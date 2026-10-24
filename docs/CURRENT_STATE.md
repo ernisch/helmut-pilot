@@ -1,15 +1,15 @@
 # CURRENT STATE — Helmut
 
-**Stand23.10.2026 Europe/Istanbul.** Letzter Production-Befund16.10.2026 13:07:32UTC,
+**Stand24.10.2026 UTC.** Letzter Production-Befund16.10.2026 13:07:32UTC,
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: Native Leseanbindung PASS; Einzelunit weiter Zeit-FAIL
+## 24.10.: Bridge-Umbau lokal; native Wirkung offen
 
 13.527Dateien/84Originale/V12-POSTRUN erhalten. Branch
 `codex/v12-unit60-native-integration-20261022`, DraftPR936. Runtime562d880f
 enthält private Zeitgrenzen und echten U/Parts-Kontrollleser im Readonly-Diagnosemodus.
-NativeCAS/Manifestcache/Connector/Snapshotfix vorhanden; unbekannteWrites terminal.
+UnbekannteWrites terminal.
 GraphReuse/CaptureOFF; Own-Write nurEinzelunit, Voll500-Write unverändert.
 
 Claim-only515c PASS, Autoritätverbraucht. EchteEinzelunit7bace FAIL:
@@ -18,25 +18,27 @@ ZehnSourcewrites COMMIT/ACK/Exit0/zweiEOFs; Peak1.342.267.392B/Events0.
 V12 bleibt499/500; Unit60/Auth30/500MB/Plateau/Qualität nichtnachgewiesen.
 Readonly-SQL55d0 PASS:24EXPLAINs; kein echterCAS-Vergleich, nichtwiederholen.
 
-FrischeReadonly-HTTP9b3 und zwei echteU/Parts-Lesevorgänge44d4 PASS:
-alleNonces/Traces/Antworten verbunden, KinderExit0/zweiEOFs, PGsauber/Gruppeleer.
-44d4: kalt1,346893s, warm0,261859s,6000History/1868Knoten;
-Peak1.137.496.064B/Events0. KeineUnit ausgeführt, keinReservebeweis.
-Clientvorprüfung klein; fehlendeZeitgrenzen liegen nun innerhalb realerPSQL-Writes.
-NächsterengerSchritt: einefrischeClaim-CAS-Transaktion mit privatenSQL-Phasen messen,
-danach ausschließlich den belegtenEngpass ändern. Alter7bace-Zustand unverändertKEEP;
-keinRebase/alteClaims. Diagnoseoverlays vorbereitet, noch nicht nativqualifiziert.
+Readonly-HTTP9b3 und U/Parts44d4 PASS: kalt1,346893s/warm0,261859s,
+6000History/1868Knoten, Peak1.137.496.064B/Events0; keineUnit/Reserveabnahme.
+24.10.: frischerClaim6994 mitSQL-Messcode78a4c1a9 PASS, Seed1+State1, COMMIT/ACK,
+alleKinderExit0/zweiEOFs, PGsauber/Gruppeleer, 50unabhängigeBelegprüfungen.
+Kernelpeak1.218.666.496B/75Samples/Events0; Originale/History erhalten, Claimverbraucht.
+PSQL905,737ms, COMMIT1,935ms; 26Dauern/neunMarker striktverbunden.
+22679d99: vierBridge-Graphprüfungen auf zwei frischeMaps im Pflichtreceipt reduziert;
+SameRoot nutzt eineMap. Frischgeprüfter Own-DBbody als siebtesArgument; Guards bleiben.
+30Compiler-/25Qualifier-Checks PASS, unabhängigesQuellenreview PASS. NativeRollback-/
+Wirkungsprüfung offen; keinFull500-Fix/Unit60-/Puffernachweis.
 
 CI40002522827 und40035705164 vollständiggrün einschließlich84Originale/Z22.
-CI40040458161 auf562d880f scheitert amTestfixture-Nutzer imReadonly-Qualifier,
-vorOriginalentschlüsselung. EngerTestfix3cbcfad0 integriert; Einzelfall plusfalscheUID-
-Ablehnung lokalPASS, neueRemote-CI offen. Runtime-Schutzregeln unverändert.
+Fixturefix3cbcfad0: CI40042703899/54c61de1 vollständigSUCCESS einschließlich84Originale.
+Neuer22679d99-Umbau braucht eigeneCI.
+Runtime-Schutzregeln unverändert, keine lokaleGesamtsuite wiederholt.
 
-VieraltePG-Archive nach verschlüsseltemDrive-Upload, vollständigemRückdownload und
-Indexprüfung kontrolliertausgelagert. Zweiweitere inBearbeitung. 9b3/1a96 vollständig
-archiviert und physischzurückgeprüft; nurentbehrlicheTEMP-Restores entfernt,
-Quell-PG/ArchiveKEEP. AlterfertigerCodeworktree nachGitHub-/Dateipinprüfung entfernt,
-Gitrefs/ObjekteKEEP. Original-RAW-V3 vorOpen/Punch gescheitert; Originaleunverändert.
+SechsaltePG-Archive nach verschlüsselterDrive-/Vollrückdownload-/Indexprüfung
+kontrolliertausgelagert. 9b3/1a96 Vollarchive mitphysischemRestore geprüft;
+TEMP-Restores entfernt. 1a96 nachVollrückprüfung kontrolliertausgelagert: +744.140.800B.
+9b3 ebenfallsvollständigoffsitezurückgeprüft, Quell-PG/Archiv bisRetirementKEEP. OriginaleKEEP.
+Original-RAW-V3 vorOpen/Punch gescheitert. NeueDiagnosekopie verbraucht wiederPlatz;
 Voll500-Platte/32frischeStartbedingungen offen. Voll500 nurmitneuemkonkretemGO;
 keineProduction/Merges. [AktuelleZahlen und Beweisgrenzen](betrieb/belege/native-claim-only-20261023/ACTUAL_NATIVE_AND_CAPACITY.SAFE.json),
 [Details](betrieb/helmut-v12-native-unit-integration-20261022.md).
@@ -290,6 +292,6 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-84er Originalkanal und gepaarte U/Parts-Lesequalifikation PASS. NeueCI nach
-engemFixturefix und tatsächliche Schreibtransaktionszeit klären. Unit60/500MB/32Startgruppen und
+Originalkanal/U/Parts und echteSchreibphasenmessung PASS. NativeBridge-Doppelarbeit
+reduzieren, Rollback/Integrität/pairedRessourcenvergleich undneueCI qualifizieren. Unit60/500MB/32Startgruppen und
 Volladmission offen; alte GOs verbraucht, kein Voll500. Hier fortsetzen, Sehr hoch.

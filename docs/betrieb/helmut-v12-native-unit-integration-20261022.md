@@ -1749,3 +1749,65 @@ entfernt; alleMetadaten/Indizes/Belege bleiben. ZweiweitereArchive werden ebenso
 geprüft; nur die entbehrlichenTEMP-Restores sind entfernt, Quell-PG/ArchiveKEEP.
 Original-RAW, benötigteOriginale und Gitrefs/Objekte bleiben erhalten. Die frischen
 Pins/Drive-Indizes stehen im [bereinigtenBefund](belege/native-claim-only-20261023/ACTUAL_NATIVE_AND_CAPACITY.SAFE.json).
+
+
+## 24.10.: echte Schreibphasen gemessen, struktureller Umbau noch ohne Wirkungsaussage
+
+Frischer isolierter Claim699469bb77dde904a7d26035ef472ddd auf eigenem
+Diagnosebranch codex/native-claim-write-phase-20261024/78a4c1a9 PASS. Produktbasis54c61de1
+bleibt getrennt. Drei Diagnose-Dateien: ursprünglicheSQL-Befehle mit neun skalaren
+Messpunkten, private monotone/wall-Clockanker und tatsächliche Readonly-Session-GUC-
+Qualifikation vor Seed/Service. Keine Originalfunktion verändert. 55 Overlay-/Decoder-
+Checks plus elf enge Sessionguard-Fälle PASS. Neuer Fall: genau Seed1+State1, beide
+COMMIT/ACK/Exit0/zweiEOFs; Callback1, Ownrevision1/running/consumed/NOREUSE, siebenOwnkeys,
+History6000 unverändert. Unabhängig50Belegprüfungen PASS, CODE435/RUNTIME1530 einschließlich
+JIT974 exakt, Sources436/RuntimeBindings553. Alle44Hostkinder/39Observer sauber beendet,
+Kernel75Samples/Events0/Gruppeleer/bisletztemExit, Peak1.218.666.496B.
+
+Strikter Decoder unverändert:26PID-gebundeneSQL-Dauern, neunMarker, achtServicephasen;
+PSQL905,736911ms monotonic. Wall-Phasen: SourceGraph+OwnProjection228,161ms, OriginalCAS
+189,183ms, ACK+Readback37,324ms, ChangedRootCompare191,764ms, OwnCAS+Receipt180,876ms;
+COMMIT1,935ms. Verschachtelte Phasen nichtaddieren oder alsCPU ausgeben. Vier volle
+Bridge-TopMap-Prüfungen old/new/old/new sind im Code belegt; keine pauschaleErsparnis
+von600,801ms behauptet. Zentralisierung in der verpflichtendenReceipt ist lokal
+als88a5b818/22679d99 umgesetzt; Rollback-/Integritäts-/NativeVergleich noch erforderlich. Dieser Fix betrifft
+die private Einzelunit-Anbindung; Full500-Pfadeinbindung und tatsächliche Motorwirkung
+sind nicht nachgewiesen. KeineUnit60/Auth30/Reserve/Plateau-/500erAbnahme.
+
+Die39,8s zweier gebundener19.900ms Mocklatenzen bleiben unverändert. Die alten
+D/R-Lücken sind keine belegte20s vermeidbareNachverarbeitung; keinProviderrewrite.
+InitialClaim liegt innerhalb derselbenEntry/Auth/Unit-Uhr; nurSeed liegt davor.
+
+Alle sechs alten Vollarchive sind nach Cipher-/Metadata-/Index-Vollrückprüfung
+ausgelagert; Plainarchives+Bulkcipher/Returns kontrolliert entfernt, MetadatenKEEP.
+1a96 ist zusätzlich vollständig offsite gesichert und byte-/SHA-/indexzurückgeprüft;
+1a96-Quellkopie/Klararchiv und zehnBulk-Cipher/Returns danach perfrischemRoot-/
+Originalschutz+vollständigemSHA/11MD-Prüflauf kontrolliertentfernt: tatsächlicherExit0,
++744.140.800B beobachteteFreigabe. Metadaten/Index/OriginaleKEEP. Neue6994-Kopie
+benötigt wiederPlatz; freieKapazität immerfrisch messen, Gewinne nichtblindaddieren.
+CI40042703899 auf54c61de1 vollständigSUCCESS einschließlich84Originale. NeueCode-CI
+für22679d99 erforderlich. Pins/Drive-Indizes im bereinigtenBefund.
+
+
+## 24.10.: verpflichtende Bridge-Prüfung strukturell vereinfacht
+
+22679d99 (auf88a5b818): Pflichtreceipt liest beideOriginalmaps frisch, prüft Own-before
+weiter gegen den echten gesperrten DBbody und übergibt diesen als siebtesArgument an
+den reinen Compare-Helper. Frühe doppelte Ownprojektion/Delta-Prüfung sowie doppelter
+Requestparse und Own-Read entfallen. Bei gleichemRoot wird genau eine genuineMap
+verwendet. Locks, OriginalCAS/ACK/Readback, Receipt-ACL/RLS/PID/xact/Nonce/Quellen-
+und Revisionsprüfungen unverändert. Kein Cross-DO-Cache/Retry oder Guardskip.
+Fehler nachOriginalCAS müssen dieselbeTransaktion vorOwnACK/COMMIT vollständig
+zurückrollen; genau dieser nativeNegativnachweis ist noch offen.
+
+30Compiler-Purechecks und25Python-Bridgequalifier-Tests PASS, zweiunabhängige
+Quellenreviews ohnekonkretenBug. Keine nativeWirkung, Unit60, Auth30 oder500MBReserve
+daraus abgeleitet. Compare-Body1313273b41be966c4a86cb34fb933079f4312527bfe3f47b267276bba464aa71;
+Receipt-Body058e191329a6ed64753fd3660a7219b6cb192c2f8481ad1a94aa6719b60edbdd.
+
+9b3-Vollbackup vollständig verschlüsselt offsite und byte-/SHA-/Indexzurückgeprüft.
+Ein ersterVerifier brach vorONCE an falschemProvider-MIME ab; keine Prüflockerung:
+tatsächlicherDateityp korrigiert, alleBytes neu authentischzurückgeladen, danach
+unveränderterVerifier PASS. Sechs alte redundanteCipherdownloads separat gegen
+neueReturns vollverglichen und entfernt: +123.924.480B beobachtet. Quell-PG/Archiv
+bis separatemRetirementKEEP.
