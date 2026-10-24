@@ -113,7 +113,7 @@ try {
   assert(!Object.hasOwn(isolated.descriptor(), "controlCacheSourceAcceptance"));
 } finally { fs.rmSync(noControlRoot, { recursive:true, force:true }); }
 const localSourceDeltaPin = atomic.pin(path.join(ROOT,
-  "docs/betrieb/belege/local-unit-storage-source-20261022/CURRENT_LOCAL_SOURCE_DELTA.SAFE.json"));
+  "docs/betrieb/belege/local-unit-control-bundle-source-20261024/CURRENT_LOCAL_SOURCE_DELTA.SAFE.json"));
 const control = atomic.descriptor({ stateStorage:"merkle-auth-v1", historyReadReuse:"verified-history-reuse-v1",
   controlRead:"verified-control-view-v1", localSourceDeltaPin });
 assert.equal(control.controlCacheSourceAcceptance.acceptedLocalCacheDelta, true);
