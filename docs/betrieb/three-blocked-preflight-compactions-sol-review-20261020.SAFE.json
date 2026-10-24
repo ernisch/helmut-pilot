@@ -1,0 +1,477 @@
+{
+  "allFullGzipSHAAndExpandedCRC_EOF_SHA_SizeIndependentlyVerified": true,
+  "atUTC": "2026-10-20T23:17:30.762154+00:00",
+  "blockingFindings": [],
+  "canonical827aRootCurrentMetadataOnly": {
+    "allocatedBytes": 4096,
+    "bytes": 4096,
+    "ctime_ns": 1792487833623423814,
+    "device": 27,
+    "gid": 1000,
+    "inode": 169,
+    "links": 19,
+    "mode": 448,
+    "mtime_ns": 1792487833623423814,
+    "uid": 1000
+  },
+  "canonicalPostmasterPidAbsent": true,
+  "cases": [
+    {
+      "adoptionPin": {
+        "bytes": 3107,
+        "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/early-blocked/ROOT_ADOPTION.SAFE.json",
+        "sha256": "22682cd7d6715759d0e5e5765f2970c42bd4ba8381e6480031258fa917004c43"
+      },
+      "exactRawRehydrationBeforeAnyFutureProofReadRequired": true,
+      "independentFullGzipSHA256CRCEOFExpandedSizeAndOriginalSHA256Verified": true,
+      "mappingPin": {
+        "bytes": 2810,
+        "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/early-blocked/LOSSLESS_MAPPING.SAFE.json",
+        "sha256": "d661b9a7bc6752ff6a66c01b6084cc11d48099eec862e1e3d9470c286168355a"
+      },
+      "oncePin": {
+        "bytes": 939,
+        "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/early-blocked/COMPACT_ONCE.SAFE.json",
+        "sha256": "aa230af178349e19a6e88c0761453af328cca68202664a0b0a700263664c211e"
+      },
+      "originalRawIdentityMatchesImmediatelyPreActionSourceReview": true,
+      "originalRawPin": {
+        "bytes": 7817929,
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_ACTUAL_CHECK_ONLY_BEFORE_INDEPENDENT_REVIEWS.PRIVATE.json",
+        "sha256": "0d1f028b9fbf950e9c96927bab481de9c2ef168878c64ac63a3c6bb1fd6ced49"
+      },
+      "rawFreshENOENT": true,
+      "reconstructedReportSummary": {
+        "activation": false,
+        "checkedAtUnixSeconds": 1792476734.4485846,
+        "checks": 32,
+        "consumerInventoryFiles": 158,
+        "consumerInventoryKeyShapes": [
+          [
+            "bytes",
+            "guards",
+            "path",
+            "requires",
+            "sha256"
+          ]
+        ],
+        "oneTimeGOConsumed": false,
+        "pass_": false,
+        "production": false,
+        "resourceRunStarted": false,
+        "schema": "helmut-complete-local-start-preflight/1",
+        "status": "BLOCKED_DO_NOT_CONSUME_GO"
+      },
+      "resultPin": {
+        "bytes": 2345,
+        "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/early-blocked/COMPACTED.SAFE.json",
+        "sha256": "d0a7c44c6f7ac9b1caa8bec04061cd7b358b6e002a39afc1c6c45fa7d2f01501"
+      },
+      "retainedGzipCurrentMetadata": {
+        "allocatedBytes": 2027520,
+        "bytes": 2024292,
+        "ctime_ns": 1792537878630811246,
+        "device": 27,
+        "gid": 1000,
+        "inode": 1966191,
+        "links": 1,
+        "mode": 384,
+        "mtime_ns": 1792537878630811246,
+        "uid": 1000
+      },
+      "retainedGzipPin": {
+        "bytes": 2024292,
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_ACTUAL_CHECK_ONLY_BEFORE_INDEPENDENT_REVIEWS.PRIVATE.json.EVIDENCE.gz",
+        "sha256": "a517129668ccd1f13ae73f24592a44c7b7909a36f7d8ef0d994b4133de310bb3"
+      },
+      "selector": "early-blocked"
+    },
+    {
+      "adoptionPin": {
+        "bytes": 3104,
+        "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/corrected-blocked/ROOT_ADOPTION.SAFE.json",
+        "sha256": "e4749935daf820859ad4f9d5e99a0ece297bcd3cfb1fa847e55ea1d004fdb1c4"
+      },
+      "exactRawRehydrationBeforeAnyFutureProofReadRequired": true,
+      "independentFullGzipSHA256CRCEOFExpandedSizeAndOriginalSHA256Verified": true,
+      "mappingPin": {
+        "bytes": 2800,
+        "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/corrected-blocked/LOSSLESS_MAPPING.SAFE.json",
+        "sha256": "099c1ec3192205fca5610907407f4bbe33bfdcc972d5054ccba8dde36d3cd3fd"
+      },
+      "oncePin": {
+        "bytes": 934,
+        "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/corrected-blocked/COMPACT_ONCE.SAFE.json",
+        "sha256": "bc0f503dd8ecfb98e6374f5c13819435c36590173c020328ba4a77faa90f8041"
+      },
+      "originalRawIdentityMatchesImmediatelyPreActionSourceReview": true,
+      "originalRawPin": {
+        "bytes": 7818919,
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_CORRECTED_CHECK_ONLY_BEFORE_REVIEWS.PRIVATE.json",
+        "sha256": "0abf5f0fba5f5e5e25397ca47d81081ccaf97918ae64db197ac0581de4f0708c"
+      },
+      "rawFreshENOENT": true,
+      "reconstructedReportSummary": {
+        "activation": false,
+        "checkedAtUnixSeconds": 1792476943.583193,
+        "checks": 32,
+        "consumerInventoryFiles": 158,
+        "consumerInventoryKeyShapes": [
+          [
+            "bytes",
+            "guards",
+            "path",
+            "requires",
+            "sha256"
+          ]
+        ],
+        "oneTimeGOConsumed": false,
+        "pass_": false,
+        "production": false,
+        "resourceRunStarted": false,
+        "schema": "helmut-complete-local-start-preflight/1",
+        "status": "BLOCKED_DO_NOT_CONSUME_GO"
+      },
+      "resultPin": {
+        "bytes": 2331,
+        "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/corrected-blocked/COMPACTED.SAFE.json",
+        "sha256": "424c2e00555405341a2302d133011fb63cf7abc89793477865322df0bc25da0b"
+      },
+      "retainedGzipCurrentMetadata": {
+        "allocatedBytes": 2027520,
+        "bytes": 2025112,
+        "ctime_ns": 1792537902050655676,
+        "device": 27,
+        "gid": 1000,
+        "inode": 1966192,
+        "links": 1,
+        "mode": 384,
+        "mtime_ns": 1792537902050655676,
+        "uid": 1000
+      },
+      "retainedGzipPin": {
+        "bytes": 2025112,
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_CORRECTED_CHECK_ONLY_BEFORE_REVIEWS.PRIVATE.json.EVIDENCE.gz",
+        "sha256": "028eba6432d789ca9222bdc884a771035c8763b1ca4f391908aa68d0ed7a9a4c"
+      },
+      "selector": "corrected-blocked"
+    },
+    {
+      "adoptionPin": {
+        "bytes": 3111,
+        "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/affinity-blocked/ROOT_ADOPTION.SAFE.json",
+        "sha256": "236900acb569e6e814be18af9b49929d11fb22daa701e8f339e21b7781e37b43"
+      },
+      "exactRawRehydrationBeforeAnyFutureProofReadRequired": true,
+      "independentFullGzipSHA256CRCEOFExpandedSizeAndOriginalSHA256Verified": true,
+      "mappingPin": {
+        "bytes": 2814,
+        "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/affinity-blocked/LOSSLESS_MAPPING.SAFE.json",
+        "sha256": "3a1dc9db991dfb89fc0412e39cdd91462eb3f9fb70d6a9268e32eb0f90362b8e"
+      },
+      "oncePin": {
+        "bytes": 941,
+        "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/affinity-blocked/COMPACT_ONCE.SAFE.json",
+        "sha256": "cd799300f7194047c3b82c39b628aeabc40095502db81543f428e3a28d9ed8d5"
+      },
+      "originalRawIdentityMatchesImmediatelyPreActionSourceReview": true,
+      "originalRawPin": {
+        "bytes": 7819534,
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_AFTER_GUARDED_STOP_SAME_AFFINITY_CHECK_ONLY.PRIVATE.json",
+        "sha256": "6dc44bdae8430dabf73b97e9a4b1d3eecfa645fb770e7c1f78c4922b29e8f137"
+      },
+      "rawFreshENOENT": true,
+      "reconstructedReportSummary": {
+        "activation": false,
+        "checkedAtUnixSeconds": 1792477478.9881516,
+        "checks": 32,
+        "consumerInventoryFiles": 158,
+        "consumerInventoryKeyShapes": [
+          [
+            "bytes",
+            "guards",
+            "path",
+            "requires",
+            "sha256"
+          ]
+        ],
+        "oneTimeGOConsumed": false,
+        "pass_": false,
+        "production": false,
+        "resourceRunStarted": false,
+        "schema": "helmut-complete-local-start-preflight/1",
+        "status": "BLOCKED_DO_NOT_CONSUME_GO"
+      },
+      "resultPin": {
+        "bytes": 2346,
+        "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/affinity-blocked/COMPACTED.SAFE.json",
+        "sha256": "6a22797460d8f373bc4698e28b17b4813c978d8f628f5280433f9c2d4b8f7f48"
+      },
+      "retainedGzipCurrentMetadata": {
+        "allocatedBytes": 2027520,
+        "bytes": 2025287,
+        "ctime_ns": 1792537902709195633,
+        "device": 27,
+        "gid": 1000,
+        "inode": 1966083,
+        "links": 1,
+        "mode": 384,
+        "mtime_ns": 1792537902709195633,
+        "uid": 1000
+      },
+      "retainedGzipPin": {
+        "bytes": 2025287,
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_AFTER_GUARDED_STOP_SAME_AFFINITY_CHECK_ONLY.PRIVATE.json.EVIDENCE.gz",
+        "sha256": "233cd46a2653691c1489998b6cc26780fd01fc59ff6eb5111d9d1c90e8574339"
+      },
+      "selector": "affinity-blocked"
+    }
+  ],
+  "checkedSmallAndGzipPins": [
+    {
+      "bytes": 8082,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/ELIGIBILITY.SAFE.json",
+      "sha256": "80a8720dbb6aca352f58689914e45e18cd24abe2cf7eadc153b78d5200586d05"
+    },
+    {
+      "bytes": 12306,
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/v11-checkonly-compactor-independent-review-20261020/V11_THREE_BLOCKED_CHECKONLY_COMPACTOR_SOURCE_REVIEW.SAFE.json",
+      "sha256": "999b92e8a49f96cab3263dc6ad85fedd40210c96402929a6660dc22d2177fb6f"
+    },
+    {
+      "bytes": 4302,
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/v11-checkonly-compactor-independent-review-20261020/ROOT_CHECKONLY_COMPACTION_ADOPTION_WRITER_SOURCE_REVIEW.SAFE.json",
+      "sha256": "9e252bd2ee4fbfb27e8f79c2474a2435fe5b9686b42b18a110d9db527d69e82c"
+    },
+    {
+      "bytes": 54156,
+      "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/old-two-retirement-end-verifier-v3-preparation-20261020/ACTUAL_REVIEW.SAFE.json",
+      "sha256": "c4aa0dab62277bce90629a86463ba12a061b148c661a8049d159c9d03b046709"
+    },
+    {
+      "bytes": 2345,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/early-blocked/COMPACTED.SAFE.json",
+      "sha256": "d0a7c44c6f7ac9b1caa8bec04061cd7b358b6e002a39afc1c6c45fa7d2f01501"
+    },
+    {
+      "bytes": 2810,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/early-blocked/LOSSLESS_MAPPING.SAFE.json",
+      "sha256": "d661b9a7bc6752ff6a66c01b6084cc11d48099eec862e1e3d9470c286168355a"
+    },
+    {
+      "bytes": 3107,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/early-blocked/ROOT_ADOPTION.SAFE.json",
+      "sha256": "22682cd7d6715759d0e5e5765f2970c42bd4ba8381e6480031258fa917004c43"
+    },
+    {
+      "bytes": 939,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/early-blocked/COMPACT_ONCE.SAFE.json",
+      "sha256": "aa230af178349e19a6e88c0761453af328cca68202664a0b0a700263664c211e"
+    },
+    {
+      "bytes": 15784,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/compact_checkonly.py",
+      "sha256": "d389f39dfa52e5bab1526d4149e0c489e62122dab75599c6312745aff89a67fa"
+    },
+    {
+      "bytes": 2024292,
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_ACTUAL_CHECK_ONLY_BEFORE_INDEPENDENT_REVIEWS.PRIVATE.json.EVIDENCE.gz",
+      "sha256": "a517129668ccd1f13ae73f24592a44c7b7909a36f7d8ef0d994b4133de310bb3"
+    },
+    {
+      "bytes": 124,
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_ACTUAL_CONTROLLER_EXIT.SAFE.json",
+      "sha256": "98ce083f42d9c1a8e2c393bd1a7afd640d00c6d087821e5a4c064df202cceda3"
+    },
+    {
+      "bytes": 124,
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_CORRECTED_CONTROLLER_EXIT.SAFE.json",
+      "sha256": "4fb79b62a0bac3a2d551273ccef98cb19bcca636b4d63bc0a220eb59ceecb443"
+    },
+    {
+      "bytes": 1521,
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/ROOT_V11_FINAL_FAILURE_ADOPTION.SAFE.json",
+      "sha256": "71765aab6a0f1c2e7e6175da7d50fa5cd952cf4abde8daf7cc97221f422c3a35"
+    },
+    {
+      "bytes": 2331,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/corrected-blocked/COMPACTED.SAFE.json",
+      "sha256": "424c2e00555405341a2302d133011fb63cf7abc89793477865322df0bc25da0b"
+    },
+    {
+      "bytes": 2800,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/corrected-blocked/LOSSLESS_MAPPING.SAFE.json",
+      "sha256": "099c1ec3192205fca5610907407f4bbe33bfdcc972d5054ccba8dde36d3cd3fd"
+    },
+    {
+      "bytes": 3104,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/corrected-blocked/ROOT_ADOPTION.SAFE.json",
+      "sha256": "e4749935daf820859ad4f9d5e99a0ece297bcd3cfb1fa847e55ea1d004fdb1c4"
+    },
+    {
+      "bytes": 934,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/corrected-blocked/COMPACT_ONCE.SAFE.json",
+      "sha256": "bc0f503dd8ecfb98e6374f5c13819435c36590173c020328ba4a77faa90f8041"
+    },
+    {
+      "bytes": 2025112,
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_CORRECTED_CHECK_ONLY_BEFORE_REVIEWS.PRIVATE.json.EVIDENCE.gz",
+      "sha256": "028eba6432d789ca9222bdc884a771035c8763b1ca4f391908aa68d0ed7a9a4c"
+    },
+    {
+      "bytes": 2346,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/affinity-blocked/COMPACTED.SAFE.json",
+      "sha256": "6a22797460d8f373bc4698e28b17b4813c978d8f628f5280433f9c2d4b8f7f48"
+    },
+    {
+      "bytes": 2814,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/affinity-blocked/LOSSLESS_MAPPING.SAFE.json",
+      "sha256": "3a1dc9db991dfb89fc0412e39cdd91462eb3f9fb70d6a9268e32eb0f90362b8e"
+    },
+    {
+      "bytes": 3111,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/affinity-blocked/ROOT_ADOPTION.SAFE.json",
+      "sha256": "236900acb569e6e814be18af9b49929d11fb22daa701e8f339e21b7781e37b43"
+    },
+    {
+      "bytes": 941,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/actions/affinity-blocked/COMPACT_ONCE.SAFE.json",
+      "sha256": "cd799300f7194047c3b82c39b628aeabc40095502db81543f428e3a28d9ed8d5"
+    },
+    {
+      "bytes": 2025287,
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_AFTER_GUARDED_STOP_SAME_AFFINITY_CHECK_ONLY.PRIVATE.json.EVIDENCE.gz",
+      "sha256": "233cd46a2653691c1489998b6cc26780fd01fc59ff6eb5111d9d1c90e8574339"
+    },
+    {
+      "bytes": 4558,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/FINAL_PROTECTED_RESOURCES_READBACK.SAFE.json",
+      "sha256": "fe1450e4459caf3b3f7c93b6d974c143eed271b0f9ca7b37856751d49a415ab9"
+    },
+    {
+      "bytes": 3389,
+      "path": "/tmp/helmut-final-protected-resource-readback.py",
+      "sha256": "ddce621fc15986c49a70569f7e86c0132c870998fc15233b6865aeb4a855ad68"
+    },
+    {
+      "bytes": 2048,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/6e6faf55f767d2014e5a7fad/CLOSED_INVENTORY_COMPACTION.SAFE.json",
+      "sha256": "0b3617ad247d0a3b26618a5e8ad3d1081d438aefccaef898a9c4f7c72b420414"
+    },
+    {
+      "bytes": 13882,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/root-orchestration-source-preservation-20261020/ACTUAL_SOURCE_PRESERVATION.SAFE.json",
+      "sha256": "8affcc278583efb546dc7b3561062afd36e06092a15ce5bc4467bc9c94650960"
+    }
+  ],
+  "eligibilityPin": {
+    "bytes": 8082,
+    "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/v11-checkonly-lossless-compactor-preparation-20261020/ELIGIBILITY.SAFE.json",
+    "sha256": "80a8720dbb6aca352f58689914e45e18cd24abe2cf7eadc153b78d5200586d05"
+  },
+  "explicitRehydrationBeforeFutureRawProofReadsRequired": true,
+  "fourActorEndVerifierActualPin": {
+    "bytes": 54156,
+    "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/old-two-retirement-end-verifier-v3-preparation-20261020/ACTUAL_REVIEW.SAFE.json",
+    "sha256": "c4aa0dab62277bce90629a86463ba12a061b148c661a8049d159c9d03b046709"
+  },
+  "historicalBLOCKEDAndControllerExit1CompletedV11FAILAndSpentGOFlagsUnchanged": true,
+  "independent": true,
+  "limits": {
+    "noOriginalAuthOrPGDATAFileContentOrLargeArchivePayloadRead": true,
+    "noOriginalRuntimeELFRehashOrNewNativeTestDBResourceActions": true,
+    "noRAMBenefitOrNewNativeFull500ProductionAuthority": true,
+    "onePathnameSearchWasBroaderThanRequested": {
+      "canonicalSubtreeNotExplicitlyExcluded": true,
+      "commandScope": "rg --files next-single-go-20261020 with output name filter",
+      "filePayloadsReadByThatSearch": false,
+      "resourceOrFileMutationByThatSearch": false,
+      "subsequentSearchRestrictedToExactHistoricalSourceFileAndExactRootLstats": true
+    },
+    "outerThreeCLIExit0InheritedFromRootObservationNotNewReviewerExecution": true,
+    "rootNoActiveNoPendingReadersRemainsExplicitRootAttestation": true,
+    "unselectedFinalRawFreshPresentMetadataNotIndependentBeforeAfterEquality": true
+  },
+  "protectedResourcesRootObservedReceiptPin": {
+    "bytes": 4558,
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/FINAL_PROTECTED_RESOURCES_READBACK.SAFE.json",
+    "sha256": "fe1450e4459caf3b3f7c93b6d974c143eed271b0f9ca7b37856751d49a415ab9"
+  },
+  "protectedResourcesScope": {
+    "RootObservedFiveExactManagedLocalGETs": true,
+    "allMountSourceMultisetsRunningPIDEqualArchivedBaselineAccordingToRootObservedReceipt": true,
+    "currentImageIDsOnlyNotNewImageOrVolumeContentQualification": true,
+    "fourV11HullsRootObservedStoppedPID0AndRetained": true,
+    "fullHostConfigComparisonNotClaimed": true,
+    "fullInspectRawNotPersistedNoIndependentRecomputationOfCurrentGETBodies": true,
+    "originalBankRootObservedRunningTruePIDPositive": true,
+    "reviewerMadeNoDockerGETOrResourceCall": true
+  },
+  "reviewer": "gpt-6.1-sol /root/sprint_shutdown",
+  "rootAdoptionWriterIndependentSourceReviewPin": {
+    "bytes": 4302,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/v11-checkonly-compactor-independent-review-20261020/ROOT_CHECKONLY_COMPACTION_ADOPTION_WRITER_SOURCE_REVIEW.SAFE.json",
+    "sha256": "9e252bd2ee4fbfb27e8f79c2474a2435fe5b9686b42b18a110d9db527d69e82c"
+  },
+  "rootOrchestrationSourcePreservationReceiptPin": {
+    "bytes": 13882,
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/root-orchestration-source-preservation-20261020/ACTUAL_SOURCE_PRESERVATION.SAFE.json",
+    "sha256": "8affcc278583efb546dc7b3561062afd36e06092a15ce5bc4467bc9c94650960"
+  },
+  "rootReportedCapacitySnapshot": {
+    "availableBytes": 15181225984,
+    "fullAdmissionBytes": 15179779720,
+    "isolatedNetReclaimNotInferredFromLogicalByteDifference": true,
+    "marginBytes": 1446264,
+    "snapshotOnlyPendingFinalPostCommitObservation": true
+  },
+  "schema": "helmut-v11-three-blocked-checkonly-compactions-independent-actual-review/1",
+  "sourceIndependentReviewPin": {
+    "bytes": 12306,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/v11-checkonly-compactor-independent-review-20261020/V11_THREE_BLOCKED_CHECKONLY_COMPACTOR_SOURCE_REVIEW.SAFE.json",
+    "sha256": "999b92e8a49f96cab3263dc6ad85fedd40210c96402929a6660dc22d2177fb6f"
+  },
+  "sourcePreservationQualificationScope": "separate Root-observed receipt bound; 44 sources not independently rereviewed or rerun here",
+  "status": "PASS_THREE_EXACT_LOSSLESS_BLOCKED_CHECKONLY_COMPACTIONS",
+  "threeRawNamesFreshENOENT": true,
+  "totalExactReconstructedRawBytes": 23456382,
+  "totalRetainedGzipBytes": 6074691,
+  "unselectedFinalRawReports": [
+    {
+      "freshCurrentMetadataOnly": {
+        "allocatedBytes": 7823360,
+        "bytes": 7819714,
+        "ctime_ns": 1792477372241943338,
+        "device": 27,
+        "gid": 1000,
+        "inode": 1966120,
+        "links": 1,
+        "mode": 384,
+        "mtime_ns": 1792477372241943338,
+        "uid": 1000
+      },
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_FINAL_ALL32_CHECK_ONLY.PRIVATE.json",
+      "payloadRead": false,
+      "prePostMetadataComparisonClaimed": false,
+      "scopePreservationEvidence": "Root exclusive no-touch attestation and exact three-selector source; no saved before-stat available to this reviewer"
+    },
+    {
+      "freshCurrentMetadataOnly": {
+        "allocatedBytes": 7823360,
+        "bytes": 7819713,
+        "ctime_ns": 1792477520713281843,
+        "device": 27,
+        "gid": 1000,
+        "inode": 1966144,
+        "links": 1,
+        "mode": 384,
+        "mtime_ns": 1792477520713281843,
+        "uid": 1000
+      },
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/V11_ALL32_AFTER_AFFINITY_CORRECTION.PRIVATE.json",
+      "payloadRead": false,
+      "prePostMetadataComparisonClaimed": false,
+      "scopePreservationEvidence": "Root exclusive no-touch attestation and exact three-selector source; no saved before-stat available to this reviewer"
+    }
+  ]
+}

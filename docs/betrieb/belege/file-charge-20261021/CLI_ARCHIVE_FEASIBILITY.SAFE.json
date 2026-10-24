@@ -1,0 +1,461 @@
+{
+  "schema": "helmut-cli-binary-archive-feasibility-source-review/1",
+  "status": "BLOCKED_RETIREMENT_RECLAIM_NET_RETENTION_AND_CURRENT_USE_NOT_QUALIFIED",
+  "scope": "Read-only metadata/source feasibility for at most the two largest exact public CLI executable payloads; no actor, archive, restore, unlink or deletion adoption is prepared or authorized.",
+  "findings": [
+    "No single regular file exceeds220.3MB: largest is169938944allocatedB. The two largest are only a conditional282112000B gross candidate; no compressed size or net saving measured.",
+    "All selected files are on overlayfs and have Oct1preinstalled high-bit inode/ctime metadata. Lower-layer origin is plausible but unproved. A lower-layer unlink only creates a whiteout and may reclaim0B. st_blocks/du is not an actionable free-space forecast.",
+    "Installed metadata consistently labels Supabase2.119.0 and Vercel62.1.0. Both npm lockfiles contain identical target package records with public registry SHA512 integrity. That does not attest current individual ELF bytes.",
+    "No selected motor/native-runtime binding or repository CLI dependency on this toolroot was found. This is a dependency finding, not a no-use clearance or proof that the optional CLI binaries are dispensable.",
+    "Archiving Supabase's glibc binary disables its ordinary shim until exact restore. Removing Vercel's optional native binary can silently choose its JS CLI path; therefore future CLI use must be gated on explicit exact restore, not advertised as behaviorally unchanged.",
+    "Saved Root process receipt has328visible/0candidateCLI and1unreadablecmdline. FD/maps ownership and unknown use are not proven; no inferred clearance."
+  ],
+  "conditionalExactCandidateScope": [
+    {
+      "path": "/workspace/.helmut-cloud-tools/node_modules/@vercel/vc-native-linux-x64/bin/vercel",
+      "package": "@vercel/vc-native-linux-x64",
+      "version": "62.1.0",
+      "platform": "linux-x64",
+      "logicalBytes": 169938112,
+      "blocks512": 331912,
+      "allocatedBytes": 169938944,
+      "mode": "0700",
+      "uid": 1000,
+      "gid": 1000,
+      "nlink": 1,
+      "device": "27",
+      "inode": "9223372036855932623",
+      "mtime": "2026-10-01T08:37:30.104204819Z",
+      "ctime": "2026-10-01T08:37:30.104204819Z",
+      "type": "regular ELF64 little-endian ET_EXEC x86-64 from first20bytes; execution not tested",
+      "payloadSHA256": "NOT_READ_PENDING_ROOT_IO"
+    },
+    {
+      "path": "/workspace/.helmut-cloud-tools/node_modules/@supabase/cli-linux-x64/bin/supabase",
+      "package": "@supabase/cli-linux-x64",
+      "version": "2.119.0",
+      "platform": "linux-x64-glibc",
+      "logicalBytes": 112170464,
+      "blocks512": 219088,
+      "allocatedBytes": 112173056,
+      "mode": "0700",
+      "uid": 1000,
+      "gid": 1000,
+      "nlink": 1,
+      "device": "27",
+      "inode": "9223372036855920612",
+      "mtime": "2026-10-01T08:37:29.582622671Z",
+      "ctime": "2026-10-01T08:37:29.582622671Z",
+      "type": "regular ELF64 little-endian ET_EXEC x86-64 from first20bytes; execution not tested",
+      "payloadSHA256": "NOT_READ_PENDING_ROOT_IO"
+    }
+  ],
+  "selectionMeaning": "Maximum-two largest payloads only, selected for capacity assessment. Both remain KEEP until independently qualified and freshly individually authorized. No third payload or parent directory is included.",
+  "otherLargeFilesKept": [
+    {
+      "path": "/workspace/.helmut-cloud-tools/node_modules/@supabase/cli-linux-x64-musl/bin/supabase",
+      "logicalBytes": 106141232,
+      "allocatedBytes": 106143744,
+      "version": "2.119.0",
+      "blocks512": 207312,
+      "mode": "0700",
+      "uid": 1000,
+      "gid": 1000,
+      "nlink": 1,
+      "device": "27",
+      "inode": "9223372036855920626",
+      "mtime": "2026-10-01T08:38:48.534896803Z",
+      "ctime": "2026-10-01T08:38:48.534896803Z",
+      "type": "regular file by metadata; header not read and binary not executed",
+      "reason": "Third-largest; outside two-file candidate scope."
+    },
+    {
+      "path": "/workspace/.helmut-cloud-tools/node_modules/@supabase/cli-linux-x64/bin/supabase-go",
+      "logicalBytes": 40579234,
+      "allocatedBytes": 40583168,
+      "reason": "Required CLI sidecar role; not selected."
+    },
+    {
+      "path": "/workspace/.helmut-cloud-tools/node_modules/@supabase/cli-linux-x64-musl/bin/supabase-go",
+      "logicalBytes": 40579234,
+      "allocatedBytes": 40583168,
+      "reason": "Not selected."
+    },
+    {
+      "paths": [
+        "/workspace/.helmut-cloud-tools/node_modules/esbuild/bin/esbuild",
+        "/workspace/.helmut-cloud-tools/node_modules/@esbuild/linux-x64/bin/esbuild"
+      ],
+      "logicalBytesEach": 11083960,
+      "nlink": 2,
+      "reason": "Hardlinked helper executables excluded; never double-credit."
+    }
+  ],
+  "toolDirectoryProvenance": {
+    "path": "/workspace/.helmut-cloud-tools",
+    "ownerUID": 1000,
+    "ownerGID": 1000,
+    "mode": "0700",
+    "device": "27",
+    "inode": "9223372036855914198",
+    "rootMtime": "2026-10-01T08:37:30.222624624Z",
+    "rootCtime": "2026-10-01T08:37:30.222624624Z",
+    "packageJsonOnlyTopDependencies": {
+      "supabase": "^2.119.0",
+      "vercel": "^62.1.0"
+    },
+    "lockfileVersion": 3,
+    "lockfileName": ".helmut-cloud-tools",
+    "topAndHiddenTargetRecordsStructurallyIdentical": true,
+    "installationMeaning": "Metadata resembles a separate prior npm CLI installation; exact installer command, creation-layer provenance, package-tarball verification and current byte integrity are not established from timestamps/locks alone.",
+    "filesystem": {
+      "type": "overlayfs",
+      "magic": "0x794c7630",
+      "fsid": "434ab459f78337c5",
+      "sameAsFreshReportFilesystem": true,
+      "upperVsLowerOrigin": "UNPROVEN",
+      "rootReportedMountMetadata": "Root separately reports readonly findmnt: lowerdir=/run/kata-containers/erofs-multi-layer/16ddf14a75144e6cabdf1730dcb918d3/lower-0, upperdir ends upper/upper, metacopy=off,index=off. Reviewer did not access underlying paths, proc or run findmnt. This identifies the overlay configuration, not the layer containing each selected inode.",
+      "highBitInodeIsOnlyHint": true,
+      "stBlocksIsReclaimGuarantee": false,
+      "actualRecoveredBytes": 0
+    },
+    "metadataPins": [
+      {
+        "path": "/workspace/.helmut-cloud-tools/package.json",
+        "bytes": 80,
+        "sha256": "3db4a499499da5fb8be8b466961a76229f018aa647241fa162bec41fd95c7bb7"
+      },
+      {
+        "path": "/workspace/.helmut-cloud-tools/package-lock.json",
+        "bytes": 181994,
+        "sha256": "9f729779a8419e0b44670d467efeece3bc0d8d594602d1a320da23c0075fdd47"
+      },
+      {
+        "path": "/workspace/.helmut-cloud-tools/node_modules/.package-lock.json",
+        "bytes": 134952,
+        "sha256": "7f5005f36ac299678e156b76b9a5115b8c5f7debf8a166dc33a9125d7854cd79"
+      },
+      {
+        "path": "/workspace/.helmut-cloud-tools/node_modules/supabase/package.json",
+        "bytes": 3839,
+        "sha256": "7f3bd906d2b20511f04a569e140c6dab2ac3cd9749d4f9c0254a4309a52f8162"
+      },
+      {
+        "path": "/workspace/.helmut-cloud-tools/node_modules/supabase/dist/supabase.js",
+        "bytes": 2069,
+        "sha256": "21d25b4bfb1870db0aaf0963c028b10d0b0b431485f119abd704c1396c7991e6"
+      },
+      {
+        "path": "/workspace/.helmut-cloud-tools/node_modules/vercel/package.json",
+        "bytes": 7945,
+        "sha256": "e096fdc5e1a8db8f30a99d77ab94e6ef931c1ec4ca44553a4cc07ec9cac0c763"
+      },
+      {
+        "path": "/workspace/.helmut-cloud-tools/node_modules/vercel/dist/vc.js",
+        "bytes": 7924,
+        "sha256": "a0459896d4698233bab881d308ade711a772cde6bcc845728731a38ef0348090"
+      },
+      {
+        "path": "/workspace/.helmut-cloud-tools/node_modules/@supabase/cli-linux-x64/package.json",
+        "bytes": 659,
+        "sha256": "ae0c90b90bec307a920660bf8ea58e8f477088b55ad2d2ace97221544e10fd1c"
+      },
+      {
+        "path": "/workspace/.helmut-cloud-tools/node_modules/@supabase/cli-linux-x64-musl/package.json",
+        "bytes": 673,
+        "sha256": "355a7902ea0488814c180de178c63673d1e2a14f86dd538909057e4670be5424"
+      },
+      {
+        "path": "/workspace/.helmut-cloud-tools/node_modules/@vercel/vc-native-linux-x64/package.json",
+        "bytes": 454,
+        "sha256": "6252fc177fb2bd0a32f9b3b236f1f04d52d1cc411e24e60ccd4d5247d425096a"
+      }
+    ],
+    "npmPackageLockRecords": [
+      {
+        "packagePath": "node_modules/supabase",
+        "record": {
+          "version": "2.119.0",
+          "resolved": "https://registry.npmjs.org/supabase/-/supabase-2.119.0.tgz",
+          "integrity": "sha512-0VYIdQBjAJj6+xlNso2JDI//KibEYM8USvimHJauPpuFZdOsj+dutM84ofLtAHlF2UFGzriT1C4qH2hHj9EJxw==",
+          "license": "MIT",
+          "dependencies": {
+            "eciesjs": "^0.5.0",
+            "jose": "^6.2.10"
+          },
+          "bin": {
+            "supabase": "dist/supabase.js"
+          },
+          "optionalDependencies": {
+            "@supabase/cli-darwin-arm64": "2.119.0",
+            "@supabase/cli-darwin-x64": "2.119.0",
+            "@supabase/cli-linux-arm64": "2.119.0",
+            "@supabase/cli-linux-arm64-musl": "2.119.0",
+            "@supabase/cli-linux-x64": "2.119.0",
+            "@supabase/cli-linux-x64-musl": "2.119.0",
+            "@supabase/cli-windows-arm64": "2.119.0",
+            "@supabase/cli-windows-x64": "2.119.0"
+          }
+        },
+        "hiddenRecordExactlyEqual": true
+      },
+      {
+        "packagePath": "node_modules/vercel",
+        "record": {
+          "version": "62.1.0",
+          "resolved": "https://registry.npmjs.org/vercel/-/vercel-62.1.0.tgz",
+          "integrity": "sha512-FuW5MhOfkOxPhyL+tQbAFmx+M4FpmTvqGSDsD2rP9FWYJt7GG2JKIsIbHOfYR5t/fqQqZrVQC3O2ODhwInEGVA==",
+          "license": "Apache-2.0",
+          "dependencies": {
+            "@vercel/backends": "12.0.0",
+            "@vercel/blob": "2.8.0",
+            "@vercel/build-utils": "14.14.0",
+            "@vercel/cli-auth": "0.3.9",
+            "@vercel/cli-config": "0.3.0",
+            "@vercel/container": "12.0.0",
+            "@vercel/detect-agent": "1.2.5",
+            "@vercel/elysia": "12.0.0",
+            "@vercel/express": "12.0.0",
+            "@vercel/fastify": "12.0.0",
+            "@vercel/fun": "1.3.6",
+            "@vercel/go": "15.0.0",
+            "@vercel/h3": "12.0.0",
+            "@vercel/hono": "12.0.0",
+            "@vercel/hydrogen": "13.0.0",
+            "@vercel/koa": "12.0.0",
+            "@vercel/nestjs": "12.0.0",
+            "@vercel/next": "16.0.0",
+            "@vercel/node": "17.0.0",
+            "@vercel/prepare-flags-definitions": "0.3.0",
+            "@vercel/python": "18.0.0",
+            "@vercel/python-analysis": "0.14.0",
+            "@vercel/redwood": "14.0.0",
+            "@vercel/remix-builder": "17.0.0",
+            "@vercel/ruby": "14.0.0",
+            "@vercel/rust": "13.0.0",
+            "@vercel/static-build": "14.0.0",
+            "chokidar": "4.0.0",
+            "esbuild": "0.27.0",
+            "jose": "5.9.6",
+            "jsonc-parser": "3.3.1",
+            "luxon": "^3.4.0",
+            "sandbox": "4.4.0",
+            "smol-toml": "1.5.2",
+            "undici": "5.29.0",
+            "uuid": "14.0.1",
+            "zod": "4.1.11"
+          },
+          "bin": {
+            "vc": "dist/vc.js",
+            "vercel": "dist/vc.js"
+          },
+          "engines": {
+            "node": ">= 20"
+          },
+          "optionalDependencies": {
+            "@vercel/vc-native-darwin-arm64": "62.1.0",
+            "@vercel/vc-native-darwin-x64": "62.1.0",
+            "@vercel/vc-native-linux-arm64": "62.1.0",
+            "@vercel/vc-native-linux-x64": "62.1.0",
+            "@vercel/vc-native-win32-arm64": "62.1.0",
+            "@vercel/vc-native-win32-x64": "62.1.0"
+          }
+        },
+        "hiddenRecordExactlyEqual": true
+      },
+      {
+        "packagePath": "node_modules/@supabase/cli-linux-x64",
+        "record": {
+          "version": "2.119.0",
+          "resolved": "https://registry.npmjs.org/@supabase/cli-linux-x64/-/cli-linux-x64-2.119.0.tgz",
+          "integrity": "sha512-JEcYXk8DFgjVcVOf4zfYpSYUjhjxz87nApqdECtRA8pf6kmmImSYzkE9f8ajhm9srELP4kPkz+C/Jdd2Tqb8Lw==",
+          "cpu": [
+            "x64"
+          ],
+          "license": "MIT",
+          "optional": true,
+          "os": [
+            "linux"
+          ]
+        },
+        "hiddenRecordExactlyEqual": true
+      },
+      {
+        "packagePath": "node_modules/@supabase/cli-linux-x64-musl",
+        "record": {
+          "version": "2.119.0",
+          "resolved": "https://registry.npmjs.org/@supabase/cli-linux-x64-musl/-/cli-linux-x64-musl-2.119.0.tgz",
+          "integrity": "sha512-mshS7qFFNb3O3M+K9YG9MJXPmkeVoaWwWy74g28t059yevlVa/YG1VsJdr2LzEgNzJgx8SIt31qO7QOZlCDyDw==",
+          "cpu": [
+            "x64"
+          ],
+          "license": "MIT",
+          "optional": true,
+          "os": [
+            "linux"
+          ]
+        },
+        "hiddenRecordExactlyEqual": true
+      },
+      {
+        "packagePath": "node_modules/@vercel/vc-native-linux-x64",
+        "record": {
+          "version": "62.1.0",
+          "resolved": "https://registry.npmjs.org/@vercel/vc-native-linux-x64/-/vc-native-linux-x64-62.1.0.tgz",
+          "integrity": "sha512-k5KaYnaey+AAMhOWVpAOTA6kEvk6AgagKGK0aP5Hm9W0cmpIDHhBr9PMpDNzNDU4BWH70ue9d1HFbxGteHuYXQ==",
+          "cpu": [
+            "x64"
+          ],
+          "license": "Apache-2.0",
+          "optional": true,
+          "os": [
+            "linux"
+          ]
+        },
+        "hiddenRecordExactlyEqual": true
+      }
+    ],
+    "binaryMetadataLimits": "No full ELF read/hash, ELF runtime invocation, archived bytes or restored comparisons. getfattr is unavailable; xattrs/ACL are unqualified and no installation or replacement probe was attempted. Only20headerbytes of the two selected executables were read."
+  },
+  "actualCallerBehavior": [
+    {
+      "sourcePin": {
+        "path": "/workspace/.helmut-cloud-tools/node_modules/supabase/dist/supabase.js",
+        "bytes": 2069,
+        "sha256": "21d25b4bfb1870db0aaf0963c028b10d0b0b431485f119abd704c1396c7991e6"
+      },
+      "lines": "9-14,24-38",
+      "behavior": "On linux x64, shim candidates are linux-x64 first and linux-x64-musl second; it resolves package.json and immediately selects bin/supabase. It does not check whether that binary exists or retry musl after spawn ENOENT. SUPABASE_CLI_BINARY_OVERRIDE can select another explicit executable. No environment override or behavior change is proposed."
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/.helmut-cloud-tools/node_modules/vercel/dist/vc.js",
+        "bytes": 7924,
+        "sha256": "a0459896d4698233bab881d308ade711a772cde6bcc845728731a38ef0348090"
+      },
+      "lines": "22-42,62-90,95-118",
+      "behavior": "Vercel resolves sibling @vercel/vc-native-linux-x64 and checks file existence, then conditionally uses native binary based on env/global config. Missing native payload returns no candidate and proceeds in JS. Existing native execution errors do not fall through. Archive must not be sold as retaining identical CLI startup behavior while absent."
+    },
+    {
+      "symlink": "/workspace/.helmut-cloud-tools/node_modules/.bin/supabase",
+      "target": "../supabase/dist/supabase.js",
+      "keep": true
+    },
+    {
+      "symlink": "/workspace/.helmut-cloud-tools/node_modules/.bin/vercel",
+      "target": "../vercel/dist/vc.js",
+      "keep": true
+    }
+  ],
+  "mandatoryMotorAndHelperAssessment": {
+    "repositoryRoot": "/workspace/helmut-cpu-epoch-20261015",
+    "rootPackageJSON": "Dependencies are AWS Lambda/SQS/SSM SDK and ical.js; no supabase/vercel CLI package dependency.",
+    "sourceSearch": "No exact .helmut-cloud-tools,vc-native-linux-x64,@supabase/cli-linux-x64 references found in inspected repository source/control docs or active native PREP/runtime bindings. Narrow subprocess/exec searches found only unrelated psql/git references to supabase migration/seed paths.",
+    "rootCorroboration": "Root separately reports0matchingtoolrootfiles in R(lib/scripts/docs/AGENTS/CLAUDE), no toolroot in PATH or NODE_PATH. Only boolean result used, no environment values read/exported.",
+    "selectedNativePreparedPin": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/PREPARED.SAFE.json",
+      "bytes": 67996,
+      "sha256": "a30bc1a726a5002e7f5b3f5e6e4d9c24dab26630bd3806d027d0c5e46ece63e8"
+    },
+    "nativeBindingsPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-auth-input-preparation/READONLY_RUNTIME_BINDINGS.SAFE.json",
+      "bytes": 207733,
+      "sha256": "71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475"
+    },
+    "frozenNativeCleanEnvironment": "worker.env uses explicit PGBIN PATH/PYTHON/node24/PG/PgREST bindings; native target runtime paths do not overlap these CLI payloads.",
+    "keepSeparate": "/workspace/.helmut-tools Node22; /opt/codex/runtimes/codex-primary-runtime/dependencies/node Node24; Python/PG/PostgREST/native binaries, all source pins/frozen harnesses/public originals/canonical827a17archives/616helperGit remain untouched.",
+    "limits": "Searches and declared closures do not prove no unrelated interactive CLI use, dynamic external loader or pinned historical dependency outside inspected scope."
+  },
+  "currentUse": {
+    "rootSavedObservationPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/ROOT_PROCESS_OBSERVATION.SAFE.json",
+      "bytes": 48943,
+      "sha256": "f5d7dfee76e3404ed664466925652664b69a8a09b830d25e142e079378c8989a"
+    },
+    "schema": "helmut-file-charge-root-readonly-process-observation/1",
+    "observedAtUTC": "2026-10-21T10:28:43.147Z",
+    "visibleProcesses": 328,
+    "candidateCLIProcesses": 0,
+    "unreadableCmdlines": 1,
+    "unreadableRecord": {
+      "pid": 1378106,
+      "ppid": 1378105,
+      "comm": "ps",
+      "candidateCLIProcess": "UNKNOWN",
+      "cmdlineReadable": false
+    },
+    "noUseClaimed": false,
+    "FDMapsAllReadableClaimed": false,
+    "noOwnProcOrProcessScans": true,
+    "requiredBeforeUnlink": "Fresh Root exact-target use/dependency review in an exclusive window. Resolve actual unknown dispositions under existing policy; a ps0/nonmatch/UID/comm or stale snapshot is not full clearance. No opaque-use disposition is invented here."
+  },
+  "budget": {
+    "oneFileMaximumGrossBytes": 169938944,
+    "twoFilesLogicalBytes": 282108576,
+    "twoFilesAllocatedBytes": 282112000,
+    "strictRequestedNetBytes": 220300000,
+    "ifFullyReclaimableUpperFiles": "Total archive+mapping+proof+retained restoration/scratch allocation must be strictly below61812000B for net>220300000B.",
+    "maximumRetainedBytesForStrictTarget": 61812000,
+    "gzipRatioMeasured": false,
+    "archiveCreated": false,
+    "netBenefitProven": false,
+    "overlayLowerCase": "Actual source recovery may be0B while retained gzip/proofs consume new upper storage; net may be negative.",
+    "temporaryHeadroom": "Originals remain until both full restore comparisons and durable verification/mapping succeed. Account complete allocated archive, mapping/proofs and temporary full restore files, plus unchanged hostfloor; never assume post-unlink savings before action.",
+    "noFullAdmissionOrMemoryReserveClaim": true
+  },
+  "minimalFutureRetentionContractNotActor": [
+    "First prove actual layer/host-reclaim semantics for these exact current inodes using authorized retained metadata or separate Root qualification. Do not run a destructive reclaim experiment merely to discover they were lower-layer.",
+    "Only if reclaim/use/authority qualify: Root records fresh canonical path/ancestor/mount/noalias/UID/mode/nlink1/dev/inode/size/allocated/nsmtime/atime/ctime/xattrs/ACL and full source hash. Reject unsupported metadata; no broad permissions change.",
+    "Lossless bounded gzip per exact selected ELF, with full CRC+EOF/no extra member/size+SHA verification and durable archive+mapping. No npm reinstall, network retrieval, dependency lock/package/CLIshim/env/prod/router config changes.",
+    "Two separate complete restore-to-new-owned-temporary-file comparisons against the unchanged original bytes, with metadata and required whole-file hash/byte comparison. Archive stays available offline; preserve metadata/proofs durably before exact original unlink.",
+    "Mapping includes package/version/platform/public resolved tarball+SRI metadata plus original source hash/identity and exact archive hash/size/comparison receipts. Registry lock SRI alone does not attest installed ELF.",
+    "Preserve exact logical restored mode/UID/GID/nsmtime/atime/xattrs/ACL where supported. Record original inode/ctime provenance; a newly restored file cannot generally recover its original inode or ctime. Do not promise impossible full inode identity restoration.",
+    "Before any future Supabase/Vercel CLI invocation, restore the selected original exact path/bytes/metadata first and verify. No implicit JS fallback, substitute binary, latest npm version or installation.",
+    "Root measures actual allocated recovery and final retained artifact cost after controlled exact unlink. Until then no net>220.3MB/full-admission claim; never broaden to third file or whole node_modules to meet a target.",
+    "All untouched package metadata/locks/wrappers, sidecars/musl variants, Node22/nativeNode24/Python/PG/PgREST, evidence/hulls/images/volumes/loops/Git/originals remain KEEP."
+  ],
+  "blockingFindings": [
+    {
+      "code": "UPPER_LAYER_RECLAIM_UNPROVEN",
+      "severity": "BLOCK_RETIREMENT_FOR_CAPACITY",
+      "detail": "Overlayfs source origin and actual recoverable bytes are unqualified; allocation accounting cannot be treated as reclaimedfree."
+    },
+    {
+      "code": "COMPRESSED_NET_TARGET_UNMEASURED",
+      "severity": "BLOCK_BENEFIT_CLAIM",
+      "detail": "No archive sizes/comparisons/mapping/allocation measurement. Even fullupperrecovery needs totalretention<61812000B for strict220.3MB."
+    },
+    {
+      "code": "LIVE_USE_AND_IDENTITY_UNQUALIFIED",
+      "severity": "BLOCK_UNLINK",
+      "detail": "Fresh exclusive actual use/source/hash/xattr/ACL qualification missing;1savedunknown andopaqueFD/maps cannot be invented away."
+    },
+    {
+      "code": "RESTORATION_AND_AUTHORITY_PENDING",
+      "severity": "BLOCK_UNLINK",
+      "detail": "No Root action/adoption or archive, two full comparisons, durable restore map or exact-target review yet. Current task is feasibility only."
+    }
+  ],
+  "authorActions": {
+    "subjectImports": false,
+    "AST": false,
+    "tests": false,
+    "CLIExecution": false,
+    "nativeStarts": false,
+    "Docker": false,
+    "SQL": false,
+    "ownProcReadsOrProcessScans": false,
+    "fullBinaryPayloadHash": false,
+    "compressionOrArchive": false,
+    "restorationOrComparisons": false,
+    "deletionOrMetadataMutation": false,
+    "network": false,
+    "productOrFrozenOrToolrootWrites": false,
+    "externalModelOrRouter": false,
+    "childAgents": false,
+    "ownReportOnlyWrites": true
+  },
+  "nextDecision": "Keep all originals and close BLOCKED without action. Root confirms no archive/deletion/copy-up experiment will follow while per-file reclaim remains unproved. No further broad candidate search: remaining >220MB directories are protected archives/canonical/original image/loop/raw evidence; smaller directories cannot meet220.3MB even before retention cost.",
+  "full500": false,
+  "production": false
+}

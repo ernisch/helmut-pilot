@@ -1,0 +1,98 @@
+{
+  "schema": "helmut-public-day21-local-preparation/1",
+  "status": "PASS_INPUT_AND_TARGETED_GUARDS_ONLY",
+  "recordedAtUTC": "2026-10-21T14:40:56.960Z",
+  "slot": {
+    "day": "2026-10-21",
+    "version": 12,
+    "spentMarkersPreserved": 23
+  },
+  "actualInputCopy": {
+    "completed": true,
+    "sourceWrites": 0,
+    "profileActivations": 0,
+    "full500Runs": 0,
+    "resourceGOConsumed": false,
+    "historicalDaysAdded": [
+      "2026-10-20"
+    ],
+    "historicalBooks": 42,
+    "bookCapacityBefore": 41,
+    "bookCapacityAfter": 42,
+    "monetaryLimitsUnchanged": true,
+    "allOtherRelationDataUnchanged": true,
+    "preexistingActiveFlagsPreserved": true,
+    "newDatabaseBytes": 20835475,
+    "beforeNativeAuthSHA256": "b5c615212f5f887ddaa029b0e9b70a3b4a8fd793661fc2dd852f6c1ec93e06d4",
+    "afterNativeAuthSHA256": "b2780782d03981794069440ffd836e14a869074f271fbf114f4f8fb59a030f44",
+    "completedCapture": {
+      "file": "READ_ONLY_SOURCE_CAPTURE.SAFE.json",
+      "bytes": 3807,
+      "sha256": "0bb42c165555de2723c787ef054001723d5ef7832d4b2bb53fda2547924ab77e"
+    },
+    "receipt": {
+      "file": "CORRECTION_RESULT.SAFE.json",
+      "bytes": 5642,
+      "sha256": "88bca5cb33cdd65dafbdebdaa06389c51efcd45aac9be6b340bfe18c78f9682d"
+    }
+  },
+  "actualReader": {
+    "pass": true,
+    "boundDataFiles": 36,
+    "preservedConsumedMarkers": 23
+  },
+  "sourceCalendar": {
+    "profiles": 500,
+    "actualA": 500,
+    "actualF": 500,
+    "actualLAtSourceView": 500,
+    "actualLAtSourceWindowEnds": 500,
+    "executionEndFreshnessClaimed": false,
+    "independentActualModel": "deepseek-v4-pro",
+    "effort": "high",
+    "inputHashesSHA256": "a57e640bf8685f71bfc563ba12a1b40b49e57f7d88446853fb3a659bc45b214f"
+  },
+  "tests": {
+    "authorityCases": 31,
+    "authorityPass": true,
+    "sharedJSBindingsAndFirstSQLSentinelPass": true,
+    "metadataRegressionCases": 15,
+    "metadataRegressionsPass": true,
+    "routerExistingLocalCases": 18,
+    "routerExistingLocalPass": true,
+    "nativeReaderPass": true,
+    "nontableCatalogBeforeAfterAndTargetPass": true
+  },
+  "evidence": [
+    {
+      "file": "ROOT_TARGETED_VALIDATION.SAFE.json",
+      "bytes": 3290,
+      "sha256": "b52dfe88435d719eddafa4ccb5575fbdbaca954581601ceba7e12d8cf5afed86"
+    },
+    {
+      "file": "ROOT_ACTUAL_SOURCE_READER_AUDIT.SAFE.json",
+      "bytes": 951,
+      "sha256": "2b828c40dd5c73e2d3cee3ae9bb76734cbd93042e2e0fbd6aa78c2809961c8fe"
+    },
+    {
+      "file": "ROOT_ACTUAL_INPUT_POSTCOPY_AUDIT.SAFE.json",
+      "bytes": 1339,
+      "sha256": "e579e6f1284078e4cd1a95f8972db2f78b48e71f9d7a24b485e0ebe2c85c5125"
+    }
+  ],
+  "disk": {
+    "availableBytes": 15663366144,
+    "fullFutureAdmissionBytes": 15179779720,
+    "hostFloorBytes": 8589934592,
+    "reserved": false
+  },
+  "limits": {
+    "hardBytes": 2048000000,
+    "reserveTargetBytes": 500000000,
+    "targetCommonCeilingBytes": 1548000000
+  },
+  "current32StartConditionsAccepted": false,
+  "full500Started": false,
+  "newComparativeRAMSavingClaimed": false,
+  "production": false
+}

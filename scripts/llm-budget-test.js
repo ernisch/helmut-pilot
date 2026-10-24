@@ -5,6 +5,7 @@
 // Kombination (canSpendLlmForTenant) mit gefaelschtem Nutzungs-Log.
 
 const { evaluateTenantBudget } = require("../lib/helmut/llm-budget");
+const { isDeepStrictEqual } = require("node:util");
 
 let pass = 0, fail = 0;
 function check(name, cond, detail = "") {
@@ -100,6 +101,65 @@ console.log("== 7) storage.canSpendLlmForTenant: kombiniert global + tenant (dep
   check("Count-Gate zaehlt GLOBAL (canSpend erhaelt null, nie die Mandanten-ID)",
     countGateScopes.length >= 5 && countGateScopes.every((s) => s === null),
     JSON.stringify(countGateScopes));
+
+  // Regression: explizit null wird vom bestehenden Storage-Vertrag zu 0
+  // normalisiert. Die inaktive Tenant-Policy darf deshalb keine zwei ganzen
+  // Auth-Stores laden; der frische globale Deckel gilt trotzdem bei JEDEM Aufruf.
+  const reference = "2026-10-21T19:00:00.000Z";
+  for (const budgets of [
+    { dailyBudgetCent: null, monthlyBudgetCent: null },
+    { dailyBudgetCent: 0, monthlyBudgetCent: 0 },
+    { dailyBudgetCent: -1, monthlyBudgetCent: -2 },
+    { dailyBudgetCent: "0", monthlyBudgetCent: "-2" },
+    { dailyBudgetCent: null },
+    { monthlyBudgetCent: 0 }
+  ]) {
+    for (const allowed of [true, false]) {
+      let globalCalls = 0, costCalls = 0;
+      const global = { allowed, used: 9, limit: 9, remaining: 0,
+        reason: allowed ? null : "daily-llm-budget-reached" };
+      const result = await storage.canSpendLlmForTenant("mdb-a", budgets, reference, {
+        canSpend: async (scope, at) => {
+          globalCalls += 1;
+          check("inaktive Tenant-Policy: globaler Scope und Zeitbindung", scope === null && at === reference);
+          return global;
+        },
+        usageToday: async () => { costCalls += 1; throw new Error("unexpected full Auth read"); },
+        costSince: async () => { costCalls += 1; throw new Error("unexpected full Auth read"); }
+      });
+      check("inaktive Tenant-Policy: genau ein globaler Check, keine Kosten-Reads",
+        globalCalls === 1 && costCalls === 0);
+      check("inaktive Tenant-Policy: vollstaendige bisherige Rueckgabe erhalten",
+        isDeepStrictEqual(result, { ...global, warn: false,
+          tenantBudget: { allowed: true, warn: false, reason: null, applied: false,
+            dailyRemainingCent: null, monthlyRemainingCent: null } }), JSON.stringify(result));
+    }
+  }
+
+  // Sobald EIN Limit positiv ist, bleiben BEIDE Kostenfenster und das bisherige
+  // Fail-closed-Verhalten erhalten, auch wenn das andere Fenster inaktiv ist.
+  for (const budgets of [
+    { dailyBudgetCent: 200, monthlyBudgetCent: 0 },
+    { dailyBudgetCent: null, monthlyBudgetCent: "200" }
+  ]) {
+    let dayCalls = 0, monthCalls = 0;
+    const result = await storage.canSpendLlmForTenant("mdb-a", budgets, reference, {
+      canSpend: async () => ({ allowed: true }),
+      usageToday: async (pid, at) => {
+        dayCalls += 1;
+        check("aktives Budget: Tageskosten fuer richtigen Mandanten und Zeitpunkt", pid === "mdb-a" && at === reference);
+        return { estimatedCostUsd: 0.10 };
+      },
+      costSince: async (pid, start, at) => {
+        monthCalls += 1;
+        check("aktives Budget: Monatskosten mit bisheriger Zeitbindung", pid === "mdb-a" && start === "2026-10-01" && at === reference);
+        throw new Error("cost read unavailable");
+      }
+    });
+    check("aktives Budget: beide Kostenfenster weiter abgefragt", dayCalls === 1 && monthCalls === 1);
+    check("aktives Budget: unbekannte Kosten bleiben fail-closed",
+      result.allowed === false && result.reason === "tenant-budget-status-unknown-fail-closed");
+  }
 
   console.log("");
   const total = pass + fail;

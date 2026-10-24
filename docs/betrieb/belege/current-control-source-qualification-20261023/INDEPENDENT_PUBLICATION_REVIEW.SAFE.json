@@ -1,0 +1,123 @@
+{
+  "schema": "helmut-current-control-native-publication-review/1",
+  "independent": true,
+  "status": "PASS",
+  "blockingFindings": [],
+  "reviewer": "v12_native_minimum",
+  "atUTC": "2026-10-23T16:39:50.435094+00:00",
+  "reviewScope": "STATIC_PUBLICATION_CODE_VERIFIER_SCHEMA_GATE_JOIN_ONLY_NOT_FIVE_ACTUAL_CASE_ACCEPTANCE",
+  "nativePreparedPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/PREPARED.SAFE.json",
+    "bytes": 35924,
+    "sha256": "f6e4d3e20e903b7f193da419e074973a56767baab1554232e089f48e705313b7"
+  },
+  "verifierPreparedPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/verifier/PREPARED.SAFE.json",
+    "bytes": 2372,
+    "sha256": "68f10ad62a4be64e01adc895aa541a678b14a39fb96091f84ac939f5521d9295"
+  },
+  "integrationGatePin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-cache-gate-prepared-20261023/candidate/scripts/helmut-resource-meter/control-cache-integration.js",
+    "bytes": 17713,
+    "sha256": "414372267970265f15b586d80d50636c578cfd311d6b3b2eed4ee681758215f3"
+  },
+  "proofSchemaPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/verifier/NATIVE_PROOF_SCHEMA.json",
+    "bytes": 11866,
+    "sha256": "ce32a6005f7856bacf0864c80a83c4eabe590a1405b7cbe9fe675d359b9ecb9a"
+  },
+  "sourceFreezePin": {
+    "bytes": 5599,
+    "sha256": "552820cc8ad57cae5e3e5c745af7ae148090bc9f72c88f6922b74d5652a92f07"
+  },
+  "verifierSourcePin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/verifier/generate_native_source_proof.py",
+    "bytes": 56601,
+    "sha256": "4395ec3cf446a78ee81d63c165a6f8758b7631ef1ae2f3c8a88a7193a2240898"
+  },
+  "reusedIndependentGateReviewPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-cache-gate-independent-review-20261023/REVIEW.SAFE.json",
+    "bytes": 9450,
+    "sha256": "e80d8c62b6660906ca3fd37aaaef1060438ae70d32b380076c9c20b6935d88f6"
+  },
+  "reusedIndependentV2SourceVerifierDeltaReviewPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-v2-independent-review-20261023/REVIEW.SAFE.json",
+    "bytes": 13302,
+    "sha256": "2a7682d962b507ff81e6968773ad8b8ac25a9acd851219272cd4a89a462b45f5"
+  },
+  "rootGateContentReviewPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-cache-gate-prepared-20261023/ROOT_CONTENT_REVIEW.SAFE.json",
+    "bytes": 3092,
+    "sha256": "753dff56d72faadc5f1cf30f0dec4c9fd49aa3af95d16e642c3c635b8b74ad1a"
+  },
+  "findings": [
+    {
+      "refs": [
+        "verifier/generate_native_source_proof.py:562",
+        "verifier/generate_native_source_proof.py:628"
+      ],
+      "finding": "Publication gate is not satisfied by this source review alone. Exact five distinct complete real PASS files must exist first under the fixed V2 case root and match the actual CLI-authenticated full Root plan and nativePrepared pin, in lifecycle NONE then OLD/NEW/NEW/OLD order. No result file was read or accepted in this review."
+    },
+    {
+      "refs": [
+        "verifier/generate_native_source_proof.py:566",
+        "verifier/generate_native_source_proof.py:574",
+        "verifier/generate_native_source_proof.py:583"
+      ],
+      "finding": "Root must separately create approved PUBLICATION_BINDINGS/2 with exact verifierPrepared/nativePrepared/sourceFreeze/sourceReview/schema/currentGate/plan/ordered-five-result pins plus genuine independent publication and actual-review pins. Independent Actualreview must bind that complete plan and all five exact full result pins, PASS/no blockers. This review supplies only the statically reviewed code-publication contract and cannot substitute for Actualreview."
+    },
+    {
+      "refs": [
+        "verifier/generate_native_source_proof.py:85",
+        "verifier/generate_native_source_proof.py:394",
+        "verifier/generate_native_source_proof.py:690",
+        "verifier/generate_native_source_proof.py:704"
+      ],
+      "finding": "Reused independently reviewed unchanged full offline verifier performs bounded canonical same-FD byte/SHA reads, detailed raw native Auth/proof/6000-history/wire checks, exact OLD/NEW source acceptance, request-response/mutation/restoration/catalog/process/PG/EOF/closure checks and cross-arm semantic agreement. V2 adds only required allocation-race metadata checks and exact source/schema rebindings to those existing checks. Missing/failed/unknown evidence prevents output; it does not become source-only acceptance. Source PGDATA reads remain forbidden."
+    },
+    {
+      "refs": [
+        "verifier/generate_native_source_proof.py:696",
+        "verifier/generate_native_source_proof.py:717",
+        "control-cache-integration.js:145",
+        "control-cache-integration.js:214"
+      ],
+      "finding": "Generator outputs /2 proof only after all detailed checks and stable evidence, with integrationGateExecutionProven false and no Unit/Full500/RAM claims. Its audit binds generator Prepared/source/schema, actual ordered results and independent Actualreview. Gate verifies proof/audit/plan/actual/publication/source joins using separately SHA-pinned public SAFE copies and the exact current two source files."
+    },
+    {
+      "refs": [
+        "control-cache-integration.js:25",
+        "control-cache-integration.js:27",
+        "control-cache-source-delta.json:3"
+      ],
+      "finding": "No future generated proof SHA is embedded in Gate source. Gate binds fixed V2 preparation/verifier/schema and current source pairs; actual future output pins belong only in separate SourceDelta after genuine Root verification/publication. This avoids a future-proof/self-source SHA cycle. Current SourceDelta remains pending/unqualified with null actual publication pins; historical source review is only exact source provenance."
+    }
+  ],
+  "remainingMandatoryRootSteps": [
+    "Obtain five actual separately adopted closed PASS cases; no automatic sequence or prior authority transfer.",
+    "Obtain independent exact five-case Actualreview and retain every required outside/raw evidence file.",
+    "Only then create real PUBLICATION_BINDINGS/2 using this exact static publication review pin and a genuine Actualreview pin.",
+    "Run the pinned offline verifier explicitly once under fresh Root authorization, then read full generated SAFE proof/audit/reviews before byte-identical repository publication.",
+    "Fill separate SourceDelta qualified/status and generated data pins only after genuine successful verification/publication; no Gate source SHA rewrite to chase future output."
+  ],
+  "staticPinsVerified": true,
+  "sourceOnlyQualificationAllowed": false,
+  "historicalAcceptanceTransferred": false,
+  "actualFiveCaseAcceptanceByThisReview": false,
+  "runtimeQualifiedByThisReview": false,
+  "nativeAccepted": false,
+  "unit60Qualified": false,
+  "auth30Qualified": false,
+  "ramBenefitClaimed": false,
+  "reserveQualified": false,
+  "full500Accepted": false,
+  "production": false,
+  "executionAuthorization": false,
+  "testsRun": 0,
+  "subjectImports": 0,
+  "actualVerifierRuns": 0,
+  "databaseCalls": 0,
+  "dockerCalls": 0,
+  "originalOrPGDATAReads": 0,
+  "rootRepositoryWrites": 0
+}

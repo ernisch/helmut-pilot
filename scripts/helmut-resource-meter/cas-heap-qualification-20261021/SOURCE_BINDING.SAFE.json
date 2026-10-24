@@ -1,0 +1,76 @@
+{
+  "canonicalWorkerPin": {
+    "bytes": 74377,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/worker.py",
+    "sha256": "9dfd5164fc4c95c56c8c60f29a959965e2c333d7b407173b98445b011df9d1d0"
+  },
+  "changedPureFunctionBlocks": [
+    "validate_observer_state"
+  ],
+  "functionBlockBytes": {
+    "validate_metadata_namespace": 771,
+    "validate_observer_readback": 417,
+    "validate_observer_restored": 245,
+    "validate_observer_selected": 1280,
+    "validate_observer_state": 6435,
+    "validate_observer_view_definition": 2430,
+    "validate_server_heap": 6957
+  },
+  "functionBlockHashMethod": "UTF-8 complete literal block from top-level def through immediately before next top-level def; no AST execution during preparation",
+  "functionBlockSHA256": {
+    "validate_metadata_namespace": "6a49ef82cb4c67aa2847e09098aeca19a0fa7f7c2cf00f772d2d38d0eaeae53f",
+    "validate_observer_readback": "c4cce01d1212fb9f28216e5592232c12af94bc54a2f01d450c417367b9b756dd",
+    "validate_observer_restored": "2c003c4228a9ee5155a2f5ffd6ab2a3502a44ff5da59b44c4171d0a94567c684",
+    "validate_observer_selected": "9e75170b11f07cf6c540ff2f5ae7339c40aac3b56fda6b6816ba60419668e2aa",
+    "validate_observer_state": "5c0fb48c35922429f1ea72294c55477dc4f9c59eecf93ddef034f78bee408757",
+    "validate_observer_view_definition": "eb202067866281d1a14f6f255be71b61812388d5db1a43aa5ebac0843bc81f25",
+    "validate_server_heap": "a73d54c81730f92a91552d0538a82bbb652af75e116080571c08a395fbd9c32f"
+  },
+  "nativeOIDSourceBindingPin": {
+    "bytes": 1094,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/JSON_SOURCE_BINDING.SAFE.json",
+    "sha256": "dc72276991585ea1fefe0d110bc18f3b34a1edbb0c4a82f20f51f0b5dc18082b"
+  },
+  "nativeTypes": {
+    "OID": "canonical decimal JSON string 1..4294967295; only ACL grantee also permits exactly zero string",
+    "int2_int4_int8_ordinality_PID": "JSON integer; bool rejected",
+    "textCasts": "unchanged exact text strings; no normalization"
+  },
+  "parentBindingPin": {
+    "bytes": 2436,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/guard-preparation/SOURCE_BINDING.SAFE.json",
+    "sha256": "76f443cda59ca6601a4f0acfebdaf6d580ac28a0ec6b4c2fb56fca8651c3ca75"
+  },
+  "parentScriptPin": {
+    "bytes": 21537,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/guard-preparation/run_pure_validator_guards.py",
+    "sha256": "0c98d7ec85c487389ad7d5c2f751e20e2a0646e923d9a4418e895e539f2200f4"
+  },
+  "reviewedWorkerPin": {
+    "bytes": 74377,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/worker.py",
+    "sha256": "9dfd5164fc4c95c56c8c60f29a959965e2c333d7b407173b98445b011df9d1d0"
+  },
+  "rootRuntimeBoundary": {
+    "authorASTOrGuardExecution": false,
+    "extractOnly": [
+      "validate_observer_view_definition",
+      "validate_observer_state",
+      "validate_observer_readback",
+      "validate_observer_selected",
+      "validate_observer_restored",
+      "validate_metadata_namespace",
+      "validate_server_heap"
+    ],
+    "runtimeFakeC": [
+      "require",
+      "uuid4",
+      "QUERY_LIMIT=262144",
+      "DATABASE=helmut_resource_fixture_20261020_3b3bf56650bc"
+    ],
+    "subjectTopLevelImportedOrExecuted": false
+  },
+  "schema": "helmut-cas-heap-pure-guard-source-binding/2",
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "unchangedPureFunctionBlockCount": 6
+}

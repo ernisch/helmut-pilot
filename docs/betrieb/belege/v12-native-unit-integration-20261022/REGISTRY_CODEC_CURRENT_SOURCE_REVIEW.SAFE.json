@@ -1,0 +1,113 @@
+{
+  "schema": "helmut-registry-codec-source-binding-repair/1",
+  "failedRun": 39877703129,
+  "failedHead": "931477bd80f9161e08f3180190cf080e4901e26a",
+  "failedPublicStep": 14,
+  "failedPublicTest": "test_reviewed_codec_input_is_exact_aa900_bytes",
+  "failureClass": "AssertionError",
+  "rootSourceReviewPass": true,
+  "independentSOLSourceReviewPass": true,
+  "sourceComparison": {
+    "baseline": {
+      "bytes": 37882,
+      "commit": "72e4db678e63394d14e169ab4858f738a278cd2b",
+      "path": "scripts/helmut-resource-meter/local-unit-native-read-closure.py",
+      "sha256": "c52a98aea31bff80cd48c6dcda8693cd623f2f3f3601494a8670c71ff971a620"
+    },
+    "consumer": {
+      "attribute": "registry_codec_probe_sql",
+      "caller": "scripts/helmut-resource-meter/local-unit-native-registry-codec.py",
+      "constantInputs": [],
+      "functionASTEqual": true,
+      "functionASTSHA256": "1368ac49535f59d7bb29ff2af4b37f45802437565274e644db2d20cdff26d1b6",
+      "functionBytesEqual": true,
+      "functionBytesSHA256": "c33dcee66f6244257d9f27a7451b2e1ac753135cc79a88906b8bfb74a8c93e34",
+      "helperCalls": [],
+      "loadedGlobalNames": [],
+      "scalarSQLBytes": 716,
+      "scalarSQLBytesEqual": true,
+      "scalarSQLSHA256": "2c626f30a1b950e5ef1c816d26fcfb7aa68fdd0ff709a897e6b4130fc0a58e6c"
+    },
+    "currentSourcePin": {
+      "bytes": 47091,
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-read-closure.py",
+      "sha256": "12a8c501e0ac5370045e91be1f6839d92cf5521744b3da068d74c0e2efa52fbd"
+    },
+    "full500Qualified": false,
+    "historicalInfrastructureEquivalenceClaimed": false,
+    "historicalNativeAcceptanceTransferred": false,
+    "moduleInitialization": {
+      "addedLiteralConstants": [
+        "PUBLICATION_COLUMNS",
+        "PUBLICATION_TABLE"
+      ],
+      "addedUncalledDefinitions": [
+        "_publication_guard",
+        "_publication_rows_hash",
+        "_selected"
+      ],
+      "changedNonConsumerConstants": [
+        "COLUMNS"
+      ],
+      "changedNonConsumerDefinitions": [
+        "_inputs",
+        "_guard",
+        "_catalog",
+        "_predicates",
+        "_acl_guard",
+        "_probes",
+        "install_read_closure"
+      ],
+      "imports": [
+        "hashlib",
+        "json",
+        "os",
+        "pathlib.Path",
+        "re",
+        "stat"
+      ],
+      "importsByteAndASTEqual": true,
+      "newTopLevelIO": false
+    },
+    "nativeDatabaseExecuted": false,
+    "reserveQualified": false,
+    "schema": "helmut-registry-codec-current-source-review/1",
+    "sourceComparisonPassed": true,
+    "sourceInstallOrAuthorityCalled": false,
+    "sourceOnly": true,
+    "unit60Qualified": false
+  },
+  "currentFullSourceAndUnchangedScalarSQLHashBound": true,
+  "historicalSourceNotAcceptedAsFallback": true,
+  "workerRechecksCurrentSourceBeforeReaderLoad": true,
+  "unchangedSQLHashCheckedBeforeQuery": true,
+  "codePins": [
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-registry-codec.py",
+      "bytes": 23485,
+      "sha256": "28095d47be903e15d46fb78c79e4ae92015e22bfa04b415a0a62717df3e2a1fd"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-registry-codec-test.py",
+      "bytes": 14767,
+      "sha256": "da4f7bc28c905830b05e931f5bdf596022657fc5f7b1f42d0c9a35d01ba091e7"
+    }
+  ],
+  "targetedPureTests": {
+    "command": "env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 LC_ALL=C.UTF-8 TZ=UTC python3 -I -S -B scripts/helmut-resource-meter/local-unit-native-registry-codec-test.py",
+    "passed": 17,
+    "failed": 0,
+    "actualStandaloneExitCode": 0,
+    "secondsReportedByUnittest": 0.078,
+    "evidence": "root tool output",
+    "authorPASSClaimed": false,
+    "rootStandaloneRepeatJustification": "Author evidence adapters failed before test on an executable-size cap, then after a communicated test on a zero-byte stdout log pin; those failure records are retained and no unobserved author exit is accepted"
+  },
+  "nativeCodecRerun": false,
+  "historicalNativeAcceptanceTransferred": false,
+  "newCIOnFixedCommit": "pending",
+  "unit60Qualified": false,
+  "full500ReserveQualified": false,
+  "production": false,
+  "full500": false
+}

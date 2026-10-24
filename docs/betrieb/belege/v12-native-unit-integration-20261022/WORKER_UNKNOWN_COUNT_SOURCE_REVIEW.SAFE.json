@@ -1,0 +1,25 @@
+{
+  "atUTC": "2026-10-22T22:53:06.753960+00:00",
+  "unit60Qualified": false,
+  "reserveQualified": false,
+  "full500Qualified": false,
+  "historicalOrConsumedAuthorityReused": false,
+  "schema": "helmut-worker-unknown-count-source-review/1",
+  "source": {
+    "file": "scripts/helmut-resource-meter/local-unit-native-worker.py",
+    "bytes": 24209,
+    "sha256": "2f10e3517aaf91f29391033b131128b4e5c8f35319e6f97097a22d73c188797f"
+  },
+  "test": {
+    "bytes": 12420,
+    "sha256": "fa0aba79d588a7d14b9780332d9e0e6c56023ee8e220fce8eeaa19b58843f0f2"
+  },
+  "pureASTGroupsPassed": 10,
+  "independentSourceReviewPassed": true,
+  "requestedWithoutFreshReturn": null,
+  "noEntryRequestCount": 0,
+  "returnedOneSurvivesLaterFinalCheckFailure": true,
+  "preparationZeroNotInheritedAsExecutionCount": true,
+  "acceptedPrimaryFailureFinalCaptureAndCleanupUnchanged": true,
+  "nativeQualificationPending": true
+}

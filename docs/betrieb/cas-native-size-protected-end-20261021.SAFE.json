@@ -1,0 +1,100 @@
+{
+  "additionalQualifiedReclaimBytes": 0,
+  "allFourNewContainerHullsAndDataKEEP": true,
+  "atUnix": 1792570686.2616627,
+  "canonicalPostmasterPIDAbsent": true,
+  "canonicalRootMetadataUnchanged": true,
+  "capacitySnapshotNotReservation": true,
+  "cases": [
+    {
+      "actualPin": {
+        "bytes": 1872,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/ACTUAL_EXECUTION.SAFE.json",
+        "sha256": "71e3013cca3dd47dbe8c41285bcb4ee8e73cbea37f3ff630dd5660d0daae9176"
+      },
+      "case": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555",
+      "postmasterPIDAbsent": true,
+      "status": "FAIL_KEEP",
+      "syntheticPGDATAStillPresent": true
+    },
+    {
+      "actualPin": {
+        "bytes": 1995,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ACTUAL_EXECUTION.SAFE.json",
+        "sha256": "0092dfb2bc11667abed9ee34019f9fc799393edaac0dd357e8df777cccb29694"
+      },
+      "case": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7",
+      "postmasterPIDAbsent": true,
+      "status": "FAIL_KEEP",
+      "syntheticPGDATAStillPresent": true
+    }
+  ],
+  "currentUAndPartsPins": [
+    {
+      "bytes": 25446,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/llm-usage-atomic.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 22169,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/auth-state-parts.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    }
+  ],
+  "full500": false,
+  "fullAdmissionGapBytes": 190815880,
+  "hostAvailableBytes": 14988963840,
+  "productChanged": false,
+  "production": false,
+  "protectedOriginalDBPayloadsRehashed": false,
+  "protectedPriorPin": {
+    "bytes": 4433,
+    "path": "/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/capacity-review/PROTECTED_RESOURCE_READBACK.SAFE.json",
+    "sha256": "e35ed0db44bec4a8465aef2ccd693044c08141a2f497ba54259a6f32c3b191e2"
+  },
+  "protectedResources": [
+    {
+      "cid": "22465c2cc2bfac3a33d01bf3460dd9a5f0b082a1c19825b60bb735dfe287ddbe",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "c6f393f20781cad88518d5543126d642c4302141f3072393a10d5f0f9bf6a231",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "f375e6f73bff6c4f5238033c0db1de96c0fa9853c49e53056f86fc4f9a7dbaed",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "039f995f2454b4b87edf7b9fe9693d6861d92b15a126205277a51b86adbc80bf",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "66d3bb789888a4c87cc3cdcdd49d6938d0c211189f13f4d8fbc096fbd5447b02",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    }
+  ],
+  "reserveAt500Proven": false,
+  "resourceMutationsByReadback": 0,
+  "runtimeBindingsPin": {
+    "bytes": 207733,
+    "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-auth-input-preparation/READONLY_RUNTIME_BINDINGS.SAFE.json",
+    "sha256": "71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475"
+  },
+  "runtimeFilesRehashedAfterClosure": 549,
+  "schema": "helmut-cas-native-size-root-end-readback/1",
+  "shellPin": {
+    "bytes": 125640,
+    "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-component-shell/original-sh",
+    "sha256": "f5adb8bf0100ed0f8c7782ca5f92814e9229525a4b4e0d401cf3bea09ac960a6"
+  },
+  "sourcePin": {
+    "bytes": 5080,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/root-end-readback.py",
+    "sha256": "908a1365196e14ded9810937f805ea4297757c15ca2854893eefb3c4db52e0d2"
+  },
+  "sourcePinsUnchanged": true,
+  "status": "PROTECTED_RESOURCES_AND_RUNTIME_UNCHANGED_NATIVE_CASES_FAIL",
+  "thirdSameMethodAttemptAllowed": false,
+  "unchangedFullAdmissionBytes": 15179779720
+}

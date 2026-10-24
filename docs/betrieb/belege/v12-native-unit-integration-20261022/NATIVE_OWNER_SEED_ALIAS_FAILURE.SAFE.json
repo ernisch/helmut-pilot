@@ -1,0 +1,81 @@
+{
+  "schema": "helmut-native-owner-seed-alias-diagnosis/1",
+  "failedCandidateCommit": "03a28be56235ae559c8042664b8a499b845d1d99",
+  "case": "/workspace/helmut-unit-diagnostic-native/b09fb4ec0d2fcfe7eb3d173bdd9a84dd",
+  "resultFile": {
+    "path": "/workspace/helmut-unit-diagnostic-native/b09fb4ec0d2fcfe7eb3d173bdd9a84dd/RESULT.SAFE.json",
+    "bytes": 2153,
+    "sha256": "6b29b68b5d6e1ae9c969961dee3ef02ab70eff7ae14635414567aeee118d58ff"
+  },
+  "failureStage": "private-original-seed",
+  "genuineHTTPQualifierPassed": true,
+  "actualOwnerSQLChild": {
+    "index": 0,
+    "exitObserved": true,
+    "exitCode": 3,
+    "exitSignal": null,
+    "stdoutEOF": true,
+    "stderrEOF": true,
+    "confirmed": false
+  },
+  "originalClientOutcomeRemains": "terminal-unknown-no-retry",
+  "actualPostgresDiagnostic": {
+    "evidence": {
+      "path": "/workspace/helmut-unit-diagnostic-native/b09fb4ec0d2fcfe7eb3d173bdd9a84dd/POSTGRES.PRIVATE.log",
+      "bytes": 1505,
+      "sha256": "fb8de3dcab9ff4fb9df66069821764646e2cce275b7443156dca23d2c7986616"
+    },
+    "errorCount": 1,
+    "classifiedError": "ambiguous-column",
+    "sqlstateClass42702InferredFromDiagnosticNotLogged": true,
+    "matchedVersionedPublicSourceExpression": "p.pronamespace",
+    "privateLogOrSQLContentsPublished": false
+  },
+  "cause": "Root DO block declares record p and also aliases pg_proc as p; JOIN p.pronamespace is ambiguous. The unused record t likewise collides with the following pg_trigger alias.",
+  "secondaryHostFailure": "Source PID ended after seed failure; subsequent /proc read failed. The HTTP qualifier had already closed with exit 0 and both natural EOFs.",
+  "hostGuardRelaxed": false,
+  "correctedCompilerPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-original-transaction.js",
+    "bytes": 54785,
+    "sha256": "44493e3f2b62e1860437bd293337547f7c566ef58e8bbfbec3cd2ed45a6d9a04"
+  },
+  "sourceCommit": "c4cb0c08f1616d055d2118bc2bf3c768bec0a0eb",
+  "rootIntegrationCommit": "104c0a74",
+  "sourceOnlyIndependentReview": {
+    "agent": "v12_original_pin_scope",
+    "pass": true,
+    "renamingNewAliasesBackReproducesPriorCompilerByteExactly": true,
+    "guardsDeadlinesAtomicityAndNoRetryUnchanged": true,
+    "nativeAcceptanceTransferred": false
+  },
+  "targetedPureCompilerChecks": {
+    "checks": 29,
+    "pass": true,
+    "modes": [
+      "seed",
+      "state",
+      "usage",
+      "artifact"
+    ],
+    "historicalAliasCollisionMutationsDetected": true,
+    "nativePostgresParserProof": false
+  },
+  "memoryPeakBytes": 1124519936,
+  "memoryEvents": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "parentEmptyAfterActualProcessEnds": true,
+  "failedAttemptRemainsFailed": true,
+  "workingCopyAndAllEvidenceRetained": true,
+  "motorEntryRequested": false,
+  "motorCalls": 0,
+  "unit60Qualified": false,
+  "full500ReserveQualified": false,
+  "caseOrAuthorityReplayed": false,
+  "full500Qualified": false
+}

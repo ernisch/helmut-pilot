@@ -1,0 +1,202 @@
+{
+  "schema": "helmut-cas-heap-source-consumer-reconciliation/1",
+  "status": "SOURCE_CONSUMERS_RECONCILED_ROOT_FIXES_SEEN_NOT_RUNTIME_QUALIFIED",
+  "scope": "Complete focused Common/Worker/Run consumer-key/value/type reconciliation against released C HEAP/LOG/PREPARED and all four SQL script producer interfaces. No general audit or native execution.",
+  "reviewedCurrentSourcePins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/common.py",
+      "bytes": 33400,
+      "sha256": "9f242fd3f17e09ba23ab59c70a46c550bd4b7f477b593ac034476d0bb0d51542"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/worker.py",
+      "bytes": 74377,
+      "sha256": "9dfd5164fc4c95c56c8c60f29a959965e2c333d7b407173b98445b011df9d1d0"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/run.py",
+      "bytes": 28237,
+      "sha256": "e6cffe4e91951ae943e50d8fedffb848d91b930b64fb8b09016886f34609b74b"
+    }
+  ],
+  "cInputPins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/HEAP_CONTRACT.SAFE.json",
+      "bytes": 10426,
+      "sha256": "74f37ac8545dc4b692197bd051704be2c42150d4d28bd5c541a4763106ab19aa"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/LOG_CONTRACT.SAFE.json",
+      "bytes": 3941,
+      "sha256": "da0aa0eb2763dd519a8287c5364a3369f3089154d7b9f41c247395b5ad35c346"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/PREPARED.SAFE.json",
+      "bytes": 4932,
+      "sha256": "0cd77787b9a37046c6e5fd18ece5b91bf6b4cdf580439c443d4a3f495091ddff"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/INSTALL_CAS_HEAP_DIAGNOSTIC.sql",
+      "bytes": 30524,
+      "sha256": "4df66d34e79749867a582273702d8ecfe6cfd7fa4fefd96008178e9b825a1e2f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_PREPARE.sql",
+      "bytes": 15269,
+      "sha256": "2dc6eb8de5194e9b6a13af341f9e08938a70b0f674cefa4a17080b53236d9874"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_SELECTED.sql",
+      "bytes": 6539,
+      "sha256": "1df6e2561436225bfbfb6bcb2692dabe247549c73d7f5c9c585cbdd770b892bd"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_RESTORE.sql",
+      "bytes": 15100,
+      "sha256": "a7d32b7a1b2ce118f9e2749da07e416e64c2c5957247c4dad02749a654a8e91d"
+    }
+  ],
+  "officialJSONTypeReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/JSON_TYPE_REVIEW.SAFE.json",
+    "bytes": 4042,
+    "sha256": "1f4c46cd092d168a63363e495c1790b0478920953dfe33f8e61067ceca862f65"
+  },
+  "sourceFindings": [
+    {
+      "id": "F1",
+      "status": "ROOT_SOURCE_FIX_SEEN",
+      "consumer": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/common.py",
+        "line": 206
+      },
+      "originalMismatch": "Consumer requested LOG key exactSuccessfulCAS, but released LOG_CONTRACT contains successfulCASCount=4.",
+      "correctionSeen": "Loop now consumes successfulCASCount,exactCASSessionRecords,exactHeapRecords,exactDiagnosticRecords,maximumRecordJSONBytes,maximumDiagnosticJSONBytes =>4,4,8,12,2048,24576."
+    },
+    {
+      "id": "F2",
+      "status": "ROOT_SOURCE_FIX_SEEN",
+      "consumer": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/worker.py",
+        "line": 460
+      },
+      "producer": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_SELECTED.sql",
+        "line": 25
+      },
+      "originalMismatch": "Uncasted PostgreSQL oid scalars passed to jsonb_build_object use JSONTYPE_OTHER/oidout and emit JSON decimal strings. V1 demanded numbers, first failing exact binding.databaseOID before any GRANT.",
+      "correctionSeen": "Local native_oid validates canonical raw strings only; database/schema/function/return/column fixed OIDs are strings. PUBLIC zero allowed only for ACL grantee. No raw-state normalization; all int2/int4/int8 fields remain strict JSON integers."
+    }
+  ],
+  "nativeOIDStringPaths": [
+    "binding.databaseOID",
+    "role.oid",
+    "memberships[].oid",
+    "memberships[].roleid",
+    "memberships[].member",
+    "memberships[].grantor",
+    "objects.view.oid",
+    "objects.view.schemaOID",
+    "objects.view.schemaOwnerOID",
+    "objects.view.ownerOID",
+    "objects.view.columns[].typeOID",
+    "objects.function.oid",
+    "objects.function.schemaOID",
+    "objects.function.schemaOwnerOID",
+    "objects.function.ownerOID",
+    "objects.function.languageOID",
+    "objects.function.returnType",
+    "objects.view.aclExpanded[].grantor",
+    "objects.view.aclExpanded[].grantee",
+    "objects.function.aclExpanded[].grantor",
+    "objects.function.aclExpanded[].grantee"
+  ],
+  "fixedNativeOIDValues": {
+    "databaseOID": "18405",
+    "pgCatalogSchemaOID": "11",
+    "builtinFunctionOID": "2282",
+    "recordReturnType": "2249",
+    "columnTypeOIDs": [
+      "25",
+      "25",
+      "25",
+      "23",
+      "20",
+      "20",
+      "20",
+      "20",
+      "20"
+    ]
+  },
+  "preserveAsJSONIntegers": [
+    "role.connectionLimit",
+    "objects.view.columns[].number",
+    "objects.view.columns[].typeModifier",
+    "objects.function.argumentCount",
+    "objects.*.aclExpanded[].ordinal",
+    "readbackBackendPID",
+    "namespace.backendPID",
+    "namespace.qualified",
+    "CAS.backendPID",
+    "heap.contextCount",
+    "heap.totalBytes",
+    "heap.usedBytes",
+    "heap.freeBytes",
+    "heap.outputTextBytes(after)",
+    "heap.outputValueBytes(after)"
+  ],
+  "literalException": "INSTALL_CAS_HEAP_DIAGNOSTIC.sql75 emits databaseOID from literal18405, so that setup-guard field is numeric. It is distinct from the ACL-state databaseOID selected from pg_database.oid.",
+  "checkedInterfaces": [
+    {
+      "area": "C metadata",
+      "result": "MATCH",
+      "details": "All consumed C PREPARED/HEAP schema/status/scriptPin/logContractPin/heapContractPin/SQLPins/catalogTargets/loggingStartupOnly keys and values exist. Four script names/pins and both function before/after hashes, invoker/proconfig/volatility/owner-ABI declarations match."
+    },
+    {
+      "area": "C log producer",
+      "result": "MATCH_AFTER_F1",
+      "details": "Exact13 common keys +6 heap keys, cas/session then heap/beforeOutputText and heap/afterOutputValue, 4/8/12 counts,2048/24576 caps, integer counters, NULL-before/int-after lengths, actual service_role/postgres identities, raw nullable text GUCs, terse/fatal and PID/XID/revision correlation align."
+    },
+    {
+      "area": "ACL readback producer",
+      "result": "MATCH_AFTER_F2",
+      "details": "Readback schema and keys schema/readbackBackendPID/state; comparable state schema/binding/role/memberships/objects; view/function/column/ACE key sets all match. Raw ACL/config/argument vector+arrays are exact text or genuineNULL; booleans and nonOID integers stay native."
+    },
+    {
+      "area": "ACL prepare/restore producer",
+      "result": "MATCH_AFTER_F2",
+      "details": "Prepare keys schema/before/selected/addedViewSELECT/addedFunctionEXECUTE and restore keys schema/restoredExactly/restored/removedViewSELECT/removedFunctionEXECUTE match. Expected ACE in C SQL casts owner/role strings to oid and therefore emits the same string grantor/grantee types used in Root's corrected semantic comparison."
+    },
+    {
+      "area": "Metadata namespace wrapper",
+      "result": "MATCH",
+      "details": "Host-created namespace row has schema/searchPath/qualified/backendPID; actual setting+PID types match. Same psql session executes fixed SET, guarded readback then the unchanged C script. ACL_SELECTED readback PID is directly compared. Exact psql variables root_clone_receipt_sha256/observer_before_json match C scripts."
+    },
+    {
+      "area": "Hook and host receipts",
+      "result": "MATCH",
+      "details": "Persist readonly baseline before prepare, install overlay then exact selected readback, once restore before final catalog or failure shutdown. Worker SERVER_HEAP/OBSERVER_ACL proof keys match run.diagnostic_proofs and common.lifecycle_proof; five same-case lifecycle pins and 0/4/8 cardinalities align."
+    },
+    {
+      "area": "Text/ABI forms",
+      "result": "MATCH",
+      "details": "Explicit ::text oidvector/oid[]/char[] names/modes and rawACL remain strings. Full view grammar, builtin2282/output9 ABI, schema11, exact before/selected/restored identity checks remain enforced."
+    }
+  ],
+  "additionalConsumerKeyValueOrTypeMismatchesFound": [],
+  "previouslyKnownFreezerABIGap": "Separately corrected by Root. This report does not requalify a stale generated PREPARED or host.",
+  "requiredRemainingRootWork": "Refreeze corrected canonical Common/Worker/metadata/host, bind updated pure-guard source pins, then run the already-scoped qualifications and independent source gate before any native adoption/start.",
+  "limits": "Source reconciliation only. It does not assert runtime/native/ACL restoration success, memory saving, whole-system safety or full500 approval.",
+  "activity": {
+    "readOnlySourcesAndMetadata": true,
+    "ownNewReportOnly": true,
+    "privateCodeEdited": false,
+    "canonicalCodeEdited": false,
+    "subjectImports": false,
+    "AST": false,
+    "tests": false,
+    "CLI": false,
+    "SQL": false,
+    "nativeDockerProcessGitActions": false,
+    "PGDATAOrOriginalPayloadReads": false
+  }
+}

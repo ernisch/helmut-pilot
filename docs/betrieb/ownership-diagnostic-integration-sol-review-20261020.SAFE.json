@@ -1,0 +1,197 @@
+{
+  "schema": "helmut-independent-ownership-root-integration-review/1",
+  "atUTC": "2026-10-20T19:58:07.847489+00:00",
+  "status": "INDEPENDENT_STATIC_ROOT_INTEGRATION_ACCEPTED",
+  "findingsStatus": "NO_BLOCKING_FINDINGS",
+  "independent": true,
+  "reviewerModel": "gpt-6.1-sol",
+  "blockingFindings": [],
+  "sourceReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/OWNERSHIP_DIAGNOSTIC_STATIC_SOURCE_REVIEW.SAFE.json",
+    "bytes": 29071,
+    "sha256": "48d8ea88909ac4cdf54cb93ebffce3c41ec8e6ad011c8a3ebc5d3252c92035da"
+  },
+  "rootPreparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/PREPARED.SAFE.json",
+    "bytes": 35991,
+    "sha256": "b8cf3abdb60c4acfe0582c34b8f6895d60958406a3c56902c1057cebc9929990"
+  },
+  "authorPreparedPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/PREPARED.SAFE.json",
+    "bytes": 34824,
+    "sha256": "75d87960d97be89899855f1830120fd00c200a2270a8e909b8c64c559ab18176"
+  },
+  "rootIntegrationRecordPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/ROOT_SOURCE_INTEGRATION.SAFE.json",
+    "bytes": 1005,
+    "sha256": "356725e0e3d54d2e06173ad567410c129ae6fdee64fed3450a4e736494ccdb33"
+  },
+  "exactCopyCount": 23,
+  "copiedSourcePins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/COMMON_PARTS.js",
+      "bytes": 22169,
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/INSTALL_NEW_ONLY.sql",
+      "bytes": 13400,
+      "sha256": "c740b463ce3b026eeb442a8c79a65f1fa95ebac2d08d7382ee31fb9d6b655f4d"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/NEW_U.js",
+      "bytes": 25446,
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/README.md",
+      "bytes": 9319,
+      "sha256": "bd672a522908ae4a7574cdc073be3d39871d6be62d232b5dd4ade4922420e122"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/SHUTDOWN_POLICY.SAFE.json",
+      "bytes": 499,
+      "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/catalog.sql",
+      "bytes": 12286,
+      "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/common.py",
+      "bytes": 18351,
+      "sha256": "f87e3a103b1fc10dfcc5cd522c2e578dc9bf2493dfb38512d7eb1207bff15d71"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/control-driver.js",
+      "bytes": 20820,
+      "sha256": "589bdfb6cf39d1bba3b21e006878858923d834363b8a800e89492f5195b98bfa"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/cycle-metrics.sql",
+      "bytes": 763,
+      "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/install-reviewed-renderer.sql",
+      "bytes": 14547,
+      "sha256": "0b99e5870d67c9b0d616283bd2eefb0df361620067c8bf610d57c65861ba29e5"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/ownership.py",
+      "bytes": 16103,
+      "sha256": "66dd34c724d330148407e222b54b5dcb556586f8063a0eb6ddc8a71d69bed6a1"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/postgrest_lifecycle.py",
+      "bytes": 9220,
+      "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/run.py",
+      "bytes": 26972,
+      "sha256": "38530c004aa1241cff1f2e57cf1a2ecb6e020d424df92dc01579e425b1d62c2b"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/small-auth.sql",
+      "bytes": 869,
+      "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/upstream/SOURCE_EVIDENCE.SAFE.json",
+      "bytes": 4139,
+      "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/upstream/ghc/libraries/base/GHC/TopHandler.hs",
+      "bytes": 9858,
+      "sha256": "b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/upstream/ghc/rts/RtsStartup.c",
+      "bytes": 19895,
+      "sha256": "985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/upstream/postgrest/default.nix",
+      "bytes": 5248,
+      "sha256": "1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/upstream/postgrest/src/PostgREST/App.hs",
+      "bytes": 7424,
+      "sha256": "d9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/upstream/postgrest/src/PostgREST/AppState.hs",
+      "bytes": 18693,
+      "sha256": "484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/upstream/postgrest/src/PostgREST/CLI.hs",
+      "bytes": 8002,
+      "sha256": "afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/upstream/postgrest/src/PostgREST/Unix.hs",
+      "bytes": 1830,
+      "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/worker.py",
+      "bytes": 39755,
+      "sha256": "a1cab4600b979ec9d29d509fc6c1cf0df1139fb3879283f2a347d3f0a5ae50e7"
+    }
+  ],
+  "metadataEquality": "Root JSON equals author JSON recursively after replacing only the exact23 actually byte-identical copied file paths; sole extra rootIntegration object has been separately checked. Private full delta/history/plan/author provenance paths remain unchanged.",
+  "rootIntegrationExtraChecked": {
+    "schema": "helmut-current-new27-root-source-integration/1",
+    "authorPreparedPin": {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/PREPARED.SAFE.json",
+      "bytes": 34824,
+      "sha256": "75d87960d97be89899855f1830120fd00c200a2270a8e909b8c64c559ab18176"
+    },
+    "authorFreezePin": {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/FREEZE_PINS.SAFE.json",
+      "bytes": 5769,
+      "sha256": "7d0e968a9c8396d449002d0c0acfbfac8055d496e7a6818b2d31a0323af87f56"
+    },
+    "authorDiagnosticSourcesCopiedByteExactly": true,
+    "onlySelfPathMetadataRebound": true,
+    "sourceDeltaKeptPrivate": {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/SOURCE_DELTA.PRIVATE.diff",
+      "bytes": 64685,
+      "sha256": "ebd0dbe69768d4543d1beadcc7fe46b2d4f9b11cec862d1bc928c7e0d8d574c7"
+    },
+    "nativeTestsNotRun": true,
+    "productSourceChanged": false,
+    "full500": false,
+    "production": false,
+    "atUTC": "2026-10-20T19:57:11.048769+00:00"
+  },
+  "sameAuthorSourceAcceptanceApplies": true,
+  "hostAndWorkerOwnershipModuleBinding": "Host C.HERE/ownership.py now exactly matches Root PREPARED.files; worker maps that exact hash/length to/tools/ownership.py. No source-code bytes changed, no new loader/alias.",
+  "unchangedLimitsGUCsSQLRuntimeWorkloadAndClosure": true,
+  "sourceHistoricalV9Preserved": true,
+  "candidateLibrarySelfApprovalGranted": false,
+  "pending": [
+    "Root actual chosen syntax/inert guards and evidence; reviewer executes none",
+    "Fresh same-final-Root-PREPARED lifecycle0 followed only by separately adopted NEW27",
+    "Visibility/ownership/allocator conclusions remain UNKNOWN until actual proof analysis",
+    "Source827a/FAIL/evidence/hulls protected; retirement requires separate exact Root dependency review"
+  ],
+  "actionsByReviewer": {
+    "subjectImports": false,
+    "ASTSyntaxTests": false,
+    "DBNativeDockerActions": false,
+    "PGDATAReadWalkHash": false,
+    "sourceWrites": false,
+    "onlySmallSourceCopyAndMetadataPinRead": true,
+    "writesOnlyThisPrivateReceipt": true
+  },
+  "nativeQualification": "NOT_RUN_BY_REVIEWER",
+  "resourceActionGo": false,
+  "production": false,
+  "full500": false
+}

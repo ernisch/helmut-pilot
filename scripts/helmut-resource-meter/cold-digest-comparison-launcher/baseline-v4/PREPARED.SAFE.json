@@ -1,0 +1,308 @@
+{
+  "schema": "helmut-late-read-spill-prepared/1",
+  "nativeQualification": "NOT_RUN",
+  "syntaxQualification": "NOT_RUN",
+  "preparedOnly": true,
+  "files": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill-launcher/common.py",
+      "bytes": 9027,
+      "sha256": "e96ce442e0fe0de1f9183752d30c4e0db0220b45e8c8c0ca53ed4ffe17b53a60"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill-launcher/run.py",
+      "bytes": 21824,
+      "sha256": "016e39e0c90e5a3006508552602fc9aef13a3c3d4b52f685c00cb517d55aef5e"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill-launcher/worker.py",
+      "bytes": 27636,
+      "sha256": "e4dcf3d76d4b570bb4a0a05415f754ae936377159aa68b70de9763241323a117"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill-launcher/catalog.sql",
+      "bytes": 12286,
+      "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill-launcher/install-reviewed-renderer.sql",
+      "bytes": 14547,
+      "sha256": "0b99e5870d67c9b0d616283bd2eefb0df361620067c8bf610d57c65861ba29e5"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill-launcher/README.md",
+      "bytes": 12466,
+      "sha256": "aca6439e8756ab3b34bd6104826cdffb105802c58eddecd122ebf21f30207a2d"
+    }
+  ],
+  "metadataAndCodeInputs": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-memory-budget.py",
+      "bytes": 19434,
+      "sha256": "66b4c432f687445763074a6b2432533c9305cadc09a17a94bf45507d419fd4af"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-memory-budget-helper.c",
+      "bytes": 2998,
+      "sha256": "4ed3d5a0f5cf7be074445a14884565b6e43453981a2d3bfc666ecb54a02c037a"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/kernel-meter.py",
+      "bytes": 6447,
+      "sha256": "e1f05e4a38d7cbe508a43d8532c4eb06adc2d4581de4c68ec43bc4011776bc44"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/atomic-usage-integration.js",
+      "bytes": 34732,
+      "sha256": "edb6dbf56f9ac4c5acf2fcce0046e194c0cc412b75f22340fa98369f1d24fff8"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill/01-ordered-rows.sql",
+      "bytes": 8682,
+      "sha256": "3a939fe064a26a23185505f46f92d7fdd69950d463165755ea5b36a5f9e6f888"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill/02-native-warm-control.sql",
+      "bytes": 11151,
+      "sha256": "5d8323c563180fc23c41d314558ed2bce3ab4ad846f957ced05acd285fec8f32"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_state_parts_local.sql",
+      "bytes": 54938,
+      "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_read_bounded_local.sql",
+      "bytes": 18650,
+      "sha256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_usage_atomic_local.sql",
+      "bytes": 17538,
+      "sha256": "5fdd3c81cf86c4f03208974bb9fd1f26d355dfaf53520f08de64292581a39e05"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-budget-implementation-qualification-v2/runtime/RUNTIME.SAFE.json",
+      "bytes": 481,
+      "sha256": "a16d045b223ef8b9f7525d97ede4596468501510f0ce71263a5ce2bddf42127e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-auth-input-preparation/READONLY_RUNTIME_BINDINGS.SAFE.json",
+      "bytes": 207733,
+      "sha256": "71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-component-shell/SOURCE.SAFE.json",
+      "bytes": 828,
+      "sha256": "ba4f22caca93194c0343c00edab9c6e628d13d7755486f64f237b4fcad9c3a23"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/dio-component-python-compat-runtime/SOURCE_COMPAT_FILES.SAFE.json",
+      "bytes": 1687,
+      "sha256": "b899687bfd9170473a1a446c8a4bf1d9112d3ce77318e5ec9e28a3ffb82b507c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/jit-closure-v2/restore_original_jit.py",
+      "bytes": 25801,
+      "sha256": "d4b6e421ceae15481c5b544c4ed959b16d9ad1992ea96ce1770d0a82da5eff2c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/jit-closure-v2/JIT_CLOSURE_PLAN.SAFE.json",
+      "bytes": 398471,
+      "sha256": "556be080d95fbe11dc1c001eabe2f3551bbe65c713f0ef3453cfae3a9779db7a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/ACTUAL_NATIVE_CATALOG.SAFE.json",
+      "bytes": 35837,
+      "sha256": "d3e4dde9d2873f892e3ae5a8140fed3966eadca80d85fb2ac629e4a4833e7345"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+      "bytes": 30894944,
+      "sha256": "fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill-launcher/03-native-cold-control.sql",
+      "bytes": 11741,
+      "sha256": "3fedec81df9b85279ee385c4ee58604cc9c1e7dab8682306d2d222d6109ed729"
+    }
+  ],
+  "sourcePGDATA": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-canonical-readback/PGDATA_COPY_NOT_AN_ORIGINAL",
+    "fileCount": 1709,
+    "fileBytes": 369399611,
+    "completeManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+    "readDuringPreparation": false
+  },
+  "rendererSetup": {
+    "originalBodySHA256": "b3157fffe12d3bc8f5b2c1d2443b97e44830082a3c6aca73124f60b260345a6a",
+    "newBodySHA256": "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32",
+    "sourceFilePin": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_state_parts_local.sql",
+      "bytes": 54938,
+      "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+    },
+    "setupSQLPin": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill-launcher/install-reviewed-renderer.sql",
+      "bytes": 14547,
+      "sha256": "0b99e5870d67c9b0d616283bd2eefb0df361620067c8bf610d57c65861ba29e5"
+    },
+    "newCloneOnly": true,
+    "originalCatalogThenOnlyBodyDeltaRequired": true,
+    "setupSQLSessions": 3,
+    "setupSQLStatements": 16
+  },
+  "largeOriginalInputsNotOpenedDuringPreparation": {
+    "archive": {
+      "bytes": 161574108,
+      "expandedBytes": 445133312,
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/RETAINED_PG17_IMAGE_FULL.PRIVATE.tar.gz",
+      "sha256": "8b1da16e05827e2aa8069c8cc0080f04c4b2b51abb7e0d242a707c90d6ef2d49"
+    },
+    "rootManifest": {
+      "canonicalSHA256": "5718039da64024e79e5c32f50c664c007a29251cc395a7764326bed797cba7b5",
+      "entries": 10226,
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/diagnostic-hull-archives-v2/RETAINED_IMAGE_ROOTFS_MANIFEST.PRIVATE.json",
+      "rawBytes": 3127302,
+      "rawSHA256": "bc9aaac0be8262a06c5b778c8b9090e8f8efcc4ea807ca41e70f60d19059fc04"
+    }
+  },
+  "nativeLimits": {
+    "memory.max": 1547997184,
+    "memory.high": 1399996416,
+    "memory.swap.max": 0
+  },
+  "persistentDiskCopyLimitBytes": 805306368,
+  "conservativeDiskAdmissionBytes": 822083584,
+  "hostFreeFloorBytes": 8589934592,
+  "workDeadlineSeconds": 300,
+  "overallClosureTargetSeconds": 360,
+  "queryCombinedOutputCapBytes": 262144,
+  "totalEvidenceCapBytes": 4194304,
+  "postgrestOrNodeWorkload": false,
+  "nativeControl02Executed": false,
+  "retirementCandidatesWrittenAtEnd": true,
+  "automaticDeletion": false,
+  "full500": false,
+  "production": false,
+  "providerCalls": 0,
+  "rootFreshAdoptionRequired": true,
+  "independentShutdownReviewRequired": true,
+  "knownWiringGaps": [
+    "V4 has not been syntax-tested or executed. Root must independently review the small03 selection/request/summary changes, copy the six launcher files plus03 SQL, rebind six source pins, setupSQLPin and both03 pin references, and create fresh preflight/adoption.",
+    "No HTTP/PostgREST or JavaScript private-token acceptance is proved by native02/03 SQL.",
+    "OFFSET0 is a scalar-subquery barrier intended to avoid artificial large-result MATERIALIZED CTE spill. Actual plan form and nested SRF/aggregate attribution are not qualified by preparation."
+  ],
+  "previousFrozenReview": {
+    "archivePin": {
+      "path": "/workspace/helmut-auth-diff-sol-20261020/diagnostics/late-read-spill-launcher/FROZEN_REVIEW_01.PRIVATE.tar.gz",
+      "bytes": 26306,
+      "sha256": "1f5a4607895e1d0a54e28001c7f101629d400ce626c1c53e5d7dbec7765b81be"
+    },
+    "preparedSHA256": "8324f4c45eaf857cec977381cea84fde411d4e6f92a63b847c7e858737f3a838"
+  },
+  "revision": "single-fresh-case-cold-control-choice-v4",
+  "caseRootOutsideGitWorktrees": "/workspace/helmut-ram-fix-20261020/late-read-spill-20261020/cases",
+  "reviewFixes": [
+    "worker main guard already present and preserved",
+    "pinned source bytes compiled directly; no PYC loader",
+    "client wall deadline includes exit wait and success return",
+    "capture exceptions persist bounded private status and buffers after kill/reap",
+    "raw container ID validated before assignment; exact fresh-name recovery retained",
+    "data_directory/hba_file/ident_file bound to new clone and checked before DDL",
+    "PG log EOF plus no drain error plus ended thread required for clean shutdown",
+    "all case evidence and derived PGDATA outside Git worktrees"
+  ],
+  "rootIntegrationRevision": {
+    "atUTC": "2026-10-20T17:05:14.300477+00:00",
+    "previousPreparedSHA256": "e49e679c992a0381e555036bad970bf719ce5fe26abd36b61a95738e6216250d",
+    "change": "OID JSON output is PostgreSQL oid text; require exact string 18405, preserving the same database identity",
+    "failedCase": "/workspace/helmut-ram-fix-20261020/late-read-spill-20261020/cases/spill-9fab599f05d9ce493b781be7",
+    "sameAttemptAutomaticRetry": false
+  },
+  "sourcePreparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill-launcher/PREPARED.SAFE.json",
+    "bytes": 13539,
+    "sha256": "f933026074362a8ef41fbc236a2b8933e935dbeea7e5270baa9f70ce7fcdbed6"
+  },
+  "oneMeasurementPerFreshCase": true,
+  "allowedMeasurements": {
+    "01": {
+      "measurementSQLPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill/01-ordered-rows.sql",
+        "bytes": 8682,
+        "sha256": "3a939fe064a26a23185505f46f92d7fdd69950d463165755ea5b36a5f9e6f888"
+      },
+      "action": "ROOT START ORDERED READ 01 ONLY",
+      "readNonce": "null"
+    },
+    "02": {
+      "measurementSQLPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill/02-native-warm-control.sql",
+        "bytes": 11151,
+        "sha256": "5d8323c563180fc23c41d314558ed2bce3ab4ad846f957ced05acd285fec8f32"
+      },
+      "action": "ROOT START NATIVE WARM CONTROL 02 ONLY",
+      "readNonce": "fresh preflight UUIDv4, same in adoption/config/sql"
+    },
+    "03": {
+      "measurementSQLPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill-launcher/03-native-cold-control.sql",
+        "bytes": 11741,
+        "sha256": "3fedec81df9b85279ee385c4ee58604cc9c1e7dab8682306d2d222d6109ed729"
+      },
+      "action": "ROOT START NATIVE COLD CONTROL 03 ONLY",
+      "readNonce": "fresh preflight UUIDv4, same in adoption/config/sql"
+    }
+  },
+  "selectionBinding": "preflight measurementMode/SQLPin/readNonce == exact Root action/adoption == START receipt == worker config == one SQL invocation",
+  "setupAndRuntimeBehaviorChanged": false,
+  "native02ResultHasPlan": false,
+  "native02NonceEchoProof": "Only after all four dictionaries and pinned SQL qualified=1; that SQL checks both actual response nonces against supplied read_nonce, without emitting raw nonce echoes.",
+  "rootV3IntegrationProvenance": {
+    "agentPreparedPin": {
+      "path": "/workspace/helmut-auth-diff-sol-20261020/diagnostics/late-read-spill-launcher-v3/PREPARED.SAFE.json",
+      "bytes": 12430,
+      "sha256": "f983c0f047c693eae1c4acf271531eb4b395c543810e01d93f4dd02d5e12601e"
+    },
+    "change": "Rebind only six source paths to repository destinations; all six bytes and18metadata inputs unchanged",
+    "historical01SourceArchive": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/QUALIFIED_ORDERED01_SOURCE_CLOSURE.PRIVATE.tar.gz"
+  },
+  "historicalV2IntegrationProvenance": {
+    "frozenPreparationPin": {
+      "path": "/workspace/helmut-auth-diff-sol-20261020/diagnostics/late-read-spill-launcher/PREPARED.SAFE.json",
+      "bytes": 9933,
+      "sha256": "906c5ce91805364e4e652ad49ad81ce1f2872693b87f689e305119721d25ab5b"
+    },
+    "allSixIntegratedSourceFilesByteIdentical": true,
+    "change": "Rebind only the six source paths to their canonical repository destinations; cases remain outside Git."
+  },
+  "nativeControl03Executed": false,
+  "native03ResultHasPlan": false,
+  "existing01And02SQLSourcesChanged": false,
+  "engineSQLSourcesChanged": false,
+  "diagnosticSQLAdded": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/late-read-spill-launcher/03-native-cold-control.sql",
+    "bytes": 11741,
+    "sha256": "3fedec81df9b85279ee385c4ee58604cc9c1e7dab8682306d2d222d6109ed729"
+  },
+  "existing18MetadataInputsChanged": false,
+  "native03NonceEchoProof": "Only after all four dictionaries and pinned03 SQL qualified=1; SQL checks both actual response nonces against supplied read_nonce and emits boolean nonceEchoVerified.",
+  "native03Wrapper": "One scalar graph_read call in OFFSET 0 subquery; no full-result MATERIALIZED observer CTE; summary metadata/hash work included in target observation.",
+  "v4Scope": "Only add one cold four-key knownGraph:null request mode03; no extra native probes, engine fix, full renderer, Node or controlText work.",
+  "v4FreezeQualification": "Source-only preparation. No launcher, tests, syntax check, Docker start or SQL execution performed.",
+  "integrationProvenance": {
+    "frozenPreparationPin": {
+      "path": "/workspace/helmut-auth-diff-sol-20261020/diagnostics/late-read-spill-launcher-v4/PREPARED.SAFE.json",
+      "bytes": 14994,
+      "sha256": "2bd9af6e788f2820d321cb2af681bc32304b5f3a8951fad2af896bc7e09fdaf1"
+    },
+    "allSevenIntegratedSourceFilesByteIdentical": true,
+    "change": "Rebind current six sources, renderer setup and the separately pinned03 SQL to canonical repository destinations; existing18inputs unchanged."
+  }
+}

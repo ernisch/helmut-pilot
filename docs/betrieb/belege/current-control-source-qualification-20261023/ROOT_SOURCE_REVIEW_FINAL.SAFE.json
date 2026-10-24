@@ -1,0 +1,91 @@
+{
+  "schema": "helmut-original-small-mutation-root-source-review/1",
+  "atUTC": "2026-10-23T13:47:54.007473+00:00",
+  "reviewer": "root",
+  "reviewResult": "PASS",
+  "rootIntegratedHead": "adbcbc70263c5f1861934a0ca7a09bd2d38f2be2",
+  "originalAuthorCommits": [
+    "e8506e58b3b576625ddd72917413ca82da2ef5a2",
+    "e797b644ccf83a86b8b54625787b1f6cda5d88c6"
+  ],
+  "rootIntegratedCommits": [
+    "4c01430c9a928d42cbf9cf325ad3700f48765c90",
+    "adbcbc70263c5f1861934a0ca7a09bd2d38f2be2"
+  ],
+  "authorFrozenReviewPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/original-small-mutation-source-20261023/FROZEN_PINS.SAFE.json",
+    "bytes": 5414,
+    "sha256": "e35bf1fa5bf60cff74ac1cbb5a8f50a678df5a2fcdea14513c744665582d73bb"
+  },
+  "sourcePinsVerifiedAgainstRootIntegration": [
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/auth-state-parts.js",
+      "bytes": 27356,
+      "sha256": "0ff039245d60ceb7f5855f62433feab0ae0eea989606d3ad8022510a8d1d80a3"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/llm-usage-atomic.js",
+      "bytes": 32050,
+      "sha256": "dc12a5c8abf7a7b4f4334ff0b886106b42381efa864ac13d4374285242886d0a"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/local-unit-diagnostic-original-writer.js",
+      "bytes": 22080,
+      "sha256": "69fe62bb7d0250694abf0740f0f8a46340a9484494b8a896948317897bb5a9ee"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/local-unit-diagnostic-store.js",
+      "bytes": 42836,
+      "sha256": "a9b32dfa8e16d91303eea83fd0485b0ed9caadec9630b929b3f221de6c58ed2b"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/auth-control-view-test.js",
+      "bytes": 31053,
+      "sha256": "efe6b198923256e5e99bb06faec0779db8de668b90b5d7c04a1caa63544d6e1b"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/local-unit-diagnostic-budget-routing-test.js",
+      "bytes": 22095,
+      "sha256": "09f6a2d08a9e2440297b765a7375eeb45efdcffc1907aaefa79583882a194637"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/local-unit-diagnostic-original-writer-test.js",
+      "bytes": 25842,
+      "sha256": "b1b70d44cf7e39ad8ee3b8712287f1619438bf9143c2701725020d3fe67540b4"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/local-unit-diagnostic-atomic-small-mutation-test.js",
+      "bytes": 27564,
+      "sha256": "ee204a94e8b5f29882668c2b83f5563ff760fe80bcab4f3abde9ba95e512abe5"
+    }
+  ],
+  "rootReadCompleteFourProductDiffsAndFourTestDiffs": true,
+  "rootReadCompleteFinalThreeFileReviewFixDelta": true,
+  "independentReviewer": "typed_cleanup_guard",
+  "independentFullAndDeltaReviewResult": "PASS",
+  "closedFindings": [
+    "private_control_order_alias_detached",
+    "private_30_second_handles_monotonic_and_utc_bound"
+  ],
+  "security": "Fresh original graph validation, revision/root/proof/original bindings, Own7/grants/outside fields, same original CAS endpoint and exact ACK kernel, no retry after unknown outcome retained.",
+  "pureTests": {
+    "baselineTargetedSuitesPassed": 10,
+    "newReviewFixGroupsPassed": 3,
+    "rootRepeatedSuccessfulSuites": false,
+    "newNativePerformanceAccepted": false
+  },
+  "integrationScope": {
+    "nativeUnitOnly": [
+      "own7 direct state and immutable usage write",
+      "bounded own/history budget projection"
+    ],
+    "sharedFull500": [
+      "verified control projection"
+    ],
+    "full500PublicWriteChanged": false
+  },
+  "actualNativeOrDatabaseOrProviderExecutionByThisReview": false,
+  "unit60Qualified": false,
+  "reserveQualified": false,
+  "full500Authorized": false
+}

@@ -1,0 +1,65 @@
+{
+  "schema": "helmut-auth-stability30-allocation-recommendation-addendum/1",
+  "status": "NO_NEW_STRUCTURAL_FIX_SUPPORTED; PRIORITY_IS_NODE_ANONYMOUS_RESIDENCY",
+  "supersedesEarlierNextObservable": true,
+  "earlierRecommendationPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/stability30-review-20261021/ALLOCATION_RECOMMENDATION.SAFE.json",
+    "bytes": 4747,
+    "sha256": "b3cab12b5a1da18dbe6b4bd0cf77a2cf547947dfbeda165452c55521f7a60476"
+  },
+  "historicalW46": {
+    "documentPath": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/local-single-write-capture-20261019.md",
+    "documentSHA256": "953604ace3eb93fcccd9a66eabea47257482635c374ec2aaeb466c70e1936b07",
+    "mechanismAlreadyTested": "Exactly the second full state parse avoided by the private captureWrite owned-data path",
+    "functionalSafetyEvidenceAsDocumented": "13 pure groups,54 valid/9 invalid differential vectors and four native safety groups passed; pre-await caller isolation,CAS conflict,unknown outcome and ACK tampering were covered.",
+    "sharedPeakOFFBytes": 890748928,
+    "sharedPeakONBytes": 907329536,
+    "sharedPeakIncreaseBytes": 16580608,
+    "sharedCPUSecondsOFF": 56.400522,
+    "sharedCPUSecondsON": 57.013037,
+    "slowestWriteMillisecondsOFF": 359.891855,
+    "slowestWriteMillisecondsON": 426.550650,
+    "whyStillOFF": "The existing shared comparison failed its RAM objective; slowest write worsened18.52%, critical independent code acceptance remained open and the complete resource descriptor does not admit this candidate. No safety counterexample is inferred from those performance results.",
+    "limits": "One historical pair does not prove universal harm on every later integrated state. It does establish that removing a parse is not an already measured shared-RAM improvement. The document explicitly says not to repeat that pair. Its referenced primary audit path is absent in this workspace; historical numbers were read from the pinned repository document and were not remeasured or represented as newly verified primary bytes."
+  },
+  "existingGCAnalysisPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/stability30-review-20261021/EXISTING_GC_STAGE_COMPARISON.SAFE.json",
+    "bytes": 23824,
+    "sha256": "79f6f862223e0f475f8be0e6c22bbbc2a27ea5b513d26c2176c8cf1f8d4624df"
+  },
+  "lateMajorGCCountsRounds21Through30": [158,165,173,180,188,195,201,209,215,222],
+  "lateMinorGCCountsRounds21Through30": [1310,1369,1432,1493,1555,1616,1678,1742,1805,1867],
+  "lateIncrementalGCCountsRounds21Through30": [158,165,173,180,188,195,201,209,215,222],
+  "closestLateStageComparison": {
+    "rounds": [26,30],
+    "observedRecordsDeliveredAfterControl5": {"minor1":6,"major4":1,"incremental8":1},
+    "operationsAfterLastOperationReportingMajorGC": 0,
+    "heapUsedBytes": [60727032,60862224],
+    "heapUsedIncreaseBytes": 135192,
+    "heapTotalBytes": [108605440,111226880],
+    "rssBytes": [264097792,268161024],
+    "rssIncreaseBytes": 4063232,
+    "externalBytes": [5439938,5439938],
+    "arrayBuffersBytes": [1457402,1457402],
+    "independentWorkerFrameSequences": [52,60],
+    "workerNodeRssAnonKiB": [227104,230880],
+    "workerNodeRssFileKiB": [31272,31284],
+    "workerNodeRssShmemKiB": [0,0]
+  },
+  "interpretation": "Major GC continues throughout the tail. Low-heap endpoints25,26,28,30 occupy roughly60.7-61.1MB used heap, while Node anonymous RSS is higher at the matched26/30 stages. Comparable stage11/30 used heap rises971800B versus RSS21622784B. This narrows the priority to resident Node memory that does not track proportional used-JS-heap or tracked external/buffer growth. It does not establish exact live-object survival, an allocator cause or an unbounded/global heap plateau; cumulative GC records arrive asynchronously and process/native samples are sequential.",
+  "smallestMissingObservable": {
+    "question": "At two equivalent late natural-GC stages, does the additional RSS track V8 physical heap/space memory or remain outside it?",
+    "additionalFields": ["v8.getHeapStatistics().total_physical_size", "v8.getHeapStatistics().malloced_memory", "v8.getHeapSpaceStatistics(): space_name,space_used_size,physical_space_size"],
+    "existingFieldsToPair": ["Node RSS/heapUsed/heapTotal/external/arrayBuffers", "natural GC entry timestamp/kind or its asynchronous-delivery limitation", "the existing Node RssAnon/RssFile/RssShmem diagnostic"],
+    "feasibility": "Two scalar V8-space frames require only a few KiB and are technically feasible inside the unchanged heap/native/time/evidence caps on the next separately justified bounded diagnostic. Preserve exact new source pins/adoption and count observer overhead. No full heap snapshot, forced GC, allocator knob, cache reset,W46 pair repetition or new thirty-round run is recommended solely to obtain them.",
+    "decisionRule": "Physical-V8 growth with nearly constant used heap supports investigating V8 page/capacity residency; stable physical-V8 figures with higher RSS narrows the unassigned native footprint. Neither observation by itself authorizes a particular memory-management change."
+  },
+  "recommendation": "Keep single-write-capture off. Do not repeat its already completed qualification or prescribe another Parts/capture redesign from the tail. The current evidence supports no specific safe additional motor-RAM improvement. Record the finite-window Node-anonymous-residency finding and add only the missing physical-V8 discriminator when another necessary bounded diagnostic exists.",
+  "newExperimentsOrResourceActions": 0,
+  "originalPayloadRereads": 0,
+  "existingReportsRewritten": false,
+  "repositoryWrites": 0,
+  "providerCalls": 0,
+  "full500": false,
+  "production": false
+}

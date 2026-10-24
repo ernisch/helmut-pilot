@@ -1,0 +1,127 @@
+{
+  "schema": "helmut-native-runtime-observer-independent-source-addendum/1",
+  "status": "PASS_SOURCE_ONLY",
+  "createdAtUTC": "2026-10-21T11:11:19.814Z",
+  "baseCommit": "ea760a70215efdeb371586b9b03a740998d1517b",
+  "previousReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/launcher-review/RUNTIME_OBSERVER_SOURCE_REVIEW.SAFE.json",
+    "bytes": 9532,
+    "sha256": "4ad14b064197cca6e7486b33597a2e19d1a2fa74f967613b89f8685075a39102"
+  },
+  "previousReviewPreservedUnchanged": true,
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget.js",
+      "bytes": 8079,
+      "sha256": "45fbf5d567e0b27c7088d2ac47b806b6bc72ebbfdd467c29e75064b9ddd3a752"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/connect-local500.py",
+      "bytes": 33488,
+      "sha256": "fe5582c7e63d0c0e67810868771458f086d3da19e2668b88f4f5af948443f84b"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget-test.js",
+      "bytes": 21621,
+      "sha256": "7f26900b3bf8782b8bc87b0a211f802e14eed6a15ad40abedf7f988c4dc03559"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/start-preflight-test.py",
+      "bytes": 22150,
+      "sha256": "0c64b4aa81e4acff433d8f0ab2e1103ffb4ebbcba5bfc7ce96fcd041d380d0b5"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/runtime-memory-staging-test.js",
+      "bytes": 7201,
+      "sha256": "aa365343b734ba1eaf95e6cf282d8c8adadd6b4881cad4e2f28ef4c7f09eb037"
+    }
+  ],
+  "blockingFindings": [],
+  "reviewActions": {
+    "readActualFiveFileDiffAndSources": true,
+    "comparedSourceHashes": true,
+    "readRootTestReceipt": true,
+    "testsStartedByReviewer": 0,
+    "ASTOrSubjectImports": 0,
+    "nativeUnitFull500Starts": 0,
+    "SQLDockerProcGitMutations": 0,
+    "repositoryWrites": 0,
+    "wroteThisReportOnly": true
+  },
+  "resolvedFindings": [
+    {
+      "id": "ORIGINAL_FAILURE_MASKED_BY_OBSERVER_EXPORT_FAILURE",
+      "priorStatus": "BLOCKING_IN_V1",
+      "finalStatus": "RESOLVED",
+      "references": [
+        "connect-local500.py146–164",
+        "original measure-runtime.js26–30",
+        "runtime-memory-staging-test.js55–87"
+      ],
+      "evidence": "metadata() is no longer changed. The catch first computes bounded primaryFailure, sets exitCode1 and writes its bounded JSON to stderr before calling beforeRuntimeExport/metadata/save. Any subsequent observer/save/close failure therefore cannot erase that already emitted original failure evidence. Save-return is marked only after the original save completes.",
+      "exactClaim": "Original primary is preserved as bounded stderr evidence with failure exit status. If the observer then rejects, the newly thrown observer error may remain the rejection and no RUNTIME_FAILURE JSON may be written. This is not a claim that the original Error object is rethrown identically through that secondary failure.",
+      "close": "Outer finally always attempts close; a close failure keeps exitCode1 and appends the fixed bounded CLOSE_FAILED message."
+    },
+    {
+      "id": "FALSE_COMPLETION_AFTER_SAMPLE_FAILURE",
+      "finalStatus": "RESOLVED_BY_ROOT_BROKEN_FLAG",
+      "references": [
+        "native-node-budget.js95–112,114–128"
+      ],
+      "evidence": "Any sample validation/GC/API/serialization/output/write error marks broken=true before rethrow. Later sample calls reject INCOMPLETE before another write; invalid selected event indices also set broken. close still disconnects/closes its descriptor in finally. A short or capped partial stream is not followed by a falsely completed final observation line.",
+      "limit": "This does not turn incomplete output into acceptance. Final save/fsync/close errors remain terminal; old partial proof is kept."
+    },
+    {
+      "id": "VALID_GC_WEAK_CALLBACK_KIND_REJECTED",
+      "attribution": "Additional concrete defect identified by Root after the first review; not retroactively attributed to the V1 original-error finding.",
+      "finalStatus": "RESOLVED",
+      "references": [
+        "native-node-budget.js70–74,87–92",
+        "native-node-budget-test.js233 onward"
+      ],
+      "evidence": "The final allowed set is built from pinned Node perf_hooks constants MINOR, MINOR_MARK_SWEEP, MAJOR, INCREMENTAL, WEAKCB (1,2,4,8,16). Genuine weak callback16 is no longer rejected by the old four-number list.",
+      "testBoundary": "The new codec fixture delivers five synthetic records inside a short real Node child and asserts the actual runtime constant values, aggregate counts/durations and weak kind. It requests no GC and proves no actual GC cadence."
+    }
+  ],
+  "finalSourceFindings": {
+    "unchangedMetadata": "The staged metadata function remains the original source. Observation is now an explicit beforeRuntimeExport method called immediately before assessment on success and before failure metadata on catch.",
+    "exactLexicalHooks": "The existing lexical event() still performs its original append/log operations and then calls the bounded observer. Exact substitutions require one match; no replacement of a returned function that would miss internal J.enter events.",
+    "fixedObservationScope": "21indices[0,24,49,...474,499], two event kinds plus initial/pre/post yields45 frames on a clean successful full runtime. Failure paths can differ but stay≤100frames/1MiB/16KiB perline. Original time/control/workload guards are not relaxed.",
+    "boundedData": "Only eight collection cardinalities and builtin process/V8/heap-space scalar objects are serialized. No profile/input/output/response/body/graph references or GC entry history are retained.",
+    "sourceClosureAndMounts": "The same native-node-budget module is already source-bound/installed by http-meter and included by native budget closure verification. It reuses the existing installed output directory and self-proc metadata, requiring no new mounts, capabilities, processwalk, native infrastructure, model or database access.",
+    "originalInstallation": "Original Node24.19/384MiB+16MiB/live Worker heap/exit receipt logic is unchanged except retaining installedDirectory. runtimeObserved is one-shot and main-thread-only.",
+    "outputAndClosure": "New JSONL lives inside the same charged output tree, is append-written exclusively with no retry, and is covered by existing log discovery. close fsyncs a healthy stream, disconnects the GC observer and closes its descriptor; failure is not counted as successful process completion.",
+    "GC": "Five known Node kinds are bounded cumulative aggregates. takeRecords consumes naturally generated queued records without forcing collection. Delivery lag remains explicit.",
+    "noHiddenProtocolExpansion": "Original packets, ACK/CAS/restore, provider deadlines, current-input checks, sequence order, production guards and final JSON schemas remain in place. Tests use isolated local sources/children or inert VM dependencies; their fixture clock/provider data are not wired into runtime."
+  },
+  "testSourceReview": {
+    "nativeNodeBudgetTest": "Existing local child runner and native receipts checks are kept; added cases inspect45 scalar frames, one-shot/config/count/index rejection, exclusive existing proof preservation, one attempted shortwrite/closed descriptor,100-frame cutoff, and synthetic five-kind GC codec.",
+    "literalStagingHelper": "Reads explicitly supplied rendered sources from stdin; evaluates those literal sources in an inert VM with a require allowlist. It checks actual lexical J.enter/event reachability and bounded primary failure persistence under observer failure. No genuine engine/storage/provider call is executed.",
+    "preflightTest": "Only the intended renderer outputs change (sequence heap options, observe-app, measure-runtime). New subprocess import fixes the previously failing targeted case; its child receives rendered strings, not an executable resource plan.",
+    "selectorBoundary": "run-offline-tests.js398–406 scans only direct files in scripts/. The helper is under scripts/helmut-resource-meter/, so its stdin-dependent filename does not become an accidental standalone STANDARD or extended suite. No CI selector rewrite is needed.",
+    "qualificationLimits": "VM equality primarily exercises populated unit/event fixture rows and inert metadata; it is not proof of all live app request/mutation/scope behavior. The100frame cap is actually reached;1MiB and16KiB separate overflow paths remain source reviewed, not independently exercised by these tests.",
+    "noTestExecutionByThisReviewer": true
+  },
+  "rootEvidence": {
+    "receiptPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/ROOT_OBSERVER_TESTS.SAFE.json",
+      "bytes": 4445,
+      "sha256": "9ad13979389611d434354f17ed38a9ab858b36d176f2c91746472113efdbe1f2"
+    },
+    "reviewedReceiptStatus": "TARGETED_LOCAL_OBSERVATION_GUARDS_PASS_NOT_RESOURCE_ACCEPTANCE",
+    "finalNodeRun": "Root reports26cases/31shortchildren PASS after symbolic GC-kind fix.",
+    "stagingRuns": "Root preserves initial19-case run18PASS/1missing-importFAIL and separately the one corrected-case PASS. No fresh whole19-case PASS is asserted.",
+    "composition": "Root reports26templates/24JSsyntax/2PythonAST composition PASS.",
+    "attribution": "This source reviewer read the receipt and final test sources; E independently qualifies actual logs. These are not tests run by this reviewer."
+  },
+  "remainingClaimLimits": [
+    "Before-final-export still precedes assess-runtime. The interval includes assessment, serialization/Buffer/write, promise completion and object-lifetime changes; it is not isolated JSON serialization cost.",
+    "Process/V8/space readings are sequential, with one after-read timestamp; they are not an atomic cgroup snapshot. RSS covers all threads; heap statistics describe the main isolate.",
+    "GC callbacks may lag; observer aggregates do not establish complete process-start GC coverage or identical post-GC stages.",
+    "The eight named cardinalities are not a complete retained object/byte census.",
+    "No current fullpath heap/external/GC measurement, memory saving, cause/peak owner, stable workset,500MB reserve or full500 acceptance has occurred.",
+    "Changed source hashes require fresh source/budget/descriptor qualification before any future authorized resource run. No old GO/adoption/once/case is reused."
+  ],
+  "acceptance": "PASS_SOURCE_ONLY for the five pinned final files and bounded staging integration. The previous V1 remains BLOCKED for its old bytes; this addendum accepts the corrected bytes only.",
+  "handoff": "Final immutable source addendum; Root remains sole repository writer and sole owner of qualification/actions. No native/Unit/full500 authorization."
+}

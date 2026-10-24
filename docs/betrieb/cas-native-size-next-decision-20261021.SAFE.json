@@ -1,0 +1,134 @@
+{
+  "schema": "helmut-cas-native-size-next-technical-decision/1",
+  "status": "DECISION_NO_PRODUCT_CHANGE_FUTURE_DIAGNOSTIC_ONLY",
+  "createdAtUTC": "2026-10-21T08:08:59.799815+00:00",
+  "decision": "Complete the separately authorized synthetic native layout correctness check; keep CAS projection OFF and current product/default renderer unchanged. A correctness counterexample is not a RAM optimization or a reason to repeat the memory-negative W45 comparison. No new measurement is prepared or started by this report.",
+  "scope": "Only existing P/write-phase and Q bound evidence, plus direct statvfs capacity readback. No repeated architecture analysis or new source investigation.",
+  "inputPins": {
+    "serverWriteSourceAttribution": {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/server-write-source-attribution/READONLY_FINDINGS.SAFE.json",
+      "bytes": 16766,
+      "sha256": "780c0aabd8792e771ca6e6e338f6e12e3f5834aa83e74818548cf68fbf44c035"
+    },
+    "writePhaseRootActualVerification": {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/ROOT_ACTUAL_VERIFICATION.SAFE.json",
+      "bytes": 12126,
+      "sha256": "92ba732e2cb4bf382b6e70cdaa9c826bc84e6e774a8362a996836a37c4b5356a"
+    },
+    "writePhaseRootRetirementEnd": {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/ROOT_RETIREMENT_END.SAFE.json",
+      "bytes": 8026,
+      "sha256": "0004246059f3bc66dab682f1236e981ead6798362a3ac302faf06cccc1cac3af"
+    },
+    "nativeLayoutSourceDerivation": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/layout-proof/SOURCE_REVIEW.SAFE.json",
+      "bytes": 12549,
+      "sha256": "fd0ea027e30cc2acfd7079c3268ce7374bd378ffa45e2ea9f8c07b39cb3771dd"
+    }
+  },
+  "evidenceDecisionBoundary": {
+    "largestEarlierRendererSavingBytes": 154886144,
+    "largestEarlierRendererSavingProvenance": "Accepted earlier measurement figure supplied in Root current task; neither remeasured nor reaudited here. Remains the largest established earlier renderer saving, not a new saving.",
+    "currentWritePhaseWholeLifetimePeakBytes": 1039151104,
+    "HTTPWindow": {
+      "labels": [
+        "driver.request.afterBodyObserverBeforeHTTP",
+        "driver.request.afterRPCJSONParsed"
+      ],
+      "peakBeforeIntervalBytes": 1031090176,
+      "peakAfterIntervalBytes": 1039151104,
+      "peakIncreaseBytes": 8060928,
+      "endpointNodeRSSBytes": [
+        269144064,
+        269144064
+      ],
+      "endpointNodeHeapUsedBytes": [
+        84843104,
+        85197096
+      ],
+      "endpointGroupAnonBytes": [
+        344674304,
+        363290624
+      ],
+      "endpointGroupFileBytes": [
+        605020160,
+        605020160
+      ],
+      "limits": "Sequential endpoint snapshots, not an atomic peak decomposition or continuous Node RSS trace. Includes PostgreSQL, PostgREST, HTTP/JSON and probe overhead. Endpoint anonymous growth cannot identify a process or allocation; unchanged endpoint Node RSS does not exclude transient interval changes."
+    },
+    "restoreCASRequest": {
+      "bytes": 2458,
+      "newNodes": 2,
+      "additions": 0,
+      "responseBodyBytes": 567,
+      "route": "/rpc/helmut_auth_state_cas_v1"
+    },
+    "activeCASProjectionGUC": "UNBEWIESEN_NOT_RECORDED",
+    "actualDiagnosticScopeGUC": "UNBEWIESEN_NOT_RECORDED",
+    "branchUnknownMeaning": "The completed case did not retain serving-session settings; no retrospective branch assignment from intended OFF or a separate psql session is valid.",
+    "W45MemoryPair": {
+      "OFFPeakBytes": 810905600,
+      "ONPeakBytes": 820375552,
+      "ONIncreaseBytes": 9469952,
+      "newReasonToRepeatEstablished": false
+    },
+    "layoutCorrectnessStatus": "SOURCE_DERIVED_COUNTEREXAMPLE_NATIVE_UNTESTED",
+    "layoutSourcePredictionOnly": {
+      "mergedNativeBytes": 2195,
+      "boundBytes": 2083,
+      "gapBytes": 112,
+      "actualNativeResultReadByThisReviewer": false
+    },
+    "meaning": "The8,060,928B lifetime-peak rise is bounded between afterBodyObserverBeforeHTTP and afterRPCJSONParsed. This includes PostgREST/PostgreSQL/HTTP/JSON and observer work. Stable endpoint Node RSS and tiny response/body do not rule out transient Node allocation or prove a server allocator cause. Endpoint anonymous growth is not a decomposition of the earlier whole-group peak. The m size counterexample blocks general projection equivalence; it supplies no memory benefit."
+  },
+  "atMostOneLaterDiagnostic": {
+    "count": 1,
+    "name": "Same-request PostgreSQL materialization heap receipt in the unchanged default path",
+    "status": "FUTURE_PROPOSAL_ONLY_NOT_PREPARED_OR_AUTHORIZED_TO_START",
+    "question": "Does the known complete output_text plus output_value materialization leave a measurable increase in the actual CAS-serving PostgreSQL backend memory contexts while both representations exist?",
+    "minimumObservation": "Only on a separately justified, freshly frozen and independently qualified current-path component diagnostic: retain one bounded scalar receipt from the actual restore-CAS backend with backendPID, exact selected source/body pins and raw projection/diagnostic-scope GUC values; bracket exactly the full-output materialization with two bounded server memory-context scalar snapshots, immediately before output_text materialization and immediately after output_value JSONB cast while its text/value locals still exist.",
+    "requiredScalarBounds": "No object values, original payloads, context names, stack dump or heap snapshot. Predeclare a strict fixed field/byte cap and actual known backend identity. Retain only context count and documented non-inclusive aggregate allocated/used/free bytes plus existing native lifetime peak/current and time brackets. Any aggregation must be qualified to avoid parent/child double counting; observer allocations remain explicitly part of the interval.",
+    "branchRequirement": "Same actual request must show default full materialization and its raw serving-session settings. A metadata query on another connection is not evidence. Projection stays OFF; do not enable or silently switch the branch to manufacture this diagnostic.",
+    "interpretationRule": "A positive context delta would establish bounded backend allocator growth across this specific materialization interval, including observer effects. A missing delta would not exclude transient allocations outside the two samples. Neither outcome proves the owner of the8.06MB whole-group high-water increase or promises a corresponding RAM saving. No separate process peaks or noncontemporaneous counters are added.",
+    "whyThisIsSmallestUsefulStep": "It targets the one known full-server materialization whose current retained heap cost is unmeasured, while simultaneously binding the otherwise unobserved actual branch. It does not revisit old W45 ON/OFF, broad Node snapshots, caches or the complete test suite.",
+    "noStandaloneRunForGUCGap": "Do not start an extra case solely to fill missing GUC metadata or resurrect the rejected projection candidate. Source review, cap qualification, exact case/retention/admission and any start require a later separate Root decision.",
+    "currentlyPreparedFiles": [],
+    "productOrFormulaChangeSelected": false,
+    "RAMSavingClaim": false,
+    "full500": false
+  },
+  "capacitySnapshot": {
+    "sampledAtUTC": "2026-10-21T08:08:59.799815+00:00",
+    "path": "/workspace",
+    "method": "os.statvfs only; no file/payload inventory or resource scan",
+    "allocationBlockBytes": 4096,
+    "availableBlocksToUser": 3670660,
+    "availableBytes": 15035023360,
+    "unchangedFullAdmissionBytes": 15179779720,
+    "fullAdmissionGapBytes": 144756360,
+    "fullAdmissionMarginBytes": -144756360,
+    "fullAdmissionSatisfied": false,
+    "previousWritePhaseEndAvailableBytes": 15082921984,
+    "previousWritePhaseEndGapBytes": 96857736,
+    "qualifiedAdditionalReclaimBytes": 0,
+    "scopeOfZero": "This report qualified no cleanup path and performs none; it does not reinterpret retained proofs, hulls, originals or Git custody as disposable.",
+    "notReservation": true,
+    "concurrencyAndProofCost": "Root native-layout preparation/proofs are active and may change availability. This readback precedes this small report write; require a new admission check before any later action. No disk admission or500 GO follows."
+  },
+  "performed": {
+    "existingMetadataRead": true,
+    "statvfsOnlyCapacityRead": true,
+    "ownNewReportWritten": true
+  },
+  "notPerformed": [
+    "Source or product edits",
+    "Launcher/SQL/test preparation",
+    "Subject import or tests",
+    "Native/SQL/Docker/DB/process/Git/resource actions",
+    "Original payload/file inventory or bank reads",
+    "Compaction/deletion/cleanup",
+    "New agents/router/external model calls",
+    "Full500 or memory-benefit assertion"
+  ],
+  "writeDomain": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/decision-review"
+}

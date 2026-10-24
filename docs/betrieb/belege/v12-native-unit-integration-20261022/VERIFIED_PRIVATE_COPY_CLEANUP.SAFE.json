@@ -1,0 +1,37 @@
+{
+  "schema": "helmut-verified-private-diagnostic-copy-cleanup/1",
+  "atUTC": "2026-10-22T22:19:35.289Z",
+  "onlyTwoOwnClosedExpandedDiagnosticCopiesRemoved": true,
+  "caseNonces": [
+    "b09fb4ec0d2fcfe7eb3d173bdd9a84dd",
+    "3e75aeb1cd927d52745a43994cd2c782"
+  ],
+  "archiveHashes": [
+    "888180c44082329e751052c3acb4a25813c55012ccab2ab7167aa10e4309b504",
+    "c1c09da178127bda4a8a898e9bc2e983744fc956dd42f162317a0c8d54ff15af"
+  ],
+  "archiveBytes": [
+    123125416,
+    123372336
+  ],
+  "fullArchiveReadbackAndFreshDirectoryRestoreVerified": true,
+  "all14BackupRestorePinsFreshlyMatched": true,
+  "all288RetainedCaseFilesUnchanged": true,
+  "rootIndependentArchiveReviewSHA256": "3273ff9d14fe52c005e5fb5c3c4698fcc7f3d2d9142a039bdcf91de0c6d1213d",
+  "detailedExternalCleanupSummarySHA256": "1246b79e46064085fb374883af1b2293fe318af56dca89dfd4ebb453f90709fc",
+  "caseParentsIdentityAnd0700Preserved": true,
+  "caseParentMtimeCtimeNlinkChangedAsDocumented": true,
+  "persistentFreeBytesAfterReceipts": 10831294464,
+  "netRemovalSeriesGainBytes": 744091648,
+  "netGainIncludingArchiveCostsBytes": 492445696,
+  "singleUnitStartThresholdBytes": 10737418240,
+  "singleUnitMarginBytes": 93876224,
+  "full500StartThresholdBytes": 15179779720,
+  "full500DeficitBytes": 4348485256,
+  "databaseStarts": 0,
+  "oldClaimsReopened": false,
+  "protectedOriginalsEvidenceCurrent93AndArchivesPreserved": true,
+  "archivesRemainLocalOnly": "Contain synthetic local test credentials; no Git or Drive export.",
+  "rollback": "Restore the pinned archive with the retained helper into a new owned 0700 directory; compare all bytes and preserved metadata before any later separately authorized use. Restore grants no execution authority.",
+  "processVisibilityLimit": "All available command lines checked; 693 links, 226 FD directories and 7 maps were unreadable. Complete absence of open FDs is not claimed."
+}

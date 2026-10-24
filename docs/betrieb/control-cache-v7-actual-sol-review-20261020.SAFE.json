@@ -1,0 +1,222 @@
+{
+  "schema": "helmut-v7-control3-independent-actual-review/1",
+  "status": "ACCEPTED_ACTUAL_DIAGNOSTIC_ONLY",
+  "atUTC": "2026-10-20T18:38:41.919285+00:00",
+  "model": "gpt-6.1-sol",
+  "independent": true,
+  "case": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e",
+  "actualResultPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/ACTUAL_RESULT.SAFE.json",
+    "bytes": 7607,
+    "sha256": "5ba6fc39e0a78bffebd23bd0dbffa6f96ba204170239f993417dab2a678fc8b5"
+  },
+  "preparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-native-v7-launcher/PREPARED.SAFE.json",
+    "bytes": 26924,
+    "sha256": "a09c91e4d70e1b6f7b656e7b51f932c0133ce51b1fd8c43535d456dd71a24666"
+  },
+  "actualLifecycleResultPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b/ACTUAL_RESULT.SAFE.json",
+    "bytes": 7082,
+    "sha256": "2865ad68e063ce7989525660518fcd530ad5cc194824dfd195087cd85382f48e"
+  },
+  "rootAdoptionPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/ROOT_ADOPTION.SAFE.json",
+    "bytes": 3742,
+    "sha256": "ea7ffe72971aff6e6d2bc20eaaf5e4630a891faca2b9877ad3e52e0a9af7f775"
+  },
+  "preflightPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/PREFLIGHT.SAFE.json",
+    "bytes": 256476,
+    "sha256": "299a9511b8f4c99b6234aa9f25a437e21c8ab6a37fd5366328014b554ca6ec60"
+  },
+  "actualEvidencePins": {
+    "ACTUAL_RESULT.SAFE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/ACTUAL_RESULT.SAFE.json",
+      "bytes": 7607,
+      "sha256": "5ba6fc39e0a78bffebd23bd0dbffa6f96ba204170239f993417dab2a678fc8b5"
+    },
+    "WORKER_RESULT.SAFE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/WORKER_RESULT.SAFE.json",
+      "bytes": 6026,
+      "sha256": "ee96bc885d0f0848bfc6601ee9de535bbf085b92a0ad97bdb07bc02cbc30cfdb"
+    },
+    "CONTROL_CACHE.SAFE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/CONTROL_CACHE.SAFE.json",
+      "bytes": 9627,
+      "sha256": "6d81bc35de76f4afa51bf9a4412ff5a2a53b6d421e4f4e02ca4958c26111d957"
+    },
+    "NODE_CONTROL.CAPTURE.SAFE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/NODE_CONTROL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "49d2961cfeedc9a8eb15a73b0cfca282693f6f9464e11eaebbde926342211568"
+    },
+    "NODE_CONTROL.stdout.PRIVATE.txt": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/NODE_CONTROL.stdout.PRIVATE.txt",
+      "bytes": 9627,
+      "sha256": "6d81bc35de76f4afa51bf9a4412ff5a2a53b6d421e4f4e02ca4958c26111d957"
+    },
+    "NODE_CONTROL.stderr.PRIVATE.txt": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/NODE_CONTROL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "POSTGREST_STOP.SAFE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/POSTGREST_STOP.SAFE.json",
+      "bytes": 2545,
+      "sha256": "cc2139691ed1802e1c218c1197cb7d05bf26a09212d969b092f95056c0ab6d14"
+    },
+    "POSTGREST_LOG.PRIVATE.txt": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/POSTGREST_LOG.PRIVATE.txt",
+      "bytes": 632,
+      "sha256": "cfb77a24663739081e29f44a649f77e579e785099c29d6e26ece714478e95358"
+    },
+    "PG_LOG.SAFE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/PG_LOG.SAFE.json",
+      "bytes": 348,
+      "sha256": "584bbeaee10b91bb36fd4dac14ce23b8964d441ad0624711064feac22c08e33e"
+    },
+    "CATALOG_AFTER_OPERATION.stdout.PRIVATE.txt": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/CATALOG_AFTER_OPERATION.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+    },
+    "SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    "SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    "node-observations/HTTP_42_0.SAFE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/node-observations/HTTP_42_0.SAFE.json",
+      "bytes": 1280,
+      "sha256": "61abc53df976dae060dc088c0bc79ded7618c1b11cefca4d7a3ab53c154c4c58"
+    },
+    "node-observations/HTTP_42_0.STARTED.SAFE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/node-observations/HTTP_42_0.STARTED.SAFE.json",
+      "bytes": 67,
+      "sha256": "46d5500baf39b4bb829003efae3a25e0abce014e11f5d901c2b17dbe9311d734"
+    },
+    "node-observations/NODE_HEAP_42_0.EXITED.SAFE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/node-observations/NODE_HEAP_42_0.EXITED.SAFE.json",
+      "bytes": 248,
+      "sha256": "2ae39e007e215dced30e5afd265d44866b2ce4e01205908cf0b270e54ab62c38"
+    },
+    "node-observations/NODE_HEAP_42_0.STARTED.SAFE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-81c274b505a2ee40e25ab03e/node-observations/NODE_HEAP_42_0.STARTED.SAFE.json",
+      "bytes": 249,
+      "sha256": "810cec23d0f57d426099043d3a3613c06975e1b0ddfa6db5d23abb8de39ca1b2"
+    }
+  },
+  "executedRelevantCodePinsMatched": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-native-v7-launcher/postgrest_lifecycle.py",
+      "bytes": 9220,
+      "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-native-v7-launcher/control-driver.js",
+      "bytes": 9986,
+      "sha256": "956f244a1bd97f30a373d22113c3d32edb1ec037263e1a95a4049acd6e624076"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/llm-usage-atomic.js",
+      "bytes": 23685,
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+    }
+  ],
+  "nodeStdoutExactlyEqualsPersistedControlReceipt": true,
+  "nodeCapturePID": 42,
+  "nodeCaptureExitCode": 0,
+  "nodeCaptureStdoutBytes": 9627,
+  "nodeCaptureStderrBytes": 0,
+  "uCalls": [
+    "read",
+    "readControl",
+    "readControl"
+  ],
+  "authRPCCount": 3,
+  "freshDistinctUUIDv4Count": 3,
+  "originalUAcceptedEachActualResponse": true,
+  "nonceEchoesAndNativeBindingsAcceptedByUnchangedOriginalU": true,
+  "fullResponsesNotReconstructedOrHashedByReviewer": true,
+  "passiveRealHTTPSendCount": 3,
+  "completePassiveFramedResponses": 3,
+  "passiveResponseErrors": 0,
+  "responseBodyBytesPerCall": [
+    10431730,
+    6662644,
+    6662644
+  ],
+  "requestJSONUTF8BytesPerCall": [
+    87,
+    323,
+    323
+  ],
+  "aggregateResponseBodyBytes": 23757018,
+  "aggregateClientTCPBytesRead": 23757600,
+  "responseHeaderBytes": 537,
+  "responseFramingBytes": 45,
+  "actualOriginalControlTextUTF8Bytes": 4856607,
+  "retainedControlCacheCapBytes": 2097152,
+  "controlTextExceedsRetainedCacheCap": true,
+  "stringifyCountsPerCall": [
+    1,
+    2,
+    2
+  ],
+  "controlTextObservations": 5,
+  "noAdditionalFullAuthOrControlSerializationByObserver": true,
+  "originalStringifyCalledOnceAndReturnPreservedPerObservation": true,
+  "controlsKnownGraph": [
+    "null",
+    "null"
+  ],
+  "controlsGraphReused": [
+    false,
+    false
+  ],
+  "controlsReturnedFullGraph": [
+    true,
+    true
+  ],
+  "controlsReachableNodes": [
+    1848,
+    1848
+  ],
+  "interpretation": "Existing raw-text cache intentionally does not retain the4856607-byte control text above2097152-byte cap. Each readControl therefore uses a fresh full graph and two original controlText serializations. This is a valid oversize fallback, not cache retention or demonstrated memory savings.",
+  "nodeVersion": "v24.19.0",
+  "nodePID": 42,
+  "nodeHeapLimitBytes": 452984832,
+  "nodeOldSpaceMiB": 384,
+  "nodeSemiSpaceMiB": 16,
+  "meteredNodeIsolates": 1,
+  "privateWorkers": 0,
+  "actualNodeStartupExitHeapReceiptsMatched": true,
+  "nativeWholeLifetimePeakDiagnosticBytes": 980570112,
+  "naturalGCOnly": true,
+  "postgrestSignedReturnCode": -2,
+  "exactExpectedTranslationPolicyMatched": true,
+  "postgrestPersistedStopEOFAndReapNoTimeoutKillError": true,
+  "postgresExitCode": 0,
+  "originalSourceSavedFullManifestsEqual": true,
+  "sourceManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+  "fullInstalledCatalogAuthStoreUnchangedAfterCalls": true,
+  "lastOwnedProcessExitCovered": true,
+  "nativeGroupEmpty": true,
+  "setupHelpersExited": true,
+  "allNativeMemoryEventsZero": true,
+  "scope": "One fresh same-a09c-freeze three-RPC local diagnostic with original raw-text control-cache behavior. No performance/cache-encoding change is included. Future bounded private encoding and fair native comparison require their own source/semantic review and actual measurements.",
+  "originalPGDATAOrLargeBinaryBytesReadByReviewer": false,
+  "subjectTestsOrRuntimeResourcesExecutedByReviewer": 0,
+  "findings": [],
+  "RAMSavingProved": false,
+  "plateauProved": false,
+  "full500ReserveProved": false,
+  "full500Accepted": false,
+  "production": false
+}

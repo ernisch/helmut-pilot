@@ -1,0 +1,160 @@
+{
+  "schema": "helmut-local-unit-current-source-review-report/1",
+  "recordedAtUTC": "2026-10-22T21:12:45.543331+00:00",
+  "scope": "SOURCE_ONLY_LOCAL_OWN2_FIXTURE_ROUTING_AND_BUDGET_PREGATES",
+  "baselineReviewedCommit": "d6778b7805adc7ebe0b466b1604947d4a86114d9",
+  "integrationImplementationCommit": "678fb118cf4632d45a31ead8516acf6343ee8587",
+  "writerCommits": [
+    "e93d46abbbace6eee18cbd5ba9064c91ad76c90b",
+    "7dfb4cd63e877924660505ce2cf55da0e8c8e4a5",
+    "60eb3c0c6ae5f08601c69fbe5e10e1fbf5999fb9",
+    "00c630b3e02256db8e7360507627a76682b7af2a"
+  ],
+  "sourcePins": [
+    {
+      "file": "lib/helmut/local-pipeline-lock-lease.js",
+      "bytes": 3721,
+      "sha256": "68c320eb6540dd08d0a28657f5e50eeb4308162a9b8e15c973ddaa90ccefe77c"
+    },
+    {
+      "file": "lib/helmut/storage.js",
+      "bytes": 556772,
+      "sha256": "dbb3d98f834731ff67ff209fe9499150ce9e92813af76786567a432cc63c776f"
+    },
+    {
+      "file": "lib/helmut/lage.js",
+      "bytes": 57463,
+      "sha256": "613ea950dcedc16cfbff14829b7437b3160b16bc49dc5afeec8d5be8c0f10649"
+    },
+    {
+      "file": "scripts/local-pipeline-lock-lease-test.js",
+      "bytes": 12354,
+      "sha256": "6307d98d794c2d6cb61fb409cef3448d36a598b6e9ff34a606869b924fdfef3a"
+    }
+  ],
+  "additionalReviewedSourcePins": [
+    {
+      "file": "lib/helmut/local-unit-diagnostic-store.js",
+      "bytes": 38153,
+      "sha256": "a7b6529f98d8cfdf9d8fa9d59086038faf91d7b485bc64797f7e2e7e215118b6"
+    },
+    {
+      "file": "scripts/local-unit-diagnostic-storage-routing-test.js",
+      "bytes": 15638,
+      "sha256": "2d506ef5cd77a7801998d6a8e9ce0499c64d9ec06972407eb47f598810ec52db"
+    },
+    {
+      "file": "scripts/local-unit-diagnostic-lage-routing-test.js",
+      "bytes": 15027,
+      "sha256": "2684ebc35b5e1bd3c5a53b5f22823fc3a45cb36a1ccba8eda0f7a1f44206c724"
+    },
+    {
+      "file": "scripts/local-unit-diagnostic-budget-routing-test.js",
+      "bytes": 19517,
+      "sha256": "f6063da14fada0e422b12f8da612ff016052be4d3f441a14a06a942c6417ce63"
+    }
+  ],
+  "historicalSourcePins": [
+    {
+      "file": "lib/helmut/local-pipeline-lock-lease.js",
+      "bytes": 3721,
+      "sha256": "68c320eb6540dd08d0a28657f5e50eeb4308162a9b8e15c973ddaa90ccefe77c"
+    },
+    {
+      "file": "lib/helmut/storage.js",
+      "bytes": 546974,
+      "sha256": "f5cc228b744fcdd9fb398b277465c72cd9d4aa3ee746618bfd4f1c3ce53a363f"
+    },
+    {
+      "file": "lib/helmut/lage.js",
+      "bytes": 56857,
+      "sha256": "61f4a2071d5c22dac276776ef37d7c29180b025f56c9ded5898c80b367abe554"
+    },
+    {
+      "file": "scripts/local-pipeline-lock-lease-test.js",
+      "bytes": 12354,
+      "sha256": "6307d98d794c2d6cb61fb409cef3448d36a598b6e9ff34a606869b924fdfef3a"
+    }
+  ],
+  "unchangedHistoricalEvidencePins": [
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/local-lock-lease-20261021/ROOT_LOCAL_SOURCE_DELTA.SAFE.json",
+      "bytes": 1287,
+      "sha256": "e2fd3590daa340afed1b066ecc7085a45a6c826ed4ecfa75a2fb6e32c9c4e925"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/local-lock-lease-20261021/INDEPENDENT_SOURCE_DELTA_REVIEW.SAFE.json",
+      "bytes": 1187,
+      "sha256": "15250fbbdff170582e630efe0779f7e90651c186ebce15881159c14f1d19eb45"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/INDEPENDENT_COMBINED_SOURCE_REVIEW_ORIGINAL.SAFE.json",
+      "bytes": 6151,
+      "sha256": "e7efec6b916aa3f01fe755f3e89566e6c2801e928d5e3484fe9cb053e749c6a8"
+    }
+  ],
+  "independentReview": {
+    "agent": "/root/v12_postrun_provenance",
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "xhigh",
+    "independent": true,
+    "readOnly": true,
+    "completeDeltasAndTestsRead": true,
+    "stableBeforeAfterPins": true,
+    "testsExecutedByReviewer": 0,
+    "nativeOrDatabaseExecutionByReviewer": 0,
+    "result": "No supported new blocking regression within the stated source-only Own2 scope"
+  },
+  "rootCombinedReview": {
+    "coordinator": "/root",
+    "joinedStorageLageBudgetPathsRead": true,
+    "actualIntegratedPinsChecked": true
+  },
+  "changes": [
+    "Six genuine diagnostic storage delegations precede irrelevant legacy production-readiness guards; generic backend predicates are unchanged",
+    "Native profile reader binds subject and one complete mandate row, rejects caller transport and propagates unknown reads",
+    "Lage admits only an open clock-bound own subject, missingOnly mode and real opaque finite-input token; legacy V3 gate remains",
+    "Native denied generation emits no ticketless usage; legacy skip telemetry remains and adapter failure-evidence/stop is reachable",
+    "Native budget reads consume genuine original U.read history with snapshot, own-claim, admission, target, mode and clock checks before and after",
+    "Original immutable history and existing usage/tenant calculations are retained; native errors deny and caller budget/day/subject/transport redirection is rejected"
+  ],
+  "writerFocusedChecks": [
+    {
+      "suite": "local-unit-diagnostic-storage-routing-test.js",
+      "groupsPassed": 16
+    },
+    {
+      "suite": "local-unit-diagnostic-lage-routing-test.js",
+      "groupsPassed": 13
+    },
+    {
+      "suite": "local-unit-diagnostic-budget-routing-test.js",
+      "groupsPassed": 32
+    },
+    {
+      "suite": "existing tenant budget assertions",
+      "assertionsPassed": 67
+    },
+    {
+      "suite": "local-unit-diagnostic-store-original-test.js",
+      "groupsPassed": 15
+    }
+  ],
+  "testsUseSyntheticVMAndEndpointBoundaries": true,
+  "testsAreNativeAdmissionEvidence": false,
+  "remaining": [
+    "Genuine complete native single-unit execution, atomic acknowledgements and closure remain unqualified on these bytes",
+    "Actual Unit60/Auth30 and common memory must be measured in a fresh once-only case",
+    "Own2 fixture tickets do not establish historical global-counter reservation or full500 financial equivalence",
+    "Full500 disk admission and all32 fresh start groups remain open; old GOs and claims remain consumed"
+  ],
+  "production": false,
+  "full500Accepted": false,
+  "executionAuthority": false,
+  "historicalAcceptanceTransferred": false,
+  "nativeLeaseAcceptanceTransferred": false,
+  "nativeUnit60Qualified": false,
+  "full500ReserveQualified": false,
+  "ramBenefitClaimed": false,
+  "requiresFreshIntegrationAcceptance": true
+}

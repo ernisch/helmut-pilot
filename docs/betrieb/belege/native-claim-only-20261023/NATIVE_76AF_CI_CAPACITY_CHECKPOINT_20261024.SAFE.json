@@ -1,0 +1,91 @@
+{
+  "schema": "helmut-native-ci-capacity-checkpoint/1",
+  "recordedOnUTC": "2026-10-24",
+  "sourceHead": "5516f3e23033f3a6179d4581d41c8317eacce128",
+  "ci": {
+    "run": 40066809993,
+    "url": "https://github.com/ernisch/helmut-pilot/actions/runs/40066809993",
+    "conclusion": "success",
+    "completedAtUTC": "2026-10-24T06:07:19Z"
+  },
+  "native": {
+    "case": "76af7337b7d60522c6d16e37a428a352",
+    "bundleHeadPrefix": "5f54179e",
+    "overallPass": false,
+    "cliExitCode": 1,
+    "naturalEOFs": 2,
+    "cliWallSeconds": 138.046509,
+    "stage": 6,
+    "terminal": "Interrupted",
+    "retryAllowed": false,
+    "controlsCompleted": 9,
+    "controlsRequired": 16,
+    "joinedBundleHTTPCalls": 18,
+    "adapterSeconds": 65.839926211,
+    "entrySecondsReported": 66.8565,
+    "genuineTracePrefixRetained": 9,
+    "complete19RecordClosure": false,
+    "nativeClockAnchor": "firstAuthority",
+    "authorityObservationSeconds": 6.202,
+    "canonicalFull500UnitEquivalent": false,
+    "clockAnchorChanged": false,
+    "unchangedWaitsMs": [
+      19900,
+      19900
+    ],
+    "writerIntervalsSeconds": {
+      "perform": 8.820701708,
+      "nestedRead": 3.424111,
+      "nestedWrite": 4.797508,
+      "notAdditive": true
+    },
+    "kernel": {
+      "samples": 107,
+      "peakBytes": 1349423104,
+      "allSixMemoryEventsZero": true,
+      "fullLastProcessExitCovered": true,
+      "groupEmpty": true
+    },
+    "originalFlagsAndLogicalStateUnchanged": true
+  },
+  "archiveRetirement": {
+    "pass": true,
+    "netAvailableBytes": 123183104,
+    "availableAfterUnlinkBeforeResultFileBytes": 10806091776,
+    "rootCheckpointAvailableBytes": 10806087680,
+    "componentFloorBytes": 10737418240,
+    "componentHeadroomAtCheckpointBytes": 68669440,
+    "fullAdmissionBytes": 15179779720,
+    "fullAdmissionGapAtCheckpointBytes": 4373692040,
+    "notFreshAdmission": true,
+    "recoveryIndexURL": "https://drive.google.com/file/d/1GVTjW-zDU9cz9JPsgNOu2d81MGEH7hW9/view",
+    "recoveryBasis": "Existing verified complete return c967 plus fresh metadata",
+    "freshRemoteSHAOrDecryptClaimed": false,
+    "privateKeyExported": false,
+    "originalsKeep": true
+  },
+  "evidencePins": [
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/76af7337b7d60522c6d16e37a428a352/RESULT.SAFE.json",
+      "bytes": 2159,
+      "sha256": "d88d773d3c6d5ab1cfaca933438caa14a137cf80d0559b6948e7860c8a727963"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/76af7337b7d60522c6d16e37a428a352/EXECUTION_HOST_CHILD_FAILURE_CLOSE_002.PRIVATE.json",
+      "bytes": 25815,
+      "sha256": "98ebfbf399e79bcf4d414cd9aeb59f6b5ea8396a1377af73c9a1070254f92c9d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/one-0ea8-clear-archive-retirement-prepared-20261024/ATTEMPT/RESULT.SAFE.json",
+      "bytes": 674,
+      "sha256": "890dd58467f99436a883b6baf97b8d116b62c88860fc0fabb66c7af268952250"
+    }
+  ],
+  "nextFunctions4TX": "PREP_ONLY_NOT_STARTED",
+  "unit60Qualified": false,
+  "auth30Qualified": false,
+  "plateauQualified": false,
+  "full500ReserveQualified": false,
+  "full500Qualified": false,
+  "production": false
+}

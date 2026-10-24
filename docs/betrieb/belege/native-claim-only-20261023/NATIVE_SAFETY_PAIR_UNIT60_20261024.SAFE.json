@@ -1,0 +1,191 @@
+{
+  "schema": "helmut-native-safety-pair-and-unit60-outcome/1",
+  "atUTC": "2026-10-24T03:30:47.614586+00:00",
+  "executedRootCommit": "603642aa2cad1e2389ebbfa26edecb3fd5e9ff76",
+  "status": "PARTIAL_NOT_500_READY",
+  "pr": "https://github.com/ernisch/helmut-pilot/pull/936",
+  "evidencePins": {
+    "lateMirror": {
+      "path": "/workspace/helmut-native-integration-checks-20261022/native-transaction-guard-V4-prepared-20261024/late-old-mirror/ROOT_ACTUAL_SUCCESS.SAFE.json",
+      "bytes": 2743,
+      "sha256": "514838c37bad717d0d64683078d9c5702f5faa8b4f1b9488181cf5a1be7820ef"
+    },
+    "lateOutside": {
+      "path": "/workspace/helmut-native-integration-checks-20261022/native-transaction-guard-V4-prepared-20261024/late-outside/ROOT_ACTUAL_SUCCESS.SAFE.json",
+      "bytes": 3060,
+      "sha256": "7b7ff2b9300a6fe4167596bfcac4da37b37f28daf2f0457cfa65df9215232d29"
+    },
+    "pair": {
+      "path": "/workspace/helmut-native-integration-checks-20261022/actual-native-receipt-pair-0ea8-20261024/SCALAR_COMPARISON.SAFE.json",
+      "bytes": 5325,
+      "sha256": "a0ca32b47a2d2652ad5ea21275b92fef48c19cf9bb290eb41800480765945525"
+    },
+    "fullUnit": {
+      "path": "/workspace/helmut-native-integration-checks-20261022/full-unit-7b2-first-failure-20261024/FIRST_FAILURE_REVIEW.PRIVATE.json",
+      "bytes": 62363,
+      "sha256": "92a10c48f10b0defd1a082b65af32d040aaa0b5b4d77c49cb179209727847dc0"
+    },
+    "offsite": {
+      "path": "/workspace/helmut-native-integration-checks-20261022/three-preserved-pg-offsite-prepared-20261024/ROOT_WORKFLOW_CLOSURE.SAFE.json",
+      "bytes": 8574,
+      "sha256": "10103d7e83630f9cbf44c4171ad42f3361378334dc216513a6cbbd978ba59da2"
+    }
+  },
+  "nativeNegativeRollbacks": [
+    {
+      "case": "e755d7783af9af4d578e8aed135afd2d",
+      "commonPeakBytes": 1170939904,
+      "independentChecksPassed": 44,
+      "fullLogicalRollbackElevenTablesAndCatalog": true,
+      "fullNativeHostAndKernelClose": true,
+      "noExternalACKAccepted": true,
+      "pass": true
+    },
+    {
+      "case": "b237dbe078a6e7ef02b2cfdeaa04c7a5",
+      "commonPeakBytes": 1131503616,
+      "independentChecksPassed": 63,
+      "fullLogicalRollbackElevenTablesAndCatalog": true,
+      "fullNativeHostAndKernelClose": true,
+      "noExternalACKAccepted": true,
+      "pass": true
+    }
+  ],
+  "pairedClaim": {
+    "oldCase": "699469bb77dde904a7d26035ef472ddd",
+    "newCase": "0ea8da6e34c183ce80352f7c95dd503e",
+    "metrics": {
+      "commitMS": {
+        "new": "2.985",
+        "old": "1.935"
+      },
+      "commonKernelPeakBytes": {
+        "increase": 34074624,
+        "new": 1252741120,
+        "old": 1218666496
+      },
+      "newSpanMS": {
+        "OwnCASWithCompleteReceiptAndDelta": "272.321",
+        "originalRootUsageChecks": "41.267"
+      },
+      "oldNonEquivalentSeparateSpansMS": {
+        "OwnCASAndReceipt": "180.876",
+        "sourceGraphAndOwnProjection": "228.161",
+        "standaloneCompareDelta": "191.764"
+      },
+      "psqlProcessMonotonicWallMS": {
+        "new": "549.184351",
+        "newMinusOld": "-356.552560",
+        "old": "905.736911",
+        "reductionPercent": "39.36601850600742493092456072"
+      },
+      "serviceDurationsMS": {
+        "new": {
+          "accept-end": "1.697328",
+          "prepare-end": "26.140534",
+          "psql-end": "549.184351"
+        },
+        "old": {
+          "accept-end": "4.863879",
+          "prepare-end": "29.766788",
+          "psql-end": "905.736911"
+        }
+      },
+      "topLevelOriginalDOms": {
+        "new": "234.386",
+        "old": "655.457"
+      },
+      "topLevelOriginalPlusOwnDisjointDOms": {
+        "new": "508.921",
+        "old": "838.338"
+      },
+      "topLevelOwnDOms": {
+        "new": "274.535",
+        "old": "182.881"
+      }
+    },
+    "comparisonRules": [
+      "Primary comparable metric is entire STATE PSQL-process monotonic wall interval, including logging/notices/COMMIT/process close. This is not exclusiveCPU time.",
+      "Old standalone CompareDelta and OwnCAS spans have different responsibilities from new OwnCAS-with-receipt-and-complete-delta; no direct isolated-OwnCAS improvement claim.",
+      "The two top-level DO statements are disjoint and may be aggregated. Nested spans are never subtracted from or added to their enclosing DO/PSQL intervals.",
+      "One observed old/new case each, with actual identical inputs/settings/method but different elapsed run times/fresh identities/code. Shared-cache state and scheduling were not controlled; no repeatability or500-profile latency guarantee."
+    ],
+    "memorySavingClaimed": false,
+    "full500WriterUnchanged": true
+  },
+  "fullSingleUnit": {
+    "case": "/workspace/helmut-unit-diagnostic-native/7b2aee01414d211db7c8ae078c6831ba",
+    "pass": false,
+    "firstProvedFailure": "native-execution-controller-entry-terminal-deadline",
+    "adapterElapsedMS": 70524.240716,
+    "controlsCompleted": 9,
+    "controlsRequired": 16,
+    "confirmedFinalPositionReceipts": 0,
+    "expectedFinalPositions": 3,
+    "finalACKObserved": false,
+    "sourceWritesCommittedAndACKed": 10,
+    "kernel": {
+      "containerClosureIsNotSuccessfulMotorAcceptance": true,
+      "failedChildren": [
+        {
+          "exitCode": 137,
+          "registeredHostPID": 526251,
+          "stderrNaturalEOF": true,
+          "stdoutNaturalEOF": true
+        },
+        {
+          "exitCode": 137,
+          "registeredHostPID": 528224,
+          "stderrNaturalEOF": true,
+          "stdoutNaturalEOF": true
+        }
+      ],
+      "fullLastProcessExitCovered": true,
+      "hostClean": false,
+      "hostState": "ENTRY",
+      "memoryEvents": {
+        "high": 0,
+        "low": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_group_kill": 0,
+        "oom_kill": 0
+      },
+      "memoryPeakBytes": 1348653056,
+      "samples": 109,
+      "terminalGroupEmpty": true
+    },
+    "unit60Qualified": false,
+    "auth30Qualified": false,
+    "commonPeakArithmeticHeadroomBytes": 699346944,
+    "successfulReserveProof": false,
+    "noOOMDoesNotPromoteFailedRun": true
+  },
+  "ci": {
+    "commit": "603642aa2cad1e2389ebbfa26edecb3fd5e9ff76",
+    "runId": 40051723434,
+    "conclusion": "success",
+    "privateOriginalCount": 84
+  },
+  "capacity": {
+    "closedThreePGOffloadsVerified": true,
+    "netWholeOffloadPhaseBytes": 1064271872,
+    "netCryptoToRetirementBytes": 1457221632,
+    "allProtectedOriginalsAndMetadataKept": true,
+    "full500AdmissionBytes": 15179779720,
+    "currentCapacityMustBeRechecked": true
+  },
+  "next": "Reduce measured repeated read/verification work without relaxing clocks, all16 fresh controls, original checks, CAS/ACKs or latency contract; qualify changed code before any new single-unit attempt.",
+  "limits": {
+    "full500Started": false,
+    "full500Accepted": false,
+    "full500ReserveQualified": false,
+    "stableMemoryPlateauProved": false,
+    "all32FreshStartConditionsProved": false,
+    "freshConcreteFull500GO": false,
+    "oldRightsReusable": false,
+    "productionActions": 0,
+    "merges": 0,
+    "paidProviderCalls": 0
+  }
+}

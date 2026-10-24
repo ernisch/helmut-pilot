@@ -1,0 +1,83 @@
+{
+  "schema": "helmut-v12-current-source-expectations-refresh/1",
+  "previousManifestSHA256": "829b5525907b6020895149823ab00a5122fffb5060ed957f8e7a94525cdac044",
+  "previousManifestArchive": "docs/betrieb/belege/v12-native-unit-integration-20261022/PREVIOUS_RELEASE_MANIFEST.SAFE.json",
+  "previousManifestBytes": 16066,
+  "changedFiles": [
+    {
+      "previous": {
+        "path": "lib/helmut/lage-textqualitaet.js",
+        "bytes": 24877,
+        "sha256": "2470bc52a18f4222b4efb76283ca47893b423f87d76acee206ca4f33352d13db"
+      },
+      "current": {
+        "path": "lib/helmut/lage-textqualitaet.js",
+        "bytes": 25256,
+        "sha256": "99cecc57f7a5eb6a0e3e531eb2037d38a3f2064c3d642988458c7f0b7ae3ee68"
+      }
+    },
+    {
+      "previous": {
+        "path": "lib/helmut/storage.js",
+        "bytes": 546974,
+        "sha256": "f5cc228b744fcdd9fb398b277465c72cd9d4aa3ee746618bfd4f1c3ce53a363f"
+      },
+      "current": {
+        "path": "lib/helmut/storage.js",
+        "bytes": 551810,
+        "sha256": "e0c3d63cabc6973ca3d26e3edaef254c843a21a4346deca3abfa061182e168ee"
+      }
+    },
+    {
+      "previous": {
+        "path": "lib/helmut/synthetik-500-direct-d-store.js",
+        "bytes": 4521,
+        "sha256": "d3c5064366bc2fd9a686034300d91ddf0165f5d733139f2072dd7275c5cac683"
+      },
+      "current": {
+        "path": "lib/helmut/synthetik-500-direct-d-store.js",
+        "bytes": 4989,
+        "sha256": "345d93664ea1e7741950def005ce3dcfda8927bf72cb5db44439ed1356fdd8e5"
+      }
+    },
+    {
+      "previous": {
+        "path": "lib/helmut/synthetik-500-local-calendar.js",
+        "bytes": 5976,
+        "sha256": "1f56a674a0e2c7ff986dddb58c331e3db70850124bed66fdd081a6b38bcf8c98"
+      },
+      "current": {
+        "path": "lib/helmut/synthetik-500-local-calendar.js",
+        "bytes": 8133,
+        "sha256": "621c5b828f6ccd8954c6e2d458fe8280715ba3ec9e377381b906eb755777cc70"
+      }
+    },
+    {
+      "previous": {
+        "path": "lib/helmut/synthetik-500-review-receipt.js",
+        "bytes": 10120,
+        "sha256": "5384250ee73b42cccf595b780a1e4cbc50910a1c4b1717f2fa55486f20b3cfc3"
+      },
+      "current": {
+        "path": "lib/helmut/synthetik-500-review-receipt.js",
+        "bytes": 11234,
+        "sha256": "7a38e10f59efa65042e893a0deac2463515e28d69d677d66f06d233e589f1e11"
+      }
+    },
+    {
+      "previous": {
+        "path": "lib/helmut/testkosten-budget.js",
+        "bytes": 32969,
+        "sha256": "9f36d5379ae9c94140cae9e2cf97c12dd91ae6efe9431ca4f16746b9efa5da2e"
+      },
+      "current": {
+        "path": "lib/helmut/testkosten-budget.js",
+        "bytes": 33827,
+        "sha256": "dfbbfd1401fa2187549af73b203c4e8c360b9535b77c425c3c015a9751337ad4"
+      }
+    }
+  ],
+  "currentCandidateFull500Qualification": false,
+  "executionAuthority": false,
+  "historicalEvidencePreserved": true
+}

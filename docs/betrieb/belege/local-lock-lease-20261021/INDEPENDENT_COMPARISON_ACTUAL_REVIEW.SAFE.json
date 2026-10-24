@@ -1,0 +1,68 @@
+{
+  "schema": "helmut-local-lock-comparison-independent-actual-review/1",
+  "atUTC": "2026-10-21T20:16:33.835015+00:00",
+  "reviewer": "/root/v12_ram_close_audit",
+  "pass": true,
+  "comparisonSHA256": "4bb5ec7e254284f499ecb7d9dd3930582781385ee0c811c503177ec1f0aae7ee",
+  "all32ProofPinsVerified": true,
+  "all284SourcePinsAcrossAllArmsIdenticalAndUnchangedAtReview": true,
+  "allFourGroupsFreshEmptyAndEventsZero": true,
+  "all8NodeExitsAnd4PostgresExitsZero": true,
+  "allPostgresLogsEOF": true,
+  "logicalHistoryAnd4HistoricalLocksUnchanged": true,
+  "all8NativeDataWithoutRevisionSHA256": [
+    "b996084738a72e36a4edfececf66c1027bebf3148a93ed84c42295e025aaef93",
+    "b996084738a72e36a4edfececf66c1027bebf3148a93ed84c42295e025aaef93",
+    "b996084738a72e36a4edfececf66c1027bebf3148a93ed84c42295e025aaef93",
+    "b996084738a72e36a4edfececf66c1027bebf3148a93ed84c42295e025aaef93",
+    "b996084738a72e36a4edfececf66c1027bebf3148a93ed84c42295e025aaef93",
+    "b996084738a72e36a4edfececf66c1027bebf3148a93ed84c42295e025aaef93",
+    "b996084738a72e36a4edfececf66c1027bebf3148a93ed84c42295e025aaef93",
+    "b996084738a72e36a4edfececf66c1027bebf3148a93ed84c42295e025aaef93"
+  ],
+  "meansIndependentlyConfirmed": {
+    "old": {
+      "peakBytes": 611895296,
+      "CPUThroughLastExitMicroseconds": 25088538,
+      "closureSeconds": 26.269917489000363,
+      "cycleMedianMS": 1658.6000665000004,
+      "walInsertWindowBytes": 222352,
+      "graphRelationGrowthBytes": 45056
+    },
+    "new": {
+      "peakBytes": 536227840,
+      "CPUThroughLastExitMicroseconds": 13455970,
+      "closureSeconds": 15.612848823002423,
+      "cycleMedianMS": 22.07737499999996,
+      "walInsertWindowBytes": 58732,
+      "graphRelationGrowthBytes": 0
+    }
+  },
+  "pairsIndependentlyConfirmed": [
+    {
+      "old": "01-old",
+      "new": "02-new",
+      "peakReductionBytes": 73453568
+    },
+    {
+      "old": "04-old",
+      "new": "03-new",
+      "peakReductionBytes": 77881344
+    }
+  ],
+  "directNativeSQLOnly": true,
+  "reviewerExecutedNothing": true,
+  "production": false,
+  "full500Accepted": false,
+  "executionAuthority": false,
+  "memoryReserveProven": false,
+  "limits": [
+    "Same evolving persistent working COPY; old writes preserve logical root but leave archival nodes/revisions/WAL",
+    "Filecache may remain charged to retained earlier cgroups; no cold cache/whole file-charge claim",
+    "Same-current samples are approximate observations; shmem is included in file, kernel subfields not added",
+    "WAL insert-LSN window ends before PostgreSQL shutdown; relation sizes do not count archive nodes",
+    "Direct native SQL transport, not HTTP/full-motor equivalent",
+    "Six cycles per arm cannot establish a long-running memory plateau",
+    "No adding savings from distinct components or separate component peaks"
+  ]
+}

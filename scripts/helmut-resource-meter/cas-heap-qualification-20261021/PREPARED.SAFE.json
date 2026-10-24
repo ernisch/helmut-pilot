@@ -1,0 +1,55 @@
+{
+  "actualResults": null,
+  "custody": "Released read-only to Root; no automatic execution; V1 remains KEEP/unexecuted.",
+  "execution": {
+    "authorImportedWorker": false,
+    "authorRanAST": false,
+    "authorRanNativeSQLDockerOrResources": false,
+    "authorRanTests": false,
+    "rootCommand": "python -I -S -B run_pure_validator_guards.py <final frozen worker.py> through repository lokal adapter",
+    "successContract": {
+      "exitCode": 0,
+      "lastStdoutJSON": {
+        "checks": "positive integer",
+        "pass": true
+      }
+    }
+  },
+  "nativeOIDSourceBindingPin": {
+    "bytes": 1094,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/JSON_SOURCE_BINDING.SAFE.json",
+    "sha256": "dc72276991585ea1fefe0d110bc18f3b34a1edbb0c4a82f20f51f0b5dc18082b"
+  },
+  "parentPreparedPin": {
+    "bytes": 2971,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/guard-preparation/PREPARED.SAFE.json",
+    "sha256": "865b05930126b9fd8c4234bd58fcd4e72e098981951830db68694b8b77f49827"
+  },
+  "readmePin": {
+    "bytes": 2613,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/guard-preparation-v2/README.md",
+    "sha256": "4a4aa8b1332c487a998b208a2a7794221312e1a9b3b225ba524fd86387bb6e59"
+  },
+  "schema": "helmut-cas-heap-pure-guard-preparation/2",
+  "scriptPin": {
+    "bytes": 24090,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/guard-preparation-v2/run_pure_validator_guards.py",
+    "sha256": "323a3c78953f336c778da4a8e4e1603679cb907de597f3b0d18ee992db1a60cd"
+  },
+  "sourceBindingPin": {
+    "bytes": 3489,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/guard-preparation-v2/SOURCE_BINDING.SAFE.json",
+    "sha256": "6fcc6617e067580bd12b2d9a78b70c47217bf6ac23e27908f89aa1342f069356"
+  },
+  "sourceDeltaPin": {
+    "bytes": 1366,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/guard-preparation-v2/SOURCE_DELTA.SAFE.json",
+    "sha256": "e144ff4d2dd7d03b9269f2d182a2449e3e1485c5ef770b05f4a43b316f3b95bb"
+  },
+  "status": "PREPARED_SOURCE_ONLY_UNEXECUTED",
+  "workerPin": {
+    "bytes": 74377,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/worker.py",
+    "sha256": "9dfd5164fc4c95c56c8c60f29a959965e2c333d7b407173b98445b011df9d1d0"
+  }
+}

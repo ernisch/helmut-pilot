@@ -1,0 +1,98 @@
+{
+  "atUTC": "2026-10-21T10:27:27.758043+00:00",
+  "authorActions": {
+    "DockerProcNativeSQLTestsAST": false,
+    "archiveCompressionComparisonOrReconstructionExecuted": false,
+    "deletionsOrSourceEdits": false,
+    "newCandidateInventory": false,
+    "payloadOrOriginalRehash": false,
+    "writes": "Only new file-charge-20261021/capacity-review/DELTA_ARCHIVE_FEASIBILITY.SAFE.json"
+  },
+  "decision": "NO within the authorizedcandidate lists: retain0B additionalqualifiedreclaim and the currentfulladmissiongap. Obtain an exact boundedcandidate from Root only if one is already known; no generalcleanupsearch, archivalexecution or deletion follows.",
+  "excludedWithoutReinspection": [
+    {
+      "reason": "Root read existing doc106+ and confirmed all5 alreadyretired8555files. This reviewer did not rescan, rehash or re-open their copies.",
+      "targetClass": "control-inflate20261021 five copies"
+    },
+    {
+      "reason": "Not present in authorizedcandidate lists; Root noted small~2x40MB insufficient. No inventory or size/closure claim was manufactured.",
+      "targetClass": "Q two synthetic layout databases"
+    },
+    {
+      "reason": "Always KEEP; no original may be replaced, discarded or selected as a capacity target.",
+      "targetClass": "originalbank/canonical827a/V11/knownStage3/archives/616files/Git/otheroldresources"
+    }
+  ],
+  "inputPins": [
+    {
+      "bytes": 5860,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/capacity-review/POSTPASS_CAPACITY_ALTERNATIVES.SAFE.json",
+      "sha256": "2fffdcd3a4a9588e99abad3e3410e3d0a095429381df4c18f82700179197636b"
+    },
+    {
+      "bytes": 7268,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/capacity-review/READONLY_CAPACITY_RETENTION_PLAN.SAFE.json",
+      "sha256": "a3fab0223fa1ad3b454905c4b4059f3db43240dd1f62a11e2f22ecb2f0bb35f8"
+    },
+    {
+      "bytes": 31962,
+      "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/controlled-local-cleanup-20261020.md",
+      "sha256": "1e7651b100b4f9df1344641fddf5b4493ae92303f405712f1ebcf712e1f15aa0"
+    }
+  ],
+  "listFindings": [
+    {
+      "limitations": "Those sources/provenance/evidence and hulls remain protected; none is a qualified discard or new archive target, and these amounts cannot close220MB.",
+      "listedCandidates": "Two private preparation trees totaling1404928B gross upperbound plus two conditional small priorholder hulls; no surviving PGDATA candidate.",
+      "sourcePin": {
+        "bytes": 5860,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/capacity-review/POSTPASS_CAPACITY_ALTERNATIVES.SAFE.json",
+        "sha256": "2fffdcd3a4a9588e99abad3e3410e3d0a095429381df4c18f82700179197636b"
+      }
+    },
+    {
+      "futurePhysical8Policy": "Two fresh physical8 derivatives were preclassified in policy, not identified here as remaining archive candidates. Root subsequently completed their exact retirement; no status was freshly inferred by scanning.",
+      "listedPriorPGDATA": "stability-6c5de4967c25879d40ef74d5 and stability-9554f8879915b2483999e354 are explicitly alreadyabsent according to accepted priorEND.",
+      "noAdditionalTargets": "No named surviving NEW8/NEW30INCONCLUSIVE PGDATA is supplied by this list.",
+      "sourcePin": {
+        "bytes": 7268,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/capacity-review/READONLY_CAPACITY_RETENTION_PLAN.SAFE.json",
+        "sha256": "a3fab0223fa1ad3b454905c4b4059f3db43240dd1f62a11e2f22ecb2f0bb35f8"
+      }
+    }
+  ],
+  "qualifiedPrecedentOnly": {
+    "FAILHandling": "V8failed status remainsFAIL while allstate was retained recoverably. Lossless archiving is a retention representation, not a discard or conversion ofFAIL/UNKNOWN toPASS.",
+    "deltaArchives": "FiveV5+threeV6/V7+nineV8/V9 losslessdelta archives reference permanentlyprotectedcanonical827a;17permanent dependencies remain. Allchanged bytes and targetmetadata retained, two independentfullcomparisons precede retirement.",
+    "documentLines": "controlled-local-cleanup-20261020.md211\u2013295",
+    "fullArchives": "Four completed probes had fullgzip archives, independent Python andGNUtar fullcomparisons before exact retirements.",
+    "toolReuseDecision": "The provenmethod class may support a future freshlybound derivative target; old actors/adoptions/checks cannot be replayed. Exactparentarchive/reconstruction/comparison contracts and targetcompatibility are not qualified in this no-candidate assessment; Root owns their focusedsource review."
+  },
+  "requiredBeforeAnyFutureAction": [
+    "An exact remaining derivedcopy path and truthful provenance/closure/allocation from an acceptedexistingplan or a separately authorizedboundedqualification.",
+    "Freshclosedstate/dependency/use/mountbinding proof. FAIL/UNKNOWN status and allrawmeasurements/mountmetadata stayretained; no necessary state becomesunrecoverable.",
+    "Fresh archive plan/bytebudget and exclusive output; exact canonical dependency827a remainspermanent. No original payload is read here or replaced.",
+    "Complete reconstruction of alltargetdatabase bytes and necessary filesystemmetadata, two independent actual fullcomparisons against the uncompressedtarget, independently accepted outputs.",
+    "Only then fresh specificRootreview/adoption/nonceTTL/once for that ownuncompressedcopy. Unknown/interrupted outcome stopsKEEP; no automaticretry/oldactorreplay.",
+    "Recompute actual netdisk capacity afterarchive/proof/reconstruction costs. No220MB recovery or fulladmission is credited before actual qualification."
+  ],
+  "rootResumePin": {
+    "bytes": 2057,
+    "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/ROOT_RESUME_PROTECTION.SAFE.json",
+    "sha256": "c55bcce0b5281e738c317246eb8061d9e6b9988a13854ea10f866abfe214ddc0"
+  },
+  "schema": "helmut-file-charge-narrow-lossless-delta-retention-feasibility/1",
+  "scope": "One closed derived PGDATA candidate only if identified in the existing retention-plan/POSTPASS alternatives. No expanded case/resource inventory.",
+  "selection": {
+    "additionalQualifiedRecoveryBytes": 0,
+    "allocatedBytes": null,
+    "currentClosedState": null,
+    "gapIsSnapshotNotReservation": true,
+    "path": null,
+    "provenance": null,
+    "reason": "Neither authorized candidate list names a remaining uncompressed closed derived PGDATA. No invented path/state or fresh scan was used.",
+    "rootResumeDiskGapBytes": 220282504,
+    "selectedCandidate": null
+  },
+  "status": "NO_EXACT_REMAINING_PGDATA_CANDIDATE_IN_AUTHORIZED_LISTS"
+}

@@ -1,0 +1,9 @@
+{
+  "version": "helmut-s500-stored-command-native-pins/1",
+  "nativeSources": {
+    "helmut_s500_command_immutable_row_v1": "eca91f5d879cc5e0811370f769aa98bf7dfbaba8941a6bf14644f22913fb1826",
+    "helmut_s500_command_no_truncate_v1": "e911523512516397afab7b79b8393fe662e13abd89bedf14847efcf84be9e0f2",
+    "helmut_s500_read_command_binding_v1": "e690c13a70c791e1fc07ee7fe532b646ecb1da1f863f8d14dfbc9d1303865641"
+  },
+  "proposalSHA256": "29c1ef679f3d887a7888a508d466b1e696733e352262a8f8278add1aa2184a3c"
+}

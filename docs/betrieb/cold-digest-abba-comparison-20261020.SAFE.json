@@ -1,0 +1,185 @@
+{
+  "schema": "helmut-cold-digest-abba-common-ram-comparison/1",
+  "status": "FOUR_VALID_CASES_NO_RELIABLE_COMMON_RAM_SAVING",
+  "rows": [
+    {
+      "label": "OLD1",
+      "case": "digest-ed63e083f528a38a1acf58aa",
+      "variant": "OLD",
+      "kernelLifetimePeakBytes": 780918784,
+      "kernelEndAnonBytes": 0,
+      "kernelEndFileBytes": 371466240,
+      "cpuUsec": 15551501,
+      "totalWallSeconds": 16.753406224001083,
+      "targetWallMS": 237.547,
+      "tempBytes": 6212035,
+      "tempFiles": 1,
+      "semanticDigest": "cbfbe4dbb806e0a4508d6bc5fe825e5b81258b294ef212ebf1f952637c21d10d",
+      "graphSHA256": "82dec36da3c68620bb270253cf6a7ca1ed152fe519828ea56fec4e7d51c733d2",
+      "dataSHA256": "71add7faac1eb28bdc151285cf00593ac886a904c029518dcbb8cca3b83ffd03",
+      "proofSHA256": "dbb143e090bb3ce246bcd662a1b6eea75c6494ac01f6970ae6daba5587d91750",
+      "stateSHA256": "6598ea9bcc6349e737a99f63c04bed27d2f3a4f8bacf3a6ffdfe046c0f8c67fd",
+      "resultTextBytes": 6662644,
+      "resultNativeBytes": 6197762,
+      "resultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-ed63e083f528a38a1acf58aa/ACTUAL_RESULT.SAFE.json",
+        "bytes": 6477,
+        "sha256": "73e9827abd07d33aa75f9134f16c9320d23bb277dea024a06713242a93ec5e7e"
+      },
+      "measurementPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-ed63e083f528a38a1acf58aa/COLD_RAM.SAFE.json",
+        "bytes": 3615,
+        "sha256": "49613c1f70bd1b5b637e7c2c79315eaea6f22fb648e65f1f33ad81e82f0a61c8"
+      },
+      "workerPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-ed63e083f528a38a1acf58aa/WORKER_RESULT.SAFE.json",
+        "bytes": 2391,
+        "sha256": "26e9cccaca801c81fb65d6208b5b466de5edb5a2105f3601eb584743422e0384"
+      }
+    },
+    {
+      "label": "NEW1",
+      "case": "digest-4682602730b5cb53f0ce7b86",
+      "variant": "NEW",
+      "kernelLifetimePeakBytes": 781803520,
+      "kernelEndAnonBytes": 0,
+      "kernelEndFileBytes": 371253248,
+      "cpuUsec": 16312313,
+      "totalWallSeconds": 17.751676633997704,
+      "targetWallMS": 254.824,
+      "tempBytes": 0,
+      "tempFiles": 0,
+      "semanticDigest": "cbfbe4dbb806e0a4508d6bc5fe825e5b81258b294ef212ebf1f952637c21d10d",
+      "graphSHA256": "82dec36da3c68620bb270253cf6a7ca1ed152fe519828ea56fec4e7d51c733d2",
+      "dataSHA256": "71add7faac1eb28bdc151285cf00593ac886a904c029518dcbb8cca3b83ffd03",
+      "proofSHA256": "dbb143e090bb3ce246bcd662a1b6eea75c6494ac01f6970ae6daba5587d91750",
+      "stateSHA256": "6598ea9bcc6349e737a99f63c04bed27d2f3a4f8bacf3a6ffdfe046c0f8c67fd",
+      "resultTextBytes": 6662644,
+      "resultNativeBytes": 6197762,
+      "resultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-4682602730b5cb53f0ce7b86/ACTUAL_RESULT.SAFE.json",
+        "bytes": 6472,
+        "sha256": "1ddb1223e0de2928dcb5b17c14731d3c2b6e8b144f7f18feccb8d81dd826dba5"
+      },
+      "measurementPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-4682602730b5cb53f0ce7b86/COLD_RAM.SAFE.json",
+        "bytes": 3608,
+        "sha256": "f7b34533634faeb2faa0c15aaaa9e453279465283d812a90d93781a23f915221"
+      },
+      "workerPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-4682602730b5cb53f0ce7b86/WORKER_RESULT.SAFE.json",
+        "bytes": 2390,
+        "sha256": "a9222876518748b55dffcd7c7e1315264d7a743fc825e58c968b653756627da7"
+      }
+    },
+    {
+      "label": "NEW2",
+      "case": "digest-739a92b8b769a80efd820f14",
+      "variant": "NEW",
+      "kernelLifetimePeakBytes": 781750272,
+      "kernelEndAnonBytes": 0,
+      "kernelEndFileBytes": 371642368,
+      "cpuUsec": 16883562,
+      "totalWallSeconds": 18.50459379699896,
+      "targetWallMS": 260.734,
+      "tempBytes": 0,
+      "tempFiles": 0,
+      "semanticDigest": "cbfbe4dbb806e0a4508d6bc5fe825e5b81258b294ef212ebf1f952637c21d10d",
+      "graphSHA256": "82dec36da3c68620bb270253cf6a7ca1ed152fe519828ea56fec4e7d51c733d2",
+      "dataSHA256": "71add7faac1eb28bdc151285cf00593ac886a904c029518dcbb8cca3b83ffd03",
+      "proofSHA256": "dbb143e090bb3ce246bcd662a1b6eea75c6494ac01f6970ae6daba5587d91750",
+      "stateSHA256": "6598ea9bcc6349e737a99f63c04bed27d2f3a4f8bacf3a6ffdfe046c0f8c67fd",
+      "resultTextBytes": 6662644,
+      "resultNativeBytes": 6197762,
+      "resultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-739a92b8b769a80efd820f14/ACTUAL_RESULT.SAFE.json",
+        "bytes": 6467,
+        "sha256": "2abcf27f9ce15703ad506eeb211775907fd1a206d4b93bc997e210e3c1f9ae50"
+      },
+      "measurementPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-739a92b8b769a80efd820f14/COLD_RAM.SAFE.json",
+        "bytes": 3609,
+        "sha256": "09ce0930a3b6be4d34a5d89984a9c05f986774d33ee349dd55381443c7be814d"
+      },
+      "workerPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-739a92b8b769a80efd820f14/WORKER_RESULT.SAFE.json",
+        "bytes": 2391,
+        "sha256": "03c5dbdeb5792dce4e844994cd78c29b29264703519204aa32761762cfd04ea9"
+      }
+    },
+    {
+      "label": "OLD2",
+      "case": "digest-6517e47c8e1299322ad72247",
+      "variant": "OLD",
+      "kernelLifetimePeakBytes": 781455360,
+      "kernelEndAnonBytes": 0,
+      "kernelEndFileBytes": 371970048,
+      "cpuUsec": 16487498,
+      "totalWallSeconds": 18.2460488910001,
+      "targetWallMS": 276.238,
+      "tempBytes": 6212035,
+      "tempFiles": 1,
+      "semanticDigest": "cbfbe4dbb806e0a4508d6bc5fe825e5b81258b294ef212ebf1f952637c21d10d",
+      "graphSHA256": "82dec36da3c68620bb270253cf6a7ca1ed152fe519828ea56fec4e7d51c733d2",
+      "dataSHA256": "71add7faac1eb28bdc151285cf00593ac886a904c029518dcbb8cca3b83ffd03",
+      "proofSHA256": "dbb143e090bb3ce246bcd662a1b6eea75c6494ac01f6970ae6daba5587d91750",
+      "stateSHA256": "6598ea9bcc6349e737a99f63c04bed27d2f3a4f8bacf3a6ffdfe046c0f8c67fd",
+      "resultTextBytes": 6662644,
+      "resultNativeBytes": 6197762,
+      "resultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-6517e47c8e1299322ad72247/ACTUAL_RESULT.SAFE.json",
+        "bytes": 6466,
+        "sha256": "50c70c5a20cb4f16056fee198a70c5aed98019cbd6b790eb7256b8aef6c651c7"
+      },
+      "measurementPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-6517e47c8e1299322ad72247/COLD_RAM.SAFE.json",
+        "bytes": 3615,
+        "sha256": "c8aa6ad56a58b9b577e67e988f2ea910cf3c266a240fc44be3b8aa8f1db0e8bc"
+      },
+      "workerPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-6517e47c8e1299322ad72247/WORKER_RESULT.SAFE.json",
+        "bytes": 2390,
+        "sha256": "7a288d05c726eec09da3d94c09c65e49381a97352859f844f7fcf92503ddd930"
+      }
+    }
+  ],
+  "order": "OLD_NEW_NEW_OLD",
+  "native19ResultPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/ACTUAL_RESULT.SAFE.json",
+    "bytes": 17076,
+    "sha256": "e8c449e70c009f328ed90bc4348143b40e019013035c1e00b6a29470061ed1c3"
+  },
+  "preparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cold-digest-comparison-launcher/PREPARED.SAFE.json",
+    "bytes": 19359,
+    "sha256": "8f9081e8b1e4c32b329c191c15f1c98f87f36a0a761825a746c432231264100c"
+  },
+  "sameSourceSameSharedObserverSameSetupVerified": true,
+  "completeWholeResponseEqualityEstablishedSeparatelyByNative19": true,
+  "componentSemanticDigestsEqual": true,
+  "noColdOSCacheClaim": true,
+  "commonLifetimeSavingProved": false,
+  "oldPeakRangeBytes": [
+    780918784,
+    781455360
+  ],
+  "newPeakRangeBytes": [
+    781750272,
+    781803520
+  ],
+  "newMinusOldFirstPairBytes": 884736,
+  "newMinusOldCounterPairBytes": 294912,
+  "noTempFilesInBothNewCases": true,
+  "allProcessesClosedAllSourcesUnchangedAllMemoryEventsZero": true,
+  "naturalGCOnly": true,
+  "cacheCleared": false,
+  "kernelPeaksReset": false,
+  "plateauProved": false,
+  "full500ReserveProved": false,
+  "full500": false,
+  "production": false,
+  "availableDiskBytes": 13711437824,
+  "fullAdmissionThresholdBytes": 15179779720,
+  "currentDiskShortfallBytes": 1468341896,
+  "observedAtUTC": "2026-10-20T17:55:51.313897+00:00"
+}

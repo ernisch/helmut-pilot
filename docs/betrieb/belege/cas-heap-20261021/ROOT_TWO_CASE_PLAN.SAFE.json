@@ -1,0 +1,27 @@
+{
+  "schema": "helmut-cas-heap-two-case-plan/1",
+  "intentPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_MEASUREMENT_INTENT.SAFE.json",
+    "bytes": 8774,
+    "sha256": "34f71d2eaad42706bfabc713ab34b8be6f011ecc7a24d5e0ce7da6c1d4579aa0"
+  },
+  "cases": [
+    {
+      "index": 0,
+      "case": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-68bb54a5d546f714223e7bc9",
+      "measurementMode": "lifecycle-only",
+      "variant": "NONE",
+      "authRPCs": 0
+    },
+    {
+      "index": 1,
+      "case": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042",
+      "measurementMode": "cas-heap",
+      "variant": "CURRENT",
+      "authRPCs": 27
+    }
+  ],
+  "noAutomaticStartOrSequence": true,
+  "full500": false,
+  "production": false
+}

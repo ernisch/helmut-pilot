@@ -6,6 +6,11 @@ const B = require("../lib/helmut/briefing-speicher");
 const K = require("../lib/helmut/briefing-profilkontext");
 const Q = require("../lib/helmut/lage-quellenbeleg");
 const S = require("../lib/helmut/storage");
+const inactiveStoreDependency = () => {
+  const store = require("../lib/helmut/local-unit-diagnostic-store");
+  assert.equal(store.active(), false, "This reader fixture requires the real diagnostic store to be inactive");
+  return store;
+};
 const clone = structuredClone;
 const { fixture, profile, day, now, briefing } = require("./fixtures/profilhash-integration");
 let count = 0;
@@ -150,6 +155,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     const start = src.indexOf("async function getRenderedBriefingV3("), end = src.indexOf("\n// GEBUENDELTER", start);
     assert(start > 0 && end > start);
     const getter = vm.runInNewContext(src.slice(start, end) + "\ngetRenderedBriefingV3", {
+      localUnitStore: inactiveStoreDependency,
       v3StoreReady: () => true, assertTenant: S.assertTenant, assertTenantRows: (rows, op, uid) => assert(rows.every(r => r.user_id === uid)),
       tenantRequest: async (url, uid) => { query = url; assert.equal(uid, profile.id); return [clone(f.rows.get(f.key))]; },
       require: name => { assert.equal(name, "./briefing-profilkontext"); return K; }

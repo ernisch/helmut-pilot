@@ -1,0 +1,166 @@
+{
+  "AST": 0,
+  "DockerOrProcessInspection": 0,
+  "SQL": 0,
+  "acceptedSourceFindings": [
+    "All original body expressions/order/returns remain except the reviewed bounded observer insertions; original native guard and renderer_chunks clearing remain in place.",
+    "SECURITY INVOKER,volatility,search_path,owner/public ACL/ABI signatures remain; CREATE OR REPLACE only two pre-existing functions.",
+    "CAS binds natural assignedXID/PID/expected+new revisions/rawGUCs/roles and rejects exact projection-on. No manufactured OFF/NULL; no new Auth request or ACK/body return.",
+    "Only two scalar aggregate snapshots around text/join/chunk release/validation/JSONB cast. Exactly13/19 fields; bounded2048B per LOG, all records parsed/limited by L after EOF.",
+    "ACL before/selected/restore descriptor includes exact clone/database/logging/object/role/membership data, raw ACL NULL/order and ordinal expanded grantor/grantee/options.",
+    "Prepare compares exact qualified persisted before state; missing+NULL fails before grants. Grant targets are fixed two observer privileges only, never WITH GRANT OPTION.",
+    "Selected guard permits only exact minimal owner ACE additions with no grant option and otherwise identical metadata. Restore accepts original/that exact selected state, revokes only new missing-before bits, then requires complete original state equality before COMMIT."
+  ],
+  "additionalIntegrationRequirements": [
+    "Before descriptor must be fully persisted and hash-bound before PREPARE can be invoked; passing a reconstructed guessed state is forbidden.",
+    "Finally restore must run exactly once after attempted preparation on success or error, while the owned DB remains available, before final catalog/strict stop. Unknown restoration blocks acceptance and preserves evidence.",
+    "L must qualify minimal selected raw state and restore raw state against persisted receipts, strict13/19 key/type/binder/byte/count matching against unchanged four accepted driver CAS calls.",
+    "Startup terse+fatal must be checked in actual readiness and same-CAS logs; all source/native/count/capture/history6000/shutdown guards remain in final actor."
+  ],
+  "fiveSharedDescriptorBlocksIdentical": true,
+  "full500": false,
+  "fullTwoFunctionDiffIndependentlyReconstructed": true,
+  "functionBodies": [
+    {
+      "afterBytes": 19784,
+      "afterSHA256": "4012154c41cc8b34a38d806e5f4c0741332467192363ec1c1df7b2692dc84252",
+      "beforeSHA256": "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32",
+      "function": "helmut_auth_state_expand_local_v1"
+    },
+    {
+      "afterBytes": 5976,
+      "afterSHA256": "f6f64a5039643798d67c5d25b43d8528a9c8acb6b2d92beb76620d9b917f5af8",
+      "beforeSHA256": "8a13952bee9f305074d6ad9f2c2ee27e129a7e20ce3babb1d8f3a971719fcf6c",
+      "function": "helmut_auth_state_cas_v1"
+    }
+  ],
+  "heapContractPin": {
+    "bytes": 10426,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/HEAP_CONTRACT.SAFE.json",
+    "sha256": "74f37ac8545dc4b692197bd051704be2c42150d4d28bd5c541a4763106ab19aa"
+  },
+  "inputPins": [
+    {
+      "bytes": 17398,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    },
+    {
+      "bytes": 51381,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
+      "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
+    },
+    {
+      "bytes": 8774,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_MEASUREMENT_INTENT.SAFE.json",
+      "sha256": "34f71d2eaad42706bfabc713ab34b8be6f011ecc7a24d5e0ce7da6c1d4579aa0"
+    },
+    {
+      "bytes": 1731,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_READONLY_RESUME.SAFE.json",
+      "sha256": "37f445c5165a3a309d5900769509fd93110254da8d356d86783aa4bff95e5bbf"
+    },
+    {
+      "bytes": 820,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_TWO_CASE_PLAN.SAFE.json",
+      "sha256": "b4dfe25b96c3ff8160539da1993753ff228598692f66b191068e6fc82f58a833"
+    },
+    {
+      "bytes": 19011,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/METHOD_REVIEW.SAFE.json",
+      "sha256": "ed1b079d3191cb54a557dc56cd0b45e891eb7e352fca85202d8ab844edc93ad5"
+    },
+    {
+      "bytes": 11331,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_BUILD_SOURCE.py",
+      "sha256": "50d61fba8bff74f52f82a1b6c317b82675d39ac297c8b5df3e1b54555053873e"
+    },
+    {
+      "bytes": 15269,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_PREPARE.sql",
+      "sha256": "2dc6eb8de5194e9b6a13af341f9e08938a70b0f674cefa4a17080b53236d9874"
+    },
+    {
+      "bytes": 15100,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_RESTORE.sql",
+      "sha256": "a7d32b7a1b2ce118f9e2749da07e416e64c2c5957247c4dad02749a654a8e91d"
+    },
+    {
+      "bytes": 6539,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_SELECTED.sql",
+      "sha256": "1df6e2561436225bfbfb6bcb2692dabe247549c73d7f5c9c585cbdd770b892bd"
+    },
+    {
+      "bytes": 12784,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/FUNCTION_DELTA.PRIVATE.diff",
+      "sha256": "29b11c021bd6ea8b03dfd60f7b65b3345c825081a323e7b1cba33d81b37aaf2a"
+    },
+    {
+      "bytes": 10426,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/HEAP_CONTRACT.SAFE.json",
+      "sha256": "74f37ac8545dc4b692197bd051704be2c42150d4d28bd5c541a4763106ab19aa"
+    },
+    {
+      "bytes": 30524,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/INSTALL_CAS_HEAP_DIAGNOSTIC.sql",
+      "sha256": "4df66d34e79749867a582273702d8ecfe6cfd7fa4fefd96008178e9b825a1e2f"
+    },
+    {
+      "bytes": 3941,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/LOG_CONTRACT.SAFE.json",
+      "sha256": "da0aa0eb2763dd519a8287c5364a3369f3089154d7b9f41c247395b5ad35c346"
+    },
+    {
+      "bytes": 4932,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/PREPARED.SAFE.json",
+      "sha256": "0cd77787b9a37046c6e5fd18ece5b91bf6b4cdf580439c443d4a3f495091ddff"
+    },
+    {
+      "bytes": 1910,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/README.md",
+      "sha256": "d13b48177f95b1e2d3d7034f9e2c69f0e34bb86dbcbf0df6053b6f32ec25b1c5"
+    }
+  ],
+  "logContractPin": {
+    "bytes": 3941,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/LOG_CONTRACT.SAFE.json",
+    "sha256": "da0aa0eb2763dd519a8287c5364a3369f3089154d7b9f41c247395b5ad35c346"
+  },
+  "methodLimitations": "Net interval includes chunk release, unique/text-size checks, cast, SRF and LOG observer. Exclusive context bytes are not RSS/group peak or isolated representation ownership.",
+  "nativeActions": 0,
+  "originalPGDATAPayloadReads": 0,
+  "preparedPin": {
+    "bytes": 4932,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/PREPARED.SAFE.json",
+    "sha256": "0cd77787b9a37046c6e5fd18ece5b91bf6b4cdf580439c443d4a3f495091ddff"
+  },
+  "productWrites": 0,
+  "projectionEnabled": false,
+  "resourceActionAuthorized": false,
+  "reviewRecorderPin": {
+    "bytes": 10595,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/review_sql_components.py",
+    "sha256": "c852a8e67db4e0eda8b897118bae2f42e256a0d1cd0e4b11878535d83ddff6a6"
+  },
+  "rootIntentPin": {
+    "bytes": 8774,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_MEASUREMENT_INTENT.SAFE.json",
+    "sha256": "34f71d2eaad42706bfabc713ab34b8be6f011ecc7a24d5e0ce7da6c1d4579aa0"
+  },
+  "rootPlanPin": {
+    "bytes": 820,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_TWO_CASE_PLAN.SAFE.json",
+    "sha256": "b4dfe25b96c3ff8160539da1993753ff228598692f66b191068e6fc82f58a833"
+  },
+  "schema": "helmut-cas-heap-independent-sql-component-review/1",
+  "status": "SQL_COMPONENT_REVIEW_COMPLETE_L_VIEW_QUALIFICATION_PENDING",
+  "subjectImports": 0,
+  "tests": 0,
+  "unresolvedIntegrationFinding": {
+    "candidateSQLChangedByReviewer": false,
+    "code": "FULL_OFFICIAL_VIEW_DEFINITION_REQUIRED_BEFORE_GRANT",
+    "detail": "C identity_ok checks schema/owner/kind/9-column ABI and captures view definition/SHA; it does not prove that definition is exactly the official single own-backend SRF projection.",
+    "finalLauncherSourceReviewPending": true,
+    "requiredClosure": "L must fully validate the persisted before descriptor against the official nine-column single pg_catalog.pg_get_backend_memory_contexts() view with namespace resolution pinned before invoking PREPARE; substring/hash storage alone does not qualify it. PREPARE then detects current-state drift before GRANT."
+  }
+}

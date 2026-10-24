@@ -1,0 +1,59 @@
+{
+  "schema": "helmut-four-closed-worktree-cleanup/1",
+  "resultReceipts": [
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/cleanup-4-closed-worktrees-2150/01-helmut-unit60-guards-sol-20261022/RESULT.SAFE.json",
+      "bytes": 12654,
+      "sha256": "2ea7885c053cd44542c5524e27bbbc5c202300ba228f488d0bddf96bc14fdfc4"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/cleanup-4-closed-worktrees-2150/02-helmut-unit60-producer-sol-20261022/RESULT.SAFE.json",
+      "bytes": 12488,
+      "sha256": "b25681bd77ccafe58b0b37c791897a57dcccaa7372a90234ae3761648adbfbae"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/cleanup-4-closed-worktrees-2150/03-helmut-unit60-observation-sol-20261022/RESULT.SAFE.json",
+      "bytes": 12323,
+      "sha256": "0d031532579492fba17c8d39d11e4df917be8b998357cb9c006af74f550f55bd"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/cleanup-4-closed-worktrees-2150/04-helmut-blockers-preview-sol-20261021/RESULT.SAFE.json",
+      "bytes": 12152,
+      "sha256": "ca1d3e23d6de5da548bb80ad209a491ca12f1654755952744cd9049e3f958132"
+    }
+  ],
+  "scope": "Exactly guards, producer, observation and preview finished own checkouts; normal git worktree remove without force.",
+  "trackedFilesVerifiedAgainstRetainedGitBlobs": 11405,
+  "existingRefsRetained": 45,
+  "rootCommitPreserved": "8eaae3e5293eed2477a91f3ef4353c6db41f8788",
+  "producerRawCherryPlusCount": 1,
+  "producerCurrentTwoBlobsEqualIntegratedRoot": true,
+  "ignoredPycBytes": [
+    5848,
+    34256
+  ],
+  "bothPycReconstructedByteExactlyInRAMFromRetainedSources": true,
+  "helperCorrectionEvidence": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/cleanup-4-closed-worktrees-2150/PROVENANCE_HELPER_CORRECTION.SAFE.json",
+    "bytes": 3253,
+    "sha256": "1972fd31f7fbe5f8e34c66e163bae1f59969f781b1522609975e48ca9100e5a9"
+  },
+  "netFreeBytesIncludingReceipts": 396722176,
+  "availableBytesAfterCleanup": 10751328256,
+  "singleUnitAdmissionRequiredBytes": 10737418240,
+  "singleUnitAdmissionMarginBytes": 13910016,
+  "full500AdmissionRequiredBytes": 15179779720,
+  "full500MissingBytes": 4428451464,
+  "protectedBindingsWithoutCandidateDependencies": {
+    "source": 432,
+    "runtime": 553,
+    "privateOriginals": 84
+  },
+  "dockerConfigurationsInspected": 341,
+  "candidateDockerMountReferences": 0,
+  "kernelProcVisibilityLimited": true,
+  "completeForeignFDCoverageClaimed": false,
+  "branchesGitObjectsHostWorktreeOriginalsCasesAndPGDATAUnchanged": true,
+  "rollback": "Create a new own checkout from the retained exact branch/commit. Never reopen old execution claims.",
+  "full500Ready": false
+}

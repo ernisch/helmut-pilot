@@ -1,0 +1,412 @@
+{
+  "actionsByReviewer": {
+    "SubjectImportsASTTestsCheckRetireDockerNativeSQL": false,
+    "exactTargetENOENTAndProtectedSourceRootOfflineMetadataOnly": true,
+    "originalInputExistenceSizeMetadataOnly": true,
+    "ownNewPrivateSAFEOnly": true,
+    "smallSavedProofSourceReadsHashesOnly": true,
+    "targetWalkOrOriginalSourceRuntimePayloadRead": false
+  },
+  "actualReceiptChain": {
+    "allDeclaredPinBytesVerified": true,
+    "checkedPin": {
+      "bytes": 379530,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/CHECKED_CASE.PRIVATE.json",
+      "sha256": "3eef5f8e403076f2022eff5a8fb6b7db12f4434ef1d9237b517b23ed4873faba"
+    },
+    "claimBeforeUnlink": "Reviewed d121source persists/fsyncsO_EXCLclaim after all guards and before unlink_exact; savedclaim timestamp/ROOTadoption/check references match. No subjectre-execution.",
+    "genuineCheckExitPin": {
+      "bytes": 77,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/ROOT_CHECK_EXIT.SAFE.json",
+      "sha256": "04f504925e6efd2369b52f9066bfe37d0f48039bf0d9b58c84142dda6f8a8598"
+    },
+    "onceClaimPin": {
+      "bytes": 56065,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/RETIRE_ONCE_CLAIM.PRIVATE.json",
+      "sha256": "6700a5fe0ee7d8f3a634a8aef9826a280380c66c0dedfa7e733dc9f246831efc"
+    },
+    "retiredPin": {
+      "bytes": 1778,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/RETIRED.PRIVATE.json",
+      "sha256": "8a960f35ea3f8d422c34222be35e7ccffc0d140e08b6115f529dbdca951ff9a5"
+    },
+    "rootAdoptionPin": {
+      "bytes": 2457,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+      "sha256": "7614ad6f8b0ba30ed4d9a9c3b5da24b40d0f206ca21810dc1cf707c556200724"
+    },
+    "rootContextPin": {
+      "bytes": 243187,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/ROOT_PASS_CASE_CONTEXT.PRIVATE.json",
+      "sha256": "2823be451890962f17a7ba6a2e4ebc8ff21d49b27139a2b7af83026da8d67b8b"
+    }
+  },
+  "blockingFindings": [],
+  "capacitySnapshot": {
+    "RAMOrNewBudgetClaim": false,
+    "afterBytes": 14402637824,
+    "afterSnapshotShortfallBytes": 777141896,
+    "beforeBytes": 14356848640,
+    "checkedTreeAllocatedBytes": 45789184,
+    "deltaExactlyEqualsCheckedBlocksForThisAction": true,
+    "freshDfByReviewer": false,
+    "fullAdmissionProved": false,
+    "fullAdmissionThresholdBytes": 15179779720,
+    "observedDeltaBytes": 45789184,
+    "snapshotOnly": true
+  },
+  "checkedPins": [
+    {
+      "bytes": 28616,
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/small-initial-auth-retirer-independent-review-20261020/SMALL_INITIAL_AUTH_PASS_RETIRER_SOURCE_REVIEW.SAFE.json",
+      "sha256": "bba4988aec1a08c0be3ec65b5adc5f6ea7e5735c17423ccbad3ef4a47bf420bc"
+    },
+    {
+      "bytes": 5859,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-node.js",
+      "sha256": "e90c085b73f762de119abecb635a39e017d7c5e1990f4d6ba70a3d2abbc296a3"
+    },
+    {
+      "bytes": 6619,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-supervisor.py",
+      "sha256": "7871bc32007ee926b2e10c87c122a9a8d343a6677ba628d889d4672fcc5efe53"
+    },
+    {
+      "bytes": 1839,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/ACTUAL_RESULT.SAFE.json",
+      "sha256": "c8412d045075946afad9008ac0d8ffe6bb79511d609f824e7b175ddcd03b544d"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/BOOTSTRAP.PRIVATE.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 293,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/BOOTSTRAP.SAFE.json",
+      "sha256": "edb4503a1d7037bba4d0d8e04c7a05297d2e322fc3e8ffa06534f2e9b100e639"
+    },
+    {
+      "bytes": 19337,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/CLIENT_RESULT.SAFE.json",
+      "sha256": "4e65d51453b3dc9bec7aa8fe7ba4406f5663137d5a69f17878aefbadcb2c42ff"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/CONTAINER.PRIVATE.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 99,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/CREATED.SAFE.json",
+      "sha256": "d4bc8df079ef8c9c3a780af7de7574494e8050fa31259df8a58cea786e5bb4f5"
+    },
+    {
+      "bytes": 707,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/DB_AFTER.SAFE.json",
+      "sha256": "08cbd65e00920689e096f1c05ee88dac4e9474e22b8e85fab89594b95b60475d"
+    },
+    {
+      "bytes": 13390,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/HEAP_AND_PG_CONTEXTS.SAFE.jsonl",
+      "sha256": "d2e81b2709b71b52251f959635278ecf410fd4a182e858436ce984129c87d642"
+    },
+    {
+      "bytes": 788,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/INITDB.PRIVATE.log",
+      "sha256": "34f1c05b18fd5e60c05f009f607aaee844cf829c21e2fa2373e6f13c27d26fbc"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/MEASURE.PRIVATE.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 384,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/NATIVE_SETTINGS.SAFE.json",
+      "sha256": "b2dd8208bf498f507797dc1ba0dd9a471a783faa15e10fef98de01941c7e0aa6"
+    },
+    {
+      "bytes": 417291,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/NATIVE_TIMELINE.SAFE.json",
+      "sha256": "297c60d675b6813c4139e07f4a31721b1cc4bafc576367219703f6b4e21c3433"
+    },
+    {
+      "bytes": 75,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/OWNED_CHILD_EXITS.SAFE.json",
+      "sha256": "0bfa31cef5ceca5061b2dc52d312748dedb70f64668bfd70cdd9ef12a709e684"
+    },
+    {
+      "bytes": 1848,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/PG.PRIVATE.log",
+      "sha256": "b2ed67fd64a9db83d74ec3970ed9b7065ca340764b6b641058ef851294352c2c"
+    },
+    {
+      "bytes": 631,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/POSTGREST.PRIVATE.log",
+      "sha256": "6dfa960fd374058c32fe8a95ac16a2bd5518edb0b4a4f49d5fe40c07eb624280"
+    },
+    {
+      "bytes": 255015,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/STARTED.SAFE.json",
+      "sha256": "0fc69dd1eaabe9dd4d750fc841b3291c6f722f26943edfa7514463829d901ad7"
+    },
+    {
+      "bytes": 187,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/SUPERVISOR_RESULT.SAFE.json",
+      "sha256": "2d08aeda3d98a0e86e20ffef2531a01a618878912621f2bd8edb338e5f403d91"
+    },
+    {
+      "bytes": 133,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/native-budget-setup/HOLDER_CREATED.SAFE.json",
+      "sha256": "3e420df41d4165da9e56d6589ea34576900ce580107cc5223c46e5dd36c4596b"
+    },
+    {
+      "bytes": 1746,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/native-budget-setup/READY.SAFE.json",
+      "sha256": "bbc9299117a4efc6e6d8f92ec230f06ebb299d04c4ed794666905e04e47673b2"
+    },
+    {
+      "bytes": 133,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/native-budget-setup/SETTER_CREATED.SAFE.json",
+      "sha256": "84e42ab4d43e15b784c76d9cf164df5ac135de26d838d302ede7ab37274c625e"
+    },
+    {
+      "bytes": 985,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/native-budget-setup/STARTED.SAFE.json",
+      "sha256": "1b9eb881977a62ac2767ca65c91ac336468381ee84116b7125cc5323e0bb3387"
+    },
+    {
+      "bytes": 39,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/native-budget-setup/STOP",
+      "sha256": "b48ae18c51f17485a61b94b482836748f0cbd48c6ea20cae71f3a792402895a8"
+    },
+    {
+      "bytes": 187,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/postgrest.PRIVATE.conf",
+      "sha256": "bd27628f620467ae44c14188c4946212f07976b5448f53cbc27c0369f7487d57"
+    },
+    {
+      "bytes": 6907,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/run-auth-native-component-v2.py",
+      "sha256": "616692c35c4b9a936cdfac4c9c8b2b476b72b510f140f519cf0ab4295a2c5912"
+    },
+    {
+      "bytes": 14928,
+      "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/small-initial-auth-copy-eligibility-20261020/ELIGIBILITY.SAFE.json",
+      "sha256": "34c18cae78f03daf867fc4075156e432279b14b99ecf45dc7058d0a149de30a6"
+    },
+    {
+      "bytes": 379530,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/CHECKED_CASE.PRIVATE.json",
+      "sha256": "3eef5f8e403076f2022eff5a8fb6b7db12f4434ef1d9237b517b23ed4873faba"
+    },
+    {
+      "bytes": 3019,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/PREPARED.SAFE.json",
+      "sha256": "b8f51a9cef3c3f1997b2a9d630598201a9b0186bf8999d94bd0bcc992bf0f370"
+    },
+    {
+      "bytes": 1778,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/RETIRED.PRIVATE.json",
+      "sha256": "8a960f35ea3f8d422c34222be35e7ccffc0d140e08b6115f529dbdca951ff9a5"
+    },
+    {
+      "bytes": 56065,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/RETIRE_ONCE_CLAIM.PRIVATE.json",
+      "sha256": "6700a5fe0ee7d8f3a634a8aef9826a280380c66c0dedfa7e733dc9f246831efc"
+    },
+    {
+      "bytes": 77,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/ROOT_CHECK_EXIT.SAFE.json",
+      "sha256": "04f504925e6efd2369b52f9066bfe37d0f48039bf0d9b58c84142dda6f8a8598"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/ROOT_CHECK_STDERR.PRIVATE.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 243187,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/ROOT_PASS_CASE_CONTEXT.PRIVATE.json",
+      "sha256": "2823be451890962f17a7ba6a2e4ebc8ff21d49b27139a2b7af83026da8d67b8b"
+    },
+    {
+      "bytes": 2457,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+      "sha256": "7614ad6f8b0ba30ed4d9a9c3b5da24b40d0f206ca21810dc1cf707c556200724"
+    },
+    {
+      "bytes": 41391,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/retire_small_initial_auth_pass_copy.py",
+      "sha256": "d121dee0a2a18af6a75c617167a10ddd56d042141f0b6529b1afc05045a6039b"
+    }
+  ],
+  "checkedUniqueBytes": 1505540,
+  "checkedUniqueFiles": 37,
+  "closureAndFreshness": {
+    "agesAtOnceClaim": {
+      "adoptionAgeAtClaimSeconds": 2.285465955734253,
+      "checkAgeAtClaimSeconds": 36.76051926612854,
+      "finalClosureScanSeconds": 1.9075603485107422,
+      "finalScanAgeAtClaimSeconds": 1.9151039123535156
+    },
+    "checks": [
+      {
+        "allThreeExactCIDsClosed": true,
+        "emptyGroup": "/sys/fs/cgroup/helmut-meter-memorybudget-dd918b5e7e482b1595311f84",
+        "globalUnobservableAbsenceClaimed": false,
+        "phase": "check",
+        "scanEndedUnix": 1792533023.0661306,
+        "scanSeconds": 1.6931877136230469,
+        "scanStartedUnix": 1792533021.372943,
+        "unreadablePIDCount": 264,
+        "visiblePIDsAttempted": 267
+      },
+      {
+        "allThreeExactCIDsClosed": true,
+        "emptyGroup": "/sys/fs/cgroup/helmut-meter-memorybudget-dd918b5e7e482b1595311f84",
+        "globalUnobservableAbsenceClaimed": false,
+        "phase": "onceclaim",
+        "scanEndedUnix": 1792533060.0959694,
+        "scanSeconds": 1.9075603485107422,
+        "scanStartedUnix": 1792533058.188409,
+        "unreadablePIDCount": 264,
+        "visiblePIDsAttempted": 266
+      }
+    ],
+    "fixedParentInodeFromReviewedRuntimeGuard": 8273,
+    "fixedParentName": "helmut-meter-memorybudget-dd918b5e7e482b1595311f84",
+    "limits": "Claim\u226410s from whole scanSTART; check+adoption\u2264300s. Global unreadable metadata remains UNKNOWN, no allFD/maps absence claim. Historical exact3CIDstates and emptygroup rely on reviewed fresh Runtimeguards and savedclosure booleans/context, not a new liveinspection."
+  },
+  "eligibilityPin": {
+    "bytes": 14928,
+    "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/small-initial-auth-copy-eligibility-20261020/ELIGIBILITY.SAFE.json",
+    "sha256": "34c18cae78f03daf867fc4075156e432279b14b99ecf45dc7058d0a149de30a6"
+  },
+  "exactTarget": {
+    "case": "auth-native-component-v2",
+    "caseDirectoryAndNativeBudgetSetupStillPresent": true,
+    "checkedAllocatedBytes": 45789184,
+    "checkedUniqueInodesNoAliases": true,
+    "completeCheckedEntries": 1027,
+    "directoriesIncludingRootInCheckedInventory": 27,
+    "noReviewerTargetTraversalOrPayloadRead": true,
+    "nowExactLstatENOENT": true,
+    "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/pgdata",
+    "regularFilesRemoved": 1000,
+    "rootBeforeIdentity": {
+      "allocatedBytes": 4096,
+      "atime_ns": 1792495720188333813,
+      "bytes": 4096,
+      "ctime_ns": 1792495601070999731,
+      "device": 27,
+      "gid": 1000,
+      "inode": 2522,
+      "links": 19,
+      "mode": 448,
+      "mtime_ns": 1792495601070999731,
+      "uid": 1000
+    }
+  },
+  "executionEvidence": {
+    "checkChildReaped": true,
+    "checkStderrBytes": 0,
+    "checkStdoutBytes": 379530,
+    "meaning": "Check status is persisted77BRoot receipt and pin-bound in adoption. Root reports genuine retireexit0; finalRETIRED plus targetENOENT/preservedproofs independently verified. No separate per-command retireexit log was found or invented.",
+    "retireExitCodeReportedByRoot": 0,
+    "retireToolExitIndependentlyObserved": false,
+    "rootObservedCheckTool": "39bbba",
+    "rootReportedRetireTool": "0ad446",
+    "savedCheckExitCode": 0
+  },
+  "findingsStatus": "NO_BLOCKING_FINDINGS",
+  "full500": false,
+  "independentOfRetirerAuthorAndActualExecutor": true,
+  "newDeletionOrArchiveOrNativeAuthority": false,
+  "preparedPin": {
+    "bytes": 3019,
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/PREPARED.SAFE.json",
+    "sha256": "b8f51a9cef3c3f1997b2a9d630598201a9b0186bf8999d94bd0bcc992bf0f370"
+  },
+  "preservation": {
+    "allExactlyMatchFrozenBeforeRemovalPins": true,
+    "authenticInputsRetainedMetadataOnly": [
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-auth-input-preparation/MAIN_AUTH_SOURCE_COPY_LINE.PRIVATE.txt",
+        "payloadRehashed": false,
+        "regularCanonicalNlink1": true,
+        "role": "rawCOPYLine",
+        "size": 4189530
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-auth-input-preparation/MAIN_AUTH.PRIVATE.json",
+        "payloadRehashed": false,
+        "regularCanonicalNlink1": true,
+        "role": "sourceAuth",
+        "size": 4188627
+      }
+    ],
+    "caseProofBytes": 715107,
+    "caseProofPinsRehashedAfterRetirement": 23,
+    "historicalAuthorPinsRehashedAfterRetirement": 3,
+    "hullLimit": "Only PGDATA target removed by reviewed FDcode. Exact3CID identities/fullmounts are bound in retainedRootcontext; freshquiescentguard closed/groupempty recorded in check+onceclaim. No independent liveDocker query or rawcurrentState reread by reviewer.",
+    "necessaryInitial5000HistoryLogicalRestoreEvidence": "Saved bootstrap/client5000History,16rounds,9CAS,256controls,44directRPC and originalLogicalStateRestored/historySHA unchanged remain exact. No6000/27RPC/modernV7shutdown policy retroclaim.",
+    "necessaryStateAndFutureDependencyDecision": "Explicit Root context/adoption binds neverFutureBaselineOrInput, noNecessaryStateOrSoleEvidenceLost and fresh dependency/unknown-use review. This review does not assert universal absence of hidden/future consumers or full WALbackup reconstruction.",
+    "originalsImagesVolumesLoops": "Outside fixed delete scope; savedRETIRED false touched, reviewedcode has no mutation of them. No liveDocker/loopinventory rerun.",
+    "retainedOwnedCIDs": [
+      {
+        "cid": "67136ae864cfcd0123f864d3665ed68b53b8f86a760cab89d3b7151d7c1346a8",
+        "name": "/helmut-auth-native-cdc23b1aed60",
+        "retainedMountDictionaryCount": 562
+      },
+      {
+        "cid": "0f4f283c46ffbf7df64f7b80cc5040cb201a7016763537ebae05de4fb10b8a08",
+        "name": "/helmut-native-budget-holder-50a406ffe717",
+        "retainedMountDictionaryCount": 1
+      },
+      {
+        "cid": "0849ecef7c2f6d1209950b57329fd49ec3a64269d2e37864e28ac98a65183567",
+        "name": "/helmut-native-budget-setter-8b0a43db8a12",
+        "retainedMountDictionaryCount": 1
+      }
+    ]
+  },
+  "production": false,
+  "protectedPermanentSource": {
+    "atimeNotImmutableIdentityField": true,
+    "manifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+    "metadataNow": {
+      "allocatedBytes": 4096,
+      "atime_ns": 1792487926568063929,
+      "bytes": 4096,
+      "ctime_ns": 1792487833623423814,
+      "device": 27,
+      "gid": 1000,
+      "inode": 169,
+      "links": 19,
+      "mode": 448,
+      "mtime_ns": 1792487833623423814,
+      "uid": 1000
+    },
+    "offlinePostmasterPIDMarkerAbsent": true,
+    "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-canonical-readback/PGDATA_COPY_NOT_AN_ORIGINAL",
+    "payloadOrFullManifestRehashed": false,
+    "permanentReconstructionDependencyRetained": true,
+    "stableDeviceInodeModeOwnerLinksSizeMtimeCtimeMatch": true
+  },
+  "reviewedUTC": "2026-10-20T21:53:11.991105+00:00",
+  "reviewerModel": "gpt-6.1-sol",
+  "schema": "helmut-small-initial-auth-copy-independent-actual-retirement-review/1",
+  "scriptPin": {
+    "bytes": 41391,
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/small-initial-auth-pass-copy-retirement-preparation/retire_small_initial_auth_pass_copy.py",
+    "sha256": "d121dee0a2a18af6a75c617167a10ddd56d042141f0b6529b1afc05045a6039b"
+  },
+  "sourceReviewPin": {
+    "bytes": 28616,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/small-initial-auth-retirer-independent-review-20261020/SMALL_INITIAL_AUTH_PASS_RETIRER_SOURCE_REVIEW.SAFE.json",
+    "sha256": "bba4988aec1a08c0be3ec65b5adc5f6ea7e5735c17423ccbad3ef4a47bf420bc"
+  },
+  "status": "ACTUAL_EXACT_INITIAL_AUTH_PASS_WORKING_COPY_RETIRED_REVIEWED"
+}

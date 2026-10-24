@@ -1,0 +1,89 @@
+{
+  "schema": "helmut-ci-private-log-diagnostic-monitor-receipt/1",
+  "atUTC": "2026-10-23T17:48:37.476341+00:00",
+  "status": "DEDICATED_DIAGNOSTIC_JOB_SUCCESS_ORIGINAL_CI_STILL_FAILURE",
+  "diagnosticRun": {
+    "id": 39997839458,
+    "url": "https://github.com/ernisch/helmut-pilot/actions/runs/39997839458",
+    "headSHA": "4a295467a9266e1ec7641607c9149a2d00db74ab",
+    "workflowPath": ".github/workflows/ci-private-log-metadata.yml",
+    "event": "push",
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success"
+  },
+  "diagnosticJob": {
+    "id": 120565900367,
+    "name": "Diagnostic metadata only \u2014 no tests or CI acceptance",
+    "status": "completed",
+    "conclusion": "success",
+    "startedAt": "2026-10-23T17:46:38Z",
+    "completedAt": "2026-10-23T17:46:45Z",
+    "helperStep": 3,
+    "helperStepConclusion": "success"
+  },
+  "sourcePinsVerifiedFromImmutableCommit": [
+    {
+      "commit": "4a295467a9266e1ec7641607c9149a2d00db74ab",
+      "file": ".github/workflows/ci-private-log-metadata.yml",
+      "bytes": 1719,
+      "sha256": "1bb46c003081871585249818cb3c2aabda64669e79b9395ab7570cdff127cf40"
+    },
+    {
+      "commit": "4a295467a9266e1ec7641607c9149a2d00db74ab",
+      "file": "scripts/helmut-resource-meter/ci-private-log-metadata.py",
+      "bytes": 13524,
+      "sha256": "9442b400d3bb457c47dca13267e7a9eb913ea2a0bec653445fd17fbb2df0d361"
+    }
+  ],
+  "safeActualOutputPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/ci-private-log-metadata-monitor-20261023/ACTUAL_WHITELIST_OUTPUT.SAFE.json",
+    "bytes": 1167,
+    "sha256": "6794bafb070063a10d1705ab6b732f7656baa986eeb0f224dc3255c3d88fcf08"
+  },
+  "actualOutputObservationTools": [
+    "499755",
+    "19a9d7"
+  ],
+  "logRead": {
+    "argv": [
+      "gh",
+      "run",
+      "view",
+      "39997839458",
+      "--job",
+      "120565900367",
+      "--log"
+    ],
+    "actualLocalFetchExitCode": 0,
+    "bytes": 231019,
+    "sha256": "201f1d4412078ccfe53b81fa762e93c785763525ab080c5524fe83649b8148a0",
+    "retainedRawLog": false,
+    "scope": "Bounded dedicated metadata job log read in memory once; only exact safe schema exported. No target private raw/cipher/key export."
+  },
+  "runnerExitEvidenceScope": "Helper step conclusion success observed via GitHub job API; no invented host-Popen/2EOF receipt for GHA process. Local gh log-fetch process exit0 is separate.",
+  "originalCI": {
+    "run": 39989672128,
+    "headSHA": "97662d821c72f45bc3b9f02636ba308ba6b54066",
+    "conclusion": "failure",
+    "failedStep": 19,
+    "diagnosticDoesNotChangeCIResult": true
+  },
+  "actualAssertionContentsReadHere": false,
+  "actualFailurePublicMetadataRead": true,
+  "causalCodeAnalysisPerformed": false,
+  "limitations": [
+    "Only exact public versioned test identity, fixed exception class and public source line numbers are available. No assertion values/messages or auth/runtime payloads were exported.",
+    "Successful diagnostic decrypt/filter is not passing original CI, a test rerun, a native/Unit/Full500 result or an execution grant."
+  ],
+  "sideEffectsByReviewer": {
+    "rootRepoWrites": 0,
+    "workflowDispatches": 0,
+    "workflowReruns": 0,
+    "tests": 0,
+    "dbDockerNativeCalls": 0,
+    "secretValuesExported": 0,
+    "privateCipherDownloads": 0,
+    "onlyOwnSafeReceiptFilesWritten": true
+  }
+}

@@ -1,0 +1,286 @@
+{
+  "schema": "helmut-cold-digest-native-qualification/1",
+  "scope": "LOCAL_SOURCE_ONLY",
+  "mode": "bounded-native-read-v1",
+  "status": "passed",
+  "production": false,
+  "full500Accepted": false,
+  "file": "supabase/proposals/auth_read_bounded_local.sql",
+  "sqlSHA256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5",
+  "function": "helmut_auth_state_graph_read_v1",
+  "functionBodySHA256": "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0",
+  "originalSQLSHA256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561",
+  "originalFunctionBodySHA256": "1644ff690fb4ae70ab2511b3ccf41353e622595bc9fed2d61005c4f655171af0",
+  "adapterSHA256": "5e4048e862f3c942ac2563638336964a10c96bf337566474568705a43e1830f0",
+  "caseCount": 19,
+  "successfulPairs": 8,
+  "errorPairs": 11,
+  "exactWholeResponsesEqual": true,
+  "identicalErrors": true,
+  "requestedNegativesPassed": true,
+  "originalStateUnchanged": true,
+  "fullCatalogRestored": true,
+  "onlyFunctionBodyCatalogDelta": true,
+  "allOwnedProcessesExited": true,
+  "namespacesEmpty": true,
+  "sourceManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+  "preparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cold-digest-comparison-launcher/PREPARED.SAFE.json",
+    "bytes": 19359,
+    "sha256": "8f9081e8b1e4c32b329c191c15f1c98f87f36a0a761825a746c432231264100c"
+  },
+  "rootAdoptionPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/ROOT_ADOPTION.SAFE.json",
+    "bytes": 12978,
+    "sha256": "a7e5b04e49259ded9cb7b805b802b3525afeaa441785e46eea2f0b92dc875a92"
+  },
+  "actualResultPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/ACTUAL_RESULT.SAFE.json",
+    "bytes": 17076,
+    "sha256": "e8c449e70c009f328ed90bc4348143b40e019013035c1e00b6a29470061ed1c3"
+  },
+  "independentStaticLauncherReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/V5_SCOPE_REVIEW.SAFE.json",
+    "bytes": 11108,
+    "sha256": "b965f3c0462d7cca970c5d07c663e24413be7056f82cc48517fcf9a668cb67d2"
+  },
+  "adapterExecutedDuringNativeProof": false,
+  "adapterBindingScope": "Exact future integration source target only; normal descriptor and critical regression acceptance separately pending",
+  "kernelPeakDiagnosticOnlyBytes": 784474112,
+  "commonMemorySavingProvedByThisProof": false,
+  "plateauProved": false,
+  "full500ReserveProved": false,
+  "observedAtUTC": "2026-10-20T17:53:21.433490+00:00",
+  "proofPins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/ACTUAL_RESULT.SAFE.json",
+      "bytes": 17076,
+      "sha256": "e8c449e70c009f328ed90bc4348143b40e019013035c1e00b6a29470061ed1c3"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/WORKER_RESULT.SAFE.json",
+      "bytes": 12995,
+      "sha256": "899477afba241a098fa570af595d4d39d7afac58211726bb5256b3f1fa2f60ef"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFFERENTIAL.SAFE.json",
+      "bytes": 70759,
+      "sha256": "fd658f57175f8d4219be97e59cdff9a5ce0b479f203dd8d5f7653252447fa008"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/ACTUAL_NATIVE_CATALOG.SAFE.json",
+      "bytes": 173885,
+      "sha256": "e364e417d05f8bab2be7f0c85e2bea95ecf75904807b4420c1724175aaee7004"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/PG_LOG.SAFE.json",
+      "bytes": 348,
+      "sha256": "8552252846fff558003e8e4c5bc4764ee90e77f81c47ead814ba5cdb51ab1996"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/OFFLINE_AFTER.CAPTURE.SAFE.json",
+      "bytes": 278,
+      "sha256": "be8260d3878968fcdb6218e1291aacd2172b3a95a2b5097472e23736deb7c90f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_01.SAFE.json",
+      "bytes": 2672,
+      "sha256": "e8a8732df2d295300157794894d4ae5fa99fb123de1c90278b8e5956ff024846"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_01.CAPTURE.SAFE.json",
+      "bytes": 276,
+      "sha256": "d40ddba28d02b9ea74840c5677a341f0d694e47f5e475d399b833d7720c7c7f6"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_02.SAFE.json",
+      "bytes": 3209,
+      "sha256": "b510f85f8778aff95ccbbd4a34bcbb659663570e6bae1ef4d44a9e51b2ed2a29"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_02.CAPTURE.SAFE.json",
+      "bytes": 276,
+      "sha256": "07ef99105bc5ce88e0545c1385fe7efc72202fe9cad6e647bd4f29d47434b2eb"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_03.SAFE.json",
+      "bytes": 2980,
+      "sha256": "141421e3e7a42d2d29d504b1af2c7bc73c2afc8490e51e10dfc846fa07e700fb"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_03.CAPTURE.SAFE.json",
+      "bytes": 276,
+      "sha256": "d7de1552ffd789e49f763d38b519e242c5a46cbd779c8636dc6c1cb57eb88212"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_04.SAFE.json",
+      "bytes": 3627,
+      "sha256": "a413433048ee69f161d7a9c497e5b14bd32d62e75e8709345caf8aee1a29348b"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_04.CAPTURE.SAFE.json",
+      "bytes": 276,
+      "sha256": "b24db359ea66cbc639889872d5700277cc1be44cdd86e4d9c26e0ca51b8010ad"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_05.SAFE.json",
+      "bytes": 3398,
+      "sha256": "55cd22141e588ec8be02b75828288589edc7981587b6578a6b06c72b0703c860"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_05.CAPTURE.SAFE.json",
+      "bytes": 276,
+      "sha256": "040e12d63dcd638bde7bec4b4d169509fda657f4286df21f909f105f092dc471"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_06.SAFE.json",
+      "bytes": 3956,
+      "sha256": "975ac0dc8e124ac018210b6028591d6f8f60bca4d5055b95779585dc8940acfe"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_06.CAPTURE.SAFE.json",
+      "bytes": 275,
+      "sha256": "ac965a7a99685e08b9db0911b9bb4f6e2e34e3991246ba8733abbdb8622fe4ff"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_07.SAFE.json",
+      "bytes": 3991,
+      "sha256": "7bd77c3054734856c9df8108e6bedcad52384b58e6c35c163e78f721c52477f1"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_07.CAPTURE.SAFE.json",
+      "bytes": 276,
+      "sha256": "25a7bf6923bf552deabc47e85931ad499a78ac60b240c701a8daae3a01b7ad31"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_08.SAFE.json",
+      "bytes": 3970,
+      "sha256": "e3fccc04f87135999916699ce6315e31e4146e02bc653ccbbb4037f24aaa51df"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_08.CAPTURE.SAFE.json",
+      "bytes": 277,
+      "sha256": "c5dd91a79cb4c482ce324587c3ea5390e118fcf918955d6c86f57f5f5933e6f1"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_09.SAFE.json",
+      "bytes": 2030,
+      "sha256": "07c5cce2bdfe1ef604854994a6613616a2cca5fd0b96e29a5442c329931d7a6f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_09.CAPTURE.SAFE.json",
+      "bytes": 277,
+      "sha256": "7a502dc56936c339fb7beeb9848b654ed14f3cc93896dee6445ca7dc798a9e15"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_10.SAFE.json",
+      "bytes": 2047,
+      "sha256": "7b81a97d9c863a684c21287b654723e9ba999fe339a9c987ec50f3b138d60aa1"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_10.CAPTURE.SAFE.json",
+      "bytes": 277,
+      "sha256": "bf69962c206b78de17cf8550861a320526e387410b2fa56b231dadd4703564d8"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_11.SAFE.json",
+      "bytes": 2355,
+      "sha256": "cb74bfedd6eae467db39cc8e13f4a053abc082ffda9701caa1e5165bd9a0f389"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_11.CAPTURE.SAFE.json",
+      "bytes": 277,
+      "sha256": "450dfd41253ee4fe34d90f24d2dd5105ee58169e7a9476d50eb789047ff93463"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_12.SAFE.json",
+      "bytes": 2157,
+      "sha256": "b39fb76684770fe4c2b352ce71cd8f844c0f0bf266ae91641cc3d971bc9532ea"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_12.CAPTURE.SAFE.json",
+      "bytes": 277,
+      "sha256": "46bc6d30b22aa09974982c10d50e48064cc70a4d0725c47ca2dfebf83243fbdb"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_13.SAFE.json",
+      "bytes": 2397,
+      "sha256": "73a0f56ecb6a2e2c46fd7face8d00e3967fe2d47b88b76b5a4391039060d0b90"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_13.CAPTURE.SAFE.json",
+      "bytes": 277,
+      "sha256": "7099743f279e27120167b35292ee98b83c5656c26341df287e4bf2c5bce39126"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_14.SAFE.json",
+      "bytes": 2396,
+      "sha256": "bf591ab253841daf3acaefaccc1bb41d3bd456b6d9b38fa1071da5eca190d706"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_14.CAPTURE.SAFE.json",
+      "bytes": 277,
+      "sha256": "4b3157be002ddd9d718b9005ec5505c7332d9262d99c554162e0863c7778ad32"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_15.SAFE.json",
+      "bytes": 2782,
+      "sha256": "343362939b180d3f6fb57d792a46554ce8651c2cf1251aa235cb51fa275a3ccd"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_15.CAPTURE.SAFE.json",
+      "bytes": 277,
+      "sha256": "a8fd751574e1e69641a4b60c4df5426a0a0f6991aab979784040c33f526cec23"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_16.SAFE.json",
+      "bytes": 2784,
+      "sha256": "7bae5b153cdb78ad0ffc59e569a0b5289ceb4cde36d94db19edda21514476ee8"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_16.CAPTURE.SAFE.json",
+      "bytes": 275,
+      "sha256": "4a0c4d0b8c6cdb321de6455aed0d03882053e68674a62fc0add7b53f7e4d5de5"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_17.SAFE.json",
+      "bytes": 2407,
+      "sha256": "7a0ce51dcc2bb5d6d0786c7480036c7e4f9fec916d262b68fb05dcd19fe49bc6"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_17.CAPTURE.SAFE.json",
+      "bytes": 277,
+      "sha256": "050fb9614a6a2e82c0a89a94d4fa277acf4d7fda178ec63a92f5b593e3fdba18"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_18.SAFE.json",
+      "bytes": 2383,
+      "sha256": "061fcd85731bd8a29810e613727a769c1f81fc3eae7e7f6d7ad922abcadbdb23"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_18.CAPTURE.SAFE.json",
+      "bytes": 277,
+      "sha256": "eede54fc5ac2b1a087b31427f7465d3200ee57814b59120584c4cc5457d90cda"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_19.SAFE.json",
+      "bytes": 2419,
+      "sha256": "b542f64f79932471966b57e4286f879a082d57c2bdfea4d5a92b60ea8506ac19"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/cases/digest-c3e412f438593433fd1f6c2a/DIFF_19.CAPTURE.SAFE.json",
+      "bytes": 276,
+      "sha256": "32cfb6b5054588ed095d26806b00c124848b291e90c2a9f93d46c126028272c7"
+    }
+  ]
+}

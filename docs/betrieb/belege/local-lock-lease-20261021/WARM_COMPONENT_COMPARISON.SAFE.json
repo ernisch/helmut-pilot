@@ -1,0 +1,457 @@
+{
+  "schema": "helmut-local-lock-lease-warm-component-comparison/1",
+  "pass": true,
+  "scope": "CONTROLLED_LOCAL_ABBA_WARM_LOGICAL_STATE_COMPARISON_ONLY",
+  "baselineStorageSHA256": "3c265bf9aaafb735b12d408ff8914f67ac32560b38194e0bf27c4fdd6e3d8d74",
+  "newStorageSHA256": "f5cc228b744fcdd9fb398b277465c72cd9d4aa3ee746618bfd4f1c3ce53a363f",
+  "rows": [
+    {
+      "label": "01-old",
+      "arm": "old",
+      "pass": true,
+      "peakBytes": 609640448,
+      "CPUThroughLastExitMicroseconds": 24166632,
+      "closureSeconds": 25.52044562800438,
+      "cycleMedianMS": 1646.1728290000005,
+      "nativeAuthReadsIncludingPreSQL": 15,
+      "nativeAuthCAS": 12,
+      "nativeLeaseRPCs": 0,
+      "cycles": 6,
+      "verifiedCycleProcessReads": 14,
+      "verifiedCycleProcessWrites": 12,
+      "highestObservedCurrentSample": {
+        "elapsedSeconds": 16.159785130992532,
+        "current": 596541440,
+        "peak": 596541440,
+        "events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memoryStat": {
+          "anon": 351137792,
+          "file": 232775680,
+          "kernel": 11591680,
+          "pagetables": 6352896,
+          "shmem": 232034304,
+          "file_dirty": 733184,
+          "file_writeback": 0,
+          "slab": 4889944
+        }
+      },
+      "walInsertWindowBytes": 214944,
+      "graphRelationGrowthBytes": 40960,
+      "databaseGrowthBytes": 40960,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "proofPins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/01-old/COMPONENT_RESULT.SAFE.json",
+          "bytes": 24329,
+          "sha256": "c3f628e8c9af9cc4b364367183e144a85971c9f40877fbffaf3ae59ed378fee7"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/01-old/WORKER_RESULT.SAFE.json",
+          "bytes": 694,
+          "sha256": "df44501bd065b8a53dbe9c805057bd650e5c917f168d7c99349d5f177ccee034"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/01-old/ACTUAL_COMPARISON_ARM.SAFE.json",
+          "bytes": 9494,
+          "sha256": "0de839ee4908d2e7d0c7bf423eefddbd2fbc58db426e4207274d570a4188d960"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/01-old/ACTUAL_SETTINGS.SAFE.json",
+          "bytes": 219,
+          "sha256": "e9ca03ec633732763699d9bff0416488c7bf994c4b5e07013c6aa0c4f9928966"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/01-old/READONLY_NATIVE_BEFORE.SAFE.json",
+          "bytes": 916,
+          "sha256": "6d51b9180c0e5a87cf722a153181d027c4546dd9c1de5229b581212b6b03997b"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/01-old/READONLY_NATIVE_AFTER.SAFE.json",
+          "bytes": 916,
+          "sha256": "8ad5f1c39033c6062d5ac06aedaed8e1982477f5067dbcb379d9e2ed48af0af8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/01-old/DATABASE_FOOTPRINT_BEFORE.SAFE.json",
+          "bytes": 163,
+          "sha256": "b6c7cd5086fac2415a53033c556039f8f419fd28475c64386bc3037beb432595"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/01-old/DATABASE_FOOTPRINT_AFTER.SAFE.json",
+          "bytes": 163,
+          "sha256": "043625cd0ae5a7e9d9b313da6e1926c583dbbcb6d48464393b84192e429baca0"
+        }
+      ]
+    },
+    {
+      "label": "02-new",
+      "arm": "new",
+      "pass": true,
+      "peakBytes": 536186880,
+      "CPUThroughLastExitMicroseconds": 13200061,
+      "closureSeconds": 15.41556595399743,
+      "cycleMedianMS": 22.088893499999926,
+      "nativeAuthReadsIncludingPreSQL": 3,
+      "nativeAuthCAS": 0,
+      "nativeLeaseRPCs": 12,
+      "cycles": 6,
+      "verifiedCycleProcessReads": 2,
+      "verifiedCycleProcessWrites": 0,
+      "highestObservedCurrentSample": {
+        "elapsedSeconds": 14.742981893999968,
+        "current": 497750016,
+        "peak": 499736576,
+        "events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memoryStat": {
+          "anon": 252829696,
+          "file": 232648704,
+          "kernel": 11268096,
+          "pagetables": 6008832,
+          "shmem": 231870464,
+          "file_dirty": 770048,
+          "file_writeback": 0,
+          "slab": 4909080
+        }
+      },
+      "walInsertWindowBytes": 60080,
+      "graphRelationGrowthBytes": 0,
+      "databaseGrowthBytes": 0,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "proofPins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/02-new/COMPONENT_RESULT.SAFE.json",
+          "bytes": 14554,
+          "sha256": "f179110c8acb34796edb12987d858e38afc98cdd59ed218d7a46e7c83214ca9b"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/02-new/WORKER_RESULT.SAFE.json",
+          "bytes": 694,
+          "sha256": "ca194795ffb1698ebf924f99e2c8927cc2b7cf0b3cf6394ee79485433670647b"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/02-new/ACTUAL_COMPARISON_ARM.SAFE.json",
+          "bytes": 7439,
+          "sha256": "6a6cae0cf01fcc0736a5177c6cf5a45dec2c92b113912fa762593ef93aceacd8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/02-new/ACTUAL_SETTINGS.SAFE.json",
+          "bytes": 219,
+          "sha256": "e9ca03ec633732763699d9bff0416488c7bf994c4b5e07013c6aa0c4f9928966"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/02-new/READONLY_NATIVE_BEFORE.SAFE.json",
+          "bytes": 916,
+          "sha256": "8ad5f1c39033c6062d5ac06aedaed8e1982477f5067dbcb379d9e2ed48af0af8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/02-new/READONLY_NATIVE_AFTER.SAFE.json",
+          "bytes": 916,
+          "sha256": "8ad5f1c39033c6062d5ac06aedaed8e1982477f5067dbcb379d9e2ed48af0af8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/02-new/DATABASE_FOOTPRINT_BEFORE.SAFE.json",
+          "bytes": 163,
+          "sha256": "d948504d8a6b97e7e1d6cef1395bec08cbaae7ace2ae74e689b47dd7e0a1f30d"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/02-new/DATABASE_FOOTPRINT_AFTER.SAFE.json",
+          "bytes": 163,
+          "sha256": "4fbc76edf8957f08fbdde9f8b0fe05fd83ebfccd21c64b90c06e7f08851d6dc5"
+        }
+      ]
+    },
+    {
+      "label": "03-new",
+      "arm": "new",
+      "pass": true,
+      "peakBytes": 536268800,
+      "CPUThroughLastExitMicroseconds": 13711879,
+      "closureSeconds": 15.810131692007417,
+      "cycleMedianMS": 22.065856499999995,
+      "nativeAuthReadsIncludingPreSQL": 3,
+      "nativeAuthCAS": 0,
+      "nativeLeaseRPCs": 12,
+      "cycles": 6,
+      "verifiedCycleProcessReads": 2,
+      "verifiedCycleProcessWrites": 0,
+      "highestObservedCurrentSample": {
+        "elapsedSeconds": 15.157019321981352,
+        "current": 492261376,
+        "peak": 505192448,
+        "events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memoryStat": {
+          "anon": 247316480,
+          "file": 232579072,
+          "kernel": 11350016,
+          "pagetables": 6184960,
+          "shmem": 231845888,
+          "file_dirty": 724992,
+          "file_writeback": 0,
+          "slab": 4824408
+        }
+      },
+      "walInsertWindowBytes": 57384,
+      "graphRelationGrowthBytes": 0,
+      "databaseGrowthBytes": 0,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "proofPins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/03-new/COMPONENT_RESULT.SAFE.json",
+          "bytes": 15062,
+          "sha256": "7ce01a221b589c4837e00158601a9c9f65d114f5b91ce29f22964ff99edb0650"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/03-new/WORKER_RESULT.SAFE.json",
+          "bytes": 694,
+          "sha256": "35a1e68b2acf402a9367942a1afc21a56294c235e2a28215df912a2733da70eb"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/03-new/ACTUAL_COMPARISON_ARM.SAFE.json",
+          "bytes": 7418,
+          "sha256": "e8800b5d0bb8b7d8fae017d843cf9b9ba408ce364ef83efc3817c13f1c946231"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/03-new/ACTUAL_SETTINGS.SAFE.json",
+          "bytes": 219,
+          "sha256": "e9ca03ec633732763699d9bff0416488c7bf994c4b5e07013c6aa0c4f9928966"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/03-new/READONLY_NATIVE_BEFORE.SAFE.json",
+          "bytes": 916,
+          "sha256": "8ad5f1c39033c6062d5ac06aedaed8e1982477f5067dbcb379d9e2ed48af0af8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/03-new/READONLY_NATIVE_AFTER.SAFE.json",
+          "bytes": 916,
+          "sha256": "8ad5f1c39033c6062d5ac06aedaed8e1982477f5067dbcb379d9e2ed48af0af8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/03-new/DATABASE_FOOTPRINT_BEFORE.SAFE.json",
+          "bytes": 163,
+          "sha256": "b2ee48e5f9d7c1b6de52cb30ae99c654a2e5e7b4f274ded2024d8829406e5d03"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/03-new/DATABASE_FOOTPRINT_AFTER.SAFE.json",
+          "bytes": 163,
+          "sha256": "21acdec3ffd260750a4ecdbed0c662eb7934aefa83af4c26f7f7e036b9718300"
+        }
+      ]
+    },
+    {
+      "label": "04-old",
+      "arm": "old",
+      "pass": true,
+      "peakBytes": 614150144,
+      "CPUThroughLastExitMicroseconds": 26010444,
+      "closureSeconds": 27.019389349996345,
+      "cycleMedianMS": 1671.0273040000002,
+      "nativeAuthReadsIncludingPreSQL": 15,
+      "nativeAuthCAS": 12,
+      "nativeLeaseRPCs": 0,
+      "cycles": 6,
+      "verifiedCycleProcessReads": 14,
+      "verifiedCycleProcessWrites": 12,
+      "highestObservedCurrentSample": {
+        "elapsedSeconds": 22.018732669996098,
+        "current": 556556288,
+        "peak": 614150144,
+        "events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memoryStat": {
+          "anon": 311361536,
+          "file": 232869888,
+          "kernel": 11382784,
+          "pagetables": 6144000,
+          "shmem": 232108032,
+          "file_dirty": 36864,
+          "file_writeback": 0,
+          "slab": 4879560
+        }
+      },
+      "walInsertWindowBytes": 229760,
+      "graphRelationGrowthBytes": 49152,
+      "databaseGrowthBytes": 49152,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "proofPins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/04-old/COMPONENT_RESULT.SAFE.json",
+          "bytes": 25250,
+          "sha256": "af55fa1cce48c2f6f439e0962634428e22f2377402b9da88662d5f08bf72c098"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/04-old/WORKER_RESULT.SAFE.json",
+          "bytes": 694,
+          "sha256": "de32049ae43beb30b3bd979f5dd8ee33cdf3525f408f77351eb370374ddaca78"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/04-old/ACTUAL_COMPARISON_ARM.SAFE.json",
+          "bytes": 9502,
+          "sha256": "1371696233b28ae9f4488c5df3a35231566178752520a2fb020425fc6a37ca17"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/04-old/ACTUAL_SETTINGS.SAFE.json",
+          "bytes": 219,
+          "sha256": "e9ca03ec633732763699d9bff0416488c7bf994c4b5e07013c6aa0c4f9928966"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/04-old/READONLY_NATIVE_BEFORE.SAFE.json",
+          "bytes": 916,
+          "sha256": "8ad5f1c39033c6062d5ac06aedaed8e1982477f5067dbcb379d9e2ed48af0af8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/04-old/READONLY_NATIVE_AFTER.SAFE.json",
+          "bytes": 916,
+          "sha256": "3bcc32a43639d35cbcbe49cfdbd6701ff37b439e19e7e56058301291bf510c8a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/04-old/DATABASE_FOOTPRINT_BEFORE.SAFE.json",
+          "bytes": 163,
+          "sha256": "88e2b4684a91d38909a02485344089cde57e20c27eff6dc0dc89f4b85a93f5c9"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-lock-lease-comparison/04-old/DATABASE_FOOTPRINT_AFTER.SAFE.json",
+          "bytes": 163,
+          "sha256": "065be79b44156470018a07bdd93871c2fea3b7fec89ed8887321c322952e1b8b"
+        }
+      ]
+    }
+  ],
+  "means": {
+    "old": {
+      "peakBytes": 611895296,
+      "CPUThroughLastExitMicroseconds": 25088538,
+      "closureSeconds": 26.269917489000363,
+      "cycleMedianMS": 1658.6000665000004,
+      "walInsertWindowBytes": 222352,
+      "graphRelationGrowthBytes": 45056
+    },
+    "new": {
+      "peakBytes": 536227840,
+      "CPUThroughLastExitMicroseconds": 13455970,
+      "closureSeconds": 15.612848823002423,
+      "cycleMedianMS": 22.07737499999996,
+      "walInsertWindowBytes": 58732,
+      "graphRelationGrowthBytes": 0
+    }
+  },
+  "meanReductions": {
+    "peakBytes": 75667456,
+    "CPUThroughLastExitMicroseconds": 11632568,
+    "closureSeconds": 10.65706866599794,
+    "cycleMedianMS": 1636.5226915000003,
+    "walInsertWindowBytes": 163620,
+    "graphRelationGrowthBytes": 45056
+  },
+  "peakReductionPercent": 12.366079048922774,
+  "pairs": [
+    {
+      "old": "01-old",
+      "new": "02-new",
+      "peakReductionBytes": 73453568
+    },
+    {
+      "old": "04-old",
+      "new": "03-new",
+      "peakReductionBytes": 77881344
+    }
+  ],
+  "peakReducedInBothPairs": true,
+  "identicalLogicalStartingWitness": {
+    "root": "51bba3f004a3c22b6ac2490f0db05d276d6a3e63214c6be6b4da87c2ef731aab",
+    "originalHash": "d241b4ed0c36611f394c7833297fc86d829a8285cf325296460aa37af3fb8602",
+    "generation": "82b8452d-2675-4444-8985-01692fca32c6",
+    "history": {
+      "head": "0afd253a6304a4327ce77ba4d30cdffea8573a896dfec478e4821a5e0791143c",
+      "count": 6000,
+      "generation": "c58616a1-ff0a-4535-ae26-60b7b6d35d03",
+      "originalHash": "a621d6cc841230a2ed074086fbddd6900a3a43abd9e6e48f585d3ab0b7c4511d"
+    },
+    "blobLockCount": 4,
+    "blobLockSHA256": "2afcf1bfd6f2fecaf0dc1049c0299f97f7013b3211dfea17eb9d0077e51e745a"
+  },
+  "sourcePinsIdenticalAcrossAllArms": true,
+  "sourceFilesPerArm": 284,
+  "settingsIdentical": {
+    "jit": "on",
+    "work_mem": "4096",
+    "autovacuum": "off",
+    "lock_timeout": "1000",
+    "shared_buffers": "16384",
+    "max_connections": "100",
+    "statement_timeout": "30000",
+    "default_transaction_read_only": "on"
+  },
+  "allGroupsFreshAndEmptyThroughLastExit": true,
+  "forcedGC": false,
+  "cacheClear": false,
+  "samePhysicalStartingCopy": false,
+  "scopeLimits": [
+    "Same evolving persistent working COPY; old writes preserve logical root but leave archival nodes/revisions/WAL",
+    "Filecache may remain charged to retained earlier cgroups; no cold cache/whole file-charge claim",
+    "Same-current samples are approximate observations; shmem is included in file, kernel subfields not added",
+    "WAL insert-LSN window ends before PostgreSQL shutdown; relation sizes do not count archive nodes",
+    "Direct native SQL transport, not HTTP/full-motor equivalent",
+    "Six cycles per arm cannot establish a long-running memory plateau",
+    "No adding savings from distinct components or separate component peaks"
+  ],
+  "full500": false,
+  "production": false,
+  "providerCalls": 0,
+  "executionAuthority": false,
+  "common500ReserveProven": false,
+  "full500RecommendedFromThisAlone": false
+}

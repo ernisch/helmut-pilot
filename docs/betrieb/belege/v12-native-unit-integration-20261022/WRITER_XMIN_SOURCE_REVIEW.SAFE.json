@@ -1,0 +1,48 @@
+{
+  "schema": "helmut-native-bridge-writer-xmin-source-review/1",
+  "atUTC": "2026-10-22T22:58:08.808358+00:00",
+  "sourcePins": [
+    {
+      "file": "supabase/proposals/local_unit_original_bridge_local.sql",
+      "bytes": 63419,
+      "sha256": "07b495a1efd7c6fb1300207a6e2f1440efee6c33054c0fe19947774865c0c762"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/local-unit-native-bridge-qualification.py",
+      "bytes": 34678,
+      "sha256": "953aec5d14b4e1c6f45abbf3ded69cdf658d99a9edddd65184db9ccba5cc3188"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/local-unit-native-bridge-qualification-test.py",
+      "bytes": 19838,
+      "sha256": "a9787276d88d36eef7ef6ddebf4476cd86abb82c1c62592ade656255099df98a"
+    }
+  ],
+  "authorPureTestsPassed": 21,
+  "pureTestsRerunByReviewer": false,
+  "independentRootAndOriginalReviewPassed": true,
+  "additionalWriterSelectColumns": [
+    "helmut_store.xmin",
+    "briefings.xmin"
+  ],
+  "writerTableSelectGranted": false,
+  "runtimeGrantsUnchanged": true,
+  "realConsumerRequiresXminForRevisionIntegrity": true,
+  "negativeSystemAttributeACLsChecked": true,
+  "actualWriterReadOnlyProbeBeforeMotor": true,
+  "writerNegativeProbeSQLState": "42501 only",
+  "missingColumnErrorRemainsFailure": true,
+  "additionalForbiddenColumns": [
+    "helmut_store.updated_at",
+    "briefings.created_at",
+    "helmut_store.xmax",
+    "briefings.xmax"
+  ],
+  "timeColumnsExistInRetainedAb17Catalog": true,
+  "negativeCheckCountRetainsHistoricalRuntimeReceiptScope": true,
+  "nativeExecutionQualified": false,
+  "unit60Qualified": false,
+  "reserveQualified": false,
+  "full500Qualified": false,
+  "oldClaimsOrGOReused": false
+}

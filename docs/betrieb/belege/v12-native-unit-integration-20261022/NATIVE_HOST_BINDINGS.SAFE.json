@@ -1,0 +1,54 @@
+{
+  "schema": "helmut-local-unit-native-host-bindings-evidence/1",
+  "candidateCommit": "30754fed753255858cc22e0534c52ff5e5bee028",
+  "case": "/workspace/helmut-unit-diagnostic-native/f4141ede77933fac0076c2b5d70672fa",
+  "resultFile": {
+    "path": "/workspace/helmut-unit-diagnostic-native/f4141ede77933fac0076c2b5d70672fa/RESULT.SAFE.json",
+    "bytes": 3818,
+    "sha256": "9d300e81c1f8e9df0a86fba33ba7be9534e2b95435f7388e1c038f8d649e9d07"
+  },
+  "pass": true,
+  "actualAliasInstallerContainerId": "e08ff6b7c4492de6c60196ce75211e04590ad68cea1a54150540a298b25acb1d",
+  "installerClose": {
+    "exitCode": 0,
+    "stdoutNaturalEOF": true,
+    "stderrNaturalEOF": true
+  },
+  "independentObserverClose": {
+    "exitCode": 0,
+    "stdoutNaturalEOF": true,
+    "stderrNaturalEOF": true,
+    "observerCodeSHA256": "d628ba48bb4b085ed8f787442fd388217d96bef1643aac5ebd962276f1f351e9",
+    "nodePin": {
+      "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "bytes": 125989464,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12"
+    }
+  },
+  "clockDomain": {
+    "schema": "helmut-local-unit-monotonic-domain/1",
+    "kind": "kernel-without-time-namespaces",
+    "namespace": null,
+    "bootId": "d5bb4284-112a-4a96-8b9b-c08e0707ba82"
+  },
+  "processMembershipVerifiedAgainstPinnedKernelParentAndLeaf": true,
+  "commonMemoryPeakBytes": 26570752,
+  "memoryEvents": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "parentEmptyAfterActualProcessEnds": true,
+  "aliasMaterializationUnderCommonParent": true,
+  "noOriginalDatabaseStarted": true,
+  "motorCalls": 0,
+  "providerCalls": 0,
+  "unit60Qualified": false,
+  "full500ReserveQualified": false,
+  "full500Qualified": false,
+  "sourcePreflightMayWarmSharedCache": true,
+  "scope": "Only native alias installation, actual independent process observation and complete process ends; no engine result or 500-profile memory claim."
+}

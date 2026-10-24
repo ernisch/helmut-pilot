@@ -1,0 +1,646 @@
+{
+  "schema": "helmut-exact-head-ci-status/1",
+  "observedAtUTC": "2026-10-23T18:11:37+00:00",
+  "repository": "ernisch/helmut-pilot",
+  "expectedHeadSHA": "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb",
+  "run": {
+    "id": 40000572324,
+    "head_sha": "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb",
+    "head_branch": "codex/v12-unit60-native-integration-20261022",
+    "run_attempt": 1,
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "failure",
+    "created_at": "2026-10-23T18:06:24Z",
+    "updated_at": "2026-10-23T18:09:21Z",
+    "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/40000572324"
+  },
+  "workflowJobs": [
+    {
+      "id": 120576228895,
+      "name": "Oeffentlicher Pruefplan",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-23T18:08:31Z",
+      "completed_at": "2026-10-23T18:08:41Z",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/40000572324/job/120576228895",
+      "steps": [
+        {
+          "number": 1,
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:31Z",
+          "completed_at": "2026-10-23T18:08:32Z"
+        },
+        {
+          "number": 2,
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:32Z",
+          "completed_at": "2026-10-23T18:08:36Z"
+        },
+        {
+          "number": 3,
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:36Z",
+          "completed_at": "2026-10-23T18:08:37Z"
+        },
+        {
+          "number": 4,
+          "name": "Pruefplan ohne private Zugaenge",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:37Z",
+          "completed_at": "2026-10-23T18:08:37Z"
+        },
+        {
+          "number": 5,
+          "name": "Checkout-Kontext ohne private Zugaenge pruefen",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:37Z",
+          "completed_at": "2026-10-23T18:08:37Z"
+        },
+        {
+          "number": 6,
+          "name": "Originalkanal-Schutzregeln (rein synthetisch)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:37Z",
+          "completed_at": "2026-10-23T18:08:38Z"
+        },
+        {
+          "number": 7,
+          "name": "Oeffentliche Codebindungen vor privater Freigabe pruefen",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:38Z",
+          "completed_at": "2026-10-23T18:08:39Z"
+        },
+        {
+          "number": 13,
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:39Z",
+          "completed_at": "2026-10-23T18:08:39Z"
+        },
+        {
+          "number": 14,
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:39Z",
+          "completed_at": "2026-10-23T18:08:39Z"
+        },
+        {
+          "number": 15,
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:39Z",
+          "completed_at": "2026-10-23T18:08:39Z"
+        }
+      ]
+    },
+    {
+      "id": 120576229370,
+      "name": "Browser-/Mobile-Smoke (Chromium)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-23T18:08:31Z",
+      "completed_at": "2026-10-23T18:09:20Z",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/40000572324/job/120576229370",
+      "steps": [
+        {
+          "number": 1,
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:31Z",
+          "completed_at": "2026-10-23T18:08:32Z"
+        },
+        {
+          "number": 2,
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:32Z",
+          "completed_at": "2026-10-23T18:08:36Z"
+        },
+        {
+          "number": 3,
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:36Z",
+          "completed_at": "2026-10-23T18:08:37Z"
+        },
+        {
+          "number": 4,
+          "name": "Prüfplan aus geänderten Dateien",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:37Z",
+          "completed_at": "2026-10-23T18:08:37Z"
+        },
+        {
+          "number": 5,
+          "name": "Abhängigkeiten installieren (aus package-lock.json)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:37Z",
+          "completed_at": "2026-10-23T18:08:39Z"
+        },
+        {
+          "number": 6,
+          "name": "Playwright + Chromium installieren",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:39Z",
+          "completed_at": "2026-10-23T18:09:02Z"
+        },
+        {
+          "number": 7,
+          "name": "Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:09:02Z",
+          "completed_at": "2026-10-23T18:09:17Z"
+        },
+        {
+          "number": 8,
+          "name": "Getrennte Prosa in beiden App Ansichten (Chromium, hell und dunkel)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:09:17Z",
+          "completed_at": "2026-10-23T18:09:18Z"
+        },
+        {
+          "number": 15,
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:09:18Z",
+          "completed_at": "2026-10-23T18:09:18Z"
+        },
+        {
+          "number": 16,
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:09:18Z",
+          "completed_at": "2026-10-23T18:09:18Z"
+        },
+        {
+          "number": 17,
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:09:18Z",
+          "completed_at": "2026-10-23T18:09:19Z"
+        }
+      ]
+    },
+    {
+      "id": 120576333958,
+      "name": "Syntax + Offline-Suiten",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-10-23T18:08:44Z",
+      "completed_at": "2026-10-23T18:09:07Z",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/40000572324/job/120576333958",
+      "steps": [
+        {
+          "number": 1,
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:45Z",
+          "completed_at": "2026-10-23T18:08:46Z"
+        },
+        {
+          "number": 2,
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:08:46Z",
+          "completed_at": "2026-10-23T18:09:00Z"
+        },
+        {
+          "number": 3,
+          "name": "Erfolgreichen oeffentlichen Pruefplan verlangen",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:09:00Z",
+          "completed_at": "2026-10-23T18:09:00Z"
+        },
+        {
+          "number": 4,
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:09:00Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 5,
+          "name": "CI-Zugang fuer Lauf, PR und Checkout pruefen",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 6,
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 7,
+          "name": "Prüfplan aus geänderten Dateien",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 8,
+          "name": "Abhängigkeiten installieren (aus package-lock.json)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 9,
+          "name": "Syntax-Check aller JS-Dateien",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 10,
+          "name": "SOURCE23 geschlossener Tuple-Codec (synthetisch/offline)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 11,
+          "name": "FinalContext Subject-Tupel-Codec (synthetisch/offline)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 12,
+          "name": "Exakte Node-Version für den lokalen Heap-Nachweis",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 13,
+          "name": "Native Speicher-/Workerbudgets (synthetisch/offline)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 14,
+          "name": "Isolierte Einzelunit-Integration (synthetisch/offline)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 15,
+          "name": "Node-Version der bestehenden Offline-Suiten wiederherstellen",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 16,
+          "name": "Lokaler PostgREST-Owner und Eingabebindungen (synthetisch/offline)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 17,
+          "name": "Einzelunit-Diagnosevorbereitung (synthetisch/offline)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 18,
+          "name": "Freigegebene Originale entschluesseln und 84 Pins bereitstellen",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 19,
+          "name": "Ressourcenstart und Originalbindungen (offline)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 20,
+          "name": "Lokale Buchungsbestätigung (synthetisch/offline)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 21,
+          "name": "psql bereitstellen (Voraussetzung des Datenbanknachweises)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 22,
+          "name": "PostgREST 12.2.3 bereitstellen (Voraussetzung des §11-Rückfallnachweises)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 23,
+          "name": "Kontoschreibschutz und 500 Registrierungen gegen PostgreSQL und PostgREST",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 24,
+          "name": "Lage-Quellenvertrag gegen isolierte PostgreSQL und PostgREST",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 25,
+          "name": "Null auf 500 auf Null gegen echte isolierte PostgreSQL",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 26,
+          "name": "Vierer-Nacharbeit gegen isolierte PostgreSQL (Atomarik und kein Retry)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 27,
+          "name": "Realkohorten-Endweg gegen echte isolierte PostgreSQL",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 28,
+          "name": "Realkohorten-Runtime gegen echte isolierte PostgreSQL17",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 29,
+          "name": "Synthetik500 Import gegen echte isolierte PostgreSQL17",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 30,
+          "name": "Synthetik500 Import bis Abschaltung gegen echte isolierte PostgreSQL17",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 31,
+          "name": "Synthetik500 nativer Vollbackup und Rueckweg gegen isolierte PostgreSQL17",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 32,
+          "name": "Neue inerte Native-D-Ablage gegen echte isolierte PostgreSQL17",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 33,
+          "name": "Unabhaengige Endsteuerung gegen echten PostgreSQL17 und pg_cron",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 34,
+          "name": "EU-Servicezeitvertrag, Tagesbuch-Bootstrap und Rueckweg gegen isolierten PostgreSQL17",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 35,
+          "name": "Inerte Originalzustands-Reader-SQL gegen isolierten PostgreSQL17.6",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 36,
+          "name": "Schnelle Kernschutzprüfung",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 37,
+          "name": "Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 38,
+          "name": "Bereichs-Regression (nur geänderte Fachbereiche)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 39,
+          "name": "Z22-Indexzugriff Gegenbeispiele (rein offline)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 40,
+          "name": "Z22-Datenbanknachweis §1–§11 gegen echte PostgreSQL + echtes PostgREST (fail-closed)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 41,
+          "name": "Private Diagnoseausgaben verschluesseln",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 42,
+          "name": "Ausschliesslich verschluesselte Diagnosen sichern",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:04Z"
+        },
+        {
+          "number": 83,
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:09:04Z",
+          "completed_at": "2026-10-23T18:09:05Z"
+        },
+        {
+          "number": 84,
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:09:05Z",
+          "completed_at": "2026-10-23T18:09:05Z"
+        },
+        {
+          "number": 85,
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-23T18:09:05Z",
+          "completed_at": "2026-10-23T18:09:05Z"
+        }
+      ]
+    }
+  ],
+  "pullRequest": {
+    "number": 936,
+    "url": "https://github.com/ernisch/helmut-pilot/pull/936",
+    "isDraft": true,
+    "state": "OPEN",
+    "headRefOid": "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb",
+    "headRefName": "codex/v12-unit60-native-integration-20261022",
+    "mergeable": "MERGEABLE",
+    "mergeStateStatus": "UNSTABLE"
+  },
+  "exactCommitPreviewStatuses": [
+    {
+      "context": "Vercel",
+      "state": "success",
+      "created_at": "2026-10-23T18:06:35Z",
+      "updated_at": "2026-10-23T18:06:35Z",
+      "target_url": "https://vercel.com/nohut/helmut-pilot/4usix7uvPBQ7cLBe7w57iEWyYR9w"
+    }
+  ],
+  "exactCommitPreviewChecks": [
+    {
+      "id": 120575360155,
+      "name": "Vercel Preview Comments",
+      "head_sha": "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-23T18:06:36Z",
+      "completed_at": "2026-10-23T18:06:36Z",
+      "details_url": "https://vercel.com/github"
+    }
+  ],
+  "publicGuardFailure": {
+    "jobId": 120576333958,
+    "stepNumber": 5,
+    "stepName": "CI-Zugang fuer Lauf, PR und Checkout pruefen",
+    "pass": false,
+    "code": "PRIVATE_CI_CHANNEL_REJECTED",
+    "location": {
+      "function": "validate_owner_access",
+      "line": 219
+    },
+    "publicAnnotation": {
+      "path": ".github",
+      "start_line": 10,
+      "end_line": 10,
+      "annotation_level": "failure",
+      "message": "Process completed with exit code 1."
+    },
+    "underlyingGuardInputsOrLocalsRead": false
+  },
+  "limits": {
+    "ciConclusion": "FAILURE",
+    "original84Provisioning": "SKIPPED",
+    "protectedOfflineBindings": "SKIPPED",
+    "isolatedSingleUnitOffline": "SKIPPED",
+    "z22OfflineAndLive": "SKIPPED",
+    "noNative60OrRAMOrFull500Acceptance": true,
+    "privateOriginalsOrPrivateLogsReadOrExported": false,
+    "publicStep5GuardJSONReadOnly": true,
+    "deploymentPagesOpened": false,
+    "workflowsTriggeredRerunOrCancelled": false,
+    "localTestsDBDockerNativeProviderActions": false,
+    "repositoryWritten": false,
+    "historicalFailuresReinterpreted": false
+  }
+}

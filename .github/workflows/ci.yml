@@ -5,8 +5,9 @@ name: CI — Offline-Suite + Browser-Smoke
 # Vorher führte KEIN Workflow die Offline-Testsuiten bei PR/Push aus — eine
 # Regression in server.js/client.js/lib erreichte ungeprüft main und Production.
 #
-# GRENZEN (hart): KEINE Secrets, KEINE Supabase-Verbindung, KEIN LLM, KEIN
-# Deployment. Alle Suiten laufen offline (DB/fetch gemockt bzw. lokaler Server).
+# GRENZEN: keine Production-Zugaenge, Supabase-Verbindung oder LLM-Aufrufe.
+# Nur der geschuetzte Entschluesselungsschritt bekommt den CI-Paketschluessel;
+# die anschliessenden Suiten laufen offline ohne diesen Schluessel.
 #
 # DAMIT DAS GATE BLOCKIERT, muss der Betreiber EINMALIG Branch Protection
 # aktivieren (GitHub → Settings → Branches → Add branch protection rule):
@@ -30,8 +31,80 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  plan:
+    name: Oeffentlicher Pruefplan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      standard: ${{ steps.plan.outputs.standard }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pruefplan ohne private Zugaenge
+        id: plan
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          CHANGED=""
+          if [ -n "$BASE" ] && [ "$BASE" != "0000000000000000000000000000000000000000" ]; then
+            CHANGED="$(git diff --name-only "$BASE" "$GITHUB_SHA")"
+          fi
+          node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
+      - name: Checkout-Kontext ohne private Zugaenge pruefen
+        if: steps.plan.outputs.standard == 'true'
+        run: python3 -B scripts/helmut-resource-meter/private_ci_channel.py inspect-context
+      - name: Originalkanal-Schutzregeln (rein synthetisch)
+        if: steps.plan.outputs.standard == 'true'
+        run: node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/private_ci_channel_test.py
+      - name: Oeffentliche Codebindungen vor privater Freigabe pruefen
+        if: steps.plan.outputs.standard == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: |
+          node scripts/lokal.js -- node scripts/synthetik-500-runtime-artifact-attestation-test.js
+          node - <<'JS'
+          const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict');
+          const root=fs.realpathSync(process.cwd()),read=fs.readFileSync,open=fs.openSync,close=fs.closeSync,fds=new Set();
+          const allowed=file=>{assert.equal(typeof file,'string');const p=path.resolve(file),st=fs.lstatSync(p);assert(p.startsWith(root+path.sep)&&st.isFile()&&!st.isSymbolicLink()&&fs.realpathSync(p)===p,'public checkout regular files only');};
+          fs.readFileSync=function(file,...args){if(typeof file==='number')assert(fds.has(file),'untracked read descriptor');else allowed(file);return read.call(this,file,...args);};
+          fs.openSync=function(file,...args){allowed(file);const fd=open.call(this,file,...args);fds.add(fd);return fd;};
+          fs.closeSync=function(fd){fds.delete(fd);return close.call(this,fd);};
+          assert.throws(()=>fs.readFileSync(0),/untracked read descriptor/);
+          // Inspect public caller metadata only. The full descriptor requires
+          // private original review evidence and remains behind the real gate.
+          const acceptance=require('./scripts/helmut-resource-meter/atomic-usage-integration.js').CONTROL_SOURCE_ACCEPTANCE;
+          const delta=acceptance.localViewBindingCallerDelta,sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+          assert.equal(delta.file,'lib/helmut/synthetik-500-production-adapter.js');
+          assert.equal(delta.originalSHA256,acceptance.localReadCallerDelta.candidateSourceSHA256[delta.file]);
+          const bytes=fs.readFileSync('docs/betrieb/belege/local-view-binding-20261022/'+delta.independentSourceReview.name);
+          assert.equal(bytes.length,delta.independentSourceReview.bytes);assert.equal(sha(bytes),delta.independentSourceReview.sha256);
+          const review=JSON.parse(bytes);assert.equal(review.baselineAdapter.sha256,delta.originalSHA256);
+          for(const key of ['executionAuthority','historicalAcceptanceTransferred','full500Accepted','nativeUnit60Qualified'])assert.equal(review[key],false);
+          assert.equal(delta.full500Accepted,false);assert.equal(delta.requiresFreshIntegrationAcceptance,true);
+          const current=review.sourcePins.filter(p=>p.file===delta.file);assert.equal(current.length,1);assert.equal(current[0].sha256,delta.sha256);
+          for(const pin of review.sourcePins){const b=fs.readFileSync(pin.file);assert.equal(b.length,pin.bytes);assert.equal(sha(b),pin.sha256);}
+          console.log(JSON.stringify({reviewedPublicSourceFiles:review.sourcePins.length,executionAuthority:false,fullDescriptorExecuted:false}));
+          JS
   offline-suite:
     name: Syntax + Offline-Suiten
+    needs: plan
+    # Run after a failed plan so the required check fails, but allow obsolete
+    # workflows to be cancelled instead of holding the concurrency slot forever.
+    if: ${{ !cancelled() }}
+    environment:
+      name: ${{ needs.plan.result == 'success' && needs.plan.outputs.standard == 'true' && 'helmut-ci-originals' || 'helmut-ci-public' }}
+      url: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    env:
+      HELMUT_CI_PRIVATE_LOGS: ${{ needs.plan.outputs.standard }}
     runs-on: ubuntu-latest
     # CI35207010979: 397/397 Suiten erfolgreich in779s, aber inklusive Setup
     # und Kontoschutz am15-Minuten-Jobende abgebrochen; Z22 wurde uebersprungen.
@@ -65,12 +138,23 @@ jobs:
           --health-timeout 5s
           --health-retries 20
     steps:
+      - name: Erfolgreichen oeffentlichen Pruefplan verlangen
+        env:
+          PLAN_RESULT: ${{ needs.plan.result }}
+        run: test "$PLAN_RESULT" = success
       - uses: actions/checkout@v4
         with:
           # Volle Historie: der Bereichs-Regressionsschritt vergleicht den PR-Kopf mit dem
           # Basis-Commit (github.event.pull_request.base.sha). Ohne fetch-depth: 0 fehlt der
           # Basis-Commit im flachen Checkout.
           fetch-depth: 0
+          persist-credentials: false
+      - name: CI-Zugang fuer Lauf, PR und Checkout pruefen
+        if: needs.plan.outputs.standard == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          HELMUT_CI_ORIGINALS_ACCESS_POLICY: ${{ vars.HELMUT_CI_ORIGINALS_ACCESS_POLICY || 'owner-automatic-v1' }}
+        run: python3 -B scripts/helmut-resource-meter/private_ci_channel.py check-approval --receipt "$RUNNER_TEMP/helmut-ci-original-approval.json"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -114,6 +198,166 @@ jobs:
       - name: FinalContext Subject-Tupel-Codec (synthetisch/offline)
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
+      - name: Exakte Node-Version für den lokalen Heap-Nachweis
+        if: steps.plan.outputs.standard == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+      - name: Native Speicher-/Workerbudgets (synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
+        run: |
+          # The real short-child guard requires this exact runtime version/path.
+          # Provide the actual setup-node binary, never a shim or a version mock.
+          test "$(node --version)" = v24.19.0
+          runtime_node=/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node
+          test ! -e "$runtime_node"
+          test ! -L "$runtime_node"
+          sudo install -D -m 0755 "$(command -v node)" "$runtime_node"
+          cmp "$(command -v node)" "$runtime_node"
+          test "$("$runtime_node" --version)" = v24.19.0
+          # One budget test creates and removes its own temporary /workspace
+          # directory. Only a new disposable runner root is made writable.
+          test ! -e /workspace
+          test ! -L /workspace
+          sudo install -d -m 0755 -o "$(id -u)" -g "$(id -g)" /workspace
+          # These two suites use only synthetic receipts/mocked Docker and short
+          # local Node children. They precede checks requiring private originals.
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/native-memory-budget-test.py
+          node scripts/lokal.js -- node scripts/helmut-resource-meter/native-node-budget-test.js
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/kernel-pressure-snapshot-test.py
+          # Pure current-checkout bindings; no authority or engine imports.
+          node scripts/lokal.js -- python3 -I -S -B scripts/helmut-resource-meter/current-repository-root-test.py
+          node scripts/lokal.js -- python3 -I -S -B scripts/helmut-resource-meter/connection-code-binding-test.py
+      - name: Isolierte Einzelunit-Integration (synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
+        run: |
+          # Pure/mocked boundaries and short isolated Python lifecycle children.
+          # These suites never start Docker,
+          # PostgreSQL, the engine, a provider, or consume an execution grant.
+          for suite in \
+            scripts/local-unit-diagnostic-*-test.js \
+            scripts/local-unit-native-*-test.js \
+            scripts/helmut-resource-meter/local-unit-original-*-test.js \
+            scripts/helmut-resource-meter/local-unit-native-*-test.js \
+            scripts/helmut-resource-meter/local-unit-diagnostic-*-test.js; do
+            node scripts/lokal.js -- node "$suite"
+          done
+          for suite in \
+            scripts/helmut-resource-meter/local-unit-native-*-test.py \
+            scripts/helmut-resource-meter/local-unit-diagnostic-store-test.py; do
+            node scripts/lokal.js -- python3 -I -S -B "$suite"
+          done
+      - name: Node-Version der bestehenden Offline-Suiten wiederherstellen
+        if: steps.plan.outputs.standard == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Lokaler PostgREST-Owner und Eingabebindungen (synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: |
+          # The runtime keeps its exact approved absolute module location.
+          # In this disposable GitHub runner, provide ONLY the same import closure
+          # before importing the synthetic tests. The final authority negative
+          # also imports the actual start-preflight through this fixed BIN.
+          # These are public checkout files, never private original inputs.
+          # Never replace an existing file.
+          runtime_helper=/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/next-resource-authority.py
+          if [ "$GITHUB_WORKSPACE/scripts/helmut-resource-meter/next-resource-authority.py" != "$runtime_helper" ]; then
+            for helper in next-resource-authority.py local-resource-authority-slot.json \
+              capture-local-source.py local-source-runtime-binding.json local-day20-input-binding.json \
+              local-day21-input-binding.json \
+              local-calendar-binding.py native-memory-budget.py start-preflight.py; do
+              runtime_file="${runtime_helper%/*}/$helper"
+              test ! -e "$runtime_file"
+              test ! -L "$runtime_file"
+              sudo install -D -m 0644 "scripts/helmut-resource-meter/$helper" "$runtime_file"
+              cmp "scripts/helmut-resource-meter/$helper" "$runtime_file"
+            done
+          fi
+          # The shared runtime descriptor also binds this unchanged public review
+          # file at its historical fixed path. Copy only the tracked checkout
+          # file; never create or replace an existing target or symlink.
+          review_source="docs/betrieb/belege/local-lock-lease-20261021/INDEPENDENT_SOURCE_DELTA_REVIEW.SAFE.json"
+          review_target="/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/local-lock-lease-20261021/INDEPENDENT_SOURCE_DELTA_REVIEW.SAFE.json"
+          if [ "$GITHUB_WORKSPACE/$review_source" != "$review_target" ]; then
+            test ! -e "$review_target"
+            test ! -L "$review_target"
+            sudo install -D -m 0644 "$review_source" "$review_target"
+            cmp "$review_source" "$review_target"
+          fi
+          # This supplemental current SOURCE review has distinct canonical
+          # paths. Preserve the historical review and never replace an alias.
+          for current_review_directory in \
+            "docs/betrieb/belege/local-unit-storage-source-20261022" \
+            "docs/betrieb/belege/local-unit-control-bundle-source-20261024"; do
+            current_review_target_directory="/workspace/helmut-unit60-native-20261022/$current_review_directory"
+            for current_review_name in CURRENT_SOURCE_REVIEW_REPORT.SAFE.json INDEPENDENT_CURRENT_SOURCE_REVIEW.SAFE.json; do
+              current_review_source="$current_review_directory/$current_review_name"
+              current_review_target="$current_review_target_directory/$current_review_name"
+              if [ "$GITHUB_WORKSPACE/$current_review_source" != "$current_review_target" ]; then
+                test ! -e "$current_review_target"
+                test ! -L "$current_review_target"
+                sudo install -D -m 0644 "$current_review_source" "$current_review_target"
+                cmp "$current_review_source" "$current_review_target"
+              fi
+            done
+          done
+          # All children/receipts are mocked or TEST_ONLY temporary fixtures.
+          # Integration inherits the owner guards; do not run that base twice.
+          # These run before the unchanged checks requiring genuine originals.
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/local-postgrest-integration-test.py
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/process-runner-postgrest-close-test.py
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/backend-consumer-binding-test.py
+          node scripts/lokal.js -- node scripts/helmut-resource-meter/local-postgrest-services-test.js
+          node scripts/lokal.js -- node --test scripts/helmut-resource-meter/backend-consumer-binding-test.js
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/provision-private-ci-originals-test.py
+      - name: Einzelunit-Diagnosevorbereitung (synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
+        # Uses synthetic packet bytes and the public historical terminal only.
+        # Runs before the checks requiring private originals; grants no execution.
+        run: node scripts/lokal.js -- node scripts/synthetik-500-unit-diagnostic-contract-test.js
+      - name: Freigegebene Originale entschluesseln und 84 Pins bereitstellen
+        id: private_originals
+        if: steps.plan.outputs.standard == 'true'
+        env:
+          HELMUT_CI_ORIGINALS_KEY: ${{ secrets.HELMUT_CI_ORIGINALS_KEY }}
+          HELMUT_CI_ORIGINALS_ACCESS_POLICY: ${{ vars.HELMUT_CI_ORIGINALS_ACCESS_POLICY || 'owner-automatic-v1' }}
+        run: python3 -B scripts/helmut-resource-meter/private_ci_channel.py provision --receipt "$RUNNER_TEMP/helmut-ci-original-approval.json"
+      - name: Ressourcenstart und Originalbindungen (offline)
+        if: steps.plan.outputs.standard == 'true'
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
+        run: |
+          # Der echte Lauf bleibt an seinen freigegebenen /workspace-Pfad gebunden.
+          # Nur die synthetischen CI-Mocks laden ihre Module aus dem Checkout.
+          python3 -B - <<'PY'
+          import importlib.util, pathlib, unittest
+          path = pathlib.Path('scripts/helmut-resource-meter/start-preflight-test.py').resolve()
+          spec = importlib.util.spec_from_file_location('local_precheck_tests', path)
+          tests = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(tests)
+          tests.C.I.BIN = path.parent
+          tests.C.C.BIN = path.parent
+          result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromModule(tests))
+          raise SystemExit(not result.wasSuccessful())
+          PY
+          python scripts/helmut-resource-meter/next-resource-authority-test.py
+          node scripts/helmut-resource-meter/preparation-bindings-test.js
+          python scripts/helmut-resource-meter/runtime-read-contract-test.py
+          node --test scripts/helmut-resource-meter/start-input-checks-test.js
+      - name: Lokale Buchungsbestätigung (synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
+        run: |
+          node scripts/auth-state-parts-codec-test.js
+          node scripts/auth-state-parts-graph-test.js
+          node scripts/auth-state-parts-write-reuse-test.js
+          for mode in usage parts; do
+            for ack_case in appended-old-head unchanged-new-head appended-new-head unchanged-old-head; do
+              node scripts/auth-state-parts-ack-case.js --local-mock-only --mode "$mode" --case "$ack_case"
+            done
+          done
       - name: psql bereitstellen (Voraussetzung des Datenbanknachweises)
         if: steps.plan.outputs.database == 'true'
         # Das ubuntu-latest-Image bringt psql heute mit — aber GitHub darf den Umfang
@@ -121,6 +365,7 @@ jobs:
         # Binary JEDEN Merge blockieren, ohne dass jemand Code angefasst hat. Die
         # Voraussetzung wird deshalb ausgesprochen statt vorausgesetzt. Ist psql schon da,
         # kostet der Schritt nichts.
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           if command -v psql >/dev/null 2>&1; then
             echo "psql vorhanden: $(psql --version)"
@@ -139,6 +384,7 @@ jobs:
         # verändern kann (gleiche Begründung wie der Playwright-Pin unten). Der Download
         # wird bis zu dreimal versucht; ein dauerhaft unerreichbares GitHub-Release ist
         # ein sichtbarer FEHLSCHLAG, kein stiller Skip.
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -e
           for i in 1 2 3; do
@@ -165,6 +411,7 @@ jobs:
           HELMUT_TEST_PG_USER: "helmut"
           HELMUT_TEST_POSTGREST_BIN: "/tmp/postgrest"
           PGPASSWORD: "helmut"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js scripts/auth-store-cas-datenbank-test.js
 
       - name: Lage-Quellenvertrag gegen isolierte PostgreSQL und PostgREST
@@ -176,6 +423,7 @@ jobs:
           HELMUT_TEST_PG_USER: "helmut"
           HELMUT_TEST_POSTGREST_BIN: "/tmp/postgrest"
           PGPASSWORD: "helmut"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/lage-quellen-rest-datenbank-test.js
 
       - name: Null auf 500 auf Null gegen echte isolierte PostgreSQL
@@ -186,6 +434,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/testfenster-null500-datenbank.js
 
       - name: Vierer-Nacharbeit gegen isolierte PostgreSQL (Atomarik und kein Retry)
@@ -196,6 +445,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/verstehen-vier-datenbank.js
 
       - name: Realkohorten-Endweg gegen echte isolierte PostgreSQL
@@ -209,6 +459,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/realkohorte-500-endweg-datenbank-test.js
 
       - name: Realkohorten-Runtime gegen echte isolierte PostgreSQL17
@@ -222,6 +473,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/realkohorte-500-runtime-datenbank-test.js
 
       - name: Synthetik500 Import gegen echte isolierte PostgreSQL17
@@ -234,6 +486,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js scripts/synthetik-500-import-test.js --postgres-local
 
       - name: Synthetik500 Import bis Abschaltung gegen echte isolierte PostgreSQL17
@@ -246,6 +499,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js scripts/synthetik-500-runtime-datenbank-test.js
 
       - name: Synthetik500 nativer Vollbackup und Rueckweg gegen isolierte PostgreSQL17
@@ -258,6 +512,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js scripts/synthetik-500-native-import-test.js --postgres-local
 
       - name: Neue inerte Native-D-Ablage gegen echte isolierte PostgreSQL17
@@ -265,6 +520,7 @@ jobs:
         timeout-minutes: 3
         env:
           HELMUT_SYNTHETIK500_PG_ISOLIERT: "JA"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -euo pipefail
           IMAGE="postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3"
@@ -293,6 +549,7 @@ jobs:
         timeout-minutes: 5
         env:
           HELMUT_END500_PG_ISOLIERT: "JA"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -euo pipefail
           docker build -f scripts/fixtures/end500-pg17.Dockerfile -t helmut-end500-pg17:1 scripts/fixtures
@@ -314,6 +571,7 @@ jobs:
       - name: EU-Servicezeitvertrag, Tagesbuch-Bootstrap und Rueckweg gegen isolierten PostgreSQL17
         if: steps.plan.outputs.database == 'true'
         timeout-minutes: 3
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -euo pipefail
           IMAGE="postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3"
@@ -339,6 +597,7 @@ jobs:
       - name: Inerte Originalzustands-Reader-SQL gegen isolierten PostgreSQL17.6
         if: steps.plan.outputs.database == 'true'
         timeout-minutes: 2
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -euo pipefail
           IMAGE="postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3"
@@ -359,6 +618,7 @@ jobs:
         if: steps.plan.outputs.core == 'true'
         env:
           HELMUT_SOURCE_MODE: "off"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/run-offline-tests.js --fast-core
 
       - name: Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)
@@ -377,6 +637,7 @@ jobs:
         # ausdrücklich, was hier ohnehin gilt — dieser Lauf ist offline.
         env:
           HELMUT_SOURCE_MODE: "off"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/run-offline-tests.js
 
       - name: Bereichs-Regression (nur geänderte Fachbereiche)
@@ -388,6 +649,8 @@ jobs:
         # wird sichtbar gemeldet. Dieselbe kanonische Zuordnung benutzt auch der Runner.
         env:
           HELMUT_SOURCE_MODE: "off"
+          HELMUT_CI_PUBLIC_SUITE_METADATA: "offline-runner-v1"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -e
           BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
@@ -399,6 +662,13 @@ jobs:
           CHANGED="$(git diff --name-only "$BASE" "${{ github.sha }}")"
           printf '%s\n' "$CHANGED"
           node scripts/lokal.js -- node scripts/run-offline-tests.js --aendert "$CHANGED" --nur-bereich
+
+      - name: Z22-Indexzugriff Gegenbeispiele (rein offline)
+        if: steps.plan.outputs.standard == 'true' || steps.plan.outputs.database == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
+        run: node scripts/lokal.js scripts/vorbedingung-mandatsfilter-plan-test.js
 
       - name: Z22-Datenbanknachweis §1–§11 gegen echte PostgreSQL + echtes PostgREST (fail-closed)
         if: steps.plan.outputs.database == 'true'
@@ -433,8 +703,24 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js scripts/vorbedingung-mandatsfilter-datenbank-test.js
 
+
+      - name: Private Diagnoseausgaben verschluesseln
+        id: private_logs
+        if: always() && steps.private_originals.outcome == 'success'
+        env:
+          HELMUT_CI_ORIGINALS_KEY: ${{ secrets.HELMUT_CI_ORIGINALS_KEY }}
+        run: python3 -B scripts/helmut-resource-meter/private_ci_channel.py encrypt-logs
+      - name: Ausschliesslich verschluesselte Diagnosen sichern
+        if: always() && steps.private_logs.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-ci-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/helmut-ci-private-logs.tar.gz.gpg
+          if-no-files-found: error
+          retention-days: 7
 
   browser-smoke:
     name: Browser-/Mobile-Smoke (Chromium)

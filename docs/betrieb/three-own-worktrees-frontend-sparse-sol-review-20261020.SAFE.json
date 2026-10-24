@@ -1,0 +1,570 @@
+{
+  "actualCases": [
+    {
+      "actualPin": {
+        "bytes": 37451,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-0/ACTUAL.SAFE.json",
+        "sha256": "5802d3dea2dc069a0218409fa54f31aaf25da7b0d55d912260a6cf4282391877"
+      },
+      "beforeFlagsReconstructedByOnlyTwoSBackToHMatchesInventory": true,
+      "branch": "codex/bounded-control-cache-20261020",
+      "currentCommonConfigPin": {
+        "bytes": 806,
+        "path": "/workspace/helmut-pilot/.git/config",
+        "sha256": "99cdcd7dc681596eede0c9bd5e6bc284df838993a634be02ed8d83291db124ae"
+      },
+      "currentPrivateConfigPin": {
+        "bytes": 82,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-cache-sol-20261020/config.worktree",
+        "sha256": "3d99a66c75b1dc4cc16501fcc80895a021ecda8892b3bf2925d783c503d42a1b"
+      },
+      "currentReferences": {
+        "bytes": 878,
+        "sha256": "e9575aaa4237a99750f74256ce402c55c8e7a88aec95f3ba8bb012fd2ec19fcf"
+      },
+      "freshFlagsSHA256": "eae80ba5df8927e3b79d3b43b8c7b79f1b029412c1f2c35e9e6dda832964ad15",
+      "freshKeptRegularFileMetadata": [
+        {
+          "bytes": 45991,
+          "ctime_ns": 1792521402517422567,
+          "device": 27,
+          "gid": 1000,
+          "inode": 138722,
+          "mode": 33152,
+          "mtime_ns": 1792521402517422567,
+          "relativePath": "AGENTS.md",
+          "uid": 1000
+        },
+        {
+          "bytes": 28716,
+          "ctime_ns": 1792521402528012653,
+          "device": 27,
+          "gid": 1000,
+          "inode": 138772,
+          "mode": 33152,
+          "mtime_ns": 1792521402528012653,
+          "relativePath": "docs/CURRENT_STATE.md",
+          "uid": 1000
+        },
+        {
+          "bytes": 8325,
+          "ctime_ns": 1792521402528012653,
+          "device": 27,
+          "gid": 1000,
+          "inode": 138776,
+          "mode": 33152,
+          "mtime_ns": 1792521402528012653,
+          "relativePath": "docs/START_HERE.md",
+          "uid": 1000
+        },
+        {
+          "bytes": 36015,
+          "ctime_ns": 1792521402528012653,
+          "device": 27,
+          "gid": 1000,
+          "inode": 138775,
+          "mode": 33152,
+          "mtime_ns": 1792521402528012653,
+          "relativePath": "docs/ROADMAP_BIS_500.md",
+          "uid": 1000
+        },
+        {
+          "bytes": 5431,
+          "ctime_ns": 1792521402799230534,
+          "device": 27,
+          "gid": 1000,
+          "inode": 142628,
+          "mode": 33152,
+          "mtime_ns": 1792521402799230534,
+          "relativePath": "scripts/lokal.js",
+          "uid": 1000
+        },
+        {
+          "bytes": 34732,
+          "ctime_ns": 1792521402778256905,
+          "device": 27,
+          "gid": 1000,
+          "inode": 142367,
+          "mode": 33152,
+          "mtime_ns": 1792521402778256905,
+          "relativePath": "scripts/helmut-resource-meter/atomic-usage-integration.js",
+          "uid": 1000
+        }
+      ],
+      "freshSelectedENOENT": [
+        "/workspace/helmut-control-cache-sol-20261020/client.js",
+        "/workspace/helmut-control-cache-sol-20261020/styles.css"
+      ],
+      "freshSkipCount": 1400,
+      "freshStageSHA256": "ad1fb1739fa7611270e44eb923286dc2a447c911342cbbf38caa9650037349df",
+      "freshStatusCleanIncludingUntrackedAndIgnored": true,
+      "gitResultPin": {
+        "bytes": 88,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-0/GIT_RESULT.SAFE.json",
+        "sha256": "0c677244fecd3141dca48a33002cca68d8c9f37838cf810269842cc3b89db6bc"
+      },
+      "head": "67b5c4ef8ccd482d726126f8bbc41a00ee4151a3",
+      "newPatternLines": 843,
+      "onceAdoptionPin": {
+        "bytes": 36232,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-0/ROOT_ONCE_ADOPTION.SAFE.json",
+        "sha256": "cc604d5b5b349edb6a1cde6c2edc64fb07c96efc3fe8b6cdd38f010819dc4e5c"
+      },
+      "patternPin": {
+        "bytes": 33540,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-cache-sol-20261020/info/sparse-checkout",
+        "sha256": "a8d38ed1a3569543215237f0b6fbf2c529f9096cdcbee74d5cd5e6900ba093a1"
+      },
+      "rootAttestedWholeOutsideHashesMetadataAllRefsAndLocalBlobContentsUnchanged": true,
+      "sequentialDfObservation": {
+        "afterBytes": 14439112704,
+        "beforeBytes": 14438191104,
+        "deltaBytes": 921600
+      },
+      "worktree": "/workspace/helmut-control-cache-sol-20261020"
+    },
+    {
+      "actualPin": {
+        "bytes": 37433,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-1/ACTUAL.SAFE.json",
+        "sha256": "cff811f08962485cb02d84566b6c61a285ddbfc5969e90c543c26a5947e07862"
+      },
+      "beforeFlagsReconstructedByOnlyTwoSBackToHMatchesInventory": true,
+      "branch": "codex/cold-read-hash-projection-20261020",
+      "currentCommonConfigPin": {
+        "bytes": 806,
+        "path": "/workspace/helmut-pilot/.git/config",
+        "sha256": "99cdcd7dc681596eede0c9bd5e6bc284df838993a634be02ed8d83291db124ae"
+      },
+      "currentPrivateConfigPin": {
+        "bytes": 82,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-srf-fix-sol-20261020/config.worktree",
+        "sha256": "3d99a66c75b1dc4cc16501fcc80895a021ecda8892b3bf2925d783c503d42a1b"
+      },
+      "currentReferences": {
+        "bytes": 878,
+        "sha256": "e9575aaa4237a99750f74256ce402c55c8e7a88aec95f3ba8bb012fd2ec19fcf"
+      },
+      "freshFlagsSHA256": "0729781d469858322e346f05217290dc8ad321fcc3b77367c0292fbb1ffce48f",
+      "freshKeptRegularFileMetadata": [
+        {
+          "bytes": 45991,
+          "ctime_ns": 1792517056803032273,
+          "device": 27,
+          "gid": 1000,
+          "inode": 139818,
+          "mode": 33152,
+          "mtime_ns": 1792517056803032273,
+          "relativePath": "AGENTS.md",
+          "uid": 1000
+        },
+        {
+          "bytes": 25597,
+          "ctime_ns": 1792517056815275428,
+          "device": 27,
+          "gid": 1000,
+          "inode": 139868,
+          "mode": 33152,
+          "mtime_ns": 1792517056815275428,
+          "relativePath": "docs/CURRENT_STATE.md",
+          "uid": 1000
+        },
+        {
+          "bytes": 8325,
+          "ctime_ns": 1792517056815275428,
+          "device": 27,
+          "gid": 1000,
+          "inode": 139872,
+          "mode": 33152,
+          "mtime_ns": 1792517056815275428,
+          "relativePath": "docs/START_HERE.md",
+          "uid": 1000
+        },
+        {
+          "bytes": 36015,
+          "ctime_ns": 1792517056815275428,
+          "device": 27,
+          "gid": 1000,
+          "inode": 139871,
+          "mode": 33152,
+          "mtime_ns": 1792517056815275428,
+          "relativePath": "docs/ROADMAP_BIS_500.md",
+          "uid": 1000
+        },
+        {
+          "bytes": 5431,
+          "ctime_ns": 1792517057050339685,
+          "device": 27,
+          "gid": 1000,
+          "inode": 141360,
+          "mode": 33152,
+          "mtime_ns": 1792517057050339685,
+          "relativePath": "scripts/lokal.js",
+          "uid": 1000
+        },
+        {
+          "bytes": 34732,
+          "ctime_ns": 1792517057036869889,
+          "device": 27,
+          "gid": 1000,
+          "inode": 141155,
+          "mode": 33152,
+          "mtime_ns": 1792517057036869889,
+          "relativePath": "scripts/helmut-resource-meter/atomic-usage-integration.js",
+          "uid": 1000
+        }
+      ],
+      "freshSelectedENOENT": [
+        "/workspace/helmut-srf-fix-sol-20261020/client.js",
+        "/workspace/helmut-srf-fix-sol-20261020/styles.css"
+      ],
+      "freshSkipCount": 1394,
+      "freshStageSHA256": "01481d8cf5a1fa1261d3950627cc6933a5df20f9113222d34c38d4cc028098cd",
+      "freshStatusCleanIncludingUntrackedAndIgnored": true,
+      "gitResultPin": {
+        "bytes": 88,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-1/GIT_RESULT.SAFE.json",
+        "sha256": "0c677244fecd3141dca48a33002cca68d8c9f37838cf810269842cc3b89db6bc"
+      },
+      "head": "227a9fafafa928c664fd380ad8860176d4422556",
+      "newPatternLines": 843,
+      "onceAdoptionPin": {
+        "bytes": 36226,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-1/ROOT_ONCE_ADOPTION.SAFE.json",
+        "sha256": "76c3ef1e74f12aa98415fab4c46008e9c163091f9a74aabf546e9289c515fe9c"
+      },
+      "patternPin": {
+        "bytes": 33540,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-srf-fix-sol-20261020/info/sparse-checkout",
+        "sha256": "a8d38ed1a3569543215237f0b6fbf2c529f9096cdcbee74d5cd5e6900ba093a1"
+      },
+      "rootAttestedWholeOutsideHashesMetadataAllRefsAndLocalBlobContentsUnchanged": true,
+      "sequentialDfObservation": {
+        "afterBytes": 14439997440,
+        "beforeBytes": 14439071744,
+        "deltaBytes": 925696
+      },
+      "worktree": "/workspace/helmut-srf-fix-sol-20261020"
+    },
+    {
+      "actualPin": {
+        "bytes": 37457,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-2/ACTUAL.SAFE.json",
+        "sha256": "a5791c01bc885a97283286fb9b8097a9c3ecec21bd6fa75fe188687e8ed11dfd"
+      },
+      "beforeFlagsReconstructedByOnlyTwoSBackToHMatchesInventory": true,
+      "branch": "codex/control-fullpath-integration-20261019",
+      "currentCommonConfigPin": {
+        "bytes": 806,
+        "path": "/workspace/helmut-pilot/.git/config",
+        "sha256": "99cdcd7dc681596eede0c9bd5e6bc284df838993a634be02ed8d83291db124ae"
+      },
+      "currentPrivateConfigPin": {
+        "bytes": 82,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-integration-20261019/config.worktree",
+        "sha256": "3d99a66c75b1dc4cc16501fcc80895a021ecda8892b3bf2925d783c503d42a1b"
+      },
+      "currentReferences": {
+        "bytes": 878,
+        "sha256": "e9575aaa4237a99750f74256ce402c55c8e7a88aec95f3ba8bb012fd2ec19fcf"
+      },
+      "freshFlagsSHA256": "5539e1a6f12a62eb233bae5a9bfda48c13284ea22380235e9ae0855b9f680f9a",
+      "freshKeptRegularFileMetadata": [
+        {
+          "bytes": 45991,
+          "ctime_ns": 1792432820961992151,
+          "device": 27,
+          "gid": 1000,
+          "inode": 1179996,
+          "mode": 33152,
+          "mtime_ns": 1792432820961992151,
+          "relativePath": "AGENTS.md",
+          "uid": 1000
+        },
+        {
+          "bytes": 32673,
+          "ctime_ns": 1792433442580059855,
+          "device": 27,
+          "gid": 1000,
+          "inode": 1180046,
+          "mode": 33152,
+          "mtime_ns": 1792433442580059855,
+          "relativePath": "docs/CURRENT_STATE.md",
+          "uid": 1000
+        },
+        {
+          "bytes": 8325,
+          "ctime_ns": 1792432820974038336,
+          "device": 27,
+          "gid": 1000,
+          "inode": 1180050,
+          "mode": 33152,
+          "mtime_ns": 1792432820974038336,
+          "relativePath": "docs/START_HERE.md",
+          "uid": 1000
+        },
+        {
+          "bytes": 36015,
+          "ctime_ns": 1792432820974038336,
+          "device": 27,
+          "gid": 1000,
+          "inode": 1180049,
+          "mode": 33152,
+          "mtime_ns": 1792432820974038336,
+          "relativePath": "docs/ROADMAP_BIS_500.md",
+          "uid": 1000
+        },
+        {
+          "bytes": 5431,
+          "ctime_ns": 1792432821253706442,
+          "device": 27,
+          "gid": 1000,
+          "inode": 1181497,
+          "mode": 33152,
+          "mtime_ns": 1792432821253706442,
+          "relativePath": "scripts/lokal.js",
+          "uid": 1000
+        },
+        {
+          "bytes": 29775,
+          "ctime_ns": 1792433440700016896,
+          "device": 27,
+          "gid": 1000,
+          "inode": 1181321,
+          "mode": 33152,
+          "mtime_ns": 1792433440700016896,
+          "relativePath": "scripts/helmut-resource-meter/atomic-usage-integration.js",
+          "uid": 1000
+        }
+      ],
+      "freshSelectedENOENT": [
+        "/workspace/helmut-control-integration-20261019/client.js",
+        "/workspace/helmut-control-integration-20261019/styles.css"
+      ],
+      "freshSkipCount": 1384,
+      "freshStageSHA256": "e2810dd752749d8d2dd529ed7aeb7fd90a63a3306e33889d96b423d099f6ba5c",
+      "freshStatusCleanIncludingUntrackedAndIgnored": true,
+      "gitResultPin": {
+        "bytes": 88,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-2/GIT_RESULT.SAFE.json",
+        "sha256": "0c677244fecd3141dca48a33002cca68d8c9f37838cf810269842cc3b89db6bc"
+      },
+      "head": "c8624f7c875a4f6f849d83951898c5e205833a6e",
+      "newPatternLines": 843,
+      "onceAdoptionPin": {
+        "bytes": 36234,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-2/ROOT_ONCE_ADOPTION.SAFE.json",
+        "sha256": "845dce3b651fbc47cd0d15b77f4e936837b498322b34d897e852c10a10a67454"
+      },
+      "patternPin": {
+        "bytes": 33540,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-integration-20261019/info/sparse-checkout",
+        "sha256": "a8d38ed1a3569543215237f0b6fbf2c529f9096cdcbee74d5cd5e6900ba093a1"
+      },
+      "rootAttestedWholeOutsideHashesMetadataAllRefsAndLocalBlobContentsUnchanged": true,
+      "sequentialDfObservation": {
+        "afterBytes": 14440882176,
+        "beforeBytes": 14439956480,
+        "deltaBytes": 925696
+      },
+      "worktree": "/workspace/helmut-control-integration-20261019"
+    }
+  ],
+  "atUTC": "2026-10-20T22:43:30.267948+00:00",
+  "blockingFindings": [],
+  "capacity": {
+    "candidateAllocatedBytesInventory": 3035136,
+    "currentAvailableBytesNotMeasuredByThisReview": true,
+    "isolatedAggregateNetReclaimProved": false,
+    "sequentialObservedDfDeltas": [
+      921600,
+      925696,
+      925696
+    ],
+    "sumOfSequentialDfDeltasBytes": 2772992
+  },
+  "checkedSmallProofPins": [
+    {
+      "bytes": 9295,
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/three-worktree-frontend-copy-sparse-independent-review-20261020/THREE_WORKTREE_FRONTEND_COPY_SPARSE_SOURCE_REVIEW.SAFE.json",
+      "sha256": "674ed68ad28074ea52e0cd18efa54ca1afec2d6b97e4df450fb063b5e07fb772"
+    },
+    {
+      "bytes": 37451,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-0/ACTUAL.SAFE.json",
+      "sha256": "5802d3dea2dc069a0218409fa54f31aaf25da7b0d55d912260a6cf4282391877"
+    },
+    {
+      "bytes": 10957,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/sparse_exact_frontend_copies.py",
+      "sha256": "9d94a97512ee36c25e102e7c00f748be0966be8d069bfa3debec84368eea8615"
+    },
+    {
+      "bytes": 2535,
+      "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/three-worktree-frontend-copy-sparse-eligibility-20261020/ELIGIBILITY.SAFE.json",
+      "sha256": "e9e2ad52d1ad87bb43eb07d674aa1b7a02d2e1b812b3f417f8a3072c1f6c471a"
+    },
+    {
+      "bytes": 9225,
+      "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/three-worktree-frontend-copy-sparse-eligibility-20261020/EXACT_SIX_FILE_INVENTORY.PRIVATE.json",
+      "sha256": "d9aab3a928f217ce38c2ec62008aef7bfbf40a2e84a2eb4241e212d269e74176"
+    },
+    {
+      "bytes": 36232,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-0/ROOT_ONCE_ADOPTION.SAFE.json",
+      "sha256": "cc604d5b5b349edb6a1cde6c2edc64fb07c96efc3fe8b6cdd38f010819dc4e5c"
+    },
+    {
+      "bytes": 88,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-0/GIT_RESULT.SAFE.json",
+      "sha256": "0c677244fecd3141dca48a33002cca68d8c9f37838cf810269842cc3b89db6bc"
+    },
+    {
+      "bytes": 33540,
+      "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-cache-sol-20261020/info/sparse-checkout",
+      "sha256": "a8d38ed1a3569543215237f0b6fbf2c529f9096cdcbee74d5cd5e6900ba093a1"
+    },
+    {
+      "bytes": 82,
+      "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-cache-sol-20261020/config.worktree",
+      "sha256": "3d99a66c75b1dc4cc16501fcc80895a021ecda8892b3bf2925d783c503d42a1b"
+    },
+    {
+      "bytes": 806,
+      "path": "/workspace/helmut-pilot/.git/config",
+      "sha256": "99cdcd7dc681596eede0c9bd5e6bc284df838993a634be02ed8d83291db124ae"
+    },
+    {
+      "bytes": 37425,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-flat-scripts-sparse-preparation/actual/worktree-0/ACTUAL.SAFE.json",
+      "sha256": "915d735d3868d05973728e09213e1ecc6f86f99fc0e7bf6a6423a39a1bd70e43"
+    },
+    {
+      "bytes": 33515,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-0/SPARSE_PATTERNS_BEFORE.PRIVATE",
+      "sha256": "8dd008e9e1c5947cd769ddbc275d605fe0c713b80ea4371f56560f7211cdc07d"
+    },
+    {
+      "bytes": 82,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-0/CONFIG_WORKTREE_BEFORE.PRIVATE",
+      "sha256": "3d99a66c75b1dc4cc16501fcc80895a021ecda8892b3bf2925d783c503d42a1b"
+    },
+    {
+      "bytes": 37433,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-1/ACTUAL.SAFE.json",
+      "sha256": "cff811f08962485cb02d84566b6c61a285ddbfc5969e90c543c26a5947e07862"
+    },
+    {
+      "bytes": 36226,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-1/ROOT_ONCE_ADOPTION.SAFE.json",
+      "sha256": "76c3ef1e74f12aa98415fab4c46008e9c163091f9a74aabf546e9289c515fe9c"
+    },
+    {
+      "bytes": 88,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-1/GIT_RESULT.SAFE.json",
+      "sha256": "0c677244fecd3141dca48a33002cca68d8c9f37838cf810269842cc3b89db6bc"
+    },
+    {
+      "bytes": 33540,
+      "path": "/workspace/helmut-pilot/.git/worktrees/helmut-srf-fix-sol-20261020/info/sparse-checkout",
+      "sha256": "a8d38ed1a3569543215237f0b6fbf2c529f9096cdcbee74d5cd5e6900ba093a1"
+    },
+    {
+      "bytes": 82,
+      "path": "/workspace/helmut-pilot/.git/worktrees/helmut-srf-fix-sol-20261020/config.worktree",
+      "sha256": "3d99a66c75b1dc4cc16501fcc80895a021ecda8892b3bf2925d783c503d42a1b"
+    },
+    {
+      "bytes": 37407,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-flat-scripts-sparse-preparation/actual/worktree-1/ACTUAL.SAFE.json",
+      "sha256": "f61c0bcaf227499af1df60e1ace43f77280c73f966c4b5316b4d8d65df7bd01d"
+    },
+    {
+      "bytes": 33515,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-1/SPARSE_PATTERNS_BEFORE.PRIVATE",
+      "sha256": "8dd008e9e1c5947cd769ddbc275d605fe0c713b80ea4371f56560f7211cdc07d"
+    },
+    {
+      "bytes": 82,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-1/CONFIG_WORKTREE_BEFORE.PRIVATE",
+      "sha256": "3d99a66c75b1dc4cc16501fcc80895a021ecda8892b3bf2925d783c503d42a1b"
+    },
+    {
+      "bytes": 37457,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-2/ACTUAL.SAFE.json",
+      "sha256": "a5791c01bc885a97283286fb9b8097a9c3ecec21bd6fa75fe188687e8ed11dfd"
+    },
+    {
+      "bytes": 36234,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-2/ROOT_ONCE_ADOPTION.SAFE.json",
+      "sha256": "845dce3b651fbc47cd0d15b77f4e936837b498322b34d897e852c10a10a67454"
+    },
+    {
+      "bytes": 88,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-2/GIT_RESULT.SAFE.json",
+      "sha256": "0c677244fecd3141dca48a33002cca68d8c9f37838cf810269842cc3b89db6bc"
+    },
+    {
+      "bytes": 33540,
+      "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-integration-20261019/info/sparse-checkout",
+      "sha256": "a8d38ed1a3569543215237f0b6fbf2c529f9096cdcbee74d5cd5e6900ba093a1"
+    },
+    {
+      "bytes": 82,
+      "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-integration-20261019/config.worktree",
+      "sha256": "3d99a66c75b1dc4cc16501fcc80895a021ecda8892b3bf2925d783c503d42a1b"
+    },
+    {
+      "bytes": 37431,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-flat-scripts-sparse-preparation/actual/worktree-2/ACTUAL.SAFE.json",
+      "sha256": "260875a62b53f67b0243f2065b13f594496d2d0be6fa667f686076d918aa8ab9"
+    },
+    {
+      "bytes": 33515,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-2/SPARSE_PATTERNS_BEFORE.PRIVATE",
+      "sha256": "8dd008e9e1c5947cd769ddbc275d605fe0c713b80ea4371f56560f7211cdc07d"
+    },
+    {
+      "bytes": 82,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/three-own-worktrees-frontend-copy-sparse-preparation/actual/worktree-2/CONFIG_WORKTREE_BEFORE.PRIVATE",
+      "sha256": "3d99a66c75b1dc4cc16501fcc80895a021ecda8892b3bf2925d783c503d42a1b"
+    }
+  ],
+  "evidenceLimits": {
+    "allOutsideFileSHAAndMetadataBeforeAfterEqualityInheritedFromPinnedRootActualNotIndependentlyRepeated": true,
+    "allRefsBeforeAfterEqualityInheritedFromPinnedRootActualCurrentRefsOnlyReobserved": true,
+    "full500": false,
+    "fullGitBlobPayloadComparisonsNotRepeated": true,
+    "noRuntimeOrRAMQualification": true,
+    "noSubjectImportsTestsASTSparseGitMutationDockerNativeDBOrOriginalReads": true,
+    "otherTwoWorktreeStateUnchangedPerSequentialActionInheritedFromPinnedRootActual": true,
+    "production": false,
+    "rootCLIExit0Tools": [
+      "fae870",
+      "4c9ac0",
+      "4557e2"
+    ],
+    "rootCLIExitProofsNotSeparatelyReopened": true
+  },
+  "findings": {
+    "allThreeCapturedGitInvocationsExit0NoStdoutNoStderrNoRetry": true,
+    "allThreePinnedActualsAndRootOnceClaimsBindExactSourceEligibilityInventoryIndependentReview": true,
+    "currentFlagsEqualInventoryWithExactlyClientAndStylesAdditionalSkip": true,
+    "currentHEADBranchAndStageTriplesMatchBeforeInventory": true,
+    "currentReferencesAgreeAcrossAllThreeWorktrees": true,
+    "localGitObjectsRemainRestoreAuthority": true,
+    "patternsAreExactActualFlatBytesPlusOnlyTwoRootExclusions": true,
+    "rootReadOnlyCodeAndCurrentProductTreeOutsideScope": true,
+    "sixExactFrontendPathsFreshENOENT": true,
+    "threePrivateConfigOriginsNonconeNoSparseIndexAndCommonConfigPinsMatch": true
+  },
+  "independent": true,
+  "reviewer": "gpt-6.1-sol /root/sprint_shutdown",
+  "schema": "helmut-own-frontend-copy-sparse-independent-actual-review/1",
+  "sourceIndependentReviewPin": {
+    "bytes": 9295,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/three-worktree-frontend-copy-sparse-independent-review-20261020/THREE_WORKTREE_FRONTEND_COPY_SPARSE_SOURCE_REVIEW.SAFE.json",
+    "sha256": "674ed68ad28074ea52e0cd18efa54ca1afec2d6b97e4df450fb063b5e07fb772"
+  },
+  "status": "ACCEPTED_ACTUAL_SIX_OWN_FRONTEND_WORKING_COPIES_SPARSE_ONLY"
+}

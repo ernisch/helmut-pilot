@@ -1,0 +1,105 @@
+{
+  "actualCommonSetupPeakBytes": 1051852800,
+  "actualNativeSourceCount": 29,
+  "allSourceChildrenExited": true,
+  "auth30Qualified": false,
+  "caseID": "c336811c8f31ecf559c34bcf56ad0381",
+  "evidencePins": [
+    {
+      "bytes": 2154,
+      "path": "/workspace/helmut-unit-diagnostic-native/c336811c8f31ecf559c34bcf56ad0381/RESULT.SAFE.json",
+      "sha256": "7b4cbddec1faf551ed40353e212e24390cd319be4b5fdf9608e5c0b4fd0c3655"
+    },
+    {
+      "bytes": 755,
+      "path": "/workspace/helmut-unit-diagnostic-native/c336811c8f31ecf559c34bcf56ad0381/NATIVE_QUALIFICATION.SAFE.json",
+      "sha256": "a15e620c68db7f0f3307ac7148e76593030626cb424bd8d77a56782f17ac4b77"
+    },
+    {
+      "bytes": 1226,
+      "path": "/workspace/helmut-unit-diagnostic-native/c336811c8f31ecf559c34bcf56ad0381/NATIVE_ROLE_QUALIFICATION.SAFE.json",
+      "sha256": "ca0e09f1497c58ce3c19a3afd119bf3dc244019ab2adb7a0ba3b3cf3daf74413"
+    },
+    {
+      "bytes": 322,
+      "path": "/workspace/helmut-unit-diagnostic-native/c336811c8f31ecf559c34bcf56ad0381/EXECUTION_HOST_FAILURE.PRIVATE.json",
+      "sha256": "9cfc723cb0bbe1a5ed4d1e7fa0e2bfbb14bf91f5cb1b0f583ddf0a10134e9abf"
+    },
+    {
+      "bytes": 19948,
+      "path": "/workspace/helmut-unit-diagnostic-native/c336811c8f31ecf559c34bcf56ad0381/EXECUTION_HOST_CLOSE.SAFE.json",
+      "sha256": "4dd6e3bd8422067d680e80c2b2ca81b4634e50b43cb198751b96399db6c621b9"
+    },
+    {
+      "bytes": 36729,
+      "path": "/workspace/helmut-unit-diagnostic-native/c336811c8f31ecf559c34bcf56ad0381/NATIVE_CATALOG.SAFE.json",
+      "sha256": "72ea4b6a3fb3c972db47d9a43af78ef4bc6a7e82a305199d71a9171d9ee54235"
+    },
+    {
+      "bytes": 104,
+      "path": "/workspace/helmut-unit-diagnostic-native/c336811c8f31ecf559c34bcf56ad0381/SOURCE_LOGICAL_BEFORE.STDOUT.PRIVATE.log",
+      "sha256": "e9e36388ed60ade9d8b15392fe0752af74aba60141d7d46c48b980a3ba2a6af4"
+    },
+    {
+      "bytes": 104,
+      "path": "/workspace/helmut-unit-diagnostic-native/c336811c8f31ecf559c34bcf56ad0381/SOURCE_LOGICAL_AFTER.STDOUT.PRIVATE.log",
+      "sha256": "e9e36388ed60ade9d8b15392fe0752af74aba60141d7d46c48b980a3ba2a6af4"
+    },
+    {
+      "bytes": 7222,
+      "path": "/workspace/helmut-native-integration-checks-20261022/full-unit-control-read-bundle-prepared-20261024/capture-2eccbcd02c3c573c25f7eae079f51e59/FINAL.SAFE.json",
+      "sha256": "2cc9f9a553c8e5b04b5b6d2343075785843119460db7c971f7c5bf0f4f9c6140"
+    }
+  ],
+  "exactCountFixPending": 29,
+  "firstFailure": "RuntimeError: native-execution-source-native-source-expectations",
+  "fixScope": "Exact native source inventory 27 to 29, nine disjoint helpers unchanged; current DDL inventory and both bundle signatures bound by tests",
+  "fixedSourceCommit": "94fba5bb21d3406b6a16635dcf473cf160e6e366",
+  "followingHostFailure": "native-execution-host-source-runtime-exited",
+  "full500ReserveQualified": false,
+  "fullLastProcessExitCovered": true,
+  "integratedCodeCommit": "13ea96574654e8e5e70256b3e914428e3b457fe6",
+  "kernelGroupEmpty": true,
+  "memoryEvents": {
+    "high": 0,
+    "low": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_group_kill": 0,
+    "oom_kill": 0
+  },
+  "motorCalls": 0,
+  "motorEntryRequested": false,
+  "nativeRoleCatalogRollbackUnchanged": true,
+  "nativeRoleNegativeCheckCount": 33,
+  "nativeRoleNegativeChecksPassed": true,
+  "naturalEOFs": [
+    true,
+    true
+  ],
+  "newReadPathPerformanceMeasured": false,
+  "noRetryOrOldRightsReused": true,
+  "offlineSourceTests": {
+    "count": 21,
+    "exit0Capture": "742144",
+    "outputCapture": "4275cc",
+    "receiptOrigin": "Author original execution output supplied to independent reviewer",
+    "repeatedForReview": false
+  },
+  "originalAuthRowUnchanged": true,
+  "originalCountExpectation": 27,
+  "originalPostrunPreserved": true,
+  "originalSourcePinsUnchanged": true,
+  "outerExitCode": 1,
+  "outerTimeout": false,
+  "outerWaitConfirmed": true,
+  "pass": false,
+  "providerCalls": 0,
+  "schema": "helmut-actual-source-count-setup-failure/1",
+  "sourceBeforeAfterIdentical": true,
+  "sourceCommit": "76d87f8c8e22cc675c194f23b228fe6dcf05980b",
+  "sourceLogicalBeforeAfterByteIdentical": true,
+  "sourceReview": "Independent SOL review PASS; no clocks, CAS, ACK or original guard changes",
+  "unit60Qualified": false,
+  "whole500OrPlateauInferred": false
+}

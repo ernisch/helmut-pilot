@@ -1,0 +1,294 @@
+{
+  "PGDATABodyReadByReviewer": false,
+  "acceptanceScope": "Five genuine closed local Control-source component cases and their independent ordered result/UUID/semantic join only.",
+  "actualResultPins": [
+    {
+      "bytes": 7871,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/ACTUAL_RESULT.SAFE.json",
+      "sha256": "a0255874bd140d278bf1b0cd9c87b976ebd00ffb0607a530119a4ceeb8baa99c"
+    },
+    {
+      "bytes": 8441,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/ACTUAL_RESULT.SAFE.json",
+      "sha256": "2aeec3d1a85633373adcd414a20252ab942d410d75611b850d3b0f0d1549d364"
+    },
+    {
+      "bytes": 8397,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/ACTUAL_RESULT.SAFE.json",
+      "sha256": "926b6e881883b2e33ebfb1e1a532bbf31bc0fd34d535674cbf50b8d44580b14e"
+    },
+    {
+      "bytes": 8396,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/ACTUAL_RESULT.SAFE.json",
+      "sha256": "16dd69e7a4103f491e42642686bda9bb08201b284de5b90e9ab547c934738502"
+    },
+    {
+      "bytes": 8420,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/ACTUAL_RESULT.SAFE.json",
+      "sha256": "7419d7a2d9fd0ffacb66d6a9958753b38fc6b4daec6909f90c64fe4c7c3c87c8"
+    }
+  ],
+  "auth30Accepted": false,
+  "blockingFindings": [],
+  "casePlanPin": {
+    "bytes": 2366,
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/ROOT_CASE_PLAN_V2.SAFE.json",
+    "sha256": "f886eed8693b9820778357d4fb8435842843ab807e16cb4b7f4f2c62c9ee8eff"
+  },
+  "caseSummaries": [
+    {
+      "actualResultPin": {
+        "bytes": 7871,
+        "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/ACTUAL_RESULT.SAFE.json",
+        "sha256": "a0255874bd140d278bf1b0cd9c87b976ebd00ffb0607a530119a4ceeb8baa99c"
+      },
+      "allOwnedProcessesExited": true,
+      "allSixMemoryEventsZero": true,
+      "authRPCCount": 0,
+      "case": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd",
+      "finalGroupEmpty": true,
+      "independentCaseReviewPin": {
+        "bytes": 29568,
+        "path": "/workspace/helmut-native-integration-checks-20261022/current-control-lifecycle-v2-actual-independent-review-20261023/REVIEW.SAFE.json",
+        "sha256": "e209ef667e5c6e75344e6a944e6b254e6b6d01539f40a0169a9a928412776e0d"
+      },
+      "measurementMode": "lifecycle-only",
+      "nativeMemoryPeakBytes": 1023897600,
+      "ordinal": 0,
+      "outerWallSeconds": 22.727456724998774,
+      "status": "PASS",
+      "variant": "NONE"
+    },
+    {
+      "actualResultPin": {
+        "bytes": 8441,
+        "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/ACTUAL_RESULT.SAFE.json",
+        "sha256": "2aeec3d1a85633373adcd414a20252ab942d410d75611b850d3b0f0d1549d364"
+      },
+      "allOwnedProcessesExited": true,
+      "allSixMemoryEventsZero": true,
+      "authRPCCount": 27,
+      "case": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d",
+      "finalGroupEmpty": true,
+      "independentCaseReviewPin": {
+        "bytes": 63854,
+        "path": "/workspace/helmut-native-integration-checks-20261022/current-control-case1-old-v2-actual-independent-review-20261023/REVIEW_FINAL.SAFE.json",
+        "sha256": "f79b45a097d70f2f70d72d0540182b3bbc1d3a7ae50b0178b262c610f9c2e59c"
+      },
+      "measurementMode": "control-cache",
+      "nativeMemoryPeakBytes": 1013436416,
+      "ordinal": 1,
+      "outerWallSeconds": 37.9848950470041,
+      "status": "PASS",
+      "variant": "OLD"
+    },
+    {
+      "actualResultPin": {
+        "bytes": 8397,
+        "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/ACTUAL_RESULT.SAFE.json",
+        "sha256": "926b6e881883b2e33ebfb1e1a532bbf31bc0fd34d535674cbf50b8d44580b14e"
+      },
+      "allOwnedProcessesExited": true,
+      "allSixMemoryEventsZero": true,
+      "authRPCCount": 27,
+      "case": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1",
+      "finalGroupEmpty": true,
+      "independentCaseReviewPin": {
+        "bytes": 40417,
+        "path": "/workspace/helmut-native-integration-checks-20261022/current-control-case2-new-v2-actual-independent-review-20261023/REVIEW.SAFE.json",
+        "sha256": "ee56ce50f90e0f3defef7fed836b4e49fd4f57b6380efabbcc8db6918b59c00d"
+      },
+      "measurementMode": "control-cache",
+      "nativeMemoryPeakBytes": 1019572224,
+      "ordinal": 2,
+      "outerWallSeconds": 36.378446331989835,
+      "status": "PASS",
+      "variant": "NEW"
+    },
+    {
+      "actualResultPin": {
+        "bytes": 8396,
+        "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/ACTUAL_RESULT.SAFE.json",
+        "sha256": "16dd69e7a4103f491e42642686bda9bb08201b284de5b90e9ab547c934738502"
+      },
+      "allOwnedProcessesExited": true,
+      "allSixMemoryEventsZero": true,
+      "authRPCCount": 27,
+      "case": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3",
+      "finalGroupEmpty": true,
+      "independentCaseReviewPin": {
+        "bytes": 40357,
+        "path": "/workspace/helmut-native-integration-checks-20261022/current-control-case3-new-v2-actual-independent-review-20261023/REVIEW.SAFE.json",
+        "sha256": "7234849b7e1af1cd018949e7fae7a6ed6bce37284cdab9297a153968493b8ced"
+      },
+      "measurementMode": "control-cache",
+      "nativeMemoryPeakBytes": 1043419136,
+      "ordinal": 3,
+      "outerWallSeconds": 38.31630864799081,
+      "status": "PASS",
+      "variant": "NEW"
+    },
+    {
+      "actualResultPin": {
+        "bytes": 8420,
+        "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/ACTUAL_RESULT.SAFE.json",
+        "sha256": "7419d7a2d9fd0ffacb66d6a9958753b38fc6b4daec6909f90c64fe4c7c3c87c8"
+      },
+      "allOwnedProcessesExited": true,
+      "allSixMemoryEventsZero": true,
+      "authRPCCount": 27,
+      "case": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98",
+      "finalGroupEmpty": true,
+      "independentCaseReviewPin": {
+        "bytes": 40451,
+        "path": "/workspace/helmut-native-integration-checks-20261022/current-control-case4-old-v2-actual-independent-review-20261023/REVIEW.SAFE.json",
+        "sha256": "f22b98d82d206c5adf165754bc7d1ef006c57180b593f81c014980f86f1885e7"
+      },
+      "measurementMode": "control-cache",
+      "nativeMemoryPeakBytes": 1015066624,
+      "ordinal": 4,
+      "outerWallSeconds": 36.121464532989194,
+      "status": "PASS",
+      "variant": "OLD"
+    }
+  ],
+  "createdAtUTC": "2026-10-23T17:24:12.285283+00:00",
+  "deletionApproved": false,
+  "evidenceRetention": {
+    "allOriginalsCanonicalV11RuntimeCodeAndEvidenceKEEP": true,
+    "fullRawCapturesAndCompleteIndividualReviewsRemainPrivate": true,
+    "individualRawPinListsNotDuplicatedHere": true,
+    "maximumAggregateBytes": 262144
+  },
+  "full500Accepted": false,
+  "globalCheckerSource": {
+    "APIs": "Evidence/from_pin/uuid/stable; no verify_case rerun; existing workload global UUID and semantic rules",
+    "bytes": 56601,
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/verifier/generate_native_source_proof.py",
+    "sha256": "4395ec3cf446a78ee81d63c165a6f8758b7631ef1ae2f3c8a88a7193a2240898"
+  },
+  "globalJoin": {
+    "actualStartFinishChronologyMatchesPlanOrder": true,
+    "evidenceStableAfterAllReads": true,
+    "fiveActualPinsFreshlyMatchedToIndependentCaseReviews": true,
+    "fiveDistinctActualResultPaths": true,
+    "fiveDistinctAdoptionNonces": true,
+    "fiveDistinctContainerIDs": true,
+    "fiveDistinctParentGroups": true,
+    "fourSemanticResultsExactlyEqual": true,
+    "globalUUIDCollisions": 0,
+    "globalUUIDRulesMatchExistingVerifierWorkload": true,
+    "nativePreparedAndCasePlanExact": true,
+    "performed": true,
+    "publicationInvoked": false,
+    "semanticsReconciledWithPinnedActualControlTraces": true,
+    "uniqueConfirmedCASRevisions": 16,
+    "uniqueReadNonces": 92,
+    "uniqueRequestUUIDs": 108,
+    "verifierMainInvoked": false,
+    "verifyCaseCallsDuringAggregation": 0
+  },
+  "globalOnlyInputCount": 8,
+  "globalOnlyInputPinsSHA256": "81ddc6da39cdde5f48122c8dc4e4742bf57f273c8b0db33702a979f9904a56bd",
+  "independent": true,
+  "limits": [
+    "The accepted earlier individual reviews retain their original DTOs and complete proof pins. Lifecycle was reviewed independently; each comparison case passed the pinned verify_case once. Aggregation performed no case checker reruns.",
+    "The earlier aggregator Exit1 is a preserved reviewer-harness DTO failure, not a failed native case. The corrected join independently read the exact existing case review/result/trace pins and succeeded; no historical review was rewritten.",
+    "Final publication/proof generation and integration-gate execution remain separate. This file is the requested independent actual review and supplies no GO/claim, NativeUnit60/Auth30/Full500, production/provider or reserve acceptance.",
+    "Global checks cover108 request UUIDs,5 adoption nonces,4 exact semantic objects and ordered actual Docker start/finish timestamps. No PGDATA body, Native/DB/Docker/engine or testsuite action occurred.",
+    "Group peaks and wall times remain diagnostic; overlapping work and separate peaks were not added. No500MB/reserve/plateau or performance benefit is claimed.",
+    "Stored disk/process facts are historical. Verified backups, fresh target/alias/mount/process identity and exact Root retirement approval remain separate; no deletion or automatic future execution is authorized."
+  ],
+  "nativeDBDockerEngineCallsByReviewer": 0,
+  "nativePreparedPin": {
+    "bytes": 35924,
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/PREPARED.SAFE.json",
+    "sha256": "f6e4d3e20e903b7f193da419e074973a56767baab1554232e089f48e705313b7"
+  },
+  "nativeUnit60Accepted": false,
+  "perCaseReviewPins": [
+    {
+      "bytes": 29568,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-lifecycle-v2-actual-independent-review-20261023/REVIEW.SAFE.json",
+      "sha256": "e209ef667e5c6e75344e6a944e6b254e6b6d01539f40a0169a9a928412776e0d"
+    },
+    {
+      "bytes": 63854,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-case1-old-v2-actual-independent-review-20261023/REVIEW_FINAL.SAFE.json",
+      "sha256": "f79b45a097d70f2f70d72d0540182b3bbc1d3a7ae50b0178b262c610f9c2e59c"
+    },
+    {
+      "bytes": 40417,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-case2-new-v2-actual-independent-review-20261023/REVIEW.SAFE.json",
+      "sha256": "ee56ce50f90e0f3defef7fed836b4e49fd4f57b6380efabbcc8db6918b59c00d"
+    },
+    {
+      "bytes": 40357,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-case3-new-v2-actual-independent-review-20261023/REVIEW.SAFE.json",
+      "sha256": "7234849b7e1af1cd018949e7fae7a6ed6bce37284cdab9297a153968493b8ced"
+    },
+    {
+      "bytes": 40451,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-case4-old-v2-actual-independent-review-20261023/REVIEW.SAFE.json",
+      "sha256": "f22b98d82d206c5adf165754bc7d1ef006c57180b593f81c014980f86f1885e7"
+    }
+  ],
+  "production": false,
+  "providerCalls": 0,
+  "publicationApproved": false,
+  "ramBenefitClaimed": false,
+  "requiredOrder": [
+    "lifecycle-only:NONE",
+    "control-cache:OLD",
+    "control-cache:NEW",
+    "control-cache:NEW",
+    "control-cache:OLD"
+  ],
+  "reserveClaimed": false,
+  "retirementApproved": false,
+  "reviewer": "typed_cleanup_guard",
+  "reviewerAggregationHarness": {
+    "caseResultsUnchanged": true,
+    "correction": "Use the genuinely shared performed/returned acceptance/stability contract and exact verifier pin already present in allCodeReadPins; historical reviews unchanged and no invocation fields invented.",
+    "failureScope": "Optional newer report field incorrectly required from earlier accepted Case1 DTO",
+    "firstAttemptActualExitCode": 1,
+    "firstAttemptActualTool": "8a60c5",
+    "firstAttemptFailurePin": {
+      "bytes": 516,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-five-case-v2-actual-independent-review-20261023/AGGREGATOR_FIRST_FAILURE.SAFE.json",
+      "sha256": "a551ce8e5664d80dda5894b48480cf3a0b88f44695ac7e7706e31ecf11dd8403"
+    },
+    "firstFailureRemainsPreserved": true,
+    "perCaseVerifiersNotRepeated": true
+  },
+  "schema": "helmut-current-control-native-independent-actual-review/1",
+  "semanticComparison": {
+    "controlFields": {
+      "synthetik500DispatchJournal": "91820d588991c7a303a43d95b24606f6192832fd503bab7e94a498eb3dae3ca5",
+      "synthetik500KostenAdmission": "c83aaaff8d2098e9f0ca05a0e7684a316b65daaf3fab3d2c2dfb2a62ca2321ec",
+      "testKostenAuftrag": "9a5382ceb0cee3583619ff6ced3f73544a33e31f752839d6c9cc777c852005f1",
+      "testKostenTage": "7ec32c2a81a6b3494348315e5dbff1540a7e3363440cdda3dcaa0febb9de296d"
+    },
+    "controlTextBytes": 4856607,
+    "history": "85af0c1168108966125f4ac4df5602a6a00fe04d03de16c0056bb22b3272fd68",
+    "nativeProof": {
+      "count": 6000,
+      "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+      "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+      "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+    },
+    "restoredState": {
+      "generation": "6593701f-3f25-4e43-9e17-e9eda4306554",
+      "originalHash": "840b1c9cfbf91e7c90de3ee8b866e77c6829d9f67a049fd310c8351fa285ed85",
+      "root": "24bea8f26ed99b234b4d0c557ce8f80cbba205bc093797daff329b398b851633",
+      "version": "merkle-auth-v1"
+    }
+  },
+  "sourceFreezePin": {
+    "bytes": 5599,
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/CURRENT_SOURCE_FREEZE.SAFE.json",
+    "sha256": "552820cc8ad57cae5e3e5c745af7ae148090bc9f72c88f6922b74d5652a92f07"
+  },
+  "status": "PASS",
+  "testsuiteRunsByReviewer": 0
+}

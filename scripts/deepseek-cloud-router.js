@@ -75,15 +75,15 @@ const MAX_RETURN_CHARS = 2000;
 const MAX_FILES = 20;
 const MAX_SOURCE_CHARS = 500000;
 const MAX_FILE_CHARS = 220000;
-// Reasoning und finale Antwort teilen sich dieses Limit; echte FlashHigh und
-// ProHigh Lesepruefungen brachen auch mit 12000 ab, weil die Antwort erst nach
-// dem Reasoning Platz hat. 32768 ist die feste Obergrenze, keine Garantie fuer
-// beliebige Aufgaben.
-const READ_MAX_OUTPUT_TOKENS = 32768;
+// Reasoning und finale Antwort teilen sich dieses Limit. Echte abgegrenzte
+// ProHigh Lesepruefungen endeten auch mit32768 ausschließlich im Reasoning.
+//65536 bleibt eine feste endliche Entwicklungsgrenze; keine automatische
+// Modellwiederholung oder Aenderung eines Helmut Laufvertrags.
+const READ_MAX_OUTPUT_TOKENS = 65536;
 // Auch echte FlashHigh/ProHigh Schreibpruefungen liefen mit 24000 in
 // status=incomplete/max_output_tokens und lieferten null Aenderungen, weil sich
 // Reasoning und finale Antwort dasselbe Limit teilen. Der Write-Modus nutzt
-// deshalb dieselbe feste Obergrenze 32768; sie bleibt eine endliche gemeinsame
+// weiterhin die feste Obergrenze32768; sie bleibt eine endliche gemeinsame
 // Schranke, keine Garantie fuer beliebige Aufgaben.
 const WRITE_MAX_OUTPUT_TOKENS = 32768;
 const REQUEST_TIMEOUT_SECONDS = 20 * 60;

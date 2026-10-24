@@ -1,0 +1,129 @@
+{
+  "schema": "helmut-ci-owner-immutable-input-independent-source-review/1",
+  "verdict": "PASS_SOURCE_ONLY",
+  "blockingFindings": [],
+  "reviewer": "/root/full500_source_path_readonly",
+  "independentOfDeltaAuthor": true,
+  "baselineCommit": "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb",
+  "preparedFreezePin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/ci-owner-immutable-input-binding-prepared-20261023/FROZEN_PINS.SAFE.json",
+    "bytes": 1631,
+    "sha256": "8fc810fb8795a95d937031bb52e651e63ffa8c63206c55be1fa187bacf0f677d"
+  },
+  "reviewedPins": [
+    {
+      "bytes": 914,
+      "path": "/workspace/helmut-native-integration-checks-20261022/ci-owner-immutable-input-binding-prepared-20261023/BASELINE_PINS.SAFE.json",
+      "sha256": "fbce736cf47c8a40e5bb64a99f59d8ebf158234be025181cd263d3943a8c8bf6"
+    },
+    {
+      "bytes": 22151,
+      "path": "/workspace/helmut-native-integration-checks-20261022/ci-owner-immutable-input-binding-prepared-20261023/private_ci_channel.py.PREPARED",
+      "sha256": "35eb31f4a4c711fe5fc86e34b821c82ae54be45da0ef4d01f62f8d383259a2d4"
+    },
+    {
+      "bytes": 49382,
+      "path": "/workspace/helmut-native-integration-checks-20261022/ci-owner-immutable-input-binding-prepared-20261023/private_ci_channel_test.py.PREPARED",
+      "sha256": "dd67dd486f5f3b61fa2f682bfd6b4a2dca4ede5996c037b8c5652d7c1ad4a636"
+    },
+    {
+      "bytes": 15930,
+      "path": "/workspace/helmut-native-integration-checks-20261022/ci-owner-immutable-input-binding-prepared-20261023/REVIEW.PRIVATE.patch",
+      "sha256": "433dc4219a5053b1bced054d20b459e4d9814ffdcd42a6a50b21c44aac8840bd"
+    },
+    {
+      "bytes": 7580,
+      "path": "/workspace/helmut-native-integration-checks-20261022/ci-owner-immutable-input-binding-prepared-20261023/PREPARATION.SAFE.json",
+      "sha256": "f841e52c4a4ad3ac1cccfabdae0a453b20e8aa08484e08e025ebd3b41674b0d8"
+    }
+  ],
+  "sourceByteComparisons": [
+    {
+      "file": "private_ci_channel.py",
+      "baselineBytes": 21676,
+      "baselineSHA256": "7baba21e677120ee173513d652ce40062ff9ecb0175c1ecc5ad1baca17608d72",
+      "candidatePin": {
+        "path": "/workspace/helmut-native-integration-checks-20261022/ci-owner-immutable-input-binding-prepared-20261023/private_ci_channel.py.PREPARED",
+        "bytes": 22151,
+        "sha256": "35eb31f4a4c711fe5fc86e34b821c82ae54be45da0ef4d01f62f8d383259a2d4"
+      },
+      "changedBodiesOnly": [
+        "context",
+        "validate_owner_access",
+        "validate_receipt"
+      ],
+      "protectedBodiesByteEqual": [
+        "validate_review",
+        "provision",
+        "check_approval",
+        "access_policy",
+        "api",
+        "NoRedirect",
+        "load_transport",
+        "read_file",
+        "child_env",
+        "encrypt_logs",
+        "main"
+      ],
+      "allNonFunctionTopLevelStatementsASTIdentical": true
+    },
+    {
+      "file": "private_ci_channel_test.py",
+      "baselineBytes": 43599,
+      "baselineSHA256": "f27b3cfb146fc7697dace0387f45d85c1273a61b3d0ddc255123cf180b038b77",
+      "candidatePin": {
+        "path": "/workspace/helmut-native-integration-checks-20261022/ci-owner-immutable-input-binding-prepared-20261023/private_ci_channel_test.py.PREPARED",
+        "bytes": 49382,
+        "sha256": "dd67dd486f5f3b61fa2f682bfd6b4a2dca4ede5996c037b8c5652d7c1ad4a636"
+      },
+      "changedBodiesOnly": [
+        "fixtures",
+        "owner_fixtures",
+        "OwnerAccessTests",
+        "FileTests"
+      ],
+      "protectedBodiesByteEqual": [
+        "ReviewTests",
+        "SuiteMetadataShellTests"
+      ],
+      "allNonFunctionTopLevelStatementsASTIdentical": true
+    }
+  ],
+  "actualMetadataComparisonPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/ci-access-merge-current-vs-checkout-c0a847d7-20261023/FINAL_CAUSE_COMPARISON.SAFE.json",
+    "bytes": 6831,
+    "sha256": "15dfac13877b496ccff60a2d74741e283fb32dcfb684d5c12a1e3ee20cb2fa02"
+  },
+  "securityFindings": [
+    "context still checks GitHub Actions/repository/API/event/run/attempt/workflow ref, exact GITHUB_SHA=GITHUB_WORKFLOW_SHA=actualGitHEAD and for PR exact ordered [checkout,eventbase,eventhead] parents before returning baseSHA. baseSHA is never taken from live API or receipt.",
+    "Automatic PR drops only mutable live merge_commit_sha equality. It now requires present exact str lowercase40hex ctx.baseSHA and live base.sha equality; all current head,branch,openPR/number,authorID,repoIDs,forkfalse,runID/attempt/actor/trigger and workflow/checkout checks remain.",
+    "Automatic main push/dispatch remains main-only and now requires present baseSHA=None. Pull refs and alternate branches cannot use that route.",
+    "Receipt validation separately rejects absent/invalid fresh-context base and requires explicit base presence plus original exact typed full-context equality/closed keys; manual/automatic schemas cannot cross. provision remains byteidentical and rejects receipt mismatch before transport/module/key/GPG.",
+    "Manual validate_review including exact live merge equality, real approvals/rejected-review veto/environment/reviewer identity is byteidentical; ReviewTests class byteidentical. Its receipt merely gains mandatory already-validated event basis.",
+    "Same trusted actual checkout identity remains necessary: parent equality alone is not a general arbitrary merge-tree proof. The removed property is freshness of the live merge alias, not checkout verification.",
+    "Current public comparison establishes two different merge SHAs with identical ordered parents and complete Git tree03234c6557112f1c82dfddb2cfc0f6ce89c9dfeb. It does not recover the historical API response at rejection or establish its sole failed subpredicate."
+  ],
+  "testSourceReview": {
+    "newGroups": 5,
+    "allOldTestNamesPreserved": true,
+    "oldManualReviewAndShellTestsByteEqual": true,
+    "positiveCoverage": "Changed/null/absent live merge accepted by Auto only with exact base/head; receipt retains base. Main push/dispatch None basis.",
+    "negativeCoverage": "Wrong/missing/malformed context/live base even with matching merge alias; wrong event basis/Gitparents/actualHEAD/workflow/ref before API; altered/missing/type-invalid receipt or fresh context before transport/module/key/GPG. Existing owner/repo/fork/run/branch/policy negatives retained.",
+    "obsoleteAssertions": "Only Auto live-merge drift/missing rejection replaced by strict basis rejection and alias-positive matrix; Manual live-merge rejection unchanged.",
+    "executionStatus": "NOT_RUN_BY_REVIEWER"
+  },
+  "limits": {
+    "testsRun": 0,
+    "subjectImports": 0,
+    "GitHubRequests": 0,
+    "repoWrites": 0,
+    "originalOrPrivateLogReads": 0,
+    "DBNativeProviderActions": 0,
+    "CITriggered": false
+  },
+  "requires": "Root integrates exact two reviewed files and executes targeted synthetic tests before any new CI. This is source review only, not actual CI access/PASS/decryption/engine/production authority.",
+  "historicalRejectPredicate": "UNKNOWN",
+  "historicalRunStillFailed": true,
+  "ciPassed": false,
+  "executionGO": false
+}

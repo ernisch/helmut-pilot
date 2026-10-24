@@ -1,0 +1,31 @@
+{
+  "schema": "helmut-local-http-lock-independent-source-review-record/1",
+  "recordedBy": "root coordinator from independent SOL review messages",
+  "review": "PASS",
+  "rootFilesAndDriverReviewer": "/root/v12_deadline_actual_audit",
+  "closePolicyReviewer": "/root/v12_ram_close_audit",
+  "reviewedSHA256": {
+    "worker-http-lock.py": "95d414969edaac846e9200eb4617fb614b2a6dda645b82354b56e208dd571954",
+    "run-http-lock-comparison.py": "00dc704a897acf93837c7747c7dbc496c5dda8db568211609a2a632e7a829942",
+    "gateway-forward-only.js": "8a716c2674b792ddcca08e992e14642a01a8eb55903be9f3696ba19370577218",
+    "ROOT_HTTP_LOCK_COMPARISON_INTENT.SAFE.json": "b2eea703eb738ef538ae4c93e9178208f962a22a3be8edc6333ccefba0f89c3b",
+    "driver-http-lock-comparison.js": "1cdc6a4bfd607d13b7cccd1fb4dab4c314cc900bf96cff6c90290cd5fa4ba8b4",
+    "postgrest_lifecycle_candidate.py": "8b6f4f32b2287bac331df6281fc95b1528e55a28036704cd7ae2d4dbb8755d51",
+    "postgrest_close_policy_test.py": "cfbf8983fd1e79867aa274395f5f38ee13b843904ee3f9e7866e3bade8cbf470",
+    "CLOSE_SOURCE_PROPOSAL.SAFE.json": "9e4aa63ecaf9ae9db9e48515e6ef593cd10e9174131195cf193e437dad7769e9"
+  },
+  "pureCloseTests": {
+    "passed": 28,
+    "failed": 0,
+    "execution": "AUTHOR_ACTUAL_UNDER_LOKAL",
+    "proposalAndConsolePin": {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/CLOSE_SOURCE_PROPOSAL.SAFE.json",
+      "bytes": 15434,
+      "sha256": "9e4aa63ecaf9ae9db9e48515e6ef593cd10e9174131195cf193e437dad7769e9"
+    }
+  },
+  "instrumentationOverheadIncludedNotProductionTiming": true,
+  "full500": false,
+  "production": false,
+  "executionAuthority": false
+}

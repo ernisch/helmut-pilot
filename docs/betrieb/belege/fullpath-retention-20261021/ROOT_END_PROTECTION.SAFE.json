@@ -1,0 +1,58 @@
+{
+  "atUnix": 1792581052.4483104,
+  "canonicalPostmasterPIDAbsent": true,
+  "canonicalRootMetadataUnchanged": true,
+  "capacitySnapshotNotReservation": true,
+  "componentAdmissionIncludingFloorBytes": 9412018176,
+  "componentCapacityAvailable": true,
+  "full500": false,
+  "fullAdmissionGapBytes": 221863560,
+  "hostAvailableBytes": 14957916160,
+  "production": false,
+  "protectedOriginalDBPayloadsRead": false,
+  "protectedPriorPin": {
+    "bytes": 4433,
+    "path": "/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/capacity-review/PROTECTED_RESOURCE_READBACK.SAFE.json",
+    "sha256": "e35ed0db44bec4a8465aef2ccd693044c08141a2f497ba54259a6f32c3b191e2"
+  },
+  "protectedResources": [
+    {
+      "cid": "22465c2cc2bfac3a33d01bf3460dd9a5f0b082a1c19825b60bb735dfe287ddbe",
+      "identityImageStatePIDAndMountSourcesUnchanged": true,
+      "pid": 5993,
+      "status": "running"
+    },
+    {
+      "cid": "c6f393f20781cad88518d5543126d642c4302141f3072393a10d5f0f9bf6a231",
+      "identityImageStatePIDAndMountSourcesUnchanged": true,
+      "pid": 0,
+      "status": "exited"
+    },
+    {
+      "cid": "f375e6f73bff6c4f5238033c0db1de96c0fa9853c49e53056f86fc4f9a7dbaed",
+      "identityImageStatePIDAndMountSourcesUnchanged": true,
+      "pid": 0,
+      "status": "exited"
+    },
+    {
+      "cid": "039f995f2454b4b87edf7b9fe9693d6861d92b15a126205277a51b86adbc80bf",
+      "identityImageStatePIDAndMountSourcesUnchanged": true,
+      "pid": 0,
+      "status": "exited"
+    },
+    {
+      "cid": "66d3bb789888a4c87cc3cdcdd49d6938d0c211189f13f4d8fbc096fbd5447b02",
+      "identityImageStatePIDAndMountSourcesUnchanged": true,
+      "pid": 0,
+      "status": "exited"
+    }
+  ],
+  "resourceMutationsByReadback": 0,
+  "schema": "helmut-fullpath-observation-root-protection-readback/1",
+  "sourcePin": {
+    "bytes": 3359,
+    "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-preparation/read-protected-end.py",
+    "sha256": "fca914d3ca39b288ac223cbc0ef3dc856ca40889ac2e2a0f5f7ff957a3fbed9b"
+  },
+  "unchangedFullAdmissionBytes": 15179779720
+}

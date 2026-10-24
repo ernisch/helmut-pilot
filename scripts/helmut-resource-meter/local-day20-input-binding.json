@@ -1,0 +1,16 @@
+{
+  "schema": "helmut-completed-day20-local-input-binding/1",
+  "sourceInputDatabase": "helmut_resource_input_20261020_4d77e2fe6616",
+  "capturePin": {
+    "path": "/workspace/helmut-parallel-20261015/wave52-bounded-native-read-preparation/book19-input/completed-input/READ_ONLY_SOURCE_CAPTURE.SAFE.json",
+    "bytes": 3739,
+    "sha256": "fa382d21bd9785db9b2ad048f3dcfc614714821985aa657db41b38e92d277973"
+  },
+  "correctionClaimPin": {
+    "path": "/workspace/helmut-parallel-20261015/wave52-bounded-native-read-preparation/book19-input/ONCE_ONLY_BOOK19_INPUT_CORRECTION_CLAIM.SAFE.json",
+    "bytes": 1268,
+    "sha256": "3029beebbbe803a3c7b0e25d204c8333afb5a4e3dc535d5da02ea8ee19e7a5a8"
+  },
+  "beforeNativeAuthSHA256": "f1a1bb64e96d854712ffa8a714a5eb5021b3b7ec65fd93aba42d054d3a8c61ef",
+  "afterNativeAuthSHA256": "b5c615212f5f887ddaa029b0e9b70a3b4a8fd793661fc2dd852f6c1ec93e06d4"
+}

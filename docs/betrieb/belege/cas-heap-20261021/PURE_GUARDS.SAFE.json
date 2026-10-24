@@ -1,0 +1,12 @@
+{
+  "label": "ROOT_GUARDS",
+  "arguments": [
+    "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/guard-preparation-v2/run_pure_validator_guards.py",
+    "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/worker.py"
+  ],
+  "actualExitCode": 0,
+  "signal": null,
+  "expectedExitCode": 0,
+  "stdout": "{\"pass\":true,\"checks\":118}\n",
+  "stderr": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+}

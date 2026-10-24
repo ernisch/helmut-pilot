@@ -1,0 +1,60 @@
+{
+  "schema": "helmut-local-pipeline-lock-lease-independent-review/1",
+  "pass": true,
+  "independent": true,
+  "production": false,
+  "full500Accepted": false,
+  "executionAuthority": false,
+  "kind": "SOURCE",
+  "sourcePins": [
+    {
+      "file": "lib/helmut/local-pipeline-lock-lease.js",
+      "bytes": 3721,
+      "sha256": "68c320eb6540dd08d0a28657f5e50eeb4308162a9b8e15c973ddaa90ccefe77c"
+    },
+    {
+      "file": "lib/helmut/storage.js",
+      "bytes": 558109,
+      "sha256": "5a0fe6c4f74e979e8e5d413065373e80190f9e24bbcb94c0204b2a1750b1e97d"
+    },
+    {
+      "file": "lib/helmut/lage.js",
+      "bytes": 57463,
+      "sha256": "613ea950dcedc16cfbff14829b7437b3160b16bc49dc5afeec8d5be8c0f10649"
+    },
+    {
+      "file": "scripts/local-pipeline-lock-lease-test.js",
+      "bytes": 12354,
+      "sha256": "6307d98d794c2d6cb61fb409cef3448d36a598b6e9ff34a606869b924fdfef3a"
+    }
+  ],
+  "originalReviewPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/local-unit-control-bundle-source-20261024/CURRENT_SOURCE_REVIEW_REPORT.SAFE.json",
+    "bytes": 2883,
+    "sha256": "bd4c50d8b3418dc82b35f00df662e5e7ed776c277cc2d5375405eabc059c8781"
+  },
+  "sourceOnly": true,
+  "scope": "CURRENT_PUBLIC_STORAGE_SOURCE_ONLY_NO_NATIVE_OR_EXECUTION_ADMISSION",
+  "requiresFreshIntegrationAcceptance": true,
+  "historicalAcceptanceTransferred": false,
+  "nativeLeaseAcceptanceTransferred": false,
+  "nativeUnit60Qualified": false,
+  "auth30Qualified": false,
+  "full500ReserveQualified": false,
+  "ramBenefitClaimed": false,
+  "testsAreNativeAdmissionEvidence": false,
+  "reviewedStorageImplementationCommits": [
+    "5b31b407c95777df09e41fd4a1834afecdfa9bb8",
+    "474d1b4eeda4b45a17d8d0e7e6e296fcb056be8c"
+  ],
+  "reviewFindings": [
+    "Storage bytes558109/SHA5a0fe6c4f74e979e8e5d413065373e80190f9e24bbcb94c0204b2a1750b1e97d verified; the other three source pins are unchanged.",
+    "Shared source/profile validators preserve the separate-read logic, diagnostic failure behavior and tenant restrictions.",
+    "New control read exports delegate to the private selected-scope runtime/snapshot consumer with the same actual runtime witness; no write snapshot or cached mutable state is introduced.",
+    "Storage bytes equal the previously reviewed 76d87 implementation; the immutable Root RPC tuple check before OriginalGraph is retained by the bound control path.",
+    "Historical source report/review/delta bytes remain unchanged; new explicit delta selectors and guarded public copies do not transfer Native, lease, timing, RAM or full500 acceptance."
+  ],
+  "testsExecutedByReviewer": false,
+  "nativeOrDatabaseExecutionByReviewer": false,
+  "originalPayloadsReadByReviewer": false
+}

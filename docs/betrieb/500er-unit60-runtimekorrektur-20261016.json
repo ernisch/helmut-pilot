@@ -1,0 +1,66 @@
+{
+  "scope": "LOCAL_FAILED_FULL_RUN_AND_TARGETED_NATIVE_COMPONENT_ONLY_NOT_FULL_NEW_UNIT60_OR_PRODUCTION_PROOF",
+  "dateUTC": "2026-10-16",
+  "baselineCommit": "349fc70eef587695d49a8d39e8ec93267d98f56c",
+  "full500Accepted": false,
+  "actualImplementationIndependentReview": "PENDING",
+  "productionActions": 0,
+  "retryOrNewActivationPerformed": false,
+  "evidence": [
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave14/FAILED_FULL_RUN_ANALYSIS.SAFE.json",
+      "bytes": 3295,
+      "sha256": "dcc026a8ec7aa4b1889894e37099b505579607f68f8312b39acf76636f67b138"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave14/FAILED_FULL_RUN_MEMORY.SAFE.json",
+      "bytes": 634,
+      "sha256": "5b31aced9d164078185870ddd6cb9bae03fc781649042021460e9a6d78c144fc"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave14/ALL500_OBSERVED_CONTROL_VECTORS.SAFE.json",
+      "bytes": 47200,
+      "sha256": "077c6f7b6c034db81b8924f94223f2d3a7bd5a841780afc3942e937d44f55f52"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave14/RUNTIME_READ_ACTUAL_PHASE_SPLIT.SAFE.json",
+      "bytes": 4742,
+      "sha256": "32e720a54b2540c6c55585369affa5a8cf286b4abc184d25a451bb0daf1bb61a"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave14/RUNTIME_DERIVATION_NATIVE_READ_COMPONENT.SAFE.json",
+      "bytes": 10637,
+      "sha256": "4fc61c16b96abb5f1102e0e4c33d1036d4dbf22fe92955bfe5dc45c399081f40"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave14/RUNTIME_DERIVATION_REGRESSION.SAFE.json",
+      "bytes": 8741,
+      "sha256": "7f63386695afe816b16dcec3ed971d6ff2eb8d1d7dbc96f4bbd315ee16e2461c"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave14/RUNTIME_DERIVATION_NEGATIVE_DELTA.SAFE.json",
+      "bytes": 1435,
+      "sha256": "719f48bbcd3f5adf2a4691645847ed5b6b0cfe2256d51df1b2f4a2004fbeb9e6"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave14/PROVIDER_MINIMUM_DELAY_TESTS.SAFE.json",
+      "bytes": 1031,
+      "sha256": "8771cd89bbb63a00008d9c33cb3125049b467a52add9a5195e55495a6a6f3c48"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave14/local-provider-wait-until.PROPOSAL.js",
+      "bytes": 3920,
+      "sha256": "56992037a0c08f1208f53ba8f16f5e66d95efb1a7699d78881df90ab1f23d132"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave14/pro-runtime-derivation-safety/FULL_RESULT.json",
+      "bytes": 3955,
+      "sha256": "29b0c59dc8e78bb8bf142bcc43b9d5c3169ae5b65aeb1d49cf8edd38cca17d7f"
+    }
+  ],
+  "sourcePins": {
+    "lib/helmut/storage.js": "28f67b93e4269e92193ca971327b072bd37b0113ceb506282809c95b0aa8c61c",
+    "lib/helmut/synthetik-500-stored-command.js": "6e0242d058492ecdc5dcdd430caa9e05f9497a0384de9b53659a8891ce9f3efa",
+    "scripts/synthetik-500-stored-command-test.js": "14956ea70b4f7c843dfe315d8a1fea28080facb03d1c81e97983b93d656322c6"
+  }
+}

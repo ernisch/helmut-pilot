@@ -1,0 +1,42 @@
+{
+  "schema": "helmut-exact-private-ci-log-metadata/1",
+  "diagnosticOnly": true,
+  "targetRun": 39989672128,
+  "targetJob": 120537987707,
+  "targetArtifact": 12517496830,
+  "sourceCommit": "97662d821c72f45bc3b9f02636ba308ba6b54066",
+  "detailsStatus": "PUBLIC_WHITELIST_METADATA",
+  "failedTests": [
+    {
+      "file": "scripts/helmut-resource-meter/runtime-read-contract-test.py",
+      "test": "RuntimeReadContractTest.test_control_descriptor_uses_shared_runtime_manifest_without_review_file_reads"
+    }
+  ],
+  "exceptionClasses": [
+    "AssertionError"
+  ],
+  "sourceLocations": [
+    {
+      "file": "scripts/helmut-resource-meter/atomic-usage-integration.js",
+      "line": 133
+    },
+    {
+      "file": "scripts/helmut-resource-meter/control-cache-integration.js",
+      "line": 41
+    },
+    {
+      "file": "scripts/helmut-resource-meter/control-cache-integration.js",
+      "line": 83
+    },
+    {
+      "file": "scripts/helmut-resource-meter/runtime-read-contract-test.py",
+      "line": 49
+    }
+  ],
+  "rawMessagesExported": false,
+  "testReplay": false,
+  "ciPassed": false,
+  "nativeAccepted": false,
+  "production": false,
+  "executionGO": false
+}

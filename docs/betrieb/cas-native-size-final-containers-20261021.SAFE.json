@@ -1,0 +1,64 @@
+{
+  "schema": "helmut-layout-root-compact-final-readback/1",
+  "containers": [
+    {
+      "id": "b746f2ac2aa9a6591591196bffc73d661da28f01d471953923050efd8d3c2b51",
+      "name": "/helmut-jsonb-layout-init-f41d3e2aaec42437a911e1f7",
+      "image": "sha256:34e72f77a5fa0728d44b75766cdfdb1851aea196b3ba6c4fb9242f5d339a678b",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 0,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-21T08:14:45.335341854Z",
+        "FinishedAt": "2026-10-21T08:14:46.155215505Z"
+      },
+      "creationPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/INIT_CREATED.SAFE.json",
+        "bytes": 383425,
+        "sha256": "34f264d4b721bbdc7a2a210751e2a23407f3d61d24b1f0cdad314eead74b1b4c"
+      },
+      "exactMountsAndArgvUnchanged": true,
+      "specialClientVariablesAbsent": true,
+      "fullInspectBytes": 465077,
+      "fullInspectSHA256": "18cbde3b75404a071f4914c05edfcf335cd42827b96f66c245c6de833469d106"
+    },
+    {
+      "id": "f2de3ed65f08764d1bdd8d20d70e5a1b083a6d149f1d7a6fa3cb2beb10e4ff41",
+      "name": "/helmut-jsonb-layout-server-f41d3e2aaec42437a911e1f7",
+      "image": "sha256:34e72f77a5fa0728d44b75766cdfdb1851aea196b3ba6c4fb9242f5d339a678b",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 0,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-21T08:14:46.321656987Z",
+        "FinishedAt": "2026-10-21T08:14:46.728609582Z"
+      },
+      "creationPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/SERVER_CREATED.SAFE.json",
+        "bytes": 384101,
+        "sha256": "7ece40907d7f191dba9cae1a94f4c224522e4077fe62b289a5583c5fed020ad9"
+      },
+      "exactMountsAndArgvUnchanged": true,
+      "specialClientVariablesAbsent": true,
+      "fullInspectBytes": 466041,
+      "fullInspectSHA256": "6027330e944ef05d4508b548083503e1bafab2bb8dd762e9ab186792b55db8ee"
+    }
+  ],
+  "allTwoClosedExit0": true,
+  "fullInspectDuplicated": false,
+  "pgCtlCommandExit137": true,
+  "caseStatusRemains": "FAIL",
+  "caseAccepted": false
+}

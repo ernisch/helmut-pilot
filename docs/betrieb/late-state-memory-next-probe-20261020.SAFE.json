@@ -1,0 +1,358 @@
+{
+  "schema": "helmut-late-state-next-component-probe/1",
+  "atUTC": "2026-10-20T16:16:12.005433+00:00",
+  "status": "PREPARED_ONLY_BLOCKED_BY_UNCHANGED_NATIVE_DISK_ADMISSION",
+  "branch": "codex/late-state-memory-diagnostics-20261020",
+  "baseCommit": "f0d3b0395b638967d89095df8b0ca5731399c633",
+  "dependencyCommit": "bdb2c2c3a369ebf175f02734c696b13f00733988",
+  "preservedAncestor": "c8624f7c875a4f6f849d83951898c5e205833a6e",
+  "historicalV11Commit": "5fae25be5068a278a88daca9a7508c7b9e4001a3",
+  "sourcePins": [
+    {
+      "path": "scripts/helmut-resource-meter/late-state-diagnostic-inspect.py",
+      "bytes": 4251,
+      "sha256": "e8804514903a7fd0ae3b6a890869b5f26a4fa4a5d994cc7df91ead3b1cbfed6c"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/postgrest_lifecycle.py",
+      "bytes": 6303,
+      "sha256": "1a0ff353e51343a1f65e54f31cac4c129930eda463eb381a88d93db76152f344"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/test_postgrest_lifecycle.py",
+      "bytes": 10049,
+      "sha256": "924058745c85b20ba3cb7c48986d0e2845ea50d59f797e5c33be57f0e33a3758"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/late-read-spill/01-ordered-rows.sql",
+      "bytes": 8682,
+      "sha256": "3a939fe064a26a23185505f46f92d7fdd69950d463165755ea5b36a5f9e6f888"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/late-read-spill/02-native-warm-control.sql",
+      "bytes": 11151,
+      "sha256": "5d8323c563180fc23c41d314558ed2bce3ab4ad846f957ced05acd285fec8f32"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/late-read-spill/README.md",
+      "bytes": 7099,
+      "sha256": "4533fb7d5883982878253763e051d2daae25d1c02e8e660782d0b938c882acc8"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/native-memory-budget.py",
+      "bytes": 19434,
+      "sha256": "66b4c432f687445763074a6b2432533c9305cadc09a17a94bf45507d419fd4af"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/start-preflight.py",
+      "bytes": 37289,
+      "sha256": "8f99c74de4e9df817d27247605c82ae7f8bc5008d8533a14ae95f767428e11ee"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 23685,
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+    },
+    {
+      "path": "lib/helmut/auth-state-parts.js",
+      "bytes": 22149,
+      "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
+    },
+    {
+      "path": "supabase/proposals/auth_read_bounded_local.sql",
+      "bytes": 18650,
+      "sha256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561"
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/late-state-sprint-20261020/ADMISSION_OBSERVED.SAFE.json",
+      "bytes": 2302,
+      "sha256": "3ce81a2b3e5a59bbbeaf3e9b2074a1cf7c9d0385e10215099b14f6e20e6fcf0f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/late-state-sprint-20261020/ADMISSION_FINAL.SAFE.json",
+      "bytes": 2302,
+      "sha256": "457476980e1d2747ac98d0981dbeb0acc7fe85b33d6c68b4d2491bffd3738fb8"
+    },
+    {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/postgrest-closure-sprint/PREPARATION.SAFE.json",
+      "bytes": 1713,
+      "sha256": "16dfcd8bd378953c791d05693c0f5ea91dc73f3367f0db4a34ea1fdee23c03bc"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/v11-curve-evidence/MEMORY_TIMELINE.SAFE.json",
+      "bytes": 589860,
+      "sha256": "b0e1198f70a2e40a9c3c6f023fd4c38b82641acc34dcab8a4948a59e780b3246"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/v11-curve-evidence/PROCESS_RSS_TRACKS.SAFE.json",
+      "bytes": 116906,
+      "sha256": "61e86caa90e5e993c8531157ee1fcf70e0458f72fd25723db26aec03f145a7cc"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/v11-curve-evidence/PROCESS_ROLES_AND_SETTINGS.SAFE.json",
+      "bytes": 54283,
+      "sha256": "6bc6b03dd36c2ffa942d29a9ddac989a4207599548a43220fc180914409a77e7"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/v11-curve-evidence/CURVE_SUMMARY.SAFE.json",
+      "bytes": 51590,
+      "sha256": "f57014bf614a56e1efc10887683012f242d10fb3475a8eefd240a629c159bcb9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/INPUTS.SAFE.json",
+      "bytes": 9301,
+      "sha256": "08ab04ebb8554ef546515f7d173320a838c64bc463dd137ebe6358c61e96ac66"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/CLIENT_RESULT.SAFE.json",
+      "bytes": 10595,
+      "sha256": "c9d2a6bd7b818bdf46e5162887ef133f31278a88c8ca21f4bafb639d6b0fe0c1"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/ACTUAL_RESULT.SAFE.json",
+      "bytes": 5151,
+      "sha256": "8182b781e628cb21596e58861f3b48d1c25e3eeb47fe503a64462a6fd478d1f4"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/WORKER_RESULT.SAFE.json",
+      "bytes": 7682,
+      "sha256": "c4e99ee5c1e8452c38cbb50c0d6aaf4e0bbd25ad762d4a3a2abef9367e8385d1"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/ACTUAL_NATIVE_CATALOG.SAFE.json",
+      "bytes": 35837,
+      "sha256": "d3e4dde9d2873f892e3ae5a8140fed3966eadca80d85fb2ac629e4a4833e7345"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/NATIVE_TIMELINE.SAFE.json",
+      "bytes": 1015478,
+      "sha256": "1e24086a57b64825b4af922bb6d67e7260fd456b903de14e231b2e4020d669a0"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/PROCESS_RSS.SAFE.json",
+      "bytes": 222132,
+      "sha256": "d46720c7ae2e70c4c92156d94186811601dbd19538d3e649f54c7db93d44f877"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/RENDERER_ABBA.SAFE.json",
+      "bytes": 5778,
+      "sha256": "50c5a6ca53bf1b7c5f51ee40134f69b76ed27c0f007afd04444912371acac91a"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/local-streamed-renderer-qualification-20261020.SAFE.json",
+      "bytes": 9096,
+      "sha256": "1ab4c73fd9d2ea63f12abd58c4b65f5014d216596f769e2a2a0eb2e0286a0637"
+    }
+  ],
+  "evidencePinMeaning": "Current local hashes of already existing receipts; no new native/original requalification.",
+  "readOnlyAdmissionObservation": {
+    "schema": "helmut-late-state-diagnostic-inspection/1",
+    "atUTC": "2026-10-20T16:11:14.969630+00:00",
+    "status": "BLOCKED_COMPONENT_DISK_ADMISSION",
+    "availableBytes": 8597049344,
+    "hostFreeFloorBytes": 8589934592,
+    "marginAboveFloorBytes": 7114752,
+    "nativeComponentRequiredBytes": 8606711808,
+    "nativeComponentShortfallBytes": 9662464,
+    "unchangedNativeEntryGuardAccepted": false,
+    "entryGuardObservedAvailableBytes": null,
+    "entryGuardError": "native helper setup lacks unchanged host reserve plus16MiB",
+    "fullRunRequiredBytesForExisting2GiBStorage": 15179779720,
+    "fullRunShortfallBytes": 6582730376,
+    "fullRunStorageBytes": 2147483648,
+    "nativePolicy": {
+      "schema": "helmut-native-memory-budget/2",
+      "hardLimitBytes": 2048000000,
+      "targetCeilingBytes": 1548000000,
+      "nativeMaxBytes": 1547997184,
+      "nativeHighBytes": 1399996416,
+      "swapMaxBytes": 0,
+      "allOwnedDescendants": true,
+      "noPeakReset": true,
+      "scope": "LOCAL_ONLY",
+      "nodeMaxOldSpaceMiB": 384,
+      "nodeMaxSemiSpaceMiB": 16,
+      "nodeHeapReceiptsRequired": true
+    },
+    "policyInstalledOrChanged": false,
+    "fullStartCheckCount": 32,
+    "fullStartRequiredReviewModel": "deepseek-v4-pro",
+    "fullStartRequiredReviewEffort": "high",
+    "reviewRequirementSource": "start-preflight.py:coverage_adopted",
+    "sourceSHA256": {
+      "native-memory-budget.py": "66b4c432f687445763074a6b2432533c9305cadc09a17a94bf45507d419fd4af",
+      "start-preflight.py": "8f99c74de4e9df817d27247605c82ae7f8bc5008d8533a14ae95f767428e11ee"
+    },
+    "runtimePin": {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-budget-implementation-qualification-v2/runtime/RUNTIME.SAFE.json",
+      "bytes": 481,
+      "sha256": "a16d045b223ef8b9f7525d97ede4596468501510f0ce71263a5ce2bddf42127e"
+    },
+    "actualRuntimeOrOriginalsRequalified": false,
+    "containersCreatedOrStarted": 0,
+    "sqlStatementsExecuted": 0,
+    "nativeBudgetStartCalled": false,
+    "reservationOrGOConsumed": false,
+    "full500Authorized": false,
+    "production": false,
+    "modelCalls": 0,
+    "limits": [
+      "A positive capacity observation never authorizes a run.",
+      "No alternative filesystem or reserved root blocks are substituted.",
+      "Full-run source, time, originals, independent acceptance and GO stay mandatory."
+    ]
+  },
+  "smallestNextProbe": {
+    "question": "Does the unchanged graph_checked ordered full-body SELECT explain recurring temp I/O (6212295 bytes/file on average from aggregate counters, not individual file observations)?",
+    "first": "01-ordered-rows.sql once, only in a freshly admitted exclusive authenticated late-state copy",
+    "conditionalSecond": "02-native-warm-control.sql once only if the first does not explain the recurring spill",
+    "sourcePGDATA": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-canonical-readback/PGDATA_COPY_NOT_AN_ORIGINAL",
+    "priorFullSourceManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+    "priorSourceFileCount": 1709,
+    "priorSourceBytes": 369399611,
+    "actualSourceMustBeRequalifiedBeforeNewCopy": true,
+    "sourceAndPriorCasesMustRemainUntouched": true,
+    "freshCloneReceiptSHAAloneProvesAdmission": false,
+    "runtimeAndCatalogMustBeActuallyRequalified": true,
+    "physicalAuthBytes": 606,
+    "physicalAuthSHA256": "9b62ab352733025f1b752e637f6360d7813b10ea86f134168698e8f4f0d11bc9",
+    "historyCount": 6000,
+    "reachableNodes": 1848,
+    "reachablePayloadBytes": 6010786,
+    "fullNativePolicy": {
+      "schema": "helmut-native-memory-budget/2",
+      "hardLimitBytes": 2048000000,
+      "targetCeilingBytes": 1548000000,
+      "nativeMaxBytes": 1547997184,
+      "nativeHighBytes": 1399996416,
+      "swapMaxBytes": 0,
+      "allOwnedDescendants": true,
+      "noPeakReset": true,
+      "scope": "LOCAL_ONLY",
+      "nodeMaxOldSpaceMiB": 384,
+      "nodeMaxSemiSpaceMiB": 16,
+      "nodeHeapReceiptsRequired": true
+    },
+    "allSetupAndOwnedDescendantsInsideFreshNativeGroup": true,
+    "externalSingleSQLCaptureMaxBytes": 262144,
+    "existingWholeCaptureMaxBytes": 4194304,
+    "statementTimeoutSeconds": 30,
+    "lockTimeoutSeconds": 1,
+    "budgetTimeoutOrOutputOverflowMeansFailure": true,
+    "sqlSyntaxOrNativeQualificationExecuted": false,
+    "launcherWiringImplemented": false,
+    "statisticsDeltaIsNotResidentMemoryOrPureFunctionCounter": true,
+    "standalonePlanMayDifferFromCachedPLpgSQLPlan": true,
+    "HTTPEnvelopeOrPrivateJSControlTokenValidated": false,
+    "noColdCacheClaim": true,
+    "perStatementTimeoutDoesNotProveWholeAuth30": true
+  },
+  "nextMotorChange": {
+    "selected": false,
+    "candidateCommit": null,
+    "reason": "Remaining largest avoidable cause not yet causally attributed. No speculative write/Parts/sort change."
+  },
+  "futureCommonMemoryComparison": {
+    "status": "NOT_IMPLEMENTED_NOT_RUN",
+    "oldCommit": "f0d3b0395b638967d89095df8b0ca5731399c633",
+    "newCommit": null,
+    "newCommitRequiresMeasuredCauseAndReviewedSpecificFix": true,
+    "sameCurrentStreamingRendererBothSidesUnlessMeasuredCauseRequiresChangingIt": true,
+    "sameFreshStartingPGDATAHashesAndSamePersistentStorageMedium": true,
+    "sameNativeBudgetNode384Semi16AndPG17_6JITPool2Settings": true,
+    "workload": "Existing 12-round late client: 11 ordinary mutations, 192 fresh controls, stale CAS, committed lost ACK without retry, restore, 2 genuine cost-free ledger appends preserving 6000-entry suffix",
+    "sameCompleteLogicalInputsAndOrder": true,
+    "allSixteenFreshControlsPerProfilePreserved": true,
+    "separateFreshCommonLifetimeGroupsFromSetupCopyJITToLastExit": true,
+    "phases": "ordinary read, snapshot/capture, Parts.build, CAS and ACK, control reads, ledger, shutdown",
+    "metrics": [
+      "native lifetime peak/current/anon/file/shmem/kernel/events/CPU",
+      "full phase-synchronized process RSS and available PSS",
+      "Node heap and natural GC",
+      "PG temp/WAL/I/O and actual backend roles",
+      "wall/CPU times",
+      "integrity checks and exact child return codes"
+    ],
+    "noPeakResetSubtractionOrAddingProcessPeaks": true,
+    "noForcedGCOrCacheConditioning": true,
+    "documentUncontrolledCacheWarmthAndObserverOverhead": true,
+    "reversePairOnlyIfFirstDifferenceAmbiguous": true,
+    "longTermPlateauAndFull500StillNotEstablishedByTwelveRounds": true
+  },
+  "postgrestClosurePreparation": {
+    "pureUnitQualification": {
+      "command": "PYTHONDONTWRITEBYTECODE=1 TMPDIR=/tmp node /workspace/helmut-cpu-epoch-20261015/scripts/lokal.js -- python3 /workspace/helmut-auth-measure-sol-20261020/diagnostics/postgrest-closure-sprint/test_postgrest_lifecycle.py",
+      "exitCode": 0,
+      "tests": 12,
+      "passed": 12,
+      "failed": 0,
+      "outputSummary": "Ran 12 tests; OK",
+      "fakeChildrenAndLogsOnly": true,
+      "realProcessAndOSSignalCallsBlockedInTests": true
+    },
+    "sourceFilesByteIdenticalToTestedPreparation": true,
+    "acceptedReturnCodes": [
+      0,
+      -15
+    ],
+    "priorCaseStatus": "FAIL",
+    "historicalReturnCode": null,
+    "nativeQualificationExecuted": false,
+    "wiredIntoExistingHarness": false,
+    "actualBinaryConfigAndLogOwnershipVerificationRequired": true,
+    "onlyReturnedReceiptAcceptedInDurableFinalAggregate": true,
+    "missingAggregateOrPersistErrorMustFail": true,
+    "provisionalStopFileCannotIndependentlyEstablishPass": true
+  },
+  "rootStaticChecks": {
+    "pythonAST": {
+      "files": 3,
+      "pass": true,
+      "command": "PYTHONDONTWRITEBYTECODE=1 node scripts/lokal.js -- python3 -B - < static AST and SQL transaction-timeout inspection"
+    },
+    "SQLTransactionTimeoutCoverage": {
+      "files": 2,
+      "transactionsEach": 4,
+      "pass": true,
+      "meaning": "Static text coverage only; not SQL parsing/execution qualification"
+    },
+    "sourceAndEvidencePins": {
+      "checked": 27,
+      "pass": true,
+      "command": "PYTHONDONTWRITEBYTECODE=1 node scripts/lokal.js -- python3 -B - < manifest pin verification"
+    },
+    "compactCurrentState": {
+      "passed": 4,
+      "failed": 0,
+      "characters": 25308,
+      "lines": 200,
+      "command": "node scripts/lokal.js -- node scripts/current-state-groesse-test.js"
+    }
+  },
+  "remainingFullStartReviewConflict": {
+    "requiredModel": "deepseek-v4-pro",
+    "requiredEffort": "high",
+    "source": "start-preflight.py:coverage_adopted",
+    "policyChanged": false,
+    "blocksSOLDevelopmentOrSeparatelyAuthorizedComponents": false,
+    "unresolvedForFutureSOLOnlyFullStart": true
+  },
+  "commonMemorySavingNewlyProved": false,
+  "stableLongTermPlateauProved": false,
+  "full500MBReserveProved": false,
+  "newNativeResourcesStarted": 0,
+  "sqlStatementsExecutedThisSprint": 0,
+  "production": false,
+  "routerCalls": 0,
+  "externalModelCalls": 0,
+  "full500Authorized": false,
+  "reservationOrOldGOReused": false,
+  "authority": "This receipt grants no run, capacity waiver, Production, merge or deployment authority. Full500 requires a new specific GO and all32 fresh start conditions.",
+  "independentSOLReviews": {
+    "inspector": "No remaining findings after verified-byte compile loader correction",
+    "SQLPreparation": "Observer timeouts fixed in all8 transactions; no remaining blocker after documenting aggregate averages and per-statement limits",
+    "closureHelper": "Future caller must durably aggregate returned receipt; native execution not qualified"
+  }
+}

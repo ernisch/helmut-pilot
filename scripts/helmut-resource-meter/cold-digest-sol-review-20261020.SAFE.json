@@ -1,0 +1,489 @@
+{
+  "schema": "helmut-cold-digest-sol-review/1",
+  "scope": "LOCAL_SOURCE_ONLY",
+  "mode": "bounded-native-read-v1",
+  "status": "accepted",
+  "independent": true,
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "reviewer": "capacity independent reviewer",
+  "atUTC": "2026-10-20T17:54:11.863389+00:00",
+  "production": false,
+  "full500Accepted": false,
+  "file": "supabase/proposals/auth_read_bounded_local.sql",
+  "sqlSHA256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5",
+  "function": "helmut_auth_state_graph_read_v1",
+  "functionBodySHA256": "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0",
+  "originalSQLSHA256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561",
+  "originalFunctionBodySHA256": "1644ff690fb4ae70ab2511b3ccf41353e622595bc9fed2d61005c4f655171af0",
+  "adapterSHA256": "5e4048e862f3c942ac2563638336964a10c96bf337566474568705a43e1830f0",
+  "engineCommit": "360af181c23dc4236ce01e9bfa4a28ae26e7ee62",
+  "sqlParentCommit": "c2b5a2596804eeabf737b1d038a567228c7d015d",
+  "nativeProofPin": {
+    "name": "cold-digest-native-qualification-20261020.SAFE.json",
+    "bytes": 14721,
+    "sha256": "6c8988e6ca763376554591d1244d574edb8bbf01586113402c452b1470937a15"
+  },
+  "actualResultPin": {
+    "name": "ACTUAL_RESULT.SAFE.json",
+    "bytes": 17076,
+    "sha256": "e8c449e70c009f328ed90bc4348143b40e019013035c1e00b6a29470061ed1c3"
+  },
+  "launcherPreparedPin": {
+    "name": "PREPARED.SAFE.json",
+    "bytes": 19359,
+    "sha256": "8f9081e8b1e4c32b329c191c15f1c98f87f36a0a761825a746c432231264100c"
+  },
+  "reviewMethod": "Independent source and recorded-evidence inspection only; no subject-code execution, SQL, native resources or external model calls by this reviewer.",
+  "sourceReview": {
+    "accepted": true,
+    "hashProjectionSemantics": "The unchanged checked helper constructs the ordered nodes array from bounded, non-null generated SHA256 node hashes. Strict JSONPath projects the same strings in array order; WITH ORDINALITY preserves the previous ordered string_agg digest input. Malformed arbitrary graph shapes are outside this reachable helper-produced domain.",
+    "unchangedContracts": "ABI, ACLs/roles, fresh guards, payload construction, nonce and binding behavior, node/byte limits, historical acceptance and rollback; candidate delta only projects hashes before the digest SRF.",
+    "proofGate": "Default acceptance reads fixed canonical regular nonsymlink public proof files with bounded exact bytes/SHA; binds actual SQL, extracted prosrc and adapter; requires native flags and independent accepted SOL review with exact native pin. No metadata self-hash cycle.",
+    "sourceOnly": "Explicit sourceOnly does not read future proof files and always reports qualified=false/localSourceOnly=true; regular callers remain on the normal gate.",
+    "adapterBindingMeaning": "Reviewed source target only; adapter execution and descriptor integration were not part of Native19."
+  },
+  "actualEvidenceReview": {
+    "accepted": true,
+    "caseCount": 19,
+    "successfulPairs": 8,
+    "errorPairs": 11,
+    "rawCapturesIndependentlyComparedToReceipts": 19,
+    "rawCaptureExitCodesAllZero": true,
+    "rawCaptureFailures": 0,
+    "rawCaptureStderrBytes": 0,
+    "distinctFreshPairNonces": 19,
+    "requestsExactlyMatchPinnedTemplates": true,
+    "actualRequestSHA256BindingsMatch": true,
+    "exactWholeJSONBResponsesEqual": true,
+    "identicalSQLSTATEAndMessage": true,
+    "requestedNegativesPassed": true,
+    "onlyFunctionBodyCatalogDelta": true,
+    "individualRollbackProofs": 19,
+    "finalFullCatalogReadMatchesInstalledOLDAndReviewedRenderer": true,
+    "originalFullCatalogMatchesPinnedReference": true,
+    "fullBeforeAfterSourceManifestsEqual": true,
+    "sourceManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+    "sourceFileCount": 1709,
+    "sourceFileBytes": 369399611,
+    "originalFilesRehashedByThisReviewer": false,
+    "allOwnedProcessesExited": true,
+    "namespacesEmpty": true,
+    "fullLastProcessExitCovered": true,
+    "nativeOOM": 0,
+    "nativeOOMKill": 0,
+    "unchangedNativeLimits": {
+      "memory.max": "1547997184",
+      "memory.high": "1399996416",
+      "memory.swap.max": "0"
+    },
+    "postgresCleanShutdownAndLogEOF": true,
+    "publicNativeProofPinsCheckedAgainstActualRecordedBytes": 46,
+    "caseResults": [
+      {
+        "caseId": "legacy",
+        "role": "service_role",
+        "expectedOutcome": "ok",
+        "exactWholeResponsesEqual": true,
+        "identicalErrors": null,
+        "errorSQLSTATE": null,
+        "errorMessage": null,
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "history-warm",
+        "role": "service_role",
+        "expectedOutcome": "ok",
+        "exactWholeResponsesEqual": true,
+        "identicalErrors": null,
+        "errorSQLSTATE": null,
+        "errorMessage": null,
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "history-cold",
+        "role": "service_role",
+        "expectedOutcome": "ok",
+        "exactWholeResponsesEqual": true,
+        "identicalErrors": null,
+        "errorSQLSTATE": null,
+        "errorMessage": null,
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "graph-cold-history-warm",
+        "role": "service_role",
+        "expectedOutcome": "ok",
+        "exactWholeResponsesEqual": true,
+        "identicalErrors": null,
+        "errorSQLSTATE": null,
+        "errorMessage": null,
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "graph-cold-history-cold",
+        "role": "service_role",
+        "expectedOutcome": "ok",
+        "exactWholeResponsesEqual": true,
+        "identicalErrors": null,
+        "errorSQLSTATE": null,
+        "errorMessage": null,
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "graph-warm",
+        "role": "service_role",
+        "expectedOutcome": "ok",
+        "exactWholeResponsesEqual": true,
+        "identicalErrors": null,
+        "errorSQLSTATE": null,
+        "errorMessage": null,
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "graph-warm-history-stale",
+        "role": "service_role",
+        "expectedOutcome": "ok",
+        "exactWholeResponsesEqual": true,
+        "identicalErrors": null,
+        "errorSQLSTATE": null,
+        "errorMessage": null,
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "graph-changed",
+        "role": "service_role",
+        "expectedOutcome": "ok",
+        "exactWholeResponsesEqual": true,
+        "identicalErrors": null,
+        "errorSQLSTATE": null,
+        "errorMessage": null,
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "null",
+        "role": "service_role",
+        "expectedOutcome": "error",
+        "exactWholeResponsesEqual": null,
+        "identicalErrors": true,
+        "errorSQLSTATE": "P0001",
+        "errorMessage": "auth-state-read-input",
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "id-empty",
+        "role": "service_role",
+        "expectedOutcome": "error",
+        "exactWholeResponsesEqual": null,
+        "identicalErrors": true,
+        "errorSQLSTATE": "P0001",
+        "errorMessage": "auth-state-read-input",
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "nonce-bad",
+        "role": "service_role",
+        "expectedOutcome": "error",
+        "exactWholeResponsesEqual": null,
+        "identicalErrors": true,
+        "errorSQLSTATE": "P0001",
+        "errorMessage": "auth-history-reuse-input",
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "proof-bad",
+        "role": "service_role",
+        "expectedOutcome": "error",
+        "exactWholeResponsesEqual": null,
+        "identicalErrors": true,
+        "errorSQLSTATE": "P0001",
+        "errorMessage": "auth-history-reuse-input",
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "graph-bad-type",
+        "role": "service_role",
+        "expectedOutcome": "error",
+        "exactWholeResponsesEqual": null,
+        "identicalErrors": true,
+        "errorSQLSTATE": "P0001",
+        "errorMessage": "auth-graph-reuse-input",
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "graph-bad-shape",
+        "role": "service_role",
+        "expectedOutcome": "error",
+        "exactWholeResponsesEqual": null,
+        "identicalErrors": true,
+        "errorSQLSTATE": "P0001",
+        "errorMessage": "auth-graph-reuse-input",
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "graph-count-mismatch",
+        "role": "service_role",
+        "expectedOutcome": "error",
+        "exactWholeResponsesEqual": null,
+        "identicalErrors": true,
+        "errorSQLSTATE": "P0001",
+        "errorMessage": "auth-graph-reuse-content-mismatch",
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "graph-digest-mismatch",
+        "role": "service_role",
+        "expectedOutcome": "error",
+        "exactWholeResponsesEqual": null,
+        "identicalErrors": true,
+        "errorSQLSTATE": "P0001",
+        "errorMessage": "auth-graph-reuse-content-mismatch",
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "foreign-id",
+        "role": "service_role",
+        "expectedOutcome": "error",
+        "exactWholeResponsesEqual": null,
+        "identicalErrors": true,
+        "errorSQLSTATE": "P0002",
+        "errorMessage": "query returned no rows",
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "role-anon",
+        "role": "anon",
+        "expectedOutcome": "error",
+        "exactWholeResponsesEqual": null,
+        "identicalErrors": true,
+        "errorSQLSTATE": "42501",
+        "errorMessage": "permission denied for schema public",
+        "fullCatalogRestored": true
+      },
+      {
+        "caseId": "role-authenticated",
+        "role": "authenticated",
+        "expectedOutcome": "error",
+        "exactWholeResponsesEqual": null,
+        "identicalErrors": true,
+        "errorSQLSTATE": "42501",
+        "errorMessage": "permission denied for schema public",
+        "fullCatalogRestored": true
+      }
+    ],
+    "rawOutputEvidencePins": [
+      {
+        "name": "DIFF_01.stdout.PRIVATE.txt",
+        "bytes": 1996,
+        "sha256": "8b5bdb8500e2423bd67738faf247fe5c3cf32dc9de344e715623806974092b2e"
+      },
+      {
+        "name": "DIFF_01.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_02.stdout.PRIVATE.txt",
+        "bytes": 2180,
+        "sha256": "1e2aef11d6d3d5d958bfa5a069b297b5d5043c6cf5a440c618f50b3d5d1d48b5"
+      },
+      {
+        "name": "DIFF_02.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_03.stdout.PRIVATE.txt",
+        "bytes": 2183,
+        "sha256": "dc8828b3d04be4af25f804a39b46f3f23d02a988071da89f57410857fe2ab01c"
+      },
+      {
+        "name": "DIFF_03.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_04.stdout.PRIVATE.txt",
+        "bytes": 2503,
+        "sha256": "793bc2de8a0954f25e9cec9c930f271d613fb92a1793560329d12ce6ed2edcf7"
+      },
+      {
+        "name": "DIFF_04.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_05.stdout.PRIVATE.txt",
+        "bytes": 2506,
+        "sha256": "c28806d4c4cee16cbe61a1371ca9c4810373928f8355120d550f2bbf603f1939"
+      },
+      {
+        "name": "DIFF_05.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_06.stdout.PRIVATE.txt",
+        "bytes": 2482,
+        "sha256": "36bf39f4c20911d21fd74fb8f28f3a249ac466d8ba0057873be6abfd484166d5"
+      },
+      {
+        "name": "DIFF_06.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_07.stdout.PRIVATE.txt",
+        "bytes": 2503,
+        "sha256": "585bfa94e0062fa5bfa9484e7df7eba11de072212cb9e68ff260128d9290b417"
+      },
+      {
+        "name": "DIFF_07.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_08.stdout.PRIVATE.txt",
+        "bytes": 2493,
+        "sha256": "8cdcd8cadf55fbb5d40c77bed2cae57b58b2079a25ec398522b94db9a158e15d"
+      },
+      {
+        "name": "DIFF_08.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_09.stdout.PRIVATE.txt",
+        "bytes": 1451,
+        "sha256": "d07789256c9c3910d2c0cf74d0c24daf9bc45c5cbac35bf1cc7dbfca9a1e639f"
+      },
+      {
+        "name": "DIFF_09.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_10.stdout.PRIVATE.txt",
+        "bytes": 1455,
+        "sha256": "81f074c763b6819857aec132cc870093a79fee2636fb14007215ff25822e4f8d"
+      },
+      {
+        "name": "DIFF_10.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_11.stdout.PRIVATE.txt",
+        "bytes": 1459,
+        "sha256": "58318f6635831b0c1aec1f4aa8e3e68372775c90e7bc084df9a888822252011e"
+      },
+      {
+        "name": "DIFF_11.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_12.stdout.PRIVATE.txt",
+        "bytes": 1459,
+        "sha256": "070c25097426efa2afc8e898ba9cadd529f7229fc1663604b8ac501f24a6a590"
+      },
+      {
+        "name": "DIFF_12.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_13.stdout.PRIVATE.txt",
+        "bytes": 1462,
+        "sha256": "02b016a6505e6c0feac34030cc13f163da7cd6ba5315f39971bdd4712a086638"
+      },
+      {
+        "name": "DIFF_13.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_14.stdout.PRIVATE.txt",
+        "bytes": 1463,
+        "sha256": "5e3e51d1aa21dd1726bb201dfd92933ba5982fa80b72d40979f8354ca3fe4d75"
+      },
+      {
+        "name": "DIFF_14.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_15.stdout.PRIVATE.txt",
+        "bytes": 1479,
+        "sha256": "0ec9a3025c64aa14b6535b6a7b084ba4c95617834a761bb02baf6b18606ec0a0"
+      },
+      {
+        "name": "DIFF_15.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_16.stdout.PRIVATE.txt",
+        "bytes": 1480,
+        "sha256": "6522ca04460fc0a8f0efda81200cb79342c6b09d67bcf5abeda8d11d657e44a9"
+      },
+      {
+        "name": "DIFF_16.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_17.stdout.PRIVATE.txt",
+        "bytes": 1458,
+        "sha256": "ca5acc2dffc856b5e9f42f1b0440ee1155cfa1482c0d00bfdfb17db1f92c644b"
+      },
+      {
+        "name": "DIFF_17.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_18.stdout.PRIVATE.txt",
+        "bytes": 1462,
+        "sha256": "09064ca51266c0c3a83bf4b87cd2595a767ee7ceeaa19b7afff9c362b1779619"
+      },
+      {
+        "name": "DIFF_18.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "DIFF_19.stdout.PRIVATE.txt",
+        "bytes": 1480,
+        "sha256": "7d006c626163bf005aef64b897c8e74a8617d4102b23c2d92b7b38ce53e73e89"
+      },
+      {
+        "name": "DIFF_19.stderr.PRIVATE.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "findings": [],
+  "acceptanceLimit": "Local candidate SQL source safety and recorded Native19 differential qualification only. The finite request set is not an exhaustive proof for every possible database/input state.",
+  "normalDescriptorIntegration": {
+    "status": "PENDING",
+    "acceptedByThisReview": false
+  },
+  "critical179": {
+    "status": "PENDING",
+    "acceptedByThisReview": false
+  },
+  "commonMemoryComparison": {
+    "status": "PENDING_SEPARATE_ROOT_MEASUREMENTS",
+    "acceptedByThisReview": false
+  },
+  "RAMGainClaimed": false,
+  "zeroSpillClaimed": false,
+  "plateauProved": false,
+  "full500ReserveProved": false,
+  "providerCalls": 0,
+  "testsExecutedByReviewer": false,
+  "sqlExecutedByReviewer": 0,
+  "containersStartedByReviewer": 0
+}

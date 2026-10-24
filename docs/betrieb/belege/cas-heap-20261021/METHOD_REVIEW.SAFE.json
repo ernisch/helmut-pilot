@@ -1,0 +1,345 @@
+{
+  "RAMSavingProven": false,
+  "activity": {
+    "AST": 0,
+    "DockerOrProcessInspection": 0,
+    "GitBlobAndSHA256Verified": true,
+    "SQL": 0,
+    "compiled": false,
+    "nativeActions": 0,
+    "oldFailedReportsChanged": false,
+    "originalPGDATAPayloadReads": 0,
+    "publicSourcesFetched": 6,
+    "resourceMutations": 0,
+    "sourceExecuted": false,
+    "subjectImports": 0,
+    "tests": 0,
+    "thirdCasNativeSizeAttempt": false
+  },
+  "atUTC": "2026-10-21T09:01:43.742624+00:00",
+  "blockingFindings": [],
+  "counterSemantics": {
+    "exclusions": "Live current-backend context tree only; no glibc arena/RSS accounting, inactive context caches, other backend/process or shared-memory totals.",
+    "noParentChildDoubleCount": true,
+    "noRecursiveSubtreeTotalAdded": true,
+    "query": "One traversal producing count(*),sum(total_bytes),sum(used_bytes),sum(free_bytes).",
+    "residentMemoryMeaning": "total/free/used are context capacity/accounting, not resident pages. Never subtract/add them to RSS/PSS/native cgroup sums to claim exact native ownership.",
+    "sourceReferences": [
+      {
+        "fact": "Fresh zeroed counters per context; context->methods->stats called on that context, then children recursively enumerated once; materialized SRF begins at TopMemoryContext.",
+        "lines": "57-61,91-112,119-129",
+        "source": "mcxtfuncs.c"
+      },
+      {
+        "fact": "totalspace is bytes requested from malloc, freespace unused portion; counters are AllocSet-oriented.",
+        "lines": "20-35",
+        "source": "memnodes.h"
+      },
+      {
+        "fact": "Context initially owns its own malloc block including header; stats sums own context header/blocks/free chunks, not children.",
+        "lines": "444-450,1521-1591",
+        "source": "aset.c"
+      }
+    ],
+    "totalEqualsUsedPlusFree": true,
+    "usedMeaning": "Allocator/context occupied bytes, including headers/overhead; not just live SQL values or logical JSONB bytes."
+  },
+  "fixedRecordContract": {
+    "binder": "Actual same CAS PID/non-forced pg_current_xact_id_if_assigned() text/expected+new revision tuples; new revision/request hash/nonce cross-bind to unchanged driver request/ACK evidence. Preserve XID as exact string, not float.",
+    "binderKind": "cas",
+    "binderPoint": "session",
+    "binders": 4,
+    "commonFieldCount": 13,
+    "commonFields": [
+      "schema",
+      "kind",
+      "point",
+      "backendPID",
+      "xid",
+      "expectedRevision",
+      "newRevision",
+      "currentUser",
+      "sessionUser",
+      "rawProjection",
+      "rawDiagnosticScope",
+      "logErrorVerbosity",
+      "logMinErrorStatement"
+    ],
+    "correlation": "Exactly one session binder followed by two ordered points per successful CAS with the same PID/XID/revisions/raw GUC/roles/logging GUC values. Backend PID may differ across requests; do not pretend one backend for the full case.",
+    "counterGuards": "contextCount integer1..4096; memory counters integer0..INT64_MAX; no NaN/float/bool aliases/missing/coalesce0; total=used+free.",
+    "existingCounts": "27 genuineRPC,3round,5read/4CAS/18control,6 boundary triplets;4successfulCAS includes restore. No added reads/controls/forced-GC/cache eviction/role/session tricks.",
+    "heapExtraFields": [
+      "contextCount",
+      "totalBytes",
+      "usedBytes",
+      "freeBytes",
+      "outputTextBytes",
+      "outputValueBytes"
+    ],
+    "heapFieldCount": 19,
+    "heapFrames": 8,
+    "heapKind": "heap",
+    "heapPoints": [
+      "beforeOutputText",
+      "afterOutputValue"
+    ],
+    "lengths": "Both null before materialization; nonnegative bounded O(1) scalars after cast. No traversal/hash/copy of large outputs for instrumentation.",
+    "maximumCombinedJSONBytes": 24576,
+    "maximumJSONBytesPerRecord": 2048,
+    "prefix": "HELMUT_CAS_HEAP_V1 ",
+    "rawGuards": "current/session role identifiers<=63UTF8B; raw projection/scope null or text<=128UTF8B; raw projection exactly on rejects before branch, all actual values otherwise preserved rather than manufactured OFF/NULL.",
+    "records": 12,
+    "schema": "helmut-cas-heap-log/1"
+  },
+  "full500": false,
+  "inputPins": [
+    {
+      "bytes": 1965,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/SOURCE_BINDING.SAFE.json",
+      "sha256": "2dc5e331b03882a72d6dcaae9f2b98b178d81fa960fd3283c2021fdc5dc7a901"
+    },
+    {
+      "bytes": 408,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/ELOG_SOURCE_BINDING.SAFE.json",
+      "sha256": "dd488022802fcedd86e38adc7c7e5b2a285fcbafb2e902659f44e7100a2e0994"
+    },
+    {
+      "bytes": 409,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/PL_EXEC_SOURCE_BINDING.SAFE.json",
+      "sha256": "c8ceb401d51d289f8d451c49cb1a70c87a2bf893a8842067b3647a8af031121f"
+    },
+    {
+      "bytes": 5340,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/mcxtfuncs.c",
+      "sha256": "263bed155de25922a8c9a319969520c6ec8904c128c892b6d4aeede4a94c5867"
+    },
+    {
+      "bytes": 54511,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/aset.c",
+      "sha256": "0fe4cf4ff97f70ce31c984b568fe3d2433c52d8da538b062e6793a12a1f9999c"
+    },
+    {
+      "bytes": 5353,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/memnodes.h",
+      "sha256": "db20b3e9d94dada33d348ce08e7aaeaf05526ff74d0948b86f6466350de54f80"
+    },
+    {
+      "bytes": 51694,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/system_views.sql",
+      "sha256": "40844d5c419bbf6ccaaeafbe650b1cbd717bdb71ed19805fdaab99b68a8cc098"
+    },
+    {
+      "bytes": 103093,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/elog.c",
+      "sha256": "11d8460bc7f549d71076da2ce5f2f21fba17c0d8d911b2b37f89b0ccb45ac2a3"
+    },
+    {
+      "bytes": 263280,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/pl_exec.c",
+      "sha256": "6262fdab288e77bc882da69e2555983498fcaf99f3f28c4250eb5beb1bcff706"
+    },
+    {
+      "bytes": 36994,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3/CATALOG_SELECTED.stdout.PRIVATE.txt",
+      "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+    },
+    {
+      "bytes": 25215,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/common.py",
+      "sha256": "864ec9f3612a61d7f83f18512ab7de0986e419555c32f419dde66d6ce2655701"
+    },
+    {
+      "bytes": 17398,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    },
+    {
+      "bytes": 1731,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_READONLY_RESUME.SAFE.json",
+      "sha256": "37f445c5165a3a309d5900769509fd93110254da8d356d86783aa4bff95e5bbf"
+    }
+  ],
+  "loggingRequiredGuards": {
+    "actualReadonlyReadinessAndCASChecks": true,
+    "noServiceRoleSUSETPrivilegeGranted": true,
+    "policy": "Only these two logging GUCs are diagnostic startup changes. Preserve all original memory/CPU/deadline/auth/return/ACK settings. Raw capture must remain bounded and must not leak statements/stacks/context names/payloads.",
+    "sourceReferences": [
+      {
+        "fact": "Terse skips detail/hint/internal query/context/backtrace.",
+        "lines": "3213-3268",
+        "source": "elog.c"
+      },
+      {
+        "fact": "STATEMENT is separately appended. LOG qualifies under defaultERROR policy, so terse alone does not suppress top SQL.",
+        "lines": "205-230,2728-2743,3276-3283",
+        "source": "elog.c"
+      },
+      {
+        "fact": "RAISE emits with no hide_stmt/hide_ctx flags.",
+        "lines": "3908-3931",
+        "source": "pl_exec.c"
+      }
+    ],
+    "startupOnly": [
+      "log_error_verbosity=terse",
+      "log_min_error_statement=fatal"
+    ]
+  },
+  "minimumRemainingSourceAcceptance": [
+    "C custody release must pin exact mechanical CAS/renderer-only overlays, four ACL/setup artifacts and descriptor, fixed final contract and all original expressions/calls/return order.",
+    "L must pin existing P37 starter reuse, exact exceptional setup/restore/error/final closure hooks, current-role/readiness checks, strict normal native shutdown/EOF and all original data/history/catalog/source/hash/ACK/CAS protection.",
+    "Root freezes only after independent source review and targeted resource-free guards; fresh same-freeze lifecycle and separately adopted work gate remain. This method report itself is not a start authorization.",
+    "Actual interpretation must separate whole-case functional acceptance from bounded observer context deltas and all remaining allocation/RSS/causal limits."
+  ],
+  "observerACLRequiredGuards": [
+    "Before any mutation pin fresh clone nonce/dataDirectory/DBOID/image/source-manifest/serverVersion and current/session role identities; exact pg_catalog namespace and the two object OIDs/owners/kinds are mandatory.",
+    "Verify view definition and9-column ABI, builtin function internal language/prosrc pg_get_backend_memory_contexts/zero input args/retset record/SECURITY INVOKER; no spoofed user helper or alternate backend reader.",
+    "Snapshot actual raw relacl/proacl including NULL/order, expanded grantor/grantee/privilege/grant-option tuples, effective service_role SELECT/EXECUTE, and relevant role membership/identity. Do not assume official default ACL arrays equal this clone.",
+    "Grant only missing named rights to service_role as the unchanged owner, never WITH GRANT OPTION. No PUBLIC/default privilege/table/Auth/RLS/owner/membership delta. If a needed right has unsupported raw NULL ACL restoration, fail before grant; already permitted NULL requires no mutation.",
+    "Verify selected ACL is exactly computed minimal additions and effective actual CAS current_user has both rights. No27RPC work before successful readiness. No fallback to postgres invocation, broader pg_read_all_stats or new SECURITY DEFINER.",
+    "Restore only newly introduced bits on success and failure; require raw pre-ACL bytes/order/grantors/options, effective rights, role membership/identity and all public Auth ABI/ACL/RLS exactly equal before state. Persist before/selected/restored/final receipts.",
+    "Restore outcome unknown, premature server loss, unexpected ACL/owner/source/object identity or mismatch means FAIL/KEEP, no automatic retry or claimed restored state. No direct pg_catalog UPDATE to manufacture exact ACL bytes."
+  ],
+  "observerLimitations": [
+    "InitMaterializedSRF creates a tuplestore and internally materializes all9 view columns, including context name/ident/parent text, even when the caller exports only four aggregate scalars. No names/identifiers/query payloads may appear in emitted records.",
+    "Traversal and tuple construction allocate between context-row samples; totals are not an atomic backend snapshot and include observer query/SRF/aggregate/record/LOG allocation and cache effects.",
+    "Context-count1..4096 is a result guard, not a hard limit on SRF internal enumeration/materialization. Existing statement/native/time/evidence limits remain actual work bounds.",
+    "Before point is before array_to_string while renderer_chunks are live. After point follows text construction, renderer_chunks:=NULL, UNIQUE JSON/text-size checks and output_value::jsonb. Delta includes all of those plus observer work, not just cast or representation size.",
+    "After-only O(1) octet_length(output_text)/pg_column_size(output_value) are supplementary scalar lengths, not allocation-size decomposition. Original checks and their order must remain; added function/cache overhead is observer work."
+  ],
+  "officialPGCommit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+  "officialSourceBindingPin": {
+    "bytes": 1965,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/SOURCE_BINDING.SAFE.json",
+    "sha256": "2dc5e331b03882a72d6dcaae9f2b98b178d81fa960fd3283c2021fdc5dc7a901"
+  },
+  "officialSources": [
+    {
+      "bytes": 5340,
+      "commit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "gitBlobSHA1": "4d4a70915bb3a56490c77fd922b303a602b6a608",
+      "officialPath": "src/backend/utils/adt/mcxtfuncs.c",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/mcxtfuncs.c",
+      "sha256": "263bed155de25922a8c9a319969520c6ec8904c128c892b6d4aeede4a94c5867"
+    },
+    {
+      "bytes": 54511,
+      "commit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "gitBlobSHA1": "dede30dd86a94739ea38446977c987e0cb3c7f37",
+      "officialPath": "src/backend/utils/mmgr/aset.c",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/aset.c",
+      "sha256": "0fe4cf4ff97f70ce31c984b568fe3d2433c52d8da538b062e6793a12a1f9999c"
+    },
+    {
+      "bytes": 5353,
+      "commit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "gitBlobSHA1": "c4c9fd3e3e1bb279e515c7d741a7ea43aad25aec",
+      "officialPath": "src/include/nodes/memnodes.h",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/memnodes.h",
+      "sha256": "db20b3e9d94dada33d348ce08e7aaeaf05526ff74d0948b86f6466350de54f80"
+    },
+    {
+      "bytes": 51694,
+      "commit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "gitBlobSHA1": "efb29adeb39cc5689980595f5328be3057ca2562",
+      "officialPath": "src/backend/catalog/system_views.sql",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/system_views.sql",
+      "sha256": "40844d5c419bbf6ccaaeafbe650b1cbd717bdb71ed19805fdaab99b68a8cc098"
+    },
+    {
+      "bytes": 103093,
+      "commit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "gitBlobSHA1": "948bec886a22895484cf4e1601d20ff029a83c87",
+      "officialPath": "src/backend/utils/error/elog.c",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/elog.c",
+      "sha256": "11d8460bc7f549d71076da2ce5f2f21fba17c0d8d911b2b37f89b0ccb45ac2a3"
+    },
+    {
+      "bytes": 263280,
+      "commit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "gitBlobSHA1": "e7b0f2544b46ed061491de0733fabbeea2c146a3",
+      "officialPath": "src/pl/plpgsql/src/pl_exec.c",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/pl_exec.c",
+      "sha256": "6262fdab288e77bc882da69e2555983498fcaf99f3f28c4250eb5beb1bcff706"
+    }
+  ],
+  "privilegeEvidence": {
+    "actualCASFunction": {
+      "anonExecute": false,
+      "arguments": "jsonb",
+      "config": [
+        "search_path=pg_catalog"
+      ],
+      "customerExecute": false,
+      "definer": false,
+      "hash": "8a13952bee9f305074d6ad9f2c2ee27e129a7e20ce3babb1d8f3a971719fcf6c",
+      "owner": "postgres",
+      "publicExecute": false,
+      "result": "jsonb",
+      "serviceExecute": true,
+      "volatility": "v"
+    },
+    "actualExpanderFunction": {
+      "anonExecute": false,
+      "arguments": "text, text, text, boolean, boolean",
+      "config": [
+        "search_path=pg_catalog"
+      ],
+      "customerExecute": false,
+      "definer": false,
+      "hash": "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32",
+      "owner": "postgres",
+      "publicExecute": false,
+      "result": "jsonb",
+      "serviceExecute": true,
+      "volatility": "s"
+    },
+    "boundary": "This explicitly changes selected-interval diagnostic pg_catalog ACLs and cannot establish unchanged production-role permission equivalence. The prior no-grant protocol is revised only for these named observer rights; original clusters/source/roles remain untouched.",
+    "commonPostgRESTConfigPin": {
+      "bytes": 25215,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/common.py",
+      "sha256": "864ec9f3612a61d7f83f18512ab7de0986e419555c32f419dde66d6ce2655701"
+    },
+    "conclusion": "Unmodified recorded artifacts do not prove effective service_role view/function access; session/owner postgres is not SECURITY INVOKER service_role superuser.",
+    "explicitDiagnosticSelection": "Root deliberately selected only missing SELECT on pg_catalog.pg_backend_memory_contexts and EXECUTE on pg_catalog.pg_get_backend_memory_contexts() in the fresh adopted private clone. No role membership, SECURITY DEFINER, owner or public Auth permission change.",
+    "officialACL": "system_views.sql660-666 revokes PUBLIC view SELECT and builtin EXECUTE, grants both pg_read_all_stats.",
+    "recordedServiceRole": {
+      "bypassRls": true,
+      "canLogin": false,
+      "createDB": false,
+      "createRole": false,
+      "inherit": true,
+      "name": "service_role",
+      "replication": false,
+      "super": false
+    },
+    "rendererSourcePin": {
+      "bytes": 17398,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    },
+    "savedRoleMembershipCaptured": false,
+    "selectedCatalogPin": {
+      "bytes": 36994,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3/CATALOG_SELECTED.stdout.PRIVATE.txt",
+      "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+    }
+  },
+  "production": false,
+  "projectionEnabled": false,
+  "recorderPin": {
+    "bytes": 13294,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/record_method_review.py",
+    "sha256": "b57f179adda42d176d8546ebcb9fd116726efe5cb2735e102afed71dcaa0f510"
+  },
+  "resourceActionAuthorized": false,
+  "resumePin": {
+    "bytes": 1731,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_READONLY_RESUME.SAFE.json",
+    "sha256": "37f445c5165a3a309d5900769509fd93110254da8d356d86783aa4bff95e5bbf"
+  },
+  "schema": "helmut-cas-heap-independent-method-review/1",
+  "scope": "Exactly4 successful original CURRENT CAS requests in one unchanged27RPC/3round diagnostic; one binder and2 in-backend heap records per CAS. Fresh same-freeze lifecycle/Root source guards remain mandatory.",
+  "sourceIdentity": "Public GitHub contents API fetched at exact commit; decoded bytes independently checked against Git blob SHA1 and SHA256. No source execution or compilation.",
+  "status": "PASS_METHOD_ONLY_SOURCE_AND_ACTUAL_PENDING"
+}

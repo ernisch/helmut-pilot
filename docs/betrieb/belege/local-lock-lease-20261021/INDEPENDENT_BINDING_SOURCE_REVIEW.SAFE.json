@@ -1,0 +1,66 @@
+{
+  "schema": "helmut-local-lease-binding-source-review-record/1",
+  "reviewer": "/root/v12_write_chain_review",
+  "recordedBy": "root coordinator from independent review messages",
+  "review": "PASS",
+  "scope": "SOURCE_ONLY",
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/synthetik-500-content-runner.js",
+      "bytes": 4748,
+      "sha256": "f632f019c9dd277cd09863ef18566416189226631af6e7ffc6014e0a117eee47"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/atomic-usage-integration.js",
+      "bytes": 40528,
+      "sha256": "b78110c1603bcac5afa3e923b7a60f4bb2b2b4920d3bb3836dcd1406237df9b0"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/connect-local500.py",
+      "bytes": 33951,
+      "sha256": "7d39c87decfb192723752b5fb412b3ef076157d082ca93ed6b644a7a66926fb3"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/start-input-checks.js",
+      "bytes": 24473,
+      "sha256": "50e04739f5250767150cc986e50d7ec1dbcb2bfb177d4cbef9631c7bf14522d9"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/pipeline-lock-lease-integration.js",
+      "bytes": 14736,
+      "sha256": "a6c2fbc75e397396c590b16a3cb1e62859f5bdd042113eb9e2509321cddbedad"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/pipeline-lock-lease-binding-test.js",
+      "bytes": 9476,
+      "sha256": "ecd8cddc09edf6c624cf0966332b0e4198d29c3a144863d0951666dfdc242bec"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/pipeline-lock-lease-binding-test.py",
+      "bytes": 7002,
+      "sha256": "9359aa8397c3c79d60deaa0e3b1aa24e74260bfb017ce51101b6e6e6c84810fb"
+    }
+  ],
+  "checks": [
+    "All lease environment values returned by installation are adopted in all three child environments",
+    "Real source/native/actual receipts bound; no invented evidence or new authority",
+    "Pre-existing historical blob locks are freshly validated and retained",
+    "Initial and final row-catalog empty checks are outside the active profile loop",
+    "Root delta requires bounded sender claim control together with lease mode",
+    "Legacy global flag enabled or unbound lease mode is rejected"
+  ],
+  "rootGenuineDescriptorPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/FINAL_GENUINE_DESCRIPTOR.SAFE.json",
+    "bytes": 27580,
+    "sha256": "cfeeb7dbb94f46f6af2ed24c90e6f0feb3e45deee7f9f8da6defa2b095b3b4e7"
+  },
+  "rootGenuineIntegrationLogPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/FINAL_GENUINE_INTEGRATION.ACTUAL.log",
+    "bytes": 965,
+    "sha256": "953831a1f3fc79f42c02a2fe8578bb384fe39fee37756a1ebbe65c728595b4fd"
+  },
+  "actualFullMotorStarted": false,
+  "full500": false,
+  "production": false,
+  "executionAuthority": false
+}
