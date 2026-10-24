@@ -47,18 +47,41 @@ class Worker:
 class SourceBoundaries(unittest.TestCase):
     def test_original_public_catalogue_cannot_replace_diagnostic_sources(self):
         rows = [{'name': 'helmut_unit_diagnostic.fn' + str(i), 'identityArguments': '',
-                 'prosrcSHA256': hashlib.sha256(str(i).encode()).hexdigest()} for i in range(27)]
+                 'prosrcSHA256': hashlib.sha256(str(i).encode()).hexdigest()} for i in range(29)]
         helpers = {'helmut_unit_diagnostic.helper' + str(i) + '()': 'c' * 64 for i in range(9)}
         catalog = {'functions': [{'name': 'public.helmut_original', 'identityArguments': '', 'prosrcSHA256': 'd' * 64}],
                    'nativeSources': rows}
         result = m.native_source_expectations(catalog, helpers)
-        self.assertEqual(len(result), 36)
+        self.assertEqual(len(result), 38)
         self.assertNotIn('public.helmut_original()', result)
         for bad in (rows[:-1], rows[:-1] + [rows[0]]):
             with self.assertRaisesRegex(RuntimeError, 'native-source-expectations'):
                 m.native_source_expectations({**catalog, 'nativeSources': bad}, helpers)
+        overlap = dict(helpers); overlap.pop(next(iter(overlap))); overlap[rows[0]['name'] + '()'] = 'e' * 64
         with self.assertRaisesRegex(RuntimeError, 'native-source-expectations'):
-            m.native_source_expectations(catalog, {**helpers, rows[0]['name'] + '()': 'e' * 64})
+            m.native_source_expectations(catalog, overlap)
+
+    def test_current_ddl_inventory_includes_both_bundle_readers_in_exact_source_closure(self):
+        spec = importlib.util.spec_from_file_location('source_inventory_offline', HERE / 'local-unit-native-bridge-qualification.py')
+        bridge = importlib.util.module_from_spec(spec); spec.loader.exec_module(bridge)
+        native = bridge._definitions((HERE / 'local-unit-diagnostic-store.sql').read_text(encoding='utf8'))
+        proposal = HERE.parents[1] / 'supabase/proposals/local_unit_original_bridge_local.sql'
+        helpers = bridge._definitions(proposal.read_text(encoding='utf8'))
+        rows = [{k: entry[k] for k in ('name', 'identityArguments', 'prosrcSHA256')} for entry in native.values()]
+        future = {entry['name'] + '(' + entry['identityArguments'] + ')': entry['prosrcSHA256'] for entry in helpers.values()}
+        self.assertEqual(len(rows), 29)
+        self.assertEqual(len(future), 9)
+        result = m.native_source_expectations({'nativeSources': rows}, future)
+        self.assertEqual(len(result), 38)
+        for signature in ('public.local_unit_diagnostic_control_runtime_read_v1(text, text)',
+                          'public.local_unit_diagnostic_control_snapshot_read_v1(text, text, integer, text, jsonb, jsonb, text)'):
+            self.assertIn(signature, result)
+        for bad in (rows[:-1], rows[:-1] + [rows[0]]):
+            with self.assertRaisesRegex(RuntimeError, 'native-source-expectations'):
+                m.native_source_expectations({'nativeSources': bad}, future)
+        overlap = dict(future); overlap.pop(next(iter(overlap))); overlap[next(iter(result))] = '0' * 64
+        with self.assertRaisesRegex(RuntimeError, 'native-source-expectations'):
+            m.native_source_expectations({'nativeSources': rows}, overlap)
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='helmut-source-channel-'); self.addCleanup(self.temp.cleanup)
@@ -164,7 +187,7 @@ class SourceBoundaries(unittest.TestCase):
                   'nonce': 'a' * 32, 'repository': '/VM', 'bridgeQualifierPin': {}, 'runtimeBindings': [],
                   'nodePin': {'path': '/VM/node', 'bytes': 3, 'sha256': 'a' * 64}, 'pythonExecutable': '/VM/python',
                   'executionHostPlan': {'aliasPins': {'postgrest': {'path': '/opt/postgrest-pinned', 'bytes': 3, 'sha256': 'b' * 64}}}}
-        rows = [{'name': 'helmut_unit_diagnostic.fn' + str(i), 'identityArguments': '', 'prosrcSHA256': 'c' * 64} for i in range(27)]
+        rows = [{'name': 'helmut_unit_diagnostic.fn' + str(i), 'identityArguments': '', 'prosrcSHA256': 'c' * 64} for i in range(29)]
         catalog = {'nativeSources': rows}
         calls = []
         def native_pin(path):

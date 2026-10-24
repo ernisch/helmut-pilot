@@ -148,7 +148,7 @@ def native_source_expectations(catalog, future_helpers):
     # implementation has its own explicit nativeSources closure.
     actual_base = {f['name'] + '(' + f['identityArguments'] + ')': f['prosrcSHA256']
                    for f in catalog['nativeSources']}
-    need(len(catalog['nativeSources']) == len(actual_base) == 27 and len(future_helpers) == 9
+    need(len(catalog['nativeSources']) == len(actual_base) == 29 and len(future_helpers) == 9
          and not set(actual_base) & set(future_helpers), 'native-source-expectations')
     return {**actual_base, **future_helpers}
 
