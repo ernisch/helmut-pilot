@@ -115,7 +115,7 @@ function executableContinuity(pid, expected) {
       const sameNames = () => need(fs.realpathSync(pin.path) === pin.path && fs.readlinkSync(proc) === pin.path, "executable-path-drift");
       sameMounts(); sameNames();
       const named = fs.lstatSync(pin.path, { bigint: true }), metadata = identity || statIdentity(named);
-      const same = s => s.isFile() && s.uid === 0n && s.nlink === 1n && s.size === BigInt(pin.bytes)
+      const same = s => s.isFile() && s.nlink === 1n && s.size === BigInt(pin.bytes)
         && isDeepStrictEqual(statIdentity(s), metadata);
       need(same(named), "executable-file-drift");
       let namedFD = null, procFD = null;
