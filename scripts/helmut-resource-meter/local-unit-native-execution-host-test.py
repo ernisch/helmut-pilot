@@ -734,6 +734,69 @@ class PureHost(unittest.TestCase):
         with self.assertRaises(RuntimeError): self.host.tick()
         self.assertTrue(path.read_bytes() == before)
 
+    def source_failure_record(self, **changes):
+        value = {'schema': 'helmut-local-unit-native-execution-failure/1', 'selection': self.selection,
+                 'stageNumber': 7, 'exceptionType': 'PermissionError', 'privateTraceback': 'synthetic-private-primary',
+                 'retryAllowed': False}
+        value.update(changes)
+        M.publish_once(self.case / 'EXECUTION_FAILURE.PRIVATE.json', M.encode(value))
+        return value
+
+    def test_bound_source_failure_closes_host_once_without_service_lookup_or_source_signal(self):
+        self.source_failure_record()
+        self.host.state = 'ENTRY'
+        self.host._observe = lambda: self.fail('teardown must not query a vanished service')
+        read = M.read_file
+        with patch.object(M, 'read_file', lambda p, *a, **k: read(p, *a, **{**k, 'uid': os.getuid()})):
+            result = self.host.tick()
+            again = self.host.tick()
+        self.assertEqual(result, again)
+        self.assertEqual(result['state'], 'SOURCE_FAILED')
+        close = self.host.close()
+        self.assertFalse(close['clean'] or close['sourceStopRequested'])
+        self.assertEqual(close['sourceFailure']['exceptionType'], 'PermissionError')
+        self.assertNotIn('synthetic-private-primary', str(result) + str(close))
+        self.assertFalse((self.case / 'EXECUTION_HOST_FAILURE.PRIVATE.json').exists())
+        self.assertIs(self.host.close(), close)
+
+    def test_source_failure_published_during_mapping_lookup_preserves_earlier_source_cause(self):
+        def observe():
+            self.source_failure_record()
+            M.need(False, 'source-service-host-mapping')
+        self.host._observe = observe
+        read = M.read_file
+        with patch.object(M, 'read_file', lambda p, *a, **k: read(p, *a, **{**k, 'uid': os.getuid()})):
+            result = self.host.tick()
+        self.assertEqual(result['state'], 'SOURCE_FAILED')
+        self.assertFalse(self.host.close()['clean'])
+        self.assertFalse((self.case / 'EXECUTION_HOST_FAILURE.PRIVATE.json').exists())
+
+    def test_actual_host_failure_is_not_replaced_by_later_source_failure(self):
+        def observe():
+            self.source_failure_record()
+            raise PermissionError(13, 'synthetic-first-host-failure')
+        self.host._observe = observe
+        with self.assertRaisesRegex(RuntimeError, '^native-execution-host-sealed-failure$'): self.host.tick()
+        failure = M.unique((self.case / 'EXECUTION_HOST_FAILURE.PRIVATE.json').read_bytes())
+        self.assertEqual(failure['exception']['type'], 'PermissionError')
+        self.assertEqual(failure['exception']['message'], '[Errno 13] synthetic-first-host-failure')
+        self.assertIsNone(self.host.source_failure)
+
+    def test_foreign_or_retryable_source_failure_never_bypasses_host_binding(self):
+        for changes in ({'selection': {**self.selection, 'commandHash': 'f' * 64}}, {'retryAllowed': True},
+                        {'stageNumber': True}, {'privateTraceback': 'x' * 32769}):
+            with self.subTest(changes=tuple(changes)):
+                self.source_failure_record(**changes)
+                read = M.read_file
+                with patch.object(M, 'read_file', lambda p, *a, **k: read(p, *a, **{**k, 'uid': os.getuid()})):
+                    with self.assertRaisesRegex(RuntimeError, '^native-execution-host-sealed-failure$'): self.host.tick()
+                self.assertIsNone(self.host.source_failure)
+                self.assertEqual(self.host.failure, 'sealed-native-host-failure')
+                self.assertFalse(self.host.closed)
+                (self.case / 'EXECUTION_FAILURE.PRIVATE.json').unlink()
+                (self.case / 'EXECUTION_HOST_FAILURE.PRIVATE.json').unlink()
+                self.host.failure = None
+
     def test_transport_capture_is_private_bounded_and_close_never_exports_bytes(self):
         sentinel = os.urandom(32).hex().encode()
         snapshot = {'schema': 'helmut-local-unit-native-pipe-failure-private/1', 'registeredHostPID': 75,

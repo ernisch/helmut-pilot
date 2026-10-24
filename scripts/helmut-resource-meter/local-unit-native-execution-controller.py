@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import re
 import stat
+import sys
 import time
 import traceback
 import unicodedata
@@ -393,6 +394,8 @@ class _Controller:
 
     def stage(self, name):
         self.stage_number += 1
+        if self.service is not None:
+            self.service.failure_context = (self.selection, self.stage_number)
         self.w.save('EXECUTION_STAGE_%02d.SAFE.json' % self.stage_number,
                     {'schema': 'helmut-local-unit-native-execution-stage/1', 'stage': name,
                      'selection': self.selection, 'observedAtUTC': utc()})
@@ -488,7 +491,8 @@ class _Controller:
         return value
 
     def start_owner(self, service_config, service_pin, code, runtime, files):
-        self.service = self.source.NodeChild(self.w, self.c, 'scripts/helmut-resource-meter/local-unit-original-service.js', '--serve-original-writes', 'ORIGINAL_SERVICE')
+        self.service = self.source.NodeChild(self.w, self.c, 'scripts/helmut-resource-meter/local-unit-original-service.js', '--serve-original-writes', 'ORIGINAL_SERVICE',
+                                             failure_context=(self.selection, self.stage_number))
         ready = self.service.first_line()
         self.observer = self.observer_module.SourceServiceObserver(self.service.child, ready, service_pin, self.c['nodePin'],
                                                                  self.c['actualSourceContainerId'], self.source.source_group(self.c))
@@ -588,7 +592,8 @@ class _Controller:
         verify_config = {**old, 'schema': 'helmut-local-unit-native-source-verify/1', 'issuedAtUTC': utc(), 'expiresAtUTC': self.expires,
                          'postgres': self.source.postgres_identity(self.w, self.pg), 'expectedPin': expected_pin}
         config_pin = _compact(self.w, 'VERIFY_CONFIG.PRIVATE.json', verify_config)
-        child = self.source.NodeChild(self.w, self.c, 'scripts/helmut-resource-meter/local-unit-native-prepare.js', '--verify-own-native-source', 'SOURCE_VERIFICATION')
+        child = self.source.NodeChild(self.w, self.c, 'scripts/helmut-resource-meter/local-unit-native-prepare.js', '--verify-own-native-source', 'SOURCE_VERIFICATION',
+                                      failure_context=(self.selection, self.stage_number))
         output = child.finish(seconds=45)
         _node_closed(child)
         need(output == b'', 'verification-no-extra-output')
@@ -680,7 +685,8 @@ class _Controller:
                   'readRPCPins': self.prepare_config['readRPCPins'], 'psqlPin': self.w.pin(self.w.PGBIN / 'psql'), 'libraryPath': self.w.LIBRARY_PATH,
                   'measuredCgroup': self.source.source_group(self.c), 'postgres': self.source.postgres_identity(self.w, self.pg)}
         _compact(self.w, 'ORIGINAL_SEED_CONFIG.PRIVATE.json', config)
-        child = self.source.NodeChild(self.w, self.c, 'scripts/helmut-resource-meter/local-unit-original-seed.js', '--seed-own-native-copy', 'ORIGINAL_SEED')
+        child = self.source.NodeChild(self.w, self.c, 'scripts/helmut-resource-meter/local-unit-original-seed.js', '--seed-own-native-copy', 'ORIGINAL_SEED',
+                                      failure_context=(self.selection, self.stage_number))
         result = parse(child.finish(seconds=35))
         _node_closed(child)
         own_hash = sha(canonical(initialization['initialState']))
@@ -801,7 +807,8 @@ class _Controller:
         config_pin = _compact(self.w,'TRANSACTION_GUARD_CONFIG.PRIVATE.json',config)
         self.stage('native-transaction-guard-once')
         child = self.source.NodeChild(self.w,self.c,'scripts/helmut-resource-meter/local-unit-native-transaction-guard.js',
-                                     '--probe-native-transaction-guard','TRANSACTION_GUARD')
+                                     '--probe-native-transaction-guard','TRANSACTION_GUARD',
+                                     failure_context=(self.selection, self.stage_number))
         result = parse(child.finish(seconds=35)); _node_closed(child)
         need(set(result)=={'schema','pass','case','selection','configPin','reportPin'}
              and result['schema']=='helmut-native-transaction-guard-published/1' and result['pass'] is True
@@ -943,23 +950,48 @@ def run_single_unit(worker, config, pg, catalog, preparation, read_result, bridg
         controller = _Controller(worker, config, pg, catalog, preparation, read_result, bridge_result)
         return controller.run()
     except BaseException as error:
-        if controller is not None:
-            controller.host.sealed = True
-            # Keep the actual cause on SOURCE for bounded diagnosis. It must
-            # never become a public receipt or a reason to repeat this claim.
-            try:
+        # Constructor failures also need a durable first cause. Publish before
+        # stopping the service: Host can then stop live-PID observation and
+        # close its own children while SOURCE performs its final readbacks.
+        selection = None
+        try:
+            selection = controller.selection if controller is not None else preparation['prepared']['selection']
+        except BaseException:
+            pass
+        try:
+            source = getattr(controller, 'source', None)
+            if source is not None and hasattr(source, 'capture_failure'):
+                source.capture_failure(worker, selection, controller.stage_number, error)
+            else:
                 _compact(worker, 'EXECUTION_FAILURE.PRIVATE.json', {
                     'schema': 'helmut-local-unit-native-execution-failure/1',
-                    'selection': controller.selection, 'stageNumber': controller.stage_number,
-                    'exceptionType': type(error).__name__, 'privateTraceback': traceback.format_exc()[:32768],
+                    'selection': selection, 'stageNumber': controller.stage_number if controller is not None else 0,
+                    'exceptionType': type(error).__name__, 'privateTraceback': traceback.format_exc().encode('ascii', 'backslashreplace')[:8192].decode('ascii'),
                     'retryAllowed': False})
+        except BaseException:
+            try:
+                sys.stderr.write('{"schema":"helmut-local-unit-native-execution-failure-capture/1",'
+                                 '"code":"private-capture-not-persisted"}\n')
             except BaseException:
                 pass
+        if controller is not None:
+            controller.host.sealed = True
             # Shutdown is cleanup only. It cannot restore acceptance or reopen
             # an unknown write. The worker independently closes all PG children.
             if controller.service is not None:
+                cleanup_error = None
                 try:
                     controller.service.finish(seconds=12, signal_child=True)
+                except BaseException as close_error:
+                    cleanup_error = type(close_error).__name__
+                try:
+                    service = controller.service
+                    _compact(worker, 'EXECUTION_SERVICE_FAILURE_CLOSE.PRIVATE.json', {
+                        'schema': 'helmut-local-unit-native-service-failure-close/1', 'selection': selection,
+                        'exitCode': service.child.poll(), 'stdoutEOF': service.eof[0], 'stderrEOF': service.eof[1],
+                        'cleanupErrorType': cleanup_error, 'executionAccepted': False, 'retryAllowed': False})
                 except BaseException:
                     pass
-        raise ExecutionError('native-single-unit-execution-not-confirmed-no-retry') from None
+        failure = ExecutionError('native-single-unit-execution-not-confirmed-no-retry')
+        failure.native_first_failure = error  # Private fallback if SOURCE persistence failed.
+        raise failure from None

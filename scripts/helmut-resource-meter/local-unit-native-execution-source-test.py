@@ -115,6 +115,47 @@ class SourceBoundaries(unittest.TestCase):
         self.assertEqual(set(request['selection']), {'operationId', 'commandHash'})
         self.assertEqual(request['selection'], self.selection)
 
+    def test_first_failure_is_atomic_byte_bounded_and_never_replaced(self):
+        error = ValueError(('💥\\\"\n' * 40000))
+        self.assertTrue(m.capture_failure(self.worker, self.selection, 7, error))
+        path = self.worker.OUT / 'EXECUTION_FAILURE.PRIVATE.json'
+        before = path.read_bytes()
+        value, _ = m.private_json(self.worker, path, cap=64 * 1024)
+        self.assertLessEqual(len(before), 64 * 1024)
+        self.assertLessEqual(len(value['privateTraceback']), 8192)
+        self.assertTrue(value['privateTraceback'].isascii())
+        self.assertEqual((value['selection'], value['stageNumber'], value['exceptionType'], value['retryAllowed']),
+                         (self.selection, 7, 'ValueError', False))
+        self.assertTrue(m.capture_failure(self.worker, self.selection, 8, RuntimeError('later-cleanup')))
+        self.assertEqual(path.read_bytes(), before)
+        self.assertEqual(path.stat().st_nlink, 1)
+        self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+
+    def test_child_first_failure_is_saved_before_abort_and_abort_cannot_mask_it(self):
+        child = object.__new__(m.NodeChild)
+        child.worker, child.config = self.worker, {}
+        child.failure_context = (self.selection, 7)
+        child.child, child.registered_pid, child.failed = types.SimpleNamespace(pid=42), 42, False
+        primary = PermissionError(13, 'synthetic-primary')
+        def guard(_): raise primary
+        self.worker.guard = guard
+        def abort():
+            value, _ = m.private_json(self.worker, self.worker.OUT / 'EXECUTION_FAILURE.PRIVATE.json')
+            self.assertEqual(value['exceptionType'], 'PermissionError')
+            raise RuntimeError('synthetic-cleanup-failure')
+        child.abort = abort
+        with self.assertRaises(PermissionError) as caught: child.poll()
+        self.assertIs(caught.exception, primary)
+        self.assertTrue(child.failed)
+
+    def test_failure_persistence_error_is_explicit_and_never_raises_over_primary(self):
+        stderr = types.SimpleNamespace(write=mock.Mock())
+        with mock.patch.object(m, '_publish_private', side_effect=OSError(28, 'synthetic-full')), mock.patch.object(m.sys, 'stderr', stderr):
+            self.assertFalse(m.capture_failure(self.worker, self.selection, 0, ValueError('synthetic-primary')))
+        notice = json.loads(stderr.write.call_args.args[0])
+        self.assertEqual(notice['code'], 'private-capture-not-persisted')
+        self.assertFalse((self.worker.OUT / 'EXECUTION_FAILURE.PRIVATE.json').exists())
+
     def test_foreign_nonce_scope_or_request_hash_permanently_seals(self):
         # Each subcase is a separate synthetic operation, never a retry.
         for key, value in [('nonce', 'c' * 64), ('selection', {**self.selection, 'commandHash': 'c' * 64}), ('requestSHA256', 'c' * 64)]:

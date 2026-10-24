@@ -136,6 +136,7 @@ class Fixture:
         c.native_catalog = {'vmOnly': True}
         c.immutable = []
         c.service = None
+        c.stage_number = 0
         c.host_ready = {'ownerPID': 2, 'ownerStartTicks': '5', 'brokerCodePin': pin('/broker')}
         c.client_report = {'rootTrustSHA256': 'd' * 64, 'signedReadonlyContractObserved': True,
             'originalControlGraphReads': 2,
@@ -191,6 +192,7 @@ class Fixture:
             self.fail(name)
 
     def stage(self, name):
+        self.c.stage_number += 1
         self.events.append('stage:' + name)
 
     def save(self, name, value):
@@ -207,7 +209,8 @@ class Fixture:
     def start_owner(self, *args):
         self.fail_at('owner')
         self.c.service = types.SimpleNamespace(poll=lambda: self.fail_at('service-poll'),
-             finish=lambda **kw: self.events.append('cleanup-service'))
+             finish=lambda **kw: self.events.append('cleanup-service'),
+             child=types.SimpleNamespace(poll=lambda: 0), eof=[True, True])
 
     def append(self, query, **kwargs):
         self.fail_at('append')
@@ -590,6 +593,47 @@ class Tests(unittest.TestCase):
         with self.assertRaises(f.m.ExecutionError): f.run(wrapper=True)
         self.assertEqual(f.calls.count('ENTRY_START'), 1)
 
+    def test_failure_is_saved_before_service_teardown_and_cleanup_failure_is_secondary(self):
+        f = Fixture(failure='ENTRY_START')
+        original = f.start_owner
+        def start(*args):
+            original(*args)
+            def finish(**kw):
+                self.assertIn('EXECUTION_FAILURE.PRIVATE.json', f.saved)
+                raise PermissionError(13, 'synthetic-cleanup')
+            f.c.service.finish = finish
+        f.c.start_owner = start
+        with self.assertRaisesRegex(f.m.ExecutionError, 'not-confirmed-no-retry'): f.run(wrapper=True)
+        failure = f.saved['EXECUTION_FAILURE.PRIVATE.json']
+        self.assertEqual(failure['exceptionType'], 'RuntimeError')
+        self.assertIn('offline-failure-ENTRY_START', failure['privateTraceback'])
+        close = f.saved['EXECUTION_SERVICE_FAILURE_CLOSE.PRIVATE.json']
+        self.assertEqual((close['exitCode'], close['stdoutEOF'], close['stderrEOF'], close['cleanupErrorType']),
+                         (0, True, True, 'PermissionError'))
+        self.assertFalse(close['executionAccepted'] or close['retryAllowed'])
+
+    def test_constructor_failure_is_saved_without_controller_and_never_retried(self):
+        m = module(); saved = []
+        selection = {'operationId': 'localUnitDiagnostic-' + 'a' * 32, 'commandHash': 'b' * 64}
+        with (mock.patch.object(m, '_Controller', side_effect=ValueError('synthetic-constructor')),
+              mock.patch.object(m, '_compact', side_effect=lambda worker, name, value: saved.append((name, value)))):
+            with self.assertRaises(m.ExecutionError):
+                m.run_single_unit(object(), {'nonce': 'a' * 32}, None, None, {'prepared': {'selection': selection}}, None, None)
+            with self.assertRaisesRegex(m.ExecutionError, 'once-only'):
+                m.run_single_unit(object(), {'nonce': 'a' * 32}, None, None, {'prepared': {'selection': selection}}, None, None)
+        self.assertEqual(len(saved), 1)
+        self.assertEqual((saved[0][1]['selection'], saved[0][1]['stageNumber'], saved[0][1]['exceptionType']),
+                         (selection, 0, 'ValueError'))
+
+    def test_failure_capture_error_never_skips_service_cleanup(self):
+        f = Fixture(failure='ENTRY_START')
+        f.c.source.capture_failure = lambda *args: False
+        with self.assertRaises(f.m.ExecutionError) as caught: f.run(wrapper=True)
+        self.assertEqual(str(caught.exception.native_first_failure), 'offline-failure-ENTRY_START')
+        self.assertIn('cleanup-service', f.events)
+        self.assertNotIn('EXECUTION_FAILURE.PRIVATE.json', f.saved)
+        self.assertFalse(f.saved['EXECUTION_SERVICE_FAILURE_CLOSE.PRIVATE.json']['executionAccepted'])
+
     def test_no_authority_after_client_terminal_substitution(self):
         f = Fixture(); original = f.host_call
         def changed(stage, body, **kwargs):
@@ -710,6 +754,7 @@ class Tests(unittest.TestCase):
             at = '2026-10-22T12:00:00.000Z'; late = '2026-10-22T11:59:59.000Z'
             c.selection = {'operationId': 'VM-only', 'commandHash': 'a'*64}; c.expires = '2026-10-22T12:03:00.000Z'
             c.pg = None; c.c = {'nonce':'a'*32,'nodePin':pin('/node')}; c.database='helmut_unit_diagnostic_'+'a'*32
+            c.stage_number = 3
             c.built = {'admission': {'authorizedAtUTC': late}, 'sourceBinding': {'preparation': {'preparedAtUTC': late}}}
             c.preparation = {'ready': {k: 'b'*64 for k in ('selectionHash','selectedProfileHash','selectedSourcesHash','originalControlHash','producerProofHash')}}
             c.preparation['ready'].update(producerTransport={}, derivedPins={})
@@ -719,7 +764,10 @@ class Tests(unittest.TestCase):
                                           eof=[True, mutation != 'eof'])
             def finish(**kwargs): events.append('finish'); return b'VM unexpected' if mutation=='stdout' else b''
             child.finish = finish
-            def node(*args): self.assertEqual(args[3], '--verify-own-native-source'); return child
+            def node(*args, **kwargs):
+                self.assertEqual(args[3], '--verify-own-native-source')
+                self.assertEqual(kwargs, {'failure_context': (c.selection, 3)})
+                return child
             c.source = types.SimpleNamespace(NodeChild=node, postgres_identity=lambda *a: {},
                 parse_utc=lambda s: __import__('datetime').datetime.fromisoformat(s.replace('Z','+00:00')))
             c.observer_module = types.SimpleNamespace(node_budget=lambda v: events.append('budget'))

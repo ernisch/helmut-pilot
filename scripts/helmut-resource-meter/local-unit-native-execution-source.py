@@ -17,6 +17,7 @@ import stat
 import subprocess
 import sys
 import time
+import traceback
 
 GATES = ('source', 'runtime', 'owner', 'calendar', 'costs', 'reservation', 'sender',
          'review', 'result', 'independentAcceptance')
@@ -85,12 +86,17 @@ def private_json(worker, path, *, expected=None, cap=8 * 1024**2):
 def publish_request(worker, name, request):
     """Expose only a complete fsynced private frame; never replace a request."""
     need(re.fullmatch(r'HOST_REQUEST_[0-9]{2}[.]PRIVATE[.]json', name), 'host-request-path')
+    _publish_private(worker, name, request)
+
+
+def _publish_private(worker, name, request):
+    need(name == 'EXECUTION_FAILURE.PRIVATE.json' or re.fullmatch(r'HOST_REQUEST_[0-9]{2}[.]PRIVATE[.]json', name), 'private-frame-path')
     directory = Path(worker.OUT)
     before = directory.lstat()
     need(directory.resolve() == directory and stat.S_ISDIR(before.st_mode) and before.st_uid == 1000
          and stat.S_IMODE(before.st_mode) == 0o700, 'host-private-directory')
     raw = json.dumps(request, separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode('utf8')
-    need(0 < len(raw) <= 256 * 1024, 'host-request-cap')
+    need(0 < len(raw) <= (64 * 1024 if name == 'EXECUTION_FAILURE.PRIVATE.json' else 256 * 1024), 'host-request-cap')
     stage, destination = directory / ('.' + name + '-' + os.urandom(16).hex()), directory / name
     fd = os.open(stage, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_NONBLOCK, 0o600)
     try:
@@ -122,6 +128,30 @@ def publish_request(worker, name, request):
     need(all(getattr(before, k) == getattr(after, k) for k in ('st_dev', 'st_ino', 'st_mode', 'st_uid', 'st_gid')),
          'host-directory-drift')
     need(worker.pin(destination) == {'path': str(destination), 'bytes': len(raw), 'sha256': sha(raw)}, 'host-request-final-pin')
+
+
+def capture_failure(worker, selection, stage_number, error):
+    """Persist the first failure before a child can disappear during abort."""
+    try:
+        path = worker.OUT / 'EXECUTION_FAILURE.PRIVATE.json'
+        if path.exists():
+            previous, _ = private_json(worker, path, cap=64 * 1024)
+            need(previous['schema'] == 'helmut-local-unit-native-execution-failure/1'
+                 and previous['selection'] == selection and previous['retryAllowed'] is False, 'first-failure-binding')
+            return True  # A later wrapper/cleanup exception cannot replace it.
+        _publish_private(worker, path.name, {
+            'schema': 'helmut-local-unit-native-execution-failure/1', 'selection': selection,
+            'stageNumber': stage_number, 'exceptionType': type(error).__name__,
+            'privateTraceback': ''.join(traceback.format_exception(type(error), error, error.__traceback__)).encode('ascii', 'backslashreplace')[:8192].decode('ascii'),
+            'retryAllowed': False})
+        return True
+    except BaseException:
+        try:
+            sys.stderr.write('{"schema":"helmut-local-unit-native-execution-failure-capture/1",'
+                             '"code":"private-capture-not-persisted"}\n')
+        except BaseException:
+            pass
+        return False
 
 
 def logical_pin(worker, nonce, name, value):
@@ -283,8 +313,9 @@ class NodeChild:
     TERM_SECONDS = 1.0
     KILL_SECONDS = 2.0
 
-    def __init__(self, worker, config, relative, flag, label):
+    def __init__(self, worker, config, relative, flag, label, *, failure_context=None):
         self.worker, self.config, self.label = worker, config, label
+        self.failure_context = failure_context
         self.selector, self.outputs, self.eof = selectors.DefaultSelector(), [bytearray(), bytearray()], [False, False]
         self.child, self.process, self.registered_pid = None, None, None
         self.began, self.saved, self.closed, self.failed, self.aborting = time.monotonic(), False, False, False, False
@@ -305,8 +336,8 @@ class NodeChild:
             need(self.process['parentPID'] == os.getpid() and self.process['exe'] == config['nodePin']['path']
                  and self.process['membership'] == parent['membership'] == '0::/\n'
                  and self.process['pidNamespace'] == parent['pidNamespace'], 'actual-node-child-process')
-        except BaseException:
-            self._cleanup_failure()
+        except BaseException as error:
+            self._cleanup_failure(error)
             raise
 
     def _register(self):
@@ -336,8 +367,11 @@ class NodeChild:
                 self.failed = True
                 need(discard, 'node-output-cap')
 
-    def _cleanup_failure(self):
+    def _cleanup_failure(self, error):
         self.failed = True
+        if self.failure_context is not None:
+            selection, stage_number = self.failure_context
+            capture_failure(self.worker, selection, stage_number, error)
         try:
             self.abort()
         except BaseException:
@@ -350,8 +384,8 @@ class NodeChild:
             need(not self.failed and self.child.pid == self.registered_pid, 'node-terminal-or-identity')
             self.worker.guard(self.config)
             self._drain()
-        except BaseException:
-            self._cleanup_failure()
+        except BaseException as error:
+            self._cleanup_failure(error)
             raise
 
     def first_line(self, seconds=15):
@@ -363,8 +397,8 @@ class NodeChild:
             # This API is used only by the long-lived source service.
             need(self.child.poll() is None and self.outputs[0].count(b'\n') == 1 and not self.outputs[1], 'node-ready-only')
             return json.loads(bytes(self.outputs[0]).decode('utf8'))
-        except BaseException:
-            self._cleanup_failure()
+        except BaseException as error:
+            self._cleanup_failure(error)
             raise
 
     def finish(self, seconds=35, *, signal_child=False):
@@ -379,8 +413,8 @@ class NodeChild:
             need(self.worker.pin(self.script_pin['path']) == self.script_pin, 'node-final-code')
             self.save()
             return bytes(self.outputs[0])
-        except BaseException:
-            self._cleanup_failure()
+        except BaseException as error:
+            self._cleanup_failure(error)
             raise
 
     def abort(self):
