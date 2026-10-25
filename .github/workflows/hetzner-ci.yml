@@ -1,0 +1,62 @@
+name: Hetzner CI · begrenzter Verbindungscheck
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helmut-hetzner-ci
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: helmut-hetzner-ci
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Geschuetzten Steuerbranch und Einrichtung pruefen
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REF: ${{ github.ref }}
+          ENABLED: ${{ vars.HELMUT_HETZNER_CI_ENABLED }}
+          TS_CLIENT: ${{ vars.HELMUT_TS_CLIENT_ID }}
+          TS_AUDIENCE: ${{ vars.HELMUT_TS_AUDIENCE }}
+        run: |
+          set -euo pipefail
+          test "$REPOSITORY" = ernisch/helmut-pilot
+          test "$REF" = refs/heads/main
+          test "$ENABLED" = probe-only-v1
+          test -n "$TS_CLIENT"
+          test -n "$TS_AUDIENCE"
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Kurzlebigen privaten Netzwerkzugang ueber GitHub OIDC herstellen
+        uses: tailscale/github-action@99a8333667fff04fdd6cffb46dfd409f8329a7bf # v4
+        with:
+          oauth-client-id: ${{ vars.HELMUT_TS_CLIENT_ID }}
+          audience: ${{ vars.HELMUT_TS_AUDIENCE }}
+          tags: tag:helmut-ci-runner
+          version: 1.104.2
+          sha256sum: 512f613ed7d04fc7282f7dc5bd76aa105aae28168fbb9357eb749ebcbc29f0ae
+          use-cache: 'false'
+          retry: '1'
+          args: --accept-routes=false --accept-dns=false
+          log-mode: quiet
+
+      - name: Ausschliesslich fest gebundenen SSH-Verbindungscheck ausfuehren
+        env:
+          HELMUT_CI_HOST: ${{ vars.HELMUT_CI_HOST }}
+          HELMUT_CI_HOST_PUBLIC_KEY: ${{ vars.HELMUT_CI_HOST_PUBLIC_KEY }}
+          HELMUT_CI_GATE_SHA256: ${{ vars.HELMUT_CI_GATE_SHA256 }}
+          HELMUT_CI_SSH_KEY: ${{ secrets.HELMUT_CI_SSH_KEY }}
+        run: python3 -I scripts/hetzner-ci-bridge.py client
