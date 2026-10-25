@@ -1,0 +1,148 @@
+{
+  "schema": "helmut-night-local-input-acceptance/1",
+  "atUTC": "2026-10-16T01:45:48.164Z",
+  "status": "ALL500_LOCAL_INPUTS_ACCEPTED_FULL_ENDRUN_PENDING_SEPARATE_ACTIVATION_GO",
+  "scope": "LOCAL_CONTENT_AND_PERSISTED_FILE_EQUALITY_ONLY",
+  "counts": {
+    "profiles": 500,
+    "visiblePositions": 23008,
+    "positiveA": 500,
+    "positiveF": 500,
+    "positiveL": 500,
+    "dayOccasions": 500,
+    "newlyReviewedOwners": 42,
+    "newlyReviewedPositions": 1974,
+    "inheritedExactUnchangedOwners": 458,
+    "nativeKOs": 6,
+    "nativeSources": 7,
+    "nativeKOFields": 60,
+    "nativeSourceFields": 23,
+    "negativeCases": 8
+  },
+  "inputPins": [
+    {
+      "file": "ALL500_NATIVE_FULL_ORDINARY_V1_REVIEW_BOUND.PRIVATE.json",
+      "bytes": 86326354,
+      "sha256": "d9982560bbf1a8f27878b32bea46857d879d87b980edc79e2ed30c3cc5c73d7c"
+    },
+    {
+      "file": "ALL500_BRIEFING_EINGABEN.PRIVATE.json",
+      "bytes": 81207146,
+      "sha256": "10f8aede338f3e612319e401b14a61d4bd1e67947349bfc522101cc32e31fd99"
+    }
+  ],
+  "originalProfilesSHA256": "92567bd9602cbd0e30644359b77d8996cbb56aeeb2c4c3de53818beb15a7626f",
+  "independent42Review": {
+    "path": "/workspace/helmut-parallel-20261015/wave12/pro-42-native-pdf-factual-review/FULL_RESULT.json",
+    "bytes": 3673,
+    "sha256": "d03c5f7a3f4ba53f7de1d6fc995649d17a23de42c718330b6b61d2c7967768c0"
+  },
+  "actualPersistedReadback": {
+    "path": "/workspace/helmut-parallel-20261015/wave12/persisted-input-readback/ACTUAL_PERSISTED_READBACK.SAFE.json",
+    "bytes": 4635,
+    "sha256": "8de49299fe1c1c0543700ca267a8b488e24c3a4568449d0e49f12351c8302f51"
+  },
+  "measurements": {
+    "inputConstruction": {
+      "elapsedMS": 2411.335,
+      "processKernelMaxRSSKiB": 437492
+    },
+    "persistedReadback": {
+      "scope": "READ_AND_COMPARE_PERSISTED_LOCAL_ARTIFACTS_ONLY",
+      "elapsedMS": 2839.790994,
+      "readerKernelMaxRSSKiB": 807644,
+      "verifiedPins": 19,
+      "verifiedReadBytes": 251010926,
+      "notUnitAuthPreparationOrEndMemoryProof": true
+    }
+  },
+  "limits": {
+    "offlineMS": 90000,
+    "preparationMS": 60000,
+    "unitMS": 60000,
+    "authMS": 30000,
+    "memoryBytes": 2048000000
+  },
+  "actualEndProof": {
+    "offline90": false,
+    "preparation60": false,
+    "unit60": false,
+    "auth30": false,
+    "all16FreshControls": false,
+    "totalMemory": false,
+    "originalUInstallation": false,
+    "complete500Execution": false,
+    "nativeU": false,
+    "production": false
+  },
+  "effects": {
+    "profileChanges": 0,
+    "activation": 0,
+    "newCommands": 0,
+    "schemaChanges": 0,
+    "production": 0,
+    "paidProductionModelCalls": 0
+  },
+  "remainingLocalGates": [
+    "Separate exact one-time local clone0to500 activation GO",
+    "Fresh bound command/requests/mock-review receipts",
+    "Full original endrun includingOffline90/U/install/Unit60/Auth30/all16/totalmemory"
+  ],
+  "providerMockEV41": "Closed for reviewed local-mock candidate text: precise instrument reasons, without claim about emissions; no actual R output or fresh request binding",
+  "providerCandidateReadiness": {
+    "variants": 7,
+    "actualOwnerSenderContextMappings": 500,
+    "candidateTextReviewAccepted": true,
+    "actualRModelOutputs": 0,
+    "actualRReviewOutputCreated": false,
+    "requestBindingsCreated": false,
+    "reviewedCandidatePin": {
+      "path": "/workspace/helmut-parallel-20261015/wave12/local-provider-candidates/REVIEWED_LOCAL_PROVIDER_CANDIDATES.PRIVATE.json",
+      "bytes": 213986,
+      "sha256": "90a789d058f503dfb4cc58a988866fe80a7d39bdfeb26b4039cc8d5cde3bf515"
+    },
+    "freshEVReview": {
+      "path": "/workspace/helmut-parallel-20261015/wave12/flash-ev41-precise-rationale/FULL_RESULT.json",
+      "bytes": 3037,
+      "sha256": "6e194eea80791e7fedb934e6cd6834da385f958c78fa4f03509f08654d85ac3f"
+    },
+    "actualStoredHibURLRebindContentUnchanged": {
+      "priorContextHash": "204b569d73354cc0e5bb09805357da49bb1a493c8beb6fe2fcaa6887c5204a38",
+      "actualContextHash": "f890fc8f83f224c1ed5c8016d04984d6aab9fa2d42279fe62eecce8d6e8d2ae3",
+      "actualStoredURL": "https://www.bundestag.de/presse/hib/kurzmeldungen-1225066",
+      "actualStoredCanonicalURL": "https://bundestag.de/presse/hib/kurzmeldungen-1225066",
+      "allowedChanges": [
+        "hib.url",
+        "hib.derived_quelle_id"
+      ],
+      "contentFieldsChanged": false
+    }
+  },
+  "ciFollowup": {
+    "failedRun": "https://github.com/ernisch/helmut-pilot/actions/runs/38837504579",
+    "failedHead": "5c238b6189a931ff8afb7c44c53b60e7467edd90",
+    "reportedFailedSuites": 5,
+    "targetedLocalSuitesPassed": 5,
+    "applicationCodeChangedByCIFix": false,
+    "fullGreenRemoteCI": false,
+    "gitHubAuthentication": "HTTP401; connector Transport closed",
+    "report": "500er-nacht-ci-folgekorrektur-20261016.md"
+  },
+  "ciProsaFollowup": {
+    "failedRun": "https://github.com/ernisch/helmut-pilot/actions/runs/38840366852",
+    "failedHead": "0e7c504f6ebd14a15b1982c8bb0617d811ea8c33",
+    "standardOfflinePassed": true,
+    "browserPassed": true,
+    "areaReportedFailedSuites": 2,
+    "Z22Executed": false,
+    "rootCause": "Unconditional PDF-specific rule changed all frozen Understanding prompts",
+    "frozenOperationalProsaContractsChanged": false,
+    "original17PromptHashesRestoredExactly": true,
+    "approvedPDFPromptUnchangedSHA256": "43e4b630abda235f92d99bcc1d1bccba3951610ab82e511e1230206fc19a63fc",
+    "typedLageAndReviewPDFRulesPreserved": true,
+    "targetedLocalSuitesPassed": 7,
+    "freshFullEndrunMeasured": false,
+    "fullGreenRemoteCI": false,
+    "report": "500er-nacht-ci-folgekorrektur-20261016.md"
+  }
+}

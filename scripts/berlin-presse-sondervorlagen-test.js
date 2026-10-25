@@ -293,6 +293,49 @@ for (const familie of ["uvk", "wgp"]) {
   ]) erwarteAbbruch(seite({ familie, textileInner: inner }).eingabe, familie + " " + label);
 }
 {
+  const h2a = "Sicheres Abbiegen für Radfahrende", h2b = "Moderne Technik, besserer Verkehrsfluss";
+  const sach3 = "Ein dritter eigenstaendiger Sachabsatz beschreibt weitere belegte Massnahmen.";
+  const sach4 = "Der abschliessende Sachabsatz nennt den organisatorischen Ablauf der Massnahmen.";
+  const inner = `<p>${SACH}</p><p>${SACH2}</p><h2>${h2a}</h2><p>${sach3}</p>`
+    + `<h2>${h2b}</h2><p>${sach4}</p>`;
+  const probe = text => seite({ familie: "uvk", textileInner: text }).eingabe;
+  const e = M.pruefeSondervorlage(probe(inner));
+  check("UVK H2: ganze direkte Sachabsaetze und beide Ueberschriften bleiben geordnet erhalten",
+    e.volltext === [SACH, SACH2, h2a, sach3, h2b, sach4].join("\n\n") + "\n"
+    && e.auszug === SACH && e.auszugHash === sha256(SACH));
+  for (const [label, wert] of [
+    ["H2 Attribute", inner.replace("<h2>", '<h2 class="title">')],
+    ["P Attribute", inner.replace("<p>", '<p id="inhalt">')],
+    ["H2 verschachtelt", inner.replace(h2a, `<span>${h2a}</span>`)],
+    ["P Inline", inner.replace(SACH, `<strong>${SACH}</strong>`)],
+    ["P Link", inner.replace(SACH, `<a href="https://www.berlin.de/">${SACH}</a>`)],
+    ["H3 statt H2", inner.replaceAll("h2", "h3")],
+    ["nur eine H2", inner.replace(`<h2>${h2b}</h2>`, "")],
+    ["dritte H2", inner + "<h2>Zusatz</h2><p>Fremder Zusatzabsatz.</p>"],
+    ["H2 zuerst", `<h2>${h2a}</h2>` + inner.replace(`<h2>${h2a}</h2>`, "")],
+    ["H2 zuletzt", inner.replace(`<p>${sach4}</p>`, "")],
+    ["kein Absatz zwischen H2", inner.replace(`<p>${sach3}</p>`, "")],
+    ["verschachtelte Huelle", `<div>${inner}</div>`],
+    ["nackter Fremdtext", inner.replace(`<h2>${h2a}`, `Fremdtext<h2>${h2a}`)],
+    ["offene H2", inner.replace("</h2>", "")],
+    ["offener P", inner.replace("</p>", "")],
+    ["verschachtelte P", inner.replace(SACH, `<p>${SACH}</p>`)],
+    ["leere H2", inner.replace(h2a, " ")],
+    ["leerer P", inner.replace(sach3, " ")],
+    ["H2 Doppler", inner.replace(h2b, h2a)],
+    ["P Doppler", inner.replace(sach4, sach3)],
+    ["unvollstaendiges Tag", inner.replace(sach3, sach3 + "<span")],
+    ["Hidden", inner.replace("<h2>", "<h2 hidden>")],
+    ["Kommentar", inner.replace(sach3, sach3 + "<!-- Fremdtext -->")],
+    ["Kontaktmodul", inner.replace(sach3, '<address>Kontakt</address>')],
+    ["Mailto", inner.replace(sach3, 'Kontakt: mailto:presse@berlin.de')],
+    ["Telefon", inner.replace(sach3, 'Kontakt: tel:030123')]
+  ]) erwarteAbbruch(probe(wert), "UVK H2 " + label);
+  for (const familie of ["rbmskzl", "senweb", "justv", "kultgz", "asgiva", "wgp"])
+    erwarteAbbruch(seite({ familie, textileInner: inner }).eingabe,
+      "UVK H2-Grammatik gilt nicht fuer " + familie);
+}
+{
   const vorspann = "Dr. Ina Czyborra, Senatorin für Wissenschaft, Gesundheit und Pflege zur heutigen Verkündung des Nobelpreiskomitees:";
   const titel = "Berlin ist stolz auf seinen neuen Nobel-Preisträger: Senatorin Ina Czyborra gratuliert Professor Peter Hegemann";
   const optionen = { familie: "wgp", nummer: "1721444", datum: "2026-10-05", titel,
@@ -562,6 +605,67 @@ for (const probe of ORIGINALE) {
 if (originalGeprueft === 0) {
   console.log("SKIP lokale Originale: /private/tmp-Originale nicht vorhanden (CI-tauglich)");
 }
+
+// Aktueller amtlicher UVK-Beleg: optionales lokales Capture, keine neue Netzbeschaffung.
+// Die CI-Synthetikfaelle oben laufen immer; dieser Pfad bindet zusaetzlich die ganzen
+// tatsaechlichen319402Bytes und mutiert exakt deren Artikelblock.
+const uvkOriginalDir = process.env.HELMUT_BERLIN_UVK_ORIGINALE_DIR;
+if (uvkOriginalDir) {
+  const capture = JSON.parse(fs.readFileSync(path.join(uvkOriginalDir, "CAPTURE.SAFE.json"), "utf8"));
+  const original = capture.requests.find(r => r.name === "be-paracelsus");
+  const html = fs.readFileSync(path.join(uvkOriginalDir, "be-paracelsus.body.PRIVATE.bin"), "utf8");
+  check("Original UVK Paracelsus: vollstaendige Datei und authentischer Capture-Pin",
+    original.http === "200" && original.rc === 0 && original.bodyBytes === 319402
+    && original.bodySHA256 === "c853feda56698451455a5f3043230e8a4a085e02772fd5864fc784b63bc07228"
+    && Buffer.byteLength(html) === original.bodyBytes && sha256(html) === original.bodySHA256);
+  const eingabe = { url: original.url, finalUrl: original.url, http: 200, html };
+  const e = M.pruefeSondervorlage(eingabe);
+  originalGeprueft += 1;
+  const start = html.indexOf('<div class="textile">', html.indexOf("<h1"));
+  const end = html.indexOf("</div>", start) + "</div>".length;
+  const textile = html.slice(start, end);
+  const bloecke = [...textile.matchAll(/<(p|h2)>([\s\S]*?)<\/\1>/g)];
+  const erwartet = bloecke.map(m => m[2].replace(/\s+/g, " ").trim());
+  check("Original UVK Paracelsus: sechs ganze P und genau zwei H2 ohne Auslassung",
+    bloecke.length === 8 && bloecke.filter(m => m[1] === "p").length === 6
+    && bloecke.filter(m => m[1] === "h2").length === 2
+    && e.volltext === erwartet.join("\n\n") + "\n" && e.auszug === erwartet[0]);
+  check("Original UVK Paracelsus: gebundener Titel, Kalendertag und volle Hashes",
+    e.pfadfamilie === "uvk" && e.publikationstag === "2026-10-14"
+    && e.titel === original.originalListing.title && e.htmlHash === original.bodySHA256
+    && e.volltextHash === sha256(e.volltext) && e.auszugHash === sha256(e.auszug));
+  const stand = require("../lib/helmut/berlin-artikelstand").erzeugeSondervorlagenstand({
+    url: original.url, title: e.titel, published_at: e.publikationstag }, e);
+  check("Original UVK Paracelsus: Original-Standpfad behaelt published_at NULL und ganze Hashes",
+    stand.ok && stand.row.published_at === null && stand.row.publishedAt == null
+    && stand.stand.publikationstag === "2026-10-14"
+    && stand.stand.volltextHash === e.volltextHash && stand.stand.absatzHash === e.auszugHash);
+  for (const [label, wert] of [
+    ["H2 Attribut", textile.replace("<h2>", '<h2 id="zwischen">')],
+    ["P Attribut", textile.replace("<p>", '<p class="fremd">')],
+    ["Inline im Sachabsatz", textile.replace(erwartet[0], `<b>${erwartet[0]}</b>`)],
+    ["H2 verschachtelter Span", textile.replace("Sicheres Abbiegen für Radfahrende", "<span>Sicheres Abbiegen für Radfahrende</span>")],
+    ["H3", textile.replaceAll("h2", "h3")],
+    ["offene H2", textile.replace("</h2>", "")],
+    ["H2 Doppler", textile.replace("Moderne Technik, besserer Verkehrsfluss", "Sicheres Abbiegen für Radfahrende")],
+    ["zusaetzliche H2", textile.replace("</div>", "<h2>Zusatz</h2><p>Zusatztext.</p></div>")],
+    ["nackter Fremdtext", textile.replace("<h2>", "Fremdtext<h2>")],
+    ["fremdes Modul", textile.replace("<h2>", '<section><h2>').replace("</h2>", "</h2></section>")],
+    ["Hidden", textile.replace("<h2>", '<h2 aria-hidden="true">')],
+    ["Mail", textile.replace("</h2>", '</h2><p><a href="mailto:presse@berlin.de">Kontakt</a></p>')],
+    ["Telefon", textile.replace("</h2>", '</h2><p>tel:030123</p>')],
+    ["Kommentar", textile.replace("</h2>", '</h2><!-- versteckter Zusatz -->')]
+  ]) {
+    assert.notEqual(wert, textile, "wirksame Originalmutation: " + label);
+    erwarteAbbruch({ ...eingabe, html: html.slice(0, start) + wert + html.slice(end) },
+      "Original UVK Paracelsus " + label);
+  }
+  const gleis = capture.requests.find(r => r.name === "be-gleis17");
+  const gleisHTML = fs.readFileSync(path.join(uvkOriginalDir, "be-gleis17.body.PRIVATE.bin"), "utf8");
+  check("Original Gleis17: unveraenderte echte Rohbytes", sha256(gleisHTML) === gleis.bodySHA256);
+  erwarteAbbruch({ url: gleis.url, finalUrl: gleis.url, http: 200, html: gleisHTML },
+    "Original Gleis17 Kontaktmail bleibt gesperrt", "kontaktblock-im-artikel");
+} else console.log("SKIP aktuelles UVK-Original: HELMUT_BERLIN_UVK_ORIGINALE_DIR nicht gesetzt");
 
 console.log(`PASS berlin-presse-sondervorlagen-test: ${bestanden} Pruefungen erfolgreich`
   + (originalGeprueft === 0 ? " (ohne lokale Originale)" : ` (mit ${originalGeprueft} lokalen Originalen)`));
