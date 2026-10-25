@@ -165,6 +165,23 @@ jetzt ausdruecklich beschrieben. Keine Liveverbindung oder Hostinstallation.
 PR942 Head29b05ac0: Pflicht-CI40141814414 SUCCESS lesend bestaetigt; keine
 Wiederholung gestartet. Gruene CI ist keine native Messung auf Hetzner.
 
+## Erster echter Cloud-Verbindungsversuch und Routingkorrektur
+
+PR943 wurde mit beiden gruenen Pflichtchecks nach ausdruecklicher Freigabe
+gemergt: main55a67e1b, Productiondpl_5bSQk8tzzFMuKqQVAP7ozfmz8XxT READY
+mit passendem Alias. Workflow40183834382 scheiterte vor SSH: die fest gepinnte
+Tailscale-Action uebergibt selbst `--accept-routes`; das zusaetzliche
+`--accept-routes=false` wird von Tailscale1.104.2 als doppeltes Flag abgelehnt.
+Dies ist kein Nachweis eines Fehlers der gespeicherten Zugangsdaten.
+
+Die begrenzte Korrektur entfernt nur das doppelte Up-Flag. Direkt nach der
+Anmeldung und vor jedem SSH-Zugriff werden Routenannahme und DNS mit
+`tailscale set` abgeschaltet und die tatsaechlichen Praeferenzen geprueft.
+Die vorhandene Tailnet-Policy begrenzt den Runner bereits waehrend der Anmeldung
+auf genau den Host/Port22. Vollstaendige Debug-Praeferenzen werden nicht geloggt.
+SSH-Hostpin, Gatehash, ForcedCommand, Probe-Umfang und Sperre nativer Tests
+bleiben unveraendert. Vercel-Deployments des Korrekturbranches sind ausgeschaltet.
+
 ## Rueckweg
 
 `HELMUT_HETZNER_CI_ENABLED` entfernen und die CI-Public-Key-Datei auf Hetzner
