@@ -1,0 +1,29 @@
+{
+  "schema": "helmut-hetzner-final-preparation-review/1",
+  "reviewer": "/root/inventory_recovery_readonly",
+  "model": "gpt-6.1-sol",
+  "reasoning": "ultra",
+  "verdict": "ACCEPT_PREPARATION_ONLY_NO_P0_P1",
+  "planSHA256": "e6d463a634925a190d60d066c0fae2ba94b9f7f0a10a115b50b4f4018b1b35eb",
+  "goTemplateSHA256": "36018001a45211db1cedccdb11dfee4df3f21e9910557c40b198abcc2c4f936d",
+  "privateInputPlanSHA256": "0ddcdb5267dad97e194e294d660a92c86ed42c8666eff80a8ee8fb25da838d2e",
+  "verified": {
+    "scopeRecords": 595,
+    "presentRecords": 590,
+    "plannedArchiveDerivations": 5,
+    "presentLogicalBytes": 2801506128,
+    "originalDockerDistributionPins": 8,
+    "profileOriginalPlanPreserved": true,
+    "executionHostSupervisorMemoryBudgetUnchanged": true,
+    "old577BackupCountsNotPromotedTo595": true,
+    "secretAndBackupAndTargetAcceptanceRemainOpen": true,
+    "probeOnlyRestrictionsUnchanged": true,
+    "existingAdministratorStillRequired": true,
+    "notExecutionReady": true
+  },
+  "nativeTests": 0,
+  "originalPayloadReads": 0,
+  "transfers": 0,
+  "targetActions": 0,
+  "filesWrittenByReviewer": 0
+}

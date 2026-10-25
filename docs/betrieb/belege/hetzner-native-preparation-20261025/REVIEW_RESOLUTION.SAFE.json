@@ -1,0 +1,55 @@
+{
+  "schema": "helmut-hetzner-preparation-source-review-resolution/1",
+  "providerReview": {
+    "model": "deepseek-flash",
+    "effort": "high",
+    "mode": "read",
+    "inputTokens": 55483,
+    "outputTokens": 11709,
+    "totalTokens": 67192,
+    "appliedFiles": 0,
+    "originalPayloadsSent": false,
+    "fees": "UNKNOWN"
+  },
+  "resolutions": [
+    {
+      "finding": "Fixed Docker/socket/UID requirements vs existing target",
+      "disposition": "ACCEPTED_AS_BLOCKING_PREREQUISITE",
+      "action": "Separate compatible native context and administrator access required; existing probe/native=false unchanged. No Docker29 allowlist."
+    },
+    {
+      "finding": "resourcesNN vs memorybudget parent mismatch",
+      "disposition": "REJECTED_FOR_SELECTED_FOUR_TX_PATH",
+      "evidence": [
+        "local-unit-native-supervisor.py:330 creates memorybudget-24hex parent",
+        "local-unit-native-supervisor.py:430 calls native.start(case,parent,runtime)",
+        "native-memory-budget.py:26-30 parent_path accepts memorybudget-24hex",
+        "native-memory-budget.py:195-197 start uses caller parent",
+        "legacy bind_setup at109 is not invoked by this supervisor"
+      ],
+      "codeChanged": false
+    },
+    {
+      "finding": "Transfer closure/reader sources and backup coverage",
+      "disposition": "ACCEPTED_OPEN_GATES_NOT_EXECUTION_READY",
+      "action": "595-record V3 plan with original Docker28 distribution includes retained archive+root manifest and five unperformed hash-bound derivations; secret/backup/target plaintext acceptance remain required."
+    },
+    {
+      "finding": "Fixed original absolute paths",
+      "disposition": "ACCEPTED_AND_CLARIFIED",
+      "action": "Target reproduces approved original path layout as real files; no symlink aliases and no checkout-only readiness claim."
+    },
+    {
+      "finding": "CoreCAS4/statistics2 not verifiable in provided review subset",
+      "disposition": "REUSED_EXISTING_PROFILE_SOURCE_EVIDENCE_NO_NEW_NATIVE_CLAIM",
+      "sourceEvidence": "docs/betrieb/belege/native-auth-kernel-profile-20261025/INDEPENDENT_SOURCE_REVIEW.SAFE.json",
+      "sourceEvidenceSHA256": "cf64adcfdd27ac0b09646fa2572ee23fe51dc24f7030e3c1e31dcf8c30d60ee2",
+      "actualMeasurementsStillRequired": true
+    }
+  ],
+  "runtimeOrMotorCodeChanged": false,
+  "nativeExecutions": 0,
+  "connectionChecksRepeated": 0,
+  "originalTransfers": 0,
+  "hostChanges": 0
+}
