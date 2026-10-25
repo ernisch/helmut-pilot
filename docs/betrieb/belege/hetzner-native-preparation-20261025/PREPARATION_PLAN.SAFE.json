@@ -1,0 +1,246 @@
+{
+  "schema": "helmut-hetzner-native-preparation/1",
+  "status": "PREPARED_CONDITIONAL_PROPOSAL_NOT_EXECUTION_READY",
+  "documentIsExecutionAuthority": false,
+  "engine": {
+    "repository": "ernisch/helmut-pilot",
+    "pr": 942,
+    "commit": "29b05ac0281347f8cde82b903b12f57e8cd5d8c9",
+    "targetCheckout": "/workspace/helmut-auth-critical-path-20261025",
+    "originalProfilePlanSHA256": "4f336065fbdd2a210bee2a3dc8fee92a5a07a456f36d1950ff1f4ec1aecec8b8",
+    "engineCodeChanged": false
+  },
+  "transport": {
+    "existingRun": 40189037230,
+    "attempt": 2,
+    "conclusion": "success",
+    "infrastructureCommit": "134dafb5c0c7da013e66fba2ee4eecc70af31602",
+    "workflow": ".github/workflows/hetzner-ci.yml",
+    "workflowSHA256": "e85777007a27de35d9f78e715e61c56a88548c8d84ee9bb8af6212c3039081ad",
+    "clientSourceSHA256": "db9ca86ce62638e5775134d1d95153171a7d744a0e0ba2d834b745e6dcd44e30",
+    "installedGateSHA256": "85111232a240a41d43622a2ad188f74232ca04b6dd5458da0871c254977d69d9",
+    "clientAndInstalledGateAreNotClaimedIdentical": true,
+    "hostKeyFingerprint": "SHA256:u48IkPIpHilVGYw2MwJuE1pv4XMjlJ88cQjUzN4Lh1c",
+    "protectedEnvironment": "helmut-hetzner-ci",
+    "newConnectionProbeRequired": false,
+    "probeOnlyBridgeChanged": false,
+    "nativeExecutionAvailableThroughProbe": false,
+    "administrativeExecutionContextStillRequired": true
+  },
+  "existingTargetObservation": {
+    "recordedAtUTC": "2026-10-25T15:24:26Z",
+    "protocol": "helmut-hetzner-probe/1",
+    "bridge_sha256": "85111232a240a41d43622a2ad188f74232ca04b6dd5458da0871c254977d69d9",
+    "user": "helmut-ci",
+    "os": "ubuntu-24.04",
+    "arch": "x86_64",
+    "memory_bytes": 16368984064,
+    "disk_free_bytes": 152379424768,
+    "cgroup_v2": true,
+    "rootless_docker_version": null,
+    "native_execution_enabled": false,
+    "docker2913": "OPERATOR_REPORTED_NOT_NATIVE_QUALIFIED",
+    "freshAdmission": false
+  },
+  "preferredEnvironment": {
+    "scope": "Existing Hetzner host, separate native test context; no new paid resource",
+    "dockerServer": {
+      "Version": "28.4.0",
+      "ApiVersion": "1.51",
+      "MinAPIVersion": "1.24",
+      "GitCommit": "249d679"
+    },
+    "dockerCLI": "/usr/local/bin/docker",
+    "dockerSocket": "unix:///var/run/docker.sock",
+    "storageDriver": "vfs",
+    "cgroupVersion": "2",
+    "cgroupDriver": "cgroupfs",
+    "nativeUID": 1000,
+    "nativeGID": 1000,
+    "network": "none",
+    "readOnlyWorkloadRoot": true,
+    "workloadCapabilities": "none",
+    "noNewPrivileges": true,
+    "node": "v24.19.0",
+    "python": "3.12.14",
+    "preserveExistingDocker29": true,
+    "preserveProbeAccountPrivileges": true,
+    "ownDataAndRunRoot": true,
+    "noSocketSymlinkOrVersionWhitelist": true,
+    "onUnavailableCompatibleContext": "STOP; no automatic new infrastructure or security exception",
+    "administrativeSetupPerformed": false,
+    "originalDocker28DistributionPins": [
+      {
+        "path": "/usr/local/bin/docker",
+        "bytes": 43556144,
+        "sha256": "27f239f97492c434e091a70b41b8796c698f0aa2b6052c6f9c28da4ee7ae888b"
+      },
+      {
+        "path": "/usr/local/bin/dockerd",
+        "bytes": 79364736,
+        "sha256": "ced6dbe1cc091efd959774db180954b9450d179acec042b6243b9f0772ecdd67"
+      },
+      {
+        "path": "/usr/local/bin/containerd",
+        "bytes": 41451704,
+        "sha256": "e37c549dd42ef88df01eb6fac0fb91791f72cfababac1f136192cd553226254b"
+      },
+      {
+        "path": "/usr/local/bin/containerd-shim-runc-v2",
+        "bytes": 14065848,
+        "sha256": "171747f42ac010d2784b874cb7cd423a7e7282338f4d44ff7b418b452bf628b0"
+      },
+      {
+        "path": "/usr/local/bin/runc",
+        "bytes": 18443272,
+        "sha256": "37f99361bd5e6ea4c44865697580009f215effb335e02d1966c52c534963c581"
+      },
+      {
+        "path": "/usr/local/bin/docker-init",
+        "bytes": 708456,
+        "sha256": "8cc70470bb4b21c25ddca7108c5820fa14d5019b5f1ec7e94bfca65de2479990"
+      },
+      {
+        "path": "/usr/local/bin/docker-proxy",
+        "bytes": 2458085,
+        "sha256": "7544ade566cb47300b35f21093f00c9d7128ab98c9140ff6141e7fe372f2a477"
+      },
+      {
+        "path": "/usr/local/bin/ctr",
+        "bytes": 21242040,
+        "sha256": "ae5b0d0ea75e8b541b7e7b611936169cbd4cd7c4ba0f13886cb5318d9aa85a76"
+      }
+    ],
+    "sourceDaemonVersionOnlyOutput": "Docker version 28.4.0, build 249d679",
+    "sourceDaemonWasNotStarted": true,
+    "administrativeExecutionRoute": "Existing authorized administrator in isolated context; no new Remoteexecutor"
+  },
+  "inputScope": {
+    "privateManifest": {
+      "path": "/workspace/helmut-hetzner-preparation-evidence-20261025/INPUT_CLOSURE_V3.PRIVATE.json",
+      "bytes": 409628,
+      "sha256": "0ddcdb5267dad97e194e294d660a92c86ed42c8666eff80a8ee8fb25da838d2e"
+    },
+    "metadataInputRecords": 595,
+    "presentLogicalBytes": 2801506128,
+    "presentUniqueAllocatedBytes": 2803052544,
+    "plannedDerivedReaderLibraries": 5,
+    "payloadHashesFreshlyVerified": false,
+    "readerRestorationPerformed": false,
+    "rawPOSTRUNSHA256": "54df2ecc0e4fdc22adf75f2ce3491d3c921e38296510543dcdadd48db3f37693",
+    "originalArchive": {
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/RETAINED_PG17_IMAGE_FULL.PRIVATE.tar.gz",
+      "bytes": 161574108,
+      "sha256": "8b1da16e05827e2aa8069c8cc0080f04c4b2b51abb7e0d242a707c90d6ef2d49"
+    },
+    "rootManifest": {
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/diagnostic-hull-archives-v2/RETAINED_IMAGE_ROOTFS_MANIFEST.PRIVATE.json",
+      "bytes": 3127302,
+      "sha256": "bc9aaac0be8262a06c5b778c8b9090e8f8efcc4ea807ca41e70f60d19059fc04"
+    },
+    "publicCodeFromExactGit": true,
+    "absoluteOriginalPathsPreservedOnTarget": true,
+    "noSymlinkAliases": true,
+    "noHistoricalAuthorityOrDiagnosticPGDATACopied": true,
+    "currentHostLibrariesRejectedAsDifferent": true,
+    "nativeHelperImage": {
+      "imageId": "sha256:34e72f77a5fa0728d44b75766cdfdb1851aea196b3ba6c4fb9242f5d339a678b",
+      "logicalBytes": 794376,
+      "exportCipherSHA256": null,
+      "exportOrImportPerformed": false
+    }
+  },
+  "backupAndSecrets": {
+    "oldPackage20261022CompleteForThisCase": false,
+    "oldDraft577": {
+      "exactIncluded": 268,
+      "includedContentAlias": 1,
+      "explicitlyExcluded": 300,
+      "notListedWithoutIncludedEquivalent": 8
+    },
+    "criticalExcluded": [
+      "V12_POSTRUN_RAW",
+      "ALL500_ACTUAL_REQUEST_TEMPLATE_BINDINGS",
+      "NEW_PREPARED_REQUESTS",
+      "READONLY_RUNTIME_BINDINGS"
+    ],
+    "oldCipherReadbackDoesNotProveTargetPlaintextRestore": true,
+    "selectedSupplementRequired": true,
+    "existingPrivateDriveFolder": "1gvYcdBSGYscOmTxYeJSJ3TpbacyJWBFd",
+    "verifiedHetznerRecipientExists": false,
+    "privateRecipientKeysExportAllowed": false,
+    "cloudProductionSSHCredentialsExportAllowed": false,
+    "localSyntheticTestSecrets": "Only if explicitly included in the new Hetzner GO and positively classified; unknown stops",
+    "classificationComplete": false,
+    "backupCoverageComplete": false,
+    "newRecipientEncryptionIsNecessaryNotAClaimOfOldCipherReusability": true,
+    "expandedManifest595CoverageNotClaimedEqualToOldDraft577": true
+  },
+  "futureConditionalApproval": {
+    "activated": false,
+    "actions": [
+      "Administrator prepares compatible isolated context on existing host",
+      "Generate target-only GPG recipient; verify public key+host binding independently",
+      "Prepare exact selected encrypted input supplement and necessary re-encryption for target; existing Drive channel only",
+      "Full cipher readback and target plaintext/file hash/structure independent acceptance",
+      "Exactly one measured setup and exactly one same-root-usage four-TX profile after every fresh admission"
+    ],
+    "allStagesStopOnFailUnknown": true,
+    "requiresNewExplicitHetznerGO": true,
+    "existingCodexCloudGOConsumed": false,
+    "existingCodexCloudGOReusableOnHetzner": false,
+    "automaticRetry": false,
+    "deletions": false,
+    "production": false,
+    "merge": false,
+    "deployment": false,
+    "fullUnit": false,
+    "full500": false,
+    "newPaidResources": false,
+    "providerCalls": false
+  },
+  "measurement": {
+    "mode": [
+      "--diagnose-native-transaction-guard",
+      "--transaction-guard-case",
+      "same-root-usage",
+      "--profile-functions"
+    ],
+    "writes": [
+      "CLAIM_STATE",
+      "RESERVE_D",
+      "SEND_D",
+      "SAME_ROOT_USAGE"
+    ],
+    "expectedActualCoreCASDelta": 4,
+    "expectedActualReadOnlyStatisticsSnapshots": 2,
+    "measuredSetups": 1,
+    "profileCases": 1,
+    "startFreeBytes": 10737418240,
+    "minimumFreeDuringBytes": 8589934592,
+    "maximumCommonPeakBytes": 1548000000,
+    "nativeMemoryMaxBytes": 1547997184,
+    "nativeMemoryHighBytes": 1399996416,
+    "nativeMemorySwapMaxBytes": 0,
+    "allInstallationAndCompletionPhasesRequired": true,
+    "naturalExitAndBothEOFRequired": true,
+    "nestedTimingsAdditive": false,
+    "nativeOIDs": "Fresh genuine qualification during measured setup before writes",
+    "allOldCaseKernelRuntimeAuthorityBindingsReusable": false,
+    "componentSuccessIsNotUnit60Auth30ReserveOr500Acceptance": true
+  },
+  "stopReasonsRemaining": [
+    "Administrative isolated native context is not provisioned and cannot be executed by the probe-only key",
+    "Target recipient is not yet generated/bound",
+    "Source secret classes and complete backup/supplement coverage need acceptance before any transfer",
+    "Archive-based reader restoration and all target hashes are not yet executed",
+    "Actual Docker/kernel/cgroup/mount/process/clock/native catalogue admission remains future measured setup work"
+  ],
+  "implementationScope": {
+    "newRemoteExecutor": false,
+    "engineGuardsWeakened": false,
+    "runtimeSourceFilesModified": false,
+    "documentationAndInputPlanningOnly": true
+  },
+  "afterProfileDecision": "Use actual self/total function timings and outer critical path to accept a sufficiently large safe kernel candidate or stop it; no automatic research/test series"
+}

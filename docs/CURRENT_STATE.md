@@ -1,21 +1,22 @@
 # CURRENT STATE — Helmut
 
-**Stand24.10.2026 UTC.** Letzter Production-Befund16.10.2026 13:07:32UTC,
+**Stand25.10.2026 Europe/Istanbul.** Letzter Production-Befund16.10.2026 13:07:32UTC,
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 25.10. Istanbul: native Funktionsmessung vorbereitet, Zeitfix offen
+## 25.10.: Hetzner-Auth-Vorbereitung; kein nativer Start
 
-Branch `codex/native-auth-critical-path-20261025` auf PR940/0f643b50:
-separater, expliziter Vier-TX-Profiler; normaler Guard exakt494e74fe erhalten.
-143 gezielte synthetische Prüfungen und unabhängiger SOL-Quellenreview PASS;
-echter Quellenconsumer8/8,20Original-/38nativeDefinitionen,9Helper geprüft.
-Keine native Ausführung, keine gemessene Zeitersparnis und kein500MB-Nachweis.
-3ac bleibt FAIL65,15s/9Kontrollen. Schnittstellenverlagerung verworfen;
-native Fusion zeitlich UNKNOWN; JIT aktiviert, Auslösung/Dauer UNKNOWN.
-Komponenten-GO und frische Admission fehlen; keinBereinigen/Unit60/500erStart.
-PR941/421558bb samt roterCI bleibt separat unverändert.
-[Vorbereitung, Grenzen und nächste Freigabe](betrieb/native-auth-kernel-profile-20261025.md).
+PR942/29b05ac0 und Vier-TX-Profiler unverändert;143 Quellenchecks übernommen.
+GitHub40189037230/Versuch2 SUCCESS, kein neuer Verbindungscheck. Ziel hat laut
+historischem Beleg ausreichend Platte/RAM,cgroupv2; nativeExecution=false.
+Vorgesehen: isolierter Docker28.4-/VFS-/cgroupfs-Kontext unter UID1000 statt
+pauschaler29-Freigabe.595 Eingangsrecords geplant; fünf Reader-ELFs müssen
+hashgleich aus vorhandenem Archiv wiederhergestellt werden. Alte Sicherung
+enthält V12-RAW/Mapping/Requests nicht vollständig. Administrativer Kontext,
+Zielschlüssel, Secretklassen, Ergänzungstransfer und frische Admission offen.
+Kein Hostumbau/Transfer/Test/Merge/Deployment; Unit60/500MB/500er weiter offen.
+PR941 separat unverändert. [Plan und Freigabe](betrieb/hetzner-native-preparation-20261025.md).
+[Erhaltene Profilvorbereitung](betrieb/native-auth-kernel-profile-20261025.md).
 
 ## 24.10.: U/Parts-Rücknahme; bestehende Quellenqualifikation wieder gültig
 
@@ -286,8 +287,8 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-Zunächst begrenzte native Vier-TX-Funktionsmessung nach separater konkreterGO
-und frischer10GiB-Admission; fehlende Kapazität nicht durch diesen Auftrag bereinigen.
-Erst anhand echter Funktionszeiten einen ausreichend wirksamen Kernumbau wählen;
-kein weiterer verworfener Schnittstellen-/U/Parts-Vergleich. Unit60/500MB/500er offen.
-KeinMerge/Deployment. Sehr hoch.
+Hetzner-Testkontext und klassifizierten verschlüsselten Originalumfang gemäß
+Vorbereitungsplan bereitstellen lassen; neue konkrete Hetzner-GO vor einem
+gemessenen Aufbau/Vier-TX-Profil. Bestehende Probe und Cloud-Originale erhalten.
+Erst echte Funktionszeiten begründen einen Kernumbau; keine neue Analyse-/
+Bereinigungsserie. Unit60/500MB/500er offen; keinMerge/Deployment. Sehr hoch.
