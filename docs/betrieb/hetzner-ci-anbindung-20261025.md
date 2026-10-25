@@ -12,9 +12,12 @@ Kein MacBook im Ausfuehrungs- oder Datenpfad. Tailscale SSH wird nicht aktiviert
 
 Das aktive Ruleset `helmut-main-protection` wurde lesend bestaetigt:
 beide Pflichtchecks, Pull Request, kein Bypass. PR942 bleibt unangetastet.
-Keine Veroeffentlichung dieses Branches: neue Workflow-/Skriptdateien wuerden
-die vorhandene CI und moeglicherweise ein Vercel-Preview ausloesen. Der Auftrag
-verbietet Deployments und native Volltests; deshalb hier kein Push, PR oder Merge.
+Vercel-Deployments dieses Entwicklungsbranches sind ueber den vorhandenen
+`git.deploymentEnabled`-Vertrag explizit ausgeschaltet. Ein separater Entwurfs-PR
+dient der Quellenpruefung. Pflicht-CI verwendet ausschliesslich ihre bisherigen
+synthetischen Fixtures; kein neuer SSH-Job oder nativer Hetzner-Volltest.
+Kein Merge und keine Production-Aktion. Vor einer spaeteren Integration muessen
+auch deren Vercel-Auswirkungen konkret geklaert und freigegeben sein.
 
 Der Check ist standardmaessig gesperrt. Er uebertraegt weder Quellen noch
 Originale und fuehrt keine Tests aus. Ein erfolgreicher Probe-Run beweist nur
@@ -99,7 +102,12 @@ Schritts, keine gleichzeitige Aufgabenliste fuer den Betreiber.
    `HELMUT_CI_GATE_SHA256` = SHA256 der installierten Bridge,
    `HELMUT_TS_CLIENT_ID`, `HELMUT_TS_AUDIENCE`.
    Zuletzt `HELMUT_HETZNER_CI_ENABLED=probe-only-v1` setzen.
-7. Erst nach gesondert erlaubter Integration des Workflows in `main` genau einen
+7. Betreiber bestaetigt Speicherung der drei OIDC-/Hostvariablen, des eigenen
+   CI-SSH-Secrets und nach erfolgreicher manueller Gateinstallation auch der
+   Hostkey-/Gatehash-/Probe-Freischaltvariablen. Secretwerte wurden nicht gelesen.
+   Uebergebene Installationsausgabe: Gate85111232a240a41d43622a2ad188f74232ca04b6dd5458da0871c254977d69d9,
+   native Ausfuehrung aus. Kein unabhaengiger Live-Verbindungsbeleg.
+   Erst nach gesondert erlaubter Integration des Workflows in `main` genau einen
    Verbindungscheck starten. Ein neuer `workflow_dispatch`-Workflow muss vorher
    auf dem Defaultbranch existieren. Keine Schutzregel fuer den Erststart lockern.
    Danach kann Codex den vorhandenen Workflow mit repositorybegrenztem
