@@ -1,0 +1,20 @@
+{
+  "tagOwners": {
+    "tag:helmut-ci-host": ["autogroup:admin"],
+    "tag:helmut-ci-runner": ["autogroup:admin"]
+  },
+  "grants": [
+    {
+      "src": ["tag:helmut-ci-runner"],
+      "dst": ["tag:helmut-ci-host"],
+      "ip": ["tcp:22"]
+    }
+  ],
+  "tests": [
+    {
+      "src": "tag:helmut-ci-runner",
+      "accept": ["tag:helmut-ci-host:22"],
+      "deny": ["tag:helmut-ci-host:2375", "tag:helmut-ci-host:5432", "tag:helmut-ci-host:443"]
+    }
+  ]
+}
