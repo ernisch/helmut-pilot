@@ -114,6 +114,11 @@ jobs:
       - name: FinalContext Subject-Tupel-Codec (synthetisch/offline)
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
+      - name: Native automation boundary qualification (synthetic)
+        # The root deployment bootstrap verifies this actual successful job step,
+        # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
+        # external APIs, originals, native resource cases or Production access.
+        run: node scripts/lokal.js -- python3 -I -S -B scripts/hetzner-native-automation-tests.py
       - name: psql bereitstellen (Voraussetzung des Datenbanknachweises)
         if: steps.plan.outputs.database == 'true'
         # Das ubuntu-latest-Image bringt psql heute mit — aber GitHub darf den Umfang
