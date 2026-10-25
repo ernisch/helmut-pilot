@@ -50,8 +50,15 @@ jobs:
           sha256sum: 512f613ed7d04fc7282f7dc5bd76aa105aae28168fbb9357eb749ebcbc29f0ae
           use-cache: 'false'
           retry: '1'
-          args: --accept-routes=false --accept-dns=false
+          # The pinned action already supplies --accept-routes; duplicate flags fail.
+          args: --accept-dns=false
           log-mode: quiet
+
+      - name: Routenannahme vor dem SSH-Zugriff ausschalten und bestaetigen
+        run: |
+          set -euo pipefail
+          sudo tailscale set --accept-routes=false --accept-dns=false
+          sudo tailscale debug prefs | python3 -c 'import json,sys; p=json.load(sys.stdin); assert p.get("RouteAll") is False and p.get("CorpDNS") is False, "Tailscale routing/DNS settings rejected"'
 
       - name: Ausschliesslich fest gebundenen SSH-Verbindungscheck ausfuehren
         env:

@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/hetzner-ci-routing-fix-20261025": false,
       "codex/hetzner-ci-bridge-20261025": false,
       "codex/runtime-read-binding-diagnostic-20261015": false,
       "codex/runtime-read-binding-fix-20261015": false,
