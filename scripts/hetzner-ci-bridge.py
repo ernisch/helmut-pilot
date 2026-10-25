@@ -133,6 +133,43 @@ def ssh_arguments(host, key, known_hosts, nonce):
     ]
 
 
+SAFE_FAILURE_CODES = {
+    "tailscale-ip-required", "host-key-required", "host-key-format", "gate-pin-required",
+    "ssh-key-required", "ssh-probe-failed", "reply-size", "reply-fields", "reply-binding",
+    "gate-source-drift", "reply-user", "host-platform", "reply-resource", "reply-cgroup",
+    "reply-docker", "execution-not-authorized", "duplicate-key", "nonfinite-json",
+    "ssh-key-load-failed", "ssh-host-verification-failed", "ssh-authentication-failed",
+    "ssh-network-unreachable", "ssh-connect-timeout", "ssh-connection-refused",
+    "remote-probe-rejected",
+}
+
+
+def ssh_failure_code(stderr):
+    text = stderr.decode("utf-8", errors="replace").lower()
+    for patterns, code in (
+        (("error in libcrypto", "invalid format", "load key"), "ssh-key-load-failed"),
+        (("host key verification failed", "remote host identification has changed"), "ssh-host-verification-failed"),
+        (("permission denied",), "ssh-authentication-failed"),
+        (("network is unreachable", "no route to host"), "ssh-network-unreachable"),
+        (("connection timed out", "operation timed out"), "ssh-connect-timeout"),
+        (("connection refused",), "ssh-connection-refused"),
+        (("helmut-ci: probe rejected",), "remote-probe-rejected"),
+    ):
+        if any(pattern in text for pattern in patterns):
+            return code
+    return "ssh-probe-failed"
+
+
+def safe_failure_code(error):
+    if isinstance(error, ValueError) and error.args and error.args[0] in SAFE_FAILURE_CODES:
+        return error.args[0]
+    if isinstance(error, subprocess.TimeoutExpired):
+        return "local-process-timeout"
+    if isinstance(error, OSError):
+        return "local-io-error"
+    return "validation-failed"
+
+
 def client():
     host = tailscale_ip(os.environ.get("HELMUT_CI_HOST", ""))
     public = os.environ.get("HELMUT_CI_HOST_PUBLIC_KEY", "")
@@ -154,7 +191,8 @@ def client():
         result = subprocess.run(ssh_arguments(host, key, hosts, nonce),
                                 stdin=subprocess.DEVNULL, capture_output=True, timeout=40,
                                 env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"})
-        require(result.returncode == 0, "ssh-probe-failed")
+        if result.returncode != 0:
+            raise ValueError(ssh_failure_code(result.stderr))
         reply = validate_reply(result.stdout, nonce, digest)
     # No remote stdout/stderr is forwarded. Only the validated closed schema is printed.
     print(json.dumps(reply, sort_keys=True))
@@ -170,9 +208,9 @@ def main():
         else:
             raise ValueError("mode-denied")
         return 0
-    except (OSError, ValueError, subprocess.SubprocessError):
-        # Never disclose exception strings, keys, environment, host errors or remote logs.
-        print("helmut-ci: probe rejected; check configuration privately", file=sys.stderr)
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        # Emit only closed constant codes, never exception strings or remote logs.
+        print("helmut-ci: probe rejected: " + safe_failure_code(error), file=sys.stderr)
         return 1
 
 
