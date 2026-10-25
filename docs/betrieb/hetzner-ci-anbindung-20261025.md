@@ -54,11 +54,14 @@ Schritts, keine gleichzeitige Aufgabenliste fuer den Betreiber.
 1. Tailnet-Zugriff pruefen und die vorbereitete Policy
    `hetzner-ci-tailnet-policy.json` an die bestehende Policy anpassen.
    Keine bestehende Policy blind ersetzen oder Administratorzugang entfernen.
-   Nach Anlage der Tag-Owner den bereits angemeldeten Host in der Tailscale-
-   Geraeteverwaltung explizit mit `tag:helmut-ci-host` versehen. Der erste
-   Anmeldeschritt oben vergibt noch keinen Tag. Vor dem Probe-Start muss die
-   tatsaechliche Tag-Zuordnung bestaetigt sein. Runner bekommt ausschliesslich
-   `tag:helmut-ci-runner`. Fuer den Runner ist nur TCP22 zum CI-Host erlaubt.
+   Betreiber bestaetigt Anmeldung mit100.96.83.66 und anschliessend Speicherung
+   der korrigierten Policy aus diesem Chat. Nicht unabhaengig live rueckgelesen.
+   Die aktuelle Policy bindet den Host ueber den Alias `helmut-ci` an diese IP;
+   kein Host-Tag vergeben, bestehende Besitzerzuordnung erhalten. Owner/Admin
+   behalten Netzwerkzugriff, Mitglieder Zugriff auf eigene Geraete. Runner
+   bekommt ausschliesslich `tag:helmut-ci-runner` und nur TCP22 zum CI-Host.
+   Die verworfene Negativpruefung `autogroup:member:22` ist entfernt: sie wuerde
+   den eigenen Hetzner-Host einschliessen und dem positiven SSH-Test widersprechen.
    Breite bestehende `*:*`-/allow-all-Regeln duerfen diesem Runner keinen weiteren
    Zugriff geben; sonst nicht aktivieren. Die Policytests muessen erfolgreich sein.
 2. Tailscale-Federation mit GitHub-Issuer

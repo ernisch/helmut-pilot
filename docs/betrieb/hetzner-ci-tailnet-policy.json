@@ -1,20 +1,46 @@
 {
+  "hosts": {
+    "helmut-ci": "100.96.83.66"
+  },
   "tagOwners": {
-    "tag:helmut-ci-host": ["autogroup:admin"],
-    "tag:helmut-ci-runner": ["autogroup:admin"]
+    "tag:helmut-ci-runner": ["autogroup:owner", "autogroup:admin"]
   },
   "grants": [
     {
+      "src": ["autogroup:owner", "autogroup:admin"],
+      "dst": ["*"],
+      "ip": ["*"]
+    },
+    {
+      "src": ["autogroup:member"],
+      "dst": ["autogroup:self"],
+      "ip": ["*"]
+    },
+    {
       "src": ["tag:helmut-ci-runner"],
-      "dst": ["tag:helmut-ci-host"],
+      "dst": ["helmut-ci"],
       "ip": ["tcp:22"]
+    }
+  ],
+  "ssh": [
+    {
+      "action": "check",
+      "src": ["autogroup:member"],
+      "dst": ["autogroup:self"],
+      "users": ["autogroup:nonroot", "root"]
     }
   ],
   "tests": [
     {
       "src": "tag:helmut-ci-runner",
-      "accept": ["tag:helmut-ci-host:22"],
-      "deny": ["tag:helmut-ci-host:2375", "tag:helmut-ci-host:5432", "tag:helmut-ci-host:443"]
+      "proto": "tcp",
+      "accept": ["helmut-ci:22"],
+      "deny": ["helmut-ci:80", "helmut-ci:443", "helmut-ci:2375", "helmut-ci:2376", "helmut-ci:5432"]
+    },
+    {
+      "src": "tag:helmut-ci-runner",
+      "proto": "udp",
+      "deny": ["helmut-ci:22"]
     }
   ]
 }
