@@ -166,6 +166,47 @@ class Boundaries(unittest.TestCase):
         self.assertNotIn("synthetic-secret", output.getvalue())
         self.assertNotIn("::error::", output.getvalue())
 
+    def test_ssh_failures_emit_closed_codes_without_raw_stderr(self):
+        cases = [
+            (b'Load key /tmp/key: error in libcrypto', 'ssh-key-load-failed'),
+            (b'Host key verification failed.', 'ssh-host-verification-failed'),
+            (b'Permission denied (publickey).', 'ssh-authentication-failed'),
+            (b'Network is unreachable', 'ssh-network-unreachable'),
+            (b'Connection timed out', 'ssh-connect-timeout'),
+            (b'Connection refused', 'ssh-connection-refused'),
+            (b'helmut-ci: probe rejected; check configuration privately', 'remote-probe-rejected'),
+            (b'private-sentinel ::error:: arbitrary text', 'ssh-probe-failed'),
+        ]
+        for raw, expected in cases:
+            with self.subTest(expected=expected):
+                code = B.ssh_failure_code(raw)
+                self.assertEqual(code, expected)
+                output = io.StringIO()
+                with patch.object(B.sys, 'argv', ['bridge', 'client']), \
+                     patch.object(B, 'client', side_effect=ValueError(code)), \
+                     contextlib.redirect_stderr(output):
+                    self.assertEqual(B.main(), 1)
+                self.assertEqual(output.getvalue(), 'helmut-ci: probe rejected: ' + expected + '\n')
+                self.assertNotIn('private-sentinel', output.getvalue())
+                self.assertNotIn('::error::', output.getvalue())
+
+    def test_local_failures_never_log_exception_details(self):
+        cases = [
+            (ValueError('ssh-key-required'), 'ssh-key-required'),
+            (ValueError('private-sentinel'), 'validation-failed'),
+            (OSError('private-sentinel'), 'local-io-error'),
+            (subprocess.TimeoutExpired('private-sentinel', 5), 'local-process-timeout'),
+        ]
+        for error, expected in cases:
+            with self.subTest(expected=expected):
+                output = io.StringIO()
+                with patch.object(B.sys, 'argv', ['bridge', 'client']), \
+                     patch.object(B, 'client', side_effect=error), \
+                     contextlib.redirect_stderr(output):
+                    self.assertEqual(B.main(), 1)
+                self.assertEqual(output.getvalue(), 'helmut-ci: probe rejected: ' + expected + '\n')
+                self.assertNotIn('private-sentinel', output.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()
