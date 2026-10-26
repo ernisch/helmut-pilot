@@ -343,9 +343,11 @@ import subprocess
 import signal
 import types
 import ctypes
+import resource
 NATIVE_GO_PLAN_SHA256 = None
 _CONTROL_DEADLINE = None
 _TOOL_ERROR_NAME = 'GPG_FIRST_TOOL_ERROR.PRIVATE.json'
+_IN_STAGE_CHILD = False
 
 def _first_tool_error(output,code):
     descriptor=None
@@ -355,27 +357,43 @@ def _first_tool_error(output,code):
                 'stderr_sha256':hashlib.sha256(output[1]).hexdigest(),
                 'stderr_prefix_base64':base64.b64encode(bytes(output[1][:8192])).decode('ascii')}
         _require(_TOOL_ERROR_NAME in ('GPG_FIRST_TOOL_ERROR.PRIVATE.json',
-            'GPG_RECOVERY_FIRST_TOOL_ERROR.PRIVATE.json'), 'EXECUTOR_COMMAND')
+            'GPG_RECOVERY_FIRST_TOOL_ERROR.PRIVATE.json',
+            'GPG_STAGE_FIRST_TOOL_ERROR.PRIVATE.json'), 'EXECUTOR_COMMAND')
         _json_new(descriptor,_TOOL_ERROR_NAME,record)
     except Exception:pass
     finally:
         if descriptor is not None:os.close(descriptor)
 
-def _bounded_tool(path,args,input=None,timeout=30):
+def _bounded_tool(path,args,input=None,timeout=30,file_limit=None):
     _require(path == '/usr/bin/env' and tuple(args[:5]) == ('-i','PATH=/usr/bin:/bin','LC_ALL=C','/usr/bin/gpg','--no-options'), 'EXECUTOR_COMMAND')
+    _require(file_limit is None or (_IN_STAGE_CHILD and type(file_limit) is int and 0 < file_limit <= 3*1024**3), 'EXECUTOR_COMMAND')
+    def limits():
+        resource.setrlimit(resource.RLIMIT_FSIZE,(file_limit,file_limit))
     process=subprocess.Popen([path,*args],stdin=subprocess.PIPE if input is not None else subprocess.DEVNULL,
         stdout=subprocess.PIPE,stderr=subprocess.PIPE,env={'PATH':'/usr/sbin:/usr/bin:/sbin:/bin','LC_ALL':'C'},
-        cwd=TARGET_BASE,start_new_session=True,close_fds=True)
+        cwd=TARGET_BASE,start_new_session=not _IN_STAGE_CHILD,close_fds=True,
+        preexec_fn=limits if file_limit is not None else None)
     output=[bytearray(),bytearray()];selector=selectors.DefaultSelector();end=time.monotonic()+timeout
     if _CONTROL_DEADLINE is not None:end=min(end,_CONTROL_DEADLINE)
     try:
+        offset=0
         if input is not None:
-            process.stdin.write(input);process.stdin.close()
+            if input:
+                os.set_blocking(process.stdin.fileno(),False)
+                selector.register(process.stdin,selectors.EVENT_WRITE,2)
+            else:process.stdin.close()
         for i,pipe in enumerate((process.stdout,process.stderr)):
             os.set_blocking(pipe.fileno(),False);selector.register(pipe,selectors.EVENT_READ,i)
         while selector.get_map():
             _require(time.monotonic()<end,'TOOL_TIMEOUT')
             for key,_ in selector.select(min(.25,max(0,end-time.monotonic()))):
+                if key.data==2:
+                    count=os.write(process.stdin.fileno(),input[offset:offset+4096])
+                    _require(count>0,'TOOL_INPUT_WRITE')
+                    offset+=count
+                    if offset==len(input):
+                        selector.unregister(process.stdin);process.stdin.close()
+                    continue
                 block=os.read(key.fileobj.fileno(),4096)
                 if not block:selector.unregister(key.fileobj);continue
                 output[key.data].extend(block)
@@ -386,13 +404,16 @@ def _bounded_tool(path,args,input=None,timeout=30):
         return types.SimpleNamespace(returncode=code,stdout=bytes(output[0]),stderr=bytes(output[1]))
     except BaseException as error:
         _first_tool_error(output,getattr(error,'code','TOOL_EXECUTION_FAILURE'))
-        try:os.killpg(process.pid,signal.SIGKILL)
+        try:
+            if _IN_STAGE_CHILD:process.kill()
+            else:os.killpg(process.pid,signal.SIGKILL)
         except OSError:pass
         try:process.wait(timeout=5)
         except Exception:pass
         raise
     finally:
         selector.close()
+        if process.stdin is not None and not process.stdin.closed:process.stdin.close()
         for pipe in (process.stdout,process.stderr):pipe.close()
 
 def _read_public_file(path,limit=65536):
@@ -730,22 +751,14 @@ def recover_recipient(target_base, execute_tool):
                     if not published:
                         raise
 
-def handle(request,context):
-    global _CONTROL_DEADLINE
-    _CONTROL_DEADLINE=context.get('deadline')
-    _require(context['base']==TARGET_BASE,'SERVER_BASE_BINDING')
-    operation=request['operation']
-    if operation=='status':
-        return {'status':'CONTROL_READY','enabled_operations':['status','recipient'],
-                'native_enabled':False,'source_sha256':context['source_sha256'],
-                'recipient_diagnostic':_recipient_diagnostic()}
-    _require(operation=='recipient','NATIVE_OPERATION_NOT_QUALIFIED')
+def _recipient_ready(allow_create):
     # A possibly complete marker from a failed fsync/publication is UNKNOWN,
     # not an accepted key. Never turn that failed recovery into READY on read.
     _require(not any(os.path.lexists(TARGET_BASE+'/'+name)
                      for name in (RECOVERY_ERROR, RECOVERY_PENDING_RESULT)), 'RECIPIENT_NOT_ACCEPTED')
     result_path=TARGET_BASE+'/'+RESULT_NAME
     if not os.path.lexists(result_path):
+        _require(allow_create,'RECIPIENT_NOT_ACCEPTED')
         if os.path.lexists(TARGET_BASE+'/'+ERROR_NAME):
             result=recover_recipient(TARGET_BASE,_recovery_tool)
         else:
@@ -786,3 +799,436 @@ def handle(request,context):
             'key_generation_attempts': receipt['key_generation_attempts'],
             'subkey_add_attempts': receipt['subkey_add_attempts']}
     return reply
+
+
+# STAGE is byte restoration only. Its embedded helper is qualified with this module.
+import datetime
+import http.client
+import ipaddress
+import socket
+import ssl
+import urllib.parse
+
+STAGE_PLAN = 'e6d463a634925a190d60d066c0fae2ba94b9f7f0a10a115b50b4f4018b1b35eb'
+STAGE_SCOPE = '08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd'
+STAGE_HOST = 'sdmntprpolandcentral.oaiusercontent.com'
+STAGE_HOSTS = frozenset(('sdmntpritalynorth.oaiusercontent.com',
+    'sdmntprnortheu.oaiusercontent.com', 'sdmntprpolandcentral.oaiusercontent.com',
+    'sdmntprukwest.oaiusercontent.com'))
+STAGE_CAPSULE_B64 = 48 * 1024
+STAGE_CAPSULE_JSON = 64 * 1024
+STAGE_CIPHER_CAP = 1024**3
+STAGE_TAR_CAP = 3 * 1024**3
+STAGE_ORIGINAL_BYTES = 2865680705
+STAGE_ORIGINAL_FILES = 1767
+STAGE_FREE_RESERVE = 8 * 1024**3
+STAGE_WORK_CAP = 8 * 1024**3
+STAGE_MIN_REMAINING = 120
+STAGE_RESTORE_SHA256 = '4882d8836b0fbeca035d2f29a674bac2ae25e458eecfe9608e3ce9f900f1be39'
+EMBEDDED_STAGE_RESTORE_SOURCE = b'"""Bounded byte restoration into one fresh private tree; no execution authority."""\nimport hashlib as _sr_hashlib\nimport ctypes as _sr_ctypes\nimport json as _sr_json\nimport os as _sr_os\nimport posixpath as _sr_path\nimport re as _sr_re\nimport stat as _sr_stat\nimport sys as _sr_sys\nimport zlib as _sr_zlib\n\n_SR_SCOPE_SHA256 = \'08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd\'\n_SR_FILE_CAP = 1767\n_SR_BYTE_CAP = 2865680705\n_SR_META_CAP = 99\n_SR_STREAM_CAP = 3 * 1024**3\n_SR_SCOPE_CAP = 2 * 1024**2\n_SR_PAX_CAP = 65536\n_SR_FLAGS = (_sr_os.O_RDONLY | _sr_os.O_NOFOLLOW | _sr_os.O_NOATIME |\n             _sr_os.O_NONBLOCK | _sr_os.O_CLOEXEC)\n_SR_DIR = _SR_FLAGS | _sr_os.O_DIRECTORY\n_SR_PATH_DIR = _sr_os.O_PATH | _sr_os.O_DIRECTORY | _sr_os.O_NOFOLLOW | _sr_os.O_CLOEXEC\n\n\nclass _SRStop(Exception):\n    pass\n\n\ndef _sr_need(value, code):\n    if not value:\n        raise _SRStop(code)\n\n\ndef _sr_owned(info):\n    return info.st_uid == info.st_gid == 0\n\n\ndef _sr_admin():\n    _sr_need(_sr_os.getuid() == _sr_os.geteuid() == _sr_os.getgid() == _sr_os.getegid() == 0, \'ROOT_REQUIRED\')\n\n\ndef _sr_pathcheck(path, absolute=False):\n    _sr_need(type(path) is str and bool(path) and len(path.encode(\'utf8\')) <= 4096\n             and not any(ord(c) < 32 or c == \'\\\\\' for c in path), \'PATH_FORMAT\')\n    _sr_need(path.startswith(\'/\') == absolute and _sr_path.normpath(path) == path\n             and \'..\' not in path.split(\'/\') and \'.\' not in path.split(\'/\'), \'PATH_ESCAPE\')\n    return path\n\n\ndef _sr_parent(path):\n    _sr_pathcheck(path, True)\n    descriptor = _sr_os.open(\'/\', _SR_PATH_DIR)\n    readable = None\n    try:\n        for part in path.split(\'/\')[1:-1]:\n            child = _sr_os.open(part, _SR_PATH_DIR, dir_fd=descriptor)\n            _sr_os.close(descriptor)\n            descriptor = child\n            info = _sr_os.fstat(descriptor)\n            _sr_need(_sr_stat.S_ISDIR(info.st_mode) and _sr_owned(info)\n                     and not _sr_stat.S_IMODE(info.st_mode) & 0o022, \'UNTRUSTED_PARENT\')\n        readable = _sr_os.open(\'.\', _SR_DIR, dir_fd=descriptor)\n        _sr_need(_sr_os.fstat(readable) == _sr_os.fstat(descriptor), \'PARENT_CHANGED\')\n        _sr_os.close(descriptor)\n        return readable, path.split(\'/\')[-1]\n    except BaseException:\n        if readable is not None:\n            _sr_os.close(readable)\n        _sr_os.close(descriptor)\n        raise\n\n\ndef _sr_metadata(descriptor, uid, gid, mode):\n    _sr_os.fchown(descriptor, uid, gid)\n    _sr_os.fchmod(descriptor, mode)\n\n\ndef _sr_link_metadata(parent, name, uid, gid):\n    _sr_os.chown(name, uid, gid, dir_fd=parent, follow_symlinks=False)\n\n\ndef _sr_directory(root, parts):\n    descriptor = _sr_os.dup(root)\n    try:\n        for part in parts:\n            created = False\n            try:\n                _sr_os.mkdir(part, 0o755, dir_fd=descriptor)\n                created = True\n            except FileExistsError:\n                pass\n            child = _sr_os.open(part, _SR_DIR, dir_fd=descriptor)\n            if created:\n                _sr_os.fchmod(child, 0o755)\n                _sr_os.fsync(child)\n                _sr_os.fsync(descriptor)\n            _sr_os.close(descriptor)\n            descriptor = child\n            _sr_need(_sr_stat.S_ISDIR(_sr_os.fstat(descriptor).st_mode), \'DESTINATION_DIRECTORY\')\n        return descriptor\n    except BaseException:\n        _sr_os.close(descriptor)\n        raise\n\n\ndef _sr_write(descriptor, data):\n    position = 0\n    while position < len(data):\n        written = _sr_os.write(descriptor, data[position:])\n        _sr_need(written > 0, \'SHORT_WRITE\')\n        position += written\n\n\ndef _sr_new(root, name, data):\n    descriptor = _sr_os.open(name, _sr_os.O_WRONLY | _sr_os.O_CREAT | _sr_os.O_EXCL |\n                             _sr_os.O_NOFOLLOW | _sr_os.O_CLOEXEC, 0o600, dir_fd=root)\n    try:\n        _sr_os.fchmod(descriptor, 0o600)\n        _sr_write(descriptor, data)\n        _sr_os.fsync(descriptor)\n    finally:\n        _sr_os.close(descriptor)\n    _sr_os.fsync(root)\n\n\ndef _sr_json_bytes(value):\n    return _sr_json.dumps(value, sort_keys=True, separators=(\',\', \':\'), ensure_ascii=True).encode(\'ascii\') + b\'\\n\'\n\n\ndef _sr_publish_receipt(root):\n    library = _sr_ctypes.CDLL(None, use_errno=True)\n    rename = library.renameat2\n    rename.argtypes = (_sr_ctypes.c_int, _sr_ctypes.c_char_p, _sr_ctypes.c_int,\n                       _sr_ctypes.c_char_p, _sr_ctypes.c_uint)\n    rename.restype = _sr_ctypes.c_int\n    if rename(root, b\'RESTORE_RECEIPT.PENDING.PRIVATE.json\', root,\n              b\'RESTORE_RECEIPT.PRIVATE.json\', 1) != 0:\n        raise OSError(_sr_ctypes.get_errno(), \'receipt-publication-failed\')\n\n\ndef _sr_json_load(raw):\n    def unique(pairs):\n        result = {}\n        for key, value in pairs:\n            _sr_need(key not in result, \'JSON_DUPLICATE\')\n            result[key] = value\n        return result\n    def constant(value):\n        raise _SRStop(\'JSON_CONSTANT\')\n    return _sr_json.loads(raw, object_pairs_hook=unique, parse_constant=constant)\n\n\nclass _SRGzip:\n    def __init__(self, descriptor):\n        self.fd, self.pending, self.count, self.compressed, self.eof = descriptor, b\'\', 0, 0, False\n        self.decoder = _sr_zlib.decompressobj(31)\n\n    def read(self, size):\n        result = bytearray()\n        while len(result) < size and not self.eof:\n            if self.decoder.eof:\n                _sr_need(not self.decoder.unused_data and not self.pending\n                         and not _sr_os.read(self.fd, 1), \'GZIP_TRAILING_BYTES\')\n                self.eof = True\n                break\n            if not self.pending:\n                self.pending = _sr_os.read(self.fd, 65536)\n                _sr_need(self.pending, \'GZIP_TRUNCATED\')\n                self.compressed += len(self.pending)\n                _sr_need(self.compressed <= _SR_STREAM_CAP, \'GZIP_INPUT_LIMIT\')\n            block = self.decoder.decompress(self.pending, min(size - len(result), 65536))\n            self.pending = self.decoder.unconsumed_tail\n            self.count += len(block)\n            _sr_need(self.count <= _SR_STREAM_CAP, \'TAR_TOTAL_LIMIT\')\n            result.extend(block)\n        return bytes(result)\n\n    def exact(self, size):\n        result = self.read(size)\n        _sr_need(len(result) == size, \'TAR_TRUNCATED\')\n        return result\n\n    def padding(self, size):\n        _sr_need(not any(self.exact((-size) % 512)), \'TAR_NONZERO_PADDING\')\n\n\ndef _sr_number(raw):\n    value = raw.strip(b\'\\0 \')\n    _sr_need(not value or _sr_re.fullmatch(b\'[0-7]+\', value), \'TAR_NUMBER\')\n    return int(value or b\'0\', 8)\n\n\ndef _sr_text(raw):\n    return raw.split(b\'\\0\', 1)[0].decode(\'utf8\')\n\n\ndef _sr_mtime(value):\n    match = _sr_re.fullmatch(r\'(-?)([0-9]{1,12})(?:\\.([0-9]{1,9}))?\', value)\n    _sr_need(match is not None, \'PAX_MTIME\')\n    nanoseconds = int(match[2]) * 10**9 + int((match[3] or \'\').ljust(9, \'0\'))\n    if match[1]:\n        nanoseconds = -nanoseconds\n    _sr_need(-2**63 <= nanoseconds < 2**63, \'PAX_MTIME\')\n    return nanoseconds\n\n\ndef _sr_header(raw):\n    _sr_need(raw[257:265] == b\'ustar\\x0000\', \'TAR_FORMAT\')\n    _sr_need(_sr_number(raw[148:156]) == sum(raw[:148] + b\' \' * 8 + raw[156:]), \'TAR_CHECKSUM\')\n    name, prefix = _sr_text(raw[:100]), _sr_text(raw[345:500])\n    return {\'name\': (prefix + \'/\' if prefix else \'\') + name, \'kind\': raw[156:157],\n            \'mode\': _sr_number(raw[100:108]), \'uid\': _sr_number(raw[108:116]),\n            \'gid\': _sr_number(raw[116:124]), \'size\': _sr_number(raw[124:136]),\n            \'link\': _sr_text(raw[157:257]), \'mtime_ns\': _sr_mtime(str(_sr_number(raw[136:148])))}\n\n\ndef _sr_pax(raw):\n    values, position = {}, 0\n    while position < len(raw):\n        space = raw.find(b\' \', position, position + 12)\n        _sr_need(space > position and _sr_re.fullmatch(b\'[1-9][0-9]*\', raw[position:space]), \'PAX_LENGTH\')\n        length = int(raw[position:space])\n        record = raw[space + 1:position + length]\n        _sr_need(length <= len(raw) - position and record.endswith(b\'\\n\') and b\'=\' in record, \'PAX_RECORD\')\n        key, value = record[:-1].split(b\'=\', 1)\n        _sr_need(key in (b\'path\', b\'mtime\') and key not in values, \'PAX_KEY\')\n        values[key] = value.decode(\'utf8\')\n        if key == b\'path\':\n            _sr_pathcheck(values[key])\n        else:\n            values[key] = _sr_mtime(values[key])\n        position += length\n    return values\n\n\ndef _sr_scope(raw):\n    _sr_need(_sr_hashlib.sha256(raw).hexdigest() == _SR_SCOPE_SHA256, \'SCOPE_HASH\')\n    scope = _sr_json_load(raw)\n    _sr_need(scope[\'schema\'] == \'helmut-encrypted-transport-scope-v4\'\n             and len(scope[\'items\']) == scope[\'regularFileCount\'] <= _SR_FILE_CAP\n             and len(scope[\'pythonDirectoriesAndLinks\']) <= _SR_META_CAP, \'SCOPE_COUNTS\')\n    selected, total = {}, 0\n    for row in scope[\'items\']:\n        path = _sr_pathcheck(row[\'path\'], True)\n        name = _sr_pathcheck(row[\'archiveMember\'])\n        _sr_need(name == \'files\' + path and name not in selected and type(row[\'bytes\']) is int\n                 and row[\'bytes\'] >= 0 and _sr_re.fullmatch(\'[0-9a-f]{64}\', row[\'sha256\']), \'SCOPE_FILE\')\n        selected[name] = dict(kind=b\'0\', size=row[\'bytes\'], sha256=row[\'sha256\'],\n                              mode=int(row[\'mode\'], 8), uid=row[\'uid\'], gid=row[\'gid\'])\n        total += row[\'bytes\']\n    _sr_need(total == scope[\'regularLogicalBytes\'] <= _SR_BYTE_CAP, \'SCOPE_BYTES\')\n    for row in scope[\'pythonDirectoriesAndLinks\']:\n        name = \'files\' + _sr_pathcheck(row[\'path\'], True)\n        _sr_need(name not in selected and row[\'type\'] in (\'directory\', \'symlink\'), \'SCOPE_METADATA\')\n        info = row[\'statBefore\']\n        record = dict(kind=b\'5\' if row[\'type\'] == \'directory\' else b\'2\', size=0,\n                      mode=_sr_stat.S_IMODE(info[\'st_mode\']), uid=info[\'st_uid\'], gid=info[\'st_gid\'])\n        if \'st_mtime_ns\' in info:\n            _sr_need(type(info[\'st_mtime_ns\']) is int and -2**63 <= info[\'st_mtime_ns\'] < 2**63, \'SCOPE_METADATA\')\n            record[\'mtime_ns\'] = info[\'st_mtime_ns\']\n        if row[\'type\'] == \'symlink\':\n            target = _sr_pathcheck(row[\'target\'])\n            resolved = _sr_path.normpath(_sr_path.join(_sr_path.dirname(name), target))\n            _sr_need(resolved in selected and selected[resolved][\'kind\'] == b\'0\', \'SCOPE_LINK_TARGET\')\n            record[\'link\'] = target\n        selected[name] = record\n    for name, row in selected.items():\n        _sr_need(type(row[\'uid\']) is int and 0 <= row[\'uid\'] < 2**32 - 1\n                 and type(row[\'gid\']) is int and 0 <= row[\'gid\'] < 2**32 - 1\n                 and 0 <= row[\'mode\'] <= 0o777, \'SCOPE_METADATA\')\n        prefix = _sr_path.dirname(name)\n        while prefix:\n            _sr_need(prefix not in selected or selected[prefix][\'kind\'] == b\'5\', \'SCOPE_PARENT_TYPE\')\n            prefix = _sr_path.dirname(prefix)\n    return scope, selected\n\n\ndef restore_bound_archive(gzip_tar_path, fresh_own_output_root):\n    """Restore one pinned archive; retain every partial file and never retry."""\n    _sr_admin()\n    input_parent = output_parent = source = root = None\n    receipt = {\'schema\': \'helmut-bound-byte-restore-v1\', \'ok\': False, \'status\': \'FAIL_KEEP_STATE_NO_RETRY\',\n               \'scope_sha256\': _SR_SCOPE_SHA256, \'native_qualified\': False, \'actual_files\': [],\n               \'actual_bytes\': 0, \'remaining_entries\': None, \'partial_file_state\': \'NONE\',\n               \'metadata_state\': \'UNKNOWN\', \'unverified_entries\': None}\n    receipt[\'mtime_binding\'] = \'AUTHORIZED_ARCHIVE_HEADER_OR_PAX_NOT_A_HISTORICAL_ALL_INPUT_MTIME_PIN\'\n    verified, selected = set(), None\n    try:\n        input_parent, input_name = _sr_parent(gzip_tar_path)\n        named = _sr_os.stat(input_name, dir_fd=input_parent, follow_symlinks=False)\n        _sr_need(_sr_stat.S_ISREG(named.st_mode) and _sr_owned(named) and named.st_nlink == 1\n                 and _sr_stat.S_IMODE(named.st_mode) == 0o600 and 0 < named.st_size <= _SR_STREAM_CAP,\n                 \'INPUT_IDENTITY\')\n        source = _sr_os.open(input_name, _SR_FLAGS, dir_fd=input_parent)\n        original = _sr_os.fstat(source)\n        _sr_need(original == named, \'INPUT_CHANGED\')\n        stream, seen, pending, selected = _SRGzip(source), set(), None, None\n        links, directories = [], []\n        while True:\n            raw = stream.exact(512)\n            if raw == b\'\\0\' * 512:\n                _sr_need(stream.exact(512) == raw and pending is None, \'TAR_END\')\n                padding = (-stream.count) % 10240\n                tail = stream.read(10241)\n                _sr_need(len(tail) in (0, padding) and not any(tail) and stream.eof, \'TAR_TRAILING_BYTES\')\n                break\n            header = _sr_header(raw)\n            if header[\'kind\'] == b\'x\':\n                _sr_need(pending is None and 0 < header[\'size\'] <= _SR_PAX_CAP, \'PAX_LIMIT\')\n                pending = _sr_pax(stream.exact(header[\'size\']))\n                stream.padding(header[\'size\'])\n                continue\n            _sr_need(header[\'kind\'] in (b\'0\', b\'5\', b\'2\'), \'TAR_ENTRY_TYPE\')\n            name = _sr_pathcheck((pending or {}).get(b\'path\', header[\'name\']).rstrip(\'/\')\n                                 if header[\'kind\'] == b\'5\' else (pending or {}).get(b\'path\', header[\'name\']))\n            if pending and b\'mtime\' in pending:\n                header[\'mtime_ns\'] = pending[b\'mtime\']\n            pending = None\n            if selected is None:\n                _sr_need(name == \'SOURCE_SCOPE.PRIVATE.json\' and header[\'kind\'] == b\'0\'\n                         and 0 < header[\'size\'] <= _SR_SCOPE_CAP, \'SCOPE_FIRST\')\n                scope_raw = stream.exact(header[\'size\'])\n                stream.padding(header[\'size\'])\n                scope, selected = _sr_scope(scope_raw)\n                output_parent, output_name = _sr_parent(fresh_own_output_root)\n                _sr_os.mkdir(output_name, 0o700, dir_fd=output_parent)\n                root = _sr_os.open(output_name, _SR_DIR, dir_fd=output_parent)\n                _sr_os.fchmod(root, 0o700)\n                _sr_os.fsync(output_parent)\n                _sr_new(root, \'SOURCE_SCOPE.PRIVATE.json\', scope_raw)\n                receipt[\'remaining_entries\'] = len(selected)\n                continue\n            _sr_need(name in selected and name not in seen, \'TAR_EXTRA_OR_DUPLICATE\')\n            expected = selected[name]\n            _sr_need(all(header[key] == expected[key] for key in (\'kind\', \'size\', \'mode\', \'uid\', \'gid\'))\n                     and header[\'link\'] == expected.get(\'link\', \'\'), \'TAR_METADATA\')\n            _sr_need(\'mtime_ns\' not in expected or expected[\'mtime_ns\'] == header[\'mtime_ns\'], \'TAR_METADATA\')\n            expected = dict(expected, mtime_ns=header[\'mtime_ns\'])\n            seen.add(name)\n            parts = name.split(\'/\')\n            if header[\'kind\'] == b\'0\':\n                parent = _sr_directory(root, parts[:-1])\n                descriptor = None\n                try:\n                    descriptor = _sr_os.open(parts[-1], _sr_os.O_RDWR | _sr_os.O_CREAT | _sr_os.O_EXCL |\n                        _sr_os.O_NOFOLLOW | _sr_os.O_NOATIME | _sr_os.O_CLOEXEC, 0o600, dir_fd=parent)\n                    receipt[\'partial_file_state\'] = \'UNKNOWN\'\n                    digest, remaining = _sr_hashlib.sha256(), expected[\'size\']\n                    while remaining:\n                        block = stream.exact(min(remaining, 65536))\n                        digest.update(block)\n                        _sr_write(descriptor, block)\n                        remaining -= len(block)\n                    _sr_need(digest.hexdigest() == expected[\'sha256\'], \'FILE_HASH\')\n                    stream.padding(expected[\'size\'])\n                    _sr_metadata(descriptor, expected[\'uid\'], expected[\'gid\'], expected[\'mode\'])\n                    info = _sr_os.fstat(descriptor)\n                    _sr_need(_sr_stat.S_ISREG(info.st_mode) and info.st_nlink == 1\n                             and (info.st_size, info.st_uid, info.st_gid, _sr_stat.S_IMODE(info.st_mode)) ==\n                             (expected[\'size\'], expected[\'uid\'], expected[\'gid\'], expected[\'mode\']), \'RESTORED_FILE_METADATA\')\n                    _sr_os.fsync(descriptor)\n                    _sr_os.lseek(descriptor, 0, _sr_os.SEEK_SET)\n                    actual_digest, unread = _sr_hashlib.sha256(), expected[\'size\']\n                    while unread:\n                        block = _sr_os.read(descriptor, min(unread, 65536))\n                        _sr_need(block, \'RESTORED_FILE_TRUNCATED\')\n                        actual_digest.update(block)\n                        unread -= len(block)\n                    _sr_need(not _sr_os.read(descriptor, 1) and actual_digest.hexdigest() == expected[\'sha256\']\n                             and _sr_os.fstat(descriptor) == info ==\n                             _sr_os.stat(parts[-1], dir_fd=parent, follow_symlinks=False), \'RESTORED_FILE_HASH\')\n                    _sr_os.utime(descriptor, ns=(info.st_atime_ns, expected[\'mtime_ns\']))\n                    stamped = _sr_os.fstat(descriptor)\n                    _sr_need(stamped.st_mtime_ns == expected[\'mtime_ns\'] and stamped.st_atime_ns == info.st_atime_ns\n                             and (stamped.st_mode, stamped.st_uid, stamped.st_gid, stamped.st_size) ==\n                             (info.st_mode, info.st_uid, info.st_gid, info.st_size)\n                             and stamped == _sr_os.stat(parts[-1], dir_fd=parent, follow_symlinks=False), \'RESTORED_MTIME\')\n                    info = stamped\n                    _sr_os.fsync(descriptor)\n                    _sr_os.fsync(parent)\n                finally:\n                    if descriptor is not None: _sr_os.close(descriptor)\n                    _sr_os.close(parent)\n                receipt[\'actual_files\'].append({\'archiveMember\': name, \'bytes\': expected[\'size\'],\n                    \'sha256\': actual_digest.hexdigest(), \'mode\': oct(info.st_mode & 0o777), \'uid\': info.st_uid, \'gid\': info.st_gid})\n                receipt[\'actual_files\'][-1][\'mtime_ns\'] = info.st_mtime_ns\n                receipt[\'actual_bytes\'] += expected[\'size\']\n                verified.add(name)\n                receipt[\'partial_file_state\'] = \'NONE\'\n            elif header[\'kind\'] == b\'5\':\n                directories.append((name, expected))\n                descriptor = _sr_directory(root, parts)\n                _sr_os.close(descriptor)\n            else:\n                links.append((name, expected))\n            receipt[\'remaining_entries\'] = len(selected) - len(seen)\n        _sr_need(selected is not None and seen == set(selected), \'TAR_MISSING_ENTRIES\')\n        _sr_need(_sr_os.fstat(source) == original, \'INPUT_CHANGED\')\n        for name, expected in links:\n            receipt[\'partial_file_state\'] = \'UNKNOWN\'\n            parts = name.split(\'/\')\n            parent = _sr_directory(root, parts[:-1])\n            try:\n                _sr_os.symlink(expected[\'link\'], parts[-1], dir_fd=parent)\n                _sr_link_metadata(parent, parts[-1], expected[\'uid\'], expected[\'gid\'])\n                info = _sr_os.stat(parts[-1], dir_fd=parent, follow_symlinks=False)\n                _sr_need(_sr_os.readlink(parts[-1], dir_fd=parent) == expected[\'link\'], \'RESTORED_LINK_METADATA\')\n                _sr_os.utime(parts[-1], ns=(info.st_atime_ns, expected[\'mtime_ns\']),\n                             dir_fd=parent, follow_symlinks=False)\n                info = _sr_os.stat(parts[-1], dir_fd=parent, follow_symlinks=False)\n                _sr_need(_sr_stat.S_ISLNK(info.st_mode) and info.st_nlink == 1 and\n                    (info.st_uid, info.st_gid, _sr_stat.S_IMODE(info.st_mode)) ==\n                    (expected[\'uid\'], expected[\'gid\'], expected[\'mode\'])\n                    and info.st_mtime_ns == expected[\'mtime_ns\'], \'RESTORED_LINK_METADATA\')\n                _sr_os.fsync(parent)\n                verified.add(name)\n                receipt[\'partial_file_state\'] = \'NONE\'\n            finally:\n                _sr_os.close(parent)\n        for name, expected in sorted(directories, key=lambda row: row[0].count(\'/\'), reverse=True):\n            receipt[\'partial_file_state\'] = \'UNKNOWN\'\n            descriptor = _sr_directory(root, name.split(\'/\'))\n            try:\n                _sr_metadata(descriptor, expected[\'uid\'], expected[\'gid\'], expected[\'mode\'])\n                info = _sr_os.fstat(descriptor)\n                _sr_os.utime(descriptor, ns=(info.st_atime_ns, expected[\'mtime_ns\']))\n                info = _sr_os.fstat(descriptor)\n                _sr_need((info.st_uid, info.st_gid, _sr_stat.S_IMODE(info.st_mode)) ==\n                         (expected[\'uid\'], expected[\'gid\'], expected[\'mode\'])\n                         and info.st_mtime_ns == expected[\'mtime_ns\'], \'RESTORED_DIRECTORY_METADATA\')\n                _sr_os.fsync(descriptor)\n                verified.add(name)\n                receipt[\'partial_file_state\'] = \'NONE\'\n            finally:\n                _sr_os.close(descriptor)\n        receipt.update(ok=True, status=\'BYTES_RESTORED_NOT_NATIVE_QUALIFIED\',\n                       gzip_bytes=stream.compressed, tar_bytes=stream.count, metadata_state=\'VERIFIED\')\n    except Exception as error:\n        receipt[\'code\'] = str(error) if isinstance(error, _SRStop) else \'FILESYSTEM_OR_FORMAT_FAILURE\'\n    receipt[\'actual_file_count\'] = len(receipt[\'actual_files\'])\n    if selected is not None:\n        receipt[\'unverified_entries\'] = sorted(set(selected) - verified)\n        receipt[\'remaining_entries\'] = len(receipt[\'unverified_entries\'])\n    if root is not None:\n        try:\n            receipt_raw = _sr_json_bytes(receipt)\n            _sr_new(root, \'RESTORE_RECEIPT.PENDING.PRIVATE.json\', receipt_raw)\n            _sr_publish_receipt(root)\n        except Exception:\n            receipt.update(ok=False, status=\'FAIL_KEEP_STATE_NO_RETRY\', receipt_saved=False)\n        else:\n            receipt[\'receipt_saved\'] = True\n            receipt[\'receipt_sha256\'] = _sr_hashlib.sha256(receipt_raw).hexdigest()\n    for descriptor in (root, source, output_parent, input_parent):\n        if descriptor is not None:\n            try:\n                _sr_os.close(descriptor)\n            except OSError:\n                if not receipt.get(\'receipt_saved\'):\n                    raise\n    return receipt\n\n\nif __name__ == \'__main__\':\n    if len(_sr_sys.argv) != 4 or _sr_sys.argv[1] != \'--restore-bound-archive-once\':\n        print(\'{"status":"NOT_EXECUTED_EXPLICIT_RESTORE_FLAG_REQUIRED"}\')\n        raise SystemExit(2)\n    _sr_result = restore_bound_archive(_sr_sys.argv[2], _sr_sys.argv[3])\n    print(_sr_json_bytes({key: value for key, value in _sr_result.items() if key != \'actual_files\'}).decode(\'ascii\'), end=\'\')\n    raise SystemExit(0 if _sr_result[\'ok\'] else 1)\n'
+STAGE_CODES = frozenset(('STAGE_COMPLETE', 'STAGE_INTERNAL_FAILURE', 'STAGE_DEADLINE',
+    'STAGE_FRAME', 'STAGE_CAPSULE_LIMIT', 'STAGE_CAPSULE_FORMAT', 'STAGE_CAPSULE_BINDING',
+    'STAGE_CAPSULE_TIME', 'STAGE_PARTS', 'STAGE_URL', 'STAGE_DNS', 'STAGE_HTTP',
+    'STAGE_SIZE', 'STAGE_HASH', 'STAGE_SPACE', 'STAGE_ALREADY_ATTEMPTED',
+    'STAGE_GPG', 'STAGE_GPG_INTEGRITY', 'STAGE_GPG_RECIPIENT', 'STAGE_RESTORE',
+    'STAGE_HELPER_HASH', 'STAGE_RECEIPT', 'STAGE_CHILD', 'STAGE_COMMIT',
+    'RECIPIENT_NOT_ACCEPTED', 'RECIPIENT_EXPIRED', 'RECIPIENT_PUBLIC_HASH',
+    'RECOVERY_ORIGINAL_BINDING'))
+
+
+def _stage_remaining():
+    _require(type(_CONTROL_DEADLINE) in (int,float), 'STAGE_DEADLINE')
+    remaining = _CONTROL_DEADLINE - time.monotonic()
+    _require(remaining > 0, 'STAGE_DEADLINE')
+    return remaining
+
+
+def _stage_space(extra=0):
+    _stage_remaining()
+    info = os.statvfs(TARGET_BASE)
+    _require(info.f_bavail * info.f_frsize >= STAGE_FREE_RESERVE + extra, 'STAGE_SPACE')
+
+
+def _stage_json(raw):
+    _require(type(raw) is bytes and 0 < len(raw) <= STAGE_CAPSULE_JSON, 'STAGE_CAPSULE_LIMIT')
+    def unique(pairs):
+        value = {}
+        for key, item in pairs:
+            _require(key not in value, 'STAGE_CAPSULE_FORMAT');value[key] = item
+        return value
+    def invalid(_):raise _Stop('STAGE_CAPSULE_FORMAT')
+    try:return json.loads(raw.decode('utf8'),object_pairs_hook=unique,parse_constant=invalid)
+    except (ValueError,UnicodeError,RecursionError):raise _Stop('STAGE_CAPSULE_FORMAT') from None
+
+
+def _stage_read_capsule(stream):
+    # Buffered reads run only in the own child; its parent enforces the deadline.
+    raw = stream.readline(STAGE_CAPSULE_B64 + 2)
+    _require(1 < len(raw) <= STAGE_CAPSULE_B64 + 1 and raw.endswith(b'\n')
+             and stream.read(1) == b'', 'STAGE_FRAME')
+    encoded = raw[:-1]
+    _require(re.fullmatch(b'[A-Za-z0-9+/]+={0,2}',encoded) is not None,'STAGE_FRAME')
+    try:value = base64.b64decode(encoded,validate=True)
+    except ValueError:raise _Stop('STAGE_FRAME') from None
+    _require(value and base64.b64encode(value)==encoded,'STAGE_FRAME')
+    return value
+
+
+def _stage_url(url,expires):
+    _require(type(url) is str and 0 < len(url) <= 8192
+             and all(32 < ord(c) < 127 and c != '\\' for c in url),'STAGE_URL')
+    try:
+        parsed=urllib.parse.urlsplit(url)
+        host=parsed.hostname
+        _require(parsed.scheme=='https' and host in STAGE_HOSTS and parsed.netloc in (host,host+':443')
+                 and parsed.port in (None,443)
+                 and parsed.username is None and parsed.password is None and not parsed.fragment
+                 and re.fullmatch(r'/files/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/raw',parsed.path)
+                 and bool(parsed.query),'STAGE_URL')
+        pairs=urllib.parse.parse_qsl(parsed.query,keep_blank_values=True,strict_parsing=True,max_num_fields=32)
+        values=dict(pairs)
+        _require(len(values)==len(pairs) and 'se' in values and bool(values.get('sig')),'STAGE_URL')
+        expiry=datetime.datetime.fromisoformat(values['se'].replace('Z','+00:00'))
+        _require(expiry.utcoffset()==datetime.timedelta(0) and expiry.timestamp()>=expires,'STAGE_URL')
+    except (ValueError,OverflowError,TypeError):raise _Stop('STAGE_URL') from None
+    return host,parsed.path+'?'+parsed.query
+
+
+def _stage_validate_capsule(raw,recipient):
+    value=_stage_json(raw)
+    fields={'schema','plan_sha256','scope_sha256','recipient_fingerprint','case_id',
+            'created_unix','expires_unix','cipher_sha256','cipher_bytes',
+            'compressed_tar_sha256','compressed_tar_bytes','parts'}
+    _require(type(value) is dict and set(value)==fields,'STAGE_CAPSULE_FORMAT')
+    _require(value['schema']=='helmut-private-drive-stage-capsule-v1'
+             and value['plan_sha256']==STAGE_PLAN and value['scope_sha256']==STAGE_SCOPE
+             and value['recipient_fingerprint']==recipient['primary_fingerprint']
+             and type(value['case_id']) is str and re.fullmatch('[a-f0-9]{64}',value['case_id']),
+             'STAGE_CAPSULE_BINDING')
+    for key in ('cipher_sha256','compressed_tar_sha256'):
+        _require(type(value[key]) is str and re.fullmatch('[a-f0-9]{64}',value[key]),'STAGE_CAPSULE_FORMAT')
+    now=time.time();created,expires=value['created_unix'],value['expires_unix']
+    _require(type(created) is int and type(expires) is int and now-300<=created<=now+30
+             and created<expires<=created+300 and expires-now>=STAGE_MIN_REMAINING,'STAGE_CAPSULE_TIME')
+    _require(type(value['cipher_bytes']) is int and 0<value['cipher_bytes']<=STAGE_CIPHER_CAP
+             and type(value['compressed_tar_bytes']) is int
+             and 0<value['compressed_tar_bytes']<=STAGE_TAR_CAP,'STAGE_SIZE')
+    parts=value['parts'];total=0
+    _require(type(parts) is list and 0<len(parts)<=64,'STAGE_PARTS')
+    for index,part in enumerate(parts,1):
+        _require(type(part) is dict and set(part)=={'index','bytes','sha256','url'}
+                 and type(part['index']) is int and part['index']==index
+                 and type(part['bytes']) is int and 0<part['bytes']<=16*1024**2
+                 and type(part['sha256']) is str and re.fullmatch('[a-f0-9]{64}',part['sha256']),'STAGE_PARTS')
+        _stage_url(part['url'],expires);total+=part['bytes']
+    _require(total==value['cipher_bytes'],'STAGE_SIZE')
+    peak=total+value['compressed_tar_bytes']+STAGE_ORIGINAL_BYTES+64*1024**2
+    _require(peak<=STAGE_WORK_CAP,'STAGE_SPACE');_stage_space(peak)
+    return value
+
+
+def _stage_gpg(recipient,arguments,input_data=None,file_limit=None):
+    prefix=('-i','PATH=/usr/bin:/bin','LC_ALL=C','/usr/bin/gpg','--no-options',
+            '--homedir',TARGET_BASE+'/'+HOME_NAME,'--batch','--no-tty',
+            '--no-auto-key-retrieve','--auto-key-locate','clear','--no-auto-check-trustdb')
+    result=_bounded_tool('/usr/bin/env',prefix+tuple(arguments),input=input_data,
+                         timeout=_stage_remaining(),file_limit=file_limit)
+    try:return _stage_verify_gpg(result,recipient,'--status-fd=2' in arguments)
+    except Exception:
+        _first_tool_error((result.stdout,result.stderr),'STAGE_GPG_VALIDATION')
+        raise
+
+
+def _stage_verify_gpg(result,recipient,status_on_stderr):
+    _require(result.returncode==0,'STAGE_GPG')
+    status=result.stderr if status_on_stderr else result.stdout
+    try:lines=status.decode('utf8').splitlines()
+    except UnicodeError:raise _Stop('STAGE_GPG_INTEGRITY') from None
+    records=[line[9:].split() for line in lines if line.startswith('[GNUPG:] ')]
+    _require(sum(row[:1]==['DECRYPTION_OKAY'] for row in records)==1
+             and sum(row[:1]==['GOODMDC'] for row in records)==1
+             and any(row[:1]==['ENC_TO'] for row in records)
+             and not any(row[:1] in (['BADMDC'],['ERRMDC'],['DECRYPTION_FAILED'],['NODATA'],['ERROR'],['FAILURE']) for row in records)
+             and any(len(row)>=3 and row[0]=='DECRYPTION_INFO' and row[1:3]==['2','9']
+                     and (len(row)==3 or row[3]=='0') for row in records),'STAGE_GPG_INTEGRITY')
+    keys=[row for row in records if row[:1]==['DECRYPTION_KEY']]
+    _require(len(keys)==1 and len(keys[0])>=3
+             and keys[0][1:3]==[recipient['subkey_fingerprint'],recipient['primary_fingerprint']],
+             'STAGE_GPG_RECIPIENT')
+    return result.stdout
+
+
+def _stage_connect(host):
+    # No proxy or second DNS lookup: connect exactly the checked numeric sockaddr.
+    # TLS verifies exactly the allowlisted hostname carried from the URL.
+    _stage_remaining()
+    _require(type(host) is str and host in STAGE_HOSTS,'STAGE_URL')
+    try:rows=socket.getaddrinfo(host,443,type=socket.SOCK_STREAM)
+    except OSError:raise _Stop('STAGE_DNS') from None
+    _require(0<len(rows)<=32,'STAGE_DNS')
+    for family,kind,protocol,_,address in rows:
+        _require(family in (socket.AF_INET,socket.AF_INET6)
+                 and ipaddress.ip_address(address[0]).is_global,'STAGE_DNS')
+    rows.sort(key=lambda row:row[0]!=socket.AF_INET)
+    family,kind,protocol,_,address=rows[0]
+    raw=socket.socket(family,kind,protocol)
+    try:
+        raw.settimeout(min(10,_stage_remaining()));raw.connect(address)
+        connection=http.client.HTTPSConnection(host,443,timeout=min(10,_stage_remaining()))
+        connection.sock=ssl.create_default_context().wrap_socket(raw,server_hostname=host)
+        return connection
+    except BaseException:raw.close();raise
+
+
+def _stage_download(part,expires,descriptor,whole):
+    _require(expires>time.time()+5,'STAGE_CAPSULE_TIME')
+    host,target=_stage_url(part['url'],expires)
+    try:connection=_stage_connect(host)
+    except _Stop:raise
+    except (OSError,http.client.HTTPException):raise _Stop('STAGE_HTTP') from None
+    try:
+        connection.sock.settimeout(min(10,_stage_remaining()))
+        connection.request('GET',target,headers={'Host':host,'Accept-Encoding':'identity','Connection':'close',
+                                               'User-Agent':'helmut-private-drive-stage-v1'})
+        response=connection.getresponse()
+        _require(response.status==200 and response.getheader('Transfer-Encoding') is None
+                 and response.getheader('Content-Encoding') in (None,'identity')
+                 and response.getheader('Content-Length')==str(part['bytes']),'STAGE_HTTP')
+        digest,count=hashlib.sha256(),0
+        while True:
+            _stage_space()
+            block=response.read(min(65536,part['bytes']+1-count))
+            if not block:break
+            count+=len(block);_require(count<=part['bytes'],'STAGE_SIZE')
+            digest.update(block);whole.update(block);offset=0
+            while offset<len(block):
+                _stage_remaining();written=os.write(descriptor,block[offset:])
+                _require(written>0,'STAGE_SIZE');offset+=written
+        _require(count==part['bytes'] and digest.hexdigest()==part['sha256'],'STAGE_HASH')
+    except _Stop:raise
+    except (OSError,http.client.HTTPException):raise _Stop('STAGE_HTTP') from None
+    finally:connection.close()
+
+
+def _stage_hash_file(path,size):
+    descriptor=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NOATIME|os.O_CLOEXEC)
+    try:
+        before=os.fstat(descriptor)
+        _require(stat.S_ISREG(before.st_mode) and _owned(before) and before.st_nlink==1
+                 and stat.S_IMODE(before.st_mode)==0o600 and before.st_size==size,'STAGE_SIZE')
+        digest=hashlib.sha256();count=0
+        while True:
+            _stage_space();block=os.read(descriptor,65536)
+            if not block:break
+            count+=len(block);_require(count<=size,'STAGE_SIZE');digest.update(block)
+        _require(count==size and before==os.fstat(descriptor),'STAGE_SIZE')
+        os.fsync(descriptor);_stage_remaining()
+        return digest.hexdigest()
+    finally:os.close(descriptor)
+
+
+def _stage_result(code,capsule_sha=None,capsule=None,restored=None,receipt_sha=None):
+    capsule=capsule or {};restored=restored or {}
+    return {'schema':'helmut-private-drive-stage-result-v1',
+        'status':'STAGE_READY_NOT_NATIVE_QUALIFIED' if code=='STAGE_COMPLETE' else 'FAIL_KEEP_STATE_NO_RETRY',
+        'native_qualified':False,'plan_sha256':STAGE_PLAN,'scope_sha256':STAGE_SCOPE,
+        'capsule_sha256':capsule_sha,'case_id':capsule.get('case_id'),
+        'cipher_sha256':capsule.get('cipher_sha256'),'compressed_tar_sha256':capsule.get('compressed_tar_sha256'),
+        # FAIL includes interrupted/partial writes. Without a complete verified
+        # report, zero would falsely claim that no original bytes were written.
+        'actual_file_count':restored.get('actual_file_count') if code=='STAGE_COMPLETE' else None,
+        'actual_bytes':restored.get('actual_bytes') if code=='STAGE_COMPLETE' else None,
+        'receipt_sha256':receipt_sha,'code':code}
+
+
+def _stage_run(request,context):
+    global _TOOL_ERROR_NAME
+    previous_log_name=_TOOL_ERROR_NAME
+    _TOOL_ERROR_NAME='GPG_STAGE_FIRST_TOOL_ERROR.PRIVATE.json'
+    base=once=case=None;capsule=None;capsule_sha=None;restored=None;published=False
+    try:
+        _stage_remaining();_stage_space()
+        _require(request['plan_sha256']==STAGE_PLAN,'STAGE_CAPSULE_BINDING')
+        _recipient_ready(False)
+        recipient=json.loads(_read_public_file(TARGET_BASE+'/'+RESULT_NAME))
+        _require(all(type(recipient.get(key)) is str and re.fullmatch('[A-F0-9]{40}',recipient[key])
+                     for key in ('primary_fingerprint','subkey_fingerprint')),'RECIPIENT_NOT_ACCEPTED')
+        encrypted=_stage_read_capsule(context['stdin']);capsule_sha=hashlib.sha256(encrypted).hexdigest()
+        base=_open_base(TARGET_BASE)
+        once=os.open('once',_DFLAGS,dir_fd=base);_dir(os.fstat(once),exact=True)
+        attempt=STAGE_PLAN+'.stage.json'
+        _require(_missing(once,attempt),'STAGE_ALREADY_ATTEMPTED')
+        # Reserve and fsync the fixed cross-version slot before touching the
+        # private key. A lost/blocked decrypt leaves UNKNOWN permanently locked.
+        _json_new(once,attempt,{'schema':'helmut-private-drive-stage-attempt-v1',
+            'state':'RESERVED_UNKNOWN_NO_RETRY','nonce':request['nonce'],
+            'source_sha256':context['source_sha256'],'capsule_sha256':capsule_sha,
+            'scope_sha256':STAGE_SCOPE})
+        plaintext=_stage_gpg(recipient,('--status-fd=2','--max-output',str(STAGE_CAPSULE_JSON),
+                                      '--decrypt'),input_data=encrypted)
+        capsule=_stage_validate_capsule(plaintext,recipient)
+        # The immutable reservation is never rewritten or released. Bind only
+        # the subsequently validated case in a separate durable receipt.
+        _json_new(once,STAGE_PLAN+'.stage-case.json',{'schema':'helmut-private-drive-stage-case-binding-v1',
+            'nonce':request['nonce'],'source_sha256':context['source_sha256'],
+            'capsule_sha256':capsule_sha,'case_id':capsule['case_id'],'scope_sha256':STAGE_SCOPE})
+        _write_new(base,'STAGE_CAPSULE.PRIVATE.pgp',encrypted)
+        _write_new(base,'STAGE_CAPSULE.PRIVATE.json',plaintext)
+        name='stage-'+capsule['case_id'];os.mkdir(name,0o700,dir_fd=base);os.fsync(base)
+        case=os.open(name,_DFLAGS,dir_fd=base);_dir(os.fstat(case),exact=True)
+        case_path=TARGET_BASE+'/'+name
+        descriptor=os.open('payload.cipher.pgp',_WFLAGS,0o600,dir_fd=case)
+        try:
+            whole=hashlib.sha256()
+            for part in capsule['parts']:_stage_download(part,capsule['expires_unix'],descriptor,whole)
+            os.fsync(descriptor)
+            _require(os.fstat(descriptor).st_size==capsule['cipher_bytes']
+                     and whole.hexdigest()==capsule['cipher_sha256'],'STAGE_HASH')
+        finally:os.close(descriptor)
+        os.fsync(case);_stage_space();gzip_path=case_path+'/payload.tar.gz'
+        _stage_gpg(recipient,('--status-fd=1','--max-output',str(capsule['compressed_tar_bytes']),
+                   '--output',gzip_path,'--decrypt',case_path+'/payload.cipher.pgp'),
+                   file_limit=capsule['compressed_tar_bytes'])
+        _require(_stage_hash_file(gzip_path,capsule['compressed_tar_bytes'])
+                 ==capsule['compressed_tar_sha256'],'STAGE_HASH')
+        result=_stage_finish(request,context,base,case,case_path,capsule_sha,capsule,recipient)
+        published=True
+        return result
+    except Exception as error:
+        code=getattr(error,'code',None)
+        if code not in STAGE_CODES:code='STAGE_INTERNAL_FAILURE'
+        result=_stage_result(code,capsule_sha,capsule,restored)
+        try:
+            held=_open_base(TARGET_BASE)
+            try:_json_new(held,'STAGE_FIRST_ERROR.SAFE.json',result)
+            finally:os.close(held)
+        except Exception:pass
+        return result
+    finally:
+        _TOOL_ERROR_NAME=previous_log_name
+        for descriptor in (case,once,base):
+            if descriptor is not None:
+                try:os.close(descriptor)
+                except OSError:
+                    # These are read-only directory descriptors. Their close
+                    # cannot undo the durable receipt and atomic publication.
+                    if not published:raise
+
+
+def _stage_publish_ready(base):
+    library=ctypes.CDLL(None,use_errno=True)
+    rename=library.renameat2
+    rename.argtypes=(ctypes.c_int,ctypes.c_char_p,ctypes.c_int,ctypes.c_char_p,ctypes.c_uint)
+    rename.restype=ctypes.c_int
+    if rename(base,b'STAGE_READY.PENDING.SAFE.json',base,b'STAGE_READY.SAFE.json',1)!=0:
+        raise _Stop('STAGE_COMMIT')
+
+
+def _stage_readback(directory,name,expected):
+    descriptor=os.open(name,os.O_RDONLY|os.O_NOFOLLOW|os.O_NOATIME|os.O_CLOEXEC,dir_fd=directory)
+    try:
+        before=os.fstat(descriptor)
+        _require(stat.S_ISREG(before.st_mode) and _owned(before) and before.st_nlink==1
+                 and stat.S_IMODE(before.st_mode)==0o600 and before.st_size==len(expected),'STAGE_RECEIPT')
+        result=bytearray()
+        while len(result)<=len(expected):
+            _stage_remaining();block=os.read(descriptor,min(65536,len(expected)+1-len(result)))
+            if not block:break
+            result.extend(block)
+        _require(bytes(result)==expected and before==os.fstat(descriptor),'STAGE_RECEIPT')
+    finally:os.close(descriptor)
+
+
+def _stage_finish(request,context,base,case,case_path,capsule_sha,capsule,recipient):
+    _require(hashlib.sha256(EMBEDDED_STAGE_RESTORE_SOURCE).hexdigest()==STAGE_RESTORE_SHA256,'STAGE_HELPER_HASH')
+    namespace={'__name__':'helmut_embedded_bound_restore','__file__':'<qualified-stage-restore>'}
+    exec(compile(EMBEDDED_STAGE_RESTORE_SOURCE,'<qualified-stage-restore>','exec'),namespace)
+    restored=namespace['restore_bound_archive'](case_path+'/payload.tar.gz',case_path+'/restored')
+    _stage_remaining();_stage_space()
+    _require(restored.get('ok') is True and restored.get('receipt_saved') is True
+             and restored.get('status')=='BYTES_RESTORED_NOT_NATIVE_QUALIFIED'
+             and restored.get('scope_sha256')==STAGE_SCOPE and restored.get('native_qualified') is False
+             and restored.get('actual_file_count')==STAGE_ORIGINAL_FILES and restored.get('actual_bytes')==STAGE_ORIGINAL_BYTES
+             and restored.get('metadata_state')=='VERIFIED' and restored.get('remaining_entries')==0,'STAGE_RESTORE')
+    receipt={'schema':'helmut-private-drive-stage-receipt-v1','nonce':request['nonce'],
+        'source_sha256':context['source_sha256'],'case_id':capsule['case_id'],
+        'scope_sha256':STAGE_SCOPE,'recipient_fingerprint':recipient['primary_fingerprint'],
+        'capsule_sha256':capsule_sha,'cipher_sha256':capsule['cipher_sha256'],
+        'compressed_tar_sha256':capsule['compressed_tar_sha256'],
+        'restore_receipt_sha256':restored['receipt_sha256'],
+        'actual_file_count':restored['actual_file_count'],'actual_bytes':restored['actual_bytes'],
+        'native_qualified':False}
+    receipt_raw=(json.dumps(receipt,sort_keys=True,separators=(',',':'))+'\n').encode('ascii')
+    _write_new(case,'STAGE_RECEIPT.PRIVATE.json',receipt_raw)
+    _stage_readback(case,'STAGE_RECEIPT.PRIVATE.json',receipt_raw)
+    result=_stage_result('STAGE_COMPLETE',capsule_sha,capsule,restored,hashlib.sha256(receipt_raw).hexdigest())
+    pending_raw=(json.dumps(result,sort_keys=True,separators=(',',':'))+'\n').encode('ascii')
+    _write_new(base,'STAGE_READY.PENDING.SAFE.json',pending_raw)
+    _stage_readback(base,'STAGE_READY.PENDING.SAFE.json',pending_raw)
+    # Atomic no-replace is the last fallible commit operation. If a crash loses
+    # the rename, the durable PENDING remains unaccepted; no automatic adoption.
+    _stage_remaining();_stage_publish_ready(base)
+    return result
+
+
+def _stage_handle(request,context):
+    # One own child contains DNS, every file write/fsync, GPG and restore.
+    _stage_remaining();read_end,write_end=os.pipe2(os.O_CLOEXEC);pid=os.fork()
+    if pid==0:
+        try:
+            global _IN_STAGE_CHILD
+            _IN_STAGE_CHILD=True;os.setsid();os.close(read_end)
+            sink=os.open('/dev/null',os.O_RDWR);os.dup2(sink,1);os.dup2(sink,2);os.close(sink)
+            result=_stage_run(request,context)
+            encoded=json.dumps(result,sort_keys=True,separators=(',',':')).encode('ascii')
+            _require(len(encoded)<=4096,'STAGE_CHILD');offset=0
+            while offset<len(encoded):offset+=os.write(write_end,encoded[offset:])
+            os.close(write_end);os._exit(0)
+        except BaseException:os._exit(1)
+    os.close(write_end);os.set_blocking(read_end,False);output=bytearray();waited=False
+    try:
+        with selectors.DefaultSelector() as selector:
+            selector.register(read_end,selectors.EVENT_READ)
+            while selector.get_map():
+                _stage_space()
+                for _,_ in selector.select(min(.25,_stage_remaining())):
+                    block=os.read(read_end,4097-len(output))
+                    if not block:selector.unregister(read_end)
+                    else:output.extend(block)
+                    _require(len(output)<=4096,'STAGE_CHILD')
+            while True:
+                child,status=os.waitpid(pid,os.WNOHANG)
+                if child:
+                    waited=True;_require(os.waitstatus_to_exitcode(status)==0,'STAGE_CHILD');break
+                _stage_remaining();time.sleep(min(.01,_stage_remaining()))
+        result=_stage_json(bytes(output))
+        _require(type(result) is dict and result.get('code') in STAGE_CODES,'STAGE_CHILD')
+        return result
+    except Exception as error:
+        code=getattr(error,'code',None)
+        return _stage_result(code if code in STAGE_CODES else 'STAGE_CHILD')
+    finally:
+        if not waited:
+            try:os.killpg(pid,signal.SIGKILL)
+            except ProcessLookupError:
+                try:os.kill(pid,signal.SIGKILL)
+                except ProcessLookupError:pass
+                # The child may have completed setsid between the two signals.
+                try:os.killpg(pid,signal.SIGKILL)
+                except ProcessLookupError:pass
+            os.waitpid(pid,0)
+        os.close(read_end)
+
+
+def handle(request,context):
+    global _CONTROL_DEADLINE
+    _CONTROL_DEADLINE=context.get('deadline')
+    _require(context['base']==TARGET_BASE,'SERVER_BASE_BINDING')
+    operation=request['operation']
+    if operation=='status':
+        return {'status':'CONTROL_READY','enabled_operations':['status','recipient','stage'],
+                'native_enabled':False,'source_sha256':context['source_sha256'],
+                'recipient_diagnostic':_recipient_diagnostic()}
+    if operation=='stage':return _stage_handle(request,context)
+    _require(operation=='recipient','NATIVE_OPERATION_NOT_QUALIFIED')
+    return _recipient_ready(True)

@@ -24,7 +24,18 @@ BRANCH = "refs/heads/main"
 WORKFLOW_REF = REPOSITORY + "/.github/workflows/hetzner-native-automation.yml@" + BRANCH
 HOST_FINGERPRINT = "SHA256:u48IkPIpHilVGYw2MwJuE1pv4XMjlJ88cQjUzN4Lh1c"
 OPERATIONS = ("status", "recipient", "stage", "admit", "four-tx")
-ENABLED_OPERATIONS = ("status", "recipient")
+ENABLED_OPERATIONS = ("status", "recipient", "stage")
+MAX_STAGE_CAPSULE = 48 * 1024
+STAGE_PLAN = 'e6d463a634925a190d60d066c0fae2ba94b9f7f0a10a115b50b4f4018b1b35eb'
+STAGE_SCOPE = '08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd'
+STAGE_CODES = frozenset(('STAGE_COMPLETE', 'STAGE_INTERNAL_FAILURE', 'STAGE_DEADLINE',
+    'STAGE_FRAME', 'STAGE_CAPSULE_LIMIT', 'STAGE_CAPSULE_FORMAT', 'STAGE_CAPSULE_BINDING',
+    'STAGE_CAPSULE_TIME', 'STAGE_PARTS', 'STAGE_URL', 'STAGE_DNS', 'STAGE_HTTP',
+    'STAGE_SIZE', 'STAGE_HASH', 'STAGE_SPACE', 'STAGE_ALREADY_ATTEMPTED',
+    'STAGE_GPG', 'STAGE_GPG_INTEGRITY', 'STAGE_GPG_RECIPIENT', 'STAGE_RESTORE',
+    'STAGE_HELPER_HASH', 'STAGE_RECEIPT', 'STAGE_CHILD', 'STAGE_COMMIT',
+    'RECIPIENT_NOT_ACCEPTED', 'RECIPIENT_EXPIRED', 'RECIPIENT_PUBLIC_HASH',
+    'RECOVERY_ORIGINAL_BINDING'))
 MAX_RESPONSE = 256 * 1024
 MAX_PUBLIC_KEY = 64 * 1024
 RESPONSE_FIELDS = {
@@ -39,7 +50,7 @@ SAFE_CODES = {
     "result-status", "native-enabled-denied", "enabled-operations-denied",
     "recipient-format", "recipient-hash", "recipient-private-material",
     "recipient-fingerprint", "recipient-validation", "ssh-failed",
-    "ssh-timeout", "mode-denied", "public-output-exists", "source-pin-drift",
+    "ssh-timeout", "mode-denied", "public-output-exists", "source-pin-drift", "stage-capsule",
 }
 
 
@@ -71,9 +82,9 @@ def validate_context(environment):
             "execution-context-denied")
     operation = environment.get("HELMUT_NATIVE_OPERATION")
     require(operation in OPERATIONS, "operation-denied")
-    # No stage, admission or transaction implementation is qualified yet.
-    # Fail before reading a private key or opening a network connection.
+    # Admission and native transactions remain unqualified.
     require(operation in ENABLED_OPERATIONS, "operation-not-qualified")
+    stage_capsule(environment, operation)
     return operation, pinned_sha(environment.get("HELMUT_NATIVE_PLAN_SHA256")), \
         pinned_sha(environment.get("HELMUT_NATIVE_PAYLOAD_SHA256"))
 
@@ -100,6 +111,51 @@ def json_unique(raw):
                           parse_constant=lambda _: require(False, "response-json"))
     except (UnicodeError, json.JSONDecodeError, RecursionError):
         raise ValueError("response-json") from None
+
+
+def stage_capsule(environment, operation):
+    encoded = environment.get('HELMUT_NATIVE_STAGE_CAPSULE', '')
+    if operation != 'stage':
+        require(encoded == '', 'stage-capsule')
+        return b'', b''
+    require(type(encoded) is str and 0 < len(encoded) <= MAX_STAGE_CAPSULE
+            and re.fullmatch(r'[A-Za-z0-9+/]+={0,2}',encoded), 'stage-capsule')
+    try:
+        raw = base64.b64decode(encoded,validate=True)
+    except (ValueError,binascii.Error):
+        raise ValueError('stage-capsule') from None
+    require(base64.b64encode(raw).decode('ascii') == encoded, 'stage-capsule')
+    # Accept a binary recipient-encrypted message, never literal/signed plaintext.
+    position, packets = 0, []
+    while position < len(raw):
+        header=raw[position];position+=1
+        require(header & 128,'stage-capsule')
+        tag=(header & 63) if header & 64 else (header >> 2) & 15
+        chunks=[]
+        while True:
+            if header & 64:
+                require(position<len(raw),'stage-capsule');first=raw[position];position+=1
+                partial=224<=first<255
+                if first<192:length=first
+                elif first<224:
+                    require(position<len(raw),'stage-capsule')
+                    length=((first-192)<<8)+raw[position]+192;position+=1
+                elif first==255:
+                    require(position+4<=len(raw),'stage-capsule')
+                    length=int.from_bytes(raw[position:position+4],'big');position+=4
+                else:length=1 << (first & 31)
+            else:
+                kind=header & 3;require(kind!=3,'stage-capsule');width=1 << kind
+                require(position+width<=len(raw),'stage-capsule')
+                length=int.from_bytes(raw[position:position+width],'big');position+=width;partial=False
+            require(position+length<=len(raw),'stage-capsule')
+            chunks.append(raw[position:position+length]);position+=length
+            if not partial:break
+        packets.append((tag,b''.join(chunks)))
+    require(len(packets)==2 and packets[0][0]==1 and len(packets[0][1])>=10
+            and packets[0][1][0]==3 and packets[0][1][9]==18
+            and packets[1][0]==18 and packets[1][1][:1]==b'\x01','stage-capsule')
+    return encoded.encode('ascii')+b'\n',raw
 
 
 def public_packets(raw):
@@ -257,6 +313,26 @@ def validate_result(result, operation, payload_sha256):
         validate_recipient(result["recipient"])
         if 'recovery' in result:
             validate_recovery_receipt(result['recovery'], result['recipient']['public_sha256'])
+    elif operation == 'stage':
+        require(set(result)=={'schema','status','native_qualified','plan_sha256','scope_sha256',
+            'capsule_sha256','case_id','cipher_sha256','compressed_tar_sha256',
+            'actual_file_count','actual_bytes','receipt_sha256','code'},'result-fields')
+        require(result['schema']=='helmut-private-drive-stage-result-v1'
+                and result['native_qualified'] is False and result['plan_sha256']==STAGE_PLAN
+                and result['scope_sha256']==STAGE_SCOPE and result['code'] in STAGE_CODES,'result-fields')
+        for key in ('capsule_sha256','case_id','cipher_sha256','compressed_tar_sha256','receipt_sha256'):
+            if result[key] is not None:pinned_sha(result[key])
+        ready=result['code']=='STAGE_COMPLETE'
+        require(result['status']==('STAGE_READY_NOT_NATIVE_QUALIFIED' if ready else 'FAIL_KEEP_STATE_NO_RETRY'),
+                'result-status')
+        if ready:
+            require(all(result[key] is not None for key in
+                        ('capsule_sha256','case_id','cipher_sha256','compressed_tar_sha256','receipt_sha256'))
+                    and result['actual_file_count']==1767 and result['actual_bytes']==2865680705,'result-fields')
+            require(type(result['actual_file_count']) is int and type(result['actual_bytes']) is int,'result-fields')
+        else:
+            require(result['receipt_sha256'] is None and result['actual_file_count'] is None
+                    and result['actual_bytes'] is None,'result-fields')
     else:
         raise ValueError("operation-not-qualified")
 
@@ -296,6 +372,7 @@ def validate_response(raw, sent):
     require(pinned_sha(reply["result_sha256"]) == digest(canonical(reply["result"])),
             "response-hash")
     validate_result(reply["result"], sent["operation"], sent["payload_sha256"])
+    if sent['operation']=='stage':require(sent['plan_sha256']==STAGE_PLAN,'response-binding')
     return reply
 
 
@@ -336,35 +413,55 @@ def ssh_arguments(host, key, known_hosts):
     ]
 
 
-def bounded_exchange(arguments, raw_request, timeout=360):
-    require(0 < len(raw_request) <= 4096, "response-size")
+def bounded_exchange(arguments, raw_request, timeout=360, include_returncode=False):
+    require(0 < len(raw_request) <= 8192+MAX_STAGE_CAPSULE+1, "response-size")
     process = subprocess.Popen(arguments, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                stderr=subprocess.DEVNULL,
                                env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"})
     deadline = time.monotonic() + timeout
     output = bytearray()
     try:
-        process.stdin.write(raw_request)
-        process.stdin.close()
+        offset=0;write_failed=False
+        os.set_blocking(process.stdin.fileno(),False)
+        os.set_blocking(process.stdout.fileno(),False)
         with selectors.DefaultSelector() as selector:
-            selector.register(process.stdout, selectors.EVENT_READ)
+            selector.register(process.stdin,selectors.EVENT_WRITE,'input')
+            selector.register(process.stdout, selectors.EVENT_READ,'output')
             while selector.get_map():
                 remaining = deadline - time.monotonic()
                 require(remaining > 0, "ssh-timeout")
-                require(selector.select(remaining), "ssh-timeout")
-                chunk = os.read(process.stdout.fileno(), min(65536, MAX_RESPONSE + 1 - len(output)))
-                if not chunk:
-                    selector.unregister(process.stdout)
-                    break
-                output.extend(chunk)
-                require(len(output) <= MAX_RESPONSE, "response-size")
-        require(process.wait(timeout=max(0.01, deadline - time.monotonic())) == 0, "ssh-failed")
+                events=selector.select(remaining)
+                require(events, "ssh-timeout")
+                for key,_ in events:
+                    if key.data=='input':
+                        try:count=os.write(process.stdin.fileno(),raw_request[offset:offset+4096])
+                        except BrokenPipeError:
+                            # An early server FAIL can close SSH input before it
+                            # consumes the capsule. Still drain and validate its
+                            # reply; incomplete input can never establish READY.
+                            write_failed=True;selector.unregister(process.stdin)
+                            try:process.stdin.close()
+                            except BrokenPipeError:pass
+                            continue
+                        require(count>0,'ssh-failed');offset+=count
+                        if offset==len(raw_request):
+                            selector.unregister(process.stdin);process.stdin.close()
+                    else:
+                        chunk=os.read(process.stdout.fileno(),min(65536,MAX_RESPONSE+1-len(output)))
+                        if not chunk:selector.unregister(process.stdout)
+                        else:output.extend(chunk)
+                        require(len(output)<=MAX_RESPONSE,'response-size')
+        code=process.wait(timeout=max(0.01,deadline-time.monotonic()))
+        if write_failed:code=code or 1
+        if include_returncode:return bytes(output),code
+        require(code==0,'ssh-failed')
         return bytes(output)
     finally:
         if process.poll() is None:
             process.kill()
             process.wait(timeout=5)
         process.stdout.close()
+        if not process.stdin.closed:process.stdin.close()
 
 
 def write_public_artifact(directory, reply):
@@ -383,6 +480,7 @@ def write_public_artifact(directory, reply):
 def client(environment):
     operation, plan, payload = validate_context(environment)
     sent = request(operation, plan, payload, secrets.token_hex(32))
+    capsule_line,capsule_raw=stage_capsule(environment,operation)
     host, public, private = transport_configuration(environment)
     temporary = Path(environment.get("RUNNER_TEMP", ""))
     require(temporary.is_absolute() and temporary.is_dir(), "runner-temp-denied")
@@ -392,10 +490,16 @@ def client(environment):
             descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             with os.fdopen(descriptor, "w") as stream:
                 stream.write(value)
-        raw = bounded_exchange(ssh_arguments(host, key, hosts), canonical(sent) + b"\n")
+        raw,code = bounded_exchange(ssh_arguments(host,key,hosts),canonical(sent)+b'\n'+capsule_line,
+                                   include_returncode=True)
         reply = validate_response(raw, sent)
+        failed=operation=='stage' and reply['result']['status']=='FAIL_KEEP_STATE_NO_RETRY'
+        require(code==0 or failed,'ssh-failed')
+        if operation=='stage' and reply['result']['capsule_sha256'] is not None:
+            require(reply['result']['capsule_sha256']==digest(capsule_raw),'response-binding')
     write_public_artifact(temporary / "helmut-native-public", reply)
     print("helmut-native-control: validated-public-response " + digest(canonical(reply) + b"\n"))
+    return 1 if failed else 0
 
 
 def main():
@@ -403,7 +507,7 @@ def main():
         if sys.argv[1:] == ["validate"]:
             validate_context(os.environ)
         elif sys.argv[1:] == ["client"]:
-            client(os.environ)
+            return client(os.environ) or 0
         else:
             raise ValueError("mode-denied")
         return 0

@@ -1,16 +1,16 @@
 # CURRENT STATE — Helmut
 
-## Hetzner-Automation und Dauerfreigabe (26.10.2026 Istanbul)
+## Hetzner-Automation (26.10.2026 Istanbul)
 
-Betreiber erlaubt autonome Arbeit, Merge und Deployment bei gruenen Pflichtchecks;
-Dauerfreigabe in AGENTS.md. PR948/949 gemeinsam auf `75199d09` gemergt,
-Main-CI40253752518 SUCCESS und Vercel dpl_DnGSCvNiDEiYDXiDAcxDBb44QiBg READY.
-Echter Root-Steuerzugang ueber Actions40255561266 bestanden. Vorhandenes
-Schluesselpaar scheitert noch an PUBLIC_IDENTITY_OR_VALIDITY; Ursache UID gegen
-Vertrauenscache noch offen. Eng begrenzte bestehende-Key-Recovery vorbereitet,
-125 synthetische Tests bestanden. Native Sperren unveraendert; kein Transfer,
-Komponenten-/Unit60-/500er-Nachweis. Docker28/UID1000/Pfadsicht noch zu binden.
-[Nachweise und naechster Schritt](betrieb/hetzner-native-automation-20261026.md).
+Autonome Arbeit, Merge und Deployment bei gruenen Pflichtchecks freigegeben
+(AGENTS.md). PR950 auf `917b45f8`, Main-CI40260308055 SUCCESS, Vercel READY.
+Actions40263202086 bestaetigt vorhandenen Empfaenger; Vertrauenscache --- zu uuu,
+keine Schluesselerzeugung. Unabhaengig abgenommen, Mac nicht mehr erforderlich.
+Privater Key bleibt auf Hetzner. Verschluesselte Stage vorbereitet: feste
+Original-Whitelist, Hashpruefung, Once vor GPG, atomare Annahme; native Tore zu.
+Originalpaket verschluesselt im Drive, vollstaendig rueckgeprueft; native Nachweise offen.
+Docker28/UID1000/Pfadsicht bleiben frisch zu qualifizieren.
+[Belege und Grenzen](betrieb/hetzner-native-automation-20261026.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 

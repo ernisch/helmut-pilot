@@ -212,7 +212,7 @@ class IndependentServerTests(unittest.TestCase):
     def test_unqualified_operations_never_reach_recipient_or_executor(self):
         with patch.object(SERVER, 'create_recipient') as create, \
                 patch.object(SERVER, '_bounded_tool') as execute:
-            for operation in ('stage', 'admit', 'four-tx', 'update', 'shell'):
+            for operation in ('admit', 'four-tx', 'update', 'shell'):
                 with self.assertRaises(SERVER._Stop) as raised:
                     SERVER.handle({'operation': operation}, {'base': self.directory.name})
                 self.assertEqual(raised.exception.code, 'NATIVE_OPERATION_NOT_QUALIFIED')
@@ -223,7 +223,8 @@ class IndependentServerTests(unittest.TestCase):
         tree = ast.parse(SERVER_SOURCE)
         imports = {name.name for node in ast.walk(tree) if isinstance(node, ast.Import) for name in node.names}
         self.assertEqual(imports, {'base64', 'hashlib', 'json', 'os', 're', 'stat', 'time',
-                                   'selectors', 'subprocess', 'signal', 'types', 'ctypes'})
+                                   'selectors', 'subprocess', 'signal', 'types', 'ctypes', 'resource',
+                                   'datetime', 'http.client', 'ipaddress', 'socket', 'ssl', 'urllib.parse'})
         self.assertFalse(any(isinstance(node, ast.ImportFrom) for node in ast.walk(tree)))
         self.assertNotIn('export-secret', SERVER_SOURCE.decode())
         self.assertNotIn('os.system', SERVER_SOURCE.decode())
