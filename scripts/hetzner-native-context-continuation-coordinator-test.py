@@ -243,8 +243,10 @@ class ContinuationCoordinatorTests(unittest.TestCase):
         primary=paths['context_receipt' if phase == 'context' else 'image_receipt']
         value={'status':self.library['SUCCESS'],'phase':phase,'ready_sha256':self.driver['read'](primary)[1]['sha256'],
             'native_qualified':False,'native_go_consumed':False,'bindings':self.driver['bindings'](self.driver['roles'](count))}
-        nonce=request['nonce']; job_root=self.base/m.NAMESPACE/'jobs'/nonce
-        job_root.mkdir(mode=0o700,parents=True)
+        nonce=request['nonce']; jobs=self.base/m.NAMESPACE/'jobs'
+        jobs.mkdir(mode=0o700,exist_ok=True)
+        job_root=jobs/nonce
+        job_root.mkdir(mode=0o700)
         worker={'pid':6789+m.PHASES.index(phase),'start_ticks':123,'namespace':[5,6]}
         job={'schema':'helmut-context-daemon-binding-v2-service-job-v1','job_namespace':m.NAMESPACE,
             'request':copy.deepcopy(request),'controller_source_sha256':context['source_sha256'],'plan_sha256':m.PLAN,
@@ -302,6 +304,8 @@ class ContinuationCoordinatorTests(unittest.TestCase):
         self.assertFalse((self.base/m.AUTHORITY).exists()); self.assertFalse((self.base/'once'/m.ONCE).exists())
 
     def test_inspect_context_image_physical_job_seals_keep_old_failure_and_one_authority(self):
+        original_umask=os.umask(0o022)
+        self.addCleanup(os.umask,original_umask)
         self.inspect(); authority=None
         for phase in m.PHASES:
             capsule=self.capsule('setup',phase); result=self.coordinate(capsule)
@@ -310,6 +314,8 @@ class ContinuationCoordinatorTests(unittest.TestCase):
             if authority is None: authority=raw
             self.assertEqual(raw,authority); self.assertEqual(result['authority_sha256'],m.sha(authority))
             job=self.base/m.NAMESPACE/'jobs'/self.request(capsule)['nonce']
+            self.assertEqual(stat.S_IMODE(self.real_stat(job.parent).st_mode),0o700)
+            self.assertEqual(stat.S_IMODE(self.real_stat(job).st_mode),0o700)
             self.assertEqual(self.job_names(job),set(self.assets)|
                 {'JOB.PRIVATE.json','ARM.PRIVATE.json','ACK.PRIVATE.json','RESULT.PRIVATE.json'})
             seal=m.parsed(self.read_bytes(self.base/m.NAMESPACE/m.seal_name(phase)))
