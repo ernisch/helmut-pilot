@@ -186,7 +186,10 @@ def validate_recipient(recipient):
 
 
 DIAGNOSTIC_PHASES = ('preflight', 'attempt', 'home', 'generate', 'add-subkey',
-    'verify-public', 'export-public', 'verify-private-metadata', 'write-public', 'write-result')
+    'verify-public', 'export-public', 'verify-private-metadata', 'write-public', 'write-result',
+    'recovery-preflight', 'recovery-public-before', 'recovery-trust-refresh',
+    'recovery-public-after', 'recovery-public-export', 'recovery-private-metadata',
+    'recovery-write-public', 'recovery-write-result')
 DIAGNOSTIC_CODES = ('BASE_IDENTITY_CHANGED', 'DIRECTORY_OWNER_OR_TYPE',
     'DIRECTORY_PERMISSIONS', 'EXECUTOR_REQUIRED', 'FILESYSTEM_OR_INTERNAL_FAILURE',
     'FILE_SIZE_OR_TYPE', 'FILE_WRITE_SHORT', 'HOME_IDENTITY_CHANGED', 'KEY_STATUS_INVALID',
@@ -197,7 +200,9 @@ DIAGNOSTIC_CODES = ('BASE_IDENTITY_CHANGED', 'DIRECTORY_OWNER_OR_TYPE',
     'PUBLIC_IDENTITY_OR_VALIDITY', 'PUBLIC_LIST_FIELDS', 'PUBLIC_LIST_INVALID',
     'PUBLIC_LIST_SHAPE', 'PUBLIC_USAGE_MISMATCH', 'RECIPIENT_ALREADY_ATTEMPTED',
     'ROOT_REQUIRED', 'TARGET_BASE_REJECTED', 'TOOL_EXECUTION_FAILED', 'TOOL_EXIT_NONZERO',
-    'TOOL_OUTPUT_LIMIT', 'TOOL_RESULT_TYPE')
+    'TOOL_OUTPUT_LIMIT', 'TOOL_RESULT_TYPE', 'RECOVERY_ORIGINAL_BINDING',
+    'RECOVERY_ALREADY_ATTEMPTED', 'RECOVERY_CACHE_NOT_PROVEN',
+    'RECOVERY_KEY_METADATA_CHANGED', 'RECOVERY_PUBLIC_RING_CHANGED')
 DIAGNOSTIC_TOOL_CLASSES = ('AGENT_CONNECTION', 'AGENT_GENERATION', 'PERMISSION_DENIED',
     'MISSING_FILE', 'PINENTRY', 'UNSUPPORTED_OPTION', 'UNSUPPORTED_ALGORITHM', 'UNCLASSIFIED')
 
@@ -247,11 +252,37 @@ def validate_result(result, operation, payload_sha256):
         require(pinned_sha(result["source_sha256"]) == payload_sha256, "source-pin-drift")
         validate_recipient_diagnostic(result['recipient_diagnostic'])
     elif operation == "recipient":
-        require(set(result) == {"status", "recipient"}, "result-fields")
+        require(set(result) in ({"status", "recipient"}, {"status", "recipient", "recovery"}), "result-fields")
         require(result["status"] == "RECIPIENT_READY", "result-status")
         validate_recipient(result["recipient"])
+        if 'recovery' in result:
+            validate_recovery_receipt(result['recovery'], result['recipient']['public_sha256'])
     else:
         raise ValueError("operation-not-qualified")
+
+
+def validate_recovery_receipt(receipt, public_sha256):
+    require(type(receipt) is dict and set(receipt) == {
+        'original_error_sha256', 'receipt_sha256', 'before_validity', 'after_validity',
+        'ownertrust', 'identity_matches', 'trust_cache_refreshed',
+        'private_key_metadata_unchanged', 'pubring_sha256', 'public_sha256',
+        'key_generation_attempts', 'subkey_add_attempts'}, 'result-fields')
+    require(receipt['original_error_sha256'] ==
+        '7d168d7defda650d313e152bd1b015b13becc24c9827eb411de775d6a6beae50', 'result-fields')
+    for key in ('receipt_sha256', 'pubring_sha256', 'public_sha256'):
+        pinned_sha(receipt[key])
+    require(receipt['public_sha256'] == public_sha256, 'recipient-hash')
+    before = receipt['before_validity']
+    require(type(before) is list and len(before) == 3
+            and all(type(value) is str and value in ('u', '-', 'o', 'q') for value in before),
+            'result-fields')
+    require(receipt['after_validity'] == ['u', 'u', 'u'] and receipt['ownertrust'] == 'u'
+            and receipt['identity_matches'] is True and receipt['private_key_metadata_unchanged'] is True,
+            'result-fields')
+    require(type(receipt['trust_cache_refreshed']) is bool
+            and receipt['trust_cache_refreshed'] == (before != ['u', 'u', 'u']), 'result-fields')
+    require(all(type(receipt[key]) is int and receipt[key] == 0
+                for key in ('key_generation_attempts', 'subkey_add_attempts')), 'result-fields')
 
 
 def validate_response(raw, sent):

@@ -342,8 +342,10 @@ import selectors
 import subprocess
 import signal
 import types
+import ctypes
 NATIVE_GO_PLAN_SHA256 = None
 _CONTROL_DEADLINE = None
+_TOOL_ERROR_NAME = 'GPG_FIRST_TOOL_ERROR.PRIVATE.json'
 
 def _first_tool_error(output,code):
     descriptor=None
@@ -352,7 +354,9 @@ def _first_tool_error(output,code):
         record={'code':code,'stdout_sha256':hashlib.sha256(output[0]).hexdigest(),
                 'stderr_sha256':hashlib.sha256(output[1]).hexdigest(),
                 'stderr_prefix_base64':base64.b64encode(bytes(output[1][:8192])).decode('ascii')}
-        _json_new(descriptor,'GPG_FIRST_TOOL_ERROR.PRIVATE.json',record)
+        _require(_TOOL_ERROR_NAME in ('GPG_FIRST_TOOL_ERROR.PRIVATE.json',
+            'GPG_RECOVERY_FIRST_TOOL_ERROR.PRIVATE.json'), 'EXECUTOR_COMMAND')
+        _json_new(descriptor,_TOOL_ERROR_NAME,record)
     except Exception:pass
     finally:
         if descriptor is not None:os.close(descriptor)
@@ -403,7 +407,10 @@ def _read_public_file(path,limit=65536):
     finally:os.close(fd)
 
 DIAGNOSTIC_PHASES = ('preflight', 'attempt', 'home', 'generate', 'add-subkey',
-    'verify-public', 'export-public', 'verify-private-metadata', 'write-public', 'write-result')
+    'verify-public', 'export-public', 'verify-private-metadata', 'write-public', 'write-result',
+    'recovery-preflight', 'recovery-public-before', 'recovery-trust-refresh',
+    'recovery-public-after', 'recovery-public-export', 'recovery-private-metadata',
+    'recovery-write-public', 'recovery-write-result')
 DIAGNOSTIC_CODES = ('BASE_IDENTITY_CHANGED', 'DIRECTORY_OWNER_OR_TYPE',
     'DIRECTORY_PERMISSIONS', 'EXECUTOR_REQUIRED', 'FILESYSTEM_OR_INTERNAL_FAILURE',
     'FILE_SIZE_OR_TYPE', 'FILE_WRITE_SHORT', 'HOME_IDENTITY_CHANGED', 'KEY_STATUS_INVALID',
@@ -414,7 +421,9 @@ DIAGNOSTIC_CODES = ('BASE_IDENTITY_CHANGED', 'DIRECTORY_OWNER_OR_TYPE',
     'PUBLIC_IDENTITY_OR_VALIDITY', 'PUBLIC_LIST_FIELDS', 'PUBLIC_LIST_INVALID',
     'PUBLIC_LIST_SHAPE', 'PUBLIC_USAGE_MISMATCH', 'RECIPIENT_ALREADY_ATTEMPTED',
     'ROOT_REQUIRED', 'TARGET_BASE_REJECTED', 'TOOL_EXECUTION_FAILED', 'TOOL_EXIT_NONZERO',
-    'TOOL_OUTPUT_LIMIT', 'TOOL_RESULT_TYPE')
+    'TOOL_OUTPUT_LIMIT', 'TOOL_RESULT_TYPE', 'RECOVERY_ORIGINAL_BINDING',
+    'RECOVERY_ALREADY_ATTEMPTED', 'RECOVERY_CACHE_NOT_PROVEN',
+    'RECOVERY_KEY_METADATA_CHANGED', 'RECOVERY_PUBLIC_RING_CHANGED')
 DIAGNOSTIC_TOOL_CLASSES = ('AGENT_CONNECTION', 'AGENT_GENERATION', 'PERMISSION_DENIED',
     'MISSING_FILE', 'PINENTRY', 'UNSUPPORTED_OPTION', 'UNSUPPORTED_ALGORITHM', 'UNCLASSIFIED')
 
@@ -465,7 +474,9 @@ def _project_gpg_error(record):
 def _diagnostic_file(name, project, gpg=False):
     # Only these two already-written first-error records may be observed. Reading
     # one does not adopt a recipient, run GPG, generate another key, or retry.
-    _require(name in (ERROR_NAME, 'GPG_FIRST_TOOL_ERROR.PRIVATE.json'), 'DIAGNOSTIC_PATH')
+    _require(name in (ERROR_NAME, 'GPG_FIRST_TOOL_ERROR.PRIVATE.json',
+        'RECIPIENT_RECOVERY_FIRST_ERROR.SAFE.json', 'GPG_RECOVERY_FIRST_TOOL_ERROR.PRIVATE.json'),
+        'DIAGNOSTIC_PATH')
     result = {'state': 'ABSENT', 'sha256': None, 'code': None}
     result.update({'stderr_classes': []} if gpg else {'phase': None})
     try:
@@ -490,8 +501,234 @@ def _diagnostic_file(name, project, gpg=False):
 
 
 def _recipient_diagnostic():
-    return {'recipient': _diagnostic_file(ERROR_NAME, _project_recipient_error),
-            'gpg': _diagnostic_file('GPG_FIRST_TOOL_ERROR.PRIVATE.json', _project_gpg_error, True)}
+    recovery = any(os.path.lexists(TARGET_BASE + '/' + name) for name in
+        ('RECIPIENT_RECOVERY_FIRST_ERROR.SAFE.json', 'GPG_RECOVERY_FIRST_TOOL_ERROR.PRIVATE.json'))
+    return {'recipient': _diagnostic_file('RECIPIENT_RECOVERY_FIRST_ERROR.SAFE.json' if recovery
+                else ERROR_NAME, _project_recipient_error),
+            'gpg': _diagnostic_file('GPG_RECOVERY_FIRST_TOOL_ERROR.PRIVATE.json' if recovery
+                else 'GPG_FIRST_TOOL_ERROR.PRIVATE.json', _project_gpg_error, True)}
+
+
+# Exact observed target failure. A different failure is not an authority to
+# repair trust, adopt keys, or start another key-generation attempt.
+RECOVERY_ORIGINAL_ERROR_SHA256 = '7d168d7defda650d313e152bd1b015b13becc24c9827eb411de775d6a6beae50'
+RECOVERY_ATTEMPT = 'RECIPIENT_RECOVERY_ATTEMPT.SAFE.json'
+RECOVERY_RECEIPT = 'RECIPIENT_RECOVERY_RECEIPT.SAFE.json'
+RECOVERY_ERROR = 'RECIPIENT_RECOVERY_FIRST_ERROR.SAFE.json'
+RECOVERY_PENDING_RESULT = 'RECIPIENT_RECOVERY_RESULT.PENDING.SAFE.json'
+
+
+def _publish_recovery_result(base_fd):
+    # The candidate file and receipt are already fsynced. Publish atomically
+    # without replacing any entry. No fallible write follows this commit.
+    library = ctypes.CDLL(None, use_errno=True)
+    rename = library.renameat2
+    rename.argtypes = (ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint)
+    rename.restype = ctypes.c_int
+    if rename(base_fd, RECOVERY_PENDING_RESULT.encode('ascii'), base_fd,
+              RESULT_NAME.encode('ascii'), 1) != 0:  # Linux RENAME_NOREPLACE
+        raise OSError(ctypes.get_errno(), 'atomic-publication-failed')
+
+
+def _recovery_tool(path, args, input=None, timeout=30):
+    global _TOOL_ERROR_NAME
+    previous = _TOOL_ERROR_NAME
+    _TOOL_ERROR_NAME = 'GPG_RECOVERY_FIRST_TOOL_ERROR.PRIVATE.json'
+    try:
+        return _bounded_tool(path, args, input=input, timeout=timeout)
+    finally:
+        _TOOL_ERROR_NAME = previous
+
+
+def _recovery_read(name):
+    path = TARGET_BASE + '/' + name
+    before = os.stat(path, follow_symlinks=False)
+    raw = _read_public_file(path)
+    _require(before == os.stat(path, follow_symlinks=False), 'RECOVERY_ORIGINAL_BINDING')
+    return raw, before
+
+
+def _private_key_metadata(home_fd):
+    descriptor = os.open('private-keys-v1.d', _DFLAGS, dir_fd=home_fd)
+    try:
+        _dir(os.fstat(descriptor), exact=True)
+        names = sorted(os.listdir(descriptor))
+        _require(len(names) == 2, 'PRIVATE_KEY_COUNT')
+        result = {}
+        for name in names:
+            _require(re.fullmatch(r'[0-9A-F]{40}\.key', name) is not None, 'PRIVATE_KEY_METADATA')
+            info = os.stat(name, dir_fd=descriptor, follow_symlinks=False)
+            _require(stat.S_ISREG(info.st_mode) and _owned(info)
+                     and stat.S_IMODE(info.st_mode) == 0o600 and info.st_nlink == 1
+                     and 0 < info.st_size <= MAX_TOOL_OUTPUT, 'PRIVATE_KEY_METADATA')
+            result[name] = {key: getattr(info, key) for key in (
+                'st_dev', 'st_ino', 'st_mode', 'st_nlink', 'st_uid', 'st_gid', 'st_size',
+                'st_atime_ns', 'st_mtime_ns', 'st_ctime_ns', 'st_blocks')}
+        return result
+    finally:
+        os.close(descriptor)
+
+
+def _recovery_public_facts(raw, primary, subkey, started, original_error_time):
+    # This is a precondition for refreshing a local trust cache, never a READY
+    # decision. The unmodified full parser must accept the final listing.
+    lines = raw.decode('ascii').splitlines()
+    rows = [line.split(':') for line in lines]
+    _require(all(row and row[0] in ('tru', 'pub', 'fpr', 'uid', 'sub') for row in rows),
+             'PUBLIC_LIST_INVALID')
+    rows = [row for row in rows if row[0] != 'tru']
+    _require([row[0] for row in rows] == ['pub', 'fpr', 'uid', 'sub', 'fpr'], 'PUBLIC_LIST_SHAPE')
+    pub, pfpr, uid, sub, sfpr = rows
+    _require(all(len(row) > 16 for row in (pub, sub)) and len(uid) > 9
+             and len(pfpr) > 9 and len(sfpr) > 9, 'PUBLIC_LIST_FIELDS')
+    _require(pfpr[9] == primary and sfpr[9] == subkey and primary != subkey,
+             'PUBLIC_FINGERPRINT_MISMATCH')
+    _require(uid[9] == USER_ID and pub[8] == 'u', 'PUBLIC_IDENTITY_OR_VALIDITY')
+    _require(pub[2:4] == ['255', '22'] and pub[16] == 'ed25519'
+             and sub[2:4] == ['255', '18'] and sub[16] == 'cv25519', 'PUBLIC_ALGORITHM_MISMATCH')
+    _require(''.join(c for c in pub[11] if c.islower()) == 'c'
+             and ''.join(c for c in sub[11] if c.islower()) == 'e'
+             and pub[4] == primary[-16:] and sub[4] == subkey[-16:], 'PUBLIC_USAGE_MISMATCH')
+    for row in (pub, sub):
+        _require(re.fullmatch(r'[0-9]{1,12}', row[5]) is not None
+                 and re.fullmatch(r'[0-9]{1,12}', row[6]) is not None, 'PUBLIC_EXPIRY_INVALID')
+        created, expires = int(row[5]), int(row[6])
+        _require(started - 5 <= created <= original_error_time + 5
+                 and created <= time.time() + 5 and expires - created == 7 * 86400
+                 and expires > time.time(), 'PUBLIC_EXPIRY_INVALID')
+    validity = [pub[1], uid[1], sub[1]]
+    _require(all(value in ('u', '-', 'o', 'q') for value in validity), 'RECOVERY_CACHE_NOT_PROVEN')
+    return {'validity': validity, 'ownertrust': pub[8], 'identity_matches': True}
+
+
+def recover_recipient(target_base, execute_tool):
+    """One guarded recovery of the existing keypair; never generate/add keys."""
+    result = {'schema': 'helmut-recipient-v1', 'ok': False, 'phase': 'recovery-preflight',
+              'private_material_exported': False, 'recovery': True}
+    base_fd = home_fd = None
+    attempt_started = False
+    published = False
+    try:
+        _require(type(target_base) is str and target_base == TARGET_BASE
+                 and os.geteuid() == os.getegid() == 0, 'ROOT_REQUIRED')
+        _require(callable(execute_tool), 'EXECUTOR_REQUIRED')
+        base_fd = _open_base(TARGET_BASE)
+        for name in (RECOVERY_ATTEMPT, RECOVERY_RECEIPT, RECOVERY_ERROR, RECOVERY_PENDING_RESULT,
+                     'GPG_RECOVERY_FIRST_TOOL_ERROR.PRIVATE.json', PUBLIC_NAME, RESULT_NAME):
+            _require(_missing(base_fd, name), 'RECOVERY_ALREADY_ATTEMPTED')
+        _json_new(base_fd, RECOVERY_ATTEMPT, {'schema': 'helmut-recipient-recovery-attempt-v1',
+            'original_error_sha256': RECOVERY_ORIGINAL_ERROR_SHA256})
+        attempt_started = True
+        _require(_missing(base_fd, 'GPG_FIRST_TOOL_ERROR.PRIVATE.json'), 'RECOVERY_ORIGINAL_BINDING')
+        original_raw, original_meta = _recovery_read(ERROR_NAME)
+        _require(hashlib.sha256(original_raw).hexdigest() == RECOVERY_ORIGINAL_ERROR_SHA256,
+                 'RECOVERY_ORIGINAL_BINDING')
+        original = json.loads(original_raw)
+        _require(_project_recipient_error(original) == {
+            'phase': 'verify-public', 'code': 'PUBLIC_IDENTITY_OR_VALIDITY'}, 'RECOVERY_ORIGINAL_BINDING')
+        primary, subkey = original.get('primary_fingerprint'), original.get('subkey_fingerprint')
+        _require(all(type(value) is str and re.fullmatch(r'[0-9A-F]{40}', value)
+                     for value in (primary, subkey)) and primary != subkey, 'RECOVERY_ORIGINAL_BINDING')
+        attempt_raw, attempt_meta = _recovery_read(ATTEMPT_NAME)
+        _require(attempt_raw == b'{"operation":"create-once","schema":"helmut-recipient-v1"}\n'
+                 and attempt_meta.st_mtime_ns <= original_meta.st_mtime_ns, 'RECOVERY_ORIGINAL_BINDING')
+        started, original_error_time = int(attempt_meta.st_mtime), int(original_meta.st_mtime)
+        home_fd = os.open(HOME_NAME, _DFLAGS, dir_fd=base_fd)
+        _check_pinned(base_fd, home_fd)
+        _audit_home(home_fd)
+        key_metadata = _private_key_metadata(home_fd)
+        ring_raw, ring_meta = _recovery_read(HOME_NAME + '/pubring.kbx')
+        ring_sha256 = hashlib.sha256(ring_raw).hexdigest()
+        home = TARGET_BASE + '/' + HOME_NAME
+
+        def check_preserved():
+            _check_pinned(base_fd, home_fd)
+            _audit_home(home_fd)
+            _require(_private_key_metadata(home_fd) == key_metadata, 'RECOVERY_KEY_METADATA_CHANGED')
+            current_ring, current_meta = _recovery_read(HOME_NAME + '/pubring.kbx')
+            fields = ('st_dev', 'st_ino', 'st_mode', 'st_nlink', 'st_uid', 'st_gid',
+                      'st_size', 'st_mtime_ns', 'st_ctime_ns', 'st_blocks')
+            _require(hashlib.sha256(current_ring).hexdigest() == ring_sha256
+                     and all(getattr(current_meta, key) == getattr(ring_meta, key) for key in fields),
+                     'RECOVERY_PUBLIC_RING_CHANGED')
+            old, old_meta = _recovery_read(ERROR_NAME)
+            marker, marker_meta = _recovery_read(ATTEMPT_NAME)
+            _require(old == original_raw and old_meta == original_meta
+                     and marker == attempt_raw and marker_meta == attempt_meta, 'RECOVERY_ORIGINAL_BINDING')
+            _require(_missing(base_fd, 'GPG_FIRST_TOOL_ERROR.PRIVATE.json'), 'RECOVERY_ORIGINAL_BINDING')
+
+        listing_args = ('--no-autostart', '--lock-never', '--with-colons', '--fixed-list-mode',
+                        '--with-fingerprint', '--with-subkey-fingerprint', '--list-keys', '--', primary)
+        result['phase'] = 'recovery-public-before'
+        before = _run(execute_tool, home, listing_args)
+        facts_before = _recovery_public_facts(before, primary, subkey, started, original_error_time)
+        check_preserved()
+        refreshed = facts_before['validity'] != ['u', 'u', 'u']
+        if refreshed:
+            result['phase'] = 'recovery-trust-refresh'
+            _run(execute_tool, home, ('--no-autostart', '--check-trustdb'))
+            check_preserved()
+        result['phase'] = 'recovery-public-after'
+        after = _run(execute_tool, home, listing_args)
+        facts_after = _recovery_public_facts(after, primary, subkey, started, original_error_time)
+        expiries = _parse_listing(after, primary, subkey, started)
+        _require(facts_after['ownertrust'] == facts_before['ownertrust'] == 'u', 'PUBLIC_IDENTITY_OR_VALIDITY')
+        check_preserved()
+        result['phase'] = 'recovery-public-export'
+        public = _run(execute_tool, home, ('--no-autostart', '--lock-never', '--armor', '--export', '--', primary))
+        _public_armor(public)
+        result['phase'] = 'recovery-private-metadata'
+        check_preserved()
+        result['phase'] = 'recovery-write-public'
+        _write_new(base_fd, PUBLIC_NAME, public)
+        check_preserved()
+        _require(_read_public_file(TARGET_BASE + '/' + PUBLIC_NAME) == public, 'PUBLIC_ARMOR_INVALID')
+        receipt = {'schema': 'helmut-recipient-recovery-receipt-v1', 'ok': True,
+            'original_error_sha256': RECOVERY_ORIGINAL_ERROR_SHA256,
+            'before': facts_before, 'after': facts_after, 'trust_cache_refreshed': refreshed,
+            'private_key_metadata_unchanged': True, 'pubring_sha256': ring_sha256,
+            'private_metadata_sha256': hashlib.sha256(json.dumps(key_metadata, sort_keys=True).encode()).hexdigest(),
+            'key_generation_attempts': 0, 'subkey_add_attempts': 0,
+            'public_sha256': hashlib.sha256(public).hexdigest()}
+        result['phase'] = 'recovery-write-result'
+        _json_new(base_fd, RECOVERY_RECEIPT, receipt)
+        check_preserved()
+        receipt_raw = _read_public_file(TARGET_BASE + '/' + RECOVERY_RECEIPT)
+        _require(json.loads(receipt_raw) == receipt,
+                 'RECOVERY_ORIGINAL_BINDING')
+        success = dict(result, ok=True, phase='complete', target_base=TARGET_BASE,
+            recipient_home=home, public_key_path=TARGET_BASE + '/' + PUBLIC_NAME,
+            primary_fingerprint=primary, subkey_fingerprint=subkey,
+            primary_expires_unix=expiries[0], subkey_expires_unix=expiries[1],
+            public_key_sha256=hashlib.sha256(public).hexdigest(), public_key_bytes=len(public),
+            recovered_from_error_sha256=RECOVERY_ORIGINAL_ERROR_SHA256,
+            recovery_receipt_sha256=hashlib.sha256(receipt_raw).hexdigest())
+        # A failed candidate fsync cannot leave an apparently valid READY file,
+        # even when no further error record can be created (for example ENOSPC).
+        _json_new(base_fd, RECOVERY_PENDING_RESULT, success)
+        _require(json.loads(_read_public_file(TARGET_BASE + '/' + RECOVERY_PENDING_RESULT)) == success,
+                 'RECOVERY_ORIGINAL_BINDING')
+        check_preserved()
+        _publish_recovery_result(base_fd)
+        published = True
+        return success
+    except Exception as error:
+        code = error.code if isinstance(error, _Stop) else 'FILESYSTEM_OR_INTERNAL_FAILURE'
+        result['first_error'] = {'phase': result['phase'], 'code': code}
+        if base_fd is not None and attempt_started:
+            try:
+                _json_new(base_fd, RECOVERY_ERROR, result)
+            except Exception:
+                pass
+        return result
+    finally:
+        for descriptor in (home_fd, base_fd):
+            if descriptor is not None:
+                try:
+                    os.close(descriptor)  # read-only descriptors; no pending data flush
+                except OSError:
+                    if not published:
+                        raise
 
 def handle(request,context):
     global _CONTROL_DEADLINE
@@ -503,15 +740,49 @@ def handle(request,context):
                 'native_enabled':False,'source_sha256':context['source_sha256'],
                 'recipient_diagnostic':_recipient_diagnostic()}
     _require(operation=='recipient','NATIVE_OPERATION_NOT_QUALIFIED')
+    # A possibly complete marker from a failed fsync/publication is UNKNOWN,
+    # not an accepted key. Never turn that failed recovery into READY on read.
+    _require(not any(os.path.lexists(TARGET_BASE+'/'+name)
+                     for name in (RECOVERY_ERROR, RECOVERY_PENDING_RESULT)), 'RECIPIENT_NOT_ACCEPTED')
     result_path=TARGET_BASE+'/'+RESULT_NAME
     if not os.path.lexists(result_path):
-        result=create_recipient(TARGET_BASE,_bounded_tool)
+        if os.path.lexists(TARGET_BASE+'/'+ERROR_NAME):
+            result=recover_recipient(TARGET_BASE,_recovery_tool)
+        else:
+            result=create_recipient(TARGET_BASE,_bounded_tool)
         _require(result['ok'],'RECIPIENT_CREATION_FAILED')
     result=json.loads(_read_public_file(result_path))
     _require(result.get('ok') is True and result.get('phase')=='complete','RECIPIENT_NOT_ACCEPTED')
+    if os.path.lexists(TARGET_BASE+'/'+RECOVERY_ATTEMPT):
+        _require(result.get('recovery') is True, 'RECIPIENT_NOT_ACCEPTED')
     public=_read_public_file(TARGET_BASE+'/'+PUBLIC_NAME)
     _public_armor(public)
     _require(hashlib.sha256(public).hexdigest()==result['public_key_sha256'],'RECIPIENT_PUBLIC_HASH')
     _require(result['primary_expires_unix']>time.time() and result['subkey_expires_unix']>time.time(),'RECIPIENT_EXPIRED')
-    return {'status':'RECIPIENT_READY','recipient':{'fingerprint':result['primary_fingerprint'],
+    reply = {'status':'RECIPIENT_READY','recipient':{'fingerprint':result['primary_fingerprint'],
             'public_key_base64':base64.b64encode(public).decode('ascii'),'public_sha256':result['public_key_sha256']}}
+    if result.get('recovery') is True:
+        _require(result.get('recovered_from_error_sha256') == RECOVERY_ORIGINAL_ERROR_SHA256,
+                 'RECOVERY_ORIGINAL_BINDING')
+        receipt_raw = _read_public_file(TARGET_BASE+'/'+RECOVERY_RECEIPT)
+        receipt = json.loads(receipt_raw)
+        _require(receipt.get('schema') == 'helmut-recipient-recovery-receipt-v1'
+                 and receipt.get('ok') is True
+                 and receipt.get('original_error_sha256') == RECOVERY_ORIGINAL_ERROR_SHA256
+                 and receipt.get('public_sha256') == result['public_key_sha256']
+                 and hashlib.sha256(receipt_raw).hexdigest() == result.get('recovery_receipt_sha256'),
+                 'RECOVERY_ORIGINAL_BINDING')
+        reply['recovery'] = {
+            'original_error_sha256': RECOVERY_ORIGINAL_ERROR_SHA256,
+            'receipt_sha256': hashlib.sha256(receipt_raw).hexdigest(),
+            'before_validity': receipt['before']['validity'],
+            'after_validity': receipt['after']['validity'],
+            'ownertrust': receipt['after']['ownertrust'],
+            'identity_matches': receipt['after']['identity_matches'],
+            'trust_cache_refreshed': receipt['trust_cache_refreshed'],
+            'private_key_metadata_unchanged': receipt['private_key_metadata_unchanged'],
+            'pubring_sha256': receipt['pubring_sha256'],
+            'public_sha256': receipt['public_sha256'],
+            'key_generation_attempts': receipt['key_generation_attempts'],
+            'subkey_add_attempts': receipt['subkey_add_attempts']}
+    return reply

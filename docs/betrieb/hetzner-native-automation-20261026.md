@@ -112,3 +112,47 @@ nur den Steuerkanal, niemals einen angenommenen Empfaenger oder native Admission
 105 synthetische Tests bestanden, einschliesslich12 gezielter Diagnosefaelle.
 Die urspruengliche Empfaengererzeugung, Bootstrap, Installer und native Sperren
 bleiben unveraendert. Die eigentliche Korrektur haengt vom echten Zielbefund ab.
+
+## Tatsaechliche Steuerabnahme und begrenzte vorhandene-Key-Recovery
+
+PR948/949 sind gemeinsam auf `75199d0977c41c07caabe10f8d4e279471789ad0`
+gemergt. Main-CI40253752518 ist SUCCESS, einschliesslich des echten
+Boundary-Pruefschritts. Vercel dpl_DnGSCvNiDEiYDXiDAcxDBb44QiBg ist READY.
+Actions40255561266 hat den Root-Steuerkanal erstmals tatsaechlich abgenommen.
+Artefakt12621954007/Response-SHA
+`ecf4f650722948c545fd5a1ae205f1a278c8cd66a4691e615a0612661100673a`
+bindet den beobachteten Erstfehler PUBLIC_IDENTITY_OR_VALIDITY/verify-public;
+der erste GPG-Toolfehler fehlt. Beide Erzeugungsbefehle hatten nach dem exakten
+Codepfad bereits Erfolg. UID und einzelne Vertrauenswerte sind noch nicht
+auseinandergehalten; eine Cacheursache ist vor der echten Liste nicht bewiesen.
+
+Die vorbereitete Recovery ist ausschliesslich an Erstfehler-SHA
+`7d168d7defda650d313e152bd1b015b13becc24c9827eb411de775d6a6beae50`
+gebunden. Ein eigener Once-Marker verhindert den Wiedereintritt. Zuerst verlangt
+sie beide urspruenglichen Fingerprints, exakte UID, Ownertrust u, Algorithmen,
+Verwendung, Zeitbindung, zwei unveraenderte private Metadaten und Pubring.
+Nur unberechnete Cachewerte u/-/o/q erlauben danach ein explizites check-trustdb;
+bei bereits vollstaendigem u entfaellt die Aktualisierung. Kein Generate,
+Add-Subkey, Import-Ownertrust, Privatexport oder urspruenglicher Schreibretry.
+Anschliessend muss der unveraenderte volle Parser einschliesslich u bestehen.
+
+Originale Fehlerdateien und das historische Fehlen des ersten Toolfehlers bleiben
+unveraendert. Neue Fehler verwenden eigene feste Recovery-Dateien; status liest
+bei solchen Fehlern dieses Paar mit endlichen Recovery-Phasen. Eine sichere
+oeffentliche Zusammenfassung bindet nach Erfolg Vorher-/Nachher-Cachewerte,
+Receipt-/Pubring-/Public-Hashes und null Erzeugungs-/Add-Aufrufe an den Empfaenger.
+
+Receipt und Ergebniskandidat werden zuerst dauerhaft geschrieben und rueckgelesen.
+Erst nach allen Erhaltungspruefungen publiziert renameat2(RENAME_NOREPLACE) den
+READY-Pfad atomisch. Gescheiterter Kandidaten-fsync kann deshalb auch bei
+zusaetzlich fehlgeschlagener Fehlerdatei-Erstellung kein READY erzeugen.
+PENDING/Recovery-Fehler werden verweigert, jede spaetere recovered-READY-Lesung
+verlangt den exakten Receipt-Rawhash, Originalpin und Publichash. Die Namensaenderung
+selbst erhaelt danach keinen weiteren Parent-fsync: keine Rename-Dauergarantie
+ueber Stromverlust behaupten; geaenderter Boot bleibt ohnehin gesperrt.
+
+125 synthetische Pruefungen bestanden, darunter20 neue Recovery-Faelle inklusive
+realer atomarer Tempdatei-Publikation ohne Ueberschreiben und doppeltem ENOSPC.
+Dies ist noch keine Ziel-Recovery. Echte Ausfuehrung folgt erst nach unabhaengiger
+Quellenabnahme, gruenen Pflichtchecks und dem qualifizierten Mainstand.
+Native Source-/Restore-/UID1000-/Socket-/Cgroup-/Ressourcenadmission bleibt offen.
