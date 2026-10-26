@@ -5,6 +5,20 @@ Automatisierung ausdruecklich freigegeben, einschliesslich Merge und Deployment
 nach vollstaendig gruenen Pflichtpruefungen. Die aeltere reine Probevorbereitung
 wird dadurch gezielt erweitert. Die dauerhafte Arbeitsregel steht in AGENTS.md.
 
+## Gesicherter Merge- und Deploymentstand
+
+PR947 ist nach erfolgreicher unabhaengiger Abnahme und gruenem CI40246626996
+auf Head418c67e8243d88377bf05781f8c5a1d42d36b93c gemergt. Mergecommit
+`234ffe8739cd276e697bd192d8053ffc1ca65c09` ist auf main bestaetigt. Vercel-
+Productiondeployment `dpl_88PMRoUjSFtDHFMwXAURZxk8jMub` ist auf genau diesem
+Commit READY. Dieser dokumentarische Nachtrag aendert keinen Laufzeitcode.
+
+Der Mac-Installer ist noch nicht auf Hetzner ausgefuehrt. Vor Auslieferung muss
+auch der tatsaechliche Mainstand die vorgeschriebenen erfolgreichen Checks
+tragen. Erst die anschliessende echte Installer-/Actions-Abnahme bestaetigt
+Root-Zugang und Empfaengerschluessel; bisher wurde dadurch kein nativer Lauf
+freigegeben, gestartet oder als bestanden gewertet.
+
 ## Konkreter Umfang
 
 Ein separat gestarteter Workflow `hetzner-native-automation.yml` nutzt das
