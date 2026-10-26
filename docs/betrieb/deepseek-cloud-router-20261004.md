@@ -329,3 +329,29 @@ Nur der lesende Modus und kostenfreie `--dry-run` Aufrufe duerfen ohne
 `--save-response` starten. Die Sicherung ersetzt weder eine vollstaendige
 Modellantwort noch fachliche Tests. Eine beim Modelllimit abgebrochene Antwort
 bleibt trotz Sicherung unvollstaendig und verursacht moeglicherweise Kosten.
+
+## Umfangreicher Gesamtauftrag, kurze sichere Einzelaufrufe (26.10.2026)
+
+Die fruehere zusaetzliche Schreibauftragssperre bei 3.000 Zeichen wurde
+entfernt. Ein einzelner lesender oder schreibender Auftrag darf bis
+zu 12.000 Zeichen konkrete Aufgabenbeschreibung enthalten.
+Diese Grenze betrifft ausschliesslich *einen Modellaufruf*, niemals
+den Umfang des gesamten Helmut Sprints. Das Ziel ist keine moeglichst
+grosse Anfrage, sondern eine vollstaendige, abnehmbare Codeaenderung
+ohne unnoetige kostenpflichtige Wiederholung.
+
+Sol teilt nur bei echtem Bedarf grosse Gesamtauftraege in voneinander
+sicher abgrenzbare Teile. Jeder Schreibaufruf veraendert weiterhin genau
+eine Datei; ein langer Plan darf aus beliebig vielen solchen abgenommenen
+Schritten bestehen. Weder zusaetzliche Modelle noch automatische Retries
+oder eine kostendeckelverletzende Modellwahl sind erlaubt.
+
+Bestehen bleiben: hoechstens 120.000 Zeichen expliziter Schreibquelltext
+pro Aufruf, die 0,25 USD konservative Peakprognose pro Aufruf,
+der 2,00 USD lokale UTC Tagesdeckel, High/Max und verpflichtende
+private Antwortsicherung. `--dry-run` prueft die Grenzen ohne
+Netzwerk oder Abrechnung. Wenn das Paket trotzdem unpassend ist,
+muss Sol entweder einen kleineren Ausschnitt waehlen oder die Arbeit
+selbst uebernehmen. Eine 12.000-Zeichen-Freigabe ist keine Garantie
+fuer vollstaendige Providerantworten; ausserdem wurde noch keine
+kostenpflichtige Modellprobe zur Ausfallrate unternommen.
