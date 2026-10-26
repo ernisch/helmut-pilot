@@ -27,13 +27,14 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const cp = require("child_process");
+const os = require("os");
 
 const API_URL = "https://api.deepseek.com/responses";
 const MODELS = Object.freeze({
   flash: "deepseek-flash",
   pro: "deepseek-v4-pro",
 });
-const EFFORTS = new Set(["high", "max"]);
+const EFFORTS = new Set(["none", "low", "high", "max"]);
 const MODES = new Set(["read", "write"]);
 const CORE_CONTEXT = Object.freeze([
   {
@@ -73,7 +74,19 @@ const CORE_CONTEXT = Object.freeze([
 const MAX_TASK_CHARS = 12000;
 const MAX_RETURN_CHARS = 2000;
 const MAX_FILES = 20;
+const MAX_WRITE_FILES = 3;
+const MAX_WRITE_SOURCE_CHARS = 120000;
+const MAX_WRITE_TASK_CHARS = 3000;
+const MAX_FULL_FILE_CHARS = 18000;
 const MAX_SOURCE_CHARS = 500000;
+// Deliberately conservative current peak prices: update only after provider verification.
+// https://api-docs.deepseek.com/quick_start/pricing/
+const PEAK_USD_PER_MILLION = Object.freeze({
+  "deepseek-flash": Object.freeze({ input: 0.30, output: 1.20 }),
+  "deepseek-v4-pro": Object.freeze({ input: 1.32, output: 3.96 }),
+});
+const MAX_JOB_USD = 0.25;
+const MIN_OUTPUT_TOKENS = 256;
 const MAX_FILE_CHARS = 220000;
 // Reasoning und finale Antwort teilen sich dieses Limit; echte FlashHigh und
 // ProHigh Lesepruefungen brachen auch mit 12000 ab, weil die Antwort erst nach
@@ -217,7 +230,10 @@ function parseArgs(argv) {
   }
 
   let taskFile = null;
-  let editFormat = "full";
+  let editFormat = "replacements";
+  let maxOutputTokens = null;
+  let maxCostUsd = MAX_JOB_USD;
+  let dryRun = false;
   let saveResponse = null;
   let replayResponse = null;
   const files = [];
@@ -234,6 +250,19 @@ function parseArgs(argv) {
       if (mode !== "write" || !["full", "replacements"].includes(editFormat)) {
         throw new Error("invalid-edit-format");
       }
+    } else if (rest[i] === "--max-output-tokens") {
+      maxOutputTokens = Number(rest[++i]);
+      if (!Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < MIN_OUTPUT_TOKENS ||
+          maxOutputTokens > (mode === "write" ? WRITE_MAX_OUTPUT_TOKENS : READ_MAX_OUTPUT_TOKENS)) {
+        throw new Error("invalid-max-output-tokens");
+      }
+    } else if (rest[i] === "--max-cost-usd") {
+      maxCostUsd = Number(rest[++i]);
+      if (!Number.isFinite(maxCostUsd) || maxCostUsd <= 0 || maxCostUsd > MAX_JOB_USD) {
+        throw new Error("invalid-max-cost-usd");
+      }
+    } else if (rest[i] === "--dry-run") {
+      dryRun = true;
     } else if (rest[i] === "--save-response" || rest[i] === "--replay-response") {
       const flag = rest[i];
       const value = rest[++i];
@@ -246,7 +275,11 @@ function parseArgs(argv) {
   }
   if (!taskFile) throw new Error("task-file-required");
   if (saveResponse && replayResponse) throw new Error("save-and-replay-exclusive");
+  if (dryRun && (saveResponse || replayResponse)) throw new Error("dry-run-response-exclusive");
   if (files.length > MAX_FILES) throw new Error(`too-many-files:${files.length}>${MAX_FILES}`);
+  if (mode === "write" && (!files.length || files.length > MAX_WRITE_FILES)) {
+    throw new Error(`write-files-must-be-1-to-${MAX_WRITE_FILES}`);
+  }
 
   return {
     modelKey,
@@ -255,6 +288,9 @@ function parseArgs(argv) {
     mode,
     taskFile: path.resolve(taskFile),
     editFormat,
+    maxOutputTokens,
+    maxCostUsd,
+    dryRun,
     saveResponse,
     replayResponse,
     files,
@@ -420,7 +456,9 @@ function buildRequestBody(task, cfg, sources) {
     instructions: buildInstructions(cfg),
     input: buildInput(task, cfg, sources),
     reasoning: { effort: cfg.effort },
-    max_output_tokens: cfg.mode === "write" ? WRITE_MAX_OUTPUT_TOKENS : READ_MAX_OUTPUT_TOKENS,
+    max_output_tokens: cfg.maxOutputTokens ||
+      (cfg.effort === "none" || cfg.effort === "low" ? 8192 :
+        (cfg.mode === "write" ? WRITE_MAX_OUTPUT_TOKENS : READ_MAX_OUTPUT_TOKENS)),
     text: {
       format: {
         type: "json_schema",
@@ -430,6 +468,50 @@ function buildRequestBody(task, cfg, sources) {
     },
     stream: false,
   };
+}
+
+function preflight(cfg, task, body, sources) {
+  if (cfg.mode === "write") {
+    if (charCount(task) > MAX_WRITE_TASK_CHARS) {
+      throw new Error("write-task-too-large; split-task-before-paid-call");
+    }
+    const editable = sources.filter(x => x.editable);
+    const total = editable.reduce((sum, x) => sum + charCount(x.content), 0);
+    if (total > MAX_WRITE_SOURCE_CHARS) {
+      throw new Error("write-sources-too-large; split-task-before-paid-call");
+    }
+    if (cfg.editFormat === "full" &&
+        editable.some(x => charCount(x.content) > MAX_FULL_FILE_CHARS)) {
+      throw new Error("full-file-too-large; use---edit-format-replacements");
+    }
+  }
+  const rate = PEAK_USD_PER_MILLION[cfg.model];
+  if (!rate) throw new Error("unknown-model-pricing; no-paid-call");
+  // This is an intentionally cautious BYTE proxy, not a tokenizer guarantee.
+  // Includes all request fields/schema, not just the human-readable prompt.
+  const estimatedInputTokens = Buffer.byteLength(JSON.stringify(body), "utf8") + 2048;
+  const estimatedPeakUsd = (estimatedInputTokens * rate.input +
+    body.max_output_tokens * rate.output) / 1000000;
+  const ceiling = Math.min(MAX_JOB_USD, cfg.maxCostUsd ?? MAX_JOB_USD);
+  if (estimatedPeakUsd > ceiling) {
+    throw new Error(`deepseek-preflight-cost-cap:estimated=${estimatedPeakUsd.toFixed(6)}USD:cap=${ceiling.toFixed(6)}USD; split-task-or-reduce-output`);
+  }
+  return {
+    input_token_byte_proxy: estimatedInputTokens,
+    output_token_cap: body.max_output_tokens,
+    estimated_peak_usd: Number(estimatedPeakUsd.toFixed(6)),
+    cost_limit_usd: ceiling,
+    warning: "Estimated against documented peak rates and byte proxy; not a provider-enforced monetary cap",
+  };
+}
+
+function observedPeakUsd(model, usage) {
+  const rate = PEAK_USD_PER_MILLION[model];
+  if (!rate) return null;
+  const input = Number(usage?.input_tokens);
+  const output = Number(usage?.output_tokens);
+  if (![input, output].every(x => Number.isSafeInteger(x) && x >= 0)) return null;
+  return Number(((input * rate.input + output * rate.output) / 1000000).toFixed(6));
 }
 
 function parseCurlResponse(raw) {
@@ -446,11 +528,13 @@ function parseCurlResponse(raw) {
 
   if (response.status !== "completed") {
     const reason = response.incomplete_details?.reason || response.error?.code || response.status || "unknown";
+    const input = Number(response.usage?.input_tokens || 0);
     const output = Number(response.usage?.output_tokens || 0);
     const reasoning = Number(response.usage?.output_tokens_details?.reasoning_tokens || 0);
+    const upper = observedPeakUsd(response.model, response.usage);
     // Never expose provider error text or unfinished content in the visible error.
     const safeReason = /^[a-zA-Z0-9_-]{1,80}$/.test(reason) ? reason : "unknown";
-    throw new Error(`deepseek-response-not-completed:${safeReason}:output_tokens=${output}:reasoning_tokens=${reasoning}; split-task; no-files-applied`);
+    throw new Error(`deepseek-response-not-completed:${safeReason}:input_tokens=${input}:output_tokens=${output}:reasoning_tokens=${reasoning}:peak_usd_estimate=${upper ?? "unknown"}; split-task; no-files-applied`);
   }
 
   const text = (response.output || [])
@@ -475,24 +559,34 @@ function callDeepSeek(body, options = {}) {
   const key = options.apiKey || envSource.DEEPSEEK_API_KEY;
   if (!key) throw new Error("DEEPSEEK_API_KEY-fehlt");
 
-  const result = spawnSync("curl", [
-    "--silent",
-    "--show-error",
-    "--connect-timeout", "10",
-    "--max-time", String(REQUEST_TIMEOUT_SECONDS),
-    "--request", "POST",
-    "--header", `Authorization: Bearer ${key}`,
-    "--header", "Content-Type: application/json",
-    "--data-binary", "@-",
-    "--write-out", "\n__HELMUT_HTTP_STATUS__:%{http_code}",
-    API_URL,
-  ], {
-    input: JSON.stringify(body),
-    encoding: "utf8",
-    env: sanitizeEnv(envSource),
-    maxBuffer: 16 * 1024 * 1024,
-  });
-
+  // Never put API credentials in argv or the process environment.
+  // Curl reads its auth config via stdin; the request body is held temporarily
+  // in a private (0700) directory and removed even on transport failure.
+  if (!/^[A-Za-z0-9._-]+$/.test(key)) throw new Error("deepseek-api-key-invalid-format");
+  const privateDir = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-deepseek-request-"));
+  const requestFile = path.join(privateDir, "request.json");
+  let result;
+  try {
+    fs.writeFileSync(requestFile, JSON.stringify(body), { flag: "wx", mode: 0o600 });
+    result = spawnSync("curl", [
+      "--silent",
+      "--show-error",
+      "--connect-timeout", "10",
+      "--max-time", String(REQUEST_TIMEOUT_SECONDS),
+      "--request", "POST",
+      "--config", "-",
+      "--data-binary", `@${requestFile}`,
+      "--write-out", "\\n__HELMUT_HTTP_STATUS__:%{http_code}",
+      API_URL,
+    ], {
+      input: `header = "Authorization: Bearer ${key}"\\nheader = "Content-Type: application/json"\\n`,
+      encoding: "utf8",
+      env: sanitizeEnv(envSource),
+      maxBuffer: 16 * 1024 * 1024,
+    });
+  } finally {
+    fs.rmSync(privateDir, { recursive: true, force: true });
+  }
   if (options.saveRawResponse) options.saveRawResponse(String(result.stdout || ""));
   if (result.error) {
     if (result.error.code === "ETIMEDOUT") throw new Error("deepseek-worker-timeout");
@@ -636,6 +730,8 @@ function finalVisibleResult(summary, cfg, apiResult, applied) {
       output_tokens: Number(apiResult.usage.output_tokens || 0),
       total_tokens: Number(apiResult.usage.total_tokens || 0),
       context_chars: Number(apiResult.contextChars || 0),
+      observed_peak_usd_estimate: observedPeakUsd(cfg.model, apiResult.usage),
+      admission_peak_usd_estimate: apiResult.admission?.estimated_peak_usd ?? null,
     },
     applied_files: applied.map((x) => truncateText(x, 120)),
     summary_compacted: compacted.compacted,
@@ -658,7 +754,7 @@ function run(options = {}) {
   const cwd = path.resolve(options.cwd || process.cwd());
   const cfg = parseArgs(argv);
 
-  if (!cfg.replayResponse && !envSource.DEEPSEEK_API_KEY) throw new Error("DEEPSEEK_API_KEY-fehlt");
+  if (!cfg.replayResponse && !cfg.dryRun && !envSource.DEEPSEEK_API_KEY) throw new Error("DEEPSEEK_API_KEY-fehlt");
   const task = ensureTextFile(cfg.taskFile);
   if (!task.trim()) throw new Error("task-file-empty");
   if (charCount(task) > MAX_TASK_CHARS) {
@@ -668,6 +764,8 @@ function run(options = {}) {
   const sources = loadSources({ cwd, explicitFiles: cfg.files });
   const body = buildRequestBody(task, cfg, sources);
   const requestHash = sha256(JSON.stringify(body));
+  const admission = preflight(cfg, task, body, sources);
+  if (cfg.dryRun) return { status: "dry_run", route: { model: cfg.model, effort: cfg.effort, mode: cfg.mode }, admission };
   let apiResult;
   if (cfg.replayResponse) {
     const saved = JSON.parse(fs.readFileSync(privateResponsePath(cfg.replayResponse, cwd), "utf8"));
@@ -695,11 +793,16 @@ function run(options = {}) {
     }
   }
   apiResult.contextChars = charCount(body.input);
+  apiResult.admission = admission;
 
   const payload = apiResult.payload;
   const summary = validateSummary(payload.summary);
   if (cfg.mode === "write" && summary.status !== "ok" && payload.edits?.length) {
     throw new Error("deepseek-non-ok-edits");
+  }
+  if (cfg.mode === "write" && summary.status === "ok" &&
+      (!Array.isArray(payload.edits) || payload.edits.length === 0)) {
+    throw new Error("deepseek-write-ok-without-edits");
   }
 
   const prepared = cfg.mode === "write"
@@ -753,6 +856,7 @@ module.exports = {
   MAX_TASK_CHARS,
   MAX_RETURN_CHARS,
   MAX_FILES,
+  MAX_WRITE_FILES,
   MAX_SOURCE_CHARS,
   MAX_FILE_CHARS,
   sanitizeEnv,
@@ -765,6 +869,8 @@ module.exports = {
   buildInput,
   buildInstructions,
   buildRequestBody,
+  preflight,
+  observedPeakUsd,
   parseCurlResponse,
   callDeepSeek,
   validateSummary,
