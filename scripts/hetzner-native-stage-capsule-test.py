@@ -133,6 +133,10 @@ class CapsuleTests(unittest.TestCase):
         invalid = [valid.replace('https://', 'http://'), valid.replace(m.HOST, 'foreign.invalid'),
             valid.replace(m.HOST, m.HOST + ':444'), valid.replace(m.HOST, 'user@' + m.HOST),
             valid.replace('/raw?', '/raw/extra?'), valid.replace('/files/', '/files/%2e%2e/'),
+            valid.replace(m.HOST,m.HOST+'.evil.invalid'),valid.replace(m.HOST,'prefix'+m.HOST),
+            valid.replace(m.HOST,'sdmntprwestus.oaiusercontent.com'),
+            valid.replace(m.HOST,'localhost'),valid.replace(m.HOST,'127.0.0.1'),
+            valid.replace(m.HOST,'8.8.8.8'),valid.replace(m.HOST,'[::1]'),
             valid + '#fragment', valid + '\n', valid.replace('/raw?', '\\raw?'),
             valid + '&se=2026-10-26T00%3A00%3A00Z', valid.replace(SECRET, ''),
             valid.replace('se=', 'wrong='), valid.replace('2026-', 'nonsense-')]
@@ -141,6 +145,15 @@ class CapsuleTests(unittest.TestCase):
                 with self.assertRaises((m.Stop, ValueError)):
                     m.uri_expiry(value, NOW)
         self.assertGreater(m.uri_expiry(valid.replace(m.HOST, m.HOST + ':443'), NOW), NOW)
+
+    def test_only_four_exact_provider_hosts_and_explicit_tls_port_are_accepted(self):
+        expected={'sdmntpritalynorth.oaiusercontent.com','sdmntprnortheu.oaiusercontent.com',
+                  'sdmntprpolandcentral.oaiusercontent.com','sdmntprukwest.oaiusercontent.com'}
+        self.assertEqual(m.HOSTS,expected)
+        for host in sorted(expected):
+            for suffix in ('',':443'):
+                with self.subTest(host=host,port=suffix):
+                    self.assertEqual(m.uri_expiry(url().replace(m.HOST,host+suffix),NOW),NOW+600)
 
     def test_uri_list_exact_indices_and_field_count(self):
         for value in ([{'index': 0, 'url': url()}, self.uris[1]],

@@ -28,6 +28,9 @@ PLAN_SHA256 = 'e6d463a634925a190d60d066c0fae2ba94b9f7f0a10a115b50b4f4018b1b35eb'
 ROOT950_SHA256 = 'ab941ccf07e78c5f1b91c35ff383d652af42f989cab7700a0ceadba77e846c92'
 FLAG = '--encode-approved-stage-capsule-once'
 HOST = 'sdmntprpolandcentral.oaiusercontent.com'
+HOSTS = frozenset(('sdmntpritalynorth.oaiusercontent.com',
+    'sdmntprnortheu.oaiusercontent.com', 'sdmntprpolandcentral.oaiusercontent.com',
+    'sdmntprukwest.oaiusercontent.com'))
 PART_BYTES, MAX_CIPHER_BYTES = 16 * 1024**2, 1024**3
 MAX_PARTS, MAX_JSON, MAX_BASE64 = 64, 65536, 48 * 1024
 MAX_ENCRYPTED = MAX_BASE64 // 4 * 3
@@ -76,8 +79,11 @@ def uri_expiry(url, created):
     need(type(url) is str and 0 < len(url) <= 4096 and url.isascii()
          and not any(ord(c) <= 32 or ord(c) == 127 or c == '\\' for c in url), 'URI_FORMAT')
     parsed = urllib.parse.urlsplit(url)
+    host = parsed.hostname
     need(url.startswith('https://') and parsed.scheme == 'https'
-         and parsed.netloc in (HOST, HOST + ':443') and not parsed.fragment
+         and host in HOSTS and parsed.netloc in (host, host + ':443')
+         and parsed.port in (None, 443) and parsed.username is None and parsed.password is None
+         and not parsed.fragment
          and re.fullmatch(r'/files/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/raw', parsed.path),
          'URI_AUTHORITY_OR_PATH')
     pairs = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True, strict_parsing=True)
