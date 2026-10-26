@@ -278,14 +278,14 @@ class ContextTests(unittest.TestCase):
             self.assertFalse(m.private_propagation(raw, required=False))
             with self.assertRaisesRegex(m.Stop, '^DAEMON_PROPAGATION_NOT_PRIVATE$'): m.private_propagation(raw)
 
-    def test_claimed_clean_empty_public_checkout_is_rejected_without_qualified_receipt_abi(self):
+    def test_caller_supplied_public_path_or_fd_proof_is_rejected(self):
         public_dir = self.base / 'public-git-only'; public_dir.mkdir(mode=0o755)
         fd = self.real_open(public_dir, m.PFLAGS)
         info = os.fstat(fd)
         proof = {'commit': m.COMMIT, 'tree': m.TREE, 'clean': True, 'public_only': True,
                  'device': info.st_dev, 'inode': info.st_ino}
         try:
-            with self.assertRaisesRegex(m.Stop, '^PUBLIC_CHECKOUT_NOT_QUALIFIED$'):
+            with self.assertRaisesRegex(m.Stop, '^PUBLIC_EXPECTED_SHA$'):
                 self.prepare(public=(fd, proof))
             self.assertEqual(self.mount_plans, [])
             self.assertFalse((self.context / 'NATIVE_CONTEXT_ATTEMPT.SAFE.json').exists())
@@ -344,6 +344,227 @@ class ContextTests(unittest.TestCase):
         self.assertFalse((out / 'CONTEXT_RECEIPT.SAFE.json').exists())
 
 
+class PublicContextTests(unittest.TestCase):
+    write, write_json = ContextTests.write, ContextTests.write_json
+    observer, child = ContextTests.observer, ContextTests.child
+    prepare = ContextTests.prepare
+
+    def setUp(self):
+        ContextTests.setUp(self)
+        self.public_parent = self.control / 'public-code'
+        self.public_parent.mkdir(mode=0o700)
+        self.public_repo = self.public_parent / 'pr942-29b05ac0'
+        self.public_repo.mkdir(mode=0o700)
+        self.public_source = self.public_repo / 'synthetic-public-engine.py'
+        self.write(self.public_source, b'SYNTHETIC_PUBLIC_SOURCE_BEFORE_ADMISSION')
+        self.public_ready = {'schema': 'helmut-fixed-public-checkout-v1',
+            'status': 'PUBLIC_CHECKOUT_READY_NOT_NATIVE_QUALIFIED', 'native_qualified': False,
+            'commit': m.COMMIT, 'tree': m.TREE, 'repository': str(self.public_repo),
+            'files': 17, 'bytes': 4096, 'manifest_sha256': 'd' * 64}
+        self.public_path = self.control / 'PUBLIC_CODE_PR942_READY.SAFE.json'
+        self.public_raw = self.write_json(self.public_path, self.public_ready)
+        real_fstat, real_stat = os.fstat, os.stat
+        self.public_identity = m.identity(real_stat(self.public_repo))
+        self.overrides = {}
+        fields = ('st_dev', 'st_ino', 'st_mode', 'st_uid', 'st_gid', 'st_nlink', 'st_size',
+                  'st_atime_ns', 'st_mtime_ns', 'st_ctime_ns')
+        def view(info):
+            # Ownership is synthetic even when the offline runner is unprivileged.
+            value = {name: getattr(info, name) for name in fields}
+            owner = 1000 if m.identity(info) == self.public_identity else 0
+            value.update(st_uid=owner, st_gid=owner)
+            value.update(self.overrides.get(m.identity(info), {}))
+            return types.SimpleNamespace(**value)
+        self.stack.enter_context(patch.object(m.os, 'fstat', side_effect=lambda fd: view(real_fstat(fd))))
+        self.stack.enter_context(patch.object(m.os, 'stat', side_effect=lambda *a, **kw: view(real_stat(*a, **kw))))
+
+    def proof(self):
+        return m.public_checkout(m.sha(self.public_raw))
+
+    def public_prepare(self, **kwargs):
+        return self.prepare(public=m.sha(self.public_raw), **kwargs)
+
+    def test_fixed_public_binding_holds_exact_fd_and_requires_fresh_source_admission(self):
+        before = m.full_metadata(os.stat(self.public_repo))
+        seen = []
+        def child(namespace, expected, steps, refresh):
+            for fd, target, readonly in steps:
+                self.assertEqual(refresh(), expected)
+                if target == '/opt/helmut-public-pr942':
+                    seen.append(m.identity(os.fstat(fd)))
+                    self.assertTrue(readonly)
+            return self.child(namespace, expected, steps, refresh)
+        with patch.object(m, 'mount', side_effect=AssertionError('no real mount')), \
+                patch.object(m, 'enter', side_effect=AssertionError('no real setns')), \
+                patch.object(m, 'make_private', side_effect=AssertionError('no real propagation')):
+            result = self.public_prepare(child=child)
+        self.assertEqual(seen, [self.public_identity])
+        self.assertEqual(result['publicEngineState'], 'MOUNTED_REQUIRES_FRESH_SOURCE_ADMISSION')
+        self.assertTrue(result['publicEnginePresent'])
+        self.assertFalse(result['nativeQualified'])
+        self.assertFalse(result['nativeGOConsumed'])
+        self.assertEqual(result['publicCheckoutReadySHA256'], m.sha(self.public_raw))
+        self.assertEqual(result['publicCheckoutReceipt'], self.public_ready)
+        self.assertEqual(result['canonicalProofs'][-1]['path'], '/opt/helmut-public-pr942')
+        self.assertEqual(result['canonicalProofs'][-1]['inode'], self.public_identity[1])
+        self.assertTrue(result['canonicalProofs'][-1]['readonly'])
+        self.assertEqual(self.created_anchors, list(m.ANCHORS))
+        self.assertEqual(m.full_metadata(os.stat(self.public_repo)), before)
+        self.assertEqual(self.chowns, [(0, 0), (0, 0), (0, 0), (1000, 1000)] + [(0, 0)] * 4)
+
+    def test_only_sha_input_and_exact_ready_hash_are_accepted(self):
+        for value in ('/arbitrary/path', 'A' * 64, None, ('fd', {})):
+            with self.subTest(value=value), self.assertRaisesRegex(m.Stop, '^PUBLIC_EXPECTED_SHA$'):
+                m.public_checkout(value)
+        with self.assertRaisesRegex(m.Stop, '^PUBLIC_READY_HASH$'):
+            m.public_checkout('0' * 64)
+
+    def test_public_schema_paths_pins_and_strict_counts_are_required(self):
+        for change in ({'schema': 'other'}, {'status': 'READY'}, {'native_qualified': True},
+                {'commit': '0' * 40}, {'tree': '0' * 40}, {'repository': str(self.base / 'other')},
+                {'files': True}, {'files': 0}, {'files': 30001}, {'bytes': False}, {'bytes': 0},
+                {'bytes': 512 * 1024**2 + 1}, {'manifest_sha256': 'D' * 64},
+                {'manifest_sha256': 123}, {'unexpected': 'field'}):
+            with self.subTest(change=change):
+                raw = self.write_json(self.public_path, {**self.public_ready, **change})
+                with self.assertRaisesRegex(m.Stop, '^PUBLIC_READY$'): m.public_checkout(m.sha(raw))
+        self.assertEqual(self.mount_plans, [])
+
+    def test_pending_or_historical_checkout_error_prevents_attempt_and_mounts(self):
+        for name in ('PUBLIC_CODE_PR942_RECEIPT.PENDING.SAFE.json', 'PUBLIC_CODE_PR942_FIRST_ERROR.PRIVATE.json'):
+            path = self.control / name
+            self.write(path, b'{}')
+            with self.assertRaisesRegex(m.Stop, '^PUBLIC_CHECKOUT_UNKNOWN$'): self.proof()
+            path.unlink()
+        self.assertEqual(self.mount_plans, [])
+
+    def test_control_and_parent_must_be_root_private_and_final_repository_exact_uid1000(self):
+        for path, values, code in ((self.control, {'st_mode': stat.S_IFDIR | 0o755}, 'PUBLIC_CONTROL_MODE'),
+                (self.control, {'st_uid': 1000}, 'PUBLIC_CONTROL_MODE'),
+                (self.public_parent, {'st_gid': 1000}, 'PUBLIC_PARENT_OWNER_MODE'),
+                (self.public_parent, {'st_mode': stat.S_IFDIR | 0o755}, 'PUBLIC_PARENT_OWNER_MODE'),
+                (self.public_repo, {'st_uid': 0}, 'PUBLIC_REPOSITORY_OWNER_MODE'),
+                (self.public_repo, {'st_gid': 0}, 'PUBLIC_REPOSITORY_OWNER_MODE'),
+                (self.public_repo, {'st_mode': stat.S_IFDIR | 0o755}, 'PUBLIC_REPOSITORY_OWNER_MODE')):
+            with self.subTest(path=path, values=values):
+                identity = m.identity(os.stat(path))
+                self.overrides[identity] = values
+                with self.assertRaisesRegex(m.Stop, '^' + code + '$'): self.proof()
+                self.overrides.clear()
+
+    def test_ready_requires_root0600_single_link_and_bounded_regular_file(self):
+        identity = m.identity(os.stat(self.public_path))
+        for values in ({'st_uid': 1000}, {'st_gid': 1000}, {'st_nlink': 2},
+                       {'st_mode': stat.S_IFREG | 0o644}, {'st_size': 16385}):
+            with self.subTest(values=values):
+                self.overrides[identity] = values
+                with self.assertRaisesRegex(m.Stop, '^PUBLIC_RECEIPT_IDENTITY$'): self.proof()
+        self.overrides.clear()
+
+    def test_receipt_open_is_noatime_nofollow_and_nanosecond_drift_during_read_is_rejected(self):
+        opening = m.os.open
+        with patch.object(m.os, 'open', wraps=opening) as calls:
+            fd, proof = self.proof()
+            os.close(fd)
+        ready_calls = [call for call in calls.call_args_list if call.args[0] == self.public_path.name]
+        self.assertEqual(len(ready_calls), 1)
+        self.assertTrue(ready_calls[0].args[1] & os.O_NOATIME)
+        self.assertTrue(ready_calls[0].args[1] & os.O_NOFOLLOW)
+        real_read = os.read
+        info = os.stat(self.public_path)
+        def reading(fd, count):
+            raw = real_read(fd, count)
+            self.overrides[m.identity(info)] = {'st_atime_ns': info.st_atime_ns + 1}
+            return raw
+        with patch.object(m.os, 'read', side_effect=reading):
+            with self.assertRaisesRegex(m.Stop, '^PUBLIC_RECEIPT_CHANGED$'): self.proof()
+
+    def test_fixed_parent_repository_and_receipt_symlinks_are_never_followed(self):
+        for path in (self.public_path, self.public_repo, self.public_parent):
+            with self.subTest(path=path):
+                moved = path.with_name(path.name + '-fixture')
+                path.rename(moved); path.symlink_to(moved)
+                try:
+                    with self.assertRaises(OSError): self.proof()
+                finally:
+                    path.unlink(); moved.rename(path)
+
+    def test_nanosecond_metadata_drift_on_held_repository_receipt_or_ancestors_is_rejected(self):
+        for path in (self.public_repo, self.public_path, self.public_parent, self.control):
+            with self.subTest(path=path):
+                fd, proof = self.proof()
+                info = os.stat(path)
+                self.overrides[m.identity(info)] = {'st_mtime_ns': info.st_mtime_ns + 1}
+                try:
+                    with self.assertRaisesRegex(m.Stop, '^PUBLIC_CHECKOUT_CHANGED$'):
+                        m.fresh_public(m.sha(self.public_raw), fd, proof)
+                finally:
+                    os.close(fd); self.overrides.clear()
+
+    def test_replaced_directory_or_changed_receipt_cannot_refresh_original_fd(self):
+        fd, proof = self.proof()
+        original = self.public_repo.with_name('held-original-fixture')
+        self.public_repo.rename(original); self.public_repo.mkdir(mode=0o700)
+        try:
+            with self.assertRaises(m.Stop): m.fresh_public(m.sha(self.public_raw), fd, proof)
+        finally: os.close(fd)
+        self.write(self.public_path, self.public_raw + b' ')
+        with self.assertRaisesRegex(m.Stop, '^PUBLIC_READY_HASH$'): self.proof()
+
+    def test_drift_during_child_ack_blocks_publication_and_keeps_first_error(self):
+        def child(namespace, expected, steps, refresh):
+            self.assertEqual(refresh(), expected)
+            info = os.stat(self.public_repo)
+            self.overrides[self.public_identity] = {'st_ctime_ns': info.st_ctime_ns + 1}
+            refresh()
+            self.fail('must stop before next acknowledged mount')
+        with self.assertRaisesRegex(m.Stop, '^PUBLIC_CHECKOUT_CHANGED$'): self.public_prepare(child=child)
+        out = self.context / ('native-context-' + self.case_id)
+        self.assertFalse((out / 'CONTEXT_RECEIPT.SAFE.json').exists())
+        self.assertTrue((self.context / 'NATIVE_CONTEXT_FIRST_ERROR.PRIVATE.json').exists())
+        with self.assertRaisesRegex(m.Stop, '^CONTEXT_ALREADY_ATTEMPTED$'): self.public_prepare()
+
+    def test_public_bind_requires_complete_actual_canonical_proof(self):
+        def child(namespace, expected, steps, refresh):
+            proofs = self.child(namespace, expected, steps, refresh)
+            proofs[-1]['readonly'] = False
+            return proofs
+        with self.assertRaisesRegex(m.Stop, '^CANONICAL_PROOF_MISMATCH$'): self.public_prepare(child=child)
+        out = self.context / ('native-context-' + self.case_id)
+        self.assertFalse((out / 'CONTEXT_RECEIPT.SAFE.json').exists())
+
+    def test_mounted_receipt_does_not_admit_or_hash_current_public_source_bytes(self):
+        self.write(self.public_source, b'SYNTHETIC_CHANGED_BYTES_REQUIRING_FRESH_NATIVE_ADMISSION')
+        opening = m.os.open
+        with patch.object(m.os, 'open', wraps=opening) as calls:
+            result = self.public_prepare()
+        self.assertFalse(any(call.args[0] == str(self.public_source) or call.args[0] == self.public_source.name
+                             for call in calls.call_args_list))
+        self.assertEqual(result['publicEngineState'], 'MOUNTED_REQUIRES_FRESH_SOURCE_ADMISSION')
+        self.assertFalse(result['nativeQualified'])
+
+    def test_public_mount_target_stays_root_owned_and_not_group_or_world_writable(self):
+        source = self.real_open(self.public_repo, m.PFLAGS)
+        self.addCleanup(os.close, source)
+        for uid, gid, mode in ((1000, 0, 0o755), (0, 1000, 0o755), (0, 0, 0o775), (0, 0, 0o757)):
+            with self.subTest(uid=uid, gid=gid, mode=mode):
+                target = self.real_open(self.base, m.PFLAGS)
+                source_info = os.fstat(source)
+                destination = types.SimpleNamespace(st_mode=stat.S_IFDIR | mode, st_uid=uid, st_gid=gid)
+                with patch.object(m, 'target_open', return_value=target), \
+                        patch.object(m.os, 'fstat', side_effect=[source_info, destination]), \
+                        patch.object(m.ctypes, 'CDLL', side_effect=AssertionError('no mount syscall')):
+                    with self.assertRaisesRegex(m.Stop, '^MOUNT_TARGET_OWNER$'):
+                        m.mount(source, '/opt/helmut-public-pr942', True)
+
+    def test_general_directory_guard_still_rejects_uid1000_for_any_other_path(self):
+        root = self.real_open(self.base, m.PFLAGS)
+        final = self.real_open(self.public_repo, m.PFLAGS)
+        with patch.object(m.os, 'open', side_effect=[root, final]):
+            with self.assertRaisesRegex(m.Stop, '^DIRECTORY_OWNER_MODE$'):
+                DIRECTORY('/synthetic-other-directory')
+
+
 class CanonicalTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='canonical-context-synthetic-')
@@ -358,9 +579,10 @@ class CanonicalTests(unittest.TestCase):
         self.expected = {'pid': 4242, 'socket': list(m.identity(self.info))}
 
     def prove(self, target=None, readonly=True, mount_readonly=True, actual_readonly=True,
-              propagation='', filesystem_mismatch=False, socket_mode=False, placeholder=False, peer_pid=4242):
+              propagation='', filesystem_mismatch=False, socket_mode=False, placeholder=False, peer_pid=4242,
+              path=None):
         target = self.source if target is None else target
-        path = '/run/docker.sock' if socket_mode else '/workspace/synthetic-original'
+        path = path or ('/run/docker.sock' if socket_mode else '/workspace/synthetic-original')
         device = str(os.major(self.info.st_dev)) + ':' + str(os.minor(self.info.st_dev))
         raw = '1 0 ' + device + ' / ' + path + ' ' + ('ro' if mount_readonly else 'rw')
         raw += ',nosuid,nodev ' + propagation + ' - ext4 synthetic rw\n'
@@ -386,6 +608,17 @@ class CanonicalTests(unittest.TestCase):
         self.assertEqual(result[0]['inode'], self.info.st_ino)
         self.assertTrue(result[0]['readonly'])
         self.assertTrue(result[0]['private'])
+
+    def test_fixed_public_target_requires_actual_inode_filesystem_private_and_readonly(self):
+        path = '/opt/helmut-public-pr942'
+        self.assertEqual(self.prove(path=path)[0]['path'], path)
+        for change, code in (({'target': self.foreign}, 'CANONICAL_TARGET_INODE'),
+                ({'filesystem_mismatch': True}, 'CANONICAL_PROOF_MISMATCH'),
+                ({'mount_readonly': False}, 'CANONICAL_MOUNT_FLAGS'),
+                ({'actual_readonly': False}, 'CANONICAL_TARGET_FILESYSTEM'),
+                ({'propagation': 'shared:1'}, 'DAEMON_PROPAGATION_NOT_PRIVATE')):
+            with self.subTest(change=change), self.assertRaisesRegex(m.Stop, '^' + code + '$'):
+                self.prove(path=path, **change)
 
     def test_wrong_canonical_inode_rejects_empty_prefix_projection(self):
         with self.assertRaisesRegex(m.Stop, '^CANONICAL_TARGET_INODE$'): self.prove(target=self.foreign)

@@ -165,6 +165,84 @@ def stage_proof(expected):
     return {'case_id': ready['case_id'], 'ready_sha256': expected, 'root': case + '/restored/files'}
 
 
+def full_metadata(info):
+    # stat_result tuple equality does not compare the integer nanosecond fields.
+    return [info.st_dev, info.st_ino, info.st_mode, info.st_uid, info.st_gid,
+            info.st_nlink, info.st_size, info.st_atime_ns, info.st_mtime_ns, info.st_ctime_ns]
+
+
+def public_checkout(expected):
+    need(type(expected) is str and re.fullmatch('[a-f0-9]{64}', expected), 'PUBLIC_EXPECTED_SHA')
+    control = directory(CONTROL)
+    parent = repo = receipt = None
+    try:
+        control_info = os.fstat(control)
+        control_before = full_metadata(control_info)
+        need(control_info.st_uid == control_info.st_gid == 0
+             and stat.S_IMODE(control_info.st_mode) == 0o700, 'PUBLIC_CONTROL_MODE')
+        for name in ('PUBLIC_CODE_PR942_RECEIPT.PENDING.SAFE.json', 'PUBLIC_CODE_PR942_FIRST_ERROR.PRIVATE.json'):
+            try: os.stat(name, dir_fd=control, follow_symlinks=False)
+            except FileNotFoundError: continue
+            raise Stop('PUBLIC_CHECKOUT_UNKNOWN')
+        name = 'PUBLIC_CODE_PR942_READY.SAFE.json'
+        receipt = os.open(name, RFLAGS, dir_fd=control)
+        before = os.fstat(receipt)
+        need(stat.S_ISREG(before.st_mode) and before.st_uid == before.st_gid == 0
+             and before.st_nlink == 1 and stat.S_IMODE(before.st_mode) == 0o600
+             and 0 < before.st_size <= 16384, 'PUBLIC_RECEIPT_IDENTITY')
+        raw = bytearray()
+        while block := os.read(receipt, 16385 - len(raw)):
+            raw.extend(block)
+            need(len(raw) <= 16384, 'PUBLIC_RECEIPT_LIMIT')
+        receipt_metadata = full_metadata(before)
+        need(len(raw) == before.st_size and receipt_metadata == full_metadata(os.fstat(receipt))
+             == full_metadata(os.stat(name, dir_fd=control, follow_symlinks=False)), 'PUBLIC_RECEIPT_CHANGED')
+        need(sha(raw) == expected, 'PUBLIC_READY_HASH')
+        ready = parse(raw)
+        repository = CONTROL + '/public-code/pr942-29b05ac0'
+        need(type(ready) is dict and set(ready) == {'schema', 'status', 'native_qualified', 'commit', 'tree',
+             'repository', 'files', 'bytes', 'manifest_sha256'}
+             and ready['schema'] == 'helmut-fixed-public-checkout-v1'
+             and ready['status'] == 'PUBLIC_CHECKOUT_READY_NOT_NATIVE_QUALIFIED'
+             and ready['native_qualified'] is False and ready['commit'] == COMMIT and ready['tree'] == TREE
+             and ready['repository'] == repository
+             and type(ready['files']) is int and 0 < ready['files'] <= 30000
+             and type(ready['bytes']) is int and 0 < ready['bytes'] <= 512 * 1024**2
+             and type(ready['manifest_sha256']) is str and re.fullmatch('[a-f0-9]{64}', ready['manifest_sha256']),
+             'PUBLIC_READY')
+        parent = os.open('public-code', PFLAGS, dir_fd=control)
+        parent_before = os.fstat(parent)
+        need(stat.S_ISDIR(parent_before.st_mode) and parent_before.st_uid == parent_before.st_gid == 0
+             and stat.S_IMODE(parent_before.st_mode) == 0o700, 'PUBLIC_PARENT_OWNER_MODE')
+        # This sole fixed final directory has the checkout producer's UID/GID.
+        # General directory and all mount-target guards remain root-only.
+        repo = os.open('pr942-29b05ac0', PFLAGS, dir_fd=parent)
+        repo_before = os.fstat(repo)
+        need(stat.S_ISDIR(repo_before.st_mode) and repo_before.st_uid == repo_before.st_gid == 1000
+             and stat.S_IMODE(repo_before.st_mode) == 0o700, 'PUBLIC_REPOSITORY_OWNER_MODE')
+        proof = {'ready_sha256': expected, 'receipt': ready, 'receipt_metadata': receipt_metadata,
+                 'control_metadata': control_before, 'parent_metadata': full_metadata(parent_before),
+                 'repository_metadata': full_metadata(repo_before)}
+        need(control_before == full_metadata(os.fstat(control))
+             and proof['parent_metadata'] == full_metadata(os.fstat(parent))
+             == full_metadata(os.stat('public-code', dir_fd=control, follow_symlinks=False))
+             and proof['repository_metadata'] == full_metadata(os.fstat(repo))
+             == full_metadata(os.stat('pr942-29b05ac0', dir_fd=parent, follow_symlinks=False)), 'PUBLIC_CHECKOUT_CHANGED')
+        result, repo = repo, None
+        return result, proof
+    finally:
+        for fd in (receipt, repo, parent, control):
+            if fd is not None: os.close(fd)
+
+
+def fresh_public(expected, held, proof):
+    current, actual = public_checkout(expected)
+    try:
+        need(actual == proof and full_metadata(os.fstat(held)) == proof['repository_metadata'],
+             'PUBLIC_CHECKOUT_CHANGED')
+    finally: os.close(current)
+
+
 def proc(path, cap=262144):
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
     try:
@@ -532,6 +610,10 @@ def prepare(stage_sha, public=None, observer=observe, child_runner=run_child):
     root = directory(BASE)
     held, output_fd, namespace = [], None, None
     anchors_created, anchors_attempted, phase, proof = [], [], 'preflight', None
+    public_fd = public_proof = None
+    def refresh():
+        if public_fd is not None: fresh_public(public, public_fd, public_proof)
+        return observer()
     try:
         proof = stage_proof(stage_sha)
         out = BASE + '/native-context-' + proof['case_id']
@@ -552,10 +634,12 @@ def prepare(stage_sha, public=None, observer=observe, child_runner=run_child):
         held.append((socket_fd, 'socket'))
         need(list(identity(os.fstat(socket_fd))) == expected['socket'], 'SOCKET_CHANGED')
         if public is not None:
-            raise Stop('PUBLIC_CHECKOUT_NOT_QUALIFIED')
-        needed = ANCHORS[:2]
+            public_fd, public_proof = public_checkout(public)
+            held.append((public_fd, 'public'))
+            no_source_submounts([CONTROL + '/public-code/pr942-29b05ac0'])
+        needed = ANCHORS if public is not None else ANCHORS[:2]
         for path in needed: anchor(path)
-        need(stage_proof(stage_sha) == proof and observer() == expected, 'PREFLIGHT_CHANGED')
+        need(stage_proof(stage_sha) == proof and refresh() == expected, 'PREFLIGHT_CHANGED')
         # No operational mutation precedes all checks above.
         phase = 'attempt'
         active = os.open('.', RFLAGS | os.O_DIRECTORY, dir_fd=root)
@@ -575,14 +659,15 @@ def prepare(stage_sha, public=None, observer=observe, child_runner=run_child):
         fd = os.open(run_socket, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600); os.close(fd)
         steps += [(held[4][0], '/opt/codex', True), (held[5][0], '/usr/local/bin', True),
                   (socket_fd, '/run/docker.sock', True)]
+        if public_fd is not None: steps.append((public_fd, '/opt/helmut-public-pr942', True))
         for path in needed:
-            need(observer() == expected, 'DAEMON_CHANGED')
+            need(refresh() == expected, 'DAEMON_CHANGED')
             if missing(path): anchors_attempted.append(path)
             if anchor(path, create=True): anchors_created.append(path)
         phase = 'private-mounts'
-        need(observer() == expected, 'DAEMON_CHANGED')
-        proofs = check_proofs(steps, child_runner(namespace, expected, steps, observer), expected)
-        actual = observer()
+        need(refresh() == expected, 'DAEMON_CHANGED')
+        proofs = check_proofs(steps, child_runner(namespace, expected, steps, refresh), expected)
+        actual = refresh()
         need(same_daemon(actual, expected) and actual['private'] is True, 'DAEMON_CHANGED')
         receipt = {'status': 'CONTEXT_PREPARED_NOT_NATIVE_QUALIFIED', 'case_id': proof['case_id'],
             'scope_sha256': SCOPE, 'stage_ready_sha256': stage_sha, 'daemon': actual,
@@ -592,6 +677,9 @@ def prepare(stage_sha, public=None, observer=observe, child_runner=run_child):
             'runnerUid': 1000, 'runnerGid': 1000, 'publicEnginePresent': False,
             'publicEngineState': 'NOT_PRESENT_NOT_QUALIFIED',
             'nativeQualified': False, 'nativeGOConsumed': False, 'budgetParentCreated': False}
+        if public_proof is not None:
+            receipt.update(publicEnginePresent=True, publicEngineState='MOUNTED_REQUIRES_FRESH_SOURCE_ADMISSION',
+                           publicCheckoutReadySHA256=public, publicCheckoutReceipt=public_proof['receipt'])
         write_json(output_fd, 'CONTEXT_RECEIPT.PENDING.SAFE.json', receipt)
         rename = ctypes.CDLL(None, use_errno=True).renameat2
         rename.argtypes = (ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint)
@@ -627,9 +715,10 @@ def main(argv=None):
         print('native-context: NOT_EXECUTED_EXPLICIT_PREPARE_FLAG_REQUIRED'); return 2
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--stage-ready-sha256', required=True)
+    parser.add_argument('--public-ready-sha256')
     args = parser.parse_args(argv[1:])
     try:
-        result = prepare(args.stage_ready_sha256)
+        result = prepare(args.stage_ready_sha256, public=args.public_ready_sha256)
         print(result['status']); return 0
     except BaseException:
         print('native-context: FAIL_KEEP_PARTIAL_CONTEXT_NO_RETRY'); return 1
