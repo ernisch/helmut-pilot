@@ -119,7 +119,8 @@ class StageBoundsTests(unittest.TestCase):
 
     def test_private_urls_redirect_variants_and_expiry_rejected(self):
         expiry=int(time.time())+250;good=url(expiry)
-        self.assertIn('/files/',S._stage_url(good,expiry))
+        host,target=S._stage_url(good,expiry)
+        self.assertEqual(host,S.STAGE_HOST);self.assertIn('/files/',target)
         for bad in (good.replace('https:','http:'),good.replace(S.STAGE_HOST,'127.0.0.1'),
                     good.replace(S.STAGE_HOST,'user@'+S.STAGE_HOST),good+'#fragment',
                     good.replace('/files/','/files/../'),good.replace('/raw?','/%72aw?'),
@@ -131,19 +132,55 @@ class StageBoundsTests(unittest.TestCase):
         for address in ('127.0.0.1','10.1.1.1','169.254.169.254','100.64.0.1','::1','fc00::1'):
             with self.subTest(address=address),patch.object(S.socket,'getaddrinfo',return_value=[
                 (socket.AF_INET,socket.SOCK_STREAM,6,'',(address,443))]),patch.object(S.socket,'socket') as connect:
-                self.rejected('STAGE_DNS',S._stage_connect);connect.assert_not_called()
+                self.rejected('STAGE_DNS',lambda:S._stage_connect(S.STAGE_HOST));connect.assert_not_called()
 
     def test_tls_connects_only_checked_ip_with_fixed_sni_and_no_proxy(self):
-        raw=types.SimpleNamespace(settimeout=lambda _:None,connect=unittest.mock.Mock(),close=unittest.mock.Mock())
-        context=types.SimpleNamespace(wrap_socket=unittest.mock.Mock(return_value='TLS'))
-        connection=types.SimpleNamespace(sock=None)
-        rows=[(socket.AF_INET,socket.SOCK_STREAM,6,'',('8.8.8.8',443))]
-        with patch.object(S.socket,'getaddrinfo',return_value=rows),patch.object(S.socket,'socket',return_value=raw),\
-             patch.object(S.ssl,'create_default_context',return_value=context),\
-             patch.object(S.http.client,'HTTPSConnection',return_value=connection):
-            self.assertIs(S._stage_connect(),connection)
-        raw.connect.assert_called_once_with(('8.8.8.8',443))
-        context.wrap_socket.assert_called_once_with(raw,server_hostname=S.STAGE_HOST)
+        expected={'sdmntpritalynorth.oaiusercontent.com','sdmntprnortheu.oaiusercontent.com',
+                  'sdmntprpolandcentral.oaiusercontent.com','sdmntprukwest.oaiusercontent.com'}
+        self.assertEqual(S.STAGE_HOSTS,expected)
+        for host in sorted(expected):
+            with self.subTest(host=host):
+                raw=types.SimpleNamespace(settimeout=lambda _:None,connect=unittest.mock.Mock(),close=unittest.mock.Mock())
+                context=types.SimpleNamespace(wrap_socket=unittest.mock.Mock(return_value='TLS'))
+                connection=types.SimpleNamespace(sock=None)
+                rows=[(socket.AF_INET,socket.SOCK_STREAM,6,'',('8.8.8.8',443))]
+                with patch.object(S.socket,'getaddrinfo',return_value=rows) as dns,\
+                     patch.object(S.socket,'socket',return_value=raw),\
+                     patch.object(S.ssl,'create_default_context',return_value=context),\
+                     patch.object(S.http.client,'HTTPSConnection',return_value=connection) as https:
+                    self.assertIs(S._stage_connect(host),connection)
+                dns.assert_called_once_with(host,443,type=socket.SOCK_STREAM)
+                self.assertEqual(https.call_args.args,(host,443))
+                raw.connect.assert_called_once_with(('8.8.8.8',443))
+                context.wrap_socket.assert_called_once_with(raw,server_hostname=host)
+
+    def test_four_hosts_bind_validated_url_to_http_host_and_exact_target(self):
+        expiry=int(time.time())+250
+        for host in sorted(S.STAGE_HOSTS):
+            for suffix in ('',':443'):
+                with self.subTest(host=host,port=suffix),tempfile.TemporaryFile() as target:
+                    part=capsule()['parts'][0];part['url']=url(expiry).replace(S.STAGE_HOST,host+suffix)
+                    selected,path=S._stage_url(part['url'],expiry)
+                    self.assertEqual(selected,host)
+                    connection=Connection();whole=hashlib.sha256()
+                    with patch.object(S,'_stage_connect',return_value=connection) as connect:
+                        S._stage_download(part,expiry,target.fileno(),whole)
+                    connect.assert_called_once_with(host)
+                    args,options=connection.requests[0]
+                    self.assertEqual(args,('GET',path));self.assertEqual(options['headers']['Host'],host)
+                    target.seek(0);self.assertEqual(target.read(),DATA);self.assertEqual(whole.hexdigest(),sha(DATA))
+
+    def test_nonallowlisted_authorities_fail_before_dns_tls_or_http(self):
+        bad_hosts=(S.STAGE_HOST+'.evil.invalid','prefix'+S.STAGE_HOST,'user@'+S.STAGE_HOST,
+                   S.STAGE_HOST+'@127.0.0.1','sdmntprwestus.oaiusercontent.com',
+                   'localhost','127.0.0.1','8.8.8.8','[::1]')
+        for host in bad_hosts:
+            part=capsule()['parts'][0];part['url']=part['url'].replace(S.STAGE_HOST,host)
+            with self.subTest(host=host),patch.object(S,'_stage_connect') as connect:
+                self.rejected('STAGE_URL',lambda:S._stage_download(part,int(time.time())+250,-1,hashlib.sha256()))
+                connect.assert_not_called()
+            with patch.object(S.socket,'getaddrinfo') as dns:
+                self.rejected('STAGE_URL',lambda:S._stage_connect(host));dns.assert_not_called()
 
     def test_gpg_exit_zero_literal_bad_mdc_wrong_key_and_algorithm_fail(self):
         for text,code in ((b'plaintext','STAGE_GPG_INTEGRITY'),
@@ -251,7 +288,7 @@ class StageStateTests(unittest.TestCase):
             with os.fdopen(fd,'wb') as stream:stream.write(self.gzip)
             return types.SimpleNamespace(returncode=0,stdout=statuses(),stderr=b'PRIVATE_GPG_MARKER')
         self.gpg=self.stack.enter_context(patch.object(S,'_bounded_tool',side_effect=gpg))
-        self.connect=self.stack.enter_context(patch.object(S,'_stage_connect',side_effect=lambda:Connection()))
+        self.connect=self.stack.enter_context(patch.object(S,'_stage_connect',side_effect=lambda host:Connection()))
 
     def run_stage(self):return S._stage_run(self.request,self.context)
 

@@ -17,7 +17,7 @@ SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parent
 SOURCE_SHA256 = {
     'bootstrap': '740e7cd3218eec796abf9fe408db2db7ddeaeeade34ddc2363942d5fcf9a4f97',
-    'server': '65ceef52ddb18e4a16c63a0c7493f64715fa13112e4c92cfb6121b4904aa6487',
+    'server': '3262e1cf895daa03e0ef1a0a26c548f4d51f4e948273dd76dd4ff7543a20ea70',
     'client': '61db0524dcdd91066517336d65b4cf0386a1c6f1140410a8fe5d3f6303f02b14',
     'installer': 'f3512b1126ece5eb744db3f991c8c2c4d0b7703350c13ded52dd0c1c894d21d3',
 }

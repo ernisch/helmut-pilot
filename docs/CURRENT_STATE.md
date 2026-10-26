@@ -8,7 +8,7 @@ Actions40263202086 bestaetigt vorhandenen Empfaenger; Vertrauenscache --- zu uuu
 keine Schluesselerzeugung. Unabhaengig abgenommen, Mac nicht mehr erforderlich.
 Privater Key bleibt auf Hetzner. Verschluesselte Stage vorbereitet: feste
 Original-Whitelist, Hashpruefung, Once vor GPG, atomare Annahme; native Tore zu.
-Originaltransfer und native Vier-TX-/Unit60-/500er-Nachweis noch nicht erfolgt.
+Originalpaket verschluesselt im Drive, vollstaendig rueckgeprueft; native Nachweise offen.
 Docker28/UID1000/Pfadsicht bleiben frisch zu qualifizieren.
 [Belege und Grenzen](betrieb/hetzner-native-automation-20261026.md).
 

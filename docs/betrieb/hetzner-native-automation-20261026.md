@@ -176,7 +176,7 @@ Diese Aenderung schaltet ausschliesslich `stage` hinzu. `admit` und `four-tx`
 bleiben gesperrt; Stage-Erfolg ist ausdruecklich keine native Abnahme.
 Eine recipient-verschluesselte, hoechstens48KiB grosse Workflow-Kapsel enthaelt
 private Kurzzeit-Downloadlinks; keine Klartextlinks/Originale in Actions-Inputs,
-Logs oder oeffentlichen Artefakten. Download nur vom fest gebundenen HTTPS-Host,
+Logs oder oeffentlichen Artefakten. Download nur von vier exakt gebundenen offiziellen HTTPS-Hosts,
 mit oeffentlicher numerischer Zieladresse, TLS-Hostpruefung, ohne Redirect/Proxy.
 Teile und Gesamtdaten werden gegen ihre Pins gelesen, GPG muss Empfaenger,
 AES256, vollstaendigen Abschluss und Integritaet bestaetigen.
@@ -200,10 +200,32 @@ niemals erfundene Nullwerte. Auch nach fruehem SSH-EPIPE wird eine vollstaendig
 validierte SAFE-FAIL-Antwort erhalten; vorzeitiges READY bleibt ausgeschlossen.
 Der Workflow publiziert gueltige Fehlerbelege und bleibt rot.
 
-157 synthetische Steuer-/Stagefaelle und31 gezielte Restorefaelle bestanden,
+159 synthetische Steuer-/Stagefaelle und31 gezielte Restorefaelle bestanden,
 ohne GPG-, HTTP-, SSH-, Original- oder native Zielausfuehrung. Die vorhandenen
 historischen Fehler und Originalbelege bleiben unveraendert.
 Die erste Source-Verschluesselung stoppte vor dem Einpacken von Originalen am
 Public-Key-Import (GPG-Agentpfad zu lang);0Cipherbytes. Diese erhaltene Fehlkopie
-wird nicht wiederverwendet. Eine getrennte schmale Quellkorrektur ist erforderlich.
+wird nicht wiederverwendet. Die schmale Korrektur nutzt nach exaktem Public-Key-
+Readback einen nur lesbaren geerbten Deskriptor mit recipient-file, keinen Import,
+Defaultkeyring oder Agentstart. 20 Bundle-/15 Kapseltests und unabhaengiges Review
+qualifizieren die Quelle; echter Einbyte-Public-only-Faehigkeitsnachweis bestanden.
+
+Der anschliessende frische Bundlelauf hat alle1767 Dateien/2865680705Bytes und
+99 Metadatenobjekte waehrend des Packens geprueft. Das verschluesselte Ergebnis
+hat487267152Bytes in30 Teilen, Whole-SHA256
+`468610327368d51360815d18538ad0c3fcdc4d98825bb8bf0499daa96112ab3c`.
+Alle Teile sind im bestehenden privaten Drive. Vollstaendiger Rueckdownload aller
+30Teile, Teilhashes und Wholehash bestanden; keine zweite vollstaendige Plattenkopie.
+Rueckpruefungsbeleg-SHA256
+`d11bc8651a39a3ceecb7d84c3c987a9611ec16c4ddecde56489a7ad6f9037ebc`.
+Die unabhaengige lokale Vollpruefung aller Cipherteile bestaetigt denselben Hash.
+Keine Entschluesselung/Wiederherstellung oder native Abnahme daraus ableiten.
+
+Tatsaechliche File-Service-Links liegen auf sdmntpritalynorth, sdmntprnortheu,
+sdmntprpolandcentral und sdmntprukwest, jeweils exakt unter oaiusercontent.com.
+Die urspruengliche Einhostannahme stoppte den ersten Rueckdownload vor jedem
+Netzzugriff; dieser Beleg bleibt erhalten. Nur diese vier exakten Hosts sind jetzt
+zugelassen, keine Wildcard. Der validierte Host bindet DNS, numerische Verbindung,
+TLS-SNI und HTTP-Host gemeinsam. Zwei neue gezielte Routing-/Abweisungspruefungen
+ergänzen den bestehenden Umfang; die vollstaendigen190 synthetischen Tests passen.
 Native Pfadsicht, UID1000, Docker-/Socket-/Cgroupadmission bleiben danach offen.

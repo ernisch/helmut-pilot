@@ -812,6 +812,9 @@ import urllib.parse
 STAGE_PLAN = 'e6d463a634925a190d60d066c0fae2ba94b9f7f0a10a115b50b4f4018b1b35eb'
 STAGE_SCOPE = '08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd'
 STAGE_HOST = 'sdmntprpolandcentral.oaiusercontent.com'
+STAGE_HOSTS = frozenset(('sdmntpritalynorth.oaiusercontent.com',
+    'sdmntprnortheu.oaiusercontent.com', 'sdmntprpolandcentral.oaiusercontent.com',
+    'sdmntprukwest.oaiusercontent.com'))
 STAGE_CAPSULE_B64 = 48 * 1024
 STAGE_CAPSULE_JSON = 64 * 1024
 STAGE_CIPHER_CAP = 1024**3
@@ -876,8 +879,9 @@ def _stage_url(url,expires):
              and all(32 < ord(c) < 127 and c != '\\' for c in url),'STAGE_URL')
     try:
         parsed=urllib.parse.urlsplit(url)
-        _require(parsed.scheme=='https' and parsed.netloc in (STAGE_HOST,STAGE_HOST+':443')
-                 and parsed.hostname==STAGE_HOST and parsed.port in (None,443)
+        host=parsed.hostname
+        _require(parsed.scheme=='https' and host in STAGE_HOSTS and parsed.netloc in (host,host+':443')
+                 and parsed.port in (None,443)
                  and parsed.username is None and parsed.password is None and not parsed.fragment
                  and re.fullmatch(r'/files/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/raw',parsed.path)
                  and bool(parsed.query),'STAGE_URL')
@@ -887,7 +891,7 @@ def _stage_url(url,expires):
         expiry=datetime.datetime.fromisoformat(values['se'].replace('Z','+00:00'))
         _require(expiry.utcoffset()==datetime.timedelta(0) and expiry.timestamp()>=expires,'STAGE_URL')
     except (ValueError,OverflowError,TypeError):raise _Stop('STAGE_URL') from None
-    return parsed.path+'?'+parsed.query
+    return host,parsed.path+'?'+parsed.query
 
 
 def _stage_validate_capsule(raw,recipient):
@@ -954,11 +958,12 @@ def _stage_verify_gpg(result,recipient,status_on_stderr):
     return result.stdout
 
 
-def _stage_connect():
+def _stage_connect(host):
     # No proxy or second DNS lookup: connect exactly the checked numeric sockaddr.
-    # TLS continues to verify the fixed provider hostname.
+    # TLS verifies exactly the allowlisted hostname carried from the URL.
     _stage_remaining()
-    try:rows=socket.getaddrinfo(STAGE_HOST,443,type=socket.SOCK_STREAM)
+    _require(type(host) is str and host in STAGE_HOSTS,'STAGE_URL')
+    try:rows=socket.getaddrinfo(host,443,type=socket.SOCK_STREAM)
     except OSError:raise _Stop('STAGE_DNS') from None
     _require(0<len(rows)<=32,'STAGE_DNS')
     for family,kind,protocol,_,address in rows:
@@ -969,21 +974,21 @@ def _stage_connect():
     raw=socket.socket(family,kind,protocol)
     try:
         raw.settimeout(min(10,_stage_remaining()));raw.connect(address)
-        connection=http.client.HTTPSConnection(STAGE_HOST,443,timeout=min(10,_stage_remaining()))
-        connection.sock=ssl.create_default_context().wrap_socket(raw,server_hostname=STAGE_HOST)
+        connection=http.client.HTTPSConnection(host,443,timeout=min(10,_stage_remaining()))
+        connection.sock=ssl.create_default_context().wrap_socket(raw,server_hostname=host)
         return connection
     except BaseException:raw.close();raise
 
 
 def _stage_download(part,expires,descriptor,whole):
     _require(expires>time.time()+5,'STAGE_CAPSULE_TIME')
-    target=_stage_url(part['url'],expires)
-    try:connection=_stage_connect()
+    host,target=_stage_url(part['url'],expires)
+    try:connection=_stage_connect(host)
     except _Stop:raise
     except (OSError,http.client.HTTPException):raise _Stop('STAGE_HTTP') from None
     try:
         connection.sock.settimeout(min(10,_stage_remaining()))
-        connection.request('GET',target,headers={'Accept-Encoding':'identity','Connection':'close',
+        connection.request('GET',target,headers={'Host':host,'Accept-Encoding':'identity','Connection':'close',
                                                'User-Agent':'helmut-private-drive-stage-v1'})
         response=connection.getresponse()
         _require(response.status==200 and response.getheader('Transfer-Encoding') is None
