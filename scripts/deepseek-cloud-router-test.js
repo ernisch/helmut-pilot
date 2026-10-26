@@ -1270,5 +1270,38 @@ check("Vollstaendig empfangene Antwort nach Routerabbruch ohne neuen Modellaufru
   });
 });
 
+
+check("P1 Gegenprobe: Verzeichniswechsel nach Providerantwort darf Fremddatei niemals ueberschreiben", () => {
+  const p=project();
+  const outside=fs.mkdtempSync(path.join(os.tmpdir(),"deepseek-p1-outside-"));
+  const original=fs.readFileSync(path.join(p.root,"lib/example.js"),"utf8");
+  const external=path.join(outside,"example.js");
+  fs.writeFileSync(external,original);
+  try {
+    const result=runSafe({
+      cwd:p.root,budgetDir:path.join(p.root,"budget-p1"),
+      argv:["flash","high","write","--edit-format","full",
+        "--task-file",p.task,"--file","lib/example.js"],
+      env:{DEEPSEEK_API_KEY:"placeholder"},
+      callDeepSeek:() => {
+        fs.renameSync(path.join(p.root,"lib"),path.join(p.root,"lib-original"));
+        fs.symlinkSync(outside,path.join(p.root,"lib"),"dir");
+        return apiResult({summary:summary(),edits:[{
+          path:"lib/example.js",expected_sha256:hash(original),
+          content:"MUST NEVER REPLACE FOREIGN DATA\n"
+        }]});
+      }
+    });
+    assert.equal(result.status,"ready_for_integration");
+    assert.equal(result.applied_files.length,0);
+    assert.deepEqual(result.staged_files,["lib/example.js"]);
+    assert.equal(fs.readFileSync(external,"utf8"),original);
+    assert.equal(fs.readFileSync(path.join(p.root,"lib-original/example.js"),"utf8"),original);
+  } finally {
+    fs.rmSync(p.root,{recursive:true,force:true});
+    fs.rmSync(outside,{recursive:true,force:true});
+  }
+});
+
 console.log(`DeepSeek Cloud Router v2: ${pass} PASS, ${fail} FAIL`);
 if (fail) process.exit(1);
