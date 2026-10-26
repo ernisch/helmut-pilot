@@ -240,6 +240,89 @@ class HistoryTests(unittest.TestCase):
             self.assertEqual(baseline['files']['worker_error']['raw'], self.encode(self.worker_error))
             path.unlink()
 
+    def test_exact_prearm_late_worker_error_is_bound_separately_and_preserved(self):
+        name = '.setup-write-'+'a'*32+'.tmp'
+        path = self.jobdir / name
+        late = {**self.worker_error, 'code': 'WORKER_ALREADY_ATTEMPTED'}
+        raw = self.encode(late)
+        self.assertEqual(raw, M._worker_error_bytes('WORKER_ALREADY_ATTEMPTED'))
+        self.write(path, raw)
+        before = M._read((M._job_path(), name, M.CAP, 0o600), self.deadline)
+        baseline = self.collect()
+        self.assertEqual(baseline['files'][name], before)
+        self.assertNotEqual(baseline['files'][name]['sha256'], baseline['files']['worker_error']['sha256'])
+        summary = M.history_summary(baseline)
+        self.assertEqual(summary['files'][name], {key: before[key] for key in ('sha256', 'metadata')})
+        self.assertTrue(M.verify_history_unchanged(baseline, self.deadline))
+        self.assertEqual(M._read((M._job_path(), name, M.CAP, 0o600), self.deadline), before)
+        self.assertEqual(baseline['files']['worker_error']['raw'], self.encode(self.worker_error))
+        self.assertEqual(M._metadata(os.stat(self.jobdir)), baseline['job_directory'])
+        self.assertEqual(M._metadata(os.stat(self.jobs)), baseline['legacy_jobs_directory'])
+
+    def test_late_worker_error_is_an_exact_encoded_finite_variant_not_a_semantic_whitelist(self):
+        name = '.setup-write-'+'a'*32+'.tmp'
+        path = self.jobdir / name
+        late = {**self.worker_error, 'code': 'WORKER_ALREADY_ATTEMPTED'}
+        for key in late:
+            for kind in ('missing', 'wrong', 'duplicate'):
+                value = copy.deepcopy(late)
+                if kind == 'missing': del value[key]
+                if kind == 'wrong': value[key] = 'wrong'
+                raw = self.encode(value)
+                if kind == 'duplicate': raw = raw.rstrip()[:-1]+b','+self.encode({key: late[key]}).strip()[1:]
+                self.write(path, raw)
+                with self.subTest(key=key, kind=kind), self.assertRaises(M.Stop): self.collect()
+        changes = ({'code': 'WORKER_FAILED'}, {'code': 'CONTROLLER_LOST'}, {'code': 'CONTROLLER_EXITED'},
+            {'code': 'WORKER_EXITED'}, {'phase': 'checkout'}, {'errno': 0}, {'exception_type': 'OSError'},
+            {'native_qualified': 0}, {'native_go_consumed': 0}, {'extra': 'private'})
+        for change in changes:
+            self.write(path, self.encode({**late, **change}))
+            with self.subTest(change=change), self.assertRaises(M.Stop): self.collect()
+        for raw in (self.encode(late)+b'\n', json.dumps(late, indent=2).encode()):
+            self.write(path, raw)
+            with self.assertRaises(M.Stop): self.collect()
+        self.write(path, self.encode(late))
+        self.write(self.jobdir/'FIRST_ERROR.PRIVATE.json', json.dumps(self.worker_error, indent=2).encode())
+        with self.assertRaises(M.Stop): self.collect()
+
+    def test_late_variant_requires_all_old_source_job_and_error_proofs_before_classification(self):
+        name = '.setup-write-'+'a'*32+'.tmp'
+        self.write(self.jobdir/name, self.encode({**self.worker_error, 'code': 'WORKER_ALREADY_ATTEMPTED'}))
+        baseline = self.collect()
+        for key in ('global_error', 'worker_error', 'job', *self.pins):
+            changed = copy.deepcopy(baseline['files'])
+            changed[key]['raw'] = b'{}\n' if key not in self.pins else b'damaged source'
+            changed[key]['sha256'] = hashlib.sha256(changed[key]['raw']).hexdigest()
+            with self.subTest(key=key), self.assertRaises(M.Stop): M._duplicate_error(changed, name)
+        for marker in ('ARM.PRIVATE.json', 'ACK.PRIVATE.json', 'RESULT.PENDING.PRIVATE.json', 'RESULT.PRIVATE.json'):
+            path = self.jobdir/marker
+            self.write(path, b'unknown')
+            with self.subTest(marker=marker), self.assertRaises(M.Stop): self.collect()
+            path.unlink()
+        second = self.jobdir/('.setup-write-'+'b'*32+'.tmp')
+        self.write(second, baseline['files'][name]['raw'])
+        with self.assertRaises(M.Stop): self.collect()
+
+    def test_unknown_temp_stays_stopped_with_only_closed_internal_type_hash_size_diagnostic(self):
+        name = '.setup-write-'+'a'*32+'.tmp'
+        path = self.jobdir/name
+        for raw, kind in ((b'{"private":"SYNTHETIC-SECRET /private/path"}\n', 'OBJECT'),
+                          (b'"SYNTHETIC-SECRET /private/path"', 'STRING'), (b'not-json', 'INVALID_JSON')):
+            self.write(path, raw)
+            before = M._read((M._job_path(), name, M.CAP, 0o600), self.deadline)
+            with self.assertRaisesRegex(M.Stop, '^HISTORY_ERROR_DUPLICATE$') as caught: self.collect()
+            diagnostic = caught.exception.safe_diagnostic
+            self.assertEqual(set(diagnostic), {'schema', 'status', 'json_type', 'error_class', 'temp_sha256',
+                                               'temp_bytes', 'first_error_sha256', 'first_error_bytes'})
+            self.assertEqual(diagnostic['status'], 'STOP_UNKNOWN_PARTIAL')
+            self.assertEqual(diagnostic['json_type'], kind)
+            self.assertEqual(diagnostic['error_class'], 'UNRECOGNIZED')
+            self.assertEqual(diagnostic['temp_sha256'], hashlib.sha256(raw).hexdigest())
+            self.assertEqual(diagnostic['temp_bytes'], len(raw))
+            self.assertNotIn(b'SYNTHETIC-SECRET', self.encode(diagnostic))
+            self.assertNotIn(b'/private/path', self.encode(diagnostic))
+            self.assertEqual(M._read((M._job_path(), name, M.CAP, 0o600), self.deadline), before)
+
     def test_complete_legacy_root_rejects_armed_siblings_and_unknown_partial_before_or_after_baseline(self):
         for name, directory in (('e'*64, True), ('.unknown-partial-job', False),
                                 ('.setup-write-'+'a'*32+'.tmp', False)):
@@ -345,7 +428,7 @@ class HistoryTests(unittest.TestCase):
         second.unlink()
         for raw in (b'', self.encode(self.worker_error) + b'\n',
                     json.dumps(self.worker_error, indent=2).encode(),
-                    self.encode({**self.worker_error, 'code': 'WORKER_ALREADY_ATTEMPTED'}),
+                    self.encode({**self.worker_error, 'code': 'WORKER_FAILED'}),
                     self.encode({**self.worker_error, 'phase': 'checkout'})):
             self.write(path, raw)
             with self.subTest(raw=raw), self.assertRaises(M.Stop): self.collect()

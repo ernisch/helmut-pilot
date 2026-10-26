@@ -119,11 +119,42 @@ def _duplicate_name(names, expected):
     return next(iter(extras)) if extras else None
 
 
+def _worker_error_bytes(code):
+    value = {'schema': 'helmut-setup-service-error-v1', 'status': 'FAIL_KEEP_STATE_NO_RETRY',
+        'phase': 'recover', 'code': code, 'exception_type': 'Stop', 'errno': None,
+        'native_qualified': False, 'native_go_consumed': False}
+    return (json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode('ascii')
+
+
+def _duplicate_diagnostic(raw, first):
+    kind = 'INVALID_JSON'
+    try:
+        value = _parsed(raw)
+        kind = {dict: 'OBJECT', list: 'ARRAY', str: 'STRING', int: 'INTEGER', float: 'FLOAT',
+                bool: 'BOOL', type(None): 'NULL'}[type(value)]
+    except (Stop, ValueError, RecursionError):
+        pass
+    known = next((code for code in ('UNIT_PROPERTIES', 'WORKER_ALREADY_ATTEMPTED')
+                  if raw == _worker_error_bytes(code)), 'UNRECOGNIZED')
+    return {'schema': 'helmut-history-temp-diagnostic-v1', 'status': 'STOP_UNKNOWN_PARTIAL',
+        'json_type': kind, 'error_class': known, 'temp_sha256': _sha(raw), 'temp_bytes': len(raw),
+        'first_error_sha256': _sha(first), 'first_error_bytes': len(first)}
+
+
 def _duplicate_error(files, duplicate):
-    # Before ARM, the historical Parent and Worker can each save_error once.
-    # RENAME_NOREPLACE leaves at most one loser; only its exact error bytes qualify.
+    job = _validate(files)  # No temporary file can qualify independently of all pinned history.
+    _need(_duplicate_name(files, _files()) == duplicate, 'HISTORY_JOB_ENTRIES')
+    # Guard a41ddc42: Parent worker_identity fails before ARM (old lines678/684).
+    # Worker may then see FIRST_ERROR in its initial absent check (lines552-553).
+    # Each writes once; only this exact second Stop is an unequal pre-ARM loser.
     if duplicate is not None:
-        _need(files[duplicate]['raw'] == files['worker_error']['raw'], 'HISTORY_ERROR_DUPLICATE')
+        raw, first = files[duplicate]['raw'], files['worker_error']['raw']
+        if raw != first and not (first == _worker_error_bytes('UNIT_PROPERTIES')
+                                 and raw == _worker_error_bytes('WORKER_ALREADY_ATTEMPTED')):
+            error = Stop('HISTORY_ERROR_DUPLICATE')
+            error.safe_diagnostic = _duplicate_diagnostic(raw, first)
+            raise error
+    return job
 
 
 def _read(spec, deadline):
@@ -266,8 +297,7 @@ def collect_history(deadline):
         before, duplicate = _job_directory(deadline)
         _history_markers(deadline)
         files = {key: _read(spec, deadline) for key, spec in _files(duplicate).items()}
-        job = _validate(files)
-        _duplicate_error(files, duplicate)
+        job = _duplicate_error(files, duplicate)
         _history_markers(deadline)
         _need(_job_directory(deadline) == (before, duplicate), 'HISTORY_DIRECTORY_CHANGED')
         _need(_legacy_jobs_directory(deadline) == legacy_jobs_before, 'HISTORY_DIRECTORY_CHANGED')
@@ -294,8 +324,7 @@ def history_summary(baseline):
     for row in (*rows.values(), {'metadata': baseline['job_directory']}, {'metadata': baseline['legacy_jobs_directory']}):
         _need(type(row['metadata']) is list and len(row['metadata']) == 12
               and all(type(n) is int and -(2**63) <= n < 2**64 for n in row['metadata']), 'HISTORY_BASELINE')
-    _need(_validate(baseline['files']) == baseline['job'], 'HISTORY_BASELINE')
-    _duplicate_error(baseline['files'], duplicate)
+    _need(_duplicate_error(baseline['files'], duplicate) == baseline['job'], 'HISTORY_BASELINE')
     return {'schema': 'helmut-setup-history-summary-v1', 'status': 'HISTORICAL_FAILURE_BOUND_NOT_AUTHORITY',
         'code': 'UNIT_PROPERTIES', 'files': rows, 'job_directory': list(baseline['job_directory']),
         'legacy_jobs_directory': list(baseline['legacy_jobs_directory']),
