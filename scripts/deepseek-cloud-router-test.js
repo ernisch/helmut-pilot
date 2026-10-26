@@ -1196,7 +1196,7 @@ check("Fehlendes Journal nach Initialisierung sperrt statt Tagesbetrag zurueckzu
     assert.equal(fs.existsSync(path.join(dir,"budget.json")),false);
     // Even an interrupted first initialization may not be silently repaired.
     const empty = path.join(p.root, "interrupted-init");
-    fs.mkdirSync(empty);
+    fs.mkdirSync(empty, {mode:0o700});
     fs.writeFileSync(path.join(empty,".initialized"),"committed\n",{mode:0o600});
     assert.throws(() => dailyBudget.reserve({
       estimateUsd:0.01,model:"deepseek-flash",dir:empty,now:day
