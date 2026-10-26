@@ -670,6 +670,7 @@ function prepareEdits(edits, sources, cwd, editFormat = "full") {
     if (typeof content !== "string" || charCount(content) > MAX_FILE_CHARS) {
       throw new Error(`deepseek-edit-content-invalid:${edit.path}`);
     }
+    if (content === current) throw new Error(`deepseek-edit-unchanged-content:${edit.path}`);
     prepared.push({ source, content });
   }
   return prepared;
