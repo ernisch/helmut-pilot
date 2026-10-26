@@ -367,7 +367,7 @@ class PublicContextTests(unittest.TestCase):
         self.public_identity = m.identity(real_stat(self.public_repo))
         self.overrides = {}
         fields = ('st_dev', 'st_ino', 'st_mode', 'st_uid', 'st_gid', 'st_nlink', 'st_size',
-                  'st_atime_ns', 'st_mtime_ns', 'st_ctime_ns')
+                  'st_atime_ns', 'st_mtime_ns', 'st_ctime_ns', 'st_rdev', 'st_blocks')
         def view(info):
             # Ownership is synthetic even when the offline runner is unprivileged.
             value = {name: getattr(info, name) for name in fields}
@@ -563,6 +563,226 @@ class PublicContextTests(unittest.TestCase):
         with patch.object(m.os, 'open', side_effect=[root, final]):
             with self.assertRaisesRegex(m.Stop, '^DIRECTORY_OWNER_MODE$'):
                 DIRECTORY('/synthetic-other-directory')
+
+
+class RecoveryContextTests(unittest.TestCase):
+    write, write_json = ContextTests.write, ContextTests.write_json
+    observer, child = ContextTests.observer, ContextTests.child
+
+    def setUp(self):
+        PublicContextTests.setUp(self)
+        self.recovery_case = self.control / ('stage-' + m.RECOVERY_CASE)
+        self.old_path = self.recovery_case / 'restored/RESTORE_RECEIPT.PRIVATE.json'
+        self.old_path.parent.mkdir(parents=True, mode=0o700)
+        self.new_path = self.recovery_case / 'restored-pax-recovery/RESTORE_RECEIPT.PRIVATE.json'
+        self.new_path.parent.mkdir(mode=0o700)
+        self.recovery_root = self.new_path.parent / 'files'
+        for name in m.PREFIXES:
+            (self.recovery_root / 'workspace' / name).mkdir(parents=True, mode=0o755)
+        (self.recovery_root / 'opt/codex').mkdir(parents=True, mode=0o755)
+        (self.recovery_root / 'usr/local/bin').mkdir(parents=True, mode=0o755)
+        self.binding = {'schema': 'helmut-private-drive-stage-case-binding-v1', 'nonce': '1' * 64,
+            'source_sha256': m.STAGE_SOURCE, 'capsule_sha256': '2' * 64,
+            'case_id': m.RECOVERY_CASE, 'scope_sha256': m.SCOPE}
+        self.error = {'schema': 'helmut-private-drive-stage-result-v1', 'status': 'FAIL_KEEP_STATE_NO_RETRY',
+            'code': 'STAGE_RESTORE', 'native_qualified': False, 'plan_sha256': m.PLAN,
+            'case_id': m.RECOVERY_CASE, 'scope_sha256': m.SCOPE, 'capsule_sha256': self.binding['capsule_sha256'],
+            'cipher_sha256': m.RECOVERY_CIPHER, 'compressed_tar_sha256': m.RECOVERY_GZIP}
+        self.old = {'schema': 'helmut-bound-byte-restore-v1', 'ok': False, 'status': 'FAIL_KEEP_STATE_NO_RETRY',
+            'scope_sha256': m.SCOPE, 'native_qualified': False, 'code': 'PATH_ESCAPE',
+            'actual_file_count': 0, 'actual_bytes': 0, 'actual_files': [], 'metadata_state': 'UNKNOWN',
+            'partial_file_state': 'UNKNOWN', 'remaining_entries': 1866,
+            'unverified_entries': ['synthetic-unverified-' + str(i) for i in range(1866)]}
+        self.completed = {'schema': 'helmut-bound-byte-restore-v1', 'ok': True,
+            'status': 'BYTES_RESTORED_NOT_NATIVE_QUALIFIED', 'native_qualified': False, 'scope_sha256': m.SCOPE,
+            'actual_file_count': 1767, 'actual_bytes': 2865680705, 'remaining_entries': 0,
+            'unverified_entries': [], 'partial_file_state': 'NONE', 'metadata_state': 'VERIFIED', 'code': None,
+            'actual_files': [{'archiveMember': 'files/synthetic-' + str(i), 'sha256': '3' * 64,
+                              'bytes': 2865680705 if i == 0 else 0} for i in range(1767)]}
+        self.attempt = {'schema': 'helmut-local-pax-recovery-attempt-v1', 'case_id': m.RECOVERY_CASE,
+            'plan_sha256': m.PLAN, 'scope_sha256': m.SCOPE, 'restore_source_sha256': m.RECOVERY_SOURCE,
+            'state': 'UNKNOWN_NO_RETRY'}
+        self.recovery_ready = {'schema': 'helmut-local-pax-recovery-ready-v1',
+            'status': 'RESTORED_NOT_NATIVE_QUALIFIED', 'case_id': m.RECOVERY_CASE, 'plan_sha256': m.PLAN,
+            'scope_sha256': m.SCOPE, 'historical_stage_source_sha256': m.STAGE_SOURCE,
+            'restore_source_sha256': m.RECOVERY_SOURCE, 'compressed_tar_sha256': m.RECOVERY_GZIP,
+            'actual_file_count': 1767, 'actual_bytes': 2865680705, 'metadata_state': 'VERIFIED',
+            'native_qualified': False, 'native_go_consumed': False}
+        self.save_chain()
+
+    def save_chain(self):
+        self.old_sha = m.sha(self.write_json(self.old_path, self.old))
+        self.recovery_ready['historical_receipt_sha256'] = self.old_sha
+        self.attempt['historical_receipt_sha256'] = self.old_sha
+        self.recovery_ready['restore_receipt_sha256'] = m.sha(self.write_json(self.new_path, self.completed))
+        self.write_json(self.control / 'once' / (m.PLAN + '.stage-case.json'), self.binding)
+        self.write_json(self.control / 'STAGE_FIRST_ERROR.SAFE.json', self.error)
+        self.write_json(self.control / 'once' / (m.PLAN + '.pax-recovery.json'), self.attempt)
+        self.recovery_raw = self.write_json(self.control / 'RESTORE_PAX_RECOVERY_READY.SAFE.json', self.recovery_ready)
+
+    def proof(self):
+        return m.recovery_stage_proof(m.sha(self.recovery_raw), self.old_sha)
+
+    def prepare(self, child=None, public=None):
+        return m.prepare(m.sha(self.recovery_raw), public=public, observer=self.observer,
+                         child_runner=child or self.child, recovery_receipt_sha=self.old_sha)
+
+    def test_exact_recovery_chain_returns_only_fixed_recovered_root_and_keeps_history(self):
+        paths = [self.old_path, self.control / 'STAGE_FIRST_ERROR.SAFE.json',
+                 self.control / 'once' / (m.PLAN + '.stage-case.json')]
+        before = [m.recovery_read(str(path)) for path in paths]
+        self.assertEqual(self.proof(), {'case_id': m.RECOVERY_CASE,
+            'ready_sha256': m.sha(self.recovery_raw), 'root': str(self.recovery_root)})
+        self.assertEqual([m.recovery_read(str(path)) for path in paths], before)
+        self.assertFalse((self.control / 'once' / (m.PLAN + '.json')).exists())
+
+    def test_default_stage_branch_still_rejects_historical_error_without_fallback(self):
+        with patch.object(m, 'recovery_stage_proof', side_effect=AssertionError('no automatic recovery')):
+            with self.assertRaisesRegex(m.Stop, '^STAGE_UNKNOWN$'):
+                m.prepare(m.sha(self.recovery_raw), observer=self.observer, child_runner=self.child)
+        self.assertEqual(self.mount_plans, [])
+        self.assertTrue((self.control / 'STAGE_FIRST_ERROR.SAFE.json').exists())
+
+    def test_explicit_recovery_with_public_binding_records_provenance_without_native_admission(self):
+        def child(namespace, expected, steps, refresh):
+            for _ in steps: self.assertEqual(refresh(), expected)
+            return self.child(namespace, expected, steps, refresh)
+        with patch.object(m, 'mount', side_effect=AssertionError('no real mount')), \
+                patch.object(m, 'enter', side_effect=AssertionError('no real setns')), \
+                patch.object(m, 'make_private', side_effect=AssertionError('no real propagation')):
+            result = self.prepare(child=child, public=m.sha(self.public_raw))
+        self.assertEqual(result['sourcePreparationKind'], 'ACCEPTED_LOCAL_PAX_RECOVERY')
+        self.assertEqual(result['recoveryReadySHA256'], m.sha(self.recovery_raw))
+        self.assertEqual(result['historicalRestoreReceiptSHA256'], self.old_sha)
+        self.assertEqual(result['historicalStageSourceSHA256'], m.STAGE_SOURCE)
+        self.assertEqual(result['restoreSourceSHA256'], m.RECOVERY_SOURCE)
+        self.assertFalse(result['nativeQualified'])
+        self.assertFalse(result['nativeGOConsumed'])
+        self.assertEqual(result['publicEngineState'], 'MOUNTED_REQUIRES_FRESH_SOURCE_ADMISSION')
+        self.assertNotIn('RESTORE_RECEIPT.PRIVATE.json', json.dumps(result))
+        for fd, target, readonly in self.mount_plans[0][2:]: self.assertTrue(readonly)
+
+    def test_explicit_ready_and_historical_raw_hashes_are_both_required(self):
+        for ready, old, code in ((None, self.old_sha, 'RECOVERY_EXPECTED_SHA'),
+                (m.sha(self.recovery_raw), None, 'RECOVERY_EXPECTED_SHA'),
+                ('0' * 64, self.old_sha, 'RECOVERY_READY_HASH'),
+                (m.sha(self.recovery_raw), '0' * 64, 'RECOVERY_READY')):
+            with self.subTest(code=code), self.assertRaisesRegex(m.Stop, '^' + code + '$'):
+                m.recovery_stage_proof(ready, old)
+        self.write(self.old_path, m.recovery_read(str(self.old_path)) + b' ')
+        with self.assertRaisesRegex(m.Stop, '^RECOVERY_HISTORICAL_RECEIPT_HASH$'): self.proof()
+
+    def test_ready_requires_exact_case_scope_plan_sources_gzip_counts_and_unqualified_states(self):
+        baseline = copy.deepcopy(self.recovery_ready)
+        for change in ({'schema': 'other'}, {'status': 'READY'}, {'case_id': '0' * 64},
+                {'scope_sha256': '0' * 64}, {'plan_sha256': '0' * 64},
+                {'historical_stage_source_sha256': '0' * 64}, {'restore_source_sha256': '0' * 64},
+                {'compressed_tar_sha256': '0' * 64}, {'actual_file_count': 1766}, {'actual_file_count': True},
+                {'actual_bytes': 0}, {'metadata_state': 'UNKNOWN'}, {'native_qualified': True},
+                {'native_go_consumed': True}, {'restore_receipt_sha256': 'bad'}, {'extra': 'field'}):
+            raw = self.write_json(self.control / 'RESTORE_PAX_RECOVERY_READY.SAFE.json', {**baseline, **change})
+            with self.subTest(change=change), self.assertRaisesRegex(m.Stop, '^RECOVERY_READY$'):
+                m.recovery_stage_proof(m.sha(raw), self.old_sha)
+
+    def test_spent_recovery_once_is_required_and_must_keep_its_original_intent_state(self):
+        path = self.control / 'once' / (m.PLAN + '.pax-recovery.json')
+        baseline = copy.deepcopy(self.attempt)
+        for key in baseline:
+            self.write_json(path, {**baseline, key: 'wrong'})
+            with self.subTest(key=key), self.assertRaisesRegex(m.Stop, '^RECOVERY_ATTEMPT$'): self.proof()
+        path.unlink()
+        with self.assertRaises(FileNotFoundError): self.proof()
+
+    def test_historical_binding_and_stage_error_must_cross_bind_exact_producer_contract(self):
+        for attribute, code in (('binding', 'RECOVERY_HISTORICAL_BINDING'), ('error', 'RECOVERY_HISTORICAL_STAGE')):
+            original = copy.deepcopy(getattr(self, attribute))
+            for key, value in original.items():
+                if attribute == 'error' and key == 'capsule_sha256': wrong = 'f' * 64
+                else: wrong = True if value is False else 'wrong'
+                setattr(self, attribute, {**original, key: wrong}); self.save_chain()
+                with self.subTest(attribute=attribute, key=key), self.assertRaisesRegex(m.Stop, '^' + code + '$'):
+                    self.proof()
+            setattr(self, attribute, original)
+        self.save_chain()
+
+    def test_historical_path_escape_is_required_even_when_caller_pins_a_changed_old_receipt(self):
+        baseline = copy.deepcopy(self.old)
+        for change in ({'code': 'other'}, {'ok': True}, {'scope_sha256': '0' * 64},
+                {'actual_file_count': False}, {'actual_file_count': 1}, {'actual_bytes': 1},
+                {'metadata_state': 'VERIFIED'}, {'remaining_entries': 0}, {'unverified_entries': []},
+                {'partial_file_state': 'PARTIAL'}, {'actual_files': [{}]}):
+            self.old = {**baseline, **change}; self.save_chain()
+            with self.subTest(change=change), self.assertRaisesRegex(m.Stop, '^RECOVERY_HISTORICAL_RESTORE$'):
+                self.proof()
+        self.old = {**baseline, 'partial_file_state': 'NONE'}; self.save_chain()
+        self.assertEqual(self.proof()['case_id'], m.RECOVERY_CASE)
+
+    def test_completed_receipt_hash_and_all_completion_fields_are_required(self):
+        self.write(self.new_path, m.recovery_read(str(self.new_path)) + b' ')
+        with self.assertRaisesRegex(m.Stop, '^RECOVERY_RESTORE_HASH$'): self.proof()
+        baseline = copy.deepcopy(self.completed)
+        for change in ({'schema': 'other'}, {'ok': False}, {'status': 'FAIL_KEEP_STATE_NO_RETRY'},
+                {'scope_sha256': '0' * 64}, {'native_qualified': True}, {'actual_file_count': 0},
+                {'actual_bytes': True}, {'remaining_entries': False}, {'remaining_entries': 1},
+                {'unverified_entries': ['unknown']}, {'partial_file_state': 'UNKNOWN'},
+                {'metadata_state': 'UNKNOWN'}, {'code': 'ERROR'}, {'actual_files': []}):
+            self.completed = {**baseline, **change}; self.save_chain()
+            with self.subTest(change=change), self.assertRaisesRegex(m.Stop, '^RECOVERY_RESTORE$'): self.proof()
+
+    def test_completed_actual_file_manifest_needs_exact_count_unique_names_hashes_and_byte_sum(self):
+        baseline = copy.deepcopy(self.completed)
+        for change in ({'archiveMember': 'outside/file'}, {'archiveMember': 'files/synthetic-1'},
+                {'sha256': 'bad'}, {'bytes': True}, {'bytes': -1}, {'bytes': 2865680704}):
+            self.completed = copy.deepcopy(baseline)
+            self.completed['actual_files'][0].update(change); self.save_chain()
+            with self.subTest(change=change), self.assertRaisesRegex(m.Stop, '^RECOVERY_RESTORE$'): self.proof()
+
+    def test_pending_or_new_error_or_consumed_native_once_never_adopts_recovery(self):
+        for name, code in (('RESTORE_PAX_RECOVERY_READY.PENDING.SAFE.json', 'RECOVERY_UNKNOWN'),
+                ('RESTORE_PAX_RECOVERY_FIRST_ERROR.SAFE.json', 'RECOVERY_UNKNOWN'),
+                ('once/' + m.PLAN + '.json', 'NATIVE_GO_ALREADY_CONSUMED')):
+            path = self.control / name; self.write(path, b'{}')
+            with self.subTest(name=name), self.assertRaisesRegex(m.Stop, '^' + code + '$'): self.proof()
+            path.unlink()
+        self.assertEqual(self.mount_plans, [])
+
+    def test_recovery_files_require_root0600_single_link_nofollow_noatime_and_ns_stability(self):
+        identity = m.identity(os.stat(self.new_path))
+        for values in ({'st_uid': 1000}, {'st_gid': 1000}, {'st_nlink': 2},
+                       {'st_mode': stat.S_IFREG | 0o644}, {'st_size': 1024**2 + 1}):
+            self.overrides[identity] = values
+            with self.subTest(values=values), self.assertRaisesRegex(m.Stop, '^RECOVERY_FILE_IDENTITY$'): self.proof()
+        self.overrides.clear()
+        moved = self.new_path.with_name('synthetic-held-receipt')
+        self.new_path.rename(moved); self.new_path.symlink_to(moved)
+        try:
+            with self.assertRaises(OSError): self.proof()
+        finally: self.new_path.unlink(); moved.rename(self.new_path)
+        opening, real_read = m.os.open, os.read
+        with patch.object(m.os, 'open', wraps=opening) as calls: self.proof()
+        for call in calls.call_args_list:
+            if call.args[0] == 'RESTORE_RECEIPT.PRIVATE.json':
+                self.assertTrue(call.args[1] & os.O_NOATIME and call.args[1] & os.O_NOFOLLOW)
+        info = os.stat(self.new_path)
+        def reading(fd, count):
+            raw = real_read(fd, count)
+            if m.identity(os.fstat(fd)) == identity:
+                self.overrides[identity] = {'st_ctime_ns': info.st_ctime_ns + 1}
+            return raw
+        with patch.object(m.os, 'read', side_effect=reading):
+            with self.assertRaisesRegex(m.Stop, '^RECOVERY_FILE_CHANGED$'): self.proof()
+
+    def test_recovery_chain_is_refreshed_before_each_child_ack_and_cannot_publish_after_drift(self):
+        def child(namespace, expected, steps, refresh):
+            self.assertEqual(refresh(), expected)
+            self.write(self.new_path, m.recovery_read(str(self.new_path)) + b' ')
+            refresh(); self.fail('drift must stop before acknowledgment')
+        with self.assertRaisesRegex(m.Stop, '^RECOVERY_RESTORE_HASH$'): self.prepare(child=child)
+        out = self.context / ('native-context-' + m.RECOVERY_CASE)
+        self.assertFalse((out / 'CONTEXT_RECEIPT.SAFE.json').exists())
+        self.assertTrue((self.context / 'NATIVE_CONTEXT_FIRST_ERROR.PRIVATE.json').exists())
+        self.save_chain()
+        with self.assertRaisesRegex(m.Stop, '^CONTEXT_ALREADY_ATTEMPTED$'): self.prepare()
 
 
 class CanonicalTests(unittest.TestCase):
