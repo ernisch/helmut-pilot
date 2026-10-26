@@ -1470,5 +1470,44 @@ check("Verzeichnistausch waehrend Vorschlagsanlage bleibt im privaten FD, nicht 
   }
 });
 
+
+check("Rohantwort wird trotz Verzeichnistausch bei Archivinitialisierung nie in Git abgelegt", () => {
+  recoveryFixture(p => {
+    const privateDir = path.dirname(p.saved);
+    const movedDir = privateDir + ".moved";
+    const forbidden = path.join(p.root, "response.json.raw");
+    const originalOpen = fs.openSync;
+    let swapped = false;
+    try {
+      fs.openSync = function(filePath, flags, mode) {
+        if (!swapped && typeof filePath === "string" &&
+            /^\/proc\/self\/fd\/\d+\/response\.json\.raw$/.test(filePath) &&
+            (flags & fs.constants.O_CREAT)) {
+          fs.renameSync(privateDir, movedDir);
+          fs.symlinkSync(p.root, privateDir, "dir");
+          swapped = true;
+        }
+        return originalOpen.call(fs, filePath, flags, mode);
+      };
+      assert.throws(() => p.run(["--save-response", p.saved], {
+        spawnSync: (bin, args, opts) => {
+          fs.writeSync(opts.stdio[1], p.raw());
+          return {status: 0, stdout: ""};
+        }
+      }), /response-must-be-outside-repo/);
+      assert.equal(swapped, true);
+      assert.equal(fs.existsSync(forbidden), false);
+      assert.equal(fs.readFileSync(path.join(movedDir, "response.json.raw"), "utf8"), p.raw());
+      assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+    } finally {
+      fs.openSync = originalOpen;
+      if (swapped) {
+        fs.unlinkSync(privateDir);
+        fs.renameSync(movedDir, privateDir);
+      }
+    }
+  });
+});
+
 console.log(`DeepSeek Cloud Router v2: ${pass} PASS, ${fail} FAIL`);
 if (fail) process.exit(1);
