@@ -1,8 +1,9 @@
 # HELMUT: begrenzte autonome Hetzner-Steuerung
 
-Aktuelle Fortsetzung: [Thread-Uebergabe vom26.10.](helmut-thread-handoff-20261026.md).
-Dieses Dossier enthaelt auch historische Zwischenstaende; fuer den naechsten
-Schritt gelten die Uebergabe und CURRENT_STATE, keine alten Ausfuehrungsplaene.
+Aktuelle Fortsetzung: [UNIT_PROPERTIES-Quellenkorrektur](#enge-quellenkorrektur-fuer-unit_properties-26102026-istanbul)
+und CURRENT_STATE. Die [Thread-Uebergabe](helmut-thread-handoff-20261026.md)
+bleibt die verifizierte Ausgangsbasis; ihre Stopp- und Schutzgrenzen gelten weiter.
+Dieses Dossier enthaelt auch historische Zwischenstaende, keine neuen Laufrechte.
 
 Der Betreiber hat am26.10.2026(Istanbul) autonome Arbeit und notwendige
 Automatisierung ausdruecklich freigegeben, einschliesslich Merge und Deployment
@@ -479,7 +480,8 @@ Grenzpruefschritt SUCCESS. Main `35d7d2d41aba7e26cf89e9ebe2f54f8c44c20163`
 hat denselben Git-Tree. Vercel `dpl_4LgfeWX2wmYYdWA7ijo3tDvL1JSa` ist auf genau
 diesem Commit production/READY; Alias `helmut-pilot.vercel.app` frisch bestaetigt.
 [Main-CI40318797794](https://github.com/ernisch/helmut-pilot/actions/runs/40318797794)
-laeuft beim Vorbereiten dieses Statusnachtrags noch. Kein Zielaufruf wurde
+ist vollstaendig SUCCESS, einschliesslich beider Pflichtjobs und des tatsaechlichen
+synthetischen Grenzpruefschritts. Kein Zielaufruf wurde
 ausgeloest; diese Auslieferung beweist keine Hetzner-Installation oder -Abnahme.
 
 Eine echte neue Setupzulassung ist damit nicht erteilt:
@@ -498,6 +500,19 @@ konkret gebunden werden; alter Erstfehler, Job, Teilbaum und alle Once-Marker
 bleiben unangetastet. Aktuelle Original-/Restore- und vollstaendige Prozessenden
 duerfen dabei nicht aus der historischen ARM-Abwesenheit abgeleitet werden.
 Dieser Nachtrag schaltet keinen neuen Vertrag oder Ausfuehrungsweg frei.
+
+Ein abgegrenzter Nachfolgevertrag liegt als lokaler Entwurf unter
+`/workspace/helmut-unit-properties-evidence-20261026/next-setup-contract-draft.txt`,
+SHA256 `d25e6267f03cd74834e42e6f2464d1728d296f6f5af7b2abedb536dde7f81bb8`.
+Vorgeschlagen ist eine feste neue Operation mit eigener Root-Autoritaet, eigener
+Zustandswurzel und dauerhaftem Once-Slot; alte Fehler/Jobs bleiben bindender
+gescheiterter Vorgaenger. Auch frische Recovery-Teilstaende wuerden stoppen.
+Die unveraenderliche Bootstrap-Allowlist kennt diesen Weg nicht: ihre Erweiterung
+waere eine neue Administrator-/Root-Protokollgrenze. Frische Prozessenden,
+private Fehl-/Jobbelege, Komponentenpfade und Gzipbindung bleiben vor Wirkung
+vollstaendig nachzuweisen. Der Entwurf ist nicht implementiert, nicht abgenommen
+und nicht GO-ready; er wiederholt weder die erledigte Mac-Abfrage noch einen
+gescheiterten Aufruf und erteilt keine Wiederholungs-/Originalrekonstruktionsrechte.
 
 ## Threadwechsel ohne erneuten Datenumzug
 
