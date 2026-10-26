@@ -909,6 +909,22 @@ check("Schreibauftrag mit ok ohne Code wird nie als Erfolg quittiert", () => {
   } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
 });
 
+check("Unveraenderte Ersatzinhalte duerfen nicht als Schreib-Erfolg gelten", () => {
+  const p = project();
+  const original = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
+  try {
+    assert.throws(() => router.run({ cwd: p.root,
+      argv: ["flash", "low", "write", "--edit-format", "full", "--task-file", p.task,
+        "--file", "lib/example.js"],
+      env: { DEEPSEEK_API_KEY: "placeholder" },
+      callDeepSeek: () => apiResult({ summary: summary(), edits: [{
+        path: "lib/example.js", expected_sha256: hash(original), content: original,
+      }] }),
+    }), /edit-unchanged-content/);
+    assert.equal(fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8"), original);
+  } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
+});
+
 check("Kostenprognose stellt Peak Obergrenze transparent dar", () => {
   const cfg = router.parseArgs(["pro", "high", "read", "--task-file", "/tmp/task"]);
   const body = router.buildRequestBody("Pruefe.", cfg, []);
