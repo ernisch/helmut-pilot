@@ -2,7 +2,7 @@
 """Closed development setup/tasks. Loaded only by the CI-qualified root controller.
 
 No import/default effects. No native paths, original mounts, credentials, host
-accounts or general command endpoint. Every test runs as numeric 2000:2000 in
+accounts or general command endpoint. Every test runs as its observed free IDs in
 its own daemon, with only this development checkout mounted and no network.
 """
 import fcntl
@@ -34,7 +34,12 @@ NODE_SHA = '1805bcd35e6815559bd2eb97db438d3fdb0eb3a5e6a977b7c1badca76337e9ce'
 DOCKER_SHA = '21516934188f06d0e5f232cbde8112701f6d82899016240bc7a5d619f6b0059c'
 POSTGREST_SHA = '9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c'
 POSTGRES = 'postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3'
-UID = GID = 2000
+IDENTITY_RANGE = range(60001, 60033)
+IDENTITY_KEYS = {'schema', 'uid', 'gid', 'uid_absent_from_nss', 'gid_absent_from_nss',
+                 'uid_absent_from_processes', 'gid_absent_from_processes', 'observed_at_utc', 'proof_sha256'}
+UID = GID = ACTIVE_IDENTITY = None
+PROC = Path('/proc')
+PROC_TASK_LIMIT, PROC_STATUS_LIMIT, PROC_TOTAL_LIMIT = 8192, 131072, 16*1024**2
 GIB = 1024**3
 RESERVE, BUILD_BUFFER, STOP_MARGIN = 10*GIB, 8*GIB, GIB
 ENV = {'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL': 'C', 'HOME': '/nonexistent',
@@ -167,6 +172,162 @@ def hex_string(value, size):
     return type(value) is str and re.fullmatch('[a-f0-9]{'+str(size)+'}', value) is not None
 
 
+def validate_identity(value):
+    need(type(value) is dict and set(value) == IDENTITY_KEYS
+         and value['schema'] == 'helmut-development-identity-v1', 'DEVELOPMENT_IDENTITY_RECEIPT')
+    need(all(type(value[key]) is int and value[key] in IDENTITY_RANGE for key in ('uid', 'gid'))
+         and all(value[key] is True for key in ('uid_absent_from_nss', 'gid_absent_from_nss',
+             'uid_absent_from_processes', 'gid_absent_from_processes'))
+         and type(value['observed_at_utc']) is int and 0 < value['observed_at_utc'] <= int(time.time())
+         and hex_string(value['proof_sha256'], 64), 'DEVELOPMENT_IDENTITY_RECEIPT')
+    need(value['proof_sha256'] == digest(encoded({key: item for key, item in value.items()
+                                                if key != 'proof_sha256'})), 'DEVELOPMENT_IDENTITY_PROOF')
+    return value
+
+
+def nss_absent(lookup, number, deadline):
+    need(time.monotonic() < deadline, 'DEVELOPMENT_IDENTITY_DEADLINE')
+    try:
+        lookup(number)
+    except KeyError:
+        need(time.monotonic() < deadline, 'DEVELOPMENT_IDENTITY_DEADLINE')
+        return True
+    except Exception as error:
+        raise Stop('DEVELOPMENT_IDENTITY_NSS_UNKNOWN') from error
+    need(time.monotonic() < deadline, 'DEVELOPMENT_IDENTITY_DEADLINE')
+    return False
+
+
+def status_identity(raw):
+    # Only numeric credential columns are used. Names, command lines and all
+    # other /proc fields are neither retained nor part of any proof/export.
+    rows = {}
+    for line in raw.splitlines():
+        key, separator, rest = line.partition(b':')
+        if key not in (b'Uid', b'Gid', b'Groups'):
+            continue
+        need(separator and key not in rows, 'DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN')
+        values = rest.split()
+        need((key == b'Groups' or len(values) == 4)
+             and len(values) <= 8192 and all(re.fullmatch(rb'[0-9]{1,10}', item) for item in values),
+             'DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN')
+        rows[key] = {int(item) for item in values}
+        need(all(item <= 4294967295 for item in rows[key]), 'DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN')
+    need(set(rows) == {b'Uid', b'Gid', b'Groups'}, 'DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN')
+    return rows[b'Uid'], rows[b'Gid'] | rows[b'Groups']
+
+
+def process_identities(deadline):
+    end, used_uids, used_gids, count, total = min(deadline, time.monotonic()+3), set(), set(), 0, 0
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+    def listing(fd):
+        need(time.monotonic() < end, 'DEVELOPMENT_IDENTITY_DEADLINE')
+        names = {name for name in os.listdir(fd) if re.fullmatch('[1-9][0-9]{0,9}', name)}
+        need(len(names) <= PROC_TASK_LIMIT, 'DEVELOPMENT_IDENTITY_PROCESS_LIMIT')
+        return names
+    try:
+        root = os.open(PROC, flags)
+        try:
+            pids = listing(root)
+            need(bool(pids), 'DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN')
+            for pid in sorted(pids):
+                process = os.open(pid, flags, dir_fd=root)
+                try:
+                    tasks = os.open('task', flags, dir_fd=process)
+                    try:
+                        tids = listing(tasks)
+                        need(pid in tids, 'DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN')
+                        for tid in sorted(tids):
+                            count += 1
+                            need(count <= PROC_TASK_LIMIT, 'DEVELOPMENT_IDENTITY_PROCESS_LIMIT')
+                            task = os.open(tid, flags, dir_fd=tasks)
+                            try:
+                                status = os.open('status', os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=task)
+                                try:
+                                    raw = bytearray()
+                                    while block := os.read(status, min(65536, PROC_STATUS_LIMIT+1-len(raw))):
+                                        raw.extend(block)
+                                        need(len(raw) <= PROC_STATUS_LIMIT and time.monotonic() < end,
+                                             'DEVELOPMENT_IDENTITY_PROCESS_LIMIT')
+                                finally: os.close(status)
+                            finally: os.close(task)
+                            total += len(raw)
+                            need(total <= PROC_TOTAL_LIMIT, 'DEVELOPMENT_IDENTITY_PROCESS_LIMIT')
+                            uids, gids = status_identity(bytes(raw))
+                            used_uids.update(uids.intersection(IDENTITY_RANGE))
+                            used_gids.update(gids.intersection(IDENTITY_RANGE))
+                        need(listing(tasks) == tids, 'DEVELOPMENT_IDENTITY_PROCESS_CHANGED')
+                    finally: os.close(tasks)
+                finally: os.close(process)
+            need(listing(root) == pids, 'DEVELOPMENT_IDENTITY_PROCESS_CHANGED')
+        finally: os.close(root)
+    except OSError as error:
+        raise Stop('DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN') from error
+    return used_uids, used_gids
+
+
+def observe_identity(uid, gid, deadline):
+    need(type(uid) is int and uid in IDENTITY_RANGE and type(gid) is int and gid in IDENTITY_RANGE,
+         'DEVELOPMENT_IDENTITY_RANGE')
+    for _ in range(2):
+        need(nss_absent(pwd.getpwuid, uid, deadline) and nss_absent(grp.getgrgid, gid, deadline),
+             'DEVELOPMENT_IDENTITY_ASSIGNED')
+        used_uids, used_gids = process_identities(deadline)
+        need(uid not in used_uids and gid not in used_gids, 'DEVELOPMENT_IDENTITY_PROCESS_ASSIGNED')
+        need(nss_absent(pwd.getpwuid, uid, deadline) and nss_absent(grp.getgrgid, gid, deadline),
+             'DEVELOPMENT_IDENTITY_ASSIGNED')
+    facts = {'schema': 'helmut-development-identity-v1', 'uid': uid, 'gid': gid,
+             'uid_absent_from_nss': True, 'gid_absent_from_nss': True,
+             'uid_absent_from_processes': True, 'gid_absent_from_processes': True,
+             'observed_at_utc': int(time.time())}
+    return {**facts, 'proof_sha256': digest(encoded(facts))}
+
+
+def select_identity(deadline):
+    global UID, GID, ACTIVE_IDENTITY
+    UID = GID = ACTIVE_IDENTITY = None
+    free_uids = [number for number in IDENTITY_RANGE if nss_absent(pwd.getpwuid, number, deadline)]
+    free_gids = [number for number in IDENTITY_RANGE if nss_absent(grp.getgrgid, number, deadline)]
+    used_uids, used_gids = process_identities(deadline)
+    free_uids = [number for number in free_uids if number not in used_uids]
+    free_gids = [number for number in free_gids if number not in used_gids]
+    need(free_uids and free_gids, 'DEVELOPMENT_IDENTITY_NONE_AVAILABLE')
+    observed = observe_identity(free_uids[0], free_gids[0], deadline)
+    UID, GID, ACTIVE_IDENTITY = observed['uid'], observed['gid'], observed
+    return observed
+
+
+def identity_ids():
+    value = validate_identity(ACTIVE_IDENTITY)
+    need((UID, GID) == (value['uid'], value['gid']), 'DEVELOPMENT_IDENTITY_BINDING')
+    return UID, GID
+
+
+def refresh_identity(deadline):
+    global ACTIVE_IDENTITY
+    previous, ACTIVE_IDENTITY = ACTIVE_IDENTITY, None
+    validate_identity(previous)
+    need((UID, GID) == (previous['uid'], previous['gid']), 'DEVELOPMENT_IDENTITY_BINDING')
+    ACTIVE_IDENTITY = observe_identity(UID, GID, deadline)
+    return ACTIVE_IDENTITY
+
+
+def tools_identity(deadline):
+    global UID, GID, ACTIVE_IDENTITY
+    ACTIVE_IDENTITY = None
+    receipt = json.loads(read_root(BASE/'private/TOOLS.SAFE.json'))
+    need(type(receipt) is dict and set(receipt) == {'schema', 'node_version', 'node_archive_sha256',
+         'docker_archive_sha256', 'postgrest_archive_sha256', 'postgres_base', 'identity'}
+         and receipt['schema'] == 'helmut-development-tools-v1'
+         and receipt['node_version'] == NODE_VERSION and receipt['node_archive_sha256'] == NODE_SHA
+         and receipt['docker_archive_sha256'] == DOCKER_SHA and receipt['postgrest_archive_sha256'] == POSTGREST_SHA
+         and receipt['postgres_base'] == POSTGRES, 'DEVELOPMENT_IDENTITY_RECEIPT')
+    value = validate_identity(receipt['identity'])
+    UID, GID, ACTIVE_IDENTITY = value['uid'], value['gid'], value
+    refresh_identity(deadline)
+    return receipt
+
+
 def check_capsule(value, source_sha, now):
     need(type(value) is dict and set(value) == CAPSULE_KEYS and
          value['schema'] == 'helmut-development-capsule-v1', 'DEVELOPMENT_CAPSULE')
@@ -245,14 +406,16 @@ if p.exists():
 HOST_COMMAND = '''import os,select,signal,subprocess,sys,time
 from pathlib import Path
 parent=int(sys.argv[1]);deadline=float(sys.argv[2]);role=sys.argv[3]
+uid=int(sys.argv[4]);gid=int(sys.argv[5])
+if not (60001<=uid<=60032 and 60001<=gid<=60032):raise SystemExit(125)
 held=os.pidfd_open(parent,0)
 poll=select.poll();poll.register(held,select.POLLIN)
 if poll.poll(0) or time.monotonic()>=deadline:raise SystemExit(125)
 if role not in ('host','worker','docker'):raise SystemExit(125)
 if role=='worker':
- os.setgroups([]);os.setgid(2000);os.setuid(2000)
- if (os.getuid(),os.geteuid(),os.getgid(),os.getegid(),os.getgroups())!=(2000,2000,2000,2000,[]):raise SystemExit(125)
-process=subprocess.Popen(sys.argv[4:],stdin=subprocess.DEVNULL,start_new_session=True,close_fds=True)
+ os.setgroups([]);os.setgid(gid);os.setuid(uid)
+ if (os.getuid(),os.geteuid(),os.getgid(),os.getegid(),os.getgroups())!=(uid,uid,gid,gid,[]):raise SystemExit(125)
+process=subprocess.Popen(sys.argv[6:],stdin=subprocess.DEVNULL,start_new_session=True,close_fds=True)
 aborted=False
 try:
  while process.poll() is None:
@@ -299,6 +462,9 @@ def run(argv, deadline, user=None, cwd=None, extra_env=None, cap=1024**2):
     need(0 < deadline-time.monotonic() <= 300, 'DEVELOPMENT_DEADLINE')
     capacity()
     need(hex_string(ACTIVE_NONCE, 64), 'DEVELOPMENT_REQUEST_REQUIRED')
+    refresh_identity(deadline)
+    uid, gid = identity_ids()
+    need(user is None or (type(user) is int and user == uid), 'DEVELOPMENT_IDENTITY_BINDING')
     command_env = {**ENV, **(extra_env or {})}
     host_unit = 'helmut-development-host-'+ACTIVE_NONCE+'-'+str(TOOL_INDEX+1)+'.service'
     remaining = max(1, int(deadline-time.monotonic()))
@@ -310,8 +476,11 @@ def run(argv, deadline, user=None, cwd=None, extra_env=None, cap=1024**2):
     if cwd is not None: launch += ['--working-directory='+str(cwd)]
     launch += ['/usr/bin/env','-i',*[key+'='+value for key,value in command_env.items()],
         '/usr/bin/python3','-I','-S','-B',str(BASE/'toolchain/host-command.py'),str(os.getpid()),str(deadline),
-        'docker' if argv[0] == str(BASE/'toolchain/docker/docker') else 'worker' if user is not None else 'host',*argv]
+        'docker' if argv[0] == str(BASE/'toolchain/docker/docker') else 'worker' if user is not None else 'host',
+        str(uid),str(gid),*argv]
     unit_policy(host_unit, deadline)
+    refresh_identity(deadline)  # Unit discovery may have taken time; observe again immediately before launch.
+    need(identity_ids() == (uid, gid), 'DEVELOPMENT_IDENTITY_BINDING')
     process = subprocess.Popen(launch, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         env=ENV, start_new_session=True, close_fds=True)
     buffers = [bytearray(), bytearray()]
@@ -454,14 +623,11 @@ def daemon_unit_source():
 
 def tools(deadline):
     receipt = BASE/'private/TOOLS.SAFE.json'
-    if receipt.exists(): return json.loads(read_root(receipt))
+    if receipt.exists(): return tools_identity(deadline)
+    select_identity(deadline)  # First setup step: only bounded credential observations.
     capacity(BUILD_BUFFER)
     need(not BASE.exists() and not UNIT.exists() and not CGROUP.exists(), 'DEVELOPMENT_SETUP_ALREADY_STARTED')
     unit_policy(SERVICE, deadline)  # Before any setup marker, download or unit write.
-    for lookup in (pwd.getpwuid, grp.getgrgid):
-        try: lookup(UID)
-        except KeyError: pass
-        else: raise Stop('DEVELOPMENT_UID_OR_GID_ASSIGNED')
     BASE.mkdir(mode=0o711)
     BASE.chmod(0o711)
     for leaf, mode in (('private', 0o700), ('toolchain', 0o755), ('workspaces', 0o711), ('repositories', 0o711)):
@@ -493,7 +659,8 @@ def tools(deadline):
     run(['/usr/bin/systemctl', 'enable', '--now', SERVICE], deadline)
     result = {'schema': 'helmut-development-tools-v1', 'node_version': NODE_VERSION,
               'node_archive_sha256': NODE_SHA, 'docker_archive_sha256': DOCKER_SHA,
-              'postgrest_archive_sha256': POSTGREST_SHA, 'postgres_base': POSTGRES}
+              'postgrest_archive_sha256': POSTGREST_SHA, 'postgres_base': POSTGRES,
+              'identity': dict(ACTIVE_IDENTITY)}
     write_new(receipt, encoded(result))
     return result
 
@@ -530,6 +697,7 @@ def lockfile(raw):
 
 
 def checkout(commit, nonce, deadline):
+    refresh_identity(deadline)
     path = BASE/'workspaces'/('repo-'+nonce)
     path.mkdir(mode=0o700); os.chown(path, UID, GID)
     git(['init', str(path)], deadline)
@@ -556,7 +724,8 @@ def checkout(commit, nonce, deadline):
         os.fchmod(fd, 0o644)
         os.write(fd, ('gitdir: '+str(sealed)+'\n').encode())
     finally: os.close(fd)
-    return {'source_commit': commit, 'workspace': path.name, 'package_lock_sha256': lockfile(raw)}, raw
+    return {'source_commit': commit, 'workspace': path.name, 'package_lock_sha256': lockfile(raw),
+            'uid': UID, 'gid': GID}, raw
 
 
 def replace_receipt(path, value):
@@ -569,6 +738,9 @@ def replace_receipt(path, value):
 
 
 def workspace(receipt):
+    identity_ids()
+    need(receipt.get('uid') == UID and type(receipt.get('uid')) is int
+         and receipt.get('gid') == GID and type(receipt.get('gid')) is int, 'DEVELOPMENT_IDENTITY_BINDING')
     name = receipt['workspace']
     need(type(name) is str and re.fullmatch('repo-[a-f0-9]{64}', name), 'DEVELOPMENT_WORKSPACE_NAME')
     path = BASE/'workspaces'/name
@@ -578,7 +750,7 @@ def workspace(receipt):
 
 
 def source_sync(capsule, deadline):
-    read_root(BASE/'private/TOOLS.SAFE.json')
+    identity_ids()
     active = BASE/'private/CURRENT.SAFE.json'
     if active.exists():
         old = json.loads(read_root(active))
@@ -589,6 +761,7 @@ def source_sync(capsule, deadline):
     if capsule['action'] == 'source-sync':
         expected = json.loads(read_root(image))
         need(result['package_lock_sha256'] == expected['package_lock_sha256'], 'DEVELOPMENT_DEPENDENCIES_REQUIRE_PREPARE')
+        need((expected.get('uid'), expected.get('gid')) == identity_ids(), 'DEVELOPMENT_IDENTITY_BINDING')
     write_new(BASE/'private'/('SOURCE-'+capsule['nonce']+'.SAFE.json'), encoded(result))
     replace_receipt(active, result)
     return result
@@ -597,7 +770,7 @@ def source_sync(capsule, deadline):
 ENTRYPOINT = '''#!/bin/sh
 set -eu
 umask 077
-test "$(id -u):$(id -g)" = 2000:2000
+test "$(id -u):$(id -g)" = @UID@:@GID@
 export HOME=/tmp/home PATH=/opt/helmut-dev/node/bin:/usr/lib/postgresql/17/bin:/usr/bin:/bin
 mkdir -p "$HOME"
 actual_lock=$(sha256sum /workspace/package-lock.json)
@@ -631,12 +804,14 @@ esac
 
 
 def image(deadline):
+    refresh_identity(deadline)
     current = json.loads(read_root(BASE/'private/CURRENT.SAFE.json'))
     path = workspace(current)
     existing = BASE/'private/IMAGE.SAFE.json'
     if existing.exists():
         result = json.loads(read_root(existing))
         need(result['package_lock_sha256'] == current['package_lock_sha256'], 'DEVELOPMENT_IMAGE_ALREADY_BOUND')
+        need((result.get('uid'), result.get('gid')) == identity_ids(), 'DEVELOPMENT_IDENTITY_BINDING')
         return result
     capacity(BUILD_BUFFER)
     build = BASE/'build'; build.mkdir(mode=0o711); build.chmod(0o711)
@@ -662,7 +837,7 @@ def image(deadline):
     # No cross-distribution PostgreSQL library copying and no runtime apt calls.
     run(['/bin/cp', '-a', str(node), str(layer/'node')], deadline)
     run(['/bin/cp', str(BASE/'toolchain/postgrest'), str(layer/'postgrest')], deadline)
-    write_new(layer/'entrypoint', ENTRYPOINT.encode(), 0o755)
+    write_new(layer/'entrypoint', entrypoint_source(), 0o755)
     write_new(layer/'package-lock.sha256', (current['package_lock_sha256']+'\n').encode(), 0o644)
     write_new(build/'Dockerfile', dockerfile_source(), 0o644)
     docker(['pull', '--platform=linux/amd64', POSTGRES], deadline)
@@ -672,28 +847,37 @@ def image(deadline):
     need(re.fullmatch('sha256:[a-f0-9]{64}', identity), 'DEVELOPMENT_IMAGE_ID')
     result = {'schema': 'helmut-development-image-v1', 'image_id': identity,
               'package_lock_sha256': current['package_lock_sha256'], 'node_version': NODE_VERSION,
-              'postgres_base': POSTGRES, 'postgrest_version': '12.2.3'}
+              'postgres_base': POSTGRES, 'postgrest_version': '12.2.3', 'uid': UID, 'gid': GID}
     write_new(existing, encoded(result))
     return result
 
 
 def dockerfile_source():
-    return ('FROM '+POSTGRES+'\nRUN groupadd --gid 2000 helmut-development && '
-            'useradd --uid 2000 --gid 2000 --no-create-home --home-dir /tmp/home '
+    uid, gid = identity_ids()
+    pair = str(uid)+':'+str(gid)
+    return ('FROM '+POSTGRES+'\nRUN groupadd --gid '+str(gid)+' helmut-development && '
+            'useradd --uid '+str(uid)+' --gid '+str(gid)+' --no-create-home --home-dir /tmp/home '
             '--shell /usr/sbin/nologin helmut-development\n'
-            'COPY --chown=2000:2000 layer/ /opt/helmut-dev/\nUSER 2000:2000\n'
+            'COPY --chown='+pair+' layer/ /opt/helmut-dev/\nUSER '+pair+'\n'
             'WORKDIR /workspace\nENTRYPOINT ["/opt/helmut-dev/entrypoint"]\n').encode()
 
 
+def entrypoint_source():
+    uid, gid = identity_ids()
+    return ENTRYPOINT.replace('@UID@', str(uid)).replace('@GID@', str(gid)).encode()
+
+
 def task_arguments(task, current, image_receipt, nonce):
+    uid, gid = identity_ids()
     need(task in PHASES['test'] and hex_string(nonce, 64), 'DEVELOPMENT_TASK')
     identity = image_receipt['image_id']
     need(re.fullmatch('sha256:[a-f0-9]{64}', identity) is not None, 'DEVELOPMENT_IMAGE_ID')
     need(current['package_lock_sha256'] == image_receipt['package_lock_sha256'], 'DEVELOPMENT_TASK_LOCK')
+    need((image_receipt.get('uid'), image_receipt.get('gid')) == (uid, gid), 'DEVELOPMENT_IDENTITY_BINDING')
     path = workspace(current)
-    return ['run', '--name=helmut-development-'+nonce, '--network=none', '--user=2000:2000',
+    return ['run', '--name=helmut-development-'+nonce, '--network=none', '--user='+str(uid)+':'+str(gid),
             '--cap-drop=ALL', '--security-opt=no-new-privileges', '--read-only', '--pids-limit=256',
-            '--memory=2g', '--cpus=2', '--tmpfs=/tmp:rw,nosuid,nodev,size=512m,uid=2000,gid=2000,mode=1770',
+            '--memory=2g', '--cpus=2', '--tmpfs=/tmp:rw,nosuid,nodev,size=512m,uid='+str(uid)+',gid='+str(gid)+',mode=1770',
             '--mount=type=bind,src='+str(path)+',dst=/workspace', '--workdir=/workspace',
             '--entrypoint=/usr/bin/env', identity, '-i', 'PATH=/usr/bin:/bin', 'LC_ALL=C',
             '/opt/helmut-dev/entrypoint', task]
@@ -710,7 +894,7 @@ def test_output(task, output):
 
 
 def coordinate(request, context, capsule):
-    global ACTIVE_NONCE, TOOL_INDEX
+    global ACTIVE_NONCE, TOOL_INDEX, UID, GID, ACTIVE_IDENTITY
     need(os.getuid() == os.geteuid() == os.getgid() == os.getegid() == 0, 'DEVELOPMENT_ROOT_REQUIRED')
     check_capsule(capsule, context['source_sha256'], int(time.time()))
     need(request['nonce'] == digest(PREFIX+encoded(capsule))
@@ -720,7 +904,8 @@ def coordinate(request, context, capsule):
               'action': capsule['action'], 'phase': capsule['phase'], 'source_commit': capsule['source_commit'],
               'source_sha256': context['source_sha256'], 'request_nonce': request['nonce'], 'code': None,
               'receipt_sha256': None, 'diagnostic': None, 'native_qualified': False, 'native_go_consumed': False}
-    ACTIVE_NONCE, TOOL_INDEX = request['nonce'], 0
+    result['identity'] = None
+    ACTIVE_NONCE, TOOL_INDEX, UID, GID, ACTIVE_IDENTITY = request['nonce'], 0, None, None, None
     # The existing root control request is already serialized by its protected
     # workflow; flock also covers other correctly authenticated CI dispatches.
     lock = os.open('/run/helmut-development-20261026.lock', os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
@@ -729,6 +914,8 @@ def coordinate(request, context, capsule):
         need(stat.S_ISREG(item.st_mode) and item.st_uid == item.st_gid == 0 and item.st_nlink == 1, 'DEVELOPMENT_LOCK')
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         action, phase = capsule['action'], capsule['phase']
+        if not (action == 'prepare' and phase == 'tools'):
+            tools_identity(deadline)
         if action == 'prepare' and phase == 'tools': facts = tools(deadline)
         elif phase == 'source': facts = source_sync(capsule, deadline)
         elif action == 'prepare' and phase == 'image': facts = image(deadline)
@@ -741,10 +928,13 @@ def coordinate(request, context, capsule):
             facts = {'schema': 'helmut-development-test-v1', 'task': phase,
                      'source_commit': current['source_commit'], 'package_lock_sha256': current['package_lock_sha256'],
                      'image_id': active_image['image_id'], 'stdout_sha256': digest(output),
-                     'network': 'none', 'uid': UID, 'exit_code': 0}
-        result.update(status='DEVELOPMENT_STEP_COMPLETE', code='DEVELOPMENT_STEP_COMPLETE', receipt_sha256=digest(encoded(facts)))
+                     'network': 'none', 'uid': UID, 'gid': GID, 'exit_code': 0}
+        facts['identity'] = dict(ACTIVE_IDENTITY)
+        result.update(status='DEVELOPMENT_STEP_COMPLETE', code='DEVELOPMENT_STEP_COMPLETE',
+                      receipt_sha256=digest(encoded(facts)), identity=dict(ACTIVE_IDENTITY))
         write_new(BASE/'private/requests'/(request['nonce']+'.SAFE.json'), encoded({'result': result, 'facts': facts}))
     except Exception as error:
+        result['identity'] = None if ACTIVE_IDENTITY is None else dict(ACTIVE_IDENTITY)
         result['code'] = error.code if isinstance(error, Stop) else 'DEVELOPMENT_SETUP_OR_TEST_FAILED'
         diagnostic = getattr(error, 'diagnostic', {})
         result['diagnostic'] = {'tool': Path(diagnostic.get('executable', '')).name or None,

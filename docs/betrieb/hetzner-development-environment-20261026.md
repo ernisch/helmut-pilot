@@ -4,8 +4,15 @@
 
 Der tatsächliche V2-Contextaufruf40403071760 auf Main4a82 endet mit
 `FAIL_KEEP_STATE_NO_RETRY/WORKER_FAILED`; Image wurde nicht ausgeführt.
-Vor jeder weiteren Einrichtung wird deshalb der neue rein lesende Vertrag
-`context-failure-observation-20261026-v1` verwendet. Er liest ausschließlich
+Die rein lesende Diagnose40417208848 auf Main84a7 wurde bereits validiert:
+`CHILD_INCOMPLETE` bedeutet EOF bei unvollständigem Childprotokoll. Die gemeldete
+Parentphase `private-mounts` beweist keinen gestarteten oder abgeschlossenen Mount.
+Ursprüngliche Childexception/errno und Exitstatus fehlen; ein konkreter Mount-,
+Kernel- oder Ressourcenfix ist damit nicht belegt. Diese abgeschlossene Diagnose
+nicht vor dem getrennten Devaufbau wiederholen. Native Änderungen und echte
+native Tests sind nicht Teil der UID/GID-Korrektur.
+
+Der dafür verwendete Vertrag `context-failure-observation-20261026-v1` liest ausschließlich
 die fest gebundenen gespeicherten Antwort-, Supervisor-, Job- und Componentrollen
 einschließlich höchstens8 anonymer temporärer Fehlerpublikationen. Fehlende
 Blätter oder übergeordnete Verzeichnisse erhalten einen positiven gehaltenen
@@ -77,8 +84,14 @@ Toolchain; es wird nicht still mit alten Abhängigkeiten getestet.
 
 Alles liegt unter `/opt/helmut-development-20261026`, mit eigenem Dockerdienst,
 Socket, DataRoot und festem Container-Cgroup. Kein Hostkonto wird angelegt;
-UID/GID1000 bleiben unberührt. Nur im Devimage existiert der Benutzer2000, den
-`initdb` zusätzlich zur numerischen Prozesskennung benötigt.
+UID/GID1000 und sämtliche vorhandenen Konten bleiben unberührt. Vor dem Aufbau
+werden getrennte UID und GID aus dem begrenzten Bereich60001–60032 ausschließlich
+lesend ermittelt: Auflösung in Benutzer-/Gruppendaten sowie numerische Kennungen
+laufender Prozesse müssen ihre Verfügbarkeit positiv bestätigen. Unbekannte oder
+wechselnde Beobachtungen stoppen. Die ausgewählten Kennungen werden an die
+rootgeschützte Devquittung gebunden und vor späteren Phasen erneut geprüft;
+eine belegte Kennung wird nicht still ersetzt. Nur im Devimage wird der dazu
+passende Benutzer für `initdb` angelegt, kein Hostkonto.
 
 Node22.23.4/npm10.9.9 und PostgREST12.2.3 ergänzen direkt das gepinnte
 `postgres:17.6-bookworm`-Image. PostgreSQL-Server, Client, ICU und Erweiterungen
@@ -87,7 +100,7 @@ ohne Audit/Fund und ohne Zugangsdaten; sämtliche Lockfile-URLs müssen HTTPS
 auf registry.npmjs.org mit SHA512-Integrität sein. Das Image wird anschließend
 ohne Netz gebaut und über seine unveränderliche Image-ID verwendet.
 
-Tests laufen als2000:2000, ohne Netz, ohne Linux-Capabilities, mit schreibgeschütztem
+Tests laufen mit genau dieser gebundenen UID/GID, ohne Netz, ohne Linux-Capabilities, mit schreibgeschütztem
 Root-Dateisystem und ausschließlich dem neuen Arbeitsbaum als Bindmount.
 Der bestehende `scripts/lokal.js` bleibt zusätzlich aktiv. PostgreSQL erhält
 für `lage-rest` einen frischen kurzlebigen Cluster innerhalb desselben
@@ -113,8 +126,24 @@ Exec-Felder werden dabei nicht als leere Arrays ausgegeben.
 Alle ausgeführten Phasen erhalten getrennte validierte SAFE-Antwortpaare im
 GitHub-Artefakt `helmut-development-public-<run>-<attempt>`. Die letzte Antwort
 oder der erste Fehler bleibt zusätzlich im bisherigen Zweierartefakt.
+Jede erfolgreiche Antwort enthält außerdem die geschlossene `identity`-Beobachtung
+mit UID, GID, vier positiven Abwesenheitsangaben, UTC-Zeit und SHA256; Kontonamen,
+Prozessnamen und Prozesskennungen werden nicht veröffentlicht. Der Client prüft
+dasselbe UID/GID-Paar über alle fünf Phasen.
 Begrenzte vollständige stdout/stderr, Hashes und Erstfehler bleiben privat in
 der neuen Devwurzel erhalten; nur geschlossene Diagnosedaten werden veröffentlicht.
+
+## Tatsächlicher UID/GID-Blocker und begrenzte Korrektur
+
+Der erste direkte Devaufbau40417450449 auf PR942-Quelle29b05ac0 stoppte in `tools`
+mit `DEVELOPMENT_UID_OR_GID_ASSIGNED`: UID oder GID2000 ist belegt, das konkrete
+Konto wurde nicht ausgegeben. Die geschützte Prüfung lag vor `BASE.mkdir`,
+Downloads, Arbeitskopie und DB; `retained_tool_count=0`. Antwort-SHA256:
+`75a142f79845de4bf3528994f2dc563e2b5bfa8f9113abff73b558e69202f081`.
+Dieser Fehler und seine Anfrage bleiben erhalten. Die Korrektur ändert nur die
+isolierte Devidentität und ihre notwendigen Prüfungen und Quellbindungen;
+kein Bestandskonto wird geändert und kein alter Einmalmarker zurückgesetzt.
+Die tatsächliche Zielabnahme steht bis zu fünf erfolgreichen neuen Phasen aus.
 
 ## Quellen und lokale Prüfung
 
