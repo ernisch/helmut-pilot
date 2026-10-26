@@ -777,6 +777,12 @@ function run(options = {}) {
   const cwd = path.resolve(options.cwd || process.cwd());
   const cfg = parseArgs(argv);
 
+  // Paid writes are never sent without a recoverable private provider reply.
+  // Refuse before source handling, reservation or any billable network access.
+  if (cfg.mode === "write" && !cfg.dryRun && !cfg.replayResponse && !cfg.saveResponse) {
+    throw new Error("deepseek-write-requires-save-response; no-provider-call");
+  }
+
   if (!cfg.replayResponse && !cfg.dryRun && !envSource.DEEPSEEK_API_KEY) throw new Error("DEEPSEEK_API_KEY-fehlt");
   const task = ensureTextFile(cfg.taskFile);
   if (!task.trim()) throw new Error("task-file-empty");
