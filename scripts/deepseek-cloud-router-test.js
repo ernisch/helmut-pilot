@@ -705,7 +705,7 @@ check("Genau eine schreibbare Datei; ungültige Edits bleiben ohne Wirkung", () 
       [{ ...good, content: "wrong format" }, /format-mismatch/],
       [{ ...good }, /duplicate-path/],
     ]) {
-      p.payload.edits = [good, bad];
+      p.payload.edits = String(error).includes("duplicate-path") ? [good, bad] : [bad];
       assert.throws(() => p.run(), error);
       assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
     }
