@@ -260,6 +260,13 @@ Jeder DeepSeek Auftrag beginnt mit einer kostenfreien lokalen Vorpruefung
 Schreibauftraege mit mehr als einer Datei, langen Auftraegen, zu grossem
 Schreibkontext und teuren Reserveschranken vor dem kostenpflichtigen API Aufruf.
 Ein Schreibauftrag darf genau eine freigegebene Datei betreffen.
+Die Grenze von 12.000 Auftragszeichen gilt nur fuer einen einzelnen
+DeepSeek Modellaufruf, niemals fuer einen gesamten Entwicklungsauftrag.
+Die fruehere zusaetzliche 3.000 Zeichen Schranke entfaellt. Sol darf
+lange Gesamtauftraege ohne kuenstliche Projektlaengengrenze selbst
+fuehren und nur die sinnvoll abgrenzbaren, abnehmbaren Teile delegieren.
+Keine automatischen LLM Aufrufe zur Zerlegung, keine kostenpflichtigen
+Probeversuche zur Auftragsgroesse.
 Pro Helferaufruf gilt eine konservative lokale Peak Preisprognose mit
 hoechstens 0,25 USD Planungslimit. Ein atomares Journal im gemeinsamen
 HOME Verzeichnis reserviert vor kostenpflichtigen Aufrufen maximal
