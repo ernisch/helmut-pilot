@@ -913,7 +913,7 @@ check("Verbrauch bleibt auch bei fehlerhafter bezahlter Antwort sichtbar", () =>
   const raw = JSON.stringify({ status: "completed", model: "deepseek-flash",
     output: [{ type: "message", content: [{ type: "output_text", text: "{bad-json" }] }],
     usage: { input_tokens: 120, output_tokens: 400 } }) +
-    "\\n__HELMUT_HTTP_STATUS__:200";
+    "\n__HELMUT_HTTP_STATUS__:200";
   assert.throws(() => router.parseCurlResponse(raw), /output-invalid-json:input_tokens=120:output_tokens=400:peak_usd_estimate=/);
   const p = project();
   try {
