@@ -81,15 +81,22 @@ function saveState(dir, state) {
   }
 }
 
-function withLock(dir, action) {
+function withLock(dir, action, lockRetries = 0) {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   checkDir(dir);
   const lock = path.join(dir, ".lock");
-  try {
-    fs.mkdirSync(lock, { mode: 0o700 });
-  } catch (error) {
-    if (error.code === "EEXIST") throw new Error("deepseek-budget-locked; no-provider-call");
-    throw error;
+  const sleep = new Int32Array(new SharedArrayBuffer(4));
+  for (let attempt = 0; ; attempt++) {
+    try {
+      fs.mkdirSync(lock, { mode: 0o700 });
+      break;
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      if (attempt >= lockRetries) throw new Error("deepseek-budget-locked; reservation-retained");
+      // A settlement occurs after paid work; brief contention must not
+      // destroy an already received response. Reserve() remains fail-fast.
+      Atomics.wait(sleep, 0, 0, 20);
+    }
   }
   try {
     const marker = path.join(dir, ".initialized");
@@ -162,7 +169,7 @@ function settle(receipt, actualUsd) {
     ticket.state = "settled";
     saveState(receipt.dir, state);
     return true;
-  });
+  }, 5);
 }
 
 function snapshot({ dir, day = new Date().toISOString().slice(0, 10) }) {
