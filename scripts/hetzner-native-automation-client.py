@@ -31,6 +31,18 @@ SETUP_PREFIX = b'helmut-setup-successor-request-v1\0'
 SETUP_CAPSULE_KEYS = {'schema', 'contract_id', 'action', 'phase', 'source_sha256', 'contract_sha256',
     'nonce', 'inspection_nonce', 'inspection_result_sha256', 'issued_at_utc', 'expires_at_utc'}
 SETUP_PHASES = ('recover', 'checkout', 'context', 'image')
+RUNTIME_METADATA_CONTRACT = 'runtime-metadata-20261026-v1'
+RUNTIME_METADATA_CONTRACT_SHA256 = '684232c392965d8e72df46820601e26098222e04298fc03d7a92d8878ae88286'
+RUNTIME_METADATA_PREFIX = b'helmut-runtime-metadata-request-v1\0'
+RUNTIME_METADATA_CAPSULE_KEYS = {'schema', 'contract_id', 'action', 'chunk', 'source_sha256',
+    'contract_sha256', 'nonce', 'issued_at_utc', 'expires_at_utc'}
+RUNTIME_METADATA_SHA256 = '71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475'
+RUNTIME_METADATA_BYTES = 207733
+RUNTIME_METADATA_SETUP = {
+    'source_sha256': 'afbccf72ad9f60ea84091567268c3b7927bcc6df9d99dac0c5da61e27e546a85',
+    'deployment_commit': '18c2736ac4da2cf946ccb4494ad2963091de7d32',
+    'contract_sha256': '029d6e301758fd27172a58c03ae99ae2003f93f84c37959192ad1124a93a5738',
+    'asset_set_sha256': '9941129431d0575caa1afe9afab497fd7d111c18ede0566b5498ec5089751c07'}
 STAGE_PLAN = 'e6d463a634925a190d60d066c0fae2ba94b9f7f0a10a115b50b4f4018b1b35eb'
 STAGE_SCOPE = '08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd'
 STAGE_CODES = frozenset(('STAGE_COMPLETE', 'STAGE_INTERNAL_FAILURE', 'STAGE_DEADLINE',
@@ -56,7 +68,7 @@ SAFE_CODES = {
     "recipient-format", "recipient-hash", "recipient-private-material",
     "recipient-fingerprint", "recipient-validation", "ssh-failed",
     "ssh-timeout", "mode-denied", "public-output-exists", "source-pin-drift", "stage-capsule",
-    "setup-mode", "setup-capsule", "setup-result",
+    "setup-mode", "setup-capsule", "setup-result", "runtime-metadata-capsule", "runtime-metadata-result",
 }
 
 
@@ -184,13 +196,28 @@ def _setup_capsule_check(value, payload, now=None):
         for key in ('inspection_nonce', 'inspection_result_sha256'): pinned_sha(value[key])
 
 
+def _runtime_metadata_capsule_check(value, payload, now=None):
+    require(type(value) is dict and set(value) == RUNTIME_METADATA_CAPSULE_KEYS
+            and value['schema'] == 'helmut-runtime-metadata-capsule-v1'
+            and value['contract_id'] == RUNTIME_METADATA_CONTRACT and value['action'] == 'read'
+            and type(value['chunk']) is int and 0 <= value['chunk'] <= 3
+            and value['source_sha256'] == payload and value['contract_sha256'] == RUNTIME_METADATA_CONTRACT_SHA256,
+            'runtime-metadata-capsule')
+    for key in ('source_sha256', 'contract_sha256', 'nonce'): pinned_sha(value[key])
+    require(type(value['issued_at_utc']) is int and type(value['expires_at_utc']) is int
+            and 0 < value['issued_at_utc'] < value['expires_at_utc']
+            and value['expires_at_utc'] - value['issued_at_utc'] <= 300, 'runtime-metadata-capsule')
+    if now is not None:
+        require(value['issued_at_utc'] <= now <= value['expires_at_utc'], 'runtime-metadata-capsule')
+
+
 def setup_capsule(environment, operation):
     encoded = environment.get('HELMUT_NATIVE_SETUP_CAPSULE', '')
     mode = environment.get('HELMUT_NATIVE_CONTROL_MODE', 'control-v1')
     if encoded == '':
         require(mode == 'control-v1', 'setup-mode')
         return b'', None
-    require(mode in ('setup-inspect-v1', 'setup-successor-v1'), 'setup-mode')
+    require(mode in ('setup-inspect-v1', 'setup-successor-v1', 'runtime-metadata-v1'), 'setup-mode')
     require(operation in ('status', 'admit') and environment.get('HELMUT_NATIVE_STAGE_CAPSULE', '') == ''
             and environment.get('HELMUT_NATIVE_PLAN_SHA256') == STAGE_PLAN, 'setup-capsule')
     require(type(encoded) is str and 0 < len(encoded) <= 10924
@@ -200,6 +227,10 @@ def setup_capsule(environment, operation):
     require(0 < len(raw) <= 8191 and base64.b64encode(raw).decode('ascii') == encoded, 'setup-capsule')
     value = json_unique(raw)
     require(canonical(value) == raw, 'setup-capsule')
+    if mode == 'runtime-metadata-v1':
+        require(operation == 'status', 'setup-mode')
+        _runtime_metadata_capsule_check(value, pinned_sha(environment.get('HELMUT_NATIVE_PAYLOAD_SHA256')), int(time.time()))
+        return raw + b'\n', value
     _setup_capsule_check(value, pinned_sha(environment.get('HELMUT_NATIVE_PAYLOAD_SHA256')), int(time.time()))
     require((mode, operation, value['action']) in (('setup-inspect-v1', 'status', 'inspect'),
             ('setup-successor-v1', 'admit', 'setup')), 'setup-mode')
@@ -208,6 +239,83 @@ def setup_capsule(environment, operation):
 
 def setup_request_nonce(capsule):
     return digest(SETUP_PREFIX + canonical(capsule) + b'\n')
+
+
+def runtime_metadata_request_nonce(capsule):
+    return digest(RUNTIME_METADATA_PREFIX + canonical(capsule) + b'\n')
+
+
+def control_request_nonce(capsule):
+    if capsule['schema'] == 'helmut-runtime-metadata-capsule-v1':
+        return runtime_metadata_request_nonce(capsule)
+    return setup_request_nonce(capsule)
+
+
+def validate_runtime_metadata_result(result, sent, capsule):
+    _runtime_metadata_capsule_check(capsule, sent['payload_sha256'])
+    require(sent['operation'] == 'status' and sent['plan_sha256'] == STAGE_PLAN
+            and sent['nonce'] == runtime_metadata_request_nonce(capsule), 'response-binding')
+    require(type(result) is dict and len(canonical(result)) <= 131072
+            and result.get('schema') == 'helmut-runtime-binding-metadata-read-v1'
+            and result.get('contract_id') == RUNTIME_METADATA_CONTRACT
+            and result.get('contract_sha256') == capsule['contract_sha256']
+            and result.get('source_sha256') == sent['payload_sha256']
+            and result.get('dataset_sha256') == RUNTIME_METADATA_SHA256
+            and type(result.get('dataset_bytes')) is int and result['dataset_bytes'] == RUNTIME_METADATA_BYTES
+            and type(result.get('chunk_index')) is int and result['chunk_index'] == capsule['chunk']
+            and result.get('native_qualified') is False and result.get('native_go_consumed') is False,
+            'runtime-metadata-result')
+    common = {'schema', 'status', 'contract_id', 'contract_sha256', 'source_sha256', 'dataset_sha256',
+              'dataset_bytes', 'chunk_index', 'data_base64', 'native_qualified', 'native_go_consumed'}
+    require(common <= set(result), 'runtime-metadata-result')
+    if result['status'] == 'FAIL_CLOSED_NOT_NATIVE_QUALIFIED':
+        require(set(result) == common | {'code'} and result['data_base64'] is None
+                and type(result['code']) is str and re.fullmatch('[A-Z][A-Z0-9_]{0,63}', result['code']),
+                'runtime-metadata-result')
+        return
+    require(set(result) == common | {'file_binding', 'scope_sha256', 'source_row_sha256', 'setup_proof',
+            'chunk_count', 'chunk_size', 'chunk_sha256', 'json_summary'}
+            and result['status'] == 'SAFE_METADATA_CHUNK_NOT_NATIVE_QUALIFIED'
+            and result['scope_sha256'] == STAGE_SCOPE
+            and type(result['chunk_count']) is int and result['chunk_count'] == 4
+            and type(result['chunk_size']) is int and result['chunk_size'] == 65536, 'runtime-metadata-result')
+    pinned_sha(result['source_row_sha256']); pinned_sha(result['chunk_sha256'])
+    binding = result['file_binding']
+    require(type(binding) is dict and set(binding) == {'sha256', 'bytes', 'metadata'}
+            and binding['sha256'] == RUNTIME_METADATA_SHA256 and type(binding['bytes']) is int
+            and binding['bytes'] == RUNTIME_METADATA_BYTES, 'runtime-metadata-result')
+    _setup_metadata(binding['metadata'])
+    require(binding['metadata'][6] == RUNTIME_METADATA_BYTES, 'runtime-metadata-result')
+    proof = result['setup_proof']
+    require(type(proof) is dict and set(proof) == {'schema', *RUNTIME_METADATA_SETUP, 'authority_sha256',
+            'once_sha256', 'accepted_sha256', 'job_seal_sha256', 'baseline_sha256'}
+            and proof['schema'] == 'helmut-runtime-metadata-setup-proof-v1'
+            and all(proof[key] == value for key, value in RUNTIME_METADATA_SETUP.items()), 'runtime-metadata-result')
+    for key in ('authority_sha256', 'once_sha256', 'baseline_sha256'): pinned_sha(proof[key])
+    for key in ('accepted_sha256', 'job_seal_sha256'):
+        require(type(proof[key]) is dict and set(proof[key]) == set(SETUP_PHASES), 'runtime-metadata-result')
+        for value in proof[key].values(): pinned_sha(value)
+    summary = result['json_summary']
+    types = {'dict', 'list', 'str', 'int', 'float', 'bool', 'NoneType'}
+    require(type(summary) is dict and set(summary) == {'root_type', 'nodes', 'max_depth', 'type_counts',
+            'ascii_only', 'utf8_valid', 'schema_value_sha256'} and type(summary['root_type']) is str
+            and summary['root_type'] in types
+            and type(summary['nodes']) is int and 0 < summary['nodes'] <= 100000
+            and type(summary['max_depth']) is int and 0 <= summary['max_depth'] <= 64
+            and type(summary['ascii_only']) is bool and summary['utf8_valid'] is True
+            and type(summary['type_counts']) is dict and set(summary['type_counts']) == types
+            and all(type(n) is int and 0 <= n <= 100000 for n in summary['type_counts'].values())
+            and sum(summary['type_counts'].values()) == summary['nodes'], 'runtime-metadata-result')
+    if summary['schema_value_sha256'] is not None: pinned_sha(summary['schema_value_sha256'])
+    data = result['data_base64']
+    require(type(data) is str and 0 < len(data) <= 87384
+            and re.fullmatch(r'[A-Za-z0-9+/]+={0,2}', data), 'runtime-metadata-result')
+    try: raw = base64.b64decode(data, validate=True)
+    except (ValueError, binascii.Error): raise ValueError('runtime-metadata-result') from None
+    require(base64.b64encode(raw).decode('ascii') == data
+            and len(raw) == min(65536, RUNTIME_METADATA_BYTES - result['chunk_index'] * 65536)
+            and digest(raw) == result['chunk_sha256']
+            and (not summary['ascii_only'] or raw.isascii()), 'runtime-metadata-result')
 
 
 def _setup_metadata(value):
@@ -586,6 +694,8 @@ def validate_response(raw, sent, successor_capsule=None):
             "response-hash")
     if successor_capsule is None:
         validate_result(reply["result"], sent["operation"], sent["payload_sha256"])
+    elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-runtime-metadata-capsule-v1':
+        validate_runtime_metadata_result(reply['result'], sent, successor_capsule)
     else:
         validate_setup_result(reply['result'], sent, successor_capsule)
     if sent['operation']=='stage':require(sent['plan_sha256']==STAGE_PLAN,'response-binding')
@@ -696,7 +806,7 @@ def write_public_artifact(directory, reply):
 def client(environment):
     operation, plan, payload = validate_context(environment)
     setup_line, successor = setup_capsule(environment, operation)
-    sent = request(operation, plan, payload, setup_request_nonce(successor) if successor is not None else secrets.token_hex(32))
+    sent = request(operation, plan, payload, control_request_nonce(successor) if successor is not None else secrets.token_hex(32))
     capsule_line,capsule_raw=stage_capsule(environment,operation)
     host, public, private = transport_configuration(environment)
     require(successor is None or host == '100.96.83.66', 'host-denied')
@@ -711,7 +821,8 @@ def client(environment):
         raw,code = bounded_exchange(ssh_arguments(host,key,hosts),canonical(sent)+b'\n'+(setup_line or capsule_line),
                                    include_returncode=True)
         reply = validate_response(raw, sent, successor)
-        failed=(successor is not None or operation in ('stage', 'admit')) and reply['result']['status']=='FAIL_KEEP_STATE_NO_RETRY'
+        failed=(successor is not None or operation in ('stage', 'admit')) and reply['result']['status'] in (
+            'FAIL_KEEP_STATE_NO_RETRY', 'FAIL_CLOSED_NOT_NATIVE_QUALIFIED')
         require(code==0 or failed,'ssh-failed')
         if operation=='stage' and reply['result']['capsule_sha256'] is not None:
             require(reply['result']['capsule_sha256']==digest(capsule_raw),'response-binding')

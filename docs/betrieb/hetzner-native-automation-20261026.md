@@ -5,6 +5,43 @@ und CURRENT_STATE. Die [Thread-Uebergabe](helmut-thread-handoff-20261026.md)
 bleibt die verifizierte Ausgangsbasis; ihre Stopp- und Schutzgrenzen gelten weiter.
 Dieses Dossier enthaelt auch historische Zwischenstaende, keine neuen Laufrechte.
 
+## Fester SAFE-Metadatenlesepfad nach der Einrichtung
+
+Der getrennte Folgepfad `runtime-metadata-v1`/`status` liest ausschliesslich
+`READONLY_RUNTIME_BINDINGS.SAFE.json`:207733Bytes, SHA256
+`71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475`.
+Diese SAFE-Metadatei ist bereits ein eigener Dateidatensatz des uebertragenen
+Quellpakets. Sie benennt die noch zu qualifizierenden Runtime-Ableitungen;
+eine neue Originaluebertragung oder Gesamtinventur ist dafuer nicht erforderlich.
+Ein Aufruf installiert nichts und startet keinen nativen Fall.
+
+Der Reader bindet den historischen Setupstand Main
+`18c2736ac4da2cf946ccb4494ad2963091de7d32`, Server `afbccf72...e546a85`,
+Vertrag `029d6e30...93a5738` und alle zehn alten Modulquellen fest.
+Authority, Once, gespeicherte Inspektion, alle vier ACCEPTED-/Job-Siegel sowie
+die elf Dateien jedes Jobs und die Komponentenbelege werden vor und nach dem
+Lesen positiv geprueft. Echte Belegshashes werden aus rootgeschuetzten Dateien
+abgeleitet; der Aufrufer kann keinen eigenen Ausgangszustand behaupten.
+
+Nur der genaue am Source-Scope gebundene Dateidatensatz liefert Besitzer und
+Modus; fehlende Metadaten gelten nicht als leer. Jeder Abruf liest die gesamte
+Datei ohne Atime-Aenderung, prueft Groesse, Hash, Pfad-/Dateimetadaten sowie
+eindeutiges UTF8-JSON und gibt genau einen von vier festen65536-Byte-Chunks aus.
+Keine freien Pfade, Quellen, Grenzen oder Exportfreigaben im Request; kein
+Export von Schluesseln, Originalpayloads oder ungeprueftem Originalquellcode.
+Die feste SAFE-Freigabe ist Teil des geprueften Readercodes. Der eigene Vertrag
+hat SHA256 `684232c392965d8e72df46820601e26098222e04298fc03d7a92d8878ae88286`.
+
+Client/Server binden Modus, Host100.96.83.66, Quell-/Vertragshash, kanonische
+Kapsel, maximal300Sekunden und einen eigenen Requesthash. Gueltige Fehler
+bleiben als rote SAFE-Artefakte erhalten; ohne positive Bindungen keine Daten.
+Der Transport schreibt seine normalen Request-/Resultbelege. Nativeflags
+bleiben false. Das bisherige Setupfenster wird nicht verlaengert.
+
+Der neue Readercode wird erst nach vier tatsaechlichen ACCEPTED auf dem
+unveraenderten Setup-Deploymentcommit gemergt. Er ist ein weiterer Lesebeleg,
+keine Abnahme einer fertigen Runtime oder beschreibbaren Entwicklungsumgebung.
+
 ## Neuer gebundener Setupweg (26.10.2026 Istanbul)
 
 Der Betreiber hat nach PR958 ausdruecklich die tatsaechliche vollstaendige

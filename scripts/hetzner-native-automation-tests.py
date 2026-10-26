@@ -17,8 +17,8 @@ SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parent
 SOURCE_SHA256 = {
     'bootstrap': '740e7cd3218eec796abf9fe408db2db7ddeaeeade34ddc2363942d5fcf9a4f97',
-    'server': 'afbccf72ad9f60ea84091567268c3b7927bcc6df9d99dac0c5da61e27e546a85',
-    'client': 'f5030ce3dfc69b40eca3a8a80675f56f90a596d1a0edc18763a49e5c01024ab5',
+    'server': 'f1c504d5ab4585ebc2948357da95e96e7f4b7295ee857a891f0f5a9c42179328',
+    'client': 'a86c549fc8351ff8970341c6e2f0a828b914b2ec58ba6f1b704662fdfc879424',
     'installer': 'f3512b1126ece5eb744db3f991c8c2c4d0b7703350c13ded52dd0c1c894d21d3',
 }
 RECIPIENT_SHA256 = '8e054d8d1c7ba5428b2fa9537462689fd0863621fd2d1eed16742fa2b3a49b10'
@@ -91,7 +91,8 @@ def main():
                   ('public-checkout', 'context', 'budget-image-import', 'local-restore-recovery',
                    'setup-driver', 'setup-service', 'setup-coordinator',
                    'setup-successor-preflight', 'setup-successor',
-                   'setup-successor-client', 'setup-successor-server'))
+                   'setup-successor-client', 'setup-successor-server',
+                   'runtime-metadata', 'runtime-metadata-client', 'runtime-metadata-server'))
     for group, test_file in groups:
         filename = SCRIPTS / test_file
         module = types.ModuleType('native_control_tests_' + group)

@@ -3,12 +3,12 @@
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
 Auftrag: Arbeits-/Testumgebung auf Hetzner; kein Productionumzug.
-UNIT_PROPERTIES-Fix PR957/35d7d2d4 abgenommen; PR-/Main-CI SUCCESS, Vercel READY.
-Gebundener Setupweg in Entwicklung; Bootstrap/Keys erhalten.
-Branch codex/hetzner-setup-successor-20261026: eigene Authority/Once/Jobs.
-Unabhaengig geprueft: Legacy-Root und Vorgaengerjobs vor Folgephasen binden.
+UNIT_PROPERTIES-Fix PR957 abgenommen. Setup PR959 auf Main18c2736a.
+Ausfuehrung verlangt gruene PR-/Main-CI; eigene Authority/Once/Jobs.
+Neuer SAFE-Metadatenlesepfad verlangt alle vier geprueften Setup-Abnahmen.
+Runtime/Arbeitskopie sind damit noch nicht als fertig abgenommen.
 Alter Setup40306875483 bleibt FAIL; Fehler, Originale, Keys und Einmalmarker erhalten.
-Mac-Abfrage erledigt; Restore offen; neue Zielaufrufe0.
+Mac-Abfrage erledigt; aktuelle Zielbelege bleiben auf Hetzner erhalten.
 Native Messung und500er-Lauf bleiben ohne frisches konkretes GO gesperrt.
 [Uebergabe](betrieb/helmut-thread-handoff-20261026.md) · [Belege](betrieb/hetzner-native-automation-20261026.md).
 
