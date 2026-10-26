@@ -235,7 +235,7 @@ class CapsuleTests(unittest.TestCase):
             self.encode()
         self.assertEqual(self.read(path), before)
 
-    def test_capsule_gpg_arguments_force_aes256_mdc_zlib_with_bounded_mock_pipes(self):
+    def test_capsule_gpg_uses_exact_public_file_without_import_or_agent(self):
         self.output.mkdir(mode=0o700)
         directory = os.open(self.output, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_NOATIME)
         input_read, input_write = os.pipe()
@@ -247,19 +247,38 @@ class CapsuleTests(unittest.TestCase):
         process = types.SimpleNamespace(stdin=os.fdopen(input_write, 'wb', buffering=0),
             stdout=os.fdopen(cipher_read, 'rb', buffering=0), stderr=os.fdopen(error_read, 'rb', buffering=0),
             wait=Mock(return_value=0), pid=123456)
+        public = b'SYNTHETIC_PUBLIC_ONLY'
+        def spawn(arguments, **options):
+            fd, = options['pass_fds']
+            self.assertEqual(arguments[arguments.index('--recipient-file') + 1], '/proc/self/fd/' + str(fd))
+            self.assertEqual(os.read(fd, 65536), public)
+            os.lseek(fd, 0, os.SEEK_SET)
+            with self.assertRaises(OSError) as raised:os.write(fd, b'x')
+            self.assertEqual(raised.exception.errno, errno.EBADF)
+            return process
         try:
-            with patch.object(WRITER, 'public_import') as importing, \
-                    patch.object(m.subprocess, 'Popen', return_value=process) as opening:
-                encrypted = m.encrypt_capsule(WRITER, directory, str(self.output), FP, b'SYNTHETIC_PUBLIC_ONLY', b'{"synthetic":true}')
+            with patch.object(m.subprocess, 'Popen', side_effect=spawn) as opening:
+                encrypted = m.encrypt_capsule(WRITER, directory, str(self.output), FP, public, b'{"synthetic":true}')
             self.assertEqual(encrypted, b'SYNTHETIC_ENCRYPTED_METADATA')
+            self.assertEqual(opening.call_count, 1)
             args = opening.call_args.args[0]
             self.assertIn('--rfc4880', args)
             self.assertIn('--force-mdc', args)
             self.assertEqual(args[args.index('--cipher-algo') + 1], 'AES256')
             self.assertEqual(args[args.index('--compress-algo') + 1], 'ZLIB')
-            self.assertEqual(args[args.index('--recipient') + 1], FP)
-            self.assertNotIn('--import-ownertrust', args)
-            self.assertEqual(importing.call_args.args[1], b'SYNTHETIC_PUBLIC_ONLY')
+            self.assertNotIn('--recipient', args)
+            self.assertEqual(args[args.index('--trust-model') + 1], 'always')
+            self.assertIn('--no-autostart', args)
+            self.assertIn('--no-default-keyring', args)
+            home = self.output / 'public-gpg-home'
+            self.assertEqual(args[args.index('--homedir') + 1], str(home))
+            self.assertEqual(home.stat().st_mode & 0o777, 0o700)
+            self.assertEqual(list(home.iterdir()), [])
+            self.assertEqual(self.read(self.output / 'RECIPIENT.PUBLIC.asc'), public)
+            self.assertFalse(any(word in args for word in (
+                '--import', '--import-options', '--import-ownertrust', '--generate-key',
+                '--quick-generate-key', '--export-secret-keys', 'gpg-agent')))
+            self.assertFalse(hasattr(WRITER, 'public_import'))
             self.assertEqual(os.read(input_read, 1024), b'{"synthetic":true}')
         finally:
             os.close(input_read)
@@ -284,7 +303,7 @@ class CapsuleTests(unittest.TestCase):
             events.append('error')
             return real_write(*args, **kwargs)
         try:
-            with patch.object(WRITER, 'public_import'), patch.object(m.subprocess, 'Popen', return_value=process), \
+            with patch.object(m.subprocess, 'Popen', return_value=process), \
                     patch.object(WRITER, 'write_once', side_effect=write), \
                     patch.object(WRITER, 'stop_process', side_effect=lambda process: events.append('stop')):
                 with self.assertRaisesRegex(m.Stop, '^CAPSULE_GPG_FAILED$'):

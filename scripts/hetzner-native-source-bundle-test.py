@@ -377,75 +377,87 @@ class BundleTests(unittest.TestCase):
             with self.assertRaisesRegex(m.Stop, '^RECIPIENT_PUBLIC_KEY_BINDING$'):
                 m.validate_recipient_inputs(str(response_path), m.digest(raw), str(public_path))
 
-    def test_real_encryptor_arguments_are_public_import_then_fixed_aes256_without_gpg_compression(self):
-        self.output.mkdir(mode=0o700)
+    def test_encryptor_uses_exact_readonly_recipient_file_without_import_or_agent(self):
+        self.output = self.base / ('deep-' + 'x'*80) / ('fresh-' + 'y'*80)
+        self.output.mkdir(mode=0o700, parents=True)
         directory = os.open(self.output, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_NOATIME)
         process = types.SimpleNamespace(stdin=Mock(), stdout=io.BytesIO(b'SYNTHETIC_CIPHER'),
                                         stderr=io.BytesIO(), wait=Mock(return_value=0), pid=123456)
         sink = m.Parts(directory)
+        public = b'SYNTHETIC_PUBLIC_ONLY'
+        def spawn(arguments, **options):
+            fd, = options['pass_fds']
+            self.assertEqual(arguments[arguments.index('--recipient-file') + 1], '/proc/self/fd/' + str(fd))
+            self.assertEqual(os.read(fd, 65536), public)
+            os.lseek(fd, 0, os.SEEK_SET)
+            with self.assertRaises(OSError) as raised:os.write(fd, b'x')
+            self.assertEqual(raised.exception.errno, errno.EBADF)
+            return process
         try:
-            with patch.object(m, 'public_import') as importing, \
-                    patch.object(m.subprocess, 'Popen', return_value=process) as opening:
-                encryptor = m.GPGEncryptor(sink, str(self.output), FP, b'SYNTHETIC_PUBLIC_ONLY')
+            with patch.object(m.subprocess, 'Popen', side_effect=spawn) as opening:
+                encryptor = m.GPGEncryptor(sink, str(self.output), FP, public)
                 encryptor.finish()
             sink.close()
-            imported = importing.call_args.args[0]
+            self.assertEqual(opening.call_count, 1)
             arguments = opening.call_args.args[0]
-            self.assertEqual(importing.call_args.args[1], b'SYNTHETIC_PUBLIC_ONLY')
             self.assertEqual(arguments[arguments.index('--cipher-algo') + 1], 'AES256')
             self.assertEqual(arguments[arguments.index('--compress-algo') + 1], 'none')
-            self.assertEqual(arguments[arguments.index('--recipient') + 1], FP)
+            self.assertNotIn('--recipient', arguments)
             self.assertIn('--encrypt', arguments)
             self.assertIn('--rfc4880', arguments)
             self.assertIn('--force-mdc', arguments)
             self.assertIn('--no-autostart', arguments)
+            self.assertIn('--no-default-keyring', arguments)
+            self.assertEqual(arguments[arguments.index('--trust-model') + 1], 'always')
+            home = self.output / 'public-gpg-home'
+            self.assertEqual(arguments[arguments.index('--homedir') + 1], str(home))
+            self.assertEqual(home.stat().st_mode & 0o777, 0o700)
+            self.assertEqual(list(home.iterdir()), [])
+            self.assertEqual(self.read(self.output / 'RECIPIENT.PUBLIC.asc'), public)
             self.assertEqual(opening.call_args.kwargs['env'], {'PATH': '/usr/bin:/bin', 'LC_ALL': 'C'})
             self.assertTrue(opening.call_args.kwargs['start_new_session'])
-            self.assertFalse(any(word in imported + arguments for word in (
-                '--generate-key', '--quick-generate-key', '--import-ownertrust', '--export-secret-keys')))
+            self.assertFalse(any(word in arguments for word in (
+                '--import', '--import-options', '--generate-key', '--quick-generate-key',
+                '--import-ownertrust', '--export-secret-keys', 'gpg-agent')))
+            self.assertFalse(hasattr(m, 'public_import'))
             self.assertEqual(self.read(self.output / sink.parts[0]['name']), b'SYNTHETIC_CIPHER')
         finally:
             os.close(directory)
 
-    def test_public_import_failure_keeps_bounded_stderr_and_errno_before_process_cleanup(self):
-        for failure in ('nonzero', 'spawn-error'):
-            with self.subTest(failure=failure):
-                output = self.base / ('import-' + failure)
-                output.mkdir(mode=0o700)
-                directory = os.open(output, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_NOATIME)
-                events = []
-                real_error = m.tool_error
-                def record(*args, **kwargs):
-                    events.append('error')
-                    return real_error(*args, **kwargs)
-                process = None
-                if failure == 'nonzero':
-                    read_fd, write_fd = os.pipe()
-                    os.write(write_fd, b'SYNTHETIC_GPG_IMPORT_FAILURE')
-                    os.close(write_fd)
-                    process = types.SimpleNamespace(stderr=os.fdopen(read_fd, 'rb', buffering=0),
-                        wait=Mock(return_value=7), pid=123456)
-                try:
-                    options = {'return_value': process} if process is not None else {
-                        'side_effect': OSError(errno.EMFILE, SECRET)}
-                    with patch.object(m.subprocess, 'Popen', **options) as opening, \
-                            patch.object(m, 'tool_error', side_effect=record), \
-                            patch.object(m.os, 'killpg', side_effect=lambda *args: events.append('kill')):
-                        with self.assertRaises((m.Stop, OSError)):
-                            m.public_import(['/usr/bin/gpg', '--no-options'], b'SYNTHETIC_PUBLIC_ONLY', directory)
-                    self.assertEqual(events[0], 'error')
-                    record = json.loads(self.read(output / 'GPG_FIRST_ERROR.PRIVATE.json'))
-                    self.assertEqual(record['phase'], 'public-import')
-                    self.assertEqual(record['errno'], None if process is not None else errno.EMFILE)
-                    self.assertLess(len(json.dumps(record)), 16384)
-                    if process is not None:
-                        self.assertEqual(base64.b64decode(record['stderrPrefixBase64']), b'SYNTHETIC_GPG_IMPORT_FAILURE')
-                        self.assertEqual(record['returncode'], 7)
-                        self.assertEqual(events[-1], 'kill')
-                        self.assertIn('--import', opening.call_args.args[0])
-                        self.assertNotIn('--import-ownertrust', opening.call_args.args[0])
-                finally:
-                    os.close(directory)
+    def test_public_file_is_pinned_readonly_and_never_overwrites_prior_copy(self):
+        self.output.mkdir(mode=0o700)
+        directory = os.open(self.output, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_NOATIME)
+        fd = None
+        try:
+            fd = m.public_recipient_file(b'SYNTHETIC_PUBLIC_ONLY', directory)
+            self.assertEqual(os.fstat(fd).st_mode & 0o777, 0o600)
+            self.assertFalse(os.get_inheritable(fd))
+            with self.assertRaises(FileExistsError):m.public_recipient_file(b'OTHER_PUBLIC_ONLY', directory)
+            path = self.output / 'RECIPIENT.PUBLIC.asc'
+            self.assertEqual(self.read(path), b'SYNTHETIC_PUBLIC_ONLY')
+            path.rename(self.output / 'PRESERVED.PUBLIC.asc')
+            self.write(path, b'OTHER_PUBLIC_ONLY')
+            self.assertEqual(os.read(fd, 65536), b'SYNTHETIC_PUBLIC_ONLY')
+        finally:
+            if fd is not None:os.close(fd)
+            os.close(directory)
+
+    def test_public_copy_mismatch_prevents_process_start_and_preserves_failure(self):
+        self.output.mkdir(mode=0o700)
+        directory = os.open(self.output, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_NOATIME)
+        real_read = os.read
+        def wrong(fd, size):
+            data = real_read(fd, size)
+            return data.replace(b'SYNTHETIC', b'CORRUPTED')
+        try:
+            with patch.object(m.os, 'read', side_effect=wrong),patch.object(m.subprocess, 'Popen') as opening:
+                with self.assertRaisesRegex(m.Stop, '^PUBLIC_KEY_COPY_CHANGED$'):
+                    m.GPGEncryptor(m.Parts(directory), str(self.output), FP, b'SYNTHETIC_PUBLIC_ONLY')
+            opening.assert_not_called()
+            record = json.loads(self.read(self.output / 'GPG_FIRST_ERROR.PRIVATE.json'))
+            self.assertEqual(record['phase'], 'encrypt-constructor')
+            self.assertEqual(self.read(self.output / 'RECIPIENT.PUBLIC.asc'), b'SYNTHETIC_PUBLIC_ONLY')
+        finally:os.close(directory)
 
     def test_constructor_thread_start_failure_records_first_error_then_closes_only_own_process(self):
         self.output.mkdir(mode=0o700)
@@ -457,7 +469,7 @@ class BundleTests(unittest.TestCase):
             events.append('error')
             return original_error(*args, **kwargs)
         try:
-            with patch.object(m, 'public_import'), patch.object(m.subprocess, 'Popen', return_value=process), \
+            with patch.object(m.subprocess, 'Popen', return_value=process), \
                     patch.object(m.threading.Thread, 'start', side_effect=RuntimeError(SECRET)), \
                     patch.object(m, 'tool_error', side_effect=record), \
                     patch.object(m.os, 'killpg', side_effect=lambda *args: events.append(('kill', args))):

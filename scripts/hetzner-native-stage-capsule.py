@@ -22,7 +22,7 @@ import time
 import types
 import urllib.parse
 
-WRITER_SHA256 = 'bc691af4ef1174470bf9adcd3946f3c23d51f1e6361cbae803065939c4df46c0'
+WRITER_SHA256 = '4a65ec1d7a2796608352f76767e52ef813e0c363d42982e70fda1a89a0ae6082'
 SCOPE_SHA256 = '08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd'
 PLAN_SHA256 = 'e6d463a634925a190d60d066c0fae2ba94b9f7f0a10a115b50b4f4018b1b35eb'
 ROOT950_SHA256 = 'ab941ccf07e78c5f1b91c35ff383d652af42f989cab7700a0ceadba77e846c92'
@@ -156,16 +156,19 @@ def encrypt_capsule(writer, directory, output, fingerprint, public, raw):
     home = str(Path(output) / 'public-gpg-home')
     os.mkdir(home, 0o700)
     common = ['/usr/bin/gpg', '--no-options', '--batch', '--no-tty', '--no-autostart',
-              '--homedir', home, '--no-auto-key-retrieve', '--auto-key-locate', 'clear']
-    writer.public_import(common, public, directory)
+              '--homedir', home, '--no-default-keyring', '--no-auto-key-retrieve', '--auto-key-locate', 'clear']
+    recipient_fd = writer.public_recipient_file(public, directory)
     process, selector = None, None
     encrypted, stderr_prefix, stderr_hash, stderr_bytes, sent = bytearray(), bytearray(), hashlib.sha256(), 0, 0
     code, completed = None, False
     try:
         process = subprocess.Popen([*common, '--rfc4880', '--force-mdc', '--trust-model', 'always',
-            '--cipher-algo', 'AES256', '--compress-algo', 'ZLIB', '--recipient', fingerprint,
+            '--cipher-algo', 'AES256', '--compress-algo', 'ZLIB',
+            '--recipient-file', '/proc/self/fd/' + str(recipient_fd),
             '--output', '-', '--encrypt'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, env=writer.ENV, start_new_session=True, close_fds=True)
+            stderr=subprocess.PIPE, env=writer.ENV, start_new_session=True, close_fds=True, pass_fds=(recipient_fd,))
+        copied_fd, recipient_fd = recipient_fd, None
+        os.close(copied_fd)
         selector = selectors.DefaultSelector()
         for stream, event, kind in ((process.stdin, selectors.EVENT_WRITE, 'input'),
                                     (process.stdout, selectors.EVENT_READ, 'cipher'),
@@ -228,6 +231,8 @@ def encrypt_capsule(writer, directory, output, fingerprint, public, raw):
                 pass
         raise
     finally:
+        if recipient_fd is not None:
+            os.close(recipient_fd)
         if process is not None:
             try:
                 if not completed:

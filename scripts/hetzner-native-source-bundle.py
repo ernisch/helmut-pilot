@@ -17,7 +17,6 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
-import selectors
 import signal
 import stat
 import subprocess
@@ -316,54 +315,48 @@ def stop_process(process):
     process.wait(timeout=5)
 
 
-def public_import(common, public, directory):
-    # A regular public-input descriptor avoids a blocked stdin writer. The
-    # public copy and all error evidence remain in the fresh output directory.
-    fd = process = selector = None
-    prefix, total, code = bytearray(), 0, None
+def public_recipient_file(public, directory):
+    """Copy exact validated public bytes and return a pinned read-only FD.
+
+    No keyring import or GPG process runs here. The child receives this same
+    descriptor through --recipient-file; no later pathname lookup selects a key.
+    The public copy remains in the fresh private output on every failure.
+    """
+    need(type(public) is bytes and 0 < len(public) <= 65536, 'PUBLIC_KEY_BYTES')
+    name = 'RECIPIENT.PUBLIC.asc'
+    fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+                 0o600, dir_fd=directory)
     try:
-        fd = os.open('RECIPIENT.PUBLIC.asc', os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
-                     0o600, dir_fd=directory)
         offset = 0
         while offset < len(public):
             count = os.write(fd, public[offset:])
             need(count > 0, 'PUBLIC_KEY_COPY_SHORT_WRITE')
             offset += count
         os.fsync(fd)
-        os.lseek(fd, 0, os.SEEK_SET)
-        process = subprocess.Popen([*common, '--import-options', 'import-minimal,import-clean', '--import'],
-            stdin=fd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, env=ENV,
-            start_new_session=True, close_fds=True)
-        selector = selectors.DefaultSelector()
-        selector.register(process.stderr, selectors.EVENT_READ)
-        import time
-        end = time.monotonic() + 30
-        while selector.get_map():
-            remaining = end - time.monotonic()
-            need(remaining > 0 and selector.select(remaining), 'PUBLIC_KEY_IMPORT_TIMEOUT')
-            chunk = os.read(process.stderr.fileno(), 4096)
-            if not chunk:
-                selector.unregister(process.stderr)
-                break
-            total += len(chunk)
-            prefix.extend(chunk[:max(0, 8192 - len(prefix))])
-            need(total <= 65536, 'PUBLIC_KEY_IMPORT_STDERR_BOUND')
-        code = process.wait(timeout=max(.01, end - time.monotonic()))
-        need(code == 0, 'PUBLIC_KEY_IMPORT_FAILED')
-    except BaseException as error:
-        tool_error(directory, 'public-import', 'PUBLIC_KEY_IMPORT_FAILED', error, prefix, total, code)
-        try:
-            stop_process(process)
-        except BaseException:
-            pass
-        raise
+        written = os.fstat(fd)
     finally:
-        if selector is not None:
-            selector.close()
-        if process is not None and process.stderr is not None:
-            process.stderr.close()
-        if fd is not None:
-            os.close(fd)
+        os.close(fd)
+    os.fsync(directory)
+    fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NOATIME | os.O_NONBLOCK | os.O_CLOEXEC,
+                 dir_fd=directory)
+    try:
+        before = os.fstat(fd)
+        need(stat.S_ISREG(before.st_mode) and before.st_uid == os.getuid() and before.st_nlink == 1
+             and stat.S_IMODE(before.st_mode) == 0o600 and before.st_size == len(public)
+             and metadata(before) == metadata(written), 'PUBLIC_KEY_COPY_IDENTITY')
+        copied = bytearray()
+        while len(copied) <= len(public):
+            block = os.read(fd, min(65536, len(public) + 1 - len(copied)))
+            if not block:
+                break
+            copied.extend(block)
+        need(bytes(copied) == public and metadata(before) == metadata(os.fstat(fd))
+             == metadata(os.stat(name, dir_fd=directory, follow_symlinks=False)), 'PUBLIC_KEY_COPY_CHANGED')
+        os.lseek(fd, 0, os.SEEK_SET)
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
 
 
 class GPGEncryptor:
@@ -387,12 +380,15 @@ class GPGEncryptor:
         home = str(Path(output) / 'public-gpg-home')
         os.mkdir(home, 0o700)
         common = ['/usr/bin/gpg', '--no-options', '--batch', '--no-tty', '--no-autostart',
-                  '--homedir', home, '--no-auto-key-retrieve', '--auto-key-locate', 'clear']
-        public_import(common, public, self.directory)
-        self.process = subprocess.Popen([*common, '--rfc4880', '--force-mdc', '--trust-model', 'always', '--cipher-algo', 'AES256',
-            '--compress-algo', 'none', '--recipient', fingerprint, '--output', '-', '--encrypt'],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            env=ENV, start_new_session=True, close_fds=True)
+                  '--homedir', home, '--no-default-keyring', '--no-auto-key-retrieve', '--auto-key-locate', 'clear']
+        recipient_fd = public_recipient_file(public, self.directory)
+        try:
+            self.process = subprocess.Popen([*common, '--rfc4880', '--force-mdc', '--trust-model', 'always', '--cipher-algo', 'AES256',
+                '--compress-algo', 'none', '--recipient-file', '/proc/self/fd/' + str(recipient_fd), '--output', '-', '--encrypt'],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                env=ENV, start_new_session=True, close_fds=True, pass_fds=(recipient_fd,))
+        finally:
+            os.close(recipient_fd)
         def output_reader():
             try:
                 while chunk := self.process.stdout.read(65536):
