@@ -1,5 +1,25 @@
 # HELMUT AGENT CONTRACT
 
+## Dauerfreigabe fuer autonome Arbeit (Betreiber, 26.10.2026 Istanbul)
+
+Der Betreiber hat im laufenden HELMUT-Auftrag ausdruecklich vollautonome Arbeit
+sowie Merge und Deployment freigegeben, wenn alle erforderlichen Pruefungen
+auf dem tatsaechlichen Endstand gruen sind. Diese neuere Dauerfreigabe ersetzt
+im autorisierten Auftragsumfang die aeltere Forderung nach einem erneuten
+einzelnen Merge-/Deployment-GO je PR. Keine abgeschlossenen Nachweise grundlos
+wiederholen; unabhaengige Abnahme sicherheitskritischer Aenderungen bleibt Pflicht.
+Notwendige begrenzte Automatisierung auf dem vorhandenen Hetzner-Testserver ist
+freigegeben. Der private Mac-SSH-Schluessel bleibt ausschliesslich auf dem Mac.
+Keine alten Laufrechte wiederverwenden: native Faelle brauchen weiterhin ihre
+frischen Quellen-, Original-, Ressourcen- und Einmalbindungen. Ein vollstaendiger
+500er Lauf, Profilaktivierung, Budgetaenderungen und bezahlte Anbieteraufrufe sind
+dadurch nicht pauschal freigegeben. Bei FAIL/UNKNOWN stoppen und den Erstfehler
+erhalten. Rueckfragen nur an einer tatsaechlichen neuen Grenze.
+
+Mit dem Betreiber kurz und in einfacher deutscher Sprache sprechen. Unabhaengige
+Arbeit sinnvoll parallelisieren; fertige Helfer bei einer neuen getrennten
+Teilaufgabe weiterverwenden. Keine unbemerkten parallelen Schreibzugriffe.
+
 ## Verbindliche Zielgruppe: AfD ausgeschlossen
 
 Ausdruecklicher Betreiberauftrag vom27.09.2026: Helmut beliefert Abgeordnete

@@ -1,5 +1,16 @@
 # CURRENT STATE — Helmut
 
+## Hetzner-Automation und Dauerfreigabe (26.10.2026 Istanbul)
+
+Betreiber erlaubt autonome Arbeit, Merge und Deployment bei gruenen Pflichtchecks;
+neuere Dauerfreigabe in AGENTS.md geht alten Merge-Sperren vor. Hetzner33/33 RO
+plus2 Diagnosepruefungen bestanden, rund152GB frei; Docker28 isoliert, Docker29
+unveraendert. Branch `codex/hetzner-native-automation-20261026`: Code, unabhaengige
+Quellenpruefung und synthetische Tests lokal vorhanden; finaler PR/CI/Merge offen.
+Kein Mac-Installer, Originaltransfer oder nativer Lauf erfolgt. Anfangs nur
+Status/Empfaenger; NativeAdmission, Unit60 und500er offen.
+[Umfang und naechster Schritt](betrieb/hetzner-native-automation-20261026.md).
+
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
 ## Vollständiges Root-Paket und Caller-Vorbereitung (13.10.2026)
