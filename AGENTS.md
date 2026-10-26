@@ -246,6 +246,15 @@ Sicherheitskritische Wiederherstellung, Root Zugriff, Schluessel und Originaldat
 bleiben bei Sol; DeepSeek darf nur eng abgegrenzte unabhaengige lesende
 Codepruefungen liefern. Keine Delegation nur zur Erfuellung einer Quote.
 
+
+Kostenpflichtige DeepSeek Schreibauftraege erfordern jetzt zwingend ein vorher reserviertes
+privates Antwortarchiv ausserhalb aller Git Worktrees (`--save-response /tmp/<eindeutiger-name>.private.json`).
+Fehlt der Parameter, stoppt der Router lokal vor jeder Reservierung und vor jedem
+Anbieteraufruf. Vollstaendig empfangene Antworten bleiben damit auch bei
+spaeterer Hashdrift, Formatfehlern oder lokaler Abweisung fuer eine kostenlose,
+strikt requestgebundene Wiederaufnahme erhalten. Geheimnisse und private
+Quelltexte niemals in Chat, PR oder Repository uebernehmen.
+
 Jeder DeepSeek Auftrag beginnt mit einer kostenfreien lokalen Vorpruefung
 (`--dry-run`), wenn Groesse oder Kosten zweifelhaft sind. Der Router sperrt
 Schreibauftraege mit mehr als einer Datei, langen Auftraegen, zu grossem
