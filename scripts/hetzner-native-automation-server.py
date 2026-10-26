@@ -1459,6 +1459,10 @@ DAEMON_BINDING_ID = 'daemon-binding-observation-20261026-v1'
 DAEMON_BINDING_CONTRACT_SHA256 = 'fe6a763fee403a0e34a943db533b0aca71b38afdfc9408143e0d9aef064844bd'
 DAEMON_BINDING_SHA256 = '5da9ff7eaf941a7ef25eb01d9448d34e8118f437e3ebe636dc1c733261addde5'
 DAEMON_BINDING_BYTES = 16561
+CONTINUATION_ID = 'setup-context-daemon-binding-v2'
+CONTINUATION_SHA256 = 'eb5d7a1602ebb4861dd4aa181cee381613c987943b7cd4e3aad6a776270404b6'
+CONTINUATION_BYTES = 44604
+CONTINUATION_CONTRACT = 'docs/betrieb/hetzner-context-continuation-contract-20261026.json'
 
 
 def _setup_successor_qualified():
@@ -1516,6 +1520,9 @@ def _setup_read_capsule(context):
     if value.get('schema') == 'helmut-daemon-binding-capsule-v1':
         _daemon_binding_capsule(value)
         return value
+    if value.get('schema') == 'helmut-context-continuation-capsule-v1':
+        _continuation_capsule(value)
+        return value
     _require(set(value) == {'schema', 'contract_id', 'action', 'phase',
              'source_sha256', 'contract_sha256', 'nonce', 'inspection_nonce',
              'inspection_result_sha256', 'issued_at_utc', 'expires_at_utc'}, 'SETUP_CAPSULE_FIELDS')
@@ -1533,11 +1540,12 @@ def _setup_public_source(commit, path, deadline, limit, expected_sha=None, expec
     allowed = {'scripts/hetzner-native-setup-successor.py',
                'scripts/hetzner-native-setup-coordinator.py',
                'scripts/hetzner-native-setup-successor-preflight.py',
-               'scripts/hetzner-native-runtime-metadata.py', 'scripts/hetzner-native-daemon-binding.py', SETUP_SUCCESSOR_CONTRACT}
+               'scripts/hetzner-native-runtime-metadata.py', 'scripts/hetzner-native-daemon-binding.py', SETUP_SUCCESSOR_CONTRACT,
+               'scripts/hetzner-native-context-continuation-coordinator.py', CONTINUATION_CONTRACT}
     _require(type(commit) is str and re.fullmatch('[a-f0-9]{40}', commit)
              and path in allowed and type(limit) is int and 0 < limit <= 131072, 'SETUP_SOURCE_BINDING')
-    _require((path == SETUP_SUCCESSOR_CONTRACT and expected_sha is None and expected_bytes is None)
-             or (path != SETUP_SUCCESSOR_CONTRACT and type(expected_sha) is str and re.fullmatch('[a-f0-9]{64}', expected_sha)
+    _require((path in (SETUP_SUCCESSOR_CONTRACT,CONTINUATION_CONTRACT) and expected_sha is None and expected_bytes is None)
+             or (path not in (SETUP_SUCCESSOR_CONTRACT,CONTINUATION_CONTRACT) and type(expected_sha) is str and re.fullmatch('[a-f0-9]{64}', expected_sha)
                  and type(expected_bytes) is int and 0 < expected_bytes <= limit), 'SETUP_SOURCE_BINDING')
     remaining = deadline - time.monotonic()
     _require(0 < remaining <= 300, 'SETUP_DEADLINE')
@@ -1569,6 +1577,8 @@ def _setup_public_source(commit, path, deadline, limit, expected_sha=None, expec
 
 
 def _setup_successor_handle(request, context, capsule):
+    if capsule.get('schema') == 'helmut-context-continuation-capsule-v1':
+        return _continuation_handle(request, context, capsule)
     _require(_setup_successor_qualified(), 'SETUP_SUCCESSOR_NOT_QUALIFIED')
     commit, deadline = context['deployment_commit'], context['deadline']
     manifest = _setup_public_source(commit, SETUP_SUCCESSOR_CONTRACT, deadline, 32768)
@@ -1595,12 +1605,36 @@ def _setup_successor_handle(request, context, capsule):
 
 
 def _setup_successor_failure(code, capsule):
-    return {'schema': 'helmut-setup-successor-result-v1', 'status': 'FAIL_KEEP_STATE_NO_RETRY',
-        'contract_id': SETUP_SUCCESSOR_ID, 'contract_sha256': capsule['contract_sha256'],
-        'phase': capsule['phase'] if capsule['phase'] is not None else 'preflight', 'code': code,
-        'authority_sha256': None, 'attempt_sha256': None, 'ready_sha256': None,
-        'accepted_sha256': None, 'lifecycle_sha256': None,
-        'native_qualified': False, 'native_go_consumed': False}
+    continuation = capsule.get('schema') == 'helmut-context-continuation-capsule-v1'
+    return {'schema': 'helmut-context-continuation-result-v1' if continuation else 'helmut-setup-successor-result-v1',
+        'status':'FAIL_KEEP_STATE_NO_RETRY','contract_id':CONTINUATION_ID if continuation else SETUP_SUCCESSOR_ID,
+        'contract_sha256':capsule['contract_sha256'],'phase':capsule['phase'] if capsule['phase'] is not None else 'preflight',
+        'code':code,'authority_sha256':None,'attempt_sha256':None,'ready_sha256':None,'accepted_sha256':None,
+        'lifecycle_sha256':None,'native_qualified':False,'native_go_consumed':False}
+
+
+def _continuation_capsule(v):
+    # The pinned coordinator checks full action/phase/time/inspection semantics
+    # before loading components or opening the setup lock. This is framing only.
+    _require(type(v) is dict and set(v)=={'schema','contract_id','action','phase','source_sha256','contract_sha256',
+        'nonce','inspection_nonce','inspection_result_sha256','issued_at_utc','expires_at_utc'}
+        and v['schema']=='helmut-context-continuation-capsule-v1' and v['contract_id']==CONTINUATION_ID
+        and v['action'] in ('inspect','setup'), 'CONTINUATION_CAPSULE')
+
+
+def _continuation_handle(request, context, capsule):
+    _require(type(CONTINUATION_SHA256) is str and re.fullmatch('[a-f0-9]{64}',CONTINUATION_SHA256)
+        and type(CONTINUATION_BYTES) is int and 0<CONTINUATION_BYTES<=65536, 'CONTINUATION_NOT_QUALIFIED')
+    _continuation_capsule(capsule)
+    raw=_setup_public_source(context['deployment_commit'],'scripts/hetzner-native-context-continuation-coordinator.py',
+        context['deadline'],CONTINUATION_BYTES,CONTINUATION_SHA256,CONTINUATION_BYTES)
+    parent={'__name__':'qualified_context_continuation','__source_bytes__':raw}
+    exec(compile(raw,'<qualified-context-continuation>','exec'),parent)
+    manifest=_setup_public_source(context['deployment_commit'],CONTINUATION_CONTRACT,context['deadline'],16384)
+    _require(hashlib.sha256(manifest).hexdigest()==capsule['contract_sha256'], 'CONTINUATION_CONTRACT_HASH')
+    reader,qualified=_runtime_metadata_modules(context)
+    return parent['coordinate_continuation'](request,{k:context[k] for k in ('base','source_sha256','deployment_commit','deadline')},
+        capsule,manifest,reader,qualified)
 
 
 def _daemon_binding_capsule(value):
@@ -1816,7 +1850,8 @@ def _setup_watchdog(request, context, successor_capsule=None, runtime_capsule=No
         schemas = (('helmut-native-daemon-binding-observation-v1',) if runtime and
                    runtime_capsule.get('schema') == 'helmut-daemon-binding-capsule-v1' else
                    ('helmut-runtime-binding-metadata-read-v1',) if runtime else
-                   ('helmut-setup-successor-result-v1', 'helmut-setup-successor-inspection-v1') if successor
+                   ('helmut-setup-successor-result-v1', 'helmut-setup-successor-inspection-v1',
+                    'helmut-context-continuation-result-v1', 'helmut-context-continuation-inspection-v1') if successor
                    else ('helmut-target-setup-result-v1',))
         _require(type(result) is dict and result.get('schema') in schemas
                  and result.get('native_qualified') is False and result.get('native_go_consumed') is False,
@@ -1856,6 +1891,13 @@ def handle(request,context):
     operation=request['operation']
     capsule = _setup_read_capsule(context) if operation in ('status', 'admit') else None
     if capsule is not None:
+        if capsule['schema']=='helmut-context-continuation-capsule-v1':
+            _require(operation==('status' if capsule['action']=='inspect' else 'admit')
+                and capsule['source_sha256']==context['source_sha256']==request['payload_sha256']
+                and request['plan_sha256']==STAGE_PLAN, 'CONTINUATION_REQUEST')
+            raw=(json.dumps(capsule,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode('ascii')
+            _require(request['nonce']==hashlib.sha256(b'helmut-context-continuation-request-v1\0'+raw).hexdigest(), 'CONTINUATION_NONCE')
+            return _setup_watchdog(request,context,successor_capsule=capsule)
         if capsule['schema'] in ('helmut-runtime-metadata-capsule-v1', 'helmut-daemon-binding-capsule-v1'):
             _require(set(request) == {'schema', 'operation', 'nonce', 'plan_sha256', 'payload_sha256'}
                      and operation == 'status' and request.get('schema') == 'helmut-native-control-request-v1'

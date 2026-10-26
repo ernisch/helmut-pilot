@@ -9,7 +9,7 @@ on:
         description: 'Explicit per-dispatch controller authorization; disabled by default'
         required: true
         type: choice
-        options: [disabled, control-v1, setup-inspect-v1, setup-successor-v1, runtime-metadata-v1]
+        options: [disabled, control-v1, setup-inspect-v1, setup-successor-v1, runtime-metadata-v1, context-continuation-v1]
         default: disabled
       operation:
         description: 'Public control operation; unqualified operations fail before network access'
@@ -84,6 +84,10 @@ jobs:
               test "$HELMUT_NATIVE_OPERATION" = admit
               test -n "$HELMUT_NATIVE_SETUP_CAPSULE"
               ;;
+            context-continuation-v1)
+              case "$HELMUT_NATIVE_OPERATION" in status|admit) ;; *) exit 1 ;; esac
+              test -n "$HELMUT_NATIVE_SETUP_CAPSULE"
+              ;;
             *) exit 1 ;;
           esac
           case "$HELMUT_NATIVE_OPERATION" in status|recipient|stage|admit) ;; *) exit 1 ;; esac
@@ -99,7 +103,7 @@ jobs:
           umask 077
           gh api "repos/ernisch/helmut-pilot/contents/scripts/hetzner-native-automation-client.py?ref=$GITHUB_SHA" \
             --jq .content | base64 --decode > "$RUNNER_TEMP/helmut-native-client.py"
-          printf '%s  %s\n' 2ebd98082d201d29d34147b2ea7b33c5fa5b3cab5792b0d0224d521e1d41eb02 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
+          printf '%s  %s\n' ad4112136dac6478a65f986db1e05f26d308cf3898a1ffe143efe8afaae23573 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
           python3 -I "$RUNNER_TEMP/helmut-native-client.py" validate
 
       - name: Existing pinned Tailscale transport using short lived GitHub OIDC
@@ -130,7 +134,7 @@ jobs:
           HELMUT_CI_SSH_KEY: ${{ secrets.HELMUT_CI_SSH_KEY }}
         run: |
           set -euo pipefail
-          printf '%s  %s\n' 2ebd98082d201d29d34147b2ea7b33c5fa5b3cab5792b0d0224d521e1d41eb02 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
+          printf '%s  %s\n' ad4112136dac6478a65f986db1e05f26d308cf3898a1ffe143efe8afaae23573 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
           python3 -I "$RUNNER_TEMP/helmut-native-client.py" client
 
       - name: Verify only fixed public artifact files without SSH secret environment
