@@ -1,8 +1,9 @@
 # HELMUT: begrenzte autonome Hetzner-Steuerung
 
-Aktuelle Fortsetzung: [Thread-Uebergabe vom26.10.](helmut-thread-handoff-20261026.md).
-Dieses Dossier enthaelt auch historische Zwischenstaende; fuer den naechsten
-Schritt gelten die Uebergabe und CURRENT_STATE, keine alten Ausfuehrungsplaene.
+Aktuelle Fortsetzung: [UNIT_PROPERTIES-Quellenkorrektur](#enge-quellenkorrektur-fuer-unit_properties-26102026-istanbul)
+und CURRENT_STATE. Die [Thread-Uebergabe](helmut-thread-handoff-20261026.md)
+bleibt die verifizierte Ausgangsbasis; ihre Stopp- und Schutzgrenzen gelten weiter.
+Dieses Dossier enthaelt auch historische Zwischenstaende, keine neuen Laufrechte.
 
 Der Betreiber hat am26.10.2026(Istanbul) autonome Arbeit und notwendige
 Automatisierung ausdruecklich freigegeben, einschliesslich Merge und Deployment
@@ -453,13 +454,65 @@ Identitaets-, Prozess-, Cgroup-, Zeit-, ARM-/ACK-/Exit- und Einmalpruefungen
 bleiben erhalten. Alle neuen Abfragen nutzen dieselben absoluten Fristen und
 Ausgabelimits. Fehlendes oder inkompatibles `busctl` bleibt ein Abbruchgrund.
 
-Die Quellenkorrektur wird ausschliesslich synthetisch qualifiziert und separat
-unabhaengig abgenommen. Eine echte neue Setupzulassung ist damit nicht erteilt:
+Der Endstand `3e5d3fd5f222e5e3ad842cc42ccbd5e25f91d846` ist unabhaengig
+durch einen getrennten GPT-6.1-SOL-Lauf mit Sehr hoch als `ACCEPT_CODE_ONLY`
+abgenommen, ohne blockierende Findings. Die40 Guardtests sind Teil der480
+integrierten synthetischen Grenztests; alle bestanden. Zusaetzlich bestanden
+168 eigene isolierte adversariale Pruefungen des unabhaengigen Pruefers,
+ohne Wiederholung der480er Suite oder Zielzugriff. Propertybestand, alle sieben
+Assetpins, Koordinator-/Serverpin und Bootstrapdeckel131072Bytes wurden separat
+verglichen. Guard:35236Bytes/SHA256
+`eea7e8eca1d439b7fa2cfa6387de527fdcdc829ed7b502e5fcfab926577cd3f2`;
+Koordinator:22592Bytes/SHA256
+`92d7271f90b38cb8fc8f59eb552f36a26d3fd179481b44429d90dddf14cfe455`;
+Server:106678Bytes/SHA256
+`544dc5a6945e42f349eec5d80d779587eedc30052941a1527c7c75e5b394c146`.
+Syntax aller fuenf geaenderten Python-Dateien, vier Statusgroessenpruefungen und
+Diffpruefung bestanden. Pruefbeleg und beide bereits ausgefuehrten Pruefskripte
+bleiben in `/workspace/helmut-unit-properties-evidence-20261026/` erhalten;
+`independent-review.txt` hat SHA256
+`6ead5eafc2179e4be816af8fd1da4241436a2aeedbaebbf6b7af7f5f735b485f`.
+
+[PR957](https://github.com/ernisch/helmut-pilot/pull/957) ist nach gruener
+[PR-CI40314973970](https://github.com/ernisch/helmut-pilot/actions/runs/40314973970)
+auf exakt diesem Kopf gemergt; beide Pflichtjobs und der tatsaechliche synthetische
+Grenzpruefschritt SUCCESS. Main `35d7d2d41aba7e26cf89e9ebe2f54f8c44c20163`
+hat denselben Git-Tree. Vercel `dpl_4LgfeWX2wmYYdWA7ijo3tDvL1JSa` ist auf genau
+diesem Commit production/READY; Alias `helmut-pilot.vercel.app` frisch bestaetigt.
+[Main-CI40318797794](https://github.com/ernisch/helmut-pilot/actions/runs/40318797794)
+ist vollstaendig SUCCESS, einschliesslich beider Pflichtjobs und des tatsaechlichen
+synthetischen Grenzpruefschritts. Kein Zielaufruf wurde
+ausgeloest; diese Auslieferung beweist keine Hetzner-Installation oder -Abnahme.
+
+Eine echte neue Setupzulassung ist damit nicht erteilt:
 der erhaltene `recover / UNIT_PROPERTIES`-Versuch, seine Teilstaende und alle
 Once-Marker bleiben gescheitert/gesperrt. Keine Mac-Abfrage, kein `admit`-/Recover-
 Retry und keine native Ausfuehrung aus dieser Korrektur ableiten. Als naechster
 Schritt darf erst ein konkret getrennt neu zugelassener Setupweg vorbereitet
 werden; frisches konkretes Betreiber-GO vor jeder nativen Ausfuehrung bleibt Pflicht.
+
+Die unveraenderte Koordinator-Sperre `SETUP_PREVIOUS_FAILURE` verweigert nach
+dem erhaltenen Erstfehler weiterhin die bestehende `admit`-Operation. Auch ein
+neuer Nonce oder Quellhash macht daraus keinen erlaubten Folgelauf. Naechste
+Vorbereitung bleibt ein ausdruecklich getrennter Setupvertrag: Ziel, vollstaendig
+qualifizierter Code, genauer Fall, Zeitfenster und neue Einmalautoritaet muessen
+konkret gebunden werden; alter Erstfehler, Job, Teilbaum und alle Once-Marker
+bleiben unangetastet. Aktuelle Original-/Restore- und vollstaendige Prozessenden
+duerfen dabei nicht aus der historischen ARM-Abwesenheit abgeleitet werden.
+Dieser Nachtrag schaltet keinen neuen Vertrag oder Ausfuehrungsweg frei.
+
+Ein abgegrenzter Nachfolgevertrag liegt als lokaler Entwurf unter
+`/workspace/helmut-unit-properties-evidence-20261026/next-setup-contract-draft.txt`,
+SHA256 `d25e6267f03cd74834e42e6f2464d1728d296f6f5af7b2abedb536dde7f81bb8`.
+Vorgeschlagen ist eine feste neue Operation mit eigener Root-Autoritaet, eigener
+Zustandswurzel und dauerhaftem Once-Slot; alte Fehler/Jobs bleiben bindender
+gescheiterter Vorgaenger. Auch frische Recovery-Teilstaende wuerden stoppen.
+Die unveraenderliche Bootstrap-Allowlist kennt diesen Weg nicht: ihre Erweiterung
+waere eine neue Administrator-/Root-Protokollgrenze. Frische Prozessenden,
+private Fehl-/Jobbelege, Komponentenpfade und Gzipbindung bleiben vor Wirkung
+vollstaendig nachzuweisen. Der Entwurf ist nicht implementiert, nicht abgenommen
+und nicht GO-ready; er wiederholt weder die erledigte Mac-Abfrage noch einen
+gescheiterten Aufruf und erteilt keine Wiederholungs-/Originalrekonstruktionsrechte.
 
 ## Threadwechsel ohne erneuten Datenumzug
 

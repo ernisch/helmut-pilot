@@ -2,13 +2,14 @@
 
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
-UNIT_PROPERTIES: enger Quellenfix auf `codex/helmut-unit-properties-20261026`.
-Sechs Exec-Listen brauchen typisierte D-Bus-Leerwerte; fehlend stoppt weiter.
-480 synthetische Tests PASS; unabhaengige Abnahme und PR-CI noch offen.
+PR957/35d7d2d4: UNIT_PROPERTIES-Quellenfix gemergt; PR-CI40314973970 SUCCESS.
+480 synthetische Tests +168 unabhaengige Zusatzpruefungen PASS.
+Vercel READY auf35d7d2d4; Main-CI40318797794 SUCCESS.
 Setup40306875483 bleibt recover FAIL; kein ACCEPTED, kein admit/Recover-Retry.
 Mac-Abfrage erledigt. Restore/Originalabnahme offen; alte Once-Marker erhalten.
 Paket/Key/Quellcloud erhalten. Keine neue Zielausfuehrung; kein500er-Lauf.
 Vor jeder nativen Ausfuehrung bleibt frisches konkretes Betreiber-GO Pflicht.
+Getrennter Setupvertrag entworfen; neuer Root-Vertrag und Zulassung offen.
 [Uebergabe](betrieb/helmut-thread-handoff-20261026.md) · [Belege](betrieb/hetzner-native-automation-20261026.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
