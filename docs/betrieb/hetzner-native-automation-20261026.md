@@ -259,3 +259,70 @@ gelangen in die oeffentliche Projektion; keine Pfade, Originalinhalte oder Keys.
 ABSENT/UNKNOWN bleiben unbekannt, keine Reklassifizierung des gescheiterten Laufs.
 214 synthetische Tests bestanden; unabhängige Abnahme und echte Statusauslese
 stehen noch aus. Es entsteht keine Wiederholungs-, Restore- oder native Autoritaet.
+
+## Tatsaechliche Erstursache und getrennte Setupvorbereitung (26.10.2026 Istanbul)
+
+PR952 ist auf `5c918afe5551938eacb2ea3d1d8249ff5e937e18` gemergt.
+Main-CI40281353379 und beide Pflichtjobs samt tatsächlicher Grenzpruefung SUCCESS;
+Vercel `dpl_G2Q5HJ6pTZJHaxgHbrZrUtTTgsoT` auf genau diesem Commit READY.
+Der einzige anschliessende Zielaufruf war der reine Status40286803902,
+Job121452270420, Artefakt12634785563. ZIP-SHA256
+`f931429fdc788c907a7fd8d0f063fb3b0c5428b2a890d7f20a7c9be5a058aba7`,
+Antwort-SHA256 `ecfcc8a65a786e2a7f17cd44a35594f0b589b8327c3586c34434eac9b200da94`.
+ZIP, Sidecar, Quellen-/Plan-/Noncebindung und qualifizierter Client wurden
+unabhaengig O_NOATIME geprueft. Die echte private Restorequittung meldet
+`PATH_ESCAPE`,0 regulaere Dateien/0 Bytes,1866 unbestaetigte Eintraege,
+Metadaten UNKNOWN, partial-file NONE. Das beweist keinen leeren Verzeichnisbaum.
+Ihr tatsaechlicher SHA256 ist
+`160b4d04df86ba0ddb9a0c0366980f1d3848a5d34249b62d8b880562e20f48be`.
+Die Projektion passt zur statisch und synthetisch belegten PAX-Verzeichnisluecke.
+Kein neuer Restore, keine native Ausfuehrung oder Originalveraenderung fand statt.
+
+Die separate lokale Recovery nutzt ausschliesslich den vorhandenen, vollstaendig
+gebundenen Zielgzip und einen neuen frischen Ausgabebaum. Alter Stage-Slot,
+Fehler und Teilbaum bleiben erhalten; native Freigabe wird nicht verbraucht.
+27 synthetische Recoverytests und unabhaengige SOL-Abnahme bestanden. Die
+explizite Recovery-/Public-Pfadsicht hat65 gezielte Tests; die Quellenfreigabe
+bleibt auch nach Mount ausdrücklich frisch erforderlich. Der feste Driver
+fuehrt nur genau einen von recover/checkout/context/image aus;26 Tests bestehen,
+einschliesslich Daemonwechsel und sicherem Erstfehlercode. Dies sind Codebelege,
+keine tatsaechliche Ziel-Recovery oder native Abnahme.
+
+Der Setupwaechter verwendet pro frischer Einmalbindung einen eigenen begrenzten
+systemd-Service mit KillMode=control-group. ARM, EOF, alle eigenen Prozessenden,
+sole-Cgroup-PID, pidfd und gehashter ACK muessen vor ACCEPTED belegt sein.
+Unbestaetigtes Helper-READY bleibt UNKNOWN, auch wenn Dateien vorhanden sind.
+Koordinator und Waechter sind lokal integriert; alle469 gezielten synthetischen
+Tests bestehen. Sourcepins sind exakt gebunden, finale unabhaengige Integration,
+Pflicht-CI und tatsaechliche Zielausfuehrung bleiben offen. Der Bootstrapdeckel131072Bytes bleibt
+unveraendert. Ausschliesslich oeffentliche, bytegehashte Programme desselben
+CI-qualifizierten Git-Commits werden bereitgestellt, keine erneute Original- oder
+Schluesseluebertragung. Der Mac ist fuer den bestaetigten Zugang nicht erforderlich.
+
+DeepSeek Pro High hat den PAX-/Statusfix unabhaengig angenommen; Flash High hat
+die fehlende Public-Context-Schnittstelle konkret benannt. Drei spaetere
+Schreib-/Reviewauftraege endeten am32768-Ausgabetokenlimit ohne Dateiänderung.
+Diese Fehlversuche bleiben erhalten; Sol uebernahm die kritische Umsetzung und
+unabhaengige Abnahme, statt weitere gleichartige Routerversuche zu starten.
+
+## Threadwechsel ohne erneuten Datenumzug
+
+Code und Quellenbindungen liegen auf dem Entwicklungsbranch
+`codex/hetzner-target-admission-20261026`; der aktuelle Git-/PR-Stand ist vor einer
+Fortsetzung frisch zu lesen. Eine neue Sitzung muss die vorhandene
+GitHub-Actions-/Tailscale-Steuerung nachweisen. Der private Mac-Schluessel wird
+dafuer nicht gebraucht; der private Empfaengerschluessel bleibt auf Hetzner.
+
+Die Originale bleiben unveraendert in der erhaltenen Quellcloud. Das bereits
+uebertragene verschluesselte Paket und der Zielgzip bleiben auf Hetzner; der
+vollstaendig rueckgepruefte verschluesselte Drive-Index ist
+`17DDhInbRwN20nqRPuNp3KTLq6AqMEhWc`, SHA256
+`87508b035c31fea52f4910cedf80b63baabf055e54cfe714dfe143383c15ec0c`.
+Eine neue Volluebertragung oder neue Schluessel sind nicht Teil der Fortsetzung.
+
+Vor dem Wechsel bevorzugt die vier begrenzten Setup-Phasen mit echten ACCEPTED-
+Quittungen abschliessen. Solange das fehlt, ist Hetzner nicht startbereit. Ein
+neuer Thread darf die gescheiterte Stage-Once nicht wiederholen und benoetigt
+keine erneute Quellinventur: zuerst vorhandene Zielquittungen und den genauen
+Git-Stand uebernehmen. Native Vier-TX-Messung, Unit60 und500er Nachweis bleiben
+getrennt und brauchen ihre jeweils frischen vollstaendigen Zulassungen.

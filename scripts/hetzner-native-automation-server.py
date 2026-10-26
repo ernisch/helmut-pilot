@@ -1370,15 +1370,181 @@ def _stage_diagnostic():
         except Exception:return _stage_diag_empty('UNKNOWN',kind+'_INVALID',stage_code,receipt_sha)
 
 
+# Source pins are filled only after the independent setup qualification. They
+# bind public code at the same CI-verified commit supplied by the bootstrap.
+SETUP_COORDINATOR_SHA256 = 'b3ced6078ddc4f5e6ccab1b6d58581aeafe8888b816d68ed77e1ce3a3c1aed6d'
+SETUP_COORDINATOR_BYTES = 22592
+
+
+def _setup_qualified():
+    return (type(SETUP_COORDINATOR_SHA256) is str
+            and re.fullmatch('[a-f0-9]{64}', SETUP_COORDINATOR_SHA256) is not None
+            and type(SETUP_COORDINATOR_BYTES) is int and 0 < SETUP_COORDINATOR_BYTES <= 131072)
+
+
+def _setup_handle(request, context):
+    _require(_setup_qualified(), 'SETUP_NOT_QUALIFIED')
+    commit = context.get('deployment_commit')
+    _require(type(commit) is str and re.fullmatch('[a-f0-9]{40}', commit), 'SETUP_COMMIT')
+    deadline = context['deadline']
+    _require(0 < deadline - time.monotonic() <= 300, 'SETUP_DEADLINE')
+    path = '/ernisch/helmut-pilot/' + commit + '/scripts/hetzner-native-setup-coordinator.py'
+    connection = http.client.HTTPSConnection('raw.githubusercontent.com',
+        timeout=min(10, deadline-time.monotonic()))
+    try:
+        connection.request('GET', path, headers={'Accept': 'text/plain', 'Connection': 'close',
+                                                'User-Agent': 'HELMUT-qualified-setup-code'})
+        peer = connection.sock
+        response = connection.getresponse()
+        _require(response.status == 200, 'SETUP_SOURCE_HTTP')  # Never follow redirects.
+        raw = bytearray()
+        while True:
+            if response.isclosed(): break
+            remaining = deadline-time.monotonic()
+            _require(remaining > 0, 'SETUP_DEADLINE')
+            peer.settimeout(min(10, remaining))
+            block = response.read1(min(65536, SETUP_COORDINATOR_BYTES + 1 - len(raw)))
+            if not block: break
+            raw.extend(block)
+            _require(len(raw) <= SETUP_COORDINATOR_BYTES, 'SETUP_SOURCE_LIMIT')
+        raw = bytes(raw)
+        _require(len(raw) == SETUP_COORDINATOR_BYTES
+                 and hashlib.sha256(raw).hexdigest() == SETUP_COORDINATOR_SHA256, 'SETUP_SOURCE_HASH')
+    finally:
+        connection.close()
+    namespace = {'__name__': 'helmut_bound_setup_coordinator', '__file__': '<qualified-public-setup>',
+                 '__source_bytes__': raw}
+    exec(compile(raw, '<qualified-public-setup>', 'exec'), namespace)
+    _require(callable(namespace.get('coordinate_setup')), 'SETUP_ENTRYPOINT')
+    result = namespace['coordinate_setup'](request, context)
+    _require(type(result) is dict and result.get('native_qualified') is False
+             and result.get('native_go_consumed') is False, 'SETUP_RESULT')
+    return result
+
+
+def _setup_failure(code):
+    return {'schema': 'helmut-target-setup-result-v1', 'status': 'FAIL_KEEP_STATE_NO_RETRY',
+        'phase': 'preflight', 'code': code, 'ready_sha256': None, 'accepted_sha256': None,
+        'lifecycle_sha256': None, 'native_qualified': False, 'native_go_consumed': False}
+
+
+def _setup_first_failure(result):
+    directory = None
+    try:
+        directory = _open_base(TARGET_BASE)
+        _json_new(directory, 'TARGET_SETUP_FIRST_ERROR.SAFE.json', result)
+    except Exception:
+        pass  # Never replace the returned first cause or an existing error.
+    finally:
+        if directory is not None: os.close(directory)
+
+
+def _setup_watchdog(request, context):
+    """Absolute bound covers public-source DNS/headers and the whole coordinator.
+
+    A live setup service independently observes this child's pidfd. Killing this
+    own group therefore cannot leave its separately grouped helper descendants
+    unmonitored: the service guard stops its own systemd control group.
+    """
+    _require(_setup_qualified(), 'SETUP_NOT_QUALIFIED')
+    deadline = context['deadline']
+    _require(0 < deadline-time.monotonic() <= 300, 'SETUP_DEADLINE')
+    read_end, write_end = os.pipe2(os.O_CLOEXEC)
+    parent_pid = os.getpid()
+    pid = os.fork()
+    if pid == 0:
+        try:
+            os.close(read_end)
+            os.setsid()
+            library = ctypes.CDLL(None, use_errno=True)
+            _require(library.prctl(1, signal.SIGKILL, 0, 0, 0) == 0
+                     and os.getppid() == parent_pid, 'SETUP_PARENT_LOST')
+            try:
+                result = _setup_handle(request, context)
+            except BaseException as error:
+                code = getattr(error, 'code', None)
+                if type(code) is not str or not re.fullmatch('[A-Z][A-Z0-9_]{0,63}', code):
+                    code = 'SETUP_CHILD_FAILURE'
+                result = _setup_failure(code)
+                _setup_first_failure(result)
+            raw = (json.dumps(result, sort_keys=True, separators=(',', ':'), allow_nan=False)+'\n').encode()
+            _require(len(raw) <= 32768, 'SETUP_RESULT_LIMIT')
+            offset = 0
+            while offset < len(raw):
+                count = os.write(write_end, raw[offset:])
+                _require(count > 0, 'SETUP_RESULT_WRITE')
+                offset += count
+            os.close(write_end)
+            os._exit(1 if result.get('status') == 'FAIL_KEEP_STATE_NO_RETRY' else 0)
+        except BaseException:
+            os._exit(1)
+    os.close(write_end)
+    waited, result = False, None
+    try:
+        os.set_blocking(read_end, False)
+        raw = bytearray()
+        with selectors.DefaultSelector() as selector:
+            selector.register(read_end, selectors.EVENT_READ)
+            while selector.get_map():
+                remaining = deadline-time.monotonic()
+                _require(remaining > 0, 'SETUP_DEADLINE')
+                space = os.statvfs(TARGET_BASE)
+                _require(space.f_bavail*space.f_frsize >= 8*1024**3, 'SETUP_FREE_SPACE')
+                if not selector.select(min(.25, remaining)): continue
+                block = os.read(read_end, min(65536, 32769-len(raw)))
+                if not block: selector.unregister(read_end)
+                else: raw.extend(block)
+                _require(len(raw) <= 32768, 'SETUP_RESULT_LIMIT')
+        while True:
+            child, status = os.waitpid(pid, os.WNOHANG)
+            if child:
+                waited = True
+                break
+            _require(time.monotonic() < deadline, 'SETUP_DEADLINE')
+            time.sleep(.01)
+        result = _stage_diag_json(bytes(raw))
+        _require(type(result) is dict and result.get('schema') == 'helmut-target-setup-result-v1'
+                 and result.get('native_qualified') is False and result.get('native_go_consumed') is False,
+                 'SETUP_RESULT')
+        failed = result.get('status') == 'FAIL_KEEP_STATE_NO_RETRY'
+        _require(os.waitstatus_to_exitcode(status) == (1 if failed else 0), 'SETUP_CHILD_EXIT')
+        if failed: _setup_first_failure(result)
+        return result
+    except BaseException as error:
+        code = getattr(error, 'code', None)
+        if type(code) is not str or not re.fullmatch('[A-Z][A-Z0-9_]{0,63}', code):
+            code = 'SETUP_WATCHDOG_FAILURE'
+        result = _setup_failure(code)
+        _setup_first_failure(result)
+        return result
+    finally:
+        if not waited:
+            try: os.killpg(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                try: os.kill(pid, signal.SIGKILL)
+                except ProcessLookupError: pass
+            limit = time.monotonic()+5
+            while time.monotonic() < limit:
+                child, _ = os.waitpid(pid, os.WNOHANG)
+                if child: waited = True; break
+                time.sleep(.01)
+            if not waited:
+                # This remains a failed/unknown operation, never successful EOF.
+                if result is not None: result['code'] = 'SETUP_CHILD_UNCONFIRMED'
+        os.close(read_end)
+
+
 def handle(request,context):
     global _CONTROL_DEADLINE
     _CONTROL_DEADLINE=context.get('deadline')
     _require(context['base']==TARGET_BASE,'SERVER_BASE_BINDING')
     operation=request['operation']
     if operation=='status':
-        return {'status':'CONTROL_READY','enabled_operations':['status','recipient','stage'],
+        return {'status':'CONTROL_READY','enabled_operations':['status','recipient','stage']
+                    + (['admit'] if _setup_qualified() else []),
                 'native_enabled':False,'source_sha256':context['source_sha256'],
                 'recipient_diagnostic':_recipient_diagnostic(),'stage_diagnostic':_stage_diagnostic()}
     if operation=='stage':return _stage_handle(request,context)
+    if operation=='admit':return _setup_watchdog(request,context)
     _require(operation=='recipient','NATIVE_OPERATION_NOT_QUALIFIED')
     return _recipient_ready(True)

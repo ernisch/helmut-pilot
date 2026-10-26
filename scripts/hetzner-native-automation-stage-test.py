@@ -610,7 +610,7 @@ class StageClientTests(unittest.TestCase):
         self.assertIn("always() && steps.verify.outcome == 'success'",text)
         self.assertLess(text.index('Publish validated public JSON'),text.index('Preserve validated failure artifact'))
         self.assertIn("steps.exchange.outcome != 'success'",text)
-        self.assertIn('case "$HELMUT_NATIVE_OPERATION" in status|recipient|stage)',text)
+        self.assertIn('case "$HELMUT_NATIVE_OPERATION" in status|recipient|stage|admit)',text)
 
 
 if __name__=='__main__':unittest.main(verbosity=2)

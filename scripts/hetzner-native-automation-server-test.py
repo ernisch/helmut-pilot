@@ -213,7 +213,7 @@ class IndependentServerTests(unittest.TestCase):
     def test_unqualified_operations_never_reach_recipient_or_executor(self):
         with patch.object(SERVER, 'create_recipient') as create, \
                 patch.object(SERVER, '_bounded_tool') as execute:
-            for operation in ('admit', 'four-tx', 'update', 'shell'):
+            for operation in ('four-tx', 'update', 'shell'):
                 with self.assertRaises(SERVER._Stop) as raised:
                     SERVER.handle({'operation': operation}, {'base': self.directory.name})
                 self.assertEqual(raised.exception.code, 'NATIVE_OPERATION_NOT_QUALIFIED')

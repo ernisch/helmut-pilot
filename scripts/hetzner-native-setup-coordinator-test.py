@@ -18,7 +18,7 @@ with os.fdopen(os.open(PATH, os.O_RDONLY | os.O_NOATIME | os.O_NOFOLLOW), 'rb') 
     SOURCE = stream.read()
 m = types.ModuleType('synthetic_setup_coordinator')
 exec(compile(SOURCE, str(PATH), 'exec'), m.__dict__)
-DEFAULT_MAP = copy.deepcopy(m.ASSET_MAP)
+DEFAULT_MAP = {alias: {'repoFile': name, 'sha256': None, 'bytes': None} for alias, name in m.FILES.items()}
 LOAD_ASSETS = m.load_assets
 CASE = 'f707b8e21b9f5f0f1d4fc131de38cd615c0c8e6e7f87631574af6bf2b672efa0'
 
@@ -184,7 +184,7 @@ class CoordinatorTests(unittest.TestCase):
         self.guard['run_setup_phase'].assert_not_called()
         self.assertEqual(self.bindings(m.ROLES), before)
 
-    def test_default_asset_map_is_disabled_before_lock_or_job_or_http(self):
+    def test_unqualified_asset_map_is_disabled_before_lock_or_job_or_http(self):
         with patch.object(m, 'ASSET_MAP', DEFAULT_MAP): self.assert_failure('ASSETS_UNQUALIFIED')
         self.loader.assert_not_called(); self.http.assert_not_called()
         self.assertFalse((self.base / m.LOCK).exists())

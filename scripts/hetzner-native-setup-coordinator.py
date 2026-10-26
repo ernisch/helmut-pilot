@@ -30,8 +30,28 @@ FILES = {'guard.py': 'hetzner-native-setup-service.py', 'driver.py': 'hetzner-na
     'recovery.py': 'hetzner-native-local-restore-recovery.py', 'restore.py': 'hetzner-native-stage-restore.py',
     'public.py': 'hetzner-native-public-checkout.py', 'context.py': 'hetzner-native-context.py',
     'image.py': 'hetzner-native-budget-image-import.py'}
-# Intentionally disabled until Root pins the independently qualified final assets.
-ASSET_MAP = {alias: {'repoFile': name, 'sha256': None, 'bytes': None} for alias, name in FILES.items()}
+# Exact independently qualified public sources at the CI-verified deployment commit.
+ASSET_MAP = {'guard.py': {'repoFile': 'hetzner-native-setup-service.py',
+              'sha256': 'a41ddc422f5c49f5f6abae87758ce47bd91d4008494bedf46ebff0bf9192659c',
+              'bytes': 34133},
+ 'driver.py': {'repoFile': 'hetzner-native-setup-driver.py',
+               'sha256': 'e2bb2bb06ef259ba7be5814f7a7535a265988d62470a85fc7c3e26cbe158d14f',
+               'bytes': 11824},
+ 'recovery.py': {'repoFile': 'hetzner-native-local-restore-recovery.py',
+                 'sha256': '5f0f430bf557ca0e8f103cd1e6b06e25703a2604826e1f2bb39c222609198eb1',
+                 'bytes': 15031},
+ 'restore.py': {'repoFile': 'hetzner-native-stage-restore.py',
+                'sha256': 'c77dba4fe7fcbe34b419a668c19d55262af30eeaaad6c43650290e38cf39bd88',
+                'bytes': 22910},
+ 'public.py': {'repoFile': 'hetzner-native-public-checkout.py',
+               'sha256': '1934c0fd09f3316b3e7088bc974925c3eebc719ca1ac512d9edde704cb3916bb',
+               'bytes': 15871},
+ 'context.py': {'repoFile': 'hetzner-native-context.py',
+                'sha256': '1ee9b47014bb0227cb385dd248990980c0083dcca167d88838590fbbe538cfa9',
+                'bytes': 43560},
+ 'image.py': {'repoFile': 'hetzner-native-budget-image-import.py',
+              'sha256': 'd355adfcd0a0a87cc1306170b5b8c0601bf9e8d9661af53609eb381dad4c337a',
+              'bytes': 14311}}
 
 
 class SetupError(Exception):
