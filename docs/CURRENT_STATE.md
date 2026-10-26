@@ -2,14 +2,14 @@
 
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
-Autonome Arbeit, Merge und Deployment bei gruenen Pflichtchecks freigegeben
-(AGENTS.md). PR950 auf `917b45f8`, Main-CI40260308055 SUCCESS, Vercel READY.
-Actions40263202086 bestaetigt vorhandenen Empfaenger; Vertrauenscache --- zu uuu,
-keine Schluesselerzeugung. Unabhaengig abgenommen, Mac nicht mehr erforderlich.
-Privater Key bleibt auf Hetzner. Verschluesselte Stage vorbereitet: feste
-Original-Whitelist, Hashpruefung, Once vor GPG, atomare Annahme; native Tore zu.
-Originalpaket verschluesselt im Drive, vollstaendig rueckgeprueft; native Nachweise offen.
-Docker28/UID1000/Pfadsicht bleiben frisch zu qualifizieren.
+PR951 auf `ce8a392b`, Main-CI40267987937 SUCCESS, Vercel READY.
+Mac nicht mehr erforderlich; privater Empfaengerkey bleibt auf Hetzner.
+Originalpaket verschluesselt im Drive vollstaendig rueckgeprueft. Stage40270395850
+stoppte nach Hashpruefung/Entschluesselung mit STAGE_RESTORE; kein Retry/native Lauf.
+Stage-Once verbraucht, native Freigabe unbenutzt. Private Erstursache noch offen.
+Enger PAX-Verzeichnisfix und nur lesende feste Fehlerprojektion vorbereitet;
+214 synthetische Tests gruen. Unabhaengige Abnahme/Merge/Zielauslese offen.
+Docker28/UID1000/Pfadsicht und saemtliche nativen Nachweise bleiben offen.
 [Belege und Grenzen](betrieb/hetzner-native-automation-20261026.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.

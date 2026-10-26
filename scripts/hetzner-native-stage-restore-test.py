@@ -139,6 +139,45 @@ class BoundRestoreTests(unittest.TestCase):
         self.assertEqual(target.stat().st_mtime_ns, 1788486253123456789)
         self.assertEqual(result['actual_files'][0]['mtime_ns'], 1788486253123456789)
 
+    def test_stdlib_pax_long_directory_terminal_slash_restores_metadata_and_bytes(self):
+        scope = copy.deepcopy(self.scope)
+        directory = self.py + '/lib/python3.12/asyncio/__pycache__'
+        scope['items'][0].update(path=directory+'/synthetic.bin',archiveMember='files'+directory+'/synthetic.bin')
+        scope['pythonDirectoriesAndLinks'] = scope['pythonDirectoriesAndLinks'][:1]
+        scope['pythonDirectoriesAndLinks'][0]['path'] = directory
+        entries = self.entries(scope)
+        source = self.archive(scope,[entries[1],entries[0]])
+        self.assertGreater(len(('files'+directory+'/').encode()),100)
+        self.assertIn((' path=files'+directory+'/\n').encode(),gzip.decompress(source.read_bytes()))
+        result = self.restore(source)
+        self.assertTrue(result['ok'],result)
+        self.assertEqual(result['metadata_state'],'VERIFIED')
+        self.assertEqual((self.base/'restored'/('files'+directory+'/synthetic.bin')).read_bytes(),self.payload)
+
+    def test_pax_regular_file_terminal_slash_is_never_authorized(self):
+        entries = self.entries()
+        entries[0][0]['pax_headers'] = {'path':entries[0][0]['name']+'/'}
+        result = self.restore(self.archive(entries=entries))
+        self.assertEqual(result.get('code'),'PATH_ESCAPE');self.assertFalse(result['ok'])
+
+    def test_pax_symlink_terminal_slash_is_never_authorized(self):
+        entries = self.entries()
+        entries[2][0]['pax_headers'] = {'path':entries[2][0]['name']+'/'}
+        result = self.restore(self.archive(entries=entries))
+        self.assertEqual(result.get('code'),'PATH_ESCAPE');self.assertFalse(result['ok'])
+
+    def test_directory_pax_never_normalizes_absolute_parent_or_duplicate_slashes(self):
+        for index,path in enumerate(('/files/absolute/','files/../../escape/','files//intermediate/',
+                                     'files/valid//','files/./dot/')):
+            entries = self.entries();entries[1][0]['pax_headers'] = {'path':path}
+            result = self.restore(self.archive(entries=entries),self.base/('bad-dir-pax-'+str(index)))
+            self.assertEqual(result.get('code'),'PATH_ESCAPE');self.assertFalse(result['ok'])
+
+    def test_plain_directory_header_double_terminal_slash_is_rejected(self):
+        entries = self.entries();entries[1][0]['name'] += '//'
+        result = self.restore(self.archive(entries=entries))
+        self.assertEqual(result.get('code'),'PATH_ESCAPE');self.assertFalse(result['ok'])
+
     def test_restored_python_source_matches_preserved_timestamp_pyc_header(self):
         scope = copy.deepcopy(self.scope)
         py_path = self.py + '/lib/synthetic.py'
