@@ -122,7 +122,7 @@ function sanitizeEnv(source) {
   for (const key of SAFE_ENV_KEYS) {
     if (source[key] != null && source[key] !== "") env[key] = source[key];
   }
-  if (source.DEEPSEEK_API_KEY) env.DEEPSEEK_API_KEY = source.DEEPSEEK_API_KEY;
+  // The child curl process never receives the provider secret in its environment.
   env.TZ = "UTC";
   return env;
 }
