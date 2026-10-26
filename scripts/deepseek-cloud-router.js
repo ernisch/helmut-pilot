@@ -514,6 +514,15 @@ function observedPeakUsd(model, usage) {
   return Number(((input * rate.input + output * rate.output) / 1000000).toFixed(6));
 }
 
+function usageReceipt(usage, model) {
+  const input = Number.isSafeInteger(usage?.input_tokens) && usage.input_tokens >= 0
+    ? usage.input_tokens : "unknown";
+  const output = Number.isSafeInteger(usage?.output_tokens) && usage.output_tokens >= 0
+    ? usage.output_tokens : "unknown";
+  const peak = observedPeakUsd(model, usage);
+  return `input_tokens=${input}:output_tokens=${output}:peak_usd_estimate=${peak ?? "unknown"}`;
+}
+
 function parseCurlResponse(raw) {
   const marker = "\n__HELMUT_HTTP_STATUS__:";
   const idx = raw.lastIndexOf(marker);
@@ -544,11 +553,11 @@ function parseCurlResponse(raw) {
     .map((x) => x.text || "")
     .join("")
     .trim();
-  if (!text) throw new Error("deepseek-response-empty");
+  if (!text) throw new Error(`deepseek-response-empty:${usageReceipt(response.usage, response.model)}`);
 
   let payload;
   try { payload = JSON.parse(text); }
-  catch { throw new Error("deepseek-output-invalid-json"); }
+  catch { throw new Error(`deepseek-output-invalid-json:${usageReceipt(response.usage, response.model)}`); }
 
   return { payload, usage: response.usage || {}, model: response.model || null };
 }
@@ -796,6 +805,7 @@ function run(options = {}) {
   apiResult.contextChars = charCount(body.input);
   apiResult.admission = admission;
 
+  try {
   const payload = apiResult.payload;
   const summary = validateSummary(payload.summary);
   if (cfg.mode === "write" && summary.status !== "ok" && payload.edits?.length) {
@@ -814,6 +824,11 @@ function run(options = {}) {
     prepared.map((x) => x.source.label));
   if (cfg.mode === "write") applyEdits(prepared);
   return visible;
+  } catch (error) {
+    // The provider may already have billed a successfully received response.
+    // Preserve the actual usage receipt even if local validation rejects it.
+    throw new Error(`${error.message}; ${usageReceipt(apiResult.usage, apiResult.model || cfg.model)}`);
+  }
 }
 
 function privateResponsePath(file, cwd) {
@@ -872,6 +887,7 @@ module.exports = {
   buildRequestBody,
   preflight,
   observedPeakUsd,
+  usageReceipt,
   parseCurlResponse,
   callDeepSeek,
   validateSummary,
