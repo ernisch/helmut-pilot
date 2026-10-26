@@ -718,7 +718,7 @@ function applyEdits(prepared) {
       const mode = fs.statSync(item.source.abs).mode & 0o777;
       const temp = `${item.source.abs}.deepseek-${process.pid}-${crypto.randomBytes(4).toString("hex")}.tmp`;
       fs.writeFileSync(temp, item.content, { mode });
-      temps.push({ temp, target: item.source.abs });
+      temps.push({ temp, target: item.source.abs, expectedSha256: item.expectedSha256 });
     }
     // Source files can change during expensive inference or immediately
     // after preparation; never overwrite a foreign write silently.
