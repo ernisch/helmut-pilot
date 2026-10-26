@@ -973,11 +973,15 @@ check("UTC Tagesdeckel und parallele Reservierung verhindern Mehrfachausgaben", 
     const b = dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", dir, now: day });
     const c = dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", dir, now: day });
     const d = dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", dir, now: day });
-    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).amountMicro, 1000000);
+    for (let i = 0; i < 4; i++) {
+      dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", dir, now: day });
+    }
+    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).amountMicro, 2000000);
+    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).limitMicro, 2000000);
     assert.throws(() => dailyBudget.reserve({ estimateUsd: 0.01, model: "deepseek-flash", dir, now: day }), /daily-cap/);
     assert.equal(dailyBudget.settle(a, 0.0125), true);
-    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).amountMicro, 762500);
-    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).pending, 3);
+    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).amountMicro, 1762500);
+    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).pending, 7);
     assert.throws(() => dailyBudget.settle(a, 0.0125), /settlement-invalid/);
     assert.equal(dailyBudget.settle(b, null), false);
     fs.mkdirSync(path.join(dir, ".lock"));
@@ -986,7 +990,7 @@ check("UTC Tagesdeckel und parallele Reservierung verhindern Mehrfachausgaben", 
     assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-27" }).amountMicro, 0);
     assert.equal(dailyBudget.settle(c, 0.1), true);
     assert.equal(dailyBudget.settle(d, 0.1), true);
-    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).amountMicro, 462500);
+    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).amountMicro, 1462500);
   } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
 });
 
@@ -995,9 +999,9 @@ check("Voller Tag sperrt Router vor Netzwerk ohne nachfolgende Modellkosten", ()
   let calls = 0;
   const store = path.join(p.root, "router-ledger");
   try {
-    // Four conservative 25-cent reservations use the entire one-dollar day.
+    // Eight conservative 25-cent reservations use the entire two-dollar day.
     const day = new Date();
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 8; i++) {
       dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", now: day, dir: store });
     }
     assert.throws(() => router.run({
@@ -1006,7 +1010,7 @@ check("Voller Tag sperrt Router vor Netzwerk ohne nachfolgende Modellkosten", ()
       callDeepSeek: () => { calls++; throw new Error("paid-provider-must-not-run"); },
     }), /daily-cap/);
     assert.equal(calls, 0);
-    assert.equal(dailyBudget.snapshot({ dir: store }).amountMicro, 1000000);
+    assert.equal(dailyBudget.snapshot({ dir: store }).amountMicro, 2000000);
   } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
 });
 
