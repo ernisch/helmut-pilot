@@ -1,5 +1,9 @@
 # HELMUT: begrenzte autonome Hetzner-Steuerung
 
+Aktuelle Fortsetzung: [Thread-Uebergabe vom26.10.](helmut-thread-handoff-20261026.md).
+Dieses Dossier enthaelt auch historische Zwischenstaende; fuer den naechsten
+Schritt gelten die Uebergabe und CURRENT_STATE, keine alten Ausfuehrungsplaene.
+
 Der Betreiber hat am26.10.2026(Istanbul) autonome Arbeit und notwendige
 Automatisierung ausdruecklich freigegeben, einschliesslich Merge und Deployment
 nach vollstaendig gruenen Pflichtpruefungen. Die aeltere reine Probevorbereitung
@@ -379,25 +383,45 @@ Blob-Endpunkt verweigert; der vorhandene GitHub-Artefaktconnector lieferte
 denselben777Byte-ZIP vollstaendig. ZIP, Sidecar, CI-Hash und Antwortbindung
 wurden O_NOATIME geprueft. Kein erneuter Zielaufruf war dafuer erforderlich.
 
-Der Code belegt nur eine abweichende Menge gelieferter systemd-Propertynamen.
-Welches Feld fehlt oder zusaetzlich geliefert wurde, ist nicht gesichert.
-ARM-Zustand, tatsaechlicher Restorezustand und aktuelle Prozessenden sind offen.
+Zum Zeitpunkt dieser Fehlerquittung waren konkrete Feldabweichung und ARM-
+Zustand noch unbekannt. Die nachfolgende Betreiberbeobachtung grenzt das ein.
+Tatsaechlicher Restorezustand und vollstaendige aktuelle Prozessenden bleiben offen.
 Daraus folgt weder eine Originalhash-Abnahme noch ein Nachweis null erfolgter
 Schreibzugriffe. Es gibt keine ACCEPTED-Abnahme. Alle Teilzustaende, Fehler und
 Einmalmarker muessen erhalten bleiben; kein Retry, keine naechste Setup-Phase.
 
-Naechster kleinster Schritt: ausschliesslich die echte Propertyliste mit und
-ohne `--all` sowie die Existenz der vier festen Start-/Endmarker lesen.
+Die anschliessend beauftragte reine Leseabfrage der echten Propertyliste mit
+und ohne `--all` sowie der vier festen Start-/Endmarker ist inzwischen erledigt.
 Die vorhandene eingeschraenkte Automatik stellt diese Abfrage nicht bereit.
 Ein einziger rein lesender Mac-Administratorbefehl vermeidet einen erneuten
 Umbau des Root-Protokolls nur zur Diagnose. Er startet/stoppt keine Dienste und
-liest keine Projektinhalte oder Schluessel. Die konkrete Abfrage steht unten;
-ihre Ausfuehrung ist noch ausstehend. Kein neuer nativer Lauf ist freigegeben.
+liest keine Projektinhalte oder Schluessel. Der historische Befehl steht unten;
+nicht grundlos wiederholen. Kein neuer nativer Lauf ist freigegeben.
+
+## Betreiberbeobachtung und neuer Fortsetzungspunkt
+
+Der Betreiber hat den unabhaengig geprueften Lesebefehl ausgefuehrt und die
+Ausgabe in diesem Thread uebermittelt. Es gab hier keine erneute Live-Abfrage.
+Beide Units lieferten bei Exit0 mit und ohne `--all` dieselbe Feldmenge und
+keine zusaetzlichen Felder. Genau sechs erwartete Namen fehlen:
+`ExecCondition`, `ExecReload`, `ExecStartPost`, `ExecStartPre`, `ExecStop`, `ExecStopPost`.
+Die Setup-Unit ist laut Ausgabe loaded/failed, Result=exit-code;
+`helmut-native-docker28.service` loaded/active/running, Result=success.
+ARM, RESULT.PENDING und RESULT fehlen; FIRST_ERROR ist regulaer,root:root,0600,211Bytes.
+Die Abfrage meldet keine Dienstveraenderung/Native-Ausfuehrung/Projektinhaltslese
+oder Schluesseluebertragung. Der genaue Beobachtungszeitpunkt wurde nicht genannt.
+
+Unabhaengige SOL-Gegenpruefung bestaetigt die Konsistenz zu Guard und Fehlercode.
+Fehlend darf nicht als leer gelten; `--all` allein ist keine belegte Loesung.
+Naechster Schritt ist die enge Klaerung der systemctl-/D-Bus-Darstellung und
+eines gleich strengen Nachweises der sechs Exec-Listen. Keine neue Ausfuehrung.
+Vollstaendige aktuelle Uebergabe und gesicherte Metadaten:
+[Thread-Uebergabe](helmut-thread-handoff-20261026.md).
 
 ## Threadwechsel ohne erneuten Datenumzug
 
-Konkreter Fortsetzungspunkt ist jetzt ausschliesslich die rein lesende
-`UNIT_PROPERTIES`-Klaerung. Main und beide Pflicht-CIs sind gruen; der
+Konkreter Fortsetzungspunkt ist die enge Quellenkorrektur nach der bereits
+vorliegenden `UNIT_PROPERTIES`-Leseausgabe. Main und beide Pflicht-CIs sind gruen; der
 Einrichtungsaufruf ist gescheitert und darf nicht wiederholt werden.
 Historische Parameter dieses Aufrufs, NICHT erneut dispatchen:
 `hetzner-native-automation.yml` auf `main`, `controlMode=control-v1`,
@@ -420,16 +444,18 @@ vollstaendig rueckgepruefte verschluesselte Drive-Index ist
 `87508b035c31fea52f4910cedf80b63baabf055e54cfe714dfe143383c15ec0c`.
 Eine neue Volluebertragung oder neue Schluessel sind nicht Teil der Fortsetzung.
 
-Vor dem Wechsel bevorzugt die vier begrenzten Setup-Phasen mit echten ACCEPTED-
-Quittungen abschliessen. Solange das fehlt, ist Hetzner nicht startbereit. Ein
-neuer Thread darf die gescheiterte Stage-Once nicht wiederholen und benoetigt
-keine erneute Quellinventur: zuerst vorhandene Zielquittungen und den genauen
+Der Betreiber verlangt jetzt den Wechsel am gesicherten FAIL-Stopp. Die vier
+Setup-Abnahmen bleiben offen; vor dem Wechsel wird nichts davon ausgefuehrt.
+Hetzner ist nicht startbereit. Der neue Thread darf die gescheiterte Stage-Once
+nicht wiederholen und benoetigt keine erneute Quellinventur: Zielquittungen und
+den genauen
 Git-Stand uebernehmen. Native Vier-TX-Messung, Unit60 und500er Nachweis bleiben
 getrennt und brauchen ihre jeweils frischen vollstaendigen Zulassungen.
 
 ## Einmalige Adminabfrage fuer UNIT_PROPERTIES
 
-Nur im Mac-Terminal den gesamten folgenden Block einmal einfuegen. Der
+Historischer, bereits ausgefuehrter Befehl. Nicht erneut anfordern oder
+ausfuehren; die Betreiberbeobachtung oben ist vorhanden. Der
 vorhandene private SSH-Schluessel bleibt auf dem Mac; keine Schluesselwerte
 weitergeben. Der Befehl liest nur die zwei fest benannten Service-Propertylisten
 und die Existenz der vier festen Marker. Er startet/stoppt keine Dienste,
@@ -437,8 +463,8 @@ legt keine Projektdateien an und liest keine Projektinhalte. Die Ausgabe
 enthaelt Propertynamen und vier begrenzte Zustandswerte, keine ExecStart- oder
 Umgebungsinhalte. Bei unbekannten Zustaenden nichts selbst reparieren.
 
-Lokale Shell-/Python-Syntaxpruefung und unabhaengige SOL-Abnahme PASS; noch
-nicht auf Hetzner ausgefuehrt. Skript-SHA256 (ohne aeussere Bash-Huelle):
+Lokale Shell-/Python-Syntaxpruefung und unabhaengige SOL-Abnahme PASS;
+Ausfuehrung vom Betreiber berichtet. Skript-SHA256 (ohne aeussere Bash-Huelle):
 `fba10f66c2f20cdff0758bae593d31ec734e96d3727f55bacba34695f1f67dbe`.
 
 ```bash
