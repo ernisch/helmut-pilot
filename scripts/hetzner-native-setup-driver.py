@@ -24,7 +24,9 @@ D = os.O_PATH | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
 
 
 class SetupError(Exception):
-    pass
+    @property
+    def code(self):
+        return self.args[0] if self.args else 'SETUP_DRIVER_FAILURE'
 
 
 def need(value, code):
@@ -217,7 +219,7 @@ def execute_phase(phase, data, modules, deadline):
         ready_role = 'context_receipt'
     else:
         need(deadline - time.monotonic() >= 70, 'IMAGE_DEADLINE_ADMISSION')
-        context_ready(data['context_ready_sha256'], data, context_module)
+        accepted_context = context_ready(data['context_ready_sha256'], data, context_module)
         archive = BASE + '/stage-' + CASE + '/restored-pax-recovery/files/workspace/' + \
                   'helmut-hetzner-preparation-evidence-20261025/ORIGINAL_BUDGET_IMAGE.DOCKER_SAVE.PRIVATE.tar'
         parent, name = archive.rsplit('/', 1)
@@ -228,6 +230,7 @@ def execute_phase(phase, data, modules, deadline):
             def observer():
                 actual = context_module['observe']()
                 need(actual.get('private') is True, 'CONTEXT_NOT_PRIVATE')
+                need(context_module['same_daemon'](actual, accepted_context['daemon']), 'DAEMON_CHANGED')
                 return actual
             result = modules['image']['import_bound_budget_image'](fd, observer)
             need(archive_before == metadata(os.fstat(fd))
