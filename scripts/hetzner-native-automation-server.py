@@ -344,6 +344,8 @@ import signal
 import types
 import ctypes
 import resource
+import io
+import select
 NATIVE_GO_PLAN_SHA256 = None
 _CONTROL_DEADLINE = None
 _TOOL_ERROR_NAME = 'GPG_FIRST_TOOL_ERROR.PRIVATE.json'
@@ -1372,8 +1374,8 @@ def _stage_diagnostic():
 
 # Source pins are filled only after the independent setup qualification. They
 # bind public code at the same CI-verified commit supplied by the bootstrap.
-SETUP_COORDINATOR_SHA256 = '92d7271f90b38cb8fc8f59eb552f36a26d3fd179481b44429d90dddf14cfe455'
-SETUP_COORDINATOR_BYTES = 22592
+SETUP_COORDINATOR_SHA256 = '0bec349c325d402e1357e77a8238e98ede64cf59047d712d93afcaecc19bbb2d'
+SETUP_COORDINATOR_BYTES = 23644
 
 
 def _setup_qualified():
@@ -1441,14 +1443,156 @@ def _setup_first_failure(result):
         if directory is not None: os.close(directory)
 
 
-def _setup_watchdog(request, context):
+SETUP_SUCCESSOR_ID = 'setup-successor-unit-properties-v1'
+SETUP_SUCCESSOR_COORDINATOR_SHA256 = '43f837860b111924aef3da593c8f808c773fd617ad06cad3c1279c4416b0ead9'
+SETUP_SUCCESSOR_COORDINATOR_BYTES = 41531
+SETUP_SUCCESSOR_PREFLIGHT_SHA256 = 'a49d1991fce3e9afc1ba5e83f7cbac66feadda52d9f5f0eeb9f8123e7094fc62'
+SETUP_SUCCESSOR_PREFLIGHT_BYTES = 17455
+SETUP_SUCCESSOR_CONTRACT = 'docs/betrieb/hetzner-setup-successor-contract-20261026.json'
+
+
+def _setup_successor_qualified():
+    return _setup_qualified() and all(
+        type(pin) is str and re.fullmatch('[a-f0-9]{64}', pin) is not None
+        and type(size) is int and 0 < size <= 65536 for pin, size in (
+            (SETUP_SUCCESSOR_COORDINATOR_SHA256, SETUP_SUCCESSOR_COORDINATOR_BYTES),
+            (SETUP_SUCCESSOR_PREFLIGHT_SHA256, SETUP_SUCCESSOR_PREFLIGHT_BYTES)))
+
+
+def _setup_read_capsule(context):
+    """One optional canonical line and EOF, bounded even after stdin prefetch."""
+    stream = context.get('stdin')
+    if stream is None:
+        return None
+    raw, descriptor, blocking = bytearray(), None, None
+    end = min(context['deadline'], time.monotonic() + 5)
+    if isinstance(stream, io.BytesIO):
+        raw.extend(stream.read(8193))
+    else:
+        try:
+            descriptor = stream.fileno()
+            blocking = os.get_blocking(descriptor)
+            _require(callable(getattr(stream, 'read1', None)), 'SETUP_CAPSULE_STREAM')
+            os.set_blocking(descriptor, False)
+            while True:
+                remaining = end - time.monotonic()
+                _require(remaining > 0, 'SETUP_CAPSULE_DEADLINE')
+                # read1 consumes any bytes already buffered by bootstrap.readline.
+                block = stream.read1(8193 - len(raw))
+                if block:
+                    raw.extend(block)
+                    _require(len(raw) <= 8192, 'SETUP_CAPSULE_LIMIT')
+                    continue
+                if select.select([descriptor], [], [], min(.05, remaining))[0]:
+                    block = stream.read1(8193 - len(raw))
+                    if not block:
+                        break  # Kernel EOF, not a temporary nonblocking no-data read.
+                    raw.extend(block)
+                    _require(len(raw) <= 8192, 'SETUP_CAPSULE_LIMIT')
+        finally:
+            if descriptor is not None and blocking is not None:
+                os.set_blocking(descriptor, blocking)
+    _require(len(raw) <= 8192, 'SETUP_CAPSULE_LIMIT')
+    if not raw:
+        return None
+    _require(raw.endswith(b'\n') and raw.count(b'\n') == 1, 'SETUP_CAPSULE_FRAME')
+    value = _stage_diag_json(bytes(raw))
+    _require(type(value) is dict and set(value) == {'schema', 'contract_id', 'action', 'phase',
+             'source_sha256', 'contract_sha256', 'nonce', 'inspection_nonce',
+             'inspection_result_sha256', 'issued_at_utc', 'expires_at_utc'}, 'SETUP_CAPSULE_FIELDS')
+    encoded = (json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode('ascii')
+    _require(bytes(raw) == encoded and value['schema'] == 'helmut-setup-successor-capsule-v1'
+             and value['contract_id'] == SETUP_SUCCESSOR_ID, 'SETUP_CAPSULE_BINDING')
+    _require(value['action'] in ('inspect', 'setup') and
+             (value['phase'] is None if value['action'] == 'inspect' else
+              value['phase'] in ('recover', 'checkout', 'context', 'image')), 'SETUP_CAPSULE_PHASE')
+    _require(all(type(value[k]) is str and re.fullmatch('[a-f0-9]{64}', value[k])
+                 for k in ('source_sha256', 'contract_sha256', 'nonce')), 'SETUP_CAPSULE_BINDING')
+    return value
+
+
+def _setup_public_source(commit, path, deadline, limit, expected_sha=None, expected_bytes=None):
+    allowed = {'scripts/hetzner-native-setup-successor.py',
+               'scripts/hetzner-native-setup-coordinator.py',
+               'scripts/hetzner-native-setup-successor-preflight.py', SETUP_SUCCESSOR_CONTRACT}
+    _require(type(commit) is str and re.fullmatch('[a-f0-9]{40}', commit)
+             and path in allowed and type(limit) is int and 0 < limit <= 131072, 'SETUP_SOURCE_BINDING')
+    _require((path == SETUP_SUCCESSOR_CONTRACT and expected_sha is None and expected_bytes is None)
+             or (path != SETUP_SUCCESSOR_CONTRACT and type(expected_sha) is str and re.fullmatch('[a-f0-9]{64}', expected_sha)
+                 and type(expected_bytes) is int and 0 < expected_bytes <= limit), 'SETUP_SOURCE_BINDING')
+    remaining = deadline - time.monotonic()
+    _require(0 < remaining <= 300, 'SETUP_DEADLINE')
+    connection = http.client.HTTPSConnection('raw.githubusercontent.com', timeout=min(10, remaining))
+    try:
+        connection.request('GET', '/ernisch/helmut-pilot/' + commit + '/' + path,
+                           headers={'Accept': 'text/plain', 'Connection': 'close',
+                                    'User-Agent': 'HELMUT-qualified-setup-successor'})
+        peer = connection.sock
+        response = connection.getresponse()
+        _require(response.status == 200, 'SETUP_SOURCE_HTTP')
+        raw = bytearray()
+        while not response.isclosed():
+            remaining = deadline - time.monotonic()
+            _require(remaining > 0, 'SETUP_DEADLINE')
+            peer.settimeout(min(10, remaining))
+            block = response.read1(min(65536, limit + 1 - len(raw)))
+            if not block:
+                break
+            raw.extend(block)
+            _require(len(raw) <= limit, 'SETUP_SOURCE_LIMIT')
+        raw = bytes(raw)
+        if expected_sha is not None:
+            _require(len(raw) == expected_bytes and hashlib.sha256(raw).hexdigest() == expected_sha,
+                     'SETUP_SOURCE_HASH')
+        return raw
+    finally:
+        connection.close()
+
+
+def _setup_successor_handle(request, context, capsule):
+    _require(_setup_successor_qualified(), 'SETUP_SUCCESSOR_NOT_QUALIFIED')
+    commit, deadline = context['deployment_commit'], context['deadline']
+    manifest = _setup_public_source(commit, SETUP_SUCCESSOR_CONTRACT, deadline, 32768)
+    contract = _stage_diag_json(manifest)
+    _require(type(contract) is dict and contract.get('server_sha256') == context['source_sha256']
+             and contract.get('coordinator_sha256') == SETUP_SUCCESSOR_COORDINATOR_SHA256,
+             'SETUP_CONTRACT_SOURCE')
+    modules = {}
+    for name, filename, pin, size in (
+            ('library', 'hetzner-native-setup-coordinator.py', SETUP_COORDINATOR_SHA256, SETUP_COORDINATOR_BYTES),
+            ('preflight', 'hetzner-native-setup-successor-preflight.py', SETUP_SUCCESSOR_PREFLIGHT_SHA256,
+             SETUP_SUCCESSOR_PREFLIGHT_BYTES),
+            ('coordinator', 'hetzner-native-setup-successor.py', SETUP_SUCCESSOR_COORDINATOR_SHA256,
+             SETUP_SUCCESSOR_COORDINATOR_BYTES)):
+        raw = _setup_public_source(commit, 'scripts/' + filename, deadline, size, pin, size)
+        namespace = {'__name__': 'helmut_qualified_setup_successor_' + name,
+                     '__file__': '<qualified-public-' + filename + '>', '__source_bytes__': raw}
+        exec(compile(raw, namespace['__file__'], 'exec'), namespace)
+        modules[name] = namespace
+    entry = modules['coordinator'].get('coordinate_successor')
+    _require(callable(entry), 'SETUP_ENTRYPOINT')
+    selected_context = {name: context[name] for name in ('base', 'source_sha256', 'deployment_commit', 'deadline')}
+    return entry(request, selected_context, capsule, manifest, modules['library'], modules['preflight'])
+
+
+def _setup_successor_failure(code, capsule):
+    return {'schema': 'helmut-setup-successor-result-v1', 'status': 'FAIL_KEEP_STATE_NO_RETRY',
+        'contract_id': SETUP_SUCCESSOR_ID, 'contract_sha256': capsule['contract_sha256'],
+        'phase': capsule['phase'] if capsule['phase'] is not None else 'preflight', 'code': code,
+        'authority_sha256': None, 'attempt_sha256': None, 'ready_sha256': None,
+        'accepted_sha256': None, 'lifecycle_sha256': None,
+        'native_qualified': False, 'native_go_consumed': False}
+
+
+def _setup_watchdog(request, context, successor_capsule=None):
     """Absolute bound covers public-source DNS/headers and the whole coordinator.
 
     A live setup service independently observes this child's pidfd. Killing this
     own group therefore cannot leave its separately grouped helper descendants
     unmonitored: the service guard stops its own systemd control group.
     """
-    _require(_setup_qualified(), 'SETUP_NOT_QUALIFIED')
+    successor = successor_capsule is not None
+    _require(_setup_successor_qualified() if successor else _setup_qualified(), 'SETUP_NOT_QUALIFIED')
     deadline = context['deadline']
     _require(0 < deadline-time.monotonic() <= 300, 'SETUP_DEADLINE')
     read_end, write_end = os.pipe2(os.O_CLOEXEC)
@@ -1462,13 +1606,14 @@ def _setup_watchdog(request, context):
             _require(library.prctl(1, signal.SIGKILL, 0, 0, 0) == 0
                      and os.getppid() == parent_pid, 'SETUP_PARENT_LOST')
             try:
-                result = _setup_handle(request, context)
+                result = (_setup_successor_handle(request, context, successor_capsule) if successor
+                          else _setup_handle(request, context))
             except BaseException as error:
                 code = getattr(error, 'code', None)
                 if type(code) is not str or not re.fullmatch('[A-Z][A-Z0-9_]{0,63}', code):
                     code = 'SETUP_CHILD_FAILURE'
-                result = _setup_failure(code)
-                _setup_first_failure(result)
+                result = _setup_successor_failure(code, successor_capsule) if successor else _setup_failure(code)
+                if not successor: _setup_first_failure(result)
             raw = (json.dumps(result, sort_keys=True, separators=(',', ':'), allow_nan=False)+'\n').encode()
             _require(len(raw) <= 32768, 'SETUP_RESULT_LIMIT')
             offset = 0
@@ -1505,19 +1650,20 @@ def _setup_watchdog(request, context):
             _require(time.monotonic() < deadline, 'SETUP_DEADLINE')
             time.sleep(.01)
         result = _stage_diag_json(bytes(raw))
-        _require(type(result) is dict and result.get('schema') == 'helmut-target-setup-result-v1'
+        schemas = ('helmut-setup-successor-result-v1', 'helmut-setup-successor-inspection-v1') if successor else ('helmut-target-setup-result-v1',)
+        _require(type(result) is dict and result.get('schema') in schemas
                  and result.get('native_qualified') is False and result.get('native_go_consumed') is False,
                  'SETUP_RESULT')
         failed = result.get('status') == 'FAIL_KEEP_STATE_NO_RETRY'
         _require(os.waitstatus_to_exitcode(status) == (1 if failed else 0), 'SETUP_CHILD_EXIT')
-        if failed: _setup_first_failure(result)
+        if failed and not successor: _setup_first_failure(result)
         return result
     except BaseException as error:
         code = getattr(error, 'code', None)
         if type(code) is not str or not re.fullmatch('[A-Z][A-Z0-9_]{0,63}', code):
             code = 'SETUP_WATCHDOG_FAILURE'
-        result = _setup_failure(code)
-        _setup_first_failure(result)
+        result = _setup_successor_failure(code, successor_capsule) if successor else _setup_failure(code)
+        if not successor: _setup_first_failure(result)
         return result
     finally:
         if not waited:
@@ -1541,6 +1687,14 @@ def handle(request,context):
     _CONTROL_DEADLINE=context.get('deadline')
     _require(context['base']==TARGET_BASE,'SERVER_BASE_BINDING')
     operation=request['operation']
+    capsule = _setup_read_capsule(context) if operation in ('status', 'admit') else None
+    if capsule is not None:
+        _require(operation == ('status' if capsule['action'] == 'inspect' else 'admit'), 'SETUP_CAPSULE_OPERATION')
+        _require(capsule['source_sha256'] == context['source_sha256'], 'SETUP_CAPSULE_SOURCE')
+        encoded = (json.dumps(capsule, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode('ascii')
+        _require(request['nonce'] == hashlib.sha256(b'helmut-setup-successor-request-v1\0' + encoded).hexdigest(),
+                 'SETUP_CAPSULE_NONCE')
+        return _setup_watchdog(request, context, successor_capsule=capsule)
     if operation=='status':
         return {'status':'CONTROL_READY','enabled_operations':['status','recipient','stage']
                     + (['admit'] if _setup_qualified() else []),

@@ -26,6 +26,11 @@ HOST_FINGERPRINT = "SHA256:u48IkPIpHilVGYw2MwJuE1pv4XMjlJ88cQjUzN4Lh1c"
 OPERATIONS = ("status", "recipient", "stage", "admit", "four-tx")
 ENABLED_OPERATIONS = ("status", "recipient", "stage", "admit")
 MAX_STAGE_CAPSULE = 48 * 1024
+SETUP_CONTRACT = 'setup-successor-unit-properties-v1'
+SETUP_PREFIX = b'helmut-setup-successor-request-v1\0'
+SETUP_CAPSULE_KEYS = {'schema', 'contract_id', 'action', 'phase', 'source_sha256', 'contract_sha256',
+    'nonce', 'inspection_nonce', 'inspection_result_sha256', 'issued_at_utc', 'expires_at_utc'}
+SETUP_PHASES = ('recover', 'checkout', 'context', 'image')
 STAGE_PLAN = 'e6d463a634925a190d60d066c0fae2ba94b9f7f0a10a115b50b4f4018b1b35eb'
 STAGE_SCOPE = '08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd'
 STAGE_CODES = frozenset(('STAGE_COMPLETE', 'STAGE_INTERNAL_FAILURE', 'STAGE_DEADLINE',
@@ -51,6 +56,7 @@ SAFE_CODES = {
     "recipient-format", "recipient-hash", "recipient-private-material",
     "recipient-fingerprint", "recipient-validation", "ssh-failed",
     "ssh-timeout", "mode-denied", "public-output-exists", "source-pin-drift", "stage-capsule",
+    "setup-mode", "setup-capsule", "setup-result",
 }
 
 
@@ -82,9 +88,10 @@ def validate_context(environment):
             "execution-context-denied")
     operation = environment.get("HELMUT_NATIVE_OPERATION")
     require(operation in OPERATIONS, "operation-denied")
-    # Admission and native transactions remain unqualified.
+    # Native transactions remain unqualified.
     require(operation in ENABLED_OPERATIONS, "operation-not-qualified")
     stage_capsule(environment, operation)
+    setup_capsule(environment, operation)
     return operation, pinned_sha(environment.get("HELMUT_NATIVE_PLAN_SHA256")), \
         pinned_sha(environment.get("HELMUT_NATIVE_PAYLOAD_SHA256"))
 
@@ -156,6 +163,138 @@ def stage_capsule(environment, operation):
             and packets[0][1][0]==3 and packets[0][1][9]==18
             and packets[1][0]==18 and packets[1][1][:1]==b'\x01','stage-capsule')
     return encoded.encode('ascii')+b'\n',raw
+
+
+def _setup_capsule_check(value, payload, now=None):
+    require(type(value) is dict and set(value) == SETUP_CAPSULE_KEYS
+            and value['schema'] == 'helmut-setup-successor-capsule-v1'
+            and value['contract_id'] == SETUP_CONTRACT and value['action'] in ('inspect', 'setup')
+            and value['source_sha256'] == payload, 'setup-capsule')
+    for key in ('source_sha256', 'contract_sha256', 'nonce'): pinned_sha(value[key])
+    require(type(value['issued_at_utc']) is int and type(value['expires_at_utc']) is int
+            and 0 < value['issued_at_utc'] < value['expires_at_utc']
+            and value['expires_at_utc'] - value['issued_at_utc'] <= 300, 'setup-capsule')
+    if now is not None:
+        require(value['issued_at_utc'] <= now <= value['expires_at_utc'], 'setup-capsule')
+    if value['action'] == 'inspect':
+        require(value['phase'] is None and value['inspection_nonce'] is None
+                and value['inspection_result_sha256'] is None, 'setup-capsule')
+    else:
+        require(value['phase'] in SETUP_PHASES, 'setup-capsule')
+        for key in ('inspection_nonce', 'inspection_result_sha256'): pinned_sha(value[key])
+
+
+def setup_capsule(environment, operation):
+    encoded = environment.get('HELMUT_NATIVE_SETUP_CAPSULE', '')
+    mode = environment.get('HELMUT_NATIVE_CONTROL_MODE', 'control-v1')
+    if encoded == '':
+        require(mode == 'control-v1', 'setup-mode')
+        return b'', None
+    require(mode in ('setup-inspect-v1', 'setup-successor-v1'), 'setup-mode')
+    require(operation in ('status', 'admit') and environment.get('HELMUT_NATIVE_STAGE_CAPSULE', '') == ''
+            and environment.get('HELMUT_NATIVE_PLAN_SHA256') == STAGE_PLAN, 'setup-capsule')
+    require(type(encoded) is str and 0 < len(encoded) <= 10924
+            and re.fullmatch(r'[A-Za-z0-9+/]+={0,2}', encoded), 'setup-capsule')
+    try: raw = base64.b64decode(encoded, validate=True)
+    except (ValueError, binascii.Error): raise ValueError('setup-capsule') from None
+    require(0 < len(raw) <= 8191 and base64.b64encode(raw).decode('ascii') == encoded, 'setup-capsule')
+    value = json_unique(raw)
+    require(canonical(value) == raw, 'setup-capsule')
+    _setup_capsule_check(value, pinned_sha(environment.get('HELMUT_NATIVE_PAYLOAD_SHA256')), int(time.time()))
+    require((mode, operation, value['action']) in (('setup-inspect-v1', 'status', 'inspect'),
+            ('setup-successor-v1', 'admit', 'setup')), 'setup-mode')
+    return raw + b'\n', value
+
+
+def setup_request_nonce(capsule):
+    return digest(SETUP_PREFIX + canonical(capsule) + b'\n')
+
+
+def _setup_metadata(value):
+    require(type(value) is list and len(value) == 12
+            and all(type(n) is int and -(2**63) <= n < 2**64 for n in value), 'setup-result')
+
+
+def _setup_history(value):
+    require(type(value) is dict and set(value) == {'schema', 'status', 'code', 'files', 'job_directory', 'legacy_jobs_directory',
+            'native_qualified', 'native_go_consumed'} and value['schema'] == 'helmut-setup-history-summary-v1'
+            and value['status'] == 'HISTORICAL_FAILURE_BOUND_NOT_AUTHORITY' and value['code'] == 'UNIT_PROPERTIES'
+            and value['native_qualified'] is False and value['native_go_consumed'] is False, 'setup-result')
+    fixed = {'global_error', 'job', 'worker_error', 'guard.py', 'driver.py', 'recovery.py', 'restore.py',
+             'public.py', 'context.py', 'image.py'}
+    require(type(value['files']) is dict and fixed <= set(value['files']), 'setup-result')
+    extras = set(value['files']) - fixed
+    require(len(extras) <= 1 and all(re.fullmatch(r'\.setup-write-[a-f0-9]{32}\.tmp', name)
+            for name in extras), 'setup-result')
+    for row in value['files'].values():
+        require(type(row) is dict and set(row) == {'sha256', 'metadata'}, 'setup-result')
+        pinned_sha(row['sha256']); _setup_metadata(row['metadata'])
+    for name in extras:
+        require(value['files'][name]['sha256'] == value['files']['worker_error']['sha256']
+                and value['files'][name]['metadata'][6] == value['files']['worker_error']['metadata'][6], 'setup-result')
+    _setup_metadata(value['job_directory'])
+    _setup_metadata(value['legacy_jobs_directory'])
+
+
+def _setup_runtime(value):
+    require(type(value) is dict and set(value) == {'boot_id', 'mount_identity', 'namespace_identity',
+            'old_unit', 'old_controller_ended'} and value['old_controller_ended'] is True
+            and type(value['boot_id']) is str
+            and re.fullmatch(r'[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}', value['boot_id']), 'setup-result')
+    for key, count in (('mount_identity', 8), ('namespace_identity', 2)):
+        require(type(value[key]) is list and len(value[key]) == count
+                and all(type(n) is int and 0 <= n < 2**64 for n in value[key]), 'setup-result')
+    unit = value['old_unit']
+    require(type(unit) is dict and set(unit) == {'fields_sha256', 'invocation_id', 'main_pid', 'cgroup'}
+            and type(unit['invocation_id']) is str and re.fullmatch('[a-f0-9]{32}', unit['invocation_id'])
+            and type(unit['main_pid']) is int and 1 < unit['main_pid'] < 2**31, 'setup-result')
+    pinned_sha(unit['fields_sha256'])
+    group = unit['cgroup']
+    require(type(group) is dict and set(group) == {'state', 'identity'}, 'setup-result')
+    if group['state'] == 'ABSENT': require(group['identity'] is None, 'setup-result')
+    else:
+        require(group['state'] == 'EMPTY', 'setup-result')
+        _setup_metadata(group['identity'])
+
+
+def validate_setup_result(result, sent, capsule):
+    _setup_capsule_check(capsule, sent['payload_sha256'])
+    require(sent['plan_sha256'] == STAGE_PLAN and sent['nonce'] == setup_request_nonce(capsule)
+            and sent['operation'] == ('status' if capsule['action'] == 'inspect' else 'admit'), 'response-binding')
+    require(type(result) is dict and result.get('native_qualified') is False
+            and result.get('native_go_consumed') is False, 'setup-result')
+    if result.get('schema') == 'helmut-setup-successor-result-v1':
+        hashes = ('authority_sha256', 'attempt_sha256', 'ready_sha256', 'accepted_sha256', 'lifecycle_sha256')
+        require(set(result) == {'schema', 'status', 'contract_id', 'contract_sha256', 'phase', 'code',
+                'native_qualified', 'native_go_consumed', *hashes}
+                and result['contract_id'] == SETUP_CONTRACT and result['contract_sha256'] == capsule['contract_sha256']
+                and type(result['code']) is str and re.fullmatch('[A-Z][A-Z0-9_]{0,63}', result['code']), 'setup-result')
+        if result['status'] == 'FAIL_KEEP_STATE_NO_RETRY':
+            require(result['phase'] in ('preflight', capsule['phase']) and all(result[key] is None for key in hashes), 'setup-result')
+            if capsule['action'] == 'inspect': require(result['phase'] == 'preflight', 'setup-result')
+        else:
+            require(capsule['action'] == 'setup' and result['status'] == 'SETUP_PHASE_COMPLETE_NOT_NATIVE_QUALIFIED'
+                    and result['phase'] == capsule['phase'] and result['code'] == 'SETUP_PHASE_COMPLETE', 'setup-result')
+            for key in hashes: pinned_sha(result[key])
+        return
+    require(capsule['action'] == 'inspect' and set(result) == {'schema', 'status', 'request_nonce', 'capsule',
+            'source_sha256', 'asset_set_sha256', 'contract_sha256', 'coordinator_sha256', 'runtime', 'history',
+            'gzip', 'observed_at_utc', 'native_qualified', 'native_go_consumed'}
+            and result['schema'] == 'helmut-setup-successor-inspection-v1' and result['status'] == 'INSPECTED_NOT_ADMITTED'
+            and result['request_nonce'] == sent['nonce'] and result['source_sha256'] == sent['payload_sha256']
+            and result['contract_sha256'] == capsule['contract_sha256']
+            and type(result['observed_at_utc']) is int
+            and capsule['issued_at_utc'] <= result['observed_at_utc'] <= capsule['expires_at_utc'], 'setup-result')
+    _setup_capsule_check(result['capsule'], sent['payload_sha256'])
+    require(canonical(result['capsule']) == canonical(capsule), 'response-binding')
+    for key in ('asset_set_sha256', 'coordinator_sha256'): pinned_sha(result[key])
+    _setup_runtime(result['runtime']); _setup_history(result['history'])
+    gzip = result['gzip']
+    require(type(gzip) is dict and set(gzip) == {'sha256', 'bytes', 'metadata'}
+            and gzip['sha256'] == 'be423c617c14d92ed833c6e8a97c3a094eb70c23dc13b05b2c114c953f73b18a'
+            and type(gzip['bytes']) is int and gzip['bytes'] == 487052181, 'setup-result')
+    _setup_metadata(gzip['metadata'])
+    require(gzip['metadata'][6] == gzip['bytes'], 'setup-result')
 
 
 def public_packets(raw):
@@ -435,7 +574,7 @@ def validate_recovery_receipt(receipt, public_sha256):
                 for key in ('key_generation_attempts', 'subkey_add_attempts')), 'result-fields')
 
 
-def validate_response(raw, sent):
+def validate_response(raw, sent, successor_capsule=None):
     require(type(raw) is bytes and 0 < len(raw) <= MAX_RESPONSE, "response-size")
     reply = json_unique(raw)
     require(type(reply) is dict and set(reply) == RESPONSE_FIELDS, "response-fields")
@@ -445,7 +584,10 @@ def validate_response(raw, sent):
             "response-binding")
     require(pinned_sha(reply["result_sha256"]) == digest(canonical(reply["result"])),
             "response-hash")
-    validate_result(reply["result"], sent["operation"], sent["payload_sha256"])
+    if successor_capsule is None:
+        validate_result(reply["result"], sent["operation"], sent["payload_sha256"])
+    else:
+        validate_setup_result(reply['result'], sent, successor_capsule)
     if sent['operation']=='stage':require(sent['plan_sha256']==STAGE_PLAN,'response-binding')
     return reply
 
@@ -553,9 +695,11 @@ def write_public_artifact(directory, reply):
 
 def client(environment):
     operation, plan, payload = validate_context(environment)
-    sent = request(operation, plan, payload, secrets.token_hex(32))
+    setup_line, successor = setup_capsule(environment, operation)
+    sent = request(operation, plan, payload, setup_request_nonce(successor) if successor is not None else secrets.token_hex(32))
     capsule_line,capsule_raw=stage_capsule(environment,operation)
     host, public, private = transport_configuration(environment)
+    require(successor is None or host == '100.96.83.66', 'host-denied')
     temporary = Path(environment.get("RUNNER_TEMP", ""))
     require(temporary.is_absolute() and temporary.is_dir(), "runner-temp-denied")
     with tempfile.TemporaryDirectory(prefix="helmut-native-private-", dir=temporary) as directory:
@@ -564,10 +708,10 @@ def client(environment):
             descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             with os.fdopen(descriptor, "w") as stream:
                 stream.write(value)
-        raw,code = bounded_exchange(ssh_arguments(host,key,hosts),canonical(sent)+b'\n'+capsule_line,
+        raw,code = bounded_exchange(ssh_arguments(host,key,hosts),canonical(sent)+b'\n'+(setup_line or capsule_line),
                                    include_returncode=True)
-        reply = validate_response(raw, sent)
-        failed=operation in ('stage', 'admit') and reply['result']['status']=='FAIL_KEEP_STATE_NO_RETRY'
+        reply = validate_response(raw, sent, successor)
+        failed=(successor is not None or operation in ('stage', 'admit')) and reply['result']['status']=='FAIL_KEEP_STATE_NO_RETRY'
         require(code==0 or failed,'ssh-failed')
         if operation=='stage' and reply['result']['capsule_sha256'] is not None:
             require(reply['result']['capsule_sha256']==digest(capsule_raw),'response-binding')

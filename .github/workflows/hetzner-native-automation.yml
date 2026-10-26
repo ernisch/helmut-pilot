@@ -9,7 +9,7 @@ on:
         description: 'Explicit per-dispatch controller authorization; disabled by default'
         required: true
         type: choice
-        options: [disabled, control-v1]
+        options: [disabled, control-v1, setup-inspect-v1, setup-successor-v1]
         default: disabled
       operation:
         description: 'Public control operation; unqualified operations fail before network access'
@@ -27,6 +27,11 @@ on:
         type: string
       stageCapsule:
         description: 'Stage only: Base64 recipient-encrypted PGP capsule, at most 48 KiB; no raw URLs'
+        required: false
+        type: string
+        default: ''
+      setupCapsule:
+        description: 'New setup contract only: canonical public admission capsule; no keys or original payloads'
         required: false
         type: string
         default: ''
@@ -57,6 +62,7 @@ jobs:
       HELMUT_NATIVE_PLAN_SHA256: ${{ inputs.planSHA }}
       HELMUT_NATIVE_PAYLOAD_SHA256: ${{ inputs.payloadSHA }}
       HELMUT_NATIVE_STAGE_CAPSULE: ${{ inputs.stageCapsule }}
+      HELMUT_NATIVE_SETUP_CAPSULE: ${{ inputs.setupCapsule }}
     steps:
       - name: Exact branch, registered workflow and public input pins
         run: |
@@ -66,7 +72,20 @@ jobs:
           test "$GITHUB_REF" = refs/heads/main
           test "$GITHUB_EVENT_NAME" = workflow_dispatch
           test "$GITHUB_WORKFLOW_REF" = ernisch/helmut-pilot/.github/workflows/hetzner-native-automation.yml@refs/heads/main
-          test "$HELMUT_NATIVE_CONTROL_MODE" = control-v1
+          case "$HELMUT_NATIVE_CONTROL_MODE" in
+            control-v1)
+              test -z "$HELMUT_NATIVE_SETUP_CAPSULE"
+              ;;
+            setup-inspect-v1)
+              test "$HELMUT_NATIVE_OPERATION" = status
+              test -n "$HELMUT_NATIVE_SETUP_CAPSULE"
+              ;;
+            setup-successor-v1)
+              test "$HELMUT_NATIVE_OPERATION" = admit
+              test -n "$HELMUT_NATIVE_SETUP_CAPSULE"
+              ;;
+            *) exit 1 ;;
+          esac
           case "$HELMUT_NATIVE_OPERATION" in status|recipient|stage|admit) ;; *) exit 1 ;; esac
           [[ "$HELMUT_NATIVE_PLAN_SHA256" =~ ^[a-f0-9]{64}$ ]]
           [[ "$HELMUT_NATIVE_PAYLOAD_SHA256" =~ ^[a-f0-9]{64}$ ]]
@@ -80,7 +99,7 @@ jobs:
           umask 077
           gh api "repos/ernisch/helmut-pilot/contents/scripts/hetzner-native-automation-client.py?ref=$GITHUB_SHA" \
             --jq .content | base64 --decode > "$RUNNER_TEMP/helmut-native-client.py"
-          printf '%s  %s\n' 16647fae58bc89c457113755dcd274f0bbd59558797d133e1e8eca14a779a87f "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
+          printf '%s  %s\n' f5030ce3dfc69b40eca3a8a80675f56f90a596d1a0edc18763a49e5c01024ab5 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
           python3 -I "$RUNNER_TEMP/helmut-native-client.py" validate
 
       - name: Existing pinned Tailscale transport using short lived GitHub OIDC
@@ -111,7 +130,7 @@ jobs:
           HELMUT_CI_SSH_KEY: ${{ secrets.HELMUT_CI_SSH_KEY }}
         run: |
           set -euo pipefail
-          printf '%s  %s\n' 16647fae58bc89c457113755dcd274f0bbd59558797d133e1e8eca14a779a87f "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
+          printf '%s  %s\n' f5030ce3dfc69b40eca3a8a80675f56f90a596d1a0edc18763a49e5c01024ab5 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
           python3 -I "$RUNNER_TEMP/helmut-native-client.py" client
 
       - name: Verify only fixed public artifact files without SSH secret environment

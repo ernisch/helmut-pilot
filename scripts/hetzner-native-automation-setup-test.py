@@ -59,6 +59,27 @@ class SetupControllerTests(unittest.TestCase):
                 self.assertEqual((len(source),hashlib.sha256(source).hexdigest()),
                                  (pin['bytes'],pin['sha256']))
         self.assertLessEqual(len(read_noatime(ROOT/'scripts/hetzner-native-automation-server.py')),131072)
+        # Real source graph and the fixed same-commit authorization configuration.
+        # Inject a time inside its declared window; later CI must not renew it.
+        contract_raw=read_noatime(ROOT/S.SETUP_SUCCESSOR_CONTRACT)
+        contract=json.loads(contract_raw)
+        self.assertEqual(contract['server_sha256'],hashlib.sha256(
+            read_noatime(ROOT/'scripts/hetzner-native-automation-server.py')).hexdigest())
+        self.assertEqual(contract['coordinator_sha256'],S.SETUP_SUCCESSOR_COORDINATOR_SHA256)
+        self.assertEqual((contract['preflight']['sha256'],contract['preflight']['bytes']),
+                         (S.SETUP_SUCCESSOR_PREFLIGHT_SHA256,S.SETUP_SUCCESSOR_PREFLIGHT_BYTES))
+        namespace['__source_bytes__']=raw
+        selected={}
+        for role,filename in (('preflight',contract['preflight']['repoFile']),
+                              ('successor','hetzner-native-setup-successor.py')):
+            source=read_noatime(ROOT/'scripts'/filename)
+            selected[role]={'__name__':'pinned_'+role,'__source_bytes__':source}
+            exec(compile(source,filename,'exec'),selected[role])
+        self.assertEqual(len(selected['successor']['__source_bytes__']),S.SETUP_SUCCESSOR_COORDINATOR_BYTES)
+        with patch.object(selected['successor']['time'],'time',return_value=contract['not_before_utc']+1):
+            selected['successor']['contract_check'](contract_raw,
+                {'base':namespace['BASE'],'source_sha256':contract['server_sha256'],
+                 'deployment_commit':'a'*40,'deadline':time.monotonic()+10},namespace,selected['preflight'])
 
     def source(self,value=None):
         value=phase_result() if value is None else value

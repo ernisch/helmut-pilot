@@ -224,7 +224,7 @@ class IndependentServerTests(unittest.TestCase):
         tree = ast.parse(SERVER_SOURCE)
         imports = {name.name for node in ast.walk(tree) if isinstance(node, ast.Import) for name in node.names}
         self.assertEqual(imports, {'base64', 'hashlib', 'json', 'os', 're', 'stat', 'time',
-                                   'selectors', 'subprocess', 'signal', 'types', 'ctypes', 'resource',
+                                   'selectors', 'subprocess', 'signal', 'types', 'ctypes', 'resource', 'io', 'select',
                                    'datetime', 'http.client', 'ipaddress', 'socket', 'ssl', 'urllib.parse'})
         self.assertFalse(any(isinstance(node, ast.ImportFrom) for node in ast.walk(tree)))
         self.assertNotIn('export-secret', SERVER_SOURCE.decode())

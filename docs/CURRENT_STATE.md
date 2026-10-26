@@ -2,14 +2,14 @@
 
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
-PR957/35d7d2d4: UNIT_PROPERTIES-Quellenfix gemergt; PR-CI40314973970 SUCCESS.
-480 synthetische Tests +168 unabhaengige Zusatzpruefungen PASS.
-Vercel READY auf35d7d2d4; Main-CI40318797794 SUCCESS.
-Setup40306875483 bleibt recover FAIL; kein ACCEPTED, kein admit/Recover-Retry.
-Mac-Abfrage erledigt. Restore/Originalabnahme offen; alte Once-Marker erhalten.
-Paket/Key/Quellcloud erhalten. Keine neue Zielausfuehrung; kein500er-Lauf.
-Vor jeder nativen Ausfuehrung bleibt frisches konkretes Betreiber-GO Pflicht.
-Getrennter Setupvertrag entworfen; neuer Root-Vertrag und Zulassung offen.
+Auftrag: Arbeits-/Testumgebung auf Hetzner; kein Productionumzug.
+UNIT_PROPERTIES-Fix PR957/35d7d2d4 abgenommen; PR-/Main-CI SUCCESS, Vercel READY.
+Gebundener Setupweg in Entwicklung; Bootstrap/Keys erhalten.
+Branch codex/hetzner-setup-successor-20261026: eigene Authority/Once/Jobs.
+Unabhaengig geprueft: Legacy-Root und Vorgaengerjobs vor Folgephasen binden.
+Alter Setup40306875483 bleibt FAIL; Fehler, Originale, Keys und Einmalmarker erhalten.
+Mac-Abfrage erledigt; Restore offen; neue Zielaufrufe0.
+Native Messung und500er-Lauf bleiben ohne frisches konkretes GO gesperrt.
 [Uebergabe](betrieb/helmut-thread-handoff-20261026.md) · [Belege](betrieb/hetzner-native-automation-20261026.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.

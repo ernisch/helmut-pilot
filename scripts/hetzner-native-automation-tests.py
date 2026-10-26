@@ -17,8 +17,8 @@ SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parent
 SOURCE_SHA256 = {
     'bootstrap': '740e7cd3218eec796abf9fe408db2db7ddeaeeade34ddc2363942d5fcf9a4f97',
-    'server': '544dc5a6945e42f349eec5d80d779587eedc30052941a1527c7c75e5b394c146',
-    'client': '16647fae58bc89c457113755dcd274f0bbd59558797d133e1e8eca14a779a87f',
+    'server': 'afbccf72ad9f60ea84091567268c3b7927bcc6df9d99dac0c5da61e27e546a85',
+    'client': 'f5030ce3dfc69b40eca3a8a80675f56f90a596d1a0edc18763a49e5c01024ab5',
     'installer': 'f3512b1126ece5eb744db3f991c8c2c4d0b7703350c13ded52dd0c1c894d21d3',
 }
 RECIPIENT_SHA256 = '8e054d8d1c7ba5428b2fa9537462689fd0863621fd2d1eed16742fa2b3a49b10'
@@ -89,7 +89,9 @@ def main():
     groups.append(('stage-restore', 'hetzner-native-stage-restore-test.py'))
     groups.extend((group, 'hetzner-native-' + group + '-test.py') for group in
                   ('public-checkout', 'context', 'budget-image-import', 'local-restore-recovery',
-                   'setup-driver', 'setup-service', 'setup-coordinator'))
+                   'setup-driver', 'setup-service', 'setup-coordinator',
+                   'setup-successor-preflight', 'setup-successor',
+                   'setup-successor-client', 'setup-successor-server'))
     for group, test_file in groups:
         filename = SCRIPTS / test_file
         module = types.ModuleType('native_control_tests_' + group)
