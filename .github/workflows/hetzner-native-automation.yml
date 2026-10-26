@@ -5,6 +5,12 @@ name: Hetzner Native Root Control · bounded automation
 on:
   workflow_dispatch:
     inputs:
+      controlMode:
+        description: 'Explicit per-dispatch controller authorization; disabled by default'
+        required: true
+        type: choice
+        options: [disabled, control-v1]
+        default: disabled
       operation:
         description: 'Public control operation; unqualified operations fail before network access'
         required: true
@@ -41,13 +47,12 @@ jobs:
       contents: read
       id-token: write
     env:
+      HELMUT_NATIVE_CONTROL_MODE: ${{ inputs.controlMode }}
       HELMUT_NATIVE_OPERATION: ${{ inputs.operation }}
       HELMUT_NATIVE_PLAN_SHA256: ${{ inputs.planSHA }}
       HELMUT_NATIVE_PAYLOAD_SHA256: ${{ inputs.payloadSHA }}
     steps:
       - name: Exact branch, registered workflow and public input pins
-        env:
-          ENABLED: ${{ vars.HELMUT_HETZNER_NATIVE_ENABLED }}
         run: |
           set -euo pipefail
           test "$GITHUB_REPOSITORY" = ernisch/helmut-pilot
@@ -55,7 +60,7 @@ jobs:
           test "$GITHUB_REF" = refs/heads/main
           test "$GITHUB_EVENT_NAME" = workflow_dispatch
           test "$GITHUB_WORKFLOW_REF" = ernisch/helmut-pilot/.github/workflows/hetzner-native-automation.yml@refs/heads/main
-          test "$ENABLED" = control-v1
+          test "$HELMUT_NATIVE_CONTROL_MODE" = control-v1
           case "$HELMUT_NATIVE_OPERATION" in status|recipient) ;; *) exit 1 ;; esac
           [[ "$HELMUT_NATIVE_PLAN_SHA256" =~ ^[a-f0-9]{64}$ ]]
           [[ "$HELMUT_NATIVE_PAYLOAD_SHA256" =~ ^[a-f0-9]{64}$ ]]
@@ -69,7 +74,7 @@ jobs:
           umask 077
           gh api "repos/ernisch/helmut-pilot/contents/scripts/hetzner-native-automation-client.py?ref=$GITHUB_SHA" \
             --jq .content | base64 --decode > "$RUNNER_TEMP/helmut-native-client.py"
-          printf '%s  %s\n' cf5d99c628483e3102219c977faefb2e336876961326720d6f3081b000c7d5c9 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
+          printf '%s  %s\n' 07f1ec6c1ac3d4b1734d629bfe9ee7582c0e1cf60cf91774ea6142b6e4380e7b "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
           python3 -I "$RUNNER_TEMP/helmut-native-client.py" validate
 
       - name: Existing pinned Tailscale transport using short lived GitHub OIDC
@@ -98,7 +103,7 @@ jobs:
           HELMUT_CI_SSH_KEY: ${{ secrets.HELMUT_CI_SSH_KEY }}
         run: |
           set -euo pipefail
-          printf '%s  %s\n' cf5d99c628483e3102219c977faefb2e336876961326720d6f3081b000c7d5c9 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
+          printf '%s  %s\n' 07f1ec6c1ac3d4b1734d629bfe9ee7582c0e1cf60cf91774ea6142b6e4380e7b "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
           python3 -I "$RUNNER_TEMP/helmut-native-client.py" client
 
       - name: Verify only fixed public artifact files without SSH secret environment

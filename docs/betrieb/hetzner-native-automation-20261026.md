@@ -5,6 +5,22 @@ Automatisierung ausdruecklich freigegeben, einschliesslich Merge und Deployment
 nach vollstaendig gruenen Pflichtpruefungen. Die aeltere reine Probevorbereitung
 wird dadurch gezielt erweitert. Die dauerhafte Arbeitsregel steht in AGENTS.md.
 
+## Gesicherter Merge- und Deploymentstand
+
+PR947 ist nach erfolgreicher unabhaengiger Abnahme und gruenem CI40246626996
+auf Head418c67e8243d88377bf05781f8c5a1d42d36b93c gemergt. Mergecommit
+`234ffe8739cd276e697bd192d8053ffc1ca65c09` ist auf main bestaetigt. Vercel-
+Productiondeployment `dpl_88PMRoUjSFtDHFMwXAURZxk8jMub` ist auf genau diesem
+Commit READY. Der nachfolgende Integrationsfix ersetzt ausschliesslich den nicht verfuegbaren
+GitHub-Variablenschalter durch einen standardmaessig gesperrten Dispatchmodus;
+Root-Bootstrap, Server, Client und Mac-Installer bleiben unveraendert.
+
+Der Main-CI40249022904 ist SUCCESS. Die anschliessende einmalige Mac-Ausfuehrung
+meldet den Root-Keyeintrag VERIFIED, stoppt aber bei RECIPIENT_CREATION_FAILED.
+Die Installation ist damit teilweise erfolgt; der Empfaenger ist nicht abgenommen.
+Der konkrete GPG-Erstfehler ist aus der Betreiberantwort noch nicht bekannt.
+Kein erneuter Installer-/Erzeugungsversuch, Originaltransfer oder nativer Lauf.
+
 ## Konkreter Umfang
 
 Ein separat gestarteter Workflow `hetzner-native-automation.yml` nutzt das
@@ -12,8 +28,12 @@ vorhandene geschuetzte Environment, dessen bestehenden SSH-Schluessel und
 Tailscale-OIDC. Ausschliesslich `main`, der exakte Repository-/Workflowbezug,
 ein neuer Nonce sowie Plan- und Quellhash sind zugelassen. Der bestehende
 Probe-Workflow, dessen Gate und `probe-only-v1`-Variable bleiben unveraendert.
-Die neue, nicht geheime Freischaltvariable heisst
-`HELMUT_HETZNER_NATIVE_ENABLED=control-v1`.
+Jeder Aufruf verlangt den ausdruecklichen
+Dispatchmodus `controlMode=control-v1`; Standard ist `disabled`. Es ist keine
+neue GitHub-Variable und kein weiterer administrativer API-Zugang erforderlich.
+Der Integrationszugang verweigert Variablenverwaltung mit HTTP403; dieser
+Ressourcenzugriff wird nicht umgangen oder erweitert. Der Abschalter ist die
+standardmaessige Workflow-Deaktivierung; bestehende Probevariablen bleiben gleich.
 
 Der einmalige Mac-Administratorbefehl uebernimmt nur den bereits vorhandenen
 CI-**Public**-Key zielintern in die tatsaechlich wirksame Root-Keydatei. Der
@@ -64,7 +84,7 @@ oder Anbieter ueber:
 node scripts/lokal.js -- python3 -I -S -B scripts/hetzner-native-automation-tests.py
 ```
 
-Lokal92/92 bestanden:27 Bootstrap-,8 Server-,20 Client-/Protokoll-,21
+Lokal93/93 bestanden:27 Bootstrap-,8 Server-,21 Client-/Protokoll-,21
 Empfaenger- und16 Installerpruefungen. Bootstrap, Server und Installer wurden
 zusaetzlich unabhaengig durch SOL gegenprueft. Das ist keine Zielausfuehrung.
 
@@ -74,3 +94,21 @@ Steuerzugang und der oeffentliche Zielschluessel tatsaechlich ueber Actions
 abgenommen. Originalklassifizierung, verschluesselte Drive-Uebertragung,
 Wiederherstellung und native Admissions bleiben getrennte nachfolgende Arbeit.
 Kein vollstaendiger500er-Lauf aus der Automatisierungsfreigabe ableiten.
+
+## Begrenzter Erstfehlerbefund nach dem Einmalsetup
+
+`status` liest zusaetzlich ausschliesslich die vorhandenen Erstfehlerdateien
+`RECIPIENT_FIRST_ERROR.SAFE.json` und `GPG_FIRST_TOOL_ERROR.PRIVATE.json`.
+Der Zugriff verlangt O_NOATIME/O_NOFOLLOW, root:root,0600, einen Link,
+hoechstens64KiB und unveraenderte Metadaten waehrend des Lesens. Es gibt keine
+GPG-Ausfuehrung, Schluesseluebernahme, Erzeugung, Bereinigung oder Wiederholung.
+
+Server und Client erlauben nur feste Phasen, Fehlercodes, Toolklassen und Hashes.
+Rohes stderr, Base64-Fehlertext und private Inhalte verlassen den Server nicht.
+ABSENT, UNTRUSTED und UNRECOGNIZED bleiben ausdruecklich getrennt; ein fehlendes
+Toolprotokoll beweist keinen fehlerfreien GPG-Aufruf. CONTROL_READY bestaetigt
+nur den Steuerkanal, niemals einen angenommenen Empfaenger oder native Admission.
+
+105 synthetische Tests bestanden, einschliesslich12 gezielter Diagnosefaelle.
+Die urspruengliche Empfaengererzeugung, Bootstrap, Installer und native Sperren
+bleiben unveraendert. Die eigentliche Korrektur haengt vom echten Zielbefund ab.

@@ -17,8 +17,8 @@ SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parent
 SOURCE_SHA256 = {
     'bootstrap': '740e7cd3218eec796abf9fe408db2db7ddeaeeade34ddc2363942d5fcf9a4f97',
-    'server': '74d15780b803a746c29348081a70b21c97abf6970b33689e93a91109bade43e2',
-    'client': 'cf5d99c628483e3102219c977faefb2e336876961326720d6f3081b000c7d5c9',
+    'server': '6cbd0b55021ee2d86fbd04f69f887c6d7beb2aedeff05eeeb24002f93296864a',
+    'client': '07f1ec6c1ac3d4b1734d629bfe9ee7582c0e1cf60cf91774ea6142b6e4380e7b',
     'installer': 'f3512b1126ece5eb744db3f991c8c2c4d0b7703350c13ded52dd0c1c894d21d3',
 }
 RECIPIENT_SHA256 = '8e054d8d1c7ba5428b2fa9537462689fd0863621fd2d1eed16742fa2b3a49b10'
@@ -84,7 +84,7 @@ def main():
         setattr(support, name, globals()[name])
     sys.modules[support.__name__] = support
     suite = unittest.TestSuite()
-    for group in ('bootstrap', 'server', 'client', 'recipient', 'installer'):
+    for group in ('bootstrap', 'server', 'client', 'recipient', 'installer', 'diagnostic'):
         filename = SCRIPTS / ('hetzner-native-automation-' + group + '-test.py')
         module = types.ModuleType('native_control_tests_' + group)
         module.__file__ = str(filename)

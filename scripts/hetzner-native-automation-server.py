@@ -402,6 +402,97 @@ def _read_public_file(path,limit=65536):
         return value
     finally:os.close(fd)
 
+DIAGNOSTIC_PHASES = ('preflight', 'attempt', 'home', 'generate', 'add-subkey',
+    'verify-public', 'export-public', 'verify-private-metadata', 'write-public', 'write-result')
+DIAGNOSTIC_CODES = ('BASE_IDENTITY_CHANGED', 'DIRECTORY_OWNER_OR_TYPE',
+    'DIRECTORY_PERMISSIONS', 'EXECUTOR_REQUIRED', 'FILESYSTEM_OR_INTERNAL_FAILURE',
+    'FILE_SIZE_OR_TYPE', 'FILE_WRITE_SHORT', 'HOME_IDENTITY_CHANGED', 'KEY_STATUS_INVALID',
+    'NEW_FILE_METADATA', 'PRIVATE_DIRECTORY_CHANGED', 'PRIVATE_FILE_PERMISSIONS',
+    'PRIVATE_KEY_COUNT', 'PRIVATE_KEY_METADATA', 'PRIVATE_OWNER', 'PRIVATE_SPECIAL_FILE',
+    'PRIVATE_TREE_DEPTH', 'PRIVATE_TREE_LIMIT', 'PUBLIC_ALGORITHM_MISMATCH',
+    'PUBLIC_ARMOR_INVALID', 'PUBLIC_EXPIRY_INVALID', 'PUBLIC_FINGERPRINT_MISMATCH',
+    'PUBLIC_IDENTITY_OR_VALIDITY', 'PUBLIC_LIST_FIELDS', 'PUBLIC_LIST_INVALID',
+    'PUBLIC_LIST_SHAPE', 'PUBLIC_USAGE_MISMATCH', 'RECIPIENT_ALREADY_ATTEMPTED',
+    'ROOT_REQUIRED', 'TARGET_BASE_REJECTED', 'TOOL_EXECUTION_FAILED', 'TOOL_EXIT_NONZERO',
+    'TOOL_OUTPUT_LIMIT', 'TOOL_RESULT_TYPE')
+DIAGNOSTIC_TOOL_CLASSES = ('AGENT_CONNECTION', 'AGENT_GENERATION', 'PERMISSION_DENIED',
+    'MISSING_FILE', 'PINENTRY', 'UNSUPPORTED_OPTION', 'UNSUPPORTED_ALGORITHM', 'UNCLASSIFIED')
+
+
+def _project_recipient_error(record):
+    _require(type(record) is dict and record.get('schema') == 'helmut-recipient-v1'
+             and record.get('ok') is False and record.get('private_material_exported') is False,
+             'DIAGNOSTIC_FORMAT')
+    error = record.get('first_error')
+    _require(type(error) is dict and set(error) == {'phase', 'code'}
+             and type(error['phase']) is str and error['phase'] in DIAGNOSTIC_PHASES
+             and type(error['code']) is str and error['code'] in DIAGNOSTIC_CODES,
+             'DIAGNOSTIC_FORMAT')
+    return {'phase': error['phase'], 'code': error['code']}
+
+
+def _project_gpg_error(record):
+    _require(type(record) is dict and set(record) == {
+        'code', 'stdout_sha256', 'stderr_sha256', 'stderr_prefix_base64'}, 'DIAGNOSTIC_FORMAT')
+    code = record['code']
+    _require(type(code) is str, 'DIAGNOSTIC_FORMAT')
+    number = re.fullmatch(r'EXIT_(-?[0-9]{1,3})', code)
+    _require(code in ('TOOL_TIMEOUT', 'TOOL_OUTPUT_LIMIT', 'TOOL_EXECUTION_FAILURE')
+             or number is not None and -64 <= int(number[1]) <= 255, 'DIAGNOSTIC_FORMAT')
+    _require(all(type(record[key]) is str and re.fullmatch(r'[a-f0-9]{64}', record[key])
+                 for key in ('stdout_sha256', 'stderr_sha256')), 'DIAGNOSTIC_FORMAT')
+    encoded = record['stderr_prefix_base64']
+    _require(type(encoded) is str and len(encoded) <= 10924, 'DIAGNOSTIC_FORMAT')
+    prefix = base64.b64decode(encoded, validate=True)
+    _require(len(prefix) <= 8192, 'DIAGNOSTIC_FORMAT')
+    # Only fixed classifications leave the server. Never return raw tool text,
+    # encoded text, paths, user IDs, private key data, or arbitrary exception strings.
+    lowered = prefix.lower()
+    matches = {
+        'AGENT_CONNECTION': (b"can't connect to the agent", b"can't connect to the gpg-agent", b'failed to start agent'),
+        'AGENT_GENERATION': (b'agent_genkey failed',),
+        'PERMISSION_DENIED': (b'permission denied',),
+        'MISSING_FILE': (b'no such file or directory',),
+        'PINENTRY': (b'no pinentry', b'inappropriate ioctl for device', b'pinentry failed'),
+        'UNSUPPORTED_OPTION': (b'invalid option', b'unknown option'),
+        'UNSUPPORTED_ALGORITHM': (b'unsupported algorithm', b'unknown elliptic curve',),
+    }
+    classes = sorted(name for name, needles in matches.items()
+                     if any(needle in lowered for needle in needles))
+    return {'code': code, 'stderr_classes': classes or ['UNCLASSIFIED']}
+
+
+def _diagnostic_file(name, project, gpg=False):
+    # Only these two already-written first-error records may be observed. Reading
+    # one does not adopt a recipient, run GPG, generate another key, or retry.
+    _require(name in (ERROR_NAME, 'GPG_FIRST_TOOL_ERROR.PRIVATE.json'), 'DIAGNOSTIC_PATH')
+    result = {'state': 'ABSENT', 'sha256': None, 'code': None}
+    result.update({'stderr_classes': []} if gpg else {'phase': None})
+    try:
+        raw = _read_public_file(TARGET_BASE + '/' + name, MAX_TOOL_OUTPUT)
+    except FileNotFoundError:
+        return result
+    except Exception:
+        return dict(result, state='UNTRUSTED')
+    result.update(state='UNRECOGNIZED', sha256=hashlib.sha256(raw).hexdigest())
+    try:
+        def unique(pairs):
+            value = {}
+            for key, item in pairs:
+                _require(key not in value, 'DIAGNOSTIC_FORMAT')
+                value[key] = item
+            return value
+        record = json.loads(raw.decode('ascii'), object_pairs_hook=unique)
+        fields = project(record)
+    except Exception:
+        return result
+    return dict(result, state='OBSERVED', **fields)
+
+
+def _recipient_diagnostic():
+    return {'recipient': _diagnostic_file(ERROR_NAME, _project_recipient_error),
+            'gpg': _diagnostic_file('GPG_FIRST_TOOL_ERROR.PRIVATE.json', _project_gpg_error, True)}
+
 def handle(request,context):
     global _CONTROL_DEADLINE
     _CONTROL_DEADLINE=context.get('deadline')
@@ -409,7 +500,8 @@ def handle(request,context):
     operation=request['operation']
     if operation=='status':
         return {'status':'CONTROL_READY','enabled_operations':['status','recipient'],
-                'native_enabled':False,'source_sha256':context['source_sha256']}
+                'native_enabled':False,'source_sha256':context['source_sha256'],
+                'recipient_diagnostic':_recipient_diagnostic()}
     _require(operation=='recipient','NATIVE_OPERATION_NOT_QUALIFIED')
     result_path=TARGET_BASE+'/'+RESULT_NAME
     if not os.path.lexists(result_path):
