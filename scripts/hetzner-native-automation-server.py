@@ -1522,6 +1522,9 @@ def _setup_read_capsule(context):
     if value.get('schema') == 'helmut-runtime-metadata-capsule-v1':
         _runtime_metadata_capsule(value)
         return value
+    if value.get('schema') == 'helmut-context-failure-capsule-v1':
+        _context_failure_capsule(value)
+        return value
     if value.get('schema') == 'helmut-daemon-binding-capsule-v1':
         _daemon_binding_capsule(value)
         return value
@@ -1547,7 +1550,7 @@ def _setup_public_source(commit, path, deadline, limit, expected_sha=None, expec
                'scripts/hetzner-native-setup-successor-preflight.py',
                'scripts/hetzner-native-runtime-metadata.py', 'scripts/hetzner-native-daemon-binding.py', SETUP_SUCCESSOR_CONTRACT,
                'scripts/hetzner-native-context-continuation-coordinator.py', CONTINUATION_CONTRACT,
-               'scripts/hetzner-development-environment.py'}
+               'scripts/hetzner-development-environment.py', 'scripts/hetzner-native-context-failure.py'}
     _require(type(commit) is str and re.fullmatch('[a-f0-9]{40}', commit)
              and path in allowed and type(limit) is int and 0 < limit <= 131072, 'SETUP_SOURCE_BINDING')
     _require((path in (SETUP_SUCCESSOR_CONTRACT,CONTINUATION_CONTRACT) and expected_sha is None and expected_bytes is None)
@@ -1626,8 +1629,8 @@ def _setup_successor_failure(code, capsule):
         'lifecycle_sha256':None,'native_qualified':False,'native_go_consumed':False}
 
 
-DEVELOPMENT_SHA256 = '152e6eae9758d731497db050b891ee010126fe08c9063ebe7a7e52e2ea3dab22'
-DEVELOPMENT_BYTES = 35539
+DEVELOPMENT_SHA256 = '50aef1f8f2bbc286373705cc26efa88fa77c5da2bd4d6d4f5cbd0eb4c304ba6f'
+DEVELOPMENT_BYTES = 41127
 
 def _development_handle(request, context, capsule):
     raw = _setup_public_source(context['deployment_commit'], 'scripts/hetzner-development-environment.py',
@@ -1773,7 +1776,56 @@ def _runtime_metadata_modules(context):
     return reader, modules
 
 
+CONTEXT_FAILURE_ID = 'context-failure-observation-20261026-v1'
+CONTEXT_FAILURE_CONTRACT = '224b49c0bb482392b201510fb83993590b3ba54a32f0426ec1a5c17d89234aa2'
+CONTEXT_FAILURE_SHA256 = 'f8c350c60c09ab670b2540237f43d8474d14c59cf75184588546704043f4261f'
+CONTEXT_FAILURE_BYTES = 21217
+
+def _context_failure_capsule(value):
+    _require(type(value) is dict and set(value)=={'schema','contract_id','action','source_sha256',
+        'contract_sha256','nonce','issued_at_utc','expires_at_utc'}
+        and value['schema']=='helmut-context-failure-capsule-v1' and value['contract_id']==CONTEXT_FAILURE_ID
+        and value['action']=='inspect' and value['contract_sha256']==CONTEXT_FAILURE_CONTRACT,
+        'CONTEXT_FAILURE_CAPSULE')
+    _require(all(type(value[key]) is str and re.fullmatch('[a-f0-9]{64}',value[key])
+        for key in ('source_sha256','contract_sha256','nonce')), 'CONTEXT_FAILURE_CAPSULE')
+    _require(type(value['issued_at_utc']) is int and type(value['expires_at_utc']) is int
+        and 0<value['issued_at_utc']<value['expires_at_utc']
+        and value['expires_at_utc']-value['issued_at_utc']<=300
+        and value['issued_at_utc']<=time.time()<=value['expires_at_utc'], 'CONTEXT_FAILURE_CAPSULE_TIME')
+
+def _context_failure_handle(request, context, capsule):
+    _context_failure_capsule(capsule)
+    raw=_setup_public_source(context['deployment_commit'],'scripts/hetzner-native-context-failure.py',
+        context['deadline'],CONTEXT_FAILURE_BYTES,CONTEXT_FAILURE_SHA256,CONTEXT_FAILURE_BYTES)
+    observer={'__name__':'qualified_context_failure','__source_bytes__':raw}
+    exec(compile(raw,'<qualified-context-failure>','exec'),observer)
+    _require(observer['CONTRACT_ID']==CONTEXT_FAILURE_ID and observer['CONTRACT_SHA256']==CONTEXT_FAILURE_CONTRACT,
+        'CONTEXT_FAILURE_SOURCE_CONTRACT')
+    observer['validate_capsule'](capsule,context['source_sha256'],time.time())
+    _require(observer['request_nonce'](capsule)==request['nonce'],'CONTEXT_FAILURE_NONCE')
+    reader,qualified=_runtime_metadata_modules(context)
+    result=observer['observe_context_failure']({key:context[key] for key in
+        ('base','source_sha256','deployment_commit','deadline')},reader,qualified)
+    _context_failure_capsule(capsule)
+    return result
+
+def _context_failure_result_error(code, capsule, context):
+    return {'schema':'helmut-context-failure-observation-v1','status':'FAIL_CLOSED_NOT_NATIVE_QUALIFIED',
+        'contract_id':CONTEXT_FAILURE_ID,'contract_sha256':CONTEXT_FAILURE_CONTRACT,
+        'source_sha256':context['source_sha256'],'deployment_commit':context['deployment_commit'],
+        'failed_commit':'4a82f5fee73e287377344326a238b141af5928b9',
+        'failed_source_sha256':'67cc1cdfdcd1375dd78aef8fef8128879c0e8d0a072819af8096c48d2f32e3fe',
+        'failed_nonce':'e939e6fde87bf3f4fb8b1c69a1c2de8e633f6856ac270d832dddd27a3c6c0bcd',
+        'failed_response_sha256':'d3660ad6164c873cced0100b14e81610fb409d9251c1c0d4df6fc59578034586',
+        'failed_result_sha256':'edfd4e3c227e0d20fa00d137419499f1d9e7cab6d34ae93ed35548200fa7be4a',
+        'code':code,'records':None,'job_directory':None,'snapshot_sha256':None,'cause_records':[],
+        'cause_state':'UNKNOWN_READ_NOT_QUALIFIED','read_only':True,'native_qualified':False,'native_go_consumed':False}
+
+
 def _runtime_metadata_handle(request, context, capsule):
+    if capsule.get('schema')=='helmut-context-failure-capsule-v1':
+        return _context_failure_handle(request,context,capsule)
     if capsule.get('schema') == 'helmut-daemon-binding-capsule-v1':
         return _daemon_binding_handle(request, context, capsule)
     _runtime_metadata_capsule(capsule)
@@ -1787,6 +1839,8 @@ def _runtime_metadata_handle(request, context, capsule):
 
 
 def _runtime_metadata_failure(code, capsule, context):
+    if capsule.get('schema')=='helmut-context-failure-capsule-v1':
+        return _context_failure_result_error(code,capsule,context)
     if capsule.get('schema') == 'helmut-daemon-binding-capsule-v1':
         return _daemon_binding_failure(code, capsule, context)
     return {'schema': 'helmut-runtime-binding-metadata-read-v1', 'status': 'FAIL_CLOSED_NOT_NATIVE_QUALIFIED',
@@ -1871,7 +1925,8 @@ def _setup_watchdog(request, context, successor_capsule=None, runtime_capsule=No
             _require(time.monotonic() < deadline, 'SETUP_DEADLINE')
             time.sleep(.01)
         result = _stage_diag_json(bytes(raw))
-        schemas = (('helmut-native-daemon-binding-observation-v1',) if runtime and
+        schemas = (('helmut-context-failure-observation-v1',) if runtime and runtime_capsule.get('schema')=='helmut-context-failure-capsule-v1' else
+                   ('helmut-native-daemon-binding-observation-v1',) if runtime and
                    runtime_capsule.get('schema') == 'helmut-daemon-binding-capsule-v1' else
                    ('helmut-runtime-binding-metadata-read-v1',) if runtime else
                    ('helmut-setup-successor-result-v1', 'helmut-setup-successor-inspection-v1',
@@ -1929,14 +1984,15 @@ def handle(request,context):
             raw=(json.dumps(capsule,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode('ascii')
             _require(request['nonce']==hashlib.sha256(b'helmut-context-continuation-request-v1\0'+raw).hexdigest(), 'CONTINUATION_NONCE')
             return _setup_watchdog(request,context,successor_capsule=capsule)
-        if capsule['schema'] in ('helmut-runtime-metadata-capsule-v1', 'helmut-daemon-binding-capsule-v1'):
+        if capsule['schema'] in ('helmut-runtime-metadata-capsule-v1', 'helmut-daemon-binding-capsule-v1','helmut-context-failure-capsule-v1'):
             _require(set(request) == {'schema', 'operation', 'nonce', 'plan_sha256', 'payload_sha256'}
                      and operation == 'status' and request.get('schema') == 'helmut-native-control-request-v1'
                      and request.get('plan_sha256') == STAGE_PLAN
                      and capsule['source_sha256'] == context['source_sha256'] == request['payload_sha256'],
                      'RUNTIME_REQUEST_BINDING')
             encoded = (json.dumps(capsule, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode('ascii')
-            prefix = (b'helmut-daemon-binding-request-v1\0' if capsule['schema'] == 'helmut-daemon-binding-capsule-v1'
+            prefix = (b'helmut-context-failure-request-v1\0' if capsule['schema']=='helmut-context-failure-capsule-v1' else
+                      b'helmut-daemon-binding-request-v1\0' if capsule['schema'] == 'helmut-daemon-binding-capsule-v1'
                       else b'helmut-runtime-metadata-request-v1\0')
             _require(request['nonce'] == hashlib.sha256(prefix + encoded).hexdigest(),
                      'RUNTIME_REQUEST_NONCE')

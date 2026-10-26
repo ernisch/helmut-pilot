@@ -1,16 +1,22 @@
 # CURRENT STATE — Helmut
 
-## Hetzner-Automation (26.10.2026 Istanbul)
+## Dauerhafte Hetzner-Arbeitsumgebung (27.10.2026 Istanbul)
 
-Auftrag: Arbeits-/Testumgebung auf Hetzner; kein Productionumzug.
-Main9df5f9dd/PR962: Pflicht-CI und normalesDeployment READY.
-UNIT_PROPERTIES behoben; Recover/Checkout ACCEPTED, alter Context bleibt FAIL.
-Frischer Daemonbeleg: nur Executable-Pfad falsch erwartet; Binärhash bestätigt.
-Neue eigenständige Context/Image-Fortsetzung vorbereitet;998lokaleTests grün.
-548 Runtime-Bindings passen zum Quellnachweis; Ziel-/Dev-/DB-Abnahme offen.
-Fehler, Originale, Keys und alte Einmalmarker erhalten; Mac-Abfrage erledigt.
-Native Messung und500er-Lauf bleiben ohne frisches konkretes GO gesperrt.
-[Uebergabe](betrieb/helmut-thread-handoff-20261026.md) · [Belege](betrieb/hetzner-native-automation-20261026.md).
+Auftrag: grosse Dateien, Arbeitskopie, lokale DB und Tests dauerhaft auf Hetzner;
+Codex steuert die KI-Arbeit. Kein Productionumzug und keine neue Infrastruktur.
+Controller Main4a82f5fe/PR963; Recover/Checkout bleiben ACCEPTED.
+V2-Context40403071760/e939e6fd ist erneut FAIL/WORKER_FAILED; Image nicht gestartet.
+Dieser Erstfehler und alle Originale, Keys und Einmalmarker bleiben erhalten.
+PR964 verbindet den festen rein lesenden V2-Fehlerleser mit getrennten Dev-/DBtasks.
+Cloud-Vorabtests: Syntax Exit0/Netzschutz92 von92, REST Exit0/15 von15 samt
+Bereinigung, kaputtes JavaScript Exit123;1048 lokale Boundarytests gruen.
+PR-CI40403238676 bewusst angehalten, um Reader und Unitfix gemeinsam abzusichern.
+Naechster Zielschritt nach neuer gruener Pflicht-CI: nur den gespeicherten Fehler lesen;
+anschliessend die allgemeine Arbeitsumgebung unabhaengig vom gesperrten Context abnehmen.
+WritableCheckout, Lockdeps, isolierte Ziel-DB und freier Ziel-Speicher noch offen.
+Native Faelle in diesem Einrichtungsauftrag0; kein neuer Context-, Native- oder500er-Versuch.
+[Vorbereitung/Beleggrenzen](betrieb/hetzner-development-environment-20261026.md) ·
+[Erhaltene Historie](betrieb/hetzner-native-automation-20261026.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 

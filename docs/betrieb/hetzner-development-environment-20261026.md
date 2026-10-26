@@ -1,4 +1,34 @@
-# Begrenzte Arbeits- und Testumgebung auf dem vorhandenen Hetzner
+# Gespeicherter Contextfehler und begrenzte Arbeits-/Testumgebung
+
+## Zuerst ausschließlich den erhaltenen V2-Fehler lesen
+
+Der tatsächliche V2-Contextaufruf40403071760 auf Main4a82 endet mit
+`FAIL_KEEP_STATE_NO_RETRY/WORKER_FAILED`; Image wurde nicht ausgeführt.
+Vor jeder weiteren Einrichtung wird deshalb der neue rein lesende Vertrag
+`context-failure-observation-20261026-v1` verwendet. Er liest ausschließlich
+die fest gebundenen gespeicherten Antwort-, Supervisor-, Job- und Componentrollen
+einschließlich höchstens8 anonymer temporärer Fehlerpublikationen. Fehlende
+Blätter oder übergeordnete Verzeichnisse erhalten einen positiven gehaltenen
+Abwesenheitsbeleg. Unbekannte Inhalte bleiben ausdrücklich unbekannt.
+
+Der bestehende Workflow verwendet dafür `controlMode=runtime-metadata-v1`,
+`operation=status` und eine frische kanonische Base64-Kapsel mit genau
+`schema=helmut-context-failure-capsule-v1`,
+`contract_id=context-failure-observation-20261026-v1`, `action=inspect`,
+dem aktuellen qualifizierten `source_sha256`,
+`contract_sha256=224b49c0bb482392b201510fb83993590b3ba54a32f0426ec1a5c17d89234aa2`,
+einem neuen64-stelligen Hexnonce sowie ganzzahligen `issued_at_utc` und
+`expires_at_utc` mit höchstens300s Abstand. `planSHA` bleibt unverändert,
+`payloadSHA` bindet genau die aktuelle Serverquelle.
+
+`CONTEXT_FAILURE_OBSERVED_NOT_READY` ist eine Diagnose und keine Einsatzbereitschaft.
+Der alte Context wird nicht wiederholt; Originale, Erstfehler, Keys, Once- und
+Accepted-Dateien bleiben erhalten. Nach dem Lesebeleg wird nur die konkret
+belegte Ursache getrennt bewertet. Die unten vorbereitete allgemeine
+Dev-Einrichtung kann nach der RO-Diagnose unabhängig vom gesperrten nativen
+Context fertiggestellt werden. Kein neuer Context- oder Nativeversuch folgt daraus.
+
+## Getrennte Entwicklungsumgebung
 
 Diese Einrichtung ergänzt die getrennte native PR942-Basis um eine schreibbare
 Arbeitskopie. Native Originale, Socket, Namespace, Quittungen und Laufrechte
@@ -73,6 +103,12 @@ bei Abbruch werden ausschließlich der eigene Container-Cgroup und Devdienst
 beendet und deren Ende geprüft. Es gibt kein Löschen, Prune oder Zurücksetzen.
 Jeder Dockerbefehl erhält eine frisch gestartete, unabhängig auf290s begrenzte
 Devruntime. Der bestehende native Dienst wird weder angehalten noch mitbenutzt.
+Vor jedem Unitstart werden die typisierten tatsächlichen Manager-Unitpfade
+und sämtliche wirksamen globalen, Präfix- und exakten Dropinorte geprüft.
+Zusätzliche `.conf`-Overrides und Unitabhängigkeiten sind gesperrt; die
+Devdaemon-Datei muss exakt dem festen eigenen Quelltext entsprechen. Unbekannte
+Suchpfade oder Metadaten stoppen bereits vor einem neuen Hostbefehl. Fehlende
+Exec-Felder werden dabei nicht als leere Arrays ausgegeben.
 
 Alle ausgeführten Phasen erhalten getrennte validierte SAFE-Antwortpaare im
 GitHub-Artefakt `helmut-development-public-<run>-<attempt>`. Die letzte Antwort

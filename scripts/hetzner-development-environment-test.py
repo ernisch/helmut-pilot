@@ -142,12 +142,51 @@ class DevelopmentBoundaries(unittest.TestCase):
     def test_every_docker_call_starts_fresh_after_a_stopped_runtime(self):
         calls=[]
         with tempfile.TemporaryDirectory() as directory, patch.object(M,'CGROUP',Path(directory)/'absent'), \
-             patch.object(M,'capacity'), patch.object(M,'stop_development',side_effect=lambda:calls.append('stop')), \
+             patch.object(M,'capacity'), patch.object(M,'unit_policy'), patch.object(M,'stop_development',side_effect=lambda:calls.append('stop')), \
              patch.object(M,'run',side_effect=lambda argv,*a,**k:calls.append(argv) or b'OK'):
             for _ in range(2): self.assertEqual(M.docker(['image','ls'], time.monotonic()+10), b'OK')
         self.assertEqual(calls[0], 'stop'); self.assertEqual(calls[3], 'stop')
         self.assertEqual(calls[1], ['/usr/bin/systemctl','start',M.SERVICE])
         self.assertEqual(calls[4], calls[1])
+
+    def test_manager_unit_paths_require_typed_positive_metadata(self):
+        self.assertEqual(M.parse_unit_paths(M.encoded({'type':'as','data':['/etc/systemd/system']})), ['/etc/systemd/system'])
+        for value in ({}, {'type':'s','data':'/etc/systemd/system'}, {'type':'as','data':[]},
+                      {'type':'as','data':['/tmp/user-units']}, {'type':'as','data':[[]]}):
+            with self.assertRaises(M.Stop):M.parse_unit_paths(M.encoded(value))
+
+    def test_all_effective_dropin_prefixes_are_closed_before_unit_launch(self):
+        name='helmut-development-host-'+'a'*64+'-1.service'
+        names=M.dropin_names(name)
+        self.assertIn('service.d', names)
+        self.assertIn('helmut-.service.d', names)
+        self.assertIn('helmut-development-.service.d', names)
+        self.assertIn('helmut-development-host-.service.d', names)
+        self.assertIn(name+'.d', names)
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            def existing(path):return os.open(path,os.O_RDONLY|os.O_DIRECTORY) if Path(path).is_dir() else None
+            with patch.object(M,'manager_unit_paths',return_value=[str(root)]), patch.object(M,'unit_directory',side_effect=existing):
+                self.assertEqual(len(M.unit_policy(name,time.monotonic()+10)),64)
+                for prefix in names:
+                    target=root/prefix;target.mkdir();(target/'extra.conf').write_text('[Service]\nExecStartPre=/bin/false\n')
+                    with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_UNIT_OVERRIDE_UNQUALIFIED'):M.unit_policy(name,time.monotonic()+10)
+                    (target/'extra.conf').unlink();target.rmdir()
+
+    def test_external_unit_dependency_is_not_silently_started(self):
+        name='helmut-development-host-'+'a'*64+'-1.service'
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); dependency=root/(name+'.requires');dependency.mkdir();(dependency/'outside.service').write_text('')
+            def existing(path):return os.open(path,os.O_RDONLY|os.O_DIRECTORY) if Path(path).is_dir() else None
+            with patch.object(M,'manager_unit_paths',return_value=[str(root)]), patch.object(M,'unit_directory',side_effect=existing):
+                with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_UNIT_DEPENDENCY_UNQUALIFIED'):M.unit_policy(name,time.monotonic()+10)
+
+    def test_unknown_unit_policy_stops_before_any_hostcommand(self):
+        with patch.object(M,'ACTIVE_NONCE','a'*64), patch.object(M,'capacity'), \
+             patch.object(M,'unit_policy',side_effect=M.Stop('DEVELOPMENT_UNIT_OVERRIDE_UNQUALIFIED')), \
+             patch.object(M.subprocess,'Popen') as start:
+            with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_UNIT_OVERRIDE_UNQUALIFIED'):M.run(['/bin/true'],time.monotonic()+10)
+            start.assert_not_called()
 
     def test_low_capacity_rejects_before_any_process_start(self):
         with patch.object(M,'capacity',side_effect=M.Stop('DEVELOPMENT_NATIVE_DISK_RESERVE')), patch.object(M.subprocess,'Popen') as start:
@@ -171,6 +210,21 @@ class DevelopmentBoundaries(unittest.TestCase):
             pid=int((root/'pid').read_text())
             while Path('/proc/'+str(pid)).exists() and time.monotonic()<end:time.sleep(.02)
             self.assertFalse(Path('/proc/'+str(pid)).exists(), 'host command survived lost controller')
+
+    def test_host_worker_drops_all_credentials_before_child_without_account_lookup(self):
+        calls=[]
+        argv=['host.py',str(os.getpid()),str(time.monotonic()+10),'worker','/usr/bin/id']
+        process=types.SimpleNamespace(poll=lambda:0,returncode=0)
+        with patch.object(sys,'argv',argv), patch.object(os,'setgroups',side_effect=lambda groups:calls.append(('groups',groups))), \
+             patch.object(os,'setgid',side_effect=lambda gid:calls.append(('gid',gid))), \
+             patch.object(os,'setuid',side_effect=lambda uid:calls.append(('uid',uid))), \
+             patch.object(os,'getuid',return_value=2000),patch.object(os,'geteuid',return_value=2000), \
+             patch.object(os,'getgid',return_value=2000),patch.object(os,'getegid',return_value=2000), \
+             patch.object(os,'getgroups',return_value=[]), \
+             patch.object(subprocess,'Popen',side_effect=lambda *a,**k:calls.append('spawn') or process):
+            with self.assertRaises(SystemExit) as stopped:exec(compile(M.HOST_COMMAND,'<fixed-host-command>','exec'),{})
+        self.assertEqual(stopped.exception.code,0)
+        self.assertEqual(calls,[('groups',[]),('gid',2000),('uid',2000),'spawn'])
 
     def test_test_output_requires_positive_complete_summary(self):
         M.test_output('syntax', b'PASS 92  FAIL 0  (gesamt 92)\n')

@@ -128,7 +128,11 @@ Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigke
 
 ## Modell und Arbeitsumgebung
 
-Codex Cloud ist die bevorzugte Arbeitsumgebung.
+Betreibersteuerung vom27.10.2026 Istanbul: Hetzner ist die dauerhafte
+Arbeitsumgebung fuer grosse Dateien, Arbeitskopien, lokale Datenbanken und Tests.
+Codex bleibt die KI-Steuerung. Bestehende Production bei Vercel/Supabase wird
+dadurch nicht migriert. Einrichtung fertigstellen, danach ausschliesslich am
+500er-Nachweis weiterarbeiten; keine zusaetzliche Infrastruktur oder Routerarbeit.
 
 Das Hauptmodell und seine Denkstufe stellt der Betreiber in Codex ein. Für den
 Routerbetrieb ist GPT 6.1 Sol High oder Sehr hoch als führender Orchestrator

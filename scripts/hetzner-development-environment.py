@@ -51,6 +51,100 @@ PHASES = {'prepare': ('tools', 'source', 'image'), 'source-sync': ('source',),
           'test': ('syntax', 'lage-rest')}
 PREFIX = b'helmut-development-request-v1\0'
 ACTIVE_NONCE, TOOL_INDEX = None, 0
+UNIT_PATHS = frozenset(('/etc/systemd/system.control','/run/systemd/system.control',
+    '/run/systemd/transient','/run/systemd/generator.early','/etc/systemd/system',
+    '/etc/systemd/system.attached','/run/systemd/system','/run/systemd/system.attached',
+    '/run/systemd/generator','/usr/local/lib/systemd/system','/usr/lib/systemd/system',
+    '/lib/systemd/system','/run/systemd/generator.late'))
+
+
+def manager_unit_paths(deadline):
+    # Read-only D-Bus probe deliberately does not create a unit before its
+    # policy is qualified. Its own bus timeout and our read bound are explicit.
+    argv = ['/usr/bin/busctl','--system','--timeout=5','--json=short','get-property',
+        'org.freedesktop.systemd1','/org/freedesktop/systemd1','org.freedesktop.systemd1.Manager','UnitPath']
+    process = subprocess.Popen(argv,env=ENV,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,close_fds=True)
+    end, raw = min(deadline,time.monotonic()+6), bytearray()
+    try:
+        os.set_blocking(process.stdout.fileno(),False)
+        with selectors.DefaultSelector() as selector:
+            selector.register(process.stdout,selectors.EVENT_READ)
+            while selector.get_map():
+                need(time.monotonic()<end,'DEVELOPMENT_UNIT_PATH_TIMEOUT')
+                for _,_ in selector.select(.05):
+                    block=os.read(process.stdout.fileno(),65537-len(raw))
+                    if not block:selector.unregister(process.stdout)
+                    else:raw.extend(block)
+                    need(len(raw)<=65536,'DEVELOPMENT_UNIT_PATH_LIMIT')
+        need(process.wait(timeout=max(.01,end-time.monotonic()))==0,'DEVELOPMENT_UNIT_PATH_UNKNOWN')
+        return parse_unit_paths(bytes(raw))
+    finally:
+        if process.poll() is None:process.kill();process.wait(timeout=2)
+        process.stdout.close()
+
+
+def parse_unit_paths(raw):
+    value=json.loads(raw)
+    need(type(value) is dict and set(value)=={'type','data'} and value['type']=='as'
+         and type(value['data']) is list and 0<len(value['data'])<=32
+         and all(type(path) is str and path in UNIT_PATHS for path in value['data'])
+         and len(set(value['data']))==len(value['data']), 'DEVELOPMENT_UNIT_PATH_UNKNOWN')
+    return value['data']
+
+
+def unit_directory(path):
+    fd=os.open('/',os.O_RDONLY|os.O_DIRECTORY|os.O_CLOEXEC)
+    try:
+        for part in str(path).strip('/').split('/'):
+            try:child=os.open(part,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=fd)
+            except FileNotFoundError:
+                os.close(fd);return None
+            os.close(fd);fd=child;info=os.fstat(fd)
+            need(info.st_uid==info.st_gid==0 and not info.st_mode&0o022,'DEVELOPMENT_UNIT_DIRECTORY')
+        return fd
+    except BaseException:os.close(fd);raise
+
+
+def dropin_names(unit):
+    need(unit==SERVICE or re.fullmatch(r'helmut-development-host-[a-f0-9]{64}-[1-9][0-9]{0,2}\.service',unit),
+         'DEVELOPMENT_UNIT_NAME')
+    stem=unit[:-len('.service')]
+    return ['service.d',*(stem[:index+1]+'.service.d' for index,char in enumerate(stem) if char=='-'),unit+'.d']
+
+
+def unit_policy(unit, deadline, expected_fragment=None):
+    paths=manager_unit_paths(deadline)
+    found=[]
+    for path in paths:
+        root=unit_directory(path)
+        if root is None:continue
+        try:
+            try:item=os.stat(unit,dir_fd=root,follow_symlinks=False)
+            except FileNotFoundError:item=None
+            if item is not None:
+                need(expected_fragment is not None and path==str(UNIT.parent)
+                    and stat.S_ISREG(item.st_mode) and item.st_uid==item.st_gid==0
+                    and item.st_nlink==1 and not item.st_mode&0o022,'DEVELOPMENT_UNIT_FRAGMENT')
+                need(read_root(Path(path)/unit,65536)==expected_fragment,'DEVELOPMENT_UNIT_FRAGMENT')
+                found.append(path)
+            for name in dropin_names(unit):
+                # All effective global/prefix/exact dropins must be positively
+                # absent/without .conf files. Missing metadata is never [] hooks.
+                directory=unit_directory(Path(path)/name)
+                if directory is not None:
+                    try:need(not any(name.endswith('.conf') for name in os.listdir(directory)),
+                             'DEVELOPMENT_UNIT_OVERRIDE_UNQUALIFIED')
+                    finally:os.close(directory)
+            for suffix in ('.wants','.requires','.upholds'):
+                directory=unit_directory(Path(path)/(unit+suffix))
+                if directory is not None:
+                    try:need(not os.listdir(directory),'DEVELOPMENT_UNIT_DEPENDENCY_UNQUALIFIED')
+                    finally:os.close(directory)
+        finally:os.close(root)
+    need(found==([str(UNIT.parent)] if expected_fragment is not None else []),'DEVELOPMENT_UNIT_FRAGMENT')
+    return digest(encoded({'unit':unit,'unit_paths':paths,'dropins':dropin_names(unit),
+                           'fragment_sha256':None if expected_fragment is None else digest(expected_fragment)}))
 
 
 class Stop(Exception):
@@ -154,6 +248,10 @@ parent=int(sys.argv[1]);deadline=float(sys.argv[2]);role=sys.argv[3]
 held=os.pidfd_open(parent,0)
 poll=select.poll();poll.register(held,select.POLLIN)
 if poll.poll(0) or time.monotonic()>=deadline:raise SystemExit(125)
+if role not in ('host','worker','docker'):raise SystemExit(125)
+if role=='worker':
+ os.setgroups([]);os.setgid(2000);os.setuid(2000)
+ if (os.getuid(),os.geteuid(),os.getgid(),os.getegid(),os.getgroups())!=(2000,2000,2000,2000,[]):raise SystemExit(125)
 process=subprocess.Popen(sys.argv[4:],stdin=subprocess.DEVNULL,start_new_session=True,close_fds=True)
 aborted=False
 try:
@@ -204,16 +302,16 @@ def run(argv, deadline, user=None, cwd=None, extra_env=None, cap=1024**2):
     command_env = {**ENV, **(extra_env or {})}
     host_unit = 'helmut-development-host-'+ACTIVE_NONCE+'-'+str(TOOL_INDEX+1)+'.service'
     remaining = max(1, int(deadline-time.monotonic()))
-    numeric_user = 0 if user is None else UID
     launch = ['/usr/bin/systemd-run','--quiet','--pipe','--wait','--service-type=exec','--unit='+host_unit,
         '--property=RuntimeMaxSec='+str(remaining),'--property=TimeoutStopSec=5',
         '--property=KillMode=control-group','--property=KillSignal=SIGKILL',
-        '--property=User='+str(numeric_user),'--property=Group='+str(numeric_user),
+        '--property=User=0','--property=Group=0',
         '--property=NoNewPrivileges=yes','--property=TasksMax=256','--property=MemoryMax=2G']
     if cwd is not None: launch += ['--working-directory='+str(cwd)]
     launch += ['/usr/bin/env','-i',*[key+'='+value for key,value in command_env.items()],
         '/usr/bin/python3','-I','-S','-B',str(BASE/'toolchain/host-command.py'),str(os.getpid()),str(deadline),
-        'docker' if argv[0] == str(BASE/'toolchain/docker/docker') else 'host',*argv]
+        'docker' if argv[0] == str(BASE/'toolchain/docker/docker') else 'worker' if user is not None else 'host',*argv]
+    unit_policy(host_unit, deadline)
     process = subprocess.Popen(launch, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         env=ENV, start_new_session=True, close_fds=True)
     buffers = [bytearray(), bytearray()]
@@ -257,6 +355,7 @@ def run(argv, deadline, user=None, cwd=None, extra_env=None, cap=1024**2):
 
 def docker(args, deadline, **kwargs):
     capacity()
+    unit_policy(SERVICE, deadline, daemon_unit_source())
     try:
         if CGROUP.exists():
             need('populated 0' in (CGROUP/'cgroup.events').read_text().splitlines(), 'DEVELOPMENT_PREVIOUS_WORKLOAD_ALIVE')
@@ -336,11 +435,29 @@ def unpack(path, output, prefix):
         destination.symlink_to(target)
 
 
+def daemon_unit_source():
+    return ('[Unit]\nDescription=Helmut isolated development Docker\nAfter=network-online.target\n'
+            '[Service]\nType=notify\nNotifyAccess=all\nUser=root\nGroup=root\nUMask=0077\n'
+            'PrivateMounts=yes\nPrivateTmp=yes\nDelegate=yes\nKillMode=control-group\n'
+            'TimeoutStartSec=90\nTimeoutStopSec=15\nKillSignal=SIGKILL\nRuntimeMaxSec=290\nRestart=no\n'
+            'Environment=PATH='+str(BASE/'toolchain/docker')+':/usr/sbin:/usr/bin:/sbin:/bin\n'
+            'ExecStart='+str(BASE/'toolchain/docker/dockerd')+' --host=unix://'+SOCKET+
+            ' --config-file='+str(BASE/'private/daemon.json')+
+            ' --data-root='+str(BASE/'private/docker/data')+' --exec-root='+str(BASE/'private/docker/exec')+
+            ' --pidfile='+str(BASE/'private/docker/run/dockerd.pid')+
+            ' --storage-driver=vfs --bridge=none --iptables=false --ip6tables=false --ip-forward=false'
+            ' --ip-masq=false --userland-proxy=false --group=root --containerd-namespace=helmut-development'
+            ' --exec-opt=native.cgroupdriver=cgroupfs --cgroup-parent=/helmut-development-20261026\n'
+            'ExecStopPost=/usr/bin/python3 -I -S -B '+str(BASE/'private/cleanup.py')+'\n'
+            '[Install]\nWantedBy=multi-user.target\n').encode()
+
+
 def tools(deadline):
     receipt = BASE/'private/TOOLS.SAFE.json'
     if receipt.exists(): return json.loads(read_root(receipt))
     capacity(BUILD_BUFFER)
     need(not BASE.exists() and not UNIT.exists() and not CGROUP.exists(), 'DEVELOPMENT_SETUP_ALREADY_STARTED')
+    unit_policy(SERVICE, deadline)  # Before any setup marker, download or unit write.
     for lookup in (pwd.getpwuid, grp.getgrgid):
         try: lookup(UID)
         except KeyError: pass
@@ -364,20 +481,7 @@ def tools(deadline):
         need(len(members) == 1 and members[0].name == 'postgrest' and members[0].isfile()
              and members[0].size < 100*1024**2, 'DEVELOPMENT_POSTGREST_ARCHIVE')
         write_new(BASE/'toolchain/postgrest', archive.extractfile(members[0]).read(), 0o755)
-    text = ('[Unit]\nDescription=Helmut isolated development Docker\nAfter=network-online.target\n'
-            '[Service]\nType=notify\nNotifyAccess=all\nUser=root\nGroup=root\nUMask=0077\n'
-            'PrivateMounts=yes\nPrivateTmp=yes\nDelegate=yes\nKillMode=control-group\n'
-            'TimeoutStartSec=90\nTimeoutStopSec=15\nKillSignal=SIGKILL\nRuntimeMaxSec=290\nRestart=no\n'
-            'Environment=PATH='+str(BASE/'toolchain/docker')+':/usr/sbin:/usr/bin:/sbin:/bin\n'
-            'ExecStart='+str(BASE/'toolchain/docker/dockerd')+' --host=unix://'+SOCKET+
-            ' --config-file='+str(BASE/'private/daemon.json')+
-            ' --data-root='+str(BASE/'private/docker/data')+' --exec-root='+str(BASE/'private/docker/exec')+
-            ' --pidfile='+str(BASE/'private/docker/run/dockerd.pid')+
-            ' --storage-driver=vfs --bridge=none --iptables=false --ip6tables=false --ip-forward=false'
-            ' --ip-masq=false --userland-proxy=false --group=root --containerd-namespace=helmut-development'
-            ' --exec-opt=native.cgroupdriver=cgroupfs --cgroup-parent=/helmut-development-20261026\n'
-            'ExecStopPost=/usr/bin/python3 -I -S -B '+str(BASE/'private/cleanup.py')+'\n'
-            '[Install]\nWantedBy=multi-user.target\n')
+    text = daemon_unit_source().decode()
     write_new(BASE/'private/daemon.json', b'{}\n')
     write_new(BASE/'private/cleanup.py', CLEANUP.encode())
     write_new(BASE/'toolchain/npm-userconfig', b'', 0o644)
@@ -385,6 +489,7 @@ def tools(deadline):
     write_new(BASE/'toolchain/host-command.py', HOST_COMMAND.encode(), 0o644)
     write_new(UNIT, text.encode(), 0o644)
     run(['/usr/bin/systemctl', 'daemon-reload'], deadline)
+    unit_policy(SERVICE, deadline, daemon_unit_source())
     run(['/usr/bin/systemctl', 'enable', '--now', SERVICE], deadline)
     result = {'schema': 'helmut-development-tools-v1', 'node_version': NODE_VERSION,
               'node_archive_sha256': NODE_SHA, 'docker_archive_sha256': DOCKER_SHA,
