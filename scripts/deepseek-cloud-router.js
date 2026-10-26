@@ -1028,20 +1028,32 @@ function run(options = {}) {
     // Only call the provider after a durable atomic UTC-day reservation.
     // If the process crashes, an unknown charge stays reserved conservatively.
     const archivePath = cfg.saveResponse ? privateResponsePath(cfg.saveResponse, cwd) : null;
-    const fd = archivePath ? fs.openSync(archivePath, "wx", 0o600) : null;
+    const archiveDir = archivePath ? openPinnedPrivateDirectory(path.dirname(archivePath)) : null;
+    const archiveEntry = (suffix) => `/proc/self/fd/${archiveDir}/${path.basename(archivePath)}${suffix}`;
+    let fd = null;
     let rawFd = null;
     if (archivePath) {
       try {
-        // Persist the immutable request binding BEFORE incurring any charge.
-        fs.writeFileSync(archivePath + ".meta",
+        // Bind ALL response artifacts to the same already-open private parent.
+        // No request output is created by re-resolving an attacker-swappable
+        // filesystem path after its initial validation.
+        fd = fs.openSync(archiveEntry(""),
+          fs.constants.O_WRONLY | fs.constants.O_CREAT |
+          fs.constants.O_EXCL | fs.constants.O_NOFOLLOW, 0o600);
+        fs.writeFileSync(archiveEntry(".meta"),
           JSON.stringify({version: 1, request_sha256: requestHash}) + "\n",
           {flag: "wx", mode: 0o600});
-        const mfd = fs.openSync(archivePath + ".meta", "r");
+        const mfd = fs.openSync(archiveEntry(".meta"),
+          fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
         try { fs.fsyncSync(mfd); } finally { fs.closeSync(mfd); }
-        rawFd = fs.openSync(archivePath + ".raw", "wx+", 0o600);
+        rawFd = fs.openSync(archiveEntry(".raw"),
+          fs.constants.O_RDWR | fs.constants.O_CREAT |
+          fs.constants.O_EXCL | fs.constants.O_NOFOLLOW, 0o600);
+        fs.fsyncSync(archiveDir);
       } catch (error) {
         if (rawFd != null) fs.closeSync(rawFd);
-        fs.closeSync(fd);
+        if (fd != null) fs.closeSync(fd);
+        fs.closeSync(archiveDir);
         throw error;
       }
     }
@@ -1087,6 +1099,7 @@ function run(options = {}) {
     } finally {
       if (rawFd !== null) fs.closeSync(rawFd);
       if (fd !== null) fs.closeSync(fd);
+      if (archiveDir !== null) fs.closeSync(archiveDir);
     }
   }
   if (budgetSettlementError) {
