@@ -99,7 +99,7 @@ jobs:
           umask 077
           gh api "repos/ernisch/helmut-pilot/contents/scripts/hetzner-native-automation-client.py?ref=$GITHUB_SHA" \
             --jq .content | base64 --decode > "$RUNNER_TEMP/helmut-native-client.py"
-          printf '%s  %s\n' f5030ce3dfc69b40eca3a8a80675f56f90a596d1a0edc18763a49e5c01024ab5 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
+          printf '%s  %s\n' a446666d1c927de36d22cfc16af24d128079896fa5ea363daaf13dadf578e770 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
           python3 -I "$RUNNER_TEMP/helmut-native-client.py" validate
 
       - name: Existing pinned Tailscale transport using short lived GitHub OIDC
@@ -130,7 +130,7 @@ jobs:
           HELMUT_CI_SSH_KEY: ${{ secrets.HELMUT_CI_SSH_KEY }}
         run: |
           set -euo pipefail
-          printf '%s  %s\n' f5030ce3dfc69b40eca3a8a80675f56f90a596d1a0edc18763a49e5c01024ab5 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
+          printf '%s  %s\n' a446666d1c927de36d22cfc16af24d128079896fa5ea363daaf13dadf578e770 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
           python3 -I "$RUNNER_TEMP/helmut-native-client.py" client
 
       - name: Verify only fixed public artifact files without SSH secret environment

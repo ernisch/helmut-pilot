@@ -230,8 +230,13 @@ def _setup_history(value):
         require(type(row) is dict and set(row) == {'sha256', 'metadata'}, 'setup-result')
         pinned_sha(row['sha256']); _setup_metadata(row['metadata'])
     for name in extras:
-        require(value['files'][name]['sha256'] == value['files']['worker_error']['sha256']
-                and value['files'][name]['metadata'][6] == value['files']['worker_error']['metadata'][6], 'setup-result')
+        master = (value['files']['worker_error']['sha256'], value['files']['worker_error']['metadata'][6])
+        loser = (value['files'][name]['sha256'], value['files'][name]['metadata'][6])
+        # The historical guard checks FIRST_ERROR before worker_identity/ARM.
+        # If the parent already wrote UNIT_PROPERTIES, this exact other Stop can lose publication.
+        require(loser == master or (master, loser) == (
+            ('16add10cda6a9f5ba7c73ddf5f57dc5599c792b69c80567f44ba62420d976060', 211),
+            ('97dc56c00c04996da08ab3ccd98e410b35de30dca5714a87d02db0ba4150c18f', 220)), 'setup-result')
     _setup_metadata(value['job_directory'])
     _setup_metadata(value['legacy_jobs_directory'])
 

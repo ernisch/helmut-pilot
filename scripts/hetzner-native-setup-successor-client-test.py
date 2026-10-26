@@ -103,6 +103,31 @@ class ClientTests(unittest.TestCase):
         sent = sent_request(value) if sent is None else sent
         return M.validate_response(M.canonical(response(sent, result)), sent, value)
 
+    def test_only_exact_source_proven_prearm_error_pair_is_a_different_duplicate(self):
+        value=inspection(capsule())
+        master={'schema':'helmut-setup-service-error-v1','status':'FAIL_KEEP_STATE_NO_RETRY',
+            'phase':'recover','code':'UNIT_PROPERTIES','exception_type':'Stop','errno':None,
+            'native_qualified':False,'native_go_consumed':False}
+        loser=master|{'code':'WORKER_ALREADY_ATTEMPTED'}
+        def row(body):
+            raw=M.canonical(body)+b'\n';metadata=[1]*12;metadata[6]=len(raw)
+            return {'sha256':M.digest(raw),'metadata':metadata}
+        name='.setup-write-'+'a'*32+'.tmp'
+        value['history']['files']['worker_error']=row(master)
+        value['history']['files'][name]=row(loser)
+        self.validate(value)
+        for body in (master|{'code':'WORKER_FAILED'},master|{'code':'CONTROLLER_LOST'},
+                     loser|{'phase':'checkout'},loser|{'exception_type':'ValueError'},loser|{'errno':0},
+                     loser|{'native_qualified':True},loser|{'native_go_consumed':True},loser|{'extra':'x'}):
+            changed=copy.deepcopy(value);changed['history']['files'][name]=row(body)
+            with self.subTest(body=body),self.assertRaises(ValueError):self.validate(changed)
+        for field in ('worker_error',name):
+            for key in ('sha256','metadata'):
+                changed=copy.deepcopy(value)
+                if key=='sha256':changed['history']['files'][field][key]='e'*64
+                else:changed['history']['files'][field][key][6]+=1
+                with self.subTest(field=field,key=key),self.assertRaises(ValueError):self.validate(changed)
+
     def test_canonical_capsules_modes_phases_and_exact_nonce_prefix(self):
         for action, phase in [('inspect', None)] + [('setup', phase) for phase in M.SETUP_PHASES]:
             value = capsule(action, phase)

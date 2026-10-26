@@ -3,12 +3,12 @@
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
 Auftrag: Arbeits-/Testumgebung auf Hetzner; kein Productionumzug.
-UNIT_PROPERTIES-Fix PR957/35d7d2d4 abgenommen; PR-/Main-CI SUCCESS, Vercel READY.
-Gebundener Setupweg in Entwicklung; Bootstrap/Keys erhalten.
-Branch codex/hetzner-setup-successor-20261026: eigene Authority/Once/Jobs.
-Unabhaengig geprueft: Legacy-Root und Vorgaengerjobs vor Folgephasen binden.
+UNIT_PROPERTIES-Fix PR957; Setup PR959/Main18c2736a: CI gruen, Vercel READY.
+Inspector40348666536: FAIL HISTORY_ERROR_DUPLICATE, kein Restore gestartet.
+Reparatur: exakt quellbelegten WORKER_ALREADY_ATTEMPTED-Temp qualifizieren.
+Tatsaechliche Tempklasse noch unbekannt; neue Zielabnahme nach Reparatur offen.
 Alter Setup40306875483 bleibt FAIL; Fehler, Originale, Keys und Einmalmarker erhalten.
-Mac-Abfrage erledigt; Restore offen; neue Zielaufrufe0.
+Mac-Abfrage erledigt; Inspectorfehler samt SAFE-Artefakt erhalten.
 Native Messung und500er-Lauf bleiben ohne frisches konkretes GO gesperrt.
 [Uebergabe](betrieb/helmut-thread-handoff-20261026.md) · [Belege](betrieb/hetzner-native-automation-20261026.md).
 
