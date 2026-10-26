@@ -689,9 +689,24 @@ function callDeepSeek(body, options = {}) {
     // Test doubles may return stdout even with a supplied file descriptor.
     fs.writeSync(options.rawResponseFd, buffered);
   }
-  if (options.rawResponseFd != null) fs.fsyncSync(options.rawResponseFd);
-  const raw = options.rawResponseFile
-    ? fs.readFileSync(options.rawResponseFile, "utf8") : buffered;
+  let raw = buffered;
+  if (options.rawResponseFd != null) {
+    fs.fsyncSync(options.rawResponseFd);
+    // Read through the original, already open descriptor. Re-resolving a path
+    // here would permit a parent-directory swap to inject foreign bytes.
+    const st = fs.fstatSync(options.rawResponseFd);
+    if (!st.isFile() || st.size > 16 * 1024 * 1024) {
+      throw new Error("deepseek-stream-archive-unsafe");
+    }
+    const bytes = Buffer.alloc(st.size);
+    for (let offset = 0; offset < bytes.length;) {
+      const n = fs.readSync(options.rawResponseFd, bytes, offset,
+        bytes.length - offset, offset);
+      if (n <= 0) throw new Error("deepseek-stream-short-read");
+      offset += n;
+    }
+    raw = bytes.toString("utf8");
+  }
   if (options.saveRawResponse) options.saveRawResponse(raw);
   if (result.error) {
     if (result.error.code === "ETIMEDOUT") throw new Error("deepseek-worker-timeout");
@@ -993,7 +1008,7 @@ function run(options = {}) {
               // Publish the complete envelope atomically. A crash before
               // rename leaves the initial empty placeholder plus the
               // already-streamed, request-bound raw bytes recoverable.
-              publishResponseEnvelope(archivePath, requestHash, raw);
+              publishResponseEnvelope(fd, requestHash, raw);
             }
           },
         });
@@ -1061,21 +1076,27 @@ function run(options = {}) {
   }
 }
 
-function publishResponseEnvelope(file, requestHash, raw) {
-  const tmp = file + ".writing-" + crypto.randomBytes(8).toString("hex");
-  try {
-    fs.writeFileSync(tmp, JSON.stringify({
-      version: 1, request_sha256: requestHash, raw,
-    }) + "\n", { flag: "wx", mode: 0o600 });
-    const fd = fs.openSync(tmp, "r");
-    try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
-    fs.renameSync(tmp, file);
-    const dirfd = fs.openSync(path.dirname(file), "r");
-    try { fs.fsyncSync(dirfd); } finally { fs.closeSync(dirfd); }
-  } finally {
-    try { fs.unlinkSync(tmp); }
-    catch (error) { if (error.code !== "ENOENT") throw error; }
+function publishResponseEnvelope(fd, requestHash, raw) {
+  // The envelope FD was opened exclusively before the model call. Every
+  // output byte must target THIS descriptor, never a newly resolved pathname.
+  // An attacker swapping the parent directory cannot redirect its inode.
+  // A crash during this write leaves an incomplete wrapper, recoverable from
+  // the separately request-bound and already fsynced raw stream.
+  const st = fs.fstatSync(fd);
+  if (!st.isFile() || st.nlink !== 1 || (st.mode & 0o077)) {
+    throw new Error("deepseek-response-envelope-unsafe");
   }
+  const bytes = Buffer.from(JSON.stringify({
+    version: 1, request_sha256: requestHash, raw,
+  }) + "\n", "utf8");
+  // The FD is not re-opened or renamed; explicit offsets avoid cursor issues.
+  for (let offset = 0; offset < bytes.length;) {
+    const n = fs.writeSync(fd, bytes, offset, bytes.length - offset, offset);
+    if (n <= 0) throw new Error("deepseek-response-envelope-short-write");
+    offset += n;
+  }
+  fs.ftruncateSync(fd, bytes.length);
+  fs.fsyncSync(fd);
 }
 
 function privateResponsePath(file, cwd) {
