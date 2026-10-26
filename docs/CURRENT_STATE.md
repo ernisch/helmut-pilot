@@ -7,8 +7,8 @@ neuere Dauerfreigabe in AGENTS.md geht alten Merge-Sperren vor. Hetzner33/33 RO
 plus2 Diagnosepruefungen bestanden, rund152GB frei; Docker28 isoliert, Docker29
 unveraendert. PR947 mit92 lokalen Tests, unabhaengiger Quellenabnahme und gruenen
 Pflichtchecks gemergt: `234ffe87`; Vercel `dpl_88PMRoUjSFtDHFMwXAURZxk8jMub` READY.
-Der Einmal-Mac-Installer ist geprueft, auf Hetzner noch nicht ausgefuehrt.
-Kein Originaltransfer oder nativer Lauf. Anfangs nur Status/Empfaenger;
+Mac-Installer: Root-Keyeintrag VERIFIED; Empfaenger fehlgeschlagen.
+Erstfehler begrenzt lesend klaeren; kein Retry/Transfer/nativer Lauf.
 NativeAdmission, Unit60 und500er offen.
 [Nachweise und naechster Schritt](betrieb/hetzner-native-automation-20261026.md).
 

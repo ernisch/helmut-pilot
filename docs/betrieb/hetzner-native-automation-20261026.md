@@ -15,11 +15,11 @@ Commit READY. Der nachfolgende Integrationsfix ersetzt ausschliesslich den nicht
 GitHub-Variablenschalter durch einen standardmaessig gesperrten Dispatchmodus;
 Root-Bootstrap, Server, Client und Mac-Installer bleiben unveraendert.
 
-Der Mac-Installer ist noch nicht auf Hetzner ausgefuehrt. Vor Auslieferung muss
-auch der tatsaechliche Mainstand die vorgeschriebenen erfolgreichen Checks
-tragen. Erst die anschliessende echte Installer-/Actions-Abnahme bestaetigt
-Root-Zugang und Empfaengerschluessel; bisher wurde dadurch kein nativer Lauf
-freigegeben, gestartet oder als bestanden gewertet.
+Der Main-CI40249022904 ist SUCCESS. Die anschliessende einmalige Mac-Ausfuehrung
+meldet den Root-Keyeintrag VERIFIED, stoppt aber bei RECIPIENT_CREATION_FAILED.
+Die Installation ist damit teilweise erfolgt; der Empfaenger ist nicht abgenommen.
+Der konkrete GPG-Erstfehler ist aus der Betreiberantwort noch nicht bekannt.
+Kein erneuter Installer-/Erzeugungsversuch, Originaltransfer oder nativer Lauf.
 
 ## Konkreter Umfang
 
@@ -94,3 +94,21 @@ Steuerzugang und der oeffentliche Zielschluessel tatsaechlich ueber Actions
 abgenommen. Originalklassifizierung, verschluesselte Drive-Uebertragung,
 Wiederherstellung und native Admissions bleiben getrennte nachfolgende Arbeit.
 Kein vollstaendiger500er-Lauf aus der Automatisierungsfreigabe ableiten.
+
+## Begrenzter Erstfehlerbefund nach dem Einmalsetup
+
+`status` liest zusaetzlich ausschliesslich die vorhandenen Erstfehlerdateien
+`RECIPIENT_FIRST_ERROR.SAFE.json` und `GPG_FIRST_TOOL_ERROR.PRIVATE.json`.
+Der Zugriff verlangt O_NOATIME/O_NOFOLLOW, root:root,0600, einen Link,
+hoechstens64KiB und unveraenderte Metadaten waehrend des Lesens. Es gibt keine
+GPG-Ausfuehrung, Schluesseluebernahme, Erzeugung, Bereinigung oder Wiederholung.
+
+Server und Client erlauben nur feste Phasen, Fehlercodes, Toolklassen und Hashes.
+Rohes stderr, Base64-Fehlertext und private Inhalte verlassen den Server nicht.
+ABSENT, UNTRUSTED und UNRECOGNIZED bleiben ausdruecklich getrennt; ein fehlendes
+Toolprotokoll beweist keinen fehlerfreien GPG-Aufruf. CONTROL_READY bestaetigt
+nur den Steuerkanal, niemals einen angenommenen Empfaenger oder native Admission.
+
+105 synthetische Tests bestanden, einschliesslich12 gezielter Diagnosefaelle.
+Die urspruengliche Empfaengererzeugung, Bootstrap, Installer und native Sperren
+bleiben unveraendert. Die eigentliche Korrektur haengt vom echten Zielbefund ab.

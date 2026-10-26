@@ -33,7 +33,10 @@ def environment(operation="status"):
 
 def result_status():
     return {"status": "CONTROL_READY", "enabled_operations": ["status", "recipient"],
-            "native_enabled": False, "source_sha256": PAYLOAD}
+            "native_enabled": False, "source_sha256": PAYLOAD,
+            "recipient_diagnostic": {
+                "recipient": {"state": "ABSENT", "sha256": None, "phase": None, "code": None},
+                "gpg": {"state": "ABSENT", "sha256": None, "code": None, "stderr_classes": []}}}
 
 
 def response(result=None, operation="status"):
@@ -287,8 +290,7 @@ class FinalIntegrationTests(unittest.TestCase):
 
     def test_nonce_plan_payload_and_loaded_runtime_source_remain_bound(self):
         sent = CLIENT.request("status", "1" * 64, "2" * 64, "3" * 64)
-        result = {"status": "CONTROL_READY", "enabled_operations": ["status", "recipient"],
-                  "native_enabled": False, "source_sha256": "2" * 64}
+        result = result_status()
         reply = dict(sent, schema="helmut-native-control-response-v1", result=result,
                      result_sha256=CLIENT.digest(CLIENT.canonical(result)))
         self.assertEqual(CLIENT.validate_response(CLIENT.canonical(reply), sent), reply)

@@ -163,13 +163,17 @@ class IndependentServerTests(unittest.TestCase):
         for operation in ('status', 'recipient'):
             sent = CLIENT.request(operation, '1' * 64, '2' * 64, '3' * 64)
             public, record = fixture()
+            reads = ([FileNotFoundError(), FileNotFoundError()] if operation == 'status'
+                     else [json.dumps(record).encode(), public])
             with patch.object(SERVER.os.path, 'lexists', return_value=True), \
-                    patch.object(SERVER, '_read_public_file', side_effect=[json.dumps(record).encode(), public]) as read, \
+                    patch.object(SERVER, '_read_public_file', side_effect=reads) as read, \
                     patch.object(SERVER, 'create_recipient') as create:
                 result = SERVER.handle(sent, context)
                 create.assert_not_called()
                 if operation == 'status':
-                    read.assert_not_called()
+                    self.assertEqual([item.args[0] for item in read.call_args_list],
+                                     [self.directory.name + '/' + SERVER.ERROR_NAME,
+                                      self.directory.name + '/GPG_FIRST_TOOL_ERROR.PRIVATE.json'])
                 else:
                     self.assertEqual([item.args[0] for item in read.call_args_list],
                                      [self.directory.name + '/' + SERVER.RESULT_NAME,

@@ -185,16 +185,67 @@ def validate_recipient(recipient):
     require(fingerprints and fingerprints[0] == fingerprint, "recipient-fingerprint")
 
 
+DIAGNOSTIC_PHASES = ('preflight', 'attempt', 'home', 'generate', 'add-subkey',
+    'verify-public', 'export-public', 'verify-private-metadata', 'write-public', 'write-result')
+DIAGNOSTIC_CODES = ('BASE_IDENTITY_CHANGED', 'DIRECTORY_OWNER_OR_TYPE',
+    'DIRECTORY_PERMISSIONS', 'EXECUTOR_REQUIRED', 'FILESYSTEM_OR_INTERNAL_FAILURE',
+    'FILE_SIZE_OR_TYPE', 'FILE_WRITE_SHORT', 'HOME_IDENTITY_CHANGED', 'KEY_STATUS_INVALID',
+    'NEW_FILE_METADATA', 'PRIVATE_DIRECTORY_CHANGED', 'PRIVATE_FILE_PERMISSIONS',
+    'PRIVATE_KEY_COUNT', 'PRIVATE_KEY_METADATA', 'PRIVATE_OWNER', 'PRIVATE_SPECIAL_FILE',
+    'PRIVATE_TREE_DEPTH', 'PRIVATE_TREE_LIMIT', 'PUBLIC_ALGORITHM_MISMATCH',
+    'PUBLIC_ARMOR_INVALID', 'PUBLIC_EXPIRY_INVALID', 'PUBLIC_FINGERPRINT_MISMATCH',
+    'PUBLIC_IDENTITY_OR_VALIDITY', 'PUBLIC_LIST_FIELDS', 'PUBLIC_LIST_INVALID',
+    'PUBLIC_LIST_SHAPE', 'PUBLIC_USAGE_MISMATCH', 'RECIPIENT_ALREADY_ATTEMPTED',
+    'ROOT_REQUIRED', 'TARGET_BASE_REJECTED', 'TOOL_EXECUTION_FAILED', 'TOOL_EXIT_NONZERO',
+    'TOOL_OUTPUT_LIMIT', 'TOOL_RESULT_TYPE')
+DIAGNOSTIC_TOOL_CLASSES = ('AGENT_CONNECTION', 'AGENT_GENERATION', 'PERMISSION_DENIED',
+    'MISSING_FILE', 'PINENTRY', 'UNSUPPORTED_OPTION', 'UNSUPPORTED_ALGORITHM', 'UNCLASSIFIED')
+
+
+def validate_recipient_diagnostic(diagnostic):
+    require(type(diagnostic) is dict and set(diagnostic) == {'recipient', 'gpg'}, 'result-fields')
+    for name in ('recipient', 'gpg'):
+        row = diagnostic[name]
+        extra = {'phase'} if name == 'recipient' else {'stderr_classes'}
+        require(type(row) is dict and set(row) == {'state', 'sha256', 'code'} | extra,
+                'result-fields')
+        state = row['state']
+        require(type(state) is str and state in ('ABSENT', 'UNTRUSTED', 'UNRECOGNIZED', 'OBSERVED'),
+                'result-fields')
+        if state in ('ABSENT', 'UNTRUSTED'):
+            require(row['sha256'] is None, 'result-fields')
+        else:
+            pinned_sha(row['sha256'])
+        if state != 'OBSERVED':
+            require(row['code'] is None and (row['phase'] is None if name == 'recipient'
+                    else row['stderr_classes'] == []), 'result-fields')
+        elif name == 'recipient':
+            require(type(row['phase']) is str and row['phase'] in DIAGNOSTIC_PHASES
+                    and type(row['code']) is str and row['code'] in DIAGNOSTIC_CODES, 'result-fields')
+        else:
+            code = row['code']
+            require(type(code) is str, 'result-fields')
+            number = re.fullmatch(r'EXIT_(-?[0-9]{1,3})', code)
+            require(code in ('TOOL_TIMEOUT', 'TOOL_OUTPUT_LIMIT', 'TOOL_EXECUTION_FAILURE')
+                    or number is not None and -64 <= int(number[1]) <= 255, 'result-fields')
+            classes = row['stderr_classes']
+            require(type(classes) is list and 0 < len(classes) <= len(DIAGNOSTIC_TOOL_CLASSES)
+                    and all(type(value) is str and value in DIAGNOSTIC_TOOL_CLASSES for value in classes)
+                    and classes == sorted(set(classes))
+                    and ('UNCLASSIFIED' not in classes or classes == ['UNCLASSIFIED']), 'result-fields')
+
+
 def validate_result(result, operation, payload_sha256):
     require(type(result) is dict, "result-fields")
     if operation == "status":
         require(set(result) == {"status", "enabled_operations", "native_enabled",
-                               "source_sha256"}, "result-fields")
+                               "source_sha256", "recipient_diagnostic"}, "result-fields")
         require(result["status"] == "CONTROL_READY", "result-status")
         require(result["enabled_operations"] == list(ENABLED_OPERATIONS),
                 "enabled-operations-denied")
         require(result["native_enabled"] is False, "native-enabled-denied")
         require(pinned_sha(result["source_sha256"]) == payload_sha256, "source-pin-drift")
+        validate_recipient_diagnostic(result['recipient_diagnostic'])
     elif operation == "recipient":
         require(set(result) == {"status", "recipient"}, "result-fields")
         require(result["status"] == "RECIPIENT_READY", "result-status")
