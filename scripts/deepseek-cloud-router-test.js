@@ -198,7 +198,10 @@ check("DeepSeek API Transport nutzt curl und Cloud Proxy", () => {
   assert.equal(result.usage.total_tokens, 19);
   assert.equal(seen.bin, "curl");
   assert(seen.args.includes(router.API_URL));
-  assert(seen.args.includes("Authorization: Bearer network-secret-placeholder"));
+  assert(!seen.args.join(" ").includes("network-secret-placeholder"), "API key never appears in process argv");
+  assert(seen.options.input.includes('header = "Authorization: Bearer network-secret-placeholder"'));
+  assert(seen.args.includes("--config"));
+  assert.equal(seen.options.env.DEEPSEEK_API_KEY, undefined);
   assert.equal(seen.options.env.HTTPS_PROXY, "http://proxy.internal:3128");
   assert.equal(seen.options.env.OPENAI_API_KEY, undefined);
   assert.equal(seen.options.env.SUPABASE_SERVICE_ROLE_KEY, undefined);
@@ -267,7 +270,8 @@ check("Read Modus verarbeitet Reasoning ueber dem alten 12000-Limit mit fester 3
 
   const calls = [];
   const fakeSpawn = (bin, args, options) => {
-    calls.push({ bin, args, options });
+    const bodyFile = args[args.indexOf("--data-binary") + 1];
+    calls.push({ bin, args, options, request: JSON.parse(fs.readFileSync(bodyFile.slice(1), "utf8")) });
     return { status: 0, stdout: raw, stderr: "", error: null };
   };
   try {
@@ -280,7 +284,7 @@ check("Read Modus verarbeitet Reasoning ueber dem alten 12000-Limit mit fester 3
 
     assert.equal(calls.length, 1);
     assert.equal(calls[0].bin, "curl");
-    const request = JSON.parse(calls[0].options.input);
+    const request = calls[0].request;
     assert.equal(request.max_output_tokens, READ_MAX_OUTPUT_TOKENS);
     assert.equal(request.max_output_tokens, 32768, "feste Read-Obergrenze");
     assert.equal(request.reasoning.effort, "high");
@@ -344,12 +348,13 @@ check("Write Modus mit 25000 Reasoning-Tokens schreibt genau einen gebundenen Ed
 
   const calls = [];
   const fakeSpawn = (bin, args, options) => {
-    calls.push({ bin, args, options });
+    const bodyFile = args[args.indexOf("--data-binary") + 1];
+    calls.push({ bin, args, options, request: JSON.parse(fs.readFileSync(bodyFile.slice(1), "utf8")) });
     return { status: 0, stdout: raw, stderr: "", error: null };
   };
   try {
     const result = router.run({
-      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      argv: ["flash", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
       cwd: p.root,
       env: { DEEPSEEK_API_KEY: "placeholder" },
       spawnSync: fakeSpawn,
@@ -357,7 +362,7 @@ check("Write Modus mit 25000 Reasoning-Tokens schreibt genau einen gebundenen Ed
 
     assert.equal(calls.length, 1, "genau ein curl");
     assert.equal(calls[0].bin, "curl");
-    const request = JSON.parse(calls[0].options.input);
+    const request = calls[0].request;
     assert.equal(request.max_output_tokens, 32768, "feste Write-Obergrenze");
     assert.equal(request.model, "deepseek-flash");
     assert.equal(request.reasoning.effort, "high");
@@ -424,7 +429,7 @@ check("Ueberlange Rueckgabe stoppt Write vor jeder Dateianderung", () => {
       { usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 }, contextChars: 50000 },
       ["lib/example.js"]), /deepseek-visible-result-too-long/);
     assert.throws(() => router.run({
-      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      argv: ["flash", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
       cwd: p.root,
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => apiResult({
@@ -449,7 +454,7 @@ check("Write Modus wendet nur hashgebundene explizite Repository Datei an", () =
   const original = fs.readFileSync(target, "utf8");
   try {
     const result = router.run({
-      argv: ["pro", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
       cwd: p.root,
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => apiResult({
@@ -477,7 +482,7 @@ check("Nicht uebergebener Schreibpfad wird fail closed abgelehnt", () => {
   fs.writeFileSync(path.join(p.root, "lib/other.js"), "x\n");
   try {
     assert.throws(() => router.run({
-      argv: ["pro", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
       cwd: p.root,
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => apiResult({
@@ -504,7 +509,7 @@ check("Schreiben ausserhalb des Repositorys bleibt verboten", () => {
   const original = fs.readFileSync(outside, "utf8");
   try {
     assert.throws(() => router.run({
-      argv: ["pro", "high", "write", "--task-file", p.task, "--file", outside],
+      argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", outside],
       cwd: p.root,
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => apiResult({
@@ -529,7 +534,7 @@ check("Hash Drift vor Anwendung stoppt ohne Schreiben", () => {
   const original = fs.readFileSync(target, "utf8");
   try {
     assert.throws(() => router.run({
-      argv: ["pro", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
       cwd: p.root,
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => {
@@ -648,12 +653,12 @@ function recoveryFixture(fn) {
 
 check("Kleine Ersetzung statt vollstaendiger grosser Datei; Schema und Grenze bleiben gebunden", () => {
   recoveryFixture((p) => {
-    const source = "// unveraendert\n".repeat(8000) + p.original;
+    const source = "// unveraendert\n".repeat(6000) + p.original;
     fs.writeFileSync(p.target, source);
     p.payload.edits[0].expected_sha256 = hash(source);
     let request;
     const result = p.run([], { spawnSync: (bin, args, opts) => {
-      request = JSON.parse(opts.input);
+      request = JSON.parse(fs.readFileSync(args[args.indexOf("--data-binary") + 1].slice(1), "utf8"));
       return { status: 0, stdout: p.raw() };
     } });
     assert.equal(request.max_output_tokens, 32768);
@@ -714,7 +719,7 @@ check("Unvollstaendige Antwort wird privat gesichert, niemals angewandt oder aut
     let calls = 0;
     const spawnSync = () => { calls++; return { status: 0, stdout: raw }; };
     assert.throws(() => p.run(["--save-response", p.saved], { spawnSync }),
-      /max_output_tokens:output_tokens=32768:reasoning_tokens=32000/);
+      /max_output_tokens:input_tokens=0:output_tokens=32768:reasoning_tokens=32000/);
     const saved = JSON.parse(fs.readFileSync(p.saved, "utf8"));
     assert.equal(saved.raw, raw);
     assert.equal(fs.statSync(p.saved).mode & 0o777, 0o600);
@@ -801,8 +806,8 @@ check("Read-Antwort wird ohne Key und ohne Modellaufruf wiederverwendet; Kontext
 });
 
 check("Neue Optionen bleiben ausdruecklich und unvertraegliche Kombinationen stoppen", () => {
-  const base = ["flash", "high", "write", "--task-file", "/tmp/task"];
-  assert.equal(router.parseArgs(base).editFormat, "full");
+  const base = ["flash", "high", "write", "--task-file", "/tmp/task", "--file", "lib/example.js"];
+  assert.equal(router.parseArgs(base).editFormat, "replacements");
   assert.throws(() => router.parseArgs([...base, "--edit-format", "guess"]), /invalid-edit-format/);
   assert.throws(() => router.parseArgs(["flash", "high", "read", "--task-file", "/tmp/task",
     "--edit-format", "replacements"]), /invalid-edit-format/);
@@ -845,6 +850,75 @@ check("Wiederaufnahme mit anderer Route oder anderem Aenderungsformat startet ke
       assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
     }
   });
+});
+
+
+check("Kostenkontrolle und Groessenpruefung stoppen vor bezahlter API", () => {
+  const p = project();
+  let started = false;
+  const noNetwork = () => { started = true; throw new Error("paid-call-must-not-start"); };
+  try {
+    const cfg = { cwd: p.root, env: { DEEPSEEK_API_KEY: "placeholder" }, spawnSync: noNetwork };
+    const dry = router.run({ ...cfg, env: {},
+      argv: ["flash", "low", "write", "--task-file", p.task, "--file", "lib/example.js", "--dry-run"] });
+    assert.equal(dry.status, "dry_run");
+    assert.equal(dry.admission.output_token_cap, 8192);
+    assert.equal(started, false);
+    assert.throws(() => router.run({ ...cfg,
+      argv: ["pro", "high", "write", "--task-file", p.task,
+        "--file", "lib/example.js", "--max-cost-usd", "0.01"] }), /preflight-cost-cap/);
+    assert.equal(started, false);
+    fs.writeFileSync(path.join(p.root, "lib/example.js"), "a".repeat(20000));
+    assert.throws(() => router.run({ ...cfg,
+      argv: ["flash", "high", "write", "--edit-format", "full", "--task-file", p.task,
+        "--file", "lib/example.js"] }), /full-file-too-large/);
+    assert.equal(started, false);
+  } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
+});
+
+check("Niedrige Denkstufen und Tokenobergrenzen explizit verfuegbar", () => {
+  const basic = ["flash", "low", "read", "--task-file", "/tmp/task"];
+  const parsed = router.parseArgs([...basic, "--max-output-tokens", "1000"]);
+  const request = router.buildRequestBody("Untersuche.", parsed, []);
+  assert.equal(request.max_output_tokens, 1000);
+  assert.equal(request.reasoning.effort, "low");
+  assert.equal(router.buildRequestBody("Untersuche.",
+    router.parseArgs(["flash", "none", "read", "--task-file", "/tmp/task"]), []).max_output_tokens, 8192);
+  assert.throws(() => router.parseArgs([...basic, "--max-output-tokens", "32769"]), /invalid-max-output-tokens/);
+  assert.throws(() => router.parseArgs([...basic, "--max-cost-usd", "1"]), /invalid-max-cost-usd/);
+  assert.throws(() => router.parseArgs([...basic, "--max-cost-usd", "-0.1"]), /invalid-max-cost-usd/);
+  assert.throws(() => router.parseArgs([...basic, "--dry-run", "--save-response", "/tmp/file"]), /exclusive/);
+});
+
+check("Schreibauftrag mit ok ohne Code wird nie als Erfolg quittiert", () => {
+  const p = project();
+  const original = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
+  try {
+    assert.throws(() => router.run({ cwd: p.root,
+      argv: ["flash", "low", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      env: { DEEPSEEK_API_KEY: "placeholder" },
+      callDeepSeek: () => apiResult({ summary: summary(), edits: [] }),
+    }), /write-ok-without-edits/);
+    assert.equal(fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8"), original);
+    const blocked = router.run({ cwd: p.root,
+      argv: ["flash", "low", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      env: { DEEPSEEK_API_KEY: "placeholder" },
+      callDeepSeek: () => apiResult({ summary: summary({ status: "blocked" }), edits: [] }),
+    });
+    assert.equal(blocked.status, "blocked");
+  } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
+});
+
+check("Kostenprognose stellt Peak Obergrenze transparent dar", () => {
+  const cfg = router.parseArgs(["pro", "high", "read", "--task-file", "/tmp/task"]);
+  const body = router.buildRequestBody("Pruefe.", cfg, []);
+  const estimate = router.preflight(cfg, "Pruefe.", body, []);
+  assert.equal(estimate.output_token_cap, 32768);
+  assert(estimate.estimated_peak_usd <= 0.25);
+  assert.equal(router.observedPeakUsd("deepseek-v4-pro",
+    { input_tokens: 1000000, output_tokens: 1000000 }), 5.28);
+  assert.equal(router.observedPeakUsd("not-a-model", {}), null);
+  assert.equal(router.observedPeakUsd("deepseek-flash", { output_tokens: 5 }), null);
 });
 
 console.log(`DeepSeek Cloud Router v2: ${pass} PASS, ${fail} FAIL`);
