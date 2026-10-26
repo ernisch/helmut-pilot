@@ -292,7 +292,7 @@ Der Setupwaechter verwendet pro frischer Einmalbindung einen eigenen begrenzten
 systemd-Service mit KillMode=control-group. ARM, EOF, alle eigenen Prozessenden,
 sole-Cgroup-PID, pidfd und gehashter ACK muessen vor ACCEPTED belegt sein.
 Unbestaetigtes Helper-READY bleibt UNKNOWN, auch wenn Dateien vorhanden sind.
-Koordinator und Waechter sind lokal integriert; alle472 gezielten synthetischen
+Koordinator und Waechter sind lokal integriert; alle473 gezielten synthetischen
 Tests bestehen. Sourcepins sind exakt gebunden und die finale Integration ist
 unabhaengig abgenommen; Pflicht-CI und Zielausfuehrung bleiben offen. Der Bootstrapdeckel131072Bytes bleibt
 unveraendert. Ausschliesslich oeffentliche, bytegehashte Programme desselben
@@ -334,6 +334,19 @@ ohne READY zu publizieren. Unabhaengige SOL-Abnahme PASS fuer Test-SHA256
 Die472 gezielten Tests bestehen unter umask022 in9,097s. Produktivquellen und
 Schutzpruefungen wurden fuer diese Testkorrektur nicht veraendert; ein gruener
 GitHub-Nachweis bleibt erforderlich.
+
+CI40295069417 scheiterte weiterhin im Public-Checkout-Test, jetzt konkret mit
+`TRACKED_METADATA`. Die erste Besitzer-Testkorrektur war unvollstaendig: Sie
+simulierte den Schreibaufruf, aber nicht die anschliessende echte Rueckpruefung.
+Die korrigierte Fixture verwendet deshalb eine nur im getesteten Modul sichtbare
+OS-Simulation mit anfangsUID12345/GID23456. Gepruefte Besitzerwechsel auf1000
+werden je(dev,ino) protokolliert und durch `stat`/`fstat` zurueckgelesen; echte
+Hostbesitzer bleiben unveraendert. Ein No-op-Negativfall muss die unveraenderte
+Runtime-Pruefung mit `TRACKED_METADATA` abbrechen. Alle473 Tests bestehen unter
+umask022 in9,549s. Unabhaengige SOL-Abnahme PASS fuer Test-SHA256
+`d71370d85595976e5c612d9921a3b594c367c83ef97bf150772498b95ab58779`;
+Runtime-SHA256 `1934c0fd09f3316b3e7088bc974925c3eebc719ca1ac512d9edde704cb3916bb`
+unveraendert. Keine echte Zielausfuehrung; Pflicht-CI bleibt offen.
 
 ## Threadwechsel ohne erneuten Datenumzug
 

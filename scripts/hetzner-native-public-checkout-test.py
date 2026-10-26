@@ -30,10 +30,25 @@ class CheckoutTests(unittest.TestCase):
         self.stack.enter_context(patch.object(M,'BASE',self.base))
         self.stack.enter_context(patch.object(M,'root_required'))
         self.stack.enter_context(patch.object(M,'root_owner',return_value=True))
+        # Keep the ownership model local to the module under test. Host files
+        # retain the caller's real ownership; source observations start at an
+        # explicit non-1000 identity even on a developer machine with UID 1000.
+        source_os=types.SimpleNamespace(**{name:getattr(os,name) for name in dir(os)})
+        self.stack.enter_context(patch.object(M,'os',source_os))
+        self.owners={}
+        def view(info):
+            uid,gid=self.owners.get((info.st_dev,info.st_ino),(12345,23456))
+            fields={key:getattr(info,key) for key in dir(info) if key.startswith('st_')}
+            return types.SimpleNamespace(**{**fields,'st_uid':uid,'st_gid':gid})
+        self.stack.enter_context(patch.object(source_os,'stat',side_effect=lambda *a,**kw:view(os.stat(*a,**kw))))
+        self.stack.enter_context(patch.object(source_os,'fstat',side_effect=lambda fd:view(os.fstat(fd))))
         # Exercise the root-only ownership contract without changing any host
         # account's ownership. GitHub's runner need not itself have UID 1000.
         def chown(*args,**kwargs):
             self.assertEqual(args[1:],(1000,1000))
+            info=(os.fstat(args[0]) if isinstance(args[0],int)
+                  else os.stat(args[0],**kwargs))
+            self.owners[(info.st_dev,info.st_ino)]=(1000,1000)
         self.chown=self.stack.enter_context(patch.object(M.os,'chown',side_effect=chown))
         self.fchown=self.stack.enter_context(patch.object(M.os,'fchown',side_effect=chown))
         self.stack.enter_context(patch.object(M,'open_base',side_effect=lambda:os.open(self.base,M.D)))
@@ -95,6 +110,8 @@ class CheckoutTests(unittest.TestCase):
         self.assertEqual(self.base.stat().st_mode & 0o777,0o700)
         self.assertEqual((self.base/M.PARENT).stat().st_mode & 0o777,0o700)
         self.assertEqual(self.repo.stat().st_uid,os.getuid())
+        observed=M.os.stat(self.repo/'code.js',follow_symlinks=False)
+        self.assertEqual((observed.st_uid,observed.st_gid),(1000,1000))
         self.chown.assert_any_call(self.repo,1000,1000)
         for name in ('code.js','tool','alias'):
             self.assertTrue(any(call.args==(name,1000,1000) and
@@ -103,6 +120,14 @@ class CheckoutTests(unittest.TestCase):
         self.assertTrue(self.fchown.called)
         self.assertEqual(json.loads((self.base/M.READY).read_bytes()),result)
         self.assertFalse((self.base/M.PENDING).exists());self.assertFalse((self.base/M.ERROR).exists())
+
+    def test_ignored_owner_update_fails_the_actual_metadata_readback(self):
+        self.chown.side_effect=lambda *args,**kwargs:None
+        result=M.create_public_checkout()
+        self.assertEqual(result['status'],'FAIL_KEEP_STATE_NO_RETRY')
+        self.assertEqual(result['code'],'TRACKED_METADATA')
+        self.assertFalse((self.base/M.READY).exists())
+        self.assertTrue((self.base/M.ERROR).exists())
 
     def test_ownership_failure_retains_attempt_error_and_partial_without_ready(self):
         self.chown.side_effect=PermissionError(1,'synthetic owner update denied')
