@@ -1426,5 +1426,49 @@ check("P1 Antwortablage bindet den Datei-Deskriptor trotz privatem Verzeichnista
   });
 });
 
+
+check("Verzeichnistausch waehrend Vorschlagsanlage bleibt im privaten FD, nicht in Git", () => {
+  const p = project();
+  const privateDir = fs.mkdtempSync(path.join(os.tmpdir(), "router-private-swap-"));
+  const saved = path.join(privateDir, "response.json");
+  const moved = privateDir + ".retained";
+  const original = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
+  const proposal = [{
+    source: { label: "lib/example.js", sha256: hash(original) },
+    content: "module.exports = 7;\n",
+  }];
+  const originalOpen = fs.openSync;
+  let switched = false;
+  try {
+    fs.openSync = function(filePath, flags, mode) {
+      if (!switched && typeof filePath === "string" &&
+          /^\/proc\/self\/fd\/\d+\/response\.json\.proposal\.json$/.test(filePath) &&
+          (flags & fs.constants.O_CREAT)) {
+        fs.renameSync(privateDir, moved);
+        fs.symlinkSync(p.root, privateDir, "dir");
+        switched = true;
+      }
+      return originalOpen.call(fs, filePath, flags, mode);
+    };
+    assert.throws(() => router.stageEdits(
+      proposal, { saveResponse: saved }, p.root, "request-hash"
+    ), /private-directory-moved/);
+    assert.equal(switched, true);
+    assert.equal(fs.existsSync(path.join(p.root, "response.json.proposal.json")), false);
+    assert.equal(fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8"), original);
+    const retained = JSON.parse(fs.readFileSync(
+      path.join(moved, "response.json.proposal.json"), "utf8"
+    ));
+    assert.equal(retained.edits[0].content, "module.exports = 7;\n");
+    assert.equal(retained.request_sha256, "request-hash");
+  } finally {
+    fs.openSync = originalOpen;
+    if (switched && fs.existsSync(privateDir)) fs.unlinkSync(privateDir);
+    fs.rmSync(moved, { recursive: true, force: true });
+    fs.rmSync(privateDir, { recursive: true, force: true });
+    fs.rmSync(p.root, { recursive: true, force: true });
+  }
+});
+
 console.log(`DeepSeek Cloud Router v2: ${pass} PASS, ${fail} FAIL`);
 if (fail) process.exit(1);
