@@ -986,7 +986,27 @@ check("UTC Tagesdeckel und parallele Reservierung verhindern Mehrfachausgaben", 
     assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-27" }).amountMicro, 0);
     assert.equal(dailyBudget.settle(c, 0.1), true);
     assert.equal(dailyBudget.settle(d, 0.1), true);
-    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).amountMicro, 212500);
+    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).amountMicro, 462500);
+  } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
+});
+
+check("Voller Tag sperrt Router vor Netzwerk ohne nachfolgende Modellkosten", () => {
+  const p = project();
+  let calls = 0;
+  const store = path.join(p.root, "router-ledger");
+  try {
+    // Four conservative 25-cent reservations use the entire one-dollar day.
+    const day = new Date();
+    for (let i = 0; i < 4; i++) {
+      dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", now: day, dir: store });
+    }
+    assert.throws(() => router.run({
+      cwd: p.root, budgetDir: store, env: { DEEPSEEK_API_KEY: "placeholder" },
+      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      callDeepSeek: () => { calls++; throw new Error("paid-provider-must-not-run"); },
+    }), /daily-cap/);
+    assert.equal(calls, 0);
+    assert.equal(dailyBudget.snapshot({ dir: store }).amountMicro, 1000000);
   } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
 });
 
