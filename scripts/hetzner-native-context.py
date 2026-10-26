@@ -32,6 +32,10 @@ SCOPE = '08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd'
 STAGE_SOURCE = '3262e1cf895daa03e0ef1a0a26c548f4d51f4e948273dd76dd4ff7543a20ea70'
 COMMIT = '29b05ac0281347f8cde82b903b12f57e8cd5d8c9'
 TREE = 'bf8551601236d89f30745d83020544e49482785f'
+RECOVERY_CASE = 'f707b8e21b9f5f0f1d4fc131de38cd615c0c8e6e7f87631574af6bf2b672efa0'
+RECOVERY_SOURCE = 'c77dba4fe7fcbe34b419a668c19d55262af30eeaaad6c43650290e38cf39bd88'
+RECOVERY_CIPHER = '468610327368d51360815d18538ad0c3fcdc4d98825bb8bf0499daa96112ab3c'
+RECOVERY_GZIP = 'be423c617c14d92ed833c6e8a97c3a094eb70c23dc13b05b2c114c953f73b18a'
 PREFIXES = ('helmut-cpu-epoch-20261015', 'helmut-hetzner-preparation-evidence-20261025',
             'helmut-parallel-20261015', 'helmut-ram-fix-20261020')
 ANCHORS = ('/workspace', '/opt/codex', '/opt/helmut-public-pr942')
@@ -169,6 +173,109 @@ def full_metadata(info):
     # stat_result tuple equality does not compare the integer nanosecond fields.
     return [info.st_dev, info.st_ino, info.st_mode, info.st_uid, info.st_gid,
             info.st_nlink, info.st_size, info.st_atime_ns, info.st_mtime_ns, info.st_ctime_ns]
+
+
+def recovery_read(path, cap=1024**2):
+    parent, name = path.rsplit('/', 1)
+    root, fd = directory(parent), None
+    def metadata(info): return full_metadata(info) + [info.st_rdev, info.st_blocks]
+    try:
+        root_before = metadata(os.fstat(root))
+        fd = os.open(name, RFLAGS, dir_fd=root)
+        info = os.fstat(fd)
+        need(stat.S_ISREG(info.st_mode) and info.st_uid == info.st_gid == 0
+             and info.st_nlink == 1 and stat.S_IMODE(info.st_mode) == 0o600
+             and 0 < info.st_size <= cap, 'RECOVERY_FILE_IDENTITY')
+        before, raw = metadata(info), bytearray()
+        while block := os.read(fd, min(65536, cap + 1 - len(raw))):
+            raw.extend(block)
+            need(len(raw) <= cap, 'RECOVERY_FILE_LIMIT')
+        need(len(raw) == info.st_size and before == metadata(os.fstat(fd))
+             == metadata(os.stat(name, dir_fd=root, follow_symlinks=False))
+             and root_before == metadata(os.fstat(root)), 'RECOVERY_FILE_CHANGED')
+        return bytes(raw)
+    finally:
+        if fd is not None: os.close(fd)
+        os.close(root)
+
+
+def recovery_stage_proof(expected, expected_old):
+    need(type(expected) is str and re.fullmatch('[a-f0-9]{64}', expected)
+         and type(expected_old) is str and re.fullmatch('[a-f0-9]{64}', expected_old), 'RECOVERY_EXPECTED_SHA')
+    control = directory(CONTROL)
+    try: need(stat.S_IMODE(os.fstat(control).st_mode) == 0o700, 'RECOVERY_CONTROL_MODE')
+    finally: os.close(control)
+    need(missing(CONTROL + '/RESTORE_PAX_RECOVERY_READY.PENDING.SAFE.json')
+         and missing(CONTROL + '/RESTORE_PAX_RECOVERY_FIRST_ERROR.SAFE.json'), 'RECOVERY_UNKNOWN')
+    raw = recovery_read(CONTROL + '/RESTORE_PAX_RECOVERY_READY.SAFE.json', 32768)
+    need(sha(raw) == expected, 'RECOVERY_READY_HASH')
+    ready = parse(raw)
+    fixed = {'schema': 'helmut-local-pax-recovery-ready-v1', 'status': 'RESTORED_NOT_NATIVE_QUALIFIED',
+        'case_id': RECOVERY_CASE, 'plan_sha256': PLAN, 'scope_sha256': SCOPE,
+        'historical_stage_source_sha256': STAGE_SOURCE, 'historical_receipt_sha256': expected_old,
+        'restore_source_sha256': RECOVERY_SOURCE, 'compressed_tar_sha256': RECOVERY_GZIP,
+        'actual_file_count': 1767, 'actual_bytes': 2865680705, 'metadata_state': 'VERIFIED',
+        'native_qualified': False, 'native_go_consumed': False}
+    need(type(ready) is dict and set(ready) == set(fixed) | {'restore_receipt_sha256'}
+         and all(type(ready[k]) is type(value) and ready[k] == value for k, value in fixed.items())
+         and type(ready['restore_receipt_sha256']) is str
+         and re.fullmatch('[a-f0-9]{64}', ready['restore_receipt_sha256']), 'RECOVERY_READY')
+    attempt = parse(recovery_read(CONTROL + '/once/' + PLAN + '.pax-recovery.json', 32768))
+    need(attempt == {'schema': 'helmut-local-pax-recovery-attempt-v1', 'case_id': RECOVERY_CASE,
+        'plan_sha256': PLAN, 'scope_sha256': SCOPE, 'historical_receipt_sha256': expected_old,
+        'restore_source_sha256': RECOVERY_SOURCE, 'state': 'UNKNOWN_NO_RETRY'}, 'RECOVERY_ATTEMPT')
+    binding = parse(recovery_read(CONTROL + '/once/' + PLAN + '.stage-case.json'))
+    need(type(binding) is dict and set(binding) == {'schema', 'nonce', 'source_sha256', 'capsule_sha256',
+         'case_id', 'scope_sha256'} and binding['schema'] == 'helmut-private-drive-stage-case-binding-v1'
+         and binding['source_sha256'] == STAGE_SOURCE and binding['case_id'] == RECOVERY_CASE
+         and binding['scope_sha256'] == SCOPE and all(type(binding[k]) is str
+             and re.fullmatch('[a-f0-9]{64}', binding[k]) for k in ('nonce', 'capsule_sha256')), 'RECOVERY_HISTORICAL_BINDING')
+    error = parse(recovery_read(CONTROL + '/STAGE_FIRST_ERROR.SAFE.json'))
+    need(type(error) is dict and error.get('schema') == 'helmut-private-drive-stage-result-v1'
+         and error.get('status') == 'FAIL_KEEP_STATE_NO_RETRY' and error.get('code') == 'STAGE_RESTORE'
+         and error.get('native_qualified') is False and error.get('plan_sha256') == PLAN
+         and error.get('case_id') == RECOVERY_CASE and error.get('scope_sha256') == SCOPE
+         and error.get('capsule_sha256') == binding['capsule_sha256']
+         and error.get('cipher_sha256') == RECOVERY_CIPHER
+         and error.get('compressed_tar_sha256') == RECOVERY_GZIP, 'RECOVERY_HISTORICAL_STAGE')
+    case = CONTROL + '/stage-' + RECOVERY_CASE
+    old_raw = recovery_read(case + '/restored/RESTORE_RECEIPT.PRIVATE.json')
+    need(sha(old_raw) == expected_old, 'RECOVERY_HISTORICAL_RECEIPT_HASH')
+    old = parse(old_raw)
+    need(type(old) is dict and old.get('schema') == 'helmut-bound-byte-restore-v1'
+         and old.get('ok') is False and old.get('status') == 'FAIL_KEEP_STATE_NO_RETRY'
+         and old.get('scope_sha256') == SCOPE and old.get('native_qualified') is False
+         and old.get('code') == 'PATH_ESCAPE' and type(old.get('actual_file_count')) is int
+         and old['actual_file_count'] == 0 and type(old.get('actual_bytes')) is int and old['actual_bytes'] == 0
+         and old.get('actual_files') == [] and old.get('metadata_state') == 'UNKNOWN'
+         and old.get('partial_file_state') in ('NONE', 'UNKNOWN')
+         and type(old.get('remaining_entries')) is int and old['remaining_entries'] == 1866
+         and type(old.get('unverified_entries')) is list and len(old['unverified_entries']) == 1866,
+         'RECOVERY_HISTORICAL_RESTORE')
+    restored_raw = recovery_read(case + '/restored-pax-recovery/RESTORE_RECEIPT.PRIVATE.json')
+    need(sha(restored_raw) == ready['restore_receipt_sha256'], 'RECOVERY_RESTORE_HASH')
+    restored = parse(restored_raw)
+    need(type(restored) is dict and restored.get('schema') == 'helmut-bound-byte-restore-v1'
+         and restored.get('ok') is True and restored.get('status') == 'BYTES_RESTORED_NOT_NATIVE_QUALIFIED'
+         and restored.get('native_qualified') is False and restored.get('scope_sha256') == SCOPE
+         and type(restored.get('actual_file_count')) is int and restored['actual_file_count'] == 1767
+         and type(restored.get('actual_bytes')) is int and restored['actual_bytes'] == 2865680705
+         and type(restored.get('remaining_entries')) is int and restored['remaining_entries'] == 0
+         and restored.get('unverified_entries') == [] and restored.get('partial_file_state') == 'NONE'
+         and restored.get('metadata_state') == 'VERIFIED' and restored.get('code') is None,
+         'RECOVERY_RESTORE')
+    files = restored.get('actual_files')
+    need(type(files) is list and len(files) == 1767, 'RECOVERY_RESTORE')
+    names, total = set(), 0
+    for row in files:
+        need(type(row) is dict and type(row.get('archiveMember')) is str
+             and row['archiveMember'].startswith('files/') and row['archiveMember'] not in names
+             and type(row.get('sha256')) is str and re.fullmatch('[a-f0-9]{64}', row['sha256'])
+             and type(row.get('bytes')) is int and 0 <= row['bytes'] <= 2865680705, 'RECOVERY_RESTORE')
+        names.add(row['archiveMember']); total += row['bytes']
+    need(total == 2865680705, 'RECOVERY_RESTORE')
+    need(missing(CONTROL + '/once/' + PLAN + '.json'), 'NATIVE_GO_ALREADY_CONSUMED')
+    return {'case_id': RECOVERY_CASE, 'ready_sha256': expected, 'root': case + '/restored-pax-recovery/files'}
 
 
 def public_checkout(expected):
@@ -605,17 +712,21 @@ def run_child(namespace, expected, steps, refresh):
         os.close(request_read); os.close(ack_write)
 
 
-def prepare(stage_sha, public=None, observer=observe, child_runner=run_child):
+def prepare(stage_sha, public=None, observer=observe, child_runner=run_child, *, recovery_receipt_sha=None):
     admin()
     root = directory(BASE)
     held, output_fd, namespace = [], None, None
     anchors_created, anchors_attempted, phase, proof = [], [], 'preflight', None
     public_fd = public_proof = None
+    def source_proof():
+        return (stage_proof(stage_sha) if recovery_receipt_sha is None
+                else recovery_stage_proof(stage_sha, recovery_receipt_sha))
     def refresh():
+        if recovery_receipt_sha is not None: need(source_proof() == proof, 'RECOVERY_PROOF_CHANGED')
         if public_fd is not None: fresh_public(public, public_fd, public_proof)
         return observer()
     try:
-        proof = stage_proof(stage_sha)
+        proof = source_proof()
         out = BASE + '/native-context-' + proof['case_id']
         need(missing(BASE + '/NATIVE_CONTEXT_FIRST_ERROR.PRIVATE.json')
              and missing(BASE + '/NATIVE_CONTEXT_ATTEMPT.SAFE.json') and missing(out), 'CONTEXT_ALREADY_ATTEMPTED')
@@ -639,7 +750,7 @@ def prepare(stage_sha, public=None, observer=observe, child_runner=run_child):
             no_source_submounts([CONTROL + '/public-code/pr942-29b05ac0'])
         needed = ANCHORS if public is not None else ANCHORS[:2]
         for path in needed: anchor(path)
-        need(stage_proof(stage_sha) == proof and refresh() == expected, 'PREFLIGHT_CHANGED')
+        need(source_proof() == proof and refresh() == expected, 'PREFLIGHT_CHANGED')
         # No operational mutation precedes all checks above.
         phase = 'attempt'
         active = os.open('.', RFLAGS | os.O_DIRECTORY, dir_fd=root)
@@ -680,6 +791,10 @@ def prepare(stage_sha, public=None, observer=observe, child_runner=run_child):
         if public_proof is not None:
             receipt.update(publicEnginePresent=True, publicEngineState='MOUNTED_REQUIRES_FRESH_SOURCE_ADMISSION',
                            publicCheckoutReadySHA256=public, publicCheckoutReceipt=public_proof['receipt'])
+        if recovery_receipt_sha is not None:
+            receipt.update(sourcePreparationKind='ACCEPTED_LOCAL_PAX_RECOVERY', recoveryReadySHA256=stage_sha,
+                historicalRestoreReceiptSHA256=recovery_receipt_sha, historicalStageSourceSHA256=STAGE_SOURCE,
+                restoreSourceSHA256=RECOVERY_SOURCE)
         write_json(output_fd, 'CONTEXT_RECEIPT.PENDING.SAFE.json', receipt)
         rename = ctypes.CDLL(None, use_errno=True).renameat2
         rename.argtypes = (ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint)
@@ -716,9 +831,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--stage-ready-sha256', required=True)
     parser.add_argument('--public-ready-sha256')
+    parser.add_argument('--recovery-receipt-sha256')
     args = parser.parse_args(argv[1:])
     try:
-        result = prepare(args.stage_ready_sha256, public=args.public_ready_sha256)
+        result = prepare(args.stage_ready_sha256, public=args.public_ready_sha256,
+                         recovery_receipt_sha=args.recovery_receipt_sha256)
         print(result['status']); return 0
     except BaseException:
         print('native-context: FAIL_KEEP_PARTIAL_CONTEXT_NO_RETRY'); return 1
