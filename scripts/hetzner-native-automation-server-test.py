@@ -165,7 +165,9 @@ class IndependentServerTests(unittest.TestCase):
             public, record = fixture()
             reads = ([FileNotFoundError(), FileNotFoundError()] if operation == 'status'
                      else [json.dumps(record).encode(), public])
-            with patch.object(SERVER.os.path, 'lexists', return_value=True), \
+            with patch.object(SERVER.os.path, 'lexists', side_effect=lambda path:
+                    path in (self.directory.name + '/' + SERVER.RESULT_NAME,
+                             self.directory.name + '/' + SERVER.PUBLIC_NAME)), \
                     patch.object(SERVER, '_read_public_file', side_effect=reads) as read, \
                     patch.object(SERVER, 'create_recipient') as create:
                 result = SERVER.handle(sent, context)
@@ -192,7 +194,13 @@ class IndependentServerTests(unittest.TestCase):
         public, record = fixture()
         context = {'base': self.directory.name, 'source_sha256': '2' * 64,
                    'deadline': time.monotonic() + 300}
-        with patch.object(SERVER.os.path, 'lexists', side_effect=[False, True]), \
+        observations = []
+        def existing_result(path):
+            if path == self.directory.name + '/' + SERVER.RESULT_NAME:
+                observations.append(path)
+                return len(observations) > 1
+            return False
+        with patch.object(SERVER.os.path, 'lexists', side_effect=existing_result), \
                 patch.object(SERVER, 'create_recipient', return_value={'ok': True}) as create, \
                 patch.object(SERVER, '_read_public_file', side_effect=[
                     json.dumps(record).encode(), public, json.dumps(record).encode(), public]):
@@ -215,7 +223,7 @@ class IndependentServerTests(unittest.TestCase):
         tree = ast.parse(SERVER_SOURCE)
         imports = {name.name for node in ast.walk(tree) if isinstance(node, ast.Import) for name in node.names}
         self.assertEqual(imports, {'base64', 'hashlib', 'json', 'os', 're', 'stat', 'time',
-                                   'selectors', 'subprocess', 'signal', 'types'})
+                                   'selectors', 'subprocess', 'signal', 'types', 'ctypes'})
         self.assertFalse(any(isinstance(node, ast.ImportFrom) for node in ast.walk(tree)))
         self.assertNotIn('export-secret', SERVER_SOURCE.decode())
         self.assertNotIn('os.system', SERVER_SOURCE.decode())
