@@ -92,6 +92,24 @@ function summary(overrides = {}) {
   };
 }
 
+// Every simulated paid write uses a private recoverable receipt. This wrapper
+// only creates a temporary artifact for offline fixtures; explicit recovery tests
+// keep their own durable paths and continue to call the real router.
+function runSafe(options) {
+  const args = options.argv || [];
+  const saved = args.includes("--save-response") || args.includes("--replay-response");
+  if (args[2] !== "write" || args.includes("--dry-run") || saved) {
+    return router.run(options);
+  }
+  const privateDir = fs.mkdtempSync(path.join(os.tmpdir(), "deepseek-test-receipt-"));
+  try {
+    return router.run({ ...options, argv: [...args,
+      "--save-response", path.join(privateDir, "response.json")] });
+  } finally {
+    fs.rmSync(privateDir, { recursive: true, force: true });
+  }
+}
+
 check("Modellnamen und Routen sind explizit", () => {
   assert.equal(router.MODELS.flash, "deepseek-flash");
   assert.equal(router.MODELS.pro, "deepseek-v4-pro");
@@ -216,7 +234,7 @@ check("Read Modus verarbeitet private Quellen ohne Dateianderung", () => {
   fs.writeFileSync(privateFile, '{"caller":"original"}\n');
   const before = fs.readFileSync(privateFile, "utf8");
   try {
-    const result = router.run({
+    const result = runSafe({
       argv: ["flash", "high", "read", "--task-file", p.task, "--file", privateFile],
       cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
@@ -277,7 +295,7 @@ check("Read Modus verarbeitet Reasoning ueber dem alten 12000-Limit mit fester 3
     return { status: 0, stdout: raw, stderr: "", error: null };
   };
   try {
-    const result = router.run({
+    const result = runSafe({
       argv: ["pro", "high", "read", "--task-file", p.task, "--file", privateFile],
       cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
@@ -355,7 +373,7 @@ check("Write Modus mit 25000 Reasoning-Tokens schreibt genau einen gebundenen Ed
     return { status: 0, stdout: raw, stderr: "", error: null };
   };
   try {
-    const result = router.run({
+    const result = runSafe({
       argv: ["flash", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
       cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
@@ -430,7 +448,7 @@ check("Ueberlange Rueckgabe stoppt Write vor jeder Dateianderung", () => {
       { model: "deepseek-flash", effort: "high", mode: "write" },
       { usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 }, contextChars: 50000 },
       ["lib/example.js"]), /deepseek-visible-result-too-long/);
-    assert.throws(() => router.run({
+    assert.throws(() => runSafe({
       argv: ["flash", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
       cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
@@ -455,7 +473,7 @@ check("Write Modus wendet nur hashgebundene explizite Repository Datei an", () =
   const target = path.join(p.root, "lib/example.js");
   const original = fs.readFileSync(target, "utf8");
   try {
-    const result = router.run({
+    const result = runSafe({
       argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
       cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
@@ -483,7 +501,7 @@ check("Nicht uebergebener Schreibpfad wird fail closed abgelehnt", () => {
   const original = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
   fs.writeFileSync(path.join(p.root, "lib/other.js"), "x\n");
   try {
-    assert.throws(() => router.run({
+    assert.throws(() => runSafe({
       argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
       cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
@@ -510,7 +528,7 @@ check("Schreiben ausserhalb des Repositorys bleibt verboten", () => {
   fs.writeFileSync(outside, '{"x":1}\n');
   const original = fs.readFileSync(outside, "utf8");
   try {
-    assert.throws(() => router.run({
+    assert.throws(() => runSafe({
       argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", outside],
       cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
@@ -535,7 +553,7 @@ check("Hash Drift vor Anwendung stoppt ohne Schreiben", () => {
   const target = path.join(p.root, "lib/example.js");
   const original = fs.readFileSync(target, "utf8");
   try {
-    assert.throws(() => router.run({
+    assert.throws(() => runSafe({
       argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
       cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
@@ -618,7 +636,7 @@ check("Connectivity Test bleibt kompatibel mit funktionierendem Cloud Proxy", ()
 check("Ohne DeepSeek Key startet kein API Worker", () => {
   const p = project();
   try {
-    assert.throws(() => router.run({
+    assert.throws(() => runSafe({
       argv: ["flash", "high", "read", "--task-file", p.task],
       cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: {},
@@ -644,7 +662,7 @@ function recoveryFixture(fn) {
   p.raw = (payload = p.payload) => JSON.stringify({ status: "completed",
     output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify(payload) }] }],
     usage: { output_tokens: 80 } }) + "\n__HELMUT_HTTP_STATUS__:200";
-  p.run = (extra = [], opts = {}) => router.run({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
+  p.run = (extra = [], opts = {}) => runSafe({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
     argv: [...p.argv, ...extra], env: { DEEPSEEK_API_KEY: "placeholder" },
     spawnSync: () => ({ status: 0, stdout: p.raw() }), ...opts });
   try { fn(p); } finally {
@@ -865,17 +883,17 @@ check("Kostenkontrolle und Groessenpruefung stoppen vor bezahlter API", () => {
   const noNetwork = () => { started = true; throw new Error("paid-call-must-not-start"); };
   try {
     const cfg = { cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"), env: { DEEPSEEK_API_KEY: "placeholder" }, spawnSync: noNetwork };
-    const dry = router.run({ ...cfg, env: {},
+    const dry = runSafe({ ...cfg, env: {},
       argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js", "--dry-run"] });
     assert.equal(dry.status, "dry_run");
     assert.equal(dry.admission.output_token_cap, 32768);
     assert.equal(started, false);
-    assert.throws(() => router.run({ ...cfg,
+    assert.throws(() => runSafe({ ...cfg,
       argv: ["pro", "high", "write", "--task-file", p.task,
         "--file", "lib/example.js", "--max-cost-usd", "0.01"] }), /preflight-cost-cap/);
     assert.equal(started, false);
     fs.writeFileSync(path.join(p.root, "lib/example.js"), "a".repeat(20000));
-    assert.throws(() => router.run({ ...cfg,
+    assert.throws(() => runSafe({ ...cfg,
       argv: ["flash", "high", "write", "--edit-format", "full", "--task-file", p.task,
         "--file", "lib/example.js"] }), /full-file-too-large/);
     assert.equal(started, false);
@@ -903,13 +921,13 @@ check("Schreibauftrag mit ok ohne Code wird nie als Erfolg quittiert", () => {
   const p = project();
   const original = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
   try {
-    assert.throws(() => router.run({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
+    assert.throws(() => runSafe({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => apiResult({ summary: summary(), edits: [] }),
     }), /write-ok-without-edits/);
     assert.equal(fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8"), original);
-    const blocked = router.run({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
+    const blocked = runSafe({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => apiResult({ summary: summary({ status: "blocked" }), edits: [] }),
@@ -926,7 +944,7 @@ check("Verbrauch bleibt auch bei fehlerhafter bezahlter Antwort sichtbar", () =>
   assert.throws(() => router.parseCurlResponse(raw), /output-invalid-json:input_tokens=120:output_tokens=400:peak_usd_estimate=/);
   const p = project();
   try {
-    assert.throws(() => router.run({
+    assert.throws(() => runSafe({
       cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"), env: { DEEPSEEK_API_KEY: "placeholder" },
       argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
       callDeepSeek: () => apiResult({ summary: summary(), edits: [] },
@@ -939,7 +957,7 @@ check("Unveraenderte Ersatzinhalte duerfen nicht als Schreib-Erfolg gelten", () 
   const p = project();
   const original = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
   try {
-    assert.throws(() => router.run({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
+    assert.throws(() => runSafe({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       argv: ["flash", "high", "write", "--edit-format", "full", "--task-file", p.task,
         "--file", "lib/example.js"],
       env: { DEEPSEEK_API_KEY: "placeholder" },
@@ -1004,7 +1022,7 @@ check("Voller Tag sperrt Router vor Netzwerk ohne nachfolgende Modellkosten", ()
     for (let i = 0; i < 8; i++) {
       dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", now: day, dir: store });
     }
-    assert.throws(() => router.run({
+    assert.throws(() => runSafe({
       cwd: p.root, budgetDir: store, env: { DEEPSEEK_API_KEY: "placeholder" },
       argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
       callDeepSeek: () => { calls++; throw new Error("paid-provider-must-not-run"); },
@@ -1026,5 +1044,25 @@ check("Budgetjournal korrupt: kein Modellaufruf und kein stilles Reset", () => {
     assert.equal(fs.existsSync(path.join(dir, "budget.json")), true);
   } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
 });
+check("Bezahltes Schreiben ohne gesicherte Antwort wird vor Modellaufruf abgelehnt", () => {
+  const p = project();
+  let calls = 0;
+  try {
+    const before = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
+    assert.throws(() => router.run({
+      cwd: p.root,
+      budgetDir: path.join(p.root, "budget-no-call"),
+      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      env: { DEEPSEEK_API_KEY: "placeholder" },
+      callDeepSeek: () => { calls++; throw new Error("must-not-start"); },
+    }), /write-requires-save-response; no-provider-call/);
+    assert.equal(calls, 0);
+    assert.equal(fs.existsSync(path.join(p.root, "budget-no-call")), false);
+    assert.equal(fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8"), before);
+  } finally {
+    fs.rmSync(p.root, { recursive: true, force: true });
+  }
+});
+
 console.log(`DeepSeek Cloud Router v2: ${pass} PASS, ${fail} FAIL`);
 if (fail) process.exit(1);
