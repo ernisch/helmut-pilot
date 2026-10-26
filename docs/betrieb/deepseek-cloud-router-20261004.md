@@ -355,3 +355,39 @@ muss Sol entweder einen kleineren Ausschnitt waehlen oder die Arbeit
 selbst uebernehmen. Eine 12.000-Zeichen-Freigabe ist keine Garantie
 fuer vollstaendige Providerantworten; ausserdem wurde noch keine
 kostenpflichtige Modellprobe zur Ausfallrate unternommen.
+
+
+## Unabhaengige FAIL Review und sicherer Integrationsweg (26.10.2026)
+
+Die unabhaengige Review von PR #953 auf `3c2b83a474ed49ca097eefb74a6d5fb5c5202866`
+erkannte sechs Befunde, davon fuenf P1 und einen P2. Der damalige
+43/43 Router CI Befund ersetzt diese Negativnachweise nicht.
+
+Der Router wurde deshalb geaendert: Direkte Dateiueberschreibung ist
+abgeschaltet. Ein abgeschlossener DeepSeek Schreibauftrag speichert
+seinen Code in einer privaten `.proposal.json` neben dem strikt
+gebundenen Antwortarchiv und liefert `ready_for_integration`, niemals
+`applied_files`. Sol uebernimmt den Vorschlag nach frischer, eigener
+Git Konkurrrenzpruefung und ohne die Quellimplementierung neu zu erfinden.
+Bestehende Beschreibungen automatischer Dateianwendung oben sind historisch
+und durch diese verbindliche Neuregelung ersetzt.
+
+Weitere gezielte Korrekturen: Provider-Usage nur bei echten
+nichtnegativen Ganzzahlen abgerechnet; unbekannte/inkonsistente Werte
+lassen die urspruengliche Reservierung stehen. Eine festgehaltene
+Initialisierungsmarke verhindert das laut Review moegliche kostenlose
+Neustarten eines verschwundenen Budgetjournals. Begrenzte
+Warteversuche beim Abschluss der Kostenbuchung, danach expliziter
+`pending_reserved` Status fuer abgeschlossene Lesearbeit.
+Bei Schreibaufrufen fliesst die Providerantwort direkt in eine
+private Empfangsdatei; die daneben vorab gespeicherte Requestbindung
+erlaubt eine Wiederaufnahme nach Routerprozessabbruch bei tatsaechlich
+vollstaendiger HTTP Antwort. Bereits vom Provider abgebrochene
+Antworten bleiben unvollstaendig und duerfen nicht angewandt werden.
+
+Ein CI Erfolg fuer diesen neuen Branch darf **nicht** als unabhaengige
+Sicherheitsabnahme oder Production Erfolg gelten. PR #953 bleibt DRAFT
+und vor einem Merge muss eine zweite, aktuelle Review alle sechs
+urspruenglichen Reproduktionen auf dem neuen Commit pruefen.
+Keine bezahlten Modellproben, Migrationen, Profileingriffe,
+Budgetsummenveraenderung oder Production Deployments aus diesem Sprint.
