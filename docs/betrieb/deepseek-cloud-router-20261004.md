@@ -286,7 +286,7 @@ Auftraege verwenden und Sol Integration ueberlassen. Der alte Grenzwert
 von drei Schreibdateien gilt nicht mehr.
 
 Zusaetzlich zum 0,25 USD Preisprognosedeckel pro Aufruf besteht ein
-lokales Buchungsjournal mit 1,00 USD Tagesgrenze (UTC).
+lokales Buchungsjournal mit 2,00 USD Tagesgrenze (UTC).
 Das Journal liegt unter HOME/.local/state/helmut-deepseek-router/budget.json,
 ist privat (0600, Verzeichnis0700) und verwendet exklusive
 Dateisperren und atomische Schreibvorgaenge. Vor jedem neuen kostenpflichtigen
