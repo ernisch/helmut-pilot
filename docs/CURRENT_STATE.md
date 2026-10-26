@@ -2,12 +2,11 @@
 
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
-PR952 auf `5c918afe`, Main-CI40281353379 SUCCESS, Vercel READY.
-Actions40286803902 bestaetigt PATH_ESCAPE,0 regulaere Dateien,1866 offene Eintraege;
-unabhaengig geprueft. Lokale Recovery vorbereitet, noch nicht ausgefuehrt.
-Daten verschluesselt im Drive rueckgeprueft; Key bleibt nur auf Hetzner, Mac entfaellt.
-PR954: vier Setup-Phasen mit Prozesswaechter/ACCEPTED lokal integriert;
-473 synthetische Tests gruen, unabhaengig abgenommen; neue PR-CI/Zielabnahme offen.
+PR954 auf `f1be0a0c`; PR-CI40299279482 und Main-CI40302732339 SUCCESS.
+473 synthetische Tests und unabhaengige Integrationsabnahme bestanden.
+Einmaliger Setupaufruf40306875483: recover FAIL UNIT_PROPERTIES, unabhaengig bestaetigt.
+Feldabweichung, ARM- und Restorezustand offen. Keine Wiederholung/weitere Phase.
+Paket im Drive/auf Hetzner gesichert; privater Key nur auf Hetzner. Admin-Leseabfrage offen.
 Stage-Once verbraucht, native Freigabe pausiert; keine Reaktivierung alter Rechte.
 Keine nativen Tests/500er-Abnahme. Docker/Pfadsicht/Quellen bleiben frisch zu pruefen.
 [Belege und Grenzen](betrieb/hetzner-native-automation-20261026.md).
