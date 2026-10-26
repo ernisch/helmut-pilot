@@ -54,6 +54,32 @@ Details: `docs/betrieb/blocker3-eu-servicekostenvertrag-umsetzung-20261011.md`.
 Diese eng begrenzte freigegebene Version ist die Ausnahme von den nachfolgenden
 historischen6/7-Regeln; außerhalb dieser Version bleiben sie unverändert.
 
+## Sicherheitskorrektur: DeepSeek schreibt nicht direkt in Arbeitsdateien (26.10.2026)
+
+Die unabhaengige Sicherheitsreview von PR #953 verwarf den bisherigen
+automatischen Dateiwechsel wegen Pfadwechseln und nicht atomarer Hashpruefung.
+Daher ist `applyEdits` jetzt sicherheitsbedingt gesperrt. DeepSeek liefert
+bei einem erfolgreichen Schreibauftrag ausschliesslich einen **privaten,
+request- und quellhashgebundenen Vorschlag** neben dem Antwortarchiv
+(`.proposal.json`). Die Originaldatei wird NICHT veraendert. Ein Ergebnis
+`ready_for_integration` ist kein angewandter Code und keine fachliche Abnahme.
+
+Sol integriert den gespeicherten Vorschlag nur nach erneuter Pruefung von
+Dateiidentitaet, Branch/Worktree, Fremdaenderungen, Git Status und einem
+sicheren eigenen Git Bearbeitungsweg. Eine nicht konfliktfreie Aenderung
+wird nicht erzwungen und nicht automatisch gegen Geld neu erzeugt.
+Eine spaetere Rueckkehr zu direktem Schreiben braucht eigene technische
+Abnahme fuer Pfadstabilitaet und vollstaendigen Konkurrenzschutz.
+
+Die Antwortsicherung erfolgt fuer kostenpflichtige Schreibarbeiten
+vor dem Anbieteraufruf durch eine private Requestbindung und eine
+zusatzliche Empfangsdatei. Der bestehende lokale Tagesdeckel von
+2 USD und die 0,25 USD Preisprognose je Aufruf bleiben unveraendert.
+Fehlende/ungueltige Provider-Usage darf eine Reservierung nicht auf
+null setzen; nach Journalverlust ist der Router gesperrt. Eine
+ausstehende Abschlussbuchung nach Leseaufrufen wird ausgewiesen und
+behaelt die Reservierung. Keine Production-Modellaufrufe freigegeben.
+
 ## Rolle und Produktziel
 
 Du arbeitest als technischer Umsetzer für Helmut.
