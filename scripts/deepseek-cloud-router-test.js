@@ -101,7 +101,7 @@ check("Modellnamen und Routen sind explizit", () => {
   assert.equal(parsed.effort, "max");
   assert.equal(parsed.mode, "write");
   assert.deepEqual(parsed.files, ["lib/a.js", "lib/b.js"]);
-  assert.throws(() => router.parseArgs(["flash", "low", "read", "--task-file", "/tmp/t"]), /usage/);
+  assert.throws(() => router.parseArgs(["flash", "ultra", "read", "--task-file", "/tmp/t"]), /usage/);
 });
 
 check("Direkter Request nutzt Responses API und JSON Schema statt verschachteltem Codex", () => {
