@@ -26,6 +26,15 @@ Roadmap-Punkt 23; Migrationsstand nach Production-Anwendung von
 
 ## 1 · Zentrale Komponenten
 
+**Isolierte native Testumgebung (26.10.2026):** Die begrenzte Hetzner-Steuerung
+laeuft ueber GitHub Actions/Tailscale und einen fest gebundenen Root-Controller.
+`hetzner-native-setup-coordinator.py` ordnet Recovery, oeffentlichen Checkout,
+Pfadsicht und Imageimport; `hetzner-native-setup-driver.py` fuehrt genau eine
+Phase aus. `hetzner-native-setup-service.py` bindet diese an einen begrenzten
+eigenen systemd-Service und prueft Prozessabschluss/ACK vor ACCEPTED. Diese
+Setupquittung erteilt keine native Testfreigabe. Stand und Belege:
+[`Hetzner-Automation`](betrieb/hetzner-native-automation-20261026.md).
+
 | Komponente | Datei | Größe | Rolle |
 |---|---|---|---|
 | HTTP-Server + alle Routen | `server.js` | ~6.700 Z. | Node-`http`-Server, ohne Framework; rendert auch die SPA-Shell (`indexHtml()`) und die servergerenderten Auth-Seiten |

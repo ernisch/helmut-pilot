@@ -78,7 +78,7 @@ class ProtocolTests(unittest.TestCase):
             self.rejected(lambda: CLIENT.validate_context(changed), "pin-required")
 
     def test_unqualified_operations_fail_before_transport_or_secrets(self):
-        for operation in ("admit", "four-tx"):
+        for operation in ("four-tx",):
             with patch.object(CLIENT, "transport_configuration") as transport:
                 self.rejected(lambda: CLIENT.client(environment(operation)), "operation-not-qualified")
                 transport.assert_not_called()
@@ -105,7 +105,7 @@ class ProtocolTests(unittest.TestCase):
 
     def test_public_allowlist_native_execution_and_fake_pass_rejected(self):
         for field, value, code in (("native_enabled", True, "native-enabled-denied"),
-                                   ("enabled_operations", ["status", "recipient", "stage", "admit"],
+                                   ("enabled_operations", ["status", "recipient", "stage", "admit", "four-tx"],
                                     "enabled-operations-denied"),
                                    ("status", "PASS", "result-status"),
                                    ("source_sha256", "4" * 64, "source-pin-drift")):
@@ -224,7 +224,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02", text)
         self.assertNotIn("actions/checkout@", text)
         self.assertNotIn("pull_request", text)
-        self.assertIn("case \"$HELMUT_NATIVE_OPERATION\" in status|recipient|stage)", text)
+        self.assertIn("case \"$HELMUT_NATIVE_OPERATION\" in status|recipient|stage|admit)", text)
         self.assertIn("contents/scripts/hetzner-native-automation-client.py?ref=$GITHUB_SHA", text)
         self.assertEqual(text.count("${{ secrets."), 1)
         self.assertIn("${{ secrets.HELMUT_CI_SSH_KEY }}", text)
@@ -279,7 +279,7 @@ class FinalIntegrationTests(unittest.TestCase):
         self.assertNotIn("bash", arguments)
 
     def test_all_unqualified_operations_fail_before_root_transport(self):
-        for operation in ("admit", "four-tx"):
+        for operation in ("four-tx",):
             with patch.object(CLIENT, "transport_configuration") as transport:
                 with self.assertRaisesRegex(ValueError, "^operation-not-qualified$"):
                     CLIENT.client(environment(operation))
@@ -320,7 +320,7 @@ class FinalIntegrationTests(unittest.TestCase):
         self.assertNotIn("probe-only-v1", after)
         self.assertEqual(after.count("${{ secrets."), 1)
         self.assertIn("${{ secrets.HELMUT_CI_SSH_KEY }}", after)
-        self.assertIn('case "$HELMUT_NATIVE_OPERATION" in status|recipient|stage)', after)
+        self.assertIn('case "$HELMUT_NATIVE_OPERATION" in status|recipient|stage|admit)', after)
         self.assertNotIn("actions/checkout@", after)
 
     def test_dispatch_guard_rejects_disabled_missing_and_injected_mode(self):

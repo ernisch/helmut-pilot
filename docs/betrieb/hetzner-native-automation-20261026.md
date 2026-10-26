@@ -259,3 +259,113 @@ gelangen in die oeffentliche Projektion; keine Pfade, Originalinhalte oder Keys.
 ABSENT/UNKNOWN bleiben unbekannt, keine Reklassifizierung des gescheiterten Laufs.
 214 synthetische Tests bestanden; unabhängige Abnahme und echte Statusauslese
 stehen noch aus. Es entsteht keine Wiederholungs-, Restore- oder native Autoritaet.
+
+## Tatsaechliche Erstursache und getrennte Setupvorbereitung (26.10.2026 Istanbul)
+
+PR952 ist auf `5c918afe5551938eacb2ea3d1d8249ff5e937e18` gemergt.
+Main-CI40281353379 und beide Pflichtjobs samt tatsächlicher Grenzpruefung SUCCESS;
+Vercel `dpl_G2Q5HJ6pTZJHaxgHbrZrUtTTgsoT` auf genau diesem Commit READY.
+Der einzige anschliessende Zielaufruf war der reine Status40286803902,
+Job121452270420, Artefakt12634785563. ZIP-SHA256
+`f931429fdc788c907a7fd8d0f063fb3b0c5428b2a890d7f20a7c9be5a058aba7`,
+Antwort-SHA256 `ecfcc8a65a786e2a7f17cd44a35594f0b589b8327c3586c34434eac9b200da94`.
+ZIP, Sidecar, Quellen-/Plan-/Noncebindung und qualifizierter Client wurden
+unabhaengig O_NOATIME geprueft. Die echte private Restorequittung meldet
+`PATH_ESCAPE`,0 regulaere Dateien/0 Bytes,1866 unbestaetigte Eintraege,
+Metadaten UNKNOWN, partial-file NONE. Das beweist keinen leeren Verzeichnisbaum.
+Ihr tatsaechlicher SHA256 ist
+`160b4d04df86ba0ddb9a0c0366980f1d3848a5d34249b62d8b880562e20f48be`.
+Die Projektion passt zur statisch und synthetisch belegten PAX-Verzeichnisluecke.
+Kein neuer Restore, keine native Ausfuehrung oder Originalveraenderung fand statt.
+
+Die separate lokale Recovery nutzt ausschliesslich den vorhandenen, vollstaendig
+gebundenen Zielgzip und einen neuen frischen Ausgabebaum. Alter Stage-Slot,
+Fehler und Teilbaum bleiben erhalten; native Freigabe wird nicht verbraucht.
+27 synthetische Recoverytests und unabhaengige SOL-Abnahme bestanden. Die
+explizite Recovery-/Public-Pfadsicht hat65 gezielte Tests; die Quellenfreigabe
+bleibt auch nach Mount ausdrücklich frisch erforderlich. Der feste Driver
+fuehrt nur genau einen von recover/checkout/context/image aus;26 Tests bestehen,
+einschliesslich Daemonwechsel und sicherem Erstfehlercode. Dies sind Codebelege,
+keine tatsaechliche Ziel-Recovery oder native Abnahme.
+
+Der Setupwaechter verwendet pro frischer Einmalbindung einen eigenen begrenzten
+systemd-Service mit KillMode=control-group. ARM, EOF, alle eigenen Prozessenden,
+sole-Cgroup-PID, pidfd und gehashter ACK muessen vor ACCEPTED belegt sein.
+Unbestaetigtes Helper-READY bleibt UNKNOWN, auch wenn Dateien vorhanden sind.
+Koordinator und Waechter sind lokal integriert; alle473 gezielten synthetischen
+Tests bestehen. Sourcepins sind exakt gebunden und die finale Integration ist
+unabhaengig abgenommen; Pflicht-CI und Zielausfuehrung bleiben offen. Der Bootstrapdeckel131072Bytes bleibt
+unveraendert. Ausschliesslich oeffentliche, bytegehashte Programme desselben
+CI-qualifizierten Git-Commits werden bereitgestellt, keine erneute Original- oder
+Schluesseluebertragung. Der Mac ist fuer den bestaetigten Zugang nicht erforderlich.
+
+DeepSeek Pro High hat den PAX-/Statusfix unabhaengig angenommen; Flash High hat
+die fehlende Public-Context-Schnittstelle konkret benannt. Drei spaetere
+Schreib-/Reviewauftraege endeten am32768-Ausgabetokenlimit ohne Dateiänderung.
+Diese Fehlversuche bleiben erhalten; Sol uebernahm die kritische Umsetzung und
+unabhaengige Abnahme, statt weitere gleichartige Routerversuche zu starten.
+
+Die unabhaengige Gluepruefung fand vor jedem Zielaufruf einen echten
+Schnittstellenfehler: Der Bootstrap liefert sieben Kontextfelder, der
+Koordinator akzeptiert genau vier. Der Server projiziert jetzt ausschliesslich
+`base`, `source_sha256`, `deployment_commit`, `deadline`. Ein gezielter Test mit
+dem vollstaendigen Bootstrapkontext besteht; finale SOL-Gegenpruefung PASS fuer
+Server-SHA256 `62cb2394de10b8c26f528b5d627dd0cb7720047e7fbd571d6f4dcf99d87d2ad8`
+(106678 Bytes). Die erste PR-CI auf `6c9a926c` ist fehlgeschlagen; dieser
+Vorstand ist kein Ausfuehrungsnachweis und wird nicht gemergt. Im vorhandenen
+CI-Protokoll ist `UNACCEPTED_JOB` beim synthetischen Mehrphasenfall belegt:
+`Path.mkdir(parents=True)` erzeugte das Zwischenverzeichnis unter umask022 mit
+0755. Die Fixture erstellt es jetzt explizit mit0700 wie der echte Guard. Ihre
+Statattrappe erhaelt ausserdem die Standard-Zeitattribute fuer die Ausgabe
+eines Testfehlers. Runtime und Schutzpruefungen bleiben unveraendert. Ein neuer
+Test erzwingt022; alle471 gezielten Tests bestehen auch unter dieser umask.
+Unabhaengige SOL-Abnahme PASS fuer Test-SHA256
+`cf6e3d3e331b9ee0e49c06acd5fe8e93d91063c5b38883f4f00e7fdd98412942`.
+
+CI40294473498 meldete danach11 Fehler und einen unvollstaendigen Test im
+synthetischen Public-Checkout, jeweils vor READY. Der genaue historische errno
+ist nicht erhalten und bleibt unbekannt. Die Fixture rief trotz simulierter
+Rootvorpruefung echte `chown`/`fchown` aufUID/GID1000 auf; dieses Benutzerkonto
+ist auf einem GitHub-Runner nicht garantiert. Diese Aufrufe werden jetzt nur
+im Test simuliert und jeder feste Zielbesitzer samt `nofollow` geprueft.
+Ein gezielter Berechtigungsfehlerfall erhaelt Attempt, Teilbaum und Fehlerbeleg,
+ohne READY zu publizieren. Unabhaengige SOL-Abnahme PASS fuer Test-SHA256
+`c87094b45f8f143290a4a1a1b669db10a2b11a79ad6a42579c234b97894d0e48`.
+Die472 gezielten Tests bestehen unter umask022 in9,097s. Produktivquellen und
+Schutzpruefungen wurden fuer diese Testkorrektur nicht veraendert; ein gruener
+GitHub-Nachweis bleibt erforderlich.
+
+CI40295069417 scheiterte weiterhin im Public-Checkout-Test, jetzt konkret mit
+`TRACKED_METADATA`. Die erste Besitzer-Testkorrektur war unvollstaendig: Sie
+simulierte den Schreibaufruf, aber nicht die anschliessende echte Rueckpruefung.
+Die korrigierte Fixture verwendet deshalb eine nur im getesteten Modul sichtbare
+OS-Simulation mit anfangsUID12345/GID23456. Gepruefte Besitzerwechsel auf1000
+werden je(dev,ino) protokolliert und durch `stat`/`fstat` zurueckgelesen; echte
+Hostbesitzer bleiben unveraendert. Ein No-op-Negativfall muss die unveraenderte
+Runtime-Pruefung mit `TRACKED_METADATA` abbrechen. Alle473 Tests bestehen unter
+umask022 in9,549s. Unabhaengige SOL-Abnahme PASS fuer Test-SHA256
+`d71370d85595976e5c612d9921a3b594c367c83ef97bf150772498b95ab58779`;
+Runtime-SHA256 `1934c0fd09f3316b3e7088bc974925c3eebc719ca1ac512d9edde704cb3916bb`
+unveraendert. Keine echte Zielausfuehrung; Pflicht-CI bleibt offen.
+
+## Threadwechsel ohne erneuten Datenumzug
+
+Code und Quellenbindungen liegen auf dem Entwicklungsbranch
+`codex/hetzner-target-admission-20261026`; der aktuelle Git-/PR-Stand ist vor einer
+Fortsetzung frisch zu lesen. Eine neue Sitzung muss die vorhandene
+GitHub-Actions-/Tailscale-Steuerung nachweisen. Der private Mac-Schluessel wird
+dafuer nicht gebraucht; der private Empfaengerschluessel bleibt auf Hetzner.
+
+Die Originale bleiben unveraendert in der erhaltenen Quellcloud. Das bereits
+uebertragene verschluesselte Paket und der Zielgzip bleiben auf Hetzner; der
+vollstaendig rueckgepruefte verschluesselte Drive-Index ist
+`17DDhInbRwN20nqRPuNp3KTLq6AqMEhWc`, SHA256
+`87508b035c31fea52f4910cedf80b63baabf055e54cfe714dfe143383c15ec0c`.
+Eine neue Volluebertragung oder neue Schluessel sind nicht Teil der Fortsetzung.
+
+Vor dem Wechsel bevorzugt die vier begrenzten Setup-Phasen mit echten ACCEPTED-
+Quittungen abschliessen. Solange das fehlt, ist Hetzner nicht startbereit. Ein
+neuer Thread darf die gescheiterte Stage-Once nicht wiederholen und benoetigt
+keine erneute Quellinventur: zuerst vorhandene Zielquittungen und den genauen
+Git-Stand uebernehmen. Native Vier-TX-Messung, Unit60 und500er Nachweis bleiben
+getrennt und brauchen ihre jeweils frischen vollstaendigen Zulassungen.

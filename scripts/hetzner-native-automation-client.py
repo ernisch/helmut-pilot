@@ -24,7 +24,7 @@ BRANCH = "refs/heads/main"
 WORKFLOW_REF = REPOSITORY + "/.github/workflows/hetzner-native-automation.yml@" + BRANCH
 HOST_FINGERPRINT = "SHA256:u48IkPIpHilVGYw2MwJuE1pv4XMjlJ88cQjUzN4Lh1c"
 OPERATIONS = ("status", "recipient", "stage", "admit", "four-tx")
-ENABLED_OPERATIONS = ("status", "recipient", "stage")
+ENABLED_OPERATIONS = ("status", "recipient", "stage", "admit")
 MAX_STAGE_CAPSULE = 48 * 1024
 STAGE_PLAN = 'e6d463a634925a190d60d066c0fae2ba94b9f7f0a10a115b50b4f4018b1b35eb'
 STAGE_SCOPE = '08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd'
@@ -352,7 +352,7 @@ def validate_result(result, operation, payload_sha256):
         fields={"status", "enabled_operations", "native_enabled","source_sha256", "recipient_diagnostic"}
         require(set(result) in (fields,fields|{'stage_diagnostic'}), "result-fields")
         require(result["status"] == "CONTROL_READY", "result-status")
-        require(result["enabled_operations"] == list(ENABLED_OPERATIONS),
+        require(result["enabled_operations"] in (list(ENABLED_OPERATIONS), list(ENABLED_OPERATIONS[:-1])),
                 "enabled-operations-denied")
         require(result["native_enabled"] is False, "native-enabled-denied")
         require(pinned_sha(result["source_sha256"]) == payload_sha256, "source-pin-drift")
@@ -384,6 +384,29 @@ def validate_result(result, operation, payload_sha256):
         else:
             require(result['receipt_sha256'] is None and result['actual_file_count'] is None
                     and result['actual_bytes'] is None,'result-fields')
+    elif operation == 'admit':
+        require(set(result) == {'schema', 'status', 'phase', 'code', 'ready_sha256',
+                'accepted_sha256', 'lifecycle_sha256', 'native_qualified', 'native_go_consumed'}, 'result-fields')
+        require(result['schema'] == 'helmut-target-setup-result-v1'
+                and result['native_qualified'] is False and result['native_go_consumed'] is False,
+                'result-fields')
+        require(result['phase'] in ('preflight', 'recover', 'checkout', 'context', 'image', 'complete')
+                and type(result['code']) is str and re.fullmatch('[A-Z][A-Z0-9_]{0,63}', result['code']),
+                'result-fields')
+        for key in ('ready_sha256', 'accepted_sha256', 'lifecycle_sha256'):
+            if result[key] is not None: pinned_sha(result[key])
+        if result['status'] == 'FAIL_KEEP_STATE_NO_RETRY':
+            require(all(result[key] is None for key in ('ready_sha256', 'accepted_sha256', 'lifecycle_sha256')),
+                    'result-fields')
+        else:
+            complete = result['status'] == 'SETUP_COMPLETE_NOT_NATIVE_QUALIFIED'
+            require(result['status'] in ('SETUP_PHASE_COMPLETE_NOT_NATIVE_QUALIFIED',
+                                         'SETUP_COMPLETE_NOT_NATIVE_QUALIFIED')
+                    and result['code'] == ('SETUP_COMPLETE' if complete else 'SETUP_PHASE_COMPLETE')
+                    and (result['phase'] == 'complete' if complete else result['phase'] in
+                         ('recover', 'checkout', 'context', 'image'))
+                    and all(result[key] is not None for key in
+                            ('ready_sha256', 'accepted_sha256', 'lifecycle_sha256')), 'result-fields')
     else:
         raise ValueError("operation-not-qualified")
 
@@ -544,7 +567,7 @@ def client(environment):
         raw,code = bounded_exchange(ssh_arguments(host,key,hosts),canonical(sent)+b'\n'+capsule_line,
                                    include_returncode=True)
         reply = validate_response(raw, sent)
-        failed=operation=='stage' and reply['result']['status']=='FAIL_KEEP_STATE_NO_RETRY'
+        failed=operation in ('stage', 'admit') and reply['result']['status']=='FAIL_KEEP_STATE_NO_RETRY'
         require(code==0 or failed,'ssh-failed')
         if operation=='stage' and reply['result']['capsule_sha256'] is not None:
             require(reply['result']['capsule_sha256']==digest(capsule_raw),'response-binding')

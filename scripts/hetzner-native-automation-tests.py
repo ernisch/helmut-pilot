@@ -17,8 +17,8 @@ SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parent
 SOURCE_SHA256 = {
     'bootstrap': '740e7cd3218eec796abf9fe408db2db7ddeaeeade34ddc2363942d5fcf9a4f97',
-    'server': '3f835e7dfd3148301eede1f010f66a6aeaec7942225ee8ae5a8b7819c6495924',
-    'client': 'baffc5bffadccfb44868ba07a48c0b061cac956f08e249a2ab9e8d8ce9e7a699',
+    'server': '62cb2394de10b8c26f528b5d627dd0cb7720047e7fbd571d6f4dcf99d87d2ad8',
+    'client': '16647fae58bc89c457113755dcd274f0bbd59558797d133e1e8eca14a779a87f',
     'installer': 'f3512b1126ece5eb744db3f991c8c2c4d0b7703350c13ded52dd0c1c894d21d3',
 }
 RECIPIENT_SHA256 = '8e054d8d1c7ba5428b2fa9537462689fd0863621fd2d1eed16742fa2b3a49b10'
@@ -85,8 +85,11 @@ def main():
     sys.modules[support.__name__] = support
     suite = unittest.TestSuite()
     groups = [(group, 'hetzner-native-automation-' + group + '-test.py')
-              for group in ('bootstrap', 'server', 'client', 'recipient', 'installer', 'diagnostic', 'recovery', 'stage', 'stage-diagnostic')]
+              for group in ('bootstrap', 'server', 'client', 'recipient', 'installer', 'diagnostic', 'recovery', 'stage', 'stage-diagnostic', 'setup')]
     groups.append(('stage-restore', 'hetzner-native-stage-restore-test.py'))
+    groups.extend((group, 'hetzner-native-' + group + '-test.py') for group in
+                  ('public-checkout', 'context', 'budget-image-import', 'local-restore-recovery',
+                   'setup-driver', 'setup-service', 'setup-coordinator'))
     for group, test_file in groups:
         filename = SCRIPTS / test_file
         module = types.ModuleType('native_control_tests_' + group)
