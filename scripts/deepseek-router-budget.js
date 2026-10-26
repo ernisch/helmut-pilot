@@ -35,7 +35,9 @@ function readState(dir) {
   try {
     fd = fs.openSync(location, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
   } catch (error) {
-    if (error.code === "ENOENT") return { version: VERSION, days: {} };
+    if (error.code === "ENOENT") {
+      throw new Error("deepseek-budget-journal-missing; no-provider-call");
+    }
     throw error;
   }
   try {
@@ -90,6 +92,34 @@ function withLock(dir, action) {
     throw error;
   }
   try {
+    const marker = path.join(dir, ".initialized");
+    const journal = path.join(dir, "budget.json");
+    let initialized = false;
+    try {
+      const fd = fs.openSync(marker, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+      try {
+        const st = fs.fstatSync(fd);
+        if (!st.isFile() || st.nlink !== 1 || (st.mode & 0o077) || st.size === 0 || st.size > 128) {
+          throw new Error("deepseek-budget-initialization-unsafe");
+        }
+      } finally { fs.closeSync(fd); }
+      initialized = true;
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+    if (!initialized) {
+      if (fs.existsSync(journal)) {
+        throw new Error("deepseek-budget-unmarked-journal; manual-recovery-required");
+      }
+      // Persist the independent initialization marker FIRST. A crash before
+      // creating budget.json then fails closed instead of resetting spending.
+      fs.writeFileSync(marker, crypto.randomUUID() + "\n", { flag: "wx", mode: 0o600 });
+      const fd = fs.openSync(marker, "r");
+      try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+      const dfd = fs.openSync(dir, "r");
+      try { fs.fsyncSync(dfd); } finally { fs.closeSync(dfd); }
+      saveState(dir, { version: VERSION, days: {} });
+    }
     return action();
   } finally {
     fs.rmdirSync(lock);
