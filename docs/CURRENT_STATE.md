@@ -2,14 +2,14 @@
 
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
-PR954 auf `f1be0a0c`; PR-CI40299279482 und Main-CI40302732339 SUCCESS.
+PR954/f1be0a0c: PR-CI40299279482 und Main-CI40302732339 SUCCESS; PR955 gemergt.
 473 synthetische Tests und unabhaengige Integrationsabnahme bestanden.
-Einmaliger Setupaufruf40306875483: recover FAIL UNIT_PROPERTIES, unabhaengig bestaetigt.
-Feldabweichung, ARM- und Restorezustand offen. Keine Wiederholung/weitere Phase.
-Paket im Drive/auf Hetzner gesichert; privater Key nur auf Hetzner. Admin-Leseabfrage offen.
-Stage-Once verbraucht, native Freigabe pausiert; keine Reaktivierung alter Rechte.
-Keine nativen Tests/500er-Abnahme. Docker/Pfadsicht/Quellen bleiben frisch zu pruefen.
-[Belege und Grenzen](betrieb/hetzner-native-automation-20261026.md).
+Setup40306875483: recover FAIL UNIT_PROPERTIES. Keine ACCEPTED-Abnahme.
+Betreiber: sechs Exec-Felder fehlen auch mit --all; ARM und RESULTs fehlen.
+Leseabfrage erledigt. Kein Retry; Restore und aktuelle Originalabnahme offen.
+Paket in Drive/auf Hetzner; privater Key nur Hetzner. Quellcloud behalten.
+Stage-Once verbraucht, native Freigabe pausiert; kein neuer500er-Lauf.
+[Uebergabe](betrieb/helmut-thread-handoff-20261026.md) · [Belege](betrieb/hetzner-native-automation-20261026.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
