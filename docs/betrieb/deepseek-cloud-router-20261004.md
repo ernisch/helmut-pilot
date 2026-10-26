@@ -314,3 +314,18 @@ Es existiert noch keine echte vergleichende Laufzeitmessung zwischen
 den Modellstufen oder fuer die End-to-End-Ausfuehrung. Bis zu 20 Minuten
 Curl Transportfrist sind eine harte technische Obergrenze, keine
 erwartete Laufzeit. Max darf nicht reflexhaft gewaehlt werden.
+
+## Antwortverlust bei bezahlter Schreibarbeit verhindern (26.10.2026)
+
+Kostenpflichtige DeepSeek Schreibauftraege erfordern jetzt zwingend ein vorher reserviertes
+privates Antwortarchiv ausserhalb aller Git Worktrees (`--save-response /tmp/<eindeutiger-name>.private.json`).
+Fehlt der Parameter, stoppt der Router lokal vor jeder Reservierung und vor jedem
+Anbieteraufruf. Vollstaendig empfangene Antworten bleiben damit auch bei
+spaeterer Hashdrift, Formatfehlern oder lokaler Abweisung fuer eine kostenlose,
+strikt requestgebundene Wiederaufnahme erhalten. Geheimnisse und private
+Quelltexte niemals in Chat, PR oder Repository uebernehmen.
+
+Nur der lesende Modus und kostenfreie `--dry-run` Aufrufe duerfen ohne
+`--save-response` starten. Die Sicherung ersetzt weder eine vollstaendige
+Modellantwort noch fachliche Tests. Eine beim Modelllimit abgebrochene Antwort
+bleibt trotz Sicherung unvollstaendig und verursacht moeglicherweise Kosten.
