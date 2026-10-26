@@ -7,7 +7,7 @@ const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
 
-const DAILY_LIMIT_MICRO_USD = 1000000; // Local ceiling: 1.00 USD per UTC day.
+const DAILY_LIMIT_MICRO_USD = 2000000; // Local ceiling: 2.00 USD per UTC day.
 const VERSION = 1;
 
 function usdToMicro(value) {
