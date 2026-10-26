@@ -313,7 +313,7 @@ class FinalIntegrationTests(unittest.TestCase):
         self.assertIn('test "$GITHUB_WORKFLOW_REF" = ' + CLIENT.WORKFLOW_REF, after)
         self.assertIn("HELMUT_NATIVE_CONTROL_MODE: ${{ inputs.controlMode }}", after)
         self.assertIn('case "$HELMUT_NATIVE_CONTROL_MODE" in', after)
-        self.assertIn('options: [disabled, control-v1, setup-inspect-v1, setup-successor-v1, runtime-metadata-v1]', after)
+        self.assertIn('options: [disabled, control-v1, setup-inspect-v1, setup-successor-v1, runtime-metadata-v1, context-continuation-v1]', after)
         self.assertIn('HELMUT_NATIVE_SETUP_CAPSULE: ${{ inputs.setupCapsule }}', after)
         self.assertIn('default: disabled', after)
         self.assertNotIn('HELMUT_HETZNER_NATIVE_ENABLED', after)

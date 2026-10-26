@@ -5,6 +5,59 @@ und CURRENT_STATE. Die [Thread-Uebergabe](helmut-thread-handoff-20261026.md)
 bleibt die verifizierte Ausgangsbasis; ihre Stopp- und Schutzgrenzen gelten weiter.
 Dieses Dossier enthaelt auch historische Zwischenstaende, keine neuen Laufrechte.
 
+## Eigene Context/Image-Fortsetzung nach belegtem Executable-Pfadfehler
+
+PR962/Main9df5f9dd62a33501b5c9a163eabc9b2854d6a1a4 ist vollständig qualifiziert:
+PR-CI40381992582, Main-CI40385326579 und Vercel dpl_A9MdEeeQsmTS4ZYWjEuNB3jqBLvL READY.
+Der reine Daemonabruf40389837630/Job121807631937 ist erfolgreich validiert.
+Artefakt12682710261:2832Bytes/SHA256
+b81b961a6496a135c0cfd678531cbf524bd0ca021d51f2e0c63f43e213f4c89a;
+Antwort947efbef9b79eaace33d6a9c97900f239b88d695c3e6a042323e33a8cb9cdc24,
+Resultd84ba66b020ae6e30853f2f3f3004bb41809f1167b92a7126ae97797dc61aa53.
+
+Prozessname und DAEMON_CHILD-Cgroup stimmen, Cgroupmitgliedschaft/v2,
+Service/MainPID/Socketpeer, Rootidentität und private Mountnamespace sind
+positiv belegt. Nur der harte Executable-Pfadvergleich war falsch.
+Die tatsächlich laufende root-eigene0555-Datei:79364736Bytes,
+SHAced6dbe1cc091efd959774db180954b9450d179acec042b6243b9f0772ecdd67;
+der49-Byte-Kernellink hat SHA2392e12641e1e94be810449223d3e2d45a79677767742ba9803ecdb28816ddaa.
+Propagation ist noch nicht private; der bestehende Childpfad stellt sie vor
+jedem Bindmount privat. Die feste /etc-Unitdatei bleibt UNKNOWN_MISSING,
+nicht als leer oder vollständig erfasst ausgegeben.
+
+Der neue Vertrag `setup-context-daemon-binding-v2` erlaubt ausschließlich
+Context und Image mit eigener Autorität, eigenem Once, Jobs, Fehlern und
+Quittungen. Kein Recover/Checkout und kein verbrauchter alter Aufruf wird
+wiederholt; die alte fehlgeschlagene Namespace bleibt unverändert gesperrt.
+Die alten Zeitgrenzen1793023051..1793044651 werden nicht verlängert.
+Dies ist ein eigener begrenzter Korrekturweg des Betreiberauftrags zur
+Arbeits-/Testumgebung, keine erneuerte alte Freigabe und kein nativer Fall.
+
+Eine frische rein lesende Inspektion prüft alle Context-Vorbedingungen und
+bindet die unveränderten zwei ACCEPTED plus alten FAIL, die neun geerbten
+Dateibindungen und die aktuelle Daemonidentität. Erst danach darf der neue
+Context-Once verbraucht werden. Die Binärdatei wird nun über gehaltenen
+Kernelprozess, Linkdigest und vollständigen Datei-SHA statt falschem
+Literalpfad gebunden. Alle weiteren Namespace-/Socket-/Cgroup-/Original-/
+UID1000-/Anker-/Mount-/Kanonizitätsprüfungen bleiben erhalten.
+Die sechs Legacy-Observerfelder bleiben ABI-kompatibel.
+
+Nur ein eigener Contextabschluss mit belegtem Workerende, vollständigen
+11Jobdateien und Siegel erlaubt anschließend das feste808960-Byte-
+Budgetimage. Originale808960-Byte-Archivbindung und Bild34e72f77 bleiben
+unverändert; das ist nicht das separate vollständige161574108-Byte-PG17-
+Archiv. Ein Fehler bewahrt den neuen Teilstand und sperrt jede Wiederholung.
+Alter Fehler24124f28, Jobs, Schlüssel und Pakete bleiben erhalten.
+
+998/998 kanonische synthetische Boundarytests lokal grün; darunter76Context-,
+45Service-,25Driver-,37Image-,63Coordinator- und8Transportschutzfälle.
+Unabhängig zusätzlich acht Modul-/ASTfälle und fünf Autoritätsfälle positiv.
+Neue Pflicht-CI und finale Quellenabnahme bleiben vor Merge nötig.
+Noch kein Effektaufruf dieses Vertrags, keine neue native Ausführung.
+
+Neues eigenes Setupfenster UTC: 2026-10-26T20:14:04+00:00 bis 2026-10-27T02:14:04+00:00.
+[Geschlossener Vertrag](hetzner-context-continuation-contract-20261026.json).
+
 ## Docker-Dienstbindung: frischer Lesebeleg, weiterhin kein Contextabschluss
 
 PR960 wurde nach unabhängiger Quellenabnahme und Pflicht-CI40369746302

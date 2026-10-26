@@ -3,12 +3,12 @@
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
 Auftrag: Arbeits-/Testumgebung auf Hetzner; kein Productionumzug.
-Main450447a3/PR960: Pflicht-CI und normalesDeployment READY.
-UNIT_PROPERTIES behoben; Recover/Checkout ACCEPTED, Context bleibt FAIL.
-Vier gepruefte SAFE-Abrufe belegen DAEMON_SERVICE_BINDING vor Context-Attempt.
-548 Laufzeitbindungen passen zum Quellnachweis; Zielqualifikation offen.
-Neue feste Docker-Dienstbeobachtung in Vorbereitung; keine Wiederholung.
-Fehler, Originale, Keys und Einmalmarker erhalten; Mac-Abfrage erledigt.
+Main9df5f9dd/PR962: Pflicht-CI und normalesDeployment READY.
+UNIT_PROPERTIES behoben; Recover/Checkout ACCEPTED, alter Context bleibt FAIL.
+Frischer Daemonbeleg: nur Executable-Pfad falsch erwartet; Binärhash bestätigt.
+Neue eigenständige Context/Image-Fortsetzung vorbereitet;998lokaleTests grün.
+548 Runtime-Bindings passen zum Quellnachweis; Ziel-/Dev-/DB-Abnahme offen.
+Fehler, Originale, Keys und alte Einmalmarker erhalten; Mac-Abfrage erledigt.
 Native Messung und500er-Lauf bleiben ohne frisches konkretes GO gesperrt.
 [Uebergabe](betrieb/helmut-thread-handoff-20261026.md) · [Belege](betrieb/hetzner-native-automation-20261026.md).
 

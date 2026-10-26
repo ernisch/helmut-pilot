@@ -17,8 +17,8 @@ SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parent
 SOURCE_SHA256 = {
     'bootstrap': '740e7cd3218eec796abf9fe408db2db7ddeaeeade34ddc2363942d5fcf9a4f97',
-    'server': 'b988af939a95a74baa5a7e38e07de1f65c8eca51e13aa688833dd1b4138bc99d',
-    'client': '2ebd98082d201d29d34147b2ea7b33c5fa5b3cab5792b0d0224d521e1d41eb02',
+    'server': '67cc1cdfdcd1375dd78aef8fef8128879c0e8d0a072819af8096c48d2f32e3fe',
+    'client': 'ad4112136dac6478a65f986db1e05f26d308cf3898a1ffe143efe8afaae23573',
     'installer': 'f3512b1126ece5eb744db3f991c8c2c4d0b7703350c13ded52dd0c1c894d21d3',
 }
 RECIPIENT_SHA256 = '8e054d8d1c7ba5428b2fa9537462689fd0863621fd2d1eed16742fa2b3a49b10'
@@ -93,7 +93,9 @@ def main():
                    'setup-successor-preflight', 'setup-successor',
                    'setup-successor-client', 'setup-successor-server',
                    'runtime-metadata', 'runtime-metadata-client', 'runtime-metadata-server',
-                   'daemon-binding', 'daemon-binding-transport'))
+                   'daemon-binding', 'daemon-binding-transport', 'context-continuation',
+                   'context-continuation-service', 'context-continuation-driver', 'context-continuation-image',
+                   'context-continuation-coordinator', 'context-continuation-transport'))
     for group, test_file in groups:
         filename = SCRIPTS / test_file
         module = types.ModuleType('native_control_tests_' + group)

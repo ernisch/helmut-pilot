@@ -37,6 +37,9 @@ RUNTIME_METADATA_PREFIX = b'helmut-runtime-metadata-request-v1\0'
 DAEMON_BINDING_CONTRACT = 'daemon-binding-observation-20261026-v1'
 DAEMON_BINDING_CONTRACT_SHA256 = 'fe6a763fee403a0e34a943db533b0aca71b38afdfc9408143e0d9aef064844bd'
 DAEMON_BINDING_PREFIX = b'helmut-daemon-binding-request-v1\0'
+CONTINUATION_ID = 'setup-context-daemon-binding-v2'
+CONTINUATION_PREFIX = b'helmut-context-continuation-request-v1\0'
+CONTINUATION_COORDINATOR_SHA256 = 'eb5d7a1602ebb4861dd4aa181cee381613c987943b7cd4e3aad6a776270404b6'
 RUNTIME_METADATA_CAPSULE_KEYS = {'schema', 'contract_id', 'action', 'chunk', 'source_sha256',
     'contract_sha256', 'nonce', 'issued_at_utc', 'expires_at_utc'}
 RUNTIME_METADATA_SHA256 = '71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475'
@@ -254,6 +257,71 @@ def _setup_capsule_check(value, payload, now=None):
         for key in ('inspection_nonce', 'inspection_result_sha256'): pinned_sha(value[key])
 
 
+def _continuation_capsule_check(v, payload, now=None):
+    require(type(v) is dict and set(v) == SETUP_CAPSULE_KEYS
+            and v['schema'] == 'helmut-context-continuation-capsule-v1'
+            and v['contract_id'] == CONTINUATION_ID and v['action'] in ('inspect','setup')
+            and v['source_sha256'] == payload, 'continuation-capsule')
+    for key in ('source_sha256','contract_sha256','nonce'): pinned_sha(v[key])
+    require(type(v['issued_at_utc']) is int and type(v['expires_at_utc']) is int
+            and 0 < v['issued_at_utc'] < v['expires_at_utc']
+            and v['expires_at_utc']-v['issued_at_utc'] <= 300, 'continuation-capsule')
+    if now is not None: require(v['issued_at_utc'] <= now <= v['expires_at_utc'], 'continuation-capsule')
+    if v['action'] == 'inspect':
+        require(v['phase'] is v['inspection_nonce'] is v['inspection_result_sha256'] is None, 'continuation-capsule')
+    else:
+        require(v['phase'] in ('context','image'), 'continuation-capsule')
+        pinned_sha(v['inspection_nonce']); pinned_sha(v['inspection_result_sha256'])
+
+
+def validate_continuation_result(result, sent, capsule):
+    _continuation_capsule_check(capsule, sent['payload_sha256'])
+    require(sent['operation'] == ('status' if capsule['action'] == 'inspect' else 'admit')
+            and sent['plan_sha256'] == STAGE_PLAN and sent['nonce'] == control_request_nonce(capsule), 'response-binding')
+    require(type(result) is dict and result.get('contract_id') == CONTINUATION_ID
+            and result.get('native_qualified') is False and result.get('native_go_consumed') is False, 'continuation-result')
+    if result.get('schema') == 'helmut-context-continuation-result-v1':
+        hashes = {'authority_sha256','attempt_sha256','ready_sha256','accepted_sha256','lifecycle_sha256'}
+        require(set(result) == {'schema','status','contract_id','contract_sha256','phase','code',*hashes,
+                              'native_qualified','native_go_consumed'}, 'continuation-result')
+        require(result['phase'] in ('preflight','context','image')
+                and (result['contract_sha256'] is None or result['contract_sha256'] == capsule['contract_sha256'])
+                and type(result['code']) is str and re.fullmatch('[A-Z][A-Z0-9_]{0,63}',result['code']), 'continuation-result')
+        if result['status'] == 'FAIL_KEEP_STATE_NO_RETRY':
+            require(all(result[key] is None for key in hashes), 'continuation-result')
+            return
+        require(capsule['action'] == 'setup' and result['phase'] == capsule['phase']
+                and result['contract_sha256'] == capsule['contract_sha256']
+                and result['status'] == 'SETUP_PHASE_COMPLETE_NOT_NATIVE_QUALIFIED'
+                and result['code'] == 'SETUP_PHASE_COMPLETE', 'continuation-result')
+        for key in hashes: pinned_sha(result[key])
+        return
+    require(capsule['action'] == 'inspect' and set(result) == {'schema','status','contract_id','request_nonce','capsule',
+            'source_sha256','contract_sha256','asset_set_sha256','coordinator_sha256','old_baseline_sha256',
+            'partial_setup_proof','failure_diagnostic','daemon_identity_sha256','preflight','observed_at_utc',
+            'native_qualified','native_go_consumed'}
+            and result['schema'] == 'helmut-context-continuation-inspection-v1'
+            and result['status'] == 'INSPECTED_NOT_ADMITTED' and result['request_nonce'] == sent['nonce']
+            and result['capsule'] == capsule and result['source_sha256'] == sent['payload_sha256']
+            and result['contract_sha256'] == capsule['contract_sha256']
+            and result['coordinator_sha256'] == CONTINUATION_COORDINATOR_SHA256
+            and type(result['observed_at_utc']) is int
+            and capsule['issued_at_utc'] <= result['observed_at_utc'] <= capsule['expires_at_utc'], 'continuation-result')
+    for key in ('asset_set_sha256','coordinator_sha256','old_baseline_sha256','daemon_identity_sha256'): pinned_sha(result[key])
+    _runtime_partial_setup_proof(result['partial_setup_proof']); _runtime_failure_diagnostic(result['failure_diagnostic'])
+    require(result['old_baseline_sha256'] == result['partial_setup_proof']['baseline_sha256'], 'continuation-result')
+    p = result['preflight']
+    require(type(p) is dict and set(p) == {'schema','status','source_proof_sha256','daemon_binding_sha256',
+            'held_source_count','anchor_count','native_qualified','native_go_consumed'}
+            and p['schema'] == 'helmut-context-daemon-binding-v2-preflight-v1'
+            and p['status'] == 'PREFLIGHT_OBSERVED_NOT_NATIVE_QUALIFIED'
+            and p['daemon_binding_sha256'] == result['daemon_identity_sha256']
+            and type(p['held_source_count']) is int and p['held_source_count'] == 7
+            and type(p['anchor_count']) is int and p['anchor_count'] == 3
+            and p['native_qualified'] is False and p['native_go_consumed'] is False, 'continuation-result')
+    pinned_sha(p['source_proof_sha256']); pinned_sha(p['daemon_binding_sha256'])
+
+
 def _daemon_binding_capsule_check(value, payload, now=None):
     require(type(value) is dict and set(value) == RUNTIME_METADATA_CAPSULE_KEYS - {'chunk'}
             and value['schema'] == 'helmut-daemon-binding-capsule-v1'
@@ -372,7 +440,7 @@ def setup_capsule(environment, operation):
     if encoded == '':
         require(mode == 'control-v1', 'setup-mode')
         return b'', None
-    require(mode in ('setup-inspect-v1', 'setup-successor-v1', 'runtime-metadata-v1'), 'setup-mode')
+    require(mode in ('setup-inspect-v1', 'setup-successor-v1', 'runtime-metadata-v1', 'context-continuation-v1'), 'setup-mode')
     require(operation in ('status', 'admit') and environment.get('HELMUT_NATIVE_STAGE_CAPSULE', '') == ''
             and environment.get('HELMUT_NATIVE_PLAN_SHA256') == STAGE_PLAN, 'setup-capsule')
     require(type(encoded) is str and 0 < len(encoded) <= 10924
@@ -382,6 +450,10 @@ def setup_capsule(environment, operation):
     require(0 < len(raw) <= 8191 and base64.b64encode(raw).decode('ascii') == encoded, 'setup-capsule')
     value = json_unique(raw)
     require(canonical(value) == raw, 'setup-capsule')
+    if mode == 'context-continuation-v1':
+        _continuation_capsule_check(value,pinned_sha(environment.get('HELMUT_NATIVE_PAYLOAD_SHA256')),int(time.time()))
+        require(operation == ('status' if value['action'] == 'inspect' else 'admit'), 'setup-mode')
+        return raw+b'\n', value
     if mode == 'runtime-metadata-v1':
         require(operation == 'status', 'setup-mode')
         require(type(value) is dict, 'daemon-binding-capsule')
@@ -404,6 +476,8 @@ def runtime_metadata_request_nonce(capsule):
 
 
 def control_request_nonce(capsule):
+    if capsule['schema'] == 'helmut-context-continuation-capsule-v1':
+        return digest(CONTINUATION_PREFIX+canonical(capsule)+b'\n')
     if capsule['schema'] == 'helmut-daemon-binding-capsule-v1':
         return digest(DAEMON_BINDING_PREFIX + canonical(capsule) + b'\n')
     if capsule['schema'] == 'helmut-runtime-metadata-capsule-v1':
@@ -943,6 +1017,8 @@ def validate_response(raw, sent, successor_capsule=None):
             "response-hash")
     if successor_capsule is None:
         validate_result(reply["result"], sent["operation"], sent["payload_sha256"])
+    elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-context-continuation-capsule-v1':
+        validate_continuation_result(reply['result'], sent, successor_capsule)
     elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-daemon-binding-capsule-v1':
         validate_daemon_binding_result(reply['result'], sent, successor_capsule)
     elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-runtime-metadata-capsule-v1':
