@@ -44,6 +44,25 @@ class Connection:
 
 
 class SetupControllerTests(unittest.TestCase):
+    def test_runtime_reader_and_all_historical_sources_match_fixed_pins(self):
+        from helmut_native_test_support import read_noatime
+        raw=read_noatime(ROOT/'scripts/hetzner-native-runtime-metadata.py')
+        self.assertEqual((len(raw),hashlib.sha256(raw).hexdigest()),
+                         (S.RUNTIME_METADATA_BYTES,S.RUNTIME_METADATA_SHA256))
+        reader={'__name__':'runtime_metadata_pins'}
+        exec(compile(raw,'runtime_metadata_pins','exec'),reader)
+        self.assertEqual(reader['CONTRACT_ID'],S.RUNTIME_METADATA_ID)
+        self.assertEqual(reader['CONTRACT_SHA256'],S.RUNTIME_METADATA_CONTRACT_SHA256)
+        self.assertEqual(reader['SETUP_CONFIG']['setup_deployment_commit'],S.RUNTIME_SETUP_COMMIT)
+        self.assertEqual(reader['SETUP_CONFIG']['setup_server_sha256'],S.RUNTIME_SETUP_SOURCE)
+        self.assertEqual(reader['SETUP_CONFIG']['contract_sha256'],
+                         'e5ffcce62f8a419f11596e7ef88e9d10f4585d33b1b18e7d962670475d4d4059')
+        for name,pin in reader['MODULE_PINS'].items():
+            with self.subTest(module=name):
+                source=read_noatime(ROOT/'scripts'/pin['repoFile'])
+                self.assertEqual((len(source),hashlib.sha256(source).hexdigest()),
+                                 (pin['bytes'],pin['sha256']))
+
     def test_deployed_public_assets_and_coordinator_match_exact_repository_bytes(self):
         from helmut_native_test_support import read_noatime
         raw=read_noatime(ROOT/'scripts/hetzner-native-setup-coordinator.py')

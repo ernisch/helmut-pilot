@@ -5,6 +5,71 @@ und CURRENT_STATE. Die [Thread-Uebergabe](helmut-thread-handoff-20261026.md)
 bleibt die verifizierte Ausgangsbasis; ihre Stopp- und Schutzgrenzen gelten weiter.
 Dieses Dossier enthaelt auch historische Zwischenstaende, keine neuen Laufrechte.
 
+## Neuer rein lesender Vertrag fuer den erhaltenen Contextfehler
+
+Die zweite Inspektion40360209226 auf Main8139b3a9 ist erfolgreich. Sie bindet
+frisch den211-Byte-Erstfehler16add10c und den220-Byte-Temp97dc56c0 als exakt
+quellbelegten WORKER_ALREADY_ATTEMPTED-Fall; Gzip487052181Bytes/be423c61,
+Prozessende und explizit typisierte leere Exec-Listen sind positiv geprueft.
+Recover40360475939 und Checkout40360938472 sind anschliessend tatsaechlich
+ACCEPTED; alle Originale und alten Fehlerbelege bleiben erhalten.
+
+Context40361288020 (Job121707124590, Nonce
+`8e1471f3745f196f402ccc4ed96000225c73d725f0349e75a481e1f858073d59`)
+endet dagegen FAIL_KEEP_STATE_NO_RETRY/WORKER_FAILED. Image wurde nicht
+angefordert. Dieser Fehler tritt im Guard erst nach ARM auf: Der zugrunde
+liegende Contextzustand ist bis zur Diagnose ausdruecklich UNKNOWN/NOT_READY.
+Der Fehler ist kein Beleg fuer ein leeres oder erfolgreiches Contextsetup.
+Kein Context-/admit-/Recover-Aufruf wird zur Diagnose wiederholt; keine Marker
+werden entfernt, umbenannt oder zurueckgesetzt.
+
+Artefakt12666459820:852Bytes, ZIP-SHA256
+`8d57bcfdddfd9e797a6217471e1b12ff596be81a76652d6af47dbb57f5106052`.
+Antwort-SHA256 `b4099527980858a10433f5f24749d8a6d4241947a257491b4214650e5fedb2fd`,
+Result-SHA256 ohneLF `b5d407c5ea19a08bbba3d1151cbf274622ff80821a2b92c8be4199bca0612e30`.
+Die Rootfehlerdatei verwendet dagegen encoded(result) mitLF; ihre Bindung
+muss diese Hashkonvention korrekt beruecksichtigen.
+
+Der bisher unveroeffentlichte Readerentwurf mit Vier-ACCEPTED-Bedingung wird
+gezielt ersetzt: Ein neuer rein lesender Vertrag bindet den exakt bekannten
+Zweierpraefix sowie diesen unveraenderten dritten FAIL. Er gibt keine neue
+Effektfreigabe und behauptet weder Context- noch Runtime- oder Setupabschluss.
+Authority/Once, zwei echte ACCEPTED-Marker und vollstaendige Job-Siegel,
+drei Attempts, Rootfehler und genau drei Jobs werden positiv nachgelesen;
+der fehlgeschlagene Job wird separat geprueft und nie als ACCEPTED ausgegeben.
+Alte accepted_chain/state_check werden nicht durch Fehlerausblendung umgangen.
+
+Nur feste, sourcebekannte Fehlerdateien und ihre Typ-/Code-/Klassenprojektionen
+sowie Hashes/Groessen/Metadaten werden ausgegeben. Unbekannte Inhalte bleiben
+UNKNOWN; keine freien privaten Fehlertexte, Pfade, Schluessel oder Quellcodes.
+WORKER_FAILED wird nicht als urspruenglicher Contextfehler ausgelegt.
+Der gespeicherte lastAcknowledgedStep ist nur ein Index; daraus folgt kein
+Nachweis abgeschlossener Mountschritte. NOT_STARTED kann bereits angelegte
+leere Anker oder Attemptdateien einschliessen.
+
+Zusaetzlich darf ausschliesslich die durch Recovery und Scope08f bereits
+gebundene SAFE-Metadatei READONLY_RUNTIME_BINDINGS.SAFE.json gelesen werden:
+207733Bytes, SHA256
+`71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475`.
+Vier feste65536-Byte-Chunks, voller Dateihash und unveraenderte Metadaten je
+Abruf; Owner/Modus kommen aus dem exakt gehashten Source-Scope. Das ist keine
+neue Originaluebertragung oder Gesamtinventur und kein nativer Fall.
+Client/Server binden Source, Vertrag, Host100.96.83.66, Zeit und Requesthash;
+Nativeflags bleiben false. Das alte Setupfenster wird nicht verlaengert.
+Neue Sourceabnahme und Pflicht-CI sind vor dem ersten Diagnoseaufruf erforderlich.
+Erst der tatsaechliche Erstfehler kann einen konkreten Reparaturplan begruenden.
+
+Vertrag `runtime-metadata-failed-context-20261026-v1`, SHA256
+`b85cecc106ab2e2a40d19f02c8caa412e6e6e3f86c6ee4c5bfa18fbe712a2caf`.
+Reader46826Bytes/`edcc93c55404685d3637abb096589f90c02ec1fce2a0e75b54dc53003b269046`,
+Server `5c75b20e947372577a16736e653fca4c909141aa0f990480a0dba2fd49ef3bee`,
+Client `cb90df51b18ae76792760828a0dec4897de411b3aaeceb55adde57ee6402893f`.
+Lokale kanonische Boundarysuite721/721 und zwoelf unabhaengige gezielte
+Pruefungen bestanden. Dies ist eine Quellenqualifikation, noch kein Zielabruf.
+Die Kernelbindung von Controller/Worker und die vollstaendige leere Cgroup
+bleiben zwingend. Ein durch systemd bereits freigegebenes Unitobjekt wird nur
+als UNKNOWN_UNIT_OBSERVATION ausgewiesen; fehlende Exec-Angaben gelten nie als leer.
+
 ## Vor-ARM-Fehlerdatei des alten Guards
 
 PR959 ist auf Main `18c2736ac4da2cf946ccb4494ad2963091de7d32` gemergt.
@@ -52,9 +117,9 @@ zu einem neuen begrenzten, positiv validierten Inspector offen; vorher kein
 Einrichtungsschritt. Es gibt keinen Markerreset oder Wiederholung alter Requests.
 Der Reparaturstand besteht666 synthetische Pruefungen und acht unabhaengige
 Zusatzfaelle; Current-State-Groessenpruefung und Diffpruefung sind ebenfalls gruen.
-Das feste Setupfenster wird nicht verlaengert. Der vorbereitete Runtime-Metadaten-
-PR960 bleibt Entwurf; sein historischer Bezug muss nach dem Setupfix aktualisiert
-werden und darf nicht vor vier tatsaechlichen Setup-Abnahmen gemergt werden.
+Das feste Setupfenster wird nicht verlaengert. Die damalige Vier-Abnahmen-
+Bedingung des unveroeffentlichten PR960 ist nach dem spaeteren erhaltenen
+Contextfehler durch den oben beschriebenen reinen Diagnosevertrag zu ersetzen.
 
 ## Neuer gebundener Setupweg (26.10.2026 Istanbul)
 

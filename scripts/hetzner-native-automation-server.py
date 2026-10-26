@@ -1449,6 +1449,12 @@ SETUP_SUCCESSOR_COORDINATOR_BYTES = 41531
 SETUP_SUCCESSOR_PREFLIGHT_SHA256 = '726534ef06f5649efa1282c0aabdc49857706104a4a82f2677259cc837a1764b'
 SETUP_SUCCESSOR_PREFLIGHT_BYTES = 19099
 SETUP_SUCCESSOR_CONTRACT = 'docs/betrieb/hetzner-setup-successor-contract-20261026.json'
+RUNTIME_METADATA_ID = 'runtime-metadata-failed-context-20261026-v1'
+RUNTIME_METADATA_CONTRACT_SHA256 = 'b85cecc106ab2e2a40d19f02c8caa412e6e6e3f86c6ee4c5bfa18fbe712a2caf'
+RUNTIME_METADATA_SHA256 = 'edcc93c55404685d3637abb096589f90c02ec1fce2a0e75b54dc53003b269046'
+RUNTIME_METADATA_BYTES = 46826
+RUNTIME_SETUP_COMMIT = '8139b3a99d04e3e854f886123869bf669da6389d'
+RUNTIME_SETUP_SOURCE = '1fc63bf8c90a6f13a2eebf4981d7f0c7da0b10f5e5c2fd563551e117f0ec58fe'
 
 
 def _setup_successor_qualified():
@@ -1497,11 +1503,16 @@ def _setup_read_capsule(context):
         return None
     _require(raw.endswith(b'\n') and raw.count(b'\n') == 1, 'SETUP_CAPSULE_FRAME')
     value = _stage_diag_json(bytes(raw))
-    _require(type(value) is dict and set(value) == {'schema', 'contract_id', 'action', 'phase',
+    _require(type(value) is dict, 'SETUP_CAPSULE_FIELDS')
+    encoded = (json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode('ascii')
+    _require(bytes(raw) == encoded, 'SETUP_CAPSULE_BINDING')
+    if value.get('schema') == 'helmut-runtime-metadata-capsule-v1':
+        _runtime_metadata_capsule(value)
+        return value
+    _require(set(value) == {'schema', 'contract_id', 'action', 'phase',
              'source_sha256', 'contract_sha256', 'nonce', 'inspection_nonce',
              'inspection_result_sha256', 'issued_at_utc', 'expires_at_utc'}, 'SETUP_CAPSULE_FIELDS')
-    encoded = (json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode('ascii')
-    _require(bytes(raw) == encoded and value['schema'] == 'helmut-setup-successor-capsule-v1'
+    _require(value['schema'] == 'helmut-setup-successor-capsule-v1'
              and value['contract_id'] == SETUP_SUCCESSOR_ID, 'SETUP_CAPSULE_BINDING')
     _require(value['action'] in ('inspect', 'setup') and
              (value['phase'] is None if value['action'] == 'inspect' else
@@ -1514,7 +1525,8 @@ def _setup_read_capsule(context):
 def _setup_public_source(commit, path, deadline, limit, expected_sha=None, expected_bytes=None):
     allowed = {'scripts/hetzner-native-setup-successor.py',
                'scripts/hetzner-native-setup-coordinator.py',
-               'scripts/hetzner-native-setup-successor-preflight.py', SETUP_SUCCESSOR_CONTRACT}
+               'scripts/hetzner-native-setup-successor-preflight.py',
+               'scripts/hetzner-native-runtime-metadata.py', SETUP_SUCCESSOR_CONTRACT}
     _require(type(commit) is str and re.fullmatch('[a-f0-9]{40}', commit)
              and path in allowed and type(limit) is int and 0 < limit <= 131072, 'SETUP_SOURCE_BINDING')
     _require((path == SETUP_SUCCESSOR_CONTRACT and expected_sha is None and expected_bytes is None)
@@ -1584,7 +1596,87 @@ def _setup_successor_failure(code, capsule):
         'native_qualified': False, 'native_go_consumed': False}
 
 
-def _setup_watchdog(request, context, successor_capsule=None):
+def _runtime_metadata_capsule(value):
+    _require(type(value) is dict and set(value) == {'schema', 'contract_id', 'action', 'chunk',
+             'source_sha256', 'contract_sha256', 'nonce', 'issued_at_utc', 'expires_at_utc'}
+             and value['schema'] == 'helmut-runtime-metadata-capsule-v1'
+             and value['contract_id'] == RUNTIME_METADATA_ID and value['action'] == 'read'
+             and value['contract_sha256'] == RUNTIME_METADATA_CONTRACT_SHA256
+             and type(value['chunk']) is int and 0 <= value['chunk'] < 4, 'RUNTIME_CAPSULE')
+    _require(all(type(value[k]) is str and re.fullmatch('[a-f0-9]{64}', value[k])
+                 for k in ('source_sha256', 'contract_sha256', 'nonce')), 'RUNTIME_CAPSULE')
+    _require(type(value['issued_at_utc']) is int and type(value['expires_at_utc']) is int
+             and 0 < value['issued_at_utc'] < value['expires_at_utc']
+             and value['expires_at_utc'] - value['issued_at_utc'] <= 300
+             and value['issued_at_utc'] <= time.time() <= value['expires_at_utc'], 'RUNTIME_CAPSULE_TIME')
+
+
+def _runtime_metadata_qualified():
+    return (type(RUNTIME_METADATA_SHA256) is str
+            and re.fullmatch('[a-f0-9]{64}', RUNTIME_METADATA_SHA256) is not None
+            and type(RUNTIME_METADATA_BYTES) is int and 0 < RUNTIME_METADATA_BYTES <= 65536
+            and _setup_successor_qualified())
+
+
+def _runtime_metadata_handle(request, context, capsule):
+    _require(_runtime_metadata_qualified(), 'RUNTIME_NOT_QUALIFIED')
+    _runtime_metadata_capsule(capsule)
+    deadline = context['deadline']
+    raw = _setup_public_source(context['deployment_commit'], 'scripts/hetzner-native-runtime-metadata.py',
+                              deadline, RUNTIME_METADATA_BYTES, RUNTIME_METADATA_SHA256, RUNTIME_METADATA_BYTES)
+    reader = {'__name__': 'helmut_qualified_runtime_metadata', '__file__': '<qualified-runtime-metadata>',
+              '__source_bytes__': raw}
+    exec(compile(raw, reader['__file__'], 'exec'), reader)
+    _require(reader.get('CONTRACT_ID') == RUNTIME_METADATA_ID
+             and reader.get('CONTRACT_SHA256') == capsule['contract_sha256'], 'RUNTIME_CONTRACT')
+    modules = {}
+    for name, filename, pin, size in (
+            ('library', 'hetzner-native-setup-coordinator.py', SETUP_COORDINATOR_SHA256, SETUP_COORDINATOR_BYTES),
+            ('preflight', 'hetzner-native-setup-successor-preflight.py', SETUP_SUCCESSOR_PREFLIGHT_SHA256,
+             SETUP_SUCCESSOR_PREFLIGHT_BYTES),
+            ('successor', 'hetzner-native-setup-successor.py', SETUP_SUCCESSOR_COORDINATOR_SHA256,
+             SETUP_SUCCESSOR_COORDINATOR_BYTES)):
+        raw = _setup_public_source(RUNTIME_SETUP_COMMIT, 'scripts/' + filename, deadline, size, pin, size)
+        module = {'__name__': 'helmut_historical_setup_' + name, '__file__': '<historical-' + filename + '>',
+                  '__source_bytes__': raw}
+        exec(compile(raw, module['__file__'], 'exec'), module)
+        modules[name] = module
+    old_context = {'base': TARGET_BASE, 'source_sha256': RUNTIME_SETUP_SOURCE,
+                   'deployment_commit': RUNTIME_SETUP_COMMIT, 'deadline': deadline}
+    expected, _ = modules['library']['asset_pins']()
+    _, assets = modules['library']['load_assets'](old_context, expected)
+    modules.update(assets)
+    pins = reader.get('MODULE_PINS')
+    _require(type(pins) is dict and set(pins) == set(modules), 'RUNTIME_MODULE_PINS')
+    filenames = dict(modules['library']['FILES']) | {
+        'library': 'hetzner-native-setup-coordinator.py', 'preflight': 'hetzner-native-setup-successor-preflight.py',
+        'successor': 'hetzner-native-setup-successor.py'}
+    for name, module in modules.items():
+        pin = pins[name]
+        _require(type(pin) is dict and set(pin) == {'repoFile', 'sha256', 'bytes'}
+                 and pin['repoFile'] == filenames[name]
+                 and type(pin['bytes']) is int and 0 < pin['bytes'] <= 131072
+                 and type(pin['sha256']) is str and re.fullmatch('[a-f0-9]{64}', pin['sha256'])
+                 and len(module['__source_bytes__']) == pin['bytes']
+                 and hashlib.sha256(module['__source_bytes__']).hexdigest() == pin['sha256'], 'RUNTIME_MODULE_PINS')
+    entry = reader.get('read_runtime_metadata')
+    _require(callable(entry), 'RUNTIME_ENTRYPOINT')
+    result = entry(capsule['chunk'],
+        {key: context[key] for key in ('base', 'source_sha256', 'deployment_commit', 'deadline')}, modules)
+    _runtime_metadata_capsule(capsule)
+    return result
+
+
+def _runtime_metadata_failure(code, capsule, context):
+    return {'schema': 'helmut-runtime-binding-metadata-read-v1', 'status': 'FAIL_CLOSED_NOT_NATIVE_QUALIFIED',
+        'contract_id': RUNTIME_METADATA_ID, 'contract_sha256': capsule['contract_sha256'],
+        'source_sha256': context['source_sha256'],
+        'dataset_sha256': '71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475',
+        'dataset_bytes': 207733, 'chunk_index': capsule['chunk'], 'code': code, 'data_base64': None,
+        'native_qualified': False, 'native_go_consumed': False}
+
+
+def _setup_watchdog(request, context, successor_capsule=None, runtime_capsule=None):
     """Absolute bound covers public-source DNS/headers and the whole coordinator.
 
     A live setup service independently observes this child's pidfd. Killing this
@@ -1592,7 +1684,14 @@ def _setup_watchdog(request, context, successor_capsule=None):
     unmonitored: the service guard stops its own systemd control group.
     """
     successor = successor_capsule is not None
-    _require(_setup_successor_qualified() if successor else _setup_qualified(), 'SETUP_NOT_QUALIFIED')
+    runtime = runtime_capsule is not None
+    _require(not (successor and runtime), 'SETUP_CAPSULE_MODE')
+    _require(_runtime_metadata_qualified() if runtime else
+             _setup_successor_qualified() if successor else _setup_qualified(), 'SETUP_NOT_QUALIFIED')
+    result_limit = 131072 if runtime else 32768
+    def failure(code):
+        if runtime: return _runtime_metadata_failure(code, runtime_capsule, context)
+        return _setup_successor_failure(code, successor_capsule) if successor else _setup_failure(code)
     deadline = context['deadline']
     _require(0 < deadline-time.monotonic() <= 300, 'SETUP_DEADLINE')
     read_end, write_end = os.pipe2(os.O_CLOEXEC)
@@ -1606,23 +1705,24 @@ def _setup_watchdog(request, context, successor_capsule=None):
             _require(library.prctl(1, signal.SIGKILL, 0, 0, 0) == 0
                      and os.getppid() == parent_pid, 'SETUP_PARENT_LOST')
             try:
-                result = (_setup_successor_handle(request, context, successor_capsule) if successor
+                result = (_runtime_metadata_handle(request, context, runtime_capsule) if runtime else
+                          _setup_successor_handle(request, context, successor_capsule) if successor
                           else _setup_handle(request, context))
             except BaseException as error:
                 code = getattr(error, 'code', None)
                 if type(code) is not str or not re.fullmatch('[A-Z][A-Z0-9_]{0,63}', code):
                     code = 'SETUP_CHILD_FAILURE'
-                result = _setup_successor_failure(code, successor_capsule) if successor else _setup_failure(code)
-                if not successor: _setup_first_failure(result)
+                result = failure(code)
+                if not (successor or runtime): _setup_first_failure(result)
             raw = (json.dumps(result, sort_keys=True, separators=(',', ':'), allow_nan=False)+'\n').encode()
-            _require(len(raw) <= 32768, 'SETUP_RESULT_LIMIT')
+            _require(len(raw) <= result_limit, 'SETUP_RESULT_LIMIT')
             offset = 0
             while offset < len(raw):
                 count = os.write(write_end, raw[offset:])
                 _require(count > 0, 'SETUP_RESULT_WRITE')
                 offset += count
             os.close(write_end)
-            os._exit(1 if result.get('status') == 'FAIL_KEEP_STATE_NO_RETRY' else 0)
+            os._exit(1 if result.get('status') in ('FAIL_KEEP_STATE_NO_RETRY', 'FAIL_CLOSED_NOT_NATIVE_QUALIFIED') else 0)
         except BaseException:
             os._exit(1)
     os.close(write_end)
@@ -1638,10 +1738,10 @@ def _setup_watchdog(request, context, successor_capsule=None):
                 space = os.statvfs(TARGET_BASE)
                 _require(space.f_bavail*space.f_frsize >= 8*1024**3, 'SETUP_FREE_SPACE')
                 if not selector.select(min(.25, remaining)): continue
-                block = os.read(read_end, min(65536, 32769-len(raw)))
+                block = os.read(read_end, min(65536, result_limit+1-len(raw)))
                 if not block: selector.unregister(read_end)
                 else: raw.extend(block)
-                _require(len(raw) <= 32768, 'SETUP_RESULT_LIMIT')
+                _require(len(raw) <= result_limit, 'SETUP_RESULT_LIMIT')
         while True:
             child, status = os.waitpid(pid, os.WNOHANG)
             if child:
@@ -1650,20 +1750,22 @@ def _setup_watchdog(request, context, successor_capsule=None):
             _require(time.monotonic() < deadline, 'SETUP_DEADLINE')
             time.sleep(.01)
         result = _stage_diag_json(bytes(raw))
-        schemas = ('helmut-setup-successor-result-v1', 'helmut-setup-successor-inspection-v1') if successor else ('helmut-target-setup-result-v1',)
+        schemas = (('helmut-runtime-binding-metadata-read-v1',) if runtime else
+                   ('helmut-setup-successor-result-v1', 'helmut-setup-successor-inspection-v1') if successor
+                   else ('helmut-target-setup-result-v1',))
         _require(type(result) is dict and result.get('schema') in schemas
                  and result.get('native_qualified') is False and result.get('native_go_consumed') is False,
                  'SETUP_RESULT')
-        failed = result.get('status') == 'FAIL_KEEP_STATE_NO_RETRY'
+        failed = result.get('status') in ('FAIL_KEEP_STATE_NO_RETRY', 'FAIL_CLOSED_NOT_NATIVE_QUALIFIED')
         _require(os.waitstatus_to_exitcode(status) == (1 if failed else 0), 'SETUP_CHILD_EXIT')
-        if failed and not successor: _setup_first_failure(result)
+        if failed and not (successor or runtime): _setup_first_failure(result)
         return result
     except BaseException as error:
         code = getattr(error, 'code', None)
         if type(code) is not str or not re.fullmatch('[A-Z][A-Z0-9_]{0,63}', code):
             code = 'SETUP_WATCHDOG_FAILURE'
-        result = _setup_successor_failure(code, successor_capsule) if successor else _setup_failure(code)
-        if not successor: _setup_first_failure(result)
+        result = failure(code)
+        if not (successor or runtime): _setup_first_failure(result)
         return result
     finally:
         if not waited:
@@ -1689,6 +1791,16 @@ def handle(request,context):
     operation=request['operation']
     capsule = _setup_read_capsule(context) if operation in ('status', 'admit') else None
     if capsule is not None:
+        if capsule['schema'] == 'helmut-runtime-metadata-capsule-v1':
+            _require(set(request) == {'schema', 'operation', 'nonce', 'plan_sha256', 'payload_sha256'}
+                     and operation == 'status' and request.get('schema') == 'helmut-native-control-request-v1'
+                     and request.get('plan_sha256') == STAGE_PLAN
+                     and capsule['source_sha256'] == context['source_sha256'] == request['payload_sha256'],
+                     'RUNTIME_REQUEST_BINDING')
+            encoded = (json.dumps(capsule, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode('ascii')
+            _require(request['nonce'] == hashlib.sha256(b'helmut-runtime-metadata-request-v1\0' + encoded).hexdigest(),
+                     'RUNTIME_REQUEST_NONCE')
+            return _setup_watchdog(request, context, runtime_capsule=capsule)
         _require(operation == ('status' if capsule['action'] == 'inspect' else 'admit'), 'SETUP_CAPSULE_OPERATION')
         _require(capsule['source_sha256'] == context['source_sha256'], 'SETUP_CAPSULE_SOURCE')
         encoded = (json.dumps(capsule, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode('ascii')

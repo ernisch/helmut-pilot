@@ -3,10 +3,10 @@
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
 Auftrag: Arbeits-/Testumgebung auf Hetzner; kein Productionumzug.
-UNIT_PROPERTIES-Fix PR957; Setup PR959/Main18c2736a: CI gruen, Vercel READY.
-Inspector40348666536: FAIL HISTORY_ERROR_DUPLICATE, kein Restore gestartet.
-Reparatur: exakt quellbelegten WORKER_ALREADY_ATTEMPTED-Temp qualifizieren.
-Tatsaechliche Tempklasse noch unbekannt; neue Zielabnahme nach Reparatur offen.
+UNIT_PROPERTIES-Fix nativ am Setup belegt; Main8139b3a9 bleibt erhalten.
+Recover und Checkout ACCEPTED; Context40361288020 FAIL WORKER_FAILED.
+Temp211/220 frisch bestaetigt; neuer reiner Fehlerleser in Vorbereitung.
+Context nicht wiederholen; Teilstaende zuerst positiv diagnostizieren.
 Alter Setup40306875483 bleibt FAIL; Fehler, Originale, Keys und Einmalmarker erhalten.
 Mac-Abfrage erledigt; Inspectorfehler samt SAFE-Artefakt erhalten.
 Native Messung und500er-Lauf bleiben ohne frisches konkretes GO gesperrt.

@@ -313,7 +313,7 @@ class FinalIntegrationTests(unittest.TestCase):
         self.assertIn('test "$GITHUB_WORKFLOW_REF" = ' + CLIENT.WORKFLOW_REF, after)
         self.assertIn("HELMUT_NATIVE_CONTROL_MODE: ${{ inputs.controlMode }}", after)
         self.assertIn('case "$HELMUT_NATIVE_CONTROL_MODE" in', after)
-        self.assertIn('options: [disabled, control-v1, setup-inspect-v1, setup-successor-v1]', after)
+        self.assertIn('options: [disabled, control-v1, setup-inspect-v1, setup-successor-v1, runtime-metadata-v1]', after)
         self.assertIn('HELMUT_NATIVE_SETUP_CAPSULE: ${{ inputs.setupCapsule }}', after)
         self.assertIn('default: disabled', after)
         self.assertNotIn('HELMUT_HETZNER_NATIVE_ENABLED', after)
@@ -349,7 +349,11 @@ class FinalIntegrationTests(unittest.TestCase):
                 ('setup-successor-v1','admit','',False),
                 ('setup-successor-v1','admit','synthetic',True),
                 ('setup-successor-v1','status','synthetic',False),
-                ('setup-successor-v1','four-tx','synthetic',False)):
+                ('setup-successor-v1','four-tx','synthetic',False),
+                ('runtime-metadata-v1','status','',False),
+                ('runtime-metadata-v1','status','synthetic',True),
+                ('runtime-metadata-v1','admit','synthetic',False),
+                ('runtime-metadata-v1','four-tx','synthetic',False)):
             values={**environment,'HELMUT_NATIVE_CONTROL_MODE':mode,
                     'HELMUT_NATIVE_OPERATION':operation,'HELMUT_NATIVE_SETUP_CAPSULE':capsule}
             with self.subTest(mode=mode,operation=operation,capsule=capsule):
