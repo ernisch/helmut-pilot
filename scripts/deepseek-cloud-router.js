@@ -787,6 +787,7 @@ function finalVisibleResult(summary, cfg, apiResult, applied) {
     },
     applied_files: applied.map((x) => truncateText(x, 120)),
     summary_compacted: compacted.compacted,
+    budget_settlement: apiResult.budgetSettlementPending ? "pending_reserved" : "settled_or_unknown",
   };
   let raw = JSON.stringify(result);
   if (charCount(raw) > MAX_RETURN_CHARS) {
@@ -834,6 +835,7 @@ function run(options = {}) {
   const admission = preflight(cfg, task, body, sources);
   if (cfg.dryRun) return { status: "dry_run", route: { model: cfg.model, effort: cfg.effort, mode: cfg.mode }, admission };
   let apiResult;
+  let budgetSettlementError = null;
   if (cfg.replayResponse) {
     const saved = JSON.parse(fs.readFileSync(privateResponsePath(cfg.replayResponse, cwd), "utf8"));
     if (saved.version !== 1 || saved.request_sha256 !== requestHash || typeof saved.raw !== "string") {
@@ -872,11 +874,24 @@ function run(options = {}) {
         const actual = apiResult?.usage
           ? observedPeakUsd(cfg.model, apiResult.usage)
           : peakFromRawResponse(rawReceived, cfg.model);
-        dailyBudget.settle(ticket, actual);
+        try {
+          dailyBudget.settle(ticket, actual);
+        } catch (error) {
+          // The response is already paid. Preserve it for reads rather than
+          // discarding it because of a transient settlement lock.
+          // The conservative reservation stays charged until resolved.
+          budgetSettlementError = error;
+        }
       }
     } finally {
       if (fd !== null) fs.closeSync(fd);
     }
+  }
+  if (budgetSettlementError) {
+    if (cfg.mode === "write") {
+      throw new Error("deepseek-budget-settlement-pending; private-response-preserved; no-files-applied");
+    }
+    apiResult.budgetSettlementPending = true;
   }
   apiResult.contextChars = charCount(body.input);
   apiResult.admission = admission;
