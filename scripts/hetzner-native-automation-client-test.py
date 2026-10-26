@@ -309,14 +309,34 @@ class FinalIntegrationTests(unittest.TestCase):
         self.assertIn('timeout-minutes: 10', after)
         self.assertIn("github.workflow_ref == '" + CLIENT.WORKFLOW_REF + "'", after)
         self.assertIn('test "$GITHUB_WORKFLOW_REF" = ' + CLIENT.WORKFLOW_REF, after)
-        self.assertIn("${{ vars.HELMUT_HETZNER_NATIVE_ENABLED }}", after)
-        self.assertIn('test "$ENABLED" = control-v1', after)
+        self.assertIn("HELMUT_NATIVE_CONTROL_MODE: ${{ inputs.controlMode }}", after)
+        self.assertIn('test "$HELMUT_NATIVE_CONTROL_MODE" = control-v1', after)
+        self.assertIn('options: [disabled, control-v1]', after)
+        self.assertIn('default: disabled', after)
+        self.assertNotIn('HELMUT_HETZNER_NATIVE_ENABLED', after)
         self.assertNotIn("vars.HELMUT_HETZNER_CI_ENABLED", after)
         self.assertNotIn("probe-only-v1", after)
         self.assertEqual(after.count("${{ secrets."), 1)
         self.assertIn("${{ secrets.HELMUT_CI_SSH_KEY }}", after)
         self.assertIn('case "$HELMUT_NATIVE_OPERATION" in status|recipient)', after)
         self.assertNotIn("actions/checkout@", after)
+
+    def test_dispatch_guard_rejects_disabled_missing_and_injected_mode(self):
+        workflow=read_noatime(WORKFLOW).decode('utf-8')
+        start=workflow.index('      - name: Exact branch, registered workflow and public input pins')
+        block=workflow[start:workflow.index('\n      - name:',start+10)]
+        script=block.split('        run: |\n',1)[1]
+        script='\n'.join(line[10:] for line in script.splitlines())
+        environment={'PATH':'/usr/bin:/bin','GITHUB_REPOSITORY':CLIENT.REPOSITORY,
+            'GITHUB_REPOSITORY_OWNER':'ernisch','GITHUB_REF':CLIENT.BRANCH,
+            'GITHUB_EVENT_NAME':'workflow_dispatch','GITHUB_WORKFLOW_REF':CLIENT.WORKFLOW_REF,
+            'GITHUB_SHA':'a'*40,'HELMUT_NATIVE_OPERATION':'status',
+            'HELMUT_NATIVE_PLAN_SHA256':'b'*64,'HELMUT_NATIVE_PAYLOAD_SHA256':'c'*64}
+        for mode in (None,'disabled','control-v2','control-v1; false','control-v1'):
+            values=dict(environment)
+            if mode is not None:values['HELMUT_NATIVE_CONTROL_MODE']=mode
+            result=subprocess.run(['/bin/bash','-c',script],env=values,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=5)
+            self.assertEqual(result.returncode==0,mode=='control-v1')
 
 
 if __name__ == "__main__":

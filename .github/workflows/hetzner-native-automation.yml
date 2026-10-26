@@ -5,6 +5,12 @@ name: Hetzner Native Root Control · bounded automation
 on:
   workflow_dispatch:
     inputs:
+      controlMode:
+        description: 'Explicit per-dispatch controller authorization; disabled by default'
+        required: true
+        type: choice
+        options: [disabled, control-v1]
+        default: disabled
       operation:
         description: 'Public control operation; unqualified operations fail before network access'
         required: true
@@ -41,13 +47,12 @@ jobs:
       contents: read
       id-token: write
     env:
+      HELMUT_NATIVE_CONTROL_MODE: ${{ inputs.controlMode }}
       HELMUT_NATIVE_OPERATION: ${{ inputs.operation }}
       HELMUT_NATIVE_PLAN_SHA256: ${{ inputs.planSHA }}
       HELMUT_NATIVE_PAYLOAD_SHA256: ${{ inputs.payloadSHA }}
     steps:
       - name: Exact branch, registered workflow and public input pins
-        env:
-          ENABLED: ${{ vars.HELMUT_HETZNER_NATIVE_ENABLED }}
         run: |
           set -euo pipefail
           test "$GITHUB_REPOSITORY" = ernisch/helmut-pilot
@@ -55,7 +60,7 @@ jobs:
           test "$GITHUB_REF" = refs/heads/main
           test "$GITHUB_EVENT_NAME" = workflow_dispatch
           test "$GITHUB_WORKFLOW_REF" = ernisch/helmut-pilot/.github/workflows/hetzner-native-automation.yml@refs/heads/main
-          test "$ENABLED" = control-v1
+          test "$HELMUT_NATIVE_CONTROL_MODE" = control-v1
           case "$HELMUT_NATIVE_OPERATION" in status|recipient) ;; *) exit 1 ;; esac
           [[ "$HELMUT_NATIVE_PLAN_SHA256" =~ ^[a-f0-9]{64}$ ]]
           [[ "$HELMUT_NATIVE_PAYLOAD_SHA256" =~ ^[a-f0-9]{64}$ ]]
