@@ -914,24 +914,41 @@ function run(options = {}) {
     const savedText = fs.readFileSync(replayPath, "utf8");
     let raw;
     if (savedText.trim()) {
-      const saved = JSON.parse(savedText);
-      if (saved.version !== 1 || saved.request_sha256 !== requestHash || typeof saved.raw !== "string") {
-        throw new Error("deepseek-replay-request-mismatch");
+      let saved = null;
+      try {
+        saved = JSON.parse(savedText);
+      } catch (error) {
+        // A killed process may have left an old, truncated envelope.
+        // Only a SYNTAX failure is recoverable; a valid but mismatching
+        // wrapper is never replaced by untrusted data from a sidecar.
+        if (!(error instanceof SyntaxError)) throw error;
       }
-      raw = saved.raw;
-    } else {
-      // Parent may have died AFTER curl delivered the HTTP response, but
-      // BEFORE the wrapper was written. Request-bound stream survives.
-      const meta = JSON.parse(fs.readFileSync(replayPath + ".meta", "utf8"));
+      if (saved !== null) {
+        if (saved.version !== 1 || saved.request_sha256 !== requestHash || typeof saved.raw !== "string") {
+          throw new Error("deepseek-replay-request-mismatch");
+        }
+        raw = saved.raw;
+      }
+    }
+    if (raw === undefined || raw === null) {
+      // The separately stored request binding must match before raw replay.
+      const metaPath = replayPath + ".meta";
+      const rawPath = replayPath + ".raw";
+      const metaStat = fs.lstatSync(metaPath);
+      if (!metaStat.isFile() || metaStat.isSymbolicLink() ||
+          (metaStat.mode & 0o077) || metaStat.size > 512) {
+        throw new Error("deepseek-stream-metadata-unsafe");
+      }
+      const meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
       if (meta.version !== 1 || meta.request_sha256 !== requestHash) {
         throw new Error("deepseek-replay-request-mismatch");
       }
-      const st = fs.lstatSync(replayPath + ".raw");
+      const st = fs.lstatSync(rawPath);
       if (!st.isFile() || st.isSymbolicLink() || (st.mode & 0o077) ||
           st.size > 16 * 1024 * 1024) {
         throw new Error("deepseek-stream-archive-unsafe");
       }
-      raw = fs.readFileSync(replayPath + ".raw", "utf8");
+      raw = fs.readFileSync(rawPath, "utf8");
     }
     apiResult = parseCurlResponse(raw);
     apiResult.replayed = true;
@@ -973,8 +990,10 @@ function run(options = {}) {
           saveRawResponse: (raw) => {
             rawReceived = raw;
             if (fd !== null) {
-              fs.writeFileSync(fd, JSON.stringify({ version: 1, request_sha256: requestHash, raw }) + "\n");
-              fs.fsyncSync(fd);
+              // Publish the complete envelope atomically. A crash before
+              // rename leaves the initial empty placeholder plus the
+              // already-streamed, request-bound raw bytes recoverable.
+              publishResponseEnvelope(archivePath, requestHash, raw);
             }
           },
         });
@@ -1039,6 +1058,23 @@ function run(options = {}) {
     // The provider may already have billed a successfully received response.
     // Preserve the actual usage receipt even if local validation rejects it.
     throw new Error(`${error.message}; ${usageReceipt(apiResult.usage, apiResult.model || cfg.model)}`);
+  }
+}
+
+function publishResponseEnvelope(file, requestHash, raw) {
+  const tmp = file + ".writing-" + crypto.randomBytes(8).toString("hex");
+  try {
+    fs.writeFileSync(tmp, JSON.stringify({
+      version: 1, request_sha256: requestHash, raw,
+    }) + "\n", { flag: "wx", mode: 0o600 });
+    const fd = fs.openSync(tmp, "r");
+    try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+    fs.renameSync(tmp, file);
+    const dirfd = fs.openSync(path.dirname(file), "r");
+    try { fs.fsyncSync(dirfd); } finally { fs.closeSync(dirfd); }
+  } finally {
+    try { fs.unlinkSync(tmp); }
+    catch (error) { if (error.code !== "ENOENT") throw error; }
   }
 }
 
