@@ -72,12 +72,13 @@ const CORE_CONTEXT = Object.freeze([
     ],
   },
 ]);
+// Maximum size of ONE delegated instruction, not of the overall Sol project.
+// Larger projects are split by Sol into bounded, independently reviewable tasks.
 const MAX_TASK_CHARS = 12000;
 const MAX_RETURN_CHARS = 2000;
 const MAX_FILES = 20;
 const MAX_WRITE_FILES = 1;
 const MAX_WRITE_SOURCE_CHARS = 120000;
-const MAX_WRITE_TASK_CHARS = 3000;
 const MAX_FULL_FILE_CHARS = 18000;
 const MAX_SOURCE_CHARS = 500000;
 // Deliberately conservative current peak prices: update only after provider verification.
@@ -472,9 +473,6 @@ function buildRequestBody(task, cfg, sources) {
 
 function preflight(cfg, task, body, sources) {
   if (cfg.mode === "write") {
-    if (charCount(task) > MAX_WRITE_TASK_CHARS) {
-      throw new Error("write-task-too-large; split-task-before-paid-call");
-    }
     const editable = sources.filter(x => x.editable);
     const total = editable.reduce((sum, x) => sum + charCount(x.content), 0);
     if (total > MAX_WRITE_SOURCE_CHARS) {
