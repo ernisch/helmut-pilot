@@ -146,8 +146,9 @@ Cloud Umgebung vorhanden ist und `api.deepseek.com` erreichbar ist.
 
 Die Aufgabenverteilung im aktiven Routerbetrieb ist:
 
-1. DeepSeek Flash High für normale Analyse, Coding Arbeit, Dokumentation und
-   Routinefehler.
+1. DeepSeek Flash Low fuer sehr kleine, exakt abgegrenzte Routinepruefungen
+   und einfache Codeaenderungen. Flash High fuer schwierigere, trotzdem kleine
+   Analyse, Coding Arbeit, Dokumentation und Routinefehler.
 2. DeepSeek V4 Pro High für schwierige Implementierung, komplexes Debugging und
    klar abgegrenzte technische Ursachenanalyse.
 3. DeepSeek V4 Pro Max nur für sehr schwierige klar abgegrenzte technische
@@ -164,8 +165,11 @@ Fehlschlag startet nicht automatisch ein weiteres Modell.
 
 DeepSeek hat im Router keine Shell und keinen eigenständigen Workspace Zugriff.
 Es arbeitet ausschließlich mit den vom Router übergebenen Textquellen. Bei
-schreibenden Aufgaben darf DeepSeek nur vollständige Ersatzinhalte für zuvor
-ausdrücklich freigegebene Repository Dateien liefern. Der Router wendet eine
+schreibenden Aufgaben liefert DeepSeek standardmaessig nur eindeutige,
+hashgebundene Textstellenersetzungen fuer zuvor freigegebene Dateien
+(`--edit-format replacements`). Vollstaendige Ersatzdateien sind nur als
+bewusst gewaehlte Ausnahme (`--edit-format full`) fuer kleine Dateien
+zulaessig. Der Router wendet eine
 Änderung nur an, wenn Pfad und ursprünglicher SHA256 exakt gebunden sind; bei
 Drift oder einem nicht freigegebenen Pfad wird nichts geschrieben.
 
@@ -231,12 +235,27 @@ Sol arbeitet direkt, wenn mindestens einer dieser Gründe vorliegt:
 4. Es handelt sich nur um eine triviale einzelne Orchestratorhandlung ohne
    eigenständige Analyse, Implementierung oder Reviewarbeit.
 
-Die bloße Tatsache, dass eine Änderung nur ein oder zwei kleine Dateien betrifft
-oder dass Sol sie schnell selbst erledigen könnte, ist allein kein Grund, DeepSeek
-zu überspringen.
+Die blosse Tatsache, dass eine Aenderung nur ein oder zwei kleine Dateien betrifft,
+ist kein automatischer Delegationsgrund. Vor einer kostenpflichtigen Delegation
+muessen die Erfolgsaussicht des konkreten Pakets, sicherer Quellumfang,
+Antwortformat und Kosten gegen die direkte Sol Umsetzung abgewogen werden.
+Sicherheitskritische Wiederherstellung, Root Zugriff, Schluessel und Originaldaten
+bleiben bei Sol; DeepSeek darf nur eng abgegrenzte unabhaengige lesende
+Codepruefungen liefern. Keine Delegation nur zur Erfuellung einer Quote.
 
-Dateien, die den Router Dateiumfang überschreiten oder deren vollständige
-Übertragung den Delegationsnutzen offensichtlich aufzehrt, nicht erst erfolglos
+Jeder DeepSeek Auftrag beginnt mit einer kostenfreien lokalen Vorpruefung
+(`--dry-run`), wenn Groesse oder Kosten zweifelhaft sind. Der Router sperrt
+Schreibauftraege mit mehr als drei Dateien, langen Auftraegen, zu grossem
+Schreibkontext und teuren Reserveschranken vor dem kostenpflichtigen API Aufruf.
+Pro Helferaufruf gilt eine konservative lokale Peak Preisprognose mit
+hoechstens 0,25 USD Planungslimit; diese Prognose ist keine Garantie
+gegen Preiswechsel oder unerwartete Provider Abrechnung. Vor bezahlten
+Aufrufen den dokumentierten Tarif aktuell halten, keine automatische
+Eskalation oder Wiederholung. Nicht abgenommene Antworten mit Verbrauch
+und Fehlergrund offen ausweisen, niemals als gesparten Aufwand zaehlen.
+
+Dateien, die den Router Dateiumfang ueberschreiten oder deren vollstaendige
+Uebertragung den Delegationsnutzen offensichtlich aufzehrt, nicht erst erfolglos
 an DeepSeek senden. In diesem Fall arbeitet Sol direkt oder grenzt die Aufgabe
 anders sicher ab. Keine Router Schleife nur um eine Routingpräferenz zu erfüllen.
 
