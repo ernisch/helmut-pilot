@@ -418,6 +418,49 @@ eines gleich strengen Nachweises der sechs Exec-Listen. Keine neue Ausfuehrung.
 Vollstaendige aktuelle Uebergabe und gesicherte Metadaten:
 [Thread-Uebergabe](helmut-thread-handoff-20261026.md).
 
+## Enge Quellenkorrektur fuer UNIT_PROPERTIES (26.10.2026 Istanbul)
+
+Die neue Sitzung hat die vollstaendige Uebergabe auf Main `17be62b5` gegen
+SHA256 `4f2bf1d911e7df6e0cdbd315e4957c95e0b2d64e7bbf091cb37b7585354248dc`
+geprueft. PR956 ist gemergt; PR-CI40312982708 und Main-CI40313300197 sind SUCCESS,
+beide Pflichtchecks und der Vercel-GitHub-Status auf diesem Mainstand gruen.
+GitHub-/Actions-Lesezugriff ist frisch belegt. SAFE-Archiv und Sicherungsindex
+wurden aus Drive vollstaendig gelesen: beide oben dokumentierten SHA256 stimmen,
+alle13 Mitgliedsdateien des14-Eintraege-Archivs stimmen mit dessen Manifest.
+Keine neue Originalpaket- oder Schluesseluebertragung und keine Zielabfrage.
+
+Die primaeren systemd-v255-Quellen erklaeren die beobachtete Darstellung:
+[systemctl-show.c](https://github.com/systemd/systemd/blob/v255/src/systemctl/systemctl-show.c#L1372)
+druckt Exec-Zeilen nur innerhalb der Schleife ueber vorhandene Befehle. Ein
+leeres Array erzeugt auch mit `--all` keine Zeile. Das ist eine Quellenklaerung,
+kein frisch erhobener Nachweis der installierten Zielversion oder ihrer Werte.
+[dbus-service.c](https://github.com/systemd/systemd/blob/v255/src/core/dbus-service.c#L374)
+und [dbus-execute.h](https://github.com/systemd/systemd/blob/v255/src/core/dbus-execute.h#L20)
+deklarieren die Exec-Listen mit Signatur `a(sasbttttuii)`.
+[busctl.c](https://github.com/systemd/systemd/blob/v255/src/busctl/busctl.c#L1695)
+serialisiert ein direktes `get-property` dieser leeren Liste als
+`{"type":"a(sasbttttuii)","data":[]}`; eine zusaetzliche Arrayhuelle passt nicht.
+
+Der Guard verlangt fuer jede der sechs Listen eine eigene erfolgreiche,
+typisierte D-Bus-Abfrage ueber den festen Systembus. Der deterministische
+Unit-Objektpfad wird zusaetzlich durch die typisierte `Unit.Id` gebunden.
+Fehlende Antworten, falsche Signaturen/Datentypen, JSON-Zusatzfelder und
+nichtleere Hooks stoppen. Keine fehlende Textzeile wird in eine leere Liste
+umgedeutet. Alle bisherigen Nicht-Hook-Felder einschliesslich `ExecStart`
+bleiben exakt Pflicht; eine vollstaendige Ruecklesung nach den D-Bus-Abfragen
+muss denselben Feldbestand und dieselben Werte ergeben. Die bestehenden
+Identitaets-, Prozess-, Cgroup-, Zeit-, ARM-/ACK-/Exit- und Einmalpruefungen
+bleiben erhalten. Alle neuen Abfragen nutzen dieselben absoluten Fristen und
+Ausgabelimits. Fehlendes oder inkompatibles `busctl` bleibt ein Abbruchgrund.
+
+Die Quellenkorrektur wird ausschliesslich synthetisch qualifiziert und separat
+unabhaengig abgenommen. Eine echte neue Setupzulassung ist damit nicht erteilt:
+der erhaltene `recover / UNIT_PROPERTIES`-Versuch, seine Teilstaende und alle
+Once-Marker bleiben gescheitert/gesperrt. Keine Mac-Abfrage, kein `admit`-/Recover-
+Retry und keine native Ausfuehrung aus dieser Korrektur ableiten. Als naechster
+Schritt darf erst ein konkret getrennt neu zugelassener Setupweg vorbereitet
+werden; frisches konkretes Betreiber-GO vor jeder nativen Ausfuehrung bleibt Pflicht.
+
 ## Threadwechsel ohne erneuten Datenumzug
 
 Konkreter Fortsetzungspunkt ist die enge Quellenkorrektur nach der bereits

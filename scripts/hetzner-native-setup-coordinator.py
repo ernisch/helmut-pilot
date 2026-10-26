@@ -32,8 +32,8 @@ FILES = {'guard.py': 'hetzner-native-setup-service.py', 'driver.py': 'hetzner-na
     'image.py': 'hetzner-native-budget-image-import.py'}
 # Exact independently qualified public sources at the CI-verified deployment commit.
 ASSET_MAP = {'guard.py': {'repoFile': 'hetzner-native-setup-service.py',
-              'sha256': 'a41ddc422f5c49f5f6abae87758ce47bd91d4008494bedf46ebff0bf9192659c',
-              'bytes': 34133},
+              'sha256': 'eea7e8eca1d439b7fa2cfa6387de527fdcdc829ed7b502e5fcfab926577cd3f2',
+              'bytes': 35236},
  'driver.py': {'repoFile': 'hetzner-native-setup-driver.py',
                'sha256': 'e2bb2bb06ef259ba7be5814f7a7535a265988d62470a85fc7c3e26cbe158d14f',
                'bytes': 11824},

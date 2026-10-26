@@ -1372,7 +1372,7 @@ def _stage_diagnostic():
 
 # Source pins are filled only after the independent setup qualification. They
 # bind public code at the same CI-verified commit supplied by the bootstrap.
-SETUP_COORDINATOR_SHA256 = 'b3ced6078ddc4f5e6ccab1b6d58581aeafe8888b816d68ed77e1ce3a3c1aed6d'
+SETUP_COORDINATOR_SHA256 = '92d7271f90b38cb8fc8f59eb552f36a26d3fd179481b44429d90dddf14cfe455'
 SETUP_COORDINATOR_BYTES = 22592
 
 

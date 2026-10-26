@@ -35,11 +35,11 @@ ENV = {'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL': 'C'}
 SUCCESS = 'SETUP_PHASE_COMPLETE_NOT_NATIVE_QUALIFIED'
 PROPERTIES = ('Id', 'Transient', 'Type', 'MainPID', 'ControlPID', 'ControlGroup', 'KillMode',
               'RuntimeMaxUSec', 'TimeoutStopUSec', 'Restart', 'RemainAfterExit', 'User', 'Group',
-              'UMask', 'StandardOutput', 'StandardError', 'Delegate', 'ExecStart', 'ExecStartPre',
-              'ExecStartPost', 'ExecCondition', 'ExecStop', 'ExecStopPost', 'ExecReload',
+              'UMask', 'StandardOutput', 'StandardError', 'Delegate', 'ExecStart',
               'InvocationID', 'ActiveState', 'SubState', 'ExecMainPID', 'ExecMainCode',
               'ExecMainStatus', 'ExecMainStartTimestampMonotonic', 'ExecMainExitTimestampMonotonic', 'Result',
               'SendSIGKILL', 'KillSignal', 'FinalKillSignal', 'TimeoutStopFailureMode')
+HOOK_PROPERTIES = ('ExecStartPre', 'ExecStartPost', 'ExecCondition', 'ExecStop', 'ExecStopPost', 'ExecReload')
 
 
 class Stop(Exception):
@@ -266,9 +266,7 @@ def duration(value):
     return total
 
 
-def unit_snapshot(job, finished=False):
-    nonce, deadline = job['request']['nonce'], job['deadline']
-    name = unit_name(nonce)
+def unit_fields(name, deadline):
     raw = command(['/usr/bin/systemctl', 'show', name, '--no-pager', '--property=' + ','.join(PROPERTIES)], deadline)
     fields = {}
     for line in raw.decode('ascii').splitlines():
@@ -276,6 +274,31 @@ def unit_snapshot(job, finished=False):
         need(sep and key not in fields, 'UNIT_FORMAT')
         fields[key] = value
     need(set(fields) == set(PROPERTIES), 'UNIT_PROPERTIES')
+    return fields
+
+
+def unit_hooks(name, deadline):
+    # systemctl show omits empty Exec arrays even with --all. Only an explicit,
+    # correctly typed empty D-Bus array proves that a hook has no commands.
+    path = '/org/freedesktop/systemd1/unit/' + name.replace('-', '_2d').replace('.', '_2e')
+    for interface, key, signature, expected in (
+            ('Unit', 'Id', 's', name),
+            *(('Service', key, 'a(sasbttttuii)', []) for key in HOOK_PROPERTIES)):
+        raw = command(['/usr/bin/busctl', '--system', '--json=short', 'get-property',
+                       'org.freedesktop.systemd1', path, 'org.freedesktop.systemd1.' + interface, key], deadline)
+        try:
+            value = parsed(raw.decode('ascii'))
+        except (ValueError, UnicodeError, RecursionError):
+            raise Stop('UNIT_DBUS_FORMAT') from None
+        need(type(value) is dict and set(value) == {'type', 'data'}
+             and value['type'] == signature and type(value['data']) is type(expected), 'UNIT_DBUS_TYPE')
+        need(value['data'] == expected, 'UNIT_DBUS_IDENTITY' if key == 'Id' else 'UNIT_EXTRA_COMMAND')
+
+
+def unit_snapshot(job, finished=False):
+    nonce, deadline = job['request']['nonce'], job['deadline']
+    name = unit_name(nonce)
+    fields = unit_fields(name, deadline)
     required = {'Id': name, 'Transient': 'yes', 'Type': 'exec', 'ControlPID': '0',
         'KillMode': 'control-group', 'Restart': 'no',
         'RemainAfterExit': 'yes', 'User': 'root', 'Group': 'root', 'UMask': '0077',
@@ -286,8 +309,6 @@ def unit_snapshot(job, finished=False):
          'UNIT_CGROUP')
     need(duration(fields['RuntimeMaxUSec']) == job['runtime_seconds']
          and duration(fields['TimeoutStopUSec']) == 5, 'UNIT_BOUNDS')
-    need(all(fields[k] == '' for k in ('ExecStartPre', 'ExecStartPost', 'ExecCondition',
-                                      'ExecStop', 'ExecStopPost', 'ExecReload')), 'UNIT_EXTRA_COMMAND')
     start = '{ path=/usr/bin/env ; argv[]=' + ' '.join(worker_argv(nonce)) + ' ; ignore_errors=no ;'
     need(fields['ExecStart'].startswith(start) and fields['ExecStart'].count('{') == 1
          and fields['ExecStart'].count('}') == 1, 'UNIT_COMMAND')
@@ -305,6 +326,8 @@ def unit_snapshot(job, finished=False):
         need(fields['MainPID'].isdigit() and int(fields['MainPID']) > 1
              and fields['ExecMainPID'] == fields['MainPID'] and fields['ActiveState'] == 'active'
              and fields['SubState'] == 'running', 'UNIT_RUNNING')
+    unit_hooks(name, deadline)
+    need(unit_fields(name, deadline) == fields, 'UNIT_CHANGED')
     return fields
 
 

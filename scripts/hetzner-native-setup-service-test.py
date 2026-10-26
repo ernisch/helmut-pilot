@@ -515,24 +515,145 @@ class GuardTests(unittest.TestCase):
         if finished: fields.update(MainPID='0', ExecMainCode='1', SubState='exited', ExecMainExitTimestampMonotonic='200000')
         return fields
 
+    def unit_observation(self, fields):
+        return ('\n'.join(k+'='+v for k,v in fields.items())+'\n').encode()
+
+    def unit_command(self, job, fields=None, hooks=None, identity=None, after=None):
+        fields = self.unit_fields(job) if fields is None else fields
+        hooks = {} if hooks is None else hooks
+        name = 'helmut-native-setup-' + self.nonce + '.service'
+        path = '/org/freedesktop/systemd1/unit/helmut_2dnative_2dsetup_2d' + self.nonce + '_2eservice'
+        shown = []
+        def command(argv, deadline):
+            self.assertEqual(deadline, job['deadline'])
+            if argv[0] == '/usr/bin/systemctl':
+                self.assertEqual(argv, ['/usr/bin/systemctl', 'show', name, '--no-pager',
+                                        '--property=' + ','.join(M.PROPERTIES)])
+                shown.append(True)
+                return self.unit_observation(after if after is not None and len(shown) > 1 else fields)
+            key = argv[-1]
+            self.assertIn(key, ('Id', 'ExecStartPre', 'ExecStartPost', 'ExecCondition',
+                                'ExecStop', 'ExecStopPost', 'ExecReload'))
+            self.assertEqual(argv, ['/usr/bin/busctl', '--system', '--json=short', 'get-property',
+                'org.freedesktop.systemd1', path,
+                'org.freedesktop.systemd1.Unit' if key == 'Id' else 'org.freedesktop.systemd1.Service', key])
+            if key == 'Id':
+                return M.encoded({'type': 's', 'data': name if identity is None else identity})
+            return hooks.get(key, b'{"type":"a(sasbttttuii)","data":[]}\n')
+        return command
+
     def test_unit_properties_argv_kill_bounds_and_exit_are_checked(self):
         root, job, raw = self.job(); os.close(root)
         fields = self.unit_fields(job)
-        def observation(value): return ('\n'.join(k+'='+v for k,v in value.items())+'\n').encode()
-        with patch.object(M, 'command', return_value=observation(fields)):
+        with patch.object(M, 'command', side_effect=self.unit_command(job, fields)):
             self.assertEqual(M.unit_snapshot(job)['MainPID'], '4242')
         for change in ({'Transient':'no'}, {'KillMode':'process'}, {'SendSIGKILL':'no'}, {'Restart':'always'},
-                       {'RuntimeMaxUSec':'999s'}, {'User':'1000'}, {'ExecStartPost':'foreign-command'},
+                       {'RuntimeMaxUSec':'999s'}, {'User':'1000'},
                        {'ExecStart':fields['ExecStart'].replace('guard.py','foreign.py')}, {'ControlGroup':'/foreign'}):
-            with self.subTest(change=change), patch.object(M, 'command', return_value=observation({**fields, **change})):
+            with self.subTest(change=change), patch.object(M, 'command', side_effect=self.unit_command(job, {**fields, **change})):
                 with self.assertRaises(M.Stop): M.unit_snapshot(job)
         finished = self.unit_fields(job, finished=True)
         finished['ControlGroup'] = ''  # Missing CG alone is never the exit proof.
-        with patch.object(M, 'command', return_value=observation(finished)):
+        with patch.object(M, 'command', side_effect=self.unit_command(job, finished)):
             M.unit_snapshot(job, finished=True)
         finished['ExecMainCode'] = '2'
-        with patch.object(M, 'command', return_value=observation(finished)):
+        with patch.object(M, 'command', side_effect=self.unit_command(job, finished)):
             with self.assertRaisesRegex(M.Stop, 'UNIT_EXIT'): M.unit_snapshot(job, finished=True)
+
+    def test_observed_missing_six_hooks_requires_all_six_explicit_typed_empty_arrays(self):
+        root, job, raw = self.job(); os.close(root)
+        fields = self.unit_fields(job)
+        hooks = {'ExecCondition', 'ExecReload', 'ExecStartPost', 'ExecStartPre', 'ExecStop', 'ExecStopPost'}
+        self.assertEqual(set(M.HOOK_PROPERTIES), hooks)
+        self.assertTrue(hooks.isdisjoint(fields))  # Exact observed systemctl omission, including with --all.
+        with patch.object(M, 'command', side_effect=self.unit_command(job, fields)) as control:
+            self.assertEqual(M.unit_snapshot(job), fields)
+        self.assertEqual(control.call_count, 9)
+        self.assertEqual([call.args[0][-1] for call in control.call_args_list[2:-1]], list(M.HOOK_PROPERTIES))
+
+    def test_each_nonempty_typed_hook_is_rejected(self):
+        root, job, raw = self.job(); os.close(root)
+        extra = M.encoded({'type': 'a(sasbttttuii)', 'data':
+            [['/bin/false', ['/bin/false'], False, 0, 0, 0, 0, 0, 0, 0]]})
+        for key in M.HOOK_PROPERTIES:
+            with self.subTest(key=key), patch.object(M, 'command', side_effect=self.unit_command(job, hooks={key: extra})):
+                with self.assertRaisesRegex(M.Stop, '^UNIT_EXTRA_COMMAND$'): M.unit_snapshot(job)
+
+    def test_hook_missing_wrong_signature_structure_duplicate_or_extra_json_stops(self):
+        root, job, raw = self.job(); os.close(root)
+        invalid = (b'', b'\n', b'not-json', b'null', b'[]', b'{}', b'{"type":"a(sasbttttuii)"}',
+            b'{"data":[]}', b'{"type":"as","data":[]}', b'{"type":"a(sasbttttuii)","data":[[]]}',
+            b'{"type":"a(sasbttttuii)","data":null}', b'{"type":"a(sasbttttuii)","data":{}}',
+            b'{"type":"a(sasbttttuii)","data":""}', b'{"type":"a(sasbttttuii)","data":false}',
+            b'{"type":"a(sasbttttuii)","data":0}', b'{"type":[],"data":[]}',
+            b'{"type":"a(sasbttttuii)","data":[],"extra":[]}',
+            b'{"type":"a(sasbttttuii)","type":"a(sasbttttuii)","data":[]}',
+            b'{"type":"a(sasbttttuii)","data":[],"data":[]}',
+            b'{"type":"a(sasbttttuii)","data":[]}\n{"type":"a(sasbttttuii)","data":[]}',
+            b'{"type":"a(sasbttttuii)","data":NaN}', b'\xff')
+        for reply in invalid:
+            with self.subTest(reply=reply), patch.object(M, 'command', side_effect=self.unit_command(job, hooks={'ExecStartPre': reply})):
+                with self.assertRaises(M.Stop): M.unit_snapshot(job)
+
+    def test_scalar_properties_remain_closed_complete_and_unique(self):
+        root, job, raw = self.job(); os.close(root)
+        fields = self.unit_fields(job)
+        for key in M.PROPERTIES:
+            missing = {name: value for name, value in fields.items() if name != key}
+            with self.subTest(missing=key), patch.object(M, 'command', side_effect=self.unit_command(job, missing)) as control:
+                with self.assertRaisesRegex(M.Stop, '^UNIT_PROPERTIES$'): M.unit_snapshot(job)
+                self.assertEqual(control.call_count, 1)
+        for key in ('Foreign', *M.HOOK_PROPERTIES):
+            with self.subTest(extra=key), patch.object(M, 'command', side_effect=self.unit_command(job, {**fields, key: ''})):
+                with self.assertRaisesRegex(M.Stop, '^UNIT_PROPERTIES$'): M.unit_snapshot(job)
+        duplicate = self.unit_observation(fields) + b'Id=' + fields['Id'].encode() + b'\n'
+        with patch.object(M, 'command', return_value=duplicate):
+            with self.assertRaisesRegex(M.Stop, '^UNIT_FORMAT$'): M.unit_snapshot(job)
+
+    def test_dbus_object_identity_and_bracketed_unit_drift_fail_closed(self):
+        root, job, raw = self.job(); os.close(root)
+        fields = self.unit_fields(job)
+        with patch.object(M, 'command', side_effect=self.unit_command(job, identity='foreign.service')) as control:
+            with self.assertRaisesRegex(M.Stop, '^UNIT_DBUS_IDENTITY$'): M.unit_snapshot(job)
+            self.assertEqual(control.call_count, 2)
+        for change in ({'InvocationID': 'e'*32}, {'MainPID': '4243'}, {'ExecMainPID': '4243'},
+                       {'ExecMainStartTimestampMonotonic': '100001'}, {'ControlGroup': '/foreign'},
+                       {'ExecStart': fields['ExecStart'] + 'foreign'}, {'SubState': 'exited'}):
+            with self.subTest(change=change), patch.object(M, 'command', side_effect=self.unit_command(job, after={**fields, **change})):
+                with self.assertRaisesRegex(M.Stop, '^UNIT_CHANGED$'): M.unit_snapshot(job)
+
+    def test_each_control_query_failure_stops_without_retry_or_empty_fallback(self):
+        root, job, raw = self.job(); os.close(root)
+        for fail_at in range(1, 10):
+            for error in ('CONTROL_COMMAND_FAILED', 'CONTROL_COMMAND_LIMIT', 'CONTROL_COMMAND_DEADLINE'):
+                answer, calls = self.unit_command(job), []
+                def command(argv, deadline):
+                    calls.append(argv)
+                    if len(calls) == fail_at: raise M.Stop(error)
+                    return answer(argv, deadline)
+                with self.subTest(fail_at=fail_at, error=error), patch.object(M, 'command', side_effect=command):
+                    with self.assertRaisesRegex(M.Stop, '^'+error+'$'): M.unit_snapshot(job)
+                    self.assertEqual(len(calls), fail_at)
+
+    def test_hook_failure_prevents_arm_and_preserves_first_error_without_service_retry(self):
+        # A successful command with no D-Bus output is unknown, never an empty hook.
+        def command(argv, deadline):
+            job = M.parsed((self.base / 'setup-jobs' / self.nonce / 'JOB.PRIVATE.json').read_bytes())
+            return self.unit_command(job, hooks={'ExecStartPre': b''})(argv, deadline)
+        with patch.object(M, 'start_service') as start, patch.object(M, 'command', side_effect=command) as control:
+            result = self.run_guard()
+        self.assertEqual(result['status'], 'FAIL_KEEP_STATE_NO_RETRY')
+        self.assertEqual(result['code'], 'UNIT_DBUS_FORMAT')
+        start.assert_called_once(); self.assertEqual(control.call_count, 3)
+        path = self.base / 'setup-jobs' / self.nonce
+        self.assertFalse(any((path / name).exists() for name in
+            ('ARM.PRIVATE.json', 'RESULT.PENDING.PRIVATE.json', 'RESULT.PRIVATE.json', 'ACK.PRIVATE.json')))
+        first = (path / 'FIRST_ERROR.PRIVATE.json').read_bytes()
+        self.assertEqual(M.parsed(first)['code'], 'UNIT_DBUS_FORMAT')
+        with patch.object(M, 'start_service') as restart:
+            self.assertEqual(self.run_guard()['status'], 'FAIL_KEEP_STATE_NO_RETRY')
+            restart.assert_not_called()
+        self.assertEqual((path / 'FIRST_ERROR.PRIVATE.json').read_bytes(), first)
 
     def test_start_command_clears_environment_and_confines_all_sessions_to_unit(self):
         root, job, raw = self.job(); os.close(root)
