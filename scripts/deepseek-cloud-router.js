@@ -521,9 +521,18 @@ function preflight(cfg, task, body, sources) {
 function observedPeakUsd(model, usage) {
   const rate = PEAK_USD_PER_MILLION[model];
   if (!rate) return null;
-  const input = Number(usage?.input_tokens);
-  const output = Number(usage?.output_tokens);
-  if (![input, output].every(x => Number.isSafeInteger(x) && x >= 0)) return null;
+  // Never coerce null, strings, booleans or absent provider counters to zero.
+  // Unknown usage must preserve the originally reserved budget.
+  if (!usage || typeof usage !== "object") return null;
+  const input = usage.input_tokens;
+  const output = usage.output_tokens;
+  if (![input, output].every(x => typeof x === "number" && Number.isSafeInteger(x) && x >= 0)) {
+    return null;
+  }
+  if (Object.hasOwn(usage, "total_tokens") &&
+      (!Number.isSafeInteger(usage.total_tokens) || usage.total_tokens < input + output)) {
+    return null;
+  }
   return Number(((input * rate.input + output * rate.output) / 1000000).toFixed(6));
 }
 
@@ -769,9 +778,9 @@ function finalVisibleResult(summary, cfg, apiResult, applied) {
     ...(apiResult.replayed ? { replayed: true } : {}),
     route: { model: cfg.model, effort: cfg.effort, mode: cfg.mode },
     usage: {
-      input_tokens: Number(apiResult.usage.input_tokens || 0),
-      output_tokens: Number(apiResult.usage.output_tokens || 0),
-      total_tokens: Number(apiResult.usage.total_tokens || 0),
+      input_tokens: Number.isSafeInteger(apiResult.usage?.input_tokens) ? apiResult.usage.input_tokens : null,
+      output_tokens: Number.isSafeInteger(apiResult.usage?.output_tokens) ? apiResult.usage.output_tokens : null,
+      total_tokens: Number.isSafeInteger(apiResult.usage?.total_tokens) ? apiResult.usage.total_tokens : null,
       context_chars: Number(apiResult.contextChars || 0),
       observed_peak_usd_estimate: observedPeakUsd(cfg.model, apiResult.usage),
       admission_peak_usd_estimate: apiResult.admission?.estimated_peak_usd ?? null,
