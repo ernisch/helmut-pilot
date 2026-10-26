@@ -1383,5 +1383,48 @@ check("P2 Teilhuelle: Requestgebundene vollstaendige Rohantwort bleibt replaybar
   });
 });
 
+check("P1 Antwortablage bindet den Datei-Deskriptor trotz privatem Verzeichnistausch", () => {
+  recoveryFixture(p => {
+    const parent = path.dirname(p.saved);
+    const relocated = parent + ".retained-" + crypto.randomBytes(4).toString("hex");
+    const repoFile = path.join(p.root, path.basename(p.saved));
+    const repoRawFile = path.join(p.root, path.basename(p.saved) + ".raw");
+    const sentinel = "ORIGINAL REPOSITORY CONTENT MUST REMAIN\n";
+    const originalRawSentinel = "PRIVATE REPO RAW MUST REMAIN\n";
+    fs.writeFileSync(repoFile, sentinel);
+    fs.writeFileSync(repoRawFile, originalRawSentinel);
+    let shifted = false;
+    let calls = 0;
+    try {
+      assert.throws(() => p.run(["--save-response", p.saved], {
+        spawnSync: (bin, args, opts) => {
+          calls++;
+          assert.ok(Number.isInteger(opts.stdio[1]));
+          fs.writeSync(opts.stdio[1], p.raw());
+          fs.renameSync(parent, relocated);
+          fs.symlinkSync(p.root, parent, "dir");
+          shifted = true;
+          return { status: 0, stdout: "" };
+        },
+      }), /response-must-be-outside-repo/);
+      assert.equal(calls, 1);
+      assert.equal(fs.readFileSync(repoFile, "utf8"), sentinel);
+      assert.equal(fs.readFileSync(repoRawFile, "utf8"), originalRawSentinel);
+      const persisted = JSON.parse(fs.readFileSync(
+        path.join(relocated, "response.json"), "utf8"));
+      assert.equal(persisted.raw, p.raw());
+      assert.equal(fs.readFileSync(
+        path.join(relocated, "response.json.raw"), "utf8"), p.raw());
+      assert.equal(fs.readdirSync(p.root).filter(n => n.includes(".writing-")).length, 0);
+      assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+    } finally {
+      if (shifted) {
+        fs.unlinkSync(parent);
+        fs.renameSync(relocated, parent);
+      }
+    }
+  });
+});
+
 console.log(`DeepSeek Cloud Router v2: ${pass} PASS, ${fail} FAIL`);
 if (fail) process.exit(1);
