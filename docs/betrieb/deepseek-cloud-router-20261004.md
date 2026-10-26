@@ -267,3 +267,50 @@ allenfalls fuer eine eng begrenzte lesende Codepruefung.
 Referenzen:
 https://api-docs.deepseek.com/api/create-response/
 https://api-docs.deepseek.com/quick_start/pricing/
+
+## Verbindliche Nachschaerfung 26.10.2026: keine Mehrdateien, High/Max und Tagessperre
+
+Vorhandene Abschnitte dokumentieren fruehere Korrekturen. Fuer den aktualisierten
+Router gelten nun ausschliesslich vier explizite Kombinationen:
+Flash High (Standard), Flash Max (ausnahmsweise), Pro High (schwierige
+Aufgaben) und Pro Max (sehr schwierige begrenzte Einzelaufgaben).
+Low und None werden vor jedem API Aufruf abgelehnt. Max bedeutet mehr
+potenziell verbrauchte Reasoningtokens, nicht automatisch mehr nuetzliche
+Codeausgabe. Nie still eskalieren oder einen Fehlversuch automatisch wiederholen.
+
+Schreibauftraege akzeptieren genau eine explizit freigegebene Datei.
+Bei zwei oder mehr Dateiargumenten Abbruch vor dem Anbieteraufruf.
+Damit sind partielle Mehrdatei-Schreibvorgaenge im Router ausgeschlossen.
+Fuer mehrere Dateien getrennte sequenzielle, vorher sinnvoll aufgeteilte
+Auftraege verwenden und Sol Integration ueberlassen. Der alte Grenzwert
+von drei Schreibdateien gilt nicht mehr.
+
+Zusaetzlich zum 0,25 USD Preisprognosedeckel pro Aufruf besteht ein
+lokales Buchungsjournal mit 1,00 USD Tagesgrenze (UTC).
+Das Journal liegt unter HOME/.local/state/helmut-deepseek-router/budget.json,
+ist privat (0600, Verzeichnis0700) und verwendet exklusive
+Dateisperren und atomische Schreibvorgaenge. Vor jedem neuen kostenpflichtigen
+Aufruf wird dessen prognostizierter Peakbetrag dauerhaft reserviert.
+Ein echter erfolgreicher oder unvollstaendiger Antwortverbrauch mit gueltiger
+Usage kann danach auf den tatsaechlichen Peakpreis abgerechnet werden.
+Bei Transportabbruch oder fehlender Usage bleibt die volle Reservierung erhalten.
+Ein Prozessabsturz laesst ein offenes Ticket stehen; es gibt kein heimliches
+Zuruecksetzen oder automatische Entsperrung eines verwaisten Locks.
+Ein voller Tag fuehrt zu einem kostenlosen lokalen Abbruch.
+
+**Grenze:** Diese Tagesgrenze gilt nur fuer Prozesse mit demselben persistenten
+HOME Dateisystem. Verschiedene Codex Cloud Container koennen getrennte HOME
+Dateisysteme verwenden; daher ist dies kein belegter globaler, anbieter-
+oder kontoübergreifender Kostendeckel. Die lokale Prognose nutzt Preise vom
+26.10.2026 und ist kein vom Provider garantiertes Maximum. Keine
+Hostwechsel oder Umgebungsresets als Umgehung einer gesperrten Buchfuehrung.
+Fuer einen harten kontoübergreifenden Tagesdeckel bedarf es eines gemeinsamen,
+atomar geschuetzten Speichers oder einer verbindlichen Providergrenze.
+Keine kostenpflichtige Probe ohne geeignete Freigabe.
+
+Geschwindigkeit: Der lokale Check benoetigt keinen Netzwerkzugriff,
+keinen Modellaufruf und nur kurze private Dateioperationen.
+Es existiert noch keine echte vergleichende Laufzeitmessung zwischen
+den Modellstufen oder fuer die End-to-End-Ausfuehrung. Bis zu 20 Minuten
+Curl Transportfrist sind eine harte technische Obergrenze, keine
+erwartete Laufzeit. Max darf nicht reflexhaft gewaehlt werden.
