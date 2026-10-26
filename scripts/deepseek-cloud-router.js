@@ -300,27 +300,66 @@ function parseArgs(argv) {
 }
 
 function ensureTextFile(absPath) {
-  // Never follow the final symlink while loading source data, including rules.
-  // Otherwise a repository path could silently read a private external target.
-  if (!Number.isInteger(fs.constants.O_NOFOLLOW)) {
-    throw new Error("deepseek-source-nofollow-unavailable");
+  // Securely walk EVERY path component, not only the final file. Linux's
+  // /proc/self/fd binds the next open to the already-open parent directory,
+  // so even a directory replacement between opens cannot redirect the read.
+  // Fail closed on hosts without this safe capability, rather than silently
+  // downgrade to a vulnerable realpath/lstat-then-open sequence.
+  if (process.platform !== "linux" ||
+      !Number.isInteger(fs.constants.O_NOFOLLOW) ||
+      !Number.isInteger(fs.constants.O_DIRECTORY) ||
+      !fs.existsSync("/proc/self/fd")) {
+    throw new Error("deepseek-source-secure-open-unavailable");
   }
-  const fd = fs.openSync(absPath, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+  const absolute = path.resolve(absPath);
+  const segments = absolute.split(path.sep).filter(Boolean);
+  if (!segments.length) throw new Error("deepseek-source-not-regular");
+  let directory = fs.openSync("/", fs.constants.O_RDONLY |
+    fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW);
   try {
-    const stat = fs.fstatSync(fd);
-    if (!stat.isFile()) throw new Error(`deepseek-source-not-regular:${absPath}`);
-    if (stat.size > MAX_FILE_CHARS * 4) {
-      throw new Error(`source-file-too-large:${absPath}`);
+    for (let i = 0; i < segments.length - 1; i++) {
+      const child = `/proc/self/fd/${directory}/${segments[i]}`;
+      let next;
+      try {
+        next = fs.openSync(child, fs.constants.O_RDONLY |
+          fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW);
+      } catch (error) {
+        if (error.code === "ELOOP" || error.code === "ENOTDIR") {
+          throw new Error(`deepseek-source-path-symlink-or-not-directory:${absolute}`);
+        }
+        throw error;
+      }
+      fs.closeSync(directory);
+      directory = next;
     }
-    const buf = fs.readFileSync(fd);
-    if (buf.includes(0)) throw new Error(`binary-file-not-supported:${absPath}`);
-    const content = buf.toString("utf8");
-    if (charCount(content) > MAX_FILE_CHARS) {
-      throw new Error(`source-file-too-large:${absPath}`);
+    let fd;
+    try {
+      fd = fs.openSync(`/proc/self/fd/${directory}/${segments[segments.length - 1]}`,
+        fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    } catch (error) {
+      if (error.code === "ELOOP") {
+        throw new Error(`deepseek-source-path-symlink:${absolute}`);
+      }
+      throw error;
     }
-    return content;
+    try {
+      const stat = fs.fstatSync(fd);
+      if (!stat.isFile()) throw new Error(`deepseek-source-not-regular:${absolute}`);
+      if (stat.size > MAX_FILE_CHARS * 4) {
+        throw new Error(`source-file-too-large:${absolute}`);
+      }
+      const buf = fs.readFileSync(fd);
+      if (buf.includes(0)) throw new Error(`binary-file-not-supported:${absolute}`);
+      const content = buf.toString("utf8");
+      if (charCount(content) > MAX_FILE_CHARS) {
+        throw new Error(`source-file-too-large:${absolute}`);
+      }
+      return content;
+    } finally {
+      fs.closeSync(fd);
+    }
   } finally {
-    fs.closeSync(fd);
+    fs.closeSync(directory);
   }
 }
 
@@ -412,7 +451,16 @@ function loadSources({ cwd, explicitFiles }) {
       editable: false,
     });
   }
-  for (const p of explicitFiles) add(p, true);
+  for (const p of explicitFiles) {
+    // External inputs must be named by their actual absolute identity.
+    // Relative traversal outside this workspace is never implicit consent.
+    const abs = path.resolve(cwd, p);
+    if (!inside(cwd, abs) && (!path.isAbsolute(p) ||
+        fs.realpathSync(abs) !== abs)) {
+      throw new Error("deepseek-external-read-requires-canonical-absolute-path");
+    }
+    add(p, true);
+  }
 
   return sources;
 }
@@ -530,7 +578,7 @@ function observedPeakUsd(model, usage) {
     return null;
   }
   if (Object.hasOwn(usage, "total_tokens") &&
-      (!Number.isSafeInteger(usage.total_tokens) || usage.total_tokens < input + output)) {
+      (!Number.isSafeInteger(usage.total_tokens) || usage.total_tokens !== input + output)) {
     return null;
   }
   return Number(((input * rate.input + output * rate.output) / 1000000).toFixed(6));
