@@ -627,11 +627,24 @@ function callDeepSeek(body, options = {}) {
       encoding: "utf8",
       env: sanitizeEnv(envSource),
       maxBuffer: 16 * 1024 * 1024,
+      ...(options.rawResponseFd != null
+        ? { stdio: ["pipe", options.rawResponseFd, "pipe"] } : {}),
     });
   } finally {
     fs.rmSync(privateDir, { recursive: true, force: true });
   }
-  if (options.saveRawResponse) options.saveRawResponse(String(result.stdout || ""));
+  // In real calls curl writes directly to a private response file descriptor
+  // while the network reply arrives, not after spawnSync returns. A SIGKILL of
+  // the parent therefore does not discard data already emitted by curl.
+  const buffered = String(result.stdout || "");
+  if (options.rawResponseFd != null && buffered) {
+    // Test doubles may return stdout even with a supplied file descriptor.
+    fs.writeSync(options.rawResponseFd, buffered);
+  }
+  if (options.rawResponseFd != null) fs.fsyncSync(options.rawResponseFd);
+  const raw = options.rawResponseFile
+    ? fs.readFileSync(options.rawResponseFile, "utf8") : buffered;
+  if (options.saveRawResponse) options.saveRawResponse(raw);
   if (result.error) {
     if (result.error.code === "ETIMEDOUT") throw new Error("deepseek-worker-timeout");
     throw new Error(`deepseek-curl-start:${result.error.code || result.error.message}`);
@@ -640,7 +653,7 @@ function callDeepSeek(body, options = {}) {
     const tail = String(result.stderr || "").trim().split("\n").slice(-2).join(" | ").slice(0, 400);
     throw new Error(`deepseek-curl-exit-${result.status}${tail ? ":" + tail : ""}`);
   }
-  return parseCurlResponse(String(result.stdout || ""));
+  return parseCurlResponse(raw);
 }
 
 function validateSummary(summary) {
@@ -837,17 +850,52 @@ function run(options = {}) {
   let apiResult;
   let budgetSettlementError = null;
   if (cfg.replayResponse) {
-    const saved = JSON.parse(fs.readFileSync(privateResponsePath(cfg.replayResponse, cwd), "utf8"));
-    if (saved.version !== 1 || saved.request_sha256 !== requestHash || typeof saved.raw !== "string") {
-      throw new Error("deepseek-replay-request-mismatch");
+    const replayPath = privateResponsePath(cfg.replayResponse, cwd);
+    const savedText = fs.readFileSync(replayPath, "utf8");
+    let raw;
+    if (savedText.trim()) {
+      const saved = JSON.parse(savedText);
+      if (saved.version !== 1 || saved.request_sha256 !== requestHash || typeof saved.raw !== "string") {
+        throw new Error("deepseek-replay-request-mismatch");
+      }
+      raw = saved.raw;
+    } else {
+      // Parent may have died AFTER curl delivered the HTTP response, but
+      // BEFORE the wrapper was written. Request-bound stream survives.
+      const meta = JSON.parse(fs.readFileSync(replayPath + ".meta", "utf8"));
+      if (meta.version !== 1 || meta.request_sha256 !== requestHash) {
+        throw new Error("deepseek-replay-request-mismatch");
+      }
+      const st = fs.lstatSync(replayPath + ".raw");
+      if (!st.isFile() || st.isSymbolicLink() || (st.mode & 0o077) ||
+          st.size > 16 * 1024 * 1024) {
+        throw new Error("deepseek-stream-archive-unsafe");
+      }
+      raw = fs.readFileSync(replayPath + ".raw", "utf8");
     }
-    apiResult = parseCurlResponse(saved.raw);
+    apiResult = parseCurlResponse(raw);
     apiResult.replayed = true;
   } else {
     // Only call the provider after a durable atomic UTC-day reservation.
     // If the process crashes, an unknown charge stays reserved conservatively.
-    const fd = cfg.saveResponse
-      ? fs.openSync(privateResponsePath(cfg.saveResponse, cwd), "wx", 0o600) : null;
+    const archivePath = cfg.saveResponse ? privateResponsePath(cfg.saveResponse, cwd) : null;
+    const fd = archivePath ? fs.openSync(archivePath, "wx", 0o600) : null;
+    let rawFd = null;
+    if (archivePath) {
+      try {
+        // Persist the immutable request binding BEFORE incurring any charge.
+        fs.writeFileSync(archivePath + ".meta",
+          JSON.stringify({version: 1, request_sha256: requestHash}) + "\n",
+          {flag: "wx", mode: 0o600});
+        const mfd = fs.openSync(archivePath + ".meta", "r");
+        try { fs.fsyncSync(mfd); } finally { fs.closeSync(mfd); }
+        rawFd = fs.openSync(archivePath + ".raw", "wx+", 0o600);
+      } catch (error) {
+        if (rawFd != null) fs.closeSync(rawFd);
+        fs.closeSync(fd);
+        throw error;
+      }
+    }
     let ticket = null;
     let rawReceived = null;
     try {
@@ -860,6 +908,8 @@ function run(options = {}) {
           env: envSource,
           spawnSync: options.spawnSync,
           apiKey: options.apiKey,
+          rawResponseFd: rawFd,
+          rawResponseFile: archivePath ? archivePath + ".raw" : null,
           saveRawResponse: (raw) => {
             rawReceived = raw;
             if (fd !== null) {
@@ -884,6 +934,7 @@ function run(options = {}) {
         }
       }
     } finally {
+      if (rawFd !== null) fs.closeSync(rawFd);
       if (fd !== null) fs.closeSync(fd);
     }
   }
