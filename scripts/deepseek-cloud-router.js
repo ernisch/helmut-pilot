@@ -802,6 +802,32 @@ function applyEdits() {
   throw new Error("deepseek-direct-file-apply-disabled; use-trusted-git-integration");
 }
 
+function openPinnedPrivateDirectory(dir) {
+  // Validate every directory component, then operate through the pinned FD.
+  // No path may be followed again when writing a private proposal.
+  if (process.platform !== "linux" || !fs.existsSync("/proc/self/fd") ||
+      !Number.isInteger(fs.constants.O_NOFOLLOW) ||
+      !Number.isInteger(fs.constants.O_DIRECTORY)) {
+    throw new Error("deepseek-proposal-pinned-directory-unavailable");
+  }
+  const absolute = path.resolve(dir);
+  const parts = absolute.split(path.sep).filter(Boolean);
+  let fd = fs.openSync("/", fs.constants.O_RDONLY |
+    fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW);
+  try {
+    for (const part of parts) {
+      const child = fs.openSync(`/proc/self/fd/${fd}/${part}`,
+        fs.constants.O_RDONLY | fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW);
+      fs.closeSync(fd);
+      fd = child;
+    }
+    return fd;
+  } catch (error) {
+    fs.closeSync(fd);
+    throw error;
+  }
+}
+
 function stageEdits(prepared, cfg, cwd, requestHash) {
   const saved = cfg.saveResponse || cfg.replayResponse;
   if (!saved) throw new Error("deepseek-proposal-requires-private-archive");
@@ -817,19 +843,50 @@ function stageEdits(prepared, cfg, cwd, requestHash) {
     })),
   };
   const bytes = JSON.stringify(artifact) + "\n";
+  const directory = openPinnedPrivateDirectory(path.dirname(file));
   try {
-    fs.writeFileSync(file, bytes, { flag: "wx", mode: 0o600 });
-    const fd = fs.openSync(file, "r");
-    try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
-  } catch (error) {
-    if (error.code !== "EEXIST") throw error;
-    const stat = fs.lstatSync(file);
-    if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) ||
-        fs.readFileSync(file, "utf8") !== bytes) {
-      throw new Error("deepseek-proposal-existing-differs; no-files-applied");
+    // /proc/self/fd pins the originally opened, validated private directory.
+    // A malicious swap of any ancestor cannot redirect the create into Git.
+    const boundPath = `/proc/self/fd/${directory}/${path.basename(file)}`;
+    let proposalFd;
+    try {
+      proposalFd = fs.openSync(boundPath,
+        fs.constants.O_WRONLY | fs.constants.O_CREAT |
+        fs.constants.O_EXCL | fs.constants.O_NOFOLLOW, 0o600);
+      try {
+        fs.writeFileSync(proposalFd, bytes, { encoding: "utf8" });
+        fs.fsyncSync(proposalFd);
+      } finally {
+        fs.closeSync(proposalFd);
+      }
+      fs.fsyncSync(directory);
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      // Idempotent offline replay. Read the existing proposal through the
+      // SAME pinned directory and reject symlinks or changed contents.
+      proposalFd = fs.openSync(boundPath,
+        fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+      try {
+        const stat = fs.fstatSync(proposalFd);
+        if (!stat.isFile() || stat.nlink !== 1 ||
+            (stat.mode & 0o077) || stat.size > 1024 * 1024 ||
+            fs.readFileSync(proposalFd, "utf8") !== bytes) {
+          throw new Error("deepseek-proposal-existing-differs; no-files-applied");
+        }
+      } finally {
+        fs.closeSync(proposalFd);
+      }
     }
+    // A relocated directory remains safe, but the old pathname may now
+    // point at foreign files. Do not hand that misleading pathname to Sol.
+    const currentDir = fs.realpathSync(`/proc/self/fd/${directory}`);
+    if (currentDir !== path.dirname(file)) {
+      throw new Error("deepseek-proposal-private-directory-moved; no-files-applied");
+    }
+    return file;
+  } finally {
+    fs.closeSync(directory);
   }
-  return file;
 }
 
 function truncateText(value, maxChars) {
