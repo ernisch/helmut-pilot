@@ -348,6 +348,17 @@ umask022 in9,549s. Unabhaengige SOL-Abnahme PASS fuer Test-SHA256
 Runtime-SHA256 `1934c0fd09f3316b3e7088bc974925c3eebc719ca1ac512d9edde704cb3916bb`
 unveraendert. Keine echte Zielausfuehrung; Pflicht-CI bleibt offen.
 
+## Gesicherte Integration PR954 (26.10.2026 Istanbul)
+
+PR-CI40299279482 auf dem exakt unabhaengig abgenommenen Endstand
+`c52522c41141b182a2dd73edca624960f9e0990a` ist vollstaendig SUCCESS.
+Beide Pflichtjobs, die tatsaechliche Native-Automation-Grenzpruefung und der
+Vercel-GitHub-Check wurden vor dem Merge frisch bestaetigt. Der freigegebene
+Merge ist auf Main `f1be0a0c0ac0f5a87fdb135c17b759dfe444b8f0` verifiziert.
+Main-CI40302732339 laeuft noch. Bis zu ihrem vollstaendig gruenen Abschluss
+findet kein Aufruf der neuen Zielphasen statt. Die native Freigabe bleibt
+unbenutzt und pausiert; dies ist keine Motor-, Unit60- oder500er-Abnahme.
+
 ## Threadwechsel ohne erneuten Datenumzug
 
 Code und Quellenbindungen liegen auf dem Entwicklungsbranch
