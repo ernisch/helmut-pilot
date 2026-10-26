@@ -51,8 +51,9 @@ class CoordinatorTests(unittest.TestCase):
         def view(info):
             identity = (info.st_dev, info.st_ino)
             owner = 1000 if identity == self.public_id else 0
-            keys = ('st_dev', 'st_ino', 'st_mode', 'st_uid', 'st_gid', 'st_nlink', 'st_size',
-                    'st_atime_ns', 'st_mtime_ns', 'st_ctime_ns', 'st_rdev', 'st_blocks')
+            # Keep the complete stat interface: unittest/linecache also use
+            # float timestamps while this fixture is patched into os.stat.
+            keys = tuple(key for key in dir(info) if key.startswith('st_'))
             values = {key: getattr(info, key) for key in keys}
             return types.SimpleNamespace(**{**values, 'st_uid': owner, 'st_gid': owner,
                                            **self.overrides.get(identity, {})})
@@ -132,6 +133,9 @@ class CoordinatorTests(unittest.TestCase):
             'runtime_seconds': 295, 'controller': {'pid': 4241, 'start_ticks': 1230, 'namespace': worker['namespace']},
             'phase_data': data, 'assets': expected}
         job_raw = m.encoded(job)
+        # Match the real guard, independent of the runner's ambient umask.
+        # Path.mkdir(parents=True) applies mode only to the final directory.
+        (self.base / 'setup-jobs').mkdir(mode=0o700, exist_ok=True)
         self.write(self.base / 'setup-jobs' / request['nonce'] / 'JOB.PRIVATE.json', job_raw)
         proof = {'schema': 'helmut-setup-service-lifecycle-v1', 'nonce': request['nonce'], 'phase': phase,
             'controller_source_sha256': context['source_sha256'], 'job_sha256': m.sha(job_raw),
@@ -151,6 +155,16 @@ class CoordinatorTests(unittest.TestCase):
             output = self.call(); self.assertEqual(output['status'], m.SUCCESS, output)
             outputs.append(output)
         return outputs
+
+    def test_fixture_job_tree_is_private_with_standard_runner_umask(self):
+        original = os.umask(0o022)
+        try:
+            self.advance(4)
+            info = os.stat(self.base / 'setup-jobs', follow_symlinks=False)
+            self.assertEqual(stat.S_IMODE(info.st_mode), 0o700)
+            self.assertEqual(info.st_mtime, self.real_stat(self.base / 'setup-jobs').st_mtime)
+        finally:
+            os.umask(original)
 
     def marker(self, phase): return self.base / m.marker_name(phase)
 

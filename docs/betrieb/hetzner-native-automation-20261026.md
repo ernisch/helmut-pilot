@@ -292,9 +292,9 @@ Der Setupwaechter verwendet pro frischer Einmalbindung einen eigenen begrenzten
 systemd-Service mit KillMode=control-group. ARM, EOF, alle eigenen Prozessenden,
 sole-Cgroup-PID, pidfd und gehashter ACK muessen vor ACCEPTED belegt sein.
 Unbestaetigtes Helper-READY bleibt UNKNOWN, auch wenn Dateien vorhanden sind.
-Koordinator und Waechter sind lokal integriert; alle469 gezielten synthetischen
-Tests bestehen. Sourcepins sind exakt gebunden, finale unabhaengige Integration,
-Pflicht-CI und tatsaechliche Zielausfuehrung bleiben offen. Der Bootstrapdeckel131072Bytes bleibt
+Koordinator und Waechter sind lokal integriert; alle471 gezielten synthetischen
+Tests bestehen. Sourcepins sind exakt gebunden und die finale Integration ist
+unabhaengig abgenommen; Pflicht-CI und Zielausfuehrung bleiben offen. Der Bootstrapdeckel131072Bytes bleibt
 unveraendert. Ausschliesslich oeffentliche, bytegehashte Programme desselben
 CI-qualifizierten Git-Commits werden bereitgestellt, keine erneute Original- oder
 Schluesseluebertragung. Der Mac ist fuer den bestaetigten Zugang nicht erforderlich.
@@ -304,6 +304,23 @@ die fehlende Public-Context-Schnittstelle konkret benannt. Drei spaetere
 Schreib-/Reviewauftraege endeten am32768-Ausgabetokenlimit ohne Dateiänderung.
 Diese Fehlversuche bleiben erhalten; Sol uebernahm die kritische Umsetzung und
 unabhaengige Abnahme, statt weitere gleichartige Routerversuche zu starten.
+
+Die unabhaengige Gluepruefung fand vor jedem Zielaufruf einen echten
+Schnittstellenfehler: Der Bootstrap liefert sieben Kontextfelder, der
+Koordinator akzeptiert genau vier. Der Server projiziert jetzt ausschliesslich
+`base`, `source_sha256`, `deployment_commit`, `deadline`. Ein gezielter Test mit
+dem vollstaendigen Bootstrapkontext besteht; finale SOL-Gegenpruefung PASS fuer
+Server-SHA256 `62cb2394de10b8c26f528b5d627dd0cb7720047e7fbd571d6f4dcf99d87d2ad8`
+(106678 Bytes). Die erste PR-CI auf `6c9a926c` ist fehlgeschlagen; dieser
+Vorstand ist kein Ausfuehrungsnachweis und wird nicht gemergt. Im vorhandenen
+CI-Protokoll ist `UNACCEPTED_JOB` beim synthetischen Mehrphasenfall belegt:
+`Path.mkdir(parents=True)` erzeugte das Zwischenverzeichnis unter umask022 mit
+0755. Die Fixture erstellt es jetzt explizit mit0700 wie der echte Guard. Ihre
+Statattrappe erhaelt ausserdem die Standard-Zeitattribute fuer die Ausgabe
+eines Testfehlers. Runtime und Schutzpruefungen bleiben unveraendert. Ein neuer
+Test erzwingt022; alle471 gezielten Tests bestehen auch unter dieser umask.
+Unabhaengige SOL-Abnahme PASS fuer Test-SHA256
+`cf6e3d3e331b9ee0e49c06acd5fe8e93d91063c5b38883f4f00e7fdd98412942`.
 
 ## Threadwechsel ohne erneuten Datenumzug
 

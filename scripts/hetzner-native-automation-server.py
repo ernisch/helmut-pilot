@@ -1416,7 +1416,9 @@ def _setup_handle(request, context):
                  '__source_bytes__': raw}
     exec(compile(raw, '<qualified-public-setup>', 'exec'), namespace)
     _require(callable(namespace.get('coordinate_setup')), 'SETUP_ENTRYPOINT')
-    result = namespace['coordinate_setup'](request, context)
+    setup_context = {name: context[name] for name in
+                     ('base', 'source_sha256', 'deployment_commit', 'deadline')}
+    result = namespace['coordinate_setup'](request, setup_context)
     _require(type(result) is dict and result.get('native_qualified') is False
              and result.get('native_go_consumed') is False, 'SETUP_RESULT')
     return result

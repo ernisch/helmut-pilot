@@ -7,7 +7,7 @@ Actions40286803902 bestaetigt PATH_ESCAPE,0 regulaere Dateien,1866 offene Eintra
 unabhaengig geprueft. Lokale Recovery vorbereitet, noch nicht ausgefuehrt.
 Daten verschluesselt im Drive rueckgeprueft; Key bleibt nur auf Hetzner, Mac entfaellt.
 Vier getrennte Setup-Phasen mit Prozesswaechter/ACCEPTED lokal integriert;
-469 synthetische Tests gruen, finale Abnahme/PR-CI/Zielausfuehrung noch offen.
+471 synthetische Tests gruen, unabhaengig abgenommen; PR-CI/Zielabnahme offen.
 Stage-Once verbraucht, native Freigabe pausiert; keine Reaktivierung alter Rechte.
 Keine nativen Tests/500er-Abnahme. Docker/Pfadsicht/Quellen bleiben frisch zu pruefen.
 [Belege und Grenzen](betrieb/hetzner-native-automation-20261026.md).

@@ -68,7 +68,10 @@ class SetupControllerTests(unittest.TestCase):
     def invoke(self,raw=None,response=None,value=None,sha=None,commit=None):
         raw=self.source(value) if raw is None else raw
         connection=Connection(Response(raw) if response is None else response)
-        context={'deadline':time.monotonic()+60,'deployment_commit':'a'*40 if commit is None else commit}
+        context={'base':S.TARGET_BASE,'source_sha256':'b'*64,
+                 'deadline':time.monotonic()+60,'deployment_commit':'a'*40 if commit is None else commit,
+                 'ci':{'status':'SYNTHETIC_SUCCESS'},'stdin':object(),
+                 'once_directory':S.TARGET_BASE+'/once'}
         with patch.object(S,'SETUP_COORDINATOR_SHA256',hashlib.sha256(raw).hexdigest() if sha is None else sha),\
              patch.object(S,'SETUP_COORDINATOR_BYTES',len(raw)),\
              patch.object(S.http.client,'HTTPSConnection',return_value=connection) as call:
@@ -92,6 +95,15 @@ class SetupControllerTests(unittest.TestCase):
         result,connection,_=self.invoke()
         self.assertEqual(result['native_qualified'],False)
         self.assertTrue(connection.response.isclosed())
+
+    def test_full_bootstrap_context_is_projected_to_exact_coordinator_contract(self):
+        raw=('def coordinate_setup(request,context):\n'
+             '    assert set(context)=={"base","source_sha256","deployment_commit","deadline"}\n'
+             '    assert context["base"]=='+repr(S.TARGET_BASE)+'\n'
+             '    assert context["source_sha256"]=="b"*64\n'
+             '    return '+repr(phase_result())+'\n').encode()
+        result,_,_=self.invoke(raw=raw)
+        self.assertEqual(result,phase_result())
 
     def test_redirect_never_runs_or_follows_another_url(self):
         response=Response(self.source());response.status=302
