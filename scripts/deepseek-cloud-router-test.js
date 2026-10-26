@@ -1232,5 +1232,32 @@ check("Bezahlte Leseantwort bei Journalkollision erhalten und Reserve offengeleg
   }
 });
 
+
+check("Vollstaendig empfangene Antwort nach Routerabbruch ohne neuen Modellaufruf wiederherstellbar", () => {
+  recoveryFixture(p => {
+    let calls = 0;
+    assert.throws(() => p.run(["--save-response",p.saved],{
+      spawnSync: (bin,args,opts) => {
+        calls++;
+        assert.ok(Array.isArray(opts.stdio));
+        assert.ok(Number.isInteger(opts.stdio[1]));
+        fs.writeSync(opts.stdio[1],p.raw());
+        throw new Error("simulated-parent-kill-after-complete-stdout");
+      }
+    }), /simulated-parent-kill/);
+    assert.equal(fs.readFileSync(p.saved,"utf8"),"");
+    assert.equal(fs.readFileSync(p.saved+".raw","utf8"),p.raw());
+    assert.equal(fs.statSync(p.saved+".raw").mode & 0o777,0o600);
+    assert.equal(fs.readFileSync(p.target,"utf8"),p.original);
+    const result=p.run(["--replay-response",p.saved], {
+      env:{}, spawnSync:() => {throw new Error("network-not-allowed");}
+    });
+    assert.equal(result.replayed,true);
+    assert.equal(result.status,"ok");
+    assert.equal(calls,1);
+    assert.equal(fs.readFileSync(p.target,"utf8"),"module.exports = 2;\n");
+  });
+});
+
 console.log(`DeepSeek Cloud Router v2: ${pass} PASS, ${fail} FAIL`);
 if (fail) process.exit(1);
