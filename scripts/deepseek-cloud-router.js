@@ -300,13 +300,28 @@ function parseArgs(argv) {
 }
 
 function ensureTextFile(absPath) {
-  const buf = fs.readFileSync(absPath);
-  if (buf.includes(0)) throw new Error(`binary-file-not-supported:${absPath}`);
-  const content = buf.toString("utf8");
-  if (charCount(content) > MAX_FILE_CHARS) {
-    throw new Error(`source-file-too-large:${absPath}`);
+  // Never follow the final symlink while loading source data, including rules.
+  // Otherwise a repository path could silently read a private external target.
+  if (!Number.isInteger(fs.constants.O_NOFOLLOW)) {
+    throw new Error("deepseek-source-nofollow-unavailable");
   }
-  return content;
+  const fd = fs.openSync(absPath, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+  try {
+    const stat = fs.fstatSync(fd);
+    if (!stat.isFile()) throw new Error(`deepseek-source-not-regular:${absPath}`);
+    if (stat.size > MAX_FILE_CHARS * 4) {
+      throw new Error(`source-file-too-large:${absPath}`);
+    }
+    const buf = fs.readFileSync(fd);
+    if (buf.includes(0)) throw new Error(`binary-file-not-supported:${absPath}`);
+    const content = buf.toString("utf8");
+    if (charCount(content) > MAX_FILE_CHARS) {
+      throw new Error(`source-file-too-large:${absPath}`);
+    }
+    return content;
+  } finally {
+    fs.closeSync(fd);
+  }
 }
 
 function inside(root, candidate) {
@@ -691,7 +706,7 @@ function prepareEdits(edits, sources, cwd, editFormat = "full") {
       throw new Error(`deepseek-edit-content-invalid:${edit.path}`);
     }
     if (content === current) throw new Error(`deepseek-edit-unchanged-content:${edit.path}`);
-    prepared.push({ source, content });
+    prepared.push({ source, content, expectedSha256: source.sha256 });
   }
   return prepared;
 }
@@ -705,7 +720,14 @@ function applyEdits(prepared) {
       fs.writeFileSync(temp, item.content, { mode });
       temps.push({ temp, target: item.source.abs });
     }
-    for (const item of temps) fs.renameSync(item.temp, item.target);
+    // Source files can change during expensive inference or immediately
+    // after preparation; never overwrite a foreign write silently.
+    for (const item of temps) {
+      if (sha256(ensureTextFile(item.target)) !== item.expectedSha256) {
+        throw new Error(`deepseek-edit-current-hash-drift:${item.target}`);
+      }
+      fs.renameSync(item.temp, item.target);
+    }
   } finally {
     for (const item of temps) {
       if (fs.existsSync(item.temp)) fs.rmSync(item.temp, { force: true });
@@ -789,6 +811,15 @@ function run(options = {}) {
   }
 
   const sources = loadSources({ cwd, explicitFiles: cfg.files });
+  if (cfg.mode === "write") {
+    const realRoot = fs.realpathSync(cwd);
+    for (const source of sources.filter(x => x.editable)) {
+      // Reject ancestor symlinks escaping the workspace before any paid call.
+      if (!inside(realRoot, fs.realpathSync(source.abs))) {
+        throw new Error(`deepseek-write-realpath-outside-repo:${source.label}`);
+      }
+    }
+  }
   const body = buildRequestBody(task, cfg, sources);
   const requestHash = sha256(JSON.stringify(body));
   const admission = preflight(cfg, task, body, sources);
