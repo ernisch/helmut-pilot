@@ -146,17 +146,20 @@ Cloud Umgebung vorhanden ist und `api.deepseek.com` erreichbar ist.
 
 Die Aufgabenverteilung im aktiven Routerbetrieb ist:
 
-1. DeepSeek Flash Low fuer sehr kleine, exakt abgegrenzte Routinepruefungen
-   und einfache Codeaenderungen. Flash High fuer schwierigere, trotzdem kleine
-   Analyse, Coding Arbeit, Dokumentation und Routinefehler.
-2. DeepSeek V4 Pro High für schwierige Implementierung, komplexes Debugging und
-   klar abgegrenzte technische Ursachenanalyse.
-3. DeepSeek V4 Pro Max nur für sehr schwierige klar abgegrenzte technische
-   Blocker, wenn Pro High voraussichtlich nicht ausreicht.
-4. Sol Sehr hoch für unklare bereichsübergreifende Ursachen, Architektur,
+1. DeepSeek Flash High als Standard fuer kleine, gut abgegrenzte Analysen,
+   normale Codeaenderungen, Dokumentation und Reviews.
+2. DeepSeek Flash Max nur fuer schwierige, trotzdem kleine Einzelprobleme,
+   wenn High voraussichtlich nicht ausreicht und ein besonders langes
+   Reasoningbudget wirtschaftlich vertretbar ist.
+3. DeepSeek V4 Pro High fuer anspruchsvollere, klar abgegrenzte Umsetzung
+   und komplexere technische Codepruefung.
+4. DeepSeek V4 Pro Max nur als bewusst gewaehlte Ausnahme fuer
+   sehr schwierige begrenzte Analyse. Niemals automatische Eskalation.
+   Low und None sind im Routerbetrieb nicht waehlbar.
+5. Sol Sehr hoch für unklare bereichsübergreifende Ursachen, Architektur,
    kritische Production Sicherheit oder Aufgaben, die sich nicht sicher an
    DeepSeek abtrennen lassen.
-5. Sol Max nur bei kritischer Production Sicherheit oder einem schwer
+6. Sol Max nur bei kritischer Production Sicherheit oder einem schwer
    nachvollziehbaren Problem, das auf Sehr hoch nicht zuverlässig geklärt wird.
 
 Es gibt keine automatische Eskalationskette. Der Orchestrator wählt vor jedem
@@ -245,13 +248,24 @@ Codepruefungen liefern. Keine Delegation nur zur Erfuellung einer Quote.
 
 Jeder DeepSeek Auftrag beginnt mit einer kostenfreien lokalen Vorpruefung
 (`--dry-run`), wenn Groesse oder Kosten zweifelhaft sind. Der Router sperrt
-Schreibauftraege mit mehr als drei Dateien, langen Auftraegen, zu grossem
+Schreibauftraege mit mehr als einer Datei, langen Auftraegen, zu grossem
 Schreibkontext und teuren Reserveschranken vor dem kostenpflichtigen API Aufruf.
+Ein Schreibauftrag darf genau eine freigegebene Datei betreffen.
 Pro Helferaufruf gilt eine konservative lokale Peak Preisprognose mit
-hoechstens 0,25 USD Planungslimit; diese Prognose ist keine Garantie
-gegen Preiswechsel oder unerwartete Provider Abrechnung. Vor bezahlten
-Aufrufen den dokumentierten Tarif aktuell halten, keine automatische
-Eskalation oder Wiederholung. Nicht abgenommene Antworten mit Verbrauch
+hoechstens 0,25 USD Planungslimit. Ein atomares Journal im gemeinsamen
+HOME Verzeichnis reserviert vor kostenpflichtigen Aufrufen maximal
+1,00 USD je UTC Tag fuer dieses gemeinsam genutzte Dateisystem. Unklare
+Antworten bleiben mit ihrer vollen urspruenglichen Reservierung gebunden;
+gueltige Usage wird mit Peak Tarifen abgerechnet. Keine automatischen
+Wiederholungen oder stillen Budgeterhoehungen.
+
+WICHTIG: Das Dateijournal ist kein echtes providerseitiges Tageslimit und
+kein hostuebergreifender Globalzaehler. Verschiedene Codex Cloud Umgebungen
+ohne dasselbe HOME Dateisystem haben getrennte Journale. Ein strikter
+kontouebergreifender Limitbeleg braucht einen gemeinsamen vertrauenswuerdigen
+Speicher oder ein Providerlimit. Die Peakprognose ist keine Garantie
+gegen Preiswechsel, abweichende Tokenisierung oder unerwartete Rechnung.
+Vor bezahlten Aufrufen den dokumentierten Tarif aktuell halten. Nicht abgenommene Antworten mit Verbrauch
 und Fehlergrund offen ausweisen, niemals als gesparten Aufwand zaehlen.
 
 Dateien, die den Router Dateiumfang ueberschreiten oder deren vollstaendige
