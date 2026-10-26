@@ -3,10 +3,10 @@
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
 Auftrag: Arbeits-/Testumgebung auf Hetzner; kein Productionumzug.
-UNIT_PROPERTIES-Fix PR957; Setupreparatur PR961 auf Main8139b3a9.
-Inspector40348666536: FAIL HISTORY_ERROR_DUPLICATE, kein Restore gestartet.
-Temp-Zulassung quellbelegt; neue Zielabnahme offen.
-Metadatenlesepfad erst nach vier tatsaechlichen Setup-Abnahmen.
+UNIT_PROPERTIES-Fix nativ am Setup belegt; Main8139b3a9 bleibt erhalten.
+Recover und Checkout ACCEPTED; Context40361288020 FAIL WORKER_FAILED.
+Temp211/220 frisch bestaetigt; neuer reiner Fehlerleser in Vorbereitung.
+Context nicht wiederholen; Teilstaende zuerst positiv diagnostizieren.
 Alter Setup40306875483 bleibt FAIL; Fehler, Originale, Keys und Einmalmarker erhalten.
 Mac-Abfrage erledigt; Inspectorfehler samt SAFE-Artefakt erhalten.
 Native Messung und500er-Lauf bleiben ohne frisches konkretes GO gesperrt.

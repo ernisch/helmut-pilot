@@ -31,8 +31,8 @@ SETUP_PREFIX = b'helmut-setup-successor-request-v1\0'
 SETUP_CAPSULE_KEYS = {'schema', 'contract_id', 'action', 'phase', 'source_sha256', 'contract_sha256',
     'nonce', 'inspection_nonce', 'inspection_result_sha256', 'issued_at_utc', 'expires_at_utc'}
 SETUP_PHASES = ('recover', 'checkout', 'context', 'image')
-RUNTIME_METADATA_CONTRACT = 'runtime-metadata-20261026-v1'
-RUNTIME_METADATA_CONTRACT_SHA256 = '8909ca48f13ea836abdf6b8833bd1341a5c2dec2007a7ea2f4e0088cd5a9c91b'
+RUNTIME_METADATA_CONTRACT = 'runtime-metadata-failed-context-20261026-v1'
+RUNTIME_METADATA_CONTRACT_SHA256 = 'b85cecc106ab2e2a40d19f02c8caa412e6e6e3f86c6ee4c5bfa18fbe712a2caf'
 RUNTIME_METADATA_PREFIX = b'helmut-runtime-metadata-request-v1\0'
 RUNTIME_METADATA_CAPSULE_KEYS = {'schema', 'contract_id', 'action', 'chunk', 'source_sha256',
     'contract_sha256', 'nonce', 'issued_at_utc', 'expires_at_utc'}
@@ -43,6 +43,61 @@ RUNTIME_METADATA_SETUP = {
     'deployment_commit': '8139b3a99d04e3e854f886123869bf669da6389d',
     'contract_sha256': 'e5ffcce62f8a419f11596e7ef88e9d10f4585d33b1b18e7d962670475d4d4059',
     'asset_set_sha256': '9941129431d0575caa1afe9afab497fd7d111c18ede0566b5498ec5089751c07'}
+RUNTIME_METADATA_AUTHORITY = '2afddc86477157c81ad537bbc06037aa9f5039a690ef4c7e774c79e942824ad3'
+RUNTIME_METADATA_ACCEPTED = {
+    'recover': 'e3b41edd946e54519f101803fbb1ef4012b5b025c927e97119ceac1a79e5dbd5',
+    'checkout': 'f4f57bdbf31298950e3d932859521318da3eb2d520a10603f80054560294767b'}
+RUNTIME_METADATA_FAILED = {
+    'failed_phase': 'context',
+    'failed_nonce': '8e1471f3745f196f402ccc4ed96000225c73d725f0349e75a481e1f858073d59',
+    'failed_response_sha256': 'b4099527980858a10433f5f24749d8a6d4241947a257491b4214650e5fedb2fd',
+    'failed_result_sha256': 'b5d407c5ea19a08bbba3d1151cbf274622ff80821a2b92c8be4199bca0612e30'}
+RUNTIME_METADATA_CONTEXT_ERROR_CODES = frozenset('''ANCHOR_NOT_EMPTY_ROOT_0755 ANCHOR_SCOPE CANONICAL_MOUNT_FLAGS
+CANONICAL_MOUNT_MISSING CANONICAL_PROOF_INCOMPLETE CANONICAL_PROOF_MISMATCH CANONICAL_SOCKET_PEER
+CANONICAL_TARGET_FILESYSTEM CANONICAL_TARGET_INODE CANONICAL_TARGET_SYMLINK CHILD_CHANNEL CHILD_DEADLINE
+CHILD_FAILED CHILD_INCOMPLETE CHILD_NAMESPACE_CHANGED CHILD_OBSERVATION_FAILED CHILD_STEP CONTEXT_ALREADY_ATTEMPTED
+CONTEXT_FAILURE DAEMON_CHANGED DAEMON_NAMESPACE_IS_HOST DAEMON_OWNER DAEMON_PROPAGATION_NOT_PRIVATE
+DAEMON_SERVICE_BINDING DAEMON_START DIRECTORY_OWNER_MODE DIRECTORY_PATH DOCKER_OBSERVATION DOCKER_SCOPE
+DUPLICATE_FIELD EVIDENCE_LIMIT EVIDENCE_WRITE FILESYSTEM_OBSERVATION HELD_NAMESPACE_CHANGED JSON_CONSTANT
+MOUNTINFO_FORMAT MOUNTINFO_LIMIT MOUNT_TARGET_OWNER MOUNT_TARGET_TYPE NAMESPACE_FD_NOT_NSFS NATIVE_GO_ALREADY_CONSUMED
+PREFLIGHT_CHANGED PROC_LIMIT PUBLIC_CHECKOUT_CHANGED PUBLIC_CHECKOUT_UNKNOWN PUBLIC_CONTROL_MODE PUBLIC_EXPECTED_SHA
+PUBLIC_PARENT_OWNER_MODE PUBLIC_READY PUBLIC_READY_HASH PUBLIC_RECEIPT_CHANGED PUBLIC_RECEIPT_IDENTITY
+PUBLIC_RECEIPT_LIMIT PUBLIC_REPOSITORY_OWNER_MODE RECEIPT_CHANGED RECEIPT_IDENTITY RECEIPT_LIMIT RECOVERY_ATTEMPT
+RECOVERY_CONTROL_MODE RECOVERY_EXPECTED_SHA RECOVERY_FILE_CHANGED RECOVERY_FILE_IDENTITY RECOVERY_FILE_LIMIT
+RECOVERY_HISTORICAL_BINDING RECOVERY_HISTORICAL_RECEIPT_HASH RECOVERY_HISTORICAL_RESTORE RECOVERY_HISTORICAL_STAGE
+RECOVERY_PROOF_CHANGED RECOVERY_READY RECOVERY_READY_HASH RECOVERY_RESTORE RECOVERY_RESTORE_HASH RECOVERY_UNKNOWN
+RESTORE_RECEIPT RESTORE_RECEIPT_HASH RESTORE_SCOPE ROOT_REQUIRED SERVICE_DEADLINE SERVICE_IDENTITY SERVICE_OBSERVATION
+SERVICE_OUTPUT_LIMIT SERVICE_SOCKET_PID SOCKET_CHANGED SOCKET_PEER SOCKET_UID1000_ACCESS SOURCE_SUBMOUNT
+STAGE_EXPECTED_SHA STAGE_READY STAGE_READY_HASH STAGE_RECEIPT_BINDING STAGE_RECEIPT_HASH STAGE_UNKNOWN
+UID_OR_GID1000_ASSIGNED'''.split())
+RUNTIME_METADATA_JOB_ERROR_CODES = frozenset('''ACK_BINDING ARCHIVE_CHANGED ARM_BINDING ASSET_PIN ASSET_SET ASSET_TOTAL
+BOOT_ID CAPACITY CGROUP_CONTENT CGROUP_LIMIT CGROUP_NOT_SOLE_WORKER CGROUP_OWNER CGROUP_PATH CGROUP_SYMLINK
+CHECKOUT_DEADLINE_ADMISSION CHILD_ERROR CHILD_EXIT CHILD_RESULT_LIMIT COMPONENT_SAVED_RESULT CONTEXT
+CONTEXT_DEADLINE_ADMISSION CONTEXT_FAILED CONTEXT_NOT_PRIVATE CONTEXT_READY CONTEXT_READY_HASH CONTEXT_UNKNOWN
+CONTROLLER_LOST CONTROL_COMMAND_DEADLINE CONTROL_COMMAND_FAILED CONTROL_COMMAND_LIMIT DAEMON_CHANGED DEADLINE
+DIRECTORY_IDENTITY DIRECTORY_PATH DIRECTORY_PRIVATE DRIVER_BINDINGS DRIVER_RESULT DUPLICATE_JSON
+FILESYSTEM_OR_PHASE_FAILURE FILE_CHANGED FILE_IDENTITY FILE_LIMIT FILE_NAME FINAL_RESULT IMAGE_DEADLINE_ADMISSION
+IMAGE_FAILED JOB_CHANGED JOB_CONTROLLER JOB_IDENTITY JOB_NAMESPACE JOB_SCHEMA JSON_CONSTANT KERNEL_LIMIT
+NATIVE_GO_ALREADY_CONSUMED NONCE OBSERVED_OLD_RECEIPT_HASH PHASE_BINDING PHASE_DATA PHASE_FAILED
+PREVIOUS_BINDINGS_CHANGED PROCESS_OWNER PROCESS_PID PROCESS_START PUBLIC_CHECKOUT_FAILED PUBLIC_DIRECTORY_CHANGED
+PUBLIC_DIRECTORY_IDENTITY RECEIPT_CHANGED RECEIPT_IDENTITY RECEIPT_LIMIT RECOVERY_FAILED REQUEST RESULT_CHANGED
+RESULT_LIMIT RESULT_PUBLICATION ROOT_REQUIRED SHORT_WRITE UNIT_BOUNDS UNIT_CGROUP UNIT_CHANGED UNIT_COMMAND
+UNIT_DBUS_FORMAT UNIT_DBUS_IDENTITY UNIT_DBUS_TYPE UNIT_DURATION UNIT_EXIT UNIT_EXTRA_COMMAND UNIT_FORMAT UNIT_IDENTITY
+UNIT_INVOCATION UNIT_PROPERTIES UNIT_REPLACED UNIT_RUNNING UNIT_RUNTIME WORKER_ALREADY_ATTEMPTED WORKER_CGROUP
+WORKER_CHANGED WORKER_COMMAND WORKER_EXE WORKER_EXITED WORKER_FAILED WORKER_SELF WRITE_LIMIT WRITE_READBACK'''.split())
+# phase_error preserves a source-known Context Stop code in JOB.FIRST_ERROR.
+RUNTIME_METADATA_JOB_ERROR_CODES |= RUNTIME_METADATA_CONTEXT_ERROR_CODES
+RUNTIME_METADATA_ERROR_CODES = RUNTIME_METADATA_CONTEXT_ERROR_CODES | RUNTIME_METADATA_JOB_ERROR_CODES
+RUNTIME_METADATA_EXCEPTION_TYPES = frozenset('''ArithmeticError AssertionError AttributeError BaseException BaseExceptionGroup
+BlockingIOError BrokenPipeError BufferError BytesWarning ChildProcessError ConnectionAbortedError ConnectionError
+ConnectionRefusedError ConnectionResetError DeprecationWarning EOFError EncodingWarning EnvironmentError Exception
+ExceptionGroup FileExistsError FileNotFoundError FloatingPointError FutureWarning GeneratorExit IOError ImportError
+ImportWarning IndentationError IndexError InterruptedError IsADirectoryError KeyError KeyboardInterrupt LookupError
+MemoryError ModuleNotFoundError NameError NotADirectoryError NotImplementedError OSError OverflowError
+PendingDeprecationWarning PermissionError ProcessLookupError RecursionError ReferenceError ResourceWarning RuntimeError
+RuntimeWarning SetupError Stop StopAsyncIteration StopIteration SyntaxError SyntaxWarning SystemError SystemExit
+TabError TimeoutError TypeError UnboundLocalError UnicodeDecodeError UnicodeEncodeError UnicodeError UnicodeTranslateError
+UnicodeWarning UserWarning ValueError Warning ZeroDivisionError'''.split())
 STAGE_PLAN = 'e6d463a634925a190d60d066c0fae2ba94b9f7f0a10a115b50b4f4018b1b35eb'
 STAGE_SCOPE = '08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd'
 STAGE_CODES = frozenset(('STAGE_COMPLETE', 'STAGE_INTERNAL_FAILURE', 'STAGE_DEADLINE',
@@ -251,6 +306,77 @@ def control_request_nonce(capsule):
     return setup_request_nonce(capsule)
 
 
+def _runtime_failure_diagnostic(diagnostic):
+    require(type(diagnostic) is dict and set(diagnostic) == {'schema', 'status', 'failed_phase',
+            'failed_nonce', 'coordinator_code', 'records', 'native_qualified', 'native_go_consumed'}
+            and diagnostic['schema'] == 'helmut-context-retained-failure-diagnostic-v1'
+            and diagnostic['status'] == 'RETAINED_CONTEXT_FAILURE_NOT_READY'
+            and diagnostic['failed_phase'] == 'context'
+            and diagnostic['failed_nonce'] == RUNTIME_METADATA_FAILED['failed_nonce']
+            and diagnostic['coordinator_code'] == 'WORKER_FAILED'
+            and diagnostic['native_qualified'] is False and diagnostic['native_go_consumed'] is False,
+            'runtime-metadata-result')
+    roles = {'namespace_error', 'job_error', 'component_error', 'component_attempt',
+             'component_receipt_pending', 'component_receipt'}
+    require(type(diagnostic['records']) is dict and set(diagnostic['records']) == roles, 'runtime-metadata-result')
+    fields = {'state', 'sha256', 'bytes', 'metadata', 'source_status', 'phase', 'code', 'exception_type',
+              'errno', 'mount_state', 'last_acknowledged_step', 'anchor_attempt_count', 'anchor_created_count'}
+    unaccepted = {'component_attempt', 'component_receipt_pending', 'component_receipt'}
+    for role, record in diagnostic['records'].items():
+        require(type(record) is dict and set(record) == fields
+                and record['state'] in ('PRESENT', 'ABSENT', 'UNKNOWN', 'UNKNOWN_UNACCEPTED'), 'runtime-metadata-result')
+        require(role not in ('namespace_error', 'job_error') or record['state'] != 'ABSENT',
+                'runtime-metadata-result')
+        if record['state'] == 'ABSENT':
+            require(all(record[key] is None for key in fields - {'state'}), 'runtime-metadata-result')
+            continue
+        pinned_sha(record['sha256'])
+        require(type(record['bytes']) is int and 0 <= record['bytes'] <= 16384
+                and (record['bytes'] > 0 or record['state'] in ('UNKNOWN', 'UNKNOWN_UNACCEPTED')
+                     and role.startswith('component_') and record['sha256'] == digest(b'')),
+                'runtime-metadata-result')
+        _setup_metadata(record['metadata'])
+        require(record['metadata'][6] == record['bytes']
+                and record['metadata'][2:6] == [0o100600, 0, 0, 1], 'runtime-metadata-result')
+        if role in unaccepted:
+            require(record['state'] == 'UNKNOWN_UNACCEPTED', 'runtime-metadata-result')
+        else:
+            require(record['state'] != 'UNKNOWN_UNACCEPTED', 'runtime-metadata-result')
+        if record['state'] in ('UNKNOWN', 'UNKNOWN_UNACCEPTED'):
+            require(all(record[key] is None for key in fields - {'state', 'sha256', 'bytes', 'metadata'}),
+                    'runtime-metadata-result')
+            continue
+        enums = {
+            'source_status': {'FAIL_KEEP_STATE_NO_RETRY', 'FAIL_KEEP_PARTIAL_CONTEXT_NO_RETRY'},
+            'phase': {'preflight', 'attempt', 'private-mounts', 'context'},
+            'code': ({'WORKER_FAILED'} if role == 'namespace_error' else RUNTIME_METADATA_JOB_ERROR_CODES
+                     if role == 'job_error' else RUNTIME_METADATA_CONTEXT_ERROR_CODES),
+            'exception_type': RUNTIME_METADATA_EXCEPTION_TYPES,
+            'mount_state': {'UNKNOWN', 'NOT_STARTED'}}
+        for key, allowed in enums.items():
+            require(record[key] is None or (type(record[key]) is str and record[key] in allowed), 'runtime-metadata-result')
+        if role in ('namespace_error', 'job_error'):
+            require(record['source_status'] == 'FAIL_KEEP_STATE_NO_RETRY' and record['phase'] == 'context'
+                    and record['code'] is not None, 'runtime-metadata-result')
+            require(all(record[key] is None for key in ('mount_state', 'last_acknowledged_step',
+                    'anchor_attempt_count', 'anchor_created_count')), 'runtime-metadata-result')
+            if role == 'namespace_error':
+                require(record['exception_type'] is None and record['errno'] is None, 'runtime-metadata-result')
+            else: require(record['exception_type'] is not None, 'runtime-metadata-result')
+        else:
+            require(record['source_status'] == 'FAIL_KEEP_PARTIAL_CONTEXT_NO_RETRY'
+                    and record['phase'] in ('preflight', 'attempt', 'private-mounts')
+                    and record['code'] is not None and record['exception_type'] is not None
+                    and record['mount_state'] == ('UNKNOWN' if record['phase'] == 'private-mounts' else 'NOT_STARTED')
+                    and record['anchor_attempt_count'] is not None and record['anchor_created_count'] is not None,
+                    'runtime-metadata-result')
+        # This is a retained protocol index; it is never a completed-step count.
+        for key, low, high in (('errno', -4095, 4095), ('last_acknowledged_step', -1, 10),
+                               ('anchor_attempt_count', 0, 3), ('anchor_created_count', 0, 3)):
+            require(record[key] is None or (type(record[key]) is int and low <= record[key] <= high),
+                    'runtime-metadata-result')
+
+
 def validate_runtime_metadata_result(result, sent, capsule):
     _runtime_metadata_capsule_check(capsule, sent['payload_sha256'])
     require(sent['operation'] == 'status' and sent['plan_sha256'] == STAGE_PLAN
@@ -273,9 +399,9 @@ def validate_runtime_metadata_result(result, sent, capsule):
                 and type(result['code']) is str and re.fullmatch('[A-Z][A-Z0-9_]{0,63}', result['code']),
                 'runtime-metadata-result')
         return
-    require(set(result) == common | {'file_binding', 'scope_sha256', 'source_row_sha256', 'setup_proof',
-            'chunk_count', 'chunk_size', 'chunk_sha256', 'json_summary'}
-            and result['status'] == 'SAFE_METADATA_CHUNK_NOT_NATIVE_QUALIFIED'
+    require(set(result) == common | {'file_binding', 'scope_sha256', 'source_row_sha256', 'partial_setup_proof',
+            'failure_diagnostic', 'chunk_count', 'chunk_size', 'chunk_sha256', 'json_summary'}
+            and result['status'] == 'RETAINED_CONTEXT_FAILURE_METADATA_NOT_READY'
             and result['scope_sha256'] == STAGE_SCOPE
             and type(result['chunk_count']) is int and result['chunk_count'] == 4
             and type(result['chunk_size']) is int and result['chunk_size'] == 65536, 'runtime-metadata-result')
@@ -286,15 +412,25 @@ def validate_runtime_metadata_result(result, sent, capsule):
             and binding['bytes'] == RUNTIME_METADATA_BYTES, 'runtime-metadata-result')
     _setup_metadata(binding['metadata'])
     require(binding['metadata'][6] == RUNTIME_METADATA_BYTES, 'runtime-metadata-result')
-    proof = result['setup_proof']
+    proof = result['partial_setup_proof']
     require(type(proof) is dict and set(proof) == {'schema', *RUNTIME_METADATA_SETUP, 'authority_sha256',
-            'once_sha256', 'accepted_sha256', 'job_seal_sha256', 'baseline_sha256'}
-            and proof['schema'] == 'helmut-runtime-metadata-setup-proof-v1'
-            and all(proof[key] == value for key, value in RUNTIME_METADATA_SETUP.items()), 'runtime-metadata-result')
-    for key in ('authority_sha256', 'once_sha256', 'baseline_sha256'): pinned_sha(proof[key])
-    for key in ('accepted_sha256', 'job_seal_sha256'):
-        require(type(proof[key]) is dict and set(proof[key]) == set(SETUP_PHASES), 'runtime-metadata-result')
-        for value in proof[key].values(): pinned_sha(value)
+            'once_sha256', 'accepted_sha256', 'job_seal_sha256', 'accepted_phases', *RUNTIME_METADATA_FAILED,
+            'failed_job_sha256', 'baseline_sha256', 'failed_unit_state', 'native_qualified', 'native_go_consumed'}
+            and proof['schema'] == 'helmut-runtime-metadata-partial-setup-proof-v1'
+            and all(proof[key] == value for key, value in RUNTIME_METADATA_SETUP.items())
+            and proof['authority_sha256'] == RUNTIME_METADATA_AUTHORITY
+            and proof['accepted_sha256'] == RUNTIME_METADATA_ACCEPTED
+            and proof['accepted_phases'] == ['recover', 'checkout']
+            and all(proof[key] == value for key, value in RUNTIME_METADATA_FAILED.items())
+            and type(proof['failed_unit_state']) is str
+            and proof['failed_unit_state'] in ('UNKNOWN_UNIT_OBSERVATION', 'LOADED_QUIESCENT')
+            and proof['native_qualified'] is False and proof['native_go_consumed'] is False,
+            'runtime-metadata-result')
+    for key in ('once_sha256', 'baseline_sha256', 'failed_job_sha256'): pinned_sha(proof[key])
+    require(type(proof['job_seal_sha256']) is dict and set(proof['job_seal_sha256']) == {'recover', 'checkout'},
+            'runtime-metadata-result')
+    for value in proof['job_seal_sha256'].values(): pinned_sha(value)
+    _runtime_failure_diagnostic(result['failure_diagnostic'])
     summary = result['json_summary']
     types = {'dict', 'list', 'str', 'int', 'float', 'bool', 'NoneType'}
     require(type(summary) is dict and set(summary) == {'root_type', 'nodes', 'max_depth', 'type_counts',

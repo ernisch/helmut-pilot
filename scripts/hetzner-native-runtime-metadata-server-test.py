@@ -110,7 +110,7 @@ class RuntimeMetadataServerTests(unittest.TestCase):
         return answer
 
     def test_runtime_large_metadata_body_has_own_cap_and_fork_transport(self):
-        result={'schema':'helmut-runtime-binding-metadata-read-v1','status':'SAFE_METADATA_CHUNK_NOT_NATIVE_QUALIFIED',
+        result={'schema':'helmut-runtime-binding-metadata-read-v1','status':'RETAINED_CONTEXT_FAILURE_METADATA_NOT_READY',
                 'data_base64':'a'*90000,'native_qualified':False,'native_go_consumed':False}
         self.assertEqual(self.watchdog(result),result)
         result['data_base64']='a'*131072
