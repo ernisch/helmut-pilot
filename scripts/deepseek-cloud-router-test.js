@@ -548,6 +548,53 @@ check("Schreiben ausserhalb des Repositorys bleibt verboten", () => {
   }
 });
 
+check("Dateilinks zu privaten Fremdpfaden werden vor jedem API-Aufruf abgewiesen", () => {
+  const p = project();
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-router-symlink-outside-"));
+  const privateTarget = path.join(outside, "private-data.txt");
+  fs.writeFileSync(privateTarget, "PRIVATE MUST NOT BE SENT\n");
+  const link = path.join(p.root, "lib", "link.js");
+  fs.symlinkSync(privateTarget, link);
+  const parentLink = path.join(p.root, "lib", "external");
+  fs.symlinkSync(outside, parentLink, "dir");
+  let calls = 0;
+  const base = { cwd: p.root, env: {}, budgetDir: path.join(p.root, ".budget-test"),
+    callDeepSeek: () => { calls++; throw new Error("provider-must-not-start"); } };
+  try {
+    assert.throws(() => router.run({
+      ...base, argv: ["flash", "high", "write", "--dry-run",
+        "--task-file", p.task, "--file", "lib/link.js"]
+    }), /ELOOP|symlink|nofollow/i);
+    assert.throws(() => router.run({
+      ...base, argv: ["flash", "high", "write", "--dry-run",
+        "--task-file", p.task, "--file", "lib/external/private-data.txt"]
+    }), /write-outside-repo/);
+    assert.equal(calls, 0);
+    assert.equal(fs.readFileSync(privateTarget, "utf8"), "PRIVATE MUST NOT BE SENT\n");
+  } finally {
+    fs.rmSync(p.root, { recursive: true, force: true });
+    fs.rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+check("Fremdaenderung unmittelbar vor Dateianwendung bleibt unangetastet", () => {
+  const p = project();
+  try {
+    const target = path.join(p.root, "lib/example.js");
+    const original = fs.readFileSync(target, "utf8");
+    const sources = router.loadSources({cwd:p.root, explicitFiles:["lib/example.js"]});
+    const prepared = router.prepareEdits([{
+      path:"lib/example.js", expected_sha256:hash(original),
+      content:"module.exports = 42;\n"
+    }], sources, p.root, "full");
+    fs.writeFileSync(target, "module.exports = 'foreign';\n");
+    assert.throws(() => router.applyEdits(prepared), /current-hash-drift/);
+    assert.equal(fs.readFileSync(target,"utf8"),"module.exports = 'foreign';\n");
+  } finally {
+    fs.rmSync(p.root, {recursive:true,force:true});
+  }
+});
+
 check("Hash Drift vor Anwendung stoppt ohne Schreiben", () => {
   const p = project();
   const target = path.join(p.root, "lib/example.js");
