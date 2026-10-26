@@ -877,6 +877,40 @@ check("Wiederaufnahme mit anderer Route oder anderem Aenderungsformat startet ke
 });
 
 
+check("Lange, klar abgegrenzte Schreibauftraege bis 12000 Zeichen ohne bezahlten Vorversuch", () => {
+  const p = project();
+  let calls = 0;
+  const original = fs.readFileSync(p.task, "utf8");
+  try {
+    // The old 3,000-character write cap was needlessly narrow.
+    fs.writeFileSync(p.task, "Scope: edit only the supplied function.\n" + "A".repeat(9000));
+    const result = router.run({
+      cwd: p.root,
+      argv: ["flash", "high", "write", "--task-file", p.task,
+        "--file", "lib/example.js", "--dry-run"],
+      env: {},
+      callDeepSeek: () => { calls++; throw new Error("must-not-call-provider"); },
+    });
+    assert.equal(result.status, "dry_run");
+    assert.equal(result.admission.output_token_cap, 32768);
+    assert.equal(calls, 0);
+    // The overall project is not capped. Individual requests retain a finite,
+    // independently reviewable input budget.
+    fs.writeFileSync(p.task, "A".repeat(router.MAX_TASK_CHARS + 1));
+    assert.throws(() => router.run({
+      cwd: p.root,
+      argv: ["flash", "high", "write", "--task-file", p.task,
+        "--file", "lib/example.js", "--dry-run"],
+      env: {},
+      callDeepSeek: () => { calls++; throw new Error("must-not-call-provider"); },
+    }), /task-too-long/);
+    assert.equal(calls, 0);
+  } finally {
+    fs.writeFileSync(p.task, original);
+    fs.rmSync(p.root, { recursive: true, force: true });
+  }
+});
+
 check("Kostenkontrolle und Groessenpruefung stoppen vor bezahlter API", () => {
   const p = project();
   let started = false;
