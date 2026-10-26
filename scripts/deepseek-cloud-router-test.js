@@ -909,6 +909,23 @@ check("Schreibauftrag mit ok ohne Code wird nie als Erfolg quittiert", () => {
   } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
 });
 
+check("Verbrauch bleibt auch bei fehlerhafter bezahlter Antwort sichtbar", () => {
+  const raw = JSON.stringify({ status: "completed", model: "deepseek-flash",
+    output: [{ type: "message", content: [{ type: "output_text", text: "{bad-json" }] }],
+    usage: { input_tokens: 120, output_tokens: 400 } }) +
+    "\\n__HELMUT_HTTP_STATUS__:200";
+  assert.throws(() => router.parseCurlResponse(raw), /output-invalid-json:input_tokens=120:output_tokens=400:peak_usd_estimate=/);
+  const p = project();
+  try {
+    assert.throws(() => router.run({
+      cwd: p.root, env: { DEEPSEEK_API_KEY: "placeholder" },
+      argv: ["flash", "low", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      callDeepSeek: () => apiResult({ summary: summary(), edits: [] },
+        { input_tokens: 123, output_tokens: 321, total_tokens: 444 }),
+    }), /write-ok-without-edits; input_tokens=123:output_tokens=321:peak_usd_estimate=/);
+  } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
+});
+
 check("Unveraenderte Ersatzinhalte duerfen nicht als Schreib-Erfolg gelten", () => {
   const p = project();
   const original = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
