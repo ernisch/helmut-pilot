@@ -176,6 +176,70 @@ class CoordinatorTests(unittest.TestCase):
         self.assertEqual(set(output), {'schema', 'status', 'phase', 'code', 'ready_sha256', 'accepted_sha256', 'lifecycle_sha256', 'native_qualified', 'native_go_consumed'})
         return output
 
+    def test_successor_lifecycle_reads_only_the_explicit_successor_job_root(self):
+        expected = {name: {'sha256': pin['sha256'], 'bytes': pin['bytes']}
+                    for name, pin in self.pins.items()}
+        data = dict.fromkeys(('old_receipt_sha256', 'recovery_ready_sha256',
+                              'public_ready_sha256', 'context_ready_sha256'))
+        data['old_receipt_sha256'] = m.EXPECTED_OLD_RECEIPT
+        guard_context = {key: self.context[key] for key in ('base', 'source_sha256', 'deadline')}
+        output = self.run_guard(self.request, guard_context, 'recover', self.assets, expected, data)
+        proof = output['lifecycle_proof']
+        value = {key: value for key, value in output.items() if key != 'lifecycle_proof'}
+        old = self.base / 'setup-jobs' / self.request['nonce'] / 'JOB.PRIVATE.json'
+        before = self.raw(old)
+        old_metadata = m.metadata(os.stat(old, follow_symlinks=False))
+        state = self.base / m.SUCCESSOR_NAMESPACE
+        state.mkdir(mode=0o700)
+        jobs = state / 'jobs'
+        jobs.mkdir(mode=0o700)
+        new_path = jobs / self.request['nonce'] / 'JOB.PRIVATE.json'
+        job = {**m.parsed(before), 'schema': 'helmut-setup-service-job-successor-v1',
+               'job_namespace': m.SUCCESSOR_NAMESPACE}
+        raw = m.encoded(job)
+        self.write(new_path, raw)
+        successor_proof = {**proof, 'job_sha256': m.sha(raw)}
+        m.lifecycle_check(successor_proof, self.request, self.context, 'recover', value,
+            self.guard, data, expected, job_namespace=m.SUCCESSOR_NAMESPACE)
+        m.guard_jobs_check([({'nonce':self.request['nonce']}, 'f'*64)],
+                           job_namespace=m.SUCCESSOR_NAMESPACE)
+        self.assertEqual(self.raw(old), before)
+        self.assertEqual(m.metadata(os.stat(old, follow_symlinks=False)), old_metadata)
+        with self.assertRaises(m.SetupError):
+            m.lifecycle_check(successor_proof, self.request, self.context, 'recover', value,
+                             self.guard, data, expected)
+        self.write(new_path, before)
+        with self.assertRaises(m.SetupError):
+            m.lifecycle_check(proof, self.request, self.context, 'recover', value,
+                self.guard, data, expected, job_namespace=m.SUCCESSOR_NAMESPACE)
+
+    def test_job_roots_do_not_accept_caller_selected_paths(self):
+        self.assertEqual(m.jobs_root(), str(self.base)+'/setup-jobs')
+        self.assertEqual(m.jobs_root(m.SUCCESSOR_NAMESPACE),
+                         str(self.base)+'/'+m.SUCCESSOR_NAMESPACE+'/jobs')
+        for namespace in (None, True, '', '../setup-jobs', '/tmp', 'unknown'):
+            with self.subTest(namespace=namespace), self.assertRaises(m.SetupError):
+                m.jobs_root(namespace)
+
+    def test_missing_or_extra_accepted_job_directory_is_never_an_empty_success(self):
+        accepted = [({'nonce':self.request['nonce']}, 'f'*64)]
+        for namespace in ('legacy', m.SUCCESSOR_NAMESPACE):
+            with self.subTest(namespace=namespace):
+                m.guard_jobs_check([], job_namespace=namespace)
+                with self.assertRaises(m.SetupError):
+                    m.guard_jobs_check(accepted, job_namespace=namespace)
+                jobs = Path(m.jobs_root(namespace))
+                if namespace != 'legacy':
+                    jobs.parent.mkdir(mode=0o700)
+                jobs.mkdir(mode=0o700)
+                with self.assertRaises(m.SetupError):
+                    m.guard_jobs_check(accepted, job_namespace=namespace)
+                (jobs/self.request['nonce']).mkdir(mode=0o700)
+                m.guard_jobs_check(accepted, job_namespace=namespace)
+                (jobs/('e'*64)).mkdir(mode=0o700)
+                with self.assertRaises(m.SetupError):
+                    m.guard_jobs_check(accepted, job_namespace=namespace)
+
     def test_exact_four_calls_advance_one_phase_each_and_keep_historical_evidence(self):
         originals = {role: self.driver_read(self.paths[role]) for role in m.ROLES[:3]}
         outputs = self.advance(4)

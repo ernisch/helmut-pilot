@@ -24,6 +24,7 @@ PRIMARY = ('recovery_ready', 'public_ready', 'context_receipt', 'image_receipt')
 SUCCESS = 'SETUP_PHASE_COMPLETE_NOT_NATIVE_QUALIFIED'
 LOCK = 'TARGET_SETUP_LOCK.PRIVATE'
 ERROR = 'TARGET_SETUP_FIRST_ERROR.SAFE.json'
+SUCCESSOR_NAMESPACE = 'setup-successor-unit-properties-v1'
 R = os.O_RDONLY | os.O_NOFOLLOW | os.O_NOATIME | os.O_NONBLOCK | os.O_CLOEXEC
 D = R | os.O_DIRECTORY
 FILES = {'guard.py': 'hetzner-native-setup-service.py', 'driver.py': 'hetzner-native-setup-driver.py',
@@ -32,8 +33,8 @@ FILES = {'guard.py': 'hetzner-native-setup-service.py', 'driver.py': 'hetzner-na
     'image.py': 'hetzner-native-budget-image-import.py'}
 # Exact independently qualified public sources at the CI-verified deployment commit.
 ASSET_MAP = {'guard.py': {'repoFile': 'hetzner-native-setup-service.py',
-              'sha256': 'eea7e8eca1d439b7fa2cfa6387de527fdcdc829ed7b502e5fcfab926577cd3f2',
-              'bytes': 35236},
+              'sha256': 'b748266c62b899764aa042be62937607f564641dd66163811ee7e363366bc662',
+              'bytes': 37312},
  'driver.py': {'repoFile': 'hetzner-native-setup-driver.py',
                'sha256': 'e2bb2bb06ef259ba7be5814f7a7535a265988d62470a85fc7c3e26cbe158d14f',
                'bytes': 11824},
@@ -236,7 +237,12 @@ def accepted_chain(root, context, asset_set, driver):
     return accepted
 
 
-def lifecycle_check(proof, request, context, phase, value, guard, data, expected):
+def jobs_root(job_namespace='legacy'):
+    need(type(job_namespace) is str and job_namespace in ('legacy', SUCCESSOR_NAMESPACE), 'JOB_NAMESPACE')
+    return BASE + ('/setup-jobs' if job_namespace == 'legacy' else '/' + SUCCESSOR_NAMESPACE + '/jobs')
+
+
+def lifecycle_check(proof, request, context, phase, value, guard, data, expected, job_namespace='legacy'):
     need(type(proof) is dict and set(proof) == {'schema', 'nonce', 'phase', 'controller_source_sha256', 'job_sha256',
          'boot_id', 'unit', 'runtime_seconds', 'invocation_id', 'worker', 'sole_worker', 'pidfd_exited', 'unit_exit_code', 'result_sha256'}
          and proof['schema'] == 'helmut-setup-service-lifecycle-v1' and proof['nonce'] == request['nonce']
@@ -255,14 +261,19 @@ def lifecycle_check(proof, request, context, phase, value, guard, data, expected
          and type(sole) is dict and set(sole) == {'cgroup', 'pids', 'worker'} and sole['worker'] == worker
          and sole['pids'] == [worker['pid']] and type(sole['pids'][0]) is int
          and sole['cgroup'] == '/system.slice/' + proof['unit'], 'LIFECYCLE_PROOF')
-    root = directory(BASE + '/setup-jobs/' + request['nonce'])
+    root = directory(jobs_root(job_namespace) + '/' + request['nonce'])
     try: raw = read_at(root, 'JOB.PRIVATE.json')
     finally: os.close(root)
     job = parsed(raw)
+    job_keys = {'schema', 'request', 'controller_source_sha256', 'plan_sha256', 'case_id', 'phase',
+                'boot_id', 'deadline', 'runtime_seconds', 'controller', 'phase_data', 'assets'}
+    job_schema = 'helmut-setup-service-job-v1'
+    if job_namespace == SUCCESSOR_NAMESPACE:
+        job_keys.add('job_namespace')
+        job_schema = 'helmut-setup-service-job-successor-v1'
     need(sha(raw) == proof['job_sha256'] and type(job) is dict
-         and set(job) == {'schema', 'request', 'controller_source_sha256', 'plan_sha256', 'case_id', 'phase',
-                         'boot_id', 'deadline', 'runtime_seconds', 'controller', 'phase_data', 'assets'}
-         and job['schema'] == 'helmut-setup-service-job-v1' and job['request'] == request
+         and set(job) == job_keys and job['schema'] == job_schema
+         and (job_namespace == 'legacy' or job['job_namespace'] == job_namespace) and job['request'] == request
          and job['controller_source_sha256'] == context['source_sha256'] and job['plan_sha256'] == PLAN
          and job['case_id'] == 'f707b8e21b9f5f0f1d4fc131de38cd615c0c8e6e7f87631574af6bf2b672efa0'
          and job['phase'] == phase and job['phase_data'] == data and job['assets'] == expected
@@ -274,16 +285,25 @@ def lifecycle_check(proof, request, context, phase, value, guard, data, expected
          and job['controller']['namespace'] == worker['namespace'], 'LIFECYCLE_JOB')
 
 
-def guard_jobs_check(accepted):
-    try: root = directory(BASE + '/setup-jobs')
-    except FileNotFoundError: return
+def guard_jobs_check(accepted, job_namespace='legacy'):
+    expected = {row[0]['nonce'] for row in accepted}
+    need(len(expected) == len(accepted) and all(hex64(nonce) for nonce in expected), 'UNACCEPTED_JOB')
+    try: root = directory(jobs_root(job_namespace))
+    except FileNotFoundError:
+        need(not expected, 'UNACCEPTED_JOB')
+        return
     try:
+        before = metadata(os.fstat(root))
         names = []
         with os.scandir(root) as entries:
             for entry in entries:
                 names.append(entry.name); need(len(names) <= 4, 'UNACCEPTED_JOB')
         need(stat.S_IMODE(os.fstat(root).st_mode) == 0o700
-             and set(names) <= {row[0]['nonce'] for row in accepted}, 'UNACCEPTED_JOB')
+             and set(names) == expected, 'UNACCEPTED_JOB')
+        fresh = directory(jobs_root(job_namespace))
+        try:
+            need(before == metadata(os.fstat(root)) == metadata(os.fstat(fresh)), 'UNACCEPTED_JOB')
+        finally: os.close(fresh)
     finally: os.close(root)
 
 

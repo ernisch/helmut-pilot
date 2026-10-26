@@ -312,8 +312,9 @@ class FinalIntegrationTests(unittest.TestCase):
         self.assertIn("github.workflow_ref == '" + CLIENT.WORKFLOW_REF + "'", after)
         self.assertIn('test "$GITHUB_WORKFLOW_REF" = ' + CLIENT.WORKFLOW_REF, after)
         self.assertIn("HELMUT_NATIVE_CONTROL_MODE: ${{ inputs.controlMode }}", after)
-        self.assertIn('test "$HELMUT_NATIVE_CONTROL_MODE" = control-v1', after)
-        self.assertIn('options: [disabled, control-v1]', after)
+        self.assertIn('case "$HELMUT_NATIVE_CONTROL_MODE" in', after)
+        self.assertIn('options: [disabled, control-v1, setup-inspect-v1, setup-successor-v1]', after)
+        self.assertIn('HELMUT_NATIVE_SETUP_CAPSULE: ${{ inputs.setupCapsule }}', after)
         self.assertIn('default: disabled', after)
         self.assertNotIn('HELMUT_HETZNER_NATIVE_ENABLED', after)
         self.assertNotIn("vars.HELMUT_HETZNER_CI_ENABLED", after)
@@ -333,12 +334,28 @@ class FinalIntegrationTests(unittest.TestCase):
             'GITHUB_REPOSITORY_OWNER':'ernisch','GITHUB_REF':CLIENT.BRANCH,
             'GITHUB_EVENT_NAME':'workflow_dispatch','GITHUB_WORKFLOW_REF':CLIENT.WORKFLOW_REF,
             'GITHUB_SHA':'a'*40,'HELMUT_NATIVE_OPERATION':'status',
-            'HELMUT_NATIVE_PLAN_SHA256':'b'*64,'HELMUT_NATIVE_PAYLOAD_SHA256':'c'*64}
+            'HELMUT_NATIVE_PLAN_SHA256':'b'*64,'HELMUT_NATIVE_PAYLOAD_SHA256':'c'*64,
+            'HELMUT_NATIVE_SETUP_CAPSULE':''}
         for mode in (None,'disabled','control-v2','control-v1; false','control-v1'):
             values=dict(environment)
             if mode is not None:values['HELMUT_NATIVE_CONTROL_MODE']=mode
             result=subprocess.run(['/bin/bash','-c',script],env=values,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=5)
             self.assertEqual(result.returncode==0,mode=='control-v1')
+        for mode, operation, capsule, allowed in (
+                ('control-v1','status','synthetic',False),
+                ('setup-inspect-v1','status','',False),
+                ('setup-inspect-v1','status','synthetic',True),
+                ('setup-inspect-v1','admit','synthetic',False),
+                ('setup-successor-v1','admit','',False),
+                ('setup-successor-v1','admit','synthetic',True),
+                ('setup-successor-v1','status','synthetic',False),
+                ('setup-successor-v1','four-tx','synthetic',False)):
+            values={**environment,'HELMUT_NATIVE_CONTROL_MODE':mode,
+                    'HELMUT_NATIVE_OPERATION':operation,'HELMUT_NATIVE_SETUP_CAPSULE':capsule}
+            with self.subTest(mode=mode,operation=operation,capsule=capsule):
+                result=subprocess.run(['/bin/bash','-c',script],env=values,
+                    stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=5)
+                self.assertEqual(result.returncode==0,allowed)
 
 
 if __name__ == "__main__":

@@ -33,6 +33,8 @@ R = os.O_RDONLY | os.O_NOFOLLOW | os.O_NOATIME | os.O_NONBLOCK | os.O_CLOEXEC
 D = R | os.O_DIRECTORY
 ENV = {'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL': 'C'}
 SUCCESS = 'SETUP_PHASE_COMPLETE_NOT_NATIVE_QUALIFIED'
+LEGACY_NAMESPACE = 'legacy'
+SUCCESSOR_NAMESPACE = 'setup-successor-unit-properties-v1'
 PROPERTIES = ('Id', 'Transient', 'Type', 'MainPID', 'ControlPID', 'ControlGroup', 'KillMode',
               'RuntimeMaxUSec', 'TimeoutStopUSec', 'Restart', 'RemainAfterExit', 'User', 'Group',
               'UMask', 'StandardOutput', 'StandardError', 'Delegate', 'ExecStart',
@@ -250,9 +252,33 @@ def unit_name(nonce):
     return 'helmut-native-setup-' + nonce + '.service'
 
 
-def worker_argv(nonce):
+def jobs_root(namespace=LEGACY_NAMESPACE):
+    need(type(namespace) is str and namespace in (LEGACY_NAMESPACE, SUCCESSOR_NAMESPACE), 'JOB_NAMESPACE')
+    return BASE + ('/setup-jobs' if namespace == LEGACY_NAMESPACE else '/' + SUCCESSOR_NAMESPACE + '/jobs')
+
+
+def job_directory(nonce, namespace=LEGACY_NAMESPACE):
+    need(hex64(nonce), 'NONCE')
+    return jobs_root(namespace) + '/' + nonce
+
+
+def job_namespace(job):
+    need(type(job) is dict, 'JOB_SCHEMA')
+    need(job.get('schema') in ('helmut-setup-service-job-v1',
+                              'helmut-setup-service-job-successor-v1'), 'JOB_SCHEMA')
+    if job.get('schema') == 'helmut-setup-service-job-v1':
+        need('job_namespace' not in job, 'JOB_NAMESPACE')
+        return LEGACY_NAMESPACE
+    need(job.get('schema') == 'helmut-setup-service-job-successor-v1'
+         and job.get('job_namespace') == SUCCESSOR_NAMESPACE, 'JOB_NAMESPACE')
+    return SUCCESSOR_NAMESPACE
+
+
+def worker_argv(nonce, namespace=LEGACY_NAMESPACE):
+    path = job_directory(nonce, namespace)
     return ['/usr/bin/env', '-i', 'PATH=' + ENV['PATH'], 'LC_ALL=C', '/usr/bin/python3',
-            '-I', '-S', '-B', BASE + '/setup-jobs/' + nonce + '/guard.py', '--setup-phase-worker', nonce]
+            '-I', '-S', '-B', path + '/guard.py',
+            '--setup-phase-worker' if namespace == LEGACY_NAMESPACE else '--setup-successor-phase-worker', nonce]
 
 
 def duration(value):
@@ -309,7 +335,7 @@ def unit_snapshot(job, finished=False):
          'UNIT_CGROUP')
     need(duration(fields['RuntimeMaxUSec']) == job['runtime_seconds']
          and duration(fields['TimeoutStopUSec']) == 5, 'UNIT_BOUNDS')
-    start = '{ path=/usr/bin/env ; argv[]=' + ' '.join(worker_argv(nonce)) + ' ; ignore_errors=no ;'
+    start = '{ path=/usr/bin/env ; argv[]=' + ' '.join(worker_argv(nonce, job_namespace(job))) + ' ; ignore_errors=no ;'
     need(fields['ExecStart'].startswith(start) and fields['ExecStart'].count('{') == 1
          and fields['ExecStart'].count('}') == 1, 'UNIT_COMMAND')
     need(re.fullmatch('[a-f0-9]{32}', fields['InvocationID'])
@@ -352,7 +378,9 @@ def phase_data_check(phase, data):
 
 
 def request_check(request, context):
-    need(type(context) is dict and set(context) == {'base', 'source_sha256', 'deadline'}
+    keys = {'base', 'source_sha256', 'deadline'}
+    need(type(context) is dict and (set(context) == keys or
+         (set(context) == keys | {'job_namespace'} and context['job_namespace'] == SUCCESSOR_NAMESPACE))
          and context['base'] == BASE and hex64(context['source_sha256']), 'CONTEXT')
     need(type(request) is dict and set(request) == {'schema', 'operation', 'nonce', 'plan_sha256', 'payload_sha256'}
          and request['schema'] == 'helmut-native-control-request-v1' and request['operation'] == 'admit'
@@ -380,9 +408,14 @@ def result_check(value, phase):
 def job_check(job, nonce):
     keys = {'schema', 'request', 'controller_source_sha256', 'plan_sha256', 'case_id', 'phase',
             'boot_id', 'deadline', 'runtime_seconds', 'controller', 'phase_data', 'assets'}
-    need(type(job) is dict and set(job) == keys and job['schema'] == 'helmut-setup-service-job-v1'
+    namespace = job_namespace(job)
+    if namespace == SUCCESSOR_NAMESPACE:
+        keys.add('job_namespace')
+    need(set(job) == keys
          and job['plan_sha256'] == PLAN and job['case_id'] == CASE, 'JOB_SCHEMA')
     context = {'base': BASE, 'source_sha256': job['controller_source_sha256'], 'deadline': job['deadline']}
+    if namespace == SUCCESSOR_NAMESPACE:
+        context['job_namespace'] = namespace
     request_check(job['request'], context)
     need(job['request']['nonce'] == nonce and job['boot_id'] == boot_id(), 'JOB_IDENTITY')
     need(type(job['runtime_seconds']) is int and 0 < job['runtime_seconds'] <= 295
@@ -411,7 +444,7 @@ def worker_identity(job, root, raw, baseline=None):
     pid = int(fields['MainPID'])
     facts = process(pid)
     need(kernel_read('/proc/' + str(pid) + '/cmdline', CAP).split(b'\0') ==
-         [part.encode() for part in worker_argv(job['request']['nonce'])[4:]] + [b''], 'WORKER_COMMAND')
+         [part.encode() for part in worker_argv(job['request']['nonce'], job_namespace(job))[4:]] + [b''], 'WORKER_COMMAND')
     executable = os.stat('/proc/' + str(pid) + '/exe')
     python = os.stat('/usr/bin/python3')
     need(stat.S_ISREG(python.st_mode) and python.st_uid == python.st_gid == 0
@@ -516,11 +549,11 @@ def phase_child(job, assets, controller_fd):
             for name in ASSETS[2:]:
                 key = name[:-3]
                 namespace = {'__name__': 'helmut_setup_' + key, '__source_bytes__': assets[name],
-                             '__file__': BASE + '/setup-jobs/' + job['request']['nonce'] + '/' + name}
+                             '__file__': job_directory(job['request']['nonce'], job_namespace(job)) + '/' + name}
                 exec(compile(assets[name], '<pinned-setup-' + key + '>', 'exec'), namespace)
                 modules[key] = namespace
             driver = {'__name__': 'helmut_setup_driver', '__source_bytes__': assets['driver.py'],
-                      '__file__': BASE + '/setup-jobs/' + job['request']['nonce'] + '/driver.py'}
+                      '__file__': job_directory(job['request']['nonce'], job_namespace(job)) + '/driver.py'}
             exec(compile(assets['driver.py'], '<pinned-setup-driver>', 'exec'), driver)
             value = result_check(driver['execute_phase'](job['phase'], job['phase_data'], modules, job['deadline']), job['phase'])
             message, code = {'ok': True, 'result': value}, 0
@@ -564,14 +597,15 @@ def phase_child(job, assets, controller_fd):
         os.close(read_fd)
 
 
-def worker(nonce):
+def worker(nonce, namespace=LEGACY_NAMESPACE):
     admin()
     need(hex64(nonce), 'NONCE')
-    root = private_dir(BASE + '/setup-jobs/' + nonce)
+    root = private_dir(job_directory(nonce, namespace))
     controller_fd, job, raw, baseline = None, None, None, None
     parked = False
     try:
         job, raw, assets = load_job(root, nonce)
+        need(job_namespace(job) == namespace, 'JOB_NAMESPACE')
         need(all(absent(root, name) for name in ('ACK.PRIVATE.json', 'RESULT.PENDING.PRIVATE.json',
              'RESULT.PRIVATE.json', 'FIRST_ERROR.PRIVATE.json')), 'WORKER_ALREADY_ATTEMPTED')
         baseline = worker_identity(job, root, raw)
@@ -622,19 +656,22 @@ def worker(nonce):
 
 
 def create_job(request, context, phase, assets, expected_assets, phase_data):
-    root = private_dir(BASE)
+    request_check(request, context)
+    namespace = context.get('job_namespace', LEGACY_NAMESPACE)
+    folder = 'setup-jobs' if namespace == LEGACY_NAMESPACE else 'jobs'
+    root = private_dir(BASE if namespace == LEGACY_NAMESPACE else BASE + '/' + SUCCESSOR_NAMESPACE)
     jobs = job_fd = None
     try:
         try:
-            os.mkdir('setup-jobs', 0o700, dir_fd=root)
+            os.mkdir(folder, 0o700, dir_fd=root)
             os.fsync(root)
         except FileExistsError:
             pass
-        jobs = private_dir(BASE + '/setup-jobs')
+        jobs = private_dir(jobs_root(namespace))
         nonce = request['nonce']
         os.mkdir(nonce, 0o700, dir_fd=jobs)  # Durable, exclusive replay/partial-state guard.
         os.fsync(jobs)
-        job_fd = private_dir(BASE + '/setup-jobs/' + nonce)
+        job_fd = private_dir(job_directory(nonce, namespace))
         for name in ASSETS:
             bounded(context['deadline'])
             write_new(job_fd, name, assets[name], 0o500)
@@ -643,6 +680,8 @@ def create_job(request, context, phase, assets, expected_assets, phase_data):
             'phase': phase, 'boot_id': boot_id(), 'deadline': context['deadline'],
             'runtime_seconds': min(295, int(context['deadline'] - time.monotonic()) - 5),
             'controller': process(os.getpid()), 'phase_data': phase_data, 'assets': expected_assets}
+        if namespace == SUCCESSOR_NAMESPACE:
+            job.update(schema='helmut-setup-service-job-successor-v1', job_namespace=namespace)
         job_check(job, nonce)
         raw = encoded(job)
         write_new(job_fd, 'JOB.PRIVATE.json', raw)
@@ -664,7 +703,7 @@ def start_service(job):
         'UMask=0077', 'User=root', 'Group=root', 'Delegate=no', 'SendSIGKILL=yes',
         'KillSignal=SIGTERM', 'FinalKillSignal=SIGKILL', 'TimeoutStopFailureMode=kill']
     argv = ['/usr/bin/systemd-run', '--quiet', '--unit=' + unit_name(job['request']['nonce'])]
-    argv += ['--property=' + value for value in props] + ['--'] + worker_argv(job['request']['nonce'])
+    argv += ['--property=' + value for value in props] + ['--'] + worker_argv(job['request']['nonce'], job_namespace(job))
     command(argv, job['deadline'])
 
 
@@ -751,10 +790,10 @@ def run_setup_phase(request, context, phase, assets, expected_assets, phase_data
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
-    if len(argv) != 2 or argv[0] != '--setup-phase-worker':
+    if len(argv) != 2 or argv[0] not in ('--setup-phase-worker', '--setup-successor-phase-worker'):
         print('{"status":"NOT_EXECUTED_COMPONENT_ONLY"}')
         return 2
-    try: return worker(argv[1])
+    try: return worker(argv[1], LEGACY_NAMESPACE if argv[0] == '--setup-phase-worker' else SUCCESSOR_NAMESPACE)
     except BaseException: return 1
 
 

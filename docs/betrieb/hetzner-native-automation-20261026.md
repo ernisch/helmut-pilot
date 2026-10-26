@@ -1,9 +1,74 @@
 # HELMUT: begrenzte autonome Hetzner-Steuerung
 
-Aktuelle Fortsetzung: [UNIT_PROPERTIES-Quellenkorrektur](#enge-quellenkorrektur-fuer-unit_properties-26102026-istanbul)
+Aktuelle Fortsetzung: [neuer Setup-Untervertrag](#neuer-gebundener-setupweg-26102026-istanbul)
 und CURRENT_STATE. Die [Thread-Uebergabe](helmut-thread-handoff-20261026.md)
 bleibt die verifizierte Ausgangsbasis; ihre Stopp- und Schutzgrenzen gelten weiter.
 Dieses Dossier enthaelt auch historische Zwischenstaende, keine neuen Laufrechte.
+
+## Neuer gebundener Setupweg (26.10.2026 Istanbul)
+
+Der Betreiber hat nach PR958 ausdruecklich die tatsaechliche vollstaendige
+Einrichtung beauftragt und den Umfang auf **Arbeits- und Testumgebung** begrenzt.
+Production bleibt ausserhalb dieses Umzugs. Diese neue Einrichtungsanweisung
+ist die Grundlage eines getrennten, eng gebundenen Nachfolgevertrags; alte
+Fehlversuche oder Nonces werden nicht wiederverwendet und keine Einmalsperre
+geloescht, umbenannt oder zurueckgesetzt. Die native Mess-/500er-Freigabe folgt
+daraus nicht. Originale, private Schluessel und die Quellcloud bleiben erhalten.
+
+Die unabhaengige Architekturpruefung hat den frueheren lokalen Entwurf
+praezisiert: Ein neuer aeusserer Operationsname ist nicht erforderlich. Der
+vorhandene unveraenderliche Bootstrap ist ausdruecklich vertrauenswuerdiges
+Root-Code-Deployment aus CI-qualifiziertem aktuellem Main. Ein expliziter neuer
+Untervertrag kann deshalb unter `admit` laufen, ohne Bootstrap, POLICY,
+Root-Keyeintrag, aeussere Planbindung oder vorhandenen Tailscale-Zugang zu aendern.
+Die bereits erledigte Mac-Abfrage wird nicht nochmals angefordert.
+
+Der Workflow bleibt standardmaessig `disabled`. Nur `setup-inspect-v1` mit
+`status` oder `setup-successor-v1` mit `admit` und einer geschlossenen neuen
+Admission-Kapsel oeffnen den neuen Pfad. Die kanonische zweite stdin-Zeile wird
+mit EOF, Laengen-/Zeitgrenze, Quell-/Vertragsbindung und eigenem Requesthash
+geprueft. Ein neuer Nonce allein ist keine Autoritaet. Legacy-Clients ohne
+Kapsel behalten ihren bisherigen, weiterhin gesperrten Setupweg. Der Client
+bindet neue Modi zusaetzlich exakt an den bestaetigten Host100.96.83.66.
+
+Die feste gleich-Commit-[Vertragsdatei](hetzner-setup-successor-contract-20261026.json)
+bindet Ziel, Fall, Scope, Server-/Koordinator-/Library-/Preflight- und Assetpins,
+die vier einzeln anzufordernden Phasen recover/checkout/context/image und ein
+maximal sechsstuendiges UTC-Fenster. Das vorbereitete Fenster entspricht
+26.10.2026,16:57:31 bis22:57:31 Europe/Istanbul. Es wird nicht durch einen
+Quellwechsel oder einen neuen Request automatisch verlaengert.
+
+Vor der ersten Wirkung sind alte Fehler-/Jobdateien, alle historischen Quellen,
+der gesamte alte Jobordner und aktuelle Prozess-/Unit-/Cgroup-Enden positiv zu
+binden. Fehlende Exec-Felder gelten nie als leer; die sechs Listen brauchen
+explizit typisierte D-Bus-Werte. Auch der vorhandene Gzip wird frisch gegen
+Groesse, Hash und unveraenderte Metadaten gelesen. Die Inspektion liest keine
+privaten Schluessel und fuehrt keinen Restore oder nativen Fall aus. Der
+Transport schreibt weiterhin seine normalen Request-/Resultbelege; die gesamte
+Operation darf daher nicht als vollstaendig schreibfrei bezeichnet werden.
+
+Erst der echte auf dem Ziel gespeicherte Inspektionsbeleg, der feste qualifizierte
+Vertrag und ihre erneute aktuelle Bindung erlauben einen eigenen dauerhaften
+Autoritaetsbeleg und Once-Slot ausserhalb der Deploymentversionen. Neuer
+Job-/ACCEPTED-Zustand liegt ausschliesslich unter dem festen Successor-Namespace.
+Alte globale Fehler und alte Jobs bleiben positiv gebundener gescheiterter
+Vorgaenger. Vorhandene oder unklare kanonische Recovery-/Komponententeilstaende
+stoppen auch den neuen Vertrag. Kein neuer Ausgabepfad ist ein automatischer Ausweg.
+
+Die unabhängige Endprüfung hat vor jedem Zielaufruf zwei echte Luecken gefunden:
+ungebundene zusaetzliche Legacy-Jobs sowie fehlende/veraenderte bereits akzeptierte
+Successorjobs. Sie werden mit vollstaendiger alter Rootbindung, exakter neuer
+Jobmenge und privaten, an die echte Lifecycle-Abnahme gebundenen Job-Siegeln
+geschlossen. Alle Quellen, ARM/ACK/RESULT-Belege, Dateimengen und Metadaten muessen
+vor und nach jedem Folgeschritt erhalten bleiben. Fehler/Partials erzeugen keine
+neue Versuchszulassung. Nach den Sicherheitskorrekturen bestehen661 synthetische
+Pruefungen sowie13 unabhaengige Zusatzfaelle; Pflicht-CI folgt auf dem finalen PR-Kopf.
+
+Stand dieses Implementierungsabschnitts: eigener Entwicklungsbranch
+`codex/hetzner-setup-successor-20261026`, noch kein Zielaufruf. Es wird keine
+erfolgreiche Wiederherstellung oder vollstaendige Hetzner-Arbeitsumgebung behauptet.
+Vor jedem neuen echten nativen Messfall bleiben frische Quellen-/Original-/Runtime-
+und Ressourcenbindungen sowie das konkrete Betreiber-GO Pflicht.
 
 Der Betreiber hat am26.10.2026(Istanbul) autonome Arbeit und notwendige
 Automatisierung ausdruecklich freigegeben, einschliesslich Merge und Deployment

@@ -77,9 +77,32 @@ class GuardTests(unittest.TestCase):
         value = os.stat(path, follow_symlinks=False)
         return (value.st_dev, value.st_ino)
 
-    def service(self, orphan=False, mutate=False, bad_exit=False, early_exit=False):
+    def use_successor(self):
+        state = self.base / M.SUCCESSOR_NAMESPACE
+        state.mkdir(mode=0o700, exist_ok=True)  # The caller, never the guard, prepares this root.
+        self.context['job_namespace'] = M.SUCCESSOR_NAMESPACE
+        return state
+
+    def job_evidence(self, path):
+        root = M.private_dir(str(path))
+        try:
+            rows = {}
+            for name in sorted(os.listdir(root)):
+                info = os.stat(name, dir_fd=root, follow_symlinks=False)
+                rows[name] = (M.regular(root, name, M.ASSET_CAP, stat.S_IMODE(info.st_mode)), M.metadata(info))
+            return M.metadata(os.fstat(root)), rows
+        finally: os.close(root)
+
+    def old_job_evidence(self):
+        root, job, raw = self.job()
+        try: M.write_new(root, 'FIRST_ERROR.PRIVATE.json', M.encoded(M.safe_error(M.Stop('UNIT_PROPERTIES'), 'recover')))
+        finally: os.close(root)
+        path = self.base / 'setup-jobs' / self.nonce
+        return path, self.job_evidence(path)
+
+    def service(self, orphan=False, mutate=False, bad_exit=False, early_exit=False, namespace=M.LEGACY_NAMESPACE):
         """Pump the exact parent ARM/PENDING/ACK/exit handshake using own files."""
-        job_path = self.base / 'setup-jobs' / self.nonce
+        job_path = Path(M.job_directory(self.nonce, namespace))
         real_absent, real_exited = M.absent, []
         def absent(root, name):
             if name == 'RESULT.PENDING.PRIVATE.json' and not real_exited:
@@ -179,6 +202,162 @@ class GuardTests(unittest.TestCase):
         fd = M.private_dir(str(self.base / 'setup-jobs' / self.nonce))
         try: self.assertEqual(M.regular(fd, 'JOB.PRIVATE.json'), raw)
         finally: os.close(fd)
+
+    def test_only_two_fixed_job_roots_preserve_exact_legacy_argv(self):
+        legacy = str(self.base) + '/setup-jobs'
+        successor = str(self.base) + '/setup-successor-unit-properties-v1/jobs'
+        expected = ['/usr/bin/env', '-i', 'PATH='+M.ENV['PATH'], 'LC_ALL=C', '/usr/bin/python3',
+                    '-I', '-S', '-B', legacy+'/'+self.nonce+'/guard.py', '--setup-phase-worker', self.nonce]
+        self.assertEqual(M.jobs_root(), legacy)
+        self.assertEqual(M.jobs_root(M.SUCCESSOR_NAMESPACE), successor)
+        self.assertEqual(M.worker_argv(self.nonce), expected)
+        expected[-3:] = [successor+'/'+self.nonce+'/guard.py', '--setup-successor-phase-worker', self.nonce]
+        self.assertEqual(M.worker_argv(self.nonce, M.SUCCESSOR_NAMESPACE), expected)
+        for namespace in ('', 'unknown', '../setup-jobs', str(self.base), M.SUCCESSOR_NAMESPACE+'/jobs', None, True, []):
+            with self.subTest(namespace=namespace), self.assertRaises(M.Stop): M.jobs_root(namespace)
+            with self.assertRaises(M.Stop): M.worker_argv(self.nonce, namespace)
+        for nonce in ('', '../escape', 'A'*64, 'a'*63, None, True):
+            with self.subTest(nonce=nonce), self.assertRaises(M.Stop): M.job_directory(nonce, M.SUCCESSOR_NAMESPACE)
+
+    def test_successor_job_schema_and_storage_preserve_all_old_job_evidence(self):
+        old, before = self.old_job_evidence()
+        self.use_successor()
+        root, job, raw = self.job()
+        try:
+            self.assertEqual(job['schema'], 'helmut-setup-service-job-successor-v1')
+            self.assertEqual(job['job_namespace'], M.SUCCESSOR_NAMESPACE)
+            self.assertEqual(M.job_namespace(job), M.SUCCESSOR_NAMESPACE)
+            self.assertEqual(M.load_job(root, self.nonce, raw), (job, raw, self.assets))
+            self.assertEqual(M.regular(root, 'JOB.PRIVATE.json'), raw)
+            self.assertEqual(set(job), {'schema', 'request', 'controller_source_sha256', 'plan_sha256', 'case_id',
+                'phase', 'boot_id', 'deadline', 'runtime_seconds', 'controller', 'phase_data', 'assets', 'job_namespace'})
+            self.assertTrue((self.base / M.SUCCESSOR_NAMESPACE / 'jobs' / self.nonce / 'JOB.PRIVATE.json').exists())
+        finally: os.close(root)
+        self.assertEqual(self.job_evidence(old), before)
+        legacy_job = M.parsed(before[1]['JOB.PRIVATE.json'][0])
+        self.assertEqual(M.job_namespace(legacy_job), M.LEGACY_NAMESPACE)
+        self.assertNotIn('job_namespace', legacy_job)
+
+    def test_successor_root_is_required_private_and_never_falls_back_or_accepts_free_paths(self):
+        self.context['job_namespace'] = M.SUCCESSOR_NAMESPACE
+        with patch.object(M, 'start_service') as start:
+            self.assertEqual(self.run_guard()['status'], 'FAIL_KEEP_STATE_NO_RETRY')
+            start.assert_not_called()
+        self.assertFalse((self.base / M.SUCCESSOR_NAMESPACE).exists())
+        self.assertFalse((self.base / 'setup-jobs').exists())
+        state = self.base / M.SUCCESSOR_NAMESPACE
+        state.mkdir(mode=0o700); state.chmod(0o755)
+        with patch.object(M, 'start_service') as start:
+            self.assertEqual(self.run_guard()['code'], 'DIRECTORY_PRIVATE')
+            start.assert_not_called()
+        self.assertFalse((state / 'jobs').exists())
+        state.rmdir(); state.symlink_to(self.base)
+        with patch.object(M, 'start_service') as start:
+            self.assertEqual(self.run_guard()['status'], 'FAIL_KEEP_STATE_NO_RETRY')
+            start.assert_not_called()
+        state.unlink()
+        for namespace in (M.LEGACY_NAMESPACE, '', '/tmp/free', '../setup-jobs', None, [], True):
+            with self.subTest(namespace=namespace), patch.object(M, 'private_dir', side_effect=AssertionError('no path access')):
+                with self.assertRaises(M.Stop):
+                    M.create_job(self.request, {**self.context, 'job_namespace': namespace}, 'recover', self.assets, self.pins, self.data)
+        with patch.object(M, 'private_dir', side_effect=AssertionError('no path access')):
+            with self.assertRaises(M.Stop):
+                M.create_job(self.request, {**self.context, 'jobs_root': '/tmp/free'}, 'recover', self.assets, self.pins, self.data)
+        self.assertEqual(list(self.base.iterdir()), [])
+
+    def test_successor_schema_namespace_and_worker_entrypoints_are_closed(self):
+        root, legacy, legacy_raw = self.job(); os.close(root)
+        self.use_successor()
+        root, successor, raw = self.job()
+        try:
+            invalid = ({**legacy, 'job_namespace': M.SUCCESSOR_NAMESPACE},
+                {**successor, 'schema': 'helmut-setup-service-job-v1'},
+                {key: value for key, value in successor.items() if key != 'job_namespace'},
+                {**successor, 'job_namespace': M.LEGACY_NAMESPACE}, {**successor, 'job_namespace': '/tmp/free'},
+                {**successor, 'schema': 'unknown'}, {**successor, 'extra': '/tmp/free'})
+            for value in invalid:
+                with self.subTest(value=value):
+                    with self.assertRaises(M.Stop): M.job_check(value, self.nonce)
+                    with patch.object(M, 'regular', return_value=M.encoded(value)):
+                        with self.assertRaises(M.Stop): M.load_job(root, self.nonce)
+            # A valid legacy schema copied into the new directory still cannot run as its worker.
+            path = self.base / M.SUCCESSOR_NAMESPACE / 'jobs' / self.nonce / 'JOB.PRIVATE.json'
+            path.write_bytes(legacy_raw)
+            with patch.object(M, 'worker_identity') as identity, patch.object(M, 'phase_child') as child:
+                self.assertEqual(M.worker(self.nonce, M.SUCCESSOR_NAMESPACE), 1)
+                identity.assert_not_called(); child.assert_not_called()
+            self.assertEqual(M.parsed(M.regular(root, 'FIRST_ERROR.PRIVATE.json'))['code'], 'JOB_NAMESPACE')
+        finally: os.close(root)
+        with patch.object(M, 'worker', return_value=0) as worker:
+            self.assertEqual(M.main(['--setup-phase-worker', self.nonce]), 0)
+            worker.assert_called_with(self.nonce, M.LEGACY_NAMESPACE)
+            self.assertEqual(M.main(['--setup-successor-phase-worker', self.nonce]), 0)
+            worker.assert_called_with(self.nonce, M.SUCCESSOR_NAMESPACE)
+            worker.reset_mock()
+            for flag in ('--setup-worker', '--setup-successor-phase-worker=/tmp/free', '/tmp/free'):
+                with contextlib.redirect_stdout(io.StringIO()): self.assertEqual(M.main([flag, self.nonce]), 2)
+            worker.assert_not_called()
+
+    def test_successor_parent_handshake_failures_and_replay_preserve_old_job(self):
+        old, before = self.old_job_evidence()
+        self.use_successor()
+        for mode in ('positive', 'orphan', 'bad_exit', 'early_exit', 'mutate'):
+            self.request['nonce'] = self.nonce = M.sha(('successor-'+mode).encode())
+            self.baseline['cgroup'] = '/system.slice/' + M.unit_name(self.nonce)
+            with self.subTest(mode=mode), contextlib.ExitStack() as stack:
+                previous, self.stack = self.stack, stack
+                try:
+                    stop = self.service(namespace=M.SUCCESSOR_NAMESPACE, **({mode: True} if mode != 'positive' else {}))
+                    result = self.run_guard()
+                    path = self.base / M.SUCCESSOR_NAMESPACE / 'jobs' / self.nonce
+                    if mode == 'positive':
+                        self.assertEqual(result['status'], M.SUCCESS)
+                        proof = result['lifecycle_proof']
+                        self.assertEqual(proof['job_sha256'], M.sha(self.job_evidence(path)[1]['JOB.PRIVATE.json'][0]))
+                        self.assertTrue(proof['pidfd_exited']); self.assertEqual(proof['sole_worker']['pids'], [4242])
+                        stop.assert_not_called()
+                    else:
+                        self.assertEqual(result['status'], 'FAIL_KEEP_STATE_NO_RETRY')
+                        self.assertNotIn('lifecycle_proof', result)
+                        if mode == 'orphan':
+                            self.assertEqual(result['code'], 'CGROUP_NOT_SOLE_WORKER')
+                            self.assertTrue((path / 'RESULT.PENDING.PRIVATE.json').exists())
+                            self.assertFalse((path / 'ACK.PRIVATE.json').exists())
+                    own_before = self.job_evidence(path)
+                    with patch.object(M, 'start_service') as restart:
+                        self.assertEqual(self.run_guard()['status'], 'FAIL_KEEP_STATE_NO_RETRY')
+                        restart.assert_not_called()
+                    self.assertEqual(self.job_evidence(path), own_before)
+                finally: self.stack = previous
+            self.assertEqual(self.job_evidence(old), before)
+
+    def test_successor_worker_reuses_arm_ack_fixture_and_keeps_failed_pending(self):
+        old, before = self.old_job_evidence()
+        self.use_successor()
+        for mode in ('positive', 'bad_arm', 'bad_ack'):
+            self.request['nonce'] = self.nonce = M.sha(('worker-successor-'+mode).encode())
+            self.baseline['cgroup'] = '/system.slice/' + M.unit_name(self.nonce)
+            with self.subTest(mode=mode), contextlib.ExitStack() as stack:
+                previous, self.stack = self.stack, stack
+                try:
+                    root, job, raw, child, stop = self.worker_fixture(**({mode: True} if mode != 'positive' else {}))
+                    try:
+                        with patch.object(M.os, 'fork', side_effect=AssertionError('no uncontrolled fork')):
+                            self.assertEqual(M.worker(self.nonce, M.SUCCESSOR_NAMESPACE), 0 if mode == 'positive' else 1)
+                        if mode == 'positive':
+                            self.assertEqual(M.parsed(M.regular(root, 'RESULT.PRIVATE.json')), self.result)
+                            self.assertTrue(M.absent(root, 'RESULT.PENDING.PRIVATE.json'))
+                            child.assert_called_once(); stop.assert_not_called()
+                        elif mode == 'bad_arm':
+                            child.assert_not_called(); stop.assert_called_once()
+                            self.assertEqual(M.parsed(M.regular(root, 'FIRST_ERROR.PRIVATE.json'))['code'], 'ARM_BINDING')
+                        else:
+                            child.assert_called_once(); stop.assert_not_called()
+                            self.assertFalse(M.absent(root, 'RESULT.PENDING.PRIVATE.json'))
+                            self.assertTrue(M.absent(root, 'RESULT.PRIVATE.json'))
+                    finally: os.close(root)
+                finally: self.stack = previous
+            self.assertEqual(self.job_evidence(old), before)
 
     def test_wrong_request_missing_old_hash_or_asset_never_creates_job(self):
         cases = ('request', 'data', 'asset', 'hash', 'size')
@@ -441,6 +620,21 @@ class GuardTests(unittest.TestCase):
             with self.assertRaisesRegex(M.Stop, 'PHASE_FAILED') as caught: M.phase_child(job, assets, -1)
         self.assertNotIn('/synthetic-private-path', str(caught.exception.phase_error))
 
+    def test_successor_real_own_fork_binds_driver_and_module_source_paths(self):
+        old, before = self.old_job_evidence()
+        self.use_successor()
+        root, job, raw = self.job(); os.close(root)
+        path = str(self.base) + '/' + M.SUCCESSOR_NAMESPACE + '/jobs/' + self.nonce
+        assets = self.assets.copy()
+        assets['driver.py'] = ('def execute_phase(phase, data, modules, deadline):\n'
+            '    assert __file__ == ' + repr(path + '/driver.py') + '\n'
+            '    assert all(row["__file__"] == ' + repr(path) + ' + "/" + name + ".py" for name,row in modules.items())\n'
+            '    assert modules["restore"]["__source_bytes__"] == b"SYNTHETIC = True\\n"\n'
+            '    return ' + repr(self.result) + '\n').encode()
+        with patch.object(M, 'worker_watch'):
+            self.assertEqual(M.phase_child(job, assets, -1), self.result)
+        self.assertEqual(self.job_evidence(old), before)
+
     def test_directory_cgroup_walk_includes_new_session_and_nested_members(self):
         cg = self.base / 'cg'; cg.mkdir()
         (cg / 'cgroup.procs').write_bytes(b'4242\n')
@@ -489,6 +683,30 @@ class GuardTests(unittest.TestCase):
                     with self.assertRaisesRegex(M.Stop, 'WORKER_CHANGED'): M.worker_identity(job, root, raw)
         finally: os.close(root)
 
+    def test_successor_process_argv_cannot_use_legacy_path_or_worker_flag(self):
+        self.use_successor()
+        root, job, raw = self.job()
+        correct = M.worker_argv(self.nonce, M.SUCCESSOR_NAMESPACE)
+        kernel = {'/proc/4242/cmdline': b'\0'.join(p.encode() for p in correct[4:])+b'\0',
+                  '/proc/4242/cgroup': ('0::'+self.baseline['cgroup']+'\n').encode()}
+        previous_stat = M.os.stat
+        python = types.SimpleNamespace(st_mode=stat.S_IFREG|0o755, st_uid=0, st_gid=0, st_dev=9, st_ino=10)
+        def file_stat(path, *args, **kwargs):
+            if str(path) in ('/proc/4242/exe', '/usr/bin/python3'): return python
+            return previous_stat(path, *args, **kwargs)
+        try:
+            with patch.object(M, 'unit_snapshot', return_value=self.unit_fields(job)), \
+                    patch.object(M, 'kernel_read', side_effect=lambda path, cap: kernel[path]), \
+                    patch.object(M.os, 'stat', side_effect=file_stat):
+                self.assertEqual(M.worker_identity(job, root, raw)['worker'], self.facts(4242))
+                for index, replacement in ((8, str(self.base)+'/setup-jobs/'+self.nonce+'/guard.py'),
+                                           (9, '--setup-phase-worker'), (8, '/tmp/free/guard.py')):
+                    argv = correct.copy(); argv[index] = replacement
+                    kernel['/proc/4242/cmdline'] = b'\0'.join(p.encode() for p in argv[4:])+b'\0'
+                    with self.subTest(index=index, replacement=replacement), self.assertRaisesRegex(M.Stop, 'WORKER_COMMAND'):
+                        M.worker_identity(job, root, raw)
+        finally: os.close(root)
+
     def test_controller_pidfd_and_kernel_change_fail_closed(self):
         root, job, raw = self.job(); os.close(root)
         with patch.object(M, 'exited', return_value=True):
@@ -511,7 +729,7 @@ class GuardTests(unittest.TestCase):
             FinalKillSignal='9', TimeoutStopFailureMode='kill', InvocationID='f'*32,
             ActiveState='active', SubState='running', ExecMainPID='4242', ExecMainCode='0', ExecMainStatus='0',
             ExecMainStartTimestampMonotonic='100000', ExecMainExitTimestampMonotonic='0', Result='success')
-        fields['ExecStart'] = '{ path=/usr/bin/env ; argv[]=' + ' '.join(M.worker_argv(self.nonce)) + ' ; ignore_errors=no ; pid=4242 ; }'
+        fields['ExecStart'] = '{ path=/usr/bin/env ; argv[]=' + ' '.join(M.worker_argv(self.nonce, M.job_namespace(job))) + ' ; ignore_errors=no ; pid=4242 ; }'
         if finished: fields.update(MainPID='0', ExecMainCode='1', SubState='exited', ExecMainExitTimestampMonotonic='200000')
         return fields
 
@@ -559,6 +777,24 @@ class GuardTests(unittest.TestCase):
         finished['ExecMainCode'] = '2'
         with patch.object(M, 'command', side_effect=self.unit_command(job, finished)):
             with self.assertRaisesRegex(M.Stop, 'UNIT_EXIT'): M.unit_snapshot(job, finished=True)
+
+    def test_successor_start_and_running_finished_snapshots_require_new_argv(self):
+        self.use_successor()
+        root, job, raw = self.job(); os.close(root)
+        expected = M.worker_argv(self.nonce, M.SUCCESSOR_NAMESPACE)
+        with patch.object(M, 'command') as command: M.start_service(job)
+        self.assertEqual(command.call_args.args[0][-len(expected):], expected)
+        for finished in (False, True):
+            fields = self.unit_fields(job, finished)
+            self.assertIn('/'+M.SUCCESSOR_NAMESPACE+'/jobs/'+self.nonce+'/guard.py', fields['ExecStart'])
+            self.assertIn('--setup-successor-phase-worker', fields['ExecStart'])
+            with patch.object(M, 'command', side_effect=self.unit_command(job, fields)):
+                self.assertEqual(M.unit_snapshot(job, finished=finished), fields)
+            for argv in (M.worker_argv(self.nonce),
+                         [('--setup-phase-worker' if p == '--setup-successor-phase-worker' else p) for p in expected]):
+                wrong = {**fields, 'ExecStart': '{ path=/usr/bin/env ; argv[]=' + ' '.join(argv) + ' ; ignore_errors=no ; pid=4242 ; }'}
+                with self.subTest(finished=finished, argv=argv), patch.object(M, 'command', side_effect=self.unit_command(job, wrong)):
+                    with self.assertRaisesRegex(M.Stop, 'UNIT_COMMAND'): M.unit_snapshot(job, finished=finished)
 
     def test_observed_missing_six_hooks_requires_all_six_explicit_typed_empty_arrays(self):
         root, job, raw = self.job(); os.close(root)
