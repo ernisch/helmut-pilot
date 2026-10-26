@@ -17,8 +17,8 @@ SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parent
 SOURCE_SHA256 = {
     'bootstrap': '740e7cd3218eec796abf9fe408db2db7ddeaeeade34ddc2363942d5fcf9a4f97',
-    'server': '5c75b20e947372577a16736e653fca4c909141aa0f990480a0dba2fd49ef3bee',
-    'client': 'cb90df51b18ae76792760828a0dec4897de411b3aaeceb55adde57ee6402893f',
+    'server': 'b988af939a95a74baa5a7e38e07de1f65c8eca51e13aa688833dd1b4138bc99d',
+    'client': '2ebd98082d201d29d34147b2ea7b33c5fa5b3cab5792b0d0224d521e1d41eb02',
     'installer': 'f3512b1126ece5eb744db3f991c8c2c4d0b7703350c13ded52dd0c1c894d21d3',
 }
 RECIPIENT_SHA256 = '8e054d8d1c7ba5428b2fa9537462689fd0863621fd2d1eed16742fa2b3a49b10'
@@ -92,7 +92,8 @@ def main():
                    'setup-driver', 'setup-service', 'setup-coordinator',
                    'setup-successor-preflight', 'setup-successor',
                    'setup-successor-client', 'setup-successor-server',
-                   'runtime-metadata', 'runtime-metadata-client', 'runtime-metadata-server'))
+                   'runtime-metadata', 'runtime-metadata-client', 'runtime-metadata-server',
+                   'daemon-binding', 'daemon-binding-transport'))
     for group, test_file in groups:
         filename = SCRIPTS / test_file
         module = types.ModuleType('native_control_tests_' + group)

@@ -34,6 +34,9 @@ SETUP_PHASES = ('recover', 'checkout', 'context', 'image')
 RUNTIME_METADATA_CONTRACT = 'runtime-metadata-failed-context-20261026-v1'
 RUNTIME_METADATA_CONTRACT_SHA256 = 'b85cecc106ab2e2a40d19f02c8caa412e6e6e3f86c6ee4c5bfa18fbe712a2caf'
 RUNTIME_METADATA_PREFIX = b'helmut-runtime-metadata-request-v1\0'
+DAEMON_BINDING_CONTRACT = 'daemon-binding-observation-20261026-v1'
+DAEMON_BINDING_CONTRACT_SHA256 = 'fe6a763fee403a0e34a943db533b0aca71b38afdfc9408143e0d9aef064844bd'
+DAEMON_BINDING_PREFIX = b'helmut-daemon-binding-request-v1\0'
 RUNTIME_METADATA_CAPSULE_KEYS = {'schema', 'contract_id', 'action', 'chunk', 'source_sha256',
     'contract_sha256', 'nonce', 'issued_at_utc', 'expires_at_utc'}
 RUNTIME_METADATA_SHA256 = '71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475'
@@ -251,6 +254,103 @@ def _setup_capsule_check(value, payload, now=None):
         for key in ('inspection_nonce', 'inspection_result_sha256'): pinned_sha(value[key])
 
 
+def _daemon_binding_capsule_check(value, payload, now=None):
+    require(type(value) is dict and set(value) == RUNTIME_METADATA_CAPSULE_KEYS - {'chunk'}
+            and value['schema'] == 'helmut-daemon-binding-capsule-v1'
+            and value['contract_id'] == DAEMON_BINDING_CONTRACT and value['action'] == 'read'
+            and value['source_sha256'] == payload and value['contract_sha256'] == DAEMON_BINDING_CONTRACT_SHA256,
+            'daemon-binding-capsule')
+    for key in ('source_sha256', 'contract_sha256', 'nonce'): pinned_sha(value[key])
+    require(type(value['issued_at_utc']) is int and type(value['expires_at_utc']) is int
+            and 0 < value['issued_at_utc'] < value['expires_at_utc']
+            and value['expires_at_utc'] - value['issued_at_utc'] <= 300, 'daemon-binding-capsule')
+    if now is not None:
+        require(value['issued_at_utc'] <= now <= value['expires_at_utc'], 'daemon-binding-capsule')
+
+
+def validate_daemon_binding_result(result, sent, capsule):
+    _daemon_binding_capsule_check(capsule, sent['payload_sha256'])
+    require(sent['operation'] == 'status' and sent['plan_sha256'] == STAGE_PLAN
+            and sent['nonce'] == control_request_nonce(capsule), 'response-binding')
+    keys = {'schema', 'status', 'contract_id', 'contract_sha256', 'source_sha256', 'code',
+            'partial_setup_proof', 'failure_diagnostic', 'observation', 'native_qualified', 'native_go_consumed'}
+    require(type(result) is dict and set(result) == keys
+            and result['schema'] == 'helmut-native-daemon-binding-observation-v1'
+            and result['contract_id'] == DAEMON_BINDING_CONTRACT
+            and result['contract_sha256'] == DAEMON_BINDING_CONTRACT_SHA256
+            and result['source_sha256'] == sent['payload_sha256']
+            and result['native_qualified'] is False and result['native_go_consumed'] is False, 'daemon-binding-result')
+    if result['status'] == 'FAIL_CLOSED_NOT_NATIVE_QUALIFIED':
+        require(type(result['code']) is str and re.fullmatch('[A-Z][A-Z0-9_]{0,63}', result['code'])
+                and all(result[k] is None for k in ('partial_setup_proof', 'failure_diagnostic', 'observation')),
+                'daemon-binding-result')
+        return
+    require(result['status'] == 'DAEMON_BINDING_OBSERVED_NOT_READY' and result['code'] is None, 'daemon-binding-result')
+    _runtime_partial_setup_proof(result['partial_setup_proof'])
+    _runtime_failure_diagnostic(result['failure_diagnostic'])
+    records = result['failure_diagnostic']['records']
+    for key, expected in (('component_error', '24124f28a62c92b0cc373f70e35b6926cf06f8df13f5fede02770a74a66fe33b'),
+                          ('job_error', '97ddf7c9c97a700d90a3b4a419ba7125849ffa251c33a8655446a84d91909a18')):
+        require(records[key]['state'] == 'PRESENT' and records[key]['sha256'] == expected
+                and records[key]['code'] == 'DAEMON_SERVICE_BINDING', 'daemon-binding-result')
+    require(all(records[key]['state'] == 'ABSENT' for key in
+                ('component_attempt', 'component_receipt_pending', 'component_receipt')), 'daemon-binding-result')
+    component = records['component_error']
+    require(component['phase'] == 'preflight' and component['mount_state'] == 'NOT_STARTED'
+            and component['anchor_attempt_count'] == component['anchor_created_count'] == 0
+            and component['last_acknowledged_step'] is None
+            and component['exception_type'] == 'Stop' and component['errno'] is None
+            and records['job_error']['exception_type'] == 'Stop' and records['job_error']['errno'] is None
+            and records['namespace_error']['state'] == 'PRESENT'
+            and records['namespace_error']['sha256'] == '08561bc6393049e003acebb7e1d4039e17f269f4b2a632c78de43c50a4933a6b',
+            'daemon-binding-result')
+    observation = result['observation']
+    positive = {'unit_active_running', 'socket_peer_bound', 'process_root_owned', 'process_alive', 'cgroup2_verified'}
+    booleans = {'private_namespace', 'private_propagation', 'comm_matches', 'exe_matches',
+                'cgroup_matches', 'cgroup_membership_verified'}
+    hashes = {'boot_id_sha256', 'process_binding_sha256', 'proc_binding_sha256'}
+    row_names = {'comm', 'exe_link', 'cgroup', 'executable'}
+    require(type(observation) is dict and set(observation) == positive | booleans | hashes | row_names |
+            {'cgroup_kind', 'unit_file', 'exec_hooks_state'}
+            and all(observation[key] is True for key in positive)
+            and all(type(observation[key]) is bool for key in booleans)
+            and observation['cgroup_kind'] in ('UNIT_ROOT', 'DAEMON_CHILD', 'OTHER')
+            and observation['cgroup_matches'] == (observation['cgroup_kind'] == 'DAEMON_CHILD')
+            and observation['cgroup_membership_verified'] == (observation['cgroup_kind'] != 'OTHER')
+            and observation['exec_hooks_state'] == 'UNKNOWN_NOT_QUERIED', 'daemon-binding-result')
+    for key in hashes: pinned_sha(observation[key])
+    for key in row_names:
+        row = observation[key]
+        require(type(row) is dict and set(row) == {'sha256', 'bytes', 'metadata'}
+                and type(row['bytes']) is int and 0 < row['bytes'] <=
+                {'comm':64, 'exe_link':4096, 'cgroup':4096, 'executable':268435456}[key], 'daemon-binding-result')
+        pinned_sha(row['sha256']); _setup_metadata(row['metadata'])
+        mode = row['metadata'][2]
+        require(row['metadata'][3:6] == [0, 0, 1]
+                and mode & 0o170000 == (0o120000 if key == 'exe_link' else 0o100000), 'daemon-binding-result')
+        if key == 'executable':
+            require(not mode & 0o022 and mode & 0o111 and row['metadata'][6] == row['bytes'], 'daemon-binding-result')
+    require(observation['comm_matches'] == (observation['comm']['sha256'] == digest(b'dockerd\n'))
+            and observation['exe_matches'] == (observation['exe_link']['sha256'] ==
+                digest(b'/opt/helmut-native-test/docker28-context-20261026/bin/dockerd')), 'daemon-binding-result')
+    groups = {'UNIT_ROOT': b'0::/system.slice/helmut-native-docker28.service\n',
+              'DAEMON_CHILD': b'0::/system.slice/helmut-native-docker28.service/daemon\n'}
+    if observation['cgroup_kind'] != 'OTHER':
+        require(observation['cgroup']['sha256'] == digest(groups[observation['cgroup_kind']]), 'daemon-binding-result')
+    else:
+        require(observation['cgroup']['sha256'] not in {digest(v) for v in groups.values()}, 'daemon-binding-result')
+    unit = observation['unit_file']
+    require(type(unit) is dict and set(unit) == {'state', 'sha256', 'bytes', 'metadata'}
+            and unit['state'] in ('PRESENT', 'UNKNOWN_MISSING'), 'daemon-binding-result')
+    if unit['state'] == 'UNKNOWN_MISSING':
+        require(all(unit[key] is None for key in ('sha256', 'bytes', 'metadata')), 'daemon-binding-result')
+    else:
+        pinned_sha(unit['sha256']); _setup_metadata(unit['metadata'])
+        require(type(unit['bytes']) is int and 0 < unit['bytes'] <= 65536
+                and unit['metadata'][2] & 0o170000 == 0o100000 and not unit['metadata'][2] & 0o022
+                and unit['metadata'][3:6] == [0, 0, 1] and unit['metadata'][6] == unit['bytes'], 'daemon-binding-result')
+
+
 def _runtime_metadata_capsule_check(value, payload, now=None):
     require(type(value) is dict and set(value) == RUNTIME_METADATA_CAPSULE_KEYS
             and value['schema'] == 'helmut-runtime-metadata-capsule-v1'
@@ -284,7 +384,10 @@ def setup_capsule(environment, operation):
     require(canonical(value) == raw, 'setup-capsule')
     if mode == 'runtime-metadata-v1':
         require(operation == 'status', 'setup-mode')
-        _runtime_metadata_capsule_check(value, pinned_sha(environment.get('HELMUT_NATIVE_PAYLOAD_SHA256')), int(time.time()))
+        require(type(value) is dict, 'daemon-binding-capsule')
+        validator = (_daemon_binding_capsule_check if value.get('schema') == 'helmut-daemon-binding-capsule-v1'
+                     else _runtime_metadata_capsule_check)
+        validator(value, pinned_sha(environment.get('HELMUT_NATIVE_PAYLOAD_SHA256')), int(time.time()))
         return raw + b'\n', value
     _setup_capsule_check(value, pinned_sha(environment.get('HELMUT_NATIVE_PAYLOAD_SHA256')), int(time.time()))
     require((mode, operation, value['action']) in (('setup-inspect-v1', 'status', 'inspect'),
@@ -301,6 +404,8 @@ def runtime_metadata_request_nonce(capsule):
 
 
 def control_request_nonce(capsule):
+    if capsule['schema'] == 'helmut-daemon-binding-capsule-v1':
+        return digest(DAEMON_BINDING_PREFIX + canonical(capsule) + b'\n')
     if capsule['schema'] == 'helmut-runtime-metadata-capsule-v1':
         return runtime_metadata_request_nonce(capsule)
     return setup_request_nonce(capsule)
@@ -377,6 +482,26 @@ def _runtime_failure_diagnostic(diagnostic):
                     'runtime-metadata-result')
 
 
+def _runtime_partial_setup_proof(proof):
+    require(type(proof) is dict and set(proof) == {'schema', *RUNTIME_METADATA_SETUP, 'authority_sha256',
+            'once_sha256', 'accepted_sha256', 'job_seal_sha256', 'accepted_phases', *RUNTIME_METADATA_FAILED,
+            'failed_job_sha256', 'baseline_sha256', 'failed_unit_state', 'native_qualified', 'native_go_consumed'}
+            and proof['schema'] == 'helmut-runtime-metadata-partial-setup-proof-v1'
+            and all(proof[key] == value for key, value in RUNTIME_METADATA_SETUP.items())
+            and proof['authority_sha256'] == RUNTIME_METADATA_AUTHORITY
+            and proof['accepted_sha256'] == RUNTIME_METADATA_ACCEPTED
+            and proof['accepted_phases'] == ['recover', 'checkout']
+            and all(proof[key] == value for key, value in RUNTIME_METADATA_FAILED.items())
+            and type(proof['failed_unit_state']) is str
+            and proof['failed_unit_state'] in ('UNKNOWN_UNIT_OBSERVATION', 'LOADED_QUIESCENT')
+            and proof['native_qualified'] is False and proof['native_go_consumed'] is False,
+            'runtime-metadata-result')
+    for key in ('once_sha256', 'baseline_sha256', 'failed_job_sha256'): pinned_sha(proof[key])
+    require(type(proof['job_seal_sha256']) is dict and set(proof['job_seal_sha256']) == {'recover', 'checkout'},
+            'runtime-metadata-result')
+    for value in proof['job_seal_sha256'].values(): pinned_sha(value)
+
+
 def validate_runtime_metadata_result(result, sent, capsule):
     _runtime_metadata_capsule_check(capsule, sent['payload_sha256'])
     require(sent['operation'] == 'status' and sent['plan_sha256'] == STAGE_PLAN
@@ -412,24 +537,7 @@ def validate_runtime_metadata_result(result, sent, capsule):
             and binding['bytes'] == RUNTIME_METADATA_BYTES, 'runtime-metadata-result')
     _setup_metadata(binding['metadata'])
     require(binding['metadata'][6] == RUNTIME_METADATA_BYTES, 'runtime-metadata-result')
-    proof = result['partial_setup_proof']
-    require(type(proof) is dict and set(proof) == {'schema', *RUNTIME_METADATA_SETUP, 'authority_sha256',
-            'once_sha256', 'accepted_sha256', 'job_seal_sha256', 'accepted_phases', *RUNTIME_METADATA_FAILED,
-            'failed_job_sha256', 'baseline_sha256', 'failed_unit_state', 'native_qualified', 'native_go_consumed'}
-            and proof['schema'] == 'helmut-runtime-metadata-partial-setup-proof-v1'
-            and all(proof[key] == value for key, value in RUNTIME_METADATA_SETUP.items())
-            and proof['authority_sha256'] == RUNTIME_METADATA_AUTHORITY
-            and proof['accepted_sha256'] == RUNTIME_METADATA_ACCEPTED
-            and proof['accepted_phases'] == ['recover', 'checkout']
-            and all(proof[key] == value for key, value in RUNTIME_METADATA_FAILED.items())
-            and type(proof['failed_unit_state']) is str
-            and proof['failed_unit_state'] in ('UNKNOWN_UNIT_OBSERVATION', 'LOADED_QUIESCENT')
-            and proof['native_qualified'] is False and proof['native_go_consumed'] is False,
-            'runtime-metadata-result')
-    for key in ('once_sha256', 'baseline_sha256', 'failed_job_sha256'): pinned_sha(proof[key])
-    require(type(proof['job_seal_sha256']) is dict and set(proof['job_seal_sha256']) == {'recover', 'checkout'},
-            'runtime-metadata-result')
-    for value in proof['job_seal_sha256'].values(): pinned_sha(value)
+    _runtime_partial_setup_proof(result['partial_setup_proof'])
     _runtime_failure_diagnostic(result['failure_diagnostic'])
     summary = result['json_summary']
     types = {'dict', 'list', 'str', 'int', 'float', 'bool', 'NoneType'}
@@ -835,6 +943,8 @@ def validate_response(raw, sent, successor_capsule=None):
             "response-hash")
     if successor_capsule is None:
         validate_result(reply["result"], sent["operation"], sent["payload_sha256"])
+    elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-daemon-binding-capsule-v1':
+        validate_daemon_binding_result(reply['result'], sent, successor_capsule)
     elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-runtime-metadata-capsule-v1':
         validate_runtime_metadata_result(reply['result'], sent, successor_capsule)
     else:
