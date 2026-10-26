@@ -2,11 +2,11 @@
 
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
-PR954 auf `f1be0a0c`; PR-CI40299279482 vollstaendig SUCCESS.
-Main-CI40302732339 laeuft; Zielausfuehrung weiterhin gesperrt.
+PR954 auf `f1be0a0c`; PR-CI40299279482 und Main-CI40302732339 SUCCESS.
 473 synthetische Tests und unabhaengige Integrationsabnahme bestanden.
-Vier Setup-Phasen sind integriert; Recovery auf Hetzner noch nicht ausgefuehrt.
-Daten verschluesselt im Drive rueckgeprueft; Key bleibt nur auf Hetzner, Mac entfaellt.
+Einmaliger Setupaufruf40306875483: recover FAIL UNIT_PROPERTIES, unabhaengig bestaetigt.
+Feldabweichung, ARM- und Restorezustand offen. Keine Wiederholung/weitere Phase.
+Paket im Drive/auf Hetzner gesichert; privater Key nur auf Hetzner. Admin-Leseabfrage offen.
 Stage-Once verbraucht, native Freigabe pausiert; keine Reaktivierung alter Rechte.
 Keine nativen Tests/500er-Abnahme. Docker/Pfadsicht/Quellen bleiben frisch zu pruefen.
 [Belege und Grenzen](betrieb/hetzner-native-automation-20261026.md).

@@ -355,11 +355,57 @@ PR-CI40299279482 auf dem exakt unabhaengig abgenommenen Endstand
 Beide Pflichtjobs, die tatsaechliche Native-Automation-Grenzpruefung und der
 Vercel-GitHub-Check wurden vor dem Merge frisch bestaetigt. Der freigegebene
 Merge ist auf Main `f1be0a0c0ac0f5a87fdb135c17b759dfe444b8f0` verifiziert.
-Main-CI40302732339 laeuft noch. Bis zu ihrem vollstaendig gruenen Abschluss
-findet kein Aufruf der neuen Zielphasen statt. Die native Freigabe bleibt
-unbenutzt und pausiert; dies ist keine Motor-, Unit60- oder500er-Abnahme.
+Main-CI40302732339 ist ebenfalls vollstaendig SUCCESS, einschliesslich beider
+Pflichtjobs und der tatsaechlichen Native-Automation-Grenzpruefung. Auch der
+Vercel-GitHub-Check auf Main ist SUCCESS. Die native Freigabe bleibt unbenutzt
+und pausiert; dies ist keine Motor-, Unit60- oder500er-Abnahme.
+
+## Einmaliger Setupabbruch und verbindlicher Stopp
+
+Nach frischer Hauptstand-/CI-/Quellenbindung wurde am26.10.2026 um10:22:12UTC
+genau ein `admit` fuer die erste Setup-Phase beauftragt. Workflow40306875483,
+Job121518055099, Artefakt12643052325 enden FAIL. Der qualifizierte Client und
+eine unabhaengige SOL-Pruefung bestaetigen: `recover / UNIT_PROPERTIES /
+FAIL_KEEP_STATE_NO_RETRY`, alle drei Quittungshashes null, beide Native-Flags
+false. ZIP777Bytes, SHA256
+`61ba7db0dad2826155c79a73c15dfafd7d07badfccf913ad9c1d05e567682e6a`;
+Antwort-SHA256
+`f4b9ff053516e884f5b9eeb227e448fc90a99bd61c82c8b8c272391a329754ae`.
+Nonce `33c5a05bbd8e9e1eb43490e67095a3ae1ce4eb570bdcc96b3185ae7653d55c9d`.
+Rohbelege liegen erhalten unter
+`/workspace/helmut-hetzner-preparation-evidence-20261025/TARGET_SETUP_RECOVER_ACTUAL_40306875483/`
+und unveraendert im GitHub-Artefakt. Der direkte CLI-Download wurde am Azure-
+Blob-Endpunkt verweigert; der vorhandene GitHub-Artefaktconnector lieferte
+denselben777Byte-ZIP vollstaendig. ZIP, Sidecar, CI-Hash und Antwortbindung
+wurden O_NOATIME geprueft. Kein erneuter Zielaufruf war dafuer erforderlich.
+
+Der Code belegt nur eine abweichende Menge gelieferter systemd-Propertynamen.
+Welches Feld fehlt oder zusaetzlich geliefert wurde, ist nicht gesichert.
+ARM-Zustand, tatsaechlicher Restorezustand und aktuelle Prozessenden sind offen.
+Daraus folgt weder eine Originalhash-Abnahme noch ein Nachweis null erfolgter
+Schreibzugriffe. Es gibt keine ACCEPTED-Abnahme. Alle Teilzustaende, Fehler und
+Einmalmarker muessen erhalten bleiben; kein Retry, keine naechste Setup-Phase.
+
+Naechster kleinster Schritt: ausschliesslich die echte Propertyliste mit und
+ohne `--all` sowie die Existenz der vier festen Start-/Endmarker lesen.
+Die vorhandene eingeschraenkte Automatik stellt diese Abfrage nicht bereit.
+Ein einziger rein lesender Mac-Administratorbefehl vermeidet einen erneuten
+Umbau des Root-Protokolls nur zur Diagnose. Er startet/stoppt keine Dienste und
+liest keine Projektinhalte oder Schluessel. Die konkrete Abfrage steht unten;
+ihre Ausfuehrung ist noch ausstehend. Kein neuer nativer Lauf ist freigegeben.
 
 ## Threadwechsel ohne erneuten Datenumzug
+
+Konkreter Fortsetzungspunkt ist jetzt ausschliesslich die rein lesende
+`UNIT_PROPERTIES`-Klaerung. Main und beide Pflicht-CIs sind gruen; der
+Einrichtungsaufruf ist gescheitert und darf nicht wiederholt werden.
+Historische Parameter dieses Aufrufs, NICHT erneut dispatchen:
+`hetzner-native-automation.yml` auf `main`, `controlMode=control-v1`,
+`operation=admit`, `planSHA=e6d463a634925a190d60d066c0fae2ba94b9f7f0a10a115b50b4f4018b1b35eb`,
+`payloadSHA=62cb2394de10b8c26f528b5d627dd0cb7720047e7fbd571d6f4dcf99d87d2ad8`,
+kein stageCapsule. Die alte fehlgeschlagene Stage-Once bleibt ebenfalls
+verbraucht. Kein neuer Aufruf und keine nachtraegliche Erfolgsumdeutung.
+Diese Parameter sind keine native Vier-TX-, Unit60- oder500er-Freigabe.
 
 Code und Quellenbindungen liegen auf dem Entwicklungsbranch
 `codex/hetzner-target-admission-20261026`; der aktuelle Git-/PR-Stand ist vor einer
@@ -380,3 +426,101 @@ neuer Thread darf die gescheiterte Stage-Once nicht wiederholen und benoetigt
 keine erneute Quellinventur: zuerst vorhandene Zielquittungen und den genauen
 Git-Stand uebernehmen. Native Vier-TX-Messung, Unit60 und500er Nachweis bleiben
 getrennt und brauchen ihre jeweils frischen vollstaendigen Zulassungen.
+
+## Einmalige Adminabfrage fuer UNIT_PROPERTIES
+
+Nur im Mac-Terminal den gesamten folgenden Block einmal einfuegen. Der
+vorhandene private SSH-Schluessel bleibt auf dem Mac; keine Schluesselwerte
+weitergeben. Der Befehl liest nur die zwei fest benannten Service-Propertylisten
+und die Existenz der vier festen Marker. Er startet/stoppt keine Dienste,
+legt keine Projektdateien an und liest keine Projektinhalte. Die Ausgabe
+enthaelt Propertynamen und vier begrenzte Zustandswerte, keine ExecStart- oder
+Umgebungsinhalte. Bei unbekannten Zustaenden nichts selbst reparieren.
+
+Lokale Shell-/Python-Syntaxpruefung und unabhaengige SOL-Abnahme PASS; noch
+nicht auf Hetzner ausgefuehrt. Skript-SHA256 (ohne aeussere Bash-Huelle):
+`fba10f66c2f20cdff0758bae593d31ec734e96d3727f55bacba34695f1f67dbe`.
+
+```bash
+/bin/bash <<'HELMUT_MAC_READONLY'
+#!/usr/bin/env bash
+# Im Mac-Terminal ausfuehren. Nur feste Service-Metadaten und Marker-Existenz lesen.
+set -euo pipefail
+if [[ "$(uname -s)" != Darwin ]]; then
+  printf '%s\n' 'STOP: Diesen Befehl im Mac-Terminal ausfuehren.' >&2
+  exit 1
+fi
+/usr/bin/ssh -F /dev/null -T -o StrictHostKeyChecking=yes -o UpdateHostKeys=no \
+  -o ForwardAgent=no -o ForwardX11=no \
+  -o ClearAllForwardings=yes -o PermitLocalCommand=no -o IdentitiesOnly=yes \
+  -o ConnectionAttempts=1 -i "$HOME/.ssh/helmut_hetzner" root@2.28.77.245 \
+  'env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin LC_ALL=C /usr/bin/python3 -I -S -B -' <<'HELMUT_UNIT_FIELDS_READONLY'
+import json, os, re, stat, subprocess
+
+assert os.getuid() == os.geteuid() == 0, 'ROOT_REQUIRED'
+nonce = '33c5a05bbd8e9e1eb43490e67095a3ae1ce4eb570bdcc96b3185ae7653d55c9d'
+names = ('Id,Transient,Type,MainPID,ControlPID,ControlGroup,KillMode,RuntimeMaxUSec,'
+         'TimeoutStopUSec,Restart,RemainAfterExit,User,Group,UMask,StandardOutput,'
+         'StandardError,Delegate,ExecStart,ExecStartPre,ExecStartPost,ExecCondition,'
+         'ExecStop,ExecStopPost,ExecReload,InvocationID,ActiveState,SubState,ExecMainPID,'
+         'ExecMainCode,ExecMainStatus,ExecMainStartTimestampMonotonic,'
+         'ExecMainExitTimestampMonotonic,Result,SendSIGKILL,KillSignal,FinalKillSignal,'
+         'TimeoutStopFailureMode').split(',')
+expected = set(names)
+for unit in ('helmut-native-setup-' + nonce + '.service', 'helmut-native-docker28.service'):
+    for include_empty in (False, True):
+        argv = ['/usr/bin/systemctl', 'show', unit, '--no-pager',
+                '--property=' + ','.join(names + ['LoadState'])]
+        if include_empty:
+            argv.append('--all')
+        result = subprocess.run(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, timeout=5, check=False)
+        assert len(result.stdout) <= 65536 and len(result.stderr) <= 65536, 'OUTPUT_LIMIT'
+        fields = {}
+        for row in result.stdout.decode('ascii', 'strict').splitlines():
+            key, separator, value = row.partition('=')
+            assert separator and key not in fields and re.fullmatch('[A-Za-z][A-Za-z0-9]{0,63}', key), 'PROPERTY_FORMAT'
+            fields[key] = value
+        assert len(fields) <= 64, 'PROPERTY_COUNT'
+        states = {key: fields[key] for key in ('LoadState', 'ActiveState', 'SubState', 'Result')
+                  if key in fields and re.fullmatch('[A-Za-z0-9_-]{0,64}', fields[key])}
+        print(json.dumps({'unit': unit, 'include_empty': include_empty,
+                          'exit': result.returncode, 'fields': sorted(fields),
+                          'missing': sorted(expected - fields.keys()),
+                          'extra': sorted(fields.keys() - expected - {'LoadState'}),
+                          'states': states}, sort_keys=True), flush=True)
+
+# O_PATH walks do not read directory contents or alter directory read timestamps.
+fd = os.open('/', os.O_PATH | os.O_DIRECTORY | os.O_NOFOLLOW)
+try:
+    path = '/opt/helmut-native-test/automation-20261026/setup-jobs/' + nonce
+    try:
+        for part in path.split('/')[1:]:
+            child = os.open(part, os.O_PATH | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+            os.close(fd)
+            fd = child
+            info = os.fstat(fd)
+            assert info.st_uid == info.st_gid == 0 and not info.st_mode & 0o022, 'UNTRUSTED_PARENT'
+    except FileNotFoundError:
+        print(json.dumps({'job_markers': 'UNKNOWN_JOB_DIRECTORY_ABSENT'}), flush=True)
+    else:
+        for name in ('ARM.PRIVATE.json', 'RESULT.PENDING.PRIVATE.json',
+                     'RESULT.PRIVATE.json', 'FIRST_ERROR.PRIVATE.json'):
+            try:
+                info = os.stat(name, dir_fd=fd, follow_symlinks=False)
+            except FileNotFoundError:
+                print(json.dumps({'marker': name, 'exists': False}), flush=True)
+            else:
+                print(json.dumps({'marker': name, 'exists': True,
+                                  'regular': stat.S_ISREG(info.st_mode),
+                                  'mode': oct(stat.S_IMODE(info.st_mode)),
+                                  'uid': info.st_uid, 'gid': info.st_gid,
+                                  'size': info.st_size}), flush=True)
+finally:
+    os.close(fd)
+print(json.dumps({'status': 'READONLY_OBSERVATION_COMPLETE',
+                  'service_changes': False, 'native_started': False,
+                  'project_contents_read': False, 'keys_transferred': False}), flush=True)
+HELMUT_UNIT_FIELDS_READONLY
+HELMUT_MAC_READONLY
+```
