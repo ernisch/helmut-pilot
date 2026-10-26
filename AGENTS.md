@@ -254,7 +254,7 @@ Ein Schreibauftrag darf genau eine freigegebene Datei betreffen.
 Pro Helferaufruf gilt eine konservative lokale Peak Preisprognose mit
 hoechstens 0,25 USD Planungslimit. Ein atomares Journal im gemeinsamen
 HOME Verzeichnis reserviert vor kostenpflichtigen Aufrufen maximal
-1,00 USD je UTC Tag fuer dieses gemeinsam genutzte Dateisystem. Unklare
+2,00 USD je UTC Tag fuer dieses gemeinsam genutzte Dateisystem. Unklare
 Antworten bleiben mit ihrer vollen urspruenglichen Reservierung gebunden;
 gueltige Usage wird mit Peak Tarifen abgerechnet. Keine automatischen
 Wiederholungen oder stillen Budgeterhoehungen.
