@@ -229,3 +229,33 @@ zugelassen, keine Wildcard. Der validierte Host bindet DNS, numerische Verbindun
 TLS-SNI und HTTP-Host gemeinsam. Zwei neue gezielte Routing-/Abweisungspruefungen
 ergänzen den bestehenden Umfang; die vollstaendigen190 synthetischen Tests passen.
 Native Pfadsicht, UID1000, Docker-/Socket-/Cgroupadmission bleiben danach offen.
+
+## Erhaltener Stage-Abbruch und begrenzte Korrektur (26.10.2026 Istanbul)
+
+PR951 ist auf `ce8a392b6a6d4358a37fee3ed03a5b62484a677e` gemergt;
+Main-CI40267987937 und die tatsaechliche native Grenzpruefung sind erfolgreich,
+Vercel `dpl_4x9ut95N3rToA3yjsbV6r7NEA6F1` auf genau diesem Commit READY.
+Der einmalige Stage-Lauf40270395850 stoppte mit `STAGE_RESTORE`.
+Artefakt12628850120 wurde vollstaendig geladen, ZIP-/Antwort-/Sidecar-/Client-/
+Nonce-/Plan-/Quellenbindung geprueft. Antwort-SHA256:
+`359acce125eb3575a6303330b2e7fa897699926d023f86011f03879c475a9c6d`.
+Nach dem tatsaechlichen Codepfad bestanden Cipherteil-/Gesamthash,
+Empfaenger-/MDC-Entschluesselung und Gziphash vor dem Restoreaufruf.
+Dateizahl, private Erstursache und Ausmass des Teilbaums sind noch unbekannt.
+Der verbrauchte Stage-Slot und Fehlerzustand bleiben erhalten; kein neuer Stage-,
+Restore- oder nativer Lauf wurde ausgefuehrt. Native Einmalfreigabe unbenutzt.
+
+Statisch ist eine konkrete Formatinkompatibilitaet belegt: Python-PAX schreibt bei
+langen Verzeichnisnamen einen abschliessenden Slash; der alte Empfaenger verwarf
+diesen vor der Dateityppruefung. Der enge Fix entfernt genau einen Slash nur bei
+DIRTYPE und bewahrt die Sperren fuer Dateien, Links, absolute/Punkt-/Doppelpfade.
+Die tatsaechliche Erstursache auf Hetzner bleibt bis zur Receipt-Auslese offen.
+
+Der neue optionale Statusbefund liest ausschliesslich die feste historische
+Casebindung, den erhaltenen Stage-Erstfehler und dessen privates Restore-Receipt.
+Root0600, nlink1, O_NOFOLLOW/O_NOATIME, Groessenlimit und unveraenderte Metadaten
+werden geprueft. Nur endliche Fehlercodes, belegte Zaehler und Receipt-/Namenshash
+gelangen in die oeffentliche Projektion; keine Pfade, Originalinhalte oder Keys.
+ABSENT/UNKNOWN bleiben unbekannt, keine Reklassifizierung des gescheiterten Laufs.
+214 synthetische Tests bestanden; unabhängige Abnahme und echte Statusauslese
+stehen noch aus. Es entsteht keine Wiederholungs-, Restore- oder native Autoritaet.

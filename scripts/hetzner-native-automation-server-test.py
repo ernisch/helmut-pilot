@@ -169,7 +169,8 @@ class IndependentServerTests(unittest.TestCase):
                     path in (self.directory.name + '/' + SERVER.RESULT_NAME,
                              self.directory.name + '/' + SERVER.PUBLIC_NAME)), \
                     patch.object(SERVER, '_read_public_file', side_effect=reads) as read, \
-                    patch.object(SERVER, 'create_recipient') as create:
+                    patch.object(SERVER, 'create_recipient') as create, \
+                    patch.object(SERVER, '_stage_diagnostic', return_value=SERVER._stage_diag_empty('ABSENT','CASE_BINDING_ABSENT')):
                 result = SERVER.handle(sent, context)
                 create.assert_not_called()
                 if operation == 'status':

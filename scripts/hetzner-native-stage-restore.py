@@ -226,7 +226,10 @@ def _sr_pax(raw):
         _sr_need(key in (b'path', b'mtime') and key not in values, 'PAX_KEY')
         values[key] = value.decode('utf8')
         if key == b'path':
-            _sr_pathcheck(values[key])
+            # PAX directory paths may carry exactly one terminal slash. Keep
+            # the raw value; the following entry's type must authorize it.
+            path = values[key]
+            _sr_pathcheck(path[:-1] if path.endswith('/') else path)
         else:
             values[key] = _sr_mtime(values[key])
         position += length
@@ -311,8 +314,11 @@ def restore_bound_archive(gzip_tar_path, fresh_own_output_root):
                 stream.padding(header['size'])
                 continue
             _sr_need(header['kind'] in (b'0', b'5', b'2'), 'TAR_ENTRY_TYPE')
-            name = _sr_pathcheck((pending or {}).get(b'path', header['name']).rstrip('/')
-                                 if header['kind'] == b'5' else (pending or {}).get(b'path', header['name']))
+            path = (pending or {}).get(b'path', header['name'])
+            if path.endswith('/'):
+                _sr_need(header['kind'] == b'5', 'PATH_ESCAPE')
+                path = path[:-1]
+            name = _sr_pathcheck(path)
             if pending and b'mtime' in pending:
                 header['mtime_ns'] = pending[b'mtime']
             pending = None

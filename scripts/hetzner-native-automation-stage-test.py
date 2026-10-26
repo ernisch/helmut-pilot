@@ -208,7 +208,7 @@ class StageBoundsTests(unittest.TestCase):
     def test_embedded_source_is_exact_reviewed_bytes_and_under_bootstrap_cap(self):
         self.assertEqual(sha(S.EMBEDDED_STAGE_RESTORE_SOURCE),S.STAGE_RESTORE_SHA256)
         self.assertEqual((ROOT/'scripts/hetzner-native-stage-restore.py').read_bytes(),S.EMBEDDED_STAGE_RESTORE_SOURCE)
-        self.assertEqual(S.STAGE_RESTORE_SHA256,'4882d8836b0fbeca035d2f29a674bac2ae25e458eecfe9608e3ce9f900f1be39')
+        self.assertEqual(S.STAGE_RESTORE_SHA256,'c77dba4fe7fcbe34b419a668c19d55262af30eeaaad6c43650290e38cf39bd88')
         self.assertLessEqual(len(source('server')),131072)
         self.assertEqual(S.NATIVE_GO_PLAN_SHA256,None)
 

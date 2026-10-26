@@ -296,17 +296,68 @@ def validate_recipient_diagnostic(diagnostic):
                     and ('UNCLASSIFIED' not in classes or classes == ['UNCLASSIFIED']), 'result-fields')
 
 
+STAGE_DIAG_CODES = ('CASE_BINDING_ABSENT','CASE_BINDING_UNTRUSTED','CASE_BINDING_INVALID',
+    'STAGE_ERROR_ABSENT','STAGE_ERROR_UNTRUSTED','STAGE_ERROR_INVALID',
+    'RESTORE_RECEIPT_ABSENT','RESTORE_RECEIPT_UNTRUSTED','RESTORE_RECEIPT_OVERSIZE',
+    'RESTORE_RECEIPT_INVALID','SAVED_RESTORE_RECEIPT')
+STAGE_RESTORE_CODES = ('DESTINATION_DIRECTORY', 'FILESYSTEM_OR_FORMAT_FAILURE', 'FILE_HASH',
+    'GZIP_INPUT_LIMIT', 'GZIP_TRAILING_BYTES', 'GZIP_TRUNCATED', 'INPUT_CHANGED', 'INPUT_IDENTITY',
+    'JSON_CONSTANT', 'JSON_DUPLICATE', 'PARENT_CHANGED', 'PATH_ESCAPE', 'PATH_FORMAT', 'PAX_KEY',
+    'PAX_LENGTH', 'PAX_LIMIT', 'PAX_MTIME', 'PAX_RECORD', 'RESTORED_DIRECTORY_METADATA',
+    'RESTORED_FILE_HASH', 'RESTORED_FILE_METADATA', 'RESTORED_FILE_TRUNCATED',
+    'RESTORED_LINK_METADATA', 'RESTORED_MTIME', 'ROOT_REQUIRED', 'SCOPE_BYTES', 'SCOPE_COUNTS',
+    'SCOPE_FILE', 'SCOPE_FIRST', 'SCOPE_HASH', 'SCOPE_LINK_TARGET', 'SCOPE_METADATA',
+    'SCOPE_PARENT_TYPE', 'SHORT_WRITE', 'TAR_CHECKSUM', 'TAR_END', 'TAR_ENTRY_TYPE',
+    'TAR_EXTRA_OR_DUPLICATE', 'TAR_FORMAT', 'TAR_METADATA', 'TAR_MISSING_ENTRIES',
+    'TAR_NONZERO_PADDING', 'TAR_NUMBER', 'TAR_TOTAL_LIMIT', 'TAR_TRAILING_BYTES', 'TAR_TRUNCATED',
+    'UNTRUSTED_PARENT')
+
+def validate_stage_diagnostic(value):
+    require(type(value) is dict and set(value)=={'schema','state','diagnostic_code','stage_code',
+        'restore_status','restore_code','receipt_sha256','actual_file_count','actual_bytes',
+        'remaining_entries','partial_file_state','metadata_state','last_verified_member_name_sha256'},'result-fields')
+    require(value['schema']=='helmut-stage-first-error-diagnostic-v1'
+            and value['state'] in ('ABSENT','UNKNOWN','RECORDED')
+            and value['diagnostic_code'] in STAGE_DIAG_CODES
+            and value['stage_code'] in (None,'STAGE_RESTORE'),'result-fields')
+    for key in ('receipt_sha256','last_verified_member_name_sha256'):
+        if value[key] is not None:pinned_sha(value[key])
+    if value['state']!='RECORDED':
+        require(value['diagnostic_code']!='SAVED_RESTORE_RECEIPT'
+                and value['diagnostic_code'].endswith('_ABSENT')==(value['state']=='ABSENT')
+                and all(value[key] is None for key in ('restore_status','restore_code','actual_file_count',
+                    'actual_bytes','remaining_entries','partial_file_state','metadata_state','last_verified_member_name_sha256')),
+                'result-fields')
+        if value['state']=='ABSENT':require(value['receipt_sha256'] is None,'result-fields')
+        return
+    require(value['diagnostic_code']=='SAVED_RESTORE_RECEIPT' and value['stage_code']=='STAGE_RESTORE'
+            and value['receipt_sha256'] is not None
+            and value['restore_status'] in ('FAIL_KEEP_STATE_NO_RETRY','BYTES_RESTORED_NOT_NATIVE_QUALIFIED')
+            and value['partial_file_state'] in ('NONE','UNKNOWN')
+            and value['metadata_state'] in ('UNKNOWN','VERIFIED'),'result-fields')
+    for key,cap in (('actual_file_count',1767),('actual_bytes',2865680705),('remaining_entries',1866)):
+        require(type(value[key]) is int and 0<=value[key]<=cap,'result-fields')
+    require((value['last_verified_member_name_sha256'] is None)==(value['actual_file_count']==0),'result-fields')
+    if value['restore_status']=='FAIL_KEEP_STATE_NO_RETRY':
+        require(type(value['restore_code']) is str and value['restore_code'] in STAGE_RESTORE_CODES,'result-fields')
+    else:
+        require(value['restore_code'] is None and value['actual_file_count']==1767
+                and value['actual_bytes']==2865680705 and value['remaining_entries']==0
+                and value['partial_file_state']=='NONE' and value['metadata_state']=='VERIFIED','result-fields')
+
+
 def validate_result(result, operation, payload_sha256):
     require(type(result) is dict, "result-fields")
     if operation == "status":
-        require(set(result) == {"status", "enabled_operations", "native_enabled",
-                               "source_sha256", "recipient_diagnostic"}, "result-fields")
+        fields={"status", "enabled_operations", "native_enabled","source_sha256", "recipient_diagnostic"}
+        require(set(result) in (fields,fields|{'stage_diagnostic'}), "result-fields")
         require(result["status"] == "CONTROL_READY", "result-status")
         require(result["enabled_operations"] == list(ENABLED_OPERATIONS),
                 "enabled-operations-denied")
         require(result["native_enabled"] is False, "native-enabled-denied")
         require(pinned_sha(result["source_sha256"]) == payload_sha256, "source-pin-drift")
         validate_recipient_diagnostic(result['recipient_diagnostic'])
+        if 'stage_diagnostic' in result:validate_stage_diagnostic(result['stage_diagnostic'])
     elif operation == "recipient":
         require(set(result) in ({"status", "recipient"}, {"status", "recipient", "recovery"}), "result-fields")
         require(result["status"] == "RECIPIENT_READY", "result-status")
