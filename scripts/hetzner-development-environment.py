@@ -40,6 +40,8 @@ IDENTITY_KEYS = {'schema', 'uid', 'gid', 'uid_absent_from_nss', 'gid_absent_from
 UID = GID = ACTIVE_IDENTITY = None
 PROC = Path('/proc')
 PROC_TASK_LIMIT, PROC_STATUS_LIMIT, PROC_TOTAL_LIMIT = 8192, 131072, 16*1024**2
+NSS_SWITCH, NSS_PASSWD = Path('/etc/nsswitch.conf'), Path('/etc/passwd')
+NSS_ACCOUNT_LIMIT = 8192
 GIB = 1024**3
 RESERVE, BUILD_BUFFER, STOP_MARGIN = 10*GIB, 8*GIB, GIB
 ENV = {'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL': 'C', 'HOME': '/nonexistent',
@@ -198,6 +200,61 @@ def nss_absent(lookup, number, deadline):
     return False
 
 
+def nss_primary_gids(deadline):
+    # Only local, enumerable NSS backends are qualified. getpwall's complete
+    # API response must cover every local passwd record, including dormant
+    # accounts whose primary GID has no corresponding group object.
+    end = min(deadline, time.monotonic()+3)
+    need(time.monotonic() < end, 'DEVELOPMENT_IDENTITY_DEADLINE')
+    try:
+        switch = read_root(NSS_SWITCH, 131072)
+        local = read_root(NSS_PASSWD, 1024**2)
+        sources = {}
+        for line in switch.splitlines():
+            key, separator, value = line.split(b'#', 1)[0].partition(b':')
+            key = key.strip()
+            if key not in (b'passwd', b'group'):
+                continue
+            need(separator and key not in sources, 'DEVELOPMENT_IDENTITY_NSS_SOURCES_UNKNOWN')
+            sources[key] = value.split()
+        need(set(sources) == {b'passwd', b'group'}
+             and all(value in ([b'files'], [b'files', b'systemd']) for value in sources.values()),
+             'DEVELOPMENT_IDENTITY_NSS_SOURCES_UNKNOWN')
+        local_pairs = set()
+        local_count = 0
+        for line in local.splitlines():
+            if not line or line.startswith(b'#'):
+                continue
+            fields = line.split(b':')
+            local_count += 1
+            need(local_count <= NSS_ACCOUNT_LIMIT and len(fields) == 7
+                 and fields[0] and not fields[0].startswith((b'+', b'-'))
+                 and all(re.fullmatch(rb'[0-9]{1,10}', value) for value in fields[2:4]),
+                 'DEVELOPMENT_IDENTITY_NSS_ENUMERATION_UNKNOWN')
+            pair = tuple(int(value) for value in fields[2:4])
+            need(all(value < 4294967295 for value in pair), 'DEVELOPMENT_IDENTITY_NSS_ENUMERATION_UNKNOWN')
+            local_pairs.add(pair)
+        need(local_pairs and time.monotonic() < end, 'DEVELOPMENT_IDENTITY_NSS_ENUMERATION_UNKNOWN')
+        accounts = pwd.getpwall()
+        need(type(accounts) is list and 0 < len(accounts) <= NSS_ACCOUNT_LIMIT,
+             'DEVELOPMENT_IDENTITY_NSS_ENUMERATION_UNKNOWN')
+        observed_pairs = set()
+        for account in accounts:
+            need(time.monotonic() < end and type(account) is pwd.struct_passwd
+                 and all(type(value) is int and 0 <= value < 4294967295
+                         for value in (account.pw_uid, account.pw_gid)),
+                 'DEVELOPMENT_IDENTITY_NSS_ENUMERATION_UNKNOWN')
+            observed_pairs.add((account.pw_uid, account.pw_gid))
+        need(local_pairs <= observed_pairs, 'DEVELOPMENT_IDENTITY_NSS_ENUMERATION_UNKNOWN')
+        need(read_root(NSS_SWITCH, 131072) == switch and read_root(NSS_PASSWD, 1024**2) == local
+             and time.monotonic() < end, 'DEVELOPMENT_IDENTITY_NSS_ENUMERATION_CHANGED')
+    except Stop:
+        raise
+    except Exception as error:
+        raise Stop('DEVELOPMENT_IDENTITY_NSS_ENUMERATION_UNKNOWN') from error
+    return {gid for _, gid in observed_pairs if gid in IDENTITY_RANGE}
+
+
 def status_identity(raw):
     # Only numeric credential columns are used. Names, command lines and all
     # other /proc fields are neither retained nor part of any proof/export.
@@ -270,12 +327,14 @@ def observe_identity(uid, gid, deadline):
     need(type(uid) is int and uid in IDENTITY_RANGE and type(gid) is int and gid in IDENTITY_RANGE,
          'DEVELOPMENT_IDENTITY_RANGE')
     for _ in range(2):
+        need(gid not in nss_primary_gids(deadline), 'DEVELOPMENT_IDENTITY_PRIMARY_GID_ASSIGNED')
         need(nss_absent(pwd.getpwuid, uid, deadline) and nss_absent(grp.getgrgid, gid, deadline),
              'DEVELOPMENT_IDENTITY_ASSIGNED')
         used_uids, used_gids = process_identities(deadline)
         need(uid not in used_uids and gid not in used_gids, 'DEVELOPMENT_IDENTITY_PROCESS_ASSIGNED')
         need(nss_absent(pwd.getpwuid, uid, deadline) and nss_absent(grp.getgrgid, gid, deadline),
              'DEVELOPMENT_IDENTITY_ASSIGNED')
+        need(gid not in nss_primary_gids(deadline), 'DEVELOPMENT_IDENTITY_PRIMARY_GID_ASSIGNED')
     facts = {'schema': 'helmut-development-identity-v1', 'uid': uid, 'gid': gid,
              'uid_absent_from_nss': True, 'gid_absent_from_nss': True,
              'uid_absent_from_processes': True, 'gid_absent_from_processes': True,
@@ -286,8 +345,10 @@ def observe_identity(uid, gid, deadline):
 def select_identity(deadline):
     global UID, GID, ACTIVE_IDENTITY
     UID = GID = ACTIVE_IDENTITY = None
+    primary_gids = nss_primary_gids(deadline)
     free_uids = [number for number in IDENTITY_RANGE if nss_absent(pwd.getpwuid, number, deadline)]
-    free_gids = [number for number in IDENTITY_RANGE if nss_absent(grp.getgrgid, number, deadline)]
+    free_gids = [number for number in IDENTITY_RANGE
+                 if number not in primary_gids and nss_absent(grp.getgrgid, number, deadline)]
     used_uids, used_gids = process_identities(deadline)
     free_uids = [number for number in free_uids if number not in used_uids]
     free_gids = [number for number in free_gids if number not in used_gids]
@@ -372,7 +433,7 @@ def write_new(path, raw, mode=0o600):
 def read_root(path, limit=32768):
     parent = trusted_directory(path.parent)
     try:
-        fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=parent)
+        fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NOATIME | os.O_CLOEXEC, dir_fd=parent)
         try:
             before = os.fstat(fd)
             need(stat.S_ISREG(before.st_mode) and before.st_uid == before.st_gid == 0

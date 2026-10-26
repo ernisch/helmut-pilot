@@ -86,8 +86,9 @@ Alles liegt unter `/opt/helmut-development-20261026`, mit eigenem Dockerdienst,
 Socket, DataRoot und festem Container-Cgroup. Kein Hostkonto wird angelegt;
 UID/GID1000 und sämtliche vorhandenen Konten bleiben unberührt. Vor dem Aufbau
 werden getrennte UID und GID aus dem begrenzten Bereich60001–60032 ausschließlich
-lesend ermittelt: Auflösung in Benutzer-/Gruppendaten sowie numerische Kennungen
-laufender Prozesse müssen ihre Verfügbarkeit positiv bestätigen. Unbekannte oder
+lesend ermittelt: Benutzer-/Gruppendaten einschließlich der primären Gruppen
+ruhender Konten sowie numerische Kennungen laufender Prozesse müssen ihre
+Verfügbarkeit positiv bestätigen. Unbekannte oder
 wechselnde Beobachtungen stoppen. Die ausgewählten Kennungen werden an die
 rootgeschützte Devquittung gebunden und vor späteren Phasen erneut geprüft;
 eine belegte Kennung wird nicht still ersetzt. Nur im Devimage wird der dazu

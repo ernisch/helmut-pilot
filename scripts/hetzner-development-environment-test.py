@@ -24,6 +24,7 @@ def load(name):
 
 
 M = load('hetzner-development-environment.py')
+NSS_PRIMARY_GIDS = M.nss_primary_gids
 C = load('hetzner-native-automation-client.py')
 S = load('hetzner-native-automation-server.py')
 
@@ -59,6 +60,7 @@ class DevelopmentBoundaries(unittest.TestCase):
         self.enterContext(patch.object(M,'UID',60011))
         self.enterContext(patch.object(M,'GID',60012))
         self.enterContext(patch.object(M,'ACTIVE_IDENTITY',identity()))
+        self.enterContext(patch.object(M,'nss_primary_gids',return_value=set()))
 
     def test_defaults_are_inert(self):
         with patch('subprocess.Popen', side_effect=AssertionError('process')), patch('urllib.request.urlopen', side_effect=AssertionError('network')):
@@ -155,6 +157,27 @@ class DevelopmentBoundaries(unittest.TestCase):
             self.assertEqual((root/'out/bin').stat().st_mode & 0o777, 0o755)
             self.assertEqual((root/'entrypoint').stat().st_mode & 0o777, 0o755)
             self.assertEqual((root/'lock.sha').stat().st_mode & 0o777, 0o644)
+
+    def test_root_read_preserves_real_stale_atime_and_returns_complete_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);path=root/'own-root-receipt.fixture';expected=b'synthetic private receipt\n'
+            path.write_bytes(expected)
+            os.utime(path,ns=(1000000000,2000000000))
+            before=path.stat()
+            original_fstat=os.fstat
+            def root_owned(fd):
+                # Only owner IDs are simulated for unprivileged CI. Every
+                # timestamp and before/after equality comes from real fstat.
+                values=list(original_fstat(fd));values[4]=values[5]=0
+                return os.stat_result(values)
+            with patch.object(M,'trusted_directory',side_effect=lambda parent:os.open(parent,os.O_RDONLY|os.O_DIRECTORY)), \
+                 patch.object(M.os,'fstat',side_effect=root_owned):
+                observed=M.read_root(path)
+            after=path.stat()
+            self.assertEqual(observed,expected)
+            self.assertEqual(before.st_atime_ns,1000000000)
+            self.assertEqual(after.st_atime_ns,before.st_atime_ns)
+            self.assertEqual(after.st_mtime_ns,before.st_mtime_ns)
 
     def test_container_cgroup_is_killed_before_daemon_grace(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -331,6 +354,63 @@ class DevelopmentBoundaries(unittest.TestCase):
              patch.object(M,'process_identities',return_value=({60001},{60001,60002})):
             selected=M.select_identity(time.monotonic()+10)
         self.assertEqual((selected['uid'],selected['gid']),(60002,60003))
+
+    def test_dormant_nss_account_reserves_primary_gid_without_group_object(self):
+        switch=b'passwd: files systemd\ngroup: files systemd\n'
+        local=b'root:x:0:0::/:/bin/sh\nsynthetic-dormant:x:49000:60001::/:/bin/false\n'
+        accounts=[M.pwd.struct_passwd(('root','x',0,0,'','/','/bin/sh')),
+                  M.pwd.struct_passwd(('synthetic-dormant','x',49000,60001,'','/','/bin/false'))]
+        with patch.object(M,'nss_primary_gids',side_effect=NSS_PRIMARY_GIDS), \
+             patch.object(M,'read_root',side_effect=lambda path,*args:switch if path==M.NSS_SWITCH else local), \
+             patch.object(M.pwd,'getpwall',return_value=accounts),patch.object(M.pwd,'getpwuid',side_effect=missing), \
+             patch.object(M.grp,'getgrgid',side_effect=missing),patch.object(M,'process_identities',return_value=(set(),set())):
+            self.assertTrue(M.nss_absent(M.grp.getgrgid,60001,time.monotonic()+10))
+            selected=M.select_identity(time.monotonic()+10)
+        self.assertEqual((selected['uid'],selected['gid']),(60001,60002))
+        self.assertEqual(set(selected),M.IDENTITY_KEYS)
+
+    def test_unknown_incomplete_or_unsupported_nss_enumeration_never_proves_absence(self):
+        switch=b'passwd: files systemd\ngroup: files systemd\n'
+        local=b'root:x:0:0::/:/bin/sh\nsynthetic-dormant:x:49000:60001::/:/bin/false\n'
+        accounts=[M.pwd.struct_passwd(('root','x',0,0,'','/','/bin/sh')),
+                  M.pwd.struct_passwd(('synthetic-dormant','x',49000,60001,'','/','/bin/false'))]
+        cases=[{'switch':b'passwd: files sss\ngroup: files systemd\n'},
+               {'switch':b'passwd: files\ngroup: files ldap\n'},
+               {'error':OSError('synthetic unavailable enumeration')},
+               {'accounts':[]},{'accounts':accounts[:1]},
+               {'accounts':[types.SimpleNamespace(pw_uid=0,pw_gid=0)]},
+               {'accounts':[M.pwd.struct_passwd(('synthetic','x',1,'60001','','',''))]},
+               {'accounts':accounts*(M.NSS_ACCOUNT_LIMIT//2+1)}]
+        for case in cases:
+            selected_switch=case.get('switch',switch)
+            with self.subTest(case=list(case)),patch.object(M,'nss_primary_gids',side_effect=NSS_PRIMARY_GIDS), \
+                 patch.object(M,'read_root',side_effect=lambda path,*args:selected_switch if path==M.NSS_SWITCH else local), \
+                 patch.object(M.pwd,'getpwall',return_value=case.get('accounts',accounts),side_effect=case.get('error')), \
+                 patch.object(M,'process_identities') as processes:
+                with self.assertRaises(M.Stop):M.select_identity(time.monotonic()+10)
+                self.assertIsNone(M.ACTIVE_IDENTITY);processes.assert_not_called()
+
+    def test_late_primary_gid_assignment_clears_proof_without_reselection(self):
+        with patch.object(M,'nss_primary_gids',side_effect=[set(),{60012}]), \
+             patch.object(M.pwd,'getpwuid',side_effect=missing),patch.object(M.grp,'getgrgid',side_effect=missing), \
+             patch.object(M,'process_identities',return_value=(set(),set())),patch.object(M,'select_identity') as select:
+            with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_IDENTITY_PRIMARY_GID_ASSIGNED'):
+                M.refresh_identity(time.monotonic()+10)
+            select.assert_not_called()
+        self.assertIsNone(M.ACTIVE_IDENTITY)
+
+    def test_nss_metadata_change_during_enumeration_is_unknown(self):
+        switch=b'passwd: files systemd\ngroup: files systemd\n'
+        local=b'root:x:0:0::/:/bin/sh\n'
+        changed=local+b'synthetic-new:x:49000:60012::/:/bin/false\n'
+        account=M.pwd.struct_passwd(('root','x',0,0,'','/','/bin/sh'))
+        with patch.object(M,'nss_primary_gids',side_effect=NSS_PRIMARY_GIDS), \
+             patch.object(M,'read_root',side_effect=[switch,local,switch,changed]), \
+             patch.object(M.pwd,'getpwall',return_value=[account]),patch.object(M,'process_identities') as processes:
+            with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_IDENTITY_NSS_ENUMERATION_CHANGED'):
+                M.refresh_identity(time.monotonic()+10)
+            processes.assert_not_called()
+        self.assertIsNone(M.ACTIVE_IDENTITY)
 
     def test_unknown_nss_and_exhausted_candidates_stop_without_fallback(self):
         with patch.object(M.pwd,'getpwuid',side_effect=OSError('synthetic NSS outage')):

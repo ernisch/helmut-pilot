@@ -1630,8 +1630,8 @@ def _setup_successor_failure(code, capsule):
         'lifecycle_sha256':None,'native_qualified':False,'native_go_consumed':False}
 
 
-DEVELOPMENT_SHA256 = '3d07d2675a9d096c9d42192e90c50bdf7e53b605d8a966f48a59a6928aeea840'
-DEVELOPMENT_BYTES = 51389
+DEVELOPMENT_SHA256 = '07f199a35e1915396c73f782a08bc022020e014d555c37f4626fcd76b6aa3e51'
+DEVELOPMENT_BYTES = 54761
 
 def _development_handle(request, context, capsule):
     raw = _setup_public_source(context['deployment_commit'], 'scripts/hetzner-development-environment.py',
