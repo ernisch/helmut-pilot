@@ -1455,6 +1455,10 @@ RUNTIME_METADATA_SHA256 = 'edcc93c55404685d3637abb096589f90c02ec1fce2a0e75b54dc5
 RUNTIME_METADATA_BYTES = 46826
 RUNTIME_SETUP_COMMIT = '8139b3a99d04e3e854f886123869bf669da6389d'
 RUNTIME_SETUP_SOURCE = '1fc63bf8c90a6f13a2eebf4981d7f0c7da0b10f5e5c2fd563551e117f0ec58fe'
+DAEMON_BINDING_ID = 'daemon-binding-observation-20261026-v1'
+DAEMON_BINDING_CONTRACT_SHA256 = 'fe6a763fee403a0e34a943db533b0aca71b38afdfc9408143e0d9aef064844bd'
+DAEMON_BINDING_SHA256 = '5da9ff7eaf941a7ef25eb01d9448d34e8118f437e3ebe636dc1c733261addde5'
+DAEMON_BINDING_BYTES = 16561
 
 
 def _setup_successor_qualified():
@@ -1509,6 +1513,9 @@ def _setup_read_capsule(context):
     if value.get('schema') == 'helmut-runtime-metadata-capsule-v1':
         _runtime_metadata_capsule(value)
         return value
+    if value.get('schema') == 'helmut-daemon-binding-capsule-v1':
+        _daemon_binding_capsule(value)
+        return value
     _require(set(value) == {'schema', 'contract_id', 'action', 'phase',
              'source_sha256', 'contract_sha256', 'nonce', 'inspection_nonce',
              'inspection_result_sha256', 'issued_at_utc', 'expires_at_utc'}, 'SETUP_CAPSULE_FIELDS')
@@ -1526,7 +1533,7 @@ def _setup_public_source(commit, path, deadline, limit, expected_sha=None, expec
     allowed = {'scripts/hetzner-native-setup-successor.py',
                'scripts/hetzner-native-setup-coordinator.py',
                'scripts/hetzner-native-setup-successor-preflight.py',
-               'scripts/hetzner-native-runtime-metadata.py', SETUP_SUCCESSOR_CONTRACT}
+               'scripts/hetzner-native-runtime-metadata.py', 'scripts/hetzner-native-daemon-binding.py', SETUP_SUCCESSOR_CONTRACT}
     _require(type(commit) is str and re.fullmatch('[a-f0-9]{40}', commit)
              and path in allowed and type(limit) is int and 0 < limit <= 131072, 'SETUP_SOURCE_BINDING')
     _require((path == SETUP_SUCCESSOR_CONTRACT and expected_sha is None and expected_bytes is None)
@@ -1596,6 +1603,53 @@ def _setup_successor_failure(code, capsule):
         'native_qualified': False, 'native_go_consumed': False}
 
 
+def _daemon_binding_capsule(value):
+    _require(type(value) is dict and set(value) == {'schema', 'contract_id', 'action',
+             'source_sha256', 'contract_sha256', 'nonce', 'issued_at_utc', 'expires_at_utc'}
+             and value['schema'] == 'helmut-daemon-binding-capsule-v1'
+             and value['contract_id'] == DAEMON_BINDING_ID and value['action'] == 'read'
+             and value['contract_sha256'] == DAEMON_BINDING_CONTRACT_SHA256, 'DAEMON_BINDING_CAPSULE')
+    _require(all(type(value[k]) is str and re.fullmatch('[a-f0-9]{64}', value[k])
+                 for k in ('source_sha256', 'contract_sha256', 'nonce')), 'DAEMON_BINDING_CAPSULE')
+    _require(type(value['issued_at_utc']) is int and type(value['expires_at_utc']) is int
+             and 0 < value['issued_at_utc'] < value['expires_at_utc']
+             and value['expires_at_utc'] - value['issued_at_utc'] <= 300
+             and value['issued_at_utc'] <= time.time() <= value['expires_at_utc'], 'DAEMON_BINDING_CAPSULE_TIME')
+
+
+def _daemon_binding_qualified():
+    return (_runtime_metadata_qualified() and type(DAEMON_BINDING_SHA256) is str
+            and re.fullmatch('[a-f0-9]{64}', DAEMON_BINDING_SHA256) is not None
+            and type(DAEMON_BINDING_BYTES) is int and 0 < DAEMON_BINDING_BYTES <= 65536)
+
+
+def _daemon_binding_handle(request, context, capsule):
+    _require(_daemon_binding_qualified(), 'DAEMON_BINDING_NOT_QUALIFIED')
+    _daemon_binding_capsule(capsule)
+    reader, modules = _runtime_metadata_modules(context)
+    raw = _setup_public_source(context['deployment_commit'], 'scripts/hetzner-native-daemon-binding.py',
+                              context['deadline'], DAEMON_BINDING_BYTES, DAEMON_BINDING_SHA256, DAEMON_BINDING_BYTES)
+    observer = {'__name__': 'helmut_qualified_daemon_binding', '__file__': '<qualified-daemon-binding>',
+                '__source_bytes__': raw}
+    exec(compile(raw, observer['__file__'], 'exec'), observer)
+    _require(observer.get('CONTRACT_ID') == DAEMON_BINDING_ID
+             and observer.get('CONTRACT_SHA256') == capsule['contract_sha256'], 'DAEMON_BINDING_CONTRACT')
+    entry = observer.get('observe_daemon_binding')
+    _require(callable(entry), 'DAEMON_BINDING_ENTRYPOINT')
+    result = entry({key: context[key] for key in ('base', 'source_sha256', 'deployment_commit', 'deadline')},
+                   reader, modules)
+    _daemon_binding_capsule(capsule)
+    return result
+
+
+def _daemon_binding_failure(code, capsule, context):
+    return {'schema': 'helmut-native-daemon-binding-observation-v1', 'status': 'FAIL_CLOSED_NOT_NATIVE_QUALIFIED',
+        'contract_id': DAEMON_BINDING_ID, 'contract_sha256': capsule['contract_sha256'],
+        'source_sha256': context['source_sha256'], 'code': code,
+        'partial_setup_proof': None, 'failure_diagnostic': None, 'observation': None,
+        'native_qualified': False, 'native_go_consumed': False}
+
+
 def _runtime_metadata_capsule(value):
     _require(type(value) is dict and set(value) == {'schema', 'contract_id', 'action', 'chunk',
              'source_sha256', 'contract_sha256', 'nonce', 'issued_at_utc', 'expires_at_utc'}
@@ -1618,9 +1672,8 @@ def _runtime_metadata_qualified():
             and _setup_successor_qualified())
 
 
-def _runtime_metadata_handle(request, context, capsule):
+def _runtime_metadata_modules(context):
     _require(_runtime_metadata_qualified(), 'RUNTIME_NOT_QUALIFIED')
-    _runtime_metadata_capsule(capsule)
     deadline = context['deadline']
     raw = _setup_public_source(context['deployment_commit'], 'scripts/hetzner-native-runtime-metadata.py',
                               deadline, RUNTIME_METADATA_BYTES, RUNTIME_METADATA_SHA256, RUNTIME_METADATA_BYTES)
@@ -1628,7 +1681,7 @@ def _runtime_metadata_handle(request, context, capsule):
               '__source_bytes__': raw}
     exec(compile(raw, reader['__file__'], 'exec'), reader)
     _require(reader.get('CONTRACT_ID') == RUNTIME_METADATA_ID
-             and reader.get('CONTRACT_SHA256') == capsule['contract_sha256'], 'RUNTIME_CONTRACT')
+             and reader.get('CONTRACT_SHA256') == RUNTIME_METADATA_CONTRACT_SHA256, 'RUNTIME_CONTRACT')
     modules = {}
     for name, filename, pin, size in (
             ('library', 'hetzner-native-setup-coordinator.py', SETUP_COORDINATOR_SHA256, SETUP_COORDINATOR_BYTES),
@@ -1659,6 +1712,14 @@ def _runtime_metadata_handle(request, context, capsule):
                  and type(pin['sha256']) is str and re.fullmatch('[a-f0-9]{64}', pin['sha256'])
                  and len(module['__source_bytes__']) == pin['bytes']
                  and hashlib.sha256(module['__source_bytes__']).hexdigest() == pin['sha256'], 'RUNTIME_MODULE_PINS')
+    return reader, modules
+
+
+def _runtime_metadata_handle(request, context, capsule):
+    if capsule.get('schema') == 'helmut-daemon-binding-capsule-v1':
+        return _daemon_binding_handle(request, context, capsule)
+    _runtime_metadata_capsule(capsule)
+    reader, modules = _runtime_metadata_modules(context)
     entry = reader.get('read_runtime_metadata')
     _require(callable(entry), 'RUNTIME_ENTRYPOINT')
     result = entry(capsule['chunk'],
@@ -1668,6 +1729,8 @@ def _runtime_metadata_handle(request, context, capsule):
 
 
 def _runtime_metadata_failure(code, capsule, context):
+    if capsule.get('schema') == 'helmut-daemon-binding-capsule-v1':
+        return _daemon_binding_failure(code, capsule, context)
     return {'schema': 'helmut-runtime-binding-metadata-read-v1', 'status': 'FAIL_CLOSED_NOT_NATIVE_QUALIFIED',
         'contract_id': RUNTIME_METADATA_ID, 'contract_sha256': capsule['contract_sha256'],
         'source_sha256': context['source_sha256'],
@@ -1750,7 +1813,9 @@ def _setup_watchdog(request, context, successor_capsule=None, runtime_capsule=No
             _require(time.monotonic() < deadline, 'SETUP_DEADLINE')
             time.sleep(.01)
         result = _stage_diag_json(bytes(raw))
-        schemas = (('helmut-runtime-binding-metadata-read-v1',) if runtime else
+        schemas = (('helmut-native-daemon-binding-observation-v1',) if runtime and
+                   runtime_capsule.get('schema') == 'helmut-daemon-binding-capsule-v1' else
+                   ('helmut-runtime-binding-metadata-read-v1',) if runtime else
                    ('helmut-setup-successor-result-v1', 'helmut-setup-successor-inspection-v1') if successor
                    else ('helmut-target-setup-result-v1',))
         _require(type(result) is dict and result.get('schema') in schemas
@@ -1791,14 +1856,16 @@ def handle(request,context):
     operation=request['operation']
     capsule = _setup_read_capsule(context) if operation in ('status', 'admit') else None
     if capsule is not None:
-        if capsule['schema'] == 'helmut-runtime-metadata-capsule-v1':
+        if capsule['schema'] in ('helmut-runtime-metadata-capsule-v1', 'helmut-daemon-binding-capsule-v1'):
             _require(set(request) == {'schema', 'operation', 'nonce', 'plan_sha256', 'payload_sha256'}
                      and operation == 'status' and request.get('schema') == 'helmut-native-control-request-v1'
                      and request.get('plan_sha256') == STAGE_PLAN
                      and capsule['source_sha256'] == context['source_sha256'] == request['payload_sha256'],
                      'RUNTIME_REQUEST_BINDING')
             encoded = (json.dumps(capsule, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode('ascii')
-            _require(request['nonce'] == hashlib.sha256(b'helmut-runtime-metadata-request-v1\0' + encoded).hexdigest(),
+            prefix = (b'helmut-daemon-binding-request-v1\0' if capsule['schema'] == 'helmut-daemon-binding-capsule-v1'
+                      else b'helmut-runtime-metadata-request-v1\0')
+            _require(request['nonce'] == hashlib.sha256(prefix + encoded).hexdigest(),
                      'RUNTIME_REQUEST_NONCE')
             return _setup_watchdog(request, context, runtime_capsule=capsule)
         _require(operation == ('status' if capsule['action'] == 'inspect' else 'admit'), 'SETUP_CAPSULE_OPERATION')

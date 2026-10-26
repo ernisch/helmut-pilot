@@ -3,12 +3,12 @@
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
 Auftrag: Arbeits-/Testumgebung auf Hetzner; kein Productionumzug.
-UNIT_PROPERTIES-Fix nativ am Setup belegt; Main8139b3a9 bleibt erhalten.
-Recover und Checkout ACCEPTED; Context40361288020 FAIL WORKER_FAILED.
-Temp211/220 frisch bestaetigt; neuer reiner Fehlerleser in Vorbereitung.
-Context nicht wiederholen; Teilstaende zuerst positiv diagnostizieren.
-Alter Setup40306875483 bleibt FAIL; Fehler, Originale, Keys und Einmalmarker erhalten.
-Mac-Abfrage erledigt; Inspectorfehler samt SAFE-Artefakt erhalten.
+Main450447a3/PR960: Pflicht-CI und normalesDeployment READY.
+UNIT_PROPERTIES behoben; Recover/Checkout ACCEPTED, Context bleibt FAIL.
+Vier gepruefte SAFE-Abrufe belegen DAEMON_SERVICE_BINDING vor Context-Attempt.
+548 Laufzeitbindungen passen zum Quellnachweis; Zielqualifikation offen.
+Neue feste Docker-Dienstbeobachtung in Vorbereitung; keine Wiederholung.
+Fehler, Originale, Keys und Einmalmarker erhalten; Mac-Abfrage erledigt.
 Native Messung und500er-Lauf bleiben ohne frisches konkretes GO gesperrt.
 [Uebergabe](betrieb/helmut-thread-handoff-20261026.md) · [Belege](betrieb/hetzner-native-automation-20261026.md).
 

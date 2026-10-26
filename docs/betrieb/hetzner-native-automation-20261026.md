@@ -5,6 +5,50 @@ und CURRENT_STATE. Die [Thread-Uebergabe](helmut-thread-handoff-20261026.md)
 bleibt die verifizierte Ausgangsbasis; ihre Stopp- und Schutzgrenzen gelten weiter.
 Dieses Dossier enthaelt auch historische Zwischenstaende, keine neuen Laufrechte.
 
+## Docker-Dienstbindung: frischer Lesebeleg, weiterhin kein Contextabschluss
+
+PR960 wurde nach unabhängiger Quellenabnahme und Pflicht-CI40369746302
+auf Main450447a3198b76e42676e8f90476c39f51353d7a übernommen.
+Main-CI40374414530 inklusive tatsächlichem Boundaryschritt ist grün;
+Vercel dpl_9whRThzMTNhFDirUUUFfBBH4sq7N auf diesem Main READY.
+Vier reine status-Abrufe40378373504/40378646348/40379609368/40379865856
+lieferten die feste SAFE-Datei vollständig:207733Bytes/SHA71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475.
+Alle ZIP-Digests, Sidecars, Clientbindungen, Chunks und die gemeinsame
+unveränderte Zweier-ACCEPTED-plus-FAIL-Baseline sind lokal geprüft.
+
+Der erhaltene Component-Erstfehler ist374Bytes/SHA24124f28a62c92b0cc373f70e35b6926cf06f8df13f5fede02770a74a66fe33b:
+DAEMON_SERVICE_BINDING, Stop, Phase preflight, gespeicherter Mountzustand
+NOT_STARTED, Ankerzähler0 und lastAcknowledgedStep null.
+Der Jobfehler218Bytes/SHA97ddf7c9c97a700d90a3b4a419ba7125849ffa251c33a8655446a84d91909a18
+bestätigt denselben Code. Component-Attempt sowie Pending/Receipt sind positiv
+abwesend. Das unterscheidet noch nicht comm, Executable-Pfad und /daemon-Cgroup:
+die drei Bedingungen stehen im alten Code unter demselben Fehlercode.
+
+Die nächste feste Leseabfrage prüft genau diese Dienstbindung mit
+Service/MainPID/Socketpeer, Kernel-Prozessgeburt, Namespace/Cgroup und
+unveränderter alter Fehlervorgeschichte. Nur Vergleichsbooleans, begrenzte
+Hashes und Metadaten werden ausgegeben, keine rohen Pfade, Unit- oder
+Exec-Texte. Nicht abgefragte Exec-Felder bleiben UNKNOWN_NOT_QUERIED;
+keine fehlende Angabe wird als leer angenommen. Das Ergebnis bleibt NOT_READY,
+auch bei allen positiven Vergleichen. Die feste bereits laufende Unit wird per
+systemctl show abgefragt; es gibt keine Start-/Stop-/Restart-/Reloadbefehle.
+Vertrag daemon-binding-observation-20261026-v1/fe6a763fee403a0e34a943db533b0aca71b38afdfc9408143e0d9aef064844bd;
+Probe16561Bytes/5da9ff7eaf941a7ef25eb01d9448d34e8118f437e3ebe636dc1c733261addde5,
+Server b988af939a95a74baa5a7e38e07de1f65c8eca51e13aa688833dd1b4138bc99d,
+Client2ebd98082d201d29d34147b2ea7b33c5fa5b3cab5792b0d0224d521e1d41eb02.
+744/744 kanonische synthetische Boundarytests sowie fünf unabhängige physische
+Probenfälle und ein zusätzlicher Client-ABI-Fall bestanden. Noch kein Zielaufruf
+dieser neuen Dienstbeobachtung. Kein alter Context-, admit- oder
+Recover-Aufruf, keine Markeränderung und keine native Freigabe folgen daraus.
+
+Die548 Bindings der gelesenen Runtime-SAFE stimmen alle mit direkten
+Quellpfaden, Größen und Hashes des590-Dateien-Nachweises überein.
+Fehlende Bytes sind daraus nicht belegt. Der dortige Zähler
+plannedArchiveDerivations:5 benennt keine Rezepte; weder fünf Kandidaten
+noch ihre bloße Anzahl sind ein Nachweis der ursprünglichen Ableitung.
+Zielqualifikation, Entwicklungsarbeitskopie und isolierte Testdatenbank
+bleiben gesondert fertigzustellen.
+
 ## Neuer rein lesender Vertrag fuer den erhaltenen Contextfehler
 
 Die zweite Inspektion40360209226 auf Main8139b3a9 ist erfolgreich. Sie bindet
