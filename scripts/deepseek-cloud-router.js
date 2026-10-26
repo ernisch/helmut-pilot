@@ -576,10 +576,10 @@ function callDeepSeek(body, options = {}) {
       "--request", "POST",
       "--config", "-",
       "--data-binary", `@${requestFile}`,
-      "--write-out", "\\n__HELMUT_HTTP_STATUS__:%{http_code}",
+      "--write-out", "\n__HELMUT_HTTP_STATUS__:%{http_code}",
       API_URL,
     ], {
-      input: `header = "Authorization: Bearer ${key}"\\nheader = "Content-Type: application/json"\\n`,
+      input: `header = "Authorization: Bearer ${key}"\nheader = "Content-Type: application/json"\n`,
       encoding: "utf8",
       env: sanitizeEnv(envSource),
       maxBuffer: 16 * 1024 * 1024,
