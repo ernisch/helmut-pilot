@@ -12,7 +12,8 @@ const VERSION = 1;
 
 function usdToMicro(value) {
   if (!Number.isFinite(value) || value < 0) throw new Error("deepseek-budget-invalid-amount");
-  return Math.ceil((value + Number.EPSILON) * 1000000);
+  // Avoid floating-point noise at exact micro-USD boundaries (e.g. 0.25).
+  return Math.ceil(value * 1000000 - 1e-7);
 }
 
 function defaultDir(env = process.env) {
