@@ -292,7 +292,7 @@ Der Setupwaechter verwendet pro frischer Einmalbindung einen eigenen begrenzten
 systemd-Service mit KillMode=control-group. ARM, EOF, alle eigenen Prozessenden,
 sole-Cgroup-PID, pidfd und gehashter ACK muessen vor ACCEPTED belegt sein.
 Unbestaetigtes Helper-READY bleibt UNKNOWN, auch wenn Dateien vorhanden sind.
-Koordinator und Waechter sind lokal integriert; alle471 gezielten synthetischen
+Koordinator und Waechter sind lokal integriert; alle472 gezielten synthetischen
 Tests bestehen. Sourcepins sind exakt gebunden und die finale Integration ist
 unabhaengig abgenommen; Pflicht-CI und Zielausfuehrung bleiben offen. Der Bootstrapdeckel131072Bytes bleibt
 unveraendert. Ausschliesslich oeffentliche, bytegehashte Programme desselben
@@ -321,6 +321,19 @@ eines Testfehlers. Runtime und Schutzpruefungen bleiben unveraendert. Ein neuer
 Test erzwingt022; alle471 gezielten Tests bestehen auch unter dieser umask.
 Unabhaengige SOL-Abnahme PASS fuer Test-SHA256
 `cf6e3d3e331b9ee0e49c06acd5fe8e93d91063c5b38883f4f00e7fdd98412942`.
+
+CI40294473498 meldete danach11 Fehler und einen unvollstaendigen Test im
+synthetischen Public-Checkout, jeweils vor READY. Der genaue historische errno
+ist nicht erhalten und bleibt unbekannt. Die Fixture rief trotz simulierter
+Rootvorpruefung echte `chown`/`fchown` aufUID/GID1000 auf; dieses Benutzerkonto
+ist auf einem GitHub-Runner nicht garantiert. Diese Aufrufe werden jetzt nur
+im Test simuliert und jeder feste Zielbesitzer samt `nofollow` geprueft.
+Ein gezielter Berechtigungsfehlerfall erhaelt Attempt, Teilbaum und Fehlerbeleg,
+ohne READY zu publizieren. Unabhaengige SOL-Abnahme PASS fuer Test-SHA256
+`c87094b45f8f143290a4a1a1b669db10a2b11a79ad6a42579c234b97894d0e48`.
+Die472 gezielten Tests bestehen unter umask022 in9,097s. Produktivquellen und
+Schutzpruefungen wurden fuer diese Testkorrektur nicht veraendert; ein gruener
+GitHub-Nachweis bleibt erforderlich.
 
 ## Threadwechsel ohne erneuten Datenumzug
 

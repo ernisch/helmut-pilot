@@ -6,8 +6,8 @@ PR952 auf `5c918afe`, Main-CI40281353379 SUCCESS, Vercel READY.
 Actions40286803902 bestaetigt PATH_ESCAPE,0 regulaere Dateien,1866 offene Eintraege;
 unabhaengig geprueft. Lokale Recovery vorbereitet, noch nicht ausgefuehrt.
 Daten verschluesselt im Drive rueckgeprueft; Key bleibt nur auf Hetzner, Mac entfaellt.
-Vier getrennte Setup-Phasen mit Prozesswaechter/ACCEPTED lokal integriert;
-471 synthetische Tests gruen, unabhaengig abgenommen; PR-CI/Zielabnahme offen.
+PR954: vier Setup-Phasen mit Prozesswaechter/ACCEPTED lokal integriert;
+472 synthetische Tests gruen, unabhaengig abgenommen; PR-CI/Zielabnahme offen.
 Stage-Once verbraucht, native Freigabe pausiert; keine Reaktivierung alter Rechte.
 Keine nativen Tests/500er-Abnahme. Docker/Pfadsicht/Quellen bleiben frisch zu pruefen.
 [Belege und Grenzen](betrieb/hetzner-native-automation-20261026.md).

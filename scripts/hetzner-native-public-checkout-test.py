@@ -30,6 +30,12 @@ class CheckoutTests(unittest.TestCase):
         self.stack.enter_context(patch.object(M,'BASE',self.base))
         self.stack.enter_context(patch.object(M,'root_required'))
         self.stack.enter_context(patch.object(M,'root_owner',return_value=True))
+        # Exercise the root-only ownership contract without changing any host
+        # account's ownership. GitHub's runner need not itself have UID 1000.
+        def chown(*args,**kwargs):
+            self.assertEqual(args[1:],(1000,1000))
+        self.chown=self.stack.enter_context(patch.object(M.os,'chown',side_effect=chown))
+        self.fchown=self.stack.enter_context(patch.object(M.os,'fchown',side_effect=chown))
         self.stack.enter_context(patch.object(M,'open_base',side_effect=lambda:os.open(self.base,M.D)))
         self.stack.enter_context(patch.object(M,'capacity',side_effect=lambda end,extra=0:M.need(time.monotonic()<end,'DEADLINE')))
         self.stack.enter_context(patch.object(M.subprocess,'Popen',side_effect=AssertionError('real processes forbidden')))
@@ -84,12 +90,30 @@ class CheckoutTests(unittest.TestCase):
         self.assertEqual(os.readlink(self.repo/'alias'),'code.js')
         for name,mode in [('code.js',0o644),('bin/tool',0o755),('.git/config',0o600)]:
             info=(self.repo/name).stat()
-            self.assertEqual((info.st_uid,info.st_gid,stat.S_IMODE(info.st_mode)),(1000,1000,mode))
+            self.assertEqual((info.st_uid,info.st_gid,stat.S_IMODE(info.st_mode)),
+                             (os.getuid(),os.getgid(),mode))
         self.assertEqual(self.base.stat().st_mode & 0o777,0o700)
         self.assertEqual((self.base/M.PARENT).stat().st_mode & 0o777,0o700)
-        self.assertEqual(self.repo.stat().st_uid,1000)
+        self.assertEqual(self.repo.stat().st_uid,os.getuid())
+        self.chown.assert_any_call(self.repo,1000,1000)
+        for name in ('code.js','tool','alias'):
+            self.assertTrue(any(call.args==(name,1000,1000) and
+                                call.kwargs.get('follow_symlinks') is False
+                                for call in self.chown.call_args_list))
+        self.assertTrue(self.fchown.called)
         self.assertEqual(json.loads((self.base/M.READY).read_bytes()),result)
         self.assertFalse((self.base/M.PENDING).exists());self.assertFalse((self.base/M.ERROR).exists())
+
+    def test_ownership_failure_retains_attempt_error_and_partial_without_ready(self):
+        self.chown.side_effect=PermissionError(1,'synthetic owner update denied')
+        result=M.create_public_checkout()
+        self.assertEqual(result['status'],'FAIL_KEEP_STATE_NO_RETRY')
+        self.assertEqual(result['code'],'FILESYSTEM_OR_FORMAT_FAILURE')
+        self.assertTrue((self.base/M.ATTEMPT).exists())
+        self.assertTrue(self.repo.exists())
+        self.assertFalse((self.base/M.READY).exists())
+        error=json.loads((self.base/M.ERROR).read_bytes())
+        self.assertEqual((error['exception_type'],error['errno']),('PermissionError',1))
 
     def test_completed_slot_cannot_be_retried_or_create_new_error(self):
         first=M.create_public_checkout();before=(self.base/M.READY).read_bytes();calls=self.executor.call_count
