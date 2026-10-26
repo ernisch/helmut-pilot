@@ -330,7 +330,7 @@ check("Read Modus verarbeitet Reasoning ueber dem alten 12000-Limit mit fester 3
   }
 });
 
-check("Write Modus mit 25000 Reasoning-Tokens schreibt genau einen gebundenen Edit bei fester 32768-Obergrenze", () => {
+check("Write Modus mit 25000 Reasoning-Tokens archiviert nur gebundenen Code bei fester 32768-Obergrenze", () => {
   const p = project();
   const target = path.join(p.root, "lib/example.js");
   const unrelated = path.join(p.root, "lib/other.js");
@@ -388,15 +388,17 @@ check("Write Modus mit 25000 Reasoning-Tokens schreibt genau einen gebundenen Ed
     assert.equal(request.reasoning.effort, "high");
     assert.ok(reasoningTokens > 24000, "Reasoning liegt ueber dem alten 24000-Limit");
 
-    assert.equal(result.status, "ok");
+    assert.equal(result.status, "ready_for_integration");
     assert.equal(result.route.model, "deepseek-flash");
     assert.equal(result.route.mode, "write");
     assert.equal(result.route.effort, "high");
     assert.equal(result.usage.input_tokens, 900);
     assert.equal(result.usage.output_tokens, reasoningTokens + 40);
     assert.equal(result.usage.total_tokens, 900 + reasoningTokens + 40);
-    assert.deepEqual(result.applied_files, ["lib/example.js"]);
-    assert.equal(fs.readFileSync(target, "utf8"), newContent, "autorisierte Bytes exakt angewendet");
+    assert.deepEqual(result.applied_files, []);
+    assert.deepEqual(result.staged_files, ["lib/example.js"]);
+    assert.equal(result.requires_trusted_git_integration, true);
+    assert.equal(fs.readFileSync(target, "utf8"), original, "Originaldatei bleibt unangetastet");
     assert.equal(fs.readFileSync(unrelated, "utf8"), unrelatedBefore, "unbeteiligte Datei unveraendert");
     assert.ok(charLength(JSON.stringify(result)) <= 2000, "Rueckgabe bleibt unter 2000 Zeichen");
   } finally {
@@ -468,7 +470,7 @@ check("Ueberlange Rueckgabe stoppt Write vor jeder Dateianderung", () => {
   }
 });
 
-check("Write Modus wendet nur hashgebundene explizite Repository Datei an", () => {
+check("Write Modus bewahrt hashgebundene Vorschlaege ohne Originalaenderung auf", () => {
   const p = project();
   const target = path.join(p.root, "lib/example.js");
   const original = fs.readFileSync(target, "utf8");
@@ -488,9 +490,10 @@ check("Write Modus wendet nur hashgebundene explizite Repository Datei an", () =
         }],
       }),
     });
-    assert.equal(result.status, "ok");
-    assert.deepEqual(result.applied_files, ["lib/example.js"]);
-    assert.equal(fs.readFileSync(target, "utf8"), "module.exports = 2;\n");
+    assert.equal(result.status, "ready_for_integration");
+    assert.deepEqual(result.staged_files, ["lib/example.js"]);
+    assert.deepEqual(result.applied_files, []);
+    assert.equal(fs.readFileSync(target, "utf8"), original);
   } finally {
     fs.rmSync(p.root, { recursive: true, force: true });
   }
@@ -588,7 +591,7 @@ check("Fremdaenderung unmittelbar vor Dateianwendung bleibt unangetastet", () =>
       content:"module.exports = 42;\n"
     }], sources, p.root, "full");
     fs.writeFileSync(target, "module.exports = 'foreign';\n");
-    assert.throws(() => router.applyEdits(prepared), /current-hash-drift/);
+    assert.throws(() => router.applyEdits(prepared), /direct-file-apply-disabled/);
     assert.equal(fs.readFileSync(target,"utf8"),"module.exports = 'foreign';\n");
   } finally {
     fs.rmSync(p.root, {recursive:true,force:true});
@@ -600,7 +603,7 @@ check("Hash Drift vor Anwendung stoppt ohne Schreiben", () => {
   const target = path.join(p.root, "lib/example.js");
   const original = fs.readFileSync(target, "utf8");
   try {
-    assert.throws(() => runSafe({
+    const candidate = runSafe({
       argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
       cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
@@ -615,7 +618,9 @@ check("Hash Drift vor Anwendung stoppt ohne Schreiben", () => {
           }],
         });
       },
-    }), /current-hash-drift/);
+    });
+    assert.equal(candidate.status, "ready_for_integration");
+    assert.deepEqual(candidate.applied_files, []);
     assert.equal(fs.readFileSync(target, "utf8"), "parallel change\n");
   } finally {
     fs.rmSync(p.root, { recursive: true, force: true });
@@ -734,8 +739,9 @@ check("Kleine Ersetzung statt vollstaendiger grosser Datei; Schema und Grenze bl
     assert.ok(editSchema.required.includes("replacements"));
     assert.ok(!("content" in editSchema.properties));
     assert.ok(p.raw().length < source.length / 100);
-    assert.equal(fs.readFileSync(p.target, "utf8"), source.replace("= 1", "= 2"));
-    assert.deepEqual(result.applied_files, ["lib/example.js"]);
+    assert.equal(fs.readFileSync(p.target, "utf8"), source);
+    assert.deepEqual(result.applied_files, []);
+    assert.deepEqual(result.staged_files, ["lib/example.js"]);
     assert.ok(charLength(JSON.stringify(result)) <= 2000);
     assert.ok(router.modelOutputSchema("write").properties.edits.items.required.includes("content"));
   });
@@ -805,11 +811,13 @@ check("Unvollstaendige Antwort wird privat gesichert, niemals angewandt oder aut
 check("Vollstaendige Arbeit nach Dateidrift bleibt erhalten und wird offline wiederaufgenommen", () => {
   recoveryFixture((p) => {
     let calls = 0;
-    assert.throws(() => p.run(["--save-response", p.saved], { spawnSync: () => {
+    const staged = p.run(["--save-response", p.saved], { spawnSync: () => {
       calls++;
       fs.writeFileSync(p.target, "concurrent work\n");
       return { status: 0, stdout: p.raw() };
-    } }), /current-hash-drift/);
+    } });
+    assert.equal(staged.status, "ready_for_integration");
+    assert.equal(fs.readFileSync(p.target,"utf8"), "concurrent work\n");
     const noNetwork = () => { throw new Error("network-must-not-start"); };
     assert.throws(() => p.run(["--replay-response", p.saved],
       { env: {}, spawnSync: noNetwork }), /replay-request-mismatch/);
@@ -821,12 +829,15 @@ check("Vollstaendige Arbeit nach Dateidrift bleibt erhalten und wird offline wie
       { env: {}, spawnSync: noNetwork }), /replay-request-mismatch/);
     fs.writeFileSync(p.task, taskBefore);
     const result = p.run(["--replay-response", p.saved], { env: {}, spawnSync: noNetwork });
-    assert.equal(result.status, "ok");
+    assert.equal(result.status, "ready_for_integration");
     assert.equal(result.replayed, true);
-    assert.equal(fs.readFileSync(p.target, "utf8"), "module.exports = 2;\n");
+    assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+    const stagedProposal = JSON.parse(fs.readFileSync(p.saved+".proposal.json","utf8"));
+    assert.equal(stagedProposal.edits[0].content,"module.exports = 2;\n");
+    assert.equal(stagedProposal.edits[0].expected_sha256,hash(p.original));
     assert.equal(calls, 1);
-    assert.throws(() => p.run(["--replay-response", p.saved],
-      { env: {}, spawnSync: noNetwork }), /replay-request-mismatch/);
+    assert.equal(p.run(["--replay-response", p.saved],
+      { env: {}, spawnSync: noNetwork }).status,"ready_for_integration");
   });
 });
 
@@ -1253,9 +1264,9 @@ check("Vollstaendig empfangene Antwort nach Routerabbruch ohne neuen Modellaufru
       env:{}, spawnSync:() => {throw new Error("network-not-allowed");}
     });
     assert.equal(result.replayed,true);
-    assert.equal(result.status,"ok");
+    assert.equal(result.status,"ready_for_integration");
     assert.equal(calls,1);
-    assert.equal(fs.readFileSync(p.target,"utf8"),"module.exports = 2;\n");
+    assert.equal(fs.readFileSync(p.target,"utf8"),p.original);
   });
 });
 
