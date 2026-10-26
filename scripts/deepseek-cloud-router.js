@@ -716,10 +716,10 @@ function prepareEdits(edits, sources, cwd, editFormat = "full") {
     if (edit.expected_sha256 !== source.sha256) {
       throw new Error(`deepseek-edit-expected-hash-mismatch:${edit.path}`);
     }
-    const current = ensureTextFile(source.abs);
-    if (sha256(current) !== source.sha256) {
-      throw new Error(`deepseek-edit-current-hash-drift:${edit.path}`);
-    }
+    // Prepare from the EXACT source bytes originally provided to the model.
+    // Files may have changed meanwhile; this proposal never writes to them.
+    // Sol must verify the expected hash before integrating via trusted Git.
+    const current = source.content;
     if (editFormat === "replacements" ? "content" in edit : "replacements" in edit) {
       throw new Error("deepseek-edit-format-mismatch");
     }
@@ -733,28 +733,40 @@ function prepareEdits(edits, sources, cwd, editFormat = "full") {
   return prepared;
 }
 
-function applyEdits(prepared) {
-  const temps = [];
+// Direct filesystem replacement cannot provide an atomic compare-and-swap
+// against non-cooperating writers. Never expose it as a bypassable API.
+function applyEdits() {
+  throw new Error("deepseek-direct-file-apply-disabled; use-trusted-git-integration");
+}
+
+function stageEdits(prepared, cfg, cwd, requestHash) {
+  const saved = cfg.saveResponse || cfg.replayResponse;
+  if (!saved) throw new Error("deepseek-proposal-requires-private-archive");
+  const file = privateResponsePath(saved, cwd) + ".proposal.json";
+  const artifact = {
+    version: 1,
+    request_sha256: requestHash,
+    edits: prepared.map(item => ({
+      path: item.source.label,
+      expected_sha256: item.source.sha256,
+      new_sha256: sha256(item.content),
+      content: item.content,
+    })),
+  };
+  const bytes = JSON.stringify(artifact) + "\n";
   try {
-    for (const item of prepared) {
-      const mode = fs.statSync(item.source.abs).mode & 0o777;
-      const temp = `${item.source.abs}.deepseek-${process.pid}-${crypto.randomBytes(4).toString("hex")}.tmp`;
-      fs.writeFileSync(temp, item.content, { mode });
-      temps.push({ temp, target: item.source.abs, expectedSha256: item.expectedSha256 });
-    }
-    // Source files can change during expensive inference or immediately
-    // after preparation; never overwrite a foreign write silently.
-    for (const item of temps) {
-      if (sha256(ensureTextFile(item.target)) !== item.expectedSha256) {
-        throw new Error(`deepseek-edit-current-hash-drift:${item.target}`);
-      }
-      fs.renameSync(item.temp, item.target);
-    }
-  } finally {
-    for (const item of temps) {
-      if (fs.existsSync(item.temp)) fs.rmSync(item.temp, { force: true });
+    fs.writeFileSync(file, bytes, { flag: "wx", mode: 0o600 });
+    const fd = fs.openSync(file, "r");
+    try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+  } catch (error) {
+    if (error.code !== "EEXIST") throw error;
+    const stat = fs.lstatSync(file);
+    if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) ||
+        fs.readFileSync(file, "utf8") !== bytes) {
+      throw new Error("deepseek-proposal-existing-differs; no-files-applied");
     }
   }
+  return file;
 }
 
 function truncateText(value, maxChars) {
@@ -961,10 +973,19 @@ function run(options = {}) {
   const prepared = cfg.mode === "write"
     ? prepareEdits(payload.edits, sources, cwd, cfg.editFormat)
     : [];
-  // Validate the bounded visible receipt before any authorized file mutation.
-  const visible = finalVisibleResult(summary, cfg, apiResult,
-    prepared.map((x) => x.source.label));
-  if (cfg.mode === "write") applyEdits(prepared);
+  // Validate the visible receipt before emitting a durable proposal.
+  // Direct writes are disabled: there is no OS-level atomic content CAS here.
+  const visible = finalVisibleResult(summary, cfg, apiResult, []);
+  if (cfg.mode === "write" && summary.status === "ok") {
+    const proposal = stageEdits(prepared, cfg, cwd, requestHash);
+    visible.status = "ready_for_integration";
+    visible.staged_files = prepared.map(x => x.source.label);
+    visible.proposal_path = proposal;
+    visible.requires_trusted_git_integration = true;
+    if (charCount(JSON.stringify(visible)) > MAX_RETURN_CHARS) {
+      throw new Error("deepseek-proposal-receipt-too-long; private-proposal-preserved");
+    }
+  }
   return visible;
   } catch (error) {
     // The provider may already have billed a successfully received response.
@@ -1038,6 +1059,7 @@ module.exports = {
   replaceExact,
   privateResponsePath,
   applyEdits,
+  stageEdits,
   truncateText,
   compactSummary,
   finalVisibleResult,
