@@ -156,3 +156,54 @@ realer atomarer Tempdatei-Publikation ohne Ueberschreiben und doppeltem ENOSPC.
 Dies ist noch keine Ziel-Recovery. Echte Ausfuehrung folgt erst nach unabhaengiger
 Quellenabnahme, gruenen Pflichtchecks und dem qualifizierten Mainstand.
 Native Source-/Restore-/UID1000-/Socket-/Cgroup-/Ressourcenadmission bleibt offen.
+
+
+## Tatsaechliche Empfaengerabnahme und eng begrenzte verschluesselte Stage
+
+PR950 ist auf `917b45f84290bc78884f3f6bcf09b16a9d207aed` gemergt.
+Main-CI40260308055 SUCCESS; Vercel dpl_5UY6aR8bYjYBgxEpS9Zqo3rxdyzd READY.
+Actions40263202086/Artefakt12625800682 hat den vorhandenen Schluessel
+unabhaengig abgenommen: Cachewerte `---` nach `uuu`, Ownertrust u,
+null Generate-/Add-Aufrufe, private Metadaten unveraendert. Antwort-SHA256:
+`e434b1f09c13d5ab55e82c17d1a43eb303414eca96ae3935ee94d9c008df2183`.
+Primaerer Fingerprint `DCFD605ED28EEACA9B826105E769DE07A68BA8E4`,
+Public-SHA `b2618129787ffbacaa1abbe6b46cd90f549022318feb4c473e663dd03c8e1bf8`.
+Nur Public-Key und bereinigter Zielbericht sind im bestehenden privaten Drive;
+Rueckdownload und Hashvergleich bestanden. Der private Key bleibt nur auf Hetzner.
+Der Mac wird fuer den vorhandenen Actions-/Tailscale-Zugang nicht mehr benoetigt.
+
+Diese Aenderung schaltet ausschliesslich `stage` hinzu. `admit` und `four-tx`
+bleiben gesperrt; Stage-Erfolg ist ausdruecklich keine native Abnahme.
+Eine recipient-verschluesselte, hoechstens48KiB grosse Workflow-Kapsel enthaelt
+private Kurzzeit-Downloadlinks; keine Klartextlinks/Originale in Actions-Inputs,
+Logs oder oeffentlichen Artefakten. Download nur vom fest gebundenen HTTPS-Host,
+mit oeffentlicher numerischer Zieladresse, TLS-Hostpruefung, ohne Redirect/Proxy.
+Teile und Gesamtdaten werden gegen ihre Pins gelesen, GPG muss Empfaenger,
+AES256, vollstaendigen Abschluss und Integritaet bestaetigen.
+
+Der feste Stage-Once-Slot wird vor der ersten Entschluesselung dauerhaft reserviert,
+die validierte Case-ID getrennt gebunden. Fehler, Timeout und Kindverlust sperren
+den Slot; kein automatischer neuer Case oder Retry. Ein eigener ueberwachter
+Kindprozess begrenzt auch DNS/GPG/Restore und erhaelt mindestens8GiB freie Platte.
+Der Restore-Parser ist vollstaendig im gehashten Root-Modul eingebettet.
+Er verlangt die feste Scope-SHA
+`08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd`,
+1767 regulaere Dateien mit2865680705Bytes und99 Python-Metadatenobjekte.
+Nur frischer privater Zielbaum, begrenztes Tar/PAX/Gzip, keine beliebige Extraktion,
+keine Ueberschreibung und keine Verfolgung von Links. Jeder Dateihash, Rechte,
+Eigentuemer und transportierter mtime werden rueckgeprueft. Receipt und Pending
+werden dauerhaft geschrieben und exakt O_NOATIME rueckgelesen; READY ist die
+letzte atomare Namenspublikation. Keine Power-Loss-Dauergarantie dieser Umbenennung.
+
+Ein beobachteter FAIL meldet tatsaechliche Dateizahl/Bytes als unbekannt (`null`),
+niemals erfundene Nullwerte. Auch nach fruehem SSH-EPIPE wird eine vollstaendig
+validierte SAFE-FAIL-Antwort erhalten; vorzeitiges READY bleibt ausgeschlossen.
+Der Workflow publiziert gueltige Fehlerbelege und bleibt rot.
+
+157 synthetische Steuer-/Stagefaelle und31 gezielte Restorefaelle bestanden,
+ohne GPG-, HTTP-, SSH-, Original- oder native Zielausfuehrung. Die vorhandenen
+historischen Fehler und Originalbelege bleiben unveraendert.
+Die erste Source-Verschluesselung stoppte vor dem Einpacken von Originalen am
+Public-Key-Import (GPG-Agentpfad zu lang);0Cipherbytes. Diese erhaltene Fehlkopie
+wird nicht wiederverwendet. Eine getrennte schmale Quellkorrektur ist erforderlich.
+Native Pfadsicht, UID1000, Docker-/Socket-/Cgroupadmission bleiben danach offen.

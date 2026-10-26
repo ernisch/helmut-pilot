@@ -25,6 +25,11 @@ on:
         description: 'Exact public payload SHA256, lowercase hexadecimal'
         required: true
         type: string
+      stageCapsule:
+        description: 'Stage only: Base64 recipient-encrypted PGP capsule, at most 48 KiB; no raw URLs'
+        required: false
+        type: string
+        default: ''
 
 permissions: {}
 
@@ -51,6 +56,7 @@ jobs:
       HELMUT_NATIVE_OPERATION: ${{ inputs.operation }}
       HELMUT_NATIVE_PLAN_SHA256: ${{ inputs.planSHA }}
       HELMUT_NATIVE_PAYLOAD_SHA256: ${{ inputs.payloadSHA }}
+      HELMUT_NATIVE_STAGE_CAPSULE: ${{ inputs.stageCapsule }}
     steps:
       - name: Exact branch, registered workflow and public input pins
         run: |
@@ -61,7 +67,7 @@ jobs:
           test "$GITHUB_EVENT_NAME" = workflow_dispatch
           test "$GITHUB_WORKFLOW_REF" = ernisch/helmut-pilot/.github/workflows/hetzner-native-automation.yml@refs/heads/main
           test "$HELMUT_NATIVE_CONTROL_MODE" = control-v1
-          case "$HELMUT_NATIVE_OPERATION" in status|recipient) ;; *) exit 1 ;; esac
+          case "$HELMUT_NATIVE_OPERATION" in status|recipient|stage) ;; *) exit 1 ;; esac
           [[ "$HELMUT_NATIVE_PLAN_SHA256" =~ ^[a-f0-9]{64}$ ]]
           [[ "$HELMUT_NATIVE_PAYLOAD_SHA256" =~ ^[a-f0-9]{64}$ ]]
           [[ "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ ]]
@@ -74,7 +80,7 @@ jobs:
           umask 077
           gh api "repos/ernisch/helmut-pilot/contents/scripts/hetzner-native-automation-client.py?ref=$GITHUB_SHA" \
             --jq .content | base64 --decode > "$RUNNER_TEMP/helmut-native-client.py"
-          printf '%s  %s\n' e1d30fe24dbffec3d32863820ef4d99da5d8e365c49d4f9d48b32bd8b0d8adf4 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
+          printf '%s  %s\n' 61db0524dcdd91066517336d65b4cf0386a1c6f1140410a8fe5d3f6303f02b14 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
           python3 -I "$RUNNER_TEMP/helmut-native-client.py" validate
 
       - name: Existing pinned Tailscale transport using short lived GitHub OIDC
@@ -97,16 +103,20 @@ jobs:
           sudo tailscale debug prefs | python3 -c 'import json,sys; p=json.load(sys.stdin); assert p.get("RouteAll") is False and p.get("CorpDNS") is False, "Tailscale routing/DNS settings rejected"'
 
       - name: Nonce bound public response over fixed forced command
+        id: exchange
+        continue-on-error: true
         env:
           HELMUT_CI_HOST: ${{ vars.HELMUT_CI_HOST }}
           HELMUT_CI_HOST_PUBLIC_KEY: ${{ vars.HELMUT_CI_HOST_PUBLIC_KEY }}
           HELMUT_CI_SSH_KEY: ${{ secrets.HELMUT_CI_SSH_KEY }}
         run: |
           set -euo pipefail
-          printf '%s  %s\n' e1d30fe24dbffec3d32863820ef4d99da5d8e365c49d4f9d48b32bd8b0d8adf4 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
+          printf '%s  %s\n' 61db0524dcdd91066517336d65b4cf0386a1c6f1140410a8fe5d3f6303f02b14 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
           python3 -I "$RUNNER_TEMP/helmut-native-client.py" client
 
       - name: Verify only fixed public artifact files without SSH secret environment
+        id: verify
+        if: ${{ always() && steps.exchange.outcome != 'skipped' }}
         run: |
           set -euo pipefail
           test -f "$RUNNER_TEMP/helmut-native-public/RESPONSE.SAFE.json"
@@ -115,6 +125,7 @@ jobs:
           sha256sum --check --status RESPONSE.SAFE.sha256
 
       - name: Publish validated public JSON and exact SHA256 only
+        if: ${{ always() && steps.verify.outcome == 'success' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # official GitHub v4.6.2, action.yml reviewed
         with:
           name: helmut-native-public-${{ github.run_id }}-${{ github.run_attempt }}
@@ -125,3 +136,7 @@ jobs:
           retention-days: 7
           include-hidden-files: false
           overwrite: false
+
+      - name: Preserve validated failure artifact and fail the workflow
+        if: ${{ always() && (steps.exchange.outcome != 'success' || steps.verify.outcome != 'success') }}
+        run: exit 1
