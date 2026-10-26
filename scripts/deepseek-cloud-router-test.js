@@ -1204,5 +1204,33 @@ check("Fehlendes Journal nach Initialisierung sperrt statt Tagesbetrag zurueckzu
   } finally { fs.rmSync(p.root, { recursive:true, force:true }); }
 });
 
+
+check("Bezahlte Leseantwort bei Journalkollision erhalten und Reserve offengelegt", () => {
+  const p=project(), dir=path.join(p.root,"read-lock"), lock=path.join(dir,".lock");
+  let count=0;
+  try {
+    const result=router.run({
+      cwd:p.root, budgetDir:dir, env:{DEEPSEEK_API_KEY:"placeholder"},
+      argv:["flash","high","read","--task-file",p.task],
+      callDeepSeek:() => {
+        count++;
+        fs.mkdirSync(lock,{mode:0o700});
+        return apiResult({summary:summary({result:["brauchbar"]})});
+      }
+    });
+    assert.equal(result.status,"ok");
+    assert.equal(result.result[0],"brauchbar");
+    assert.equal(result.budget_settlement,"pending_reserved");
+    assert.equal(count,1);
+    fs.rmdirSync(lock);
+    const snapshot=dailyBudget.snapshot({dir});
+    assert.equal(snapshot.pending,1);
+    assert.ok(snapshot.amountMicro>0);
+  } finally {
+    if(fs.existsSync(lock)) fs.rmdirSync(lock);
+    fs.rmSync(p.root,{recursive:true,force:true});
+  }
+});
+
 console.log(`DeepSeek Cloud Router v2: ${pass} PASS, ${fail} FAIL`);
 if (fail) process.exit(1);
