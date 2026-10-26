@@ -2,9 +2,9 @@
 
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
-UNIT_PROPERTIES: enger Quellenfix auf `codex/helmut-unit-properties-20261026`.
-Sechs Exec-Listen brauchen typisierte D-Bus-Leerwerte; fehlend stoppt weiter.
-480 synthetische Tests PASS; unabhaengige Abnahme und PR-CI noch offen.
+PR957/35d7d2d4: UNIT_PROPERTIES-Quellenfix gemergt; PR-CI40314973970 SUCCESS.
+480 synthetische Tests +168 unabhaengige Zusatzpruefungen PASS.
+Vercel READY auf35d7d2d4; Main-CI40318797794 laeuft noch.
 Setup40306875483 bleibt recover FAIL; kein ACCEPTED, kein admit/Recover-Retry.
 Mac-Abfrage erledigt. Restore/Originalabnahme offen; alte Once-Marker erhalten.
 Paket/Key/Quellcloud erhalten. Keine neue Zielausfuehrung; kein500er-Lauf.
