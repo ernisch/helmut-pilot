@@ -39,6 +39,22 @@ DAEMON_BINDING_CONTRACT_SHA256 = 'fe6a763fee403a0e34a943db533b0aca71b38afdfc9408
 DAEMON_BINDING_PREFIX = b'helmut-daemon-binding-request-v1\0'
 CONTINUATION_ID = 'setup-context-daemon-binding-v2'
 CONTINUATION_PREFIX = b'helmut-context-continuation-request-v1\0'
+DEVELOPMENT_PREFIX = b'helmut-development-request-v1\0'
+DEVELOPMENT_KEYS = {'schema','action','phase','source_sha256','source_commit','nonce','issued_at_utc','expires_at_utc'}
+DEVELOPMENT_PHASES = {'prepare': ('tools','source','image'), 'source-sync': ('source',),
+                      'test': ('syntax','lage-rest')}
+CONTEXT_FAILURE_ID = 'context-failure-observation-20261026-v1'
+CONTEXT_FAILURE_CONTRACT = '224b49c0bb482392b201510fb83993590b3ba54a32f0426ec1a5c17d89234aa2'
+CONTEXT_FAILURE_PREFIX = b'helmut-context-failure-request-v1\0'
+CONTEXT_FAILURE_HISTORICAL = {
+    'failed_commit':'4a82f5fee73e287377344326a238b141af5928b9',
+    'failed_source_sha256':'67cc1cdfdcd1375dd78aef8fef8128879c0e8d0a072819af8096c48d2f32e3fe',
+    'failed_nonce':'e939e6fde87bf3f4fb8b1c69a1c2de8e633f6856ac270d832dddd27a3c6c0bcd',
+    'failed_response_sha256':'d3660ad6164c873cced0100b14e81610fb409d9251c1c0d4df6fc59578034586',
+    'failed_result_sha256':'edfd4e3c227e0d20fa00d137419499f1d9e7cab6d34ae93ed35548200fa7be4a'}
+CONTEXT_FAILURE_ROLES = frozenset(('component_attempt','component_error','component_receipt',
+    'component_receipt_pending','continuation_attempt','job','job_error','job_result','job_result_pending',
+    'namespace_error','namespace_error_pending','root_response'))
 CONTINUATION_COORDINATOR_SHA256 = 'eb5d7a1602ebb4861dd4aa181cee381613c987943b7cd4e3aad6a776270404b6'
 RUNTIME_METADATA_CAPSULE_KEYS = {'schema', 'contract_id', 'action', 'chunk', 'source_sha256',
     'contract_sha256', 'nonce', 'issued_at_utc', 'expires_at_utc'}
@@ -130,6 +146,7 @@ SAFE_CODES = {
     "recipient-fingerprint", "recipient-validation", "ssh-failed",
     "ssh-timeout", "mode-denied", "public-output-exists", "source-pin-drift", "stage-capsule",
     "setup-mode", "setup-capsule", "setup-result", "runtime-metadata-capsule", "runtime-metadata-result",
+    "context-failure-capsule", "context-failure-result",
 }
 
 
@@ -419,6 +436,80 @@ def validate_daemon_binding_result(result, sent, capsule):
                 and unit['metadata'][3:6] == [0, 0, 1] and unit['metadata'][6] == unit['bytes'], 'daemon-binding-result')
 
 
+def context_failure_capsule_check(value, payload, now=None):
+    require(type(value) is dict and set(value)==RUNTIME_METADATA_CAPSULE_KEYS-{'chunk'}
+        and value['schema']=='helmut-context-failure-capsule-v1' and value['contract_id']==CONTEXT_FAILURE_ID
+        and value['contract_sha256']==CONTEXT_FAILURE_CONTRACT and value['action']=='inspect'
+        and value['source_sha256']==payload, 'context-failure-capsule')
+    for key in ('source_sha256','contract_sha256','nonce'):pinned_sha(value[key])
+    require(type(value['issued_at_utc']) is int and type(value['expires_at_utc']) is int
+        and 0<value['issued_at_utc']<value['expires_at_utc']
+        and value['expires_at_utc']-value['issued_at_utc']<=300, 'context-failure-capsule')
+    if now is not None:require(value['issued_at_utc']<=now<=value['expires_at_utc'], 'context-failure-capsule')
+
+
+def validate_context_failure_result(result, sent, capsule):
+    context_failure_capsule_check(capsule,sent['payload_sha256'])
+    require(sent['operation']=='status' and sent['plan_sha256']==STAGE_PLAN
+        and sent['nonce']==control_request_nonce(capsule), 'response-binding')
+    keys={'schema','status','contract_id','contract_sha256','source_sha256','deployment_commit','code',
+        'records','job_directory','snapshot_sha256','cause_records','cause_state','read_only',
+        'native_qualified','native_go_consumed'}|set(CONTEXT_FAILURE_HISTORICAL)
+    require(type(result) is dict and set(result)==keys and len(canonical(result))<=32768
+        and result['schema']=='helmut-context-failure-observation-v1' and result['contract_id']==CONTEXT_FAILURE_ID
+        and result['contract_sha256']==CONTEXT_FAILURE_CONTRACT and result['source_sha256']==sent['payload_sha256']
+        and type(result['deployment_commit']) is str and re.fullmatch('[a-f0-9]{40}',result['deployment_commit'])
+        and all(result[key]==value for key,value in CONTEXT_FAILURE_HISTORICAL.items())
+        and result['read_only'] is True and result['native_qualified'] is False and result['native_go_consumed'] is False,
+        'context-failure-result')
+    if result['status']=='FAIL_CLOSED_NOT_NATIVE_QUALIFIED':
+        require(type(result['code']) is str and re.fullmatch('[A-Z][A-Z0-9_]{0,63}',result['code'])
+            and all(result[key] is None for key in ('records','job_directory','snapshot_sha256'))
+            and result['cause_records']==[] and result['cause_state']=='UNKNOWN_READ_NOT_QUALIFIED', 'context-failure-result')
+        return
+    require(result['status']=='CONTEXT_FAILURE_OBSERVED_NOT_READY' and result['code'] is None, 'context-failure-result')
+    records=result['records'];directory=result['job_directory']
+    require(type(directory) is dict and set(directory)=={'state','sha256','metadata','member_count','temporary_record_count'}
+        and directory['state']=='PRESENT' and type(directory['member_count']) is int and 0<=directory['member_count']<=21
+        and type(directory['temporary_record_count']) is int and 0<=directory['temporary_record_count']<=8, 'context-failure-result')
+    pinned_sha(directory['sha256']);_setup_metadata(directory['metadata'])
+    require(directory['metadata'][2]&0o170000==0o040000 and directory['metadata'][3:5]==[0,0]
+        and directory['metadata'][2]&0o777==0o700, 'context-failure-result')
+    extras={'job_temporary_error_'+str(index) for index in range(directory['temporary_record_count'])}
+    require(type(records) is dict and set(records)==CONTEXT_FAILURE_ROLES|extras, 'context-failure-result')
+    extra_codes=set('DAEMON_BOOT_ID DAEMON_EXE_CHANGED DAEMON_EXE_HASH DAEMON_EXE_IDENTITY DAEMON_EXE_LIMIT '
+        'DAEMON_EXE_LINK_BINDING DAEMON_EXE_LINK_IDENTITY DAEMON_EXITED DAEMON_OBSERVATION_DEADLINE '
+        'DAEMON_PROC_CHANGED DAEMON_PROC_FILESYSTEM OBSERVED_PUBLIC_READY_HASH OBSERVED_RECOVERY_READY_HASH SETUP_GUARD_FAILURE'.split())
+    for role,row in records.items():
+        require(type(row) is dict and set(row)=={'state','sha256','bytes','metadata','absence','source_status','phase','code','exception_type','errno'}
+            and row['state'] in ('ABSENT','UNKNOWN_PARENT_UNOBSERVED','UNKNOWN','UNKNOWN_UNACCEPTED','PRESENT'), 'context-failure-result')
+        if row['state'] in ('ABSENT','UNKNOWN_PARENT_UNOBSERVED'):
+            require(all(row[key] is None for key in ('sha256','bytes','metadata','source_status','phase','code','exception_type','errno')), 'context-failure-result')
+            if row['state']=='ABSENT':
+                absence=row['absence']
+                require(type(absence) is dict and set(absence)=={'scope','parent_metadata','chain_sha256'}
+                    and absence['scope'] in ('LEAF','PARENT'), 'context-failure-result')
+                pinned_sha(absence['chain_sha256']);_setup_metadata(absence['parent_metadata'])
+                require(absence['parent_metadata'][2]&0o170000==0o040000 and absence['parent_metadata'][3:5]==[0,0]
+                    and not absence['parent_metadata'][2]&0o022, 'context-failure-result')
+            else:require(row['absence'] is None,'context-failure-result')
+            continue
+        pinned_sha(row['sha256']);_setup_metadata(row['metadata'])
+        require(type(row['bytes']) is int and 0<=row['bytes']<=16384 and row['absence'] is None
+            and row['metadata'][2]==0o100600 and row['metadata'][3:6]==[0,0,1]
+            and row['metadata'][6]==row['bytes'], 'context-failure-result')
+        require(row['source_status'] in (None,'FAIL_KEEP_STATE_NO_RETRY','FAIL_KEEP_PARTIAL_CONTEXT_NO_RETRY','CONTEXT_PREPARED_NOT_NATIVE_QUALIFIED')
+            and row['phase'] in (None,'preflight','attempt','private-mounts','context')
+            and (row['code'] is None or row['code'] in RUNTIME_METADATA_ERROR_CODES|extra_codes)
+            and (row['exception_type'] is None or row['exception_type'] in RUNTIME_METADATA_EXCEPTION_TYPES)
+            and (row['errno'] is None or type(row['errno']) is int and -4095<=row['errno']<=4095), 'context-failure-result')
+    require(records['root_response']['sha256']==CONTEXT_FAILURE_HISTORICAL['failed_response_sha256'], 'context-failure-result')
+    causes=sorted(role for role,row in records.items() if row['state']=='PRESENT' and row['code'] not in (None,'WORKER_FAILED'))
+    require(result['cause_records']==causes and result['cause_state']==('STORED_INNER_ERROR_OBSERVED' if causes
+        else 'UNKNOWN_INNER_ERROR_ABSENT_OR_UNRECOGNIZED'), 'context-failure-result')
+    require(result['snapshot_sha256']==digest(canonical({'records':records,'job_directory':directory})+b'\n'), 'context-failure-result')
+
+
 def _runtime_metadata_capsule_check(value, payload, now=None):
     require(type(value) is dict and set(value) == RUNTIME_METADATA_CAPSULE_KEYS
             and value['schema'] == 'helmut-runtime-metadata-capsule-v1'
@@ -438,9 +529,16 @@ def setup_capsule(environment, operation):
     encoded = environment.get('HELMUT_NATIVE_SETUP_CAPSULE', '')
     mode = environment.get('HELMUT_NATIVE_CONTROL_MODE', 'control-v1')
     if encoded == '':
+        if mode == 'development-v1':
+            require(operation == 'admit' and environment.get('HELMUT_NATIVE_PLAN_SHA256') == STAGE_PLAN
+                and environment.get('HELMUT_NATIVE_STAGE_CAPSULE', '') == ''
+                and environment.get('HELMUT_DEVELOPMENT_ACTION') in ('prepare','source-sync','syntax','lage-rest')
+                and re.fullmatch('[a-f0-9]{40}', environment.get('HELMUT_DEVELOPMENT_SOURCE_COMMIT') or environment.get('GITHUB_SHA','')),
+                'setup-capsule')
+            return b'', None
         require(mode == 'control-v1', 'setup-mode')
         return b'', None
-    require(mode in ('setup-inspect-v1', 'setup-successor-v1', 'runtime-metadata-v1', 'context-continuation-v1'), 'setup-mode')
+    require(mode in ('setup-inspect-v1', 'setup-successor-v1', 'runtime-metadata-v1', 'context-continuation-v1', 'development-v1'), 'setup-mode')
     require(operation in ('status', 'admit') and environment.get('HELMUT_NATIVE_STAGE_CAPSULE', '') == ''
             and environment.get('HELMUT_NATIVE_PLAN_SHA256') == STAGE_PLAN, 'setup-capsule')
     require(type(encoded) is str and 0 < len(encoded) <= 10924
@@ -450,6 +548,10 @@ def setup_capsule(environment, operation):
     require(0 < len(raw) <= 8191 and base64.b64encode(raw).decode('ascii') == encoded, 'setup-capsule')
     value = json_unique(raw)
     require(canonical(value) == raw, 'setup-capsule')
+    if mode == 'development-v1':
+        require(operation == 'admit', 'setup-mode')
+        development_capsule_check(value, environment['HELMUT_NATIVE_PAYLOAD_SHA256'])
+        return raw+b'\n', value
     if mode == 'context-continuation-v1':
         _continuation_capsule_check(value,pinned_sha(environment.get('HELMUT_NATIVE_PAYLOAD_SHA256')),int(time.time()))
         require(operation == ('status' if value['action'] == 'inspect' else 'admit'), 'setup-mode')
@@ -457,7 +559,8 @@ def setup_capsule(environment, operation):
     if mode == 'runtime-metadata-v1':
         require(operation == 'status', 'setup-mode')
         require(type(value) is dict, 'daemon-binding-capsule')
-        validator = (_daemon_binding_capsule_check if value.get('schema') == 'helmut-daemon-binding-capsule-v1'
+        validator = (context_failure_capsule_check if value.get('schema')=='helmut-context-failure-capsule-v1'
+                     else _daemon_binding_capsule_check if value.get('schema') == 'helmut-daemon-binding-capsule-v1'
                      else _runtime_metadata_capsule_check)
         validator(value, pinned_sha(environment.get('HELMUT_NATIVE_PAYLOAD_SHA256')), int(time.time()))
         return raw + b'\n', value
@@ -476,6 +579,10 @@ def runtime_metadata_request_nonce(capsule):
 
 
 def control_request_nonce(capsule):
+    if capsule['schema'] == 'helmut-context-failure-capsule-v1':
+        return digest(CONTEXT_FAILURE_PREFIX+canonical(capsule)+b'\n')
+    if capsule['schema'] == 'helmut-development-capsule-v1':
+        return digest(DEVELOPMENT_PREFIX+canonical(capsule)+b'\n')
     if capsule['schema'] == 'helmut-context-continuation-capsule-v1':
         return digest(CONTINUATION_PREFIX+canonical(capsule)+b'\n')
     if capsule['schema'] == 'helmut-daemon-binding-capsule-v1':
@@ -483,6 +590,44 @@ def control_request_nonce(capsule):
     if capsule['schema'] == 'helmut-runtime-metadata-capsule-v1':
         return runtime_metadata_request_nonce(capsule)
     return setup_request_nonce(capsule)
+
+
+def development_capsule_check(value, source):
+    require(type(value) is dict and set(value) == DEVELOPMENT_KEYS
+        and value['schema'] == 'helmut-development-capsule-v1'
+        and value['action'] in DEVELOPMENT_PHASES and value['phase'] in DEVELOPMENT_PHASES[value['action']]
+        and value['source_sha256'] == source and re.fullmatch('[a-f0-9]{64}', source)
+        and type(value['source_commit']) is str and re.fullmatch('[a-f0-9]{40}', value['source_commit'])
+        and type(value['nonce']) is str and re.fullmatch('[a-f0-9]{64}', value['nonce'])
+        and type(value['issued_at_utc']) is int and type(value['expires_at_utc']) is int
+        and value['issued_at_utc'] <= int(time.time()) <= value['expires_at_utc']
+        and 0 < value['expires_at_utc']-value['issued_at_utc'] <= 300, 'setup-capsule')
+
+
+def development_result(result, sent, capsule):
+    keys = {'schema','status','action','phase','source_commit','source_sha256','request_nonce','code',
+            'receipt_sha256','diagnostic','native_qualified','native_go_consumed'}
+    require(type(result) is dict and set(result) == keys and result['schema'] == 'helmut-development-result-v1'
+        and result['status'] in ('DEVELOPMENT_STEP_COMPLETE','FAIL_KEEP_STATE_NO_RETRY')
+        and all(result[key] == capsule[key] for key in ('action','phase','source_commit','source_sha256'))
+        and result['request_nonce'] == sent['nonce'] and result['native_qualified'] is False
+        and result['native_go_consumed'] is False and type(result['code']) is str
+        and re.fullmatch('[A-Z][A-Z0-9_]{0,95}', result['code']), 'setup-result')
+    if result['status'] == 'DEVELOPMENT_STEP_COMPLETE':
+        require(result['code'] == 'DEVELOPMENT_STEP_COMPLETE' and result['diagnostic'] is None, 'setup-result')
+        pinned_sha(result['receipt_sha256'])
+    else:
+        require(result['receipt_sha256'] is None, 'setup-result')
+        diagnostic = result['diagnostic']
+        if diagnostic is not None:
+            require(type(diagnostic) is dict and set(diagnostic) == {'tool','exit_code','errno','stdout_sha256','stderr_sha256','retained_tool_count'}, 'setup-result')
+            require(diagnostic['tool'] is None or (type(diagnostic['tool']) is str
+                and re.fullmatch('[a-zA-Z0-9_.-]{1,64}', diagnostic['tool'])), 'setup-result')
+            for key in ('exit_code','errno'):
+                require(diagnostic[key] is None or (type(diagnostic[key]) is int and -65536 <= diagnostic[key] <= 65536), 'setup-result')
+            for key in ('stdout_sha256','stderr_sha256'):
+                if diagnostic[key] is not None: pinned_sha(diagnostic[key])
+            require(type(diagnostic['retained_tool_count']) is int and 0 <= diagnostic['retained_tool_count'] <= 100, 'setup-result')
 
 
 def _runtime_failure_diagnostic(diagnostic):
@@ -1017,6 +1162,10 @@ def validate_response(raw, sent, successor_capsule=None):
             "response-hash")
     if successor_capsule is None:
         validate_result(reply["result"], sent["operation"], sent["payload_sha256"])
+    elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-development-capsule-v1':
+        development_result(reply['result'], sent, successor_capsule)
+    elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-context-failure-capsule-v1':
+        validate_context_failure_result(reply['result'], sent, successor_capsule)
     elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-context-continuation-capsule-v1':
         validate_continuation_result(reply['result'], sent, successor_capsule)
     elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-daemon-binding-capsule-v1':
@@ -1130,9 +1279,10 @@ def write_public_artifact(directory, reply):
             stream.write(raw)
 
 
-def client(environment):
+def client(environment, artifact_directory=None):
     operation, plan, payload = validate_context(environment)
     setup_line, successor = setup_capsule(environment, operation)
+    require(environment.get('HELMUT_NATIVE_CONTROL_MODE') != 'development-v1' or successor is not None, 'setup-capsule')
     sent = request(operation, plan, payload, control_request_nonce(successor) if successor is not None else secrets.token_hex(32))
     capsule_line,capsule_raw=stage_capsule(environment,operation)
     host, public, private = transport_configuration(environment)
@@ -1153,9 +1303,38 @@ def client(environment):
         require(code==0 or failed,'ssh-failed')
         if operation=='stage' and reply['result']['capsule_sha256'] is not None:
             require(reply['result']['capsule_sha256']==digest(capsule_raw),'response-binding')
-    write_public_artifact(temporary / "helmut-native-public", reply)
+    write_public_artifact(artifact_directory or temporary / "helmut-native-public", reply)
     print("helmut-native-control: validated-public-response " + digest(canonical(reply) + b"\n"))
     return 1 if failed else 0
+
+
+def development_client(environment):
+    validate_context(environment)
+    require(environment.get('HELMUT_NATIVE_SETUP_CAPSULE', '') == '', 'setup-capsule')
+    selected = environment['HELMUT_DEVELOPMENT_ACTION']
+    source = environment.get('HELMUT_DEVELOPMENT_SOURCE_COMMIT') or environment['GITHUB_SHA']
+    steps = ([('prepare',p) for p in ('tools','source','image')]+[('test','syntax'),('test','lage-rest')]
+             if selected == 'prepare' else [('source-sync','source')] if selected == 'source-sync'
+             else [('test',selected)])
+    temporary = Path(environment['RUNNER_TEMP'])
+    phase_root = temporary/'helmut-development-public'
+    require(not phase_root.exists(), 'public-output-exists')
+    phase_root.mkdir(mode=0o700)
+    for index, (action, phase) in enumerate(steps):
+        now = int(time.time())
+        capsule = {'schema':'helmut-development-capsule-v1','action':action,'phase':phase,
+            'source_sha256':environment['HELMUT_NATIVE_PAYLOAD_SHA256'],'source_commit':source,
+            'nonce':secrets.token_hex(32),'issued_at_utc':now,'expires_at_utc':now+295}
+        supplied = {**environment, 'HELMUT_NATIVE_SETUP_CAPSULE':base64.b64encode(canonical(capsule)).decode()}
+        output = phase_root/phase
+        code = client(supplied, output)
+        # The standard workflow publishes only validated bounded public bytes.
+        # Keep the prior phase artifacts and publish the final or first failure.
+        if code or index == len(steps)-1:
+            reply = json_unique((output/'RESPONSE.SAFE.json').read_bytes())
+            write_public_artifact(temporary/'helmut-native-public', reply)
+            return code
+    return 1
 
 
 def main():
@@ -1163,7 +1342,8 @@ def main():
         if sys.argv[1:] == ["validate"]:
             validate_context(os.environ)
         elif sys.argv[1:] == ["client"]:
-            return client(os.environ) or 0
+            return (development_client(os.environ) if os.environ.get('HELMUT_NATIVE_CONTROL_MODE') == 'development-v1'
+                    else client(os.environ)) or 0
         else:
             raise ValueError("mode-denied")
         return 0

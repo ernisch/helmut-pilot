@@ -9,7 +9,7 @@ on:
         description: 'Explicit per-dispatch controller authorization; disabled by default'
         required: true
         type: choice
-        options: [disabled, control-v1, setup-inspect-v1, setup-successor-v1, runtime-metadata-v1, context-continuation-v1]
+        options: [disabled, control-v1, setup-inspect-v1, setup-successor-v1, runtime-metadata-v1, context-continuation-v1, development-v1]
         default: disabled
       operation:
         description: 'Public control operation; unqualified operations fail before network access'
@@ -35,6 +35,17 @@ on:
         required: false
         type: string
         default: ''
+      developmentAction:
+        description: 'Development only: prepare includes tools, source, image, syntax and isolated database test'
+        required: false
+        type: choice
+        options: [disabled, prepare, source-sync, syntax, lage-rest]
+        default: disabled
+      developmentSourceCommit:
+        description: 'Development working source SHA from this public repository; empty means exact controller main'
+        required: false
+        type: string
+        default: ''
 
 permissions: {}
 
@@ -51,7 +62,7 @@ jobs:
       github.event_name == 'workflow_dispatch' &&
       github.workflow_ref == 'ernisch/helmut-pilot/.github/workflows/hetzner-native-automation.yml@refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: ${{ inputs.controlMode == 'development-v1' && 30 || 10 }}
     environment: helmut-hetzner-ci
     permissions:
       contents: read
@@ -63,6 +74,8 @@ jobs:
       HELMUT_NATIVE_PAYLOAD_SHA256: ${{ inputs.payloadSHA }}
       HELMUT_NATIVE_STAGE_CAPSULE: ${{ inputs.stageCapsule }}
       HELMUT_NATIVE_SETUP_CAPSULE: ${{ inputs.setupCapsule }}
+      HELMUT_DEVELOPMENT_ACTION: ${{ inputs.developmentAction }}
+      HELMUT_DEVELOPMENT_SOURCE_COMMIT: ${{ inputs.developmentSourceCommit }}
     steps:
       - name: Exact branch, registered workflow and public input pins
         run: |
@@ -88,6 +101,13 @@ jobs:
               case "$HELMUT_NATIVE_OPERATION" in status|admit) ;; *) exit 1 ;; esac
               test -n "$HELMUT_NATIVE_SETUP_CAPSULE"
               ;;
+            development-v1)
+              test "$HELMUT_NATIVE_OPERATION" = admit
+              test -z "$HELMUT_NATIVE_SETUP_CAPSULE"
+              test -z "$HELMUT_NATIVE_STAGE_CAPSULE"
+              case "$HELMUT_DEVELOPMENT_ACTION" in prepare|source-sync|syntax|lage-rest) ;; *) exit 1 ;; esac
+              [[ -z "$HELMUT_DEVELOPMENT_SOURCE_COMMIT" || "$HELMUT_DEVELOPMENT_SOURCE_COMMIT" =~ ^[a-f0-9]{40}$ ]]
+              ;;
             *) exit 1 ;;
           esac
           case "$HELMUT_NATIVE_OPERATION" in status|recipient|stage|admit) ;; *) exit 1 ;; esac
@@ -103,7 +123,7 @@ jobs:
           umask 077
           gh api "repos/ernisch/helmut-pilot/contents/scripts/hetzner-native-automation-client.py?ref=$GITHUB_SHA" \
             --jq .content | base64 --decode > "$RUNNER_TEMP/helmut-native-client.py"
-          printf '%s  %s\n' ad4112136dac6478a65f986db1e05f26d308cf3898a1ffe143efe8afaae23573 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
+          printf '%s  %s\n' 51d5314de522683b42ed1f7b75cdc1bbbbe90fcb60d869fd5887f8c47a1b75b8 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
           python3 -I "$RUNNER_TEMP/helmut-native-client.py" validate
 
       - name: Existing pinned Tailscale transport using short lived GitHub OIDC
@@ -134,7 +154,7 @@ jobs:
           HELMUT_CI_SSH_KEY: ${{ secrets.HELMUT_CI_SSH_KEY }}
         run: |
           set -euo pipefail
-          printf '%s  %s\n' ad4112136dac6478a65f986db1e05f26d308cf3898a1ffe143efe8afaae23573 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
+          printf '%s  %s\n' 51d5314de522683b42ed1f7b75cdc1bbbbe90fcb60d869fd5887f8c47a1b75b8 "$RUNNER_TEMP/helmut-native-client.py" | sha256sum --check --status
           python3 -I "$RUNNER_TEMP/helmut-native-client.py" client
 
       - name: Verify only fixed public artifact files without SSH secret environment
@@ -159,7 +179,35 @@ jobs:
           retention-days: 7
           include-hidden-files: false
           overwrite: false
+      - name: Verify fixed development phase receipts
+        id: development_evidence
+        if: ${{ always() && inputs.controlMode == 'development-v1' && steps.exchange.outcome != 'skipped' }}
+        run: |
+          python3 -I - <<'PY'
+          import hashlib,os
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])/'helmut-development-public'
+          assert root.is_dir() and not root.is_symlink()
+          phases=list(root.iterdir())
+          assert 1<=len(phases)<=5
+          for phase in phases:
+              assert phase.name in ('tools','source','image','syntax','lage-rest') and phase.is_dir() and not phase.is_symlink()
+              assert {p.name for p in phase.iterdir()}=={'RESPONSE.SAFE.json','RESPONSE.SAFE.sha256'}
+              for path in phase.iterdir():assert path.is_file() and not path.is_symlink() and path.stat().st_size<=262144
+              raw=(phase/'RESPONSE.SAFE.json').read_bytes()
+              assert (phase/'RESPONSE.SAFE.sha256').read_bytes()==(hashlib.sha256(raw).hexdigest()+'  RESPONSE.SAFE.json\n').encode()
+          PY
+      - name: Preserve all validated development phase receipts
+        if: ${{ always() && steps.development_evidence.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: helmut-development-public-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/helmut-development-public/
+          if-no-files-found: error
+          include-hidden-files: false
+          retention-days: 30
+          overwrite: false
 
       - name: Preserve validated failure artifact and fail the workflow
-        if: ${{ always() && (steps.exchange.outcome != 'success' || steps.verify.outcome != 'success') }}
+        if: ${{ always() && (steps.exchange.outcome != 'success' || steps.verify.outcome != 'success' || (inputs.controlMode == 'development-v1' && steps.development_evidence.outcome != 'success')) }}
         run: exit 1

@@ -1,16 +1,15 @@
 # CURRENT STATE — Helmut
 
-## Hetzner-Automation (26.10.2026 Istanbul)
+## Hetzner dauerhaft (27.10.2026 Istanbul)
 
-Auftrag: Arbeits-/Testumgebung auf Hetzner; kein Productionumzug.
-Main9df5f9dd/PR962: Pflicht-CI und normalesDeployment READY.
-UNIT_PROPERTIES behoben; Recover/Checkout ACCEPTED, alter Context bleibt FAIL.
-Frischer Daemonbeleg: nur Executable-Pfad falsch erwartet; Binärhash bestätigt.
-Neue eigenständige Context/Image-Fortsetzung vorbereitet;998lokaleTests grün.
-548 Runtime-Bindings passen zum Quellnachweis; Ziel-/Dev-/DB-Abnahme offen.
-Fehler, Originale, Keys und alte Einmalmarker erhalten; Mac-Abfrage erledigt.
-Native Messung und500er-Lauf bleiben ohne frisches konkretes GO gesperrt.
-[Uebergabe](betrieb/helmut-thread-handoff-20261026.md) · [Belege](betrieb/hetzner-native-automation-20261026.md).
+Dateien, Arbeitskopie, lokale DB/Tests auf Hetzner; Codex steuert. Kein Productionumzug.
+Main4a82/PR963: Recover/Checkout ACCEPTED. V2-Context40403071760 bleibt
+FAIL/WORKER_FAILED; Image nicht gestartet. Fehler, Originale, Keys und Marker erhalten.
+PR964: rein lesender Fehlerleser plus getrennte Dev-/DBtasks. Cloud-Vorabtests:
+92/92 Syntax/Netzschutz,15/15 REST,Negativfall123;1048 Boundarytests gruen.
+Zielabnahme offen. Nach gruener CI gespeicherten Fehler lesen, dann Devsetup abnehmen.
+Native0; neue native Tests/500 nur mit konkretem GO.
+[Abnahmegrenzen](betrieb/hetzner-development-environment-20261026.md) · [Historie](betrieb/hetzner-native-automation-20261026.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
