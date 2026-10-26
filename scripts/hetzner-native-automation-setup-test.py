@@ -56,7 +56,7 @@ class SetupControllerTests(unittest.TestCase):
         self.assertEqual(reader['SETUP_CONFIG']['setup_deployment_commit'],S.RUNTIME_SETUP_COMMIT)
         self.assertEqual(reader['SETUP_CONFIG']['setup_server_sha256'],S.RUNTIME_SETUP_SOURCE)
         self.assertEqual(reader['SETUP_CONFIG']['contract_sha256'],
-                         '029d6e301758fd27172a58c03ae99ae2003f93f84c37959192ad1124a93a5738')
+                         'e5ffcce62f8a419f11596e7ef88e9d10f4585d33b1b18e7d962670475d4d4059')
         for name,pin in reader['MODULE_PINS'].items():
             with self.subTest(module=name):
                 source=read_noatime(ROOT/'scripts'/pin['repoFile'])

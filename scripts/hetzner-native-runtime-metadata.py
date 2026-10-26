@@ -31,8 +31,8 @@ MODULE_PINS = {
                 'sha256': '0bec349c325d402e1357e77a8238e98ede64cf59047d712d93afcaecc19bbb2d'},
     'successor': {'repoFile': 'hetzner-native-setup-successor.py', 'bytes': 41531,
                   'sha256': '43f837860b111924aef3da593c8f808c773fd617ad06cad3c1279c4416b0ead9'},
-    'preflight': {'repoFile': 'hetzner-native-setup-successor-preflight.py', 'bytes': 17455,
-                  'sha256': 'a49d1991fce3e9afc1ba5e83f7cbac66feadda52d9f5f0eeb9f8123e7094fc62'},
+    'preflight': {'repoFile': 'hetzner-native-setup-successor-preflight.py', 'bytes': 19099,
+                  'sha256': '726534ef06f5649efa1282c0aabdc49857706104a4a82f2677259cc837a1764b'},
     'guard.py': {'repoFile': 'hetzner-native-setup-service.py', 'bytes': 37312,
                  'sha256': 'b748266c62b899764aa042be62937607f564641dd66163811ee7e363366bc662'},
     'driver.py': {'repoFile': 'hetzner-native-setup-driver.py', 'bytes': 11824,
@@ -48,10 +48,10 @@ MODULE_PINS = {
     'image.py': {'repoFile': 'hetzner-native-budget-image-import.py', 'bytes': 14311,
                  'sha256': 'd355adfcd0a0a87cc1306170b5b8c0601bf9e8d9661af53609eb381dad4c337a'}}
 SETUP_CONFIG = {'schema': 'helmut-runtime-metadata-read-contract-v1', 'contract_id': CONTRACT_ID,
-    'setup_qualification_commit': '1370a6e4c757ffc3fb877bcfed7b164e8e352256',
-    'setup_deployment_commit': '18c2736ac4da2cf946ccb4494ad2963091de7d32',
-    'setup_server_sha256': 'afbccf72ad9f60ea84091567268c3b7927bcc6df9d99dac0c5da61e27e546a85',
-    'contract_sha256': '029d6e301758fd27172a58c03ae99ae2003f93f84c37959192ad1124a93a5738',
+    'setup_qualification_commit': '747d6c59088fbc89170f8426f5e2a2fc4ceedd08',
+    'setup_deployment_commit': '8139b3a99d04e3e854f886123869bf669da6389d',
+    'setup_server_sha256': '1fc63bf8c90a6f13a2eebf4981d7f0c7da0b10f5e5c2fd563551e117f0ec58fe',
+    'contract_sha256': 'e5ffcce62f8a419f11596e7ef88e9d10f4585d33b1b18e7d962670475d4d4059',
     'asset_set_sha256': '9941129431d0575caa1afe9afab497fd7d111c18ede0566b5498ec5089751c07',
     'scope_sha256': SCOPE_SHA, 'dataset_sha256': FILE_SHA, 'dataset_bytes': FILE_BYTES,
     'member': MEMBER, 'modules': MODULE_PINS, 'read_only': True,
@@ -186,7 +186,7 @@ def validate_config(qualified):
         'scope_sha256', 'dataset_sha256', 'dataset_bytes', 'member', 'modules', 'read_only',
         'released_safe_sha256', 'native_qualified', 'native_go_consumed'}
         and config['schema'] == 'helmut-runtime-metadata-read-contract-v1' and config['contract_id'] == CONTRACT_ID
-        and config['setup_qualification_commit'] == '1370a6e4c757ffc3fb877bcfed7b164e8e352256'
+        and config['setup_qualification_commit'] == '747d6c59088fbc89170f8426f5e2a2fc4ceedd08'
         and type(config['setup_deployment_commit']) is str
         and re.fullmatch('[a-f0-9]{40}', config['setup_deployment_commit'])
         and all(hex64(config[key]) for key in ('setup_server_sha256', 'contract_sha256', 'asset_set_sha256'))

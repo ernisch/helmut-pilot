@@ -16,6 +16,7 @@ with os.fdopen(os.open(SOURCE, os.O_RDONLY | os.O_NOFOLLOW | os.O_NOATIME), 'rb'
 m = types.ModuleType('synthetic_fixed_metadata')
 exec(compile(RAW, str(SOURCE), 'exec'), m.__dict__)
 VERIFY_BASELINE = m.verify_setup_baseline
+STATIC_CONFIG = copy.deepcopy(m.SETUP_CONFIG)
 
 
 class ReaderTests(unittest.TestCase):
@@ -58,7 +59,7 @@ class ReaderTests(unittest.TestCase):
         self.qualified = {key: {'__source_bytes__': ('EXPLICITLY_SYNTHETIC_' + key).encode()}
                           for key in m.MODULE_NAMES}
         self.config = {'schema': 'helmut-runtime-metadata-read-contract-v1', 'contract_id': m.CONTRACT_ID,
-            'setup_qualification_commit': '1370a6e4c757ffc3fb877bcfed7b164e8e352256',
+            'setup_qualification_commit': '747d6c59088fbc89170f8426f5e2a2fc4ceedd08',
             'setup_deployment_commit': '1'*40, 'setup_server_sha256': '2'*64,
             'contract_sha256': '3'*64, 'asset_set_sha256': '4'*64,
             'modules': {key: {'repoFile': m.MODULE_PINS[key]['repoFile'],
@@ -248,6 +249,16 @@ class ReaderTests(unittest.TestCase):
         self.assertEqual(result['code'], 'METADATA_IO_OR_FORMAT')
         self.assertEqual(result['chunk_index'], 3)
         self.assertNotIn('SECRET', str(result)); self.assertNotIn('/private/', str(result))
+
+    def test_frozen_8139_setup_profile_and_new_preflight_pin_are_exact(self):
+        self.assertEqual(STATIC_CONFIG['setup_qualification_commit'], '747d6c59088fbc89170f8426f5e2a2fc4ceedd08')
+        self.assertEqual(STATIC_CONFIG['setup_deployment_commit'], '8139b3a99d04e3e854f886123869bf669da6389d')
+        self.assertEqual(STATIC_CONFIG['setup_server_sha256'], '1fc63bf8c90a6f13a2eebf4981d7f0c7da0b10f5e5c2fd563551e117f0ec58fe')
+        self.assertEqual(STATIC_CONFIG['contract_sha256'], 'e5ffcce62f8a419f11596e7ef88e9d10f4585d33b1b18e7d962670475d4d4059')
+        self.assertEqual(STATIC_CONFIG['modules']['preflight'], {
+            'repoFile': 'hetzner-native-setup-successor-preflight.py', 'bytes': 19099,
+            'sha256': '726534ef06f5649efa1282c0aabdc49857706104a4a82f2677259cc837a1764b'})
+        self.assertEqual(STATIC_CONFIG['asset_set_sha256'], '9941129431d0575caa1afe9afab497fd7d111c18ede0566b5498ec5089751c07')
 
     def baseline_adapter_fixture(self):
         """Test delegation/context selection, not a replacement qualification of old modules."""

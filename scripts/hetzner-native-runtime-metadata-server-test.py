@@ -70,8 +70,8 @@ class RuntimeMetadataServerTests(unittest.TestCase):
         library=(b'FILES={"guard.py":"hetzner-native-setup-service.py"}\n'
             b'def asset_pins():return {"guard.py":{}},"synthetic-asset-set"\n'
             b'def load_assets(context,expected):\n'
-            b' assert context["deployment_commit"]=="18c2736ac4da2cf946ccb4494ad2963091de7d32"\n'
-            b' assert context["source_sha256"]=="afbccf72ad9f60ea84091567268c3b7927bcc6df9d99dac0c5da61e27e546a85"\n'
+            b' assert context["deployment_commit"]=="8139b3a99d04e3e854f886123869bf669da6389d"\n'
+            b' assert context["source_sha256"]=="1fc63bf8c90a6f13a2eebf4981d7f0c7da0b10f5e5c2fd563551e117f0ec58fe"\n'
             b' return {},{"guard.py":{"__source_bytes__":b"SYNTHETIC_ASSET=True\\n"}}\n')
         rows={'library':('hetzner-native-setup-coordinator.py',library),
             'preflight':('hetzner-native-setup-successor-preflight.py',preflight),

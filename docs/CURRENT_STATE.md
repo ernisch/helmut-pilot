@@ -3,12 +3,12 @@
 ## Hetzner-Automation (26.10.2026 Istanbul)
 
 Auftrag: Arbeits-/Testumgebung auf Hetzner; kein Productionumzug.
-UNIT_PROPERTIES-Fix PR957 abgenommen. Setup PR959 auf Main18c2736a.
-Ausfuehrung verlangt gruene PR-/Main-CI; eigene Authority/Once/Jobs.
-Neuer SAFE-Metadatenlesepfad verlangt alle vier geprueften Setup-Abnahmen.
-Runtime/Arbeitskopie sind damit noch nicht als fertig abgenommen.
+UNIT_PROPERTIES-Fix PR957; Setupreparatur PR961 auf Main8139b3a9.
+Inspector40348666536: FAIL HISTORY_ERROR_DUPLICATE, kein Restore gestartet.
+Temp-Zulassung quellbelegt; neue Zielabnahme offen.
+Metadatenlesepfad erst nach vier tatsaechlichen Setup-Abnahmen.
 Alter Setup40306875483 bleibt FAIL; Fehler, Originale, Keys und Einmalmarker erhalten.
-Mac-Abfrage erledigt; aktuelle Zielbelege bleiben auf Hetzner erhalten.
+Mac-Abfrage erledigt; Inspectorfehler samt SAFE-Artefakt erhalten.
 Native Messung und500er-Lauf bleiben ohne frisches konkretes GO gesperrt.
 [Uebergabe](betrieb/helmut-thread-handoff-20261026.md) · [Belege](betrieb/hetzner-native-automation-20261026.md).
 

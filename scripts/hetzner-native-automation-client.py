@@ -32,16 +32,16 @@ SETUP_CAPSULE_KEYS = {'schema', 'contract_id', 'action', 'phase', 'source_sha256
     'nonce', 'inspection_nonce', 'inspection_result_sha256', 'issued_at_utc', 'expires_at_utc'}
 SETUP_PHASES = ('recover', 'checkout', 'context', 'image')
 RUNTIME_METADATA_CONTRACT = 'runtime-metadata-20261026-v1'
-RUNTIME_METADATA_CONTRACT_SHA256 = '684232c392965d8e72df46820601e26098222e04298fc03d7a92d8878ae88286'
+RUNTIME_METADATA_CONTRACT_SHA256 = '8909ca48f13ea836abdf6b8833bd1341a5c2dec2007a7ea2f4e0088cd5a9c91b'
 RUNTIME_METADATA_PREFIX = b'helmut-runtime-metadata-request-v1\0'
 RUNTIME_METADATA_CAPSULE_KEYS = {'schema', 'contract_id', 'action', 'chunk', 'source_sha256',
     'contract_sha256', 'nonce', 'issued_at_utc', 'expires_at_utc'}
 RUNTIME_METADATA_SHA256 = '71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475'
 RUNTIME_METADATA_BYTES = 207733
 RUNTIME_METADATA_SETUP = {
-    'source_sha256': 'afbccf72ad9f60ea84091567268c3b7927bcc6df9d99dac0c5da61e27e546a85',
-    'deployment_commit': '18c2736ac4da2cf946ccb4494ad2963091de7d32',
-    'contract_sha256': '029d6e301758fd27172a58c03ae99ae2003f93f84c37959192ad1124a93a5738',
+    'source_sha256': '1fc63bf8c90a6f13a2eebf4981d7f0c7da0b10f5e5c2fd563551e117f0ec58fe',
+    'deployment_commit': '8139b3a99d04e3e854f886123869bf669da6389d',
+    'contract_sha256': 'e5ffcce62f8a419f11596e7ef88e9d10f4585d33b1b18e7d962670475d4d4059',
     'asset_set_sha256': '9941129431d0575caa1afe9afab497fd7d111c18ede0566b5498ec5089751c07'}
 STAGE_PLAN = 'e6d463a634925a190d60d066c0fae2ba94b9f7f0a10a115b50b4f4018b1b35eb'
 STAGE_SCOPE = '08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd'
@@ -338,8 +338,13 @@ def _setup_history(value):
         require(type(row) is dict and set(row) == {'sha256', 'metadata'}, 'setup-result')
         pinned_sha(row['sha256']); _setup_metadata(row['metadata'])
     for name in extras:
-        require(value['files'][name]['sha256'] == value['files']['worker_error']['sha256']
-                and value['files'][name]['metadata'][6] == value['files']['worker_error']['metadata'][6], 'setup-result')
+        master = (value['files']['worker_error']['sha256'], value['files']['worker_error']['metadata'][6])
+        loser = (value['files'][name]['sha256'], value['files'][name]['metadata'][6])
+        # The historical guard checks FIRST_ERROR before worker_identity/ARM.
+        # If the parent already wrote UNIT_PROPERTIES, this exact other Stop can lose publication.
+        require(loser == master or (master, loser) == (
+            ('16add10cda6a9f5ba7c73ddf5f57dc5599c792b69c80567f44ba62420d976060', 211),
+            ('97dc56c00c04996da08ab3ccd98e410b35de30dca5714a87d02db0ba4150c18f', 220)), 'setup-result')
     _setup_metadata(value['job_directory'])
     _setup_metadata(value['legacy_jobs_directory'])
 

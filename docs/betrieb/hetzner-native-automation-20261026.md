@@ -1,6 +1,6 @@
 # HELMUT: begrenzte autonome Hetzner-Steuerung
 
-Aktuelle Fortsetzung: [neuer Setup-Untervertrag](#neuer-gebundener-setupweg-26102026-istanbul)
+Aktuelle Fortsetzung: [Vor-ARM-Fehlerdatei](#vor-arm-fehlerdatei-des-alten-guards)
 und CURRENT_STATE. Die [Thread-Uebergabe](helmut-thread-handoff-20261026.md)
 bleibt die verifizierte Ausgangsbasis; ihre Stopp- und Schutzgrenzen gelten weiter.
 Dieses Dossier enthaelt auch historische Zwischenstaende, keine neuen Laufrechte.
@@ -16,8 +16,8 @@ eine neue Originaluebertragung oder Gesamtinventur ist dafuer nicht erforderlich
 Ein Aufruf installiert nichts und startet keinen nativen Fall.
 
 Der Reader bindet den historischen Setupstand Main
-`18c2736ac4da2cf946ccb4494ad2963091de7d32`, Server `afbccf72...e546a85`,
-Vertrag `029d6e30...93a5738` und alle zehn alten Modulquellen fest.
+`8139b3a99d04e3e854f886123869bf669da6389d`, Server `1fc63bf8...0ec58fe`,
+Vertrag `e5ffcce6...5d4d4059` und alle zehn alten Modulquellen fest.
 Authority, Once, gespeicherte Inspektion, alle vier ACCEPTED-/Job-Siegel sowie
 die elf Dateien jedes Jobs und die Komponentenbelege werden vor und nach dem
 Lesen positiv geprueft. Echte Belegshashes werden aus rootgeschuetzten Dateien
@@ -30,7 +30,7 @@ eindeutiges UTF8-JSON und gibt genau einen von vier festen65536-Byte-Chunks aus.
 Keine freien Pfade, Quellen, Grenzen oder Exportfreigaben im Request; kein
 Export von Schluesseln, Originalpayloads oder ungeprueftem Originalquellcode.
 Die feste SAFE-Freigabe ist Teil des geprueften Readercodes. Der eigene Vertrag
-hat SHA256 `684232c392965d8e72df46820601e26098222e04298fc03d7a92d8878ae88286`.
+hat SHA256 `8909ca48f13ea836abdf6b8833bd1341a5c2dec2007a7ea2f4e0088cd5a9c91b`.
 
 Client/Server binden Modus, Host100.96.83.66, Quell-/Vertragshash, kanonische
 Kapsel, maximal300Sekunden und einen eigenen Requesthash. Gueltige Fehler
@@ -41,6 +41,57 @@ bleiben false. Das bisherige Setupfenster wird nicht verlaengert.
 Der neue Readercode wird erst nach vier tatsaechlichen ACCEPTED auf dem
 unveraenderten Setup-Deploymentcommit gemergt. Er ist ein weiterer Lesebeleg,
 keine Abnahme einer fertigen Runtime oder beschreibbaren Entwicklungsumgebung.
+
+## Vor-ARM-Fehlerdatei des alten Guards
+
+PR959 ist auf Main `18c2736ac4da2cf946ccb4494ad2963091de7d32` gemergt.
+PR-CI40339552837 und Main-CI40343223008 sind vollstaendig gruen;
+Vercel `dpl_42Mg9Ebk24VSG1RzkC7rNqa9JPdk` ist auf diesem Commit READY.
+Der erste neue reine Setup-Inspector40348666536 (Job121662423999,
+Artefakt12662846919) meldet `FAIL_KEEP_STATE_NO_RETRY`/`HISTORY_ERROR_DUPLICATE`.
+Es wurde kein neuer admit-/Recover-Aufruf angefordert und kein Restore gestartet.
+Der bestehende Fehler, neue Request-/Resultbelege und die Originale bleiben erhalten.
+
+Requestnonce `67d6b8fc96fff1a9d87cbfeb677e49a2fcf4bdae4d4d12ac3a0cb10bf2d48947`,
+Quellhash `afbccf72ad9f60ea84091567268c3b7927bcc6df9d99dac0c5da61e27e546a85`,
+Vertrag `029d6e301758fd27172a58c03ae99ae2003f93f84c37959192ad1124a93a5738`.
+Der vollstaendig zurueckgeladene869-Byte-ZIP hat SHA256
+`9a41eda8138def114b5859bd28a15bfd638136efb6c78df433def3284de18e7b`;
+Antwort-SHA256 `56d6dafd31f1c925be4d1495cf37a40dc7ad3617fc0ee29b0c073d30ecdd18e4`,
+Result-SHA256 `550087770901e7f268da0d09417a7c106bf0bfe51cd8b9a503b288c9691b2ea0`.
+Der gepinnte Client bestaetigt den geschlossenen Fehlerbeleg, beide Nativeflags false.
+
+Die Ursache der zu engen Vorbedingung ist anhand des exakt historischen Guards
+aus17be62b5 belegt:34133Bytes, SHA256
+`a41ddc422f5c49f5f6abae87758ce47bd91d4008494bedf46ebff0bf9192659c`.
+Parent und Worker schreiben ueber `renameat2(RENAME_NOREPLACE)` denselben
+Erstfehlerpfad. Wenn der Parent `UNIT_PROPERTIES` publiziert, bevor der Worker
+seine anfaengliche Abwesenheitspruefung erreicht, erzeugt dieser stattdessen
+`WORKER_ALREADY_ATTEMPTED`; die verlorene Publikation hinterlaesst genau einen
+Temp. Beide Schritte liegen vor ARM. Die fruehere Forderung nach bytegleichen
+Fehlerdateien war geschlossen, aber fuer diesen quellbelegten Ablauf zu eng.
+
+Die Reparatur erlaubt zusaetzlich nur diesen vollstaendigen kanonischen
+Master-/Temp-Fingerprint:211Bytes/
+`16add10cda6a9f5ba7c73ddf5f57dc5599c792b69c80567f44ba62420d976060`
+und220Bytes/
+`97dc56c00c04996da08ab3ccd98e410b35de30dca5714a87d02db0ba4150c18f`.
+Alle bisherigen Fehler-/JOB-/Quellpins, exakte Dateimengen, Berechtigungen,
+unveraenderte Metadaten, aktuelle Prozessenden und unbenutzte Komponenten
+bleiben zwingend. Client und Preflight muessen dieselbe feste Kombination pruefen.
+Unbekannte, veraenderte, nichtkanonische oder teilweise Dateien bleiben STOP.
+Insbesondere `WORKER_FAILED` und `CONTROLLER_LOST` werden nicht freigegeben.
+
+Vier unabhaengige synthetische Nachstellungen auf dem unveraenderten alten
+Guard bestaetigen den Ablauf und den Unterschied zu Fehlern nach ARM. Sie
+belegen noch nicht die tatsaechliche Tempklasse auf Hetzner. Diese bleibt bis
+zu einem neuen begrenzten, positiv validierten Inspector offen; vorher kein
+Einrichtungsschritt. Es gibt keinen Markerreset oder Wiederholung alter Requests.
+Der Reparaturstand besteht666 synthetische Pruefungen und acht unabhaengige
+Zusatzfaelle; Current-State-Groessenpruefung und Diffpruefung sind ebenfalls gruen.
+Das feste Setupfenster wird nicht verlaengert. Der vorbereitete Runtime-Metadaten-
+PR960 bleibt Entwurf; sein historischer Bezug muss nach dem Setupfix aktualisiert
+werden und darf nicht vor vier tatsaechlichen Setup-Abnahmen gemergt werden.
 
 ## Neuer gebundener Setupweg (26.10.2026 Istanbul)
 

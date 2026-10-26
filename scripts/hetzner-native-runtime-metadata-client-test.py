@@ -87,7 +87,12 @@ class RuntimeClientTests(unittest.TestCase):
 
     def test_fixed_production_pins_and_exact_four_chunk_transport(self):
         self.assertEqual(PRODUCTION_SHA, '71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475')
-        self.assertEqual(M.RUNTIME_METADATA_CONTRACT_SHA256, '684232c392965d8e72df46820601e26098222e04298fc03d7a92d8878ae88286')
+        self.assertEqual(M.RUNTIME_METADATA_CONTRACT_SHA256, '8909ca48f13ea836abdf6b8833bd1341a5c2dec2007a7ea2f4e0088cd5a9c91b')
+        self.assertEqual(M.RUNTIME_METADATA_SETUP, {
+            'source_sha256': '1fc63bf8c90a6f13a2eebf4981d7f0c7da0b10f5e5c2fd563551e117f0ec58fe',
+            'deployment_commit': '8139b3a99d04e3e854f886123869bf669da6389d',
+            'contract_sha256': 'e5ffcce62f8a419f11596e7ef88e9d10f4585d33b1b18e7d962670475d4d4059',
+            'asset_set_sha256': '9941129431d0575caa1afe9afab497fd7d111c18ede0566b5498ec5089751c07'})
         chunks, nonces = [], []
         for index in range(4):
             cap = capsule(index)
@@ -121,7 +126,8 @@ class RuntimeClientTests(unittest.TestCase):
             {'issued_at_utc': True}, {'expires_at_utc': 1100.0}, {'issued_at_utc': 1001},
             {'issued_at_utc': 800, 'expires_at_utc': 1101}, {'issued_at_utc': 800, 'expires_at_utc': 999},
             {'issued_at_utc': 0}, {'issued_at_utc': 1100, 'expires_at_utc': 990},
-            {'source_sha256': '0'*64}, {'contract_sha256': '0'*64}, {'nonce': 'A'*64})
+            {'source_sha256': '0'*64}, {'contract_sha256': '0'*64},
+            {'contract_sha256': '684232c392965d8e72df46820601e26098222e04298fc03d7a92d8878ae88286'}, {'nonce': 'A'*64})
         for change in changes:
             with self.subTest(change=change), self.assertRaises(ValueError): M.validate_context(environment({**cap, **change}))
 
@@ -187,6 +193,11 @@ class RuntimeClientTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.validate(changed)
         changed = copy.deepcopy(original); changed['file_binding']['metadata'][6] -= 1
         with self.assertRaises(ValueError): self.validate(changed)
+        for key, stale in (('source_sha256', 'afbccf72ad9f60ea84091567268c3b7927bcc6df9d99dac0c5da61e27e546a85'),
+                           ('deployment_commit', '18c2736ac4da2cf946ccb4494ad2963091de7d32'),
+                           ('contract_sha256', '029d6e301758fd27172a58c03ae99ae2003f93f84c37959192ad1124a93a5738')):
+            changed = copy.deepcopy(original); changed['setup_proof'][key] = stale
+            with self.subTest(stale=key), self.assertRaises(ValueError): self.validate(changed)
 
     def test_chunks_cannot_select_other_datasets_lengths_encodings_or_malformed_summaries(self):
         cap = capsule(); original = result(cap)
