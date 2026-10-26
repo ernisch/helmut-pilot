@@ -17,8 +17,8 @@ SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parent
 SOURCE_SHA256 = {
     'bootstrap': '740e7cd3218eec796abf9fe408db2db7ddeaeeade34ddc2363942d5fcf9a4f97',
-    'server': '67cc1cdfdcd1375dd78aef8fef8128879c0e8d0a072819af8096c48d2f32e3fe',
-    'client': 'ad4112136dac6478a65f986db1e05f26d308cf3898a1ffe143efe8afaae23573',
+    'server': 'ac1646355b2c690026f4bb8d78f5d0653f82c3be1948f959839794b9574cd8d8',
+    'client': 'cd7a5fb12790e9c328a177ec68d5a85218a5754cffe04c09f6f5fc65662e3805',
     'installer': 'f3512b1126ece5eb744db3f991c8c2c4d0b7703350c13ded52dd0c1c894d21d3',
 }
 RECIPIENT_SHA256 = '8e054d8d1c7ba5428b2fa9537462689fd0863621fd2d1eed16742fa2b3a49b10'
@@ -87,6 +87,7 @@ def main():
     groups = [(group, 'hetzner-native-automation-' + group + '-test.py')
               for group in ('bootstrap', 'server', 'client', 'recipient', 'installer', 'diagnostic', 'recovery', 'stage', 'stage-diagnostic', 'setup')]
     groups.append(('stage-restore', 'hetzner-native-stage-restore-test.py'))
+    groups.append(('development-environment', 'hetzner-development-environment-test.py'))
     groups.extend((group, 'hetzner-native-' + group + '-test.py') for group in
                   ('public-checkout', 'context', 'budget-image-import', 'local-restore-recovery',
                    'setup-driver', 'setup-service', 'setup-coordinator',

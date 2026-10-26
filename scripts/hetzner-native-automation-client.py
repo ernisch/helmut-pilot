@@ -39,6 +39,10 @@ DAEMON_BINDING_CONTRACT_SHA256 = 'fe6a763fee403a0e34a943db533b0aca71b38afdfc9408
 DAEMON_BINDING_PREFIX = b'helmut-daemon-binding-request-v1\0'
 CONTINUATION_ID = 'setup-context-daemon-binding-v2'
 CONTINUATION_PREFIX = b'helmut-context-continuation-request-v1\0'
+DEVELOPMENT_PREFIX = b'helmut-development-request-v1\0'
+DEVELOPMENT_KEYS = {'schema','action','phase','source_sha256','source_commit','nonce','issued_at_utc','expires_at_utc'}
+DEVELOPMENT_PHASES = {'prepare': ('tools','source','image'), 'source-sync': ('source',),
+                      'test': ('syntax','lage-rest')}
 CONTINUATION_COORDINATOR_SHA256 = 'eb5d7a1602ebb4861dd4aa181cee381613c987943b7cd4e3aad6a776270404b6'
 RUNTIME_METADATA_CAPSULE_KEYS = {'schema', 'contract_id', 'action', 'chunk', 'source_sha256',
     'contract_sha256', 'nonce', 'issued_at_utc', 'expires_at_utc'}
@@ -438,9 +442,16 @@ def setup_capsule(environment, operation):
     encoded = environment.get('HELMUT_NATIVE_SETUP_CAPSULE', '')
     mode = environment.get('HELMUT_NATIVE_CONTROL_MODE', 'control-v1')
     if encoded == '':
+        if mode == 'development-v1':
+            require(operation == 'admit' and environment.get('HELMUT_NATIVE_PLAN_SHA256') == STAGE_PLAN
+                and environment.get('HELMUT_NATIVE_STAGE_CAPSULE', '') == ''
+                and environment.get('HELMUT_DEVELOPMENT_ACTION') in ('prepare','source-sync','syntax','lage-rest')
+                and re.fullmatch('[a-f0-9]{40}', environment.get('HELMUT_DEVELOPMENT_SOURCE_COMMIT') or environment.get('GITHUB_SHA','')),
+                'setup-capsule')
+            return b'', None
         require(mode == 'control-v1', 'setup-mode')
         return b'', None
-    require(mode in ('setup-inspect-v1', 'setup-successor-v1', 'runtime-metadata-v1', 'context-continuation-v1'), 'setup-mode')
+    require(mode in ('setup-inspect-v1', 'setup-successor-v1', 'runtime-metadata-v1', 'context-continuation-v1', 'development-v1'), 'setup-mode')
     require(operation in ('status', 'admit') and environment.get('HELMUT_NATIVE_STAGE_CAPSULE', '') == ''
             and environment.get('HELMUT_NATIVE_PLAN_SHA256') == STAGE_PLAN, 'setup-capsule')
     require(type(encoded) is str and 0 < len(encoded) <= 10924
@@ -450,6 +461,10 @@ def setup_capsule(environment, operation):
     require(0 < len(raw) <= 8191 and base64.b64encode(raw).decode('ascii') == encoded, 'setup-capsule')
     value = json_unique(raw)
     require(canonical(value) == raw, 'setup-capsule')
+    if mode == 'development-v1':
+        require(operation == 'admit', 'setup-mode')
+        development_capsule_check(value, environment['HELMUT_NATIVE_PAYLOAD_SHA256'])
+        return raw+b'\n', value
     if mode == 'context-continuation-v1':
         _continuation_capsule_check(value,pinned_sha(environment.get('HELMUT_NATIVE_PAYLOAD_SHA256')),int(time.time()))
         require(operation == ('status' if value['action'] == 'inspect' else 'admit'), 'setup-mode')
@@ -476,6 +491,8 @@ def runtime_metadata_request_nonce(capsule):
 
 
 def control_request_nonce(capsule):
+    if capsule['schema'] == 'helmut-development-capsule-v1':
+        return digest(DEVELOPMENT_PREFIX+canonical(capsule)+b'\n')
     if capsule['schema'] == 'helmut-context-continuation-capsule-v1':
         return digest(CONTINUATION_PREFIX+canonical(capsule)+b'\n')
     if capsule['schema'] == 'helmut-daemon-binding-capsule-v1':
@@ -483,6 +500,44 @@ def control_request_nonce(capsule):
     if capsule['schema'] == 'helmut-runtime-metadata-capsule-v1':
         return runtime_metadata_request_nonce(capsule)
     return setup_request_nonce(capsule)
+
+
+def development_capsule_check(value, source):
+    require(type(value) is dict and set(value) == DEVELOPMENT_KEYS
+        and value['schema'] == 'helmut-development-capsule-v1'
+        and value['action'] in DEVELOPMENT_PHASES and value['phase'] in DEVELOPMENT_PHASES[value['action']]
+        and value['source_sha256'] == source and re.fullmatch('[a-f0-9]{64}', source)
+        and type(value['source_commit']) is str and re.fullmatch('[a-f0-9]{40}', value['source_commit'])
+        and type(value['nonce']) is str and re.fullmatch('[a-f0-9]{64}', value['nonce'])
+        and type(value['issued_at_utc']) is int and type(value['expires_at_utc']) is int
+        and value['issued_at_utc'] <= int(time.time()) <= value['expires_at_utc']
+        and 0 < value['expires_at_utc']-value['issued_at_utc'] <= 300, 'setup-capsule')
+
+
+def development_result(result, sent, capsule):
+    keys = {'schema','status','action','phase','source_commit','source_sha256','request_nonce','code',
+            'receipt_sha256','diagnostic','native_qualified','native_go_consumed'}
+    require(type(result) is dict and set(result) == keys and result['schema'] == 'helmut-development-result-v1'
+        and result['status'] in ('DEVELOPMENT_STEP_COMPLETE','FAIL_KEEP_STATE_NO_RETRY')
+        and all(result[key] == capsule[key] for key in ('action','phase','source_commit','source_sha256'))
+        and result['request_nonce'] == sent['nonce'] and result['native_qualified'] is False
+        and result['native_go_consumed'] is False and type(result['code']) is str
+        and re.fullmatch('[A-Z][A-Z0-9_]{0,95}', result['code']), 'setup-result')
+    if result['status'] == 'DEVELOPMENT_STEP_COMPLETE':
+        require(result['code'] == 'DEVELOPMENT_STEP_COMPLETE' and result['diagnostic'] is None, 'setup-result')
+        pinned_sha(result['receipt_sha256'])
+    else:
+        require(result['receipt_sha256'] is None, 'setup-result')
+        diagnostic = result['diagnostic']
+        if diagnostic is not None:
+            require(type(diagnostic) is dict and set(diagnostic) == {'tool','exit_code','errno','stdout_sha256','stderr_sha256','retained_tool_count'}, 'setup-result')
+            require(diagnostic['tool'] is None or (type(diagnostic['tool']) is str
+                and re.fullmatch('[a-zA-Z0-9_.-]{1,64}', diagnostic['tool'])), 'setup-result')
+            for key in ('exit_code','errno'):
+                require(diagnostic[key] is None or (type(diagnostic[key]) is int and -65536 <= diagnostic[key] <= 65536), 'setup-result')
+            for key in ('stdout_sha256','stderr_sha256'):
+                if diagnostic[key] is not None: pinned_sha(diagnostic[key])
+            require(type(diagnostic['retained_tool_count']) is int and 0 <= diagnostic['retained_tool_count'] <= 100, 'setup-result')
 
 
 def _runtime_failure_diagnostic(diagnostic):
@@ -1017,6 +1072,8 @@ def validate_response(raw, sent, successor_capsule=None):
             "response-hash")
     if successor_capsule is None:
         validate_result(reply["result"], sent["operation"], sent["payload_sha256"])
+    elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-development-capsule-v1':
+        development_result(reply['result'], sent, successor_capsule)
     elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-context-continuation-capsule-v1':
         validate_continuation_result(reply['result'], sent, successor_capsule)
     elif type(successor_capsule) is dict and successor_capsule.get('schema') == 'helmut-daemon-binding-capsule-v1':
@@ -1130,9 +1187,10 @@ def write_public_artifact(directory, reply):
             stream.write(raw)
 
 
-def client(environment):
+def client(environment, artifact_directory=None):
     operation, plan, payload = validate_context(environment)
     setup_line, successor = setup_capsule(environment, operation)
+    require(environment.get('HELMUT_NATIVE_CONTROL_MODE') != 'development-v1' or successor is not None, 'setup-capsule')
     sent = request(operation, plan, payload, control_request_nonce(successor) if successor is not None else secrets.token_hex(32))
     capsule_line,capsule_raw=stage_capsule(environment,operation)
     host, public, private = transport_configuration(environment)
@@ -1153,9 +1211,38 @@ def client(environment):
         require(code==0 or failed,'ssh-failed')
         if operation=='stage' and reply['result']['capsule_sha256'] is not None:
             require(reply['result']['capsule_sha256']==digest(capsule_raw),'response-binding')
-    write_public_artifact(temporary / "helmut-native-public", reply)
+    write_public_artifact(artifact_directory or temporary / "helmut-native-public", reply)
     print("helmut-native-control: validated-public-response " + digest(canonical(reply) + b"\n"))
     return 1 if failed else 0
+
+
+def development_client(environment):
+    validate_context(environment)
+    require(environment.get('HELMUT_NATIVE_SETUP_CAPSULE', '') == '', 'setup-capsule')
+    selected = environment['HELMUT_DEVELOPMENT_ACTION']
+    source = environment.get('HELMUT_DEVELOPMENT_SOURCE_COMMIT') or environment['GITHUB_SHA']
+    steps = ([('prepare',p) for p in ('tools','source','image')]+[('test','syntax'),('test','lage-rest')]
+             if selected == 'prepare' else [('source-sync','source')] if selected == 'source-sync'
+             else [('test',selected)])
+    temporary = Path(environment['RUNNER_TEMP'])
+    phase_root = temporary/'helmut-development-public'
+    require(not phase_root.exists(), 'public-output-exists')
+    phase_root.mkdir(mode=0o700)
+    for index, (action, phase) in enumerate(steps):
+        now = int(time.time())
+        capsule = {'schema':'helmut-development-capsule-v1','action':action,'phase':phase,
+            'source_sha256':environment['HELMUT_NATIVE_PAYLOAD_SHA256'],'source_commit':source,
+            'nonce':secrets.token_hex(32),'issued_at_utc':now,'expires_at_utc':now+295}
+        supplied = {**environment, 'HELMUT_NATIVE_SETUP_CAPSULE':base64.b64encode(canonical(capsule)).decode()}
+        output = phase_root/phase
+        code = client(supplied, output)
+        # The standard workflow publishes only validated bounded public bytes.
+        # Keep the prior phase artifacts and publish the final or first failure.
+        if code or index == len(steps)-1:
+            reply = json_unique((output/'RESPONSE.SAFE.json').read_bytes())
+            write_public_artifact(temporary/'helmut-native-public', reply)
+            return code
+    return 1
 
 
 def main():
@@ -1163,7 +1250,8 @@ def main():
         if sys.argv[1:] == ["validate"]:
             validate_context(os.environ)
         elif sys.argv[1:] == ["client"]:
-            return client(os.environ) or 0
+            return (development_client(os.environ) if os.environ.get('HELMUT_NATIVE_CONTROL_MODE') == 'development-v1'
+                    else client(os.environ)) or 0
         else:
             raise ValueError("mode-denied")
         return 0
