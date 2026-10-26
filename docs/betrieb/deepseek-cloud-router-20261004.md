@@ -205,3 +205,65 @@ nur eigener Commit, kein PR und kein Push, um keine zusätzlichen gemeinsamen
 CI-/Preview-Ressourcen neben dem laufenden 500er Auftrag zu beanspruchen.
 Die operativen Statusdateien und Agentenregeln bleiben für
 den laufenden Nachweis unangetastet.
+
+## Gezielte Routerhaertung 26.10.2026 (lokale Quell- und Kostenadmission)
+
+Der Router nimmt neue schreibende Auftraege standardmaessig als exakte,
+SHA256 gebundene Textstellenersetzungen an. Der alte Volltextmodus bleibt
+ausdruecklich ueber `--edit-format full` fuer kleine Bestandsdateien verfuegbar.
+Auftraege mit mehr als drei Schreibdateien, mehr als 3.000 Auftragszeichen,
+mehr als 120.000 Zeichen expliziten Schreibquellen oder mehr als 18.000
+Zeichen je Volltextdatei werden vor dem Provideraufruf gestoppt. Lesende
+Auftraege behalten ihre getrennten Bestandsgrenzen.
+
+`none` und `low` sind jetzt zusaetzlich zu `high` und `max` waehlbar.
+Fuer niedrige Denkstufen ist der Default auf 8.192 Ausgabetokens begrenzt;
+hoehere Stufen behalten die bestehende 32.768 Obergrenze.
+`--max-output-tokens N` kann weiter reduzieren.
+
+Vor jedem API-Aufruf prueft `preflight` das vollstaendig serialisierte
+Requestvolumen und die Ausgabetokenobergrenze. Grundlage sind die dokumentierten
+Anbieter-Peaktarife vom 26.10.2026:
+Flash 0,30 USD je Million Eingabe und 1,20 USD je Million Ausgabe,
+Pro 1,32 USD Eingabe und 3,96 USD Ausgabe. Input wird aus den UTF8
+Requestbytes plus 2.048 Reserve als bewusst vorsichtige Schaetzung
+abgeleitet. Der lokale Maximalwert ist 0,25 USD je Auftrag;
+`--max-cost-usd N` kann ihn nur senken, niemals erhoehen.
+**Das ist keine abrechnungsfeste oder vom Provider bestaetigte harte
+Geldobergrenze.** Anbieterpreise und Tokenisierung koennen abweichen,
+auch kostenpflichtige unvollstaendige Antworten bleiben moeglich.
+Der Betreiber muss den Tarif regelmaessig aktuell verifizieren.
+
+`--dry-run` fuehrt die gesamte lokale Zulassung ohne API Schluessel,
+Netzwerkverbindung oder Schreibwirkung aus und zeigt Modell, Denkstufe,
+Eingabeproxy und konservative Peak-Prognose.
+Bei `ok` ohne Aenderung endet ein Schreibauftrag nun mit Fehler statt
+falscher Erfolgsmeldung. Die sichtbare Quittung weist die tatsaechliche
+Usage und einen Peakkosten-Schaetzwert aus. Unvollstaendige Antworten
+melden auch vorhandene Eingabe- und Reasoningtokens; ohne Usage keine
+erfundene Rechnung. Kein automatischer Retry.
+
+Der API Schluessel wird nicht mehr im Curl Argument oder dessen
+Kindprozessumgebung uebergeben, sondern als vertrauliche Curl
+Konfiguration ueber Standard Input. Der JSON Request liegt ausschliesslich
+fuer die synchrone Transportdauer in einem frischen privaten
+0700 Temporaerverzeichnis mit 0600 Requestdatei und wird im `finally`
+geloescht. Damit verbleibt ein kurzzeitiges lokales Klartextfenster fuer
+die Anfrage; es ist keine Behauptung, dass der Host speicherlos arbeitet.
+Keine Rohantworten in Git oder Chat. Alte dokumentierte Belege bleiben gueltig.
+
+Ein kostenfreier Erstcheck fuer eine kleine Schreibaufgabe:
+```sh
+node scripts/deepseek-cloud-router.js flash low write \
+  --task-file /tmp/helmut-auftrag.txt --file lib/helmut/kleine-funktion.js \
+  --edit-format replacements --max-output-tokens 4096 --max-cost-usd 0.05 --dry-run
+```
+
+Erst wenn die lokale Zulassung passt und eine bezahlte Delegation
+wirtschaftlich sinnvoll ist, `--dry-run` bewusst weglassen.
+Sicherheitskritische Hetzner Wiederherstellung bleibt bei Sol; DeepSeek
+allenfalls fuer eine eng begrenzte lesende Codepruefung.
+
+Referenzen:
+https://api-docs.deepseek.com/api/create-response/
+https://api-docs.deepseek.com/quick_start/pricing/
