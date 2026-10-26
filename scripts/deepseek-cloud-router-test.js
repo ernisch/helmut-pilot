@@ -571,7 +571,7 @@ check("Dateilinks zu privaten Fremdpfaden werden vor jedem API-Aufruf abgewiesen
     assert.throws(() => router.run({
       ...base, argv: ["flash", "high", "write", "--dry-run",
         "--task-file", p.task, "--file", "lib/external/private-data.txt"]
-    }), /write-outside-repo/);
+    }), /write-outside-repo|source-path-symlink/);
     assert.equal(calls, 0);
     assert.equal(fs.readFileSync(privateTarget, "utf8"), "PRIVATE MUST NOT BE SENT\n");
   } finally {
@@ -1301,6 +1301,86 @@ check("P1 Gegenprobe: Verzeichniswechsel nach Providerantwort darf Fremddatei ni
     fs.rmSync(p.root,{recursive:true,force:true});
     fs.rmSync(outside,{recursive:true,force:true});
   }
+});
+
+
+check("P1 Lese-Angriff: verlinktes Elternverzeichnis bleibt vor Anbieteraufruf gesperrt", () => {
+  const p=project(), outside=fs.mkdtempSync(path.join(os.tmpdir(),"router-external-source-"));
+  const privatePath=path.join(outside,"SECRET_DATA_DO_NOT_SEND.txt");
+  fs.writeFileSync(privatePath,"PRIVATE DATA\n",{mode:0o600});
+  fs.symlinkSync(outside,path.join(p.root,"docs","external"),"dir");
+  let calls=0;
+  try {
+    const args=["flash","high","read","--dry-run",
+      "--task-file",p.task,"--file","docs/external/SECRET_DATA_DO_NOT_SEND.txt"];
+    assert.throws(()=>router.run({
+      cwd:p.root,argv:args,env:{},
+      callDeepSeek:()=>{calls++;throw new Error("provider-called");}
+    }),/source-path-symlink/);
+    assert.equal(calls,0);
+    // Not a workaround: an external source needs a canonical absolute path.
+    const outsideLink=path.join(p.root,"relative-outside.txt");
+    fs.symlinkSync(privatePath,outsideLink);
+    assert.throws(()=>router.run({
+      cwd:p.root,argv:["flash","high","read","--dry-run","--task-file",p.task,
+        "--file","../"+path.basename(outside)+"/SECRET_DATA_DO_NOT_SEND.txt"],
+      env:{}
+    }),/external-read-requires-canonical-absolute-path/);
+    assert.equal(fs.readFileSync(privatePath,"utf8"),"PRIVATE DATA\n");
+  } finally {
+    fs.rmSync(p.root,{recursive:true,force:true});
+    fs.rmSync(outside,{recursive:true,force:true});
+  }
+});
+
+check("P1 Usage mit zu hoher Gesamtzahl haelt Reservierung unveraendert", () => {
+  const p=project(), dir=path.join(p.root,"strict-token-sum");
+  try {
+    const invalid={input_tokens:0,output_tokens:0,total_tokens:1000};
+    assert.equal(router.observedPeakUsd("deepseek-flash",invalid),null);
+    const result=router.run({
+      cwd:p.root,env:{DEEPSEEK_API_KEY:"placeholder"},budgetDir:dir,
+      argv:["flash","high","read","--task-file",p.task],
+      callDeepSeek:()=>apiResult({summary:summary()},invalid),
+    });
+    assert.equal(result.status,"ok");
+    assert.equal(result.usage.observed_peak_usd_estimate,null);
+    const snap=dailyBudget.snapshot({dir});
+    assert.equal(snap.pending,1);
+    assert.ok(snap.amountMicro>0);
+  } finally {fs.rmSync(p.root,{recursive:true,force:true});}
+});
+
+check("P2 Teilhuelle: Requestgebundene vollstaendige Rohantwort bleibt replaybar", () => {
+  recoveryFixture(p => {
+    let calls=0;
+    const first=p.run(["--save-response",p.saved],{
+      spawnSync:(bin,args,opts)=>{
+        calls++;
+        fs.writeSync(opts.stdio[1],p.raw());
+        return {status:0,stdout:""};
+      }
+    });
+    assert.equal(first.status,"ready_for_integration");
+    assert.equal(calls,1);
+    const expectedRaw=fs.readFileSync(p.saved+".raw","utf8");
+    assert.equal(expectedRaw,p.raw());
+    fs.writeFileSync(p.saved,'{"version":1,"request',{mode:0o600});
+    const again=p.run(["--replay-response",p.saved],{
+      env:{},spawnSync:()=>{throw new Error("network-must-not-start");}
+    });
+    assert.equal(again.status,"ready_for_integration");
+    assert.equal(again.replayed,true);
+    assert.equal(calls,1);
+    assert.equal(fs.readFileSync(p.target,"utf8"),p.original);
+    // Valid but intentionally mismatched bindings must NEVER fall back.
+    fs.writeFileSync(p.saved,JSON.stringify({
+      version:1,request_sha256:"bad",raw:expectedRaw
+    }),{mode:0o600});
+    assert.throws(()=>p.run(["--replay-response",p.saved],{
+      env:{},spawnSync:()=>{throw new Error("network-must-not-start");}
+    }),/replay-request-mismatch/);
+  });
 });
 
 console.log(`DeepSeek Cloud Router v2: ${pass} PASS, ${fail} FAIL`);
