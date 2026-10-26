@@ -156,3 +156,24 @@ realer atomarer Tempdatei-Publikation ohne Ueberschreiben und doppeltem ENOSPC.
 Dies ist noch keine Ziel-Recovery. Echte Ausfuehrung folgt erst nach unabhaengiger
 Quellenabnahme, gruenen Pflichtchecks und dem qualifizierten Mainstand.
 Native Source-/Restore-/UID1000-/Socket-/Cgroup-/Ressourcenadmission bleibt offen.
+
+## Gebundene Quellenwerkzeuge fuer die verschluesselte Uebernahme
+
+Der einmalige Source-Schreiber und der getrennte Capsule-Encoder stehen unter
+`scripts/hetzner-native-source-bundle.py` und `scripts/hetzner-native-stage-capsule.py`.
+Sie sind an Scope08fafd5e (1767 Dateien/2.865.680.705Bytes), den PR950-Client
+e1d30fe2 und dessen Empfaengerantwort ab941ccf gebunden. Ausfuehrung nur aus dem
+unveraenderten geprueften Worktree `codex/hetzner-source-bundle-20261026`; eine
+andere spaetere Clientversion ist keine austauschbare Ausfuehrungsgrundlage.
+
+19 Writer- und14 Capsule-Synthetiktests sowie unabhaengige Gegenpruefung bestanden.
+NoAtime bzw. belegte Nur-Lese-Runtimes, volle Quellhashes und ns-Zeitstempel bleiben
+erhalten. Die Quelle verwendet ausschliesslich ein frisches Public-only-GPG-Home;
+AES256/MDC,16MiB-Teile und8GiB-Plattenreserve sind gebunden. Die Metadaten-Capsule
+enthaelt signierte Download-URLs ausschliesslich verschluesselt, maximal64Teile/
+1GiB und48KiB Base64. Es wird kein Sender-Signaturbeweis behauptet: die Autoritaet
+kommt aus dem bestehenden SSH-/CI-Kanal und den fest gepinnten Originalbytes.
+
+Kein echter Bundle-/GPG-/Transferlauf durch diese Vorbereitung. Noch vor jedem
+Aufruf muessen die tatsaechliche Empfaengerabnahme, der jeweilige Beleg-SHA und
+die frischen URL-/Zeitbindungen bestehen. Keine native Fallfreigabe verbraucht.
