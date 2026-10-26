@@ -816,7 +816,7 @@ function run(options = {}) {
     for (const source of sources.filter(x => x.editable)) {
       // Reject ancestor symlinks escaping the workspace before any paid call.
       if (!inside(realRoot, fs.realpathSync(source.abs))) {
-        throw new Error(`deepseek-write-realpath-outside-repo:${source.label}`);
+        throw new Error(`deepseek-write-outside-repo:realpath:${source.label}`);
       }
     }
   }
