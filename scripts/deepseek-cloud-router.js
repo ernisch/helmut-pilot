@@ -28,13 +28,14 @@ const path = require("path");
 const crypto = require("crypto");
 const cp = require("child_process");
 const os = require("os");
+const dailyBudget = require("./deepseek-router-budget");
 
 const API_URL = "https://api.deepseek.com/responses";
 const MODELS = Object.freeze({
   flash: "deepseek-flash",
   pro: "deepseek-v4-pro",
 });
-const EFFORTS = new Set(["none", "low", "high", "max"]);
+const EFFORTS = new Set(["high", "max"]);
 const MODES = new Set(["read", "write"]);
 const CORE_CONTEXT = Object.freeze([
   {
@@ -74,7 +75,7 @@ const CORE_CONTEXT = Object.freeze([
 const MAX_TASK_CHARS = 12000;
 const MAX_RETURN_CHARS = 2000;
 const MAX_FILES = 20;
-const MAX_WRITE_FILES = 3;
+const MAX_WRITE_FILES = 1;
 const MAX_WRITE_SOURCE_CHARS = 120000;
 const MAX_WRITE_TASK_CHARS = 3000;
 const MAX_FULL_FILE_CHARS = 18000;
@@ -457,8 +458,7 @@ function buildRequestBody(task, cfg, sources) {
     input: buildInput(task, cfg, sources),
     reasoning: { effort: cfg.effort },
     max_output_tokens: cfg.maxOutputTokens ||
-      (cfg.effort === "none" || cfg.effort === "low" ? 8192 :
-        (cfg.mode === "write" ? WRITE_MAX_OUTPUT_TOKENS : READ_MAX_OUTPUT_TOKENS)),
+      (cfg.mode === "write" ? WRITE_MAX_OUTPUT_TOKENS : READ_MAX_OUTPUT_TOKENS),
     text: {
       format: {
         type: "json_schema",
@@ -512,6 +512,19 @@ function observedPeakUsd(model, usage) {
   const output = Number(usage?.output_tokens);
   if (![input, output].every(x => Number.isSafeInteger(x) && x >= 0)) return null;
   return Number(((input * rate.input + output * rate.output) / 1000000).toFixed(6));
+}
+
+function peakFromRawResponse(raw, model) {
+  if (typeof raw !== "string") return null;
+  const marker = "\n__HELMUT_HTTP_STATUS__:";
+  const idx = raw.lastIndexOf(marker);
+  if (idx < 0 || Number(raw.slice(idx + marker.length).trim()) !== 200) return null;
+  try {
+    const response = JSON.parse(raw.slice(0, idx));
+    return observedPeakUsd(model, response.usage);
+  } catch {
+    return null;
+  }
 }
 
 function usageReceipt(usage, model) {
@@ -785,19 +798,38 @@ function run(options = {}) {
     apiResult = parseCurlResponse(saved.raw);
     apiResult.replayed = true;
   } else {
-    // Reserve before the paid call: refuse an existing path and never overwrite work.
+    // Only call the provider after a durable atomic UTC-day reservation.
+    // If the process crashes, an unknown charge stays reserved conservatively.
     const fd = cfg.saveResponse
       ? fs.openSync(privateResponsePath(cfg.saveResponse, cwd), "wx", 0o600) : null;
+    let ticket = null;
+    let rawReceived = null;
     try {
-      apiResult = (options.callDeepSeek || callDeepSeek)(body, {
-        env: envSource,
-        spawnSync: options.spawnSync,
-        apiKey: options.apiKey,
-        saveRawResponse: fd === null ? null : (raw) => {
-          fs.writeFileSync(fd, JSON.stringify({ version: 1, request_sha256: requestHash, raw }) + "\n");
-          fs.fsyncSync(fd);
-        },
+      ticket = dailyBudget.reserve({
+        estimateUsd: admission.estimated_peak_usd,
+        model: cfg.model, env: envSource, dir: options.budgetDir,
       });
+      try {
+        apiResult = (options.callDeepSeek || callDeepSeek)(body, {
+          env: envSource,
+          spawnSync: options.spawnSync,
+          apiKey: options.apiKey,
+          saveRawResponse: (raw) => {
+            rawReceived = raw;
+            if (fd !== null) {
+              fs.writeFileSync(fd, JSON.stringify({ version: 1, request_sha256: requestHash, raw }) + "\n");
+              fs.fsyncSync(fd);
+            }
+          },
+        });
+      } finally {
+        // Provider billing may happen even on incomplete/malformed responses.
+        // Unknown usage leaves the original admission amount committed.
+        const actual = apiResult?.usage
+          ? observedPeakUsd(cfg.model, apiResult.usage)
+          : peakFromRawResponse(rawReceived, cfg.model);
+        dailyBudget.settle(ticket, actual);
+      }
     } finally {
       if (fd !== null) fs.closeSync(fd);
     }
@@ -887,6 +919,7 @@ module.exports = {
   buildRequestBody,
   preflight,
   observedPeakUsd,
+  peakFromRawResponse,
   usageReceipt,
   parseCurlResponse,
   callDeepSeek,
