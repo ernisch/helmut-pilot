@@ -1145,5 +1145,64 @@ check("Bezahltes Schreiben ohne gesicherte Antwort wird vor Modellaufruf abgeleh
   }
 });
 
+
+check("Ungueltige Provider Usage darf die Kostenreservierung nicht auf Null setzen", () => {
+  const p = project();
+  const dir = path.join(p.root, "usage-budget");
+  let calls = 0;
+  try {
+    for (const invalid of [
+      { input_tokens: null, output_tokens: 10 },
+      { input_tokens: 10, output_tokens: null },
+      { input_tokens: "10", output_tokens: 15 },
+      { input_tokens: true, output_tokens: 0 },
+      { input_tokens: 10, output_tokens: 20, total_tokens: 2 },
+      {},
+    ]) {
+      assert.equal(router.observedPeakUsd("deepseek-flash", invalid), null);
+      const result = router.run({
+        cwd: p.root, budgetDir: dir,
+        env: { DEEPSEEK_API_KEY: "placeholder" },
+        argv: ["flash", "high", "read", "--task-file", p.task],
+        callDeepSeek: () => {
+          calls++;
+          return { payload: { summary: summary() }, usage: invalid, model: "deepseek-flash" };
+        },
+      });
+      assert.equal(result.status, "ok");
+      assert.equal(result.usage.observed_peak_usd_estimate, null);
+    }
+    const snap = dailyBudget.snapshot({dir});
+    assert.equal(calls, 6);
+    assert.equal(snap.pending, 6);
+    assert.ok(snap.amountMicro > 0);
+  } finally { fs.rmSync(p.root, { recursive:true, force:true }); }
+});
+
+check("Fehlendes Journal nach Initialisierung sperrt statt Tagesbetrag zurueckzusetzen", () => {
+  const p = project();
+  const dir = path.join(p.root, "budget-loss");
+  try {
+    const day = new Date("2026-10-26T05:00:00Z");
+    for(let i=0;i<8;i++) dailyBudget.reserve({
+      estimateUsd:0.25, model:"deepseek-flash", dir, now:day
+    });
+    assert.equal(dailyBudget.snapshot({dir,day:"2026-10-26"}).amountMicro,2000000);
+    assert.equal(fs.existsSync(path.join(dir,".initialized")),true);
+    fs.unlinkSync(path.join(dir, "budget.json"));
+    assert.throws(() => dailyBudget.reserve({
+      estimateUsd:0.01,model:"deepseek-flash",dir,now:day
+    }), /journal-missing/);
+    assert.equal(fs.existsSync(path.join(dir,"budget.json")),false);
+    // Even an interrupted first initialization may not be silently repaired.
+    const empty = path.join(p.root, "interrupted-init");
+    fs.mkdirSync(empty);
+    fs.writeFileSync(path.join(empty,".initialized"),"committed\n",{mode:0o600});
+    assert.throws(() => dailyBudget.reserve({
+      estimateUsd:0.01,model:"deepseek-flash",dir:empty,now:day
+    }),/journal-missing/);
+  } finally { fs.rmSync(p.root, { recursive:true, force:true }); }
+});
+
 console.log(`DeepSeek Cloud Router v2: ${pass} PASS, ${fail} FAIL`);
 if (fail) process.exit(1);
