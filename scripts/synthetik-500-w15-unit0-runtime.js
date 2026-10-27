@@ -2,7 +2,7 @@
 // Exactly one explicitly authorized isolated DR mock unit. Never next/retry/real provider.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict');
 const {performance}=require('node:perf_hooks');
-const DIR='/tmp/w15-unit0-20261027',STATE=path.join(DIR,'state');
+const DIR='/tmp/w15-unit0b-20261027',STATE=path.join(DIR,'state');
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
 const PUB='HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY',PRIV='HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY';
 function file(n){return path.join(STATE,n);}
@@ -17,10 +17,10 @@ function setup(){
  fs.writeFileSync(file('signing-key.PRIVATE.pem'),key.privateKey.export({type:'pkcs8',format:'pem'}),{flag:'wx',mode:384});
  const policy=fs.readFileSync(file('publication-policy.PRIVATE.json'),'utf8');
  assert.equal(sha(policy),'274033cdfdd5f1527d0e961a6c00482d61b7be317eeea03e736a6a5948aa6a04');
- save('configuration.PRIVATE.json',{database:'helmut_w15_unit0_20261027',publicKey:key.publicKey.export({type:'spki',format:'pem'}),policy,
+ save('configuration.PRIVATE.json',{database:'helmut_w15_unit0b_20261027',publicKey:key.publicKey.export({type:'spki',format:'pem'}),policy,
   serviceToken:token,adminSecret:crypto.randomBytes(32).toString('hex'),euHash:EU.HASH,renewalHash:EU.ORDER_RENEWAL_HASH,
   commit:'8fd37534eb077299b240d66d7ff8318fb6a65985',host:'helmut-w15-unit0-local.vercel.app',deploymentId:'dpl_W15Unit0LocalNotProduction'});
- fs.writeFileSync(file('postgrest.PRIVATE.conf'),'db-uri = "postgresql://authenticator@localhost/helmut_w15_unit0_20261027?host=/var/run/postgresql"\ndb-schemas = "public"\nserver-host = "127.0.0.1"\nserver-port = 3210\ndb-pool = 3\njwt-secret = "'+secret+'"\n',{flag:'wx',mode:384});
+ fs.writeFileSync(file('postgrest.PRIVATE.conf'),'db-uri = "postgresql://authenticator@localhost/helmut_w15_unit0b_20261027?host=/var/run/postgresql"\ndb-schemas = "public"\nserver-host = "127.0.0.1"\nserver-port = 3210\ndb-pool = 3\njwt-secret = "'+secret+'"\n',{flag:'wx',mode:384});
  save('SETUP.SAFE.json',{status:'READY',publicKeySHA256:sha(key.publicKey.export({type:'spki',format:'der'})),memory:memory(),privateKeyExported:false});
 }
 async function gateway(){
@@ -61,7 +61,7 @@ async function prepare(){
  save('PREPARE.SAFE.json',{status:'PASS',realClock:true,actualSource23AndKO60PostimagesMatchDerivedInputs:true,fullC:prepared.metrics,authMutations:records,memory:memory(),sharedScope:'existing PostgreSQL/PostgREST/gateway/actual Node including worker threads and file cache',providerCalls:0,profileActivations:500,unitEntries:0});
 }
 function sql(query){
- const r=require('node:child_process').spawnSync('psql',['-X','-w','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d','helmut_w15_unit0_20261027','-f','-'],{
+ const r=require('node:child_process').spawnSync('psql',['-X','-w','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d','helmut_w15_unit0b_20261027','-f','-'],{
   input:"begin read only;set local statement_timeout='15s';"+query+'rollback;',encoding:'utf8',timeout:20000,maxBuffer:24*1024*1024,env:{PATH:'/usr/bin:/bin',LANG:'C.UTF-8'}});
  assert.equal(r.status,0,'w15-unit0-readonly-sql');return JSON.parse(r.stdout.trim());
 }
@@ -70,9 +70,9 @@ async function run(){
  const c=read('configuration.PRIVATE.json');environment(c);assert(!process.env[PRIV]);
  const S=require('../lib/helmut/storage'),J=require('../lib/helmut/synthetik-500-dispatch-journal'),K=require('../lib/helmut/testkosten-budget'),P=require('../lib/helmut/synthetik-500-profile');
  const m=read('processing-materials.PRIVATE.json'),inputs=read('unit0-provider-input.PRIVATE.json');
- assert.equal(m.database,c.database);assert.equal(c.database,'helmut_w15_unit0_20261027');
+ assert.equal(m.database,c.database);assert.equal(c.database,'helmut_w15_unit0b_20261027');
  assert.equal(inputs.row.profile.id,'test-kohorte-synthetik-bb-001');
- process.env.AZURE_OPENAI_ENDPOINT=new URL(inputs.responsesURL).origin;process.env.AZURE_OPENAI_KEY='LOCAL_MOCK_NOT_A_VALID_PROVIDER_KEY';
+ process.env.AZURE_OPENAI_ENDPOINT=new URL(inputs.responsesURL).origin;process.env.AZURE_OPENAI_KEY='LOCAL_MOCK_NOT_A_VALID_PROVIDER_KEY';process.env.AZURE_OPENAI_DEPLOYMENT='gpt-5-mini-eu';
  const H=require('./fixtures/w15-unit0-provider'),fixture=H.prepare(inputs);
  assert.equal(fixture.requestBodySHA256,inputs.requestBodySHA256);
  const providerPhases=[],authMutations=[],units=[],errors=[],scopes=[];let activeMutation=null;
@@ -102,7 +102,7 @@ async function run(){
  const before=sql("select jsonb_build_object('active',(select count(*)from mandate_profiles where aktiv),'auth',(select data from helmut_store where id='main-auth'));" );
  assert.equal(before.active,500);assert.equal(before.auth[J.KEY].operations[m.selector.operationId].state,'installed');
  // Deliberately local dummy, never a configured Production credential. All HTTPS is intercepted below.
- process.env.AZURE_OPENAI_ENDPOINT=new URL(inputs.responsesURL).origin;process.env.AZURE_OPENAI_KEY='LOCAL_MOCK_NOT_A_VALID_PROVIDER_KEY';
+ process.env.AZURE_OPENAI_ENDPOINT=new URL(inputs.responsesURL).origin;process.env.AZURE_OPENAI_KEY='LOCAL_MOCK_NOT_A_VALID_PROVIDER_KEY';process.env.AZURE_OPENAI_DEPLOYMENT='gpt-5-mini-eu';
  const provider=H.install({fixture,selector:m.selector,readSenderClaim,providerPhases});
  const http=require('node:http'),server=http.createServer(require('../server'));await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const memoryBefore=memory();let response,status,body,httpWallMs;
@@ -111,7 +111,7 @@ async function run(){
    method:'POST',headers:{Authorization:'Bearer '+c.adminSecret,'Content-Type':'application/json',Connection:'close'},
    body:JSON.stringify({action:'start',...m.selector}),signal:AbortSignal.timeout(120000)});
   status=response.status;body=await response.json();httpWallMs=performance.now()-t;
- }finally{provider.restore();delete process.env.AZURE_OPENAI_KEY;delete process.env.AZURE_OPENAI_ENDPOINT;
+ }finally{provider.restore();delete process.env.AZURE_OPENAI_KEY;delete process.env.AZURE_OPENAI_ENDPOINT;delete process.env.AZURE_OPENAI_DEPLOYMENT;
   server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
  const after=sql("select jsonb_build_object('active',(select count(*)from mandate_profiles where aktiv),'auth',(select data from helmut_store where id='main-auth'),"
   +"'evidence',(select data from helmut_store where id="+literal('synthetik500-evidence-'+m.selector.operationId+'-0')+"));");

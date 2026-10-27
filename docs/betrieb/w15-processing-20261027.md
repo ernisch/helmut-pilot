@@ -168,11 +168,52 @@ keine Coverage/Profiler in den Leistungsphasen und keine weitere Testserie.
 Anwendungscode unveraendert zum oben belegten gruenen CI-Stand; neuer
 Kopf-CI-Erfolg wird nicht behauptet.
 
-Naechste kleinste Korrektur ist ausschliesslich der fehlende lokale
+Beim Abschluss des abgebrochenen Versuchs war die kleinste Korrektur der fehlende lokale
 `AZURE_OPENAI_DEPLOYMENT`-Wert entsprechend dem signierten Modell, gefolgt vom
-vollstaendigen aufgeloesten Routentupelvergleich. **Noch nicht umgesetzt**,
-weil nach dem ersten Fehler gestoppt wurde. Ein erneuter einzelner Funktionslauf
+vollstaendigen aufgeloesten Routentupelvergleich. Damals noch nicht umgesetzt,
+weil nach dem ersten Fehler gestoppt wurde; der folgende Abschnitt fuehrt das neue Korrektur-GO aus. Ein erneuter einzelner Funktionslauf
 braucht ein **neues separates GO**, neue DB/Operation/Signaturen und denselben
 Rueckweg auf0. Keine Wiederverwendung dieser Operation. Voll500/1500, voll
 gewachsenes Authledger, technisch erzwungene gemeinsame RAM-Grenze und echte
 Quellenversorgung vor Production bleiben offen. PR969/971/972 ungemergt.
+
+
+## Lokale Routen-Korrektur und ungestarteter Folgelauf
+
+**Korrekturschritt abgeschlossen; neuer Unitlauf ungestartet.** Mit separatem GO
+wurde ausschliesslich im privaten Testaufbau `AZURE_OPENAI_DEPLOYMENT=gpt-5-mini-eu`
+gesetzt und im lokalen Cleanup entfernt: beide Runtime-Konfigurationsstellen und
+die Eingabenvorbereitung. Production-Env, Anwendungscode und Kontrollen bleiben gleich.
+
+Die einzige gezielte Pruefung verwendet `ai.runtimeProviderConfiguration()` und
+`understandingModelName()`. Sie fuehrt exakt die korrigierten Konfigurationszeilen
+des Testharness aus, ohne dessen Dispatcher zu importieren. Alle sieben Senderfelder
+stimmen per Deep-Equal und kanonischem `pruefeRouteSnapshot`-Hash mit dem signierten
+Referenzplan ueberein: Azure, Responses-URL, gpt-5-mini-eu, Commit, Deploymenthost/-ID,
+API-Key-Modus. Nur lokaler Dummykey; keine Azure-Konto-/SKU-/Tarifaussage.
+
+Echte Ed25519-Pruefung des erhaltenen Contentproofs sowie kanonischer Hashvergleich
+von vollstaendig dekodiertem Command und Plan belegen den historisch signierten
+Inhalt. Keine Laufrechts-/Frischeerneuerung oder Wiederverwendung alter Freigaben.
+Nur readonly SQL in der alten TestDB; kein Prepare/Install/Admission/Claim/Reserve/Start.
+[Sanierter Routenbeleg](belege/w15-processing-20261027/ROUTE_CHECK.SAFE.json).
+**PASS fuer lokale Konfigurationsgleichheit**,0DBwrites/0Aktivierungen/0Units/
+0Modell- oder Mockaufrufe. Vorher/nachher0aktive Profile, alte Operation unveraendert
+unknown/gesperrt. Unabhaengiger Agent hat Scope und Beleg rein lesend bestaetigt.
+Keine Voll-CI oder Leistungsmessung wiederholt; Anwendungscode-CI weiterhin gruen.
+Historische Harness-Pins/Rohberichte gehoeren zum erhaltenen Commit ed73fee8.
+
+[Inerter neuer Freigabeentwurf](belege/w15-processing-20261027/UNIT0B_GO_PROPOSAL.SAFE.json):
+Alle drei Harnesse verwenden konsistent die unbenutzte neue DB
+`helmut_w15_unit0b_20261027`, neue Verzeichnisse und Operationprefix
+`synthetik500-w15-unit0b-`. Ausfuehrung nicht aufgerufen. Noch keine DB, Operation,
+Schluessel oder Signatur erzeugt: diese entstehen erst nach separatem Start-GO
+unmittelbar vor dem Lauf, damit echte <=60s-Beobachtungen und Startbindungen
+frisch bleiben. Keine Berechtigungsbelege vor der Betreiberentscheidung voraltern.
+
+Freigabereif ist genau derselbe einzelne DR-Mocklauf: neue netzlose TestDB,
+500synthetische Profile temporaer aktiv,1Unit/2lokale19,9s-Simulationen,
+Unit60/Auth30/gemeinsames RAM messen, gebundener Rueckweg auf0 mit Gegenlesung.
+Erster Fehler/Unbekannt beendet den Versuch, kein Next/Retry. Speicherbudget
+2.048.000.000B/Reserve500.000.000B unveraendert; max=max ist weiterhin kein
+erzwungener Cap. Kein500er-/Productionnachweis aus dieser Vorbereitung.

@@ -1,17 +1,16 @@
 # CURRENT STATE — Helmut
 
-## W15: Einzellauf gestoppt (27.10.)
+## W15: Route korrigiert, Lauf ungestartet (27.10.)
 
 Main6b4012cd; PR972 auf971/969, alle ungemergt. Anwendungscode unveraendert.
-Neue netzlose DB:500synthetische aktiv,1Unit betreten.
-Vor Mock gestoppt: reservation-route-drift; Azure-Deploymentname
-fehlte(gpt-5-mini statt gebundenem gpt-5-mini-eu).0Antworten/0Ergebnisse.
-Prepare12,78s,Open2,74s; quittierte Authmax0,676s; Unit60/Auth30 nicht abgenommen.
-Gemeinsamer Lebenszeitpeak1.378.390.016B;669.609.984B rechnerische Reserve;
-memory.max=max, keinHardlimit, nur abgebrochener Pfad. NativeEnd+Readback:0aktiv.
-Originale/Quellrestore/Budgets gleich. Kein Retry.
-Code-CI40534410137/da63309c gruen; danach nur Harnesse/Status.
-[Belege, Ursache und naechste Freigabe](betrieb/w15-processing-20261027.md).
+Nur Testaufbau: AZURE_OPENAI_DEPLOYMENT=gpt-5-mini-eu. Echte Resolver + alle7
+Routefelder stimmen mit signiertem Referenzplan ueberein.
+Pruefung:0DBwrites/0Aktivierungen/0Units/0Modelle; alte TestDB0.
+unit0b vorbereitet, ungestartet. DBname frei;
+frische DB/Operation/Signaturen und <=60s-Belege erst nach separatem Start-GO.
+Unit60/finalesAuth30/erzwungene RAM-Grenze weiter offen. Keine Leistungsmessung.
+Code-CI40534410137/da63309c gruen; danach nur privateHarnesse/Status.
+[Pruefbeleg und Startentwurf](betrieb/w15-processing-20261027.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 

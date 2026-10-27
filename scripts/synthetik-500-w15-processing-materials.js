@@ -6,8 +6,8 @@ const {originalBuilder,localEnvironment}=require("./synthetik-500-w15-signed-cha
 const ROOT = path.resolve(__dirname, ".."), CONTAINER = "synthetik500-runtime-pg-7e1c20261027";
 const SOURCE_DB = "helmut_w15_input_20261027";
 const UNIT0 = process.argv.includes("--authorized-unit0");
-const DB = UNIT0 ? "helmut_w15_unit0_20261027" : "helmut_w15_processing_20261027_b";
-const WORK = UNIT0 ? "/workspace/shared/helmut-w15-unit0-20261027" : "/workspace/shared/helmut-w15-processing-20261027";
+const DB = UNIT0 ? "helmut_w15_unit0b_20261027" : "helmut_w15_processing_20261027_b";
+const WORK = UNIT0 ? "/workspace/shared/helmut-w15-unit0b-20261027" : "/workspace/shared/helmut-w15-processing-20261027";
 const RECEIPT = "/workspace/shared/helmut-w15-receipt-20261027/reports/W15_RECEPTION_REPORT.SAFE.json";
 const RECEIPT_HASH = "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1";
 const PUB = "HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY", PRIV = "HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY";
@@ -102,12 +102,12 @@ async function main() {
       const mapping=candidates.value.ownerMapping.find(x=>x.owner===rows[0].profile.id);assert(mapping);
       const providerInputs={row:rows[0],candidate:candidates.value.candidates[mapping.variantIndex],template:templates.value.templates[mapping.variantIndex],
         candidatePin:candidates.pin,templatePin:templates.pin,model:native.costInputs.routeContract.route.model,responsesURL:native.costInputs.routeContract.route.responsesUrl};
-      process.env.AZURE_OPENAI_ENDPOINT=new URL(providerInputs.responsesURL).origin;process.env.AZURE_OPENAI_KEY="LOCAL_MOCK_NOT_A_VALID_PROVIDER_KEY";
+      process.env.AZURE_OPENAI_ENDPOINT=new URL(providerInputs.responsesURL).origin;process.env.AZURE_OPENAI_KEY="LOCAL_MOCK_NOT_A_VALID_PROVIDER_KEY";process.env.AZURE_OPENAI_DEPLOYMENT="gpt-5-mini-eu";
       unit0Fixture=require("./fixtures/w15-unit0-provider").prepare(providerInputs);
-      delete process.env.AZURE_OPENAI_ENDPOINT;delete process.env.AZURE_OPENAI_KEY;
+      delete process.env.AZURE_OPENAI_ENDPOINT;delete process.env.AZURE_OPENAI_KEY;delete process.env.AZURE_OPENAI_DEPLOYMENT;
       retain("unit0-provider-input.PRIVATE.json",{...providerInputs,requestBodySHA256:unit0Fixture.requestBodySHA256});
     }
-    const operationId = (UNIT0 ? "synthetik500-w15-unit0-" : "synthetik500-w15-processing-") + now;
+    const operationId = (UNIT0 ? "synthetik500-w15-unit0b-" : "synthetik500-w15-processing-") + now;
     const snapshot = { beobachtetAm: observed, mandate_profiles: source.mandates, profiles: source.profiles };
     const ids = packet.profile.map(x => x.mandatsId), wanted = new Set(ids);
     const receipt = { version: "helmut-synthetik500-import/1", operationId, ...I.projizierteBindung(packet),

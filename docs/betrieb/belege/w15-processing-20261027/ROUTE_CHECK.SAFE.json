@@ -1,0 +1,51 @@
+{
+  "status": "PASS_LOCAL_ROUTE_MATCH_ONLY",
+  "checkedAtUTC": "2026-10-27T17:44:19.617Z",
+  "actual": {
+    "provider": "azure",
+    "responsesUrl": "https://helmut-resource.openai.azure.com/openai/v1/responses",
+    "model": "gpt-5-mini-eu",
+    "productionCommit": "8fd37534eb077299b240d66d7ff8318fb6a65985",
+    "deploymentHost": "helmut-w15-unit0-local.vercel.app",
+    "deploymentId": "dpl_W15Unit0LocalNotProduction",
+    "authMode": "api-key"
+  },
+  "expected": {
+    "provider": "azure",
+    "responsesUrl": "https://helmut-resource.openai.azure.com/openai/v1/responses",
+    "model": "gpt-5-mini-eu",
+    "productionCommit": "8fd37534eb077299b240d66d7ff8318fb6a65985",
+    "deploymentHost": "helmut-w15-unit0-local.vercel.app",
+    "deploymentId": "dpl_W15Unit0LocalNotProduction",
+    "authMode": "api-key"
+  },
+  "routeHash": "03c1d8958ce0ff9eb70866dec8d9ab1adcab2c10a253ae2c6a529ccf325bae94",
+  "signatureVerified": true,
+  "signedReferenceSelector": {
+    "operationId": "synthetik500-w15-unit0-1793122269459",
+    "commandHash": "98899024c6e9b37e838c46aef9c7eb52baebeca47394c4e564763caf471f6e24"
+  },
+  "planHash": "bbdd92b6f45dda0f3e01b8c3410ac8538dd2c9eecb2092115f630da2958d0cf8",
+  "signingPublicKeySHA256": "cc91896f7024065121aa3085a6fca7f6555e5e306a23024804578edceb59d246",
+  "signatureScope": "Historical signed content hash verified with Ed25519 and exact decoded command/plan hash; no execution admission/native-content freshness claim or old approval reused",
+  "originalSignedCertificateIssuedAtUTC": "2026-10-27T17:32:01.265Z",
+  "originalSignedCertificateExpiresAtUTC": "2026-10-27T18:01:09.459Z",
+  "historicalAuthorityReused": false,
+  "actualConfigurationResolver": "ai.runtimeProviderConfiguration + ai.understandingModelName",
+  "allSevenRouteFieldsEqual": true,
+  "modelValueSource": "AZURE_OPENAI_DEPLOYMENT",
+  "localHarnessSHA256": "86345beb678b17abf7e05e12f694a177470b042d6ac33a0d6abb28de4203acff",
+  "certificateSHA256": "c289f49d89da2c7bbbb0aa130c15974826c5b95cc065d5454951ff6cdc78e70f",
+  "originalEncodedCommandSHA256": "119c9fa535469f4a0046139ece48aa7731b0f723b05b0db2a3dfe1cab8db0158",
+  "activeProfilesBefore": 0,
+  "activeProfilesAfter": 0,
+  "newDatabaseName": "helmut_w15_unit0b_20261027",
+  "newDatabaseCreated": false,
+  "profileActivations": 0,
+  "unitExecutions": 0,
+  "providerCalls": 0,
+  "databaseWrites": 0,
+  "productionChanges": 0,
+  "actualAzureAccountSkuOrTariffProven": false,
+  "executionAuthorized": false
+}

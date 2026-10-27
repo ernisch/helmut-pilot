@@ -2,11 +2,11 @@
 """One authorized local sequence. First failure terminal, native cleanup always attempted once."""
 import json, os, pathlib, subprocess, hashlib, time
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-WORK=pathlib.Path('/workspace/shared/helmut-w15-unit0-20261027')
+WORK=pathlib.Path('/workspace/shared/helmut-w15-unit0b-20261027')
 CONTAINER='synthetik500-runtime-pg-7e1c20261027'
-DB='helmut_w15_unit0_20261027'
+DB='helmut_w15_unit0b_20261027'
 SOURCE='helmut_w15_input_20261027'
-BASE='/tmp/w15-unit0-20261027'
+BASE='/tmp/w15-unit0b-20261027'
 DOCKER=['docker','--host=unix:///var/run/docker.sock']
 ENV={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'}
 
