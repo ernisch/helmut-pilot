@@ -45,8 +45,8 @@
     },
     {
       "path": "docs/betrieb/production-startblocker-vorbereitung-20261027.md",
-      "bytes": 11240,
-      "sha256": "c9ba0301158d45fa3f6836378ff485dfbae9dedc4b2e155ce520979f7d23e700"
+      "bytes": 13172,
+      "sha256": "f331dc2df194d848b0db53de956d83bb67ceb9691d40055732715913edc1baee"
     },
     {
       "path": "lib/helmut/synthetik-500-date-binding.js",
@@ -158,6 +158,28 @@
     "correction": "documentation only: register new renewal binding in env-inventar.md",
     "targetedCorrectionResult": "38 PASS, 0 FAIL",
     "productAndSQLBytesUnchanged": true,
-    "newHeadMandatoryCI": "PENDING; no merge or Production acceptance"
+    "newHeadMandatoryCI": "SUCCESS on 1628339ea5e36d0f2f1d0aa47b173dc46c214714, run 40434893251; subsequent integrated head requires its own CI"
+  },
+  "mainIntegration": {
+    "observedAtUTC": "2026-10-27T07:01:35.266741+00:00",
+    "mainCommit": "775e928a0f7c7962712e35ffaeecb17cb6225a1e",
+    "includedMergedPR": 966,
+    "previousPRHead": "1628339ea5e36d0f2f1d0aa47b173dc46c214714",
+    "previousMandatoryCI": {
+      "runId": 40434893251,
+      "offline": "SUCCESS",
+      "browserMobile": "SUCCESS",
+      "allRequiredDatabaseSteps": "SUCCESS",
+      "areaRegression": "SUCCESS",
+      "z22": "SUCCESS"
+    },
+    "overlappingFiles": [],
+    "mainDeltaFiles": 8,
+    "method": "rebase own two development commits; no main merge",
+    "priorProductSQLCIInventoryBytesUnchanged": true,
+    "allPR966FilesIdenticalToMain": true,
+    "integratedHeadMandatoryCI": "REQUIRED_BEFORE_FINAL_APPROVAL; actual run and outcome linked in PR",
+    "nextApprovalScope": "exact checked PR967 merge and regular Vercel deployment only; no SQL, ENV, financial adoption, activation, command or paid test",
+    "noProductionReadinessClaim": true
   }
 }

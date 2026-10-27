@@ -1,8 +1,9 @@
 # Production-Startblocker: begrenzte Vorbereitung vom 27.10.2026
 
 **Entwicklung vorbereitet; keine Production-Anwendung oder Testfreigabe.**
-Branch `codex/production-startblocker-prep-20261027`, Basis Main/Production
-`fcc8d8e0078c5307d817c9156433c560d3d431b1`. Hetzner-Einrichtung, Leistungsprüfung
+Branch `codex/production-startblocker-prep-20261027`, ursprüngliche Basis
+`fcc8d8e0078c5307d817c9156433c560d3d431b1`, auf Main einschließlich PR966
+`775e928a0f7c7962712e35ffaeecb17cb6225a1e` aktualisiert. Hetzner-Einrichtung, Leistungsprüfung
 und dortige Arbeitsstände sind nicht Bestandteil dieser Änderung.
 
 ## Übernommene native Objekte
@@ -146,6 +147,35 @@ Die neue PG-Prüfung wird im vorhandenen netzlosen EU-CI-Container ausgeführt;
 kein neuer Dienst oder Hetzner-Workflow. Vor Anwendung bleiben sämtliche
 Pflichtchecks auf dem tatsächlichen Integrationskopf erforderlich. Keine
 bestandenen B1–B4-/bezahlten/nativeLeistungs-/500erAbnahmen wurden wiederholt.
+
+## Abschluss der PR-Vorbereitung auf Main einschließlich PR966
+
+Die beiden Pflichtchecks auf dem vorherigen Kopf `1628339e` sind vollständig
+erfolgreich: [CI40434893251](https://github.com/ernisch/helmut-pilot/actions/runs/40434893251),
+einschließlich Offline-, Bereichs-, isolierter Datenbank- und Z22-Schritte.
+Der frühere fehlgeschlagene Inventarcheck bleibt als Erstfehler dokumentiert.
+
+PR966 berührt acht andere Dateien; die Schnittmenge mit den23Dateien dieses
+PRs ist leer. Die beiden eigenen Commits wurden konfliktfrei auf den genannten
+Mainstand umgesetzt. Sämtliche Produkt-/SQL-/CI-/Inventarbytes dieses PRs sind
+gegenüber `1628339e` unverändert; sämtliche acht Dateien aus PR966 sind exakt
+wie auf Main. Es wurden keine Hetzner-Aktionen oder dortigen Tests gestartet.
+Die Pflicht-CI muss auch auf dem abschließenden aktualisierten PR-Kopf grün
+sein; ihr tatsächliches Ergebnis wird im PR verlinkt. Ein früheres Grün
+ersetzt diese Integrationsprüfung nicht.
+
+Die **nächste mögliche Freigabe** ist ausschließlich Merge von PR967 und das
+dadurch regulär ausgelöste Vercel-Deployment des konkret geprüften Kopfes.
+Sie umfasst weder SQL-Anwendung noch das Setzen der Zusatzvariable, finanzielle
+Adoption, Profilaktivierung, Commandinstallation oder bezahlte Tests. Diese
+reine Codeauslieferung benötigt keine Leistungsabnahme und öffnet allein kein
+Starttor: die SQL-Vorlagen bleiben inert und die finanzielle Verlängerung
+verlangt weiterhin die dreifache Auftrag-/Route-/Runtimebindung. Unmittelbar
+vor einem freigegebenen Merge Main und Pflichtchecks nochmals rein lesend
+abgleichen. Jede zwischenzeitliche relevante Änderung erfordert Neubewertung.
+
+Die folgenden Anwendungsfreigaben bleiben separat. Insbesondere bleibt der
+Vorschlag nach31.10.2026 gesperrt; Merge oder Deployment verlängern keine Frist.
 
 ## Konkrete spätere Freigabegrenzen und Reihenfolge
 
