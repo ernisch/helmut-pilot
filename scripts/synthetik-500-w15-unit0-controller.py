@@ -9,6 +9,13 @@ SOURCE='helmut_w15_input_20261027'
 BASE='/tmp/w15-unit0b-20261027'
 DOCKER=['docker','--host=unix:///var/run/docker.sock']
 ENV={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'}
+MEMORY_CONTRACT=json.loads((ROOT/'scripts/fixtures/w15-memory-contract.json').read_text())
+assert MEMORY_CONTRACT['version']=='helmut-w15-memory-check/2'
+assert MEMORY_CONTRACT['minimumReservePercent']==20
+MEMORY_LIMIT=MEMORY_CONTRACT['comparisonBudgetBytes']
+assert type(MEMORY_LIMIT) is int and MEMORY_LIMIT>0
+MEMORY_RESERVE=(MEMORY_LIMIT*MEMORY_CONTRACT['minimumReservePercent']+99)//100
+
 
 def command(args,input=None,timeout=120):
     result=subprocess.run(args,input=input,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=ENV,cwd=ROOT,timeout=timeout)
@@ -109,7 +116,7 @@ try:
     sql('begin;update mandate_profiles set aktiv=false where aktiv;commit;')
     assert read('select count(*)from mandate_profiles where aktiv;')==0
     docker('exec',CONTAINER,'sh','-c','test ! -e '+BASE+' && mkdir -m 700 '+BASE+' && mkdir -m 700 '+BASE+'/state && cp -a /tmp/w15-processing-20261027/app '+BASE+'/app && cp /tmp/w15-processing-20261027/node '+BASE+'/node && cp /tmp/w15-postgrest-20261027 '+BASE+'/postgrest && chown -R 1000:1000 '+BASE)
-    for name in ['synthetik-500-w15-unit0-runtime.js','synthetik-500-w15-processing-materials.js','fixtures/w15-unit0-provider.js']:
+    for name in ['synthetik-500-w15-unit0-runtime.js','synthetik-500-w15-processing-materials.js','fixtures/w15-unit0-provider.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json']:
         copy_in(ROOT/'scripts'/name,BASE+'/app/scripts/'+name)
     copy_in('/workspace/shared/helmut-w15-development-20261027/publication-policy.PRIVATE.json',BASE+'/state/publication-policy.PRIVATE.json')
     docker('exec',CONTAINER,'chown','-R','1000:1000',BASE)
@@ -163,7 +170,12 @@ finally:
         try:
             raw=docker('exec',CONTAINER,'cat','/sys/fs/cgroup/memory.current','/sys/fs/cgroup/memory.peak','/sys/fs/cgroup/memory.max','/sys/fs/cgroup/memory.swap.current','/sys/fs/cgroup/memory.events').decode().strip().splitlines()
             peak=int(raw[1]);save('FINAL_COMMON_MEMORY.SAFE.json',{'currentBytes':int(raw[0]),'kernelLifetimePeakBytes':peak,'configuredLimit':raw[2],'swapCurrentBytes':int(raw[3]),'events':dict((k,int(v))for k,v in (x.split()for x in raw[4:])),
-              'comparisonBudgetBytes':2048000000,'requiredReserveBytes':500000000,'comparisonReserveBytes':2048000000-peak,'technicalCapEnforced':False,'peakReset':False})
+              'version':MEMORY_CONTRACT['version'],'minimumReservePercent':MEMORY_CONTRACT['minimumReservePercent'],
+              'comparisonBudgetBytes':MEMORY_LIMIT,'requiredReserveBytes':MEMORY_RESERVE,'maximumConsumptionBytes':MEMORY_LIMIT-MEMORY_RESERVE,
+              'comparisonReserveBytes':MEMORY_LIMIT-peak,'reserveMeetsContract':MEMORY_LIMIT-peak>=MEMORY_RESERVE,
+              'technicalCapEnforced':False,'peakReset':False})
+            if MEMORY_LIMIT-peak<MEMORY_RESERVE:
+                failure=failure or {'type':'MemoryReserveFailure','reason':'final-common-memory-reserve-not-met'}
         except BaseException as error:failure=failure or {'type':type(error).__name__,'reason':'final-memory-read-missing'}
     save('CONTROLLER_RESULT.SAFE.json',{'status':'PASS_BOUNDED_SEQUENCE' if failure is None and cleanup_failure is None else 'STOPPED_FIRST_FAILURE_OR_UNKNOWN',
       'failure':failure,'cleanupFailure':cleanup_failure,'database':DB,'existingContainerNetwork':'none','containerResourceLimitsUnchanged':True,

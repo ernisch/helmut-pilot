@@ -291,3 +291,56 @@ Dieser Entwurf wurde **nicht umgesetzt oder gestartet** und ist keine Behauptung
 dass die Reserve dann besteht. Weitere Unit oder neue Messgruppe nur nach
 passender separater Freigabe. Voll500/1500, finalesLedgerAuth30, harte RAM-Abnahme
 sowie echte Quellenversorgung/fachliche Abnahme vor Production bleiben offen.
+
+
+## Neuer RAM-Pruefvertrag: 20 Prozent Mindestreserve
+
+Der Betreiber hat den Pruefplan am27.10.2026 **ausdruecklich geaendert**:
+Die bisher feste500.000.000B-Reserve wird fuer aktuelle Bewertungen durch
+mindestens20% des Gesamtspeicherlimits ersetzt. Das Limit selbst bleibt
+2.048.000.000B. Damit gelten **409.600.000B Mindestreserve** und
+**1.638.400.000B maximaler Verbrauch**; Gleichheit an der Grenze besteht.
+Bei nicht ganzzahligen Prozentwerten wird die Mindestreserve auf volle Bytes
+aufgerundet. Keine Kostenbudget- oder Productionaenderung.
+
+Aktuelle einzige Kriterienquelle ist
+[`scripts/fixtures/w15-memory-contract.json`](../../scripts/fixtures/w15-memory-contract.json),
+Version `helmut-w15-memory-check/2`. Der aktuelle Unit-Harness und sein Python-
+Controller lesen denselben Vertrag; beide pruefen Reserve gegen den gemessenen
+Kernelpeak, der Controller auch im finalen Nachlauf. Der bestehende Stagingweg
+nimmt JSON und Auswertungshelfer explizit mit. Auswertung richtet keinen Cap ein.
+Der alte Prepared0-Harness, alte Freigabeentwuerfe und Messberichte reproduzieren
+ihren damaligen Vertrag; sie sind historische Belege und werden nicht umgeschrieben.
+
+**Getrennte Neubewertung desselben UNIT0B-Messwerts, kein neuer Testlauf:**
+
+| Vorhandener Messwert / neues Kriterium | Bytes |
+|---|---:|
+| Gemeinsamer Kernel-Lebenszeitpeak |1.558.614.016|
+| Rechnerische verbleibende Reserve |489.385.984|
+| Neue Mindestreserve(20%) |409.600.000|
+| Abstand oberhalb der neuen Mindestreserve |79.785.984|
+
+Die Reserve entspricht **23,8958%** des Gesamtlimits und besteht das neue
+**rechnerische** Kriterium. [Separater Neubewertungsbeleg](belege/w15-processing-20261027/UNIT0B_MEMORY_REASSESSMENT_V2.SAFE.json)
+bindet Bytezahl/SHA256 des urspruenglichen UNIT0B-Berichts. Dessen damaliger
+`FAIL_COMMON_MEMORY_RESERVE` unter500MB,10.614.016B Fehlbetrag, komplette
+Messwerte, Rohberichte, Freigabeentwuerfe und Pins bleiben bytegleich erhalten.
+Der alte Fehler wird weder geloescht noch nachtraeglich zu einem damaligen PASS.
+Die vorstehenden Fehler-/Naechste-Schritte-Abschnitte beschreiben den damaligen
+Pruefplan. Unter dem neuen Vertrag besteht kein rechnerischer Reservefehler mehr.
+
+Gezielt bestanden: neue Konstanten, exakte Grenzgleichheit, Ueberschreitung um
+1Byte, ungueltige Peaks und dieselben echten Python-Controllerkonstanten wie in
+JavaScript. Zusaetzlich wurde ausschliesslich der gespeicherte UNIT0B-Beleg neu
+berechnet und sein historischer Fehlerstatus kontrolliert. Python-Auswertung
+kompiliert nur die Konstantenzuweisungen aus dem AST, nie den Controllerablauf.
+Keine neue Performance-/Unit-/DB-/Modellpruefung, keine Wiederholung der grossen CI.
+Anwendungscode/Finanzvertrag bleiben bytegleich zum belegten gruenen CI-Stand;
+neue reine Rechenpruefung separat gruen, kein neuer Gesamt-CI-Erfolg behauptet.
+
+**Weiter offen:** technisch erzwungene gemeinsame Speichergrenze (`memory.max=max`
+im alten Lauf), final gewachsenes500er-Ledger-Auth30, Voll500/1500 sowie echte
+Quellenversorgung und fachliche Productionabnahme. Die Neubewertung ist kein
+Hard-Cap- oder500er-Gesamtnachweis und kein neues Laufrecht. Keine weitere Unit,
+kein Infrastrukturaufbau, keine Productionaenderung oder Merge ausgefuehrt.

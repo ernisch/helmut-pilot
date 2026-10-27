@@ -2,13 +2,14 @@
 // Exactly one explicitly authorized isolated DR mock unit. Never next/retry/real provider.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict');
 const {performance}=require('node:perf_hooks');
+const Memory=require('./fixtures/w15-memory-contract');
 const DIR='/tmp/w15-unit0b-20261027',STATE=path.join(DIR,'state');
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
 const PUB='HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY',PRIV='HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY';
 function file(n){return path.join(STATE,n);}
 function read(n){const p=file(n),s=fs.lstatSync(p);assert(s.isFile()&&!s.isSymbolicLink()&&s.uid===process.getuid()&&(s.mode&511)===384);return JSON.parse(fs.readFileSync(p));}
 function save(n,x){const b=Buffer.from(JSON.stringify(x,null,2)+'\n');fs.writeFileSync(file(n),b,{flag:'wx',mode:384});return {path:file(n),bytes:b.length,sha256:sha(b)};}
-function memory(){const events=Object.fromEntries(fs.readFileSync('/sys/fs/cgroup/memory.events','utf8').trim().split('\n').map(x=>x.split(/\s+/)).map(([k,v])=>[k,Number(v)]));return {events,swapCurrentBytes:Number(fs.readFileSync('/sys/fs/cgroup/memory.swap.current','utf8')),currentBytes:Number(fs.readFileSync('/sys/fs/cgroup/memory.current','utf8')),kernelLifetimePeakBytes:Number(fs.readFileSync('/sys/fs/cgroup/memory.peak','utf8')),configuredLimit:fs.readFileSync('/sys/fs/cgroup/memory.max','utf8').trim(),comparisonBudgetBytes:2048000000,requiredReserveBytes:500000000};}
+function memory(){const events=Object.fromEntries(fs.readFileSync('/sys/fs/cgroup/memory.events','utf8').trim().split('\n').map(x=>x.split(/\s+/)).map(([k,v])=>[k,Number(v)]));return {events,swapCurrentBytes:Number(fs.readFileSync('/sys/fs/cgroup/memory.swap.current','utf8')),currentBytes:Number(fs.readFileSync('/sys/fs/cgroup/memory.current','utf8')),kernelLifetimePeakBytes:Number(fs.readFileSync('/sys/fs/cgroup/memory.peak','utf8')),configuredLimit:fs.readFileSync('/sys/fs/cgroup/memory.max','utf8').trim(),...Memory.limits};}
 function setup(){
  const EU=require('../lib/helmut/synthetik-500-eu-service-contract'),key=crypto.generateKeyPairSync('ed25519');
  const secret=crypto.randomBytes(48).toString('hex'),now=Math.floor(Date.now()/1000);
@@ -118,7 +119,7 @@ async function run(){
  const op=after.auth[J.KEY].operations[m.selector.operationId],evidence=after.evidence;
  const positions=evidence?.positions?.map(x=>({mandatsId:x.mandatsId,bereich:x.bereich,status:x.status,ergebnisHash:x.ergebnisHash,fachstatus:x.fachstatus}))||[];
  for(const u of units)u.wallMS=u.finalACKMS===null?null:u.finalACKMS-u.beginMS;
- const mem=memory();mem.comparisonReserveBytes=2048000000-mem.kernelLifetimePeakBytes;
+ const mem=memory();Object.assign(mem,Memory.assess(mem.kernelLifetimePeakBytes));
  const actualCalls=Object.values(op.attempts),checks={noObservedApplicationErrors:errors.length===0,httpSuccess:status===200&&body?.ok===true&&body.result?.completedUnits===1&&body.result?.dispatchedUnits===1,
   exactlyOneEntered:units.length===1&&op.units.filter(u=>u.entered).length===1&&op.units[0].entered===true,
   exactlyTwoMockCalls:provider.count()===2&&provider.pending()===0&&providerPhases.length===2,
@@ -129,11 +130,11 @@ async function run(){
   twoAttemptsAccounted:actualCalls.length===2&&actualCalls.every(x=>x.status==='accounted'),
   oneOutputNoInFlight:op.index===1&&op.inFlight===null&&Object.keys(op.outputs).length===1,
   nativeActive500AtEntryAndEndRead:after.active===500&&evidence?.activeRuntime?.aktiv===500,
-  commonComparisonReserveAtLeast500MB:mem.comparisonReserveBytes>=500000000,
+  commonComparisonReserveSatisfied:mem.reserveMeetsContract,
   memoryEventsUnchanged:JSON.stringify(memoryBefore.events)===JSON.stringify(mem.events)};
  const result={schema:'helmut-w15-unit0-function-proof/1',status:Object.values(checks).every(Boolean)?'PASS_BOUNDED_FUNCTION_AND_COMPARISON_BUDGET':'FAIL_OR_UNKNOWN',
   selector:m.selector,checks,http:{status,body,wallMs:httpWallMs},units,authMutations,providerPhases,positions,errors,scopes,
-  memoryBefore,memoryAfter:mem,technicalMemoryLimitEnforced:mem.configuredLimit==='2048000000',
+  memoryBefore,memoryAfter:mem,technicalMemoryLimitEnforced:mem.configuredLimit===String(Memory.limits.comparisonBudgetBytes),
   commonMemoryScope:'whole existing PG container: PostgreSQL/PostgREST/gateway/Node/worker threads/charged cache; lifetime kernel peak not reset; host input assembler excluded',
   modelCalls:0,localSimulations:provider.count(),full500Run:false,productionActions:0,privateKeyPresent:false,
   noAutomaticRetry:true,remaining:['full500/1500 final proof','final fully grown ledger Auth30','technically enforced common memory limit','live sources and independent result quality before Production']};

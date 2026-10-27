@@ -1,0 +1,5 @@
+{
+  "version": "helmut-w15-memory-check/2",
+  "comparisonBudgetBytes": 2048000000,
+  "minimumReservePercent": 20
+}

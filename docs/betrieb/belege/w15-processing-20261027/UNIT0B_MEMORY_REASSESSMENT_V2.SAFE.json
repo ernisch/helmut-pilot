@@ -1,0 +1,40 @@
+{
+  "schema": "helmut-w15-memory-reassessment/2",
+  "status": "PASS_RECALCULATED_RESERVE_ONLY",
+  "version": "helmut-w15-memory-check/2",
+  "comparisonBudgetBytes": 2048000000,
+  "minimumReservePercent": 20,
+  "requiredReserveBytes": 409600000,
+  "maximumConsumptionBytes": 1638400000,
+  "kernelLifetimePeakBytes": 1558614016,
+  "comparisonReserveBytes": 489385984,
+  "reserveMeetsContract": true,
+  "reservePercentOfLimit": 23.8958,
+  "surplusAboveRequiredReserveBytes": 79785984,
+  "originalReport": {
+    "path": "docs/betrieb/belege/w15-processing-20261027/UNIT0B_RESULT.SAFE.json",
+    "bytes": 8505,
+    "sha256": "09ca01f7229a2b35802b75956cff609177ed89bd40d4d1a06b6a7fdcaf495516",
+    "status": "FAIL_COMMON_MEMORY_RESERVE",
+    "requiredReserveBytes": 500000000,
+    "reservePassed": false
+  },
+  "checks": [
+    "20percent-contract",
+    "exact-boundary-pass",
+    "one-byte-over-boundary-fail",
+    "invalid-peaks-reject",
+    "JS-and-actual-Python-constants-match",
+    "historical-FAIL-preserved",
+    "saved-peak-reassessed-no-new-measurement"
+  ],
+  "technicalCapEnforced": false,
+  "technicalMemoryAcceptanceComplete": false,
+  "full500Proof": false,
+  "newPerformanceTests": 0,
+  "unitExecutions": 0,
+  "profileActivations": 0,
+  "databaseWrites": 0,
+  "productionChanges": 0,
+  "note": "Explicit operator criterion change. Historical report/measurement not edited. memory.max=max; no new run, freshness approval or hard-cap acceptance."
+}
