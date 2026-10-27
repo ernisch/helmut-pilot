@@ -21,8 +21,15 @@ Eingaben, Datenbank, Nodeversion und Sicherheitskontrollen gehören ebenfalls da
 Das spätere Releasemanifest enthält drei Dateien, die gegenüber W15 neu oder
 anders sind: Anbieter-Runtimeprüfung, Artefaktleser und Vercel-Konfiguration.
 Es wird deshalb nicht fälschlich als unverändertes W15-Laufmanifest bezeichnet.
-Der private 26,6-MB-Primärbericht ist hier nur hashgebunden referenziert; seine
-Rohmessungen wurden nicht neu verifiziert oder heruntergeladen.
+Das bestehende [Minimalarchiv](https://drive.google.com/file/d/1_yaGlXYrG2ExYbE2MFBq_ucE4YtgMFCm/view)
+wurde ausschließlich in der Cloud gelesen (269.598 B, SHA256 im JSON): alle79
+Payloads stimmen mit dem Manifest überein, fünf Referenzen zusätzlich mit dem
+bereits versionierten PR915-Dossier. Die500 Zeit-/Kontrollzeilen und4000
+Authzeilen bestätigen die untenstehenden Maxima und8000 Kontrollen. Kein Test
+wurde dafür wiederholt. Das Archiv schließt Originalbodies, DB-Dumps, private
+Konfigurationen/GO, Schlüssel und Modellantworten ausdrücklich aus. Der26,6-MB-
+Runtime-Primärbericht ist weiterhin nur hashgebunden referenziert; seine
+vollständigen Rohmessungen wurden nicht neu verifiziert oder heruntergeladen.
 
 ## Gezielte Übernahme und verbleibende Änderungen
 
@@ -67,17 +74,21 @@ Die übrigen Abweichungen sind im JSON einzeln benannt. Sie sind keine pauschale
 
 Primärreferenzen: [W15/W16](https://github.com/ernisch/helmut-pilot/blob/470d871a0d38afb3bc2aab4288537c70a382c80a/docs/betrieb/500er-production-vorbereitung-20261016.md),
 [PR936-Checkpoint](https://github.com/ernisch/helmut-pilot/blob/2fc821fd7bbdef1cf9846001e041a847a9f58f8f/docs/betrieb/belege/native-claim-only-20261023/NATIVE_76AF_CI_CAPACITY_CHECKPOINT_20261024.SAFE.json).
+Die Unitzeit umfasst nicht die gesonderte Runtimevorbereitung; beide gehören
+zur Gesamtdauer. Aus den lokalen Werten folgt keine garantierte9h-Productionsumme.
 Grenzen bleiben unverändert; Komponentenverbesserungen werden nicht von
 fehlgeschlagenen Gesamtzeiten abgezogen. Kein neues Ressourcen- oder 500er-Experiment.
 
 ## Validierung und nächster Schritt
 
-34 gezielte Vertragsgruppen auf dem neuen Main-Kandidaten bestanden. Dabei einmalig
-Node-v24.19.0-Coverage für **nur** `briefing-bereichsvertrag.js`: 99,47 % Zeilen,
+34 gezielte Vertragsgruppen auf dem neuen Main-Kandidaten bestanden. Coverage
+wurde direkt bei den notwendigen Integrationsläufen erfasst, zuletzt mit
+Node v24.19.0 für **nur** `briefing-bereichsvertrag.js`: 99,47 % Zeilen,
 84,75 % Verzweigungen, 95,12 % Funktionen. Keine repositoryweite Coveragebehauptung.
 Aufruf: `node scripts/lokal.js -- node --test --experimental-test-coverage --test-coverage-include='lib/helmut/briefing-bereichsvertrag.js' scripts/briefing-bereichsvertrag-test.js`.
-Diese Wiederholung ist die erstmalige Integrationsprüfung des übernommenen Moduls
-auf Main; keine breite lokale Regression oder Wiederholung des historischen Laufs.
+Zuerst bestanden33Gruppen; nach dem Review wurde der fehlende sichtbare
+Integrationsfall ergänzt, danach34/34. Kein zusätzlicher Lauf nur für Coverage,
+keine breite lokale Regression oder Wiederholung des historischen500erLaufs.
 
 Ein getrennter lesender DeepSeek-Flash-High-Review bestätigte die Ablehnung
 ungültiger Varianten. Sein Hinweis auf die fehlende sichtbare Briefingintegration
@@ -88,19 +99,31 @@ auf `fenster.end` ist kein Befund: Das bestehende API dokumentiert ausschließli
 
 Der vorhandene erste PostgreSQL-/PostgREST-Fall wird bis zum Briefing-Tagesanlass
 verlängert: echte gespeicherte Zeilen → Storage-Leser → Lagequelle → Tagesanlass,
-einschließlich Randmillisekunde und unveränderter Null-Uhrzeit. Prüfung über den
-bestehenden CI-Schritt, kein neuer Dienst/Workflow; CI-Ergebnis noch offen.
+einschließlich Randmillisekunde und unveränderter Null-Uhrzeit. [CI40477575989](https://github.com/ernisch/helmut-pilot/actions/runs/40477575989) auf Codekopf `bc9ff4a2` vollständig erfolgreich:
+beide Pflichtjobs, Standard- und Bereichsregression, alle erforderlichen
+isolierten DB-Schritte und Z22. Der erweiterte REST-Fall und die Bereinigung
+sind erfolgreich. Der tatsächliche Browserlauf wurde nach unverändertem
+Prüfplan mangels UI-Änderung übersprungen; kein neuer Browsertest behauptet.
 
 Nach CI ist der nächste notwendige Schritt die **eng abgegrenzte Auswahl des
 Inhalts-/Stored-Command-Pfads** mit seinen echten Eingabe- und Quellenbindungen.
 Vorhandene Quellenqualifikationen und Messdaten übernehmen, wo sämtliche Pins
 passen; nur verbleibende aktuelle Grenzfälle prüfen. Die privaten Originale des
 vergleichbaren späten DB-Zustands und vollständigen Motorharness liegen hier
-nicht vor. Ein kleiner synthetischer Test kann diese Performancebelege nicht ersetzen.
+nicht vor. Auch der im PR936-Checkpoint verlinkte Wiederherstellungsindex
+ist laut Drive-Metadaten PGP-verschlüsselt (6007B); er wurde weder heruntergeladen
+noch entschlüsselt. Kein neuer Zugriff oder Key wird erfunden. Ein kleiner
+synthetischer Test kann diese Performancebelege nicht ersetzen.
 Ohne diese Grundlage kein sinnvoller neuer Gesamtressourcenlauf und keine
 behauptete Zeit-/Speicherlösung. Hetzner ist dafür kein notwendiges Starttor.
 
-Status: **teilweise abgeschlossen** bis zum Abschluss der erforderlichen CI.
+Status: **gezielter Abgleich und Vertragsfix abgeschlossen; gesamter500erPfad
+weiter teilweise abgeschlossen**. Der abschließende Dokucommit verändert keinen
+Anwendungscode. Sein erneuter CI-Start wird mit `[skip ci]` unterdrückt, um den
+bereits bestandenen kumulativen PR-Prüfumfang nicht nochmals auszuführen.
+Der CI-Erfolg wird ausschließlich für `bc9ff4a2` behauptet, nicht als neuer
+Pflichtcheck für den Doku-Kopf. Vor einem späteren Merge bleiben die tatsächlichen
+Endkopf-Prüfungen und ein gesondertes Production-GO verbindlich.
 Merge/Deployment, aktuelle Quellen-/Finanz-/Releaseannahme, Profilaktivierung,
 kostenpflichtige Modellaufrufe und die unabhängige 1500er-Production-Endabnahme
 bleiben außerhalb dieser Freigabe. Rückweg des Patches: PR nicht übernehmen oder

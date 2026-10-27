@@ -2629,7 +2629,8 @@
       "sameRunWholePeakMeasured": false,
       "primaryRuntimeReportAvailableHere": false,
       "primaryRuntimeReportSHA256": "ad82417bfc03e61b5a7041c46b774dc21676717b57149eb078880cbe48004489",
-      "claim": "Historical success remains scoped to W15, not Main or current Production."
+      "claim": "Historical success remains scoped to W15, not Main or current Production.",
+      "maximumCommonPeakWithRequestedReserveBytes": 1548000000
     },
     "laterFailure": {
       "evidencePath": "docs/betrieb/belege/native-claim-only-20261023/NATIVE_76AF_CI_CAPACITY_CHECKPOINT_20261024.SAFE.json",
@@ -2681,7 +2682,13 @@
       "unit60Qualified": false,
       "auth30Qualified": false,
       "full500ReserveQualified": false,
-      "claim": "Failed different bundle, 9/16 controls, non-equivalent clock; do not subtract phase times or infer complete-run memory."
+      "claim": "Failed different bundle, 9/16 controls, non-equivalent clock; do not subtract phase times or infer complete-run memory.",
+      "memoryContractSource": {
+        "path": "scripts/helmut-resource-meter/isolation.py",
+        "sha256": "3a67cdf382adc6c1a27beaedd7060676c71c7f127f069ef3264ff2f5c1ab5849",
+        "requestedBytes": 500000000,
+        "maximumCommonPeakBytes": 1548000000
+      }
     }
   },
   "targetedValidation": {
@@ -2695,9 +2702,33 @@
       "functionPercent": 95.12,
       "repositoryWide": false
     },
-    "restAssertions": "pending GitHub CI existing isolated PostgreSQL/PostgREST step",
+    "restAssertions": "PASS in existing GitHub CI isolated PostgreSQL/PostgREST step; 15 groups plus cleanup",
     "new500Run": false,
-    "productionEffects": false
+    "productionEffects": false,
+    "localRuns": [
+      {
+        "groupsPassed": 33,
+        "reason": "initial integration of historical module on Main",
+        "coverageCollectedInSameRun": true
+      },
+      {
+        "groupsPassed": 34,
+        "reason": "added visible-briefing positive and rejection case after review",
+        "coverageCollectedInSameRun": true
+      }
+    ],
+    "ci": {
+      "runId": 40477575989,
+      "url": "https://github.com/ernisch/helmut-pilot/actions/runs/40477575989",
+      "codeCommit": "bc9ff4a22df8f1b4a0c2b2f06cb1165df41c71d5",
+      "conclusion": "success",
+      "requiredJobs": {
+        "Syntax + Offline-Suiten": "success",
+        "Browser-/Mobile-Smoke (Chromium)": "success"
+      },
+      "browserActuallyExecuted": false,
+      "reasonBrowserSkipped": "No UI/browser-relevant file changed; existing plan."
+    }
   },
   "review": {
     "route": "deepseek-flash",
@@ -2709,5 +2740,78 @@
       "windowEnd": "Not an existing API field: frischeFenster and briefingContract document start-only; end is now. No unsolicited contract extension.",
       "dateParserThrow": "berlinTagVollImFenster returns false for invalid inputs; source parser exceptions already fail closed."
     }
+  },
+  "archiveReadback": {
+    "driveFileId": "1_yaGlXYrG2ExYbE2MFBq_ucE4YtgMFCm",
+    "bytes": 269598,
+    "sha256": "c979e18775f285ddf7af4328c8efc8f0642954eb6d0e52e50636d3b4ab902d15",
+    "payloadsVerifiedAgainstManifest": 79,
+    "pinsAlsoMatchedToExistingGitDossier": 5,
+    "unitRows": 500,
+    "authRows": 4000,
+    "freshControlsSummed": 8000,
+    "unitMaxMS": 58950.35593799967,
+    "authMaxMS": 1263.6394079998136,
+    "sameRunWholePeakProved": false,
+    "fullPrimaryReportIncluded": false,
+    "excludedByArchiveManifest": [
+      "Secrets/Tokens/keys",
+      "PRIVATEconfigs/GO",
+      "rawlogs",
+      "originalbodies",
+      "DBdumps",
+      "modelrequests/responses",
+      "applicationcodealreadyonGitHub"
+    ],
+    "selectedEvidence": [
+      {
+        "sourcePath": "/workspace/helmut-parallel-20261015/wave15/ROOT_FINAL_LOCAL500_REVIEW.SAFE.json",
+        "category": "selected_review_or_proposal_no_execution_authority",
+        "bytes": 6936,
+        "sha256": "f348b00eb51249fe8852e89bfedc7f4ff81fb4062fae8174cd35180606105560",
+        "archivePath": "blobs/f348b00eb51249fe8852e89bfedc7f4ff81fb4062fae8174cd35180606105560"
+      },
+      {
+        "sourcePath": "/workspace/helmut-parallel-20261015/wave16-authority-memory/ROOT_MEMORY_COMPOSITION.SAFE.json",
+        "category": "selected_review_or_proposal_no_execution_authority",
+        "bytes": 4937,
+        "sha256": "9b65f74460c947c58d6957d4bb19490d0cb4440d12f6b2aedb92518a7474d511",
+        "archivePath": "blobs/9b65f74460c947c58d6957d4bb19490d0cb4440d12f6b2aedb92518a7474d511"
+      },
+      {
+        "sourcePath": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/run-combined500-synthetik500-localnative16-b27c20261016/SEQUENCE_RESULT.SAFE.json",
+        "category": "compact_primary_stage_receipt",
+        "bytes": 1783,
+        "sha256": "555fcc4ba50589633e1a9c1c9bd9f76b22f36aeabab7cebdb5499d4b7ceaacdd",
+        "archivePath": "blobs/555fcc4ba50589633e1a9c1c9bd9f76b22f36aeabab7cebdb5499d4b7ceaacdd"
+      },
+      {
+        "sourcePath": "/workspace/helmut-handoff-20261016-final/LOCAL500_TIMINGS_AND_CONTROLS.csv",
+        "category": "new_handoff_projection_or_foreign_patch_not_accepted",
+        "bytes": 36257,
+        "sha256": "3f8889e11f8b13f2d4ae5cda5cb2605a3d65aa77310ea76df78249d1f00b2166",
+        "archivePath": "blobs/3f8889e11f8b13f2d4ae5cda5cb2605a3d65aa77310ea76df78249d1f00b2166"
+      },
+      {
+        "sourcePath": "/workspace/helmut-handoff-20261016-final/AUTH4000_TIMINGS.csv",
+        "category": "numeric_only_auth_projection_no_originals",
+        "bytes": 111403,
+        "sha256": "87fd761d746e754046791f12d2326a0ec3c88458561017a031f53568e0e79ef5",
+        "archivePath": "blobs/87fd761d746e754046791f12d2326a0ec3c88458561017a031f53568e0e79ef5"
+      }
+    ],
+    "laterRecoveryIndexMetadata": {
+      "driveFileId": "1GVTjW-zDU9cz9JPsgNOu2d81MGEH7hW9",
+      "name": "0ea8da6e34c183ce80352f7c95dd503e.INDEX.part-000.gpg",
+      "mimeType": "application/pgp-encrypted",
+      "bytes": 6007,
+      "contentsRead": false,
+      "decrypted": false
+    }
+  },
+  "documentationFollowup": {
+    "runtimeUnchangedFromTestedCommit": true,
+    "ciSkippedForDocsOnly": true,
+    "headRequiredChecksNotClaimed": "Merge remains prohibited; this is not a synthetic successful head check."
   }
 }
