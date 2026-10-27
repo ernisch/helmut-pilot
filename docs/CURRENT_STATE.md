@@ -1,16 +1,16 @@
 # CURRENT STATE — Helmut
 
-## W15 mit geprueften Originalen (27.10.2026)
+## W15: signierte isolierte Kette (27.10.2026)
 
-Main6b4012cd; DraftPR971 auf969, eigener W15-Integrationsbranch.
-PR969 ungemergt;29W15-Runtimepfade und67Workerquellen bytegleich gepinnt.
-11Originaldateien/96.530.256B empfangen; Dump in netzlosemPG17.6 restauriert.
-81Bindungs-,7Originaldaten-,8DB- und20Testauswahlpruefungen bestanden.
-Original-W15-Inhaltsworker PASS:14,72s;500/1000/1500 als Inhalt, kein Vollrun.
-Publikationspolicy exakt lokal gebunden; DB-/Quellhashes unveraendert.
-CI2:Standard177/177,Bereich328/330; fehlende Promptanbindung gezielt behoben.
-Keine Productionaenderung, bezahlten Modelle oder vollstaendiger500erLauf.
-[Belege und verbleibende Abnahme](betrieb/500er-main-abgleich-20261027.md).
+Main6b4012cd; eigene Fortsetzung auf PR971/969, beide ungemergt.
+Nur benoetigte31.10.-Vertragsbindung aus967; unveraenderter Geldvertrag.
+12echte Signatur-/HTTP-/PostgREST-/prepared0-Pruefungen PASS,0Units/Modelle.
+Vorbereitung24,41s<90; kaltes Oeffnen5,55s<60; keine gemeinsame RAM-Abnahme.
+Historische Requestfixture: heutiger D-Kontext bei BE abgewiesen, kein500erBeleg.
+11Originaldateien/96.530.256B erhalten; urspruenglicher Restore unveraendert.
+Basis-CI40510429293 auf7c99ee34 vollstaendig gruen; neue Kopf-CI noch offen.
+Keine Productionaenderung, Aktivierung oder vollstaendige500erAusfuehrung.
+[Belege/Grenzen](betrieb/w15-signierte-kette-20261027.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
