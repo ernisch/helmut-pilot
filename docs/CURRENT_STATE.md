@@ -1,15 +1,15 @@
 # CURRENT STATE — Helmut
 
-## W15:20%-Reserve rechnerisch erfuellt (27.10.)
+## W15: einmaliger lokaler Mock500-Plan vorgelegt (27.10.)
 
-Main6b4012cd; PR972/971/969 ungemergt. Appcode unveraendert.
-RAM-Vertrag bei2.048.000.000B:20% Reserve409.600.000B,Verbrauchmax1.638.400.000B.
-UNIT0B-Peak1.558.614.016B:489.385.984B Reserve(23,8958%),neues Kriterium PASS.
-Ueberhang79.785.984B; kein neuer Lauf. Alter500MB-FAIL/Belege bytegleich.
-Unit60/Einzellauf-Auth30/3Outputs und Rueckfuehrung0 belegt;
-harterCap/finalesLedgerAuth30/Voll500 offen.
-Nur Rechenpruefungen. App-CI40534410137/da63309c gruen; Pruefharness geaendert.
-[Vertrag und Neubewertung](betrieb/w15-processing-20261027.md#neuer-ram-pruefvertrag-20-prozent-mindestreserve).
+Main6b4012cd; PR972/971/969 ungemergt. Keine neue Ausfuehrung/Aktivierung.
+Originale/500Mappings/7Mockvarianten komplett; UNIT0B+20%-Rechenbeleg uebernommen.
+DockerCap/Image/Binaries verfuegbar; neuer Testcontainer nicht angelegt.
+Plan:500aktive/500Units/1000Mocks/1500Outputs/8000echteKontrollen, danach0.
+Cap2.048.000.000B/Reserve409.600.000B; fest3h+30min, Tagesgrenzen pruefen.
+Noch Glue fuer500Sequenz/Bindings/Observer/interneUsage-Authmessung/Cleanup.
+Plan-/Startfreigabe fehlt; kein neuer Einzeltest. Productionnachweis getrennt/offen.
+[Konkreter Plan mit Abnahmematrix](betrieb/w15-voll500-mock-testplan-20261027.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
