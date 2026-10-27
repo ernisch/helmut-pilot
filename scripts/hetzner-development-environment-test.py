@@ -1,5 +1,6 @@
 """Synthetic development boundary tests; no target, Docker, database or providers."""
 import copy
+import errno
 import io
 import json
 import os
@@ -131,6 +132,58 @@ class DevelopmentBoundaries(unittest.TestCase):
         self.assertNotIn('apt', dockerfile); self.assertNotIn('curl', dockerfile)
         self.assertNotIn('500', M.ENTRYPOINT)
         self.assertIn('xargs -0 -r -n1 node --check', M.ENTRYPOINT)
+
+    def test_fresh_image_requests_keep_legacy_and_failed_builds_and_use_separate_caches(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);(root/'private').mkdir();repo=root/'workspace';repo.mkdir()
+            legacy=[]
+            for name in ('build','npm-cache'):
+                path=root/name;path.mkdir();marker=path/'retained.fixture';marker.write_bytes(name.encode())
+                legacy.append((path,path.stat().st_ino,marker,marker.stat().st_ino,marker.read_bytes()))
+            lock=(HERE.parent/'package-lock.json').read_bytes()
+            package=(HERE.parent/'package.json').read_bytes()
+            current={'source_commit':'b'*40,'workspace':'repo-'+'c'*64,
+                     'package_lock_sha256':M.digest(lock),'uid':60011,'gid':60012}
+            (root/'private/CURRENT.SAFE.json').write_bytes(M.encoded(current))
+            calls=[]
+            def own_write(path,raw,mode=0o600):
+                with path.open('xb') as stream:stream.write(raw)
+                path.chmod(mode)
+            def fake_docker(args,*_args,**_kwargs):
+                calls.append((M.ACTIVE_NONCE,args))
+                if M.ACTIVE_NONCE=='a'*64:raise M.Stop('SYNTHETIC_LATE_IMAGE_FAILURE')
+                return ('sha256:'+'d'*64+'\n').encode() if args[0]=='image' else b'OK'
+            with patch.object(M,'BASE',root),patch.object(M,'ACTIVE_NONCE','a'*64), \
+                 patch.object(M,'refresh_identity'),patch.object(M,'capacity'), \
+                 patch.object(M,'read_root',side_effect=lambda path,*args:path.read_bytes()), \
+                 patch.object(M,'workspace',return_value=repo), \
+                 patch.object(M,'git',side_effect=lambda args,*a,**k:lock if args[1].endswith(':package-lock.json') else package), \
+                 patch.object(M,'run',return_value=b'') as command,patch.object(M,'docker',side_effect=fake_docker), \
+                 patch.object(M.os,'chown'),patch.object(M.os,'fchown'),patch.object(M,'write_new',side_effect=own_write):
+                M.ACTIVE_NONCE='a'*64
+                with self.assertRaisesRegex(M.Stop,'SYNTHETIC_LATE_IMAGE_FAILURE'):M.image(time.monotonic()+10)
+                self.assertTrue((root/('build-'+'a'*64)/'Dockerfile').is_file())
+                first_calls=(command.call_count,len(calls))
+                with self.assertRaises(FileExistsError):M.image(time.monotonic()+10)
+                self.assertEqual((command.call_count,len(calls)),first_calls)
+                M.ACTIVE_NONCE='e'*64
+                receipt=M.image(time.monotonic()+10)
+                self.assertEqual((receipt['uid'],receipt['gid']),(60011,60012))
+                self.assertEqual(receipt['image_id'],'sha256:'+'d'*64)
+                before_reuse=(command.call_count,len(calls))
+                self.assertEqual(M.image(time.monotonic()+10),receipt)
+                self.assertEqual((command.call_count,len(calls)),before_reuse)
+                for nonce in ('a'*64,'e'*64):
+                    build=root/('build-'+nonce);cache=root/('npm-cache-'+nonce)
+                    self.assertTrue(build.is_dir());self.assertTrue(cache.is_dir())
+                    self.assertNotIn(cache,build.parents);self.assertNotIn(build,cache.parents)
+                cache_flags=[arg for entry in command.call_args_list for arg in entry.args[0] if arg.startswith('--cache=')]
+                self.assertEqual(cache_flags,['--cache='+str(root/('npm-cache-'+'a'*64)),
+                                             '--cache='+str(root/('npm-cache-'+'e'*64))])
+            for path,inode,marker,marker_inode,raw in legacy:
+                self.assertEqual(path.stat().st_ino,inode)
+                self.assertEqual(marker.stat().st_ino,marker_inode)
+                self.assertEqual(marker.read_bytes(),raw)
 
     def test_archive_escape_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -459,13 +512,113 @@ class DevelopmentBoundaries(unittest.TestCase):
             (path/'status').write_bytes(b'Uid: 0 0 0 0\nGid: 0 0 0 0\nGroups:\n')
             with patch.object(M,'PROC',root),patch.object(M.os,'listdir',side_effect=[['123'],['123'],['123'],[]]):
                 with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_IDENTITY_PROCESS_CHANGED'):
-                    M.process_identities(time.monotonic()+10)
+                    M._process_snapshot(time.monotonic()+3)
             with patch.object(M,'PROC',root),patch.object(M,'PROC_STATUS_LIMIT',8):
                 with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_IDENTITY_PROCESS_LIMIT'):
                     M.process_identities(time.monotonic()+10)
             with patch.object(M,'PROC',root/'missing'):
                 with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN'):
                     M.process_identities(time.monotonic()+10)
+
+    def test_transient_status_io_discards_the_entire_partial_snapshot(self):
+        for transient in (errno.ENOENT,errno.ESRCH):
+            with self.subTest(errno=transient),tempfile.TemporaryDirectory() as directory:
+                root=Path(directory);neutral=b'Uid: 0 0 0 0\nGid: 0 0 0 0\nGroups:\n'
+                first=root/'123/task/123';second=root/'456/task/456'
+                first.mkdir(parents=True);second.mkdir(parents=True)
+                (first/'status').write_bytes(b'Uid: 60031 0 0 0\nGid: 0 60032 0 0\nGroups:\n')
+                (second/'status').write_bytes(neutral)
+                original_open=os.open;status_reads=[]
+                def churn(path,*args,**kwargs):
+                    if path=='status':
+                        status_reads.append(path)
+                        if len(status_reads)==2:
+                            (first/'status').write_bytes(neutral)
+                            raise OSError(transient,'synthetic vanished task')
+                    return original_open(path,*args,**kwargs)
+                with patch.object(M,'PROC',root),patch.object(M.os,'open',side_effect=churn):
+                    complete=M.process_identities(time.monotonic()+10)
+                self.assertEqual(complete,(set(),set()))
+                self.assertEqual(len(status_reads),4)
+
+    def test_transient_snapshot_errors_exhaust_exactly_three_attempts_and_keep_errno(self):
+        for transient in (errno.ENOENT,errno.ESRCH):
+            failure=OSError(transient,'synthetic missing task')
+            with self.subTest(errno=transient),patch.object(M,'_process_snapshot',side_effect=failure) as snapshot:
+                with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN') as stopped:
+                    M.process_identities(time.monotonic()+10)
+                self.assertEqual(snapshot.call_count,3)
+                self.assertEqual(stopped.exception.errno,transient)
+                self.assertIs(stopped.exception.__cause__,failure)
+
+    def test_listing_change_restarts_only_a_whole_observation_with_the_same_end(self):
+        changed=M.Stop('DEVELOPMENT_IDENTITY_PROCESS_CHANGED')
+        complete=({60002},{60003})
+        with patch.object(M,'_process_snapshot',side_effect=[changed,complete]) as snapshot:
+            self.assertEqual(M.process_identities(time.monotonic()+10),complete)
+            self.assertEqual(snapshot.call_count,2)
+            self.assertEqual(snapshot.call_args_list[0].args,snapshot.call_args_list[1].args)
+        with patch.object(M,'_process_snapshot',side_effect=changed) as snapshot:
+            with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_IDENTITY_PROCESS_CHANGED'):
+                M.process_identities(time.monotonic()+10)
+            self.assertEqual(snapshot.call_count,3)
+
+    def test_permission_parse_limit_or_unknown_snapshot_errors_are_never_retried(self):
+        failures=[OSError(errno.EACCES,'private path'),OSError(errno.EIO,'private path'),OSError(),
+                  M.Stop('DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN'),
+                  M.Stop('DEVELOPMENT_IDENTITY_PROCESS_LIMIT'),M.Stop('DEVELOPMENT_IDENTITY_DEADLINE')]
+        for failure in failures:
+            with self.subTest(error=type(failure).__name__,errno=getattr(failure,'errno',None)), \
+                 patch.object(M,'_process_snapshot',side_effect=failure) as snapshot:
+                with self.assertRaises(M.Stop) as stopped:M.process_identities(time.monotonic()+10)
+                self.assertEqual(snapshot.call_count,1)
+                self.assertEqual(stopped.exception.errno,getattr(failure,'errno',None))
+                if isinstance(failure,OSError):self.assertIs(stopped.exception.__cause__,failure)
+        with tempfile.TemporaryDirectory() as directory,patch.object(M,'PROC',Path(directory)/'missing'), \
+             patch.object(M.os,'open',wraps=os.open) as opened:
+            with self.assertRaises(M.Stop) as stopped:M.process_identities(time.monotonic()+10)
+            self.assertEqual(stopped.exception.errno,errno.ENOENT)
+            self.assertEqual(opened.call_count,1)
+
+    def test_assigned_credentials_or_unknown_nss_are_not_retried_or_reselected(self):
+        with patch.object(M.pwd,'getpwuid',side_effect=missing),patch.object(M.grp,'getgrgid',side_effect=missing), \
+             patch.object(M,'_process_snapshot',return_value=({60011},set())) as snapshot, \
+             patch.object(M,'select_identity') as select:
+            with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_IDENTITY_PROCESS_ASSIGNED'):
+                M.refresh_identity(time.monotonic()+10)
+            self.assertEqual(snapshot.call_count,1);select.assert_not_called()
+        self.assertIsNone(M.ACTIVE_IDENTITY)
+        for lookup in (object(),OSError(errno.EIO,'synthetic NSS unknown')):
+            M.ACTIVE_IDENTITY=identity()
+            kwargs={'side_effect':lookup} if isinstance(lookup,OSError) else {'return_value':lookup}
+            with patch.object(M.pwd,'getpwuid',**kwargs),patch.object(M,'_process_snapshot') as snapshot, \
+                 patch.object(M,'select_identity') as select:
+                with self.assertRaises(M.Stop) as stopped:M.refresh_identity(time.monotonic()+10)
+                snapshot.assert_not_called();select.assert_not_called()
+                self.assertEqual(stopped.exception.errno,getattr(lookup,'errno',None))
+            self.assertIsNone(M.ACTIVE_IDENTITY)
+
+    def test_all_snapshot_attempts_share_three_seconds_and_the_callers_deadline(self):
+        for deadline,expected_calls,expected_end in ((110.,2,103.),(101.,1,101.)):
+            clock=[100.]
+            def changed(end):
+                self.assertEqual(end,expected_end)
+                clock[0]+=2
+                raise M.Stop('DEVELOPMENT_IDENTITY_PROCESS_CHANGED')
+            with self.subTest(deadline=deadline),patch.object(M.time,'monotonic',side_effect=lambda:clock[0]), \
+                 patch.object(M,'_process_snapshot',side_effect=changed) as snapshot:
+                with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_IDENTITY_DEADLINE'):
+                    M.process_identities(deadline)
+                self.assertEqual(snapshot.call_count,expected_calls)
+        clock=[100.]
+        def late_complete(end):
+            clock[0]=end+.01
+            return set(),set()
+        with patch.object(M.time,'monotonic',side_effect=lambda:clock[0]), \
+             patch.object(M,'_process_snapshot',side_effect=late_complete) as snapshot:
+            with self.assertRaisesRegex(M.Stop,'DEVELOPMENT_IDENTITY_DEADLINE'):
+                M.process_identities(110.)
+            self.assertEqual(snapshot.call_count,1)
 
     def test_tools_receipt_binds_reuse_and_rechecks_instead_of_reselecting(self):
         stored=tools_receipt(identity(60005,60006))
@@ -510,7 +663,8 @@ class DevelopmentBoundaries(unittest.TestCase):
         def prepared(_):
             M.UID,M.GID,M.ACTIVE_IDENTITY=60011,60012,identity()
             return {'schema':'synthetic-own-development-facts'}
-        for callback,complete in ((prepared,True),(M.Stop('DEVELOPMENT_IDENTITY_NSS_UNKNOWN'),False)):
+        for callback,complete in ((prepared,True),(M.Stop('DEVELOPMENT_IDENTITY_NSS_UNKNOWN'),False),
+                                  (M.Stop('DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN',OSError(errno.EACCES,'private-path')),False)):
             with tempfile.TemporaryFile() as lock:
                 fd=os.dup(lock.fileno())
                 with patch.object(M.os,'getuid',return_value=0),patch.object(M.os,'geteuid',return_value=0), \
@@ -527,6 +681,8 @@ class DevelopmentBoundaries(unittest.TestCase):
             else:
                 self.assertIsNone(result['identity'])
                 self.assertEqual(result['status'],'FAIL_KEEP_STATE_NO_RETRY')
+                self.assertEqual(result['diagnostic']['errno'],callback.errno)
+                self.assertNotIn('private-path',json.dumps(result))
             C.development_result(result,{'nonce':nonce},cap)
 
     def test_wrong_host_worker_identity_stops_before_child_launch(self):

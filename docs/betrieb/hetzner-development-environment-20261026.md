@@ -146,6 +146,33 @@ isolierte Devidentität und ihre notwendigen Prüfungen und Quellbindungen;
 kein Bestandskonto wird geändert und kein alter Einmalmarker zurückgesetzt.
 Die tatsächliche Zielabnahme steht bis zu fünf erfolgreichen neuen Phasen aus.
 
+## Direkter Fortschritt und begrenzte Prozessbeobachtung
+
+Der korrigierte Zielaufruf40428805792 auf Mainfcc8/PR965 hat UID60001 und GID60001
+rein lesend als verfügbar belegt. `tools` und `source` sind abgeschlossen; die
+schreibbare Quelle29b05 und Werkzeuge bleiben erhalten. `image` stoppte mit
+`DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN`, `identity=null` und Toolzähler3.
+Die ursprüngliche errno wurde dabei nicht weitergegeben; weder ein verschwundener
+Prozess noch ein Rechtefehler wird als konkrete Ursache behauptet.
+
+Die Folgekorrektur wiederholt ausschließlich eine vollständige lesende
+Prozessaufnahme, wenn der Kernel ENOENT/ESRCH oder eine geänderte PID-/Threadliste
+bestätigt. Jeder Teilstand wird verworfen. Höchstens drei Aufnahmen teilen sich
+ein einziges Zeitlimit von maximal3s; Rechtefehler, unbekannte/fehlerhafte Daten,
+NSS-Probleme und belegte Kennungen stoppen weiterhin. Die bestehende numerische
+errno-Diagnose erhält die Fehlernummer. Kein Befehl, Download, Docker- oder
+nativer Lauf wird durch diese Beobachtungslogik wiederholt.
+
+Eine spätere frische geprüfte Devfortsetzung verwendet die vorhandenen
+TOOLS-/CURRENT-Quittungen und dasselbe gebundene UID/GID-Paar. Alle früheren
+Antworten, Fehler und Dateien bleiben erhalten; Marker werden nicht zurückgesetzt.
+Ein neuer Imageversuch erhält eigene Build- und Cacheverzeichnisse aus seinem
+frischen Anfrage-Nonce. Alte feste oder angefangene Verzeichnisse bleiben
+unverändert; derselbe Nonce darf kein Verzeichnis erneut anlegen. Der Cache liegt
+außerhalb des Docker-Buildkontexts. Eine bereits vorhandene gebundene
+IMAGE-Quittung wird weiterhin wiederverwendet.
+Abhängigkeiten, Image und Ziel-DB bleiben bis zum tatsächlichen Funktionsbeleg offen.
+
 ## Quellen und lokale Prüfung
 
 Am26.10.2026 direkt gegen offizielle Quellen geprüft:
