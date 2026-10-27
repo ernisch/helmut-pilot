@@ -3048,11 +3048,18 @@
         "sha256": "6e0242d058492ecdc5dcdd430caa9e05f9497a0384de9b53659a8891ce9f3efa",
         "relationToPR969": "missing",
         "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/understanding.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 199841,
+        "sha256": "380411f85b1c608d665c5b093303f9e4ca8028e7389b83e06e9d0ac52c616077",
+        "relationToPR969": "different",
+        "action": "required source-bound prompt-rule integration; proven by CI2; exact selected W15 hunk"
       }
     ],
     "excludedW15FileChanges": {
-      "lib/helmut/berlin-presse-sondervorlagen.js": "Source recapture grammar, outside measured runtime content graph; no new source capture in this sprint.",
-      "lib/helmut/understanding.js": "Prompt selection for new U work; chosen run is D/R with U0 and preserves existing U history."
+      "lib/helmut/berlin-presse-sondervorlagen.js": "Source recapture grammar, outside measured runtime content graph; no new source capture in this sprint."
     },
     "additionalInterfaces": [
       {
@@ -3278,7 +3285,7 @@
     "basePR969RemainsUnmerged": true,
     "mainCommit": "6b4012cd912fd0e1f5ec79969168d0dcc010927f",
     "runtimeSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
-    "runtimeFiles": 28,
+    "runtimeFiles": 29,
     "cpuPinnedSources": 67,
     "runtimeFilesRemainByteIdenticalToSelectedW15": true,
     "inputReceipt": {
@@ -3388,7 +3395,9 @@
       "rawIndexSHA256": "17ab053232fc006363c844b8862a20a1d088fe1c46a6b9a1a35a9254091bcfb3",
       "coverageOnlyReruns": 0,
       "workerCoverageClaimed": false,
-      "wholeRepositoryPercentClaimed": false
+      "wholeRepositoryPercentClaimed": false,
+      "subsequentRequiredCIInterfaceV8Files": 8,
+      "subsequentRequiredPromptIntegrationV8Files": 6
     },
     "privateOriginalTestsAutomaticallyExcluded": true,
     "privateOriginalInputsUploadedToCI": false,
@@ -3417,7 +3426,6 @@
       "productionRuntimeQualificationStillRequired": true
     },
     "draftPR": "https://github.com/ernisch/helmut-pilot/pull/971",
-    "codeCommit": "058cc9e8201bf36ef5eaff756855472a901dfa97",
     "firstCIRun": {
       "url": "https://github.com/ernisch/helmut-pilot/actions/runs/40502943321",
       "headSHA": "058cc9e8201bf36ef5eaff756855472a901dfa97",
@@ -3457,6 +3465,51 @@
       "independentReadOnlyReview": "No blocker; actual auth/nonce/deadline/canonical fallback preserved; structured cron path guard plus negative tests; no configuration value changed."
     },
     "requiredFollowupCIChecks": "https://github.com/ernisch/helmut-pilot/pull/971/checks",
-    "followupCIStatusAtCommit": "pending; no all-green assertion for corrected head"
+    "followupCIStatusAtCommit": "pending after required prompt integration; see latest PR checks, no all-green assertion",
+    "originalWorkerProofCommit": "058cc9e8201bf36ef5eaff756855472a901dfa97",
+    "secondCIRun": {
+      "url": "https://github.com/ernisch/helmut-pilot/actions/runs/40506065002",
+      "headSHA": "c0a4af23c747db37b6b5428a12a8d8d710e52237",
+      "conclusion": "failure",
+      "standardPassed": 177,
+      "standardTotal": 177,
+      "browserDesktopMobile": "success",
+      "precedingIsolatedDatabaseSteps": "success",
+      "areaPassed": 328,
+      "areaTotal": 330,
+      "failures": [
+        "prosa-denktiefe-test.js",
+        "prosa-modellversuch-test.js"
+      ],
+      "Z22": "skipped_after_area_failure"
+    },
+    "requiredPromptIntegration": {
+      "runtimeFile": "lib/helmut/understanding.js",
+      "sourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+      "runtimeFilesAfterFix": 29,
+      "closed67WorkerGraphChanged": false,
+      "unchangedProsaSuites": [
+        {
+          "name": "prosa-denktiefe-test.js",
+          "groups": 14
+        },
+        {
+          "name": "prosa-modellversuch-test.js",
+          "groups": 13
+        }
+      ],
+      "sourceTimeGroups": 14,
+      "promptPinsOrOldTestsChanged": false,
+      "existingW15TestAndPublicFixtureImported": true,
+      "publicFixtureMatchesReceivedOriginalKeys": [
+        "actualSource23KO60",
+        "nativeInventoryHistoricalTemplate"
+      ],
+      "reportSHA256": "2a512692e20ceaf4a801c2e079d045ecc1795d530e88938a2c7f66a49723236e",
+      "additionalV8Files": 6,
+      "originalWorkerOrDBReruns": 0,
+      "independentReview": "No blocker; ordinary prompts preserved, typed background binding required and all selected proofs checked.",
+      "partialMainComparison": "Original prompt checks passed; later missing helper in minimal temporary tree, not a full successful baseline run."
+    }
   }
 }

@@ -9,9 +9,9 @@ Der vollständige Datei-/SHA256-Abgleich steht einmalig im
 
 ## Aktuelle W15-Entwicklungsintegration
 
-[Draft-PR971](https://github.com/ernisch/helmut-pilot/pull/971), Runtimecode`058cc9e8`; Test-/Inventargrenzen danach gezielt ergänzt.
+[Draft-PR971](https://github.com/ernisch/helmut-pilot/pull/971), Originalworker-Beleg auf`058cc9e8`; notwendige Anschlusskorrekturen danach im selben Draft.
 Eigener Branch `codex/w15-original-input-integration-20261027`, auf dem weiterhin
-ungemergten PR969. Genau28benannte Runtimepfade entsprechen jetzt W15; einer war
+ungemergten PR969. Genau29benannte Runtimepfade entsprechen jetzt W15; einer war
 schon in969enthalten.67geschlossene Quellen plus Worker sind byte-/SHA-identisch.
 Die fünf benötigten CLI-/SQL-Schnittstellen und die Worker-Paketierung sind
 übernommen. Main-Buildauswahl, Router und übrige Vercel-Einstellungen bleiben;
@@ -73,6 +73,27 @@ Die Cronprüfung prüft jetzt nur strukturierte Cronrouten, inklusive zusätzlic
 Negativfälle. Unabhängiger lesender Review ohne Blocker. Die vorhandene
 [Pflicht-CI am PR](https://github.com/ernisch/helmut-pilot/pull/971/checks)
 ist nach diesen Korrekturen erneut abzuschließen; kein Grün für den neuen Kopf vorweggenommen.
+
+Der [zweite CI-Lauf](https://github.com/ernisch/helmut-pilot/actions/runs/40506065002)
+belegt Standard177/177, Browser und alle vorgelagerten DB-Schritte als grün.
+Bereich328/330 scheiterte an zwei unveränderten Prosa-Prompthashprüfungen.
+Ursache war eine tatsächlich fehlende W15-Anbindung: `understanding.js` nutzte die
+neue statische Hintergrundregel auch bei gewöhnlichen Quellen, statt die vorhandene
+`promptRegeln(selected)`-Auswahl aufzurufen. Genau der kleine Originalhunk aus11ca02db
+ist jetzt ergänzt; keine Prompthashes, alten Prosa-Tests oder Schutzregeln geändert.
+Die unveränderten Prosa-Suiten bestehen gezielt mit14/14 und13/13; der bestehende
+Quellenzeittest aus W15 besteht mit14Gruppen einschließlich gewöhnlichem Prompt,
+festem Original-PDF-Prompthash und ungültigen Folgebelegen. Die öffentliche
+Belegfixture ist zusätzlich identisch in zwei empfangenen Originaldateien bestätigt.
+
+Damit29statt28Runtimeimporte; `understanding.js` liegt außerhalb des unveränderten
+67er-Workergraphs. Erfolgreiche Originalworker-/DB-Läufe werden deshalb nicht wiederholt.
+Der Main-Vergleich bestätigte bereits passende historische Prompthashes; sein
+bewusst minimaler temporärer Codebaum brach erst später wegen eines fehlenden
+Hilfsmoduls ab und wird nicht als vollständiger erfolgreicher Testlauf gewertet.
+Die drei notwendigen Korrekturprüfungen haben sechs weitere V8-Dateien erzeugt.
+Unabhängiger lesender Review ohne Blocker. Die aktuelle Pflicht-CI am PR bleibt
+vor Abschluss erforderlich; Z22 war nach dem Bereichsfehler noch übersprungen.
 
 Coverage wurde in den ohnehin erforderlichen Läufen erfasst:16V8-Dateien,
 Prüfsummenindex privat erhalten. Die vier notwendigen CI-Korrekturprüfungen
