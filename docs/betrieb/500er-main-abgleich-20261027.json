@@ -3226,12 +3226,23 @@
     "laterPhysicalSnapshot": "V12 image.raw 2147483648B is recorded in the safe source inventory, not a proven W15 pre-unit initial state.",
     "safeRestoreSequence": [
       "obtain selected W15 input and DB-state membership from preserved original cloud without reusing old authority",
-      "use a separately confirmed current-Cloud recipient; private keys stay at their own endpoints",
+      "Use existing private recipient key if accessible; its transfer is now explicitly authorized. Verify target and per-file hashes; no new encryption architecture.",
       "pin complete selected manifest, hashes, cipher part order and target identity before any plaintext exposure",
       "after authorized secure delivery, verify complete bytes and use no-overwrite/symlink-safe restore dry-run before applying selected files",
       "rebuild isolated PG17/PostgREST state with fresh local credentials and native bindings; do not restore live processes or copy in-use PGDATA"
     ],
-    "safetyBoundary": "Only storage/recovery path discovery is authorized for originals in this sprint. No confirmed current-recipient access and no verified complete comparable input dataset; no decryption, re-encryption, server access or substitute original fabrication.",
-    "nextAction": "Read-only exact subset inventory from the original cloud or authorized provision of the selected data to a confirmed current Cloud recipient; no Hetzner work."
+    "safetyBoundary": "Selected preparation and private-key transfer authorized; original source/file channel and matching existing key are not accessible here. Production and paid tests remain blocked.",
+    "nextAction": "Obtain technical access to preserved source and recover only eight missing originals plus selected frozen W15 input dump/capture and roles; no new generic GO required.",
+    "privateKeyTransferAuthorizedByCurrentUser": true
+  },
+  "selectedOriginalDataAudit": {
+    "manifest": "docs/betrieb/w15-minimal-datenuebernahme-20261027.json",
+    "availableReferences": 5,
+    "missingOriginalFilesHere": 8,
+    "missingOriginalBytes": 91544863,
+    "selectedFrozenInputDumpSHA256": "06c6f37c7189dd166641d867809d42424f5c44618ab5cf6974939057ad61025c",
+    "dumpBytesNotYetKnown": true,
+    "privateKeyTransferAuthorized": true,
+    "blocker": "Technical access to preserved original workspace/existing decryption key; no further generic approval required."
   }
 }

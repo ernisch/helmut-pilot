@@ -213,16 +213,51 @@ Die alte [Cloud-Transferanleitung](https://drive.google.com/file/d/1aD8_ofHkAcyh
 ist an einen anderen bestätigten Empfänger gebunden; sie autorisiert keine
 Entschlüsselung in dieser Sitzung.
 
-**Konkreter nächster Schritt:** Im erhaltenen Ursprung ausschließlich die oben
-benannte W15-Teilmenge und einen passenden gültigen DB-Zustand per Inventar
-bestätigen. Anschließend, außerhalb der hier nur lesend beauftragten
-Speicherprüfung, gezielte verschlüsselte Bereitstellung für einen bestätigten
-Empfänger der aktuellen Cloud; private Schlüssel bleiben an ihren Endpunkten.
-Geordnete Teile-/Gesamthashes und vollständiges Manifest prüfen, dann ein
-No-Overwrite-/Symlink-sicherer Restore-Dry-run und erst danach die ausdrücklich
-zulässige Teilwiederherstellung. Lokale Credentials/Keys/Identitätsbindungen neu
-erzeugen; keine Live-PGDATA kopieren oder historische Claims reaktivieren.
-Private Inputs nicht in Git, Chat oder ungeprüften öffentlichen PR-Code stellen.
+**Aktuelle Betreiberfreigabe:** Die Übertragung privater Schlüssel ist ausdrücklich
+erlaubt. Die frühere Beschränkung auf ihren bisherigen Endpunkt gilt damit nicht
+mehr. Für die gezielte Vorbereitung ist kein weiteres pauschales GO nötig.
+Der offene Punkt ist tatsächlicher Dateizugriff auf den erhaltenen Ursprung oder
+dessen vorhandenen Entschlüsselungsschlüssel. Production/Modelltests bleiben gesperrt.
+
+### Gezielter Datenbestand, abschließende Prüfung27.10.
+
+Das [Übernahmemanifest](w15-minimal-datenuebernahme-20261027.json) enthält exakte
+Pfade, Größen, SHA256 und bereits verfügbare Archivmitglieder. Die kleine
+Originaldatei-Ergänzung und das Ressourcenabhängigkeitspaket vom16.10. sowie der
+Metadatenkatalog vom19.10. wurden gezielt nachgeladen und per Gesamthash geprüft.
+Keine großen Originalarchive oder Cipherteile wurden geladen.
+
+- **Bereits vorhanden:** fünf hashgleiche Dateien: Policy-/Inhalts-/Mockabnahme,
+  Original-U-Review und Vorgängerbindung. Dazu die direkten Beleg-/Binderdateien
+  des vorhandenen Ressourcenabhängigkeitspakets. Keine erneute Übertragung nötig.
+- **Hier fehlend:** acht Originaldateien mit exakt **91.544.863B**: die sechs
+  W12/W13-Eingaben, Original-U-Paket und die439.524B große Profilreferenz
+  `wave11/cohort-requirements/PROFILES.PRIVATE.json`. Letztere ist im originalen
+  `exact-request-binder` fest nach Größe/Hash gebunden und fehlte in der ersten
+  Zwölferreferenzliste. Git-Objekte enthalten keinen exakten Bodytreffer.
+- **Passender DB-Ausgang gefunden:** Der [Drive-Kontrollindex vom19.10.](https://drive.google.com/file/d/1DG1uKBfEZjuMUhzIiItuJIgNgyr_yb6G/view)
+  (15.999B, SHA256`979cae32eb0f24ae9df6640094a061c593e486a3d467933774224b72569eded1`)
+  führt für `helmut_fresh_input_fixture_d2e98984` genau
+  `wave20-resource-integration/source-capture/FROZEN_SOURCE.PRIVATE.dump`,
+  SHA256`06c6f37c7189dd166641d867809d42424f5c44618ab5cf6974939057ad61025c`.
+  Seine Einzelgröße und der Inhalt des verschlüsselten inneren Manifests sind
+  hier noch nicht lesbar. Die Sicherung umfasst sieben Teile/111.247.647B;
+  sie wird deshalb noch nicht vollständig übertragen.
+- **Benötigter Zustand:**500synthetische Profile,501Identitäten, sechs Storezeilen
+  im historischen Eingang; Original-U und Auth-/Finanz-/Journalzustand erhalten.
+  Im neuen isolierten Lauf wächst der vollständige späte Zustand regulär.
+  Dafür muss kein alter Endzustand zurückgesetzt und kein späteres2GiB-V12-Image
+  importiert werden. Nur dieser eine Eingangsdump plus Capture/Rollenmetadaten
+  ist ausgewählt, nicht alle vier späteren Datenbankstände.
+
+**Einfachster nächster Schritt:** Im erhaltenen Originalspeicher die acht Dateien
+und den ausgewählten Dump/Capture/Rollensatz direkt prüfen und gezielt in diese
+Cloud kopieren. Falls nur die Drive-Sicherung erreichbar ist, den bereits
+passenden privaten Schlüssel verwenden/übertragen und nur diese Mitglieder
+bereitstellen. Der Schlüsseltransfer ist erlaubt; Quelle/Schlüssel sind hier
+technisch nicht angeschlossen. Keine neue Verschlüsselungsarchitektur nötig.
+Das ist kein Beleg für Datenverlust. Die endgültige Gesamtgröße bleibt bis zur
+Dump-/Capture-Inventur offen. Private Inhalte gehören weiterhin nicht in Git/Chat.
 
 **Folgesprintstatus: blockiert an sicher verfügbarer vergleichbarer Datenbasis.**
 Pfad und Datenvertrag sind gewählt und dokumentiert; kein Runtime-Port, neuer

@@ -4,10 +4,9 @@
 
 Main6b4012cd; PR969 bleibt ungemergt. Gewaehlt: W15-Kern11ca02db ausPR915,
 keine spaetere Native-/Auth-Architektur.27Runtimeaenderungen noch nicht importiert.
-Datenzugang blockiert: W15-Originalgraph/gueltiger DB-Zustand hier nicht vorhanden;
-kleines3Quellen/3KO-Fixture nicht lastaequivalent. Drive-Sicherung identifiziert,
-Empfaengerschluessel nur am alten Ziel; keine Entschluesselung/Hetzneraktion.
-NeueSynthetik grundsaetzlich moeglich, konservative Aequivalenz derzeit unbelegt.
+Daten:5Belegdateien hashgleich vorhanden;8Originaldateien/91.544.863B fehlen hier.
+Passender Eingangsdump mit SHA in Drive belegt; Einzelgroesse/Zugriff noch offen.
+Schluesseltransfer erlaubt. Technischer Quellenzugang fehlt; kein weiteresGO noetig.
 Codebc9ff4a2:34Gruppen und CI40477575989 gruen; seither nur Doku, keine neuenTests.
 [Pfad,Daten,Recovery und naechster Schritt](betrieb/500er-main-abgleich-20261027.md).
 Kein Productioneingriff;500/1500 nur mit eigenemGO. Mac5GB/Tag,Cloud/CI bevorzugt.
