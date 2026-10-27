@@ -13,7 +13,8 @@
     "dateRegressionCases": 39,
     "dateRegressionGroups": 9,
     "adapterRegressionGroups": 16,
-    "additionalRenewalDateBoundaries": "PASS"
+    "additionalRenewalDateBoundaries": "PASS",
+    "envInventoryChecks": 38
   },
   "newPG": {
     "image": "postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3",
@@ -141,6 +142,22 @@
       "path": "supabase/proposals/synthetik500_stored_command_suspend_reader.sql",
       "bytes": 10853,
       "sha256": "6b65ed567e26b330ca12c355c4031d955aebcd57d27e895149e140d2b49babd7"
+    },
+    {
+      "path": "docs/betrieb/env-inventar.md",
+      "bytes": 114242,
+      "sha256": "183f4d3605179c8b4b8938b3566cc74092e357e8b125bdc915d57f3f852e8a91"
     }
-  ]
+  ],
+  "ciFollowup": {
+    "runId": 40431434208,
+    "testedCodeHead": "abd70fd222ee1c6f8cb4c13904386df6ea3652f9",
+    "euDatabaseStep": "SUCCESS including new renewal SQL",
+    "browserMobile": "SUCCESS",
+    "offlineResult": "FAIL solely env-inventar-test.js, verified through check annotations",
+    "correction": "documentation only: register new renewal binding in env-inventar.md",
+    "targetedCorrectionResult": "38 PASS, 0 FAIL",
+    "productAndSQLBytesUnchanged": true,
+    "newHeadMandatoryCI": "PENDING; no merge or Production acceptance"
+  }
 }
