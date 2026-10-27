@@ -3085,9 +3085,9 @@
         "scope": "only closed worker source inclusion if later packaging needed; preserve Main build-ignore and existing deployment settings"
       }
     ],
-    "runtimeImportedThisSprint": false,
-    "testsStartedThisSprint": false,
-    "status": "BLOCKED_ON_SAFE_AVAILABLE_COMPARABLE_INPUTS_BEFORE_RUNTIME_PORT"
+    "runtimeImportedThisSprint": true,
+    "testsStartedThisSprint": true,
+    "status": "SELECTED_W15_CORE_FUNCTIONAL_WITH_ORIGINALS_FULL500_AND_PRODUCTION_ACCEPTANCE_OPEN"
   },
   "comparableDataDecision": {
     "existingSmallFixture": {
@@ -3095,7 +3095,8 @@
       "profiles": 500,
       "documents": 3,
       "knowledgeObjects": 3,
-      "adequateForResourceAcceptance": false
+      "adequateForResourceAcceptance": false,
+      "qualification": "Three-document/three-KO fixtures are still insufficient as selected original workload evidence; ordinary-v1 by itself is supported by W15 and is not a reason to reject a fixture."
     },
     "measurementNeeds": {
       "profileCount": 500,
@@ -3103,12 +3104,22 @@
       "providerMocks": 1000,
       "freshControlsPerProfile": 16,
       "graph": "Full valid source/KO/Draft/Review data, expanded canonical work, sharing, depth/fanout and profile distribution must be covered; bytes alone are insufficient.",
-      "historicalExpandedInputLowerBoundBytes": 3012510816,
-      "sourceVisitsPerFullC": 437000,
-      "koVisitsPerFullC": 250000,
       "lateState": "W15 valid entire Auth, money/reservations/history/journal and already retained outputs with real read/mutate/CAS/ACK; comparable physical DB/storage/cache configuration and full process lifecycle.",
       "differentLaterState": "PR936 1848 reachable nodes/6010786 payload bytes/6000 history rows describes a different split-Auth diagnostic case, not W15.",
-      "stateAvailability": "No authentic pre-last-unit W15 snapshot established here; do not rewind an entered/unknown V12 operation."
+      "stateAvailability": "No authentic pre-last-unit W15 snapshot established here; do not rewind an entered/unknown V12 operation.",
+      "olderHistoricalV2ExpandedInputLowerBoundBytes": 3012510816,
+      "olderV2SourceVisitsPerFullC": 437000,
+      "olderV2KOVisitsPerFullC": 250000,
+      "qualificationCorrection20261027": "The successful W15 assembler uses NORMALIZED500_CURRENT_POLICY:500 ordinary-v1 rows with7selected documents/6selected KOs. The3GBlowerbound and874/500per-draft oldv2capture describe a different older input, not a minimum for selected W15. Full isolated source DB remains preserved.",
+      "selectedW15Context": {
+        "profiles": 500,
+        "briefingVersion": 1,
+        "selectedDocuments": 7,
+        "selectedKnowledgeObjects": 6,
+        "normalizedFileBytes": 89982254,
+        "fullOriginalDatabaseRawDocuments": 931,
+        "fullOriginalDatabaseKnowledgeObjects": 517
+      }
     },
     "exactOriginalContentGenerallyMandatory": false,
     "syntheticEquivalentPossibleInPrinciple": true,
@@ -3219,8 +3230,8 @@
     "privateKeyOnlyOnAcceptedHistoricalTarget": true,
     "privateKeyReadOrExported": false,
     "largeCipherPartsDownloaded": false,
-    "currentCloudAcceptedRecipientEstablished": false,
-    "actualRestoreExecuted": false,
+    "currentCloudAcceptedRecipientEstablished": true,
+    "actualRestoreExecuted": true,
     "originalsRetainedOnSourceAccordingToHistoricalIndex": true,
     "W15InputMembershipInLaterBackupEstablished": false,
     "laterPhysicalSnapshot": "V12 image.raw 2147483648B is recorded in the safe source inventory, not a proven W15 pre-unit initial state.",
@@ -3232,7 +3243,7 @@
       "rebuild isolated PG17/PostgREST state with fresh local credentials and native bindings; do not restore live processes or copy in-use PGDATA"
     ],
     "safetyBoundary": "Selected preparation and private-key transfer authorized; original source/file channel and matching existing key are not accessible here. Production and paid tests remain blocked.",
-    "nextAction": "Obtain technical access to preserved source and recover only eight missing originals plus selected frozen W15 input dump/capture and roles; no new generic GO required.",
+    "nextAction": "Original data received; isolated PostgreSQL input restored and focused development checks passed. Next qualify current signed prepare/open and runtime chain; no full500 or Production action authorized.",
     "privateKeyTransferAuthorizedByCurrentUser": true
   },
   "selectedOriginalDataAudit": {
@@ -3241,8 +3252,157 @@
     "missingOriginalFilesHere": 8,
     "missingOriginalBytes": 91544863,
     "selectedFrozenInputDumpSHA256": "06c6f37c7189dd166641d867809d42424f5c44618ab5cf6974939057ad61025c",
-    "dumpBytesNotYetKnown": true,
+    "dumpBytesNotYetKnown": false,
     "privateKeyTransferAuthorized": true,
-    "blocker": "Technical access to preserved original workspace/existing decryption key; no further generic approval required."
+    "blocker": null,
+    "dataReceived": true,
+    "receivedFileCount": 11,
+    "receivedPayloadBytes": 96530256,
+    "selectedDumpBytes": 4981565
+  },
+  "W15DevelopmentIntegration": {
+    "date": "2026-10-27",
+    "branch": "codex/w15-original-input-integration-20261027",
+    "basePR969RemainsUnmerged": true,
+    "mainCommit": "6b4012cd912fd0e1f5ec79969168d0dcc010927f",
+    "runtimeSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+    "runtimeFiles": 28,
+    "cpuPinnedSources": 67,
+    "runtimeFilesRemainByteIdenticalToSelectedW15": true,
+    "inputReceipt": {
+      "files": 11,
+      "bytes": 96530256,
+      "reportSHA256": "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1"
+    },
+    "database": {
+      "container": "synthetik500-runtime-pg-7e1c20261027",
+      "database": "helmut_w15_input_20261027",
+      "postgresVersion": "17.6",
+      "network": "none",
+      "publishedPorts": 0,
+      "imageId": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+      "dumpSHA256": "06c6f37c7189dd166641d867809d42424f5c44618ab5cf6974939057ad61025c",
+      "nativeFunctionBodiesAlreadyMatchW15": true,
+      "migrationsApplied": 0,
+      "preexistingActiveProfileFlagsRestored": 500,
+      "profileActivations": 0,
+      "allOriginalDataHashesUnchangedAfterChecks": true
+    },
+    "localChecks": {
+      "storedCommandCases": 81,
+      "originalContentGroups": 7,
+      "originalDBGroups": 8,
+      "suiteSelectionCases": 20,
+      "originalContentReportSHA256": "6fd260bb5f4b5df6e96988bd655a5e1d195d248c749158074ea1c0e6ff0b451b",
+      "originalDBReportSHA256": "c0d43725b92b36386bdb2472a6ee8a70c353ecc38f58811d1452292920a3083e",
+      "dataOnlyTransport": {
+        "version": "helmut-synthetik500-direct-dictionary-gzip/2",
+        "expandedBytes": 90613729,
+        "dictionaryBytes": 2132353,
+        "encodedBytes": 499189,
+        "dataOnlyNotExecutableCommand": true
+      },
+      "regionalMockChecks": [
+        {
+          "parliament": "bundestag",
+          "historicalBriefingDate": "2026-10-16T01:23:25.449Z",
+          "originalContextSources": 1,
+          "preparedRequestSHA256": "b7edc70c8e1e9de6759f2e1056b076a242597f8d141d02a45a404321968b021d",
+          "mockReviewAccepted": true,
+          "actualModelOutput": false
+        },
+        {
+          "parliament": "landtag-berlin",
+          "historicalBriefingDate": "2026-10-16T00:08:02.586Z",
+          "originalContextSources": 1,
+          "preparedRequestSHA256": "daeeb8b8f1a3dcff451cd8931525339cf40951f56d3fc87a6f2d0e4f2129558e",
+          "mockReviewAccepted": true,
+          "actualModelOutput": false
+        },
+        {
+          "parliament": "landtag-brandenburg",
+          "historicalBriefingDate": "2026-10-16T00:08:02.586Z",
+          "originalContextSources": 1,
+          "preparedRequestSHA256": "a56b0a772cd4cafc481a1d02b5706820bb458bbf6eaf1ad21e67530b49d5c1ac",
+          "mockReviewAccepted": true,
+          "actualModelOutput": false
+        }
+      ],
+      "selectedW15PositiveWorkerPending": false,
+      "selectedW15Worker": {
+        "status": "PASS",
+        "scenario": "ACTUAL_W15_NORMALIZED_7_DOCUMENTS_6_KOS_ORDINARY_V1",
+        "reportSHA256": "d0ed2b8b7327fc22ae4511c003ca0de0a10b301401dbd123ba10b5625cc46880",
+        "workerWallMs": 14716.032657,
+        "commandHash": "923832bb40bc44ae0bb18363399832235b269ea13f56d034238be254b5df370b",
+        "profilesAsContent": 500,
+        "intentsAsContent": 1000,
+        "positionsAsContent": 1500,
+        "expandedBytes": 105875862,
+        "encodedBytes": 1235995,
+        "commandCalls": 1,
+        "codecEnteredCount": 1,
+        "cpuEnteredCount": 0,
+        "scope": "ONE_ACTUAL_ORIGINAL_PINNED_WORKER_FULL_C_ONLY; NO_AUTHORITY_INSTALLATION_OR_UNIT_DISPATCH",
+        "modeledRuntimeMetadata": {
+          "scope": "INERT_HISTORICAL_CONTENT_FIXTURE_NOT_CURRENT_PRODUCTION_EVIDENCE",
+          "historicalClock": "2026-10-16T10:01:00.000Z",
+          "snapshotActiveOverrideOnlyInMemory": true,
+          "observedSourceActiveProfiles": 500,
+          "mockDayBookAddedOnlyInMemory": "2026-10-16",
+          "existingJournalAndClaimsUnchangedInMemory": true,
+          "externalEvidenceSchema": "public belegFixture; modeled only",
+          "actualRuntimeOrBudgetApprovalClaimed": false
+        },
+        "receivedOriginalObjectsPreserved": true,
+        "originalDBUnchanged": true,
+        "actualPreparedBackendOrHTTPQualificationClaimed": false
+      }
+    },
+    "publicationPolicy": {
+      "hash": "274033cdfdd5f1527d0e961a6c00482d61b7be317eeea03e736a6a5948aa6a04",
+      "origin": "Existing nonsecret plain Vercel configuration read only; exact policy required by original data; local child process binding only",
+      "productionConfigurationChanged": false,
+      "holdRemovedOrOriginalVerdictsRewritten": false
+    },
+    "firstFailures": {
+      "missingLocalPolicy": "Preserved first original-content log; resolved by binding exact existing policy, never by bypassing guard.",
+      "oldV2Probe": "Preserved90s deadline on older13Oct874document/500KO version2 dictionary. SuccessfulW15 builder uses normalized7/6 ordinaryv1. Wrong probe input binding corrected; no oldv2 repetition or90s relaxation.",
+      "directTestHarness": "Eight complete PASS groups inlog, but outer100s covered-run harness expired before observing clean exit; current CI required, no local success exit claimed."
+    },
+    "coverage": {
+      "capturedDuringRequiredRuns": true,
+      "rawV8Files": 16,
+      "rawIndexSHA256": "17ab053232fc006363c844b8862a20a1d088fe1c46a6b9a1a35a9254091bcfb3",
+      "coverageOnlyReruns": 0,
+      "workerCoverageClaimed": false,
+      "wholeRepositoryPercentClaimed": false
+    },
+    "privateOriginalTestsAutomaticallyExcluded": true,
+    "privateOriginalInputsUploadedToCI": false,
+    "HTTPPostgRESTEndToEndQualified": false,
+    "full500DispatchRun": false,
+    "paidModelCalls": 0,
+    "productionChanges": 0,
+    "hetznerActions": 0,
+    "remaining": [
+      "Actual current signed backend.prepare/open and HTTP/runtime/authority chain before full500 approval",
+      "Fresh runtime/command/source/date/financial/GO bindings",
+      "Full500 dispatch with1500complete results and8000fresh controls",
+      "Offline90/preparation60/Unit60/Auth30 and full common memory limit2048000000B; desired500000000B headroom",
+      "Controlled Production qualification and separately approved paidmodel final proof"
+    ],
+    "independentReview": {
+      "scope": "read-only source/pins/security/CI/private-input exclusion/packaging review",
+      "findings": "No blocker for draft PR in scoped functional integration",
+      "actual500OrLiveRuntimeAcceptance": false
+    },
+    "ciRuntime": {
+      "oldNode": "22",
+      "newNode": "24.19.0",
+      "reason": "Exact runtime required by unchangedW15 startupSupported; reuse existingtwoCIjobs, no newrunner.",
+      "productionRuntimeChanged": false,
+      "productionRuntimeQualificationStillRequired": true
+    }
   }
 }

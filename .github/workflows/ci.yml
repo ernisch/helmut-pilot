@@ -73,7 +73,8 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # W15's closed worker validates this exact native runtime.
+          node-version: 24.19.0
           cache: npm
       - name: Prüfplan aus geänderten Dateien
         id: plan
@@ -451,7 +452,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.19.0
           cache: npm
       - name: Prüfplan aus geänderten Dateien
         id: plan

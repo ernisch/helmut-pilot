@@ -78,7 +78,9 @@ async function remote(command, action, index, { vercelAuth = null } = {}) {
         });
       });
     const timer = setTimeout(() => finish(true),
-      require("../lib/helmut/synthetik-500-eu-service-contract").isPlan(command.slot.plan) ? 60000 : 180000);
+      // Runtime content restoration and the unchanged Unit60 are consecutive
+      // phases. The client transport must permit both; neither deadline grows.
+      require("../lib/helmut/synthetik-500-eu-service-contract").isPlan(command.slot.plan) ? 120000 : 180000);
     req.once("error", () => finish(true)); req.end(body);
   });
   if (action === "export") result.result = Codec.decode(result.result);
