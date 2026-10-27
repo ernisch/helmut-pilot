@@ -61,6 +61,8 @@ Kalendermetadaten und davon abhaengige Hashes neu gebunden; keine Quelldaten,
 Urteilstexte oder Frischepruefer geaendert. Der echte aktuelle D-Vorflug scheitert
 nach51 geprueften Eingaben bei einem Berliner Profil am leeren Quellenkontext.
 Das ist ein Ablehnungsbeispiel, keine vollstaendige heutige500erD-Pruefung.
+Rein lesend eingegrenzt: dessen einzige ausgewaehlte Quelle ist vom13.10.,
+11:02:48UTC; der unveraenderte14Tage-Cutoff lag beim Test am13.10.,15:38:22UTC.
 
 Fuer den begrenzten Backendtest erzeugt der unveraenderte originale D-Preparer
 historische Requestbytes aus den Originalen mit explizitem Fixture-Datum
@@ -109,7 +111,14 @@ Codex-Review ohne Blocker fuer diesen begrenzten Umfang.
 Basis PR971/7c99ee34: [CI40510429293](https://github.com/ernisch/helmut-pilot/actions/runs/40510429293)
 vollstaendig erfolgreich, einschliesslich Standard, Bereich, nativer DB und
 Browser/Mobile. Die zuvor dokumentierten Zwischenfehler sind damit ueberholt.
-Aktuelle Kopf-CI dieses Folgesprints steht noch aus und wird hier nachgetragen.
+Codekopf `da63309c44625f072afb8ccaf924fc0b3da77877`:
+[CI40534410137](https://github.com/ernisch/helmut-pilot/actions/runs/40534410137)
+vollstaendig erfolgreich: Syntax, Standard, Bereich und saemtliche vorgesehenen
+nativen Schritte einschliesslich Z22. Browserjob erfolgreich, UI-Pruefungen
+gemaess vorhandener Auswahl uebersprungen; bestehender Browserbeleg7c bleibt.
+Der anschliessende reine Statusnachtrag aendert keinen Anwendungscode und traegt
+`[skip ci]`, damit dieselbe Vollserie nicht grundlos wiederholt wird. Der gruen
+belegte Codekopf bleibt ausdruecklich da63309c, kein behaupteter neuer Testlauf.
 
 Vor einem vollstaendigen Nachweis bleiben die heutige D-Kontextbindung des
 historischen W15-Datensatzes und die gemeinsame Unit-/RAM-Abnahme zu schliessen.

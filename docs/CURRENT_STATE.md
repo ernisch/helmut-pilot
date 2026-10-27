@@ -8,7 +8,7 @@ Nur benoetigte31.10.-Vertragsbindung aus967; unveraenderter Geldvertrag.
 Vorbereitung24,41s<90; kaltes Oeffnen5,55s<60; keine gemeinsame RAM-Abnahme.
 Historische Requestfixture: heutiger D-Kontext bei BE abgewiesen, kein500erBeleg.
 11Originaldateien/96.530.256B erhalten; urspruenglicher Restore unveraendert.
-Basis-CI40510429293 auf7c99ee34 vollstaendig gruen; neue Kopf-CI noch offen.
+Code-CI40534410137 aufda63309c vollstaendig gruen; danach nur Statusnachtrag.
 Keine Productionaenderung, Aktivierung oder vollstaendige500erAusfuehrung.
 [Belege/Grenzen](betrieb/w15-signierte-kette-20261027.md).
 

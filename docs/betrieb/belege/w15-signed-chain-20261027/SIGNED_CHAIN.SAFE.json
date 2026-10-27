@@ -205,12 +205,44 @@
     "baselineRun": 40510429293,
     "baselineHead": "7c99ee34e95119c8f5ad3013c4b14553d06c2fac",
     "baselineConclusion": "success",
-    "newHeadConclusion": "pending"
+    "newHeadConclusion": "success",
+    "codeHead": "da63309c44625f072afb8ccaf924fc0b3da77877",
+    "runId": 40534410137,
+    "url": "https://github.com/ernisch/helmut-pilot/actions/runs/40534410137",
+    "offlineJob": {
+      "id": 122295624529,
+      "conclusion": "success",
+      "syntax": true,
+      "standard": true,
+      "area": true,
+      "nativeDatabaseStepsIncludingZ22": true
+    },
+    "browserJob": {
+      "id": 122295626165,
+      "conclusion": "success",
+      "actualUITestsSkippedByExistingPlan": true,
+      "existingBrowserEvidenceReusedFrom": "7c99ee34e95119c8f5ad3013c4b14553d06c2fac"
+    },
+    "subsequentDocumentationOnlyCommitSkipsCI": true,
+    "applicationCodeChangedAfterSuccess": false
   },
   "remaining": [
     "Original v1 sources do not qualify all500 current D contexts (one verified BE rejection after51 preflights)",
     "active500 native runtime and actual unit execution not authorized/performed",
     "shared process+database memory peak/headroom and Unit60/Auth30 bound remain open",
     "new branch CI required; Production merge/deploy/activation/paid-model/full500 authorization remains separate"
-  ]
+  ],
+  "readOnlySourceDiagnosis": {
+    "schema": "helmut-w15-source-context-readonly-diagnosis/1",
+    "scope": "read-only metadata of first rejected profile only; no new preflight or source modification",
+    "profile": "test-kohorte-synthetik-be-001",
+    "normalizedOriginalSHA256": "90e11a4228e2e568edf03c3feb9ea2c79e71449e68fdc6c563a3355f1fbaaa14",
+    "originalInputDay": "2026-10-16",
+    "selectedSourceCount": 1,
+    "documentId": "rd-691117a4712de0582634fca3081d3ee6c2d6a65c3c4360086dd5caffbd44800d",
+    "publishedAtUTC": "2026-10-13T11:02:48+00:00",
+    "currentTestBriefingDatum": "2026-10-27T15:38:22.340Z",
+    "unchanged14DayCutoffUTC": "2026-10-13T15:38:22.340000+00:00",
+    "full500CurrentDPreflightClaimed": false
+  }
 }
