@@ -128,11 +128,16 @@ Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigke
 
 ## Modell und Arbeitsumgebung
 
-Betreibersteuerung vom27.10.2026 Istanbul: Hetzner ist die dauerhafte
-Arbeitsumgebung fuer grosse Dateien, Arbeitskopien, lokale Datenbanken und Tests.
-Codex bleibt die KI-Steuerung. Bestehende Production bei Vercel/Supabase wird
-dadurch nicht migriert. Einrichtung fertigstellen, danach ausschliesslich am
-500er-Nachweis weiterarbeiten; keine zusaetzliche Infrastruktur oder Routerarbeit.
+Betreiberentscheidung 27.10.2026, Sifis vereinfachter Weg: Codex und die
+bestehende GitHub CI (isolierte PostgreSQL/PostgREST, Browser, Offline-Mocks)
+sind der Standard. Vorhandene Tests wiederverwenden, Code Coverage ehrlich
+erheben, 500 Profile zuerst mit Mock-KI, echten isolierten DB-Transaktionen
+und relevanten Grenzfaellen pruefen. Hetzner ist KEIN Entwicklungs- oder
+500er-Starttor; keine neuen Aufbau- oder nativen Tests ohne belegte
+Notwendigkeit und passende Freigabe. Bestandsdaten und Belege erhalten.
+Mac nur optional; 5 GB mobiles Datenvolumen pro Tag, keine grossen Downloads
+dorthin. Production bleibt Vercel/Supabase; der echte 500er-Lauf mit
+1500 Sollpositionen bleibt eine separat freizugebende Schlussabnahme.
 
 Das Hauptmodell und seine Denkstufe stellt der Betreiber in Codex ein. Für den
 Routerbetrieb ist GPT 6.1 Sol High oder Sehr hoch als führender Orchestrator
