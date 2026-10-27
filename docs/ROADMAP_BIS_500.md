@@ -1,8 +1,8 @@
 # Roadmap bis zum 500er Production Nachweis
 
-Stand: 10.10.2026
+Stand: 27.10.2026 (neuer kritischer Pfad oben, historische Befunde darunter)
 
-Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis.
+Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis. Die ältere Detailchronik nach dem heutigen Pfad ist ausdrücklich historisch.
 Sie dient Codex als kurze Arbeitsroadmap. Aktueller Production Stand und Belege
 stehen weiterhin in `docs/CURRENT_STATE.md`.
 
@@ -17,11 +17,24 @@ gelten weiter. [Aktueller Umfang und Nachweisgrenzen](betrieb/synthetischer-500e
 Die nachfolgenden historischen Realprofilvorarbeiten sind keine aktuelle
 Importanweisung und kein Beleg synthetischer Startbereitschaft.
 
+## Aktueller kritischer Pfad vom 27.10.2026
+
+Die ältere technische Blockerhistorie weiter unten ist dokumentierte Historie, keine heutige Arbeitsanweisung. Maßgeblich sind die [aktuellen Belege](CURRENT_STATE.md) und Siffis in AGENTS.md verankerter einfacher Entwicklungsweg.
+
+1. Elf originale W15-Eingaben (96.530.256 B) sind laut Codex-Quittung vollständig in die aktuelle Cloud übernommen; Datenbank-Restore und Motorintegration **noch offen**.
+2. Historischen W15-Motorpfad aus PR #915 gezielt auf aktuellem main integrieren; PR #969 ist DRAFT, keine Production-Funktion dadurch behaupten. Mit isolierter PostgreSQL/PostgREST-Testdatenbank, Mock-KI und nur notwendigen gezielten Tests prüfen.
+3. Den korrekten Mock-Nachweis für **exakt 500 Profile** und 1500 Ergebnispositionen samt 8000 Schutzkontrollen, tatsächlichen Ressourcenmessungen und unabhängiger Nachkontrolle erbringen. RAM-Hauptgrenze 2.048.000.000 B und zusätzlich 500.000.000 B Reserve gelten weiter.
+4. Aktuelle Production-Eingaben, Qualität/Quellen, Budget, Endsteuerung und Sicherheitsbedingungen separat frisch belegen; dann genau **ein getrennt genehmigter Production-Test** mit exakt 500 gleichzeitig aktiven Profilen, definierten Sollwerten und Stopp/Rückweg. Kleinere Tests ersetzen ihn nie.
+
+**Hetzner:** Kein Entwicklungs- oder Starttor. Server erst nach verschlüsselter externer Sicherung und nachgewiesener Entschlüsselbarkeit des derzeit allein dort liegenden GPG-Schlüssels, geprüftem Restdateninventar und gesondertem Lösch-GO entfernen. Das bisherige Drive-Archiv allein ist kein Kündigungsnachweis. Mac nicht mit großen Dateien belasten.
+
+---
+
 ## Kritischer Pfad und Parallelitaet
 
 **Blocker 1 technisch abgeschlossen:** Der direkte500er Motorweg aus PR846 ist gemergt und ausgerollt; ein authentifizierter GET auf das gebundene READY-Deployment `53e1e369` ergab HTTP405/`Allow: POST` vor Datenbank- und Motorzugriff. Kein500er Test. Andere Starttore bleiben separat offen. [Abnahme](betrieb/blocker1-direkter-500er-motor-20261007.md).
 
-**Blocker 2 weiter offen, tatsächliche Fortschreibung10.10.:** **499/500 vollständig fachlich angenommene Eingaben** nach eigenem Stern-Originalminimum und84konkreten neuen Endurteilen. Genau336 unveränderte Titel-/Summary-Stellen geschlossen. Offen bleibt ausschließlich **Brake69** mit dem eigenen Kreiszeitungs-Ereignisbeleg. 180.103übrige Aussageobjekte/3.548alte Deltaurteile/416Profilurteile unverändert; fehlende Aussagenbelege, Ereignisduplikate, unbeurteilte Aussagen und übrige Fehlerkategorien0. Als Nächstes nur den tatsächlich fehlenden eigenen Originalabsatz beschaffen und Ereignisidentität entscheiden. Data13 und Aufnahme wurden nicht wiederholt. [Aktuelle Fortschreibung](betrieb/blocker2-stern-originalminimum-und-499er-fachabnahme-20261010.md). Keine Aktivierung oder Freigabe des späteren1500-Positionen-Funktionstests daraus ableiten.
+**Blocker 2 (historische, inzwischen durch spätere Abnahme überholte Fortschreibung vom 10.10.):** **499/500 vollständig fachlich angenommene Eingaben** nach eigenem Stern-Originalminimum und84konkreten neuen Endurteilen. Genau336 unveränderte Titel-/Summary-Stellen geschlossen. Offen bleibt ausschließlich **Brake69** mit dem eigenen Kreiszeitungs-Ereignisbeleg. 180.103übrige Aussageobjekte/3.548alte Deltaurteile/416Profilurteile unverändert; fehlende Aussagenbelege, Ereignisduplikate, unbeurteilte Aussagen und übrige Fehlerkategorien0. Als Nächstes nur den tatsächlich fehlenden eigenen Originalabsatz beschaffen und Ereignisidentität entscheiden. Data13 und Aufnahme wurden nicht wiederholt. [Aktuelle Fortschreibung](betrieb/blocker2-stern-originalminimum-und-499er-fachabnahme-20261010.md). Keine Aktivierung oder Freigabe des späteren1500-Positionen-Funktionstests daraus ableiten.
 
 Vor jeder neuen Arbeitswelle priorisiert Sol in Codex Cloud nur die Blocker, die das 500er Starttor unmittelbar verhindern. Der geprüfte Cloud Router delegiert klar abgegrenzte Arbeit nach AGENTS.md an DeepSeek; Architektur, Production Entscheidungen, Integration und finale Abnahme bleiben bei Sol. Unabhaengige Arbeit darf nur parallel laufen, wenn die Schreibbereiche eindeutig getrennt sind. Am02.10.2026 hat der Betreiber alle Peak Arbeitssperren aufgehoben, auch die Chatvorgabe vom01.10.; Entwicklungsarbeit darf jederzeit ohne Peak GO starten. Production Schutz und Production Kostenlimits bleiben unveraendert; gruene Merges und regulaere Deployments sind inzwischen konkret freigegeben.
 
