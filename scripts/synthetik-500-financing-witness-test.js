@@ -12,7 +12,7 @@ function fixture(){const days={};for(let i=0;i<28;i++){const d=new Date(Date.UTC
 async function call(o={}){
  let reads=0,counters=0,backendChecks=0,clock=o.at||"2026-10-06T03:00:00.000Z";const day=clock.slice(0,10),auth=o.eu?require("./synthetik-500-eu-service-contract-test").fixture().read():fixture();o.edit?.(auth);
  const storage={llmDailyCallLimit:()=>o.raw??2416,llmUnderstandingReserve:()=>o.understanding??702,synthetik500ProductionBackend(){backendChecks++;if(o.badBackend)throw Error("private-failure");},async readAuthStore(args){assert.deepEqual(JSON.parse(JSON.stringify(args)),{strict:true});reads++;const a=structuredClone(auth);if(reads===2){o.afterEdit?.(a);if(o.afterTime)clock=o.afterTime;}return a;},async leseLlmTageszaehler(at){counters++;assert.equal(at.slice(0,10),day);return {ok:true,used:0,tag:day,...o.counter};}};
- const m={exports:{}};const deps={"./synthetik-500-production-command":C,"./testkosten-budget":K,"./provider-runtime-attestation":o.eu?{...R,operationAuthority:()=>({operationNonce:nonce,bearerSha256:crypto.createHash("sha256").update(BEARER).digest("hex"),expiresAtUTC:"2026-10-13T00:00:00.000Z"})}:R,"./storage":storage,
+ const m={exports:{}};const deps={"./synthetik-500-production-command":C,"./testkosten-budget":K,"./provider-runtime-attestation":o.eu?{...R,operationAuthority:()=>({operationNonce:nonce,bearerSha256:crypto.createHash("sha256").update(BEARER).digest("hex"),expiresAtUTC:"2026-11-15T18:00:00.000Z"})}:R,"./storage":storage,
    "./mandatsklasse":require("../lib/helmut/mandatsklasse"),
    "./synthetik-500-eu-service-contract":require("../lib/helmut/synthetik-500-eu-service-contract")};
  vm.runInNewContext("(function(require,module,exports){"+source+"\n})",{Buffer,Date,process:{env:{}}})(name=>{assert(Object.hasOwn(deps,name));return deps[name];},m,m.exports);
@@ -29,5 +29,17 @@ async function call(o={}){
  assert.equal((await call({headers:{"content-length":"0"}})).code,200);groups++;
  const eu=await call({eu:true,at:"2026-10-12T10:00:00.000Z"});assert.equal(eu.code,200);assert.equal(eu.json.serviceContractHash,EU.HASH);assert.equal(eu.json.dayLimitMicroUsd,82036000);assert.equal(eu.json.orderLimitMicroUsd,88845364);assert.equal(eu.json.dayBoundMicroUsd,636000);assert.equal(eu.json.orderBoundMicroUsd,7445364);assert.deepEqual(eu.json.globalPolicy,{raw:2416,understanding:702,realPriority:200,syntheticDR:1714,used:0});groups++;
  for(const x of [{raw:2415},{understanding:703},{env:{HELMUT_TESTLAUF_VORRANG_REAL:"201"}},{counter:{used:715}},{edit:a=>a.testKostenAuftrag.externGebunden++}])assert.notEqual((await call({eu:true,at:"2026-10-12T10:00:00.000Z",...x})).code,200);groups++;
+ const expired=await call({eu:true,at:"2026-10-27T10:00:00.000Z"});
+ assert.equal(expired.code,409);assert.deepEqual(expired.json.blockers,["order-window-expired","current-daybook-missing","daybook-capacity-exhausted"]);
+ assert.equal(expired.json.actual500Ready,false);assert.equal(expired.json.paidTestGo,false);groups++;
+ const renew=a=>require("./synthetik-500-order-renewal-test").renewed(a,"2026-10-27");
+ const renewed=await call({eu:true,at:"2026-10-27T10:00:00.000Z",edit:renew,env:{HELMUT_SYNTHETIK500_EU_ORDER_RENEWAL:EU.ORDER_RENEWAL_HASH}});
+ assert.equal(renewed.code,200);assert.equal(renewed.json.orderRenewalHash,EU.ORDER_RENEWAL_HASH);
+ assert.equal(renewed.json.orderLimitMicroUsd,88845364);assert.equal(renewed.json.actual500Ready,false);assert.equal(renewed.json.paidTestGo,false);groups++;
+ const noRenewalEnv=await call({eu:true,at:"2026-10-27T10:00:00.000Z",edit:renew});
+ assert.equal(noRenewalEnv.code,409);assert.deepEqual(noRenewalEnv.json.blockers,["order-renewal-runtime-unbound"]);
+ for(const edit of [a=>{renew(a);delete a.testKostenTage["2026-10-20"];},a=>{renew(a);a.testKostenAuftrag.orderRenewalHash="0".repeat(64);}])
+   assert.equal((await call({eu:true,at:"2026-10-27T10:00:00.000Z",edit,env:{HELMUT_SYNTHETIK500_EU_ORDER_RENEWAL:EU.ORDER_RENEWAL_HASH}})).code,409);
+ groups++;
  console.log("PASS financing witness: "+groups+" targeted groups; real pure hash/budget/verifier; zero real effects");
 })().catch(e=>{console.error(e);process.exitCode=1;});
