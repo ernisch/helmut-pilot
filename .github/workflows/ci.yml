@@ -340,6 +340,8 @@ jobs:
           node scripts/lokal.js -- node scripts/synthetik-500-eu-daybook-init-datenbank-test.js
           # Getrennter enger Nachfolger; alter Erstinitializer bleibt unveraendert.
           node scripts/lokal.js -- node scripts/synthetik-500-eu-daybook-rollforward-datenbank-test.js
+          # Neue begrenzte Auftragsverlaengerung; keine alte Abnahme ersetzt.
+          node scripts/lokal.js -- node scripts/synthetik-500-order-renewal-datenbank-test.js
 
       - name: Inerte Originalzustands-Reader-SQL gegen isolierten PostgreSQL17.6
         if: steps.plan.outputs.database == 'true'

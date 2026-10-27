@@ -1,0 +1,185 @@
+{
+  "schema": "helmut-production-startblocker-preparation/1",
+  "status": "DEVELOPMENT_PREPARED_NOT_APPROVED_NOT_APPLIED",
+  "observedAtUTC": "2026-10-27T01:12:13.076551+00:00",
+  "baseCommit": "fcc8d8e0078c5307d817c9156433c560d3d431b1",
+  "nativeAdoptionSource": "470d871a0d38afb3bc2aab4288537c70a382c80a",
+  "targetedResults": {
+    "renewalGroups": 6,
+    "financeGroups": 9,
+    "newIsolatedPGGroups": 20,
+    "budgetRegressionGroups": 26,
+    "euRegressionGroups": 6,
+    "dateRegressionCases": 39,
+    "dateRegressionGroups": 9,
+    "adapterRegressionGroups": 16,
+    "additionalRenewalDateBoundaries": "PASS",
+    "envInventoryChecks": 38
+  },
+  "newPG": {
+    "image": "postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3",
+    "network": "none",
+    "ports": 0,
+    "clock": "fixed only in isolated SQL test copies",
+    "initialFailure": "ambiguous JSONB operator; full transaction rollback; corrected parentheses",
+    "finalResult": "20/20 PASS"
+  },
+  "renewalHash": "a649603fa8f18c6a3db65aab09b67e15d6bda80befa20e5394bce7eeda1d6415",
+  "productionWrites": 0,
+  "paidProviderTests": 0,
+  "hetznerActions": 0,
+  "productionReady": false,
+  "operatorApproval": false,
+  "review": {
+    "status": "PASS_SOURCE_ONLY_NO_OPEN_P0_P1",
+    "reviewer": "independent Codex instance /root/production_blocker_review",
+    "scope": "final source delta, seven byte-identical native imports, generated SQL and GO documentation",
+    "testsRepeatedByReviewer": false,
+    "productionAcceptance": false
+  },
+  "filePins": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 27362,
+      "sha256": "32deb30338b030bd9f3bc0fceb00124fa7a64e85d000e6826538db5ef864fa61"
+    },
+    {
+      "path": "docs/betrieb/production-startblocker-vorbereitung-20261027.md",
+      "bytes": 13172,
+      "sha256": "f331dc2df194d848b0db53de956d83bb67ceb9691d40055732715913edc1baee"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-date-binding.js",
+      "bytes": 5693,
+      "sha256": "4fcb90cfb76c6f41ab4fdb941502a50c38f44dc534697de563291cc47e4f4f33"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-eu-service-contract.js",
+      "bytes": 6229,
+      "sha256": "fc3a9f61a33424195b493824e18e0fba82076170880074459c735529a8ed3ef3"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-financing-witness.js",
+      "bytes": 7796,
+      "sha256": "3ef9877f17b8f296305e79f216a944817742fdc3984d2fa60d3855c6f21e9681"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-kosten-admission.js",
+      "bytes": 23099,
+      "sha256": "7a882404722dfc0313792f26768cfd35c29b05a948bb6d768d625c7db0ea2a9c"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-production-adapter.js",
+      "bytes": 26532,
+      "sha256": "ea9591d9aaa322dc7faa717431c81b21af6fd07d0efc381d420d147ecf8501d5"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-stored-command-native-pins.json",
+      "bytes": 506,
+      "sha256": "e553c720f93b4cb9855bf4aa23b20753e88492b3623d5ace778245676ff4bc46"
+    },
+    {
+      "path": "lib/helmut/testkosten-budget.js",
+      "bytes": 33455,
+      "sha256": "494275be430a51746852472e242eea40e1151529d2bc0191c1cebdbea0255441"
+    },
+    {
+      "path": "scripts/run-offline-tests.js",
+      "bytes": 40046,
+      "sha256": "fcbfb80509be267b27c4d7eedfdebbf2a63818fdb04dc2382550e588bbac08cb"
+    },
+    {
+      "path": "scripts/synthetik-500-eu-renewal-sql.js",
+      "bytes": 9310,
+      "sha256": "8151eafa732238209fb1577c6cab1293f90771d4ebc2fd13a53c4ed31fe74a2b"
+    },
+    {
+      "path": "scripts/synthetik-500-financing-witness-test.js",
+      "bytes": 7948,
+      "sha256": "a552740a8de768b1cbbb09af28516eebab12ce73a2321d531fa673c9f6ead1e4"
+    },
+    {
+      "path": "scripts/synthetik-500-order-renewal-datenbank-test.js",
+      "bytes": 9633,
+      "sha256": "e36a1532d849e09388f7369b0ee48e35a5f93dd88130c50d5b7e088a9a40915f"
+    },
+    {
+      "path": "scripts/synthetik-500-order-renewal-test.js",
+      "bytes": 4878,
+      "sha256": "56a83d26345b56368d277c9c0c5246e9209d62ba4de0fdaef30233b88151cc4d"
+    },
+    {
+      "path": "scripts/synthetik-500-release-sql.js",
+      "bytes": 9605,
+      "sha256": "8035de8d1ef8dd666220a166d1469cce9054386f63e9f6e58eacd72136f1e907"
+    },
+    {
+      "path": "supabase/proposals/synthetik500_eu_order_renewal_20261027.sql",
+      "bytes": 24239,
+      "sha256": "04c9155a37d195e5cea177c118b5abe0edaf499bee82d489aa04ebc53fe2768b"
+    },
+    {
+      "path": "supabase/proposals/synthetik500_stored_command_binding.sql",
+      "bytes": 7850,
+      "sha256": "29c1ef679f3d887a7888a508d466b1e696733e352262a8f8278add1aa2184a3c"
+    },
+    {
+      "path": "supabase/proposals/synthetik500_stored_command_binding_rollback.sql",
+      "bytes": 632,
+      "sha256": "055b6d9214f60df762a17a250575b3075ad28f0f6851e28cfeb4ea0ce07bcaaa"
+    },
+    {
+      "path": "supabase/proposals/synthetik500_stored_command_install_guarded.sql",
+      "bytes": 15086,
+      "sha256": "17e41c0448fb82e8e2e99421bc7f7c8d2e3f85ad202552a56c2fc44482b8cdf3"
+    },
+    {
+      "path": "supabase/proposals/synthetik500_stored_command_remove_if_empty.sql",
+      "bytes": 8170,
+      "sha256": "7d812c61df9fb1b6b1166c956bd53f3de8fc40066777f85b4813695e8515c31e"
+    },
+    {
+      "path": "supabase/proposals/synthetik500_stored_command_suspend_reader.sql",
+      "bytes": 10853,
+      "sha256": "6b65ed567e26b330ca12c355c4031d955aebcd57d27e895149e140d2b49babd7"
+    },
+    {
+      "path": "docs/betrieb/env-inventar.md",
+      "bytes": 114242,
+      "sha256": "183f4d3605179c8b4b8938b3566cc74092e357e8b125bdc915d57f3f852e8a91"
+    }
+  ],
+  "ciFollowup": {
+    "runId": 40431434208,
+    "testedCodeHead": "abd70fd222ee1c6f8cb4c13904386df6ea3652f9",
+    "euDatabaseStep": "SUCCESS including new renewal SQL",
+    "browserMobile": "SUCCESS",
+    "offlineResult": "FAIL solely env-inventar-test.js, verified through check annotations",
+    "correction": "documentation only: register new renewal binding in env-inventar.md",
+    "targetedCorrectionResult": "38 PASS, 0 FAIL",
+    "productAndSQLBytesUnchanged": true,
+    "newHeadMandatoryCI": "SUCCESS on 1628339ea5e36d0f2f1d0aa47b173dc46c214714, run 40434893251; subsequent integrated head requires its own CI"
+  },
+  "mainIntegration": {
+    "observedAtUTC": "2026-10-27T07:01:35.266741+00:00",
+    "mainCommit": "775e928a0f7c7962712e35ffaeecb17cb6225a1e",
+    "includedMergedPR": 966,
+    "previousPRHead": "1628339ea5e36d0f2f1d0aa47b173dc46c214714",
+    "previousMandatoryCI": {
+      "runId": 40434893251,
+      "offline": "SUCCESS",
+      "browserMobile": "SUCCESS",
+      "allRequiredDatabaseSteps": "SUCCESS",
+      "areaRegression": "SUCCESS",
+      "z22": "SUCCESS"
+    },
+    "overlappingFiles": [],
+    "mainDeltaFiles": 8,
+    "method": "rebase own two development commits; no main merge",
+    "priorProductSQLCIInventoryBytesUnchanged": true,
+    "allPR966FilesIdenticalToMain": true,
+    "integratedHeadMandatoryCI": "REQUIRED_BEFORE_FINAL_APPROVAL; actual run and outcome linked in PR",
+    "nextApprovalScope": "exact checked PR967 merge and regular Vercel deployment only; no SQL, ENV, financial adoption, activation, command or paid test",
+    "noProductionReadinessClaim": true
+  }
+}
