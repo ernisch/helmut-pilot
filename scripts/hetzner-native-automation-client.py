@@ -604,9 +604,24 @@ def development_capsule_check(value, source):
         and 0 < value['expires_at_utc']-value['issued_at_utc'] <= 300, 'setup-capsule')
 
 
+def development_identity(value):
+    keys = {'schema','uid','gid','uid_absent_from_nss','gid_absent_from_nss',
+            'uid_absent_from_processes','gid_absent_from_processes','observed_at_utc','proof_sha256'}
+    require(type(value) is dict and set(value) == keys
+        and value['schema'] == 'helmut-development-identity-v1'
+        and all(type(value[key]) is int and 60001 <= value[key] <= 60032 for key in ('uid','gid'))
+        and all(value[key] is True for key in ('uid_absent_from_nss','gid_absent_from_nss',
+            'uid_absent_from_processes','gid_absent_from_processes'))
+        and type(value['observed_at_utc']) is int and 0 < value['observed_at_utc'] < 2**63,
+        'development-identity')
+    pinned_sha(value['proof_sha256'])
+    facts = {key:item for key,item in value.items() if key != 'proof_sha256'}
+    require(value['proof_sha256'] == digest(canonical(facts)+b'\n'), 'development-identity')
+
+
 def development_result(result, sent, capsule):
     keys = {'schema','status','action','phase','source_commit','source_sha256','request_nonce','code',
-            'receipt_sha256','diagnostic','native_qualified','native_go_consumed'}
+            'receipt_sha256','diagnostic','identity','native_qualified','native_go_consumed'}
     require(type(result) is dict and set(result) == keys and result['schema'] == 'helmut-development-result-v1'
         and result['status'] in ('DEVELOPMENT_STEP_COMPLETE','FAIL_KEEP_STATE_NO_RETRY')
         and all(result[key] == capsule[key] for key in ('action','phase','source_commit','source_sha256'))
@@ -616,8 +631,10 @@ def development_result(result, sent, capsule):
     if result['status'] == 'DEVELOPMENT_STEP_COMPLETE':
         require(result['code'] == 'DEVELOPMENT_STEP_COMPLETE' and result['diagnostic'] is None, 'setup-result')
         pinned_sha(result['receipt_sha256'])
+        development_identity(result['identity'])
     else:
         require(result['receipt_sha256'] is None, 'setup-result')
+        if result['identity'] is not None: development_identity(result['identity'])
         diagnostic = result['diagnostic']
         if diagnostic is not None:
             require(type(diagnostic) is dict and set(diagnostic) == {'tool','exit_code','errno','stdout_sha256','stderr_sha256','retained_tool_count'}, 'setup-result')
@@ -1320,6 +1337,7 @@ def development_client(environment):
     phase_root = temporary/'helmut-development-public'
     require(not phase_root.exists(), 'public-output-exists')
     phase_root.mkdir(mode=0o700)
+    identity_pair = None
     for index, (action, phase) in enumerate(steps):
         now = int(time.time())
         capsule = {'schema':'helmut-development-capsule-v1','action':action,'phase':phase,
@@ -1328,10 +1346,14 @@ def development_client(environment):
         supplied = {**environment, 'HELMUT_NATIVE_SETUP_CAPSULE':base64.b64encode(canonical(capsule)).decode()}
         output = phase_root/phase
         code = client(supplied, output)
+        reply = json_unique((output/'RESPONSE.SAFE.json').read_bytes())
+        if not code:
+            observed_pair = tuple(reply['result']['identity'][key] for key in ('uid','gid'))
+            require(identity_pair is None or observed_pair == identity_pair, 'development-identity-binding')
+            identity_pair = observed_pair
         # The standard workflow publishes only validated bounded public bytes.
         # Keep the prior phase artifacts and publish the final or first failure.
         if code or index == len(steps)-1:
-            reply = json_unique((output/'RESPONSE.SAFE.json').read_bytes())
             write_public_artifact(temporary/'helmut-native-public', reply)
             return code
     return 1

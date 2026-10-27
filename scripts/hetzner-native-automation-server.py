@@ -1620,7 +1620,8 @@ def _setup_successor_failure(code, capsule):
         return {'schema':'helmut-development-result-v1','status':'FAIL_KEEP_STATE_NO_RETRY',
             'action':capsule['action'],'phase':capsule['phase'],'source_commit':capsule['source_commit'],
             'source_sha256':capsule['source_sha256'],'request_nonce':hashlib.sha256(b'helmut-development-request-v1\0'+(json.dumps(capsule,sort_keys=True,separators=(',',':'))+'\n').encode()).hexdigest(),
-            'code':code,'receipt_sha256':None,'diagnostic':None,'native_qualified':False,'native_go_consumed':False}
+            'code':code,'receipt_sha256':None,'diagnostic':None,'identity':None,
+            'native_qualified':False,'native_go_consumed':False}
     continuation = capsule.get('schema') == 'helmut-context-continuation-capsule-v1'
     return {'schema': 'helmut-context-continuation-result-v1' if continuation else 'helmut-setup-successor-result-v1',
         'status':'FAIL_KEEP_STATE_NO_RETRY','contract_id':CONTINUATION_ID if continuation else SETUP_SUCCESSOR_ID,
@@ -1629,8 +1630,8 @@ def _setup_successor_failure(code, capsule):
         'lifecycle_sha256':None,'native_qualified':False,'native_go_consumed':False}
 
 
-DEVELOPMENT_SHA256 = '50aef1f8f2bbc286373705cc26efa88fa77c5da2bd4d6d4f5cbd0eb4c304ba6f'
-DEVELOPMENT_BYTES = 41127
+DEVELOPMENT_SHA256 = '07f199a35e1915396c73f782a08bc022020e014d555c37f4626fcd76b6aa3e51'
+DEVELOPMENT_BYTES = 54761
 
 def _development_handle(request, context, capsule):
     raw = _setup_public_source(context['deployment_commit'], 'scripts/hetzner-development-environment.py',
