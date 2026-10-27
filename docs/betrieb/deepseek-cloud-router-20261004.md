@@ -205,3 +205,189 @@ nur eigener Commit, kein PR und kein Push, um keine zusätzlichen gemeinsamen
 CI-/Preview-Ressourcen neben dem laufenden 500er Auftrag zu beanspruchen.
 Die operativen Statusdateien und Agentenregeln bleiben für
 den laufenden Nachweis unangetastet.
+
+## Gezielte Routerhaertung 26.10.2026 (lokale Quell- und Kostenadmission)
+
+Der Router nimmt neue schreibende Auftraege standardmaessig als exakte,
+SHA256 gebundene Textstellenersetzungen an. Der alte Volltextmodus bleibt
+ausdruecklich ueber `--edit-format full` fuer kleine Bestandsdateien verfuegbar.
+Auftraege mit mehr als drei Schreibdateien, mehr als 3.000 Auftragszeichen,
+mehr als 120.000 Zeichen expliziten Schreibquellen oder mehr als 18.000
+Zeichen je Volltextdatei werden vor dem Provideraufruf gestoppt. Lesende
+Auftraege behalten ihre getrennten Bestandsgrenzen.
+
+`none` und `low` sind jetzt zusaetzlich zu `high` und `max` waehlbar.
+Fuer niedrige Denkstufen ist der Default auf 8.192 Ausgabetokens begrenzt;
+hoehere Stufen behalten die bestehende 32.768 Obergrenze.
+`--max-output-tokens N` kann weiter reduzieren.
+
+Vor jedem API-Aufruf prueft `preflight` das vollstaendig serialisierte
+Requestvolumen und die Ausgabetokenobergrenze. Grundlage sind die dokumentierten
+Anbieter-Peaktarife vom 26.10.2026:
+Flash 0,30 USD je Million Eingabe und 1,20 USD je Million Ausgabe,
+Pro 1,32 USD Eingabe und 3,96 USD Ausgabe. Input wird aus den UTF8
+Requestbytes plus 2.048 Reserve als bewusst vorsichtige Schaetzung
+abgeleitet. Der lokale Maximalwert ist 0,25 USD je Auftrag;
+`--max-cost-usd N` kann ihn nur senken, niemals erhoehen.
+**Das ist keine abrechnungsfeste oder vom Provider bestaetigte harte
+Geldobergrenze.** Anbieterpreise und Tokenisierung koennen abweichen,
+auch kostenpflichtige unvollstaendige Antworten bleiben moeglich.
+Der Betreiber muss den Tarif regelmaessig aktuell verifizieren.
+
+`--dry-run` fuehrt die gesamte lokale Zulassung ohne API Schluessel,
+Netzwerkverbindung oder Schreibwirkung aus und zeigt Modell, Denkstufe,
+Eingabeproxy und konservative Peak-Prognose.
+Bei `ok` ohne Aenderung endet ein Schreibauftrag nun mit Fehler statt
+falscher Erfolgsmeldung. Die sichtbare Quittung weist die tatsaechliche
+Usage und einen Peakkosten-Schaetzwert aus. Unvollstaendige Antworten
+melden auch vorhandene Eingabe- und Reasoningtokens; ohne Usage keine
+erfundene Rechnung. Kein automatischer Retry.
+
+Der API Schluessel wird nicht mehr im Curl Argument oder dessen
+Kindprozessumgebung uebergeben, sondern als vertrauliche Curl
+Konfiguration ueber Standard Input. Der JSON Request liegt ausschliesslich
+fuer die synchrone Transportdauer in einem frischen privaten
+0700 Temporaerverzeichnis mit 0600 Requestdatei und wird im `finally`
+geloescht. Damit verbleibt ein kurzzeitiges lokales Klartextfenster fuer
+die Anfrage; es ist keine Behauptung, dass der Host speicherlos arbeitet.
+Keine Rohantworten in Git oder Chat. Alte dokumentierte Belege bleiben gueltig.
+
+Ein kostenfreier Erstcheck fuer eine kleine Schreibaufgabe:
+```sh
+node scripts/deepseek-cloud-router.js flash low write \
+  --task-file /tmp/helmut-auftrag.txt --file lib/helmut/kleine-funktion.js \
+  --edit-format replacements --max-output-tokens 4096 --max-cost-usd 0.05 --dry-run
+```
+
+Erst wenn die lokale Zulassung passt und eine bezahlte Delegation
+wirtschaftlich sinnvoll ist, `--dry-run` bewusst weglassen.
+Sicherheitskritische Hetzner Wiederherstellung bleibt bei Sol; DeepSeek
+allenfalls fuer eine eng begrenzte lesende Codepruefung.
+
+Referenzen:
+https://api-docs.deepseek.com/api/create-response/
+https://api-docs.deepseek.com/quick_start/pricing/
+
+## Verbindliche Nachschaerfung 26.10.2026: keine Mehrdateien, High/Max und Tagessperre
+
+Vorhandene Abschnitte dokumentieren fruehere Korrekturen. Fuer den aktualisierten
+Router gelten nun ausschliesslich vier explizite Kombinationen:
+Flash High (Standard), Flash Max (ausnahmsweise), Pro High (schwierige
+Aufgaben) und Pro Max (sehr schwierige begrenzte Einzelaufgaben).
+Low und None werden vor jedem API Aufruf abgelehnt. Max bedeutet mehr
+potenziell verbrauchte Reasoningtokens, nicht automatisch mehr nuetzliche
+Codeausgabe. Nie still eskalieren oder einen Fehlversuch automatisch wiederholen.
+
+Schreibauftraege akzeptieren genau eine explizit freigegebene Datei.
+Bei zwei oder mehr Dateiargumenten Abbruch vor dem Anbieteraufruf.
+Damit sind partielle Mehrdatei-Schreibvorgaenge im Router ausgeschlossen.
+Fuer mehrere Dateien getrennte sequenzielle, vorher sinnvoll aufgeteilte
+Auftraege verwenden und Sol Integration ueberlassen. Der alte Grenzwert
+von drei Schreibdateien gilt nicht mehr.
+
+Zusaetzlich zum 0,25 USD Preisprognosedeckel pro Aufruf besteht ein
+lokales Buchungsjournal mit 2,00 USD Tagesgrenze (UTC).
+Das Journal liegt unter HOME/.local/state/helmut-deepseek-router/budget.json,
+ist privat (0600, Verzeichnis0700) und verwendet exklusive
+Dateisperren und atomische Schreibvorgaenge. Vor jedem neuen kostenpflichtigen
+Aufruf wird dessen prognostizierter Peakbetrag dauerhaft reserviert.
+Ein echter erfolgreicher oder unvollstaendiger Antwortverbrauch mit gueltiger
+Usage kann danach auf den tatsaechlichen Peakpreis abgerechnet werden.
+Bei Transportabbruch oder fehlender Usage bleibt die volle Reservierung erhalten.
+Ein Prozessabsturz laesst ein offenes Ticket stehen; es gibt kein heimliches
+Zuruecksetzen oder automatische Entsperrung eines verwaisten Locks.
+Ein voller Tag fuehrt zu einem kostenlosen lokalen Abbruch.
+
+**Grenze:** Diese Tagesgrenze gilt nur fuer Prozesse mit demselben persistenten
+HOME Dateisystem. Verschiedene Codex Cloud Container koennen getrennte HOME
+Dateisysteme verwenden; daher ist dies kein belegter globaler, anbieter-
+oder kontoübergreifender Kostendeckel. Die lokale Prognose nutzt Preise vom
+26.10.2026 und ist kein vom Provider garantiertes Maximum. Keine
+Hostwechsel oder Umgebungsresets als Umgehung einer gesperrten Buchfuehrung.
+Fuer einen harten kontoübergreifenden Tagesdeckel bedarf es eines gemeinsamen,
+atomar geschuetzten Speichers oder einer verbindlichen Providergrenze.
+Keine kostenpflichtige Probe ohne geeignete Freigabe.
+
+Geschwindigkeit: Der lokale Check benoetigt keinen Netzwerkzugriff,
+keinen Modellaufruf und nur kurze private Dateioperationen.
+Es existiert noch keine echte vergleichende Laufzeitmessung zwischen
+den Modellstufen oder fuer die End-to-End-Ausfuehrung. Bis zu 20 Minuten
+Curl Transportfrist sind eine harte technische Obergrenze, keine
+erwartete Laufzeit. Max darf nicht reflexhaft gewaehlt werden.
+
+## Antwortverlust bei bezahlter Schreibarbeit verhindern (26.10.2026)
+
+Kostenpflichtige DeepSeek Schreibauftraege erfordern jetzt zwingend ein vorher reserviertes
+privates Antwortarchiv ausserhalb aller Git Worktrees (`--save-response /tmp/<eindeutiger-name>.private.json`).
+Fehlt der Parameter, stoppt der Router lokal vor jeder Reservierung und vor jedem
+Anbieteraufruf. Vollstaendig empfangene Antworten bleiben damit auch bei
+spaeterer Hashdrift, Formatfehlern oder lokaler Abweisung fuer eine kostenlose,
+strikt requestgebundene Wiederaufnahme erhalten. Geheimnisse und private
+Quelltexte niemals in Chat, PR oder Repository uebernehmen.
+
+Nur der lesende Modus und kostenfreie `--dry-run` Aufrufe duerfen ohne
+`--save-response` starten. Die Sicherung ersetzt weder eine vollstaendige
+Modellantwort noch fachliche Tests. Eine beim Modelllimit abgebrochene Antwort
+bleibt trotz Sicherung unvollstaendig und verursacht moeglicherweise Kosten.
+
+## Umfangreicher Gesamtauftrag, kurze sichere Einzelaufrufe (26.10.2026)
+
+Die fruehere zusaetzliche Schreibauftragssperre bei 3.000 Zeichen wurde
+entfernt. Ein einzelner lesender oder schreibender Auftrag darf bis
+zu 12.000 Zeichen konkrete Aufgabenbeschreibung enthalten.
+Diese Grenze betrifft ausschliesslich *einen Modellaufruf*, niemals
+den Umfang des gesamten Helmut Sprints. Das Ziel ist keine moeglichst
+grosse Anfrage, sondern eine vollstaendige, abnehmbare Codeaenderung
+ohne unnoetige kostenpflichtige Wiederholung.
+
+Sol teilt nur bei echtem Bedarf grosse Gesamtauftraege in voneinander
+sicher abgrenzbare Teile. Jeder Schreibaufruf veraendert weiterhin genau
+eine Datei; ein langer Plan darf aus beliebig vielen solchen abgenommenen
+Schritten bestehen. Weder zusaetzliche Modelle noch automatische Retries
+oder eine kostendeckelverletzende Modellwahl sind erlaubt.
+
+Bestehen bleiben: hoechstens 120.000 Zeichen expliziter Schreibquelltext
+pro Aufruf, die 0,25 USD konservative Peakprognose pro Aufruf,
+der 2,00 USD lokale UTC Tagesdeckel, High/Max und verpflichtende
+private Antwortsicherung. `--dry-run` prueft die Grenzen ohne
+Netzwerk oder Abrechnung. Wenn das Paket trotzdem unpassend ist,
+muss Sol entweder einen kleineren Ausschnitt waehlen oder die Arbeit
+selbst uebernehmen. Eine 12.000-Zeichen-Freigabe ist keine Garantie
+fuer vollstaendige Providerantworten; ausserdem wurde noch keine
+kostenpflichtige Modellprobe zur Ausfallrate unternommen.
+
+
+## Unabhaengige FAIL Review und sicherer Integrationsweg (26.10.2026)
+
+Die unabhaengige Review von PR #953 auf `3c2b83a474ed49ca097eefb74a6d5fb5c5202866`
+erkannte sechs Befunde, davon fuenf P1 und einen P2. Der damalige
+43/43 Router CI Befund ersetzt diese Negativnachweise nicht.
+
+Der Router wurde deshalb geaendert: Direkte Dateiueberschreibung ist
+abgeschaltet. Ein abgeschlossener DeepSeek Schreibauftrag speichert
+seinen Code in einer privaten `.proposal.json` neben dem strikt
+gebundenen Antwortarchiv und liefert `ready_for_integration`, niemals
+`applied_files`. Sol uebernimmt den Vorschlag nach frischer, eigener
+Git Konkurrrenzpruefung und ohne die Quellimplementierung neu zu erfinden.
+Bestehende Beschreibungen automatischer Dateianwendung oben sind historisch
+und durch diese verbindliche Neuregelung ersetzt.
+
+Weitere gezielte Korrekturen: Provider-Usage nur bei echten
+nichtnegativen Ganzzahlen abgerechnet; unbekannte/inkonsistente Werte
+lassen die urspruengliche Reservierung stehen. Eine festgehaltene
+Initialisierungsmarke verhindert das laut Review moegliche kostenlose
+Neustarten eines verschwundenen Budgetjournals. Begrenzte
+Warteversuche beim Abschluss der Kostenbuchung, danach expliziter
+`pending_reserved` Status fuer abgeschlossene Lesearbeit.
+Bei Schreibaufrufen fliesst die Providerantwort direkt in eine
+private Empfangsdatei; die daneben vorab gespeicherte Requestbindung
+erlaubt eine Wiederaufnahme nach Routerprozessabbruch bei tatsaechlich
+vollstaendiger HTTP Antwort. Bereits vom Provider abgebrochene
+Antworten bleiben unvollstaendig und duerfen nicht angewandt werden.
+
+Ein CI Erfolg fuer diesen neuen Branch darf **nicht** als unabhaengige
+Sicherheitsabnahme oder Production Erfolg gelten. PR #953 bleibt DRAFT
+und vor einem Merge muss eine zweite, aktuelle Review alle sechs
+urspruenglichen Reproduktionen auf dem neuen Commit pruefen.
+Keine bezahlten Modellproben, Migrationen, Profileingriffe,
+Budgetsummenveraenderung oder Production Deployments aus diesem Sprint.

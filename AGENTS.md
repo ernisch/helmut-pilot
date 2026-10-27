@@ -54,6 +54,32 @@ Details: `docs/betrieb/blocker3-eu-servicekostenvertrag-umsetzung-20261011.md`.
 Diese eng begrenzte freigegebene Version ist die Ausnahme von den nachfolgenden
 historischen6/7-Regeln; außerhalb dieser Version bleiben sie unverändert.
 
+## Sicherheitskorrektur: DeepSeek schreibt nicht direkt in Arbeitsdateien (26.10.2026)
+
+Die unabhaengige Sicherheitsreview von PR #953 verwarf den bisherigen
+automatischen Dateiwechsel wegen Pfadwechseln und nicht atomarer Hashpruefung.
+Daher ist `applyEdits` jetzt sicherheitsbedingt gesperrt. DeepSeek liefert
+bei einem erfolgreichen Schreibauftrag ausschliesslich einen **privaten,
+request- und quellhashgebundenen Vorschlag** neben dem Antwortarchiv
+(`.proposal.json`). Die Originaldatei wird NICHT veraendert. Ein Ergebnis
+`ready_for_integration` ist kein angewandter Code und keine fachliche Abnahme.
+
+Sol integriert den gespeicherten Vorschlag nur nach erneuter Pruefung von
+Dateiidentitaet, Branch/Worktree, Fremdaenderungen, Git Status und einem
+sicheren eigenen Git Bearbeitungsweg. Eine nicht konfliktfreie Aenderung
+wird nicht erzwungen und nicht automatisch gegen Geld neu erzeugt.
+Eine spaetere Rueckkehr zu direktem Schreiben braucht eigene technische
+Abnahme fuer Pfadstabilitaet und vollstaendigen Konkurrenzschutz.
+
+Die Antwortsicherung erfolgt fuer kostenpflichtige Schreibarbeiten
+vor dem Anbieteraufruf durch eine private Requestbindung und eine
+zusatzliche Empfangsdatei. Der bestehende lokale Tagesdeckel von
+2 USD und die 0,25 USD Preisprognose je Aufruf bleiben unveraendert.
+Fehlende/ungueltige Provider-Usage darf eine Reservierung nicht auf
+null setzen; nach Journalverlust ist der Router gesperrt. Eine
+ausstehende Abschlussbuchung nach Leseaufrufen wird ausgewiesen und
+behaelt die Reservierung. Keine Production-Modellaufrufe freigegeben.
+
 ## Rolle und Produktziel
 
 Du arbeitest als technischer Umsetzer für Helmut.
@@ -155,16 +181,20 @@ Cloud Umgebung vorhanden ist und `api.deepseek.com` erreichbar ist.
 
 Die Aufgabenverteilung im aktiven Routerbetrieb ist:
 
-1. DeepSeek Flash High für normale Analyse, Coding Arbeit, Dokumentation und
-   Routinefehler.
-2. DeepSeek V4 Pro High für schwierige Implementierung, komplexes Debugging und
-   klar abgegrenzte technische Ursachenanalyse.
-3. DeepSeek V4 Pro Max nur für sehr schwierige klar abgegrenzte technische
-   Blocker, wenn Pro High voraussichtlich nicht ausreicht.
-4. Sol Sehr hoch für unklare bereichsübergreifende Ursachen, Architektur,
+1. DeepSeek Flash High als Standard fuer kleine, gut abgegrenzte Analysen,
+   normale Codeaenderungen, Dokumentation und Reviews.
+2. DeepSeek Flash Max nur fuer schwierige, trotzdem kleine Einzelprobleme,
+   wenn High voraussichtlich nicht ausreicht und ein besonders langes
+   Reasoningbudget wirtschaftlich vertretbar ist.
+3. DeepSeek V4 Pro High fuer anspruchsvollere, klar abgegrenzte Umsetzung
+   und komplexere technische Codepruefung.
+4. DeepSeek V4 Pro Max nur als bewusst gewaehlte Ausnahme fuer
+   sehr schwierige begrenzte Analyse. Niemals automatische Eskalation.
+   Low und None sind im Routerbetrieb nicht waehlbar.
+5. Sol Sehr hoch für unklare bereichsübergreifende Ursachen, Architektur,
    kritische Production Sicherheit oder Aufgaben, die sich nicht sicher an
    DeepSeek abtrennen lassen.
-5. Sol Max nur bei kritischer Production Sicherheit oder einem schwer
+6. Sol Max nur bei kritischer Production Sicherheit oder einem schwer
    nachvollziehbaren Problem, das auf Sehr hoch nicht zuverlässig geklärt wird.
 
 Es gibt keine automatische Eskalationskette. Der Orchestrator wählt vor jedem
@@ -173,8 +203,11 @@ Fehlschlag startet nicht automatisch ein weiteres Modell.
 
 DeepSeek hat im Router keine Shell und keinen eigenständigen Workspace Zugriff.
 Es arbeitet ausschließlich mit den vom Router übergebenen Textquellen. Bei
-schreibenden Aufgaben darf DeepSeek nur vollständige Ersatzinhalte für zuvor
-ausdrücklich freigegebene Repository Dateien liefern. Der Router wendet eine
+schreibenden Aufgaben liefert DeepSeek standardmaessig nur eindeutige,
+hashgebundene Textstellenersetzungen fuer zuvor freigegebene Dateien
+(`--edit-format replacements`). Vollstaendige Ersatzdateien sind nur als
+bewusst gewaehlte Ausnahme (`--edit-format full`) fuer kleine Dateien
+zulaessig. Der Router wendet eine
 Änderung nur an, wenn Pfad und ursprünglicher SHA256 exakt gebunden sind; bei
 Drift oder einem nicht freigegebenen Pfad wird nichts geschrieben.
 
@@ -240,12 +273,54 @@ Sol arbeitet direkt, wenn mindestens einer dieser Gründe vorliegt:
 4. Es handelt sich nur um eine triviale einzelne Orchestratorhandlung ohne
    eigenständige Analyse, Implementierung oder Reviewarbeit.
 
-Die bloße Tatsache, dass eine Änderung nur ein oder zwei kleine Dateien betrifft
-oder dass Sol sie schnell selbst erledigen könnte, ist allein kein Grund, DeepSeek
-zu überspringen.
+Die blosse Tatsache, dass eine Aenderung nur ein oder zwei kleine Dateien betrifft,
+ist kein automatischer Delegationsgrund. Vor einer kostenpflichtigen Delegation
+muessen die Erfolgsaussicht des konkreten Pakets, sicherer Quellumfang,
+Antwortformat und Kosten gegen die direkte Sol Umsetzung abgewogen werden.
+Sicherheitskritische Wiederherstellung, Root Zugriff, Schluessel und Originaldaten
+bleiben bei Sol; DeepSeek darf nur eng abgegrenzte unabhaengige lesende
+Codepruefungen liefern. Keine Delegation nur zur Erfuellung einer Quote.
 
-Dateien, die den Router Dateiumfang überschreiten oder deren vollständige
-Übertragung den Delegationsnutzen offensichtlich aufzehrt, nicht erst erfolglos
+
+Kostenpflichtige DeepSeek Schreibauftraege erfordern jetzt zwingend ein vorher reserviertes
+privates Antwortarchiv ausserhalb aller Git Worktrees (`--save-response /tmp/<eindeutiger-name>.private.json`).
+Fehlt der Parameter, stoppt der Router lokal vor jeder Reservierung und vor jedem
+Anbieteraufruf. Vollstaendig empfangene Antworten bleiben damit auch bei
+spaeterer Hashdrift, Formatfehlern oder lokaler Abweisung fuer eine kostenlose,
+strikt requestgebundene Wiederaufnahme erhalten. Geheimnisse und private
+Quelltexte niemals in Chat, PR oder Repository uebernehmen.
+
+Jeder DeepSeek Auftrag beginnt mit einer kostenfreien lokalen Vorpruefung
+(`--dry-run`), wenn Groesse oder Kosten zweifelhaft sind. Der Router sperrt
+Schreibauftraege mit mehr als einer Datei, langen Auftraegen, zu grossem
+Schreibkontext und teuren Reserveschranken vor dem kostenpflichtigen API Aufruf.
+Ein Schreibauftrag darf genau eine freigegebene Datei betreffen.
+Die Grenze von 12.000 Auftragszeichen gilt nur fuer einen einzelnen
+DeepSeek Modellaufruf, niemals fuer einen gesamten Entwicklungsauftrag.
+Die fruehere zusaetzliche 3.000 Zeichen Schranke entfaellt. Sol darf
+lange Gesamtauftraege ohne kuenstliche Projektlaengengrenze selbst
+fuehren und nur die sinnvoll abgrenzbaren, abnehmbaren Teile delegieren.
+Keine automatischen LLM Aufrufe zur Zerlegung, keine kostenpflichtigen
+Probeversuche zur Auftragsgroesse.
+Pro Helferaufruf gilt eine konservative lokale Peak Preisprognose mit
+hoechstens 0,25 USD Planungslimit. Ein atomares Journal im gemeinsamen
+HOME Verzeichnis reserviert vor kostenpflichtigen Aufrufen maximal
+2,00 USD je UTC Tag fuer dieses gemeinsam genutzte Dateisystem. Unklare
+Antworten bleiben mit ihrer vollen urspruenglichen Reservierung gebunden;
+gueltige Usage wird mit Peak Tarifen abgerechnet. Keine automatischen
+Wiederholungen oder stillen Budgeterhoehungen.
+
+WICHTIG: Das Dateijournal ist kein echtes providerseitiges Tageslimit und
+kein hostuebergreifender Globalzaehler. Verschiedene Codex Cloud Umgebungen
+ohne dasselbe HOME Dateisystem haben getrennte Journale. Ein strikter
+kontouebergreifender Limitbeleg braucht einen gemeinsamen vertrauenswuerdigen
+Speicher oder ein Providerlimit. Die Peakprognose ist keine Garantie
+gegen Preiswechsel, abweichende Tokenisierung oder unerwartete Rechnung.
+Vor bezahlten Aufrufen den dokumentierten Tarif aktuell halten. Nicht abgenommene Antworten mit Verbrauch
+und Fehlergrund offen ausweisen, niemals als gesparten Aufwand zaehlen.
+
+Dateien, die den Router Dateiumfang ueberschreiten oder deren vollstaendige
+Uebertragung den Delegationsnutzen offensichtlich aufzehrt, nicht erst erfolglos
 an DeepSeek senden. In diesem Fall arbeitet Sol direkt oder grenzt die Aufgabe
 anders sicher ab. Keine Router Schleife nur um eine Routingpräferenz zu erfüllen.
 

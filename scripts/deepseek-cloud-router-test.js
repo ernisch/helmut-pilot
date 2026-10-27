@@ -6,6 +6,7 @@ const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
 const router = require("./deepseek-cloud-router");
+const dailyBudget = require("./deepseek-router-budget");
 const connectivity = require("./deepseek-cloud-connectivity");
 
 let pass = 0;
@@ -91,17 +92,36 @@ function summary(overrides = {}) {
   };
 }
 
+// Every simulated paid write uses a private recoverable receipt. This wrapper
+// only creates a temporary artifact for offline fixtures; explicit recovery tests
+// keep their own durable paths and continue to call the real router.
+function runSafe(options) {
+  const args = options.argv || [];
+  const saved = args.includes("--save-response") || args.includes("--replay-response");
+  if (args[2] !== "write" || args.includes("--dry-run") || saved) {
+    return router.run(options);
+  }
+  const privateDir = fs.mkdtempSync(path.join(os.tmpdir(), "deepseek-test-receipt-"));
+  try {
+    return router.run({ ...options, argv: [...args,
+      "--save-response", path.join(privateDir, "response.json")] });
+  } finally {
+    fs.rmSync(privateDir, { recursive: true, force: true });
+  }
+}
+
 check("Modellnamen und Routen sind explizit", () => {
   assert.equal(router.MODELS.flash, "deepseek-flash");
   assert.equal(router.MODELS.pro, "deepseek-v4-pro");
   const parsed = router.parseArgs([
-    "pro", "max", "write", "--task-file", "/tmp/t", "--file", "lib/a.js", "--file", "lib/b.js",
+    "pro", "max", "write", "--task-file", "/tmp/t", "--file", "lib/a.js",
   ]);
   assert.equal(parsed.model, "deepseek-v4-pro");
   assert.equal(parsed.effort, "max");
   assert.equal(parsed.mode, "write");
-  assert.deepEqual(parsed.files, ["lib/a.js", "lib/b.js"]);
-  assert.throws(() => router.parseArgs(["flash", "low", "read", "--task-file", "/tmp/t"]), /usage/);
+  assert.deepEqual(parsed.files, ["lib/a.js"]);
+  assert.throws(() => router.parseArgs(["pro", "max", "write", "--task-file", "/tmp/t", "--file", "lib/a.js", "--file", "lib/b.js"]), /write-files-must-be-1-to-1/);
+  assert.throws(() => router.parseArgs(["flash", "ultra", "read", "--task-file", "/tmp/t"]), /usage/);
 });
 
 check("Direkter Request nutzt Responses API und JSON Schema statt verschachteltem Codex", () => {
@@ -123,7 +143,7 @@ check("Quellenloader nimmt Kernregeln und explizite private Datei auf", () => {
   const privateFile = path.join(privateDir, "beleg.json");
   fs.writeFileSync(privateFile, '{"beleg":true}\n');
   try {
-    const sources = router.loadSources({ cwd: p.root, explicitFiles: [privateFile] });
+    const sources = router.loadSources({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"), explicitFiles: [privateFile] });
     assert.equal(sources.length, 4);
     assert(sources.some((s) => s.label === privateFile && s.editable));
     assert(sources.some((s) => s.label === "AGENTS.md" && !s.editable));
@@ -136,7 +156,7 @@ check("Quellenloader nimmt Kernregeln und explizite private Datei auf", () => {
 check("Kernkontext nutzt nur relevante Abschnitte der kanonischen Dateien", () => {
   const p = project();
   try {
-    const sources = router.loadSources({ cwd: p.root, explicitFiles: [] });
+    const sources = router.loadSources({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"), explicitFiles: [] });
     assert.equal(sources.length, 3);
     const combined = sources.map((s) => s.content).join("\n");
     assert(combined.includes("zielgruppe"));
@@ -154,7 +174,7 @@ check("Kernkontext nutzt nur relevante Abschnitte der kanonischen Dateien", () =
 check("Explizit uebergebene Kerndatei ersetzt den gekuerzten Kontext fuer genau diese Datei", () => {
   const p = project();
   try {
-    const sources = router.loadSources({ cwd: p.root, explicitFiles: ["AGENTS.md"] });
+    const sources = router.loadSources({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"), explicitFiles: ["AGENTS.md"] });
     const agents = sources.filter((s) => s.label === "AGENTS.md");
     assert.equal(agents.length, 1);
     assert.equal(agents[0].editable, true);
@@ -198,7 +218,10 @@ check("DeepSeek API Transport nutzt curl und Cloud Proxy", () => {
   assert.equal(result.usage.total_tokens, 19);
   assert.equal(seen.bin, "curl");
   assert(seen.args.includes(router.API_URL));
-  assert(seen.args.includes("Authorization: Bearer network-secret-placeholder"));
+  assert(!seen.args.join(" ").includes("network-secret-placeholder"), "API key never appears in process argv");
+  assert(seen.options.input.includes('header = "Authorization: Bearer network-secret-placeholder"'));
+  assert(seen.args.includes("--config"));
+  assert.equal(seen.options.env.DEEPSEEK_API_KEY, undefined);
   assert.equal(seen.options.env.HTTPS_PROXY, "http://proxy.internal:3128");
   assert.equal(seen.options.env.OPENAI_API_KEY, undefined);
   assert.equal(seen.options.env.SUPABASE_SERVICE_ROLE_KEY, undefined);
@@ -211,9 +234,9 @@ check("Read Modus verarbeitet private Quellen ohne Dateianderung", () => {
   fs.writeFileSync(privateFile, '{"caller":"original"}\n');
   const before = fs.readFileSync(privateFile, "utf8");
   try {
-    const result = router.run({
+    const result = runSafe({
       argv: ["flash", "high", "read", "--task-file", p.task, "--file", privateFile],
-      cwd: p.root,
+      cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => apiResult({ summary: summary({ result: ["Caller geprueft"] }) }),
     });
@@ -267,20 +290,21 @@ check("Read Modus verarbeitet Reasoning ueber dem alten 12000-Limit mit fester 3
 
   const calls = [];
   const fakeSpawn = (bin, args, options) => {
-    calls.push({ bin, args, options });
+    const bodyFile = args[args.indexOf("--data-binary") + 1];
+    calls.push({ bin, args, options, request: JSON.parse(fs.readFileSync(bodyFile.slice(1), "utf8")) });
     return { status: 0, stdout: raw, stderr: "", error: null };
   };
   try {
-    const result = router.run({
+    const result = runSafe({
       argv: ["pro", "high", "read", "--task-file", p.task, "--file", privateFile],
-      cwd: p.root,
+      cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
       spawnSync: fakeSpawn,
     });
 
     assert.equal(calls.length, 1);
     assert.equal(calls[0].bin, "curl");
-    const request = JSON.parse(calls[0].options.input);
+    const request = calls[0].request;
     assert.equal(request.max_output_tokens, READ_MAX_OUTPUT_TOKENS);
     assert.equal(request.max_output_tokens, 32768, "feste Read-Obergrenze");
     assert.equal(request.reasoning.effort, "high");
@@ -306,7 +330,7 @@ check("Read Modus verarbeitet Reasoning ueber dem alten 12000-Limit mit fester 3
   }
 });
 
-check("Write Modus mit 25000 Reasoning-Tokens schreibt genau einen gebundenen Edit bei fester 32768-Obergrenze", () => {
+check("Write Modus mit 25000 Reasoning-Tokens archiviert nur gebundenen Code bei fester 32768-Obergrenze", () => {
   const p = project();
   const target = path.join(p.root, "lib/example.js");
   const unrelated = path.join(p.root, "lib/other.js");
@@ -344,34 +368,37 @@ check("Write Modus mit 25000 Reasoning-Tokens schreibt genau einen gebundenen Ed
 
   const calls = [];
   const fakeSpawn = (bin, args, options) => {
-    calls.push({ bin, args, options });
+    const bodyFile = args[args.indexOf("--data-binary") + 1];
+    calls.push({ bin, args, options, request: JSON.parse(fs.readFileSync(bodyFile.slice(1), "utf8")) });
     return { status: 0, stdout: raw, stderr: "", error: null };
   };
   try {
-    const result = router.run({
-      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
-      cwd: p.root,
+    const result = runSafe({
+      argv: ["flash", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
+      cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
       spawnSync: fakeSpawn,
     });
 
     assert.equal(calls.length, 1, "genau ein curl");
     assert.equal(calls[0].bin, "curl");
-    const request = JSON.parse(calls[0].options.input);
+    const request = calls[0].request;
     assert.equal(request.max_output_tokens, 32768, "feste Write-Obergrenze");
     assert.equal(request.model, "deepseek-flash");
     assert.equal(request.reasoning.effort, "high");
     assert.ok(reasoningTokens > 24000, "Reasoning liegt ueber dem alten 24000-Limit");
 
-    assert.equal(result.status, "ok");
+    assert.equal(result.status, "ready_for_integration");
     assert.equal(result.route.model, "deepseek-flash");
     assert.equal(result.route.mode, "write");
     assert.equal(result.route.effort, "high");
     assert.equal(result.usage.input_tokens, 900);
     assert.equal(result.usage.output_tokens, reasoningTokens + 40);
     assert.equal(result.usage.total_tokens, 900 + reasoningTokens + 40);
-    assert.deepEqual(result.applied_files, ["lib/example.js"]);
-    assert.equal(fs.readFileSync(target, "utf8"), newContent, "autorisierte Bytes exakt angewendet");
+    assert.deepEqual(result.applied_files, []);
+    assert.deepEqual(result.staged_files, ["lib/example.js"]);
+    assert.equal(result.requires_trusted_git_integration, true);
+    assert.equal(fs.readFileSync(target, "utf8"), original, "Originaldatei bleibt unangetastet");
     assert.equal(fs.readFileSync(unrelated, "utf8"), unrelatedBefore, "unbeteiligte Datei unveraendert");
     assert.ok(charLength(JSON.stringify(result)) <= 2000, "Rueckgabe bleibt unter 2000 Zeichen");
   } finally {
@@ -423,9 +450,9 @@ check("Ueberlange Rueckgabe stoppt Write vor jeder Dateianderung", () => {
       { model: "deepseek-flash", effort: "high", mode: "write" },
       { usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 }, contextChars: 50000 },
       ["lib/example.js"]), /deepseek-visible-result-too-long/);
-    assert.throws(() => router.run({
-      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
-      cwd: p.root,
+    assert.throws(() => runSafe({
+      argv: ["flash", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
+      cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => apiResult({
         summary: oversized,
@@ -443,14 +470,14 @@ check("Ueberlange Rueckgabe stoppt Write vor jeder Dateianderung", () => {
   }
 });
 
-check("Write Modus wendet nur hashgebundene explizite Repository Datei an", () => {
+check("Write Modus bewahrt hashgebundene Vorschlaege ohne Originalaenderung auf", () => {
   const p = project();
   const target = path.join(p.root, "lib/example.js");
   const original = fs.readFileSync(target, "utf8");
   try {
-    const result = router.run({
-      argv: ["pro", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
-      cwd: p.root,
+    const result = runSafe({
+      argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
+      cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => apiResult({
         summary: summary({
@@ -463,9 +490,10 @@ check("Write Modus wendet nur hashgebundene explizite Repository Datei an", () =
         }],
       }),
     });
-    assert.equal(result.status, "ok");
-    assert.deepEqual(result.applied_files, ["lib/example.js"]);
-    assert.equal(fs.readFileSync(target, "utf8"), "module.exports = 2;\n");
+    assert.equal(result.status, "ready_for_integration");
+    assert.deepEqual(result.staged_files, ["lib/example.js"]);
+    assert.deepEqual(result.applied_files, []);
+    assert.equal(fs.readFileSync(target, "utf8"), original);
   } finally {
     fs.rmSync(p.root, { recursive: true, force: true });
   }
@@ -476,9 +504,9 @@ check("Nicht uebergebener Schreibpfad wird fail closed abgelehnt", () => {
   const original = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
   fs.writeFileSync(path.join(p.root, "lib/other.js"), "x\n");
   try {
-    assert.throws(() => router.run({
-      argv: ["pro", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
-      cwd: p.root,
+    assert.throws(() => runSafe({
+      argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
+      cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => apiResult({
         summary: summary(),
@@ -503,9 +531,9 @@ check("Schreiben ausserhalb des Repositorys bleibt verboten", () => {
   fs.writeFileSync(outside, '{"x":1}\n');
   const original = fs.readFileSync(outside, "utf8");
   try {
-    assert.throws(() => router.run({
-      argv: ["pro", "high", "write", "--task-file", p.task, "--file", outside],
-      cwd: p.root,
+    assert.throws(() => runSafe({
+      argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", outside],
+      cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => apiResult({
         summary: summary(),
@@ -523,14 +551,61 @@ check("Schreiben ausserhalb des Repositorys bleibt verboten", () => {
   }
 });
 
+check("Dateilinks zu privaten Fremdpfaden werden vor jedem API-Aufruf abgewiesen", () => {
+  const p = project();
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-router-symlink-outside-"));
+  const privateTarget = path.join(outside, "private-data.txt");
+  fs.writeFileSync(privateTarget, "PRIVATE MUST NOT BE SENT\n");
+  const link = path.join(p.root, "lib", "link.js");
+  fs.symlinkSync(privateTarget, link);
+  const parentLink = path.join(p.root, "lib", "external");
+  fs.symlinkSync(outside, parentLink, "dir");
+  let calls = 0;
+  const base = { cwd: p.root, env: {}, budgetDir: path.join(p.root, ".budget-test"),
+    callDeepSeek: () => { calls++; throw new Error("provider-must-not-start"); } };
+  try {
+    assert.throws(() => router.run({
+      ...base, argv: ["flash", "high", "write", "--dry-run",
+        "--task-file", p.task, "--file", "lib/link.js"]
+    }), /ELOOP|symlink|nofollow/i);
+    assert.throws(() => router.run({
+      ...base, argv: ["flash", "high", "write", "--dry-run",
+        "--task-file", p.task, "--file", "lib/external/private-data.txt"]
+    }), /write-outside-repo|source-path-symlink/);
+    assert.equal(calls, 0);
+    assert.equal(fs.readFileSync(privateTarget, "utf8"), "PRIVATE MUST NOT BE SENT\n");
+  } finally {
+    fs.rmSync(p.root, { recursive: true, force: true });
+    fs.rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+check("Fremdaenderung unmittelbar vor Dateianwendung bleibt unangetastet", () => {
+  const p = project();
+  try {
+    const target = path.join(p.root, "lib/example.js");
+    const original = fs.readFileSync(target, "utf8");
+    const sources = router.loadSources({cwd:p.root, explicitFiles:["lib/example.js"]});
+    const prepared = router.prepareEdits([{
+      path:"lib/example.js", expected_sha256:hash(original),
+      content:"module.exports = 42;\n"
+    }], sources, p.root, "full");
+    fs.writeFileSync(target, "module.exports = 'foreign';\n");
+    assert.throws(() => router.applyEdits(prepared), /direct-file-apply-disabled/);
+    assert.equal(fs.readFileSync(target,"utf8"),"module.exports = 'foreign';\n");
+  } finally {
+    fs.rmSync(p.root, {recursive:true,force:true});
+  }
+});
+
 check("Hash Drift vor Anwendung stoppt ohne Schreiben", () => {
   const p = project();
   const target = path.join(p.root, "lib/example.js");
   const original = fs.readFileSync(target, "utf8");
   try {
-    assert.throws(() => router.run({
-      argv: ["pro", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
-      cwd: p.root,
+    const candidate = runSafe({
+      argv: ["pro", "high", "write", "--edit-format", "full", "--task-file", p.task, "--file", "lib/example.js"],
+      cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: { DEEPSEEK_API_KEY: "placeholder" },
       callDeepSeek: () => {
         fs.writeFileSync(target, "parallel change\n");
@@ -543,7 +618,9 @@ check("Hash Drift vor Anwendung stoppt ohne Schreiben", () => {
           }],
         });
       },
-    }), /current-hash-drift/);
+    });
+    assert.equal(candidate.status, "ready_for_integration");
+    assert.deepEqual(candidate.applied_files, []);
     assert.equal(fs.readFileSync(target, "utf8"), "parallel change\n");
   } finally {
     fs.rmSync(p.root, { recursive: true, force: true });
@@ -611,9 +688,9 @@ check("Connectivity Test bleibt kompatibel mit funktionierendem Cloud Proxy", ()
 check("Ohne DeepSeek Key startet kein API Worker", () => {
   const p = project();
   try {
-    assert.throws(() => router.run({
+    assert.throws(() => runSafe({
       argv: ["flash", "high", "read", "--task-file", p.task],
-      cwd: p.root,
+      cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
       env: {},
       callDeepSeek: () => {
         throw new Error("darf nicht starten");
@@ -637,7 +714,7 @@ function recoveryFixture(fn) {
   p.raw = (payload = p.payload) => JSON.stringify({ status: "completed",
     output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify(payload) }] }],
     usage: { output_tokens: 80 } }) + "\n__HELMUT_HTTP_STATUS__:200";
-  p.run = (extra = [], opts = {}) => router.run({ cwd: p.root,
+  p.run = (extra = [], opts = {}) => runSafe({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
     argv: [...p.argv, ...extra], env: { DEEPSEEK_API_KEY: "placeholder" },
     spawnSync: () => ({ status: 0, stdout: p.raw() }), ...opts });
   try { fn(p); } finally {
@@ -648,12 +725,12 @@ function recoveryFixture(fn) {
 
 check("Kleine Ersetzung statt vollstaendiger grosser Datei; Schema und Grenze bleiben gebunden", () => {
   recoveryFixture((p) => {
-    const source = "// unveraendert\n".repeat(8000) + p.original;
+    const source = "// unveraendert\n".repeat(6000) + p.original;
     fs.writeFileSync(p.target, source);
     p.payload.edits[0].expected_sha256 = hash(source);
     let request;
     const result = p.run([], { spawnSync: (bin, args, opts) => {
-      request = JSON.parse(opts.input);
+      request = JSON.parse(fs.readFileSync(args[args.indexOf("--data-binary") + 1].slice(1), "utf8"));
       return { status: 0, stdout: p.raw() };
     } });
     assert.equal(request.max_output_tokens, 32768);
@@ -662,8 +739,9 @@ check("Kleine Ersetzung statt vollstaendiger grosser Datei; Schema und Grenze bl
     assert.ok(editSchema.required.includes("replacements"));
     assert.ok(!("content" in editSchema.properties));
     assert.ok(p.raw().length < source.length / 100);
-    assert.equal(fs.readFileSync(p.target, "utf8"), source.replace("= 1", "= 2"));
-    assert.deepEqual(result.applied_files, ["lib/example.js"]);
+    assert.equal(fs.readFileSync(p.target, "utf8"), source);
+    assert.deepEqual(result.applied_files, []);
+    assert.deepEqual(result.staged_files, ["lib/example.js"]);
     assert.ok(charLength(JSON.stringify(result)) <= 2000);
     assert.ok(router.modelOutputSchema("write").properties.edits.items.required.includes("content"));
   });
@@ -683,18 +761,22 @@ check("Ersetzungen sind eindeutig, nicht ueberlappend und beziehen sich auf Orig
   ]) assert.throws(() => router.replaceExact(src, replacements), error);
 });
 
-check("Kein teilweises Anwenden bei falschem Pfad, Hash, Format oder doppelter Datei", () => {
+check("Genau eine schreibbare Datei; ungültige Edits bleiben ohne Wirkung", () => {
   recoveryFixture((p) => {
     const good = structuredClone(p.payload.edits[0]);
     fs.writeFileSync(path.join(p.root, "lib/second.js"), p.original);
     p.argv.push("--file", "lib/second.js");
+    const noProvider = () => { throw new Error("provider-must-not-start"); };
+    assert.throws(() => p.run([], { spawnSync: noProvider }), /write-files-must-be-1-to-1/);
+    assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+    p.argv.splice(-2);
     for (const [bad, error] of [
       [{ ...good, path: "lib/unknown.js" }, /path-not-allowed/],
-      [{ ...good, path: "lib/second.js", expected_sha256: "0".repeat(64) }, /hash-mismatch/],
-      [{ ...good, path: "lib/second.js", content: "wrong format" }, /format-mismatch/],
+      [{ ...good, expected_sha256: "0".repeat(64) }, /hash-mismatch/],
+      [{ ...good, content: "wrong format" }, /format-mismatch/],
       [{ ...good }, /duplicate-path/],
     ]) {
-      p.payload.edits = [good, bad];
+      p.payload.edits = String(error).includes("duplicate-path") ? [good, bad] : [bad];
       assert.throws(() => p.run(), error);
       assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
     }
@@ -714,7 +796,7 @@ check("Unvollstaendige Antwort wird privat gesichert, niemals angewandt oder aut
     let calls = 0;
     const spawnSync = () => { calls++; return { status: 0, stdout: raw }; };
     assert.throws(() => p.run(["--save-response", p.saved], { spawnSync }),
-      /max_output_tokens:output_tokens=32768:reasoning_tokens=32000/);
+      /max_output_tokens:input_tokens=0:output_tokens=32768:reasoning_tokens=32000/);
     const saved = JSON.parse(fs.readFileSync(p.saved, "utf8"));
     assert.equal(saved.raw, raw);
     assert.equal(fs.statSync(p.saved).mode & 0o777, 0o600);
@@ -729,11 +811,13 @@ check("Unvollstaendige Antwort wird privat gesichert, niemals angewandt oder aut
 check("Vollstaendige Arbeit nach Dateidrift bleibt erhalten und wird offline wiederaufgenommen", () => {
   recoveryFixture((p) => {
     let calls = 0;
-    assert.throws(() => p.run(["--save-response", p.saved], { spawnSync: () => {
+    const staged = p.run(["--save-response", p.saved], { spawnSync: () => {
       calls++;
       fs.writeFileSync(p.target, "concurrent work\n");
       return { status: 0, stdout: p.raw() };
-    } }), /current-hash-drift/);
+    } });
+    assert.equal(staged.status, "ready_for_integration");
+    assert.equal(fs.readFileSync(p.target,"utf8"), "concurrent work\n");
     const noNetwork = () => { throw new Error("network-must-not-start"); };
     assert.throws(() => p.run(["--replay-response", p.saved],
       { env: {}, spawnSync: noNetwork }), /replay-request-mismatch/);
@@ -745,12 +829,15 @@ check("Vollstaendige Arbeit nach Dateidrift bleibt erhalten und wird offline wie
       { env: {}, spawnSync: noNetwork }), /replay-request-mismatch/);
     fs.writeFileSync(p.task, taskBefore);
     const result = p.run(["--replay-response", p.saved], { env: {}, spawnSync: noNetwork });
-    assert.equal(result.status, "ok");
+    assert.equal(result.status, "ready_for_integration");
     assert.equal(result.replayed, true);
-    assert.equal(fs.readFileSync(p.target, "utf8"), "module.exports = 2;\n");
+    assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+    const stagedProposal = JSON.parse(fs.readFileSync(p.saved+".proposal.json","utf8"));
+    assert.equal(stagedProposal.edits[0].content,"module.exports = 2;\n");
+    assert.equal(stagedProposal.edits[0].expected_sha256,hash(p.original));
     assert.equal(calls, 1);
-    assert.throws(() => p.run(["--replay-response", p.saved],
-      { env: {}, spawnSync: noNetwork }), /replay-request-mismatch/);
+    assert.equal(p.run(["--replay-response", p.saved],
+      { env: {}, spawnSync: noNetwork }).status,"ready_for_integration");
   });
 });
 
@@ -801,8 +888,8 @@ check("Read-Antwort wird ohne Key und ohne Modellaufruf wiederverwendet; Kontext
 });
 
 check("Neue Optionen bleiben ausdruecklich und unvertraegliche Kombinationen stoppen", () => {
-  const base = ["flash", "high", "write", "--task-file", "/tmp/task"];
-  assert.equal(router.parseArgs(base).editFormat, "full");
+  const base = ["flash", "high", "write", "--task-file", "/tmp/task", "--file", "lib/example.js"];
+  assert.equal(router.parseArgs(base).editFormat, "replacements");
   assert.throws(() => router.parseArgs([...base, "--edit-format", "guess"]), /invalid-edit-format/);
   assert.throws(() => router.parseArgs(["flash", "high", "read", "--task-file", "/tmp/task",
     "--edit-format", "replacements"]), /invalid-edit-format/);
@@ -843,6 +930,581 @@ check("Wiederaufnahme mit anderer Route oder anderem Aenderungsformat startet ke
       assert.throws(() => p.run(["--replay-response", p.saved],
         { env: {}, spawnSync: noNetwork }), /replay-request-mismatch/);
       assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+    }
+  });
+});
+
+
+check("Lange, klar abgegrenzte Schreibauftraege bis 12000 Zeichen ohne bezahlten Vorversuch", () => {
+  const p = project();
+  let calls = 0;
+  const original = fs.readFileSync(p.task, "utf8");
+  try {
+    // The old 3,000-character write cap was needlessly narrow.
+    fs.writeFileSync(p.task, "Scope: edit only the supplied function.\n" + "A".repeat(9000));
+    const result = router.run({
+      cwd: p.root,
+      argv: ["flash", "high", "write", "--task-file", p.task,
+        "--file", "lib/example.js", "--dry-run"],
+      env: {},
+      callDeepSeek: () => { calls++; throw new Error("must-not-call-provider"); },
+    });
+    assert.equal(result.status, "dry_run");
+    assert.equal(result.admission.output_token_cap, 32768);
+    assert.equal(calls, 0);
+    // The overall project is not capped. Individual requests retain a finite,
+    // independently reviewable input budget.
+    fs.writeFileSync(p.task, "A".repeat(router.MAX_TASK_CHARS + 1));
+    assert.throws(() => router.run({
+      cwd: p.root,
+      argv: ["flash", "high", "write", "--task-file", p.task,
+        "--file", "lib/example.js", "--dry-run"],
+      env: {},
+      callDeepSeek: () => { calls++; throw new Error("must-not-call-provider"); },
+    }), /task-too-long/);
+    assert.equal(calls, 0);
+  } finally {
+    fs.writeFileSync(p.task, original);
+    fs.rmSync(p.root, { recursive: true, force: true });
+  }
+});
+
+check("Kostenkontrolle und Groessenpruefung stoppen vor bezahlter API", () => {
+  const p = project();
+  let started = false;
+  const noNetwork = () => { started = true; throw new Error("paid-call-must-not-start"); };
+  try {
+    const cfg = { cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"), env: { DEEPSEEK_API_KEY: "placeholder" }, spawnSync: noNetwork };
+    const dry = runSafe({ ...cfg, env: {},
+      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js", "--dry-run"] });
+    assert.equal(dry.status, "dry_run");
+    assert.equal(dry.admission.output_token_cap, 32768);
+    assert.equal(started, false);
+    assert.throws(() => runSafe({ ...cfg,
+      argv: ["pro", "high", "write", "--task-file", p.task,
+        "--file", "lib/example.js", "--max-cost-usd", "0.01"] }), /preflight-cost-cap/);
+    assert.equal(started, false);
+    fs.writeFileSync(path.join(p.root, "lib/example.js"), "a".repeat(20000));
+    assert.throws(() => runSafe({ ...cfg,
+      argv: ["flash", "high", "write", "--edit-format", "full", "--task-file", p.task,
+        "--file", "lib/example.js"] }), /full-file-too-large/);
+    assert.equal(started, false);
+  } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
+});
+
+check("Ausschliesslich High und Max, Ausgabetokens und Kosten klar begrenzt", () => {
+  const basic = ["flash", "high", "read", "--task-file", "/tmp/task"];
+  const parsed = router.parseArgs([...basic, "--max-output-tokens", "1000"]);
+  const request = router.buildRequestBody("Untersuche.", parsed, []);
+  assert.equal(request.max_output_tokens, 1000);
+  assert.equal(request.reasoning.effort, "high");
+  assert.equal(router.buildRequestBody("Untersuche.",
+    router.parseArgs(["pro", "max", "read", "--task-file", "/tmp/task"]), []).max_output_tokens, 32768);
+  for (const effort of ["none", "low"]) {
+    assert.throws(() => router.parseArgs(["flash", effort, "read", "--task-file", "/tmp/task"]), /usage/);
+  }
+  assert.throws(() => router.parseArgs([...basic, "--max-output-tokens", "32769"]), /invalid-max-output-tokens/);
+  assert.throws(() => router.parseArgs([...basic, "--max-cost-usd", "1"]), /invalid-max-cost-usd/);
+  assert.throws(() => router.parseArgs([...basic, "--max-cost-usd", "-0.1"]), /invalid-max-cost-usd/);
+  assert.throws(() => router.parseArgs([...basic, "--dry-run", "--save-response", "/tmp/file"]), /exclusive/);
+});
+
+check("Schreibauftrag mit ok ohne Code wird nie als Erfolg quittiert", () => {
+  const p = project();
+  const original = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
+  try {
+    assert.throws(() => runSafe({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
+      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      env: { DEEPSEEK_API_KEY: "placeholder" },
+      callDeepSeek: () => apiResult({ summary: summary(), edits: [] }),
+    }), /write-ok-without-edits/);
+    assert.equal(fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8"), original);
+    const blocked = runSafe({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
+      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      env: { DEEPSEEK_API_KEY: "placeholder" },
+      callDeepSeek: () => apiResult({ summary: summary({ status: "blocked" }), edits: [] }),
+    });
+    assert.equal(blocked.status, "blocked");
+  } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
+});
+
+check("Verbrauch bleibt auch bei fehlerhafter bezahlter Antwort sichtbar", () => {
+  const raw = JSON.stringify({ status: "completed", model: "deepseek-flash",
+    output: [{ type: "message", content: [{ type: "output_text", text: "{bad-json" }] }],
+    usage: { input_tokens: 120, output_tokens: 400 } }) +
+    "\n__HELMUT_HTTP_STATUS__:200";
+  assert.throws(() => router.parseCurlResponse(raw), /output-invalid-json:input_tokens=120:output_tokens=400:peak_usd_estimate=/);
+  const p = project();
+  try {
+    assert.throws(() => runSafe({
+      cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"), env: { DEEPSEEK_API_KEY: "placeholder" },
+      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      callDeepSeek: () => apiResult({ summary: summary(), edits: [] },
+        { input_tokens: 123, output_tokens: 321, total_tokens: 444 }),
+    }), /write-ok-without-edits; input_tokens=123:output_tokens=321:peak_usd_estimate=/);
+  } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
+});
+
+check("Unveraenderte Ersatzinhalte duerfen nicht als Schreib-Erfolg gelten", () => {
+  const p = project();
+  const original = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
+  try {
+    assert.throws(() => runSafe({ cwd: p.root, budgetDir: path.join(p.root, ".deepseek-budget-test"),
+      argv: ["flash", "high", "write", "--edit-format", "full", "--task-file", p.task,
+        "--file", "lib/example.js"],
+      env: { DEEPSEEK_API_KEY: "placeholder" },
+      callDeepSeek: () => apiResult({ summary: summary(), edits: [{
+        path: "lib/example.js", expected_sha256: hash(original), content: original,
+      }] }),
+    }), /edit-unchanged-content/);
+    assert.equal(fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8"), original);
+  } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
+});
+
+check("Kostenprognose stellt Peak Obergrenze transparent dar", () => {
+  const cfg = router.parseArgs(["pro", "high", "read", "--task-file", "/tmp/task"]);
+  const body = router.buildRequestBody("Pruefe.", cfg, []);
+  const estimate = router.preflight(cfg, "Pruefe.", body, []);
+  assert.equal(estimate.output_token_cap, 32768);
+  assert(estimate.estimated_peak_usd <= 0.25);
+  assert.equal(router.observedPeakUsd("deepseek-v4-pro",
+    { input_tokens: 1000000, output_tokens: 1000000 }), 5.28);
+  assert.equal(router.observedPeakUsd("not-a-model", {}), null);
+  assert.equal(router.observedPeakUsd("deepseek-flash", { output_tokens: 5 }), null);
+});
+
+
+check("UTC Tagesdeckel und parallele Reservierung verhindern Mehrfachausgaben", () => {
+  const p = project();
+  const dir = path.join(p.root, "safe-budget");
+  const day = new Date("2026-10-26T02:00:00Z");
+  try {
+    const a = dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", dir, now: day });
+    const b = dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", dir, now: day });
+    const c = dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", dir, now: day });
+    const d = dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", dir, now: day });
+    for (let i = 0; i < 4; i++) {
+      dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", dir, now: day });
+    }
+    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).amountMicro, 2000000);
+    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).limitMicro, 2000000);
+    assert.throws(() => dailyBudget.reserve({ estimateUsd: 0.01, model: "deepseek-flash", dir, now: day }), /daily-cap/);
+    assert.equal(dailyBudget.settle(a, 0.0125), true);
+    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).amountMicro, 1762500);
+    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).pending, 7);
+    assert.throws(() => dailyBudget.settle(a, 0.0125), /settlement-invalid/);
+    assert.equal(dailyBudget.settle(b, null), false);
+    fs.mkdirSync(path.join(dir, ".lock"));
+    assert.throws(() => dailyBudget.reserve({ estimateUsd: 0.01, model: "deepseek-flash", dir, now: day }), /budget-locked/);
+    fs.rmdirSync(path.join(dir, ".lock"));
+    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-27" }).amountMicro, 0);
+    assert.equal(dailyBudget.settle(c, 0.1), true);
+    assert.equal(dailyBudget.settle(d, 0.1), true);
+    assert.equal(dailyBudget.snapshot({ dir, day: "2026-10-26" }).amountMicro, 1462500);
+  } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
+});
+
+check("Voller Tag sperrt Router vor Netzwerk ohne nachfolgende Modellkosten", () => {
+  const p = project();
+  let calls = 0;
+  const store = path.join(p.root, "router-ledger");
+  try {
+    // Eight conservative 25-cent reservations use the entire two-dollar day.
+    const day = new Date();
+    for (let i = 0; i < 8; i++) {
+      dailyBudget.reserve({ estimateUsd: 0.25, model: "deepseek-flash", now: day, dir: store });
+    }
+    assert.throws(() => runSafe({
+      cwd: p.root, budgetDir: store, env: { DEEPSEEK_API_KEY: "placeholder" },
+      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      callDeepSeek: () => { calls++; throw new Error("paid-provider-must-not-run"); },
+    }), /daily-cap/);
+    assert.equal(calls, 0);
+    assert.equal(dailyBudget.snapshot({ dir: store }).amountMicro, 2000000);
+  } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
+});
+
+check("Budgetjournal korrupt: kein Modellaufruf und kein stilles Reset", () => {
+  const p = project();
+  const dir = path.join(p.root, "safe-budget");
+  try {
+    const ticket = dailyBudget.reserve({ estimateUsd: 0.2, model: "deepseek-v4-pro", dir });
+    assert.equal(dailyBudget.settle(ticket, null), false);
+    assert.equal(dailyBudget.snapshot({ dir, day: ticket.day }).pending, 1);
+    fs.writeFileSync(path.join(dir, "budget.json"), "invalid-json", { mode: 0o600 });
+    assert.throws(() => dailyBudget.reserve({ estimateUsd: 0.01, model: "deepseek-flash", dir }), /SyntaxError|Unexpected token/);
+    assert.equal(fs.existsSync(path.join(dir, "budget.json")), true);
+  } finally { fs.rmSync(p.root, { recursive: true, force: true }); }
+});
+check("Bezahltes Schreiben ohne gesicherte Antwort wird vor Modellaufruf abgelehnt", () => {
+  const p = project();
+  let calls = 0;
+  try {
+    const before = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
+    assert.throws(() => router.run({
+      cwd: p.root,
+      budgetDir: path.join(p.root, "budget-no-call"),
+      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      env: { DEEPSEEK_API_KEY: "placeholder" },
+      callDeepSeek: () => { calls++; throw new Error("must-not-start"); },
+    }), /write-requires-save-response; no-provider-call/);
+    assert.equal(calls, 0);
+    assert.equal(fs.existsSync(path.join(p.root, "budget-no-call")), false);
+    assert.equal(fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8"), before);
+  } finally {
+    fs.rmSync(p.root, { recursive: true, force: true });
+  }
+});
+
+
+check("Ungueltige Provider Usage darf die Kostenreservierung nicht auf Null setzen", () => {
+  const p = project();
+  const dir = path.join(p.root, "usage-budget");
+  let calls = 0;
+  try {
+    for (const invalid of [
+      { input_tokens: null, output_tokens: 10 },
+      { input_tokens: 10, output_tokens: null },
+      { input_tokens: "10", output_tokens: 15 },
+      { input_tokens: true, output_tokens: 0 },
+      { input_tokens: 10, output_tokens: 20, total_tokens: 2 },
+      {},
+    ]) {
+      assert.equal(router.observedPeakUsd("deepseek-flash", invalid), null);
+      const result = router.run({
+        cwd: p.root, budgetDir: dir,
+        env: { DEEPSEEK_API_KEY: "placeholder" },
+        argv: ["flash", "high", "read", "--task-file", p.task],
+        callDeepSeek: () => {
+          calls++;
+          return { payload: { summary: summary() }, usage: invalid, model: "deepseek-flash" };
+        },
+      });
+      assert.equal(result.status, "ok");
+      assert.equal(result.usage.observed_peak_usd_estimate, null);
+    }
+    const snap = dailyBudget.snapshot({dir});
+    assert.equal(calls, 6);
+    assert.equal(snap.pending, 6);
+    assert.ok(snap.amountMicro > 0);
+  } finally { fs.rmSync(p.root, { recursive:true, force:true }); }
+});
+
+check("Fehlendes Journal nach Initialisierung sperrt statt Tagesbetrag zurueckzusetzen", () => {
+  const p = project();
+  const dir = path.join(p.root, "budget-loss");
+  try {
+    const day = new Date("2026-10-26T05:00:00Z");
+    for(let i=0;i<8;i++) dailyBudget.reserve({
+      estimateUsd:0.25, model:"deepseek-flash", dir, now:day
+    });
+    assert.equal(dailyBudget.snapshot({dir,day:"2026-10-26"}).amountMicro,2000000);
+    assert.equal(fs.existsSync(path.join(dir,".initialized")),true);
+    fs.unlinkSync(path.join(dir, "budget.json"));
+    assert.throws(() => dailyBudget.reserve({
+      estimateUsd:0.01,model:"deepseek-flash",dir,now:day
+    }), /journal-missing/);
+    assert.equal(fs.existsSync(path.join(dir,"budget.json")),false);
+    // Even an interrupted first initialization may not be silently repaired.
+    const empty = path.join(p.root, "interrupted-init");
+    fs.mkdirSync(empty, {mode:0o700});
+    fs.writeFileSync(path.join(empty,".initialized"),"committed\n",{mode:0o600});
+    assert.throws(() => dailyBudget.reserve({
+      estimateUsd:0.01,model:"deepseek-flash",dir:empty,now:day
+    }),/journal-missing/);
+  } finally { fs.rmSync(p.root, { recursive:true, force:true }); }
+});
+
+
+check("Bezahlte Leseantwort bei Journalkollision erhalten und Reserve offengelegt", () => {
+  const p=project(), dir=path.join(p.root,"read-lock"), lock=path.join(dir,".lock");
+  let count=0;
+  try {
+    const result=router.run({
+      cwd:p.root, budgetDir:dir, env:{DEEPSEEK_API_KEY:"placeholder"},
+      argv:["flash","high","read","--task-file",p.task],
+      callDeepSeek:() => {
+        count++;
+        fs.mkdirSync(lock,{mode:0o700});
+        return apiResult({summary:summary({result:["brauchbar"]})});
+      }
+    });
+    assert.equal(result.status,"ok");
+    assert.equal(result.result[0],"brauchbar");
+    assert.equal(result.budget_settlement,"pending_reserved");
+    assert.equal(count,1);
+    fs.rmdirSync(lock);
+    const snapshot=dailyBudget.snapshot({dir});
+    assert.equal(snapshot.pending,1);
+    assert.ok(snapshot.amountMicro>0);
+  } finally {
+    if(fs.existsSync(lock)) fs.rmdirSync(lock);
+    fs.rmSync(p.root,{recursive:true,force:true});
+  }
+});
+
+
+check("Vollstaendig empfangene Antwort nach Routerabbruch ohne neuen Modellaufruf wiederherstellbar", () => {
+  recoveryFixture(p => {
+    let calls = 0;
+    assert.throws(() => p.run(["--save-response",p.saved],{
+      spawnSync: (bin,args,opts) => {
+        calls++;
+        assert.ok(Array.isArray(opts.stdio));
+        assert.ok(Number.isInteger(opts.stdio[1]));
+        fs.writeSync(opts.stdio[1],p.raw());
+        throw new Error("simulated-parent-kill-after-complete-stdout");
+      }
+    }), /simulated-parent-kill/);
+    assert.equal(fs.readFileSync(p.saved,"utf8"),"");
+    assert.equal(fs.readFileSync(p.saved+".raw","utf8"),p.raw());
+    assert.equal(fs.statSync(p.saved+".raw").mode & 0o777,0o600);
+    assert.equal(fs.readFileSync(p.target,"utf8"),p.original);
+    const result=p.run(["--replay-response",p.saved], {
+      env:{}, spawnSync:() => {throw new Error("network-not-allowed");}
+    });
+    assert.equal(result.replayed,true);
+    assert.equal(result.status,"ready_for_integration");
+    assert.equal(calls,1);
+    assert.equal(fs.readFileSync(p.target,"utf8"),p.original);
+  });
+});
+
+
+check("P1 Gegenprobe: Verzeichniswechsel nach Providerantwort darf Fremddatei niemals ueberschreiben", () => {
+  const p=project();
+  const outside=fs.mkdtempSync(path.join(os.tmpdir(),"deepseek-p1-outside-"));
+  const original=fs.readFileSync(path.join(p.root,"lib/example.js"),"utf8");
+  const external=path.join(outside,"example.js");
+  fs.writeFileSync(external,original);
+  try {
+    const result=runSafe({
+      cwd:p.root,budgetDir:path.join(p.root,"budget-p1"),
+      argv:["flash","high","write","--edit-format","full",
+        "--task-file",p.task,"--file","lib/example.js"],
+      env:{DEEPSEEK_API_KEY:"placeholder"},
+      callDeepSeek:() => {
+        fs.renameSync(path.join(p.root,"lib"),path.join(p.root,"lib-original"));
+        fs.symlinkSync(outside,path.join(p.root,"lib"),"dir");
+        return apiResult({summary:summary(),edits:[{
+          path:"lib/example.js",expected_sha256:hash(original),
+          content:"MUST NEVER REPLACE FOREIGN DATA\n"
+        }]});
+      }
+    });
+    assert.equal(result.status,"ready_for_integration");
+    assert.equal(result.applied_files.length,0);
+    assert.deepEqual(result.staged_files,["lib/example.js"]);
+    assert.equal(fs.readFileSync(external,"utf8"),original);
+    assert.equal(fs.readFileSync(path.join(p.root,"lib-original/example.js"),"utf8"),original);
+  } finally {
+    fs.rmSync(p.root,{recursive:true,force:true});
+    fs.rmSync(outside,{recursive:true,force:true});
+  }
+});
+
+
+check("P1 Lese-Angriff: verlinktes Elternverzeichnis bleibt vor Anbieteraufruf gesperrt", () => {
+  const p=project(), outside=fs.mkdtempSync(path.join(os.tmpdir(),"router-external-source-"));
+  const privatePath=path.join(outside,"SECRET_DATA_DO_NOT_SEND.txt");
+  fs.writeFileSync(privatePath,"PRIVATE DATA\n",{mode:0o600});
+  fs.symlinkSync(outside,path.join(p.root,"docs","external"),"dir");
+  let calls=0;
+  try {
+    const args=["flash","high","read","--dry-run",
+      "--task-file",p.task,"--file","docs/external/SECRET_DATA_DO_NOT_SEND.txt"];
+    assert.throws(()=>router.run({
+      cwd:p.root,argv:args,env:{},
+      callDeepSeek:()=>{calls++;throw new Error("provider-called");}
+    }),/source-path-symlink/);
+    assert.equal(calls,0);
+    // Not a workaround: an external source needs a canonical absolute path.
+    const outsideLink=path.join(p.root,"relative-outside.txt");
+    fs.symlinkSync(privatePath,outsideLink);
+    assert.throws(()=>router.run({
+      cwd:p.root,argv:["flash","high","read","--dry-run","--task-file",p.task,
+        "--file","../"+path.basename(outside)+"/SECRET_DATA_DO_NOT_SEND.txt"],
+      env:{}
+    }),/external-read-requires-canonical-absolute-path/);
+    assert.equal(fs.readFileSync(privatePath,"utf8"),"PRIVATE DATA\n");
+  } finally {
+    fs.rmSync(p.root,{recursive:true,force:true});
+    fs.rmSync(outside,{recursive:true,force:true});
+  }
+});
+
+check("P1 Usage mit zu hoher Gesamtzahl haelt Reservierung unveraendert", () => {
+  const p=project(), dir=path.join(p.root,"strict-token-sum");
+  try {
+    const invalid={input_tokens:0,output_tokens:0,total_tokens:1000};
+    assert.equal(router.observedPeakUsd("deepseek-flash",invalid),null);
+    const result=router.run({
+      cwd:p.root,env:{DEEPSEEK_API_KEY:"placeholder"},budgetDir:dir,
+      argv:["flash","high","read","--task-file",p.task],
+      callDeepSeek:()=>apiResult({summary:summary()},invalid),
+    });
+    assert.equal(result.status,"ok");
+    assert.equal(result.usage.observed_peak_usd_estimate,null);
+    const snap=dailyBudget.snapshot({dir});
+    assert.equal(snap.pending,1);
+    assert.ok(snap.amountMicro>0);
+  } finally {fs.rmSync(p.root,{recursive:true,force:true});}
+});
+
+check("P2 Teilhuelle: Requestgebundene vollstaendige Rohantwort bleibt replaybar", () => {
+  recoveryFixture(p => {
+    let calls=0;
+    const first=p.run(["--save-response",p.saved],{
+      spawnSync:(bin,args,opts)=>{
+        calls++;
+        fs.writeSync(opts.stdio[1],p.raw());
+        return {status:0,stdout:""};
+      }
+    });
+    assert.equal(first.status,"ready_for_integration");
+    assert.equal(calls,1);
+    const expectedRaw=fs.readFileSync(p.saved+".raw","utf8");
+    assert.equal(expectedRaw,p.raw());
+    fs.writeFileSync(p.saved,'{"version":1,"request',{mode:0o600});
+    const again=p.run(["--replay-response",p.saved],{
+      env:{},spawnSync:()=>{throw new Error("network-must-not-start");}
+    });
+    assert.equal(again.status,"ready_for_integration");
+    assert.equal(again.replayed,true);
+    assert.equal(calls,1);
+    assert.equal(fs.readFileSync(p.target,"utf8"),p.original);
+    // Valid but intentionally mismatched bindings must NEVER fall back.
+    fs.writeFileSync(p.saved,JSON.stringify({
+      version:1,request_sha256:"bad",raw:expectedRaw
+    }),{mode:0o600});
+    assert.throws(()=>p.run(["--replay-response",p.saved],{
+      env:{},spawnSync:()=>{throw new Error("network-must-not-start");}
+    }),/replay-request-mismatch/);
+  });
+});
+
+check("P1 Antwortablage bindet den Datei-Deskriptor trotz privatem Verzeichnistausch", () => {
+  recoveryFixture(p => {
+    const parent = path.dirname(p.saved);
+    const relocated = parent + ".retained-" + crypto.randomBytes(4).toString("hex");
+    const repoFile = path.join(p.root, path.basename(p.saved));
+    const repoRawFile = path.join(p.root, path.basename(p.saved) + ".raw");
+    const sentinel = "ORIGINAL REPOSITORY CONTENT MUST REMAIN\n";
+    const originalRawSentinel = "PRIVATE REPO RAW MUST REMAIN\n";
+    fs.writeFileSync(repoFile, sentinel);
+    fs.writeFileSync(repoRawFile, originalRawSentinel);
+    let shifted = false;
+    let calls = 0;
+    try {
+      assert.throws(() => p.run(["--save-response", p.saved], {
+        spawnSync: (bin, args, opts) => {
+          calls++;
+          assert.ok(Number.isInteger(opts.stdio[1]));
+          fs.writeSync(opts.stdio[1], p.raw());
+          fs.renameSync(parent, relocated);
+          fs.symlinkSync(p.root, parent, "dir");
+          shifted = true;
+          return { status: 0, stdout: "" };
+        },
+      }), /response-must-be-outside-repo/);
+      assert.equal(calls, 1);
+      assert.equal(fs.readFileSync(repoFile, "utf8"), sentinel);
+      assert.equal(fs.readFileSync(repoRawFile, "utf8"), originalRawSentinel);
+      const persisted = JSON.parse(fs.readFileSync(
+        path.join(relocated, "response.json"), "utf8"));
+      assert.equal(persisted.raw, p.raw());
+      assert.equal(fs.readFileSync(
+        path.join(relocated, "response.json.raw"), "utf8"), p.raw());
+      assert.equal(fs.readdirSync(p.root).filter(n => n.includes(".writing-")).length, 0);
+      assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+    } finally {
+      if (shifted) {
+        fs.unlinkSync(parent);
+        fs.renameSync(relocated, parent);
+      }
+    }
+  });
+});
+
+
+check("Verzeichnistausch waehrend Vorschlagsanlage bleibt im privaten FD, nicht in Git", () => {
+  const p = project();
+  const privateDir = fs.mkdtempSync(path.join(os.tmpdir(), "router-private-swap-"));
+  const saved = path.join(privateDir, "response.json");
+  const moved = privateDir + ".retained";
+  const original = fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8");
+  const proposal = [{
+    source: { label: "lib/example.js", sha256: hash(original) },
+    content: "module.exports = 7;\n",
+  }];
+  const originalOpen = fs.openSync;
+  let switched = false;
+  try {
+    fs.openSync = function(filePath, flags, mode) {
+      if (!switched && typeof filePath === "string" &&
+          /^\/proc\/self\/fd\/\d+\/response\.json\.proposal\.json$/.test(filePath) &&
+          (flags & fs.constants.O_CREAT)) {
+        fs.renameSync(privateDir, moved);
+        fs.symlinkSync(p.root, privateDir, "dir");
+        switched = true;
+      }
+      return originalOpen.call(fs, filePath, flags, mode);
+    };
+    assert.throws(() => router.stageEdits(
+      proposal, { saveResponse: saved }, p.root, "request-hash"
+    ), /private-directory-moved/);
+    assert.equal(switched, true);
+    assert.equal(fs.existsSync(path.join(p.root, "response.json.proposal.json")), false);
+    assert.equal(fs.readFileSync(path.join(p.root, "lib/example.js"), "utf8"), original);
+    const retained = JSON.parse(fs.readFileSync(
+      path.join(moved, "response.json.proposal.json"), "utf8"
+    ));
+    assert.equal(retained.edits[0].content, "module.exports = 7;\n");
+    assert.equal(retained.request_sha256, "request-hash");
+  } finally {
+    fs.openSync = originalOpen;
+    if (switched && fs.existsSync(privateDir)) fs.unlinkSync(privateDir);
+    fs.rmSync(moved, { recursive: true, force: true });
+    fs.rmSync(privateDir, { recursive: true, force: true });
+    fs.rmSync(p.root, { recursive: true, force: true });
+  }
+});
+
+
+check("Rohantwort wird trotz Verzeichnistausch bei Archivinitialisierung nie in Git abgelegt", () => {
+  recoveryFixture(p => {
+    const privateDir = path.dirname(p.saved);
+    const movedDir = privateDir + ".moved";
+    const forbidden = path.join(p.root, "response.json.raw");
+    const originalOpen = fs.openSync;
+    let swapped = false;
+    try {
+      fs.openSync = function(filePath, flags, mode) {
+        if (!swapped && typeof filePath === "string" &&
+            /^\/proc\/self\/fd\/\d+\/response\.json\.raw$/.test(filePath) &&
+            (flags & fs.constants.O_CREAT)) {
+          fs.renameSync(privateDir, movedDir);
+          fs.symlinkSync(p.root, privateDir, "dir");
+          swapped = true;
+        }
+        return originalOpen.call(fs, filePath, flags, mode);
+      };
+      assert.throws(() => p.run(["--save-response", p.saved], {
+        spawnSync: (bin, args, opts) => {
+          fs.writeSync(opts.stdio[1], p.raw());
+          return {status: 0, stdout: ""};
+        }
+      }), /response-must-be-outside-repo/);
+      assert.equal(swapped, true);
+      assert.equal(fs.existsSync(forbidden), false);
+      assert.equal(fs.readFileSync(path.join(movedDir, "response.json.raw"), "utf8"), p.raw());
+      assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+    } finally {
+      fs.openSync = originalOpen;
+      if (swapped) {
+        fs.unlinkSync(privateDir);
+        fs.renameSync(movedDir, privateDir);
+      }
     }
   });
 });

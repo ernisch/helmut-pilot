@@ -27,6 +27,8 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const cp = require("child_process");
+const os = require("os");
+const dailyBudget = require("./deepseek-router-budget");
 
 const API_URL = "https://api.deepseek.com/responses";
 const MODELS = Object.freeze({
@@ -70,10 +72,23 @@ const CORE_CONTEXT = Object.freeze([
     ],
   },
 ]);
+// Maximum size of ONE delegated instruction, not of the overall Sol project.
+// Larger projects are split by Sol into bounded, independently reviewable tasks.
 const MAX_TASK_CHARS = 12000;
 const MAX_RETURN_CHARS = 2000;
 const MAX_FILES = 20;
+const MAX_WRITE_FILES = 1;
+const MAX_WRITE_SOURCE_CHARS = 120000;
+const MAX_FULL_FILE_CHARS = 18000;
 const MAX_SOURCE_CHARS = 500000;
+// Deliberately conservative current peak prices: update only after provider verification.
+// https://api-docs.deepseek.com/quick_start/pricing/
+const PEAK_USD_PER_MILLION = Object.freeze({
+  "deepseek-flash": Object.freeze({ input: 0.30, output: 1.20 }),
+  "deepseek-v4-pro": Object.freeze({ input: 1.32, output: 3.96 }),
+});
+const MAX_JOB_USD = 0.25;
+const MIN_OUTPUT_TOKENS = 256;
 const MAX_FILE_CHARS = 220000;
 // Reasoning und finale Antwort teilen sich dieses Limit; echte FlashHigh und
 // ProHigh Lesepruefungen brachen auch mit 12000 ab, weil die Antwort erst nach
@@ -109,7 +124,7 @@ function sanitizeEnv(source) {
   for (const key of SAFE_ENV_KEYS) {
     if (source[key] != null && source[key] !== "") env[key] = source[key];
   }
-  if (source.DEEPSEEK_API_KEY) env.DEEPSEEK_API_KEY = source.DEEPSEEK_API_KEY;
+  // The child curl process never receives the provider secret in its environment.
   env.TZ = "UTC";
   return env;
 }
@@ -217,7 +232,10 @@ function parseArgs(argv) {
   }
 
   let taskFile = null;
-  let editFormat = "full";
+  let editFormat = "replacements";
+  let maxOutputTokens = null;
+  let maxCostUsd = MAX_JOB_USD;
+  let dryRun = false;
   let saveResponse = null;
   let replayResponse = null;
   const files = [];
@@ -234,6 +252,19 @@ function parseArgs(argv) {
       if (mode !== "write" || !["full", "replacements"].includes(editFormat)) {
         throw new Error("invalid-edit-format");
       }
+    } else if (rest[i] === "--max-output-tokens") {
+      maxOutputTokens = Number(rest[++i]);
+      if (!Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < MIN_OUTPUT_TOKENS ||
+          maxOutputTokens > (mode === "write" ? WRITE_MAX_OUTPUT_TOKENS : READ_MAX_OUTPUT_TOKENS)) {
+        throw new Error("invalid-max-output-tokens");
+      }
+    } else if (rest[i] === "--max-cost-usd") {
+      maxCostUsd = Number(rest[++i]);
+      if (!Number.isFinite(maxCostUsd) || maxCostUsd <= 0 || maxCostUsd > MAX_JOB_USD) {
+        throw new Error("invalid-max-cost-usd");
+      }
+    } else if (rest[i] === "--dry-run") {
+      dryRun = true;
     } else if (rest[i] === "--save-response" || rest[i] === "--replay-response") {
       const flag = rest[i];
       const value = rest[++i];
@@ -246,7 +277,11 @@ function parseArgs(argv) {
   }
   if (!taskFile) throw new Error("task-file-required");
   if (saveResponse && replayResponse) throw new Error("save-and-replay-exclusive");
+  if (dryRun && (saveResponse || replayResponse)) throw new Error("dry-run-response-exclusive");
   if (files.length > MAX_FILES) throw new Error(`too-many-files:${files.length}>${MAX_FILES}`);
+  if (mode === "write" && (!files.length || files.length > MAX_WRITE_FILES)) {
+    throw new Error(`write-files-must-be-1-to-${MAX_WRITE_FILES}`);
+  }
 
   return {
     modelKey,
@@ -255,6 +290,9 @@ function parseArgs(argv) {
     mode,
     taskFile: path.resolve(taskFile),
     editFormat,
+    maxOutputTokens,
+    maxCostUsd,
+    dryRun,
     saveResponse,
     replayResponse,
     files,
@@ -262,13 +300,67 @@ function parseArgs(argv) {
 }
 
 function ensureTextFile(absPath) {
-  const buf = fs.readFileSync(absPath);
-  if (buf.includes(0)) throw new Error(`binary-file-not-supported:${absPath}`);
-  const content = buf.toString("utf8");
-  if (charCount(content) > MAX_FILE_CHARS) {
-    throw new Error(`source-file-too-large:${absPath}`);
+  // Securely walk EVERY path component, not only the final file. Linux's
+  // /proc/self/fd binds the next open to the already-open parent directory,
+  // so even a directory replacement between opens cannot redirect the read.
+  // Fail closed on hosts without this safe capability, rather than silently
+  // downgrade to a vulnerable realpath/lstat-then-open sequence.
+  if (process.platform !== "linux" ||
+      !Number.isInteger(fs.constants.O_NOFOLLOW) ||
+      !Number.isInteger(fs.constants.O_DIRECTORY) ||
+      !fs.existsSync("/proc/self/fd")) {
+    throw new Error("deepseek-source-secure-open-unavailable");
   }
-  return content;
+  const absolute = path.resolve(absPath);
+  const segments = absolute.split(path.sep).filter(Boolean);
+  if (!segments.length) throw new Error("deepseek-source-not-regular");
+  let directory = fs.openSync("/", fs.constants.O_RDONLY |
+    fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW);
+  try {
+    for (let i = 0; i < segments.length - 1; i++) {
+      const child = `/proc/self/fd/${directory}/${segments[i]}`;
+      let next;
+      try {
+        next = fs.openSync(child, fs.constants.O_RDONLY |
+          fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW);
+      } catch (error) {
+        if (error.code === "ELOOP" || error.code === "ENOTDIR") {
+          throw new Error(`deepseek-source-path-symlink-or-not-directory:${absolute}`);
+        }
+        throw error;
+      }
+      fs.closeSync(directory);
+      directory = next;
+    }
+    let fd;
+    try {
+      fd = fs.openSync(`/proc/self/fd/${directory}/${segments[segments.length - 1]}`,
+        fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    } catch (error) {
+      if (error.code === "ELOOP") {
+        throw new Error(`deepseek-source-path-symlink:${absolute}`);
+      }
+      throw error;
+    }
+    try {
+      const stat = fs.fstatSync(fd);
+      if (!stat.isFile()) throw new Error(`deepseek-source-not-regular:${absolute}`);
+      if (stat.size > MAX_FILE_CHARS * 4) {
+        throw new Error(`source-file-too-large:${absolute}`);
+      }
+      const buf = fs.readFileSync(fd);
+      if (buf.includes(0)) throw new Error(`binary-file-not-supported:${absolute}`);
+      const content = buf.toString("utf8");
+      if (charCount(content) > MAX_FILE_CHARS) {
+        throw new Error(`source-file-too-large:${absolute}`);
+      }
+      return content;
+    } finally {
+      fs.closeSync(fd);
+    }
+  } finally {
+    fs.closeSync(directory);
+  }
 }
 
 function inside(root, candidate) {
@@ -359,7 +451,16 @@ function loadSources({ cwd, explicitFiles }) {
       editable: false,
     });
   }
-  for (const p of explicitFiles) add(p, true);
+  for (const p of explicitFiles) {
+    // External inputs must be named by their actual absolute identity.
+    // Relative traversal outside this workspace is never implicit consent.
+    const abs = path.resolve(cwd, p);
+    if (!inside(cwd, abs) && (!path.isAbsolute(p) ||
+        fs.realpathSync(abs) !== abs)) {
+      throw new Error("deepseek-external-read-requires-canonical-absolute-path");
+    }
+    add(p, true);
+  }
 
   return sources;
 }
@@ -420,7 +521,8 @@ function buildRequestBody(task, cfg, sources) {
     instructions: buildInstructions(cfg),
     input: buildInput(task, cfg, sources),
     reasoning: { effort: cfg.effort },
-    max_output_tokens: cfg.mode === "write" ? WRITE_MAX_OUTPUT_TOKENS : READ_MAX_OUTPUT_TOKENS,
+    max_output_tokens: cfg.maxOutputTokens ||
+      (cfg.mode === "write" ? WRITE_MAX_OUTPUT_TOKENS : READ_MAX_OUTPUT_TOKENS),
     text: {
       format: {
         type: "json_schema",
@@ -430,6 +532,78 @@ function buildRequestBody(task, cfg, sources) {
     },
     stream: false,
   };
+}
+
+function preflight(cfg, task, body, sources) {
+  if (cfg.mode === "write") {
+    const editable = sources.filter(x => x.editable);
+    const total = editable.reduce((sum, x) => sum + charCount(x.content), 0);
+    if (total > MAX_WRITE_SOURCE_CHARS) {
+      throw new Error("write-sources-too-large; split-task-before-paid-call");
+    }
+    if (cfg.editFormat === "full" &&
+        editable.some(x => charCount(x.content) > MAX_FULL_FILE_CHARS)) {
+      throw new Error("full-file-too-large; use---edit-format-replacements");
+    }
+  }
+  const rate = PEAK_USD_PER_MILLION[cfg.model];
+  if (!rate) throw new Error("unknown-model-pricing; no-paid-call");
+  // This is an intentionally cautious BYTE proxy, not a tokenizer guarantee.
+  // Includes all request fields/schema, not just the human-readable prompt.
+  const estimatedInputTokens = Buffer.byteLength(JSON.stringify(body), "utf8") + 2048;
+  const estimatedPeakUsd = (estimatedInputTokens * rate.input +
+    body.max_output_tokens * rate.output) / 1000000;
+  const ceiling = Math.min(MAX_JOB_USD, cfg.maxCostUsd ?? MAX_JOB_USD);
+  if (estimatedPeakUsd > ceiling) {
+    throw new Error(`deepseek-preflight-cost-cap:estimated=${estimatedPeakUsd.toFixed(6)}USD:cap=${ceiling.toFixed(6)}USD; split-task-or-reduce-output`);
+  }
+  return {
+    input_token_byte_proxy: estimatedInputTokens,
+    output_token_cap: body.max_output_tokens,
+    estimated_peak_usd: Number(estimatedPeakUsd.toFixed(6)),
+    cost_limit_usd: ceiling,
+    warning: "Estimated against documented peak rates and byte proxy; not a provider-enforced monetary cap",
+  };
+}
+
+function observedPeakUsd(model, usage) {
+  const rate = PEAK_USD_PER_MILLION[model];
+  if (!rate) return null;
+  // Never coerce null, strings, booleans or absent provider counters to zero.
+  // Unknown usage must preserve the originally reserved budget.
+  if (!usage || typeof usage !== "object") return null;
+  const input = usage.input_tokens;
+  const output = usage.output_tokens;
+  if (![input, output].every(x => typeof x === "number" && Number.isSafeInteger(x) && x >= 0)) {
+    return null;
+  }
+  if (Object.hasOwn(usage, "total_tokens") &&
+      (!Number.isSafeInteger(usage.total_tokens) || usage.total_tokens !== input + output)) {
+    return null;
+  }
+  return Number(((input * rate.input + output * rate.output) / 1000000).toFixed(6));
+}
+
+function peakFromRawResponse(raw, model) {
+  if (typeof raw !== "string") return null;
+  const marker = "\n__HELMUT_HTTP_STATUS__:";
+  const idx = raw.lastIndexOf(marker);
+  if (idx < 0 || Number(raw.slice(idx + marker.length).trim()) !== 200) return null;
+  try {
+    const response = JSON.parse(raw.slice(0, idx));
+    return observedPeakUsd(model, response.usage);
+  } catch {
+    return null;
+  }
+}
+
+function usageReceipt(usage, model) {
+  const input = Number.isSafeInteger(usage?.input_tokens) && usage.input_tokens >= 0
+    ? usage.input_tokens : "unknown";
+  const output = Number.isSafeInteger(usage?.output_tokens) && usage.output_tokens >= 0
+    ? usage.output_tokens : "unknown";
+  const peak = observedPeakUsd(model, usage);
+  return `input_tokens=${input}:output_tokens=${output}:peak_usd_estimate=${peak ?? "unknown"}`;
 }
 
 function parseCurlResponse(raw) {
@@ -446,11 +620,13 @@ function parseCurlResponse(raw) {
 
   if (response.status !== "completed") {
     const reason = response.incomplete_details?.reason || response.error?.code || response.status || "unknown";
+    const input = Number(response.usage?.input_tokens || 0);
     const output = Number(response.usage?.output_tokens || 0);
     const reasoning = Number(response.usage?.output_tokens_details?.reasoning_tokens || 0);
+    const upper = observedPeakUsd(response.model, response.usage);
     // Never expose provider error text or unfinished content in the visible error.
     const safeReason = /^[a-zA-Z0-9_-]{1,80}$/.test(reason) ? reason : "unknown";
-    throw new Error(`deepseek-response-not-completed:${safeReason}:output_tokens=${output}:reasoning_tokens=${reasoning}; split-task; no-files-applied`);
+    throw new Error(`deepseek-response-not-completed:${safeReason}:input_tokens=${input}:output_tokens=${output}:reasoning_tokens=${reasoning}:peak_usd_estimate=${upper ?? "unknown"}; split-task; no-files-applied`);
   }
 
   const text = (response.output || [])
@@ -460,11 +636,11 @@ function parseCurlResponse(raw) {
     .map((x) => x.text || "")
     .join("")
     .trim();
-  if (!text) throw new Error("deepseek-response-empty");
+  if (!text) throw new Error(`deepseek-response-empty:${usageReceipt(response.usage, response.model)}`);
 
   let payload;
   try { payload = JSON.parse(text); }
-  catch { throw new Error("deepseek-output-invalid-json"); }
+  catch { throw new Error(`deepseek-output-invalid-json:${usageReceipt(response.usage, response.model)}`); }
 
   return { payload, usage: response.usage || {}, model: response.model || null };
 }
@@ -475,25 +651,63 @@ function callDeepSeek(body, options = {}) {
   const key = options.apiKey || envSource.DEEPSEEK_API_KEY;
   if (!key) throw new Error("DEEPSEEK_API_KEY-fehlt");
 
-  const result = spawnSync("curl", [
-    "--silent",
-    "--show-error",
-    "--connect-timeout", "10",
-    "--max-time", String(REQUEST_TIMEOUT_SECONDS),
-    "--request", "POST",
-    "--header", `Authorization: Bearer ${key}`,
-    "--header", "Content-Type: application/json",
-    "--data-binary", "@-",
-    "--write-out", "\n__HELMUT_HTTP_STATUS__:%{http_code}",
-    API_URL,
-  ], {
-    input: JSON.stringify(body),
-    encoding: "utf8",
-    env: sanitizeEnv(envSource),
-    maxBuffer: 16 * 1024 * 1024,
-  });
-
-  if (options.saveRawResponse) options.saveRawResponse(String(result.stdout || ""));
+  // Never put API credentials in argv or the process environment.
+  // Curl reads its auth config via stdin; the request body is held temporarily
+  // in a private (0700) directory and removed even on transport failure.
+  if (!/^[A-Za-z0-9._-]+$/.test(key)) throw new Error("deepseek-api-key-invalid-format");
+  const privateDir = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-deepseek-request-"));
+  const requestFile = path.join(privateDir, "request.json");
+  let result;
+  try {
+    fs.writeFileSync(requestFile, JSON.stringify(body), { flag: "wx", mode: 0o600 });
+    result = spawnSync("curl", [
+      "--silent",
+      "--show-error",
+      "--connect-timeout", "10",
+      "--max-time", String(REQUEST_TIMEOUT_SECONDS),
+      "--request", "POST",
+      "--config", "-",
+      "--data-binary", `@${requestFile}`,
+      "--write-out", "\n__HELMUT_HTTP_STATUS__:%{http_code}",
+      API_URL,
+    ], {
+      input: `header = "Authorization: Bearer ${key}"\nheader = "Content-Type: application/json"\n`,
+      encoding: "utf8",
+      env: sanitizeEnv(envSource),
+      maxBuffer: 16 * 1024 * 1024,
+      ...(options.rawResponseFd != null
+        ? { stdio: ["pipe", options.rawResponseFd, "pipe"] } : {}),
+    });
+  } finally {
+    fs.rmSync(privateDir, { recursive: true, force: true });
+  }
+  // In real calls curl writes directly to a private response file descriptor
+  // while the network reply arrives, not after spawnSync returns. A SIGKILL of
+  // the parent therefore does not discard data already emitted by curl.
+  const buffered = String(result.stdout || "");
+  if (options.rawResponseFd != null && buffered) {
+    // Test doubles may return stdout even with a supplied file descriptor.
+    fs.writeSync(options.rawResponseFd, buffered);
+  }
+  let raw = buffered;
+  if (options.rawResponseFd != null) {
+    fs.fsyncSync(options.rawResponseFd);
+    // Read through the original, already open descriptor. Re-resolving a path
+    // here would permit a parent-directory swap to inject foreign bytes.
+    const st = fs.fstatSync(options.rawResponseFd);
+    if (!st.isFile() || st.size > 16 * 1024 * 1024) {
+      throw new Error("deepseek-stream-archive-unsafe");
+    }
+    const bytes = Buffer.alloc(st.size);
+    for (let offset = 0; offset < bytes.length;) {
+      const n = fs.readSync(options.rawResponseFd, bytes, offset,
+        bytes.length - offset, offset);
+      if (n <= 0) throw new Error("deepseek-stream-short-read");
+      offset += n;
+    }
+    raw = bytes.toString("utf8");
+  }
+  if (options.saveRawResponse) options.saveRawResponse(raw);
   if (result.error) {
     if (result.error.code === "ETIMEDOUT") throw new Error("deepseek-worker-timeout");
     throw new Error(`deepseek-curl-start:${result.error.code || result.error.message}`);
@@ -502,7 +716,7 @@ function callDeepSeek(body, options = {}) {
     const tail = String(result.stderr || "").trim().split("\n").slice(-2).join(" | ").slice(0, 400);
     throw new Error(`deepseek-curl-exit-${result.status}${tail ? ":" + tail : ""}`);
   }
-  return parseCurlResponse(String(result.stdout || ""));
+  return parseCurlResponse(raw);
 }
 
 function validateSummary(summary) {
@@ -565,10 +779,10 @@ function prepareEdits(edits, sources, cwd, editFormat = "full") {
     if (edit.expected_sha256 !== source.sha256) {
       throw new Error(`deepseek-edit-expected-hash-mismatch:${edit.path}`);
     }
-    const current = ensureTextFile(source.abs);
-    if (sha256(current) !== source.sha256) {
-      throw new Error(`deepseek-edit-current-hash-drift:${edit.path}`);
-    }
+    // Prepare from the EXACT source bytes originally provided to the model.
+    // Files may have changed meanwhile; this proposal never writes to them.
+    // Sol must verify the expected hash before integrating via trusted Git.
+    const current = source.content;
     if (editFormat === "replacements" ? "content" in edit : "replacements" in edit) {
       throw new Error("deepseek-edit-format-mismatch");
     }
@@ -576,25 +790,102 @@ function prepareEdits(edits, sources, cwd, editFormat = "full") {
     if (typeof content !== "string" || charCount(content) > MAX_FILE_CHARS) {
       throw new Error(`deepseek-edit-content-invalid:${edit.path}`);
     }
-    prepared.push({ source, content });
+    if (content === current) throw new Error(`deepseek-edit-unchanged-content:${edit.path}`);
+    prepared.push({ source, content, expectedSha256: source.sha256 });
   }
   return prepared;
 }
 
-function applyEdits(prepared) {
-  const temps = [];
+// Direct filesystem replacement cannot provide an atomic compare-and-swap
+// against non-cooperating writers. Never expose it as a bypassable API.
+function applyEdits() {
+  throw new Error("deepseek-direct-file-apply-disabled; use-trusted-git-integration");
+}
+
+function openPinnedPrivateDirectory(dir) {
+  // Validate every directory component, then operate through the pinned FD.
+  // No path may be followed again when writing a private proposal.
+  if (process.platform !== "linux" || !fs.existsSync("/proc/self/fd") ||
+      !Number.isInteger(fs.constants.O_NOFOLLOW) ||
+      !Number.isInteger(fs.constants.O_DIRECTORY)) {
+    throw new Error("deepseek-proposal-pinned-directory-unavailable");
+  }
+  const absolute = path.resolve(dir);
+  const parts = absolute.split(path.sep).filter(Boolean);
+  let fd = fs.openSync("/", fs.constants.O_RDONLY |
+    fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW);
   try {
-    for (const item of prepared) {
-      const mode = fs.statSync(item.source.abs).mode & 0o777;
-      const temp = `${item.source.abs}.deepseek-${process.pid}-${crypto.randomBytes(4).toString("hex")}.tmp`;
-      fs.writeFileSync(temp, item.content, { mode });
-      temps.push({ temp, target: item.source.abs });
+    for (const part of parts) {
+      const child = fs.openSync(`/proc/self/fd/${fd}/${part}`,
+        fs.constants.O_RDONLY | fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW);
+      fs.closeSync(fd);
+      fd = child;
     }
-    for (const item of temps) fs.renameSync(item.temp, item.target);
+    return fd;
+  } catch (error) {
+    fs.closeSync(fd);
+    throw error;
+  }
+}
+
+function stageEdits(prepared, cfg, cwd, requestHash) {
+  const saved = cfg.saveResponse || cfg.replayResponse;
+  if (!saved) throw new Error("deepseek-proposal-requires-private-archive");
+  const file = privateResponsePath(saved, cwd) + ".proposal.json";
+  const artifact = {
+    version: 1,
+    request_sha256: requestHash,
+    edits: prepared.map(item => ({
+      path: item.source.label,
+      expected_sha256: item.source.sha256,
+      new_sha256: sha256(item.content),
+      content: item.content,
+    })),
+  };
+  const bytes = JSON.stringify(artifact) + "\n";
+  const directory = openPinnedPrivateDirectory(path.dirname(file));
+  try {
+    // /proc/self/fd pins the originally opened, validated private directory.
+    // A malicious swap of any ancestor cannot redirect the create into Git.
+    const boundPath = `/proc/self/fd/${directory}/${path.basename(file)}`;
+    let proposalFd;
+    try {
+      proposalFd = fs.openSync(boundPath,
+        fs.constants.O_WRONLY | fs.constants.O_CREAT |
+        fs.constants.O_EXCL | fs.constants.O_NOFOLLOW, 0o600);
+      try {
+        fs.writeFileSync(proposalFd, bytes, { encoding: "utf8" });
+        fs.fsyncSync(proposalFd);
+      } finally {
+        fs.closeSync(proposalFd);
+      }
+      fs.fsyncSync(directory);
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      // Idempotent offline replay. Read the existing proposal through the
+      // SAME pinned directory and reject symlinks or changed contents.
+      proposalFd = fs.openSync(boundPath,
+        fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+      try {
+        const stat = fs.fstatSync(proposalFd);
+        if (!stat.isFile() || stat.nlink !== 1 ||
+            (stat.mode & 0o077) || stat.size > 1024 * 1024 ||
+            fs.readFileSync(proposalFd, "utf8") !== bytes) {
+          throw new Error("deepseek-proposal-existing-differs; no-files-applied");
+        }
+      } finally {
+        fs.closeSync(proposalFd);
+      }
+    }
+    // A relocated directory remains safe, but the old pathname may now
+    // point at foreign files. Do not hand that misleading pathname to Sol.
+    const currentDir = fs.realpathSync(`/proc/self/fd/${directory}`);
+    if (currentDir !== path.dirname(file)) {
+      throw new Error("deepseek-proposal-private-directory-moved; no-files-applied");
+    }
+    return file;
   } finally {
-    for (const item of temps) {
-      if (fs.existsSync(item.temp)) fs.rmSync(item.temp, { force: true });
-    }
+    fs.closeSync(directory);
   }
 }
 
@@ -632,13 +923,16 @@ function finalVisibleResult(summary, cfg, apiResult, applied) {
     ...(apiResult.replayed ? { replayed: true } : {}),
     route: { model: cfg.model, effort: cfg.effort, mode: cfg.mode },
     usage: {
-      input_tokens: Number(apiResult.usage.input_tokens || 0),
-      output_tokens: Number(apiResult.usage.output_tokens || 0),
-      total_tokens: Number(apiResult.usage.total_tokens || 0),
+      input_tokens: Number.isSafeInteger(apiResult.usage?.input_tokens) ? apiResult.usage.input_tokens : null,
+      output_tokens: Number.isSafeInteger(apiResult.usage?.output_tokens) ? apiResult.usage.output_tokens : null,
+      total_tokens: Number.isSafeInteger(apiResult.usage?.total_tokens) ? apiResult.usage.total_tokens : null,
       context_chars: Number(apiResult.contextChars || 0),
+      observed_peak_usd_estimate: observedPeakUsd(cfg.model, apiResult.usage),
+      admission_peak_usd_estimate: apiResult.admission?.estimated_peak_usd ?? null,
     },
     applied_files: applied.map((x) => truncateText(x, 120)),
     summary_compacted: compacted.compacted,
+    budget_settlement: apiResult.budgetSettlementPending ? "pending_reserved" : "settled_or_unknown",
   };
   let raw = JSON.stringify(result);
   if (charCount(raw) > MAX_RETURN_CHARS) {
@@ -658,7 +952,13 @@ function run(options = {}) {
   const cwd = path.resolve(options.cwd || process.cwd());
   const cfg = parseArgs(argv);
 
-  if (!cfg.replayResponse && !envSource.DEEPSEEK_API_KEY) throw new Error("DEEPSEEK_API_KEY-fehlt");
+  // Paid writes are never sent without a recoverable private provider reply.
+  // Refuse before source handling, reservation or any billable network access.
+  if (cfg.mode === "write" && !cfg.dryRun && !cfg.replayResponse && !cfg.saveResponse) {
+    throw new Error("deepseek-write-requires-save-response; no-provider-call");
+  }
+
+  if (!cfg.replayResponse && !cfg.dryRun && !envSource.DEEPSEEK_API_KEY) throw new Error("DEEPSEEK_API_KEY-fehlt");
   const task = ensureTextFile(cfg.taskFile);
   if (!task.trim()) throw new Error("task-file-empty");
   if (charCount(task) > MAX_TASK_CHARS) {
@@ -666,50 +966,207 @@ function run(options = {}) {
   }
 
   const sources = loadSources({ cwd, explicitFiles: cfg.files });
-  const body = buildRequestBody(task, cfg, sources);
-  const requestHash = sha256(JSON.stringify(body));
-  let apiResult;
-  if (cfg.replayResponse) {
-    const saved = JSON.parse(fs.readFileSync(privateResponsePath(cfg.replayResponse, cwd), "utf8"));
-    if (saved.version !== 1 || saved.request_sha256 !== requestHash || typeof saved.raw !== "string") {
-      throw new Error("deepseek-replay-request-mismatch");
-    }
-    apiResult = parseCurlResponse(saved.raw);
-    apiResult.replayed = true;
-  } else {
-    // Reserve before the paid call: refuse an existing path and never overwrite work.
-    const fd = cfg.saveResponse
-      ? fs.openSync(privateResponsePath(cfg.saveResponse, cwd), "wx", 0o600) : null;
-    try {
-      apiResult = (options.callDeepSeek || callDeepSeek)(body, {
-        env: envSource,
-        spawnSync: options.spawnSync,
-        apiKey: options.apiKey,
-        saveRawResponse: fd === null ? null : (raw) => {
-          fs.writeFileSync(fd, JSON.stringify({ version: 1, request_sha256: requestHash, raw }) + "\n");
-          fs.fsyncSync(fd);
-        },
-      });
-    } finally {
-      if (fd !== null) fs.closeSync(fd);
+  if (cfg.mode === "write") {
+    const realRoot = fs.realpathSync(cwd);
+    for (const source of sources.filter(x => x.editable)) {
+      // Reject ancestor symlinks escaping the workspace before any paid call.
+      if (!inside(realRoot, fs.realpathSync(source.abs))) {
+        throw new Error(`deepseek-write-outside-repo:realpath:${source.label}`);
+      }
     }
   }
+  const body = buildRequestBody(task, cfg, sources);
+  const requestHash = sha256(JSON.stringify(body));
+  const admission = preflight(cfg, task, body, sources);
+  if (cfg.dryRun) return { status: "dry_run", route: { model: cfg.model, effort: cfg.effort, mode: cfg.mode }, admission };
+  let apiResult;
+  let budgetSettlementError = null;
+  if (cfg.replayResponse) {
+    const replayPath = privateResponsePath(cfg.replayResponse, cwd);
+    const savedText = fs.readFileSync(replayPath, "utf8");
+    let raw;
+    if (savedText.trim()) {
+      let saved = null;
+      try {
+        saved = JSON.parse(savedText);
+      } catch (error) {
+        // A killed process may have left an old, truncated envelope.
+        // Only a SYNTAX failure is recoverable; a valid but mismatching
+        // wrapper is never replaced by untrusted data from a sidecar.
+        if (!(error instanceof SyntaxError)) throw error;
+      }
+      if (saved !== null) {
+        if (saved.version !== 1 || saved.request_sha256 !== requestHash || typeof saved.raw !== "string") {
+          throw new Error("deepseek-replay-request-mismatch");
+        }
+        raw = saved.raw;
+      }
+    }
+    if (raw === undefined || raw === null) {
+      // The separately stored request binding must match before raw replay.
+      const metaPath = replayPath + ".meta";
+      const rawPath = replayPath + ".raw";
+      const metaStat = fs.lstatSync(metaPath);
+      if (!metaStat.isFile() || metaStat.isSymbolicLink() ||
+          (metaStat.mode & 0o077) || metaStat.size > 512) {
+        throw new Error("deepseek-stream-metadata-unsafe");
+      }
+      const meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
+      if (meta.version !== 1 || meta.request_sha256 !== requestHash) {
+        throw new Error("deepseek-replay-request-mismatch");
+      }
+      const st = fs.lstatSync(rawPath);
+      if (!st.isFile() || st.isSymbolicLink() || (st.mode & 0o077) ||
+          st.size > 16 * 1024 * 1024) {
+        throw new Error("deepseek-stream-archive-unsafe");
+      }
+      raw = fs.readFileSync(rawPath, "utf8");
+    }
+    apiResult = parseCurlResponse(raw);
+    apiResult.replayed = true;
+  } else {
+    // Only call the provider after a durable atomic UTC-day reservation.
+    // If the process crashes, an unknown charge stays reserved conservatively.
+    const archivePath = cfg.saveResponse ? privateResponsePath(cfg.saveResponse, cwd) : null;
+    const archiveDir = archivePath ? openPinnedPrivateDirectory(path.dirname(archivePath)) : null;
+    const archiveEntry = (suffix) => `/proc/self/fd/${archiveDir}/${path.basename(archivePath)}${suffix}`;
+    let fd = null;
+    let rawFd = null;
+    if (archivePath) {
+      try {
+        // Bind ALL response artifacts to the same already-open private parent.
+        // No request output is created by re-resolving an attacker-swappable
+        // filesystem path after its initial validation.
+        fd = fs.openSync(archiveEntry(""),
+          fs.constants.O_WRONLY | fs.constants.O_CREAT |
+          fs.constants.O_EXCL | fs.constants.O_NOFOLLOW, 0o600);
+        fs.writeFileSync(archiveEntry(".meta"),
+          JSON.stringify({version: 1, request_sha256: requestHash}) + "\n",
+          {flag: "wx", mode: 0o600});
+        const mfd = fs.openSync(archiveEntry(".meta"),
+          fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+        try { fs.fsyncSync(mfd); } finally { fs.closeSync(mfd); }
+        rawFd = fs.openSync(archiveEntry(".raw"),
+          fs.constants.O_RDWR | fs.constants.O_CREAT |
+          fs.constants.O_EXCL | fs.constants.O_NOFOLLOW, 0o600);
+        fs.fsyncSync(archiveDir);
+      } catch (error) {
+        if (rawFd != null) fs.closeSync(rawFd);
+        if (fd != null) fs.closeSync(fd);
+        fs.closeSync(archiveDir);
+        throw error;
+      }
+    }
+    let ticket = null;
+    let rawReceived = null;
+    try {
+      ticket = dailyBudget.reserve({
+        estimateUsd: admission.estimated_peak_usd,
+        model: cfg.model, env: envSource, dir: options.budgetDir,
+      });
+      try {
+        apiResult = (options.callDeepSeek || callDeepSeek)(body, {
+          env: envSource,
+          spawnSync: options.spawnSync,
+          apiKey: options.apiKey,
+          rawResponseFd: rawFd,
+          rawResponseFile: archivePath ? archivePath + ".raw" : null,
+          saveRawResponse: (raw) => {
+            rawReceived = raw;
+            if (fd !== null) {
+              // Publish the complete envelope atomically. A crash before
+              // rename leaves the initial empty placeholder plus the
+              // already-streamed, request-bound raw bytes recoverable.
+              publishResponseEnvelope(fd, requestHash, raw);
+            }
+          },
+        });
+      } finally {
+        // Provider billing may happen even on incomplete/malformed responses.
+        // Unknown usage leaves the original admission amount committed.
+        const actual = apiResult?.usage
+          ? observedPeakUsd(cfg.model, apiResult.usage)
+          : peakFromRawResponse(rawReceived, cfg.model);
+        try {
+          dailyBudget.settle(ticket, actual);
+        } catch (error) {
+          // The response is already paid. Preserve it for reads rather than
+          // discarding it because of a transient settlement lock.
+          // The conservative reservation stays charged until resolved.
+          budgetSettlementError = error;
+        }
+      }
+    } finally {
+      if (rawFd !== null) fs.closeSync(rawFd);
+      if (fd !== null) fs.closeSync(fd);
+      if (archiveDir !== null) fs.closeSync(archiveDir);
+    }
+  }
+  if (budgetSettlementError) {
+    if (cfg.mode === "write") {
+      throw new Error("deepseek-budget-settlement-pending; private-response-preserved; no-files-applied");
+    }
+    apiResult.budgetSettlementPending = true;
+  }
   apiResult.contextChars = charCount(body.input);
+  apiResult.admission = admission;
 
+  try {
   const payload = apiResult.payload;
   const summary = validateSummary(payload.summary);
   if (cfg.mode === "write" && summary.status !== "ok" && payload.edits?.length) {
     throw new Error("deepseek-non-ok-edits");
   }
+  if (cfg.mode === "write" && summary.status === "ok" &&
+      (!Array.isArray(payload.edits) || payload.edits.length === 0)) {
+    throw new Error("deepseek-write-ok-without-edits");
+  }
 
   const prepared = cfg.mode === "write"
     ? prepareEdits(payload.edits, sources, cwd, cfg.editFormat)
     : [];
-  // Validate the bounded visible receipt before any authorized file mutation.
-  const visible = finalVisibleResult(summary, cfg, apiResult,
-    prepared.map((x) => x.source.label));
-  if (cfg.mode === "write") applyEdits(prepared);
+  // Validate the visible receipt before emitting a durable proposal.
+  // Direct writes are disabled: there is no OS-level atomic content CAS here.
+  const visible = finalVisibleResult(summary, cfg, apiResult, []);
+  if (cfg.mode === "write" && summary.status === "ok") {
+    const proposal = stageEdits(prepared, cfg, cwd, requestHash);
+    visible.status = "ready_for_integration";
+    visible.staged_files = prepared.map(x => x.source.label);
+    visible.proposal_path = proposal;
+    visible.requires_trusted_git_integration = true;
+    if (charCount(JSON.stringify(visible)) > MAX_RETURN_CHARS) {
+      throw new Error("deepseek-proposal-receipt-too-long; private-proposal-preserved");
+    }
+  }
   return visible;
+  } catch (error) {
+    // The provider may already have billed a successfully received response.
+    // Preserve the actual usage receipt even if local validation rejects it.
+    throw new Error(`${error.message}; ${usageReceipt(apiResult.usage, apiResult.model || cfg.model)}`);
+  }
+}
+
+function publishResponseEnvelope(fd, requestHash, raw) {
+  // The envelope FD was opened exclusively before the model call. Every
+  // output byte must target THIS descriptor, never a newly resolved pathname.
+  // An attacker swapping the parent directory cannot redirect its inode.
+  // A crash during this write leaves an incomplete wrapper, recoverable from
+  // the separately request-bound and already fsynced raw stream.
+  const st = fs.fstatSync(fd);
+  if (!st.isFile() || st.nlink !== 1 || (st.mode & 0o077)) {
+    throw new Error("deepseek-response-envelope-unsafe");
+  }
+  const bytes = Buffer.from(JSON.stringify({
+    version: 1, request_sha256: requestHash, raw,
+  }) + "\n", "utf8");
+  // The FD is not re-opened or renamed; explicit offsets avoid cursor issues.
+  for (let offset = 0; offset < bytes.length;) {
+    const n = fs.writeSync(fd, bytes, offset, bytes.length - offset, offset);
+    if (n <= 0) throw new Error("deepseek-response-envelope-short-write");
+    offset += n;
+  }
+  fs.ftruncateSync(fd, bytes.length);
+  fs.fsyncSync(fd);
 }
 
 function privateResponsePath(file, cwd) {
@@ -753,6 +1210,7 @@ module.exports = {
   MAX_TASK_CHARS,
   MAX_RETURN_CHARS,
   MAX_FILES,
+  MAX_WRITE_FILES,
   MAX_SOURCE_CHARS,
   MAX_FILE_CHARS,
   sanitizeEnv,
@@ -765,6 +1223,10 @@ module.exports = {
   buildInput,
   buildInstructions,
   buildRequestBody,
+  preflight,
+  observedPeakUsd,
+  peakFromRawResponse,
+  usageReceipt,
   parseCurlResponse,
   callDeepSeek,
   validateSummary,
@@ -772,6 +1234,7 @@ module.exports = {
   replaceExact,
   privateResponsePath,
   applyEdits,
+  stageEdits,
   truncateText,
   compactSummary,
   finalVisibleResult,
