@@ -1,15 +1,18 @@
 # CURRENT STATE — Helmut
 
-## Hetzner-Arbeitsumgebung (27.10.2026 Istanbul)
+## Sifi: vereinfachter Testweg (27.10.2026)
 
-Hetzner: Dateien/DB/Tests; Codex: KI. Kein Productionumzug.
-Mainfcc8/PR965: Pflicht-CIs und Deployment gruen.
-Ziel40428805792: UID/GID60001 frei belegt; Tools und schreibbare Quelle29b05 bereit.
-Image stoppt mit PROCESS_UNKNOWN; ursprüngliche errno fehlt.
-Enger Folgefix: nur bestätigte flüchtige Prozessänderungen lesend neu beobachten;
-kein Befehlsretry, keine Kennungsumwahl. Abhängigkeiten/Ziel-DB noch nicht abgenommen.
-Native0; Kindprozessursache unbekannt, kein neuer nativer Test ohne konkretes GO.
-[Dev/Beleggrenzen](betrieb/hetzner-development-environment-20261026.md) · [Historie](betrieb/hetzner-native-automation-20261026.md).
+Codex und GitHub CI statt Hetzner als Entwicklungstor. Vorhandene Offline-,
+Browser- und isolierte PostgreSQL/PostgREST-Tests mit Mocks nutzen;
+keine Doppeltests. Coverage und fehlende 500er-Integrationsfaelle gezielt
+pruefen. Mac: maximal 5 GB mobiler Traffic pro Tag, keine grossen Downloads.
+Hetzner unveraendert; neuer Aufbau/native Tests nur bei belegtem Bedarf und GO.
+Finaler Production-Test mit 500 aktiven Profilen/1500 Sollpositionen nur
+nach getrennter Freigabe.
+
+Letzter Hetzner-Lauf 40428805792: Tools/Quelle bereit, Image PROCESS_UNKNOWN,
+Test-DB offen, native Tests 0. PR966 gemergt, kein positiver Zielnachweis.
+Kein Productionumzug. [Belege](betrieb/hetzner-development-environment-20261026.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
