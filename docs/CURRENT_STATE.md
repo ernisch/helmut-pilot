@@ -1,18 +1,16 @@
 # CURRENT STATE — Helmut
 
-## Siffi: vereinfachter Testweg (27.10.2026)
+## Siffi: gezielter 500er-Abgleich (27.10.2026)
 
-Codex und GitHub CI statt Hetzner als Entwicklungstor. Vorhandene Offline-,
-Browser- und isolierte PostgreSQL/PostgREST-Tests mit Mocks nutzen;
-keine Doppeltests. Coverage und fehlende 500er-Integrationsfaelle gezielt
-pruefen. Mac: maximal 5 GB mobiler Traffic pro Tag, keine grossen Downloads.
-Hetzner unveraendert; neuer Aufbau/native Tests nur bei belegtem Bedarf und GO.
-Finaler Production-Test mit 500 aktiven Profilen/1500 Sollpositionen nur
-nach getrennter Freigabe.
-
-Letzter Hetzner-Lauf 40428805792: Tools/Quelle bereit, Image PROCESS_UNKNOWN,
-Test-DB offen, native Tests 0. PR966 gemergt, kein positiver Zielnachweis.
-Kein Productionumzug. [Belege](betrieb/hetzner-development-environment-20261026.md).
+Main6b4012cd; W15/PR915 und PR936 rein lesend verglichen:54/84Releasepins
+identisch,20anders,10fehlen. Nur Artikelstand-Tagesanlass ausPR915 integriert;
+34gezielte Gruppen gruen, Modulcoverage99,47%Zeilen/84,75%Branches.
+Echter REST→Briefing-Assert in vorhandener CI vorbereitet; Abnahme/PR-CI offen.
+Kein neuer500erLauf,Hetzner oder Production-Eingriff. Zeit-/Gesamt-RAM bleiben
+unqualifiziert. [Abgleich und naechster Schritt](betrieb/500er-main-abgleich-20261027.md).
+Codex/GitHubCI mit isoliertemPG/PostgREST und Mocks; keine Doppeltests.
+Mac maximal5GB/Tag,keine grossenDownloads. Production500/1500 nur mit eigenemGO.
+Historische Hetznerstaende: [Belege](betrieb/hetzner-development-environment-20261026.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
