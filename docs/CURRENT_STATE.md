@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-## Sifi: vereinfachter Testweg (27.10.2026)
+## Siffi: vereinfachter Testweg (27.10.2026)
 
 Codex und GitHub CI statt Hetzner als Entwicklungstor. Vorhandene Offline-,
 Browser- und isolierte PostgreSQL/PostgREST-Tests mit Mocks nutzen;
