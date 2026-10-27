@@ -2,12 +2,13 @@
 
 ## W15 mit geprueften Originalen (27.10.2026)
 
-Main6b4012cd; eigenerBranch codex/w15-original-input-integration-20261027 auf969.
+Main6b4012cd; DraftPR971 auf969, Code058cc9e8, eigener W15-Integrationsbranch.
 PR969 bleibt ungemergt. W15-Kern importiert;67Quellen/Worker bytegleich gepinnt.
 11Originaldateien/96.530.256B empfangen; Dump in netzlosemPG17.6 restauriert.
 81Bindungs-,7Originaldaten-,8DB- und20Testauswahlpruefungen bestanden.
 Original-W15-Inhaltsworker PASS:14,72s;500/1000/1500 als Inhalt, kein Vollrun.
 Publikationspolicy exakt lokal gebunden; DB-/Quellhashes unveraendert.
+CI-Erstlauf173/177; vier Test-/Inventargrenzen korrigiert, gezielt bestanden.
 Keine Productionaenderung, bezahlten Modelle oder vollstaendiger500erLauf.
 [Belege und verbleibende Abnahme](betrieb/500er-main-abgleich-20261027.md).
 

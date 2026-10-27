@@ -9,6 +9,7 @@ Der vollständige Datei-/SHA256-Abgleich steht einmalig im
 
 ## Aktuelle W15-Entwicklungsintegration
 
+[Draft-PR971](https://github.com/ernisch/helmut-pilot/pull/971), Runtimecode`058cc9e8`; Test-/Inventargrenzen danach gezielt ergänzt.
 Eigener Branch `codex/w15-original-input-integration-20261027`, auf dem weiterhin
 ungemergten PR969. Genau28benannte Runtimepfade entsprechen jetzt W15; einer war
 schon in969enthalten.67geschlossene Quellen plus Worker sind byte-/SHA-identisch.
@@ -56,8 +57,26 @@ Keine Frist wurde dafür angehoben. Ein bestehender Direct-Test meldete8PASS-Gru
 aber sein äußerer100s-Coverageaufruf endete vor beobachtetem sauberem Exit;
 für diesen Fall wird lokal kein sauberer Gesamterfolg behauptet.
 
+Der [erste GitHub-CI-Lauf](https://github.com/ernisch/helmut-pilot/actions/runs/40502943321)
+belegt Browser/Desktop/Mobil und die vorgelagerten isolierten DB-Schritte als grün.
+Die Standardsuite endete mit173/177grünen Suiten: Inventar zweier öffentlicher
+Konfigurationsnamen, zwei veraltete VM-Whitelistgrenzen und eine Volltext-Cronprüfung
+waren noch nicht an W15 angeschlossen. Direct-, Production-Adapter- und Stored-Command-
+Suiten bestanden dort bereits sauber. Bereichsregression und Z22 wurden nach dem
+Standardfehler übersprungen und zählen nicht als bestanden.
+
+Genau die vier benötigten Test-/Inventardateien aus11ca02db sind ergänzt, kein
+Runtimecode geändert:38Inventarprüfungen,13Attestationfälle,3Auth-Rebindfälle plus
+2Handler/20negative Bindungen und64Pipelineprüfungen bestehen lokal. VM-Optimierer
+sind ausdrücklich inaktiv; echter SHA-Fallback und Authprüfungen bleiben aktiv.
+Die Cronprüfung prüft jetzt nur strukturierte Cronrouten, inklusive zusätzlicher
+Negativfälle. Unabhängiger lesender Review ohne Blocker. Die vorhandene
+[Pflicht-CI am PR](https://github.com/ernisch/helmut-pilot/pull/971/checks)
+ist nach diesen Korrekturen erneut abzuschließen; kein Grün für den neuen Kopf vorweggenommen.
+
 Coverage wurde in den ohnehin erforderlichen Läufen erfasst:16V8-Dateien,
-Prüfsummenindex privat erhalten. Kein zusätzlicher Lauf nur für Coverage,
+Prüfsummenindex privat erhalten. Die vier notwendigen CI-Korrekturprüfungen
+liefern zusätzlich eigene V8-Dateien mit separatem SAFE-Bericht. Kein zusätzlicher Lauf nur für Coverage,
 keine Gesamtquote für das Repository und keine Worker-Coverage behauptet.
 Der native31,95%-Bericht betrifft ausschließlich den Elternprozess des älteren
 fehlgeschlagenen Zusatzfalls und ist kein W15-Erfolgs-/Ressourcenmaß.
@@ -292,11 +311,13 @@ Die alte [Cloud-Transferanleitung](https://drive.google.com/file/d/1aD8_ofHkAcyh
 ist an einen anderen bestätigten Empfänger gebunden; sie autorisiert keine
 Entschlüsselung in dieser Sitzung.
 
-**Aktuelle Betreiberfreigabe:** Die Übertragung privater Schlüssel ist ausdrücklich
-erlaubt. Die frühere Beschränkung auf ihren bisherigen Endpunkt gilt damit nicht
-mehr. Für die gezielte Vorbereitung ist kein weiteres pauschales GO nötig.
-Der offene Punkt ist tatsächlicher Dateizugriff auf den erhaltenen Ursprung oder
-dessen vorhandenen Entschlüsselungsschlüssel. Production/Modelltests bleiben gesperrt.
+**Historische Betreiberfreigabe vor der neuen Schlüsselanlage:** Damals war die
+Übertragung privater Schlüssel erlaubt. Für den neuen Empfängerschlüssel BA62F5AA…
+gilt die spätere ausdrückliche Grenze: dessen privater Schlüssel und Passphrase
+bleiben ausschließlich in der geschützten aktuellen Cloud. Der ausgewählte
+Datenempfang ist abgeschlossen. Der damals offene Zugriff auf den älteren
+Ursprungsschlüssel wurde für diesen Empfang nicht benötigt. Production/Modelltests
+bleiben gesperrt.
 
 ### Gezielter Datenbestand, abschließende Prüfung27.10.
 

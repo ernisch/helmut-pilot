@@ -29,6 +29,16 @@ function abschnitt(t) { console.log(`\n== ${t} ==`); }
 const serverSrc = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
 const pipelineSrc = fs.readFileSync(path.join(ROOT, "lib/helmut/scalable-pipeline.js"), "utf8");
 
+function keineDirektenWorkerCrons(config) {
+  return config && typeof config === "object" && !Array.isArray(config)
+    && Array.isArray(config.crons) && config.crons.every(cron =>
+      cron && typeof cron === "object" && !Array.isArray(cron)
+      && Object.keys(cron).sort().join("|") === "path|schedule"
+      && typeof cron.path === "string" && cron.path.startsWith("/api/cron/")
+      && typeof cron.schedule === "string" && cron.schedule.trim().length > 0
+      && !/jobqueue|scalable|worker/i.test(cron.path));
+}
+
 function main() {
   console.log("Helmut — Aktivierungsschutz skalierbarer Pfad (OP-30)");
 
@@ -160,7 +170,19 @@ function main() {
           + "|/api/cron/understanding-rueckstand@30 11 * * *|/api/cron/understanding-rueckstand@30 17 * * *";
     })());
   check("6.7 Kein Cron ruft die OP-30-Maschinerie unmittelbar auf",
-    !/jobqueue|scalable|worker/i.test(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8")));
+    keineDirektenWorkerCrons(JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"))));
+  check("6.7a Gebuendelte Workerdatei ist keine Cronroute",
+    keineDirektenWorkerCrons({ crons: [{ path: "/api/cron/crawl", schedule: "0 4 * * *" }],
+      functions: { "api/index.js": { includeFiles: "lib/helmut/synthetik-500-content-worker.js" } } }));
+  for (const name of ["jobqueue", "scalable", "worker"]) {
+    check(`6.7b Echte ${name}-Cronroute wird abgelehnt`, !keineDirektenWorkerCrons({
+      crons: [{ path: "/api/cron/" + name, schedule: "* * * * *" }] }));
+  }
+  for (const invalid of [null, {}, { crons: null }, { crons: {} }, { crons: [null] },
+    { crons: [{ path: "/api/cron/crawl" }] }, { crons: [{ path: "/api/cron/crawl", schedule: "" }] },
+    { crons: [{ path: "/api/cron/crawl", schedule: "* * * * *", unknown: true }] }]) {
+    check("6.7c Ungueltige Cronkonfiguration bleibt gesperrt", !keineDirektenWorkerCrons(invalid));
+  }
   check("6.8 Der zweite Morgenslot bricht bei ausgeschalteten Flags VOR jedem Schreibzugriff ab",
     (() => {
       const i = serverSrc.indexOf('url.pathname === "/api/cron/lage-briefing-nachlauf"');

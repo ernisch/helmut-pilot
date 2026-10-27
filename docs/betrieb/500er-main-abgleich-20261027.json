@@ -3230,8 +3230,8 @@
     "privateKeyOnlyOnAcceptedHistoricalTarget": true,
     "privateKeyReadOrExported": false,
     "largeCipherPartsDownloaded": false,
-    "currentCloudAcceptedRecipientEstablished": true,
-    "actualRestoreExecuted": true,
+    "currentCloudAcceptedRecipientEstablished": false,
+    "actualRestoreExecuted": false,
     "originalsRetainedOnSourceAccordingToHistoricalIndex": true,
     "W15InputMembershipInLaterBackupEstablished": false,
     "laterPhysicalSnapshot": "V12 image.raw 2147483648B is recorded in the safe source inventory, not a proven W15 pre-unit initial state.",
@@ -3244,7 +3244,19 @@
     ],
     "safetyBoundary": "Selected preparation and private-key transfer authorized; original source/file channel and matching existing key are not accessible here. Production and paid tests remain blocked.",
     "nextAction": "Original data received; isolated PostgreSQL input restored and focused development checks passed. Next qualify current signed prepare/open and runtime chain; no full500 or Production action authorized.",
-    "privateKeyTransferAuthorizedByCurrentUser": true
+    "historicalScopeClarification": "These two flags describe only the old487267152B backup/DCFDrecipient path, which was not transferred or restored. Selected W15 receipt uses a separately createdBA62recipient and a new12491342B package.",
+    "privateKeyTransferAuthorizedByEarlierUserMessage": true,
+    "currentPrivateKeyExportAuthorized": false,
+    "selectedW15Receipt": {
+      "recipientFingerprint": "BA62F5AA45E156824AF62BE6EF2A2F30AD52CAA8",
+      "cipherBytes": 12491342,
+      "cipherSHA256": "44603988decffe2a1f712aa72e2fd924860695d042cc3238f79d753dbf047252",
+      "files": 11,
+      "plainBytes": 96530256,
+      "receivedVerified": true,
+      "isolatedInputDumpRestored": true,
+      "privateKeyOrPassphraseExported": false
+    }
   },
   "selectedOriginalDataAudit": {
     "manifest": "docs/betrieb/w15-minimal-datenuebernahme-20261027.json",
@@ -3368,7 +3380,7 @@
     "firstFailures": {
       "missingLocalPolicy": "Preserved first original-content log; resolved by binding exact existing policy, never by bypassing guard.",
       "oldV2Probe": "Preserved90s deadline on older13Oct874document/500KO version2 dictionary. SuccessfulW15 builder uses normalized7/6 ordinaryv1. Wrong probe input binding corrected; no oldv2 repetition or90s relaxation.",
-      "directTestHarness": "Eight complete PASS groups inlog, but outer100s covered-run harness expired before observing clean exit; current CI required, no local success exit claimed."
+      "directTestHarness": "Eight complete PASS groups inlog, but outer100s covered-run harness expired before observing clean exit; current CI required, no local success exit claimed. First current CI subsequently observed clean PASS for direct, adapter and stored-command suites; overall firstCI still failed on four separately corrected test/inventory interfaces."
     },
     "coverage": {
       "capturedDuringRequiredRuns": true,
@@ -3403,6 +3415,48 @@
       "reason": "Exact runtime required by unchangedW15 startupSupported; reuse existingtwoCIjobs, no newrunner.",
       "productionRuntimeChanged": false,
       "productionRuntimeQualificationStillRequired": true
-    }
+    },
+    "draftPR": "https://github.com/ernisch/helmut-pilot/pull/971",
+    "codeCommit": "058cc9e8201bf36ef5eaff756855472a901dfa97",
+    "firstCIRun": {
+      "url": "https://github.com/ernisch/helmut-pilot/actions/runs/40502943321",
+      "headSHA": "058cc9e8201bf36ef5eaff756855472a901dfa97",
+      "conclusion": "failure",
+      "standardPassed": 173,
+      "standardTotal": 177,
+      "browserDesktopMobile": "success",
+      "precedingIsolatedDatabaseSteps": "success",
+      "areaRegression": "skipped_after_standard_failure",
+      "Z22": "skipped_after_standard_failure",
+      "failures": [
+        "env-inventar-test.js",
+        "provider-runtime-attestation-test.js",
+        "provider-runtime-auth-rebind-test.js",
+        "scalable-pipeline-flag-test.js"
+      ],
+      "alreadySuccessfulW15StandardSuites": [
+        "synthetik-500-direct-test.js",
+        "synthetik-500-production-adapter-test.js",
+        "synthetik-500-stored-command-test.js"
+      ]
+    },
+    "targetedCIInterfaceFix": {
+      "sourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+      "files": [
+        "docs/betrieb/env-inventar.md",
+        "scripts/provider-runtime-attestation-test.js",
+        "scripts/provider-runtime-auth-rebind-test.js",
+        "scripts/scalable-pipeline-flag-test.js"
+      ],
+      "allFourFilesByteIdenticalToSelectedW15": true,
+      "runtimeFilesChanged": 0,
+      "fourTargetedSuitesExitCode": 0,
+      "reportSHA256": "6a544cb2364878d43b888d7ba86594caabd281f3175abeaa6e2aee90c3b30565",
+      "additionalV8Files": 8,
+      "separateCoverageOnlyRun": false,
+      "independentReadOnlyReview": "No blocker; actual auth/nonce/deadline/canonical fallback preserved; structured cron path guard plus negative tests; no configuration value changed."
+    },
+    "requiredFollowupCIChecks": "https://github.com/ernisch/helmut-pilot/pull/971/checks",
+    "followupCIStatusAtCommit": "pending; no all-green assertion for corrected head"
   }
 }
