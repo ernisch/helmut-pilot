@@ -128,7 +128,7 @@ Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigke
 
 ## Modell und Arbeitsumgebung
 
-Betreiberentscheidung 27.10.2026, Sifis vereinfachter Weg: Codex und die
+Betreiberentscheidung 27.10.2026, Siffis vereinfachter Weg: Codex und die
 bestehende GitHub CI (isolierte PostgreSQL/PostgREST, Browser, Offline-Mocks)
 sind der Standard. Vorhandene Tests wiederverwenden, Code Coverage ehrlich
 erheben, 500 Profile zuerst mit Mock-KI, echten isolierten DB-Transaktionen
