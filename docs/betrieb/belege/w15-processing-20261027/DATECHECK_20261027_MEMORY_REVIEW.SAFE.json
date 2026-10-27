@@ -1,0 +1,152 @@
+{
+  "schema": "helmut-w15-full500-independent-current-memory-date-review/1",
+  "status": "PASS_PRESTART_STATIC_AND_PURE_CHECKS",
+  "reviewCreatedAtUTC": "2026-10-27T20:02:55.643200+00:00",
+  "reviewer": "independent-memory-time-review-agent",
+  "scope": "Narrow independent read-only review of explicitly authorized two positive date-literal changes; shared JS/Python date gates, successor names and unchanged20percent memory contract. Incorporates parent-reported one green pure test; no operational execution by this reviewer.",
+  "authorizedDiff": {
+    "file": "scripts/synthetik-500-w15-full500-preflight-test.js",
+    "line": 35,
+    "changes": [
+      "2026-10-27T19:29:59Z ->2026-10-28T19:29:59Z",
+      "2026-10-27T19:29:59.000Z ->2026-10-28T19:29:59.000Z"
+    ],
+    "onlyTwoPositiveDateStringsChanged": true,
+    "historical27OctNegativeCasesRetained": true,
+    "guardOrMemoryLimitsWeakened": false
+  },
+  "purePreflight": {
+    "performedBy": "parent agent under new explicit narrow GO",
+    "executions": 1,
+    "exitCode": 0,
+    "status": "PASS",
+    "reportedToolWallSeconds": 0.209,
+    "privateLogPin": {
+      "path": "/workspace/shared/helmut-w15-datecheck-20261027/PREFLIGHT.PRIVATE.log",
+      "bytes": 650,
+      "sha256": "8a7e7ee91f9ff42f3eb2865c375733172625d03b59a21d3fffacb12346b23445"
+    },
+    "repeatedByReviewer": false,
+    "applicationOrDBOrUnitExecuted": false,
+    "coverage": "UTC/Berlin/28..31Oct/strict19:30UTC date gates, fixed3h+30min, JS/Python window parity, shared memory boundaries, artifact isolation, checkpoint/Auth/CAS fake observer simulation"
+  },
+  "dateGate": {
+    "JSAndPythonFirstUTCDate": "2026-10-28",
+    "lastUTCDate": "2026-10-31",
+    "earliestStartUTC": "2026-10-28T00:00:00.000Z",
+    "earliestStartBerlin": "2026-10-28T01:00:00.000+01:00",
+    "activeWindowMS": 10800000,
+    "completionWindowTotalMS": 12600000,
+    "latestDailyStartExclusiveUTC": "19:30:00.000Z",
+    "sameUTCAndBerlinDayRequired": true,
+    "windowOpenAtReviewTime": false,
+    "reason": "Review occurs on27OctUTC; successor minimum date28OctUTC has not been reached. This static PASS does not open the start window."
+  },
+  "freshAttemptNames": {
+    "work": "/workspace/shared/helmut-w15-full500-20261028",
+    "base": "/tmp/w15-full500-20261028",
+    "database": "helmut_w15_full500_20261028",
+    "container": "w15-full500-20261028",
+    "reviewReady": "/workspace/shared/helmut-w15-full500-review-20261028/REVIEW_READY.SAFE.json",
+    "controllerMaterialsRuntimeAuditConsistent": true,
+    "unchangedOriginalSourceReceiptPolicyAndCachedBinaryReferencesTo27Retained": true,
+    "oldOperationOrKeyOrGoReused": false
+  },
+  "unchangedMemoryContract": {
+    "version": "helmut-w15-memory-check/2",
+    "comparisonBudgetBytes": 2048000000,
+    "minimumReservePercent": 20,
+    "requiredReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "swapMaximumBytes": 0,
+    "freshSuccessorActualKernelCapProven": false,
+    "baselineSubtractionOrPeakReset": false
+  },
+  "restorePreflight": {
+    "status": "PASS_COMMITTED_ORIGINAL_RESTORE_WITH_500_INACTIVE_PROFILES",
+    "independentReviewAccepted": true,
+    "checksReportedByParent": {
+      "passed": 14,
+      "total": 14
+    },
+    "scope": "Separately retained successful actual restore preflight; incorporated without repetition or new DB query in this review.",
+    "doesNotReplaceFull500Acceptance": true
+  },
+  "historicalBlockedRecord": {
+    "path": "/workspace/shared/helmut-w15-full500-review-20261028/MEMORY_REVIEW.SAFE.json",
+    "bytes": 5440,
+    "sha256": "4b74302698c5a059ad6dd1ee2fed4617ae7b80cbe7f5ece176b3b48f182321de",
+    "status": "FAIL_PURE_DATE_FIXTURE_UNCHANGED_SAFE_LIMITS",
+    "notModifiedOrOverwrittenByThisReview": true
+  },
+  "controllerSHA256": "804dcf4df64b657da1c062de820ef79385b94fa5205d73b5942c3f9dbaa71e2c",
+  "pins": [
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 28035,
+      "sha256": "804dcf4df64b657da1c062de820ef79385b94fa5205d73b5942c3f9dbaa71e2c"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-materials.js",
+      "bytes": 21106,
+      "sha256": "3d3dc70ed0c18e0925e6ec635b9c2c75bef7e9f537bf22f643d5bc8db4a0639f"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 33684,
+      "sha256": "92acb528fb66926fd9a43ab7e986c1ac7fed2a76053279ba2f2de7af21aa136f"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-audit.js",
+      "bytes": 17723,
+      "sha256": "ab2ceaaf6833a785569da8edeb53317682210ce1fa5bb4ffcd57c4412b222282"
+    },
+    {
+      "path": "scripts/fixtures/w15-full500-window.js",
+      "bytes": 1702,
+      "sha256": "05b2d6a1e6886cad91e4780e7907f1b35773c039ca925649ce73b4544e49ddf8"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-preflight-test.js",
+      "bytes": 11784,
+      "sha256": "83740bf2df29b30b525d433f6ec8bfe4e9c896a43e0bda7734b1fe663f8c85fd"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.js",
+      "bytes": 1096,
+      "sha256": "7fde8ef7bd10210da3d20ffb9d03fe9115ec4cf1716d45a2a79faf24ad8bc994"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.json",
+      "bytes": 115,
+      "sha256": "acffec2e146c8b104605eb27b52a02822cb189f0c0468303fa2061240cc7bff2"
+    }
+  ],
+  "actualFull500Proof": false,
+  "actualPerformanceProof": false,
+  "independent1500ResultsAcceptedByThisReview": false,
+  "productionProof": false,
+  "conditionalFull500UserGoUsedByThisReview": false,
+  "reviewAloneAuthorizesExecution": false,
+  "automaticResumeOrTimerPromised": false,
+  "remainingStartConditions": [
+    "real currentUTCdate at least28Oct and at most31Oct",
+    "full fixed3h+30min fits sameUTC/Berlin day",
+    "fresh reachable environment/resources and source integrity",
+    "new review-ready source pins match",
+    "all original operation/activation/native freshness guards",
+    "actual new common kernel cap/membership checks before activation"
+  ],
+  "reviewActions": {
+    "sourceEdits": 0,
+    "testsExecuted": 0,
+    "databaseQueries": 0,
+    "databaseWrites": 0,
+    "containersCreated": 0,
+    "startsOrRestarts": 0,
+    "unitExecutions": 0,
+    "modelCalls": 0,
+    "timersOrAutomationsCreated": 0,
+    "reportFileCreatedOnly": true
+  }
+}

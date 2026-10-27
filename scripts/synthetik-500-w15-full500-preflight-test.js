@@ -32,7 +32,7 @@ for (const [now, pass] of cases) {
 }
 for (const invalid of [undefined, null, 0, "", "2026-02-30T10:00:00.000Z", "2026-10-27T10:00:00+01:00", "not-a-date"])
   assert.throws(() => Window.window(invalid), /w15-full500-window-/);
-assert.deepEqual(Window.window("2026-10-27T19:29:59Z"), Window.window("2026-10-27T19:29:59.000Z"));
+assert.deepEqual(Window.window("2026-10-28T19:29:59Z"), Window.window("2026-10-28T19:29:59.000Z"));
 assert.equal(limits.comparisonBudgetBytes, 2048000000);
 assert.equal(limits.requiredReserveBytes, 409600000);
 assert.equal(limits.maximumConsumptionBytes, 1638400000);

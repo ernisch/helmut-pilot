@@ -1,17 +1,17 @@
 # CURRENT STATE — Helmut
 
-## W15: Restore gruen, Datumspruefung blockiert (27.10.)
+## W15: Datum gruen, Start ab28.10. (27.10.)
 
-Main6b4012cd; PR972/971/969 ungemergt. public.-Restorefix umgesetzt.
-NeueDB:13Tabellen/10Funktionen,500Profile/0aktiv/501Identitaeten.
-13Datenhashes originalgleich(nuraktivfalse), unabhaengig14/14PASS.
-Quelle unveraendert:931Dokumente/517KOs; W15-Auswahl7/6.
-NeueVollaufnamen/Starttor28.10.; Cap2.048.000.000B/20%/Swap0 gleich.
-Purecheck1xFAIL: Zeile35 hat positive27.10.-ISO-Eingaben statt28.10.
-Stop; keineReparatur/Wiederholung/READY/Terminierung. Vollaufungestartet.
-0Aktivierungen/Units/Mocks; Puretest-Coverage erfasst, keineApp-Coverage/Voll-CI.
-Bestaetigungnoetig: Testeingaben27→28 und erneuterPurecheck; VollaufGOungenutzt.
-[Belege/Blocker](betrieb/w15-restorekorrektur-20261027.md).
+Main6b4012cd; PR972/971/969 ungemergt. Nur2positiveTestdaten27→28 geaendert.
+Genau1PurecheckPASS,2ReviewsPASS; negative/Grenzenunveraendert.
+Restore500/0/501+13Tabellen/10Funktionen+Hashgleichheit uebernommen.
+Quelle unveraendert; alteFAILs erhalten; Puretest-Coverage erfasst.
+NeuesReviewpinntCode/Restore/Datum; heute27.10. keinStart.
+VollaufGOungenutzt,keinweiteresGOnoetig; ab28.frischeStartpruefung.
+500Units/1000Mocks/1500Outputs/8000Kontrollen+Zeiten/RAM weiteroffen.
+Cap2.048.000.000B/20%/Swap0;3h+30min,beideTagesgrenzen,bis31.10.
+0Aktivierungen/Units/Modelcalls; keinStarttermin/Production/Merge.
+[Belege/Startbedingungen](betrieb/w15-datumsbereinigung-20261027.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
