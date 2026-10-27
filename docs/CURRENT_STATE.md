@@ -1,15 +1,17 @@
 # CURRENT STATE — Helmut
 
-## W15: einmaliger lokaler Mock500-Plan vorgelegt (27.10.)
+## W15: einmaliger Mock500-Aufbau abgebrochen (27.10.)
 
-Main6b4012cd; PR972/971/969 ungemergt. Keine neue Ausfuehrung/Aktivierung.
-Originale/500Mappings/7Mockvarianten komplett; UNIT0B+20%-Rechenbeleg uebernommen.
-DockerCap/Image/Binaries verfuegbar; neuer Testcontainer nicht angelegt.
-Plan:500aktive/500Units/1000Mocks/1500Outputs/8000echteKontrollen, danach0.
-Cap2.048.000.000B/Reserve409.600.000B; fest3h+30min, Tagesgrenzen pruefen.
-Noch Glue fuer500Sequenz/Bindings/Observer/interneUsage-Authmessung/Cleanup.
-Plan-/Startfreigabe fehlt; kein neuer Einzeltest. Productionnachweis getrennt/offen.
-[Konkreter Plan mit Abnahmematrix](betrieb/w15-voll500-mock-testplan-20261027.md).
+Main6b4012cd; PR972/971/969 ungemergt; einmalcdea4b19, kein Retry.
+Harness/Preflight/Reviews fertig; leerer Restore-Suchpfad, UPDATE ohne public.
+Atomarer Rollback:0Anwendungstabellen;0Aktivierungen/Units/Mocks/Ergebnisse.
+1500Sollpositionen fehlen; Unit60/Auth30/8000Kontrollen nicht erreicht.
+Cap2.048.000.000B/Swap0 echt; Peak165.920.768B nurInit, kein Lastnachweis.
+RohcleanupUNKNOWN erhalten; unabhaengig leereDB/keineaktivenTestprofile belegt.
+Originalquelle unveraendert. Keine Reparatur/weitereAusfuehrung/Productionaktion.
+Appda63309c: CI40534410137success uebernommen; keine neue Voll-CI.
+GOnoetig: Bootstrapfix/Pruefung und ein neuer Versuch.
+[Ergebnis und Belege](betrieb/w15-voll500-mock-ergebnis-20261027.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 

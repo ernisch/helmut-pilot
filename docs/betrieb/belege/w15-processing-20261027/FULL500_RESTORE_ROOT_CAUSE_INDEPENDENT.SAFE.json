@@ -1,0 +1,83 @@
+{
+  "schema": "helmut-w15-full500-independent-restore-rootcause/1",
+  "status": "CONFIRMED_BOOTSTRAP_SEARCH_PATH_FAILURE_NOT_FULL500_RUN",
+  "reviewer": "/root/w15_function_review",
+  "reviewedAtUTC": "2026-10-27T19:17:07.332100+00:00",
+  "rootCause": {
+    "restoreHeaderVerifiedReadOnly": true,
+    "cachedSQLPath": "/tmp/w15-full500-20261027/restore.PRIVATE.sql",
+    "cachedSQLBytes": 16467511,
+    "headerBytesRead": 4096,
+    "headerLine": 16,
+    "headerStatement": "SELECT pg_catalog.set_config('search_path', '', false);",
+    "settingScope": "Session, because third argument is false",
+    "controllerInvocation": "One psql --single-transaction -f restore.PRIVATE.sql -c finalUPDATE, ON_ERROR_STOP=1",
+    "finalUPDATE": "set local statement_timeout='15s';update mandate_profiles set aktiv=false where aktiv;",
+    "explanation": "The restore empties the same session search_path. The final UPDATE is unqualified, so it cannot resolve the public relation. ON_ERROR_STOP stops the transaction and the uncommitted restore is rolled back.",
+    "actualPGError": "2026-10-27 19:13:27.194 UTC [156] ERROR:  relation \"mandate_profiles\" does not exist at character 42",
+    "actualPGStatement": "2026-10-27 19:13:27.194 UTC [156] STATEMENT:  set local statement_timeout='15s';update mandate_profiles set aktiv=false where aktiv;"
+  },
+  "consequences": {
+    "restoreRolledBack": true,
+    "rollbackEvidence": "Independent READ ONLY catalog receipt shows no user tables/public relations/application schemas/functions; consistent with atomic restore rollback.",
+    "newDatabaseApplicationProfiles": 0,
+    "zeroBasis": "Empty application catalog, independently observed; not a native ended-runtime receipt",
+    "setupCompleted": false,
+    "materialsCompleted": false,
+    "freshApplicationOperationInstalled": false,
+    "profileActivations": 0,
+    "unitsEntered": 0,
+    "localMockCalls": 0,
+    "paidModelCalls": 0,
+    "storedResultRows": 0,
+    "expectedPositions": 1500,
+    "missingPositions": 1500,
+    "full500ExecutionAccepted": false,
+    "performanceAccepted": false,
+    "originalSourceUnchanged": true,
+    "originalControllerCleanupStillUnknown": true,
+    "nativeEndedReceiptAvailable": false
+  },
+  "preservation": {
+    "firstControllerFailurePreserved": true,
+    "priorStaticReviewPreserved": true,
+    "priorStaticReviewDidNotIdentifyThisSessionStateInteraction": true,
+    "attemptConsumed": true,
+    "retryOrSecondAttemptAuthorized": false
+  },
+  "actionsByReviewer": {
+    "sourceAndExistingLogReadsOnly": true,
+    "cachedSQLHeaderReadOnlyProcess": 1,
+    "newDatabaseQueries": 0,
+    "databaseWrites": 0,
+    "repairs": 0,
+    "tests": 0,
+    "applicationStarts": 0,
+    "profileActivations": 0,
+    "units": 0,
+    "retries": 0
+  },
+  "futureCorrectionNotImplemented": "A later separately authorized attempt must explicitly qualify public.mandate_profiles in the final post-restore UPDATE (or establish an explicitly reviewed safe search_path). No change or rerun performed.",
+  "pins": [
+    {
+      "name": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 27844,
+      "sha256": "e7631b3b1e5d2294feb8b22824522588b67df033d5eda129c33e3b101bed5b5b"
+    },
+    {
+      "name": "POSTGRES_ACTUAL_FAILURE.PRIVATE.log",
+      "bytes": 4537,
+      "sha256": "32ea8dd9b638517eba0e5f8bbaef466ddb1a9d29a2ddff73315dbba20c866ea3"
+    },
+    {
+      "name": "CONTROLLER_RESULT.SAFE.json",
+      "bytes": 553,
+      "sha256": "169306185ecad4cf0f809b19a9db150b53d0675aa2cbbf695ceda327d1bd3de8"
+    },
+    {
+      "name": "INDEPENDENT_BOOTSTRAP_ZERO_NO_START.SAFE.json",
+      "bytes": 3889,
+      "sha256": "5dadff23c60aceb43975e5f72d9bab2d10126a20986b41af6e24aee185808a0b"
+    }
+  ]
+}

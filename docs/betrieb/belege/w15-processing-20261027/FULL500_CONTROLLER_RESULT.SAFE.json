@@ -1,0 +1,23 @@
+{
+  "status": "FAIL_OR_UNKNOWN",
+  "failure": {
+    "type": "RuntimeError",
+    "reason": "full500-command-failed:docker:1",
+    "retryAllowed": false
+  },
+  "cleanupFailure": {
+    "type": "RuntimeError",
+    "reason": "full500-command-failed:docker:3",
+    "activeZeroUnknown": true
+  },
+  "cleanupConfirmedZero": false,
+  "independent1500ResultsAccepted": false,
+  "categories": {
+    "notAudited": 1500
+  },
+  "full500ProductionProof": false,
+  "noRetryOrResume": true,
+  "realModelCalls": 0,
+  "newTestContainers": 1,
+  "recoveryOccurred": false
+}

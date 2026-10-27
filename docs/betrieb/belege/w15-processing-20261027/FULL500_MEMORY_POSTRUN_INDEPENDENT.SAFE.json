@@ -1,0 +1,135 @@
+{
+  "schema": "helmut-w15-full500-postrun-independent-memory-review/1",
+  "status": "PASS_ISOLATION_METADATA_ONLY_RUN_FAILED",
+  "reviewCreatedAtUTC": "2026-10-27T19:15:05.565726+00:00",
+  "reviewer": "independent-memory-time-review-agent",
+  "runAssessment": "FAIL_OR_UNKNOWN; aborted at atomic restore before application setup/materials/activation; no retry or restart by this reviewer",
+  "reviewScope": "Existing SAFE reports, Docker metadata, direct original fresh-cgroup kernel reads, and byte comparison of retained original-source before/after reports only",
+  "actualContainerMetadata": {
+    "name": "w15-full500-20261027",
+    "id": "ac79dd037c010a701c2a8a6fd9f3c3c5ee376eea038b010f6283dfb48196c8a0",
+    "image": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+    "running": true,
+    "postgresMainPID": 34026,
+    "OOMKilled": false,
+    "network": "none",
+    "publishedPorts": {},
+    "HostConfigMemoryBytes": 2048000000,
+    "HostConfigMemorySwapBytes": 2048000000,
+    "restartPolicy": "no",
+    "mounts": [
+      {
+        "type": "bind",
+        "source": "/workspace/shared/helmut-w15-full500-20261027/pgdata",
+        "destination": "/var/lib/postgresql/data",
+        "RW": true
+      }
+    ],
+    "existingPGDataMountObserved": false
+  },
+  "directKernelRead": {
+    "capturedAtUTC": "2026-10-27T19:14:33.982772+00:00",
+    "cgroup": "/sys/fs/cgroup/docker/ac79dd037c010a701c2a8a6fd9f3c3c5ee376eea038b010f6283dfb48196c8a0",
+    "postgresProcCgroup": "0::/../docker/ac79dd037c010a701c2a8a6fd9f3c3c5ee376eea038b010f6283dfb48196c8a0",
+    "matchesReportedOriginalCgroup": true,
+    "containsPostgresMainPID": true,
+    "memoryMax": "2048000000",
+    "memorySwapMax": "0",
+    "currentBytes": 127946752,
+    "kernelLifetimePeakBytes": 165920768,
+    "swapCurrentBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "readsWereSequentialNotAtomic": true
+  },
+  "reportedFinalMemory": {
+    "sampleAtUTC": "2026-10-27T19:13:45.401626+00:00",
+    "currentBytes": 128196608,
+    "kernelLifetimePeakBytes": 165920768,
+    "comparisonBudgetBytes": 2048000000,
+    "requiredReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "comparisonReserveBytes": 1882079232,
+    "originalFinalPeakVerified": true,
+    "recoveryOccurred": false,
+    "failure": null,
+    "peakAgreesWithLaterDirectRead": true
+  },
+  "interpretation": {
+    "technicalCapActuallyObserved": true,
+    "swapDisabledActuallyObserved": true,
+    "noOOMOrLimitEventObserved": true,
+    "scopeReached": "PostgreSQL initialization and failed atomic restore only",
+    "applicationRuntimeOrFull500MemoryProven": false,
+    "allApplicationProcessMembershipProvenByThisAbortedRun": false,
+    "unit60OrAuth30PerformanceAccepted": false,
+    "independent1500ResultsAccepted": false,
+    "originalCgroupPeakResetOrBaselineSubtracted": false
+  },
+  "originalSourceComparison": {
+    "comparison": "retained before/after report bytes and all values equal",
+    "bytesEach": 309,
+    "sha256Each": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27",
+    "byteEqual": true,
+    "profiles": 500,
+    "identities": 501,
+    "sourceActive": 500,
+    "profileStoreRawDocumentHashesEqual": true,
+    "existingSourceContainerMemoryMaxStill": "max"
+  },
+  "cleanupBoundary": {
+    "controllerCleanupConfirmedZero": false,
+    "controllerActiveZeroUnknown": true,
+    "nativeEndedActiveZeroProvenByThisReview": false,
+    "note": "Controller failed before test schema setup completed. No native cleanup success is inferred from a low memory peak or from the unchanged original-source report. The parent separately reports a read-only zero-public-table finding for the new database; this reviewer performed no DB query."
+  },
+  "rawReportPins": [
+    {
+      "name": "FINAL_COMMON_MEMORY.SAFE.json",
+      "bytes": 793,
+      "sha256": "43e4d7443ec8232b1370bffe358c99e75e80193eda29ca84193cf57e10a73870"
+    },
+    {
+      "name": "CONTROLLER_RESULT.SAFE.json",
+      "bytes": 553,
+      "sha256": "169306185ecad4cf0f809b19a9db150b53d0675aa2cbbf695ceda327d1bd3de8"
+    },
+    {
+      "name": "SUPERVISOR_READY.SAFE.json",
+      "bytes": 297,
+      "sha256": "ebecfe9b66672255f47960efab71229453469a6105af374ee60461260bf6bedb"
+    },
+    {
+      "name": "SOURCE_BEFORE.SAFE.json",
+      "bytes": 309,
+      "sha256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27"
+    },
+    {
+      "name": "SOURCE_AFTER.SAFE.json",
+      "bytes": 309,
+      "sha256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27"
+    }
+  ],
+  "actions": {
+    "additionalControllerRuns": 0,
+    "unitRuns": 0,
+    "tests": 0,
+    "databaseQueries": 0,
+    "databaseWrites": 0,
+    "containerCreates": 0,
+    "containerStartsOrRestarts": 0,
+    "containerOrLimitChanges": 0,
+    "cacheDrops": 0,
+    "deletions": 0,
+    "reportFileCreatedOnly": true
+  },
+  "full500Proof": false,
+  "productionProof": false,
+  "executionOrRetryAuthorizedByThisReview": false
+}
