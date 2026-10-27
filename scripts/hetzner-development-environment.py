@@ -5,6 +5,7 @@ No import/default effects. No native paths, original mounts, credentials, host
 accounts or general command endpoint. Every test runs as its observed free IDs in
 its own daemon, with only this development checkout mounted and no network.
 """
+import errno
 import fcntl
 import hashlib
 import http.client
@@ -155,6 +156,10 @@ def unit_policy(unit, deadline, expected_fragment=None):
 
 
 class Stop(Exception):
+    def __init__(self, code, error=None):
+        super().__init__(code)
+        self.errno = error.errno if isinstance(error, OSError) else None
+
     @property
     def code(self): return self.args[0]
 
@@ -195,7 +200,7 @@ def nss_absent(lookup, number, deadline):
         need(time.monotonic() < deadline, 'DEVELOPMENT_IDENTITY_DEADLINE')
         return True
     except Exception as error:
-        raise Stop('DEVELOPMENT_IDENTITY_NSS_UNKNOWN') from error
+        raise Stop('DEVELOPMENT_IDENTITY_NSS_UNKNOWN', error) from error
     need(time.monotonic() < deadline, 'DEVELOPMENT_IDENTITY_DEADLINE')
     return False
 
@@ -251,7 +256,7 @@ def nss_primary_gids(deadline):
     except Stop:
         raise
     except Exception as error:
-        raise Stop('DEVELOPMENT_IDENTITY_NSS_ENUMERATION_UNKNOWN') from error
+        raise Stop('DEVELOPMENT_IDENTITY_NSS_ENUMERATION_UNKNOWN', error) from error
     return {gid for _, gid in observed_pairs if gid in IDENTITY_RANGE}
 
 
@@ -274,8 +279,10 @@ def status_identity(raw):
     return rows[b'Uid'], rows[b'Gid'] | rows[b'Groups']
 
 
-def process_identities(deadline):
-    end, used_uids, used_gids, count, total = min(deadline, time.monotonic()+3), set(), set(), 0, 0
+def _process_snapshot(end):
+    # One complete observation owns all its sets and descriptors. A rejected
+    # observation never contributes credentials to a later attempt.
+    used_uids, used_gids, count, total = set(), set(), 0, 0
     flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
     def listing(fd):
         need(time.monotonic() < end, 'DEVELOPMENT_IDENTITY_DEADLINE')
@@ -284,43 +291,63 @@ def process_identities(deadline):
         return names
     try:
         root = os.open(PROC, flags)
-        try:
-            pids = listing(root)
-            need(bool(pids), 'DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN')
-            for pid in sorted(pids):
-                process = os.open(pid, flags, dir_fd=root)
-                try:
-                    tasks = os.open('task', flags, dir_fd=process)
-                    try:
-                        tids = listing(tasks)
-                        need(pid in tids, 'DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN')
-                        for tid in sorted(tids):
-                            count += 1
-                            need(count <= PROC_TASK_LIMIT, 'DEVELOPMENT_IDENTITY_PROCESS_LIMIT')
-                            task = os.open(tid, flags, dir_fd=tasks)
-                            try:
-                                status = os.open('status', os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=task)
-                                try:
-                                    raw = bytearray()
-                                    while block := os.read(status, min(65536, PROC_STATUS_LIMIT+1-len(raw))):
-                                        raw.extend(block)
-                                        need(len(raw) <= PROC_STATUS_LIMIT and time.monotonic() < end,
-                                             'DEVELOPMENT_IDENTITY_PROCESS_LIMIT')
-                                finally: os.close(status)
-                            finally: os.close(task)
-                            total += len(raw)
-                            need(total <= PROC_TOTAL_LIMIT, 'DEVELOPMENT_IDENTITY_PROCESS_LIMIT')
-                            uids, gids = status_identity(bytes(raw))
-                            used_uids.update(uids.intersection(IDENTITY_RANGE))
-                            used_gids.update(gids.intersection(IDENTITY_RANGE))
-                        need(listing(tasks) == tids, 'DEVELOPMENT_IDENTITY_PROCESS_CHANGED')
-                    finally: os.close(tasks)
-                finally: os.close(process)
-            need(listing(root) == pids, 'DEVELOPMENT_IDENTITY_PROCESS_CHANGED')
-        finally: os.close(root)
     except OSError as error:
-        raise Stop('DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN') from error
+        # A missing/inaccessible proc root is not a disappearing PID/TID.
+        raise Stop('DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN', error) from error
+    try:
+        pids = listing(root)
+        need(bool(pids), 'DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN')
+        for pid in sorted(pids):
+            process = os.open(pid, flags, dir_fd=root)
+            try:
+                tasks = os.open('task', flags, dir_fd=process)
+                try:
+                    tids = listing(tasks)
+                    need(pid in tids, 'DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN')
+                    for tid in sorted(tids):
+                        count += 1
+                        need(count <= PROC_TASK_LIMIT, 'DEVELOPMENT_IDENTITY_PROCESS_LIMIT')
+                        task = os.open(tid, flags, dir_fd=tasks)
+                        try:
+                            status = os.open('status', os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=task)
+                            try:
+                                raw = bytearray()
+                                while block := os.read(status, min(65536, PROC_STATUS_LIMIT+1-len(raw))):
+                                    raw.extend(block)
+                                    need(len(raw) <= PROC_STATUS_LIMIT and time.monotonic() < end,
+                                         'DEVELOPMENT_IDENTITY_PROCESS_LIMIT')
+                            finally: os.close(status)
+                        finally: os.close(task)
+                        total += len(raw)
+                        need(total <= PROC_TOTAL_LIMIT, 'DEVELOPMENT_IDENTITY_PROCESS_LIMIT')
+                        uids, gids = status_identity(bytes(raw))
+                        used_uids.update(uids.intersection(IDENTITY_RANGE))
+                        used_gids.update(gids.intersection(IDENTITY_RANGE))
+                    need(listing(tasks) == tids, 'DEVELOPMENT_IDENTITY_PROCESS_CHANGED')
+                finally: os.close(tasks)
+            finally: os.close(process)
+        need(listing(root) == pids, 'DEVELOPMENT_IDENTITY_PROCESS_CHANGED')
+    finally: os.close(root)
     return used_uids, used_gids
+
+
+def process_identities(deadline):
+    end = min(deadline, time.monotonic()+3)
+    for attempt in range(3):
+        need(time.monotonic() < end, 'DEVELOPMENT_IDENTITY_DEADLINE')
+        try:
+            complete = _process_snapshot(end)
+            need(time.monotonic() < end, 'DEVELOPMENT_IDENTITY_DEADLINE')
+            return complete
+        except OSError as error:
+            # Only confirmed vanished PID/TID I/O may restart the entire read.
+            if error.errno in (errno.ENOENT, errno.ESRCH) and attempt < 2 and time.monotonic() < end:
+                continue
+            raise Stop('DEVELOPMENT_IDENTITY_PROCESS_UNKNOWN', error) from error
+        except Stop as error:
+            if error.code != 'DEVELOPMENT_IDENTITY_PROCESS_CHANGED' or attempt == 2:
+                raise
+            need(time.monotonic() < end, 'DEVELOPMENT_IDENTITY_DEADLINE')
 
 
 def observe_identity(uid, gid, deadline):
@@ -874,8 +901,9 @@ def image(deadline):
         need(result['package_lock_sha256'] == current['package_lock_sha256'], 'DEVELOPMENT_IMAGE_ALREADY_BOUND')
         need((result.get('uid'), result.get('gid')) == identity_ids(), 'DEVELOPMENT_IDENTITY_BINDING')
         return result
+    need(hex_string(ACTIVE_NONCE, 64), 'DEVELOPMENT_REQUEST_REQUIRED')
     capacity(BUILD_BUFFER)
-    build = BASE/'build'; build.mkdir(mode=0o711); build.chmod(0o711)
+    build = BASE/('build-'+ACTIVE_NONCE); build.mkdir(mode=0o711); build.chmod(0o711)
     layer = build/'layer'; layer.mkdir(mode=0o755); layer.chmod(0o755)
     dependencies = layer/'dependencies'; dependencies.mkdir(mode=0o700); os.chown(dependencies, UID, GID)
     for name in ('package.json', 'package-lock.json'):
@@ -885,7 +913,7 @@ def image(deadline):
         try:
             os.write(fd, raw); os.fchown(fd, UID, GID); os.fchmod(fd, 0o644)
         finally: os.close(fd)
-    cache = BASE/'npm-cache'; cache.mkdir(mode=0o700); os.chown(cache, UID, GID)
+    cache = BASE/('npm-cache-'+ACTIVE_NONCE); cache.mkdir(mode=0o700); os.chown(cache, UID, GID)
     node = BASE/'toolchain/node'
     run([str(node/'bin/node'), str(node/'lib/node_modules/npm/bin/npm-cli.js'), 'ci', '--ignore-scripts',
          '--audit=false', '--fund=false', '--strict-ssl=true', '--registry=https://registry.npmjs.org',
