@@ -1,15 +1,17 @@
 # CURRENT STATE — Helmut
 
-## W15: Verarbeitung vor Nachrichtenaktualitaet (27.10.2026)
+## W15: Einzellauf gestoppt (27.10.)
 
 Main6b4012cd; PR972 auf971/969, alle ungemergt. Anwendungscode unveraendert.
-500echte D-Vorbereitungen mit klar synthetischer1-Quellenzeit-Ableitung PASS.
-Originale/PDF erhalten; keine neuen Quellenimporte oder Productionaenderung.
-GemeinsameMessgruppe: Prepare12,56s<90,Open3,12s<60,3AuthCASmax0,67s<30.
-Kernel-Lebenszeitpeak1,123GB;925MBrechnerischeReserve zu2,048GB, keinHardlimit.
-0Aktivierungen/Units/Modelle; Unit60/finalesAuth30/aktiveRAM-Abnahme offen.
-Code-CI40534410137 aufda63309c gruen; nur privateHarnesse/Statusnachtrag danach.
-[Einzelbelege und naechster Schritt](betrieb/w15-processing-20261027.md).
+Neue netzlose DB:500synthetische aktiv,1Unit betreten.
+Vor Mock gestoppt: reservation-route-drift; Azure-Deploymentname
+fehlte(gpt-5-mini statt gebundenem gpt-5-mini-eu).0Antworten/0Ergebnisse.
+Prepare12,78s,Open2,74s; quittierte Authmax0,676s; Unit60/Auth30 nicht abgenommen.
+Gemeinsamer Lebenszeitpeak1.378.390.016B;669.609.984B rechnerische Reserve;
+memory.max=max, keinHardlimit, nur abgebrochener Pfad. NativeEnd+Readback:0aktiv.
+Originale/Quellrestore/Budgets gleich. Kein Retry.
+Code-CI40534410137/da63309c gruen; danach nur Harnesse/Status.
+[Belege, Ursache und naechste Freigabe](betrieb/w15-processing-20261027.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
