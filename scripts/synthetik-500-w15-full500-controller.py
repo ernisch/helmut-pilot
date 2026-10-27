@@ -2,16 +2,16 @@
 """Exactly one explicitly authorized full local mock run. No action on import."""
 import datetime, zoneinfo, hashlib, json, os, pathlib, posixpath, signal, subprocess, threading, time
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-WORK=pathlib.Path('/workspace/shared/helmut-w15-full500-20261027')
-BASE='/tmp/w15-full500-20261027'
-DB='helmut_w15_full500_20261027'
-CONTAINER='w15-full500-20261027'
+WORK=pathlib.Path('/workspace/shared/helmut-w15-full500-20261028')
+BASE='/tmp/w15-full500-20261028'
+DB='helmut_w15_full500_20261028'
+CONTAINER='w15-full500-20261028'
 SOURCE_DB='helmut_w15_input_20261027'
 SOURCE_CONTAINER='synthetik500-runtime-pg-7e1c20261027'
 IMAGE='sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e'
 RECEIPT=pathlib.Path('/workspace/shared/helmut-w15-receipt-20261027/reports/W15_RECEPTION_REPORT.SAFE.json')
 RECEIPT_SHA='2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1'
-REVIEW=pathlib.Path('/workspace/shared/helmut-w15-full500-review-20261027/REVIEW_READY.SAFE.json')
+REVIEW=pathlib.Path('/workspace/shared/helmut-w15-full500-review-20261028/REVIEW_READY.SAFE.json')
 DOCKER=['docker','--host=unix:///var/run/docker.sock']
 ENV={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'}
 MEMORY=json.loads((ROOT/'scripts/fixtures/w15-memory-contract.json').read_text())
@@ -28,7 +28,7 @@ def check_window(now=None):
     berlin=zoneinfo.ZoneInfo('Europe/Berlin')
     assert now.date()==end.date()==complete.date(), 'full500-utc-day-window-unavailable'
     assert now.astimezone(berlin).date()==end.astimezone(berlin).date()==complete.astimezone(berlin).date(), 'full500-berlin-day-window-unavailable'
-    assert '2026-10-27'<=now.date().isoformat()<='2026-10-31', 'full500-contract-date'
+    assert '2026-10-28'<=now.date().isoformat()<='2026-10-31', 'full500-contract-date'
     return {'startsAtUTC':(now+datetime.timedelta(milliseconds=1)).isoformat(timespec='milliseconds').replace('+00:00','Z'),
       'endsAtUTC':end.isoformat(timespec='milliseconds').replace('+00:00','Z'),
       'completionDeadlineUTC':complete.isoformat(timespec='milliseconds').replace('+00:00','Z')}
@@ -184,6 +184,8 @@ def main():
     assert LIMIT==2048000000 and RESERVE==409600000
     assert REVIEW.exists(),'full500-independent-review-missing'
     review=json.loads(REVIEW.read_text());assert review['status']=='PASS_PRESTART_STATIC_AND_PURE_CHECKS'
+    assert review['restorePreflight']['status']=='PASS_COMMITTED_ORIGINAL_RESTORE_WITH_500_INACTIVE_PROFILES'
+    assert review['restorePreflight']['independentReviewAccepted']is True
     for pin in review['pins']:
         b=(ROOT/pin['path']).read_bytes();assert len(b)==pin['bytes']and sha(b)==pin['sha256'],'full500-reviewed-source-drift'
     assert not WORK.exists(),'full500-once-only-existing-attempt'
@@ -218,7 +220,7 @@ def main():
           'fixtures/w15-full500-provider.js','fixtures/w15-unit0-provider.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-full500-window.js']
         for n in names:shutil.copy2(ROOT/'scripts'/n,stage/'app/scripts'/n)
         pgdata=WORK/'pgdata';pgdata.mkdir(mode=0o700)
-        docker('create','--name',CONTAINER,'--label','helmut.w15.full500=20261027','--pull=never','--network=none','--restart=no',
+        docker('create','--name',CONTAINER,'--label','helmut.w15.full500=20261028','--pull=never','--network=none','--restart=no',
           '--memory=2048000000','--memory-swap=2048000000','--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
           '-e','POSTGRES_HOST_AUTH_METHOD=trust',IMAGE);created=True
         docker('start',CONTAINER)
@@ -250,7 +252,7 @@ def main():
         docker('exec',CONTAINER,'pg_restore','--exit-on-error','--file='+BASE+'/restore.PRIVATE.sql',BASE+'/input.PRIVATE.dump')
         # One transaction: the original active flags are never committed.
         docker('exec',CONTAINER,'psql','-X','-w','-q','-v','ON_ERROR_STOP=1','--single-transaction','-U','postgres','-d',DB,
-          '-f',BASE+'/restore.PRIVATE.sql','-c',"set local statement_timeout='15s';update mandate_profiles set aktiv=false where aktiv;")
+          '-f',BASE+'/restore.PRIVATE.sql','-c',"set local statement_timeout='15s';update public.mandate_profiles set aktiv=false where aktiv;")
         assert read('select count(*)from mandate_profiles where aktiv;')==0
         inner(supervisor,'setup')
         docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','echo $$ >'+BASE+'/state/postgrest.pid; exec '+BASE+'/postgrest '+BASE+'/state/postgrest.PRIVATE.conf >'+BASE+'/state/postgrest.PRIVATE.log 2>&1')

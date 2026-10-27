@@ -3,7 +3,7 @@
 // Pure calculation only. The caller supplies its freshly read real UTC clock.
 const ACTIVE_MS = 3 * 60 * 60 * 1000;
 const COMPLETION_MS = ACTIVE_MS + 30 * 60 * 1000;
-const FIRST_RUN_DAY = "2026-10-27";
+const FIRST_RUN_DAY = "2026-10-28";
 const LAST_ORDER_DAY = "2026-10-31";
 const berlin = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit"

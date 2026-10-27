@@ -3,11 +3,11 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypto");
 const {spawnSync}=require("node:child_process"),{performance}=require("node:perf_hooks");
 const {originalBuilder,localEnvironment}=require("./synthetik-500-w15-signed-chain-test");
-const ROOT = path.resolve(__dirname, ".."), CONTAINER = "w15-full500-20261027";
+const ROOT = path.resolve(__dirname, ".."), CONTAINER = "w15-full500-20261028";
 const SOURCE_DB = "helmut_w15_input_20261027";
 const UNIT0 = true;
-const DB = "helmut_w15_full500_20261027";
-const WORK = "/workspace/shared/helmut-w15-full500-20261027";
+const DB = "helmut_w15_full500_20261028";
+const WORK = "/workspace/shared/helmut-w15-full500-20261028";
 const RECEIPT = "/workspace/shared/helmut-w15-receipt-20261027/reports/W15_RECEPTION_REPORT.SAFE.json";
 const RECEIPT_HASH = "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1";
 const PUB = "HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY", PRIV = "HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY";

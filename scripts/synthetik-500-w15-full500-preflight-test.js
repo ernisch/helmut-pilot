@@ -7,8 +7,11 @@ assert(require.cache[require.resolve("./lokaler-netzschutz")]);
 const ROOT = path.resolve(__dirname, ".."), Window = require("./fixtures/w15-full500-window");
 const Memory = require("./fixtures/w15-memory-contract"), limits = Memory.limits;
 const cases = [
-  ["2026-10-27T19:29:59.000Z", true],
-  ["2026-10-27T19:29:59.999Z", true],
+  ["2026-10-28T00:00:00.000Z", true],
+  ["2026-10-28T19:29:59.999Z", true],
+  ["2026-10-28T19:30:00.000Z", false],
+  ["2026-10-27T19:29:59.000Z", false],
+  ["2026-10-27T19:29:59.999Z", false],
   ["2026-10-27T19:30:00.000Z", false],
   ["2026-10-27T20:30:00.000Z", false],
   ["2026-10-27T23:59:59.999Z", false],
