@@ -1,0 +1,208 @@
+{
+  "schema": "helmut-w15-independent-three-stored-results/1",
+  "status": "PASS_THREE_STORED_RESULTS_ONLY_OVERALL_MEMORY_FAILURE_UNCHANGED",
+  "database": "helmut_w15_unit0b_20261027",
+  "operationId": "synthetik500-w15-unit0b-1793123453661",
+  "checkedAtUTC": "2026-10-27T17:55:39.020Z",
+  "checks": [
+    {
+      "name": "local preloaded network guard",
+      "status": "PASS"
+    },
+    {
+      "name": "existing isolated container has no network or published ports",
+      "status": "PASS"
+    },
+    {
+      "name": "fixed database operation owner selectors",
+      "status": "PASS"
+    },
+    {
+      "name": "zero active profiles after native cleanup",
+      "status": "PASS"
+    },
+    {
+      "name": "journal and plan bind the observed command",
+      "status": "PASS"
+    },
+    {
+      "name": "exactly one finished unit and two accounted attempts",
+      "status": "PASS"
+    },
+    {
+      "name": "full retained evidence matches journal canonical result hash",
+      "status": "PASS"
+    },
+    {
+      "name": "exact three retained positions with pending independent professional acceptance",
+      "status": "PASS"
+    },
+    {
+      "name": "mandatsbriefing: exactly one actual stored row",
+      "status": "PASS"
+    },
+    {
+      "name": "mandatsbriefing: exact identity and real creation window",
+      "status": "PASS"
+    },
+    {
+      "name": "mandatsbriefing: complete native row equals retained row",
+      "status": "PASS"
+    },
+    {
+      "name": "mandatsbriefing: canonical native row hash equals retained position hash",
+      "status": "PASS"
+    },
+    {
+      "name": "mandatsbriefing: journal position includes same result hash",
+      "status": "PASS"
+    },
+    {
+      "name": "morgenbriefing: exactly one actual stored row",
+      "status": "PASS"
+    },
+    {
+      "name": "morgenbriefing: exact identity and real creation window",
+      "status": "PASS"
+    },
+    {
+      "name": "morgenbriefing: complete native row equals retained row",
+      "status": "PASS"
+    },
+    {
+      "name": "morgenbriefing: canonical native row hash equals retained position hash",
+      "status": "PASS"
+    },
+    {
+      "name": "morgenbriefing: journal position includes same result hash",
+      "status": "PASS"
+    },
+    {
+      "name": "lage: exactly one actual stored row",
+      "status": "PASS"
+    },
+    {
+      "name": "lage: exact identity and real creation window",
+      "status": "PASS"
+    },
+    {
+      "name": "lage: complete native row equals retained row",
+      "status": "PASS"
+    },
+    {
+      "name": "lage: canonical native row hash equals retained position hash",
+      "status": "PASS"
+    },
+    {
+      "name": "lage: journal position includes same result hash",
+      "status": "PASS"
+    },
+    {
+      "name": "actual mandate row passes unchanged profile content and structural validator",
+      "status": "PASS"
+    },
+    {
+      "name": "morning receipt binds day window success and complete mandate output",
+      "status": "PASS"
+    },
+    {
+      "name": "stored Lage binds original derived input and matching mandate payload",
+      "status": "PASS"
+    },
+    {
+      "name": "stored Lage passes unchanged source and paragraph validator",
+      "status": "PASS"
+    },
+    {
+      "name": "entwurf: exactly one actual private run receipt",
+      "status": "PASS"
+    },
+    {
+      "name": "entwurf: full receipt equals retained artifact and canonical payload hash",
+      "status": "PASS"
+    },
+    {
+      "name": "pruefung: exactly one actual private run receipt",
+      "status": "PASS"
+    },
+    {
+      "name": "pruefung: full receipt equals retained artifact and canonical payload hash",
+      "status": "PASS"
+    },
+    {
+      "name": "unchanged pure D review validation reproduces actual stored Lage paragraphs",
+      "status": "PASS"
+    },
+    {
+      "name": "bound native RPC independently confirms ended zero",
+      "status": "PASS"
+    },
+    {
+      "name": "failed shared memory acceptance remains explicitly failed",
+      "status": "PASS"
+    }
+  ],
+  "results": [
+    {
+      "area": "mandatsbriefing",
+      "id": "bf-test-kohorte-synthetik-bb-001-mandatsbriefing-2026-10-27",
+      "userId": "test-kohorte-synthetik-bb-001",
+      "slot": "mandatsbriefing",
+      "generatedAt": "2026-10-27T17:52:52.043+00:00",
+      "canonicalHash": "207634a3f1523606ac90f8b1ebf1e359b8f53cf353227336aa7f4f720ceabfd0",
+      "matchesRetainedEvidence": true,
+      "professionalStatus": "pending"
+    },
+    {
+      "area": "morgenbriefing",
+      "id": "bf-test-kohorte-synthetik-bb-001-morgenlage-2026-10-27",
+      "userId": "test-kohorte-synthetik-bb-001",
+      "slot": "morgenlage",
+      "generatedAt": "2026-10-27T17:52:52.851+00:00",
+      "canonicalHash": "1a50aae3264dffe5af127767556939b7fb7d2223c535be7c0c2318c8e4e3e3a3",
+      "matchesRetainedEvidence": true,
+      "professionalStatus": "pending"
+    },
+    {
+      "area": "lage",
+      "id": "bf-test-kohorte-synthetik-bb-001-lage-2026-10-27",
+      "userId": "test-kohorte-synthetik-bb-001",
+      "slot": "lage",
+      "generatedAt": "2026-10-27T17:52:49.946+00:00",
+      "canonicalHash": "30b323b902aef41afd4458b2f0c127ed846f425f37ac0f557e829b9432258b28",
+      "matchesRetainedEvidence": true,
+      "professionalStatus": "pending"
+    }
+  ],
+  "databaseWrites": 0,
+  "profileActivations": 0,
+  "unitExecutions": 0,
+  "providerCalls": 0,
+  "scope": "Independent read-only SQL and pure persisted-content validators after the one-unit measurement; synthetic local mock outputs only",
+  "overallPerformanceAcceptance": false,
+  "memoryFailureUnchanged": true,
+  "full500Proof": false,
+  "professionalOrProductionAcceptance": false,
+  "selector": {
+    "operationId": "synthetik500-w15-unit0b-1793123453661",
+    "commandHash": "e13d89021858457c911254012b187cee2c1f4f94b80c8c8f80905ea21372b169"
+  },
+  "runId": "nachlauf500-1793123467957",
+  "berlinDay": "2026-10-27",
+  "evidenceId": "synthetik500-evidence-synthetik500-w15-unit0b-1793123453661-0",
+  "evidenceCanonicalHash": "fdd48f8efe101cfa23bb831fcd34cf63518b3a7f567201d982e8e5444c98b736",
+  "planHash": "1466be0523b3ef1773444e585710f841eb9b81f8a72e40b0627f5718a41fea52",
+  "journalState": "running",
+  "actualStoredRows": 3,
+  "storedPrivateDraftReviewRows": 2,
+  "activeProfiles": 0,
+  "nativeEndState": "beendet",
+  "professionalStatus": "pending",
+  "noThreeIndependentModelTextsClaim": true,
+  "completedAtUTC": "2026-10-27T17:55:40.002Z",
+  "priorAuditPathError": {
+    "retainedReport": "RESULTS_INDEPENDENT_FIRST_AUDIT_PATH_FAILURE.SAFE.json",
+    "sha256": "feb60f85134c5008a6c075806109606f525c761c48f4e7b12bdd8656873bc2de",
+    "correction": "Read basis.eingabe.eingabeHash as required by the existing B/local-calendar contract; no application or original-data change"
+  }
+}

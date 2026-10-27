@@ -1,16 +1,16 @@
 # CURRENT STATE — Helmut
 
-## W15: Route korrigiert, Lauf ungestartet (27.10.)
+## W15: eine DR-Unit fertig, RAM-Reserve verfehlt (27.10.)
 
 Main6b4012cd; PR972 auf971/969, alle ungemergt. Anwendungscode unveraendert.
-Nur Testaufbau: AZURE_OPENAI_DEPLOYMENT=gpt-5-mini-eu. Echte Resolver + alle7
-Routefelder stimmen mit signiertem Referenzplan ueberein.
-Pruefung:0DBwrites/0Aktivierungen/0Units/0Modelle; alte TestDB0.
-unit0b vorbereitet, ungestartet. DBname frei;
-frische DB/Operation/Signaturen und <=60s-Belege erst nach separatem Start-GO.
-Unit60/finalesAuth30/erzwungene RAM-Grenze weiter offen. Keine Leistungsmessung.
-Code-CI40534410137/da63309c gruen; danach nur privateHarnesse/Status.
-[Pruefbeleg und Startentwurf](betrieb/w15-processing-20261027.md).
+UNIT0B: exakt500synthetische aktiv,1DR-Unit/2lokale19,9s-Mocks,3Ergebnisse.
+Unit55,924s<60;9quittierteAuthmax0,663s<30;34unabhaengigeResultatchecks PASS.
+GesamtFAIL: gemeinsamerPeak1.558.614.016B,Reserve489.385.984B;
+es fehlen10.614.016B zur500MB-Reserve. max=max, kein erzwungenes Limit.
+NativeEnd500→0 und unabhaengige Nachlesung0 bestaetigt; keine weitereUnit.
+Originale/Budgets/Production unveraendert. Voll500/finalesLedgerAuth30 offen.
+Code-CI40534410137/da63309c gruen; nur Beleg-/Statusnachtrag.
+[Messwerte, Ergebnispruefung und RAM-Blocker](betrieb/w15-processing-20261027.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
