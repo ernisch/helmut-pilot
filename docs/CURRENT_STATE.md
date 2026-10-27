@@ -1,16 +1,16 @@
 # CURRENT STATE — Helmut
 
-## Siffi: gezielter 500er-Abgleich (27.10.2026)
+## Siffi: ein Motorpfad festgelegt (27.10.2026)
 
-Main6b4012cd; [PR969](https://github.com/ernisch/helmut-pilot/pull/969) ungemergt.
-84Releasepins:54gleich/20anders/10fehlen. Nur Artikelstand-Tagesanlass uebernommen.
-34gezielte Gruppen gruen; Modulcoverage99,47%Zeilen/84,75%Branches.
-Codebc9ff4a2: CI40477575989 vollstaendig gruen, echter REST→Briefing-Fall bestanden.
-Dokuabschluss ohne Codeaenderung/erneute Tests; Endkopf-CI nicht neu behauptet.
-Original-DB/Eingaben fehlen; Archivnachweise siehe Beleg.
-Zeit-/Gesamt-RAM bleiben offen. Kein neuer500erLauf,Hetzner oder Production-Eingriff.
-[Belege und naechster Schritt](betrieb/500er-main-abgleich-20261027.md).
-Codex/GitHubCI, isoliertesPG/PostgREST; Mac5GB/Tag. Production500/1500 brauchtGO.
+Main6b4012cd; PR969 bleibt ungemergt. Gewaehlt: W15-Kern11ca02db ausPR915,
+keine spaetere Native-/Auth-Architektur.27Runtimeaenderungen noch nicht importiert.
+Datenzugang blockiert: W15-Originalgraph/gueltiger DB-Zustand hier nicht vorhanden;
+kleines3Quellen/3KO-Fixture nicht lastaequivalent. Drive-Sicherung identifiziert,
+Empfaengerschluessel nur am alten Ziel; keine Entschluesselung/Hetzneraktion.
+NeueSynthetik grundsaetzlich moeglich, konservative Aequivalenz derzeit unbelegt.
+Codebc9ff4a2:34Gruppen und CI40477575989 gruen; seither nur Doku, keine neuenTests.
+[Pfad,Daten,Recovery und naechster Schritt](betrieb/500er-main-abgleich-20261027.md).
+Kein Productioneingriff;500/1500 nur mit eigenemGO. Mac5GB/Tag,Cloud/CI bevorzugt.
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 

@@ -105,17 +105,130 @@ isolierten DB-Schritte und Z22. Der erweiterte REST-Fall und die Bereinigung
 sind erfolgreich. Der tatsächliche Browserlauf wurde nach unverändertem
 Prüfplan mangels UI-Änderung übersprungen; kein neuer Browsertest behauptet.
 
-Nach CI ist der nächste notwendige Schritt die **eng abgegrenzte Auswahl des
-Inhalts-/Stored-Command-Pfads** mit seinen echten Eingabe- und Quellenbindungen.
-Vorhandene Quellenqualifikationen und Messdaten übernehmen, wo sämtliche Pins
-passen; nur verbleibende aktuelle Grenzfälle prüfen. Die privaten Originale des
-vergleichbaren späten DB-Zustands und vollständigen Motorharness liegen hier
-nicht vor. Auch der im PR936-Checkpoint verlinkte Wiederherstellungsindex
-ist laut Drive-Metadaten PGP-verschlüsselt (6007B); er wurde weder heruntergeladen
-noch entschlüsselt. Kein neuer Zugriff oder Key wird erfunden. Ein kleiner
-synthetischer Test kann diese Performancebelege nicht ersetzen.
-Ohne diese Grundlage kein sinnvoller neuer Gesamtressourcenlauf und keine
-behauptete Zeit-/Speicherlösung. Hetzner ist dafür kein notwendiges Starttor.
+## Gewählter Motorpfad und Datenzugang (Folgesprint27.10.)
+
+**Genau ein Weg: der geschlossene W15-Ausführungskern aus PR915 auf
+`11ca02dbea72603ccdabc3560edf93f45caabe3a`, auf aktueller Mainbasis.** Nur reine
+unveränderliche Inhaltsarbeit darf wiederverwendet werden; alle bisherigen
+frischen Zeit-/Profil-/Quellen-/Kosten-/GO-/Journal-/CAS-/ACK-Wachen bleiben.
+PR969 bleibt ungemergt; sein Tagesanlassmodul ist bereits bytegleich W15.
+
+| Geprüfter Bestand | Entscheidung |
+|---|---|
+| Main ohne W15-Inhaltsnachweis | Kein vollständiger Ressourcenbeleg. Der dokumentierte ältere Voll-C/Auth-Pfad überschritt bereits die ursprünglichen Grenzen; keine neue Kleinoptimierungsschleife. |
+| W15 | Einziger vorhandener kompletter500erMockabschluss mit8000Kontrollen; deshalb gewählter Anwendungspfad. Die offene Reserve wird nicht als bestanden übernommen. |
+| Spätere Auth-/Native-Ketten #917–#942 | Komponentenverbesserungen und Fehlersicherung erhalten, aber kein vollständiger500erAbschluss. Zusätzliche Graph-/Lease-/Mount-/Broker-/Owner-Lebenszyklen werden nicht als Voraussetzung dieses W15-Anwendungspfads übernommen. #940 stellt nur ein zuvor qualifiziertes Teilpaar wieder her; es liefert keine neue Unit-/RAM-Abnahme. |
+
+Der [JSON-Beleg](500er-main-abgleich-20261027.json) benennt **28 W15-Runtimepfade**
+mit SHA256; einer ist durch969bereits identisch,27bleiben für die spätere
+Integration. Dazu gehören ausschließlich der gebundene Inhaltsworker/-runner,
+Stored-Command/Signatur/Scope, zugehörige reine Hash-/Codec-/Vertragsänderungen,
+Storage/Adapter/Entry/Journal und der echte begrenzte Current-Inputs-Leser.
+Kein loses Cachemodul ohne seine Bindungen. Neue Quellenerfassung und neue
+U-Prompts gehören nicht zu diesem D/R-U0-Pfad; die entsprechenden beiden
+W15-Dateiänderungen werden nicht vorsorglich übernommen.
+
+Die zugehörigen Schnittstellen sind ebenfalls einzeln benannt: nativer
+Batchleser samt Rollback, unveränderliche Commandablage/-lesung und Pins,
+CLI-Transport für **Vorbereitung60 plus unveränderte Unit60** sowie später
+nur die notwendige Worker-Paketierung. Main-CI, Build-Auswahl, Router,
+Deploymentschalter und fremde Arbeit bleiben erhalten. Diese Liste ist der
+abgegrenzte Integrationsplan, **keine behauptete Qualifikation eines neu
+zusammengestellten Releases**. Vor tatsächlicher Übernahme sind passende
+Eingaben und unabhängige Integrationsabnahme nötig; Production-SQL bleibt gesperrt.
+
+### Welche Daten tatsächlich nötig sind
+
+Die gewählte Messung braucht500gültige synthetische Profile/1500Positionen,
+1000D/R-Mocks und16echte frische Kontrollen je Profil. Quellen-/KO-/Draft-/
+Reviewgraph müssen Umfang, Typen, Sharing, Tiefe, Fanout und Profilzuordnung
+abbilden. Die dokumentierte Untergrenze von3.012.510.816expandierten logischen
+Bytes ist **kein Aufruf,3GB als flache Zeichenkette zu materialisieren**.
+Dictionaryteilung ist gerade Teil des gemessenen Verhaltens.
+
+Für den historischen W15-Eingabeweg sind konkret referenziert:
+
+- `NORMALIZED500_CURRENT_POLICY.PRIVATE.json`:89.982.254B,
+  SHA256`90e11a4228e2e568edf03c3feb9ea2c79e71449e68fdc6c563a3355f1fbaaa14`.
+- Profilpaket631.359B, Nativeinventar44.832B und Source23/KO60-Daten82.170B.
+- Original-U-Paket53.018B, zugehörige alte Reviewdaten und Vorgängerbindung als
+  zu erhaltende Daten; **keine Übernahme ihrer alten Ausführungsrechte**.
+- Geprüfte D/R-Mockkandidaten213.986B und Reviewtemplates97.720B.
+- Vollständiger zu diesem Pfad passender logischer Auth-/Finanz-/Historien-/
+  Journal-/Quellen-/Profil-/Ergebniszustand der isolierten DB. Ausgang,
+  Installation, wachsender später Zustand, bestätigter letzter Abschluss und
+  Rückweg/Prozessende müssen zusammenpassen. Die einzelnen Dateihashes und
+  ursprünglichen Pfade stehen im JSON; diese Bodies sind hier nicht vorhanden.
+
+Ein alter erfolgreicher oder gescheiterter Auftrag wird nicht zurückgesetzt.
+Ein späterer V12-Postrun mit bereits betretenem/unklarem Index499 ist kein
+frischer Vor-Unit-Snapshot. Neue lokale Instanzen brauchen ihre tatsächlichen
+OIDs/Revisionen, neue Operation/Nonces und neue lokale Signierschlüssel und
+Zugangsdaten. Historische GOs, Claims und private Schlüssel sind keine
+wiederverwendbaren Performanceinputs. Kein Productioncredential gehört ins Fixture.
+
+### Reichen vorhandene synthetische Fixtures?
+
+**Nein, für diese Ressourcenabnahme nicht belegt.**
+`scripts/fixtures/synthetik500-direct.js` erzeugt500Profile, aber nur3Dokumente
+und3KOs. Im W15-Worker läuft solches gewöhnlichesVersion1-Material ausdrücklich
+außerhalb des historischenVersion2-CPU-Schnellpfads. Dieser kleine Funktionstest
+prüft damit weder die große Last noch denselben optimierten Pfad.
+
+Neue vollständig gültige synthetische Daten könnten grundsätzlich eine eigene
+Messung tragen. Historische Originaltexte sind deshalb **keine allgemeine
+Pflicht für jeden neuen Synthetiktest**. Mit dem vorhandenen Bestand ist aber
+weder eine konservative Lastäquivalenz noch eine vollständige rekonstruierbare
+W15-Graph-/DB-Beschreibung belegt. Gleiche Bytes oder ein aufgefüllter kleiner
+Datensatz genügen nicht. Eine neue Generator-/Architekturvariante wird nicht eröffnet.
+Die späteren Zahlen1848Knoten/6.010.786Payloadbytes/6000Historyzeilen betreffen
+zusätzlich einen anderen gesplitteten Authpfad und dürfen W15 nicht ersetzen.
+
+### Sicherer Cloud-Speicherort und Wiederherstellungsweg
+
+Nur Metadaten und kleine sichere Belegpakete wurden gelesen, keine großen
+Original-/Cipherteile geladen und keine Archivprogramme ausgeführt:
+
+- Privater [HELMUT-Driveordner](https://drive.google.com/drive/folders/1gvYcdBSGYscOmTxYeJSJ3TpbacyJWBFd).
+- [Vorhandener Sicherungsindex](https://drive.google.com/file/d/17DDhInbRwN20nqRPuNp3KTLq6AqMEhWc/view),
+ 14.384B, SHA256`87508b035c31fea52f4910cedf80b63baabf055e54cfe714dfe143383c15ec0c`,
+ stimmt mit dem bereits versionierten Handoff überein:30Cipherteile,
+ 487.267.152B verschlüsselt, Scope1767Dateien/2.865.680.705B.
+- [Empfängerbericht](https://drive.google.com/file/d/1-kUkySS3dwV3belI3LZWgTkzEXyB4Gre/view):
+ Fingerprint`DCFD605ED28EEACA9B826105E769DE07A68BA8E4`, privater Schlüssel nur auf
+ dem damaligen Hetzner-Ziel. **Keine Hetzner-Verbindung, Schlüsselprüfung,
+ Entschlüsselung oder Übertragung durch diesen Sprint.**
+- [Kleines SAFE-Paket](https://drive.google.com/file/d/1ENhDwHmj7jTnmTOe6LTV30BKUK1UUT4p/view):
+ 143.904B, SHA256`e04ce3c460337b3735ccea170808f8f3085d26fe5bfa6e1f0a73a4d187120a1d`;
+ alle13inneren Dateipins geprüft. Es belegt insbesondere ein späteres
+ 2GiB-V12-RAW und W20-Eingaben, **keine bestätigte vollständige W15-Teilmenge**.
+- Die älteren Archive vom13./14.10. und der verschlüsselte0ea8-Recoveryindex
+ bleiben nur historische Speicherreferenzen. Kein automatischer Rücksprung und
+ keine behauptete Vollständigkeit der später benötigten W15-Daten daraus.
+
+Die Originalcloud ist im Empfängerbericht identifiziert; der Index vom26.10.
+behauptet deren Erhalt. Die heutige Sitzung ist eine andere Cloud. Ein lesbarer
+Index oder ein gelesener alter Chat verleiht keinen Dateizugriff auf diese Quelle.
+Die alte [Cloud-Transferanleitung](https://drive.google.com/file/d/1aD8_ofHkAcyhD2k04w01pW3vEvFVfml2/view)
+ist an einen anderen bestätigten Empfänger gebunden; sie autorisiert keine
+Entschlüsselung in dieser Sitzung.
+
+**Konkreter nächster Schritt:** Im erhaltenen Ursprung ausschließlich die oben
+benannte W15-Teilmenge und einen passenden gültigen DB-Zustand per Inventar
+bestätigen. Anschließend, außerhalb der hier nur lesend beauftragten
+Speicherprüfung, gezielte verschlüsselte Bereitstellung für einen bestätigten
+Empfänger der aktuellen Cloud; private Schlüssel bleiben an ihren Endpunkten.
+Geordnete Teile-/Gesamthashes und vollständiges Manifest prüfen, dann ein
+No-Overwrite-/Symlink-sicherer Restore-Dry-run und erst danach die ausdrücklich
+zulässige Teilwiederherstellung. Lokale Credentials/Keys/Identitätsbindungen neu
+erzeugen; keine Live-PGDATA kopieren oder historische Claims reaktivieren.
+Private Inputs nicht in Git, Chat oder ungeprüften öffentlichen PR-Code stellen.
+
+**Folgesprintstatus: blockiert an sicher verfügbarer vergleichbarer Datenbasis.**
+Pfad und Datenvertrag sind gewählt und dokumentiert; kein Runtime-Port, neuer
+Test oder neue Infrastruktur gestartet. Nach sicherer Datenannahme nur diesen
+W15-Kern integrieren, vorhandene zielbezogene GitHub-/isolierte PG-Tests nutzen
+und ausschließlich die tatsächlich fehlende gemeinsame Zeit-/RAM-Abnahme ergänzen.
 
 Status: **gezielter Abgleich und Vertragsfix abgeschlossen; gesamter500erPfad
 weiter teilweise abgeschlossen**. Der abschließende Dokucommit verändert keinen

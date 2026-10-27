@@ -2813,5 +2813,425 @@
     "runtimeUnchangedFromTestedCommit": true,
     "ciSkippedForDocsOnly": true,
     "headRequiredChecksNotClaimed": "Merge remains prohibited; this is not a synthetic successful head check."
+  },
+  "motorPathDecision": {
+    "date": "2026-10-27",
+    "selected": "W15 closed immutable-content execution core with original fresh guards",
+    "sourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+    "rejectedForThisSprint": {
+      "mainOnly": "No full-size time proof; older full-C/Auth path already exceeded original limits. Main remains architecture base.",
+      "laterNativeAuthChains": "No completed final unit/full500; additional local Auth/lease/graph/loop/storage lifecycle not required to reuse W15 application proof.",
+      "freshParallelArchitecture": "Not opened."
+    },
+    "PR969": "remains open and unmerged; its runtime change already equals W15",
+    "selectedRuntimeFiles": [
+      {
+        "path": "lib/helmut/briefing-aussagenbindung.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 15045,
+        "sha256": "d7d82b85c1004ac45fd4233f699faa0ac34cd0871cb2e8cd0e40f9cf370e2f10",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/briefing-bereichsvertrag.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 11613,
+        "sha256": "c4ff08eca4ec890a90fad3bd41c472c8dfc3251e26dc2ca8c7adfc71cf6c05a5",
+        "relationToPR969": "already-identical",
+        "action": "preserve"
+      },
+      {
+        "path": "lib/helmut/briefing-speicher.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 12500,
+        "sha256": "0ac1a72f11580c56b3d8e282ca6861aa7961918cf5837fb6ae71db0bcffbea7e",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/bundestag-dokumenthintergrund.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 7483,
+        "sha256": "25e1473553a6e784abc607b11bc300f6feb5c70ba79f0002b3c85b9f4155d0c6",
+        "relationToPR969": "missing",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/canonical-content-facts.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 44900,
+        "sha256": "6b76d6637195dedb7c7c304ba42cc1627c8f798d0110c603b10c16259f1406d3",
+        "relationToPR969": "missing",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/canonical-sha-byte-writer.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 3619,
+        "sha256": "59f8b86d5533b3e6770259b79a42382b8bcfbb3a62586da032b664c48a1a9c08",
+        "relationToPR969": "missing",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/knowledge-object-version.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 3232,
+        "sha256": "16beec2f988044267faa03f2be5703f100c128d7f7a1464b5e6a2ceed9e568fd",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/lage-quellenbeleg.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 13666,
+        "sha256": "94583ff0cffc77934117ad4f36146b74c050cf11dd780e7b4b5e69501a2084bf",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/lage.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 56155,
+        "sha256": "b69d8abc8793be120980bfd86f3d4e65682a6f885ddd6d16b10671d4c67995b3",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/quellen-auszug.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 7590,
+        "sha256": "f4c9c8073b5644a5878af0042395fa7c357e98844d45d9c47a98cd4087ee38ff",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/quellen-zeitvertrag.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 7086,
+        "sha256": "229d58b671ad215ecf405d164be88b5c3a010b9ea6669c7c07f9b726da740cee",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/storage.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 543389,
+        "sha256": "28f67b93e4269e92193ca971327b072bd37b0113ceb506282809c95b0aa8c61c",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/streaming-canonical-hash.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 3921,
+        "sha256": "c33f6002e047041b69f9c37c6eae0c9bbd59db5c05ce2b97285f42d03162ec20",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-content-runner.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 4064,
+        "sha256": "24d248983147ab30c5745ae0a52e8bd362a9caa749f827495e8a54239d0a7806",
+        "relationToPR969": "missing",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-content-worker.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 5169,
+        "sha256": "201a4f8ba027011a091bd82d0039a481c7796a2615bfdd6fec35e7b44b44779d",
+        "relationToPR969": "missing",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-cpu-epoch.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 29127,
+        "sha256": "4d4e840b41a9cf077830c3234b69a274213d62f1dd20609df82b53392209490a",
+        "relationToPR969": "missing",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 11909,
+        "sha256": "9d4761cf4669fef43d38ee27dc6f24ed1c4ccf4a25c9660c78681d5efb716267",
+        "relationToPR969": "missing",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-current-inputs-read-batch.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 12474,
+        "sha256": "90f34959b9a0e13eb45372c441559de7059518691acbbfc7f94e6dae962b52bb",
+        "relationToPR969": "missing",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-direct-codec.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 13651,
+        "sha256": "f4390028c1c8f7cad40899c74cf2e5b3203f542b5617af48c3c56aecbbf22645",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-direct-d-store.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 4521,
+        "sha256": "d3c5064366bc2fd9a686034300d91ddf0165f5d733139f2072dd7275c5cac683",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-direct-entry.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 4719,
+        "sha256": "a5137d521935518e609aededa99b56ae136a589ea54c9dfdc85fe9add13d168c",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-dispatch-journal.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 12159,
+        "sha256": "c9cf08100d63646e9c16f931b257b6ccc7fa65fc96e18f7bc6459e530bd5e4b8",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-executor.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 16165,
+        "sha256": "14d311979ec3017b677486acedc4a9f2d3ce7be2b175cab08cacaaec8ef16832",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-kosten-plan.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 35886,
+        "sha256": "0b8dfc354640159d20f88d3e563297187d0786a634a351e6af19da83ef09d50a",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-production-adapter.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 27649,
+        "sha256": "3948fcf22b9c94f38a8b78266e03497675b0806d0c0f28e4eb83c169c89f8171",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-production-command.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 23926,
+        "sha256": "93d4bb7521912c94b46b49449ab6713dad5ada84939dd70fbb52afed3019d325",
+        "relationToPR969": "different",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-stored-command-native-pins.json",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 506,
+        "sha256": "e553c720f93b4cb9855bf4aa23b20753e88492b3623d5ace778245676ff4bc46",
+        "relationToPR969": "missing",
+        "action": "selected-runtime-import-after-data-admission"
+      },
+      {
+        "path": "lib/helmut/synthetik-500-stored-command.js",
+        "requiredSourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+        "bytes": 20981,
+        "sha256": "6e0242d058492ecdc5dcdd430caa9e05f9497a0384de9b53659a8891ce9f3efa",
+        "relationToPR969": "missing",
+        "action": "selected-runtime-import-after-data-admission"
+      }
+    ],
+    "excludedW15FileChanges": {
+      "lib/helmut/berlin-presse-sondervorlagen.js": "Source recapture grammar, outside measured runtime content graph; no new source capture in this sprint.",
+      "lib/helmut/understanding.js": "Prompt selection for new U work; chosen run is D/R with U0 and preserves existing U history."
+    },
+    "additionalInterfaces": [
+      {
+        "path": "scripts/synthetik-500-direct.js",
+        "scope": "EU client transport 120s permits consecutive preparation60 and Unit60; no increase of either phase limit.",
+        "sourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a"
+      },
+      {
+        "path": "supabase/migrations/20261015161057_synthetik500_current_inputs_read_batch.sql",
+        "scope": "native bounded batch reader, local fixture first; Production application prohibited.",
+        "sourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a"
+      },
+      {
+        "path": "supabase/migrations/rollback_20261015161057_synthetik500_current_inputs_read_batch.sql",
+        "scope": "matching inert rollback",
+        "sourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a"
+      },
+      {
+        "path": "supabase/proposals/synthetik500_stored_command_binding.sql",
+        "scope": "original immutable-row reader/guard bodies and pins; no Production install",
+        "sourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a"
+      },
+      {
+        "path": "supabase/proposals/synthetik500_stored_command_binding_rollback.sql",
+        "scope": "reference only, not blanket approved live rollback",
+        "sourceCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a"
+      },
+      {
+        "path": "vercel.json",
+        "scope": "only closed worker source inclusion if later packaging needed; preserve Main build-ignore and existing deployment settings"
+      }
+    ],
+    "runtimeImportedThisSprint": false,
+    "testsStartedThisSprint": false,
+    "status": "BLOCKED_ON_SAFE_AVAILABLE_COMPARABLE_INPUTS_BEFORE_RUNTIME_PORT"
+  },
+  "comparableDataDecision": {
+    "existingSmallFixture": {
+      "path": "scripts/fixtures/synthetik500-direct.js",
+      "profiles": 500,
+      "documents": 3,
+      "knowledgeObjects": 3,
+      "adequateForResourceAcceptance": false
+    },
+    "measurementNeeds": {
+      "profileCount": 500,
+      "positionCount": 1500,
+      "providerMocks": 1000,
+      "freshControlsPerProfile": 16,
+      "graph": "Full valid source/KO/Draft/Review data, expanded canonical work, sharing, depth/fanout and profile distribution must be covered; bytes alone are insufficient.",
+      "historicalExpandedInputLowerBoundBytes": 3012510816,
+      "sourceVisitsPerFullC": 437000,
+      "koVisitsPerFullC": 250000,
+      "lateState": "W15 valid entire Auth, money/reservations/history/journal and already retained outputs with real read/mutate/CAS/ACK; comparable physical DB/storage/cache configuration and full process lifecycle.",
+      "differentLaterState": "PR936 1848 reachable nodes/6010786 payload bytes/6000 history rows describes a different split-Auth diagnostic case, not W15.",
+      "stateAvailability": "No authentic pre-last-unit W15 snapshot established here; do not rewind an entered/unknown V12 operation."
+    },
+    "exactOriginalContentGenerallyMandatory": false,
+    "syntheticEquivalentPossibleInPrinciple": true,
+    "syntheticEquivalentEstablishedByExistingFixtures": false,
+    "newSyntheticMeasurementsMayClaim": "Only their declared scenario on its code/runtime/DB, never historical byte identity, original provenance or unmeasured Production resource bounds.",
+    "originalInputReferences": {
+      "normalizedCurrentPolicy": {
+        "path": "/workspace/helmut-parallel-20261015/wave13/NORMALIZED500_CURRENT_POLICY.PRIVATE.json",
+        "bytes": 89982254,
+        "sha256": "90e11a4228e2e568edf03c3feb9ea2c79e71449e68fdc6c563a3355f1fbaaa14",
+        "presentAtOriginalWorkspacePathHere": false
+      },
+      "package": {
+        "path": "/workspace/helmut-parallel-20261015/wave13/input-extraction/ORIGINAL_PACKAGE.PRIVATE.json",
+        "bytes": 631359,
+        "sha256": "52b4a49c334a2d537f642cddf3f95d3eb6e6830e0f3b1b7280c8bd8fd3812f10",
+        "presentAtOriginalWorkspacePathHere": false
+      },
+      "nativeInventoryHistoricalTemplate": {
+        "path": "/workspace/helmut-parallel-20261015/wave13/NATIVE_INVENTORY_TEMPLATE.PRIVATE.json",
+        "bytes": 44832,
+        "sha256": "9285dd06daf66d9ecaafa045d7cdfa2e8793f21cc1d7d70aeda9fe97267c5f97",
+        "presentAtOriginalWorkspacePathHere": false
+      },
+      "actualSource23KO60": {
+        "path": "/workspace/helmut-parallel-20261015/wave12/native-pdf-inputs/ACTUAL_NATIVE_SOURCE23_KO60_WITH_PDF.PRIVATE.json",
+        "bytes": 82170,
+        "sha256": "2057d97278d80d1ec37b2355c41c90fbfab315250d9eefbf30d4e45128f0c967",
+        "presentAtOriginalWorkspacePathHere": false
+      },
+      "originalUPacket": {
+        "path": "/workspace/helmut-parallel-20261015/wave9/native-fixture/ORIGINAL_U_PACKET.PRIVATE.json",
+        "bytes": 53018,
+        "sha256": "8d732cb88dc6df457b66682a45831e60b8ecdb28d92b35d4c1db4440991f2ed2",
+        "presentAtOriginalWorkspacePathHere": false
+      },
+      "originalUReview": {
+        "path": "/workspace/helmut-parallel-20261015/wave9/native-fixture/ORIGINAL_U_EXISTING_REVIEW.PRIVATE.json",
+        "bytes": 2073,
+        "sha256": "8a907f6241a7fc2b202d6a32a064c57b67e854d262f35da8eed461f53ebb9475",
+        "presentAtOriginalWorkspacePathHere": false
+      },
+      "originalUPredecessor": {
+        "path": "/workspace/helmut-parallel-20261015/wave9/native-fixture/PREDECESSOR_BINDING.SAFE.json",
+        "bytes": 2107,
+        "sha256": "29be696bca85e8168c9724906a1b8e9a46c74bf939795e97293df5ea10e503d4",
+        "presentAtOriginalWorkspacePathHere": false
+      },
+      "currentPolicyAcceptance": {
+        "path": "/workspace/helmut-parallel-20261015/wave13/ROOT_POLICY_CONTEXT_ACCEPTANCE.SAFE.json",
+        "bytes": 1140,
+        "sha256": "eb895b11875949012eaa0d5c2183777c319c4870264905fd27c86c267e50a40f",
+        "presentAtOriginalWorkspacePathHere": false
+      },
+      "existingContentAcceptance": {
+        "path": "/workspace/helmut-parallel-20261015/wave13/ROOT_ALL500_CONTENT_ACCEPTANCE.PRIVATE.json",
+        "bytes": 2701,
+        "sha256": "44b39d511667a085d040f1246617f263ddd62988bccdc906fe273a5dcbd909de",
+        "presentAtOriginalWorkspacePathHere": false
+      },
+      "staticMockAcceptance": {
+        "path": "/workspace/helmut-parallel-20261015/wave12/ROOT_STATIC_LOCAL_R_TEMPLATE_ACCEPTANCE.SAFE.json",
+        "bytes": 3409,
+        "sha256": "c3088f502d3b5c278af583929712cd4b43d8b80412c36a3f291d8c00c63ee0d4",
+        "presentAtOriginalWorkspacePathHere": false
+      },
+      "reviewedMockCandidates": {
+        "path": "/workspace/helmut-parallel-20261015/wave12/local-provider-candidates/REVIEWED_LOCAL_PROVIDER_CANDIDATES.PRIVATE.json",
+        "bytes": 213986,
+        "sha256": "90a789d058f503dfb4cc58a988866fe80a7d39bdfeb26b4039cc8d5cde3bf515",
+        "presentAtOriginalWorkspacePathHere": false
+      },
+      "staticMockTemplates": {
+        "path": "/workspace/helmut-parallel-20261015/wave12/local-r-mock-templates/STATIC_UNBOUND_R_TEMPLATES.PRIVATE.json",
+        "bytes": 97720,
+        "sha256": "cb80981e72a5ce74ab9e2530dd7f32005ae088d45359f22e8cdb20afa7c3e4f0",
+        "presentAtOriginalWorkspacePathHere": false
+      }
+    },
+    "requiredLogicalStates": [
+      "new isolated initial/reference state preserving original sentinels and old U history",
+      "fresh operation installation and exactly500 active local synthetic profiles",
+      "true growing middle/late ledger/history/result state with successful terminal unit",
+      "full final state, stop/zero-active rollback and owned process exit"
+    ],
+    "notReusableAuthority": [
+      "consumed or historical GO",
+      "old claims/unknown outcomes",
+      "old signing private keys",
+      "old OIDs/revisions/nonces as access rights"
+    ],
+    "newBindings": "Fresh local operation/keys/actual DB IDs, source/target/runtime hashes; never import Production credentials or reuse consumed authority."
+  },
+  "cloudRecoveryDecision": {
+    "readOnly": true,
+    "currentCloud": "ccarenv_b64_Y2NhcmVudl83ZTFjMmY3NGI0Mjg4MTkxYmM4Y2UzNzI1YzU3ZGNhYw",
+    "historicalSourceCloud": "ccarenv_b64_Y2NhcmVudl8yOTU4NWEyOWM5NjA4MTkxYjhjNTkwOTY0ZGZkYjllOQ",
+    "folderId": "1gvYcdBSGYscOmTxYeJSJ3TpbacyJWBFd",
+    "backupIndexDriveId": "17DDhInbRwN20nqRPuNp3KTLq6AqMEhWc",
+    "backupIndexSHA256": "87508b035c31fea52f4910cedf80b63baabf055e54cfe714dfe143383c15ec0c",
+    "cipherBytes": 487267152,
+    "cipherSHA256": "468610327368d51360815d18538ad0c3fcdc4d98825bb8bf0499daa96112ab3c",
+    "cipherParts": 30,
+    "compressedArchiveBytes": 487052181,
+    "scopeFiles": 1767,
+    "scopeBytes": 2865680705,
+    "recipientFingerprint": "DCFD605ED28EEACA9B826105E769DE07A68BA8E4",
+    "privateKeyOnlyOnAcceptedHistoricalTarget": true,
+    "privateKeyReadOrExported": false,
+    "largeCipherPartsDownloaded": false,
+    "currentCloudAcceptedRecipientEstablished": false,
+    "actualRestoreExecuted": false,
+    "originalsRetainedOnSourceAccordingToHistoricalIndex": true,
+    "W15InputMembershipInLaterBackupEstablished": false,
+    "laterPhysicalSnapshot": "V12 image.raw 2147483648B is recorded in the safe source inventory, not a proven W15 pre-unit initial state.",
+    "safeRestoreSequence": [
+      "obtain selected W15 input and DB-state membership from preserved original cloud without reusing old authority",
+      "use a separately confirmed current-Cloud recipient; private keys stay at their own endpoints",
+      "pin complete selected manifest, hashes, cipher part order and target identity before any plaintext exposure",
+      "after authorized secure delivery, verify complete bytes and use no-overwrite/symlink-safe restore dry-run before applying selected files",
+      "rebuild isolated PG17/PostgREST state with fresh local credentials and native bindings; do not restore live processes or copy in-use PGDATA"
+    ],
+    "safetyBoundary": "Only storage/recovery path discovery is authorized for originals in this sprint. No confirmed current-recipient access and no verified complete comparable input dataset; no decryption, re-encryption, server access or substitute original fabrication.",
+    "nextAction": "Read-only exact subset inventory from the original cloud or authorized provision of the selected data to a confirmed current Cloud recipient; no Hetzner work."
   }
 }
