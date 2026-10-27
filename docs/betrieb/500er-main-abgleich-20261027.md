@@ -7,6 +7,121 @@ Mock-Lauf `11ca02dbea72603ccdabc3560edf93f45caabe3a` (W15), PR915-Kopf
 Der vollständige Datei-/SHA256-Abgleich steht einmalig im
 [maschinenlesbaren Beleg](500er-main-abgleich-20261027.json).
 
+## Aktuelle W15-Entwicklungsintegration
+
+[Draft-PR971](https://github.com/ernisch/helmut-pilot/pull/971), Originalworker-Beleg auf`058cc9e8`; notwendige Anschlusskorrekturen danach im selben Draft.
+Eigener Branch `codex/w15-original-input-integration-20261027`, auf dem weiterhin
+ungemergten PR969. Genau29benannte Runtimepfade entsprechen jetzt W15; einer war
+schon in969enthalten.67geschlossene Quellen plus Worker sind byte-/SHA-identisch.
+Die fünf benötigten CLI-/SQL-Schnittstellen und die Worker-Paketierung sind
+übernommen. Main-Buildauswahl, Router und übrige Vercel-Einstellungen bleiben;
+nur dieser Entwicklungsbranch ist zusätzlich von Previewdeployments ausgeschlossen.
+Keine vollständige Übernahme von915oder späteren PRs.
+
+Elf Originaldateien mit96.530.256B sind vollständig empfangen. Der4.981.565B-Dump
+wurde in einer neuen isolierten PostgreSQL17.6-Testdatenbank wiederhergestellt:
+`synthetik500-runtime-pg-7e1c20261027` / `helmut_w15_input_20261027`, Netzwerk`none`,
+keine veröffentlichten Ports. Die drei Immutable-/Lesefunktionen und der
+Batchleser lagen bereits mit den erwarteten Körpern im Dump; keine Migration
+musste lokal erneut installiert werden. Die500Aktivflags stammen aus der Quelle,
+keine neue Aktivierung. Profile, Identitäten, Auth/Historie/Journal, Quellen/KOs,
+Zähler und Storehashes sind nach den Tests unverändert.
+
+Gezielte Ergebnisse:
+
+| Prüfung | Ergebnis und tatsächlicher Umfang |
+|---|---|
+| Bestehender W15-Stored-Command-Test |81Fälle PASS; Signatur/Expiry/ALS/Freshguards mit expliziten Worker-/RPC-Mocks; echter Worker-Bootstrap als Negativfall.|
+| Originaldaten-Inhaltsprüfung |7Gruppen PASS; echte330/120/50-Profile, Original-U-C, D/R-Mock-Vertrag für Bundestag/Berlin/Brandenburg, vollständiger90.613.729B-Datentransport über Dictionary. Kein ausführbarer500er-Command in diesem ersten Codecfall.|
+| Isolierte Originaldatenbank |8Gruppen PASS; echter ursprünglicher7Dokument-/6KO-Leser über lokale SQL-Transportanbindung, native U-/Tuple-/Funktionsbindungen, Rollen-/Immutable-Sperren, Drift/Unvollständigkeit und unveränderte Bestände. Keine HTTP-/PostgREST-Abnahme daraus.|
+| Echter W15-Inhaltsworker |PASS,14.716,032657ms bei unverändert90.000ms. Vollständiges originales C genau einmal, Codec einmal, ordinary-v1 wie im erfolgreichen W15-Assembler.500Profile/1000Intents/1500Sollpositionen sind vollständiger **Inhalt**, keine ausgeführten1500Ergebnisse.|
+| Testauswahl |20/20PASS; private Originalprüfungen aus automatischen Standard-/Bereichs-/erweiterten Sammelläufen ausgeschlossen.|
+
+Der positive Workerfall verwendet die exakten empfangenen normalisierten Profil-/
+Briefing-/Quellenobjekte. Originale und Urteile werden nicht neu geschrieben.
+Nur klar als inert markierte Runtime-Metadaten werden für den historischen
+16.10.-Funktionsfall im Speicher aufgebaut: inaktive Snapshotkopie, lokales
+Kostenbuch und modellierte externe Belegstruktur. Keine tatsächliche aktuelle
+Finanz-/Runtimefreigabe; keine DB-Schreiboperation, Rechteinstallation oder
+Owner-GO. Die echte originale C-/Workerimplementierung prüft diesen Inhalt.
+Bericht-SHA256 und alle Mess-/Geltungsfelder stehen im JSON-Beleg.
+
+Eine echte Integrationslücke war die fehlende lokale Publikationspolicy.
+Die bestehende nicht geheime Vercel-Konfiguration wurde ausschließlich gelesen
+und mit dem Originalhash274033cdfdd5… gebunden. Keine Publikationssperre entfernt,
+kein Originalurteil umgeschrieben, keine Productionvariable geändert.
+Der erste Fehler bleibt als Log erhalten. Ebenso erhalten bleibt der90s-Abbruch
+eines zunächst falsch gebundenen älteren13.10.-V2-Datensatzes mit874/500Quellen/KOs.
+Er gehört nicht zum erfolgreichen7/6/v1-W15-Datensatz und wurde nicht wiederholt.
+Keine Frist wurde dafür angehoben. Ein bestehender Direct-Test meldete8PASS-Gruppen,
+aber sein äußerer100s-Coverageaufruf endete vor beobachtetem sauberem Exit;
+für diesen Fall wird lokal kein sauberer Gesamterfolg behauptet.
+
+Der [erste GitHub-CI-Lauf](https://github.com/ernisch/helmut-pilot/actions/runs/40502943321)
+belegt Browser/Desktop/Mobil und die vorgelagerten isolierten DB-Schritte als grün.
+Die Standardsuite endete mit173/177grünen Suiten: Inventar zweier öffentlicher
+Konfigurationsnamen, zwei veraltete VM-Whitelistgrenzen und eine Volltext-Cronprüfung
+waren noch nicht an W15 angeschlossen. Direct-, Production-Adapter- und Stored-Command-
+Suiten bestanden dort bereits sauber. Bereichsregression und Z22 wurden nach dem
+Standardfehler übersprungen und zählen nicht als bestanden.
+
+Genau die vier benötigten Test-/Inventardateien aus11ca02db sind ergänzt, kein
+Runtimecode geändert:38Inventarprüfungen,13Attestationfälle,3Auth-Rebindfälle plus
+2Handler/20negative Bindungen und64Pipelineprüfungen bestehen lokal. VM-Optimierer
+sind ausdrücklich inaktiv; echter SHA-Fallback und Authprüfungen bleiben aktiv.
+Die Cronprüfung prüft jetzt nur strukturierte Cronrouten, inklusive zusätzlicher
+Negativfälle. Unabhängiger lesender Review ohne Blocker. Die vorhandene
+[Pflicht-CI am PR](https://github.com/ernisch/helmut-pilot/pull/971/checks)
+ist nach diesen Korrekturen erneut abzuschließen; kein Grün für den neuen Kopf vorweggenommen.
+
+Der [zweite CI-Lauf](https://github.com/ernisch/helmut-pilot/actions/runs/40506065002)
+belegt Standard177/177, Browser und alle vorgelagerten DB-Schritte als grün.
+Bereich328/330 scheiterte an zwei unveränderten Prosa-Prompthashprüfungen.
+Ursache war eine tatsächlich fehlende W15-Anbindung: `understanding.js` nutzte die
+neue statische Hintergrundregel auch bei gewöhnlichen Quellen, statt die vorhandene
+`promptRegeln(selected)`-Auswahl aufzurufen. Genau der kleine Originalhunk aus11ca02db
+ist jetzt ergänzt; keine Prompthashes, alten Prosa-Tests oder Schutzregeln geändert.
+Die unveränderten Prosa-Suiten bestehen gezielt mit14/14 und13/13; der bestehende
+Quellenzeittest aus W15 besteht mit14Gruppen einschließlich gewöhnlichem Prompt,
+festem Original-PDF-Prompthash und ungültigen Folgebelegen. Die öffentliche
+Belegfixture ist zusätzlich identisch in zwei empfangenen Originaldateien bestätigt.
+
+Damit29statt28Runtimeimporte; `understanding.js` liegt außerhalb des unveränderten
+67er-Workergraphs. Erfolgreiche Originalworker-/DB-Läufe werden deshalb nicht wiederholt.
+Der Main-Vergleich bestätigte bereits passende historische Prompthashes; sein
+bewusst minimaler temporärer Codebaum brach erst später wegen eines fehlenden
+Hilfsmoduls ab und wird nicht als vollständiger erfolgreicher Testlauf gewertet.
+Die drei notwendigen Korrekturprüfungen haben sechs weitere V8-Dateien erzeugt.
+Unabhängiger lesender Review ohne Blocker. Die aktuelle Pflicht-CI am PR bleibt
+vor Abschluss erforderlich; Z22 war nach dem Bereichsfehler noch übersprungen.
+
+Coverage wurde in den ohnehin erforderlichen Läufen erfasst:16V8-Dateien,
+Prüfsummenindex privat erhalten. Die vier notwendigen CI-Korrekturprüfungen
+liefern zusätzlich eigene V8-Dateien mit separatem SAFE-Bericht. Kein zusätzlicher Lauf nur für Coverage,
+keine Gesamtquote für das Repository und keine Worker-Coverage behauptet.
+Der native31,95%-Bericht betrifft ausschließlich den Elternprozess des älteren
+fehlgeschlagenen Zusatzfalls und ist kein W15-Erfolgs-/Ressourcenmaß.
+Die vorhandene GitHub-CI erhält den wiederverwendbaren81-Fälle-Test und die
+angepassten zwei bestehenden HTTP-/FS-Testgrenzen; private Daten gehen nicht in CI.
+Die beiden bestehenden CI-Jobs verwenden jetzt exakt Node24.19.0 statt22,
+weil der unveränderte W15-Worker genau diese native Version verlangt. Kein neuer
+Runner und keine Änderung der tatsächlichen Production-Runtime.
+Eine unabhängige lesende Code-/Pin-/Schutz-/Paketierungsprüfung fand im Umfang
+dieses Draft-PR keinen Blocker.
+
+**Noch keine vollständige Laufabnahme:** Tatsächliches aktuelles signiertes
+`backend.prepare/open`, HTTP-/Runtime-/Rechtekette und frische Tages-/Quellen-/
+Finanz-/Laufbindungen bleiben vor der500er-Schlussabnahme zu qualifizieren.
+Danach fehlen weiterhin der vollständige500erAusführungslauf mit1500brauchbaren
+Ergebnissen/8000frischenKontrollen,90/60/30s und gemeinsamer Gesamtpeak einschließlich
+DB/Caches/Prozessende≤2.048.000.000B sowie der gewünschte500.000.000B-Puffer.
+Keine RSS-Einzelsumme wird dafür als gemeinsamer Peak ausgegeben.
+Production-Rollout und bezahlter Modellnachweis bleiben separat freizugeben.
+
+Die nachfolgenden Bestands-/Datenzugangsabschnitte dokumentieren frühere Schritte
+am27.10.; ihr damaliger Blockierstatus ist durch den hier belegten Empfang und die
+Entwicklungsprüfungen überholt. PR969 bleibt ungemergt.
+
 ## Was erhalten bleibt
 
 Alle 84 Dateipins des PR915-Releasemanifests wurden gegen dessen Git-Objekte
@@ -142,9 +257,10 @@ Eingaben und unabhängige Integrationsabnahme nötig; Production-SQL bleibt gesp
 Die gewählte Messung braucht500gültige synthetische Profile/1500Positionen,
 1000D/R-Mocks und16echte frische Kontrollen je Profil. Quellen-/KO-/Draft-/
 Reviewgraph müssen Umfang, Typen, Sharing, Tiefe, Fanout und Profilzuordnung
-abbilden. Die dokumentierte Untergrenze von3.012.510.816expandierten logischen
-Bytes ist **kein Aufruf,3GB als flache Zeichenkette zu materialisieren**.
-Dictionaryteilung ist gerade Teil des gemessenen Verhaltens.
+abbilden. Die früher dokumentierten3.012.510.816expandierten logischen Bytes gehören
+zum älteren V2-Eingabeweg, nicht zum ausgewählten erfolgreichen W15-Datensatz.
+Die tatsächlichen W15-Originale enthalten500ordinary-v1-Eingaben mit7ausgewählten
+Dokumenten und6KOs. Der gesamte ursprüngliche DB-Bestand bleibt dabei erhalten.
 
 Für den historischen W15-Eingabeweg sind konkret referenziert:
 
@@ -171,9 +287,12 @@ wiederverwendbaren Performanceinputs. Kein Productioncredential gehört ins Fixt
 
 **Nein, für diese Ressourcenabnahme nicht belegt.**
 `scripts/fixtures/synthetik500-direct.js` erzeugt500Profile, aber nur3Dokumente
-und3KOs. Im W15-Worker läuft solches gewöhnlichesVersion1-Material ausdrücklich
-außerhalb des historischenVersion2-CPU-Schnellpfads. Dieser kleine Funktionstest
-prüft damit weder die große Last noch denselben optimierten Pfad.
+und3KOs und ersetzt deshalb den ausgewählten Originaldatensatz nicht.
+**Präzisierung aus den empfangenen Originalen:** Der erfolgreiche W15-Assembler
+verwendet selbst ordinary-v1 mit7Dokumenten/6KOs; der Worker unterstützt diesen
+Pfad ausdrücklich mit vollständigem originalem C. Die frühere Aussage, v1 allein
+liege außerhalb des benötigten W15-Pfads, war zu weitgehend. Der ältere874/500-V2-
+Datensatz aus dem Dump ist eine andere Eingabemenge und kein W15-Mindestumfang.
 
 Neue vollständig gültige synthetische Daten könnten grundsätzlich eine eigene
 Messung tragen. Historische Originaltexte sind deshalb **keine allgemeine
@@ -213,11 +332,13 @@ Die alte [Cloud-Transferanleitung](https://drive.google.com/file/d/1aD8_ofHkAcyh
 ist an einen anderen bestätigten Empfänger gebunden; sie autorisiert keine
 Entschlüsselung in dieser Sitzung.
 
-**Aktuelle Betreiberfreigabe:** Die Übertragung privater Schlüssel ist ausdrücklich
-erlaubt. Die frühere Beschränkung auf ihren bisherigen Endpunkt gilt damit nicht
-mehr. Für die gezielte Vorbereitung ist kein weiteres pauschales GO nötig.
-Der offene Punkt ist tatsächlicher Dateizugriff auf den erhaltenen Ursprung oder
-dessen vorhandenen Entschlüsselungsschlüssel. Production/Modelltests bleiben gesperrt.
+**Historische Betreiberfreigabe vor der neuen Schlüsselanlage:** Damals war die
+Übertragung privater Schlüssel erlaubt. Für den neuen Empfängerschlüssel BA62F5AA…
+gilt die spätere ausdrückliche Grenze: dessen privater Schlüssel und Passphrase
+bleiben ausschließlich in der geschützten aktuellen Cloud. Der ausgewählte
+Datenempfang ist abgeschlossen. Der damals offene Zugriff auf den älteren
+Ursprungsschlüssel wurde für diesen Empfang nicht benötigt. Production/Modelltests
+bleiben gesperrt.
 
 ### Gezielter Datenbestand, abschließende Prüfung27.10.
 

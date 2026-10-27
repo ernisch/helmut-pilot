@@ -1,15 +1,16 @@
 # CURRENT STATE — Helmut
 
-## Siffi: ein Motorpfad festgelegt (27.10.2026)
+## W15 mit geprueften Originalen (27.10.2026)
 
-Main6b4012cd; PR969 bleibt ungemergt. Gewaehlt: W15-Kern11ca02db ausPR915,
-keine spaetere Native-/Auth-Architektur.27Runtimeaenderungen noch nicht importiert.
-Daten:5Belegdateien hashgleich vorhanden;8Originaldateien/91.544.863B fehlen hier.
-Passender Eingangsdump mit SHA in Drive belegt; Einzelgroesse/Zugriff noch offen.
-Schluesseltransfer erlaubt. Technischer Quellenzugang fehlt; kein weiteresGO noetig.
-Codebc9ff4a2:34Gruppen und CI40477575989 gruen; seither nur Doku, keine neuenTests.
-[Pfad,Daten,Recovery und naechster Schritt](betrieb/500er-main-abgleich-20261027.md).
-Kein Productioneingriff;500/1500 nur mit eigenemGO. Mac5GB/Tag,Cloud/CI bevorzugt.
+Main6b4012cd; DraftPR971 auf969, eigener W15-Integrationsbranch.
+PR969 ungemergt;29W15-Runtimepfade und67Workerquellen bytegleich gepinnt.
+11Originaldateien/96.530.256B empfangen; Dump in netzlosemPG17.6 restauriert.
+81Bindungs-,7Originaldaten-,8DB- und20Testauswahlpruefungen bestanden.
+Original-W15-Inhaltsworker PASS:14,72s;500/1000/1500 als Inhalt, kein Vollrun.
+Publikationspolicy exakt lokal gebunden; DB-/Quellhashes unveraendert.
+CI2:Standard177/177,Bereich328/330; fehlende Promptanbindung gezielt behoben.
+Keine Productionaenderung, bezahlten Modelle oder vollstaendiger500erLauf.
+[Belege und verbleibende Abnahme](betrieb/500er-main-abgleich-20261027.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 

@@ -1,0 +1,18 @@
+{
+  "version": "helmut-bundestag-originaldokument-hintergrund/1",
+  "pdfSha256": "136b8729e92d06f92b97b9fdc9ec8aa87d02d12707e5423fe8e6249f528546d7",
+  "pdfBytes": 210052,
+  "textSha256": "ebb6b8bce4d53730af56f0849ed3b0416aa1362f5bafe32b4643fc3f465b4939",
+  "textBytes": 6561,
+  "auszugSha256": "3cc37dc4b868f0f57c072419cb87834cb4aae2f7e7e2922d96f82669ca42966d",
+  "dokumentnummer": "21/8468",
+  "dokumentdatum": "2026-10-08",
+  "documentId": "rd-136b8729e92d06f92b97b9fdc9ec8aa87d02d12707e5423fe8e6249f528546d7",
+  "titel": "Antwort der Bundesregierung – Zunahme von Zwangsversteigerungen bei privatem Wohneigentum – Drucksache21/8468",
+  "url": "https://dserver.bundestag.de/btd/21/084/2108468.pdf",
+  "zeitbasis": "dokumentdatum",
+  "quellenrolle": "hintergrund",
+  "veroeffentlichtAm": null,
+  "ereignisdatum": null,
+  "hash": "77da81bf5ff502f77819431475e5e8f11dae4c36e6148b0bff2c416feb70bff1"
+}

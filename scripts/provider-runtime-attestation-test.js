@@ -22,6 +22,11 @@ const plain = value => JSON.parse(JSON.stringify(value));
 let passed = 0, blockedEffectAttempts = 0;
 const comparisonLengths = [], imported = [];
 let productionVerifierHash;
+let inactiveEpochReads = 0, optimizerHashCalls = 0;
+// These configuration/auth tests deliberately exercise the real canonical
+// fallback. They do not admit the opt-in epoch's FS/runtime graph into this VM.
+const inactiveEpoch = Object.freeze({ isActive() { inactiveEpochReads++; return false; } });
+const inactiveFacts = Object.freeze({ hash() { optimizerHashCalls++; throw Error("inactive-optimizer-hash-forbidden"); } });
 function check(name, fn) { fn(); passed += 1; console.log("PASS " + name); }
 function forbiddenEffect() { blockedEffectAttempts += 1; throw new Error("offline-effect-forbidden"); }
 
@@ -45,6 +50,10 @@ function loadPureModule(name) {
   assert(Object.hasOwn(dependencies, name), "module outside pure configuration inventory");
   const filename = path.join(__dirname, "../lib/helmut", name);
   let source = fs.readFileSync(filename, "utf8");
+  if (name === "streaming-canonical-hash.js") {
+    assert(source.includes('require("./canonical-content-facts")'));
+    assert(source.includes('require("./synthetik-500-cpu-epoch")'));
+  }
   if (name === "provider-runtime-attestation.js") {
     const hashDeclaration = /bearerSha256: "[a-f0-9]{64}"/g;
     assert.equal((source.match(hashDeclaration) || []).length, 1);
@@ -60,6 +69,8 @@ function loadPureModule(name) {
   }
   const module = { exports: {} };
   const requirePure = specifier => {
+    if (name === "streaming-canonical-hash.js" && specifier === "./canonical-content-facts") return inactiveFacts;
+    if (name === "streaming-canonical-hash.js" && specifier === "./synthetik-500-cpu-epoch") return inactiveEpoch;
     assert(dependencies[name].includes(specifier), "unexpected dependency in " + name);
     imported.push(name + ":" + specifier);
     if (["crypto", "node:crypto"].includes(specifier)) return testCrypto;
@@ -246,7 +257,16 @@ check("bounded witness retains external acceptance, server-global one-use and ta
   assert.equal(error.code, 500); assert(!error.body.includes("synthetic-secret-url"));
 });
 
-check("configuration entrypoint imports no DB and attempts no external effect", () => {
+check("inactive optimizer keeps the real canonical SHA fallback", () => {
+  const hash = loadPureModule("streaming-canonical-hash.js").hash;
+  const canonical = loadPureModule("synthetik-500-profile.js").kanonisch;
+  const before = inactiveEpochReads;
+  assert.equal(hash({ a: 1 }, canonical), crypto.createHash("sha256").update('{"a":1}').digest("hex"));
+  assert.equal(inactiveEpochReads, before + 1);
+  assert.equal(optimizerHashCalls, 0);
+});
+
+check("configuration entrypoint with explicitly inactive optimizer imports no DB and attempts no external effect", () => {
   assert.equal(blockedEffectAttempts, 0);
   assert(imported.every(x => !/storage|http:|https:|fetch|supabase/.test(x)));
   assert(comparisonLengths.every(([a, b]) => a === 32 && b === 32));
