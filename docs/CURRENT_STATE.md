@@ -1,16 +1,15 @@
 # CURRENT STATE — Helmut
 
-## W15: signierte isolierte Kette (27.10.2026)
+## W15: Verarbeitung vor Nachrichtenaktualitaet (27.10.2026)
 
-Main6b4012cd; eigene Fortsetzung auf PR971/969, beide ungemergt.
-Nur benoetigte31.10.-Vertragsbindung aus967; unveraenderter Geldvertrag.
-12echte Signatur-/HTTP-/PostgREST-/prepared0-Pruefungen PASS,0Units/Modelle.
-Vorbereitung24,41s<90; kaltes Oeffnen5,55s<60; keine gemeinsame RAM-Abnahme.
-Historische Requestfixture: heutiger D-Kontext bei BE abgewiesen, kein500erBeleg.
-11Originaldateien/96.530.256B erhalten; urspruenglicher Restore unveraendert.
-Code-CI40534410137 aufda63309c vollstaendig gruen; danach nur Statusnachtrag.
-Keine Productionaenderung, Aktivierung oder vollstaendige500erAusfuehrung.
-[Belege/Grenzen](betrieb/w15-signierte-kette-20261027.md).
+Main6b4012cd; PR972 auf971/969, alle ungemergt. Anwendungscode unveraendert.
+500echte D-Vorbereitungen mit klar synthetischer1-Quellenzeit-Ableitung PASS.
+Originale/PDF erhalten; keine neuen Quellenimporte oder Productionaenderung.
+GemeinsameMessgruppe: Prepare12,56s<90,Open3,12s<60,3AuthCASmax0,67s<30.
+Kernel-Lebenszeitpeak1,123GB;925MBrechnerischeReserve zu2,048GB, keinHardlimit.
+0Aktivierungen/Units/Modelle; Unit60/finalesAuth30/aktiveRAM-Abnahme offen.
+Code-CI40534410137 aufda63309c gruen; nur privateHarnesse/Statusnachtrag danach.
+[Einzelbelege und naechster Schritt](betrieb/w15-processing-20261027.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 

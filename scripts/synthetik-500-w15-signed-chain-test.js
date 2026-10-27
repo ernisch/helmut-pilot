@@ -392,4 +392,4 @@ if (require.main === module) (process.argv.includes("--serve") ? serve() : main(
   try { retain("SIGNED_CHAIN_ATTEMPT_4_FAILURE.SAFE.json", report); } catch { /* Preserve prior failures. */ }
   console.error("W15 signed integration failed: " + error.message); process.exitCode = 1;
 });
-module.exports = { main, childServer };
+module.exports = { main, childServer, originalBuilder, localEnvironment };
