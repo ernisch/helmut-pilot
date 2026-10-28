@@ -3,10 +3,10 @@
 import datetime,hashlib,importlib.util,json,os,pathlib,posixpath,shutil,subprocess,threading,time
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ASSETS=pathlib.Path('/workspace/shared/helmut-w15-memory-forward-20261028')
-WORK=ASSETS/'diagnostic-run'
-BASE='/tmp/w15-memory-forward-20261028'
-DB='helmut_w15_memory_forward_20261028'
-CONTAINER='w15-memory-forward-20261028'
+WORK=ASSETS/'diagnostic-run-b'
+BASE='/tmp/w15-memory-forward-20261028b'
+DB='helmut_w15_memory_forward_20261028b'
+CONTAINER='w15-memory-forward-20261028b'
 spec=importlib.util.spec_from_file_location('existing_w15_controller',ROOT/'scripts/synthetik-500-w15-full500-controller.py')
 M=importlib.util.module_from_spec(spec);spec.loader.exec_module(M)
 M.WORK=WORK;M.BASE=BASE;M.DB=DB;M.CONTAINER=CONTAINER
@@ -132,12 +132,12 @@ def main():
         M.copy_in(ASSETS/'END500_MEMORY_BOUND.SAFE.json',BASE+'/state/END500_MEMORY_BOUND.SAFE.json')
         M.docker('exec',CONTAINER,'chown','-R','1000:1000',BASE)
         M.docker('exec',CONTAINER,'chmod','700',BASE+'/node',BASE+'/postgrest')
-        M.sql('create database '+DB+';','postgres')
+        M.sql('create database '+DB+';',database='postgres')
         M.docker('exec',CONTAINER,'psql','-X','-w','-q','-v','ON_ERROR_STOP=1','-U','postgres','-d',DB,'-f',BASE+'/roles.PRIVATE.sql')
         M.docker('exec',CONTAINER,'pg_restore','--exit-on-error','--file='+BASE+'/restore.PRIVATE.sql',BASE+'/input.PRIVATE.dump')
         M.docker('exec',CONTAINER,'psql','-X','-w','-q','-v','ON_ERROR_STOP=1','--single-transaction','-U','postgres','-d',DB,
           '-f',BASE+'/restore.PRIVATE.sql','-c','update public.mandate_profiles set aktiv=false where aktiv;')
-        assert M.read('select count(*)from public.mandate_profiles where aktiv;')==0
+        assert M.read('select count(*)from public.mandate_profiles where aktiv;',database=DB)==0
         # Seed all retained500-end positions in native tables, one bounded row
         # per statement. No fake execution/quality claims or source mutation.
         seed=WORK/'seed.PRIVATE.sql';row_ids={}
@@ -165,9 +165,9 @@ def main():
         counts={}
         for key,ids in row_ids.items():
             table='public.helmut_store'if key in ['evidenceRows','privateDraftStoreRows']else'public.briefings'
-            counts[key]=M.read('select count(*)from '+table+' where id=any(array['+','.join(map(M.literal,ids))+']);')
+            counts[key]=M.read('select count(*)from '+table+' where id=any(array['+','.join(map(M.literal,ids))+']);',database=DB)
             assert counts[key]==len(ids),'w15-forward-committed-native-rowcount'
-        assert M.read('select count(*)from public.mandate_profiles where aktiv;')==0
+        assert M.read('select count(*)from public.mandate_profiles where aktiv;',database=DB)==0
         M.save('SEED.SAFE.json',{'nativeCommittedCounts':counts,'nativeExactPostimageChecks':3501,'activeProfiles':0,'executionAuthority':False,'actualResults':False})
         inner(w,'setup',90)
         M.docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','echo $$ >'+BASE+'/state/postgrest.pid; exec '+BASE+'/postgrest '+BASE+'/state/postgrest.PRIVATE.conf >'+BASE+'/state/postgrest.PRIVATE.log 2>&1')
@@ -189,7 +189,7 @@ def main():
         if created:
             try:
                 M.stop_owned(['run','setup','gateway','postgrest'])
-                zero=M.read('select count(*)from public.mandate_profiles where aktiv;')==0
+                zero=M.read('select count(*)from public.mandate_profiles where aktiv;',database=DB)==0
                 assert zero,'w15-forward-active-unknown'
             except BaseException as e:failure=failure or {'type':type(e).__name__,'reason':str(e)}
             for n in ['FORWARD_RESULT.SAFE.json','FORWARD_ABORT.SAFE.json']:

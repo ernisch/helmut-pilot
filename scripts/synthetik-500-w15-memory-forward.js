@@ -3,7 +3,7 @@
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
 const { performance, PerformanceObserver, constants } = require("node:perf_hooks");
-const BASE = "/tmp/w15-memory-forward-20261028", STATE = path.join(BASE, "state"), DB = "helmut_w15_memory_forward_20261028";
+const BASE = "/tmp/w15-memory-forward-20261028b", STATE = path.join(BASE, "state"), DB = "helmut_w15_memory_forward_20261028b";
 const Budget = require("./fixtures/w15-local-memory-budget.json"), AuthReport = require("./fixtures/w15-auth-measurement-report");
 const sha = x => crypto.createHash("sha256").update(x).digest("hex");
 const file = n => path.join(STATE, n);
