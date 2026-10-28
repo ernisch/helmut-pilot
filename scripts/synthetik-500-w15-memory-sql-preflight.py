@@ -4,7 +4,7 @@ import ast,hashlib,importlib.util,json,os,pathlib,re,subprocess,sys
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ASSETS=pathlib.Path('/workspace/shared/helmut-w15-memory-forward-20261028')
-WORK=ASSETS/'sql-preflight-c'
+WORK=ASSETS/'sql-preflight-d'
 EXISTING_CONTAINER='w15-memory-forward-20261028b'
 EXISTING_DB='helmut_w15_memory_forward_20261028b'
 ENV={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'}
@@ -17,7 +17,7 @@ def main():
     os.umask(0o077);WORK.mkdir(mode=0o700)
     spec=importlib.util.spec_from_file_location('forward_parse_only',ROOT/'scripts/synthetik-500-w15-memory-forward.py')
     n=importlib.util.module_from_spec(spec);spec.loader.exec_module(n)
-    assert not n.WORK.exists() and n.DB=='helmut_w15_memory_forward_20261028c'
+    assert not n.WORK.exists() and n.DB=='helmut_w15_memory_forward_20261028d'
     js="const m=require('./scripts/synthetik-500-w15-memory-forward');process.stdout.write(JSON.stringify({sql:m.databaseStatsSQL(),db:m.database,base:m.base}));"
     r=subprocess.run(['node','--require','./scripts/lokaler-netzschutz.js','-e',js],cwd=ROOT,env=os.environ.copy(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=20)
     assert r.returncode==0,'metadata-factory'
@@ -59,10 +59,18 @@ def main():
     # inputs; PostgREST internal SQL is covered by prior genuine Auth/CAS proof.
     unique={hashlib.sha256(q.encode()).hexdigest():(label,q)for label,q in queries}
     assert sum(label=='native-seed'for label,q in unique.values())==3501
+    previous_path=ASSETS/'sql-preflight-c/SQL_PREFLIGHT.SAFE.json'
+    previous_bytes=previous_path.read_bytes()
+    assert hashlib.sha256(previous_bytes).hexdigest()=='b02143076edc5c72af39be3798b0d8a45e3e140c8b98967ad4fcdf25422fd49c'
+    previous=json.loads(previous_bytes)
+    assert previous['status']=='PASS_ALL_GENERATED_DIAGNOSTIC_SQL_PARSE_DESCRIBE_NO_EXECUTION'
+    cached={x['sha256']for x in previous['statementPins']}
+    changed={h:v for h,v in unique.items()if h not in cached}
+    assert len(changed)==1 and next(iter(changed.values()))==('database-call','create database '+n.DB+';'),'unexpected-generated-sql-change'
     script=WORK/'parse-only.PRIVATE.psql'
     with script.open('x')as f:
         os.chmod(script,0o600);f.write("begin read only;set local statement_timeout='15s';\n")
-        for h,(label,q)in unique.items():
+        for h,(label,q)in changed.items():
             # Deliberately NO semicolon before \gdesc. This sends Parse/Describe,
             # never Bind/Execute, including CREATE DATABASE and data-modifying CTEs.
             assert q.endswith(';')
@@ -76,7 +84,7 @@ def main():
       'authMD5',(select md5(data::text)from public.helmut_store where id='main-auth'),
       'storeRows',(select count(*)from public.helmut_store),'briefingRows',(select count(*)from public.briefings),
       'usage',(select jsonb_array_length(data->'llmUsage')from public.helmut_store where id='main-auth'),
-      'newTargetAbsent',not exists(select from pg_database where datname='helmut_w15_memory_forward_20261028c'),
+      'newTargetAbsent',not exists(select from pg_database where datname='helmut_w15_memory_forward_20261028d'),
       'createdb',(select rolcreatedb or rolsuper from pg_roles where rolname=current_user),
       'serviceCanSelect',has_table_privilege('service_role','public.helmut_store','SELECT'),
       'serviceCanUpdate',has_column_privilege('service_role','public.helmut_store','data','UPDATE'),
@@ -94,17 +102,18 @@ def main():
     (WORK/'parser.PRIVATE.stdout').write_bytes(parsed.stdout);(WORK/'parser.PRIVATE.stderr').write_bytes(parsed.stderr)
     assert parsed.returncode==0,'native-parser-rejected-generated-query'
     markers=[line[6:]for line in parsed.stdout.decode().splitlines()if line.startswith('PARSE_')]
-    assert markers==list(unique),'incomplete-parser-coverage'
+    assert markers==list(changed),'incomplete-parser-coverage'
     after=run_psql(metadata_sql);assert after.returncode==0
     assert json.loads(after.stdout)==observed,'parser-modified-source-data-or-target-created'
     report={'status':'PASS_ALL_GENERATED_DIAGNOSTIC_SQL_PARSE_DESCRIBE_NO_EXECUTION','statements':len(unique),
-      'seedStatements':3501,'actualGeneratedQuerySites':len(queries),'workloadStatementsExecuted':0,'newDatabaseCreated':False,
-      'method':'PostgreSQL17 psql gdesc uses Parse/Describe; no semicolon, g/bind/Execute or EXPLAIN ANALYZE on workload SQL.',
+      'seedStatements':3501,'newlyParsedStatements':len(changed),'exactPriorHashReusedStatements':len(unique)-len(changed),
+      'reusedParserReportSHA256':hashlib.sha256(previous_bytes).hexdigest(),'actualGeneratedQuerySites':len(queries),'workloadStatementsExecuted':0,'newDatabaseCreated':False,
+      'method':'PostgreSQL17 Parse/Describe of the one changed database-name statement;3508 exact SQL hashes reuse the pinned successful C parser proof. No workload Execute.',
       'existingParserDatabase':EXISTING_DB,'plannedDatabase':n.DB,'sourceSnapshotUnchanged':True,
       'metadataAndPermissionChecks':{k:v for k,v in observed.items()if k!='authMD5'},
       'coverageLimits':['Original pg_restore and roles SQL reuse unchanged successful pinned restore proof.','PostgREST internally generated SQL reuses successful native Auth/CAS proof; not claimed extracted from diagnostic source.','Parse-only does not execute constraints/triggers or demonstrate runtime memory.'],
       'statementPins':[{'kind':v[0],'sha256':h}for h,v in unique.items()],
-      'sourcePins':{p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest()for p in ['scripts/synthetik-500-w15-memory-forward.js','scripts/synthetik-500-w15-memory-forward.py','scripts/synthetik-500-w15-memory-sql-preflight.py']}}
+      'sourcePins':{p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest()for p in ['scripts/synthetik-500-w15-memory-forward.js','scripts/synthetik-500-w15-memory-forward.py','scripts/synthetik-500-w15-memory-sql-preflight.py','scripts/fixtures/w15-durable-observations.js','scripts/fixtures/w15-owned-process-stop.js','scripts/fixtures/w15-local-memory-budget.json','scripts/synthetik-500-w15-full500-controller.py','scripts/synthetik-500-w15-full500-runtime.js']}}
     out=WORK/'SQL_PREFLIGHT.SAFE.json';out.write_text(json.dumps(report,indent=2)+'\n');out.chmod(0o600)
     print(json.dumps({k:v for k,v in report.items()if k not in ['statementPins','metadataAndPermissionChecks','sourcePins','coverageLimits']}))
 if __name__=='__main__':main()

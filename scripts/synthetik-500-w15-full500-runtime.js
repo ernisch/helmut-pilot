@@ -6,6 +6,7 @@ const assert = require("node:assert/strict"), { AsyncLocalStorage } = require("n
 const { performance } = require("node:perf_hooks");
 const Memory = require("./fixtures/w15-memory-contract");
 const AuthReport = require("./fixtures/w15-auth-measurement-report");
+const Durable = require("./fixtures/w15-durable-observations");
 const DIR = "/tmp/w15-full500-20261028d", STATE = path.join(DIR, "state");
 const DB = "helmut_w15_full500_20261028b", PUB = "HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY";
 const PRIV = "HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY";
@@ -198,10 +199,12 @@ async function prepare() {
   assert.equal(m.database, DB); assert.equal(m.productionCommit, c.commit);
   process.env[PRIV] = fs.readFileSync(file("signing-key.PRIVATE.pem"), "utf8");
   const S = require("../lib/helmut/storage"), C = require("../lib/helmut/synthetik-500-production-command");
-  const observation = observeAuth(S); const begin = performance.now();
+  const journal = Durable.open(STATE, "prepare");
+  const observation = observeAuth(S); journal.observe(observation); const stopTelemetry = Durable.monitor(journal, memory); const begin = performance.now();
   const removeAbortReceipt = AuthReport.retainOnTermination(() => ({ phase: "prepare", selector: m.selector,
     authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites,
-    authTimings: AuthReport.summarize(observation) }), value => save("PREPARE_ABORT_OBSERVATIONS.SAFE.json", value));
+    authTimings: AuthReport.summarize(observation) }), value => { journal.write("termination-received", value); save("PREPARE_ABORT_OBSERVATIONS.SAFE.json", value); });
+  journal.ready();
   try {
     const prepared = await S.prepareSynthetik500StoredCommand(m.selector);
     assert.equal(prepared.executionAuthorized, false); assert(prepared.metrics.wallMs < 90000, "w15-full500-offline90");
@@ -238,7 +241,7 @@ async function prepare() {
       authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites, authCoverage: coverage,
       authTimings: AuthReport.summarize(observation),
       actualSource23AndKO60PostimagesMatchDerivedInputs: true, providerCalls: 0, unitEntries: 0, memory: memory() });
-  } finally { removeAbortReceipt(); delete process.env[PRIV]; }
+  } finally { stopTelemetry(); removeAbortReceipt(); delete process.env[PRIV]; }
 }
 function claimQuery(selector, index, phase) {
   assert(Number.isInteger(index) && index >= 0 && index < 500); assert(["D", "R"].includes(phase));
@@ -260,14 +263,19 @@ async function run() {
   const P = require("../lib/helmut/synthetik-500-profile"), A = require("../lib/helmut/synthetik-500-kosten-admission");
   const H = require("./fixtures/w15-full500-provider"), unitReports = [], scopeReports = [], responses = [], providerPhases = [], errors = [];
   let index = -1, activeScope = null, memoryViolation = null;
+  const journal = Durable.open(STATE, "run");
   const observation = observeAuth(S, { currentIndex: () => index, onFinalACK: (finished, ack) => {
     const unit = unitReports.find(u => u.index === finished); assert(unit, "w15-full500-finish-without-entry");
     unit.finalACKMS = ack; unit.endCheckpointCount = S.synthetik500PreparedDiagnostics()?.checkpoints.length;
   } });
+  journal.observe(observation);
+  const stopTelemetry = Durable.monitor(journal, memory);
+  journal.write("database-statistics", sql(Durable.databaseStatsSQL()));
   const removeAbortReceipt = AuthReport.retainOnTermination(() => ({ phase: "run", selector: m.selector,
     currentIndex: index, unitReports, scopeReports, responses, providerPhases,
     authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites,
-    authTimings: AuthReport.summarize(observation) }), value => save("FULL500_ABORT_OBSERVATIONS.SAFE.json", value));
+    authTimings: AuthReport.summarize(observation) }), value => { journal.write("termination-received", value); save("FULL500_ABORT_OBSERVATIONS.SAFE.json", value); });
+  journal.ready();
   const Lage = require("../lib/helmut/lage"), actualLage = Lage.buildLageBriefing;
   Lage.buildLageBriefing = async function(...args) {
     try { const result = await actualLage.apply(this, args);
@@ -327,6 +335,7 @@ async function run() {
   const started = performance.now();
   try {
     for (index = 0; index < 500; index++) {
+      assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")), "w15-full500-stop-requested");
       assert(!memoryViolation && memoryAccepted(memory()), "w15-full500-common-memory-before-next");
       assert(Date.now() < ends, "w15-full500-fixed-window-expired");
       const fixture = fixtures[index], phaseOffset = providerPhases.length, mutationOffset = observation.mutations.length;
@@ -388,6 +397,7 @@ async function run() {
       unit.authTimings = AuthReport.summarize(unitAuth);
       event("unit-final-ack-accepted", { index, status: "PASS", unit, response, authCoverage: authCheck,
         authTimings: AuthReport.summarize(observation) });
+      if (index % 25 === 24) journal.write("database-statistics", sql(Durable.databaseStatsSQL()));
       assert(errors.length === 0 && !memoryViolation && memoryAccepted(memory()), "w15-full500-observed-failure-before-next");
     }
     const final = sql("select jsonb_build_object('active',(select count(*)from mandate_profiles where aktiv),'journal',data->'synthetik500DispatchJournal'->'operations'->"
@@ -425,13 +435,14 @@ async function run() {
       noAutomaticRetry: true, independent1500RowAcceptance: false, cleanupConfirmed: false, productionProof: false });
     throw e;
   } finally {
-    removeAbortReceipt();
+    stopTelemetry(); removeAbortReceipt();
     clearInterval(poll); if (provider) provider.restore(); azure(false);
     server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
   }
 }
 async function main(action) {
   assert(["setup", "gateway", "prepare", "run"].includes(action), "w15-full500-runtime-action"); guard();
+  assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")), "w15-full500-stop-requested");
   return ({ setup, gateway, prepare, run })[action]();
 }
 if (require.main === module) main(process.argv[2]).catch(e => {

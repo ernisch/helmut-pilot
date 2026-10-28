@@ -3,8 +3,9 @@
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
 const { performance, PerformanceObserver, constants } = require("node:perf_hooks");
-const BASE = "/tmp/w15-memory-forward-20261028c", STATE = path.join(BASE, "state"), DB = "helmut_w15_memory_forward_20261028c";
+const BASE = "/tmp/w15-memory-forward-20261028d", STATE = path.join(BASE, "state"), DB = "helmut_w15_memory_forward_20261028d";
 const Budget = require("./fixtures/w15-local-memory-budget.json"), AuthReport = require("./fixtures/w15-auth-measurement-report");
+const Durable = require("./fixtures/w15-durable-observations");
 const sha = x => crypto.createHash("sha256").update(x).digest("hex");
 const file = n => path.join(STATE, n);
 const read = n => JSON.parse(fs.readFileSync(file(n), "utf8"));
@@ -15,21 +16,7 @@ function query(sql) {
     env:{PATH:"/usr/bin:/bin",LANG:"C.UTF-8"}});
   assert.equal(r.status,0,"w15-forward-readonly-sql");return JSON.parse(r.stdout.trim());
 }
-function databaseStatsSQL() {
-  return "select jsonb_build_object('active',(select count(*)from public.mandate_profiles where aktiv),"
-    +"'tempBytes',temp_bytes,'tempFiles',temp_files,'walBytes',(select wal_bytes::text from pg_stat_wal),"
-    +"'walPhysicalBytes',(select sum(size)from pg_ls_waldir()where name~'^[0-9A-F]{24}$'),"
-    +"'walOldest',(select min(name)from pg_ls_waldir()where name~'^[0-9A-F]{24}$'),"
-    +"'walNewest',(select max(name)from pg_ls_waldir()where name~'^[0-9A-F]{24}$'),"
-    +"'replicationSlots',(select count(*)from pg_replication_slots),"
-    +"'checkpoints',(select num_timed+num_requested from pg_stat_checkpointer),"
-    +"'storeBytes',pg_total_relation_size('public.helmut_store'),'briefingBytes',pg_total_relation_size('public.briefings'),"
-    +"'toastBytes',(select pg_total_relation_size(reltoastrelid)from pg_class where oid='public.helmut_store'::regclass),"
-    +"'autovacuums',(select coalesce(sum(autovacuum_count),0)from pg_stat_all_tables where relid='public.helmut_store'::regclass"
-    +" or relid=(select reltoastrelid from pg_class where oid='public.helmut_store'::regclass)),"
-    +"'settings',(select jsonb_object_agg(name,setting)from pg_settings where name in('work_mem','max_wal_size','autovacuum_naptime',"
-    +"'fsync','full_page_writes','synchronous_commit','autovacuum','archive_mode','wal_keep_size')))from pg_stat_database where datname=current_database();";
-}
+const databaseStatsSQL = Durable.databaseStatsSQL;
 function databaseStats() { return query(databaseStatsSQL()); }
 function setup() {
   const secret=crypto.randomBytes(48).toString("hex"),b64=x=>Buffer.from(JSON.stringify(x)).toString("base64url"),now=Math.floor(Date.now()/1000);
@@ -60,13 +47,16 @@ async function run() {
   const P=require("../lib/helmut/synthetik-500-profile"),S=require("../lib/helmut/storage");
   const report={schema:"helmut-w15-memory-forward/1",status:"UNKNOWN",units:0,providerCalls:0,profileActivations:0,
     executionAuthority:false,originalDatabaseWrites:0,full500Acceptance:false,budget:Budget,startedAtUTC:new Date().toISOString(),cas:[],gc:[],samples:[],database:[]};
+  const journal=Durable.open(STATE,"run");
   let index=-1,observed,casAtIndex=0,expectedRevision;
   const contentHash = store => P.hash(Object.fromEntries(Object.entries(store).filter(([k])=>!["_authStoreRevision","w15MemoryProbeSequence"].includes(k))));
-  const sample=()=>report.samples.push({atMs:performance.now(),...process.memoryUsage()});
-  const gcObserver=new PerformanceObserver(list=>{for(const e of list.getEntries())report.gc.push({atMs:e.startTime,durationMs:e.duration,kind:e.detail.kind,flags:e.detail.flags});});
+  const sample=()=>{const row={atMs:performance.now(),...process.memoryUsage()};report.samples.push(row);journal.write("node-memory",row);};
+  const dbSample=()=>{const row={index,atMs:performance.now(),...databaseStats()};report.database.push(row);journal.write("database-statistics",row);return row;};
+  const gcObserver=new PerformanceObserver(list=>{for(const e of list.getEntries()){const row={atMs:e.startTime,durationMs:e.duration,kind:e.detail.kind,flags:e.detail.flags};report.gc.push(row);journal.write("node-gc",row);}});
   gcObserver.observe({entryTypes:["gc"]});sample();const timer=setInterval(sample,250);
   const removeAbort=AuthReport.retainOnTermination(()=>({...report,currentIndex:index,authTimings:observed?AuthReport.summarize(observed):null,
-    authMutations:observed?.mutations,casWrites:observed?.casWrites}),value=>save("FORWARD_ABORT.SAFE.json",value));
+    authMutations:observed?.mutations,casWrites:observed?.casWrites}),value=>{journal.write("termination-received",value);save("FORWARD_ABORT.SAFE.json",value);});
+  journal.ready();
   try {
     assert.equal(databaseStats().active,0);
     const encoded=fs.readFileSync(file("current-command.PRIVATE.json"));
@@ -85,12 +75,14 @@ async function run() {
     report.contentHash=contentHash(before);report.authBytes=Buffer.byteLength(JSON.stringify(before));
     assert.equal(report.authBytes,bound.authJSONBytes);assert(report.authBytes<=Budget.maximumFixtureAuthBytes);
     assert(Budget.postgresWorkMemMiB*1024*1024>=2*report.authBytes);
-    before=null;sample();report.database.push({index:-1,atMs:performance.now(),...databaseStats()});
+    before=null;sample();dbSample();
     const Cas=require("../lib/helmut/auth-store-cas"),native=Cas.writeConditional;
     Cas.writeConditional=async function(...args){assert.equal(casAtIndex,0,"w15-forward-no-second-native-write");casAtIndex++;
       const result=await native.apply(this,args);expectedRevision=result._authStoreRevision;return result;};
     observed=require("./synthetik-500-w15-full500-runtime").observeAuth(S,{currentIndex:()=>index});
+    journal.observe(observed);
     for(index=0;index<Budget.diagnosticCASWrites;index++){
+      assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")),"w15-forward-stop-requested");
       casAtIndex=0;expectedRevision=null;const begin=performance.now();
       await S.mutateAuthStore(store=>{store.w15MemoryProbeSequence=index;});
       const fullCallMs=performance.now()-begin;assert(fullCallMs<30000,"w15-forward-auth30");
@@ -101,7 +93,7 @@ async function run() {
       assert(observed.assessment().pass,"w15-forward-auth-coverage");
       const row={index,fullCallMs,authTimings:AuthReport.summarize(observed),revisionReadback:true,postimagePreserved:true};report.cas.push(row);
       console.log(JSON.stringify({name:"memory-cas-accepted",...row}));
-      if(index%25===24||index===Budget.diagnosticCASWrites-1){const stats=databaseStats();assert.equal(stats.active,0);report.database.push({index,atMs:performance.now(),...stats});}
+      if(index%25===24||index===Budget.diagnosticCASWrites-1){const stats=dbSample();assert.equal(stats.active,0);}
     }
     assert(heldCommand.drafts.length===500&&Object.isFrozen(heldCommand)&&heldCommand.units.length===500);
     report.authTimings=AuthReport.summarize(observed);report.authCoverage=observed.assessment();
@@ -138,6 +130,6 @@ async function run() {
     report.completedAtUTC=new Date().toISOString();save("FORWARD_RESULT.SAFE.json",report);console.log(JSON.stringify({name:"memory-forward-result",status:report.status,cas:report.cas.length}));}
 }
 async function main(action){assert(require.cache[require.resolve("./lokaler-netzschutz")]);assert.deepEqual(require("./lokaler-netzschutz").pruefe(process.env),[]);
-  assert(["setup","gateway","run"].includes(action));return({setup,gateway,run})[action]();}
+  assert(["setup","gateway","run"].includes(action));assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")),"w15-forward-stop-requested");return({setup,gateway,run})[action]();}
 if(require.main===module)main(process.argv[2]).catch(()=>{console.error("w15-forward-first-failure");process.exitCode=1;});
 module.exports = { databaseStatsSQL, database: DB, base: BASE };

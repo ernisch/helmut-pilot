@@ -19,6 +19,7 @@ AUTH_WITNESS=pathlib.Path('/workspace/shared/helmut-w15-auth-observer-check-2026
 AUTH_WITNESS_SOURCE=pathlib.Path('/workspace/shared/helmut-w15-auth-observer-check-20261028/stage/app/scripts/synthetik-500-w15-full500-runtime.js')
 DOCKER=['docker','--host=unix:///var/run/docker.sock']
 ENV={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'}
+STARTED_INNER_ACTIONS=set()
 MEMORY=json.loads((ROOT/'scripts/fixtures/w15-memory-contract.json').read_text())
 LIMIT=MEMORY['comparisonBudgetBytes']
 RESERVE=(LIMIT*MEMORY['minimumReservePercent']+99)//100
@@ -121,6 +122,7 @@ class Supervisor:
     def __init__(self,cgroup):
         self.cgroup=cgroup;self.finished=threading.Event();self.failure=None;self.last=None;self.process=None;self.maximum=0;self.last_events=None;self.closure_mode=False;self.stage_name=None
         self.progress_lock=threading.RLock();self.failure_lock=threading.Lock();self.accepted_indexes=set();self.last_accepted_index=None
+        self.inner_stop_thread=None;self.stop_dispatched=False;self.stop_failure=None
         self.started_monotonic=time.monotonic();self.last_ack_monotonic=None;self.last_terminal_monotonic=self.started_monotonic
         self.progress=(WORK/'outer-progress.SAFE.jsonl').open('x');os.chmod(WORK/'outer-progress.SAFE.jsonl',0o600)
         self.progress_queue=queue.Queue(maxsize=2048);self.progress_finished=threading.Event()
@@ -134,7 +136,7 @@ class Supervisor:
                 except queue.Empty:continue
                 try:
                     line=json.dumps(record,separators=(',',':'))
-                    self.progress.write(line+'\n');self.progress.flush();print(record['message'],flush=True)
+                    self.progress.write(line+'\n');self.progress.flush();os.fdatasync(self.progress.fileno());print(record['message'],flush=True)
                 finally:self.progress_queue.task_done()
         except BaseException as e:self.first_failure(e)
         finally:self.progress.close()
@@ -197,8 +199,28 @@ class Supervisor:
             p=self.process
         # Stop first; terminal/file reporting cannot delay the existing bound stop.
         if not self.closure_mode and p and p.poll()is None:
-            try:os.killpg(p.pid,signal.SIGTERM)
-            except ProcessLookupError:pass
+            action={'seed':'setup'}.get(self.stage_name,self.stage_name)
+            if action in ['prepare','run','setup','audit','signal-proof']:
+                with self.failure_lock:
+                    if not self.stop_dispatched:
+                        self.stop_dispatched=True
+                        def signal_inner():
+                            try:stop_owned([action],require_registered=True)
+                            except BaseException as e:
+                                self.stop_failure={'type':type(e).__name__,'reason':str(e),'innerStopConfirmed':False}
+                                save('INNER_STOP_UNKNOWN.SAFE.json',self.stop_failure)
+                            finally:
+                                # The inner stop was attempted first. Bound even a
+                                # failed/unknown helper; preserve its own receipt.
+                                try:p.wait(timeout=1)
+                                except subprocess.TimeoutExpired:
+                                    try:os.killpg(p.pid,signal.SIGTERM)
+                                    except ProcessLookupError:pass
+                        self.inner_stop_thread=threading.Thread(target=signal_inner,daemon=True)
+                        self.inner_stop_thread.start()
+            else:
+                try:os.killpg(p.pid,signal.SIGTERM)
+                except ProcessLookupError:pass
         if first:
             try:self.publish('supervisor-first-failure',status='FAIL')
             except BaseException:pass # First failure and bound stop already persist independently.
@@ -230,7 +252,9 @@ class Supervisor:
     def stage(self,cmd,name,seconds,extra_env=None):
         if self.failure and not self.closure_mode:raise RuntimeError('full500-supervisor-first-failure')
         assert self.thread.is_alive(),'full500-memory-supervisor-not-alive'
-        self.stage_name=name
+        self.stage_name=name;self.stop_dispatched=False;self.inner_stop_thread=None
+        action={'seed':'setup'}.get(name,name)
+        if action in ['prepare','run','setup','audit','signal-proof']:STARTED_INNER_ACTIONS.add(action)
         with (WORK/(name+'.PRIVATE.log')).open('xb')as log:
             self.process=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=extra_env or ENV,cwd=ROOT,start_new_session=True)
             process=self.process
@@ -250,16 +274,19 @@ class Supervisor:
                 except BaseException as e:self.first_failure(e)
             reader=threading.Thread(target=drain,daemon=True);reader.start()
             try:
-                r=self.process.wait(timeout=seconds)
+                r=self.process.wait(timeout=seconds);self.last_stage_exit_code=r
                 if r:
                     error=RuntimeError('full500-stage-failed:'+name+':'+str(r))
                     self.first_failure(error);raise error
             except subprocess.TimeoutExpired:
-                os.killpg(self.process.pid,signal.SIGTERM)
-                try:self.process.wait(timeout=5)
-                except subprocess.TimeoutExpired:os.killpg(self.process.pid,signal.SIGKILL);self.process.wait()
+                self.first_failure(RuntimeError('full500-stage-timeout:'+name))
+                try:self.process.wait(timeout=25)
+                except subprocess.TimeoutExpired:
+                    os.killpg(self.process.pid,signal.SIGKILL);self.process.wait()
                 raise RuntimeError('full500-stage-timeout:'+name)
             finally:
+                if self.inner_stop_thread:self.inner_stop_thread.join(timeout=25)
+                if self.stop_failure:self.failure=self.failure or self.stop_failure
                 reader.join(timeout=5)
                 if reader.is_alive():self.first_failure(RuntimeError('full500-output-reader-not-drained'))
                 else:process.stdout.close()
@@ -279,29 +306,15 @@ def inner(supervisor,action,seconds=120):
     runtime='synthetik-500-w15-full500-runtime.js'
     script=runtime if action!='audit'else'synthetik-500-w15-full500-audit.js'
     suffix=' '+action if action!='audit'else''
-    cmd='echo $$ >'+BASE+'/state/'+action+'.pid; exec timeout --signal=TERM --kill-after=5s '+str(seconds-10)+'s env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/'+script+suffix
+    cmd='umask 077; echo $$ >'+BASE+'/state/'+action+'.pid; exec timeout --signal=TERM --kill-after=5s '+str(seconds-10)+'s env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/'+script+suffix
     supervisor.stage(DOCKER+['exec','--user','1000:1000',CONTAINER,'sh','-c',cmd],action,seconds)
 
-def stop_owned(actions):
-    for a in actions:
-        assert a in ['prepare','run','setup','audit','gateway','postgrest']
-        # The minimal cached image has neither ps nor /bin/kill. Use the already
-        # available Node to verify every live member of the owned timeout group.
-        code=r'''const fs=require('fs'),assert=require('assert/strict');
-const [base,action,db]=process.argv.slice(1),f=base+'/state/'+action+'.pid';
-if(!fs.existsSync(f))process.exit(0);const p=Number(fs.readFileSync(f,'utf8'));assert(Number.isSafeInteger(p)&&p>1);
-const grouped=['prepare','run','setup','audit'].includes(action);
-function members(){const out=[];for(const d of fs.readdirSync('/proc').filter(x=>/^\d+$/.test(x))){try{
-const s=fs.readFileSync('/proc/'+d+'/stat','utf8'),fields=s.slice(s.lastIndexOf(') ')+2).split(' '),id=Number(d);
-if(fields[0]==='Z'||(grouped?Number(fields[2])!==p:id!==p))continue;
-const cmd=fs.readFileSync('/proc/'+d+'/cmdline','utf8').replaceAll('\0',' ');
-assert(cmd.includes(base)||(grouped&&cmd.includes('psql')&&cmd.includes(db)),'unowned-live-process');out.push(id);
-}catch(e){if(e.code==='ENOENT'||e.code==='ESRCH')continue;throw e;}}return out;}
-async function wait(ms){const end=Date.now()+ms;while(members().length&&Date.now()<end)await new Promise(r=>setTimeout(r,50));}
-(async()=>{if(!members().length)return;try{process.kill(grouped?-p:p,'SIGTERM');}catch(e){if(e.code!=='ESRCH')throw e;}
-await wait(5000);if(members().length){process.kill(grouped?-p:p,'SIGKILL');await wait(2000);}
-assert.equal(members().length,0,'owned-process-group-still-live');})().catch(()=>{process.exitCode=1;});'''
-        docker('exec','--user','1000:1000',CONTAINER,BASE+'/node','--eval',code,BASE,a,DB,timeout=12)
+def stop_owned(actions,require_registered=False):
+    for action in actions:
+        assert action in ['prepare','run','setup','audit','gateway','postgrest','signal-proof']
+        docker('exec','--user','1000:1000',CONTAINER,BASE+'/node',
+          BASE+'/app/scripts/fixtures/w15-owned-process-stop.js',BASE,action,DB,
+          'active'if require_registered or action in STARTED_INNER_ACTIONS else'never-started',timeout=27)
 
 def cleanup():
     cpath=WORK/'cleanup-context.PRIVATE.json'
@@ -399,17 +412,19 @@ def main():
         shutil.copytree(ROOT/'lib',stage/'app/lib',dirs_exist_ok=True)
         for name in ['server.js','package.json']:shutil.copy2(ROOT/name,stage/'app'/name)
         names=['synthetik-500-w15-full500-runtime.js','synthetik-500-w15-full500-audit.js','synthetik-500-w15-signed-chain-test.js','fixtures/w15-auth-measurement-report.js',
-          'fixtures/w15-full500-provider.js','fixtures/w15-unit0-provider.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-full500-window.js']
+          'fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-full500-provider.js','fixtures/w15-unit0-provider.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-full500-window.js']
         for n in names:shutil.copy2(ROOT/'scripts'/n,stage/'app/scripts'/n)
         pgdata=WORK/'pgdata';pgdata.mkdir(mode=0o700)
+        state=WORK/'state';state.mkdir(mode=0o700)
         docker('create','--name',CONTAINER,'--label','helmut.w15.full500=20261028d','--pull=never','--network=none','--restart=no',
           '--memory=2048000000','--memory-swap=2048000000','--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
+          '--mount','type=bind,src='+str(state)+',dst='+BASE+'/state',
           '-e','POSTGRES_HOST_AUTH_METHOD=trust',IMAGE);created=True
         docker('start',CONTAINER)
         info=json.loads(docker('inspect',CONTAINER))[0]
         assert info['Image']==IMAGE and info['HostConfig']['NetworkMode']=='none'and not info['NetworkSettings']['Ports']
         assert info['HostConfig']['Memory']==LIMIT and info['HostConfig']['MemorySwap']==LIMIT
-        assert len(info['Mounts'])==1 and info['Mounts'][0]['Source']==str(pgdata)and info['Mounts'][0]['Destination']=='/var/lib/postgresql/data'
+        assert {(m['Source'],m['Destination'])for m in info['Mounts']}=={(str(pgdata),'/var/lib/postgresql/data'),(str(state),BASE+'/state')}
         pid=info['State']['Pid'];cgrel=pathlib.Path('/proc/'+str(pid)+'/cgroup').read_text().strip().split('0::')[-1]
         cgroup=pathlib.Path('/sys/fs/cgroup')/posixpath.normpath('/'+cgrel.lstrip('/')).lstrip('/');assert info['Id']in str(cgroup)
         supervisor=Supervisor(cgroup)
@@ -424,9 +439,10 @@ def main():
             if r.returncode==0:ready=True;break
             time.sleep(.2)
         assert ready,'full500-pg-not-ready'
-        docker('exec',CONTAINER,'mkdir','-m','700',BASE)
+        docker('exec',CONTAINER,'mkdir','-p',BASE)
+        docker('exec',CONTAINER,'chmod','700',BASE)
         copy_in(stage/'app',BASE+'/app');copy_in(stage/'node',BASE+'/node');copy_in(stage/'postgrest',BASE+'/postgrest')
-        docker('exec',CONTAINER,'mkdir','-m','700',BASE+'/state')
+        assert state.stat().st_mode&0o777==0o700
         for n in ['OWNER_GO.PRIVATE.json','setup-input.PRIVATE.json']:copy_in(WORK/n,BASE+'/state/'+n)
         copy_in('/workspace/shared/helmut-w15-development-20261027/publication-policy.PRIVATE.json',BASE+'/state/publication-policy.PRIVATE.json')
         copy_in(inputs['localRoles'],BASE+'/roles.PRIVATE.sql');copy_in(inputs['frozenSourceDump'],BASE+'/input.PRIVATE.dump')
@@ -440,7 +456,7 @@ def main():
           '-f',BASE+'/restore.PRIVATE.sql','-c',"set local statement_timeout='15s';update public.mandate_profiles set aktiv=false where aktiv;")
         assert read('select count(*)from mandate_profiles where aktiv;')==0
         inner(supervisor,'setup')
-        docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','echo $$ >'+BASE+'/state/postgrest.pid; exec '+BASE+'/postgrest '+BASE+'/state/postgrest.PRIVATE.conf >'+BASE+'/state/postgrest.PRIVATE.log 2>&1')
+        docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','umask 077; echo $$ >'+BASE+'/state/postgrest.pid; exec '+BASE+'/postgrest '+BASE+'/state/postgrest.PRIVATE.conf >'+BASE+'/state/postgrest.PRIVATE.log 2>&1')
         docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/synthetik-500-w15-full500-runtime.js gateway >'+BASE+'/state/gateway.PRIVATE.log 2>&1')
         gateway_ready=False
         for _ in range(40):
@@ -465,7 +481,13 @@ def main():
                     recovery=True
                     # Only PostgreSQL is the container entry point. No dispatcher/services restart.
                     recover_postgres_only(supervisor)
-                else:stop_owned(['prepare','run','setup','audit'])
+                else:
+                    try:stop_owned(['prepare','run','setup','audit'])
+                    except BaseException as e:
+                        failure=failure or {'type':type(e).__name__,'reason':str(e),'innerStopConfirmed':False}
+                        # The bound native zero path is still mandatory with PG
+                        # available; a telemetry/stop error cannot skip it.
+                        if not(WORK/'INNER_STOP_UNKNOWN.SAFE.json').exists():save('INNER_STOP_UNKNOWN.SAFE.json',failure)
                 # Bound outstanding server statements can settle; no unit or write retry.
                 if failure:time.sleep(16)
                 cleanup_result=cleanup()
