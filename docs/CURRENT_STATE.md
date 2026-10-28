@@ -1,43 +1,35 @@
 # CURRENT STATE — Helmut
 
-## W15-Folgeprüfung: exakter Quellexport gebunden, Quelle hier nicht erreichbar
+## W15: neuer End500-RAM-Vertrag, Vercel Standard bestätigt
 
-AlterASSETS-Pfad hier nicht vorhanden; Erhalt in Quelle offen.
-Aus dem aufgezeichneten Leseauszug im bisherigen Chat„Hauptthread“
-alle5Fixturepfade/-größen/SHA wiedergefunden. Genau9Nutzdateien=242.548.460Bytes,
-dazu Bound/FixtureReview/Empfangsmanifest. Dump-/Rollen-Empfangspfade ausschließlich
-aus dem gepinnten Empfangsmanifest auflösen; keine Pfade erfinden.
-Lesender Inventurhelfer vorbereitet, hier SOURCE_UNAVAILABLE vor ersterNutzdatei.
-Keine Archive/Übertragung/500er-Tests. Frische Quelle zunächst einmalig lesend
-anbinden und zwölf ausgewählte Dateien prüfen. Kein alterKeytransfer nötig.
+Neue Betreiberentscheidung: nur isoliertes GitHub-End500 mit harter gemeinsamer
+Zuteilung2.560.000.000Bytes, tatsächlichem Lebenszeitpeak<=2.048.000.000Bytes und
+physischerReserve>=512.000.000Bytes(20%).1,8/1,9GB allein kein Abbruchgrund.
+Swap0/OOM-/Limitfehler/Vollmessung/sichererAbschluss bleiben Pflicht. Prognose
+weiteren Mock500-Wachstums separat, kein End500-RAM-Abbruchkriterium. Keine neue
+Optimierung. Historische v2/Messberichte/Ergebnisse unverändert; frischer Startreview
+für geänderten Controller nötig. Auth30/Unit60/Provider20 und Integrität erhalten.
+[Aktiver RAM-Vertrag und Kostenabgrenzung](betrieb/w15-end500-ram-vertrag-20261028.md).
 
-Eigener Branch für Push/DraftPR gegen PR974 freigegeben;
-normale PflichtCI erlaubt, kein Merge/Dispatch. Vercel-Deployment nur für diesen
-Kandidatenbranch in bestehenderMap gesperrt.22gezielte Dateischutzfälle PASS.
-[Exakte Exportliste, letzter Nachweis und Inventurbefehl](betrieb/w15-end500-quellbestand-export-20261028.md).
+Rein lesend aktive Production bestätigt: Aliashelmut-pilot.vercel.app READY,
+Deploymentdpl_2eGCkYt4Uu8Ek8w4E1UfzcohwcRA/Commit775e928a;api/index,nodejs24.x,
+Standard2048MB,Regionfra1,Fluid. Keine Performance4GB aktiviert. Buildmaschine8192MB
+ist keine Funktionsgröße. GitHub-Gesamtpeak umfasst lokalePG/PGR/Node/Cache;
+Vercel-Funktionsspeicher und entfernteSupabaseDB sind getrennte Messräume.
+Kein Funktionsbedarfsbeleg>2GB, keine Upgradeempfehlung/Umstellung/Production-Aktion.
 
-## W15: GitHub-Vorbereitung, konkreter Datenzugang fehlt (Sprint28.10.)
+## W15: Quelle und gesicherter Entwicklungsstand
 
-PR968 gemergt; PR974 offen auf `186ebfa6`. Neuer getrennter Worktree vorbereitet,
-kein Push/Dispatch/großer Test/Merge/Deployment. Alte Arbeitskopie und vier dort
-unpublizierte Berichte hier nicht vorhanden; keine Aussage über Verlust.
-26-Dateien-Bereinigung laut Betreiber bereits abgeschlossen, kein weiterer
-Bereinigungslauf und keine neue lokale500er-Ausführung.
-
-Frischer GitHub-Standardrunner bleibt gewählter Weg. Rein neu erzeugte Synthetik
-belegt die verbindliche Historien-/Quellengleichwertigkeit derzeit nicht.
-Drive frisch geprüft:587Einträge, alle14am28.10.geänderten Dateien berücksichtigt.
-Das vorhandene11Originale-Paket enthält die späteren End500-Ableitungen nicht.
-**Konkret fehlt ein erreichbarer ausgewählter Export: Bound+5FixtureJSONs+Seed+
-echterCommand/Provenienz, ergänzt um Dump/Rollen.** Kein Ganzarchiv/alterKeyexport.
-
-Manueller CI-Planmodus, strikt lesender9-Dateien-Prüfer und lokale verschlüsselte
-Streaming-Sicherung vorbereitet; keine fertige Controllerportierung oder
-vollständige entfernte Rücksicherung behauptet. Start **BLOCKED**, kein empfohlenes
-Test-GO. End500=inerterEndbestand/500AuthCAS/0aktiv/0Units/0Provider;
-Mock500 bleibt spätere separate Stufe mit neuem GO. Grenzen2.048.000.000Bytes,
-20%Reserve,Swap0,Auth30/Unit60/Provider20 und vollständigeIntegrität unverändert.
-[Entscheidung, Drivebelege, ausführbare Vorbereitung und Restanschlüsse](betrieb/w15-github-end500-vorbereitung-20261028.md).
+DraftPR975 auf eigenemBranch, veröffentlichterKopf66efb89a gegen PR974/186ebfa6;
+kein Merge/Dispatch. Laufende normale PflichtCI wird nicht erneut gestartet.
+Neuer RAM-Stand zunächst lokal, nur gezielte Prüfungen. Kein End500/Mock500-Lauf.
+AlterASSETS-Pfad hier nicht vorhanden; Erhalt in Quelle offen. Aus bisherigem
+Chat„Hauptthread“5Fixturepfade/-größen/SHA wiedergefunden: genau9Nutzdateien
+242.548.460Bytes plus Bound/FixtureReview/Empfangsmanifest. Dump/Rollenpfade nur
+aus gepinntem Empfangsmanifest. Inventur hier SOURCE_UNAVAILABLE vor Nutzdatei.
+Keine Archive/Übertragung; zunächst alte Quelle lesend anbinden. Dateischutz22PASS
+vor RAM-Folgeänderung. Vercel-Deployment dieses Kandidatenbranchs gesperrt.
+[Exportliste und Inventurbefehl](betrieb/w15-end500-quellbestand-export-20261028.md).
 
 ## Historischer W15-D-Befund vor obiger GitHub-Vorbereitung (28.10.)
 

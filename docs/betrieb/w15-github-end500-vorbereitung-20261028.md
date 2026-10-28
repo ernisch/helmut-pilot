@@ -85,8 +85,11 @@ Ein neuer sinngleicher SQL-Generator wäre noch kein gleichwertiger Ersatz.
 | End500 | Vollständiger inerter Endbestand, 500 echte Auth-CAS, 6.000 Usage, 3.501 vollständige native Postimages; 0 aktiv, 0 Units, 0 Provider. Kein funktionaler 500er-Nachweis. |
 | Mock500, später mit eigenem GO | 500 gleichzeitig aktive synthetische Profile, 500 Units, 1.000 Providerphasen, 1.500 unabhängig bilanzierte Ergebnisse, 8.000 echte Kontrollen, gebundene Rückführung auf 0. |
 
-Gemeinsames hartes RAM-Limit **2.048.000.000 Bytes**, mindestens **20 % Reserve**,
-Lebenszeitpeak höchstens **1.638.400.000 Bytes**, **Swap0**. PostgreSQL,
+Aktuelle Betreiberpräzisierung für GitHub-End500: gemeinsames hartes RAM-Limit
+**2.560.000.000 Bytes**, mindestens **512.000.000 Bytes/20 % physische Reserve**,
+Lebenszeitpeak höchstens **2.048.000.000 Bytes**, **Swap0**. 1,8/1,9 GB sind
+für sich kein Abbruchgrund. [Aktiver Vertrag und Vercel-Abgrenzung](w15-end500-ram-vertrag-20261028.md).
+PostgreSQL,
 PostgREST, Node, SQL-Kinder und Dateicache gehören in dieselbe cgroup. Restore,
 Seed, Arbeit und Abschluss zählen mit; kein Neustart, Peakreset oder Messwertabzug.
 Volles Auth30 bleibt erhalten. Unit60 und Provider20 gelten für ihre spätere

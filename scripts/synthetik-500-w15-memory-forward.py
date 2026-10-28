@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""One new capped0active allocation diagnostic. Never a DR/Mock500 execution."""
+"""Isolated GitHub End500 memory contract only; never DR/Mock500 authority.
+
+The independently imported controller's memory constants are scoped to this
+End500 module. Historical v2 and the standalone Mock500 controller stay intact.
+Old reviewed source pins still fail closed after these changes; no new start GO.
+"""
 import datetime,hashlib,importlib.util,json,os,pathlib,posixpath,shutil,subprocess,sys,threading,time
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ASSETS=pathlib.Path('/workspace/shared/helmut-w15-memory-forward-20261028')
@@ -16,13 +21,43 @@ REPORTS=pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-202
 PLANNED_TOTAL=1512501248 # Includes64MiB in-flight allowance; not a filesystem quota.
 PROCESSING_DISK_FLOOR=224*1024*1024
 AUDIT_CLOSURE_FLOOR=64*1024*1024
-STAGED_SCRIPTS=['synthetik-500-w15-memory-forward.js','synthetik-500-w15-auth-transport-probe.js','synthetik-500-w15-full500-runtime.js','fixtures/w15-auth-measurement-report.js','fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-local-memory-budget.json','fixtures/w15-atomic-integration-target.json','fixtures/z3-plattform.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','lokal.js','lokaler-netzschutz.js']
+STAGED_SCRIPTS=['synthetik-500-w15-memory-forward.js','synthetik-500-w15-auth-transport-probe.js','synthetik-500-w15-full500-runtime.js','fixtures/w15-auth-measurement-report.js','fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-local-memory-budget.json','fixtures/w15-atomic-integration-target.json','fixtures/z3-plattform.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-end500-memory-contract.json','lokal.js','lokaler-netzschutz.js']
 spec=importlib.util.spec_from_file_location('existing_w15_controller',ROOT/'scripts/synthetik-500-w15-full500-controller.py')
 M=importlib.util.module_from_spec(spec);spec.loader.exec_module(M)
 M.WORK=WORK;M.BASE=BASE;M.DB=DB;M.CONTAINER=CONTAINER
+M.MEMORY=json.loads((ROOT/'scripts/fixtures/w15-end500-memory-contract.json').read_text())
+M.LIMIT=M.MEMORY['comparisonBudgetBytes']
+M.RESERVE=(M.LIMIT*M.MEMORY['minimumReservePercent']+99)//100
+M.MAXIMUM=M.LIMIT-M.RESERVE
+assert M.MEMORY['version']=='helmut-w15-end500-memory-check/3' and M.MEMORY['scope']=='ISOLATED_GITHUB_END500_ONLY'
+assert all(type(M.MEMORY[k])is int for k in ['comparisonBudgetBytes','minimumReservePercent','requiredReserveBytes','maximumConsumptionBytes','swapBytes'])
+assert M.LIMIT==2560000000 and M.RESERVE==M.MEMORY['requiredReserveBytes']==512000000 and M.MAXIMUM==M.MEMORY['maximumConsumptionBytes']==2048000000
+assert M.MEMORY['minimumReservePercent']==20 and M.MEMORY['swapBytes']==0 and M.MEMORY['mock500Acceptance']is False and M.MEMORY['executionAuthority']is False
 BUDGET=json.loads((ROOT/'scripts/fixtures/w15-local-memory-budget.json').read_text())
 audit_spec=importlib.util.spec_from_file_location('w15_final_native_audit',ROOT/'scripts/synthetik-500-w15-memory-final-audit.py')
 AUDIT=importlib.util.module_from_spec(audit_spec);audit_spec.loader.exec_module(AUDIT)
+
+def end500_memory_assessment(sample):
+    """Assess genuine readbacks when provided; this pure function starts nothing."""
+    if not isinstance(sample,dict):return False
+    fields=['kernelLifetimePeakBytes','currentBytes','swapCurrentBytes']
+    if not all(type(sample.get(k))is int and sample[k]>=0 for k in fields):return False
+    events=sample.get('events')
+    if not isinstance(events,dict)or not all(type(events.get(k))is int and events[k]==0 for k in ['max','oom','oom_kill','oom_group_kill']):return False
+    return(sample.get('configuredLimit')==str(M.LIMIT)and sample.get('swapMaximum')=='0'
+      and sample['swapCurrentBytes']==0 and sample['kernelLifetimePeakBytes']<=M.MAXIMUM
+      and sample['currentBytes']<=M.MAXIMUM and M.LIMIT-sample['kernelLifetimePeakBytes']>=M.RESERVE)
+
+def future_mock500_capacity(peak,projected):
+    """Forecast only. It never changes the actual End500 memory assessment."""
+    result={'executionAuthority':False,'mock500Acceptance':False,'forecastOnly':True,
+      'comparisonBudgetBytes':M.MAXIMUM,'additionalProjectionMarginBytes':BUDGET['minimumCommonHeadroomBytes']}
+    if not all(type(x)is int and x>=0 for x in [peak,projected]):
+        return {**result,'status':'UNKNOWN','projectedMeetsBudget':None}
+    projected_peak=peak+projected+BUDGET['minimumCommonHeadroomBytes']
+    return {**result,'status':'DIAGNOSTIC_ONLY_NOT_MOCK500_ACCEPTANCE','measuredEnd500PeakBytes':peak,
+      'projectedAdditionalPhysicalBytes':projected,'projectedPeakBytes':projected_peak,
+      'projectedMeetsBudget':projected_peak<=M.MAXIMUM}
 
 def digest_file(p):
     h=hashlib.sha256()
@@ -59,6 +94,7 @@ def prepare():
 class Watch(M.Supervisor):
     def __init__(self,cgroup):
         self.cas_records=[];self.last_component=0;self.disk_phase='processing';self.audit_remaining=64*1024*1024;self.disk=None
+        self.memory_failure=None
         self.initial_disk_free=available_disk()
         super().__init__(cgroup)
     def write_progress(self):
@@ -97,8 +133,15 @@ class Watch(M.Supervisor):
         finally:self.progress.close()
     def sample(self):
         memory_error=None
-        try:super().sample() # Exact existing outer kernel limit/reserve/swap/event guard.
+        try:
+            super().sample() # Same common lifetime measurement, End500-scoped limits.
+            assert end500_memory_assessment(self.last),'w15-end500-memory-measurement-invalid-or-out-of-contract'
+            self.last.update({'memoryContractVersion':M.MEMORY['version'],'physicalHardCapBytes':M.LIMIT,
+              'maximumAllowedPeakBytes':M.MAXIMUM,'requiredPhysicalReserveBytes':M.RESERVE,
+              'physicalReserveBytes':M.LIMIT-self.last['kernelLifetimePeakBytes']})
         except BaseException as error:memory_error=error
+        if memory_error and self.memory_failure is None:
+            self.memory_failure={'type':type(memory_error).__name__,'reason':'end500-memory-readback-invalid-or-out-of-contract'}
         try:self.disk_check()
         except BaseException:
             if memory_error:raise memory_error
@@ -211,7 +254,7 @@ def main():
         check_seed()
         pgdata=WORK/'pgdata';pgdata.mkdir(mode=0o700)
         state=WORK/'state';state.mkdir(mode=0o700)
-        M.docker('create','--name',CONTAINER,'--pull=never','--network=none','--restart=no','--memory=2048000000','--memory-swap=2048000000',
+        M.docker('create','--name',CONTAINER,'--pull=never','--network=none','--restart=no','--memory='+str(M.LIMIT),'--memory-swap='+str(M.LIMIT),
           '--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
           '--mount','type=bind,src='+str(SEED)+',dst='+SEED_MOUNT+',readonly',
           '--mount','type=bind,src='+str(state)+',dst='+BASE+'/state','-e','POSTGRES_HOST_AUTH_METHOD=trust',M.IMAGE,
@@ -296,9 +339,9 @@ def main():
         M.copy_out('FORWARD_RESULT.SAFE.json');result=json.loads((WORK/'FORWARD_RESULT.SAFE.json').read_text())
         assert result['status']=='PASS_FORWARD_COMPONENTS_COMMON_KERNEL_REVIEW_PENDING'
         assert len(w.cas_records)==500
-        # Growth is added to real peak, never subtracted from its accounting.
-        projected=result['projectedAdditionalPhysicalBytes'];w.sample()
-        assert w.maximum+projected+BUDGET['minimumCommonHeadroomBytes']<=M.MAXIMUM,'w15-forward-projected-common-reserve'
+        # Preserve the unchanged 6500-write projection as separate Mock500 context.
+        # Only actual common kernel measurements determine End500 RAM acceptance.
+        w.sample();result['futureMock500Capacity']=future_mock500_capacity(w.maximum,result.get('projectedAdditionalPhysicalBytes'))
     except BaseException as e:failure={'type':type(e).__name__,'reason':str(e),'retryAllowed':False}
     finally:
         if w:w.closure_mode=True
@@ -363,16 +406,23 @@ def main():
                     failure=failure or {'type':type(error).__name__,'reason':'w15-forward-native-final-audit-failed-or-unknown'}
         try:check_seed()
         except BaseException as error:failure=failure or {'type':type(error).__name__,'reason':'w15-readonly-seed-source-drift'}
+        final_sample_verified=False
         if w:
-            try:w.sample()
+            try:w.sample();final_sample_verified=True
             except BaseException as e:failure=failure or {'type':type(e).__name__,'reason':str(e)}
             w.stop()
             if w.failure:failure=failure or w.failure
-            if result and w.maximum+result['projectedAdditionalPhysicalBytes']+BUDGET['minimumCommonHeadroomBytes']>M.MAXIMUM:
-                failure=failure or {'reason':'w15-forward-final-projected-common-reserve'}
+        future_capacity=future_mock500_capacity(w.maximum,result.get('projectedAdditionalPhysicalBytes'))if w and result else None
+        actual_memory_accepted=bool(w and final_sample_verified and not failure and not w.failure and not w.memory_failure
+          and result and result['status']=='PASS_FORWARD_COMPONENTS_COMMON_KERNEL_REVIEW_PENDING'and len(w.cas_records)==500
+          and final_audit and final_audit['status']=='PASS_COMPLETE_LOSSLESS_NATIVE_POSTIMAGES_AND_ZERO_ONLY'and zero)
         M.save('CONTROLLER_RESULT.SAFE.json',{'status':'PASS_FORWARD_ALLOCATION_INDEPENDENT_REVIEW_PENDING'if not failure and zero else'FAIL_OR_UNKNOWN',
           'failure':failure,'innerStopFailure':w.stop_failure if w else None,'stopFailures':stop_failures,'zeroCheckFailure':zero_check_failure,'serviceClosure':service_closure,'activeProfiles':0 if zero else None,'CASCompleted':len(w.cas_records)if w else 0,
           'commonKernelPeakBytes':w.maximum if w else None,'lastKernel':w.last if w else None,
+          'memoryContract':M.MEMORY,'physicalHardCapBytes':M.LIMIT,'maximumAllowedPeakBytes':M.MAXIMUM,
+          'requiredPhysicalReserveBytes':M.RESERVE,'finalKernelReadbackVerified':final_sample_verified,
+          'end500ActualMemoryAccepted':actual_memory_accepted,'memoryMeasurementFailure':w.memory_failure if w else None,
+          'futureMock500Capacity':future_capacity,
           'finalNativeAudit':final_audit,'lastDisk':w.disk if w else None,
           'projectedAdditionalPhysicalBytes':result.get('projectedAdditionalPhysicalBytes')if result else None,
           'additionalProjectionMarginBytes':BUDGET['minimumCommonHeadroomBytes'],'units':0,'providerCalls':0,'profileActivations':0,'executionAuthority':False,

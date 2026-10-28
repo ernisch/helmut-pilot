@@ -1,5 +1,5 @@
 {
-  "schema": "helmut-w15-github-end500-preparation/1",
+  "schema": "helmut-w15-github-end500-preparation/2",
   "status": "PLAN_ONLY_START_BLOCKED",
   "sourceCommit": "186ebfa62fbd55b0143d9c65a424386ba55dabe9",
   "executionAuthority": false,
@@ -33,9 +33,16 @@
   },
   "fixtureKeys": ["auth", "evidenceRows", "privateDraftStoreRows", "resultRows", "privateDraftReviewRows"],
   "resources": {
-    "commonMemoryBytes": 2048000000,
+    "memoryPolicy": "helmut-w15-end500-memory-check/3",
+    "scope": "ISOLATED_GITHUB_END500_ONLY",
+    "containerMemoryLimitBytes": 2560000000,
     "minimumReservePercent": 20,
-    "maximumLifetimePeakBytes": 1638400000,
+    "requiredPhysicalReserveBytes": 512000000,
+    "maximumLifetimePeakBytes": 2048000000,
+    "measurementWindow": "Full fresh common cgroup lifetime including restore, seed and closure; no peak reset or deductions",
+    "accountedComponents": ["Node", "PostgreSQL", "PostgREST", "SQL children", "charged file cache"],
+    "futureMock500ProjectionIsEnd500AbortCriterion": false,
+    "vercelFunctionMemoryInferredFromCommonPeak": false,
     "swapBytes": 0,
     "fullAuthCallMaximumExclusiveMs": 30000,
     "unitMaximumExclusiveMs": 60000,
@@ -54,6 +61,7 @@
   },
   "separateMock500": {
     "startAllowed": false,
+    "memoryPolicy": "Existing separate stage remains unchanged and needs its own authorization",
     "simultaneouslyActiveProfiles": 500,
     "units": 500,
     "providerPhases": 1000,

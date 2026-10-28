@@ -1,0 +1,207 @@
+{
+  "schema": "helmut-w15-end500-ram-contract-readonly-evidence/1",
+  "status": "TARGETED_CONTRACT_CHECKS_PASS_NO_END500_RUN_NO_PRODUCTION_CHANGE",
+  "baseCommit": "66efb89a42e3d1bee739844ac32a258d79b38ebb",
+  "operatorDecision": {
+    "scope": "ISOLATED_GITHUB_END500_ONLY",
+    "hardCgroupMemoryBytes": 2560000000,
+    "maximumActualCommonLifetimePeakBytes": 2048000000,
+    "requiredPhysicalReserveBytes": 512000000,
+    "minimumReservePercent": 20,
+    "swapMaximumBytes": 0,
+    "swapCurrentBytes": 0,
+    "authMaximumExclusiveMs": 30000,
+    "unitMaximumExclusiveMs": 60000,
+    "providerMaximumExclusiveMs": 20000,
+    "executionAuthority": false
+  },
+  "implementation": {
+    "memoryContractVersion": "helmut-w15-end500-memory-check/3",
+    "end500ScopedSupervisor": true,
+    "standaloneMock500AndLegacyV2Unchanged": true,
+    "dockerMemoryAndMemorySwapEqualHardCap": true,
+    "missingOrInvalidMeasurementsFailClosed": true,
+    "oomAndLimitEventsRemainErrors": true,
+    "projectionsRetainedAsForecastOnly": true,
+    "projectionsAffectActualEnd500Acceptance": false,
+    "fullFinalNativeIntegrityAndClosureStillRequired": true,
+    "noMemoryOptimizationPerformed": true
+  },
+  "targetedChecks": [
+    {
+      "command": "python3 -B scripts/w15-github/test_end500_memory.py -v",
+      "cases": 9,
+      "result": "PASS",
+      "executor": "ci_path",
+      "scope": "AST_SELECTED_REAL_GUARDS_AND_TEMPORARY_FAKE_CGROUP_FILES",
+      "boundariesAccepted": [
+        1800000000,
+        1900000000,
+        2048000000
+      ],
+      "firstRejectedActualPeak": 2048000001,
+      "noControllerImportOrContainerStart": true
+    },
+    {
+      "name": "public plan and actual controller contract agree",
+      "result": "PASS",
+      "readiness": "BLOCKED"
+    },
+    {
+      "name": "Python syntax and git diff --check",
+      "result": "PASS"
+    },
+    {
+      "name": "legacy v2, JS runtime and standalone Mock500 unchanged",
+      "result": "PASS",
+      "files": 5
+    },
+    {
+      "name": "historical CURRENT_STATE measurement/result section byte-identical",
+      "result": "PASS"
+    },
+    {
+      "name": "independent code/document integration review",
+      "result": "PASS_SCOPE",
+      "executor": "data_equivalence",
+      "externalAPIReadsRepeated": false
+    }
+  ],
+  "vercel": {
+    "observationUTCApprox": "2026-10-28T21:37:00Z",
+    "source": "Read-only Vercel metadata; safe scalar results supplied by runner_security",
+    "projectId": "prj_xbZ6QzTkr7YoxQI71lW59FT03IR3",
+    "teamId": "team_bTAfzDHwD3mT03r1z7rh1TC3",
+    "accountPlan": "Pro confirmed by operator; no billing change",
+    "projectGET": {
+      "api": "/v9/projects/prj_xbZ6QzTkr7YoxQI71lW59FT03IR3",
+      "httpStatus": 200,
+      "fields": {
+        "defaultResourceConfig.fluid": true,
+        "defaultResourceConfig.functionDefaultMemoryType": "standard",
+        "defaultResourceConfig.functionDefaultRegions": [
+          "fra1"
+        ],
+        "resourceConfig.fluid": true,
+        "resourceConfig.functionDefaultMemoryType": "NO_OVERRIDE_REPORTED"
+      }
+    },
+    "activeAlias": {
+      "name": "helmut-pilot.vercel.app",
+      "httpStatus": 200,
+      "deploymentId": "dpl_2eGCkYt4Uu8Ek8w4E1UfzcohwcRA",
+      "state": "READY",
+      "commit": "775e928a0f7c7962712e35ffaeecb17cb6225a1e",
+      "region": "fra1"
+    },
+    "deploymentGET": {
+      "api": "/v13/deployments/dpl_2eGCkYt4Uu8Ek8w4E1UfzcohwcRA",
+      "httpStatus": 200,
+      "fields": {
+        "config.functionMemoryType": "standard",
+        "config.isUsingActiveCPU": true
+      }
+    },
+    "buildsGET": {
+      "api": "/v12/deployments/dpl_2eGCkYt4Uu8Ek8w4E1UfzcohwcRA/builds",
+      "httpStatus": 200,
+      "buildId": "bld_f261rz8pt",
+      "readyState": "READY",
+      "fields": {
+        "output[0].type": "lambda",
+        "output[0].path": "api/index",
+        "output[0].lambda.runtime": "nodejs24.x",
+        "output[0].lambda.memorySize": 2048
+      },
+      "memorySizeUnit": "MB reported by Vercel"
+    },
+    "effectiveFunctionTier": "STANDARD_2GB_1VCPU",
+    "performance4GBEnabled": false,
+    "buildMachineMemoryMB": 8192,
+    "buildMachineMemoryIsFunctionMemory": false,
+    "functionActualPeakConsumption": "NOT_MEASURED_BY_THIS_METADATA_READ",
+    "measuredFunctionNeedAbove2GB": "NOT_ESTABLISHED",
+    "projectTargetCanceledDeploymentNotUsedAsActiveProduction": true,
+    "changesPerformed": false,
+    "deploymentTriggered": false
+  },
+  "distinctAccounting": {
+    "github": "Shared isolated Node/PostgreSQL/PostgREST/SQL children/charged cache lifetime peak",
+    "vercel": "Single function instance memory; assigned size differs from measured consumption",
+    "supabase": "Separately hosted database memory, outside Vercel function; client response allocations remain inside function"
+  },
+  "conditionalCostReference": {
+    "region": "fra1",
+    "activeCPUUSDPerHour": 0.184,
+    "provisionedMemoryUSDPerGBHour": 0.0152,
+    "invocationsUSDPerMillion": 0.6,
+    "standardAdvertisedGB": 2,
+    "performanceAdvertisedGB": 4,
+    "equalInstanceHoursMemoryDeltaUSDPerHour": 0.0304,
+    "actualHelmutIncrementalCost": "UNKNOWN_NO_NEED_OR_DURATION_MEASUREMENT",
+    "creditsAndOtherServicesNotIncluded": true,
+    "upgradeRecommendation": "KEEP_STANDARD_UNTIL_A_FUNCTION_SPECIFIC_MEASURED_NEED",
+    "automaticUpgrade": false
+  },
+  "documentation": [
+    "https://vercel.com/docs/functions/configuring-functions/memory",
+    "https://vercel.com/docs/functions/usage-and-pricing"
+  ],
+  "publication": {
+    "scope": "LOCAL_CHECKPOINT_ONLY",
+    "remotePR": "https://github.com/ernisch/helmut-pilot/pull/975",
+    "remoteHeadUnchanged": "66efb89a42e3d1bee739844ac32a258d79b38ebb",
+    "existingCIRun": "https://github.com/ernisch/helmut-pilot/actions/runs/40772174428",
+    "existingBrowserCheck": "success",
+    "existingOfflineCheck": "in_progress_at_observation",
+    "newCIRunsStarted": 0,
+    "reason": "Only targeted checks authorized for this RAM task; pushing would restart broad mandatory CI.",
+    "merge": false
+  },
+  "prohibitedActionsPerformed": {
+    "end500Runs": 0,
+    "mock500Runs": 0,
+    "productionChanges": 0,
+    "paidTierSwitches": 0,
+    "modelCalls": 0,
+    "containerStarts": 0,
+    "privatePayloadTransfers": 0
+  },
+  "preparedFilePins": [
+    {
+      "path": "scripts/fixtures/w15-end500-memory-contract.json",
+      "bytes": 321,
+      "sha256": "b0305bd1385810523e8bac1900b3f4ccc64eb3cc03d192097e9ac18bc19deaa4"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.py",
+      "bytes": 36299,
+      "sha256": "1ed4bb888326be7b1a9dfcda80b9d50e9b30754784e3bcd3423ab9234be9214f"
+    },
+    {
+      "path": "scripts/w15-github/test_end500_memory.py",
+      "bytes": 8254,
+      "sha256": "7dbc542530b465639d14a1a4f5826a9edcf7d8ec62bef280a11a64cd7a326e62"
+    },
+    {
+      "path": "scripts/w15-github/end500-contract.json",
+      "bytes": 3369,
+      "sha256": "5b74b6aefc124ccd660d2322dd115d3ca4b3dba8813e3c1301255aa0c69cd80c"
+    },
+    {
+      "path": "docs/betrieb/w15-end500-ram-vertrag-20261028.md",
+      "bytes": 7271,
+      "sha256": "def57daa08f117705788b7fdadcefe61e850ed93310c0c623605576fff08f5f2"
+    },
+    {
+      "path": "docs/betrieb/w15-github-end500-vorbereitung-20261028.md",
+      "bytes": 13125,
+      "sha256": "75afbcd8c1f8e52fb7591fc07cb018985afc7c24f6e900506b0eb1baa5b4aa84"
+    },
+    {
+      "path": "docs/CURRENT_STATE.md",
+      "bytes": 29458,
+      "sha256": "35f60219a7afe2e5fdd802fcf4d27c16b28c5c62819d3bebac703e2dc0301b13"
+    }
+  ]
+}
