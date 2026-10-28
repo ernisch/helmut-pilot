@@ -1,3 +1,107 @@
+# Aktuell: SQL-Vorprüfung PASS; RAM-Diagnose C an echter 20%-Reserve gestoppt
+
+**FAIL, kein neuer Mock500-Gesamtversuch.** Diagnose C wurde genau einmal
+auf dem unabhängig geprüften Code `eb4bed70` ausgeführt. Nach dem ersten
+RAM-Reservefehler keine Reparatur, Parameteränderung, Wiederholung oder Aktivierung.
+PR969/971/972 bleiben ungemergt. Originale und sämtliche historischen Fehlerbelege
+bleiben erhalten.
+
+## Diagnoseprogramm vor neuer Datenbank geprüft
+
+Das fehlende Leerzeichen zwischen `::regclass` und `or relid` ist korrigiert.
+Alle tatsächlich erzeugten **3509 unterschiedlichen SQL-Anweisungen** aus
+3511 Vorkommen, einschließlich 3501 Seed-Anweisungen, wurden einmal am vorhandenen
+PostgreSQL17-Parser mit Parse/Describe geprüft. Keine dieser Nutzabfragen wurde
+ausgeführt; keine neue Datenbank für die Vorprüfung. Tabellen, Spalten,
+Rollenrechte und ausdrückliche Datenbankzuordnung einschließlich Abschluss
+geprüft; READ-ONLY-Vorher/Nachher unverändert. Unabhängiger statischer Review
+und quellhashgebundener Startabgleich PASS. Gateway-Bereitschaft wird erst nach
+PID-Datei und Signalhandler gemeldet. Keine Geschäfts-/Sicherheitslogik geändert.
+
+Die unveränderte Restore-/Rollenfolge und PostgREST-internes SQL übernehmen ihre
+vorhandenen echten Belege; sie werden nicht als neu extrahierte Abfragen ausgegeben.
+Parserprüfung beweist keine Laufzeit, Triggerausführung oder Speichergrenze.
+Keine vollständige CI, Quellenqualifikation oder bestandene Auth-Serie wiederholt.
+
+## Tatsächliche gemeinsame Speichermessung
+
+Neue netzlose, isolierte Datenbank C; hartes Limit **2048000000 B**, Swap0.
+Der vollständige native End500-Seed besteht 3501 exakte Postimagevergleiche:
+500 Evidence,500 privateDstore,1500 Ergebnis- und1000 privateD/R-Zeilen,
+6000 Usage einschließlich aller 5139 vorhandenen Einträge. Ergänzte Zeilen
+bleiben ausdrücklich inert; sie sind keine neu erarbeiteten Ergebnisse.
+Der echte gepinnte W15-Command wurde mit dem Originaldecoder geladen und
+festgehalten. PostgreSQL, W15-Node, Gateway, PostgREST und Dateicache liegen
+in derselben gemessenen cgroup. Kein Cachelöschen, Zwangs-GC oder Messwertabzug.
+
+**247 native Auth-CAS einschließlich vollständigem ACK, Revisionsnachlesung und
+Inhaltsvergleich abgeschlossen.** Die folgende Mutation248 ist gespeichert,
+aber ihr vollständiger ACK und Zeitbeleg fehlen: UNKNOWN, nicht als bestanden gezählt.
+Keine Profile aktiviert, keine DR-Unit, keine Mockantwort und kein Modellaufruf.
+
+- Erstüberschreitung am **28.10.,13:20:46,892 Europe/Istanbul**
+  (10:20:46,892UTC): Kernelpeak1639776256 B, Reserve408223744 B.
+- Finaler Peak derselben cgroup **1644748800 B**; Reserve **403251200 B/19,69%**.
+  Erforderlich409600000 B; Fehlbetrag **6348800 B**. Harte Grenze nicht erreicht;
+  Swap und sämtliche OOM-/Max-Ereignisse0. Die echte20%-Anforderung ist trotzdem FAIL.
+- Frühere separate64-MiB-Projektionsmarge wäre bereits bei172CAS nicht mehr
+  erfüllbar gewesen. Sie ist keine Änderung des Betreiberkriteriums.
+  Die vollständige500er-Wachstumsprojektion wurde nicht erreicht.
+
+## Nachgewiesene Verbraucher und offene Ursache
+
+Größter gemessener anhaltender RSS-Zuwachs: PostgREST von339435520 B bei25CAS
+auf477945856 B bei247CAS; höchster gesampelter RSS492617728 B.
+Beim größten mit Komponenten erfassten gemeinsamen Verbrauch1625980928 B
+(217CAS) meldet memory.stat: anon1167384576 B, file432394240 B,
+kernel25206784 B. Gleichzeitig: PostgREST-RSS473759744 B,
+W15-Node410828800 B, Gateway138588160 B und PostgreSQL-Backend316780544 B.
+Der Backendverbrauch fällt später deutlich zurück; Node schwankt ebenfalls.
+Node-Rollenzuordnung folgt Startreihenfolge. RSS enthält gemeinsam gemappte
+Seiten, PSS war nicht lesbar; diese Werte werden weder addiert noch abgezogen.
+Unterkategorien von memory.stat überlappen ebenfalls. Am kurzen eigentlichen
+Reservebruch fehlt ein synchroner Komponentensnapshot.
+
+Damit ist erheblicher anonymer Druck mit PostgREST-Wachstum und PostgreSQL-Spitzen
+belegt, aber kein einzelner Leak oder sicherer Fix. Partielle WAL-/TEMP-/GC-
+Beobachtungen blieben nur im Prozessspeicher; Abschluss- und Abbruchbeleg fehlen.
+Der vollständige500er-Zyklus wurde nicht erreicht. Historische kumulative
+Schreibbytes sind keine RAM-Messung und ersetzen die fehlende Reihe nicht.
+
+## Auth-Belege, Abschluss und nächste notwendige Arbeit
+
+Für247 abgeschlossene Vorgänge dauerhaft erhalten: vollständige Auth-Zeit maximal
+**4410,963033 ms**, nativer CAS maximal **3827,916957 ms**; äußerer Await maximal
+4411,057741 ms. Alle247 unter30s. Der nächste angefangene Vorgang bleibt unbekannt.
+Innerer Abschluss- und Abbruchbericht fehlen auch im Container. Der Wächter
+signalisierte die Host-Docker-Client-Prozessgruppe; tatsächliche innere
+Signalzustellung und Grund des fehlenden Berichts sind unbekannt. Der frühere
+direkte SIGTERM-Helper-PASS beweist diese reale Abbruchkette nicht.
+
+Controllerabschluss0aktiv; **genau eine unabhängige READ-ONLY-Nachlesung bestätigt
+0aktiv/500Profile/501Identitäten/6000Usage** und alle Seedmengen. Unabhängiger
+Abschlussreview bestätigt die Werte und Nachweisgrenzen mit8/8 Konsistenzchecks.
+
+Nötig vor einem weiteren Versuch: gemessenen anonymen Verbrauch gezielt erklären
+und begrenzen sowie die inneren Auth-/GC-/WAL-Belege auch im echten Docker-Abbruch
+dauerhaft sichern. Kein weiterer Versuch innerhalb dieses GO nach dem FAIL.
+Die Reserve bis500 ist offen, deshalb kein bedingter Vollstart. Unit60,
+8000 Kontrollen und1500 neu erzeugte Ergebnisse sind hier nicht geprüft.
+Ein späterer lokaler Mock-PASS wäre weiterhin kein Productionnachweis.
+
+App-/Sicherheitsbasis und historisch grüner CI-Run40534410137 unverändert;
+kein neues CI-Grün behauptet. Keine Production-, Budget-, Hetzner-, Ressourcen-
+oder Mergeaktion.
+
+[Bereinigter Gesamtbeleg mit Hashbindungen](belege/w15-processing-20261027/FORWARD_DIAGNOSTIC_C_20261028.SAFE.json) ·
+[247 dauerhaft protokollierte Auth-ACKs](belege/w15-processing-20261027/FORWARD_DIAGNOSTIC_C_20261028_AUTH_PROGRESS.SAFE.json).
+Vollständige Kernel-/Komponentenzeitreihe und private Originalberichte bleiben
+in der geschützten Cloud erhalten.
+
+---
+
+## Historisch: Diagnose B vor dem neuen GO
+
 # Aktuell: DB-Zuordnung korrigiert; neue RAM-Diagnose an Statistik-SQL gestoppt
 
 **FAIL der neuen Diagnose B, kein neuer Mock500-Vollauf.** Python-DB-Fehler
