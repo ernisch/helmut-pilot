@@ -3,7 +3,7 @@
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
 const { performance, PerformanceObserver, constants } = require("node:perf_hooks");
-const BASE = "/tmp/w15-memory-atomic-20261028b", STATE = path.join(BASE, "state"), DB = "helmut_w15_memory_atomic_20261028b";
+const BASE = "/tmp/w15-memory-atomic-20261028c", STATE = path.join(BASE, "state"), DB = "helmut_w15_memory_atomic_20261028c";
 const Budget = require("./fixtures/w15-local-memory-budget.json"), AuthReport = require("./fixtures/w15-auth-measurement-report");
 const Durable = require("./fixtures/w15-durable-observations");
 const sha = x => crypto.createHash("sha256").update(x).digest("hex");
@@ -22,23 +22,10 @@ function setup() {
   const secret=crypto.randomBytes(48).toString("hex"),b64=x=>Buffer.from(JSON.stringify(x)).toString("base64url"),now=Math.floor(Date.now()/1000);
   const header=b64({alg:"HS256",typ:"JWT"})+"."+b64({role:"service_role",iat:now,exp:now+3600});
   const token=header+"."+crypto.createHmac("sha256",secret).update(header).digest("base64url");
-  save("configuration.PRIVATE.json",{database:DB,token,executionAuthority:false});
+  save("configuration.PRIVATE.json",{base:BASE,database:DB,token,nonce:crypto.randomUUID(),maximumMutations:500,
+    mode:"INERT_END500_MEMORY_NO_UNITS",executionAuthority:false});
   fs.writeFileSync(file("postgrest.PRIVATE.conf"),'db-uri = "postgresql://authenticator@localhost/'+DB+'?host=/var/run/postgresql"\n'
     +'db-schemas = "public"\nserver-host = "127.0.0.1"\nserver-port = 3218\ndb-pool = '+Budget.postgrestPool+'\njwt-secret = "'+secret+'"\n',{flag:"wx",mode:0o600});
-}
-async function gateway() {
-  const config=read("configuration.PRIVATE.json"),http=require("node:http");let ready=false;
-  for(let i=0;i<50;i++){
-    ready=await new Promise(resolve=>{const req=http.get({host:"127.0.0.1",port:3218,path:"/helmut_store?id=eq.main-auth&select=id&limit=1",
-      headers:{Authorization:"Bearer "+config.token},timeout:500},res=>{res.resume();res.on("end",()=>resolve(res.statusCode===200));});
-      req.on("timeout",()=>req.destroy());req.on("error",()=>resolve(false));});
-    if(ready)break;await new Promise(resolve=>setTimeout(resolve,100));
-  }
-  assert(ready,"w15-forward-postgrest-schema-readiness");
-  const g=await require("./fixtures/z3-plattform").starteDatenbankTor({postgrestPort:3218});
-  fs.writeFileSync(file("gateway.pid"),String(process.pid),{flag:"wx",mode:0o600});
-  process.once("SIGTERM",async()=>{await g.stoppe();process.exit(0);});
-  save("gateway.PRIVATE.json",{url:g.url});
 }
 async function run() {
   const c=read("configuration.PRIVATE.json"),g=read("gateway.PRIVATE.json"),bound=read("END500_MEMORY_BOUND.SAFE.json");
@@ -141,6 +128,6 @@ async function run() {
     report.completedAtUTC=new Date().toISOString();save("FORWARD_RESULT.SAFE.json",report);console.log(JSON.stringify({name:"memory-forward-result",status:report.status,cas:report.cas.length}));}
 }
 async function main(action){assert(require.cache[require.resolve("./lokaler-netzschutz")]);assert.deepEqual(require("./lokaler-netzschutz").pruefe(process.env),[]);
-  assert(["setup","gateway","run"].includes(action));assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")),"w15-forward-stop-requested");return({setup,gateway,run})[action]();}
+  assert(["setup","run"].includes(action));assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")),"w15-forward-stop-requested");return({setup,run})[action]();}
 if(require.main===module)main(process.argv[2]).catch(()=>{console.error("w15-forward-first-failure");process.exitCode=1;});
 module.exports = { databaseStatsSQL, database: DB, base: BASE };

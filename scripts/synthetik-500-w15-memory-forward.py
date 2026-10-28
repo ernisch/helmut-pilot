@@ -3,10 +3,10 @@
 import datetime,hashlib,importlib.util,json,os,pathlib,posixpath,shutil,subprocess,threading,time
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ASSETS=pathlib.Path('/workspace/shared/helmut-w15-memory-forward-20261028')
-WORK=pathlib.Path('/workspace/shared/helmut-w15-memory-atomic-20261028b')
-BASE='/tmp/w15-memory-atomic-20261028b'
-DB='helmut_w15_memory_atomic_20261028b'
-CONTAINER='w15-memory-atomic-20261028b'
+WORK=pathlib.Path('/workspace/shared/helmut-w15-memory-atomic-20261028c')
+BASE='/tmp/w15-memory-atomic-20261028c'
+DB='helmut_w15_memory_atomic_20261028c'
+CONTAINER='w15-memory-atomic-20261028c'
 spec=importlib.util.spec_from_file_location('existing_w15_controller',ROOT/'scripts/synthetik-500-w15-full500-controller.py')
 M=importlib.util.module_from_spec(spec);spec.loader.exec_module(M)
 M.WORK=WORK;M.BASE=BASE;M.DB=DB;M.CONTAINER=CONTAINER
@@ -89,10 +89,10 @@ def main():
     integration=json.loads((pathlib.Path(target['work'])/'INTEGRATION_RESULT.SAFE.json').read_text())
     assert integration['status']=='PASS_PREPARED0_ATOMIC_COMPONENTS_RAM_PENDING'and integration['activeProfiles']==0
     assert integration['originalSourceUnchanged']is True and integration['units']==0
-    parser=json.loads((ASSETS/'sql-preflight-atomic-c/SQL_PREFLIGHT_REBOUND.SAFE.json').read_text())
+    parser=json.loads((ASSETS/'sql-preflight-atomic-d/SQL_PREFLIGHT.SAFE.json').read_text())
     assert parser['status']=='PASS_ALL_GENERATED_DIAGNOSTIC_SQL_PARSE_DESCRIBE_NO_EXECUTION'and parser['plannedDatabase']==DB
     for name,expected in parser['sourcePins'].items():assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==expected,'atomic-sql-reviewed-source-drift'
-    review=json.loads(pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/MEMORY_PRESTART_REVIEW_B.SAFE.json').read_text())
+    review=json.loads(pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/MEMORY_PRESTART_REVIEW_C.SAFE.json').read_text())
     assert review['status']=='PASS_PRESTART_ATOMIC_END500_ALLOCATION_ONLY'
     for reviewed_pin in review['sourcePins']:
         p=ROOT/reviewed_pin['path'];b=p.read_bytes();assert len(b)==reviewed_pin['bytes']and hashlib.sha256(b).hexdigest()==reviewed_pin['sha256'],'atomic-memory-reviewed-source-drift'
@@ -103,9 +103,15 @@ def main():
     assert stop_review['status']=='PASS_REAL_STOP_AND_EXISTING_TRANSPORT_PROTECTIONS'
     assert stop_review['stopReportSHA256']==hashlib.sha256(stop_path.read_bytes()).hexdigest()
     assert stop_review['historicalEleventhOutcome']=='UNCHANGED_UNKNOWN_NOT_REPLAYED'
+    corrections_path=pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/OBSERVATION_RESULTS_REVIEW.SAFE.json')
+    corrections=json.loads(corrections_path.read_text())
+    assert corrections['status']=='PASS_INDEPENDENT_OBSERVATION_CORRECTIONS'
+    assert review['observationCorrectionsReviewSHA256']==hashlib.sha256(corrections_path.read_bytes()).hexdigest()
+    growth_path=pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_B_GROWTH_LATE_WINDOWS.SAFE.json')
+    assert review['growthAnalysisSHA256']==hashlib.sha256(growth_path.read_bytes()).hexdigest()
     assert not WORK.exists(),'w15-forward-once-only'
     os.umask(0o077);WORK.mkdir(mode=0o700)
-    created=False;w=None;failure=None;result=None;zero=False
+    created=False;w=None;failure=None;result=None;zero=False;stop_failures=[];zero_check_failure=None;service_closure=None
     try:
         bound=json.loads((ASSETS/'END500_MEMORY_BOUND.SAFE.json').read_text())
         independent=json.loads((ASSETS/'END500_FIXTURE_INDEPENDENT_REVIEW.SAFE.json').read_text())
@@ -126,7 +132,7 @@ def main():
           ('synthetik500-runtime-pg-7e1c20261027:/tmp/w15-postgrest-20261027','postgrest')]:M.docker('cp',source,str(stage/target))
         shutil.copytree(ROOT/'lib',stage/'app/lib',dirs_exist_ok=True)
         shutil.copy2(ROOT/'server.js',stage/'app/server.js')
-        for n in ['synthetik-500-w15-memory-forward.js','synthetik-500-w15-full500-runtime.js','fixtures/w15-auth-measurement-report.js','fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-local-memory-budget.json','fixtures/w15-atomic-integration-target.json','fixtures/z3-plattform.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','lokal.js','lokaler-netzschutz.js']:
+        for n in ['synthetik-500-w15-memory-forward.js','synthetik-500-w15-auth-transport-probe.js','synthetik-500-w15-full500-runtime.js','fixtures/w15-auth-measurement-report.js','fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-local-memory-budget.json','fixtures/w15-atomic-integration-target.json','fixtures/z3-plattform.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','lokal.js','lokaler-netzschutz.js']:
             shutil.copy2(ROOT/'scripts'/n,stage/'app/scripts'/n)
         for n,h in [('node','bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12'),('postgrest','870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617')]:
             assert hashlib.sha256((stage/n).read_bytes()).hexdigest()==h
@@ -207,9 +213,14 @@ def main():
         assert initial==converted and converted['usage']==6000,'w15-atomic-full-history-bootstrap'
         M.save('ATOMIC_BOOTSTRAP.SAFE.json',{'status':'PASS_EXACT_LOGICAL_STATE_PRESERVED','before':initial,'after':converted})
         inner(w,'setup',90)
-        M.docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','umask 077; echo $$ >'+BASE+'/state/postgrest.pid; exec '+BASE+'/postgrest '+BASE+'/state/postgrest.PRIVATE.conf >'+BASE+'/state/postgrest.PRIVATE.log 2>&1')
-        M.docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --max-old-space-size='+str(BUDGET['nodeOldSpaceMiB'])+' --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/synthetik-500-w15-memory-forward.js gateway >'+BASE+'/state/gateway.PRIVATE.log 2>&1')
-        for _ in range(50):
+        staged_dry=M.docker('exec','--user','1000:1000',CONTAINER,'env','-i','PATH=/usr/bin:/bin','LANG=C.UTF-8',
+          'HELMUT_SOURCE_MODE=off','HELMUT_STORAGE_BACKEND=local',BASE+'/node','--require',BASE+'/app/scripts/lokaler-netzschutz.js',
+          BASE+'/app/scripts/synthetik-500-w15-auth-transport-probe.js','--serve-memory','--dry-run')
+        dry_result=json.loads(staged_dry)
+        assert dry_result['status']=='PASS_INERT_MEMORY_SERVICE_DRY'and dry_result['database']==DB and dry_result['HTTP']==dry_result['childStarts']==0
+        M.save('SERVICE_STAGED_DRY.SAFE.json',dry_result)
+        M.docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --max-old-space-size='+str(BUDGET['nodeOldSpaceMiB'])+' --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/synthetik-500-w15-auth-transport-probe.js --serve-memory >'+BASE+'/state/gateway.PRIVATE.log 2>&1')
+        for _ in range(120):
             r=subprocess.run(M.DOCKER+['exec',CONTAINER,'test','-f',BASE+'/state/gateway.PRIVATE.json'],env=M.ENV,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
             if r.returncode==0:break
             time.sleep(.1)
@@ -224,12 +235,45 @@ def main():
     except BaseException as e:failure={'type':type(e).__name__,'reason':str(e),'retryAllowed':False}
     finally:
         if created:
+            # Each owned stop is attempted once. A failed stop never skips
+            # the separate native read-only zero check or hides later failures.
+            for action in ['run','setup','gateway','postgrest']:
+                try:M.stop_owned([action])
+                except BaseException as e:
+                    stop_failure={'action':action,'type':type(e).__name__,
+                      'reason':'owned-stop-failed-or-unknown',
+                      'diagnostics':getattr(e,'safe_failure',None)}
+                    stop_failures.append(stop_failure)
+                    failure=failure or stop_failure
             try:
-                M.stop_owned(['run','setup','gateway','postgrest'])
                 zero=M.read('select count(*)from public.mandate_profiles where aktiv;',database=DB)==0
                 assert zero,'w15-forward-active-unknown'
-            except BaseException as e:failure=failure or {'type':type(e).__name__,'reason':str(e)}
-            for n in ['FORWARD_RESULT.SAFE.json','FORWARD_ABORT.SAFE.json']:
+            except BaseException as e:
+                zero_check_failure={'type':type(e).__name__,'reason':'native-zero-check-failed-or-unknown'}
+                failure=failure or zero_check_failure
+            M.save('NATIVE_ZERO.SAFE.json',{'activeProfiles':0 if zero else None,
+              'confirmed':zero,'failure':zero_check_failure,'readOnly':True,'profileActivations':0})
+            if stop_failures:M.save('STOP_FAILURES.SAFE.json',{'failures':stop_failures,'retryAllowed':False})
+            # /proc absence is not a child-exit acknowledgement. The existing
+            # service parent must retain one genuine accepted TERM/exit receipt.
+            try:
+                rows=[json.loads(line)for line in(WORK/'state/gateway-observations.SAFE.jsonl').read_text().splitlines()]
+                signals=[x for x in rows if x['name']=='postgrest-signal-request']
+                exits=[x for x in rows if x['name']=='postgrest-exit']
+                closed=[x for x in rows if x['name']=='services-stopped']
+                assert len(signals)==len(exits)==len(closed)==1
+                assert signals[0]['signal']=='SIGTERM'and signals[0]['accepted']is True
+                assert (exits[0]['code']==0 and exits[0]['signal']is None)or(exits[0]['code']is None and exits[0]['signal']in ['SIGINT','SIGTERM'])
+                assert closed[0]['confirmed']is True and closed[0]['forced']is False
+                assert closed[0]['openSockets']==closed[0]['agentSockets']==closed[0]['agentFreeSockets']==0
+                assert not(WORK/'state/SERVICE_FAILURE.SAFE.json').exists()
+                service_closure={'status':'PASS_GENUINE_OWNED_SERVICE_EXIT','signalRequest':signals[0],
+                  'postgrestExit':exits[0],'servicesStopped':closed[0]}
+            except BaseException as e:
+                service_closure={'status':'FAIL_OR_UNKNOWN','reason':'owned-service-exit-unconfirmed','type':type(e).__name__}
+                failure=failure or service_closure
+            M.save('SERVICE_CLOSURE.SAFE.json',service_closure)
+            for n in ['FORWARD_RESULT.SAFE.json','FORWARD_ABORT.SAFE.json','gateway-observations.SAFE.jsonl','SERVICE_FAILURE.SAFE.json']:
                 try:M.copy_out(n)
                 except BaseException:pass
         if w:
@@ -240,7 +284,7 @@ def main():
             if result and w.maximum+result['projectedAdditionalPhysicalBytes']+BUDGET['minimumCommonHeadroomBytes']>M.MAXIMUM:
                 failure=failure or {'reason':'w15-forward-final-projected-common-reserve'}
         M.save('CONTROLLER_RESULT.SAFE.json',{'status':'PASS_FORWARD_ALLOCATION_INDEPENDENT_REVIEW_PENDING'if not failure and zero else'FAIL_OR_UNKNOWN',
-          'failure':failure,'innerStopFailure':w.stop_failure if w else None,'activeProfiles':0 if zero else None,'CASCompleted':len(w.cas_records)if w else 0,
+          'failure':failure,'innerStopFailure':w.stop_failure if w else None,'stopFailures':stop_failures,'zeroCheckFailure':zero_check_failure,'serviceClosure':service_closure,'activeProfiles':0 if zero else None,'CASCompleted':len(w.cas_records)if w else 0,
           'commonKernelPeakBytes':w.maximum if w else None,'lastKernel':w.last if w else None,
           'projectedAdditionalPhysicalBytes':result.get('projectedAdditionalPhysicalBytes')if result else None,
           'additionalProjectionMarginBytes':BUDGET['minimumCommonHeadroomBytes'],'units':0,'providerCalls':0,'profileActivations':0,'executionAuthority':False,

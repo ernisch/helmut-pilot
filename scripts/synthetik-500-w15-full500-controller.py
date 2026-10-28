@@ -99,9 +99,33 @@ def check_auth_witness(review):
 def save(name,value):
     p=WORK/name
     with p.open('x') as f:os.chmod(p,0o600);json.dump(value,f,indent=2);f.write('\n')
+def safe_stop_stderr(raw):
+    # Child stderr is untrusted. Retain only this helper's closed JSON schema;
+    # never store arbitrary Docker, PostgreSQL or process messages.
+    try:
+        assert isinstance(raw,bytes)and 0<len(raw)<=4096
+        v=json.loads(raw.decode('utf-8'))
+        assert isinstance(v,dict)and set(v)<={'kind','status','phase','reason','code','pid','journalFailure'}
+        assert v['kind']=='W15_OWNED_STOP_FAILURE'and v['status']=='STOP_FAILURE'
+        assert v['phase']in ['entry','stop-marker','pid-registration','proc-list','proc-stat','proc-cmdline','proc-ownership','identity-read','identity-start-ticks','signal-term','signal-kill']
+        assert v['reason']in ['owned-pid-registration-unknown','unowned-live-process','inner-handler-registration-unknown','inner-process-pid-reused','owned-process-group-still-live','owned-stop-unknown']
+        if 'code'in v:assert v['code']in ['ERR_ASSERTION','ENOENT','ESRCH','EACCES','EPERM','EIO','EINVAL','EMFILE','ENFILE','ENOSPC','EBADF']
+        if 'pid'in v:assert type(v['pid'])is int and v['pid']>1
+        if 'journalFailure'in v:assert v['journalFailure']is True
+        return v
+    except (AssertionError,KeyError,ValueError,TypeError,UnicodeError):return None
+
+class CommandFailure(RuntimeError):
+    def __init__(self,command,returncode,stderr=b'',timed_out=False):
+        super().__init__('full500-command-failed:'+command+':'+str(returncode))
+        safe_stderr=safe_stop_stderr(stderr)
+        self.safe_failure={'kind':'CHILD_COMMAND_FAILURE','returncode':returncode,'timedOut':timed_out,
+          'safeStderr':safe_stderr,'stderrClassification':'owned-stop-structured'if safe_stderr else'redacted-or-empty'}
+
 def call(args,input=None,timeout=120):
-    r=subprocess.run(args,input=input,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=ENV,cwd=ROOT,timeout=timeout)
-    if r.returncode:raise RuntimeError('full500-command-failed:'+args[0]+':'+str(r.returncode))
+    try:r=subprocess.run(args,input=input,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=ENV,cwd=ROOT,timeout=timeout)
+    except subprocess.TimeoutExpired as e:raise CommandFailure(args[0],None,e.stderr or b'',True)from None
+    if r.returncode:raise CommandFailure(args[0],r.returncode,r.stderr)
     return r.stdout
 
 def docker(*args,**kw):return call(DOCKER+list(args),**kw)

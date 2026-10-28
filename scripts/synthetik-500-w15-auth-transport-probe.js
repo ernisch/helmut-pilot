@@ -3,9 +3,10 @@
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto");
 const assert = require("node:assert/strict"), http = require("node:http"), dc = require("node:diagnostics_channel");
 const { fork, spawn } = require("node:child_process"), { performance, PerformanceObserver } = require("node:perf_hooks");
+const MEMORY_SERVICE = require.main === module && process.argv[2] === "--serve-memory";
 const STOP_CHECK = require.main === module && ["--stop-check", "--serve-stop-check"].includes(process.argv[2]);
-const BASE = STOP_CHECK ? "/tmp/w15-postgrest-stop-check-20261028" : "/tmp/w15-auth-transport-probe-20261028a", STATE = BASE + "/state";
-const DB = "helmut_w15_transport_probe_20261028a", sha = b => crypto.createHash("sha256").update(b).digest("hex");
+const BASE = MEMORY_SERVICE ? "/tmp/w15-memory-atomic-20261028c" : STOP_CHECK ? "/tmp/w15-postgrest-stop-check-20261028" : "/tmp/w15-auth-transport-probe-20261028a", STATE = BASE + "/state";
+const DB = MEMORY_SERVICE ? "helmut_w15_memory_atomic_20261028c" : "helmut_w15_transport_probe_20261028a", POSTGREST_PORT = MEMORY_SERVICE ? 3218 : 3228, sha = b => crypto.createHash("sha256").update(b).digest("hex");
 const file = n => path.join(STATE, n), read = n => JSON.parse(fs.readFileSync(file(n)));
 const save = (n, x) => fs.writeFileSync(file(n), JSON.stringify(x, null, 2) + "\n", { flag: "wx", mode: 0o600 });
 const stamp = () => ({ atUTC: new Date().toISOString(), monoNS: process.hrtime.bigint().toString() });
@@ -37,8 +38,10 @@ function guard() {
   assert.equal(process.version, "v24.19.0");assert(require.cache[require.resolve("./lokaler-netzschutz")]);
   assert.deepEqual(require("./lokaler-netzschutz").pruefe(process.env), []);
   const c = read("configuration.PRIVATE.json");assert.equal(c.database, DB);assert.equal(c.base, BASE);
-  assert.match(c.nonce, /^[a-f0-9-]{36}$/);assert.equal(c.maximumMutations, STOP_CHECK ? 0 : 16);
-  if (STOP_CHECK) assert.equal(c.mode, "REAL_SERVICE_STOP_ONLY_NO_AUTH");return c;
+  assert.match(c.nonce, /^[a-f0-9-]{36}$/);assert.equal(c.maximumMutations, MEMORY_SERVICE ? 500 : STOP_CHECK ? 0 : 16);
+  if (STOP_CHECK) assert.equal(c.mode, "REAL_SERVICE_STOP_ONLY_NO_AUTH");
+  if (MEMORY_SERVICE) { assert.equal(c.mode, "INERT_END500_MEMORY_NO_UNITS");assert.equal(c.executionAuthority, false);
+    assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")), "memory-service-stop-already-requested"); }return c;
 }
 function common() {
   const n = x => fs.readFileSync("/sys/fs/cgroup/" + x, "utf8").trim();
@@ -89,7 +92,7 @@ async function serve() {
   const until = Date.now() + 8000;let ready = false;
   while (Date.now() < until && !pgExit) {
     ready = await new Promise(resolve => {
-      const req = http.get({ host: "127.0.0.1", port: 3228, path: "/", headers: { Authorization: "Bearer " + c.token }, timeout: 500 }, res => {
+      const req = http.get({ host: "127.0.0.1", port: POSTGREST_PORT, path: "/", headers: { Authorization: "Bearer " + c.token }, timeout: 500 }, res => {
         let s = "";res.on("data", b => { if (s.length < 1024 * 1024) s += b; });res.on("end", () => {
           try { const p = JSON.parse(s).paths;resolve(res.statusCode === 200 && p?.["/rpc/helmut_auth_usage_read_v1"] && p?.["/rpc/helmut_auth_usage_cas_v1"]); } catch { resolve(false); }
         }); });req.on("error", () => resolve(false));req.on("timeout", () => req.destroy());
@@ -111,12 +114,19 @@ async function serve() {
       res.on("finish", () => log.write("gateway-finish", { id: ids.get(req.socket), route, status: res.statusCode,
         keepAlive: res.getHeader("keep-alive") ?? null })); });return server;
   };
-  try { gateway = await require("./fixtures/z3-plattform").starteDatenbankTor({ postgrestPort: 3228 }); }
+  try { gateway = await require("./fixtures/z3-plattform").starteDatenbankTor({ postgrestPort: POSTGREST_PORT }); }
   finally { http.createServer = create; }
   log.write("real-defaults", { keepAliveTimeout: server.keepAliveTimeout, keepAliveTimeoutBuffer: server.keepAliveTimeoutBuffer,
     headersTimeout: server.headersTimeout, requestTimeout: server.requestTimeout, agentKeepAlive: http.globalAgent.keepAlive });
-  pg.on("exit", () => { if (!expectedStop && process.connected) process.send({ type: "service-failed", error: pgExit }); });
-  process.send({ type: "ready", url: gateway.url });
+  pg.on("exit", () => {
+    if (!expectedStop && process.connected) process.send({ type: "service-failed", error: pgExit });
+    if (!expectedStop && MEMORY_SERVICE) {
+      save("SERVICE_FAILURE.SAFE.json", { status: "FAIL_OR_UNKNOWN", pgExit, retryAllowed: false });
+      void stop();
+    }
+  });
+  if (MEMORY_SERVICE) save("gateway.PRIVATE.json", { url: gateway.url });
+  else process.send({ type: "ready", url: gateway.url });
 }
 async function main({ dryRun = false } = {}) {
   const c = guard();if (dryRun) { console.log(JSON.stringify({ status: "PASS_DRY_ARGS_CONFIG_NO_HTTP_OR_DATABASE", database: DB, maximumMutations: 16 }));return; }
@@ -280,8 +290,11 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   const stopArgs = args[0] === "--stop-check" && (args.length === 1 || args.length === 2 && args[1] === "--dry-run")
     || args.length === 1 && args[0] === "--serve-stop-check";
-  assert(stopArgs || args.length <= 1 && [undefined, "--serve", "--dry-run"].includes(args[0]));
-  Promise.resolve().then(() => ["--serve", "--serve-stop-check"].includes(args[0]) ? serve()
+  const memoryArgs = args[0] === "--serve-memory" && (args.length === 1 || args.length === 2 && args[1] === "--dry-run");
+  assert(stopArgs || memoryArgs || args.length <= 1 && [undefined, "--serve", "--dry-run"].includes(args[0]));
+  Promise.resolve().then(() => memoryArgs && args[1] === "--dry-run"
+    ? (guard(), console.log(JSON.stringify({ status: "PASS_INERT_MEMORY_SERVICE_DRY", database: DB, HTTP: 0, childStarts: 0 })))
+    : ["--serve", "--serve-stop-check", "--serve-memory"].includes(args[0]) ? serve()
     : STOP_CHECK ? stopCheck({ dryRun: args[1] === "--dry-run" }) : main({ dryRun: args[0] === "--dry-run" }))
     .catch(e => { console.error(JSON.stringify({ status: "FAIL_PRECONDITION", error: failure(e) }));process.exitCode = 1; });
 }
