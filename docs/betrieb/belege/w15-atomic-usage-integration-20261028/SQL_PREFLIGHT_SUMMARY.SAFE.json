@@ -1,0 +1,56 @@
+{
+  "status": "PASS_ALL_GENERATED_DIAGNOSTIC_SQL_PARSE_DESCRIBE_NO_EXECUTION",
+  "statements": 3512,
+  "seedStatements": 3501,
+  "newlyParsedStatements": 0,
+  "exactPriorHashReusedStatements": 3512,
+  "reusedParserReportSHA256": "98d329bfa2bf7650ff34be02caa860886e38441b9134c3e69f0663d86992c720",
+  "actualGeneratedQuerySites": 3514,
+  "workloadStatementsExecuted": 0,
+  "newDatabaseCreated": false,
+  "method": "PostgreSQL17 Parse/Describe of every changed generated diagnostic SQL statement; every byte-identical generated SQL hash reuses the pinned successful atomic-A parser proof; only changed statements would be newly parsed. No workload Execute. Local SQL proposal reused byte-identical successful atomic bootstrap proof.",
+  "existingParserDatabase": "helmut_w15_full500_20261028b",
+  "plannedDatabase": "helmut_w15_memory_atomic_20261028a",
+  "sourceSnapshotUnchanged": true,
+  "metadataAndPermissionChecks": {
+    "usage": 5001,
+    "active": 0,
+    "createdb": true,
+    "database": "helmut_w15_full500_20261028b",
+    "profiles": 500,
+    "readonly": "on",
+    "storeRows": 12,
+    "identities": 501,
+    "briefingRows": 0,
+    "serviceSchema": true,
+    "newTargetAbsent": true,
+    "serviceCanInsert": true,
+    "serviceCanSelect": true,
+    "serviceCanUpdate": true,
+    "postgresStoreUpdate": true,
+    "postgresProfilesUpdate": true,
+    "postgresBriefingsInsert": true,
+    "authenticatorCanSetService": true
+  },
+  "coverageLimits": [
+    "Original pg_restore and roles SQL reuse unchanged successful pinned restore proof.",
+    "PostgREST internally generated SQL reuses successful native Auth/CAS proof; not claimed extracted from diagnostic source.",
+    "Parse-only does not execute constraints/triggers or demonstrate runtime memory."
+  ],
+  "sourcePins": {
+    "scripts/synthetik-500-w15-memory-forward.js": "2e3ddd8df904713e56c1d2657d89e4b34a66a453aafcb680c21c1bea0dfe2d12",
+    "scripts/synthetik-500-w15-memory-forward.py": "38f8fd27db2eb7139e0df8e3443de49f45b337a816dd1dc46f9c5a63066a34aa",
+    "scripts/synthetik-500-w15-memory-sql-preflight.py": "7fdeb045adffdce6502963cfd57843d128fbe11e698d99fdb7e1b246b7c82c33",
+    "scripts/fixtures/w15-durable-observations.js": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8",
+    "scripts/fixtures/w15-owned-process-stop.js": "e2ac57c7f7f47740ca98d1f48e767ab540a6d10af9c4d5041cde7fdf889b0482",
+    "scripts/fixtures/w15-local-memory-budget.json": "83414ddc04a025b20eedd9119657d62689f8e18d2f660b8a3bad85556e2566c7",
+    "scripts/synthetik-500-w15-full500-controller.py": "4fe9b65671af956a3ec88e82b43e2a9af48f1709271808c41381824583428ec8",
+    "scripts/synthetik-500-w15-full500-runtime.js": "ebc1870b092734a15cd9a5fb3253b77333fb9bf5d034250dfc6a46b3eafea239"
+  },
+  "completeProtectedReportPin": {
+    "path": "/workspace/shared/helmut-w15-memory-forward-20261028/sql-preflight-atomic-b/SQL_PREFLIGHT.SAFE.json",
+    "bytes": 441802,
+    "sha256": "5df0ebc3f45b2d014536f075db9f645b3ced202d916a016040fccbfa2f9d8883"
+  },
+  "publicProjectionExcludesStatementPins": true
+}

@@ -1,0 +1,193 @@
+{
+  "authTimings": {
+    "observedFullCalls": 5,
+    "completedFullCalls": 5,
+    "observedCASWrites": 5,
+    "completedCASWrites": 5,
+    "maximumFullCallWallMs": 618.9063150000002,
+    "maximumCASWallMs": 121.81008699999984,
+    "incompleteFullCalls": 0,
+    "incompleteCASWrites": 0,
+    "perAPI": {
+      "public-mutation": {
+        "count": 4,
+        "maximumWallMs": 618.9063150000002
+      },
+      "usage-sink": {
+        "count": 1,
+        "maximumWallMs": 142.56579299999976
+      }
+    },
+    "timingsUseWholeCallThroughACK": true
+  },
+  "authCoverage": {
+    "allEnvelopesAcknowledgedUnder30": true,
+    "allWritesAssigned": true,
+    "allWritesAcknowledged": true,
+    "allWritesBoundedByEnvelope": true,
+    "eachEnvelopeHasWrite": true,
+    "observedCASWrites": 5,
+    "mutationEnvelopes": 4,
+    "usageEnvelopes": 1,
+    "usage1000": false,
+    "pass": true
+  },
+  "authMutations": [
+    {
+      "id": 1,
+      "kind": "public-mutation",
+      "index": null,
+      "beginMS": 4445.284377,
+      "callbackRuns": 1,
+      "wallMs": 618.9063150000002,
+      "callbackMs": 247.30407699999978,
+      "acknowledged": true,
+      "ackMS": 5064.186665,
+      "endMS": 5064.190692
+    },
+    {
+      "id": 3,
+      "kind": "public-mutation",
+      "index": null,
+      "beginMS": 5456.561779,
+      "callbackRuns": 1,
+      "wallMs": 112.15679500000078,
+      "callbackMs": 2.6982949999992343,
+      "acknowledged": true,
+      "ackMS": 5568.69496,
+      "endMS": 5568.718574
+    },
+    {
+      "id": 4,
+      "kind": "public-mutation",
+      "index": null,
+      "beginMS": 5646.702215,
+      "callbackRuns": 1,
+      "wallMs": 251.83894099999998,
+      "callbackMs": 111.87707000000046,
+      "acknowledged": true,
+      "ackMS": 5898.539139,
+      "endMS": 5898.541156
+    },
+    {
+      "id": 5,
+      "kind": "public-mutation",
+      "index": null,
+      "beginMS": 5901.2534,
+      "callbackRuns": 1,
+      "wallMs": 106.42432700000063,
+      "callbackMs": 0.678859000000557,
+      "acknowledged": true,
+      "ackMS": 6007.67471,
+      "endMS": 6007.677727
+    }
+  ],
+  "usageSinks": [
+    {
+      "id": 2,
+      "kind": "usage-sink",
+      "index": null,
+      "beginMS": 5308.063056,
+      "wallMs": 142.56579299999976,
+      "storageAcknowledged": true,
+      "storageMode": "relational-atomic-v1",
+      "blobAcknowledged": false,
+      "acknowledged": true,
+      "usageReceiptId": "llm-1793193780641-jqlj27",
+      "ackMS": 5450.626593,
+      "endMS": 5450.628849
+    }
+  ],
+  "casWrites": [
+    {
+      "id": 0,
+      "envelopeId": 1,
+      "index": null,
+      "rowId": "w15-eu-component-85e70d27-553b-47ca-b6f2-715e76cd2591",
+      "storageMode": "relational-atomic-v1",
+      "beginMS": 4937.298874,
+      "wallMs": 121.81008699999984,
+      "acknowledged": true,
+      "ackMS": 5059.106528,
+      "endMS": 5059.108961
+    },
+    {
+      "id": 1,
+      "envelopeId": 2,
+      "index": null,
+      "rowId": "w15-eu-component-85e70d27-553b-47ca-b6f2-715e76cd2591",
+      "storageMode": "relational-atomic-v1",
+      "beginMS": 5367.080501,
+      "wallMs": 79.99333299999944,
+      "acknowledged": true,
+      "ackMS": 5447.072545,
+      "endMS": 5447.073834
+    },
+    {
+      "id": 2,
+      "envelopeId": 3,
+      "index": null,
+      "rowId": "w15-eu-component-85e70d27-553b-47ca-b6f2-715e76cd2591",
+      "storageMode": "relational-atomic-v1",
+      "beginMS": 5502.183708,
+      "wallMs": 64.62660200000028,
+      "acknowledged": true,
+      "ackMS": 5566.809378,
+      "endMS": 5566.81031
+    },
+    {
+      "id": 3,
+      "envelopeId": 4,
+      "index": null,
+      "rowId": "w15-eu-component-85e70d27-553b-47ca-b6f2-715e76cd2591",
+      "storageMode": "relational-atomic-v1",
+      "beginMS": 5798.289055,
+      "wallMs": 98.69408000000021,
+      "acknowledged": true,
+      "ackMS": 5896.982263,
+      "endMS": 5896.983135
+    },
+    {
+      "id": 4,
+      "envelopeId": 5,
+      "index": null,
+      "rowId": "w15-eu-component-85e70d27-553b-47ca-b6f2-715e76cd2591",
+      "storageMode": "relational-atomic-v1",
+      "beginMS": 5935.368676,
+      "wallMs": 69.7247610000004,
+      "acknowledged": true,
+      "ackMS": 6005.092858,
+      "endMS": 6005.093437
+    }
+  ],
+  "schema": "helmut-w15-atomic-EU-component-integration/1",
+  "status": "PASS_EU_D_COMPLETION_COMPONENT_NOT_INSTALLED_RUNTIME",
+  "checks": [
+    "real-private-relational-receipt-persisted",
+    "forged-relational-receipt-rejected",
+    "genuine-AI-DraftCompletion-and-native-postimage-match",
+    "EU-cost-ticket-accounted-with-exact-tariff-and-reserve",
+    "uninstalled-component-has-no-dispatch-journal-or-R-authority",
+    "unknown-completion-keeps-full-EU-reserve-without-DraftCompletion",
+    "real-day-and-order-cost-ceilings-remain-valid",
+    "original-main-auth-and-inactive-profiles-unchanged",
+    "every-genuine-atomic-Auth-write-assigned-and-under30"
+  ],
+  "rowId": "w15-eu-component-85e70d27-553b-47ca-b6f2-715e76cd2591",
+  "operationId": "synthetik500-w15-atomic-component-1793193779150",
+  "planHash": "7614319d8c6d7835d201643c2d45d11d68cd541e301447268150635e8002c13f",
+  "providerMocks": 1,
+  "paidModelCalls": 0,
+  "profileActivations": 0,
+  "unitExecutions": 0,
+  "complete500Attempts": 0,
+  "sourceQualityAcceptance": false,
+  "installedDStoreOrRProven": false,
+  "originalMainAuthUnchanged": true,
+  "acknowledgedUsageRows": 1,
+  "costMicroUSD": 248,
+  "reservedUnknownMicroUSD": 81400,
+  "completionHash": "03571527d1d6fd87aca54d35c494f08b52eaf6473946b1f20be51f39190e3b02",
+  "executionUTC": "2026-10-28T13:22:59.150Z",
+  "realElapsedMs": 2579.652586
+}

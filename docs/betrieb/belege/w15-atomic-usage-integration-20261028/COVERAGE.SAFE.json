@@ -1,0 +1,31 @@
+{
+  "status": "CAPTURED_DURING_REQUIRED_INTEGRATION_NO_EXTRA_TEST_RUN",
+  "scope": "V8 function coverage in prepared0/Auth/EU D-component node processes only; not line/branch/full-suite or worker-thread coverage",
+  "coverageFiles": 4,
+  "files": [
+    {
+      "path": "lib/helmut/storage.js",
+      "coveredFunctions": 63,
+      "observedFunctions": 458,
+      "percentage": 13.76
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "coveredFunctions": 15,
+      "observedFunctions": 16,
+      "percentage": 93.75
+    },
+    {
+      "path": "lib/helmut/testkosten-budget.js",
+      "coveredFunctions": 41,
+      "observedFunctions": 48,
+      "percentage": 85.42
+    },
+    {
+      "path": "lib/helmut/ai.js",
+      "coveredFunctions": 40,
+      "observedFunctions": 102,
+      "percentage": 39.22
+    }
+  ]
+}

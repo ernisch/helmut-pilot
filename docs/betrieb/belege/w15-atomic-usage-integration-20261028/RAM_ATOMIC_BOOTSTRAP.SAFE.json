@@ -1,0 +1,11 @@
+{
+  "status": "PASS_EXACT_LOGICAL_STATE_PRESERVED",
+  "before": {
+    "usage": 6000,
+    "logicalHash": "921b5b2f5a3a837e932808e967122214a20561bfc2bf351da3028dd222343e19"
+  },
+  "after": {
+    "usage": 6000,
+    "logicalHash": "921b5b2f5a3a837e932808e967122214a20561bfc2bf351da3028dd222343e19"
+  }
+}

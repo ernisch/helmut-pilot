@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "command": "node scripts/lokal.js -- node scripts/synthetik-500-stored-command-test.js",
+  "exitCode": 0,
+  "passed": 81,
+  "failed": 0,
+  "sourceSHA256": "6e0242d058492ecdc5dcdd430caa9e05f9497a0384de9b53659a8891ce9f3efa",
+  "storageSourceSHA256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496",
+  "scope": "Actual backend/extracted ALS with mocked RPC/real temporary Ed25519; actual closed-worker module graph",
+  "productionCalls": 0,
+  "networkCalls": 0,
+  "fullC": false,
+  "Auth30": false,
+  "Unit60": false,
+  "evidenceOrigin": "Terminal tool session69806 finalexit0; summary retained without repeating test"
+}

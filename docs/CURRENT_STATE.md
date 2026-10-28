@@ -1,17 +1,25 @@
 # CURRENT STATE — Helmut
 
-## W15:SignalPASS;CLI-FAILvorRAM (28.10.)
+## W15: atomare Integration lokal PASS; End500-Diagnose gestoppt (28.10.)
 
-PR972/971/969ungemergt;Code3a4a64b1;D/Mock500nichtgestartet.
-DockerSIGTERM→Receipt→Exit143PASS;0700/0600,Review12/12.
-Auth-Kernbytegleich;4alteMessungen+1unfertigUNKNOWNgesichert.
-MicroReproargv[1]statt[2]:ENOTDIRvorHTTP;0Paare/Units/Modelle.
-Startup485908480BkeinRAMnachweis;keineSpeicheränderung.
-0aktiv/500/501/6000Usage+Prozessendeunabhängig10/10bestätigt.
-C-ReserveFAIL1644748800B/19,69%erhalten;keinRetry/CodefixnachFAIL.
-NächstesGO:CLI-Fix+trockenerDateiaufruf,dannUrsachenprüfung.
-Quellen/Auth/End500übernommen;keinneuesCI-Grün/ProductionPASS.
-[Belege/Grenzen](betrieb/w15-mock-quellenbindungen-20261028.md).
+PR974 eigener Integrationsbranch auf PR973 `fa506939`/PR972 `c36bd427`;
+alle PRs ungemergt. Code `e1a62acc`; ursprüngliche offene972-Arbeit unverändert.
+Echter signierter Prepared0-/HTTP-/Auth-/EU-DraftCompletion-Anschluss PASS,
+unabhängig16/16; Worker19,87s, Auth maximal2,491931300s, Peak719.044.608Bytes.
+5.000 historische Einträge verlustfrei atomar übernommen;0aktive Testprofile.
+Quellen500/500 begrenzt übernommen (16Dateien gleich,2genau geprüft); Worker81/81.
+Genau eine neue inerte End500-Allokationsdiagnose: FAIL/UNKNOWN nach10/500CAS;
+11.Schreibvorgang ohne ACK. Peak1.154.990.080Bytes, Reserve893.009.920=43,604%;
+Auth-Max20,034336894s/native12,559368517s;1unbestätigter Vorgang bleibt UNKNOWN.
+Unabhängig alle3.501Postimages/6.000Usage/500Profile/0aktiv erhalten bestätigt.
+Kein Reserveverstoß, aber keine belastbare Restwachstums-/500er-Abnahme.
+Ursache unterhalb TypeError nicht gesichert; sichere Fehlercodes künftig ergänzt,
+pure3Prüfungen/Review12/12, kein Retry. Kein voller Mock500/Production-Lauf.
+CI für den Codekopf noch laufend; kein neues vollständiges CI-Grün behauptet.
+Bekannter Vercel-Fehler `includeFiles`2.915>256Zeichen unverändert separat.
+Nächster Schritt: begrenzte Diagnose des unklaren Schreib-/Requestfehlers;
+kein neuer Gesamtversuch freigabereif. Stopregel bleibt bestehen.
+[Messwerte, Quellenbindungen, Fehler und Freigabestand](betrieb/w15-atomic-usage-integration-20261028.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 

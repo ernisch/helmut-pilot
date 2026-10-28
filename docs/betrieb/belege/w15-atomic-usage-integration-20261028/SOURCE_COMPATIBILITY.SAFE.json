@@ -1,0 +1,132 @@
+{
+  "status": "PASS_SCOPED_REUSE_NOT_NEW_ALL500_RUN",
+  "qualificationPin": {
+    "path": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b/ALL500_MOCK_BINDINGS_CHECK.SAFE.json",
+    "bytes": 13706128,
+    "sha256": "d2603d926508a1655b415b18734fe37bc1a660dccb6f139ae43b1859a11bed3d"
+  },
+  "unchangedSourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-mock-bindings-check.js",
+      "bytes": 25072,
+      "sha256": "f68d60da7164a2917b0ec58151b28102714bf89d916b617a69a7bd3a9b0680cd"
+    },
+    {
+      "path": "scripts/fixtures/w15-local-calendar.js",
+      "bytes": 4937,
+      "sha256": "4e7cd70c70dcfad6ef4e4f97c7dd1f6ce6385a57e04b642140814b38bcf2f4f6"
+    },
+    {
+      "path": "scripts/fixtures/w15-unit0-provider.js",
+      "bytes": 8826,
+      "sha256": "fdf4ac5a036dfa03347a562c99ef3a330080e5b23db0ea5e9cd47be3ce95e221"
+    },
+    {
+      "path": "scripts/fixtures/w15-full500-provider.js",
+      "bytes": 6616,
+      "sha256": "df71e0c063274f0d65d6eaa7ab291b42d435b985d15824b785e2ac6e22507d6a"
+    },
+    {
+      "path": "scripts/fixtures/w15-current-input-bindings.js",
+      "bytes": 26327,
+      "sha256": "20854cd2ad4e2ce85c920285591d4d1dcf6ff543b861c7be2730fe26272f11c3"
+    },
+    {
+      "path": "scripts/fixtures/w15-current-mock-data.js",
+      "bytes": 14178,
+      "sha256": "606ab86623ae68b9b33644d09cbde33c3eaee1a5ae11bcc229054dbe74a95587"
+    },
+    {
+      "path": "scripts/fixtures/w15-current-native-data.js",
+      "bytes": 4575,
+      "sha256": "c7650ad5bd75039d9a64e13b84fc97a594718441a8a042ce5ad27eeb4fe5401d"
+    },
+    {
+      "path": "scripts/fixtures/w15-current-input-database.js",
+      "bytes": 5232,
+      "sha256": "4c59abce5077fcdd627b9c75f201e05fe83389a808fab510b5490b8b6050bef9"
+    },
+    {
+      "path": "lib/helmut/publication-eligibility.js",
+      "bytes": 8672,
+      "sha256": "d1ea673bfecd27feddf64f9275ea0f3c3a153ee66bc2e07d60efaee09f24ac4c"
+    },
+    {
+      "path": "lib/helmut/radarState.js",
+      "bytes": 66475,
+      "sha256": "aad627cc79c73b4004c6049ab73fbc0440c319f6978c1d74b93a2616988dcc06"
+    },
+    {
+      "path": "lib/helmut/briefingContract.js",
+      "bytes": 64171,
+      "sha256": "285939d8d37432c16ed48346b26787f6ed14448cd090713b47eb4005104a7e02"
+    },
+    {
+      "path": "lib/helmut/briefing-lagebindung.js",
+      "bytes": 2933,
+      "sha256": "6cca21f32919cf3df2c6f6661886b1c8fc5a4aa99f5c0016953d3f043095a5a3"
+    },
+    {
+      "path": "lib/helmut/lage.js",
+      "bytes": 56155,
+      "sha256": "b69d8abc8793be120980bfd86f3d4e65682a6f885ddd6d16b10671d4c67995b3"
+    },
+    {
+      "path": "lib/helmut/lage-textqualitaet.js",
+      "bytes": 24722,
+      "sha256": "efb6d4a512f84e74454d6ef1f93d3e00661c5b4ec560f7fb2c6256c41e4e9cd1"
+    },
+    {
+      "path": "lib/helmut/lage-quellenbeleg.js",
+      "bytes": 13666,
+      "sha256": "94583ff0cffc77934117ad4f36146b74c050cf11dd780e7b4b5e69501a2084bf"
+    },
+    {
+      "path": "lib/helmut/briefing-frische.js",
+      "bytes": 21804,
+      "sha256": "748209a7a2217e8a8d5adc99755ad981176b2fac6a2071c04209795b78ea54a4"
+    }
+  ],
+  "reboundSourcePins": [
+    {
+      "oldPin": {
+        "path": "lib/helmut/storage.js",
+        "bytes": 543389,
+        "sha256": "28f67b93e4269e92193ca971327b072bd37b0113ceb506282809c95b0aa8c61c"
+      },
+      "currentPin": {
+        "path": "/workspace/helmut-w15-atomic-integration/lib/helmut/storage.js",
+        "bytes": 545054,
+        "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+      },
+      "unchangedSegmentBytes": 2266,
+      "unchangedSegmentSHA256": "6992e6b3b4a686225326df0a07210f0e1baf8b84c941b1fe86b20368d000f101",
+      "scope": "Exact publication candidate/source-identity function unchanged;973 Auth/usage storage changes tested separately."
+    },
+    {
+      "oldPin": {
+        "path": "lib/helmut/ai.js",
+        "bytes": 100090,
+        "sha256": "33a64efbe45989f4ee5f3f1268c0874c0a2c4924b2ac4c825977005824ccbd5a"
+      },
+      "currentPin": {
+        "path": "/workspace/helmut-w15-atomic-integration/lib/helmut/ai.js",
+        "bytes": 100108,
+        "sha256": "949bbf8c26486342682588f227b7729925eb523b772733ca2db8316e9f1bfa8d"
+      },
+      "unchangedSegmentBytes": 24332,
+      "unchangedSegmentSHA256": "e85b1fefaf8bb0b85add4598aa150ded282ff1e2651b8940179074ce9ad977d1",
+      "scope": "Exact entire schema/prompt/D/R-constructor/generation tail unchanged; only provider receipt confirmation updated in973."
+    }
+  ],
+  "cpuManifestPin": {
+    "path": "/workspace/helmut-w15-atomic-integration/lib/helmut/synthetik-500-cpu-source-pins.json",
+    "bytes": 12237,
+    "sha256": "bc2409e35d68d52d0ba92914ffa1e427de42da738b73197e9bf7fe428f71b5fe"
+  },
+  "original500PassRetained": true,
+  "freshWorkerAndAtomicAuthRequired": true,
+  "sourcesReimported": false,
+  "constructorChecksRepeated": false,
+  "independentReviewPending": true
+}

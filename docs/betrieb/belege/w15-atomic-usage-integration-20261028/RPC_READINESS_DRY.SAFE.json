@@ -1,0 +1,9 @@
+{
+  "status": "PASS_ACTUAL_LOCAL_DRY_FILE_CALL",
+  "argvConfigIndex": 2,
+  "httpRequests": 0,
+  "databaseChanges": 0,
+  "profileActivations": 0,
+  "driverSHA256": "748e7e161ab72179128f9ba3e1c1c33722781c19e41f719ad37fd0e20fbf5af1",
+  "scope": "One real dry file invocation; existingC configuration read; noHTTP/DB/activation; newseparatetemporaryfilesonly"
+}
