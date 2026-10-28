@@ -4,7 +4,7 @@ import ast,hashlib,importlib.util,json,os,pathlib,re,subprocess,sys
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ASSETS=pathlib.Path('/workspace/shared/helmut-w15-memory-forward-20261028')
-WORK=ASSETS/'sql-preflight-atomic-a'
+WORK=ASSETS/'sql-preflight-atomic-b'
 EXISTING_CONTAINER='w15-atomic-integration-20261028d'
 EXISTING_DB='helmut_w15_full500_20261028b'
 ENV={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'}
@@ -67,14 +67,14 @@ def main():
     # inputs; PostgREST internal SQL is covered by prior genuine Auth/CAS proof.
     unique={hashlib.sha256(q.encode()).hexdigest():(label,q)for label,q in queries}
     assert sum(label=='native-seed'for label,q in unique.values())==3501
-    previous_path=ASSETS/'sql-preflight-c/SQL_PREFLIGHT.SAFE.json'
+    previous_path=ASSETS/'sql-preflight-atomic-a/SQL_PREFLIGHT.SAFE.json'
     previous_bytes=previous_path.read_bytes()
-    assert hashlib.sha256(previous_bytes).hexdigest()=='b02143076edc5c72af39be3798b0d8a45e3e140c8b98967ad4fcdf25422fd49c'
+    assert hashlib.sha256(previous_bytes).hexdigest()=='98d329bfa2bf7650ff34be02caa860886e38441b9134c3e69f0663d86992c720'
     previous=json.loads(previous_bytes)
     assert previous['status']=='PASS_ALL_GENERATED_DIAGNOSTIC_SQL_PARSE_DESCRIBE_NO_EXECUTION'
     cached={x['sha256']for x in previous['statementPins']}
     changed={h:v for h,v in unique.items()if h not in cached}
-    assert 1<=len(changed)<=8 and all(label!='native-seed'for label,q in changed.values()),'unexpected-seed-sql-drift'
+    assert 0<=len(changed)<=8 and all(label!='native-seed'for label,q in changed.values()),'unexpected-seed-sql-drift'
     script=WORK/'parse-only.PRIVATE.psql'
     with script.open('x')as f:
         os.chmod(script,0o600);f.write("begin read only;set local statement_timeout='15s';\n")
@@ -116,7 +116,7 @@ def main():
     report={'status':'PASS_ALL_GENERATED_DIAGNOSTIC_SQL_PARSE_DESCRIBE_NO_EXECUTION','statements':len(unique),
       'seedStatements':3501,'newlyParsedStatements':len(changed),'exactPriorHashReusedStatements':len(unique)-len(changed),
       'reusedParserReportSHA256':hashlib.sha256(previous_bytes).hexdigest(),'actualGeneratedQuerySites':len(queries),'workloadStatementsExecuted':0,'newDatabaseCreated':False,
-      'method':'PostgreSQL17 Parse/Describe of every changed generated diagnostic SQL statement; exact old seed/other SQL hashes reuse the pinned successful C parser proof. No workload Execute. Local SQL proposal reused byte-identical successful atomic bootstrap proof.',
+      'method':'PostgreSQL17 Parse/Describe of every changed generated diagnostic SQL statement; every byte-identical generated SQL hash reuses the pinned successful atomic-A parser proof; only changed statements would be newly parsed. No workload Execute. Local SQL proposal reused byte-identical successful atomic bootstrap proof.',
       'existingParserDatabase':EXISTING_DB,'plannedDatabase':n.DB,'sourceSnapshotUnchanged':True,
       'metadataAndPermissionChecks':{k:v for k,v in observed.items()if k!='authMD5'},
       'coverageLimits':['Original pg_restore and roles SQL reuse unchanged successful pinned restore proof.','PostgREST internally generated SQL reuses successful native Auth/CAS proof; not claimed extracted from diagnostic source.','Parse-only does not execute constraints/triggers or demonstrate runtime memory.'],

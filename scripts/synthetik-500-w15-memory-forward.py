@@ -89,13 +89,13 @@ def main():
     integration=json.loads((pathlib.Path(target['work'])/'INTEGRATION_RESULT.SAFE.json').read_text())
     assert integration['status']=='PASS_PREPARED0_ATOMIC_COMPONENTS_RAM_PENDING'and integration['activeProfiles']==0
     assert integration['originalSourceUnchanged']is True and integration['units']==0
-    parser=json.loads((ASSETS/'sql-preflight-atomic-a/SQL_PREFLIGHT.SAFE.json').read_text())
+    parser=json.loads((ASSETS/'sql-preflight-atomic-b/SQL_PREFLIGHT.SAFE.json').read_text())
     assert parser['status']=='PASS_ALL_GENERATED_DIAGNOSTIC_SQL_PARSE_DESCRIBE_NO_EXECUTION'and parser['plannedDatabase']==DB
     for name,expected in parser['sourcePins'].items():assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==expected,'atomic-sql-reviewed-source-drift'
     review=json.loads(pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/MEMORY_PRESTART_REVIEW_FINAL.SAFE.json').read_text())
     assert review['status']=='PASS_PRESTART_ATOMIC_END500_ALLOCATION_ONLY'
-    for pin in review['sourcePins']:
-        p=ROOT/pin['path'];b=p.read_bytes();assert len(b)==pin['bytes']and hashlib.sha256(b).hexdigest()==pin['sha256'],'atomic-memory-reviewed-source-drift'
+    for reviewed_pin in review['sourcePins']:
+        p=ROOT/reviewed_pin['path'];b=p.read_bytes();assert len(b)==reviewed_pin['bytes']and hashlib.sha256(b).hexdigest()==reviewed_pin['sha256'],'atomic-memory-reviewed-source-drift'
     assert not WORK.exists(),'w15-forward-once-only'
     os.umask(0o077);WORK.mkdir(mode=0o700)
     created=False;w=None;failure=None;result=None;zero=False
