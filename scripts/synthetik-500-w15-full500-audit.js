@@ -4,7 +4,7 @@
 // dispatches, activates, retries, repairs data or claims real model quality.
 const fs = require("node:fs"), path = require("node:path"), assert = require("node:assert/strict");
 const crypto = require("node:crypto"), { spawnSync } = require("node:child_process");
-const ROOT = path.resolve(__dirname, ".."), STATE = "/tmp/w15-full500-20261028b/state";
+const ROOT = path.resolve(__dirname, ".."), STATE = "/tmp/w15-full500-20261028c/state";
 const DB = "helmut_w15_full500_20261028b", EXPECTED = 500, CHECKS = 34;
 const literal = x => "'" + String(x).replaceAll("'", "''") + "'";
 const sha = x => crypto.createHash("sha256").update(x).digest("hex");

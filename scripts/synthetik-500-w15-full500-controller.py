@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """Exactly one explicitly authorized full local mock run. No action on import."""
-import datetime, zoneinfo, hashlib, json, os, pathlib, posixpath, signal, subprocess, threading, time
+import datetime, zoneinfo, hashlib, json, math, os, pathlib, posixpath, queue, signal, subprocess, threading, time
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-WORK=pathlib.Path('/workspace/shared/helmut-w15-full500-20261028b')
-BASE='/tmp/w15-full500-20261028b'
+# Fresh server/container/PGDATA; the database namespace deliberately remains
+# unchanged so the already qualified source installer and its pins stay exact.
+WORK=pathlib.Path('/workspace/shared/helmut-w15-full500-20261028c')
+BASE='/tmp/w15-full500-20261028c'
 DB='helmut_w15_full500_20261028b'
-CONTAINER='w15-full500-20261028b'
+CONTAINER='w15-full500-20261028c'
 SOURCE_DB='helmut_w15_input_20261027'
 SOURCE_CONTAINER='synthetik500-runtime-pg-7e1c20261027'
 IMAGE='sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e'
 RECEIPT=pathlib.Path('/workspace/shared/helmut-w15-receipt-20261027/reports/W15_RECEPTION_REPORT.SAFE.json')
 RECEIPT_SHA='2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1'
-REVIEW=pathlib.Path('/workspace/shared/helmut-w15-full500-review-20261028b/REVIEW_READY.SAFE.json')
+REVIEW=pathlib.Path('/workspace/shared/helmut-w15-full500-review-20261028c/REVIEW_READY.SAFE.json')
 QUALIFICATION=pathlib.Path('/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b')
+AUTH_WITNESS=pathlib.Path('/workspace/shared/helmut-w15-auth-observer-check-20261028/AUTH_MEASUREMENT_CHECK.SAFE.json')
 DOCKER=['docker','--host=unix:///var/run/docker.sock']
 ENV={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'}
 MEMORY=json.loads((ROOT/'scripts/fixtures/w15-memory-contract.json').read_text())
@@ -36,6 +39,50 @@ def check_window(now=None):
 
 def sha(data):return hashlib.sha256(data).hexdigest()
 def literal(x):return "'"+str(x).replace("'","''")+"'"
+def private_json_pin(pin,expected=None):
+    p=pathlib.Path(pin['path'])
+    assert p.is_absolute()and p.is_file()and not p.is_symlink()
+    if expected is not None:assert p==expected
+    s=p.stat();assert s.st_uid==os.getuid()and s.st_mode&0o777==0o600
+    b=p.read_bytes();assert len(b)==pin['bytes']and sha(b)==pin['sha256'],'full500-auth-review-pin-drift'
+    return json.loads(b)
+def check_auth_witness(review):
+    accepted=review['authMeasurementCheck']
+    assert accepted['status']=='PASS_GENUINE_ALL_AUTH_WRITES_TIMED'and accepted['independentReviewAccepted']is True
+    actual=private_json_pin(accepted['reportPin'],AUTH_WITNESS)
+    independent=private_json_pin(accepted['independentReviewPin'])
+    assert independent['status']=='PASS_INDEPENDENT_GENUINE_AUTH_MEASUREMENT_REVIEW'
+    assert independent['reportPin']==accepted['reportPin'],'full500-independent-auth-report-binding'
+    assert actual['status']==accepted['status']and actual['coverage']['pass']is True
+    assert actual['coverage']['observedCASWrites']==4 and actual['unassignedCASWrites']==0
+    for key in ['profileActivations','unitExecutions','providerCalls','activeProfilesBefore','activeProfilesAfter','originalDatabaseWrites']:
+        assert actual[key]==0,'full500-auth-witness-scope'
+    assert actual['sourceQualifierRepeated']is False
+    pin=actual['runtimeSourcePin'];assert pin['path']=='scripts/synthetik-500-w15-full500-runtime.js'
+    b=(ROOT/pin['path']).read_bytes();assert len(b)==pin['bytes']and sha(b)==pin['sha256'],'full500-auth-observer-source-drift'
+    # Read the complete real observation, never rerun an API or trust a timing
+    # summary alone. This is a pre-resource gate, not another Auth test.
+    envelopes=actual['mutations']+actual['usageSinks'];writes=actual['casWrites']
+    assert len(writes)==4 and len(envelopes)==4
+    assert len(actual['usageSinks'])==1
+    assert sum(e['kind']=='public-mutation'for e in actual['mutations'])==1
+    for api in ['acquirePipelineLock','releasePipelineLock']:
+        locks=[e for e in actual['mutations']if e['kind']=='pipeline-lock'and e['api']==api]
+        assert len(locks)==1 and locks[0]['blobAcknowledged']is True
+    by_id={e['id']:e for e in envelopes};assert len(by_id)==len(envelopes)
+    def timed(row):
+        assert row['acknowledged']is True
+        assert all(type(row[k])in [int,float]and math.isfinite(row[k])for k in ['beginMS','ackMS','endMS','wallMs'])
+        assert row['beginMS']<=row['ackMS']<=row['endMS']and 0<=row['wallMs']<30000
+        assert row['endMS']-row['beginMS']<30000
+    for row in envelopes:timed(row)
+    for row in actual['usageSinks']:assert row['blobAcknowledged']is True
+    used=set()
+    for row in writes:
+        timed(row);assert row['rowId']=='main-auth'
+        envelope=by_id[row['envelopeId']];used.add(row['envelopeId'])
+        assert envelope['beginMS']<=row['beginMS']<=row['ackMS']<=row['endMS']<=envelope['endMS']
+    assert used==set(by_id)
 def save(name,value):
     p=WORK/name
     with p.open('x') as f:os.chmod(p,0o600);json.dump(value,f,indent=2);f.write('\n')
@@ -62,7 +109,81 @@ def copy_out(name):
 class Supervisor:
     def __init__(self,cgroup):
         self.cgroup=cgroup;self.finished=threading.Event();self.failure=None;self.last=None;self.process=None;self.maximum=0;self.last_events=None;self.closure_mode=False;self.stage_name=None
+        self.progress_lock=threading.RLock();self.failure_lock=threading.Lock();self.accepted_indexes=set();self.last_accepted_index=None
+        self.started_monotonic=time.monotonic();self.last_ack_monotonic=None;self.last_terminal_monotonic=self.started_monotonic
+        self.progress=(WORK/'outer-progress.SAFE.jsonl').open('x');os.chmod(WORK/'outer-progress.SAFE.jsonl',0o600)
+        self.progress_queue=queue.Queue(maxsize=2048);self.progress_finished=threading.Event()
+        self.reporter=threading.Thread(target=self.write_progress,daemon=True);self.reporter.start()
         self.thread=threading.Thread(target=self.monitor,daemon=True)
+    def write_progress(self):
+        try:
+            while not self.progress_finished.is_set()or not self.progress_queue.empty():
+                try:record=self.progress_queue.get(timeout=.2)
+                except queue.Empty:continue
+                try:
+                    line=json.dumps(record,separators=(',',':'))
+                    self.progress.write(line+'\n');self.progress.flush();print(record['message'],flush=True)
+                finally:self.progress_queue.task_done()
+        except BaseException as e:self.first_failure(e)
+        finally:self.progress.close()
+    def publish(self,name,index=None,status=None):
+        # Only existing kernel samples and sanitized runtime ACK events enter
+        # this public-shaped record. No SQL, Docker exec or memory read here.
+        with self.progress_lock:
+            now=time.monotonic();m=self.last
+            actual_limit=None if m is None else m['configuredLimit']
+            memory=None if m is None else {'sampleAtUTC':m['sampleAtUTC'],'comparisonBudgetBytes':LIMIT,
+              'kernelLimitBytes':int(actual_limit)if actual_limit.isdigit()else actual_limit,
+              'kernelLimitMB':int(actual_limit)/1000000 if actual_limit.isdigit()else None,'kernelSwapMaximum':m['swapMaximum'],
+              'currentBytes':m['currentBytes'],'currentMB':round(m['currentBytes']/1000000,3),'currentPercentOfCap':round(100*m['currentBytes']/LIMIT,6),
+              'kernelLifetimePeakBytes':m['kernelLifetimePeakBytes'],'peakMB':round(m['kernelLifetimePeakBytes']/1000000,3),'peakPercentOfCap':round(100*m['kernelLifetimePeakBytes']/LIMIT,6),
+              'reserveBytes':LIMIT-m['kernelLifetimePeakBytes'],'reserveMB':round((LIMIT-m['kernelLifetimePeakBytes'])/1000000,3),
+              'reservePercentOfCap':round(100*(LIMIT-m['kernelLifetimePeakBytes'])/LIMIT,6),'requiredReserveBytes':RESERVE,
+              'requiredReservePercent':MEMORY['minimumReservePercent'],'maximumAllowedPeakBytes':MAXIMUM,'maximumAllowedPeakMB':MAXIMUM/1000000,
+              'swapCurrentBytes':m['swapCurrentBytes'],'events':m['events']}
+            record={'name':name,'observedAtUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'phase':self.stage_name or 'between-stages-or-cleanup',
+              'acceptedProfiles':len(self.accepted_indexes),'expectedProfiles':500,'lastAcceptedIndex':self.last_accepted_index,
+              'noNewAcceptedACKForSeconds':round(now-(self.last_ack_monotonic or self.started_monotonic),3),
+              'noAcceptedProfileYet':not self.accepted_indexes,'memory':memory}
+            if index is not None:record['index']=index
+            if status is not None:record['status']=status
+            if name=='supervisor-first-failure':record['failure']=self.failure
+            ram='RAM noch ohne verifizierten Sample'
+            if memory is not None:
+                ram=('RAM {currentMB:.1f} MB ({currentPercentOfCap:.2f} %) | Peak {peakMB:.1f} MB ({peakPercentOfCap:.2f} %)'
+                  ' | Peak-Reserve {reserveMB:.1f} MB ({reservePercentOfCap:.2f} %)').format(**memory)
+            if name=='unit-final-ack-accepted':
+                record['message']='Profil '+str(index+1)+'/500 abgeschlossen | '+ram
+            elif name=='supervisor-first-failure':
+                pending=' | nächstes nicht akzeptiertes Profil '+str(len(self.accepted_indexes)+1)+'/500'if len(self.accepted_indexes)<500 else''
+                record['message']='FEHLER | Phase '+record['phase']+' | '+str(len(self.accepted_indexes))+'/500 akzeptiert'+pending+' | '+str(self.failure['reason'])+' | '+ram
+            else:
+                record['message']='Status | Phase '+record['phase']+' | '+str(len(self.accepted_indexes))+'/500 akzeptiert | kein neuer akzeptierter ACK seit '+str(record['noNewAcceptedACKForSeconds'])+' s | '+ram
+            # Terminal/disk backpressure must never stall the safety monitor.
+            self.progress_queue.put_nowait(record);self.last_terminal_monotonic=now
+    def observe_line(self,raw,stage):
+        if stage!='run' or len(raw)>4096:return
+        try:value=json.loads(raw)
+        except (ValueError,UnicodeError):return
+        if not isinstance(value,dict)or value.get('name')!='unit-final-ack-accepted'or value.get('status')!='PASS':return
+        index=value.get('index')
+        with self.progress_lock:
+            if type(index)is not int or not 0<=index<500 or index!=len(self.accepted_indexes):
+                self.first_failure(RuntimeError('full500-accepted-ack-sequence-unknown'));return
+            self.accepted_indexes.add(index);self.last_accepted_index=index;self.last_ack_monotonic=time.monotonic()
+            self.publish('unit-final-ack-accepted',index,'PASS')
+    def first_failure(self,error):
+        with self.failure_lock:
+            first=self.failure is None
+            self.failure=self.failure or {'type':type(error).__name__,'reason':str(error)}
+            p=self.process
+        # Stop first; terminal/file reporting cannot delay the existing bound stop.
+        if not self.closure_mode and p and p.poll()is None:
+            try:os.killpg(p.pid,signal.SIGTERM)
+            except ProcessLookupError:pass
+        if first:
+            try:self.publish('supervisor-first-failure',status='FAIL')
+            except BaseException:pass # First failure and bound stop already persist independently.
     def sample(self):
         if self.stage_name!='materials'and(WORK/'processing-materials.PRIVATE.json').exists():
             m=json.loads((WORK/'processing-materials.PRIVATE.json').read_text())
@@ -82,32 +203,55 @@ class Supervisor:
             raise RuntimeError('full500-memory-reserve-or-oom')
     def monitor(self):
         while not self.finished.is_set():
-            try:self.sample()
-            except BaseException as e:
-                self.failure=self.failure or {'type':type(e).__name__,'reason':str(e)}
-                p=self.process
-                if not self.closure_mode and p and p.poll()is None:
-                    try:os.killpg(p.pid,signal.SIGTERM)
-                    except ProcessLookupError:pass
+            try:
+                self.sample()
+                with self.progress_lock:
+                    if time.monotonic()-self.last_terminal_monotonic>=20:self.publish('supervisor-heartbeat')
+            except BaseException as e:self.first_failure(e)
             self.finished.wait(.1)
     def stage(self,cmd,name,seconds,extra_env=None):
         if self.failure and not self.closure_mode:raise RuntimeError('full500-supervisor-first-failure')
         assert self.thread.is_alive(),'full500-memory-supervisor-not-alive'
         self.stage_name=name
         with (WORK/(name+'.PRIVATE.log')).open('xb')as log:
-            self.process=subprocess.Popen(cmd,stdout=log,stderr=log,env=extra_env or ENV,cwd=ROOT,start_new_session=True)
-            try:r=self.process.wait(timeout=seconds)
+            self.process=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=extra_env or ENV,cwd=ROOT,start_new_session=True)
+            process=self.process
+            # A first failure may have arrived after the entry check while no
+            # child existed. Bind its stop to this newly assigned owned group.
+            if self.failure and not self.closure_mode:
+                self.first_failure(RuntimeError('full500-supervisor-first-failure'))
+            def drain():
+                try:
+                    partial=False
+                    while True:
+                        raw=process.stdout.readline(65536)
+                        if not raw:break
+                        log.write(raw);log.flush()
+                        if not partial and raw.endswith(b'\n'):self.observe_line(raw,name)
+                        partial=not raw.endswith(b'\n')
+                except BaseException as e:self.first_failure(e)
+            reader=threading.Thread(target=drain,daemon=True);reader.start()
+            try:
+                r=self.process.wait(timeout=seconds)
+                if r:
+                    error=RuntimeError('full500-stage-failed:'+name+':'+str(r))
+                    self.first_failure(error);raise error
             except subprocess.TimeoutExpired:
                 os.killpg(self.process.pid,signal.SIGTERM)
                 try:self.process.wait(timeout=5)
                 except subprocess.TimeoutExpired:os.killpg(self.process.pid,signal.SIGKILL);self.process.wait()
                 raise RuntimeError('full500-stage-timeout:'+name)
-            finally:self.process=None;self.stage_name=None
-        if r:raise RuntimeError('full500-stage-failed:'+name+':'+str(r))
+            finally:
+                reader.join(timeout=5)
+                if reader.is_alive():self.first_failure(RuntimeError('full500-output-reader-not-drained'))
+                else:process.stdout.close()
+                self.process=None;self.stage_name=None
         if self.failure and not self.closure_mode:raise RuntimeError('full500-supervisor-first-failure')
     def stop(self):
         self.finished.set()
         if self.thread.ident is not None:self.thread.join(timeout=2)
+        self.progress_finished.set();self.reporter.join(timeout=5)
+        if self.reporter.is_alive():self.failure=self.failure or {'type':'RuntimeError','reason':'full500-progress-output-not-drained'}
 
 def inner(supervisor,action,seconds=120):
     if action=='audit'and(WORK/'processing-materials.PRIVATE.json').exists():
@@ -187,6 +331,7 @@ def main():
     review=json.loads(REVIEW.read_text());assert review['status']=='PASS_PRESTART_STATIC_AND_PURE_CHECKS'
     assert review['restorePreflight']['status']=='PASS_COMMITTED_ORIGINAL_RESTORE_WITH_500_INACTIVE_PROFILES'
     assert review['restorePreflight']['independentReviewAccepted']is True
+    check_auth_witness(review)
     qualification=review['sourceQualification']
     assert qualification['status']=='PASS_ALL500_CURRENT_ORIGINAL_MOCK_BINDINGS'
     assert qualification['independentReviewAccepted']is True
@@ -239,7 +384,7 @@ def main():
           'fixtures/w15-full500-provider.js','fixtures/w15-unit0-provider.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-full500-window.js']
         for n in names:shutil.copy2(ROOT/'scripts'/n,stage/'app/scripts'/n)
         pgdata=WORK/'pgdata';pgdata.mkdir(mode=0o700)
-        docker('create','--name',CONTAINER,'--label','helmut.w15.full500=20261028b','--pull=never','--network=none','--restart=no',
+        docker('create','--name',CONTAINER,'--label','helmut.w15.full500=20261028c','--pull=never','--network=none','--restart=no',
           '--memory=2048000000','--memory-swap=2048000000','--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
           '-e','POSTGRES_HOST_AUTH_METHOD=trust',IMAGE);created=True
         docker('start',CONTAINER)
@@ -249,7 +394,10 @@ def main():
         assert len(info['Mounts'])==1 and info['Mounts'][0]['Source']==str(pgdata)and info['Mounts'][0]['Destination']=='/var/lib/postgresql/data'
         pid=info['State']['Pid'];cgrel=pathlib.Path('/proc/'+str(pid)+'/cgroup').read_text().strip().split('0::')[-1]
         cgroup=pathlib.Path('/sys/fs/cgroup')/posixpath.normpath('/'+cgrel.lstrip('/')).lstrip('/');assert info['Id']in str(cgroup)
-        supervisor=Supervisor(cgroup);supervisor.sample();supervisor.thread.start()
+        supervisor=Supervisor(cgroup)
+        try:supervisor.sample()
+        except BaseException as e:supervisor.first_failure(e);raise
+        supervisor.thread.start()
         save('SUPERVISOR_READY.SAFE.json',{'pid':os.getpid(),'container':CONTAINER,'realMemoryCap':LIMIT,'swapMaximum':0,'cgroup':str(cgroup),'image':IMAGE})
         # Readiness is bounded, never a dispatch/DB-write retry.
         ready=False
@@ -341,7 +489,8 @@ def main():
             final_sample_verified=False
             if not recovery:
                 try:supervisor.sample();final_sample_verified=True
-                except BaseException as e:failure=failure or {'type':type(e).__name__,'reason':str(e)}
+                except BaseException as e:
+                    supervisor.first_failure(e);failure=failure or {'type':type(e).__name__,'reason':str(e)}
             supervisor.stop();save('FINAL_COMMON_MEMORY.SAFE.json',{'originalCgroup':str(supervisor.cgroup),'originalLastVerifiedSample':supervisor.last,
               'maximumObservedPeakBytes':supervisor.maximum,'originalFinalPeakVerified':final_sample_verified and not recovery and supervisor.failure is None,'recoveryOccurred':recovery,'failure':supervisor.failure})
         if before is not None:

@@ -5,7 +5,7 @@ const fs = require("node:fs"), path = require("node:path"), crypto = require("no
 const assert = require("node:assert/strict"), { AsyncLocalStorage } = require("node:async_hooks");
 const { performance } = require("node:perf_hooks");
 const Memory = require("./fixtures/w15-memory-contract");
-const DIR = "/tmp/w15-full500-20261028b", STATE = path.join(DIR, "state");
+const DIR = "/tmp/w15-full500-20261028c", STATE = path.join(DIR, "state");
 const DB = "helmut_w15_full500_20261028b", PUB = "HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY";
 const PRIV = "HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY";
 const CONFIRMATION = "GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO";
@@ -141,6 +141,28 @@ function observeAuth(S, { currentIndex = () => null, onFinalACK = () => {} } = {
       finally { row.endMS = performance.now(); row.wallMs = row.endMS - row.beginMS; }
     });
   };
+  // These genuine lock APIs call lexical writeAuthStore rather than the
+  // exported mutation API. Preserve their behavior and measure the whole call
+  // as the acknowledged upper bound, just like the existing usage sink.
+  for (const name of ["acquirePipelineLock", "releasePipelineLock"]) {
+    const actual = S[name]; assert.equal(typeof actual, "function");
+    S[name] = function(...args) {
+      const row = { id: ++nextId, kind: "pipeline-lock", api: name,
+        lockKeyHash: sha(String(args[0])), index: currentIndex(), beginMS: performance.now() };
+      mutations.push(row);
+      return contexts.run(row, async () => {
+        try {
+          const value = await actual.apply(this, args);
+          const writes = casWrites.filter(w => w.envelopeId === row.id);
+          row.blobAcknowledged = writes.length > 0 && writes.every(w => w.acknowledged === true);
+          row.acknowledged = row.blobAcknowledged && (name !== "acquirePipelineLock" || value === true);
+          if (name === "acquirePipelineLock") row.acquired = value === true;
+          row.ackMS = performance.now(); return value;
+        } catch (e) { row.failure = safeError(e); throw e; }
+        finally { row.endMS = performance.now(); row.wallMs = row.endMS - row.beginMS; }
+      });
+    };
+  }
   return { mutations, usageSinks, casWrites, context: () => contexts.getStore(),
     assessment: () => authCoverageAssessment({ mutations, usageSinks, casWrites }) };
 }
