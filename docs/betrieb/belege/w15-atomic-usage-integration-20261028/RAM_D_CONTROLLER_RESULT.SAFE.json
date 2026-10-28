@@ -1,0 +1,56 @@
+{
+  "status": "FAIL_OR_UNKNOWN",
+  "failure": {
+    "type": "RuntimeError",
+    "reason": "full500-supervisor-first-failure",
+    "retryAllowed": false
+  },
+  "innerStopFailure": null,
+  "stopFailures": [],
+  "zeroCheckFailure": null,
+  "serviceClosure": {
+    "status": "FAIL_OR_UNKNOWN",
+    "reason": "owned-service-exit-unconfirmed",
+    "type": "FileNotFoundError"
+  },
+  "activeProfiles": 0,
+  "CASCompleted": 0,
+  "commonKernelPeakBytes": 548626432,
+  "lastKernel": {
+    "sampleAtUTC": "2026-10-28T19:34:24.333973+00:00",
+    "configuredLimit": "2048000000",
+    "swapMaximum": "0",
+    "kernelLifetimePeakBytes": 548626432,
+    "currentBytes": 317153280,
+    "swapCurrentBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "comparisonBudgetBytes": 2048000000,
+    "requiredReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "comparisonReserveBytes": 1499373568
+  },
+  "finalNativeAudit": null,
+  "lastDisk": {
+    "availableBytes": 223236096,
+    "initialBytes": 641568768,
+    "consumedSinceWatcherBytes": 418332672,
+    "phase": "processing",
+    "requiredFreeBytes": 234881024,
+    "atUTC": "2026-10-28T19:34:24.334120+00:00"
+  },
+  "projectedAdditionalPhysicalBytes": null,
+  "additionalProjectionMarginBytes": 67108864,
+  "units": 0,
+  "providerCalls": 0,
+  "profileActivations": 0,
+  "executionAuthority": false,
+  "full500Acceptance": false,
+  "retryAllowed": false
+}

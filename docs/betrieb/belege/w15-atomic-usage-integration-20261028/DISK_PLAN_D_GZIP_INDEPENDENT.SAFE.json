@@ -1,0 +1,98 @@
+{
+  "schema": "helmut-w15-D-disk-capacity-independent-plan-gzip/1",
+  "status": "PASS_PREPARATION_PLAN_ONLY_IMPLEMENTATION_AND_START_GATES_PENDING",
+  "reviewedAtUTC": "2026-10-28T19:02:03.518823+00:00",
+  "previousAssessmentPreserved": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/DISK_PLAN_D_INDEPENDENT.SAFE.json",
+    "bytes": 6932,
+    "sha256": "c9e16580044c9d618e48c14b1a3278fefbfda41cf8d4bea20b859dc8976ba2ea",
+    "earlierNoPassRemainsHistorical": true
+  },
+  "scope": "ADDITIVE_READ_ONLY_PLAN_REASSESSMENT_NO_NEW_COMPRESSION_NO_NEW_DATABASE_OR_DIAGNOSTIC",
+  "assumptions": {
+    "unchangedFullNativePostimages": 3501,
+    "samePinnedImmutableCSeed": {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/seed.PRIVATE.sql",
+      "bytes": 118800333,
+      "sha256": "a91d74064c3a717777cd25a743de27aaba4cb3dd0529b85270d24c503e5717d4"
+    },
+    "onlyIntendedAuthDifferences": [
+      "freshRevision",
+      "diagnosticProbeSequence"
+    ],
+    "maximumClaimedAuthMetadataDifferenceBytes": 128,
+    "smallDatabaseNamespaceMetadataDifference": true,
+    "differencesAreProspectivePlanAssumptionsRequiringActualFinalReadback": true,
+    "otherCopyAndDiskAssumptionsFromPreviousReportUnchanged": true
+  },
+  "existingCompressionEvidence": {
+    "sourcePath": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_C_NATIVE_FINAL_PRIVATE.jsonl",
+    "rawBytes": 120268457,
+    "rawSHA256": "e3111216d4fa6e57c99f747e970cc853609f4f07fa01e0b44d895d570ae7ef6c",
+    "method": "Root reported readonly streaming gzip via zlib level6; no output file was written",
+    "gzipBytes": 42139672,
+    "measurementReportedToolSeconds": 5.289,
+    "repeatedByReviewer": false,
+    "databaseCalls": 0,
+    "completeFullAuthAndAllOtherNativeRowsRetained": true,
+    "auditAllowanceBytes": 67108864,
+    "measuredCompressionMarginBytes": 24969192,
+    "allowanceIsEmpiricalScopedEngineeringBudgetNotUniversalDeflateBound": true
+  },
+  "revisedBudget": {
+    "parts": {
+      "freshVFSRootExcludingPGDATAAndStateMinusOnlyReusedROSeed": 629256192,
+      "freshPGDATAAtMeasuredCSizeReplacingCurrentWALWithGuardAndAdding64MiBGrowth": 606060544,
+      "newHostAppStage": 8749056,
+      "logsAllowance64MiB": 67108864,
+      "filesystemOtherAndClosureAllowance32MiB": 33554432,
+      "temporaryFilesAllowance32MiB": 33554432,
+      "independentLosslessGzipFullAuditAllowance64MiB": 67108864
+    },
+    "totalBytes": 1445392384,
+    "additionalInflightAllowanceBytes": 67108864,
+    "totalIncludingInflightBytes": 1512501248,
+    "availableBytesFromPriorReadOnlyObservation": 1563201536,
+    "availableNotRemeasured": true,
+    "remainingIncludingInflightBytes": 50700288,
+    "reductionRelativeToRawAuditPlanBytes": 53161984,
+    "closureAdmissionFloorBytes": 167772160,
+    "closureFloorComponents": {
+      "fullGzipAuditAllowanceBytes": 67108864,
+      "oneInflightWriterAllowanceBytes": 67108864,
+      "closureAllowanceBytes": 33554432
+    },
+    "noDoubleAuditRawFileOrRawSpoolIncluded": true
+  },
+  "mandatoryBeforeStart": [
+    "Implement and independently review direct streaming gzip from complete native output; never persist an additional raw copy. Preserve all old raw artifacts unchanged.",
+    "Refresh actual f_bavail before creation/copy; require complete remaining-copy budget plus pending audit and abort reserves.",
+    "Continuous existing outer0.1s disk monitor and before-copy/before-CAS checks; retain original memory cap/reserve/swap guards unchanged.",
+    "At disk failure stop new mutation dispatch and owned writers; no retry. Complete and preserve bounded readonly native audit and zero/closure receipts.",
+    "Use phase-aware remaining disk reservation: a fixed admission floor crossing must not itself cancel the complete pending readonly audit. Account for remaining compressed audit bytes plus closure through gzip close and independent validation.",
+    "Require gzip EOF/trailer/CRC validation, uncompressed byte count and SHA256, parser completeness, all3501 exact/deep postimage comparisons and exact raw fullAuth comparison except the explicit allowed metadata.",
+    "Any unexpected content/cardinality/size or exceeding the64MiB audit allowance is UNKNOWN/FAIL, never PASS; do not truncate or omit evidence. Retain admission overshoot/closure slack for safe completion.",
+    "Review bounds/overshoot for soft WAL402653184, PG relation growth, temporary files and logs; existing finite allowances are not filesystem hard quotas.",
+    "Fresh diagnostic only after implementation/review gates. This assessment creates no Full500 permission or result proof."
+  ],
+  "limitations": [
+    "Compression measurement was supplied by Root and intentionally not repeated by this reviewer.",
+    "Known C gzip size plus narrowly specified content invariance supports this preparation budget; it does not mathematically bound arbitrary future Deflate output.",
+    "No current actual D state exists or is asserted.",
+    "About50.7MB plan slack is finite and requires the proposed guards; shared concurrent workspace consumption can invalidate admission."
+  ],
+  "activity": {
+    "sourceEdits": 0,
+    "databaseQueries": 0,
+    "databaseWrites": 0,
+    "tests": 0,
+    "compressionRuns": 0,
+    "containerStarts": 0,
+    "diagnostics": 0,
+    "cacheChanges": 0,
+    "deletions": 0,
+    "onlyNewProtectedReportWritten": true
+  },
+  "freshDiagnosticStartApproved": false,
+  "full500Pass": false
+}

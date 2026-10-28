@@ -1,0 +1,150 @@
+{
+  "schema": "helmut-w15-D-disk-capacity-independent-plan/1",
+  "status": "UNKNOWN_NO_CAPACITY_PASS_BEFORE_GUARDED_PLAN_IMPLEMENTED_AND_REVIEWED",
+  "reviewedAtUTC": "2026-10-28T19:00:02.918846+00:00",
+  "scope": "READ_ONLY_CAPACITY_REVIEW_NOT_A_DIAGNOSTIC_OR_FULL500_EXECUTION",
+  "worktree": "/workspace/helmut-w15-atomic-integration",
+  "requestedHEAD": "fdf693426c5798456d612205626e13be61713404",
+  "observation": {
+    "workspaceAvailableBytes": 1563201536,
+    "filesystem": "shared workspace overlay",
+    "dockerDriver": "vfs",
+    "dockerRoot": "/var/lib/docker",
+    "sameWorkspaceCapacityPool": true,
+    "tmpAvailableNotCounted": true,
+    "currentContainer": "w15-memory-atomic-20261028c",
+    "containerID": "de73c6bb253bee9c055dbdac6ab0efa2aaf36a15e04be99fb29f929aa2c9e7f8",
+    "readOnlyDockerMetadataAndDuCalls": true,
+    "newResourcesCreated": false
+  },
+  "measuredPhysicalBytes": {
+    "containerRootExcludingPGDATAAndState": 748060672,
+    "includedSeed": 118804480,
+    "includedApp": 8749056,
+    "includedNode": 125997056,
+    "includedPostgrest": 17309696,
+    "includedDump": 4984832,
+    "includedRestoreSQL": 16470016,
+    "PGDATA": 270528512,
+    "PGbase": 135507968,
+    "PGwalIncludingDirectoryBlocks": 134230016,
+    "PGglobal": 614400,
+    "stateBind": 5636096,
+    "historicalRawAuditFile": 120268457,
+    "historicalRawAuditPhysical": 120270848
+  },
+  "deduplicationRules": [
+    "Root already contains app/node/PostgREST/dump/restoreSQL: do not add these again.",
+    "PGDATA and state were explicitly excluded from root and need separate allowances.",
+    "Direct stream old immutable staged node/PostgREST into fresh independent files; no extra host binary stage.",
+    "Old C seed remains intact; verify exact pin and RO-bind the existing seed directly, no host or container seed duplicate.",
+    "Only new app host stage is added; its container copy is already represented in the root envelope.",
+    "Do not sum Docker SizeRootFs, SizeRw, BASE and du root.",
+    "No shared PGDATA, hardlinks, tmpfs relocation, deletion, truncation, cache clearing or RAM subtraction."
+  ],
+  "historicalNaturalTrend": {
+    "actualCompletedCAS": 369,
+    "databaseObservations": 16,
+    "all500InertOutputVolumesAlreadySeeded": true,
+    "nativeExactSeedRows": 3501,
+    "walPhysicalMin": 134217728,
+    "walPhysicalMax": 134217728,
+    "cumulativeWalFirst": 121062068,
+    "cumulativeWalLast": 1331295572,
+    "storePhysicalMin": 63963136,
+    "storePhysicalMax": 72589312,
+    "TEMPBytesMax": 0,
+    "TEMPFilesMax": 0,
+    "checkpointsFirstLast": [
+      2,
+      20
+    ],
+    "autovacuumsFirstLast": [
+      3,
+      124
+    ],
+    "interpretation": "Measured recycling and finite retained physical footprint support a bounded engineering plan. Neither cumulative WAL times 6500 nor per-CAS linear bloat is a justified physical-capacity forecast. These 369 completed CAS do not prove all500 or6500 future footprint."
+  },
+  "proposedBudget": {
+    "parts": {
+      "freshVFSRootExcludingPGDATAAndStateMinusOnlyReusedROSeed": 629256192,
+      "freshPGDATAAtMeasuredCSizeReplacingCurrentWALWithGuardAndAdding64MiBGrowth": 606060544,
+      "newHostAppStage": 8749056,
+      "logsAllowance64MiB": 67108864,
+      "independentFullRawAudit": 120270848,
+      "filesystemOtherAndClosureAllowance32MiB": 33554432,
+      "temporaryFilesAllowance32MiB": 33554432
+    },
+    "totalBytes": 1498554368,
+    "remainingBytes": 64647168,
+    "additional64MiBInFlightWalBytes": 67108864,
+    "totalIncludingAdditionalInFlightBytes": 1565663232,
+    "shortfallIncludingAdditionalInFlightBytes": 2461696,
+    "notAProvenENOSPCForecast": true,
+    "assumedPGGrowthTemporaryLogsAndOverheadAreNotEstablishedHardBounds": true,
+    "maxWalSize128MiBIsSoft": true,
+    "existingWalGuard402653184IsNotFilesystemQuota": true
+  },
+  "requiredBeforeCapacityPass": [
+    "Refresh actual workspace f_bavail immediately before creation/copy; account for all concurrent writers and use the same filesystem for the guard.",
+    "Implement and independently review continuous outer free-space guard (existing 0.1s supervisor) through copies, restore, seed, CAS, owned stop and complete native audit.",
+    "Pre-copy admission must include the whole remaining independent copy, PG growth/WAL, logs, full audit and abort allowances without double-counting.",
+    "Before dispatching further CAS preserve at least full raw audit + in-flight writer + closure reserve; crossing threshold is first UNKNOWN/FAIL and bounded owned stop, never a retry.",
+    "Retain complete independent native audit after a disk stop and genuine closure/zero receipts; do not silently skip or truncate them.",
+    "Bound/review each unbounded writer or provide independently justified worst-case overshoot. Soft WAL limit and positive free-space sampling alone are not a hard byte ceiling.",
+    "Keep current cap2048000000, reserve409600000, swap0 and full-lifetime kernel peak accounting unchanged."
+  ],
+  "candidateClosureFloorBytes": 220934144,
+  "candidateClosureFloorComponents": {
+    "fullAuditPhysical": 120270848,
+    "oneInflightWriterAllowance": 67108864,
+    "closureOtherAllowance": 33554432
+  },
+  "closureFloorIsProposalNotImplementedProof": true,
+  "sourcePins": [
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/FORWARD_RESULT.SAFE.json",
+      "bytes": 1824215,
+      "sha256": "0b76630aeef9e084cc18d3e030f1878bbbc9c25aa6b757a7aea5a72dad649588"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/CONTROLLER_RESULT.SAFE.json",
+      "bytes": 2475,
+      "sha256": "d1a95541b79e7040bb1657b0458770e575d2f701bddd2733b50a2910351aa35e"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_C_NATIVE_FINAL_INDEPENDENT_READONLY.SAFE.json",
+      "bytes": 1933,
+      "sha256": "61cc142e647f7bb34b2541ab3efab858d7ea78992a8097c25f72ee4c6fea1bd1"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/scripts/synthetik-500-w15-memory-forward.py",
+      "bytes": 26290,
+      "sha256": "6ebf276cd774de23a7a58038f85594b15afd3d774c34fab596d1c47b88ac371c"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/scripts/fixtures/w15-local-memory-budget.json",
+      "bytes": 641,
+      "sha256": "83414ddc04a025b20eedd9119657d62689f8e18d2f660b8a3bad85556e2566c7"
+    }
+  ],
+  "reusedSeedPin": {
+    "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/seed.PRIVATE.sql",
+    "bytes": 118800333,
+    "sha256": "a91d74064c3a717777cd25a743de27aaba4cb3dd0529b85270d24c503e5717d4"
+  },
+  "activity": {
+    "sourceEdits": 0,
+    "databaseQueries": 0,
+    "databaseWrites": 0,
+    "tests": 0,
+    "newDiagnostics": 0,
+    "containerStarts": 0,
+    "cacheChanges": 0,
+    "deletions": 0,
+    "modelCalls": 0,
+    "onlyNewReviewArtifactWritten": true
+  },
+  "full500Pass": false,
+  "diagnosticStartApprovedByThisReport": false
+}

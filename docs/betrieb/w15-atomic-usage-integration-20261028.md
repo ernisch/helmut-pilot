@@ -6,7 +6,8 @@ Eigener Branch `codex/w15-atomic-usage-integration-20261028`,
 PR973 `fa506939` und PR972 `c36bd427`. Neu ausgeführter Diagnosecode C: `ee36720d`;
 der historische B-Lauf wurde auf `d2920d6d` ausgeführt. Neuer begrenzter
 Datei-I/O-Check tatsächlich auf `63f37c7d` (FAIL); neuer gezielter Draincheck
-mit dem Dateistand aus `7c4c25a7` (PASS), keine weitere End500-Ausführung.
+mit dem Dateistand aus `7c4c25a7` (PASS). Danach genau ein neuer D-Versuch
+auf `07b51319`, vor dem ersten CAS am Plattenwächter gestoppt.
 Tatsächlich ausgeführter Anschlussstand D: `d66a94dc`; RAM-Diagnose: `55dda919`.
 `e1a62acc` ergänzt danach ausschließlich Fehler-Metadaten; kein Lauf wurde wiederholt
 oder nachträglich auf diesen Kopf umetikettiert.
@@ -26,7 +27,127 @@ kein End500-PASS. Alle historischen UNKNOWN-/FAIL-Befunde bleiben erhalten.
 
 Die anschließend freigegebene C-Diagnose endete nach369/500 mit einem ausdrücklich
 klassifizierten Lese-Timeout. Die echte Service-Abschlussquittung und vollständige
-native Endsicht sind diesmal positiv. Kein weiterer Versuch und kein Mock500.
+native Endsicht waren im damaligen C-Sprint positiv; dort kein weiterer Versuch.
+Der danach separat freigegebene D-Versuch und der heutige Freigabestand stehen oben.
+
+## Aktueller Sprint: neue Anbindung gezielt geprüft, End500-D FAIL vor CAS0
+
+Auf Code `07b51319` wurde genau ein frischer isolierter D-Versuch ausgeführt.
+Vorbereitende gezielte Checks liefen auf `fdf69342` plus den anschließend
+bytegleich in `07b51319` versionierten Dateien. Keine Ergebnisse auf neue Quellen
+umetikettiert. Kein Retry, Resume, vollständiger Mock500-Lauf oder Merge.
+
+Die asynchrone Protokollierung ist ausschließlich im isolierten Diagnosepfad
+angebunden: synchroner Stop-Latch vor Public-Aufruf/Mutator/nativem Schreiben,
+tiefer unveränderlicher Anfangs-Abbruchsnapshot, einmaliger Abschlussowner mit
+realer verbleibender15s-Frist, vollständige dauerhafte Fortschrittsbestätigung.
+Späte bereits abgesandte Antworten können keinen neuen Fortschritt freigeben.
+MEMORY-Gateway bestätigt echte Prozess-/Socket-Enden erst nach Journalabschluss;
+früher Prozessfehler sperrt READY. Alle Anwendungs-/Kosten-/Quellenregeln bleiben.
+Der bewährte native Abschlussaudit hat45s/Statement; eigentlicher Storage10s,
+Journal15s und Auth30 bleiben unverändert. Keine Production-Konfiguration geändert.
+
+Zusätzlicher Plattenbedarf wurde aus bestehenden physischen Größen geplant,
+überlappende BASE-/RootFS-/PGDATA-Größen nicht doppelt addiert. Seed118.800.333Bytes
+wird unverändert hashgebunden als einzelne RO-Datei außerhalb rekursiv geänderter
+BASE eingebunden. Node/PostgREST werden direkt aus vorhandener Kanonik in die
+neue getrennte Containerkopie übertragen, ohne weitere143MB Host-Stagingkopie.
+Nur8.675.328Bytes neue Appdateien. Keine PGDATA-/State-Aliase, keine Hardlinks,
+keine geschützten Daten verlagert und kein PGDATA auf tmpfs. Gemeinsamer Kernelpeak
+bleibt ohne Abzüge das RAM-Kriterium. Alle Original-/Altbestände bleiben erhalten.
+
+Der neue Abschlussadapter bewahrt den vollständigen privaten Datenstrom verlustfrei
+als gzip statt zweiter120MB-Rohkopie; RawSHA/Bytes, EOF/CRC, exakter Decimalvergleich
+und alle3.501Postimages einschließlich6.000Usage sind verpflichtend. Auch stderr wird
+vollständig privat mit fdatasync erhalten; öffentliche Berichte enthalten nur
+Metadaten. Laufender gemeinsamer RAM-/Plattenwächter0,1s, zusätzlich unmittelbare
+Diskprüfung vor jedem Public-/Mutator-/nativen Aufruf. Processing-Floor224MiB;
+readonly Abschluss verwendet verbleibendes Auditbudget plus64MiB, damit die
+reservierte Auditkapazität auch verbraucht werden kann. Das ist keine FS-Quota.
+
+Gezielte Vorabprüfungen wurden genau einmal ausgeführt, keine Gesamtsuite wiederholt:
+
+| Neue begrenzte Prüfung | Tatsächliches Ergebnis |
+| --- | --- |
+| Lebenszyklus:2echteSIGTERM-Kinder plus onceClose/Stop-Latch |3/3PASS,143/Signalnull,0weitereFreigaben |
+| Verlustfreier Gzip-/Decimal-Dateiadapter |alle120.268.457historischen C-Bytes,42.139.672Gzipbytes,3.501voll verglichenePostimages/6.000Usage |
+| Geänderte tatsächlich erzeugte SQL |3.517Hashes:3.511übernommen,6neueParse/Describe,0Execute |
+| LokaleDateivorbereitung |8.675.328Bytes,keine neue Datenbank |
+
+Der Codeccheck verwendet ausschließlich einen **neuen privaten Kontrollkopiepfad**
+auf `/tmp`, während die historische Originaldatei auf dem Workspace erhalten bleibt.
+Er ist kein RAM-/Datenbanklauf und verschiebt keine bestehenden geschützten Dateien.
+Die bereits bestandenen10.820Journal-/10.822ACK-/4Fehlerfallprüfungen sowie echte
+Auth-/Quellen-/Workerbelege wurden übernommen. Keine alten UNKNOWN-Schreibvorgänge
+wiederholt. [Neue Lifecycleabnahme](belege/w15-atomic-usage-integration-20261028/LIFECYCLE_RESULTS_REVIEW_D.SAFE.json)
+· [Codec](belege/w15-atomic-usage-integration-20261028/AUDIT_CODEC_CHECK_D.SAFE.json)
+· [SQL](belege/w15-atomic-usage-integration-20261028/SQL_PREFLIGHT_D.SAFE.json).
+
+Vor Start unabhängige bewachte Engineering-Zulassung, keine harte Platzgarantie:
+1.553.272.832Bytes frei, verbleibendes Planbudget1.503.825.920Bytes nach bereits
+allokierterApp,49.446.912Bytes Spielraum; In-flight64MiB bereits enthalten.
+[Damals gültige Startabnahme](belege/w15-atomic-usage-integration-20261028/MEMORY_PRESTART_REVIEW_D.SAFE.json).
+Dieser Plan stellte sich bei tatsächlicher Anlage/Seed als unvollständig heraus.
+
+| Tatsächlicher D-Befund | Wert |
+| --- | --- |
+| Primärfehler,19:34:22.803560UTC |`w15-forward-disk-closure-reserve` |
+| FreiePlatte beim Erstfehler / geforderterFloor |224.247.808 /234.881.024Bytes |
+| Endgültiger gemeinsamer Kernelpeak |548.626.432Bytes |
+| RAM-Reserve / Swap / OOM-max-Ereignisse |1.499.373.568Bytes=73,2116% /0 /0 |
+| Nativ unabhängig am Ende |500Profile,0aktiv |
+| Auth-CAS / W15-Node-Run / Gateway / DR-Units / Modelle |0 /nicht gestartet /nicht gestartet /0 /0 |
+
+Bereits am ersten Wächtersample waren nur641.568.768Bytes frei: rund911,7MB
+unter dem Admission-Read. Diese Strecke ist nicht komponentengenau zugeordnet.
+Docker weist einen logischen Imageanteil437.457.485Bytes aus; eine zusätzliche
+physische VFS-Initlayerkopie bleibt **Vermutung/UNKNOWN**, kein bewiesener Defekt.
+Insbesondere wurde kein geschützter Docker-Verzeichniszugriff umgangen.
+
+Alle3.501Seed-SELECTs meldeten innerhalb ihrer Transaktion matches=true. Die
+unabhängige reine Metadaten-Endlesung sieht committed Seed-Daten
+(2.500Briefings,1.006Storezeilen,Main-Auth6.000Usage). Noch kein Atomicmarker,
+llm_usage0; weder Bootstrap noch Node-Setup/-Run erreicht. Keine neue vollständige
+3.501Postimage-Abschlussprüfung behauptet. Die im Controller fehlende Servicequittung
+ist sekundär: der Service wurde nie gestartet. Der ursprüngliche FileNotFound- /
+UNKNOWN-Befund wird nicht überschrieben. Auth-Maxima bleiben nicht gemessen;
+der beobachtete Boot-/Restore-/Seed-Peak ist kein End500-RAM-/Auth30-PASS.
+[Unabhängiger D-Abschluss](belege/w15-atomic-usage-integration-20261028/DISK_D_RESULTS_REVIEW.SAFE.json)
+· [ursprünglicher Controllerbericht](belege/w15-atomic-usage-integration-20261028/RAM_D_CONTROLLER_RESULT.SAFE.json)
+· [Postmortem](belege/w15-atomic-usage-integration-20261028/DISK_D_POSTMORTEM_INDEPENDENT.SAFE.json).
+
+### Konkreter Bereinigungsvorschlag: keine Ausführung ohne GO
+
+Exakt26byteidentische Node-/PostgREST-Host-Stagingdateien aus13alten Vorbereitungen,
+alle als regulär/UID1000/nlink1/ohneSymlink und mit vollständigemSHA geprüft.
+Sichtbare Allokation1.862.975.488Bytes; derzeit222.924.800Bytes frei.
+Rechnerisch nach vollständiger Reclamation2.085.900.288Bytes; tatsächlichesdf
+ist erst nach einer separat genehmigten Aktion beweisbar. Keine Aussage, dass
+sichtbareBlocks sofort vollständig frei werden. Keine Containerdatei, Datenbank,
+Originaleingabe, Quelle, Fixture, Archiv, Schlüssel, Passwort oder Journal betroffen.
+
+Kanonische gleichgehashte Exemplare unter dem bisherigenC-Staging sowie die
+Originalruntimekopie bleiben erhalten. Vor jeder freigegebenen Löschung müssten
+Hashes, Rechte und aktuelle Nichtbenutzung erneut gebunden werden. Risiko:
+Die konkreten alten Stagepfade fehlen danach, bis sie wiederhergestellt werden.
+Rückweg: exklusives Kopieren der kanonischen Bytes auf den jeweiligen fehlenden
+Pfad, vollständige Größen-/SHA-Prüfung, aufgezeichneteUID/GID/Modi und
+fdatasync/fsync; niemals vorhandene Dateien überschreiben oder mutable Aliase bauen.
+Alle exakten Zielpfade und Wiederherstellungsquellen sind im
+[prüfbaren26-Dateien-Manifest](belege/w15-atomic-usage-integration-20261028/STAGING_DUPLICATES_NEXT_GO.SAFE.json)
+enthalten. Privates vollständiges Metadatenmanifest bleibt lokal geschützt.
+
+**Nichts gelöscht oder verlagert. Der eine D-Versuch ist verbraucht.** Für die
+konkrete26-Dateien-Bereinigung und einen weiteren frischen End500-Versuch braucht
+es neues ausdrückliches GO. Zuerst tatsächlich zurückgewonnenen Platz und
+revidierten Anlagebedarf mit unabhängiger Startprüfung bestätigen; kein Resume.
+Der nächste gemeinsame Plattenplan muss die vor dem bisherigen Wächter sichtbare
+Anlagephase tatsächlich berücksichtigen. Eine logische VFS-Risikoallokation ist
+keine bewiesene physische Zusatzspitze. Mock500-Startbindungen wurden nach FAIL
+nicht weiter geändert; dieser Gesamtversuch und Production bleiben gesperrt.
+
+Die folgenden Komponentenabschnitte enthalten auch historische Sprintstände.
+Der neueste D-Befund und die aktuelle konkrete Freigabegrenze stehen im Abschnitt oben.
 
 ## Was tatsächlich integriert und geprüft ist
 
@@ -449,7 +570,7 @@ Alle10.820Ereignisse bleiben erhalten; keine Frist-/RAM-Grenze wird erhöht.
 [Vorschlag](belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_FIX_PROPOSAL.SAFE.json)
 · [unapplied Patch](belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_FIX_UNAPPLIED.patch).
 
-## Journal-Abbruchfix: genau ein neuer gezielter Check PASS
+## Historisch vor D: Journal-Abbruchfix, gezielter Check PASS
 
 Der ausdrücklich freigegebene Patch wurde gegen den exakten Quellhash geprüft.
 Nur das Datei-Prüfprogramm wurde geändert; tatsächlicher Lauf auf HEAD `872a1bcf`
@@ -493,7 +614,7 @@ Auth-Operation, Unit, Aktivierung oder Modellaufruf. Kein neuer RAM-/Auth30-Bele
 · [echter Kindexit](belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_CHILD_EXIT.SAFE.json)
 · [Drainquittung](belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_RECEIPT.SAFE.json).
 
-**Neue End500-Startbedingung UNKNOWN, deshalb vor Start gestoppt.** Unabhängig
+**Damals neue End500-Startbedingung UNKNOWN, deshalb vor Start gestoppt.** Unabhängig
 aktuell1.563.443.200Bytes auf dem Workspace frei. Das historische konservative
 1,88GB-Kopierplanbudget passt nicht mehr. Eine belastbare obere Grenze für die
 zusätzliche Spitze aus frischer VFS-/Datenbankkopie, WAL, Logs und vollständigem
@@ -528,16 +649,16 @@ Zeilen-/Branch-, Worker- oder Gesamtprojektabdeckung.
 
 ## Freigabestand und nächster Schritt
 
-**Journal-/Abbruchkomponente vollständig unabhängig PASS; End500 noch gesperrt.**
-Ein erneuter gleicher Datei-/Abbruchcheck ist nicht nötig. Nächster notwendiger
-Schritt ist eine belastbare Plattenplatzplanung beziehungsweise sichere
-Platzbereitstellung ohne Verlust alter Daten/Belege. Keine Löschung oder neue
-kostenpflichtige Ressource wurde dafür vorgenommen oder vorausgesetzt.
-Danach sichere asynchrone Anbindung samt unabhängiger Abnahme; nur bei sämtlichen
-frischen gültigen Ressourcen-/Startbedingungen darf die unverbrauchte bedingte
-Freigabe für genau eine neue End500-Diagnose verwendet werden. Kein Mock500-Start.
-Die tiefere historische C-Lückenursache bleibt UNKNOWN, kein alter unbestätigter
-Schreibvorgang wird wiederholt und kein Timeout erhöht.
+**End500-D gescheitert vor erstem CAS; kein weiterer Versuch in diesem GO.**
+Journal-/Lifecycle-/Codec-/Parserkomponenten gezielt unabhängig PASS; tatsächlicher
+W15-End500-Runtime- und Speicherbeleg weiterhin offen. Der eine frische D-Versuch
+stoppte an der Plattenreserve im Seed; keine neue Runtime-/Auth30-Abnahme.
+Konkretes26-Dateien-Manifest oben ist ausschließlich ein Freigabevorschlag.
+Vor jedem weiteren Versuch erst getrennt genehmigte Platzbereitstellung,
+tatsächlichesdf, revidierten Anlageplan und neue unabhängige Startabnahme.
+Keine Daten-/Beleglöschung oder neuen kostenpflichtigen Ressourcen ausgeführt.
+Die tiefe historische C8,4s-Lückenursache bleibt UNKNOWN; kein alter unbestätigter
+Schreibvorgang wiederholt und kein Timeout erhöht. Kein Mock500-Start.
 
 Für den späteren Mock500-Start sind außerdem vier vorhandene Bindungen anzupassen:
 alter4-Blob-Auth-Beleg auf die bereits geprüften12atomaren D-/EU-ACKs,
@@ -576,3 +697,9 @@ auf den neuen optionalen Journalcode `63f37c7d`; neue Kopf-CI separat.
 Lokale Belege ersetzen keine Pflicht-CI. Der bekannte unveränderte Vercel-Konfigurationsfehler bleibt
 außerhalb dieses Sprints: `functions.api/index.js.includeFiles` hat2.915Zeichen,
 zulässig sind256. Keine Preview-/Production-Bereitschaft behauptet.
+
+Auf Kopf `fdf69342` sind Pflicht-CI40748463046 und Integrität40748463085
+abgeschlossen/grün, tatsächlicher Browserlauf laut Prüfplan übersprungen. Dies
+gilt nicht automatisch für den danach lokal geprüften Codekopf `07b51319` oder
+den neuen Dokumentationskopf; dessen automatische Kopf-CI wird separat gelesen.
+Keine vollständige lokale Suite oder manuelle CI-Wiederholung gestartet.

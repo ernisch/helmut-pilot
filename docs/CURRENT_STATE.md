@@ -1,46 +1,53 @@
 # CURRENT STATE — Helmut
 
-## W15: Journal-Abbruchprüfung PASS; End500 vor Start am Plattenplatz gesperrt (28.10.)
+## W15: End500-D vor erstem Auth-Vorgang am Plattenwächter gescheitert (28.10.)
 
-PR974, eigener Integrationsbranch auf PR973 `fa506939`/PR972 `c36bd427`;
-alle ungemergt. Gezielter Journalcheck auf HEAD `872a1bcf` plus einer geänderten Datei
-(SHA256 `7984a69b…`); ausgeführter Dateistand danach bytegleich in `7c4c25a7` versioniert.
-Vorbereiteter Patch gegen exakte Quellhashes geprüft und ausschließlich nötig ergänzt:
-Drain-Prefix höchstens64Einträge je unveränderter15s-Barriere, letzte64für Signal;
-echte Kind-Exit-/Signalquittung mit fdatasync, Fatal-Exit ohne Heartbeat-Leck.
-Gezielte Syntaxprüfung und unabhängiger statischer Review21Punkte bestanden.
-**Genau ein neuer Datei-/Abbruchcheck vollständig unabhängig PASS:**
-10.820/10.820 Originalpayloads exakt;10.822 Zeilen inklusive Start/Abbruch,
-10.822 vollständige native Write-/Sync-ACKs, letzteSequenz10.821,0pending,Datei geschlossen.
-Ein echter akzeptierter SIGTERM, wirklicher Kindexit143/Signalnull, kein SIGKILL;
-Kindprozessende unabhängig bestätigt. Alle4vorab definierten Fehlerfälle bestanden:
-Teilschreiben/immutableSnapshot, Sync-EIO ohneACK, abgelaufene IO ohne FD-Reuse/lateACK,
-Queueüberlauf ohne zusätzlichenACK. Erwartete injizierte Fehler sind keine Laufwiederholung.
-Kein HTTP/DB/Auth/Unit/Modell und keine Aktivierung; kein neuer RAM-/Auth30-/Unit60-Beleg.
-Bestandene normale Sync-/Async-Vergleiche über exakte Hashes übernommen, nicht wiederholt.
-Alter Datei-Check bleibt GesamtFAIL; alte fehlende Kindexitquittung bleibt UNKNOWN.
-Die historische C-Ursache der gemeinsamen8,4s-Lücke bleibt UNKNOWN; kein Timeout erhöht.
-**End500-Startbedingung UNKNOWN/gesperrt:** unabhängig1.563.443.200Bytes frei.
-Altes konservatives1,88GB-Kopierplanbudget passt nicht; sichere zusätzliche Spitze für
-frische VFS-/Datenbankkopie, WAL und vollständigen Abschlussaudit noch nicht belegt.
-Keine überlappenden Größen doppelt addiert; keine angeblich exakt bewiesene Bedarfszahl.
-Deshalb vor Async-End500-Anbindung und neuer Datenbank/Container/Diagnose gestoppt.
-Bedingte Freigabe für genau eine neue End500-Diagnose weiter ungenutzt; kein Mock500.
-Keine alten Daten, Originale oder historischen Fehlerbelege gelöscht oder verändert.
-Bestehende Prepared0-/HTTP-/Auth-/EU-Integration16/16, Worker81/81,
-500/500Quellen und16frische Auth-ACKs/49HTTP200 im belegten Umfang übernommen.
-Historische End500-C bleibt369/500 FAIL: Peak1.437.229.056Bytes/Reserve29,8228%,Swap0;
-Authmax16,171304524s/native7,691495863s. Alle3.501Postimages/6.000Usage zuletzt exakt,
-500Profile/0aktiv zuletzt unabhängig nativ bestätigt; dieser Sprint0DB-Schreibvorgänge.
-Historischer11.UNKNOWN, B291.UNKNOWN und fehlende B-Stopquittung bleiben erhalten.
-CI `319bf131`: Pflicht40738479972 und Integrität40738480004 grün;
-CI `872a1bcf`: Integrität40745802549 grün, Pflicht40745802429 zuletzt noch laufend;
-Browser gemäß Prüfplan übersprungen. Neue Kopf-CI separat, keine lokale Vollwiederholung.
-Vercel-Konfigurationsfehler includeFiles2.915>256 unverändert separat.
-Nächster Schritt: sicheren zusätzlichen Plattenbedarf/Platzbereitstellung klären;
-danach sichere Async-Anbindung mit Review und nur bei allen PASS genau eine End500-Diagnose.
-Kein weiterer Datei-/Abbruchcheck nötig ohne neue sachliche Änderung.
-[Messwerte, unabhängige Belege und Freigabestand](betrieb/w15-atomic-usage-integration-20261028.md).
+PR974 auf PR973 `fa506939`/PR972 `c36bd427`, alle ungemergt.
+Genau ein neuer End500-D-Versuch auf sauberem Codekopf `07b51319` ausgeführt;
+keine Wiederholung/kein Resume und kein Mock500-Gesamtstart.
+**FAIL bei0/500CAS:** am19:34:22.803560UTC frei224.247.808Bytes,
+erforderlicher Plattenfloor234.881.024Bytes. Primärfehler exakt
+`w15-forward-disk-closure-reserve`, nicht nur generischer Controllerabschluss.
+Kernelpeak einschließlich Abschluss548.626.432Bytes; Reserve1.499.373.568Bytes
+=73,2116%, hartes Limit2.048.000.000Bytes, Swap/OOM/max0. Nur Boot/Restore/Seed;
+kein W15-Node-Run/Gateway/Atomicbootstrap/Auth-Aufruf, keine Aktivierung oder Unit.
+Deshalb kein neuer End500-RAM-, Auth30- oder Unit60-PASS; Authmax nicht gemessen.
+**Unabhängig nativ500Profile/0aktiv bestätigt.** Seed-Daten committed beobachtet
+(2.500Briefings/1.006Storezeilen/Main-Auth6.000Usage); keine neue vollständige
+3.501Postimage-Endprüfung behauptet. Alles weiter inert, keine neuen DR-Ergebnisse.
+Original-Seed-SHA unverändert. Service-Abschlussdatei fehlt, weil Service nie startete;
+der ursprüngliche FileNotFound-/UNKNOWN-Befund bleibt erhalten, kein falsches Grün.
+Startplan war trotz bewachter unabhängiger Zulassung zu knapp: vor dem ersten
+Wächtersample schon rund911,7MB Abnahme gegenüber Admission. Genaue physische
+Zuordnung UNKNOWN; zusätzlicher VFS-Initlayer nur plausible, unbewiesene Erklärung.
+Der spätere Grenzschutz stoppte; keine Grenze erhöht/Cachebereinigung/Datenkürzung.
+
+Vorher gezielt bestanden und unabhängig übernommen: Journal10.820Originalpayloads/
+10.822durableACKs, echterSIGTERM+4Fehlerfälle; neue3Lifecyclefälle mit2echtenTERMs,
+kein Weiterlauf, ursprünglicher UNKNOWN-Snapshot bleibt unverändert. Gzip-/Decimal-
+Dateiadapter erhält alle120.268.457C-Auditbytes verlustfrei in42.139.672Bytes und
+vergleicht3.501Postimages/6.000Usage; ausdrücklich keine neue Datenbankabnahme.
+SQL3517:3511exakt übernommen/6nurParseDescribe/0Arbeitsabfragen ausgeführt.
+KleineAppvorbereitung8.675.328Bytes; keine143MB-Binär-Stagingduplikation und
+keine118,8MB-Seedkopie, stattdessen hashgebundenerRO-Einzelfilemount außerhalbBASE.
+Asynchrone Diagnosehülle mit Stop-Latch, tiefem Abbruchbild, einem Abschlussowner,
+dauerhaftenACKs und exakten Zeiten eingebunden; tatsächlicher Runtime-Beleg noch offen.
+Bestehende16/16Integration, Worker81/81,500/500Quellen und16Auth-ACKs/49HTTP200
+im belegten Umfang übernommen, nicht wiederholt. HistorischeA/B/CFAILs,
+11.UNKNOWN, B291.UNKNOWN und C8,4s-Ursache unverändert erhalten.
+
+**Konkreter Vorschlag, noch NICHT ausgeführt:**26byteidentische Node-/PostgREST-
+Host-Stagingkopien,13Paare/26verschiedeneInodes, SHA/Größe/Modus vollständig erfasst.
+Sichtbar1.862.975.488Bytes; rechnerisch danach ca2,086GB frei, keine garantierte
+Reclamation/Startreserve. Keine Originale/DBs/Logs/Archive/Quellenbelege im Vorschlag.
+Kanonische Exemplare plus Originalruntime bleiben; Rückweg exklusive Kopie aus
+Kanonik mit vollständigerHash-/Rechtekontrolle. Alte Stagepfade fehlen bis Restore.
+Vor Löschung separates GO, danach echtesdf und neuer unabhängiger Kapazitätsreview;
+auch ein weiterer frischer End500-Versuch benötigt neues GO. AktuellesKontingent verbraucht.
+CI `fdf69342`: Pflicht40748463046/Integrität40748463085 abgeschlossen/grün;
+Browser gemäß Prüfplan übersprungen. Dies ist kein CI-PASS für `07b51319`;
+neue Kopf-CI nach Push separat. Vercel-includeFiles2.915>256 unverändert separat.
+[Belege, tatsächliche Messwerte und genaues Bereinigungsmanifest](betrieb/w15-atomic-usage-integration-20261028.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten.
 

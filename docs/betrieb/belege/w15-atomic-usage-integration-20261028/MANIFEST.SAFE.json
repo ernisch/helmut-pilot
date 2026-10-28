@@ -1,6 +1,11 @@
 {
   "files": [
     {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/ASYNC_END500_INTEGRATION_CONDITIONS.SAFE.json",
+      "bytes": 7781,
+      "sha256": "c2a88916b5d3bd2e305c73023a27781248b97dce1f3f8a981521134681857750"
+    },
+    {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/ATOMIC_AUTH_PREPARED0.SAFE.json",
       "bytes": 7218,
       "sha256": "3d701e603149930d3696da9a368c72381b65687622011a20946df87b5f27fc52"
@@ -14,6 +19,16 @@
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/ATOMIC_EU.SAFE.json",
       "bytes": 5581,
       "sha256": "c4d55de806eec8c657e061e2ee8d795dcdba2d3c58c31892cad781550001c39e"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/AUDIT_CODEC_CHECK_D.SAFE.json",
+      "bytes": 1923,
+      "sha256": "029f48b72be9c53f41b2c94107474b13b166862fcf3f670142509d0ef45481bd"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/AUDIT_CODEC_PRESTART_REVIEW_D.SAFE.json",
+      "bytes": 4724,
+      "sha256": "d290fa51c344787c8083cd029b9e9422bac1b404e08c730da1ca869d7d274ae1"
     },
     {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/AUTH_TRANSPORT_PROBE_PRESTART_REVIEW.SAFE.json",
@@ -51,6 +66,26 @@
       "sha256": "08656ab43a6e3738a57aa74d32cbda8a37e54372662f257de767c04e4c988d29"
     },
     {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/DISK_D_POSTMORTEM_INDEPENDENT.SAFE.json",
+      "bytes": 6672,
+      "sha256": "e8b576ac6a4888a6fe7dfe47e1a518e3123a02eb0fe596ad4fe08e2be59bd55f"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/DISK_D_RESULTS_REVIEW.SAFE.json",
+      "bytes": 15521,
+      "sha256": "c5ec2cfd1588f8e979e2c749c1032c53318f1f452c56bfe6133f8324c1a43728"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/DISK_PLAN_D_GZIP_INDEPENDENT.SAFE.json",
+      "bytes": 5471,
+      "sha256": "a62c58e1c0c451666cb845edfb36963531f96496ff62e024d034a509033d6b78"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/DISK_PLAN_D_INDEPENDENT.SAFE.json",
+      "bytes": 6932,
+      "sha256": "c9e16580044c9d618e48c14b1a3278fefbfda41cf8d4bea20b859dc8976ba2ea"
+    },
+    {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/D_NATIVE_INDEPENDENT_READONLY.SAFE.json",
       "bytes": 805,
       "sha256": "008e30337e36f73cf37227081f4c0ea677c1ba6da4b30a0ea3fb428521d64dbc"
@@ -59,6 +94,11 @@
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/D_RESULTS_INDEPENDENT_REVIEW.SAFE.json",
       "bytes": 15279,
       "sha256": "45ed6642e60ad704f4d4f50c06bfd43f3347b39a838bd369d65eace3339baed1"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/FINAL_DOC_PUBLICATION_D_REVIEW.SAFE.json",
+      "bytes": 10826,
+      "sha256": "15a46fbce796de279aef0113c011614b851af5bd83792d3282d42fbcdb9fcf60"
     },
     {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/HTTP_IDLE_PROBE_PRESTART_REVIEW.SAFE.json",
@@ -131,6 +171,21 @@
       "sha256": "924ea275f7fb05b9ca0445ac55aa1b91fc952c5afa185360745917495e6f4932"
     },
     {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/LIFECYCLE_PRESTART_REVIEW_D.SAFE.json",
+      "bytes": 5389,
+      "sha256": "8f114ce9888f949510b44dc9dace225efdb0c619b03ae672c402d866bd79c1de"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/LIFECYCLE_RESULTS_REVIEW_D.SAFE.json",
+      "bytes": 5836,
+      "sha256": "6c549f6b5dcbc35bc37097a1f15621486aa9ca8e0f6e0e5c6d7b75008da193b4"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/LIFECYCLE_RUN_RESULT_D.SAFE.json",
+      "bytes": 4971,
+      "sha256": "a8612e449af84451d17d7d4e1d3ee1fb586d4276ed018ee852ab34589356433c"
+    },
+    {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/MEMORY_PRESTART_REVIEW_B.SAFE.json",
       "bytes": 13458,
       "sha256": "07e3112b1fb225a6dea36fc6560ce1f9fa9696bc07660683aa8c51f6d8000037"
@@ -139,6 +194,11 @@
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/MEMORY_PRESTART_REVIEW_C.SAFE.json",
       "bytes": 16659,
       "sha256": "3c6a9826c9b6412f5908c5bef9e0c9f114ead9ed3115f76fa5349975ec279e07"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/MEMORY_PRESTART_REVIEW_D.SAFE.json",
+      "bytes": 17395,
+      "sha256": "03352a0c51134df2fc68096f17c81ce5e98415660793df30dce5235bd5424e72"
     },
     {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/MEMORY_PRESTART_REVIEW_FINAL.SAFE.json",
@@ -341,6 +401,21 @@
       "sha256": "fe600d13c39ca20e1ccf2660cc11ed5c154145b1ca3643b126d9227bbf0c45da"
     },
     {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_D_CONTROLLER_RESULT.SAFE.json",
+      "bytes": 1504,
+      "sha256": "e39950f859cf9ab454ac54ac41ef987048ce3449fbcb77024744b032943ebf4c"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_D_NATIVE_ZERO.SAFE.json",
+      "bytes": 113,
+      "sha256": "7406b24f929d69e74499288457db78a04b635a665b49a6b0b96500f5672f878e"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_D_RESTORED500_ZERO.SAFE.json",
+      "bytes": 37,
+      "sha256": "eb421a1cb57e3f0936bf5e81a7f65fd347e546412584c49c4d15fd3185cc8895"
+    },
+    {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_FORWARD_RESULT.SAFE.json",
       "bytes": 76699,
       "sha256": "df3dc65442120f0bf55d1c99df92fb01570cb974aad6a5ffbb88f24e5486aa62"
@@ -376,6 +451,11 @@
       "sha256": "1250fc610598371ee6f873ba5ea258b37a11c70515527cbd4146a05b30efdf83"
     },
     {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/SQL_PREFLIGHT_D.SAFE.json",
+      "bytes": 442705,
+      "sha256": "3003fac4718db331fa288783bbf53212ebf248d201cd2e6a0571ac433a870293"
+    },
+    {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/SQL_PREFLIGHT_RAM_B_SUMMARY.SAFE.json",
       "bytes": 2497,
       "sha256": "a8c7cf977b7ee7e79349cecd1a50da2cb1bae2f230fcbad2907329a02d098e9e"
@@ -391,9 +471,19 @@
       "sha256": "bff55ce352760d0dc7a1752af429dc7d05793113abb87c0d8e7ad99b689b2db9"
     },
     {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/STAGING_DUPLICATES_NEXT_GO.SAFE.json",
+      "bytes": 23955,
+      "sha256": "427c4f8a37cbd5540949d5b03c60b637a39cd6e6e268db795f9ac2bbdd45e00d"
+    },
+    {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/START_FAILURES.SAFE.json",
       "bytes": 2336,
       "sha256": "1d5aa24ab759fa5b7c2fa02331df7a143826f5cbcf1434a2532b22eb0fb0564e"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/STATIC_D_PREPARE_PARSE_REVIEW.SAFE.json",
+      "bytes": 7098,
+      "sha256": "787b8fac3daa00ee26e0745dae2ddd588aeae04cd71cdce8f32cefc8c6caaebb"
     },
     {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/TARGETED_WORKER_CHECK.SAFE.json",

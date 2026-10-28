@@ -1,0 +1,225 @@
+{
+  "schema": "helmut-w15-independent-D-final-publication-review/1",
+  "status": "PASS_STATIC_D_PUBLICATION_AND_PROPOSED_SCOPE_ONLY",
+  "reviewedAtUTC": "2026-10-28T19:51:08.097883+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "actualRuntimeSourceCommit": "07b51319",
+  "manifestFilesReviewed": 100,
+  "manifestPayloadBytes": 4858171,
+  "unchangedHistoricalFiles": 83,
+  "newTechnicalFiles": 17,
+  "checks": [
+    {
+      "name": "manifest",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "100technicalJSONentries4858171Bsize/hashverified;83historicalentriesunchanged;17newsmallSAFEfiles. No PRIVATE/raw/gzip/stderr/OriginalAuth/sourcepayloadfileincluded."
+    },
+    {
+      "name": "DactualFAIL",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "07b51319actualDsingleattemptFAILat0CASbeforenode/setup/Gateway/Atomicbootstrap. Exactdiskfree224247808vsfloor234881024andprimaryreasonpreserved;parentgenericfailuresecondary."
+    },
+    {
+      "name": "native_zero_seed",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Independent500profiles0activeandcommittedseedmetadatacorrectlylimited;3501precommitSELECTmatchesnotrelabeledfullnativeend-audit. ServicequittungmissingbecauseNEVER_STARTED;originalFileNotFound/UNKNOWNpreserved."
+    },
+    {
+      "name": "RAM_scope",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "548626432Bpeak/1499373568Breserve73.2116%/SwapOOMmax0reportedonlyinitializationphase. NoRAM/Auth30/Unit60/full500/ProductionPASSandnonewAuthmaxinvented."
+    },
+    {
+      "name": "capacity_causality",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "911704064Bprewatcherfree-reductioniscorrelatedintervalnotcomponentproof.437457485Blogicalimagesize/VFSriskisprovisional,notprovedphysicalallocation. SourceSourcebeforewatchconsumptionnotguessed."
+    },
+    {
+      "name": "reused_newcomponents",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Journal/3Lifecycle/Codec3501historicalBytes/3517SQLbindingspositivewithscope;noOriginalDB/500source/oldAuthrepeats. CodecfileroundtripnotnewDbstateproof;actualruntimeproofstillopen."
+    },
+    {
+      "name": "proposal_targets",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Exact26hoststageNode/PGRpaths from13pairs agreewithsmallpinnedprivatefullmetadata,26distinctrecordeddevice/inodes,nlink1/UID1000/regular/nonsymlink/stablehashreads. Ccanonicalpaths/inodesexcluded andsamefullbinarybytes/modesmappedforeachrestore."
+    },
+    {
+      "name": "proposal_preservation",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Onlyduplicateexecutablestagefilesproposed;canonicalC+originalruntimecopiesandallDB/receivedinputs/logs/manifests/archives/keys/fixturesretained. Oldstagepathsabsentuntilrestoreexplicitlydisclosed;uniquebinary/evidencecontentnotlostaccordingtopinnedcomparison."
+    },
+    {
+      "name": "rollback",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Exclusivecreatecopyfromretainedmatchingcanonical,fullsize/SHA/readback/modeUIDGID+fdatasync/fsync,noexistingtargetoverwrite/nohardlinks/symlinks. Historicalinodeidentitynotclaimedrecreated;capturedfullmetadatamanifeststaysprivate."
+    },
+    {
+      "name": "approval_capacity",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "1862975488Bvisibleblocks and2085900288Barithmeticfuturefreecorrect;actualreclamationnotguaranteedandnotperformed.1949958733Bcombinedplanprovisional,actualdf+newindependentadmission+freshunusagetargetvalidationrequiredafterseparateexactmanifestGO. NoRunpermissionrenewal."
+    },
+    {
+      "name": "privacy",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "All17newpublicfilesstructurallyread/credentialandcontentpatternsabsent;onlytechnicalpaths/hashes/counts/timings/enums/cgroupmetadata. Private26filemetamanifestnotcopied. No2GBbinaryrehashperformedbyreviewer."
+    },
+    {
+      "name": "CI_source",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "fdfCI40748463046/40748463085greenandbrowserSKIPscopedhistorically. No07b51319/newdocsheadCIgreenclaim. Runtimeactualcode/sourcecommitnotrelabeled."
+    },
+    {
+      "name": "stop_boundary",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Dauthorizationconsumed/noRetry/noResume/noMock500/newtest. Proposedcleanupnotexecuted;deletionandnewdiagnosisrequireexplicitnewGO. NoSourceschangedwhilethispublicationreview."
+    },
+    {
+      "name": "docs",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "CURRENT_STATE27099chars<30000;alllocalMarkdownlinksexist. LatestDsectiontakesprecedenceoverexplicitlyhistoriccomponentsections."
+    },
+    {
+      "name": "review_method",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Onlydocs/smallJSON/private26-filemetamanifestread;no largebinaryhashread,query,HTTP,signal,cleanup,resourcecreationorcodeedit."
+    }
+  ],
+  "documentAndManifestPins": [
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/docs/CURRENT_STATE.md",
+      "bytes": 27396,
+      "sha256": "97d4d3394e5f8c7ebefcfb922de67a8ff4f8ceea0175cdddf3b031276045c8a7"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/docs/betrieb/w15-atomic-usage-integration-20261028.md",
+      "bytes": 47653,
+      "sha256": "3d5027739850c6eb631be6bd893da7519484b5e6a1659850eee8c5c9f3120543"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/docs/betrieb/belege/w15-atomic-usage-integration-20261028/MANIFEST.SAFE.json",
+      "bytes": 22831,
+      "sha256": "758c98188fec51afb10538056c75a07a10bc4d172934f082a2f8f05c86a4faa8"
+    }
+  ],
+  "newPublicFilePins": [
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/ASYNC_END500_INTEGRATION_CONDITIONS.SAFE.json",
+      "bytes": 7781,
+      "sha256": "c2a88916b5d3bd2e305c73023a27781248b97dce1f3f8a981521134681857750"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/AUDIT_CODEC_CHECK_D.SAFE.json",
+      "bytes": 1923,
+      "sha256": "029f48b72be9c53f41b2c94107474b13b166862fcf3f670142509d0ef45481bd"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/AUDIT_CODEC_PRESTART_REVIEW_D.SAFE.json",
+      "bytes": 4724,
+      "sha256": "d290fa51c344787c8083cd029b9e9422bac1b404e08c730da1ca869d7d274ae1"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/DISK_D_POSTMORTEM_INDEPENDENT.SAFE.json",
+      "bytes": 6672,
+      "sha256": "e8b576ac6a4888a6fe7dfe47e1a518e3123a02eb0fe596ad4fe08e2be59bd55f"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/DISK_D_RESULTS_REVIEW.SAFE.json",
+      "bytes": 15521,
+      "sha256": "c5ec2cfd1588f8e979e2c749c1032c53318f1f452c56bfe6133f8324c1a43728"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/DISK_PLAN_D_GZIP_INDEPENDENT.SAFE.json",
+      "bytes": 5471,
+      "sha256": "a62c58e1c0c451666cb845edfb36963531f96496ff62e024d034a509033d6b78"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/DISK_PLAN_D_INDEPENDENT.SAFE.json",
+      "bytes": 6932,
+      "sha256": "c9e16580044c9d618e48c14b1a3278fefbfda41cf8d4bea20b859dc8976ba2ea"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/LIFECYCLE_PRESTART_REVIEW_D.SAFE.json",
+      "bytes": 5389,
+      "sha256": "8f114ce9888f949510b44dc9dace225efdb0c619b03ae672c402d866bd79c1de"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/LIFECYCLE_RESULTS_REVIEW_D.SAFE.json",
+      "bytes": 5836,
+      "sha256": "6c549f6b5dcbc35bc37097a1f15621486aa9ca8e0f6e0e5c6d7b75008da193b4"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/LIFECYCLE_RUN_RESULT_D.SAFE.json",
+      "bytes": 4971,
+      "sha256": "a8612e449af84451d17d7d4e1d3ee1fb586d4276ed018ee852ab34589356433c"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/MEMORY_PRESTART_REVIEW_D.SAFE.json",
+      "bytes": 17395,
+      "sha256": "03352a0c51134df2fc68096f17c81ce5e98415660793df30dce5235bd5424e72"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_D_CONTROLLER_RESULT.SAFE.json",
+      "bytes": 1504,
+      "sha256": "e39950f859cf9ab454ac54ac41ef987048ce3449fbcb77024744b032943ebf4c"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_D_NATIVE_ZERO.SAFE.json",
+      "bytes": 113,
+      "sha256": "7406b24f929d69e74499288457db78a04b635a665b49a6b0b96500f5672f878e"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_D_RESTORED500_ZERO.SAFE.json",
+      "bytes": 37,
+      "sha256": "eb421a1cb57e3f0936bf5e81a7f65fd347e546412584c49c4d15fd3185cc8895"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/SQL_PREFLIGHT_D.SAFE.json",
+      "bytes": 442705,
+      "sha256": "3003fac4718db331fa288783bbf53212ebf248d201cd2e6a0571ac433a870293"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/STAGING_DUPLICATES_NEXT_GO.SAFE.json",
+      "bytes": 23955,
+      "sha256": "427c4f8a37cbd5540949d5b03c60b637a39cd6e6e268db795f9ac2bbdd45e00d"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/STATIC_D_PREPARE_PARSE_REVIEW.SAFE.json",
+      "bytes": 7098,
+      "sha256": "787b8fac3daa00ee26e0745dae2ddd588aeae04cd71cdce8f32cefc8c6caaebb"
+    }
+  ],
+  "proposalPin": {
+    "path": "/workspace/helmut-w15-atomic-integration/docs/betrieb/belege/w15-atomic-usage-integration-20261028/STAGING_DUPLICATES_NEXT_GO.SAFE.json",
+    "bytes": 23955,
+    "sha256": "427c4f8a37cbd5540949d5b03c60b637a39cd6e6e268db795f9ac2bbdd45e00d"
+  },
+  "privateMetadataPinReviewedOnlyNotPublished": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/STAGING_DUPLICATES_NEXT_GO.PRIVATE.json",
+    "bytes": 30936,
+    "sha256": "d803eb6a15b038e058fbda86e78f723bddac0334b84f1eb8412f473860dab90a"
+  },
+  "reviewActions": {
+    "tests": 0,
+    "SQL": 0,
+    "HTTP": 0,
+    "signals": 0,
+    "deletions": 0,
+    "sourceChanges": 0,
+    "largeBinaryRehashes": 0
+  },
+  "scopeVerdict": {
+    "Dactual": "UNCHANGED_FAIL_DISK_RESERVE",
+    "proposalMetadataAndDisclosure": "PASS_CONDITIONAL_PROPOSAL_ONLY",
+    "deletionAuthorized": false,
+    "newDiagnosticAuthorized": false,
+    "futureFreeSpaceProven": false,
+    "Mock500Acceptance": false
+  },
+  "limitations": [
+    "Thisreviewcertifiesproposalmetadata/scopeddisclosure,notthefutureunlinkaction. Alltargets/canonicals/use/identitiesmustberevalidatedafterexplicitGO.",
+    "Current100entrymanifestexcludesthisnewreview;additsfreshpinforpublication.",
+    "NoactualdfimprovementorphysicalVFSrootcauseisproven.",
+    "ThisreviewdoesnotrenewconsumedDattemptorapprovenewruntime/productionwork."
+  ]
+}
