@@ -4,18 +4,19 @@ import datetime, zoneinfo, hashlib, json, math, os, pathlib, posixpath, queue, s
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 # Fresh server/container/PGDATA; the database namespace deliberately remains
 # unchanged so the already qualified source installer and its pins stay exact.
-WORK=pathlib.Path('/workspace/shared/helmut-w15-full500-20261028c')
-BASE='/tmp/w15-full500-20261028c'
+WORK=pathlib.Path('/workspace/shared/helmut-w15-full500-20261028d')
+BASE='/tmp/w15-full500-20261028d'
 DB='helmut_w15_full500_20261028b'
-CONTAINER='w15-full500-20261028c'
+CONTAINER='w15-full500-20261028d'
 SOURCE_DB='helmut_w15_input_20261027'
 SOURCE_CONTAINER='synthetik500-runtime-pg-7e1c20261027'
 IMAGE='sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e'
 RECEIPT=pathlib.Path('/workspace/shared/helmut-w15-receipt-20261027/reports/W15_RECEPTION_REPORT.SAFE.json')
 RECEIPT_SHA='2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1'
-REVIEW=pathlib.Path('/workspace/shared/helmut-w15-full500-review-20261028c/REVIEW_READY.SAFE.json')
+REVIEW=pathlib.Path('/workspace/shared/helmut-w15-full500-review-20261028d/REVIEW_READY.SAFE.json')
 QUALIFICATION=pathlib.Path('/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b')
 AUTH_WITNESS=pathlib.Path('/workspace/shared/helmut-w15-auth-observer-check-20261028/AUTH_MEASUREMENT_CHECK.SAFE.json')
+AUTH_WITNESS_SOURCE=pathlib.Path('/workspace/shared/helmut-w15-auth-observer-check-20261028/stage/app/scripts/synthetik-500-w15-full500-runtime.js')
 DOCKER=['docker','--host=unix:///var/run/docker.sock']
 ENV={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'}
 MEMORY=json.loads((ROOT/'scripts/fixtures/w15-memory-contract.json').read_text())
@@ -59,7 +60,17 @@ def check_auth_witness(review):
         assert actual[key]==0,'full500-auth-witness-scope'
     assert actual['sourceQualifierRepeated']is False
     pin=actual['runtimeSourcePin'];assert pin['path']=='scripts/synthetik-500-w15-full500-runtime.js'
-    b=(ROOT/pin['path']).read_bytes();assert len(b)==pin['bytes']and sha(b)==pin['sha256'],'full500-auth-observer-source-drift'
+    b=(ROOT/pin['path']).read_bytes()
+    # Reuse the genuine Auth proof only for byte-identical observer/assessment
+    # bodies. Namespace and reporting-only edits do not rerun four APIs.
+    original=AUTH_WITNESS_SOURCE.read_bytes()
+    assert len(original)==pin['bytes']and sha(original)==pin['sha256'],'full500-auth-original-source-pin'
+    def observer_body(value):
+        text=value.decode();a=text.index('function authCoverageAssessment(');z=text.index('async function setup()',a)
+        return text[a:z].encode()
+    assert observer_body(b)==observer_body(original),'full500-auth-observer-source-drift'
+    expected=review['authMeasurementCheck']['unchangedObserverBodySHA256']
+    assert sha(observer_body(b))==expected,'full500-reviewed-auth-observer-binding'
     # Read the complete real observation, never rerun an API or trust a timing
     # summary alone. This is a pre-resource gate, not another Auth test.
     envelopes=actual['mutations']+actual['usageSinks'];writes=actual['casWrites']
@@ -113,6 +124,7 @@ class Supervisor:
         self.started_monotonic=time.monotonic();self.last_ack_monotonic=None;self.last_terminal_monotonic=self.started_monotonic
         self.progress=(WORK/'outer-progress.SAFE.jsonl').open('x');os.chmod(WORK/'outer-progress.SAFE.jsonl',0o600)
         self.progress_queue=queue.Queue(maxsize=2048);self.progress_finished=threading.Event()
+        self.unit_max_ms=None;self.auth_max_ms=None;self.cas_max_ms=None
         self.reporter=threading.Thread(target=self.write_progress,daemon=True);self.reporter.start()
         self.thread=threading.Thread(target=self.monitor,daemon=True)
     def write_progress(self):
@@ -144,7 +156,8 @@ class Supervisor:
             record={'name':name,'observedAtUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'phase':self.stage_name or 'between-stages-or-cleanup',
               'acceptedProfiles':len(self.accepted_indexes),'expectedProfiles':500,'lastAcceptedIndex':self.last_accepted_index,
               'noNewAcceptedACKForSeconds':round(now-(self.last_ack_monotonic or self.started_monotonic),3),
-              'noAcceptedProfileYet':not self.accepted_indexes,'memory':memory}
+              'noAcceptedProfileYet':not self.accepted_indexes,'memory':memory,
+              'maximumUnitWallMs':self.unit_max_ms,'maximumAuthFullCallWallMs':self.auth_max_ms,'maximumCASWallMs':self.cas_max_ms}
             if index is not None:record['index']=index
             if status is not None:record['status']=status
             if name=='supervisor-first-failure':record['failure']=self.failure
@@ -153,7 +166,7 @@ class Supervisor:
                 ram=('RAM {currentMB:.1f} MB ({currentPercentOfCap:.2f} %) | Peak {peakMB:.1f} MB ({peakPercentOfCap:.2f} %)'
                   ' | Peak-Reserve {reserveMB:.1f} MB ({reservePercentOfCap:.2f} %)').format(**memory)
             if name=='unit-final-ack-accepted':
-                record['message']='Profil '+str(index+1)+'/500 abgeschlossen | '+ram
+                record['message']='Profil '+str(index+1)+'/500 abgeschlossen | '+ram+' | Unit-Max {:.3f} s | Auth-Max {:.3f} s | CAS-Max {:.3f} s'.format(self.unit_max_ms/1000,self.auth_max_ms/1000,self.cas_max_ms/1000)
             elif name=='supervisor-first-failure':
                 pending=' | nächstes nicht akzeptiertes Profil '+str(len(self.accepted_indexes)+1)+'/500'if len(self.accepted_indexes)<500 else''
                 record['message']='FEHLER | Phase '+record['phase']+' | '+str(len(self.accepted_indexes))+'/500 akzeptiert'+pending+' | '+str(self.failure['reason'])+' | '+ram
@@ -170,6 +183,11 @@ class Supervisor:
         with self.progress_lock:
             if type(index)is not int or not 0<=index<500 or index!=len(self.accepted_indexes):
                 self.first_failure(RuntimeError('full500-accepted-ack-sequence-unknown'));return
+            timings=value.get('authTimings')or{}
+            numbers=[value.get('unitWallMs'),timings.get('maximumFullCallWallMs'),timings.get('maximumCASWallMs')]
+            if not all(type(x)in [int,float]and math.isfinite(x)and x>=0 for x in numbers)or timings.get('incompleteFullCalls')or timings.get('incompleteCASWrites'):
+                self.first_failure(RuntimeError('full500-live-auth-timing-unknown'));return
+            self.unit_max_ms=max(self.unit_max_ms or 0,numbers[0]);self.auth_max_ms=max(self.auth_max_ms or 0,numbers[1]);self.cas_max_ms=max(self.cas_max_ms or 0,numbers[2])
             self.accepted_indexes.add(index);self.last_accepted_index=index;self.last_ack_monotonic=time.monotonic()
             self.publish('unit-final-ack-accepted',index,'PASS')
     def first_failure(self,error):
@@ -380,11 +398,11 @@ def main():
         import shutil
         shutil.copytree(ROOT/'lib',stage/'app/lib',dirs_exist_ok=True)
         for name in ['server.js','package.json']:shutil.copy2(ROOT/name,stage/'app'/name)
-        names=['synthetik-500-w15-full500-runtime.js','synthetik-500-w15-full500-audit.js','synthetik-500-w15-signed-chain-test.js',
+        names=['synthetik-500-w15-full500-runtime.js','synthetik-500-w15-full500-audit.js','synthetik-500-w15-signed-chain-test.js','fixtures/w15-auth-measurement-report.js',
           'fixtures/w15-full500-provider.js','fixtures/w15-unit0-provider.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-full500-window.js']
         for n in names:shutil.copy2(ROOT/'scripts'/n,stage/'app/scripts'/n)
         pgdata=WORK/'pgdata';pgdata.mkdir(mode=0o700)
-        docker('create','--name',CONTAINER,'--label','helmut.w15.full500=20261028c','--pull=never','--network=none','--restart=no',
+        docker('create','--name',CONTAINER,'--label','helmut.w15.full500=20261028d','--pull=never','--network=none','--restart=no',
           '--memory=2048000000','--memory-swap=2048000000','--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
           '-e','POSTGRES_HOST_AUTH_METHOD=trust',IMAGE);created=True
         docker('start',CONTAINER)
@@ -482,7 +500,7 @@ def main():
             try:
                 if not recovery:stop_owned(['gateway','postgrest'])
             except BaseException as e:failure=failure or {'type':type(e).__name__,'reason':'owned-services-stop-unconfirmed'}
-            for n in ['SETUP.SAFE.json','PREPARE.SAFE.json','FULL500_RUNTIME_RESULT.SAFE.json','FULL500_RUNTIME_FAILURE.SAFE.json','RESULTS_INDEPENDENT.SAFE.json','run-FIRST-FAILURE.SAFE.json','prepare-FIRST-FAILURE.SAFE.json','audit-FIRST-FAILURE.SAFE.json','runtime-progress.SAFE.jsonl']:
+            for n in ['SETUP.SAFE.json','PREPARE.SAFE.json','PREPARE_ABORT_OBSERVATIONS.SAFE.json','FULL500_RUNTIME_RESULT.SAFE.json','FULL500_RUNTIME_FAILURE.SAFE.json','FULL500_ABORT_OBSERVATIONS.SAFE.json','RESULTS_INDEPENDENT.SAFE.json','run-FIRST-FAILURE.SAFE.json','prepare-FIRST-FAILURE.SAFE.json','audit-FIRST-FAILURE.SAFE.json','runtime-progress.SAFE.jsonl']:
                 try:copy_out(n)
                 except BaseException:pass
         if supervisor:

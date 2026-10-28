@@ -1,3 +1,39 @@
+# Neuer Vorbereitungssprint: vor Speicherprobe abgebrochen
+
+**FAIL im Diagnosecontroller; kein neuer Mock500-Versuch.** Der neue Controller
+importiert Hilfsfunktionen mit bei Import gebundenem Datenbank-Standardargument.
+Die spätere Änderung von `M.DB` ändert dieses Argument nicht. Deshalb stoppt
+`M.read()` nach erfolgreichem Restore am Datenbank-Schutzassert vor der SQL-Ausführung.
+Auch die automatische Nullnachlesung traf denselben Fehler. Keine Wiederholung
+oder Reparatur nach FAIL. Nächste konkrete Korrektur: Diagnose-Datenbank bei allen
+importierten Lese-/SQL-Aufrufen ausdrücklich übergeben; frisches Diagnoseziel verwenden.
+
+Unabhängig frisch bestätigt: **0 aktiv /500 Profile /501 Identitäten**;
+6 Store-Zeilen und5000Usage. Der End500-Seed wurde nicht erreicht:0CAS/0Units/
+0Modellaufrufe. Kernelpeak165928960B betrifft nur Vorbereitung, kein RAM-Nachweis.
+Hartes Limit2048000000B/Swap0, keine OOM-Ereignisse.
+
+Erledigt und wiederverwendbar: End500-Größenmodell unabhängig31PrüfungenPASS,
+Auth13616853B/6000Usage einschließlich aller5139vorhandenen Einträge,
+500Evidence/1500Ergebnisse/1000privateDR/500privateDstore und closedSlot-Kopie.
+Ergänzungen eindeutig inert, keine Ausführungs- oder Qualitätsbelege.
+Neue lokale Ressourcenbudgets512MiBNode/128MiBWAL/32MiBwork_mem/Autovacuum10s
+sind **nicht unter Last validiert** und nicht in den Vollcontroller übernommen.
+
+Auth-Messhülle erweitert: dauerhafte Maxima im bestehenden Profil-ACK und
+bestmöglicher Rohdatenbeleg bei SIGTERM. Genau ein gezielter Helpertest mit echtem
+SIGTERM PASS; Original-Authbeobachter und Bewertung bytegleich. Unfertige
+Vorgänge bleiben unbekannt; keine Garantie bei SIGKILL/OOM. Keine Auth-API,
+Quellenqualifikation oder vollständige CI wiederholt.
+
+Geschützte Originalberichte bleiben in der Cloud. Bereinigter Beleg:
+[Vorbereitungsbefund](belege/w15-processing-20261027/FORWARD_PREPARATION_20261028.SAFE.json).
+CURRENT_STATE und PR972 aktualisiert;969/971/972 bleiben ungemergt.
+Die bedingte Freigabe für einen neuen Gesamtversuch wurde nicht genutzt;
+gemäß Fehlerregel gestoppt. Keine Production-/Budget-/Hetzneränderungen.
+
+---
+
 # W15: RAM-Teildiagnose bestanden; neuer Vollauf nicht startbereit
 
 **Sprint teilweise abgeschlossen; Startbedingung des neuen Mock500-Versuchs

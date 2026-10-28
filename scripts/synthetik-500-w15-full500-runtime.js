@@ -5,7 +5,8 @@ const fs = require("node:fs"), path = require("node:path"), crypto = require("no
 const assert = require("node:assert/strict"), { AsyncLocalStorage } = require("node:async_hooks");
 const { performance } = require("node:perf_hooks");
 const Memory = require("./fixtures/w15-memory-contract");
-const DIR = "/tmp/w15-full500-20261028c", STATE = path.join(DIR, "state");
+const AuthReport = require("./fixtures/w15-auth-measurement-report");
+const DIR = "/tmp/w15-full500-20261028d", STATE = path.join(DIR, "state");
 const DB = "helmut_w15_full500_20261028b", PUB = "HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY";
 const PRIV = "HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY";
 const CONFIRMATION = "GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO";
@@ -29,7 +30,8 @@ function save(name, value) {
 function event(name, fields = {}) {
   const value = { name, observedAtUTC: new Date().toISOString(), ...fields };
   fs.appendFileSync(file("runtime-progress.SAFE.jsonl"), JSON.stringify(value) + "\n", { mode: 384 });
-  console.log(JSON.stringify({ name, index: fields.index, status: fields.status }));
+  console.log(JSON.stringify({ name, index: fields.index, status: fields.status,
+    unitWallMs: fields.unit?.wallMS, authTimings: fields.authTimings }));
 }
 function memory() {
   const at = name => fs.readFileSync("/sys/fs/cgroup/" + name, "utf8").trim();
@@ -197,6 +199,9 @@ async function prepare() {
   process.env[PRIV] = fs.readFileSync(file("signing-key.PRIVATE.pem"), "utf8");
   const S = require("../lib/helmut/storage"), C = require("../lib/helmut/synthetik-500-production-command");
   const observation = observeAuth(S); const begin = performance.now();
+  const removeAbortReceipt = AuthReport.retainOnTermination(() => ({ phase: "prepare", selector: m.selector,
+    authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites,
+    authTimings: AuthReport.summarize(observation) }), value => save("PREPARE_ABORT_OBSERVATIONS.SAFE.json", value));
   try {
     const prepared = await S.prepareSynthetik500StoredCommand(m.selector);
     assert.equal(prepared.executionAuthorized, false); assert(prepared.metrics.wallMs < 90000, "w15-full500-offline90");
@@ -231,8 +236,9 @@ async function prepare() {
     assert(memoryAccepted(memory()), "w15-full500-preparation-common-memory");
     save("PREPARE.SAFE.json", { status: "PASS", selector: m.selector, fullC: prepared.metrics, installationOpenMs, fullStageWallMs: performance.now() - begin,
       authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites, authCoverage: coverage,
+      authTimings: AuthReport.summarize(observation),
       actualSource23AndKO60PostimagesMatchDerivedInputs: true, providerCalls: 0, unitEntries: 0, memory: memory() });
-  } finally { delete process.env[PRIV]; }
+  } finally { removeAbortReceipt(); delete process.env[PRIV]; }
 }
 function claimQuery(selector, index, phase) {
   assert(Number.isInteger(index) && index >= 0 && index < 500); assert(["D", "R"].includes(phase));
@@ -258,6 +264,10 @@ async function run() {
     const unit = unitReports.find(u => u.index === finished); assert(unit, "w15-full500-finish-without-entry");
     unit.finalACKMS = ack; unit.endCheckpointCount = S.synthetik500PreparedDiagnostics()?.checkpoints.length;
   } });
+  const removeAbortReceipt = AuthReport.retainOnTermination(() => ({ phase: "run", selector: m.selector,
+    currentIndex: index, unitReports, scopeReports, responses, providerPhases,
+    authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites,
+    authTimings: AuthReport.summarize(observation) }), value => save("FULL500_ABORT_OBSERVATIONS.SAFE.json", value));
   const Lage = require("../lib/helmut/lage"), actualLage = Lage.buildLageBriefing;
   Lage.buildLageBriefing = async function(...args) {
     try { const result = await actualLage.apply(this, args);
@@ -375,7 +385,9 @@ async function run() {
       scope.restorePhases = scope.diagnostics.metrics?.phases || [];
       // Preserve bounded metadata only. The native evidence retains full rows.
       delete scope.diagnostics;
-      event("unit-final-ack-accepted", { index, status: "PASS", unit, response, authCoverage: authCheck });
+      unit.authTimings = AuthReport.summarize(unitAuth);
+      event("unit-final-ack-accepted", { index, status: "PASS", unit, response, authCoverage: authCheck,
+        authTimings: AuthReport.summarize(observation) });
       assert(errors.length === 0 && !memoryViolation && memoryAccepted(memory()), "w15-full500-observed-failure-before-next");
     }
     const final = sql("select jsonb_build_object('active',(select count(*)from mandate_profiles where aktiv),'journal',data->'synthetik500DispatchJournal'->'operations'->"
@@ -396,6 +408,7 @@ async function run() {
     const result = { schema: "helmut-w15-full500-runtime/1", status: Object.values(checks).every(Boolean) ? "PASS_RUNTIME_AUDIT_AND_CLEANUP_PENDING" : "FAIL_OR_UNKNOWN",
       selector: m.selector, runId: m.runId, checks, unitReports, scopeReports, responses, providerPhases,
       authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites, authCoverage: coverage,
+      authTimings: AuthReport.summarize(observation),
       errors, memoryBefore, memoryAfter: mem, actualSequenceWallMs: performance.now() - started,
       summedHTTPWallMs: responses.reduce((n, r) => n + r.wallMs, 0), summedUnitWallMs: unitReports.reduce((n, u) => n + u.wallMS, 0),
       technicallyStoredPositions: unitReports.reduce((n, u) => n + u.positions.length, 0), activeProfilesAtLastRead: final.active,
@@ -408,10 +421,11 @@ async function run() {
     save("FULL500_RUNTIME_FAILURE.SAFE.json", { status: "FAIL_OR_UNKNOWN", error: safeError(e), selector: m.selector,
       currentIndex: index, completedHTTPRequests: responses.length, unitReports, scopeReports, responses, providerPhases,
       authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites,
-      authCoverage: observation.assessment(), errors, memory: memory(), memoryViolation,
+      authCoverage: observation.assessment(), authTimings: AuthReport.summarize(observation), errors, memory: memory(), memoryViolation,
       noAutomaticRetry: true, independent1500RowAcceptance: false, cleanupConfirmed: false, productionProof: false });
     throw e;
   } finally {
+    removeAbortReceipt();
     clearInterval(poll); if (provider) provider.restore(); azure(false);
     server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
   }

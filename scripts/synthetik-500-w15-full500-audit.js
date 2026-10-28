@@ -4,7 +4,7 @@
 // dispatches, activates, retries, repairs data or claims real model quality.
 const fs = require("node:fs"), path = require("node:path"), assert = require("node:assert/strict");
 const crypto = require("node:crypto"), { spawnSync } = require("node:child_process");
-const ROOT = path.resolve(__dirname, ".."), STATE = "/tmp/w15-full500-20261028c/state";
+const ROOT = path.resolve(__dirname, ".."), STATE = "/tmp/w15-full500-20261028d/state";
 const DB = "helmut_w15_full500_20261028b", EXPECTED = 500, CHECKS = 34;
 const literal = x => "'" + String(x).replaceAll("'", "''") + "'";
 const sha = x => crypto.createHash("sha256").update(x).digest("hex");
@@ -70,8 +70,14 @@ function main() {
       // An OOM may prevent the runtime from writing either receipt. Continue
       // after safe native shutdown: no observation is invented, and every
       // expected position still receives independent readback/classification.
-      runtime = { unitReports: [], selector: m.selector };
-      report.runtimeObservation = { status: "FAIL", source: null, reason: "missing-or-unreadable-runtime-observation" };
+      try {
+        runtime = input("FULL500_ABORT_OBSERVATIONS.SAFE.json");
+        report.runtimeObservation = { status: "PASS", source: "FULL500_ABORT_OBSERVATIONS.SAFE.json",
+          successfulRuntimeClaimed: false, terminationSignal: runtime.terminationSignal };
+      } catch {
+        runtime = { unitReports: [], selector: m.selector };
+        report.runtimeObservation = { status: "FAIL", source: null, reason: "missing-or-unreadable-runtime-observation" };
+      }
     }
   }
   const slotValid = before.slot?.planHash === m.planHash && P.hash(before.slot.plan) === m.planHash

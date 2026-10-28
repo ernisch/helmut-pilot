@@ -1,0 +1,21 @@
+{
+  "status": "FAIL_PREPARATION_BEFORE_CAS",
+  "cause": "Imported Python default DB arguments retain old database name; fail-closed assert before SQL.",
+  "independentlyConfirmedActiveProfiles": 0,
+  "profiles": 500,
+  "identities": 501,
+  "storeRows": 6,
+  "usageRows": 5000,
+  "CAS": 0,
+  "Units": 0,
+  "full500Attempts": 0,
+  "kernelPeakBytes": 165928960,
+  "memoryAcceptance": false,
+  "fixtureOfflineChecksPASS": 31,
+  "fixtureAuthBytes": 13616853,
+  "fixtureUsageRows": 6000,
+  "authReportingRealSIGTERMCheck": "PASS",
+  "retryPerformed": false,
+  "productionChanges": 0,
+  "nextCorrection": "Explicit database arguments on imported calls, then fresh diagnostic target; no retry performed."
+}

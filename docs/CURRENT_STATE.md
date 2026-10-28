@@ -1,17 +1,17 @@
 # CURRENT STATE — Helmut
 
-## W15:RAM-DiagnosePASS;VollaufstartUNKNOWN (28.10.)
+## W15:VorbereitungFAIL vor RAM-Probe (28.10.)
 
-PR972/971/969ungemergt;Quellen500/AuthPASSübernommen,nichtwiederholt.
-Historisch28c:69Units/207Ergebnisse;Peak1640103936B,Reserve19,9168%:FAIL.
-Reinlesend:553648128BWALresident;vollständigeAuth-CAS-Rewrites.
-Neue0aktiveDiagnoseDB:1CAS4MBwork_mem→5729274BTemp;1CAS16MB→0Temp.
-5139Usage/Rohdatenunverändert,0Units/Modelle;unabhängigbestätigt.
-KeinCommonRAMgewinn/500Beleg;Fullcontrollerunverändert,keinweitererVollauf.
-StartUNKNOWN:End500Auth/echteCommandbaseline/WAL-GC-Verlaufnichtbelegt.
-BeiUNKNOWNgestoppt;Gesamtversuchnichtgestartet.Authmax-Persistenzoffen.
-AppbasisCI40534410137unverändert;keinProductionPASS.
-[Ursachen,Diagnose,offeneMessung](betrieb/w15-mock-quellenbindungen-20261028.md).
+PR972/971/969ungemergt;keinweitererMock500gestartet.
+End500Fixture31PASS:Auth13616853B/6000Usage,alle5139altenunverändert.
+Auth-Maxima/SIGTERM-Beleghelper1xPASS;OriginalAuthbeobachterbytegleich.
+DiagnosecontrollerFAIL:importiertePython-DB-Defaultsbleibenalt,trotzM.DB-Wechsel.
+SchutzassertstopptvorSQL;End500Seed/0CAS/0Units/0Modelle.
+Frischunabhängig0aktiv/500Profile/501Identitäten/5000Usagebestätigt.
+Peak165928960BnurVorbereitung;keinneuerRAM-/500Beleg.KeinRetry.
+KorrekturvorneuemDiagnoseziel:DBexplizitdurchreichen;nachFAILnichtumgesetzt.
+Historisch28c:69Units,Peak1640103936B/19,9168%ReserveFAILbleibterhalten.
+[Belege/Restarbeit](betrieb/w15-mock-quellenbindungen-20261028.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
