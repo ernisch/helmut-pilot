@@ -161,11 +161,26 @@ solcher quittierten oberen Schranke zugeordnet sein; eine beobachtende Zaehler-
 Abstimmung am bestehenden CAS-Schreiber darf keine unzugeordnete Schreibung
 uebersehen. Keine Geschaefts-/CAS-/Fristlogik aendern. Erwartet sind zudem1000
 bestaetigte Usage-Speicherungen; nicht blind4000 als Gesamtzahl aller CAS annehmen.
+Auch `storage.acquirePipelineLock` und `storage.releasePipelineLock` schreiben
+intern lexikalisch in Auth. Die bestehende Messhuelle erfasst seit dem gezielten
+28.10.-Fix beide vollstaendigen Originalaufrufe und ordnet ihre echten CAS-ACKs
+per AsyncLocalStorage zu. Keine Aenderung der Sperr-, Sicherheits- oder Fachlogik.
+Der gezielte echte Vier-Schreibvorgang-Test und69vollstaendige Units im danach
+abgebrochenen Versuch bestaetigen die Zuordnung; kein500er-Auth30-Gesamtbeleg.
 Mindestens
 500unterschiedliche persistente Unit-FinalACKs muessen zuordenbar sein. Erhaltene
 5000Usagezeilen wachsen lokal um1000simulierte Calls; keine Historie abschneiden.
 Der Auditor muss mehr als1000Resultate vollstaendig erfassen: begrenzte nativeSQL-
 Nachlesung oder Pagination, keinen PostgREST1000-Rowdeckel als1500ausgeben.
+
+Der vorhandene aeussere Speicherwaechter protokolliert nach jedem akzeptierten
+Profil den gemeinsamen Kernelverbrauch, Lebenszeitpeak und die Reserve in
+dezimalen MB und Prozent. Seine Ausgabe erfolgt ausserhalb der Test-cgroup;
+keine zusaetzliche Datenbankabfrage pro Profil. Die unveraenderte0,1s-Pruefung
+und der sofortige Stop bleiben vom Terminalausgabepfad getrennt. Gespeicherte
+Fortschritts-Snapshots sind keine Behauptung einer vollstaendig gespeicherten
+0,1s-Zeitreihe. Der einmalige28c-Versuch ist beendet und verbraucht; dieser
+Messhinweis erteilt keine neue Startfreigabe.
 
 Die8000Kontrollen sind16echte Sicherheitspruefpunkte jeUnit, keine16neuen Tests:
 

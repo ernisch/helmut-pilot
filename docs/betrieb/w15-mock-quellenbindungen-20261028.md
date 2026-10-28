@@ -1,6 +1,145 @@
-# W15:Quellen500PASS; Vollauf28b bei Profil1 abgebrochen
+# W15: Authmessung geschlossen; Vollauf28c wegen RAM-Reserve FAIL
 
-**Aktueller Sprintzustand:gescheitert/abgebrochen, kein lokaler Mock500-PASS.**
+**Aktueller Befund vom28.10.: FAIL, kein lokaler Mock500-PASS.** Nach der
+gezielten Auth-Reparatur und unabhängigem Review wurde unter dem neuen GO genau
+**ein** neuer vollständiger lokaler Versuch gestartet. **69/500 Profile** sind
+vollständig abgeschlossen; während Profil70 stoppte der gemeinsame
+Speicherwächter. Kein Retry, Resume oder zweiter Versuch.
+
+## Auth-Messfehler gezielt behoben
+
+Nur die beiden bislang fehlenden Aufrufzuordnungen der bestehenden
+`storage.acquirePipelineLock`-/`storage.releasePipelineLock`-APIs wurden in der
+Messhülle ergänzt. Ihre echten internen CAS-Schreibvorgänge werden jetzt per
+AsyncLocalStorage mit dem vollständigen Originalaufruf einschließlich ACK
+verbunden. Öffentliche Mutationen und `recordLlmUsage` behalten ihre bestehenden
+Messhüllen. Originalfunktionen, Argumente, Ergebnisse, Exceptions und sämtliche
+Sicherheits-/Geschäftsregeln bleiben erhalten.
+
+Genau eine notwendige kostenfreie Auth-Vorprüfung gegen eine neue isolierte
+PostgreSQL-Datenbank und echtes PostgREST: Acquire, öffentliche Mutation,
+Usage-Speicherung ohne Modellaufruf, Release. **4/4 echte CAS-Schreibvorgänge**
+zugeordnet, bestätigt und vollständig unter30s gemessen. Maximaler voller
+Aufruf **859,089335ms**, maximaler CAS **663,495627ms**.0aktive Profile davor/danach,
+0Units,0Modellaufrufe;5000historische Usage-Zeilen unverändert. Unabhängiger
+Review23/23 positiv. Die bereits bestätigte500/500-Quellenqualifikation wurde
+übernommen, nicht erneut ausgeführt. V8-Coverage wurde im nötigen Auth-Test erfasst.
+
+## Tatsächlicher neuer Vollauf28c
+
+Getesteter Code `3092efecf98b989d90d0b2c7948bd850826bd990`.
+Physisch neuer netzloser Container/PGDATA, keine neuen kostenpflichtigen Ressourcen
+oder Downloads.
+Der lokale Datenbankname bleibt wegen der unveränderten qualifizierten
+Quelleninstallation gleich; er bezeichnet hier eine neue Datenbank im neuen
+Server, keinen Zugriff auf den alten28b-Versuch. Frische Operation, Signaturen,
+Prüfbelege und unabhängig bestätigte Startbedingungen. Gebundenes Zeitfenster
+07:12:47.105–10:12:47.104UTC plus30Minuten Abschluss am28.10.; erste
+Reserveverletzung **07:36:11.428UTC**, weit vor beiden Tagesgrenzen.
+
+| Kriterium | Tatsächlich belegt |
+|---|---|
+| Gleichzeitig aktive synthetische Profile |Exakt500, anschließend gebunden500→0 und unabhängig frisch bestätigt |
+| Vollständig abgeschlossene DR Units |69/500; lückenlose bestätigte Indizes0–68; während Index69/Profil70 abgebrochen |
+| Lokale Mockantworten |138 für die69vollständigen Units belegt; Teilunit70 nicht vollständig quittiert, kein behaupteter Nullbestand |
+| Gespeicherte Ergebnisse |207/1500 plus138private D/R-Belege; alle500Profile/1500Sollpositionen nachgelesen |
+| Echte Sicherheitskontrollen |1104/8000 in69vollständigen Units:690Load+414Admission; Teilunit nicht als abgeschlossen gezählt |
+| Vertragliche Unit60 |69/69unter60s; längste55,6877248s bei Index0; kein500er-Beleg |
+| Ganze HTTP-Anfrage |Maximal60,371888269s; getrennt von der vertraglichen Unitgrenze, kein HTTP-60s-PASS |
+| Auth30/Zuordnung |828/828CAS in69Units,690Mutations- und138Usage-Hüllen; alle zugeordnet, vollständig bestätigt und unter30s |
+| Auth vor Runtime |Vorbereitung1Mutation732,46813ms/1CAS549,802162ms, ZuordnungPASS |
+| Gemeinsamer Kernel-RAM-Peak |**1640103936B** bei technisch erzwungenen2048000000B; kein Cache-/Baselineabzug |
+| Reserve |**407896064B=19,9168%**, erforderlich409600000B/20%: **FAIL um1703936B** |
+| Swap/Kernel-Ereignisse |Swapmaximum und Verbrauch0; max/OOM/OOMkillalle0, kein Neustart/Recovery |
+| Sicheres Ende |Einmal gebunden500→0; SQL und unabhängige native Lesung bestätigen beendet/0aktiv/500Profile/501Identitäten |
+
+Die Unitzeit bleibt unverändert unmittelbar vorJ.enter bis zum bestätigten
+J.finish-ACK definiert. Der letzte Owner und ein vollständig gewachsener
+500er-Datenbestand wurden nicht erreicht. Die erhaltenen69Fortschrittsbelege
+enthalten die tatsächlichen Unitzeiten,16Kontrollen und jeweilige erfolgreiche
+Auth-Abstimmung. **Exakte numerische Auth-Maxima dieses Vollaufs sind nach dem
+Supervisor-SIGTERM nicht persistiert**; die jeUnit gespeicherten <30s-/Zuordnungs-
+Prüfergebnisse bleiben vorhanden. Der gezielte859ms-Wert ist kein Ersatz für
+fehlende Vollauf-Maxima. Teilunit70 und deren vollständige Schreib-/Antwortzahl
+bleiben ohne Abschlussbeleg offen.0echte Modellaufrufe.
+
+## Abbruch, Live-Protokoll und unabhängige Prüfung
+
+Der vorhandene äußere Wächter meldete die erste Reserveverletzung bei69
+akzeptierten Profilen und stoppte die Verarbeitung. Zum Abbruch betrug der
+aktuelle gemeinsame Verbrauch1460740096B; maßgeblich ist der vorherige
+Lebenszeitpeak1640103936B. Das harte2,048GB-Limit wurde nicht erreicht und kein
+OOM beobachtet; **der20%-Reservevertrag ist trotzdem verletzt**.
+
+Nach jedem Profil wurden aktueller gemeinsamer RAM, Peak und verbleibende
+Peakreserve in dezimalen MB und Prozent im Terminal und Thread ausgegeben.
+Ausgabe und Logschreiber arbeiten außerhalb der Test-cgroup am vorhandenen
+Wächter; keine zusätzliche DB-Abfrage pro Profil. Die0,1s-Prüfung ist vom
+Ausgabepfad getrennt.86äußere Snapshots sind erhalten; die exakte Zahl sämtlicher
+0,1s-Abtastungen wurde nicht gespeichert und wird nicht behauptet.
+
+Der unabhängige Speicherreview hat denselben ursprünglichen Kernelpeak nach
+Abschluss erneut gelesen: unverändert1640103936B, kein Restart, kein Swap/OOM.
+Das Controllerkennzeichen `originalFinalPeakVerified:false` bleibt im Rohbericht
+erhalten: Der bereits gesetzte Speicherfehler verhindert dort die Annahme.
+Die zusätzliche unabhängige Lesung bestätigt den Zahlenwert in derselben
+fortbestehenden cgroup und macht daraus keinen PASS. Eine frische rein lesende
+Repeatable-Read-Sicht bestätigt gebundenbeendet/0aktiv. Alle11Originaldateien
+mit96530256Bytes sowie die ursprüngliche Source-Datenbank sind unverändert.
+
+Die genaue Ursache des Peaks ist **nicht** bewiesen. Ein früherer vorhandener
+Speichersnapshot enthält anonymen und Datei-/Shared-Memory-Verbrauch, aber keine
+Zerlegung zum Peakzeitpunkt. Kein Cache wird abgezogen, keine höhere Grenze,
+kein Reclaim und keine Konfigurationsreparatur nach dem Abbruch vorgenommen.
+
+## Alle1500Ergebnispositionen und verbleibende Lücken
+
+Die vollständige unabhängige Nachlesung erfasste500Profile/1500Sollpositionen
+mit17000Prüfungen. Rohbilanz3501PASS/13499FAIL; diese Prüfungen sind von den
+8000Runtime-Sicherheitskontrollen getrennt. Der Supervisorstop hinterließ keine
+finale Runtime-Receipt. Der unveränderte Audit markiert deshalb zusätzlich
+seinen Runtime-Kontrollbeleg als fehlend; die69vorhandenen Fortschrittsbelege
+beweisen die1104Kontrollen separat. Die Rohberichte werden nicht umgeschrieben.
+
+| Rohkennzeichen | Anzahl | Bedeutung |
+|---|---:|---|
+| Fehlend |1293|431nicht vollständig verarbeitete Profile mal3 |
+| Leer |0|Kein vorhandenes leeres Ergebnis |
+| Doppelt |0|Keine doppelten Ergebnisse |
+| Technisch nicht abgenommen |1500|Gesamtjournal unvollständig; Runtime-Abschlussreceipt fehlt; umfasst207vorhandene Ergebnisse |
+| Unbrauchbar |1293|Hier fehlende Ausgaben; kein festgestellter unbrauchbarer generierter Inhalt |
+
+Flags dürfen überlappen. Die207gespeicherten Ergebnisse bleiben fachlich ungeprüft; lokale Mockbindungen und Strukturprüfung sind
+keine echte Modellqualität. Der vollständige500er-Mocknachweis bleibt offen,
+der spätere Productionnachweis ebenfalls.
+
+Bereinigte öffentliche Belege ohne private Eingaben, Pfade oder Zugangsdaten:
+
+- [Gezielte echte Auth-Messprüfung und Review](belege/w15-processing-20261027/AUTH_MEASUREMENT_20261028_SUMMARY.SAFE.json).
+- [Aktueller Vollauf: Bilanz und Nachweisgrenzen](belege/w15-processing-20261027/FULL500_20261028C_SUMMARY.SAFE.json).
+- [Jedes abgeschlossene Profil mit gemeinsamem RAM und Erstfehler](belege/w15-processing-20261027/FULL500_20261028C_PROGRESS.SAFE.jsonl).
+- [Alle500Profile und1500Positionen mit getrennten Rohkennzeichen](belege/w15-processing-20261027/FULL500_20261028C_ALL_POSITIONS.SAFE.json).
+- [Unabhängiger Speicher-/Nullzustandsreview](belege/w15-processing-20261027/FULL500_20261028C_MEMORY_ZERO_REVIEW.SAFE.json).
+- [Übernommener500/500Quellen-PASS](belege/w15-processing-20261027/SOURCE_BINDINGS_20261028B_500PASS.SAFE.json).
+
+**Kürzester nächster Schritt nach neuem GO:** Genau den gemeinsamen
+Speicherbedarf des bestehenden Pfads eingrenzen und nur die belegte Ursache
+beheben. Hartes Limit,20%-Reserve, Sicherheitslogik und Originale erhalten;
+keine neue Architektur. Kein automatischer neuer Gesamtversuch. Die aktuelle
+Einmalfreigabe ist verbraucht. Historische Fehler unten bleiben erhalten.
+
+Keine neue vollständige CI: App/Server/Sicherheitslogik/Workflows seit der grünen
+Basis `da63309c`/CI40534410137 unverändert; gezielte Checks und Reviews für die
+Messhülle separat belegt. Auf dem getesteten Kopf3092efec kein neuer
+Workflowlauf; kein neues CI-Grün behauptet. PR969/971/972 bleiben ungemergt.
+Keine Production-/Hetzner-/Budgetänderungen, echten Modellaufrufe oder neuen
+kostenpflichtigen Ressourcen.
+
+---
+
+## Historischer Vollauf28b: Auth-Zuordnung bei Profil1 unvollständig
+
+**Historischer Sprintzustand28b:gescheitert/abgebrochen, kein lokaler Mock500-PASS.**
 Die fehlende echte Quellenidentitätsprüfung ist geschlossen: genau eine neue
 Vorprüfung erreichte am28.10.,06:29:07.972UTC **500/500PASS,0Fehler**.
 Danach wurde unter dem neuen Betreiber-GO genau ein frischer vollständiger

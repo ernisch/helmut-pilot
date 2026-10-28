@@ -1,16 +1,16 @@
 # CURRENT STATE — Helmut
 
-## W15:Quellen500PASS; Vollauf28bFAIL bei Profil1 (28.10.)
+## W15:AuthmessungPASS;Vollauf28c RAM-FAIL (28.10.)
 
-Main6b4012cd; PR972/971/969 ungemergt. EchteKandidaten-/Quellenprüfungverbunden:
-500/500VorprüfungPASS,unabhängigbestätigt;Originale96530256B+SourceDBgleich.
-Genau1neuerVollauf:500gleichzeitigaktiv,1DR/2Mocks/3Resultate/16von8000Kontrollen.
-StopbeiAuthCAS-Messhülle:2von12WritesohneAufrufzuordnung,keinAuth30Vollbeleg.
-Unit56,435s;HTTP61,202s. Kernelpeak966053888B,Reserve52,83%,hart2,048GB/Swap0.
-Unabhängiggebunden500→0bestätigt;1497Resultatefehlen,keineleeren/doppelten.
-Einmalfreigabeverbraucht;keinRetry/Resume. NächstesGO:nurLock-Authmessungschließen.
-Code98be4f66;kein500er/ProductionPASS. AppbasisCI40534410137unverändert.
-[Belege/Ursache/Nächsterschritt](betrieb/w15-mock-quellenbindungen-20261028.md).
+Main6b4012cd;PR972/971/969ungemergt. Quellen500PASSübernommen,nichtwiederholt.
+500gleichzeitigaktiv;69/500Units,138Mocksbelegt,207/1500Ergebnisse,1104/8000Kontrollen.
+Auth828/828zugeordnet<30s;Unitmax55,688s;HTTPmax60,372s(separat).
+Kernelpeak1640103936B;Reserve407896064B=19,9168%:FAILum1703936B.
+Hart2048000000B/Swap0/OOM0;500→0unabhängigbestätigt.
+Alle1500Positionengeprüft:1293fehlen,0leer/0doppelt;Originale11/96530256Bgleich.
+KeinRetry/Resume;Einmalfreigabeverbraucht.NächstesGO:gezielteRAM-Ursachebeheben.
+Code3092efec;kein500er/ProductionPASS;AppbasisCI40534410137unverändert.
+[Messwerte,Prüfgrenzen,Historie](betrieb/w15-mock-quellenbindungen-20261028.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
