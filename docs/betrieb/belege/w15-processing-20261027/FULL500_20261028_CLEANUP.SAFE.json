@@ -1,0 +1,13 @@
+{
+  "automaticUnitRetry": false,
+  "endWriteAttempts": 0,
+  "before": {
+    "active": 0,
+    "database": "helmut_w15_full500_20261028"
+  },
+  "after": {
+    "active": 0,
+    "database": "helmut_w15_full500_20261028"
+  },
+  "confirmedZero": true
+}

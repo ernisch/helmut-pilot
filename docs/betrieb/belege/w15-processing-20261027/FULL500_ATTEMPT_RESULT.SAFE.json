@@ -1,0 +1,109 @@
+{
+  "schema": "helmut-w15-full500-attempt-result/1",
+  "status": "STOPPED_FIRST_BOOTSTRAP_FAILURE_NO_APPLICATION_START",
+  "reportedAtUTC": "2026-10-27T19:16:20.538485+00:00",
+  "executionCommit": "cdea4b19",
+  "controllerExecutions": 1,
+  "newTestContainers": 1,
+  "restartsOrRecovery": 0,
+  "automaticRetryOrResume": false,
+  "firstFailure": {
+    "observedAtUTC": "2026-10-27T19:13:27.194Z",
+    "stage": "atomic-original-dump-restore-and-initial-deactivation",
+    "postgresError": "relation \"mandate_profiles\" does not exist at character 42",
+    "actualStatement": "set local statement_timeout='15s';update mandate_profiles set aktiv=false where aktiv;",
+    "cause": "Restore sets session search_path empty; appended UPDATE lacks public qualification. The transaction rolled back all application objects and data.",
+    "repairApplied": false,
+    "independentlyConfirmed": true
+  },
+  "execution": {
+    "temporarilyActivatedProfiles": 0,
+    "enteredUnits": 0,
+    "completedUnits": 0,
+    "localMockResponses": 0,
+    "realModelCalls": 0,
+    "freshSigningKeyCreated": false,
+    "actualSecurityCheckpointExecutions": 0,
+    "expectedSecurityCheckpoints": 8000,
+    "unit60": "NOT_MEASURED",
+    "auth30": "NOT_MEASURED",
+    "fullC90": "NOT_REACHED",
+    "newApplicationCoverage": "NOT_COLLECTED_APPLICATION_NOT_STARTED"
+  },
+  "results": {
+    "expected": 1500,
+    "actuallyStored": 0,
+    "missing": 1500,
+    "empty": null,
+    "duplicate": null,
+    "technicallyInvalid": null,
+    "unusable": null,
+    "unassessedPositions": 1500,
+    "classificationReason": "No application tables or results exist after transaction rollback. Content/result validators did not execute; no quality acceptance inferred.",
+    "mockQualityAcceptedByThisRun": false,
+    "realModelQualityAccepted": false
+  },
+  "memory": {
+    "scope": "PostgreSQL initialization and aborted restore only",
+    "enforcedLimitBytes": 2048000000,
+    "swapMaximumBytes": 0,
+    "kernelLifetimePeakBytes": 165920768,
+    "reserveBytes": 1882079232,
+    "requiredReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "peakResetOrBaselineSubtraction": false,
+    "allWorkloadsOrFull500PerformanceAccepted": false
+  },
+  "safeState": {
+    "rawControllerCleanupStatus": "UNKNOWN_missing_mandate_profiles_relation",
+    "independentDatabaseReadback": "No non-system application tables/schemas/functions, no application session, only PostgreSQL processes",
+    "activeTestProfiles": 0,
+    "boundNative500ToZeroReceipt": "NOT_APPLICABLE_activation_never_reached",
+    "originalControllerFailurePreserved": true,
+    "originalSourceBeforeAfterByteEqual": true,
+    "originalSourceActiveProfilesRemain": 500
+  },
+  "existingTestsReused": true,
+  "purePreflightExecutions": 1,
+  "purePreflightStatus": "PASS",
+  "independentPrestartReviews": 3,
+  "productionChanges": 0,
+  "merges": 0,
+  "full500LocalMockProof": false,
+  "full500ProductionProof": false,
+  "nextNecessaryAction": "Explicit approval for targeted schema-qualification/bootstrap checks and exactly one new attempt. No further executable action taken.",
+  "evidence": [
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_CONTROLLER_RESULT.SAFE.json",
+      "bytes": 553,
+      "sha256": "169306185ecad4cf0f809b19a9db150b53d0675aa2cbbf695ceda327d1bd3de8"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_FINAL_COMMON_MEMORY.SAFE.json",
+      "bytes": 793,
+      "sha256": "43e4d7443ec8232b1370bffe358c99e75e80193eda29ca84193cf57e10a73870"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_INDEPENDENT_BOOTSTRAP_ZERO_NO_START.SAFE.json",
+      "bytes": 3889,
+      "sha256": "5dadff23c60aceb43975e5f72d9bab2d10126a20986b41af6e24aee185808a0b"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_MEMORY_POSTRUN_INDEPENDENT.SAFE.json",
+      "bytes": 5084,
+      "sha256": "c9c4aa4227f011aa5c1cee0987cc04197b8e6b78e3b2820df720d505cffe4a5b"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_RESTORE_ROOT_CAUSE_INDEPENDENT.SAFE.json",
+      "bytes": 3723,
+      "sha256": "751b05c673fcf0dcd004efd86635a416fcce97fb65405d318e937f61906402b4"
+    }
+  ],
+  "priorApplicationCI": {
+    "commit": "da63309c44625f072afb8ccaf924fc0b3da77877",
+    "run": 40534410137,
+    "conclusion": "success",
+    "applicationAndWorkflowDiffSinceCommit": false,
+    "newCIStarted": false
+  }
+}

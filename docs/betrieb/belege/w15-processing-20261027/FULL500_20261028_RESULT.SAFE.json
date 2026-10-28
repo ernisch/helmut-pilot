@@ -1,0 +1,172 @@
+{
+  "schema": "helmut-w15-full500-actual-attempt/1",
+  "status": "FAIL",
+  "reportedAtUTC": "2026-10-28T05:14:38.813889+00:00",
+  "executionCommit": "514de4184a5b58155402d3210134d9273e78c1fa",
+  "controllerExecutions": 1,
+  "newCappedContainers": 1,
+  "retriesOrResume": 0,
+  "postgresRecovery": false,
+  "firstFailure": {
+    "stage": "offline500MockFixturePreparation",
+    "reason": "ai-text-source-reference",
+    "retainedFailureFileModifiedAtUTC": "2026-10-28T05:09:19.079000+00:00",
+    "codePath": "full500-materials Provider.prepare -> unit0-provider prepare -> AI.prepareLageReviewInput -> paragraph/source-reference guard",
+    "specificStaticallyConfirmedIncompatibility": "Mock candidate variant6 cites the fixed Bundestag PDF background dated2026-10-08, which the unchanged14-day source contract excludes on2026-10-28.",
+    "exactFirstFailingProfileIndex": null,
+    "exactGuardSubcondition": null,
+    "traceLimitation": "Index and whether AI guard1711 or1714 rejected are not recorded by this attempt. Static incompatibility is not a replay or an invented execution trace.",
+    "repairApplied": false
+  },
+  "actualExecution": {
+    "targetProfiles": 500,
+    "allSynthetic": true,
+    "activatedProfiles": 0,
+    "maximumActiveTargetProfiles": 0,
+    "finalActiveProfiles": 0,
+    "identities": 501,
+    "completedDRUnits": 0,
+    "localMockResponses": 0,
+    "realModelCalls": 0,
+    "unitSecurityCheckpoints": 0,
+    "expectedUnitSecurityCheckpoints": 8000,
+    "storedResults": 0,
+    "expectedResults": 1500,
+    "unit60": "NOT_REACHED",
+    "auth30": "NOT_REACHED",
+    "fullC90": "NOT_REACHED",
+    "native500ToZeroReceipt": "NOT_APPLICABLE_NO_ACTIVATION",
+    "cleanupConfirmedZero": true,
+    "independentZeroAndAll500ProfilesConfirmed": true
+  },
+  "expectedResultClassification": {
+    "expectedOwners": 500,
+    "areasPerOwner": 3,
+    "expectedPositions": 1500,
+    "observedStoredRows": 0,
+    "missing": 1500,
+    "empty": 0,
+    "duplicate": 0,
+    "technicallyInvalid": null,
+    "unusable": null,
+    "assessment": {
+      "missing": "All1500 expected positions absent because the complete briefings table is empty.",
+      "empty": "0 persisted rows with empty content; absent rows are classified as missing.",
+      "duplicate": "0 duplicate persisted rows; complete briefings table is empty.",
+      "technicallyInvalid": "NOT_ASSESSED_NO_OUTPUT",
+      "unusable": "NOT_ASSESSED_NO_OUTPUT"
+    },
+    "perPositionContentValidatorsExecuted": 0,
+    "notA17000CheckAudit": true
+  },
+  "memory": {
+    "scope": "New common capped container during setup, PostgreSQL restore, partial preparation and closure only; motor and units not reached",
+    "enforcedLimitBytes": 2048000000,
+    "swapLimitBytes": 0,
+    "swapCurrentBytes": 0,
+    "kernelLifetimePeakBytes": 369651712,
+    "reserveBytes": 1678348288,
+    "requiredReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "originalFinalPeakVerified": true,
+    "peakResetOrBaselineSubtraction": false,
+    "full500MemoryAccepted": false,
+    "offlineFixtureAssemblyOutsideCgroupAsPreviouslyDisclosed": true
+  },
+  "originals": {
+    "sourceBeforeAfterByteEqual": true,
+    "freshIndependentOriginalHashesMatch": true,
+    "sourceProfilesRemainUnchanged": true,
+    "sourceActiveProfilesRemain": 500,
+    "newTargetContainsPartialLocalSyntheticSourceAndAuthPreparation": true,
+    "newTargetMustNotBeCalledUnchangedRawRestore": true,
+    "originalReceivedFilesNotModified": true
+  },
+  "auditQualification": {
+    "initialAuditorStatus": "FAIL_OR_UNKNOWN_AUDIT_PREREQUISITE",
+    "initialAuditorPositionsExamined": 0,
+    "initialAuditorZeroCategoryCountersAreNotAcceptance": true,
+    "independentPostFailureReadbackChecks": 11,
+    "all500OwnersAnd1500AbsentPositionsConfirmed": true,
+    "contentValidatorsExecuted": 0
+  },
+  "quality": {
+    "mockOutputQualityAcceptedByThisAttempt": false,
+    "realModelQualityAccepted": false,
+    "noGeneratedOrStoredOutputForQualityReview": true
+  },
+  "coverage": {
+    "capturedDuringRequiredMaterialsStage": true,
+    "privateRawFiles": 2,
+    "privateRawBytes": 676720,
+    "noFullRuntimeCoverageClaim": true
+  },
+  "priorGreenPreflightAndRestoreReused": true,
+  "freshStartWindowAndSourcePinsVerifiedBeforeAttempt": true,
+  "full500LocalProof": false,
+  "productionProof": false,
+  "productionChanges": 0,
+  "merges": 0,
+  "paidResources": 0,
+  "nextNecessaryAction": "Stop. Before any new attempt, explicitly authorize targeted correction/qualification of local mock source bindings for all500 profiles; preserve real source/signature/cost checks and require a separate new one-shot run approval. No repair or repetition performed.",
+  "evidence": [
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_20261028_CONTROLLER_RESULT.SAFE.json",
+      "bytes": 523,
+      "sha256": "ae4ed55a569774fe5d6b48b0a9e5886d835a6fd4ce6e3eb373835379ea056bec"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_20261028_CLEANUP.SAFE.json",
+      "bytes": 247,
+      "sha256": "d193b6d021a24143290b0e185dbca4a85de5974904feed03ef46dba326f4741f"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_20261028_FINAL_COMMON_MEMORY.SAFE.json",
+      "bytes": 793,
+      "sha256": "4b603afa91c68890c955ae91bf0a35ce32432f568051f581900f6b632dcbc6e1"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_20261028_MATERIALS_FIRST_FAILURE.SAFE.json",
+      "bytes": 281,
+      "sha256": "dd427c1750dd9df561e561518e32a0d1cd9b2e75e3c2db732e785a56920e1065"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_20261028_RESULTS_INDEPENDENT.SAFE.json",
+      "bytes": 1137,
+      "sha256": "dfd471679857cd0e66a9d0027711618e0a15c39d0dcac18fb380e4efee0ef9f9"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_20261028_SOURCE_BEFORE.SAFE.json",
+      "bytes": 309,
+      "sha256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_20261028_SOURCE_AFTER.SAFE.json",
+      "bytes": 309,
+      "sha256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_20261028_INDEPENDENT_ZERO_AND_MISSING1500.SAFE.json",
+      "bytes": 6662,
+      "sha256": "32a8f72af61f1ffc6b8bfc8a15bdbe8f2e4591fbad2fa00a05fd75535da29338"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_20261028_MEMORY_POSTRUN_INDEPENDENT.SAFE.json",
+      "bytes": 6117,
+      "sha256": "b94780220a5ed5bd32ec80cbec8beca0edbdfbb70e933f0904ca5aecf9caf5c4"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/FULL500_20261028_FUNCTION_POSTRUN_ROOTCAUSE.SAFE.json",
+      "bytes": 7970,
+      "sha256": "50bd14df6ead79ee59cba4f2856036ee3698b69f9dbd24668c17686c52075250"
+    }
+  ]
+}

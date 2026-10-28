@@ -1,0 +1,13 @@
+{
+  "status": "FAIL",
+  "reason": "ai-text-source-reference",
+  "stages": [
+    {
+      "name": "rebind-current-calendar-originals",
+      "elapsedMs": 2494.779429,
+      "observedAtUTC": "2026-10-28T05:09:05.924Z",
+      "parentRssBytes": 579588096,
+      "rows": 500
+    }
+  ]
+}

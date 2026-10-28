@@ -1,0 +1,45 @@
+{
+  "schema": "helmut-w15-unit0-go-proposal/1",
+  "status": "INERT_NOT_AUTHORIZED_NOT_EXECUTED",
+  "scope": "ONLY_NEW_ISOLATED_TEST_DATABASE_IN_EXISTING_CONTAINER",
+  "container": "synthetik500-runtime-pg-7e1c20261027",
+  "sourceDatabasePreserved": "helmut_w15_input_20261027",
+  "newDatabaseName": "helmut_w15_unit0_20261027",
+  "temporaryActiveSyntheticProfiles": 500,
+  "distribution": {
+    "Bundestag": 330,
+    "Berlin": 120,
+    "Brandenburg": 50
+  },
+  "maximumDispatchedUnits": 1,
+  "unitIndex": 0,
+  "owner": "test-kohorte-synthetik-bb-001",
+  "provider": "local reviewed mock only",
+  "providerDelayMsEach": [
+    19900,
+    19900
+  ],
+  "unchangedUnitDeadlineMs": 60000,
+  "unchangedAuthDeadlineMs": 30000,
+  "commonMemoryComparisonBudgetBytes": 2048000000,
+  "requiredCommonMemoryReserveBytes": 500000000,
+  "newOperationAndFreshSignaturesRequired": true,
+  "oldStoppedOperationReusable": false,
+  "freshSourceSnapshotMainAuthCostEvidenceAndActivationReceiptRequired": true,
+  "sequence": [
+    "fresh inactive source-database copy and already verified synthetic performance inputs",
+    "fresh original SQL preparation and separately authorized activation BEFORE Auth-changing adapter.install; within original freshness/deadline guards",
+    "read native receipt: exactly500 active, same500/501 identities, source/role/code/signature bindings actual",
+    "actual signed prepare/install and cold HTTP productionStart exactly once; never next or loop",
+    "only two reviewed local mock model responses; unchanged real system/security/cost clocks",
+    "measure J.enter through final persistent ACK, each actual AuthCAS, common cgroup peak",
+    "bound existing end RPC to return500 to0 and verify; first FAIL/UNKNOWN terminal, no retry/next"
+  ],
+  "triggerCatalogReadOnly": "no noninternal mandate_profiles or end500 triggers found; only plpgsql extension; no extra scheduler installed or required by original local generator",
+  "productionEndWatcherAcceptanceClaimed": false,
+  "expectedResults": "one unit, two mock provider responses, three stored positions; not1500 outputs",
+  "productionActionsAllowed": false,
+  "paidProviderCallsAllowed": false,
+  "full500RunAllowed": false,
+  "separateOperatorPermissionRequired": "temporary isolated activation plus exactly one DR mock unit; prior operator activation restriction remains in force"
+}

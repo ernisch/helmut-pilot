@@ -1,0 +1,123 @@
+{
+  "schema": "helmut-w15-full500-independent-function-review/2",
+  "status": "BLOCKED_PURE_DATE_FIXTURE",
+  "reviewer": "/root/w15_function_review",
+  "reviewedAtUTC": "2026-10-27T19:46:39.273569+00:00",
+  "scope": "Narrow incremental static schema-fix, adjacent SQL, fresh28Oct namespaces and date fixture review; no new application or database execution.",
+  "blocker": {
+    "path": "scripts/synthetik-500-w15-full500-preflight-test.js",
+    "line": 35,
+    "source": "assert.deepEqual(Window.window(\"2026-10-27T19:29:59Z\"), Window.window(\"2026-10-27T19:29:59.000Z\"));",
+    "firstRunDay": "2026-10-28",
+    "explanation": "An unconditional positive formatting comparison still invokes27Oct. The actual window helper now rejects dates before28Oct, so the first Window.window call throws rather than reaching the comparison.",
+    "actualTargetedPureTest": "Root reports exactly one execution failed on this stale positive date case. Reviewer did not execute or repeat the test.",
+    "classification": "Pure test fixture date mismatch; not a new application or database failure."
+  },
+  "separateConfirmedFindings": [
+    {
+      "name": "Restore schema fix is the single public.mandate_profiles qualifier in the same psql --single-transaction -f/-c call",
+      "status": "PASS_STATIC"
+    },
+    {
+      "name": "Actual isolated restorecheck extracted and executed that exact corrected controller AST call",
+      "status": "PASS_EXISTING_EVIDENCE"
+    },
+    {
+      "name": "Committed restore500inactive mandates/501identities;13tables/10functions;13projected data hashes equal original except persisted active=false",
+      "status": "PASS_EXISTING_EVIDENCE"
+    },
+    {
+      "name": "Controller/materials/runtime/audit target28Oct WORK/BASE/database/container namespaces are congruent",
+      "status": "PASS_STATIC"
+    },
+    {
+      "name": "Verified original source database receipt and cached binary paths remain27Oct and unchanged",
+      "status": "PASS_STATIC"
+    },
+    {
+      "name": "Python and JS earliest date28Oct; unchanged3h+30min UTC/Berlin day and31Oct limits",
+      "status": "PASS_STATIC"
+    },
+    {
+      "name": "Controller requires actual restore preflight PASS and independent review acceptance before resource creation",
+      "status": "PASS_STATIC"
+    },
+    {
+      "name": "Adjacent count and cleanup calls use fresh psql sessions and do not inherit the restore session empty search_path",
+      "status": "PASS_STATIC"
+    }
+  ],
+  "restorePreflightEvidence": [
+    {
+      "name": "RESTORECHECK_RESULT.SAFE.json",
+      "bytes": 37841,
+      "sha256": "19cf4de850fe980b5a2ca59eb05bf19ff9b544a3318159c9b9b3880fbe98213a",
+      "status": "PASS_COMMITTED_ORIGINAL_RESTORE_WITH_500_INACTIVE_PROFILES"
+    },
+    {
+      "name": "RESTORECHECK_INDEPENDENT.SAFE.json",
+      "bytes": 5087,
+      "sha256": "9c578b21f30aec717a769de68b500f037b4ee5a8b930f6012b006d047800b74b",
+      "status": "PASS_INDEPENDENT_READONLY_COMMITTED_RESTORE_500_INACTIVE"
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 28035,
+      "sha256": "804dcf4df64b657da1c062de820ef79385b94fa5205d73b5942c3f9dbaa71e2c"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-materials.js",
+      "bytes": 21106,
+      "sha256": "3d3dc70ed0c18e0925e6ec635b9c2c75bef7e9f537bf22f643d5bc8db4a0639f"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 33684,
+      "sha256": "92acb528fb66926fd9a43ab7e986c1ac7fed2a76053279ba2f2de7af21aa136f"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-audit.js",
+      "bytes": 17723,
+      "sha256": "ab2ceaaf6833a785569da8edeb53317682210ce1fa5bb4ffcd57c4412b222282"
+    },
+    {
+      "path": "scripts/fixtures/w15-full500-window.js",
+      "bytes": 1702,
+      "sha256": "05b2d6a1e6886cad91e4780e7907f1b35773c039ca925649ce73b4544e49ddf8"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-preflight-test.js",
+      "bytes": 11784,
+      "sha256": "9278f132ab557009c0449d709d53c15c1811f42694ee80fd282acfadff66d616"
+    }
+  ],
+  "readiness": {
+    "fullRunReady": false,
+    "PASSReadySealIssued": false,
+    "applicationOrUnitStarted": false,
+    "newFull500MayStart": false,
+    "startTimerCreated": false
+  },
+  "stopPolicy": {
+    "firstPureTestFailurePreserved": true,
+    "furtherCorrectionPerformed": false,
+    "testRetryPerformed": false,
+    "fullStartPerformed": false,
+    "nextStep": "Stop and report the remaining stale pure date fixture; no further correction, test repeat, start or timer without new explicit steering."
+  },
+  "actionsByReviewer": {
+    "sourceAndExistingSafeReceiptReadsOnly": true,
+    "databaseQueries": 0,
+    "databaseWrites": 0,
+    "sourceChanges": 0,
+    "tests": 0,
+    "applicationStarts": 0,
+    "units": 0,
+    "activations": 0,
+    "timers": 0
+  },
+  "productionProof": false,
+  "full500Proof": false
+}

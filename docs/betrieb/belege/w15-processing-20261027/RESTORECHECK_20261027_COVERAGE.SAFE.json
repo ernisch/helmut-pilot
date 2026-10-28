@@ -1,0 +1,37 @@
+{
+  "schema": "helmut-w15-targeted-preflight-coverage/1",
+  "capturedAtUTC": "2026-10-27T19:46:27.277763+00:00",
+  "testExecutions": 1,
+  "testStatus": "FAIL_STALE_POSITIVE_DATE_FIXTURE",
+  "applicationExecuted": false,
+  "applicationCoverageAccepted": false,
+  "method": "V8 function-entry coverage for loaded repository files only; no line or branch coverage claim",
+  "rawFiles": 2,
+  "files": [
+    {
+      "path": "scripts/fixtures/w15-full500-window.js",
+      "functionsExecuted": 5,
+      "functionsObserved": 5
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.js",
+      "functionsExecuted": 1,
+      "functionsObserved": 2
+    },
+    {
+      "path": "scripts/lokal.js",
+      "functionsExecuted": 6,
+      "functionsObserved": 6
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "functionsExecuted": 9,
+      "functionsObserved": 24
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-preflight-test.js",
+      "functionsExecuted": 3,
+      "functionsObserved": 22
+    }
+  ]
+}

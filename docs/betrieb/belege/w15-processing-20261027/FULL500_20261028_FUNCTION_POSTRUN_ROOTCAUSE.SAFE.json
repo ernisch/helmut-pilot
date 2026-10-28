@@ -1,0 +1,184 @@
+{
+  "status": "FAIL_CLOSED_MATERIALS_SOURCE_REFERENCE_WITH_STATIC_INCOMPATIBILITY_IDENTIFIED",
+  "scope": "INDEPENDENT_STATIC_POSTRUN_ROOTCAUSE_ONLY_NO_RETRY",
+  "createdAtUTC": "2026-10-28T05:13:15.822328+00:00",
+  "reviewedActualFailure": {
+    "status": "FAIL",
+    "reason": "ai-text-source-reference",
+    "stages": [
+      {
+        "name": "rebind-current-calendar-originals",
+        "elapsedMs": 2494.779429,
+        "observedAtUTC": "2026-10-28T05:09:05.924Z",
+        "parentRssBytes": 579588096,
+        "rows": 500
+      }
+    ]
+  },
+  "confirmed": {
+    "actualFailureReason": "ai-text-source-reference",
+    "actualLogContainsStackOrProfileIndex": false,
+    "actualFailingProfileIndex": null,
+    "actualFailingGuardBranch": "UNKNOWN: same error string at ai.js1711 and1714; existing log cannot distinguish",
+    "observedPhase": "materials before retained mock-fixtures, audit-inputs, operation ID construction and activation block",
+    "callChain": [
+      "full500-materials.js:103-108 sorted rows -> Provider.prepare",
+      "w15-full500-provider.js:19-22 -> unchanged unit0 provider prepare",
+      "w15-unit0-provider.js:22 B.pruefe ->23 L.prepareDContext ->24 nonempty context ->28 ai.prepareLageReviewInput",
+      "ai.js:1744-1746 -> pruefeLageParagraphs, throws LAGE_AI_FAILURE with exact source-reference reason"
+    ],
+    "guardRules": [
+      {
+        "file": "lib/helmut/ai.js",
+        "lines": [
+          1709,
+          1711
+        ],
+        "rule": "Every paragraph must contain nonempty vorgang_ids and each ID must belong to current context."
+      },
+      {
+        "file": "lib/helmut/ai.js",
+        "lines": [
+          1712,
+          1714
+        ],
+        "rule": "Exactly one vorgang_id; string quelle_id must map to that same current-context vorgang_id."
+      }
+    ],
+    "noModelOrRuntimeSuccessProved": true
+  },
+  "specificStaticIncompatibility": {
+    "classification": "CONFIRMED_INPUT_AND_RULE_INCOMPATIBILITY_NOT_A_CAPTURED_FAILURE_INDEX",
+    "variantIndex": 6,
+    "firstOwnerInSortedInputs": "test-kohorte-synthetik-bt-001",
+    "firstSortedIndex": 170,
+    "candidateParagraphCount": 2,
+    "candidateParagraphReference": "q-89cfb5d28f8ae51b8021",
+    "candidateVorgangId": "vg-fresh-draft-bt-zwangsversteigerungen-43dc373a38e2eab4",
+    "originalContextContainsReferencedPDFSource": true,
+    "originalContextAlsoContainsOrdinarySource": "q-e61c51251bc1d8866dd3",
+    "ordinarySourcePublicationUTC": "2026-10-15T14:46:00.000Z",
+    "pdfDocumentId": "rd-136b8729e92d06f92b97b9fdc9ec8aa87d02d12707e5423fe8e6249f528546d7",
+    "immutablePDFDocumentDay": "2026-10-08",
+    "pdfBerlinDayStartUTC": "2026-10-07T22:00:00.000Z",
+    "pdfBerlinDayEndUTC": "2026-10-08T22:00:00.000Z",
+    "rule": "lage-quellenbeleg.js116-122 requires entire immutable PDF day within max(context beginning, actual now minus14days) and min(context end, actual now).",
+    "observationStageUTC": "2026-10-28T05:09:05.924Z",
+    "fourteenDayBeginningAtObservationUTC": "2026-10-14T05:09:05.924Z",
+    "consequence": "The PDF reference is necessarily excluded at this observed date. A remaining ordinary source can leave the same KO/context nonempty, so checking koLite.length>0 does not establish candidate reference compatibility. If this variant is reached, its two PDF references cannot satisfy current AI source mapping. The saved failure does not establish this was the first thrown error.",
+    "syntheticTimestampChangeExplainsThisPDFReference": false,
+    "basisForLastField": "Derived timestamp targets only distinct BE source ID rd-691117a4712de0582634fca3081d3ee6c2d6a65c3c4360086dd5caffbd44800d; it changes no PDF document day or reference. No source-ID drift claimed."
+  },
+  "limits": {
+    "constructorsExecutedByReviewer": false,
+    "testsOrApplicationRunsStarted": false,
+    "databaseQueriesOrMutationsPerformed": false,
+    "activationPerformed": false,
+    "providerCallsMade": false,
+    "originalPlaintextPublished": false,
+    "exactFirstFailingOwnerOrBranchReconstructed": false,
+    "additionalGuardTestClaimed": false,
+    "retriesOrRepairsMade": false
+  },
+  "existingCleanupEvidence": {
+    "automaticUnitRetry": false,
+    "endWriteAttempts": 0,
+    "before": {
+      "active": 0,
+      "database": "helmut_w15_full500_20261028"
+    },
+    "after": {
+      "active": 0,
+      "database": "helmut_w15_full500_20261028"
+    },
+    "confirmedZero": true
+  },
+  "acceptance": "Existing single attempt remains FAIL. Materials fail-closed rejection is an integration failure, not a replacement for any unit/full500/1500-output acceptance. No retry or repair authorization derived.",
+  "nextAction": "Report the static input/context incompatibility and exact trace limitation. Preserve first failure; stop without reconstruction run, fix or new activation.",
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-pilot/scripts/synthetik-500-w15-full500-materials.js",
+      "bytes": 21106,
+      "sha256": "3d3dc70ed0c18e0925e6ec635b9c2c75bef7e9f537bf22f643d5bc8db4a0639f"
+    },
+    {
+      "path": "/workspace/helmut-pilot/scripts/fixtures/w15-full500-provider.js",
+      "bytes": 6616,
+      "sha256": "df71e0c063274f0d65d6eaa7ab291b42d435b985d15824b785e2ac6e22507d6a"
+    },
+    {
+      "path": "/workspace/helmut-pilot/scripts/fixtures/w15-unit0-provider.js",
+      "bytes": 8826,
+      "sha256": "fdf4ac5a036dfa03347a562c99ef3a330080e5b23db0ea5e9cd47be3ce95e221"
+    },
+    {
+      "path": "/workspace/helmut-pilot/lib/helmut/briefing-lagebindung.js",
+      "bytes": 2933,
+      "sha256": "6cca21f32919cf3df2c6f6661886b1c8fc5a4aa99f5c0016953d3f043095a5a3"
+    },
+    {
+      "path": "/workspace/helmut-pilot/lib/helmut/lage.js",
+      "bytes": 56155,
+      "sha256": "b69d8abc8793be120980bfd86f3d4e65682a6f885ddd6d16b10671d4c67995b3"
+    },
+    {
+      "path": "/workspace/helmut-pilot/lib/helmut/lage-quellenbeleg.js",
+      "bytes": 13666,
+      "sha256": "94583ff0cffc77934117ad4f36146b74c050cf11dd780e7b4b5e69501a2084bf"
+    },
+    {
+      "path": "/workspace/helmut-pilot/lib/helmut/ai.js",
+      "bytes": 100090,
+      "sha256": "33a64efbe45989f4ee5f3f1268c0874c0a2c4924b2ac4c825977005824ccbd5a"
+    },
+    {
+      "path": "/workspace/helmut-pilot/lib/helmut/bundestag-dokumenthintergrund.js",
+      "bytes": 7483,
+      "sha256": "25e1473553a6e784abc607b11bc300f6feb5c70ba79f0002b3c85b9f4155d0c6"
+    },
+    {
+      "path": "/workspace/helmut-pilot/lib/helmut/briefing-frische.js",
+      "bytes": 21804,
+      "sha256": "748209a7a2217e8a8d5adc99755ad981176b2fac6a2071c04209795b78ea54a4"
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "/workspace/shared/helmut-w15-full500-20261028/MATERIALS_FIRST_FAILURE.SAFE.json",
+      "bytes": 281,
+      "sha256": "dd427c1750dd9df561e561518e32a0d1cd9b2e75e3c2db732e785a56920e1065"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-full500-20261028/materials.PRIVATE.log",
+      "bytes": 263,
+      "sha256": "cf19ea479d7e13ca29659f78d3bbd922b97e5f317f3b87bb7545965638a86834"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-full500-20261028/CLEANUP.SAFE.json",
+      "bytes": 247,
+      "sha256": "d193b6d021a24143290b0e185dbca4a85de5974904feed03ef46dba326f4741f"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-full500-20261028/CONTROLLER_RESULT.SAFE.json",
+      "bytes": 523,
+      "sha256": "ae4ed55a569774fe5d6b48b0a9e5886d835a6fd4ce6e3eb373835379ea056bec"
+    }
+  ],
+  "originalManifestPins": [
+    {
+      "key": "normalizedCurrentPolicy",
+      "expectedBytes": 89982254,
+      "expectedSHA256": "90e11a4228e2e568edf03c3feb9ea2c79e71449e68fdc6c563a3355f1fbaaa14"
+    },
+    {
+      "key": "reviewedMockCandidates",
+      "expectedBytes": 213986,
+      "expectedSHA256": "90a789d058f503dfb4cc58a988866fe80a7d39bdfeb26b4039cc8d5cde3bf515"
+    },
+    {
+      "key": "staticMockTemplates",
+      "expectedBytes": 97720,
+      "expectedSHA256": "cb80981e72a5ce74ab9e2530dd7f32005ae088d45359f22e8cdb20afa7c3e4f0"
+    }
+  ]
+}

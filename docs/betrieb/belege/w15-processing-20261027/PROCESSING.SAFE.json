@@ -1,0 +1,123 @@
+{
+  "schema": "helmut-w15-processing-priority/1",
+  "scope": "SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION",
+  "status": "PASS_ALL500_D_PREPARATION_AND_PREPARED0_AUTH_MEMORY_CASES",
+  "date": "2026-10-27",
+  "applicationCodeUnchangedFromGreenCI": "da63309c44625f072afb8ccaf924fc0b3da77877",
+  "ciRun": 40534410137,
+  "applicationSourcesUnchanged": true,
+  "originalReceiptSHA256": "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1",
+  "processingInputs": {
+    "rows": 500,
+    "documents": 7,
+    "knowledgeObjects": 6,
+    "actualDPreparer": "original pinned W15 API, no provider call",
+    "allRequestsHaveNonemptyContext": true,
+    "descriptorsAndActualRequestDatesMatch": true,
+    "uniqueSyntheticPublicationTimes": 1,
+    "syntheticSourceDate": "2026-10-25T11:02:48+00:00",
+    "originalSourceDate": "2026-10-13T11:02:48+00:00",
+    "allOtherSourcesIncludingPDFAndAllKOContentPreserved": true,
+    "professionalVerdictsReboundAsTestDataOnly": true,
+    "originalFilesModified": false,
+    "sourceRestorePreserved": true,
+    "liveNewsAcceptance": false,
+    "transport": {
+      "expandedBytes": 105764857,
+      "dictionaryBytes": 11701225,
+      "encodedUTF8Bytes": 1148089
+    }
+  },
+  "realSecurityClock": true,
+  "productionGuardsChanged": false,
+  "actualSource23AndKO60PostimagesMatchDerivedInputs": true,
+  "prepare": {
+    "wallMs": 12559.501731,
+    "limitMs": 90000
+  },
+  "preparedOpen": {
+    "wallMs": 3115.986093,
+    "limitMs": 60000
+  },
+  "authCases": {
+    "acknowledgedWallMs": [
+      667.2722349999985,
+      506.444622,
+      604.0504089999995
+    ],
+    "limitMs": 30000,
+    "allCallbackRunsOne": true,
+    "scope": "actual500-unit/1000-intent input ledger with preserved5000 historical usage, installation+claim+stop",
+    "final500UnitLedgerAccepted": false
+  },
+  "memory": {
+    "currentBytes": 1024278528,
+    "kernelLifetimePeakBytes": 1122721792,
+    "configuredLimit": "max",
+    "comparisonBudgetBytes": 2048000000,
+    "requiredReserveBytes": 500000000,
+    "comparisonReserveBytes": 925278208,
+    "reserveAtLeast500MB": true,
+    "measurement": "kernel cgroup lifetime maximum, not reset; includes actualPG, PostgREST, gateway, Node/worker and file cache; no baseline subtraction",
+    "hostInputAssemblerIncluded": false,
+    "hardLimitEnforced": false,
+    "acceptedActiveUnitOrProductionMemory": false
+  },
+  "actualActivityGuard": "synthetik500-production-direct-exact500-active-runtime-required",
+  "runtime": {
+    "zustand": "vorbereitet",
+    "aktiv": 0,
+    "gesamt": 500,
+    "identitaeten": 501
+  },
+  "unit60Accepted": false,
+  "unitEntries": 0,
+  "profileActivations": 0,
+  "full500Dispatch": false,
+  "providerCalls": 0,
+  "productionActions": 0,
+  "sourceImports": 0,
+  "newContainers": 0,
+  "privateKeyLeftProtectedContainer": false,
+  "rawEvidence": [
+    {
+      "file": "PROCESSING_INPUTS.SAFE.json",
+      "bytes": 117792,
+      "sha256": "5b9b3eb091fff919fba1f7fe2c05807e389a4705a021ffdfb08d96dbaf547a49"
+    },
+    {
+      "file": "PREPARE.SAFE.json",
+      "bytes": 6359,
+      "sha256": "dda9d0f66a8a3b97a6fe52a413213dfcdbf7e61e60e4d9ab312064711b97752a"
+    },
+    {
+      "file": "RUNTIME_AUTH_RAM.SAFE.json",
+      "bytes": 5887,
+      "sha256": "c64010642cf4f9dcb37891f60ff01a4efc8cb24bf7c2bd5d8a1d6fe7fd0702b5"
+    },
+    {
+      "file": "PROCESSING_MATERIALS_FIRST_FAILURE.SAFE.json",
+      "bytes": 672,
+      "sha256": "c788844532b3fb4d9677c37733f6ada6900c08de741f7ac4a57486224eff982a"
+    },
+    {
+      "file": "check-FIRST-FAILURE.SAFE.json",
+      "bytes": 639,
+      "sha256": "d7d4301e3560ea451783598162f8065644e29ce7beabc4c49a996c732d4b346f"
+    }
+  ],
+  "preservedFirstFailures": [
+    "derived cluster reference required canonical source-version rebinding",
+    "cold server needed one existing repository script dependency, added only that file"
+  ],
+  "independentReviews": [
+    "function reviewer: actual data/crypto/Auth functions preserved; no activation/dispatch",
+    "memory auditor: numeric925278208B comparison reserve valid only for covered scope; memory.max=max; no Unit/finalLedger/Production claim"
+  ],
+  "remaining": [
+    "separately authorized temporary activation of500synthetic profiles only in a new isolated test database",
+    "one actual DR-Unit0 with two19.9s local mock provider delays, originalUnit60/Auth30/deadlines and bound return to0",
+    "final-ledger Auth30 and active memory under the actual2.048GB cap before a full500 proof",
+    "real source provision checked separately before laterProduction use"
+  ]
+}

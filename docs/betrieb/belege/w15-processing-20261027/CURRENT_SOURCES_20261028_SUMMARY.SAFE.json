@@ -1,0 +1,99 @@
+{
+  "status": "FAIL_FIRST_CURRENT_BINDING_NO_RETRY",
+  "atUTC": "2026-10-28T06:07:24.201393+00:00",
+  "completedOwners": 51,
+  "qualifiedOwners": 50,
+  "failedOwners": 1,
+  "unattemptedOwners": 449,
+  "failedIndex": 50,
+  "failedOwner": "test-kohorte-synthetik-be-001",
+  "failedVariant": 4,
+  "reason": "publication-eligibility-candidate-unchecked",
+  "firstFailurePhase": "current-source-bindings-constructed",
+  "newBEOriginalId": "rd-717c311350b734ae503946cb238d531f7d0c66a77e4bc2b037635fb8f1b24e3d",
+  "newBEKO": "ko-w15-current-be-steuerschaetzung-20261023",
+  "oldRBBMetadataInFailure": "Predecessor metadata only; newRow not returned because genuine constructor stopped",
+  "newSources": [
+    {
+      "scope": "BE",
+      "url": "https://www.berlin.de/sen/finanzen/presse/pressemitteilungen/pressemitteilung.1730442.php",
+      "publicationDay": "2026-10-23",
+      "publishedLocalMinute": "12:52 Europe/Berlin",
+      "publishedUTCMinute": "10:52",
+      "precision": "minute",
+      "originalHTMLBytes": 50643,
+      "originalHTMLSHA256": "717c311350b734ae503946cb238d531f7d0c66a77e4bc2b037635fb8f1b24e3d"
+    },
+    {
+      "scope": "BT",
+      "url": "https://www.bundestag.de/presse/hib/kurzmeldungen-1225362",
+      "publicationDay": "2026-10-16",
+      "precision": "day",
+      "publisherClockTime": null,
+      "originalHTMLBytes": 256798,
+      "originalHTMLSHA256": "c6938aebddb2e5c2203b6c5892802010ae78cc46e6d1cf76554995136f2c12ca"
+    }
+  ],
+  "sourceWindowDaysUnchanged": 14,
+  "newSourcesContentReview": "16/16 public original/excerpt/date checks, separate Root HTML/excerpt/content read; static mocks4/6 reviewed, actual162 D/R qualification unproven",
+  "sourceDatesRewritten": false,
+  "oldUnprovenPDFNumbersRetained": false,
+  "originalFiles": {
+    "count": 11,
+    "bytes": 96530256,
+    "hashesUnchanged": true
+  },
+  "currentSprint": {
+    "newContainers": 0,
+    "databaseWrites": 0,
+    "profileActivations": 0,
+    "unitExecutions": 0,
+    "mockResponses": 0,
+    "paidModelCalls": 0,
+    "full500Runs": 0,
+    "retries": 0
+  },
+  "independentPostrunChecks": 44,
+  "all500Pass": false,
+  "localMock500Pass": false,
+  "productionProof": false,
+  "conditionalNewFull500Authorization": "UNUSED; start prerequisites not satisfied",
+  "nextRequiredChange": "Use the existing genuine publication filter with complete source-identity reads before constructing new KO briefing bindings. Preserve policy, source holds and all guards. New targeted qualification requires renewed GO after explicit first-error stop.",
+  "evidence": [
+    {
+      "path": "CURRENT_SOURCES_20261028_QUALIFICATION.SAFE.json",
+      "bytes": 620284,
+      "sha256": "dfd20fe8aea431be91c2ca80e58000bd6be1ed15ca7e92ad9e97cc43c2f1e0fa"
+    },
+    {
+      "path": "CURRENT_SOURCES_20261028_REVIEW.SAFE.json",
+      "bytes": 10349,
+      "sha256": "9832cd3f20f79fc4bb9d9ec8c3c67a516b7f206ffc08b462c9b9e78806fd00b1"
+    },
+    {
+      "path": "CURRENT_SOURCES_20261028_SOURCE_REVIEW.SAFE.json",
+      "bytes": 9028,
+      "sha256": "69c34d2749ff83ff2406d4d7bbe54f68646cb91c27c453ff18883bc2c45ec175"
+    },
+    {
+      "path": "CURRENT_SOURCES_20261028_STATIC_REVIEW.SAFE.json",
+      "bytes": 4245,
+      "sha256": "65c0108a1550fd3a1b5f2a23b2e5c5cf3e2f29710c395e5dbde67006bd3dc93b"
+    },
+    {
+      "path": "CURRENT_SOURCES_20261028_ORIGINALS.SAFE.json",
+      "bytes": 8626,
+      "sha256": "23fc558592d48a6a2d77da58f40bad84866102d5908b00049f13b22318850737"
+    },
+    {
+      "path": "CURRENT_SOURCES_20261028_SOURCE_DB.SAFE.json",
+      "bytes": 871,
+      "sha256": "f893b14070957947c5bb2196da45dc8ab1ffc084234cc7106d911d284b18b2c5"
+    },
+    {
+      "path": "CURRENT_SOURCES_20261028_COVERAGE.SAFE.json",
+      "bytes": 13566,
+      "sha256": "c8e8162c2dbac632099a3bd3c0971ab85995918adc0f6e9943be37ec1bc45af3"
+    }
+  ]
+}

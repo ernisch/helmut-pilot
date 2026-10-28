@@ -1,0 +1,235 @@
+{
+  "schema": "helmut-w15-forward-c-public-outcome/1",
+  "status": "FAIL_PRIMARY_TWENTY_PERCENT_RESERVE_BREACH",
+  "testedCodeCommit": "eb4bed7005e97e5cab46a8673129c172bd3657ae",
+  "diagnosticAttempts": 1,
+  "newFull500Attempts": 0,
+  "preflight": {
+    "sqlWhitespaceFix": "PASS",
+    "generatedDistinctSQLStatements": 3509,
+    "actualGeneratedQuerySites": 3511,
+    "nativeSeedStatements": 3501,
+    "workloadStatementsExecuted": 0,
+    "newDatabaseCreated": false,
+    "method": "PostgreSQL17 psql gdesc uses Parse/Describe; no semicolon, g/bind/Execute or EXPLAIN ANALYZE on workload SQL.",
+    "sourceSnapshotUnchanged": true,
+    "databaseObjectsColumnsRolesAndRouting": "PASS",
+    "independentStaticReview": "PASS",
+    "coverageLimits": [
+      "Original pg_restore and roles SQL reuse unchanged successful pinned restore proof.",
+      "PostgREST internally generated SQL reuses successful native Auth/CAS proof; not claimed extracted from diagnostic source.",
+      "Parse-only does not execute constraints/triggers or demonstrate runtime memory."
+    ],
+    "reportPin": {
+      "bytes": 440462,
+      "sha256": "b02143076edc5c72af39be3798b0d8a45e3e140c8b98967ad4fcdf25422fd49c"
+    },
+    "independentStaticReviewPin": {
+      "bytes": 11903,
+      "sha256": "b870d7bfdaa566fcbe38af417ef6b98d0e50bac172f79c387f6c60aeb8516820"
+    }
+  },
+  "scope": {
+    "actualPinnedW15CommandDecodedAndRetained": true,
+    "nativeExactSeedPostimageChecks": 3501,
+    "fixtureUsageRows": 6000,
+    "preservedHistoricalUsageRows": 5000,
+    "preservedActualHistoricalTestUsageRows": 139,
+    "newExplicitlyInertUsageRows": 861,
+    "nativeCommittedSeedCounts": {
+      "evidenceRows": 500,
+      "privateDraftStoreRows": 500,
+      "resultRows": 1500,
+      "privateDraftReviewRows": 1000
+    },
+    "fixtureIsExecutionCostSourceOrQualityEvidence": false,
+    "fixtureExecutionAuthority": false,
+    "completedDiagnosticCASAndContentReadbacks": 247,
+    "nextPersistedMutationOrdinal": 248,
+    "nextPersistedMutationACKAndTiming": "UNKNOWN",
+    "units": 0,
+    "localMockResponses": 0,
+    "modelCalls": 0,
+    "profileActivations": 0,
+    "full500Acceptance": false
+  },
+  "memory": {
+    "sharedKernelScope": "Same whole-container cgroup: PostgreSQL, actual W15 Node runtime, gateway Node, PostgREST and filesystem cache; RSS values are context only.",
+    "hardLimitBytes": 2048000000,
+    "requiredReserveBytes": 409600000,
+    "requiredReservePercent": 20,
+    "maximumAllowedPeakBytes": 1638400000,
+    "firstBreach": {
+      "sampleUTC": "2026-10-28T10:20:46.891677+00:00",
+      "peakBytes": 1639776256,
+      "reserveBytes": 408223744,
+      "excessOverMaximumBytes": 1376256
+    },
+    "failureAtEuropeIstanbul": "2026-10-28T13:20:46.892434+03:00",
+    "finalPeakBytes": 1644748800,
+    "finalReserveBytes": 403251200,
+    "finalReservePercent": 19.69,
+    "reserveShortfallBytes": 6348800,
+    "currentAfterClosureBytes": 455258112,
+    "swapMaximumBytes": 0,
+    "swapCurrentBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "separateAdditionalProjectionGate": {
+      "additionalMarginBytes": 67108864,
+      "minimumProjectedAdditionalBytes": 655360,
+      "minimumProjectionFormula": "ceil(2*8192*(6500-500)/150)=655360",
+      "maximumPeakEvenForMinimumProjectionBytes": 1570635776,
+      "firstRecordedImpossibleGate": {
+        "atUTC": "2026-10-28T10:18:08.781763+00:00",
+        "acceptedCAS": 172,
+        "peakBytes": 1570725888,
+        "excessBytes": 90112,
+        "primaryTwentyPercentCriterionBreachedThen": false
+      },
+      "notTheUserTwentyPercentCriterion": true,
+      "actualCompletedForwardGrowthProjection": null,
+      "finalMinimumPossibleAdditiveTotalBytes": 1712513024,
+      "conclusion": "The extra projection gate was already impossible before the later actual20percent reserve breach. The64MiB extra margin is a distinct predeclared diagnostic condition."
+    },
+    "complete500ForwardProjection": "NOT_REACHED"
+  },
+  "components": {
+    "largestSampledCurrentBytes": 1625980928,
+    "sampleAtUTC": "2026-10-28T10:19:45.104795+00:00",
+    "completedCASAtSample": 217,
+    "simultaneousMemoryStatBytes": {
+      "anon": 1167384576,
+      "file": 432394240,
+      "kernel": 25206784,
+      "shmem": 139624448,
+      "file_mapped": 137089024,
+      "file_dirty": 18817024,
+      "file_writeback": 0,
+      "inactive_file": 487260160,
+      "active_file": 10022912,
+      "slab": 14299728,
+      "pagetables": 10153984,
+      "sock": 0
+    },
+    "separateProcessRSSAtSample": [
+      {
+        "name": "postgres",
+        "RSSBytes": 140279808,
+        "VmHWMBytes": 140279808,
+        "PSSBytes": null
+      },
+      {
+        "name": "postgrest",
+        "RSSBytes": 473759744,
+        "VmHWMBytes": 505516032,
+        "PSSBytes": null
+      },
+      {
+        "name": "postgres",
+        "RSSBytes": 316780544,
+        "VmHWMBytes": 331468800,
+        "PSSBytes": null
+      },
+      {
+        "name": "MainThread",
+        "RSSBytes": 138588160,
+        "VmHWMBytes": 142622720,
+        "PSSBytes": null
+      },
+      {
+        "name": "MainThread",
+        "RSSBytes": 410828800,
+        "VmHWMBytes": 465252352,
+        "PSSBytes": null
+      }
+    ],
+    "interpretation": [
+      "PostgREST has the largest directly observed sustained RSS increase:339435520bytes at25acceptedCAS to477945856bytes at247; maximum sampled492617728 and observedVmHWM506728448. This is measured growth, not proof of a leak or any particular PostgREST/GC mechanism.",
+      "The runtime Node RSS fluctuates rather than growing monotonically, with maximum sampled446214144 and observedVmHWM465252352. The earlier Node process inferred as gateway reaches roughly138MB late and remains close to that level.",
+      "A PostgreSQL backend has transient RSS spikes above300MB. At10:19:45.104795Z/CAS217, common current was1625980928bytes and stat anon1167384576/file432394240/kernel25206784, while separate RSS observations included backend316780544/PostgREST473759744/runtimeNode410828800. These are correlated observations, not a sum of independently charged physical memory.",
+      "Late common memory increases coincide with higher anonymous memory and PostgREST RSS; file memory changes much less between25 and247ACK checkpoints. The recorded evidence does not isolate one sole cause or establish a safe reduction.",
+      "The exact first-breach sample is a fast supervisor kernel sample without synchronous memory.stat or per-processRSS. The nearest prior component sample is10:20:46.288373Z/CAS247, about0.603seconds before the breach."
+    ],
+    "accountingLimits": [
+      "Only cgroup lifetime peak establishes cap/reserve acceptance. Per-processRSS is not summed, subtracted from the cap or substituted for it.",
+      "PSS was unavailable due permissions in every collected process observation; private/shared proportional ownership cannot be reconstructed.",
+      "Kernel/stat/process samples are read sequentially and have separate timestamps. memory.stat categories and subcategories overlap and may show transient counter differences; individual maxima occur at different times and must not be added.",
+      "No heap dump, allocator trace, GC internals, new measurement or memory mutation was performed by this reviewer."
+    ],
+    "measuredLargestSustainedRSSIncrease": "PostgREST:339435520 bytes at25 accepted CAS to477945856 bytes at247; maximum sampled492617728 bytes. A leak or safe remedy is not established.",
+    "newWALTempAndNaturalGCFinalSeries": "UNKNOWN: partial observations remained in process memory; no final or abort receipt was saved. The complete500 forward cycle was not reached. Historical cumulative WAL/temp bytes are not RAM or this attempt's residency."
+  },
+  "auth": {
+    "completedWholeMutationACKs": 247,
+    "completedNativeCASACKs": 247,
+    "maximumWholeMutationThroughACKMs": 4410.963033,
+    "maximumNativeCASThroughACKMs": 3827.9169570000004,
+    "maximumAwaitedCallMs": 4411.0577410000005,
+    "all247Under30Seconds": true,
+    "allObservedIncludingPendingCoverage": "UNKNOWN",
+    "partial248thACKAndTiming": "UNKNOWN",
+    "fullFinalAndAbortReceiptsPresent": false,
+    "missingReceiptCause": "UNKNOWN; Docker client process-group SIGTERM was requested; inner signal delivery was not recorded. No SIGKILL or OOM kill asserted.",
+    "priorDirectSIGTERMHelperPASSIsIntegratedAbortProof": false,
+    "acceptedProgressArtifact": "FORWARD_DIAGNOSTIC_C_20261028_AUTH_PROGRESS.SAFE.json",
+    "acceptedProgressPin": {
+      "bytes": 83228,
+      "sha256": "7b00e0d598ef3e3eb0e5a8f1dda90309b39bdb542e4a3e10251c21f60d5328b6"
+    }
+  },
+  "closure": {
+    "controllerActiveProfiles": 0,
+    "independentReadonlyActiveProfiles": 0,
+    "independentReadonlySnapshots": 1,
+    "mandateProfiles": 500,
+    "identities": 501,
+    "usageRows": 6000,
+    "nativeSeedCountsConfirmed": true,
+    "independentClosureReportPin": {
+      "bytes": 5738,
+      "sha256": "3beb451bd5977750c97148e2bad12211af7d0543f176787d6c1906d89ddafc60"
+    }
+  },
+  "independentReview": {
+    "status": "FAIL_CONFIRMED_PRIMARY_TWENTY_PERCENT_RESERVE_BREACH_247_COMPLETED_CAS_CLOSED_ZERO",
+    "consistencyChecks": 8,
+    "reportPin": {
+      "bytes": 43262,
+      "sha256": "103a72741b32efaab3ef21cd2271ffe8848e97bfe8a90b6c370a978a70553b79"
+    },
+    "publicDocumentationReview": "247 raw-log projection rows and all metrics/pins checked; no private payloads/paths found. Wording corrected: partial in-memory WAL/temp/GC observations, not an existing complete500 series."
+  },
+  "evidencePins": {
+    "controller": {
+      "bytes": 1021,
+      "sha256": "3e056fbcd717d805278a8fa412960e81fbbd91b735e147d897cb84ea3cda47cf"
+    },
+    "outerKernelAndComponentsTimeline": {
+      "bytes": 1777324,
+      "sha256": "d4ebc5e41c539318aba73b2f7b38859f033ab768a752fd44ee3a25e482dd9252"
+    },
+    "nativeSeed": {
+      "bytes": 273,
+      "sha256": "10e8f1a9ea4639aa4d33c23c49eec9952f37c95dcc71702f0ed0058cb3083986"
+    }
+  },
+  "retainedEvidence": "Full private raw records, originals and historical failures retained in protected cloud storage; public file contains only a sanitized projection.",
+  "reuse": "Passed source qualification500/500, original constructors/security checks, Auth checks, End500 fixture31 checks and unchanged original restore proof reused without repeat.",
+  "postFailure": {
+    "retry": false,
+    "restart": false,
+    "codeOrBudgetChange": false,
+    "forcedGCOrCacheClearOrMeasurementSubtraction": false,
+    "productionChange": false,
+    "paidCallsOrResources": false,
+    "merge": false
+  },
+  "nextNecessaryWork": "No Full500 start. Investigate measured PostgREST/Node/PostgreSQL anonymous pressure and durable inner abort/report delivery before any newly authorized diagnosis. Safe500 forward reserve and complete natural WAL/GC cycles remain unproved."
+}

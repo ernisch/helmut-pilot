@@ -192,7 +192,8 @@ function main() {
   check("C3 Eine unbekannte neue Suite ist NICHT Standard (Testauswahl bleibt bewusst)",
     !standard.suiten.has("gaenzlich-neuer-beispiel-test.js"), "");
   check("C4 Private W15-Originalpruefungen bleiben ausserhalb aller automatischen Sammellaeufe",
-    ["synthetik-500-w15-original-content-test.js", "synthetik-500-w15-original-db-test.js", "synthetik-500-w15-original-worker-test.js"]
+    ["synthetik-500-w15-original-content-test.js", "synthetik-500-w15-original-db-test.js", "synthetik-500-w15-original-worker-test.js",
+      "synthetik-500-w15-signed-chain-test.js"]
       .every(f => fs.existsSync(path.join(ROOT, "scripts", f)) && !standard.suiten.has(f) && !erweitert.suiten.has(f)), "");
 
   console.log(`\n${pass} PASS / ${fail} FAIL`);

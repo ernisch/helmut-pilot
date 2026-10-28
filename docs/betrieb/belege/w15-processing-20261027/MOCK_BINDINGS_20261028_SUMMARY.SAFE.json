@@ -1,0 +1,80 @@
+{
+  "schema": "helmut-w15-local-mock-binding-qualification/1",
+  "status": "FAIL_NOT500_OF500_NO_NEW_FULL_RUN",
+  "reportedAtUTC": "2026-10-28T05:34:13.742745+00:00",
+  "qualificationExecutions": 1,
+  "inputExecutionUTC": "2026-10-28T05:30:21.782Z",
+  "profilesChecked": 500,
+  "qualifiedDAndR": 338,
+  "failed": 162,
+  "nativeInventoryHashUnchanged": true,
+  "sourceDatesRewritten": false,
+  "failureGroups": [
+    {
+      "variant": 4,
+      "count": 120,
+      "indices": "50..169",
+      "reason": "w15-unit0-provider-empty-context",
+      "sourceDocumentId": "rd-691117a4712de0582634fca3081d3ee6c2d6a65c3c4360086dd5caffbd44800d",
+      "sourceQuelleId": "q-52da9d6e37f47514600f",
+      "sourcePublishedAt": "2026-10-13T11:02:48+00:00",
+      "DAndR": "NOT_CONSTRUCTIBLE_NO_CURRENT_CONTEXT",
+      "constraint": "Only bound source lies outside unchanged14-day window; mock text/reference edits cannot create a valid current source."
+    },
+    {
+      "variant": 6,
+      "count": 42,
+      "firstActualQualificationIndex": 170,
+      "reason": "ai-text-source-reference",
+      "rejectedQuelleId": "q-89cfb5d28f8ae51b8021",
+      "currentAllowedQuelleId": "q-e61c51251bc1d8866dd3",
+      "sourcePDFDay": "2026-10-08",
+      "DAndR": "NOT_QUALIFIED",
+      "constraint": "Remaining15Oct hib extract does not substantiate old PDF numerical/statistics claims; relabelling would be unsupported."
+    }
+  ],
+  "allFailuresHaveIndexVariantSourceIdsAndReason": true,
+  "originalsAndHistoricalFailureReceiptsPreserved": true,
+  "genuineUnchangedConstructors": "B/A/F + L.prepareDContext + existing unit0 Provider.prepare (AI/Q and genuine D/R response payload constructors); no substitutes",
+  "calendarOnlyRebinding": "Five existing calendar/hash paths; all source bodies/dates and native inventory unchanged",
+  "noSilentMappingRepairOrFabricatedSource": true,
+  "repairsApplied": false,
+  "repairBoundary": "Current bound inputs lack admissible evidence for all500; no compliant mock-only replacement has been established. Stop rather than claim repaired/PASS.",
+  "independentReviewsAccepted": true,
+  "newFull500Started": false,
+  "newFull500AuthorizationUsed": false,
+  "newContainers": 0,
+  "databaseWrites": 0,
+  "profileActivations": 0,
+  "units": 0,
+  "mockResponses": 0,
+  "realModelCalls": 0,
+  "newFullRunResultCategories": "NOT_APPLICABLE_NEW_FULL_RUN_NOT_STARTED; qualification failures are input failures, not stored outputs",
+  "runtimeMemoryUnit60Auth30Or8000Accepted": false,
+  "productionProof": false,
+  "coverage": {
+    "capturedInOnlyRequiredQualification": true,
+    "privateRawFiles": 2,
+    "privateRawBytes": 538266,
+    "noRuntimeOrFull500CoverageClaim": true
+  },
+  "nextNecessaryData": "For120BE a genuinely admissible source plus correctly bound reviewed briefing context; for42variant6 fully supported mock content/review rather than substitution of source ID. Sources and real gates must remain truthful/unmodified.",
+  "overallRunMayStartOnlyAfter": "500/500 actual valid D/R inputs and independent review, original day/window/resource constraints",
+  "evidence": [
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/MOCK_BINDINGS_20261028_ALL500.SAFE.json",
+      "bytes": 1624835,
+      "sha256": "636ee6d019898652551cdd0368410d6a0b0b2b309c198606ffbb6fbfe559e699"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/MOCK_BINDINGS_20261028_REVIEW.SAFE.json",
+      "bytes": 9891,
+      "sha256": "51507e3f405a3646a853626fa999246a274cf1794bda54b8e7c9b67d206f503d"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/MOCK_BINDINGS_20261028_SOURCE_PRESERVATION.SAFE.json",
+      "bytes": 9779,
+      "sha256": "0cc44d3cbcc301fc45de6795a9330bb4ae4e397b9539dc93602be21d18a02f79"
+    }
+  ]
+}

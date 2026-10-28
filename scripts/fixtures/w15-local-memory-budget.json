@@ -1,0 +1,19 @@
+{
+  "version": "helmut-w15-local-common-memory-budget/1",
+  "scope": "ISOLATED_LOCAL_TEST_ONLY_NOT_PRODUCTION",
+  "nodeOldSpaceMiB": 512,
+  "postgresMaxWalMiB": 128,
+  "postgresWorkMemMiB": 32,
+  "postgresAutovacuumNaptimeSeconds": 10,
+  "postgrestPool": 3,
+  "maximumFixtureAuthBytes": 13616853,
+  "fixtureUsageRows": 6000,
+  "diagnosticCASWrites": 500,
+  "conservativeTotalAuthCASWrites": 6500,
+  "minimumCompletedNaturalCheckpoints": 2,
+  "minimumNaturalMajorGCs": 2,
+  "maximumRetainedWalBytes": 402653184,
+  "minimumCommonHeadroomBytes": 67108864,
+  "durabilitySettingsUnchanged": true,
+  "forcedCheckpointOrGCOrCacheClearing": false
+}

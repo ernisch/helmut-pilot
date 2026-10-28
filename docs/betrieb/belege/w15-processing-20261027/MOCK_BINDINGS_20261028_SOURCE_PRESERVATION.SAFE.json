@@ -1,0 +1,254 @@
+{
+  "schema": "helmut-w15-independent-all500-source-preservation/1",
+  "status": "PASS_SOURCE_PRESERVATION_REVIEW_QUALIFICATION_FAILED",
+  "reviewedAtUTC": "2026-10-28T05:32:52.137293+00:00",
+  "reviewer": "independent-memory-source-review-agent",
+  "scope": "Read-only audit of the completed qualification report, original received file pins, existing checker/calendar source, source metadata and canonical hashes. No qualification, validator, constructor, controller, database or runtime execution repeated.",
+  "qualificationReportPin": {
+    "path": "/workspace/shared/helmut-w15-mock-bindings-check-20261028/ALL500_MOCK_BINDINGS_CHECK.SAFE.json",
+    "bytes": 1624835,
+    "sha256": "636ee6d019898652551cdd0368410d6a0b0b2b309c198606ffbb6fbfe559e699"
+  },
+  "qualificationStatus": "FAIL_ALL500_COMPLETED_NOT_ALL_CURRENT_BINDINGS_QUALIFIED",
+  "cardinality": {
+    "expectedOwners": 500,
+    "completedRecords": 500,
+    "uniqueOwners": 500,
+    "indicesExactly0Through499": true,
+    "ownerSetExactlyOriginal500": true,
+    "qualifiedOwners": 338,
+    "failedOwners": 162,
+    "failureRecords": 162,
+    "failureOwnerSetExactlyFailedRecords": true
+  },
+  "failureGroups": [
+    {
+      "variantIndex": 4,
+      "owners": 120,
+      "reason": "w15-unit0-provider-empty-context",
+      "contextCount": 0
+    },
+    {
+      "variantIndex": 6,
+      "owners": 42,
+      "reason": "ai-text-source-reference",
+      "contextNotEmpty": true,
+      "note": "The retained failure metadata identifies a source-reference mismatch; no corrective fixture was applied or revalidated by this review."
+    }
+  ],
+  "summaryByVariant": [
+    {
+      "variantIndex": 0,
+      "variantKey": "oil",
+      "owners": 82,
+      "qualified": 82,
+      "failed": 0,
+      "emptyCurrentContext": 0
+    },
+    {
+      "variantIndex": 1,
+      "variantKey": "tobacco",
+      "owners": 82,
+      "qualified": 82,
+      "failed": 0,
+      "emptyCurrentContext": 0
+    },
+    {
+      "variantIndex": 2,
+      "variantKey": "ev",
+      "owners": 83,
+      "qualified": 83,
+      "failed": 0,
+      "emptyCurrentContext": 0
+    },
+    {
+      "variantIndex": 3,
+      "variantKey": "ev",
+      "owners": 41,
+      "qualified": 41,
+      "failed": 0,
+      "emptyCurrentContext": 0
+    },
+    {
+      "variantIndex": 4,
+      "variantKey": "berlin",
+      "owners": 120,
+      "qualified": 0,
+      "failed": 120,
+      "emptyCurrentContext": 120
+    },
+    {
+      "variantIndex": 5,
+      "variantKey": "brandenburg",
+      "owners": 50,
+      "qualified": 50,
+      "failed": 0,
+      "emptyCurrentContext": 0
+    },
+    {
+      "variantIndex": 6,
+      "variantKey": "foreclosure-pdf",
+      "owners": 42,
+      "qualified": 0,
+      "failed": 42,
+      "emptyCurrentContext": 0
+    }
+  ],
+  "originalFileVerification": {
+    "receiptSHA256Matches": true,
+    "originalReceiptSHA256": "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1",
+    "all4OriginalPinsMatchCurrentBytesAndReceipt": true,
+    "verifiedOriginalPins": [
+      {
+        "key": "normalizedCurrentPolicy",
+        "bytes": 89982254,
+        "sha256": "90e11a4228e2e568edf03c3feb9ea2c79e71449e68fdc6c563a3355f1fbaaa14"
+      },
+      {
+        "key": "nativeInventoryHistoricalTemplate",
+        "bytes": 44832,
+        "sha256": "9285dd06daf66d9ecaafa045d7cdfa2e8793f21cc1d7d70aeda9fe97267c5f97"
+      },
+      {
+        "key": "reviewedMockCandidates",
+        "bytes": 213986,
+        "sha256": "90a789d058f503dfb4cc58a988866fe80a7d39bdfeb26b4039cc8d5cde3bf515"
+      },
+      {
+        "key": "staticMockTemplates",
+        "bytes": 97720,
+        "sha256": "cb80981e72a5ce74ab9e2530dd7f32005ae088d45359f22e8cdb20afa7c3e4f0"
+      }
+    ],
+    "all9SourceCodePinsMatchCurrentBytes": true,
+    "verifiedSourceCodePins": [
+      {
+        "path": "scripts/synthetik-500-w15-mock-bindings-check.js",
+        "bytes": 16897,
+        "sha256": "08f4441a540eb904523e87cf80b3381a8f740d0eb13d236827a322ce7fba9895"
+      },
+      {
+        "path": "scripts/fixtures/w15-local-calendar.js",
+        "bytes": 4937,
+        "sha256": "4e7cd70c70dcfad6ef4e4f97c7dd1f6ce6385a57e04b642140814b38bcf2f4f6"
+      },
+      {
+        "path": "scripts/fixtures/w15-unit0-provider.js",
+        "bytes": 8826,
+        "sha256": "fdf4ac5a036dfa03347a562c99ef3a330080e5b23db0ea5e9cd47be3ce95e221"
+      },
+      {
+        "path": "lib/helmut/briefing-lagebindung.js",
+        "bytes": 2933,
+        "sha256": "6cca21f32919cf3df2c6f6661886b1c8fc5a4aa99f5c0016953d3f043095a5a3"
+      },
+      {
+        "path": "lib/helmut/lage.js",
+        "bytes": 56155,
+        "sha256": "b69d8abc8793be120980bfd86f3d4e65682a6f885ddd6d16b10671d4c67995b3"
+      },
+      {
+        "path": "lib/helmut/ai.js",
+        "bytes": 100090,
+        "sha256": "33a64efbe45989f4ee5f3f1268c0874c0a2c4924b2ac4c825977005824ccbd5a"
+      },
+      {
+        "path": "lib/helmut/lage-textqualitaet.js",
+        "bytes": 24722,
+        "sha256": "efb6d4a512f84e74454d6ef1f93d3e00661c5b4ec560f7fb2c6256c41e4e9cd1"
+      },
+      {
+        "path": "lib/helmut/lage-quellenbeleg.js",
+        "bytes": 13666,
+        "sha256": "94583ff0cffc77934117ad4f36146b74c050cf11dd780e7b4b5e69501a2084bf"
+      },
+      {
+        "path": "lib/helmut/briefing-frische.js",
+        "bytes": 21804,
+        "sha256": "748209a7a2217e8a8d5adc99755ad981176b2fac6a2071c04209795b78ea54a4"
+      }
+    ],
+    "policyPinCurrentBytesMatch": true,
+    "policyPinSHA256": "274033cdfdd5f1527d0e961a6c00482d61b7be317eeea03e736a6a5948aa6a04"
+  },
+  "sourceAndNativePreservation": {
+    "all500ReportedOriginalSourceHashesMatchOriginalRows": true,
+    "all500ReportedSourceIDsDatesAndVorgangBindingsMatchOriginalRows": true,
+    "nativeInventoryCanonicalHashRecomputedFromOriginal": "cedf15fcab22b12110e2a766f1281ec72815de78620b0bd1f85320b213defdd3",
+    "nativeInventoryHashBefore": "cedf15fcab22b12110e2a766f1281ec72815de78620b0bd1f85320b213defdd3",
+    "nativeInventoryHashAfter": "cedf15fcab22b12110e2a766f1281ec72815de78620b0bd1f85320b213defdd3",
+    "actualBeforeAndAfterCanonicalHashesEqual": true,
+    "all7NativeSourceIDAndPublicationDatePairsMatchOriginal": true,
+    "independentHashMethod": "Read-only SHA256 of compact UTF-8 JSON with sorted object keys; matches the existing canonical report values for the native inventory and every row.sources object.",
+    "noSourceTimestampRewriteFoundInCalendarEvidence": true
+  },
+  "calendarOnlyEvidence": {
+    "all500CalendarChangedPathsWithinWhitelist": true,
+    "allowedPaths": [
+      "/briefingDatum",
+      "/briefingEingabe/eingabe/tag",
+      "/briefingEingabe/eingabe/eingabeHash",
+      "/briefingEingabe/urteil/eingabeHash",
+      "/briefingEingabe/urteil/gesamtpruefung/umfang/eingabeHash"
+    ],
+    "calendarHelperSourceRetainsNoncalendarChangeGuard": true,
+    "qualificationSourceAssertsDerivedRowSourcesAndCorrectionSourcesEqualOriginal": true,
+    "syntheticSourceWindowHelperNotUsedByQualifier": true,
+    "publicationDatesReviewsAndOriginalSourceFilesNotRejuvenated": true,
+    "limitations": "Derived full rows are not retained in this report. This independent audit verifies original file/current-source hashes, all500 source metadata/hash records and calendar whitelist enforcement in the pinned qualifier/helper; it does not re-run calendar derivation or B/L/D constructors."
+  },
+  "fourteenDayFinding": {
+    "qualificationExecutionISO": "2026-10-28T05:30:21.782Z",
+    "sourceWindowDays": 14,
+    "cutoffUTC": "2026-10-14T05:30:21.782Z",
+    "BEProfileCount": 120,
+    "onlyBoundBESourceID": "rd-691117a4712de0582634fca3081d3ee6c2d6a65c3c4360086dd5caffbd44800d",
+    "unchangedPublishedAt": "2026-10-13T11:02:48+00:00",
+    "olderThanWindow": true,
+    "noArticleStandExceptionObservedForTheseRows": true,
+    "codeEvidence": [
+      "lib/helmut/briefing-frische.js:109-110 defaults source relevance to14 days",
+      "lib/helmut/lage-quellenbeleg.js:47-50 computes the current ordinary window",
+      "lib/helmut/lage-quellenbeleg.js:126-127 rejects ordinary timestamps outside that window"
+    ],
+    "conclusion": "Calendar rebinding preserves these real source dates and cannot make the120 empty ordinary D contexts current.338 successful mock qualifications do not constitute all500 readiness."
+  },
+  "qualificationReportedZeroActions": {
+    "databaseWrites": 0,
+    "profileActivations": 0,
+    "unitExecutions": 0,
+    "providerCalls": 0,
+    "paidModelCalls": 0
+  },
+  "qualificationReportedFalseFlags": {
+    "sourceDatesRewritten": false,
+    "originalFilesWritten": false,
+    "globalDateReplaced": false,
+    "retryAllowed": false,
+    "full500RunAuthorized": false,
+    "productionApproval": false,
+    "actualModelOutput": false,
+    "currentProfessionalAcceptance": false
+  },
+  "staticExecutionBoundary": "The pinned qualifier calls only calendar/B/L and unchanged Provider.prepare constructors. No Provider.install HTTPS hook, controller, dispatcher, command installation, activation or DB entrypoint is invoked; its one qualification run is not repeated by this review.",
+  "full500QualificationAccepted": false,
+  "newFull500RunStarted": false,
+  "new28bAttemptBuiltByThisReview": false,
+  "historical28WorkspaceNotReusedByThisReview": true,
+  "full500MemoryOrUnitPerformanceProof": false,
+  "productionProof": false,
+  "reviewActions": {
+    "tests": 0,
+    "qualificationReruns": 0,
+    "databaseQueries": 0,
+    "databaseWrites": 0,
+    "runtimeOrControllerStarts": 0,
+    "activations": 0,
+    "unitExecutions": 0,
+    "providerCalls": 0,
+    "sourceCodeEdits": 0,
+    "sourceDateChanges": 0,
+    "reportFileCreatedOnly": true
+  },
+  "next": "Retain the complete negative qualification and original evidence. No all500 PASS or fresh full500 attempt follows from this source-preservation review."
+}

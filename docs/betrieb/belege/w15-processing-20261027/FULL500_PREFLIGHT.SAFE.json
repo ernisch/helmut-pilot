@@ -1,0 +1,92 @@
+{
+  "schema": "helmut-w15-full500-prestart-review/1",
+  "status": "PASS_PRESTART_STATIC_AND_PURE_CHECKS",
+  "reviewedAtUTC": "2026-10-27T19:13:13.248491+00:00",
+  "pins": [
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 27844,
+      "sha256": "e7631b3b1e5d2294feb8b22824522588b67df033d5eda129c33e3b101bed5b5b"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-materials.js",
+      "bytes": 21106,
+      "sha256": "41cbb7aef83d6d9a61acacf821c92e00c8a3b5b16593d03f47dafe4bec2d47de"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 33684,
+      "sha256": "42ab91006cf18116782b0f56d7e2b14f6c30fe4894435cdf2a78fbde7ff21fc3"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-audit.js",
+      "bytes": 17723,
+      "sha256": "afabc72c6025ab3a54eadd1467fd953ac4220525e36fa6bd8f944fdfb11efee3"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-preflight-test.js",
+      "bytes": 11667,
+      "sha256": "b75bf2be2411d6a0aa9309dce40f1638df99fc2fbcb2237fce0c48954e20b118"
+    },
+    {
+      "path": "scripts/fixtures/w15-full500-window.js",
+      "bytes": 1702,
+      "sha256": "37bed3235916aa721986d1c9b5e6d84a6967fa5ec105cbb45dcf5b40d5aa5253"
+    },
+    {
+      "path": "scripts/fixtures/w15-full500-provider.js",
+      "bytes": 6616,
+      "sha256": "df71e0c063274f0d65d6eaa7ab291b42d435b985d15824b785e2ac6e22507d6a"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.js",
+      "bytes": 1096,
+      "sha256": "7fde8ef7bd10210da3d20ffb9d03fe9115ec4cf1716d45a2a79faf24ad8bc994"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.json",
+      "bytes": 115,
+      "sha256": "acffec2e146c8b104605eb27b52a02822cb189f0c0468303fa2061240cc7bff2"
+    },
+    {
+      "path": "scripts/fixtures/w15-unit0-provider.js",
+      "bytes": 8826,
+      "sha256": "fdf4ac5a036dfa03347a562c99ef3a330080e5b23db0ea5e9cd47be3ce95e221"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-signed-chain-test.js",
+      "bytes": 35558,
+      "sha256": "f47425dcb8f0e487b4be5e741d07dc991bf21f6fcff9f794bd2a3998bfb9fff3"
+    }
+  ],
+  "independentReviews": [
+    {
+      "path": "/workspace/shared/helmut-w15-full500-review-20261027/MEMORY_REVIEW.SAFE.json",
+      "bytes": 5437,
+      "sha256": "c0ce209bfa509ba525348d5f29200745348552947e56b705e2b0424830184847",
+      "status": "PASS_PRESTART_STATIC_AND_PURE_CHECKS"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-full500-review-20261027/DATA_REVIEW.SAFE.json",
+      "bytes": 4938,
+      "sha256": "6ed89e9193468cbac8753a9c16584ffe2a0111ab7f853ba54baa9cd1794de45c",
+      "status": "PASS"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-full500-review-20261027/FUNCTION_REVIEW.SAFE.json",
+      "bytes": 3763,
+      "sha256": "9f8d93be5ae1685556f43504b5da52464751dcaa8791f512c9928cc41e107abb",
+      "status": "PASS_INDEPENDENT_STATIC_REVIEW"
+    }
+  ],
+  "ownerExecutionAuthorization": "Explicit user GO for exactly one local Mock500; no retry/resume, no production/real models/merge",
+  "purePreflightExecutions": 1,
+  "purePreflightStatus": "PASS",
+  "applicationTestsOrUnitsExecutedByPreflight": 0,
+  "existingSecurityTestsReused": true,
+  "newArchitecture": false,
+  "rootReview": "Provider/runtime/auditor pure and actual-call connections source-reviewed; security functions, clocks, native guards and app code unchanged",
+  "measurementScope": "Offline fixture/request assembly outside run; genuine stored Full-C preparation/install, application/worker, HTTP driver/mock, PostgreSQL/PostgREST/gateway and independent audit inside common capped container",
+  "actualCapAndFull500Accepted": false,
+  "productionProof": false
+}

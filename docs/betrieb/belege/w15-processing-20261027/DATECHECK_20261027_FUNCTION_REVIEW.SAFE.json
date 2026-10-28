@@ -1,0 +1,134 @@
+{
+  "schema": "helmut-w15-independent-date-correction-review/1",
+  "status": "PASS_DATE_CORRECTION_REVIEW",
+  "reviewer": "/root/w15_function_review",
+  "reviewedAtUTC": "2026-10-27T20:02:48.467901+00:00",
+  "baselineCommit": "78865e30",
+  "change": {
+    "path": "scripts/synthetik-500-w15-full500-preflight-test.js",
+    "line": 35,
+    "old": "assert.deepEqual(Window.window(\"2026-10-27T19:29:59Z\"), Window.window(\"2026-10-27T19:29:59.000Z\"));",
+    "new": "assert.deepEqual(Window.window(\"2026-10-28T19:29:59Z\"), Window.window(\"2026-10-28T19:29:59.000Z\"));",
+    "changedPositiveStrings": 2,
+    "onlyOneLineChanged": true,
+    "noOtherTrackedApplicationOrScriptCodeDiff": true
+  },
+  "checks": [
+    {
+      "name": "Exactly two approved positive27Oct date strings replaced by28Oct",
+      "status": "PASS_STATIC_EXACT_BASELINE_COMPARISON"
+    },
+    {
+      "name": "All negative cases and boundary values byte-identical to baseline",
+      "status": "PASS_STATIC"
+    },
+    {
+      "name": "No other unconditional positive27Oct Window call remains; remaining27Oct values are negative invalid cases",
+      "status": "PASS_STATIC"
+    },
+    {
+      "name": "Earliest28Oct latest31Oct and exact3h+30min UTC/Berlin day limits unchanged",
+      "status": "PASS_STATIC"
+    },
+    {
+      "name": "Entire pure source retains AST-only controller function extraction and isolated fake-observer simulation; no application start",
+      "status": "PASS_STATIC"
+    },
+    {
+      "name": "One newly authorized pure preflight by Root ended EXIT0/PASS; reviewer did not repeat",
+      "status": "PASS_EXISTING_LOG"
+    },
+    {
+      "name": "Existing actual committed restore500inactive/501identities/13tables/10functions/all13datahashes plus independent review reused",
+      "status": "PASS_EXISTING_EVIDENCE"
+    },
+    {
+      "name": "Earlier blocked review and first-failure artifacts preserved",
+      "status": "PASS_EXISTING_HASH"
+    }
+  ],
+  "purePreflight": {
+    "executionOwner": "/root",
+    "executionsUnderLatestAuthorization": 1,
+    "exitCode": 0,
+    "toolWallSecondsReportedByRoot": 0.209,
+    "log": {
+      "path": "/workspace/shared/helmut-w15-datecheck-20261027/PREFLIGHT.PRIVATE.log",
+      "bytes": 650,
+      "sha256": "8a7e7ee91f9ff42f3eb2865c375733172625d03b59a21d3fffacb12346b23445",
+      "finalLine": "PASS: pure full500 UTC/Berlin/order-date gates; exact3h+30min; shared20% memory boundaries; isolation/recovery artifact scope; checkpoint/Auth/CAS and fake-observer coverage; actual Python window parity. No controller, DB, container, unit or network executed."
+    },
+    "repeatedByReviewer": false
+  },
+  "restoredPreflightEvidenceReused": [
+    {
+      "name": "RESTORECHECK_RESULT.SAFE.json",
+      "bytes": 37841,
+      "sha256": "19cf4de850fe980b5a2ca59eb05bf19ff9b544a3318159c9b9b3880fbe98213a",
+      "status": "PASS_COMMITTED_ORIGINAL_RESTORE_WITH_500_INACTIVE_PROFILES"
+    },
+    {
+      "name": "RESTORECHECK_INDEPENDENT.SAFE.json",
+      "bytes": 5087,
+      "sha256": "9c578b21f30aec717a769de68b500f037b4ee5a8b930f6012b006d047800b74b",
+      "status": "PASS_INDEPENDENT_READONLY_COMMITTED_RESTORE_500_INACTIVE"
+    }
+  ],
+  "preservedBlockedReview": {
+    "name": "FUNCTION_REVIEW.SAFE.json",
+    "bytes": 4933,
+    "sha256": "12de1bedba9d54de001bb9434be0d44c4753a08d18f04f46df6b24bc241ca35b",
+    "status": "BLOCKED_PURE_DATE_FIXTURE"
+  },
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-full500-preflight-test.js",
+      "bytes": 11784,
+      "sha256": "83740bf2df29b30b525d433f6ec8bfe4e9c896a43e0bda7734b1fe663f8c85fd"
+    },
+    {
+      "path": "scripts/fixtures/w15-full500-window.js",
+      "bytes": 1702,
+      "sha256": "05b2d6a1e6886cad91e4780e7907f1b35773c039ca925649ce73b4544e49ddf8"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 28035,
+      "sha256": "804dcf4df64b657da1c062de820ef79385b94fa5205d73b5942c3f9dbaa71e2c"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-materials.js",
+      "bytes": 21106,
+      "sha256": "3d3dc70ed0c18e0925e6ec635b9c2c75bef7e9f537bf22f643d5bc8db4a0639f"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 33684,
+      "sha256": "92acb528fb66926fd9a43ab7e986c1ac7fed2a76053279ba2f2de7af21aa136f"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-audit.js",
+      "bytes": 17723,
+      "sha256": "ab2ceaaf6833a785569da8edeb53317682210ce1fa5bb4ffcd57c4412b222282"
+    }
+  ],
+  "scopeLimits": {
+    "full500ExecutionProof": false,
+    "full500Started": false,
+    "earliestFull500UTCDate": "2026-10-28",
+    "newRuntimeRightsIssuedByThisReview": false,
+    "startTimerCreated": false,
+    "otherAggregateStartConditionsStillRequired": true
+  },
+  "actionsByReviewer": {
+    "sourceAndExistingLogReview": true,
+    "sourceEdits": 0,
+    "tests": 0,
+    "databaseQueries": 0,
+    "databaseWrites": 0,
+    "applicationStarts": 0,
+    "unitExecutions": 0,
+    "profileActivations": 0,
+    "timers": 0
+  }
+}

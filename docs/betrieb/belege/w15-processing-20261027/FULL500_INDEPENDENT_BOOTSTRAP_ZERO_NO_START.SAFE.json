@@ -1,0 +1,123 @@
+{
+  "schema": "helmut-w15-full500-independent-bootstrap-zero-no-start/1",
+  "status": "PASS_BOOTSTRAP_ZERO_AND_NO_APPLICATION_START",
+  "observedAtUTC": "2026-10-27T19:15:02.153820+00:00",
+  "reviewer": "required_data_audit",
+  "database": "helmut_w15_full500_20261027",
+  "container": "w15-full500-20261027",
+  "scope": "Independent post-failure read-only Docker inspection, process names, state-file metadata, and repeatable-read READ ONLY PostgreSQL catalog/activity query only. No application/test/restore/retry or database write.",
+  "controller": {
+    "originalStatus": "FAIL_OR_UNKNOWN",
+    "originalFailure": {
+      "type": "RuntimeError",
+      "reason": "full500-command-failed:docker:1",
+      "retryAllowed": false
+    },
+    "originalCleanupFailure": {
+      "type": "RuntimeError",
+      "reason": "full500-command-failed:docker:3",
+      "activeZeroUnknown": true
+    },
+    "receiptSHA256": "169306185ecad4cf0f809b19a9db150b53d0675aa2cbbf695ceda327d1bd3de8",
+    "originalFilesModified": false,
+    "failureRepaired": false,
+    "retryOrSecondAttempt": false
+  },
+  "observedCatalog": {
+    "serverVersion": "170006",
+    "transactionReadOnly": "on",
+    "userTables": [],
+    "publicRelations": [],
+    "publicFunctions": 0,
+    "applicationSchemas": [],
+    "otherTargetSessions": [],
+    "roles": [
+      "anon",
+      "authenticated",
+      "authenticator",
+      "service_role"
+    ]
+  },
+  "observedContainer": {
+    "running": true,
+    "networkMode": "none",
+    "publishedPorts": {},
+    "memoryBytes": 2048000000,
+    "memorySwapTotalBytes": 2048000000,
+    "OOMKilled": false,
+    "mainHostPID": 34026,
+    "processNames": [
+      "postgres",
+      "postgres",
+      "postgres",
+      "postgres",
+      "postgres",
+      "postgres"
+    ],
+    "applicationProcessPresent": false
+  },
+  "observedStateFiles": [
+    {
+      "name": "OWNER_GO.PRIVATE.json",
+      "bytes": 512,
+      "mode": "0600"
+    },
+    {
+      "name": "publication-policy.PRIVATE.json",
+      "bytes": 493,
+      "mode": "0600"
+    },
+    {
+      "name": "setup-input.PRIVATE.json",
+      "bytes": 59,
+      "mode": "0600"
+    }
+  ],
+  "absentHostReceipts": [
+    "cleanup-context.PRIVATE.json",
+    "ACTIVATION.SAFE.json",
+    "processing-materials.PRIVATE.json",
+    "PROCESSING_INPUTS.SAFE.json",
+    "PREPARE.SAFE.json",
+    "FULL500_RUNTIME_RESULT.SAFE.json",
+    "FULL500_RUNTIME_FAILURE.SAFE.json",
+    "RESULTS_INDEPENDENT.SAFE.json"
+  ],
+  "sourceBeforeAfterSAFEEqual": true,
+  "zeroQualification": {
+    "activeApplicationProfiles": 0,
+    "basis": "No application table, relation, schema or public function exists in the new database; therefore no application profile or result row can exist. This is independent catalog-based bootstrap-zero evidence, not a claimed native ended-runtime receipt. Original controller cleanup remained UNKNOWN because mandate_profiles does not exist.",
+    "nativeRuntimeEndedReceiptAvailable": false,
+    "atomicRestoreRolledBackConsistentWithCatalog": true,
+    "setupCompleted": false,
+    "materialsCompleted": false,
+    "activationOccurred": false,
+    "unitsEntered": 0,
+    "mockCalls": 0,
+    "paidModelCalls": 0
+  },
+  "expectedResultClassification": {
+    "expectedPositions": 1500,
+    "storedResultRows": 0,
+    "missing": 1500,
+    "empty": 0,
+    "duplicate": 0,
+    "technicallyInvalid": 0,
+    "unusable": 0,
+    "basis": "All expected positions are absent because the restored application catalog is empty. No per-position validator or 17000-check run is claimed."
+  },
+  "actionsByReviewer": {
+    "readOnlyDatabaseQueries": 1,
+    "databaseWrites": 0,
+    "applicationOrTestStarts": 0,
+    "restores": 0,
+    "profileActivations": 0,
+    "unitExecutions": 0,
+    "retries": 0,
+    "processSignals": 0
+  },
+  "full500Success": false,
+  "performanceAccepted": false,
+  "productionProof": false,
+  "firstFailurePreserved": true
+}

@@ -1,0 +1,27 @@
+{
+  "originalCgroup": "/sys/fs/cgroup/docker/ca34f4d35b7674b57894e849ba02a91f26e05a4fdcab119beec1c396a6130d98",
+  "originalLastVerifiedSample": {
+    "sampleAtUTC": "2026-10-28T05:09:37.178433+00:00",
+    "configuredLimit": "2048000000",
+    "swapMaximum": "0",
+    "kernelLifetimePeakBytes": 369651712,
+    "currentBytes": 141357056,
+    "swapCurrentBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "comparisonBudgetBytes": 2048000000,
+    "requiredReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "comparisonReserveBytes": 1678348288
+  },
+  "maximumObservedPeakBytes": 369651712,
+  "originalFinalPeakVerified": true,
+  "recoveryOccurred": false,
+  "failure": null
+}

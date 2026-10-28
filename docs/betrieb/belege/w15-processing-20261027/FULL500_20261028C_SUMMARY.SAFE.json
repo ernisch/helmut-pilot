@@ -1,0 +1,1881 @@
+{
+  "schema": "helmut-w15-full500-public-run-summary/2",
+  "status": "FAIL",
+  "attempt": "20261028C",
+  "testedCodeCommit": "3092efecf98b989d90d0b2c7948bd850826bd990",
+  "reason": "Common kernel memory peak leaves less than20percent reserve.",
+  "activationAtUTC": "2026-10-28T07:13:01.192Z",
+  "failureAtUTC": "2026-10-28T07:36:11.428198+00:00",
+  "expected": {
+    "simultaneouslyActiveProfiles": 500,
+    "units": 500,
+    "localMockResponses": 1000,
+    "results": 1500,
+    "nativeControls": 8000,
+    "unitLimitMs": 60000,
+    "authLimitMs": 30000
+  },
+  "actualSimultaneouslyActiveProfiles": 500,
+  "metrics": {
+    "acceptedUnits": 69,
+    "acceptedIndices": [
+      0,
+      68
+    ],
+    "acceptedHTTP200": 69,
+    "maxUnitMs": 55687.7248,
+    "maxUnitIndex": 0,
+    "minUnitMs": 15230.938643999994,
+    "sumUnitMs": 1259629.3333700008,
+    "maxHTTPMs": 60371.888269,
+    "sumHTTPMs": 1338150.245269,
+    "HTTPWallIsNotUnitClock": true,
+    "freshControlsCompletedUnits": 1104,
+    "loadControls": 690,
+    "admissionControls": 414,
+    "completedUnitsAuth": {
+      "mutationEnvelopes": 690,
+      "usageEnvelopes": 138,
+      "CASWrites": 828,
+      "all69CoverageChecksRetainedPass": true,
+      "allACKsAssignedAndBoundedUnder30000ms": true,
+      "numericMaxAuthWallMs": null,
+      "numericMaxCASWallMs": null,
+      "rawAuthTimesAvailable": false,
+      "reason": "Progress preserves actual computed perunit Authcoverage; SIGTERM prevented final raw Auth arrays receipt. No maximum inferred from independent four-writer probe."
+    },
+    "installationAuthSeparateScope": {
+      "mutationEnvelopes": 1,
+      "CASWrites": 1,
+      "maxEnvelopeWallMs": 732.4681299999993,
+      "maxCASWallMs": 549.802162,
+      "coveragePass": true
+    },
+    "fullCPreparationWallMs": 11254.222859,
+    "installationOpenMs": 37.7954469999986,
+    "completedUnitsLocalMockCalls": 138,
+    "completedUnitsPersistedUsageReceipts": 138,
+    "partialIndex69": {
+      "accepted": false,
+      "unitFinished": false,
+      "additionalProviderOrUsageCalls": null,
+      "additionalControls": null,
+      "enteredJournalState": null,
+      "reason": "No final runtime receipt or partial journal snapshot retained. Current-loop index69 and watchdog event confirmed; further calls/controls cannot be counted as zero or inferred."
+    },
+    "actualStoredRows": 207,
+    "privateDraftReviewRows": 138,
+    "expectedResultPositions": 1500,
+    "missing": 1293,
+    "empty": 0,
+    "duplicate": 0,
+    "rawTechnicalInvalidFlags": 1500,
+    "rawUnusableFlags": 1293,
+    "rawAuditChecks": 17000,
+    "rawAuditChecksPass": 3501,
+    "rawAuditChecksFail": 13499,
+    "classificationNotes": [
+      "Position flags overlap: 1500 technicallyInvalid and1293 missing/unusable are not disjoint result totals.",
+      "All69 stored units pass32/34 raw content/state checks. The two failures are absent finalreceipt lookup for controls and global all500 journal close. Existing progress independently recovers69×16control evidence; raw audit is preserved unchanged.",
+      "207 retained delivery payloads match all207 progress hashes and pass raw canonical/native-row/identity/creation/morning-binding/D/R-content checks; this does not establish professional or model quality approval.",
+      "Profile70 and remaining430 have no accepted outputs. No success inferred from missing data."
+    ],
+    "journalFullyClosed": false,
+    "nativeCleanupZero": true
+  },
+  "memory": {
+    "comparisonBudgetBytes": 2048000000,
+    "minimumReservePercent": 20,
+    "requiredReserveBytes": 409600000,
+    "maximumAllowedPeakBytes": 1638400000,
+    "firstStopPeakBytes": 1640103936,
+    "firstStopCurrentBytes": 1460740096,
+    "firstStopReserveBytes": 407896064,
+    "firstStopReservePercent": 19.9168,
+    "finalLifetimePeakBytes": 1640103936,
+    "finalReserveBytes": 407896064,
+    "finalReservePercent": 19.9168,
+    "reserveShortfallBytes": 1703936,
+    "reserveCriterionPassed": false,
+    "firstStopAndFinalPeakEqual": true,
+    "postCleanupAuditRaisedPeakFurther": false,
+    "hardCapReached": false,
+    "oomObserved": false,
+    "swapObserved": false,
+    "originalCgroupStillPresentAndIndependentlyReadable": true,
+    "controllerOriginalFinalPeakVerifiedFlag": false,
+    "controllerFlagLimitation": "Controller flag remains false because its existing supervisor memory failure prevents acceptance; this independent review verifies the numerical peak in the same unrestarted original cgroup and does not convert the failed reserve criterion into PASS.",
+    "noBaselineOrFileCacheSubtraction": true
+  },
+  "swapCurrentBytes": 0,
+  "swapMaximumBytes": 0,
+  "memoryEvents": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "cleanup": {
+    "activeAfter": 0,
+    "profileCount": 500,
+    "identities": 501,
+    "nativeEndState": "beendet",
+    "boundNativeEndWriteAttempts": 1,
+    "independentFreshReadOnlySnapshot": true,
+    "recoveryOccurred": false
+  },
+  "sourceQualification": {
+    "passed": 500,
+    "failed": 0,
+    "independentlyReviewed": true,
+    "repeated": false,
+    "actualTestDay": "2026-10-28"
+  },
+  "authObserverProbe": {
+    "genuineCASWrites": 4,
+    "allCoveredUnder30": true,
+    "maximumFullCallWallMs": 859.089335,
+    "independentReviewChecks": 23,
+    "unitExecutions": 0,
+    "modelCalls": 0
+  },
+  "independentReview": {
+    "functionChecksPassed": 85,
+    "functionReviewStatus": "FAIL_MEMORY_RESERVE_PARTIAL69_FUNCTION_AUTH_AND207_STORED_RESULTS_CONFIRMED",
+    "functionReviewerActions": {
+      "codeEdits": 0,
+      "applicationExecutions": 0,
+      "constructorValidatorReplays": 0,
+      "providerCalls": 0,
+      "profileActivations": 0,
+      "databaseMutations": 0,
+      "readonlySQLAttempts": 2,
+      "readonlySQLCompleted": 0,
+      "readonlySQLFailures": [
+        {
+          "phase": "parse",
+          "reason": "Wrong identity-table name; transaction aborted before SELECT result."
+        },
+        {
+          "phase": "metadata SELECT",
+          "reason": "15s statement_timeout; transaction aborted, no result retained."
+        }
+      ],
+      "additionalSQLAfterParentStop": 0,
+      "databaseEvidenceSource": "Existing independent post-run ALL500 audit and bound native cleanup; this review does not claim a newly successful database snapshot."
+    },
+    "memoryReviewStatus": "FAIL_MEMORY_RESERVE_CONFIRMED_ZERO_AND_ORIGINALS_PRESERVED",
+    "memoryReviewerActions": {
+      "readOnlyDatabaseSnapshots": 1,
+      "databaseWrites": 0,
+      "unitExecutions": 0,
+      "providerCalls": 0,
+      "sourceQualifierReruns": 0,
+      "containerStartsOrRestarts": 0,
+      "memoryOrCacheChanges": 0,
+      "codeOrConfigEdits": 0
+    }
+  },
+  "originals": {
+    "files": 11,
+    "totalBytes": 96530256,
+    "hashesUnchanged": true,
+    "sourceDatabaseBeforeAfterUnchanged": true
+  },
+  "progress": {
+    "everyAcceptedProfileLogged": true,
+    "measurementScope": "Entire common test container including PostgreSQL, PostgREST and Node.js.",
+    "outerWatchdogIntervalSeconds": 0.1,
+    "retainedOuterMemorySnapshots": 86,
+    "actualTotalSamplerIterations": null,
+    "noDatabaseReadsPerProgressMessage": true,
+    "noCacheOrBaselineSubtraction": true
+  },
+  "completedProfiles": [
+    {
+      "index": 0,
+      "profileNumber": 1,
+      "acceptedAtUTC": "2026-10-28T07:14:37.895Z",
+      "unitWallMs": 55687.7248,
+      "httpWallMs": 60371.888269,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 1,
+      "profileNumber": 2,
+      "acceptedAtUTC": "2026-10-28T07:14:55.526Z",
+      "unitWallMs": 16376.330107000009,
+      "httpWallMs": 17533.021746,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 2,
+      "profileNumber": 3,
+      "acceptedAtUTC": "2026-10-28T07:15:12.354Z",
+      "unitWallMs": 15800.111533000003,
+      "httpWallMs": 16730.047817,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 3,
+      "profileNumber": 4,
+      "acceptedAtUTC": "2026-10-28T07:15:28.635Z",
+      "unitWallMs": 15230.938643999994,
+      "httpWallMs": 16173.02334700001,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 4,
+      "profileNumber": 5,
+      "acceptedAtUTC": "2026-10-28T07:15:48.534Z",
+      "unitWallMs": 18826.833469999998,
+      "httpWallMs": 19791.627172000008,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 5,
+      "profileNumber": 6,
+      "acceptedAtUTC": "2026-10-28T07:16:10.589Z",
+      "unitWallMs": 20748.99481600002,
+      "httpWallMs": 21958.048338000022,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 6,
+      "profileNumber": 7,
+      "acceptedAtUTC": "2026-10-28T07:16:28.899Z",
+      "unitWallMs": 17011.235319,
+      "httpWallMs": 18200.478887000005,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 7,
+      "profileNumber": 8,
+      "acceptedAtUTC": "2026-10-28T07:16:46.555Z",
+      "unitWallMs": 16621.240354999987,
+      "httpWallMs": 17566.37114100001,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 8,
+      "profileNumber": 9,
+      "acceptedAtUTC": "2026-10-28T07:17:04.277Z",
+      "unitWallMs": 16522.796009000012,
+      "httpWallMs": 17621.28271500001,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 9,
+      "profileNumber": 10,
+      "acceptedAtUTC": "2026-10-28T07:17:22.234Z",
+      "unitWallMs": 16655.119158000016,
+      "httpWallMs": 17831.99419300002,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 10,
+      "profileNumber": 11,
+      "acceptedAtUTC": "2026-10-28T07:17:40.237Z",
+      "unitWallMs": 16936.962778999994,
+      "httpWallMs": 17905.689203999995,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 11,
+      "profileNumber": 12,
+      "acceptedAtUTC": "2026-10-28T07:17:59.826Z",
+      "unitWallMs": 17495.055500000017,
+      "httpWallMs": 19496.63313100001,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 12,
+      "profileNumber": 13,
+      "acceptedAtUTC": "2026-10-28T07:18:19.520Z",
+      "unitWallMs": 18541.048819999967,
+      "httpWallMs": 19593.809904000023,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 13,
+      "profileNumber": 14,
+      "acceptedAtUTC": "2026-10-28T07:18:38.422Z",
+      "unitWallMs": 17513.509133999993,
+      "httpWallMs": 18807.168028999993,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 14,
+      "profileNumber": 15,
+      "acceptedAtUTC": "2026-10-28T07:18:55.975Z",
+      "unitWallMs": 16190.06802299997,
+      "httpWallMs": 17457.04159499996,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 15,
+      "profileNumber": 16,
+      "acceptedAtUTC": "2026-10-28T07:19:14.741Z",
+      "unitWallMs": 17603.11629199999,
+      "httpWallMs": 18667.83193799999,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 16,
+      "profileNumber": 17,
+      "acceptedAtUTC": "2026-10-28T07:19:35.970Z",
+      "unitWallMs": 19975.950584999984,
+      "httpWallMs": 21123.582221000048,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 17,
+      "profileNumber": 18,
+      "acceptedAtUTC": "2026-10-28T07:19:53.942Z",
+      "unitWallMs": 16709.221279999998,
+      "httpWallMs": 17874.076533999993,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 18,
+      "profileNumber": 19,
+      "acceptedAtUTC": "2026-10-28T07:20:11.654Z",
+      "unitWallMs": 16657.703813,
+      "httpWallMs": 17618.42388800002,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 19,
+      "profileNumber": 20,
+      "acceptedAtUTC": "2026-10-28T07:20:31.401Z",
+      "unitWallMs": 18526.189742999966,
+      "httpWallMs": 19630.785369999998,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 20,
+      "profileNumber": 21,
+      "acceptedAtUTC": "2026-10-28T07:20:49.830Z",
+      "unitWallMs": 17126.755712000013,
+      "httpWallMs": 18337.862725999963,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 21,
+      "profileNumber": 22,
+      "acceptedAtUTC": "2026-10-28T07:21:07.371Z",
+      "unitWallMs": 16404.500905000023,
+      "httpWallMs": 17441.10009099997,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 22,
+      "profileNumber": 23,
+      "acceptedAtUTC": "2026-10-28T07:21:24.836Z",
+      "unitWallMs": 16225.467576000025,
+      "httpWallMs": 17367.776321000012,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 23,
+      "profileNumber": 24,
+      "acceptedAtUTC": "2026-10-28T07:21:43.794Z",
+      "unitWallMs": 17722.11984999996,
+      "httpWallMs": 18742.277421000006,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 24,
+      "profileNumber": 25,
+      "acceptedAtUTC": "2026-10-28T07:22:03.312Z",
+      "unitWallMs": 18259.373176000023,
+      "httpWallMs": 19423.232065999997,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 25,
+      "profileNumber": 26,
+      "acceptedAtUTC": "2026-10-28T07:22:23.256Z",
+      "unitWallMs": 18830.14560799999,
+      "httpWallMs": 19854.054896000016,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 26,
+      "profileNumber": 27,
+      "acceptedAtUTC": "2026-10-28T07:22:40.668Z",
+      "unitWallMs": 16355.217005999992,
+      "httpWallMs": 17317.573091999977,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 27,
+      "profileNumber": 28,
+      "acceptedAtUTC": "2026-10-28T07:22:57.756Z",
+      "unitWallMs": 15953.918716999935,
+      "httpWallMs": 16923.963556999923,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 28,
+      "profileNumber": 29,
+      "acceptedAtUTC": "2026-10-28T07:23:19.498Z",
+      "unitWallMs": 20605.809837999986,
+      "httpWallMs": 21634.295423000003,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 29,
+      "profileNumber": 30,
+      "acceptedAtUTC": "2026-10-28T07:23:37.349Z",
+      "unitWallMs": 16566.61022500007,
+      "httpWallMs": 17750.964332000003,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 30,
+      "profileNumber": 31,
+      "acceptedAtUTC": "2026-10-28T07:23:55.833Z",
+      "unitWallMs": 17331.274672999978,
+      "httpWallMs": 18382.166969000013,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 31,
+      "profileNumber": 32,
+      "acceptedAtUTC": "2026-10-28T07:24:13.457Z",
+      "unitWallMs": 16503.83793400007,
+      "httpWallMs": 17536.257509000017,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 32,
+      "profileNumber": 33,
+      "acceptedAtUTC": "2026-10-28T07:24:30.862Z",
+      "unitWallMs": 16262.671547999955,
+      "httpWallMs": 17248.74790700001,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 33,
+      "profileNumber": 34,
+      "acceptedAtUTC": "2026-10-28T07:24:47.303Z",
+      "unitWallMs": 15380.505365999998,
+      "httpWallMs": 16313.450018999982,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 34,
+      "profileNumber": 35,
+      "acceptedAtUTC": "2026-10-28T07:25:04.689Z",
+      "unitWallMs": 16340.156840000069,
+      "httpWallMs": 17285.458704999997,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 35,
+      "profileNumber": 36,
+      "acceptedAtUTC": "2026-10-28T07:25:25.920Z",
+      "unitWallMs": 20014.58004599996,
+      "httpWallMs": 21090.547791999998,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 36,
+      "profileNumber": 37,
+      "acceptedAtUTC": "2026-10-28T07:25:50.203Z",
+      "unitWallMs": 22347.60761800001,
+      "httpWallMs": 24161.502730999957,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 37,
+      "profileNumber": 38,
+      "acceptedAtUTC": "2026-10-28T07:26:08.697Z",
+      "unitWallMs": 17126.713523000013,
+      "httpWallMs": 18383.76494100003,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 38,
+      "profileNumber": 39,
+      "acceptedAtUTC": "2026-10-28T07:26:26.567Z",
+      "unitWallMs": 16672.17263699998,
+      "httpWallMs": 17765.936031999998,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 39,
+      "profileNumber": 40,
+      "acceptedAtUTC": "2026-10-28T07:26:44.972Z",
+      "unitWallMs": 17334.594552999944,
+      "httpWallMs": 18303.61388800002,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 40,
+      "profileNumber": 41,
+      "acceptedAtUTC": "2026-10-28T07:27:04.987Z",
+      "unitWallMs": 18853.21650400001,
+      "httpWallMs": 19919.635779000004,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 41,
+      "profileNumber": 42,
+      "acceptedAtUTC": "2026-10-28T07:27:24.089Z",
+      "unitWallMs": 17875.445748999948,
+      "httpWallMs": 19004.869855999947,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 42,
+      "profileNumber": 43,
+      "acceptedAtUTC": "2026-10-28T07:27:43.390Z",
+      "unitWallMs": 18211.921261000098,
+      "httpWallMs": 19179.079825000023,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 43,
+      "profileNumber": 44,
+      "acceptedAtUTC": "2026-10-28T07:28:02.077Z",
+      "unitWallMs": 17616.218532999977,
+      "httpWallMs": 18593.194443000015,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 44,
+      "profileNumber": 45,
+      "acceptedAtUTC": "2026-10-28T07:28:19.364Z",
+      "unitWallMs": 16199.922176999971,
+      "httpWallMs": 17150.677707000053,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 45,
+      "profileNumber": 46,
+      "acceptedAtUTC": "2026-10-28T07:28:36.803Z",
+      "unitWallMs": 16394.291815000004,
+      "httpWallMs": 17342.116197999916,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 46,
+      "profileNumber": 47,
+      "acceptedAtUTC": "2026-10-28T07:28:55.130Z",
+      "unitWallMs": 17247.530141999945,
+      "httpWallMs": 18216.294916999992,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 47,
+      "profileNumber": 48,
+      "acceptedAtUTC": "2026-10-28T07:29:12.778Z",
+      "unitWallMs": 16551.948688999983,
+      "httpWallMs": 17544.84922600002,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 48,
+      "profileNumber": 49,
+      "acceptedAtUTC": "2026-10-28T07:29:30.001Z",
+      "unitWallMs": 16203.915818999987,
+      "httpWallMs": 17122.475298000034,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 49,
+      "profileNumber": 50,
+      "acceptedAtUTC": "2026-10-28T07:29:49.367Z",
+      "unitWallMs": 17969.87999799999,
+      "httpWallMs": 19235.335366999963,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 50,
+      "profileNumber": 51,
+      "acceptedAtUTC": "2026-10-28T07:30:09.167Z",
+      "unitWallMs": 18481.98805100005,
+      "httpWallMs": 19663.086435999954,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 51,
+      "profileNumber": 52,
+      "acceptedAtUTC": "2026-10-28T07:30:27.000Z",
+      "unitWallMs": 16772.489123000065,
+      "httpWallMs": 17722.775899,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 52,
+      "profileNumber": 53,
+      "acceptedAtUTC": "2026-10-28T07:30:45.827Z",
+      "unitWallMs": 17745.14586400008,
+      "httpWallMs": 18717.580911999918,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 53,
+      "profileNumber": 54,
+      "acceptedAtUTC": "2026-10-28T07:31:08.468Z",
+      "unitWallMs": 21496.25320600008,
+      "httpWallMs": 22458.086969999946,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 54,
+      "profileNumber": 55,
+      "acceptedAtUTC": "2026-10-28T07:31:36.261Z",
+      "unitWallMs": 25862.696985000046,
+      "httpWallMs": 27701.530109999934,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 55,
+      "profileNumber": 56,
+      "acceptedAtUTC": "2026-10-28T07:31:55.625Z",
+      "unitWallMs": 18253.033472000156,
+      "httpWallMs": 19255.758203000063,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 56,
+      "profileNumber": 57,
+      "acceptedAtUTC": "2026-10-28T07:32:12.850Z",
+      "unitWallMs": 16076.836526000174,
+      "httpWallMs": 17117.46205600002,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 57,
+      "profileNumber": 58,
+      "acceptedAtUTC": "2026-10-28T07:32:33.026Z",
+      "unitWallMs": 19173.609707999974,
+      "httpWallMs": 20077.83021600009,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 58,
+      "profileNumber": 59,
+      "acceptedAtUTC": "2026-10-28T07:32:51.669Z",
+      "unitWallMs": 17587.338308000006,
+      "httpWallMs": 18540.173540000105,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 59,
+      "profileNumber": 60,
+      "acceptedAtUTC": "2026-10-28T07:33:09.667Z",
+      "unitWallMs": 16888.150144000072,
+      "httpWallMs": 17899.346575999865,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 60,
+      "profileNumber": 61,
+      "acceptedAtUTC": "2026-10-28T07:33:30.045Z",
+      "unitWallMs": 19087.211217999924,
+      "httpWallMs": 20276.97489300021,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 61,
+      "profileNumber": 62,
+      "acceptedAtUTC": "2026-10-28T07:33:49.901Z",
+      "unitWallMs": 18719.8770620001,
+      "httpWallMs": 19743.06313799997,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 62,
+      "profileNumber": 63,
+      "acceptedAtUTC": "2026-10-28T07:34:09.512Z",
+      "unitWallMs": 18493.507672999986,
+      "httpWallMs": 19500.973704000004,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 63,
+      "profileNumber": 64,
+      "acceptedAtUTC": "2026-10-28T07:34:28.972Z",
+      "unitWallMs": 18343.89464500011,
+      "httpWallMs": 19365.934252999956,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 64,
+      "profileNumber": 65,
+      "acceptedAtUTC": "2026-10-28T07:34:46.747Z",
+      "unitWallMs": 16593.59753200016,
+      "httpWallMs": 17673.212281000102,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 65,
+      "profileNumber": 66,
+      "acceptedAtUTC": "2026-10-28T07:35:06.639Z",
+      "unitWallMs": 18841.3544960001,
+      "httpWallMs": 19781.871291999938,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 66,
+      "profileNumber": 67,
+      "acceptedAtUTC": "2026-10-28T07:35:24.544Z",
+      "unitWallMs": 16854.365556999808,
+      "httpWallMs": 17807.263383999933,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 67,
+      "profileNumber": 68,
+      "acceptedAtUTC": "2026-10-28T07:35:42.637Z",
+      "unitWallMs": 17024.231715,
+      "httpWallMs": 17999.119240000146,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    },
+    {
+      "index": 68,
+      "profileNumber": 69,
+      "acceptedAtUTC": "2026-10-28T07:36:03.072Z",
+      "unitWallMs": 19215.277867000084,
+      "httpWallMs": 20322.3016929999,
+      "originalControls": 16,
+      "controlKinds": {
+        "load": 10,
+        "admission": 6
+      },
+      "authCoverage": {
+        "allEnvelopesAcknowledgedUnder30": true,
+        "allWritesAssigned": true,
+        "allWritesAcknowledged": true,
+        "allWritesBoundedByEnvelope": true,
+        "eachEnvelopeHasWrite": true,
+        "observedCASWrites": 12,
+        "mutationEnvelopes": 10,
+        "usageEnvelopes": 2,
+        "usage1000": false,
+        "pass": true
+      }
+    }
+  ],
+  "realModelCalls": 0,
+  "productionWrites": 0,
+  "newPaidResources": 0,
+  "newAttemptContainers": 1,
+  "retryOrResume": false,
+  "mergePerformed": false,
+  "ci": {
+    "noNewWorkflowRunOnTestedHead": true,
+    "reusedApplicationBaselineRun": 40534410137,
+    "newHeadCIGreenClaimed": false,
+    "fullSuiteRepeated": false
+  },
+  "modelQuality": {
+    "localSyntheticMockOutputs": true,
+    "actualModelOutput": false,
+    "professionalAcceptance": false
+  },
+  "full500MockProof": false,
+  "productionProof": false,
+  "limitations": [
+    "Partial profile70 counters and exact full-run Auth maxima are not retained. Never count unknown partial work as zero.",
+    "The unchanged raw all500 audit could not read a final runtime receipt after watchdog SIGTERM.69 retained progress records independently establish1104controls; raw reports remain unchanged.",
+    "All1500 raw technical-nonacceptance flags include207stored rows because the global journal is incomplete. Position flags can overlap.",
+    "The first and final lifetime peaks are independently equal in the original unrestarted cgroup. The raw controller flag originalFinalPeakVerified:false remains historical; no reserve PASS is inferred.",
+    "Exact peak cause remains unproved. No cache/baseline/charged memory is subtracted."
+  ],
+  "nextAction": "New narrowly scoped authorization to diagnose and fix measured common memory demand; no further complete attempt is authorized."
+}
