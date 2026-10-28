@@ -18,18 +18,20 @@ ist keine Funktionsgröße. GitHub-Gesamtpeak umfasst lokalePG/PGR/Node/Cache;
 Vercel-Funktionsspeicher und entfernteSupabaseDB sind getrennte Messräume.
 Kein Funktionsbedarfsbeleg>2GB, keine Upgradeempfehlung/Umstellung/Production-Aktion.
 
-## W15: Quelle und gesicherter Entwicklungsstand
+## W15: Quelle frisch bestätigt, Transfer vorbereitet — GO offen
 
-DraftPR975 auf eigenemBranch, veröffentlichterKopf66efb89a gegen PR974/186ebfa6;
-kein Merge/Dispatch. Laufende normale PflichtCI wird nicht erneut gestartet.
-Neuer RAM-Stand zunächst lokal, nur gezielte Prüfungen. Kein End500/Mock500-Lauf.
-AlterASSETS-Pfad hier nicht vorhanden; Erhalt in Quelle offen. Aus bisherigem
-Chat„Hauptthread“5Fixturepfade/-größen/SHA wiedergefunden: genau9Nutzdateien
-242.548.460Bytes plus Bound/FixtureReview/Empfangsmanifest. Dump/Rollenpfade nur
-aus gepinntem Empfangsmanifest. Inventur hier SOURCE_UNAVAILABLE vor Nutzdatei.
-Keine Archive/Übertragung; zunächst alte Quelle lesend anbinden. Dateischutz22PASS
-vor RAM-Folgeänderung. Vercel-Deployment dieses Kandidatenbranchs gesperrt.
-[Exportliste und Inventurbefehl](betrieb/w15-end500-quellbestand-export-20261028.md).
+Hauptthread bestätigt12Dateien frisch:242.570.240Bytes,alleSHA/Größen/Rechte/Owner
+PASS;QuelleGPGbereit/2.084.634.624Bytesfrei.CI975auf66efb89aerfolgreich.
+DieserCloudchat hat noch keineW15-Nutzdaten empfangen.KeineÜbertragung gestartet.
+Empfänger7E3998A6C2CB948C69A2EE51F4267ABF26796EDC,RSA3072,privaterKeypassphrasen-
+geschützt außerhalbGit;lokaleEntschlüsselung/ExportrestorePASS.Neueverschlüsselte
+Key-RecoveryunterbestehendemunabhängiggeprüftemDCFD…A8E4vorbereitet,nichtuploadet.
+GewählterWeg nachGO:Cloud→bestehenderprivaterDriveordner→dieseCloud;keinMac,
+kein neuerDienst.ErstKey-Rücksicherungrücklesen,dann12Dateien/16MiBCipherteile.
+Originale/Belegebleiben.KeinTest-GO;RAMv32560MCap/2048MPeak unverändert.
+Controller-Kontextbindung undEmpfangsprüfung vorbereitet,13+7gezielteFällePASS,
+kleineechteGPG-Probe nurmit12erfundenenDateienpositiv.KeinEnd500/Mock500-Lauf.
+[Konkreter Weg, Empfänger, Risiken, Nachkontrolle und Freigabebindung](betrieb/w15-end500-uebertragungsfreigabe-20261029.md).
 
 ## Historischer W15-D-Befund vor obiger GitHub-Vorbereitung (28.10.)
 
