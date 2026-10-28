@@ -7,6 +7,19 @@
 -- logical state under its row lock and RETAINS every relational history row.
 -- Do not drop the added columns/functions/history as a rollback.
 begin;
+-- The original W15 dump predates these additive scalar projections. The973
+-- component fixture already had them; preserve the complete existing schema
+-- and rows while making this explicitly local proposal work on the real dump.
+do $local$ begin
+  if current_setting('helmut.local_usage_experiment',true) is distinct from 'on' then
+    raise exception 'atomic-usage-local-only';
+  end if;
+end;$local$;
+alter table public.llm_usage add column if not exists kein_aufruf boolean not null default false;
+alter table public.llm_usage add column if not exists source_id text;
+alter table public.llm_usage add column if not exists package_id text;
+alter table public.llm_usage add column if not exists vorgang_id text;
+alter table public.llm_usage add column if not exists knowledge_object_id text;
 alter table public.llm_usage add column usage_store_id text;
 alter table public.llm_usage add column usage_generation text;
 alter table public.llm_usage add column usage_ordinal bigint;
