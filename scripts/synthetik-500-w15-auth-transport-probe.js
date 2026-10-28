@@ -3,7 +3,8 @@
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto");
 const assert = require("node:assert/strict"), http = require("node:http"), dc = require("node:diagnostics_channel");
 const { fork, spawn } = require("node:child_process"), { performance, PerformanceObserver } = require("node:perf_hooks");
-const BASE = "/tmp/w15-auth-transport-probe-20261028a", STATE = BASE + "/state";
+const STOP_CHECK = require.main === module && ["--stop-check", "--serve-stop-check"].includes(process.argv[2]);
+const BASE = STOP_CHECK ? "/tmp/w15-postgrest-stop-check-20261028" : "/tmp/w15-auth-transport-probe-20261028a", STATE = BASE + "/state";
 const DB = "helmut_w15_transport_probe_20261028a", sha = b => crypto.createHash("sha256").update(b).digest("hex");
 const file = n => path.join(STATE, n), read = n => JSON.parse(fs.readFileSync(file(n)));
 const save = (n, x) => fs.writeFileSync(file(n), JSON.stringify(x, null, 2) + "\n", { flag: "wx", mode: 0o600 });
@@ -36,7 +37,8 @@ function guard() {
   assert.equal(process.version, "v24.19.0");assert(require.cache[require.resolve("./lokaler-netzschutz")]);
   assert.deepEqual(require("./lokaler-netzschutz").pruefe(process.env), []);
   const c = read("configuration.PRIVATE.json");assert.equal(c.database, DB);assert.equal(c.base, BASE);
-  assert.match(c.nonce, /^[a-f0-9-]{36}$/);assert.equal(c.maximumMutations, 16);return c;
+  assert.match(c.nonce, /^[a-f0-9-]{36}$/);assert.equal(c.maximumMutations, STOP_CHECK ? 0 : 16);
+  if (STOP_CHECK) assert.equal(c.mode, "REAL_SERVICE_STOP_ONLY_NO_AUTH");return c;
 }
 function common() {
   const n = x => fs.readFileSync("/sys/fs/cgroup/" + x, "utf8").trim();
@@ -71,11 +73,15 @@ async function serve() {
     let timer;await Promise.race([exited, new Promise(resolve => { timer = setTimeout(resolve, 4000); })]);clearTimeout(timer);
     let forced = false;if (!pgExit) { forced = true;pg.kill("SIGKILL");await exited; }
     http.globalAgent.destroy();await new Promise(resolve => setImmediate(resolve));
+    const agentCount = key => Object.values(http.globalAgent[key]).reduce((n, sockets) => n + sockets.length, 0);
     const until = Date.now() + 1500;
-    while (serverSockets.size && Date.now() < until) await new Promise(resolve => setTimeout(resolve, 10));
+    while ((serverSockets.size || agentCount("sockets") || agentCount("freeSockets")) && Date.now() < until)
+      await new Promise(resolve => setTimeout(resolve, 10));
+    const agentSockets = agentCount("sockets"), agentFreeSockets = agentCount("freeSockets");
     const expectedExit = expectedPostgrestStop(pgExit, terminationRequested);
-    const confirmed = pgWasRunning && expectedExit && !forced && serverSockets.size === 0;
-    log.write("services-stopped", { pgExit, gateway: gateway?.bericht(), forced, openSockets: serverSockets.size, confirmed });
+    const confirmed = pgWasRunning && expectedExit && !forced && serverSockets.size === 0 && agentSockets === 0 && agentFreeSockets === 0;
+    log.write("services-stopped", { pgExit, gateway: gateway?.bericht(), forced, openSockets: serverSockets.size,
+      agentSockets, agentFreeSockets, confirmed });
     if (!serverSockets.size) log.close();fs.closeSync(pglog);
     if (process.connected) process.send({ type: "stopped", confirmed }, () => process.exit(confirmed ? 0 : 1));else process.exit(confirmed ? 0 : 1);
   }
@@ -210,9 +216,73 @@ async function main({ dryRun = false } = {}) {
   console.log(JSON.stringify({ status: result.status, completed: reports.length, error: firstError }));
   if (result.status.startsWith("FAIL")) process.exitCode = 1;return result;
 }
+// Same genuine serve()/PostgREST signal predicate as the Auth diagnosis. This
+// mode never enters main(), storage, any RPC, or an Auth observer.
+async function stopCheck({ dryRun = false } = {}) {
+  const c = guard();assert(STOP_CHECK);assert.equal(c.maximumMutations, 0);
+  if (dryRun) { console.log(JSON.stringify({ status: "PASS_STOP_CHECK_DRY_NO_HTTP_OR_DATABASE", database: DB,
+    maximumMutations: 0, sourceSHA256: sha(fs.readFileSync(__filename)) }));return; }
+  const Auth = require("./fixtures/w15-auth-measurement-report"), Durable = require("./fixtures/w15-durable-observations");
+  const journal = Durable.open(STATE, "run"), started = performance.now();
+  let child, exit, stoppedReceipt = null, error = null, ready = false;
+  const abort = Auth.retainOnTermination(() => ({ phase: "real-stop-check", exit, ready, stoppedReceipt,
+    authCalls: 0, CASWrites: 0, units: 0, modelCalls: 0 }), x => { journal.write("termination-received", x);save("ABORT.SAFE.json", x); });
+  journal.ready();
+  try {
+    common();
+    child = fork(__filename, ["--serve-stop-check"], { execPath: process.execPath,
+      execArgv: ["--require", path.join(__dirname, "lokaler-netzschutz.js")],
+      env: { PATH: "/usr/bin:/bin", LANG: "C.UTF-8", HELMUT_SOURCE_MODE: "off", HELMUT_STORAGE_BACKEND: "local" },
+      stdio: ["ignore", "ignore", "ignore", "ipc"] });
+    child.once("exit", (code, signal) => { exit = { code, signal }; });
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(Error("stop-check-child-readiness-timeout")), 12000);
+      child.on("message", m => {
+        if (m.type === "stopped") stoppedReceipt = m;
+        if (m.type === "service-failed") { error ||= [{ name: "Error", code: null, frames: [] }]; }
+        if (m.type === "ready") { ready = true;clearTimeout(timer);resolve(); }
+      });
+      child.once("error", e => { clearTimeout(timer);reject(e); });
+      child.once("exit", () => { clearTimeout(timer);if (!ready) reject(Error("stop-check-child-early-exit")); });
+    });
+    assert(!error && !exit, "stop-check-service-failed-before-stop");
+    journal.write("IPC-stop-request", { childPID: child.pid });child.send({ type: "stop" });
+    await new Promise((resolve, reject) => {
+      if (exit) return resolve();const timer = setTimeout(() => reject(Error("stop-check-child-stop-timeout")), 8000);
+      child.once("exit", () => { clearTimeout(timer);resolve(); });
+    });
+    assert(exit?.code === 0 && exit?.signal === null && stoppedReceipt?.confirmed === true && !error,
+      "stop-check-child-stop-unconfirmed");
+    const rows = fs.readFileSync(file("gateway-observations.SAFE.jsonl"), "utf8").trim().split("\n").map(s => JSON.parse(s));
+    const signals = rows.filter(x => x.name === "postgrest-signal-request"), exits = rows.filter(x => x.name === "postgrest-exit");
+    const closed = rows.filter(x => x.name === "services-stopped");
+    assert.equal(signals.length, 1);assert.equal(signals[0].signal, "SIGTERM");assert.equal(signals[0].accepted, true);
+    assert.equal(exits.length, 1);assert(expectedPostgrestStop(exits[0], signals[0].accepted));
+    assert.equal(closed.length, 1);assert(closed[0].confirmed === true && closed[0].forced === false && closed[0].openSockets === 0);
+    assert.equal(closed[0].agentSockets, 0);assert.equal(closed[0].agentFreeSockets, 0);
+    assert.equal(closed[0].gateway.anfragen, 0, "stop-check-must-not-send-gateway-request");
+    assert(!rows.some(x => x.name === "gateway-request"), "stop-check-no-gateway-RPC");common();
+    const result = { status: "PASS_REAL_POSTGREST_CONTROLLED_STOP", signalRequest: signals[0], postgrestExit: exits[0],
+      servicesStopped: closed[0], childExit: exit, stoppedReceipt, realElapsedMs: performance.now() - started,
+      authCalls: 0, CASWrites: 0, units: 0, modelCalls: 0, gatewayHTTPRequests: 0,
+      HTTPscope: "Only existing serve() bounded small authenticated OpenAPI readiness GETs, no RPC.",
+      memoryAcceptance: false, common: common(), sourceSHA256: sha(fs.readFileSync(__filename)),
+      serveSHA256: sha(Buffer.from(serve.toString())), expectedStopSHA256: sha(Buffer.from(expectedPostgrestStop.toString())) };
+    journal.write("real-stop-check-passed", result);save("RESULT.SAFE.json", result);return result;
+  } catch (e) {
+    error ||= failure(e);const result = { status: "FAIL_REAL_POSTGREST_CONTROLLED_STOP_UNKNOWN", error,
+      ready, childExit: exit || null, stoppedReceipt, authCalls: 0, CASWrites: 0, units: 0, modelCalls: 0,
+      retryAllowed: false, outerOwnedCleanupRequired: !exit };
+    journal.write("real-stop-check-failed", result);save("RESULT.SAFE.json", result);process.exitCode = 1;return result;
+  } finally { abort(); }
+}
 if (require.main === module) {
-  const args = process.argv.slice(2);assert(args.length <= 1 && [undefined, "--serve", "--dry-run"].includes(args[0]));
-  Promise.resolve().then(() => args[0] === "--serve" ? serve() : main({ dryRun: args[0] === "--dry-run" }))
+  const args = process.argv.slice(2);
+  const stopArgs = args[0] === "--stop-check" && (args.length === 1 || args.length === 2 && args[1] === "--dry-run")
+    || args.length === 1 && args[0] === "--serve-stop-check";
+  assert(stopArgs || args.length <= 1 && [undefined, "--serve", "--dry-run"].includes(args[0]));
+  Promise.resolve().then(() => ["--serve", "--serve-stop-check"].includes(args[0]) ? serve()
+    : STOP_CHECK ? stopCheck({ dryRun: args[1] === "--dry-run" }) : main({ dryRun: args[0] === "--dry-run" }))
     .catch(e => { console.error(JSON.stringify({ status: "FAIL_PRECONDITION", error: failure(e) }));process.exitCode = 1; });
 }
-module.exports = { main, failure, common, expectedPostgrestStop };
+module.exports = { main, failure, common, expectedPostgrestStop, stopCheck };

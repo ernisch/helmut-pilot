@@ -3,10 +3,10 @@
 import datetime,hashlib,importlib.util,json,os,pathlib,posixpath,shutil,subprocess,threading,time
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ASSETS=pathlib.Path('/workspace/shared/helmut-w15-memory-forward-20261028')
-WORK=pathlib.Path('/workspace/shared/helmut-w15-memory-atomic-20261028a')
-BASE='/tmp/w15-memory-atomic-20261028a'
-DB='helmut_w15_memory_atomic_20261028a'
-CONTAINER='w15-memory-atomic-20261028a'
+WORK=pathlib.Path('/workspace/shared/helmut-w15-memory-atomic-20261028b')
+BASE='/tmp/w15-memory-atomic-20261028b'
+DB='helmut_w15_memory_atomic_20261028b'
+CONTAINER='w15-memory-atomic-20261028b'
 spec=importlib.util.spec_from_file_location('existing_w15_controller',ROOT/'scripts/synthetik-500-w15-full500-controller.py')
 M=importlib.util.module_from_spec(spec);spec.loader.exec_module(M)
 M.WORK=WORK;M.BASE=BASE;M.DB=DB;M.CONTAINER=CONTAINER
@@ -89,13 +89,20 @@ def main():
     integration=json.loads((pathlib.Path(target['work'])/'INTEGRATION_RESULT.SAFE.json').read_text())
     assert integration['status']=='PASS_PREPARED0_ATOMIC_COMPONENTS_RAM_PENDING'and integration['activeProfiles']==0
     assert integration['originalSourceUnchanged']is True and integration['units']==0
-    parser=json.loads((ASSETS/'sql-preflight-atomic-b/SQL_PREFLIGHT.SAFE.json').read_text())
+    parser=json.loads((ASSETS/'sql-preflight-atomic-c/SQL_PREFLIGHT_REBOUND.SAFE.json').read_text())
     assert parser['status']=='PASS_ALL_GENERATED_DIAGNOSTIC_SQL_PARSE_DESCRIBE_NO_EXECUTION'and parser['plannedDatabase']==DB
     for name,expected in parser['sourcePins'].items():assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==expected,'atomic-sql-reviewed-source-drift'
-    review=json.loads(pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/MEMORY_PRESTART_REVIEW_FINAL.SAFE.json').read_text())
+    review=json.loads(pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/MEMORY_PRESTART_REVIEW_B.SAFE.json').read_text())
     assert review['status']=='PASS_PRESTART_ATOMIC_END500_ALLOCATION_ONLY'
     for reviewed_pin in review['sourcePins']:
         p=ROOT/reviewed_pin['path'];b=p.read_bytes();assert len(b)==reviewed_pin['bytes']and hashlib.sha256(b).hexdigest()==reviewed_pin['sha256'],'atomic-memory-reviewed-source-drift'
+    stop_path=pathlib.Path('/workspace/shared/helmut-w15-postgrest-stop-check-20261028/RESULT.SAFE.json')
+    stop_result=json.loads(stop_path.read_text())
+    assert stop_result['status']=='PASS_REAL_POSTGREST_CONTROLLED_STOP'
+    stop_review=json.loads(pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/POSTGREST_STOP_AND_TRANSPORT_REVIEW.SAFE.json').read_text())
+    assert stop_review['status']=='PASS_REAL_STOP_AND_EXISTING_TRANSPORT_PROTECTIONS'
+    assert stop_review['stopReportSHA256']==hashlib.sha256(stop_path.read_bytes()).hexdigest()
+    assert stop_review['historicalEleventhOutcome']=='UNCHANGED_UNKNOWN_NOT_REPLAYED'
     assert not WORK.exists(),'w15-forward-once-only'
     os.umask(0o077);WORK.mkdir(mode=0o700)
     created=False;w=None;failure=None;result=None;zero=False
@@ -207,7 +214,7 @@ def main():
             if r.returncode==0:break
             time.sleep(.1)
         assert r.returncode==0,'w15-forward-gateway-readiness'
-        inner(w,'run',1800)
+        inner(w,'run',3600)
         M.copy_out('FORWARD_RESULT.SAFE.json');result=json.loads((WORK/'FORWARD_RESULT.SAFE.json').read_text())
         assert result['status']=='PASS_FORWARD_COMPONENTS_COMMON_KERNEL_REVIEW_PENDING'
         assert len(w.cas_records)==500

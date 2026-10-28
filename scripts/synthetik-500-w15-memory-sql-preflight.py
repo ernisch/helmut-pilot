@@ -4,7 +4,7 @@ import ast,hashlib,importlib.util,json,os,pathlib,re,subprocess,sys
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ASSETS=pathlib.Path('/workspace/shared/helmut-w15-memory-forward-20261028')
-WORK=ASSETS/'sql-preflight-atomic-b'
+WORK=ASSETS/'sql-preflight-atomic-c'
 EXISTING_CONTAINER='w15-atomic-integration-20261028d'
 EXISTING_DB='helmut_w15_full500_20261028b'
 ENV={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'}
@@ -17,7 +17,7 @@ def main():
     os.umask(0o077);WORK.mkdir(mode=0o700)
     spec=importlib.util.spec_from_file_location('forward_parse_only',ROOT/'scripts/synthetik-500-w15-memory-forward.py')
     n=importlib.util.module_from_spec(spec);spec.loader.exec_module(n)
-    assert not n.WORK.exists() and n.DB=='helmut_w15_memory_atomic_20261028a'
+    assert not n.WORK.exists() and n.DB=='helmut_w15_memory_atomic_20261028b'
     js="const m=require('./scripts/synthetik-500-w15-memory-forward');process.stdout.write(JSON.stringify({sql:m.databaseStatsSQL(),db:m.database,base:m.base}));"
     r=subprocess.run(['node','--require','./scripts/lokaler-netzschutz.js','-e',js],cwd=ROOT,env=os.environ.copy(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=20)
     assert r.returncode==0,'metadata-factory'
@@ -92,7 +92,7 @@ def main():
       'authMD5',(select md5(data::text)from public.helmut_store where id='main-auth'),
       'storeRows',(select count(*)from public.helmut_store),'briefingRows',(select count(*)from public.briefings),
       'usage',jsonb_array_length(public.helmut_auth_usage_read_v1(jsonb_build_object('id','main-auth'))->'data'->'llmUsage'),
-      'newTargetAbsent',not exists(select from pg_database where datname='helmut_w15_memory_atomic_20261028a'),
+      'newTargetAbsent',not exists(select from pg_database where datname='helmut_w15_memory_atomic_20261028b'),
       'createdb',(select rolcreatedb or rolsuper from pg_roles where rolname=current_user),
       'serviceCanSelect',has_table_privilege('service_role','public.helmut_store','SELECT'),
       'serviceCanUpdate',has_column_privilege('service_role','public.helmut_store','data','UPDATE'),
