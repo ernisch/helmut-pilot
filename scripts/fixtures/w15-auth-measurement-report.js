@@ -29,6 +29,9 @@ function failureMetadata(error) {
     "ECONNRESET", "ECONNREFUSED", "EPIPE", "ETIMEDOUT", "ABORT_ERR", "ENOTFOUND"]);
   const name = get(error, "name"), code = get(error, "code"), cause = get(error, "cause"), causeCode = get(cause, "code");
   const result = { name: ["Error", "TypeError", "AbortError", "TimeoutError"].includes(name) ? name : "Error" };
+  const durableCodes = new Set(["W15_DURABLE_QUEUE_OVERFLOW", "W15_DURABLE_WRITE_FAILED", "W15_DURABLE_SYNC_FAILED",
+    "W15_DURABLE_DEADLINE", "W15_DURABLE_CLOSED", "W15_DURABLE_SERIALIZE_FAILED", "W15_DURABLE_OBSERVER_FAILED", "W15_DURABLE_CLOSE_FAILED"]);
+  if (durableCodes.has(code)) return { ...result, code, failureKind: "durable-io-error" };
   if (codes.has(code)) result.code = code;
   if (codes.has(causeCode)) result.causeCode = causeCode;
   for (const key of ["bytesRead", "bytesWritten"]) {
@@ -62,10 +65,22 @@ function retainOnTermination(snapshot, write) {
     handlers[signal] = () => {
       if (attempted) return;
       attempted = true;
-      try { write({ ...snapshot(), status: "FAIL_OR_UNKNOWN", terminationSignal: signal,
-        retainedAtUTC: new Date().toISOString(), bestEffortOnly: true, retryAllowed: false }); }
-      catch { process.stderr.write("w15-abort-observations-unavailable\n"); }
-      finally { process.exit(exitCode); }
+      let waitingForPromise = false;
+      try {
+        const outcome = write({ ...snapshot(), status: "FAIL_OR_UNKNOWN", terminationSignal: signal,
+          retainedAtUTC: new Date().toISOString(), bestEffortOnly: true, retryAllowed: false });
+        if (outcome && typeof outcome.then === "function") {
+          // Only opt-in Promise callbacks wait. Existing synchronous callers
+          // retain their immediate-exit behavior; no missing ACK becomes PASS.
+          const timer = setTimeout(() => { process.stderr.write("w15-abort-durable-deadline\n"); process.exit(exitCode); }, 15000);
+          Promise.resolve(outcome).then(() => { clearTimeout(timer); process.exit(exitCode); }, () => {
+            clearTimeout(timer); process.stderr.write("w15-abort-observations-unavailable\n"); process.exit(exitCode);
+          });
+          waitingForPromise = true;
+          return;
+        }
+      } catch { process.stderr.write("w15-abort-observations-unavailable\n"); }
+      finally { if (!waitingForPromise) process.exit(exitCode); }
     };
     process.once(signal, handlers[signal]);
   }
