@@ -387,3 +387,15 @@ entfesselt Kosten. Diese Werte bei JEDER Env-Änderung gegenprüfen:
 | `AZURE_OPENAI_ENDPOINT`+`AZURE_OPENAI_KEY` (oder `OPENAI_API_KEY`) | Ohne: nur Regel-Fallbacks, keine KI-Ausgaben (App läuft, Kernnutzen fehlt). |
 | `HELMUT_V3_STORE` | Ohne `=1`: V3-Pfade inert — Understanding/Büro/Radar-Datenfluss steht. |
 | `HELMUT_REVIEW_FIXTURE` | MUSS ungesetzt sein — gesetzt liefert es fiktive Daten an echte Nutzer. |
+
+## Lokaler Auth-Speicherkandidat (28.10.2026)
+
+`HELMUT_LLM_USAGE_STORAGE` ist standardmäßig ungesetzt beziehungsweise `blob`.
+Nur `relational-atomic-v1` wählt den getrennten lokalen Nutzungsspeicher; andere
+Werte brechen ab. Er verlangt HTTP auf `localhost`, `127.0.0.1` oder `[::1]`,
+verweigert Vercel und benötigt den gesonderten lokalen SQL-Vorschlag
+`supabase/proposals/auth_usage_atomic_local.sql` sowie
+`helmut.local_usage_experiment=on` im isolierten PostgreSQL.
+Keine Production-Variable setzen und keine Production-Migration ausführen.
+Der bestehende Schalter `HELMUT_LLM_USAGE_RELATIONAL` bleibt der bisherige
+Dualwrite-Pfad; der neue Modus verwendet ihn nicht als zweiten Schreibweg.

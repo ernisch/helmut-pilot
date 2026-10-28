@@ -1,0 +1,13 @@
+{
+  "scope": "synthetic-storage-component-only",
+  "case": "old",
+  "container": "helmut-usage-split-6d96357e4152",
+  "id": "49528a644c76017ef1f80983503741125750b2b86c84f4aba534087ec9b78f2f",
+  "image": "sha256:8d9b8f13a74bf2e26485ea289fd9f2d576f5f558c5e88758020a83aa8f1d5638",
+  "networkMode": "none",
+  "memoryMaxBytes": 2048000000,
+  "cpus": 2,
+  "profiles": 0,
+  "providerCalls": 0,
+  "launcherSHA256": "651916497b9dedf65392084d7e758e83efaded5c3c88d92a566fd6e3196d9a2e"
+}
