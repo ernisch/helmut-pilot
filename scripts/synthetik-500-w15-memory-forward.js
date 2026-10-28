@@ -60,7 +60,8 @@ async function run() {
   try {
     assert.equal(databaseStats().active,0);
     const encoded=fs.readFileSync(file("current-command.PRIVATE.json"));
-    assert.equal(encoded.length,1169848);assert.equal(sha(encoded),"ddd721f249d5e8c06c3073a59120ab08eaf96cbf16735485258dcd1834aa98fa");
+    const commandBinding=read("CURRENT_COMMAND_BINDING.SAFE.json");assert.equal(commandBinding.executionAuthority,false);
+    assert.equal(encoded.length,commandBinding.bytes);assert.equal(sha(encoded),commandBinding.sha256);
     const packet=require("../lib/helmut/synthetik-500-direct-codec").decode(JSON.parse(encoded));
     // A strong reference to actual immutable content, never authority/admission.
     const heldCommand=packet.command;

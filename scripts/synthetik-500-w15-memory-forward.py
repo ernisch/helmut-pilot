@@ -131,7 +131,13 @@ def main():
         for n in ['app','node','postgrest']:M.copy_in(stage/n,BASE+'/'+n)
         assert state.stat().st_mode&0o777==0o700
         for k,n in [('localRoles','roles.PRIVATE.sql'),('frozenSourceDump','input.PRIVATE.dump')]:M.copy_in(original[k]['receivedPath'],BASE+'/'+n)
-        M.copy_in('/workspace/shared/helmut-w15-full500-20261028c/current-command.PRIVATE.json',BASE+'/state/current-command.PRIVATE.json')
+        target=json.loads((ROOT/'scripts/fixtures/w15-atomic-integration-target.json').read_text())
+        command_path=pathlib.Path(target['work'])/'current-command.PRIVATE.json'
+        command_bytes=command_path.read_bytes()
+        command_pin={'path':str(command_path),'bytes':len(command_bytes),'sha256':hashlib.sha256(command_bytes).hexdigest(),'executionAuthority':False}
+        M.save('CURRENT_COMMAND_BINDING.SAFE.json',command_pin)
+        M.copy_in(command_path,BASE+'/state/current-command.PRIVATE.json')
+        M.copy_in(WORK/'CURRENT_COMMAND_BINDING.SAFE.json',BASE+'/state/CURRENT_COMMAND_BINDING.SAFE.json')
         M.copy_in(ASSETS/'END500_MEMORY_BOUND.SAFE.json',BASE+'/state/END500_MEMORY_BOUND.SAFE.json')
         M.docker('exec',CONTAINER,'chown','-R','1000:1000',BASE)
         M.docker('exec',CONTAINER,'chmod','700',BASE+'/node',BASE+'/postgrest')
