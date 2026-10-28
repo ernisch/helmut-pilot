@@ -23,6 +23,12 @@ function failure(e) {
   }
   return out;
 }
+// PostgREST12.2.3 maps its owned SIGTERM handler to GHC UserInterrupt,
+// which this pinned binary reports as SIGINT. Accept only a requested stop.
+function expectedPostgrestStop(exit, requested) {
+  return requested === true && !!exit && (exit.code === 0 && exit.signal === null
+    || exit.code === null && ["SIGTERM", "SIGINT"].includes(exit.signal));
+}
 function socketMeta(s, tuple) { return s ? { localPort: tuple?.localPort ?? s.localPort ?? null,
   remotePort: tuple?.remotePort ?? s.remotePort ?? null, bytesRead: s.bytesRead, bytesWritten: s.bytesWritten,
   destroyed: s.destroyed, readableEnded: s.readableEnded, writableEnded: s.writableEnded } : null; }
@@ -57,13 +63,17 @@ async function serve() {
   async function stop() {
     if (stopping) return;stopping = true;expectedStop = true;const pgWasRunning = !pgExit;
     if (server) { server.closeAllConnections();await gateway.stoppe(); }
-    if (!pgExit) pg.kill("SIGTERM");
+    let terminationRequested = false;
+    if (!pgExit) {
+      terminationRequested = pg.kill("SIGTERM");
+      log.write("postgrest-signal-request", { pid: pg.pid, signal: "SIGTERM", accepted: terminationRequested });
+    }
     let timer;await Promise.race([exited, new Promise(resolve => { timer = setTimeout(resolve, 4000); })]);clearTimeout(timer);
     let forced = false;if (!pgExit) { forced = true;pg.kill("SIGKILL");await exited; }
     http.globalAgent.destroy();await new Promise(resolve => setImmediate(resolve));
     const until = Date.now() + 1500;
     while (serverSockets.size && Date.now() < until) await new Promise(resolve => setTimeout(resolve, 10));
-    const expectedExit = pgExit && (pgExit.code === 0 && pgExit.signal === null || pgExit.code === null && pgExit.signal === "SIGTERM");
+    const expectedExit = expectedPostgrestStop(pgExit, terminationRequested);
     const confirmed = pgWasRunning && expectedExit && !forced && serverSockets.size === 0;
     log.write("services-stopped", { pgExit, gateway: gateway?.bericht(), forced, openSockets: serverSockets.size, confirmed });
     if (!serverSockets.size) log.close();fs.closeSync(pglog);
@@ -205,4 +215,4 @@ if (require.main === module) {
   Promise.resolve().then(() => args[0] === "--serve" ? serve() : main({ dryRun: args[0] === "--dry-run" }))
     .catch(e => { console.error(JSON.stringify({ status: "FAIL_PRECONDITION", error: failure(e) }));process.exitCode = 1; });
 }
-module.exports = { main, failure, common };
+module.exports = { main, failure, common, expectedPostgrestStop };
