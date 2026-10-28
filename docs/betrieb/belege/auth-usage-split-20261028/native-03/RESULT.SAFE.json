@@ -1,0 +1,51 @@
+{
+  "schema": "helmut-auth-usage-split-native-contract/1",
+  "pass": true,
+  "checks": 13,
+  "groups": [
+    "Native v6 bootstrap, full-history reconstruction and exact future-field retention",
+    "Native v5 bootstrap, no silent loss or changed economic fields",
+    "Native bootstrap rejects wrong v5/v6 contract binding and rolls back unchanged",
+    "Actual RPC append atomically commits full receipt and exact nonusage state",
+    "Actual duplicate ID rolls back state/revision/history as one transaction",
+    "Actual concurrent writers: one CAS winner, stale loser; explicit fresh read preserves both changes",
+    "Actual committed lost ACK: one attempt, no receipt/replay, fresh state shows single insert",
+    "Actual in-flight caller mutation leaves confirmed transport contents exact",
+    "Existing full-blob writers/direct history modifications/truncate fail closed",
+    "Native chain detects actual stored corruption including SQL NULL, transaction rolls back",
+    "Catalog/RLS/ALWAYS triggers and public/anon/customer function privileges retained",
+    "Local SQL experiment gate absent denies RPC before exposing data",
+    "Restore requires fresh revision, restores entire exact state and retains immutable relational history"
+  ],
+  "server": "PostgreSQL17.6 with genuine local PostgREST",
+  "wire": {
+    "requests": 31,
+    "requestBodyBytes": 45307,
+    "responseBodyBytes": 407340
+  },
+  "originalData": false,
+  "profiles": 0,
+  "engineUnits": 0,
+  "modelCalls": 0,
+  "complete500Attempts": 0,
+  "integration": {
+    "schema": "helmut-auth-usage-split-actual-storage-integration/1",
+    "pass": true,
+    "checks": 5,
+    "groups": [
+      "Actual storage read/mutate preserves more than5000 full historical records and future fields",
+      "Actual storage.recordLlmUsage produces private relational receipt and full history remains complete",
+      "Unchanged budget completion accepts genuinely persisted receipt and keeps reserved unknown costs",
+      "AI completion waits for real atomic storage receipt; forged relational flags deny completion",
+      "Disabled split mode rejects physical markers and already-read split snapshots without legacy fallback"
+    ],
+    "realLocalDatabase": true,
+    "mockProviderResponses": 2,
+    "actualPaidModelCalls": 0,
+    "historicalUsage": 5000,
+    "finalUsage": 5002,
+    "profiles": 0,
+    "engineUnits": 0,
+    "complete500Attempts": 0
+  }
+}

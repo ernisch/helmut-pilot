@@ -1,0 +1,53 @@
+name: Auth usage split — isolated component contract
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/auth-usage-split.yml'
+      - 'lib/helmut/llm-usage-atomic.js'
+      - 'lib/helmut/auth-store-cas.js'
+      - 'lib/helmut/storage.js'
+      - 'lib/helmut/ai.js'
+      - 'lib/helmut/testkosten-budget.js'
+      - 'lib/helmut/synthetik-500-eu-service-contract.js'
+      - 'supabase/proposals/auth_usage_atomic_local.sql'
+      - 'scripts/auth-usage-split*'
+      - 'scripts/auth-usage-split/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  storage-contract:
+    name: Local usage history integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+      - name: Pure protocol guards
+        run: node scripts/lokal.js -- node scripts/auth-usage-split/module-test.js
+      - name: Build existing pinned local test tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/auth-usage-image"
+          cp "$(command -v node)" "$RUNNER_TEMP/auth-usage-image/node"
+          curl -fsSL --max-time 90 -o "$RUNNER_TEMP/postgrest.tar.xz" https://github.com/PostgREST/postgrest/releases/download/v12.2.3/postgrest-v12.2.3-linux-static-x64.tar.xz
+          echo "9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c  $RUNNER_TEMP/postgrest.tar.xz" | sha256sum -c -
+          tar -xJf "$RUNNER_TEMP/postgrest.tar.xz" -C "$RUNNER_TEMP/auth-usage-image"
+          cp scripts/auth-usage-split.Dockerfile "$RUNNER_TEMP/auth-usage-image/Dockerfile"
+          docker build -t helmut-auth-usage-component:20261028 "$RUNNER_TEMP/auth-usage-image"
+      - name: Real local PostgreSQL, PostgREST and application receipts
+        # No benchmark, engine, profile activation, private originals or external network.
+        run: python3 -B scripts/auth-usage-split-container.py --case native --output "$RUNNER_TEMP/auth-usage-result"
+      - name: Retain synthetic safe results, including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-usage-split-component
+          path: ${{ runner.temp }}/auth-usage-result/*.SAFE.json
+          if-no-files-found: ignore

@@ -1,0 +1,13 @@
+{
+  "node": {
+    "version": "v24.19.0",
+    "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12"
+  },
+  "postgrest": {
+    "version": "12.2.3",
+    "executableSHA256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+    "archiveSHA256": "9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c"
+  },
+  "postgresBaseDigest": "sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3",
+  "measuredImageID": "sha256:8d9b8f13a74bf2e26485ea289fd9f2d576f5f558c5e88758020a83aa8f1d5638"
+}

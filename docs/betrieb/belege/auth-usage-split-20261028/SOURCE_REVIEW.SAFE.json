@@ -1,0 +1,45 @@
+{
+  "schema": "helmut-auth-usage-split-independent-source-review/1",
+  "reviewer": "Separate unimplicated Sol review session /root/independent_review",
+  "status": "ACCEPTED_LOCAL_USAGE_PROTOCOL_ONLY",
+  "reviewerImplementedCode": false,
+  "reviewerAuthoredTests": false,
+  "reviewerRanTests": false,
+  "sourcePins": [
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "supabase/proposals/auth_usage_atomic_local.sql",
+      "sha256": "3640d7eefcac0c7e5cc7e3c30cff27d1b0772ae03f5ee13e0a7f2addd5c6369b"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/ai.js",
+      "sha256": "949bbf8c26486342682588f227b7729925eb523b772733ca2db8316e9f1bfa8d"
+    },
+    {
+      "path": "lib/helmut/testkosten-budget.js",
+      "sha256": "012d52bb9cb891c5634a788953861f83299ba632b1b8e614686ad717d7cfdbb7"
+    }
+  ],
+  "findings": [],
+  "reviewed": [
+    "full usage records and fresh STABLE MVCC reconstruction",
+    "private revision and confirmed content-bound receipts",
+    "atomic CAS including appends, stale writers and UNKNOWN outcomes",
+    "exact v5/v6 contract bindings",
+    "NULL corruption and chain validation",
+    "privileges, local-only default-off mode and lossless restore"
+  ],
+  "limitations": [
+    "Resource assertion requires separate actual evidence review.",
+    "Byte-volume surrogate does not reconstruct private W15 shapes.",
+    "Full EU500 admission/DraftCompletion and new worker/source pin bindings remain open.",
+    "No Production or complete500 acceptance."
+  ]
+}

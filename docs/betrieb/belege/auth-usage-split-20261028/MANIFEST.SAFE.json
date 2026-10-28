@@ -1,0 +1,268 @@
+{
+  "schema": "helmut-auth-usage-split-evidence-manifest/1",
+  "files": [
+    {
+      "path": "COMPARISON.SAFE.json",
+      "bytes": 8712,
+      "sha256": "efce7e1a8eb6643735af7ee7b99890a8db1718b27c8eb0158b0a73bb66b7ba88"
+    },
+    {
+      "path": "INDEPENDENT_RESULTS_REVIEW.SAFE.json",
+      "bytes": 5536,
+      "sha256": "bdabf4a33184a9390ff1c835704ade302b243d8aa581056f1b84a0a6ae863ee3"
+    },
+    {
+      "path": "SOURCE_REVIEW.SAFE.json",
+      "bytes": 1722,
+      "sha256": "3b103222055b7da215532e27ccb1f23cd48d2e1714b1eb48bc034bce6f6890af"
+    },
+    {
+      "path": "START_FAILURES.SAFE.json",
+      "bytes": 924,
+      "sha256": "9face6f9637cbc7b6e5e37f34d44a20a531b43889a9ddbeb2cbf6d5ca6243e9c"
+    },
+    {
+      "path": "TOOLS.SAFE.json",
+      "bytes": 550,
+      "sha256": "7f2eced9813ee2ec5a4ecbc125f463c677215d2e2dc43838483969e1d883c1ee"
+    },
+    {
+      "path": "ab-01-old/CLOSE.SAFE.json",
+      "bytes": 363,
+      "sha256": "1aa3f541073629b5cade246224e9196705fbee572d32264bcbd9b58ab89d271b"
+    },
+    {
+      "path": "ab-01-old/COMMON_CGROUP.SAFE.json",
+      "bytes": 217,
+      "sha256": "38a648be39ed77ff0f856f71fabc0de99c18de569003a89620c5414917532ed1"
+    },
+    {
+      "path": "ab-01-old/DRIVER.SAFE.json",
+      "bytes": 15258,
+      "sha256": "67de0e1d9e80dd2b7c6d24049d900bbe80755d2f3353d244a82906476d2adde7"
+    },
+    {
+      "path": "ab-01-old/POSTGRES_LOG.SAFE.json",
+      "bytes": 3318,
+      "sha256": "1101ff277e1150e33b28b21fea01bb654e77ae1043a4287ea3ac29e21fee338d"
+    },
+    {
+      "path": "ab-01-old/RESULT.SAFE.json",
+      "bytes": 20130,
+      "sha256": "85a61ad04abc61de981360a451dce46581090d06130e0222b27d849aa5e610f3"
+    },
+    {
+      "path": "ab-01-old/START.SAFE.json",
+      "bytes": 476,
+      "sha256": "7d5d2f64bc51276e2ddba5bf76f7caacbd4e04152d1ed643934b147cfeb2df4f"
+    },
+    {
+      "path": "ab-01-old/VERSIONS.SAFE.json",
+      "bytes": 252,
+      "sha256": "4fe235aec70534b00df29e19ce5687143a64338f251bd4782c6ef4ade40337a8"
+    },
+    {
+      "path": "ab-02-new/CLOSE.SAFE.json",
+      "bytes": 363,
+      "sha256": "1f29df5bccd7836e3b9cef2801cc02801cffa5cb4eb80691461d83e305d34cc1"
+    },
+    {
+      "path": "ab-02-new/COMMON_CGROUP.SAFE.json",
+      "bytes": 218,
+      "sha256": "646af2005725aa6f85ce98d6558cc4371eb70752a98387ee7cf193c2ff686078"
+    },
+    {
+      "path": "ab-02-new/DRIVER.SAFE.json",
+      "bytes": 16098,
+      "sha256": "4e34ca2d455ef13fea5b0cabfa12fcbfa04cfcb1489e505e5df6c3179e04c701"
+    },
+    {
+      "path": "ab-02-new/POSTGRES_LOG.SAFE.json",
+      "bytes": 3318,
+      "sha256": "dfa733747441d7cea1b7cf41b15a370a68854a1cd06920b60c99b8d5e28c46f8"
+    },
+    {
+      "path": "ab-02-new/RESULT.SAFE.json",
+      "bytes": 21366,
+      "sha256": "83da3fb412387fa78f30ed580a47774172c21bc2186947db9451ad4f99523d8d"
+    },
+    {
+      "path": "ab-02-new/START.SAFE.json",
+      "bytes": 476,
+      "sha256": "a04576a1033d0ab780c79b63b6125295bb7cfde23c70738f4af21f1f9d09d95f"
+    },
+    {
+      "path": "ab-02-new/VERSIONS.SAFE.json",
+      "bytes": 252,
+      "sha256": "4fe235aec70534b00df29e19ce5687143a64338f251bd4782c6ef4ade40337a8"
+    },
+    {
+      "path": "ab-03-new/CLOSE.SAFE.json",
+      "bytes": 363,
+      "sha256": "deab258d64cfdc8ff2202e286b2a8420ce5c8783f664dcb2bb2e09d91cc8f0a5"
+    },
+    {
+      "path": "ab-03-new/COMMON_CGROUP.SAFE.json",
+      "bytes": 218,
+      "sha256": "e9b9869187389385ef35f693acd2dac590ca3a6675e7347f4128277d436d1ad3"
+    },
+    {
+      "path": "ab-03-new/DRIVER.SAFE.json",
+      "bytes": 15887,
+      "sha256": "239a2a84b56311e4355b885e855898558ce7cea8a127dc589f1c2fd5fc155e99"
+    },
+    {
+      "path": "ab-03-new/POSTGRES_LOG.SAFE.json",
+      "bytes": 3318,
+      "sha256": "0816cf0f23189827273f8ab59a0474287d01b146068eb5f8acfa7938ed1e44e9"
+    },
+    {
+      "path": "ab-03-new/RESULT.SAFE.json",
+      "bytes": 21067,
+      "sha256": "12a02a6bdeb1d5fc09217f11464e5eb3a12949f2da50956f1b93a088518a4453"
+    },
+    {
+      "path": "ab-03-new/START.SAFE.json",
+      "bytes": 476,
+      "sha256": "4afbcffbb348cd75c431522f7df2a124b4eb8dd7a16b2d7ff7462bcfebd2d938"
+    },
+    {
+      "path": "ab-03-new/VERSIONS.SAFE.json",
+      "bytes": 252,
+      "sha256": "4fe235aec70534b00df29e19ce5687143a64338f251bd4782c6ef4ade40337a8"
+    },
+    {
+      "path": "ab-04-old/CLOSE.SAFE.json",
+      "bytes": 364,
+      "sha256": "86850c0e1a40406c9d94ce7bef4e45041504bb901e679e9599bfe6284987a7a3"
+    },
+    {
+      "path": "ab-04-old/COMMON_CGROUP.SAFE.json",
+      "bytes": 216,
+      "sha256": "d4f6c2b740e5c5f668dab8113c8a7f2e026b5d3994f173d3160fb37a86591967"
+    },
+    {
+      "path": "ab-04-old/DRIVER.SAFE.json",
+      "bytes": 14318,
+      "sha256": "28907b4888790b6af61961de458211dfd904743737494b5a8223bf772a7bfb39"
+    },
+    {
+      "path": "ab-04-old/POSTGRES_LOG.SAFE.json",
+      "bytes": 3318,
+      "sha256": "fd4af88ba53b82ba32b9dcf285d4a46a250408a5fe4bff962a3b1612469b36a2"
+    },
+    {
+      "path": "ab-04-old/RESULT.SAFE.json",
+      "bytes": 18772,
+      "sha256": "5b629cad7cbdccd9b7f63f9c82f3ca6bbc5f83d9bb855e435a51637df3fb6adb"
+    },
+    {
+      "path": "ab-04-old/START.SAFE.json",
+      "bytes": 476,
+      "sha256": "41f18d27b308c37fc6ed13c2ebe67f7bd93f70455159d515dd020c9d5fba440c"
+    },
+    {
+      "path": "ab-04-old/VERSIONS.SAFE.json",
+      "bytes": 252,
+      "sha256": "4fe235aec70534b00df29e19ce5687143a64338f251bd4782c6ef4ade40337a8"
+    },
+    {
+      "path": "native-01/CLOSE.SAFE.json",
+      "bytes": 362,
+      "sha256": "f92925e15a9e078e6789ce6820e7bd83ebb6a5c620285f29321ab31a930b9df1"
+    },
+    {
+      "path": "native-01/COMMON_CGROUP.SAFE.json",
+      "bytes": 206,
+      "sha256": "462af35c64d197f8d1c3e8df43eaf0fbb73ab022f6fdf07c220a8dbcd825d34f"
+    },
+    {
+      "path": "native-01/DRIVER.SAFE.json",
+      "bytes": 825,
+      "sha256": "6995ad8348f530477c7b9281da932acb66219a42c3296868b0222ed9f94f1b7f"
+    },
+    {
+      "path": "native-01/FAILURE.SAFE.json",
+      "bytes": 87,
+      "sha256": "6cbce9f0f0defcaf9e0eccf0df61ab24bfe560df9acebd3ede52fff63b32f95a"
+    },
+    {
+      "path": "native-01/POSTGRES_LOG.SAFE.json",
+      "bytes": 3318,
+      "sha256": "491ff691819b33e4233eafbcf6b6db7790e80c55699e014783b705d3a15d2c5e"
+    },
+    {
+      "path": "native-01/START.SAFE.json",
+      "bytes": 479,
+      "sha256": "c17b60471be87c9ecfb606f0be40d0802647fb9b2eaf1e460c8b4d7af307a444"
+    },
+    {
+      "path": "native-02/CLOSE.SAFE.json",
+      "bytes": 363,
+      "sha256": "5a601322ab917d00377200e756fd91eeff51ed50ad47ded3d81307f7c80ffc5d"
+    },
+    {
+      "path": "native-02/COMMON_CGROUP.SAFE.json",
+      "bytes": 203,
+      "sha256": "0fd7f4e98a5036c3e70479ec1d7f311544d962a6f973f7ff19dcebfc8d33affb"
+    },
+    {
+      "path": "native-02/DRIVER.SAFE.json",
+      "bytes": 192,
+      "sha256": "2a752cafc39cca90ca6a2ad672c1bf00d36d87d9f52f7bfea7aeb68c3cd06a86"
+    },
+    {
+      "path": "native-02/FAILURE.SAFE.json",
+      "bytes": 87,
+      "sha256": "6cbce9f0f0defcaf9e0eccf0df61ab24bfe560df9acebd3ede52fff63b32f95a"
+    },
+    {
+      "path": "native-02/POSTGRES_LOG.SAFE.json",
+      "bytes": 3318,
+      "sha256": "890157c8952e4f02dd5a78d26be287e4ded8e7016332a779128ff04678b2726e"
+    },
+    {
+      "path": "native-02/START.SAFE.json",
+      "bytes": 479,
+      "sha256": "a069a7c8c46c4fdcf4a7cd4ced9d5fd27b07e0adc21b8e33a88abfc5b4483a1d"
+    },
+    {
+      "path": "native-03/CLOSE.SAFE.json",
+      "bytes": 364,
+      "sha256": "21f027632c6cf921040b5bc6ea2a6628dce4279ca97969e7c85b72d09f1a428f"
+    },
+    {
+      "path": "native-03/COMMON_CGROUP.SAFE.json",
+      "bytes": 209,
+      "sha256": "a9f1272a80cdc23c598a88e8e6ab3bf16f3849a307974f641804e55f5f035c68"
+    },
+    {
+      "path": "native-03/DRIVER.SAFE.json",
+      "bytes": 4902,
+      "sha256": "0ff5f71f61a2d1f7c9a51740352f4827f293913fe95d8e1791e02400ce95411f"
+    },
+    {
+      "path": "native-03/POSTGRES_LOG.SAFE.json",
+      "bytes": 13184,
+      "sha256": "13e0fc195266013e5e7f8d64638ea33522bb7df610dc2984ccb7d5e1c76aabf7"
+    },
+    {
+      "path": "native-03/RESULT.SAFE.json",
+      "bytes": 2419,
+      "sha256": "84d3cce215328cb5a948378cae26b26433e902ef7a998d46dff827e72c8d665a"
+    },
+    {
+      "path": "native-03/START.SAFE.json",
+      "bytes": 479,
+      "sha256": "8aa565911fa0cc9a499292820055c4c8b086553570bc6e9a4372a30795372b2c"
+    },
+    {
+      "path": "native-03/VERSIONS.SAFE.json",
+      "bytes": 252,
+      "sha256": "4fe235aec70534b00df29e19ce5687143a64338f251bd4782c6ef4ade40337a8"
+    }
+  ],
+  "privateFixtureConfigurationsIncluded": false,
+  "secretsIncluded": false,
+  "data": "solely newly synthesized local component records"
+}

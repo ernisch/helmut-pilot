@@ -1,0 +1,941 @@
+{
+  "schema": "helmut-auth-usage-split-component-comparison/1",
+  "pass": true,
+  "mode": "old",
+  "scope": "Synthetic same-fixture24 full-state mutations/four appends; no profiles or500-program; common lifetime peak includes setup",
+  "fixture": {
+    "fixtureJSONBytes": 13616853,
+    "historyCount": 6000,
+    "sha256": "656c616e9fa6ce8b6eaafa6c523a62074469542e7c9582bc717b8bf11c2623ef",
+    "originalHistoryHash": "cf6150cddcd38397314e2e6785324d63ae68d66ec81ec2f25fae029f1b300fc1",
+    "usageJSONBytes": 4020001,
+    "usageFraction": 0.29522247174145155,
+    "nonusageJSONBytes": 9596852,
+    "declaredSyntheticPaddingBytes": 9595747,
+    "paddingSHA256": "e4a635f278a6f72907f20d6a4806df1676e2c2ed56a556dcc6d335b266eff3a7",
+    "restVolumeHash": "6487abcb3ce94634916c60cbc3b41734926a3e4dac611de15a90abc354c465e8",
+    "retainedFieldHashes": {
+      "users": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "sessions": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "assignments": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "dailyInputs": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "auditEvents": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "systemErrors": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "processRuns": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "pipelineLocks": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "understandingRetries": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "testKostenAuftrag": "27e6cc12c5491c3034c664f322742a6b168a7419fb1a44e17bc465b13711017c",
+      "testKostenTage": "cc800dbead2b137b670ef6bfdf2928134a17ff989e35a1d3425d0ca09c3992d9",
+      "synthetik500KostenAdmission": "6839d1984ed976439ff6b4c28a0ef9eaeda8c2ffb66bd647b0df7500dd2790ef",
+      "synthetik500DispatchJournal": "8306535cb7714d938171417354aca264621cfa43faaf905372dd893bba745d01",
+      "unknownFutureField": "47e86fde01e69d12616f5c2caaff282fad31a428bf6e47ec1abca8b90d0c8099"
+    },
+    "perUsagePaddingBytes": 0,
+    "historicalTargetSizeSource": "PR972 FORWARD_PREPARATION_20261028.SAFE.json fixtureAuthBytes=13616853",
+    "shapeOrOriginalReconstruction": false,
+    "representativeOriginalDataClaim": false,
+    "description": "6000 inert technical component receipts plus declared pseudorandom nonusage padding; matches only recorded total byte volume, not private shapes or runtime authority"
+  },
+  "result": {
+    "completePostimageHash": "f78daacc81e16efdddb4af17832b0ea823d1c7b13195387cc9335d3c485e2894",
+    "historyCount": 6004,
+    "originalHistoryRetained": true,
+    "all24ACKAndFullReadback": true
+  },
+  "setupWallMs": 3665.8776869999997,
+  "wallMs": 35038.87072,
+  "maximumOperationMs": 1959.967528000001,
+  "cpu": {
+    "user": 10335559,
+    "system": 3430374
+  },
+  "wire": {
+    "requests": 72,
+    "requestBodyBytes": 326831851,
+    "responseBodyBytes": 667781418
+  },
+  "database": {
+    "before": {
+      "lsn": "0/27EC7D8",
+      "tempBytes": 0,
+      "tempFiles": 0,
+      "walDirectoryBytes": 33554432,
+      "storeRelationBytes": 14835712,
+      "usageRelationBytes": 24576
+    },
+    "after": {
+      "lsn": "0/18DB59A8",
+      "tempBytes": 341529888,
+      "tempFiles": 24,
+      "walDirectoryBytes": 402653184,
+      "storeRelationBytes": 369213440,
+      "usageRelationBytes": 24576
+    },
+    "walDeltaBytes": 375165392,
+    "tempDeltaBytes": 341529888,
+    "tempFilesDelta": 24
+  },
+  "kernel": {
+    "atEntry": {
+      "currentBytes": 113639424,
+      "lifetimePeakBytes": 113639424,
+      "cpu": {
+        "usage_usec": 2240162,
+        "user_usec": 1309214,
+        "system_usec": 930948,
+        "nice_usec": 0,
+        "nr_periods": 37,
+        "nr_throttled": 0,
+        "throttled_usec": 0,
+        "nr_bursts": 0,
+        "burst_usec": 0
+      },
+      "measurementScope": "Caller cgroup; common process coverage must be established by the launcher"
+    },
+    "beforeWorkload": {
+      "currentBytes": 351780864,
+      "lifetimePeakBytes": 537559040,
+      "cpu": {
+        "usage_usec": 5953983,
+        "user_usec": 3721233,
+        "system_usec": 2232750,
+        "nice_usec": 0,
+        "nr_periods": 75,
+        "nr_throttled": 0,
+        "throttled_usec": 0,
+        "nr_bursts": 0,
+        "burst_usec": 0
+      },
+      "measurementScope": "Caller cgroup; common process coverage must be established by the launcher"
+    },
+    "afterWorkload": {
+      "currentBytes": 1798324224,
+      "lifetimePeakBytes": 1912393728,
+      "cpu": {
+        "usage_usec": 43563849,
+        "user_usec": 31705235,
+        "system_usec": 11858614,
+        "nice_usec": 0,
+        "nr_periods": 425,
+        "nr_throttled": 1,
+        "throttled_usec": 65833,
+        "nr_bursts": 0,
+        "burst_usec": 0
+      },
+      "measurementScope": "Caller cgroup; common process coverage must be established by the launcher"
+    },
+    "commonScopeVerifiedByThisDriver": false,
+    "requiresLauncherSameCgroupEvidence": true
+  },
+  "process": {
+    "node": "v24.19.0",
+    "maxRSSBytes": 475840512,
+    "finalMemoryUsage": {
+      "rss": 299110400,
+      "heapTotal": 182599680,
+      "heapUsed": 131169688,
+      "external": 2687956,
+      "arrayBuffers": 145903
+    },
+    "totalCPU": {
+      "user": 12083663,
+      "system": 4066869
+    }
+  },
+  "naturalGC": [
+    {
+      "kind": 1,
+      "durationMs": 6.802802999969572
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.421792000066489
+    },
+    {
+      "kind": 4,
+      "durationMs": 5.781836000038311
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.5157609998714179
+    },
+    {
+      "kind": 4,
+      "durationMs": 4.840734000084922
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.4708829999435693
+    },
+    {
+      "kind": 4,
+      "durationMs": 4.1608410000335425
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.368722999934107
+    },
+    {
+      "kind": 1,
+      "durationMs": 1.4906140000093728
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.4687749999575317
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.5534039998892695
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.6874379999935627
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.5719200000166893
+    },
+    {
+      "kind": 4,
+      "durationMs": 4.899144999915734
+    },
+    {
+      "kind": 1,
+      "durationMs": 3.0894639999605715
+    },
+    {
+      "kind": 1,
+      "durationMs": 1.6287080000620335
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.44977699988521636
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.237859000219032
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.4934630000498146
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.8020969999488443
+    },
+    {
+      "kind": 4,
+      "durationMs": 5.547839000122622
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.8010860001668334
+    },
+    {
+      "kind": 1,
+      "durationMs": 1.1908720000647008
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.5404350000899285
+    },
+    {
+      "kind": 4,
+      "durationMs": 9.694203000050038
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.5304819999728352
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.4899720000103116
+    },
+    {
+      "kind": 4,
+      "durationMs": 5.444760999875143
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.909737000009045
+    },
+    {
+      "kind": 1,
+      "durationMs": 1.5738670001737773
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.40872599999420345
+    },
+    {
+      "kind": 4,
+      "durationMs": 2.9341619999613613
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.4156480000820011
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.44555999990552664
+    },
+    {
+      "kind": 4,
+      "durationMs": 4.689918999793008
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.6427960000000894
+    },
+    {
+      "kind": 1,
+      "durationMs": 1.5429640000220388
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.6328920000232756
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.288905000081286
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.9598100001458079
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.411807999946177
+    },
+    {
+      "kind": 4,
+      "durationMs": 8.349327000090852
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.2834619998466223
+    },
+    {
+      "kind": 1,
+      "durationMs": 1.2789900000207126
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.6915019999723881
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.1372380000539124
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.48684799997135997
+    },
+    {
+      "kind": 8,
+      "durationMs": 1.4717080001719296
+    },
+    {
+      "kind": 4,
+      "durationMs": 4.548310999991372
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.9493369997944683
+    },
+    {
+      "kind": 1,
+      "durationMs": 1.7655050000175834
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.42943900008685887
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.0681660000700504
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.4255979999434203
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.4278720000293106
+    },
+    {
+      "kind": 4,
+      "durationMs": 5.943395000183955
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.9412730000913143
+    },
+    {
+      "kind": 1,
+      "durationMs": 1.6048079999163747
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.41590899997390807
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.221936000045389
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.4649139998946339
+    },
+    {
+      "kind": 8,
+      "durationMs": 1.0600839999970049
+    },
+    {
+      "kind": 4,
+      "durationMs": 8.691835000179708
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.860825000097975
+    },
+    {
+      "kind": 1,
+      "durationMs": 1.7324850000441074
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.739051999989897
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.3650510001461953
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.4368589997757226
+    },
+    {
+      "kind": 8,
+      "durationMs": 1.1244739999528974
+    },
+    {
+      "kind": 4,
+      "durationMs": 4.1477799999993294
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.424077000003308
+    },
+    {
+      "kind": 1,
+      "durationMs": 1.747797999996692
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.6752379999961704
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.2822290000040084
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.6304359999485314
+    },
+    {
+      "kind": 8,
+      "durationMs": 1.5323980001267046
+    },
+    {
+      "kind": 4,
+      "durationMs": 4.278605999890715
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.663369000190869
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.073122999863699
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.5106199998408556
+    },
+    {
+      "kind": 4,
+      "durationMs": 11.453988999826834
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.4231269999872893
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.5759519999846816
+    },
+    {
+      "kind": 4,
+      "durationMs": 14.812619999982417
+    },
+    {
+      "kind": 1,
+      "durationMs": 5.14096499979496
+    },
+    {
+      "kind": 1,
+      "durationMs": 1.4191569997929037
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.6011709999293089
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.242937000002712
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.4378240001387894
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.4920330001041293
+    },
+    {
+      "kind": 4,
+      "durationMs": 4.389202000107616
+    },
+    {
+      "kind": 1,
+      "durationMs": 8.784703999990597
+    },
+    {
+      "kind": 1,
+      "durationMs": 1.4395049999002367
+    },
+    {
+      "kind": 8,
+      "durationMs": 1.100794999860227
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.741842000046745
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.2540130000561476
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.747042000060901
+    },
+    {
+      "kind": 4,
+      "durationMs": 7.108570999931544
+    },
+    {
+      "kind": 1,
+      "durationMs": 5.5080760000273585
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.0038699998985976
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.7015090000350028
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.4894919998478144
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.49600499984808266
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.7504339998122305
+    },
+    {
+      "kind": 4,
+      "durationMs": 5.505548000102863
+    },
+    {
+      "kind": 1,
+      "durationMs": 7.155873999930918
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.99855100014247
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.46348500018939376
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.192972000222653
+    },
+    {
+      "kind": 1,
+      "durationMs": 0.8620610001962632
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.5013650001492351
+    },
+    {
+      "kind": 4,
+      "durationMs": 6.456466000061482
+    },
+    {
+      "kind": 1,
+      "durationMs": 2.390592000214383
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.4428220000118017
+    },
+    {
+      "kind": 4,
+      "durationMs": 10.192394000012428
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.5574890000279993
+    },
+    {
+      "kind": 4,
+      "durationMs": 9.69557400001213
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.4102340000681579
+    },
+    {
+      "kind": 4,
+      "durationMs": 6.345017999876291
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.38207399984821677
+    },
+    {
+      "kind": 4,
+      "durationMs": 5.616412999806926
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.38439999986439943
+    },
+    {
+      "kind": 4,
+      "durationMs": 4.202061000047252
+    },
+    {
+      "kind": 1,
+      "durationMs": 4.269382999977097
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.3973139999434352
+    },
+    {
+      "kind": 4,
+      "durationMs": 9.177051999839023
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.42726499983109534
+    },
+    {
+      "kind": 4,
+      "durationMs": 2.285511000081897
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.3619450000114739
+    },
+    {
+      "kind": 4,
+      "durationMs": 6.055249999975786
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.4057420000899583
+    },
+    {
+      "kind": 4,
+      "durationMs": 4.512519999872893
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.43531500012613833
+    },
+    {
+      "kind": 4,
+      "durationMs": 3.7843809998594224
+    },
+    {
+      "kind": 1,
+      "durationMs": 4.1185849998146296
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.5094320001080632
+    },
+    {
+      "kind": 4,
+      "durationMs": 8.727159000001848
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.5366470001172274
+    },
+    {
+      "kind": 4,
+      "durationMs": 6.03995699994266
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.5661710000131279
+    },
+    {
+      "kind": 4,
+      "durationMs": 4.74380199983716
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.6513630000408739
+    },
+    {
+      "kind": 4,
+      "durationMs": 6.274993000086397
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.4743709999602288
+    },
+    {
+      "kind": 4,
+      "durationMs": 4.628175999969244
+    },
+    {
+      "kind": 1,
+      "durationMs": 3.9579040000680834
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.4084880000445992
+    },
+    {
+      "kind": 4,
+      "durationMs": 7.524860000004992
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.7821750000584871
+    },
+    {
+      "kind": 4,
+      "durationMs": 2.5554740000516176
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.5055309999734163
+    },
+    {
+      "kind": 4,
+      "durationMs": 5.542454000096768
+    },
+    {
+      "kind": 8,
+      "durationMs": 0.6027420000173151
+    },
+    {
+      "kind": 4,
+      "durationMs": 6.98334200005047
+    }
+  ],
+  "operations": [
+    {
+      "ordinal": 1,
+      "wallMs": 1563.2003519999998,
+      "historyCount": 6000,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 2,
+      "wallMs": 1869.4627819999996,
+      "historyCount": 6000,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 3,
+      "wallMs": 1495.363292,
+      "historyCount": 6000,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 4,
+      "wallMs": 1290.345268000001,
+      "historyCount": 6000,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 5,
+      "wallMs": 1424.769225,
+      "historyCount": 6000,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 6,
+      "wallMs": 1271.984593000001,
+      "historyCount": 6001,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 7,
+      "wallMs": 1396.2778439999984,
+      "historyCount": 6001,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 8,
+      "wallMs": 1268.8768149999996,
+      "historyCount": 6001,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 9,
+      "wallMs": 1718.1250790000013,
+      "historyCount": 6001,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 10,
+      "wallMs": 1255.6953289999983,
+      "historyCount": 6001,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 11,
+      "wallMs": 1326.8590950000034,
+      "historyCount": 6001,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 12,
+      "wallMs": 1959.967528000001,
+      "historyCount": 6002,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 13,
+      "wallMs": 1895.3626750000003,
+      "historyCount": 6002,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 14,
+      "wallMs": 1472.8442810000015,
+      "historyCount": 6002,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 15,
+      "wallMs": 1849.2398610000018,
+      "historyCount": 6002,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 16,
+      "wallMs": 1402.8798929999975,
+      "historyCount": 6002,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 17,
+      "wallMs": 1329.9231309999996,
+      "historyCount": 6002,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 18,
+      "wallMs": 1400.9626250000001,
+      "historyCount": 6003,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 19,
+      "wallMs": 1225.4233709999971,
+      "historyCount": 6003,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 20,
+      "wallMs": 1253.9380290000008,
+      "historyCount": 6003,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 21,
+      "wallMs": 1300.2541060000003,
+      "historyCount": 6003,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 22,
+      "wallMs": 1304.4263400000054,
+      "historyCount": 6003,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 23,
+      "wallMs": 1294.614042000001,
+      "historyCount": 6003,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    },
+    {
+      "ordinal": 24,
+      "wallMs": 1275.382706000004,
+      "historyCount": 6004,
+      "acknowledged": true,
+      "completePostimageEqual": true
+    }
+  ],
+  "forcedGC": false,
+  "cacheClearing": false,
+  "memorySubtraction": false,
+  "workMem": "4MB",
+  "profiles": 0,
+  "engineUnits": 0,
+  "providerCalls": 0,
+  "complete500Attempts": 0
+}

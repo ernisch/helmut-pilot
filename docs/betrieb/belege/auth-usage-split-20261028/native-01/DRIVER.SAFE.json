@@ -1,0 +1,5 @@
+{
+  "exitCode": 1,
+  "stdout": "",
+  "stderr": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) \u2014 Werte bleiben in dieser Sitzung unveraendert.\nError: Local REST 404: {\"code\":\"PGRST202\",\"details\":\"Searched for the function public.helmut_auth_usage_read_v1 with parameter id or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.\",\"hint\":null,\"message\":\"Could not find the function public.helmut_auth_usage_read_v1(id) in the schema cache\"}\n    at IncomingMessage.<anonymous> (/repo/scripts/auth-usage-split/support.js:62:25)\n    at IncomingMessage.emit (node:events:521:24)\n    at endReadableNT (node:internal/streams/readable:1736:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)\n"
+}
