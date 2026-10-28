@@ -1,0 +1,91 @@
+{
+  "schema": "helmut-w15-observation-prestart-review/1",
+  "status": "PASS_PRESTART_OBSERVATION_ONLY",
+  "reviewer": "independent atomic_integration_audit",
+  "reviewedAtUTC": "2026-10-28T16:52:57.709278+00:00",
+  "sourcePins": [
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 4508,
+      "sha256": "b4f7ab49b92a39366ce440ca000ea815e0ddaa3edd2d37733c9f0a311cb90874"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 6301,
+      "sha256": "677ab387df1147619328be32f5601e98280ae434c49eb753ad7873cd41017b21"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 46446,
+      "sha256": "cf2e79b47f8ea87cac5a2240d554ac49c90f478002aa822928b43a6a1f53e2aa"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-observation-check.js",
+      "bytes": 10325,
+      "sha256": "0cef55042d782ac8ed9a06d8148408b0ea3bb15d66a97ecd61089c408656c48c"
+    }
+  ],
+  "checks": [
+    {
+      "id": "scope",
+      "status": "PASS_STATIC",
+      "finding": "Observation-only code/classifier check: no database,HTTP,Auth,profiles,Units,providers oroldPGR/16Auth/49HTTP repetition. Root-only syntax/dry and exactlyone actualcontrolledchild test follow this static review."
+    },
+    {
+      "id": "exact-cli",
+      "status": "PASS_STATIC",
+      "finding": "Parent accepts exactly --dry-run or --run; owned child receives exactly --owned-child BASE. BASE fixed/distinct from repo path and parent CLI; fresh WORK/BASE must notexist. Child base argument permits genuine existing proc-ownership binding."
+    },
+    {
+      "id": "closed-error-privacy",
+      "status": "PASS_STATIC",
+      "finding": "Getter-safe allowlisted errorname/code/causecode/nonnegativeinteger bytecounters. Message never exported; storage timeout bounded1..20000ms andHTTP400..599 numeric extraction only,othernames closed."
+    },
+    {
+      "id": "no-timeout-mislabel",
+      "status": "PASS_STATIC",
+      "finding": "GenericAbortError now failureKind=aborted; storage-timeout requires trueclosedstorageprefix or exactown deadline message. Prefix+sentinel suffix failsclosed. Historicalerrors never relabeled."
+    },
+    {
+      "id": "ownership-guard",
+      "status": "PASS_STATIC",
+      "finding": "Original real /proc membership/cmdline/startTicks checks preserved. Negative target is parentPID withoutBASE in its commandline, so actualhelper must rejectbefore any signal; no mocked process.kill/guard."
+    },
+    {
+      "id": "one-real-term",
+      "status": "PASS_STATIC",
+      "finding": "Positive detached owned child registers signal-proof PID/identity and durableSIGTERM handler; genuine helper must emit exactly1 acceptedSIGTERM and1 exitconfirmed withchild0/null, noSIGKILL/failure."
+    },
+    {
+      "id": "no-term-retry",
+      "status": "PASS_STATIC",
+      "finding": "After stopAttempted=true no finally SIGTERM allowed; await child40snaturaldeadline bounded atchildStartedAt+41000 and retainFAIL. EmergencyTERM onlybefore any positivehelper attempt, exactPID/startTicks; reportstaysFAIL."
+    },
+    {
+      "id": "durable-stop-metadata",
+      "status": "PASS_STATIC",
+      "finding": "Owned stop preserves phase/reason/allowlistedcode/acceptedSignal and error journal, closes FD. No rawcmdline/originalexceptionmessage/privatevalues enter SAFE reports. Failedreceipt remainsUNKNOWN."
+    },
+    {
+      "id": "python-safe-chain",
+      "status": "PASS_STATIC",
+      "finding": "CommandFailure.safe_failure parses atmost4096bytes against closedJSONkeys/kind/status/phase/reason/code/PID/journalFailure; arbitrary stderr redacted. Timeout separatebool, no untrustedstdout/rawdata; compatible with memoryPYgetattr safe_failure."
+    },
+    {
+      "id": "bounded-and-private",
+      "status": "PASS_STATIC",
+      "finding": "Fresh state dirs700/files600, childprotectedphasejournal and40sdeadline, readiness5s, ownershiphelper existing20s+2boundedstop. No operation retry or restart; sourcepins retained."
+    },
+    {
+      "id": "nonacceptance",
+      "status": "PASS_STATIC",
+      "finding": "StaticPASS only scopedobservationprestart. Actualrunmust independentlyPASS and currentRAMserve-owner-binding receive separate review before one newRAMdiagnosis. No fullMock500/Production/memoryacceptance."
+    }
+  ],
+  "historicalEleventhOutcome": "UNCHANGED_UNKNOWN_NOT_REPLAYED",
+  "historicalRAM_BFailure": "UNCHANGED_FAIL_UNKNOWN",
+  "reviewerExecutedTestsHTTPDBOrSignals": false,
+  "RAMStartApproved": false,
+  "full500Approved": false,
+  "allowedNextAction": "Root syntax/dry; then exactlyone observation run through existing local launcher, realownedchildTERM, no workload."
+}

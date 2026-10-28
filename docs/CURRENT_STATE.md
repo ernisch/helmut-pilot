@@ -1,32 +1,37 @@
 # CURRENT STATE — Helmut
 
-## W15: echter Prozessabschluss PASS; End500 bei290/500 gestoppt (28.10.)
+## W15: Abschlussquittung PASS; neue End500-Diagnose bei369/500 gestoppt (28.10.)
 
 PR974, eigener Integrationsbranch auf PR973 `fa506939`/PR972 `c36bd427`;
-alle ungemergt. Tatsächlicher neuer Diagnosecode `d2920d6d`.
+alle ungemergt. Tatsächlicher neuer Diagnosecode `ee36720d`.
 Bestehende signierte Prepared0-/HTTP-/Auth-/EU-Integration unabhängig16/16;
 Worker81/81 und500/500Quellen im belegten Geltungsbereich übernommen.
 Die16frischen Auth-ACKs/49HTTP200 wurden nicht wiederholt.
-Neuer kleiner echter PostgREST-Abschlusscheck PASS, unabhängig bestätigt:
-angenommenes SIGTERM→SIGINT, Kindexit0/Quittung,0Client-/DB-Verbindungen,
-552,613949ms,0Auth-Schreibvorgänge und unveränderte500Profile/0aktiv.
-Genau eine neue frische End500-RAM-Diagnose B: **FAIL/UNKNOWN nach290/500**.
-291.Auth-Vorgang nach10,339606479s vor Callback/nativeCAS gescheitert;
-Ursache/Timeoutbezug UNKNOWN. Kein291.nativer Schreibversuch, kein Retry.
-290ganze bestätigte Auth-Vorgänge max11,681541407s/native6,150820550s.
-Gemeinsamer echter Kernelpeak auch nach unabhängigem Abschluss1.444.556.800Bytes;
-Reserve603.443.200Bytes=29,4646875%, hartes2.048.000.000Limit/Swap0/OOM0.
-Keine End500-/Restwachstumsabnahme, kein vollständiges Auth30 oder Unit60.
+Die1.297 alten RAM-/Fortschrittspunkte rein lesend ausgewertet: früher PostgREST-
+Anstieg, späte Werte weitgehend stabil; kein belegtes fortgesetztes Leck und keine
+unbelegte RAM-Optimierung. End500-Datenbestand war bereits vor der Diagnose geladen.
+Fehlerklassifizierung und echte Elternprozess-/Abschlussbindung gezielt korrigiert;
+14reine Fälle, echter begrenzter Ownership-/Signalcheck und8Python-Prüfpunkte PASS,
+unabhängig bestätigt. SQL:3.512 Abfragen,3.511 exakte Übernahmen/1neue Parsebindung,
+0Arbeitsabfragen ausgeführt. Grenzen und ursprüngliche Sicherheitslogik unverändert.
+Genau eine frische End500-Diagnose C: **FAIL nach369/500** bestätigten Vorgängen.
+370.Auth-Hülle: expliziter10.000ms-Storage-Timeout vor Callback,0native Schreibversuche;
+Fehlerdauer11,068298475s, gemeinsame8,4s-Messlücke, tiefere Ursache UNKNOWN.
+369ganze bestätigte Auth-Vorgänge max16,171304524s/native7,691495863s.
+Gemeinsamer Kernelpeak auch nach unabhängigem Abschluss1.437.229.056Bytes;
+Reserve610.770.944Bytes=29,8228%, hartes2.048.000.000Limit/Swap0/OOM0.
+Echte Abschlussquittung jetzt PASS: TERM angenommen→SIGINT-Ende,0offene Verbindungen,
+kein erzwungenes Ende. Alle739Auth-Starts und739Abschlüsse dauerhaft erhalten.
+Keine End500-/Restwachstumsabnahme, kein vollständiges Auth30 oder Unit60; kein Retry.
 Unabhängige native Endsicht: alle3.501Postimages/6.000Usage vollständig erhalten,
 500Profile/**0aktiv**, Kosten-/Sicherheitsfelder unverändert. Keine Units/Modelle.
-Controller-Nullstatus und fehlende PostgREST-Stopquittung bleiben historisch UNKNOWN;
-separate spätere0-/Prozesssicht bestätigt Abschluss, ersetzt keine fehlende Quittung.
-Alter11.UNKNOWN und frühere FAILs bleiben erhalten. Keine weitere Ausführung.
-CI `d823e95f`:177/178Offline-Suiten grün; nur Statusdateigröße rot.
-Historie wortgleich archiviert; gezielter Größentest4/4 PASS. Neue Kopf-CI separat.
+Alter11.UNKNOWN, B291.UNKNOWN und fehlende historische B-Stopquittung bleiben erhalten.
+CI `f534a1f7`: Pflicht-CI40723672752 und Integrität40723672779 abgeschlossen/grün;
+Browser laut Prüfplan übersprungen. Das ist kein CI-Beleg für den neuen Codekopf.
+Historie wortgleich archiviert; Statusdatei bleibt unter30.000Zeichen.
 Vercel-Konfigurationsfehler `includeFiles`2.915>256 unverändert separat.
-Nächster Schritt braucht gezieltes GO für Lesefehler-/Abschlussdiagnose mit
-vollständiger sicherer Fehlerklassifizierung; Mock500 weiterhin nicht freigabereif.
+Nächster Schritt braucht gezieltes GO für Ursache des Lese-Timeouts und der gemeinsamen
+Messlücke, danach neu gebundene End500-Abnahme; Mock500 weiterhin nicht freigabereif.
 Vier alte Mock500-Startbindungen nur lesend ermittelt, nach FAIL nicht geändert.
 [Messwerte, unabhängige Belege und Freigabestand](betrieb/w15-atomic-usage-integration-20261028.md).
 

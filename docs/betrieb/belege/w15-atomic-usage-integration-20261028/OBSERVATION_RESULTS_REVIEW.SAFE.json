@@ -1,0 +1,127 @@
+{
+  "schema": "helmut-w15-observation-results-independent-review/1",
+  "status": "PASS_INDEPENDENT_OBSERVATION_CORRECTIONS",
+  "reviewer": "independent atomic_integration_audit",
+  "reviewedAtUTC": "2026-10-28T17:00:49.051179+00:00",
+  "checks": [
+    {
+      "id": "actual-run",
+      "status": "PASS_SCOPED",
+      "finding": "Exactlyone retained observationrunPASS:14purecases incl getters/sentinel/closedreasonenums, one genuine negativeownership rejection before signal, one actualowned childTERM/exit0. NoAuth/DB/HTTP/Unit/profile/model/retry."
+    },
+    {
+      "id": "real-owner-receipts",
+      "status": "PASS_SCOPED",
+      "finding": "Negativejournal hasexactlyoneSTOP_FAILURE/proc-ownership/unowned-live-process;no accepted signal. Positivejournal exactSIGTERM_REQUEST\u2192SIGNAL_REQUEST_ACCEPTED\u2192OWNED_PROCESS_EXIT_CONFIRMED. ChildsamePID/startTicks emitscontrolled-stop,exit0/null,stderr0,noSIGKILL/emergency/retry."
+    },
+    {
+      "id": "safe-error-labels",
+      "status": "PASS_SCOPED",
+      "finding": "Reviewed currenthelpergenericAbortError=>aborted;timeoutonlyclosedstorageprefix/exactowndeadline;statusnumbersbounded;getterfailuresunknown;nooriginalmessage/body/key/URLexport. Historical11th and291st errors remainUNKNOWN."
+    },
+    {
+      "id": "safe-stop-chain",
+      "status": "PASS_SCOPED",
+      "finding": "CurrentOwnedStop retains closedphase/reason/code/acceptedSignal and preservesrealmembership/startTicks/ownedPID checks. PythonCommandFailure safely parsesonlyclosed <=4096BJSON,retainsreturncode/timedOutandredactsotherstderr. Nosecuritybypass/coreStoragechange."
+    },
+    {
+      "id": "python-pure-existing",
+      "status": "PASS_SCOPED",
+      "finding": "Rootretainedactual8assertionpure-checkresultPINmatchesexactcontroller andsuccessfulobservationreportstatus;runtimeOrDBCommands0. Staticclosedparserreviewconfirmsprivacy;individual8casebodiesnotretainedhereandnotrerunbyreviewer."
+    },
+    {
+      "id": "source-identity",
+      "status": "PASS_SCOPED",
+      "finding": "All5actualsourcepins and4independentprestartpins exactlymatchcurrentfiles;genuinedurablehelperunchanged. No source drift/relabeling oftesthead."
+    },
+    {
+      "id": "scoped-reuse",
+      "status": "PASS_SCOPED",
+      "finding": "ExistingD/16Auth/49HTTP/552msPGRstop/500sources reused,notrepeated. ThisPASSonlyclosesobservation/error/ownedhelpermeasurementproof;newRAMservicebindingseparatestaticreviewstillapplies."
+    },
+    {
+      "id": "failure-boundary",
+      "status": "PASS_SCOPED",
+      "finding": "AfterattempteduncertainhelperstopnoretryTERM;childnaturaldeadlineboundedandFAILretained. NoautomaticRAMretry/full500/Productionpermission issuedbythisreview."
+    }
+  ],
+  "actualPureCases": 14,
+  "actualPythonPureAssertions": 8,
+  "realOwnedChildSIGTERMCount": 1,
+  "negativeUnownedParentSignals": 0,
+  "actualChildExit": {
+    "code": 0,
+    "signal": null
+  },
+  "sourcePins": [
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 4508,
+      "sha256": "b4f7ab49b92a39366ce440ca000ea815e0ddaa3edd2d37733c9f0a311cb90874"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 6301,
+      "sha256": "677ab387df1147619328be32f5601e98280ae434c49eb753ad7873cd41017b21"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 46446,
+      "sha256": "cf2e79b47f8ea87cac5a2240d554ac49c90f478002aa822928b43a6a1f53e2aa"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-observation-check.js",
+      "bytes": 10325,
+      "sha256": "0cef55042d782ac8ed9a06d8148408b0ea3bb15d66a97ecd61089c408656c48c"
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "observation/RESULT.SAFE.json",
+      "bytes": 1791,
+      "sha256": "0e10a9f7c7ca541461346d7ad82df5ae8387f2d8a5d472e91a82e1530c54f783"
+    },
+    {
+      "path": "COMMAND_FAILURE_PURE_CHECK.SAFE.json",
+      "bytes": 274,
+      "sha256": "9cdcb24f2ec3424d59898a1d4822d4d10b3f823a04100bfa7270893bf1dca8cb"
+    },
+    {
+      "path": "OBSERVATION_PRESTART_REVIEW.SAFE.json",
+      "bytes": 4678,
+      "sha256": "5b8eeef42b91daf4a150dd6bac5cc667e99ec95049bb8e3fa1efa37c8f7e792d"
+    },
+    {
+      "path": "stop-gateway.SAFE.jsonl",
+      "bytes": 173,
+      "sha256": "e2475c41c00a2bbb32f69a196739accc99cb5b8ffdc39a66d184a2dfaff029a9"
+    },
+    {
+      "path": "stop-signal-proof.SAFE.jsonl",
+      "bytes": 403,
+      "sha256": "e64ff1f90d6d1d6cbd911ec4a48acd34f1a514b827aae468c76a1e616f4009ff"
+    },
+    {
+      "path": "signal-proof-observations.SAFE.jsonl",
+      "bytes": 261,
+      "sha256": "0db5e2f9dceca893b1e3b8d1f497aae5b9b3cae867dd42af68e9643f621bb187"
+    },
+    {
+      "path": "signal-proof.node.SAFE.json",
+      "bytes": 60,
+      "sha256": "95679c0e3f698d879089aaf322f5921fe074669e638532a269052a272b96db60"
+    }
+  ],
+  "historicalEleventhOutcome": "UNCHANGED_UNKNOWN_NOT_REPLAYED",
+  "historicalRAM_B291stFailure": "UNCHANGED_UNKNOWN",
+  "actualHistoricalRAM_BVerdict": "UNCHANGED_FAIL",
+  "reviewerExecutedQueriesHTTPTestsOrSignals": false,
+  "RAMAcceptance": false,
+  "full500Permission": false,
+  "productionProof": false
+}

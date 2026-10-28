@@ -1,0 +1,56 @@
+{
+  "status": "PASS_GENUINE_OWNED_SERVICE_EXIT",
+  "signalRequest": {
+    "sequence": 2253,
+    "atUTC": "2026-10-28T17:36:43.546Z",
+    "monoNS": "44985609878407",
+    "name": "postgrest-signal-request",
+    "pid": 305,
+    "signal": "SIGTERM",
+    "accepted": true
+  },
+  "postgrestExit": {
+    "sequence": 2254,
+    "atUTC": "2026-10-28T17:36:43.605Z",
+    "monoNS": "44985668788214",
+    "name": "postgrest-exit",
+    "code": null,
+    "signal": "SIGINT"
+  },
+  "servicesStopped": {
+    "sequence": 2255,
+    "atUTC": "2026-10-28T17:36:43.621Z",
+    "monoNS": "44985685502319",
+    "name": "services-stopped",
+    "pgExit": {
+      "code": null,
+      "signal": "SIGINT"
+    },
+    "gateway": {
+      "anfragen": 1109,
+      "fehler": 0,
+      "nachStatus": {
+        "200": 1109
+      },
+      "nachRpc": {
+        "rpc:helmut_auth_usage_read_v1": 740,
+        "rpc:helmut_auth_usage_cas_v1": 369
+      },
+      "fehlerbeispiele": [],
+      "dauerMs": {
+        "n": 1108,
+        "min": 462,
+        "p50": 731,
+        "p95": 1330,
+        "max": 8096,
+        "mittel": 790.7
+      },
+      "gleichzeitigSpitze": 1
+    },
+    "forced": false,
+    "openSockets": 0,
+    "agentSockets": 0,
+    "agentFreeSockets": 0,
+    "confirmed": true
+  }
+}

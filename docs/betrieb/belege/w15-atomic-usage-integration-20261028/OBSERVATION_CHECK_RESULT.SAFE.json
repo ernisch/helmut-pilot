@@ -1,0 +1,68 @@
+{
+  "status": "PASS_OBSERVATION_ENUMS_AND_REAL_OWNED_STOP",
+  "sourcePins": [
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 4508,
+      "sha256": "b4f7ab49b92a39366ce440ca000ea815e0ddaa3edd2d37733c9f0a311cb90874"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 6301,
+      "sha256": "677ab387df1147619328be32f5601e98280ae434c49eb753ad7873cd41017b21"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 46446,
+      "sha256": "cf2e79b47f8ea87cac5a2240d554ac49c90f478002aa822928b43a6a1f53e2aa"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-observation-check.js",
+      "bytes": 10325,
+      "sha256": "0cef55042d782ac8ed9a06d8148408b0ea3bb15d66a97ecd61089c408656c48c"
+    }
+  ],
+  "HTTP": 0,
+  "databaseCalls": 0,
+  "AuthCalls": 0,
+  "Units": 0,
+  "profileActivations": 0,
+  "providerCalls": 0,
+  "retries": 0,
+  "oldPostgrestStopRepeated": false,
+  "pure": {
+    "cases": 14,
+    "status": "PASS_CLOSED_ENUMS_GETTERS_AND_SENTINEL"
+  },
+  "negativeOwnership": {
+    "status": "EXPECTED_REJECTION",
+    "failure": {
+      "status": "STOP_FAILURE",
+      "phase": "proc-ownership",
+      "reason": "unowned-live-process",
+      "code": "ERR_ASSERTION",
+      "pid": 115498
+    },
+    "signalsAccepted": 0
+  },
+  "controlledStop": {
+    "childExit": {
+      "code": 0,
+      "signal": null
+    },
+    "acceptedSIGTERM": true,
+    "exitReceipt": true,
+    "childStderrBytes": 0
+  },
+  "stopAttempted": true,
+  "childExit": {
+    "code": 0,
+    "signal": null
+  },
+  "childStopped": true
+}

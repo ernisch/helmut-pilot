@@ -3,7 +3,8 @@
 Stand: 28.10.2026. **Teilweise abgeschlossen; kein Mock500- oder Production-Nachweis.**
 Eigener Branch `codex/w15-atomic-usage-integration-20261028`,
 [Draft-PR974](https://github.com/ernisch/helmut-pilot/pull/974), gestapelt auf
-PR973 `fa506939` und PR972 `c36bd427`. Aktueller und neu ausgeführter Code `d2920d6d`.
+PR973 `fa506939` und PR972 `c36bd427`. Neu ausgeführter Diagnosecode C: `ee36720d`;
+der historische B-Lauf wurde auf `d2920d6d` ausgeführt.
 Tatsächlich ausgeführter Anschlussstand D: `d66a94dc`; RAM-Diagnose: `55dda919`.
 `e1a62acc` ergänzt danach ausschließlich Fehler-Metadaten; kein Lauf wurde wiederholt
 oder nachträglich auf diesen Kopf umetikettiert.
@@ -20,6 +21,10 @@ PostgREST-Abschlusscheck bestanden. Die danach einmalig gestartete neue
 End500-Diagnose B scheiterte nach290 bestätigten Vorgängen vor dem291.nativen
 Schreiben. Unabhängige Endsicht bestätigt sämtliche Daten und0aktive Profile;
 kein End500-PASS. Alle historischen UNKNOWN-/FAIL-Befunde bleiben erhalten.
+
+Die anschließend freigegebene C-Diagnose endete nach369/500 mit einem ausdrücklich
+klassifizierten Lese-Timeout. Die echte Service-Abschlussquittung und vollständige
+native Endsicht sind diesmal positiv. Kein weiterer Versuch und kein Mock500.
 
 ## Was tatsächlich integriert und geprüft ist
 
@@ -283,6 +288,88 @@ und [1.297 äußeren Kernel-/Fortschrittspunkte](belege/w15-atomic-usage-integra
 sind zusätzlich in Git erhalten. Originale private Rohbelege bleiben geschützt;
 Größe und SHA256 der Exporte und ihrer Ausgangsdateien sind gebunden.
 
+## RAM-Wachstum aus den vorhandenen B-Messungen
+
+Alle1.297 vorhandenen äußeren RAM-/Fortschrittspunkte ausgewertet;1.004 davon
+enthalten Kernelkomponenten. Das vollständige inerte End500-Modell war bereits
+vor der Diagnose geladen. Die späteren Schreibvorgänge vergrößerten nicht erst
+schrittweise den fachlichen500er-Enddatenbestand.
+
+PostgREST war der größte frühe anonyme Zuwachs: Median331,01→411,30MB zwischen
+den Fenstern50–99 und250–289. Im letzten Fenster gegenüber200–249 aber nur
+0,33MB mehr Median und kein höherer p95. Gemeinsamer Median zuletzt+5,58MB;
+Dateicache stabil um339MB, darin146,79MB Shared Memory. Node-Heap-Median
+99,26→101,07MB. Geteilte Prozess-RSS nicht addiert; PSS war nicht zugänglich.
+Der tatsächliche B-Kernelpeak bleibt1.444.556.800Bytes einschließlich aller Spitzen.
+Kumulative WAL-Schreibbytes sind kein zusätzlicher RAM: physischer WAL-Bestand
+blieb134.217.728Bytes; TEMP0, natürliche Checkpoints/Autovacuum und GC belegt.
+
+Das spricht für ein spätes weitgehend stabiles Niveau im beobachteten Bereich,
+beweist aber weder500 noch6.500 zukünftige Vorgänge. Daher keine spekulative
+Pool-/GC-/Cache-Optimierung, kein Messwertabzug und keine neue1GB-Pflichtgrenze.
+[Vollständige Analyse](belege/w15-atomic-usage-integration-20261028/RAM_B_GROWTH_ANALYSIS.SAFE.json)
+· [späte Fenster](belege/w15-atomic-usage-integration-20261028/RAM_B_GROWTH_LATE_WINDOWS.SAFE.json).
+
+## Korrigierte Beobachtung und genau eine neue Diagnose C
+
+Nur im lokalen Testprogramm: geschlossene sichere Fehlerklassen statt verlorener
+Fehlertypen; tatsächliche Ownership-/Signalfehler bleiben sichtbar. Jeder eigene
+Stopp und die native Nullkontrolle werden getrennt abgeschlossen. Der bestehende
+echte Service-Parent startet nun auch im RAM-Lauf PostgREST als Kind und muss
+Signalannahme, Kindexit und0Verbindungen dauerhaft quittieren. Keine Änderung
+der Storage-, Auth-, Kosten-, Quellen- oder Geschäftslogik und kein höheres Timeout.
+
+Gezielt bestanden:14reine Fehlerklassifikationsfälle, eine echte Ownership-
+Ablehnung ohne Signal und genau ein kontrollierter eigener Kindprozess-Stopp;
+0HTTP/DB/Auth/Units/Modelle. Acht reine Python-Prüfpunkte bestätigen die sichere
+Fehlerübergabe. Unabhängiger Review PASS. Alle3.512 erzeugten SQL-Abfragen sind
+gebunden:3.511 identische Parserbelege übernommen, nur CREATE-C neu geparst,
+0Arbeitsabfragen ausgeführt.26Quellpins/24Startprüfpunkte unabhängig bestätigt.
+[Beobachtungsreview](belege/w15-atomic-usage-integration-20261028/OBSERVATION_RESULTS_REVIEW.SAFE.json)
+· [Startabnahme C](belege/w15-atomic-usage-integration-20261028/MEMORY_PRESTART_REVIEW_C.SAFE.json).
+
+Danach genau eine frische netzlose C-Kopie, vollständiges inertes End500-Modell
+und echter unveränderlich geladener W15-Command. Tatsächlicher Ablauf
+17:14:20,922–17:36:38,463UTC am28.10.; keine Aktivierung oder DR-Unit.
+
+| Tatsächlicher Befund C | Ergebnis |
+| --- | --- |
+| Vollständig bestätigte Auth-Vorgänge / native CAS / exakte Postimages |369 /369 /369 |
+| Nächste Auth-Hülle |370., Index369; Storage-Timeout10.000ms, Callback0/native CAS0 |
+| Vollständiges bestätigtes Auth-Maximum |16,171304524s |
+| Bestätigtes natives CAS-Maximum |7,691495863s |
+| Dauer der gescheiterten Auth-Hülle |11,068298475s; kein erfolgreicher ACK |
+| Gemeinsamer Kernelpeak, auch nach unabhängiger Endsicht |1.437.229.056Bytes |
+| Verbleibende Reserve |610.770.944Bytes =29,8228% |
+| Technisches Limit / Swap / OOM-/Max-Ereignisse |2.048.000.000Bytes /0 /0 |
+| Echter Serviceabschluss |TERM angenommen, SIGINT-Kindexit,0Sockets, kein erzwungenes Ende |
+| Vollständige native Datenendprüfung |3.501/3.501 Postimages,6.000 Usage unverändert |
+| Profile / aktiv |500 /0 |
+
+**Gesamtstatus C: FAIL.** Sofort beendet, kein Retry. Der Speichergrenzwert wurde
+im beobachteten Verlauf eingehalten, aber vollständige End500-/Restwachstums-
+Abnahme, vollständiges Auth30 und Unit60 sind weiterhin offen. Keine Hochrechnung
+des unvollständigen Verlaufs als500er- oder6.500er-Beleg.
+
+Der neue geschlossene Fehlerenum belegt einen Storage-Lesetimeout vor dem
+370.Callback; damit kein370.nativer Schreibversuch. Die tieferliegende Ursache
+bleibt UNKNOWN. Beide Messspuren haben kurz davor eine Lücke: außen8,404908s,
+Node8,513s. Kein GC-Eintrag im Timeoutfenster; daraus folgt weder eine bewiesene
+Host-/IO-Pause noch eine PostgreSQL-/PostgREST-Ursache.1.109 Gateway-Anfragen,
+aber nur1.108 abgeschlossene Antworten;1.109 gezählte200-Header sind kein Beleg
+für1.109 vollständige Antworten. Letzter Read ohne Finish/ausgelieferte Socketbytes.
+Die alten11.- undB291.-Fehler werden dadurch nicht nachträglich erklärt.
+
+Dauerhaft erhalten:10.820 innere Beobachtungszeilen,739Auth-Starts/739Abschlüsse
+einschließlich Fehler, exakte370Hüllen-/369CAS-Zeiten,1.692äußere Messpunkte,
+5.459GC-Einträge und16native Datenbankbeobachtungen. Private Inhalte bleiben
+außerhalbGit; öffentliche Exporte enthalten nur technische Messwerte.
+[Unabhängige C-Abnahme](belege/w15-atomic-usage-integration-20261028/RAM_C_RESULTS_INDEPENDENT_REVIEW.SAFE.json)
+· [Auth-Einzelzeiten](belege/w15-atomic-usage-integration-20261028/RAM_C_AUTH_TIMINGS.SAFE.json)
+· [RAM-Verlauf](belege/w15-atomic-usage-integration-20261028/RAM_C_MEMORY_TIMELINE.SAFE.jsonl)
+· [echte Abschlussquittung](belege/w15-atomic-usage-integration-20261028/RAM_C_SERVICE_CLOSURE.SAFE.json)
+· [native Endsicht](belege/w15-atomic-usage-integration-20261028/RAM_C_NATIVE_FINAL_INDEPENDENT_READONLY.SAFE.json).
+
 ## Übernommene und erhaltene Belege
 
 Die ersten lokalen Vorbereitungen bleiben FAIL: A überschritt mit dem alten
@@ -306,13 +393,14 @@ Zeilen-/Branch-, Worker- oder Gesamtprojektabdeckung.
 
 ## Freigabestand und nächster Schritt
 
-**Nicht freigabereif für einen neuen Mock500-Gesamtversuch.** Der kleine echte
-SIGINT-Abschlusscheck ist bestanden. Die neue End500-Diagnose B ist jedoch
-unvollständig, der Fehler vor dem291.Callback und die fehlende Abschlussquittung
-der tatsächlichen RAM-Stopphase sind nicht erklärt. Nächster notwendiger Schritt
-ist ein neues gezieltes GO für eine begrenzte Lesepfad-/Abschlussdiagnose mit
-vollständiger sicherer Fehlerklassifizierung. Kein alter Schreibvorgang darf
-wiederholt werden. Danach bleibt die vollständige End500-/Restwachstumsabnahme nötig.
+**Nicht freigabereif für einen neuen Mock500-Gesamtversuch.** Der tatsächliche
+Serviceabschluss C ist jetzt unabhängig bestanden; historische fehlende Quittungen
+bleiben UNKNOWN. Die neue End500-Diagnose C ist wegen des Storage-Lesetimeouts
+nach369/500 unvollständig. Nächster notwendiger Schritt ist ein neues gezieltes GO
+für die Ursache des Lese-Timeouts und der gemeinsamen Beobachtungslücke, mit
+begrenzter frischer Gegenprüfung nur soweit notwendig. Kein alter unbestätigter
+Schreibvorgang darf wiederholt werden; keine pauschale Timeout-Erhöhung.
+Danach bleibt eine neu freizugebende vollständige End500-Abnahme erforderlich.
 
 Für den späteren Mock500-Start sind außerdem vier vorhandene Bindungen anzupassen:
 alter4-Blob-Auth-Beleg auf die bereits geprüften12atomaren D-/EU-ACKs,
@@ -329,7 +417,7 @@ Quell-/Worker-/Auth-/RAM-Abnahme und vollständiges gültiges3h+30min-Zeitfenste
 CI auf Codekopf `e1a62acc`: [lokale Integrität40699087786](https://github.com/ernisch/helmut-pilot/actions/runs/40699087786)
 grün; [Pflicht-CI40699087763](https://github.com/ernisch/helmut-pilot/actions/runs/40699087763)
 ebenfalls abgeschlossen/grün (Browserlauf gemäß Prüfplan übersprungen).
-Dies gilt für `e1a62acc`, nicht automatisch für `f8702304` oder den aktuellen Code `d2920d6d`.
+Dies gilt für `e1a62acc`, nicht automatisch für `f8702304` oder den damaligen Code `d2920d6d`.
 Neue Kopf-CI wird nach dem Push getrennt ausgewiesen; keine lokale Gesamtsuite
 wiederholt. Der folgende Kopf `d823e95f` hat177/178Offline-Suiten bestanden;
 allein `current-state-groesse-test.js` scheiterte an31.601>30.000Zeichen.
@@ -337,6 +425,12 @@ Die beiden historischen12.10.-Abschnitte wurden wortgleich archiviert
 (SHA256`72622750e75961613b0ce7f7d37ad6cba61c30a5dabf45ed0aafd5233ae55d51`).
 Der gezielte Größentest bestand danach4/4 bei25.901Zeichen; keine vollständige
 lokale CI-Wiederholung. Neue Berichtsergänzungen bleiben unter der unveränderten Grenze.
+Auf dem späteren Kopf `f534a1f7` sind Pflicht-CI
+[40723672752](https://github.com/ernisch/helmut-pilot/actions/runs/40723672752) und Integrität
+[40723672779](https://github.com/ernisch/helmut-pilot/actions/runs/40723672779) abgeschlossen/grün;
+Browser gemäß Prüfplan übersprungen. Das ist kein CI-Beleg für `ee36720d`.
+Neue Kopf-CI wird nach dem Push getrennt ausgewiesen; keine vollständige lokale
+Suite oder manuelle CI-Wiederholung gestartet.
 Lokale Belege ersetzen keine Pflicht-CI. Der bekannte unveränderte Vercel-Konfigurationsfehler bleibt
 außerhalb dieses Sprints: `functions.api/index.js.includeFiles` hat2.915Zeichen,
 zulässig sind256. Keine Preview-/Production-Bereitschaft behauptet.
