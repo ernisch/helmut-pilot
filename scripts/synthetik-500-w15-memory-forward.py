@@ -38,6 +38,9 @@ class Watch(M.Supervisor):
                                     processes.append({'pid':int(pid),'name':(p/'comm').read_text().strip(),
                                       'Rss':int(status.get('VmRSS','0 kB').split()[0])*1024,
                                       'HighWaterRSS':int(status.get('VmHWM','0 kB').split()[0])*1024,
+                                      'RssAnon':int(status.get('RssAnon','0 kB').split()[0])*1024,
+                                      'RssFile':int(status.get('RssFile','0 kB').split()[0])*1024,
+                                      'RssShmem':int(status.get('RssShmem','0 kB').split()[0])*1024,
                                       'Pss':None,'pssReadPermitted':False})
                                 except(FileNotFoundError,ProcessLookupError,PermissionError):pass
                         record['processes']=processes
@@ -82,6 +85,17 @@ def inner(w,action,seconds):
     command='umask 077; echo $$ >'+BASE+'/state/'+action+'.pid; exec timeout --signal=TERM --kill-after=5s '+str(seconds-10)+'s env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --max-old-space-size='+str(BUDGET['nodeOldSpaceMiB'])+' --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/synthetik-500-w15-memory-forward.js '+action
     w.stage(M.DOCKER+['exec','--user','1000:1000',CONTAINER,'sh','-c',command],action,seconds)
 def main():
+    target=json.loads((ROOT/'scripts/fixtures/w15-atomic-integration-target.json').read_text())
+    integration=json.loads((pathlib.Path(target['work'])/'INTEGRATION_RESULT.SAFE.json').read_text())
+    assert integration['status']=='PASS_PREPARED0_ATOMIC_COMPONENTS_RAM_PENDING'and integration['activeProfiles']==0
+    assert integration['originalSourceUnchanged']is True and integration['units']==0
+    parser=json.loads((ASSETS/'sql-preflight-atomic-a/SQL_PREFLIGHT.SAFE.json').read_text())
+    assert parser['status']=='PASS_ALL_GENERATED_DIAGNOSTIC_SQL_PARSE_DESCRIBE_NO_EXECUTION'and parser['plannedDatabase']==DB
+    for name,expected in parser['sourcePins'].items():assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==expected,'atomic-sql-reviewed-source-drift'
+    review=json.loads(pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/MEMORY_PRESTART_REVIEW_FINAL.SAFE.json').read_text())
+    assert review['status']=='PASS_PRESTART_ATOMIC_END500_ALLOCATION_ONLY'
+    for pin in review['sourcePins']:
+        p=ROOT/pin['path'];b=p.read_bytes();assert len(b)==pin['bytes']and hashlib.sha256(b).hexdigest()==pin['sha256'],'atomic-memory-reviewed-source-drift'
     assert not WORK.exists(),'w15-forward-once-only'
     os.umask(0o077);WORK.mkdir(mode=0o700)
     created=False;w=None;failure=None;result=None;zero=False
