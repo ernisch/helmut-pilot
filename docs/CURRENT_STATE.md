@@ -18,20 +18,21 @@ ist keine Funktionsgröße. GitHub-Gesamtpeak umfasst lokalePG/PGR/Node/Cache;
 Vercel-Funktionsspeicher und entfernteSupabaseDB sind getrennte Messräume.
 Kein Funktionsbedarfsbeleg>2GB, keine Upgradeempfehlung/Umstellung/Production-Aktion.
 
-## W15: Quelle frisch bestätigt, Transfer vorbereitet — GO offen
+## W15: Transfer-GO erteilt, Quellstart technisch offen
 
-Hauptthread bestätigt12Dateien frisch:242.570.240Bytes,alleSHA/Größen/Rechte/Owner
-PASS;QuelleGPGbereit/2.084.634.624Bytesfrei.CI975auf66efb89aerfolgreich.
-DieserCloudchat hat noch keineW15-Nutzdaten empfangen.KeineÜbertragung gestartet.
-Empfänger7E3998A6C2CB948C69A2EE51F4267ABF26796EDC,RSA3072,privaterKeypassphrasen-
-geschützt außerhalbGit;lokaleEntschlüsselung/ExportrestorePASS.Neueverschlüsselte
-Key-RecoveryunterbestehendemunabhängiggeprüftemDCFD…A8E4vorbereitet,nichtuploadet.
-GewählterWeg nachGO:Cloud→bestehenderprivaterDriveordner→dieseCloud;keinMac,
-kein neuerDienst.ErstKey-Rücksicherungrücklesen,dann12Dateien/16MiBCipherteile.
-Originale/Belegebleiben.KeinTest-GO;RAMv32560MCap/2048MPeak unverändert.
-Controller-Kontextbindung undEmpfangsprüfung vorbereitet,13+7gezielteFällePASS,
-kleineechteGPG-Probe nurmit12erfundenenDateienpositiv.KeinEnd500/Mock500-Lauf.
-[Konkreter Weg, Empfänger, Risiken, Nachkontrolle und Freigabebindung](betrieb/w15-end500-uebertragungsfreigabe-20261029.md).
+Public-Key und verschlüsseltes Empfängerbackup nach ausdrücklichem GO privat
+in Drive gespeichert, vollständig rückgelesen: Größen/SHA PASS. Privater Key
+bleibt außerhalb Git; externe Entschlüsselung des neuen Backups ungeprüft.
+Noch keine W15-Datei empfangen. Hauptthread hält zwölf frisch bestätigte
+Originale/242.570.240 Bytes. Hier nur lesender Chatzugriff, kein Befehlsstart;
+lokale Inventur SOURCE_UNAVAILABLE. Quellauftrag und Exporthelfer vorbereitet.
+Kein weiteres Transfer-GO nötig; vorbereiteten Auftrag im Hauptthread auslösen.
+Relocation/Backup-Auswahlplan und 10+9+9 neue fiktive Schutzfälle PASS.
+Controlleranschluss, DB-Export unter fortlaufender RAM-Messung, echter Restore
+und Runnernachweise offen. End500 nicht ausführbar; kein Test-GO.
+RAM-v3/historische Ergebnisse unverändert. 6bee9957 auf Draft-PR975 gepusht;
+CI zuletzt laufend, älterer Kopf 66efb89a grün.
+[Rücklesebeleg, Quellauftrag und Restblocker](betrieb/w15-end500-quellstart-nach-go-20261029.md).
 
 ## Historischer W15-D-Befund vor obiger GitHub-Vorbereitung (28.10.)
 
