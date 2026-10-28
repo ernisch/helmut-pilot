@@ -13,6 +13,10 @@ def stage_inner(w,action,seconds=130):
     w.stage(M.DOCKER+['exec','--user','1000:1000',CONTAINER,'sh','-c',command], 'run'if action=='atomic-check'else action,seconds)
 
 def main():
+    review_path=pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/PRESTART_REVIEW.SAFE.json')
+    review=json.loads(review_path.read_text());assert review['status']=='PASS_PRESTART_SCOPED_ATOMIC_PREPARED0_ONLY'
+    for pin in review['sourcePins']:
+        p=ROOT/pin['path'];b=p.read_bytes();assert len(b)==pin['bytes']and hashlib.sha256(b).hexdigest()==pin['sha256'],'atomic-reviewed-source-drift'
     assert not WORK.exists(),'atomic-prepared0-no-rerun'
     os.umask(0o077);WORK.mkdir(mode=0o700)
     created=False;w=None;failure=None;zero=None;before=None
