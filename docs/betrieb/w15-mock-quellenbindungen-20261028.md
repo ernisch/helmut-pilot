@@ -1,3 +1,61 @@
+# Aktuell: DB-Zuordnung korrigiert; neue RAM-Diagnose an Statistik-SQL gestoppt
+
+**FAIL der neuen Diagnose B, kein neuer Mock500-Vollauf.** Python-DB-Fehler
+behoben: alle vier importierten `M.read`-Aufrufstellen einschließlich Abschluss
+übergeben `database=DB`; administrative Anlage ausdrücklich `postgres`.
+Gezielte reine Routingvorprüfung einmalPASS: fünfAufrufstellen, echter
+unveränderter Guard mit aufzeichnendem Transport,0DB-Abfragen; implizites altes
+und falsches Ziel werden weiterhin vor Transport abgewiesen. Unabhängiger
+statischer Review der fertigen RevisionPASS. Frisches ZielB statt Wiederholung.
+
+## Tatsächlich erreichte neue Diagnose
+
+28.10., Beginn der Run-Phase12:42:16 Europe/Istanbul/09:42:16UTC.
+Originalrestore atomar inaktiv; vollständiger End500-Datenbestand anschließend
+in nativen Tabellen committed und kontrolliert: **3501native Postimagevergleiche**,
+500Evidence,500privateDstore,1500Ergebnis- und1000privateD/R-Zeilen,6000Usage.
+Die ergänzten Daten bleiben ausdrücklich inert und sind kein Ausführungs-,
+Modell- oder Qualitätsnachweis. Der vorangegangene31-Punkte-Datenreview bleibt
+übernommen, keine Konstruktor-/Quellen-/Auth-API-Serie wiederholt.
+
+**Erstfehler:** Erste `databaseStats()`-Abfrage scheitert syntaktisch an
+`::regclassor relid`. Zwei SQL-Textfragmente wurden ohne Leerzeichen verbunden
+(`scripts/synthetik-500-w15-memory-forward.js`, Autovacuum-Statistik).
+Das vorhandene PostgreSQL-Fehlerlog bestätigt09:42:16.152UTC/12:42:16.152Istanbul
+Syntaxfehler an Zeichen924. Das war ein Fehler der neuen Messhülle.
+Der ursprüngliche Python-DB-Fehler trat nicht erneut auf.
+
+Abbruch **vor T-Decodierung, geladenem Command und erstem Mess-CAS**.
+0CAS/0Units/0Mockantworten/0Modellaufrufe, kein weiterer Gesamtversuch.
+Peak **627245056B**, verbleibend **1420754944B/69,37%**, hart2048000000B,
+Swap0,allemax/OOM-Ereignisse0. Diese Zahlen betreffen Seed und abgebrochenen
+Anfang; kein vollständiger gemeinsamer Speicher-/GC-/WAL-Zyklusnachweis.
+Keine Aussage, die geplanten lokalen Ressourcenbudgets seien erfolgreich validiert.
+
+Automatische Abschlussprüfung funktioniert nun:0aktiv. Genau eine zusätzliche
+unabhängige READ-ONLY-Sicht bestätigt **0aktiv/500Profile/501Identitäten/6000Usage**
+und die vier nativen Seed-Mengen. Derselbe ursprüngliche Kernelpeak wurde
+unabhängig bestätigt, ohne Neustart oder Cachebereinigung. Alle Daten und alten
+Fehlerbelege bleiben erhalten. Keine Reparatur oder Wiederholung nach FAIL.
+
+**Nächste konkrete Arbeit:** Fehlendes Leerzeichen in der Statistikabfrage
+korrigieren; erzeugtes Metadaten-SQL vor einem neuen Diagnosestart gezielt vom
+vorhandenen PostgreSQL-Parser prüfen lassen. Erst danach frisches Diagnoseziel
+und gemeinsame End500-Speichermessung. Keine neue Architektur oder pauschale
+Testwiederholung. Die bedingte Freigabe für einen Mock500-Gesamtversuch wurde
+nicht genutzt; wegen der Fehlerregel gestoppt.
+
+Codefix `dfc9962f`; App-/Sicherheits-/Geschäftslogik unverändert. Kein neues
+CI-Grün behauptet, keine vollständige CI wiederholt. Auth-Maxima-/SIGTERM-
+Reportingtest aus dem vorigen SprintPASS übernommen. PR969/971/972ungemergt;
+keine Production-, Budget-, Hetzner- oder kostenpflichtigen Ressourcenaktionen.
+
+[Ergebnis, unabhängiger Nullnachweis und Nachweisgrenzen](belege/w15-processing-20261027/FORWARD_DIAGNOSTIC_B_20261028.SAFE.json).
+
+---
+
+## Historischer Vorbereitungsfehler vor dem neuen GO
+
 # Neuer Vorbereitungssprint: vor Speicherprobe abgebrochen
 
 **FAIL im Diagnosecontroller; kein neuer Mock500-Versuch.** Der neue Controller

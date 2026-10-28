@@ -1,17 +1,17 @@
 # CURRENT STATE — Helmut
 
-## W15:VorbereitungFAIL vor RAM-Probe (28.10.)
+## W15:DB-FixPASS;RAM-DiagnoseB SQL-FAIL (28.10.)
 
-PR972/971/969ungemergt;keinweitererMock500gestartet.
-End500Fixture31PASS:Auth13616853B/6000Usage,alle5139altenunverändert.
-Auth-Maxima/SIGTERM-Beleghelper1xPASS;OriginalAuthbeobachterbytegleich.
-DiagnosecontrollerFAIL:importiertePython-DB-Defaultsbleibenalt,trotzM.DB-Wechsel.
-SchutzassertstopptvorSQL;End500Seed/0CAS/0Units/0Modelle.
-Frischunabhängig0aktiv/500Profile/501Identitäten/5000Usagebestätigt.
-Peak165928960BnurVorbereitung;keinneuerRAM-/500Beleg.KeinRetry.
-KorrekturvorneuemDiagnoseziel:DBexplizitdurchreichen;nachFAILnichtumgesetzt.
-Historisch28c:69Units,Peak1640103936B/19,9168%ReserveFAILbleibterhalten.
-[Belege/Restarbeit](betrieb/w15-mock-quellenbindungen-20261028.md).
+PR972/971/969ungemergt;Codefixdfc9962f,keinMock500gestartet.
+Alle5DB-Callsiteroutinggeprüft+unabhängigPASS,inklAbschluss;Guardunverändert.
+FrischerEnd500Seed3501nativePostimagesPASS;6000Usage,1500inerteErgebniszeilen.
+ErstfehlerStatistik-SQL:::regclassor relid(fehlendesLeerzeichen),vorDecoder/0CAS.
+Peak627245056BnurSeed/Start;Reserve69,37%,Swap/OOM0;kein500RAMnachweis.
+Abschluss0aktiv;frischunabhängig0/500Profile/501Identitäten/6000Usagebestätigt.
+KeinRetry.NächsteKorrektur:SQLLeerzeichen+ParservorprüfungvorfrischemZiel.
+Auth-Maxima/SIGTERM-HelperPASSübernommen;Originale/alteFAILserhalten.
+AppbasisCI40534410137unverändert;keinneuesCI-Grün/ProductionPASS.
+[Belege/Nachweisgrenzen](betrieb/w15-mock-quellenbindungen-20261028.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
