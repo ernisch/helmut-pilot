@@ -15,8 +15,8 @@ for c in calls:
 spec=importlib.util.spec_from_file_location('forward_routing_only',driver)
 n=importlib.util.module_from_spec(spec);spec.loader.exec_module(n)
 assert not n.WORK.exists(),'w15-routing-must-precede-new-attempt'
-assert n.DB=='helmut_w15_memory_forward_20261028b'
-assert n.CONTAINER=='w15-memory-forward-20261028b'
+assert n.DB=='helmut_w15_memory_forward_20261028c'
+assert n.CONTAINER=='w15-memory-forward-20261028c'
 js=(ROOT/'scripts/synthetik-500-w15-memory-forward.js').read_text()
 assert n.DB in js and n.BASE in js
 old_default=inspect.signature(n.M.read).parameters['database'].default

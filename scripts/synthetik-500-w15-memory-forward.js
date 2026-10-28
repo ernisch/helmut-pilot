@@ -3,7 +3,7 @@
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
 const { performance, PerformanceObserver, constants } = require("node:perf_hooks");
-const BASE = "/tmp/w15-memory-forward-20261028b", STATE = path.join(BASE, "state"), DB = "helmut_w15_memory_forward_20261028b";
+const BASE = "/tmp/w15-memory-forward-20261028c", STATE = path.join(BASE, "state"), DB = "helmut_w15_memory_forward_20261028c";
 const Budget = require("./fixtures/w15-local-memory-budget.json"), AuthReport = require("./fixtures/w15-auth-measurement-report");
 const sha = x => crypto.createHash("sha256").update(x).digest("hex");
 const file = n => path.join(STATE, n);
@@ -15,8 +15,8 @@ function query(sql) {
     env:{PATH:"/usr/bin:/bin",LANG:"C.UTF-8"}});
   assert.equal(r.status,0,"w15-forward-readonly-sql");return JSON.parse(r.stdout.trim());
 }
-function databaseStats() {
-  return query("select jsonb_build_object('active',(select count(*)from public.mandate_profiles where aktiv),"
+function databaseStatsSQL() {
+  return "select jsonb_build_object('active',(select count(*)from public.mandate_profiles where aktiv),"
     +"'tempBytes',temp_bytes,'tempFiles',temp_files,'walBytes',(select wal_bytes::text from pg_stat_wal),"
     +"'walPhysicalBytes',(select sum(size)from pg_ls_waldir()where name~'^[0-9A-F]{24}$'),"
     +"'walOldest',(select min(name)from pg_ls_waldir()where name~'^[0-9A-F]{24}$'),"
@@ -26,10 +26,11 @@ function databaseStats() {
     +"'storeBytes',pg_total_relation_size('public.helmut_store'),'briefingBytes',pg_total_relation_size('public.briefings'),"
     +"'toastBytes',(select pg_total_relation_size(reltoastrelid)from pg_class where oid='public.helmut_store'::regclass),"
     +"'autovacuums',(select coalesce(sum(autovacuum_count),0)from pg_stat_all_tables where relid='public.helmut_store'::regclass"
-    +"or relid=(select reltoastrelid from pg_class where oid='public.helmut_store'::regclass)),"
+    +" or relid=(select reltoastrelid from pg_class where oid='public.helmut_store'::regclass)),"
     +"'settings',(select jsonb_object_agg(name,setting)from pg_settings where name in('work_mem','max_wal_size','autovacuum_naptime',"
-    +"'fsync','full_page_writes','synchronous_commit','autovacuum','archive_mode','wal_keep_size')))from pg_stat_database where datname=current_database();");
+    +"'fsync','full_page_writes','synchronous_commit','autovacuum','archive_mode','wal_keep_size')))from pg_stat_database where datname=current_database();";
 }
+function databaseStats() { return query(databaseStatsSQL()); }
 function setup() {
   const secret=crypto.randomBytes(48).toString("hex"),b64=x=>Buffer.from(JSON.stringify(x)).toString("base64url"),now=Math.floor(Date.now()/1000);
   const header=b64({alg:"HS256",typ:"JWT"})+"."+b64({role:"service_role",iat:now,exp:now+3600});
@@ -48,9 +49,9 @@ async function gateway() {
   }
   assert(ready,"w15-forward-postgrest-schema-readiness");
   const g=await require("./fixtures/z3-plattform").starteDatenbankTor({postgrestPort:3218});
-  save("gateway.PRIVATE.json",{url:g.url});
   fs.writeFileSync(file("gateway.pid"),String(process.pid),{flag:"wx",mode:0o600});
   process.once("SIGTERM",async()=>{await g.stoppe();process.exit(0);});
+  save("gateway.PRIVATE.json",{url:g.url});
 }
 async function run() {
   const c=read("configuration.PRIVATE.json"),g=read("gateway.PRIVATE.json"),bound=read("END500_MEMORY_BOUND.SAFE.json");
@@ -139,3 +140,4 @@ async function run() {
 async function main(action){assert(require.cache[require.resolve("./lokaler-netzschutz")]);assert.deepEqual(require("./lokaler-netzschutz").pruefe(process.env),[]);
   assert(["setup","gateway","run"].includes(action));return({setup,gateway,run})[action]();}
 if(require.main===module)main(process.argv[2]).catch(()=>{console.error("w15-forward-first-failure");process.exitCode=1;});
+module.exports = { databaseStatsSQL, database: DB, base: BASE };

@@ -3,10 +3,10 @@
 import datetime,hashlib,importlib.util,json,os,pathlib,posixpath,shutil,subprocess,threading,time
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ASSETS=pathlib.Path('/workspace/shared/helmut-w15-memory-forward-20261028')
-WORK=ASSETS/'diagnostic-run-b'
-BASE='/tmp/w15-memory-forward-20261028b'
-DB='helmut_w15_memory_forward_20261028b'
-CONTAINER='w15-memory-forward-20261028b'
+WORK=ASSETS/'diagnostic-run-c'
+BASE='/tmp/w15-memory-forward-20261028c'
+DB='helmut_w15_memory_forward_20261028c'
+CONTAINER='w15-memory-forward-20261028c'
 spec=importlib.util.spec_from_file_location('existing_w15_controller',ROOT/'scripts/synthetik-500-w15-full500-controller.py')
 M=importlib.util.module_from_spec(spec);spec.loader.exec_module(M)
 M.WORK=WORK;M.BASE=BASE;M.DB=DB;M.CONTAINER=CONTAINER
