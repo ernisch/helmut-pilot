@@ -1,0 +1,187 @@
+{
+  "schema": "helmut-w15-full500-independent-postfailure-zero-no-output/1",
+  "status": "PASS_POST_FAILURE_ZERO_AND_NO_OUTPUT_VERIFIED",
+  "observedAtUTC": "2026-10-28T05:12:02.205593+00:00",
+  "reviewer": "required_data_audit",
+  "scope": "Independent repeatable-read READ ONLY target/source observations and existing receipt/file metadata only. This is a failed-attempt zero/no-output verification, never a successful500-unit result audit.",
+  "checks": [
+    {
+      "name": "exact target identity and READ ONLY observation",
+      "status": "PASS"
+    },
+    {
+      "name": "all500synthetic target profiles remain inactive with501identities",
+      "status": "PASS"
+    },
+    {
+      "name": "no stored visible or private draft/review output",
+      "status": "PASS"
+    },
+    {
+      "name": "no fresh full500 command/evidence or journal operation",
+      "status": "PASS"
+    },
+    {
+      "name": "no concurrent target session",
+      "status": "PASS"
+    },
+    {
+      "name": "original source before-after receipts byte equal",
+      "status": "PASS"
+    },
+    {
+      "name": "fresh original source hashes agree with controller before snapshot",
+      "status": "PASS"
+    },
+    {
+      "name": "target factual profiles and identities match original",
+      "status": "PASS"
+    },
+    {
+      "name": "no retained fixture activation preparation or runtime result artifacts",
+      "status": "PASS"
+    },
+    {
+      "name": "first material failure preserved and no retry allowed",
+      "status": "PASS"
+    },
+    {
+      "name": "prerequisite-only prior audit is not a17000check success",
+      "status": "PASS"
+    }
+  ],
+  "controllerEvidence": {
+    "path": "/workspace/shared/helmut-w15-full500-20261028/CONTROLLER_RESULT.SAFE.json",
+    "sha256": "ae4ed55a569774fe5d6b48b0a9e5886d835a6fd4ce6e3eb373835379ea056bec",
+    "status": "FAIL_OR_UNKNOWN",
+    "failure": {
+      "type": "RuntimeError",
+      "reason": "full500-stage-failed:materials:1",
+      "retryAllowed": false
+    },
+    "cleanupConfirmedZero": true,
+    "recoveryOccurred": false,
+    "firstFailureReason": "ai-text-source-reference",
+    "lastReportedStage": "rebind-current-calendar-originals",
+    "firstFailureOrControllerReceiptModified": false
+  },
+  "zeroEvidence": {
+    "database": "helmut_w15_full500_20261028",
+    "mandateProfiles": 500,
+    "syntheticProfiles": 500,
+    "active": 0,
+    "identities": 501,
+    "cohort": {
+      "bb": 50,
+      "be": 120,
+      "bt": 330
+    },
+    "briefingsTotal": 0,
+    "visibleAreaRows": 0,
+    "privateDraftReviewRows": 0,
+    "newFull500StoreRows": 0,
+    "newFull500Operations": 0,
+    "otherTargetSessions": 0,
+    "unitExecutions": 0,
+    "mockResponses": 0,
+    "paidModelCalls": 0,
+    "activationReceiptPresent": false
+  },
+  "expectedPositionClassification": {
+    "expectedOwners": 500,
+    "areasPerOwner": 3,
+    "expectedPositions": 1500,
+    "observedStoredRows": 0,
+    "missing": 1500,
+    "empty": 0,
+    "duplicate": 0,
+    "technicallyInvalid": null,
+    "unusable": null,
+    "assessment": {
+      "missing": "All1500 expected positions absent because the complete briefings table is empty.",
+      "empty": "0 persisted rows with empty content; absent rows are classified as missing.",
+      "duplicate": "0 duplicate persisted rows; complete briefings table is empty.",
+      "technicallyInvalid": "NOT_ASSESSED_NO_OUTPUT",
+      "unusable": "NOT_ASSESSED_NO_OUTPUT"
+    },
+    "perPositionContentValidatorsExecuted": 0,
+    "notA17000CheckAudit": true
+  },
+  "priorAuditorQualification": {
+    "status": "FAIL_OR_UNKNOWN_AUDIT_PREREQUISITE",
+    "unitChecksCompleted": 0,
+    "unitChecksRequired": 17000,
+    "itsZeroCategoryCountersAreNotCompleteClassification": true,
+    "priorReportUnmodified": true
+  },
+  "originalPreservation": {
+    "beforeAfterByteEqual": true,
+    "beforeSHA256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27",
+    "afterSHA256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27",
+    "bytesEach": 309,
+    "freshOriginalObservation": {
+      "active": 500,
+      "cohort": {
+        "bb": 50,
+        "be": 120,
+        "bt": 330
+      },
+      "koHash": "c12ba16811c3d4220409229f523e45ea159203bd2be6c32523198ea526114890",
+      "rawHash": "c44e74d5463f9a7fdda7e07e3bb125b7ac2e316065e2bf26939e7541b3944e17",
+      "database": "helmut_w15_input_20261027",
+      "storeHash": "b096fa764c03a2fdbbb36e3d1d9e14ed34da7cd8a1ff32e354d132a4a7b7b284",
+      "storeRows": 6,
+      "synthetic": 500,
+      "identities": 501,
+      "profileHash": "fafba5723cb6be289b5bf092acbf439e9bd7247c96ab970228e99b3aaf7bf675",
+      "identityHash": "b298a5014f7c574d0e28f27d16fb729ced5090e3b08c4de30b64f3f2f9a0ef6c",
+      "briefingsTotal": 0,
+      "mandateProfiles": 500,
+      "visibleAreaRows": 0,
+      "newFull500StoreRows": 0,
+      "otherTargetSessions": 0,
+      "transactionReadOnly": "on",
+      "newFull500Operations": 0,
+      "privateDraftReviewRows": 0,
+      "profileProjectedActiveHash": "fafba5723cb6be289b5bf092acbf439e9bd7247c96ab970228e99b3aaf7bf675"
+    },
+    "factualTargetProfilesMatchOriginalAfterSELECTOnlyActiveProjection": true,
+    "originalSourceDatabaseModified": false
+  },
+  "partialTargetPreparation": {
+    "rawHash": "e71d94f97de4208981dd13af8846df14ec1ffe07a7dc8fd92042c4745b9fc60f",
+    "originalRawHash": "c44e74d5463f9a7fdda7e07e3bb125b7ac2e316065e2bf26939e7541b3944e17",
+    "storeHash": "d5dc6b1073b955183d4cfdc6a9111767cf910216a0c0a7a7b7c6c5ca1381e8e1",
+    "originalStoreHash": "b096fa764c03a2fdbbb36e3d1d9e14ed34da7cd8a1ff32e354d132a4a7b7b284",
+    "targetRawAndStoreDifferFromOriginal": true,
+    "qualification": "Target contains partial local preparation changes before failure; do not describe it as an unchanged raw restore. No new full500 operation, activation or result rows exist. No repair or rollback was attempted by this reviewer."
+  },
+  "absentHostArtifacts": [
+    "mock-fixtures.PRIVATE.json",
+    "audit-inputs.PRIVATE.json",
+    "cleanup-context.PRIVATE.json",
+    "ACTIVATION.SAFE.json",
+    "processing-materials.PRIVATE.json",
+    "PROCESSING_INPUTS.SAFE.json",
+    "PREPARE.SAFE.json",
+    "FULL500_RUNTIME_RESULT.SAFE.json",
+    "FULL500_RUNTIME_FAILURE.SAFE.json"
+  ],
+  "actionsByReviewer": {
+    "readOnlyDatabaseQueries": 2,
+    "databaseWrites": 0,
+    "applicationStarts": 0,
+    "tests": 0,
+    "restores": 0,
+    "profileActivations": 0,
+    "dispatches": 0,
+    "signals": 0,
+    "repairs": 0,
+    "retries": 0
+  },
+  "full500Accepted": false,
+  "performanceAccepted": false,
+  "realModelQualityAccepted": false,
+  "productionProof": false,
+  "freshUnitsAuthorized": false
+}
