@@ -1,0 +1,131 @@
+{
+  "schema": "helmut-w15-durable-abort-and-allocation-sprint/1",
+  "status": "PARTIAL_SIGNAL_PASS_ALLOCATION_HELPER_FAIL_STOPPED",
+  "testedSourceCommit": "3a4a64b1",
+  "observedDateUTC": "2026-10-28",
+  "completedSignalProof": {
+    "status": "PASS_REAL_DOCKER_INNER_SIGTERM_AND_DURABLE_AUTH_JOURNAL",
+    "realDockerSupervisor": true,
+    "realInnerSIGTERMReceipt": true,
+    "actualDockerStageExitCode": 143,
+    "hostDockerClientKilledBeforeInnerReceipt": false,
+    "innerStopSIGKILLFallbackUsed": false,
+    "durableRecords": 23,
+    "reusedHistoricalCompletedFullCalls": 4,
+    "reusedHistoricalCompletedCASWrites": 4,
+    "replayedFinishedRawRows": 8,
+    "unfinishedFullCalls": 1,
+    "unfinishedCASWrites": 1,
+    "unfinishedTimesFabricated": false,
+    "reusedMaximumFullCallMs": 859.089335,
+    "reusedMaximumCASMs": 663.495627,
+    "newAuthAPICalls": 0,
+    "newDatabaseCreated": false,
+    "unitExecutions": 0,
+    "providerCalls": 0,
+    "directoryMode": "0700",
+    "fileModes": "0600",
+    "independentReviewChecks": 12,
+    "proofPin": {
+      "bytes": 1921,
+      "sha256": "2370667cac8451238b1ef3c3a76aa60060d856744362420ec8939f100b291425"
+    },
+    "independentReviewPin": {
+      "bytes": 12185,
+      "sha256": "f491e85803b76920219800de13a150dec707f98b05955dbce88a2d865696b043"
+    }
+  },
+  "reportingChanges": {
+    "authObserverAndAssessmentBodiesByteIdentical": true,
+    "sourceReuseMeansNoNewRealAuthAPIProof": true,
+    "appendAndFdatasyncOnAuthBeginAndFinish": true,
+    "pendingRowsRemainUnknown": true,
+    "sameProtectedStateBindMountedToHost": true,
+    "innerReadyAfterActualSignalHandlerInstalled": true,
+    "verifiedInnerPIDStartTicksAndGroup": true,
+    "preStartStopMarkerAndNoFurtherUnitOrCASAfterStop": true,
+    "stopUnknownReceiptSeparateFromFirstFailure": true,
+    "nativeBoundZeroCleanupNotSkippedByStopHelperError": true,
+    "nodeMemoryAndGCJournalWired": true,
+    "databaseWALTempCheckpointsJournalWired": true,
+    "full500TelemetryUnderLoadNotYetProved": true
+  },
+  "allocationCheck": {
+    "status": "FAIL_OR_UNKNOWN",
+    "attempts": 1,
+    "plannedRequests": 32,
+    "actualHTTPRequestCalls": 0,
+    "completedGETPATCHPairs": 0,
+    "driverExitCode": 1,
+    "firstFailure": "ENOTDIR: file-mode driver used process.argv[1] (the script filename) as its base instead of process.argv[2]. Failure before configuration read completed, readiness check or first HTTP request.",
+    "failedSourceSHA256": "21ec01ba257cb33d9caa74b5057f4b0a6755288bdffd6d4c2171336df508370e",
+    "failedSourceUnchangedAfterExecution": true,
+    "previousStaticReviewMissedCLIArgumentBinding": true,
+    "errorIsHarnessNotProvenPostgrestMemoryDefect": true,
+    "databaseChanged": false,
+    "beforeAfterEqual": true,
+    "serverTransactionEnd": "rollback",
+    "nativeAuthAPICalls": 0,
+    "nativeCASWrites": 0,
+    "units": 0,
+    "mockResponses": 0,
+    "modelCalls": 0,
+    "maximumSampledCommonCurrentBytes": 485908480,
+    "maximumSampledPostgrestRSSBytes": 12673024,
+    "samples": 5,
+    "memoryScope": "STARTUP_ONLY_NO_REQUESTS; existing C cgroup historical lifetime peak is not replaced, reset, subtracted or called a new RAM PASS.",
+    "PostgrestGCPolicyChanged": false,
+    "heapOrCacheCauseProved": false,
+    "resultPin": {
+      "bytes": 939,
+      "sha256": "d671f856e5f2ef3d944e2bafd700ea805bceec93f2d717f2488e81d77b715c63"
+    },
+    "stderrPin": {
+      "bytes": 952,
+      "sha256": "5a6fc5f456a597cee9df16638542b34b835b3289d21e4649c1047bf40b4fd1e1"
+    },
+    "independentReviewChecks": 10,
+    "independentReviewPin": {
+      "bytes": 10324,
+      "sha256": "4db2080cf597c93dbe6ccdba394c8002223ca2bf016f702cf674784b2968b19c"
+    }
+  },
+  "closure": {
+    "independentReadOnlySnapshots": 1,
+    "activeProfiles": 0,
+    "mandateProfiles": 500,
+    "identities": 501,
+    "usageRows": 6000,
+    "retainedMemoryProbeSequence": 247,
+    "nativeSeedCounts": {
+      "evidenceRows": 500,
+      "privateDraftStoreRows": 500,
+      "resultRows": 1500,
+      "privateDraftReviewRows": 1000
+    },
+    "seedRowsRemainExplicitlyInert": true,
+    "newPostgrestProcessExited": true,
+    "newDriverProcessGroupExited": true,
+    "snapshotPin": {
+      "bytes": 1875,
+      "sha256": "416a9c1555f63861c97e29efbeeb6f8c61b429eeb5c7699edb7918a93063ad59"
+    }
+  },
+  "executionBoundary": {
+    "newEnd500DiagnosticAttempts": 0,
+    "newFull500Attempts": 0,
+    "profileActivations": 0,
+    "postFailureCodeCorrection": false,
+    "retry": false,
+    "resume": false,
+    "forcedGCOrCacheClearOrAccountingSubtraction": false,
+    "productionChange": false,
+    "budgetChange": false,
+    "paidModelOrResource": false,
+    "merge": false
+  },
+  "reusedProofs": "Existing source500/500, Auth API checks, original data receipt and31-check inert End500 model preserved, not rerun.",
+  "preparedNotExecuted": "Fresh diagnostic D namespace and incremental SQL preflight with3508 prior exact hashes and one changed CREATE DATABASE statement. No D parser execution, large DB or loaded-command stress attempted.",
+  "open": "The historical C reserve FAIL remains unchanged: peak1644748800 bytes and reserve403251200 bytes=19.69percent. PostgREST/Node/PostgreSQL cause and safe memory reduction remain unproved.",
+  "nextNecessaryStep": "A new GO is required after this execution FAIL: correct only the driver CLI argument, check the real file invocation without requests first, then authorize one bounded allocation observation. No new End500 or Full500 before actual cause, correction and independent reserve PASS."
+}

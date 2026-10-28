@@ -1,3 +1,89 @@
+# Aktuell: dauerhafte Abbruchprotokollierung PASS; Ursachenprüfung am CLI-Aufruf gestoppt
+
+**Teilweise abgeschlossen, FAIL des neuen Hilfsprogramms.** Der echte innere
+Docker-SIGTERM-Pfad ist gezielt und unabhängig bestanden. Die anschließende kleine
+PostgREST-Allokationsprüfung scheiterte vor dem ersten HTTP-Aufruf an einer falschen
+CLI-Argumentposition. Gemäß Stopregel keine Reparatur oder Wiederholung nach diesem
+Ausführungsfehler. **End500-Diagnose D und Mock500-Vollauf wurden nicht gestartet.**
+Code `3a4a64b1`, PR972 bleibt Draft; PR969/971/972 ungemergt.
+
+## Nachweislich erledigt
+
+Die Stopanforderung geht jetzt an den geprüften inneren Prozess mit PID-,
+Startzeit- und Gruppenbindung. Dessen Identität wird erst nach installiertem
+SIGTERM-Handler als bereit gemeldet. Ein früher Stopmarker verhindert späteren
+Start beziehungsweise weitere Units/CAS. Unbestätigte Stops erhalten einen eigenen
+UNKNOWN-Beleg und blockieren den vorhandenen gebundenen Nullpfad nicht.
+Auth-Beobachter und Bewertung bleiben bytegleich; keine Sicherheits-/Geschäftsregel
+und kein Anbieterbudget geändert.
+
+Messjournale werden bei Beginn und Abschluss der Auth-Vorgänge mit fdatasync
+geschrieben. Das geschützte Verzeichnis liegt auf dem Cloud-Dateisystem und ist in
+den Container eingebunden. Node-Speicher/GC sowie vorhandene WAL-/TEMP-/Checkpoint-
+Statistik sind für fortlaufende Sicherung verbunden. Eine vollständige Lastabnahme
+dieser Telemetrie steht aus; keine Vollständigkeit unter500er-Last behauptet.
+
+**Genau ein tatsächlicher Signal-/Journaltest PASS:** netzloser Prozesscontainer,
+keine Datenbank, kein Auth-API-Aufruf, keine Unit oder Modellnutzung. Echter
+Supervisor → direkte SIGTERM-Zustellung → gespeicherter Empfang → tatsächlicher
+Docker-Stage-Exit **143**. Kein innerer SIGKILL-Fallback oder vorheriger Hostclient-
+Kill.23 Journalrecords erhalten, darunter8 fertige Rohzeitzeilen aus4 übernommenen
+historischen Auth-Vorgängen und ihren4CAS. Der absichtlich unfertige Vorgang bleibt
+jeweils UNKNOWN ohne erfundene Endzeit. Übernommene Maxima859,089335ms/663,495627ms
+sind **keine neuen Auth-API-Messungen**. Rechte0700/0600; unabhängig12/12 bestätigt.
+Die erwartete Stoppzeile im Terminal war Teil dieses kontrollierten Signaltests.
+
+## Tatsächlicher Fehler der kleinen Ursachenprüfung
+
+Geplant waren16 große GETs und16 gleich große PATCH-Körper an eine vorher
+nachweislich fehlende ID, zusätzlich serverseitig auf Rollback gesetzt. Bestehende
+C-Datenbank, kein neuer großer Datenbestand und keine geänderte GC-Policy.
+
+Beim tatsächlichen Datei-Aufruf bezeichnet `process.argv[1]` den Skriptnamen;
+der Driver behandelt diesen Wert fälschlich als Basisverzeichnis. Das früheste
+Konfigurationslesen endet mit **ENOTDIR** an `driver.js/configuration.PRIVATE.json`.
+Das übergebene Basisargument stünde in `argv[2]`. **Dieser Aufruffehler wurde in der
+Vorprüfung übersehen.**0 HTTP-Aufrufe/0 Requestpaare, Driver-Exit1. Fehlerquelle und
+Ausführungsbytes bleiben unverändert erhalten; keine stille einzeilige Reparatur.
+
+Startup-Samples: höchster gemeinsamer aktueller Verbrauch485908480B, beobachteter
+PostgREST-RSS12673024B,5 Samples. **Kein Speicherursachen- oder RAM-Reservenachweis.**
+Der alte C-Kernelpeak wird nicht ersetzt, zurückgesetzt oder abgezogen. Die
+GHC-Buildauskunft bestätigt lediglich die bestehenden Optionen `-N -I0 -qg`
+und hier5 Ausführungseinheiten; daraus wurde kein unbewiesener Fix abgeleitet.
+
+Neue PostgREST- und Driverprozesse sind beendet. Native Vorher/Nachher-Sicht
+unverändert; genau eine zusätzliche unabhängige READ-ONLY-Sicht bestätigt
+**0 aktiv/500Profile/501Identitäten/6000Usage**, Marker247 und alle erhaltenen
+inerten Seedmengen500/500/1500/1000. Unabhängiger Abschlussreview10/10 bestätigt
+CLI-Erstfehler, Quellenbindung, Nullstand und Prozessende. Keine Originale,
+Historien, Ergebnisse oder Journale gekürzt; sämtliche alten FAIL-Belege erhalten.
+
+## Offene Arbeit und nächste Freigabegrenze
+
+Die Ursache des gemessenen PostgREST-/Node-/PostgreSQL-Drucks ist weiterhin offen.
+Es wurde keine Speicheroptimierung ohne Beleg vorgenommen. Der historische
+C-Reservebruch bleibt FAIL:1644748800B Peak,403251200B/19,69% Reserve.
+
+Vorbereitet, nicht ausgeführt: frischer D-Diagnosenamensraum und SQL-Vorprüfung,
+die3508 unveränderte SQL-Hashes übernimmt und nur die neue DB-Bezeichnung parst.
+Quellen500/500, Auth- und31-Punkte-End500-Datenprüfung sind unverändert übernommen.
+Keine vollständige CI oder neue Quellen-/Auth-Testserie; historischer grüner
+Appbasis-Run40534410137 ist kein neuer Head-CI-Beleg.
+
+Nach diesem FAIL ist ein **neues GO** für die gezielte CLI-Korrektur, einen echten
+trockenen Datei-Aufruf vor Netzrequests und danach eine begrenzte Ursachenprüfung
+nötig. Erst nach belegtem Fix und unabhängiger gemeinsamer Speicherabnahme darf die
+weiterhin offene End500-/Mock500-Stufe folgen. Kein lokaler oder Production500-PASS.
+Keine Production-, Hetzner-, Merge-, Budget- oder kostenpflichtige Ressourcenaktion.
+
+[Bereinigter Sprintbeleg und Hashbindungen](belege/w15-processing-20261027/DURABLE_ABORT_ALLOCATION_20261028D.SAFE.json).
+Private Rohbelege bleiben in der geschützten Cloud.
+
+---
+
+## Historisch: Diagnose C vor diesem GO
+
 # Aktuell: SQL-Vorprüfung PASS; RAM-Diagnose C an echter 20%-Reserve gestoppt
 
 **FAIL, kein neuer Mock500-Gesamtversuch.** Diagnose C wurde genau einmal

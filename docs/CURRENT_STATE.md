@@ -1,17 +1,17 @@
 # CURRENT STATE — Helmut
 
-## W15:SQL-PASS;RAM-DiagnoseC FAIL (28.10.)
+## W15:SignalPASS;CLI-FAILvorRAM (28.10.)
 
-PR972/971/969ungemergt;Codeeb4bed70,keinMock500gestartet.
-3509echteSQLs Parse/DescribePASS,0ausgeführt;DB/Rechte+ReviewPASS.
-End500Seed3501PostimagesPASS;6000Usage/1500inerteErgebniszeilen.
-247Auth-CAS+NachlesenPASS,Authmax4410,963033ms;Mutation248ACK/ZeitUNKNOWN.
-EchterRAM-FAIL:Peak1644748800B,Reserve403251200B/19,69%;Swap/OOM0.
-PostgREST-RSS-Zuwachs+PG/Node-Spitzenbelegt;alleinigeUrsacheoffen.
-Abbruchbericht/GC/WAL-Reihefehlt;0aktivunabhängigREADONLYbestätigt.
-KeinRetry;Originale/alteFAILserhalten;500Reserve/Unit60/8000offen.
-AppbasisCI40534410137unverändert;keinneuesCI-Grün/ProductionPASS.
-[Messwerte,Grenzen,nächsteArbeit](betrieb/w15-mock-quellenbindungen-20261028.md).
+PR972/971/969ungemergt;Code3a4a64b1;D/Mock500nichtgestartet.
+DockerSIGTERM→Receipt→Exit143PASS;0700/0600,Review12/12.
+Auth-Kernbytegleich;4alteMessungen+1unfertigUNKNOWNgesichert.
+MicroReproargv[1]statt[2]:ENOTDIRvorHTTP;0Paare/Units/Modelle.
+Startup485908480BkeinRAMnachweis;keineSpeicheränderung.
+0aktiv/500/501/6000Usage+Prozessendeunabhängig10/10bestätigt.
+C-ReserveFAIL1644748800B/19,69%erhalten;keinRetry/CodefixnachFAIL.
+NächstesGO:CLI-Fix+trockenerDateiaufruf,dannUrsachenprüfung.
+Quellen/Auth/End500übernommen;keinneuesCI-Grün/ProductionPASS.
+[Belege/Grenzen](betrieb/w15-mock-quellenbindungen-20261028.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
