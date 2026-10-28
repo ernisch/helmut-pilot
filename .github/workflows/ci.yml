@@ -20,17 +20,28 @@ on:
   pull_request:
   push:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      w15_mode:
+        description: 'Standard-CI oder nur W15-End500-Vorbereitungsplan (kein Teststart)'
+        type: choice
+        options: [standard, end500-plan]
+        default: standard
+      expected_commit:
+        description: 'Bei end500-plan: exakt gepruefter 40-stelliger Commit des gewaehlten Refs'
+        type: string
+        default: ''
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.ref }}${{ inputs.w15_mode == 'end500-plan' && '-w15-end500-plan' || '' }}
+  cancel-in-progress: ${{ inputs.w15_mode != 'end500-plan' }}
 
 jobs:
   offline-suite:
+    if: github.event_name != 'workflow_dispatch' || inputs.w15_mode != 'end500-plan'
     name: Syntax + Offline-Suiten
     runs-on: ubuntu-latest
     # CI35207010979: 397/397 Suiten erfolgreich in779s, aber inklusive Setup
@@ -443,6 +454,7 @@ jobs:
 
 
   browser-smoke:
+    if: github.event_name != 'workflow_dispatch' || inputs.w15_mode != 'end500-plan'
     name: Browser-/Mobile-Smoke (Chromium)
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -511,3 +523,33 @@ jobs:
           HELMUT_REQUIRE_BROWSER: "1"
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js -- node scripts/prosa-vorschau-test.js
+
+  w15-end500-plan:
+    name: W15 Vorbereitungsplan — kein End500-Test
+    if: github.event_name == 'workflow_dispatch' && inputs.w15_mode == 'end500-plan'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Exakten freigegebenen Quellenstand lesen
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]] || [[ "$(git rev-parse HEAD)" != "$EXPECTED_COMMIT" ]]; then
+            echo 'W15_PLAN_COMMIT_BINDING_FAILED'
+            exit 1
+          fi
+      - name: Oeffentlichen Plan ohne Datenzugang oder Ressourcenstart erzeugen
+        run: python3 -B scripts/w15-github/prepare.py --plan
+      - name: Startgrenze anzeigen
+        shell: bash
+        run: |
+          echo 'Plan erzeugt. End500 und Mock500 wurden nicht gestartet.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Start bleibt BLOCKED: privater Eingang, Ressourcenmessung, CI-Adapter, Ruecksicherung und neues GO fehlen.' >> "$GITHUB_STEP_SUMMARY"

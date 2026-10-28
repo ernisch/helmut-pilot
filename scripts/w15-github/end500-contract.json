@@ -1,0 +1,75 @@
+{
+  "schema": "helmut-w15-github-end500-preparation/1",
+  "status": "PLAN_ONLY_START_BLOCKED",
+  "sourceCommit": "186ebfa62fbd55b0143d9c65a424386ba55dabe9",
+  "executionAuthority": false,
+  "testStarted": false,
+  "readiness": "BLOCKED",
+  "stage": "INERT_END500_MEMORY_AND_AUTH_ONLY",
+  "inputFileCount": 9,
+  "manifestFormat": "JSON object with exactly the nine input keys, each mapped to a unique relative file path below input-root; manifest and bound are separate files below that same private root. No other files or directories are accepted.",
+  "boundPathPolicy": "The immutable bound's historical path fields are provenance only. Never follow them; locate each payload solely through the checked manifest mapping.",
+  "bound": {
+    "bytes": 4985,
+    "sha256": "5d61bb67ff0def43d4cc24ad11db59bb388e0a0b630393b173a9178b5bd2bf2c"
+  },
+  "hardPins": {
+    "frozenSourceDump": {
+      "bytes": 4981565,
+      "sha256": "06c6f37c7189dd166641d867809d42424f5c44618ab5cf6974939057ad61025c"
+    },
+    "localRoles": {
+      "bytes": 658,
+      "sha256": "d9a99d567346768110a91f10033fd32cfa6e2a88dedd52ee59bfe62136ba0e02"
+    },
+    "seed": {
+      "bytes": 118800333,
+      "sha256": "a91d74064c3a717777cd25a743de27aaba4cb3dd0529b85270d24c503e5717d4"
+    },
+    "currentCommand": {
+      "bytes": 1169844,
+      "sha256": "ee866daff1c7c2b2e13f8b28938a4d14344f11c815e074f78d9acb9713413ee9"
+    }
+  },
+  "fixtureKeys": ["auth", "evidenceRows", "privateDraftStoreRows", "resultRows", "privateDraftReviewRows"],
+  "resources": {
+    "commonMemoryBytes": 2048000000,
+    "minimumReservePercent": 20,
+    "maximumLifetimePeakBytes": 1638400000,
+    "swapBytes": 0,
+    "fullAuthCallMaximumExclusiveMs": 30000,
+    "unitMaximumExclusiveMs": 60000,
+    "providerMaximumExclusiveMs": 20000,
+    "actualRunnerResourcesVerified": false
+  },
+  "end500": {
+    "diagnosticCASWrites": 500,
+    "retainedUsageRows": 6000,
+    "preservedHistoricalUsageRows": 5139,
+    "nativePostimages": 3501,
+    "activeProfiles": 0,
+    "units": 0,
+    "providerCalls": 0,
+    "completeFunctionProof": false
+  },
+  "separateMock500": {
+    "startAllowed": false,
+    "simultaneouslyActiveProfiles": 500,
+    "units": 500,
+    "providerPhases": 1000,
+    "freshControls": 8000,
+    "independentResults": 1500,
+    "boundReturnToZeroRequired": true
+  },
+  "remainingGates": {
+    "dataEquivalenceOrPrivateAccess": "BLOCKED",
+    "protectedInputAccess": "BLOCKED",
+    "freshCommitAndRunBoundReview": "BLOCKED",
+    "portableControllerAdapter": "BLOCKED",
+    "actualRunnerDiskAndSetupBudget": "BLOCKED",
+    "commonCgroupReadbacksAndSwapZero": "BLOCKED",
+    "encryptedCompleteBackupAndReadback": "BLOCKED",
+    "independentEnd500Acceptance": "BLOCKED",
+    "separateExplicitStartGO": "BLOCKED"
+  }
+}

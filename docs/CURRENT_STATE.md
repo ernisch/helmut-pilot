@@ -1,6 +1,29 @@
 # CURRENT STATE — Helmut
 
-## W15: End500-D vor erstem Auth-Vorgang am Plattenwächter gescheitert (28.10.)
+## W15: GitHub-Vorbereitung, konkreter Datenzugang fehlt (Sprint28.10.)
+
+PR968 gemergt; PR974 offen auf `186ebfa6`. Neuer getrennter Worktree vorbereitet,
+kein Push/Dispatch/großer Test/Merge/Deployment. Alte Arbeitskopie und vier dort
+unpublizierte Berichte hier nicht vorhanden; keine Aussage über Verlust.
+26-Dateien-Bereinigung laut Betreiber bereits abgeschlossen, kein weiterer
+Bereinigungslauf und keine neue lokale500er-Ausführung.
+
+Frischer GitHub-Standardrunner bleibt gewählter Weg. Rein neu erzeugte Synthetik
+belegt die verbindliche Historien-/Quellengleichwertigkeit derzeit nicht.
+Drive frisch geprüft:587Einträge, alle14am28.10.geänderten Dateien berücksichtigt.
+Das vorhandene11Originale-Paket enthält die späteren End500-Ableitungen nicht.
+**Konkret fehlt ein erreichbarer ausgewählter Export: Bound+5FixtureJSONs+Seed+
+echterCommand/Provenienz, ergänzt um Dump/Rollen.** Kein Ganzarchiv/alterKeyexport.
+
+Manueller CI-Planmodus, strikt lesender9-Dateien-Prüfer und lokale verschlüsselte
+Streaming-Sicherung vorbereitet; keine fertige Controllerportierung oder
+vollständige entfernte Rücksicherung behauptet. Start **BLOCKED**, kein empfohlenes
+Test-GO. End500=inerterEndbestand/500AuthCAS/0aktiv/0Units/0Provider;
+Mock500 bleibt spätere separate Stufe mit neuem GO. Grenzen2.048.000.000Bytes,
+20%Reserve,Swap0,Auth30/Unit60/Provider20 und vollständigeIntegrität unverändert.
+[Entscheidung, Drivebelege, ausführbare Vorbereitung und Restanschlüsse](betrieb/w15-github-end500-vorbereitung-20261028.md).
+
+## Historischer W15-D-Befund vor obiger GitHub-Vorbereitung (28.10.)
 
 PR974 auf PR973 `fa506939`/PR972 `c36bd427`, alle ungemergt.
 Genau ein neuer End500-D-Versuch auf sauberem Codekopf `07b51319` ausgeführt;
