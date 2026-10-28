@@ -1,0 +1,81 @@
+{
+  "schema": "helmut-w15-postgrest-stop-prestart-review/1",
+  "status": "PASS_PRESTART_REAL_POSTGREST_STOP_ONLY",
+  "reviewer": "independent atomic_integration_audit",
+  "reviewedAtUTC": "2026-10-28T15:25:02.436179+00:00",
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 24850,
+      "sha256": "49c6f9daf1e5e1cf3d793f2400fbe555de49c6049c28d19522e820deb224c926"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-postgrest-stop-check.py",
+      "bytes": 8418,
+      "sha256": "d29d2895b2440ee03f2e25f2209f18c9df92ae5372ccc55fd5f0500a538049a7"
+    }
+  ],
+  "checks": [
+    {
+      "id": "fixed-scope",
+      "status": "PASS_STATIC",
+      "finding": "Dedicated fixed fresh stop-only base/work, existing isolated netless container/database,0mutations. Original probe and full16/49 are not replayed."
+    },
+    {
+      "id": "argv",
+      "status": "PASS_STATIC",
+      "finding": "--stop-check/--serve-stop-check select stop-only base/mode; --stop-check --dry-run invokes no HTTP/DB. Parent and child use actual file argv and strict maximumMutations0."
+    },
+    {
+      "id": "genuine-services",
+      "status": "PASS_STATIC",
+      "finding": "Uses genuine existing serve(), PostgREST binary, authenticated OpenAPI readiness and actual z3 gateway. No Auth/storage/main() path, RPC or Unit; no new DB."
+    },
+    {
+      "id": "expected-stop",
+      "status": "PASS_STATIC",
+      "finding": "Exact expectedPostgrestStop body unchanged from f870. Requires accepted owned SIGTERM, previously-running child, allowed0/SIGTERM/SIGINT exit, no forcedKILL, explicit confirmed receipt and child code0/signalnull."
+    },
+    {
+      "id": "connection-closure",
+      "status": "PASS_STATIC",
+      "finding": "Added child globalAgent active/free count checks after destroy and bounded drain, plus serverSockets0. Native readonly authenticatorConnections0 before/after. Parent agent counts are not substituted."
+    },
+    {
+      "id": "durable-receipts",
+      "status": "PASS_STATIC",
+      "finding": "Private state700/files600; signal request/accepted, exit, closure, parent IPC, registered node identity and source pins retained; no private token/body logged to SAFE reports."
+    },
+    {
+      "id": "bounds",
+      "status": "PASS_STATIC",
+      "finding": "Real inner35s TERM/+5sKILL and outer45s; readiness12s/stop8s; existing verified owned-stop helper handles all three processes without workload retry."
+    },
+    {
+      "id": "native-state",
+      "status": "PASS_STATIC",
+      "finding": "Every SQL uses explicit existing target DB, BEGIN READ ONLY, statement20s/lock3s;500profiles0active6000physical usage and complete physical/Auth hashes equal before/after."
+    },
+    {
+      "id": "clean-environment",
+      "status": "PASS_STATIC",
+      "finding": "Clean env local guard preloaded in real driver/fork, Node24.19 required, loopback only, container hard2.048GB/swap0/networknone asserted. Fresh local JWT only."
+    },
+    {
+      "id": "failure",
+      "status": "PASS_STATIC",
+      "finding": "Missing/nonzero/unconfirmed/forced/remaining-connection/state mismatch ->FAIL/UNKNOWN. No automatic retry, cleanup cannot infer a historical ACK."
+    },
+    {
+      "id": "nonacceptance",
+      "status": "PASS_STATIC",
+      "finding": "Only genuine shutdown recognition can PASS. No RAM/500/Production proof; original11th UNKNOWN and historical failed transport probe remain unchanged."
+    }
+  ],
+  "executedByReviewer": false,
+  "SQLByReviewer": false,
+  "HTTPByReviewer": false,
+  "nextAction": "One real service-stop-only check after root syntax/dry checks. No Auth or full500 repetition.",
+  "RAMStartApproved": false,
+  "historicalEleventhOutcome": "UNCHANGED_UNKNOWN_NOT_REPLAYED"
+}

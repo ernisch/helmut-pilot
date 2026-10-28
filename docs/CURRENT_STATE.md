@@ -1,39 +1,36 @@
 # CURRENT STATE — Helmut
 
-## W15: Transportprobe beendet; End500 weiterhin gesperrt (28.10.)
+## W15: echter Prozessabschluss PASS; End500 bei290/500 gestoppt (28.10.)
 
-PR974 eigener Integrationsbranch auf PR973 `fa506939`/PR972 `c36bd427`;
-alle PRs ungemergt. Code `f8702304`; ursprüngliche offene972-Arbeit unverändert.
-Echter signierter Prepared0-/HTTP-/Auth-/EU-DraftCompletion-Anschluss PASS,
-unabhängig16/16; Worker19,87s, Auth maximal2,491931300s, Peak719.044.608Bytes.
-5.000 historische Einträge verlustfrei atomar übernommen;0aktive Testprofile.
-Quellen500/500 begrenzt übernommen (16Dateien gleich,2genau geprüft); Worker81/81.
-Genau eine neue inerte End500-Allokationsdiagnose: FAIL/UNKNOWN nach10/500CAS;
-11.Schreibvorgang ohne ACK. Peak1.154.990.080Bytes, Reserve893.009.920=43,604%;
-Auth-Max20,034336894s/native12,559368517s;1unbestätigter Vorgang bleibt UNKNOWN.
-Unabhängig alle3.501Postimages/6.000Usage/500Profile/0aktiv erhalten bestätigt.
-Kein Reserveverstoß, aber keine belastbare Restwachstums-/500er-Abnahme.
-Ursache unterhalb TypeError nicht gesichert; sichere Fehlercodes künftig ergänzt,
-pure3Prüfungen/Review12/12, kein Retry. Kein voller Mock500/Production-Lauf.
-Neuer gezielter Sprint:6/6 kleine HTTP-Anfragen PASS, ohne Reproduktion.
-Frische isolierte Auth-Probe:16/16 Schreibquittungen samt Vollnachlesen,
-49/49 HTTP200; ganze Auth maximal3,141334564s/native1,951072017s.
-Gemeinsamer historischer Containerpeak1.475.330.048Bytes,
-Reserve572.669.952Bytes=27,9624%; kein frischer End500-Nachweis.
-Quellzustand unverändert, alle6.000Usage erhalten,500Profile/0aktiv.
-Abschluss der Probe FAIL: PostgREST-SIGINT wurde trotz angefordertem SIGTERM
-von der neuen Diagnoseklassifizierung nicht bestätigt. Kleine dokumentierte
-Korrektur `f8702304` nur rein9/9 und unabhängig statisch geprüft; kein Retry.
-Ursprünglicher11.UNKNOWN weiterhin ungeklärt; keine neue End500-Diagnose gestartet.
-Unabhängige Ergebnisabnahme17Punkte, dauerhafte exakte Auth-/Kernelbelege erhalten.
-CI `e1a62acc` jetzt vollständig grün; neue Kopf-CI separat, kein übertragenes CI-Grün.
-Bekannter Vercel-Fehler `includeFiles`2.915>256Zeichen unverändert separat.
-Nächster Schritt: neues gezieltes GO für Diagnose mit vollständiger Transport-
-und Abschlussquittung, danach End500-Abnahme; kein Gesamtversuch freigabereif.
-Nach tatsächlichem Diagnose-FAIL keine weitere Ausführung in diesem GO.
-[Messwerte, Quellenbindungen, Fehler und Freigabestand](betrieb/w15-atomic-usage-integration-20261028.md).
+PR974, eigener Integrationsbranch auf PR973 `fa506939`/PR972 `c36bd427`;
+alle ungemergt. Tatsächlicher neuer Diagnosecode `d2920d6d`.
+Bestehende signierte Prepared0-/HTTP-/Auth-/EU-Integration unabhängig16/16;
+Worker81/81 und500/500Quellen im belegten Geltungsbereich übernommen.
+Die16frischen Auth-ACKs/49HTTP200 wurden nicht wiederholt.
+Neuer kleiner echter PostgREST-Abschlusscheck PASS, unabhängig bestätigt:
+angenommenes SIGTERM→SIGINT, Kindexit0/Quittung,0Client-/DB-Verbindungen,
+552,613949ms,0Auth-Schreibvorgänge und unveränderte500Profile/0aktiv.
+Genau eine neue frische End500-RAM-Diagnose B: **FAIL/UNKNOWN nach290/500**.
+291.Auth-Vorgang nach10,339606479s vor Callback/nativeCAS gescheitert;
+Ursache/Timeoutbezug UNKNOWN. Kein291.nativer Schreibversuch, kein Retry.
+290ganze bestätigte Auth-Vorgänge max11,681541407s/native6,150820550s.
+Gemeinsamer echter Kernelpeak auch nach unabhängigem Abschluss1.444.556.800Bytes;
+Reserve603.443.200Bytes=29,4646875%, hartes2.048.000.000Limit/Swap0/OOM0.
+Keine End500-/Restwachstumsabnahme, kein vollständiges Auth30 oder Unit60.
+Unabhängige native Endsicht: alle3.501Postimages/6.000Usage vollständig erhalten,
+500Profile/**0aktiv**, Kosten-/Sicherheitsfelder unverändert. Keine Units/Modelle.
+Controller-Nullstatus und fehlende PostgREST-Stopquittung bleiben historisch UNKNOWN;
+separate spätere0-/Prozesssicht bestätigt Abschluss, ersetzt keine fehlende Quittung.
+Alter11.UNKNOWN und frühere FAILs bleiben erhalten. Keine weitere Ausführung.
+CI `d823e95f`:177/178Offline-Suiten grün; nur Statusdateigröße rot.
+Historie wortgleich archiviert; gezielter Größentest4/4 PASS. Neue Kopf-CI separat.
+Vercel-Konfigurationsfehler `includeFiles`2.915>256 unverändert separat.
+Nächster Schritt braucht gezieltes GO für Lesefehler-/Abschlussdiagnose mit
+vollständiger sicherer Fehlerklassifizierung; Mock500 weiterhin nicht freigabereif.
+Vier alte Mock500-Startbindungen nur lesend ermittelt, nach FAIL nicht geändert.
+[Messwerte, unabhängige Belege und Freigabestand](betrieb/w15-atomic-usage-integration-20261028.md).
 
-**Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
+**Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten.
 
 ## Vollständiges Root-Paket und Caller-Vorbereitung (13.10.2026)
 
@@ -47,26 +44,7 @@ UTC13-Tagesbuch einmal angelegt:35 Bücher/Kapazität35, EU-Limit82,036000USD, d
 
 [Draft-PR907](https://github.com/ernisch/helmut-pilot/pull/907), Headc0d0bd48, unabhängig akzeptiert; Pflicht-CI38334575016 mit175+330Suiten, nativen Schritten undZ22 grün. [PR906](https://github.com/ernisch/helmut-pilot/pull/906), Head2b6fbfe7, ebenfalls unabhängig geprüft/Pflicht-CI38317468800 grün. Beide ungemergt. Statischer tatsächlicher Composite-Dictionary und unverändertes unfreigegebenes Kandidatenfenster erhalten; finaler Commandhash/Fit erst mit echten frischen Laufbelegen. Kein neuer Initializer-Aufruf oder neue Finanzierung.
 
-## Historischer Git- und Deployment-Beleg (12.10.2026, vor PR902–905)
-
-- **PR901 gemergt:** [PR901](https://github.com/ernisch/helmut-pilot/pull/901) MERGED am 2026-10-12T00:33:24Z, Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Beide Pflichtchecks SUCCESS auf PR-Head `36b2e573d8e9ee9d677129553025e3eb4f744194`; `origin/main` identisch zum Merge.
-- **Frisch gelesenes Deployment:** Vercel `dpl_3FWWM3CtEj324fjTrgkD7b6UWSsi` READY, Target production, auf demselben SHA, Alias `helmut-pilot.vercel.app`. Belegt nur die Auslieferung dieses Git-Stands, nicht Funktion, Aktivierung oder 500er-Test.
-- **Betreiberübergabe (übernommen, in dieser Sitzung nicht unabhängig nachgemessen):** Blocker1, Blocker2, Blocker3 und Blocker4 geschlossen; der begrenzte B2→D-Abschluss wurde mit **500/500 gültigen Kontexten** übergeben. Der finale Blocker3-Abnahmebeleg lag beim Merge nicht im Repository und ist inzwischen aus dem privaten [Übergabearchiv vom12.10.](https://drive.google.com/drive/folders/1jLuYGXdJtXy08s461-gVwvlsIX7CvCXU) übernommen: ZIP-SHA256 `30ca1ffa643ef177f30e7e9a958d002ab426429fdf4387eeb0f4d05f7eb919a8`, alle42 ausgewählten Mitgliedshashes stimmen mit dem [Index](https://drive.google.com/file/d/1axu7LC6YzDn3WQW0ZzPT4-SJcXB-j8JW/view) überein. Maschinenlesbare finale Abnahme SHA256 `70169288d112a6bf43c46ae455b4d138752195c6f80a4bea1d7550613ae39ceb`, historische Beobachtung00:36:00.861949UTC. Keine Abnahme wiederholt.
-
-## Frische RO-Vorbereitung (12.10.2026, rein lesend)
-
-- **Native READ ONLY beobachtet 2026-10-12T06:16:27.299425Z:** 500 Profile / 0 aktiv / 0 AfD; Verteilung 330 BT / 120 BE / 50 BB; laufende Prozesse 0, offene Jobs 0, offene Outbox 0, lebende Locks 0, lebende Leases 0.
-- **Endwächter:** schedulerActive true, recentSuccessfulRuns 3, lastTick 06:16:17.098857Z, keine offene Endbindung. Die alte Qualifikationsbindung wurde am 07.10.2026 gestoppt und darf nie wiederverwendet werden; es gibt keine neue Testbindung. Migrationsversionen 20261007111136 und 20261012002250 vorhanden.
-- **Auth-Kostenbuch, beobachtet 06:12:40.239273Z:** Auftragversion 5, Limit 88845364 µUSD, ab Tag 2026-09-25, id `autonom-bis500-20260926`; extern gebunden 5195303 µUSD, private Reserve 636000 µUSD, gesamte konservative Auftragsbindung 7445364 µUSD; genau 34 erhaltene Tagesbücher, bookCapacity 34, runDayUTC null. 12.10.: Buchversion 3 / Limit 82036000 µUSD / spent 0 / baseline 0 / manualCalls 0 / calls 0 / frozen null; 5000 historische Usage-Zeilen, 0 heutige Usage.
-- **Globaler Tageszähler 12.10.: 0 nach bestehendem Lesevertrag.** Die native Zeile fehlt; `leseLlmTageszaehler` wertet genau diesen gelesenen Nullbestand als `used=0`. Der übernommene Runtimebeleg von11:42Istanbul bestätigt used0 und die wirksamen Deckel; keine Reservierung oder Startquittung.
-- **Vercel-Projektkonfiguration:** EU-HASH `78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f`, 2416 global / 702 U / 200 real, Kommunikation gesperrt. Secretwerte werden nicht gelesen oder übertragen. Effektive Runtime ist inzwischen für den unten angegebenen Beobachtungszeitpunkt belegt; dieser ersetzt keine Startfrische.
-- **Azure Management, frisch:** Deployment `gpt-5-mini-eu` / DataZoneStandard / swedencentral / Version 2025-08-07 / NoAutoUpgrade / Succeeded, 250 RPM, 250000 TPM, keine Inference. GitHub: keine laufenden oder queued Runs, kein relevanter lokaler Productionprozess.
-- **Bekannter B2-Drivebankindex erreichbar**, verschlüsselte 184 Parts; privateKeys/Credentials/EphemeralURLs Included false. Die42 ausgewählten B3-Übergabedateien sind übernommen und hashverifiziert. Der Index schließt Secrets/Bearer/vollständige Auth-Snapshots ausdrücklich aus. Originaltransfer, Transportquittung und tatsächliches500er-Eingabepaket sind inzwischen ebenfalls privat übernommen; kein weiterer Originaldatenbestand wird hierfür angefordert. Finale Command-/Startidentität bleibt offen.
-- **In dieser Sitzung keine kostenpflichtigen Production-Modellaufrufe, Profiländerungen, Commandinstallation oder Journalmutation.** Start-GO bleibt ausgeschlossen, solange der Datumsfix nicht auf Production READY ist und die endgültige Laufbindung sowie frische Startbelege fehlen.
-
-**Fortsetzung nach Archivübernahme (12.10.,09:45–09:46 Europe/Istanbul /06:45–06:46 UTC):** Native READ ONLY bestätigt500/0, keine offene Facharbeit, Endwächter mit3 aktuellen erfolgreichenRuns. Profil-/Main-/vollständigerAuth-SQL-Hash stimmen mit dem übernommenen Abschlussbeleg überein; ebenso alle3 EU-Funktionshashes, der historische4h-Binder und der4h-/9h-Constraint. Frischer eigener Auth-Primärbezug bleibt0600 außerhalbGit; die bereinigten Archivprojektionen werden nicht als vollständige Originale dargestellt.34Bücher/5000Usage/0heutigerVerbrauch, privateReserve0,636000USD undAuftragsbindung7,445364USD unverändert. Keine Qualifikation wiederholt.
-
-**Separates Tagesbindungs-Starttor festgestellt (Codeanalyse, kein Test):** AufPR901 bindet `blocker2-d-historical-binding.js` die unveränderte angenommeneVersion2-Eingabe und ihren Prüftag fest anBerlin11.10.; `synthetik-500-production-command.js` verlangt dasselbe Briefingdatum wie denUTC-Lauftag, `synthetik-500-production-adapter.js` zusätzlich den aktuellenBerlinerTag. Dieser übernommeneStand ist am12.10. oder später deshalb nicht unverändert ausführbar. Ein GO/Bearer/Archiv hebt den technischen Riegel nicht auf. Der frühere lokale Terminvorschlag11:00Istanbul ist zurückgenommen; kein neuer Termin oder automatische Umdatierung. Blocker1–4 bleiben geschlossen; der begrenzte Kalender-/Snapshotübergang wird jetzt im eigenen Entwicklungsbranch vorbereitet; auf Production ist er noch nicht geändert. Weitere unabhängige Vorbereitung:1500Sollpositionen und12000ausstehende Kriterienpositionen vollständig angelegt,0Fachurteile. Vercel bestätigt zusätzlichSSO-Schutz für den unveränderlichenDeploymenthost; dessen Zugangsweg bleibt getrennt vomHelmutRuntime-Lesebearer.
+Historische Deployment- und Read-only-Beobachtungen vom12.10. sind [wortgleich archiviert](archive/project_state/2026_10_28_historischer_Deployment_und_RO_Beleg_20261012.md); sie sind keine aktuellen Production-Belege.
 
 ## Kalenderfix im Entwicklungsbranch (12.10.2026, noch nicht Production)
 

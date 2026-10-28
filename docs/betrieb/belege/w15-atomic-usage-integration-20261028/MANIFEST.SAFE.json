@@ -51,9 +51,29 @@
       "sha256": "089b989a76d0382f150da0d98df65232d84d8ddabb22c82337ef7fa264040685"
     },
     {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/MEMORY_PRESTART_REVIEW_B.SAFE.json",
+      "bytes": 13458,
+      "sha256": "07e3112b1fb225a6dea36fc6560ce1f9fa9696bc07660683aa8c51f6d8000037"
+    },
+    {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/MEMORY_PRESTART_REVIEW_FINAL.SAFE.json",
       "bytes": 10259,
       "sha256": "f21bdc0363a129cd96c8c98109570816c999465f16327bd175cf5ce600689a5f"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/POSTGREST_STOP_AND_TRANSPORT_REVIEW.SAFE.json",
+      "bytes": 5643,
+      "sha256": "5d8e01a755465fb7570c5ffc5d9b57c537702aa32de2cef610d0210ff3bb6a61"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/POSTGREST_STOP_PRESTART_REVIEW.SAFE.json",
+      "bytes": 3769,
+      "sha256": "fdaead464aad1353308222e346cedfff508263e62146563dcf81c0c423dda3e5"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/POSTGREST_STOP_RESULT.SAFE.json",
+      "bytes": 4023,
+      "sha256": "9d96d1873f33a7cbfa4b8e1cfdf64ce77e79c9d6425e04183c4f95362798267f"
     },
     {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/PREPARE.SAFE.json",
@@ -64,6 +84,51 @@
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_ATOMIC_BOOTSTRAP.SAFE.json",
       "bytes": 300,
       "sha256": "c7299eb56d66e27b0c41bc3deb78306a021925dd09a78d0be23960f84d824c4d"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_B_AUTH_TIMINGS.SAFE.json",
+      "bytes": 176363,
+      "sha256": "a4c8cd72a9c5c732250b09491cc4d51f7f01a758869159ad2cc4b1becde71a10"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_B_CONTROLLER_RESULT.SAFE.json",
+      "bytes": 1046,
+      "sha256": "7c9198ed0cdd5e657302f0e0e378a20fc5547e72272758c89251c0fd6aee96c7"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_B_KERNEL_AFTER_INDEPENDENT_AUDIT.SAFE.json",
+      "bytes": 271,
+      "sha256": "a23029789f697079cc6d6d587502331f9e1859b28c3e504fb07102e02e95ea91"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_B_KERNEL_BEFORE_INDEPENDENT_AUDIT.SAFE.json",
+      "bytes": 271,
+      "sha256": "4ae776cd25f33617f43edf3594de07f849599af4d50751621d27f128f893c125"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_B_MEMORY_TIMELINE.SAFE.jsonl",
+      "bytes": 1061634,
+      "sha256": "0a390f498f16b932550241c2653af87846f503ea1019b960b261ec390954d2ec"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_B_NATIVE_FINAL_INDEPENDENT_READONLY.SAFE.json",
+      "bytes": 1933,
+      "sha256": "b76b6fb155593f3b1ada4c93c2267b3a5605d04dd10d38f12c5e41b9ea78b168"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_B_OWNED_PROCESS_READONLY.SAFE.json",
+      "bytes": 615,
+      "sha256": "360db7ecb40ebc75bc8b60afcaa01352cbd96566d46dce248111154de0c2587a"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_B_RESULTS_INDEPENDENT_REVIEW.SAFE.json",
+      "bytes": 17533,
+      "sha256": "66f81adb8f7d579d4d0ec8768c1c6c5adb34049add8e23d45dd3ead26256a675"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_B_TIMELINE_EXPORT.SAFE.json",
+      "bytes": 529,
+      "sha256": "4f2455fe8c5e748134e786f9f16256900a418dee3142d24b7dd9dbb5f8e9cee8"
     },
     {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/RAM_CONTROLLER_RESULT.SAFE.json",
@@ -114,6 +179,11 @@
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/SOURCE_COMPATIBILITY.SAFE.json",
       "bytes": 4894,
       "sha256": "1250fc610598371ee6f873ba5ea258b37a11c70515527cbd4146a05b30efdf83"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/SQL_PREFLIGHT_RAM_B_SUMMARY.SAFE.json",
+      "bytes": 2497,
+      "sha256": "a8c7cf977b7ee7e79349cecd1a50da2cb1bae2f230fcbad2907329a02d098e9e"
     },
     {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/SQL_PREFLIGHT_SUMMARY.SAFE.json",

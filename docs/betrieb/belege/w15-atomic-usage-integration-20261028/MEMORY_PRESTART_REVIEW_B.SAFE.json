@@ -1,0 +1,277 @@
+{
+  "schema": "helmut-w15-atomic-end500-B-independent-prestart-review/1",
+  "status": "PASS_PRESTART_ATOMIC_END500_ALLOCATION_ONLY",
+  "reviewer": "independent atomic_integration_audit",
+  "independentOfRAMImplementation": true,
+  "reviewedAtUTC": "2026-10-28T15:34:01.260860+00:00",
+  "head": "d2920d6d64356471efe68e7ada1f3851441bfb6c",
+  "scope": "Exactly one fresh End500 inert allocation diagnosis B; no active profiles or Units",
+  "checks": [
+    {
+      "name": "authorized-scope",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "One new inert End500 allocation diagnosis only. Exactly500 marker CAS writes planned,0active profiles/0Units/0providers/no operation replay. Historical11th UNKNOWN is retained, not a prerequisite invented cause fix."
+    },
+    {
+      "name": "real-stop-proof",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "One actual stop check PASS with accepted SIGTERM\u2192documentedSIGINT, child0/null,confirmedreceipt,noSIGKILL,0server/actualchildAgent/nativeauthenticator connections. Stop report hash independently bound before any RAM resource."
+    },
+    {
+      "name": "existing-auth-reuse",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Previously independently verified16private ACK+complete6000-entry postimages and49HTTP200 reused; no repeated Auth qualification. Real core atomic/storage/cost logic unchanged."
+    },
+    {
+      "name": "fresh-target-bindings",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Python/JS WORK/BASE/DB/container exactly20261028b, originalA preserved; fresh WORK absent. Imported controller globals patched; all9 M.sql/M.read sites explicit database incl final0check. Wx resources/filenames preclude reuse/resume."
+    },
+    {
+      "name": "pre-resource-gates",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "ActualDprepared0 PASS/0active/sourcepreserved; current SQL hashes; independent B sourcepins; actualStop status and reviewed hash/UNKNOWN text all required before WORK/container/DB creation."
+    },
+    {
+      "name": "sql-parse-reuse",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "ActualParserC3512 statements:1 new CREATE described,3511 exact hashes reused,0workloadExecute/sourceunchanged. REBOUND retains all3512 exact pins; reverse substitution of only timeout1800\u21923600 and reportpath reproduces exact parsed Python hash. All8 current parser sourcepins match. No repeated parser execution."
+    },
+    {
+      "name": "complete-fixture",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Five protected fixture outputs independently hash/size/600modechecked, original offline review pin matches.6000 usage includes5139 preserved original+861inertfillers.3501 full native seed postimages/counts required; all prior state/evidence/results retained; new boolean authority/evidence denied."
+    },
+    {
+      "name": "atomic-bootstrap",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Fresh local copy only/GUCguard/noProductionmigration. Full logical state hash before/after atomic bootstrap and6000usage equal; original inputdump+roles receipt checked before restore; no source mutation."
+    },
+    {
+      "name": "real-command-baseline",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Held D command1169844bytes/SHAee866daf\u2026 exactly matches previously actually loaded command.500drafts/500units frozen and retained, real server module loaded, executionAuthorityfalse/no listener/job/dispatch; no stale approval reused as execution."
+    },
+    {
+      "name": "ack-and-no-retry",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "One delegated Atomic.write per index with genuine private revision/proof ACK; full readback revision/marker/6000usage/fullcontenthash then acceptance. Incomplete/failed calls remain UNKNOWN; final native absence never creates ACK. Wrapper refuses second native write, including confirmed CAS conflict path."
+    },
+    {
+      "name": "timeouts-and-progress",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Whole Auth API/native CAS measured through ACK and strict<30s check. Real per-request body-inclusive abort cap20s. Inner3590s TERM/5sKILL and outer3600s diagnosis budget. PerCAS durable progress/exact maxima; no Unit60/full500 performance assertion."
+    },
+    {
+      "name": "common-kernel-enforcement",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Fresh netless container hard2048000000B/memoryswap equal\u2192Swap0. Existing separate hostSupervisor samples actual common cgroup100ms through setup/run/cleanup, fails peak>1638400000B or swap/max/oom event, verified owned inner-stop first. No RSSsum/395MBsubtraction/cacheclear/forcedGC/checkpoint."
+    },
+    {
+      "name": "retained-abort-evidence",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "PerAuth starts/finishes fdatasync, Node/GC/kernel components/native WAL/TEMP/checkpoint telemetry durable. Final genuine native DB sample added even before next25CAS observation. Auth maxima retained even when last operation unacknowledged; no shortened histories/results."
+    },
+    {
+      "name": "natural-growth-acceptance",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "At least2natural majorGC/2native checkpoints/realautovacuum/WALrotation/TEMP0/durability on required. Positive late physicalStore+Usage+WAL growth factor2 projected to6500writes +64MiB added to actual common kernel peak; no subtraction. Dynamic result still requires independent actual RAM/anonym-growth audit before any later full500 authority."
+    },
+    {
+      "name": "safe-end",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Never activates. Owned run/setup/gateway/PostgREST stopped, then genuine readonly0active check; all databases/evidence retained; final common peak and projection rechecked. First FAIL/UNKNOWN stops without retry."
+    },
+    {
+      "name": "time-planning",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Existing15warmACKintervals mean3.3288418364s/max4.614155967s imply1664.4209182s/2307.0779835s for500, not guarantees.3590s inner budget removes former125.58s tight margin without changing Auth30/Unit60/security. Timeout remains FAIL."
+    },
+    {
+      "name": "disk-planning",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Existing free5484843008B, prior stage151028771B. Full inert-end initial measured relations Store64.995MB/Usage8.339MB/Briefings26.345MB/WAL134.218MB/TEMP0 with naturalautovacuum. Reasonable one-diagnosis start space, no disk-end guarantee.9.818MB\u00d7500 cumulativewrites\u2260simultaneously retained disk; no unsupported subtraction/optimization."
+    },
+    {
+      "name": "scope-limit",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "PRESTART PASS permits this one allocated-state diagnosis only; measured RAM reserve toEnd500 remains unknown until actual run/audit. No500DRunits/1000mocks/1500producedresults/8000controls/Production acceptance or fullMock500 permission. Existing historical FAILs stay."
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.py",
+      "bytes": 22527,
+      "sha256": "1ad6a44ad7f7bf4696579d2b9c00ab1b3ae109c204ca417690891114785c99fd"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.js",
+      "bytes": 12990,
+      "sha256": "ad35b95c28360fc79799b3f72c34afaa1a0e85815622b0e383f4cdbd11f19338"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-sql-preflight.py",
+      "bytes": 11247,
+      "sha256": "7b8665c2d6fae085f05216f25418bc8afc93e8afd90ba7ba822f414523b101ad"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 44655,
+      "sha256": "4fe9b65671af956a3ec88e82b43e2a9af48f1709271808c41381824583428ec8"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 43294,
+      "sha256": "1dc68b22e57f69e191693693766e1628e83b0c2253fb3c22d83791ebbb3ce1cd"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 4335,
+      "sha256": "e2ac57c7f7f47740ca98d1f48e767ab540a6d10af9c4d5041cde7fdf889b0482"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 3018,
+      "sha256": "95c24fa1ccd2e47467cbd22ecfb89e69ca441fc9fb9c8a21fab8c4583ce78a8b"
+    },
+    {
+      "path": "scripts/fixtures/w15-local-memory-budget.json",
+      "bytes": 641,
+      "sha256": "83414ddc04a025b20eedd9119657d62689f8e18d2f660b8a3bad85556e2566c7"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.json",
+      "bytes": 115,
+      "sha256": "acffec2e146c8b104605eb27b52a02822cb189f0c0468303fa2061240cc7bff2"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.js",
+      "bytes": 1096,
+      "sha256": "7fde8ef7bd10210da3d20ffb9d03fe9115ec4cf1716d45a2a79faf24ad8bc994"
+    },
+    {
+      "path": "scripts/fixtures/w15-atomic-integration-target.json",
+      "bytes": 299,
+      "sha256": "e396b8bf990df0d773211e8c1483c938e3b57f3787481891334cc73d51c0abc5"
+    },
+    {
+      "path": "scripts/fixtures/z3-plattform.js",
+      "bytes": 28609,
+      "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 545054,
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "lib/helmut/auth-store-cas.js",
+      "bytes": 2753,
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-direct-codec.js",
+      "bytes": 13651,
+      "sha256": "f4390028c1c8f7cad40899c74cf2e5b3203f542b5617af48c3c56aecbbf22645"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
+      "bytes": 12237,
+      "sha256": "bc2409e35d68d52d0ba92914ffa1e427de42da738b73197e9bf7fe428f71b5fe"
+    },
+    {
+      "path": "supabase/proposals/auth_usage_atomic_local.sql",
+      "bytes": 20726,
+      "sha256": "5a8c07670354b504c85984618999feaa93f78f3107f96236ce61b2f7bbcd438a"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 24850,
+      "sha256": "49c6f9daf1e5e1cf3d793f2400fbe555de49c6049c28d19522e820deb224c926"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-postgrest-stop-check.py",
+      "bytes": 8418,
+      "sha256": "d29d2895b2440ee03f2e25f2209f18c9df92ae5372ccc55fd5f0500a538049a7"
+    },
+    {
+      "path": "scripts/fixtures/w15-end500-memory-fixture.js",
+      "bytes": 17280,
+      "sha256": "cca76fa363e1a85801241a6b1a58b8d559d0d57d757a0488170345ebd66bd209"
+    },
+    {
+      "path": "server.js",
+      "bytes": 547868,
+      "sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9"
+    },
+    {
+      "path": "scripts/lokal.js",
+      "bytes": 5431,
+      "sha256": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b"
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "SQL_PREFLIGHT_REBOUND.SAFE.json",
+      "bytes": 442654,
+      "sha256": "71df76872199585359fbab673c6d3e12e72321486e04e2c2da8f722b53ba3c7c"
+    },
+    {
+      "path": "SQL_PREFLIGHT.SAFE.json",
+      "bytes": 441802,
+      "sha256": "b5c10b6a6c2bd0725abcde130487c901f4592ddfc64ca34438241d9d186da514"
+    },
+    {
+      "path": "POSTGREST_STOP_AND_TRANSPORT_REVIEW.SAFE.json",
+      "bytes": 5643,
+      "sha256": "5d8e01a755465fb7570c5ffc5d9b57c537702aa32de2cef610d0210ff3bb6a61"
+    },
+    {
+      "path": "D_RESULTS_INDEPENDENT_REVIEW.SAFE.json",
+      "bytes": 15279,
+      "sha256": "45ed6642e60ad704f4d4f50c06bfd43f3347b39a838bd369d65eace3339baed1"
+    },
+    {
+      "path": "AUTH_TRANSPORT_PROBE_RESULTS_REVIEW.SAFE.json",
+      "bytes": 12672,
+      "sha256": "af3b64cdaeb2e91128b6df8a3a785ad1f9d55f44049251a8042bd0df913ad2f5"
+    },
+    {
+      "path": "END500_MEMORY_BOUND.SAFE.json",
+      "bytes": 4985,
+      "sha256": "5d61bb67ff0def43d4cc24ad11db59bb388e0a0b630393b173a9178b5bd2bf2c"
+    },
+    {
+      "path": "END500_FIXTURE_INDEPENDENT_REVIEW.SAFE.json",
+      "bytes": 4438,
+      "sha256": "dae2ff8b04ba57ae021cd9c129556edc7e06af0b717eea123ba056f890b5b499"
+    }
+  ],
+  "remainingRisks": [
+    "Actual common RAM plateau/anonym-memory trajectory and conservative end-growth have not yet passed; this diagnosis is intended to measure them.",
+    "500-write duration and disk retention are planning estimates, not guarantees. First timeout/resource/error/UNKNOWN stops the one attempt without retry.",
+    "Outer resource/namespace0state check immediately before start remains root responsibility; no resource/query executed by reviewer.",
+    "Historical11th transport error cause unproven; untouched UNKNOWN and failed diagnostic records remain."
+  ],
+  "actualRAMAcceptance": false,
+  "profileActivations": 0,
+  "unitExecutions": 0,
+  "full500ExecutionAuthorized": false,
+  "productionProof": false,
+  "newQueriesHTTPOrTestsByReviewer": false
+}
