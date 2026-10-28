@@ -1,5 +1,14 @@
 # W15: GitHub-End500 vorbereiten
 
+**Folgeprüfung:** Die zuvor offenen fünf Fixturepins sind aus dem aufgezeichneten
+Leseauszug des bisherigen Chats wiedergefunden. Neun Nutzdateien ergeben exakt
+242.548.460 Bytes; der alte Bestand ist in dieser angebundenen Umgebung weiter
+nicht erreichbar. Neuer Auftrag erlaubt Push/Draft-PR, keine Datenübertragung
+und keine500er-Tests. Maßgeblich ist jetzt die
+[exakte Exportliste mit rein lesendem Inventurbefehl](w15-end500-quellbestand-export-20261028.md).
+Die früheren UNKNOWN- und Nichtveröffentlichungsangaben unten sind datierte
+Vorbeobachtungen und bleiben zur Nachvollziehbarkeit erhalten.
+
 Auftrag vom 28.10.2026, Betreiberzeit Europe/Istanbul. **Teilweise vorbereitet;
 Start BLOCKED. Kein neuer End500-/Mock500-Lauf und kein Production-Nachweis.**
 Ausgang: [PR974](https://github.com/ernisch/helmut-pilot/pull/974),

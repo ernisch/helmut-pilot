@@ -163,6 +163,27 @@ class PreparationTests(unittest.TestCase):
         self.assertNotIn(str(self.root), output.getvalue())
         self.assertEqual(json.loads(output.getvalue())["reason"], "ARGUMENTS_INVALID")
 
+    def test_metadata_growth_is_bounded_during_read(self):
+        self.write("growing.json", b"{}")
+        root_fd = P.open_root(str(self.root))
+        original_read = os.read
+        grew = False
+
+        def grow_before_read(fd, size):
+            nonlocal grew
+            if not grew:
+                grew = True
+                with (self.root / "growing.json").open("ab") as target:
+                    target.write(b"x" * 65)
+            return original_read(fd, size)
+
+        try:
+            with patch.object(P.os, "read", grow_before_read):
+                with self.assertRaisesRegex(P.Rejected, "METADATA_TOO_LARGE"):
+                    P.inspect_file(root_fd, "growing.json", retain_limit=64)
+        finally:
+            os.close(root_fd)
+
 
 if __name__ == "__main__":
     unittest.main()

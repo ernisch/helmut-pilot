@@ -1,5 +1,21 @@
 # CURRENT STATE — Helmut
 
+## W15-Folgeprüfung: exakter Quellexport gebunden, Quelle hier nicht erreichbar
+
+AlterASSETS-Pfad hier nicht vorhanden; Erhalt in Quelle offen.
+Aus dem aufgezeichneten Leseauszug im bisherigen Chat„Hauptthread“
+alle5Fixturepfade/-größen/SHA wiedergefunden. Genau9Nutzdateien=242.548.460Bytes,
+dazu Bound/FixtureReview/Empfangsmanifest. Dump-/Rollen-Empfangspfade ausschließlich
+aus dem gepinnten Empfangsmanifest auflösen; keine Pfade erfinden.
+Lesender Inventurhelfer vorbereitet, hier SOURCE_UNAVAILABLE vor ersterNutzdatei.
+Keine Archive/Übertragung/500er-Tests. Frische Quelle zunächst einmalig lesend
+anbinden und zwölf ausgewählte Dateien prüfen. Kein alterKeytransfer nötig.
+
+Eigener Branch für Push/DraftPR gegen PR974 freigegeben;
+normale PflichtCI erlaubt, kein Merge/Dispatch. Vercel-Deployment nur für diesen
+Kandidatenbranch in bestehenderMap gesperrt.22gezielte Dateischutzfälle PASS.
+[Exakte Exportliste, letzter Nachweis und Inventurbefehl](betrieb/w15-end500-quellbestand-export-20261028.md).
+
 ## W15: GitHub-Vorbereitung, konkreter Datenzugang fehlt (Sprint28.10.)
 
 PR968 gemergt; PR974 offen auf `186ebfa6`. Neuer getrennter Worktree vorbereitet,

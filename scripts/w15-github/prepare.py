@@ -131,9 +131,12 @@ def inspect_file(root_fd, name, expected=None, retain_limit=0):
             require(before.st_size <= retain_limit, "METADATA_TOO_LARGE")
         digest = hashlib.sha256()
         retained = []
+        retained_bytes = 0
         while block := os.read(fd, 1024 * 1024):
             digest.update(block)
             if retain_limit:
+                retained_bytes += len(block)
+                require(retained_bytes <= retain_limit, "METADATA_TOO_LARGE")
                 retained.append(block)
         after = os.fstat(fd)
         require((before.st_size, before.st_mtime_ns, before.st_ctime_ns)
