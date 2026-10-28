@@ -1,0 +1,60 @@
+{
+  "schema": "helmut-w15-transport-sprint-summary/1",
+  "actualResult": "FAIL_DIAGNOSTIC_CHILD_STOP_UNCONFIRMED_TRANSPORT_NOT_REPRODUCED",
+  "historicalEleventh": "UNCHANGED_UNKNOWN_NOT_REPLAYED_CAUSE_NOT_PROVEN",
+  "httpOnlyProbe": {
+    "status": "PASS_NO_REPRO_CAUSE_NOT_PROVEN",
+    "requests": 6,
+    "allComplete": true,
+    "realEventLoopStallMs": 7000,
+    "databaseOperations": 0,
+    "modelCalls": 0,
+    "retries": 0,
+    "resultBytes": 3597,
+    "resultSHA256": "dcb6f938e5fa781fd53751325e3d626241289617fbd031f7998a39bfb98901e9",
+    "sourceSHA256": "f7a2b0369ba5b5c277553ffe87063688697e6a158962daea4638c6aa08dd5699"
+  },
+  "authProbe": {
+    "freshWrites": 16,
+    "fullPostimages": 16,
+    "HTTPRequests": 49,
+    "allHTTP200": true,
+    "wholeAuthMaximumMs": 3141.334564,
+    "nativeCASMaximumMs": 1951.072017,
+    "commonLifetimePeakBytes": 1475330048,
+    "remainingReserveBytes": 572669952,
+    "remainingReservePercent": 27.9624,
+    "memoryLimitBytes": 2048000000,
+    "swapBytes": 0,
+    "freshEnd500MemoryAcceptance": false,
+    "sourceUnchanged": true,
+    "originalUsageRowsPreserved": 6000,
+    "profiles": 500,
+    "activeProfiles": 0,
+    "units": 0,
+    "modelCalls": 0,
+    "actualExecutedScriptSHA256": "afcfc7d43f8d08e313e52e92b143745147b5c10a97ed2607aae9b4149172ea98",
+    "result": "FAIL_UNKNOWN_CHILD_OR_SOCKET_CLOSURE",
+    "actualPostgrestExit": {
+      "code": null,
+      "signal": "SIGINT"
+    },
+    "retries": 0
+  },
+  "correction": {
+    "commit": "f870230465759c88e781343651c4b7ee75932f3e",
+    "scope": "Only owned PostgREST exit classification plus accepted signal-request journal; no Auth/transport/cost/business logic change",
+    "pureAssertionsPassed": 9,
+    "actualHTTPRequestsInPureChecks": 0,
+    "SQLInPureChecks": 0,
+    "processSignalsInPureChecks": 0,
+    "independentReview": "PASS_STATIC_ONLY",
+    "runtimeRetest": false,
+    "historicalFailurePreserved": true
+  },
+  "conditionalFreshEnd500Started": false,
+  "fullMock500Started": false,
+  "productionProof": false,
+  "nextBoundary": "STOP after actual diagnostic FAIL; new targeted GO required before any execution. Original transport cause unresolved; no full500 readiness.",
+  "privateEvidence": "Complete transport, GC, Auth and kernel journals retained in protected cloud; no original/private data or credentials included here."
+}

@@ -3,12 +3,17 @@
 Stand: 28.10.2026. **Teilweise abgeschlossen; kein Mock500- oder Production-Nachweis.**
 Eigener Branch `codex/w15-atomic-usage-integration-20261028`,
 [Draft-PR974](https://github.com/ernisch/helmut-pilot/pull/974), gestapelt auf
-PR973 `fa506939` und PR972 `c36bd427`. Code nach dem Messversuch `e1a62acc`.
+PR973 `fa506939` und PR972 `c36bd427`. Aktueller Code `f8702304`.
 Tatsächlich ausgeführter Anschlussstand D: `d66a94dc`; RAM-Diagnose: `55dda919`.
 `e1a62acc` ergänzt danach ausschließlich Fehler-Metadaten; kein Lauf wurde wiederholt
 oder nachträglich auf diesen Kopf umetikettiert.
 Keine Änderungen im ursprünglichen972-Worktree oder am973-Branch; deren offene
 Arbeit bleibt erhalten. Keine Merges, Production-Aktionen oder echten Modellaufrufe.
+
+Der nachfolgende gezielte Transport-Sprint führte genau eine kleine HTTP-Probe
+und eine begrenzte frische Auth-Probe aus. Die Auth-Probe endete beim kontrollierten
+Prozessabschluss mit **FAIL**; danach keine Wiederholung und keine neue
+End500-Diagnose. Der ursprüngliche11.UNKNOWN bleibt unverändert ungeklärt.
 
 ## Was tatsächlich integriert und geprüft ist
 
@@ -127,6 +132,64 @@ URLs, Adressen, Schlüssel oder Inhalte. Drei reine Prüfungen bestanden;
 unabhängiger statischer Review12/12. Der alte Fehler bleibt UNKNOWN.
 [Trace-Review](belege/w15-atomic-usage-integration-20261028/TRANSPORT_METADATA_REVIEW.SAFE.json).
 
+## Gezielte Transportdiagnose: Schreibbestätigungen grün, Abschluss FAIL
+
+Zuerst ausschließlich vorhandene Transport-, PostgreSQL-, PostgREST-, Zeit- und
+Kernelbelege geprüft: kein OOM, kein PostgreSQL-Fehlerbeleg, keine belegte
+Überschreitung des Auth30-Limits beim11.Vorgang. Dessen native Dauer446,903297ms
+und ganze Auth-Dauer1.417,059425ms erklären den TypeError nicht. Der ursprüngliche
+Fehlerbericht hat den unterliegenden Transportcode nicht erhalten. Ein bestimmter
+HTTP-, Pool-, Zeitlimit- oder RAM-Fehler ist deshalb weiterhin nicht nachgewiesen.
+Keine ungeprüfte Transport- oder Speicheroptimierung vorgenommen.
+
+Eine kleine HTTP-Probe über das echte lokale Gateway mit7s realem Eventloop-Stillstand
+endet mit6/6 vollständigen Antworten, ohne Datenbank oder Modelle. Kein reproduzierter
+Fehler; insbesondere kein Beweis für oder gegen den damaligen unbekannten Ausgang.
+
+Danach genau eine frische isolierte Datenbankkopie, keine Wiederholung des alten
+Schreibvorgangs:16 neue Nonce-gebundene Auth-Mutationen über den echten atomaren
+Speicherweg, jeweils Revision, private Schreibquittung und vollständiges Nachlesen.
+Der reale W15-Command bleibt als gehashte Daten geladen, ohne Ausführungsrecht.
+
+| Tatsächlicher Befund der begrenzten Auth-Probe | Messwert / Ergebnis |
+| --- | --- |
+| Vollständige neue Schreibbestätigungen / Postimages | 16 /16 |
+| HTTP-Anfragen | 49/49 Status200;33 Lese-,16 CAS-Anfragen;0 Requestfehler |
+| Ganze Auth-Zeit maximal | 3.141,334564ms |
+| Native CAS-Zeit maximal | 1.951,072017ms |
+| Gemeinsamer historischer Containerpeak | 1.475.330.048Bytes |
+| Reserve zum unveränderten Limit | 572.669.952Bytes =27,9624% |
+| Profile / aktiv / Usage am Ende | 500 /0 /6.000 |
+| Units / echte Modelle / Wiederholungen | 0 /0 /0 |
+
+Der Peak gehört zum bereits genutzten begrenzten Container einschließlich alter
+Diagnose und frischer Kopie. Er ist **kein frischer End500-RAM-Nachweis** und keine
+Prognose bis500Units. Swap0, keine OOM-Ereignisse. Auth-Zeiten, Transportverlauf,
+GC- und gemeinsame Kernelmessungen sind dauerhaft erhalten. Native Invarianthashes
+bestätigen vollständige Historie, Kosten-/Sicherheitsbindungen und übrige Daten;
+Quellzustand vor/nach identisch. Keine Profilaktivierung.
+
+**Der tatsächliche Diagnoseabschluss bleibt FAIL:** Das eigene Programm forderte
+SIGTERM an; PostgREST endete mit SIGINT. Die neue Abschlussklassifizierung akzeptierte
+nur Exit0 oder SIGTERM und verweigerte die Bestätigung. Alle49 HTTP-Anfragen und
+16 Schreibquittungen waren vorher vollständig. Zwei spätere Socket-Close-Ereignisse
+nach dem letzten ACK gehören zum Abschluss, nicht zu einem gescheiterten Schreiben.
+Alle eigenen Treiber-/Gateway-/PostgREST-Prozesse sind beendet; Daten erhalten.
+
+Die bestätigte kleine Programmkorrektur `f8702304` akzeptiert den dokumentierten
+PostgREST-UserInterrupt-Ausgang nur nach erfolgreich zugestelltem eigenem SIGTERM;
+keine erzwungene Beendigung und keine offenen Sockets bleiben Voraussetzungen.
+Primärbeleg: [PostgREST12.2.3, Unix.hs](https://github.com/PostgREST/postgrest/blob/v12.2.3/src/PostgREST/Unix.hs#L23).
+Neun reine Zuordnungsprüfungen und unabhängiger statischer Review bestanden;
+**kein erneuter Lauf**, keine nachträgliche PASS-Umetikettierung. Die Korrektur
+behebt nicht den weiterhin ungeklärten ursprünglichen11.TypeError.
+
+Die einmal bedingt freigegebene neue End500-Diagnose wurde **nicht gestartet**:
+Der notwendige Fehlerfix-/Start-PASS fehlt, außerdem gilt nach diesem tatsächlichen
+Diagnose-FAIL die Stopregel. Neuer Ausführungsversuch benötigt ein neues gezieltes GO.
+[Unabhängige17-Punkte-Abnahme und exakte Beleg-/Quellhashes](belege/w15-atomic-usage-integration-20261028/AUTH_TRANSPORT_PROBE_RESULTS_REVIEW.SAFE.json)
+· [bereinigte Sprintübersicht](belege/w15-atomic-usage-integration-20261028/TRANSPORT_SPRINT_SUMMARY.SAFE.json).
+
 ## Übernommene und erhaltene Belege
 
 Die ersten lokalen Vorbereitungen bleiben FAIL: A überschritt mit dem alten
@@ -150,9 +213,12 @@ Zeilen-/Branch-, Worker- oder Gesamtprojektabdeckung.
 
 ## Freigabestand und nächster Schritt
 
-**Nicht freigabereif für einen neuen Mock500-Gesamtversuch.** Zuerst begrenzte
-Diagnose des unklaren Schreib-/Requestfehlers und belastbare erneute End500-
-Zeit-/RAM-Abnahme. Keine automatische Wiederholung nach diesem FAIL.
+**Nicht freigabereif für einen neuen Mock500-Gesamtversuch.** Der ursprüngliche
+Schreib-/Requestfehler ist nicht reproduziert oder behoben. Zusätzlich ist die
+Abschlusskorrektur erst rein/statisch geprüft. Nächster notwendiger Ausführungsschritt
+ist ein neu freizugebender gezielter Diagnoseversuch mit vollständiger Transport-
+und Abschlussquittung; danach weiterhin belastbare End500-Zeit-/RAM-Abnahme.
+Keine automatische Wiederholung nach diesem FAIL.
 Der bisherige Full500-Controller ist im Integrationssprint ausdrücklich vor
 jeder Wirkung gesperrt; historische Reviews erteilen dem neuen Speicherweg
 keine Startfreigabe. Erst später frische Operation, Datenbank, Signaturen,
@@ -160,8 +226,9 @@ Quell-/Worker-/Auth-/RAM-Abnahme und vollständiges gültiges3h+30min-Zeitfenste
 
 CI auf Codekopf `e1a62acc`: [lokale Integrität40699087786](https://github.com/ernisch/helmut-pilot/actions/runs/40699087786)
 grün; [Pflicht-CI40699087763](https://github.com/ernisch/helmut-pilot/actions/runs/40699087763)
-mit grünem Browserjob (Browserlauf gemäß Prüfplan übersprungen), Syntax/Offline noch
-laufend. Kein vollständiges CI-Grün behauptet. Ein reiner abschließender Dokucommit
-startet keine zusätzliche vollständige Testserie. Lokale Belege ersetzen keine Pflicht-CI. Der bekannte unveränderte Vercel-Konfigurationsfehler bleibt
+ebenfalls abgeschlossen/grün (Browserlauf gemäß Prüfplan übersprungen).
+Dies gilt für `e1a62acc`, nicht automatisch für den neuen Code `f8702304`.
+Neue Kopf-CI wird nach dem Push getrennt ausgewiesen; keine lokale Gesamtsuite
+wiederholt. Lokale Belege ersetzen keine Pflicht-CI. Der bekannte unveränderte Vercel-Konfigurationsfehler bleibt
 außerhalb dieses Sprints: `functions.api/index.js.includeFiles` hat2.915Zeichen,
 zulässig sind256. Keine Preview-/Production-Bereitschaft behauptet.

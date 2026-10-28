@@ -1,0 +1,294 @@
+{
+  "schema": "helmut-w15-auth-transport-results-independent-review/1",
+  "status": "FAIL_DIAGNOSTIC_CHILD_STOP_UNCONFIRMED_TRANSPORT_NOT_REPRODUCED",
+  "reviewedAtUTC": "2026-10-28T14:48:06.972088+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "reviewMethod": "Existing evidence/source only; no SQL/HTTP/model/test execution",
+  "checks": [
+    {
+      "id": "audit-scope",
+      "status": "PASS",
+      "finding": "Only existing protected reports, journals and source files read. No new DB queries or HTTP/test/diagnostic executions by independent reviewer."
+    },
+    {
+      "id": "actual-overall-verdict",
+      "status": "FAIL_CONFIRMED",
+      "finding": "Controller FAIL_OR_UNKNOWN/exit1 and driver FAIL_UNKNOWN_CHILD_OR_SOCKET_CLOSURE preserved; no diagnostic PASS, RAM launch or full500 launch authorized."
+    },
+    {
+      "id": "request-streams",
+      "status": "PASS",
+      "finding": "All49 monotonically ordered request IDs have exactly create/sendHeaders/bodySent/headers/trailers once; every response200. Gateway independently has49 requests/49 finishes,33 reads+16 CAS,0 errors."
+    },
+    {
+      "id": "fresh-execution-order",
+      "status": "PASS",
+      "finding": "Requests are baseline read then16 exact read/CAS/read triplets. Index0..15 each has one callback, one accepted private CAS, one full postimage. Fresh nonce marker ends at15 in the cloned DB; old memory marker remains9 and source unchanged."
+    },
+    {
+      "id": "auth-completeness",
+      "status": "PASS",
+      "finding": "16 whole mutation envelopes and16 CAS rows: exactly32 durable starts and32 matching finishes, no pending operation. Every row acknowledged; all Auth wall times under30000ms. Whole max3141.334564ms/native1951.072017ms."
+    },
+    {
+      "id": "data-preservation",
+      "status": "PASS",
+      "finding": "Original source before/after report objects match exactly. Clone baseline equals source apart from database. Final native invariant hashes preserve full logical Auth excluding only revision/new marker, complete usage rows, non-Auth store, briefings and profiles."
+    },
+    {
+      "id": "zero-profile-state",
+      "status": "PASS",
+      "finding": "Existing native final readonly evidence reports500 profiles,0 active,6000 usage, old marker9; source remains500/0/6000. No profiles activated or Units/models executed."
+    },
+    {
+      "id": "common-memory",
+      "status": "PASS_BOUNDED_ONLY",
+      "finding": "416 accepted whole-cgroup observations including final/ACK checkpoints: lifetime peak1475330048B, reserve572669952B/27.9624%, final current831545344B; limit2048000000B, swapmax0/current0, max/oom/oomkill events0. Historical cgroup peak, not new End500 acceptance."
+    },
+    {
+      "id": "transport-reproduction",
+      "status": "NO_REPRO",
+      "finding": "Zero undici:request:error records and empty requestErrors. All16 fresh writes/readbacks completed. Historical11th TypeError neither replayed nor explained."
+    },
+    {
+      "id": "cleanup-socket-events",
+      "status": "PASS_SCOPE_DISTINCTION",
+      "finding": "Two client UND_ERR_SOCKET events occurred after last trailer14:42:41.116Z, last ACK14:42:41.764Z, first server cleanup close14:42:41.774Z (errors14:42:41.818Z/14:42:41.833Z). They are not failed write requests and prove no historical cause."
+    },
+    {
+      "id": "child-stop-classifier",
+      "status": "FAIL_CONFIRMED",
+      "finding": "Actual PostgREST exit code=null/signal=SIGINT, forced=false/openSockets0. Approved run classifier accepted0/requestedSIGTERM only; receipt confirmed=false and child exit1 correctly prevented PASS. Historical run lacks explicit accepted signal-request journal receipt."
+    },
+    {
+      "id": "no-live-sockets",
+      "status": "PASS_BOUNDED",
+      "finding": "Gateway reports0 open sockets; driver remainingClientSockets0. Existing owned-stop receipts run/gateway/PostgREST all report already exited. Does not retroactively satisfy failed strict child classifier."
+    },
+    {
+      "id": "source-binding",
+      "status": "PASS",
+      "finding": "12 unchanged source pins match current files; actual run JS pin afcfc7d4 is preserved exactly in f8702304 parent commit. Held command size/hash matches original binding with executionAuthority=false; never dispatched."
+    },
+    {
+      "id": "documented-signal-path",
+      "status": "PASS_PRIMARY_SOURCE",
+      "finding": "Pinned official PostgRESTv12.2.3 Unix.hs installs both SIGTERM/SIGINT as throwTo main-thread UserInterrupt. This is consistent with actual SIGINT exit after cleanup; it establishes no historical Auth transport cause."
+    },
+    {
+      "id": "minimal-classifier-correction",
+      "status": "PASS_STATIC_ONLY",
+      "finding": "f8702304 helper accepts0/SIGTERM/SIGINT only when owned pg.kill(SIGTERM) returnedtrue; logs pid/signal/accepted. Prior-running,!forced,zero-open-sockets and parent explicit stopped receipt/code0/signalnull remain mandatory. No core Auth/ACK/request changes or runtime retest."
+    },
+    {
+      "id": "stop-boundary",
+      "status": "PASS",
+      "finding": "Actual classifier FAIL ends scope: no retry, second probe, RAM diagnosis or full500 run. Historical FAIL unchanged after pure correction. Further runtime verification needs new authorization."
+    },
+    {
+      "id": "scope-and-cause",
+      "status": "PASS",
+      "finding": "No500 processed profiles/1500 outputs/8000 controls/Unit60 or Production proof. No claimed historical TypeError fix. Existing local user authorization is not expanded by this review."
+    }
+  ],
+  "actualMetrics": {
+    "freshACKs": 16,
+    "fullPostimagesChecked": 16,
+    "HTTPRequests": 49,
+    "readRPCs": 33,
+    "CASRPCs": 16,
+    "allResponses200": true,
+    "gatewayErrors": 0,
+    "requestErrors": 0,
+    "wholeAuthMaximumMs": 3141.3345640000002,
+    "nativeCASMaximumMs": 1951.0720169999986,
+    "runtimeWallMs": 57968.723507,
+    "commonLifetimePeakBytes": 1475330048,
+    "remainingReserveBytes": 572669952,
+    "remainingReservePercent": 27.9624,
+    "finalCurrentBytes": 831545344,
+    "profiles": 500,
+    "active": 0,
+    "usage": 6000,
+    "units": 0,
+    "models": 0,
+    "retries": 0
+  },
+  "nativePreservationHashes": {
+    "authInvariantHash": "e2aa3696fee35f87e2be3366d0beaf173af3a114383d4d514652a139848ce7fa",
+    "storeNonAuthHash": "8757b60eb494e2fe01ac7e1a0e51d7ee19a3e14b04f61282ab26ee2da18573b6",
+    "briefingsHash": "4ffcc4b1f32a12673ad8b791798de376b5e59d61d728d46dc40246de54595dc2",
+    "usageHash": "8d160f2bcab243b920af0b6373332fc4a0a9416830d29e256755ad76db9d8e1d",
+    "profileHash": "10c96addf2a2cc67abd8658c349e838c0897cd3c7ace9a94336638980851ba05"
+  },
+  "originalSourceBeforeAfterExactlyEqual": true,
+  "prestartReportPin": {
+    "path": "AUTH_TRANSPORT_PROBE_PRESTART_REVIEW.SAFE.json",
+    "bytes": 7704,
+    "sha256": "80ab5580d735c4a6669db0bd63d77ca98c78754497b82fdec5b98e05cc875b4c"
+  },
+  "actualRunSourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.py",
+      "bytes": 10615,
+      "sha256": "95134458b28fbbef52a41bfca0be7951de8ea13e7441692dbf729d8a7fee1ba0"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 18699,
+      "sha256": "afcfc7d43f8d08e313e52e92b143745147b5c10a97ed2607aae9b4149172ea98"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 43294,
+      "sha256": "1dc68b22e57f69e191693693766e1628e83b0c2253fb3c22d83791ebbb3ce1cd"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 3018,
+      "sha256": "95c24fa1ccd2e47467cbd22ecfb89e69ca441fc9fb9c8a21fab8c4583ce78a8b"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 4335,
+      "sha256": "e2ac57c7f7f47740ca98d1f48e767ab540a6d10af9c4d5041cde7fdf889b0482"
+    },
+    {
+      "path": "scripts/fixtures/w15-atomic-integration-target.json",
+      "bytes": 299,
+      "sha256": "e396b8bf990df0d773211e8c1483c938e3b57f3787481891334cc73d51c0abc5"
+    },
+    {
+      "path": "scripts/fixtures/z3-plattform.js",
+      "bytes": 28609,
+      "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 545054,
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "lib/helmut/auth-store-cas.js",
+      "bytes": 2753,
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544"
+    },
+    {
+      "path": "server.js",
+      "bytes": 547868,
+      "sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9"
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "CONTROLLER_RESULT.SAFE.json",
+      "bytes": 527,
+      "sha256": "75079da19245c896c33a6743dec9c20202b22b0ba2fbd64d6ebf4af2bfce5500"
+    },
+    {
+      "path": "SOURCE_BEFORE.SAFE.json",
+      "bytes": 761,
+      "sha256": "77737a22c50de6c17bc121703e34e5ef252e9920a0214ab1546f88d25dfabeea"
+    },
+    {
+      "path": "SOURCE_AFTER_READONLY.SAFE.json",
+      "bytes": 761,
+      "sha256": "77737a22c50de6c17bc121703e34e5ef252e9920a0214ab1546f88d25dfabeea"
+    },
+    {
+      "path": "TARGET_BASELINE.SAFE.json",
+      "bytes": 763,
+      "sha256": "010526b4540dceac6b1c5252e4c7d61df397f5adb7597883288856c5f050ed46"
+    },
+    {
+      "path": "TARGET_FINAL_INDEPENDENT_READONLY.SAFE.json",
+      "bytes": 833,
+      "sha256": "8deafbbbaee5c49633f22b60deeedc987151e67c5d8a49ac10a41f6e5759e17d"
+    },
+    {
+      "path": "STAGED_DRY.SAFE.json",
+      "bytes": 173,
+      "sha256": "3e6bc6caff4625c1f88b26d0c7efa84907bb413dfdf8e95a7b8e64e25685c9fc"
+    },
+    {
+      "path": "state/RESULT.SAFE.json",
+      "bytes": 26453,
+      "sha256": "7d6028114729a0f10df6fe8c787f8235cfa302c0e1ec9279678a25f58ade93bd"
+    },
+    {
+      "path": "state/gateway-observations.SAFE.jsonl",
+      "bytes": 15365,
+      "sha256": "d087503b37afbf43a204e82fd0361020964847472890d756bafdb64bfdbf4f84"
+    },
+    {
+      "path": "state/transport-observations.SAFE.jsonl",
+      "bytes": 268212,
+      "sha256": "c6dee477257af35b9b794c796674214e79a8dea0b8c5df604c5dc9ec624866bf"
+    },
+    {
+      "path": "state/run-observations.SAFE.jsonl",
+      "bytes": 29277,
+      "sha256": "e6c3f8deeb8cce206ae7798e4ade325ce6d159a8541beb21a9f24f219ac65ed3"
+    },
+    {
+      "path": "state/stop-run.SAFE.jsonl",
+      "bytes": 92,
+      "sha256": "f234ae15d27546ca55de60ec7b5ec3b9f8cb4e784b02b0a7e5a66d34b6ba7524"
+    },
+    {
+      "path": "state/stop-gateway.SAFE.jsonl",
+      "bytes": 96,
+      "sha256": "5b11ff4a2930e086459f0a3be3bf108276e0fa0336936059c13767a70f99b411"
+    },
+    {
+      "path": "state/stop-postgrest.SAFE.jsonl",
+      "bytes": 98,
+      "sha256": "48455be1aeb79fb926710b991a972c2dad0158096ba7178af7e0f8019f869dff"
+    }
+  ],
+  "staticCorrection": {
+    "commit": "f870230465759c88e781343651c4b7ee75932f3e",
+    "status": "PASS_STATIC_ONLY_NO_RETEST",
+    "sourcePin": {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 19209,
+      "sha256": "f9898e10a0e085cc66e589e2a24da988e51612b6170a0c0cb5b6421d99839741"
+    },
+    "primarySourcePin": {
+      "path": "POSTGREST_V12_SIGNAL_SOURCE.PRIMARY.txt",
+      "bytes": 1830,
+      "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
+    },
+    "primarySourceURL": "https://raw.githubusercontent.com/PostgREST/postgrest/v12.2.3/src/PostgREST/Unix.hs",
+    "historicalResultUnchanged": true,
+    "reportedRootPureAssertions": 9,
+    "pureAssertionsNotRerunByReviewer": true
+  },
+  "actualDiagnosticStatus": "FAIL_UNKNOWN_CHILD_OR_SOCKET_CLOSURE",
+  "actualControllerStatus": "FAIL_OR_UNKNOWN",
+  "actualChildExit": {
+    "code": 1,
+    "signal": null
+  },
+  "originalEleventhOutcome": "UNCHANGED_UNKNOWN_NOT_REPLAYED",
+  "historicalRootCauseProven": false,
+  "RAMAcceptance": false,
+  "full500Started": false,
+  "productionProof": false,
+  "nextBoundary": "STOP: preserve evidence. No retry, RAM diagnosis or full500 attempt after this actual failed execution. Pure signal-classifier correction does not retroactively certify the failed attempt."
+}

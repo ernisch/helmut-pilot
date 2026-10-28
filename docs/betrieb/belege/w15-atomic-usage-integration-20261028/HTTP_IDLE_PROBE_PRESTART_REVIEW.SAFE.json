@@ -1,0 +1,104 @@
+{
+  "schema": "helmut-w15-http-idle-independent-static-prestart/1",
+  "status": "PASS_STATIC_ONE_BOUNDED_HTTP_IDLE_PROBE_ONLY",
+  "reviewer": "/root/atomic_integration_audit",
+  "reviewedAtUTC": "2026-10-28T14:25:25.845334+00:00",
+  "checks": [
+    {
+      "name": "strict_real_file_CLI",
+      "status": "PASS",
+      "evidence": "--server exactchildargs; user--config absoluteprotectedfile; --dry-run exits beforeoutput/fork/HTTP; unknownflagsreject."
+    },
+    {
+      "name": "pinned_runtime_and_guard",
+      "status": "PASS",
+      "evidence": "Actualprocess.versionmustv24.19.0; preloadednetworkguardandfullmandatoryoff/localENV retained inbothdriver/child."
+    },
+    {
+      "name": "fresh_exact_work",
+      "status": "PASS",
+      "evidence": "Onlyexactnewprotectedoutputpath; existingdirectory rejects repeat;0700/0600 journal/result files."
+    },
+    {
+      "name": "no_original_or_database_access",
+      "status": "PASS",
+      "evidence": "NoAuth/storage/PG/profile/model APIs; syntheticUUIDbody only; actualgatewayforwardssolelytofresh127.0.0.1HTTPorigin."
+    },
+    {
+      "name": "bounded_requests",
+      "status": "PASS",
+      "evidence": "Two explicitcases; eachtwo concurrentwarmups andonefreshrequest. Atmost6driverHTTPattempts, correspondingatmost6forwardedlegs; noapplicationwriteeffects."
+    },
+    {
+      "name": "real_clock_stimulus",
+      "status": "PASS",
+      "evidence": "Explicit7sAtomicswait onlydriverdiagnosticstimulus; serverchildtimers remainlive; no globalclockchange/GC/cachemanipulation."
+    },
+    {
+      "name": "real_gateway_and_forks",
+      "status": "PASS",
+      "evidence": "Driverandserversseparateprocesses; genuineexistingz3gatewayhandler/header/defaulttimeoutsretained. Constructorwrap onlyattachesobservations."
+    },
+    {
+      "name": "stable_socket_identity",
+      "status": "PASS",
+      "evidence": "Serverconnectioncapturesimmutablelocal/remoteports; end/close/errorobserved()overrideslateundefinedports. WeakMapIDsbinddriverwarmandfreshsocket."
+    },
+    {
+      "name": "narrow_expected_negative",
+      "status": "PASS",
+      "evidence": "Reproductiononlystallfreshsocketerror UND_ERR_SOCKETorECONNRESET pluswarmobjectreuse andgatewayclose exactportbeforefreshsendusinghostmonotonicclock."
+    },
+    {
+      "name": "honest_no_repro",
+      "status": "PASS",
+      "evidence": "OtherfailureFAIL/UNKNOWN; successPASS_NO_REPRO_CAUSE_NOT_PROVEN; originalCauseProvenfalse andhistorical11thUNKNOWNunchanged."
+    },
+    {
+      "name": "cleanup_and_durable_end",
+      "status": "PASS",
+      "evidence": "Childstopreceipt+exit0+nokillfallbackrequired; openorigin/gatewaysocketsdrainedand0asserted; fallbackmarksFAIL; finallyunsubscribesdriverchannels."
+    },
+    {
+      "name": "sanitized_recording",
+      "status": "PASS",
+      "evidence": "Onlyallowlistedgenericnames/messages/codesandlocalsocketcounters/ports; nocredentials/body/URL/privateinputlogging."
+    },
+    {
+      "name": "no_retry_or_acceptance",
+      "status": "PASS",
+      "evidence": "stopped latchblocksnewrequestsafterfailure; nocurrentdiagnosis/full500/RAM/Unitacceptanceclaimed; noautomaticretry."
+    }
+  ],
+  "sourcePin": {
+    "path": "/workspace/helmut-w15-atomic-integration/scripts/synthetik-500-w15-http-idle-probe.js",
+    "bytes": 16094,
+    "sha256": "f7a2b0369ba5b5c277553ffe87063688697e6a158962daea4638c6aa08dd5699"
+  },
+  "gatewayPin": {
+    "path": "/workspace/helmut-w15-atomic-integration/scripts/fixtures/z3-plattform.js",
+    "bytes": 28609,
+    "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+  },
+  "guardPin": {
+    "path": "/workspace/helmut-w15-atomic-integration/scripts/lokaler-netzschutz.js",
+    "bytes": 17384,
+    "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+  },
+  "maximumDriverHTTPAttempts": 6,
+  "maximumForwardedHTTPAttempts": 6,
+  "maximumCases": 2,
+  "eventLoopStallMs": 7000,
+  "databaseOperations": 0,
+  "modelCalls": 0,
+  "reviewerTestsRun": 0,
+  "reviewerHTTPRequests": 0,
+  "reviewerDatabaseQueries": 0,
+  "workloadStartedByReviewer": false,
+  "rootReportedPriorDryInvocation": "Oneactualdrycallonprior114296...sourcebeforeports/draintelemetryfix; notrerunbyreviewer andnotcalledcurrentf7runtimeproof. CLI/drybodyunchangedbystaticinspection.",
+  "originalEleventhCause": "UNKNOWN_NOT_RETROSPECTIVELY_ATTRIBUTED",
+  "historicalWriteReplayed": false,
+  "RAMPass": false,
+  "full500Ready": false,
+  "approvalScope": "OnlyonefreshlimitedHTTP-onlyprobe undercurrentGO; node/gatewayfingerprintsandabsentworkcheckedagainatlaunch. AnyunexpectedFAIL/UNKNOWNstops; no automaticrepeat."
+}

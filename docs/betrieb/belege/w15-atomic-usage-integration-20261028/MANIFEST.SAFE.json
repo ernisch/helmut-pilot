@@ -16,6 +16,16 @@
       "sha256": "c4d55de806eec8c657e061e2ee8d795dcdba2d3c58c31892cad781550001c39e"
     },
     {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/AUTH_TRANSPORT_PROBE_PRESTART_REVIEW.SAFE.json",
+      "bytes": 7704,
+      "sha256": "80ab5580d735c4a6669db0bd63d77ca98c78754497b82fdec5b98e05cc875b4c"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/AUTH_TRANSPORT_PROBE_RESULTS_REVIEW.SAFE.json",
+      "bytes": 12672,
+      "sha256": "af3b64cdaeb2e91128b6df8a3a785ad1f9d55f44049251a8042bd0df913ad2f5"
+    },
+    {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/COVERAGE.SAFE.json",
       "bytes": 826,
       "sha256": "934b8a48effd19c78913b8526d97e6a7a673c50da82437e8fb3e83e6cb7d0e1a"
@@ -29,6 +39,11 @@
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/D_RESULTS_INDEPENDENT_REVIEW.SAFE.json",
       "bytes": 15279,
       "sha256": "45ed6642e60ad704f4d4f50c06bfd43f3347b39a838bd369d65eace3339baed1"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/HTTP_IDLE_PROBE_PRESTART_REVIEW.SAFE.json",
+      "bytes": 4637,
+      "sha256": "43b3d2de6e1be124057456d4abd32e822797dd7c6eb53c003ab72a13b9887f0d"
     },
     {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/INTEGRATION_RESULT.SAFE.json",
@@ -124,6 +139,11 @@
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/TRANSPORT_METADATA_REVIEW.SAFE.json",
       "bytes": 6284,
       "sha256": "3517127e965db60e8e305b9ac838aec623b45a3cf0201208785c99cf6f72419e"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/TRANSPORT_SPRINT_SUMMARY.SAFE.json",
+      "bytes": 2348,
+      "sha256": "e0616535e2fc28a19430c7afcdc5ce20da59b4dbc6c39b05cbfc9f93af351f69"
     }
   ],
   "scope": "Sanitized exact functional/static/failure/readback measurements; no original/private inputs; no full500/Productionacceptance"

@@ -1,9 +1,9 @@
 # CURRENT STATE — Helmut
 
-## W15: atomare Integration lokal PASS; End500-Diagnose gestoppt (28.10.)
+## W15: Transportprobe beendet; End500 weiterhin gesperrt (28.10.)
 
 PR974 eigener Integrationsbranch auf PR973 `fa506939`/PR972 `c36bd427`;
-alle PRs ungemergt. Code `e1a62acc`; ursprüngliche offene972-Arbeit unverändert.
+alle PRs ungemergt. Code `f8702304`; ursprüngliche offene972-Arbeit unverändert.
 Echter signierter Prepared0-/HTTP-/Auth-/EU-DraftCompletion-Anschluss PASS,
 unabhängig16/16; Worker19,87s, Auth maximal2,491931300s, Peak719.044.608Bytes.
 5.000 historische Einträge verlustfrei atomar übernommen;0aktive Testprofile.
@@ -15,10 +15,22 @@ Unabhängig alle3.501Postimages/6.000Usage/500Profile/0aktiv erhalten bestätigt
 Kein Reserveverstoß, aber keine belastbare Restwachstums-/500er-Abnahme.
 Ursache unterhalb TypeError nicht gesichert; sichere Fehlercodes künftig ergänzt,
 pure3Prüfungen/Review12/12, kein Retry. Kein voller Mock500/Production-Lauf.
-CI für den Codekopf noch laufend; kein neues vollständiges CI-Grün behauptet.
+Neuer gezielter Sprint:6/6 kleine HTTP-Anfragen PASS, ohne Reproduktion.
+Frische isolierte Auth-Probe:16/16 Schreibquittungen samt Vollnachlesen,
+49/49 HTTP200; ganze Auth maximal3,141334564s/native1,951072017s.
+Gemeinsamer historischer Containerpeak1.475.330.048Bytes,
+Reserve572.669.952Bytes=27,9624%; kein frischer End500-Nachweis.
+Quellzustand unverändert, alle6.000Usage erhalten,500Profile/0aktiv.
+Abschluss der Probe FAIL: PostgREST-SIGINT wurde trotz angefordertem SIGTERM
+von der neuen Diagnoseklassifizierung nicht bestätigt. Kleine dokumentierte
+Korrektur `f8702304` nur rein9/9 und unabhängig statisch geprüft; kein Retry.
+Ursprünglicher11.UNKNOWN weiterhin ungeklärt; keine neue End500-Diagnose gestartet.
+Unabhängige Ergebnisabnahme17Punkte, dauerhafte exakte Auth-/Kernelbelege erhalten.
+CI `e1a62acc` jetzt vollständig grün; neue Kopf-CI separat, kein übertragenes CI-Grün.
 Bekannter Vercel-Fehler `includeFiles`2.915>256Zeichen unverändert separat.
-Nächster Schritt: begrenzte Diagnose des unklaren Schreib-/Requestfehlers;
-kein neuer Gesamtversuch freigabereif. Stopregel bleibt bestehen.
+Nächster Schritt: neues gezieltes GO für Diagnose mit vollständiger Transport-
+und Abschlussquittung, danach End500-Abnahme; kein Gesamtversuch freigabereif.
+Nach tatsächlichem Diagnose-FAIL keine weitere Ausführung in diesem GO.
 [Messwerte, Quellenbindungen, Fehler und Freigabestand](betrieb/w15-atomic-usage-integration-20261028.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
