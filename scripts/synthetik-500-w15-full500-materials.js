@@ -249,7 +249,7 @@ async function main() {
     const route = structuredClone(native.costInputs.routeContract);
     Object.assign(route, { runtimeManifestHash: P.hash(runtimeManifest), orderRenewalHash: EU.ORDER_RENEWAL_HASH });
     Object.assign(route.route, { productionCommit: config.commit, deploymentId: config.deploymentId, deploymentHost: config.host });
-    Object.assign(route.management, { validFromUTC: constructedAtUTC, validUntilUTC: end });
+    Object.assign(route.management, { validFromUTC: plannedWindow.startsAtUTC, validUntilUTC: end });
     const startsAtUTC = plannedWindow.startsAtUTC;
     const currentConfig = { selector: { operationId }, runId: "nachlauf500-" + Date.now(), constructedAtUTC,
       window: { startsAtUTC, endsAtUTC: end } };
