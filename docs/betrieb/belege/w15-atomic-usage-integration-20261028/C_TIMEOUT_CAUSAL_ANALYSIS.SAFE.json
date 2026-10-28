@@ -1,0 +1,669 @@
+{
+  "schema": "helmut-w15-C-timeout-causal-analysis/1",
+  "status": "READ_ONLY_TRIGGER_PROVEN_DEEPER_PAUSE_CAUSE_NOT_IDENTIFIABLE",
+  "analyzedAtUTC": "2026-10-28T17:58:29.602579+00:00",
+  "actualSourceCommit": "ee36720d",
+  "reviewer": "independent atomic_integration_audit",
+  "method": "Existing C private timing/journal/kernel/process/log files only plus live read-only cumulative cgroup counters. No SQL/HTTP/signals/workload/test. No source changes.",
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.py",
+      "bytes": 26290,
+      "sha256": "6ebf276cd774de23a7a58038f85594b15afd3d774c34fab596d1c47b88ac371c"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.js",
+      "bytes": 12137,
+      "sha256": "bcee2d77c001d52cbe8d36bfa59cc19b38602f92372f2ccb9f34be575bd89c96"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-sql-preflight.py",
+      "bytes": 11247,
+      "sha256": "58df08038a407d944086133da7acb528e51bebe66d6f3532b74e47e29e90fe6e"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 46446,
+      "sha256": "cf2e79b47f8ea87cac5a2240d554ac49c90f478002aa822928b43a6a1f53e2aa"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 43294,
+      "sha256": "1dc68b22e57f69e191693693766e1628e83b0c2253fb3c22d83791ebbb3ce1cd"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 6301,
+      "sha256": "677ab387df1147619328be32f5601e98280ae434c49eb753ad7873cd41017b21"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 4508,
+      "sha256": "b4f7ab49b92a39366ce440ca000ea815e0ddaa3edd2d37733c9f0a311cb90874"
+    },
+    {
+      "path": "scripts/fixtures/w15-local-memory-budget.json",
+      "bytes": 641,
+      "sha256": "83414ddc04a025b20eedd9119657d62689f8e18d2f660b8a3bad85556e2566c7"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.json",
+      "bytes": 115,
+      "sha256": "acffec2e146c8b104605eb27b52a02822cb189f0c0468303fa2061240cc7bff2"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.js",
+      "bytes": 1096,
+      "sha256": "7fde8ef7bd10210da3d20ffb9d03fe9115ec4cf1716d45a2a79faf24ad8bc994"
+    },
+    {
+      "path": "scripts/fixtures/w15-atomic-integration-target.json",
+      "bytes": 299,
+      "sha256": "e396b8bf990df0d773211e8c1483c938e3b57f3787481891334cc73d51c0abc5"
+    },
+    {
+      "path": "scripts/fixtures/z3-plattform.js",
+      "bytes": 28609,
+      "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 545054,
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "lib/helmut/auth-store-cas.js",
+      "bytes": 2753,
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-direct-codec.js",
+      "bytes": 13651,
+      "sha256": "f4390028c1c8f7cad40899c74cf2e5b3203f542b5617af48c3c56aecbbf22645"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
+      "bytes": 12237,
+      "sha256": "bc2409e35d68d52d0ba92914ffa1e427de42da738b73197e9bf7fe428f71b5fe"
+    },
+    {
+      "path": "supabase/proposals/auth_usage_atomic_local.sql",
+      "bytes": 20726,
+      "sha256": "5a8c07670354b504c85984618999feaa93f78f3107f96236ce61b2f7bbcd438a"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 25944,
+      "sha256": "77357f3871aada76433161e466de471888853743f63c0bfcec7eb7f58db4489d"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-postgrest-stop-check.py",
+      "bytes": 8418,
+      "sha256": "d29d2895b2440ee03f2e25f2209f18c9df92ae5372ccc55fd5f0500a538049a7"
+    },
+    {
+      "path": "scripts/fixtures/w15-end500-memory-fixture.js",
+      "bytes": 17280,
+      "sha256": "cca76fa363e1a85801241a6b1a58b8d559d0d57d757a0488170345ebd66bd209"
+    },
+    {
+      "path": "server.js",
+      "bytes": 547868,
+      "sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9"
+    },
+    {
+      "path": "scripts/lokal.js",
+      "bytes": 5431,
+      "sha256": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-observation-check.js",
+      "bytes": 10325,
+      "sha256": "0cef55042d782ac8ed9a06d8148408b0ea3bb15d66a97ecd61089c408656c48c"
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/FORWARD_RESULT.SAFE.json",
+      "bytes": 1824215,
+      "sha256": "0b76630aeef9e084cc18d3e030f1878bbbc9c25aa6b757a7aea5a72dad649588"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/CONTROLLER_RESULT.SAFE.json",
+      "bytes": 2475,
+      "sha256": "d1a95541b79e7040bb1657b0458770e575d2f701bddd2733b50a2910351aa35e"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/run-observations.SAFE.jsonl",
+      "bytes": 2230255,
+      "sha256": "730e4a9755490c386af8720fb376133b6d7354dd870e965326b135aa0a1447b9"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/outer-progress.SAFE.jsonl",
+      "bytes": 5518317,
+      "sha256": "6d0108bc115ea75baa6167859b362c4e2ade58def9380e3b8940901427ba0570"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/gateway-observations.SAFE.jsonl",
+      "bytes": 319600,
+      "sha256": "3cf6f067af7a812d4d837b2d8192c1f4c43698a415d8fae90ac3225d20fb470f"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/postgrest.PRIVATE.log",
+      "bytes": 1247,
+      "sha256": "d308812470b5fdb3e36c6bcc7261ea60e020f708f02f4d7001de5439b1a9d103"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_C_POSTGRES_PRIMARY.PRIVATE.log",
+      "bytes": 11163,
+      "sha256": "9a39ccbdb7286881b54b5c89175bb591ac79ba5bad896e6a190c044ec24e2b01"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_C_RESULTS_INDEPENDENT_REVIEW.SAFE.json",
+      "bytes": 19723,
+      "sha256": "0791ce58147bcfe07fa87600452059947670f9b32732b10df6a1a3ce45507012"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_C_NATIVE_FINAL_INDEPENDENT_READONLY.SAFE.json",
+      "bytes": 1933,
+      "sha256": "61cc142e647f7bb34b2541ab3efab858d7ea78992a8097c25f72ee4c6fea1bd1"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/C_TIMEOUT_READONLY_KERNEL_COUNTERS.SAFE.json",
+      "bytes": 2781,
+      "sha256": "08656ab43a6e3738a57aa74d32cbda8a37e54372662f257de767c04e4c988d29"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/MEMORY_PRESTART_REVIEW_C.SAFE.json",
+      "bytes": 16659,
+      "sha256": "3c6a9826c9b6412f5908c5bef9e0c9f114ead9ed3115f76fa5349975ec279e07"
+    }
+  ],
+  "actualOutcome": {
+    "acceptedFullPostimageCAS": 369,
+    "observedWholeAuth": 370,
+    "nativeCAS": 369,
+    "failedIndex": 369,
+    "failedCallbackRuns": 0,
+    "failedNativeCAS": 0,
+    "failureKind": "storage-timeout",
+    "timeoutMs": 10000,
+    "failedWholeCallMs": 11068.298475000076,
+    "originalEleventhOutcome": "UNCHANGED_UNKNOWN",
+    "B291Outcome": "UNCHANGED_UNKNOWN",
+    "COverallVerdict": "UNCHANGED_FAIL",
+    "finalNativeProfiles": 500,
+    "finalNativeActive": 0,
+    "finalNativeUsage": 6000,
+    "finalNativeFullPostimages": 3501
+  },
+  "timeline": [
+    {
+      "atUTC": "2026-10-28T17:36:00.756Z",
+      "source": "durable-auth",
+      "sequence": 10741,
+      "event": "auth-started",
+      "collection": "mutations",
+      "index": 368,
+      "rowId": 369,
+      "performanceStartMS": 1299991.445689
+    },
+    {
+      "atUTC": "2026-10-28T17:36:00.787Z",
+      "source": "gateway",
+      "sequence": 2234,
+      "event": "gateway-request",
+      "route": "read",
+      "socketId": 9,
+      "monoNS": "44942851177203"
+    },
+    {
+      "atUTC": "2026-10-28T17:36:06.482Z",
+      "source": "gateway",
+      "sequence": 2235,
+      "event": "socket-close",
+      "route": null,
+      "socketId": 7,
+      "monoNS": "44948545916619",
+      "bytesRead": 491002800,
+      "bytesWritten": 1432227723
+    },
+    {
+      "atUTC": "2026-10-28T17:36:08.884Z",
+      "source": "gateway",
+      "sequence": 2236,
+      "event": "gateway-finish",
+      "route": "read",
+      "socketId": 9,
+      "monoNS": "44950947546034"
+    },
+    {
+      "atUTC": "2026-10-28T17:36:09.230Z",
+      "source": "durable-auth",
+      "sequence": 10764,
+      "event": "auth-started",
+      "collection": "casWrites",
+      "index": 368,
+      "rowId": 368,
+      "performanceStartMS": 1308466.12603
+    },
+    {
+      "atUTC": "2026-10-28T17:36:15.633Z",
+      "source": "gateway",
+      "sequence": 2237,
+      "event": "socket-close",
+      "route": null,
+      "socketId": 9,
+      "monoNS": "44957696929576",
+      "bytesRead": 88381130,
+      "bytesWritten": 272122988
+    },
+    {
+      "atUTC": "2026-10-28T17:36:15.683Z",
+      "source": "gateway",
+      "sequence": 2238,
+      "event": "socket-connect",
+      "route": null,
+      "socketId": 10,
+      "monoNS": "44957746685296"
+    },
+    {
+      "atUTC": "2026-10-28T17:36:15.818Z",
+      "source": "gateway",
+      "sequence": 2239,
+      "event": "gateway-request",
+      "route": "cas",
+      "socketId": 10,
+      "monoNS": "44957882382979"
+    },
+    {
+      "atUTC": "2026-10-28T17:36:16.919Z",
+      "source": "gateway",
+      "sequence": 2240,
+      "event": "gateway-finish",
+      "route": "cas",
+      "socketId": 10,
+      "monoNS": "44958983043413"
+    },
+    {
+      "atUTC": "2026-10-28T17:36:16.925Z",
+      "source": "durable-auth",
+      "sequence": 10774,
+      "event": "auth-finished",
+      "collection": "casWrites",
+      "index": 368,
+      "rowId": 368,
+      "performanceStartMS": 1308466.12603,
+      "performanceEndMS": 1316157.621893,
+      "wallMs": 7691.495863000164,
+      "acknowledged": true,
+      "callbackRuns": null
+    },
+    {
+      "atUTC": "2026-10-28T17:36:16.928Z",
+      "source": "durable-auth",
+      "sequence": 10775,
+      "event": "auth-finished",
+      "collection": "mutations",
+      "index": 368,
+      "rowId": 369,
+      "performanceStartMS": 1299991.445689,
+      "performanceEndMS": 1316162.750213,
+      "wallMs": 16171.304524000036,
+      "acknowledged": true,
+      "callbackRuns": 1
+    },
+    {
+      "atUTC": "2026-10-28T17:36:16.932Z",
+      "source": "gateway",
+      "sequence": 2241,
+      "event": "socket-connect",
+      "route": null,
+      "socketId": 11,
+      "monoNS": "44958996433006"
+    },
+    {
+      "atUTC": "2026-10-28T17:36:16.934Z",
+      "source": "gateway",
+      "sequence": 2242,
+      "event": "gateway-request",
+      "route": "read",
+      "socketId": 11,
+      "monoNS": "44958998284415"
+    },
+    {
+      "atUTC": "2026-10-28T17:36:17.692Z",
+      "source": "gateway",
+      "sequence": 2243,
+      "event": "gateway-finish",
+      "route": "read",
+      "socketId": 11,
+      "monoNS": "44959755612481"
+    },
+    {
+      "atUTC": "2026-10-28T17:36:22.923Z",
+      "source": "gateway",
+      "sequence": 2244,
+      "event": "socket-close",
+      "route": null,
+      "socketId": 10,
+      "monoNS": "44964987432550",
+      "bytesRead": 9818804,
+      "bytesWritten": 551
+    },
+    {
+      "atUTC": "2026-10-28T17:36:23.476Z",
+      "source": "durable-auth",
+      "sequence": 10782,
+      "event": "auth-started",
+      "collection": "mutations",
+      "index": 369,
+      "rowId": 370,
+      "performanceStartMS": 1322711.464587
+    },
+    {
+      "atUTC": "2026-10-28T17:36:23.516Z",
+      "source": "gateway",
+      "sequence": 2245,
+      "event": "socket-connect",
+      "route": null,
+      "socketId": 12,
+      "monoNS": "44965580317175"
+    },
+    {
+      "atUTC": "2026-10-28T17:36:23.519Z",
+      "source": "gateway",
+      "sequence": 2246,
+      "event": "gateway-request",
+      "route": "read",
+      "socketId": 12,
+      "monoNS": "44965582733936"
+    },
+    {
+      "atUTC": "2026-10-28T17:36:23.748Z",
+      "source": "gateway",
+      "sequence": 2247,
+      "event": "socket-close",
+      "route": null,
+      "socketId": 11,
+      "monoNS": "44965812195020",
+      "bytesRead": 626,
+      "bytesWritten": 14322008
+    },
+    {
+      "atUTC": "2026-10-28T17:36:34.537Z",
+      "source": "gateway",
+      "sequence": 2248,
+      "event": "socket-end",
+      "route": null,
+      "socketId": 12,
+      "monoNS": "44976601138843",
+      "bytesRead": 626,
+      "bytesWritten": 0
+    },
+    {
+      "atUTC": "2026-10-28T17:36:34.540Z",
+      "source": "gateway",
+      "sequence": 2249,
+      "event": "socket-close",
+      "route": null,
+      "socketId": 12,
+      "monoNS": "44976604314224",
+      "bytesRead": 626,
+      "bytesWritten": 0
+    },
+    {
+      "atUTC": "2026-10-28T17:36:34.546Z",
+      "source": "durable-auth",
+      "sequence": 10817,
+      "event": "auth-finished",
+      "collection": "mutations",
+      "index": 369,
+      "rowId": 370,
+      "performanceStartMS": 1322711.464587,
+      "performanceEndMS": 1333779.763062,
+      "wallMs": 11068.298475000076,
+      "acknowledged": false,
+      "callbackRuns": 0
+    }
+  ],
+  "successfulIndex368": {
+    "wholeAuthMs": 16171.304524000036,
+    "nativeWrapperMs": 7691.495863000164,
+    "initialGatewayReadStartUTC": "2026-10-28T17:36:00.787Z",
+    "initialGatewayReadFinishUTC": "2026-10-28T17:36:08.884Z",
+    "initialGatewayReadApproxMs": 8097,
+    "nativeWrapperStartedUTC": "2026-10-28T17:36:09.230Z",
+    "gatewayCASStartedUTC": "2026-10-28T17:36:15.818Z",
+    "gatewayCASFinishedUTC": "2026-10-28T17:36:16.919Z",
+    "gatewayCASMonoDurationMs": 1100.660434,
+    "wrapperToGatewayStartApproxMs": 6588,
+    "postimageGatewayReadDurationMs": 757.328066,
+    "meaning": "Slowdown already preceded failed call. Native wrapper duration is not equivalent to SQL or HTTP-only duration; approximately6.588s elapsed before gateway recorded its CAS request. Location/cause within serialization/durable IO/scheduling/client preparation is not determined."
+  },
+  "failedIndex369": {
+    "authRecordedStartUTC": "2026-10-28T17:36:23.476Z",
+    "gatewayReadStartUTC": "2026-10-28T17:36:23.519Z",
+    "gatewayReadSocketEndUTC": "2026-10-28T17:36:34.537Z",
+    "gatewayReadSocketCloseUTC": "2026-10-28T17:36:34.540Z",
+    "authFailureRecordedUTC": "2026-10-28T17:36:34.546Z",
+    "gatewayResponseFinished": false,
+    "socketBytesWritten": 0,
+    "callbackExecuted": false,
+    "nativeCASStarted": false,
+    "trigger": "Explicit closed storage-timeout metadata records the10000msstorage guard; no failure cause is inferred from duration alone. Underlying late response/observation pause cause remains unknown."
+  },
+  "sharedObservationGap": {
+    "outerFromUTC": "2026-10-28T17:36:26.043283+00:00",
+    "outerToUTC": "2026-10-28T17:36:34.448191+00:00",
+    "outerGapSeconds": 8.404908,
+    "nodeFromUTC": "2026-10-28T17:36:25.958Z",
+    "nodeToUTC": "2026-10-28T17:36:34.471Z",
+    "nodeGapSeconds": 8.513,
+    "nodeMonotonicSampleGapMs": 7833.811084999936,
+    "recordingCaution": "Node sample atMs is captured before collecting process.memoryUsage; atUTC is journal recording time. GC entry atMs is event start delivered later by PerformanceObserver. These are not identical capture instants or proof of clock manipulation. Gatewayhrtime and Nodeperformance have different origins.",
+    "whatProven": "Two independently running observation paths lack records over overlapping multi-second windows. The10000msguard expired during this elapsed interval.",
+    "whatNotProven": "No trace establishes that all processes were suspended, nor that fsync, CPU descheduling, ancestor limits, hostIO, PostgreSQL, PostgREST or GC caused it."
+  },
+  "failureWindowKernelDeltas": {
+    "pgscan": {
+      "before": 114329,
+      "after": 114329,
+      "delta": 0
+    },
+    "pgscan_direct": {
+      "before": 114329,
+      "after": 114329,
+      "delta": 0
+    },
+    "pgsteal": {
+      "before": 113330,
+      "after": 113330,
+      "delta": 0
+    },
+    "pgsteal_direct": {
+      "before": 113330,
+      "after": 113330,
+      "delta": 0
+    },
+    "pgfault": {
+      "before": 63170655,
+      "after": 63172475,
+      "delta": 1820
+    },
+    "pgmajfault": {
+      "before": 0,
+      "after": 0,
+      "delta": 0
+    },
+    "file_dirty": {
+      "before": 53248,
+      "after": 53248,
+      "delta": 0
+    },
+    "file_writeback": {
+      "before": 0,
+      "after": 0,
+      "delta": 0
+    },
+    "anon": {
+      "before": 1025200128,
+      "after": 1031987200,
+      "delta": 6787072
+    },
+    "file": {
+      "before": 323301376,
+      "after": 323301376,
+      "delta": 0
+    },
+    "shmem": {
+      "before": 146964480,
+      "after": 146964480,
+      "delta": 0
+    },
+    "sock": {
+      "before": 0,
+      "after": 0,
+      "delta": 0
+    },
+    "pglazyfree": {
+      "before": 2996207,
+      "after": 2996207,
+      "delta": 0
+    },
+    "pglazyfreed": {
+      "before": 4972,
+      "after": 4972,
+      "delta": 0
+    }
+  },
+  "failureWindowMemory": {
+    "currentBeforeBytes": 1371119616,
+    "currentAfterBytes": 1377865728,
+    "peakBeforeAndAfterBytes": 1437229056,
+    "remainingReserveBytes": 610770944,
+    "kernelEventsMaxOOMSwap": 0,
+    "interpretation": "No local reserve breach, swapping, majorpagefault, newreclaimscan orwriteback counter increase at the two bracketing observations. This is a bracket, not a continuous CPU/IOstate trace."
+  },
+  "GCAndNode": {
+    "GCEntries": 5459,
+    "lastGCBeforeFailedAuth": {
+      "kind": 4,
+      "durationMs": 11.842514999210835,
+      "startMS": 1322682.637147,
+      "endMS": 1322694.479662,
+      "failedAuthBeginMS": 1322711.464587
+    },
+    "GCEntriesStartingDuringFailedAuth": 0,
+    "nodeRSSBeforeAfterGapBytes": [
+      353681408,
+      353681408
+    ],
+    "nodeHeapUsedBeforeAfterGapBytes": [
+      84916424,
+      84918376
+    ],
+    "conclusion": "No recordedmulti-secondGC or largeNodeheapallocationduringfailedwindow. MissingCPU/schedulertracingpreventsprovingNodewasrunnableorinIOsleep."
+  },
+  "processEvidence": {
+    "recordedFields": [
+      "pid",
+      "name",
+      "Rss",
+      "HighWaterRSS",
+      "RssAnon",
+      "RssFile",
+      "RssShmem",
+      "Pss",
+      "pssReadPermitted"
+    ],
+    "missingHistoricalFields": [
+      "taskCPUtime",
+      "processstate",
+      "wchan",
+      "schedstat",
+      "CPUpressure",
+      "IOpressure",
+      "perfsyncduration",
+      "perreadphaseelapsed"
+    ],
+    "PSSAvailable": false,
+    "processesDistinctNotSummed": true,
+    "conclusion": "RSSsnapshots cannot establishCPUrun/diskwait/blocking,sharedRSSnotadded;PostgRESTRSSroughly412504064Bunchangedacrosstwoframeobservations."
+  },
+  "liveCumulativeCounters": {
+    "snapshotPin": {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/C_TIMEOUT_READONLY_KERNEL_COUNTERS.SAFE.json",
+      "bytes": 2781,
+      "sha256": "08656ab43a6e3738a57aa74d32cbda8a37e54372662f257de767c04e4c988d29"
+    },
+    "observedAtUTC": "2026-10-28T17:56:49.086540+00:00",
+    "cpuMax": "max 100000",
+    "cpuStat": "usage_usec 1585507485\nuser_usec 1282834405\nsystem_usec 302673080\nnice_usec 0\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0",
+    "ioStat": "254:0 rbytes=372736 wbytes=2164510720 rios=30 wios=50880 dbytes=0 dios=0",
+    "pressureFilesAvailable": false,
+    "hostPressureFilesAvailable": false,
+    "limits": "Totals include full C execution, cleanup and final native audit. nr_throttled0 with cpu.max max only describes the localcgroup; no ancestor CPUhistory or host scheduling proof. IO totals contain no failure-windowtimestamps or fsynclatency."
+  },
+  "logFindings": {
+    "postgresPrimaryBytes": 11163,
+    "postgrestLogBytes": 1247,
+    "errorFatalPanicStatementTimeoutOOMMatches": 0,
+    "noLogErrorIsNotProofOfNoDelay": true
+  },
+  "causalityAssessment": [
+    {
+      "hypothesis": "Configuredstorage read timeout fired",
+      "status": "PROVEN_FROM_CLOSED_FAILURE_METADATA_AND_PREWRITE_SEQUENCE"
+    },
+    {
+      "hypothesis": "Kernelreserve/OOM/swapcausedfailure",
+      "status": "NOT_SUPPORTED_OBSERVED_COUNTERS_ZERO_RESERVE_INTACT"
+    },
+    {
+      "hypothesis": "NodeGCcaused8.4spause",
+      "status": "NOT_SUPPORTED_BY_RECORDED_GC_NO_CAUSAL_PROOF"
+    },
+    {
+      "hypothesis": "Localreclaimscan/majorfault/writebackspikecausedpause",
+      "status": "NOT_SUPPORTED_AT_BRACKETING_KERNEL_SNAPSHOTS"
+    },
+    {
+      "hypothesis": "Synchronousjournalfsynccausessharedstall",
+      "status": "UNRESOLVED_NO_DURATION_OR_IOWAIT_TRACE"
+    },
+    {
+      "hypothesis": "Host/ancestorCPUIOpausecausesharedstall",
+      "status": "UNRESOLVED_HISTORICAL_SCHEDULER_PSI_COUNTERS_ABSENT"
+    },
+    {
+      "hypothesis": "PostgreSQL/PostgRESTquerybodycreationdelayedresponse",
+      "status": "UNRESOLVED_NO_REQUEST_TO_SQL_BODY_TIMELINE"
+    }
+  ],
+  "minimalNextEvidenceNeeded": [
+    "Capture monotonic elapsed durations around existing journal write/fdatasync operations and gateway upstream header/body stages, using numbers/closed enums only and preservingallrecords.",
+    "Capture bounded aligned local/ancestor CPU and IO counters and eventloopdelay; retain missingPSIasunknown. No source/timeout/safetyrelaxation or forcedGC/cacheclear.",
+    "Only a separatelyreviewed bounded existingpipelineprobe may resolve causality; oldfailedwrite/operation must not be replayed. No freshEnd500startfromthisanalysisalone."
+  ],
+  "limitations": [
+    "Existingdata prove timeouttrigger and commonobservationgap, not deeper sharedpausecause. No guessed rootcause or speculativeoptimization is endorsed.",
+    "All historicalFAIL/UNKNOWN/results/originaldata remain unchanged; existingfullfixture/500sources/16Auth/49HTTP/native3501facts reused.",
+    "No newruntimeprobe or source modification was performed."
+  ]
+}

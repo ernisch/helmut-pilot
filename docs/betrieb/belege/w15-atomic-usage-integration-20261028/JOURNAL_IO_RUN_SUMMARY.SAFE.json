@@ -1,0 +1,181 @@
+{
+  "status": "FAIL_OR_UNKNOWN",
+  "sourcePin": {
+    "bytes": 2230255,
+    "sha256": "730e4a9755490c386af8720fb376133b6d7354dd870e965326b135aa0a1447b9"
+  },
+  "originalEvents": 10820,
+  "error": {
+    "name": "Error",
+    "failureKind": "assertion",
+    "reason": "journal-io-child-failed-or-unknown"
+  },
+  "failedMode": "drain",
+  "retryAllowed": false,
+  "historicalCCause": "UNCHANGED_UNKNOWN",
+  "HTTP": 0,
+  "databaseWrites": 0,
+  "AuthCalls": 0,
+  "profileActivations": 0,
+  "modelCalls": 0,
+  "scope": "Real bounded file-I/O and controlled owned-child stop only; not RAM/End500/Auth acceptance.",
+  "rawPrivateResultPin": {
+    "bytes": 11375407,
+    "sha256": "b5e37a1e42bc3d677bc45080c81bea40300266d031410e5173a2596af4b5e470"
+  },
+  "actualSourceCommit": "63f37c7d",
+  "modes": [
+    {
+      "mode": "sync",
+      "exit": {
+        "code": 0,
+        "signal": null
+      },
+      "termRequests": 0,
+      "termAccepted": false,
+      "retainedEvents": 10820,
+      "completeRows": 10821,
+      "exactPayloadSHA256": "5aa7c19291b111d34edc815538194d43137760df258e50752a85720c41000a28",
+      "independentParentHeartbeat": {
+        "ticks": 1415,
+        "maximumGapMs": 441.5217929999999
+      },
+      "result": {
+        "status": "PASS_RETAINED_ALL_EVENTS",
+        "mode": "sync",
+        "attempted": 10820,
+        "sourcePin": {
+          "bytes": 2230255,
+          "sha256": "730e4a9755490c386af8720fb376133b6d7354dd870e965326b135aa0a1447b9"
+        },
+        "enqueueMs": 16245.511934999999,
+        "totalWallMs": 16266.034717999999,
+        "producerEventloop": {
+          "ticks": 4,
+          "maximumGapMs": 16226.024010000001
+        },
+        "journal": null,
+        "HTTP": 0,
+        "databaseWrites": 0,
+        "profilesActivated": 0,
+        "AuthCalls": 0,
+        "modelCalls": 0,
+        "IOPhaseStatistics": {
+          "write": {
+            "count": 10821,
+            "sumWallMs": 366.80969999999775,
+            "maximumWallMs": 112.4018530000003,
+            "p95WallMs": 0.049124000001029344
+          },
+          "sync": {
+            "count": 10821,
+            "sumWallMs": 15455.779739000052,
+            "maximumWallMs": 1261.0122090000004,
+            "p95WallMs": 2.636882999999216
+          }
+        }
+      }
+    },
+    {
+      "mode": "async",
+      "exit": {
+        "code": 0,
+        "signal": null
+      },
+      "termRequests": 0,
+      "termAccepted": false,
+      "retainedEvents": 10820,
+      "completeRows": 10821,
+      "exactPayloadSHA256": "5aa7c19291b111d34edc815538194d43137760df258e50752a85720c41000a28",
+      "independentParentHeartbeat": {
+        "ticks": 1693,
+        "maximumGapMs": 103.24542900000233
+      },
+      "result": {
+        "status": "PASS_RETAINED_ALL_EVENTS",
+        "mode": "async",
+        "attempted": 10820,
+        "sourcePin": {
+          "bytes": 2230255,
+          "sha256": "730e4a9755490c386af8720fb376133b6d7354dd870e965326b135aa0a1447b9"
+        },
+        "enqueueMs": 210.338778,
+        "totalWallMs": 17575.73752,
+        "producerEventloop": {
+          "ticks": 1658,
+          "maximumGapMs": 182.817406
+        },
+        "journal": {
+          "completedWrites": 10821,
+          "completedSyncs": 10821,
+          "maximumWriteMs": 174.09984899999995,
+          "maximumSyncMs": 103.7711690000001,
+          "maximumPendingBytes": 3732453,
+          "lastIO": {
+            "kind": "sync",
+            "sequence": 10820,
+            "beginMS": 17775.169163,
+            "endMS": 17776.733102,
+            "durationMs": 1.5639389999996638,
+            "acknowledged": true,
+            "pendingBytes": 338,
+            "pendingEntries": 1,
+            "acknowledgedSequence": 10820
+          },
+          "acknowledgedSequence": 10820,
+          "nextSequence": 10821,
+          "pendingBytes": 0,
+          "pendingEntries": 0,
+          "maximumAllowedPendingBytes": 8388608,
+          "running": false,
+          "status": "DURABLE_ACKNOWLEDGED",
+          "failureCode": null,
+          "closed": true,
+          "descriptorRetainedOpen": false
+        },
+        "HTTP": 0,
+        "databaseWrites": 0,
+        "profilesActivated": 0,
+        "AuthCalls": 0,
+        "modelCalls": 0,
+        "IOPhaseStatistics": {
+          "write": {
+            "count": 10821,
+            "sumWallMs": 2508.1465749999643,
+            "maximumWallMs": 174.09984899999995,
+            "p95WallMs": 0.6157440000006318
+          },
+          "sync": {
+            "count": 10821,
+            "sumWallMs": 14793.669764000031,
+            "maximumWallMs": 103.7711690000001,
+            "p95WallMs": 2.6309230000000525
+          }
+        }
+      }
+    }
+  ],
+  "observationLimits": [
+    "Historical common C8.4s gap cause stillUNKNOWN; this probe shows present synchronous-logger producer blocking, not historical proof.",
+    "Normal async complete payload/durable ACK proven; controlled drain NOT reached, four fault cases NOT executed.",
+    "Async total I/O walltime is not faster and no waiting time is subtracted.",
+    "Failed child exit/signal not retained in original parent result; later PID absence is not an exit receipt.",
+    "No newEnd500, no Mock500, no Production proof; conditional End500 allocation unused."
+  ],
+  "drainPreparationFailure": {
+    "kind": "W15_DURABLE_DEADLINE",
+    "configurationDeadlineMs": 15000,
+    "prefixBeforeFinalSignalBurst": 10756,
+    "parsedPayloadRowsPresent": 10299,
+    "lastSourceSequencePresent": 10298,
+    "explicitControlledSIGTERMSent": false,
+    "fourFaultCasesRun": false,
+    "exactChildExitOrSignal": "UNKNOWN",
+    "rootExternalCleanupSignalsSent": 0,
+    "allHistoricalCEventsPreservedAtSource": true
+  },
+  "nativeFinalReportPin": {
+    "bytes": 1443,
+    "sha256": "79f5e866d10c0dcbf850e6ea99b16f71ace9073ab1340e99d99a69b9807dfc1f"
+  }
+}

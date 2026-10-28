@@ -1,37 +1,42 @@
 # CURRENT STATE — Helmut
 
-## W15: Abschlussquittung PASS; neue End500-Diagnose bei369/500 gestoppt (28.10.)
+## W15: Protokollblockierung belegt; Datei-Abbruchcheck FAIL, kein End500-Neustart (28.10.)
 
 PR974, eigener Integrationsbranch auf PR973 `fa506939`/PR972 `c36bd427`;
-alle ungemergt. Tatsächlicher neuer Diagnosecode `ee36720d`.
+alle ungemergt. End500-C tatsächlich `ee36720d`; neuer Datei-I/O-Check `63f37c7d`.
 Bestehende signierte Prepared0-/HTTP-/Auth-/EU-Integration unabhängig16/16;
 Worker81/81 und500/500Quellen im belegten Geltungsbereich übernommen.
 Die16frischen Auth-ACKs/49HTTP200 wurden nicht wiederholt.
-Die1.297 alten RAM-/Fortschrittspunkte rein lesend ausgewertet: früher PostgREST-
-Anstieg, späte Werte weitgehend stabil; kein belegtes fortgesetztes Leck und keine
-unbelegte RAM-Optimierung. End500-Datenbestand war bereits vor der Diagnose geladen.
-Fehlerklassifizierung und echte Elternprozess-/Abschlussbindung gezielt korrigiert;
-14reine Fälle, echter begrenzter Ownership-/Signalcheck und8Python-Prüfpunkte PASS,
-unabhängig bestätigt. SQL:3.512 Abfragen,3.511 exakte Übernahmen/1neue Parsebindung,
-0Arbeitsabfragen ausgeführt. Grenzen und ursprüngliche Sicherheitslogik unverändert.
-Genau eine frische End500-Diagnose C: **FAIL nach369/500** bestätigten Vorgängen.
-370.Auth-Hülle: expliziter10.000ms-Storage-Timeout vor Callback,0native Schreibversuche;
-Fehlerdauer11,068298475s, gemeinsame8,4s-Messlücke, tiefere Ursache UNKNOWN.
-369ganze bestätigte Auth-Vorgänge max16,171304524s/native7,691495863s.
-Gemeinsamer Kernelpeak auch nach unabhängigem Abschluss1.437.229.056Bytes;
-Reserve610.770.944Bytes=29,8228%, hartes2.048.000.000Limit/Swap0/OOM0.
-Echte Abschlussquittung jetzt PASS: TERM angenommen→SIGINT-Ende,0offene Verbindungen,
-kein erzwungenes Ende. Alle739Auth-Starts und739Abschlüsse dauerhaft erhalten.
-Keine End500-/Restwachstumsabnahme, kein vollständiges Auth30 oder Unit60; kein Retry.
-Unabhängige native Endsicht: alle3.501Postimages/6.000Usage vollständig erhalten,
-500Profile/**0aktiv**, Kosten-/Sicherheitsfelder unverändert. Keine Units/Modelle.
+Originale C-Ereignisfolge rein lesend rekonstruiert: bereits vor dem letzten
+erfolgreichen Gateway-CAS ca6,588s Verzögerung; keine belegte SQL-Dauer.
+Danach10s-Lesetimeout vor370.Callback/nativeCAS0; gemeinsame8,4s-Lücke bleibt
+ursächlich UNKNOWN. HistorischeCPU-/IO-/fsync-Zeitreihen fehlen; keine belegte
+GC-/Reclaim-/OOM-Ursache. Kein Timeout-/RAM-Grenzwert verändert.
+Belegte Testschwachstelle: synchrone write+fdatasync-Protokollierung im Eventloop.
+Kleiner optionaler asynchroner Journalweg ergänzt, alter synchroner Weg unverändert;
+jede Zeile einzeln vollständig schreiben/synchronisieren, echte ACKs und begrenzte Queue.
+Unabhängige statische Vorabnahme; genau ein begrenzter realer Datei-I/O-Check:
+normale Sync/Async-Modi jeweils10.820/10.820 Originalpayloads exakt, Async10.821
+dauerhafte Sync-ACKs. Producerlücke16,226024010s→0,182817406s; gesamte Datei-I/O
+16,266034718s→17,575737520s, also keine schnellere Gesamt-I/O behauptet.
+**Gesamtcheck FAIL im Drain-Vorbereiter:**10.756Zeilen auf einmal queued, dann15s-
+Barriere überschritten, vor den letzten64/Signalbereitschaft. Drain/4Fehlerfälle
+nicht bestanden bzw. nicht ausgeführt. Probe-Kindexitquittung fehlt, bleibt UNKNOWN;
+alle3Probe-Kind-PIDs später abwesend. Kein Retry. Vorbereitete kleine Korrektur nur
+als unapplied Patch erhalten:64er-Vorbereitungsbarrieren, Fatal-Exit, echte Exitquittung.
+Keine neue End500-Diagnose; diese bedingte Freigabe ungenutzt. Unvollständige
+End500-Anbindung nicht veröffentlicht. Der echte C-PostgREST-Abschluss bleibt PASS.
+C bleibt369/500 FAIL: Peak1.437.229.056Bytes, Reserve29,8228%, Swap0;
+Authmax16,171304524s/native7,691495863s. Keine neue RAM-/Auth30-/Unit60-Abnahme.
+Alle3.501C-Postimages/6.000Usage zuletzt vollständig geprüft; Datei-Probe0DB/HTTP/
+Auth/Modelle/Aktivierungen. Neue unabhängige native Abschlusslesung:500Profile/**0aktiv**.
 Alter11.UNKNOWN, B291.UNKNOWN und fehlende historische B-Stopquittung bleiben erhalten.
-CI `f534a1f7`: Pflicht-CI40723672752 und Integrität40723672779 abgeschlossen/grün;
+CI `319bf131`: Pflicht-CI40738479972 und Integrität40738480004 abgeschlossen/grün;
 Browser laut Prüfplan übersprungen. Das ist kein CI-Beleg für den neuen Codekopf.
 Historie wortgleich archiviert; Statusdatei bleibt unter30.000Zeichen.
 Vercel-Konfigurationsfehler `includeFiles`2.915>256 unverändert separat.
-Nächster Schritt braucht gezieltes GO für Ursache des Lese-Timeouts und der gemeinsamen
-Messlücke, danach neu gebundene End500-Abnahme; Mock500 weiterhin nicht freigabereif.
+Nächster Schritt braucht GO für die korrigierte begrenzte Journal-/Abbruchprüfung;
+erst bei PASS/Review und vollständigen Startbedingungen End500, kein Mock500-Start.
 Vier alte Mock500-Startbindungen nur lesend ermittelt, nach FAIL nicht geändert.
 [Messwerte, unabhängige Belege und Freigabestand](betrieb/w15-atomic-usage-integration-20261028.md).
 

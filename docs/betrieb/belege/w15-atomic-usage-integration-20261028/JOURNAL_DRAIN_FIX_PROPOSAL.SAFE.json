@@ -1,0 +1,14 @@
+{
+  "status": "PROPOSED_ONLY_NOT_APPLIED_NOT_EXECUTED",
+  "target": "scripts/synthetik-500-w15-journal-io-check.js",
+  "sourceSHA256": "aaaeb4575424b8a54c232f23099a22e4ec33166c3d00c06a7c5a9f9a363ea8e4",
+  "patchBytes": 3073,
+  "patchSHA256": "edf50dde23439b17ceeb920ca9fecd9e742b07f638319b071b3c24ed5e6db2ce",
+  "changes": [
+    "Bound only drain preparation to64queued source events per existing15s barrier; all10820events unchanged.",
+    "Persist actual child exit and requested timeout signal before failed assertion.",
+    "Fatal component child exits1 after closed failure instead of retaining heartbeat timers."
+  ],
+  "limitsChanged": false,
+  "newAttemptAuthorized": false
+}

@@ -1,0 +1,43 @@
+{
+  "schema": "helmut-w15-journal-io-post-failure-native-zero/1",
+  "status": "PASS_NATIVE500_ZERO_ONLY",
+  "observedAtUTC": "2026-10-28T18:22:37.378790+00:00",
+  "nativeReadOnlyTransactions": 1,
+  "profileCountQuery": {
+    "active": 0,
+    "database": "helmut_w15_memory_atomic_20261028c",
+    "profiles": 500,
+    "readonly": "on"
+  },
+  "HTTP": 0,
+  "databaseWrites": 0,
+  "signalsSentByReviewer": 0,
+  "registeredChildIdentityReadOnlyObservations": [
+    {
+      "mode": "sync",
+      "registeredIdentityAvailable": true,
+      "liveSameIdentity": false,
+      "observationAtUTC": "2026-10-28T18:22:37.146644+00:00",
+      "processStatus": "REGISTERED_PID_ABSENT"
+    },
+    {
+      "mode": "async",
+      "registeredIdentityAvailable": true,
+      "liveSameIdentity": false,
+      "observationAtUTC": "2026-10-28T18:22:37.146770+00:00",
+      "processStatus": "REGISTERED_PID_ABSENT"
+    },
+    {
+      "mode": "drain",
+      "registeredIdentityAvailable": true,
+      "liveSameIdentity": false,
+      "observationAtUTC": "2026-10-28T18:22:37.146832+00:00",
+      "processStatus": "REGISTERED_PID_ABSENT"
+    }
+  ],
+  "originalChildExitSignal": "UNKNOWN_NOT_RETAINED",
+  "parentExit": "ROOT_PRIMARY_EXEC_EXIT1_OBSERVED_2026-10-28T18:20:58Z",
+  "rootExternalCleanupSignals": 0,
+  "noBindingsBypassed": true,
+  "scope": "Exactlyoneauthorized500profile/0active read afterIOcheckparentexit. No3501/6000repeat, newworkloadorcleanupsignal."
+}

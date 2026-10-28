@@ -4,7 +4,8 @@ Stand: 28.10.2026. **Teilweise abgeschlossen; kein Mock500- oder Production-Nach
 Eigener Branch `codex/w15-atomic-usage-integration-20261028`,
 [Draft-PR974](https://github.com/ernisch/helmut-pilot/pull/974), gestapelt auf
 PR973 `fa506939` und PR972 `c36bd427`. Neu ausgeführter Diagnosecode C: `ee36720d`;
-der historische B-Lauf wurde auf `d2920d6d` ausgeführt.
+der historische B-Lauf wurde auf `d2920d6d` ausgeführt. Neuer begrenzter
+Datei-I/O-Check tatsächlich auf `63f37c7d`, keine weitere End500-Ausführung.
 Tatsächlich ausgeführter Anschlussstand D: `d66a94dc`; RAM-Diagnose: `55dda919`.
 `e1a62acc` ergänzt danach ausschließlich Fehler-Metadaten; kein Lauf wurde wiederholt
 oder nachträglich auf diesen Kopf umetikettiert.
@@ -370,6 +371,83 @@ außerhalbGit; öffentliche Exporte enthalten nur technische Messwerte.
 · [echte Abschlussquittung](belege/w15-atomic-usage-integration-20261028/RAM_C_SERVICE_CLOSURE.SAFE.json)
 · [native Endsicht](belege/w15-atomic-usage-integration-20261028/RAM_C_NATIVE_FINAL_INDEPENDENT_READONLY.SAFE.json).
 
+## C-Ursachenrekonstruktion und begrenzter Datei-I/O-Check
+
+Die Originalzeitspuren bestätigen den10.000ms-Lesetimeout vor dem370.Callback.
+Schon beim letzten erfolgreichen Vorgang lag die native Hülle bei7,691496s,
+die eigentliche Gateway-CAS-Anfrage aber nur bei1,100660s. Rund6,588s lagen
+vor dem Gateway-Aufruf und dürfen nicht PostgreSQL zugerechnet werden.
+Für die gemeinsame8,404908s-/8,513s-Messlücke fehlen historische CPU-/IO-/PSI-
+und fsync-Dauern. Kein GC-Eintrag im Fehlerfenster, keine Reclaim-/Major-Fault-/
+OOM-Spitze. Ein späterer kumulativer Snapshot hat `cpu.max=max`,0Drosselereignisse,
+keine zugänglichen PSI-Dateien; das rekonstruiert keine damalige Hostpause.
+Der vorherige Checkpoint-sync4,268s ist ein IO-Latenzbefund, kein Beweis für den
+späteren Stillstand. Produktfehler, Hostpause und fsync bleiben als historische
+Ursachenzuordnung UNKNOWN; keine Vermutung als nachgewiesenen Produktfehler ausgeben.
+[Zeitfolge und Grenzen](belege/w15-atomic-usage-integration-20261028/C_TIMEOUT_CAUSAL_ANALYSIS.SAFE.json).
+
+Eine konkrete Schwachstelle des Testprogramms ist dagegen belegt: jeder der
+10.820 inneren Beobachtungseinträge und2.256 Gatewayeinträge wurde synchron
+geschrieben und synchronisiert, auch während echter HTTP-Anfragen. Der neue
+optionale `openAsync()`-Weg verwendet dieselben vollständigen sofort serialisierten
+Zeilen, native serielle Partialwrites mit anschließendem `fdatasync`, echte ACKs,
+eine8-MiB-Queue und standardmäßig15s-Abschlussgrenze. Kein Worker, keine neue
+Anwendungsarchitektur, keine gekürzte Historie, keine abgeschaltete Dauerhaftigkeit.
+Der alte `open()`-Funktionskörper bleibt bytegleich; Produktion und Geschäfts-
+funktionen unverändert. Der Promise-Abbruchpfad ist neu und noch nicht abgenommen.
+
+Nach gezielten Syntax-/Dateivorprüfungen und unabhängigem statischem Review wurde
+genau ein begrenzter Datei-I/O-Check mit vorab festgelegten Modi ausgeführt.
+Keine HTTP-Anfragen, Datenbank-/Auth-Vorgänge, Profile, Units oder Modelle.
+Die historischen C-Ereignisse sind lediglich unveränderte inerte Dateipayloads.
+
+| Gemessener normaler Dateimodus | Synchron | Asynchron |
+| --- | --- | --- |
+| Vollständige identische C-Payloads |10.820 |10.820 |
+| Vollständige dauerhafte Sync-ACKs inkl. Prozessstart |10.821 |10.821 |
+| Größte Producer-Eventloop-Lücke |16,226024010s |0,182817406s |
+| Größte unabhängige Eltern-Heartbeatlücke |0,441521793s |0,103245429s |
+| Gesamte Dateimodus-Wallzeit |16,266034718s |17,575737520s |
+
+Die blockierende Wirkung im Producer und ihre Beseitigung im normalen
+asynchronen Dateimodus sind damit belegt. Die gesamte I/O ist nicht schneller;
+keine Wartezeit wurde abgezogen. Der konzentrierte Dateitest ist keine
+nachträgliche Erklärung der historischen gemeinsamen C-Lücke und keine
+Auth30-/RAM-/End500-Abnahme.
+
+**Der Gesamtcheck ist FAIL:** Der Drain-Vorbereiter reihte10.756Zeilen am Stück
+ein und wartete dann mit der echten15s-Grenze. Diese wurde bereits vor den
+letzten64Zeilen und vor der vorgesehenen SIGTERM-Bereitschaft überschritten.
+10.299 kopierte Payloadzeilen vorhanden, letzte Quellsequenz10.298;
+Original-C-Datei mit allen10.820Zeilen vollständig erhalten. Kein Abbruchdrain-PASS,
+keine der vier danach vorgesehenen Fehlerfallprüfungen ausgeführt. Keine Wiederholung.
+
+Zusätzlicher Fehler im Datei-Prüfprogramm: der fatale Kind-Catch ließ den
+Heartbeat aktiv. Das Elternprogramm endete schließlich mit exit1; der tatsächliche
+Drain-Kindexit/-Signalwert wurde vor der fehlgeschlagenen Assertion nicht gesichert
+und bleibt UNKNOWN. Alle drei registrierten Kind-PIDs sind später unabhängig
+abwesend. Eine Prozessabwesenheit wird nicht in eine fehlende Exitquittung umgedeutet.
+Externe Cleanup-Prüfungen scheiterten vor einer Signalanforderung; keine Bindung
+umgangen, kein externes Signal gesendet. Dies betrifft das Datei-Probekind,
+nicht die bereits echte positive C-PostgREST-Abschlussquittung.
+
+Die unabhängige neue native READ-ONLY-Abschlusslesung bestätigt500Profile/0aktiv.
+Keine weiteren Datenbankvergleiche oder erfolgreichen Komponentenfälle wiederholt.
+Die unvollständige neue End500-Anbindung wurde nicht ausgeführt und nicht aktiv
+übernommen; ihr Entwurf bleibt privat erhalten. Der bedingte neue End500-Versuch
+ist ungenutzt. Alle vorherigen Daten, FAILs und UNKNOWN-Befunde bleiben erhalten.
+[Unabhängige Ergebnisabnahme](belege/w15-atomic-usage-integration-20261028/JOURNAL_IO_RESULTS_REVIEW.SAFE.json)
+· [Messwerte](belege/w15-atomic-usage-integration-20261028/JOURNAL_IO_RUN_SUMMARY.SAFE.json)
+· [Nullkontrolle und Prozesssicht](belege/w15-atomic-usage-integration-20261028/JOURNAL_IO_NATIVE_ZERO_AND_PROCESS_END.SAFE.json).
+
+Die konkrete nächste Korrektur ist ausschließlich als **nicht angewendeter,
+nicht ausgeführter** Patch vorbereitet: Drain-Vorbereitung mit höchstens64
+wartenden Ereignissen je vorhandener15s-Barriere, fataler Kind-Exit und
+echte Exit-/Signalanforderungsquittung als Datei vor jeder Ergebnisassertion.
+Alle10.820Ereignisse bleiben erhalten; keine Frist-/RAM-Grenze wird erhöht.
+[Vorschlag](belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_FIX_PROPOSAL.SAFE.json)
+· [unapplied Patch](belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_FIX_UNAPPLIED.patch).
+
 ## Übernommene und erhaltene Belege
 
 Die ersten lokalen Vorbereitungen bleiben FAIL: A überschritt mit dem alten
@@ -393,14 +471,18 @@ Zeilen-/Branch-, Worker- oder Gesamtprojektabdeckung.
 
 ## Freigabestand und nächster Schritt
 
-**Nicht freigabereif für einen neuen Mock500-Gesamtversuch.** Der tatsächliche
-Serviceabschluss C ist jetzt unabhängig bestanden; historische fehlende Quittungen
-bleiben UNKNOWN. Die neue End500-Diagnose C ist wegen des Storage-Lesetimeouts
-nach369/500 unvollständig. Nächster notwendiger Schritt ist ein neues gezieltes GO
-für die Ursache des Lese-Timeouts und der gemeinsamen Beobachtungslücke, mit
-begrenzter frischer Gegenprüfung nur soweit notwendig. Kein alter unbestätigter
-Schreibvorgang darf wiederholt werden; keine pauschale Timeout-Erhöhung.
-Danach bleibt eine neu freizugebende vollständige End500-Abnahme erforderlich.
+**Nicht freigabereif für Mock500 oder einen sofortigen End500-Neustart.** Die
+synchrone Protokollblockierung ist im normalen Datei-Vergleich belegt und der
+asynchrone normale Schreibweg positiv geprüft. Der erforderliche Abbruchcheck
+scheiterte aber im eigenen Vorbereiter; vier Fehlerfälle und End500-Anbindung
+bleiben offen. Gemäß ausdrücklicher erster-FAIL-Stoppregel keine Wiederholung.
+Nächster Schritt braucht GO für die konkrete kleine Prüfprogrammkorrektur und
+genau einen neu gebundenen begrenzten Datei-/Abbruchcheck mit unabhängigem Review.
+Nur bei dessen PASS, vollständiger sicherer Anbindung und gültigen Ressourcen-
+und Startbindungen darf der noch ungenutzte bedingte End500-Versuch folgen.
+Speicherplatzbedarf einschließlich Abschlussaudit vorher tatsächlich binden.
+Die tiefere historische C-Lückenursache bleibt UNKNOWN, kein alter unbestätigter
+Schreibvorgang wird wiederholt und kein Timeout pauschal erhöht.
 
 Für den späteren Mock500-Start sind außerdem vier vorhandene Bindungen anzupassen:
 alter4-Blob-Auth-Beleg auf die bereits geprüften12atomaren D-/EU-ACKs,
@@ -431,6 +513,11 @@ Auf dem späteren Kopf `f534a1f7` sind Pflicht-CI
 Browser gemäß Prüfplan übersprungen. Das ist kein CI-Beleg für `ee36720d`.
 Neue Kopf-CI wird nach dem Push getrennt ausgewiesen; keine vollständige lokale
 Suite oder manuelle CI-Wiederholung gestartet.
+Auf dem folgenden Kopf `319bf131` sind Pflicht-CI
+[40738479972](https://github.com/ernisch/helmut-pilot/actions/runs/40738479972) und Integrität
+[40738480004](https://github.com/ernisch/helmut-pilot/actions/runs/40738480004) abgeschlossen/grün;
+Browserausführung gemäß Prüfplan übersprungen. Kein Übertragen dieses CI-PASS
+auf den neuen optionalen Journalcode `63f37c7d`; neue Kopf-CI separat.
 Lokale Belege ersetzen keine Pflicht-CI. Der bekannte unveränderte Vercel-Konfigurationsfehler bleibt
 außerhalb dieses Sprints: `functions.api/index.js.includeFiles` hat2.915Zeichen,
 zulässig sind256. Keine Preview-/Production-Bereitschaft behauptet.
