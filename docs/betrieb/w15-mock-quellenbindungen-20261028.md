@@ -1,6 +1,126 @@
-# W15: Authmessung geschlossen; Vollauf28c wegen RAM-Reserve FAIL
+# W15: RAM-Teildiagnose bestanden; neuer Vollauf nicht startbereit
 
-**Aktueller Befund vom28.10.: FAIL, kein lokaler Mock500-PASS.** Nach der
+**Sprint teilweise abgeschlossen; Startbedingung des neuen Mock500-Versuchs
+UNKNOWN.** Die Betreiberbedingung verlangt eine belastbare Begründung der
+Reserve bis500Units. Beide unabhängigen Reviews bestätigen: Der neue enge
+Auslagerungsbefund reicht dafür nicht. Gemäß Stopregel kein Vollauf, keine
+Aktivierung und keine unbewiesene RAM-Optimierung. Der neu bedingt erlaubte
+Gesamtversuch wurde **nicht gestartet**. Der historische28c-FAIL und sämtliche
+Rohbelege unten bleiben unverändert erhalten.
+
+## Vorhandene Speicherbelege rein lesend geklärt
+
+- Snapshot bei26abgeschlossenen Profilen:579096576B anonym,648536064BDatei-/Shared-Memory;
+  darin96247808Bshmem. Das ist keine Zerlegung am eigentlichen1640103936B-Peak.
+- Nach Ende von Node/PostgREST nur PostgreSQL-Prozesse übrig: etwa4,69MBanon,
+  781,44MBfile einschließlich105,70MBshmem. Kein belegter großer Runtime-Metadaten-
+  oder Gateway-Body-Leak: Gateway streamt; Berichte halten begrenzte Metadaten;
+  Backend hält einen aktuellen Commandgraphen. Ein Leak allgemein oder die
+  konkrete Node-Liveheapgröße am alten Peak ist damit nicht bewiesen oder ausgeschlossen.
+- Datenbank79744147B; `helmut_store`65232896B einschließlich65126400BTOAST.
+  Native Statistik837Updates,834HOT,einAutovacuum. AuthJSON5458615B in
+  PostgreSQL-Textdarstellung/1396404Bkomprimiert. Jeder echte CAS serialisiert
+  und ersetzt die vollständige Auth-Zeile einschließlich erhaltener Historie.
+- Kumulativ1227383222BWAL und4504080717BTEMP/842Dateien geschrieben. Die
+  TEMP-Statistik umfasst auch Restore, Vorbereitung, Audit und Diagnoseabfragen;
+  keine nachträglich erfundene Einzelstatementzuordnung.
+- 33WAL-Dateien mit553648128B sind per `mincore` vollständig resident nachgewiesen.
+  Die Abfrage liest Seitenstatus ohne Inhaltszugriff, Reclaim oder Cachelöschung.
+  Globale Dateiresidenz beweist weder jede cgroup-Seitenzuordnung noch die
+  Aufteilung am historischen Peak. Kein Cacheanteil wird vom Kernelpeak abgezogen.
+- Der begrenzte Container meldet tatsächlich V8-Heaplimit1124859904B. Das ist
+  keine RSS-Grenze oder Liveheapmessung. PostgreSQL, PostgREST, externer
+  Node-Speicher und Datei-/Shared-Memory teilen weiterhin2048000000B mit
+  verbindlicher409600000BReserve.
+
+**Ergänzender alter Teilunit-Befund, keine Änderung alter Berichte:**139neue
+Usage-Belege sind gespeichert:70D+69R neben allen5000historischen Zeilen.
+Damit ist nun ein zusätzlicher D-Usage-Beleg des abgebrochenen70.Profil belegt.
+Vollständige Units bleiben69 und fertige Ergebnisse207. Die DB-Zeilen tragen
+keine erfundenen Mockflags; lokale Mockprovenienz folgt aus dem gepinnten
+geschlossenen Providerhook und netzlosen Container. Die alte Unbekannt-Aussage
+der damaligen Teilzähler bleibt als historischer Stand erhalten.
+
+## Genau eine neue gezielte Diagnose, keine Unit
+
+Ausführung28.10.,**11:12:00–11:12:08 Europe/Istanbul**
+(08:12:00–08:12:08UTC). Neue isolierte, inaktive Datenbank innerhalb des
+vorhandenen netzlosen Testcontainers. Originaldump hashgeprüft; Restore und
+Deaktivierung in einer Transaktion. Nur der erhaltene Auth-Stand69/70 wurde
+rein lesend kopiert. Originaldatenbanken unverändert. Frischer lokaler JWT,
+keine alte Freigabe als Ausführungsrecht benutzt, keine Signaturprüfung ersetzt.
+
+Vorher unabhängiger statischer Review der finalen Skriptbytes: maximal ein
+nativer CAS jePhase, Guard vor einem zweiten Dispatch, kein automatischer
+Konfliktretry. Revisions-ACK und echte PostgREST-Nachlesung müssen übereinstimmen.
+Vollständiges Roh-JSON vor/nach kanonisch identisch, ausgenommen nur eigener
+Diagnosemarker und echte CAS-Revision.
+
+| Schritt | Temp-Dateien/Bytes | Tatsächliches Ergebnis |
+|---|---:|---|
+| Reine GET-Kontrolle |0/0|Keine Auslagerung |
+|1echter CAS, bisherige4MB`work_mem` |1/5729274B|ACK+Revision+vollständiger Readback;1171,434231ms |
+|1echter CAS, nur neue DiagnoseDB auf16MB |0/0|ACK+Revision+vollständiger Readback;841,601506ms |
+
+5GETs und2PATCHes,0Gatewayfehler. Alle5139Usage-Einträge und sämtliche übrigen
+Rohdaten erhalten.0aktive Profile,0Units,0Provideraufrufe; keine Kosten-,
+Quellen-, Sicherheits- oder Geschäftsregel geändert. Eine frische unabhängige
+READ-ONLY-Sicht bestätigt0/500/501und5139Usage sowie den Rohdatenvergleich.
+Bestehende Quellen500PASS- und Auth-Vier-Schreiber-Belege übernommen, nicht
+erneut ausgeführt. V8-Coverage im nötigen Diagnoselauf erfasst.
+
+**Belegt:** Der repräsentative echte Auth-CAS verursacht bei4MB eine temporäre
+Auslagerung;16MB beseitigen genau diesen beobachteten Spill. Der genaue interne
+PostgreSQL-Operator wird ohne Statement-/Planbeleg nicht behauptet. Die zwei
+Zeiten sind Einzelmessungen, keine allgemeine Laufzeitverbesserung.
+
+**Nicht belegt:** geringerer gemeinsamer RAM-Peak oder geringere WAL-Menge.
+Beide CAS erzeugten jeetwa1,528MBWAL; diese Arbeit entfällt nicht. Die höchste
+periodisch gemessene Probe-Node-RSS301477888B ist weder gemeinsamer Peak noch
+exakter Prozesshöchstwert. Höheres`work_mem` kann PostgreSQL-RAM jeOperator und
+Verbindung erhöhen. Deshalb keine Übernahme der16MB in den Vollcontroller,
+keine spekulativen V8-/WAL-Parameter, kein Cachelöschen oder Messwertabzug.
+
+## Tatsächliche Startgrenze und kürzester notwendiger Folgeschritt
+
+Beide unabhängigen Reviews bestätigen engen Diagnose-PASS, aber
+**`UNKNOWN_NOT_CLEARED` für einen neuen Mock500-Start**. Es fehlt die Verbindung
+zwischen wachsendem Datenbestand und gleichzeitiger Speicherbelegung:
+
+1. Konservativ größter End500-Authzustand mit1000Usage-/Versuchseinträgen und
+   500Outputs zusätzlich zu allen5000historischen Usage-Zeilen.
+2. Tatsächlich geladener W15-Command zusammen mit Node-Liveheap, externen
+   Allokationen und PostgreSQL-/PostgREST-Verbrauch; natürliche GC statt forcedGC.
+3. Gemeinsamer Verlauf über PostgreSQL-Checkpoint-/WAL-Recycling und wachsende
+   gespeicherte Ergebnisse, ohne Cachelöschung oder Abzüge.
+
+Der kürzeste sichere nächste Schritt ist eine darauf begrenzte gemeinsame
+Speicherdiagnose mit erhaltenen Daten, ohne Unit-/Profilaktivierung oder
+Modellaufruf. Erst daraus genau einen belegten Speicherfaktor korrigieren und
+unabhängig prüfen. Ein4→16MB-CAS-Vergleich ersetzt diese Begründung nicht.
+Kumulative8,89GBWAL bei linearer500er-Hochrechnung sind keine8,89GBRAM;
+`max_wal_size` ist nur ein weicher Checkpointtrigger.
+
+Auch die dauerhafte Ablage exakter Auth-Maxima proProfil und eines begrenzten
+Abbruchbelegs bleibt vor einem späteren Vollauf offen. Nach der festgestellten
+UNKNOWN-Startbedingung keine weitere Umsetzung oder Tests. Full500-Messhüllen,
+Startbedingungen, Grenzen und One-shot-Sperren bleiben unverändert; keine
+vermeintlich startbereite neue Operation erzeugt.
+
+- [Bereinigte Befund-/Diagnose-/Reviewprojektion](belege/w15-processing-20261027/RAM_DIAGNOSIS_20261028_SUMMARY.SAFE.json).
+- [V8-Coverage des erforderlichen Diagnoselaufs](belege/w15-processing-20261027/RAM_DIAGNOSIS_20261028_COVERAGE.SAFE.json).
+- Neue Diagnosewerkzeuge:[JavaScript](../../scripts/synthetik-500-w15-ram-cas-diagnostic.js),[Controller](../../scripts/synthetik-500-w15-ram-cas-diagnostic.py).
+
+PR972weiterDraft/ungemergt;969/971ebenfallsnichtgemergt. App/Server/Workflows und
+bisherige Quellen-/Authprüfpfade unverändert; kein unnötiger Voll-CI-Lauf,
+kein neues CI-Grün. Keine Production-/Hetzner-/Budgetänderungen oder neuen
+kostenpflichtigen Ressourcen. Kein neuer Mock500- oder Production-Nachweis.
+
+---
+
+## Historischer Abschluss28c vor dem RAM-Diagnose-GO
+
+**Historischer Befund28c vom28.10.: FAIL, kein lokaler Mock500-PASS.** Nach der
 gezielten Auth-Reparatur und unabhängigem Review wurde unter dem neuen GO genau
 **ein** neuer vollständiger lokaler Versuch gestartet. **69/500 Profile** sind
 vollständig abgeschlossen; während Profil70 stoppte der gemeinsame

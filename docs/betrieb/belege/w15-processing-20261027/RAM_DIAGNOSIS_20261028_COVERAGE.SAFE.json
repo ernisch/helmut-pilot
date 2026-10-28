@@ -1,0 +1,31 @@
+{
+  "schema": "helmut-w15-diagnostic-v8-coverage/1",
+  "scope": "This necessary two-CAS memory-attribution diagnostic only; no whole-project line/branch percentage inferred.",
+  "existingFiles": 2,
+  "bytes": 866591,
+  "selectedFiles": [
+    {
+      "file": "scripts/synthetik-500-w15-ram-cas-diagnostic.js",
+      "functions": 26,
+      "executedFunctions": 23,
+      "ranges": 38,
+      "executedRanges": 32
+    },
+    {
+      "file": "lib/helmut/storage.js",
+      "functions": 447,
+      "executedFunctions": 15,
+      "ranges": 487,
+      "executedRanges": 18
+    },
+    {
+      "file": "lib/helmut/auth-store-cas.js",
+      "functions": 4,
+      "executedFunctions": 3,
+      "ranges": 11,
+      "executedRanges": 3
+    }
+  ],
+  "extraTestExecutions": 0,
+  "full500Run": false
+}
