@@ -1,7 +1,7 @@
 {
   "scope": "ISOLATED_PREPARED0_ATOMIC_INTEGRATION_NO_ACTIVATION_NO_FULL500",
   "database": "helmut_w15_full500_20261028b",
-  "container": "w15-atomic-integration-20261028c",
-  "base": "/tmp/w15-atomic-integration-20261028c",
-  "work": "/workspace/shared/helmut-w15-atomic-integration-20261028c"
+  "container": "w15-atomic-integration-20261028d",
+  "base": "/tmp/w15-atomic-integration-20261028d",
+  "work": "/workspace/shared/helmut-w15-atomic-integration-20261028d"
 }

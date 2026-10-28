@@ -13,7 +13,7 @@ def stage_inner(w,action,seconds=130):
     w.stage(M.DOCKER+['exec','--user','1000:1000',CONTAINER,'sh','-c',command], 'run'if action=='atomic-check'else action,seconds)
 
 def main():
-    review_path=pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/PRESTART_REVIEW_C.SAFE.json')
+    review_path=pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/PRESTART_REVIEW_D.SAFE.json')
     review=json.loads(review_path.read_text());assert review['status']=='PASS_PRESTART_SCOPED_ATOMIC_PREPARED0_ONLY'
     for pin in review['sourcePins']:
         p=ROOT/pin['path'];b=p.read_bytes();assert len(b)==pin['bytes']and hashlib.sha256(b).hexdigest()==pin['sha256'],'atomic-reviewed-source-drift'
@@ -83,8 +83,7 @@ def main():
         M.save('ATOMIC_BOOTSTRAP.SAFE.json',{'status':'PASS_FULL_LOGICAL_HASH_PRESERVED','before':boot,'after':after,'existingPhysicalRowsRetained':after['physicalUsage']==boot['physicalUsage']+5000})
         M.sql("notify pgrst,'reload schema';",database=DB)
         M.docker('exec',CONTAINER,'chown','-R','1000:1000',BASE+'/state')
-        readiness="const fs=require('node:fs');const c=JSON.parse(fs.readFileSync(process.argv[1]));(async()=>{for(let i=0;i<50;i++){try{const r=await fetch(c.url+'/rest/v1/',{headers:{Authorization:'Bearer '+c.serviceToken,Accept:'application/openapi+json'},signal:AbortSignal.timeout(1000)});const v=await r.json();if(r.ok&&v.paths?.['/rpc/helmut_auth_usage_read_v1']&&v.paths?.['/rpc/helmut_auth_usage_cas_v1'])return console.log('PASS_TRUE_RPC_CACHE_READY');}catch{}await new Promise(r=>setTimeout(r,100));}throw Error('atomic-rpc-cache-not-ready');})().catch(()=>process.exitCode=1);"
-        M.docker('exec','--user','1000:1000',CONTAINER,'env','-i','PATH=/usr/bin:/bin','LANG=C.UTF-8',BASE+'/node','--require',BASE+'/app/scripts/lokaler-netzschutz.js','-e',readiness,BASE+'/state/configuration.PRIVATE.json')
+        M.docker('exec','--user','1000:1000',CONTAINER,'env','-i','PATH=/usr/bin:/bin','LANG=C.UTF-8','HELMUT_SOURCE_MODE=off','HELMUT_STORAGE_BACKEND=local',BASE+'/node','--require',BASE+'/app/scripts/lokaler-netzschutz.js',BASE+'/app/scripts/synthetik-500-w15-rpc-ready.js',BASE+'/state/configuration.PRIVATE.json')
         stage_inner(w,'prepare',150);M.copy_out('PREPARE.SAFE.json')
         stage_inner(w,'atomic-check',150);M.copy_out('ATOMIC_AUTH_PREPARED0.SAFE.json')
         c=json.loads((state/'configuration.PRIVATE.json').read_text())
