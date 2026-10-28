@@ -1,0 +1,419 @@
+{
+  "schema": "helmut-w15-atomic-integration-independent-results/1",
+  "status": "PASS_PREPARED0_ATOMIC_AND_EU_COMPONENTS_ONLY_RAM_AND_FULL500_OPEN",
+  "reviewer": "/root/atomic_integration_audit",
+  "independentOfImplementation": true,
+  "reviewedAtUTC": "2026-10-28T13:30:46.340618+00:00",
+  "testedHead": "d66a94dc13f5d93310e6c963f36c4bb4ca21d621",
+  "testsRepeatedByReviewer": false,
+  "reviewerActions": "Evidence/source/journal reads;3 READONLY transactions(one original source,two isolated D including certificate); kernel/process reads; Ed25519 public verification; sanitized reports. No HTTP/workload test.",
+  "checks": [
+    {
+      "name": "22 staged source pins match D prestart",
+      "status": "PASS"
+    },
+    {
+      "name": "Lossless bootstrap full logical hash equal and5000 records preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "Independent original-source/native relational history equality",
+      "status": "PASS"
+    },
+    {
+      "name": "Real worker full original C and sealed closed graph",
+      "status": "PASS"
+    },
+    {
+      "name": "Fresh signed prepared0 and actual HTTP status1500 expected positions",
+      "status": "PASS"
+    },
+    {
+      "name": "All12 Auth calls and12 atomic writes under30 assigned and bounded",
+      "status": "PASS"
+    },
+    {
+      "name": "All24 Auth starts and24 completions preserved in110 journal records",
+      "status": "PASS"
+    },
+    {
+      "name": "Genuine private EU D completion/native postimage",
+      "status": "PASS"
+    },
+    {
+      "name": "Copied receipt denied and unknown81400microUSD reserve retained",
+      "status": "PASS"
+    },
+    {
+      "name": "Exact synthetic accounted cost248microUSD and original economic bounds",
+      "status": "PASS"
+    },
+    {
+      "name": "Zero entered units/attempts/outputs; no1500 produced-result claim",
+      "status": "PASS"
+    },
+    {
+      "name": "Independent zeroactive/500profiles and owned process closures",
+      "status": "PASS"
+    },
+    {
+      "name": "Whole container kernel peak719044608B/hard2048000000B/swap0/networknone",
+      "status": "PASS"
+    },
+    {
+      "name": "Source before/after unchanged and historical failures retained",
+      "status": "PASS"
+    },
+    {
+      "name": "Independent Ed25519 persisted proof verification with public key only",
+      "status": "PASS"
+    },
+    {
+      "name": "Prepared0/EU scope accepted; full installed Dstore/R and End500 RAM open",
+      "status": "PASS"
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "lib/helmut/ai.js",
+      "bytes": 100108,
+      "sha256": "949bbf8c26486342682588f227b7729925eb523b772733ca2db8316e9f1bfa8d"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 545054,
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
+      "bytes": 12237,
+      "sha256": "bc2409e35d68d52d0ba92914ffa1e427de42da738b73197e9bf7fe428f71b5fe"
+    },
+    {
+      "path": "lib/helmut/testkosten-budget.js",
+      "bytes": 33501,
+      "sha256": "012d52bb9cb891c5634a788953861f83299ba632b1b8e614686ad717d7cfdbb7"
+    },
+    {
+      "path": "scripts/auth-usage-split/support.js",
+      "bytes": 6759,
+      "sha256": "39b2f3e0fdae496c60afaf017617a182bd2b5d68626273bc609c2f9585318cdb"
+    },
+    {
+      "path": "scripts/fixtures/w15-atomic-integration-target.json",
+      "bytes": 299,
+      "sha256": "e396b8bf990df0d773211e8c1483c938e3b57f3787481891334cc73d51c0abc5"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 4335,
+      "sha256": "e2ac57c7f7f47740ca98d1f48e767ab540a6d10af9c4d5041cde7fdf889b0482"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-atomic-eu-check.js",
+      "bytes": 16904,
+      "sha256": "aeb8305904741d6a9fa6cf59f5136c42832735a6712b8ce2bf5f1bc54b9f9f5e"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-atomic-prepared0-check.py",
+      "bytes": 12593,
+      "sha256": "a23eff5e68c549cccd51186279824c235e63ac14eac70b22f18ab7b6caba91d9"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-atomic-source-check.py",
+      "bytes": 3646,
+      "sha256": "9473dd155547ca6fe5f918f30d52ee3a365171bc60a64e755f1795c070e148bf"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-audit.js",
+      "bytes": 18167,
+      "sha256": "f9cf5db050578ad7abda10c46c16e946993e774690eec6651d1535174771e722"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 44655,
+      "sha256": "4fe9b65671af956a3ec88e82b43e2a9af48f1709271808c41381824583428ec8"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-materials.js",
+      "bytes": 27105,
+      "sha256": "9bd6641171f53d992316ee12a81ac66cba7974b43e3bca67828cf119a124b29c"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 43286,
+      "sha256": "ebc1870b092734a15cd9a5fb3253b77333fb9bf5d034250dfc6a46b3eafea239"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.js",
+      "bytes": 12548,
+      "sha256": "2e3ddd8df904713e56c1d2657d89e4b34a66a453aafcb680c21c1bea0dfe2d12"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.py",
+      "bytes": 20325,
+      "sha256": "76da2ae1b2710b4ce90b89ad155bd9e3a0713e511038b31628f9003a46e5b3a9"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-rpc-ready.js",
+      "bytes": 1820,
+      "sha256": "748e7e161ab72179128f9ba3e1c1c33722781c19e41f719ad37fd0e20fbf5af1"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-signed-chain-test.js",
+      "bytes": 35558,
+      "sha256": "f47425dcb8f0e487b4be5e741d07dc991bf21f6fcff9f794bd2a3998bfb9fff3"
+    },
+    {
+      "path": "supabase/proposals/auth_usage_atomic_local.sql",
+      "bytes": 20726,
+      "sha256": "5a8c07670354b504c85984618999feaa93f78f3107f96236ce61b2f7bbcd438a"
+    }
+  ],
+  "prestartReviewPin": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/PRESTART_REVIEW_D.SAFE.json",
+    "bytes": 19918,
+    "sha256": "4301ddff59e3743f9cc16532e211b77f10cbf0e57c79bc64dbbfc4c47b4b9bd3"
+  },
+  "evidencePins": [
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/INTEGRATION_RESULT.SAFE.json",
+      "bytes": 832,
+      "sha256": "089b989a76d0382f150da0d98df65232d84d8ddabb22c82337ef7fa264040685"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/PREPARE.SAFE.json",
+      "bytes": 8137,
+      "sha256": "bec0065005290ca7578a3f737ae5b0eb34fe6956ec8677ba1f95deddb2660320"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/ATOMIC_AUTH_PREPARED0.SAFE.json",
+      "bytes": 7218,
+      "sha256": "3d701e603149930d3696da9a368c72381b65687622011a20946df87b5f27fc52"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/ATOMIC_EU.SAFE.json",
+      "bytes": 5581,
+      "sha256": "c4d55de806eec8c657e061e2ee8d795dcdba2d3c58c31892cad781550001c39e"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/ATOMIC_BOOTSTRAP.SAFE.json",
+      "bytes": 389,
+      "sha256": "99f8e7b8b03d3007179fad8de016d09d8ac4cd492fd8d5b86019a4ab95908214"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/INACTIVE_FINAL.SAFE.json",
+      "bytes": 129,
+      "sha256": "041afdf016e281cfd5560585695c410169622aa44a63f61e6af3d3b4fdbe7f21"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/SOURCE_BEFORE.SAFE.json",
+      "bytes": 309,
+      "sha256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/SOURCE_AFTER.SAFE.json",
+      "bytes": 309,
+      "sha256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/PROCESSING_INPUTS.SAFE.json",
+      "bytes": 173162,
+      "sha256": "a0b87803b5273185b6ac2878ad9bcb1b351c2f47c3daeb5c4c17d8c76c0c74df"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/state/SETUP.SAFE.json",
+      "bytes": 780,
+      "sha256": "aaa31c080002b39c5282124ad9de8b7908f0ccf9ef685d127ab7ac24e6202d55"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/state/prepare-observations.SAFE.jsonl",
+      "bytes": 23262,
+      "sha256": "374d5e694399bc23cacbd0f183508a90baa5e050f6d8f2411324ad45952bdb67"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/state/run-observations.SAFE.jsonl",
+      "bytes": 12899,
+      "sha256": "cae92c1cb4756d410a8146303916d526407d97e48bed6d06845696e9d7888ca4"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/state/eu-component-observations.SAFE.jsonl",
+      "bytes": 10311,
+      "sha256": "7b753dc6ae37f7ac815ccea1a3525447a51afa2c40da0de8316f6386219c7242"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/state/stop-eu-component.SAFE.jsonl",
+      "bytes": 101,
+      "sha256": "76551c688e866ed1eae31781ec903731c4736977cbf3e85db52328d324a1259b"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/state/stop-run.SAFE.jsonl",
+      "bytes": 92,
+      "sha256": "5979a0e37d69fec0d1e488917d30d07b075f109d3993ed96fa644944f7173d62"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/state/stop-prepare.SAFE.jsonl",
+      "bytes": 96,
+      "sha256": "3d68688c774bd1c95f0635c872ddf0e6c1966791bd88dd202e19fddad68cac49"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/state/stop-setup.SAFE.jsonl",
+      "bytes": 94,
+      "sha256": "3df4649ecf3f2de62d3f999d0e1dfe86b888fe113ea47d12d7ed9f9eb52dc1ae"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/state/stop-gateway.SAFE.jsonl",
+      "bytes": 206,
+      "sha256": "09c8a075713010fa189a22c2fa0358c5b15547d13e81c91ff3fb3114e5bbf8af"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/state/stop-postgrest.SAFE.jsonl",
+      "bytes": 210,
+      "sha256": "0944671d66027bbbdc49bedd20d3d0536730df646335dcebfe08b5cac3075025"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/D_NATIVE_INDEPENDENT_READONLY.SAFE.json",
+      "bytes": 805,
+      "sha256": "008e30337e36f73cf37227081f4c0ea677c1ba6da4b30a0ea3fb428521d64dbc"
+    }
+  ],
+  "actualMetrics": {
+    "fullCWallMs": 19868.511200999998,
+    "installationOpenWallMs": 49.11530700000003,
+    "wholePrepareStageWallMs": 22187.442042000002,
+    "phaseAuth": {
+      "prepare": {
+        "journalRows": 62,
+        "startedRows": 2,
+        "finishedRows": 2,
+        "wholeAuthCalls": 1,
+        "nativeAtomicWrites": 1,
+        "maximumFullCallWallMs": 829.8761930000001,
+        "maximumNativeWriteWallMs": 317.3222939999978
+      },
+      "run": {
+        "journalRows": 26,
+        "startedRows": 12,
+        "finishedRows": 12,
+        "wholeAuthCalls": 6,
+        "nativeAtomicWrites": 6,
+        "maximumFullCallWallMs": 2491.931300000002,
+        "maximumNativeWriteWallMs": 1556.4365380000017
+      },
+      "eu-component": {
+        "journalRows": 22,
+        "startedRows": 10,
+        "finishedRows": 10,
+        "wholeAuthCalls": 5,
+        "nativeAtomicWrites": 5,
+        "maximumFullCallWallMs": 618.9063150000002,
+        "maximumNativeWriteWallMs": 121.81008699999984
+      }
+    },
+    "maximumWholeAuthWallMs": 2491.931300000002,
+    "maximumNativeAtomicWriteWallMs": 1556.4365380000017,
+    "commonKernelPeakBytes": 719044608,
+    "limitBytes": 2048000000,
+    "swapMaximumBytes": 0,
+    "swapCurrentBytes": 0,
+    "reserveFromMeasuredPeakBytes": 1328955392,
+    "reserveFromMeasuredPeakPercent": 64.8904,
+    "End500ReserveAccepted": false
+  },
+  "nativeFinal": {
+    "database": "helmut_w15_full500_20261028b",
+    "readOnly": "on",
+    "profiles": 500,
+    "active": 0,
+    "physicalUsage": 5002,
+    "mainUsage": 5001,
+    "componentUsage": 1,
+    "historicalRows": 5000,
+    "historicalUsageHash": "db9d974d67af97600bf2ebc9fda7e66225a11adf0a15bcca380e0beebd97af78",
+    "originalSourceHistoricalHash": "db9d974d67af97600bf2ebc9fda7e66225a11adf0a15bcca380e0beebd97af78",
+    "sourceReadOnly": "on",
+    "journalState": "stopped",
+    "unitCount": 500,
+    "enteredUnits": 0,
+    "attempts": 0,
+    "outputs": 0,
+    "componentConsumed": 2,
+    "componentDraftCompletions": 1,
+    "componentReviewBindings": 0,
+    "componentSpentMicroUSD": 248,
+    "componentUnknownReservedMicroUSD": 81400,
+    "completionHash": "03571527d1d6fd87aca54d35c494f08b52eaf6473946b1f20be51f39190e3b02",
+    "zeroCostSkipRows": 1
+  },
+  "ownedStops": {
+    "eu-component": [
+      "OWNED_PROCESS_ALREADY_EXITED"
+    ],
+    "run": [
+      "OWNED_PROCESS_ALREADY_EXITED"
+    ],
+    "prepare": [
+      "OWNED_PROCESS_ALREADY_EXITED"
+    ],
+    "setup": [
+      "OWNED_PROCESS_ALREADY_EXITED"
+    ],
+    "gateway": [
+      "GROUP_SIGTERM_NO_REGISTERED_NODE",
+      "OWNED_PROCESS_EXIT_CONFIRMED"
+    ],
+    "postgrest": [
+      "GROUP_SIGTERM_NO_REGISTERED_NODE",
+      "OWNED_PROCESS_EXIT_CONFIRMED"
+    ]
+  },
+  "reportedOriginalCanonicalUsageHash": "cab5effca36a1fd5e6586cca3f3a4c0c6e20ec495d1dbe83c80d0deeac9eb97f",
+  "historyHashAlgorithms": "Application canonical cab5... and independently compared PostgreSQL JSONB-text db9d... differ by serialization. Each preservation comparison uses identical serialization both sides.",
+  "signatureVerification": {
+    "algorithm": "Ed25519",
+    "persistedProofVerified": true,
+    "publicKeyOnly": true,
+    "privateKeyRead": false
+  },
+  "mockCostProof": {
+    "localResponses": 1,
+    "actualPaidModelCalls": 0,
+    "syntheticAccountedMicroUSD": 248,
+    "syntheticUnknownReserveMicroUSD": 81400,
+    "installedDStoreOrRProven": false,
+    "sourceQualityAcceptance": false
+  },
+  "execution": {
+    "activeProfiles": 0,
+    "profiles": 500,
+    "activatedProfiles": 0,
+    "enteredUnits": 0,
+    "completedUnits": 0,
+    "producedAcceptedResults": 0,
+    "HTTPExpectedPositions": 1500,
+    "full500Started": false,
+    "productionAcceptance": false
+  },
+  "coldOpenQualification": "First prepared scope opens cold; HTTP status follows in same process. No separate cold-HTTP timing claimed.",
+  "pending": [
+    "Separate common-kernel End500 RAM and conservative growth assessment",
+    "Installed positive Dstore/R/result-journal under later authorized activation",
+    "Full500 units/1000mocks/1500independent produced results/8000controls/Unit60/grown Auth30",
+    "CI and separate Vercel configuration error; no merge/deployment"
+  ]
+}

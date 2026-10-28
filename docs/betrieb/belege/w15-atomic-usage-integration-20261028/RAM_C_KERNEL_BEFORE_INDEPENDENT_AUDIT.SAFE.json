@@ -1,0 +1,16 @@
+{
+  "atUTC": "2026-10-28T17:37:32.403537+00:00",
+  "peak": 1437229056,
+  "current": 341823488,
+  "limit": "2048000000",
+  "swapMax": "0",
+  "swap": 0,
+  "events": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  }
+}

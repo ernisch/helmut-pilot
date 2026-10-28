@@ -1,0 +1,1148 @@
+{
+  "schema": "helmut-w15-atomic-RAM-final-independent-review/1",
+  "status": "PASS_INDEPENDENT_FAILURE_AUDIT_DIAGNOSTIC_FAIL_UNKNOWN_RETAINED",
+  "diagnosticStatus": "FAIL_OR_UNKNOWN",
+  "reviewer": "/root/eu_atomic_check_author",
+  "independentOfRAMImplementationAndExecution": true,
+  "reviewedAtUTC": "2026-10-28T13:46:32.957835+00:00",
+  "checks": [
+    {
+      "name": "first_error_stop_no_retry",
+      "status": "PASS_AUDIT",
+      "evidence": "10acceptedCAS+11thunACKedTypeError;driverexit1;controllerfirstfailurepreserved;no12thmutation/retry/resume."
+    },
+    {
+      "name": "kernel_budget_true_not_breached",
+      "status": "PASS_AUDIT",
+      "evidence": "Hard2048000000/cgroupSwap0;peak1154990080;reserve893009920/43.604%;noOOM/maxevents. ThisearlytechnicalfailureisNOTaRAMreservefailureorfullgrowthPASS."
+    },
+    {
+      "name": "timings_complete_and_incomplete",
+      "status": "PASS_AUDIT",
+      "evidence": "All10ACKedwholeAuthandnativeCASrecordsunder30s;11thAuth/CASfailedwithoutACK,remainsUNKNOWN;all22started/22finishedmetadataandexactmaximapersisted468contiguousdurablerows."
+    },
+    {
+      "name": "actual_inert_end500_complete_retained",
+      "status": "PASS_AUDIT",
+      "evidence": "OneindependentnativeREADONLYtransactionverifies500profiles/0active/501identities;full6000logicalhistoryandallAuthfieldsequalbaselineexceptrevision/probe;all1000store+2500briefingseedpostimagesequal. Theseareinertfixtures,notproduced500proof."
+    },
+    {
+      "name": "safe_service_shutdown",
+      "status": "PASS_AUDIT",
+      "evidence": "Ownedstoplogsconfirmdriver/setupalreadyexitedandgateway/PGRexitconfirmed;currentcgroupcontainsnoownedW15/PostgRESTprocess;PostgreSQLretainedrunning;innerStopFailurenull."
+    },
+    {
+      "name": "no_underlying_cause_invention",
+      "status": "PASS_AUDIT",
+      "evidence": "OnlyTypeError/fetchwritephasefailuremetadataretained;sanitizermaskedunderlyingmessage/cause.code. PGERROR/FATAL/PANIC0;PGRlognormalstartup;gatewaylogempty. Noconfirmednetwork/SQL/OOMrootcause."
+    },
+    {
+      "name": "natural_growth_not_established",
+      "status": "PASS_AUDIT",
+      "evidence": "234GCevents55majorobserved;onlyinitialPGstatsrowbecause25CASsampleboundarynotreached. No2naturalcheckpoint/autovac/WALlateplateau/6500projectionresult;cannotacceptreserveupto500."
+    },
+    {
+      "name": "source_and_original_boundaries",
+      "status": "PASS_AUDIT",
+      "evidence": "FreshRAMrestoreusesverifiedread-onlydump/rolesandpinnedEnd500data. NoSQLsourcewritepath;lastnativeoriginal-sourceequalityproofisDindependentreview,reusedhonestly,nofreshoriginalDBclaim. Nounit/profileactivation/model/Productionexecution."
+    }
+  ],
+  "actualObservations": {
+    "acceptedCAS": 10,
+    "expectedCAS": 500,
+    "attemptedMutations": 11,
+    "actualUnitExecutions": 0,
+    "profileActivations": 0,
+    "paidModelCalls": 0,
+    "commonKernelPeakBytes": 1154990080,
+    "requiredReserveBytes": 409600000,
+    "observedReserveBytes": 893009920,
+    "observedReservePercent": 43.604,
+    "kernelAfterIndependentReadOnlyAudit": {
+      "kind": "kernelAfterAudit",
+      "peak": 1154990080,
+      "swap": 0,
+      "current": 348987392
+    },
+    "completeAuthMaximumWallMs": 20034.336893999993,
+    "completeNativeCASMaximumWallMs": 12559.36851700001,
+    "authTimingRows": [
+      {
+        "id": 1,
+        "kind": "public-mutation",
+        "index": 0,
+        "beginMS": 4636.715308,
+        "callbackRuns": 1,
+        "wallMs": 3506.6117030000005,
+        "callbackMs": 0.01782999999977619,
+        "acknowledged": true,
+        "ackMS": 8143.322285,
+        "endMS": 8143.327011
+      },
+      {
+        "id": 2,
+        "kind": "public-mutation",
+        "index": 1,
+        "beginMS": 10795.956008,
+        "callbackRuns": 1,
+        "wallMs": 2591.073585,
+        "callbackMs": 0.007599000000482192,
+        "acknowledged": true,
+        "ackMS": 13386.940963,
+        "endMS": 13387.029593
+      },
+      {
+        "id": 3,
+        "kind": "public-mutation",
+        "index": 2,
+        "beginMS": 15146.624753,
+        "callbackRuns": 1,
+        "wallMs": 2129.187052000001,
+        "callbackMs": 0.004938999998557847,
+        "acknowledged": true,
+        "ackMS": 17275.809876,
+        "endMS": 17275.811805
+      },
+      {
+        "id": 4,
+        "kind": "public-mutation",
+        "index": 3,
+        "beginMS": 18513.496824,
+        "callbackRuns": 1,
+        "wallMs": 2505.8502829999998,
+        "callbackMs": 0.005432000001746928,
+        "acknowledged": true,
+        "ackMS": 21019.343173,
+        "endMS": 21019.347107
+      },
+      {
+        "id": 5,
+        "kind": "public-mutation",
+        "index": 4,
+        "beginMS": 22297.351175,
+        "callbackRuns": 1,
+        "wallMs": 1892.6781640000008,
+        "callbackMs": 0.005713000002288027,
+        "acknowledged": true,
+        "ackMS": 24190.027815,
+        "endMS": 24190.029339
+      },
+      {
+        "id": 6,
+        "kind": "public-mutation",
+        "index": 5,
+        "beginMS": 25621.817239,
+        "callbackRuns": 1,
+        "wallMs": 6685.440011999999,
+        "callbackMs": 0.006250000002182787,
+        "acknowledged": true,
+        "ackMS": 32307.255497,
+        "endMS": 32307.257251
+      },
+      {
+        "id": 7,
+        "kind": "public-mutation",
+        "index": 6,
+        "beginMS": 38015.99499,
+        "callbackRuns": 1,
+        "wallMs": 6160.087579999999,
+        "callbackMs": 0.2058309999993071,
+        "acknowledged": true,
+        "ackMS": 44176.08051,
+        "endMS": 44176.08257
+      },
+      {
+        "id": 8,
+        "kind": "public-mutation",
+        "index": 7,
+        "beginMS": 54560.011207,
+        "callbackRuns": 1,
+        "wallMs": 18509.476083,
+        "callbackMs": 0.006033999998180661,
+        "acknowledged": true,
+        "ackMS": 73069.485265,
+        "endMS": 73069.48729
+      },
+      {
+        "id": 9,
+        "kind": "public-mutation",
+        "index": 8,
+        "beginMS": 79222.111782,
+        "callbackRuns": 1,
+        "wallMs": 10898.802798999997,
+        "callbackMs": 0.005413000006228685,
+        "acknowledged": true,
+        "ackMS": 90120.91253,
+        "endMS": 90120.914581
+      },
+      {
+        "id": 10,
+        "kind": "public-mutation",
+        "index": 9,
+        "beginMS": 91304.597836,
+        "callbackRuns": 1,
+        "wallMs": 20034.336893999993,
+        "callbackMs": 0.00782499999331776,
+        "acknowledged": true,
+        "ackMS": 111338.932043,
+        "endMS": 111338.93473
+      },
+      {
+        "id": 11,
+        "kind": "public-mutation",
+        "index": 10,
+        "beginMS": 125555.855652,
+        "callbackRuns": 1,
+        "wallMs": 1417.0594249999995,
+        "callbackMs": 0.3000270000047749,
+        "failure": {
+          "name": "TypeError",
+          "reason": "w15-full500-error-details-retained-private"
+        },
+        "endMS": 126972.915077
+      }
+    ],
+    "nativeCASTimingRows": [
+      {
+        "id": 0,
+        "envelopeId": 1,
+        "index": 0,
+        "rowId": "main-auth",
+        "storageMode": "relational-atomic-v1",
+        "beginMS": 5846.987378,
+        "wallMs": 2294.4528680000003,
+        "acknowledged": true,
+        "ackMS": 8141.438406,
+        "endMS": 8141.440246
+      },
+      {
+        "id": 1,
+        "envelopeId": 2,
+        "index": 1,
+        "rowId": "main-auth",
+        "storageMode": "relational-atomic-v1",
+        "beginMS": 11943.091561,
+        "wallMs": 1432.033802,
+        "acknowledged": true,
+        "ackMS": 13375.124492,
+        "endMS": 13375.125363
+      },
+      {
+        "id": 2,
+        "envelopeId": 3,
+        "index": 2,
+        "rowId": "main-auth",
+        "storageMode": "relational-atomic-v1",
+        "beginMS": 16000.19376,
+        "wallMs": 1274.1890570000014,
+        "acknowledged": true,
+        "ackMS": 17274.382129,
+        "endMS": 17274.382817
+      },
+      {
+        "id": 3,
+        "envelopeId": 4,
+        "index": 3,
+        "rowId": "main-auth",
+        "storageMode": "relational-atomic-v1",
+        "beginMS": 19294.032813,
+        "wallMs": 1723.2144709999993,
+        "acknowledged": true,
+        "ackMS": 21017.246336,
+        "endMS": 21017.247284
+      },
+      {
+        "id": 4,
+        "envelopeId": 5,
+        "index": 4,
+        "rowId": "main-auth",
+        "storageMode": "relational-atomic-v1",
+        "beginMS": 23035.922392,
+        "wallMs": 1152.3058429999983,
+        "acknowledged": true,
+        "ackMS": 24188.227269,
+        "endMS": 24188.228235
+      },
+      {
+        "id": 5,
+        "envelopeId": 6,
+        "index": 5,
+        "rowId": "main-auth",
+        "storageMode": "relational-atomic-v1",
+        "beginMS": 26301.460194,
+        "wallMs": 6004.156897000001,
+        "acknowledged": true,
+        "ackMS": 32305.616345,
+        "endMS": 32305.617091
+      },
+      {
+        "id": 6,
+        "envelopeId": 7,
+        "index": 6,
+        "rowId": "main-auth",
+        "storageMode": "relational-atomic-v1",
+        "beginMS": 39092.246451,
+        "wallMs": 5080.259622999998,
+        "acknowledged": true,
+        "ackMS": 44172.505155,
+        "endMS": 44172.506074
+      },
+      {
+        "id": 7,
+        "envelopeId": 8,
+        "index": 7,
+        "rowId": "main-auth",
+        "storageMode": "relational-atomic-v1",
+        "beginMS": 60506.984839,
+        "wallMs": 12559.36851700001,
+        "acknowledged": true,
+        "ackMS": 73066.352635,
+        "endMS": 73066.353356
+      },
+      {
+        "id": 8,
+        "envelopeId": 9,
+        "index": 8,
+        "rowId": "main-auth",
+        "storageMode": "relational-atomic-v1",
+        "beginMS": 81745.194036,
+        "wallMs": 8373.780843999994,
+        "acknowledged": true,
+        "ackMS": 90118.974192,
+        "endMS": 90118.97488
+      },
+      {
+        "id": 9,
+        "envelopeId": 10,
+        "index": 9,
+        "rowId": "main-auth",
+        "storageMode": "relational-atomic-v1",
+        "beginMS": 100644.982631,
+        "wallMs": 10690.087263999987,
+        "acknowledged": true,
+        "ackMS": 111335.068642,
+        "endMS": 111335.069895
+      },
+      {
+        "id": 10,
+        "envelopeId": 11,
+        "index": 10,
+        "rowId": "main-auth",
+        "storageMode": "relational-atomic-v1",
+        "beginMS": 126523.868583,
+        "wallMs": 446.9032969999971,
+        "failure": {
+          "name": "TypeError",
+          "reason": "w15-full500-error-details-retained-private"
+        },
+        "endMS": 126970.77188
+      }
+    ],
+    "eleventhOutcome": "UNKNOWN_NO_ACK; finalfreshnativeprobeSequence9doesnotshow11thwrite;neverclassifiedassuccess/retryablefromabsencealone",
+    "actualError": {
+      "name": "TypeError",
+      "reason": "details-retained-private"
+    },
+    "durableRecords": 468,
+    "naturalGCCounts": {
+      "1": 123,
+      "8": 56,
+      "4": 55
+    },
+    "GCMaximumPauseMs": 2628.176269002259,
+    "PGStatistics": [
+      {
+        "index": -1,
+        "atMs": 4549.557227,
+        "active": 0,
+        "settings": {
+          "fsync": "on",
+          "work_mem": "32768",
+          "autovacuum": "on",
+          "archive_mode": "off",
+          "max_wal_size": "128",
+          "wal_keep_size": "0",
+          "full_page_writes": "on",
+          "autovacuum_naptime": "10",
+          "synchronous_commit": "on"
+        },
+        "walBytes": "121087443",
+        "tempBytes": 0,
+        "tempFiles": 0,
+        "walNewest": "000000010000000000000008",
+        "walOldest": "000000010000000000000001",
+        "storeBytes": 64995328,
+        "toastBytes": 64618496,
+        "usageBytes": 8339456,
+        "autovacuums": 3,
+        "checkpoints": 2,
+        "briefingBytes": 26345472,
+        "usageToastBytes": 1482752,
+        "replicationSlots": 0,
+        "walPhysicalBytes": 134217728
+      }
+    ],
+    "lateGrowthProjection": null
+  },
+  "RAMAttribution": {
+    "maximumComponentSampleCommonCurrentBytes": 1152004096,
+    "trueKernelPeakMayOccurBetweenComponentSamples": true,
+    "contemporaneousKernelStatAtMaximumSample": {
+      "anon": 894226432,
+      "file": 237780992,
+      "kernel": 19308544,
+      "kernel_stack": 655360,
+      "pagetables": 9637888,
+      "sec_pagetables": 0,
+      "percpu": 4592,
+      "sock": 0,
+      "vmalloc": 49152,
+      "shmem": 143839232,
+      "file_mapped": 132198400,
+      "file_dirty": 12804096,
+      "file_writeback": 0,
+      "swapcached": 0,
+      "anon_thp": 0,
+      "file_thp": 6291456,
+      "shmem_thp": 0,
+      "inactive_anon": 879599616,
+      "active_anon": 135946240,
+      "inactive_file": 106332160,
+      "active_file": 10088448,
+      "unevictable": 0,
+      "slab_reclaimable": 7425760,
+      "slab_unreclaimable": 1506576,
+      "slab": 8932336,
+      "workingset_refault_anon": 0,
+      "workingset_refault_file": 82,
+      "workingset_activate_anon": 0,
+      "workingset_activate_file": 82,
+      "workingset_restore_anon": 0,
+      "workingset_restore_file": 0,
+      "workingset_nodereclaim": 0,
+      "pgdemote_kswapd": 0,
+      "pgdemote_direct": 0,
+      "pgdemote_khugepaged": 0,
+      "pgdemote_proactive": 0,
+      "pgscan": 74134,
+      "pgsteal": 73704,
+      "pswpin": 0,
+      "pswpout": 0,
+      "pgscan_kswapd": 0,
+      "pgscan_direct": 74134,
+      "pgscan_khugepaged": 0,
+      "pgscan_proactive": 0,
+      "pgsteal_kswapd": 0,
+      "pgsteal_direct": 73704,
+      "pgsteal_khugepaged": 0,
+      "pgsteal_proactive": 0,
+      "pgfault": 2593765,
+      "pgmajfault": 0,
+      "pgrefill": 0,
+      "pgactivate": 37053,
+      "pgdeactivate": 0,
+      "pglazyfree": 97202,
+      "pglazyfreed": 0,
+      "swpin_zero": 0,
+      "swpout_zero": 0,
+      "thp_fault_alloc": 0,
+      "thp_collapse_alloc": 0,
+      "thp_swpout": 0,
+      "thp_swpout_fallback": 0
+    },
+    "contemporaneousProcessesAtMaximumSample": [
+      {
+        "pid": 68442,
+        "name": "postgres",
+        "Rss": 33116160,
+        "HighWaterRSS": 33116160,
+        "RssAnon": 2461696,
+        "RssFile": 19394560,
+        "RssShmem": 11259904,
+        "Pss": null,
+        "pssReadPermitted": false
+      },
+      {
+        "pid": 68842,
+        "name": "postgres",
+        "Rss": 113459200,
+        "HighWaterRSS": 113459200,
+        "RssAnon": 2691072,
+        "RssFile": 6447104,
+        "RssShmem": 104321024,
+        "Pss": null,
+        "pssReadPermitted": false
+      },
+      {
+        "pid": 68843,
+        "name": "postgres",
+        "Rss": 9117696,
+        "HighWaterRSS": 9117696,
+        "RssAnon": 2498560,
+        "RssFile": 4673536,
+        "RssShmem": 1945600,
+        "Pss": null,
+        "pssReadPermitted": false
+      },
+      {
+        "pid": 68845,
+        "name": "postgres",
+        "Rss": 12181504,
+        "HighWaterRSS": 12181504,
+        "RssAnon": 2494464,
+        "RssFile": 5066752,
+        "RssShmem": 4620288,
+        "Pss": null,
+        "pssReadPermitted": false
+      },
+      {
+        "pid": 68846,
+        "name": "postgres",
+        "Rss": 11128832,
+        "HighWaterRSS": 11128832,
+        "RssAnon": 2748416,
+        "RssFile": 7335936,
+        "RssShmem": 1044480,
+        "Pss": null,
+        "pssReadPermitted": false
+      },
+      {
+        "pid": 68847,
+        "name": "postgres",
+        "Rss": 10342400,
+        "HighWaterRSS": 10342400,
+        "RssAnon": 2732032,
+        "RssFile": 6860800,
+        "RssShmem": 749568,
+        "Pss": null,
+        "pssReadPermitted": false
+      },
+      {
+        "pid": 69671,
+        "name": "postgrest",
+        "Rss": 272232448,
+        "HighWaterRSS": 298393600,
+        "RssAnon": 260427776,
+        "RssFile": 11804672,
+        "RssShmem": 0,
+        "Pss": null,
+        "pssReadPermitted": false
+      },
+      {
+        "pid": 69693,
+        "name": "postgres",
+        "Rss": 16224256,
+        "HighWaterRSS": 16224256,
+        "RssAnon": 3194880,
+        "RssFile": 8990720,
+        "RssShmem": 4038656,
+        "Pss": null,
+        "pssReadPermitted": false
+      },
+      {
+        "pid": 69694,
+        "name": "postgres",
+        "Rss": 324632576,
+        "HighWaterRSS": 326656000,
+        "RssAnon": 264740864,
+        "RssFile": 14737408,
+        "RssShmem": 45154304,
+        "Pss": null,
+        "pssReadPermitted": false
+      },
+      {
+        "pid": 69716,
+        "name": "sh",
+        "Rss": 1925120,
+        "HighWaterRSS": 1925120,
+        "RssAnon": 110592,
+        "RssFile": 1814528,
+        "RssShmem": 0,
+        "Pss": null,
+        "pssReadPermitted": false
+      },
+      {
+        "pid": 69722,
+        "name": "MainThread",
+        "Rss": 101449728,
+        "HighWaterRSS": 112295936,
+        "RssAnon": 49635328,
+        "RssFile": 51814400,
+        "RssShmem": 0,
+        "Pss": null,
+        "pssReadPermitted": false
+      },
+      {
+        "pid": 69784,
+        "name": "timeout",
+        "Rss": 2441216,
+        "HighWaterRSS": 2441216,
+        "RssAnon": 106496,
+        "RssFile": 2334720,
+        "RssShmem": 0,
+        "Pss": null,
+        "pssReadPermitted": false
+      },
+      {
+        "pid": 69790,
+        "name": "MainThread",
+        "Rss": 378175488,
+        "HighWaterRSS": 418086912,
+        "RssAnon": 321060864,
+        "RssFile": 57114624,
+        "RssShmem": 0,
+        "Pss": null,
+        "pssReadPermitted": false
+      }
+    ],
+    "perProcessObservedMaximaNotSimultaneousNotToBeSummed": [
+      {
+        "hostPID": 69790,
+        "name": "MainThread",
+        "sampledRSSMaxBytes": 398811136,
+        "sampledAnonMaxBytes": 341762048,
+        "observedHighWaterRSSMaxBytes": 418086912,
+        "firstSampleRSSBytes": 193568768,
+        "lastSampleRSSBytes": 378228736
+      },
+      {
+        "hostPID": 69694,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 324632576,
+        "sampledAnonMaxBytes": 264740864,
+        "observedHighWaterRSSMaxBytes": 326656000,
+        "firstSampleRSSBytes": 38125568,
+        "lastSampleRSSBytes": 196075520
+      },
+      {
+        "hostPID": 69671,
+        "name": "postgrest",
+        "sampledRSSMaxBytes": 298774528,
+        "sampledAnonMaxBytes": 286969856,
+        "observedHighWaterRSSMaxBytes": 300511232,
+        "firstSampleRSSBytes": 16605184,
+        "lastSampleRSSBytes": 286580736
+      },
+      {
+        "hostPID": 69297,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 297930752,
+        "sampledAnonMaxBytes": 218386432,
+        "observedHighWaterRSSMaxBytes": 297930752,
+        "firstSampleRSSBytes": 24821760,
+        "lastSampleRSSBytes": 297930752
+      },
+      {
+        "hostPID": 69542,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 178094080,
+        "sampledAnonMaxBytes": 156430336,
+        "observedHighWaterRSSMaxBytes": 178094080,
+        "firstSampleRSSBytes": 178094080,
+        "lastSampleRSSBytes": 178094080
+      },
+      {
+        "hostPID": 69577,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 132968448,
+        "sampledAnonMaxBytes": 98267136,
+        "observedHighWaterRSSMaxBytes": 197636096,
+        "firstSampleRSSBytes": 132968448,
+        "lastSampleRSSBytes": 132968448
+      },
+      {
+        "hostPID": 68842,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 113459200,
+        "sampledAnonMaxBytes": 2691072,
+        "observedHighWaterRSSMaxBytes": 113459200,
+        "firstSampleRSSBytes": 7380992,
+        "lastSampleRSSBytes": 113459200
+      },
+      {
+        "hostPID": 69722,
+        "name": "MainThread",
+        "sampledRSSMaxBytes": 102117376,
+        "sampledAnonMaxBytes": 50302976,
+        "observedHighWaterRSSMaxBytes": 112295936,
+        "firstSampleRSSBytes": 59228160,
+        "lastSampleRSSBytes": 102117376
+      },
+      {
+        "hostPID": 69738,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 72814592,
+        "sampledAnonMaxBytes": 6889472,
+        "observedHighWaterRSSMaxBytes": 72814592,
+        "firstSampleRSSBytes": 72814592,
+        "lastSampleRSSBytes": 72814592
+      },
+      {
+        "hostPID": 69178,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 61714432,
+        "sampledAnonMaxBytes": 32448512,
+        "observedHighWaterRSSMaxBytes": 88539136,
+        "firstSampleRSSBytes": 57491456,
+        "lastSampleRSSBytes": 61714432
+      },
+      {
+        "hostPID": 68542,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 58359808,
+        "sampledAnonMaxBytes": 10317824,
+        "observedHighWaterRSSMaxBytes": 58359808,
+        "firstSampleRSSBytes": 56274944,
+        "lastSampleRSSBytes": 58359808
+      },
+      {
+        "hostPID": 69640,
+        "name": "MainThread",
+        "sampledRSSMaxBytes": 47116288,
+        "sampledAnonMaxBytes": 9261056,
+        "observedHighWaterRSSMaxBytes": 47116288,
+        "firstSampleRSSBytes": 47116288,
+        "lastSampleRSSBytes": 47116288
+      },
+      {
+        "hostPID": 70241,
+        "name": "MainThread",
+        "sampledRSSMaxBytes": 40308736,
+        "sampledAnonMaxBytes": 8060928,
+        "observedHighWaterRSSMaxBytes": 40308736,
+        "firstSampleRSSBytes": 33517568,
+        "lastSampleRSSBytes": 40308736
+      },
+      {
+        "hostPID": 68442,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 33116160,
+        "sampledAnonMaxBytes": 2461696,
+        "observedHighWaterRSSMaxBytes": 33116160,
+        "firstSampleRSSBytes": 33116160,
+        "lastSampleRSSBytes": 33116160
+      },
+      {
+        "hostPID": 68800,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 32980992,
+        "sampledAnonMaxBytes": 2453504,
+        "observedHighWaterRSSMaxBytes": 32980992,
+        "firstSampleRSSBytes": 32980992,
+        "lastSampleRSSBytes": 32980992
+      },
+      {
+        "hostPID": 70147,
+        "name": "MainThread",
+        "sampledRSSMaxBytes": 26001408,
+        "sampledAnonMaxBytes": 2527232,
+        "observedHighWaterRSSMaxBytes": 26001408,
+        "firstSampleRSSBytes": 26001408,
+        "lastSampleRSSBytes": 26001408
+      },
+      {
+        "hostPID": 69967,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 17952768,
+        "sampledAnonMaxBytes": 3190784,
+        "observedHighWaterRSSMaxBytes": 17952768,
+        "firstSampleRSSBytes": 17952768,
+        "lastSampleRSSBytes": 17952768
+      },
+      {
+        "hostPID": 69693,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 16224256,
+        "sampledAnonMaxBytes": 3194880,
+        "observedHighWaterRSSMaxBytes": 16224256,
+        "firstSampleRSSBytes": 16224256,
+        "lastSampleRSSBytes": 16224256
+      },
+      {
+        "hostPID": 69330,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 16138240,
+        "sampledAnonMaxBytes": 3321856,
+        "observedHighWaterRSSMaxBytes": 16138240,
+        "firstSampleRSSBytes": 16138240,
+        "lastSampleRSSBytes": 16138240
+      },
+      {
+        "hostPID": 70039,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 15048704,
+        "sampledAnonMaxBytes": 3190784,
+        "observedHighWaterRSSMaxBytes": 15048704,
+        "firstSampleRSSBytes": 15048704,
+        "lastSampleRSSBytes": 15048704
+      },
+      {
+        "hostPID": 70050,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 14782464,
+        "sampledAnonMaxBytes": 3186688,
+        "observedHighWaterRSSMaxBytes": 14782464,
+        "firstSampleRSSBytes": 14782464,
+        "lastSampleRSSBytes": 14782464
+      },
+      {
+        "hostPID": 69976,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 13721600,
+        "sampledAnonMaxBytes": 3108864,
+        "observedHighWaterRSSMaxBytes": 13721600,
+        "firstSampleRSSBytes": 13721600,
+        "lastSampleRSSBytes": 13721600
+      },
+      {
+        "hostPID": 70209,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 13389824,
+        "sampledAnonMaxBytes": 3104768,
+        "observedHighWaterRSSMaxBytes": 13389824,
+        "firstSampleRSSBytes": 13389824,
+        "lastSampleRSSBytes": 13389824
+      },
+      {
+        "hostPID": 69989,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 13373440,
+        "sampledAnonMaxBytes": 3088384,
+        "observedHighWaterRSSMaxBytes": 13373440,
+        "firstSampleRSSBytes": 13373440,
+        "lastSampleRSSBytes": 13373440
+      },
+      {
+        "hostPID": 68845,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 12181504,
+        "sampledAnonMaxBytes": 2494464,
+        "observedHighWaterRSSMaxBytes": 12181504,
+        "firstSampleRSSBytes": 7241728,
+        "lastSampleRSSBytes": 12181504
+      },
+      {
+        "hostPID": 68846,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 11128832,
+        "sampledAnonMaxBytes": 2748416,
+        "observedHighWaterRSSMaxBytes": 11128832,
+        "firstSampleRSSBytes": 11010048,
+        "lastSampleRSSBytes": 11128832
+      },
+      {
+        "hostPID": 68806,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 11059200,
+        "sampledAnonMaxBytes": 2727936,
+        "observedHighWaterRSSMaxBytes": 11059200,
+        "firstSampleRSSBytes": 11059200,
+        "lastSampleRSSBytes": 11059200
+      },
+      {
+        "hostPID": 68847,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 10342400,
+        "sampledAnonMaxBytes": 2732032,
+        "observedHighWaterRSSMaxBytes": 10342400,
+        "firstSampleRSSBytes": 10309632,
+        "lastSampleRSSBytes": 10342400
+      },
+      {
+        "hostPID": 68807,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 10293248,
+        "sampledAnonMaxBytes": 2723840,
+        "observedHighWaterRSSMaxBytes": 10293248,
+        "firstSampleRSSBytes": 10293248,
+        "lastSampleRSSBytes": 10293248
+      },
+      {
+        "hostPID": 68843,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 9117696,
+        "sampledAnonMaxBytes": 2498560,
+        "observedHighWaterRSSMaxBytes": 9117696,
+        "firstSampleRSSBytes": 7446528,
+        "lastSampleRSSBytes": 9117696
+      },
+      {
+        "hostPID": 68802,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 7483392,
+        "sampledAnonMaxBytes": 2494464,
+        "observedHighWaterRSSMaxBytes": 7483392,
+        "firstSampleRSSBytes": 7483392,
+        "lastSampleRSSBytes": 7483392
+      },
+      {
+        "hostPID": 68803,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 7278592,
+        "sampledAnonMaxBytes": 2478080,
+        "observedHighWaterRSSMaxBytes": 7278592,
+        "firstSampleRSSBytes": 7278592,
+        "lastSampleRSSBytes": 7278592
+      },
+      {
+        "hostPID": 69938,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 7274496,
+        "sampledAnonMaxBytes": 2510848,
+        "observedHighWaterRSSMaxBytes": 7274496,
+        "firstSampleRSSBytes": 7274496,
+        "lastSampleRSSBytes": 7274496
+      },
+      {
+        "hostPID": 68805,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 7258112,
+        "sampledAnonMaxBytes": 2478080,
+        "observedHighWaterRSSMaxBytes": 7258112,
+        "firstSampleRSSBytes": 7258112,
+        "lastSampleRSSBytes": 7258112
+      },
+      {
+        "hostPID": 70118,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 6930432,
+        "sampledAnonMaxBytes": 2494464,
+        "observedHighWaterRSSMaxBytes": 6930432,
+        "firstSampleRSSBytes": 6930432,
+        "lastSampleRSSBytes": 6930432
+      },
+      {
+        "hostPID": 70168,
+        "name": "postgres",
+        "sampledRSSMaxBytes": 6037504,
+        "sampledAnonMaxBytes": 2461696,
+        "observedHighWaterRSSMaxBytes": 6037504,
+        "firstSampleRSSBytes": 6037504,
+        "lastSampleRSSBytes": 6037504
+      }
+    ],
+    "workloadNodeSelfSampleMaxima": {
+      "rss": 398667776,
+      "heapUsed": 110283984,
+      "heapTotal": 169275392,
+      "external": 87088331,
+      "arrayBuffers": 54440205
+    },
+    "interpretation": "LargestobservedanonymoustermsareworkloadNode,PGbackendandPGR;gatewayandsharedPGmappingsalsoexist. Atmaxcomponentsamplecommonanon894226432/file237780992/kernel19308544;shmem143839232issubcategory,notanextraterm. Node/PGR/PG RSSandcumulativeWALareNEVERadded/subtractedtoacceptRAM. Shorttracecannotproveleak/plateau/rootcause."
+  },
+  "nativeFinal": {
+    "schema": "helmut-w15-atomic-RAM-final-readonly/1",
+    "status": "PASS_RETAINED_ALL3501_POSTIMAGES_AND_ZERO_ONLY_NOT_RAM_ACCEPTANCE",
+    "reviewer": "/root/eu_atomic_check_author",
+    "observedAtUTC": "2026-10-28T13:42:38.945356+00:00",
+    "nativeReadOnlyTransactions": 1,
+    "database": "helmut_w15_memory_atomic_20261028a",
+    "metadata": {
+      "kind": "metadata",
+      "active": 0,
+      "database": "helmut_w15_memory_atomic_20261028a",
+      "profiles": 500,
+      "readonly": "on",
+      "identities": 501,
+      "physicalUsageRows": 6000,
+      "physicalAuthHasUsage": false
+    },
+    "logicalAuthExactlyPreservedExcluding": [
+      "freshRevision",
+      "diagnosticProbeSequence"
+    ],
+    "observedProbeSequence": 9,
+    "authUsageRows": 6000,
+    "allHistoricalAndInertAuthFieldsEqual": true,
+    "exactAuthPostimages": 1,
+    "exactStorePostimages": 1000,
+    "exactBriefingPostimages": 2500,
+    "totalExactPostimages": 3501,
+    "kernelAfterAudit": {
+      "kind": "kernelAfterAudit",
+      "peak": 1154990080,
+      "swap": 0,
+      "current": 348987392
+    },
+    "privateRawPin": {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_NATIVE_FINAL_PRIVATE.jsonl",
+      "bytes": 120268514,
+      "sha256": "b94e71349827bf4f1f1515d1120694ecbda5d1ff9fae3a6b11b26f10e9d3285b"
+    },
+    "workloadOrHTTPAttempts": 0,
+    "databaseWrites": 0,
+    "activations": 0,
+    "retryAllowed": false
+  },
+  "processFinal": {
+    "schema": "helmut-w15-atomic-RAM-process-log-readonly/1",
+    "status": "PASS_OWNED_GATEWAY_POSTGREST_DRIVER_ENDED",
+    "reviewer": "/root/eu_atomic_check_author",
+    "atUTC": "2026-10-28T13:43:59.046853+00:00",
+    "postgresErrorLines": [],
+    "postgresErrorCount": 0,
+    "containerRunning": true,
+    "OOMKilled": false,
+    "memoryLimitBytes": 2048000000,
+    "memorySwapLimitBytes": 2048000000,
+    "networkMode": "none",
+    "remainingProcesses": [
+      {
+        "pid": 68442,
+        "name": "postgres",
+        "ownedW15Command": false,
+        "postgrest": false
+      },
+      {
+        "pid": 68842,
+        "name": "postgres",
+        "ownedW15Command": false,
+        "postgrest": false
+      },
+      {
+        "pid": 68843,
+        "name": "postgres",
+        "ownedW15Command": false,
+        "postgrest": false
+      },
+      {
+        "pid": 68845,
+        "name": "postgres",
+        "ownedW15Command": false,
+        "postgrest": false
+      },
+      {
+        "pid": 68846,
+        "name": "postgres",
+        "ownedW15Command": false,
+        "postgrest": false
+      },
+      {
+        "pid": 68847,
+        "name": "postgres",
+        "ownedW15Command": false,
+        "postgrest": false
+      }
+    ],
+    "kernelPeakBytes": 1154990080,
+    "swapCurrentBytes": 0,
+    "kernelEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "privatePostgresLogPin": {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_POSTGRES_LOG_PRIVATE.txt",
+      "bytes": 4914,
+      "sha256": "c9f06c6a91d4b42a70327d9f8266ac5794e08238aa1b2034eb216f5e30e1243a"
+    },
+    "SQLReadsOrWrites": 0,
+    "HTTPAttempts": 0,
+    "tests": 0,
+    "readOnlyHelperNote": "Initialmetadatahelperreadusedunnormalizedhostcgroupnamespacepathandfailedbeforeprocessread. Correctedpathnormalization,reusedsamePGlog;noSQLorworkloadrepeat."
+  },
+  "evidencePins": [
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/CONTROLLER_RESULT.SAFE.json",
+      "bytes": 1042,
+      "sha256": "30663b99b7e0043d67228b3c7a22f4c30c778a021b13e3349af1f5e726c88b46"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/FORWARD_RESULT.SAFE.json",
+      "bytes": 76699,
+      "sha256": "df3dc65442120f0bf55d1c99df92fb01570cb974aad6a5ffbb88f24e5486aa62"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/SEED.SAFE.json",
+      "bytes": 273,
+      "sha256": "10e8f1a9ea4639aa4d33c23c49eec9952f37c95dcc71702f0ed0058cb3083986"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/ATOMIC_BOOTSTRAP.SAFE.json",
+      "bytes": 300,
+      "sha256": "c7299eb56d66e27b0c41bc3deb78306a021925dd09a78d0be23960f84d824c4d"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/CURRENT_COMMAND_BINDING.SAFE.json",
+      "bytes": 234,
+      "sha256": "b19985f0066367d2d047ac9a67df48e10f83b037c3ab682ac28efb9bee5b8833"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/outer-progress.SAFE.jsonl",
+      "bytes": 457401,
+      "sha256": "1f8234c1966fc52144ebe7be75fbfd7d4fc63b2dd1a53eea1455f21b6d46bd09"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/run.PRIVATE.log",
+      "bytes": 4746,
+      "sha256": "e05b05980815c059f9aceed649d78d0ea417e4d10e18a8d45c46d8a1368d7d61"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/state/run-observations.SAFE.jsonl",
+      "bytes": 89872,
+      "sha256": "fe600d13c39ca20e1ccf2660cc11ed5c154145b1ca3643b126d9227bbf0c45da"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/state/postgrest.PRIVATE.log",
+      "bytes": 634,
+      "sha256": "b11cef969cac4717551912be95be8f6f8102fa4955fd9b37248d0f23178a2d4c"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/state/gateway.PRIVATE.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_NATIVE_FINAL_INDEPENDENT_READONLY.SAFE.json",
+      "bytes": 1368,
+      "sha256": "1162add685b482984860e9e7e001de02dcaf08ef394d903b9605a449506bb16c"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_PROCESS_LOG_INDEPENDENT_READONLY.SAFE.json",
+      "bytes": 1811,
+      "sha256": "25b37b56974f20eec6a80ce56e66ee4b2eb1c15dc813a6201e7d4dd0d456916f"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/MEMORY_PRESTART_REVIEW_FINAL.SAFE.json",
+      "bytes": 10259,
+      "sha256": "f21bdc0363a129cd96c8c98109570816c999465f16327bd175cf5ce600689a5f"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/D_RESULTS_INDEPENDENT_REVIEW.SAFE.json",
+      "bytes": 15279,
+      "sha256": "45ed6642e60ad704f4d4f50c06bfd43f3347b39a838bd369d65eace3339baed1"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/state/stop-gateway.SAFE.jsonl",
+      "bytes": 206,
+      "sha256": "575d37302a7c30fcb4516eaa918606c3903b2e02a27fd48c7c0230778152fd54"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/state/stop-postgrest.SAFE.jsonl",
+      "bytes": 210,
+      "sha256": "95d3eff1ff7c3b14b5f07d788b11075f85e0aa7d8f2bc272ec9c6019b13be526"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/state/stop-run.SAFE.jsonl",
+      "bytes": 92,
+      "sha256": "3c09d76532e8feaa01e629acd0a8c9d38ca5a2f014a83f6c95d97bc2da68da0f"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/state/stop-setup.SAFE.jsonl",
+      "bytes": 94,
+      "sha256": "5d12878d8fe9135d70c59b07a9e6359c1e36504319ab20385fd51b04a12e7c62"
+    }
+  ],
+  "scopeLimits": [
+    "Existing14MBlogicalreads+AuthmutationswithrealheldW15command/inertfullEnd500volumeonly. No500active/500DRUnits/1000Mocks/1500producedresults/8000controls acceptance.",
+    "Source/nativepipelineprepared0/EUcomponentproofDremainsseparate;RAMattempttechnicalUNKNOWNblocks500readiness.",
+    "Newdiagnostic/fullattemptrequiresnewexplicitGOunderstoprule;reviewstartednoHTTP/test/DDL/alter/activation/retry."
+  ],
+  "full500Ready": false,
+  "full500Started": false,
+  "productionProof": false,
+  "automaticRetryAllowed": false
+}

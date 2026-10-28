@@ -1,0 +1,308 @@
+{
+  "status": "PASS",
+  "selector": {
+    "operationId": "synthetik500-w15-processing-1793193691814",
+    "commandHash": "26e54b003ee24cbba1f48c7bf63b0a60c489d9b34823520ad2b64f1484f4c7c9"
+  },
+  "fullC": {
+    "wallMs": 19868.511200999998,
+    "phases": [
+      {
+        "name": "readAndHashActualStoredRow",
+        "wallMs": 79.16877799999997
+      },
+      {
+        "name": "isolatedFullContentValidation",
+        "wallMs": 19495.620106000002
+      },
+      {
+        "name": "freezeReturnedGraph",
+        "wallMs": 63.19472400000086
+      },
+      {
+        "name": "freshNativeRecheck",
+        "wallMs": 45.486816999997245
+      },
+      {
+        "name": "retainSignedContentProof",
+        "wallMs": 20.537739999999758
+      }
+    ],
+    "workerPhases": [
+      {
+        "name": "closedBootstrap",
+        "wallMs": 1477.264568,
+        "diagnostics": {
+          "bootAttempted": true,
+          "bootQualified": true,
+          "sealed": false,
+          "commandCalls": 0,
+          "enteredCount": 0,
+          "qualifiedFalseCount": 0,
+          "lastFailure": "none",
+          "codecCalls": 0,
+          "codecEnteredCount": 0
+        }
+      },
+      {
+        "name": "closedSeal",
+        "wallMs": 62.516051999999945,
+        "diagnostics": {
+          "bootAttempted": true,
+          "bootQualified": true,
+          "sealed": true,
+          "commandCalls": 0,
+          "enteredCount": 0,
+          "qualifiedFalseCount": 0,
+          "lastFailure": "none",
+          "codecCalls": 0,
+          "codecEnteredCount": 0
+        }
+      },
+      {
+        "name": "parseActualStoredText",
+        "wallMs": 1.6356520000003911,
+        "diagnostics": {
+          "bootAttempted": true,
+          "bootQualified": true,
+          "sealed": true,
+          "commandCalls": 0,
+          "enteredCount": 0,
+          "qualifiedFalseCount": 0,
+          "lastFailure": "none",
+          "codecCalls": 0,
+          "codecEnteredCount": 0
+        }
+      },
+      {
+        "name": "completeDecode",
+        "wallMs": 1871.6604120000002,
+        "diagnostics": {
+          "bootAttempted": true,
+          "bootQualified": true,
+          "sealed": true,
+          "commandCalls": 0,
+          "enteredCount": 0,
+          "qualifiedFalseCount": 0,
+          "lastFailure": "none",
+          "codecCalls": 1,
+          "codecEnteredCount": 1
+        }
+      },
+      {
+        "name": "completeOriginalC",
+        "wallMs": 15424.868419000002,
+        "diagnostics": {
+          "bootAttempted": true,
+          "bootQualified": true,
+          "sealed": true,
+          "commandCalls": 1,
+          "enteredCount": 0,
+          "qualifiedFalseCount": 1,
+          "lastFailure": "unsupported-command-dispatch",
+          "codecCalls": 1,
+          "codecEnteredCount": 1
+        }
+      },
+      {
+        "name": "closedGraphAfterContent",
+        "wallMs": 3.7215290000021923,
+        "diagnostics": {
+          "bootAttempted": true,
+          "bootQualified": true,
+          "sealed": true,
+          "commandCalls": 1,
+          "enteredCount": 0,
+          "qualifiedFalseCount": 1,
+          "lastFailure": "unsupported-command-dispatch",
+          "codecCalls": 1,
+          "codecEnteredCount": 1
+        }
+      }
+    ],
+    "diagnostics": {
+      "bootAttempted": true,
+      "bootQualified": true,
+      "sealed": true,
+      "commandCalls": 1,
+      "enteredCount": 0,
+      "qualifiedFalseCount": 1,
+      "lastFailure": "unsupported-command-dispatch",
+      "codecCalls": 1,
+      "codecEnteredCount": 1
+    },
+    "facts": {
+      "prepares": 1,
+      "prepareHits": 0,
+      "prepareFailures": 0,
+      "begins": 0,
+      "beginFailures": 0,
+      "hashCalls": 0,
+      "hashHits": 0,
+      "hashMisses": 0,
+      "hashFallbacks": 0,
+      "jsonFacts": 0,
+      "lastFailure": null,
+      "actualDigestNs": 0,
+      "actualDigestPreimageBytes": 0,
+      "snapshotSamples": 0,
+      "snapshotSampleNs": 0,
+      "prefillChunks": 6,
+      "prefillBytes": 1363693,
+      "prefillNs": 184897238,
+      "projectionCalls": 0,
+      "projectionHits": 0,
+      "projectionCreates": 0,
+      "projectionFallbacks": 0,
+      "indexCalls": 0,
+      "indexHits": 0,
+      "indexCreates": 0,
+      "indexFallbacks": 0,
+      "compatibleBCalls": 0,
+      "compatibleBEligible": 0,
+      "compatibleBFallbacks": 0,
+      "inputCopyCalls": 0,
+      "inputCopyBindings": 0,
+      "inputCopyFallbacks": 0,
+      "expandedDigestHits": 0,
+      "firstBudgetFailure": null,
+      "fallbackCounters": {},
+      "checkpoints": [],
+      "contextPresent": true,
+      "active": false,
+      "activeBindings": 0,
+      "activeOperationEntries": 0,
+      "activeOperationKeyBytes": 0,
+      "activeOperationHeapBytes": 0,
+      "contextAgeMs": 15869.840052,
+      "baseIdentities": 35807,
+      "extraIdentities": 0,
+      "contentRecords": 35471,
+      "keyBytes": 1891568,
+      "retainedExtraTypes": {
+        "null": 0,
+        "boolean": 0,
+        "number": 0,
+        "string": 0,
+        "array": 0,
+        "object": 0
+      },
+      "retainedExtraKeyBytes": {
+        "scalarMapKeys": 0,
+        "tupleWords": 0
+      },
+      "retainedExtraStringIndex": {
+        "numericBuckets": 0,
+        "collisionEntries": 0
+      },
+      "parsedAndFactHeapBytes": 42852224,
+      "activeBindingHeapBytes": 0,
+      "chunkBytes": 1363693,
+      "digestEntries": 1,
+      "digestBytes": 160,
+      "caps": {
+        "identities": 200000,
+        "keyBytes": 8388608,
+        "digestEntries": 131072,
+        "digestBytes": 8388608,
+        "chunkAndTemporaryBytes": 16777216,
+        "retainedChunkBytes": 8388608,
+        "rawBytes": 67108864,
+        "parsedAndFactHeapBytes": 134217728,
+        "diagnosticHeapBytes": 16384,
+        "diagnosticCheckpoints": 64,
+        "ageMs": 60000
+      }
+    },
+    "graph": {
+      "objects": 25193,
+      "edges": 250078
+    },
+    "maxRSSBytes": 458743808
+  },
+  "installationOpenMs": 49.11530700000003,
+  "fullStageWallMs": 22187.442042000002,
+  "authMutations": [
+    {
+      "id": 1,
+      "kind": "public-mutation",
+      "index": null,
+      "beginMS": 21894.837313,
+      "callbackRuns": 1,
+      "wallMs": 829.8761930000001,
+      "callbackMs": 157.22390900000028,
+      "acknowledged": true,
+      "ackMS": 22724.708746,
+      "endMS": 22724.713506
+    }
+  ],
+  "usageSinks": [],
+  "casWrites": [
+    {
+      "id": 0,
+      "envelopeId": 1,
+      "index": null,
+      "rowId": "main-auth",
+      "storageMode": "relational-atomic-v1",
+      "beginMS": 22405.553572,
+      "wallMs": 317.3222939999978,
+      "acknowledged": true,
+      "ackMS": 22722.87407,
+      "endMS": 22722.875866
+    }
+  ],
+  "authCoverage": {
+    "allEnvelopesAcknowledgedUnder30": true,
+    "allWritesAssigned": true,
+    "allWritesAcknowledged": true,
+    "allWritesBoundedByEnvelope": true,
+    "eachEnvelopeHasWrite": true,
+    "observedCASWrites": 1,
+    "mutationEnvelopes": 1,
+    "usageEnvelopes": 0,
+    "usage1000": false,
+    "pass": true
+  },
+  "authTimings": {
+    "observedFullCalls": 1,
+    "completedFullCalls": 1,
+    "observedCASWrites": 1,
+    "completedCASWrites": 1,
+    "maximumFullCallWallMs": 829.8761930000001,
+    "maximumCASWallMs": 317.3222939999978,
+    "incompleteFullCalls": 0,
+    "incompleteCASWrites": 0,
+    "perAPI": {
+      "public-mutation": {
+        "count": 1,
+        "maximumWallMs": 829.8761930000001
+      }
+    },
+    "timingsUseWholeCallThroughACK": true
+  },
+  "actualSource23AndKO60PostimagesMatchDerivedInputs": true,
+  "providerCalls": 0,
+  "unitEntries": 0,
+  "memory": {
+    "currentBytes": 625565696,
+    "configuredLimit": "2048000000",
+    "swapMaximum": "0",
+    "swapCurrentBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "version": "helmut-w15-memory-check/2",
+    "comparisonBudgetBytes": 2048000000,
+    "minimumReservePercent": 20,
+    "requiredReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "kernelLifetimePeakBytes": 643399680,
+    "comparisonReserveBytes": 1404600320,
+    "reserveMeetsContract": true
+  }
+}

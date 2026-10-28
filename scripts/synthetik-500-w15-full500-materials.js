@@ -3,13 +3,15 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypto");
 const {spawnSync}=require("node:child_process"),{performance}=require("node:perf_hooks");
 const {originalBuilder,localEnvironment}=require("./synthetik-500-w15-signed-chain-test");
-const ROOT = path.resolve(__dirname, ".."), CONTAINER = "w15-full500-20261028d";
+const ATOMIC_PREPARED0 = process.argv.includes("--atomic-prepared0");
+const TARGET = require("./fixtures/w15-atomic-integration-target.json");
+const ROOT = path.resolve(__dirname, ".."), CONTAINER = ATOMIC_PREPARED0 ? TARGET.container : "w15-full500-20261028d";
 const SOURCE_DB = "helmut_w15_input_20261027";
-const UNIT0 = true;
+const UNIT0 = !ATOMIC_PREPARED0;
 // This namespace lives only in the fresh28c server/PGDATA; never connect to28b's
 // existing container. Keeping it preserves the already qualified installer pin.
 const DB = "helmut_w15_full500_20261028b";
-const WORK = "/workspace/shared/helmut-w15-full500-20261028d";
+const WORK = ATOMIC_PREPARED0 ? TARGET.work : "/workspace/shared/helmut-w15-full500-20261028d";
 const QUALIFICATION = "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b";
 const RECEIPT = "/workspace/shared/helmut-w15-receipt-20261027/reports/W15_RECEPTION_REPORT.SAFE.json";
 const RECEIPT_HASH = "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1";
@@ -118,7 +120,7 @@ async function main() {
   assert.equal(process.env.HELMUT_STORAGE_BACKEND, "local");
   assert.equal(process.version, "v24.19.0");
   const beforeSource = state(SOURCE_DB); assert.equal(beforeSource.active, 500); assert.equal(beforeSource.storeRows, 6);
-  if(UNIT0){
+  if(UNIT0 || ATOMIC_PREPARED0){
     const target=state(DB);assert.equal(target.active,0);
     const {profileHash:sourceHash,...sourceComparable}=beforeSource;
     const {profileHash:targetHash,...targetComparable}=target;
@@ -247,7 +249,7 @@ async function main() {
     const route = structuredClone(native.costInputs.routeContract);
     Object.assign(route, { runtimeManifestHash: P.hash(runtimeManifest), orderRenewalHash: EU.ORDER_RENEWAL_HASH });
     Object.assign(route.route, { productionCommit: config.commit, deploymentId: config.deploymentId, deploymentHost: config.host });
-    Object.assign(route.management, { validFromUTC: constructedAtUTC, validUntilUTC: end });
+    Object.assign(route.management, { validFromUTC: plannedWindow.startsAtUTC, validUntilUTC: end });
     const startsAtUTC = plannedWindow.startsAtUTC;
     const currentConfig = { selector: { operationId }, runId: "nachlauf500-" + Date.now(), constructedAtUTC,
       window: { startsAtUTC, endsAtUTC: end } };
@@ -276,14 +278,14 @@ async function main() {
       planHash:built.command.slot.planHash, paketHash:packet.bindung.paketHash, commandPin,
       controlHash:C.controlHash(auth), booksHash:C.booksHash(auth), sourceReceiptSHA256:RECEIPT_HASH,
       database: DB, runtimeManifestHash:P.hash(runtimeManifest), productionCommit:config.commit,
-      scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION", full500DispatchAuthorized:true, activatedProfiles:UNIT0?500:0 });
+      scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION", full500DispatchAuthorized:!ATOMIC_PREPARED0, activatedProfiles:UNIT0?500:0 });
     retain("PROCESSING_INPUTS.SAFE.json", { status:"PASS_ALL500_ACTUAL_D_PREPARATIONS", scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION",
       actualOriginalPreparer:true, currentDescriptorAndActualRequestDatesMatch:true, originalFilesModified:false,
       sourceRestorePreserved:true, sourceComparisonScope:"mandate/store hashes and profile counts", sourceReceiptSHA256:RECEIPT_HASH,
       sourceDatesRewritten:false,qualificationPin:qualified.reportPin,qualifiedAssets:qualified.report.qualifiedAssets,
       qualifiedExecutionISO:qualified.executionISO,currentNativeDatabasePin,nativeDerivation,derivedRows:derivationReports.length,
       derivationHash:P.hash(derivationReports),requests, changedPaths:[...changedPaths], securityClockReal:true,
-      globalDateReplaced:false, providerCalls:0, profileActivations:UNIT0?500:0, full500Dispatch:false,maximumAuthorizedUnits:500 });
+      globalDateReplaced:false, providerCalls:0, profileActivations:UNIT0?500:0, full500Dispatch:false,maximumAuthorizedUnits:ATOMIC_PREPARED0?0:500 });
     pass("all500 real D preparations have nonempty contexts and exact current request bindings");
 
   }

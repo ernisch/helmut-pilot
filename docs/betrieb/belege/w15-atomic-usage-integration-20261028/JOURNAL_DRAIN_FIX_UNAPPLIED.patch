@@ -1,0 +1,46 @@
+--- a/scripts/synthetik-500-w15-journal-io-check.js
++++ b/scripts/synthetik-500-w15-journal-io-check.js
+@@ -55,7 +55,7 @@
+     });
+     await journal.ready(); await new Promise(resolve => setTimeout(resolve, 20));
+     for (const event of original.events) {
+-      if (mode === "drain" && attempted === original.events.length - 64) await journal.flush();
++      if (mode === "drain" && attempted > 0 && (attempted % 64 === 0 || attempted === original.events.length - 64)) await journal.flush();
+       journal.write("retained-c-observation", { sourceSequence: event.sequence, observation: event }); attempted++;
+     }
+     enqueueMs = performance.now() - begin;
+@@ -77,7 +77,7 @@
+ async function runChild(mode) {
+   const state = directory(mode);fs.mkdirSync(state, { mode: 0o700 });
+   const stdout = fs.openSync(path.join(state, "child.PRIVATE.log"), "wx", 0o600), beat = pulse();
+-  let termAccepted = false, termRequests = 0, exit, parentHeartbeat, protocolError = null;
++  let termAccepted = false, termRequests = 0, exit, parentHeartbeat, protocolError = null, deadlineKillAccepted = null;
+   const c = fork(__filename, ["--child", mode], { cwd: ROOT, execPath: process.execPath,
+     execArgv: ["--require", path.join(__dirname, "lokaler-netzschutz.js")],
+     env: { PATH: process.env.PATH, LANG: "C.UTF-8", HELMUT_SOURCE_MODE: "off", HELMUT_STORAGE_BACKEND: "local" },
+@@ -95,10 +95,14 @@
+     }
+   });
+   const timeout = setTimeout(() => { // Bound one failed child, never start another mode.
+-    if (!exit) { c.kill("SIGKILL"); }
++    if (!exit) { deadlineKillAccepted = c.kill("SIGKILL"); }
+   }, 210000);
+   try { exit = await new Promise((resolve, reject) => { c.once("error", reject);c.once("exit", (code, signal) => resolve({ code, signal })); }); }
+-  finally { clearTimeout(timeout);parentHeartbeat = beat.snapshot();beat.stop();fs.closeSync(stdout); }
++  finally {
++    clearTimeout(timeout);parentHeartbeat = beat.snapshot();beat.stop();fs.closeSync(stdout);
++    save(path.join(state, "CHILD_EXIT.SAFE.json"), { mode, exit: exit || null, termRequests, termAccepted,
++      deadlineKillAccepted, protocolError, independentParentHeartbeat: parentHeartbeat });
++  }
+   assert(!protocolError, "journal-io-invalid-ipc-stopped");
+   assert(mode === "drain" ? termRequests === 1 && termAccepted && exit.code === 143 && exit.signal === null : exit.code === 0 && exit.signal === null,
+     "journal-io-child-failed-or-unknown");
+@@ -191,5 +195,7 @@
+ const args = process.argv.slice(2);
+ assert(args.length === 1 && ["--dry-run", "--run"].includes(args[0]) || args.length === 2 && args[0] === "--child" && ["sync", "async", "drain"].includes(args[1]));
+ Promise.resolve().then(() => args[0] === "--child" ? child(args[1]) : main(args[0] === "--dry-run")).catch(e => {
+-  console.error(JSON.stringify({ status: "FAIL_OR_UNKNOWN", error: Auth.failureMetadata(e) }));process.exitCode = 1;
++  console.error(JSON.stringify({ status: "FAIL_OR_UNKNOWN", error: Auth.failureMetadata(e) }));
++  if (args[0] === "--child") process.exit(1);
++  process.exitCode = 1;
+ });

@@ -1,0 +1,162 @@
+{
+  "schema": "helmut-w15-auth-transport-prestart-review/1",
+  "status": "PASS_PRESTART_SCOPED_FRESH_NONCE_AUTH_TRANSPORT_ONLY",
+  "reviewedAtUTC": "2026-10-28T14:41:54.378686+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "repositoryHead": "f154addf2fbadcf50229ef0521d7616b59ff4a08",
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.py",
+      "bytes": 10615,
+      "sha256": "95134458b28fbbef52a41bfca0be7951de8ea13e7441692dbf729d8a7fee1ba0"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 18699,
+      "sha256": "afcfc7d43f8d08e313e52e92b143745147b5c10a97ed2607aae9b4149172ea98"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 43294,
+      "sha256": "1dc68b22e57f69e191693693766e1628e83b0c2253fb3c22d83791ebbb3ce1cd"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 3018,
+      "sha256": "95c24fa1ccd2e47467cbd22ecfb89e69ca441fc9fb9c8a21fab8c4583ce78a8b"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 4335,
+      "sha256": "e2ac57c7f7f47740ca98d1f48e767ab540a6d10af9c4d5041cde7fdf889b0482"
+    },
+    {
+      "path": "scripts/fixtures/w15-atomic-integration-target.json",
+      "bytes": 299,
+      "sha256": "e396b8bf990df0d773211e8c1483c938e3b57f3787481891334cc73d51c0abc5"
+    },
+    {
+      "path": "scripts/fixtures/z3-plattform.js",
+      "bytes": 28609,
+      "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 545054,
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "lib/helmut/auth-store-cas.js",
+      "bytes": 2753,
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544"
+    },
+    {
+      "path": "server.js",
+      "bytes": 547868,
+      "sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9"
+    }
+  ],
+  "checks": [
+    {
+      "id": "review-method",
+      "status": "PASS_STATIC",
+      "finding": "Independent source-only review. Reviewer ran no probe, HTTP, SQL, database mutation, model or component test."
+    },
+    {
+      "id": "fixed-namespace",
+      "status": "PASS_STATIC",
+      "finding": "All controller SQL helpers require an explicit database in the source/target/postgres allowlist. Fresh cloned target helmut_w15_transport_probe_20261028a; existing source is only read."
+    },
+    {
+      "id": "bounded-operation",
+      "status": "PASS_STATIC",
+      "finding": "Maximum 16 fresh-nonce mutations, one delegated Atomic.write per iteration. A second native write is rejected before transport. No historical operation is replayed, no retry orchestrated."
+    },
+    {
+      "id": "data-preservation",
+      "status": "PASS_STATIC",
+      "finding": "Native before/after read-only hashes cover the complete logical Auth, non-Auth store, physical usage, briefings and profiles. Per-ACK genuine full readback requires revision/nonce/index, 6000 unchanged usage, old marker9 and invariant full content hash."
+    },
+    {
+      "id": "actual-api",
+      "status": "PASS_STATIC",
+      "finding": "Real Storage.mutateAuthStore, relational-atomic-v1 read/write, genuine private ACK, full runtime observer, loaded server baseline and held W15 command data are used. No fake business/security acknowledgement."
+    },
+    {
+      "id": "command-binding",
+      "status": "PASS_STATIC",
+      "finding": "Held command byte count and SHA256 are checked in controller and Node driver; original binding executionAuthority=false is required; command is not dispatched."
+    },
+    {
+      "id": "clean-environment",
+      "status": "PASS_STATIC",
+      "finding": "Exact Node24.19.0, preloaded local network guard, clean env and fresh local service-role JWT. Existing container is asserted network=none, memory=2048000000, MemorySwap=2048000000."
+    },
+    {
+      "id": "shared-memory",
+      "status": "PASS_STATIC",
+      "finding": "common() reads whole-container cgroup current/untouched lifetime peak/max/swap/events; hard limit2048000000, reserve threshold1638400000 and swap0 remain. Historical peak is not reset/subtracted or represented as a new RAM proof."
+    },
+    {
+      "id": "timing",
+      "status": "PASS_STATIC",
+      "finding": "Real 300s driver budget and outer timeout305s/TERM/5s KILL bound execution. No clock, contract calendar, signature or Production controls change."
+    },
+    {
+      "id": "observations",
+      "status": "PASS_STATIC",
+      "finding": "Protected durable per-line fdatasync retains Auth starts/finishes/maxima, request/socket stages, common+Node memory and natural GC. Only safe code/name/location/port/counter metadata; no raw message, headers, URL, token or Auth body in sanitized records."
+    },
+    {
+      "id": "classification",
+      "status": "PASS_STATIC",
+      "finding": "New TypeError with an allowlisted cause and matching mutate/CAS diagnostics-channel error may be classified observed transport failure for this fresh nonce only. Other errors remain FAIL/UNKNOWN. No root cause beyond transport is claimed."
+    },
+    {
+      "id": "finalization",
+      "status": "PASS_STATIC",
+      "finding": "Explicit final common() must pass; timer and termination handler persist through cleanup; late firstError prevents NO_REPRO PASS. Child stopped receipt plus exit0/signalnull required. PostgREST stop must follow a previously running owned process, exact expected clean exit/TERM, no forced fallback; client/server sockets drain before journal sealing."
+    },
+    {
+      "id": "safe-abort",
+      "status": "PASS_STATIC",
+      "finding": "Inner registered identity plus existing owned-stop helper covers run/gateway/PostgREST, preserves evidence and source. No source cleanup/deletion or rollback of an unknown historical write occurs."
+    },
+    {
+      "id": "scope",
+      "status": "PASS_STATIC",
+      "finding": "No units, activations, model calls, Production changes, infrastructure, full500 or RAM acceptance. A 16/16 NO_REPRO is bounded diagnostic evidence only; historic 11th is unchanged UNKNOWN."
+    },
+    {
+      "id": "reused-http-evidence",
+      "status": "PASS_STATIC",
+      "finding": "Existing HTTP idle probe reports PASS_NO_REPRO_CAUSE_NOT_PROVEN with 6 completed requests and clean child closure. It establishes no keepalive cause/fix and is not repeated."
+    }
+  ],
+  "executionByReviewer": false,
+  "productionAuthority": false,
+  "full500Authority": false,
+  "RAMAcceptance": false,
+  "historicalEleventhOutcome": "UNCHANGED_UNKNOWN_NOT_REPLAYED",
+  "permittedNextAction": "One bounded fresh-nonce Auth transport probe after root syntax/dry checks; max16 genuine writes in the fresh cloned local database, stop at first failure/unknown, no retry.",
+  "limitations": [
+    "Static review does not certify a runtime result.",
+    "Shared cgroup lifetime peak is conservative historical state; this bounded probe is not the End500 RAM acceptance.",
+    "Root-reported syntax and controller dry-run passed; reviewer did not rerun them."
+  ]
+}

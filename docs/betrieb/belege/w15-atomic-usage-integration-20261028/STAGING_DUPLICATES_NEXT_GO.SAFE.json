@@ -1,0 +1,629 @@
+{
+  "schema": "helmut-w15-host-staging-dedup-public-proposal/1",
+  "status": "PROPOSAL_ONLY_26_BYTE_IDENTICAL_HOST_STAGING_FILES_NO_DELETION",
+  "reviewedAtUTC": "2026-10-28T19:41:57.905740+00:00",
+  "scope": "Only26exacthoststagebinarypaths; no container files, databases, originals, logs, fixtures, source snapshots, archive or evidence files",
+  "pairCount": 13,
+  "fileCount": 26,
+  "uniqueInodesVerified": 26,
+  "regularNoSymlinkAllUID1000Nlink1": true,
+  "canonicalRetained": {
+    "node": {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+      "bytes": 125989464,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755"
+    },
+    "postgrest": {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+      "bytes": 17309560,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700"
+    }
+  },
+  "exactProposedTargets": [
+    {
+      "path": "/workspace/shared/helmut-w15-full500-20261027/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125992960,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-full500-20261027/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-full500-20261027/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-full500-20261027/stage/postgrest"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-full500-20261028/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125997056,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-full500-20261028/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-full500-20261028/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-full500-20261028/stage/postgrest"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-full500-20261028b/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125997056,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-full500-20261028b/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-full500-20261028b/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-full500-20261028b/stage/postgrest"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-full500-20261028c/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125997056,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-full500-20261028c/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-full500-20261028c/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-full500-20261028c/stage/postgrest"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028a/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125997056,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-atomic-integration-20261028a/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028a/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-atomic-integration-20261028a/stage/postgrest"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028b/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125997056,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-atomic-integration-20261028b/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028b/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-atomic-integration-20261028b/stage/postgrest"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028c/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125997056,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-atomic-integration-20261028c/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028c/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-atomic-integration-20261028c/stage/postgrest"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125992960,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-atomic-integration-20261028d/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-atomic-integration-20261028d/stage/postgrest"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125997056,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-memory-atomic-20261028a/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028a/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-memory-atomic-20261028a/stage/postgrest"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028b/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125997056,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-memory-atomic-20261028b/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028b/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-memory-atomic-20261028b/stage/postgrest"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/diagnostic-run/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125997056,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-memory-forward-20261028/diagnostic-run/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/diagnostic-run/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-memory-forward-20261028/diagnostic-run/stage/postgrest"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/diagnostic-run-b/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125997056,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-memory-forward-20261028/diagnostic-run-b/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/diagnostic-run-b/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-memory-forward-20261028/diagnostic-run-b/stage/postgrest"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/diagnostic-run-c/stage/node",
+      "bytes": 125989464,
+      "allocatedBytes": 125992960,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o755",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-memory-forward-20261028/diagnostic-run-c/stage/node"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/diagnostic-run-c/stage/postgrest",
+      "bytes": 17309560,
+      "allocatedBytes": 17309696,
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0o700",
+      "nlink": 1,
+      "regular": true,
+      "symlink": false,
+      "restoreSource": {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/stage/postgrest",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o700"
+      },
+      "restoreDestination": "/workspace/shared/helmut-w15-memory-forward-20261028/diagnostic-run-c/stage/postgrest"
+    }
+  ],
+  "totalLogicalBytes": 1862887312,
+  "visibleAllocatedBytes": 1862975488,
+  "actualReclaimedBytes": 0,
+  "observedAvailableBytesBeforeAnyAction": 222924800,
+  "arithmeticAvailableIfAllVisibleBlocksReclaimed": 2085900288,
+  "diskAdmission": {
+    "knownPriorCopyGzipGrowthInflightBudgetBytes": 1512501248,
+    "additionalLogicalImageRiskAllowanceBytes": 437457485,
+    "provisionalCombinedBudgetBytes": 1949958733,
+    "arithmeticMarginAfterProposedReclamationBytes": 135941555,
+    "extraPhysicalVFSAllocationStillUnknown": true,
+    "thisIsNotMeasuredFutureFreeOrStartGuarantee": true,
+    "freshStatvfsAfterAnySeparatelyApprovedActionRequired": true,
+    "newIndependentCopyCapacityAndGuardReviewRequired": true,
+    "actualPriorDiskStopFloorBytes": 234881024
+  },
+  "evidenceLossAndRollback": {
+    "allHistoricalEvidenceBytesPreserved": true,
+    "allUniqueBinaryBytesRemainInCanonicalAndOriginalRuntimeCopies": true,
+    "historicalStagePathsWouldBeAbsentUntilRestore": true,
+    "noConsumedRunPermissionRenewed": true,
+    "restoreMethod": "Onlyafterseparateauthorization: exclusive-create copy from matching canonical source to exact absent target; verify full size/SHA, restore recorded mode/UID/GID; fdatasync file and fsync parent. Never overwrite or use hardlinks/symlinks.",
+    "fullMetadataManifestRetainedPrivately": true
+  },
+  "requiredBeforeAnyDeletion": [
+    "Obtain explicit review/approval for this exact manifest SHA and26 exact paths.",
+    "Rehash both retained canonical sources and preserve them and all original runtime/received copies.",
+    "Ensure no live process or new preparation depends on an affected host stage path.",
+    "Revalidate every candidate against this manifest; refuse symlinks, changed inode/content/owner/nlink or unexpected path.",
+    "Retain this complete mode/owner/source manifest and historical evidence files unchanged."
+  ],
+  "limitations": [
+    "Visible allocated blocks are not guaranteed immediate reclaimed capacity: open files, overlay/lower layers and filesystem accounting may affect actual df.",
+    "Prospective437457485B allowance is a logical image size, not a proven physical VFS init-layer bound.",
+    "Existing failedDcontainer/workspace and all database files remain intact; this proposal cannot authorize a new diagnostic or retry."
+  ],
+  "originalPrivateManifestPin": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/STAGING_DUPLICATES_NEXT_GO.PRIVATE.json",
+    "bytes": 30936,
+    "sha256": "d803eb6a15b038e058fbda86e78f723bddac0334b84f1eb8412f473860dab90a"
+  },
+  "actionsPerformed": {
+    "deletedFiles": 0,
+    "containerFileReadsForThisProposal": 0,
+    "databaseQueries": 0,
+    "databaseWrites": 0,
+    "tests": 0,
+    "diagnostics": 0,
+    "newResources": 0,
+    "sourceEdits": 0
+  },
+  "approvalRequiredForExactDeletionProposal": true,
+  "freshDiagnosticStartApproved": false
+}

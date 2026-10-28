@@ -1,0 +1,93 @@
+{
+  "schema": "helmut-w15-independent-audit-codec-prestart/1",
+  "status": "PASS_FILE_ONLY_AUDIT_CODEC_PRESTART_D",
+  "reviewedAtUTC": "2026-10-28T19:26:21.379080+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/scripts/synthetik-500-w15-audit-codec-check.py",
+      "bytes": 3877,
+      "sha256": "059c127dd23c113a6f9181518b6685705f89748e4193176d606db5fc59fc4508"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/scripts/synthetik-500-w15-memory-final-audit.py",
+      "bytes": 21606,
+      "sha256": "42dda99ed17450a1bd678894f9549b64c8790cfbd91af0fc28f072b9f6bb29b7"
+    }
+  ],
+  "historicalRawPin": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_C_NATIVE_FINAL_PRIVATE.jsonl",
+    "bytes": 120268457,
+    "sha256": "e3111216d4fa6e57c99f747e970cc853609f4f07fa01e0b44d895d570ae7ef6c"
+  },
+  "checks": [
+    {
+      "name": "file_only",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Exactlyonenewlosslessadaptercheck ofexistinghistoricalCnativeRAWbytes. ScriptimportsAUDITbutonlycallsverify_capture/_deep_equal,nevercapture or SQL/HTTP/Auth/model/Profile/Unit functions."
+    },
+    {
+      "name": "private_original_preserved",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Originalregular0600RAWpinned120268457B/e3111216...isopenedreadonly. New0700/tmpdir+0600gzipcopy, originalretainedunchanged,nosecond120MBrawcopy/noPGDATAinTMPFS."
+    },
+    {
+      "name": "adapter_integrity",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Incremental1MiBinputcompressionlevel6/gzipwrapper,rawstreamsizeSHAcompared;newverify_capture databaseC/probe368 requiresall3501postimages/6000usage/500profileswith0activeandEOF/CRC/rawhash. ExistingCactualDBreadnotrepeatedorrelabelled."
+    },
+    {
+      "name": "precision",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Actualadapterparse_floatDecimalandboolseparationtestdistinguishneardecimals;1andDecimal1.0allowednumericvalueequivalence. Fullfieldcomparisonexcludesonlyrevision/probesequence."
+    },
+    {
+      "name": "bounds",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Realinner300sdeadline/guard+mandatoryouter300sTERM/5sKILLwatchdog;gzip64MiBnominalcap checkedaftereachboundedchunkandfinalflush. SmallfilecontrolmaywriteonesingleoutputchunkbeforeovercapFAIL;notclaimedstrictfilesystemquotaandnotreusedasDmemorymeasurement."
+    },
+    {
+      "name": "receipts",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Newgzipfdatasync beforeclose andSAFEsummaryexclusive0600/fdatasync. Onlyhashes/counts/technicalmetadatareport,nativeAuthcontentsstayprivate. FirstFAIL/UNKNOWNretained,noRetry/deletion."
+    },
+    {
+      "name": "new_stderr_static",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Updatedcapture42dda...privatelyretainsallstderrbytes/fsync andactualPopenreturncode;controlledselectorEOF/ownedstop/clientfallback bounded. Closureguarddoesnotreplaceoldfirstfailure. Thisfuturecapturepath reviewedstaticallyonly,notexercisedbyfilecodec."
+    },
+    {
+      "name": "source_and_start",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Codecsourcespinnedbelow;rootmustnotmodifythem beforecheck. Priorprepare/parserstaticPASSupdatedforAudit42additively;noDcontainer/DB/End500start untilactualcheckresults/finalindependentstartreview."
+    }
+  ],
+  "requiredLaunchCommand": "node scripts/lokal.js -- timeout --signal=TERM --kill-after=5s 300s python scripts/synthetik-500-w15-audit-codec-check.py",
+  "allowedNextAction": {
+    "newFileCodecRuns": 1,
+    "newSQLQueries": 0,
+    "newHTTPCalls": 0,
+    "signalsByReviewer": 0,
+    "End500StartApproved": false,
+    "retryAllowed": false
+  },
+  "priorStaticReviewAddendum": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/STATIC_D_PREPARE_PARSE_REVIEW.SAFE.json",
+    "oldAuditSHA256": "dc9afa6f60814ffbde291734b7c4b1628cfccfe22b93965a59505a2102b9eaaa",
+    "newAuditSHA256": "42dda99ed17450a1bd678894f9549b64c8790cfbd91af0fc28f072b9f6bb29b7",
+    "changeScope": "privatefullstderrcapture+actualreturncode/EOF+boundedclosureguard only;losslessDecimal/freshD/readonly/limitsmethodunchanged",
+    "status": "PASS_STATIC_ADDITIVE_PREPARATION_PARSE_ONLY_NOT_D_START"
+  },
+  "reviewActions": {
+    "tests": 0,
+    "HTTP": 0,
+    "SQL": 0,
+    "signals": 0,
+    "sourceChanges": 0
+  },
+  "limitations": [
+    "Newcodecverifiesnewadapteragainsthistoricalbytes,notanewdatabase/endstate/500operationproof.",
+    "Noactualcodecresultyet;futurestderrtransportpathonlystaticreview.",
+    "CompleteDstartreviewmustbindallupdatedpins,actualnewtargetedresults,anddiskthreshold."
+  ]
+}

@@ -1,0 +1,370 @@
+{
+  "schema": "helmut-w15-independent-D-prestart/1",
+  "status": "PASS_PRESTART_ATOMIC_END500_ALLOCATION_ONLY",
+  "reviewedAtUTC": "2026-10-28T19:32:58.732066+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "sourceBaseHEAD": "fdf693426c5798456d612205626e13be61713404",
+  "sourceVersioning": "Rootwillcommitexactreviewedbytesbeforeactualstart;reviewiscontent-pinnednotretrolabelledhistoricalcode.",
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.py",
+      "bytes": 32256,
+      "sha256": "8533748af9e2b66f6c07d51f34c7d74435313d1bd1f9b65c3d83169372bf0054"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.js",
+      "bytes": 17599,
+      "sha256": "939d7c9c71d4f39161f2693034b057ac8167d4dbd4eee638c7b4252c0f797efe"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-sql-preflight.py",
+      "bytes": 10841,
+      "sha256": "5909a31eac1d6769785788c2cf0ad417cc38ce28ff5aa7e725dd882c2a6ecf85"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 46446,
+      "sha256": "cf2e79b47f8ea87cac5a2240d554ac49c90f478002aa822928b43a6a1f53e2aa"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 43294,
+      "sha256": "1dc68b22e57f69e191693693766e1628e83b0c2253fb3c22d83791ebbb3ce1cd"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 13410,
+      "sha256": "0737e8dd5c570f65b8e57dba1670870497eca8c889b340a5cc6b4d54ffd3356f"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 6301,
+      "sha256": "677ab387df1147619328be32f5601e98280ae434c49eb753ad7873cd41017b21"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 5598,
+      "sha256": "a49ff1c7b5b3c3b4eae789a580894d4cb5e847d678ee9678811f8919bd95db22"
+    },
+    {
+      "path": "scripts/fixtures/w15-local-memory-budget.json",
+      "bytes": 641,
+      "sha256": "83414ddc04a025b20eedd9119657d62689f8e18d2f660b8a3bad85556e2566c7"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.json",
+      "bytes": 115,
+      "sha256": "acffec2e146c8b104605eb27b52a02822cb189f0c0468303fa2061240cc7bff2"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.js",
+      "bytes": 1096,
+      "sha256": "7fde8ef7bd10210da3d20ffb9d03fe9115ec4cf1716d45a2a79faf24ad8bc994"
+    },
+    {
+      "path": "scripts/fixtures/w15-atomic-integration-target.json",
+      "bytes": 299,
+      "sha256": "e396b8bf990df0d773211e8c1483c938e3b57f3787481891334cc73d51c0abc5"
+    },
+    {
+      "path": "scripts/fixtures/z3-plattform.js",
+      "bytes": 28609,
+      "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 545054,
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "lib/helmut/auth-store-cas.js",
+      "bytes": 2753,
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-direct-codec.js",
+      "bytes": 13651,
+      "sha256": "f4390028c1c8f7cad40899c74cf2e5b3203f542b5617af48c3c56aecbbf22645"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
+      "bytes": 12237,
+      "sha256": "bc2409e35d68d52d0ba92914ffa1e427de42da738b73197e9bf7fe428f71b5fe"
+    },
+    {
+      "path": "supabase/proposals/auth_usage_atomic_local.sql",
+      "bytes": 20726,
+      "sha256": "5a8c07670354b504c85984618999feaa93f78f3107f96236ce61b2f7bbcd438a"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 28552,
+      "sha256": "d57be24369cd8d36aa74ca55163d9171e76be810da5e0ceaa81daaeee3f72b82"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-postgrest-stop-check.py",
+      "bytes": 8418,
+      "sha256": "d29d2895b2440ee03f2e25f2209f18c9df92ae5372ccc55fd5f0500a538049a7"
+    },
+    {
+      "path": "scripts/fixtures/w15-end500-memory-fixture.js",
+      "bytes": 17280,
+      "sha256": "cca76fa363e1a85801241a6b1a58b8d559d0d57d757a0488170345ebd66bd209"
+    },
+    {
+      "path": "server.js",
+      "bytes": 547868,
+      "sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9"
+    },
+    {
+      "path": "scripts/lokal.js",
+      "bytes": 5431,
+      "sha256": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-final-audit.py",
+      "bytes": 21606,
+      "sha256": "42dda99ed17450a1bd678894f9549b64c8790cfbd91af0fc28f072b9f6bb29b7"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-audit-codec-check.py",
+      "bytes": 3877,
+      "sha256": "059c127dd23c113a6f9181518b6685705f89748e4193176d606db5fc59fc4508"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-lifecycle-check.js",
+      "bytes": 12277,
+      "sha256": "ff24bb5ea2cb75e0408842f0107c97177e080ddb60f0789b515c32a524641551"
+    }
+  ],
+  "observationCorrectionsReviewSHA256": "f7f335be3ca17e683f81c0efdefe731ffc1f78c90cfb08429083db385ec6c2ba",
+  "growthAnalysisSHA256": "c812728a95fddd76b507a1501da82797e6f8939b2b1d06cd5e99d1f9873aef22",
+  "checks": [
+    {
+      "name": "scope",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "Exactlyonefreshnetwork-noneDallocationdiagnosis,0active500syntheticprofiles,500diagnosticmarkerCAS,fullinertEnd500fixtureandheldrealW15Command;0DRUnits/production/models/profileactivations. NoMock500permission."
+    },
+    {
+      "name": "target_once",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "FreshDWORKandcontainerabsent atindependentreview. Rootread-onlydockerinspectconfirmedNoSuchObject. Once-onlyWORKguard/newnamespace:no retry/resume/replay."
+    },
+    {
+      "name": "source_gate",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "28actualrepositorysourcepinsbelow,SQL10sourcepinsallmatch,and418preparedappfilesbyte/hashverified. RuntimeScript/lib/serverbytesmatchpreparedtree;nochangedsourceaftertestapproved."
+    },
+    {
+      "name": "targeted_results",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "ActualnewLifecycle3casesindependentlyPASS,Journal10820/drain/fourfaultproofsreused,CodecactualPASS42MBgzipwith3501DeepDecimal/6000usage/historicalRawSHA+CRC. NoneisnewDdatabaseproof."
+    },
+    {
+      "name": "SQL",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "3517generatedstatementbindings:3511exactearlierhashproofs+6newParseDescribe(1DCreate/4auditSELECT/1restore5000metadata),0Execute/noDBcreated/sourceunchanged,existingDpermissionsvalid."
+    },
+    {
+      "name": "disk_admission",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "Guardedbudget1512501248Bincludes64MiBinflight;actualalreadyallocatedapp8675328Bsubtractedonce =>remaining1503825920B. Actualfreshfilesystemavailable1553272832B;positiveplanheadroom49446912B. Sharedfilesystemunforeseenwriterscaninvalidateadmission;Rootmustrefreshimmediatelybeforestart."
+    },
+    {
+      "name": "disk_enforcement",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "Existing0.1souterwatchthroughcopies/restore/run/closure/audit;224MiBfreeflooralsodirectbeforePublic/callback/nativewrite. Capturefloorremaininggzip+64MiBclosure,verify64MiB;nooptimisticunknownsize0orRAMcache-subtraction."
+    },
+    {
+      "name": "disk_limitations",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "VFS/WAL/rootbudgetisscopedempiricalengineeringbound,notfilesystemquota. max_wal_size128MiBsoft,physicalguard402653184B unchanged. Excessgrowth/spaceviolationfirstFAILstopsnewprocessing,retainsboundedclosure/auditallowance. No guarantee500willpass."
+    },
+    {
+      "name": "copies_originals",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "HistoricCseed118800333B/SHAa91d...preserved ROonefileat/runoutsideBASErecusivechown;UID1000mode0600. Newappsmallstageonly;cachednode/PGRcopiedtoindependentnewfileswithoutsecond143MBhoststage;noPGDATA/statealias/hardlink/reflink/tmpfs/oldfiledeletion."
+    },
+    {
+      "name": "restore_end_fixture",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "Originalreceiveddump/rolesbytehashesfreshcheckedbycontroller;restoreexplicit500/0report,3501nativeexactseedpostimages andfull6000logicalbootstrapcomparisonbeforeCAS. Fullfixturealreadyloadedbeforefirstmarkerwrite."
+    },
+    {
+      "name": "lifecycle",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "Stoplatchbeforeanyawait/public/callback/native,immutableinitialUNKNOWNdurablysavedbeforeinflightwait,singleidempotentstop/close,latercompletedoldoperationcannotadvancepostimage/progress. OriginalAuth10s/30s andcombinedjournal15sunchanged."
+    },
+    {
+      "name": "gateway",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "MEMORY-onlyasyncwriter,parentownspinnedrealPGR;earlyunexpectedexitlatch,guardedstartup/dispatch,realownedTERMacceptance/PGexit/allsocketsfollowedbylog.close+GATEWAY_DRAINbeforeconfirmedexit.15scombined/4sPG/1.5ssocket/20sownedstop unchanged."
+    },
+    {
+      "name": "Auth_evidence",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "EachrealCASprivateACK/revision/fullreadback/unchanged6000Authrequired;durableacceptedpostimagewriteawaitedbeforeterminalprogress. ExactwholeAuthandnativeMaxplusdurableobservationwalltime retained;no realwaitsubtraction orbusinesslogicweakening."
+    },
+    {
+      "name": "kernel",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "FreshDhardkernel2048000000B cap,swapMaximum0/current0,eventcounters0,full-lifetimepeak<=1638400000B required. Kernelpeaknotreset/externalcacheornonconcurrentRSSnotdeducted. Node/PGR/PG/allownedtestactorsincluded."
+    },
+    {
+      "name": "growth",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "Complete500nativeiterationsrequired beforelatephysicalprojection;currentkernelpeak+projection+67108864margin<=1638400000. NaturalGC/checkpoints/autovacuum/WALrotation/TEMP/durabilitygatesunchanged. Old290/369data nevera6500fitpromise."
+    },
+    {
+      "name": "full_native_final",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "SinglefreshDrepeatable-readREADONLYaudit4SELECTs,historical45sPGstatement/3slock,Decimalfull3501postimages/6000usage/500profileswith0active withonlyrevision/probesequenceexcluded. Directgzip<=64MiB,raw<=128MiB,row<=20MiB;EOF/CRC/rawSHAfullroundtrip/deepcomparisonmandatory,nosecond120MBrawfile."
+    },
+    {
+      "name": "audit_budget_stop",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "300sactivecapture+verify budget plus separatelyboundedowned/clientcleanupup to37s;notclaimed300stotal. Registeredownedpsqlstop first,privateallstderrfdatasync/actualreturncode/EOFretained. Anyclose/pipe/ownership/size/integrityerrorFAILUNKNOWN,noreadretry."
+    },
+    {
+      "name": "safe_end",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "Independentnativezeroevenafterearlierstopfailure,separatefreshzeroafteraudittransaction;genuinePGRdrainmandatory—notjustPIDabsence. SourceSeedposthashandkernelpeakafterallnativeaudit/cleanupcheckedbeforefinalresult."
+    },
+    {
+      "name": "reused_history",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "Original11UNKNOWN/B291UNKNOWN/C369FAIL/oldmissingreceiptsunchanged. Existing500sourcePASS,prepared0D16,worker81,real16Auth/49HTTP preservedinexactscopewithoutnewfullsuite orCIrepeat."
+    },
+    {
+      "name": "final_boundary",
+      "status": "PASS_SCOPED_STATIC_AND_EXISTING_ACTUAL_EVIDENCE",
+      "finding": "ThisreviewallowsoneguardedDdiagnosisafterRootcommitsunchangedsourceandactualmainstartupchecks. FirstFAILUNKNOWNstopsnoretry;fullMock500/productiondeployment/merges/budgetchangespaidmodelcallsnotauthorized."
+    }
+  ],
+  "diskAdmission": {
+    "workspaceFreeBytesAtReview": 1553272832,
+    "completePlanIncludingInflightBytes": 1512501248,
+    "appAlreadyAllocatedBytes": 8675328,
+    "remainingAdmissionBudgetBytes": 1503825920,
+    "extraPlanSlackBytes": 49446912,
+    "processingFreeFloorBytes": 234881024,
+    "captureFloor": "Remaining64MiBarchiveallowance+64MiBclosure",
+    "verifyFreeFloorBytes": 67108864,
+    "hardFilesystemQuota": false,
+    "fitGuarantee": false,
+    "freshRecheckByControllerMandatory": true
+  },
+  "limits": {
+    "hardMemoryBytes": 2048000000,
+    "minimumReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "Swap": 0,
+    "growthProjectionExtraMarginBytes": 67108864,
+    "storageTimeoutMs": 10000,
+    "AuthMs": 30000,
+    "journalAbortMs": 15000,
+    "auditActiveSeconds": 300,
+    "auditBoundedAdditionalCleanupSeconds": 37
+  },
+  "evidencePins": [
+    {
+      "path": "/workspace/shared/helmut-w15-memory-prepare-20261028d/PREPARED.SAFE.json",
+      "bytes": 74275,
+      "sha256": "8856abf77c92ac66022a06f9d7383ca5c5a63b85c3d30bdc5c814d09c8f9999b"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/sql-preflight-atomic-e/SQL_PREFLIGHT.SAFE.json",
+      "bytes": 442705,
+      "sha256": "3003fac4718db331fa288783bbf53212ebf248d201cd2e6a0571ac433a870293"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/LIFECYCLE_RESULTS_REVIEW_D.SAFE.json",
+      "bytes": 5836,
+      "sha256": "6c549f6b5dcbc35bc37097a1f15621486aa9ca8e0f6e0e5c6d7b75008da193b4"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/AUDIT_CODEC_CHECK_D.SAFE.json",
+      "bytes": 1923,
+      "sha256": "029f48b72be9c53f41b2c94107474b13b166862fcf3f670142509d0ef45481bd"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/AUDIT_CODEC_PRESTART_REVIEW_D.SAFE.json",
+      "bytes": 4724,
+      "sha256": "d290fa51c344787c8083cd029b9e9422bac1b404e08c730da1ca869d7d274ae1"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json",
+      "bytes": 12102,
+      "sha256": "25157d93434b749c8dbd38fa9dc5e5336b62f7be328f414ea5449c715525b3ac"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/STATIC_D_PREPARE_PARSE_REVIEW.SAFE.json",
+      "bytes": 7098,
+      "sha256": "787b8fac3daa00ee26e0745dae2ddd588aeae04cd71cdce8f32cefc8c6caaebb"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/DISK_PLAN_D_GZIP_INDEPENDENT.SAFE.json",
+      "bytes": 5471,
+      "sha256": "a62c58e1c0c451666cb845edfb36963531f96496ff62e024d034a509033d6b78"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/D_RESULTS_INDEPENDENT_REVIEW.SAFE.json",
+      "bytes": 15279,
+      "sha256": "45ed6642e60ad704f4d4f50c06bfd43f3347b39a838bd369d65eace3339baed1"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/POSTGREST_STOP_AND_TRANSPORT_REVIEW.SAFE.json",
+      "bytes": 5643,
+      "sha256": "5d8e01a755465fb7570c5ffc5d9b57c537702aa32de2cef610d0210ff3bb6a61"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/OBSERVATION_RESULTS_REVIEW.SAFE.json",
+      "bytes": 5328,
+      "sha256": "f7f335be3ca17e683f81c0efdefe731ffc1f78c90cfb08429083db385ec6c2ba"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_B_GROWTH_LATE_WINDOWS.SAFE.json",
+      "bytes": 21418,
+      "sha256": "c812728a95fddd76b507a1501da82797e6f8939b2b1d06cd5e99d1f9873aef22"
+    }
+  ],
+  "preparedAppFilesVerified": 418,
+  "codecArchivePinIndependentlyVerified": {
+    "path": "/tmp/w15-audit-codec-check-20261028d/C_NATIVE_AUDIT.PRIVATE.jsonl.gz",
+    "bytes": 42139672,
+    "sha256": "6e5753dba457fb6cdf71b29fb88471e4815b4e744ab2609d33e66e3eae497f83"
+  },
+  "authorizedNextAction": {
+    "freshEnd500AllocationDiagnosticRuns": 1,
+    "profileActivations": 0,
+    "DRUnits": 0,
+    "paidModels": 0,
+    "Mock500": false,
+    "retryAllowed": false
+  },
+  "reviewActions": {
+    "newRuntimeChecks": 0,
+    "HTTP": 0,
+    "SQL": 0,
+    "signals": 0,
+    "sourceChanges": 0,
+    "readOnlyContainerAbsenceMetadata": 1,
+    "preparedFilesAndArchiveHashRead": true
+  },
+  "limitations": [
+    "PrestartPASSisnotaRAMresult,fulldatasetexecutionPASS,6500fitprooforProduction/Mock500proof.",
+    "Sharedfilesystemavailableheadroomisfinite;copyadmission/runtimefloorsandfirstfailurestopmandatory.",
+    "ActualDnativeaudit/safeend/resultreviewremainrequiredafterthisoneattempt.",
+    "OldcodecDresultuseshistoricalCbytesonly;fullnewDdatawillbeverifiedfreshonceafterrun."
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "status": "PASS_CONTROLLED_DURABLE_DRAIN_NO_AUTH",
+  "attempted": 10820,
+  "journal": {
+    "completedWrites": 10822,
+    "completedSyncs": 10822,
+    "maximumWriteMs": 10.677480999998807,
+    "maximumSyncMs": 67.19774899999993,
+    "maximumPendingBytes": 23610,
+    "lastIO": {
+      "kind": "sync",
+      "sequence": 10821,
+      "beginMS": 13775.088011,
+      "endMS": 13776.213972,
+      "durationMs": 1.1259609999997338,
+      "acknowledged": true,
+      "pendingBytes": 940,
+      "pendingEntries": 1,
+      "acknowledgedSequence": 10821
+    },
+    "acknowledgedSequence": 10821,
+    "nextSequence": 10822,
+    "pendingBytes": 0,
+    "pendingEntries": 0,
+    "maximumAllowedPendingBytes": 8388608,
+    "running": false,
+    "status": "DURABLE_ACKNOWLEDGED",
+    "failureCode": null,
+    "closed": true,
+    "descriptorRetainedOpen": false
+  },
+  "observedSignal": "SIGTERM",
+  "unfinishedOperations": "UNKNOWN"
+}

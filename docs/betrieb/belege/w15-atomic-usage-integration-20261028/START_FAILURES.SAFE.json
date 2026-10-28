@@ -1,0 +1,62 @@
+{
+  "scope": "Historical local integrationpreparation failures; notRAMorMock500attempts; raworiginalsretained",
+  "attempts": [
+    {
+      "attempt": "A",
+      "status": "FAIL_OR_UNKNOWN",
+      "failure": {
+        "type": "RuntimeError",
+        "reason": "full500-stage-failed:materials:1",
+        "retryAllowed": false
+      },
+      "activeProfiles": 0,
+      "units": 0,
+      "commonKernelPeakBytes": 369860608,
+      "originalSourceUnchanged": true,
+      "cause": "Management-validFrom used qualification06:29 instead of freshly planned start; ninehourwindow refused beforeatomicbootstrap.",
+      "rawReportPin": {
+        "path": "/workspace/shared/helmut-w15-atomic-integration-20261028a/INTEGRATION_RESULT.SAFE.json",
+        "bytes": 908,
+        "sha256": "cd372dbbaff51fb5356413a6c2b90b398828cf2f9ed9f58d4e56f7a6698dd476"
+      }
+    },
+    {
+      "attempt": "B",
+      "status": "FAIL_OR_UNKNOWN",
+      "failure": {
+        "type": "RuntimeError",
+        "reason": "full500-command-failed:docker:3",
+        "retryAllowed": false
+      },
+      "activeProfiles": 0,
+      "units": 0,
+      "commonKernelPeakBytes": 369340416,
+      "originalSourceUnchanged": true,
+      "cause": "Real originalschema lacks five scalar columns assumed by973componentfixture; bootstraptransactionrolledback beforeatomicconversion.",
+      "rawReportPin": {
+        "path": "/workspace/shared/helmut-w15-atomic-integration-20261028b/INTEGRATION_RESULT.SAFE.json",
+        "bytes": 907,
+        "sha256": "fdbd6b093c4f267bc14e0f26bce45b81401fa18b6c17469534742312348fab13"
+      }
+    },
+    {
+      "attempt": "C",
+      "status": "FAIL_OR_UNKNOWN",
+      "failure": {
+        "type": "RuntimeError",
+        "reason": "full500-command-failed:docker:3",
+        "retryAllowed": false
+      },
+      "activeProfiles": 0,
+      "units": 0,
+      "commonKernelPeakBytes": 357752832,
+      "originalSourceUnchanged": true,
+      "cause": "Atomicconversion5000/fullLogicalHashPASS; readonlyreadinessCLI omittedmandatorylocalenv; unchangednetworkguardcorrectlyexit3beforeprepare.",
+      "rawReportPin": {
+        "path": "/workspace/shared/helmut-w15-atomic-integration-20261028c/INTEGRATION_RESULT.SAFE.json",
+        "bytes": 907,
+        "sha256": "a0308ec95afa1db5fcd6e6e43f64e127b90bf4e718a0e71139d24cb95cb7e5cc"
+      }
+    }
+  ]
+}

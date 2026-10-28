@@ -20,6 +20,44 @@ function summarize({ mutations = [], usageSinks = [], casWrites = [] }) {
     perAPI: kinds, timingsUseWholeCallThroughACK: true };
 }
 
+// Retain only allowlisted machine transport metadata. Raw messages, headers,
+// request bodies, URLs, credentials and arbitrary causes never enter reports.
+function failureMetadata(error) {
+  const get = (value, key) => { try { return value?.[key]; } catch { return undefined; } };
+  const codes = new Set(["UND_ERR_SOCKET", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT",
+    "UND_ERR_BODY_TIMEOUT", "UND_ERR_ABORTED", "UND_ERR_RES_CONTENT_LENGTH_MISMATCH",
+    "ECONNRESET", "ECONNREFUSED", "EPIPE", "ETIMEDOUT", "ABORT_ERR", "ENOTFOUND"]);
+  const name = get(error, "name"), code = get(error, "code"), cause = get(error, "cause"), causeCode = get(cause, "code");
+  const result = { name: ["Error", "TypeError", "AbortError", "TimeoutError"].includes(name) ? name : "Error" };
+  const durableCodes = new Set(["W15_DURABLE_QUEUE_OVERFLOW", "W15_DURABLE_WRITE_FAILED", "W15_DURABLE_SYNC_FAILED",
+    "W15_DURABLE_DEADLINE", "W15_DURABLE_CLOSED", "W15_DURABLE_SERIALIZE_FAILED", "W15_DURABLE_OBSERVER_FAILED", "W15_DURABLE_CLOSE_FAILED"]);
+  if (durableCodes.has(code)) return { ...result, code, failureKind: "durable-io-error" };
+  if (codes.has(code)) result.code = code;
+  if (codes.has(causeCode)) result.causeCode = causeCode;
+  for (const key of ["bytesRead", "bytesWritten"]) {
+    const value = get(get(cause, "socket"), key);
+    if (Number.isSafeInteger(value) && value >= 0) (result.socket ||= {})[key] = value;
+  }
+  // Existing storage prefixes; the internal deadline message is exact-only.
+  // A label describes this error only; historical UNKNOWNs are not relabelled.
+  const message = get(error, "message");
+  const timeout = typeof message === "string" && /^Supabase storage timed out after (\d+)ms:/.exec(message);
+  const http = typeof message === "string" && /^Supabase storage failed \((\d{3})\):/.exec(message);
+  if (code === "ERR_ASSERTION") result.failureKind = "assertion";
+  else if (code === "ATOMIC_USAGE_READ_INVALID" || message === "ATOMIC_USAGE_READ_INVALID") result.failureKind = "atomic-read-invalid";
+  else if (code === "STORE_READ_INVALID") result.failureKind = "store-read-invalid";
+  else if (timeout && Number(timeout[1]) > 0 && Number(timeout[1]) <= 20000) {
+    result.failureKind = "storage-timeout"; result.timeoutMs = Number(timeout[1]);
+  } else if (message === "Supabase request deadline exceeded") {
+    result.failureKind = "storage-timeout";
+  } else if (http && Number(http[1]) >= 400 && Number(http[1]) <= 599) {
+    result.failureKind = "storage-http-error"; result.httpStatus = Number(http[1]);
+  } else if (result.code || result.causeCode) result.failureKind = "transport-error";
+  else if (name === "AbortError") result.failureKind = "aborted";
+  else result.failureKind = "unknown";
+  return result;
+}
+
 function retainOnTermination(snapshot, write) {
   let attempted = false;
   const handlers = {};
@@ -27,14 +65,26 @@ function retainOnTermination(snapshot, write) {
     handlers[signal] = () => {
       if (attempted) return;
       attempted = true;
-      try { write({ ...snapshot(), status: "FAIL_OR_UNKNOWN", terminationSignal: signal,
-        retainedAtUTC: new Date().toISOString(), bestEffortOnly: true, retryAllowed: false }); }
-      catch { process.stderr.write("w15-abort-observations-unavailable\n"); }
-      finally { process.exit(exitCode); }
+      let waitingForPromise = false;
+      try {
+        const outcome = write({ ...snapshot(), status: "FAIL_OR_UNKNOWN", terminationSignal: signal,
+          retainedAtUTC: new Date().toISOString(), bestEffortOnly: true, retryAllowed: false });
+        if (outcome && typeof outcome.then === "function") {
+          // Only opt-in Promise callbacks wait. Existing synchronous callers
+          // retain their immediate-exit behavior; no missing ACK becomes PASS.
+          const timer = setTimeout(() => { process.stderr.write("w15-abort-durable-deadline\n"); process.exit(exitCode); }, 15000);
+          Promise.resolve(outcome).then(() => { clearTimeout(timer); process.exit(exitCode); }, () => {
+            clearTimeout(timer); process.stderr.write("w15-abort-observations-unavailable\n"); process.exit(exitCode);
+          });
+          waitingForPromise = true;
+          return;
+        }
+      } catch { process.stderr.write("w15-abort-observations-unavailable\n"); }
+      finally { if (!waitingForPromise) process.exit(exitCode); }
     };
     process.once(signal, handlers[signal]);
   }
   return () => { for (const [signal, fn] of Object.entries(handlers)) process.removeListener(signal, fn); };
 }
 
-module.exports = { summarize, retainOnTermination };
+module.exports = { summarize, retainOnTermination, failureMetadata };

@@ -1,0 +1,513 @@
+{
+  "schema": "helmut-w15-independent-ram-C-results/1",
+  "status": "FAIL_END500_DIAGNOSIS_RETAINED_STATE_ZERO_CONFIRMED",
+  "recordedAtUTC": "2026-10-28T17:39:52.624875+00:00",
+  "sourceCommit": "ee36720d",
+  "reviewer": "independent atomic_integration_audit",
+  "actualDiagnosis": {
+    "attempts": 1,
+    "acceptedCAS": 369,
+    "requiredCAS": 500,
+    "observedWholeAuth": 370,
+    "completedWholeAuth": 369,
+    "observedNativeCAS": 369,
+    "completedNativeCAS": 369,
+    "allDurableStartsHaveFinishedRecord": true,
+    "retryAllowed": false,
+    "full500Acceptance": false,
+    "incompleteFullCalls": 1
+  },
+  "failure": {
+    "index": 369,
+    "phase": "before-mutation-callback-no-native-CAS",
+    "callbackRuns": 0,
+    "failureKind": "storage-timeout",
+    "timeoutMs": 10000,
+    "wholeCallWallMs": 11068.298475000076,
+    "underlyingSchedulingOrResourceCause": "UNKNOWN"
+  },
+  "authTimings": {
+    "observedFullCalls": 370,
+    "completedFullCalls": 369,
+    "observedCASWrites": 369,
+    "completedCASWrites": 369,
+    "maximumFullCallWallMs": 16171.304524000036,
+    "maximumCASWallMs": 7691.495863000164,
+    "incompleteFullCalls": 1,
+    "incompleteCASWrites": 0,
+    "perAPI": {
+      "public-mutation": {
+        "count": 369,
+        "maximumWallMs": 16171.304524000036
+      }
+    },
+    "timingsUseWholeCallThroughACK": true
+  },
+  "nativeFinal": {
+    "status": "PASS_RETAINED_ALL3501_POSTIMAGES_AND_ZERO_ONLY_NOT_RAM_ACCEPTANCE",
+    "totalExactPostimages": 3501,
+    "fullUsageEntries": 6000,
+    "profiles": 500,
+    "activeProfiles": 0,
+    "logicalAuthPreserved": true,
+    "excludedFields": [
+      "_authStoreRevision",
+      "w15MemoryProbeSequence"
+    ],
+    "observedProbeSequence": 368,
+    "transactions": 1,
+    "readOnly": true,
+    "writes": 0
+  },
+  "memory": {
+    "commonKernelPeakBytes": 1437229056,
+    "limitBytes": 2048000000,
+    "minimumReserveBytes": 409600000,
+    "actualReserveBytes": 610770944,
+    "actualReservePercent": 29.8228,
+    "swapBytes": 0,
+    "kernelPeakUnchangedAcrossFinalAudit": true,
+    "projectedAdditionalPhysicalBytes": null,
+    "additionalMarginBytes": 67108864,
+    "peakPlusMarginOnlyBytes": 1504337920,
+    "finalGrowthGate": "NOT_PROVEN_BECAUSE_DIAGNOSIS_FAILED"
+  },
+  "serviceClosure": {
+    "status": "PASS_GENUINE_OWNED_SERVICE_EXIT",
+    "ownedSignal": "SIGTERM",
+    "accepted": true,
+    "realPostgrestExitSignal": "SIGINT",
+    "forced": false,
+    "openServerSockets": 0,
+    "openAgentSockets": 0,
+    "openAgentFreeSockets": 0,
+    "stopFailures": 0
+  },
+  "gateway": {
+    "requestStarts": 1109,
+    "finishEvents": 1108,
+    "headerStatus200Count": 1109,
+    "readStarts": 740,
+    "CASStarts": 369,
+    "allStartedResponsesCompleted": false,
+    "finalReadNoFinishAndNoSocketBytesWritten": true
+  },
+  "finalDatabaseObservation": {
+    "index": 369,
+    "atMs": 1333883.124102,
+    "active": 0,
+    "settings": {
+      "fsync": "on",
+      "work_mem": "32768",
+      "autovacuum": "on",
+      "archive_mode": "off",
+      "max_wal_size": "128",
+      "wal_keep_size": "0",
+      "full_page_writes": "on",
+      "autovacuum_naptime": "10",
+      "synchronous_commit": "on"
+    },
+    "walBytes": "1331295572",
+    "tempBytes": 0,
+    "tempFiles": 0,
+    "walNewest": "000000010000000000000054",
+    "walOldest": "00000001000000000000004D",
+    "storeBytes": 63963136,
+    "toastBytes": 63586304,
+    "usageBytes": 8339456,
+    "autovacuums": 124,
+    "checkpoints": 20,
+    "briefingBytes": 26345472,
+    "usageToastBytes": 1482752,
+    "replicationSlots": 0,
+    "walPhysicalBytes": 134217728
+  },
+  "naturalGC": {
+    "entries": 5459,
+    "majorEntries": 1212,
+    "forcedGC": false
+  },
+  "observationGap": {
+    "outerFromUTC": "2026-10-28T17:36:26.043283+00:00",
+    "outerToUTC": "2026-10-28T17:36:34.448191+00:00",
+    "outerGapSeconds": 8.404908,
+    "nodeFromUTC": "2026-10-28T17:36:25.958Z",
+    "nodeToUTC": "2026-10-28T17:36:34.471Z",
+    "nodeGapSeconds": 8.513,
+    "causalAttribution": "UNKNOWN",
+    "lastMajorGCBeforeFailureMs": 11.842514999210835,
+    "lastMajorGCStartBeforeAuthMs": 28.827440000139177
+  },
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.py",
+      "bytes": 26290,
+      "sha256": "6ebf276cd774de23a7a58038f85594b15afd3d774c34fab596d1c47b88ac371c"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.js",
+      "bytes": 12137,
+      "sha256": "bcee2d77c001d52cbe8d36bfa59cc19b38602f92372f2ccb9f34be575bd89c96"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-sql-preflight.py",
+      "bytes": 11247,
+      "sha256": "58df08038a407d944086133da7acb528e51bebe66d6f3532b74e47e29e90fe6e"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 46446,
+      "sha256": "cf2e79b47f8ea87cac5a2240d554ac49c90f478002aa822928b43a6a1f53e2aa"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 43294,
+      "sha256": "1dc68b22e57f69e191693693766e1628e83b0c2253fb3c22d83791ebbb3ce1cd"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 6301,
+      "sha256": "677ab387df1147619328be32f5601e98280ae434c49eb753ad7873cd41017b21"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 4508,
+      "sha256": "b4f7ab49b92a39366ce440ca000ea815e0ddaa3edd2d37733c9f0a311cb90874"
+    },
+    {
+      "path": "scripts/fixtures/w15-local-memory-budget.json",
+      "bytes": 641,
+      "sha256": "83414ddc04a025b20eedd9119657d62689f8e18d2f660b8a3bad85556e2566c7"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.json",
+      "bytes": 115,
+      "sha256": "acffec2e146c8b104605eb27b52a02822cb189f0c0468303fa2061240cc7bff2"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.js",
+      "bytes": 1096,
+      "sha256": "7fde8ef7bd10210da3d20ffb9d03fe9115ec4cf1716d45a2a79faf24ad8bc994"
+    },
+    {
+      "path": "scripts/fixtures/w15-atomic-integration-target.json",
+      "bytes": 299,
+      "sha256": "e396b8bf990df0d773211e8c1483c938e3b57f3787481891334cc73d51c0abc5"
+    },
+    {
+      "path": "scripts/fixtures/z3-plattform.js",
+      "bytes": 28609,
+      "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 545054,
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "lib/helmut/auth-store-cas.js",
+      "bytes": 2753,
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-direct-codec.js",
+      "bytes": 13651,
+      "sha256": "f4390028c1c8f7cad40899c74cf2e5b3203f542b5617af48c3c56aecbbf22645"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
+      "bytes": 12237,
+      "sha256": "bc2409e35d68d52d0ba92914ffa1e427de42da738b73197e9bf7fe428f71b5fe"
+    },
+    {
+      "path": "supabase/proposals/auth_usage_atomic_local.sql",
+      "bytes": 20726,
+      "sha256": "5a8c07670354b504c85984618999feaa93f78f3107f96236ce61b2f7bbcd438a"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 25944,
+      "sha256": "77357f3871aada76433161e466de471888853743f63c0bfcec7eb7f58db4489d"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-postgrest-stop-check.py",
+      "bytes": 8418,
+      "sha256": "d29d2895b2440ee03f2e25f2209f18c9df92ae5372ccc55fd5f0500a538049a7"
+    },
+    {
+      "path": "scripts/fixtures/w15-end500-memory-fixture.js",
+      "bytes": 17280,
+      "sha256": "cca76fa363e1a85801241a6b1a58b8d559d0d57d757a0488170345ebd66bd209"
+    },
+    {
+      "path": "server.js",
+      "bytes": 547868,
+      "sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9"
+    },
+    {
+      "path": "scripts/lokal.js",
+      "bytes": 5431,
+      "sha256": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-observation-check.js",
+      "bytes": 10325,
+      "sha256": "0cef55042d782ac8ed9a06d8148408b0ea3bb15d66a97ecd61089c408656c48c"
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/CONTROLLER_RESULT.SAFE.json",
+      "bytes": 2475,
+      "sha256": "d1a95541b79e7040bb1657b0458770e575d2f701bddd2733b50a2910351aa35e"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/FORWARD_RESULT.SAFE.json",
+      "bytes": 1824215,
+      "sha256": "0b76630aeef9e084cc18d3e030f1878bbbc9c25aa6b757a7aea5a72dad649588"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/NATIVE_ZERO.SAFE.json",
+      "bytes": 113,
+      "sha256": "7406b24f929d69e74499288457db78a04b635a665b49a6b0b96500f5672f878e"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/SERVICE_CLOSURE.SAFE.json",
+      "bytes": 1251,
+      "sha256": "a5e483ab2efc2833836c4926d4b9542ea55c35439e23be6c1980b002205b56b7"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/SEED.SAFE.json",
+      "bytes": 273,
+      "sha256": "10e8f1a9ea4639aa4d33c23c49eec9952f37c95dcc71702f0ed0058cb3083986"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/ATOMIC_BOOTSTRAP.SAFE.json",
+      "bytes": 300,
+      "sha256": "c7299eb56d66e27b0c41bc3deb78306a021925dd09a78d0be23960f84d824c4d"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/SERVICE_STAGED_DRY.SAFE.json",
+      "bytes": 133,
+      "sha256": "b2d580056d777abdcc009a4189bc6bedef49dd458880a45324d83a2fca1c1df1"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/outer-progress.SAFE.jsonl",
+      "bytes": 5518317,
+      "sha256": "6d0108bc115ea75baa6167859b362c4e2ade58def9380e3b8940901427ba0570"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/run-observations.SAFE.jsonl",
+      "bytes": 2230255,
+      "sha256": "730e4a9755490c386af8720fb376133b6d7354dd870e965326b135aa0a1447b9"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/gateway-observations.SAFE.jsonl",
+      "bytes": 319600,
+      "sha256": "3cf6f067af7a812d4d837b2d8192c1f4c43698a415d8fae90ac3225d20fb470f"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/stop-run.SAFE.jsonl",
+      "bytes": 92,
+      "sha256": "d8f6cc6816d51ebaa865ebe0484982d169b87c5e8804c138aa75afa13e592a6a"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/stop-setup.SAFE.jsonl",
+      "bytes": 94,
+      "sha256": "f15749e3754d04818d3b2e47d66fadb0f1386a7bd9aaa29452b851eac3b21910"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/stop-gateway.SAFE.jsonl",
+      "bytes": 351,
+      "sha256": "5d20db05996b1403046bd540683d77f764257df82d47aa4dc03529d3f82e55fb"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/stop-postgrest.SAFE.jsonl",
+      "bytes": 98,
+      "sha256": "75941cfae7d576cd5e5cc784cc6d95af0005c9aa860239e19edce7a562515a27"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_C_NATIVE_FINAL_INDEPENDENT_READONLY.SAFE.json",
+      "bytes": 1933,
+      "sha256": "61cc142e647f7bb34b2541ab3efab858d7ea78992a8097c25f72ee4c6fea1bd1"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_C_KERNEL_BEFORE_INDEPENDENT_AUDIT.SAFE.json",
+      "bytes": 271,
+      "sha256": "b1a69b07ab10b45ab2767c83fcc0119083a3d85dcc13c538630ae44cffa4abc8"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_C_KERNEL_AFTER_INDEPENDENT_AUDIT.SAFE.json",
+      "bytes": 271,
+      "sha256": "3390072ae17f35f61f794d883d28aed9b21998b593b258bbf5091042f8e3c520"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/MEMORY_PRESTART_REVIEW_C.SAFE.json",
+      "bytes": 16659,
+      "sha256": "3c6a9826c9b6412f5908c5bef9e0c9f114ead9ed3115f76fa5349975ec279e07"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_C_POSTGRES_PRIMARY.PRIVATE.log",
+      "bytes": 11163,
+      "sha256": "9a39ccbdb7286881b54b5c89175bb591ac79ba5bad896e6a190c044ec24e2b01"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/postgrest.PRIVATE.log",
+      "bytes": 1247,
+      "sha256": "d308812470b5fdb3e36c6bcc7261ea60e020f708f02f4d7001de5439b1a9d103"
+    }
+  ],
+  "checks": [
+    {
+      "name": "actual_scope",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Exactly one C inert End500 diagnosis;0Units,0profiles activated,0model calls. ActualcontrollerFAIL exit1 after369acceptedCAS; no retry."
+    },
+    {
+      "name": "source_binding",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "All26 prestartsourcepins still equal reviewed ee36720d contents; SQLD and observation evidence reused without reruns."
+    },
+    {
+      "name": "full_fixture",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Complete End500 fixture existed beforeCAS0;6000Usage,3501nativepositions. Stored fixture positions are not completedDRresults."
+    },
+    {
+      "name": "auth_envelopes",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "370wholeAuthobserved:369ACK,1terminatedwithoutACK; callbackRuns0 for failed index369, so no370thnativeCAS."
+    },
+    {
+      "name": "native_cas",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "369nativeCAS observed and acknowledged, matching contiguous indexes0..368;369complete revision/postimage readbacks."
+    },
+    {
+      "name": "durable_completion",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "10820contiguous durable rows;739uniqueAuthstarts and739matchingfinished records. Finishederror is not successfulACK and remains failed/unconfirmed."
+    },
+    {
+      "name": "timings",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "WholeAuthmaximum16171.304524000036ms; native7691.495863000164ms. Failedwholecall11068.298475000076ms; closedmetadata explicitlystorage-timeout10000ms. No paidmodels/Unit60proof."
+    },
+    {
+      "name": "gateway",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "1109gatewayrequests (740read/369CAS),1108finish events. Headerstatusaggregate200=1109 does not mean1109fullycompletedresponses; finalread had nofinish and socketbytesWritten0."
+    },
+    {
+      "name": "safe_shutdown",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Exactlyone acceptedownTERM→genuinePGSIGINT exit→confirmedservices-stopped; noforcedkill;server/agent/freeSockets0;allownedstopphasescomplete. Bmissingreceipt staysUNKNOWN."
+    },
+    {
+      "name": "native_final",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Exactlyoneauthorizedrepeatable-readREADONLYfinalstream:all3501fullpostimages,6000Usage,500profiles0active;alllogicalAuth/cost/securityfieldsequal exceptfreshrevision/probesequence. Diagnosticmarkersequence368."
+    },
+    {
+      "name": "kernel",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Peak1437229056B beforeandafternativeaudit,Swap0/OOM0/maxevents0. Reserve610770944B=29.8228%; no resetor subtraction. Currentkernelbefore341823488B/after342106112B."
+    },
+    {
+      "name": "physical_cumulative",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "FinalphysicalWAL134217728B;TEMP0. Cumulativewal_bytes1331295572isgeneratedactivity,notresidentRAM/retaineddisk. Naturalcheckpoints20/autovacuum124finalcounters."
+    },
+    {
+      "name": "projection",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Diagnosisfailedbefore500 and projectedAdditionalPhysicalBytes null. Existing conservative6500writephysicalgrowthgate notsatisfied; peak+64MiB alone cannot replaceunknownfuturegrowth."
+    },
+    {
+      "name": "time_gap",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Outerobservationgap8.404908s andNodegap8.513s overlapfinal10000mstimeout; lastmajorGC11.842515ms precedeswholecallby28.827440ms. No GCentriesduringwindow. No causalhost/GC/PostgREST/Nodeclaim inferred."
+    },
+    {
+      "name": "historical_integrity",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Historicaloriginaleleventh andB291causes stay UNKNOWN; currentexplicitstorage-timeout doesnotretrospectivelyclassifythem."
+    },
+    {
+      "name": "stop_boundary",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "ActualFAIL ends authorization. No restart,replay,optimization,newdiagnosisorfullMock500; furthercauseanalysiscanreadexistingrecords only."
+    },
+    {
+      "name": "primary_logs",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "One read-only Docker PostgreSQL log capture and existing PostgREST log reviewed. Only pins/counts/categories retained here, no raw private content. No ERROR/FATAL/PANIC/statement_timeout/OOM/cancel/broken-pipe/reset/no-space matches."
+    }
+  ],
+  "reviewActions": {
+    "newDiagnosisOrUnitRuns": 0,
+    "HTTPRequests": 0,
+    "signals": 0,
+    "databaseWrites": 0,
+    "nativeReadOnlyFinalTransactions": 1,
+    "rawPrivateAuthPublished": false
+  },
+  "conclusion": "C remains FAIL. Native retained-data/zero-state and controlled service shutdown PASS are separate. No completeEnd500/6500growth or Mock500/Productionproof.",
+  "primaryLogReview": {
+    "readOnlyDockerLogCalls": 1,
+    "logFindings": [
+      {
+        "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_C_POSTGRES_PRIMARY.PRIVATE.log",
+        "bytes": 11163,
+        "sha256": "9a39ccbdb7286881b54b5c89175bb591ac79ba5bad896e6a190c044ec24e2b01",
+        "lines": 108,
+        "failureCategoryMatches": {
+          "ERROR": 0,
+          "FATAL": 0,
+          "PANIC": 0,
+          "statement_timeout": 0,
+          "out of memory": 0,
+          "out_of_memory": 0,
+          "canceling statement": 0,
+          "broken pipe": 0,
+          "connection reset": 0,
+          "no space left": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/postgrest.PRIVATE.log",
+        "bytes": 1247,
+        "sha256": "d308812470b5fdb3e36c6bcc7261ea60e020f708f02f4d7001de5439b1a9d103",
+        "lines": 13,
+        "failureCategoryMatches": {
+          "ERROR": 0,
+          "FATAL": 0,
+          "PANIC": 0,
+          "statement_timeout": 0,
+          "out of memory": 0,
+          "out_of_memory": 0,
+          "canceling statement": 0,
+          "broken pipe": 0,
+          "connection reset": 0,
+          "no space left": 0
+        }
+      }
+    ],
+    "limits": "No matching PostgreSQL/PostgREST log category does not identify underlying scheduling/resource cause or rule out an HTTP read timeout."
+  }
+}

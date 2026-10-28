@@ -1,0 +1,359 @@
+{
+  "schema": "helmut-w15-independent-journal-io-results/1",
+  "status": "FAIL_DRAIN_PREPARATION_RETAINED_IO_EFFECT_AND_NATIVE_ZERO",
+  "reviewedAtUTC": "2026-10-28T18:23:54.608893+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "actualSourceCommit": "63f37c7d",
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-journal-io-check.js",
+      "bytes": 15197,
+      "sha256": "aaaeb4575424b8a54c232f23099a22e4ec33166c3d00c06a7c5a9f9a363ea8e4"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 13410,
+      "sha256": "0737e8dd5c570f65b8e57dba1670870497eca8c889b340a5cc6b4d54ffd3356f"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 5598,
+      "sha256": "a49ff1c7b5b3c3b4eae789a580894d4cb5e847d678ee9678811f8919bd95db22"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    }
+  ],
+  "inputSourcePin": {
+    "bytes": 2230255,
+    "sha256": "730e4a9755490c386af8720fb376133b6d7354dd870e965326b135aa0a1447b9"
+  },
+  "parentResult": {
+    "status": "FAIL_OR_UNKNOWN",
+    "failedMode": "drain",
+    "error": {
+      "name": "Error",
+      "failureKind": "assertion",
+      "reason": "journal-io-child-failed-or-unknown"
+    },
+    "retryAllowed": false,
+    "actualExitCode": 1,
+    "parentExitObservationUTC": "2026-10-28T18:20:58Z",
+    "parentExitEvidence": "Rootprimaryexecsession32527report, notinferredfromsource"
+  },
+  "completedModes": [
+    {
+      "mode": "sync",
+      "status": "PASS_COMPLETE_EXACT_PAYLOAD_ONLY",
+      "childExit": {
+        "code": 0,
+        "signal": null
+      },
+      "originalPayloads": 10820,
+      "journalRows": 10821,
+      "payloadSHA256": "5aa7c19291b111d34edc815538194d43137760df258e50752a85720c41000a28",
+      "producerPulse": {
+        "ticks": 4,
+        "maximumGapMs": 16226.024010000001
+      },
+      "parentPulse": {
+        "ticks": 1415,
+        "maximumGapMs": 441.5217929999999
+      },
+      "enqueueWallMs": 16245.511934999999,
+      "totalWallMs": 16266.034717999999,
+      "journal": null,
+      "IO": {
+        "write": {
+          "calls": 10821,
+          "sumElapsedMs": 366.80969999999775,
+          "maximumElapsedMs": 112.4018530000003
+        },
+        "fdatasync": {
+          "calls": 10821,
+          "sumElapsedMs": 15455.779739000052,
+          "maximumElapsedMs": 1261.0122090000004
+        }
+      }
+    },
+    {
+      "mode": "async",
+      "status": "PASS_COMPLETE_EXACT_PAYLOAD_ONLY",
+      "childExit": {
+        "code": 0,
+        "signal": null
+      },
+      "originalPayloads": 10820,
+      "journalRows": 10821,
+      "payloadSHA256": "5aa7c19291b111d34edc815538194d43137760df258e50752a85720c41000a28",
+      "producerPulse": {
+        "ticks": 1658,
+        "maximumGapMs": 182.817406
+      },
+      "parentPulse": {
+        "ticks": 1693,
+        "maximumGapMs": 103.24542900000233
+      },
+      "enqueueWallMs": 210.338778,
+      "totalWallMs": 17575.73752,
+      "journal": {
+        "completedWrites": 10821,
+        "completedSyncs": 10821,
+        "maximumWriteMs": 174.09984899999995,
+        "maximumSyncMs": 103.7711690000001,
+        "maximumPendingBytes": 3732453,
+        "lastIO": {
+          "kind": "sync",
+          "sequence": 10820,
+          "beginMS": 17775.169163,
+          "endMS": 17776.733102,
+          "durationMs": 1.5639389999996638,
+          "acknowledged": true,
+          "pendingBytes": 338,
+          "pendingEntries": 1,
+          "acknowledgedSequence": 10820
+        },
+        "acknowledgedSequence": 10820,
+        "nextSequence": 10821,
+        "pendingBytes": 0,
+        "pendingEntries": 0,
+        "maximumAllowedPendingBytes": 8388608,
+        "running": false,
+        "status": "DURABLE_ACKNOWLEDGED",
+        "failureCode": null,
+        "closed": true,
+        "descriptorRetainedOpen": false
+      },
+      "IO": {
+        "write": {
+          "calls": 10821,
+          "sumElapsedMs": 2508.1465749999643,
+          "maximumElapsedMs": 174.09984899999995
+        },
+        "sync": {
+          "calls": 10821,
+          "sumElapsedMs": 14793.669764000031,
+          "maximumElapsedMs": 103.7711690000001
+        }
+      }
+    }
+  ],
+  "drain": {
+    "status": "FAIL_DURABLE_DEADLINE_BEFORE_SIGNAL_READINESS",
+    "closedError": {
+      "name": "Error",
+      "code": "W15_DURABLE_DEADLINE",
+      "failureKind": "durable-io-error"
+    },
+    "defaultFlushDeadlineMs": 15000,
+    "preSignalBulkEnqueueInferredFromSource": 10756,
+    "fullyParsedNewJournalRows": 10300,
+    "parsedOriginalPayloads": 10299,
+    "lastOriginalSourceSequence": 10298,
+    "controlledSIGTERMReadyReached": false,
+    "controlledTestSIGTERMSent": 0,
+    "DRAINReceiptExists": false,
+    "actualChildExitSignal": "UNKNOWN_NOT_RETAINED",
+    "actualChildExitCode": "UNKNOWN_NOT_RETAINED"
+  },
+  "unexecutedExpectedComponentCases": [
+    "captured-snapshot-and-real-partial-writes",
+    "injected-sync-error-no-ack",
+    "injected-pending-deadline-late-io-no-fd-reuse-or-ack",
+    "injected-queue-overflow-no-extra-ack"
+  ],
+  "nativeFinal": {
+    "schema": "helmut-w15-journal-io-post-failure-native-zero/1",
+    "status": "PASS_NATIVE500_ZERO_ONLY",
+    "observedAtUTC": "2026-10-28T18:22:37.378790+00:00",
+    "nativeReadOnlyTransactions": 1,
+    "profileCountQuery": {
+      "active": 0,
+      "database": "helmut_w15_memory_atomic_20261028c",
+      "profiles": 500,
+      "readonly": "on"
+    },
+    "HTTP": 0,
+    "databaseWrites": 0,
+    "signalsSentByReviewer": 0,
+    "registeredChildIdentityReadOnlyObservations": [
+      {
+        "mode": "sync",
+        "registeredIdentityAvailable": true,
+        "liveSameIdentity": false,
+        "observationAtUTC": "2026-10-28T18:22:37.146644+00:00",
+        "processStatus": "REGISTERED_PID_ABSENT"
+      },
+      {
+        "mode": "async",
+        "registeredIdentityAvailable": true,
+        "liveSameIdentity": false,
+        "observationAtUTC": "2026-10-28T18:22:37.146770+00:00",
+        "processStatus": "REGISTERED_PID_ABSENT"
+      },
+      {
+        "mode": "drain",
+        "registeredIdentityAvailable": true,
+        "liveSameIdentity": false,
+        "observationAtUTC": "2026-10-28T18:22:37.146832+00:00",
+        "processStatus": "REGISTERED_PID_ABSENT"
+      }
+    ],
+    "originalChildExitSignal": "UNKNOWN_NOT_RETAINED",
+    "parentExit": "ROOT_PRIMARY_EXEC_EXIT1_OBSERVED_2026-10-28T18:20:58Z",
+    "rootExternalCleanupSignals": 0,
+    "noBindingsBypassed": true,
+    "scope": "Exactlyoneauthorized500profile/0active read afterIOcheckparentexit. No3501/6000repeat, newworkloadorcleanupsignal."
+  },
+  "historicalCauseAssessment": {
+    "originalEleventh": "UNCHANGED_UNKNOWN",
+    "B291": "UNCHANGED_UNKNOWN",
+    "CSharedGapCause": "UNCHANGED_UNKNOWN",
+    "currentProbeProves": "SynchronousperrecordnativefileIO blocksproducerthread;asyncentryqueuepreservesexactpayloadsanddurableACKsonnormalcompletion.",
+    "currentProbeDoesNotProve": "ControlledSIGTERMdrain,negativefaultcases,runtimewiring,End500RAMfit,ormidCsharedpausecause."
+  },
+  "checks": [
+    {
+      "name": "one_attempt",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "ExactlyoneboundedIOprogram executed. Two modescompleted; drainfailedbeforecontrolledsignalstage. Parentactualexec exit1 perRootterminal18:20:58UTC. NoRetry/newEnd500."
+    },
+    {
+      "name": "exact_sync",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "All10820Cpayloads+processstart retained/contiguous/hashidentical toinput;10821genuine synchronouswrite/fdatasync calls, childexit0."
+    },
+    {
+      "name": "exact_async",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "All10820Cpayloads+processstart retained/contiguous/hashidentical toinput;10821successfulasyncfdatasyncACKs,lastsequence10820,pending0,closedtrue,childexit0."
+    },
+    {
+      "name": "current_effect",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "Withinthisprobe synchronousIOonproducereventloop produced16226.024010msmaximumgap;asyncqueue182.817406ms. Synchronousfdatasyncspanssum15455.779739ms. Thisdirectlydemonstrateshotpathblocking/nonblockingeffecttoday,notretrospectiveCsharedgapcause."
+    },
+    {
+      "name": "no_throughput_claim",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "Asynctotalwall17575.737520ms exceedssync16266.034718ms; claimisresponsiveness,notfasterdisk orprovenRAM/Unitperformance."
+    },
+    {
+      "name": "drain_failure",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "W15_DURABLE_DEADLINE duringdefault15spreparatoryflush; preparationqueued10756events thenflush beforelast64 according tosource. Readiness forownedTERM neverreached;actualsignaldrainNOT_TESTED."
+    },
+    {
+      "name": "partial_private_probe_log",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "Drainfilecontains10300contiguouscompleteJSONrows:10299validCpayloads,lastsourceindex10298. MissingremaindernotclaimedACK/preserved. OriginalCfileunchanged; newfailedtestlogisincompleteonly."
+    },
+    {
+      "name": "child_end",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "Registeredidentitiesfromsync/async/drainjournalfirstrows allPIDabsent atindependentfinalobservation. Parentexit1confirmedbyRoot; exactdrainchildexitcode/signalnotretainedandremainsUNKNOWN. Sourceplanned210sKILLisnotinventedactualquittung."
+    },
+    {
+      "name": "external_cleanup",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "Rootreportedbothoutsidecleanupownershipchecksfailedbeforeos.kill;0externalRootsends/0marker,noBindingbypass. Reviewer sent0signals."
+    },
+    {
+      "name": "native_zero",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "ExactlyoneauthorizednativeREADONLYtransaction afterparentend confirms500mandateprofiles/0active inexistingCDB. No3501/6000retestormutation."
+    },
+    {
+      "name": "fault_cases",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "FourplannednegativecomponentcasesNOT_EXECUTED becauseprogramstoppedatdrainfailure. NoSnapshot/Partialwrite/EIO/Deadline/OverflowPASSclaimedfromthisrun."
+    },
+    {
+      "name": "abrupt_error_handling",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "Drainchildunexpectedcatch retainedclosederror butleftrefedpulsealiveuntilboundedparentcompletion. Durable15sabortpathanddeadline-safeFDbehaviornotactuallyacceptedbythisrun;remainingerrorpathfixrequiresnewGO."
+    },
+    {
+      "name": "historical_scope",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "Original11UNKNOWN/B291UNKNOWN/CsharedpausecauseUNKNOWN unchanged. ProvenlocalIOhotpathissue isnotproofthatoldC8.4scommonpausewasfsync-caused."
+    },
+    {
+      "name": "stop_boundary",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FACT",
+      "finding": "No codefix/workloadrerun/End500afteractualFAIL. Helperremainsnotacceptedforruntimeabruptdrain; candidateDataPathpositivefindingskeptseparatefromoverallFAIL."
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028a/RESULT.SAFE.json",
+      "bytes": 11375407,
+      "sha256": "b5e37a1e42bc3d677bc45080c81bea40300266d031410e5173a2596af4b5e470"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028a/sync/RESULT.SAFE.json",
+      "bytes": 3058983,
+      "sha256": "5c18ffe4dbf5eb23e095ec249849986b7138960b68aa4704f2e8d2b2b5d9b274"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028a/async/RESULT.SAFE.json",
+      "bytes": 6107008,
+      "sha256": "e8b8ad3bfbe324def3d4dfe634bd8bb4a71fe6554b91660d5e1740cf36fea479"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028a/sync/prepare-observations.SAFE.jsonl",
+      "bytes": 3747644,
+      "sha256": "d33f4f11cdfa1fbd809ef8fe467556a631e23ba7827918447a251abeb2637ad4"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028a/async/prepare-observations.SAFE.jsonl",
+      "bytes": 3732598,
+      "sha256": "88ff8daa87a4de71c6bff9d59aed2835aadad04a7cbb77d253b05c00601f9370"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028a/drain/prepare-observations.SAFE.jsonl",
+      "bytes": 3551406,
+      "sha256": "696d1141f8cecb00b01eaa61aa83835072c17b7da032dc856f961eb4116cbbb3"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028a/drain/child.PRIVATE.log",
+      "bytes": 117,
+      "sha256": "9bc42287a6ab2ad4cd3dd4c04c8cbfd935c29b46a83a09b416c2c8b82879e38e"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/JOURNAL_IO_PRESTART_REVIEW.SAFE.json",
+      "bytes": 7938,
+      "sha256": "ee76532b2bcb80ea926edea1cfe2d82ddeacabd50be0091e922041f05fdea3db"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/JOURNAL_IO_NATIVE_ZERO_AND_PROCESS_END.SAFE.json",
+      "bytes": 1443,
+      "sha256": "79f5e866d10c0dcbf850e6ea99b16f71ace9073ab1340e99d99a69b9807dfc1f"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/run-observations.SAFE.jsonl",
+      "bytes": 2230255,
+      "sha256": "730e4a9755490c386af8720fb376133b6d7354dd870e965326b135aa0a1447b9"
+    }
+  ],
+  "reviewActions": {
+    "newIOChecks": 0,
+    "HTTP": 0,
+    "databaseWrites": 0,
+    "nativeReadOnly500ZeroTransactions": 1,
+    "signals": 0,
+    "sourceEdits": 0
+  },
+  "verdict": {
+    "overallIOCheck": "FAIL",
+    "normalCompletionPayloadAndACKs": "PASS",
+    "currentNonblockingEffect": "PASS_SCOPED_PROBE_ONLY",
+    "controlledAbortDrain": "NOT_ACCEPTED",
+    "fourComponentFaultCases": "NOT_EXECUTED",
+    "native500ProfilesZeroActive": "PASS",
+    "newEnd500Start": "NOT_ALLOWED",
+    "fullMock500": "NOT_ALLOWED"
+  }
+}

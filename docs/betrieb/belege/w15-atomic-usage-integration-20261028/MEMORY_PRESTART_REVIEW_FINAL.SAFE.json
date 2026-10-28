@@ -1,0 +1,213 @@
+{
+  "schema": "helmut-w15-atomic-end500-memory-independent-prestart/1",
+  "status": "PASS_PRESTART_ATOMIC_END500_ALLOCATION_ONLY",
+  "reviewer": "/root/eu_atomic_check_author",
+  "independentOfRAMImplementation": true,
+  "reviewedAtUTC": "2026-10-28T13:33:47.865323+00:00",
+  "head": "55dda919069acd2d29689193c449639514912860",
+  "scope": "Independent read-only RAM source/evidence review. This reviewer authored only the separate EU component, not RAM code. ActualEU/prepared0 evidence independently accepted by /root/atomic_integration_audit. No reviewer database/workload/container/model/test execution.",
+  "checks": [
+    {
+      "name": "scoped_previous_integration_and_source_reuse",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "ActualDprepared0/atomicEUcomponentPASS independently16checks;0active/sourceunchanged/noUnits. AllDsourcepinsexactexceptunexecutedRAMlauncher;newguards/shadowfixreviewedhere,noDretestorwholeheadrelabel."
+    },
+    {
+      "name": "pre_resource_gates_and_Python_binding",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "PositiveD/parser/currenthashes/independentRAMpinscheckedbeforeWORK/resourcecreation;argv2andDBBASEconsistent;reviewed_pinavoidsfunctionshadowing;requiredstagedfilespresentbysource."
+    },
+    {
+      "name": "actual_generated_SQL_evidence",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "3512currentgeneratedSQLhashesequalA;3501seedhashesexactC;A5realParse/Describemarkersexactandstderr0. Bsourcepinscurrent;0workloadExecute,noDBcreated,snapshotunchanged. ProposalbyteidenticaltoactualDbootstrap."
+    },
+    {
+      "name": "common_kernel_accounting",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Onefreshnetlesscgroup2048000000hardcap/Swap0;truecurrent/lifetimepeak/eventsguard100msincludesPG/PGR/Node/gateway/children/chargedcache. NoRSSsum/historical395MBsubtraction."
+    },
+    {
+      "name": "complete_original_and_inert_end500_retention",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Pinnedreceipt/dump/roles,restore+initial0activeonetransaction;3501postimageACKsandcounts. All6000Usageincluding5139original+861inertfillersandallEnd500results/evidence/Dstoresretained."
+    },
+    {
+      "name": "native_atomic_integrity_and_Auth30",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "LocalGUConlyfreshcopy;wholelogicalbootstrapstatehashbefore/afterexcludingfreshrevision/6000count.500realAtomic.writeRPCs,wholeAuthenvelopeandnativewriteunder30s;freshrevision/marker/fullhistorypostimagechecks. No fabricatedACK."
+    },
+    {
+      "name": "durable_progress_and_owned_abort",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "PerCAScurrent/peak/reserve/exactAuthmax;outerfdatasync. Authbegin/endandNodeGC/PGWAL/TEMP/checkpointjournalsdurable;unfinishedUNKNOWN. OwnedPID/startTickssignalhelperpreserved;noautomaticretry."
+    },
+    {
+      "name": "real_loaded_command_and_modules",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "FreshDcommandhash/bytesvalidatedthen500drafts500unitsdecoded/frozenheldstrongly,actualservermodulebaseline;noauthority/admissionusefromheldcommand."
+    },
+    {
+      "name": "natural_allocation_and_growth",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Minimum2naturalmajorNodeGC,2naturalPGcheckpoints,autovacuumandWALrotation;tempunchanged/fsync/full_page_writes/synchronous_commiton. No forcedGC/checkpoint/cacheclear. PG/PGR/Node RSS/PSScontextandfallbackRssAnon/File/Shmem;commonscopeacceptedonlykernel."
+    },
+    {
+      "name": "conservative_physical_projection",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "PositiveStoreTotal+UsageTotal+WALgrowthaddedoncewithfactor2acrossremaining6500writebudgetplus67108864marginontopoftruepeak;requires<=1638400000. TOASTreportedbutnotdoubleadded."
+    },
+    {
+      "name": "safe_inactive_end",
+      "status": "PASS_PRESTART_SCOPED",
+      "evidence": "Neveractivation/Units/providers;verifiedownedsignalclosurethenindependentnativeREADONLY0activecheck;allDB/evidenceretained,finalcommonpeakrechecked."
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.py",
+      "bytes": 21862,
+      "sha256": "38f8fd27db2eb7139e0df8e3443de49f45b337a816dd1dc46f9c5a63066a34aa"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.js",
+      "bytes": 12548,
+      "sha256": "2e3ddd8df904713e56c1d2657d89e4b34a66a453aafcb680c21c1bea0dfe2d12"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-sql-preflight.py",
+      "bytes": 11247,
+      "sha256": "7fdeb045adffdce6502963cfd57843d128fbe11e698d99fdb7e1b246b7c82c33"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 44655,
+      "sha256": "4fe9b65671af956a3ec88e82b43e2a9af48f1709271808c41381824583428ec8"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 43286,
+      "sha256": "ebc1870b092734a15cd9a5fb3253b77333fb9bf5d034250dfc6a46b3eafea239"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 4335,
+      "sha256": "e2ac57c7f7f47740ca98d1f48e767ab540a6d10af9c4d5041cde7fdf889b0482"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 2075,
+      "sha256": "b2fa1547bf9aaaea0a9f08876d76e9a371ab9a5d1cd0f403eaf79eb3e8d4b063"
+    },
+    {
+      "path": "scripts/fixtures/w15-local-memory-budget.json",
+      "bytes": 641,
+      "sha256": "83414ddc04a025b20eedd9119657d62689f8e18d2f660b8a3bad85556e2566c7"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.json",
+      "bytes": 115,
+      "sha256": "acffec2e146c8b104605eb27b52a02822cb189f0c0468303fa2061240cc7bff2"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.js",
+      "bytes": 1096,
+      "sha256": "7fde8ef7bd10210da3d20ffb9d03fe9115ec4cf1716d45a2a79faf24ad8bc994"
+    },
+    {
+      "path": "scripts/fixtures/w15-atomic-integration-target.json",
+      "bytes": 299,
+      "sha256": "e396b8bf990df0d773211e8c1483c938e3b57f3787481891334cc73d51c0abc5"
+    },
+    {
+      "path": "scripts/fixtures/z3-plattform.js",
+      "bytes": 28609,
+      "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 545054,
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "lib/helmut/auth-store-cas.js",
+      "bytes": 2753,
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-direct-codec.js",
+      "bytes": 13651,
+      "sha256": "f4390028c1c8f7cad40899c74cf2e5b3203f542b5617af48c3c56aecbbf22645"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
+      "bytes": 12237,
+      "sha256": "bc2409e35d68d52d0ba92914ffa1e427de42da738b73197e9bf7fe428f71b5fe"
+    },
+    {
+      "path": "supabase/proposals/auth_usage_atomic_local.sql",
+      "bytes": 20726,
+      "sha256": "5a8c07670354b504c85984618999feaa93f78f3107f96236ce61b2f7bbcd438a"
+    }
+  ],
+  "evidencePins": {
+    "actualIntegrationD": {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/INTEGRATION_RESULT.SAFE.json",
+      "bytes": 832,
+      "sha256": "089b989a76d0382f150da0d98df65232d84d8ddabb22c82337ef7fa264040685"
+    },
+    "independentD": {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/D_RESULTS_INDEPENDENT_REVIEW.SAFE.json",
+      "bytes": 15279,
+      "sha256": "45ed6642e60ad704f4d4f50c06bfd43f3347b39a838bd369d65eace3339baed1"
+    },
+    "parserA": {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/sql-preflight-atomic-a/SQL_PREFLIGHT.SAFE.json",
+      "bytes": 441739,
+      "sha256": "98d329bfa2bf7650ff34be02caa860886e38441b9134c3e69f0663d86992c720"
+    },
+    "parserB": {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/sql-preflight-atomic-b/SQL_PREFLIGHT.SAFE.json",
+      "bytes": 441802,
+      "sha256": "5df0ebc3f45b2d014536f075db9f645b3ced202d916a016040fccbfa2f9d8883"
+    },
+    "priorSeedParserC": {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/sql-preflight-c/SQL_PREFLIGHT.SAFE.json",
+      "bytes": 440462,
+      "sha256": "b02143076edc5c72af39be3798b0d8a45e3e140c8b98967ad4fcdf25422fd49c"
+    },
+    "heldCommand": {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-20261028d/current-command.PRIVATE.json",
+      "bytes": 1169844,
+      "sha256": "ee866daff1c7c2b2e13f8b28938a4d14344f11c815e074f78d9acb9713413ee9"
+    }
+  },
+  "remainingRisks": [
+    "This is prestart acceptance only, NOT actualRAM PASS. FirstFAIL/UNKNOWN stops with no retry.",
+    "500uniformAuthmutations with completeinertEnd500 data are an allocationdiagnostic, not500DRUnits/1000responses/1500producedresults/8000controls.",
+    "PhysicalDB/WALfactor2projectionand64MiBmargin are explicit conservativeassumptions, not a mathematicalbound on futureanonymousheap growth. Actual latekernel/process trajectories need independentreview.",
+    "The19.87s coldworker/preparepeak fromD cannotbeadded/subtracted to/from the futureRAMpeak or represented as simultaneous with End500. Warmworker/activeDRUnitworking-set/coexistence andUnit60 remain open.",
+    "CumulativeWALwritten/allocatedbytes differfromcurrentRAM. Truewholekernelpeakincludeschargedcache,nosubtraction;PSSpermissionmaylimitattribution;sharedRSSneverdoublecounted.",
+    "No Production/modelquality proof and no fullMock500startauthorization. Userrequestedintegrationonly."
+  ],
+  "actualRAMAcceptance": false,
+  "profileActivations": 0,
+  "unitExecutions": 0,
+  "full500ExecutionAuthorized": false,
+  "productionProof": false
+}

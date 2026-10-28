@@ -1,0 +1,177 @@
+{
+  "schema": "helmut-w15-independent-journal-drain-prestart/1",
+  "status": "PASS_BOUNDED_JOURNAL_DRAIN_PRESTART",
+  "reviewedAtUTC": "2026-10-28T18:42:36.906219+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "baseHead": "872a1bcf0193e1cf082f1754b9b7b8ad8c1254a3",
+  "method": "Independentstaticsource/evidenceinspectiononly;0runtimechecks,0HTTP/DB/signals by reviewer.",
+  "sourcePin": {
+    "bytes": 2230255,
+    "sha256": "730e4a9755490c386af8720fb376133b6d7354dd870e965326b135aa0a1447b9"
+  },
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-journal-io-check.js",
+      "bytes": 17241,
+      "sha256": "7984a69b9a93c5700610708c0c324262e38a9c895830d7116972c30c722c22de"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 13410,
+      "sha256": "0737e8dd5c570f65b8e57dba1670870497eca8c889b340a5cc6b4d54ffd3356f"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 5598,
+      "sha256": "a49ff1c7b5b3c3b4eae789a580894d4cb5e847d678ee9678811f8919bd95db22"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    }
+  ],
+  "launcherPin": {
+    "path": "/workspace/helmut-w15-atomic-integration/scripts/lokal.js",
+    "bytes": 5431,
+    "sha256": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b"
+  },
+  "priorPositiveComparisonPin": {
+    "path": "/workspace/shared/helmut-w15-journal-io-check-20261028a/RESULT.SAFE.json",
+    "bytes": 11375407,
+    "sha256": "b5e37a1e42bc3d677bc45080c81bea40300266d031410e5173a2596af4b5e470"
+  },
+  "priorIndependentResultsReviewPin": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/JOURNAL_IO_RESULTS_REVIEW.SAFE.json",
+    "bytes": 14045,
+    "sha256": "c8a42edba6a3f36661648adca4dc3f0d9fff87e1a52ae840400eb7f613e86434"
+  },
+  "requiredLaunchCommand": "node scripts/lokal.js -- timeout --signal=TERM --kill-after=5s 210s node scripts/synthetik-500-w15-journal-io-check.js --run",
+  "checks": [
+    {
+      "name": "scope",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "ExactlyonefreshDrainmode plusfourpredefinedcomponentfaultcases;noSync/Asyncbaseline rerun.0DB/HTTP/Auth/Profiles/Units/Models. ExistingoldFAILandCUNKNOWNremainunchanged."
+    },
+    {
+      "name": "freshness",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "NewfixedWORK20261028babsent, oldaresultimmutable/hashbound, protectedsource2230255B/hash730e4a.../10820contiguousinertCpayloads. Existing--runGateonceonly/prestart4sourcepinsbeforecreatingfiles."
+    },
+    {
+      "name": "argv",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Actualargv2/3 --dry-run/--run/--child MODE strict. Mainfor-loop contains onlydrain; fullsync/async implementations retainedhistorically butnotinvokedbythisGOcommand."
+    },
+    {
+      "name": "inherited_proof",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "OldprivateaRESULT exactSHA b5e37...;sourcepin/modeorder/successfulstatuses/exit0/10820payloads/hash5aa7c192 validated. HistoricaloverallFAIL/drainisretained,normalmodePASSonlyreused."
+    },
+    {
+      "name": "prefix",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Preparationflushes aftereach64prefixevents andexplicitlyatN-64=10756. Periodicflushcondition excludeslast64;all10820events stillqueuedexactonce, no data truncationorweakeneddeadline."
+    },
+    {
+      "name": "ready_snapshot",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Beforeyielding IPC carriesactualpending64,nextSequence10821,ACK10756. Parentstrictlyvalidatessnapshot beforeonesingleSIGTERM. Signalhandleractualqueue mayalreadyhavesomeACKs;noassumptionofstill64atdelivery."
+    },
+    {
+      "name": "drain",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "ExistingAuth Promise terminationhandler retainsFAIL/UNKNOWNsnapshot andwaitsbounded15s;writescontrolledterminationevent afteralloriginalpayloads;successfulclose requires10822durableSyncs,lastACK10821,pending0,closedtrue."
+    },
+    {
+      "name": "receipt",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Smallsavehelper nowwritesnativefdatasync beforeclose. Childstdoutfdatasync andparentCHILD_EXITreceipt occurbeforeassertions;exitcode/signal/TERMacceptance/deadlineKillAcceptance/IPCreadinessareactualobservations,notprocessabsence substitutes."
+    },
+    {
+      "name": "fatal_exit",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Unexpectedchildtop-levelcatchclosedmetadata thenprocess.exit1 terminatesrefedpulse ratherthanleavingheartbeatuntil210s. Noextraorunboundcleanup signals introduced."
+    },
+    {
+      "name": "ownership_IPC",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Knownforkfile/childmode,clearedENVandnetguard;IPCassertions caught,termRequestscountlimit1,privateknownChildProcesssignal.210sinternalchildguard andcontrolledsignalcode143/null requiredforPASS."
+    },
+    {
+      "name": "external_watchdog",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Mandatoryouter invocation bound:node scripts/lokal.js -- timeout --signal=TERM --kill-after=5s210s node scripts/synthetik-500-w15-journal-io-check.js --run.210sbudgetunchanged;externalwatchdogexit/cancelisFAIL/UNKNOWN,noPASSwhenreceiptmissing."
+    },
+    {
+      "name": "helper_reuse",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Durable0737e8dd/Autha49ff1c7/netguard3341a39d byte-identicaltoscopedpriorreview.15sdefault,8MiBqueue,partialwriteandfdatasyncACKrulesunchanged;originalsyncopenunchanged."
+    },
+    {
+      "name": "snapshot_negative",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Firstcomponentcaseactualnative31bytepartialwrites,mutatesinputafterwrite,expectsserializedbeforevalue/exact2lines+2syncs. Nofakeauth/securityfunction."
+    },
+    {
+      "name": "sync_error_negative",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "InjectednativeasyncsyncEIOrequiresflush/closeW15_DURABLE_SYNC_FAILED,ACK-1/FAIL. Faultresultreceipt itself usesrealfdatasyncSync, nottheinjectedasyncfunction."
+    },
+    {
+      "name": "deadline_negative",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "IntentionallyheldnativeIOrequires25msdeadline,closeCalls0/descriptorretainedopen,lateIOmustnotACKorpermitnewwrite. Actualcallbackrelease nowseparately15sbounded;externalwatchdogcoversnativehang."
+    },
+    {
+      "name": "overflow_negative",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "8MiBqueueoverflowmustthrowclosedcode andnotadvancebeyondpriorprocessstartACK0;closefails. Expectedfailureonlyinsidepredeclaredassertions,notRuntimeAcceptance."
+    },
+    {
+      "name": "case_receipts",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "EachfaultPASSsavedindividuallywithnativefdatasyncbeforepush. FirstunexpectedFAILstopsremainingcases,mainretainsfailedMode/closedreason,noRetry."
+    },
+    {
+      "name": "integrity",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Afterchildexit all10820originalpayloads independentlydeepcompared,contiguoussequence10822linesinclprocessstart/termination,payloadSHAidenticaltooldcomparison;no clippedhistory/silentrepair."
+    },
+    {
+      "name": "unknown_handling",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "MissingDRAIN/exit/ACK/IOreceipt orforcedKILL cannotPASS. Successfulcontrolleddrainonlyprovestelemetryretention,nevermarksunfinishedAuthsuccessful."
+    },
+    {
+      "name": "privacy_bounds",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Private0700dirs/0600newfileswithwx, noSource/OriginalArchivecopyout, nocredentials inoutput. SmallIO-onlyallocation;End500diskbudget/startnotimplicitlyapproved."
+    },
+    {
+      "name": "historical_and_future",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "OldiooverallFAIL/drainsignalUNKNOWN andCunderlyinggapUNKNOWN preserved. ThisprestartdoesnotapproveRAM/End500/Mock500. Runtime/GatewayasynclinkrequiresownreviewafteractualfilePASS."
+    }
+  ],
+  "permittedNextAction": {
+    "freshDrainRuns": 1,
+    "predefinedFaultCases": 4,
+    "repeatSyncAsyncComparisons": false,
+    "firstUnexpectedFailStops": true,
+    "retryAllowed": false,
+    "HTTP": 0,
+    "DB": 0,
+    "Auth": 0,
+    "profileActivations": 0,
+    "RAMStartApproved": false,
+    "Mock500Approved": false
+  },
+  "historicalIOOverall": "UNCHANGED_FAIL",
+  "historicalCCause": "UNCHANGED_UNKNOWN",
+  "limitations": [
+    "StaticPASSpermitsonlyoneboundedfiledrain/faultcheck. Actualresultsnotknown.",
+    "Outerwatchdogand15sdrainlimitsmustremain;timeoutorforcedshutdowncannotbeacceptedassuccess.",
+    "AwaitindependentactualresultsandseparateruntimeintegrationreviewbeforeanynewEnd500start."
+  ]
+}

@@ -1,0 +1,440 @@
+{
+  "schema": "helmut-w15-atomic-RAM-B-independent-results-review/1",
+  "status": "FAIL_END500_DIAGNOSIS_RETAINED_STATE_ZERO_CONFIRMED",
+  "diagnosticStatus": "FAIL_OR_UNKNOWN",
+  "reviewer": "independent atomic_integration_audit",
+  "independentOfRAMImplementationAndExecution": true,
+  "reviewedAtUTC": "2026-10-28T16:01:39.375304+00:00",
+  "checks": [
+    {
+      "name": "actual-once-failure",
+      "status": "FAIL_ACTUAL",
+      "evidence": "Exactly one new RAM-B attempt atd292 ended exit1 after290/500 acceptedCAS. Controller retains full500-stage-failed:run:1,zero=False/activeProfilesnull; neither original report is modified."
+    },
+    {
+      "name": "fault-position",
+      "status": "UNKNOWN_CAUSE",
+      "evidence": "Mutation index290 (291st envelope) failed before callback (callbackRuns0); no291st native CAS row exists. Error/name only, detail redacted; neither read/transport/timeout nor other cause proven. No retry/resume."
+    },
+    {
+      "name": "ack-auth-preservation",
+      "status": "PASS_AUDIT",
+      "evidence": "290 genuine private native ACKs/envelopes plus290 full postimages accepted at indices0..289; all ACK timings/assignment windows verified. Maxwhole11681.541407ms/native6150.820550ms;291st envelope10339.606479ms unacknowledged. Entire500Auth30 remains incomplete."
+    },
+    {
+      "name": "durable-history",
+      "status": "PASS_AUDIT",
+      "evidence": "8424 sequential durable records;581starts+581matchingfinishes comprise291envelopes+290nativewrites. All290completed writes have nativeACK;1finished error envelope remains unacknowledged. Exact maxima and error preserved."
+    },
+    {
+      "name": "native-zero-and-history",
+      "status": "PASS_AUDIT_ONLY",
+      "evidence": "Exactly one authorized independent native repeatable-read readonly stream after execution:500profiles0active,6000physical/main/logical usage,all3501 complete postimages retained. Auth equal excluding only freshRevision/probeSequence; every historical/inert cost/security field equal. Index289 does not invent291st ACK."
+    },
+    {
+      "name": "kernel-after-audit",
+      "status": "PASS_OBSERVED_PORTION_ONLY",
+      "evidence": "True common cgroup peak1444556800B unchanged before/after native stream;reserve603443200B=29.4646875%,hardlimit2048000000B,swap0,max/oom events0. No subtraction/reset; not completed500RAMacceptance."
+    },
+    {
+      "name": "projection-gate",
+      "status": "UNKNOWN_INCOMPLETE",
+      "evidence": "No completed late window>=349/500, projection absent. Peak+64MiB=1511665664B leaving126734336B tothreshold, but unknown futureprojection must not be treated as0 or called PASS."
+    },
+    {
+      "name": "wal-and-tables",
+      "status": "PASS_OBSERVED_PORTION_ONLY",
+      "evidence": "13genuine PGstat points incl failure-finalindex290:WALphysical134217728B throughout while cumulativewal_bytes120168018\u21921075781447. Store64995328\u2192max69615616B (TOASTincluded),Usage8339456Bconstant,Briefings26345472Bconstant,TEMP0. Cumulative writes are not RAM/diskfootprint."
+    },
+    {
+      "name": "natural-maintenance",
+      "status": "PASS_OBSERVED_PORTION_ONLY",
+      "evidence": "Checkpoints2\u219217 (15additional),observedautovacuumcounter2\u219293;WALsegments advance naturally;fsync/full_page_writes/synchronous_commiton/workmem32MiB/maxwal128MiB/autovacuum10s unchanged.4353recordednaturalGCs including961major;no forcedGC/checkpoint/cacheclear."
+    },
+    {
+      "name": "attribution",
+      "status": "PASS_NONADDITIVE_CONTEXT",
+      "evidence": "1004kernelcomponent snapshots provide processRSS/Anon fallback,not PSS. Largest nonconcurrent singleRSS:NodeMainThread425541632B/PostgREST452300800B/PostgreSQLbackend328970240B;do not sum shared/nonsimultaneous values or infer a failure cause."
+    },
+    {
+      "name": "stop-receipt",
+      "status": "UNKNOWN_PRESERVED",
+      "evidence": "Gateway has explicit owned-exit receipt,run/setup already exited. PostgREST stop file onlySIGTERMrequest, no owned-exit confirmation. Original missing receipt remains UNKNOWN; do not fabricate receipt from laterabsence."
+    },
+    {
+      "name": "later-process-observation",
+      "status": "PASS_LIMITED_OBSERVATION",
+      "evidence": "Existing separately recorded root /proc observation has no owned live/observed process; exact original observation timestamp was not retained and report says so. No new signal/restart/query by reviewer."
+    },
+    {
+      "name": "logs-and-trace",
+      "status": "UNKNOWN_CAUSE",
+      "evidence": "Retained PostgREST log7lines has0ERROR/FATAL/PANIC;gatewaylogempty. No per-request HTTPstatus/diagnostics-channel trace in RAM-B, so cannot assert allRAMrequests200 or name reason. Similar duration to configured timeout is no timeoutproof."
+    },
+    {
+      "name": "source-and-scope",
+      "status": "PASS_AUDIT",
+      "evidence": "25prestartsourcepins match. Protected5fixtureinputs reused;0activation/0Units/0providers/0originalDBwrites/noProductionaction. HistoricalA/16Auth/stop failures/proofs remain separate."
+    },
+    {
+      "name": "stop-boundary",
+      "status": "PASS",
+      "evidence": "Stop after actualFAIL. No second attempt, replay, newperformance test or fullMock500. Independent data/zero proof succeeds but cannot convert failed RAMattempt or grant laterMock500authority."
+    },
+    {
+      "name": "postgres-primary-log",
+      "status": "UNKNOWN_CAUSE_NO_ERROR_EVIDENCE",
+      "evidence": "Complete retained primary PostgreSQL startup/run/checkpoint log has0ERROR/FATAL/PANIC/statement_timeout/canceling_statement/connection_reset/broken_pipe/out_of_memory/no_space terms. No request-level cause is reconstructed from absence."
+    }
+  ],
+  "actualObservations": {
+    "acceptedCAS": 290,
+    "expectedCAS": 500,
+    "attemptedMutationEnvelopes": 291,
+    "actualNativeCASCalls": 290,
+    "unacknowledgedEnvelopes": 1,
+    "unacknowledgedNativeCASCalls": 0,
+    "errorEnvelopeIndex": 290,
+    "errorCallbackRuns": 0,
+    "errorEnvelopeWallMs": 10339.606478999951,
+    "error": {
+      "name": "Error",
+      "reason": "details-retained-private"
+    },
+    "completeAuthMaximumWallMs": 11681.541406999982,
+    "completeNativeCASMaximumWallMs": 6150.820550000004,
+    "commonKernelPeakBytes": 1444556800,
+    "requiredReserveBytes": 409600000,
+    "observedReserveBytes": 603443200,
+    "observedReservePercent": 29.465,
+    "peakAfterIndependentNativeAuditBytes": 1444556800,
+    "projectionBytes": null,
+    "peakPlus64MiBBytes": 1511665664,
+    "unknownProjectionRoomBytes": 126734336,
+    "durableRecords": 8424,
+    "authStartedRecords": 581,
+    "authFinishedRecords": 581,
+    "PGStatisticsPoints": 13,
+    "walBytesCumulativeInitial": "120168018",
+    "walBytesCumulativeFinal": "1075781447",
+    "walPhysicalBytesInitial": 134217728,
+    "walPhysicalBytesFinal": 134217728,
+    "checkpointsInitial": 2,
+    "checkpointsFinal": 17,
+    "autovacuumCounterInitial": 2,
+    "autovacuumCounterFinal": 93,
+    "tempBytesFinal": 0,
+    "tempFilesFinal": 0,
+    "naturalGCCounts": {
+      "1": 2431,
+      "8": 961,
+      "4": 961
+    },
+    "naturalGCMaximumPauseMs": 526.3779510036111,
+    "profileActivations": 0,
+    "actualUnitExecutions": 0,
+    "paidModelCalls": 0,
+    "primaryPostgresLogNegativeErrorTermCounts": {
+      "ERROR": 0,
+      "FATAL": 0,
+      "PANIC": 0,
+      "statement_timeout": 0,
+      "canceling statement": 0,
+      "connection reset": 0,
+      "broken pipe": 0,
+      "out of memory": 0,
+      "no space": 0
+    }
+  },
+  "nativeFinal": {
+    "schema": "helmut-w15-atomic-RAM-B-final-readonly/1",
+    "status": "PASS_RETAINED_ALL3501_POSTIMAGES_AND_ZERO_ONLY_NOT_RAM_ACCEPTANCE",
+    "reviewer": "independent atomic_integration_audit",
+    "observedAtUTC": "2026-10-28T15:57:07.246603+00:00",
+    "nativeReadOnlyTransactions": 1,
+    "database": "helmut_w15_memory_atomic_20261028b",
+    "metadata": {
+      "kind": "metadata",
+      "active": 0,
+      "database": "helmut_w15_memory_atomic_20261028b",
+      "profiles": 500,
+      "readonly": "on",
+      "identities": 501,
+      "mainUsageRows": 6000,
+      "physicalUsageRows": 6000,
+      "physicalAuthHasUsage": false
+    },
+    "logicalAuthExactlyPreservedExcluding": [
+      "freshRevision",
+      "diagnosticProbeSequence"
+    ],
+    "observedProbeSequence": 289,
+    "authUsageRows": 6000,
+    "allHistoricalAndInertAuthFieldsEqual": true,
+    "exactAuthPostimages": 1,
+    "exactStorePostimages": 1000,
+    "exactBriefingPostimages": 2500,
+    "totalExactPostimages": 3501,
+    "kernelBeforeAudit": {
+      "atUTC": "2026-10-28T15:56:54.671904+00:00",
+      "peak": 1444556800,
+      "current": 357724160,
+      "limit": "2048000000",
+      "swapMax": "0",
+      "swap": 0,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "kernelAfterAudit": {
+      "atUTC": "2026-10-28T15:57:07.245049+00:00",
+      "peak": 1444556800,
+      "current": 358064128,
+      "limit": "2048000000",
+      "swapMax": "0",
+      "swap": 0,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "privateRawPin": {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_B_NATIVE_FINAL_PRIVATE.jsonl",
+      "bytes": 120268457,
+      "sha256": "4b6b2cb6f6bf997454af46ae3bc6100453d3ed833ae354321df9c23f6cf35f6e"
+    },
+    "workloadOrHTTPAttempts": 0,
+    "databaseWrites": 0,
+    "activations": 0,
+    "retryAllowed": false
+  },
+  "originalControllerZeroState": "UNKNOWN_NULL_RETAINED",
+  "independentConfirmedZero": true,
+  "missingPostgrestStopReceipt": "UNCHANGED_UNKNOWN",
+  "laterOwnedProcessObservation": {
+    "schema": "helmut-w15-root-readonly-owned-process-observation/1",
+    "recordedAtUTC": "2026-10-28T15:59:23.325239+00:00",
+    "method": "One actual cached Node /proc inspection, excluded the inspecting process, matched owned command lines against /tmp/w15-memory-atomic-20261028b; no signal, SQL, restart or write request",
+    "ownedLiveProcesses": [],
+    "ownedObserved": [],
+    "commonKernelPeakBytes": 1444556800,
+    "commonCurrentBytesAtObservation": 367247360,
+    "observationTimestampNotRetainedByOriginalCommand": true,
+    "historicalMissingPostgrestStopReceiptPreserved": true,
+    "newDiagnosticAttempt": false
+  },
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.py",
+      "bytes": 22527,
+      "sha256": "1ad6a44ad7f7bf4696579d2b9c00ab1b3ae109c204ca417690891114785c99fd"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.js",
+      "bytes": 12990,
+      "sha256": "ad35b95c28360fc79799b3f72c34afaa1a0e85815622b0e383f4cdbd11f19338"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-sql-preflight.py",
+      "bytes": 11247,
+      "sha256": "7b8665c2d6fae085f05216f25418bc8afc93e8afd90ba7ba822f414523b101ad"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 44655,
+      "sha256": "4fe9b65671af956a3ec88e82b43e2a9af48f1709271808c41381824583428ec8"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 43294,
+      "sha256": "1dc68b22e57f69e191693693766e1628e83b0c2253fb3c22d83791ebbb3ce1cd"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 4335,
+      "sha256": "e2ac57c7f7f47740ca98d1f48e767ab540a6d10af9c4d5041cde7fdf889b0482"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 3018,
+      "sha256": "95c24fa1ccd2e47467cbd22ecfb89e69ca441fc9fb9c8a21fab8c4583ce78a8b"
+    },
+    {
+      "path": "scripts/fixtures/w15-local-memory-budget.json",
+      "bytes": 641,
+      "sha256": "83414ddc04a025b20eedd9119657d62689f8e18d2f660b8a3bad85556e2566c7"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.json",
+      "bytes": 115,
+      "sha256": "acffec2e146c8b104605eb27b52a02822cb189f0c0468303fa2061240cc7bff2"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.js",
+      "bytes": 1096,
+      "sha256": "7fde8ef7bd10210da3d20ffb9d03fe9115ec4cf1716d45a2a79faf24ad8bc994"
+    },
+    {
+      "path": "scripts/fixtures/w15-atomic-integration-target.json",
+      "bytes": 299,
+      "sha256": "e396b8bf990df0d773211e8c1483c938e3b57f3787481891334cc73d51c0abc5"
+    },
+    {
+      "path": "scripts/fixtures/z3-plattform.js",
+      "bytes": 28609,
+      "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 545054,
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "lib/helmut/auth-store-cas.js",
+      "bytes": 2753,
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-direct-codec.js",
+      "bytes": 13651,
+      "sha256": "f4390028c1c8f7cad40899c74cf2e5b3203f542b5617af48c3c56aecbbf22645"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
+      "bytes": 12237,
+      "sha256": "bc2409e35d68d52d0ba92914ffa1e427de42da738b73197e9bf7fe428f71b5fe"
+    },
+    {
+      "path": "supabase/proposals/auth_usage_atomic_local.sql",
+      "bytes": 20726,
+      "sha256": "5a8c07670354b504c85984618999feaa93f78f3107f96236ce61b2f7bbcd438a"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 24850,
+      "sha256": "49c6f9daf1e5e1cf3d793f2400fbe555de49c6049c28d19522e820deb224c926"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-postgrest-stop-check.py",
+      "bytes": 8418,
+      "sha256": "d29d2895b2440ee03f2e25f2209f18c9df92ae5372ccc55fd5f0500a538049a7"
+    },
+    {
+      "path": "scripts/fixtures/w15-end500-memory-fixture.js",
+      "bytes": 17280,
+      "sha256": "cca76fa363e1a85801241a6b1a58b8d559d0d57d757a0488170345ebd66bd209"
+    },
+    {
+      "path": "server.js",
+      "bytes": 547868,
+      "sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9"
+    },
+    {
+      "path": "scripts/lokal.js",
+      "bytes": 5431,
+      "sha256": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b"
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "CONTROLLER_RESULT.SAFE.json",
+      "bytes": 1046,
+      "sha256": "7c9198ed0cdd5e657302f0e0e378a20fc5547e72272758c89251c0fd6aee96c7"
+    },
+    {
+      "path": "FORWARD_RESULT.SAFE.json",
+      "bytes": 1412938,
+      "sha256": "9ffd105a9626d7f3038c690e533986114468ee79e502aea7917da912f3b7c805"
+    },
+    {
+      "path": "run-observations.SAFE.jsonl",
+      "bytes": 1730090,
+      "sha256": "00acf4a3741321e4a9a33602e62b5cd21ec2465a65c07207729e242a23595ef4"
+    },
+    {
+      "path": "outer-progress.SAFE.jsonl",
+      "bytes": 4191102,
+      "sha256": "3d51f6bb952f13975d33105dea3b06c53eed169f021cf743cc6807c487213498"
+    },
+    {
+      "path": "stop-postgrest.SAFE.jsonl",
+      "bytes": 112,
+      "sha256": "b8a6b00b288da7002a53ad3cee9ca5593a48d61fa575b2c3f24d79f8c9931bcb"
+    },
+    {
+      "path": "stop-gateway.SAFE.jsonl",
+      "bytes": 206,
+      "sha256": "b9575a01a859f8017823caac0f2db7a7c8b5393fca229fb2bb5e6cdf14ac8f77"
+    },
+    {
+      "path": "stop-run.SAFE.jsonl",
+      "bytes": 92,
+      "sha256": "211dbbbc098ffae83ce2a37f60e6d3f24cff7abb17fd05ae0924d3981614b1dd"
+    },
+    {
+      "path": "stop-setup.SAFE.jsonl",
+      "bytes": 94,
+      "sha256": "7dd55ea601d77a1bbf10c329ed6a172157f96264d8fe714aa7a22bc36395b7e6"
+    },
+    {
+      "path": "RAM_B_NATIVE_FINAL_INDEPENDENT_READONLY.SAFE.json",
+      "bytes": 1933,
+      "sha256": "b76b6fb155593f3b1ada4c93c2267b3a5605d04dd10d38f12c5e41b9ea78b168"
+    },
+    {
+      "path": "RAM_B_KERNEL_BEFORE_INDEPENDENT_AUDIT.SAFE.json",
+      "bytes": 271,
+      "sha256": "4ae776cd25f33617f43edf3594de07f849599af4d50751621d27f128f893c125"
+    },
+    {
+      "path": "RAM_B_KERNEL_AFTER_INDEPENDENT_AUDIT.SAFE.json",
+      "bytes": 271,
+      "sha256": "a23029789f697079cc6d6d587502331f9e1859b28c3e504fb07102e02e95ea91"
+    },
+    {
+      "path": "RAM_B_OWNED_PROCESS_READONLY.SAFE.json",
+      "bytes": 615,
+      "sha256": "360db7ecb40ebc75bc8b60afcaa01352cbd96566d46dce248111154de0c2587a"
+    },
+    {
+      "path": "RAM_B_POSTGRES_PRIMARY.PRIVATE.log",
+      "bytes": 13565,
+      "sha256": "b47aade5722ae282e48009cb0f942ee56322503539ffe9a21e58f5cb850f24cd"
+    }
+  ],
+  "historicalEleventhOutcome": "UNCHANGED_UNKNOWN_NOT_REPLAYED",
+  "newFailureCause": "UNKNOWN_NOT_RECONSTRUCTABLE_FROM_RETAINED_METADATA",
+  "full500Ready": false,
+  "full500Started": false,
+  "productionProof": false,
+  "automaticRetryAllowed": false,
+  "scopeLimits": [
+    "Observed reserve to290only;completed500trajectory/rest-growth remain open.",
+    "Native preservation/zero pass is not execution/quality/500/Productionacceptance.",
+    "No furtherDBquery,signal,restart or retry after single approved independent native stream."
+  ]
+}

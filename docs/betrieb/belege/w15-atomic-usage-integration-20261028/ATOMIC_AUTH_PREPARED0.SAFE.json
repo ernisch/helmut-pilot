@@ -1,0 +1,256 @@
+{
+  "status": "PASS_ATOMIC_AUTH30_AND_REAL_SIGNED_PREPARED0",
+  "runtime": {
+    "aktiv": 0,
+    "endeAm": "2026-10-28T16:21:31.814Z",
+    "gesamt": 500,
+    "idsHash": "4d6d7b169831128cc69f0f3beb04c2fe05b57b7b4f528934b52e5c155f54e258",
+    "version": "helmut-synthetik500-status/1",
+    "zustand": "vorbereitet",
+    "paketHash": "aa79ae64ab76bb96b3190eea1352366cffe2d448d4c28d5407da480096d52cc5",
+    "operationId": "synthetik500-w15-processing-1793193691814",
+    "beobachtetAm": "2026-10-28T13:22:47.143Z",
+    "identitaeten": 501,
+    "manifestHash": "8053a9ec31f5c130c5c782065d0eadbd8c75972c027ab7ecb479531c181a1842",
+    "productionCommit": "d66a94dc13f5d93310e6c963f36c4bb4ca21d621",
+    "fremdUnveraendert": true,
+    "profilManifestHash": "d53d85c156e80020d98b16aa9cc82d39b50d3069a4b5ee332884f9a27cd022fd",
+    "serviceContractHash": "78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f",
+    "fachfelderUnveraendert": true,
+    "quittungBindungBestaetigt": true
+  },
+  "selector": {
+    "operationId": "synthetik500-w15-processing-1793193691814",
+    "commandHash": "26e54b003ee24cbba1f48c7bf63b0a60c489d9b34823520ad2b64f1484f4c7c9"
+  },
+  "inactiveRuntimeDenied": "synthetik500-production-direct-exact500-active-runtime-required",
+  "httpStatusPositions": 1500,
+  "historicalUsageRows": 5000,
+  "preservedHistoryHash": "cab5effca36a1fd5e6586cca3f3a4c0c6e20ec495d1dbe83c80d0deeac9eb97f",
+  "newZeroCostSkipRows": 1,
+  "sourceQualifierRepeated": false,
+  "authCoverage": {
+    "allEnvelopesAcknowledgedUnder30": true,
+    "allWritesAssigned": true,
+    "allWritesAcknowledged": true,
+    "allWritesBoundedByEnvelope": true,
+    "eachEnvelopeHasWrite": true,
+    "observedCASWrites": 6,
+    "mutationEnvelopes": 5,
+    "usageEnvelopes": 1,
+    "usage1000": false,
+    "pass": true
+  },
+  "authTimings": {
+    "observedFullCalls": 6,
+    "completedFullCalls": 6,
+    "observedCASWrites": 6,
+    "completedCASWrites": 6,
+    "maximumFullCallWallMs": 2491.931300000002,
+    "maximumCASWallMs": 1556.4365380000017,
+    "incompleteFullCalls": 0,
+    "incompleteCASWrites": 0,
+    "perAPI": {
+      "acquirePipelineLock": {
+        "count": 1,
+        "maximumWallMs": 821.509843
+      },
+      "public-mutation": {
+        "count": 3,
+        "maximumWallMs": 2491.931300000002
+      },
+      "releasePipelineLock": {
+        "count": 1,
+        "maximumWallMs": 783.9985190000002
+      },
+      "usage-sink": {
+        "count": 1,
+        "maximumWallMs": 714.1822659999998
+      }
+    },
+    "timingsUseWholeCallThroughACK": true
+  },
+  "authMutations": [
+    {
+      "id": 1,
+      "kind": "pipeline-lock",
+      "api": "acquirePipelineLock",
+      "lockKeyHash": "ddf338bdf20d48c91f16a0561ccaa17cb68e92139d2bee26bb54296029f3359a",
+      "index": null,
+      "beginMS": 790.498818,
+      "wallMs": 821.509843,
+      "storageAcknowledged": true,
+      "blobAcknowledged": false,
+      "acknowledged": true,
+      "acquired": true,
+      "ackMS": 1612.006855,
+      "endMS": 1612.008661
+    },
+    {
+      "id": 2,
+      "kind": "public-mutation",
+      "index": null,
+      "beginMS": 1613.974838,
+      "callbackRuns": 1,
+      "wallMs": 738.2580419999999,
+      "callbackMs": 0.05009499999982836,
+      "acknowledged": true,
+      "ackMS": 2352.229342,
+      "endMS": 2352.23288
+    },
+    {
+      "id": 4,
+      "kind": "pipeline-lock",
+      "api": "releasePipelineLock",
+      "lockKeyHash": "ddf338bdf20d48c91f16a0561ccaa17cb68e92139d2bee26bb54296029f3359a",
+      "index": null,
+      "beginMS": 3070.33695,
+      "wallMs": 783.9985190000002,
+      "storageAcknowledged": true,
+      "blobAcknowledged": false,
+      "acknowledged": true,
+      "ackMS": 3854.33363,
+      "endMS": 3854.335469
+    },
+    {
+      "id": 5,
+      "kind": "public-mutation",
+      "index": null,
+      "beginMS": 14331.173551,
+      "callbackRuns": 1,
+      "wallMs": 716.0871540000007,
+      "callbackMs": 0.37870099999963713,
+      "acknowledged": true,
+      "ackMS": 15047.257275,
+      "endMS": 15047.260705
+    },
+    {
+      "id": 6,
+      "kind": "public-mutation",
+      "index": null,
+      "beginMS": 15830.062224,
+      "callbackRuns": 1,
+      "wallMs": 2491.931300000002,
+      "callbackMs": 0.28217600000061793,
+      "acknowledged": true,
+      "ackMS": 18321.991109,
+      "endMS": 18321.993524
+    }
+  ],
+  "usageSinks": [
+    {
+      "id": 3,
+      "kind": "usage-sink",
+      "index": null,
+      "beginMS": 2354.814307,
+      "wallMs": 714.1822659999998,
+      "storageAcknowledged": true,
+      "storageMode": "relational-atomic-v1",
+      "blobAcknowledged": false,
+      "acknowledged": true,
+      "usageReceiptId": "llm-1793193757728-3z8rzf",
+      "ackMS": 3068.993396,
+      "endMS": 3068.996573
+    }
+  ],
+  "casWrites": [
+    {
+      "id": 0,
+      "envelopeId": 1,
+      "index": null,
+      "rowId": "main-auth",
+      "storageMode": "relational-atomic-v1",
+      "beginMS": 1306.724487,
+      "wallMs": 303.72278500000016,
+      "acknowledged": true,
+      "ackMS": 1610.445203,
+      "endMS": 1610.447272
+    },
+    {
+      "id": 1,
+      "envelopeId": 2,
+      "index": null,
+      "rowId": "main-auth",
+      "storageMode": "relational-atomic-v1",
+      "beginMS": 2039.708728,
+      "wallMs": 311.47637299999997,
+      "acknowledged": true,
+      "ackMS": 2351.183474,
+      "endMS": 2351.185101
+    },
+    {
+      "id": 2,
+      "envelopeId": 3,
+      "index": null,
+      "rowId": "main-auth",
+      "storageMode": "relational-atomic-v1",
+      "beginMS": 2726.009025,
+      "wallMs": 340.60518900000034,
+      "acknowledged": true,
+      "ackMS": 3066.61339,
+      "endMS": 3066.614214
+    },
+    {
+      "id": 3,
+      "envelopeId": 4,
+      "index": null,
+      "rowId": "main-auth",
+      "storageMode": "relational-atomic-v1",
+      "beginMS": 3490.023143,
+      "wallMs": 361.00418100000024,
+      "acknowledged": true,
+      "ackMS": 3851.026271,
+      "endMS": 3851.027324
+    },
+    {
+      "id": 4,
+      "envelopeId": 5,
+      "index": null,
+      "rowId": "main-auth",
+      "storageMode": "relational-atomic-v1",
+      "beginMS": 14706.271939,
+      "wallMs": 339.6073099999994,
+      "acknowledged": true,
+      "ackMS": 15045.878201,
+      "endMS": 15045.879249
+    },
+    {
+      "id": 5,
+      "envelopeId": 6,
+      "index": null,
+      "rowId": "main-auth",
+      "storageMode": "relational-atomic-v1",
+      "beginMS": 16761.760552,
+      "wallMs": 1556.4365380000017,
+      "acknowledged": true,
+      "ackMS": 18318.195753,
+      "endMS": 18318.19709
+    }
+  ],
+  "unitEntries": 0,
+  "profileActivations": 0,
+  "providerCalls": 0,
+  "full500Acceptance": false,
+  "memory": {
+    "currentBytes": 504057856,
+    "configuredLimit": "2048000000",
+    "swapMaximum": "0",
+    "swapCurrentBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "version": "helmut-w15-memory-check/2",
+    "comparisonBudgetBytes": 2048000000,
+    "minimumReservePercent": 20,
+    "requiredReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "kernelLifetimePeakBytes": 719044608,
+    "comparisonReserveBytes": 1328955392,
+    "reserveMeetsContract": true
+  }
+}

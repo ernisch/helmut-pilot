@@ -1,0 +1,167 @@
+{
+  "status": "PASS_NEW_OBSERVATION_LIFECYCLE_WIRING_ONLY",
+  "scope": "CONTROLLED_LOCAL_LIFECYCLE_ONLY_NOT_AUTH_STORAGE_COST_OR_MEMORY_ACCEPTANCE",
+  "prestartReview": {
+    "path": "/workspace/shared/helmut-w15-memory-lifecycle-check-20261028d/REPORTS/LIFECYCLE_PRESTART_REVIEW_D.SAFE.json",
+    "sha256": "8f114ce9888f949510b44dc9dace225efdb0c619b03ae672c402d866bd79c1de",
+    "sourcePins": [
+      {
+        "path": "scripts/synthetik-500-w15-memory-lifecycle-check.js",
+        "bytes": 12277,
+        "sha256": "ff24bb5ea2cb75e0408842f0107c97177e080ddb60f0789b515c32a524641551"
+      },
+      {
+        "path": "scripts/synthetik-500-w15-memory-forward.js",
+        "bytes": 17599,
+        "sha256": "939d7c9c71d4f39161f2693034b057ac8167d4dbd4eee638c7b4252c0f797efe"
+      },
+      {
+        "path": "scripts/fixtures/w15-durable-observations.js",
+        "bytes": 13410,
+        "sha256": "0737e8dd5c570f65b8e57dba1670870497eca8c889b340a5cc6b4d54ffd3356f"
+      },
+      {
+        "path": "scripts/fixtures/w15-auth-measurement-report.js",
+        "bytes": 5598,
+        "sha256": "a49ff1c7b5b3c3b4eae789a580894d4cb5e847d678ee9678811f8919bd95db22"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "status": "PASS_NEW_FILE_LIFECYCLE",
+      "stops": 1,
+      "closes": 1,
+      "lines": 2,
+      "journal": {
+        "completedWrites": 2,
+        "completedSyncs": 2,
+        "maximumWriteMs": 1.4359170000000034,
+        "maximumSyncMs": 2.5082469999999972,
+        "maximumPendingBytes": 213,
+        "lastIO": {
+          "kind": "sync",
+          "sequence": 1,
+          "beginMS": 99.484922,
+          "endMS": 100.627357,
+          "durationMs": 1.142435000000006,
+          "acknowledged": true,
+          "pendingBytes": 213,
+          "pendingEntries": 1,
+          "acknowledgedSequence": 1
+        },
+        "acknowledgedSequence": 1,
+        "nextSequence": 2,
+        "pendingBytes": 0,
+        "pendingEntries": 0,
+        "maximumAllowedPendingBytes": 8388608,
+        "running": false,
+        "status": "DURABLE_ACKNOWLEDGED",
+        "failureCode": null,
+        "closed": true,
+        "descriptorRetainedOpen": false
+      }
+    },
+    {
+      "mode": "read",
+      "status": "PASS_OWNED_SIGTERM_CONTROLLED_PROMISE_LIFECYCLE",
+      "exit": {
+        "code": 143,
+        "signal": null
+      },
+      "accepted": true,
+      "finalCounters": {
+        "loopStarts": 1,
+        "nativeCalls": 0,
+        "acceptedPostimages": 0,
+        "laterCalls": 0
+      },
+      "preservedInitialUnknown": true,
+      "exactControlledFinalTiming": true,
+      "journal": {
+        "completedWrites": 3,
+        "completedSyncs": 3,
+        "maximumWriteMs": 1.7537880000000001,
+        "maximumSyncMs": 2.7020669999999996,
+        "maximumPendingBytes": 684,
+        "lastIO": {
+          "kind": "sync",
+          "sequence": 2,
+          "beginMS": 100.697971,
+          "endMS": 101.845588,
+          "durationMs": 1.147617000000011,
+          "acknowledged": true,
+          "pendingBytes": 183,
+          "pendingEntries": 1,
+          "acknowledgedSequence": 2
+        },
+        "acknowledgedSequence": 2,
+        "nextSequence": 3,
+        "pendingBytes": 0,
+        "pendingEntries": 0,
+        "maximumAllowedPendingBytes": 8388608,
+        "running": false,
+        "status": "DURABLE_ACKNOWLEDGED",
+        "failureCode": null,
+        "closed": true,
+        "descriptorRetainedOpen": false
+      }
+    },
+    {
+      "mode": "sent",
+      "status": "PASS_OWNED_SIGTERM_CONTROLLED_PROMISE_LIFECYCLE",
+      "exit": {
+        "code": 143,
+        "signal": null
+      },
+      "accepted": true,
+      "finalCounters": {
+        "loopStarts": 1,
+        "nativeCalls": 1,
+        "acceptedPostimages": 0,
+        "laterCalls": 0
+      },
+      "preservedInitialUnknown": true,
+      "exactControlledFinalTiming": true,
+      "journal": {
+        "completedWrites": 3,
+        "completedSyncs": 3,
+        "maximumWriteMs": 1.5668529999999947,
+        "maximumSyncMs": 2.118821000000011,
+        "maximumPendingBytes": 684,
+        "lastIO": {
+          "kind": "sync",
+          "sequence": 2,
+          "beginMS": 90.795096,
+          "endMS": 92.81581,
+          "durationMs": 2.020713999999998,
+          "acknowledged": true,
+          "pendingBytes": 183,
+          "pendingEntries": 1,
+          "acknowledgedSequence": 2
+        },
+        "acknowledgedSequence": 2,
+        "nextSequence": 3,
+        "pendingBytes": 0,
+        "pendingEntries": 0,
+        "maximumAllowedPendingBytes": 8388608,
+        "running": false,
+        "status": "DURABLE_ACKNOWLEDGED",
+        "failureCode": null,
+        "closed": true,
+        "descriptorRetainedOpen": false
+      }
+    }
+  ],
+  "error": null,
+  "retryAllowed": false,
+  "historicalJournalReplay": false,
+  "IOFaultInjection": false,
+  "HTTP": 0,
+  "databaseCalls": 0,
+  "AuthCalls": 0,
+  "modelCalls": 0,
+  "profileActivations": 0,
+  "UnitCalls": 0,
+  "securityOrMemoryAcceptance": false
+}

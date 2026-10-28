@@ -1,0 +1,137 @@
+{
+  "schema": "helmut-w15-independent-final-publication-review/1",
+  "status": "PASS_STATIC_DOCUMENTATION_PRIVACY_AND_EVIDENCE",
+  "reviewedAtUTC": "2026-10-28T18:47:42.264055+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "actualFileCheckSource": {
+    "runBaseHEAD": "872a1bcf0193e1cf082f1754b9b7b8ad8c1254a3",
+    "changedScriptSHA256": "7984a69b9a93c5700610708c0c324262e38a9c895830d7116972c30c722c22de",
+    "subsequentlyVersionedByteIdenticalCommit": "7c4c25a7"
+  },
+  "manifestEntriesReviewed": 82,
+  "manifestPayloadBytes": 4293906,
+  "historicalEntriesUnchanged": 77,
+  "newTechnicalFiles": 5,
+  "checks": [
+    {
+      "name": "manifest",
+      "status": "PASS",
+      "finding": "82entries allsize/hashcorrect;77historicalentriesunchanged;5newtechnicalSAFEfilesbyte-identicaltoprivatereviewedoutputs."
+    },
+    {
+      "name": "new_PASS_scope",
+      "status": "PASS",
+      "finding": "ExactlyonenewboundedfileDrain+4componentcasesPASS,reusednormalSync/Asynccomparisons,nofreshbaselineorworkloadretry. All10820payloads,10822writes/syncACKs,lastACK10821,pending0/closed exact."
+    },
+    {
+      "name": "signal_receipt",
+      "status": "PASS",
+      "finding": "OneownedTERMaccepted,actualchild143/null,durableCHILD_EXITbeforeresultassertion,deadlineKillAcceptednull. Realchildexitproofseparatefromlaterabsence;nohistoricalsignalquittunginvented."
+    },
+    {
+      "name": "faults",
+      "status": "PASS",
+      "finding": "AllfourpredeclaredcasescompletedwithindividualdurablePASSreports. Injectednegativeerrorslabeledassuch;notbusinessAuth/securitytestsoractualDBfailures."
+    },
+    {
+      "name": "old_evidence",
+      "status": "PASS",
+      "finding": "OldIOoverallFAILandmissingexitreceiptUNKNOWNremainunchanged;Cunderlyingcommon8.4sgapUNKNOWN,oldB/eleventhUNKNOWNpreserved. No6500/RAM/Auth30/Unit60/ProductionPASSclaimed."
+    },
+    {
+      "name": "disk_start",
+      "status": "PASS",
+      "finding": "1563443200Bfreeiscitedactualindependentobservation;old1.88GBplanfitfailsbutactualadditionalneednotinvented. SizeRootFs/SizeRw/BASEoverlapnotdouble-counted;diskstartUNKNOWNblocksnewcopy/integration/diagnosisbeforeanynewresource. NoENOSPCclaim."
+    },
+    {
+      "name": "unused_authority",
+      "status": "PASS",
+      "finding": "ConditionalnewEnd500diagnosisunused;noAsyncEnd500wiring/newDB/container/runexecutedornonreviewedcodepublished. Laterfreshvalidstart/resourcebindingsrequired,nofullMock500permission."
+    },
+    {
+      "name": "privacy",
+      "status": "PASS",
+      "finding": "FivepublicJSONscontaintechnicalenums/counts/timings/ACK/sourcehashes/ephemeralprocessPIDonly;noAuthoriginalcontents,JWT,keys,passwords,headers,URLsorpersonalidentities. Rawsource10820payloadlognotGit."
+    },
+    {
+      "name": "source_CI",
+      "status": "PASS",
+      "finding": "ActualrunHEAD872withchangedscriptSHA7984a69b subsequentlybyte-identicalversioned7c4c25a7;sourcepinsmatchreviewedrun.319CIgreenhistorical;872CIonlylastobservedrunningstated,notnewheadgreen. BrowseractualskipandVercelconfigurationissuekeptseparate."
+    },
+    {
+      "name": "documentation",
+      "status": "PASS",
+      "finding": "CURRENT_STATE26830chars<30000;alllocalMarkdownlinksexist. Proposedoldpatchmarkedhistorical,latestgenuinefdatasyncimplementationaccuratelydescribed."
+    },
+    {
+      "name": "review_boundaries",
+      "status": "PASS",
+      "finding": "Finalreviewonlyexistingfiles/hash/metadata,0tests/HTTP/SQL/signals/workloads/sourcechanges. NewPASSnotrepeated;noadditionalinvestigation."
+    }
+  ],
+  "documentAndManifestPins": [
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/docs/CURRENT_STATE.md",
+      "bytes": 27129,
+      "sha256": "fa10df54257446dd9bb462e2ff20ec2bcf86cfc3761aa8a790a0baa1973a1422"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/docs/betrieb/w15-atomic-usage-integration-20261028.md",
+      "bytes": 38831,
+      "sha256": "56b7eb60d935c1dc305f2000fee65c7cd5fad93eded18ce513a43dfd34e7d7d8"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/docs/betrieb/belege/w15-atomic-usage-integration-20261028/MANIFEST.SAFE.json",
+      "bytes": 18720,
+      "sha256": "3201c42ce1d497ea049aab51b8b10d46d5a1a841229d10bde91815b39560facd"
+    }
+  ],
+  "newPublicFilePins": [
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_CHILD_EXIT.SAFE.json",
+      "bytes": 1078,
+      "sha256": "41cbaf498c094740bb6fba3cc0f7344ffee08d3ff1de18179e4701a5e8d582f4"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_PRESTART_REVIEW.SAFE.json",
+      "bytes": 8754,
+      "sha256": "06c36cd06bf8aabe39a17004ea5fb2083f0a40b701120140ca7160599f29c4ec"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_RECEIPT.SAFE.json",
+      "bytes": 923,
+      "sha256": "0265fd95a978de94a038cb72ff54f51a1b43dc96a745a79c08b2ff6c9667b12c"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json",
+      "bytes": 12102,
+      "sha256": "25157d93434b749c8dbd38fa9dc5e5336b62f7be328f414ea5449c715525b3ac"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_RUN_RESULT.SAFE.json",
+      "bytes": 3953,
+      "sha256": "eb3d98ce4cdbfef6c68a9abef2797d6f74480a515e93069470b82bd5d9abfc74"
+    }
+  ],
+  "actualIndependentDrainReviewSHA256": "25157d93434b749c8dbd38fa9dc5e5336b62f7be328f414ea5449c715525b3ac",
+  "reviewActions": {
+    "tests": 0,
+    "HTTP": 0,
+    "SQL": 0,
+    "signals": 0,
+    "sourceChanges": 0
+  },
+  "scopeVerdict": {
+    "publication": "PASS",
+    "journalControlledDrainAndFourCases": "PASS_SCOPED_COMPONENT",
+    "End500DiskStart": "UNCHANGED_UNKNOWN_BLOCKED",
+    "newEnd500Started": false,
+    "Mock500Acceptance": false,
+    "oldFailuresAndUnknowns": "UNCHANGED"
+  },
+  "limitations": [
+    "Current82entrymanifest excludes thisnewreview;copyingrequiresfreshmanifestentry/pin.",
+    "ThispublicationreviewdoesnotauthorizeDiskchanges/deletion/newinfraorEnd500start.",
+    "NewheadautomaticCImustberesolvedseparatelybyexacthead;no manualtests/workflowsstartedhere."
+  ]
+}

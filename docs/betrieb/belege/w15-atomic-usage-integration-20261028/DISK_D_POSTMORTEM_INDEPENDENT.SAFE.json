@@ -1,0 +1,172 @@
+{
+  "schema": "helmut-w15-atomic-memory-D-disk-postmortem-independent/1",
+  "status": "FAIL_DISK_RESERVE_BEFORE_FIRST_CAS_PHYSICAL_VFS_COMPONENT_UNKNOWN",
+  "reviewedAtUTC": "2026-10-28T19:41:57.914795+00:00",
+  "scope": "Existingreports+standardDockerinspect/imageinspect/info+readonlyhostfilemetadata/fullhashes; no PG query or privileged filesystem access",
+  "actualRun": {
+    "attempts": 1,
+    "retryAllowed": false,
+    "completedCAS": 0,
+    "units": 0,
+    "modelCalls": 0,
+    "profileActivations": 0,
+    "finalNativeFullAudit": null,
+    "full500Acceptance": false,
+    "existingZeroReceipt": {
+      "activeProfiles": 0,
+      "confirmed": true,
+      "failure": null,
+      "readOnly": true,
+      "profileActivations": 0
+    },
+    "zeroWasNotRequeriedByReviewer": true,
+    "serviceClosure": {
+      "status": "FAIL_OR_UNKNOWN",
+      "reason": "owned-service-exit-unconfirmed",
+      "type": "FileNotFoundError"
+    }
+  },
+  "diskTimeline": {
+    "beforeCreateAvailableBytesRootReported": 1553272832,
+    "beforeCreateIsRootSuppliedObservationNotIndependentlyRequeried": true,
+    "firstWatcherAtUTC": "2026-10-28T19:34:01.654770+00:00",
+    "firstWatcherAvailableBytes": 641568768,
+    "preWatcherNetConsumptionFromReportedStartBytes": 911704064,
+    "firstFailureAtUTC": "2026-10-28T19:34:22.804291+00:00",
+    "firstFailure": {
+      "type": "AssertionError",
+      "reason": "w15-forward-disk-closure-reserve"
+    },
+    "firstFailureAvailableBytes": 224247808,
+    "stopFloorBytes": 234881024,
+    "netConsumptionSinceWatcherAtFirstFailure": 417320960,
+    "finalControllerDisk": {
+      "availableBytes": 223236096,
+      "initialBytes": 641568768,
+      "consumedSinceWatcherBytes": 418332672,
+      "phase": "processing",
+      "requiredFreeBytes": 234881024,
+      "atUTC": "2026-10-28T19:34:24.334120+00:00"
+    },
+    "laterReviewerDfAvailableBytes": 222945280,
+    "manifestObservationAvailableBytes": 222924800,
+    "noENOSPCProven": true
+  },
+  "independentDockerMetadata": {
+    "driver": "vfs",
+    "root": "/var/lib/docker",
+    "D": {
+      "id": "911e09058f6262b5f7ab1c2c1a2b495a03e81ab1d0d93a32772e7ab415c1d408",
+      "SizeRw": 172526201,
+      "SizeRootFs": 609983686,
+      "logicalDifferenceBytes": 437457485
+    },
+    "C": {
+      "id": "de73c6bb253bee9c055dbdac6ab0efa2aaf36a15e04be99fb29f929aa2c9e7f8",
+      "SizeRw": 291308841,
+      "SizeRootFs": 728766326,
+      "logicalDifferenceBytes": 437457485
+    },
+    "cachedImage": {
+      "id": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+      "Size": 437457485,
+      "layers": 14
+    },
+    "DSeedMountReadOnly": true,
+    "DSeedMountSource": "/workspace/shared/helmut-w15-memory-atomic-20261028c/seed.PRIVATE.sql",
+    "DSeedMountDestination": "/run/w15-end500-seed.PRIVATE.sql",
+    "rootDuCanIncludeSameFilesystemReadOnlyBindContents": true,
+    "SizeRootFsSizeRwAndDuAreOverlappingNotAdditive": true
+  },
+  "causalBoundary": {
+    "proven": "Netfree-space reduction before watcher and later guarded seed/setup consumption caused diskclosure-reserve stop; no CAS started. Cached image logicalsize exactlymatchesC/Dlogicalbaseportion. RO seedmount is real.",
+    "hypothesis": "Additional physicalVFS deep-copy/init-layerallocation could account for the omittedrough437MB; metadata and timing support investigation but do not prove actual bytes/ownership.",
+    "unknown": "InternalDocker initlayer physicalallocatedblocks inaccessiblewithoutunapprovedaccess; no bypass attempted. Other sharedfilesystem writers/metadata allocation not fullyisolated.",
+    "noMistakenClaims": [
+      "No proof of a memory leak or failed2GBcap.",
+      "No successfulEnd500/Full500allocationproof.",
+      "No exact437MBphysicalhidden-layerchargeasserted.",
+      "No immediate1.863GBreclaimedcapacityasserted."
+    ]
+  },
+  "memoryContext": {
+    "finalKernelPeakBytes": 548626432,
+    "hardCap": "2048000000",
+    "swapMaximum": "0",
+    "swapBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "initializationOnlyNot500Proof": true
+  },
+  "concreteNextApprovalProposalPin": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/STAGING_DUPLICATES_NEXT_GO.SAFE.json",
+    "bytes": 23955,
+    "sha256": "427c4f8a37cbd5540949d5b03c60b637a39cd6e6e268db795f9ac2bbdd45e00d"
+  },
+  "privateFullMetadataManifestPin": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/STAGING_DUPLICATES_NEXT_GO.PRIVATE.json",
+    "bytes": 30936,
+    "sha256": "d803eb6a15b038e058fbda86e78f723bddac0334b84f1eb8412f473860dab90a"
+  },
+  "proposedCapacityIfActuallyReclaimed": {
+    "uniqueHostFiles": 26,
+    "visibleAllocatedBytes": 1862975488,
+    "arithmeticAvailableBytes": 2085900288,
+    "knownOldPlanPlusLogicalImageRiskBytes": 1949958733,
+    "provisionalArithmeticMarginBytes": 135941555,
+    "capacityRequiresActualFreshDfAndNewReview": true
+  },
+  "sourceEvidencePins": [
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028d/CONTROLLER_RESULT.SAFE.json",
+      "bytes": 1504,
+      "sha256": "e39950f859cf9ab454ac54ac41ef987048ce3449fbcb77024744b032943ebf4c"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028d/outer-progress.SAFE.jsonl",
+      "bytes": 66732,
+      "sha256": "b87990deded00d078487d9d828d62e95f24c9908232a811dd9dc5a4f2ffcdb56"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028d/NATIVE_ZERO.SAFE.json",
+      "bytes": 113,
+      "sha256": "7406b24f929d69e74499288457db78a04b635a665b49a6b0b96500f5672f878e"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028d/RESTORED500_ZERO.SAFE.json",
+      "bytes": 37,
+      "sha256": "eb421a1cb57e3f0936bf5e81a7f65fd347e546412584c49c4d15fd3185cc8895"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028d/READONLY_SEED_MOUNT.SAFE.json",
+      "bytes": 135,
+      "sha256": "faece4484ab8795e7ae0409f0ff1bbe35e9ca17540ed7875e80f090d140c9c51"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028d/SERVICE_CLOSURE.SAFE.json",
+      "bytes": 111,
+      "sha256": "1594a6513bc035432920b713d252a9045d340b05f6dfaed4385cc2ec563cc253"
+    }
+  ],
+  "actions": {
+    "databaseQueries": 0,
+    "databaseWrites": 0,
+    "containerExecQueries": 0,
+    "privilegedAccess": 0,
+    "codeEdits": 0,
+    "deletions": 0,
+    "moves": 0,
+    "links": 0,
+    "compressions": 0,
+    "testOrDiagnosticRuns": 0,
+    "newResources": 0,
+    "onlyNewProtectedReviewArtifactsWritten": true
+  },
+  "nextDiagnosticAuthorized": false
+}

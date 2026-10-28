@@ -7,6 +7,11 @@
       "sha256": "1c043c6d677281adea70dc59c04260e5268944cd2db47a0c8d4b56b719d0e9e7"
     },
     {
+      "path": "lib/helmut/auth-store-cas.js",
+      "bytes": 2753,
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544"
+    },
+    {
       "path": "lib/helmut/berlin-artikelstand.js",
       "bytes": 22910,
       "sha256": "58be8bc840b64eb01a872f673c83e5d75be4b0c6f5a85290282d2a6d2a2ab890"
@@ -145,6 +150,11 @@
       "path": "lib/helmut/lage.js",
       "bytes": 56155,
       "sha256": "b69d8abc8793be120980bfd86f3d4e65682a6f885ddd6d16b10671d4c67995b3"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
     },
     {
       "path": "lib/helmut/matching-begruendung.js",
@@ -318,8 +328,8 @@
     },
     {
       "path": "lib/helmut/testkosten-budget.js",
-      "bytes": 33455,
-      "sha256": "494275be430a51746852472e242eea40e1151529d2bc0191c1cebdbea0255441"
+      "bytes": 33501,
+      "sha256": "012d52bb9cb891c5634a788953861f83299ba632b1b8e614686ad717d7cfdbb7"
     },
     {
       "path": "lib/helmut/understanding-schema.js",
