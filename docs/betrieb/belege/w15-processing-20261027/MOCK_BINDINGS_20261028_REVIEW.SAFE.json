@@ -1,0 +1,437 @@
+{
+  "status": "PASS_INDEPENDENT_REVIEW_OF_FAILED_ALL500_DATA_QUALIFICATION",
+  "qualificationStatus": "FAIL_338_QUALIFIED_162_REJECTED",
+  "scope": "Read existing report and source/original metadata only; no constructor, validator, application, DB or provider execution repeated.",
+  "atUTC": "2026-10-28T05:31:48.114854+00:00",
+  "checks": [
+    {
+      "name": "receipt pin unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "original unchanged normalizedCurrentPolicy",
+      "status": "PASS"
+    },
+    {
+      "name": "original unchanged nativeInventoryHistoricalTemplate",
+      "status": "PASS"
+    },
+    {
+      "name": "original unchanged reviewedMockCandidates",
+      "status": "PASS"
+    },
+    {
+      "name": "original unchanged staticMockTemplates",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin scripts/synthetik-500-w15-mock-bindings-check.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin scripts/fixtures/w15-local-calendar.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin scripts/fixtures/w15-unit0-provider.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin lib/helmut/briefing-lagebindung.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin lib/helmut/lage.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin lib/helmut/ai.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin lib/helmut/lage-textqualitaet.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin lib/helmut/lage-quellenbeleg.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin lib/helmut/briefing-frische.js",
+      "status": "PASS"
+    },
+    {
+      "name": "directory private",
+      "status": "PASS"
+    },
+    {
+      "name": "report private",
+      "status": "PASS"
+    },
+    {
+      "name": "500 unique complete ordered owners",
+      "status": "PASS"
+    },
+    {
+      "name": "sequential indices",
+      "status": "PASS"
+    },
+    {
+      "name": "original owner variant mapping all500",
+      "status": "PASS"
+    },
+    {
+      "name": "all calendar and B-A-F phases pass",
+      "status": "PASS"
+    },
+    {
+      "name": "all genuine B-L contexts observed",
+      "status": "PASS"
+    },
+    {
+      "name": "only explicit calendar changed paths all500",
+      "status": "PASS"
+    },
+    {
+      "name": "all500 source IDs/publication dates exactly original metadata",
+      "status": "PASS"
+    },
+    {
+      "name": "all500 mock references exactly original candidate",
+      "status": "PASS"
+    },
+    {
+      "name": "338 qualified 162 failed no omissions",
+      "status": "PASS"
+    },
+    {
+      "name": "flat failures exactly all162 failed owner indices",
+      "status": "PASS"
+    },
+    {
+      "name": "338 both D/R constructor qualifications and hashes",
+      "status": "PASS"
+    },
+    {
+      "name": "BE120 all exactindices50to169 context0 D/R not constructible",
+      "status": "PASS"
+    },
+    {
+      "name": "BE120 exactly unchanged one13Oct source each",
+      "status": "PASS"
+    },
+    {
+      "name": "PDF42 nonempty sameVG context missing exactPDF qID",
+      "status": "PASS"
+    },
+    {
+      "name": "exact reason counts120empty and42sourceRef",
+      "status": "PASS"
+    },
+    {
+      "name": "flat failure references faithful to records",
+      "status": "PASS"
+    },
+    {
+      "name": "PDF42 rejectedReference metadata identifies missingPDFnotVGdrift",
+      "status": "PASS"
+    },
+    {
+      "name": "original unchanged14day contract recorded",
+      "status": "PASS"
+    },
+    {
+      "name": "no DB activation unit provider or paid effects claimed",
+      "status": "PASS"
+    },
+    {
+      "name": "no retry full500 or production authorization claimed",
+      "status": "PASS"
+    },
+    {
+      "name": "overall qualification remains FAIL",
+      "status": "PASS"
+    },
+    {
+      "name": "variant summaries independently recounted",
+      "status": "PASS"
+    },
+    {
+      "name": "policy hash size matches current unchanged493B original",
+      "status": "PASS"
+    }
+  ],
+  "checkCount": 39,
+  "reportPin": {
+    "path": "/workspace/shared/helmut-w15-mock-bindings-check-20261028/ALL500_MOCK_BINDINGS_CHECK.SAFE.json",
+    "bytes": 1624835,
+    "sha256": "636ee6d019898652551cdd0368410d6a0b0b2b309c198606ffbb6fbfe559e699"
+  },
+  "scriptPin": {
+    "path": "/workspace/helmut-pilot/scripts/synthetik-500-w15-mock-bindings-check.js",
+    "bytes": 16897,
+    "sha256": "08f4441a540eb904523e87cf80b3381a8f740d0eb13d236827a322ce7fba9895"
+  },
+  "variantSummary": [
+    {
+      "variantIndex": 0,
+      "variantKey": "oil",
+      "owners": 82,
+      "qualified": 82,
+      "failed": 0,
+      "emptyCurrentContext": 0
+    },
+    {
+      "variantIndex": 1,
+      "variantKey": "tobacco",
+      "owners": 82,
+      "qualified": 82,
+      "failed": 0,
+      "emptyCurrentContext": 0
+    },
+    {
+      "variantIndex": 2,
+      "variantKey": "ev",
+      "owners": 83,
+      "qualified": 83,
+      "failed": 0,
+      "emptyCurrentContext": 0
+    },
+    {
+      "variantIndex": 3,
+      "variantKey": "ev",
+      "owners": 41,
+      "qualified": 41,
+      "failed": 0,
+      "emptyCurrentContext": 0
+    },
+    {
+      "variantIndex": 4,
+      "variantKey": "berlin",
+      "owners": 120,
+      "qualified": 0,
+      "failed": 120,
+      "emptyCurrentContext": 120
+    },
+    {
+      "variantIndex": 5,
+      "variantKey": "brandenburg",
+      "owners": 50,
+      "qualified": 50,
+      "failed": 0,
+      "emptyCurrentContext": 0
+    },
+    {
+      "variantIndex": 6,
+      "variantKey": "foreclosure-pdf",
+      "owners": 42,
+      "qualified": 0,
+      "failed": 42,
+      "emptyCurrentContext": 0
+    }
+  ],
+  "failureGroups": [
+    {
+      "variantIndex": 4,
+      "owners": 120,
+      "indices": [
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169
+      ],
+      "reason": "w15-unit0-provider-empty-context",
+      "DRequest": "NOT_CONSTRUCTIBLE",
+      "RRequest": "NOT_CONSTRUCTIBLE",
+      "sourcePublicationUTC": "2026-10-13T11:02:48+00:00",
+      "windowDays": 14,
+      "windowBeginningUTC": "2026-10-14T05:30:21.782Z",
+      "sourceExpiresUTC": "2026-10-27T11:02:48.000Z"
+    },
+    {
+      "variantIndex": 6,
+      "owners": 42,
+      "indices": [
+        170,
+        178,
+        186,
+        194,
+        202,
+        210,
+        218,
+        226,
+        234,
+        242,
+        250,
+        258,
+        266,
+        274,
+        282,
+        290,
+        298,
+        306,
+        314,
+        322,
+        330,
+        338,
+        346,
+        354,
+        362,
+        370,
+        378,
+        386,
+        394,
+        402,
+        410,
+        418,
+        426,
+        434,
+        442,
+        450,
+        458,
+        466,
+        474,
+        482,
+        490,
+        498
+      ],
+      "reason": "ai-text-source-reference",
+      "missingReference": "q-89cfb5d28f8ae51b8021",
+      "presentReference": "q-e61c51251bc1d8866dd3",
+      "vorgangId": "vg-fresh-draft-bt-zwangsversteigerungen-43dc373a38e2eab4",
+      "DRequest": "NOT_QUALIFIED",
+      "RRequest": "NOT_QUALIFIED",
+      "PDFDocumentDay": "2026-10-08",
+      "sourceRule": "Full Berlin document day must remain in actual14day window, lage-quellenbeleg.js116-122.",
+      "referenceRule": "AI1712-1714 requires exact quelle_id to belong to paragraph vorgang_id; the current context contains sameVG but only ordinary15Octsource, not referencedPDF."
+    }
+  ],
+  "acceptanceLimits": {
+    "all500ProfilesQualified": false,
+    "full500RunPerformed": false,
+    "outputsProducedByThisQualification": 0,
+    "independentConstructorRerun": false,
+    "sourceContextRecomputedByReviewer": false,
+    "nativeOrDatabaseStateIndependentlyQueried": false,
+    "paidReviewOrProfessionalApproval": false,
+    "qualificationDoesNotEstablishUnit60Auth30RAMOr1500Outputs": true
+  },
+  "dataBoundary": "No500PASS can follow from changing only mock text or reference IDs in the present source context: all120BE rows have no current source at all. Housing claims from excludedPDF cannot be relabeled as supported by short ordinaryhib source, which lacks detailed figures/statistical limits. No source rejuvenation, route fallback, codec or guard change is justified.",
+  "nextAction": "Preserve single failed qualification and do not retry, repair, activate or start full500. Resolve actual source-data/binding boundary explicitly before new work."
+}

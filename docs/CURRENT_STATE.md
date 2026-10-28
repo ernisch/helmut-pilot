@@ -1,16 +1,16 @@
 # CURRENT STATE — Helmut
 
-## W15: Mock500-Versuch FAIL, alle500 inaktiv (28.10.)
+## W15:500Mockbindungen geprueft,338PASS/162FAIL (28.10.)
 
-Main6b4012cd; PR972/971/969 ungemergt. Genau1Versuch auf514de418, keinRetry.
-VorAktivierunggestoppt: Mockfixture→ai-text-source-reference.
-Statischbelegt: VorlagezitiertPDF08.10., echtes14Tagefensterschliesstesaus.
-500synthetisch/0aktiv/501IDs unabhaengig;0Units/Mocks/Outputs/8000Kontrollen.
-1500fehlend,leer0,doppelt0; Gueltigkeit/NutzbarkeitohneAusgabennichtbewertbar.
-Cap2.048.000.000B/Swap0 echt; Peak369.651.712B nurAufbau,keinLastnachweis.
-Originalquellegleich; neueZielDBteilvorbereitet.0bestaetigt,keinEndwrite.
-LaufGOverbraucht; neueFreigabe fuerMockbindung/Qualifikation+neuenVersuchnoetig.
-[FAIL/Nullbestand/Ursache](betrieb/w15-mock500-ergebnis-20261028.md).
+Main6b4012cd; PR972/971/969 ungemergt. Genau1datenreine500erVorpruefung.
+338D/Rgueltig;120BEohne14TageQuelle,42PDFMockrefsungueltig.
+JederFehlermitIndex/Variante/QuellenID/Grund; ersterVar6Index170jetztgeloggt.
+KeineQuellenverjuengung/Umdeutung/Guardlockerung. Original-/Nativehashesgleich.
+UnabhaengigeReviewsbestaetigenBilanz;Source14TageDatenbasisfehlend.
+KeineMock-onlyReparaturkann120fehlendeBE-Kontexteherstellen;Datenbindungnoetig.
+Stop,kein28bVollauf/Container/DBwrite/Aktivierung/Unit/Modell. VollaufGOungenutzt.
+AlterVollaufFAILweitergueltig;Unit60/Auth30/1500Outputs/8000/RAMweiteroffen.
+[Einzelbelege/Datenbedarf](betrieb/w15-mock-quellenbindungen-20261028.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
