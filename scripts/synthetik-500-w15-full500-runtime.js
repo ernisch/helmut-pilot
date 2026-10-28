@@ -7,7 +7,9 @@ const { performance } = require("node:perf_hooks");
 const Memory = require("./fixtures/w15-memory-contract");
 const AuthReport = require("./fixtures/w15-auth-measurement-report");
 const Durable = require("./fixtures/w15-durable-observations");
-const DIR = "/tmp/w15-full500-20261028d", STATE = path.join(DIR, "state");
+const ATOMIC_PREPARED0 = process.argv.includes("--atomic-prepared0");
+const TARGET = require("./fixtures/w15-atomic-integration-target.json");
+const DIR = ATOMIC_PREPARED0 ? TARGET.base : "/tmp/w15-full500-20261028d", STATE = path.join(DIR, "state");
 const DB = "helmut_w15_full500_20261028b", PUB = "HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY";
 const PRIV = "HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY";
 const CONFIRMATION = "GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO";
@@ -49,9 +51,9 @@ function memoryAccepted(m) {
 }
 function ownerGo() {
   const go = read("OWNER_GO.PRIVATE.json");
-  assert.equal(go.confirmation, CONFIRMATION); assert.equal(go.targetDatabase, DB);
-  assert.equal(go.maximumUnits, 500); assert.equal(go.temporarySyntheticProfiles, 500);
-  assert.equal(go.paidModelsAllowed, false); assert.equal(go.productionAllowed, false); assert.equal(go.full500Allowed, true);
+  assert.equal(go.confirmation, ATOMIC_PREPARED0 ? TARGET.scope : CONFIRMATION); assert.equal(go.targetDatabase, DB);
+  assert.equal(go.maximumUnits, ATOMIC_PREPARED0 ? 0 : 500); assert.equal(go.temporarySyntheticProfiles, ATOMIC_PREPARED0 ? 0 : 500);
+  assert.equal(go.paidModelsAllowed, false); assert.equal(go.productionAllowed, false); assert.equal(go.full500Allowed, !ATOMIC_PREPARED0);
   return go;
 }
 function guard() {
@@ -63,6 +65,7 @@ function guard() {
   assert.equal(process.version, "v24.19.0"); assert(memoryAccepted(memory()), "w15-full500-common-memory-precondition");
 }
 function environment(config) {
+  process.env.HELMUT_LLM_USAGE_STORAGE = "relational-atomic-v1";
   require("./synthetik-500-w15-signed-chain-test").localEnvironment(config);
   assert(!process.env[PRIV]); assert.equal(config.database, DB);
 }
@@ -86,13 +89,13 @@ function checkpointAssessment(points) {
       && Object.keys(checkpointKinds).length === 2
       && points.every((p, i) => Number.isFinite(p.observedAt) && (i === 0 || p.observedAt >= points[i - 1].observedAt)) };
 }
-function authCoverageAssessment({ mutations, usageSinks, casWrites }) {
+function authCoverageAssessment({ mutations, usageSinks, casWrites, expectedAuthRowId = "main-auth" }) {
   const envelopes = [...mutations, ...usageSinks], byId = new Map(envelopes.map(e => [e.id, e]));
   const allEnvelopesAcknowledgedUnder30 = envelopes.length > 0 && byId.size === envelopes.length && envelopes.every(e => e.acknowledged === true
     && Number.isFinite(e.beginMS) && Number.isFinite(e.ackMS) && Number.isFinite(e.endMS)
     && e.beginMS <= e.ackMS && e.ackMS <= e.endMS && Number.isFinite(e.wallMs) && e.wallMs < 30000 && e.wallMs >= 0
-    && (e.kind !== "usage-sink" || e.blobAcknowledged === true));
-  const allWritesAssigned = casWrites.length > 0 && casWrites.every(w => byId.has(w.envelopeId) && w.rowId === "main-auth");
+    && (e.kind !== "usage-sink" || e.storageAcknowledged === true));
+  const allWritesAssigned = casWrites.length > 0 && casWrites.every(w => byId.has(w.envelopeId) && w.rowId === expectedAuthRowId);
   const allWritesAcknowledged = casWrites.length > 0 && casWrites.every(w => w.acknowledged === true
     && [w.beginMS, w.ackMS, w.endMS, w.wallMs].every(Number.isFinite)
     && w.beginMS <= w.ackMS && w.ackMS <= w.endMS && w.wallMs >= 0 && w.wallMs < 30000);
@@ -104,18 +107,23 @@ function authCoverageAssessment({ mutations, usageSinks, casWrites }) {
     usage1000: usageSinks.length === 1000,
     pass: allEnvelopesAcknowledgedUnder30 && allWritesAssigned && allWritesAcknowledged && allWritesBoundedByEnvelope && eachEnvelopeHasWrite };
 }
-function observeAuth(S, { currentIndex = () => null, onFinalACK = () => {} } = {}) {
+function observeAuth(S, { currentIndex = () => null, onFinalACK = () => {}, expectedAuthRowId = "main-auth" } = {}) {
   const contexts = new AsyncLocalStorage(), mutations = [], usageSinks = [], casWrites = [];
-  const Cas = require("../lib/helmut/auth-store-cas"), actualWrite = Cas.writeConditional;
+  const Cas = require("../lib/helmut/auth-store-cas"), Atomic = require("../lib/helmut/llm-usage-atomic");
   let nextId = 0;
-  Cas.writeConditional = async function(...args) {
-    const context = contexts.getStore(), row = { id: casWrites.length, envelopeId: context?.id ?? null,
-      index: context?.index ?? currentIndex(), rowId: args[1]?.rowId, beginMS: performance.now() };
-    casWrites.push(row);
-    try { const value = await actualWrite.apply(this, args); row.acknowledged = true; row.ackMS = performance.now(); return value; }
-    catch (e) { row.failure = safeError(e); throw e; }
-    finally { row.endMS = performance.now(); row.wallMs = row.endMS - row.beginMS; }
-  };
+  // Measure the actual native writer selected by storage, including lexical
+  // pipeline-lock and usage calls. Wrapping both never fabricates an ACK.
+  for (const [target, name, storageMode] of [[Cas, "writeConditional", "blob"], [Atomic, "write", Atomic.VERSION]]) {
+    const actualWrite = target[name];
+    target[name] = async function(...args) {
+      const context = contexts.getStore(), row = { id: casWrites.length, envelopeId: context?.id ?? null,
+        index: context?.index ?? currentIndex(), rowId: args[1]?.rowId, storageMode, beginMS: performance.now() };
+      casWrites.push(row);
+      try { const value = await actualWrite.apply(this, args); row.acknowledged = true; row.ackMS = performance.now(); return value; }
+      catch (e) { row.failure = safeError(e); throw e; }
+      finally { row.endMS = performance.now(); row.wallMs = row.endMS - row.beginMS; }
+    };
+  }
   const actualMutate = S.mutateAuthStore;
   S.mutateAuthStore = function(fn, ...rest) {
     const row = { id: ++nextId, kind: "public-mutation", index: currentIndex(), beginMS: performance.now(), callbackRuns: 0 };
@@ -138,7 +146,9 @@ function observeAuth(S, { currentIndex = () => null, onFinalACK = () => {} } = {
     usageSinks.push(row);
     return contexts.run(row, async () => {
       try { const result = await actualUsage.apply(this, args);
-        row.blobAcknowledged = result?._ablage?.blob === true; row.acknowledged = row.blobAcknowledged;
+        row.storageAcknowledged = Atomic.confirmed(result);
+        row.storageMode = result?._ablage?.relationalAtomic || "blob";
+        row.blobAcknowledged = result?._ablage?.blob === true; row.acknowledged = row.storageAcknowledged;
         row.usageReceiptId = result?.id || null; row.ackMS = performance.now(); return result;
       } catch (e) { row.failure = safeError(e); throw e; }
       finally { row.endMS = performance.now(); row.wallMs = row.endMS - row.beginMS; }
@@ -157,8 +167,9 @@ function observeAuth(S, { currentIndex = () => null, onFinalACK = () => {} } = {
         try {
           const value = await actual.apply(this, args);
           const writes = casWrites.filter(w => w.envelopeId === row.id);
-          row.blobAcknowledged = writes.length > 0 && writes.every(w => w.acknowledged === true);
-          row.acknowledged = row.blobAcknowledged && (name !== "acquirePipelineLock" || value === true);
+          row.storageAcknowledged = writes.length > 0 && writes.every(w => w.acknowledged === true);
+          row.blobAcknowledged = row.storageAcknowledged && writes.every(w => w.storageMode === "blob");
+          row.acknowledged = row.storageAcknowledged && (name !== "acquirePipelineLock" || value === true);
           if (name === "acquirePipelineLock") row.acquired = value === true;
           row.ackMS = performance.now(); return value;
         } catch (e) { row.failure = safeError(e); throw e; }
@@ -167,7 +178,7 @@ function observeAuth(S, { currentIndex = () => null, onFinalACK = () => {} } = {
     };
   }
   return { mutations, usageSinks, casWrites, context: () => contexts.getStore(),
-    assessment: () => authCoverageAssessment({ mutations, usageSinks, casWrites }) };
+    assessment: () => authCoverageAssessment({ mutations, usageSinks, casWrites, expectedAuthRowId }) };
 }
 async function setup() {
   ownerGo(); const metadata = read("setup-input.PRIVATE.json"); assert.match(metadata.commit, /^[a-f0-9]{40}$/);
@@ -218,12 +229,12 @@ async function prepare() {
     const auth = await S.readAuthStore({ strict: true });
     assert.equal(C.controlHash(auth), m.controlHash); assert.equal(C.booksHash(auth), m.booksHash);
     const primary = save("local-approval.PRIVATE.json", { scope: "EXACTLY_ONE_USER_AUTHORIZED_LOCAL_MOCK_FULL500_SEQUENCE_NOT_PRODUCTION",
-      selector: m.selector, full500DispatchAuthorized: true, maximumUnits: 500, profileActivationAuthorized: true,
+      selector: m.selector, full500DispatchAuthorized: !ATOMIC_PREPARED0, maximumUnits: ATOMIC_PREPARED0 ? 0 : 500, profileActivationAuthorized: !ATOMIC_PREPARED0,
       paidModelsAllowed: false, ownerGoSHA256: sha(fs.readFileSync(file("OWNER_GO.PRIVATE.json"))), sourceReceiptSHA256: m.sourceReceiptSHA256 });
     const go = save("local-go.PRIVATE.json", { version: "helmut-synthetik500-test-go/1", operationId: m.selector.operationId,
       productionCommit: c.commit, deploymentId: c.deploymentId, planHash: m.planHash, paketHash: m.paketHash,
       startsAtUTC: m.startsAtUTC, endsAtUTC: m.endsAtUTC, authorizedAtUTC: new Date().toISOString(),
-      authorizationReference: "EXPLICIT_USER_ONE_ISOLATED_MOCK_FULL500_GO:" + primary.sha256,
+      authorizationReference: (ATOMIC_PREPARED0 ? "SIMULATED_LOCAL_PREPARED0_INSTALLATION_ONLY_NO_EXECUTION_AUTHORITY:" : "EXPLICIT_USER_ONE_ISOLATED_MOCK_FULL500_GO:") + primary.sha256,
       confirmation: "SEPARATES_GO_EXAKT500_SYNTHETIK_PRODUCTION_TEST" });
     const gates = {}, evidencePins = {};
     for (const purpose of C.DIRECT_GATES) { gates[purpose] = true; evidencePins[purpose] = save("gate-" + purpose + ".PRIVATE.json", {
@@ -253,7 +264,67 @@ function claimQuery(selector, index, phase) {
     + "'journalState',op->>'state','attemptStatus',attempt->>'status','reservationStatus',call->>'status','actualRequestHash',call->'admission'->>'actualRequestHash',"
     + "'planHash',call->'admission'->>'planHash','intentId',call->'admission'->>'intentId','expectedIntentId',op->'units'->" + index + "->'intentIds'->>" + offset + ")from c;";
 }
+async function atomicPrepared0Check() {
+  assert(ATOMIC_PREPARED0); ownerGo();
+  const c = read("configuration.PRIVATE.json"), m = read("processing-materials.PRIVATE.json"); environment(c);
+  assert(!process.env[PRIV]);
+  const S = require("../lib/helmut/storage"), J = require("../lib/helmut/synthetik-500-dispatch-journal");
+  const Atomic = require("../lib/helmut/llm-usage-atomic"), P = require("../lib/helmut/synthetik-500-profile");
+  const observation = observeAuth(S), journal = Durable.open(STATE, "run"); journal.observe(observation);
+  const removeAbort = AuthReport.retainOnTermination(() => ({ authTimings: AuthReport.summarize(observation),
+    authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites }),
+    value => { journal.write("termination-received", value); save("ATOMIC_AUTH_ABORT.SAFE.json", value); });
+  journal.ready();
+  const before = await S.readAuthStore({ strict: true }), historyHash = P.hash(before.llmUsage);
+  assert.equal(before.llmUsage.length, 5000);
+  const key = "w15-atomic-check-" + crypto.randomUUID();
+  let server;
+  try {
+    assert.equal(await S.acquirePipelineLock(key, 90000), true);
+    await S.mutateAuthStore(a => { a.w15AtomicObserverCheck = { key }; });
+    const receipt = await S.recordLlmUsage({ callType: "skipped-w15-atomic-observer", keinAufruf: true,
+      success: false, model: "none", runId: key });
+    assert(Atomic.confirmed(receipt));
+    await S.releasePipelineLock(key);
+    const after = await S.readAuthStore({ strict: true });
+    assert.equal(after.llmUsage.length, 5001); assert.equal(P.hash(after.llmUsage.slice(1)), historyHash);
+    assert(Atomic.persisted(after, receipt)); assert(!Atomic.persisted(after, structuredClone(receipt)));
+    assert(!Object.hasOwn(after.pipelineLocks, key));
+    assert.equal(observation.casWrites.length, 4); assert.equal(observation.usageSinks.length, 1);
+    assert(observation.assessment().pass); assert(observation.casWrites.every(w => w.storageMode === Atomic.VERSION));
+    let runtime, denied;
+    await S.withSynthetik500PreparedCommand(m.selector, async () => {
+      const packet = await S.loadSynthetik500ProductionCommand(m.selector.operationId, m.selector.commandHash);
+      runtime = await S.readSynthetik500Runtime(packet.command);
+      try { await require("../lib/helmut/synthetik-500-production-adapter").directRuntime(packet.command); }
+      catch (e) { denied = e.message; }
+    });
+    assert.equal(runtime.aktiv, 0); assert.equal(runtime.gesamt, 500);
+    assert.equal(denied, "synthetik500-production-direct-exact500-active-runtime-required");
+    server = require("node:http").createServer(require("../server"));
+    await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+    const response = await fetch("http://127.0.0.1:" + server.address().port + "/api/ops/synthetik500-direkt", {
+      method: "POST", headers: { Authorization: "Bearer " + c.adminSecret, "Content-Type": "application/json", Connection: "close" },
+      body: JSON.stringify({ action: "status", ...m.selector }), signal: AbortSignal.timeout(90000) });
+    assert.equal(response.status, 200); const status = await response.json(); assert.equal(status.result.positions.length, 1500);
+    const claim = crypto.randomUUID();
+    await S.mutateAuthStore(a => J.claim(a, m.selector.commandHash, claim, new Date().toISOString()));
+    const claimed = await S.readAuthStore({ strict: true });
+    assert.throws(() => J.claim(claimed, m.selector.commandHash, crypto.randomUUID(), new Date().toISOString()));
+    await S.mutateAuthStore(a => J.stop(a, m.selector.commandHash, "atomic-prepared0-integration-no-unit"));
+    const ended = await S.readAuthStore({ strict: true }), op = ended[J.KEY].operations[m.selector.operationId];
+    assert.equal(op.claimId, claim); assert.equal(Object.keys(op.attempts).length, 0); assert(op.units.every(u => !u.entered));
+    assert.deepEqual(ended.testKostenTage, before.testKostenTage); assert(observation.assessment().pass);
+    save("ATOMIC_AUTH_PREPARED0.SAFE.json", { status: "PASS_ATOMIC_AUTH30_AND_REAL_SIGNED_PREPARED0",
+      runtime, selector: m.selector, inactiveRuntimeDenied: denied, httpStatusPositions: 1500,
+      historicalUsageRows: 5000, preservedHistoryHash: historyHash, newZeroCostSkipRows: 1,
+      sourceQualifierRepeated: false, authCoverage: observation.assessment(), authTimings: AuthReport.summarize(observation),
+      authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites,
+      unitEntries: 0, profileActivations: 0, providerCalls: 0, full500Acceptance: false, memory: memory() });
+  } finally { removeAbort(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }
+}
 async function run() {
+  assert(!ATOMIC_PREPARED0, "w15-atomic-integration-no-unit-permission");
   ownerGo(); const c = read("configuration.PRIVATE.json"), m = read("processing-materials.PRIVATE.json"); environment(c);
   assert.equal(m.database, DB); assert.equal(m.productionCommit, c.commit); assert(!process.env[PRIV]);
   const fixtures = read("mock-fixtures.PRIVATE.json"); assert(Array.isArray(fixtures) && fixtures.length === 500);
@@ -310,7 +381,7 @@ async function run() {
       catch (e) { errors.push({ index, phase: name, ...safeError(e) }); throw e; } };
   }
   const before = sql("select jsonb_build_object('active',(select count(*)from mandate_profiles where aktiv),'journal',data->'synthetik500DispatchJournal'->'operations'->"
-    + literal(m.selector.operationId) + ",'route',data->'synthetik500KostenAdmission'->'plan'->'routeContract'->'route','usageRows',jsonb_array_length(data->'llmUsage'))from helmut_store where id='main-auth';");
+    + literal(m.selector.operationId) + ",'route',data->'synthetik500KostenAdmission'->'plan'->'routeContract'->'route','usageRows',jsonb_array_length(public.helmut_auth_usage_read_v1(jsonb_build_object('id','main-auth'))->'data'->'llmUsage'))from helmut_store where id='main-auth';");
   assert.equal(before.active, 500); assert.equal(before.journal.state, "installed"); assert.equal(before.journal.claimId, null);
   assert.equal(before.journal.commandHash, m.selector.commandHash); assert.equal(before.usageRows, 5000);
   const starts = Date.parse(m.startsAtUTC), ends = Date.parse(m.endsAtUTC);
@@ -401,7 +472,7 @@ async function run() {
       assert(errors.length === 0 && !memoryViolation && memoryAccepted(memory()), "w15-full500-observed-failure-before-next");
     }
     const final = sql("select jsonb_build_object('active',(select count(*)from mandate_profiles where aktiv),'journal',data->'synthetik500DispatchJournal'->'operations'->"
-      + literal(m.selector.operationId) + ",'usageRows',jsonb_array_length(data->'llmUsage'))from helmut_store where id='main-auth';");
+      + literal(m.selector.operationId) + ",'usageRows',jsonb_array_length(public.helmut_auth_usage_read_v1(jsonb_build_object('id','main-auth'))->'data'->'llmUsage'))from helmut_store where id='main-auth';");
     const op = final.journal, coverage = observation.assessment(), mem = memory();
     const checks = { exactly500ClosedFinalACKs: unitReports.length === 500 && op.index === 500 && op.state === "closed" && op.inFlight === null
         && op.units.length === 500 && op.units.every(u => u.entered) && Object.keys(op.outputs).length === 500,
@@ -441,9 +512,9 @@ async function run() {
   }
 }
 async function main(action) {
-  assert(["setup", "gateway", "prepare", "run"].includes(action), "w15-full500-runtime-action"); guard();
+  assert(["setup", "gateway", "prepare", "run", "atomic-check"].includes(action), "w15-full500-runtime-action"); guard();
   assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")), "w15-full500-stop-requested");
-  return ({ setup, gateway, prepare, run })[action]();
+  return ({ setup, gateway, prepare, run, "atomic-check": atomicPrepared0Check })[action]();
 }
 if (require.main === module) main(process.argv[2]).catch(e => {
   try { save(process.argv[2] + "-FIRST-FAILURE.SAFE.json", { status: "FAIL_OR_UNKNOWN", error: safeError(e),

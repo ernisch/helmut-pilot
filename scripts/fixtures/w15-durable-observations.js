@@ -9,7 +9,7 @@ function startTicks(pid) {
   return s.slice(s.lastIndexOf(") ") + 2).split(" ")[19];
 }
 function open(state, phase) {
-  assert(/^(run|prepare|signal-proof)$/.test(phase));
+  assert(/^(run|prepare|signal-proof|eu-component)$/.test(phase));
   const directory = fs.lstatSync(state);
   assert(directory.isDirectory() && !directory.isSymbolicLink() && (directory.mode & 0o777) === 0o700);
   const fd = fs.openSync(path.join(state, `${phase}-observations.SAFE.jsonl`), "wx", 0o600);
@@ -26,7 +26,7 @@ function open(state, phase) {
   }
   function observe(observation) {
     // Decorate measurement rows, never the business APIs. The original observer
-    // and assessment stay byte-identical. A pending row serializes without times.
+    // and assessment enforce the selected real storage path. A pending row serializes without times.
     for (const key of ["mutations", "usageSinks", "casWrites"]) {
       const rows = observation[key];
       assert(Array.isArray(rows));
@@ -55,6 +55,7 @@ function databaseStatsSQL() {
     +"'walNewest',(select max(name)from pg_ls_waldir()where name~'^[0-9A-F]{24}$'),"
     +"'replicationSlots',(select count(*)from pg_replication_slots),"
     +"'checkpoints',(select num_timed+num_requested from pg_stat_checkpointer),"
+    +"'usageBytes',pg_total_relation_size('public.llm_usage'),'usageToastBytes',(select pg_total_relation_size(reltoastrelid)from pg_class where oid='public.llm_usage'::regclass),"
     +"'storeBytes',pg_total_relation_size('public.helmut_store'),'briefingBytes',pg_total_relation_size('public.briefings'),"
     +"'toastBytes',(select pg_total_relation_size(reltoastrelid)from pg_class where oid='public.helmut_store'::regclass),"
     +"'autovacuums',(select coalesce(sum(autovacuum_count),0)from pg_stat_all_tables where relid='public.helmut_store'::regclass"

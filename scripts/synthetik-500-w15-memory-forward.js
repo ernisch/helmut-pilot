@@ -3,7 +3,7 @@
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
 const { performance, PerformanceObserver, constants } = require("node:perf_hooks");
-const BASE = "/tmp/w15-memory-forward-20261028d", STATE = path.join(BASE, "state"), DB = "helmut_w15_memory_forward_20261028d";
+const BASE = "/tmp/w15-memory-atomic-20261028a", STATE = path.join(BASE, "state"), DB = "helmut_w15_memory_atomic_20261028a";
 const Budget = require("./fixtures/w15-local-memory-budget.json"), AuthReport = require("./fixtures/w15-auth-measurement-report");
 const Durable = require("./fixtures/w15-durable-observations");
 const sha = x => crypto.createHash("sha256").update(x).digest("hex");
@@ -43,7 +43,7 @@ async function gateway() {
 async function run() {
   const c=read("configuration.PRIVATE.json"),g=read("gateway.PRIVATE.json"),bound=read("END500_MEMORY_BOUND.SAFE.json");
   assert.equal(c.database,DB);assert.equal(c.executionAuthority,false);assert.equal(bound.executionAuthority,false);
-  Object.assign(process.env,{SUPABASE_URL:g.url,SUPABASE_SERVICE_ROLE_KEY:c.token,HELMUT_STORAGE_BACKEND:"supabase",HELMUT_SUPABASE_AUTH_STORE_ID:"main-auth"});
+  Object.assign(process.env,{SUPABASE_URL:g.url,SUPABASE_SERVICE_ROLE_KEY:c.token,HELMUT_STORAGE_BACKEND:"supabase",HELMUT_SUPABASE_AUTH_STORE_ID:"main-auth",HELMUT_LLM_USAGE_STORAGE:"relational-atomic-v1"});
   const P=require("../lib/helmut/synthetik-500-profile"),S=require("../lib/helmut/storage");
   const report={schema:"helmut-w15-memory-forward/1",status:"UNKNOWN",units:0,providerCalls:0,profileActivations:0,
     executionAuthority:false,originalDatabaseWrites:0,full500Acceptance:false,budget:Budget,startedAtUTC:new Date().toISOString(),cas:[],gc:[],samples:[],database:[]};
@@ -76,8 +76,8 @@ async function run() {
     assert.equal(report.authBytes,bound.authJSONBytes);assert(report.authBytes<=Budget.maximumFixtureAuthBytes);
     assert(Budget.postgresWorkMemMiB*1024*1024>=2*report.authBytes);
     before=null;sample();dbSample();
-    const Cas=require("../lib/helmut/auth-store-cas"),native=Cas.writeConditional;
-    Cas.writeConditional=async function(...args){assert.equal(casAtIndex,0,"w15-forward-no-second-native-write");casAtIndex++;
+    const Atomic=require("../lib/helmut/llm-usage-atomic"),native=Atomic.write;
+    Atomic.write=async function(...args){assert.equal(casAtIndex,0,"w15-forward-no-second-native-write");casAtIndex++;
       const result=await native.apply(this,args);expectedRevision=result._authStoreRevision;return result;};
     observed=require("./synthetik-500-w15-full500-runtime").observeAuth(S,{currentIndex:()=>index});
     journal.observe(observed);
@@ -108,6 +108,7 @@ async function run() {
     report.plateau={middleWalMax:maximum(mid,"walPhysicalBytes"),lateWalMax:maximum(late,"walPhysicalBytes"),
       middleStoreMax:maximum(mid,"storeBytes"),lateStoreMax:maximum(late,"storeBytes"),
       middleToastMax:maximum(mid,"toastBytes"),lateToastMax:maximum(late,"toastBytes"),
+      middleUsageMax:maximum(mid,"usageBytes"),lateUsageMax:maximum(late,"usageBytes"),
       initialTempBytes:first.tempBytes,finalTempBytes:last.tempBytes};
     assert(report.plateau.lateWalMax<=Budget.maximumRetainedWalBytes,"w15-forward-wal-footprint");
     assert(last.walOldest>first.walOldest&&last.walNewest>first.walNewest,"w15-forward-wal-segments-not-recycled");
@@ -115,7 +116,8 @@ async function run() {
     // Positive late growth is NOT called a plateau. Project it conservatively
     // across all remaining writes, with a factor2 and an allocation-page margin.
     const observedGrowth=Math.max(0,report.plateau.lateStoreMax-report.plateau.middleStoreMax)
-      +Math.max(0,report.plateau.lateWalMax-report.plateau.middleWalMax)+8192;
+      +Math.max(0,report.plateau.lateWalMax-report.plateau.middleWalMax)
+      +Math.max(0,report.plateau.lateUsageMax-report.plateau.middleUsageMax)+8192;
     report.projectedAdditionalPhysicalBytes=Math.ceil(2*observedGrowth*(Budget.conservativeTotalAuthCASWrites-Budget.diagnosticCASWrites)/150);
     report.remainingGrowthGate="Host must ADD projectedAdditionalPhysicalBytes and64MiB margin to the common measured kernel lifetime peak; no subtraction.";
     assert.equal(last.tempBytes,first.tempBytes,"w15-forward-native-auth-spill");

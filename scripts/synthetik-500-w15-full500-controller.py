@@ -21,6 +21,7 @@ DOCKER=['docker','--host=unix:///var/run/docker.sock']
 ENV={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'}
 STARTED_INNER_ACTIONS=set()
 MEMORY=json.loads((ROOT/'scripts/fixtures/w15-memory-contract.json').read_text())
+LOCAL_MEMORY=json.loads((ROOT/'scripts/fixtures/w15-local-memory-budget.json').read_text())
 LIMIT=MEMORY['comparisonBudgetBytes']
 RESERVE=(LIMIT*MEMORY['minimumReservePercent']+99)//100
 MAXIMUM=LIMIT-RESERVE
@@ -200,7 +201,7 @@ class Supervisor:
         # Stop first; terminal/file reporting cannot delay the existing bound stop.
         if not self.closure_mode and p and p.poll()is None:
             action={'seed':'setup'}.get(self.stage_name,self.stage_name)
-            if action in ['prepare','run','setup','audit','signal-proof']:
+            if action in ['prepare','run','setup','audit','signal-proof','eu-component']:
                 with self.failure_lock:
                     if not self.stop_dispatched:
                         self.stop_dispatched=True
@@ -254,7 +255,7 @@ class Supervisor:
         assert self.thread.is_alive(),'full500-memory-supervisor-not-alive'
         self.stage_name=name;self.stop_dispatched=False;self.inner_stop_thread=None
         action={'seed':'setup'}.get(name,name)
-        if action in ['prepare','run','setup','audit','signal-proof']:STARTED_INNER_ACTIONS.add(action)
+        if action in ['prepare','run','setup','audit','signal-proof','eu-component']:STARTED_INNER_ACTIONS.add(action)
         with (WORK/(name+'.PRIVATE.log')).open('xb')as log:
             self.process=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=extra_env or ENV,cwd=ROOT,start_new_session=True)
             process=self.process
@@ -306,12 +307,12 @@ def inner(supervisor,action,seconds=120):
     runtime='synthetik-500-w15-full500-runtime.js'
     script=runtime if action!='audit'else'synthetik-500-w15-full500-audit.js'
     suffix=' '+action if action!='audit'else''
-    cmd='umask 077; echo $$ >'+BASE+'/state/'+action+'.pid; exec timeout --signal=TERM --kill-after=5s '+str(seconds-10)+'s env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/'+script+suffix
+    cmd='umask 077; echo $$ >'+BASE+'/state/'+action+'.pid; exec timeout --signal=TERM --kill-after=5s '+str(seconds-10)+'s env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --max-old-space-size=512 --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/'+script+suffix
     supervisor.stage(DOCKER+['exec','--user','1000:1000',CONTAINER,'sh','-c',cmd],action,seconds)
 
 def stop_owned(actions,require_registered=False):
     for action in actions:
-        assert action in ['prepare','run','setup','audit','gateway','postgrest','signal-proof']
+        assert action in ['prepare','run','setup','audit','gateway','postgrest','signal-proof','eu-component']
         docker('exec','--user','1000:1000',CONTAINER,BASE+'/node',
           BASE+'/app/scripts/fixtures/w15-owned-process-stop.js',BASE,action,DB,
           'active'if require_registered or action in STARTED_INNER_ACTIONS else'never-started',timeout=27)
@@ -356,6 +357,7 @@ def recover_postgres_only(supervisor):
     raise RuntimeError('full500-cleanup-only-pg-recovery-unavailable')
 
 def main():
+    raise RuntimeError('full500-new-explicit-user-go-and-independent-atomic-review-required-no-start-in-integration-sprint')
     check_window() # Before any new resource; no shortened window or later resume.
     assert LIMIT==2048000000 and RESERVE==409600000
     assert REVIEW.exists(),'full500-independent-review-missing'
@@ -412,14 +414,14 @@ def main():
         shutil.copytree(ROOT/'lib',stage/'app/lib',dirs_exist_ok=True)
         for name in ['server.js','package.json']:shutil.copy2(ROOT/name,stage/'app'/name)
         names=['synthetik-500-w15-full500-runtime.js','synthetik-500-w15-full500-audit.js','synthetik-500-w15-signed-chain-test.js','fixtures/w15-auth-measurement-report.js',
-          'fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-full500-provider.js','fixtures/w15-unit0-provider.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-full500-window.js']
+          'fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-full500-provider.js','fixtures/w15-unit0-provider.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-full500-window.js','fixtures/w15-atomic-integration-target.json','fixtures/w15-local-memory-budget.json']
         for n in names:shutil.copy2(ROOT/'scripts'/n,stage/'app/scripts'/n)
         pgdata=WORK/'pgdata';pgdata.mkdir(mode=0o700)
         state=WORK/'state';state.mkdir(mode=0o700)
         docker('create','--name',CONTAINER,'--label','helmut.w15.full500=20261028d','--pull=never','--network=none','--restart=no',
           '--memory=2048000000','--memory-swap=2048000000','--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
           '--mount','type=bind,src='+str(state)+',dst='+BASE+'/state',
-          '-e','POSTGRES_HOST_AUTH_METHOD=trust',IMAGE);created=True
+          '-e','POSTGRES_HOST_AUTH_METHOD=trust',IMAGE,'postgres','-c','helmut.local_usage_experiment=on','-c','max_wal_size=128MB','-c','work_mem=32MB','-c','autovacuum_naptime=10s');created=True
         docker('start',CONTAINER)
         info=json.loads(docker('inspect',CONTAINER))[0]
         assert info['Image']==IMAGE and info['HostConfig']['NetworkMode']=='none'and not info['NetworkSettings']['Ports']
@@ -457,7 +459,7 @@ def main():
         assert read('select count(*)from mandate_profiles where aktiv;')==0
         inner(supervisor,'setup')
         docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','umask 077; echo $$ >'+BASE+'/state/postgrest.pid; exec '+BASE+'/postgrest '+BASE+'/state/postgrest.PRIVATE.conf >'+BASE+'/state/postgrest.PRIVATE.log 2>&1')
-        docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/synthetik-500-w15-full500-runtime.js gateway >'+BASE+'/state/gateway.PRIVATE.log 2>&1')
+        docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --max-old-space-size=512 --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/synthetik-500-w15-full500-runtime.js gateway >'+BASE+'/state/gateway.PRIVATE.log 2>&1')
         gateway_ready=False
         for _ in range(40):
             r=subprocess.run(DOCKER+['exec',CONTAINER,'test','-f',BASE+'/state/runtime-public.PRIVATE.json'],env=ENV,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
@@ -469,6 +471,9 @@ def main():
         supervisor.stage(['node','scripts/lokal.js','--','node','scripts/synthetik-500-w15-full500-materials.js'],'materials',240,env)
         for n in ['processing-materials.PRIVATE.json','current-command.PRIVATE.json','mock-fixtures.PRIVATE.json','audit-inputs.PRIVATE.json']:copy_in(WORK/n,BASE+'/state/'+n)
         docker('exec',CONTAINER,'chown','-R','1000:1000',BASE+'/state')
+        sql((ROOT/'supabase/proposals/auth_usage_atomic_local.sql').read_text(),database=DB)
+        sql("select public.helmut_auth_usage_bootstrap_v1(jsonb_build_object('id','main-auth','expectedHash',encode(sha256(convert_to(data::text,'UTF8')),'hex')))from public.helmut_store where id='main-auth';",database=DB)
+        sql("notify pgrst,'reload schema';",database=DB)
         inner(supervisor,'prepare',130);copy_out('PREPARE.SAFE.json')
         inner(supervisor,'run',10815)
     except BaseException as e:

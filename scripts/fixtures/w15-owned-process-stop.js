@@ -7,7 +7,7 @@ const { startTicks } = require("./w15-durable-observations");
 async function stop(base, action, database, registration = "active") {
   assert(["active", "never-started"].includes(registration));
   assert(/^\/tmp\/w15-[a-z0-9-]+$/.test(base));
-  assert(["prepare", "run", "setup", "audit", "gateway", "postgrest", "signal-proof"].includes(action));
+  assert(["prepare", "run", "setup", "audit", "gateway", "postgrest", "signal-proof", "eu-component"].includes(action));
   const state = `${base}/state`, pidFile = `${state}/${action}.pid`;
   const log = fs.openSync(`${state}/stop-${action}.SAFE.jsonl`, "a", 0o600);
   const record = value => { fs.writeFileSync(log, JSON.stringify({ atUTC: new Date().toISOString(), action, ...value }) + "\n"); fs.fdatasyncSync(log); };
@@ -20,7 +20,7 @@ async function stop(base, action, database, registration = "active") {
   while (!fs.existsSync(pidFile) && Date.now() < registrationEnd) await new Promise(resolve => setTimeout(resolve, 25));
   assert(fs.existsSync(pidFile), "owned-pid-registration-unknown");
   const pid = Number(fs.readFileSync(pidFile, "utf8")); assert(Number.isSafeInteger(pid) && pid > 1);
-  const grouped = ["prepare", "run", "setup", "audit", "signal-proof"].includes(action);
+  const grouped = ["prepare", "run", "setup", "audit", "signal-proof", "eu-component"].includes(action);
   function members() {
     const out = [];
     for (const d of fs.readdirSync("/proc").filter(x => /^\d+$/.test(x))) {
@@ -37,7 +37,7 @@ async function stop(base, action, database, registration = "active") {
   if (!members().length) { record({ status: "OWNED_PROCESS_ALREADY_EXITED" }); return; }
   const identityFile = `${state}/${action}.node.SAFE.json`;
   const readyEnd = Date.now() + 2000;
-  if (["prepare", "run", "signal-proof"].includes(action)) {
+  if (["prepare", "run", "signal-proof", "eu-component"].includes(action)) {
     while (members().length && !fs.existsSync(identityFile) && Date.now() < readyEnd) await new Promise(resolve => setTimeout(resolve, 25));
     if (!members().length) { record({ status: "OWNED_PROCESS_EXIT_CONFIRMED_BEFORE_READY" }); return; }
     assert(fs.existsSync(identityFile), "inner-handler-registration-unknown");

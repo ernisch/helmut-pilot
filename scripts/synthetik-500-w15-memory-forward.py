@@ -3,10 +3,10 @@
 import datetime,hashlib,importlib.util,json,os,pathlib,posixpath,shutil,subprocess,threading,time
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ASSETS=pathlib.Path('/workspace/shared/helmut-w15-memory-forward-20261028')
-WORK=ASSETS/'diagnostic-run-d'
-BASE='/tmp/w15-memory-forward-20261028d'
-DB='helmut_w15_memory_forward_20261028d'
-CONTAINER='w15-memory-forward-20261028d'
+WORK=pathlib.Path('/workspace/shared/helmut-w15-memory-atomic-20261028a')
+BASE='/tmp/w15-memory-atomic-20261028a'
+DB='helmut_w15_memory_atomic_20261028a'
+CONTAINER='w15-memory-atomic-20261028a'
 spec=importlib.util.spec_from_file_location('existing_w15_controller',ROOT/'scripts/synthetik-500-w15-full500-controller.py')
 M=importlib.util.module_from_spec(spec);spec.loader.exec_module(M)
 M.WORK=WORK;M.BASE=BASE;M.DB=DB;M.CONTAINER=CONTAINER
@@ -60,9 +60,9 @@ class Watch(M.Supervisor):
             message='RAM-Diagnose | CAS '+str(len(self.cas_records))+'/500 | '+name
             if mem:
                 message+=' | RAM {:.1f} MB | Peak {:.1f} MB | Reserve {:.1f} MB ({:.2f} %)'.format(mem['currentBytes']/1e6,peak/1e6,(M.LIMIT-peak)/1e6,100*(M.LIMIT-peak)/M.LIMIT)
-            if self.cas_records:message+=' | Auth-Max {:.3f} s'.format(self.cas_records[-1]['authTimings']['maximumFullCallWallMs']/1000)
+            if self.cas_records:message+=' | Auth-Max {:.9f} s'.format(self.cas_records[-1]['authTimings']['maximumFullCallWallMs']/1000)
             self.progress_queue.put_nowait({'name':name,'atUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'casCompleted':len(self.cas_records),
-              'kernel':mem,'failure':self.failure,'message':message})
+              'kernel':mem,'failure':self.failure,'authTimings':self.cas_records[-1]['authTimings']if self.cas_records else None,'message':message})
             self.last_terminal_monotonic=time.monotonic()
     def observe_line(self,raw,stage):
         if stage!='run'or len(raw)>4096:return
@@ -105,7 +105,7 @@ def main():
           ('synthetik500-runtime-pg-7e1c20261027:/tmp/w15-postgrest-20261027','postgrest')]:M.docker('cp',source,str(stage/target))
         shutil.copytree(ROOT/'lib',stage/'app/lib',dirs_exist_ok=True)
         shutil.copy2(ROOT/'server.js',stage/'app/server.js')
-        for n in ['synthetik-500-w15-memory-forward.js','synthetik-500-w15-full500-runtime.js','fixtures/w15-auth-measurement-report.js','fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-local-memory-budget.json','fixtures/z3-plattform.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','lokal.js','lokaler-netzschutz.js']:
+        for n in ['synthetik-500-w15-memory-forward.js','synthetik-500-w15-full500-runtime.js','fixtures/w15-auth-measurement-report.js','fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-local-memory-budget.json','fixtures/w15-atomic-integration-target.json','fixtures/z3-plattform.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','lokal.js','lokaler-netzschutz.js']:
             shutil.copy2(ROOT/'scripts'/n,stage/'app/scripts'/n)
         for n,h in [('node','bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12'),('postgrest','870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617')]:
             assert hashlib.sha256((stage/n).read_bytes()).hexdigest()==h
@@ -114,7 +114,7 @@ def main():
         M.docker('create','--name',CONTAINER,'--pull=never','--network=none','--restart=no','--memory=2048000000','--memory-swap=2048000000',
           '--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
           '--mount','type=bind,src='+str(state)+',dst='+BASE+'/state','-e','POSTGRES_HOST_AUTH_METHOD=trust',M.IMAGE,
-          'postgres','-c','max_wal_size='+str(BUDGET['postgresMaxWalMiB'])+'MB','-c','work_mem='+str(BUDGET['postgresWorkMemMiB'])+'MB',
+          'postgres','-c','helmut.local_usage_experiment=on','-c','max_wal_size='+str(BUDGET['postgresMaxWalMiB'])+'MB','-c','work_mem='+str(BUDGET['postgresWorkMemMiB'])+'MB',
           '-c','autovacuum_naptime='+str(BUDGET['postgresAutovacuumNaptimeSeconds'])+'s');created=True
         M.docker('start',CONTAINER);info=json.loads(M.docker('inspect',CONTAINER))[0]
         assert info['HostConfig']['NetworkMode']=='none'and info['HostConfig']['Memory']==M.LIMIT and info['HostConfig']['MemorySwap']==M.LIMIT
@@ -172,6 +172,13 @@ def main():
             assert counts[key]==len(ids),'w15-forward-committed-native-rowcount'
         assert M.read('select count(*)from public.mandate_profiles where aktiv;',database=DB)==0
         M.save('SEED.SAFE.json',{'nativeCommittedCounts':counts,'nativeExactPostimageChecks':3501,'activeProfiles':0,'executionAuthority':False,'actualResults':False})
+        # Install only in this new netless copy after all native seed postimages.
+        M.sql((ROOT/'supabase/proposals/auth_usage_atomic_local.sql').read_text(),database=DB)
+        initial=M.read("select jsonb_build_object('logicalHash',encode(sha256(convert_to((data-'_authStoreRevision')::text,'UTF8')),'hex'),'usage',jsonb_array_length(data->'llmUsage'))from public.helmut_store where id='main-auth';",database=DB)
+        M.sql("select public.helmut_auth_usage_bootstrap_v1(jsonb_build_object('id','main-auth','expectedHash',encode(sha256(convert_to(data::text,'UTF8')),'hex')))from public.helmut_store where id='main-auth';",database=DB)
+        converted=M.read("select jsonb_build_object('logicalHash',encode(sha256(convert_to(((public.helmut_auth_usage_read_v1(jsonb_build_object('id','main-auth'))->'data')-'_authStoreRevision')::text,'UTF8')),'hex'),'usage',(select count(*)from public.llm_usage where usage_store_id='main-auth'));",database=DB)
+        assert initial==converted and converted['usage']==6000,'w15-atomic-full-history-bootstrap'
+        M.save('ATOMIC_BOOTSTRAP.SAFE.json',{'status':'PASS_EXACT_LOGICAL_STATE_PRESERVED','before':initial,'after':converted})
         inner(w,'setup',90)
         M.docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','umask 077; echo $$ >'+BASE+'/state/postgrest.pid; exec '+BASE+'/postgrest '+BASE+'/state/postgrest.PRIVATE.conf >'+BASE+'/state/postgrest.PRIVATE.log 2>&1')
         M.docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --max-old-space-size='+str(BUDGET['nodeOldSpaceMiB'])+' --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/synthetik-500-w15-memory-forward.js gateway >'+BASE+'/state/gateway.PRIVATE.log 2>&1')

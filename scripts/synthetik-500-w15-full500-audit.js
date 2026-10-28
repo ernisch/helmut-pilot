@@ -54,7 +54,7 @@ function main() {
     + "'journal',jsonb_build_object('operationId'," + opExpr + "->>'operationId','commandHash'," + opExpr
     + "->>'commandHash','state'," + opExpr + "->>'state','index'," + opExpr + "->'index','inFlight'," + opExpr
     + "->'inFlight','outputs',(select count(*)from jsonb_object_keys(" + opExpr + "->'outputs'))),'slot',data->'synthetik500KostenAdmission')"
-    + "from helmut_store where id='main-auth';");
+    + "from (select public.helmut_auth_usage_read_v1(jsonb_build_object('id','main-auth'))->'data' data) logical_auth;");
   const before = snapshot();
   assert(before.database === DB && before.active === 0, "audit-requires-safe-zero");
   let runtime;
@@ -105,7 +105,7 @@ function main() {
     try {
       const evidenceID = "synthetik500-evidence-" + opID + "-" + index;
       const ids = P.BEREICHE.map(a => "bf-" + owner + "-" + (a === "morgenbriefing" ? L.SLOT_ERFOLG : a) + "-" + day);
-      const data = query("with a as(select data," + opExpr + " op from helmut_store where id='main-auth')"
+      const data = query("with a as(select data," + opExpr + " op from (select public.helmut_auth_usage_read_v1(jsonb_build_object('id','main-auth'))->'data' data) logical_auth)"
         + "select jsonb_build_object('database',current_database(),'active',(select count(*)from mandate_profiles where aktiv),"
         + "'unit',op->'units'->" + index + ",'output',op->'outputs'->" + literal(String(index)) + ","
         + "'attempts',(select coalesce(jsonb_agg(value),'[]'::jsonb)from jsonb_each(op->'attempts')"
