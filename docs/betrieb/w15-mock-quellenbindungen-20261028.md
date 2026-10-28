@@ -2,8 +2,8 @@
 
 **Abgebrochen nach erstem FAIL:** Genau eine kostenfreie datenreine Prüfung,
 06:03:36.135–06:03:38.805UTC (09:03:36–38Istanbul). **50 PASS,1 FAIL,
-449 nicht versucht.** Das Ziel500/500 ist nicht erreicht. Kein neuer Vollauf,
-Container, DB-Schreibzugriff, Aktivierung, Unit, Mockantwort oder Modellaufruf.
+449 nicht versucht.** Das Ziel500/500 ist nicht erreicht. Kein neuer lokaler W15-Vollauf,
+lokaler Container, DB-Schreibzugriff, Aktivierung, Unit, Mockantwort oder Modellaufruf.
 Die bedingte Freigabe für einen neuen Mock500-Gesamtversuch ist ungenutzt.
 
 ## Neue belegte Originalquellen und lokale Bindungen
@@ -70,7 +70,15 @@ fehlende reguläre Kandidatenprüfung mit vollständigen Quellenidentitäten vor
 dem B-Konstruktor einzubinden und erneut gezielt zu prüfen. **Wegen der ausdrücklichen
 Stop-Regel ist dafür ein neues GO erforderlich.** Keine Policy leeren,
 keine Freigabe fälschen und keine Sicherheitskontrolle überspringen.
-V8-Coverage wurde im notwendigen Lauf erfasst; keine weitere Testsuite/CI gestartet.
+V8-Coverage wurde im notwendigen Lauf erfasst; keine weitere lokale Testsuite
+oder manuelle Voll-CI gestartet. Der Push löste automatisch
+[CI40642019279](https://github.com/ernisch/helmut-pilot/actions/runs/40642019279)
+aus. Nach dem bestätigten lokalen FAIL wurde deren Abbruch angefordert, um
+bereits belegte Volltests nicht weiter zu wiederholen. Die untenstehenden
+Nullzähler gelten für die lokale W15-Datenprüfung, nicht für diesen gesonderten
+automatischen GitHub-Lauf. Kein neues CI-Grün. Diese abschließende reine
+Dokukorrektur überspringt eine weitere identische CI-Auslösung; keine
+Prüfkonfiguration oder Merge-Schutzregel wurde geändert.
 App/Server/Workflows sind seit der grünen Basis `da63309c`/CI40534410137 unverändert;
 diese neue datenreine Qualifikation ist ausdrücklich FAIL, kein neues CI-Grün.
 

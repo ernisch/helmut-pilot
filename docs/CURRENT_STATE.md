@@ -9,7 +9,7 @@ neuerKOohneechtevollständigeQuellenidentitätsprüfung anB-Konstruktorübergebe
 Guardkorrektgesperrt;50/1/449unabhängigbestätigt,11Originale96530256B+SourceDBgleich.
 Stop,keineReparatur/Wiederholung/DBwrite/Aktivierung/Unit/Vollauf. VollaufGOungenutzt.
 NächstesGO:reguläreKandidatenprüfunganbinden,danngezielte500Vorprüfung.
-AppbasisCI40534410137unverändert;neueQualifikationFAIL,kein500er/ProductionPASS.
+AppbasisCI40534410137;AutoCI40642019279Abbruchangefordert;QualifikationFAIL.
 [Einzelbelege/Ursache](betrieb/w15-mock-quellenbindungen-20261028.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
