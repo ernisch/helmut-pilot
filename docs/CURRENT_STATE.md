@@ -1,16 +1,16 @@
 # CURRENT STATE — Helmut
 
-## W15:aktuelle Quellen vorbereitet; neue Vorprüfung FAIL (28.10.)
+## W15:Quellen500PASS; Vollauf28bFAIL bei Profil1 (28.10.)
 
-Main6b4012cd; PR972/971/969 ungemergt. BE23.10./BT16.10.amtlich gesichert;
-Mock4/6neuquellengebunden,keineAltdatumsänderung. Genau1Vorprüfung06:03UTC:
-50PASS/1FAIL(Index50,BE001)/449unversucht. publication-eligibility-candidate-unchecked:
-neuerKOohneechtevollständigeQuellenidentitätsprüfung anB-Konstruktorübergeben.
-Guardkorrektgesperrt;50/1/449unabhängigbestätigt,11Originale96530256B+SourceDBgleich.
-Stop,keineReparatur/Wiederholung/DBwrite/Aktivierung/Unit/Vollauf. VollaufGOungenutzt.
-NächstesGO:reguläreKandidatenprüfunganbinden,danngezielte500Vorprüfung.
-AppbasisCI40534410137;AutoCI40642019279Abbruchangefordert;QualifikationFAIL.
-[Einzelbelege/Ursache](betrieb/w15-mock-quellenbindungen-20261028.md).
+Main6b4012cd; PR972/971/969 ungemergt. EchteKandidaten-/Quellenprüfungverbunden:
+500/500VorprüfungPASS,unabhängigbestätigt;Originale96530256B+SourceDBgleich.
+Genau1neuerVollauf:500gleichzeitigaktiv,1DR/2Mocks/3Resultate/16von8000Kontrollen.
+StopbeiAuthCAS-Messhülle:2von12WritesohneAufrufzuordnung,keinAuth30Vollbeleg.
+Unit56,435s;HTTP61,202s. Kernelpeak966053888B,Reserve52,83%,hart2,048GB/Swap0.
+Unabhängiggebunden500→0bestätigt;1497Resultatefehlen,keineleeren/doppelten.
+Einmalfreigabeverbraucht;keinRetry/Resume. NächstesGO:nurLock-Authmessungschließen.
+Code98be4f66;kein500er/ProductionPASS. AppbasisCI40534410137unverändert.
+[Belege/Ursache/Nächsterschritt](betrieb/w15-mock-quellenbindungen-20261028.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 

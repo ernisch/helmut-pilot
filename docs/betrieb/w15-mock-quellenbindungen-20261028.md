@@ -1,4 +1,137 @@
-# W15 Quellen aktualisiert; neue Vorprüfung gestoppt (28.10.)
+# W15:Quellen500PASS; Vollauf28b bei Profil1 abgebrochen
+
+**Aktueller Sprintzustand:gescheitert/abgebrochen, kein lokaler Mock500-PASS.**
+Die fehlende echte Quellenidentitätsprüfung ist geschlossen: genau eine neue
+Vorprüfung erreichte am28.10.,06:29:07.972UTC **500/500PASS,0Fehler**.
+Danach wurde unter dem neuen Betreiber-GO genau ein frischer vollständiger
+Mock500-Versuch gestartet. Er stoppte bei Profil1 wegen unvollständiger
+Auth-/CAS-Messzuordnung. Kein Retry, Resume oder weiterer Gesamtversuch.
+
+## Tatsächliche Bilanz des neuen Versuchs
+
+| Kriterium | Belegtes Ergebnis |
+|---|---|
+| Gleichzeitig aktive synthetische Profile |Exakt500; anschliessend gebunden500→0, unabhängig frisch bestätigt |
+| Vollständige native DR Units |1/500, Profil1/Index0/BB001; Runner-Abnahme0 wegen Auth-Messfehler;499nicht versucht |
+| Lokale Mockantworten |2/1000;0echte Modellaufrufe |
+| Gespeicherte Ergebnisse |3/1500 plus2private D/R-Belege; alle500Profile/1500Sollpositionen unabhängig nachgelesen |
+| Echte Sicherheitskontrollen |16/8000:10Load+6Admission; kein Hochrechnen der ungeprüften7984 |
+| Vertragliche Unit60 |56,435357s von unmittelbar vorJ.enter bis Final-ACK vonJ.finish; nur diese eineUnit |
+| Ganze HTTP-Anfrage |61,202063s; ausdrücklich kein Ende-zu-Ende-60s-PASS |
+| Auth30 |Nicht vollständig nachgewiesen:2CAS-Schreibvorgänge ohne vollständige Aufrufhülle |
+| Gemeinsamer Kernel-RAM-Peak |966053888B, technisch erzwungenes Limit2048000000B, Swap0 |
+| Tatsächliche Reserve |1081946112B=52,83%; mindestens409600000B/20% eingehalten, nur im abgebrochenen Lauf |
+| Memory-Ereignisse/Rückweg |max/OOM/OOMkillalle0, keine Datenbank-Recovery; nativer Endzustandbeendet/0aktiv |
+
+Der unveränderte genehmigte Prüfvertrag definiert die Unitgrenze vorJ.enter bis
+zum bestätigten J.finish-Schreibvorgang, nicht als volle HTTP-Anfrage. Beide
+Zeiten sind getrennt ausgewiesen. Unit499 und ein gewachsener500er-Datenbestand
+wurden nicht erreicht. RAM unter Last aller500Units ist daher weiterhin offen.
+
+## Quellenblocker tatsächlich behoben
+
+Neue Quellen wurden über die bestehenden unveränderten
+`storage.getPublicationSourceIdentities` und
+`publication-eligibility.filterCandidates` an die echte neue isolierte PostgreSQL/
+PostgREST-Datenbank angeschlossen. Zwei tatsächliche GET-Lesungen lieferten die
+kompletten Quellenidentitäten bis zum leeren Seitenschluss; kein Request-Override,
+keine selbst erzeugten Symbolnachweise, keine geleerte Publikationspolicy.
+Die prozesslokalen geprüften KO-Objekte gelangen unmittelbar in beide
+Briefing-/Radar-Konstruktorargumente; native KO60-Versionen bleiben plain.
+Der rohe Leerseitenrumpf wurde nicht gesondert gespeichert; Schlussfolgerung aus
+unverändertem Paging-Code, zwei erfolgreichen GETs und zwei gelesenen Kanten.
+
+Vorher wurden die neuen Source23-, KO60- und vollständigen Link-Postimages gegen
+die geprüften Originalartikel gelesen. Alle500 Profile bestanden danach die
+unveränderten B/A/F-, L-, AI/Q- und D/R-Payloadprüfungen. Variantenbilanz:
+82/82,82/82,83/83,41/41,**120/120BE**,50/50BB,**42/42Variante6**.
+Historische Bezeichnung der Variante6 bleibt im Rohbericht; ihr aktueller
+Inhalt ist die amtliche Wohnungsbau-/Wohnungslosigkeitsmeldung vom16.10., kein
+umetikettierter08.10.-PDF-Inhalt. Sämtliche Originaltexte/Publikationsdaten und14Tage bleiben
+unverändert. Neuer Quellen-/Mockinhalt bleibt ausdrücklich manuelle Testfixture,
+kein natives Understanding, keine Modellqualität oder professionelle Abnahme.
+
+62 unabhängige Nachlesekontrollen plus500Einzelabgleiche bestätigten Records,
+Originalprofile, Request-/Outputhashes, Native-/Derivationsdaten und fünf
+qualifizierte Dateien. Separater Herkunftsreview16/16 bestätigte11Originaldateien
+mit96530256Bytes und tatsächliche DB-Postimages. Die qualifizierten Daten wurden
+im Vollauf gepinnt wiederverwendet; die500er-Vorprüfung wurde nicht wiederholt.
+Der frische signierte Command erhielt die notwendige eigene Requesthashbindung.
+Native6Source23/6KO60 mit vollständigen Links wurden vor Aktivierung neu gelesen.
+
+## Konkreter Erstfehler der Vollausführung
+
+`w15-full500-all-unit-auth30-cas-assigned` bei Index0. Die Anwendung antwortete
+HTTP200/ok mit1abgeschlossener Unit und speicherte die drei Ergebnisse.
+Der Runner stoppte danach vor einem zweiten Dispatch.
+
+Alle12 beobachteten CAS-Schreibvorgänge besitzen bestätigte Schreib-ACKs unter30s.
+Die acht vollständig beobachteten öffentlichen Mutationen dauerten maximal
+667,295ms, zwei Usage-Aufrufe maximal619,227ms, reine CAS-Schreibvorgänge maximal
+568,114ms. **CAS1 undCAS10 tragen jedoch keine Aufrufhülle** (`envelopeId:null`),
+ihre Writezeiten418,362ms bzw.427,290ms ersetzen nicht die vollständige Messung
+von Queue/Read/Callback bis ACK. Daher `allWritesAssigned=false` und
+`allWritesBoundedByEnvelope=false`; kein Auth30-PASS.
+
+Der bestehende Beobachter umhüllt öffentliche Auth-Mutationen und Usage-Sinks.
+Die Pipeline-Sperre ruft über die vorhandenen Acquire-/Release-APIs dagegen
+lexikalisch `writeAuthStore` auf. Diese beiden Aufrufpfade sind im unveränderten
+Quelltext belegt. Die Zuordnung zu den konkreten CAS-IDs ist aus Quelle und
+Zeitlage abgeleitet; ein ursprünglicher Caller-Stack wurde nicht erfasst und
+wird nicht nachträglich erfunden. Keine Sicherheitskontrolle hat falsch
+freigegeben, keine echte Kosten-/Authregel wurde abgeschwächt.
+
+## Ergebnisse, Rückführung und Nachweisgrenzen
+
+Die unabhängige Nachlesung prüfte500Owners/1500Sollpositionen mit17000
+Einzelkontrollen, davon1530positiv/15470negativ. Die drei vorhandenen Ergebnisse
+haben korrekte native Zeilen, Quellen-, Payload- und Hashbindungen; beim ersten
+Owner sind33/34Prüfungen positiv. Die verbleibende Prüfung fordert den nicht
+vorhandenen vollständigen500er-Journalabschluss.
+
+| Rohkennzeichen der Ergebnisprüfung | Anzahl | Einordnung |
+|---|---:|---|
+| Fehlend |1497|499nicht verarbeitete Profile mal3 |
+| Leer |0|Kein vorhandenes leeres Ergebnis |
+| Doppelt |0|Keine doppelten Ergebnisse |
+| Technisch nicht abgenommen |1500|Gesamtjournal nicht abgeschlossen; umfasst auch drei vorhandene Payloads |
+| Unbrauchbar |1497|Hier fehlende Ergebnisse; keine generierten unbrauchbaren Texte festgestellt |
+
+Die Rohkennzeichen dürfen überlappen und werden nicht zu disjunkten Kategorien
+umgedeutet. Die drei Inhalte bleiben professionell ungeprüft; ihre Existenz und
+Einzelbindungen sind kein bestandener Gesamtlauf und kein Beleg echter Modellqualität.
+
+Einmalige gebundene native Rückführung500→0 erfolgreich. Zwei unabhängige
+Nachlesungen bestätigen0aktiv/500Profile/501Identitäten, nativebeendet,
+Quittungsbindung und unveränderte Fach-/Fremdfelder. Der behaltene Teiljournalstand
+ist Index1/running/keinInFlight, keine fortsetzbare neue Freigabe. Originalquelle
+und11Originaldateien unverändert; Original-cgroupPeak bis nach der Nachlesung
+bestätigt, alle Memory-Ereignisse0, kein Ersatzpeak aus einem Neustart.
+
+Die detaillierten unveränderten Berichte und privaten Eingabedateien bleiben
+im geschützten Cloud-Arbeitsbereich. Im öffentlichen Repository liegen nur
+bereinigte Statusprojektionen ohne private Eingaben, Pfade oder Zugangsdaten:
+
+- [Alle500 Quellen-/Konstruktorergebnisse](belege/w15-processing-20261027/SOURCE_BINDINGS_20261028B_500PASS.SAFE.json).
+- [Tatsächliche Vollaufmetriken, Rohkategorien und Rückführung](belege/w15-processing-20261027/FULL500_20261028B_SUMMARY.SAFE.json).
+
+**Nächster engster Schritt nach neuem GO:** Messhülle der bestehenden
+Pipeline-Sperr-APIs vervollständigen, sodass auch deren Queue/Read/Callback/ACK
+und CAS-Schreibvorgänge lückenlos gebunden sind. Keine Sicherheits- oder
+Zeitgrenzen ändern. Keine Reparatur/Wiederholung dieses verbrauchten Versuchs;
+ein weiterer Gesamtversuch braucht eine neue ausdrückliche Freigabe.
+
+Codebranch `codex/w15-signed-runtime-integration-20261027`, getesteter Codecommit
+`98be4f6687b40145a8bc4907b8a7dc48197f6d49`. Anwendung/Server/Workflows seit der
+grünen Basis `da63309c`/CI40534410137 unverändert. Keine neue Voll-CI; gezielte
+Syntax7JS/2Python und notwendige500er-Qualifikation, V8-Coverage dabei erfasst.
+PR969/971/972 bleiben ungemergt. Keine Production-/Hetzner-/Budgetänderungen,
+keine neuen kostenpflichtigen Ressourcen und keine echten Modellaufrufe.
+Lokaler Mockvollnachweis und späterer Productionnachweis bleiben offen.
+
+---
+
+# Historischer Stand vor dem neuen GO:Quellen vorbereitet,Vorprüfung50/1/449
 
 **Abgebrochen nach erstem FAIL:** Genau eine kostenfreie datenreine Prüfung,
 06:03:36.135–06:03:38.805UTC (09:03:36–38Istanbul). **50 PASS,1 FAIL,
