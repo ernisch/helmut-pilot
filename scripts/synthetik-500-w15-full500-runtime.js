@@ -18,7 +18,7 @@ const literal = x => "'" + String(x).replaceAll("'", "''") + "'";
 const file = name => path.join(STATE, name);
 function safeError(e) {
   const reason = String(e?.message || "");
-  return { name: e?.name || "Error", reason: /^[a-z][a-z0-9-]{1,180}$/.test(reason) ? reason : "w15-full500-error-details-retained-private" };
+  return { ...AuthReport.failureMetadata(e), reason: /^[a-z][a-z0-9-]{1,180}$/.test(reason) ? reason : "w15-full500-error-details-retained-private" };
 }
 function read(name) {
   const p = file(name), s = fs.lstatSync(p);

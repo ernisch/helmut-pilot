@@ -20,6 +20,22 @@ function summarize({ mutations = [], usageSinks = [], casWrites = [] }) {
     perAPI: kinds, timingsUseWholeCallThroughACK: true };
 }
 
+// Retain only allowlisted machine transport metadata. Raw messages, headers,
+// request bodies, URLs, credentials and arbitrary causes never enter reports.
+function failureMetadata(error) {
+  const codes = new Set(["UND_ERR_SOCKET", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT",
+    "UND_ERR_BODY_TIMEOUT", "UND_ERR_ABORTED", "UND_ERR_RES_CONTENT_LENGTH_MISMATCH",
+    "ECONNRESET", "ECONNREFUSED", "EPIPE", "ETIMEDOUT", "ABORT_ERR", "ENOTFOUND"]);
+  const result = { name: ["Error", "TypeError", "AbortError", "TimeoutError"].includes(error?.name) ? error.name : "Error" };
+  if (codes.has(error?.code)) result.code = error.code;
+  if (codes.has(error?.cause?.code)) result.causeCode = error.cause.code;
+  for (const key of ["bytesRead", "bytesWritten"]) {
+    const value = error?.cause?.socket?.[key];
+    if (Number.isSafeInteger(value) && value >= 0) (result.socket ||= {})[key] = value;
+  }
+  return result;
+}
+
 function retainOnTermination(snapshot, write) {
   let attempted = false;
   const handlers = {};
@@ -37,4 +53,4 @@ function retainOnTermination(snapshot, write) {
   return () => { for (const [signal, fn] of Object.entries(handlers)) process.removeListener(signal, fn); };
 }
 
-module.exports = { summarize, retainOnTermination };
+module.exports = { summarize, retainOnTermination, failureMetadata };

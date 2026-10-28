@@ -127,7 +127,7 @@ async function run() {
     assert.equal(Number(last.settings.max_wal_size),Budget.postgresMaxWalMiB);
     assert.equal(Number(last.settings.autovacuum_naptime),Budget.postgresAutovacuumNaptimeSeconds);
     report.status="PASS_FORWARD_COMPONENTS_COMMON_KERNEL_REVIEW_PENDING";
-  } catch(e){report.status="FAIL_OR_UNKNOWN";report.error={name:e.name,reason:/^[a-z0-9-]{1,160}$/.test(e.message)?e.message:"details-retained-private"};process.exitCode=1;}
+  } catch(e){report.status="FAIL_OR_UNKNOWN";report.error={...AuthReport.failureMetadata(e),reason:/^[a-z0-9-]{1,160}$/.test(e.message)?e.message:"details-retained-private"};process.exitCode=1;}
   finally {removeAbort();clearInterval(timer);sample();gcObserver.disconnect();
     report.authTimings=observed?AuthReport.summarize(observed):null;report.authMutations=observed?.mutations;report.casWrites=observed?.casWrites;
     report.completedAtUTC=new Date().toISOString();save("FORWARD_RESULT.SAFE.json",report);console.log(JSON.stringify({name:"memory-forward-result",status:report.status,cas:report.cas.length}));}
