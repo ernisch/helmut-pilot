@@ -5,8 +5,8 @@ const assert = require("node:assert/strict"), http = require("node:http"), dc = 
 const { fork, spawn } = require("node:child_process"), { performance, PerformanceObserver } = require("node:perf_hooks");
 const MEMORY_SERVICE = require.main === module && process.argv[2] === "--serve-memory";
 const STOP_CHECK = require.main === module && ["--stop-check", "--serve-stop-check"].includes(process.argv[2]);
-const BASE = MEMORY_SERVICE ? "/tmp/w15-memory-atomic-20261028c" : STOP_CHECK ? "/tmp/w15-postgrest-stop-check-20261028" : "/tmp/w15-auth-transport-probe-20261028a", STATE = BASE + "/state";
-const DB = MEMORY_SERVICE ? "helmut_w15_memory_atomic_20261028c" : "helmut_w15_transport_probe_20261028a", POSTGREST_PORT = MEMORY_SERVICE ? 3218 : 3228, sha = b => crypto.createHash("sha256").update(b).digest("hex");
+const BASE = MEMORY_SERVICE ? "/tmp/w15-memory-atomic-20261028d" : STOP_CHECK ? "/tmp/w15-postgrest-stop-check-20261028" : "/tmp/w15-auth-transport-probe-20261028a", STATE = BASE + "/state";
+const DB = MEMORY_SERVICE ? "helmut_w15_memory_atomic_20261028d" : "helmut_w15_transport_probe_20261028a", POSTGREST_PORT = MEMORY_SERVICE ? 3218 : 3228, sha = b => crypto.createHash("sha256").update(b).digest("hex");
 const file = n => path.join(STATE, n), read = n => JSON.parse(fs.readFileSync(file(n)));
 const save = (n, x) => fs.writeFileSync(file(n), JSON.stringify(x, null, 2) + "\n", { flag: "wx", mode: 0o600 });
 const stamp = () => ({ atUTC: new Date().toISOString(), monoNS: process.hrtime.bigint().toString() });
@@ -57,18 +57,32 @@ function logFile(name) {
     close: () => { fs.fdatasyncSync(fd);fs.closeSync(fd); } };
 }
 async function serve() {
-  const c = guard(), log = logFile("gateway-observations.SAFE.jsonl");
+  const c = guard();let durable,serviceFailure=false,stopPromise,gatewayStarting;
+  const saveDurable=(name,value)=>{const fd=fs.openSync(file(name),"wx",0o600);
+    try{fs.writeFileSync(fd,JSON.stringify(value)+"\n");fs.fdatasyncSync(fd);}finally{fs.closeSync(fd);}};
+  function memoryFailure(error){if(serviceFailure)return;serviceFailure=true;
+    try{saveDurable("SERVICE_FAILURE.SAFE.json",{status:"FAIL_OR_UNKNOWN",error:failure(error),
+      durableError:require("./fixtures/w15-auth-measurement-report").failureMetadata(error),retryAllowed:false});}catch{}
+    startStop();}
+  const log = MEMORY_SERVICE ? (()=>{
+    durable=require("./fixtures/w15-durable-observations").openAsync(STATE,"prepare",{filename:"gateway-observations.SAFE.jsonl"});
+    return {write:(name,value={})=>{try{durable.write(name,{...stamp(),...value}).catch(memoryFailure);}catch(e){memoryFailure(e);}},
+      close:()=>durable.close()};
+  })() : logFile("gateway-observations.SAFE.jsonl");
   fs.writeFileSync(file("gateway.pid"), String(process.pid), { flag: "wx", mode: 0o600 });
   const pglog = fs.openSync(file("postgrest.PRIVATE.log"), "wx", 0o600);
   const pg = spawn(BASE + "/postgrest", [file("postgrest.PRIVATE.conf")], { env: { PATH: "/usr/bin:/bin", LANG: "C.UTF-8" }, stdio: ["ignore", pglog, pglog] });
   fs.writeFileSync(file("postgrest.pid"), String(pg.pid), { flag: "wx", mode: 0o600 });
-  let pgExit = null, expectedStop = false, gateway, server, stopping = false;const serverSockets = new Set();
-  const exited = new Promise(resolve => pg.once("exit", (code, signal) => { pgExit = { code, signal };log.write("postgrest-exit", pgExit);resolve(pgExit); }));
+  let pgExit = null, expectedStop = false, gateway, server, stopping = false,terminationRequested = false;const serverSockets = new Set();
+  const exited = new Promise(resolve => pg.once("exit", (code, signal) => { pgExit = { code, signal };log.write("postgrest-exit", pgExit);resolve(pgExit);
+    if(MEMORY_SERVICE&&!expectedStop)memoryFailure(Error("auth-probe-postgrest-unexpected-exit")); }));
   pg.once("error", e => { log.write("postgrest-start-error", { error: failure(e) });process.exitCode = 1; });
   async function stop() {
     if (stopping) return;stopping = true;expectedStop = true;const pgWasRunning = !pgExit;
-    if (server) { server.closeAllConnections();await gateway.stoppe(); }
-    let terminationRequested = false;
+    const stopDeadline=performance.now()+15000;
+    const stopTimer=MEMORY_SERVICE?setTimeout(()=>{memoryFailure(Error("auth-probe-15s-stop-deadline"));process.exit(1);},15000):null;
+    if(MEMORY_SERVICE&&gatewayStarting&&!gateway)gateway=await gatewayStarting;
+    if (server) { server.closeAllConnections();if(gateway)await gateway.stoppe(); }
     if (!pgExit) {
       terminationRequested = pg.kill("SIGTERM");
       log.write("postgrest-signal-request", { pid: pg.pid, signal: "SIGTERM", accepted: terminationRequested });
@@ -82,13 +96,23 @@ async function serve() {
       await new Promise(resolve => setTimeout(resolve, 10));
     const agentSockets = agentCount("sockets"), agentFreeSockets = agentCount("freeSockets");
     const expectedExit = expectedPostgrestStop(pgExit, terminationRequested);
-    const confirmed = pgWasRunning && expectedExit && !forced && serverSockets.size === 0 && agentSockets === 0 && agentFreeSockets === 0;
+    const confirmed = pgWasRunning && expectedExit && !forced && serverSockets.size === 0 && agentSockets === 0 && agentFreeSockets === 0 && !serviceFailure;
     log.write("services-stopped", { pgExit, gateway: gateway?.bericht(), forced, openSockets: serverSockets.size,
       agentSockets, agentFreeSockets, confirmed });
-    if (!serverSockets.size) log.close();fs.closeSync(pglog);
+    if(MEMORY_SERVICE){assert.equal(serverSockets.size,0);await log.close();
+      assert(performance.now()<=stopDeadline,"auth-probe-15s-stop-deadline");
+      saveDurable("GATEWAY_DRAIN.SAFE.json",{confirmed,journal:durable.snapshot()});fs.fdatasyncSync(pglog);clearTimeout(stopTimer);}
+    else if (!serverSockets.size) log.close();fs.closeSync(pglog);
     if (process.connected) process.send({ type: "stopped", confirmed }, () => process.exit(confirmed ? 0 : 1));else process.exit(confirmed ? 0 : 1);
   }
-  process.once("SIGTERM", () => void stop());process.on("message", m => { if (m.type === "stop") void stop(); });
+  function startStop(){if(stopPromise)return stopPromise;
+    stopPromise=stop();if(MEMORY_SERVICE)stopPromise.catch(async error=>{
+      memoryFailure(error);if(!pgExit&&!terminationRequested){terminationRequested=pg.kill("SIGTERM");}
+      let t;await Promise.race([exited,new Promise(resolve=>{t=setTimeout(resolve,4000);})]);clearTimeout(t);
+      if(!pgExit)pg.kill("SIGKILL");process.exit(1);
+    });return stopPromise;}
+  process.once("SIGTERM", () => void startStop());process.on("message", m => { if (m.type === "stop") void startStop(); });
+  if(MEMORY_SERVICE){try{await durable.flush();}catch(error){memoryFailure(error);await startStop();return;}}
   const until = Date.now() + 8000;let ready = false;
   while (Date.now() < until && !pgExit) {
     ready = await new Promise(resolve => {
@@ -97,11 +121,15 @@ async function serve() {
           try { const p = JSON.parse(s).paths;resolve(res.statusCode === 200 && p?.["/rpc/helmut_auth_usage_read_v1"] && p?.["/rpc/helmut_auth_usage_cas_v1"]); } catch { resolve(false); }
         }); });req.on("error", () => resolve(false));req.on("timeout", () => req.destroy());
     });
+    if(MEMORY_SERVICE&&(stopping||pgExit))return;
     if (ready) break;await new Promise(resolve => setTimeout(resolve, 100));
   }
-  if (!ready) { await stop();throw Error("auth-probe-native-rpc-readiness"); }
+  if (!ready) { await startStop();throw Error("auth-probe-native-rpc-readiness"); }
   const create = http.createServer;let socketN = 0;const ids = new WeakMap();
   http.createServer = function(...args) {
+    if(MEMORY_SERVICE){const listener=args.at(-1);assert.equal(typeof listener,"function");
+      args[args.length-1]=(req,res)=>{if(stopping||serviceFailure||fs.existsSync(file("STOP_REQUESTED.SAFE.json"))){res.destroy();return;}
+        return listener(req,res);};}
     server = create.apply(this, args);
     server.on("connection", s => { const id = ++socketN, tuple = socketMeta(s);ids.set(s, id);serverSockets.add(s);
       log.write("socket-connect", { id, socket: tuple });
@@ -114,18 +142,19 @@ async function serve() {
       res.on("finish", () => log.write("gateway-finish", { id: ids.get(req.socket), route, status: res.statusCode,
         keepAlive: res.getHeader("keep-alive") ?? null })); });return server;
   };
-  try { gateway = await require("./fixtures/z3-plattform").starteDatenbankTor({ postgrestPort: POSTGREST_PORT }); }
+  try { gatewayStarting=require("./fixtures/z3-plattform").starteDatenbankTor({ postgrestPort: POSTGREST_PORT });gateway=await gatewayStarting; }
   finally { http.createServer = create; }
+  if(MEMORY_SERVICE&&(stopping||pgExit))return;
   log.write("real-defaults", { keepAliveTimeout: server.keepAliveTimeout, keepAliveTimeoutBuffer: server.keepAliveTimeoutBuffer,
     headersTimeout: server.headersTimeout, requestTimeout: server.requestTimeout, agentKeepAlive: http.globalAgent.keepAlive });
   pg.on("exit", () => {
     if (!expectedStop && process.connected) process.send({ type: "service-failed", error: pgExit });
     if (!expectedStop && MEMORY_SERVICE) {
-      save("SERVICE_FAILURE.SAFE.json", { status: "FAIL_OR_UNKNOWN", pgExit, retryAllowed: false });
-      void stop();
+      memoryFailure(Error("auth-probe-postgrest-unexpected-exit"));
     }
   });
-  if (MEMORY_SERVICE) save("gateway.PRIVATE.json", { url: gateway.url });
+  if (MEMORY_SERVICE){try{await durable.flush();}catch(error){memoryFailure(error);await startStop();return;}
+    if(!stopping&&!serviceFailure&&!pgExit)save("gateway.PRIVATE.json", { url: gateway.url });}
   else process.send({ type: "ready", url: gateway.url });
 }
 async function main({ dryRun = false } = {}) {

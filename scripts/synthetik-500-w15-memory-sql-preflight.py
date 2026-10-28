@@ -4,7 +4,7 @@ import ast,hashlib,importlib.util,json,os,pathlib,re,subprocess,sys
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ASSETS=pathlib.Path('/workspace/shared/helmut-w15-memory-forward-20261028')
-WORK=ASSETS/'sql-preflight-atomic-d'
+WORK=ASSETS/'sql-preflight-atomic-e'
 EXISTING_CONTAINER='w15-atomic-integration-20261028d'
 EXISTING_DB='helmut_w15_full500_20261028b'
 ENV={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'}
@@ -17,7 +17,7 @@ def main():
     os.umask(0o077);WORK.mkdir(mode=0o700)
     spec=importlib.util.spec_from_file_location('forward_parse_only',ROOT/'scripts/synthetik-500-w15-memory-forward.py')
     n=importlib.util.module_from_spec(spec);spec.loader.exec_module(n)
-    assert not n.WORK.exists() and n.DB=='helmut_w15_memory_atomic_20261028c'
+    assert not n.WORK.exists() and n.DB=='helmut_w15_memory_atomic_20261028d'
     js="const m=require('./scripts/synthetik-500-w15-memory-forward');process.stdout.write(JSON.stringify({sql:m.databaseStatsSQL(),db:m.database,base:m.base}));"
     r=subprocess.run(['node','--require','./scripts/lokaler-netzschutz.js','-e',js],cwd=ROOT,env=os.environ.copy(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=20)
     assert r.returncode==0,'metadata-factory'
@@ -28,17 +28,12 @@ def main():
         p=pathlib.Path(pin['path']);b=p.read_bytes()
         assert len(b)==pin['bytes'] and hashlib.sha256(b).hexdigest()==pin['sha256']
         paths[k]=p
-    # Execute only the exact existing file-generation AST, not main()/SQL/DB calls.
+    # Reuse the exact successful native seed; no second118.8MB SQL file.
+    n.check_seed()
+    context={'seed':n.SEED,'row_ids':{k:[x['id']for x in json.loads(paths[k].read_text())]
+      for k in ['evidenceRows','privateDraftStoreRows','resultRows','privateDraftReviewRows']}}
     tree=ast.parse((ROOT/'scripts/synthetik-500-w15-memory-forward.py').read_text())
     fn=next(x for x in tree.body if isinstance(x,ast.FunctionDef)and x.name=='main')
-    body=next(x for x in fn.body if isinstance(x,ast.Try)).body
-    start=next(i for i,x in enumerate(body)if isinstance(x,ast.Assign)and any(isinstance(t,ast.Name)and t.id=='seed'for t in x.targets))
-    stop=next(i for i in range(start,len(body))if isinstance(body[i],ast.With))
-    fragment=ast.Module(body=body[start:stop+1],type_ignores=[])
-    for call in [x for x in ast.walk(fragment)if isinstance(x,ast.Call)and isinstance(x.func,ast.Attribute)and isinstance(x.func.value,ast.Name)and x.func.value.id=='M']:
-        assert call.func.attr=='literal','unsafe-generation-fragment'
-    context={'WORK':WORK,'paths':paths,'M':n.M,'json':json,'os':os}
-    exec(compile(ast.fix_missing_locations(fragment),str(ROOT/'scripts/synthetik-500-w15-memory-forward.py'),'exec'),context)
     queries=[('metadata',metadata['sql'])]
     # Capture the exact imported read/admin call expressions and real ID lists.
     for call in [x for x in ast.walk(fn)if isinstance(x,ast.Call)and isinstance(x.func,ast.Attribute)and isinstance(x.func.value,ast.Name)and x.func.value.id=='M'and x.func.attr in ['read','sql']]:
@@ -58,6 +53,7 @@ def main():
         for scope in scopes:
             q=eval(compile(ast.Expression(call.args[0]),'<actual-query-expression>','eval'),scope)
             queries.append(('database-call',q))
+    queries.extend(('final-native-audit',q)for q in n.AUDIT.audit_sql(paths))
     queries.append(('restore-deactivation','update public.mandate_profiles set aktiv=false where aktiv;'))
     with context['seed'].open()as f:
         for line in f:
@@ -92,7 +88,7 @@ def main():
       'authMD5',(select md5(data::text)from public.helmut_store where id='main-auth'),
       'storeRows',(select count(*)from public.helmut_store),'briefingRows',(select count(*)from public.briefings),
       'usage',jsonb_array_length(public.helmut_auth_usage_read_v1(jsonb_build_object('id','main-auth'))->'data'->'llmUsage'),
-      'newTargetAbsent',not exists(select from pg_database where datname='helmut_w15_memory_atomic_20261028c'),
+      'newTargetAbsent',not exists(select from pg_database where datname='helmut_w15_memory_atomic_20261028d'),
       'createdb',(select rolcreatedb or rolsuper from pg_roles where rolname=current_user),
       'serviceCanSelect',has_table_privilege('service_role','public.helmut_store','SELECT'),
       'serviceCanUpdate',has_column_privilege('service_role','public.helmut_store','data','UPDATE'),
@@ -121,7 +117,7 @@ def main():
       'metadataAndPermissionChecks':{k:v for k,v in observed.items()if k!='authMD5'},
       'coverageLimits':['Original pg_restore and roles SQL reuse unchanged successful pinned restore proof.','PostgREST internally generated SQL reuses successful native Auth/CAS proof; not claimed extracted from diagnostic source.','Parse-only does not execute constraints/triggers or demonstrate runtime memory.'],
       'statementPins':[{'kind':v[0],'sha256':h}for h,v in unique.items()],
-      'sourcePins':{p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest()for p in ['scripts/synthetik-500-w15-memory-forward.js','scripts/synthetik-500-w15-memory-forward.py','scripts/synthetik-500-w15-memory-sql-preflight.py','scripts/fixtures/w15-durable-observations.js','scripts/fixtures/w15-owned-process-stop.js','scripts/fixtures/w15-local-memory-budget.json','scripts/synthetik-500-w15-full500-controller.py','scripts/synthetik-500-w15-full500-runtime.js']}}
+      'sourcePins':{p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest()for p in ['scripts/synthetik-500-w15-memory-forward.js','scripts/synthetik-500-w15-memory-forward.py','scripts/synthetik-500-w15-memory-sql-preflight.py','scripts/fixtures/w15-durable-observations.js','scripts/fixtures/w15-owned-process-stop.js','scripts/fixtures/w15-local-memory-budget.json','scripts/synthetik-500-w15-full500-controller.py','scripts/synthetik-500-w15-full500-runtime.js','scripts/synthetik-500-w15-auth-transport-probe.js','scripts/synthetik-500-w15-memory-final-audit.py']}}
     out=WORK/'SQL_PREFLIGHT.SAFE.json';out.write_text(json.dumps(report,indent=2)+'\n');out.chmod(0o600)
     print(json.dumps({k:v for k,v in report.items()if k not in ['statementPins','metadataAndPermissionChecks','sourcePins','coverageLimits']}))
 if __name__=='__main__':main()
