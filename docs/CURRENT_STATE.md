@@ -1,43 +1,45 @@
 # CURRENT STATE — Helmut
 
-## W15: Protokollblockierung belegt; Datei-Abbruchcheck FAIL, kein End500-Neustart (28.10.)
+## W15: Journal-Abbruchprüfung PASS; End500 vor Start am Plattenplatz gesperrt (28.10.)
 
 PR974, eigener Integrationsbranch auf PR973 `fa506939`/PR972 `c36bd427`;
-alle ungemergt. End500-C tatsächlich `ee36720d`; neuer Datei-I/O-Check `63f37c7d`.
-Bestehende signierte Prepared0-/HTTP-/Auth-/EU-Integration unabhängig16/16;
-Worker81/81 und500/500Quellen im belegten Geltungsbereich übernommen.
-Die16frischen Auth-ACKs/49HTTP200 wurden nicht wiederholt.
-Originale C-Ereignisfolge rein lesend rekonstruiert: bereits vor dem letzten
-erfolgreichen Gateway-CAS ca6,588s Verzögerung; keine belegte SQL-Dauer.
-Danach10s-Lesetimeout vor370.Callback/nativeCAS0; gemeinsame8,4s-Lücke bleibt
-ursächlich UNKNOWN. HistorischeCPU-/IO-/fsync-Zeitreihen fehlen; keine belegte
-GC-/Reclaim-/OOM-Ursache. Kein Timeout-/RAM-Grenzwert verändert.
-Belegte Testschwachstelle: synchrone write+fdatasync-Protokollierung im Eventloop.
-Kleiner optionaler asynchroner Journalweg ergänzt, alter synchroner Weg unverändert;
-jede Zeile einzeln vollständig schreiben/synchronisieren, echte ACKs und begrenzte Queue.
-Unabhängige statische Vorabnahme; genau ein begrenzter realer Datei-I/O-Check:
-normale Sync/Async-Modi jeweils10.820/10.820 Originalpayloads exakt, Async10.821
-dauerhafte Sync-ACKs. Producerlücke16,226024010s→0,182817406s; gesamte Datei-I/O
-16,266034718s→17,575737520s, also keine schnellere Gesamt-I/O behauptet.
-**Gesamtcheck FAIL im Drain-Vorbereiter:**10.756Zeilen auf einmal queued, dann15s-
-Barriere überschritten, vor den letzten64/Signalbereitschaft. Drain/4Fehlerfälle
-nicht bestanden bzw. nicht ausgeführt. Probe-Kindexitquittung fehlt, bleibt UNKNOWN;
-alle3Probe-Kind-PIDs später abwesend. Kein Retry. Vorbereitete kleine Korrektur nur
-als unapplied Patch erhalten:64er-Vorbereitungsbarrieren, Fatal-Exit, echte Exitquittung.
-Keine neue End500-Diagnose; diese bedingte Freigabe ungenutzt. Unvollständige
-End500-Anbindung nicht veröffentlicht. Der echte C-PostgREST-Abschluss bleibt PASS.
-C bleibt369/500 FAIL: Peak1.437.229.056Bytes, Reserve29,8228%, Swap0;
-Authmax16,171304524s/native7,691495863s. Keine neue RAM-/Auth30-/Unit60-Abnahme.
-Alle3.501C-Postimages/6.000Usage zuletzt vollständig geprüft; Datei-Probe0DB/HTTP/
-Auth/Modelle/Aktivierungen. Neue unabhängige native Abschlusslesung:500Profile/**0aktiv**.
-Alter11.UNKNOWN, B291.UNKNOWN und fehlende historische B-Stopquittung bleiben erhalten.
-CI `319bf131`: Pflicht-CI40738479972 und Integrität40738480004 abgeschlossen/grün;
-Browser laut Prüfplan übersprungen. Das ist kein CI-Beleg für den neuen Codekopf.
-Historie wortgleich archiviert; Statusdatei bleibt unter30.000Zeichen.
-Vercel-Konfigurationsfehler `includeFiles`2.915>256 unverändert separat.
-Nächster Schritt braucht GO für die korrigierte begrenzte Journal-/Abbruchprüfung;
-erst bei PASS/Review und vollständigen Startbedingungen End500, kein Mock500-Start.
-Vier alte Mock500-Startbindungen nur lesend ermittelt, nach FAIL nicht geändert.
+alle ungemergt. Gezielter Journalcheck auf HEAD `872a1bcf` plus einer geänderten Datei
+(SHA256 `7984a69b…`); ausgeführter Dateistand danach bytegleich in `7c4c25a7` versioniert.
+Vorbereiteter Patch gegen exakte Quellhashes geprüft und ausschließlich nötig ergänzt:
+Drain-Prefix höchstens64Einträge je unveränderter15s-Barriere, letzte64für Signal;
+echte Kind-Exit-/Signalquittung mit fdatasync, Fatal-Exit ohne Heartbeat-Leck.
+Gezielte Syntaxprüfung und unabhängiger statischer Review21Punkte bestanden.
+**Genau ein neuer Datei-/Abbruchcheck vollständig unabhängig PASS:**
+10.820/10.820 Originalpayloads exakt;10.822 Zeilen inklusive Start/Abbruch,
+10.822 vollständige native Write-/Sync-ACKs, letzteSequenz10.821,0pending,Datei geschlossen.
+Ein echter akzeptierter SIGTERM, wirklicher Kindexit143/Signalnull, kein SIGKILL;
+Kindprozessende unabhängig bestätigt. Alle4vorab definierten Fehlerfälle bestanden:
+Teilschreiben/immutableSnapshot, Sync-EIO ohneACK, abgelaufene IO ohne FD-Reuse/lateACK,
+Queueüberlauf ohne zusätzlichenACK. Erwartete injizierte Fehler sind keine Laufwiederholung.
+Kein HTTP/DB/Auth/Unit/Modell und keine Aktivierung; kein neuer RAM-/Auth30-/Unit60-Beleg.
+Bestandene normale Sync-/Async-Vergleiche über exakte Hashes übernommen, nicht wiederholt.
+Alter Datei-Check bleibt GesamtFAIL; alte fehlende Kindexitquittung bleibt UNKNOWN.
+Die historische C-Ursache der gemeinsamen8,4s-Lücke bleibt UNKNOWN; kein Timeout erhöht.
+**End500-Startbedingung UNKNOWN/gesperrt:** unabhängig1.563.443.200Bytes frei.
+Altes konservatives1,88GB-Kopierplanbudget passt nicht; sichere zusätzliche Spitze für
+frische VFS-/Datenbankkopie, WAL und vollständigen Abschlussaudit noch nicht belegt.
+Keine überlappenden Größen doppelt addiert; keine angeblich exakt bewiesene Bedarfszahl.
+Deshalb vor Async-End500-Anbindung und neuer Datenbank/Container/Diagnose gestoppt.
+Bedingte Freigabe für genau eine neue End500-Diagnose weiter ungenutzt; kein Mock500.
+Keine alten Daten, Originale oder historischen Fehlerbelege gelöscht oder verändert.
+Bestehende Prepared0-/HTTP-/Auth-/EU-Integration16/16, Worker81/81,
+500/500Quellen und16frische Auth-ACKs/49HTTP200 im belegten Umfang übernommen.
+Historische End500-C bleibt369/500 FAIL: Peak1.437.229.056Bytes/Reserve29,8228%,Swap0;
+Authmax16,171304524s/native7,691495863s. Alle3.501Postimages/6.000Usage zuletzt exakt,
+500Profile/0aktiv zuletzt unabhängig nativ bestätigt; dieser Sprint0DB-Schreibvorgänge.
+Historischer11.UNKNOWN, B291.UNKNOWN und fehlende B-Stopquittung bleiben erhalten.
+CI `319bf131`: Pflicht40738479972 und Integrität40738480004 grün;
+CI `872a1bcf`: Integrität40745802549 grün, Pflicht40745802429 zuletzt noch laufend;
+Browser gemäß Prüfplan übersprungen. Neue Kopf-CI separat, keine lokale Vollwiederholung.
+Vercel-Konfigurationsfehler includeFiles2.915>256 unverändert separat.
+Nächster Schritt: sicheren zusätzlichen Plattenbedarf/Platzbereitstellung klären;
+danach sichere Async-Anbindung mit Review und nur bei allen PASS genau eine End500-Diagnose.
+Kein weiterer Datei-/Abbruchcheck nötig ohne neue sachliche Änderung.
 [Messwerte, unabhängige Belege und Freigabestand](betrieb/w15-atomic-usage-integration-20261028.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten.

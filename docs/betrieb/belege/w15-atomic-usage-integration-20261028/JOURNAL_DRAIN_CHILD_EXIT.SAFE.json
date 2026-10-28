@@ -1,0 +1,44 @@
+{
+  "mode": "drain",
+  "childPID": 144013,
+  "exit": {
+    "code": 143,
+    "signal": null
+  },
+  "termRequests": 1,
+  "termAccepted": true,
+  "deadlineKillAccepted": null,
+  "drainReadiness": {
+    "completedWrites": 10757,
+    "completedSyncs": 10757,
+    "maximumWriteMs": 10.677480999998807,
+    "maximumSyncMs": 67.19774899999993,
+    "maximumPendingBytes": 23610,
+    "lastIO": {
+      "kind": "sync",
+      "sequence": 10756,
+      "beginMS": 13712.701006,
+      "endMS": 13713.652695,
+      "durationMs": 0.9516890000013518,
+      "acknowledged": true,
+      "pendingBytes": 341,
+      "pendingEntries": 1,
+      "acknowledgedSequence": 10756
+    },
+    "acknowledgedSequence": 10756,
+    "nextSequence": 10821,
+    "pendingBytes": 22127,
+    "pendingEntries": 64,
+    "maximumAllowedPendingBytes": 8388608,
+    "running": true,
+    "status": "UNKNOWN_PENDING",
+    "failureCode": null,
+    "closed": false,
+    "descriptorRetainedOpen": false
+  },
+  "protocolError": null,
+  "independentParentHeartbeat": {
+    "ticks": 1349,
+    "maximumGapMs": 18.5845240000001
+  }
+}

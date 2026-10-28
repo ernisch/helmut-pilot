@@ -1,0 +1,131 @@
+{
+  "status": "PASS_EXACT_DURABLE_NONBLOCKING_JOURNAL_AND_CONTROLLED_DRAIN",
+  "sourcePin": {
+    "bytes": 2230255,
+    "sha256": "730e4a9755490c386af8720fb376133b6d7354dd870e965326b135aa0a1447b9"
+  },
+  "originalEvents": 10820,
+  "inheritedComparison": {
+    "source": "/workspace/shared/helmut-w15-journal-io-check-20261028a/RESULT.SAFE.json",
+    "sha256": "b5e37a1e42bc3d677bc45080c81bea40300266d031410e5173a2596af4b5e470",
+    "modes": [
+      "sync",
+      "async"
+    ],
+    "retainedEventsEach": 10820,
+    "historicalOverallStatus": "FAIL_OR_UNKNOWN",
+    "rerun": false
+  },
+  "modes": [
+    {
+      "mode": "drain",
+      "exit": {
+        "code": 143,
+        "signal": null
+      },
+      "termRequests": 1,
+      "termAccepted": true,
+      "drainReadiness": {
+        "completedWrites": 10757,
+        "completedSyncs": 10757,
+        "maximumWriteMs": 10.677480999998807,
+        "maximumSyncMs": 67.19774899999993,
+        "maximumPendingBytes": 23610,
+        "lastIO": {
+          "kind": "sync",
+          "sequence": 10756,
+          "beginMS": 13712.701006,
+          "endMS": 13713.652695,
+          "durationMs": 0.9516890000013518,
+          "acknowledged": true,
+          "pendingBytes": 341,
+          "pendingEntries": 1,
+          "acknowledgedSequence": 10756
+        },
+        "acknowledgedSequence": 10756,
+        "nextSequence": 10821,
+        "pendingBytes": 22127,
+        "pendingEntries": 64,
+        "maximumAllowedPendingBytes": 8388608,
+        "running": true,
+        "status": "UNKNOWN_PENDING",
+        "failureCode": null,
+        "closed": false,
+        "descriptorRetainedOpen": false
+      },
+      "retainedEvents": 10820,
+      "completeRows": 10822,
+      "exactPayloadSHA256": "5aa7c19291b111d34edc815538194d43137760df258e50752a85720c41000a28",
+      "independentParentHeartbeat": {
+        "ticks": 1349,
+        "maximumGapMs": 18.5845240000001
+      },
+      "result": {
+        "status": "PASS_CONTROLLED_DURABLE_DRAIN_NO_AUTH",
+        "attempted": 10820,
+        "journal": {
+          "completedWrites": 10822,
+          "completedSyncs": 10822,
+          "maximumWriteMs": 10.677480999998807,
+          "maximumSyncMs": 67.19774899999993,
+          "maximumPendingBytes": 23610,
+          "lastIO": {
+            "kind": "sync",
+            "sequence": 10821,
+            "beginMS": 13775.088011,
+            "endMS": 13776.213972,
+            "durationMs": 1.1259609999997338,
+            "acknowledged": true,
+            "pendingBytes": 940,
+            "pendingEntries": 1,
+            "acknowledgedSequence": 10821
+          },
+          "acknowledgedSequence": 10821,
+          "nextSequence": 10822,
+          "pendingBytes": 0,
+          "pendingEntries": 0,
+          "maximumAllowedPendingBytes": 8388608,
+          "running": false,
+          "status": "DURABLE_ACKNOWLEDGED",
+          "failureCode": null,
+          "closed": true,
+          "descriptorRetainedOpen": false
+        },
+        "observedSignal": "SIGTERM",
+        "unfinishedOperations": "UNKNOWN"
+      }
+    }
+  ],
+  "faultResults": [
+    {
+      "case": "captured-snapshot-and-real-partial-writes",
+      "status": "PASS",
+      "exactRows": 2
+    },
+    {
+      "case": "injected-sync-error-no-ack",
+      "status": "PASS",
+      "expectedFailure": "W15_DURABLE_SYNC_FAILED"
+    },
+    {
+      "case": "injected-pending-deadline-late-io-no-fd-reuse-or-ack",
+      "status": "PASS",
+      "expectedFailure": "W15_DURABLE_DEADLINE",
+      "closeCalls": 0
+    },
+    {
+      "case": "injected-queue-overflow-no-extra-ack",
+      "status": "PASS",
+      "expectedFailure": "W15_DURABLE_QUEUE_OVERFLOW"
+    }
+  ],
+  "failedMode": null,
+  "retryAllowed": false,
+  "historicalCCause": "UNCHANGED_UNKNOWN",
+  "HTTP": 0,
+  "databaseWrites": 0,
+  "AuthCalls": 0,
+  "profileActivations": 0,
+  "modelCalls": 0,
+  "scope": "Real bounded file-I/O and controlled owned-child stop only; not RAM/End500/Auth acceptance."
+}

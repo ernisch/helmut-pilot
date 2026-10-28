@@ -5,7 +5,8 @@ Eigener Branch `codex/w15-atomic-usage-integration-20261028`,
 [Draft-PR974](https://github.com/ernisch/helmut-pilot/pull/974), gestapelt auf
 PR973 `fa506939` und PR972 `c36bd427`. Neu ausgeführter Diagnosecode C: `ee36720d`;
 der historische B-Lauf wurde auf `d2920d6d` ausgeführt. Neuer begrenzter
-Datei-I/O-Check tatsächlich auf `63f37c7d`, keine weitere End500-Ausführung.
+Datei-I/O-Check tatsächlich auf `63f37c7d` (FAIL); neuer gezielter Draincheck
+mit dem Dateistand aus `7c4c25a7` (PASS), keine weitere End500-Ausführung.
 Tatsächlich ausgeführter Anschlussstand D: `d66a94dc`; RAM-Diagnose: `55dda919`.
 `e1a62acc` ergänzt danach ausschließlich Fehler-Metadaten; kein Lauf wurde wiederholt
 oder nachträglich auf diesen Kopf umetikettiert.
@@ -440,13 +441,69 @@ ist ungenutzt. Alle vorherigen Daten, FAILs und UNKNOWN-Befunde bleiben erhalten
 · [Messwerte](belege/w15-atomic-usage-integration-20261028/JOURNAL_IO_RUN_SUMMARY.SAFE.json)
 · [Nullkontrolle und Prozesssicht](belege/w15-atomic-usage-integration-20261028/JOURNAL_IO_NATIVE_ZERO_AND_PROCESS_END.SAFE.json).
 
-Die konkrete nächste Korrektur ist ausschließlich als **nicht angewendeter,
-nicht ausgeführter** Patch vorbereitet: Drain-Vorbereitung mit höchstens64
+Im vorigen Sprint war die nächste Korrektur ausschließlich als **damals nicht
+angewendeter, nicht ausgeführter** Patch vorbereitet: Drain-Vorbereitung mit höchstens64
 wartenden Ereignissen je vorhandener15s-Barriere, fataler Kind-Exit und
 echte Exit-/Signalanforderungsquittung als Datei vor jeder Ergebnisassertion.
 Alle10.820Ereignisse bleiben erhalten; keine Frist-/RAM-Grenze wird erhöht.
 [Vorschlag](belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_FIX_PROPOSAL.SAFE.json)
 · [unapplied Patch](belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_FIX_UNAPPLIED.patch).
+
+## Journal-Abbruchfix: genau ein neuer gezielter Check PASS
+
+Der ausdrücklich freigegebene Patch wurde gegen den exakten Quellhash geprüft.
+Nur das Datei-Prüfprogramm wurde geändert; tatsächlicher Lauf auf HEAD `872a1bcf`
+mit geänderter Datei SHA256 `7984a69b9a93c5700610708c0c324262e38a9c895830d7116972c30c722c22de`,
+danach bytegleich in `7c4c25a7` versioniert. Journal-/Auth-Helper und
+synchroner Rückweg bleiben bytegleich. Prefix-Barrieren bei höchstens64Einträgen
+verhindern den belegten großen Vorbereitungsstau; letzte64Einträge unvermischt
+für den echten Signalcheck. Sämtliche15s-Fristen und8MiB-Queue unverändert.
+Exit-/Signalausgang, Kindlog und Ergebnisquittungen werden vor Erfolg mit
+fdatasync synchronisiert. Fataler Kindfehler beendet den Prozess mit1 statt
+Heartbeat-Leck; late-IO-Warten zusätzlich innerhalb derselben15s-Grenze begrenzt.
+
+Gezielte Syntaxprüfung und unabhängiger statischer Review21Punkte bestanden.
+Danach genau ein frischer begrenzter Check mit realem210s-Außenwächter:
+`node scripts/lokal.js -- timeout --signal=TERM --kill-after=5s 210s node scripts/synthetik-500-w15-journal-io-check.js --run`.
+Tatsächlicher Elternprozess-Exit0, kein Retry. Die vorher erfolgreichen normalen
+Sync-/Async-Modi wurden über ihren exakten Ergebnis-/Payloadhash übernommen,
+nicht erneut ausgeführt. Der alte GesamtFAIL und fehlende Exitbeleg bleiben erhalten.
+
+| Neues tatsächliches Ergebnis | Befund |
+| --- | --- |
+| Exakte originale C-Payloads, einzeln unabhängig verglichen |10.820/10.820 |
+| Kontinuierliche Journalzeilen inklusive Start/Abbruch |10.822 |
+| Vollständige native Write-/fdatasync-Bestätigungen |10.822/10.822 |
+| Letzte ACK-Sequenz / wartende Einträge |10.821 /0 |
+| Dateiabwicklung |geschlossen, kein laufendes IO |
+| Tatsächliches SIGTERM / Kind-Exit |einmal angenommen,143/Signalnull |
+| Notfall-SIGKILL / verbliebener Kindprozess |keiner /keiner |
+| Maximaler nativer Write-/Sync-Callback |10,677481ms /67,197749ms |
+| Größte wartende Queue / unveränderte Grenze |23.610Bytes /8.388.608Bytes |
+| Alle4vorher nicht ausgeführten Fehlerfälle |PASS |
+
+Vorab festgelegte Fehlerfälle: echte partielle native31Byte-Schreibvorgänge und
+unveränderlicher Snapshot; injiziertes Sync-EIO ohneACK; offene IO mit abgelaufener
+Deadline ohne FD-Schließen/Wiederverwendung oder verspätetenACK; Queueüberlauf
+ohne zusätzlichenACK. Jeder Fall hat eine eigene dauerhaft geschriebene Quittung.
+Unfertige Vorgänge bleiben UNKNOWN. Keine HTTP-Anfrage, Datenbankänderung,
+Auth-Operation, Unit, Aktivierung oder Modellaufruf. Kein neuer RAM-/Auth30-Beleg.
+[Unabhängige Abnahme](belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json)
+· [Ergebnis](belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_RUN_RESULT.SAFE.json)
+· [echter Kindexit](belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_CHILD_EXIT.SAFE.json)
+· [Drainquittung](belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_RECEIPT.SAFE.json).
+
+**Neue End500-Startbedingung UNKNOWN, deshalb vor Start gestoppt.** Unabhängig
+aktuell1.563.443.200Bytes auf dem Workspace frei. Das historische konservative
+1,88GB-Kopierplanbudget passt nicht mehr. Eine belastbare obere Grenze für die
+zusätzliche Spitze aus frischer VFS-/Datenbankkopie, WAL, Logs und vollständigem
+nativen Abschlussaudit ist nicht belegt. `SizeRootFs`, `SizeRw` und BASE überlappen;
+keine Doppeladdition und keine vermeintlich präzise neue Bedarfszahl daraus ableiten.
+Das bedeutet fehlende sichere Startreserve, keinen bereits eingetretenen ENOSPC.
+Keine Daten gelöscht, verlagert oder verkürzt; keine neue Ressource gebaut.
+Keine ungeprüfte asynchrone End500-Anbindung veröffentlicht und keine neue
+Datenbank, kein Container und keine End500-Diagnose gestartet. Die bedingte
+Einmalfreigabe bleibt ungenutzt. Historische gemeinsame8,4s-Lückenursache UNKNOWN.
 
 ## Übernommene und erhaltene Belege
 
@@ -471,24 +528,22 @@ Zeilen-/Branch-, Worker- oder Gesamtprojektabdeckung.
 
 ## Freigabestand und nächster Schritt
 
-**Nicht freigabereif für Mock500 oder einen sofortigen End500-Neustart.** Die
-synchrone Protokollblockierung ist im normalen Datei-Vergleich belegt und der
-asynchrone normale Schreibweg positiv geprüft. Der erforderliche Abbruchcheck
-scheiterte aber im eigenen Vorbereiter; vier Fehlerfälle und End500-Anbindung
-bleiben offen. Gemäß ausdrücklicher erster-FAIL-Stoppregel keine Wiederholung.
-Nächster Schritt braucht GO für die konkrete kleine Prüfprogrammkorrektur und
-genau einen neu gebundenen begrenzten Datei-/Abbruchcheck mit unabhängigem Review.
-Nur bei dessen PASS, vollständiger sicherer Anbindung und gültigen Ressourcen-
-und Startbindungen darf der noch ungenutzte bedingte End500-Versuch folgen.
-Speicherplatzbedarf einschließlich Abschlussaudit vorher tatsächlich binden.
+**Journal-/Abbruchkomponente vollständig unabhängig PASS; End500 noch gesperrt.**
+Ein erneuter gleicher Datei-/Abbruchcheck ist nicht nötig. Nächster notwendiger
+Schritt ist eine belastbare Plattenplatzplanung beziehungsweise sichere
+Platzbereitstellung ohne Verlust alter Daten/Belege. Keine Löschung oder neue
+kostenpflichtige Ressource wurde dafür vorgenommen oder vorausgesetzt.
+Danach sichere asynchrone Anbindung samt unabhängiger Abnahme; nur bei sämtlichen
+frischen gültigen Ressourcen-/Startbedingungen darf die unverbrauchte bedingte
+Freigabe für genau eine neue End500-Diagnose verwendet werden. Kein Mock500-Start.
 Die tiefere historische C-Lückenursache bleibt UNKNOWN, kein alter unbestätigter
-Schreibvorgang wird wiederholt und kein Timeout pauschal erhöht.
+Schreibvorgang wird wiederholt und kein Timeout erhöht.
 
 Für den späteren Mock500-Start sind außerdem vier vorhandene Bindungen anzupassen:
 alter4-Blob-Auth-Beleg auf die bereits geprüften12atomaren D-/EU-ACKs,
 neuer974-Review mit echter RAM-Endabnahme, strikte Übernahme des500er-Quellen-PASS
 über den belegten16+2-Quellvergleich und frische konsistente Laufverzeichnisse.
-Diese Lücken wurden nur lesend ermittelt; nach FAIL keine Umsetzung/Patchanwendung.
+Diese Mock500-Lücken wurden nur lesend ermittelt; weiterhin keine Umsetzung.
 Die vorhandene fachliche Qualifikation gilt ausdrücklich für28.10.; ein späterer
 Tag braucht eine gültige ausgewiesene Kalenderbindung. Keine Signaturen wiederverwenden.
 Der bisherige Full500-Controller ist im Integrationssprint ausdrücklich vor

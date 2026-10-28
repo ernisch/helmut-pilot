@@ -1,0 +1,297 @@
+{
+  "schema": "helmut-w15-independent-journal-drain-results/1",
+  "status": "PASS_INDEPENDENT_BOUNDED_JOURNAL_DRAIN_AND_FOUR_FAULTS",
+  "reviewedAtUTC": "2026-10-28T18:44:53.904823+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "actualSourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-journal-io-check.js",
+      "bytes": 17241,
+      "sha256": "7984a69b9a93c5700610708c0c324262e38a9c895830d7116972c30c722c22de"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 13410,
+      "sha256": "0737e8dd5c570f65b8e57dba1670870497eca8c889b340a5cc6b4d54ffd3356f"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 5598,
+      "sha256": "a49ff1c7b5b3c3b4eae789a580894d4cb5e847d678ee9678811f8919bd95db22"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    }
+  ],
+  "sourcePin": {
+    "bytes": 2230255,
+    "sha256": "730e4a9755490c386af8720fb376133b6d7354dd870e965326b135aa0a1447b9"
+  },
+  "inheritedComparison": {
+    "source": "/workspace/shared/helmut-w15-journal-io-check-20261028a/RESULT.SAFE.json",
+    "sha256": "b5e37a1e42bc3d677bc45080c81bea40300266d031410e5173a2596af4b5e470",
+    "modes": [
+      "sync",
+      "async"
+    ],
+    "retainedEventsEach": 10820,
+    "historicalOverallStatus": "FAIL_OR_UNKNOWN",
+    "rerun": false
+  },
+  "actualRun": {
+    "outerExit": 0,
+    "rootPrimaryExecSession": 21984,
+    "freshDrainRuns": 1,
+    "freshSyncAsyncRuns": 0,
+    "faultCases": 4,
+    "retryAllowed": false
+  },
+  "integrity": {
+    "exactOriginalPayloads": 10820,
+    "exactJournalRows": 10822,
+    "contiguousSequences": true,
+    "exactPayloadSHA256": "5aa7c19291b111d34edc815538194d43137760df258e50752a85720c41000a28",
+    "nativeWrites": 10822,
+    "nativeSyncs": 10822,
+    "finalACKSequence": 10821,
+    "pendingEntries": 0,
+    "pendingBytes": 0,
+    "journalClosed": true
+  },
+  "actualTermination": {
+    "requestedSIGTERM": 1,
+    "SIGTERMAccepted": true,
+    "childExit": {
+      "code": 143,
+      "signal": null
+    },
+    "deadlineKillAccepted": null,
+    "protocolError": null,
+    "readinessPendingEntries": 64,
+    "readinessACK": 10756,
+    "readinessNextSequence": 10821,
+    "unfinishedOperationOutcome": "UNKNOWN",
+    "registeredChildProcessEnd": {
+      "liveSameIdentity": false,
+      "registeredIdentityMatch": true,
+      "readOnly": true,
+      "status": "REGISTERED_PID_ABSENT"
+    }
+  },
+  "IOtimingContext": {
+    "maximumWriteCallbackWallMs": 10.677480999998807,
+    "maximumSyncCallbackWallMs": 67.19774899999993,
+    "maximumPendingBytes": 23610,
+    "parentMaximumHeartbeatGapMs": 18.5845240000001,
+    "drainDeadlineMs": 15000,
+    "outerWatchdogSeconds": 210
+  },
+  "actualFaultResults": [
+    {
+      "case": "captured-snapshot-and-real-partial-writes",
+      "status": "PASS",
+      "exactRows": 2
+    },
+    {
+      "case": "injected-sync-error-no-ack",
+      "status": "PASS",
+      "expectedFailure": "W15_DURABLE_SYNC_FAILED"
+    },
+    {
+      "case": "injected-pending-deadline-late-io-no-fd-reuse-or-ack",
+      "status": "PASS",
+      "expectedFailure": "W15_DURABLE_DEADLINE",
+      "closeCalls": 0
+    },
+    {
+      "case": "injected-queue-overflow-no-extra-ack",
+      "status": "PASS",
+      "expectedFailure": "W15_DURABLE_QUEUE_OVERFLOW"
+    }
+  ],
+  "checks": [
+    {
+      "name": "one_fresh_run",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Rootprimaryexec21984exit0. Exactlyonenewdrainmodeandfourcomponentcases;oldsync/asynctwomodeshashboundandreused,norerun."
+    },
+    {
+      "name": "payload_integrity",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "All10820originalCpayloadsindependentlydeepcompared,sourcehash730e4a...unchanged,contiguous10822journalrows inclprocessstart+termination;payloadhash5aa7c192...exactoldnormalmodes."
+    },
+    {
+      "name": "real_signal",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "GenuineownedforkTERMrequestedonceandacceptedtrue;actualChildProcessexiteventcode143/signalnull durablyretainedbeforeassertions;deadlineKillAcceptednull/protocolErrornull. NoSIGKILLreceiptassumption."
+    },
+    {
+      "name": "pending_work",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Readinessactualsnapshotpending64/ACK10756/next10821. Onsignal,terminationstillreportsunfinishedUNKNOWN; no businessoperationrelabelledPASS."
+    },
+    {
+      "name": "drain_durability",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Realnative10822writesandfdatasyncs completed,ACK10821,pending0,closedtrue,runningfalse. Configured15sclose/abortboundsunchanged;DRAINmetadataandsignalexitreceiptsnativefdatasync byreviewedsource."
+    },
+    {
+      "name": "no_heartbeat_leak",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "ActualregisteredchildPID/startticksfromprocessstartmatchprivateexitreceipt;PIDabsentatfinalread-only/procobservation,realexitreceiptalreadyconfirmsend. NoadditionalSignals."
+    },
+    {
+      "name": "partial_snapshot_case",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Executedcapturedsnapshot/real31bytepartialnativewrites:2exactrows, latermutatedinputstillvaluebefore. IndividualdurablePASSfilematchesparentresult."
+    },
+    {
+      "name": "sync_EIO_case",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "ExecutedpredeclaredasyncEIOrejectsflush/close asW15_DURABLE_SYNC_FAILED, noACK; privatefilepresenceisnotACK. CasePASSfileexact."
+    },
+    {
+      "name": "pending_deadline_case",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Executed25msdeadlinewithnativeIOheld,FDcloseCalls0/retainedopen,latecallbackcannotACK/reopen;15sreleasebound. Expectedclosedfailureonly;allcaseassertionsreachedindividualPASSreceipt."
+    },
+    {
+      "name": "overflow_case",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Executed8MiBoverflowrejectsnewentry/close,nolaterACKbeyondprocessstart;allfourfaultfilesdurableandequalparentresult."
+    },
+    {
+      "name": "old_failures",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "OldioaprogramoverallFAIL/childsignalUNKNOWN andCsharedpausecauseUNKNOWN unchanged. ScopednewtelemetryPASSdoesnotretroactivelyvalidateoldaborts."
+    },
+    {
+      "name": "runtime_scope",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "0HTTP/DB/Auth/Profiles/Units/Models bycheck;noengine/GatewayintegrationorRAM/Unit60/Auth30proof. Reviewerusedonlyexistingfiles+/proc/statvfs,nativeDBqueries0."
+    },
+    {
+      "name": "disk_blocker",
+      "status": "PASS_INDEPENDENT_AUDIT_OF_SCOPED_FINDING",
+      "finding": "Workspaceavailable1563443200B isless thanpreviousconservative1.88GBcopyplanning. CachedsharedimageSizeRootFs isnotaddedagain. Actualboundedpeakneedforfreshcopy+VFS/WAL+finalnativeaudit/logs hasnotbeenestablished. NewEnd500startUNKNOWN/BLOCKED;nofreshDB/container/test/reclaim/deletionallowedbythisreport."
+    }
+  ],
+  "diskReadiness": {
+    "availableBytes": 1563443200,
+    "historicalConservativePlanBytes": 1880000000,
+    "actualCopyPeakUpperBound": "NOT_ESTABLISHED",
+    "rootReadOnlyExistingCStorageFacts": {
+      "dockerSizeRwBytes": 291308841,
+      "dockerSizeRootFsBytes": 728766326,
+      "PGDirectoryBytes": 270427322,
+      "baseBytes": 296954888,
+      "externalStageBytes": 151058711,
+      "stateBytes": 5551902
+    },
+    "noDoubleCount": "SizeRootFs includescachedsharedlayers;BASEandSizeRw overlap. ExistingCGrowthSprintDelta isnotcausally allCcopy.",
+    "verdict": "UNKNOWN_BLOCKS_NEW_END500_START",
+    "action": "StopbeforefreshDBorasyncEnd500integrationuntilsafeadditionalcapacityboundornewoperatorstorageinstruction. No deletion/offload/paidinfra."
+  },
+  "evidencePins": [
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/RESULT.SAFE.json",
+      "bytes": 3953,
+      "sha256": "eb3d98ce4cdbfef6c68a9abef2797d6f74480a515e93069470b82bd5d9abfc74"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/drain/DRAIN.SAFE.json",
+      "bytes": 923,
+      "sha256": "0265fd95a978de94a038cb72ff54f51a1b43dc96a745a79c08b2ff6c9667b12c"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/drain/CHILD_EXIT.SAFE.json",
+      "bytes": 1078,
+      "sha256": "41cbaf498c094740bb6fba3cc0f7344ffee08d3ff1de18179e4701a5e8d582f4"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/drain/prepare-observations.SAFE.jsonl",
+      "bytes": 3747073,
+      "sha256": "331aeb89a2cddcde6ce90e7ed80ca5d6c1749fb5738227a35d8914a206df88e5"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/drain/prepare.node.SAFE.json",
+      "bytes": 55,
+      "sha256": "441a43145c1f326c721349b550bf189775a85f985183e023db23a9f32a47c5f0"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/drain/child.PRIVATE.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/faults/1.SAFE.json",
+      "bytes": 96,
+      "sha256": "65572d46283c65bdc59ba375b3eb151398c033025629a67a1ad64e107d727ad9"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/faults/2.SAFE.json",
+      "bytes": 111,
+      "sha256": "b8b51d401650271daab98715a4d9899ace492bc19febc5314cf77a9f347db4f7"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/faults/3.SAFE.json",
+      "bytes": 153,
+      "sha256": "1209773da46ec9c06813fb202580cd278e2e68a9d47ffac48d91c1719936ad9e"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/faults/4.SAFE.json",
+      "bytes": 124,
+      "sha256": "8fe96ea5aa1cdc26d520dd6c53f6835d276a95cabf6b95b84b61951d9aba69cb"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/faults/snapshot-partial/prepare-observations.SAFE.jsonl",
+      "bytes": 260,
+      "sha256": "c6ff963364066670c40cd29d68b225dd2e8355dc37a45791f3a02e8c3c3ec112"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/faults/sync-error/prepare-observations.SAFE.jsonl",
+      "bytes": 147,
+      "sha256": "2ed12c1736db916da292792d3945576deebeac408ab766a63787033c92edcea7"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/faults/pending-deadline/prepare-observations.SAFE.jsonl",
+      "bytes": 147,
+      "sha256": "118d5be3afcbfa6b80d9f73de79fd7b3336fb5508f79f04508e66c36e9cb2069"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-journal-io-check-20261028b/faults/overflow/prepare-observations.SAFE.jsonl",
+      "bytes": 146,
+      "sha256": "9808dbb8a17d89ca739dcd34b8b15dd06af651501fbd6116cd84b4530d7affc4"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/JOURNAL_DRAIN_PRESTART_REVIEW.SAFE.json",
+      "bytes": 8754,
+      "sha256": "06c36cd06bf8aabe39a17004ea5fb2083f0a40b701120140ca7160599f29c4ec"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-atomic-20261028c/state/run-observations.SAFE.jsonl",
+      "bytes": 2230255,
+      "sha256": "730e4a9755490c386af8720fb376133b6d7354dd870e965326b135aa0a1447b9"
+    }
+  ],
+  "reviewActions": {
+    "workloads": 0,
+    "HTTP": 0,
+    "SQL": 0,
+    "signals": 0,
+    "sourceChanges": 0,
+    "readOnlyProcessInspection": 1,
+    "readOnlyDiskMetadata": 1
+  },
+  "scopeVerdict": {
+    "fileJournalAbortProof": "PASS",
+    "fourPredeclaredComponentFaults": "PASS",
+    "End500RuntimeIntegration": "NOT_PERFORMED",
+    "End500DiskStart": "UNKNOWN_BLOCKED",
+    "End500Started": false,
+    "Mock500Acceptance": false,
+    "historicalCSharedPauseCause": "UNCHANGED_UNKNOWN"
+  }
+}

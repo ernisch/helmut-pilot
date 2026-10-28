@@ -71,6 +71,16 @@
       "sha256": "089b989a76d0382f150da0d98df65232d84d8ddabb22c82337ef7fa264040685"
     },
     {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_CHILD_EXIT.SAFE.json",
+      "bytes": 1078,
+      "sha256": "41cbaf498c094740bb6fba3cc0f7344ffee08d3ff1de18179e4701a5e8d582f4"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_FINAL_DOCUMENTATION_REVIEW.SAFE.json",
+      "bytes": 6238,
+      "sha256": "4f57db3b9534914e110e4ad557ede980e06ee411296c918d5487bfe9eae04f1e"
+    },
+    {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_FIX_PROPOSAL.SAFE.json",
       "bytes": 684,
       "sha256": "08c4c79a08982bcacfdb8c974d2c511fc524d333668e03ed4d8751ab4924164b"
@@ -79,6 +89,26 @@
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_FIX_UNAPPLIED.patch",
       "bytes": 3073,
       "sha256": "edf50dde23439b17ceeb920ca9fecd9e742b07f638319b071b3c24ed5e6db2ce"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_PRESTART_REVIEW.SAFE.json",
+      "bytes": 8754,
+      "sha256": "06c36cd06bf8aabe39a17004ea5fb2083f0a40b701120140ca7160599f29c4ec"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_RECEIPT.SAFE.json",
+      "bytes": 923,
+      "sha256": "0265fd95a978de94a038cb72ff54f51a1b43dc96a745a79c08b2ff6c9667b12c"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json",
+      "bytes": 12102,
+      "sha256": "25157d93434b749c8dbd38fa9dc5e5336b62f7be328f414ea5449c715525b3ac"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_RUN_RESULT.SAFE.json",
+      "bytes": 3953,
+      "sha256": "eb3d98ce4cdbfef6c68a9abef2797d6f74480a515e93069470b82bd5d9abfc74"
     },
     {
       "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_IO_NATIVE_ZERO_AND_PROCESS_END.SAFE.json",
