@@ -3,11 +3,12 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypto");
 const {spawnSync}=require("node:child_process"),{performance}=require("node:perf_hooks");
 const {originalBuilder,localEnvironment}=require("./synthetik-500-w15-signed-chain-test");
-const ROOT = path.resolve(__dirname, ".."), CONTAINER = "w15-full500-20261028";
+const ROOT = path.resolve(__dirname, ".."), CONTAINER = "w15-full500-20261028b";
 const SOURCE_DB = "helmut_w15_input_20261027";
 const UNIT0 = true;
-const DB = "helmut_w15_full500_20261028";
-const WORK = "/workspace/shared/helmut-w15-full500-20261028";
+const DB = "helmut_w15_full500_20261028b";
+const WORK = "/workspace/shared/helmut-w15-full500-20261028b";
+const QUALIFICATION = "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b";
 const RECEIPT = "/workspace/shared/helmut-w15-receipt-20261027/reports/W15_RECEPTION_REPORT.SAFE.json";
 const RECEIPT_HASH = "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1";
 const PUB = "HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY", PRIV = "HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY";
@@ -45,6 +46,70 @@ function originals() { const raw = privateFile(RECEIPT); assert.equal(sha(raw), 
     const b = privateFile(p.receivedPath); assert.equal(b.length, p.expectedBytes); assert.equal(sha(b), p.expectedSHA256);
     return { value: JSON.parse(b), pin: { path: p.receivedPath, bytes: b.length, sha256: sha(b) } }; };
 }
+function qualifiedAssets() {
+  const reportPath = path.join(QUALIFICATION, "ALL500_MOCK_BINDINGS_CHECK.SAFE.json");
+  const raw = privateFile(reportPath), report = JSON.parse(raw);
+  assert.equal(report.status, "PASS_ALL500_CURRENT_ORIGINAL_MOCK_BINDINGS", "w15-full500-qualification-not-pass");
+  assert.equal(report.completedOwners, 500); assert.equal(report.qualifiedOwners, 500); assert.equal(report.failedOwners, 0);
+  assert.equal(report.profileActivations, 0); assert.equal(report.unitExecutions, 0);
+  assert.equal(report.originalDatabaseWrites, 0);
+  assert.equal(report.providerCalls, 0); assert.equal(report.sourceDatesRewritten, false);
+  assert.equal(report.originalFilesWritten, false);
+  assert.equal(report.briefingReadingWindow?.start, "2026-10-16T00:00:00.000Z");
+  const executionISO = report.executionISO;
+  assert.equal(report.briefingReadingWindow.end, executionISO);
+  assert.equal(new Date(executionISO).toISOString(), executionISO, "w15-full500-qualified-execution-date");
+  assert.equal(executionISO.slice(0, 10), new Date().toISOString().slice(0, 10), "w15-full500-qualified-utc-day");
+  const berlinDay = x => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", dateStyle: "short" }).format(new Date(x));
+  assert.equal(berlinDay(executionISO), berlinDay(new Date().toISOString()), "w15-full500-qualified-berlin-day");
+  assert.equal(report.qualifiedAssetsPinned, true, "w15-full500-qualified-asset-pins");
+  const load = (name, pin) => {
+    const file = path.join(QUALIFICATION, name); assert.equal(pin?.path, file, "w15-full500-qualified-asset-path");
+    const bytes = privateFile(file); assert.equal(bytes.length, pin.bytes); assert.equal(sha(bytes), pin.sha256);
+    return JSON.parse(bytes);
+  };
+  return { report, reportPin: { path: reportPath, bytes: raw.length, sha256: sha(raw) }, executionISO,
+    rows: load("QUALIFIED_ROWS.PRIVATE.json", report.qualifiedAssets?.rows),
+    fixtures: load("QUALIFIED_MOCK_FIXTURES.PRIVATE.json", report.qualifiedAssets?.fixtures),
+    nativeBundle: load("QUALIFIED_NATIVE.PRIVATE.json", report.qualifiedAssets?.native),
+    derivations: load("QUALIFIED_DERIVATIONS.PRIVATE.json", report.qualifiedAssets?.derivations),
+    replacements: load("CURRENT_NATIVE_REPLACEMENTS.PRIVATE.json", report.currentNativeReplacementsPin) };
+}
+function verifyCurrentDatabase(native) {
+  const fields = require("../lib/helmut/synthetik-500-w-inventar").SOURCE_VERSION_FIELDS;
+  const koFields = require("../lib/helmut/knowledge-object-version").VERSION_FIELDS;
+  assert.equal(native.documents.length, 6); assert.equal(native.knowledgeObjects.length, 6); assert.equal(native.clusters.length, 6);
+  const documentIds = native.documents.map(d => d.id), koIds = native.knowledgeObjects.map(k => k.version.id);
+  assert.equal(new Set(documentIds).size, 6); assert.equal(new Set(koIds).size, 6);
+  const aliases = { quellenauszug_beleg: "raw->'helmutQuellenkontext'", dip_quellfelder: "raw->'helmutDipQuellfelder'",
+    bundestag_artikelstand: "raw->'helmutBundestagArtikelstand'", berlin_artikelstand: "raw->'helmutBerlinArtikelstand'",
+    brandenburg_artikelstand: "raw->'helmutBrandenburgLandtagPresseArtikelstand'",
+    bundestag_abgerufen_at: "to_jsonb(retrieved_at)", berlin_abgerufen_at: "to_jsonb(retrieved_at)", brandenburg_abgerufen_at: "to_jsonb(retrieved_at)" };
+  const projection = keys => keys.map(k => literal(k) + "," + (aliases[k] || 'to_jsonb("' + k + '")')).join(",");
+  const actual = read("select jsonb_build_object('documents',(select jsonb_agg(x order by x->>'id' collate \"C\")from(select jsonb_build_object("
+    + projection(fields) + ")x from public.raw_documents where id in(" + documentIds.map(literal).join(",") + "))d),"
+    + "'knowledgeObjects',(select jsonb_agg(x order by x->>'id' collate \"C\")from(select (select jsonb_object_agg(kv.key,kv.value)"
+    + "from jsonb_each(to_jsonb(k))kv where kv.key=any(array[" + koFields.map(literal).join(",")
+    + "]))x from public.knowledge_objects k where id in(" + koIds.map(literal).join(",") + "))k),"
+    + "'links',(select coalesce(jsonb_agg(to_jsonb(l)order by knowledge_object_id collate \"C\",raw_document_id collate \"C\"),'[]'::jsonb)"
+    + "from(select knowledge_object_id,raw_document_id from public.ko_document_links where knowledge_object_id in(" + koIds.map(literal).join(",") + "))l));");
+  const ordered = rows => [...rows].sort((a,b) => a.id.localeCompare(b.id));
+  assert.deepEqual(actual.documents, ordered(native.documents.map(d => d.version)), "w15-full500-native-source23-readback");
+  assert.deepEqual(actual.knowledgeObjects, ordered(native.knowledgeObjects.map(k => k.version)), "w15-full500-native-ko60-readback");
+  const K = require("../lib/helmut/synthetik-500-kosten-plan"), versions = K.sourceVersions(native.documents, native.knowledgeObjects,
+    native.clusters, K.ROUTE_INPUT_VERSION, native.costInputs.routeContract, null);
+  const byKey = new Map(versions.documents.map(d => [d.key, d.id]));
+  const expectedLinks = native.clusters.flatMap(c => {
+    const ko = native.knowledgeObjects.find(k => k.vorgangId === c.vorgangId); assert(ko);
+    return c.documentKeys.map(key => { const id = byKey.get(key); assert(id); return { knowledge_object_id: ko.version.id, raw_document_id: id }; });
+  });
+  const links = xs => [...xs].sort((a,b) => a.knowledge_object_id.localeCompare(b.knowledge_object_id) || a.raw_document_id.localeCompare(b.raw_document_id));
+  assert.deepEqual(links(actual.links), links(expectedLinks), "w15-full500-native-complete-ko-source-links");
+  return retain("CURRENT_NATIVE_DATABASE.SAFE.json", { status: "PASS_ACTUAL_SOURCE23_KO60_AND_COMPLETE_LINKS", database: DB,
+    observedAtUTC: new Date().toISOString(), documents: actual.documents.length, knowledgeObjects: actual.knowledgeObjects.length,
+    links: actual.links.length, sourceHash: sha(JSON.stringify(actual.documents)), knowledgeObjectHash: sha(JSON.stringify(actual.knowledgeObjects)),
+    originalSourceDatabaseWritten: false, sourcePublicationDatesRewritten: false });
+}
 async function main() {
   assert(require.cache[require.resolve("./lokaler-netzschutz")]);
   assert.deepEqual(require("./lokaler-netzschutz").pruefe(process.env), []);
@@ -61,24 +126,27 @@ async function main() {
     "Test target must be a new pristine copy; never rerun against a prior test state");
   const config = JSON.parse(privateFile(path.join(WORK, "runtime-public.PRIVATE.json")));
   const get = originals(), packet = get("package").value, originalRows = get("normalizedCurrentPolicy").value;
-  const derive = require("./fixtures/w15-synthetic-window");
-  const derivedNative = derive.deriveNative(get("nativeInventoryHistoricalTemplate").value, new Date().toISOString());
-  const native = derivedNative.native, oldU = get("originalUPacket");
+  const qualified = qualifiedAssets(), { rows, fixtures, derivations: derivationReports } = qualified;
+  const { native, report: nativeDerivation } = qualified.nativeBundle, oldU = get("originalUPacket");
+  assert.equal(rows.length, 500); assert.equal(fixtures.length, 500); assert.equal(derivationReports.length, 500);
+  assert.equal(new Set(rows.map(r => r.profile.id)).size, 500);
+  const originalById = new Map(originalRows.map(r => [r.profile.id, r.profile]));
+  for (const row of rows) {
+    assert.deepEqual(row.profile, originalById.get(row.profile.id), "w15-full500-original-profile-unchanged");
+    assert.equal(row.briefingDatum, qualified.executionISO, "w15-full500-qualified-request-date-unchanged");
+  }
   const P = require("../lib/helmut/synthetik-500-profile"), EU = require("../lib/helmut/synthetik-500-eu-service-contract");
   localEnvironment(config);
   {
     const K = require("../lib/helmut/testkosten-budget"), C = require("../lib/helmut/synthetik-500-production-command");
     const I = require("../lib/helmut/synthetik-500-import"), J = require("../lib/helmut/synthetik-500-dispatch-journal");
-    stage("rebind-current-calendar-originals", { rows: originalRows.length });
-    const changedPaths = new Set(), day = new Date().toISOString().slice(0, 10), temporaryDate = new Date().toISOString();
-    const derivationReports = [];
-    const rows = originalRows.map(row => { const x = derive.deriveRow(row, temporaryDate);
-      derivationReports.push(x.report); x.report.changedPaths.forEach(p => changedPaths.add(p)); return x.row; });
-    assert.equal(rows.length, 500); pass("explicit synthetic fixture preserves content/profiles and original files", { changedPaths: [...changedPaths] });
-    assert.equal(sql("begin;set local statement_timeout='15s';update public.mandate_profiles set aktiv=false where aktiv;"
-      + "with changed as (update public.raw_documents set published_at=" + literal(derivedNative.report.syntheticPublishedAt)
-      + " where id=" + literal(derivedNative.report.sourceId) + " and published_at=" + literal(derivedNative.report.originalPublishedAt)
-      + " returning id) select count(*) from changed;commit;"), "1");
+    stage("reuse-pinned-all500-current-qualification", { rows: rows.length, qualificationSHA256: qualified.reportPin.sha256 });
+    const changedPaths = new Set(derivationReports.flatMap(r => r.changedPaths || [])), day = new Date().toISOString().slice(0, 10);
+    assert.equal(qualified.replacements.length, 2);
+    const Database = require("./fixtures/w15-current-input-database");
+    sql(Database.installSQL(qualified.replacements));
+    const currentNativeDatabasePin = verifyCurrentDatabase(native);
+    pass("pinned qualified rows reused and actual current native inputs independently read back", { qualificationSHA256: qualified.reportPin.sha256 });
     let source = read("select jsonb_build_object('mandates',(select jsonb_agg(to_jsonb(p)order by user_id collate \"C\")from mandate_profiles p),"
       + "'profiles',(select jsonb_agg(to_jsonb(p)order by id collate \"C\")from profiles p),"
       + "'auth',(select data from helmut_store where id='main-auth'),'main',(select data from helmut_store where id='main'));" );
@@ -94,23 +162,15 @@ async function main() {
     for (const [d, b] of Object.entries(originalBooks)) assert.deepEqual(auth[K.KEY][d], b);
     K.pruefeStart(auth, day, { ok: true, used: 0 });
     sql("begin;update helmut_store set data=" + json(auth) + " where id='main-auth';commit;");
-    const constructedAtUTC = new Date().toISOString();
-    rows.forEach(row => { row.briefingDatum = constructedAtUTC; });
-    const candidates=get("reviewedMockCandidates"), templates=get("staticMockTemplates");
-    const fixtures=[];
-    process.env.AZURE_OPENAI_ENDPOINT=new URL(native.costInputs.routeContract.route.responsesUrl).origin;
-    process.env.AZURE_OPENAI_KEY="LOCAL_MOCK_NOT_A_VALID_PROVIDER_KEY";process.env.AZURE_OPENAI_DEPLOYMENT="gpt-5-mini-eu";
-    const Provider=require("./fixtures/w15-full500-provider");
+    const constructedAtUTC = qualified.executionISO;
     const sortedRows=[...rows].sort((a,b)=>a.profile.id.localeCompare(b.profile.id));
     for(let index=0;index<500;index++){
-      const row=sortedRows[index],mapping=candidates.value.ownerMapping.find(x=>x.owner===row.profile.id);assert(mapping);
-      fixtures.push(Provider.prepare({index,row,candidate:candidates.value.candidates[mapping.variantIndex],template:templates.value.templates[mapping.variantIndex],
-        model:native.costInputs.routeContract.route.model,responsesURL:native.costInputs.routeContract.route.responsesUrl}));
+      assert.equal(fixtures[index].index,index); assert.equal(fixtures[index].owner,sortedRows[index].profile.id);
+      assert.equal(fixtures[index].delayMs,[0,499].includes(index)?19900:0,"w15-full500-qualified-mock-delay");
     }
-    delete process.env.AZURE_OPENAI_ENDPOINT;delete process.env.AZURE_OPENAI_KEY;delete process.env.AZURE_OPENAI_DEPLOYMENT;
     retain("mock-fixtures.PRIVATE.json",fixtures);
     retain("audit-inputs.PRIVATE.json",sortedRows.map((row,index)=>({index,owner:row.profile.id,profile:row.profile,briefingEingabeHash:row.briefingEingabe.eingabe.eingabeHash})));
-    // Observe the actual database after all expensive fixture construction.
+    // Observe the actual database after pinned fixture loading and native input installation.
     const observed=new Date().toISOString(), priorSource=source;
     source=read("select jsonb_build_object('mandates',(select jsonb_agg(to_jsonb(p)order by user_id collate \"C\")from mandate_profiles p),"
       + "'profiles',(select jsonb_agg(to_jsonb(p)order by id collate \"C\")from profiles p),"
@@ -189,16 +249,15 @@ async function main() {
     const startsAtUTC = plannedWindow.startsAtUTC;
     const currentConfig = { selector: { operationId }, runId: "nachlauf500-" + Date.now(), constructedAtUTC,
       window: { startsAtUTC, endsAtUTC: end } };
-    rows.forEach(row => { row.briefingDatum = constructedAtUTC; });
     const oldOperation = oldU.value.command.slot.plan.operationId, oldJournal = auth[J.KEY].operations[oldOperation]; assert(oldJournal);
     const prior = { predecessor: { operationId: oldOperation, commandHash: P.hash(oldU.value.command), planHash: oldU.value.command.slot.planHash,
       journalHash: P.hash(oldJournal) }, originalPacketPin: oldU.pin, originalJournalHash: P.hash(oldJournal) };
     const builder = originalBuilder(), requests = [];
-    stage("prepare-all500-current-synthetic-requests");
+    stage("bind-qualified-all500-current-requests-with-fresh-native-command");
     const built = builder.build({ approval: { status: "ACCEPTED_ALL500_ORDINARY_V1_AND_ACTUAL_NATIVE_BINDING", actualNativeInputEquality: true,
       positiveBoundOrdinaryVerdicts: 500, scope: "SYNTHETIC PERFORMANCE FIXTURE ONLY; NO PROFESSIONAL/PRODUCTION OR UNIT EXECUTION APPROVAL" },
       config: currentConfig, paket: packet, rows, native, runtime: { runtimeManifest, snapshot, productionCommit: config.commit,
-        briefingFensterStart: "2026-10-13T00:00:00.000Z" }, routeContract: route, prior,
+        briefingFensterStart: qualified.report.briefingReadingWindow.start }, routeContract: route, prior,
       prepareDraft: row => { const result = builder.prepareDraft(row, route, native.routeId);
         requests.push({ owner: row.profile.id, requestBodySHA256: sha(result.requestBody), inputDate: row.briefingDatum,
           contextSources: result.sources.length }); return result; } });
@@ -219,7 +278,8 @@ async function main() {
     retain("PROCESSING_INPUTS.SAFE.json", { status:"PASS_ALL500_ACTUAL_D_PREPARATIONS", scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION",
       actualOriginalPreparer:true, currentDescriptorAndActualRequestDatesMatch:true, originalFilesModified:false,
       sourceRestorePreserved:true, sourceComparisonScope:"mandate/store hashes and profile counts", sourceReceiptSHA256:RECEIPT_HASH,
-      uniqueSyntheticSourceTimestamps:1,nativeDerivation:derivedNative.report,derivedRows:derivationReports.length,
+      sourceDatesRewritten:false,qualificationPin:qualified.reportPin,qualifiedAssets:qualified.report.qualifiedAssets,
+      qualifiedExecutionISO:qualified.executionISO,currentNativeDatabasePin,nativeDerivation,derivedRows:derivationReports.length,
       derivationHash:P.hash(derivationReports),requests, changedPaths:[...changedPaths], securityClockReal:true,
       globalDateReplaced:false, providerCalls:0, profileActivations:UNIT0?500:0, full500Dispatch:false,maximumAuthorizedUnits:500 });
     pass("all500 real D preparations have nonempty contexts and exact current request bindings");

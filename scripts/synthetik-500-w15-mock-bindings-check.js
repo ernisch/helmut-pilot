@@ -1,7 +1,8 @@
 "use strict";
 
 // One data-only qualification of all500 bindings after two current original sources. No HTTP provider hook,
-// database, command, authority, activation, dispatcher, retry or clock override.
+// command, authority, activation, dispatcher, retry or clock override.
+// Only the new isolated preparation DB receives the two original-source fixtures; genuine HTTP reads qualify candidates.
 // Original files and old source dates stay unchanged; only derived local source/KO/mock selections change.
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto");
 const assert = require("node:assert/strict");
@@ -11,7 +12,9 @@ const RECEIPT_SHA = "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6ad
 const POLICY = "/workspace/shared/helmut-w15-development-20261027/publication-policy.PRIVATE.json";
 const POLICY_SHA = "274033cdfdd5f1527d0e961a6c00482d61b7be317eeea03e736a6a5948aa6a04";
 const DATA = "/workspace/shared/helmut-w15-current-source-update-20261028";
-const OUT = DATA + "/qualification";
+const OUT = DATA + "/qualification-b";
+const PREP_DB = "helmut_w15_source_bindings_20261028";
+const LOCAL_CONFIG = "/tmp/w15-publication-bindings-20261028/configuration.PRIVATE.json";
 const sha = bytes => crypto.createHash("sha256").update(bytes).digest("hex");
 
 function privateBytes(filename, cap) {
@@ -71,7 +74,7 @@ function rejectedReferenceMetadata(record) {
     invalidQuelleIds: [...new Set(mismatches.map(p => p.quelleId).filter(id => typeof id === "string"))] };
 }
 
-function main() {
+async function main() {
   const guard = require.resolve("./lokaler-netzschutz");
   assert(require.cache[guard], "w15-mock-check-preloaded-network-guard");
   assert.deepEqual(require(guard).pruefe(process.env), []);
@@ -83,13 +86,14 @@ function main() {
   const parent = path.dirname(OUT);
   assert.equal(fs.realpathSync(parent), parent);
   fs.mkdirSync(OUT, { mode: 0o700 }); // Exclusive attempt marker; no automatic rerun/overwrite.
-  save("ATTEMPT_STARTED.SAFE.json", { scope: "ONE_DATA_ONLY_ALL500_MOCK_QUALIFICATION", atUTC: new Date().toISOString(),
-    databaseWrites: 0, profileActivations: 0, unitExecutions: 0, providerCalls: 0, retryAllowed: false });
+  save("ATTEMPT_STARTED.SAFE.json", { scope: "ONE_ISOLATED_ORIGINAL_SOURCE_AND_ALL500_MOCK_QUALIFICATION", atUTC: new Date().toISOString(),
+    databaseWrites: "ONLY_NEW_ISOLATED_PREPARATION_DATABASE", originalDatabaseWrites: 0, profileActivations: 0, unitExecutions: 0, providerCalls: 0, retryAllowed: false });
   const report = { schema: "helmut-w15-all500-current-original-mock-bindings/2", status: "UNKNOWN",
     scope: "Ordinary-v1 current local source/KO selections and explicit manual B/A/F mock review, genuine unchanged B/L/AI/Q/D/R; actual-day14day source window; no execution authority",
     startedAtUTC: new Date().toISOString(), expectedOwners: EXPECTED, completedOwners: 0, qualifiedOwners: 0,
     failedOwners: 0, records: [], failures: [], originalPins: [], sourceCodePins: [],
-    databaseWrites: 0, profileActivations: 0, unitExecutions: 0, providerCalls: 0, paidModelCalls: 0,
+    databaseWrites: "ONLY_NEW_ISOLATED_PREPARATION_DATABASE", originalDatabaseWrites: 0,
+    profileActivations: 0, unitExecutions: 0, providerCalls: 0, paidModelCalls: 0,
     sourceDatesRewritten: false, originalFilesWritten: false, globalDateReplaced: false,
     retryAllowed: false, full500RunAuthorized: false, productionApproval: false, actualModelOutput: false,
     currentProfessionalAcceptance: false };
@@ -169,6 +173,36 @@ function main() {
     const curatedCoverageWitness = { reference: witnessPin.path, sha256: witnessPin.sha256 };
     const bindings = Current.createBindings({ sourceEvidence, manualReviewEvidence, executionISO, fixtureWindowStart });
     const derivedNative = CurrentNative.deriveNative(native, bindings.nativeReplacements, curatedCoverageWitness);
+    const config = JSON.parse(privateBytes(LOCAL_CONFIG, 64 * 1024));
+    assert.equal(config.database, PREP_DB, "w15-current-isolated-preparation-database");
+    assert.equal(new URL(config.url).hostname, "127.0.0.1", "w15-current-loopback-postgrest-only");
+    const Database = require("./fixtures/w15-current-input-database"), { spawnSync } = require("node:child_process");
+    const sql = text => {
+      const p = spawnSync("psql", ["-X", "-w", "-qAt", "-v", "ON_ERROR_STOP=1", "-U", "postgres", "-d", PREP_DB, "-f", "-"], {
+        input: text, encoding: "utf8", timeout: 25000, maxBuffer: 1024 * 1024,
+        env: { PATH: "/usr/bin:/bin", LANG: "C.UTF-8" } });
+      assert.equal(p.status, 0, "w15-current-isolated-fixture-sql"); return p.stdout.trim();
+    };
+    sql(Database.installSQL(bindings.nativeReplacements));
+    const postimage = JSON.parse(sql("begin read only;set local statement_timeout='15s';"
+      + Database.postimageSQL(bindings.nativeReplacements) + "rollback;"));
+    const sortedById = list => [...list].sort((a,b)=>a.id.localeCompare(b.id));
+    assert.equal(postimage.active, 0, "w15-current-preparation-must-stay-zero");
+    assert.equal(P.hash(postimage.documents), P.hash(sortedById(bindings.nativeReplacements.map(r => r.document))),
+      "w15-current-original-source23-postimage-drift");
+    assert.equal(P.hash(postimage.knowledgeObjects), P.hash(sortedById(bindings.nativeReplacements.map(r => r.knowledgeObject))),
+      "w15-current-manual-ko60-postimage-drift");
+    const expectedLinks = bindings.nativeReplacements.map(r => ({ knowledge_object_id: r.knowledgeObject.id,
+      raw_document_id: r.document.id })).sort((a,b)=>a.knowledge_object_id.localeCompare(b.knowledge_object_id));
+    assert.equal(P.hash(postimage.links), P.hash(expectedLinks), "w15-current-complete-source-link-postimage-drift");
+    report.currentNativeReplacementsPin = save("CURRENT_NATIVE_REPLACEMENTS.PRIVATE.json", bindings.nativeReplacements);
+    report.originalSourceAndKOReadback = { status: "PASS_COMPLETE_NATIVE23_KO60_AND_LINK_POSTIMAGES", database: PREP_DB,
+      activeProfiles: 0, insertedNewOriginalDocuments: 2, insertedExplicitManualKOs: 2, insertedSourceLinks: 2,
+      source23Hash: P.hash(postimage.documents), ko60Hash: P.hash(postimage.knowledgeObjects), linksHash: P.hash(postimage.links) };
+    Object.assign(process.env, { SUPABASE_URL: config.url, SUPABASE_SERVICE_ROLE_KEY: config.serviceToken,
+      HELMUT_STORAGE_BACKEND: "supabase" });
+    const storage = require("../lib/helmut/storage");
+    report.publicationQualification = await bindings.qualifyPublications(storage);
     const preparedRows = [], preparedFixtures = [], derivationReports = [];
     report.nativeDerivation = derivedNative.report;
     report.briefingReadingWindow = { start: fixtureWindowStart, end: executionISO,
@@ -179,7 +213,9 @@ function main() {
     for (const relative of ["scripts/synthetik-500-w15-mock-bindings-check.js", "scripts/fixtures/w15-local-calendar.js",
       "scripts/fixtures/w15-unit0-provider.js", "scripts/fixtures/w15-full500-provider.js",
       "scripts/fixtures/w15-current-input-bindings.js", "scripts/fixtures/w15-current-mock-data.js",
-      "scripts/fixtures/w15-current-native-data.js", "lib/helmut/briefing-lagebindung.js", "lib/helmut/lage.js",
+      "scripts/fixtures/w15-current-native-data.js", "scripts/fixtures/w15-current-input-database.js",
+      "lib/helmut/storage.js", "lib/helmut/publication-eligibility.js", "lib/helmut/radarState.js",
+      "lib/helmut/briefingContract.js", "lib/helmut/briefing-lagebindung.js", "lib/helmut/lage.js",
       "lib/helmut/ai.js", "lib/helmut/lage-textqualitaet.js", "lib/helmut/lage-quellenbeleg.js", "lib/helmut/briefing-frische.js"]) {
       const bytes = fs.readFileSync(path.join(ROOT, relative));
       report.sourceCodePins.push({ path: relative, bytes: bytes.length, sha256: sha(bytes) });
@@ -293,12 +329,13 @@ function main() {
         native: save("QUALIFIED_NATIVE.PRIVATE.json", derivedNative),
         derivations: save("QUALIFIED_DERIVATIONS.PRIVATE.json", derivationReports)
       };
+      report.qualifiedAssetsPinned = true;
     }
   } catch (error) {
     report.status = "FAIL_OR_UNKNOWN_QUALIFICATION_PREREQUISITE";
     report.prerequisiteFailure = reasonOf(error);
   } finally {
-    for (const key of ["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_KEY", "AZURE_OPENAI_DEPLOYMENT"])
+    for (const key of ["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_KEY", "AZURE_OPENAI_DEPLOYMENT", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])
       delete process.env[key];
   }
   report.completedAtUTC = new Date().toISOString();
@@ -309,5 +346,5 @@ function main() {
   return report;
 }
 
-if (require.main === module) main();
+if (require.main === module) main().catch(() => { process.exitCode = 1; console.error("w15-current-qualification-unhandled-prerequisite"); });
 module.exports = { main };

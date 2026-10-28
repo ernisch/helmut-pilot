@@ -5,8 +5,8 @@ const fs = require("node:fs"), path = require("node:path"), crypto = require("no
 const assert = require("node:assert/strict"), { AsyncLocalStorage } = require("node:async_hooks");
 const { performance } = require("node:perf_hooks");
 const Memory = require("./fixtures/w15-memory-contract");
-const DIR = "/tmp/w15-full500-20261028", STATE = path.join(DIR, "state");
-const DB = "helmut_w15_full500_20261028", PUB = "HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY";
+const DIR = "/tmp/w15-full500-20261028b", STATE = path.join(DIR, "state");
+const DB = "helmut_w15_full500_20261028b", PUB = "HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY";
 const PRIV = "HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY";
 const CONFIRMATION = "GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO";
 const sha = b => crypto.createHash("sha256").update(b).digest("hex");

@@ -2,16 +2,17 @@
 """Exactly one explicitly authorized full local mock run. No action on import."""
 import datetime, zoneinfo, hashlib, json, os, pathlib, posixpath, signal, subprocess, threading, time
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-WORK=pathlib.Path('/workspace/shared/helmut-w15-full500-20261028')
-BASE='/tmp/w15-full500-20261028'
-DB='helmut_w15_full500_20261028'
-CONTAINER='w15-full500-20261028'
+WORK=pathlib.Path('/workspace/shared/helmut-w15-full500-20261028b')
+BASE='/tmp/w15-full500-20261028b'
+DB='helmut_w15_full500_20261028b'
+CONTAINER='w15-full500-20261028b'
 SOURCE_DB='helmut_w15_input_20261027'
 SOURCE_CONTAINER='synthetik500-runtime-pg-7e1c20261027'
 IMAGE='sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e'
 RECEIPT=pathlib.Path('/workspace/shared/helmut-w15-receipt-20261027/reports/W15_RECEPTION_REPORT.SAFE.json')
 RECEIPT_SHA='2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1'
-REVIEW=pathlib.Path('/workspace/shared/helmut-w15-full500-review-20261028/REVIEW_READY.SAFE.json')
+REVIEW=pathlib.Path('/workspace/shared/helmut-w15-full500-review-20261028b/REVIEW_READY.SAFE.json')
+QUALIFICATION=pathlib.Path('/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b')
 DOCKER=['docker','--host=unix:///var/run/docker.sock']
 ENV={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'}
 MEMORY=json.loads((ROOT/'scripts/fixtures/w15-memory-contract.json').read_text())
@@ -186,6 +187,24 @@ def main():
     review=json.loads(REVIEW.read_text());assert review['status']=='PASS_PRESTART_STATIC_AND_PURE_CHECKS'
     assert review['restorePreflight']['status']=='PASS_COMMITTED_ORIGINAL_RESTORE_WITH_500_INACTIVE_PROFILES'
     assert review['restorePreflight']['independentReviewAccepted']is True
+    qualification=review['sourceQualification']
+    assert qualification['status']=='PASS_ALL500_CURRENT_ORIGINAL_MOCK_BINDINGS'
+    assert qualification['independentReviewAccepted']is True
+    qpin=qualification['reportPin'];qpath=QUALIFICATION/'ALL500_MOCK_BINDINGS_CHECK.SAFE.json'
+    assert qpin['path']==str(qpath)and qpath.is_file()and not qpath.is_symlink()
+    qb=qpath.read_bytes();assert len(qb)==qpin['bytes']and sha(qb)==qpin['sha256'],'full500-qualified-report-drift'
+    qr=json.loads(qb)
+    assert qr['status']==qualification['status']and qr['completedOwners']==500 and qr['qualifiedOwners']==500 and qr['failedOwners']==0
+    assert qr['qualifiedAssetsPinned']is True
+    assert qr['originalDatabaseWrites']==0 and qr['profileActivations']==0 and qr['unitExecutions']==0 and qr['providerCalls']==0
+    assert qr['sourceDatesRewritten']is False and qr['originalFilesWritten']is False
+    assert qr['executionISO'][:10]==datetime.datetime.now(datetime.timezone.utc).date().isoformat(),'full500-qualified-day-expired'
+    for key,name in [('rows','QUALIFIED_ROWS.PRIVATE.json'),('fixtures','QUALIFIED_MOCK_FIXTURES.PRIVATE.json'),('native','QUALIFIED_NATIVE.PRIVATE.json'),('derivations','QUALIFIED_DERIVATIONS.PRIVATE.json'),('replacements','CURRENT_NATIVE_REPLACEMENTS.PRIVATE.json')]:
+        pin=qr['currentNativeReplacementsPin']if key=='replacements'else qr['qualifiedAssets'][key]
+        p=QUALIFICATION/name;assert pin['path']==str(p)and p.is_file()and not p.is_symlink()
+        b=p.read_bytes();assert len(b)==pin['bytes']and sha(b)==pin['sha256'],'full500-qualified-assets-drift'
+    for pin in qr['sourceCodePins']:
+        b=(ROOT/pin['path']).read_bytes();assert len(b)==pin['bytes']and sha(b)==pin['sha256'],'full500-qualified-constructor-source-drift'
     for pin in review['pins']:
         b=(ROOT/pin['path']).read_bytes();assert len(b)==pin['bytes']and sha(b)==pin['sha256'],'full500-reviewed-source-drift'
     assert not WORK.exists(),'full500-once-only-existing-attempt'
@@ -220,7 +239,7 @@ def main():
           'fixtures/w15-full500-provider.js','fixtures/w15-unit0-provider.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-full500-window.js']
         for n in names:shutil.copy2(ROOT/'scripts'/n,stage/'app/scripts'/n)
         pgdata=WORK/'pgdata';pgdata.mkdir(mode=0o700)
-        docker('create','--name',CONTAINER,'--label','helmut.w15.full500=20261028','--pull=never','--network=none','--restart=no',
+        docker('create','--name',CONTAINER,'--label','helmut.w15.full500=20261028b','--pull=never','--network=none','--restart=no',
           '--memory=2048000000','--memory-swap=2048000000','--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
           '-e','POSTGRES_HOST_AUTH_METHOD=trust',IMAGE);created=True
         docker('start',CONTAINER)

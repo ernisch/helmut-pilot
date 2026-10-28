@@ -118,19 +118,22 @@ function sourceCase(scope, evidence, executionISO) {
     sourceEvidence: { reference: evidence.evidenceref || evidence.htmlPath, sha256: spec.html } };
 }
 
-function buildCurrentCase({ originalRow, current, executionISO, manualReviewEvidence }) {
+function buildCurrentCase({ originalRow, current, executionISO, manualReviewEvidence, publicationCandidate }) {
   const { spec, document, knowledgeObject: ko } = current, profile = structuredClone(originalRow.profile);
   assert(profile.synthetisch === true && profile.parlament === spec.parliament, "w15-current-input-synthetic-original-profile");
   assert(new RegExp("^test-kohorte-synthetik-" + (spec.scope === "BE" ? "be" : "bt") + "-\\d{3}$").test(profile.id));
   assert(originalRow.briefingEingabe.briefing.items.some(i => i.vorgangId === spec.oldVorgangId), "w15-current-input-exact-predecessor-case");
   const A = require("../../lib/helmut/briefing-aussagenbindung"), F = require("../../lib/helmut/briefing-fachurteil");
   const Contract = require("../../lib/helmut/briefingContract"), Fresh = require("../../lib/helmut/briefing-frische");
+  const eligibility = require("../../lib/helmut/publication-eligibility");
+  eligibility.assertKnown(publicationCandidate);
+  assert.equal(hash(publicationCandidate), hash(ko), "w15-current-input-publication-candidate-content-drift");
   const day = Fresh.berlinTagKey(new Date(executionISO)), sourcesByVorgang = { [spec.vorgangId]: [document] };
   // Explicit editorial Observe choice, not an invented model match/confidence.
   const decision = { knowledge_object_id: ko.id, vorgang_id: ko.vorgang_id, user_id: profile.id,
     score: 40, decision: "Beobachten", priority_type: "observe", matched_features: [], redaktionellerRang: 0 };
-  const briefing = Contract.toBriefingContractV3({ profile, decisions: [decision], kosById: { [ko.id]: ko },
-    sourcesByVorgang, now: new Date(executionISO), briefingType: "daily", knowledgeObjects: [ko],
+  const briefing = Contract.toBriefingContractV3({ profile, decisions: [decision], kosById: { [ko.id]: publicationCandidate },
+    sourcesByVorgang, now: new Date(executionISO), briefingType: "daily", knowledgeObjects: [publicationCandidate],
     frischeFenster: { start: WINDOW_START } });
   briefing.publicationEligibilityPolicy = structuredClone(originalRow.briefingEingabe.briefing.publicationEligibilityPolicy);
   assert(briefing.available && briefing.currentHelmutState?.tagesAnlass, "w15-current-input-existing-B-constructor-day-cause");
@@ -207,6 +210,23 @@ function createBindings({ sourceEvidence, manualReviewEvidence, executionISO }) 
   const nativeReplacements = Object.values(cases).map(c => ({ scope: c.spec.scope, oldDocumentIds: [...c.spec.oldDocumentIds],
     oldVorgangId: c.spec.oldVorgangId, document: structuredClone(c.document), knowledgeObject: structuredClone(c.knowledgeObject),
     vorgangId: c.spec.vorgangId, koVersion: 1 }));
+  let publicationCandidates = null;
+  async function qualifyPublications(storage) {
+    assert.equal(publicationCandidates, null, "w15-current-input-no-publication-retry");
+    const genuineStorage = require("../../lib/helmut/storage");
+    assert.equal(storage, genuineStorage, "w15-current-input-genuine-storage-required");
+    const eligibility = require("../../lib/helmut/publication-eligibility"), policy = eligibility.current();
+    assert(policy.hash, "w15-current-input-existing-publication-policy-required");
+    const requested = Object.values(cases).map(c => c.knowledgeObject);
+    const eligible = await eligibility.filterCandidates(storage, requested, policy);
+    assert.deepEqual(eligible.map(k => k.id).sort(), requested.map(k => k.id).sort(),
+      "w15-current-input-all-new-publication-candidates-required");
+    assert(eligible.every(k => eligibility.known(k, policy)), "w15-current-input-genuine-publication-proof-required");
+    publicationCandidates = new Map(eligible.map(k => [k.id, k]));
+    return { status: "PASS_GENUINE_COMPLETE_PUBLICATION_IDENTITY_FILTER", policyHash: policy.hash,
+      eligibleIds: eligible.map(k => k.id), requestOverride: false, proofSerialized: false,
+      proofScope: "PROCESS_LOCAL_EXISTING_SYMBOL_AND_WEAKSET; NATIVE_TUPLES_STAY_PLAIN" };
+  }
   function replaceInventory(sources) {
     const removedDocs = new Set(nativeReplacements.flatMap(r => r.oldDocumentIds)), removedKos = new Set(nativeReplacements.map(r => r.oldVorgangId));
     return { documents: [...sources.documents.filter(d => !removedDocs.has(d.id)), ...nativeReplacements.map(r => structuredClone(r.document))],
@@ -215,7 +235,9 @@ function createBindings({ sourceEvidence, manualReviewEvidence, executionISO }) 
   function deriveRow(originalRow) {
     const oldHash = hash(originalRow), ids = originalRow.briefingEingabe.briefing.items.map(i => i.vorgangId);
     const current = Object.values(cases).find(c => ids.includes(c.spec.oldVorgangId));
-    const derived = current ? buildCurrentCase({ originalRow, current, executionISO, manualReviewEvidence })
+    if (current) assert(publicationCandidates, "w15-current-input-publication-filter-must-precede-constructor");
+    const derived = current ? buildCurrentCase({ originalRow, current, executionISO, manualReviewEvidence,
+      publicationCandidate: publicationCandidates.get(current.knowledgeObject.id) })
       : require("./w15-local-calendar").rebindOrdinaryRow(originalRow, executionISO);
     const intermediateRowHash = hash(derived.row), calendarHash = derived.report.derivedRowHash;
     const selectedCalendarPreserved = derived.report.sourceProfileAndReviewTextsPreserved;
@@ -246,7 +268,7 @@ function createBindings({ sourceEvidence, manualReviewEvidence, executionISO }) 
     });
     return derived;
   }
-  return { scope: SCOPE, nativeReplacements: structuredClone(nativeReplacements), deriveRow,
+  return { scope: SCOPE, nativeReplacements: structuredClone(nativeReplacements), deriveRow, qualifyPublications,
     caseFor(scope) { assert(cases[scope]); return structuredClone(cases[scope]); },
     note: "Root builds fresh native6doc/6KO/6cluster keys and a new truthful curated0U coverage witness with the existing generators. No old coverage evidence is reused." };
 }
