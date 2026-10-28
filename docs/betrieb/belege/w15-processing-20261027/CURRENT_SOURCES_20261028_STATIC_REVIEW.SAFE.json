@@ -1,0 +1,106 @@
+{
+  "status": "STATIC_REVIEW_RECORDED_POSTRUN_ACTUAL_FAILURE_BLOCKS_QUALIFICATION",
+  "recordedAtUTC": "2026-10-28T06:05:10.886300+00:00",
+  "previousCommunicatedAssessment": "PASS for bounded source-only review before the formal attempt; no preview execution was performed.",
+  "reviewScope": [
+    "Root native inventory helper6documents/6KOs/6clusters and fresh explicit manualU0 coverage",
+    "Input helper source-pinned finite semantic curation and real A/F version2 schema/quote anchors",
+    "Qualifier original/source/code pins, first failure stop, genuine unchanged constructors, private assets only on500PASS",
+    "Original profiles/files/source dates unchanged, shared inventory replacement honestly reported and final row hashes assigned afterward"
+  ],
+  "independence": {
+    "currentMockDataAuthoredByThisReviewer": true,
+    "independentSelfAcceptanceOfMockCodeClaimed": false,
+    "independentOriginalSourceReview": "required_data_audit plus Root source/excerpt and mock-content review",
+    "reviewedInputHelperAuthoredBy": "w15_memory_audit",
+    "reviewedNativeHelperAndQualifierAuthoredBy": "Root"
+  },
+  "actualSubsequentOutcome": {
+    "status": "FAIL_50_PASSED_1_FAILED_449_UNATTEMPTED",
+    "reportPin": {
+      "path": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification/ALL500_MOCK_BINDINGS_CHECK.SAFE.json",
+      "bytes": 620284,
+      "sha256": "dfd20fe8aea431be91c2ca80e58000bd6be1ed15ca7e92ad9e97cc43c2f1e0fa"
+    },
+    "missedPrerequisite": "New manual KO is constructed from plain JSON fields. Input helper invokes the real B constructor without having obtained that candidate proof. Copying public policy metadata later does not create the missing process-local proof.",
+    "readinessBlocked": true
+  },
+  "sourceCodePins": [
+    {
+      "path": "scripts/synthetik-500-w15-mock-bindings-check.js",
+      "bytes": 21644,
+      "sha256": "e40b4beae276f92a989287c521f837e88485464849defba8fe12455ff915ca22"
+    },
+    {
+      "path": "scripts/fixtures/w15-local-calendar.js",
+      "bytes": 4937,
+      "sha256": "4e7cd70c70dcfad6ef4e4f97c7dd1f6ce6385a57e04b642140814b38bcf2f4f6"
+    },
+    {
+      "path": "scripts/fixtures/w15-unit0-provider.js",
+      "bytes": 8826,
+      "sha256": "fdf4ac5a036dfa03347a562c99ef3a330080e5b23db0ea5e9cd47be3ce95e221"
+    },
+    {
+      "path": "scripts/fixtures/w15-full500-provider.js",
+      "bytes": 6616,
+      "sha256": "df71e0c063274f0d65d6eaa7ab291b42d435b985d15824b785e2ac6e22507d6a"
+    },
+    {
+      "path": "scripts/fixtures/w15-current-input-bindings.js",
+      "bytes": 24516,
+      "sha256": "33a97deec2511fe6690246801eefd269a4984db128e3f8edfd4c10f5b32cc663"
+    },
+    {
+      "path": "scripts/fixtures/w15-current-mock-data.js",
+      "bytes": 14178,
+      "sha256": "606ab86623ae68b9b33644d09cbde33c3eaee1a5ae11bcc229054dbe74a95587"
+    },
+    {
+      "path": "scripts/fixtures/w15-current-native-data.js",
+      "bytes": 4575,
+      "sha256": "c7650ad5bd75039d9a64e13b84fc97a594718441a8a042ce5ad27eeb4fe5401d"
+    },
+    {
+      "path": "lib/helmut/briefing-lagebindung.js",
+      "bytes": 2933,
+      "sha256": "6cca21f32919cf3df2c6f6661886b1c8fc5a4aa99f5c0016953d3f043095a5a3"
+    },
+    {
+      "path": "lib/helmut/lage.js",
+      "bytes": 56155,
+      "sha256": "b69d8abc8793be120980bfd86f3d4e65682a6f885ddd6d16b10671d4c67995b3"
+    },
+    {
+      "path": "lib/helmut/ai.js",
+      "bytes": 100090,
+      "sha256": "33a64efbe45989f4ee5f3f1268c0874c0a2c4924b2ac4c825977005824ccbd5a"
+    },
+    {
+      "path": "lib/helmut/lage-textqualitaet.js",
+      "bytes": 24722,
+      "sha256": "efb6d4a512f84e74454d6ef1f93d3e00661c5b4ec560f7fb2c6256c41e4e9cd1"
+    },
+    {
+      "path": "lib/helmut/lage-quellenbeleg.js",
+      "bytes": 13666,
+      "sha256": "94583ff0cffc77934117ad4f36146b74c050cf11dd780e7b4b5e69501a2084bf"
+    },
+    {
+      "path": "lib/helmut/briefing-frische.js",
+      "bytes": 21804,
+      "sha256": "748209a7a2217e8a8d5adc99755ad981176b2fac6a2071c04209795b78ea54a4"
+    }
+  ],
+  "executionByThisReviewer": {
+    "constructorCalls": 0,
+    "tests": 0,
+    "DBQueries": 0,
+    "DBWrites": 0,
+    "profileActivations": 0,
+    "providerCalls": 0,
+    "repairs": 0,
+    "retries": 0
+  },
+  "noPASSReadySeal": true
+}

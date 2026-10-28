@@ -1,0 +1,201 @@
+{
+  "schema": "helmut-w15-independent-publication-guard-and-originals/1",
+  "status": "FAIL_CALLER_PUBLICATION_ELIGIBILITY_CONTRACT_ORIGINALS_PRESERVED",
+  "reviewedAtUTC": "2026-10-28T06:06:02.428910+00:00",
+  "reviewer": "independent-source-memory-review-agent",
+  "scope": "Read-only source diagnosis of the first formal qualification failure and independent byte/SHA256 comparison of all11 received original files. No fix or repeated constructor/validator/qualification/DB/runtime call.",
+  "qualificationReport": {
+    "path": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification/ALL500_MOCK_BINDINGS_CHECK.SAFE.json",
+    "bytes": 620284,
+    "sha256": "dfd20fe8aea431be91c2ca80e58000bd6be1ed15ca7e92ad9e97cc43c2f1e0fa",
+    "status": "FAIL_FIRST_CURRENT_BINDING_NO_RETRY",
+    "startedAtUTC": "2026-10-28T06:03:36.135Z",
+    "completedAtUTC": "2026-10-28T06:03:38.805Z"
+  },
+  "qualificationCardinality": {
+    "expectedOwners": 500,
+    "completedOwners": 51,
+    "qualifiedOwners": 50,
+    "failedOwners": 1,
+    "unattemptedOwners": 449,
+    "firstFailureIndex": 50,
+    "firstFailureOwner": "test-kohorte-synthetik-be-001",
+    "variantIndex": 4,
+    "first50BBQualified": true,
+    "all500ReadinessAccepted": false
+  },
+  "firstFailure": {
+    "reason": "publication-eligibility-candidate-unchecked",
+    "phase": "current-source-bindings-constructed",
+    "type": "PublicationEligibilityError",
+    "code": "PUBLICATION_ELIGIBILITY_UNAVAILABLE"
+  },
+  "rootCause": {
+    "classification": "Missing existing caller contract in new local fixture helper; no core guard defect inferred.",
+    "helper": "scripts/fixtures/w15-current-input-bindings.js:132-135 passes newly curated KO directly into the existing briefing constructor; no prior filterCandidates proof exists.",
+    "chain": [
+      "lib/helmut/briefingContract.js:1153 calls radarState.buildCurrentRadarState",
+      "lib/helmut/radarState.js:983-992 applies active publication policy and assertKnown to each supplied KO",
+      "lib/helmut/publication-eligibility.js:85-91 requires private Symbol/WeakSet proof matching policy hash and KO identity"
+    ],
+    "requiredExistingCallerContract": "publication-eligibility.filterCandidates(storage,kos,policy), lines96-114, reads complete publication-source identities through getPublicationSourceIdentities, checks policy stability and holds, and returns KOs carrying its own genuine in-memory proof. The actual returned proof-bearing objects must reach the constructor; copying a public policy DTO does not provide this proof.",
+    "completeReaderEvidence": "storage.js:5698-5735 reads paginated linked raw document identities and requires an empty terminal page; a first40 subset or only best_source_url is not its completion contract.",
+    "KOIdentityFields": [
+      "id",
+      "vorgang_id",
+      "best_source_url"
+    ],
+    "notEstablished": "This error does not establish that the new BE source is withheld, substantively invalid or outside14 days. The complete publication-identity eligibility check was not provided.",
+    "notAFVerdict": "The failure happens before the new B/A/F binding and D/R qualification complete; no new positive A/F acceptance follows.",
+    "noShortcutAllowed": [
+      "no policy removal or empty-policy override",
+      "no assertKnown replacement",
+      "no forged private Symbol/WeakSet proof",
+      "no inherited old KO proof for changed identity",
+      "no abbreviated source identity list presented as complete"
+    ],
+    "repairApplied": false,
+    "furtherCallsOrRetryPerformed": false
+  },
+  "originalPreservation": {
+    "receiptSHA256": "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1",
+    "receiptMatchesKnownOriginal": true,
+    "originalFileCount": 11,
+    "totalOriginalBytes": 96530256,
+    "all11CurrentBytesAndSHA256MatchReceipt": true,
+    "verificationMethod": "Read each received original as bytes once during this review, compare exact length and SHA256 to retained receipt; no parsing/building of original assertions was executed.",
+    "originalPins": [
+      {
+        "key": "normalizedCurrentPolicy",
+        "bytes": 89982254,
+        "sha256": "90e11a4228e2e568edf03c3feb9ea2c79e71449e68fdc6c563a3355f1fbaaa14",
+        "independentlyMatchedCurrentBytes": true
+      },
+      {
+        "key": "package",
+        "bytes": 631359,
+        "sha256": "52b4a49c334a2d537f642cddf3f95d3eb6e6830e0f3b1b7280c8bd8fd3812f10",
+        "independentlyMatchedCurrentBytes": true
+      },
+      {
+        "key": "nativeInventoryHistoricalTemplate",
+        "bytes": 44832,
+        "sha256": "9285dd06daf66d9ecaafa045d7cdfa2e8793f21cc1d7d70aeda9fe97267c5f97",
+        "independentlyMatchedCurrentBytes": true
+      },
+      {
+        "key": "actualSource23KO60",
+        "bytes": 82170,
+        "sha256": "2057d97278d80d1ec37b2355c41c90fbfab315250d9eefbf30d4e45128f0c967",
+        "independentlyMatchedCurrentBytes": true
+      },
+      {
+        "key": "originalUPacket",
+        "bytes": 53018,
+        "sha256": "8d732cb88dc6df457b66682a45831e60b8ecdb28d92b35d4c1db4440991f2ed2",
+        "independentlyMatchedCurrentBytes": true
+      },
+      {
+        "key": "reviewedMockCandidates",
+        "bytes": 213986,
+        "sha256": "90a789d058f503dfb4cc58a988866fe80a7d39bdfeb26b4039cc8d5cde3bf515",
+        "independentlyMatchedCurrentBytes": true
+      },
+      {
+        "key": "staticMockTemplates",
+        "bytes": 97720,
+        "sha256": "cb80981e72a5ce74ab9e2530dd7f32005ae088d45359f22e8cdb20afa7c3e4f0",
+        "independentlyMatchedCurrentBytes": true
+      },
+      {
+        "key": "originalProfileReference",
+        "bytes": 439524,
+        "sha256": "92567bd9602cbd0e30644359b77d8996cbb56aeeb2c4c3de53818beb15a7626f",
+        "independentlyMatchedCurrentBytes": true
+      },
+      {
+        "key": "frozenSourceDump",
+        "bytes": 4981565,
+        "sha256": "06c6f37c7189dd166641d867809d42424f5c44618ab5cf6974939057ad61025c",
+        "independentlyMatchedCurrentBytes": true
+      },
+      {
+        "key": "localRoles",
+        "bytes": 658,
+        "sha256": "d9a99d567346768110a91f10033fd32cfa6e2a88dedd52ee59bfe62136ba0e02",
+        "independentlyMatchedCurrentBytes": true
+      },
+      {
+        "key": "readOnlyCapture",
+        "bytes": 3170,
+        "sha256": "2eb7ba1030eb62bda6c8610fde5104ed679fdfe706e35591c825205c708148be",
+        "independentlyMatchedCurrentBytes": true
+      }
+    ],
+    "originalNativeHashBefore": "cedf15fcab22b12110e2a766f1281ec72815de78620b0bd1f85320b213defdd3",
+    "originalNativeHashAfter": "cedf15fcab22b12110e2a766f1281ec72815de78620b0bd1f85320b213defdd3",
+    "originalNativeBeforeAfterEqual": true
+  },
+  "sourceCodePins": [
+    {
+      "path": "scripts/fixtures/w15-current-input-bindings.js",
+      "bytes": 24516,
+      "sha256": "33a97deec2511fe6690246801eefd269a4984db128e3f8edfd4c10f5b32cc663"
+    },
+    {
+      "path": "lib/helmut/briefingContract.js",
+      "bytes": 64171,
+      "sha256": "285939d8d37432c16ed48346b26787f6ed14448cd090713b47eb4005104a7e02"
+    },
+    {
+      "path": "lib/helmut/radarState.js",
+      "bytes": 66475,
+      "sha256": "aad627cc79c73b4004c6049ab73fbc0440c319f6978c1d74b93a2616988dcc06"
+    },
+    {
+      "path": "lib/helmut/publication-eligibility.js",
+      "bytes": 8672,
+      "sha256": "d1ea673bfecd27feddf64f9275ea0f3c3a153ee66bc2e07d60efaee09f24ac4c"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 543389,
+      "sha256": "28f67b93e4269e92193ca971327b072bd37b0113ceb506282809c95b0aa8c61c"
+    }
+  ],
+  "qualificationReportedActions": {
+    "databaseWrites": 0,
+    "profileActivations": 0,
+    "unitExecutions": 0,
+    "providerCalls": 0,
+    "paidModelCalls": 0
+  },
+  "qualificationReportedFlags": {
+    "sourceDatesRewritten": false,
+    "originalFilesWritten": false,
+    "globalDateReplaced": false,
+    "retryAllowed": false,
+    "full500RunAuthorized": false,
+    "productionApproval": false
+  },
+  "reviewActions": {
+    "sourceCodeEdits": 0,
+    "tests": 0,
+    "constructorOrValidatorCalls": 0,
+    "qualificationReruns": 0,
+    "databaseQueries": 0,
+    "databaseWrites": 0,
+    "runtimeOrControllerStarts": 0,
+    "activations": 0,
+    "units": 0,
+    "providers": 0,
+    "timers": 0,
+    "reportFileCreatedOnly": true
+  },
+  "stoppedAfterFirstFormalFailure": true,
+  "full500ConditionalGoConsumed": false,
+  "newFull500RunStarted": false,
+  "full500Proof": false,
+  "productionProof": false,
+  "next": "Preserve the first failure and current code/evidence. No repair, constructor call, qualification retry or runner start follows under the stop instruction."
+}

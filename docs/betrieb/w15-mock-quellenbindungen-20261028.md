@@ -1,4 +1,95 @@
-# W15 Mock-/Quellenbindungen:500 geprueft,338PASS/162FAIL
+# W15 Quellen aktualisiert; neue Vorprüfung gestoppt (28.10.)
+
+**Abgebrochen nach erstem FAIL:** Genau eine kostenfreie datenreine Prüfung,
+06:03:36.135–06:03:38.805UTC (09:03:36–38Istanbul). **50 PASS,1 FAIL,
+449 nicht versucht.** Das Ziel500/500 ist nicht erreicht. Kein neuer Vollauf,
+Container, DB-Schreibzugriff, Aktivierung, Unit, Mockantwort oder Modellaufruf.
+Die bedingte Freigabe für einen neuen Mock500-Gesamtversuch ist ungenutzt.
+
+## Neue belegte Originalquellen und lokale Bindungen
+
+Im vorhandenen Bestand fehlten geeignete Quellen. Nur zwei neue amtliche
+Originalartikel und der kleine amtliche Berliner Zeitnachweis wurden abgerufen;
+alle verbleiben geschützt in der Cloud, ohne Mac-Download oder Originalersatz.
+
+- Berlin: [Steuerschätzung vom23.10.](https://www.berlin.de/sen/finanzen/presse/pressemitteilungen/pressemitteilung.1730442.php),
+  amtlicher Index23.10.,12:52Berlin/10:52UTC, Minutenpräzision. HTML50643B,
+  SHA256 `717c311350b734ae503946cb238d531f7d0c66a77e4bc2b037635fb8f1b24e3d`.
+  Vollständiger zusammenhängender Auszug1139Zeichen: erwartete31,3/32,4Mrd.Euro
+  Steuereinnahmen2026/27 und ausdrücklich zugeschriebene Wirtschaftsunsicherheit.
+- Variante6: [Bundestagsmeldung vom16.10.](https://www.bundestag.de/presse/hib/kurzmeldungen-1225362),
+  nur Publikationstag belegt, keine erfundene Veröffentlichungsuhrzeit. HTML256798B,
+  SHA256 `c6938aebddb2e5c2203b6c5892802010ae78cc46e6d1cf76554995136f2c12ca`.
+  Vollständige benachbarte Absätze1177Zeichen: Grünen-Forderung nach sozialem
+  Wohnungsbau/Bestandsnutzung und zugeschriebene Genehmigungshürden.
+  Keine alten PDF-Zahlen oder Statistikbehauptungen übernommen.
+
+Beide Quellen liegen am tatsächlichen28.10. vollständig im unveränderten
+14-Tage-Fenster.16 Quellen-/Auszugs-/Zeitbelege positiv und durch Root zusätzlich
+an den Original-HTMLs gegengelesen. Quellen-/Mock-/Inputhelpers sind ausschließlich
+optionale lokale Testdaten:120 neue BE-Bindungen und42 Wohnungsbau-Bindungen,
+neu und offen manuell kuratiert; keine Modellreview- oder native U-Quittung.
+Die anderen338 ausgewählten Briefings bleiben inhaltlich bei ihren historischen
+Quellen, nur Kalenderbindung neu. Das gemeinsame ausgewählte Inventar wird
+getrennt offengelegt:7→6Dokumente,6KOs/6Cluster; alte Originale bleiben erhalten.
+
+Für die neuen Briefingdaten verwendet der unveränderte B-Konstruktor ein
+explizites lokales Test-Lesefenster ab16.10.; keine Behauptung heutiger Nachrichten
+oder eines nativen Morgenreceipts. Die echte Lage-Quellenfrist, Systemuhr,
+Signaturen, Kosten-, Auth-, Einmaligkeits- und Productionregeln bleiben unverändert.
+BT-Mitternacht ist ausschließlich dokumentierte Speicherung des belegten Tags;
+die lokale Anzeige nennt ehrlich nur diesen Tag, keine Publisher-Uhrzeit.
+
+## Erster tatsächlicher Fehler und engster Folgeschritt
+
+**Index50, `test-kohorte-synthetik-be-001`, Variante4:**
+`publication-eligibility-candidate-unchecked` während der Bindungskonstruktion.
+Die vorigen50 Brandenburgprofile bestanden die echten unveränderten B/A/F-/L-
+und AI/Q-/D/R-Konstruktoren. Für die übrigen449 gab es nach dem ersten Fehler
+keine weitere Konstruktorprüfung; insbesondere Variante6 ist noch nicht dynamisch
+abgenommen. Keine qualifizierten Daten-/Mockpakete wurden geschrieben.
+
+Der neue Testhelper übergibt seinen neuen Wissenseintrag direkt an
+`toBriefingContractV3`. Dessen echte Radarprojektion verlangt unter der erhaltenen
+Veröffentlichungspolicy den prozesslokalen Kandidatennachweis. Dieser entsteht
+nur durch den bestehenden `publication-eligibility.filterCandidates`-Pfad mit
+vollständiger Quellenidentitätslesung. Der Aufruf fehlt im neuen lokalen Helper.
+Ein kopierter Policyhash oder ein manuelles A/F-Urteil ersetzt diesen Nachweis
+nicht. Der Guard hat korrekt gesperrt; dies ist kein inhaltliches Quellenurteil.
+
+Der vorherige statische Review hatte diese Konstruktorvorbedingung übersehen.
+Zwei unabhängige Nachlesereviews bestätigen den tatsächlichen FAIL;44 Kontrollen
+im Qualifikationsreview. Die Fehleraufzeichnung enthält an dieser frühen Phase
+noch alte RBB-Vorgängermetadaten. Die tatsächlich neu versuchte Quelle/KO sind
+im unabhängigen Bericht und Native-Ableitungsbeleg eindeutig separat benannt.
+Alle11 Originaldateien mit96530256Bytes byte-/hashgleich; auch die ursprüngliche
+isolierte Datenbank ist gegen den erhaltenen Vorherbeleg unverändert.
+
+Nach FAIL keine Reparatur oder Wiederholung. Kürzester nächster Schritt ist die
+fehlende reguläre Kandidatenprüfung mit vollständigen Quellenidentitäten vor
+dem B-Konstruktor einzubinden und erneut gezielt zu prüfen. **Wegen der ausdrücklichen
+Stop-Regel ist dafür ein neues GO erforderlich.** Keine Policy leeren,
+keine Freigabe fälschen und keine Sicherheitskontrolle überspringen.
+V8-Coverage wurde im notwendigen Lauf erfasst; keine weitere Testsuite/CI gestartet.
+App/Server/Workflows sind seit der grünen Basis `da63309c`/CI40534410137 unverändert;
+diese neue datenreine Qualifikation ist ausdrücklich FAIL, kein neues CI-Grün.
+
+- [Zusammenfassung, Quellenpins, Bilanz und nächste Änderung](belege/w15-processing-20261027/CURRENT_SOURCES_20261028_SUMMARY.SAFE.json).
+- [Alle51 tatsächlichen Einzelprotokolle](belege/w15-processing-20261027/CURRENT_SOURCES_20261028_QUALIFICATION.SAFE.json).
+- [Unabhängiger Qualifikationsreview](belege/w15-processing-20261027/CURRENT_SOURCES_20261028_REVIEW.SAFE.json).
+- [Originalerhaltung und konkrete Veröffentlichungsbindung](belege/w15-processing-20261027/CURRENT_SOURCES_20261028_ORIGINALS.SAFE.json).
+- [Quelleninhalt und Datumspräzision](belege/w15-processing-20261027/CURRENT_SOURCES_20261028_SOURCE_REVIEW.SAFE.json).
+- [Ursprüngliche isolierte Datenbank unverändert](belege/w15-processing-20261027/CURRENT_SOURCES_20261028_SOURCE_DB.SAFE.json).
+- [V8-Abdeckung dieser begrenzten Vorprüfung](belege/w15-processing-20261027/CURRENT_SOURCES_20261028_COVERAGE.SAFE.json).
+
+PR969/971/972 bleiben ungemergt. Kein500er-PASS, keine neuen gespeicherten Ausgaben;
+Ergebniskategorien eines neuen Gesamtlaufs nicht anwendbar. Historische Fehler und
+die früher1500fehlenden Ausgaben bleiben im folgenden Befund und im separaten
+Vollaufdossier unverändert erhalten. Kein Productionnachweis.
+
+---
+
+# Historischer Befund vor Quellenaktualisierung:338PASS/162FAIL
 
 Die einmalige vollstaendige Vorpruefung lief am28.10.,05:30:21.782UTC
 (08:30:21Istanbul) mit den echten bestehenden Konstruktoren und unveraenderten

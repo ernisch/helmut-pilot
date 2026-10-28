@@ -1,0 +1,493 @@
+{
+  "status": "COVERAGE_CAPTURED_DURING_ONLY_REQUIRED_FAILED_QUALIFICATION",
+  "scope": "V8 function/range counters for this partial local data qualification only; no full-suite or global line coverage claim",
+  "atUTC": "2026-10-28T06:05:28.716724+00:00",
+  "testStatus": "FAIL_FIRST_CURRENT_BINDING_NO_RETRY",
+  "completedOwners": 51,
+  "qualifiedOwners": 50,
+  "failedOwners": 1,
+  "unattemptedOwners": 449,
+  "files": [
+    {
+      "path": "lib/helmut/synthetik-500-eu-service-contract.js",
+      "functionRecords": 16,
+      "executedFunctionRecords": 5,
+      "rangeRecords": 18,
+      "executedRangeRecords": 5
+    },
+    {
+      "path": "lib/helmut/synthetik-500-profile.js",
+      "functionRecords": 13,
+      "executedFunctionRecords": 8,
+      "rangeRecords": 22,
+      "executedRangeRecords": 14
+    },
+    {
+      "path": "lib/helmut/streaming-canonical-hash.js",
+      "functionRecords": 8,
+      "executedFunctionRecords": 8,
+      "rangeRecords": 81,
+      "executedRangeRecords": 71
+    },
+    {
+      "path": "lib/helmut/canonical-content-facts.js",
+      "functionRecords": 46,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 46,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/synthetik-500-cpu-epoch.js",
+      "functionRecords": 27,
+      "executedFunctionRecords": 2,
+      "rangeRecords": 27,
+      "executedRangeRecords": 2
+    },
+    {
+      "path": "lib/helmut/canonical-sha-byte-writer.js",
+      "functionRecords": 3,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 3,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/briefing-frische.js",
+      "functionRecords": 26,
+      "executedFunctionRecords": 15,
+      "rangeRecords": 62,
+      "executedRangeRecords": 20
+    },
+    {
+      "path": "scripts/fixtures/w15-current-input-bindings.js",
+      "functionRecords": 31,
+      "executedFunctionRecords": 27,
+      "rangeRecords": 71,
+      "executedRangeRecords": 55
+    },
+    {
+      "path": "scripts/fixtures/w15-current-mock-data.js",
+      "functionRecords": 5,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 5,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "scripts/fixtures/w15-current-native-data.js",
+      "functionRecords": 11,
+      "executedFunctionRecords": 11,
+      "rangeRecords": 12,
+      "executedRangeRecords": 12
+    },
+    {
+      "path": "lib/helmut/synthetik-500-kosten-plan.js",
+      "functionRecords": 41,
+      "executedFunctionRecords": 28,
+      "rangeRecords": 60,
+      "executedRangeRecords": 36
+    },
+    {
+      "path": "lib/helmut/synthetik-500-kosten-admission.js",
+      "functionRecords": 27,
+      "executedFunctionRecords": 2,
+      "rangeRecords": 27,
+      "executedRangeRecords": 2
+    },
+    {
+      "path": "lib/helmut/knowledge-object-version.js",
+      "functionRecords": 5,
+      "executedFunctionRecords": 5,
+      "rangeRecords": 18,
+      "executedRangeRecords": 15
+    },
+    {
+      "path": "lib/helmut/synthetik-500-kosten-intents.js",
+      "functionRecords": 10,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 10,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/testkosten-budget.js",
+      "functionRecords": 27,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 27,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/verstehen-vertrag.js",
+      "functionRecords": 11,
+      "executedFunctionRecords": 4,
+      "rangeRecords": 17,
+      "executedRangeRecords": 6
+    },
+    {
+      "path": "lib/helmut/briefing-lagebindung.js",
+      "functionRecords": 14,
+      "executedFunctionRecords": 11,
+      "rangeRecords": 25,
+      "executedRangeRecords": 11
+    },
+    {
+      "path": "lib/helmut/briefing-speicher.js",
+      "functionRecords": 11,
+      "executedFunctionRecords": 5,
+      "rangeRecords": 19,
+      "executedRangeRecords": 10
+    },
+    {
+      "path": "lib/helmut/lage.js",
+      "functionRecords": 34,
+      "executedFunctionRecords": 5,
+      "rangeRecords": 42,
+      "executedRangeRecords": 5
+    },
+    {
+      "path": "lib/helmut/sourceSafety.js",
+      "functionRecords": 32,
+      "executedFunctionRecords": 27,
+      "rangeRecords": 72,
+      "executedRangeRecords": 29
+    },
+    {
+      "path": "lib/helmut/scoring.js",
+      "functionRecords": 42,
+      "executedFunctionRecords": 3,
+      "rangeRecords": 44,
+      "executedRangeRecords": 3
+    },
+    {
+      "path": "lib/helmut/understanding-schema.js",
+      "functionRecords": 8,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 8,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/matching-erklaerung.js",
+      "functionRecords": 10,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 10,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/matching-begruendung.js",
+      "functionRecords": 9,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 9,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/lage-quellenbeleg.js",
+      "functionRecords": 18,
+      "executedFunctionRecords": 11,
+      "rangeRecords": 63,
+      "executedRangeRecords": 11
+    },
+    {
+      "path": "lib/helmut/radarState.js",
+      "functionRecords": 64,
+      "executedFunctionRecords": 10,
+      "rangeRecords": 94,
+      "executedRangeRecords": 10
+    },
+    {
+      "path": "lib/helmut/briefingLanguage.js",
+      "functionRecords": 8,
+      "executedFunctionRecords": 5,
+      "rangeRecords": 16,
+      "executedRangeRecords": 7
+    },
+    {
+      "path": "lib/helmut/matching.js",
+      "functionRecords": 39,
+      "executedFunctionRecords": 5,
+      "rangeRecords": 52,
+      "executedRangeRecords": 13
+    },
+    {
+      "path": "lib/helmut/config.js",
+      "functionRecords": 8,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 8,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/quellenarchitektur/seeds/geographies.js",
+      "functionRecords": 7,
+      "executedFunctionRecords": 7,
+      "rangeRecords": 8,
+      "executedRangeRecords": 7
+    },
+    {
+      "path": "lib/helmut/quellenarchitektur/seeds/entities.js",
+      "functionRecords": 6,
+      "executedFunctionRecords": 6,
+      "rangeRecords": 12,
+      "executedRangeRecords": 12
+    },
+    {
+      "path": "lib/helmut/quellenarchitektur/seeds/publishers.js",
+      "functionRecords": 1,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 1,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/quellen-zeitvertrag.js",
+      "functionRecords": 5,
+      "executedFunctionRecords": 2,
+      "rangeRecords": 11,
+      "executedRangeRecords": 2
+    },
+    {
+      "path": "lib/helmut/briefing-quellenqualitaet.js",
+      "functionRecords": 12,
+      "executedFunctionRecords": 7,
+      "rangeRecords": 22,
+      "executedRangeRecords": 7
+    },
+    {
+      "path": "lib/helmut/vorgang-identity.js",
+      "functionRecords": 42,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 44,
+      "executedRangeRecords": 3
+    },
+    {
+      "path": "lib/helmut/herausgeber.js",
+      "functionRecords": 11,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 11,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "scripts/fixtures/w15-full500-provider.js",
+      "functionRecords": 6,
+      "executedFunctionRecords": 4,
+      "rangeRecords": 9,
+      "executedRangeRecords": 7
+    },
+    {
+      "path": "lib/helmut/synthetik-500-w-inventar.js",
+      "functionRecords": 15,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 15,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/synthetik-500-eu-frozen-reader.js",
+      "functionRecords": 20,
+      "executedFunctionRecords": 2,
+      "rangeRecords": 21,
+      "executedRangeRecords": 2
+    },
+    {
+      "path": "scripts/fixtures/w15-local-calendar.js",
+      "functionRecords": 8,
+      "executedFunctionRecords": 8,
+      "rangeRecords": 22,
+      "executedRangeRecords": 21
+    },
+    {
+      "path": "lib/helmut/briefing-aussagenbindung.js",
+      "functionRecords": 31,
+      "executedFunctionRecords": 25,
+      "rangeRecords": 152,
+      "executedRangeRecords": 107
+    },
+    {
+      "path": "lib/helmut/briefing-fachurteil.js",
+      "functionRecords": 18,
+      "executedFunctionRecords": 14,
+      "rangeRecords": 37,
+      "executedRangeRecords": 14
+    },
+    {
+      "path": "lib/helmut/publication-eligibility.js",
+      "functionRecords": 30,
+      "executedFunctionRecords": 20,
+      "rangeRecords": 49,
+      "executedRangeRecords": 20
+    },
+    {
+      "path": "lib/helmut/bundestag-dokumenthintergrund.js",
+      "functionRecords": 13,
+      "executedFunctionRecords": 7,
+      "rangeRecords": 29,
+      "executedRangeRecords": 7
+    },
+    {
+      "path": "lib/helmut/dip-quellfelder.js",
+      "functionRecords": 23,
+      "executedFunctionRecords": 4,
+      "rangeRecords": 50,
+      "executedRangeRecords": 4
+    },
+    {
+      "path": "lib/helmut/lage-textqualitaet.js",
+      "functionRecords": 34,
+      "executedFunctionRecords": 29,
+      "rangeRecords": 100,
+      "executedRangeRecords": 38
+    },
+    {
+      "path": "lib/helmut/briefing-korrektur.js",
+      "functionRecords": 8,
+      "executedFunctionRecords": 2,
+      "rangeRecords": 8,
+      "executedRangeRecords": 2
+    },
+    {
+      "path": "lib/helmut/briefing-ereignisteilmitglieder.js",
+      "functionRecords": 39,
+      "executedFunctionRecords": 11,
+      "rangeRecords": 54,
+      "executedRangeRecords": 15
+    },
+    {
+      "path": "lib/helmut/artikelstand.js",
+      "functionRecords": 6,
+      "executedFunctionRecords": 3,
+      "rangeRecords": 10,
+      "executedRangeRecords": 5
+    },
+    {
+      "path": "lib/helmut/bundestag-artikelstand.js",
+      "functionRecords": 16,
+      "executedFunctionRecords": 3,
+      "rangeRecords": 23,
+      "executedRangeRecords": 3
+    },
+    {
+      "path": "lib/helmut/berlin-artikelstand.js",
+      "functionRecords": 22,
+      "executedFunctionRecords": 3,
+      "rangeRecords": 29,
+      "executedRangeRecords": 3
+    },
+    {
+      "path": "lib/helmut/brandenburg-landtag-presseartikelstand.js",
+      "functionRecords": 24,
+      "executedFunctionRecords": 3,
+      "rangeRecords": 31,
+      "executedRangeRecords": 3
+    },
+    {
+      "path": "lib/helmut/quellen-auszug.js",
+      "functionRecords": 13,
+      "executedFunctionRecords": 3,
+      "rangeRecords": 15,
+      "executedRangeRecords": 3
+    },
+    {
+      "path": "lib/helmut/dedup.js",
+      "functionRecords": 14,
+      "executedFunctionRecords": 4,
+      "rangeRecords": 33,
+      "executedRangeRecords": 4
+    },
+    {
+      "path": "scripts/fixtures/w15-unit0-provider.js",
+      "functionRecords": 4,
+      "executedFunctionRecords": 3,
+      "rangeRecords": 4,
+      "executedRangeRecords": 3
+    },
+    {
+      "path": "lib/helmut/ai.js",
+      "functionRecords": 95,
+      "executedFunctionRecords": 26,
+      "rangeRecords": 128,
+      "executedRangeRecords": 26
+    },
+    {
+      "path": "lib/helmut/verstehen-restzeit.js",
+      "functionRecords": 7,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 7,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/azure-endpunkt.js",
+      "functionRecords": 5,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 5,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/provider-runtime-attestation.js",
+      "functionRecords": 14,
+      "executedFunctionRecords": 2,
+      "rangeRecords": 21,
+      "executedRangeRecords": 2
+    },
+    {
+      "path": "lib/helmut/anbieter-steuerung.js",
+      "functionRecords": 11,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 11,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/lage-datumsbindung.js",
+      "functionRecords": 7,
+      "executedFunctionRecords": 3,
+      "rangeRecords": 11,
+      "executedRangeRecords": 3
+    },
+    {
+      "path": "lib/helmut/briefingContract.js",
+      "functionRecords": 123,
+      "executedFunctionRecords": 86,
+      "rangeRecords": 308,
+      "executedRangeRecords": 89
+    },
+    {
+      "path": "lib/helmut/decisions.js",
+      "functionRecords": 11,
+      "executedFunctionRecords": 1,
+      "rangeRecords": 11,
+      "executedRangeRecords": 1
+    },
+    {
+      "path": "lib/helmut/briefing-relativzeit.js",
+      "functionRecords": 4,
+      "executedFunctionRecords": 2,
+      "rangeRecords": 9,
+      "executedRangeRecords": 2
+    },
+    {
+      "path": "lib/helmut/empfehlungs-text.js",
+      "functionRecords": 2,
+      "executedFunctionRecords": 2,
+      "rangeRecords": 5,
+      "executedRangeRecords": 2
+    },
+    {
+      "path": "lib/helmut/briefing-bereichsvertrag.js",
+      "functionRecords": 29,
+      "executedFunctionRecords": 16,
+      "rangeRecords": 50,
+      "executedRangeRecords": 16
+    },
+    {
+      "path": "lib/helmut/briefing-ereignisgruppen.js",
+      "functionRecords": 14,
+      "executedFunctionRecords": 6,
+      "rangeRecords": 27,
+      "executedRangeRecords": 6
+    }
+  ],
+  "coverageFiles": [
+    {
+      "path": "/workspace/shared/helmut-w15-current-source-update-20261028/coverage/coverage-5803-1793167418907-0.json",
+      "bytes": 115712,
+      "sha256": "72580691b25c21037d2e7b2a24df043957cbddc406adde6d41b4f0498bfcf903"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-current-source-update-20261028/coverage/coverage-5810-1793167418821-0.json",
+      "bytes": 465846,
+      "sha256": "8ab56ce5a24ea1ea0dd5034438a59daf2130c2623fb29f4479a665b16b62c21e"
+    }
+  ]
+}

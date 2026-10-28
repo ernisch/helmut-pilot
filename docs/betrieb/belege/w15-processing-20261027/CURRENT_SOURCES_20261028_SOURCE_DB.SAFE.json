@@ -1,0 +1,20 @@
+{
+  "status": "PASS_UNCHANGED_ORIGINAL_ISOLATED_SOURCE_DATABASE",
+  "atUTC": "2026-10-28T06:06:40.238936+00:00",
+  "beforeEvidence": "/workspace/helmut-pilot/docs/betrieb/belege/w15-processing-20261027/FULL500_20261028_SOURCE_AFTER.SAFE.json",
+  "after": {
+    "active": 500,
+    "rawHash": "c44e74d5463f9a7fdda7e07e3bb125b7ac2e316065e2bf26939e7541b3944e17",
+    "profiles": 500,
+    "storeHash": "b096fa764c03a2fdbbb36e3d1d9e14ed34da7cd8a1ff32e354d132a4a7b7b284",
+    "identities": 501,
+    "profileHash": "fafba5723cb6be289b5bf092acbf439e9bd7247c96ab970228e99b3aaf7bf675"
+  },
+  "queryReadOnly": true,
+  "currentSprintDatabaseWrites": 0,
+  "newTestContainers": 0,
+  "newTestProfileActivations": 0,
+  "originalActiveFlags": "500 preserved original snapshot flags; not new test activations",
+  "full500AttemptStarted": false,
+  "newFull500AuthorizationConsumed": false
+}
