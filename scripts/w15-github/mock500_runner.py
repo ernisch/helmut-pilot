@@ -51,11 +51,14 @@ PHASE = 'arguments'
 
 
 class MockRunnerError(RuntimeError):
-    def __init__(self, phase=None, worker_phase=None):
+    def __init__(self, phase=None, worker_phase=None, worker_memory=None):
         self.phase = phase if type(phase) is str and phase in PHASES else PHASE if PHASE in PHASES else 'arguments'
         self.safe_failure = {'phase': self.phase}
         if type(worker_phase) is str and worker_phase in WORKER_PHASES:
             self.safe_failure['worker'] = {'phase': worker_phase}
+            memory = S.P.R.closed_failure_memory(worker_memory)
+            if memory is not None:
+                self.safe_failure['worker']['memory'] = memory
         super().__init__('MOCK500_RUNNER_FAILED_OR_UNKNOWN')
 
 
@@ -138,11 +141,12 @@ def validate_public_result(result, manifest):
 
 
 def _failure(value):
-    need(type(value) is dict and set(value) in ({'ok', 'phase'}, {'ok', 'phase', 'workerPhase'})
+    need(type(value) is dict and set(value) in ({'ok', 'phase'}, {'ok', 'phase', 'workerPhase'}, {'ok', 'phase', 'workerPhase', 'workerMemory'})
          and value['ok'] is False and type(value['phase']) is str and value['phase'] in PHASES
          and ('workerPhase' not in value or
-              type(value['workerPhase']) is str and value['workerPhase'] in WORKER_PHASES))
-    return MockRunnerError(value['phase'], value.get('workerPhase'))
+              type(value['workerPhase']) is str and value['workerPhase'] in WORKER_PHASES)
+         and ('workerMemory' not in value or S.P.R.closed_failure_memory(value['workerMemory']) is not None))
+    return MockRunnerError(value['phase'], value.get('workerPhase'), value.get('workerMemory'))
 
 
 def _started(started_at, started_mono, maximum):
@@ -176,6 +180,9 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
             phase = getattr(error, 'phase', None)
             if type(phase) is str and phase in WORKER_PHASES:
                 failure['workerPhase'] = phase
+                memory = S.P.R.closed_failure_memory(getattr(error, 'worker_memory', None))
+                if memory is not None:
+                    failure['workerMemory'] = memory
             sender.send_bytes(S._encode(failure, S.MAX_RESULT))
         except BaseException:
             pass
@@ -340,6 +347,8 @@ def main(argv=None):
                 response = {'ok': False, 'phase': failure.phase}
                 if 'worker' in failure.safe_failure:
                     response['workerPhase'] = failure.safe_failure['worker']['phase']
+                    if 'memory' in failure.safe_failure['worker']:
+                        response['workerMemory'] = failure.safe_failure['worker']['memory']
                 S._send_result(ipc_dir, ctx, response)
             except BaseException:
                 pass

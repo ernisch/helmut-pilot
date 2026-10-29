@@ -49,6 +49,22 @@ def assess(sample):
     return sample
 
 
+def closed_failure_memory(value):
+    """Closed numeric diagnostics only; never a resource acceptance."""
+    keys = {'configuredLimitBytes', 'kernelLifetimePeakBytes', 'currentBytes',
+            'swapMaximumBytes', 'swapCurrentBytes', 'lastReadbackValid', 'events'}
+    events = ('max', 'oom', 'oom_kill', 'oom_group_kill')
+    if type(value) is not dict or set(value) != keys or type(value['lastReadbackValid']) is not bool:
+        return None
+    if any(type(value[k]) is not int or not 0 <= value[k] <= 2**53 - 1
+           for k in keys - {'lastReadbackValid', 'events'}):
+        return None
+    if type(value['events']) is not dict or set(value['events']) != set(events) or any(
+            type(value['events'][k]) is not int or not 0 <= value['events'][k] <= 2**53 - 1 for k in events):
+        return None
+    return json.loads(json.dumps(value))
+
+
 class CommonResources:
     def __init__(self, token, context, path, identity):
         require(token is TOKEN)
@@ -104,6 +120,23 @@ class CommonResources:
         return {'lastReadbackValid': self._last_valid,
                 'lastObservedKernelSample': json.loads(json.dumps(self._last_observed)),
                 'fullLifetimeClosureAccepted': False}
+
+    def failure_observation(self):
+        """Project the existing cached sample. No kernel read or peak reset."""
+        value = self._last_observed
+        if type(value) is not dict:
+            return None
+        try:
+            for key in ('configuredLimit', 'swapMaximum'):
+                if type(value[key]) is not str or re.fullmatch('[0-9]{1,16}', value[key]) is None:
+                    return None
+            result = {key: value[key] for key in ('kernelLifetimePeakBytes', 'currentBytes', 'swapCurrentBytes')}
+            result.update(configuredLimitBytes=int(value['configuredLimit']), swapMaximumBytes=int(value['swapMaximum']),
+                lastReadbackValid=self._last_valid,
+                events={key: value['events'][key] for key in ('max', 'oom', 'oom_kill', 'oom_group_kill')})
+            return closed_failure_memory(result)
+        except (KeyError, TypeError, ValueError):
+            return None
 
     def safe_summary(self):
         value = self.sample()

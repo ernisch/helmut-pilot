@@ -44,8 +44,9 @@ def need(value, phase='binding'):
 
 
 class WorkflowRejected(RuntimeError):
-    def __init__(self, phase='arguments'):
+    def __init__(self, phase='arguments', worker_memory=None):
         self.phase = phase if phase in PHASES else 'arguments'
+        self.worker_memory = worker_memory
         super().__init__('MOCK500_WORKFLOW_FAILED_OR_UNKNOWN')
 
 
@@ -196,7 +197,7 @@ def _result(manifest):
 
 
 def run_worker(manifest, private_payload):
-    phase = 'binding'
+    phase, resources = 'binding', None
     try:
         raw, digest = validate_admission(manifest, private_payload)
         validate_manifest(manifest)
@@ -259,7 +260,8 @@ def run_worker(manifest, private_payload):
              and len(receipts) == 1, 'closure')
         phase = 'closure'; closing_guard(); resources.sample()
         return _result(manifest)
-    except WorkflowRejected:
+    except WorkflowRejected as error:
+        error.worker_memory = _cached_memory(resources)
         raise
     except BaseException as error:
         # Only fixed component checkpoints survive; no exception text or paths.
@@ -268,7 +270,14 @@ def run_worker(manifest, private_payload):
         if receiver is not None and type(error) is getattr(receiver, 'MockReceiveError', None):
             if child_phase in MOCK_RECEIVER_PHASES:
                 child_phase = 'mock-receiver-' + child_phase
-        raise WorkflowRejected(child_phase if child_phase in PHASES else phase) from None
+        raise WorkflowRejected(child_phase if child_phase in PHASES else phase, _cached_memory(resources)) from None
+
+
+def _cached_memory(resources):
+    try:
+        return component('common_resources').closed_failure_memory(resources.failure_observation())
+    except BaseException:
+        return None
 
 
 def plan():
@@ -301,8 +310,12 @@ def main(argv=None):
         safe = {'status': 'FAIL_OR_BLOCKED_MOCK500_WORKFLOW', 'phase': phase if phase in allowed else 'arguments',
                 'executionAuthority': False, 'retryAllowed': False}
         child = getattr(error, 'safe_failure', {}).get('worker')
-        if type(child) is dict and set(child) == {'phase'} and child['phase'] in PHASES:
-            safe['worker'] = child
+        if type(child) is dict and set(child) in ({'phase'}, {'phase', 'memory'}) and type(child['phase']) is str and child['phase'] in PHASES:
+            safe['worker'] = {'phase': child['phase']}
+            if 'memory' in child:
+                memory = component('common_resources').closed_failure_memory(child['memory'])
+                if memory is not None:
+                    safe['worker']['memory'] = memory
         print(canonical(safe).decode()); return 1
 
 

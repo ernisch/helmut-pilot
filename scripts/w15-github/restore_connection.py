@@ -22,6 +22,9 @@ E = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(E)
 PHASES = {'binding', 'receive', 'input-binding', 'cache', 'prepare', 'restore', 'closure',
           'prepared-check', 'materialization', 'container-start', 'readiness', 'native-restore', 'backup'}
+BACKUP_PHASES = {'backup-export', 'backup-freeze', 'backup-collect', 'backup-seal',
+                 'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'}
+PHASES |= BACKUP_PHASES
 
 
 class RestoreConnectionError(RuntimeError):
@@ -238,6 +241,7 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
         if backup_completion is not None:
             phase = 'backup'
             backup_receipt = backup_completion(forward=forward, inputs=inputs, resources=resources, watch=watch, restored=restored)
+            phase = 'backup-postcheck'
             need(isinstance(backup_receipt, dict) and backup_receipt.get('watchClosed') is True
                  and backup_receipt.get('remoteReadbackObserved') is True
                  and backup_receipt.get('databaseRestoreObserved') is True)
@@ -245,8 +249,9 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
         inputs.path('localRoles')
         inputs.path('frozenSourceDump')
         resources.sample()
-    except (Exception, KeyboardInterrupt):
-        failure = phase
+    except (Exception, KeyboardInterrupt) as error:
+        nested = getattr(error, 'phase', None)
+        failure = nested if phase == 'backup' and type(nested) is str and nested in BACKUP_PHASES else phase
     finally:
         phase = 'closure'
         if attempted:

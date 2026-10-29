@@ -1,4 +1,15 @@
 'use strict';
+function closedFailureMemory(value){
+  const keys=['configuredLimitBytes','kernelLifetimePeakBytes','currentBytes','swapMaximumBytes','swapCurrentBytes','lastReadbackValid','events'];
+  const events=['max','oom','oom_kill','oom_group_kill'];
+  if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).sort().join(',')!==[...keys].sort().join(',')||
+    typeof value.lastReadbackValid!=='boolean')return null;
+  if(keys.filter(k=>!['lastReadbackValid','events'].includes(k)).some(k=>!Number.isSafeInteger(value[k])||value[k]<0))return null;
+  if(!value.events||typeof value.events!=='object'||Array.isArray(value.events)||
+    Object.keys(value.events).sort().join(',')!==[...events].sort().join(',')||
+    events.some(k=>!Number.isSafeInteger(value.events[k])||value.events[k]<0))return null;
+  return value;
+}
 // Runtime artifact credentials exist in JavaScript actions. They travel only
 // through private stdin, never shell expansion, arguments or public outputs.
 const fs = require('node:fs');
@@ -55,14 +66,19 @@ function main() {
       'connection-prepare','connection-restore','connection-closure','receiver-arguments',
       'connection-prepared-check','connection-materialization','connection-container-start',
       'connection-readiness','connection-native-restore','connection-backup',
+      ...['backup-export','backup-freeze','backup-collect','backup-seal','backup-transport',
+        'backup-authenticate','backup-recovery','backup-postcheck'].flatMap(p=>[p,'connection-'+p]),
       'receiver-source-binding','receiver-private-inputs','receiver-index','receiver-disk-admission',
       'receiver-key-import','receiver-encrypted-index','receiver-download','receiver-cipher-readback',
       'receiver-authenticated-reception','receiver-relocation','receiver-agent-close'];
     if (failed.status !== 'FAIL_W15_ISOLATED_WORKFLOW' || !phases.includes(failed.phase)
       || failed.executionAuthority !== false || failed.retryAllowed !== false) throw Error('receipt');
     const safe = {status:failed.status,phase:failed.phase,executionAuthority:false,retryAllowed:false};
-    if (failed.worker && Object.keys(failed.worker).length === 1 && phases.includes(failed.worker.phase))
+    if (failed.worker && Object.keys(failed.worker).every(k=>['phase','memory'].includes(k)) && phases.includes(failed.worker.phase)) {
       safe.worker={phase:failed.worker.phase};
+      const memory=closedFailureMemory(failed.worker.memory);
+      if(memory)safe.worker.memory=memory;
+    }
     console.log(JSON.stringify(safe)); process.exitCode=1; return;
   }
   // The Python boundary emits one strictly bounded public receipt.

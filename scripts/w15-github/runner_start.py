@@ -70,15 +70,21 @@ WORKER_PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', '
                  'receiver-index', 'receiver-disk-admission', 'receiver-key-import',
                  'receiver-encrypted-index', 'receiver-download', 'receiver-cipher-readback',
                  'receiver-authenticated-reception', 'receiver-relocation', 'receiver-agent-close'}
+BACKUP_PHASES = {'backup-export', 'backup-freeze', 'backup-collect', 'backup-seal',
+                 'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'}
+WORKER_PHASES |= BACKUP_PHASES | {'connection-' + phase for phase in BACKUP_PHASES}
 
 
 class RunnerStartError(RuntimeError):
-    def __init__(self, phase=None, worker_phase=None):
+    def __init__(self, phase=None, worker_phase=None, worker_memory=None):
         self.phase = phase if phase in PHASES else PHASE if PHASE in PHASES else 'arguments'
         self.worker_phase = worker_phase if type(worker_phase) is str and worker_phase in WORKER_PHASES else None
+        self.worker_memory = P.R.closed_failure_memory(worker_memory)
         self.safe_failure = {'phase': self.phase}
         if self.worker_phase is not None:
             self.safe_failure['worker'] = {'phase': self.worker_phase}
+            if self.worker_memory is not None:
+                self.safe_failure['worker']['memory'] = self.worker_memory
         super().__init__('RUNNER_START_FAILED_OR_UNKNOWN')
 
 
@@ -122,10 +128,11 @@ def _worker_result(result, request):
 
 def _response_error(value):
     need(type(value) is dict and value.get('ok') is False
-         and set(value) in ({'ok', 'phase'}, {'ok', 'phase', 'workerPhase'})
+         and set(value) in ({'ok', 'phase'}, {'ok', 'phase', 'workerPhase'}, {'ok', 'phase', 'workerPhase', 'workerMemory'})
          and value.get('phase') in PHASES
-         and ('workerPhase' not in value or value['workerPhase'] in WORKER_PHASES))
-    return RunnerStartError(value['phase'], value.get('workerPhase'))
+         and ('workerPhase' not in value or value['workerPhase'] in WORKER_PHASES)
+         and ('workerMemory' not in value or P.R.closed_failure_memory(value['workerMemory']) is not None))
+    return RunnerStartError(value['phase'], value.get('workerPhase'), value.get('workerMemory'))
 
 
 def _path(value):
@@ -455,6 +462,9 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
             failure = {'ok': False, 'phase': 'worker'}
             if type(child_phase) is str and child_phase in WORKER_PHASES:
                 failure['workerPhase'] = child_phase
+                memory = P.R.closed_failure_memory(getattr(error, 'worker_memory', None))
+                if memory is not None:
+                    failure['workerMemory'] = memory
             sender.send_bytes(_encode(failure, MAX_RESULT))
         except BaseException:
             pass
@@ -666,6 +676,8 @@ def main(argv=None):
             result = {'ok': False, 'phase': failure.phase}
             if failure.worker_phase is not None:
                 result['workerPhase'] = failure.worker_phase
+                if failure.worker_memory is not None:
+                    result['workerMemory'] = failure.worker_memory
             _send_result(args.ipc_dir, ctx, result)
         except BaseException:
             pass

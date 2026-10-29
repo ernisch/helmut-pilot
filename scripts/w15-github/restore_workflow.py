@@ -37,13 +37,16 @@ DECLARATION_KEYS = {'nonce', 'sourceQualification', 'approval', 'limits', 'maxim
 PRIVATE_KEYS = {'cipherIndex', 'keyB64', 'passphrase', 'eventInputs', 'artifactCredentials'}
 CONNECTION_PHASES = {'binding', 'receive', 'input-binding', 'cache', 'prepare', 'restore', 'closure',
                      'prepared-check', 'materialization', 'container-start', 'readiness', 'native-restore', 'backup'}
+BACKUP_PHASES = {'backup-export', 'backup-freeze', 'backup-collect', 'backup-seal',
+                 'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'}
+CONNECTION_PHASES |= BACKUP_PHASES
 RECEIVER_PHASES = {'arguments', 'source-binding', 'private-inputs', 'index', 'disk-admission',
                    'key-import', 'encrypted-index', 'download', 'cipher-readback',
                    'authenticated-reception', 'relocation', 'agent-close'}
 PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', 'resources',
           'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure'} | {
               'connection-' + phase for phase in CONNECTION_PHASES} | {
-              'receiver-' + phase for phase in RECEIVER_PHASES}
+              'receiver-' + phase for phase in RECEIVER_PHASES} | BACKUP_PHASES
 RUNNER_PHASES = {'arguments', 'binding', 'parent', 'service', 'staging', 'worker', 'closure', 'ipc'}
 STATUSES = {'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
             'end500-restore-gated': 'PASS_SAME_JOB_RESTORE_BACKUP_500_INACTIVE_ONLY_START_BLOCKED',
@@ -55,8 +58,9 @@ RESULT_FALSE = {'executionAuthority', 'end500Acceptance', 'mock500Acceptance',
 
 
 class WorkflowRejected(RuntimeError):
-    def __init__(self, phase='arguments'):
+    def __init__(self, phase='arguments', worker_memory=None):
         self.phase = phase if phase in PHASES else 'arguments'
+        self.worker_memory = worker_memory
         super().__init__('W15_ISOLATED_WORKFLOW_FAILED_OR_UNKNOWN')
 
 
@@ -344,7 +348,7 @@ def _connection_failure_phase(error, connection_code, fallback):
 
 def run_worker(manifest, private_payload):
     """A's single fixed UID1000 worker. Call only after measured bootstrap."""
-    phase, connection_code = 'binding', None
+    phase, connection_code, resources, backup_code, backup_failure = 'binding', None, None, None, None
     try:
         raw, digest, qualification = validate_admission(manifest, private_payload)
         _manifest(manifest)
@@ -382,12 +386,22 @@ def run_worker(manifest, private_payload):
             full = manifest['mode'] == 'end500-full-gated'
             complete = (backup_code.completion_hook if full else backup_code.restore_completion_hook)(manifest, private_payload, guard)
             def capture(**kwargs):
+                nonlocal backup_failure
                 need(not receipts, 'backup')
-                receipt = complete(**kwargs)
-                need(type(receipt) is dict and receipt.get('remoteReadbackObserved') is True
-                     and receipt.get('databaseRestoreObserved') is True, 'backup')
-                receipts.append(receipt)
-                return receipt
+                try:
+                    receipt = complete(**kwargs)
+                    need(type(receipt) is dict and receipt.get('remoteReadbackObserved') is True
+                         and receipt.get('databaseRestoreObserved') is True, 'backup-postcheck')
+                    receipts.append(receipt)
+                    return receipt
+                except BaseException as error:
+                    # The legacy full controller retains its own closure and
+                    # exits SystemExit(1). Keep only this first closed phase
+                    # across that exit; never retain exception text or paths.
+                    if backup_failure is None:
+                        nested = getattr(error, 'phase', None)
+                        backup_failure = nested if type(nested) is str and nested in BACKUP_PHASES else 'backup'
+                    raise
             if full:
                 phase = 'end500'
                 forward.main(inputs=connection.controller_inputs(), common_resources=resources,
@@ -403,10 +417,26 @@ def run_worker(manifest, private_payload):
         guard()
         resources.sample()
         return _result(manifest)
-    except WorkflowRejected:
+    except WorkflowRejected as error:
+        error.worker_memory = _cached_failure_memory(resources)
         raise
     except BaseException as error:
-        raise WorkflowRejected(_connection_failure_phase(error, connection_code, phase)) from None
+        selected = _connection_failure_phase(error, connection_code, phase)
+        if backup_failure is not None:
+            selected = backup_failure
+        if backup_code is not None and type(error) is getattr(backup_code, 'BackupRuntimeError', None):
+            nested = getattr(error, 'phase', None)
+            if type(nested) is str and nested in BACKUP_PHASES:
+                selected = nested
+        raise WorkflowRejected(selected, _cached_failure_memory(resources)) from None
+
+
+def _cached_failure_memory(resources):
+    try:
+        value = resources.failure_observation()
+        return _load('common_resources').closed_failure_memory(value)
+    except BaseException:
+        return None
 
 
 def plan():
@@ -424,8 +454,11 @@ def _safe_failure(error):
         if type(phase) is str and phase in RUNNER_PHASES:
             result = {'phase': phase}
             worker = candidate.get('worker')
-            if type(worker) is dict and set(worker) == {'phase'} and type(worker['phase']) is str and worker['phase'] in PHASES:
+            if type(worker) is dict and set(worker) in ({'phase'}, {'phase', 'memory'}) and type(worker['phase']) is str and worker['phase'] in PHASES:
                 result['worker'] = {'phase': worker['phase']}
+                memory = _load('common_resources').closed_failure_memory(worker.get('memory'))
+                if memory is not None:
+                    result['worker']['memory'] = memory
             return result
     return {'phase': 'arguments'}
 

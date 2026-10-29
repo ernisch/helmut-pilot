@@ -53,7 +53,7 @@ Quellbindung umfasst sämtliche neuen Python-/JavaScript-/Action-Abhängigkeiten
 
 Empfang, Staging, Restore, Arbeit, Sicherung, SDK-Kinder, Rückdownload,
 Rücksicherung und Abschluss teilen denselben Lebenszeitpeak und dieselbe Uhr.
-Kein Peak-/Zeitreset. Vollständiger konservativer Plattenplan enthält alle elf
+Kein Peak-/Zeitreset.Vollständiger konservativer Plattenplan enthält alle elf
 zusätzlichen Eingaben samt Kopien; zusätzlich reservieren zwei getrennte
 Inputcipherbudgets je1326437376Bytes die Teile und die Konkatenation. Der
 bestehende Decoder prüft dieselbe Obergrenze vor jedem GET. Unbekannte Bytezahlen bleiben unbekannt und
@@ -179,3 +179,58 @@ Keine Original-/Cipher-/Key-Payloads gelesen und keine Inventur neu erzeugt.
 Der30Teil-Backupindex enthält keine separate SAFE-Scope-Mitgliederreferenz.
 Der verbleibende gezielte Transferbedarf bleibt unverändert; keine erneute
 Gesamtübertragung und keine neue Qualifikation zulässig.
+
+
+## Dritter exakt freigegebener Restoreversuch und gezielte Backupdiagnose
+
+Nach neuem ausdrücklichem GO wurde40931663329 auf unverändertc89d423f genau
+einmal gestartet. Tatsächlicher gesamter verschlüsselter Dispatch47864Zeichen,
+frische Linkgültigkeit geprüft, kein Retry. ErgebnisFAIL`connection-backup`.
+Die fünf primären Native-Restoreschritte und500Profile/0aktiv sind ausschließlich
+durch den geprüften Codefluss vor dieser Phase belegt; keine unabhängige
+Gesamt-Abnahme. Für diesen Run sind keine finalisierten Artefakte verzeichnet.
+Vollständige Sicherung, Remote-Readback, zweite Rücksicherung und gemeinsame
+Lebenszeitabnahme fehlen weiter; End500 bleibt gesperrt. Alle früheren FAILs
+bleiben unverändert. Kein neuer echter Versuch ist dadurch freigegeben.
+
+Die rein lesende Eingrenzung fand keinen deterministisch belegten neuen
+Sicherungsdefekt. Der tatsächliche Erstfehler istUNKNOWN; es wird kein Fix der
+historischen Ursache behauptet. Behoben wird der belegte Diagnoseverlust:
+Limited-Restore trennt nun feste Export-/Freeze-/Collect-/Seal-/Transport-/
+Authenticate-/Recovery-/Postcheck-Phasen. Der Full-End500-Completioncallback
+bewahrt seine erste feste Fehlerphase auch über den vorhandenen Legacy-
+SystemExit; Export/Collect vor diesem Callback behalten den Legacy-Fallback.
+Keine freien Exceptiontexte, Pfade oder privaten Logdaten werden veröffentlicht.
+
+Zusätzlich wird ausschließlich die bereits vorhandene letzte RAM-Beobachtung
+als geschlossenes numerisches Objekt projiziert: Limit/Peak/Current/Swap und
+vier Kernelereignisse plus Readbackgültigkeit. Keine Neumessung, kein Peakreset
+und kein neues Akzeptanzflag. Booleans statt Zahlen, freie Felder, Texte und
+Werte außerhalb sicherer JS-Ganzzahlen werden abgewiesen oder verworfen.
+Fiktive Worker-/IPC-/JavaScript-Grenztests und unabhängige Prüfung bestätigen
+nur diese Diagnoseverbindungen, keinen Originalbackup-PASS.
+
+Der bestehende CI-PostgreSQL17-Service prüft erstmals gezielt das unveränderte
+Snapshot-SQL mit500kleinen ausdrücklich fiktiven inaktiven Datensätzen, einer
+zweiten kleinen Tabelle(Duplikate/NULL/Unicode) und einer Sequenz. Kein
+500er-Controller, keine Aktivierung/Auth-CAS/Units/Provider/Originale, keine
+neuen Schlüssel oder Infrastruktur. Rohes SQL-Ergebnis bleibt im Speicher;
+öffentlich nur geschlossene Prüfzähler. Lokal war psql nicht vorhanden: native
+SQL-Abnahme erst nach tatsächlichem CI-PASS, nicht aus Syntaxprüfungen ableiten.
+
+Nächste Ausführung erst nach aktuellen Pflichtchecks, nativer synthetischer
+Snapshotprüfung, unabhängigem Review und neuem konkretem GO. Ohne anderweitig
+belegten Bug wäre dies ausdrücklich ein gezielter Backup-Diagnoselauf im
+bestehenden einmaligen Restorepfad, keine behauptete Reparaturabnahme und kein
+identischer automatischer Retry. Grenzen/Rückweg unverändert; keine erneute
+Originalbeschaffung oder Mock-Zusatzübertragung freigegeben.
+
+
+Betreiberbestätigung: Der historische13.706.128Byte-Qualifikationsbericht am
+bekannten qualification-b-Pfad ist weiterhin nicht zugänglich; kein aktueller
+Ort oder vollständiges passendes Drivebackup bestätigt. BLOCKED. Kleinster
+notwendiger Dateischritt ist die gezielte Wiederherstellung exakt dieses
+vorhandenen Berichts aus erhaltenem Ursprungsbestand oder einem passenden
+Snapshot nach seiner Erstellung, SHA256d2603d926508a1655b415b18734fe37bc1a660dccb6f139ae43b1859a11bed3d.
+Ohne bestätigte Quelle kein ausführbarer Transferweg; keine neue Inventur,
+Neuqualifikation, Ersatzdatei oder erneute Gesamtübertragung.

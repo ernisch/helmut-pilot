@@ -1,5 +1,24 @@
 # CURRENT STATE — Helmut
 
+## W15 Fortschreibung: primärer Restore durchlaufen, Backup noch FAIL
+
+Neues exaktes Betreiber-GO aufc89d423f wurde genau einmal genutzt: Run40931663329
+FAIL`connection-backup`,47864Zeichen verschlüsselter Dispatch. Primäre fünf
+Native-Schritte und500/0 nur durch verifizierten Codefluss belegt; keine
+unabhängige Gesamt-Restore-/Backup-/RAM-Abnahme, keine finalisierten Artefakte.
+Kein Retry/End500/Mock500. Alte7e3d96e9/b6/c89d und ihre FAIL-Belege erhalten.
+
+Gezielte anschließende Entwicklung: acht feste Backup-Unterphasen, geschlossen
+numerische Diagnose ausschließlich aus bestehendem RAM-Cache ohne Neumessung,
+Erhalt einer Callbackphase über Legacy-SystemExit. Kein tatsächlicher Backupbug
+als repariert behauptet; historische UrsacheUNKNOWN. Neue fiktive Tests und
+unabhängige Reviews PASS. Unverändertes echtes Snapshot-SQL wird im vorhandenen
+synthetischen CI-PostgreSQL mit kleinen500/0Fixturezeilen geprüft; native CI
+noch erforderlich. Kein Original-/500er-Controller-/Modelllauf durch den Test.
+Nächster echter Datenlauf erfordert neue konkrete Freigabe und aktuelle CI.
+Mock-Dateiblocker und bestehende Zeit-/RAM-Verträge bleiben unverändert.
+
+
 ## W15: Restore-Einzelversuch FAIL; Mock500 integriert, Ausführung gesperrt
 
 PR975-Branch wurde ohne Force-Push auf den geprüften gemeinsamen Integrationsstand
