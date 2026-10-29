@@ -115,6 +115,22 @@ class MockResourceChecks(unittest.TestCase):
         with self.assertRaises(R.ResourceRejected):
             R.DiskGuard(self.root, plan, SimpleNamespace(profile='END500_V3', sample=Mock()), started_monotonic=time.monotonic())
 
+    def test_additional_input_cipher_copies_have_full_separate_caps_and_require_fresh_capacity(self):
+        plan = self.plan()
+        budgets = plan['budgets']
+        self.assertEqual(budgets['mockInputCipherParts'], R.D.MAX_CIPHER_BYTES)
+        self.assertEqual(budgets['mockInputCipherConcatenation'], R.D.MAX_CIPHER_BYTES)
+        self.assertEqual(budgets['mockPrivateAssetSources'], 123456789)
+        self.assertEqual(budgets['mockPrivateAssetMaterialization'], 123456789)
+        self.assertEqual(plan['requiredAdditionalBytes'], sum(budgets.values()) + R.D.FREE_RESERVE_BYTES)
+        for name in ('mockInputCipherParts', 'mockInputCipherConcatenation'):
+            altered = {**plan, 'budgets': {**budgets, name: R.D.MAX_CIPHER_BYTES - 1}}
+            with self.subTest(category=name), self.assertRaises(R.ResourceRejected):
+                R.DiskGuard(self.root, altered, self.resources, started_monotonic=time.monotonic())
+        self.free = plan['requiredAdditionalBytes'] - 4096
+        with self.assertRaisesRegex(R.ResourceRejected, 'COMPLETE_RETAINED_DISK_PLAN_DOES_NOT_FIT'):
+            self.plan()
+
 
 if __name__ == '__main__':
     unittest.main()

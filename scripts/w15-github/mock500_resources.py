@@ -132,7 +132,12 @@ MAX_SELECTION_BYTES = D.MAX_SELECTION_BYTES
 MAX_CIPHER_BYTES = MAX_SELECTION_BYTES + D.ARCHIVE_OVERHEAD_BYTES
 BUDGETS.update({'completePrivateSelection': MAX_SELECTION_BYTES, 'encryptedBackup': MAX_CIPHER_BYTES,
     'offhostCipherDownload': MAX_CIPHER_BYTES, 'artifactTransportZipAllowance': MAX_CIPHER_BYTES,
-    'authenticatedReadback': MAX_SELECTION_BYTES + 8 * D.MiB})
+    'authenticatedReadback': MAX_SELECTION_BYTES + 8 * D.MiB,
+    # The existing input-index validator bounds this additional ciphertext
+    # before its first GET. Retained parts and concatenation are two physical
+    # copies, in addition to every plaintext source/materialization copy.
+    'mockInputCipherParts': D.MAX_CIPHER_BYTES,
+    'mockInputCipherConcatenation': D.MAX_CIPHER_BYTES})
 
 
 def admit_disk_plan(filesystem_root, *, checkout_bytes, binary_bytes, additional_asset_bytes,
