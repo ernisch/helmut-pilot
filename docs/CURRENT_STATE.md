@@ -1,5 +1,28 @@
 # CURRENT STATE — Helmut
 
+## W15: Diagnose60195031 FAIL, keine weitere echte Ausführung
+
+Neues konkretes GO genau einmal genutzt: [40946145190](https://github.com/ernisch/helmut-pilot/actions/runs/40946145190)
+auf60195031c9187cf91ce4497f8875977683914f20, Originalbranch/Attempt1, FAIL
+`worker.backup-export`. Dispatch47528Zeichen, echte Mindestlinkrestzeit262s.
+Unabhängige Abnahme bestätigt FAIL. Letzter gültiger Worker-Cache:
+Cap2560000000/Peak1638682624/Current1510432768Bytes,Swap0,alle4Limit-/OOM-Events0.
+Kein Gesamt-RAM-/Stop-/Parentleer-PASS. Codefluss belegt davor12Dateien/242570240Bytes
+und primären fünfstufigen Restore500/0; kein vollständiger Restore-PASS.
+Freeze/Collect/Seal/Transport/zweiteRecovery nicht erreicht,0finalisierte Artefakte.
+Innere Exportoperation/UrsacheUNKNOWN; kein pg_dump-Defekt behauptet.
+[Erstfehler](betrieb/belege/w15-mock500-integration-20261029/RESTORE_60195031_FAILED.SAFE.json)
+und [unabhängige Abnahme](betrieb/belege/w15-mock500-integration-20261029/RESTORE_60195031_REVIEW.SAFE.json)
+erhalten. Kein Retry. Weitere echte Ausführung erst nach gezielter Ursachenbehebung
+UND neuem konkretem GO; End500/Mock500 bleiben gesperrt.
+
+Die tatsächlich fehlende native Exportverbindung wird gezielt mit kleinen
+synthetischen Daten im vorhandenen CI-Service geprüft: echter Worker/Kindprozess,
+Dateien, Lifecycle und Quittungen statt künstlich erzeugter Exportdateien.
+Kein Originalrestore oder500er-Controller. Aktueller nativer Befund und Pflicht-CI
+stehen am tatsächlichen Kopf vonDraft977; kein Originalfehler-PASS daraus.
+Originalbranch60195031 bleibt erhalten, Mock-Dateiblocker unverändertBLOCKED.
+
 ## W15 Fortschreibung: primärer Restore durchlaufen, Backup noch FAIL
 
 Neues exaktes Betreiber-GO aufc89d423f wurde genau einmal genutzt: Run40931663329

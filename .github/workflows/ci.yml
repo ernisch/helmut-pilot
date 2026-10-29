@@ -208,6 +208,17 @@ jobs:
           PGPASSWORD: "helmut"
         run: python3 -B scripts/w15-github/test_backup_snapshot_postgres.py --postgres-fixture
 
+      - name: W15 native Exportverbindung mit kleinen synthetischen Daten pruefen
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 3
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5433"
+          PGUSER: "helmut"
+          PGPASSWORD: "helmut"
+          W15_BACKUP_EXPORT_FIXTURE_CONTAINER: ${{ job.services.postgres.id }}
+        run: python3 -B scripts/w15-github/test_backup_export_native.py --postgres-fixture
+
       - name: Neue Backupinventare nativ mit drei fiktiven Profilen pruefen
         if: steps.plan.outputs.database == 'true'
         env:

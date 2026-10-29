@@ -234,3 +234,32 @@ vorhandenen Berichts aus erhaltenem Ursprungsbestand oder einem passenden
 Snapshot nach seiner Erstellung, SHA256d2603d926508a1655b415b18734fe37bc1a660dccb6f139ae43b1859a11bed3d.
 Ohne bestätigte Quelle kein ausführbarer Transferweg; keine neue Inventur,
 Neuqualifikation, Ersatzdatei oder erneute Gesamtübertragung.
+
+## Vierter einzeln freigegebener Restore: Exportphase FAIL
+
+Das neue ausdrückliche Diagnose-GO auf60195031c9187cf91ce4497f8875977683914f20
+wurde in40946145190 genau einmal genutzt: Originalbranch,Attempt1,47528Zeichen
+gesamter Dispatch,262s echte minimale Linkrestzeit. Der Job ist beendet,
+erste konkrete Phase`backup-export` im äußeren`worker`,0finalisierte Artefakte.
+Der unabhängige Prüfer bestätigt FAIL. Bestehender Empfang aller12Dateien mit
+242570240Bytes und primärer fünfstufiger Restore500/0 sind nur codeflussbelegt;
+keine vollständige Restore-/Sicherungs-/Rücksicherungsabnahme.
+
+Letzte gültige vorhandene Workerbeobachtung: RAM-Cap2560000000Byte,
+Kernel-Lebenszeitpeak1638682624Byte,Current1510432768Byte,Swapmaximum/-current0;
+max/oom/oom_kill/oom_group_kill0. Rechnerische Peakreserve921317376Byte.
+Das ist kein endgültiger Gesamtpeak-, Stop- oder Parentleer-Nachweis und
+keine neue Mock-RAM-v2-Abnahme. Historische Fehler bleiben FAIL.
+
+`backup-export` enthält auch Hook-Vorbedingungen, Disk-/Kontext-/Prozessbindung
+und nachfolgende Export-, Snapshot-, Inventar-, Quittungs- und Lifecycleprüfungen.
+Es ist kein konkreter`pg_dump`-Defekt bewiesen. Die innere Ursache bleibtUNKNOWN.
+Eine gezielte neue synthetische Verbindung prüft den bislang nachgebildeten Pfad
+vom unveränderten nativen Worker über echte Kindprozesse und Dateien bis zu den
+Exportquittungen im bestehenden PG17-CI-Service. Das ersetzt keinen Test mit
+Originaldaten und keine Neuqualifikation der bereits bestandenen Quellen/SQL.
+
+Das GO ist verbraucht. Nach ausdrücklicher Betreibersteuerung keine weitere
+echte Ausführung ohne gezielte Ursachenbehebung UND neue konkrete Freigabe;
+kein weiterer reiner Original-Diagnoselauf. Kein End500/Mock500, Merge,
+Deployment oder Production-Eingriff. Keine automatische Löschung oder Retry.
