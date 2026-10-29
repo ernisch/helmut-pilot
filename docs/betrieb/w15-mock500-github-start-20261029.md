@@ -1,7 +1,9 @@
 # W15 Mock500: Integration und tatsächliche Startgrenzen
 
 Stand29.10.2026UTC. Entwicklung auf eigenem Integrationszweig, Basis des
-Restorepfads bleibt der unveränderte Commitb6eb7449 auf DraftPR975. Kein Merge,
+nächsten getrennt freizugebenden Restorepfads ist der eingefrorene gemeinsame
+Integrationscommitc89d423f auf DraftPR975;7e3d96e9/b6eb7449 bleiben unverändert
+erhalten. Kein Merge nachmain,
 Deployment, Production-Eingriff, End500 oder vollständiger Mock500 wurde ausgeführt.
 
 ## Vorbereiteter gemeinsamer Ablauf
@@ -155,3 +157,25 @@ unverändert erhalten. Ein ausdrücklicher zusätzlicher Mock-Adapter erlaubt
 künftig genau diese Baseline; positive End500-Abnahme, neue Commitbrücke und
 Mock-GO werden weiterhin verlangt und sind derzeit nicht vorhanden. Kein
 Restore oder End500 wird durch diese reine Baselinevorbereitung ausgeführt.
+
+
+Git-Historie: Die geprüfte Integration wurde ausschließlich per normalem
+Fast Forward auf den vorhandenen Entwicklungsbranch von PR975 übernommen.
+Dadurch markierte GitHub den davon vollständig umfassten Draft976 automatisch
+als gemergt in den Entwicklungsbranch. Keine Operation aufmain/Production.
+Der getrennte Baselineadapter ist direkter Nachfolger in Draft977, damit auch
+seine spätere geprüfte Übernahme ohne Force-Push oder Mergecommit möglich bleibt.
+Die CI-Ergebnisse auf tatsächlichen Köpfen werden in den PRs aktuell gehalten;
+für neue echte Datenläufe ist weiterhin das genaue separate Betreiber-GO nötig.
+
+
+Ergänzender rein lesender Metadatenbeleg: Das vorhandene5362478Byte-V2-SAFE-
+GZIP-Inventar vom27.10. wurde gegen seinen bestehenden Verification-SHA geprüft
+und alle364084Einträge streamend ausschließlich nach den elf Namen und zehn
+bekannten Dateihashes gefiltert. Keine Treffer; das Schema enthält ausdrücklich
+nur Stat-Metadaten, keine Inhaltshashes. Directory-Alias-Nachlauf nicht vollständig
+expandiert(2MiB-Grenze); kein Beweis von Datenverlust oder heutiger Abwesenheit.
+Keine Original-/Cipher-/Key-Payloads gelesen und keine Inventur neu erzeugt.
+Der30Teil-Backupindex enthält keine separate SAFE-Scope-Mitgliederreferenz.
+Der verbleibende gezielte Transferbedarf bleibt unverändert; keine erneute
+Gesamtübertragung und keine neue Qualifikation zulässig.

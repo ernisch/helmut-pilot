@@ -2,12 +2,20 @@
 
 ## W15: Restore-Einzelversuch FAIL; Mock500 integriert, Ausführung gesperrt
 
-PR975-Branch wurde ohne Force-Push auf den unveränderten geprüften Fixcommit
-b6eb74495cd9cf4d7bee04ec4b37da6244b5c6a2 vorgerückt; Schutzregeln unverändert.
-Pflicht-CI40909894080 und PR-CI40915289161 bestanden. Nach explizitem Betreiber-GO
+PR975-Branch wurde ohne Force-Push auf den geprüften gemeinsamen Integrationsstand
+c89d423fd8431b42a5351de82e640f40e8517ee4 vorgerückt;7e3d96e9/b6eb7449 als
+unveränderte Vorfahren erhalten, Schutzregeln unverändert. GitHub markierte
+den vorbereitenden Draft976 dadurch automatisch als gemergt in diesen
+Entwicklungsbranch; kein Merge nachmain/Deployment/Production. Der getrennte
+Mock-Baselineadapter läuft als Draft977 auf direktem Nachfolgerc4d035dd.
+Bisherige b6-Pflicht-CI40909894080/40915289161 bestanden. Nach explizitem Betreiber-GO
 wurde genau ein Restore gestartet:40920225333 FAIL, Phase`connection-restore`.
 Erster Versuch40905370350 auf7e3d96e9 bleibt FAIL. Kein Retry, keine positive
-Restoreabnahme, kein End500/Mock500. Erfolgreicher Empfang aller zwölf Originaldateien
+Restoreabnahme, kein End500/Mock500. TCP-Readinessrace in primärem und zweitem
+Restore korrigiert, feste Fehlerunterphasen/gezielte fiktive Tests und unabhängiger
+Review bestanden; genaue historische Ursache weiterUNKNOWN. Ein nächster echter
+Restore aufc89d423f braucht grüne aktuelle CI und neues exaktesGO.
+Erfolgreicher Empfang aller zwölf Originaldateien
 40876458074 bleibt übernommen; seine Qualifikation wurde nicht wiederholt.
 
 Mock500-Anschlüsse auf getrenntem Integrationszweig vorbereitet: Atomic12ACK,
@@ -17,14 +25,18 @@ verschlüsselte Sicherung/Remote-Readback/zweite Rücksicherung und Einmalstartw
 Standardmäßig gesperrt; gezielte fiktive Verbindungstests sind keine500er-Abnahme.
 Synthetischer neuer v2-Runner40922859278 aufc89d423f unabhängigPASS:
 Peak302014464Bytes/Swap0,UID1000,gleicherParentnachKindernleer,keineOriginale/DB.
-Pflicht-CI muss am tatsächlichen neuen Codekopf bestehen. Historischer RAM-v2-Fehler bleibt FAIL.
+Pflicht-CI40922851354/40923999187 aufc89d423f und40924138247 auf
+c4d035dd bestanden; aktuellste Dokumentationskopfchecks sieheDraft977. Historischer RAM-v2-Fehler bleibt FAIL.
 
 Dateiinventur lokalBLOCKED wird nicht wiederholt. GitHub-/Drive-Belege bestätigen
 das bestehende269598Byte-Builder-ZIP samt historischem SHA; keine Payloads geladen.
 Zehn weitere Originale weiter nicht erreichbar bestätigt; zehn der elf Zusatzpins
 bekannt(217550485Bytes), nur aktueller Replacements-Pin unbekannt. Keine neue
 Qualifikation/Übertragung freigegeben. Zwölf vorhandene End500-Originale ersetzen
-nicht diese elf Zusatzdateien. Kein Beweis globalen Datenverlusts.
+nicht diese elf Zusatzdateien. Kein Beweis globalen Datenverlusts. Auch364084Einträge des
+vorhandenen komprimierten SAFE-Metainventars27.10. liefern keinen Zusatzbeleg:
+nur Statfelder, keine Inhaltshashes,0exakte Namens-/Pin-Treffer; keine neue
+Inventur/Original-/Cipherdateien gelesen.
 [Mock-Vertrag, Nachweise, fehlende Dateien und getrennte Freigaben](betrieb/w15-mock500-github-start-20261029.md).
 
 ## Vollständiges Root-Paket und Caller-Vorbereitung (13.10.2026)
