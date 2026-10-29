@@ -143,6 +143,48 @@ def validate_atomic_auth(repo=REPO):
             'APIsRepeated': False, 'executionAuthority': False}
 
 
+def validate_source_compatibility(qualification, repo=REPO):
+    """Reuse16 exact source pins and the two already reviewed code segments.
+
+    This reads code bytes only. It neither rebuilds a source candidate nor
+    reruns any of the successful500 D/R constructor qualifications.
+    """
+    repo = Path(repo)
+    old = decode((repo / ATOMIC / 'SOURCE_COMPATIBILITY.SAFE.json').read_bytes())
+    need(old['status'] == 'PASS_SCOPED_REUSE_NOT_NEW_ALL500_RUN'
+         and old['original500PassRetained'] is True and old['constructorChecksRepeated'] is False
+         and len(old['unchangedSourcePins']) == 16 and len(old['reboundSourcePins']) == 2)
+    def pin(row): return {key: row[key] for key in ('bytes', 'sha256')}
+    need(pin(old['qualificationPin']) == {'bytes': 13706128,
+         'sha256': 'd2603d926508a1655b415b18734fe37bc1a660dccb6f139ae43b1859a11bed3d'})
+    expected = old['unchangedSourcePins'] + [row['oldPin'] for row in old['reboundSourcePins']]
+    actual = qualification['sourceCodePins']
+    need(sorted(actual, key=lambda row: row['path']) == sorted(expected, key=lambda row: row['path']))
+    def public_path(relative):
+        need(type(relative) is str and not relative.startswith('/')
+             and all(part not in ('', '.', '..') for part in relative.split('/')))
+        return repo / relative
+    for row in old['unchangedSourcePins']:
+        file_bytes(public_path(row['path']), pin(row), private=False, maximum=16 * 1024 * 1024)
+    need({row['oldPin']['path'] for row in old['reboundSourcePins']} == {'lib/helmut/ai.js', 'lib/helmut/storage.js'})
+    for row in old['reboundSourcePins']:
+        name = row['oldPin']['path']
+        raw = file_bytes(public_path(name), pin(row['currentPin']), private=False, maximum=16 * 1024 * 1024)
+        if name == 'lib/helmut/ai.js':
+            marker = b'const LAGE_BRIEFING_SCHEMA ='
+            need(raw.count(marker) == 1); segment = raw[raw.index(marker):]
+        else:
+            marker = b'async function getPublicationSourceIdentities('
+            need(raw.count(marker) == 1)
+            start = raw.index(marker); end = raw.index(b'\nasync function ', start + len(marker))
+            segment = raw[start:end]
+        need(len(segment) == row['unchangedSegmentBytes']
+             and hashlib.sha256(segment).hexdigest() == row['unchangedSegmentSHA256'])
+    return {'status': 'PASS_REUSED_16_EXACT_SOURCES_AND_2_SCOPED_CODE_BINDINGS_ONLY',
+            'unchangedSources': 16, 'scopedCodeBindings': 2, 'constructorChecksRepeated': False,
+            'sourceDatesRewritten': False, 'executionAuthority': False}
+
+
 def open_inputs(runtime_inputs, *, context, binding_raw, binding_sha256, asset_paths, observed_context, repo=REPO):
     """No file creation. Missing qualified/private assets are an explicit gate."""
     try:
@@ -241,6 +283,7 @@ class Mock500Inputs:
         for key, old in (('qualifiedRows', 'rows'), ('qualifiedFixtures', 'fixtures'), ('qualifiedNative', 'native'), ('qualifiedDerivations', 'derivations'), ('currentReplacements', None)):
             pin = qualification['currentNativeReplacementsPin'] if old is None else qualification['qualifiedAssets'][old]
             need({k: pin[k] for k in ('bytes', 'sha256')} == self._record['assets'][key])
+        validate_source_compatibility(qualification, self._repo)
         need(self._record['assets']['publicationPolicy']['sha256'] == '274033cdfdd5f1527d0e961a6c00482d61b7be317eeea03e736a6a5948aa6a04'
              and self._record['assets']['originalBuilderArchive'] == {'bytes': 269598, 'sha256': 'c979e18775f285ddf7af4328c8efc8f0642954eb6d0e52e50636d3b4ab902d15'})
         validate_atomic_auth(self._repo)
