@@ -18,6 +18,7 @@ import os
 from pathlib import Path
 import pwd
 import re
+import select
 import signal
 import socket
 import stat
@@ -38,6 +39,7 @@ def _load(name):
 
 
 P, C = _load('runner_parent'), _load('controller_context')
+D = _load('runner_diagnostics')
 LIMITS = {'comparisonBudgetBytes': 2560000000, 'maximumConsumptionBytes': 2048000000,
           'requiredReserveBytes': 512000000, 'swapBytes': 0}
 WALL = {'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
@@ -76,16 +78,66 @@ WORKER_PHASES |= BACKUP_PHASES | {'connection-' + phase for phase in BACKUP_PHAS
 
 
 class RunnerStartError(RuntimeError):
-    def __init__(self, phase=None, worker_phase=None, worker_memory=None):
-        self.phase = phase if phase in PHASES else PHASE if PHASE in PHASES else 'arguments'
-        self.worker_phase = worker_phase if type(worker_phase) is str and worker_phase in WORKER_PHASES else None
-        self.worker_memory = P.R.closed_failure_memory(worker_memory)
+    allowed_worker_phases = WORKER_PHASES
+
+    def __init__(self, phase=None, worker_phase=None, worker_memory=None, *, runner=None, cleanup=None):
+        self.phase = phase if type(phase) is str and phase in PHASES else PHASE if PHASE in PHASES else 'arguments'
+        self.worker_phase = worker_phase if type(worker_phase) is str and worker_phase in self.allowed_worker_phases else None
+        self.worker_memory = _closed_memory(worker_memory)
+        self.runner = D.runner(runner, _closed_memory)
+        self.cleanup = D.cleanup(cleanup)
+        self.refresh()
+        super().__init__('RUNNER_START_FAILED_OR_UNKNOWN')
+
+    def refresh(self):
         self.safe_failure = {'phase': self.phase}
         if self.worker_phase is not None:
             self.safe_failure['worker'] = {'phase': self.worker_phase}
             if self.worker_memory is not None:
                 self.safe_failure['worker']['memory'] = self.worker_memory
-        super().__init__('RUNNER_START_FAILED_OR_UNKNOWN')
+        if self.runner is not None:
+            self.safe_failure['runner'] = self.runner
+        if self.cleanup is not None:
+            self.safe_failure['cleanup'] = self.cleanup
+
+
+def _closed_memory(value):
+    try:
+        return P.R.closed_failure_memory(value)
+    except BaseException:
+        return None
+
+
+def _diagnose(error, phase, reason, cached=None, *, error_type=RunnerStartError):
+    if isinstance(error, KeyboardInterrupt):
+        reason = 'SUPERVISOR_INTERRUPTED'
+    first = error if isinstance(error, error_type) else error_type(phase)
+    detail = dict(first.runner) if first.runner is not None else {
+        'reason': 'WORKER_REPORTED_FAILURE' if first.worker_phase is not None else reason}
+    observed = _closed_memory(D.attribute(error, 'failure_memory'))
+    if observed is not None:
+        detail.update(memory=observed, memorySource='CURRENT_REJECTED_READBACK')
+    elif 'memory' not in detail and cached is not None:
+        cached = dict(cached)
+        if reason in ('PARENT_READBACK_REJECTED', 'SUPERVISOR_INTERRUPTED'):
+            cached['lastReadbackValid'] = False
+        detail.update(memory=cached, memorySource='CACHED_READBACK')
+    first.runner = D.runner(detail, _closed_memory)
+    first.refresh()
+    return first
+
+
+def _failure_packet(error):
+    packet = {'ok': False, 'phase': error.phase}
+    if error.worker_phase is not None:
+        packet['workerPhase'] = error.worker_phase
+        if error.worker_memory is not None:
+            packet['workerMemory'] = error.worker_memory
+    if error.runner is not None:
+        packet['runner'] = error.runner
+    if error.cleanup is not None:
+        packet['cleanup'] = error.cleanup
+    return packet
 
 
 def need(value):
@@ -126,13 +178,19 @@ def _worker_result(result, request):
     return {key: result[key] for key in sorted(result)}
 
 
-def _response_error(value):
-    need(type(value) is dict and value.get('ok') is False
-         and set(value) in ({'ok', 'phase'}, {'ok', 'phase', 'workerPhase'}, {'ok', 'phase', 'workerPhase', 'workerMemory'})
-         and value.get('phase') in PHASES
-         and ('workerPhase' not in value or value['workerPhase'] in WORKER_PHASES)
-         and ('workerMemory' not in value or P.R.closed_failure_memory(value['workerMemory']) is not None))
-    return RunnerStartError(value['phase'], value.get('workerPhase'), value.get('workerMemory'))
+def _response_error(value, *, error_type=RunnerStartError):
+    keys = {'ok', 'phase', 'workerPhase', 'workerMemory', 'runner', 'cleanup'}
+    valid = type(value) is dict and {'ok', 'phase'} <= set(value) <= keys and value['ok'] is False
+    valid = valid and type(value['phase']) is str and value['phase'] in PHASES
+    valid = valid and ('workerPhase' not in value or type(value['workerPhase']) is str
+        and value['workerPhase'] in error_type.allowed_worker_phases)
+    valid = valid and ('workerMemory' not in value or 'workerPhase' in value and _closed_memory(value['workerMemory']) is not None)
+    valid = valid and ('runner' not in value or D.runner(value['runner'], _closed_memory) is not None)
+    valid = valid and ('cleanup' not in value or D.cleanup(value['cleanup']) is not None)
+    if not valid:
+        raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
+    return error_type(value['phase'], value.get('workerPhase'), value.get('workerMemory'),
+        runner=value.get('runner'), cleanup=value.get('cleanup'))
 
 
 def _path(value):
@@ -209,7 +267,7 @@ def github_binding(request):
          and os.environ.get('GITHUB_RUN_ID') == request['runId'] and os.environ.get('GITHUB_RUN_ATTEMPT') == '1'
          and os.environ.get('GITHUB_SHA') == request['exactCommit'] and os.environ.get('GITHUB_REF') == BRANCH)
     need(_git(REPO, ['rev-parse', 'HEAD']) == (request['exactCommit'] + '\n').encode())
-    for file in (SCRIPT, SCRIPT.with_name('runner_parent.py'), SCRIPT.with_name('common_resources.py'),
+    for file in (SCRIPT, SCRIPT.with_name('runner_parent.py'), SCRIPT.with_name('common_resources.py'), SCRIPT.with_name('runner_diagnostics.py'),
                  SCRIPT.with_name('controller_context.py')):
         relative = str(file.relative_to(REPO))
         entry = _git(REPO, ['ls-tree', '-z', request['exactCommit'], '--', relative])
@@ -436,11 +494,20 @@ def _worker_env(manifest):
             'GITHUB_RUN_ID': manifest['runId'], 'GITHUB_RUN_ATTEMPT': '1', 'RUNNER_TEMP': manifest['runnerTemp']}
 
 
+def _worker_failure(error, reason, *, error_type=RunnerStartError):
+    if isinstance(error, KeyboardInterrupt):
+        reason = 'WORKER_INTERRUPTED'
+    phase = D.attribute(error, 'phase')
+    phase = phase if type(phase) is str and phase in error_type.allowed_worker_phases else None
+    memory = _closed_memory(D.attribute(error, 'worker_memory')) if phase is not None else None
+    return error_type('worker', phase, memory, runner=None if phase is not None else {'reason': reason})
+
+
 def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
-    receiver.close()
-    code = 1
-    latch = None
+    code, latch, result, failure = 1, None, None, None
+    reason = 'WORKER_SETUP_REJECTED'
     try:
+        receiver.close()
         _close_stdio()
         os.environ.clear(); os.environ.update(_worker_env(manifest))
         os.setgroups([docker_gid]); os.setgid(1000); os.setuid(1000)
@@ -451,27 +518,32 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
         need(len(raw) == pin['bytes'] and hashlib.sha256(raw).hexdigest() == pin['sha256'])
         spec = importlib.util.spec_from_file_location('w15_fixed_staged_restore_worker', script)
         module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        reason = 'WORKER_RESULT_REJECTED'
         result = module.run_worker(manifest, private_payload)
         result = _worker_result(result, manifest)
         need(not latch.seen)
-        sender.send_bytes(_encode({'ok': True, 'result': result}, MAX_RESULT))
-        code = 0
     except BaseException as error:
-        try:
-            child_phase = getattr(error, 'phase', None)
-            failure = {'ok': False, 'phase': 'worker'}
-            if type(child_phase) is str and child_phase in WORKER_PHASES:
-                failure['workerPhase'] = child_phase
-                memory = P.R.closed_failure_memory(getattr(error, 'worker_memory', None))
-                if memory is not None:
-                    failure['workerMemory'] = memory
-            sender.send_bytes(_encode(failure, MAX_RESULT))
-        except BaseException:
-            pass
+        failure = _worker_failure(error, reason)
     finally:
         if latch is not None:
-            latch.close()
-        sender.close()
+            latch.cleaning = True
+            try:
+                latch.close()
+                if latch.seen and failure is None:
+                    failure = RunnerStartError('worker', runner={'reason': 'WORKER_CLEANUP_UNCONFIRMED'})
+            except BaseException:
+                if failure is None:
+                    failure = RunnerStartError('worker', runner={'reason': 'WORKER_CLEANUP_UNCONFIRMED'})
+        try:
+            packet = _failure_packet(failure) if failure is not None else {'ok': True, 'result': result}
+            sender.send_bytes(_encode(packet, MAX_RESULT))
+            code = 0 if failure is None else 1
+        except BaseException:
+            code = 1  # The observer will classify missing/partial IPC and exit.
+        try:
+            sender.close()
+        except BaseException:
+            code = 1
     raise SystemExit(code)
 
 
@@ -480,7 +552,148 @@ def _members(ctx):
     return {int(pid) for file in root.rglob('cgroup.procs') for pid in file.read_text().split()}
 
 
-def supervise(request, private_payload):
+def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartError):
+    """Read one existing Pipe frame with bounded reads, including partial EOF."""
+    try:
+        if not receiver.poll(wait):
+            return None
+        fd = receiver.fileno()
+        end = min(deadline, time.monotonic() + 1)
+        def read(size):
+            raw = b''
+            while len(raw) < size:
+                remaining = max(0, end - time.monotonic())
+                if not select.select([fd], [], [], remaining)[0]:
+                    raise error_type('ipc', runner={'reason': 'WORKER_IPC_TIMEOUT'})
+                part = os.read(fd, size - len(raw))
+                if not part:
+                    raise error_type('ipc', runner={'reason': 'WORKER_IPC_EOF'})
+                raw += part
+            return raw
+        length = struct.unpack('!i', read(4))[0]
+        if not 0 < length <= MAX_RESULT:
+            raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
+        value = _decode(read(length))
+        if type(value) is not dict or value.get('ok') not in (True, False) or type(value['ok']) is not bool:
+            raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
+        if value['ok'] is False:
+            _response_error(value, error_type=error_type)  # Validate before it can become a witness.
+        elif set(value) != {'ok', 'result'} or type(value['result']) is not dict:
+            raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
+        return value
+    except error_type:
+        raise
+    except Exception:
+        raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'}) from None
+
+
+def _parent_readback(parent, ctx, identity, last, *, empty=False, error_type=RunnerStartError, phase=None):
+    try:
+        value = parent.read_parent(ctx, identity, empty=empty)
+    except BaseException as error:
+        reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'PARENT_READBACK_REJECTED'
+        raise _diagnose(error, phase or PHASE, reason, last.get('memory'), error_type=error_type) from None
+    last['memory'] = P.R.project_failure_memory(value, True)
+    return value
+
+
+def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: None,
+                   latch=None, error_type=RunnerStartError):
+    """Keep the first validated failure, then stop only this owned child."""
+    response, failure = None, None
+    cleanup = D.unknown_cleanup()
+    try:
+        try:
+            child.start(); sender.close()
+        except BaseException as error:
+            raise _diagnose(error, 'worker', 'WORKER_START_REJECTED', memory(), error_type=error_type) from None
+        while child.is_alive():
+            if response is None:
+                response = _read_worker_response(receiver, deadline, error_type=error_type)
+            if type(response) is dict and response['ok'] is False:
+                raise _response_error(response, error_type=error_type)
+            guard()
+            time.sleep(.1)
+        child.join(timeout=5)
+        if response is None:
+            response = _read_worker_response(receiver, deadline, wait=1, error_type=error_type)
+        if type(response) is dict and response['ok'] is False:
+            raise _response_error(response, error_type=error_type)
+        code = child.exitcode
+        if code != 0 or response is None:
+            detail = {'reason': 'WORKER_SIGNAL_EXIT' if type(code) is int and code < 0 else
+                      'WORKER_EXIT_REJECTED' if response is not None else 'WORKER_EXIT_WITHOUT_REPORT'}
+            if type(code) is int and -255 <= code <= 255:
+                detail['workerExitCode'] = code
+            raise error_type('worker', runner=detail)
+    except BaseException as error:
+        reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'SUPERVISOR_REJECTED'
+        failure = _diagnose(error, 'worker', reason, memory(), error_type=error_type)
+        # A guard can race a message already in the pipe. Drain once BEFORE
+        # cleanup/signals; no later cancellation response may become primary.
+        if failure.runner and failure.runner['reason'] in {
+                'PARENT_READBACK_REJECTED', 'SUPERVISOR_DEADLINE', 'SUPERVISOR_INTERRUPTED', 'SUPERVISOR_REJECTED'}:
+            try:
+                pending = response
+                if pending is None and failure.runner['reason'] != 'SUPERVISOR_INTERRUPTED':
+                    pending = _read_worker_response(receiver, deadline, error_type=error_type)
+                if type(pending) is dict and pending.get('ok') is False:
+                    first = _response_error(pending, error_type=error_type)
+                    detail = dict(first.runner or failure.runner)
+                    if first.runner:
+                        detail['secondaryReason'] = failure.runner['reason']
+                    for key in ('memory', 'memorySource'):
+                        if key in failure.runner:
+                            detail[key] = failure.runner[key]
+                    first.runner = D.runner(detail, _closed_memory); first.refresh()
+                    failure = first
+            except BaseException:
+                pass
+    finally:
+        if latch is not None:
+            latch.cleaning = True
+        bad, stopped_by_us = False, False
+        try:
+            if child.pid is not None:
+                if child.is_alive():
+                    stopped_by_us = True
+                    child.terminate(); child.join(timeout=30)
+                    if child.is_alive():
+                        child.kill(); child.join(timeout=5)
+                cleanup['workerExited'] = 'FAIL' if child.is_alive() else 'PASS'
+                bad = cleanup['workerExited'] != 'PASS'
+        except BaseException:
+            bad = True
+        closed = True
+        for pipe in (receiver, sender):
+            try:
+                pipe.close()
+            except BaseException:
+                closed, bad = False, True
+        if closed:
+            cleanup['workerIPCClosed'] = 'PASS'
+        if latch is not None and latch.seen and failure is None:
+            failure = error_type('worker', runner={'reason': 'SIGNAL_DURING_CLEANUP'})
+        if bad and failure is None:
+            failure = error_type('worker', runner={'reason': 'CLEANUP_UNCONFIRMED'})
+        if failure is not None:
+            code = D.attribute(child, 'exitcode')
+            if not stopped_by_us and type(code) is int and -255 <= code <= 255:
+                detail = dict(failure.runner or {'reason': 'WORKER_REPORTED_FAILURE' if failure.worker_phase is not None else 'WORKER_EXIT_REJECTED'})
+                detail['workerExitCode'] = code
+                if code < 0 and failure.worker_phase is None and detail['reason'] in {
+                        'WORKER_IPC_EOF', 'WORKER_EXIT_WITHOUT_REPORT', 'WORKER_EXIT_REJECTED'}:
+                    detail['reason'] = 'WORKER_SIGNAL_EXIT'
+                failure.runner = D.runner(detail, _closed_memory)
+            failure.cleanup = cleanup; failure.refresh()
+        if latch is not None and failure is None:
+            latch.cleaning = False
+    if failure is not None:
+        raise failure from None
+    return response, cleanup
+
+
+def supervise(request, private_payload, *, latch=None):
     """Already inside the bounded root service; no setup write precedes guard."""
     global PHASE
     validate_request(request, private_payload)
@@ -489,30 +702,27 @@ def supervise(request, private_payload):
     identity = P.identity(path)
     need(P.R.membership(Path('/proc/self/cgroup').read_text()).startswith('/' + P.names(ctx)[0] + '/'))
     deadline = time.monotonic() + request['maximumWallSeconds']
+    last = {'memory': None}
     def guard():
-        need(time.monotonic() < deadline)
-        return P.read_parent(ctx, identity)
-    guard(); docker_gid = _identity_available()
-    PHASE = 'staging'; manifest = _stage(request, guard)
-    PHASE = 'worker'
-    fork = multiprocessing.get_context('fork')
-    receiver, sender = fork.Pipe(duplex=False)
-    child = fork.Process(target=_fork_worker, args=(manifest, private_payload, sender, receiver, docker_gid))
-    response = None
+        if time.monotonic() >= deadline:
+            raise RunnerStartError(PHASE, runner={'reason': 'SUPERVISOR_DEADLINE'})
+        return _parent_readback(P, ctx, identity, last)
     try:
-        child.start(); sender.close()
-        while child.is_alive():
-            guard()
-            if response is None and receiver.poll(0):
-                response = _decode(receiver.recv_bytes(maxlength=MAX_RESULT))
-            time.sleep(.1)
-        child.join(timeout=5)
-        if response is None and receiver.poll(1):
-            response = _decode(receiver.recv_bytes(maxlength=MAX_RESULT))
-        if type(response) is dict and response.get('ok') is False:
-            raise _response_error(response)
-        need(child.exitcode == 0 and type(response) is dict and set(response) == {'ok', 'result'}
-             and response['ok'] is True and type(response['result']) is dict)
+        guard(); docker_gid = _identity_available()
+        PHASE = 'staging'; manifest = _stage(request, guard)
+    except BaseException as error:
+        raise _diagnose(error, PHASE, 'SUPERVISOR_REJECTED', last['memory']) from None
+    PHASE = 'worker'
+    try:
+        fork = multiprocessing.get_context('fork')
+        receiver, sender = fork.Pipe(duplex=False)
+        child = fork.Process(target=_fork_worker, args=(manifest, private_payload, sender, receiver, docker_gid))
+    except BaseException as error:
+        raise _diagnose(error, 'worker', 'WORKER_START_REJECTED', last['memory']) from None
+    cleanup = None
+    try:
+        response, cleanup = _monitor_child(child, receiver, sender, guard, deadline,
+            memory=lambda: last['memory'], latch=latch)
         response['result'] = _worker_result(response['result'], request)
         PHASE = 'closure'; guard()
         need(_members(ctx) == {os.getpid()})
@@ -520,12 +730,12 @@ def supervise(request, private_payload):
                 'checkoutFiles': len(manifest['sourcePins']), 'checkoutBytes': manifest['checkoutBytes'],
                 'binaryBytes': manifest['binaryBytes'], 'dockerSocketGID': docker_gid,
                 'workerUID': 1000, 'workerGID': 1000}
-    finally:
-        if child.pid is not None and child.is_alive():
-            child.terminate(); child.join(timeout=30)
-            if child.is_alive():
-                child.kill(); child.join(timeout=5)
-        receiver.close(); sender.close()
+    except BaseException as error:
+        reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'WORKER_RESULT_REJECTED'
+        failure = _diagnose(error, PHASE, reason, last['memory'])
+        if cleanup is not None:
+            failure.cleanup = cleanup; failure.refresh()
+        raise failure from None
 
 
 def _send_result(ipc_dir, ctx, value):
@@ -548,26 +758,167 @@ def _service_argv(request, ipc_dir):
             '--run-id', ctx['runId'], '--nonce', ctx['nonce'], '--ipc-dir', str(ipc_dir)]
 
 
-def _receive_result(listener, process, deadline):
-    listener.settimeout(.2)
-    connection = None
+def _receive_result(listener, process, deadline, *, error_type=RunnerStartError):
+    connection, failure, result = None, None, None
     while connection is None:
-        need(time.monotonic() < deadline)
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise error_type('ipc', runner={'reason': 'SERVICE_IPC_TIMEOUT'})
+        listener.settimeout(min(.2, remaining))
         try:
             connection, _ = listener.accept()
         except socket.timeout:
-            need(process.poll() is None)
-    with connection:
-        need(struct.unpack('3i', connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))[1] == 0)
-        connection.settimeout(5)
+            code = process.poll()
+            if code is not None:
+                detail = {'reason': 'SERVICE_EXIT_WITHOUT_REPORT'}
+                if type(code) is int and -255 <= code <= 255:
+                    detail['serviceExitCode'] = code
+                raise error_type('service', runner=detail)
+        except Exception:
+            raise error_type('ipc', runner={'reason': 'SERVICE_IPC_REJECTED'}) from None
+    try:
+        if struct.unpack('3i', connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))[1] != 0:
+            raise error_type('ipc', runner={'reason': 'SERVICE_IPC_REJECTED'})
+        end = min(deadline, time.monotonic() + 5)
         def read(size):
             raw = b''
             while len(raw) < size:
-                chunk = connection.recv(size - len(raw)); need(chunk); raw += chunk
+                remaining = end - time.monotonic()
+                if remaining <= 0:
+                    raise error_type('ipc', runner={'reason': 'SERVICE_IPC_TIMEOUT'})
+                connection.settimeout(remaining)
+                chunk = connection.recv(size - len(raw))
+                if not chunk:
+                    raise error_type('ipc', runner={'reason': 'SERVICE_IPC_EOF'})
+                raw += chunk
             return raw
         length = struct.unpack('!I', read(4))[0]
-        need(0 < length <= MAX_RESULT)
-        return _decode(read(length))
+        if not 0 < length <= MAX_RESULT:
+            raise error_type('ipc', runner={'reason': 'SERVICE_IPC_REJECTED'})
+        result = _decode(read(length))
+        if type(result) is dict and result.get('ok') is False:
+            failure = _response_error(result, error_type=error_type)
+    except BaseException as error:
+        reason = 'SERVICE_IPC_TIMEOUT' if isinstance(error, socket.timeout) else 'SERVICE_IPC_REJECTED'
+        failure = _diagnose(error, 'ipc', reason, error_type=error_type)
+    finally:
+        try:
+            connection.close()
+        except BaseException:
+            if failure is None:
+                failure = error_type('ipc', runner={'reason': 'CLEANUP_UNCONFIRMED'})
+            else:
+                detail = dict(failure.runner or {'reason': 'WORKER_REPORTED_FAILURE' if failure.worker_phase else 'SERVICE_IPC_REJECTED'})
+                detail['secondaryReason'] = 'CLEANUP_UNCONFIRMED'
+                failure.runner = D.runner(detail, _closed_memory); failure.refresh()
+    if failure is not None:
+        raise failure from None
+    return result
+
+
+def _cleanup_launch(ctx, parent, identity, created, process, listener, latch, failure,
+                    *, empty_observed=False, error_type=RunnerStartError, kernel_root=None):
+    """Separate observed cleanup facts from the immutable first failure."""
+    cleanup = dict(failure.cleanup) if failure is not None and failure.cleanup is not None else D.unknown_cleanup()
+    seen_before_cleanup = latch.seen
+    latch.cleaning = True
+    bad = False
+    if created:
+        path = (P.R.KERNEL_ROOT if kernel_root is None else kernel_root) / parent.names(ctx)[0]
+        owned = False
+        try:
+            owned = identity is not None and parent.identity(path) == identity
+        except BaseException:
+            pass
+        if not owned:
+            bad = True  # Never kill OR remove a replaced/unknown parent.
+        else:
+            if failure is not None:
+                detail = dict(failure.runner or {'reason': 'WORKER_REPORTED_FAILURE' if failure.worker_phase else 'SUPERVISOR_REJECTED'})
+                if detail.get('memorySource') != 'CURRENT_REJECTED_READBACK' and failure.worker_memory is None:
+                    observed = None
+                    try:
+                        observed = P.R.project_failure_memory(parent.read_parent(ctx, identity), True)
+                    except BaseException as error:
+                        observed = _closed_memory(D.attribute(error, 'failure_memory'))
+                    if observed is not None:
+                        detail.update(memory=observed, memorySource='POST_FAILURE_READBACK')
+                failure.runner = D.runner(detail, _closed_memory); failure.refresh()
+                try:
+                    _command(['/usr/bin/sudo', '-n', '/usr/bin/systemctl', 'kill', '--kill-whom=all',
+                              '--signal=SIGKILL', parent.names(ctx)[0]], timeout=15)
+                    cleanup['parentStopRequested'] = 'PASS'
+                except BaseException:
+                    bad = True
+            if empty_observed:
+                cleanup['parentEmpty'] = 'PASS'
+            else:
+                try:
+                    end = time.monotonic() + 5
+                    while True:
+                        if parent.parent_empty(ctx, identity):
+                            cleanup['parentEmpty'] = 'PASS'
+                            break
+                        if time.monotonic() >= end:
+                            cleanup['parentEmpty'] = 'FAIL'
+                            break
+                        time.sleep(.05)
+                except BaseException:
+                    bad = True
+            # Even missing observations cannot suppress a bounded stop of our
+            # still-owned unit. A replaced parent is never touched.
+            if cleanup['parentEmpty'] != 'PASS':
+                try:
+                    if parent.identity(path) == identity:
+                        _command(['/usr/bin/sudo', '-n', '/usr/bin/systemctl', 'stop', parent.names(ctx)[0]], timeout=30)
+                        cleanup['parentStopRequested'] = 'PASS'
+                        cleanup['parentEmpty'] = 'UNKNOWN'
+                        if parent.parent_empty(ctx, identity):
+                            cleanup['parentEmpty'] = 'PASS'
+                        else:
+                            cleanup['parentEmpty'] = 'FAIL'
+                except BaseException:
+                    bad = True
+            # Remove only after actual emptiness at the unchanged identity.
+            try:
+                if cleanup['parentEmpty'] == 'PASS' and parent.identity(path) == identity:
+                    parent.privileged('remove', ctx)
+                    cleanup['parentUnitRemoved'] = 'PASS'
+                else:
+                    bad = True
+            except BaseException:
+                bad = True
+    try:
+        if process is not None:
+            if process.poll() is None:
+                process.kill(); process.wait(timeout=10)
+            cleanup['serviceLauncherExited'] = 'PASS' if process.poll() is not None else 'FAIL'
+            bad = bad or cleanup['serviceLauncherExited'] != 'PASS'
+    except BaseException:
+        bad = True
+    try:
+        listener.close(); cleanup['launcherListenerClosed'] = 'PASS'
+    except BaseException:
+        bad = True
+    try:
+        latch.close(); cleanup['launcherSignalsRestored'] = 'PASS'
+    except BaseException:
+        bad = True
+    if latch.seen and failure is None:
+        failure = error_type('closure', runner={'reason': 'SIGNAL_DURING_CLEANUP'})
+    if bad and failure is None:
+        failure = error_type('closure', runner={'reason': 'CLEANUP_UNCONFIRMED'})
+    if failure is not None:
+        failure.cleanup = cleanup
+        if latch.seen and not seen_before_cleanup:
+            if failure.runner is None:
+                failure.runner = {'reason': 'SIGNAL_DURING_CLEANUP'}
+            elif 'secondaryReason' not in failure.runner:
+                failure.runner['secondaryReason'] = 'SIGNAL_DURING_CLEANUP'
+        if failure.runner is None and bad:
+            failure.runner = {'reason': 'CLEANUP_UNCONFIRMED'}
+        failure.refresh()
+    return failure
 
 
 def launch(request, private_payload):
@@ -582,10 +933,11 @@ def launch(request, private_payload):
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     listener.bind(str(ipc_dir / 'result.sock')); os.chmod(ipc_dir / 'result.sock', 0o600); listener.listen(1)
     created, process, failure, result, identity, latch = False, None, None, None, None, P.StopLatch()
+    last, empty_observed = {'memory': None}, False
     try:
         PHASE = 'parent'; P.privileged('prepare', ctx); created = True
         identity = P.identity(P.R.KERNEL_ROOT / P.names(ctx)[0])
-        initial = P.read_parent(ctx, identity, empty=True)
+        initial = _parent_readback(P, ctx, identity, last, empty=True)
         PHASE = 'service'
         process = subprocess.Popen(_service_argv(request, ipc_dir), stdin=subprocess.PIPE,
                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -595,12 +947,19 @@ def launch(request, private_payload):
         result = _receive_result(listener, process, time.monotonic() + request['maximumWallSeconds'] + 45)
         if type(result) is dict and result.get('ok') is False:
             raise _response_error(result)
-        need(process.wait(timeout=45) == 0 and type(result) is dict and result.get('ok') is True)
+        code = process.wait(timeout=45)
+        if code != 0:
+            detail = {'reason': 'SERVICE_EXIT_REJECTED'}
+            if type(code) is int and -255 <= code <= 255:
+                detail['serviceExitCode'] = code
+            raise RunnerStartError('service', runner=detail)
+        need(type(result) is dict and result.get('ok') is True)
         need(type(result.get('result')) is dict)
         result['result']['worker'] = _worker_result(result['result']['worker'], request)
         PHASE = 'closure'
-        final = P.read_parent(ctx, identity, empty=True)
+        final = _parent_readback(P, ctx, identity, last, empty=True)
         need(final['kernelLifetimePeakBytes'] >= initial['kernelLifetimePeakBytes'] and not latch.seen)
+        empty_observed = True
         return {'status': 'PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY', 'exactCommit': ctx['exactCommit'],
                 'runId': ctx['runId'], 'runAttempt': 1, 'mode': request['mode'],
                 'initialCommonParent': initial, 'finalCommonParentAfterOwnedExits': final,
@@ -612,35 +971,14 @@ def launch(request, private_payload):
                 'end500Acceptance': False, 'mock500Acceptance': False,
                 'commonLifetimeMemoryAccepted': False, 'retryAllowed': False}
     except BaseException as error:
-        failure = error if isinstance(error, RunnerStartError) else RunnerStartError(PHASE)
+        reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'SUPERVISOR_REJECTED'
+        failure = _diagnose(error, PHASE, reason, last['memory'])
         raise failure from None
     finally:
-        latch.cleaning = True
-        cleanup_error = None
-        if created:
-            try:
-                # On failure, terminate only the exclusively created parent.
-                # Its inode/content remain available until final readback.
-                if failure is not None:
-                    if identity is not None:
-                        need(P.identity(P.R.KERNEL_ROOT / P.names(ctx)[0]) == identity)
-                    _command(['/usr/bin/sudo', '-n', '/usr/bin/systemctl', 'kill', '--kill-whom=all',
-                              '--signal=SIGKILL', P.names(ctx)[0]], timeout=15)
-            except BaseException as error:
-                cleanup_error = error
-            try:
-                P.privileged('remove', ctx)
-            except BaseException:
-                cleanup_error = True
-        try:
-            if process is not None and process.poll() is None:
-                process.kill(); process.wait(timeout=10)
-        except BaseException:
-            cleanup_error = True
-        finally:
-            listener.close(); latch.close()
-        if cleanup_error is not None and failure is None:
-            raise RunnerStartError('closure') from None
+        after = _cleanup_launch(ctx, P, identity, created, process, listener, latch, failure,
+            empty_observed=empty_observed)
+        if failure is None and after is not None:
+            raise after from None
 
 
 def main(argv=None):
@@ -666,18 +1004,14 @@ def main(argv=None):
         validate_request(request, private_payload)
         need(_ctx(request) == ctx)
         # root privileged helper env intentionally contains no secret values.
-        result = supervise(request, private_payload)
+        result = supervise(request, private_payload, latch=latch)
         need(not latch.seen)
         _send_result(args.ipc_dir, ctx, {'ok': True, 'result': result})
         return 0
     except BaseException as error:
         try:
-            failure = error if isinstance(error, RunnerStartError) else RunnerStartError(PHASE)
-            result = {'ok': False, 'phase': failure.phase}
-            if failure.worker_phase is not None:
-                result['workerPhase'] = failure.worker_phase
-                if failure.worker_memory is not None:
-                    result['workerMemory'] = failure.worker_memory
+            failure = _diagnose(error, PHASE, 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'SUPERVISOR_REJECTED')
+            result = _failure_packet(failure)
             _send_result(args.ipc_dir, ctx, result)
         except BaseException:
             pass

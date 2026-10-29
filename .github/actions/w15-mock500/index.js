@@ -1,4 +1,33 @@
 'use strict';
+function closedRunnerDetail(value){
+  const reasons=new Set(['PARENT_READBACK_REJECTED','SUPERVISOR_DEADLINE','SUPERVISOR_INTERRUPTED','SUPERVISOR_REJECTED',
+    'WORKER_START_REJECTED','WORKER_SETUP_REJECTED','WORKER_INTERRUPTED','WORKER_RESULT_REJECTED','WORKER_CLEANUP_UNCONFIRMED',
+    'WORKER_IPC_EOF','WORKER_IPC_TIMEOUT','WORKER_IPC_REJECTED','WORKER_EXIT_WITHOUT_REPORT','WORKER_SIGNAL_EXIT',
+    'WORKER_EXIT_REJECTED','WORKER_REPORTED_FAILURE','SERVICE_IPC_EOF','SERVICE_IPC_TIMEOUT','SERVICE_IPC_REJECTED',
+    'SERVICE_EXIT_WITHOUT_REPORT','SERVICE_EXIT_REJECTED','PARENT_CLOSURE_REJECTED','CLEANUP_UNCONFIRMED','SIGNAL_DURING_CLEANUP']);
+  if(!value||typeof value!=='object'||Array.isArray(value)||!reasons.has(value.reason)||
+    !Object.keys(value).every(k=>['reason','secondaryReason','memory','memorySource','workerExitCode','serviceExitCode'].includes(k)))return null;
+  const out={reason:value.reason};
+  if(Object.hasOwn(value,'secondaryReason')){
+    if(!reasons.has(value.secondaryReason))return null;out.secondaryReason=value.secondaryReason;
+  }
+  if(Object.hasOwn(value,'memory')||Object.hasOwn(value,'memorySource')){
+    const memory=closedFailureMemory(value.memory);
+    if(!memory||!['CURRENT_REJECTED_READBACK','CACHED_READBACK','POST_FAILURE_READBACK'].includes(value.memorySource))return null;
+    out.memory=memory;out.memorySource=value.memorySource;
+  }
+  for(const key of ['workerExitCode','serviceExitCode'])if(Object.hasOwn(value,key)){
+    if(!Number.isInteger(value[key])||value[key]<-255||value[key]>255)return null;out[key]=value[key];
+  }
+  return out;
+}
+function closedCleanup(value){
+  const keys=['workerExited','workerIPCClosed','parentStopRequested','parentEmpty','parentUnitRemoved',
+    'serviceLauncherExited','launcherListenerClosed','launcherSignalsRestored'];
+  if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).sort().join(',')!==[...keys].sort().join(',')||
+    !keys.every(k=>['PASS','FAIL','UNKNOWN'].includes(value[k])))return null;
+  return Object.fromEntries(keys.map(k=>[k,value[k]]));
+}
 function closedFailureMemory(value){
   const keys=['configuredLimitBytes','kernelLifetimePeakBytes','currentBytes','swapMaximumBytes','swapCurrentBytes','lastReadbackValid','events'];
   const events=['max','oom','oom_kill','oom_group_kill'];
@@ -33,9 +62,8 @@ function main(){
   if(Buffer.byteLength(input)>1024*1024)throw Error('bound');
   const result=cp.spawnSync('/usr/bin/python3',['-B','scripts/w15-github/mock500_workflow.py','--launch'],
     {input,env:process.env,encoding:'utf8',maxBuffer:1024*1024,timeout:(synthetic?420:12720)*1000});
-  if(result.error)throw Error('worker');
   const receipt=JSON.parse(result.stdout);
-  if(result.status!==0){
+  if(result.error||result.status!==0){
     const phases=['arguments','event','approval','qualification','binding','resources','synthetic',
       'receive-prepare','restore','mock500','backup','closure','parent','service','staging','worker','ipc'];
     phases.push(...['arguments','binding','private-inputs','key-import','outer-index','original-download',
@@ -48,6 +76,8 @@ function main(){
       safe.worker={phase:receipt.worker.phase};
       const memory=closedFailureMemory(receipt.worker.memory);if(memory)safe.worker.memory=memory;
     }
+    const runner=closedRunnerDetail(receipt.runner);if(runner)safe.runner=runner;
+    const cleanup=closedCleanup(receipt.cleanup);if(cleanup)safe.cleanup=cleanup;
     console.log(JSON.stringify(safe));process.exitCode=1;return;
   }
   if(receipt.status!=='PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY')throw Error('receipt');

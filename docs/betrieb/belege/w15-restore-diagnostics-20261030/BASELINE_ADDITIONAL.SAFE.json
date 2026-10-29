@@ -1,0 +1,38 @@
+{
+  "schema": "helmut-w15-diagnostic-additional-baseline/1",
+  "baselineCommit": "225e76d7b7618e36c189d205294dfd073e6d88a4",
+  "cases": [
+    {
+      "case": "test_outer_listener_close_cannot_replace_inner_failure",
+      "regressionDetected": true,
+      "syntheticOnly": true
+    },
+    {
+      "case": "test_replaced_parent_is_neither_killed_nor_removed",
+      "regressionDetected": true,
+      "syntheticOnly": true
+    },
+    {
+      "case": "test_term_during_successful_cleanup_cannot_return_pass",
+      "regressionDetected": true,
+      "syntheticOnly": true
+    },
+    {
+      "case": "test_complete_sample_survives_later_populated_rejection_and_interrupt",
+      "regressionDetected": true,
+      "syntheticOnly": true
+    },
+    {
+      "case": "test_worker_setup_close_fault_still_emits_closed_failure",
+      "regressionDetected": true,
+      "syntheticOnly": true
+    },
+    {
+      "case": "test_signal_keeps_its_type_in_both_resource_observers",
+      "regressionDetected": true,
+      "syntheticOnly": true
+    }
+  ],
+  "originalDataRead": false,
+  "originalRunCauseProven": false
+}

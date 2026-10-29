@@ -1,37 +1,23 @@
 # CURRENT STATE — Helmut
 
-## W15: Diagnose60195031 FAIL, keine weitere echte Ausführung
+## W15: Diagnoseverlust synthetisch repariert; echte Ausführung gesperrt
 
-Neues konkretes GO genau einmal genutzt: [40946145190](https://github.com/ernisch/helmut-pilot/actions/runs/40946145190)
-auf60195031c9187cf91ce4497f8875977683914f20, Originalbranch/Attempt1, FAIL
-`worker.backup-export`. Dispatch47528Zeichen, echte Mindestlinkrestzeit262s.
-Unabhängige Abnahme bestätigt FAIL. Letzter gültiger Worker-Cache:
-Cap2560000000/Peak1638682624/Current1510432768Bytes,Swap0,alle4Limit-/OOM-Events0.
-Kein Gesamt-RAM-/Stop-/Parentleer-PASS. Codefluss belegt davor12Dateien/242570240Bytes
-und primären fünfstufigen Restore500/0; kein vollständiger Restore-PASS.
-Freeze/Collect/Seal/Transport/zweiteRecovery nicht erreicht,0finalisierte Artefakte.
-Innere Exportoperation/UrsacheUNKNOWN; kein pg_dump-Defekt behauptet.
-[Erstfehler](betrieb/belege/w15-mock500-integration-20261029/RESTORE_60195031_FAILED.SAFE.json)
-und [unabhängige Abnahme](betrieb/belege/w15-mock500-integration-20261029/RESTORE_60195031_REVIEW.SAFE.json)
-erhalten. Kein Retry. Weitere echte Ausführung erst nach gezielter Ursachenbehebung
-UND neuem konkretem GO; End500/Mock500 bleiben gesperrt.
-
-Die tatsächlich fehlende native Exportverbindung wird gezielt mit kleinen
-synthetischen Daten im vorhandenen CI-Service geprüft: echter Worker/Kindprozess,
-Dateien, Lifecycle und Quittungen statt künstlich erzeugter Exportdateien.
-Kein Originalrestore oder500er-Controller. Aktueller nativer Befund und Pflicht-CI
-stehen am tatsächlichen Kopf vonDraft977; kein Originalfehler-PASS daraus.
-Fehlercommit60195031 bleibt unveränderter Vorfahre, Mock-Dateiblocker weiterBLOCKED.
-
-Konkreter zusätzlicher Exportblocker synthetisch reproduziert: CI40948554553
-auf32eb2dd2 beendet zwei native Aktionen, dannFAIL`backup-roles-native`,RC1;
-eigeneDB/Rolle/Dateienbereinigung bestätigt. PG17.6 sucht beim Start vonpg_dumpall
-unbedingt seinpg_dump-Nachbarprogramm anhandargv0. Der bisher erfundeneBASE-Pfad
-existiert nicht. Minimalfix: nurpg_dumpall erhält echtesargv0; ein gültiger
-application_name-Verbindungsparameter erhältBASE im Prozessargument. Stopguard
-unverändert. Native Regressionsabnahme/aktuelle Pflicht-CI sieheDraft977.
-Das ist ein belegter Codeblocker, kein direkt beobachteter innerer Erstfehler
-des Originallaufs; dessen feine Ursache bleibtUNKNOWN. Keine neueAusführung.
+Letzter Originallauf [40958135662](https://github.com/ernisch/helmut-pilot/actions/runs/40958135662)
+auf225e76d7 bleibt FAIL `worker`: innere Phase, RAM, Restore-/Backupfortschritt
+und Bereinigungsstatus UNKNOWN. Keine Übernahme älterer Laufwerte.
+Der Fixzweig `codex/w15-restore-diagnostics-20261030` erhält bekannte Workerphasen
+vor späteren Überwachungs-, IPC-, Signal- und Bereinigungsfehlern. Vier zentrale
+Regressionen plus sechs zusätzliche Fehlergruppen am alten Code nachgestellt;
+27 neue synthetische Diagnoseprüfungen und betroffene Anschlusssuiten PASS.
+Zwei unabhängige Quellreviews PASS; Pflicht-CI am tatsächlichen neuen PR-Kopf
+weiterhin erforderlich, aktueller externer Status im zugehörigen Draft-PR.
+Kein weiterer Originallauf. Kein historischer Restore-/RAM-/Stillstands-PASS.
+[Diagnoseabnahme und Grenzen](betrieb/w15-restore-diagnostics-20261030.md),
+[SAFE-Belege](betrieb/belege/w15-restore-diagnostics-20261030/CODE_REVIEW.SAFE.json).
+Mock-Anschlüsse verwenden dieselbe reparierte Fehlerkette; Dateiblocker bleibt
+BLOCKED. Beide RAM-Verträge, bestehende Freigabegrenzen und Schutzregeln bleiben.
+Weitere echte Ausführung erfordert konkrete Diagnosebegründung und neues GO;
+kein vollständiger Restore auf Verdacht. End500/Mock500 bleiben gesperrt.
 
 ## W15 Fortschreibung: primärer Restore durchlaufen, Backup noch FAIL
 

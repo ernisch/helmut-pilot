@@ -50,16 +50,13 @@ RESULT_KEYS = {'status', 'mode', 'exactCommit', 'runId', 'runAttempt', 'syntheti
 PHASE = 'arguments'
 
 
-class MockRunnerError(RuntimeError):
-    def __init__(self, phase=None, worker_phase=None, worker_memory=None):
-        self.phase = phase if type(phase) is str and phase in PHASES else PHASE if PHASE in PHASES else 'arguments'
-        self.safe_failure = {'phase': self.phase}
-        if type(worker_phase) is str and worker_phase in WORKER_PHASES:
-            self.safe_failure['worker'] = {'phase': worker_phase}
-            memory = S.P.R.closed_failure_memory(worker_memory)
-            if memory is not None:
-                self.safe_failure['worker']['memory'] = memory
-        super().__init__('MOCK500_RUNNER_FAILED_OR_UNKNOWN')
+class MockRunnerError(S.RunnerStartError):
+    allowed_worker_phases = WORKER_PHASES
+
+    def __init__(self, phase=None, worker_phase=None, worker_memory=None, **kwargs):
+        phase = phase if type(phase) is str and phase in PHASES else PHASE
+        super().__init__(phase, worker_phase, worker_memory, **kwargs)
+        self.args = ('MOCK500_RUNNER_FAILED_OR_UNKNOWN',)
 
 
 def need(value):
@@ -112,7 +109,7 @@ def github_binding(request):
          and os.environ.get('GITHUB_RUN_ID') == request['runId'] and os.environ.get('GITHUB_RUN_ATTEMPT') == '1')
     need(S._git(REPO, ['rev-parse', 'HEAD']) == (request['exactCommit'] + '\n').encode())
     for name in ('mock500_runner.py', 'mock500_parent.py', 'mock500_resources.py', 'mock500_workflow.py',
-                 'runner_start.py', 'runner_parent.py', 'common_resources.py', 'controller_context.py'):
+                 'runner_start.py', 'runner_parent.py', 'common_resources.py', 'runner_diagnostics.py', 'controller_context.py'):
         file = SCRIPT.with_name(name)
         relative = str(file.relative_to(REPO))
         entry = S._git(REPO, ['ls-tree', '-z', request['exactCommit'], '--', relative])
@@ -141,12 +138,7 @@ def validate_public_result(result, manifest):
 
 
 def _failure(value):
-    need(type(value) is dict and set(value) in ({'ok', 'phase'}, {'ok', 'phase', 'workerPhase'}, {'ok', 'phase', 'workerPhase', 'workerMemory'})
-         and value['ok'] is False and type(value['phase']) is str and value['phase'] in PHASES
-         and ('workerPhase' not in value or
-              type(value['workerPhase']) is str and value['workerPhase'] in WORKER_PHASES)
-         and ('workerMemory' not in value or S.P.R.closed_failure_memory(value['workerMemory']) is not None))
-    return MockRunnerError(value['phase'], value.get('workerPhase'), value.get('workerMemory'))
+    return S._response_error(value, error_type=MockRunnerError)
 
 
 def _started(started_at, started_mono, maximum):
@@ -158,9 +150,10 @@ def _started(started_at, started_mono, maximum):
 
 
 def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
-    receiver.close()
-    latch, code = None, 1
+    latch, code, result, failure = None, 1, None, None
+    reason = 'WORKER_SETUP_REJECTED'
     try:
+        receiver.close()
         S._close_stdio()
         os.environ.clear(); os.environ.update(S._worker_env(manifest))
         os.setgroups([docker_gid]); os.setgid(1000); os.setuid(1000)
@@ -171,70 +164,77 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
         need(len(raw) == pin['bytes'] and hashlib.sha256(raw).hexdigest() == pin['sha256'])
         spec = importlib.util.spec_from_file_location('w15_fixed_mock500_worker', script)
         module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        reason = 'WORKER_RESULT_REJECTED'
         result = validate_public_result(module.run_worker(manifest, private_payload), manifest)
         need(not latch.seen)
-        sender.send_bytes(S._encode({'ok': True, 'result': result}, S.MAX_RESULT)); code = 0
     except BaseException as error:
-        try:
-            failure = {'ok': False, 'phase': 'worker'}
-            phase = getattr(error, 'phase', None)
-            if type(phase) is str and phase in WORKER_PHASES:
-                failure['workerPhase'] = phase
-                memory = S.P.R.closed_failure_memory(getattr(error, 'worker_memory', None))
-                if memory is not None:
-                    failure['workerMemory'] = memory
-            sender.send_bytes(S._encode(failure, S.MAX_RESULT))
-        except BaseException:
-            pass
+        failure = S._worker_failure(error, reason, error_type=MockRunnerError)
     finally:
         if latch is not None:
-            latch.close()
-        sender.close()
+            latch.cleaning = True
+            try:
+                latch.close()
+                if latch.seen and failure is None:
+                    failure = MockRunnerError('worker', runner={'reason': 'WORKER_CLEANUP_UNCONFIRMED'})
+            except BaseException:
+                if failure is None:
+                    failure = MockRunnerError('worker', runner={'reason': 'WORKER_CLEANUP_UNCONFIRMED'})
+        try:
+            packet = S._failure_packet(failure) if failure is not None else {'ok': True, 'result': result}
+            sender.send_bytes(S._encode(packet, S.MAX_RESULT)); code = 0 if failure is None else 1
+        except BaseException:
+            code = 1
+        try:
+            sender.close()
+        except BaseException:
+            code = 1
     raise SystemExit(code)
 
 
-def supervise(request, private_payload, started_at, started_mono):
+def supervise(request, private_payload, started_at, started_mono, *, latch=None):
     global PHASE
     PHASE = 'binding'
     validate_request(request, private_payload); need(os.getuid() == 0)
     ctx = S._ctx(request); path = P.P.R.KERNEL_ROOT / P.names(ctx)[0]
     inode = P.identity(path)
     need(P.P.R.membership(Path('/proc/self/cgroup').read_text()).startswith('/' + P.names(ctx)[0] + '/'))
+    last = {'memory': None}
     def guard():
-        _started(started_at, started_mono, request['maximumWallSeconds'])
-        return P.read_parent(ctx, inode)
-    guard(); docker_gid = S._identity_available()
-    PHASE = 'staging'; manifest = S._stage(request, guard)
+        try:
+            _started(started_at, started_mono, request['maximumWallSeconds'])
+        except BaseException as error:
+            raise S._diagnose(error, PHASE, 'SUPERVISOR_DEADLINE', last['memory'], error_type=MockRunnerError) from None
+        return S._parent_readback(P, ctx, inode, last, error_type=MockRunnerError, phase=PHASE)
+    try:
+        guard(); docker_gid = S._identity_available()
+        PHASE = 'staging'; manifest = S._stage(request, guard)
+    except BaseException as error:
+        raise S._diagnose(error, PHASE, 'SUPERVISOR_REJECTED', last['memory'], error_type=MockRunnerError) from None
     manifest.update(startedAtUTC=started_at, startedMonotonic=started_mono)
     need('scripts/w15-github/mock500_workflow.py' in manifest['sourcePins'])
-    PHASE = 'worker'; fork = multiprocessing.get_context('fork')
-    receiver, sender = fork.Pipe(duplex=False)
-    child = fork.Process(target=_fork_worker, args=(manifest, private_payload, sender, receiver, docker_gid))
-    response = None
+    PHASE = 'worker'
     try:
-        child.start(); sender.close()
-        while child.is_alive():
-            guard()
-            if response is None and receiver.poll(0):
-                response = S._decode(receiver.recv_bytes(maxlength=S.MAX_RESULT))
-            time.sleep(.1)
-        child.join(timeout=5)
-        if response is None and receiver.poll(1):
-            response = S._decode(receiver.recv_bytes(maxlength=S.MAX_RESULT))
-        if type(response) is dict and response.get('ok') is False:
-            raise _failure(response)
-        need(child.exitcode == 0 and type(response) is dict and set(response) == {'ok', 'result'} and response['ok'] is True)
+        fork = multiprocessing.get_context('fork')
+        receiver, sender = fork.Pipe(duplex=False)
+        child = fork.Process(target=_fork_worker, args=(manifest, private_payload, sender, receiver, docker_gid))
+    except BaseException as error:
+        raise S._diagnose(error, PHASE, 'WORKER_START_REJECTED', last['memory'], error_type=MockRunnerError) from None
+    cleanup = None
+    try:
+        response, cleanup = S._monitor_child(child, receiver, sender, guard,
+            started_mono + request['maximumWallSeconds'], memory=lambda: last['memory'],
+            latch=latch, error_type=MockRunnerError)
         result = validate_public_result(response['result'], manifest)
         PHASE = 'closure'; guard(); need(S._members(ctx) == {os.getpid()})
         return {'worker': result, 'workerExited': True, 'checkoutFiles': len(manifest['sourcePins']),
             'checkoutBytes': manifest['checkoutBytes'], 'binaryBytes': manifest['binaryBytes'],
             'dockerSocketGID': docker_gid, 'workerUID': 1000, 'workerGID': 1000}
-    finally:
-        if child.pid is not None and child.is_alive():
-            child.terminate(); child.join(timeout=30)
-            if child.is_alive():
-                child.kill(); child.join(timeout=5)
-        receiver.close(); sender.close()
+    except BaseException as error:
+        reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'WORKER_RESULT_REJECTED'
+        failure = S._diagnose(error, PHASE, reason, last['memory'], error_type=MockRunnerError)
+        if cleanup is not None:
+            failure.cleanup = cleanup; failure.refresh()
+        raise failure from None
 
 
 def _service_argv(request, ipc_dir, started_mono):
@@ -261,24 +261,34 @@ def launch(request, private_payload):
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     listener.bind(str(ipc_dir / 'result.sock')); os.chmod(ipc_dir / 'result.sock', 0o600); listener.listen(1)
     created, process, failure, inode, latch = False, None, None, None, P.P.StopLatch()
+    last, empty_observed = {'memory': None}, False
     try:
         PHASE = 'parent'; P.privileged('prepare', ctx); created = True
-        inode = P.identity(P.P.R.KERNEL_ROOT / P.names(ctx)[0]); initial = P.read_parent(ctx, inode, empty=True)
+        inode = P.identity(P.P.R.KERNEL_ROOT / P.names(ctx)[0])
+        initial = S._parent_readback(P, ctx, inode, last, empty=True, error_type=MockRunnerError, phase=PHASE)
         _started(started_at, started_mono, request['maximumWallSeconds']); PHASE = 'service'
         process = subprocess.Popen(_service_argv(request, ipc_dir, started_mono), stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=S.ENV, close_fds=True, start_new_session=True)
         raw = S._encode({'request': request, 'private': private_payload,
                          'startedAtUTC': started_at, 'startedMonotonic': started_mono})
         process.stdin.write(raw); process.stdin.close()
-        response = S._receive_result(listener, process, started_mono + request['maximumWallSeconds'] + 45)
+        response = S._receive_result(listener, process, started_mono + request['maximumWallSeconds'] + 45, error_type=MockRunnerError)
         if type(response) is dict and response.get('ok') is False:
             raise _failure(response)
-        need(process.wait(timeout=45) == 0 and type(response) is dict and set(response) == {'ok', 'result'}
+        code = process.wait(timeout=45)
+        if code != 0:
+            detail = {'reason': 'SERVICE_EXIT_REJECTED'}
+            if type(code) is int and -255 <= code <= 255:
+                detail['serviceExitCode'] = code
+            raise MockRunnerError('service', runner=detail)
+        need(type(response) is dict and set(response) == {'ok', 'result'}
              and response['ok'] is True and type(response['result']) is dict)
         result = response['result']; worker = validate_public_result(result['worker'], request)
-        PHASE = 'closure'; final = P.read_parent(ctx, inode, empty=True)
+        PHASE = 'closure'
+        final = S._parent_readback(P, ctx, inode, last, empty=True, error_type=MockRunnerError, phase=PHASE)
         _started(started_at, started_mono, request['maximumWallSeconds'])
         need(final['kernelLifetimePeakBytes'] >= initial['kernelLifetimePeakBytes'] and not latch.seen)
+        empty_observed = True
         return {'status': 'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY', 'mode': request['mode'],
             'exactCommit': ctx['exactCommit'], 'runId': ctx['runId'], 'runAttempt': 1,
             'startedAtUTC': started_at, 'startedMonotonic': started_mono,
@@ -289,32 +299,14 @@ def launch(request, private_payload):
             'executionAuthority': False, 'mock500Acceptance': False, 'end500Acceptance': False,
             'commonLifetimeMemoryAccepted': False, 'retryAllowed': False}
     except BaseException as error:
-        failure = error if isinstance(error, MockRunnerError) else MockRunnerError(PHASE)
+        reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'SUPERVISOR_REJECTED'
+        failure = S._diagnose(error, PHASE, reason, last['memory'], error_type=MockRunnerError)
         raise failure from None
     finally:
-        latch.cleaning = True; cleanup_error = False
-        if created:
-            try:
-                if failure is not None:
-                    if inode is not None:
-                        need(P.identity(P.P.R.KERNEL_ROOT / P.names(ctx)[0]) == inode)
-                    S._command(['/usr/bin/sudo', '-n', '/usr/bin/systemctl', 'kill', '--kill-whom=all',
-                        '--signal=SIGKILL', P.names(ctx)[0]], timeout=15)
-            except BaseException:
-                cleanup_error = True
-            try:
-                P.privileged('remove', ctx)
-            except BaseException:
-                cleanup_error = True
-        try:
-            if process is not None and process.poll() is None:
-                process.kill(); process.wait(timeout=10)
-        except BaseException:
-            cleanup_error = True
-        finally:
-            listener.close(); latch.close()
-        if cleanup_error and failure is None:
-            raise MockRunnerError('closure') from None
+        after = S._cleanup_launch(ctx, P, inode, created, process, listener, latch, failure,
+            empty_observed=empty_observed, error_type=MockRunnerError, kernel_root=P.P.R.KERNEL_ROOT)
+        if failure is None and after is not None:
+            raise after from None
 
 
 def main(argv=None):
@@ -338,17 +330,14 @@ def main(argv=None):
         need(type(envelope) is dict and set(envelope) == {'request', 'private', 'startedAtUTC', 'startedMonotonic'})
         request, private_payload = envelope['request'], envelope['private']
         validate_request(request, private_payload); need(S._ctx(request) == ctx)
-        result = supervise(request, private_payload, envelope['startedAtUTC'], envelope['startedMonotonic'])
+        result = supervise(request, private_payload, envelope['startedAtUTC'], envelope['startedMonotonic'], latch=latch)
         need(not latch.seen); S._send_result(ipc_dir, ctx, {'ok': True, 'result': result}); return 0
     except BaseException as error:
         if ctx is not None and ipc_dir is not None:
             try:
-                failure = error if isinstance(error, MockRunnerError) else MockRunnerError(PHASE)
-                response = {'ok': False, 'phase': failure.phase}
-                if 'worker' in failure.safe_failure:
-                    response['workerPhase'] = failure.safe_failure['worker']['phase']
-                    if 'memory' in failure.safe_failure['worker']:
-                        response['workerMemory'] = failure.safe_failure['worker']['memory']
+                reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'SUPERVISOR_REJECTED'
+                failure = S._diagnose(error, PHASE, reason, error_type=MockRunnerError)
+                response = S._failure_packet(failure)
                 S._send_result(ipc_dir, ctx, response)
             except BaseException:
                 pass

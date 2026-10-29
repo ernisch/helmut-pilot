@@ -51,9 +51,10 @@ PHASE = 'arguments'
 
 
 class ProbeError(RuntimeError):
-    def __init__(self, message='RUNNER_PARENT_PROBE_REJECTED', *, code='CHECK_REJECTED', exit_code=None, record=None):
+    def __init__(self, message='RUNNER_PARENT_PROBE_REJECTED', *, code='CHECK_REJECTED', exit_code=None, record=None, memory=None):
         super().__init__('RUNNER_PARENT_PROBE_REJECTED')
         self.record = record if record is not None else {'phase': PHASE, 'code': code, 'exitCode': exit_code, 'via': []}
+        self.failure_memory = R.closed_failure_memory(memory)
 
 
 def phase(value):
@@ -211,11 +212,37 @@ def read_parent(ctx, expected_identity, *, empty=False):
                   'kernelLifetimePeakBytes': int(read('memory.peak')), 'currentBytes': int(read('memory.current')),
                   'swapCurrentBytes': int(read('memory.swap.current')),
                   'events': {k: int(v) for k, v in (row.split() for row in read('memory.events').splitlines())}}
-        R.assess(sample)
-        populated = dict(row.split() for row in read('cgroup.events').splitlines())['populated']
-        if empty:
-            require(populated == '0')
+        try:
+            R.assess(sample)
+            populated = dict(row.split() for row in read('cgroup.events').splitlines())['populated']
+            require(populated in ('0', '1'))
+            if empty:
+                require(populated == '0')
+        except KeyboardInterrupt as error:
+            error.failure_memory = R.project_failure_memory(sample, False)
+            raise
+        except BaseException:
+            raise ProbeError(code='COMMON_PARENT_REJECTED', memory=R.project_failure_memory(sample, False)) from None
         return sample
+    finally:
+        os.close(fd)
+
+
+def parent_empty(ctx, expected_identity):
+    """Separate stop fact; never accepts memory or changes a kernel counter."""
+    fd = R._kernel_directory(R.KERNEL_ROOT / names(ctx)[0])
+    try:
+        value = os.fstat(fd)
+        require((value.st_dev, value.st_ino) == expected_identity)
+        child = os.open('cgroup.events', os.O_RDONLY | os.O_NOFOLLOW, dir_fd=fd)
+        try:
+            raw = os.read(child, 8193)
+            require(len(raw) <= 8192)
+            populated = dict(row.split() for row in raw.decode('ascii').splitlines())['populated']
+            require(populated in ('0', '1'))
+            return populated == '0'
+        finally:
+            os.close(child)
     finally:
         os.close(fd)
 

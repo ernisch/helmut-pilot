@@ -288,6 +288,22 @@ def plan():
         'actualRAMAcceptance': False, 'retryAllowed': False}
 
 
+_DIAGNOSTICS = component('runner_diagnostics')
+_DIAGNOSTIC_MEMORY = component('common_resources')
+
+
+def _safe_failure(error):
+    allowed = PHASES | {'parent', 'service', 'staging', 'worker', 'ipc'}
+    candidate = _DIAGNOSTICS.attribute(error, 'safe_failure')
+    if type(candidate) is dict and 'phase' not in candidate:
+        candidate = {**candidate, 'phase': _DIAGNOSTICS.attribute(error, 'phase', 'arguments')}
+    closed = _DIAGNOSTICS.public(candidate, allowed, PHASES, _DIAGNOSTIC_MEMORY.closed_failure_memory)
+    if closed is not None:
+        return closed
+    phase = _DIAGNOSTICS.attribute(error, 'phase', 'arguments')
+    return {'phase': phase if type(phase) is str and phase in allowed else 'arguments'}
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     if argv in ([], ['--plan']):
@@ -306,17 +322,8 @@ def main(argv=None):
         runner.validate_public_result(receipt['workerResult'], request)
         print(canonical(receipt).decode()); return 0
     except BaseException as error:
-        phase = getattr(error, 'phase', 'arguments')
-        allowed = PHASES | {'parent', 'service', 'staging', 'worker', 'ipc'}
-        safe = {'status': 'FAIL_OR_BLOCKED_MOCK500_WORKFLOW', 'phase': phase if phase in allowed else 'arguments',
+        safe = {'status': 'FAIL_OR_BLOCKED_MOCK500_WORKFLOW', **_safe_failure(error),
                 'executionAuthority': False, 'retryAllowed': False}
-        child = getattr(error, 'safe_failure', {}).get('worker')
-        if type(child) is dict and set(child) in ({'phase'}, {'phase', 'memory'}) and type(child['phase']) is str and child['phase'] in PHASES:
-            safe['worker'] = {'phase': child['phase']}
-            if 'memory' in child:
-                memory = component('common_resources').closed_failure_memory(child['memory'])
-                if memory is not None:
-                    safe['worker']['memory'] = memory
         print(canonical(safe).decode()); return 1
 
 

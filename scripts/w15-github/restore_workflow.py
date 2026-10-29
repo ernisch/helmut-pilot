@@ -445,22 +445,16 @@ def plan():
             'executionAuthority': False, 'end500Acceptance': False, 'retryAllowed': False}
 
 
+_DIAGNOSTICS = _load('runner_diagnostics')
+_DIAGNOSTIC_MEMORY = _load('common_resources')
+
+
 def _safe_failure(error):
     if isinstance(error, WorkflowRejected):
         return {'phase': error.phase}
-    candidate = getattr(error, 'safe_failure', None)
-    if type(candidate) is dict and set(candidate) in ({'phase'}, {'phase', 'worker'}):
-        phase = candidate.get('phase')
-        if type(phase) is str and phase in RUNNER_PHASES:
-            result = {'phase': phase}
-            worker = candidate.get('worker')
-            if type(worker) is dict and set(worker) in ({'phase'}, {'phase', 'memory'}) and type(worker['phase']) is str and worker['phase'] in PHASES:
-                result['worker'] = {'phase': worker['phase']}
-                memory = _load('common_resources').closed_failure_memory(worker.get('memory'))
-                if memory is not None:
-                    result['worker']['memory'] = memory
-            return result
-    return {'phase': 'arguments'}
+    candidate = _DIAGNOSTICS.attribute(error, 'safe_failure')
+    return _DIAGNOSTICS.public(candidate, RUNNER_PHASES, PHASES,
+        _DIAGNOSTIC_MEMORY.closed_failure_memory) or {'phase': 'arguments'}
 
 
 def main(argv=None):

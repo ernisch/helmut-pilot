@@ -1,0 +1,52 @@
+{
+  "affectedPriorSuitesPassed": {
+    "backup_failure_projection": 5,
+    "mock500_parent": 6,
+    "mock500_resources": 7,
+    "mock500_runner": 9,
+    "mock500_workflow": 6,
+    "restore_resources": 8,
+    "restore_workflow": 18,
+    "runner_parent": 24,
+    "runner_start": 13
+  },
+  "baselineCommit": "225e76d7b7618e36c189d205294dfd073e6d88a4",
+  "codeSHA256": {
+    ".github/actions/w15-isolated/index.js": "e5b67a9505c82d0e9ada991c02d7d242d0dcdc0825047d8674d1129361fdbdb7",
+    ".github/actions/w15-mock500/index.js": "169d5ca9ef6a2f7050ab6679d77dc71331622992c46fcdf485c8bb050b1beba2",
+    ".github/workflows/ci.yml": "7bad96bd463dde89765302d724b87cbc37c9cbdd4a11c152eb13e612882bfe88",
+    "scripts/w15-github/common_resources.py": "40a7a5e9d9935256820dc35bed4367626c37a925c835ffe61b9fe9f45f239930",
+    "scripts/w15-github/mock500_parent.py": "aeec27465f914de1a86e1b9609390bc382ba3018375196ce196bc5a6038d2fa2",
+    "scripts/w15-github/mock500_resources.py": "6b3b6e649ca7e16418ca9c722ca5a1e410db1f0db8723bca91cec87c11515f1f",
+    "scripts/w15-github/mock500_runner.py": "a0992d0bee418fb0f6da48c2477aa370b929943d59ff6b037a37e1055c916b70",
+    "scripts/w15-github/mock500_workflow.py": "64e5768b0368a167a49fdb15b5ec65eca9eff5262e1d4224b777c8451c0800f0",
+    "scripts/w15-github/restore_workflow.py": "a319a4c5413e7df16ede091dc126a1d1351cd8b279049207e51c6a466801f139",
+    "scripts/w15-github/runner_diagnostics.py": "7699736121d06767f3bc9ac95d455f29f063666fb1532c2b0f237d897bcfa839",
+    "scripts/w15-github/runner_parent.py": "fdcabdfdc72c2f143c98007ea7fffbc81d0774a35fa6e98629c59140dcbdd5c5",
+    "scripts/w15-github/runner_start.py": "e878e3bdc857d06fb2e84f810b9da43a23d55fe51f51443a3f05cc5398aaf738",
+    "scripts/w15-github/test_runner_diagnostics.py": "a3a519386fc183183cfbbf91a9af748d5dd0542c94987ae6c98aaeeee8bf86ff"
+  },
+  "historicalRunId": "40958135662",
+  "independentReadonlyReviews": [
+    {
+      "reviewer": "diag_review",
+      "scope": "worker-supervisor-ipc-projection",
+      "status": "PASS"
+    },
+    {
+      "reviewer": "cleanup_review",
+      "scope": "resources-signals-owned-cleanup",
+      "status": "PASS"
+    }
+  ],
+  "mandatoryCI": "REQUIRED_ON_PR_HEAD",
+  "newDiagnosticTests": 27,
+  "newRealExecutionAuthorized": false,
+  "originalRunAcceptance": false,
+  "originalRunCause": "UNKNOWN",
+  "protectionRulesChanged": false,
+  "ramContractsChanged": false,
+  "realExecutionPerformed": false,
+  "schema": "helmut-w15-diagnostic-repair-review/1",
+  "status": "PASS_CODE_AND_TARGETED_SYNTHETIC_CHECKS_CI_PENDING"
+}

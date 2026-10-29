@@ -65,6 +65,23 @@ def closed_failure_memory(value):
     return json.loads(json.dumps(value))
 
 
+def project_failure_memory(value, valid):
+    """Project an already captured sample, including a rejected one; no IO."""
+    if type(value) is not dict or type(valid) is not bool:
+        return None
+    try:
+        for key in ('configuredLimit', 'swapMaximum'):
+            if type(value[key]) is not str or re.fullmatch('[0-9]{1,16}', value[key]) is None:
+                return None
+        result = {key: value[key] for key in ('kernelLifetimePeakBytes', 'currentBytes', 'swapCurrentBytes')}
+        result.update(configuredLimitBytes=int(value['configuredLimit']), swapMaximumBytes=int(value['swapMaximum']),
+            lastReadbackValid=valid,
+            events={key: value['events'][key] for key in ('max', 'oom', 'oom_kill', 'oom_group_kill')})
+        return closed_failure_memory(result)
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 class CommonResources:
     def __init__(self, token, context, path, identity):
         require(token is TOKEN)
@@ -88,6 +105,8 @@ class CommonResources:
         return path
 
     def sample(self):
+        current = None
+        self._last_valid = False
         fd = _kernel_directory(self.path)
         try:
             s = os.fstat(fd)
@@ -106,11 +125,16 @@ class CommonResources:
                      'currentBytes': int(read('memory.current')),
                      'swapCurrentBytes': int(read('memory.swap.current')),
                      'events': {k: int(v) for k, v in (x.split() for x in read('memory.events').splitlines())}}
+            current = value
             self._last_observed, self._last_valid = value, False
             assess(value)
             self._last_valid = True
             return value
-        except (Exception, KeyboardInterrupt):
+        except KeyboardInterrupt as error:
+            self._last_valid = False
+            error.failure_memory = project_failure_memory(current, False)
+            raise
+        except Exception:
             self._last_valid = False
             raise ResourceError('COMMON_TEST_RESOURCE_BINDING_REJECTED') from None
         finally:
@@ -123,20 +147,7 @@ class CommonResources:
 
     def failure_observation(self):
         """Project the existing cached sample. No kernel read or peak reset."""
-        value = self._last_observed
-        if type(value) is not dict:
-            return None
-        try:
-            for key in ('configuredLimit', 'swapMaximum'):
-                if type(value[key]) is not str or re.fullmatch('[0-9]{1,16}', value[key]) is None:
-                    return None
-            result = {key: value[key] for key in ('kernelLifetimePeakBytes', 'currentBytes', 'swapCurrentBytes')}
-            result.update(configuredLimitBytes=int(value['configuredLimit']), swapMaximumBytes=int(value['swapMaximum']),
-                lastReadbackValid=self._last_valid,
-                events={key: value['events'][key] for key in ('max', 'oom', 'oom_kill', 'oom_group_kill')})
-            return closed_failure_memory(result)
-        except (KeyError, TypeError, ValueError):
-            return None
+        return project_failure_memory(self._last_observed, self._last_valid)
 
     def safe_summary(self):
         value = self.sample()
@@ -184,5 +195,5 @@ def observe(context):
         result = CommonResources(TOKEN, context, path, (value.st_dev, value.st_ino))
         result.sample()
         return result
-    except (Exception, KeyboardInterrupt):
+    except Exception:
         raise ResourceError('COMMON_TEST_RESOURCE_BINDING_REJECTED') from None

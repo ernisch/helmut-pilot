@@ -67,6 +67,8 @@ class MockCommonResources(C.CommonResources):
     def sample(self):
         # Reuse the established no-follow kernel directory and actual process
         # membership checks. Only the immutable v2 assessment differs.
+        current = None
+        self._last_valid = False
         fd = C._kernel_directory(self.path)
         try:
             value = os.fstat(fd)
@@ -84,11 +86,16 @@ class MockCommonResources(C.CommonResources):
                 'kernelLifetimePeakBytes': int(read('memory.peak')), 'currentBytes': int(read('memory.current')),
                 'swapCurrentBytes': int(read('memory.swap.current')),
                 'events': {k: int(v) for k, v in (line.split() for line in read('memory.events').splitlines())}}
+            current = observed
             self._last_observed, self._last_valid = observed, False
             assess(observed)
             self._last_valid = True
             return observed
-        except (Exception, KeyboardInterrupt):
+        except KeyboardInterrupt as error:
+            self._last_valid = False
+            error.failure_memory = C.project_failure_memory(current, False)
+            raise
+        except Exception:
             self._last_valid = False
             raise ResourceRejected('MOCK500_COMMON_RESOURCE_BINDING_REJECTED') from None
         finally:
@@ -120,7 +127,7 @@ def observe(context):
         resource = MockCommonResources(TOKEN, context, path, (value.st_dev, value.st_ino))
         resource.sample()
         return resource
-    except (Exception, KeyboardInterrupt):
+    except Exception:
         raise ResourceRejected('MOCK500_COMMON_RESOURCE_BINDING_REJECTED') from None
 
 

@@ -35,11 +35,13 @@ P = _load('runner_parent')
 LIMIT, MAXIMUM, RESERVE = 2048000000, 1638400000, 409600000
 UNIT_ROOT = P.UNIT_ROOT
 names, context, identity = P.names, P.context, P.identity
+parent_empty = P.parent_empty
 
 
 class MockParentError(RuntimeError):
-    def __init__(self):
+    def __init__(self, memory=None):
         super().__init__('MOCK500_PARENT_REJECTED')
+        self.failure_memory = P.R.closed_failure_memory(memory)
 
 
 def require(value):
@@ -72,9 +74,17 @@ def read_parent(ctx, expected_identity, *, empty=False):
             'swapCurrentBytes': int(read('memory.swap.current')),
             'events': {key: int(value) for key, value in
                        (row.split() for row in read('memory.events').splitlines())}}
-        resources().assess(sample)
-        if empty:
-            require(dict(row.split() for row in read('cgroup.events').splitlines())['populated'] == '0')
+        try:
+            resources().assess(sample)
+            populated = dict(row.split() for row in read('cgroup.events').splitlines())['populated']
+            require(populated in ('0', '1'))
+            if empty:
+                require(populated == '0')
+        except KeyboardInterrupt as error:
+            error.failure_memory = P.R.project_failure_memory(sample, False)
+            raise
+        except BaseException:
+            raise MockParentError(P.R.project_failure_memory(sample, False)) from None
         return sample
     finally:
         os.close(fd)

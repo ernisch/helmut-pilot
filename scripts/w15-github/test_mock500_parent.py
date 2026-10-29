@@ -80,7 +80,7 @@ class MockParentChecks(unittest.TestCase):
             assessor = Mock(); assessor.assess.side_effect = ValueError('FICTIONAL_WRONG_PROFILE')
             with patch.object(P.P.R, '_kernel_directory', side_effect=lambda _: os.open(root, os.O_RDONLY)), \
                     patch.object(P, 'resources', return_value=assessor):
-                with self.assertRaises(ValueError): P.read_parent(CTX, inode, empty=True)
+                with self.assertRaises(P.MockParentError): P.read_parent(CTX, inode, empty=True)
             self.assertEqual(assessor.assess.call_args.args[0]['configuredLimit'], '2560000000')
 
     def test_remove_rejects_other_unit_content_before_stop_or_unlink(self):

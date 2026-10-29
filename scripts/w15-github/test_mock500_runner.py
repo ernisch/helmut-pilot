@@ -130,9 +130,10 @@ class MockRunnerChecks(unittest.TestCase):
             self.assertGreater(read.call_count, 0)
             guard(); return manifest
         child = Mock(pid=54321, exitcode=0); child.is_alive.return_value = False
-        receiver, sender, fork = Mock(), Mock(), Mock()
-        receiver.poll.return_value = True
-        receiver.recv_bytes.return_value = json.dumps({'ok': True, 'result': result(value)}).encode()
+        raw_receiver, sender = R.multiprocessing.Pipe(duplex=False)
+        self.addCleanup(raw_receiver.close); self.addCleanup(sender.close)
+        sender.send_bytes(json.dumps({'ok': True, 'result': result(value)}).encode())
+        receiver, fork = Mock(wraps=raw_receiver), Mock()
         fork.Pipe.return_value = (receiver, sender); fork.Process.return_value = child
         with patch.object(R.os, 'getuid', return_value=0), patch.object(R.P, 'identity', return_value=(1, 2)), \
                 patch.object(R.P.P.R, 'membership', return_value='/' + R.P.names(ctx)[0] + '/service'), \
@@ -163,7 +164,7 @@ class MockRunnerChecks(unittest.TestCase):
                 patch.object(R, 'supervise', return_value={}) as supervise, patch.object(R.S, '_send_result') as send:
             self.assertEqual(R.main(argv), 0)
         self.assertEqual([call.args[1] for call in dup.call_args_list], [1, 2])
-        supervise.assert_called_once_with(value, {}, started_at, started_mono)
+        supervise.assert_called_once_with(value, {}, started_at, started_mono, latch=latch)
         send.assert_called_once_with('/FICTIONAL/ipc', ctx, {'ok': True, 'result': {}})
 
     def launch_fixture(self, failed_final=False):
@@ -172,14 +173,15 @@ class MockRunnerChecks(unittest.TestCase):
                  'binaryBytes': 200, 'dockerSocketGID': 987, 'workerUID': 1000, 'workerGID': 1000}
         def privileged(mode, ctx): order.append(mode)
         def read(ctx, inode, **kwargs):
-            self.assertTrue(kwargs['empty']); order.append('empty-readback')
+            order.append('empty-readback' if kwargs.get('empty') else 'post-failure-readback')
             if failed_final and order.count('empty-readback') == 2: raise ValueError(CANARY)
             return sample(1234 + order.count('empty-readback'))
-        def receive(*args): order.append('service-exited'); return {'ok': True, 'result': roles}
+        def receive(*args, **kwargs): order.append('service-exited'); return {'ok': True, 'result': roles}
         with tempfile.TemporaryDirectory(prefix='w15-fictional-mock-launch-') as tmp:
             with patch.object(R, 'github_binding'), patch.object(R.S, '_identity_available', return_value=987), \
                     patch.object(R.S, '_roots', return_value=(Path(tmp) / 'worker', Path(tmp) / 'ipc')), \
                     patch.object(R.P, 'privileged', side_effect=privileged), patch.object(R.P, 'identity', return_value=(1, 2)), \
+                    patch.object(R.P, 'parent_empty', return_value=True), \
                     patch.object(R.P, 'read_parent', side_effect=read), patch.object(R.subprocess, 'Popen', return_value=process) as spawn, \
                     patch.object(R.S, '_receive_result', side_effect=receive), patch.object(R.S, '_command') as command:
                 if failed_final:
@@ -207,7 +209,7 @@ class MockRunnerChecks(unittest.TestCase):
     def test_failed_final_readback_never_returns_pass_but_removes_owned_parent(self):
         order, receipt = self.launch_fixture(True)
         self.assertIsNone(receipt)
-        self.assertEqual(order, ['prepare', 'empty-readback', 'service-exited', 'empty-readback', 'remove'])
+        self.assertEqual(order, ['prepare', 'empty-readback', 'service-exited', 'empty-readback', 'post-failure-readback', 'remove'])
 
 
 if __name__ == '__main__': unittest.main()
