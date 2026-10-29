@@ -52,7 +52,9 @@ Quellbindung umfasst sämtliche neuen Python-/JavaScript-/Action-Abhängigkeiten
 Empfang, Staging, Restore, Arbeit, Sicherung, SDK-Kinder, Rückdownload,
 Rücksicherung und Abschluss teilen denselben Lebenszeitpeak und dieselbe Uhr.
 Kein Peak-/Zeitreset. Vollständiger konservativer Plattenplan enthält alle elf
-zusätzlichen Eingaben samt Kopien; unbekannte Bytezahlen bleiben unbekannt und
+zusätzlichen Eingaben samt Kopien; zusätzlich reservieren zwei getrennte
+Inputcipherbudgets je1326437376Bytes die Teile und die Konkatenation. Der
+bestehende Decoder prüft dieselbe Obergrenze vor jedem GET. Unbekannte Bytezahlen bleiben unbekannt und
 blockieren. UTC-/Berlin-Tagesbindung und unverändertes Quellenfenster werden
 frisch geprüft; keine Fristverlängerung durch Umschreiben von Daten.
 
@@ -107,6 +109,11 @@ Beschaffung/Qualifikation, kein erneutes Zwölf-Dateien-Gesamtpaket, keine neuen
 Schlüssel und keine öffentliche Ablage. Gegenwärtig kein Transfer freigegeben.
 
 ## Stufen und spätere Freigabevorlage
+
+Erste Integrations-CI40921313170: BrowserPASS, OfflineFAIL wegen einer nur im
+Test aus echter VM-Uptime abgeleiteten negativen fiktiven Monotonie. Die Testuhr
+ist isoliert korrigiert; keine Laufzeitgrenze gelockert. Der endgültige Kopf
+benötigt neue Pflicht-CI.
 
 Erster Restore40905370350 auf7e3d96e9:FAIL vor Datenbank. Der nach unabhängigem
 Review und grüner Pflicht-/PR-CI freigegebene Einzelversuch40920225333 aufb6eb7449:

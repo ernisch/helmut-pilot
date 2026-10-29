@@ -10,7 +10,7 @@ from pathlib import Path
 import time
 from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 SPEC = importlib.util.spec_from_file_location('w15_mock_start_tests', Path(__file__).with_name('mock500_start.py'))
 S = importlib.util.module_from_spec(SPEC)
@@ -31,6 +31,10 @@ def sample():
 
 class StartChecks(unittest.TestCase):
     def setUp(self):
+        # A fresh GitHub VM can have less than 300s uptime. Fictional elapsed
+        # time must use its own monotonic clock rather than a negative origin.
+        clock = patch.object(S.time, 'monotonic', return_value=1000.0)
+        clock.start(); self.addCleanup(clock.stop)
         self.request = {'mode': S.MODE, 'branch': S.BRANCH, 'exactCommit': 'a' * 40, 'runAttempt': 1,
             'nonce': '11111111-2222-4333-8444-555555555555', 'limits': S.LIMITS,
             'sourceQualificationSHA256': 'b' * 64}

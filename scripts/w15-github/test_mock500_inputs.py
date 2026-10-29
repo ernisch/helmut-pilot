@@ -349,6 +349,14 @@ class ControllerAdmissionChecks(unittest.TestCase):
             self.assertTrue((work / 'RESULTS_INDEPENDENT.SAFE.json').exists())
             kwargs['close_owned']()
             return dict.fromkeys(('remoteReadbackObserved', 'databaseRestoreObserved', 'ownedContainerStopped', 'watchClosed'), True)
+        readiness = []
+        def command(argv, **kwargs):
+            if 'pg_isready' in argv:
+                self.assertEqual(argv[argv.index('-h') + 1], '127.0.0.1')
+                readiness.append('tcp')
+                # The init-only Unix socket must not let restore start early.
+                return subprocess.CompletedProcess(argv, 1 if len(readiness) == 1 else 0)
+            return subprocess.CompletedProcess(argv, 0)
         with patch.object(controller, '_mock_module', side_effect=lambda name: modules[name]), \
                 patch.object(controller, 'Supervisor', Supervisor), patch.object(controller, 'docker', side_effect=docker), \
                 patch.object(controller, '_bound_container', side_effect=inspect), \
@@ -356,7 +364,7 @@ class ControllerAdmissionChecks(unittest.TestCase):
                 patch.object(controller, 'sql'), patch.object(controller, 'copy_in', side_effect=copy_in), \
                 patch.object(controller, 'copy_out', side_effect=copy_out), patch.object(controller, 'cleanup', side_effect=cleanup), \
                 patch.object(controller, 'stop_owned'), patch.object(controller.subprocess, 'Popen', Gateway), \
-                patch.object(controller.subprocess, 'run', side_effect=lambda argv, **kwargs: subprocess.CompletedProcess(argv, 0)):
+                patch.object(controller.subprocess, 'run', side_effect=command), patch.object(controller.time, 'sleep'):
             try: result = controller.run_bound(inputs, resource, start, complete, disk_guard=Mock())
             except RuntimeError:
                 final_path = Path(ctx['hostPaths']['runRoot']) / 'FINAL_MOCK500_CLOSURE.SAFE.json'
@@ -368,6 +376,7 @@ class ControllerAdmissionChecks(unittest.TestCase):
             self.assertLess(events.index(before), events.index(after))
         self.assertEqual(events.count('restore'), 1); self.assertEqual(events.count('run'), 1)
         self.assertEqual(events.count('backup'), 1); self.assertEqual(events.count('container-stopped'), 1)
+        self.assertEqual(readiness, ['tcp', 'tcp'])
         self.assertEqual((controller.WORK, controller.BASE, controller.DB, controller.CONTAINER, controller.IMAGE), original)
         self.assertTrue((Path(ctx['hostPaths']['runRoot']) / 'FINAL_MOCK500_CLOSURE.SAFE.json').exists())
         self.assertFalse((work / 'FINAL_MOCK500_CLOSURE.SAFE.json').exists())

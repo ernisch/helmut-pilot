@@ -510,7 +510,7 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
         ready=False
         for _ in range(100):
             guard()
-            p=subprocess.run(DOCKER+['exec',owned_id,'pg_isready','-U','postgres','--timeout=1'],
+            p=subprocess.run(DOCKER+['exec',owned_id,'pg_isready','-h','127.0.0.1','-U','postgres','--timeout=1'],
               env=ENV,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=5)
             if p.returncode==0:ready=True;break
             time.sleep(.2)
