@@ -15,7 +15,10 @@ als repariert behauptet; historische UrsacheUNKNOWN. Neue fiktive Tests und
 unabhängige Reviews PASS. Unverändertes echtes Snapshot-SQL wird im vorhandenen
 synthetischen CI-PostgreSQL mit kleinen500/0Fixturezeilen geprüft; native CI
 noch erforderlich. Kein Original-/500er-Controller-/Modelllauf durch den Test.
-Nächster echter Datenlauf erfordert neue konkrete Freigabe und aktuelle CI.
+Der folgende Diagnosekopf ecae6400 wird unverändert für einen später separat
+freizugebenden Restore-/End500-Lauf eingefroren; Mock-Folgeadapter erlaubt ihn
+nur mit späterer positiver End500-Abnahme/Bridge/Mock-GO. Nächster echter
+Datenlauf erfordert neue konkrete Freigabe und aktuelle CI.
 Mock-Dateiblocker und bestehende Zeit-/RAM-Verträge bleiben unverändert.
 
 
