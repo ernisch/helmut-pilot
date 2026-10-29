@@ -128,6 +128,8 @@ class ExistingReceiveChecks(unittest.TestCase):
                 patch.object(E.os, 'statvfs', return_value=SimpleNamespace(f_bavail=available, f_frsize=1)), \
                 patch.object(E.A.resource, 'setrlimit'), patch.object(E.A, '_run', side_effect=crypto) as gpg, \
                 patch.object(E.A, '_binary', return_value='/usr/bin/gpgconf'), \
+                patch.object(E.N, 'check_event', return_value=1234), \
+                patch.object(E.N, 'decrypt_index', return_value=json.dumps(index(datetime.now(timezone.utc)))), \
                 patch.object(E.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0)), \
                 patch.object(E, 'download', return_value=root / 'cipher.PRIVATE.gpg') as download, \
                 patch.object(E.R, 'receive', return_value={'sealedManifestSHA256': receipt_sha or E.SEALED_SHA}) as receive, \

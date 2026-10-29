@@ -1,5 +1,11 @@
 # W15: vorhandene Originaleingänge einmalig empfangen
 
+**Aktuelle Kanaländerung:** Der nachfolgend historisch vorgesehene automatische
+Write von `HELMUT_W15_CIPHER_URL_INDEX` entfällt. Der bestehende Empfänger erhält
+stattdessen ausschließlich `w15_cipher_index`, einen GPG-verschlüsselten
+Workflowparameter; nur die bestehenden zwei Empfängersecrets bleiben nötig.
+[Geltender enger Kanal, Prüfungen und Rückweg](w15-github-indexparameter-20261029.md).
+
 `receive_existing_inputs.py` verbindet ausschließlich die bestehenden15
 Cipherteile mit den vorhandenen `receive.receive`- und
 `input_port.verify_received`-Prüfern. Kein Controller, keine Datenbank und kein

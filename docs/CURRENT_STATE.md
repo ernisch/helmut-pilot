@@ -2,6 +2,19 @@
 
 ## W15: GitHub-Kanal, Parent und Empfänger belegt; Originalempfang vorbereitet
 
+Neue begrenzte Betreiberfreigabe: Der zusätzliche Secretwrite entfällt.
+`w15_cipher_index` transportiert ausschließlich einen mit dem bestehenden
+7E-Empfänger GPG-verschlüsselten Index als möglicherweise öffentlichen
+Workflowparameter. Gesamte tatsächliche Parameter und komplette Dispatch-Anfrage
+werden gegen65535Zeichen geprüft; Entschlüsselung nur mit den bestehenden zwei
+Environmentsecrets, danach unveränderte15-/12-Empfangsprüfer.10 neue gezielte
+synthetische Prüfungen und unabhängiger statischer Review bestanden. Vor genau
+einer echten Übergabe: finalen Commit und Pflicht-CI bestätigen, dann erst
+kurzlebige Links erzeugen. Keine Tokenrotation, Support- oder Secretwrite-
+Voraussetzung. Tatsächlicher Empfang noch offen; keine End500-Startfreigabe.
+[Aktueller enger Kanal und Rückweg](betrieb/w15-github-indexparameter-20261029.md).
+Die nachfolgenden403-/Secretwrite-Befunde sind die erhaltene Vorgeschichte.
+
 Frische Cloud-Metadaten vom29.10.2026 binden den bereits lokal bestandenen
 Canary an eine **normale Laufzeitvariable**, nicht an eine nachgewiesene
 geschützte lokale Secretdatei. Beobachtungen aktuell, Revision1; vorhandene

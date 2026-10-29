@@ -31,7 +31,8 @@ def load(name, filename):
 V = load('w15_existing_input_receiver_key', 'verify_receiver_key.py')
 IP = load('w15_existing_input_port', 'input_port.py')
 R, A, P = IP.R, V.A, V.P
-INDEX_NAME = 'HELMUT_W15_CIPHER_URL_INDEX'
+N = load('w15_existing_encrypted_index', 'encrypted_index.py')
+INDEX_NAME = N.ENV_NAME
 PROJECTION = 'docs/betrieb/belege/w15-end500-transfer-20261029/RECEIVED_SOURCE.SAFE.json'
 TOTAL = 242693044
 CIPHER_SHA = 'eeec60f6f97f35b143f9fca22fae653ea9c8695a23d712c9fc74c1979e410231'
@@ -40,7 +41,7 @@ SOURCE = {'exactCommit': '66efb89a42e3d1bee739844ac32a258d79b38ebb', 'runId': '2
           'inputManifestSHA': '84b730490014c5d17f81ac350677275ce33f368731c8f4a979a4d1b2c9165bf5',
           'recipientFingerprint': V.FINGERPRINT}
 PHASES = frozenset(('arguments', 'source-binding', 'private-inputs', 'index', 'disk-admission',
-                    'key-import', 'download', 'cipher-readback', 'authenticated-reception', 'relocation', 'agent-close'))
+                    'key-import', 'encrypted-index', 'download', 'cipher-readback', 'authenticated-reception', 'relocation', 'agent-close'))
 PHASE = 'arguments'
 CHUNK = 1024 * 1024
 
@@ -57,7 +58,8 @@ def phase(value):
 def source_binding(commit):
     binding = V.bind_runtime(commit)
     files = ['scripts/w15-github/' + name for name in ('receive_existing_inputs.py', 'receive.py', 'input_port.py',
-             'seal.py', 'source-export-request.json')]
+             'seal.py', 'source-export-request.json', 'encrypted_index.py')]
+    files += ['.github/workflows/ci.yml']
     files += [PROJECTION] + [IP._REPORT_ROOT + row[1] for row in IP.PUBLIC_PROVENANCE]
     argv = ['/usr/bin/git', '--no-optional-locks', '-c', 'core.hooksPath=/dev/null', '-c', 'core.fsmonitor=false',
             '-c', 'safe.directory=' + str(REPO), '-C', str(REPO), 'ls-tree', '-z', commit, '--'] + files
@@ -182,13 +184,11 @@ def download(root, urls, expires, pins):
 def receive_existing(commit, runner_temp):
     phase('source-binding'); binding = source_binding(commit); pins = projection()
     phase('private-inputs')
-    raw_index = os.environ.pop(INDEX_NAME, None)
+    armored_index = os.environ.pop(INDEX_NAME, None)
     key, secret = V.read_environment()
-    phase('index'); urls, expires = url_index(raw_index, commit)
+    phase('encrypted-index'); input_chars = N.check_event(commit, armored_index)
     root = V.private_root(runner_temp)
     phase('disk-admission'); disk = os.statvfs(root); need(disk.f_bavail * disk.f_frsize >= 1024 ** 3)
-    with os.fdopen(A._file(root, 'cipher-url-index.PRIVATE.json'), 'wb') as stream:
-        stream.write(raw_index.encode('utf-8')); stream.flush(); os.fsync(stream.fileno())
     A.resource.setrlimit(A.resource.RLIMIT_CORE, (0, 0))
     home = root / 'gnupg'; home.mkdir(mode=0o700)
     failure = None
@@ -196,6 +196,9 @@ def receive_existing(commit, runner_temp):
         phase('key-import')
         A._run(root, home, 'key-import', ['--disable-dirmngr', '--import'], data=key, secret=secret)
         V.primary(A._run(root, home, 'secret-primary', ['--disable-dirmngr', '--with-colons', '--fingerprint', '--list-secret-keys']), 'sec')
+        phase('encrypted-index')
+        raw_index = N.decrypt_index(armored_index, root, home, secret)
+        phase('index'); urls, expires = url_index(raw_index, commit)
         with os.fdopen(A._file(root, 'receiver-passphrase.PRIVATE'), 'wb') as stream:
             stream.write(secret); stream.flush(); os.fsync(stream.fileno())
         phase('download'); cipher = download(root, urls, expires, pins)
@@ -223,6 +226,7 @@ def receive_existing(commit, runner_temp):
     if failure:
         phase(failure); raise ValueError('EXISTING_INPUT_RECEPTION_REJECTED')
     return {'status': 'PASS_EXISTING12_RECEIVED_AND_RELOCATED_ONLY_START_BLOCKED', **binding,
+            'indexHandoff': 'GPG_WORKFLOW_INPUT_NO_SECRET_WRITE', 'workflowPayloadChars': input_chars,
             'verifiedFiles': 12, 'verifiedBytes': 242570240, 'cipherSHA256': CIPHER_SHA,
             'sealedManifestSHA256': SEALED_SHA, 'inputManifestSHA': SOURCE['inputManifestSHA'],
             'relocationVerified': True, 'fullRestoreAccepted': False, 'databaseStarted': False,
