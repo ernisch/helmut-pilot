@@ -255,7 +255,7 @@ class SameJobConnectionChecks(unittest.TestCase):
         self.restore.side_effect = ValueError('/FICTIONAL/PRIVATE/NATIVE_FAILURE')
         with self.assertRaises(R.RestoreConnectionError) as error:
             self.run_restore(connection)
-        self.assertEqual(error.exception.phase, 'restore')
+        self.assertEqual(error.exception.phase, 'native-restore')
         self.assertNotIn('PRIVATE', str(error.exception))
         self.assertEqual(self.stop_calls, [CID])
         self.assertEqual(self.watch.stopped, 1)

@@ -20,7 +20,8 @@ HERE = Path(__file__).absolute().parent
 SPEC = importlib.util.spec_from_file_location('w15_same_job_receiver', HERE / 'receive_existing_inputs.py')
 E = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(E)
-PHASES = {'binding', 'receive', 'input-binding', 'cache', 'prepare', 'restore', 'closure'}
+PHASES = {'binding', 'receive', 'input-binding', 'cache', 'prepare', 'restore', 'closure',
+          'prepared-check', 'materialization', 'container-start', 'readiness', 'native-restore', 'backup'}
 
 
 class RestoreConnectionError(RuntimeError):
@@ -151,7 +152,7 @@ def _inspect(controller, container):
 
 def _restore_prepared(forward, inputs, resources, *, backup_completion=None, disk_guard=None):
     """Restore only; never seed, call fullmain, Auth CAS, provider or backup closure."""
-    phase, failure, attempted, watch, owned_id, restored = 'restore', None, False, None, None, None
+    phase, failure, attempted, watch, owned_id, restored = 'prepared-check', None, False, None, None, None
     backup_receipt = None
     context = inputs.controller_context()
     m = forward.M
@@ -159,8 +160,10 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
         forward._checked_prepared(inputs, resources)
         resources.check_context(context)
         need(not forward.WORK.exists())
+        phase = 'container-start'
         need(json.loads(m.docker('image', 'inspect', m.IMAGE))[0]['Id'] == m.IMAGE)
         need(not m.docker('ps', '-a', '--filter', 'name=^/' + forward.CONTAINER + '$', '--format', '{{.ID}}').strip())
+        phase = 'materialization'
         forward.WORK.mkdir(mode=0o700)
         for name in ('pgdata', 'state'):
             (forward.WORK / name).mkdir(mode=0o700)
@@ -183,6 +186,7 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
             bound=inputs.path('bound'), guard=resources.sample)
         seed = forward.check_seed(inputs)
         labels = tuple(item for key, value in _labels(context).items() for item in ('--label', key + '=' + value))
+        phase = 'container-start'
         attempted = True
         m.docker('create', '--name', forward.CONTAINER, '--pull=never', '--network=none', '--restart=no',
                  '--memory=' + str(m.LIMIT), '--memory-swap=' + str(m.LIMIT), '--cgroup-parent=' + resources.unit,
@@ -215,20 +219,24 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
         # Reuse the controller's bounded read-only readiness polling. No
         # restore action is retried. A timed-out client fails into owned
         # container closure rather than being treated as a completed restore.
+        phase = 'readiness'
         for _ in range(100):
             watch.sample()
-            ready = subprocess.run(m.DOCKER + ['exec', owned_id, 'pg_isready', '-U', 'postgres', '--timeout=1'],
+            # The entrypoint's temporary init server accepts Unix sockets only.
+            ready = subprocess.run(m.DOCKER + ['exec', owned_id, 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres', '--timeout=1'],
                                    env=m.ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
             if ready.returncode == 0:
                 break
             time.sleep(.2)
         need(ready.returncode == 0)
+        phase = 'native-restore'
         m.docker('exec', owned_id, 'mkdir', '-p', forward.BASE)
         m.docker('exec', owned_id, 'chmod', '700', forward.BASE)
         m.docker('exec', owned_id, 'chown', '1000:1000', forward.BASE)
         restored = forward._runtime_module('runtime_restore').restore_owned(m, watch, run_owned=watch.backup_runner.run_owned)
         need(restored['profiles'] == 500 and restored['active'] == 0)
         if backup_completion is not None:
+            phase = 'backup'
             backup_receipt = backup_completion(forward=forward, inputs=inputs, resources=resources, watch=watch, restored=restored)
             need(isinstance(backup_receipt, dict) and backup_receipt.get('watchClosed') is True
                  and backup_receipt.get('remoteReadbackObserved') is True

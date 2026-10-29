@@ -673,7 +673,8 @@ def restore_readback(verified_root, *, context, controller_context, resources,
         watch.thread.start()
         for _ in range(100):
             guard()
-            ready = subprocess.run(m.DOCKER + ['exec', owned_id, 'pg_isready', '-U', 'postgres', '--timeout=1'],
+            # Exclude the Unix-socket-only server used during fresh initdb.
+            ready = subprocess.run(m.DOCKER + ['exec', owned_id, 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres', '--timeout=1'],
                 env=m.ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
             if ready.returncode == 0:
                 break
