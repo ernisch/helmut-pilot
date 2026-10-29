@@ -7,10 +7,10 @@
   "requiredAssets": 12,
   "alreadyReceivedAssets": 1,
   "missingExistingAssets": 11,
-  "knownRequiredBytes": 104655207,
-  "knownAdditionalBytesExcludingAlreadyReceivedReception": 104642850,
+  "knownRequiredBytes": 217562842,
+  "knownAdditionalBytesExcludingAlreadyReceivedReception": 217550485,
   "declaredTotalRequiredBytes": null,
-  "unknownSizeOrHashAssets": 5,
+  "unknownSizeOrHashAssets": 1,
   "diskAdmissionReady": false,
   "unknownValuesMustNeverBeZero": true,
   "assets": [
@@ -25,27 +25,30 @@
     },
     {
       "key": "package",
-      "historicalPath": null,
+      "historicalPath": "/workspace/helmut-parallel-20261015/wave13/input-extraction/ORIGINAL_PACKAGE.PRIVATE.json",
       "historicalPathResolution": "originalReception.files.find(entry => entry.key === 'package').receivedPath",
       "bytes": 631359,
       "sha256": "52b4a49c334a2d537f642cddf3f95d3eb6e6830e0f3b1b7280c8bd8fd3812f10",
-      "publicPinEvidence": "docs/betrieb/belege/w15-processing-20261027/CURRENT_SOURCES_20261028_ORIGINALS.SAFE.json#/originalPreservation/originalPins"
+      "publicPinEvidence": "docs/betrieb/belege/w15-processing-20261027/CURRENT_SOURCES_20261028_ORIGINALS.SAFE.json#/originalPreservation/originalPins",
+      "historicalPathEvidence": "docs/betrieb/w15-minimal-datenuebernahme-20261027.json"
     },
     {
       "key": "normalizedCurrentPolicy",
-      "historicalPath": null,
+      "historicalPath": "/workspace/helmut-parallel-20261015/wave13/NORMALIZED500_CURRENT_POLICY.PRIVATE.json",
       "historicalPathResolution": "originalReception.files.find(entry => entry.key === 'normalizedCurrentPolicy').receivedPath",
       "bytes": 89982254,
       "sha256": "90e11a4228e2e568edf03c3feb9ea2c79e71449e68fdc6c563a3355f1fbaaa14",
-      "publicPinEvidence": "docs/betrieb/belege/w15-processing-20261027/CURRENT_SOURCES_20261028_ORIGINALS.SAFE.json#/originalPreservation/originalPins"
+      "publicPinEvidence": "docs/betrieb/belege/w15-processing-20261027/CURRENT_SOURCES_20261028_ORIGINALS.SAFE.json#/originalPreservation/originalPins",
+      "historicalPathEvidence": "docs/betrieb/w15-minimal-datenuebernahme-20261027.json"
     },
     {
       "key": "originalUPacket",
-      "historicalPath": null,
+      "historicalPath": "/workspace/helmut-parallel-20261015/wave9/native-fixture/ORIGINAL_U_PACKET.PRIVATE.json",
       "historicalPathResolution": "originalReception.files.find(entry => entry.key === 'originalUPacket').receivedPath",
       "bytes": 53018,
       "sha256": "8d732cb88dc6df457b66682a45831e60b8ecdb28d92b35d4c1db4440991f2ed2",
-      "publicPinEvidence": "docs/betrieb/belege/w15-processing-20261027/CURRENT_SOURCES_20261028_ORIGINALS.SAFE.json#/originalPreservation/originalPins"
+      "publicPinEvidence": "docs/betrieb/belege/w15-processing-20261027/CURRENT_SOURCES_20261028_ORIGINALS.SAFE.json#/originalPreservation/originalPins",
+      "historicalPathEvidence": "docs/betrieb/w15-minimal-datenuebernahme-20261027.json"
     },
     {
       "key": "qualificationReport",
@@ -57,38 +60,42 @@
     {
       "key": "qualifiedRows",
       "historicalPath": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b/QUALIFIED_ROWS.PRIVATE.json",
-      "bytes": null,
-      "sha256": null,
+      "bytes": 99566746,
+      "sha256": "22d4f73337178ec260c6d963f5539044f15e07d952aafc83e258cfdc4d267359",
       "deferredExactPin": "qualificationReport.qualifiedAssets.rows",
-      "pinSourceKnownButPrivateRecordUnavailable": true,
-      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets"
+      "pinSourceKnownButPrivateRecordUnavailable": false,
+      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets",
+      "retainedMetadataEvidence": "Existing Hauptthread recorded qualification-b report read; no qualification repeated. Payload not available in this runner."
     },
     {
       "key": "qualifiedFixtures",
       "historicalPath": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b/QUALIFIED_MOCK_FIXTURES.PRIVATE.json",
-      "bytes": null,
-      "sha256": null,
+      "bytes": 1895933,
+      "sha256": "548a5bd3e268be76a85ba8088c6993c0860b4f90659b47da1c76526cf486d9d1",
       "deferredExactPin": "qualificationReport.qualifiedAssets.fixtures",
-      "pinSourceKnownButPrivateRecordUnavailable": true,
-      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets"
+      "pinSourceKnownButPrivateRecordUnavailable": false,
+      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets",
+      "retainedMetadataEvidence": "Existing Hauptthread recorded qualification-b report read; no qualification repeated. Payload not available in this runner."
     },
     {
       "key": "qualifiedNative",
       "historicalPath": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b/QUALIFIED_NATIVE.PRIVATE.json",
-      "bytes": null,
-      "sha256": null,
+      "bytes": 53017,
+      "sha256": "986379885a2e7ea74de82d5075201183f8fc3837eec1f24c3ece4480561dee8b",
       "deferredExactPin": "qualificationReport.qualifiedAssets.native",
-      "pinSourceKnownButPrivateRecordUnavailable": true,
-      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets"
+      "pinSourceKnownButPrivateRecordUnavailable": false,
+      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets",
+      "retainedMetadataEvidence": "Existing Hauptthread recorded qualification-b report read; no qualification repeated. Payload not available in this runner."
     },
     {
       "key": "qualifiedDerivations",
       "historicalPath": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b/QUALIFIED_DERIVATIONS.PRIVATE.json",
-      "bytes": null,
-      "sha256": null,
+      "bytes": 11391939,
+      "sha256": "c19a56ea20ee4d05f8c6578b2bfe5af603fe89c0418df4fda7be085a1e19c261",
       "deferredExactPin": "qualificationReport.qualifiedAssets.derivations",
-      "pinSourceKnownButPrivateRecordUnavailable": true,
-      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets"
+      "pinSourceKnownButPrivateRecordUnavailable": false,
+      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets",
+      "retainedMetadataEvidence": "Existing Hauptthread recorded qualification-b report read; no qualification repeated. Payload not available in this runner."
     },
     {
       "key": "currentReplacements",
@@ -111,8 +118,15 @@
       "historicalPath": "/workspace/attachments/1ba8d4a9-bf54-4cbe-b89b-2fb3f2b7518b/HELMUT_HANDOFF_20261016_MINIMAL.zip",
       "bytes": 269598,
       "sha256": "c979e18775f285ddf7af4328c8efc8f0642954eb6d0e52e50636d3b4ab902d15",
-      "publicPinEvidence": "scripts/synthetik-500-w15-signed-chain-test.js#originalBuilder"
+      "publicPinEvidence": "scripts/synthetik-500-w15-signed-chain-test.js#originalBuilder",
+      "existingDriveMetadata": {
+        "fileId": "1_yaGlXYrG2ExYbE2MFBq_ucE4YtgMFCm",
+        "bytes": 269598,
+        "historicalSHA256Evidence": "docs/betrieb/500er-main-abgleich-20261027.json#/archiveReadback",
+        "payloadReadDuringThisInventory": false,
+        "freshByteHashVerified": false
+      }
     }
   ],
-  "nextMetadataOnlyStep": "Read the already existing SHA-bound qualificationReport metadata and resolve its five exact asset pins; do not rerun a qualifier or infer payloads from the public500PASS projection."
+  "nextMetadataOnlyStep": "Resolve the retained qualification-b currentNativeReplacementsPin and locate missing payloads in existing backup inventories. No new qualification, guessed bytes, transfer or original acquisition."
 }

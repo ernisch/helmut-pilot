@@ -19,9 +19,9 @@ function stopFailure(error, phase = "entry", pid) {
 async function stop(base, action, database, registration = "active", scope = "legacy") {
   assert(["active", "never-started"].includes(registration));
   assert(/^\/tmp\/w15-[a-z0-9-]+$/.test(base));
-  assert(["legacy", "end500-backup", "end500-restore"].includes(scope));
-  const backup = scope === "end500-backup";
-  const restore = scope === "end500-restore";
+  assert(["legacy", "end500-backup", "end500-restore", "mock500-backup", "mock500-restore"].includes(scope));
+  const backup = scope === "end500-backup" || scope === "mock500-backup";
+  const restore = scope === "end500-restore" || scope === "mock500-restore";
   assert((backup ? ["backup-before", "backup-dump", "backup-roles", "backup-after"] : restore ?
     ["restore-create", "restore-roles", "restore-render", "restore-apply", "restore-check"] :
     ["prepare", "run", "setup", "audit", "gateway", "postgrest", "signal-proof", "eu-component"]).includes(action));

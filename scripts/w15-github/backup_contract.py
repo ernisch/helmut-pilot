@@ -82,12 +82,14 @@ def _pin(value, role=False):
     return {key: value[key] for key in ("path", "bytes", "sha256")}
 
 
-def _context(context):
+def _context(context, *, expected_scope='ISOLATED_GITHUB_END500_BACKUP_ONLY'):
+    require(expected_scope in ('ISOLATED_GITHUB_END500_BACKUP_ONLY',
+        'ISOLATED_GITHUB_MOCK500_BACKUP_ONLY', 'ISOLATED_GITHUB_MOCK500_INPUTS_ONLY'))
     require(isinstance(context, dict) and set(context) == {
         "schema", "scope", "nonce", "exactCommit", "runId", "runAttempt",
         "inputManifestSHA", "recipientFingerprint", "executionAuthority"})
     require(context["schema"] == "helmut-w15-backup-context/1"
-            and context["scope"] == "ISOLATED_GITHUB_END500_BACKUP_ONLY"
+            and context["scope"] == expected_scope
             and context["executionAuthority"] is False)
     require(isinstance(context["exactCommit"], str) and COMMIT.fullmatch(context["exactCommit"]))
     require(isinstance(context["runId"], str) and re.fullmatch(r"[1-9][0-9]{4,19}", context["runId"]))

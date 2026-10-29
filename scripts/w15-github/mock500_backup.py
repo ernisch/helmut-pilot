@@ -576,7 +576,7 @@ def completion_hook(manifest, private_payload, disk_guard):
             node=node, credentials=private_payload['artifactCredentials'], guard=disk_guard)
         need(returned.get('remoteReadbackObserved') is True
              and all(returned[k] == sealed[k] for k in ('cipherBytes', 'cipherSHA256')))
-        receive_root = Path(inputs.path('auth')).parent.parent.parent
+        receive_root = Path(inputs.backup_input_files()['auth']).parent.parent.parent
         verified = root / 'authenticated'
         readback = C.authenticated_readback(returned['cipher'], cipher_bytes=sealed['cipherBytes'],
             cipher_sha256=sealed['cipherSHA256'], expected_manifest=collection['manifest'],

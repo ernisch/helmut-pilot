@@ -105,7 +105,16 @@ def source_requirements(repo=REPO):
     paths = {row['path'] for row in historical} | {
         'server.js', 'package.json', 'package-lock.json', C.FORWARD, C.CONTROLLER,
         C.AUDITOR, C.MEMORY, 'supabase/proposals/auth_usage_atomic_local.sql',
-        'scripts/auth-usage-split.Dockerfile'}
+        'scripts/auth-usage-split.Dockerfile',
+        'scripts/synthetik-500-w15-full500-materials.js', 'scripts/synthetik-500-w15-full500-audit.js',
+        'scripts/synthetik-500-w15-processing-materials.js', 'scripts/fixtures/w15-full500-provider.js',
+        'scripts/fixtures/w15-unit0-provider.js', 'scripts/fixtures/w15-full500-window.js',
+        'scripts/fixtures/w15-current-mock-data.js',
+        'docs/betrieb/belege/w15-atomic-usage-integration-20261028/D_RESULTS_INDEPENDENT_REVIEW.SAFE.json',
+        'docs/betrieb/belege/w15-atomic-usage-integration-20261028/PREPARE.SAFE.json',
+        'docs/betrieb/belege/w15-atomic-usage-integration-20261028/ATOMIC_AUTH_PREPARED0.SAFE.json',
+        'docs/betrieb/belege/w15-atomic-usage-integration-20261028/ATOMIC_EU.SAFE.json',
+        'docs/betrieb/belege/w15-atomic-usage-integration-20261028/SOURCE_COMPATIBILITY.SAFE.json'}
     tree = ast.parse(_public_bytes(repo, C.FORWARD))
     staged = next(ast.literal_eval(node.value) for node in tree.body
                   if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'STAGED_SCRIPTS'

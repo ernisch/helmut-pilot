@@ -1,76 +1,30 @@
 # CURRENT STATE — Helmut
 
-## W15: einmaliger GitHub-Empfang aller zwölf Originale bestanden
+## W15: Restore-Einzelversuch FAIL; Mock500 integriert, Ausführung gesperrt
 
-Gemeinsamer Runner-/Restore-/End500-Code jetzt ausführbar vorbereitet und
-standardmäßig gesperrt. UID1000-Checkout/Binärpins/frische Slice, vollständiger
-Plattenplan, Lebenszeit-RAM, bestehender Controller, verschlüsselte vollständige
-Sicherung, entfernter Cipherreadback und frische isolierte Rücksicherung sind
-verbunden. Getrennte frische Scope-/Commit-/Nonce-/Zeit-/Kosten-GOs; End500
-fordert zusätzlich die unabhängige positive Restoreabnahme. Kein automatischer
-Stufenwechsel. Gezielte neue synthetische Prüfungen/Review und Pflicht-CI gehören
-zum tatsächlichen PR975-Kopf; deren GitHub-Runs sind im PR verlinkt.
-Kein erneuter Originalempfang/echter Restore/End500/Mock500 ausgeführt.
-**Nächste echte Grenze:** genau ein begrenzter Empfang+Restore500/0 samt Backup
-und Rücksicherung mit separatem GO; danach eigene Abnahme und End500-GO.
-Mock500-Quellenbindung am28.10. bereits500/500PASS; frühere338/500sind historisch.
-Aktueller Lauftag, gesperrter Controller, Atomic12ACK-/Namespaceanschlüsse und
-eigene RAM-/Startabnahme bleiben offen; keine Quellenverjüngung.
-[Stufen, Ressourcen, Kosten und konkrete Freigabevorlagen](betrieb/w15-github-stufenstart-20261029.md).
+PR975-Branch wurde ohne Force-Push auf den unveränderten geprüften Fixcommit
+b6eb74495cd9cf4d7bee04ec4b37da6244b5c6a2 vorgerückt; Schutzregeln unverändert.
+Pflicht-CI40909894080 und PR-CI40915289161 bestanden. Nach explizitem Betreiber-GO
+wurde genau ein Restore gestartet:40920225333 FAIL, Phase`connection-restore`.
+Erster Versuch40905370350 auf7e3d96e9 bleibt FAIL. Kein Retry, keine positive
+Restoreabnahme, kein End500/Mock500. Erfolgreicher Empfang aller zwölf Originaldateien
+40876458074 bleibt übernommen; seine Qualifikation wurde nicht wiederholt.
 
-Aktueller enger Betreiberauftrag vom29.10.2026: vorhandene15Cipherteile einmal
-im bestehenden GitHub-Empfänger empfangen, zwölf Originaldateien vollständig
-prüfen. Kein neuer Sourceexport, keine neuen Schlüssel, Ressourcen oder
-Modellkosten. Kein End500/Mock500, Merge, Deployment oder Production-Eingriff.
+Mock500-Anschlüsse auf getrenntem Integrationszweig vorbereitet: Atomic12ACK,
+Tages-/Namespacebindung, bestehende500/500-Quellenprüfung, vollständiger Controller
+und Auswertung, eigene gemeinsame RAM-v2-Messung, vollständiger Plattenplan,
+verschlüsselte Sicherung/Remote-Readback/zweite Rücksicherung und Einmalstartwächter.
+Standardmäßig gesperrt; gezielte fiktive Verbindungstests sind keine500er-Abnahme.
+Eigene GitHub-Runnerqualifikation und Pflicht-CI müssen am tatsächlichen neuen
+Codekopf bestehen. Historischer RAM-v2-Fehler bleibt FAIL.
 
-Der zusätzliche Secretwrite entfällt vollständig. Der manuelle bestehende Modus
-`end500-receive-inputs` erhält nur `w15_cipher_index`: GPG-Ciphertext für den
-bestehenden7E-Empfänger. Komplette tatsächliche Dispatch-Anfrage≤65535Zeichen;
-Entschlüsselung nur mit den beiden bestehenden Environmentsecrets. Branch,
-Commit, Versuch1, tatsächliches Event und neuer Modul-/Workflowcode sind gebunden.
-Danach bleiben Linkablauf,15Teilpins und alle zwölf Originalpins unverändert.
-10 neue gezielte synthetische Prüfungen und unabhängiger statischer ReviewPASS.
-Tatsächlicher [Empfang40876458074](https://github.com/ernisch/helmut-pilot/actions/runs/40876458074)
-auf`596c5b1f`, Versuch1, vollständig erfolgreich:15Cipherteile und12 geprüfte/
-relokalisierte Originaldateien mit242570240Bytes. Pflicht-CI40872878459 davor
-vollständig grün. Genau ein Dispatch,9868Gesamtzeichen,292s tatsächliche
-Restgültigkeit vor Versand; kein Secretwrite, kein Artefaktupload. Unabhängiger
-BefundabgleichPASS. Fortbestand der Klartexte nach Jobende nicht nachgewiesen;
-Drive-Cipherteile und Originale bleiben unverändert. Kein weiterer Empfang aus
-diesem Auftrag. **Nächster Schritt:** vollständige Runner-/Restoreanbindung
-vorbereiten. [Kanal, enger Ergebnisbeleg und Rückweg](betrieb/w15-github-indexparameter-20261029.md).
-
-Bereits tatsächlich erfolgreich und nicht wiederholt: gemeinsame
-[Parentprobe40847487765](https://github.com/ernisch/helmut-pilot/actions/runs/40847487765),
-[öffentlicher Kanalcheck40848206475](https://github.com/ernisch/helmut-pilot/actions/runs/40848206475)
-und [Empfängerkontrolle40855525798](https://github.com/ernisch/helmut-pilot/actions/runs/40855525798).
-Die bestehende öffentliche7E-Schlüsseldatei ist fingerprint-/hashgeprüft;
-Archivpassphrase und DCF bleiben offline. Environment`helmut-ci-originals`:
-Adminbypass aus, nur PR975-Branch, keine Tags; menschliche Reviewer laut Soloauftrag
-zurückgestellt. Geschützter lokaler Cloud-Dateikanal bleibt unbewiesen und ist
-hier nicht erforderlich. [Empfängerumfang](betrieb/w15-github-empfaengerpruefung-20261029.md).
-
-Unabhängig vorbereitet: App/Binärdateien/Rollen/Dump im gemeinsamen Parent auf
-neue Dateien kopieren und lesend einbinden. Echte Mount-Readbacks vor Restore;
-kein daemonseitiges`docker cp` mehr für diese Daten.11 neue gezielte Prüfungen
-und unabhängiger statischer ReviewPASS. PREP-Backupwalk passt, standalone
-Full500-Controller bytegleich. Zusätzliche Kopien müssen im frischen Plattenplan
-mitgerechnet werden. [Datei-Anschluss](betrieb/w15-github-runner-parent-20261029.md).
-
-**End500-Start BLOCKED:** Datenverfügbarkeit im künftigen Ausführungsjob,
-vollständige tatsächliche PG/PostgREST/Node-/Controlleranbindung, Lebenszeit-RAM-/Dateicachezurechnung,
-frischer Platten-/Startplan und vollständiger Restore-/Rücksicherungsbeleg fehlen.
-Aktiver Vertrag: gemeinsamer Parent/Container2560000000Bytes, Peak≤2048000000,
-Reserve512000000Bytes, Swap0; Auth30/Unit60/Provider20 und Integrität unverändert.
-Keine Komponentennachweise als Gesamtabnahme ausgeben.
-[RAM-Vertrag](betrieb/w15-end500-ram-vertrag-20261028.md).
-
-Historische403-/Proxy-/Secretwritebefunde sind keine Voraussetzung des neuen
-Kanals. Keine Rotation, Supportanfrage oder erneute403-Probe. Historie einschließlich
-alter Fehlmessungen, CI und Quellenbefunden bleibt
-[bytegleich archiviert](archive/project_state/2026_10_29_4c28cd65_CURRENT_STATE_vor_w15_verdichtung.md).
-
-**Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten.
+Dateiinventur lokalBLOCKED wird nicht wiederholt. GitHub-/Drive-Belege bestätigen
+das bestehende269598Byte-Builder-ZIP samt historischem SHA; keine Payloads geladen.
+Zehn weitere Originale weiter nicht erreichbar bestätigt; zehn der elf Zusatzpins
+bekannt(217550485Bytes), nur aktueller Replacements-Pin unbekannt. Keine neue
+Qualifikation/Übertragung freigegeben. Zwölf vorhandene End500-Originale ersetzen
+nicht diese elf Zusatzdateien. Kein Beweis globalen Datenverlusts.
+[Mock-Vertrag, Nachweise, fehlende Dateien und getrennte Freigaben](betrieb/w15-mock500-github-start-20261029.md).
 
 ## Vollständiges Root-Paket und Caller-Vorbereitung (13.10.2026)
 

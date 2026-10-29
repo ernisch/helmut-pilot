@@ -89,8 +89,8 @@ def require(value, code='RESTORE_BACKUP_REJECTED'):
         raise BackupRuntimeError(code)
 
 
-def _context(context):
-    B._context(context)
+def _context(context, *, expected_scope='ISOLATED_GITHUB_END500_BACKUP_ONLY'):
+    B._context(context, expected_scope=expected_scope)
     require(context['recipientFingerprint'] == FINGERPRINT)
 
 
@@ -361,7 +361,8 @@ def _destination_file(root_fd, relative, blocks, guard):
 
 
 def authenticated_readback(cipher, *, cipher_bytes, cipher_sha256, expected_manifest,
-        expected_manifest_sha256, context, destination, private_home, passphrase_file, guard):
+        expected_manifest_sha256, context, destination, private_home, passphrase_file, guard,
+        backup_scope='ISOLATED_GITHUB_END500_BACKUP_ONLY'):
     """Authenticate GPG and every archive byte into a NEW private return tree.
 
     ``expected_manifest`` is the independently retained manifest object from
@@ -369,7 +370,7 @@ def authenticated_readback(cipher, *, cipher_bytes, cipher_sha256, expected_mani
     GPG failure leaves private partials and never produces a success receipt.
     Offhost status belongs to the caller's separately checked transport receipt.
     """
-    _context(context)
+    _context(context, expected_scope=backup_scope)
     require(callable(guard) and type(cipher_bytes) is int and 0 < cipher_bytes <= Q.MAX_CIPHER_BYTES)
     require(isinstance(cipher_sha256, str) and B.SHA.fullmatch(cipher_sha256))
     expected_raw = (json.dumps(expected_manifest, sort_keys=True, separators=(',', ':')) + '\n').encode()

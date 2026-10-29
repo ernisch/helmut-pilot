@@ -1,5 +1,10 @@
 # W15: gemeinsamer Runner, getrennte Restore- und End500-Freigaben
 
+Aktuelle Fortschreibung: Die konkret freigegebenen Restoreversuche40905370350
+und40920225333 sind FAIL; kein Retry/End500. Mock-Integration und aktuelle
+Dateiblocker siehe[fortgeschriebener Startstand](w15-mock500-github-start-20261029.md).
+Die folgenden Freigabevorlagen bleiben historische Vorbereitung.
+
 Stand29.10.2026UTC, DraftPR975, bestehender Entwicklungszweig. Dieser Stand
 bereitet ausführbaren Code vor. **Kein neuer Originalempfang, Originalrestore,
 End500, Mock500, Merge, Deployment oder Production-Eingriff ist freigegeben.**
