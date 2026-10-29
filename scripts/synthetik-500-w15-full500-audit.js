@@ -5,6 +5,8 @@
 const fs = require("node:fs"), path = require("node:path"), assert = require("node:assert/strict");
 const crypto = require("node:crypto"), { spawnSync } = require("node:child_process");
 const ROOT = path.resolve(__dirname, ".."), STATE = "/tmp/w15-full500-20261028d/state";
+const Bound = require("./w15-github/mock500_bindings"), BOUND = Bound.readBound();
+if (BOUND) { Bound.namespace(BOUND.context); Bound.currentCalendar(BOUND); }
 const DB = "helmut_w15_full500_20261028b", EXPECTED = 500, CHECKS = 34;
 const literal = x => "'" + String(x).replaceAll("'", "''") + "'";
 const sha = x => crypto.createHash("sha256").update(x).digest("hex");

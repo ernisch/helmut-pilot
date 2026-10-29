@@ -7,6 +7,7 @@ const { performance } = require("node:perf_hooks");
 const Memory = require("./fixtures/w15-memory-contract");
 const AuthReport = require("./fixtures/w15-auth-measurement-report");
 const Durable = require("./fixtures/w15-durable-observations");
+const Bound = require("./w15-github/mock500_bindings"), BOUND = Bound.readBound();
 const ATOMIC_PREPARED0 = process.argv.includes("--atomic-prepared0");
 const TARGET = require("./fixtures/w15-atomic-integration-target.json");
 const DIR = ATOMIC_PREPARED0 ? TARGET.base : "/tmp/w15-full500-20261028d", STATE = path.join(DIR, "state");
@@ -198,12 +199,62 @@ async function setup() {
     privateKeyExported: false, database: DB, memory: memory() });
 }
 async function gateway() {
+  if (BOUND) return boundGateway();
   const c = read("configuration.PRIVATE.json");
   const g = await require("./fixtures/z3-plattform").starteDatenbankTor({ postgrestPort: 3210 }); c.url = g.url;
   fs.writeFileSync(file("configuration.PRIVATE.json"), JSON.stringify(c), { mode: 384 });
   save("runtime-public.PRIVATE.json", { ...c, serviceToken: "LOCAL_INPUT_ASSEMBLER_NO_SERVICE_ACCESS", adminSecret: "UNUSED_INPUT_ASSEMBLER" });
   fs.writeFileSync(file("gateway.pid"), String(process.pid), { mode: 384 });
   process.on("SIGTERM", async () => { await g.stoppe(); process.exit(0); });
+}
+async function boundGateway() {
+  const { spawn } = require("node:child_process"), http = require("node:http");
+  const c = read("configuration.PRIVATE.json"), journal = Durable.openAsync(STATE, "prepare", { filename: "gateway-observations.SAFE.jsonl" });
+  const log = fs.openSync(file("postgrest.PRIVATE.log"), "wx", 384);
+  const pg = spawn(DIR + "/postgrest", [file("postgrest.PRIVATE.conf")], {
+    env: { PATH: "/usr/bin:/bin", LANG: "C.UTF-8" }, stdio: ["ignore", log, log] });
+  assert(Number.isInteger(pg.pid) && pg.pid > 1);
+  fs.writeFileSync(file("postgrest.pid"), String(pg.pid), { flag: "wx", mode: 384 });
+  let closed = null, stopping = false, accepted = false, gateway = null, startup = null;
+  const childClose = new Promise(resolve => pg.once("close", (code, signal) => {
+    closed = { code, signal }; journal.write("postgrest-child-close", closed); resolve(closed);
+    if (!stopping) { process.exitCode = 1; process.kill(process.pid, "SIGTERM"); }
+  }));
+  pg.once("error", () => { process.exitCode = 1; process.kill(process.pid, "SIGTERM"); });
+  async function stop() {
+    if (stopping) return; stopping = true;
+    const deadline = setTimeout(() => process.exit(1), 15000); let success = false;
+    try {
+      if (startup && !gateway) gateway = await startup;
+      assert(gateway && closed === null, "w15-mock500-services-running-before-stop");
+      await gateway.stoppe(); http.globalAgent.destroy();
+      accepted = pg.kill("SIGTERM"); assert(accepted);
+      await childClose;
+      assert((closed.code === 0 && closed.signal === null) ||
+        (closed.code === null && ["SIGTERM", "SIGINT"].includes(closed.signal)), "w15-mock500-native-postgrest-close");
+      await new Promise(resolve => setImmediate(resolve));
+      const count = key => Object.values(http.globalAgent[key]).reduce((sum, sockets) => sum + sockets.length, 0);
+      assert.equal(count("sockets"), 0); assert.equal(count("freeSockets"), 0);
+      journal.write("services-stopped", { postgrestChildClose: closed, forced: false });
+      await journal.close(); const drained = journal.snapshot();
+      assert(drained.closed && drained.pendingEntries === 0 && !drained.failureCode);
+      save("SERVICE_CLOSURE.SAFE.json", { status: "PASS_OWNED_MOCK500_SERVICES_CHILD_CLOSE",
+        postgrestChildClose: closed, postgrestSignalAccepted: accepted, gatewayStopped: true,
+        forced: false, agentSockets: 0, agentFreeSockets: 0, journal: drained });
+      fs.fdatasyncSync(log); fs.closeSync(log); success = true;
+    } catch { process.exitCode = 1; }
+    finally { clearTimeout(deadline); process.exit(success ? 0 : 1); }
+  }
+  process.on("SIGTERM", () => { void stop(); });
+  const identity = { phase: "gateway", pid: process.pid, startTicks: Durable.startTicks(process.pid) };
+  journal.write("owned-handler-ready", identity); await journal.flush();
+  fs.writeFileSync(file("gateway.node.SAFE.json"), JSON.stringify(identity), { flag: "wx", mode: 384 });
+  startup = require("./fixtures/z3-plattform").starteDatenbankTor({ postgrestPort: 3210 });
+  gateway = await startup;
+  if (stopping) return;
+  c.url = gateway.url; fs.writeFileSync(file("configuration.PRIVATE.json"), JSON.stringify(c), { mode: 384 });
+  save("runtime-public.PRIVATE.json", { ...c, serviceToken: "LOCAL_INPUT_ASSEMBLER_NO_SERVICE_ACCESS", adminSecret: "UNUSED_INPUT_ASSEMBLER" });
+  fs.writeFileSync(file("gateway.pid"), String(process.pid), { flag: "wx", mode: 384 });
 }
 async function prepare() {
   ownerGo(); const c = read("configuration.PRIVATE.json"), m = read("processing-materials.PRIVATE.json"); environment(c);
@@ -448,6 +499,7 @@ async function run() {
       const unitAuth = { mutations: observation.mutations.slice(mutationOffset), usageSinks: observation.usageSinks.slice(usageOffset), casWrites: observation.casWrites.slice(casOffset) };
       const authCheck = authCoverageAssessment(unitAuth);
       assert(authCheck.pass && unitAuth.usageSinks.length === 2, "w15-full500-all-unit-auth30-cas-assigned");
+      if (BOUND) assert(unitAuth.casWrites.every(w => w.storageMode === "relational-atomic-v1"), "w15-mock500-actual-atomic-writers");
       const post = sql("with a as(select data from helmut_store where id='main-auth'),o as(select data->'synthetik500DispatchJournal'->'operations'->"
         + literal(m.selector.operationId) + " op from a),e as(select data from helmut_store where id=" + literal("synthetik500-evidence-" + m.selector.operationId + "-" + index)
         + ") select jsonb_build_object('active',(select count(*)from mandate_profiles where aktiv),'completedIndex',(op->>'index')::int,'state',op->>'state','inFlight',op->'inFlight',"
@@ -485,6 +537,7 @@ async function run() {
         && new Set(observation.mutations.filter(m => m.finishIndex !== undefined).map(m => m.finishIndex)).size === 500,
       usageHistoryNotTruncated: final.usageRows === before.usageRows + 1000,
       active500AtLastRead: final.active === 500, sharedCapAnd20PercentReserve: memoryAccepted(mem),
+      ...(BOUND ? { allObservedWritesAtomic: observation.casWrites.every(w => w.storageMode === "relational-atomic-v1") } : {}),
       noObservedErrors: errors.length === 0 && memoryViolation === null, privateKeyAbsent: !process.env[PRIV] };
     const result = { schema: "helmut-w15-full500-runtime/1", status: Object.values(checks).every(Boolean) ? "PASS_RUNTIME_AUDIT_AND_CLEANUP_PENDING" : "FAIL_OR_UNKNOWN",
       selector: m.selector, runId: m.runId, checks, unitReports, scopeReports, responses, providerPhases,
