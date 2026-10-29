@@ -18,23 +18,23 @@ ist keine Funktionsgröße. GitHub-Gesamtpeak umfasst lokalePG/PGR/Node/Cache;
 Vercel-Funktionsspeicher und entfernteSupabaseDB sind getrennte Messräume.
 Kein Funktionsbedarfsbeleg>2GB, keine Upgradeempfehlung/Umstellung/Production-Aktion.
 
-## W15: zwölf Originale empfangen, GitHub-Zugang gesperrt
+## W15: Empfang belegt, Actions-Daten-GO erteilt; Rücksicherung offen
 
-Freigegebener einmaliger Cloudtransfer abgeschlossen:15Cipherteile/242.693.044Bytes,
+Quelltransfer abgeschlossen:15Cipherteile/242.693.044Bytes,
 Einzel-/Gesamthashes und privater Drive-Zugriff geprüft; GPG-Empfang aller zwölf
 Originale/242.570.240Bytes PASS. Unabhängig Größen/SHA/Rechte/Baum bestätigt.
-Kein neuer Quelltransfer nötig. Private Schlüssel/Passphrase und Nutzdaten außerhalb Git.
-Controller-/Auditoradapter, owned finaler DB-/Rollenexport und bewachte vollständige
-Backupauswahl/Versiegelung vorbereitet;51gezielte Entwicklungsfälle PASS.
-Neue gemeinsame Parent-Bindung erfasst auch Python/Auditor/Backupabschluss;
-alter Containerpeak ist kein Gesamtbeleg. Keine neue RAM-Optimierung.
-Tatsächlicher Runner-Bootstrap/UID1000, kompletter Restore und Remote-Abnahme offen.
-GitHubEnvironment lesbar, derzeit ohne Branch-/Reviewschutz; Secrets-API403 auch
-mit konfigurierter CI-Admin-Identität. Keine Daten/Schlüssel an Actions bereitgestellt.
-Dafür zusätzlich konkretes Daten-GO und tatsächlich geschützter API-Zugang nötig.
-End500 weiterhin nicht startbereit; kein Gesamtlauf/Mock500/Production-Eingriff.
-DraftPR975 bleibt auf PR974. CI40783871139 für8be75787 grün; neuer Kopf separat.
-[Empfang, Anschluss, Sicherheitsabnahme und konkrete Restgrenze](betrieb/w15-end500-empfang-und-startgrenze-20261029.md).
+Entwicklungsstand6b24c890 gepusht, PflichtCI40793217236 grün.51 neue plus9 vorhandene
+gezielte Fälle PASS; unabhängiger Code-/Publikationsreview PASS im belegten Umfang.
+Adapter, DB-/Rollenexport, bewachter Backupabschluss und Parent-Bindung vorbereitet.
+Jüngstes „Freigegeben“ gilt für die zusätzliche Actions-Daten-/Empfängerschlüssel-
+bereitstellung; kein erneutes Daten-GO nötig, kein End500-/Mock500-Start-GO.
+Aktuelle Cloud05:46UTC: privater Empfang/Key/Passphrase nicht erreichbar; öffentlicher
+Worktree aus6b24c890 wiederhergestellt. Drive-Recovery-Wrapper/Quittung privat erreichbar.
+Zuerst7E3998-Empfänger mit bestehendem DCFD605-Recovery-Schlüssel rücksichern;
+kein erneuter Quelltransfer, kein Export des alten privaten Recovery-Schlüssels.
+Secrets-API403, Environment ohne Branch-/Reviewschutz. Keine Actions-Bereitstellung.
+Runner-Bootstrap/UID1000, kompletter Restore/Remote-Abnahme offen. Nicht startbereit.
+[Empfang, Freigabe, Rücksicherungs- und Zugriffsgrenze](betrieb/w15-end500-empfang-und-startgrenze-20261029.md).
 
 ## Historischer W15-D-Befund vor obiger GitHub-Vorbereitung (28.10.)
 

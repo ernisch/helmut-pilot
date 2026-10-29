@@ -1,9 +1,26 @@
-# W15: Quellbestand empfangen, GitHub-Bereitstellung noch gesperrt
+# W15: Empfang belegt, Actions-Daten-GO erteilt; Rücksicherung und Zugriff offen
 
 Stand29.10.2026, PR975 bleibt Draft und auf PR974 gestapelt. Keine Production-
 Änderung, kein Merge/Deployment, kein End500-/Mock500-Gesamtlauf. Der ausdrücklich
 freigegebene einmalige Quelltransfer einschließlich Empfang ist abgeschlossen;
 er wird nicht wiederholt. Der frühere Quellstartauftrag ist erledigte Historie.
+
+**Aktuell nach jüngstem Betreiber-„Freigegeben“:** Die zusätzliche Daten- und
+Empfängerschlüsselbereitstellung für GitHub Actions ist autorisiert; kein neues
+Daten-GO anfragen. Vollständige End500-/Mock500-Läufe bleiben gesperrt. Beim
+Wiederanlauf um05:46UTC ist der frühere private Empfang einschließlich Key und
+Passphrase in der aktuellen Ausführungsumgebung nicht erreichbar. Der öffentliche
+Worktree wurde aus dem gepushten6b24c890 wiederhergestellt, dessen Pflicht-CI
+40793217236 grün ist. Die frühere vollständige Empfangsprüfung bleibt belegt;
+sie ist keine Behauptung aktueller lokaler Datenverfügbarkeit. Drive-Metadaten
+bestätigen den privaten Recovery-Wrapper(3.298Bytes) und die Quittung(17.136Bytes)
+weiterhin. Vor Datennutzung den7E3998-Empfänger aus dem bestehenden Wrapper mit
+DCFD605… rücksichern oder den bisherigen privaten Cloudbestand wieder erreichbar
+machen. Kein erneuter Quelltransfer und kein Export des alten privaten
+Recovery-Schlüssels. Letzte Secrets-API403 und fehlende Environment-Schutzregeln
+bleiben zusätzliche technische Blocker; keine weiteren gleichartigen API-Versuche.
+Der neue [Zugriffsstand nach GO](belege/w15-end500-transfer-20261029/START_ACCESS_AFTER_GO.SAFE.json)
+hält diese Beobachtungen getrennt von historischen Prüfbelegen fest.
 
 ## Erfolgreicher Empfang
 
@@ -26,9 +43,10 @@ Dateien erneut hashgeprüft sowie Eigentümer1000:1000, Dateien0600, Verzeichnis
 `input_port.verify_received`-Verbrauchercheck bestätigt denselben Bestand und
 seine Transfer-/Provenienzbindung; er startet keinen Controller.
 
-Private Empfangswurzel dieser Cloud:
+Zum früheren erfolgreichen Prüfzeitpunkt verwendete private Empfangswurzel:
 `/workspace/shared/helmut-w15-end500-receiver-20261029/private/received-26d5a4135ca7415ca41262fc45b561c8`.
-Cipher und vollständige Quittung liegen daneben unter `private/incoming-cipher`.
+Cipher und vollständige Quittung lagen daneben unter `private/incoming-cipher`;
+diese Pfade sind im aktuellen Wiederanlauf nicht verfügbar.
 Privater Schlüssel und Passphrase bleiben außerhalb Git. Öffentlich gespeichert
 wird ausschließlich die geschlossene
 [Empfangsprojektion](belege/w15-end500-transfer-20261029/RECEIVED_SOURCE.SAFE.json),
@@ -120,8 +138,8 @@ verschachtelte Geheimwerte müssen vor Nutzung maskiert sein; private
 Prozessausgaben werden unmittelbar in private Dateien geschrieben.
 
 **Vor Veröffentlichung dieses Secretpakets erforderlich:** tatsächlicher Zugriff
-auf die Environment-Secret-API und Freigabe für genau diese zusätzliche
-GitHub-Daten-/Schlüsselbereitstellung. Das bestehende Environment muss vorher
+auf die Environment-Secret-API und rückgesicherter Empfänger. Die konkrete
+Freigabe für die zusätzliche GitHub-Daten-/Schlüsselbereitstellung ist inzwischen erteilt. Das bestehende Environment muss vorher
 auf den überprüften Branch beschränkt, mit unabhängiger Freigabe geschützt und
 ohne Admin-Bypass rückgelesen sein. Aktuell sind weder diese Schutzbindung noch
 Secrets-Zugriff gegeben. Es wurde kein Paket erstellt oder veröffentlicht.
@@ -159,12 +177,15 @@ Unabhängige statische Sicherheitsabnahme bestätigt den geprüften Umfang, kein
 vollständige Runner-/Restore-Abnahme. Einzelheiten und Dateipins im
 [Integrationsbeleg](belege/w15-end500-transfer-20261029/RECEPTION_INTEGRATION.SAFE.json).
 
-Pflicht-CI40783871139 auf8be75787 ist grün. Für den neuen Commit ist die eigene
-Kopf-CI getrennt zu prüfen; dieser ältere Erfolg gilt nicht automatisch weiter.
+Pflicht-CI40793217236 auf6b24c890 ist grün. Der aktuelle öffentliche Quellenabschluss
+wurde nach Commit tatsächlich gegen431 Git-Blobs/42 historische Pintripel geprüft;
+sechs Deltas verlangen einen frischen laufgebundenen Review. Die spätere reine
+Statusfortschreibung braucht ihre eigene Kopf-CI; ältere Erfolge gelten nicht automatisch weiter.
 
 **Startentscheidung: gesperrt, noch nicht vollständig ausführbar vorbereitet.**
-Die Datenblockade zwischen den Codex-Clouds ist behoben. Es fehlen der geschützte
-GitHub-Zugang mit neuem Daten-GO, tatsächlicher gemeinsamer Runneranschluss,
+Der einmalige Transfer und frühere Empfang sind vollständig belegt. Aktuell fehlen
+Empfängerrücksicherung, geschützter GitHub-Zugang trotz erteiltem Daten-GO,
+tatsächlicher gemeinsamer Runneranschluss,
 vollständige Restore-/Remote-Bindung sowie frischer unabhängiger Laufreview.
 Erst nach deren Abschluss ist eine konkrete Freigabe für genau einen vollständigen
 End500 sinnvoll. Empfangs-GO und grüne Entwicklungsprüfungen ersetzen sie nicht.

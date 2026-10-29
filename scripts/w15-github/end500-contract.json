@@ -91,8 +91,8 @@
     "boundReturnToZeroRequired": true
   },
   "remainingGates": {
-    "dataEquivalenceOrPrivateAccess": "PASS_SELECTED12_LOCALLY_RECEIVED_GITHUB_PROVISIONING_NOT_AUTHORIZED",
-    "protectedInputAccess": "BLOCKED",
+    "dataEquivalenceOrPrivateAccess": "SOURCE_RECEPTION_VERIFIED_GITHUB_PROVISIONING_AUTHORIZED_CURRENT_RECIPIENT_RESTORE_BLOCKED",
+    "protectedInputAccess": "BLOCKED_RECIPIENT_RESTORE_AND_GITHUB_SECRETS_ACCESS",
     "freshCommitAndRunBoundReview": "BLOCKED",
     "portableControllerAdapter": "IMPLEMENTED_TARGETED_CHECKS_ONLY_ACTUAL_RUNNER_BINDING_PENDING",
     "actualRunnerDiskAndSetupBudget": "BLOCKED",
