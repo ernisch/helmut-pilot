@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-## W15: verschlüsselter Indexparameter vorbereitet; echter Empfang offen
+## W15: einmaliger GitHub-Empfang aller zwölf Originale bestanden
 
 Aktueller enger Betreiberauftrag vom29.10.2026: vorhandene15Cipherteile einmal
 im bestehenden GitHub-Empfänger empfangen, zwölf Originaldateien vollständig
@@ -14,9 +14,15 @@ Entschlüsselung nur mit den beiden bestehenden Environmentsecrets. Branch,
 Commit, Versuch1, tatsächliches Event und neuer Modul-/Workflowcode sind gebunden.
 Danach bleiben Linkablauf,15Teilpins und alle zwölf Originalpins unverändert.
 10 neue gezielte synthetische Prüfungen und unabhängiger statischer ReviewPASS.
-**Nächster Schritt:** finale Pflicht-CI bestätigen, erst unmittelbar danach die
-kurzlebigen Links erzeugen und genau einmal übertragen/empfangen. Start allein
-ist kein Erfolg. [Kanal, Freigabe und Rückweg](betrieb/w15-github-indexparameter-20261029.md).
+Tatsächlicher [Empfang40876458074](https://github.com/ernisch/helmut-pilot/actions/runs/40876458074)
+auf`596c5b1f`, Versuch1, vollständig erfolgreich:15Cipherteile und12 geprüfte/
+relokalisierte Originaldateien mit242570240Bytes. Pflicht-CI40872878459 davor
+vollständig grün. Genau ein Dispatch,9868Gesamtzeichen,292s tatsächliche
+Restgültigkeit vor Versand; kein Secretwrite, kein Artefaktupload. Unabhängiger
+BefundabgleichPASS. Fortbestand der Klartexte nach Jobende nicht nachgewiesen;
+Drive-Cipherteile und Originale bleiben unverändert. Kein weiterer Empfang aus
+diesem Auftrag. **Nächster Schritt:** vollständige Runner-/Restoreanbindung
+vorbereiten. [Kanal, enger Ergebnisbeleg und Rückweg](betrieb/w15-github-indexparameter-20261029.md).
 
 Bereits tatsächlich erfolgreich und nicht wiederholt: gemeinsame
 [Parentprobe40847487765](https://github.com/ernisch/helmut-pilot/actions/runs/40847487765),
@@ -35,8 +41,8 @@ und unabhängiger statischer ReviewPASS. PREP-Backupwalk passt, standalone
 Full500-Controller bytegleich. Zusätzliche Kopien müssen im frischen Plattenplan
 mitgerechnet werden. [Datei-Anschluss](betrieb/w15-github-runner-parent-20261029.md).
 
-**End500-Start BLOCKED:** echter Originalempfang, vollständige tatsächliche
-PG/PostgREST/Node-/Controlleranbindung, Lebenszeit-RAM-/Dateicachezurechnung,
+**End500-Start BLOCKED:** Datenverfügbarkeit im künftigen Ausführungsjob,
+vollständige tatsächliche PG/PostgREST/Node-/Controlleranbindung, Lebenszeit-RAM-/Dateicachezurechnung,
 frischer Platten-/Startplan und vollständiger Restore-/Rücksicherungsbeleg fehlen.
 Aktiver Vertrag: gemeinsamer Parent/Container2560000000Bytes, Peak≤2048000000,
 Reserve512000000Bytes, Swap0; Auth30/Unit60/Provider20 und Integrität unverändert.

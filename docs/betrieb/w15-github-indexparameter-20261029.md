@@ -78,5 +78,34 @@ Commit bleibt vor der tatsächlichen Übergabe erforderlich.
 Rückweg: diesen neuen Empfangspfad nicht weiter verwenden. Bestehende
 Environmentsecrets, Drive-Cipherteile, Originale und private Teilprodukte
 unverändert erhalten; keine automatische Löschung. Kein Merge, Deployment oder
-Production-Eingriff. Der tatsächliche Empfang wird erst nach dem Lauf separat
-mit Workflow, Commit, Versuch und vollständigem Zwölfdateienbefund dokumentiert.
+Production-Eingriff.
+
+## Tatsächlicher einmaliger Empfang
+
+[Workflow40876458074](https://github.com/ernisch/helmut-pilot/actions/runs/40876458074)
+auf`596c5b1f26951bca77d894d03a956c87fc551274`, Versuch1, abgeschlossen mit
+`success`. Vorher beide Pflichtchecks in
+[CI40872878459](https://github.com/ernisch/helmut-pilot/actions/runs/40872878459)
+für exakt diesen Kopf vollständig erfolgreich. Die Dokumentgrößenverletzung der
+vorigen CI wurde durch bytegleiche Archivierung und Verdichtung behoben; der
+Code der Kanaländerung blieb dabei unverändert.
+
+Genau ein tatsächlicher Dispatch: vollständiger Payload9868Zeichen,
+unmittelbar davor292s tatsächliche Restgültigkeit. Bestehende15Cipherteile
+empfangen, zusammengesetzt und vollständig zurückgelesen; Gesamthash und
+authentifiziertes Manifest passen. Geschlossener Empfängerbericht
+`PASS_EXISTING12_RECEIVED_AND_RELOCATED_ONLY_START_BLOCKED` bestätigt alle zwölf
+Originale mit242570240Bytes einschließlich Relokation und unverändertem
+Sourcekontext. Tatsächlicher Empfänger- und Consumercommit bleiben getrennt
+gebunden. Unabhängiger abschließender BefundabgleichPASS, keine Testwiederholung.
+
+[Vollständiger öffentlicher skalarer Empfangsbeleg](belege/w15-end500-transfer-20261029/GITHUB_ENCRYPTED_INDEX_RECEPTION.SAFE.json).
+Artefaktzahl0. Kein Secretwrite, keine Secret-/Drive-Freigabeänderung, keine neue
+Sourceverschlüsselung, kein zusätzlicher Empfang und kein Retry. Bestehende
+Secrets,15Drive-Cipherteile und Sourceoriginale unverändert. Klartexte wurden
+nur innerhalb dieses Jobs geprüft; ihre weitere Verfügbarkeit nach Jobende ist
+nicht belegt. Kein Klartextupload oder neuer privater Dauerspeicher.
+
+Damit ist ausschließlich das beauftragte Empfangskriterium erfüllt. Restore,
+vollständige Runner-/RAM-/Platten-/Rücksicherungsabnahme und End500-/Mock500-Start
+bleiben offen und gesperrt. Keine neue Ausführungsautorität daraus ableiten.
