@@ -84,7 +84,7 @@ class WorkflowChecks(unittest.TestCase):
             start.validate_admission.assert_not_called()
             value['bindings'] = {'end500Acceptance': {}, 'compatibilityBridge': {},
                 'inputBindingSHA256': 'e' * 64, 'additionalAssetBytes': 217550486,
-                'approvedEnd500Commit': 'b6eb74495cd9cf4d7bee04ec4b37da6244b5c6a2'}
+                'approvedEnd500Commit': 'c89d423fd8431b42a5351de82e640f40e8517ee4'}
             with self.assertRaises(RuntimeError): W.validate_admission(value, {})
             self.assertEqual(start.validate_admission.call_args.kwargs['expected_end500_commit'],
                 value['bindings']['approvedEnd500Commit'])

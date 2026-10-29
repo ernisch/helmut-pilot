@@ -138,3 +138,20 @@ Vorlage, mit tatsächlichem Commit/Run-/Inventar-SHA auszufüllen:
 > Rücksicherung. RAM-v2/Zeiten wie oben, höchstens0,05USD Speicherung,0Modell-
 > oder externe Provideraufrufe. BeiFAIL/UNKNOWN stoppen; kein Retry, kein Merge,
 > Deployment oder Production-Eingriff. Bestehende Originale/Secrets bleiben erhalten.
+
+## Tatsächliche neue Runnerqualifikation
+
+Run40922859278 aufc89d423fd8431b42a5351de82e640f40e8517ee4 ist unabhängig
+synthetisch abgenommen: UID/GID1000, gleicher Kernelparent, alle eigenen Kinder
+beendet/Parentpopulated0; gemeinsamer Peak302014464Bytes,Swap/OOM0. Keine Originale,
+DB, Profile, Units, Provider oder Mock500-Ausführung. Öffentliche
+Quellqualifikation482Dateien, ganzer synthetischer Dispatch37389Zeichen.
+Dieser Beleg gilt für den genannten Codekopf und erteilt keine volle RAM-Abnahme.
+
+Der gesamte gemeinsam geprüfte Integrationscommitc89d423f enthält die kleine
+Restore-/Recovery-TCP-Korrektur und die weiterhin gesperrten Mock-Anschlüsse.
+Er bleibt als künftiger separat freizugebender Restore-/End500-Baselinecommit
+unverändert erhalten. Ein ausdrücklicher zusätzlicher Mock-Adapter erlaubt
+künftig genau diese Baseline; positive End500-Abnahme, neue Commitbrücke und
+Mock-GO werden weiterhin verlangt und sind derzeit nicht vorhanden. Kein
+Restore oder End500 wird durch diese reine Baselinevorbereitung ausgeführt.

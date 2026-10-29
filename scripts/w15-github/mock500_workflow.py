@@ -22,7 +22,8 @@ REPO = HERE.parents[1]
 FULL, SYNTHETIC = 'mock500-full-gated', 'mock500-runner-synthetic'
 BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 SYNTHETIC_BRANCH = 'refs/heads/codex/w15-mock500-integration-20261029'
-END_BASELINES = {'7e3d96e99fc687b03bcb9a7cbe4a0f59c174859b', 'b6eb74495cd9cf4d7bee04ec4b37da6244b5c6a2'}
+END_BASELINES = {'7e3d96e99fc687b03bcb9a7cbe4a0f59c174859b', 'b6eb74495cd9cf4d7bee04ec4b37da6244b5c6a2',
+                 'c89d423fd8431b42a5351de82e640f40e8517ee4'}
 LIMITS = {'comparisonBudgetBytes': 2048000000, 'maximumConsumptionBytes': 1638400000,
           'requiredReserveBytes': 409600000, 'swapBytes': 0}
 WALL = {SYNTHETIC: 300, FULL: 12600}

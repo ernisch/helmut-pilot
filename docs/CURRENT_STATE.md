@@ -15,8 +15,9 @@ Tages-/Namespacebindung, bestehende500/500-Quellenprüfung, vollständiger Contr
 und Auswertung, eigene gemeinsame RAM-v2-Messung, vollständiger Plattenplan,
 verschlüsselte Sicherung/Remote-Readback/zweite Rücksicherung und Einmalstartwächter.
 Standardmäßig gesperrt; gezielte fiktive Verbindungstests sind keine500er-Abnahme.
-Eigene GitHub-Runnerqualifikation und Pflicht-CI müssen am tatsächlichen neuen
-Codekopf bestehen. Historischer RAM-v2-Fehler bleibt FAIL.
+Synthetischer neuer v2-Runner40922859278 aufc89d423f unabhängigPASS:
+Peak302014464Bytes/Swap0,UID1000,gleicherParentnachKindernleer,keineOriginale/DB.
+Pflicht-CI muss am tatsächlichen neuen Codekopf bestehen. Historischer RAM-v2-Fehler bleibt FAIL.
 
 Dateiinventur lokalBLOCKED wird nicht wiederholt. GitHub-/Drive-Belege bestätigen
 das bestehende269598Byte-Builder-ZIP samt historischem SHA; keine Payloads geladen.
