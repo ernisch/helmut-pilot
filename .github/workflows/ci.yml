@@ -135,6 +135,7 @@ jobs:
           python3 -B scripts/w15-github/test_build_receiver_browser.py
           node scripts/w15-github/test_receiver_browser.js
           python3 -B scripts/w15-github/test_receive_existing_inputs.py
+          python3 -B scripts/w15-github/test_runtime_materialization.py
       - name: Native automation boundary qualification (synthetic)
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,

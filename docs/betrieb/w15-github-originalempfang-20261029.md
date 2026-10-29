@@ -64,6 +64,29 @@ Fakebytes, Mock-HTTP und Mock-GPG; kein neuer Originalempfang wird daraus behaup
 
 ## Tatsächliche Abrufgrenze und kleinster Berechtigungsschritt
 
+Neue gezielte Gegenprobe vom29.10.2026: Betreiber bestätigt den erneuerten
+feingranularen Token mit `Environments: Read and write`, Actions und
+Administration für dieses Repository. Der geerbte `GH_TOKEN` ist vorhanden
+und ungleich der HELMUT-Bindung. Für genau einen GET des festen
+Environment-Public-Key-Endpunkts wurde `GH_TOKEN` ausdrücklich mit
+`HELMUT_GITHUB_CI_ADMIN_TOKEN` ersetzt und `GITHUB_TOKEN` entfernt;
+CLI-Host`github.com`, keine gespeicherte Anmeldung kann diesen Wert verdrängen.
+Ergebnis403/`Resource not accessible by integration`, benötigte Berechtigung
+laut GitHub-Antwort`environments=read`. `/user` mit derselben Bindung ergibt
+200/Konto`ernisch`. Bereits die frühere Python-Anfrage setzte ihren Bearer direkt
+aus der HELMUT-Bindung; die CLI-Priorität erklärt somit keinen der beiden403.
+Die Kontokennung unterscheidet keine einzelnen Tokens. Eine konkrete falsche
+Tokenkopie, ein Laufzeitbindungsfehler oder eine abweichende effektive GitHub-
+Berechtigung lässt sich mit diesen Antworten nicht sicher unterscheiden.
+Kein weiterer gleicher Versuch und kein Secretwrite.
+[Geschlossener Befund ohne Geheimwerte](belege/w15-end500-transfer-20261029/GITHUB_TOKEN_BOUND_PROBE.SAFE.json).
+
+Einzige manuelle Handlung: Die Secretbindung
+`HELMUT_GITHUB_CI_ADMIN_TOKEN` in `Helmut main` auf genau den bereits
+berechtigten feingranularen Token aktualisieren und als frische Laufzeitbindung
+übernehmen. Keine zusätzliche Rechteausweitung oder neue Infrastruktur.
+Der folgende frühere Berechtigungsbefund bleibt historisch erhalten.
+
 Die vorhandenen15Drive-Cipherdateien wurden frisch als ausschließlich
 eigentümerberechtigt mit unveränderten Größen/MIME-Typen beobachtet. Der
 Connector stellt lesende objektgebundene Dateifähigkeiten bereit (`sp=r`,

@@ -119,3 +119,39 @@ Ein kleiner echter lokaler Forktest verwendet ausschließlich erfundene Daten
 und gemockte Identitätswechsel; er startet weder Docker noch systemd oder DB.
 Der nächste echte Lauf prüft diesen konkret geänderten Startweg. RAM-/Swap-
 Grenzen und End500-/Mock500-Sperren bleiben unverändert; kein automatischer Retry.
+
+## Unabhängig vorbereiteter Datei-Anschluss
+
+Der explizite `runtime_inputs`-Pfad im vorhandenen Controller verwendet für
+App, Node, PostgREST, Rollen und Eingangsdump jetzt neue physische Kopien unter
+`PREP/runtime-files`. `runtime_materialization.py` erzeugt sie im aufrufenden
+Prozess und prüft den bestehenden gemeinsamen Parent vor/nach jedem
+Streamblock sowie beim vollständigen Rücklesen. Danach werden genau diese fünf
+Ziele im Container ausschließlich lesend eingebunden. Der tatsächliche
+`docker inspect`-Readback muss je Ziel genau einen Bindmount mit exakter Quelle
+und `RW=false` zeigen; fehlende, doppelte oder überlagernde Mounts stoppen vor
+dem Restore. Dadurch benötigt dieser Pfad kein daemonseitiges `docker cp` mehr.
+
+Hostkopien und State gehören bereits UID1000. Nur das beschreibbare
+Container-Basisverzeichnis erhält noch den passenden Besitzer; keine rekursiven
+Rechteänderungen an den lesenden Mounts. `BASE/restore.PRIVATE.sql` bleibt
+beschreibbar. State-Dateien bleiben0600. Der vorbereitete Baum nimmt die
+ausführbaren0700-Binärkopien auf und bleibt mit dem vorhandenen vollständigen
+Backupwalk kompatibel; WORK bleibt bei seinem strikten0600-Dateivertrag.
+Kopien sind neue Inodes, Quellen bleiben erhalten. Symlinks, Hardlinks,
+Quelldrift, Überschreiben, unsichere Mount-Trennzeichen und unbekannte
+Parentwerte stoppen mit festem Fehlercode; private Teilprodukte bleiben liegen.
+Der lokale Kopierumfang ist auf1GiB und4096Dateien begrenzt. Das ist keine
+vollständige Restore-/WAL-/Backupkapazitätsabnahme; zusätzliche Kopien müssen im
+frischen tatsächlichen Plattenplan mitgerechnet werden.
+
+Neun neue kleine Prüfungen bestanden zunächst; nach unabhängigem Review kamen
+zwei neue tatsächliche-Mount-Readback-Prüfungen mit acht Negativvarianten hinzu.
+Die neun bereits grünen Prüfungen wurden nicht wiederholt. Abschließender
+unabhängiger statischer ReviewPASS. Nur der neue synthetische Test wird dem
+bestehenden W15-CI-Schritt hinzugefügt. Der standalone Full500-Controller bleibt
+bytegleich. Keine erneute Parent-/Canary-/Empfängerprobe und kein tatsächlicher
+Runner-, Datenbank-, Restore- oder500er-Lauf. Vorher außerhalb des Parents
+geladene Quellen, Images, Daemon-Metadaten und deren Cache werden hierdurch
+nicht nachträglich als vollständig zugerechnet ausgegeben. Frische komplette
+Runnerintegration, Lebenszeit-RAM, Plattenplan und Rücksicherung bleiben offen.

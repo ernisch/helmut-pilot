@@ -61,12 +61,29 @@ Fake-HTTP/GPG-Testgruppen und unabhängiger statischer Review bestanden; noch ke
 echter Originalempfang in diesem neuen Job. Tatsächliche Connectorlinks gelten
 nur ungefähr5min; deshalb wurde kein manueller Index ausgegeben. Für den
 zuverlässigen sofortigen Write/Dispatch des ausschließlich neuen Secrets
-`HELMUT_W15_CIPHER_URL_INDEX` ist jetzt der konkrete Berechtigungsschritt am
-bestehenden CI-Admin-Zugang zu klären (`Environments: write`, Tokenart noch
-unbestätigt). Kein unveränderter403-Retry, keine URL-Veröffentlichung,
+`HELMUT_W15_CIPHER_URL_INDEX` bleibt der bestehende CI-Admin-Zugang blockiert.
+Betreiber bestätigt einen feingranularen Token mit `Environments: Read and write`.
+Genau eine beauftragte Gegenprobe mit ausdrücklich ersetztem `GH_TOKEN` aus
+`HELMUT_GITHUB_CI_ADMIN_TOKEN` ergibt weiterhin403 am Environment-Public-Key;
+derselbe Zugang meldet Konto`ernisch`. Der geerbte andere `GH_TOKEN` und
+gespeicherte CLI-Anmeldungen sind als Ursache dieser Probe ausgeschlossen;
+auch die vorherige Python-Anfrage verwendete bereits die HELMUT-Bindung.
+Die Übereinstimmung der effektiven Laufzeitberechtigung mit dem in GitHub
+bearbeiteten Token bleibt unbewiesen. Keine erneute identische Probe,
+keine URL-Veröffentlichung,
 Sharingänderung, neue Quelle oder erneuter Quelltransfer. Vorhandene
 Empfängersecrets bleiben unverändert.
 [Konkreter Datenanschluss und Grenzen](betrieb/w15-github-originalempfang-20261029.md).
+[Geheimwertfreier gebundener403-Befund](betrieb/belege/w15-end500-transfer-20261029/GITHUB_TOKEN_BOUND_PROBE.SAFE.json).
+
+Unabhängig vom Zugangsblocker vorbereitet: Der explizite GitHub-Controllerpfad
+materialisiert App/Binärdateien/Rollen/Dump im gemeinsamen Parent und bindet sie
+lesend ein. Echte Mount-Readbacks sind vor Restore Pflicht; kein daemonseitiges
+`docker cp` für diese Dateien mehr.11 neue gezielte Prüfungen und unabhängiger
+statischer Review bestanden. Bestehender PREP-Backupwalk bleibt kompatibel;
+zusätzliche Kopien brauchen den noch offenen frischen Plattenplan. Standalone
+Full500-Controller bytegleich. Kein tatsächlicher Runner-/Restorebeleg daraus.
+[Begrenzter Datei-Anschluss](betrieb/w15-github-runner-parent-20261029.md#unabhängig-vorbereiteter-datei-anschluss).
 
 **End500-Start weiterhin BLOCKED:** tatsächlicher Originaldatenzugang,
 tatsächliche vollständige PG/PostgREST/Node-/Controlleranbindung einschließlich

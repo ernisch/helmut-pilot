@@ -38,7 +38,7 @@ audit_spec=importlib.util.spec_from_file_location('w15_final_native_audit',ROOT/
 AUDIT=importlib.util.module_from_spec(audit_spec);audit_spec.loader.exec_module(AUDIT)
 
 def _runtime_module(component='runtime_inputs'):
-    assert component in ['runtime_inputs','runtime_backup','runtime_owned_backup','common_resources']
+    assert component in ['runtime_inputs','runtime_backup','runtime_owned_backup','common_resources','runtime_materialization']
     name='w15_github_'+component
     if name not in sys.modules:
         spec=importlib.util.spec_from_file_location(name,ROOT/'scripts/w15-github'/(component+'.py'))
@@ -318,17 +318,31 @@ def main(inputs=None,common_resources=None):
         for n,h in [('node','bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12'),('postgrest','870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617')]:
             assert digest_file(CACHE/n)==h,'w15-cached-binary-pin'
         seed=check_seed(inputs)
+        target=json.loads((ROOT/'scripts/fixtures/w15-atomic-integration-target.json').read_text())
+        command_path=pathlib.Path(target['work'])/'current-command.PRIVATE.json'if inputs is None else inputs.path('currentCommand')
+        command_bytes=command_path.read_bytes()
+        command_pin={'path':str(command_path),'bytes':len(command_bytes),'sha256':hashlib.sha256(command_bytes).hexdigest(),'executionAuthority':False}
+        M.save('CURRENT_COMMAND_BINDING.SAFE.json',command_pin)
         pgdata=WORK/'pgdata';pgdata.mkdir(mode=0o700)
         state=WORK/'state';state.mkdir(mode=0o700)
+        runtime_mounts=()
+        if inputs is not None:
+            runtime_mounts=_runtime_module('runtime_materialization').materialize(
+              PREP/'runtime-files',app=stage/'app',node=CACHE/'node',postgrest=CACHE/'postgrest',
+              roles=original_paths['localRoles'],dump=original_paths['frozenSourceDump'],state=state,
+              command=command_path,command_binding=WORK/'CURRENT_COMMAND_BINDING.SAFE.json',
+              bound=bound_path,guard=common_resources.sample)
         M.docker('create','--name',CONTAINER,'--pull=never','--network=none','--restart=no','--memory='+str(M.LIMIT),'--memory-swap='+str(M.LIMIT),
           *(['--cgroup-parent='+common_resources.unit]if common_resources is not None else[]),
           '--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
           '--mount','type=bind,src='+str(seed)+',dst='+SEED_MOUNT+',readonly',
-          '--mount','type=bind,src='+str(state)+',dst='+BASE+'/state','-e','POSTGRES_HOST_AUTH_METHOD=trust',M.IMAGE,
+          '--mount','type=bind,src='+str(state)+',dst='+BASE+'/state',*runtime_mounts,'-e','POSTGRES_HOST_AUTH_METHOD=trust',M.IMAGE,
           'postgres','-c','helmut.local_usage_experiment=on','-c','max_wal_size='+str(BUDGET['postgresMaxWalMiB'])+'MB','-c','work_mem='+str(BUDGET['postgresWorkMemMiB'])+'MB',
           '-c','autovacuum_naptime='+str(BUDGET['postgresAutovacuumNaptimeSeconds'])+'s');created=True
         M.docker('start',CONTAINER);info=json.loads(M.docker('inspect',CONTAINER))[0]
         assert info['HostConfig']['NetworkMode']=='none'and info['HostConfig']['Memory']==M.LIMIT and info['HostConfig']['MemorySwap']==M.LIMIT
+        if inputs is not None:
+            _runtime_module('runtime_materialization').verify_mounts(info['Mounts'],PREP/'runtime-files')
         seed_mounts=[x for x in info['Mounts']if x['Destination']==SEED_MOUNT]
         assert len(seed_mounts)==1 and seed_mounts[0]['Source']==str(seed)and seed_mounts[0]['RW']is False,'w15-seed-must-be-readonly'
         M.save('READONLY_SEED_MOUNT.SAFE.json',{'sourceSHA256':SEED_SHA,'readOnly':True,'singleFileOnly':True})
@@ -347,20 +361,20 @@ def main(inputs=None,common_resources=None):
         assert r.returncode==0,'w15-forward-pg-readiness'
         M.docker('exec',CONTAINER,'mkdir','-p',BASE)
         M.docker('exec',CONTAINER,'chmod','700',BASE)
-        for n,source in [('app',stage/'app'),('node',CACHE/'node'),('postgrest',CACHE/'postgrest')]:
-            w.disk_check();M.copy_in(source,BASE+'/'+n);w.disk_check()
         assert state.stat().st_mode&0o777==0o700
-        for k,n in [('localRoles','roles.PRIVATE.sql'),('frozenSourceDump','input.PRIVATE.dump')]:M.copy_in(original_paths[k],BASE+'/'+n)
-        target=json.loads((ROOT/'scripts/fixtures/w15-atomic-integration-target.json').read_text())
-        command_path=pathlib.Path(target['work'])/'current-command.PRIVATE.json'if inputs is None else inputs.path('currentCommand')
-        command_bytes=command_path.read_bytes()
-        command_pin={'path':str(command_path),'bytes':len(command_bytes),'sha256':hashlib.sha256(command_bytes).hexdigest(),'executionAuthority':False}
-        M.save('CURRENT_COMMAND_BINDING.SAFE.json',command_pin)
-        M.copy_in(command_path,BASE+'/state/current-command.PRIVATE.json')
-        M.copy_in(WORK/'CURRENT_COMMAND_BINDING.SAFE.json',BASE+'/state/CURRENT_COMMAND_BINDING.SAFE.json')
-        M.copy_in(bound_path,BASE+'/state/END500_MEMORY_BOUND.SAFE.json')
-        M.docker('exec',CONTAINER,'chown','-R','1000:1000',BASE)
-        M.docker('exec',CONTAINER,'chmod','700',BASE+'/node',BASE+'/postgrest')
+        if inputs is None:
+            for n,source in [('app',stage/'app'),('node',CACHE/'node'),('postgrest',CACHE/'postgrest')]:
+                w.disk_check();M.copy_in(source,BASE+'/'+n);w.disk_check()
+            for k,n in [('localRoles','roles.PRIVATE.sql'),('frozenSourceDump','input.PRIVATE.dump')]:M.copy_in(original_paths[k],BASE+'/'+n)
+            M.copy_in(command_path,BASE+'/state/current-command.PRIVATE.json')
+            M.copy_in(WORK/'CURRENT_COMMAND_BINDING.SAFE.json',BASE+'/state/CURRENT_COMMAND_BINDING.SAFE.json')
+            M.copy_in(bound_path,BASE+'/state/END500_MEMORY_BOUND.SAFE.json')
+            M.docker('exec',CONTAINER,'chown','-R','1000:1000',BASE)
+            M.docker('exec',CONTAINER,'chmod','700',BASE+'/node',BASE+'/postgrest')
+        else:
+            # The host copies already belong to UID1000; readonly mounts must
+            # not be recursively chowned/chmodded by an out-of-parent daemon.
+            M.docker('exec',CONTAINER,'chown','1000:1000',BASE)
         M.sql('create database '+DB+';',database='postgres')
         M.docker('exec',CONTAINER,'psql','-X','-w','-q','-v','ON_ERROR_STOP=1','-U','postgres','-d',DB,'-f',BASE+'/roles.PRIVATE.sql')
         M.docker('exec',CONTAINER,'pg_restore','--exit-on-error','--file='+BASE+'/restore.PRIVATE.sql',BASE+'/input.PRIVATE.dump')
