@@ -61,3 +61,40 @@ vollständiger Parent-/RAM-Nachweis, Backup und End500 bleiben offen und gesperr
 Fehler nennen nur eine feste Phase, erhalten private Teilprodukte und erlauben
 keinen automatischen Wiederanlauf. Entwicklungsprüfungen verwenden ausschließlich
 Fakebytes, Mock-HTTP und Mock-GPG; kein neuer Originalempfang wird daraus behauptet.
+
+## Tatsächliche Abrufgrenze und kleinster Berechtigungsschritt
+
+Die vorhandenen15Drive-Cipherdateien wurden frisch als ausschließlich
+eigentümerberechtigt mit unveränderten Größen/MIME-Typen beobachtet. Der
+Connector stellt lesende objektgebundene Dateifähigkeiten bereit (`sp=r`,
+`sr=b`), deren beobachtete Gültigkeit aber nur ungefähr fünf Minuten beträgt.
+Ein manueller Copy-/Queue-/Downloadweg wäre damit unzuverlässig. Es wurde
+deshalb noch kein privater Index an den Betreiber ausgegeben und kein
+Originalempfang gestartet. Die Source-/Empfängerprüfung bleibt erhalten.
+
+Der bestehende CI-Admin-Zugang antwortet auf eine einzige Kontometadatenabfrage
+mit Benutzer`ernisch`; seine Tokenart wird daraus nicht sicher abgeleitet.
+Die offizielle GitHub-REST-Dokumentation verlangt für das Schreiben eines
+Environment-Secrets bei feingranularen Zugängen die Repositoryberechtigung
+`Environments: write`. Der bekannte403 wird ohne tatsächliche Änderung der
+Berechtigung nicht erneut geprüft.
+
+Nach einem passenden Berechtigungsschritt wird ein frischer privater Index
+0700/0600 erstellt, validiert und ausschließlich mit dem vorhandenen GitHub-CLI
+in das fest benannte neue Secret geschrieben. Sein Wert geht über stdin und
+wird vom CLI mit dem Environment-Public-Key verschlüsselt; keine URL wird
+in Kommandoargumente, Chat, Git oder öffentliche Artefakte kopiert:
+
+```sh
+GH_TOKEN="$HELMUT_GITHUB_CI_ADMIN_TOKEN" gh secret set HELMUT_W15_CIPHER_URL_INDEX \
+  --repo ernisch/helmut-pilot --env helmut-ci-originals < /privat/CIPHER_INDEX.PRIVATE.json
+```
+
+Danach folgt sofort der unverändert gebundene Empfangsmodus am überprüften
+Kopf. Die beiden bestehenden Empfängersecrets und alle anderen Secrets bleiben
+unverändert. Keine Drive-Freigabe, neue Tokenwerte, Anbieteranmeldung oder
+öffentliche Ablage wird für diesen Weg verlangt. Falls die vorhandene Tokenart
+diesen Berechtigungsschritt nicht unterstützt, ist diese konkrete manuelle
+Grenze zu klären; keine weitere technische Umgehung.
+
+[GitHub: Create or update an environment secret](https://docs.github.com/en/rest/actions/secrets#create-or-update-an-environment-secret).

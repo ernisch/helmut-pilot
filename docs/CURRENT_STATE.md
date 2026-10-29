@@ -58,10 +58,14 @@ Nächster begrenzter Schritt:`end500-receive-inputs` verbindet ausschließlich d
 bestehenden15Cipherteile mit unveränderten Empfangs-/Relokationsprüfern. Alter
 versiegelter Sourcekontext und neuer Actionslauf bleiben getrennt. Sieben neue
 Fake-HTTP/GPG-Testgruppen und unabhängiger statischer Review bestanden; noch kein
-echter Originalempfang in diesem neuen Job. Einziger neuer manueller Eintrag:
-privater kurzlebiger URL-Index als`HELMUT_W15_CIPHER_URL_INDEX` im selben
-Environment. Keine URL-Veröffentlichung, Tokenrechterweiterung, neue Quelle,
-Sharingänderung oder erneuter Quelltransfer.
+echter Originalempfang in diesem neuen Job. Tatsächliche Connectorlinks gelten
+nur ungefähr5min; deshalb wurde kein manueller Index ausgegeben. Für den
+zuverlässigen sofortigen Write/Dispatch des ausschließlich neuen Secrets
+`HELMUT_W15_CIPHER_URL_INDEX` ist jetzt der konkrete Berechtigungsschritt am
+bestehenden CI-Admin-Zugang zu klären (`Environments: write`, Tokenart noch
+unbestätigt). Kein unveränderter403-Retry, keine URL-Veröffentlichung,
+Sharingänderung, neue Quelle oder erneuter Quelltransfer. Vorhandene
+Empfängersecrets bleiben unverändert.
 [Konkreter Datenanschluss und Grenzen](betrieb/w15-github-originalempfang-20261029.md).
 
 **End500-Start weiterhin BLOCKED:** tatsächlicher Originaldatenzugang,
