@@ -1,23 +1,25 @@
 # CURRENT STATE — Helmut
 
-## W15: Diagnoseverlust synthetisch repariert; echte Ausführung gesperrt
+## W15: Diagnosefix grün; innerer Restorefehler weiter UNKNOWN
 
-Letzter Originallauf [40958135662](https://github.com/ernisch/helmut-pilot/actions/runs/40958135662)
-auf225e76d7 bleibt FAIL `worker`: innere Phase, RAM, Restore-/Backupfortschritt
-und Bereinigungsstatus UNKNOWN. Keine Übernahme älterer Laufwerte.
-Der Fixzweig `codex/w15-restore-diagnostics-20261030` erhält bekannte Workerphasen
-vor späteren Überwachungs-, IPC-, Signal- und Bereinigungsfehlern. Vier zentrale
-Regressionen plus sechs zusätzliche Fehlergruppen am alten Code nachgestellt;
-27 neue synthetische Diagnoseprüfungen und betroffene Anschlusssuiten PASS.
-Zwei unabhängige Quellreviews PASS; Pflicht-CI am tatsächlichen neuen PR-Kopf
-weiterhin erforderlich, aktueller externer Status im zugehörigen Draft-PR.
-Kein weiterer Originallauf. Kein historischer Restore-/RAM-/Stillstands-PASS.
-[Diagnoseabnahme und Grenzen](betrieb/w15-restore-diagnostics-20261030.md),
-[SAFE-Belege](betrieb/belege/w15-restore-diagnostics-20261030/CODE_REVIEW.SAFE.json).
-Mock-Anschlüsse verwenden dieselbe reparierte Fehlerkette; Dateiblocker bleibt
-BLOCKED. Beide RAM-Verträge, bestehende Freigabegrenzen und Schutzregeln bleiben.
-Weitere echte Ausführung erfordert konkrete Diagnosebegründung und neues GO;
-kein vollständiger Restore auf Verdacht. End500/Mock500 bleiben gesperrt.
+PR978/cf466883 und Pflicht-CI40967332952 sind unabhängig PASS; Fix unverändert
+als Vorfahre erhalten. PR975 bleibt225e76d7, PR977 bleibt8de90cbe, kein Merge.
+Run40958135662 bleibt FAIL/worker mit UNKNOWN für innere Phase, RAM, Fortschritt
+und Bereinigung;76sJoblaufzeit belegt, keine Übernahme alter Laufwerte.
+Neue gezielte Trennprobe: fünf echte Node-Producer→Restore→Backup-Einstiegsprüfung,
+3Tests und unabhängiger Review PASS. NativeCP/RAM/Dockertransport ausdrücklich
+synthetisch; kein neuer Produktbug oder Originalrestore-PASS. Keine früheren
+Exportaktionen manuell wiederholt. Pflicht-CI am neuen Prüfkopf siehe Draft-PR.
+Drivequellen gezielt geprüft:605direkte Metadateneinträge, Qualifikationsbericht
+13706128Bytes/d2603d92… nicht lokalisiert, alter30Teil-Index nur Revision26.10.
+ohne Mitgliederinventar. Zehn Originale+ein Replacements-Pin weiter BLOCKED;
+Builder-ZIP bleibt lokalisiert. Kein globaler Verlustbeweis, keine Inventur,
+Neuqualifikation oder Übertragung wiederholt. Codex-Threadindex nicht erreichbar.
+[Neue Ursachenabgrenzung und Quellenbelege](betrieb/w15-restore-cause-20261030.md),
+[abgenommener Diagnosefix](betrieb/w15-restore-diagnostics-20261030.md).
+Weitere echte Ausführung braucht konkrete Begründung und neues GO; kein weiterer
+vollständiger Originallauf auf Verdacht. End500/Mock500 bleiben gesperrt.
+Beide RAM-Verträge und Schutzregeln unverändert.
 
 ## W15 Fortschreibung: primärer Restore durchlaufen, Backup noch FAIL
 
