@@ -247,7 +247,7 @@ class MockBackupChecks(unittest.TestCase):
             'binaries': {'node': {'path': str(self.work / 'stage/node'), **pin(self.node)}}}
         inputs = SimpleNamespace(backup_context=lambda: self.context,
             controller_context=lambda: {'hostPaths': {'prepare': str(self.prepared)}, 'runtimePins': {'node': pin(self.node)}},
-            path=lambda key: self.root / 'received/payloads/auth.PRIVATE', check_sources=Mock(), backup_input_files=Mock())
+            check_sources=Mock(), backup_input_files=lambda: {'auth': self.root / 'received/payloads/auth.PRIVATE'})
         collection = {'manifest': {'files': []}, 'manifestSHA256': 'f' * 64}
         cipher_data = b'FICTIONAL CIPHER'
         sealed = {'cipherBytes': len(cipher_data), 'cipherSHA256': pin(cipher_data)['sha256']}
@@ -275,6 +275,8 @@ class MockBackupChecks(unittest.TestCase):
                           supervisor=self.w, result=self.body, close_owned=close)
             self.assertEqual(events, ['export', 'close', 'collect', 'seal', 'transport', 'authenticate', 'restore'])
             self.assertEqual(decrypt.call_args.kwargs['backup_scope'], B.SCOPE)
+            self.assertEqual(decrypt.call_args.kwargs['private_home'], str(self.root / 'gnupg'))
+            self.assertEqual(decrypt.call_args.kwargs['passphrase_file'], str(self.root / 'receiver-passphrase.PRIVATE'))
             self.assertTrue(result['remoteReadbackObserved'])
             self.assertTrue(result['databaseRestoreObserved'])
             self.assertFalse(result['mock500Acceptance'])
