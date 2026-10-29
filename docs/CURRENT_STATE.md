@@ -13,8 +13,9 @@ zum tatsächlichen PR975-Kopf; deren GitHub-Runs sind im PR verlinkt.
 Kein erneuter Originalempfang/echter Restore/End500/Mock500 ausgeführt.
 **Nächste echte Grenze:** genau ein begrenzter Empfang+Restore500/0 samt Backup
 und Rücksicherung mit separatem GO; danach eigene Abnahme und End500-GO.
-Mock500 zusätzlich fachlich blockiert: übernommene338/500gültige D/R-Eingaben,
-120Berlin-Kontexte und42Mockinhalte offen; keine Quellenverjüngung.
+Mock500-Quellenbindung am28.10. bereits500/500PASS; frühere338/500sind historisch.
+Aktueller Lauftag, gesperrter Controller, Atomic12ACK-/Namespaceanschlüsse und
+eigene RAM-/Startabnahme bleiben offen; keine Quellenverjüngung.
 [Stufen, Ressourcen, Kosten und konkrete Freigabevorlagen](betrieb/w15-github-stufenstart-20261029.md).
 
 Aktueller enger Betreiberauftrag vom29.10.2026: vorhandene15Cipherteile einmal

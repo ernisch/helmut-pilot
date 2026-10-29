@@ -170,13 +170,26 @@ Beschaffung. Es gibt keine verdeckte Fortsetzung eines beendeten Runners.
 
 ## Mock500 und Production bleiben eigenständige Stufen
 
-Rein lesend übernommen: `MOCK_BINDINGS_20261028_SUMMARY.SAFE.json` bestätigt
-338/500 gültige D/R-Eingaben und162Fehler:120Berlinprofile ohne zulässigen
-aktuellen Quellenkontext sowie42nicht vollständig belegte Mockinhalte. Keine
-erneute500er-Qualifikation, keine Quellenverjüngung oder Umdeklarierung.
-Diese Datenblocker werden durch einen End500-PASS nicht behoben. Nötig sind
-wahrheitsgemäß zulässige Quellen/Kontexte und belegte Mockinhalte mit500/500-
-Qualifikation und unabhängiger Abnahme; neue Originalbeschaffung bleibt gesperrt.
+Rein lesend übernommen: Der neuere Beleg
+`SOURCE_BINDINGS_20261028B_500PASS.SAFE.json` bestätigt500/500,0Fehler,
+Berlin120/120 und Variante6 42/42, echte Publikationsidentität, unveränderte
+Originaldaten/14-Tage-Vertrag und unabhängigen Review. Die vorherigen338/500
+und162Fehler sind ausdrücklich historisch. Keine erfolgreiche500er-Qualifikation
+wird wiederholt; keine Quellenverjüngung oder Umdeklarierung.
+
+Die tatsächlichen weiteren Anschlüsse stehen im vorhandenen Atomic-Usage-
+Integrationsplan: Der Full500-Controller ist vor Wirkung hart gesperrt und noch
+an alte feste28d-/qualification-b-Pfade, den historischen11-Dateien-Empfang und
+einen4-CAS-Blobauthbeleg gebunden. Die neue GitHub-Route autorisiert ausschließlich
+Restore/End500. Für Mock500 fehlen Atomic12ACK-Übernahme, der neue gebundene
+Controller-/RAM-Review, strikte Übernahme des500PASS samt16+2-Quellen sowie
+frische konsistente Namespaces. Der gültige500PASS vom28.10. ersetzt nicht die
+zwingende tatsächliche UTC-/Berliner Tagesbindung eines späteren Laufs.
+Neue Originalbeschaffung bleibt gesperrt. [Bestehender Anschlussplan](w15-atomic-usage-integration-20261028.md).
+Mock500-v2 bleibt separat:2048000000Bytes hart,409600000Bytes Reserve,
+zulässiger Peak1638400000Bytes. Versuch28c überschritt die Reserve um1703936Bytes;
+End500-v3 ersetzt diesen offenen Nachweis nicht. Der eigene Mockablauf benötigt
+das bestehende vollständige3h+30min-Fenster; der End500-Modus mit3600s genügt nicht.
 
 Danach braucht Mock500 sein eigenes GO:500gleichzeitig aktive synthetische
 Profile,500Units,1000Providerphasen,1500vollständig bilanzierte Ergebnisse,

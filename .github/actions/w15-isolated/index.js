@@ -26,6 +26,21 @@ function main() {
     nodeSource:process.env.W15_NODE_SOURCE, postgrestSource:process.env.W15_POSTGREST_SOURCE,
     sourceQualification:declared.sourceQualification, approval:declared.approval,
     limits:declared.limits, maximumWallSeconds:declared.maximumWallSeconds};
+  if (synthetic) {
+    const inputs=event.inputs || {};
+    let declarationMatches=false;
+    try {
+      const eventDeclared=JSON.parse(inputs.w15_request);
+      declarationMatches=Object.keys(declared).length===Object.keys(eventDeclared).length
+        && Object.keys(declared).every(k=>JSON.stringify(declared[k])===JSON.stringify(eventDeclared[k]));
+    } catch (_) {}
+    console.log(JSON.stringify({status:'PUBLIC_SYNTHETIC_EVENT_OBSERVATION',
+      inputCount:Object.keys(inputs).length,
+      exactInputSet:JSON.stringify(Object.keys(inputs).sort())===JSON.stringify(['expected_commit','w15_cipher_index','w15_mode','w15_request']),
+      inputsAreStrings:Object.values(inputs).every(v=>typeof v==='string'),
+      modeMatches:inputs.w15_mode===mode,commitMatches:inputs.expected_commit===request.exactCommit,
+      declarationMatches,cipherEmpty:inputs.w15_cipher_index===''}));
+  }
   const input = JSON.stringify({request,privatePayload});
   if (Buffer.byteLength(input) > 1024*1024) throw Error('bound');
   const result = cp.spawnSync('/usr/bin/python3', ['-B','scripts/w15-github/restore_workflow.py','--launch'],

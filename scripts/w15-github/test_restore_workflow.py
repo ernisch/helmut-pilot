@@ -165,6 +165,18 @@ class AdmissionChecks(unittest.TestCase):
             with self.assertRaises(W.WorkflowRejected):
                 W.validate_admission(value, payload(value))
 
+    def test_only_synthetic_accepts_an_omitted_or_null_empty_cipher_default(self):
+        value=request()
+        for null in (False,True):
+            event=inputs(value)
+            if null:event['w15_cipher_index']=None
+            else:event.pop('w15_cipher_index')
+            W._event_inputs(value,event,{})
+        event=inputs(value);event['w15_cipher_index']='UNEXPECTED'
+        with self.assertRaises(W.WorkflowRejected):W._event_inputs(value,event,{})
+        gated=request('end500-restore-gated');event=inputs(gated);event.pop('w15_cipher_index')
+        with self.assertRaises(W.WorkflowRejected):W._event_inputs(gated,event,payload(gated))
+
     def test_actual_event_copy_and_total_dispatch_size_are_checked_before_bootstrap(self):
         value = request('end500-restore-gated')
         private = payload(value)

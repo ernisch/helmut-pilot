@@ -58,7 +58,15 @@ class BackupChecks(unittest.TestCase):
 
     @staticmethod
     def put(path, raw):
-        path.parent.mkdir(mode=0o700, exist_ok=True, parents=True)
+        # pathlib's parents=True gives intermediate parents the process umask
+        # defaults, ignoring mode=0700. Create each new fictional parent with
+        # the same private mode required by the production readback checks.
+        missing, parent = [], path.parent
+        while not parent.exists():
+            missing.append(parent)
+            parent = parent.parent
+        for parent in reversed(missing):
+            parent.mkdir(mode=0o700)
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(fd, 'wb') as stream:
             stream.write(raw)

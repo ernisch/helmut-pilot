@@ -196,6 +196,11 @@ def validate_admission(value, private_payload, *, now=None):
 
 
 def _event_inputs(request, inputs, private_payload):
+    # GitHub may omit an empty optional string in the dispatch event. Only
+    # the no-originals synthetic mode accepts that precise empty default.
+    if request['mode'] == 'end500-restore-synthetic' and type(inputs) is dict:
+        if 'w15_cipher_index' not in inputs or inputs['w15_cipher_index'] is None:
+            inputs = {**inputs, 'w15_cipher_index': ''}
     need(type(inputs) is dict and set(inputs) == {'w15_mode', 'expected_commit', 'w15_request', 'w15_cipher_index'}
          and all(type(v) is str for v in inputs.values())
          and inputs['w15_mode'] == request['mode'] and inputs['expected_commit'] == request['exactCommit'], 'event')
