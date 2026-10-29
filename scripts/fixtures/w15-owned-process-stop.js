@@ -19,9 +19,11 @@ function stopFailure(error, phase = "entry", pid) {
 async function stop(base, action, database, registration = "active", scope = "legacy") {
   assert(["active", "never-started"].includes(registration));
   assert(/^\/tmp\/w15-[a-z0-9-]+$/.test(base));
-  assert(["legacy", "end500-backup"].includes(scope));
+  assert(["legacy", "end500-backup", "end500-restore"].includes(scope));
   const backup = scope === "end500-backup";
-  assert((backup ? ["backup-before", "backup-dump", "backup-roles", "backup-after"] :
+  const restore = scope === "end500-restore";
+  assert((backup ? ["backup-before", "backup-dump", "backup-roles", "backup-after"] : restore ?
+    ["restore-create", "restore-roles", "restore-render", "restore-apply", "restore-check"] :
     ["prepare", "run", "setup", "audit", "gateway", "postgrest", "signal-proof", "eu-component"]).includes(action));
   const state = `${base}/state`, pidFile = `${state}/${action}.pid`;
   const log = fs.openSync(`${state}/stop-${action}.SAFE.jsonl`, "a", 0o600);
@@ -38,7 +40,7 @@ async function stop(base, action, database, registration = "active", scope = "le
   while (!fs.existsSync(pidFile) && Date.now() < registrationEnd) await new Promise(resolve => setTimeout(resolve, 25));
   assert(fs.existsSync(pidFile), "owned-pid-registration-unknown");
   const pid = Number(fs.readFileSync(pidFile, "utf8")); assert(Number.isSafeInteger(pid) && pid > 1); observedPID = pid;
-  const grouped = backup || ["prepare", "run", "setup", "audit", "signal-proof", "eu-component"].includes(action);
+  const grouped = backup || restore || ["prepare", "run", "setup", "audit", "signal-proof", "eu-component"].includes(action);
   function members() {
     const out = [];
     phase = "proc-list";
@@ -59,7 +61,7 @@ async function stop(base, action, database, registration = "active", scope = "le
   if (!members().length) { record({ status: "OWNED_PROCESS_ALREADY_EXITED" }); return; }
   const identityFile = `${state}/${action}.node.SAFE.json`;
   const readyEnd = Date.now() + 2000;
-  if (backup || ["prepare", "run", "signal-proof", "eu-component"].includes(action)) {
+  if (backup || restore || ["prepare", "run", "signal-proof", "eu-component"].includes(action)) {
     while (members().length && !fs.existsSync(identityFile) && Date.now() < readyEnd) await new Promise(resolve => setTimeout(resolve, 25));
     if (!members().length) { record({ status: "OWNED_PROCESS_EXIT_CONFIRMED_BEFORE_READY" }); return; }
     assert(fs.existsSync(identityFile), "inner-handler-registration-unknown");

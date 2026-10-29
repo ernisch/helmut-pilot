@@ -1,4 +1,4 @@
-"""Use the existing stage supervisor for four explicit End500 backup actions.
+"""Use the existing stage supervisor for fixed End500 backup or restore actions.
 
 No action on import. The original Full500 supervisor is unchanged. The caller
 connects first_failure only for these actions; all other stages retain their
@@ -14,6 +14,7 @@ import subprocess
 import threading
 
 ACTIONS = ('backup-before', 'backup-dump', 'backup-roles', 'backup-after')
+RESTORE_ACTIONS = ('restore-create', 'restore-roles', 'restore-render', 'restore-apply', 'restore-check')
 
 
 class OwnedBackupError(RuntimeError):
@@ -26,7 +27,8 @@ def require(value):
 
 
 class OwnedBackupRunner:
-    def __init__(self, supervisor, controller, *, base, container, database):
+    def __init__(self, supervisor, controller, *, base, container, database, scope='end500-backup'):
+        require(scope in ('end500-backup', 'end500-restore'))
         require(base == '/tmp/w15-memory-atomic-20261028d'
                 and database == 'helmut_w15_memory_atomic_20261028d'
                 and re.fullmatch(r'w15-end500-[1-9][0-9]{4,19}-[a-f0-9]{32}', container))
@@ -35,11 +37,17 @@ class OwnedBackupRunner:
                 and controller.DOCKER == ['docker', '--host=unix:///var/run/docker.sock'])
         self.watch, self.controller = supervisor, controller
         self.base, self.container, self.database = base, container, database
+        self.scope = scope
+        self.actions = ACTIONS if scope == 'end500-backup' else RESTORE_ACTIONS
+        self.failure_reason = ('end500-owned-backup-stage-failed' if scope == 'end500-backup'
+                               else 'end500-owned-restore-stage-failed')
+        self.stop_reason = ('owned-backup-stop-unconfirmed' if scope == 'end500-backup'
+                            else 'owned-restore-stop-unconfirmed')
         self.started, self.stops = set(), {}
         self.lock = threading.Lock()
 
     def stop_once(self, action):
-        require(action in ACTIONS and action in self.started)
+        require(action in self.actions and action in self.started)
         with self.lock:
             record = self.stops.get(action)
             first = record is None
@@ -50,7 +58,7 @@ class OwnedBackupRunner:
             try:
                 self.controller.docker('exec', '--user', '1000:1000', self.container,
                     self.base + '/node', self.base + '/app/scripts/fixtures/w15-owned-process-stop.js',
-                    self.base, action, self.database, 'active', 'end500-backup', timeout=35)
+                    self.base, action, self.database, 'active', self.scope, timeout=35)
                 record['confirmed'] = True
             except BaseException:
                 record['confirmed'] = False
@@ -61,13 +69,13 @@ class OwnedBackupRunner:
         require(record['confirmed'])
 
     def first_failure(self, error):
-        """Called only while an explicitly owned backup stage is current."""
+        """Called only while an action from this runner's fixed scope is current."""
         w = self.watch
-        require(w.stage_name in ACTIONS)
+        require(w.stage_name in self.actions)
         with w.failure_lock:
             first = w.failure is None
             w.failure = w.failure or {'type': type(error).__name__,
-                                     'reason': 'end500-owned-backup-stage-failed'}
+                                     'reason': self.failure_reason}
             process, action = w.process, w.stage_name
             dispatch = process is not None and process.poll() is None and not w.stop_dispatched
             if dispatch:
@@ -78,7 +86,7 @@ class OwnedBackupRunner:
                     self.stop_once(action)
                 except BaseException:
                     w.stop_failure = {'type': 'OwnedBackupError',
-                                      'reason': 'owned-backup-stop-unconfirmed',
+                                      'reason': self.stop_reason,
                                       'innerStopConfirmed': False}
                     try:
                         self.controller.save('INNER_STOP_UNKNOWN.SAFE.json', w.stop_failure)
@@ -103,7 +111,7 @@ class OwnedBackupRunner:
 
     def run_owned(self, argv, action, seconds):
         w = self.watch
-        require(action in ACTIONS and action not in self.started
+        require(action in self.actions and action not in self.started
                 and type(seconds) is int and 10 < seconds <= 600
                 and type(argv) is list and len(argv) == 9
                 and argv[:8] == self.controller.DOCKER + ['exec', '--user', '1000:1000',
@@ -123,12 +131,12 @@ class OwnedBackupRunner:
             # A departed Docker client is not evidence that its inner exited.
             with w.failure_lock:
                 w.failure = w.failure or {'type': type(error).__name__,
-                                         'reason': 'end500-owned-backup-stage-failed'}
+                                         'reason': self.failure_reason}
             try:
                 self.stop_once(action)
             except BaseException:
                 w.stop_failure = w.stop_failure or {'type': 'OwnedBackupError',
-                    'reason': 'owned-backup-stop-unconfirmed', 'innerStopConfirmed': False}
+                    'reason': self.stop_reason, 'innerStopConfirmed': False}
             raise OwnedBackupError('OWNED_BACKUP_STAGE_FAILED_OR_UNKNOWN') from None
         finally:
             w.closure_mode = previous

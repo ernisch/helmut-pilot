@@ -181,7 +181,12 @@ def download(root, urls, expires, pins):
     return root / 'source-cipher.PRIVATE.gpg'
 
 
-def receive_existing(commit, runner_temp):
+def _receive_existing_verified(commit, runner_temp):
+    """Internal same-process handoff; never expose this private path in output.
+
+    The received tree remains available to a later, separately authorized local
+    consumer in this job. No path is returned until the owned GPG agent closes.
+    """
     phase('source-binding'); binding = source_binding(commit); pins = projection()
     phase('private-inputs')
     armored_index = os.environ.pop(INDEX_NAME, None)
@@ -225,13 +230,20 @@ def receive_existing(commit, runner_temp):
         except BaseException: failure = failure or 'agent-close'
     if failure:
         phase(failure); raise ValueError('EXISTING_INPUT_RECEPTION_REJECTED')
-    return {'status': 'PASS_EXISTING12_RECEIVED_AND_RELOCATED_ONLY_START_BLOCKED', **binding,
+    summary = {'status': 'PASS_EXISTING12_RECEIVED_AND_RELOCATED_ONLY_START_BLOCKED', **binding,
             'indexHandoff': 'GPG_WORKFLOW_INPUT_NO_SECRET_WRITE', 'workflowPayloadChars': input_chars,
             'verifiedFiles': 12, 'verifiedBytes': 242570240, 'cipherSHA256': CIPHER_SHA,
             'sealedManifestSHA256': SEALED_SHA, 'inputManifestSHA': SOURCE['inputManifestSHA'],
             'relocationVerified': True, 'fullRestoreAccepted': False, 'databaseStarted': False,
             'commonLifetimeMemoryAccepted': False, 'end500Acceptance': False, 'mock500Acceptance': False,
             'controllerStarted': False, 'executionAuthority': False, 'readiness': 'BLOCKED'}
+    return root / 'received', summary
+
+
+def receive_existing(commit, runner_temp):
+    """Public receipt-only wrapper; private same-job paths never reach stdout."""
+    _, summary = _receive_existing_verified(commit, runner_temp)
+    return summary
 
 
 def main(argv=None):

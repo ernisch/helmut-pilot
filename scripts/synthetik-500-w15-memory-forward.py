@@ -38,7 +38,7 @@ audit_spec=importlib.util.spec_from_file_location('w15_final_native_audit',ROOT/
 AUDIT=importlib.util.module_from_spec(audit_spec);audit_spec.loader.exec_module(AUDIT)
 
 def _runtime_module(component='runtime_inputs'):
-    assert component in ['runtime_inputs','runtime_backup','runtime_owned_backup','common_resources','runtime_materialization']
+    assert component in ['runtime_inputs','runtime_backup','runtime_owned_backup','common_resources','runtime_materialization','runtime_cache','runtime_restore']
     name='w15_github_'+component
     if name not in sys.modules:
         spec=importlib.util.spec_from_file_location(name,ROOT/'scripts/w15-github'/(component+'.py'))
@@ -140,7 +140,7 @@ class Watch(M.Supervisor):
         self.initial_disk_free=available_disk()
         super().__init__(cgroup)
     def first_failure(self,error):
-        if self.backup_runner is not None and self.stage_name in _runtime_module('runtime_owned_backup').ACTIONS:
+        if self.backup_runner is not None and self.stage_name in self.backup_runner.actions:
             return self.backup_runner.first_failure(error)
         return super().first_failure(error)
     def write_progress(self):
@@ -242,9 +242,10 @@ def pin(pin,inputs=None):
 def inner(w,action,seconds):
     command='umask 077; echo $$ >'+BASE+'/state/'+action+'.pid; exec timeout --signal=TERM --kill-after=5s '+str(seconds-10)+'s env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --max-old-space-size='+str(BUDGET['nodeOldSpaceMiB'])+' --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/synthetik-500-w15-memory-forward.js '+action
     w.stage(M.DOCKER+['exec','--user','1000:1000',CONTAINER,'sh','-c',command],action,seconds)
-def main(inputs=None,common_resources=None):
+def _checked_prepared(inputs=None,common_resources=None):
+    """Share the existing prepared-file admission with the bounded restore path."""
     inputs=_checked_runtime_inputs(inputs)
-    common_resources=_checked_common_resources(inputs,common_resources)
+    _checked_common_resources(inputs,common_resources)
     prepared=json.loads((PREP/'PREPARED.SAFE.json').read_text())
     assert prepared['status']=='PASS_LOCAL_FILES_PREPARED_NO_DATABASE'
     assert available_disk()>=PLANNED_TOTAL-prepared['appAllocatedBytes'],'w15-insufficient-start-disk'
@@ -252,6 +253,22 @@ def main(inputs=None,common_resources=None):
         path=PREP/p['path'];assert path.is_file()and not path.is_symlink()
         assert path.stat().st_size==p['bytes']and digest_file(path)==p['sha256'],'w15-prepared-app-drift'
     for n in STAGED_SCRIPTS:assert (ROOT/'scripts'/n).read_bytes()==(PREP/'app/scripts'/n).read_bytes(),'w15-prepared-script-drift'
+    return prepared
+
+def _restore_database(inputs,w):
+    """The shared restore boundary ends before seed, native postimages and CAS."""
+    restore=_runtime_module('runtime_restore')
+    if inputs is None:return restore.restore_legacy(M)
+    previous=w.backup_runner
+    w.backup_runner=_runtime_module('runtime_owned_backup').OwnedBackupRunner(
+      w,M,base=BASE,container=CONTAINER,database=DB,scope='end500-restore')
+    try:return restore.restore_owned(M,w,run_owned=w.backup_runner.run_owned)
+    finally:w.backup_runner=previous
+
+def main(inputs=None,common_resources=None):
+    inputs=_checked_runtime_inputs(inputs)
+    common_resources=_checked_common_resources(inputs,common_resources)
+    prepared=_checked_prepared(inputs,common_resources)
     journal_review=inputs.report('JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json')if inputs else json.loads((REPORTS/'JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json').read_text())
     assert journal_review['status']=='PASS_INDEPENDENT_BOUNDED_JOURNAL_DRAIN_AND_FOUR_FAULTS'
     for p in journal_review['actualSourcePins']:
@@ -375,14 +392,7 @@ def main(inputs=None,common_resources=None):
             # The host copies already belong to UID1000; readonly mounts must
             # not be recursively chowned/chmodded by an out-of-parent daemon.
             M.docker('exec',CONTAINER,'chown','1000:1000',BASE)
-        M.sql('create database '+DB+';',database='postgres')
-        M.docker('exec',CONTAINER,'psql','-X','-w','-q','-v','ON_ERROR_STOP=1','-U','postgres','-d',DB,'-f',BASE+'/roles.PRIVATE.sql')
-        M.docker('exec',CONTAINER,'pg_restore','--exit-on-error','--file='+BASE+'/restore.PRIVATE.sql',BASE+'/input.PRIVATE.dump')
-        M.docker('exec',CONTAINER,'psql','-X','-w','-q','-v','ON_ERROR_STOP=1','--single-transaction','-U','postgres','-d',DB,
-          '-f',BASE+'/restore.PRIVATE.sql','-c','update public.mandate_profiles set aktiv=false where aktiv;')
-        restored=M.read("select jsonb_build_object('profiles',count(*),'active',count(*)filter(where aktiv))from public.mandate_profiles;",database=DB)
-        assert restored=={'profiles':500,'active':0},'w15-forward-restored500-zero'
-        M.save('RESTORED500_ZERO.SAFE.json',restored)
+        _restore_database(inputs,w)
         # Seed all retained500-end positions in native tables, one bounded row
         # per statement. No fake execution/quality claims or source mutation.
         row_ids={}
