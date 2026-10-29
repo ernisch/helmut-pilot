@@ -15,6 +15,7 @@ ausschließlich aktueller Projektstatus neu aufgesetzt.
 
 | Datei | Inhalt |
 |---|---|
+| [`project_state/2026_10_29_4c28cd65_CURRENT_STATE_vor_w15_verdichtung.md`](project_state/2026_10_29_4c28cd65_CURRENT_STATE_vor_w15_verdichtung.md) | Bytegleicher PR975-Stand`4c28cd65` vor der notwendigen W15-Statusverdichtung; behebt die harte Dokumentgrößenschranke ohne Verlust alter Befunde. |
 | [`project_state/2026_10_29_CURRENT_STATE_vor_kanal_und_parentnachweis.md`](project_state/2026_10_29_CURRENT_STATE_vor_kanal_und_parentnachweis.md) | Bytegleicher PR975-Stand`51f03287` vor dem neuen Kanal-/Parentnachweis. Historische W15-D-Fehler, Messwerte und Recoverybefunde unverändert erhalten; keine neue Laufabnahme. |
 | [`project_state/2026_10_28_historischer_Deployment_und_RO_Beleg_20261012.md`](project_state/2026_10_28_historischer_Deployment_und_RO_Beleg_20261012.md) | Die beiden historischen Deployment-/RO-Abschnitte vom12.10. wortgleich aus CURRENT_STATE übernommen; SHA256 `72622750e75961613b0ce7f7d37ad6cba61c30a5dabf45ed0aafd5233ae55d51`. Keine neue Production-Prüfung. |
 | [`project_state/2026_10_08_CURRENT_STATE_vor_blocker2_kandidatenschranke.md`](project_state/2026_10_08_CURRENT_STATE_vor_blocker2_kandidatenschranke.md) | Bytegleicher `main`-Stand `eaab008d` vor der Blocker2-Cockpitverdichtung; SHA256 `c53bbde6a0179b2775a854fe41e5737756c34c11d81bb3b14fcb16be68518b6a`. Alle früheren Blocker2-Stop-, Diagnose- und Quellenbilanzen unverändert erhalten. |

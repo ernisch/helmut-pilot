@@ -1,120 +1,52 @@
 # CURRENT STATE — Helmut
 
-## W15: GitHub-Kanal, Parent und Empfänger belegt; Originalempfang vorbereitet
+## W15: verschlüsselter Indexparameter vorbereitet; echter Empfang offen
 
-Neue begrenzte Betreiberfreigabe: Der zusätzliche Secretwrite entfällt.
-`w15_cipher_index` transportiert ausschließlich einen mit dem bestehenden
-7E-Empfänger GPG-verschlüsselten Index als möglicherweise öffentlichen
-Workflowparameter. Gesamte tatsächliche Parameter und komplette Dispatch-Anfrage
-werden gegen65535Zeichen geprüft; Entschlüsselung nur mit den bestehenden zwei
-Environmentsecrets, danach unveränderte15-/12-Empfangsprüfer.10 neue gezielte
-synthetische Prüfungen und unabhängiger statischer Review bestanden. Vor genau
-einer echten Übergabe: finalen Commit und Pflicht-CI bestätigen, dann erst
-kurzlebige Links erzeugen. Keine Tokenrotation, Support- oder Secretwrite-
-Voraussetzung. Tatsächlicher Empfang noch offen; keine End500-Startfreigabe.
-[Aktueller enger Kanal und Rückweg](betrieb/w15-github-indexparameter-20261029.md).
-Die nachfolgenden403-/Secretwrite-Befunde sind die erhaltene Vorgeschichte.
+Aktueller enger Betreiberauftrag vom29.10.2026: vorhandene15Cipherteile einmal
+im bestehenden GitHub-Empfänger empfangen, zwölf Originaldateien vollständig
+prüfen. Kein neuer Sourceexport, keine neuen Schlüssel, Ressourcen oder
+Modellkosten. Kein End500/Mock500, Merge, Deployment oder Production-Eingriff.
 
-Frische Cloud-Metadaten vom29.10.2026 binden den bereits lokal bestandenen
-Canary an eine **normale Laufzeitvariable**, nicht an eine nachgewiesene
-geschützte lokale Secretdatei. Beobachtungen aktuell, Revision1; vorhandene
-Secretziele sind API-/Domainbindungen. Betreiber meldet den Bereitstellungstyp
-im Dialog als nicht erkennbar. Lokale Cloud-Schlüsselbereitstellung bleibt
-unbewiesen; der vorhandene GitHub-Environment-Weg wurde stattdessen konkret
-geprüft. Kein echter Schlüssel hier empfangen, kein neuer Schlüssel oder Thread.
-[Kanalbefund und konkrete manuelle Grenze](betrieb/w15-empfaenger-uebergabekanal-20261029.md).
+Der zusätzliche Secretwrite entfällt vollständig. Der manuelle bestehende Modus
+`end500-receive-inputs` erhält nur `w15_cipher_index`: GPG-Ciphertext für den
+bestehenden7E-Empfänger. Komplette tatsächliche Dispatch-Anfrage≤65535Zeichen;
+Entschlüsselung nur mit den beiden bestehenden Environmentsecrets. Branch,
+Commit, Versuch1, tatsächliches Event und neuer Modul-/Workflowcode sind gebunden.
+Danach bleiben Linkablauf,15Teilpins und alle zwölf Originalpins unverändert.
+10 neue gezielte synthetische Prüfungen und unabhängiger statischer ReviewPASS.
+**Nächster Schritt:** finale Pflicht-CI bestätigen, erst unmittelbar danach die
+kurzlebigen Links erzeugen und genau einmal übertragen/empfangen. Start allein
+ist kein Erfolg. [Kanal, Freigabe und Rückweg](betrieb/w15-github-indexparameter-20261029.md).
 
-GitHub-Environment `helmut-ci-originals` nach manueller Betreiberänderung neu
-lesend geprüft: Adminbypass jetzt aus; ausschließlich der aktuelle PR975-Branch
-ist als typisierte Branchpolicy zugelassen, keine Tags. Required reviewers und
-Selbstfreigabesperre sind nicht eingerichtet und laut neuer Betreibersteuerung
-für die Soloentwicklung zurückgestellt. Keine pauschale Pflicht einer zweiten
-Person. Technische unabhängige Codeabnahme, tatsächlicher Environment-Scope,
-manueller exakt gebundener Job und begrenzter Datenumfang bleiben nötig;
-Metadaten allein sind keine private Übergabefreigabe. Kein erneuter
-Secrets-API-Zugriff nach dem bekannten403.
-[Befund, Prüfer und Adminschritte](betrieb/w15-github-datenzugang-20261029.md).
+Bereits tatsächlich erfolgreich und nicht wiederholt: gemeinsame
+[Parentprobe40847487765](https://github.com/ernisch/helmut-pilot/actions/runs/40847487765),
+[öffentlicher Kanalcheck40848206475](https://github.com/ernisch/helmut-pilot/actions/runs/40848206475)
+und [Empfängerkontrolle40855525798](https://github.com/ernisch/helmut-pilot/actions/runs/40855525798).
+Die bestehende öffentliche7E-Schlüsseldatei ist fingerprint-/hashgeprüft;
+Archivpassphrase und DCF bleiben offline. Environment`helmut-ci-originals`:
+Adminbypass aus, nur PR975-Branch, keine Tags; menschliche Reviewer laut Soloauftrag
+zurückgestellt. Geschützter lokaler Cloud-Dateikanal bleibt unbewiesen und ist
+hier nicht erforderlich. [Empfängerumfang](betrieb/w15-github-empfaengerpruefung-20261029.md).
 
-Unabhängig vorbereitet: eng begrenzter manueller CI-Modus
-`end500-parent-probe` für neue gemeinsame Slice, root-Supervisor,
-UID/GID1000-Worker samt expliziter Docker-Ergänzungsgruppe und festes
-Container-Schlafkind. Keine Datenbank/App/Controller/Originale/Auth-Aufrufe.
-Exakter Commit, Branch und Versuch1 sind Pflicht. Neue synthetische
-Adaptergrenzen geprüft. Nach zwei erhaltenen Pfad-Reexec-Fehlern
-(`WORKER_SOURCE_UNAVAILABLE`) wurde der Startweg auf root-geprüften Speichercode
-via Fork umgestellt, ohne Home-/Repository-Rechteänderung. Echter
-[Runnerlauf40847487765](https://github.com/ernisch/helmut-pilot/actions/runs/40847487765)
-auf`6a2a439c` erfolgreich: gleiche Parent-Inode bis Ende aller Kinder,
-abschließender Kernelpeak33669120Bytes, Swap/OOM/max0. Ausschließlich
-Topologieprobe; kein vollständiger Lebenszeit-RAM-/Restorebeleg. Der
-öffentliche Planmodus bleibt ohne Secrets/Environment.
-[Umfang und Grenzen der Parentprobe](betrieb/w15-github-runner-parent-20261029.md).
+Unabhängig vorbereitet: App/Binärdateien/Rollen/Dump im gemeinsamen Parent auf
+neue Dateien kopieren und lesend einbinden. Echte Mount-Readbacks vor Restore;
+kein daemonseitiges`docker cp` mehr für diese Daten.11 neue gezielte Prüfungen
+und unabhängiger statischer ReviewPASS. PREP-Backupwalk passt, standalone
+Full500-Controller bytegleich. Zusätzliche Kopien müssen im frischen Plattenplan
+mitgerechnet werden. [Datei-Anschluss](betrieb/w15-github-runner-parent-20261029.md).
 
-Environment-Secret-Scope vom Betreiber bestätigt; separater
-[Canarylauf40848206475](https://github.com/ernisch/helmut-pilot/actions/runs/40848206475)
-auf`6a2a439c` erfolgreich. Zusammengesetzter Nachweis aus aktueller technischer
-Metadatenprüfung, ausdrücklich bestätigtem Environment-Secret und tatsächlicher
-Job-/Branch-/Commit-/Versuch1-Bindung. Keine echten Geheimnisse/Originale;
-kein weiterer Cloud-Dateikanal oder Dienst. Dieser öffentliche Beleg ersetzt
-keine tatsächliche Schlüsselkontrolle.
+**End500-Start BLOCKED:** echter Originalempfang, vollständige tatsächliche
+PG/PostgREST/Node-/Controlleranbindung, Lebenszeit-RAM-/Dateicachezurechnung,
+frischer Platten-/Startplan und vollständiger Restore-/Rücksicherungsbeleg fehlen.
+Aktiver Vertrag: gemeinsamer Parent/Container2560000000Bytes, Peak≤2048000000,
+Reserve512000000Bytes, Swap0; Auth30/Unit60/Provider20 und Integrität unverändert.
+Keine Komponentennachweise als Gesamtabnahme ausgeben.
+[RAM-Vertrag](betrieb/w15-end500-ram-vertrag-20261028.md).
 
-Betreiber hat den Offline-Browserweg auf dem Mac ausgeführt und beide bestehenden
-Empfängerwerte als Environment-Secrets bestätigt. Echte
-[Empfängerkontrolle40855525798](https://github.com/ernisch/helmut-pilot/actions/runs/40855525798)
-auf`837b993a`, Versuch1, erfolgreich: vorhandener7E-Primary, Import und
-Entschlüsselung eines festen öffentlichen Kontrolltexts. Archivpassphrase/DCF
-bleiben offline; kein neuer Schlüssel, keine tatsächlichen Geheimwerte hier
-empfangen. Neue Pflicht-CI40853841698 auf demselben Kopf vollständig grün.
-[Prüfschritt und enger Übergabeumfang](betrieb/w15-github-empfaengerpruefung-20261029.md).
-
-Nächster begrenzter Schritt:`end500-receive-inputs` verbindet ausschließlich die
-bestehenden15Cipherteile mit unveränderten Empfangs-/Relokationsprüfern. Alter
-versiegelter Sourcekontext und neuer Actionslauf bleiben getrennt. Sieben neue
-Fake-HTTP/GPG-Testgruppen und unabhängiger statischer Review bestanden; noch kein
-echter Originalempfang in diesem neuen Job. Tatsächliche Connectorlinks gelten
-nur ungefähr5min; deshalb wurde kein manueller Index ausgegeben. Für den
-zuverlässigen sofortigen Write/Dispatch des ausschließlich neuen Secrets
-`HELMUT_W15_CIPHER_URL_INDEX` bleibt der bestehende CI-Admin-Zugang blockiert.
-Betreiber bestätigt einen feingranularen Token mit `Environments: Read and write`.
-Genau eine beauftragte Gegenprobe mit ausdrücklich ersetztem `GH_TOKEN` aus
-`HELMUT_GITHUB_CI_ADMIN_TOKEN` ergibt weiterhin403 am Environment-Public-Key;
-derselbe Zugang meldet Konto`ernisch`. Der geerbte andere `GH_TOKEN` und
-gespeicherte CLI-Anmeldungen sind als Ursache dieser Probe ausgeschlossen;
-auch die vorherige Python-Anfrage verwendete bereits die HELMUT-Bindung.
-Die Übereinstimmung der effektiven Laufzeitberechtigung mit dem in GitHub
-bearbeiteten Token bleibt unbewiesen. Keine erneute identische Probe,
-keine URL-Veröffentlichung,
-Sharingänderung, neue Quelle oder erneuter Quelltransfer. Vorhandene
-Empfängersecrets bleiben unverändert.
-[Konkreter Datenanschluss und Grenzen](betrieb/w15-github-originalempfang-20261029.md).
-[Geheimwertfreier gebundener403-Befund](betrieb/belege/w15-end500-transfer-20261029/GITHUB_TOKEN_BOUND_PROBE.SAFE.json).
-
-Unabhängig vom Zugangsblocker vorbereitet: Der explizite GitHub-Controllerpfad
-materialisiert App/Binärdateien/Rollen/Dump im gemeinsamen Parent und bindet sie
-lesend ein. Echte Mount-Readbacks sind vor Restore Pflicht; kein daemonseitiges
-`docker cp` für diese Dateien mehr.11 neue gezielte Prüfungen und unabhängiger
-statischer Review bestanden. Bestehender PREP-Backupwalk bleibt kompatibel;
-zusätzliche Kopien brauchen den noch offenen frischen Plattenplan. Standalone
-Full500-Controller bytegleich. Kein tatsächlicher Runner-/Restorebeleg daraus.
-[Begrenzter Datei-Anschluss](betrieb/w15-github-runner-parent-20261029.md#unabhängig-vorbereiteter-datei-anschluss).
-
-**End500-Start weiterhin BLOCKED:** tatsächlicher Originaldatenzugang,
-tatsächliche vollständige PG/PostgREST/Node-/Controlleranbindung einschließlich
-Docker-Writer-/Dateicachezurechnung, frische Ressourcen-/Startbindungen und
-vollständiger realer Restore-/Rücksicherungsbeleg fehlen. Keine alten
-Komponentennachweise als Gesamtabnahme umetikettieren. Vollständiger
-End500-/Mock500-Test, Merge, Deployment und Production bleiben gesperrt.
-
-Aktiver Vertrag unverändert: gemeinsamer Parent/Container2560000000Bytes,
-Lebenszeitpeak höchstens2048000000Bytes, Reserve512000000Bytes, Swap0;
-Auth30/Unit60/Provider20 und vollständige Integrität. Die kleine Parentprobe
-ersetzt diese vollständige Laufabnahme nicht. Keine RAM-Optimierung oder
-Vercel-Umstellung. [RAM-Vertrag](betrieb/w15-end500-ram-vertrag-20261028.md).
-
-Der vollständige datierte Stand vor dem Kanal-/Parentnachweis bleibt
-[bytegleich archiviert](archive/project_state/2026_10_29_CURRENT_STATE_vor_kanal_und_parentnachweis.md).
-Historische W15-D-Fehler und frühere Messwerte stehen unverändert dort und im
-[W15-Dossier](betrieb/w15-atomic-usage-integration-20261028.md).
+Historische403-/Proxy-/Secretwritebefunde sind keine Voraussetzung des neuen
+Kanals. Keine Rotation, Supportanfrage oder erneute403-Probe. Historie einschließlich
+alter Fehlmessungen, CI und Quellenbefunden bleibt
+[bytegleich archiviert](archive/project_state/2026_10_29_4c28cd65_CURRENT_STATE_vor_w15_verdichtung.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten.
 
