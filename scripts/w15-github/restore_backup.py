@@ -78,10 +78,21 @@ select jsonb_build_object('database',current_database(),
 rollback;"""
 _json, _pin, _sample, _write, _lifecycle = R._json, R._pin, R._sample, R._write, R._lifecycle
 FINGERPRINT = '7E3998A6C2CB948C69A2EE51F4267ABF26796EDC'
+BACKUP_PHASES = frozenset(('backup-export', 'backup-freeze', 'backup-collect', 'backup-seal',
+    'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'))
 
 
 class BackupRuntimeError(RuntimeError):
-    pass
+    def __init__(self, code='RESTORE_BACKUP_REJECTED', *, phase=None):
+        self.phase = phase if type(phase) is str and phase in BACKUP_PHASES else None
+        super().__init__(code)
+
+
+def _checkpoint_error(error, checkpoint):
+    """Keep only a known nested checkpoint, never its text or other attributes."""
+    if type(error) is BackupRuntimeError and type(error.phase) is str and error.phase in BACKUP_PHASES:
+        checkpoint = error.phase
+    return BackupRuntimeError(phase=checkpoint)
 
 
 def require(value, code='RESTORE_BACKUP_REJECTED'):
@@ -753,78 +764,85 @@ def completion_hook(manifest, private_payload, disk_guard):
     used = False
     def complete(*, forward, inputs, resources, collection, sealed, cipher):
         nonlocal used
-        require(not used, 'BACKUP_COMPLETION_REUSE_REJECTED')
-        used = True
-        disk_guard()
-        inputs.check_sources()
-        context = inputs.backup_context()
-        _context(context)
-        require(context['exactCommit'] == manifest['exactCommit']
-                and context['runId'] == manifest['runId'] and context['runAttempt'] == 1)
-        require(sealed['exactCommit'] == context['exactCommit'] and sealed['runId'] == context['runId']
-                and sealed['runAttempt'] == 1 and sealed['recipientFingerprint'] == FINGERPRINT
-                and sealed['inputManifestSHA'] == context['inputManifestSHA']
-                and sealed['manifestSHA256'] == collection['manifestSHA256'])
-        require(type(sealed['cipherBytes']) is int and 0 < sealed['cipherBytes'] <= Q.MAX_CIPHER_BYTES
-                and collection['selectedPlaintextBytes'] <= Q.MAX_SELECTION_BYTES,
-                'BACKUP_ACTUAL_SIZE_EXCEEDS_REVIEWED_BUDGET')
-        # Published $0.25/GB/month, charged with a 28-day month and one extra
-        # hour of rounding. No free artifact allowance is assumed.
-        from decimal import Decimal
-        price_bound = (Decimal(sealed['cipherBytes']) / Decimal(10**9)
-                       * Decimal('0.25') * Decimal(25) / Decimal(28 * 24))
-        require(price_bound <= Decimal('0.05'), 'BACKUP_STORAGE_PRICE_CEILING')
-        backup_root = Path(manifest['backupRoot'])
-        backup_fd = S._directory(str(backup_root), private=True)
-        os.close(backup_fd)
-        transport = _load('artifact_transport')
-        node = Path(manifest['binaries']['node']['path'])
-        node_pin = _source_pin(node, False, disk_guard)
-        expected_node = inputs.controller_context()['runtimePins']['node']
-        require(all(node_pin[k] == expected_node[k] == manifest['binaries']['node'][k]
-                    for k in ('bytes', 'sha256')), 'BACKUP_TRANSPORT_NODE_PIN_MISMATCH')
-        returned = transport.roundtrip(Path(cipher), destination=backup_root / 'remote',
-            node=node,
-            credentials=private_payload['artifactCredentials'], guard=disk_guard)
-        require(returned['remoteReadbackObserved'] is True
-                and type(returned['artifactId']) is int and returned['artifactId'] > 0
-                and all(returned[k] == sealed[k] for k in ('cipherBytes', 'cipherSHA256')))
-        # Received original inputs remain in a sibling tree of the existing
-        # key home. No new key import, token, key system or retrieval is needed.
-        received = Path(inputs.path('auth')).parent.parent
-        receive_root = received.parent
-        verified = backup_root / 'authenticated'
-        readback = authenticated_readback(returned['cipher'], cipher_bytes=sealed['cipherBytes'],
-            cipher_sha256=sealed['cipherSHA256'], expected_manifest=collection['manifest'],
-            expected_manifest_sha256=collection['manifestSHA256'], context=context,
-            destination=str(verified), private_home=str(receive_root / 'gnupg'),
-            passphrase_file=str(receive_root / 'receiver-passphrase.PRIVATE'), guard=disk_guard)
-        recovery = restore_readback(verified, context=context,
-            controller_context=inputs.controller_context(), resources=resources,
-            expected_manifest=collection['manifest'], expected_manifest_sha256=collection['manifestSHA256'],
-            rollback_root=manifest['rollbackRoot'], guard=disk_guard)
-        inputs.check_sources()
-        for path in inputs.backup_input_files().values():
-            require(Path(path).is_file())
-        final = disk_guard()
-        receipt = {'schema': 'helmut-w15-backup-return-completion/1',
-            'status': 'PASS_ENCRYPTED_OFFHOST_AUTHENTICATED_READBACK_AND_FRESH_500_ZERO_RESTORE',
-            'cipherBytes': sealed['cipherBytes'], 'cipherSHA256': sealed['cipherSHA256'],
-            'artifactId': returned['artifactId'], 'artifactRetentionDays': 1,
-            'publishedStorageUSDPerGBMonth': '0.25',
-            'maximumStorageUSD': '0.05', 'actualSizeStorageUSDBound': str(price_bound),
-            'remoteReadbackObserved': True, 'databaseRestoreObserved': True,
-            'authenticatedReadback': readback, 'independentRecovery': recovery,
-            'finalResourceSample': final, 'acceptedAsCompleteBackup': False,
-            'independentAcceptanceRequired': True, 'end500Acceptance': False,
-            'mock500Acceptance': False, 'productionAcceptance': False,
-            'executionAuthority': False, 'retryAllowed': False}
-        receipt_fd = S._directory(str(backup_root), private=True)
+        phase = 'backup-transport'
         try:
-            _write(receipt_fd, 'BACKUP_RETURN.SAFE.json', (json.dumps(receipt, sort_keys=True) + '\n').encode())
-        finally:
-            os.close(receipt_fd)
-        return receipt
+            require(not used, 'BACKUP_COMPLETION_REUSE_REJECTED')
+            used = True
+            disk_guard()
+            inputs.check_sources()
+            context = inputs.backup_context()
+            _context(context)
+            require(context['exactCommit'] == manifest['exactCommit']
+                    and context['runId'] == manifest['runId'] and context['runAttempt'] == 1)
+            require(sealed['exactCommit'] == context['exactCommit'] and sealed['runId'] == context['runId']
+                    and sealed['runAttempt'] == 1 and sealed['recipientFingerprint'] == FINGERPRINT
+                    and sealed['inputManifestSHA'] == context['inputManifestSHA']
+                    and sealed['manifestSHA256'] == collection['manifestSHA256'])
+            require(type(sealed['cipherBytes']) is int and 0 < sealed['cipherBytes'] <= Q.MAX_CIPHER_BYTES
+                    and collection['selectedPlaintextBytes'] <= Q.MAX_SELECTION_BYTES,
+                    'BACKUP_ACTUAL_SIZE_EXCEEDS_REVIEWED_BUDGET')
+            # Published $0.25/GB/month, charged with a 28-day month and one extra
+            # hour of rounding. No free artifact allowance is assumed.
+            from decimal import Decimal
+            price_bound = (Decimal(sealed['cipherBytes']) / Decimal(10**9)
+                           * Decimal('0.25') * Decimal(25) / Decimal(28 * 24))
+            require(price_bound <= Decimal('0.05'), 'BACKUP_STORAGE_PRICE_CEILING')
+            backup_root = Path(manifest['backupRoot'])
+            backup_fd = S._directory(str(backup_root), private=True)
+            os.close(backup_fd)
+            transport = _load('artifact_transport')
+            node = Path(manifest['binaries']['node']['path'])
+            node_pin = _source_pin(node, False, disk_guard)
+            expected_node = inputs.controller_context()['runtimePins']['node']
+            require(all(node_pin[k] == expected_node[k] == manifest['binaries']['node'][k]
+                        for k in ('bytes', 'sha256')), 'BACKUP_TRANSPORT_NODE_PIN_MISMATCH')
+            returned = transport.roundtrip(Path(cipher), destination=backup_root / 'remote',
+                node=node,
+                credentials=private_payload['artifactCredentials'], guard=disk_guard)
+            require(returned['remoteReadbackObserved'] is True
+                    and type(returned['artifactId']) is int and returned['artifactId'] > 0
+                    and all(returned[k] == sealed[k] for k in ('cipherBytes', 'cipherSHA256')))
+            phase = 'backup-authenticate'
+            # Received original inputs remain in a sibling tree of the existing
+            # key home. No new key import, token, key system or retrieval is needed.
+            received = Path(inputs.path('auth')).parent.parent
+            receive_root = received.parent
+            verified = backup_root / 'authenticated'
+            readback = authenticated_readback(returned['cipher'], cipher_bytes=sealed['cipherBytes'],
+                cipher_sha256=sealed['cipherSHA256'], expected_manifest=collection['manifest'],
+                expected_manifest_sha256=collection['manifestSHA256'], context=context,
+                destination=str(verified), private_home=str(receive_root / 'gnupg'),
+                passphrase_file=str(receive_root / 'receiver-passphrase.PRIVATE'), guard=disk_guard)
+            phase = 'backup-recovery'
+            recovery = restore_readback(verified, context=context,
+                controller_context=inputs.controller_context(), resources=resources,
+                expected_manifest=collection['manifest'], expected_manifest_sha256=collection['manifestSHA256'],
+                rollback_root=manifest['rollbackRoot'], guard=disk_guard)
+            phase = 'backup-postcheck'
+            inputs.check_sources()
+            for path in inputs.backup_input_files().values():
+                require(Path(path).is_file())
+            final = disk_guard()
+            receipt = {'schema': 'helmut-w15-backup-return-completion/1',
+                'status': 'PASS_ENCRYPTED_OFFHOST_AUTHENTICATED_READBACK_AND_FRESH_500_ZERO_RESTORE',
+                'cipherBytes': sealed['cipherBytes'], 'cipherSHA256': sealed['cipherSHA256'],
+                'artifactId': returned['artifactId'], 'artifactRetentionDays': 1,
+                'publishedStorageUSDPerGBMonth': '0.25',
+                'maximumStorageUSD': '0.05', 'actualSizeStorageUSDBound': str(price_bound),
+                'remoteReadbackObserved': True, 'databaseRestoreObserved': True,
+                'authenticatedReadback': readback, 'independentRecovery': recovery,
+                'finalResourceSample': final, 'acceptedAsCompleteBackup': False,
+                'independentAcceptanceRequired': True, 'end500Acceptance': False,
+                'mock500Acceptance': False, 'productionAcceptance': False,
+                'executionAuthority': False, 'retryAllowed': False}
+            receipt_fd = S._directory(str(backup_root), private=True)
+            try:
+                _write(receipt_fd, 'BACKUP_RETURN.SAFE.json', (json.dumps(receipt, sort_keys=True) + '\n').encode())
+            finally:
+                os.close(receipt_fd)
+            return receipt
+        except (Exception, KeyboardInterrupt) as error:
+            raise _checkpoint_error(error, phase) from None
     return complete
 
 
@@ -834,44 +852,53 @@ def restore_completion_hook(manifest, private_payload, disk_guard):
     used = False
     def complete(*, forward, inputs, resources, watch, restored):
         nonlocal used
-        require(not used and restored['profiles'] == 500 and restored['active'] == 0)
-        used = True
-        disk_guard()
-        context = inputs.backup_context()
-        _bind_disk_guard(watch, disk_guard)
-        watch.backup_runner = T.O.OwnedBackupRunner(watch, forward.M, base=forward.BASE,
-            container=forward.CONTAINER, database=forward.DB, scope='end500-backup')
-        export_restore_database(context, expected_context=context, work=forward.WORK,
-            container=forward.CONTAINER, database=forward.DB, supervisor=watch,
-            run_owned=watch.backup_runner.run_owned)
-        # Freeze original private outputs before independently walking them.
-        info = json.loads(forward.M.docker('inspect', forward.CONTAINER))[0]
-        require(info['Image'] == forward.M.IMAGE and info['State']['Running'] is True
-                and re.fullmatch('[a-f0-9]{64}', info['Id']))
-        owned_id = info['Id']
-        resources.check_pid(info['State']['Pid'], owned_id)
-        require(info['HostConfig']['CgroupParent'] == resources.unit)
-        forward.M.docker('stop', '--time', '5', owned_id, timeout=12)
-        final = json.loads(forward.M.docker('inspect', owned_id))[0]
-        require(final['Id'] == owned_id and final['State']['Running'] is False
-                and final['State']['Pid'] == 0 and final['State'].get('OOMKilled') is False
-                and final['State'].get('ExitCode') == 0)
-        watch.sample()
-        watch.stop()
-        require(watch.failure is None and watch.stop_failure is None and watch.finished.is_set()
-                and not watch.thread.is_alive() and not watch.reporter.is_alive())
-        disk_guard()
-        root = Path(manifest['backupRoot'])
-        collection = collect_restore_backup(context, expected_context=context,
-            input_files=inputs.backup_input_files(), work=forward.WORK, prepared=forward.PREP,
-            provenance_files=inputs.backup_provenance_files(), destination=root / 'selection', guard=disk_guard)
-        cipher = root / 'restore-complete.PRIVATE.gpg'
-        sealed = seal_restore_backup(collection, root=root / 'selection', output=cipher,
-            public_key=forward.ROOT / 'docs/betrieb/belege/w15-end500-transfer-20261029/receiver-public.asc',
-            guard=disk_guard)
-        result = finish(forward=forward, inputs=inputs, resources=resources,
-            collection=collection, sealed=sealed, cipher=cipher)
-        return {**result, 'watchClosed': True, 'ownedContainerStopped': True}
+        phase = 'backup-export'
+        try:
+            require(not used and restored['profiles'] == 500 and restored['active'] == 0)
+            used = True
+            disk_guard()
+            context = inputs.backup_context()
+            _bind_disk_guard(watch, disk_guard)
+            watch.backup_runner = T.O.OwnedBackupRunner(watch, forward.M, base=forward.BASE,
+                container=forward.CONTAINER, database=forward.DB, scope='end500-backup')
+            export_restore_database(context, expected_context=context, work=forward.WORK,
+                container=forward.CONTAINER, database=forward.DB, supervisor=watch,
+                run_owned=watch.backup_runner.run_owned)
+            # Freeze original private outputs before independently walking them.
+            phase = 'backup-freeze'
+            info = json.loads(forward.M.docker('inspect', forward.CONTAINER))[0]
+            require(info['Image'] == forward.M.IMAGE and info['State']['Running'] is True
+                    and re.fullmatch('[a-f0-9]{64}', info['Id']))
+            owned_id = info['Id']
+            resources.check_pid(info['State']['Pid'], owned_id)
+            require(info['HostConfig']['CgroupParent'] == resources.unit)
+            forward.M.docker('stop', '--time', '5', owned_id, timeout=12)
+            final = json.loads(forward.M.docker('inspect', owned_id))[0]
+            require(final['Id'] == owned_id and final['State']['Running'] is False
+                    and final['State']['Pid'] == 0 and final['State'].get('OOMKilled') is False
+                    and final['State'].get('ExitCode') == 0)
+            watch.sample()
+            watch.stop()
+            require(watch.failure is None and watch.stop_failure is None and watch.finished.is_set()
+                    and not watch.thread.is_alive() and not watch.reporter.is_alive())
+            phase = 'backup-collect'
+            disk_guard()
+            root = Path(manifest['backupRoot'])
+            collection = collect_restore_backup(context, expected_context=context,
+                input_files=inputs.backup_input_files(), work=forward.WORK, prepared=forward.PREP,
+                provenance_files=inputs.backup_provenance_files(), destination=root / 'selection', guard=disk_guard)
+            phase = 'backup-seal'
+            cipher = root / 'restore-complete.PRIVATE.gpg'
+            sealed = seal_restore_backup(collection, root=root / 'selection', output=cipher,
+                public_key=forward.ROOT / 'docs/betrieb/belege/w15-end500-transfer-20261029/receiver-public.asc',
+                guard=disk_guard)
+            phase = 'backup-transport'
+            result = finish(forward=forward, inputs=inputs, resources=resources,
+                collection=collection, sealed=sealed, cipher=cipher)
+            phase = 'backup-postcheck'
+            return {**result, 'watchClosed': True, 'ownedContainerStopped': True}
+        except (Exception, KeyboardInterrupt) as error:
+            raise _checkpoint_error(error, phase) from None
     return complete
 
 
