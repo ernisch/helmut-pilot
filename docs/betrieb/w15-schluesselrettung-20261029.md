@@ -1,4 +1,4 @@
-# W15: vorhandene passphrasebasierte Schlüsselsicherung gefunden
+# W15: Offline-Recovery belegt, geschützter Übergabekanal offen
 
 Stand29.10.2026. Hetzner ist laut Betreiber endgültig gelöscht und ausgeschlossen.
 Es wurde keine Verbindung dorthin aufgebaut. Kein neuer Empfänger, Originaltransfer,
@@ -16,13 +16,18 @@ Die statisch geprüfte Konfiguration bindet diesen Cipher an einen privaten
 Recovery-Schlüsselexport, dessen Hash, Fingerprint
 `DCFD605ED28EEACA9B826105E769DE07A68BA8E4` und eine Kontrollnachricht mit eigenem
 Klartexthash. Eine unabhängige erfolgreiche Recovery-Kontrollprüfung ist vom
-27.10. historisch belegt. Heute wurde kein echter Schlüssel entschlüsselt.
+27.10. historisch belegt. Der neu hochgeladene1338Byte-Prüfbeleg bestätigt
+zusätzlich die erfolgreiche Offline-Wiederherstellung beim Betreiber am29.10.:
+alle fünf Checks wahr, Sicherungs-/Exporthash/Fingerprint/Challenge-ID passen.
+Die kanonische Kontrollantwort einschließlich Zeilenende stimmt mit dem zuvor
+gebundenen Klartexthash überein. In dieser Cloud wurde kein Schlüssel entschlüsselt.
+[Neue Belegprüfung](belege/w15-end500-transfer-20261029/OFFLINE_PROOF_VERIFIED.SAFE.json).
 
 Das äußere Backup ist passphrasebasiert: OpenPGP-SKESK v4, AES256, iterierter
 gesalzener SHA512-S2K und integritätsgeschütztes Datenpaket. Es benötigt zum
 Öffnen keinen weiteren privaten GPG-Schlüssel. Damit gibt es eine konkrete
-Sicherung, zu der die Bitwarden-Archivpassphrase passen kann. Ob genau die
-heute vorhandene Passphrase passt, beweist ausschließlich die Entschlüsselung.
+Sicherung, die mit der vorhandenen Bitwarden-Archivpassphrase offline erfolgreich
+entschlüsselt wurde. Der Beleg enthält keine Passphrase und keinen privaten Schlüssel.
 Ein Passwort ersetzt keinen fehlenden privaten Schlüssel; hier könnte es aber
 den bereits gesicherten Schlüssel entsperren.
 
@@ -30,29 +35,36 @@ Nach erfolgreicher Probe: DCFD605… wiederherstellen → vorhandenen3.298Byte-
 Empfängerwrapper öffnen → bisherigen7E3998…-Empfänger vollständig prüfen →
 vorhandene15 W15-Cipherteile weiterverwenden. Der alte Recovery-Schlüssel muss
 dafür weder neu erzeugt noch nach GitHub kopiert werden. Ein neuer Empfänger
-oder erneute Verschlüsselung der zwölf Originale ist vor dieser Probe unnötig.
+oder erneute Verschlüsselung der zwölf Originale ist dafür unnötig.
 Scheitert die Zuordnung und fehlt ein weiterer rettbarer Bestand, wäre erst
 dann ein neuer unabhängig rückgesicherter Empfänger und ein konkret erneut
 freizugebender Quellverschlüsselungs-/Transferauftrag vorzubereiten.
 
-## Sichere Passphrasenbereitstellung und lokale Prüfung
+## Zuerst den geschützten Übergabekanal nachweisen
 
-Der Betreiber bestätigt: Passphrase ausschließlich in Bitwarden, noch kein
-Codex-Secret. Hier ist kein Bitwarden-Zugriff eingerichtet. Das Secret kann
-in der bestehenden Codex-Umgebung unter dem Namen
-`HELMUT_W15_ARCHIVE_PASSPHRASE` hinterlegt werden. Den Wert ausschließlich im
-geschützten Secret-Eingabefeld erfassen, nicht in Chat, Shell-Befehl, Git oder
-Workflow-Eingaben. Nur den Secret-Namen beziehungsweise „hinterlegt“ zurückmelden.
+Die frühere pauschale Empfehlung, sofort ein Archivpassphrasen-Secret zu
+hinterlegen, war nicht durch einen tatsächlich nachgewiesenen lokalen Kanal
+gedeckt. Aktuell gibt es neun domaingebundene API-Secret-Anbindungen, aber keine
+belegte lokale Secretdatei oder direkte GPG-Bereitstellung. Der Betreiber hat
+eine frühere Secret-Hinterlegung nicht abgelehnt; er meldete deren Fehlen.
+Verbindlich bleibt: keine Passphrase im Chat und den Übergabeweg zuerst klären.
 
-Vor Verwendung tatsächliche Verfügbarkeit für die lokale GPG-Prüfung feststellen.
-Eine ready-Metadatenmeldung oder ein API-Proxy-Platzhalter allein reicht nicht.
-Falls der Secret-Kanal nur im Setup oder als API-Platzhalter verfügbar ist,
-bleibt die lokale Probe gesperrt; keine Umstellung auf ein öffentliches Feld.
-Alternativ unterstützt der Helfer eine bereits sicher bereitgestellte lokale
-Secretdatei mit privatem0700-Elternordner/0600-Datei, eigenem Eigentümer und ohne
-Links. Eine solche Datei ist derzeit ebenfalls nicht vorhanden.
+Vor echten Daten zunächst ausschließlich den öffentlichen Prüfwert aus dem
+[konkreten Übergabeplan](w15-empfaenger-uebergabekanal-20261029.md) verwenden.
+Konfigurationstyp und aktuelle Schutz-/Bereitschaftsmetadaten müssen zu dem
+in diesem selben Lauf beobachteten Klartext-Prüfwert passen. Ein API-Platzhalter
+oder eine normale ungeschützte Laufzeitvariable genügt nicht. Der Test selbst
+erteilt keine Schutz- oder Übermittlungsfreigabe. Keine echten Geheimnisse
+hinterlegen, solange diese Bindungen fehlen.
 
-Vorbereiteter Befehl nach tatsächlicher sicherer Verfügbarkeit:
+Die Variante mit geringstem Zugriff hält Archivpassphrase und DCF offline,
+öffnet dort nur den vorhandenen7E-Wrapper und übergibt ausschließlich dessen
+geschützten Empfängerexport samt separater Passphrase. Das bisherige Offline-
+Prüfprogramm öffnet den7E-Wrapper noch nicht; es liefert ausschließlich den
+DCF-Prüfbeleg. Der konkrete Wiederherstellungsschritt folgt nach Kanalnachweis.
+
+Vorhandener alternativer lokaler Prüfhelfer, ausschließlich nach belegtem Kanal
+und passend geklärter echter Secretbereitstellung; derzeit nicht ausführen:
 
 ```sh
 python3 -B scripts/w15-github/verify_archive_key.py --verify-archive-key-only \

@@ -548,6 +548,8 @@ jobs:
           fi
       - name: Oeffentlichen Plan ohne Datenzugang oder Ressourcenstart erzeugen
         run: python3 -B scripts/w15-github/prepare.py --plan
+      - name: Runnerfaehigkeiten rein lesend beobachten — kein Bootstrap oder Teststart
+        run: python3 -B scripts/w15-github/runner_preflight.py --observe-runner-only --runner-temp "$RUNNER_TEMP"
       - name: Startgrenze anzeigen
         shell: bash
         run: |

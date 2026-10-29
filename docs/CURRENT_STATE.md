@@ -18,20 +18,21 @@ ist keine Funktionsgröße. GitHub-Gesamtpeak umfasst lokalePG/PGR/Node/Cache;
 Vercel-Funktionsspeicher und entfernteSupabaseDB sind getrennte Messräume.
 Kein Funktionsbedarfsbeleg>2GB, keine Upgradeempfehlung/Umstellung/Production-Aktion.
 
-## W15: passphrasebasierte Schlüsselsicherung gefunden, Probe offen
+## W15: Offline-Recovery belegt; Übergabekanal noch offen
 
-Empfang zuvor vollständig belegt:15Cipherteile/242.693.044Bytes, zwölf Originale/
-242.570.240Bytes, Hashes/Rechte/Baum unabhängig PASS. Aktueller7E-Key nicht erreichbar.
-Hetzner laut Betreiber gelöscht. Privates Drive-Backup HELMUT_GPG_KEY.pgp(569Bytes)
-ist passphraseverschlüsselt und an DCF-Recovery-Key/Exporthash/Kontrollnachricht
-gebunden. Historischer Recoverybeleg vorhanden; heutige Entschlüsselung unbewiesen.
-Kürzester Weg: Bitwardenpassprobe→DCF→bestehender7E-Wrapper→15Cipherreuse.
-Secret noch nicht verfügbar. Kein neuer Empfänger/Originaltransfer vor dieser Probe.
-Prüfhelfer/5synthetische GPG-Fälle/unabhängiger Review PASS; echte Cipherpins geprüft,
-kein Secret gelesen. Kontextprüfung als stdin-CLI/4neue Fälle PASS. Frühere51+9
-Nachweise übernommen; RAM-Vertrag und History unverändert. Actions-Daten-GO besteht;
-Secrets-API zuletzt403/Environment-Schutz/Runner/Restore offen. Kein500er-Start-GO.
-[Sicherungsfund, sichere Bereitstellung und lokale Probe](betrieb/w15-schluesselrettung-20261029.md).
+Neu hochgeladener1338Byte-Beleg geprüft: DCF-Recovery beim Betreiber erfolgreich,
+alle fünf Checks/FPR/Hashes/Challenge-ID und kanonische Kontrollantwort passend.
+Bitwardenpass korrekt; kein Passwort/Privatschlüssel hier empfangen. Vorhandener
+3.298Byte-7E-Wrapper weiter privat erreichbar. Kein neuer Schlüssel/Originaltransfer.
+In dieser Cloud7E noch nicht wiederhergestellt. Lokaler Secret-/Dateikanal bislang
+unbewiesen; frühere pauschale Secret-Anweisung korrigiert. Zuerst nur öffentlichen
+Canary im geschützten Konfigurationsweg testen, Schutztyp+aktuelle Metadaten prüfen;
+kein echter Transfer allein aufgrund eines passenden Prüfwerts. Gleicher Thread.
+Fünf neue Canary-/sechs lesende Runner-Grenzfälle PASS, unabhängig geprüft.
+Runnerprobe im bestehenden Planjob vorbereitet; kein Bootstrap-/RAM-/Restore-PASS.
+f135a2ee-Pflicht-CI grün; neuer Kopf separat. RAM/Swap0/Auth30/Unit60/Provider20 und
+historische Ergebnisse unverändert. Vollständige500er weiter gesondert gesperrt.
+[Geprüfter Beleg und konkreter Übergabeplan](betrieb/w15-empfaenger-uebergabekanal-20261029.md).
 
 ## Historischer W15-D-Befund vor obiger GitHub-Vorbereitung (28.10.)
 
