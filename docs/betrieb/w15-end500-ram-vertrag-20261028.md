@@ -124,3 +124,31 @@ Vorrang. Gezielt geprüfte neue Grenzen und die sicheren API-Readbacks stehen im
 kein neuer Gesamtlauf wurde durchgeführt. Die Änderungen werden lokal gesichert.
 PR975 bleibt auf dem veröffentlichten Kopf66efb89a, damit die laufende große
 Pflicht-CI nicht erneut startet; dieser Auftrag führt nur gezielte Prüfungen aus.
+
+# Ergänzende Messbindung vom29.10.2026
+
+Die bisherigen Messwerte und Testergebnisse bleiben unverändert. Neu festgestellt:
+Der alte Controller las nur die cgroup des PostgreSQL-Containers. Python-
+Orchestrator und nativer Auditor liefen hostseitig; spätere Backupkopien und
+Verschlüsselung lagen ebenfalls außerhalb dieses Containerpeaks. Dafür gibt es
+keine belegte Ausnahme vom vollständigen gemeinsamen Testbudget. Ein solcher
+Containerwert ist deshalb kein vollständiger Gesamt-RAM-Nachweis.
+
+Der explizite GitHub-Laufweg verlangt jetzt einen tatsächlich beobachteten
+gemeinsamen Parent mit2.560.000.000Bytes und Swap0, der Python und die
+Containerprozesse einschließlich Dateicache, Datenbankexport und Backupabschluss
+umfasst. Lebenszeitpeak höchstens2.048.000.000Bytes, Reserve mindestens512.000.000
+Bytes; keine Peakrücksetzung oder Abzüge. Der Datenbankcontainer behält zusätzlich
+sein eigenes Limit2.560.000.000Bytes innerhalb dieses gemeinsamen Parents.
+
+`common_resources.py` prüft Parent-Inode, echte PID-Zuordnung und Kernelwerte.
+Originale und Seed bleiben0600; der UID1000-Anschluss muss tatsächlich hergestellt
+und beobachtet werden. Kopier-, Hash- und Verschlüsselungsschritte prüfen den
+gleichen Parent weiter, nachdem die ursprünglichen Fortschrittsdateien für das
+Backup eingefroren wurden. Der frühe Controllerbefund ist ausdrücklich vorläufig;
+er erteilt keine vollständige Lebenszeit- oder Restore-Abnahme.
+
+Die tatsächliche Einrichtung auf einem frischen GitHub-Standardrunner sowie die
+vollständige unabhängige Abschlussabnahme bleiben offen. Kleine Prüfungen mit
+erfundenen cgroup-Dateien sind kein echter Runnernachweis. Diese Korrektur ist
+eine Messbindung, keine Speicheroptimierung und keine Änderung der RAM-Grenzen.

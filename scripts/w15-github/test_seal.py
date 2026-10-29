@@ -202,6 +202,17 @@ class SealChecks(unittest.TestCase):
         with self.assertRaises(S.SealError):
             S.seal(**self.args)
 
+    def test_common_budget_failure_stops_real_gpg_keeps_private_partial(self):
+        output = Path(self.args['output'])
+        def guard():
+            if output.exists():
+                raise RuntimeError('FICTIONAL_COMMON_BUDGET_FAILURE')
+        with self.assertRaisesRegex(RuntimeError, '^FICTIONAL_COMMON_BUDGET_FAILURE$'):
+            S.seal(**self.args, guard=guard)
+        self.assertTrue(output.exists())
+        self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o600)
+        self.assertTrue(self.data.is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

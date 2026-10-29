@@ -31,7 +31,13 @@
       "sha256": "ee866daff1c7c2b2e13f8b28938a4d14344f11c815e074f78d9acb9713413ee9"
     }
   },
-  "fixtureKeys": ["auth", "evidenceRows", "privateDraftStoreRows", "resultRows", "privateDraftReviewRows"],
+  "fixtureKeys": [
+    "auth",
+    "evidenceRows",
+    "privateDraftStoreRows",
+    "resultRows",
+    "privateDraftReviewRows"
+  ],
   "resources": {
     "memoryPolicy": "helmut-w15-end500-memory-check/3",
     "scope": "ISOLATED_GITHUB_END500_ONLY",
@@ -39,15 +45,30 @@
     "minimumReservePercent": 20,
     "requiredPhysicalReserveBytes": 512000000,
     "maximumLifetimePeakBytes": 2048000000,
-    "measurementWindow": "Full fresh common cgroup lifetime including restore, seed and closure; no peak reset or deductions",
-    "accountedComponents": ["Node", "PostgreSQL", "PostgREST", "SQL children", "charged file cache"],
+    "measurementWindow": "Full fresh common parent cgroup lifetime, including Python orchestrator, input materialization, restore, seed, native audit, full database export, backup collection and encryption closure; no peak reset, deductions or excluded test processes",
+    "accountedComponents": [
+      "Python orchestrator",
+      "native auditor",
+      "Node",
+      "PostgreSQL",
+      "PostgREST",
+      "SQL children",
+      "GPG",
+      "backup copy and hash processes",
+      "charged file cache"
+    ],
     "futureMock500ProjectionIsEnd500AbortCriterion": false,
     "vercelFunctionMemoryInferredFromCommonPeak": false,
     "swapBytes": 0,
     "fullAuthCallMaximumExclusiveMs": 30000,
     "unitMaximumExclusiveMs": 60000,
     "providerMaximumExclusiveMs": 20000,
-    "actualRunnerResourcesVerified": false
+    "actualRunnerResourcesVerified": false,
+    "commonParentMemoryLimitBytes": 2560000000,
+    "containerOnlyPeakIsCompleteProof": false,
+    "commonParentIncludesHostAndContainerProcessesRequired": true,
+    "actualCommonParentBootstrapVerified": false,
+    "actualUID1000MappingVerified": false
   },
   "end500": {
     "diagnosticCASWrites": 500,
@@ -70,10 +91,10 @@
     "boundReturnToZeroRequired": true
   },
   "remainingGates": {
-    "dataEquivalenceOrPrivateAccess": "BLOCKED",
+    "dataEquivalenceOrPrivateAccess": "PASS_SELECTED12_LOCALLY_RECEIVED_GITHUB_PROVISIONING_NOT_AUTHORIZED",
     "protectedInputAccess": "BLOCKED",
     "freshCommitAndRunBoundReview": "BLOCKED",
-    "portableControllerAdapter": "BLOCKED",
+    "portableControllerAdapter": "IMPLEMENTED_TARGETED_CHECKS_ONLY_ACTUAL_RUNNER_BINDING_PENDING",
     "actualRunnerDiskAndSetupBudget": "BLOCKED",
     "commonCgroupReadbacksAndSwapZero": "BLOCKED",
     "encryptedCompleteBackupAndReadback": "BLOCKED",

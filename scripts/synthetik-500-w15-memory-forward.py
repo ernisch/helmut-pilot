@@ -37,6 +37,41 @@ BUDGET=json.loads((ROOT/'scripts/fixtures/w15-local-memory-budget.json').read_te
 audit_spec=importlib.util.spec_from_file_location('w15_final_native_audit',ROOT/'scripts/synthetik-500-w15-memory-final-audit.py')
 AUDIT=importlib.util.module_from_spec(audit_spec);audit_spec.loader.exec_module(AUDIT)
 
+def _runtime_module(component='runtime_inputs'):
+    assert component in ['runtime_inputs','runtime_backup','runtime_owned_backup','common_resources']
+    name='w15_github_'+component
+    if name not in sys.modules:
+        spec=importlib.util.spec_from_file_location(name,ROOT/'scripts/w15-github'/(component+'.py'))
+        module=importlib.util.module_from_spec(spec);sys.modules[name]=module
+        try:spec.loader.exec_module(module)
+        except BaseException:
+            del sys.modules[name];raise
+    return sys.modules[name]
+
+def open_runtime_inputs(*args,**kwargs):
+    """Observe received inputs/current source review only. Never start work."""
+    return _runtime_module().open_inputs(*args,**kwargs)
+
+def open_common_resources(context):
+    """Observe only; caller must already be in the actual limited parent."""
+    return _runtime_module('common_resources').observe(context)
+
+def _checked_common_resources(inputs,resources):
+    if inputs is not None:
+        assert type(resources)is _runtime_module('common_resources').CommonResources,'w15-common-parent-required'
+        resources.check_context(inputs.controller_context())
+    else:assert resources is None,'w15-common-parent-explicit-runtime-only'
+    return resources
+
+def _checked_runtime_inputs(inputs):
+    if inputs is not None:
+        assert type(inputs)is _runtime_module().RuntimeInputs,'w15-runtime-input-binding-type'
+        assert M.WORK==AUDIT.WORK==WORK and M.BASE==AUDIT.BASE==BASE,'w15-runtime-host-bindings'
+        assert M.DB==AUDIT.DATABASE==DB and M.CONTAINER==AUDIT.CONTAINER==CONTAINER,'w15-runtime-database-bindings'
+        assert (M.LIMIT,M.RESERVE,M.MAXIMUM)==(2560000000,512000000,2048000000),'w15-runtime-memory-bindings'
+        inputs.check_controller(work=WORK,prepare=PREP,cache=CACHE,base=BASE,database=DB,container=CONTAINER,image=M.IMAGE)
+    return inputs
+
 def end500_memory_assessment(sample):
     """Assess genuine readbacks when provided; this pure function starts nothing."""
     if not isinstance(sample,dict):return False
@@ -64,17 +99,23 @@ def digest_file(p):
     with p.open('rb')as f:
         for b in iter(lambda:f.read(1024*1024),b''):h.update(b)
     return h.hexdigest()
-def check_seed():
-    s=SEED.lstat();assert SEED.is_file()and not SEED.is_symlink()and s.st_mode&0o777==0o600
-    assert s.st_size==118800333 and digest_file(SEED)==SEED_SHA,'w15-seed-pin-drift'
+def check_seed(inputs=None):
+    seed=SEED if inputs is None else inputs.path('seed')
+    s=seed.lstat();assert seed.is_file()and not seed.is_symlink()and s.st_mode&0o777==0o600
+    assert s.st_size==118800333 and digest_file(seed)==SEED_SHA,'w15-seed-pin-drift'
+    return seed
 def available_disk():
-    s=os.statvfs('/workspace');return s.f_bavail*s.f_frsize
-def prepare():
+    path=WORK.parent
+    while not path.exists():path=path.parent
+    s=os.statvfs(path);return s.f_bavail*s.f_frsize
+def prepare(inputs=None,common_resources=None):
+    inputs=_checked_runtime_inputs(inputs)
+    _checked_common_resources(inputs,common_resources)
     assert not PREP.exists()and not WORK.exists(),'w15-prepare-once-only'
-    plan=json.loads((REPORTS/'DISK_PLAN_D_GZIP_INDEPENDENT.SAFE.json').read_text())
+    plan=inputs.report('DISK_PLAN_D_GZIP_INDEPENDENT.SAFE.json')if inputs else json.loads((REPORTS/'DISK_PLAN_D_GZIP_INDEPENDENT.SAFE.json').read_text())
     assert plan['status']=='PASS_PREPARATION_PLAN_ONLY_IMPLEMENTATION_AND_START_GATES_PENDING'
     assert available_disk()>=PLANNED_TOTAL,'w15-insufficient-preparation-disk'
-    check_seed();os.umask(0o077);PREP.mkdir(mode=0o700)
+    check_seed(inputs);os.umask(0o077);PREP.mkdir(mode=0o700)
     shutil.copytree(CACHE/'app',PREP/'app')
     shutil.copytree(ROOT/'lib',PREP/'app/lib',dirs_exist_ok=True)
     shutil.copy2(ROOT/'server.js',PREP/'app/server.js')
@@ -93,10 +134,15 @@ def prepare():
 
 class Watch(M.Supervisor):
     def __init__(self,cgroup):
+        self.backup_runner=None;self.common_resources=None
         self.cas_records=[];self.last_component=0;self.disk_phase='processing';self.audit_remaining=64*1024*1024;self.disk=None
         self.memory_failure=None
         self.initial_disk_free=available_disk()
         super().__init__(cgroup)
+    def first_failure(self,error):
+        if self.backup_runner is not None and self.stage_name in _runtime_module('runtime_owned_backup').ACTIONS:
+            return self.backup_runner.first_failure(error)
+        return super().first_failure(error)
     def write_progress(self):
         try:
             while not self.progress_finished.is_set()or not self.progress_queue.empty():
@@ -134,6 +180,7 @@ class Watch(M.Supervisor):
     def sample(self):
         memory_error=None
         try:
+            if self.common_resources is not None:self.common_resources.sample()
             super().sample() # Same common lifetime measurement, End500-scoped limits.
             assert end500_memory_assessment(self.last),'w15-end500-memory-measurement-invalid-or-out-of-contract'
             self.last.update({'memoryContractVersion':M.MEMORY['version'],'physicalHardCapBytes':M.LIMIT,
@@ -187,14 +234,17 @@ class Watch(M.Supervisor):
         self.disk_phase=state['phase'];self.audit_remaining=state['remainingAuditAllowanceBytes']if state['phase']=='capture'else 0
         self.disk_check()
 
-def pin(pin):
-    p=pathlib.Path(pin['path']);assert p.is_file()and not p.is_symlink()and p.stat().st_mode&0o777==0o600
+def pin(pin,inputs=None):
+    p=pathlib.Path(pin['path'])if inputs is None else inputs.resolve(pin)
+    assert p.is_file()and not p.is_symlink()and p.stat().st_mode&0o777==0o600
     b=p.read_bytes();assert len(b)==pin['bytes']and hashlib.sha256(b).hexdigest()==pin['sha256']
     return p,b
 def inner(w,action,seconds):
     command='umask 077; echo $$ >'+BASE+'/state/'+action+'.pid; exec timeout --signal=TERM --kill-after=5s '+str(seconds-10)+'s env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --max-old-space-size='+str(BUDGET['nodeOldSpaceMiB'])+' --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/synthetik-500-w15-memory-forward.js '+action
     w.stage(M.DOCKER+['exec','--user','1000:1000',CONTAINER,'sh','-c',command],action,seconds)
-def main():
+def main(inputs=None,common_resources=None):
+    inputs=_checked_runtime_inputs(inputs)
+    common_resources=_checked_common_resources(inputs,common_resources)
     prepared=json.loads((PREP/'PREPARED.SAFE.json').read_text())
     assert prepared['status']=='PASS_LOCAL_FILES_PREPARED_NO_DATABASE'
     assert available_disk()>=PLANNED_TOTAL-prepared['appAllocatedBytes'],'w15-insufficient-start-disk'
@@ -202,72 +252,94 @@ def main():
         path=PREP/p['path'];assert path.is_file()and not path.is_symlink()
         assert path.stat().st_size==p['bytes']and digest_file(path)==p['sha256'],'w15-prepared-app-drift'
     for n in STAGED_SCRIPTS:assert (ROOT/'scripts'/n).read_bytes()==(PREP/'app/scripts'/n).read_bytes(),'w15-prepared-script-drift'
-    journal_review=json.loads((REPORTS/'JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json').read_text())
+    journal_review=inputs.report('JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json')if inputs else json.loads((REPORTS/'JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json').read_text())
     assert journal_review['status']=='PASS_INDEPENDENT_BOUNDED_JOURNAL_DRAIN_AND_FOUR_FAULTS'
     for p in journal_review['actualSourcePins']:
-        assert (ROOT/p['path']).stat().st_size==p['bytes']and digest_file(ROOT/p['path'])==p['sha256'],'w15-journal-proof-drift'
-    check_seed()
+        if inputs:inputs.check_historical_source(p)
+        else:assert (ROOT/p['path']).stat().st_size==p['bytes']and digest_file(ROOT/p['path'])==p['sha256'],'w15-journal-proof-drift'
+    seed=check_seed(inputs)
     target=json.loads((ROOT/'scripts/fixtures/w15-atomic-integration-target.json').read_text())
-    integration=json.loads((pathlib.Path(target['work'])/'INTEGRATION_RESULT.SAFE.json').read_text())
+    integration=inputs.report('INTEGRATION_RESULT.SAFE.json')if inputs else json.loads((pathlib.Path(target['work'])/'INTEGRATION_RESULT.SAFE.json').read_text())
     assert integration['status']=='PASS_PREPARED0_ATOMIC_COMPONENTS_RAM_PENDING'and integration['activeProfiles']==0
     assert integration['originalSourceUnchanged']is True and integration['units']==0
-    parser=json.loads((ASSETS/'sql-preflight-atomic-e/SQL_PREFLIGHT.SAFE.json').read_text())
+    parser=inputs.report('SQL_PREFLIGHT_D.SAFE.json')if inputs else json.loads((ASSETS/'sql-preflight-atomic-e/SQL_PREFLIGHT.SAFE.json').read_text())
     assert parser['status']=='PASS_ALL_GENERATED_DIAGNOSTIC_SQL_PARSE_DESCRIBE_NO_EXECUTION'and parser['plannedDatabase']==DB
-    for name,expected in parser['sourcePins'].items():assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==expected,'atomic-sql-reviewed-source-drift'
-    review=json.loads((REPORTS/'MEMORY_PRESTART_REVIEW_D.SAFE.json').read_text())
+    for name,expected in parser['sourcePins'].items():
+        if inputs:inputs.check_historical_source({'path':name,'sha256':expected})
+        else:assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==expected,'atomic-sql-reviewed-source-drift'
+    review=inputs.report('MEMORY_PRESTART_REVIEW_D.SAFE.json')if inputs else json.loads((REPORTS/'MEMORY_PRESTART_REVIEW_D.SAFE.json').read_text())
     assert review['status']=='PASS_PRESTART_ATOMIC_END500_ALLOCATION_ONLY'
     for reviewed_pin in review['sourcePins']:
-        p=ROOT/reviewed_pin['path'];b=p.read_bytes();assert len(b)==reviewed_pin['bytes']and hashlib.sha256(b).hexdigest()==reviewed_pin['sha256'],'atomic-memory-reviewed-source-drift'
-    stop_path=pathlib.Path('/workspace/shared/helmut-w15-postgrest-stop-check-20261028/RESULT.SAFE.json')
+        if inputs:inputs.check_historical_source(reviewed_pin)
+        else:
+            p=ROOT/reviewed_pin['path'];b=p.read_bytes();assert len(b)==reviewed_pin['bytes']and hashlib.sha256(b).hexdigest()==reviewed_pin['sha256'],'atomic-memory-reviewed-source-drift'
+    stop_path=inputs.report_path('POSTGREST_STOP_RESULT.SAFE.json')if inputs else pathlib.Path('/workspace/shared/helmut-w15-postgrest-stop-check-20261028/RESULT.SAFE.json')
     stop_result=json.loads(stop_path.read_text())
     assert stop_result['status']=='PASS_REAL_POSTGREST_CONTROLLED_STOP'
-    stop_review=json.loads(pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/POSTGREST_STOP_AND_TRANSPORT_REVIEW.SAFE.json').read_text())
+    stop_review=inputs.report('POSTGREST_STOP_AND_TRANSPORT_REVIEW.SAFE.json')if inputs else json.loads(pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/POSTGREST_STOP_AND_TRANSPORT_REVIEW.SAFE.json').read_text())
     assert stop_review['status']=='PASS_REAL_STOP_AND_EXISTING_TRANSPORT_PROTECTIONS'
     assert stop_review['stopReportSHA256']==hashlib.sha256(stop_path.read_bytes()).hexdigest()
     assert stop_review['historicalEleventhOutcome']=='UNCHANGED_UNKNOWN_NOT_REPLAYED'
-    corrections_path=pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/OBSERVATION_RESULTS_REVIEW.SAFE.json')
+    corrections_path=inputs.report_path('OBSERVATION_RESULTS_REVIEW.SAFE.json')if inputs else pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/OBSERVATION_RESULTS_REVIEW.SAFE.json')
     corrections=json.loads(corrections_path.read_text())
     assert corrections['status']=='PASS_INDEPENDENT_OBSERVATION_CORRECTIONS'
     assert review['observationCorrectionsReviewSHA256']==hashlib.sha256(corrections_path.read_bytes()).hexdigest()
-    growth_path=pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_B_GROWTH_LATE_WINDOWS.SAFE.json')
+    growth_path=inputs.report_path('RAM_B_GROWTH_LATE_WINDOWS.SAFE.json')if inputs else pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_B_GROWTH_LATE_WINDOWS.SAFE.json')
     assert review['growthAnalysisSHA256']==hashlib.sha256(growth_path.read_bytes()).hexdigest()
     assert not WORK.exists(),'w15-forward-once-only'
     os.umask(0o077);WORK.mkdir(mode=0o700)
-    created=False;seeded=False;w=None;failure=None;result=None;zero=False;stop_failures=[];zero_check_failure=None;service_closure=None;final_audit=None
+    created=False;seeded=False;w=None;failure=None;result=None;zero=False;stop_failures=[];zero_check_failure=None;service_closure=None;final_audit=None;database_export=None;backup_result=None;sealed_backup=None
     try:
-        bound=json.loads((ASSETS/'END500_MEMORY_BOUND.SAFE.json').read_text())
-        independent=json.loads((ASSETS/'END500_FIXTURE_INDEPENDENT_REVIEW.SAFE.json').read_text())
+        if inputs is not None:
+            for name,raw in [('CURRENT_SOURCE_REVIEW.SAFE.json',inputs.source_review_bytes()),
+                             ('CURRENT_RUNTIME_CONTEXT.SAFE.json',(json.dumps(inputs.controller_context(),sort_keys=True)+'\n').encode())]:
+                with(WORK/name).open('xb')as output:
+                    os.chmod(output.name,0o600);output.write(raw);output.flush();os.fdatasync(output.fileno())
+        bound_path=ASSETS/'END500_MEMORY_BOUND.SAFE.json'if inputs is None else inputs.path('bound')
+        review_path=ASSETS/'END500_FIXTURE_INDEPENDENT_REVIEW.SAFE.json'if inputs is None else inputs.path('boundReview')
+        bound=json.loads(bound_path.read_text())
+        independent=json.loads(review_path.read_text())
         assert bound['executionAuthority']is False and bound['totalUsageRows']==6000 and bound['preservedOriginalUsageRows']==5139
         # Review is an offline data review, not a made-up execution authority.
         assert independent['status']=='PASS_OFFLINE_INERT_FIXTURE_AND_PROVENANCE_ONLY'
-        reviewed_path,reviewed_bytes=pin(independent['inputReportPin'])
-        assert reviewed_path==ASSETS/'END500_MEMORY_BOUND.SAFE.json'
+        reviewed_path,reviewed_bytes=pin(independent['inputReportPin'],inputs)
+        assert reviewed_path==bound_path
         assert json.loads(reviewed_bytes)==bound
-        paths={k:pin(v)[0]for k,v in bound['protectedOutputPins'].items()}
-        receipt=json.loads(M.RECEIPT.read_text());assert hashlib.sha256(M.RECEIPT.read_bytes()).hexdigest()==M.RECEIPT_SHA
+        paths={k:pin(v,inputs)[0]for k,v in bound['protectedOutputPins'].items()}
+        receipt_path=M.RECEIPT if inputs is None else inputs.path('reception')
+        receipt=json.loads(receipt_path.read_text());assert hashlib.sha256(receipt_path.read_bytes()).hexdigest()==M.RECEIPT_SHA
         original={k:next(x for x in receipt['files']if x['key']==k)for k in ['frozenSourceDump','localRoles']}
+        original_paths={}
         for v in original.values():
-            b=pathlib.Path(v['receivedPath']).read_bytes();assert len(b)==v['expectedBytes']and hashlib.sha256(b).hexdigest()==v['expectedSHA256']
+            path=pathlib.Path(v['receivedPath'])if inputs is None else inputs.resolve({'path':v['receivedPath'],'bytes':v['expectedBytes'],'sha256':v['expectedSHA256']})
+            b=path.read_bytes();assert len(b)==v['expectedBytes']and hashlib.sha256(b).hexdigest()==v['expectedSHA256']
+            original_paths[v['key']]=path
         stage=PREP
         for n,h in [('node','bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12'),('postgrest','870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617')]:
             assert digest_file(CACHE/n)==h,'w15-cached-binary-pin'
-        check_seed()
+        seed=check_seed(inputs)
         pgdata=WORK/'pgdata';pgdata.mkdir(mode=0o700)
         state=WORK/'state';state.mkdir(mode=0o700)
         M.docker('create','--name',CONTAINER,'--pull=never','--network=none','--restart=no','--memory='+str(M.LIMIT),'--memory-swap='+str(M.LIMIT),
+          *(['--cgroup-parent='+common_resources.unit]if common_resources is not None else[]),
           '--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
-          '--mount','type=bind,src='+str(SEED)+',dst='+SEED_MOUNT+',readonly',
+          '--mount','type=bind,src='+str(seed)+',dst='+SEED_MOUNT+',readonly',
           '--mount','type=bind,src='+str(state)+',dst='+BASE+'/state','-e','POSTGRES_HOST_AUTH_METHOD=trust',M.IMAGE,
           'postgres','-c','helmut.local_usage_experiment=on','-c','max_wal_size='+str(BUDGET['postgresMaxWalMiB'])+'MB','-c','work_mem='+str(BUDGET['postgresWorkMemMiB'])+'MB',
           '-c','autovacuum_naptime='+str(BUDGET['postgresAutovacuumNaptimeSeconds'])+'s');created=True
         M.docker('start',CONTAINER);info=json.loads(M.docker('inspect',CONTAINER))[0]
         assert info['HostConfig']['NetworkMode']=='none'and info['HostConfig']['Memory']==M.LIMIT and info['HostConfig']['MemorySwap']==M.LIMIT
         seed_mounts=[x for x in info['Mounts']if x['Destination']==SEED_MOUNT]
-        assert len(seed_mounts)==1 and seed_mounts[0]['Source']==str(SEED)and seed_mounts[0]['RW']is False,'w15-seed-must-be-readonly'
+        assert len(seed_mounts)==1 and seed_mounts[0]['Source']==str(seed)and seed_mounts[0]['RW']is False,'w15-seed-must-be-readonly'
         M.save('READONLY_SEED_MOUNT.SAFE.json',{'sourceSHA256':SEED_SHA,'readOnly':True,'singleFileOnly':True})
         pid=info['State']['Pid'];rel=pathlib.Path('/proc/'+str(pid)+'/cgroup').read_text().strip().split('0::')[-1]
         cgroup=pathlib.Path('/sys/fs/cgroup')/posixpath.normpath('/'+rel.lstrip('/')).lstrip('/');assert info['Id']in str(cgroup)
-        w=Watch(cgroup);w.sample();w.thread.start()
+        if common_resources is not None:
+            assert info['HostConfig']['CgroupParent']==common_resources.unit,'w15-common-parent-container-setting'
+            common_resources.check_pid(pid,info['Id']);cgroup=common_resources.path
+        w=Watch(cgroup);w.common_resources=common_resources
+        if inputs is not None:w.backup_runner=_runtime_module('runtime_owned_backup').OwnedBackupRunner(w,M,base=BASE,container=CONTAINER,database=DB)
+        w.sample();w.thread.start()
         for _ in range(100):
             r=subprocess.run(M.DOCKER+['exec',CONTAINER,'pg_isready','-U','postgres'],env=M.ENV,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=5)
             if r.returncode==0:break
@@ -278,15 +350,15 @@ def main():
         for n,source in [('app',stage/'app'),('node',CACHE/'node'),('postgrest',CACHE/'postgrest')]:
             w.disk_check();M.copy_in(source,BASE+'/'+n);w.disk_check()
         assert state.stat().st_mode&0o777==0o700
-        for k,n in [('localRoles','roles.PRIVATE.sql'),('frozenSourceDump','input.PRIVATE.dump')]:M.copy_in(original[k]['receivedPath'],BASE+'/'+n)
+        for k,n in [('localRoles','roles.PRIVATE.sql'),('frozenSourceDump','input.PRIVATE.dump')]:M.copy_in(original_paths[k],BASE+'/'+n)
         target=json.loads((ROOT/'scripts/fixtures/w15-atomic-integration-target.json').read_text())
-        command_path=pathlib.Path(target['work'])/'current-command.PRIVATE.json'
+        command_path=pathlib.Path(target['work'])/'current-command.PRIVATE.json'if inputs is None else inputs.path('currentCommand')
         command_bytes=command_path.read_bytes()
         command_pin={'path':str(command_path),'bytes':len(command_bytes),'sha256':hashlib.sha256(command_bytes).hexdigest(),'executionAuthority':False}
         M.save('CURRENT_COMMAND_BINDING.SAFE.json',command_pin)
         M.copy_in(command_path,BASE+'/state/current-command.PRIVATE.json')
         M.copy_in(WORK/'CURRENT_COMMAND_BINDING.SAFE.json',BASE+'/state/CURRENT_COMMAND_BINDING.SAFE.json')
-        M.copy_in(ASSETS/'END500_MEMORY_BOUND.SAFE.json',BASE+'/state/END500_MEMORY_BOUND.SAFE.json')
+        M.copy_in(bound_path,BASE+'/state/END500_MEMORY_BOUND.SAFE.json')
         M.docker('exec',CONTAINER,'chown','-R','1000:1000',BASE)
         M.docker('exec',CONTAINER,'chmod','700',BASE+'/node',BASE+'/postgrest')
         M.sql('create database '+DB+';',database='postgres')
@@ -299,7 +371,7 @@ def main():
         M.save('RESTORED500_ZERO.SAFE.json',restored)
         # Seed all retained500-end positions in native tables, one bounded row
         # per statement. No fake execution/quality claims or source mutation.
-        seed=SEED;row_ids={}
+        row_ids={}
         for key in ['evidenceRows','privateDraftStoreRows','resultRows','privateDraftReviewRows']:
             row_ids[key]=[x['id']for x in json.loads(paths[key].read_text())]
         seed_cmd='umask 077; echo $$ >'+BASE+'/state/setup.pid; exec timeout --signal=TERM --kill-after=5s 170s psql -X -w -qAt -v ON_ERROR_STOP=1 -U postgres -d '+DB+' -f '+SEED_MOUNT
@@ -396,6 +468,7 @@ def main():
                     w.disk_phase='capture';w.audit_remaining=64*1024*1024;w.disk_check()
                     M.STARTED_INNER_ACTIONS.add('audit')
                     final_audit=AUDIT.capture(CONTAINER,DB,WORK,paths,expectedProbe=499 if not failure and result and len(w.cas_records)==500 else None,
+                      input_binding=inputs,
                       guard=w.audit_guard,stop_owned=lambda:M.stop_owned(['audit'],require_registered=True))
                     assert final_audit['status']=='PASS_COMPLETE_LOSSLESS_NATIVE_POSTIMAGES_AND_ZERO_ONLY'
                     # A second fresh0 read after the consistent audit snapshot.
@@ -404,7 +477,15 @@ def main():
                     M.save('NATIVE_ZERO_AFTER_AUDIT.SAFE.json',{'activeProfiles':0,'confirmed':True,'readOnly':True})
                 except BaseException as error:
                     failure=failure or {'type':type(error).__name__,'reason':'w15-forward-native-final-audit-failed-or-unknown'}
-        try:check_seed()
+        if inputs is not None and w and created and seeded and zero and not failure and not w.failure and final_audit:
+            try:
+                w.disk_phase='processing'
+                database_export=_runtime_module('runtime_backup').export_final_database(
+                  inputs.backup_context(),expected_context=inputs.backup_context(),work=WORK,
+                  container=CONTAINER,database=DB,supervisor=w,run_owned=w.backup_runner.run_owned)
+            except BaseException as error:
+                failure=failure or {'type':type(error).__name__,'reason':'w15-final-database-export-failed-or-unknown'}
+        try:check_seed(inputs)
         except BaseException as error:failure=failure or {'type':type(error).__name__,'reason':'w15-readonly-seed-source-drift'}
         final_sample_verified=False
         if w:
@@ -415,19 +496,71 @@ def main():
         future_capacity=future_mock500_capacity(w.maximum,result.get('projectedAdditionalPhysicalBytes'))if w and result else None
         actual_memory_accepted=bool(w and final_sample_verified and not failure and not w.failure and not w.memory_failure
           and result and result['status']=='PASS_FORWARD_COMPONENTS_COMMON_KERNEL_REVIEW_PENDING'and len(w.cas_records)==500
-          and final_audit and final_audit['status']=='PASS_COMPLETE_LOSSLESS_NATIVE_POSTIMAGES_AND_ZERO_ONLY'and zero)
-        M.save('CONTROLLER_RESULT.SAFE.json',{'status':'PASS_FORWARD_ALLOCATION_INDEPENDENT_REVIEW_PENDING'if not failure and zero else'FAIL_OR_UNKNOWN',
+          and final_audit and final_audit['status']=='PASS_COMPLETE_LOSSLESS_NATIVE_POSTIMAGES_AND_ZERO_ONLY'and zero
+          and(inputs is None or database_export is not None))
+        M.save('CONTROLLER_RESULT.SAFE.json',{'status':('PASS_FORWARD_PHASE_COMMON_CLOSURE_PENDING'if inputs is not None else'PASS_FORWARD_ALLOCATION_INDEPENDENT_REVIEW_PENDING')if not failure and zero else'FAIL_OR_UNKNOWN',
           'failure':failure,'innerStopFailure':w.stop_failure if w else None,'stopFailures':stop_failures,'zeroCheckFailure':zero_check_failure,'serviceClosure':service_closure,'activeProfiles':0 if zero else None,'CASCompleted':len(w.cas_records)if w else 0,
           'commonKernelPeakBytes':w.maximum if w else None,'lastKernel':w.last if w else None,
           'memoryContract':M.MEMORY,'physicalHardCapBytes':M.LIMIT,'maximumAllowedPeakBytes':M.MAXIMUM,
           'requiredPhysicalReserveBytes':M.RESERVE,'finalKernelReadbackVerified':final_sample_verified,
-          'end500ActualMemoryAccepted':actual_memory_accepted,'memoryMeasurementFailure':w.memory_failure if w else None,
+          'end500ActualMemoryAccepted':actual_memory_accepted if inputs is None else False,
+          'preBackupMemoryChecksPassed':actual_memory_accepted if inputs is not None else None,
+          'fullLifetimeClosureAccepted':False,'memoryMeasurementFailure':w.memory_failure if w else None,
           'futureMock500Capacity':future_capacity,
-          'finalNativeAudit':final_audit,'lastDisk':w.disk if w else None,
+          'finalNativeAudit':final_audit,'finalDatabaseExport':database_export,'lastDisk':w.disk if w else None,
           'projectedAdditionalPhysicalBytes':result.get('projectedAdditionalPhysicalBytes')if result else None,
           'additionalProjectionMarginBytes':BUDGET['minimumCommonHeadroomBytes'],'units':0,'providerCalls':0,'profileActivations':0,'executionAuthority':False,
           'full500Acceptance':False,'retryAllowed':False})
-    print(json.dumps({'status':'PASS'if not failure and zero else'FAIL_OR_UNKNOWN','failure':failure,'zero':zero}),flush=True)
+        if inputs is not None:
+            # The prior container-only result is never a complete acceptance.
+            # Collection and encryption remain inside the same parent lifetime,
+            # guarded at each streamed chunk after the progress files freeze.
+            try:
+                assert not failure and actual_memory_accepted,'w15-backup-requires-successful-owned-closure'
+                run_root=WORK.parent
+                backup_result=_runtime_module('runtime_backup').collect_backup(
+                  inputs.backup_context(),expected_context=inputs.backup_context(),
+                  input_files=inputs.backup_input_files(),work=WORK,prepared=PREP,
+                  provenance_files=inputs.backup_provenance_files(),destination=run_root/'backup',
+                  guard=common_resources.sample)
+                cipher_root=run_root/'cipher';cipher_root.mkdir(mode=0o700)
+                seal=_runtime_module('runtime_backup').S
+                public_key=ROOT/'docs/betrieb/belege/w15-end500-transfer-20261029/receiver-public.asc'
+                assert hashlib.sha256(public_key.read_bytes()).hexdigest()=='3075683711733f6c7fc5836c9b4f5f1d94eaf35dec7f9a401132f52995122443'
+                context=inputs.backup_context()
+                sealed_backup=seal.seal(root=str(run_root/'backup'),manifest='manifest.PRIVATE.json',
+                  manifest_sha256=backup_result['manifestSHA256'],public_key=str(public_key),
+                  recipient_fingerprint=context['recipientFingerprint'],commit=context['exactCommit'],
+                  run_id=context['runId'],input_manifest_sha256=context['inputManifestSHA'],
+                  output=str(cipher_root/'end500-full.PRIVATE.gpg'),guard=common_resources.sample)
+                final_common=common_resources.safe_summary()
+                receipt={'status':'PASS_LOCAL_BACKUP_BYTES_ONLY_RESTORE_AND_REMOTE_PENDING',
+                  'sealed':sealed_backup,'finalCommonParent':final_common,'databaseRestoreObserved':False,
+                  'remoteReadbackObserved':False,'acceptedAsCompleteBackup':False,
+                  'executionAuthority':False,'testStartedByReceipt':False,'retryAllowed':False}
+                with(cipher_root/'LOCAL_BACKUP.SAFE.json').open('x')as output:
+                    os.chmod(output.name,0o600);json.dump(receipt,output);output.write('\n');output.flush();os.fdatasync(output.fileno())
+                common_resources.sample()
+            except BaseException as error:
+                failure=failure or {'type':type(error).__name__,'reason':'w15-complete-backup-or-common-closure-failed-or-unknown'}
+            # Outside the frozen archive tree, exclusive and durable. A later
+            # closure failure never leaves a durable full-lifetime RAM PASS.
+            closing={'status':'FAIL_OR_UNKNOWN_COMMON_CLOSURE'if failure else'LOCAL_CLOSURE_ONLY_INDEPENDENT_ACCEPTANCE_PENDING',
+              'failure':failure,'end500ActualMemoryAccepted':False,'fullLifetimeClosureAccepted':False,
+              'localArchiveCreated':sealed_backup is not None,
+              'commonParent':common_resources.last_observation(),
+              'databaseRestoreObserved':False,'remoteReadbackObserved':False,
+              'acceptedAsCompleteBackup':False,'executionAuthority':False,'retryAllowed':False}
+            try:
+                with(WORK.parent/'FINAL_CLOSURE.SAFE.json').open('x')as output:
+                    os.chmod(output.name,0o600);json.dump(closing,output);output.write('\n');output.flush();os.fdatasync(output.fileno())
+                common_resources.sample()
+            except BaseException as error:
+                failure=failure or {'type':type(error).__name__,'reason':'w15-final-closure-receipt-or-kernel-unconfirmed'}
+    status=('LOCAL_END500_WORK_AND_CIPHER_ONLY_ACCEPTANCE_PENDING'if inputs is not None else'PASS')if not failure and zero else'FAIL_OR_UNKNOWN'
+    final_public={'status':status,'failure':failure,'zero':zero}
+    if common_resources is not None:final_public['commonParent']=common_resources.last_observation()
+    print(json.dumps(final_public),flush=True)
     if failure or not zero:raise SystemExit(1)
 if __name__=='__main__':
     assert sys.argv[1:]in [['--prepare-only'],['--run']],'w15-memory-forward-explicit-action'

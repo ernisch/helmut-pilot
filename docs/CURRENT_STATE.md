@@ -18,21 +18,23 @@ ist keine Funktionsgröße. GitHub-Gesamtpeak umfasst lokalePG/PGR/Node/Cache;
 Vercel-Funktionsspeicher und entfernteSupabaseDB sind getrennte Messräume.
 Kein Funktionsbedarfsbeleg>2GB, keine Upgradeempfehlung/Umstellung/Production-Aktion.
 
-## W15: Transfer-GO erteilt, Quellstart technisch offen
+## W15: zwölf Originale empfangen, GitHub-Zugang gesperrt
 
-Public-Key und verschlüsseltes Empfängerbackup nach ausdrücklichem GO privat
-in Drive gespeichert, vollständig rückgelesen: Größen/SHA PASS. Privater Key
-bleibt außerhalb Git; externe Entschlüsselung des neuen Backups ungeprüft.
-Noch keine W15-Datei empfangen. Hauptthread hält zwölf frisch bestätigte
-Originale/242.570.240 Bytes. Hier nur lesender Chatzugriff, kein Befehlsstart;
-lokale Inventur SOURCE_UNAVAILABLE. Quellauftrag und Exporthelfer vorbereitet.
-Kein weiteres Transfer-GO nötig; vorbereiteten Auftrag im Hauptthread auslösen.
-Relocation/Backup-Auswahlplan und 10+9+9 neue fiktive Schutzfälle PASS.
-Controlleranschluss, DB-Export unter fortlaufender RAM-Messung, echter Restore
-und Runnernachweise offen. End500 nicht ausführbar; kein Test-GO.
-RAM-v3/historische Ergebnisse unverändert. 6bee9957 auf Draft-PR975 gepusht;
-CI zuletzt laufend, älterer Kopf 66efb89a grün.
-[Rücklesebeleg, Quellauftrag und Restblocker](betrieb/w15-end500-quellstart-nach-go-20261029.md).
+Freigegebener einmaliger Cloudtransfer abgeschlossen:15Cipherteile/242.693.044Bytes,
+Einzel-/Gesamthashes und privater Drive-Zugriff geprüft; GPG-Empfang aller zwölf
+Originale/242.570.240Bytes PASS. Unabhängig Größen/SHA/Rechte/Baum bestätigt.
+Kein neuer Quelltransfer nötig. Private Schlüssel/Passphrase und Nutzdaten außerhalb Git.
+Controller-/Auditoradapter, owned finaler DB-/Rollenexport und bewachte vollständige
+Backupauswahl/Versiegelung vorbereitet;51gezielte Entwicklungsfälle PASS.
+Neue gemeinsame Parent-Bindung erfasst auch Python/Auditor/Backupabschluss;
+alter Containerpeak ist kein Gesamtbeleg. Keine neue RAM-Optimierung.
+Tatsächlicher Runner-Bootstrap/UID1000, kompletter Restore und Remote-Abnahme offen.
+GitHubEnvironment lesbar, derzeit ohne Branch-/Reviewschutz; Secrets-API403 auch
+mit konfigurierter CI-Admin-Identität. Keine Daten/Schlüssel an Actions bereitgestellt.
+Dafür zusätzlich konkretes Daten-GO und tatsächlich geschützter API-Zugang nötig.
+End500 weiterhin nicht startbereit; kein Gesamtlauf/Mock500/Production-Eingriff.
+DraftPR975 bleibt auf PR974. CI40783871139 für8be75787 grün; neuer Kopf separat.
+[Empfang, Anschluss, Sicherheitsabnahme und konkrete Restgrenze](betrieb/w15-end500-empfang-und-startgrenze-20261029.md).
 
 ## Historischer W15-D-Befund vor obiger GitHub-Vorbereitung (28.10.)
 

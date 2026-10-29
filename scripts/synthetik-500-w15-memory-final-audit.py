@@ -14,6 +14,7 @@ import pathlib
 import selectors
 import signal
 import subprocess
+import sys
 import time
 import zlib
 
@@ -48,13 +49,19 @@ def _private_read(path):
     return path.read_bytes()
 
 
-def _fixtures(paths_or_assets):
+def _fixtures(paths_or_assets, input_binding=None):
     """Load only the five already pinned immutable memory-volume fixtures."""
-    bound_bytes = _private_read(ASSETS / 'END500_MEMORY_BOUND.SAFE.json')
+    if input_binding is not None:
+        module = sys.modules.get('w15_github_runtime_inputs')
+        _require(module is not None and type(input_binding) is module.RuntimeInputs, 'input-binding-type')
+    bound_path = ASSETS / 'END500_MEMORY_BOUND.SAFE.json' if input_binding is None else input_binding.path('bound')
+    bound_bytes = _private_read(bound_path)
     _require(hashlib.sha256(bound_bytes).hexdigest() == BOUND_SHA, 'bound-pin')
     bound = json.loads(bound_bytes, parse_float=decimal.Decimal)
     _require(bound['executionAuthority'] is False and bound['totalUsageRows'] == 6000,
              'inert-bound')
+    if paths_or_assets is None and input_binding is not None:
+        paths_or_assets = {key: input_binding.path(key) for key in ('auth', *COUNTS)}
     if paths_or_assets is None:
         paths_or_assets = ASSETS
     if isinstance(paths_or_assets, dict):
@@ -66,7 +73,11 @@ def _fixtures(paths_or_assets):
     for key in ('auth', *COUNTS):
         expected = bound['protectedOutputPins'][key]
         path = pathlib.Path(paths[key])
-        _require(path.resolve() == pathlib.Path(expected['path']), 'fixture-path')
+        if input_binding is None:
+            _require(path.resolve() == pathlib.Path(expected['path']), 'fixture-path')
+        else:
+            _require(path == input_binding.resolve(expected)
+                     and pathlib.Path(expected['path']) == input_binding.original_path(key), 'fixture-path')
         data = _private_read(path)
         _require(len(data) == expected['bytes'] and
                  hashlib.sha256(data).hexdigest() == expected['sha256'], 'fixture-pin')
@@ -111,9 +122,9 @@ def _sql_for(fixtures):
     return meta, auth, store, briefing
 
 
-def audit_sql(paths_or_assets=None):
+def audit_sql(paths_or_assets=None, *, input_binding=None):
     """Four SELECT statements only; capture supplies the common readonly txn."""
-    return _sql_for(_fixtures(paths_or_assets))
+    return _sql_for(_fixtures(paths_or_assets, input_binding))
 
 
 def _deep_equal(a, b):
@@ -225,9 +236,9 @@ def _verify(archive, fixtures, database, expected_probe, guard, deadline,
 
 
 def verify_capture(archive, paths_or_assets=None, database=DATABASE,
-                   expectedProbe=None, guard=None):
+                   expectedProbe=None, guard=None, input_binding=None):
     """Offline-only verifier, also usable for a separately approved old-C control."""
-    return _verify(archive, _fixtures(paths_or_assets), database, expectedProbe,
+    return _verify(archive, _fixtures(paths_or_assets, input_binding), database, expectedProbe,
                    guard, time.monotonic() + SECONDS)
 
 
@@ -241,7 +252,7 @@ def _save_exclusive(path, value):
 
 
 def capture(container, database, work, paths_or_assets=None, expectedProbe=None,
-            guard=None, stop_owned=None):
+            guard=None, stop_owned=None, input_binding=None):
     """Exactly one native read. guard(state) is phase-aware; stop_owned() must
     verify the existing controller's owned audit process group has exited.
     Both callbacks are mandatory: this helper never creates/restarts resources.
@@ -252,7 +263,7 @@ def capture(container, database, work, paths_or_assets=None, expectedProbe=None,
              'work-mode')
     _require(callable(guard) and callable(stop_owned), 'required-supervisor-callbacks')
     deadline = time.monotonic() + SECONDS
-    fixtures = _fixtures(paths_or_assets)
+    fixtures = _fixtures(paths_or_assets, input_binding)
     sql = ("begin isolation level repeatable read read only;\n"
            "set local statement_timeout='45s';set local lock_timeout='3s';\n"
            "set local client_encoding='UTF8';\n" + '\n'.join(_sql_for(fixtures)) +

@@ -105,10 +105,12 @@ def _file(root, relative):
         os.close(directory)
 
 
-def _hash_fd(fd):
+def _hash_fd(fd, guard=None):
     digest = hashlib.sha256()
     size = 0
     while True:
+        if guard is not None:
+            guard()
         chunk = os.read(fd, CHUNK)
         if not chunk:
             return size, digest.hexdigest()
@@ -116,12 +118,12 @@ def _hash_fd(fd):
         digest.update(chunk)
 
 
-def _verify_file(root, entry, expected_snapshot=None):
+def _verify_file(root, entry, expected_snapshot=None, guard=None):
     fd, before = _file(root, entry["path"])
     try:
         require(expected_snapshot is None or before == expected_snapshot)
         require(before[2] == entry["bytes"])
-        size, digest = _hash_fd(fd)
+        size, digest = _hash_fd(fd, guard)
         require(size == entry["bytes"] and digest == entry["sha256"])
         require(_snapshot(os.fstat(fd)) == before)
         return before
@@ -299,8 +301,9 @@ def _import_public(home, raw, fingerprint):
 
 
 class _EncryptPipe:
-    def __init__(self, process):
+    def __init__(self, process, guard=None):
         self.process = process
+        self.guard = guard
         self.fd = process.stdin.fileno()
         os.set_blocking(self.fd, False)
 
@@ -309,6 +312,8 @@ class _EncryptPipe:
         view = memoryview(data)
         deadline = time.monotonic() + 60
         while view:
+            if self.guard is not None:
+                self.guard()
             require(self.process.poll() is None and time.monotonic() < deadline)
             if not select.select([], [self.fd], [], min(1, max(0, deadline - time.monotonic())))[1]:
                 continue
@@ -322,12 +327,15 @@ class _EncryptPipe:
 
 
 class _StreamingReader:
-    def __init__(self, fd):
+    def __init__(self, fd, guard=None):
         self.fd = fd
+        self.guard = guard
         self.size = 0
         self.digest = hashlib.sha256()
 
     def read(self, size):
+        if self.guard is not None:
+            self.guard()
         require(0 <= size <= CHUNK)
         chunk = os.read(self.fd, size)
         self.size += len(chunk)
@@ -344,14 +352,16 @@ def _member(name, size):
     return info
 
 
-def _write_archive(stream, root, raw, entries, snapshots):
+def _write_archive(stream, root, raw, entries, snapshots, guard=None):
     with tarfile.open(fileobj=stream, mode="w|", format=tarfile.PAX_FORMAT) as archive:
         archive.addfile(_member("W15_MANIFEST.PRIVATE.json", len(raw)), io.BytesIO(raw))
         for entry, expected in zip(entries, snapshots):
+            if guard is not None:
+                guard()
             fd, before = _file(root, entry["path"])
             try:
                 require(before == expected)
-                reader = _StreamingReader(fd)
+                reader = _StreamingReader(fd, guard)
                 archive.addfile(_member("files/" + entry["path"], entry["bytes"]), reader)
                 require(reader.size == entry["bytes"]
                         and reader.digest.hexdigest() == entry["sha256"])
@@ -360,11 +370,16 @@ def _write_archive(stream, root, raw, entries, snapshots):
                 os.close(fd)
         # A file changed after its archive member was written must also fail.
         for entry, expected in zip(entries, snapshots):
-            _verify_file(root, entry, expected)
+            if guard is not None:
+                guard()
+            _verify_file(root, entry, expected, guard)
 
 
 def seal(*, root, manifest, manifest_sha256, public_key, recipient_fingerprint,
-         commit, run_id, input_manifest_sha256, output):
+         commit, run_id, input_manifest_sha256, output, guard=None):
+    require(guard is None or callable(guard))
+    if guard is not None:
+        guard()
     root = _absolute(root)
     output = _absolute(output)
     require(os.path.commonpath([root, output]) != root)
@@ -377,7 +392,7 @@ def seal(*, root, manifest, manifest_sha256, public_key, recipient_fingerprint,
         raw, manifest_snapshot, entries = _manifest(
             root_fd, manifest, manifest_sha256, commit, run_id,
             input_manifest_sha256, recipient_fingerprint)
-        snapshots = [_verify_file(root_fd, entry) for entry in entries]
+        snapshots = [_verify_file(root_fd, entry, guard=guard) for entry in entries]
         key = _read_public_key(public_key)
         with tempfile.TemporaryDirectory(prefix="w15-public-seal-") as home:
             os.chmod(home, 0o700)
@@ -393,9 +408,9 @@ def seal(*, root, manifest, manifest_sha256, public_key, recipient_fingerprint,
                                   "--recipient", recipient_fingerprint, "--encrypt"],
                 stdin=subprocess.PIPE, stdout=output_fd, stderr=subprocess.DEVNULL,
                 env=_gpg_env(), bufsize=0)
-            _write_archive(_EncryptPipe(process), root_fd, raw, entries, snapshots)
+            _write_archive(_EncryptPipe(process, guard), root_fd, raw, entries, snapshots, guard)
             _verify_file(root_fd, {"path": manifest, "bytes": len(raw),
-                                  "sha256": manifest_sha256}, manifest_snapshot)
+                                  "sha256": manifest_sha256}, manifest_snapshot, guard)
             check_root = _directory(root, private=True)
             try:
                 current = os.fstat(check_root)
@@ -416,8 +431,10 @@ def seal(*, root, manifest, manifest_sha256, public_key, recipient_fingerprint,
             finally:
                 os.close(named_fd)
             os.lseek(output_fd, 0, os.SEEK_SET)
-            size, digest = _hash_fd(output_fd)
+            size, digest = _hash_fd(output_fd, guard)
             require(size > 0 and _snapshot(os.fstat(output_fd)) == _snapshot(value))
+            if guard is not None:
+                guard()
             os.fsync(parent_fd)
             return {"status": STATUS, "cipherSHA256": digest, "cipherBytes": size,
                     "fileCount": len(entries), "manifestSHA256": manifest_sha256,
