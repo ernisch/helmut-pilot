@@ -3,6 +3,9 @@
 Only public repository entry pins are read. Input-manifest and image bindings
 are declarations, not observations. Immutable input/provenance paths and every
 existing controller check remain intact. No review or GO can unlock this API.
+
+CLI: --validate-context-only reads at most 1 MiB of context JSON from stdin.
+Exit 0 means the binding declarations passed; readiness remains BLOCKED.
 """
 import sys
 sys.dont_write_bytecode=True
@@ -177,3 +180,26 @@ def apply_context(module,context,repo=REPO):
         module.__dict__.update(forward);module.M.__dict__.update(shared);module.AUDIT.__dict__.update(audit)
     except (Exception,KeyboardInterrupt):raise P.Rejected('CONTEXT_BINDING_REJECTED')from None
     return {**result,'hostBindingsApplied':True}
+
+
+def main(argv=None):
+    """Validate supplied public declarations; never import or bind a controller."""
+    try:
+        parser=P.Parser(description=__doc__,allow_abbrev=False)
+        parser.add_argument('--validate-context-only',action='store_true',required=True)
+        parser.parse_args(argv)
+        raw=sys.stdin.buffer.read(1024*1024+1)
+        require(0<len(raw)<=1024*1024)
+        result=validate_context(P.decode(raw),REPO)
+        print(json.dumps(result,separators=(',',':'),allow_nan=False))
+        return 0
+    except (Exception,KeyboardInterrupt):
+        print(json.dumps({'status':'FAIL_CONTEXT_CHECK_START_BLOCKED',
+          'reason':'CONTEXT_INVALID_OR_UNAVAILABLE','readiness':'BLOCKED',
+          'hostBindingsApplied':False,'executionAuthority':False,'testStarted':False,
+          'mock500Acceptance':False},separators=(',',':')))
+        return 1
+
+
+if __name__=='__main__':
+    raise SystemExit(main())

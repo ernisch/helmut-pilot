@@ -18,23 +18,20 @@ ist keine Funktionsgröße. GitHub-Gesamtpeak umfasst lokalePG/PGR/Node/Cache;
 Vercel-Funktionsspeicher und entfernteSupabaseDB sind getrennte Messräume.
 Kein Funktionsbedarfsbeleg>2GB, keine Upgradeempfehlung/Umstellung/Production-Aktion.
 
-## W15: Empfang belegt, Actions-Daten-GO erteilt; Rücksicherung offen
+## W15: passphrasebasierte Schlüsselsicherung gefunden, Probe offen
 
-Quelltransfer abgeschlossen:15Cipherteile/242.693.044Bytes,
-Einzel-/Gesamthashes und privater Drive-Zugriff geprüft; GPG-Empfang aller zwölf
-Originale/242.570.240Bytes PASS. Unabhängig Größen/SHA/Rechte/Baum bestätigt.
-Entwicklungsstand6b24c890 gepusht, PflichtCI40793217236 grün.51 neue plus9 vorhandene
-gezielte Fälle PASS; unabhängiger Code-/Publikationsreview PASS im belegten Umfang.
-Adapter, DB-/Rollenexport, bewachter Backupabschluss und Parent-Bindung vorbereitet.
-Jüngstes „Freigegeben“ gilt für die zusätzliche Actions-Daten-/Empfängerschlüssel-
-bereitstellung; kein erneutes Daten-GO nötig, kein End500-/Mock500-Start-GO.
-Aktuelle Cloud05:46UTC: privater Empfang/Key/Passphrase nicht erreichbar; öffentlicher
-Worktree aus6b24c890 wiederhergestellt. Drive-Recovery-Wrapper/Quittung privat erreichbar.
-Zuerst7E3998-Empfänger mit bestehendem DCFD605-Recovery-Schlüssel rücksichern;
-kein erneuter Quelltransfer, kein Export des alten privaten Recovery-Schlüssels.
-Secrets-API403, Environment ohne Branch-/Reviewschutz. Keine Actions-Bereitstellung.
-Runner-Bootstrap/UID1000, kompletter Restore/Remote-Abnahme offen. Nicht startbereit.
-[Empfang, Freigabe, Rücksicherungs- und Zugriffsgrenze](betrieb/w15-end500-empfang-und-startgrenze-20261029.md).
+Empfang zuvor vollständig belegt:15Cipherteile/242.693.044Bytes, zwölf Originale/
+242.570.240Bytes, Hashes/Rechte/Baum unabhängig PASS. Aktueller7E-Key nicht erreichbar.
+Hetzner laut Betreiber gelöscht. Privates Drive-Backup HELMUT_GPG_KEY.pgp(569Bytes)
+ist passphraseverschlüsselt und an DCF-Recovery-Key/Exporthash/Kontrollnachricht
+gebunden. Historischer Recoverybeleg vorhanden; heutige Entschlüsselung unbewiesen.
+Kürzester Weg: Bitwardenpassprobe→DCF→bestehender7E-Wrapper→15Cipherreuse.
+Secret noch nicht verfügbar. Kein neuer Empfänger/Originaltransfer vor dieser Probe.
+Prüfhelfer/5synthetische GPG-Fälle/unabhängiger Review PASS; echte Cipherpins geprüft,
+kein Secret gelesen. Kontextprüfung als stdin-CLI/4neue Fälle PASS. Frühere51+9
+Nachweise übernommen; RAM-Vertrag und History unverändert. Actions-Daten-GO besteht;
+Secrets-API zuletzt403/Environment-Schutz/Runner/Restore offen. Kein500er-Start-GO.
+[Sicherungsfund, sichere Bereitstellung und lokale Probe](betrieb/w15-schluesselrettung-20261029.md).
 
 ## Historischer W15-D-Befund vor obiger GitHub-Vorbereitung (28.10.)
 
