@@ -346,7 +346,7 @@ class WorkerChecks(unittest.TestCase):
         self.forward.main.side_effect = lambda **kwargs: kwargs['backup_completion'](FICTIONAL=True)
         with self.assertRaises(W.WorkflowRejected) as failed:
             W.run_worker(manifest, private)
-        self.assertEqual(failed.exception.phase, 'backup')
+        self.assertEqual(failed.exception.phase, 'backup-postcheck')
 
     def test_failed_prepare_has_no_retry_restore_or_private_error(self):
         manifest, private = self.setup_worker('end500-restore-gated')
