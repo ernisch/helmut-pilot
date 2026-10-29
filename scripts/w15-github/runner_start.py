@@ -64,6 +64,8 @@ WORKER_PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', '
                  'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure',
                  'connection-binding', 'connection-receive', 'connection-input-binding',
                  'connection-cache', 'connection-prepare', 'connection-restore', 'connection-closure',
+                 'connection-prepared-check', 'connection-materialization', 'connection-container-start',
+                 'connection-readiness', 'connection-native-restore', 'connection-backup',
                  'receiver-arguments', 'receiver-source-binding', 'receiver-private-inputs',
                  'receiver-index', 'receiver-disk-admission', 'receiver-key-import',
                  'receiver-encrypted-index', 'receiver-download', 'receiver-cipher-readback',

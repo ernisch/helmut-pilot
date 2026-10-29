@@ -53,6 +53,8 @@ function main() {
       'receive-prepare','restore','end500','backup','closure','parent','service','staging','worker','ipc',
       'connection-binding','connection-receive','connection-input-binding','connection-cache',
       'connection-prepare','connection-restore','connection-closure','receiver-arguments',
+      'connection-prepared-check','connection-materialization','connection-container-start',
+      'connection-readiness','connection-native-restore','connection-backup',
       'receiver-source-binding','receiver-private-inputs','receiver-index','receiver-disk-admission',
       'receiver-key-import','receiver-encrypted-index','receiver-download','receiver-cipher-readback',
       'receiver-authenticated-reception','receiver-relocation','receiver-agent-close'];

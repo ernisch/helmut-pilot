@@ -160,6 +160,7 @@ jobs:
           python3 -B scripts/w15-github/test_full_container_closure.py
           python3 -B scripts/w15-github/test_receiver_socket_path.py
           python3 -B scripts/w15-github/test_restore_failure_phase.py
+          python3 -B scripts/w15-github/test_restore_tcp_readiness.py
           python3 -B scripts/w15-github/test_mock500_parent.py
           python3 -B scripts/w15-github/test_mock500_runner.py
           python3 -B scripts/w15-github/test_mock500_inputs.py

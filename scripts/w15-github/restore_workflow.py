@@ -35,7 +35,8 @@ MANIFEST_KEYS = REQUEST_KEYS - {'nodeSource', 'postgrestSource'} | {
     'sourcePins', 'checkoutBytes', 'binaryBytes'}
 DECLARATION_KEYS = {'nonce', 'sourceQualification', 'approval', 'limits', 'maximumWallSeconds'}
 PRIVATE_KEYS = {'cipherIndex', 'keyB64', 'passphrase', 'eventInputs', 'artifactCredentials'}
-CONNECTION_PHASES = {'binding', 'receive', 'input-binding', 'cache', 'prepare', 'restore', 'closure'}
+CONNECTION_PHASES = {'binding', 'receive', 'input-binding', 'cache', 'prepare', 'restore', 'closure',
+                     'prepared-check', 'materialization', 'container-start', 'readiness', 'native-restore', 'backup'}
 RECEIVER_PHASES = {'arguments', 'source-binding', 'private-inputs', 'index', 'disk-admission',
                    'key-import', 'encrypted-index', 'download', 'cipher-readback',
                    'authenticated-reception', 'relocation', 'agent-close'}
