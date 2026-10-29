@@ -263,3 +263,32 @@ Das GO ist verbraucht. Nach ausdrücklicher Betreibersteuerung keine weitere
 echte Ausführung ohne gezielte Ursachenbehebung UND neue konkrete Freigabe;
 kein weiterer reiner Original-Diagnoselauf. Kein End500/Mock500, Merge,
 Deployment oder Production-Eingriff. Keine automatische Löschung oder Retry.
+
+## Gezielte synthetische Reproduktion und kleinster Rollenexportfix
+
+CI40948554553 auf32eb2dd2 reproduziert im neuen begrenzten nativen Exporttest
+FAIL`backup-roles-native`,Rückgabecode1,nach zwei abgeschlossenen Aktionen.
+Alle eigenen synthetischen DB-/Rollen-/Dateibereinigungen wurden bestätigt;
+keine Originaldaten oder Restoreausführung. Dieser Erstfehler bleibt erhalten.
+
+Die offiziellen Quellen vonPostgreSQL17.6 belegen die Ursache dieses Codeblockers:
+pg_dumpall ruft bereits vor der Optionsverarbeitungfind_other_exec mitargv0
+auf, umpg_dump im selben Installationsverzeichnis zu finden und zu prüfen.
+Das bisher für die Prozessbindung erfundeneargv0BASE/pg_dumpall existiert nicht.
+Der Fehler betrifft diesen Produktionsaufruf und ist kein Fixtureargumentfehler;
+`--database=postgres` ist eine gültige Option. Die genaue innere Fehlerstelle des
+vorigen Originallaufs ist durch dessen grobe Exportphase weiterhin nicht direkt
+beobachtet und wird nicht als erwiesen bezeichnet.
+
+Nur beim Rollenexport bleibtargv0 jetzt der tatsächliche Installationspfad.
+Ein gültiger libpq-Parameter`application_name=BASE/pg_dumpall` erhält gleichzeitig
+BASE im Prozessargument. Host, Socket, Port, Benutzer und Rollenexport bleiben
+gleich; kein Symlink, neuer Schlüssel, neues Image oder gelockerter Stopguard.
+Der kurze internepg_dump-Versionsnachfahre bleibt im registrierten Prozessverbund;
+eine unbekannte Besitzprüfung beim Abbruch muss unverändert geschlossen stoppen.
+Der gezielte Test prüft diese Stopgrenze und die native Exportverbindung.
+
+[Synthetischer Erstfehler](belege/w15-mock500-integration-20261029/EXPORT_BRIDGE_PRE_FIX_FAILED.SAFE.json)
+und [offizielle Quellbindung](belege/w15-mock500-integration-20261029/POSTGRES17_PGDUMPALL_DISCOVERY.SAFE.json).
+Neuer Originallauf ausschließlich nach gezieltem Fix, unabhängiger Prüfung,
+grüner Pflicht-CI auf dem tatsächlichen Kopf und neuem exaktem Betreiber-GO.

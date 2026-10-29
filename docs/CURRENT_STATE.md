@@ -21,7 +21,17 @@ synthetischen Daten im vorhandenen CI-Service geprüft: echter Worker/Kindprozes
 Dateien, Lifecycle und Quittungen statt künstlich erzeugter Exportdateien.
 Kein Originalrestore oder500er-Controller. Aktueller nativer Befund und Pflicht-CI
 stehen am tatsächlichen Kopf vonDraft977; kein Originalfehler-PASS daraus.
-Originalbranch60195031 bleibt erhalten, Mock-Dateiblocker unverändertBLOCKED.
+Fehlercommit60195031 bleibt unveränderter Vorfahre, Mock-Dateiblocker weiterBLOCKED.
+
+Konkreter zusätzlicher Exportblocker synthetisch reproduziert: CI40948554553
+auf32eb2dd2 beendet zwei native Aktionen, dannFAIL`backup-roles-native`,RC1;
+eigeneDB/Rolle/Dateienbereinigung bestätigt. PG17.6 sucht beim Start vonpg_dumpall
+unbedingt seinpg_dump-Nachbarprogramm anhandargv0. Der bisher erfundeneBASE-Pfad
+existiert nicht. Minimalfix: nurpg_dumpall erhält echtesargv0; ein gültiger
+application_name-Verbindungsparameter erhältBASE im Prozessargument. Stopguard
+unverändert. Native Regressionsabnahme/aktuelle Pflicht-CI sieheDraft977.
+Das ist ein belegter Codeblocker, kein direkt beobachteter innerer Erstfehler
+des Originallaufs; dessen feine Ursache bleibtUNKNOWN. Keine neueAusführung.
 
 ## W15 Fortschreibung: primärer Restore durchlaufen, Backup noch FAIL
 

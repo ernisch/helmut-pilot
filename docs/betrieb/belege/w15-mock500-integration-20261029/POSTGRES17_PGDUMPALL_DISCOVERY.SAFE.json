@@ -1,0 +1,20 @@
+{
+  "finding": "PG_DUMPALL_REQUIRES_REAL_ARGV0_FOR_SIBLING_DISCOVERY_BEFORE_OPTIONS",
+  "officialSources": [
+    {
+      "bytes": 59932,
+      "line": 225,
+      "sha256": "5080a5879c44d3478ee3cbab0e55f49d3dcd3c4205e6d52cc5d3a6907c61e670",
+      "url": "https://raw.githubusercontent.com/postgres/postgres/REL_17_6/src/bin/pg_dump/pg_dumpall.c"
+    },
+    {
+      "bytes": 18773,
+      "line": 329,
+      "sha256": "530d597a30f2ac12ebe917dba36cb2bc7add5825aa8262a76808a4114a413a4c",
+      "url": "https://raw.githubusercontent.com/postgres/postgres/REL_17_6/src/common/exec.c"
+    }
+  ],
+  "originalRunInnerFailureObserved": false,
+  "postgresVersion": "17.6",
+  "schema": "helmut-w15-postgres-executable-discovery-source/1"
+}

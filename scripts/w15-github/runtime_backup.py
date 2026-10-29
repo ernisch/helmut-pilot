@@ -79,8 +79,10 @@ select jsonb_build_object('database',current_database(),
 rollback;"""
 
 # Executed only through the controller's owned runner. Raw child output never
-# reaches the Actions console. argv0 keeps every grouped native child bound to
-# this BASE for the existing owned-process cmdline check.
+# reaches the Actions console. Native commands retain BASE in their arguments
+# for the existing owned-process cmdline check. pg_dumpall needs its real argv0
+# to locate and version-check its pg_dump sibling; its connection application
+# name carries BASE instead. No change to the owned-process stop guard.
 NODE_WORKER = r'''"use strict";
 const fs=require("node:fs"),cp=require("node:child_process"),crypto=require("node:crypto");
 const [base,action,database,sql]=process.argv.slice(1),root=base+"/state/final-backup";
@@ -114,9 +116,9 @@ function hash(fd){const h=crypto.createHash("sha256"),buf=Buffer.alloc(65536);le
   const common=["--no-password","--host=/var/run/postgresql","--port=5432","--username=postgres"];
   let exe,args;
   if(action==="backup-dump"){exe="pg_dump";args=[...common,"--format=custom","--create","--dbname="+database];}
-  else if(action==="backup-roles"){exe="pg_dumpall";args=[...common,"--database=postgres","--roles-only"];}
+  else if(action==="backup-roles"){exe="pg_dumpall";args=[...common,"--database=postgres","--roles-only","--dbname=application_name="+base+"/pg_dumpall"];}
   else{exe="psql";args=["-X","-w","-qAt","-v","ON_ERROR_STOP=1",...common,"--dbname="+database,"--command="+sql];}
-  need(!term);child=cp.spawn("/usr/lib/postgresql/17/bin/"+exe,args,{argv0:base+"/"+exe,stdio:["ignore",out,err],
+  need(!term);child=cp.spawn("/usr/lib/postgresql/17/bin/"+exe,args,{argv0:exe==="pg_dumpall"?"/usr/lib/postgresql/17/bin/pg_dumpall":base+"/"+exe,stdio:["ignore",out,err],
     env:{PATH:"/usr/lib/postgresql/17/bin:/usr/bin:/bin",LANG:"C.UTF-8",LC_ALL:"C.UTF-8"}});
   let spawnError=false;child.once("error",()=>{spawnError=true;});
   record({event:"owned-child-spawned",pid:child.pid||null});
