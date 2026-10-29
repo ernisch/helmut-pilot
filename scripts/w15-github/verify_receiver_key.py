@@ -30,6 +30,7 @@ KEY_NAME = 'HELMUT_W15_RECEIVER_PROTECTED_KEY_B64'
 PASS_NAME = 'HELMUT_W15_RECEIVER_PASSPHRASE'
 CONTROL = b'HELMUT W15 existing 7E recipient control only 20261029\n'
 ENV = {'PATH': '/usr/bin:/bin', 'LANG': 'C', 'LC_ALL': 'C'}
+MAX_AGENT_SOCKET_BYTES = 107
 
 
 class ReceiverError(ValueError):
@@ -91,9 +92,27 @@ def private_root(runner_temp):
         value = os.fstat(fd)
         require(value.st_uid == os.getuid() and stat.S_IMODE(value.st_mode) & 0o022 == 0)
         name = 'w15-existing-recipient-' + uuid.uuid4().hex
+        parent = Path(runner_temp)
+        # The common runner has a nested private temp path. GnuPG normally
+        # creates its Unix sockets below GNUPGHOME; Linux sun_path cannot hold
+        # that nested path. Use a NEW short private root, never a symlink or an
+        # assumed /run/user socket directory. All children stay in the parent
+        # cgroup; only their private filesystem name is shorter.
+        if len(os.fsencode(parent / name / 'gnupg' / 'S.gpg-agent.browser')) > MAX_AGENT_SOCKET_BYTES:
+            short_parent = os.open('/tmp', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            try:
+                shared = os.fstat(short_parent)
+                require(shared.st_uid == 0 and stat.S_ISDIR(shared.st_mode)
+                        and stat.S_IMODE(shared.st_mode) == 0o1777)
+            except BaseException:
+                os.close(short_parent)
+                raise
+            os.close(fd); fd = short_parent
+            parent, name = Path('/tmp'), 'w15-rx-' + uuid.uuid4().hex
+        require(len(os.fsencode(parent / name / 'gnupg' / 'S.gpg-agent.browser')) <= MAX_AGENT_SOCKET_BYTES)
         os.mkdir(name, mode=0o700, dir_fd=fd)
         os.fsync(fd)
-        root = Path(runner_temp) / name
+        root = parent / name
         checked = P.open_root(str(root))
         os.close(checked)
         return root

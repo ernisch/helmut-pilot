@@ -61,7 +61,13 @@ WORKER_BOOLEANS = {'isolatedRestoreObserved', 'end500BodyCompleted', 'originalTr
 WORKER_FALSE = {'executionAuthority', 'end500Acceptance', 'mock500Acceptance',
                 'productionActions', 'fullLifetimeMemoryAccepted'}
 WORKER_PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', 'resources',
-                 'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure'}
+                 'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure',
+                 'connection-binding', 'connection-receive', 'connection-input-binding',
+                 'connection-cache', 'connection-prepare', 'connection-restore', 'connection-closure',
+                 'receiver-arguments', 'receiver-source-binding', 'receiver-private-inputs',
+                 'receiver-index', 'receiver-disk-admission', 'receiver-key-import',
+                 'receiver-encrypted-index', 'receiver-download', 'receiver-cipher-readback',
+                 'receiver-authenticated-reception', 'receiver-relocation', 'receiver-agent-close'}
 
 
 class RunnerStartError(RuntimeError):

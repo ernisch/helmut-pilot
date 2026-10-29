@@ -35,8 +35,14 @@ MANIFEST_KEYS = REQUEST_KEYS - {'nodeSource', 'postgrestSource'} | {
     'sourcePins', 'checkoutBytes', 'binaryBytes'}
 DECLARATION_KEYS = {'nonce', 'sourceQualification', 'approval', 'limits', 'maximumWallSeconds'}
 PRIVATE_KEYS = {'cipherIndex', 'keyB64', 'passphrase', 'eventInputs', 'artifactCredentials'}
+CONNECTION_PHASES = {'binding', 'receive', 'input-binding', 'cache', 'prepare', 'restore', 'closure'}
+RECEIVER_PHASES = {'arguments', 'source-binding', 'private-inputs', 'index', 'disk-admission',
+                   'key-import', 'encrypted-index', 'download', 'cipher-readback',
+                   'authenticated-reception', 'relocation', 'agent-close'}
 PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', 'resources',
-          'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure'}
+          'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure'} | {
+              'connection-' + phase for phase in CONNECTION_PHASES} | {
+              'receiver-' + phase for phase in RECEIVER_PHASES}
 RUNNER_PHASES = {'arguments', 'binding', 'parent', 'service', 'staging', 'worker', 'closure', 'ipc'}
 STATUSES = {'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
             'end500-restore-gated': 'PASS_SAME_JOB_RESTORE_BACKUP_500_INACTIVE_ONLY_START_BLOCKED',
@@ -316,9 +322,28 @@ def _result(manifest):
         **dict.fromkeys(RESULT_FALSE, False)})
 
 
+def _connection_failure_phase(error, connection_code, fallback):
+    """Project only fixed checkpoints, never exception messages or free-form values.
+
+    A receiver checkpoint records the last observed step, not a causal claim.
+    In particular, receipt validation can fail after its final agent-close step.
+    """
+    error_type = getattr(connection_code, 'RestoreConnectionError', None)
+    if not isinstance(error_type, type) or type(error) is not error_type:
+        return fallback
+    phase = error.phase
+    if type(phase) is not str or phase not in CONNECTION_PHASES:
+        return fallback
+    if phase == 'receive':
+        receiver_phase = getattr(getattr(connection_code, 'E', None), 'PHASE', None)
+        if type(receiver_phase) is str and receiver_phase in RECEIVER_PHASES:
+            return 'receiver-' + receiver_phase
+    return 'connection-' + phase
+
+
 def run_worker(manifest, private_payload):
     """A's single fixed UID1000 worker. Call only after measured bootstrap."""
-    phase = 'binding'
+    phase, connection_code = 'binding', None
     try:
         raw, digest, qualification = validate_admission(manifest, private_payload)
         _manifest(manifest)
@@ -379,8 +404,8 @@ def run_worker(manifest, private_payload):
         return _result(manifest)
     except WorkflowRejected:
         raise
-    except BaseException:
-        raise WorkflowRejected(phase) from None
+    except BaseException as error:
+        raise WorkflowRejected(_connection_failure_phase(error, connection_code, phase)) from None
 
 
 def plan():

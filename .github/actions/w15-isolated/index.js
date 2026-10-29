@@ -50,7 +50,12 @@ function main() {
   if (result.status !== 0) {
     const failed = JSON.parse(result.stdout);
     const phases = ['arguments','event','approval','qualification','binding','resources','synthetic',
-      'receive-prepare','restore','end500','backup','closure','parent','service','staging','worker','ipc'];
+      'receive-prepare','restore','end500','backup','closure','parent','service','staging','worker','ipc',
+      'connection-binding','connection-receive','connection-input-binding','connection-cache',
+      'connection-prepare','connection-restore','connection-closure','receiver-arguments',
+      'receiver-source-binding','receiver-private-inputs','receiver-index','receiver-disk-admission',
+      'receiver-key-import','receiver-encrypted-index','receiver-download','receiver-cipher-readback',
+      'receiver-authenticated-reception','receiver-relocation','receiver-agent-close'];
     if (failed.status !== 'FAIL_W15_ISOLATED_WORKFLOW' || !phases.includes(failed.phase)
       || failed.executionAuthority !== false || failed.retryAllowed !== false) throw Error('receipt');
     const safe = {status:failed.status,phase:failed.phase,executionAuthority:false,retryAllowed:false};

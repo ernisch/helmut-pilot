@@ -158,6 +158,8 @@ jobs:
           python3 -B scripts/w15-github/test_artifact_transport.py
           python3 -B scripts/w15-github/test_gated_index.py
           python3 -B scripts/w15-github/test_full_container_closure.py
+          python3 -B scripts/w15-github/test_receiver_socket_path.py
+          python3 -B scripts/w15-github/test_restore_failure_phase.py
           node --check .github/actions/w15-isolated/index.js
       - name: Native automation boundary qualification (synthetic)
         # The root deployment bootstrap verifies this actual successful job step,
