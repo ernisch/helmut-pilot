@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-## W15: GitHub-Kanal und Parent belegt; Empfängerbereitstellung offen
+## W15: GitHub-Kanal, Parent und Empfänger belegt; Originalempfang vorbereitet
 
 Frische Cloud-Metadaten vom29.10.2026 binden den bereits lokal bestandenen
 Canary an eine **normale Laufzeitvariable**, nicht an eine nachgewiesene
@@ -42,21 +42,29 @@ Environment-Secret-Scope vom Betreiber bestätigt; separater
 auf`6a2a439c` erfolgreich. Zusammengesetzter Nachweis aus aktueller technischer
 Metadatenprüfung, ausdrücklich bestätigtem Environment-Secret und tatsächlicher
 Job-/Branch-/Commit-/Versuch1-Bindung. Keine echten Geheimnisse/Originale;
-kein weiterer Cloud-Dateikanal oder Dienst. Echte Empfängerwerte sind dadurch
-noch nicht vorhanden oder als funktionsfähig bewiesen.
+kein weiterer Cloud-Dateikanal oder Dienst. Dieser öffentliche Beleg ersetzt
+keine tatsächliche Schlüsselkontrolle.
 
-Nächste tatsächlich manuelle Handlung: bestehende Sicherung auf dem Mac mit dem
-vorbereiteten privaten Offline-Browserhelfer öffnen. Der Betreiber hat nur
-HTML/SAFE, keine gespeicherte DCF-Datei; deshalb kein GPG-/Dateiexport vorausgesetzt.
-Unveränderte OpenPGP.js6.3.2-Bibliothek/Lizenz, gepinnter Wrapper, keine alte
-Challengewiederholung, keine neuen Schlüssel. Nur bestehender geschützter7E-
-Export und eigene Passphrase werden lokal für genau zwei Environment-Secrets
-vorbereitet. Neuer begrenzter Modus`end500-receiver-check` dafür unabhängig
-statisch geprüft; acht Mock-GPG-, drei Builder- und acht Fake-Browserfälle
-bestanden. Noch keine echte Empfängerprüfung ausgeführt.
+Betreiber hat den Offline-Browserweg auf dem Mac ausgeführt und beide bestehenden
+Empfängerwerte als Environment-Secrets bestätigt. Echte
+[Empfängerkontrolle40855525798](https://github.com/ernisch/helmut-pilot/actions/runs/40855525798)
+auf`837b993a`, Versuch1, erfolgreich: vorhandener7E-Primary, Import und
+Entschlüsselung eines festen öffentlichen Kontrolltexts. Archivpassphrase/DCF
+bleiben offline; kein neuer Schlüssel, keine tatsächlichen Geheimwerte hier
+empfangen. Neue Pflicht-CI40853841698 auf demselben Kopf vollständig grün.
 [Prüfschritt und enger Übergabeumfang](betrieb/w15-github-empfaengerpruefung-20261029.md).
 
-**End500-Start weiterhin BLOCKED:** tatsächlicher Empfänger-/Originaldatenzugang,
+Nächster begrenzter Schritt:`end500-receive-inputs` verbindet ausschließlich die
+bestehenden15Cipherteile mit unveränderten Empfangs-/Relokationsprüfern. Alter
+versiegelter Sourcekontext und neuer Actionslauf bleiben getrennt. Sieben neue
+Fake-HTTP/GPG-Testgruppen und unabhängiger statischer Review bestanden; noch kein
+echter Originalempfang in diesem neuen Job. Einziger neuer manueller Eintrag:
+privater kurzlebiger URL-Index als`HELMUT_W15_CIPHER_URL_INDEX` im selben
+Environment. Keine URL-Veröffentlichung, Tokenrechterweiterung, neue Quelle,
+Sharingänderung oder erneuter Quelltransfer.
+[Konkreter Datenanschluss und Grenzen](betrieb/w15-github-originalempfang-20261029.md).
+
+**End500-Start weiterhin BLOCKED:** tatsächlicher Originaldatenzugang,
 tatsächliche vollständige PG/PostgREST/Node-/Controlleranbindung einschließlich
 Docker-Writer-/Dateicachezurechnung, frische Ressourcen-/Startbindungen und
 vollständiger realer Restore-/Rücksicherungsbeleg fehlen. Keine alten

@@ -1,5 +1,13 @@
 # W15: nur den bestehenden7E-Empfänger prüfen
 
+**Tatsächlich belegt:** Betreiber bestätigt beide Environment-Secrets. Genau
+ein gebundener echter Prüflauf40855525798 auf`837b993a`, Versuch1, ist erfolgreich:
+bestehender7E-Schlüssel importiert und öffentlicher Kontrolltext entschlüsselt.
+Keine Werte oder privaten Dateien an den Agenten übertragen. Die Kontrolle
+wird nicht wiederholt; der nächste Originalempfang importiert denselben
+Schlüssel nur für seine eigentliche Datenentschlüsselung neu.
+[SAFE-Laufbeleg](belege/w15-end500-transfer-20261029/RECEIVER_GITHUB_CONTROL.SAFE.json).
+
 Dieser vorbereitete Prüfschritt importiert ausschließlich den bestehenden
 geschützten7E-Export aus dem vorhandenen Wrapper und seine separate Passphrase.
 Er öffnet weder DCF-Recovery noch Archivpassphrase oder Originale und erzeugt
