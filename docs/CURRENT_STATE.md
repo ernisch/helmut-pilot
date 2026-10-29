@@ -10,9 +10,11 @@ im Dialog als nicht erkennbar. Keine echte Passphrase oder privaten Schlüssel
 angefordert/empfangen, kein neuer Datenweg, Schlüssel oder Thread.
 [Kanalbefund und konkrete manuelle Grenze](betrieb/w15-empfaenger-uebergabekanal-20261029.md).
 
-GitHub-Environment `helmut-ci-originals` frisch lesend bestätigt:
-Adminbypass an, keine Schutzregeln, keine Branchbindung. Neuer ausschließlich
-lesender, branch-/commitgebundener Metadatenprüfer sperrt diesen Zustand;
+GitHub-Environment `helmut-ci-originals` nach manueller Betreiberänderung neu
+lesend geprüft: Adminbypass jetzt aus; ausschließlich der aktuelle PR975-Branch
+ist als typisierte Branchpolicy zugelassen, keine Tags. Required reviewers und
+Selbstfreigabesperre fehlen noch. Neuer ausschließlich
+lesender, branch-/commitgebundener Metadatenprüfer sperrt diesen Teilzustand;
 kein erneuter Secrets-API-Zugriff nach dem bekannten403. Für echten
 Datenzugang fehlen wirksamer Schutz und ein tatsächlich zulässiger anderer
 Reviewer; keine Selbstfreigabe oder Umgehung.

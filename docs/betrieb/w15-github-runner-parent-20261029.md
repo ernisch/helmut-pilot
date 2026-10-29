@@ -71,3 +71,33 @@ Auth30/Unit60/Provider20 und der geltende End500-Vertrag bleiben unverändert.
 Nur neue synthetische Adapter-Grenzfälle dürfen lokal laufen. Ein echter
 Parent-/Containerstart wird hier nicht lokal ausgeführt; historische grüne
 CI-/Capability-/500er-Nachweise werden nicht wiederholt oder neu etikettiert.
+
+## Erste echte Probe und begrenzte Fehlerdiagnose
+
+Die erste echte Parentprobe40844433704 aufb78ff845 scheiterte im Python-Schritt
+in weniger als einer Sekunde. Checkout, Kopfbindung, die17 kleinen Grenzfälle und
+der feste Imagepull waren erfolgreich. Der damalige Bericht enthielt nur
+`RUNNER_PARENT_PROBE_REJECTED`; daraus lässt sich kein bestimmter Kernel-,
+systemd-, Git- oder Rechtefehler ableiten. Es wird keine Ursache erfunden.
+
+Der Adapter ergänzt ausschließlich feste Phasen und Fehlercodes. Äußerer
+Image-/Socket-/Prepare-/Supervisor-/Finalanschluss und interne Git-, Unit-,
+Start-, Readback-, Worker- und Stopphasen werden unterschieden. Ein interner
+Fehler darf nur das geschlossene Schema `phase`, `code`, `exitCode`, `via`
+mit begrenzten festen Werten weitergeben. Fremde Kindausgaben, Tracebacks,
+stderr, private Pfade und freie Exceptiontexte bleiben verworfen. Der erste
+beobachtete Fehler bleibt erhalten, auch wenn dessen Abschluss später scheitert.
+
+Ein fester kleiner Python-Lader meldet vor einem UID1000-Scriptstart ausschließlich
+`worker-load/WORKER_SOURCE_UNAVAILABLE`, falls der unveränderte öffentliche
+Scriptpfad nicht geöffnet werden kann. Damit wird insbesondere eine mögliche
+Unix-Traversierungsgrenze unter `/home/runner` sichtbar; `safe.directory` allein
+würde solche Dateirechte nicht ändern. Eine solche Ursache ist bisher nicht
+belegt. Keine Home-/Repositoryrechte werden gelockert und keine neue Quellen-
+Stagingarchitektur wird vorsorglich eingeführt.
+
+Ein zweiter echter secretfreier Versuch wäre damit ein gezielter Diagnoselauf
+des ersten unbekannten Anschlussfehlers und keine Behauptung seiner Behebung.
+Limits und eigentliche Prozess-/Containerlogik bleiben unverändert. Nach
+höchstens zwei gleichartigen Fehlschlägen muss die konkrete Ursache und der
+kleinste weitere Weg neu bewertet werden; kein automatischer Retry.

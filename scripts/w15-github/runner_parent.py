@@ -35,10 +35,67 @@ INSPECT = ('{"id":{{json .Id}},"pid":{{json .State.Pid}},"running":{{json .State
            '"exit":{{json .State.ExitCode}},"parent":{{json .HostConfig.CgroupParent}},'
            '"memory":{{json .HostConfig.Memory}},"swap":{{json .HostConfig.MemorySwap}},'
            '"network":{{json .HostConfig.NetworkMode}},"image":{{json .Image}},"labels":{{json .Config.Labels}}}')
+PHASES = frozenset(('arguments', 'github-environment', 'github-head', 'github-entry-pin',
+    'outer-image', 'outer-socket', 'outer-prepare', 'outer-initial-readback', 'outer-supervisor',
+    'outer-final-readback', 'outer-parent-stop', 'parent-entry', 'parent-unit-write',
+    'parent-daemon-reload', 'parent-start', 'parent-readback', 'parent-remove',
+    'supervisor-entry', 'supervisor-image', 'supervisor-worker', 'supervisor-readback',
+    'supervisor-container-stop', 'worker-load', 'worker-entry', 'worker-image',
+    'worker-container-start', 'worker-container-bind', 'worker-client', 'worker-container-stop'))
+CODES = frozenset(('CHECK_REJECTED', 'COMMAND_FAILED', 'COMMAND_TIMEOUT', 'COMMAND_UNAVAILABLE',
+    'OUTPUT_REJECTED', 'CHILD_EXIT_WITHOUT_REPORT', 'WORKER_SOURCE_UNAVAILABLE',
+    'FILESYSTEM_ACCESS_DENIED', 'FILESYSTEM_ENTRY_MISSING', 'FILESYSTEM_ERROR',
+    'COMMON_PARENT_REJECTED', 'CANCELLED', 'RUNTIME_REJECTED'))
+PHASE = 'arguments'
+WORKER_LOADER = '''import json,runpy,sys
+sys.argv=sys.argv[1:]
+try:
+ runpy.run_path(sys.argv[0],run_name="__main__")
+except OSError:
+ print(json.dumps({"w15ParentProbeFailure":{"phase":"worker-load","code":"WORKER_SOURCE_UNAVAILABLE","exitCode":None,"via":[]}},separators=(",",":")))
+ raise SystemExit(1)
+'''
 
 
 class ProbeError(RuntimeError):
-    pass
+    def __init__(self, message='RUNNER_PARENT_PROBE_REJECTED', *, code='CHECK_REJECTED', exit_code=None, record=None):
+        super().__init__('RUNNER_PARENT_PROBE_REJECTED')
+        self.record = record if record is not None else {'phase': PHASE, 'code': code, 'exitCode': exit_code, 'via': []}
+
+
+def phase(value):
+    global PHASE
+    require(value in PHASES)
+    PHASE = value
+
+
+def failure_record(error):
+    if isinstance(error, ProbeError):
+        return error.record
+    code = ('CANCELLED' if isinstance(error, KeyboardInterrupt) else
+            'COMMAND_TIMEOUT' if isinstance(error, subprocess.TimeoutExpired) else
+            'FILESYSTEM_ACCESS_DENIED' if isinstance(error, PermissionError) else
+            'FILESYSTEM_ENTRY_MISSING' if isinstance(error, FileNotFoundError) else
+            'FILESYSTEM_ERROR' if isinstance(error, OSError) else
+            'COMMON_PARENT_REJECTED' if isinstance(error, R.ResourceError) else 'RUNTIME_REJECTED')
+    return {'phase': PHASE, 'code': code, 'exitCode': None, 'via': []}
+
+
+def child_failure(raw):
+    """Only our closed scalar failure schema may cross an internal boundary."""
+    try:
+        require(isinstance(raw, bytes) and 0 < len(raw) <= 8192)
+        outer = json.loads(raw)
+        require(type(outer) is dict and set(outer) == {'w15ParentProbeFailure'})
+        row = outer['w15ParentProbeFailure']
+        require(type(row) is dict and set(row) == {'phase', 'code', 'exitCode', 'via'}
+                and row['phase'] in PHASES and row['code'] in CODES
+                and (row['exitCode'] is None or type(row['exitCode']) is int and -255 <= row['exitCode'] <= 255)
+                and type(row['via']) is list and len(row['via']) < 4
+                and all(type(item) is str and item in PHASES for item in row['via']))
+        return {**row, 'via': row['via'] + [PHASE]}
+    except Exception:
+        return None
 
 
 class StopLatch:
@@ -69,12 +126,19 @@ class Parser(argparse.ArgumentParser):
 
 
 def command(argv, *, timeout=15, check=True):
-    result = subprocess.run(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                            stderr=subprocess.DEVNULL, env=ENV, timeout=timeout,
-                            close_fds=True, shell=False)
-    require(len(result.stdout) <= 65536)
-    if check:
-        require(result.returncode == 0)
+    try:
+        result = subprocess.run(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL, env=ENV, timeout=timeout,
+                                close_fds=True, shell=False)
+    except subprocess.TimeoutExpired:
+        raise ProbeError(code='COMMAND_TIMEOUT') from None
+    except OSError:
+        raise ProbeError(code='COMMAND_UNAVAILABLE') from None
+    if len(result.stdout) > 65536:
+        raise ProbeError(code='OUTPUT_REJECTED')
+    if check and result.returncode != 0:
+        raise ProbeError(code='COMMAND_FAILED', exit_code=result.returncode,
+                         record=child_failure(result.stdout))
     return result
 
 
@@ -96,15 +160,18 @@ def process_env(ctx):
 
 
 def github_binding(run_id, commit):
+    phase('github-environment')
     require(os.environ.get('GITHUB_ACTIONS') == 'true'
             and os.environ.get('GITHUB_RUN_ID') == run_id
             and os.environ.get('GITHUB_RUN_ATTEMPT') == '1')
+    phase('github-head')
     head = command(['/usr/bin/git', '--no-optional-locks', '-c', 'core.hooksPath=/dev/null',
                     '-c', 'core.fsmonitor=false', '-c', 'safe.directory=' + str(REPO),
                     '-C', str(REPO), 'rev-parse', 'HEAD']).stdout
     require(head == (commit + '\n').encode())
     # Both executable repository sources must equal raw blobs at the exact HEAD.
     for file in (SCRIPT, SCRIPT.with_name('common_resources.py')):
+        phase('github-entry-pin')
         relative = str(file.relative_to(REPO))
         result = command(['/usr/bin/git', '--no-optional-locks', '-c', 'core.hooksPath=/dev/null',
                           '-c', 'core.fsmonitor=false', '-c', 'safe.directory=' + str(REPO), '-C', str(REPO),
@@ -166,10 +233,12 @@ def unit_bytes():
 
 
 def prepare_parent(ctx):
+    phase('parent-entry')
     require(os.getuid() == 0 and Path('/proc/1/comm').read_text().strip() == 'systemd')
     unit, _, _ = names(ctx)
     path = R.KERNEL_ROOT / unit
     require(not path.exists())
+    phase('parent-unit-write')
     fd = os.open(UNIT_ROOT / unit, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
     try:
         raw = unit_bytes()
@@ -180,18 +249,26 @@ def prepare_parent(ctx):
     # Explicit unit definition and start avoid relying on implicit set-property
     # loading. No worker runs before the slice's actual limits are read back.
     try:
+        phase('parent-daemon-reload')
         command(['/usr/bin/systemctl', 'daemon-reload'])
+        phase('parent-start')
         command(['/usr/bin/systemctl', 'start', unit])
+        phase('parent-readback')
         observed = identity(path)
         read_parent(ctx, observed, empty=True)
-    except BaseException:
+    except BaseException as error:
         # This invocation exclusively created the unit; a pre-existing unit
         # would already have failed O_EXCL and is never stopped or removed.
-        remove_parent(ctx)
-        raise
+        first = ProbeError(record=failure_record(error))
+        try:
+            remove_parent(ctx)
+        except BaseException:
+            pass  # Preserve the actual first failure, never a cleanup PASS.
+        raise first from None
 
 
 def remove_parent(ctx):
+    phase('parent-remove')
     require(os.getuid() == 0)
     unit, _, _ = names(ctx)
     file = UNIT_ROOT / unit
@@ -237,22 +314,27 @@ def stop_container(ctx, image):
 
 
 def worker(ctx):
+    phase('worker-entry')
     require(os.getuid() == os.getgid() == 1000 and os.getgroups() == [socket_gid()])
     unit, _, container = names(ctx)
     resources = R.observe(ctx)
     root_pid = os.getppid()
     resources.check_pid(root_pid)
+    phase('worker-image')
     image = command(DOCKER + ['image', 'inspect', '--format', '{{.Id}}', IMAGE]).stdout.decode().strip()
     require(re.fullmatch('sha256:[a-f0-9]{64}', image))
     require(inspect(container, check=False) is None)
     wait = None
+    failure = None
     try:
+        phase('worker-container-start')
         command(DOCKER + ['run', '-d', '--name', container, '--pull=never', '--network=none',
                           '--restart=no', '--read-only', '--pids-limit=16', '--cap-drop=ALL',
                           '--security-opt=no-new-privileges', '--memory=2560000000',
                           '--memory-swap=2560000000', '--cgroup-parent=' + unit,
                           *[arg for key, value in container_labels(ctx).items() for arg in ('--label', key + '=' + value)],
                           '--entrypoint=/bin/sleep', IMAGE, '90'], timeout=20)
+        phase('worker-container-bind')
         value = inspect(container)
         container_owned(value, ctx, image)
         require(value['running'] is True and value['parent'] == unit and value['memory'] == R.LIMIT
@@ -260,6 +342,7 @@ def worker(ctx):
         resources.check_pid(value['pid'], value['id'])
         # Hold an actual host Docker client in the parent while observing the
         # separately daemon-created container child. No inherited runner env.
+        phase('worker-client')
         wait = subprocess.Popen(DOCKER + ['wait', container], stdin=subprocess.DEVNULL,
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                 env=ENV, close_fds=True)
@@ -269,27 +352,40 @@ def worker(ctx):
                   'dockerClientPID': wait.pid, 'containerInitPID': value['pid'],
                   'dockerSocketGID': socket_gid(), 'workerSupplementaryGroups': os.getgroups(),
                   'observedImageId': image, 'sampleWhileAllRolesLive': sample}
+    except BaseException as error:
+        failure = ProbeError(record=failure_record(error))
+        raise failure from None
     finally:
-        stop_container(ctx, image)
-        if wait is not None:
-            require(wait.wait(timeout=10) == 0)
-        resources.sample()
+        try:
+            phase('worker-container-stop')
+            stop_container(ctx, image)
+            if wait is not None:
+                require(wait.wait(timeout=10) == 0)
+            resources.sample()
+        except BaseException:
+            if failure is None:
+                raise
     return result
 
 
 def supervise(ctx):
+    phase('supervisor-entry')
     require(os.getuid() == 0)
     unit, _, container = names(ctx)
     path = R.KERNEL_ROOT / unit
     inode = identity(path)
     require(R.membership(Path('/proc/self/cgroup').read_text()).startswith('/' + unit + '/'))
     read_parent(ctx, inode)
+    phase('supervisor-image')
     image = command(DOCKER + ['image', 'inspect', '--format', '{{.Id}}', IMAGE]).stdout.decode().strip()
     require(re.fullmatch('sha256:[a-f0-9]{64}', image))
     require(inspect(container, check=False) is None)
     child = None
+    failure = None
     try:
-        child = subprocess.Popen(internal_argv('worker', ctx), stdin=subprocess.DEVNULL,
+        phase('supervisor-worker')
+        worker_args = internal_argv('worker', ctx)
+        child = subprocess.Popen(worker_args[:2] + ['-c', WORKER_LOADER] + worker_args[2:], stdin=subprocess.DEVNULL,
                                  stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                                  env=process_env(ctx), user=1000, group=1000, extra_groups=[socket_gid()], close_fds=True)
         deadline = time.monotonic() + 60
@@ -298,21 +394,32 @@ def supervise(ctx):
             read_parent(ctx, inode)
             time.sleep(.1)
         raw = child.communicate(timeout=5)[0]
-        require(child.returncode == 0 and len(raw) <= 16384)
+        if child.returncode != 0:
+            raise ProbeError(code='CHILD_EXIT_WITHOUT_REPORT', exit_code=child.returncode, record=child_failure(raw))
+        require(len(raw) <= 16384)
         result = json.loads(raw)
         require(result['rootSupervisorPID'] == os.getpid() and result['uid1000WorkerPID'] == child.pid)
+        phase('supervisor-readback')
         read_parent(ctx, inode)
         return result
+    except BaseException as error:
+        failure = ProbeError(record=failure_record(error))
+        raise failure from None
     finally:
-        if child is not None and child.poll() is None:
-            child.terminate()
-            try:
-                child.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                child.kill()
-                child.wait(timeout=5)
-        stop_container(ctx, image)
-        read_parent(ctx, inode)
+        try:
+            if child is not None and child.poll() is None:
+                child.terminate()
+                try:
+                    child.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    child.kill()
+                    child.wait(timeout=5)
+            phase('supervisor-container-stop')
+            stop_container(ctx, image)
+            read_parent(ctx, inode)
+        except BaseException:
+            if failure is None:
+                raise
 
 
 def internal_argv(mode, ctx):
@@ -327,13 +434,18 @@ def privileged(mode, ctx):
 
 def probe(ctx, stop_latch=None):
     unit, service, _ = names(ctx)
+    phase('outer-image')
     image = command(DOCKER + ['image', 'inspect', '--format', '{{.Id}}', IMAGE]).stdout.decode().strip()
     require(re.fullmatch('sha256:[a-f0-9]{64}', image))
+    phase('outer-socket')
     socket_gid()
     created = False
+    failure = None
     try:
+        phase('outer-prepare')
         privileged('prepare', ctx)
         created = True
+        phase('outer-initial-readback')
         inode = identity(R.KERNEL_ROOT / unit)
         initial = read_parent(ctx, inode, empty=True)
         argv = ['/usr/bin/sudo', '-n', '/usr/bin/systemd-run', '--quiet', '--wait', '--pipe', '--collect',
@@ -341,9 +453,11 @@ def probe(ctx, stop_latch=None):
                 '--property=User=0', '--property=Group=0', '--property=RuntimeMaxSec=75',
                 '--property=TimeoutStopSec=15', '--property=KillMode=control-group',
                 '/usr/bin/env', '-i', *[k + '=' + v for k, v in process_env(ctx).items()], *internal_argv('supervise', ctx)]
+        phase('outer-supervisor')
         result = command(argv, timeout=100)
         roles = json.loads(result.stdout)
         require(roles['observedImageId'] == image)
+        phase('outer-final-readback')
         final = read_parent(ctx, inode, empty=True)
         require(final['kernelLifetimePeakBytes'] >= initial['kernelLifetimePeakBytes'])
         return {'status': 'PASS_PARENT_TOPOLOGY_ONLY_START_BLOCKED', 'readiness': 'BLOCKED',
@@ -353,17 +467,26 @@ def probe(ctx, stop_latch=None):
                 'executionAuthority': False, 'end500Acceptance': False, 'mock500Acceptance': False,
                 'commonLifetimeMemoryAccepted': False, 'fullRestoreCapacityAccepted': False,
                 'controllerStarted': False, 'databaseStarted': False, 'authCalls': 0, 'units': 0, 'providerCalls': 0}
+    except BaseException as error:
+        failure = ProbeError(record=failure_record(error))
+        raise failure from None
     finally:
         if created:
             if stop_latch is not None:
                 stop_latch.cleaning = True
-            privileged('remove', ctx)
+            try:
+                phase('outer-parent-stop')
+                privileged('remove', ctx)
+            except BaseException:
+                if failure is None:
+                    raise
 
 
 def main(argv=None):
     public = True
     stop_latch = None
     try:
+        phase('arguments')
         parser = Parser(allow_abbrev=False, add_help=False, description=__doc__)
         mode = parser.add_mutually_exclusive_group(required=True)
         mode.add_argument('--probe-parent-only', action='store_true')
@@ -388,13 +511,16 @@ def main(argv=None):
         if result is not None:
             print(json.dumps(result, separators=(',', ':'), allow_nan=False))
         return 0
-    except (Exception, KeyboardInterrupt):
+    except (Exception, KeyboardInterrupt) as error:
         if public:
             print(json.dumps({'status': 'FAIL_OR_UNKNOWN_PARENT_PROBE_START_BLOCKED',
                               'reason': 'RUNNER_PARENT_PROBE_REJECTED', 'readiness': 'BLOCKED',
+                              'failure': failure_record(error),
                               'executionAuthority': False, 'controllerStarted': False,
                               'databaseStarted': False, 'end500Acceptance': False, 'mock500Acceptance': False,
                               'commonLifetimeMemoryAccepted': False, 'retryAllowed': False}, separators=(',', ':')))
+        else:
+            print(json.dumps({'w15ParentProbeFailure': failure_record(error)}, separators=(',', ':')))
         return 1
     finally:
         if stop_latch is not None:

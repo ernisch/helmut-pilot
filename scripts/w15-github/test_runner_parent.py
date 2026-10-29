@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import stat
 import subprocess
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -209,7 +210,9 @@ class ParentProbeChecks(unittest.TestCase):
                 patch.object(P.R, 'observe', return_value=Mock()), \
                 patch.object(P, 'inspect', side_effect=[None, value, stopped]), \
                 patch.object(P, 'command', side_effect=command) as commands:
-            with self.assertRaises(subprocess.TimeoutExpired): P.worker(CTX)
+            with self.assertRaises(P.ProbeError) as failure: P.worker(CTX)
+        self.assertEqual(failure.exception.record['code'], 'COMMAND_TIMEOUT')
+        self.assertEqual(failure.exception.record['phase'], 'worker-container-start')
         self.assertEqual(commands.call_args.args[0], P.DOCKER + ['stop', '--time', '5', 'b' * 64])
 
     def test_preexisting_name_is_rejected_before_run_and_not_cleaned_up(self):
@@ -270,6 +273,78 @@ class ParentProbeChecks(unittest.TestCase):
                 with self.assertRaises(P.ProbeError): P.remove_parent(CTX)
                 command.assert_not_called()
             self.assertTrue(file.exists())
+
+    def test_closed_internal_failure_preserves_actual_phase_and_exit_only(self):
+        row = {'phase': 'parent-start', 'code': 'COMMAND_FAILED', 'exitCode': 1, 'via': []}
+        raw = json.dumps({'w15ParentProbeFailure': row}).encode()
+        P.phase('outer-prepare')
+        with patch.object(P.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, raw)):
+            with self.assertRaises(P.ProbeError) as failure: P.command(['fixed'])
+        self.assertEqual(failure.exception.record, {**row, 'via': ['outer-prepare']})
+        for bad in (b'/private/SECRET', b'{"error":"SECRET"}',
+                    json.dumps({'w15ParentProbeFailure': {**row, 'phase': '/private/SECRET'}}).encode(),
+                    json.dumps({'w15ParentProbeFailure': {**row, 'code': 'SECRET'}}).encode(),
+                    json.dumps({'w15ParentProbeFailure': {**row, 'exitCode': True}}).encode(),
+                    json.dumps({'w15ParentProbeFailure': {**row, 'extra': 'SECRET'}}).encode()):
+            with patch.object(P.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, bad)):
+                with self.assertRaises(P.ProbeError) as failure: P.command(['fixed'])
+            self.assertEqual(failure.exception.record['phase'], 'outer-prepare')
+            self.assertNotIn('SECRET', json.dumps(failure.exception.record))
+
+    def test_internal_errors_publish_only_allowlisted_fixed_fields(self):
+        def prepare(ctx):
+            P.phase('parent-unit-write')
+            raise PermissionError('/private/SECRET')
+        argv = ['--internal', 'prepare', '--run-id', CTX['runId'], '--expected-commit', CTX['exactCommit'], '--nonce', CTX['nonce']]
+        with patch.object(P, 'github_binding'), patch.object(P, 'prepare_parent', side_effect=prepare), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(P.main(argv), 1)
+        row = json.loads(out.getvalue())['w15ParentProbeFailure']
+        self.assertEqual(row, {'phase': 'parent-unit-write', 'code': 'FILESYSTEM_ACCESS_DENIED', 'exitCode': None, 'via': []})
+        self.assertNotIn('SECRET', out.getvalue())
+
+    def test_fixed_worker_loader_reports_unreadable_script_without_traceback_or_path(self):
+        result = subprocess.run([sys.executable, '-B', '-c', P.WORKER_LOADER,
+                                 '/fictional-w15-nonexistent-private-SECRET/entry.py'],
+                                env=P.ENV, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                stdin=subprocess.DEVNULL, timeout=5)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stderr, b'')
+        P.phase('supervisor-worker')
+        row = P.child_failure(result.stdout)
+        self.assertEqual(row['phase'], 'worker-load')
+        self.assertEqual(row['code'], 'WORKER_SOURCE_UNAVAILABLE')
+        self.assertNotIn('SECRET', result.stdout.decode())
+
+    def test_cleanup_failure_cannot_replace_actual_outer_first_failure(self):
+        image = 'sha256:' + 'f' * 64
+        def privileged(action, ctx):
+            if action == 'remove': raise P.ProbeError(code='COMMAND_FAILED', exit_code=1)
+        def read(ctx, inode, **kwargs):
+            P.phase('outer-initial-readback')
+            raise PermissionError('/private/SECRET')
+        with patch.object(P, 'command', return_value=subprocess.CompletedProcess([], 0, (image + '\n').encode())), \
+                patch.object(P, 'socket_gid', return_value=987), patch.object(P, 'identity', return_value=(1, 2)), \
+                patch.object(P, 'privileged', side_effect=privileged), patch.object(P, 'read_parent', side_effect=read):
+            with self.assertRaises(P.ProbeError) as failure: P.probe(CTX)
+        self.assertEqual(failure.exception.record['phase'], 'outer-initial-readback')
+        self.assertEqual(failure.exception.record['code'], 'FILESYSTEM_ACCESS_DENIED')
+
+    def test_worker_termination_failure_preserves_supervisor_first_failure(self):
+        child = Mock(pid=54321)
+        child.poll.return_value = None
+        child.terminate.side_effect = ProcessLookupError('do-not-publish')
+        with patch.object(P.os, 'getuid', return_value=0), patch.object(P, 'socket_gid', return_value=987), \
+                patch.object(P, 'identity', return_value=(1, 2)), patch.object(P, 'read_parent'), \
+                patch.object(P, 'command', return_value=subprocess.CompletedProcess([], 0, ('sha256:' + 'f' * 64).encode())), \
+                patch.object(P, 'inspect', return_value=None), \
+                patch.object(P.Path, 'read_text', return_value='0::/' + P.names(CTX)[0] + '/control.service\n'), \
+                patch.object(P.subprocess, 'Popen', return_value=child), \
+                patch.object(P.time, 'monotonic', side_effect=[0, 61]):
+            with self.assertRaises(P.ProbeError) as failure: P.supervise(CTX)
+        self.assertEqual(failure.exception.record['phase'], 'supervisor-worker')
+        self.assertEqual(failure.exception.record['code'], 'CHECK_REJECTED')
+        self.assertNotIn('do-not-publish', json.dumps(failure.exception.record))
 
 
 if __name__ == '__main__':

@@ -1,5 +1,22 @@
 # W15: GitHub-Datenzugang bleibt gesperrt
 
+## Neue Beobachtung nach manueller Betreiberänderung
+
+Nach dem Speichern am29.10.2026 erneut ausschließlich live lesend geprüft:
+`can_admins_bypass=false`, Custom-Branchpolicies aktiv, genau eine Policy mit
+Typ`branch` und dem aktuellen PR975-Branch. Keine Tags und keine weiteren
+Branchmuster. Der aktuelle Branchkopf passt zu`b78ff845`.
+`protection_rules` enthält aber ausschließlich`branch_policy`; eine
+`required_reviewers`-Regel und `prevent_self_review=true` fehlen weiterhin.
+Der Datenzugangsblocker bleibt deshalb offen. Keine Secrets-Endpunkte oder
+Konfigurationsänderungen durch den Agenten.
+[Öffentlicher neuer Teilbefund](belege/w15-end500-transfer-20261029/GITHUB_PROTECTION_UPDATE.SAFE.json).
+
+Noch nötiger Klickweg: GitHub → Repository → Settings → Environments →
+`helmut-ci-originals` → Required reviewers → anderen berechtigten Nutzer oder
+Team auswählen → Prevent self-review aktivieren → Save protection rules.
+Der untenstehende frühere Befund bleibt historisch erhalten.
+
 Rein lesender Livebefund vom29.10.2026 für `ernisch/helmut-pilot`, bestehendes
 Environment `helmut-ci-originals`, ID`25001443837`: `can_admins_bypass=true`,
 `protection_rules=[]`, `deployment_branch_policy=null`. Der GET der
