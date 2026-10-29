@@ -148,6 +148,7 @@ jobs:
           python3 -B scripts/w15-github/test_receive_runtime_handoff.py
           python3 -B scripts/w15-github/test_runtime_cache.py
           python3 -B scripts/w15-github/test_runtime_restore.py
+          python3 -B scripts/w15-github/test_restore_backup_seam.py
           python3 -B scripts/w15-github/test_runtime_owned_backup.py
           python3 -B scripts/w15-github/test_restore_connection.py
           python3 -B scripts/w15-github/test_runtime_qualification.py
