@@ -4,6 +4,41 @@ Stand29.10.2026. Die angehängte Offline-Quittung wurde geprüft. Die Wiederhers
 des bestehenden DCF-Recovery-Schlüssels und die echte Kontrollantwort sind beim
 Betreiber belegt. Das ist keine Wiederherstellung des7E-Empfängers in dieser Cloud.
 
+## Fortsetzung im bestehenden neuen Chat: Schutz noch nicht nachgewiesen
+
+Die aktuelle, tatsächlich an diesen Chat gebundene Cloud-Umgebung ist bereit;
+Konfigurations- und beobachtete Revision sind jeweils `1`,
+`observations_current=true`. Der bereits bestandene Prozessvergleich wurde
+übernommen und nicht wiederholt. Die Metadaten führen den Canary jedoch unter
+`runtime_variables` auf. Alle ausgewiesenen Secret-Ziele sind API-Variablen mit
+Domainbindung; keine geschützte lokale Secret-Dateibindung ist ausgewiesen.
+Das beweist keine geschützte lokale Schlüsselübergabe. Der öffentliche
+[reduzierte Metadatenbeleg](belege/w15-end500-transfer-20261029/CLOUD_HANDOFF_CHANNEL.SAFE.json)
+enthält keine Secret-Werte und erteilt keine Transfer- oder Startfreigabe.
+
+Die verfügbaren Cloud-Werkzeuge lesen Status und Diagnosen; eine Änderung der
+Bereitstellung können sie nicht vornehmen. Die tatsächlich nötige manuelle
+Handlung ist daher zunächst ausschließlich die Prüfung des vorhandenen
+Konfigurationsdialogs: Wird für **diese bestehende Umgebung** eine ausdrücklich
+geschützte lokale Secret-Datei angeboten? Nur Bereitstellungstyp und die
+nicht geheimen Bindungsmetadaten melden. Noch keine echte Passphrase und keinen
+privaten Schlüssel eintragen oder in den Chat senden. Eine gewöhnliche Variable
+oder eine umgedeutete API-Domainbindung erfüllt diese Anforderung nicht.
+
+Der Betreiber meldet im laufenden Chat: Bereitstellungstyp nicht erkennbar.
+Damit ist auch auf diesem Weg kein Schutznachweis hinzugekommen; keine echten
+Geheimnisse anfordern. Die unabhängige GitHub-Integration kann weitergehen.
+
+Falls ein passender Dateityp vorhanden ist, zuerst den bereits öffentlichen
+Canary über genau diesen geschützten Dateityp bereitstellen. Danach aktuelle
+Schutz-/Bereitschaftsmetadaten, Umgebungsbindung sowie Besitzer, Modus und
+Bytegleichheit der Probe prüfen. Ein möglicher Neustart oder Wechsel der
+Umgebung wird dadurch nicht freigegeben. Bei fehlender nachweisbarer
+Bereitstellung bleibt die echte Schlüsselübergabe blockiert; keine Alternative
+durch Chat, Git, Workflow-Inputs oder öffentliche Ablage improvisieren.
+
+Die nachfolgenden Beobachtungen vor dem neuen Chat bleiben historisch erhalten.
+
 ## Bestehende Sicherungen und Zielbindung
 
 Der private Drive-Wrapper `1QqKoON859fDE-iwvk3nErSZnN68Tkz8C` ist erneut als

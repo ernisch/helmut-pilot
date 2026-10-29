@@ -1,5 +1,39 @@
 # CURRENT STATE — Helmut
 
+## W15: Fortsetzung im selben Chat, Schlüssel- und GitHub-Kanal gesperrt
+
+Frische Cloud-Metadaten vom29.10.2026 binden den bereits lokal bestandenen
+Canary an eine **normale Laufzeitvariable**, nicht an eine nachgewiesene
+geschützte lokale Secretdatei. Beobachtungen aktuell, Revision1; vorhandene
+Secretziele sind API-/Domainbindungen. Betreiber meldet den Bereitstellungstyp
+im Dialog als nicht erkennbar. Keine echte Passphrase oder privaten Schlüssel
+angefordert/empfangen, kein neuer Datenweg, Schlüssel oder Thread.
+[Kanalbefund und konkrete manuelle Grenze](betrieb/w15-empfaenger-uebergabekanal-20261029.md).
+
+GitHub-Environment `helmut-ci-originals` frisch lesend bestätigt:
+Adminbypass an, keine Schutzregeln, keine Branchbindung. Neuer ausschließlich
+lesender, branch-/commitgebundener Metadatenprüfer sperrt diesen Zustand;
+kein erneuter Secrets-API-Zugriff nach dem bekannten403. Für echten
+Datenzugang fehlen wirksamer Schutz und ein tatsächlich zulässiger anderer
+Reviewer; keine Selbstfreigabe oder Umgehung.
+[Befund, Prüfer und Adminschritte](betrieb/w15-github-datenzugang-20261029.md).
+
+Unabhängig vorbereitet: eng begrenzter manueller CI-Modus
+`end500-parent-probe` für neue gemeinsame Slice, root-Supervisor,
+UID/GID1000-Worker samt expliziter Docker-Ergänzungsgruppe und festes
+Container-Schlafkind. Keine Datenbank/App/Controller/Originale/Auth-Aufrufe.
+Exakter Commit, Branch und Versuch1 sind Pflicht. Neue synthetische
+Adaptergrenzen geprüft; tatsächliche Runnerprobe und neue Kopf-CI separat
+nachzuweisen. Der öffentliche Planmodus bleibt ohne Secrets/Environment.
+[Umfang und Grenzen der Parentprobe](betrieb/w15-github-runner-parent-20261029.md).
+
+**End500-Start weiterhin BLOCKED:** geschützter Schlüssel-/Datenzugang,
+tatsächliche vollständige PG/PostgREST/Node-/Controlleranbindung einschließlich
+Docker-Writer-/Dateicachezurechnung, frische Ressourcen-/Startbindungen und
+vollständiger realer Restore-/Rücksicherungsbeleg fehlen. Keine alten
+Komponentennachweise als Gesamtabnahme umetikettieren. Vollständiger
+End500-/Mock500-Test, Merge, Deployment und Production bleiben gesperrt.
+
 ## W15: neuer End500-RAM-Vertrag, Vercel Standard bestätigt
 
 Neue Betreiberentscheidung: nur isoliertes GitHub-End500 mit harter gemeinsamer
