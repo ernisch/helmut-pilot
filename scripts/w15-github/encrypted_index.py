@@ -59,11 +59,15 @@ def cipher_bytes(armored):
     return raw
 
 
-def dispatch_payload(commit, armored):
+def dispatch_payload(commit, armored, *, mode=MODE, extra_inputs=None):
     """Bound all actual inputs AND their serialized dispatch below 65,535 chars."""
     need(type(commit) is str and re.fullmatch('[a-f0-9]{40}', commit))
     cipher_bytes(armored)
-    inputs = {'w15_mode': MODE, 'expected_commit': commit, INPUT_NAME: armored}
+    need(mode in (MODE, 'end500-restore-gated', 'end500-full-gated'))
+    need((mode == MODE and extra_inputs is None) or
+         (mode != MODE and isinstance(extra_inputs, dict) and set(extra_inputs) == {'w15_request'}
+          and type(extra_inputs['w15_request']) is str))
+    inputs = {'w15_mode': mode, 'expected_commit': commit, INPUT_NAME: armored, **(extra_inputs or {})}
     payload = json.dumps({'ref': BRANCH, 'inputs': inputs}, ensure_ascii=True, separators=(',', ':'))
     need(sum(len(value) for value in inputs.values()) <= MAX_INPUT_CHARS
          and len(json.dumps(inputs, ensure_ascii=True, separators=(',', ':'))) <= MAX_INPUT_CHARS
@@ -71,9 +75,15 @@ def dispatch_payload(commit, armored):
     return payload.encode('ascii')
 
 
-def check_event(commit, armored):
+def check_event(commit, armored, *, mode=MODE, extra_inputs=None, event_inputs=None):
     """Verify the actual event input set, not only a copy passed via environment."""
-    expected = json.loads(dispatch_payload(commit, armored))
+    expected = json.loads(dispatch_payload(commit, armored, mode=mode, extra_inputs=extra_inputs))
+    if event_inputs is not None:
+        # Only the gated outer CLI may supply the actual event snapshot after
+        # checking it before extracting secrets. The legacy path always reads
+        # the event itself, unchanged.
+        need(mode != MODE and type(event_inputs) is dict and event_inputs == expected['inputs'])
+        return len(dispatch_payload(commit, armored, mode=mode, extra_inputs=extra_inputs))
     need(os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch')
     path = os.environ.get('GITHUB_EVENT_PATH')
     need(isinstance(path, str) and path.startswith('/'))
@@ -81,8 +91,15 @@ def check_event(commit, armored):
         raw = stream.read(1024 * 1024 + 1)
     need(len(raw) <= 1024 * 1024)
     event = P.decode(raw)
-    need(type(event) is dict and event.get('inputs') == expected['inputs'])
-    return len(dispatch_payload(commit, armored))
+    need(type(event) is dict)
+    if mode == MODE and event.get('inputs') == {**expected['inputs'], 'w15_request': ''}:
+        # GitHub includes newly declared empty defaults in legacy dispatches.
+        # Only this exact empty field is compatible; no hidden input is ignored.
+        actual = json.dumps({'ref': BRANCH, 'inputs': event['inputs']}, ensure_ascii=True, separators=(',', ':'))
+        need(len(actual) <= MAX_INPUT_CHARS)
+        return len(actual)
+    need(event.get('inputs') == expected['inputs'])
+    return len(dispatch_payload(commit, armored, mode=mode, extra_inputs=extra_inputs))
 
 
 def _close_agent(home):

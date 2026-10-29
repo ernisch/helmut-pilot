@@ -7,6 +7,7 @@ import sys
 sys.dont_write_bytecode = True
 
 from datetime import datetime, timedelta, timezone
+import base64
 import hashlib
 import importlib.util
 import json
@@ -128,7 +129,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         raise ValueError('REDIRECT_REJECTED')
 
 
-def download(root, urls, expires, pins):
+def download(root, urls, expires, pins, *, guard=None):
     # Default proxy and TLS verification are preserved; redirects are prohibited.
     opener = urllib.request.build_opener(NoRedirect())
     deadline = time.monotonic() + 300
@@ -139,6 +140,8 @@ def download(root, urls, expires, pins):
             for url, pin in zip(urls, pins, strict=True):
                 part_deadline = min(deadline, time.monotonic() + 60)
                 def remaining():
+                    if guard is not None:
+                        guard()
                     value = part_deadline - time.monotonic()
                     need(value > 0 and datetime.now(timezone.utc) < expires)
                     return value
@@ -181,7 +184,7 @@ def download(root, urls, expires, pins):
     return root / 'source-cipher.PRIVATE.gpg'
 
 
-def _receive_existing_verified(commit, runner_temp):
+def _receive_existing_verified(commit, runner_temp, *, private_payload=None, mode=N.MODE, guard=None):
     """Internal same-process handoff; never expose this private path in output.
 
     The received tree remains available to a later, separately authorized local
@@ -189,9 +192,23 @@ def _receive_existing_verified(commit, runner_temp):
     """
     phase('source-binding'); binding = source_binding(commit); pins = projection()
     phase('private-inputs')
-    armored_index = os.environ.pop(INDEX_NAME, None)
-    key, secret = V.read_environment()
-    phase('encrypted-index'); input_chars = N.check_event(commit, armored_index)
+    if private_payload is None:
+        need(mode == N.MODE)
+        armored_index = os.environ.pop(INDEX_NAME, None)
+        key, secret = V.read_environment()
+        phase('encrypted-index'); input_chars = N.check_event(commit, armored_index)
+    else:
+        need(mode in ('end500-restore-gated', 'end500-full-gated') and isinstance(private_payload, dict))
+        armored_index = private_payload['cipherIndex']
+        encoded, passphrase = private_payload['keyB64'], private_payload['passphrase']
+        need(type(encoded) is str and 0 < len(encoded) <= 49152 and type(passphrase) is str)
+        key, secret = base64.b64decode(encoded, validate=True), passphrase.encode('utf-8')
+        need(0 < len(key) <= 36864 and 0 < len(secret) <= 4096
+             and not any(value in secret for value in (b'\0', b'\r', b'\n')))
+        event_inputs = private_payload['eventInputs']
+        phase('encrypted-index')
+        input_chars = N.check_event(commit, armored_index, mode=mode,
+            extra_inputs={'w15_request': event_inputs['w15_request']}, event_inputs=event_inputs)
     root = V.private_root(runner_temp)
     phase('disk-admission'); disk = os.statvfs(root); need(disk.f_bavail * disk.f_frsize >= 1024 ** 3)
     A.resource.setrlimit(A.resource.RLIMIT_CORE, (0, 0))
@@ -206,7 +223,8 @@ def _receive_existing_verified(commit, runner_temp):
         phase('index'); urls, expires = url_index(raw_index, commit)
         with os.fdopen(A._file(root, 'receiver-passphrase.PRIVATE'), 'wb') as stream:
             stream.write(secret); stream.flush(); os.fsync(stream.fileno())
-        phase('download'); cipher = download(root, urls, expires, pins)
+        phase('download')
+        cipher = download(root, urls, expires, pins) if guard is None else download(root, urls, expires, pins, guard=guard)
         phase('authenticated-reception')
         receipt = R.receive(str(cipher), cipher_sha256=CIPHER_SHA, cipher_bytes=TOTAL, destination=str(root / 'received'),
                             private_home=str(home), passphrase_file=str(root / 'receiver-passphrase.PRIVATE'),

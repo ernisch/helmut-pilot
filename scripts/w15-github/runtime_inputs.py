@@ -112,7 +112,7 @@ def source_requirements(repo=REPO):
                                                          for t in node.targets))
     require(isinstance(staged, list) and all(isinstance(p, str) for p in staged))
     paths.update('scripts/' + name for name in staged)
-    for root in ('lib', 'scripts/w15-github', '.github/workflows'):
+    for root in ('lib', 'scripts/w15-github', '.github/workflows', '.github/actions'):
         for file in (repo / root).rglob('*'):
             require(not file.is_symlink())
             if file.is_file() and not file.name.startswith('test_'):
@@ -171,6 +171,8 @@ def validate_source_review(context, raw, expected_sha256, repo=REPO):
                 and hashlib.sha256(raw).hexdigest() == expected_sha256)
         validated = C.validate_context(context, repo)
         review = P.decode(raw)
+        if isinstance(review, dict) and review.get('schema') == 'helmut-w15-qualified-runtime-observation/1':
+            return _validate_observation(context, review, repo)
         require(isinstance(review, dict) and set(review) == {
             'schema', 'scope', 'status', 'contextSHA256', 'exactCommit', 'sourcePins',
             'historicalDeltas', 'executionAuthority', 'testStarted'})
@@ -202,6 +204,78 @@ def validate_source_review(context, raw, expected_sha256, repo=REPO):
         return review
     except (Exception, KeyboardInterrupt):
         raise RuntimeInputError('CURRENT_SOURCE_REVIEW_REJECTED') from None
+
+
+def _validate_qualification(context, qualification, repo):
+    require(isinstance(qualification, dict) and set(qualification) == {
+        'schema', 'scope', 'status', 'exactCommit', 'sourcePins', 'historicalDeltas',
+        'executionAuthority', 'testStarted'})
+    require(qualification['schema'] == 'helmut-w15-static-source-qualification/1'
+            and qualification['scope'] == 'ISOLATED_GITHUB_W15_SOURCE_ONLY'
+            and qualification['status'] == 'PASS_INDEPENDENT_STATIC_SOURCE_REVIEW'
+            and qualification['exactCommit'] == context['exactCommit']
+            and qualification['executionAuthority'] is False and qualification['testStarted'] is False)
+    current, historical = source_requirements(repo)
+    require(qualification['sourcePins'] == current
+            and qualification['historicalDeltas'] == _deltas(current, historical))
+    _require_commit_contents(repo, context['exactCommit'], current)
+    require(P.git_head(Path(repo)) == context['exactCommit'])
+
+
+def _validate_observation(context, review, repo):
+    require(set(review) == {'schema', 'status', 'exactCommit', 'contextSHA256',
+        'sourcePins', 'historicalDeltas', 'qualification', 'qualificationSHA256',
+        'observedContext', 'executionAuthority', 'testStarted'})
+    validated = C.validate_context(context, repo)
+    qualification = review['qualification']
+    raw = json.dumps(qualification, sort_keys=True, separators=(',', ':')).encode('ascii')
+    require(hashlib.sha256(raw).hexdigest() == review['qualificationSHA256'])
+    _validate_qualification(context, qualification, repo)
+    observed = review['observedContext']
+    require(isinstance(observed, dict) and set(observed) == {
+        'exactCommit', 'branch', 'runId', 'runAttempt', 'mode', 'nonce'})
+    require(observed == {key: context[key] for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')}
+            | {'branch': 'refs/heads/codex/w15-github-end500-preparation-20261028',
+               'mode': observed['mode']})
+    require(observed['mode'] in ('end500-restore-gated', 'end500-full-gated')
+            and os.environ.get('GITHUB_ACTIONS') == 'true'
+            and os.environ.get('GITHUB_SHA') == observed['exactCommit']
+            and os.environ.get('GITHUB_REF') == observed['branch']
+            and os.environ.get('GITHUB_RUN_ID') == observed['runId']
+            and os.environ.get('GITHUB_RUN_ATTEMPT') == '1'
+            and observed['runAttempt'] == 1)
+    require(review['status'] == 'PASS_STATIC_SOURCE_QUALIFICATION_AND_OBSERVED_CONTEXT_BINDING'
+            and review['exactCommit'] == context['exactCommit']
+            and review['contextSHA256'] == validated['contextSHA256']
+            and review['sourcePins'] == qualification['sourcePins']
+            and review['historicalDeltas'] == qualification['historicalDeltas']
+            and review['executionAuthority'] is False and review['testStarted'] is False)
+    return review
+
+
+def observe_source_qualification(context, qualification_raw, qualification_sha256, observed_context, repo=REPO):
+    """Bind a pre-reviewed code record to a newly observed run, without claiming
+    that the reviewer previously observed this future runner or its context.
+    The externally approved digest covers the canonical static record.
+    """
+    try:
+        require(isinstance(qualification_raw, bytes) and 0 < len(qualification_raw) <= 1024 * 1024)
+        qualification = P.decode(qualification_raw)
+        canonical = json.dumps(qualification, sort_keys=True, separators=(',', ':')).encode('ascii')
+        require(qualification_raw == canonical and hashlib.sha256(canonical).hexdigest() == qualification_sha256)
+        _validate_qualification(context, qualification, repo)
+        validated = C.validate_context(context, repo)
+        observation = {'schema': 'helmut-w15-qualified-runtime-observation/1',
+            'status': 'PASS_STATIC_SOURCE_QUALIFICATION_AND_OBSERVED_CONTEXT_BINDING',
+            'exactCommit': context['exactCommit'], 'contextSHA256': validated['contextSHA256'],
+            'sourcePins': qualification['sourcePins'], 'historicalDeltas': qualification['historicalDeltas'],
+            'qualification': qualification, 'qualificationSHA256': qualification_sha256,
+            'observedContext': observed_context, 'executionAuthority': False, 'testStarted': False}
+        _validate_observation(context, observation, repo)
+        raw = json.dumps(observation, sort_keys=True, separators=(',', ':')).encode('ascii')
+        return raw, hashlib.sha256(raw).hexdigest()
+    except (Exception, KeyboardInterrupt):
+        raise RuntimeInputError('STATIC_SOURCE_QUALIFICATION_REJECTED') from None
 
 
 class RuntimeInputs:

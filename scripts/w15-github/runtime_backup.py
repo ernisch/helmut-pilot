@@ -46,7 +46,36 @@ select jsonb_build_object('database',current_database(),
  'otherClientBackends',(select count(*) from pg_stat_activity
    where backend_type='client backend' and pid<>pg_backend_pid()),
  'rolesDigest',(select md5(coalesce(jsonb_agg(to_jsonb(r) order by oid)::text,'null')) from pg_authid r),
- 'readOnly',current_setting('transaction_read_only'));
+ 'readOnly',current_setting('transaction_read_only'),
+ 'foreignTables',(select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
+   where c.relkind='f' and n.nspname !~ '^pg_' and n.nspname<>'information_schema'),
+ 'tableInventory',(select coalesce(jsonb_agg(jsonb_build_object(
+   'schema',n.nspname,'table',c.relname,
+   'columns',(select coalesce(jsonb_agg(jsonb_build_object(
+     'name',a.attname,'type',format_type(a.atttypid,a.atttypmod),'notNull',a.attnotnull,
+     'default',pg_get_expr(d.adbin,d.adrelid),'identity',a.attidentity,'generated',a.attgenerated)
+       order by a.attnum),'[]'::jsonb)
+     from pg_attribute a left join pg_attrdef d on d.adrelid=a.attrelid and d.adnum=a.attnum
+     where a.attrelid=c.oid and a.attnum>0 and not a.attisdropped),
+   'rows',(xpath('//rows/text()',q.x))[1]::text::bigint,
+   'sha256',(xpath('//digest/text()',q.x))[1]::text)
+   order by n.nspname collate "C",c.relname collate "C"),'[]'::jsonb)
+   from pg_class c join pg_namespace n on n.oid=c.relnamespace
+   cross join lateral (select query_to_xml(format($w15table$
+     select count(*) as rows,
+       encode(sha256(convert_to(coalesce(string_agg(h,'' order by h collate "C"),''),'UTF8')),'hex') as digest
+     from (select encode(sha256(convert_to(to_jsonb(t)::text,'UTF8')),'hex') as h from %I.%I t) hashed
+     $w15table$,n.nspname,c.relname),false,true,'') as x) q
+   where c.relkind in ('r','p','m') and n.nspname !~ '^pg_' and n.nspname<>'information_schema'),
+ 'sequenceInventory',(select coalesce(jsonb_agg(jsonb_build_object(
+   'schema',n.nspname,'sequence',c.relname,
+   'lastValue',(xpath('//last_value/text()',q.x))[1]::text,
+   'isCalled',(xpath('//is_called/text()',q.x))[1]::text)
+   order by n.nspname collate "C",c.relname collate "C"),'[]'::jsonb)
+   from pg_class c join pg_namespace n on n.oid=c.relnamespace
+   cross join lateral (select query_to_xml(format('select last_value,is_called from %I.%I',
+       n.nspname,c.relname),false,true,'') as x) q
+   where c.relkind='S' and n.nspname !~ '^pg_' and n.nspname<>'information_schema'));
 rollback;"""
 
 # Executed only through the controller's owned runner. Raw child output never
@@ -261,13 +290,17 @@ def export_final_database(context, *, expected_context, work, container, databas
             require(_pin(output_fd, action + '.lifecycle.PRIVATE.jsonl') == receipt['lifecycle'])
             require(pins[action]['bytes'] > 0)
             _sample(supervisor)
-        a, z = (_json(output_fd, OUTPUTS[k]) for k in ('backup-before', 'backup-after'))
+        a, z = (_json(output_fd, OUTPUTS[k], limit=8 * 1024 * 1024) for k in ('backup-before', 'backup-after'))
         for observed in (a, z):
-            require(set(observed) == {'database', 'profiles', 'activeProfiles', 'otherClientBackends', 'rolesDigest', 'readOnly'}
+            require(set(observed) == {'database', 'profiles', 'activeProfiles', 'otherClientBackends', 'rolesDigest', 'readOnly',
+                    'foreignTables', 'tableInventory', 'sequenceInventory'}
                     and observed['database'] == database and observed['profiles'] == 500
                     and observed['activeProfiles'] == observed['otherClientBackends'] == 0
                     and observed['readOnly'] == 'on' and isinstance(observed['rolesDigest'], str)
-                    and len(observed['rolesDigest']) == 32)
+                    and len(observed['rolesDigest']) == 32
+                    and observed['foreignTables'] == 0
+                    and isinstance(observed['tableInventory'], list) and observed['tableInventory']
+                    and isinstance(observed['sequenceInventory'], list))
         require(a == z, 'BACKUP_SNAPSHOT_CLOSURE_CHANGED')
         child, _ = S._file(output_fd, OUTPUTS['backup-dump'])
         try:

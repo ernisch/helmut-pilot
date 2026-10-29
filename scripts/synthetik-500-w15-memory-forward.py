@@ -134,7 +134,7 @@ def prepare(inputs=None,common_resources=None):
 
 class Watch(M.Supervisor):
     def __init__(self,cgroup):
-        self.backup_runner=None;self.common_resources=None
+        self.backup_runner=None;self.common_resources=None;self.disk_guard=None
         self.cas_records=[];self.last_component=0;self.disk_phase='processing';self.audit_remaining=64*1024*1024;self.disk=None
         self.memory_failure=None
         self.initial_disk_free=available_disk()
@@ -224,6 +224,7 @@ class Watch(M.Supervisor):
         self.cas_records.append(x)
         self.publish('memory-cas-accepted',x['index'],'PASS')
     def disk_check(self):
+        if self.disk_guard is not None:self.disk_guard()
         free=available_disk()
         floor=PROCESSING_DISK_FLOOR if self.disk_phase=='processing'else self.audit_remaining+AUDIT_CLOSURE_FLOOR
         self.disk={'availableBytes':free,'initialBytes':self.initial_disk_free,'consumedSinceWatcherBytes':self.initial_disk_free-free,
@@ -265,7 +266,29 @@ def _restore_database(inputs,w):
     try:return restore.restore_owned(M,w,run_owned=w.backup_runner.run_owned)
     finally:w.backup_runner=previous
 
-def main(inputs=None,common_resources=None):
+def _runtime_container_labels(inputs):
+    context=inputs.controller_context()
+    return {'helmut.w15.scope':'isolated-end500-only','helmut.w15.run':context['runId'],
+      'helmut.w15.nonce':context['nonce'],'helmut.w15.commit':context['exactCommit']}
+
+def _owned_runtime_container(inputs,resources,expected_id=None):
+    info=json.loads(M.docker('inspect',expected_id or CONTAINER))[0]
+    assert info['Name']=='/'+CONTAINER and info['Config']['Labels']==_runtime_container_labels(inputs)
+    assert info['Image']==M.IMAGE and info['HostConfig']['CgroupParent']==resources.unit
+    assert len(info['Id'])==64 and all(c in '0123456789abcdef'for c in info['Id'])
+    assert expected_id is None or info['Id']==expected_id
+    return info
+
+def _stop_runtime_container(inputs,resources,owned_id):
+    info=_owned_runtime_container(inputs,resources,owned_id)
+    if info['State']['Running']:M.docker('stop','--time','5',info['Id'],timeout=12)
+    final=_owned_runtime_container(inputs,resources,info['Id'])
+    assert final['State']['Running']is False and final['State']['Pid']==0
+    assert final['State'].get('OOMKilled')is False and final['State'].get('ExitCode')==0
+    resources.sample()
+    return {'status':'PASS_OWNED_END500_DATABASE_STOP','confirmed':True,'exitCode':0,'oomKilled':False}
+
+def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=None):
     inputs=_checked_runtime_inputs(inputs)
     common_resources=_checked_common_resources(inputs,common_resources)
     prepared=_checked_prepared(inputs,common_resources)
@@ -305,7 +328,7 @@ def main(inputs=None,common_resources=None):
     assert review['growthAnalysisSHA256']==hashlib.sha256(growth_path.read_bytes()).hexdigest()
     assert not WORK.exists(),'w15-forward-once-only'
     os.umask(0o077);WORK.mkdir(mode=0o700)
-    created=False;seeded=False;w=None;failure=None;result=None;zero=False;stop_failures=[];zero_check_failure=None;service_closure=None;final_audit=None;database_export=None;backup_result=None;sealed_backup=None
+    created=False;owned_id=None;seeded=False;w=None;failure=None;result=None;zero=False;stop_failures=[];zero_check_failure=None;service_closure=None;final_audit=None;database_export=None;backup_result=None;sealed_backup=None
     try:
         if inputs is not None:
             for name,raw in [('CURRENT_SOURCE_REVIEW.SAFE.json',inputs.source_review_bytes()),
@@ -351,12 +374,15 @@ def main(inputs=None,common_resources=None):
               bound=bound_path,guard=common_resources.sample)
         M.docker('create','--name',CONTAINER,'--pull=never','--network=none','--restart=no','--memory='+str(M.LIMIT),'--memory-swap='+str(M.LIMIT),
           *(['--cgroup-parent='+common_resources.unit]if common_resources is not None else[]),
+          *([item for key,value in _runtime_container_labels(inputs).items()for item in('--label',key+'='+value)]if inputs is not None else[]),
           '--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
           '--mount','type=bind,src='+str(seed)+',dst='+SEED_MOUNT+',readonly',
           '--mount','type=bind,src='+str(state)+',dst='+BASE+'/state',*runtime_mounts,'-e','POSTGRES_HOST_AUTH_METHOD=trust',M.IMAGE,
           'postgres','-c','helmut.local_usage_experiment=on','-c','max_wal_size='+str(BUDGET['postgresMaxWalMiB'])+'MB','-c','work_mem='+str(BUDGET['postgresWorkMemMiB'])+'MB',
           '-c','autovacuum_naptime='+str(BUDGET['postgresAutovacuumNaptimeSeconds'])+'s');created=True
-        M.docker('start',CONTAINER);info=json.loads(M.docker('inspect',CONTAINER))[0]
+        if inputs is not None:owned_id=_owned_runtime_container(inputs,common_resources)['Id']
+        M.docker('start',owned_id or CONTAINER);info=json.loads(M.docker('inspect',owned_id or CONTAINER))[0]
+        if inputs is not None:_owned_runtime_container(inputs,common_resources,owned_id)
         assert info['HostConfig']['NetworkMode']=='none'and info['HostConfig']['Memory']==M.LIMIT and info['HostConfig']['MemorySwap']==M.LIMIT
         if inputs is not None:
             _runtime_module('runtime_materialization').verify_mounts(info['Mounts'],PREP/'runtime-files')
@@ -368,7 +394,7 @@ def main(inputs=None,common_resources=None):
         if common_resources is not None:
             assert info['HostConfig']['CgroupParent']==common_resources.unit,'w15-common-parent-container-setting'
             common_resources.check_pid(pid,info['Id']);cgroup=common_resources.path
-        w=Watch(cgroup);w.common_resources=common_resources
+        w=Watch(cgroup);w.common_resources=common_resources;w.disk_guard=disk_guard
         if inputs is not None:w.backup_runner=_runtime_module('runtime_owned_backup').OwnedBackupRunner(w,M,base=BASE,container=CONTAINER,database=DB)
         w.sample();w.thread.start()
         for _ in range(100):
@@ -509,6 +535,10 @@ def main(inputs=None,common_resources=None):
                   container=CONTAINER,database=DB,supervisor=w,run_owned=w.backup_runner.run_owned)
             except BaseException as error:
                 failure=failure or {'type':type(error).__name__,'reason':'w15-final-database-export-failed-or-unknown'}
+        if inputs is not None and created:
+            try:M.save('OWNED_DATABASE_STOP.SAFE.json',_stop_runtime_container(inputs,common_resources,owned_id))
+            except BaseException as error:
+                failure=failure or {'type':type(error).__name__,'reason':'w15-owned-database-stop-failed-or-unknown'}
         try:check_seed(inputs)
         except BaseException as error:failure=failure or {'type':type(error).__name__,'reason':'w15-readonly-seed-source-drift'}
         final_sample_verified=False
@@ -557,6 +587,9 @@ def main(inputs=None,common_resources=None):
                   recipient_fingerprint=context['recipientFingerprint'],commit=context['exactCommit'],
                   run_id=context['runId'],input_manifest_sha256=context['inputManifestSHA'],
                   output=str(cipher_root/'end500-full.PRIVATE.gpg'),guard=common_resources.sample)
+                if backup_completion is not None:
+                    backup_completion(forward=sys.modules[__name__], inputs=inputs, resources=common_resources,
+                        collection=backup_result, sealed=sealed_backup, cipher=cipher_root/'end500-full.PRIVATE.gpg')
                 final_common=common_resources.safe_summary()
                 receipt={'status':'PASS_LOCAL_BACKUP_BYTES_ONLY_RESTORE_AND_REMOTE_PENDING',
                   'sealed':sealed_backup,'finalCommonParent':final_common,'databaseRestoreObserved':False,

@@ -25,8 +25,12 @@ on:
       w15_mode:
         description: 'Standard-CI oder begrenzte W15-Vorbereitung; kein End500-Start'
         type: choice
-        options: [standard, end500-plan, end500-parent-probe, end500-handoff-canary, end500-receiver-check, end500-receive-inputs]
+        options: [standard, end500-plan, end500-parent-probe, end500-handoff-canary, end500-receiver-check, end500-receive-inputs, end500-restore-synthetic, end500-restore-gated, end500-full-gated]
         default: standard
+      w15_request:
+        description: 'Oeffentliche laufgebundene Qualifikation und getrennte Freigabe; keine Geheimnisse'
+        type: string
+        default: ''
       expected_commit:
         description: 'Bei W15-Vorbereitung: exakt gepruefter 40-stelliger Commit des gewaehlten Refs'
         type: string
@@ -40,12 +44,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}${{ (inputs.w15_mode == 'end500-plan' || inputs.w15_mode == 'end500-parent-probe' || inputs.w15_mode == 'end500-handoff-canary' || inputs.w15_mode == 'end500-receiver-check' || inputs.w15_mode == 'end500-receive-inputs') && format('-w15-{0}', inputs.w15_mode) || '' }}
-  cancel-in-progress: ${{ inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' }}
+  group: ci-${{ github.ref }}${{ (inputs.w15_mode == 'end500-plan' || inputs.w15_mode == 'end500-parent-probe' || inputs.w15_mode == 'end500-handoff-canary' || inputs.w15_mode == 'end500-receiver-check' || inputs.w15_mode == 'end500-receive-inputs' || inputs.w15_mode == 'end500-restore-synthetic' || inputs.w15_mode == 'end500-restore-gated' || inputs.w15_mode == 'end500-full-gated') && format('-w15-{0}', inputs.w15_mode) || '' }}
+  cancel-in-progress: ${{ inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-full-gated' }}
 
 jobs:
   offline-suite:
-    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs')
+    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-full-gated')
     name: Syntax + Offline-Suiten
     runs-on: ubuntu-latest
     # CI35207010979: 397/397 Suiten erfolgreich in779s, aber inklusive Setup
@@ -146,6 +150,15 @@ jobs:
           python3 -B scripts/w15-github/test_runtime_restore.py
           python3 -B scripts/w15-github/test_runtime_owned_backup.py
           python3 -B scripts/w15-github/test_restore_connection.py
+          python3 -B scripts/w15-github/test_runtime_qualification.py
+          python3 -B scripts/w15-github/test_runner_start.py
+          python3 -B scripts/w15-github/test_restore_workflow.py
+          python3 -B scripts/w15-github/test_restore_resources.py
+          python3 -B scripts/w15-github/test_restore_backup.py
+          python3 -B scripts/w15-github/test_artifact_transport.py
+          python3 -B scripts/w15-github/test_gated_index.py
+          python3 -B scripts/w15-github/test_full_container_closure.py
+          node --check .github/actions/w15-isolated/index.js
       - name: Native automation boundary qualification (synthetic)
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
@@ -166,6 +179,15 @@ jobs:
             sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
             psql --version
           fi
+
+      - name: Neue Backupinventare nativ mit drei fiktiven Profilen pruefen
+        if: steps.plan.outputs.database == 'true'
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5433'
+          PGUSER: helmut
+          PGPASSWORD: helmut
+        run: python3 -B scripts/w15-github/test_backup_inventory_sql.py --ci-postgres-only
 
       - name: PostgREST 12.2.3 bereitstellen (Voraussetzung des §11-Rückfallnachweises)
         if: steps.plan.outputs.database == 'true'
@@ -474,7 +496,7 @@ jobs:
 
 
   browser-smoke:
-    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs')
+    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-full-gated')
     name: Browser-/Mobile-Smoke (Chromium)
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -718,3 +740,47 @@ jobs:
         run: |
           echo 'Nur bestehender verschluesselter Bestand und vollstaendige zwoelf Dateipins; keine Datenbank oder Controller.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Kein Artefakt-/Cacheupload. Restore, gemeinsamer Lebenszeit-RAM-Nachweis und End500/Mock500 bleiben offen.' >> "$GITHUB_STEP_SUMMARY"
+
+  w15-isolated:
+    name: W15 gemeinsamer Runner — getrennt gesperrter Restore und End500
+    if: github.event_name == 'workflow_dispatch' && (inputs.w15_mode == 'end500-restore-synthetic' || inputs.w15_mode == 'end500-restore-gated' || inputs.w15_mode == 'end500-full-gated')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    environment: helmut-ci-originals
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+      - name: Vorhandene gepinnte Werkzeuge und Image bereitstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/w15-image"
+          cp "$(command -v node)" "$RUNNER_TEMP/w15-image/node"
+          curl -fsSL --max-time 90 -o "$RUNNER_TEMP/w15-postgrest.tar.xz" https://github.com/PostgREST/postgrest/releases/download/v12.2.3/postgrest-v12.2.3-linux-static-x64.tar.xz
+          echo "9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c  $RUNNER_TEMP/w15-postgrest.tar.xz" | sha256sum -c -
+          tar -xJf "$RUNNER_TEMP/w15-postgrest.tar.xz" -C "$RUNNER_TEMP/w15-image"
+          echo "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12  $RUNNER_TEMP/w15-image/node" | sha256sum -c -
+          echo "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617  $RUNNER_TEMP/w15-image/postgrest" | sha256sum -c -
+          cp scripts/auth-usage-split.Dockerfile "$RUNNER_TEMP/w15-image/Dockerfile"
+          docker build -t helmut-w15-existing:20261029 "$RUNNER_TEMP/w15-image"
+          echo "W15_IMAGE_ID=$(docker image inspect --format '{{.Id}}' helmut-w15-existing:20261029)" >> "$GITHUB_ENV"
+          echo "W15_NODE_SOURCE=$RUNNER_TEMP/w15-image/node" >> "$GITHUB_ENV"
+          echo "W15_POSTGREST_SOURCE=$RUNNER_TEMP/w15-image/postgrest" >> "$GITHUB_ENV"
+      - name: Einmaligen Ablauf gebunden ausfuehren — ohne passende Freigabe gesperrt
+        uses: ./.github/actions/w15-isolated
+        env:
+          W15_MODE: ${{ inputs.w15_mode }}
+          W15_REQUEST: ${{ inputs.w15_request }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          HELMUT_W15_CIPHER_INDEX_GPG: ${{ inputs.w15_cipher_index }}
+          HELMUT_W15_RECEIVER_PROTECTED_KEY_B64: ${{ inputs.w15_mode != 'end500-restore-synthetic' && secrets.HELMUT_W15_RECEIVER_PROTECTED_KEY_B64 || '' }}
+          HELMUT_W15_RECEIVER_PASSPHRASE: ${{ inputs.w15_mode != 'end500-restore-synthetic' && secrets.HELMUT_W15_RECEIVER_PASSPHRASE || '' }}
+          GITHUB_TOKEN: ${{ github.token }}

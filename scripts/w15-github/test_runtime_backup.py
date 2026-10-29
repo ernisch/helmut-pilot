@@ -52,7 +52,11 @@ class RuntimeBackupChecks(unittest.TestCase):
             'status': 'PASS_COMPLETE_LOSSLESS_NATIVE_POSTIMAGES_AND_ZERO_ONLY', 'captureComplete': True,
             'actualPopenReturncode': 0, 'gzipPin': self.pin(raw)})
         self.observed = {'database': R.B.DATABASE, 'profiles': 500, 'activeProfiles': 0,
-                         'otherClientBackends': 0, 'rolesDigest': 'd' * 32, 'readOnly': 'on'}
+                         'otherClientBackends': 0, 'rolesDigest': 'd' * 32, 'readOnly': 'on',
+                         'foreignTables': 0, 'tableInventory': [{'schema': 'public', 'table': 'mandate_profiles',
+                            'columns': [{'name': 'id', 'type': 'integer', 'notNull': True,
+                                'default': None, 'identity': '', 'generated': ''}],
+                            'rows': 500, 'sha256': 'e' * 64}], 'sequenceInventory': []}
         self.calls = []
 
     @staticmethod

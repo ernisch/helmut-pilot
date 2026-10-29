@@ -141,7 +141,7 @@ class EncryptedIndexChecks(unittest.TestCase):
 
     def test_workflow_uses_input_env_and_only_existing_two_secrets(self):
         workflow = (HERE.parents[1] / '.github/workflows/ci.yml').read_text()
-        receiver = workflow.split('  w15-receive-inputs:\n', 1)[1]
+        receiver = workflow.split('  w15-receive-inputs:\n', 1)[1].split('\n  w15-isolated:', 1)[0]
         self.assertIn('HELMUT_W15_CIPHER_INDEX_GPG: ${{ inputs.w15_cipher_index }}', receiver)
         self.assertNotIn('HELMUT_W15_CIPHER_URL_INDEX', receiver)
         self.assertEqual(receiver.count('${{ secrets.'), 2)

@@ -34,8 +34,10 @@ def need(value):
         raise ValueError('SAME_JOB_RESTORE_CONNECTION_REJECTED')
 
 
-def prepare_same_job(forward, context, common_resources, *, source_review_raw,
-                     source_review_sha256, node_source, postgrest_source):
+def prepare_same_job(forward, context, common_resources, *, source_review_raw=None,
+                     source_review_sha256=None, node_source, postgrest_source,
+                     source_qualification_raw=None, source_qualification_sha256=None,
+                     observed_context=None, private_payload=None, disk_guard=None):
     """Receive once and preserve live private inputs in this SAME process/job.
 
     A later separately approved job must supply its fresh limited parent,
@@ -45,6 +47,8 @@ def prepare_same_job(forward, context, common_resources, *, source_review_raw,
     phase = 'binding'
     try:
         need(isinstance(context, dict) and common_resources is not None)
+        if disk_guard is not None:
+            disk_guard()
         need(os.environ.get('GITHUB_ACTIONS') == 'true'
              and os.environ.get('GITHUB_REF') == E.V.BRANCH
              and os.environ.get('GITHUB_SHA') == context['exactCommit']
@@ -54,17 +58,28 @@ def prepare_same_job(forward, context, common_resources, *, source_review_raw,
         need(type(common_resources) is resources_module.CommonResources)
         common_resources.check_context(context)
         runtime = forward._runtime_module('runtime_inputs')
+        if source_qualification_raw is not None:
+            need(source_review_raw is None and source_review_sha256 is None
+                 and isinstance(private_payload, dict) and isinstance(observed_context, dict))
+            source_review_raw, source_review_sha256 = runtime.observe_source_qualification(
+                context, source_qualification_raw, source_qualification_sha256, observed_context, forward.ROOT)
         # All freshness checks precede runRoot creation. Do not weaken the
         # existing context contract merely to accommodate a cache directory.
         runtime.validate_source_review(context, source_review_raw, source_review_sha256, forward.ROOT)
         runtime.C.apply_context(forward, context, repo=forward.ROOT)
         phase = 'receive'
-        received_root, receipt = E._receive_existing_verified(context['exactCommit'], context['runnerTemp'])
+        if private_payload is None:
+            received_root, receipt = E._receive_existing_verified(context['exactCommit'], context['runnerTemp'])
+        else:
+            received_root, receipt = E._receive_existing_verified(context['exactCommit'], context['runnerTemp'],
+                private_payload=private_payload, mode=observed_context['mode'], guard=disk_guard)
         need(receipt['exactCommit'] == context['exactCommit'] and receipt['runId'] == context['runId']
              and receipt['runAttempt'] == 1 and receipt['verifiedFiles'] == 12
              and receipt['verifiedBytes'] == 242570240 and receipt['relocationVerified'] is True)
         common_resources.check_context(context)
         phase = 'input-binding'
+        if disk_guard is not None:
+            disk_guard()
         # Use forward's canonical loader: a separately loaded RuntimeInputs
         # class would fail its intentional exact type check.
         inputs = forward.open_runtime_inputs(str(received_root), context=context,
@@ -78,7 +93,11 @@ def prepare_same_job(forward, context, common_resources, *, source_review_raw,
             forward, inputs, common_resources, node_source=node_source, postgrest_source=postgrest_source)
         phase = 'prepare'
         forward.prepare(inputs, common_resources)
-        return RestoreConnection(forward, inputs, common_resources, receipt, cache)
+        if disk_guard is not None:
+            disk_guard()
+        connection = RestoreConnection(forward, inputs, common_resources, receipt, cache)
+        connection._disk_guard = disk_guard
+        return connection
     except (Exception, KeyboardInterrupt):
         raise RestoreConnectionError(phase) from None
 
@@ -90,6 +109,7 @@ class RestoreConnection:
         self._reception = json.loads(json.dumps(reception))
         self._cache = json.loads(json.dumps(cache))
         self._used = False
+        self._disk_guard = None
 
     def controller_inputs(self):
         self._forward._checked_runtime_inputs(self._inputs)
@@ -103,10 +123,11 @@ class RestoreConnection:
                 'databaseStarted': False, 'restoreObserved': False, 'fullRestoreAccepted': False,
                 'executionAuthority': False, 'readiness': 'SEPARATE_RECEIVE_AND_RESTORE_GO_REQUIRED'}
 
-    def restore_only(self):
+    def restore_only(self, *, backup_completion=None):
         need(not self._used)
         self._used = True
-        return _restore_prepared(self._forward, self.controller_inputs(), self._resources)
+        return _restore_prepared(self._forward, self.controller_inputs(), self._resources,
+                                 backup_completion=backup_completion, disk_guard=self._disk_guard)
 
 
 def _labels(context):
@@ -128,9 +149,10 @@ def _inspect(controller, container):
     return value[0]
 
 
-def _restore_prepared(forward, inputs, resources):
+def _restore_prepared(forward, inputs, resources, *, backup_completion=None, disk_guard=None):
     """Restore only; never seed, call fullmain, Auth CAS, provider or backup closure."""
     phase, failure, attempted, watch, owned_id, restored = 'restore', None, False, None, None, None
+    backup_receipt = None
     context = inputs.controller_context()
     m = forward.M
     try:
@@ -185,6 +207,7 @@ def _restore_prepared(forward, inputs, resources):
         resources.check_pid(info['State']['Pid'], owned_id)
         watch = forward.Watch(resources.path)
         watch.common_resources = resources
+        watch.disk_guard = disk_guard
         watch.backup_runner = forward._runtime_module('runtime_owned_backup').OwnedBackupRunner(
             watch, m, base=forward.BASE, container=forward.CONTAINER, database=forward.DB, scope='end500-restore')
         watch.sample()
@@ -205,6 +228,11 @@ def _restore_prepared(forward, inputs, resources):
         m.docker('exec', owned_id, 'chown', '1000:1000', forward.BASE)
         restored = forward._runtime_module('runtime_restore').restore_owned(m, watch, run_owned=watch.backup_runner.run_owned)
         need(restored['profiles'] == 500 and restored['active'] == 0)
+        if backup_completion is not None:
+            backup_receipt = backup_completion(forward=forward, inputs=inputs, resources=resources, watch=watch, restored=restored)
+            need(isinstance(backup_receipt, dict) and backup_receipt.get('watchClosed') is True
+                 and backup_receipt.get('remoteReadbackObserved') is True
+                 and backup_receipt.get('databaseRestoreObserved') is True)
         forward.check_seed(inputs)
         inputs.path('localRoles')
         inputs.path('frozenSourceDump')
@@ -228,12 +256,15 @@ def _restore_prepared(forward, inputs, resources):
             except (Exception, KeyboardInterrupt):
                 failure = failure or phase
         if watch is not None:
-            for operation in (watch.sample, watch.stop):
+            operations = () if backup_receipt and backup_receipt.get('watchClosed') else (watch.sample, watch.stop)
+            for operation in operations:
                 try:
                     operation()
                 except (Exception, KeyboardInterrupt):
                     failure = failure or phase
             if watch.failure is not None or watch.stop_failure is not None:
+                failure = failure or phase
+            if not operations and (not watch.finished.is_set() or watch.thread.is_alive() or watch.reporter.is_alive()):
                 failure = failure or phase
     if failure:
         raise RestoreConnectionError(failure) from None
@@ -253,4 +284,6 @@ def _restore_prepared(forward, inputs, resources):
             'originalInputsModified': False, 'authCalls': 0, 'units': 0, 'providerCalls': 0,
             'fullRestoreAccepted': False, 'acceptedAsCompleteBackup': False,
             'commonLifetimeMemoryAccepted': False, 'end500Acceptance': False, 'mock500Acceptance': False,
+            'remoteReadbackObserved': bool(backup_receipt and backup_receipt.get('remoteReadbackObserved')),
+            'databaseRestoreObserved': bool(backup_receipt and backup_receipt.get('databaseRestoreObserved')),
             'executionAuthority': False, 'readiness': 'FURTHER_RUNTIME_AND_BACKUP_ACCEPTANCE_REQUIRED'}

@@ -2,16 +2,20 @@
 
 ## W15: einmaliger GitHub-Empfang aller zwölf Originale bestanden
 
-Restore-Anbindung jetzt im Code vorbereitet: interner pfadfreier Empfangs-
-Handoff nach GPG-Abschluss, kanonische RuntimeInputs vor Rootanlage, gepinnter
-Cache und gemeinsame Restorekante im bestehenden Controller. Neuer getrennter
-Pfad stoppt bei500Profilen/0aktiv mit überwachten nativen Kindern und gebundenem
-Containerabschluss.38 neue synthetische Fälle und6 betroffene Regressionen
-bestanden, unabhängiger ReviewPASS. Kein erneuter Originalempfang/echter Restore.
-Tatsächlicher UID1000-/Checkout-/Image-/Parentbootstrap, frischer Platten-/Run-
-Review und späterer Same-Job-Restorebeleg bleiben offen. Weitere Codevorbereitung
-ist erlaubt; neuer Originalempfang+begrenzter Restore benötigen separates GO.
-[Anschlüsse, Grenzen und genaue nächste Freigabe](betrieb/w15-restore-anbindung-20261029.md).
+Gemeinsamer Runner-/Restore-/End500-Code jetzt ausführbar vorbereitet und
+standardmäßig gesperrt. UID1000-Checkout/Binärpins/frische Slice, vollständiger
+Plattenplan, Lebenszeit-RAM, bestehender Controller, verschlüsselte vollständige
+Sicherung, entfernter Cipherreadback und frische isolierte Rücksicherung sind
+verbunden. Getrennte frische Scope-/Commit-/Nonce-/Zeit-/Kosten-GOs; End500
+fordert zusätzlich die unabhängige positive Restoreabnahme. Kein automatischer
+Stufenwechsel. Gezielte neue synthetische Prüfungen/Review und Pflicht-CI gehören
+zum tatsächlichen PR975-Kopf; deren GitHub-Runs sind im PR verlinkt.
+Kein erneuter Originalempfang/echter Restore/End500/Mock500 ausgeführt.
+**Nächste echte Grenze:** genau ein begrenzter Empfang+Restore500/0 samt Backup
+und Rücksicherung mit separatem GO; danach eigene Abnahme und End500-GO.
+Mock500 zusätzlich fachlich blockiert: übernommene338/500gültige D/R-Eingaben,
+120Berlin-Kontexte und42Mockinhalte offen; keine Quellenverjüngung.
+[Stufen, Ressourcen, Kosten und konkrete Freigabevorlagen](betrieb/w15-github-stufenstart-20261029.md).
 
 Aktueller enger Betreiberauftrag vom29.10.2026: vorhandene15Cipherteile einmal
 im bestehenden GitHub-Empfänger empfangen, zwölf Originaldateien vollständig
