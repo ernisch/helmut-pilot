@@ -41,6 +41,16 @@ Die nachfolgenden Beobachtungen vor dem neuen Chat bleiben historisch erhalten.
 
 ## Aktueller Solo-Weg: zuerst öffentlicher Canary im vorhandenen GitHub-Environment
 
+**Neuer tatsächlicher Befund:** Betreiber bestätigt den Canary als
+Environment-Secret. Lauf40848206475 auf`6a2a439c`, Versuch1, ist erfolgreich;
+aktueller Metadatenprüfer bestätigt Environment-ID, exakten Branch, deaktivierten
+Adminbypass und passenden Kopf. Job-/Environment-/Commitbindung unabhängig
+statisch geprüft. Diese Kombination belegt den öffentlichen Testkanal;
+echte Empfängerdaten und Originale bleiben separat zu prüfen.
+[Zusammengesetzter Kanalbeleg](belege/w15-end500-transfer-20261029/GITHUB_ENVIRONMENT_CANARY.SAFE.json).
+
+Die folgende Beschreibung hält den inzwischen ausgeführten Canary-Schritt fest.
+
 Der Betreiber stellt menschliche Required reviewers/Selbstfreigabesperre
 ausdrücklich zurück. Das erzeugt keine neue personelle Startbedingung.
 Branchbindung und ausgeschalteter Adminbypass sind inzwischen live bestätigt;
@@ -74,6 +84,15 @@ Restore- oder End500-Freigabe. Vor einem echten Transfer müssen konkreter
 Secretumfang und private Verarbeitung im tatsächlichen Job unabhängig geprüft
 sein. Archivpassphrase und DCF bleiben bevorzugt offline; bestehender7E-Export
 und separate Empfängerpassphrase sind weiterhin der engste spätere Umfang.
+
+Der konkrete nächste Empfängerschritt ist jetzt als
+[`end500-receiver-check`](w15-github-empfaengerpruefung-20261029.md) vorbereitet:
+zwei dedizierte Environment-Secrets, ausschließlich bestehender7E-Empfänger
+und öffentlicher Kontrolltext, kein Originalarchiv/DB/Controller. Der private
+lokale Browserhelfer öffnet den bereits gepinnten Wrapper auf dem Mac; er
+benötigt keine zuvor gespeicherte DCF-Datei und keine neue Software. Archivpassphrase
+und DCF bleiben offline. Die eigentliche Bereitstellung/Empfängerprüfung ist
+noch nicht erfolgt; keine Startfreigabe daraus ableiten.
 
 ## Bestehende Sicherungen und Zielbindung
 

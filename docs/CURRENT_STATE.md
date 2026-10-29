@@ -1,13 +1,14 @@
 # CURRENT STATE — Helmut
 
-## W15: Fortsetzung im selben Chat, Schlüssel- und GitHub-Kanal gesperrt
+## W15: GitHub-Kanal und Parent belegt; Empfängerbereitstellung offen
 
 Frische Cloud-Metadaten vom29.10.2026 binden den bereits lokal bestandenen
 Canary an eine **normale Laufzeitvariable**, nicht an eine nachgewiesene
 geschützte lokale Secretdatei. Beobachtungen aktuell, Revision1; vorhandene
 Secretziele sind API-/Domainbindungen. Betreiber meldet den Bereitstellungstyp
-im Dialog als nicht erkennbar. Keine echte Passphrase oder privaten Schlüssel
-angefordert/empfangen, kein neuer Datenweg, Schlüssel oder Thread.
+im Dialog als nicht erkennbar. Lokale Cloud-Schlüsselbereitstellung bleibt
+unbewiesen; der vorhandene GitHub-Environment-Weg wurde stattdessen konkret
+geprüft. Kein echter Schlüssel hier empfangen, kein neuer Schlüssel oder Thread.
 [Kanalbefund und konkrete manuelle Grenze](betrieb/w15-empfaenger-uebergabekanal-20261029.md).
 
 GitHub-Environment `helmut-ci-originals` nach manueller Betreiberänderung neu
@@ -26,109 +27,52 @@ Unabhängig vorbereitet: eng begrenzter manueller CI-Modus
 UID/GID1000-Worker samt expliziter Docker-Ergänzungsgruppe und festes
 Container-Schlafkind. Keine Datenbank/App/Controller/Originale/Auth-Aufrufe.
 Exakter Commit, Branch und Versuch1 sind Pflicht. Neue synthetische
-Adaptergrenzen geprüft. Zwei echte Pfad-Reexec-Proben scheiterten; der zweite
-Lauf belegt`WORKER_SOURCE_UNAVAILABLE` unterUID1000. Ursache neu bewertet:
-Worker nutzt jetzt bereits root-geprüften Speichercode via Fork, keine
-Home-/Repository-Rechteänderung. Tatsächlicher Erfolg dieses geänderten
-Startwegs und neue Kopf-CI separat nachzuweisen. Der öffentliche Planmodus
-bleibt ohne Secrets/Environment.
+Adaptergrenzen geprüft. Nach zwei erhaltenen Pfad-Reexec-Fehlern
+(`WORKER_SOURCE_UNAVAILABLE`) wurde der Startweg auf root-geprüften Speichercode
+via Fork umgestellt, ohne Home-/Repository-Rechteänderung. Echter
+[Runnerlauf40847487765](https://github.com/ernisch/helmut-pilot/actions/runs/40847487765)
+auf`6a2a439c` erfolgreich: gleiche Parent-Inode bis Ende aller Kinder,
+abschließender Kernelpeak33669120Bytes, Swap/OOM/max0. Ausschließlich
+Topologieprobe; kein vollständiger Lebenszeit-RAM-/Restorebeleg. Der
+öffentliche Planmodus bleibt ohne Secrets/Environment.
 [Umfang und Grenzen der Parentprobe](betrieb/w15-github-runner-parent-20261029.md).
 
-Kleinster nächster Kanalnachweis: vorhandenes GitHub-Environment und separater
-manueller Modus`end500-handoff-canary`, ausschließlich mit dem bereits
-öffentlichen Canary als **Environment secret**. Keine echten Geheimnisse,
-Originale oder Datenbank. Erst dessen tatsächliche Bereitstellungs-/Laufbindung
-prüfen; kein weiterer Cloud-Dateikanal oder neuer Dienst wird aufgebaut.
+Environment-Secret-Scope vom Betreiber bestätigt; separater
+[Canarylauf40848206475](https://github.com/ernisch/helmut-pilot/actions/runs/40848206475)
+auf`6a2a439c` erfolgreich. Zusammengesetzter Nachweis aus aktueller technischer
+Metadatenprüfung, ausdrücklich bestätigtem Environment-Secret und tatsächlicher
+Job-/Branch-/Commit-/Versuch1-Bindung. Keine echten Geheimnisse/Originale;
+kein weiterer Cloud-Dateikanal oder Dienst. Echte Empfängerwerte sind dadurch
+noch nicht vorhanden oder als funktionsfähig bewiesen.
 
-**End500-Start weiterhin BLOCKED:** geschützter Schlüssel-/Datenzugang,
+Nächste tatsächlich manuelle Handlung: bestehende Sicherung auf dem Mac mit dem
+vorbereiteten privaten Offline-Browserhelfer öffnen. Der Betreiber hat nur
+HTML/SAFE, keine gespeicherte DCF-Datei; deshalb kein GPG-/Dateiexport vorausgesetzt.
+Unveränderte OpenPGP.js6.3.2-Bibliothek/Lizenz, gepinnter Wrapper, keine alte
+Challengewiederholung, keine neuen Schlüssel. Nur bestehender geschützter7E-
+Export und eigene Passphrase werden lokal für genau zwei Environment-Secrets
+vorbereitet. Neuer begrenzter Modus`end500-receiver-check` dafür unabhängig
+statisch geprüft; acht Mock-GPG-, drei Builder- und acht Fake-Browserfälle
+bestanden. Noch keine echte Empfängerprüfung ausgeführt.
+[Prüfschritt und enger Übergabeumfang](betrieb/w15-github-empfaengerpruefung-20261029.md).
+
+**End500-Start weiterhin BLOCKED:** tatsächlicher Empfänger-/Originaldatenzugang,
 tatsächliche vollständige PG/PostgREST/Node-/Controlleranbindung einschließlich
 Docker-Writer-/Dateicachezurechnung, frische Ressourcen-/Startbindungen und
 vollständiger realer Restore-/Rücksicherungsbeleg fehlen. Keine alten
 Komponentennachweise als Gesamtabnahme umetikettieren. Vollständiger
 End500-/Mock500-Test, Merge, Deployment und Production bleiben gesperrt.
 
-## W15: neuer End500-RAM-Vertrag, Vercel Standard bestätigt
+Aktiver Vertrag unverändert: gemeinsamer Parent/Container2560000000Bytes,
+Lebenszeitpeak höchstens2048000000Bytes, Reserve512000000Bytes, Swap0;
+Auth30/Unit60/Provider20 und vollständige Integrität. Die kleine Parentprobe
+ersetzt diese vollständige Laufabnahme nicht. Keine RAM-Optimierung oder
+Vercel-Umstellung. [RAM-Vertrag](betrieb/w15-end500-ram-vertrag-20261028.md).
 
-Neue Betreiberentscheidung: nur isoliertes GitHub-End500 mit harter gemeinsamer
-Zuteilung2.560.000.000Bytes, tatsächlichem Lebenszeitpeak<=2.048.000.000Bytes und
-physischerReserve>=512.000.000Bytes(20%).1,8/1,9GB allein kein Abbruchgrund.
-Swap0/OOM-/Limitfehler/Vollmessung/sichererAbschluss bleiben Pflicht. Prognose
-weiteren Mock500-Wachstums separat, kein End500-RAM-Abbruchkriterium. Keine neue
-Optimierung. Historische v2/Messberichte/Ergebnisse unverändert; frischer Startreview
-für geänderten Controller nötig. Auth30/Unit60/Provider20 und Integrität erhalten.
-[Aktiver RAM-Vertrag und Kostenabgrenzung](betrieb/w15-end500-ram-vertrag-20261028.md).
-
-Rein lesend aktive Production bestätigt: Aliashelmut-pilot.vercel.app READY,
-Deploymentdpl_2eGCkYt4Uu8Ek8w4E1UfzcohwcRA/Commit775e928a;api/index,nodejs24.x,
-Standard2048MB,Regionfra1,Fluid. Keine Performance4GB aktiviert. Buildmaschine8192MB
-ist keine Funktionsgröße. GitHub-Gesamtpeak umfasst lokalePG/PGR/Node/Cache;
-Vercel-Funktionsspeicher und entfernteSupabaseDB sind getrennte Messräume.
-Kein Funktionsbedarfsbeleg>2GB, keine Upgradeempfehlung/Umstellung/Production-Aktion.
-
-## W15: Offline-Recovery belegt; Übergabekanal noch offen
-
-Neu hochgeladener1338Byte-Beleg geprüft: DCF-Recovery beim Betreiber erfolgreich,
-alle fünf Checks/FPR/Hashes/Challenge-ID und kanonische Kontrollantwort passend.
-Bitwardenpass korrekt; kein Passwort/Privatschlüssel hier empfangen. Vorhandener
-3.298Byte-7E-Wrapper weiter privat erreichbar. Kein neuer Schlüssel/Originaltransfer.
-In dieser Cloud7E noch nicht wiederhergestellt. Lokaler Secret-/Dateikanal bislang
-unbewiesen; frühere pauschale Secret-Anweisung korrigiert. Zuerst nur öffentlichen
-Canary im geschützten Konfigurationsweg testen, Schutztyp+aktuelle Metadaten prüfen;
-kein echter Transfer allein aufgrund eines passenden Prüfwerts. Gleicher Thread.
-Fünf neue Canary-/sechs lesende Runner-Grenzfälle PASS, unabhängig geprüft.
-Runnerprobe im bestehenden Planjob vorbereitet; kein Bootstrap-/RAM-/Restore-PASS.
-f135a2ee-Pflicht-CI grün; neuer Kopf separat. RAM/Swap0/Auth30/Unit60/Provider20 und
-historische Ergebnisse unverändert. Vollständige500er weiter gesondert gesperrt.
-[Geprüfter Beleg und konkreter Übergabeplan](betrieb/w15-empfaenger-uebergabekanal-20261029.md).
-
-## Historischer W15-D-Befund vor obiger GitHub-Vorbereitung (28.10.)
-
-PR974 auf PR973 `fa506939`/PR972 `c36bd427`, alle ungemergt.
-Genau ein neuer End500-D-Versuch auf sauberem Codekopf `07b51319` ausgeführt;
-keine Wiederholung/kein Resume und kein Mock500-Gesamtstart.
-**FAIL bei0/500CAS:** am19:34:22.803560UTC frei224.247.808Bytes,
-erforderlicher Plattenfloor234.881.024Bytes. Primärfehler exakt
-`w15-forward-disk-closure-reserve`, nicht nur generischer Controllerabschluss.
-Kernelpeak einschließlich Abschluss548.626.432Bytes; Reserve1.499.373.568Bytes
-=73,2116%, hartes Limit2.048.000.000Bytes, Swap/OOM/max0. Nur Boot/Restore/Seed;
-kein W15-Node-Run/Gateway/Atomicbootstrap/Auth-Aufruf, keine Aktivierung oder Unit.
-Deshalb kein neuer End500-RAM-, Auth30- oder Unit60-PASS; Authmax nicht gemessen.
-**Unabhängig nativ500Profile/0aktiv bestätigt.** Seed-Daten committed beobachtet
-(2.500Briefings/1.006Storezeilen/Main-Auth6.000Usage); keine neue vollständige
-3.501Postimage-Endprüfung behauptet. Alles weiter inert, keine neuen DR-Ergebnisse.
-Original-Seed-SHA unverändert. Service-Abschlussdatei fehlt, weil Service nie startete;
-der ursprüngliche FileNotFound-/UNKNOWN-Befund bleibt erhalten, kein falsches Grün.
-Startplan war trotz bewachter unabhängiger Zulassung zu knapp: vor dem ersten
-Wächtersample schon rund911,7MB Abnahme gegenüber Admission. Genaue physische
-Zuordnung UNKNOWN; zusätzlicher VFS-Initlayer nur plausible, unbewiesene Erklärung.
-Der spätere Grenzschutz stoppte; keine Grenze erhöht/Cachebereinigung/Datenkürzung.
-
-Vorher gezielt bestanden und unabhängig übernommen: Journal10.820Originalpayloads/
-10.822durableACKs, echterSIGTERM+4Fehlerfälle; neue3Lifecyclefälle mit2echtenTERMs,
-kein Weiterlauf, ursprünglicher UNKNOWN-Snapshot bleibt unverändert. Gzip-/Decimal-
-Dateiadapter erhält alle120.268.457C-Auditbytes verlustfrei in42.139.672Bytes und
-vergleicht3.501Postimages/6.000Usage; ausdrücklich keine neue Datenbankabnahme.
-SQL3517:3511exakt übernommen/6nurParseDescribe/0Arbeitsabfragen ausgeführt.
-KleineAppvorbereitung8.675.328Bytes; keine143MB-Binär-Stagingduplikation und
-keine118,8MB-Seedkopie, stattdessen hashgebundenerRO-Einzelfilemount außerhalbBASE.
-Asynchrone Diagnosehülle mit Stop-Latch, tiefem Abbruchbild, einem Abschlussowner,
-dauerhaftenACKs und exakten Zeiten eingebunden; tatsächlicher Runtime-Beleg noch offen.
-Bestehende16/16Integration, Worker81/81,500/500Quellen und16Auth-ACKs/49HTTP200
-im belegten Umfang übernommen, nicht wiederholt. HistorischeA/B/CFAILs,
-11.UNKNOWN, B291.UNKNOWN und C8,4s-Ursache unverändert erhalten.
-
-**Konkreter Vorschlag, noch NICHT ausgeführt:**26byteidentische Node-/PostgREST-
-Host-Stagingkopien,13Paare/26verschiedeneInodes, SHA/Größe/Modus vollständig erfasst.
-Sichtbar1.862.975.488Bytes; rechnerisch danach ca2,086GB frei, keine garantierte
-Reclamation/Startreserve. Keine Originale/DBs/Logs/Archive/Quellenbelege im Vorschlag.
-Kanonische Exemplare plus Originalruntime bleiben; Rückweg exklusive Kopie aus
-Kanonik mit vollständigerHash-/Rechtekontrolle. Alte Stagepfade fehlen bis Restore.
-Vor Löschung separates GO, danach echtesdf und neuer unabhängiger Kapazitätsreview;
-auch ein weiterer frischer End500-Versuch benötigt neues GO. AktuellesKontingent verbraucht.
-CI `fdf69342`: Pflicht40748463046/Integrität40748463085 abgeschlossen/grün;
-Browser gemäß Prüfplan übersprungen. Dies ist kein CI-PASS für `07b51319`;
-neue Kopf-CI nach Push separat. Vercel-includeFiles2.915>256 unverändert separat.
-[Belege, tatsächliche Messwerte und genaues Bereinigungsmanifest](betrieb/w15-atomic-usage-integration-20261028.md).
+Der vollständige datierte Stand vor dem Kanal-/Parentnachweis bleibt
+[bytegleich archiviert](archive/project_state/2026_10_29_CURRENT_STATE_vor_kanal_und_parentnachweis.md).
+Historische W15-D-Fehler und frühere Messwerte stehen unverändert dort und im
+[W15-Dossier](betrieb/w15-atomic-usage-integration-20261028.md).
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten.
 
