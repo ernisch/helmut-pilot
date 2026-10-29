@@ -168,6 +168,50 @@ class AtomicProofChecks(unittest.TestCase):
                     M.validate_atomic_auth(Path('/FICTIONAL'))
 
 
+class SourceReuseChecks(unittest.TestCase):
+    def fixture(self):
+        def pin(raw): return {'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
+        sources = {'lib/fictional-' + str(i) + '.js': b'FICTIONAL' + str(i).encode() for i in range(16)}
+        unchanged = [{'path': name, **pin(raw)} for name, raw in sources.items()]
+        rebound = []
+        ai = b'const LAGE_BRIEFING_SCHEMA = FICTIONAL_ONLY;'
+        storage = b'async function getPublicationSourceIdentities(FICTIONAL) {}'
+        for name, raw, segment in [('lib/helmut/ai.js', b'HEADER\n' + ai, ai),
+            ('lib/helmut/storage.js', b'HEADER\n' + storage + b'\nasync function next() {}', storage)]:
+            sources[name] = raw
+            rebound.append({'oldPin': {'path': name, 'bytes': 5, 'sha256': 'a' * 64},
+                'currentPin': {'path': '/OLD/' + name, **pin(raw)},
+                'unchangedSegmentBytes': len(segment), 'unchangedSegmentSHA256': hashlib.sha256(segment).hexdigest()})
+        public = {'status': 'PASS_SCOPED_REUSE_NOT_NEW_ALL500_RUN', 'original500PassRetained': True,
+            'constructorChecksRepeated': False, 'unchangedSourcePins': unchanged, 'reboundSourcePins': rebound,
+            'qualificationPin': {'bytes': 13706128, 'sha256': 'd2603d926508a1655b415b18734fe37bc1a660dccb6f139ae43b1859a11bed3d'}}
+        qualification = {'sourceCodePins': unchanged + [row['oldPin'] for row in rebound]}
+        def read(path, expected, **kwargs):
+            raw = sources[str(Path(path).relative_to('/FICTIONAL'))]
+            M.need(pin(raw) == expected)
+            return raw
+        return sources, public, qualification, read
+
+    def test_16_plus_2_source_bridge_reads_only_pins_and_preserved_segments(self):
+        sources, public, qualification, read = self.fixture()
+        with patch.object(Path, 'read_bytes', return_value=M.canonical(public)), patch.object(M, 'file_bytes', side_effect=read):
+            result = M.validate_source_compatibility(qualification, Path('/FICTIONAL'))
+        self.assertEqual(result['unchangedSources'], 16); self.assertEqual(result['scopedCodeBindings'], 2)
+        self.assertFalse(result['constructorChecksRepeated']); self.assertFalse(result['executionAuthority'])
+
+    def test_unreviewed_source_or_critical_segment_change_cannot_reuse_old_pass(self):
+        for change in ('source-pin', 'segment'):
+            sources, public, qualification, read = self.fixture()
+            if change == 'source-pin': sources['lib/fictional-0.js'] += b'CHANGED'
+            else:
+                sources['lib/helmut/ai.js'] += b'CHANGED'
+                public['reboundSourcePins'][0]['currentPin'].update(bytes=len(sources['lib/helmut/ai.js']),
+                    sha256=hashlib.sha256(sources['lib/helmut/ai.js']).hexdigest())
+            with patch.object(Path, 'read_bytes', return_value=M.canonical(public)), patch.object(M, 'file_bytes', side_effect=read):
+                with self.subTest(change=change), self.assertRaises(M.MockInputError):
+                    M.validate_source_compatibility(qualification, Path('/FICTIONAL'))
+
+
 class ControllerAdmissionChecks(unittest.TestCase):
     def load_controller(self):
         path = HERE.parent / 'synthetik-500-w15-full500-controller.py'
