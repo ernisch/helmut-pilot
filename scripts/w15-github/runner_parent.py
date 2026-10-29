@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import multiprocessing
 import os
 from pathlib import Path
 import re
@@ -47,14 +48,6 @@ CODES = frozenset(('CHECK_REJECTED', 'COMMAND_FAILED', 'COMMAND_TIMEOUT', 'COMMA
     'FILESYSTEM_ACCESS_DENIED', 'FILESYSTEM_ENTRY_MISSING', 'FILESYSTEM_ERROR',
     'COMMON_PARENT_REJECTED', 'CANCELLED', 'RUNTIME_REJECTED'))
 PHASE = 'arguments'
-WORKER_LOADER = '''import json,runpy,sys
-sys.argv=sys.argv[1:]
-try:
- runpy.run_path(sys.argv[0],run_name="__main__")
-except OSError:
- print(json.dumps({"w15ParentProbeFailure":{"phase":"worker-load","code":"WORKER_SOURCE_UNAVAILABLE","exitCode":None,"via":[]}},separators=(",",":")))
- raise SystemExit(1)
-'''
 
 
 class ProbeError(RuntimeError):
@@ -368,6 +361,33 @@ def worker(ctx):
     return result
 
 
+def fork_worker(ctx, sender, receiver, docker_gid):
+    """Run only the already loaded fixed worker, after dropping root identity."""
+    receiver.close()
+    code = 1
+    try:
+        phase('worker-entry')
+        os.environ.clear()
+        os.environ.update(ENV)
+        os.setgroups([docker_gid])
+        os.setgid(1000)
+        os.setuid(1000)
+        result = worker(ctx)
+        raw = json.dumps(result, separators=(',', ':'), allow_nan=False).encode()
+        require(len(raw) <= 16384)
+        sender.send_bytes(raw)
+        code = 0
+    except BaseException as error:
+        raw = json.dumps({'w15ParentProbeFailure': failure_record(error)}, separators=(',', ':')).encode()
+        try:
+            sender.send_bytes(raw)
+        except (OSError, EOFError):
+            pass
+    finally:
+        sender.close()
+    raise SystemExit(code)
+
+
 def supervise(ctx):
     phase('supervisor-entry')
     require(os.getuid() == 0)
@@ -381,21 +401,29 @@ def supervise(ctx):
     require(re.fullmatch('sha256:[a-f0-9]{64}', image))
     require(inspect(container, check=False) is None)
     child = None
+    receiver = sender = None
     failure = None
     try:
         phase('supervisor-worker')
-        worker_args = internal_argv('worker', ctx)
-        child = subprocess.Popen(worker_args[:2] + ['-c', WORKER_LOADER] + worker_args[2:], stdin=subprocess.DEVNULL,
-                                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                                 env=process_env(ctx), user=1000, group=1000, extra_groups=[socket_gid()], close_fds=True)
+        fork = multiprocessing.get_context('fork')
+        receiver, sender = fork.Pipe(duplex=False)
+        child = fork.Process(target=fork_worker, args=(ctx, sender, receiver, socket_gid()))
+        child.start()
+        sender.close()
+        raw = None
         deadline = time.monotonic() + 60
-        while child.poll() is None:
+        while child.is_alive():
             require(time.monotonic() < deadline)
             read_parent(ctx, inode)
+            if raw is None and receiver.poll(0):
+                raw = receiver.recv_bytes(maxlength=16384)
             time.sleep(.1)
-        raw = child.communicate(timeout=5)[0]
-        if child.returncode != 0:
-            raise ProbeError(code='CHILD_EXIT_WITHOUT_REPORT', exit_code=child.returncode, record=child_failure(raw))
+        child.join(timeout=5)
+        require(type(child.exitcode) is int)
+        if raw is None and receiver.poll(1):
+            raw = receiver.recv_bytes(maxlength=16384)
+        if child.exitcode != 0 or raw is None:
+            raise ProbeError(code='CHILD_EXIT_WITHOUT_REPORT', exit_code=child.exitcode, record=child_failure(raw))
         require(len(raw) <= 16384)
         result = json.loads(raw)
         require(result['rootSupervisorPID'] == os.getpid() and result['uid1000WorkerPID'] == child.pid)
@@ -407,19 +435,24 @@ def supervise(ctx):
         raise failure from None
     finally:
         try:
-            if child is not None and child.poll() is None:
+            if child is not None and child.pid is not None and child.is_alive():
                 child.terminate()
-                try:
-                    child.wait(timeout=5)
-                except subprocess.TimeoutExpired:
+                child.join(timeout=5)
+                if child.is_alive():
                     child.kill()
-                    child.wait(timeout=5)
+                    child.join(timeout=5)
+                require(not child.is_alive())
             phase('supervisor-container-stop')
             stop_container(ctx, image)
             read_parent(ctx, inode)
         except BaseException:
             if failure is None:
                 raise
+        finally:
+            if receiver is not None:
+                receiver.close()
+            if sender is not None:
+                sender.close()
 
 
 def internal_argv(mode, ctx):
@@ -490,7 +523,7 @@ def main(argv=None):
         parser = Parser(allow_abbrev=False, add_help=False, description=__doc__)
         mode = parser.add_mutually_exclusive_group(required=True)
         mode.add_argument('--probe-parent-only', action='store_true')
-        mode.add_argument('--internal', choices=('prepare', 'remove', 'supervise', 'worker'))
+        mode.add_argument('--internal', choices=('prepare', 'remove', 'supervise'))
         parser.add_argument('--run-id', required=True)
         parser.add_argument('--expected-commit', required=True)
         parser.add_argument('--nonce')
@@ -507,7 +540,7 @@ def main(argv=None):
             require(not stop_latch.seen)
         else:
             result = {'prepare': prepare_parent, 'remove': remove_parent,
-                      'supervise': supervise, 'worker': worker}[args.internal](ctx)
+                      'supervise': supervise}[args.internal](ctx)
         if result is not None:
             print(json.dumps(result, separators=(',', ':'), allow_nan=False))
         return 0

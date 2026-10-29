@@ -8,7 +8,6 @@ import os
 from pathlib import Path
 import stat
 import subprocess
-import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -108,22 +107,27 @@ class ParentProbeChecks(unittest.TestCase):
             self.assertEqual(stat.S_IMODE((units / P.names(CTX)[0]).stat().st_mode), 0o600)
 
     def test_root_supervisor_drops_to_exact_docker_group_and_waits_for_worker(self):
-        worker = Mock(pid=54321, returncode=0)
-        worker.poll.return_value = 0
-        worker.communicate.return_value = (json.dumps({'rootSupervisorPID': os.getpid(),
-                                                       'uid1000WorkerPID': worker.pid}).encode(), None)
+        worker = Mock(pid=54321, exitcode=0)
+        worker.is_alive.return_value = False
+        receiver, sender, fork = Mock(), Mock(), Mock()
+        receiver.poll.return_value = True
+        receiver.recv_bytes.return_value = json.dumps({'rootSupervisorPID': os.getpid(),
+                                                       'uid1000WorkerPID': worker.pid}).encode()
+        fork.Pipe.return_value = (receiver, sender)
+        fork.Process.return_value = worker
         with patch.object(P.os, 'getuid', return_value=0), patch.object(P, 'socket_gid', return_value=987), \
                 patch.object(P, 'identity', return_value=(1, 2)), patch.object(P, 'read_parent'), \
                 patch.object(P, 'command', return_value=subprocess.CompletedProcess([], 0, ('sha256:' + 'f' * 64 + '\n').encode())), \
                 patch.object(P, 'inspect', return_value=None), \
                 patch.object(P.Path, 'read_text', return_value='0::/' + P.names(CTX)[0] + '/control.service\n'), \
-                patch.object(P.subprocess, 'Popen', return_value=worker) as popen, \
+                patch.object(P.multiprocessing, 'get_context', return_value=fork) as get_context, \
                 patch.object(P, 'stop_container') as stop:
             P.supervise(CTX)
-        kwargs = popen.call_args.kwargs
-        self.assertEqual((kwargs['user'], kwargs['group'], kwargs['extra_groups']), (1000, 1000, [987]))
-        self.assertEqual(kwargs['env'], P.process_env(CTX))
-        self.assertNotIn('sudo', ' '.join(popen.call_args.args[0]))
+        get_context.assert_called_once_with('fork')
+        fork.Process.assert_called_once_with(target=P.fork_worker, args=(CTX, sender, receiver, 987))
+        fork.Pipe.assert_called_once_with(duplex=False)
+        worker.start.assert_called_once()
+        worker.join.assert_called_once_with(timeout=5)
         stop.assert_called_once_with(CTX, 'sha256:' + 'f' * 64)
         worker.terminate.assert_not_called()
 
@@ -303,18 +307,56 @@ class ParentProbeChecks(unittest.TestCase):
         self.assertEqual(row, {'phase': 'parent-unit-write', 'code': 'FILESYSTEM_ACCESS_DENIED', 'exitCode': None, 'via': []})
         self.assertNotIn('SECRET', out.getvalue())
 
-    def test_fixed_worker_loader_reports_unreadable_script_without_traceback_or_path(self):
-        result = subprocess.run([sys.executable, '-B', '-c', P.WORKER_LOADER,
-                                 '/fictional-w15-nonexistent-private-SECRET/entry.py'],
-                                env=P.ENV, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                stdin=subprocess.DEVNULL, timeout=5)
-        self.assertEqual(result.returncode, 1)
-        self.assertEqual(result.stderr, b'')
-        P.phase('supervisor-worker')
-        row = P.child_failure(result.stdout)
-        self.assertEqual(row['phase'], 'worker-load')
-        self.assertEqual(row['code'], 'WORKER_SOURCE_UNAVAILABLE')
-        self.assertNotIn('SECRET', result.stdout.decode())
+    def test_fork_target_cleans_environment_and_drops_all_identity_before_fixed_worker(self):
+        events = []
+        def worker(ctx):
+            self.assertEqual(dict(P.os.environ), P.ENV)
+            self.assertEqual(ctx, CTX)
+            events.append('worker')
+            return {'fixedWorker': True}
+        sender, receiver = Mock(), Mock()
+        with patch.dict(P.os.environ, {'FICTIONAL_SECRET': 'must-not-inherit'}, clear=True), \
+                patch.object(P.os, 'setgroups', side_effect=lambda groups: events.append(('groups', groups))), \
+                patch.object(P.os, 'setgid', side_effect=lambda gid: events.append(('gid', gid))), \
+                patch.object(P.os, 'setuid', side_effect=lambda uid: events.append(('uid', uid))), \
+                patch.object(P, 'worker', side_effect=worker), \
+                patch.object(P, 'github_binding', side_effect=AssertionError('no checkout reads')):
+            with self.assertRaises(SystemExit) as ended: P.fork_worker(CTX, sender, receiver, 987)
+        self.assertEqual(ended.exception.code, 0)
+        self.assertEqual(events, [('groups', [987]), ('gid', 1000), ('uid', 1000), 'worker'])
+        self.assertEqual(json.loads(sender.send_bytes.call_args.args[0]), {'fixedWorker': True})
+
+    def test_real_harmless_fork_uses_preloaded_code_and_bytes_pipe_without_privilege_change(self):
+        fork = P.multiprocessing.get_context('fork')
+        receiver, sender = fork.Pipe(duplex=False)
+        child = None
+        try:
+            with patch.object(P.os, 'setgroups'), patch.object(P.os, 'setgid'), patch.object(P.os, 'setuid'), \
+                    patch.object(P, 'worker', return_value={'preloadedFixedWorker': True}), \
+                    patch.object(P, 'github_binding', side_effect=AssertionError('must not reopen checkout')):
+                child = fork.Process(target=P.fork_worker, args=(CTX, sender, receiver, 987))
+                child.start()
+                sender.close()
+                self.assertTrue(receiver.poll(5))
+                self.assertEqual(json.loads(receiver.recv_bytes(maxlength=16384)), {'preloadedFixedWorker': True})
+                child.join(timeout=5)
+                self.assertFalse(child.is_alive())
+                self.assertEqual(child.exitcode, 0)
+        finally:
+            if child is not None and child.is_alive():
+                child.terminate(); child.join(timeout=5)
+            receiver.close(); sender.close()
+
+    def test_failed_uid_drop_never_calls_worker_and_only_sends_fixed_failure(self):
+        sender, receiver = Mock(), Mock()
+        with patch.dict(P.os.environ, {}, clear=True), \
+                patch.object(P.os, 'setgroups', side_effect=PermissionError('/private/SECRET')), \
+                patch.object(P.os, 'setgid') as gid, patch.object(P.os, 'setuid') as uid, \
+                patch.object(P, 'worker') as worker:
+            with self.assertRaises(SystemExit) as ended: P.fork_worker(CTX, sender, receiver, 987)
+        self.assertEqual(ended.exception.code, 1)
+        gid.assert_not_called(); uid.assert_not_called(); worker.assert_not_called()
+        self.assertNotIn('SECRET', sender.send_bytes.call_args.args[0].decode())
 
     def test_cleanup_failure_cannot_replace_actual_outer_first_failure(self):
         image = 'sha256:' + 'f' * 64
@@ -332,14 +374,15 @@ class ParentProbeChecks(unittest.TestCase):
 
     def test_worker_termination_failure_preserves_supervisor_first_failure(self):
         child = Mock(pid=54321)
-        child.poll.return_value = None
+        child.is_alive.return_value = True
         child.terminate.side_effect = ProcessLookupError('do-not-publish')
+        fork = Mock(); fork.Pipe.return_value = (Mock(), Mock()); fork.Process.return_value = child
         with patch.object(P.os, 'getuid', return_value=0), patch.object(P, 'socket_gid', return_value=987), \
                 patch.object(P, 'identity', return_value=(1, 2)), patch.object(P, 'read_parent'), \
                 patch.object(P, 'command', return_value=subprocess.CompletedProcess([], 0, ('sha256:' + 'f' * 64).encode())), \
                 patch.object(P, 'inspect', return_value=None), \
                 patch.object(P.Path, 'read_text', return_value='0::/' + P.names(CTX)[0] + '/control.service\n'), \
-                patch.object(P.subprocess, 'Popen', return_value=child), \
+                patch.object(P.multiprocessing, 'get_context', return_value=fork), \
                 patch.object(P.time, 'monotonic', side_effect=[0, 61]):
             with self.assertRaises(P.ProbeError) as failure: P.supervise(CTX)
         self.assertEqual(failure.exception.record['phase'], 'supervisor-worker')

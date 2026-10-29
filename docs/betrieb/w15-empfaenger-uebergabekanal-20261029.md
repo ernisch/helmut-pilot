@@ -39,6 +39,42 @@ durch Chat, Git, Workflow-Inputs oder öffentliche Ablage improvisieren.
 
 Die nachfolgenden Beobachtungen vor dem neuen Chat bleiben historisch erhalten.
 
+## Aktueller Solo-Weg: zuerst öffentlicher Canary im vorhandenen GitHub-Environment
+
+Der Betreiber stellt menschliche Required reviewers/Selbstfreigabesperre
+ausdrücklich zurück. Das erzeugt keine neue personelle Startbedingung.
+Branchbindung und ausgeschalteter Adminbypass sind inzwischen live bestätigt;
+die unabhängige technische Codeprüfung erfolgt durch einen getrennten Helfer.
+Der lokale Cloud-Dateikanal bleibt unbekannt. Für den vorhandenen GitHub-Weg
+wird deshalb nur ein eng gebundener öffentlicher Kanalcheck vorbereitet.
+
+Der manuelle CI-Modus`end500-handoff-canary` bindet das vorhandene
+Environment`helmut-ci-originals`, den aktuellen PR975-Branch, exakten Commit
+und Versuch1. Ausschließlich der Ausdruck
+`secrets.HELMUT_W15_HANDOFF_CANARY` wird dem bekannten Canary-Prüfer übergeben.
+Er verwendet keine Archiv-/Empfängerpassphrase und keinen privaten Schlüssel.
+Der Prüfwert ist unverändert öffentlich:
+`HELMUT-W15-LOCAL-CANARY-20261029`.
+
+Falls dieser Eintrag im Environment noch fehlt, ist der konkrete manuelle
+Schritt: GitHub → Repository → Settings → Environments →`helmut-ci-originals`
+→ Environment secrets → Add environment secret →
+Name`HELMUT_W15_HANDOFF_CANARY`, Wert obiger **öffentlicher** Testwert →
+Add secret. Keine bestehenden Secrets ersetzen; keine gleichnamige
+Repositoryvariable als Beleg umdeuten. Nur Namen und Environment-Scope melden.
+Diese Scopebestätigung bleibt erforderlich: Fehlt das Environment-Secret,
+kann GitHub für`secrets.NAME` auf ein gleichnamiges Repository-/Org-Secret
+zurückfallen. Job-Environment und passende Bytes allein beweisen die Herkunft
+des Eintrags deshalb nicht.
+
+Danach genau diesen manuellen Kanalcheck am geprüften Kopf ausführen und die
+tatsächliche Job-/Environment-/Commit-/Versuchbindung prüfen. Auch ein passender
+Testwert allein beweist weder den Zugriff auf echte Empfängerdaten noch eine
+Restore- oder End500-Freigabe. Vor einem echten Transfer müssen konkreter
+Secretumfang und private Verarbeitung im tatsächlichen Job unabhängig geprüft
+sein. Archivpassphrase und DCF bleiben bevorzugt offline; bestehender7E-Export
+und separate Empfängerpassphrase sind weiterhin der engste spätere Umfang.
+
 ## Bestehende Sicherungen und Zielbindung
 
 Der private Drive-Wrapper `1QqKoON859fDE-iwvk3nErSZnN68Tkz8C` ist erneut als

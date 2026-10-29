@@ -23,12 +23,12 @@ on:
   workflow_dispatch:
     inputs:
       w15_mode:
-        description: 'Standard-CI, lesender W15-Plan oder secretfreie Parentprobe; kein End500-Start'
+        description: 'Standard-CI oder W15-Plan/Parentprobe/oeffentlicher Kanal-Canary; kein End500-Start'
         type: choice
-        options: [standard, end500-plan, end500-parent-probe]
+        options: [standard, end500-plan, end500-parent-probe, end500-handoff-canary]
         default: standard
       expected_commit:
-        description: 'Bei W15-Plan/Parentprobe: exakt gepruefter 40-stelliger Commit des gewaehlten Refs'
+        description: 'Bei W15-Vorbereitung: exakt gepruefter 40-stelliger Commit des gewaehlten Refs'
         type: string
         default: ''
 
@@ -36,12 +36,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}${{ (inputs.w15_mode == 'end500-plan' || inputs.w15_mode == 'end500-parent-probe') && format('-w15-{0}', inputs.w15_mode) || '' }}
-  cancel-in-progress: ${{ inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' }}
+  group: ci-${{ github.ref }}${{ (inputs.w15_mode == 'end500-plan' || inputs.w15_mode == 'end500-parent-probe' || inputs.w15_mode == 'end500-handoff-canary') && format('-w15-{0}', inputs.w15_mode) || '' }}
+  cancel-in-progress: ${{ inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' }}
 
 jobs:
   offline-suite:
-    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe')
+    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary')
     name: Syntax + Offline-Suiten
     runs-on: ubuntu-latest
     # CI35207010979: 397/397 Suiten erfolgreich in779s, aber inklusive Setup
@@ -459,7 +459,7 @@ jobs:
 
 
   browser-smoke:
-    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe')
+    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary')
     name: Browser-/Mobile-Smoke (Chromium)
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -599,3 +599,36 @@ jobs:
         run: |
           echo 'Nur synthetische Parent-/UID-/Containerzuordnung; keine Originale, Datenbank, App oder Auth-Aufrufe.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Kein vollstaendiger Lebenszeit-RAM-, Restore-, Backup-, End500- oder Mock500-Nachweis. Start bleibt BLOCKED.' >> "$GITHUB_STEP_SUMMARY"
+
+  w15-handoff-canary:
+    name: W15 Uebergabekanal — ausschliesslich oeffentlicher Canary
+    if: github.event_name == 'workflow_dispatch' && inputs.w15_mode == 'end500-handoff-canary'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    environment: helmut-ci-originals
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Canary an Commit, Branch und ersten Versuch binden
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]] || [[ "$(git rev-parse HEAD)" != "$EXPECTED_COMMIT" ]] || [[ "$GITHUB_SHA" != "$EXPECTED_COMMIT" ]] || [[ "$GITHUB_RUN_ATTEMPT" != '1' ]] || [[ "$GITHUB_REF" != 'refs/heads/codex/w15-github-end500-preparation-20261028' ]]; then
+            echo 'W15_HANDOFF_CANARY_CONTEXT_REJECTED'
+            exit 1
+          fi
+      - name: Ausschliesslich oeffentlichen Environment-Secret-Canary vergleichen
+        env:
+          HELMUT_W15_HANDOFF_CANARY: ${{ secrets.HELMUT_W15_HANDOFF_CANARY }}
+        run: python3 -B scripts/w15-github/handoff_canary.py --check-public-canary-only
+      - name: Begrenzte Aussage des Kanalchecks festhalten
+        shell: bash
+        run: |
+          echo 'Nur bekannter oeffentlicher Testwert im vorhandenen GitHub-Environment; keine echten Schluessel oder Passphrasen.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Keine privaten Daten, kein Restore, kein End500/Mock500 und keine Startfreigabe.' >> "$GITHUB_STEP_SUMMARY"

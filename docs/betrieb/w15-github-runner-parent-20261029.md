@@ -88,16 +88,34 @@ mit begrenzten festen Werten weitergeben. Fremde Kindausgaben, Tracebacks,
 stderr, private Pfade und freie Exceptiontexte bleiben verworfen. Der erste
 beobachtete Fehler bleibt erhalten, auch wenn dessen Abschluss später scheitert.
 
-Ein fester kleiner Python-Lader meldet vor einem UID1000-Scriptstart ausschließlich
+Der damalige feste kleine Python-Lader meldete vor einem UID1000-Scriptstart ausschließlich
 `worker-load/WORKER_SOURCE_UNAVAILABLE`, falls der unveränderte öffentliche
 Scriptpfad nicht geöffnet werden kann. Damit wird insbesondere eine mögliche
 Unix-Traversierungsgrenze unter `/home/runner` sichtbar; `safe.directory` allein
-würde solche Dateirechte nicht ändern. Eine solche Ursache ist bisher nicht
-belegt. Keine Home-/Repositoryrechte werden gelockert und keine neue Quellen-
-Stagingarchitektur wird vorsorglich eingeführt.
+würde solche Dateirechte nicht ändern.
 
-Ein zweiter echter secretfreier Versuch wäre damit ein gezielter Diagnoselauf
-des ersten unbekannten Anschlussfehlers und keine Behauptung seiner Behebung.
-Limits und eigentliche Prozess-/Containerlogik bleiben unverändert. Nach
-höchstens zwei gleichartigen Fehlschlägen muss die konkrete Ursache und der
-kleinste weitere Weg neu bewertet werden; kein automatischer Retry.
+Die zweite echte Probe40846013963 aufcc534d6d hat genau diesen Fehler bestätigt:
+`worker-load/WORKER_SOURCE_UNAVAILABLE` über`supervisor-worker,outer-supervisor`.
+Der UID1000-Prozess konnte das Checkoutscript nicht öffnen. Dieser Pfadstart
+wird deshalb nicht ein drittes Mal unverändert versucht.
+
+## Kleinster geänderter Workeranschluss
+
+Der root-Supervisor hat Modul, Commit und Sourcepins bereits im gemeinsamen
+Parent geprüft. Er startet jetzt ausschließlich den festen vorhandenen Worker
+aus genau diesem vorgeladenen Modul über POSIX-Fork der Standardbibliothek.
+Das Kind ersetzt seine Umgebung durch die kleine feste Umgebung, setzt zuerst
+die einzige Docker-Ergänzungsgruppe, dann GID1000 und UID1000. Erst anschließend
+ruft es `worker(ctx)` auf. Es öffnet kein Checkoutscript erneut und führt keine
+Gitprüfung an einem für UID1000 unzugänglichen Repository aus. Kein beliebiger
+Code, kein anderer Workertyp und kein externer Eingabepfad sind zugelassen.
+
+Eine unidirektionale Pipe überträgt nur begrenzte JSON-Bytes, keine Pickle-
+Nachrichten. Der Supervisor überwacht währenddessen unverändert den gemeinsamen
+Kernel-Parent und die60s-Grenze; echter Childexit, Term/Kill, Eigentumsstop,
+Erstfehler und äußerer finaler Inode-/Leerstandreadback bleiben erforderlich.
+Es werden keine Home-/Repositoryrechte gelockert und keine Quellen gestaged.
+Ein kleiner echter lokaler Forktest verwendet ausschließlich erfundene Daten
+und gemockte Identitätswechsel; er startet weder Docker noch systemd oder DB.
+Der nächste echte Lauf prüft diesen konkret geänderten Startweg. RAM-/Swap-
+Grenzen und End500-/Mock500-Sperren bleiben unverändert; kein automatischer Retry.

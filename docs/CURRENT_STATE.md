@@ -13,11 +13,12 @@ angefordert/empfangen, kein neuer Datenweg, Schlüssel oder Thread.
 GitHub-Environment `helmut-ci-originals` nach manueller Betreiberänderung neu
 lesend geprüft: Adminbypass jetzt aus; ausschließlich der aktuelle PR975-Branch
 ist als typisierte Branchpolicy zugelassen, keine Tags. Required reviewers und
-Selbstfreigabesperre fehlen noch. Neuer ausschließlich
-lesender, branch-/commitgebundener Metadatenprüfer sperrt diesen Teilzustand;
-kein erneuter Secrets-API-Zugriff nach dem bekannten403. Für echten
-Datenzugang fehlen wirksamer Schutz und ein tatsächlich zulässiger anderer
-Reviewer; keine Selbstfreigabe oder Umgehung.
+Selbstfreigabesperre sind nicht eingerichtet und laut neuer Betreibersteuerung
+für die Soloentwicklung zurückgestellt. Keine pauschale Pflicht einer zweiten
+Person. Technische unabhängige Codeabnahme, tatsächlicher Environment-Scope,
+manueller exakt gebundener Job und begrenzter Datenumfang bleiben nötig;
+Metadaten allein sind keine private Übergabefreigabe. Kein erneuter
+Secrets-API-Zugriff nach dem bekannten403.
 [Befund, Prüfer und Adminschritte](betrieb/w15-github-datenzugang-20261029.md).
 
 Unabhängig vorbereitet: eng begrenzter manueller CI-Modus
@@ -25,9 +26,19 @@ Unabhängig vorbereitet: eng begrenzter manueller CI-Modus
 UID/GID1000-Worker samt expliziter Docker-Ergänzungsgruppe und festes
 Container-Schlafkind. Keine Datenbank/App/Controller/Originale/Auth-Aufrufe.
 Exakter Commit, Branch und Versuch1 sind Pflicht. Neue synthetische
-Adaptergrenzen geprüft; tatsächliche Runnerprobe und neue Kopf-CI separat
-nachzuweisen. Der öffentliche Planmodus bleibt ohne Secrets/Environment.
+Adaptergrenzen geprüft. Zwei echte Pfad-Reexec-Proben scheiterten; der zweite
+Lauf belegt`WORKER_SOURCE_UNAVAILABLE` unterUID1000. Ursache neu bewertet:
+Worker nutzt jetzt bereits root-geprüften Speichercode via Fork, keine
+Home-/Repository-Rechteänderung. Tatsächlicher Erfolg dieses geänderten
+Startwegs und neue Kopf-CI separat nachzuweisen. Der öffentliche Planmodus
+bleibt ohne Secrets/Environment.
 [Umfang und Grenzen der Parentprobe](betrieb/w15-github-runner-parent-20261029.md).
+
+Kleinster nächster Kanalnachweis: vorhandenes GitHub-Environment und separater
+manueller Modus`end500-handoff-canary`, ausschließlich mit dem bereits
+öffentlichen Canary als **Environment secret**. Keine echten Geheimnisse,
+Originale oder Datenbank. Erst dessen tatsächliche Bereitstellungs-/Laufbindung
+prüfen; kein weiterer Cloud-Dateikanal oder neuer Dienst wird aufgebaut.
 
 **End500-Start weiterhin BLOCKED:** geschützter Schlüssel-/Datenzugang,
 tatsächliche vollständige PG/PostgREST/Node-/Controlleranbindung einschließlich

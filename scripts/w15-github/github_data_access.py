@@ -68,9 +68,12 @@ def evaluate(environment, policies, ref, expected_commit):
     if not isinstance(expected_commit, str) or not re.fullmatch('[0-9a-f]{40}', expected_commit):
         raise ValueError('COMMIT_REJECTED')
     checks = dict.fromkeys(('environmentIdentity', 'adminBypassDisabled',
-                            'requiredReviewersConfigured', 'selfReviewPrevented',
                             'customBranchPoliciesOnly', 'exactBranchPolicy',
                             'branchHeadMatchesCommit'), UNKNOWN)
+    # Operator's solo-development contract: human reviewer governance is
+    # informational, independent of these strict technical metadata bindings.
+    reviewer_controls = {'status': 'INFO_ONLY', 'requiredForMetadataAcceptance': False,
+                         'requiredReviewersConfigured': UNKNOWN, 'selfReviewPrevented': UNKNOWN}
     if type(environment) is dict:
         checks['environmentIdentity'] = PASS if (
             type(environment.get('id')) is int and environment['id'] == ENVIRONMENT_ID
@@ -80,8 +83,8 @@ def evaluate(environment, policies, ref, expected_commit):
         if type(rules) is list and all(type(rule) is dict for rule in rules):
             review_rules = [rule for rule in rules if rule.get('type') == 'required_reviewers']
             if len(review_rules) == 0:
-                checks['requiredReviewersConfigured'] = FAIL
-                checks['selfReviewPrevented'] = FAIL
+                reviewer_controls['requiredReviewersConfigured'] = 'NOT_CONFIGURED'
+                reviewer_controls['selfReviewPrevented'] = 'NOT_CONFIGURED'
             elif len(review_rules) == 1:
                 rule = review_rules[0]
                 reviewers = rule.get('reviewers')
@@ -90,8 +93,10 @@ def evaluate(environment, policies, ref, expected_commit):
                         type(item) is dict and item.get('type') in ('User', 'Team')
                         and type(item.get('reviewer')) is dict
                         and positive_id(item['reviewer'].get('id')) for item in reviewers)
-                    checks['requiredReviewersConfigured'] = PASS if valid else FAIL
-                checks['selfReviewPrevented'] = bool_check(rule.get('prevent_self_review'), True)
+                    reviewer_controls['requiredReviewersConfigured'] = 'CONFIGURED' if valid else 'NOT_CONFIGURED'
+                self_review = rule.get('prevent_self_review')
+                if type(self_review) is bool:
+                    reviewer_controls['selfReviewPrevented'] = 'ENABLED' if self_review else 'DISABLED'
         branch_policy = environment.get('deployment_branch_policy')
         if 'deployment_branch_policy' in environment and branch_policy is None:
             checks['customBranchPoliciesOnly'] = FAIL
@@ -121,7 +126,8 @@ def evaluate(environment, policies, ref, expected_commit):
     passed = all(value == PASS for value in checks.values())
     return {'status': ('PASS_GITHUB_PROTECTION_METADATA_ONLY_START_BLOCKED' if passed else
                        'BLOCKED_GITHUB_PROTECTION_METADATA'),
-            'checks': checks, 'protectionMetadataVerified': passed,
+            'checks': checks, 'reviewerControls': reviewer_controls,
+            'protectionMetadataVerified': passed,
             'readiness': 'BLOCKED', 'executionAuthority': False,
             'privateHandoffAuthorized': False, 'secretAccessVerified': False,
             'workflowEnvironmentBindingVerified': False, 'runApprovalVerified': False,

@@ -34,6 +34,9 @@ class MetadataChecks(unittest.TestCase):
     def test_metadata_success_never_grants_runtime_secret_or_start_authority(self):
         result = G.evaluate(*fixture(), SHA)
         self.assertTrue(result['protectionMetadataVerified'])
+        self.assertEqual(result['reviewerControls'], {
+            'status': 'INFO_ONLY', 'requiredForMetadataAcceptance': False,
+            'requiredReviewersConfigured': 'CONFIGURED', 'selfReviewPrevented': 'ENABLED'})
         self.check_closed(result)
 
     def test_name_only_and_current_unprotected_environment_fail(self):
@@ -44,19 +47,51 @@ class MetadataChecks(unittest.TestCase):
             self.assertFalse(result['protectionMetadataVerified'])
             self.check_closed(result)
 
-    def test_reviewers_self_review_admin_bypass_and_recreated_identity_are_independent(self):
+    def test_admin_bypass_and_recreated_identity_are_mandatory(self):
         for field, value in (('can_admins_bypass', True), ('can_admins_bypass', None),
                              ('can_admins_bypass', 0), ('id', G.ENVIRONMENT_ID + 1),
-                             ('protection_rules', []), ('deployment_branch_policy', None)):
+                             ('deployment_branch_policy', None)):
             env, policies, ref = fixture()
             env[field] = value
             self.assertFalse(G.evaluate(env, policies, ref, SHA)['protectionMetadataVerified'])
+
+    def test_reviewer_controls_are_informational_for_solo_metadata_acceptance(self):
+        for rules, expected in (([], ('NOT_CONFIGURED', 'NOT_CONFIGURED')),
+                                (None, (G.UNKNOWN, G.UNKNOWN))):
+            env, policies, ref = fixture()
+            env['protection_rules'] = rules
+            result = G.evaluate(env, policies, ref, SHA)
+            self.assertTrue(result['protectionMetadataVerified'])
+            self.assertEqual(result['reviewerControls']['requiredReviewersConfigured'], expected[0])
+            self.assertEqual(result['reviewerControls']['selfReviewPrevented'], expected[1])
+            self.assertNotIn('requiredReviewersConfigured', result['checks'])
+            self.assertNotIn('selfReviewPrevented', result['checks'])
+            self.check_closed(result)
         for field, value in (('prevent_self_review', False), ('prevent_self_review', 1),
                              ('reviewers', []), ('reviewers', [{'type': 'User', 'id': 123}]),
                              ('reviewers', [{'type': 'Team', 'reviewer': {'id': True}}])):
             env, policies, ref = fixture()
             env['protection_rules'][0][field] = value
-            self.assertFalse(G.evaluate(env, policies, ref, SHA)['protectionMetadataVerified'])
+            result = G.evaluate(env, policies, ref, SHA)
+            self.assertTrue(result['protectionMetadataVerified'])
+            self.assertFalse(result['reviewerControls']['requiredForMetadataAcceptance'])
+            self.check_closed(result)
+
+    def test_solo_mode_keeps_every_required_metadata_gate_fail_closed(self):
+        changes = (
+            ('environmentIdentity', lambda e, p, r: e.update(id=G.ENVIRONMENT_ID + 1)),
+            ('adminBypassDisabled', lambda e, p, r: e.update(can_admins_bypass=None)),
+            ('customBranchPoliciesOnly', lambda e, p, r: e.update(deployment_branch_policy=None)),
+            ('exactBranchPolicy', lambda e, p, r: p['branch_policies'][0].pop('type')),
+            ('branchHeadMatchesCommit', lambda e, p, r: r['object'].update(sha='b' * 40)))
+        for key, change in changes:
+            env, policies, ref = fixture()
+            env['protection_rules'] = []
+            change(env, policies, ref)
+            result = G.evaluate(env, policies, ref, SHA)
+            self.assertNotEqual(result['checks'][key], G.PASS)
+            self.assertFalse(result['protectionMetadataVerified'])
+            self.check_closed(result)
 
     def test_tag_missing_type_wildcard_extra_and_incomplete_policies_block(self):
         for change in ({'type': 'tag'}, {'type': None}, {'name': 'codex/*'}, {'name': 'main'}):
