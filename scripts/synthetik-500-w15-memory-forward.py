@@ -181,11 +181,18 @@ class Watch(M.Supervisor):
         memory_error=None
         try:
             if self.common_resources is not None:self.common_resources.sample()
-            super().sample() # Same common lifetime measurement, End500-scoped limits.
-            assert end500_memory_assessment(self.last),'w15-end500-memory-measurement-invalid-or-out-of-contract'
-            self.last.update({'memoryContractVersion':M.MEMORY['version'],'physicalHardCapBytes':M.LIMIT,
-              'maximumAllowedPeakBytes':M.MAXIMUM,'requiredPhysicalReserveBytes':M.RESERVE,
-              'physicalReserveBytes':M.LIMIT-self.last['kernelLifetimePeakBytes']})
+            if getattr(self.common_resources,'capacity_diagnostic',False) is True:
+                # Restore-only admission owns time/disk checks; no Full500 body runs.
+                assert self.start_guard is None and not self.mock_backup_closure
+                self.last=self.common_resources.sample()
+                self.maximum=max(self.maximum,self.last['kernelLifetimePeakBytes'])
+                self.last.update({'capacityDiagnosticOnly':True,'legacyContractAccepted':False})
+            else:
+                super().sample() # Same common lifetime measurement, End500-scoped limits.
+                assert end500_memory_assessment(self.last),'w15-end500-memory-measurement-invalid-or-out-of-contract'
+                self.last.update({'memoryContractVersion':M.MEMORY['version'],'physicalHardCapBytes':M.LIMIT,
+                  'maximumAllowedPeakBytes':M.MAXIMUM,'requiredPhysicalReserveBytes':M.RESERVE,
+                  'physicalReserveBytes':M.LIMIT-self.last['kernelLifetimePeakBytes']})
         except BaseException as error:memory_error=error
         if memory_error and self.memory_failure is None:
             self.memory_failure={'type':type(memory_error).__name__,'reason':'end500-memory-readback-invalid-or-out-of-contract'}
@@ -203,9 +210,12 @@ class Watch(M.Supervisor):
     def publish(self,name,index=None,status=None):
         with self.progress_lock:
             mem=self.last;peak=None if mem is None else mem['kernelLifetimePeakBytes']
-            message='RAM-Diagnose | CAS '+str(len(self.cas_records))+'/500 | '+name
+            capacity=getattr(self.common_resources,'capacity_diagnostic',False) is True
+            physical=self.common_resources.container_limit if capacity else M.LIMIT
+            message=('Restore-Kapazitaet | '+name if capacity else 'RAM-Diagnose | CAS '+str(len(self.cas_records))+'/500 | '+name)
             if mem:
-                message+=' | RAM {:.1f} MB | Peak {:.1f} MB | Reserve {:.1f} MB ({:.2f} %)'.format(mem['currentBytes']/1e6,peak/1e6,(M.LIMIT-peak)/1e6,100*(M.LIMIT-peak)/M.LIMIT)
+                label='Parentrest' if capacity else 'Reserve'
+                message+=(' | RAM {:.1f} MB | Peak {:.1f} MB | '+label+' {:.1f} MB ({:.2f} %)').format(mem['currentBytes']/1e6,peak/1e6,(physical-peak)/1e6,100*(physical-peak)/physical)
             if self.cas_records:message+=' | Auth-Max {:.9f} s'.format(self.cas_records[-1]['authTimings']['maximumFullCallWallMs']/1000)
             if self.cas_records:message+=' | Auth+Beleg-Max {:.9f} s'.format(self.cas_records[-1]['maximumAuthThroughDurableObservationWallMs']/1000)
             if self.disk:message+=' | Platte frei {:.1f} MB'.format(self.disk['availableBytes']/1e6)

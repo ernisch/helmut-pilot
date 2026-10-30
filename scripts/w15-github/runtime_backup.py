@@ -211,6 +211,8 @@ def _sample(supervisor):
             and supervisor.disk_phase == 'processing', 'BACKUP_MONITOR_NOT_LIVE')
     supervisor.sample()
     value = supervisor.last
+    if getattr(getattr(supervisor, 'common_resources', None), 'capacity_diagnostic', False) is True:
+        return supervisor.common_resources.sample()
     require(isinstance(value, dict) and value.get('configuredLimit') == '2560000000'
             and value.get('swapMaximum') == '0' and value.get('swapCurrentBytes') == 0)
     require(all(type(value.get(k)) is int and 0 <= value[k] <= 2048000000

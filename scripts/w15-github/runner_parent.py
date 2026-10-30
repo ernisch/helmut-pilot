@@ -153,7 +153,7 @@ def process_env(ctx):
     return {**ENV, 'GITHUB_ACTIONS': 'true', 'GITHUB_RUN_ID': ctx['runId'], 'GITHUB_RUN_ATTEMPT': '1'}
 
 
-def github_binding(run_id, commit):
+def github_binding(run_id, commit, *, capacity_diagnostic=False):
     phase('github-environment')
     require(os.environ.get('GITHUB_ACTIONS') == 'true'
             and os.environ.get('GITHUB_RUN_ID') == run_id
@@ -164,7 +164,8 @@ def github_binding(run_id, commit):
                     '-C', str(REPO), 'rev-parse', 'HEAD']).stdout
     require(head == (commit + '\n').encode())
     # Both executable repository sources must equal raw blobs at the exact HEAD.
-    for file in (SCRIPT, SCRIPT.with_name('common_resources.py')):
+    for file in (SCRIPT, SCRIPT.with_name('common_resources.py'),
+                 *([SCRIPT.with_name('restore_capacity.py')] if capacity_diagnostic else [])):
         phase('github-entry-pin')
         relative = str(file.relative_to(REPO))
         result = command(['/usr/bin/git', '--no-optional-locks', '-c', 'core.hooksPath=/dev/null',
@@ -213,7 +214,11 @@ def read_parent(ctx, expected_identity, *, empty=False):
                   'swapCurrentBytes': int(read('memory.swap.current')),
                   'events': {k: int(v) for k, v in (row.split() for row in read('memory.events').splitlines())}}
         try:
-            R.assess(sample)
+            if ctx.get('capacityDiagnostic') is True:
+                sample['capacityMeasurement'] = R.capacity().snapshot(sample, fd)
+                R.capacity().assess(sample)
+            else:
+                R.assess(sample)
             populated = dict(row.split() for row in read('cgroup.events').splitlines())['populated']
             require(populated in ('0', '1'))
             if empty:
@@ -249,7 +254,10 @@ def parent_empty(ctx, expected_identity):
         os.close(fd)
 
 
-def unit_bytes():
+def unit_bytes(ctx=None):
+    if ctx is not None and ctx.get('capacityDiagnostic') is True:
+        return (b'[Unit]\nDescription=W15 full restore capacity diagnostic only\n'
+                b'[Slice]\nMemoryAccounting=yes\nMemoryMax=4999999488\nMemorySwapMax=0\n')
     return (b'[Unit]\nDescription=W15 secret-free parent topology probe\n'
             b'[Slice]\nMemoryAccounting=yes\nMemoryMax=2560000000\nMemorySwapMax=0\n')
 
@@ -260,10 +268,12 @@ def prepare_parent(ctx):
     unit, _, _ = names(ctx)
     path = R.KERNEL_ROOT / unit
     require(not path.exists())
+    if ctx.get('capacityDiagnostic') is True:
+        R.capacity().host_admission()
     phase('parent-unit-write')
     fd = os.open(UNIT_ROOT / unit, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
     try:
-        raw = unit_bytes()
+        raw = unit_bytes(ctx)
         require(os.write(fd, raw) == len(raw))
         os.fsync(fd)
     finally:
@@ -296,7 +306,7 @@ def remove_parent(ctx):
     file = UNIT_ROOT / unit
     value = file.lstat()
     require(stat.S_ISREG(value.st_mode) and value.st_uid == 0 and value.st_nlink == 1
-            and stat.S_IMODE(value.st_mode) == 0o600 and file.read_bytes() == unit_bytes())
+            and stat.S_IMODE(value.st_mode) == 0o600 and file.read_bytes() == unit_bytes(ctx))
     command(['/usr/bin/systemctl', 'stop', unit], timeout=30)
     file.unlink()  # Only this exclusive, fixed-content transient probe unit.
     command(['/usr/bin/systemctl', 'daemon-reload'])
@@ -486,7 +496,8 @@ def supervise(ctx):
 
 def internal_argv(mode, ctx):
     return ['/usr/bin/python3', '-B', str(SCRIPT), '--internal', mode,
-            '--run-id', ctx['runId'], '--expected-commit', ctx['exactCommit'], '--nonce', ctx['nonce']]
+            '--run-id', ctx['runId'], '--expected-commit', ctx['exactCommit'], '--nonce', ctx['nonce'],
+            *(['--capacity-diagnostic'] if ctx.get('capacityDiagnostic') is True else [])]
 
 
 def privileged(mode, ctx):
@@ -556,13 +567,17 @@ def main(argv=None):
         parser.add_argument('--run-id', required=True)
         parser.add_argument('--expected-commit', required=True)
         parser.add_argument('--nonce')
+        parser.add_argument('--capacity-diagnostic', action='store_true')
         args = parser.parse_args(argv)
         public = args.internal is None
         require((public and args.nonce is None) or (not public and args.nonce is not None))
         ctx = context(args.run_id, args.expected_commit, str(uuid.uuid4()) if public else args.nonce)
+        require(not args.capacity_diagnostic or args.internal in ('prepare', 'remove'))
+        if args.capacity_diagnostic:
+            ctx['capacityDiagnostic'] = True
         if public:
             stop_latch = StopLatch()
-        github_binding(args.run_id, args.expected_commit)
+        github_binding(args.run_id, args.expected_commit, capacity_diagnostic=args.capacity_diagnostic)
         if public:
             result = probe(ctx, stop_latch=stop_latch)
             stop_latch.cleaning = False

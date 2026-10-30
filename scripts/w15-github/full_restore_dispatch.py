@@ -36,6 +36,7 @@ LAUNCHER_REVIEW_SCHEMA = 'helmut-w15-independent-full-restore-launcher-review/1'
 BRANCH, ENVIRONMENT, WORKFLOW = M.BRANCH, M.ENVIRONMENT, M.WORKFLOW
 REVIEW_SCHEMA = 'helmut-w15-independent-full-restore-receiver-review/1'
 SOURCE_FILE = HERE / 'restore-diagnostic-source-parts.SAFE.json'
+CAP = component('restore_capacity')
 MAX_FRAME = 70000
 READY = 'READY_FOR_FRESH_PRIVATE_FULL_RESTORE_LINKS'
 PHASES = {'arguments', 'approval', 'qualification', 'launcher', 'review', 'ci', 'workflow', 'environment',
@@ -72,13 +73,19 @@ def source_parts():
     return rows
 
 
+def profile(value):
+    diagnostic = type(value) is dict and value.get('scope') == CAP.SCOPE
+    return (CAP.MODE, CAP.SCOPE, CAP.LIMITS) if diagnostic else (MODE, SCOPE, W.LIMITS)
+
+
 def validate_approval(value, target, launcher, request, now):
+    mode, scope, limits = profile(value)
     keys = {'schema', 'scope', 'authorized', 'targetCommit', 'launcherCommit', 'branch', 'environment',
         'workflowId', 'nonce', 'runAttempt', 'maxReceiveAttempts', 'targetCI', 'targetPR', 'reviewSHA256', 'launcherCI', 'launcherPR', 'launcherReviewSHA256', 'sourceQualificationSHA256',
         'requestSHA256', 'advanceAllowedBranch', 'stateDir', 'issuedAt', 'expiresAt'}
     need(type(value) is dict and set(value) == keys and type(target) is str and M.HEX.fullmatch(target)
          and type(launcher) is str and M.HEX.fullmatch(launcher) and value['schema'] == 'helmut-w15-full-restore-dispatch-approval/1'
-         and value['scope'] == SCOPE and value['authorized'] is True
+         and value['scope'] == scope and value['authorized'] is True
          and value['targetCommit'] == target and value['launcherCommit'] == launcher
          and value['branch'] == BRANCH and value['environment'] == ENVIRONMENT
          and type(value['workflowId']) is int and value['workflowId'] == WORKFLOW
@@ -95,13 +102,13 @@ def validate_approval(value, target, launcher, request, now):
     need(str(nonce) == value['nonce'] and nonce.version == 4 and nonce.variant == uuid.RFC_4122, 'approval')
     need(type(request) is dict and set(request) == W.DECLARATION_KEYS
          and hashlib.sha256(canonical(request)).hexdigest() == value['requestSHA256']
-         and request['nonce'] == value['nonce'] and request['limits'] == W.LIMITS
+         and request['nonce'] == value['nonce'] and request['limits'] == limits
          and all(type(x) is int for x in request['limits'].values())
          and type(request['maximumWallSeconds']) is int and request['maximumWallSeconds'] == 1800, 'approval')
     approval = request['approval']
-    expected = {'schema': 'helmut-w15-workflow-start-approval/1', 'scope': SCOPE, 'authorized': True,
+    expected = {'schema': 'helmut-w15-workflow-start-approval/1', 'scope': scope, 'authorized': True,
         'exactCommit': target, 'branch': 'refs/heads/' + BRANCH, 'runAttempt': 1, 'nonce': value['nonce'],
-        'mode': MODE, 'limits': W.LIMITS, 'maximumWallSeconds': 1800,
+        'mode': mode, 'limits': limits, 'maximumWallSeconds': 1800,
         'sourceQualificationSHA256': request['sourceQualification']['sha256'], 'maxReceiveAttempts': 1,
         'issuedAt': value['issuedAt'], 'expiresAt': value['expiresAt'], 'maxStorageUSD': '0.05', 'maxProviderCalls': 0}
     need(type(approval) is dict and approval == expected
@@ -144,6 +151,7 @@ class Git(M.Git):
 
 def prepare(value, target, launcher, request, *, api, git, now, progress):
     validate_approval(value, target, launcher, request, now())
+    mode, scope, limits = profile(value)
     git.check_launcher(launcher)
     raw, digest, qualification = W.decode_qualification(request['sourceQualification'])
     need(qualification['exactCommit'] == target and digest == request['approval']['sourceQualificationSHA256'] == value['sourceQualificationSHA256'], 'qualification')
@@ -157,7 +165,7 @@ def prepare(value, target, launcher, request, *, api, git, now, progress):
         M.verify_review(pr, commit, schema, digest, phase)
         records = [decode(block) for block in re.findall(r'```json\s*\n(.*?)\n```', pr['body'], re.DOTALL)]
         reviews = [row for row in records if type(row) is dict and row.get('schema') == schema]
-        need(len(reviews) == 1 and reviews[0].get('scope') == SCOPE
+        need(len(reviews) == 1 and reviews[0].get('scope') == scope
              and reviews[0].get('executionAuthority') is False, phase)
         if phase == 'receiver-review':
             need(reviews[0].get('sourceQualificationSHA256') == digest_qualification, phase)
@@ -185,11 +193,12 @@ def prepare(value, target, launcher, request, *, api, git, now, progress):
 
 
 def execute(value, target, launcher, request, *, api, git, now, encrypt, link_provider, ready, state_dir, cleanup=None):
+    mode, scope, limits = profile(value)
     phase, fd, attempted, accepted = 'approval', None, False, False
     progress = {'branchChanged': False, 'branchUpdateAttempted': False}
     first, secondary = None, []
     result = {'schema': 'helmut-w15-full-restore-dispatch-attempt/1', 'targetCommit': target,
-        'launcherCommit': launcher, 'mode': MODE, 'dispatchAttempted': False, 'dispatchAccepted': False,
+        'launcherCommit': launcher, 'mode': mode, 'dispatchAttempted': False, 'dispatchAccepted': False,
         'restoreAccepted': False, 'retryAllowed': False, 'executionAuthority': False}
     try:
         validate_approval(value, target, launcher, request, now())
@@ -210,7 +219,7 @@ def execute(value, target, launcher, request, *, api, git, now, encrypt, link_pr
         M.H.E.url_index(canonical(index).decode('ascii'), target, now=issued)
         phase = 'encryption'; armored = encrypt(canonical(index).decode('ascii'), target, Path(state_dir))
         phase = 'payload'
-        payload = N.dispatch_payload(target, armored, mode=MODE, extra_inputs={'w15_request': canonical(request).decode('ascii')})
+        payload = N.dispatch_payload(target, armored, mode=mode, extra_inputs={'w15_request': canonical(request).decode('ascii')})
         need(type(payload) is bytes and len(payload) <= 65535, phase)
         phase = 'final-expiry'; validate_approval(value, target, launcher, request, now())
         need((expiry - now()).total_seconds() > M.MIN_LINK_SECONDS, phase)

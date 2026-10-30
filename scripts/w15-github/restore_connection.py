@@ -212,7 +212,8 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
         _observe(resources, phase)
         attempted = True
         m.docker('create', '--name', forward.CONTAINER, '--pull=never', '--network=none', '--restart=no',
-                 '--memory=' + str(m.LIMIT), '--memory-swap=' + str(m.LIMIT), '--cgroup-parent=' + resources.unit,
+                 '--memory=' + str(getattr(resources, 'container_limit', m.LIMIT)),
+                 '--memory-swap=' + str(getattr(resources, 'container_limit', m.LIMIT)), '--cgroup-parent=' + resources.unit,
                  *labels, '--mount', 'type=bind,src=' + str(forward.WORK / 'pgdata') + ',dst=/var/lib/postgresql/data',
                  '--mount', 'type=bind,src=' + str(seed) + ',dst=' + forward.SEED_MOUNT + ',readonly',
                  '--mount', 'type=bind,src=' + str(state) + ',dst=' + forward.BASE + '/state', *mounts,
@@ -226,8 +227,8 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
         m.docker('start', owned_id)
         info = _inspect(m, owned_id)
         _owned(info, context, m.IMAGE, resources.unit, owned_id)
-        need(info['HostConfig']['NetworkMode'] == 'none' and info['HostConfig']['Memory'] == m.LIMIT
-             and info['HostConfig']['MemorySwap'] == m.LIMIT and info['State']['Running'] is True)
+        need(info['HostConfig']['NetworkMode'] == 'none' and info['HostConfig']['Memory'] == getattr(resources, 'container_limit', m.LIMIT)
+             and info['HostConfig']['MemorySwap'] == getattr(resources, 'container_limit', m.LIMIT) and info['State']['Running'] is True)
         forward._runtime_module('runtime_materialization').verify_mounts(info['Mounts'], forward.PREP / 'runtime-files')
         seed_mounts = [row for row in info['Mounts'] if row['Destination'] == forward.SEED_MOUNT]
         need(len(seed_mounts) == 1 and seed_mounts[0]['Source'] == str(seed) and seed_mounts[0]['RW'] is False)

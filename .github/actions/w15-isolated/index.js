@@ -39,11 +39,41 @@ function closedCleanup(value){
     !keys.every(k=>['PASS','FAIL','UNKNOWN'].includes(value[k])))return null;
   return Object.fromEntries(keys.map(k=>[k,value[k]]));
 }
+function closedCapacityMeasurement(v){
+  const exact=(o,keys)=>o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).sort().join(',')===[...keys].sort().join(',');
+  const integer=n=>Number.isSafeInteger(n)&&n>=0;
+  const cats=['anon','file','kernel','shmem','file_dirty','file_writeback'];
+  const amounts=o=>exact(o,cats)&&cats.every(k=>integer(o[k])||o[k]==='UNKNOWN');
+  const keys=['schema','diagnosticOnly','legacyPeakLimitBytes','legacyPeakExceeded','legacyContractAccepted',
+    'sampleCount','maximumObservedCurrentBytes','categoryMaxima','last','phaseObservations'];
+  if(!exact(v,keys)||v.schema!=='helmut-w15-full-restore-capacity-measurement/1'||v.diagnosticOnly!==true||
+    v.legacyPeakLimitBytes!==2048000000||typeof v.legacyPeakExceeded!=='boolean'||v.legacyContractAccepted!==false||
+    !integer(v.sampleCount)||v.sampleCount<1||!integer(v.maximumObservedCurrentBytes)||!amounts(v.categoryMaxima))return null;
+  const last=v.last;
+  if(!exact(last,['hostAvailableBytes','memoryStat','memoryPressure','observedMonotonicNS','peakCompositionKnown'])||
+    !(integer(last.hostAvailableBytes)||last.hostAvailableBytes==='UNKNOWN')||!amounts(last.memoryStat)||
+    !integer(last.observedMonotonicNS)||last.peakCompositionKnown!==false)return null;
+  if(last.memoryPressure!=='UNKNOWN'){
+    if(!exact(last.memoryPressure,['some','full']))return null;
+    for(const row of Object.values(last.memoryPressure))if(!exact(row,['avg10','avg60','avg300','total'])||
+      !integer(row.total)||!['avg10','avg60','avg300'].every(k=>integer(row[k])&&row[k]<=10000))return null;
+  }
+  if(!Array.isArray(v.phaseObservations)||v.phaseObservations.length>128)return null;
+  let previous=0;
+  for(const row of v.phaseObservations){
+    if(!exact(row,['name','sequence','meaning','observedKernelPeakBytes','observedCurrentBytes'])||
+      !closedPhaseObservation({name:row.name,sequence:row.sequence,meaning:row.meaning})||row.sequence<=previous||
+      !integer(row.observedKernelPeakBytes)||!integer(row.observedCurrentBytes))return null;
+    previous=row.sequence;
+  }
+  if(JSON.stringify(v).length>32768)return null;
+  return JSON.parse(JSON.stringify(v));
+}
 function closedFailureMemory(value){
   const keys=['configuredLimitBytes','kernelLifetimePeakBytes','currentBytes','swapMaximumBytes','swapCurrentBytes','lastReadbackValid','events'];
   const events=['max','oom','oom_kill','oom_group_kill'];
   if(!value||typeof value!=='object'||Array.isArray(value)||!keys.every(k=>Object.hasOwn(value,k))||
-    !Object.keys(value).every(k=>keys.includes(k)||k==='postFailureMemoryStat')||
+    !Object.keys(value).every(k=>keys.includes(k)||k==='postFailureMemoryStat'||k==='capacityMeasurement')||
     typeof value.lastReadbackValid!=='boolean')return null;
   if(keys.filter(k=>!['lastReadbackValid','events'].includes(k)).some(k=>!Number.isSafeInteger(value[k])||value[k]<0))return null;
   if(!value.events||typeof value.events!=='object'||Array.isArray(value.events)||
@@ -56,6 +86,10 @@ function closedFailureMemory(value){
     detail.observedAfterFailure===true&&detail.peakCompositionKnown===false&&
     categories.every(k=>Number.isSafeInteger(detail[k])&&detail[k]>=0||detail[k]==='UNKNOWN'))
     out.postFailureMemoryStat=Object.fromEntries([...categories,'observedAfterFailure','peakCompositionKnown'].map(k=>[k,detail[k]]));
+  if(value.configuredLimitBytes===4999999488){
+    const capacity=closedCapacityMeasurement(value.capacityMeasurement);
+    if(capacity)out.capacityMeasurement=capacity;
+  }
   return out;
 }
 // Runtime artifact credentials exist in JavaScript actions. They travel only
