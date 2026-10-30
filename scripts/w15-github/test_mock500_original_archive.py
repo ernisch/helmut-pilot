@@ -102,6 +102,8 @@ class ArchiveChecks(unittest.TestCase):
         receipt = result['safe_receipt']
         self.assertEqual((receipt['verifiedFiles'], receipt['verifiedBytes']), (11, self.total))
         self.assertTrue(receipt['gpgIntegrityVerified'] and receipt['fullPrivateReadbackVerified'])
+        self.assertEqual(receipt['files'], [{'name': name, 'bytes': len(raw), 'sha256': SHA(raw), 'status': 'PASS'}
+            for name, raw in sorted(self.data.items()) if name != 'MANIFEST.json'])
         self.assertFalse(receipt['executionAuthority'] or receipt['testStarted'] or receipt['mock500Acceptance'])
         destination = Path(self.args['destination'])
         self.assertEqual(destination.stat().st_mode & 0o777, 0o700)
@@ -109,7 +111,19 @@ class ArchiveChecks(unittest.TestCase):
             self.assertEqual((destination / name).read_bytes(), raw)
             self.assertEqual((destination / name).stat().st_mode & 0o777, 0o600)
         self.assertTrue(self.created[0].finished and self.created[0].stdout.closed)
+        self.assertEqual(self.created[0].waits, 1)
         self.assertFalse((self.root / 'historical').exists())
+
+    def test_timer_race_does_not_emit_private_callback_errors_or_claim_stopped(self):
+        for error in (ProcessLookupError('FICTIONAL PRIVATE PROCESS DETAIL'),
+                      OSError('FICTIONAL PRIVATE KILL DETAIL'), RuntimeError('FICTIONAL PRIVATE DETAIL')):
+            with self.subTest(kind=type(error).__name__):
+                process = FakeGPG(b'')
+                with patch.object(process, 'kill', side_effect=error), \
+                     patch('sys.stderr', new_callable=io.StringIO) as output:
+                    M._timer_stop(process)
+                    self.assertEqual(output.getvalue(), '')
+                self.assertFalse(process.finished)
 
     def test_invalid_members_are_rejected_before_writing_their_paths(self):
         variants = [('absolute', '/escape', tarfile.REGTYPE, ''), ('traversal', '../escape', tarfile.REGTYPE, ''),

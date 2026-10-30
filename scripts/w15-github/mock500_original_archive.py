@@ -154,6 +154,14 @@ def _status(raw):
                                      '[GNUPG:] FAILURE', '[GNUPG:] NODATA')) for row in rows), 'integrity')
 
 
+def _timer_stop(process):
+    # GPG may exit between Timer.cancel() and the callback. Never let a callback
+    # exception emit an unfiltered thread traceback. Only wait(), below, proves
+    # process termination; a successful kill request does not establish it.
+    try: process.kill()
+    except BaseException: pass
+
+
 def receive(cipher, *, destination, private_home, passphrase_file, guard):
     """Return PRIVATE paths only after authenticated EOF and complete readback.
 
@@ -191,7 +199,7 @@ def receive(cipher, *, destination, private_home, passphrase_file, guard):
         process = subprocess.Popen(base + ['--pinentry-mode', 'loopback', '--passphrase-fd', str(pass_fd),
             '--status-fd', str(status_fd), '--decrypt'], stdin=cipher_fd, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, pass_fds=(pass_fd, status_fd), env=S._gpg_env(), bufsize=0, close_fds=True)
-        timer = threading.Timer(180, process.kill); timer.daemon = True; timer.start()
+        timer = threading.Timer(180, _timer_stop, args=(process,)); timer.daemon = True; timer.start()
         phase = 'archive'
         _extract(process.stdout, root_fd, pins, guard)
         phase = 'integrity'
@@ -217,6 +225,8 @@ def receive(cipher, *, destination, private_home, passphrase_file, guard):
                 'manifestBytes': MANIFEST['bytes'], 'manifestSHA256': MANIFEST['sha256'],
                 'recipientFingerprint': FINGERPRINT, 'gzipUSTARVerified': True,
                 'allOriginalSizesAndHashesVerified': True, 'fullPrivateReadbackVerified': True,
+                'files': [{'name': name, **pins[name], 'status': 'PASS'}
+                          for name in sorted(pins) if name != 'MANIFEST.json'],
                 'gpgIntegrityVerified': True, 'gpgProcessStopped': 'PASS',
                 'executionAuthority': False, 'testStarted': False, 'mock500Acceptance': False}}
     except BaseException as error:
@@ -224,13 +234,19 @@ def receive(cipher, *, destination, private_home, passphrase_file, guard):
     finally:
         if timer is not None: timer.cancel()
         if process is not None:
+            cleanup_failed = False
             try:
                 if process.poll() is None: process.kill()
-                process.stdout.close()
-                process.wait(timeout=15)
-                stopped = 'PASS'
-            except BaseException:
-                stopped = 'UNKNOWN'; failure = failure or 'cleanup'
+            except BaseException: cleanup_failed = True
+            try: process.stdout.close()
+            except BaseException: cleanup_failed = True
+            if stopped != 'PASS':
+                try:
+                    process.wait(timeout=15)
+                    stopped = 'PASS'
+                except BaseException:
+                    stopped = 'UNKNOWN'; cleanup_failed = True
+            if cleanup_failed: failure = failure or 'cleanup'
         for fd in (status_fd, root_fd, parent_fd, pass_fd, home_fd, cipher_fd):
             if fd is not None:
                 try: os.close(fd)
