@@ -219,9 +219,11 @@ def read_parent(ctx, expected_identity, *, empty=False):
             if empty:
                 require(populated == '0')
         except KeyboardInterrupt as error:
+            sample['postFailureMemoryStat'] = R.capture_post_failure_memory_stat(fd)
             error.failure_memory = R.project_failure_memory(sample, False)
             raise
         except BaseException:
+            sample['postFailureMemoryStat'] = R.capture_post_failure_memory_stat(fd)
             raise ProbeError(code='COMMON_PARENT_REJECTED', memory=R.project_failure_memory(sample, False)) from None
         return sample
     finally:

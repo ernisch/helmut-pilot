@@ -31,13 +31,21 @@ function closedCleanup(value){
 function closedFailureMemory(value){
   const keys=['configuredLimitBytes','kernelLifetimePeakBytes','currentBytes','swapMaximumBytes','swapCurrentBytes','lastReadbackValid','events'];
   const events=['max','oom','oom_kill','oom_group_kill'];
-  if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).sort().join(',')!==[...keys].sort().join(',')||
+  if(!value||typeof value!=='object'||Array.isArray(value)||!keys.every(k=>Object.hasOwn(value,k))||
+    !Object.keys(value).every(k=>keys.includes(k)||k==='postFailureMemoryStat')||
     typeof value.lastReadbackValid!=='boolean')return null;
   if(keys.filter(k=>!['lastReadbackValid','events'].includes(k)).some(k=>!Number.isSafeInteger(value[k])||value[k]<0))return null;
   if(!value.events||typeof value.events!=='object'||Array.isArray(value.events)||
     Object.keys(value.events).sort().join(',')!==[...events].sort().join(',')||
     events.some(k=>!Number.isSafeInteger(value.events[k])||value.events[k]<0))return null;
-  return value;
+  const out=Object.fromEntries(keys.map(k=>[k,value[k]])),detail=value.postFailureMemoryStat;
+  const categories=['anon','file','kernel','shmem','file_dirty','file_writeback'];
+  if(value.lastReadbackValid===false&&detail&&typeof detail==='object'&&!Array.isArray(detail)&&
+    Object.keys(detail).sort().join(',')===[...categories,'observedAfterFailure','peakCompositionKnown'].sort().join(',')&&
+    detail.observedAfterFailure===true&&detail.peakCompositionKnown===false&&
+    categories.every(k=>Number.isSafeInteger(detail[k])&&detail[k]>=0||detail[k]==='UNKNOWN'))
+    out.postFailureMemoryStat=Object.fromEntries([...categories,'observedAfterFailure','peakCompositionKnown'].map(k=>[k,detail[k]]));
+  return out;
 }
 const fs=require('node:fs'),cp=require('node:child_process');
 const credentialKeys=['ACTIONS_RUNTIME_TOKEN','ACTIONS_RESULTS_URL','ACTIONS_RUNTIME_URL','GITHUB_TOKEN',
