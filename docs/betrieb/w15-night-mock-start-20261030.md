@@ -27,7 +27,10 @@ Abschluss weist alle drei vor einem nativen Export zurück.
 
 - genau 1000 gespeicherte D/R-Phasen in ihrer ursprünglichen Reihenfolge, jede
   mit nativer Send-/Kostenbindung, konsistenten Anfangs-/End-/Dauerwerten und
-  strikt weniger als 20 Sekunden; die 19,9-Sekunden-Randfälle bleiben erhalten;
+  strikt weniger als 20 Sekunden; beide Phasen müssen zwischen dem tatsächlichen
+  Unitbeginn und nativen Schluss-ACK liegen, D muss vor R abgeschlossen sein und
+  die nächste Unit darf erst nach dem vorigen Schluss-ACK beginnen. Die
+  19,9-Sekunden-Randfälle bleiben erhalten;
 - jede native Auth-Hülle und jeden zugeordneten CAS-Schreibbeleg, bestätigte
   Speicherung, denselben Unitindex, `main-auth`, `relational-atomic-v1`, echte
   ACK-Zeitordnung und strikt weniger als 30 Sekunden; genau zwei Usage-Hüllen
@@ -58,7 +61,7 @@ Alle Befehle liefen ausschließlich über `node scripts/lokal.js -- python3 -I -
 
 | Prüfung | Tatsächliches Ergebnis |
 | --- | --- |
-| `test_mock500_backup.py` | 13 Tests PASS; drei neue Gruppen mit 42 negativen Beobachtungsfällen |
+| `test_mock500_backup.py` | 15 Tests PASS; vier neue Gruppen mit 46 negativen Beobachtungsfällen und ein positiver Pipeline-Lock-Randfall |
 | `test_mock500_workflow.py` | 6 Tests PASS, einschließlich des übernommenen Baselineadapters |
 | `test_mock500_start.py` | 9 Tests PASS; einschließlich Ablehnung des nativen Fixturekandidaten ohne echte positive End500-Abnahme |
 | Direkter Vergleich des alten und ergänzten Abschlusses | 3/3 synthetische Lücken reproduziert und geschlossen; kein Export/DB/Provider/500-Lauf |
@@ -71,6 +74,19 @@ Belege, keine echte 500er-Leistung oder RAM-Abnahme. Ein erster Vergleichsharnes
 wurde wegen Wiederverwendung derselben synthetischen Exportablage verworfen;
 der erfolgreiche direkte Vergleich ruft ausschließlich die Abschlussprüfung
 auf. Kein historischer Lauf erhält dadurch eine neue Klassifikation.
+
+Die unabhängige Anschlussprüfung fand anschließend einen konkreten weiteren
+Fehler: Die bisherige positive Metadatenfixture beendete die Unit nach 1ms,
+obwohl ihre Randphasen jeweils 19,9s dauerten. Einzelgrenzen allein konnten
+diese unmögliche Verbindung nicht abweisen. Die Fixture ist jetzt zeitlich
+kohärent; Unit- und native Schluss-ACK-Zeiten passen zusammen und ihre D/R-Phasen
+liegen vollständig darin. Der direkte Vergleich mit `9511a8ae` reproduzierte
+drei zuvor akzeptierte Gegenfälle (Providerende nach Schluss-ACK, Providerbeginn
+vor Unitbeginn, überlappende D/R-Phasen); alle werden jetzt vor Export abgewiesen.
+Zusätzlich wird eine vor dem vorigen Schluss-ACK begonnene nächste Unit abgewiesen.
+Ein positiver Randfall erhält gültige Pipeline-Lock-Hüllen vor Unitbeginn und
+nach Schluss-ACK: Auth-Hüllen bleiben an ihren nativen ACK/CAS-Beleg gebunden,
+es gibt keine pauschale Pflicht, jede Auth-Hülle in die Unitspanne zu zwingen.
 
 Maschinenlesbarer lokaler Umfang:
 [MOCK_CLOSURE_SYNTHETIC_CHECKS.SAFE.json](belege/w15-night-mock-start-20261030/MOCK_CLOSURE_SYNTHETIC_CHECKS.SAFE.json).

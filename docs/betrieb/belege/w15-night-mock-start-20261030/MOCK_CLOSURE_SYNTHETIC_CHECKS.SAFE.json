@@ -5,10 +5,10 @@
   "baselineExactCommit": "deb812f9e7e3a2d58e5b4e593a1eec00ef1e22d8",
   "retainedBaselineAdapterCommit": "63fac078",
   "tests": {
-    "mock500Backup": 13,
+    "mock500Backup": 15,
     "mock500Workflow": 6,
     "mock500Start": 9,
-    "newNegativeObservationSubcases": 42,
+    "newNegativeObservationSubcases": 46,
     "allPassed": true,
     "viaProductionEnvironmentRemovingLocalLauncher": true
   },
@@ -17,6 +17,15 @@
     {"case": "missing-native-auth-ack", "baselineAcceptedIncompleteObservation": true, "fixedRejected": true},
     {"case": "missing-persisted-readback-position", "baselineAcceptedIncompleteObservation": true, "fixedRejected": true}
   ],
+  "providerUnitSpanRegression": {
+    "priorCommit": "9511a8ae",
+    "syntheticPositiveFixtureNowTimeCoherent": true,
+    "priorClosureAcceptedAllThreeIncoherentCases": true,
+    "fixedRejectedAllThreeIncoherentCases": true,
+    "cases": ["provider-end-after-native-final-ack", "provider-before-unit-begin", "review-before-draft-end"],
+    "nextUnitBeforePriorFinalACKRejected": true,
+    "validPipelineLocksOutsideUnitSpanPreserved": true
+  },
   "sharedRuntimeIntegrationRequired": true,
   "finalSourceQualificationAvailable": false,
   "positiveEnd500AcceptanceAvailable": false,

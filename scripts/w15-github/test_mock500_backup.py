@@ -114,9 +114,13 @@ class MockBackupChecks(unittest.TestCase):
             'noObservedErrors', 'privateKeyAbsent')
         # Metadata fixtures only. These descriptors do not run a single unit,
         # provider, control, database import or real profile operation.
+        def begin(index): return 100 + index * 50000
+        def delay(index): return 19900 if index in (0, 499) else 1
+        def final_ack(index): return begin(index) + 3 + 2 * delay(index)
         def acknowledged(identifier, index, kind):
             return {'id': identifier, 'index': index, 'kind': kind, 'acknowledged': True,
-                'beginMS': 1, 'ackMS': 2, 'endMS': 3, 'wallMs': 2}
+                'beginMS': final_ack(index) - 1, 'ackMS': final_ack(index),
+                'endMS': final_ack(index) + 1, 'wallMs': 2}
         mutations = [{**acknowledged(i + 1, i, 'public-mutation'), 'finishIndex': i} for i in range(500)]
         usage = [{**acknowledged(501 + j, j // 2, 'usage-sink'), 'storageAcknowledged': True,
             'storageMode': 'relational-atomic-v1'} for j in range(1000)]
@@ -124,16 +128,18 @@ class MockBackupChecks(unittest.TestCase):
             'status': 'PASS_RUNTIME_AUDIT_AND_CLEANUP_PENDING', 'checks': dict.fromkeys(check_names, True),
             'modelCalls': 0, 'completedUnits': 500, 'technicallyStoredPositions': 1500,
             'localSimulations': 1000, 'activeProfilesAtLastRead': 500, 'journalState': 'closed', 'errors': [],
-            'providerPhases': [{'index': i, 'phase': phase, 'beginMS': 1,
-                'endMS': 19901 if i in (0, 499) else 2, 'actualDelayMS': 19900 if i in (0, 499) else 1,
+            'providerPhases': [{'index': i, 'phase': phase,
+                'beginMS': begin(i) + 1 + offset * (delay(i) + 1),
+                'endMS': begin(i) + 1 + offset * (delay(i) + 1) + delay(i), 'actualDelayMS': delay(i),
                 'requiredDelayMs': 19900 if i in (0, 499) else 0, 'nativePermanentSendClaim': True,
                 'nativeCostReservation': True, 'actualModelOutput': False, 'simulatedUsage': True}
-                for i in range(500) for phase in ('D', 'R')],
+                for i in range(500) for offset, phase in enumerate(('D', 'R'))],
             'authMutations': mutations, 'usageSinks': usage,
             'casWrites': [{**acknowledged(j, outer['index'], 'FICTIONAL-CAS'), 'envelopeId': outer['id'],
                 'rowId': 'main-auth', 'storageMode': 'relational-atomic-v1'} for j, outer in enumerate(mutations + usage)],
             'unitReports': [{'index': i, 'owner': 'FICTIONAL-' + str(i), 'original16FreshControls': True,
-                'count': 16, 'under60': True, 'beginMS': 1, 'finalACKMS': 2, 'wallMS': 1,
+                'count': 16, 'under60': True, 'beginMS': begin(i), 'finalACKMS': final_ack(i),
+                'wallMS': final_ack(i) - begin(i),
                 'positions': [{'bereich': area, 'mandatsId': 'FICTIONAL-' + str(i),
                     'status': 'stored-unreviewed', 'ergebnisHash': 'c' * 64} for area in areas],
                 'checkpoints': [{'kind': 'load' if j < 10 else 'admission', 'observedAt': 1 + j}
@@ -238,15 +244,18 @@ class MockBackupChecks(unittest.TestCase):
         original = json.loads((self.work / filename).read_text())
         mutations = {
             'provider-duration-header-missing': lambda v: v['checks'].pop('all1000ProviderPhasesUnder20'),
-            'middle-phase-exactly20s': lambda v: v['providerPhases'][501].update(endMS=20001, actualDelayMS=20000),
-            'middle-phase-over20s': lambda v: v['providerPhases'][501].update(endMS=20002, actualDelayMS=20001),
+            'middle-phase-exactly20s': lambda v: v['providerPhases'][501].update(
+                endMS=v['providerPhases'][501]['beginMS'] + 20000, actualDelayMS=20000),
+            'middle-phase-over20s': lambda v: v['providerPhases'][501].update(
+                endMS=v['providerPhases'][501]['beginMS'] + 20001, actualDelayMS=20001),
             'missing-phase': lambda v: v['providerPhases'].pop(),
             'duplicate-phase': lambda v: v['providerPhases'][501].update(phase='D'),
             'claim-missing': lambda v: v['providerPhases'][501].update(nativePermanentSendClaim=False),
             'reservation-missing': lambda v: v['providerPhases'][501].update(nativeCostReservation=False),
             'external-model': lambda v: v['providerPhases'][501].update(actualModelOutput=True),
             'negative-duration': lambda v: v['providerPhases'][501].update(endMS=0, actualDelayMS=-1),
-            'duration-header-does-not-match-clock': lambda v: v['providerPhases'][501].update(endMS=20001),
+            'duration-header-does-not-match-clock': lambda v: v['providerPhases'][501].update(
+                endMS=v['providerPhases'][501]['beginMS'] + 20000),
             'boolean-clock': lambda v: v['providerPhases'][501].update(beginMS=True),
         }
         for name, change in mutations.items():
@@ -268,19 +277,65 @@ class MockBackupChecks(unittest.TestCase):
             'non-atomic-write': lambda v: v['casWrites'][0].update(storageMode='blob'),
             'write-outside-envelope': lambda v: v['casWrites'][0].update(beginMS=0),
             'unacknowledged-write': lambda v: v['casWrites'][0].update(acknowledged=False),
-            'auth-exactly30s': lambda v: v['authMutations'][0].update(ackMS=30001, endMS=30001, wallMs=30000),
-            'short-header-with-long-call': lambda v: v['authMutations'][0].update(ackMS=30001, endMS=30001),
+            'auth-exactly30s': lambda v: v['authMutations'][0].update(
+                ackMS=v['authMutations'][0]['beginMS'] + 30000, endMS=v['authMutations'][0]['beginMS'] + 30000, wallMs=30000),
+            'short-header-with-long-call': lambda v: v['authMutations'][0].update(
+                ackMS=v['authMutations'][0]['beginMS'] + 30000, endMS=v['authMutations'][0]['beginMS'] + 30000),
             'missing-finish': lambda v: v['authMutations'][0].pop('finishIndex'),
             'duplicate-finish': lambda v: v['authMutations'][1].update(finishIndex=0),
             'retained-failure': lambda v: v['authMutations'][0].update(failure={'name': 'FICTIONAL'}),
-            'unit-exactly60s': lambda v: v['unitReports'][250].update(finalACKMS=60001, wallMS=60000),
+            'unit-exactly60s': lambda v: v['unitReports'][250].update(
+                finalACKMS=v['unitReports'][250]['beginMS'] + 60000, wallMS=60000),
             'unit-no-actual-final-ack': lambda v: v['unitReports'][250].pop('finalACKMS'),
-            'unit-final-ack-not-from-native-envelope': lambda v: v['unitReports'][250].update(finalACKMS=3, wallMS=2),
+            'unit-final-ack-not-from-native-envelope': lambda v: v['unitReports'][250].update(
+                finalACKMS=v['unitReports'][250]['finalACKMS'] + 1, wallMS=v['unitReports'][250]['wallMS'] + 1),
             'not500-active': lambda v: v.update(activeProfilesAtLastRead=499),
         }
         for name, change in mutations.items():
             with self.subTest(name=name):
                 self.assert_observation_rejected_before_export(filename, original, change)
+
+    def test_provider_pair_must_fit_actual_unit_and_draft_must_finish_before_review(self):
+        filename = 'FULL500_RUNTIME_RESULT.SAFE.json'
+        original = json.loads((self.work / filename).read_text())
+        def end_after_ack(value):
+            phase = value['providerPhases'][501]
+            phase['endMS'] = value['unitReports'][250]['finalACKMS'] + 1
+            phase['actualDelayMS'] = phase['endMS'] - phase['beginMS']
+        def begin_before_unit(value):
+            phase = value['providerPhases'][500]
+            phase['beginMS'] = value['unitReports'][250]['beginMS'] - 1
+            phase['actualDelayMS'] = phase['endMS'] - phase['beginMS']
+        def overlap_pair(value):
+            draft, review = value['providerPhases'][500:502]
+            review['beginMS'] = draft['endMS'] - .5
+            review['actualDelayMS'] = review['endMS'] - review['beginMS']
+        def overlap_units(value):
+            unit = value['unitReports'][250]
+            unit['beginMS'] = value['unitReports'][249]['finalACKMS'] - 1
+            unit['wallMS'] = unit['finalACKMS'] - unit['beginMS']
+        for name, change in (('provider-end-after-native-final-ack', end_after_ack),
+                             ('provider-begin-before-unit-entry', begin_before_unit),
+                             ('review-begins-before-draft-ended', overlap_pair),
+                             ('next-unit-before-previous-final-ack', overlap_units)):
+            with self.subTest(name=name):
+                self.assert_observation_rejected_before_export(filename, original, change)
+
+    def test_pipeline_lock_envelopes_can_legitimately_extend_beyond_unit_entry_and_finish(self):
+        path = self.work / 'FULL500_RUNTIME_RESULT.SAFE.json'
+        runtime = json.loads(path.read_text())
+        unit = runtime['unitReports'][250]
+        for identifier, api, begin in ((2001, 'acquirePipelineLock', unit['beginMS'] - 5),
+                                       (2002, 'releasePipelineLock', unit['finalACKMS'] + 1)):
+            outer = {'id': identifier, 'index': 250, 'kind': 'pipeline-lock', 'api': api,
+                'beginMS': begin, 'ackMS': begin + 1, 'endMS': begin + 2, 'wallMs': 2,
+                'acknowledged': True, 'storageAcknowledged': True}
+            runtime['authMutations'].append(outer)
+            runtime['casWrites'].append({**outer, 'id': len(runtime['casWrites']), 'envelopeId': identifier,
+                'rowId': 'main-auth', 'storageMode': 'relational-atomic-v1'})
+        path.write_text(json.dumps(runtime))
+        self.assertEqual(B._mock_closure(self.work, self.body)['controls'], 8000)
+        self.assertEqual(self.export_fixture.calls, [])
 
     def test_all1500_independent_readback_positions_are_required_even_when_summary_counts_pass(self):
         filename = 'RESULTS_INDEPENDENT.SAFE.json'

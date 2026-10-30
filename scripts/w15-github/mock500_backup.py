@@ -239,7 +239,7 @@ def _auth_observations(runtime):
     return finish
 
 
-def _provider_observations(runtime):
+def _provider_observations(runtime, units):
     phases = runtime.get('providerPhases')
     need(type(runtime.get('localSimulations')) is int and runtime['localSimulations'] == 1000
          and type(phases) is list and len(phases) == 1000)
@@ -251,7 +251,9 @@ def _provider_observations(runtime):
              and row.get('actualModelOutput') is False and row.get('simulatedUsage') is True
              and all(_number(row.get(key)) for key in ('beginMS', 'endMS', 'actualDelayMS'))
              and 0 <= row['endMS'] - row['beginMS'] < 20000 and row['actualDelayMS'] < 20000
-             and row['actualDelayMS'] == row['endMS'] - row['beginMS'])
+             and row['actualDelayMS'] == row['endMS'] - row['beginMS']
+             and units[index]['beginMS'] <= row['beginMS'] <= row['endMS'] <= units[index]['finalACKMS']
+             and (phase == 0 or phases[offset - 1]['endMS'] <= row['beginMS']))
         if index in (0, 499):
             need(row.get('requiredDelayMs') == 19900 and row['actualDelayMS'] >= 19900)
 
@@ -322,7 +324,6 @@ def _mock_closure(work, result):
         units = runtime.get('unitReports')
         need(isinstance(units, list) and len(units) == 500)
         finish_acks = _auth_observations(runtime)
-        _provider_observations(runtime)
         owners = set()
         for index, unit in enumerate(units):
             need(type(unit.get('index')) is int and unit['index'] == index
@@ -330,6 +331,7 @@ def _mock_closure(work, result):
                  and unit.get('original16FreshControls') is True and type(unit.get('count')) is int and unit['count'] == 16
                  and unit.get('under60') is True and all(_number(unit.get(key)) for key in ('beginMS', 'finalACKMS', 'wallMS'))
                  and unit['finalACKMS'] == finish_acks[index]
+                 and (index == 0 or units[index - 1]['finalACKMS'] <= unit['beginMS'])
                  and 0 <= unit['finalACKMS'] - unit['beginMS'] < 60000 and unit['wallMS'] < 60000
                  and math.isclose(unit['wallMS'], unit['finalACKMS'] - unit['beginMS'], rel_tol=1e-12, abs_tol=1e-6))
             owners.add(unit['owner'])
@@ -341,6 +343,7 @@ def _mock_closure(work, result):
                  and sum(point.get('kind') == 'admission' for point in points) == 6
                  and all(type(point.get('observedAt')) is int and point['observedAt'] > 0 for point in points)
                  and all(points[i]['observedAt'] >= points[i-1]['observedAt'] for i in range(1, 16)))
+        _provider_observations(runtime, units)
         _stored_result_observations(audit, units)
         need(result == body and body.get('status') == 'PASS_LOCAL_MOCK500_BODY_ONLY')
         postgrest = service.get('postgrestChildClose')
