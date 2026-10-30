@@ -133,8 +133,7 @@ class StartChecks(unittest.TestCase):
         with self.assertRaises(S.StartRejected):
             self.admit()
 
-    def bind_receiver13_candidate(self):
-        candidate = '13b858b1a1e83a695e1fa64446573b5b550921ea'
+    def bind_receiver13_candidate(self, candidate='13b858b1a1e83a695e1fa64446573b5b550921ea'):
         self.end['exactCommit'] = candidate
         self.end_envelope = envelope(self.end)
         self.bridge.update(baselineExactCommit=candidate, end500AcceptanceSHA256=self.end_envelope['sha256'])
@@ -181,6 +180,14 @@ class StartChecks(unittest.TestCase):
         self.observed['exactCommit'] = candidate
         self.approval['exactCommit'] = candidate
         with self.assertRaises(S.StartRejected): admit()
+
+    def test_export_diagnostic_prefix_cannot_be_used_as_positive_end500_acceptance(self):
+        self.end['status'] = 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED'
+        candidate = self.bind_receiver13_candidate('a2d0f542df9526534c239e3db8291e366798a67a')
+        with self.assertRaisesRegex(S.StartRejected, 'POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED'):
+            S.validate_admission(self.request, self.end_envelope,
+                compatibility_bridge=self.bridge_envelope, observed_context=self.observed,
+                expected_end500_commit=candidate, now=NOW)
 
     def test_original_start_sets_same_three_hour_and_thirty_minute_window(self):
         guard = self.guard()
