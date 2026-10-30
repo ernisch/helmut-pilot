@@ -42,8 +42,9 @@ P, C = _load('runner_parent'), _load('controller_context')
 D = _load('runner_diagnostics')
 LIMITS = {'comparisonBudgetBytes': 2560000000, 'maximumConsumptionBytes': 2048000000,
           'requiredReserveBytes': 512000000, 'swapBytes': 0}
+CAPACITY = 'end500-restore-capacity-diagnostic'
 DIAGNOSTIC = 'end500-restore-export-diagnostic'
-WALL = {DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
+WALL = {CAPACITY: 1800, DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
 BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 MAX_FILES, MAX_SOURCE_BYTES, MAX_BLOB = 4096, 128 * 1024 * 1024, 16 * 1024 * 1024
 MAX_IPC, MAX_RESULT, CHUNK = 1024 * 1024, 65536, 1024 * 1024
@@ -57,6 +58,7 @@ GIT_OPTIONS = ['--no-optional-locks', '-c', 'core.hooksPath=/dev/null', '-c', 'c
 PHASE = 'arguments'
 PHASES = {'arguments', 'binding', 'parent', 'service', 'staging', 'worker', 'closure', 'ipc'}
 WORKER_STATUS = {DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
+                 CAPACITY: 'MEASURED_FULL_RESTORE_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED',
                  'end500-restore-gated': 'PASS_SAME_JOB_RESTORE_BACKUP_500_INACTIVE_ONLY_START_BLOCKED',
                  'end500-full-gated': 'PASS_END500_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING'}
 WORKER_BOOLEANS = {'isolatedRestoreObserved', 'end500BodyCompleted', 'originalTransferPerformed',
@@ -163,6 +165,8 @@ def _worker_result(result, request):
     """Only B's closed public scalar receipt can leave the private IPC channel."""
     fields = {'status', 'mode', 'exactCommit', 'runId', 'runAttempt', 'verifiedFiles', 'verifiedBytes'}
     diagnostic = request['mode'] == DIAGNOSTIC
+    if request['mode'] == CAPACITY:
+        fields |= {'capacityDiagnosticOnly', 'legacyRestoreAccepted'}
     if diagnostic:
         fields |= {'diagnosticExportOnly', 'restoreSteps', 'exportActions', 'profiles', 'activeProfiles',
             'ownedContainerStopped', 'watchStopped', 'remoteReadbackObserved', 'databaseRestoreObserved', 'fullRestoreAccepted'}
@@ -188,6 +192,8 @@ def _worker_result(result, request):
              and result['databaseRestoreObserved'] is False and result['fullRestoreAccepted'] is False
              and all(type(result[k]) is int for k in ('restoreSteps', 'exportActions', 'profiles', 'activeProfiles'))
              and (result['restoreSteps'], result['exportActions'], result['profiles'], result['activeProfiles']) == (5, 4, 500, 0))
+    if request['mode'] == CAPACITY:
+        need(result['capacityDiagnosticOnly'] is True and result['legacyRestoreAccepted'] is False)
     return {key: result[key] for key in sorted(result)}
 
 
@@ -231,7 +237,7 @@ def validate_request(request, private_payload):
     need(type(request) is dict and set(request) == REQUEST_KEYS
          and request['schema'] == 'helmut-w15-runner-request/1' and request['mode'] in WALL
          and type(request['runAttempt']) is int and request['runAttempt'] == 1
-         and request['branch'] == BRANCH and request['limits'] == LIMITS
+         and request['branch'] == BRANCH and request['limits'] == (P.R.capacity().LIMITS if request['mode'] == CAPACITY else LIMITS)
          and all(type(v) is int for v in request['limits'].values())
          and type(request['maximumWallSeconds']) is int
          and request['maximumWallSeconds'] == WALL[request['mode']]
@@ -255,7 +261,10 @@ def validate_request(request, private_payload):
 
 
 def _ctx(request):
-    return P.context(request['runId'], request['exactCommit'], request['nonce'])
+    value = P.context(request['runId'], request['exactCommit'], request['nonce'])
+    if request['mode'] == CAPACITY:
+        value['capacityDiagnostic'] = True
+    return value
 
 
 def _roots(request):
@@ -281,7 +290,8 @@ def github_binding(request):
          and os.environ.get('GITHUB_SHA') == request['exactCommit'] and os.environ.get('GITHUB_REF') == BRANCH)
     need(_git(REPO, ['rev-parse', 'HEAD']) == (request['exactCommit'] + '\n').encode())
     for file in (SCRIPT, SCRIPT.with_name('runner_parent.py'), SCRIPT.with_name('common_resources.py'), SCRIPT.with_name('runner_diagnostics.py'),
-                 SCRIPT.with_name('controller_context.py')):
+                 SCRIPT.with_name('controller_context.py'),
+                 *([SCRIPT.with_name('restore_capacity.py')] if request['mode'] == CAPACITY else [])):
         relative = str(file.relative_to(REPO))
         entry = _git(REPO, ['ls-tree', '-z', request['exactCommit'], '--', relative])
         header, name = entry.rstrip(b'\0').split(b'\t')
@@ -638,8 +648,24 @@ def _parent_readback(parent, ctx, identity, last, *, empty=False, error_type=Run
     try:
         value = parent.read_parent(ctx, identity, empty=empty)
     except BaseException as error:
+        if ctx.get('capacityDiagnostic') is True:
+            try:
+                detail = _closed_memory(D.attribute(error, 'failure_memory'))
+                if detail is not None:
+                    if 'capacityMeasurement' in detail:
+                        detail['capacityMeasurement'] = P.R.capacity().merge(last.get('capacity'), detail['capacityMeasurement'],
+                            detail, last.get('observedPhase'))
+                    elif P.R.capacity().closed(last.get('capacity')) is not None:
+                        detail['capacityMeasurement'] = last['capacity']
+                    error.failure_memory = detail
+            except BaseException:
+                pass  # Optional enrichment must never displace the first failure or signal.
         reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'PARENT_READBACK_REJECTED'
         raise _diagnose(error, phase or PHASE, reason, last.get('memory'), error_type=error_type) from None
+    if ctx.get('capacityDiagnostic') is True:
+        value['capacityMeasurement'] = P.R.capacity().merge(last.get('capacity'), value['capacityMeasurement'],
+            value, last.get('observedPhase'))
+        last['capacity'] = value['capacityMeasurement']
     last['memory'] = P.R.project_failure_memory(value, True)
     return value
 
@@ -779,6 +805,7 @@ def supervise(request, private_payload, *, latch=None):
     except BaseException as error:
         raise _diagnose(error, 'worker', 'WORKER_START_REJECTED', last['memory']) from None
     cleanup, observed = None, {}
+    last['observedPhase'] = observed
     try:
         response, cleanup = _monitor_child(child, receiver, sender, guard, deadline,
             memory=lambda: last['memory'], latch=latch, observed=observed)
@@ -788,7 +815,8 @@ def supervise(request, private_payload, *, latch=None):
         return {'worker': response['result'], 'workerExited': True,
                 'checkoutFiles': len(manifest['sourcePins']), 'checkoutBytes': manifest['checkoutBytes'],
                 'binaryBytes': manifest['binaryBytes'], 'dockerSocketGID': docker_gid,
-                'workerUID': 1000, 'workerGID': 1000}
+                'workerUID': 1000, 'workerGID': 1000,
+                **({'capacityMeasurement': last['capacity']} if request['mode'] == CAPACITY else {})}
     except BaseException as error:
         reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'WORKER_RESULT_REJECTED'
         failure = _diagnose(error, PHASE, reason, last['memory'])
@@ -817,7 +845,8 @@ def _service_argv(request, ipc_dir):
             '--property=TimeoutStopSec=40', '--property=KillMode=control-group',
             '/usr/bin/env', '-i', *[key + '=' + value for key, value in P.process_env(ctx).items()],
             '/usr/bin/python3', '-B', str(SCRIPT), '--internal-supervisor', '--expected-commit', ctx['exactCommit'],
-            '--run-id', ctx['runId'], '--nonce', ctx['nonce'], '--ipc-dir', str(ipc_dir)]
+            '--run-id', ctx['runId'], '--nonce', ctx['nonce'], '--ipc-dir', str(ipc_dir),
+            *(['--capacity-diagnostic'] if request['mode'] == CAPACITY else [])]
 
 
 def _receive_result(listener, process, deadline, *, error_type=RunnerStartError):
@@ -904,6 +933,15 @@ def _cleanup_launch(ctx, parent, identity, created, process, listener, latch, fa
                     except BaseException as error:
                         observed = _closed_memory(D.attribute(error, 'failure_memory'))
                     if observed is not None:
+                        if ctx.get('capacityDiagnostic') is True:
+                            try:
+                                previous = detail.get('memory', {}).get('capacityMeasurement')
+                                if 'capacityMeasurement' in observed:
+                                    observed['capacityMeasurement'] = P.R.capacity().merge(previous, observed['capacityMeasurement'], observed)
+                                elif P.R.capacity().closed(previous) is not None:
+                                    observed['capacityMeasurement'] = previous
+                            except BaseException:
+                                pass  # Keep original failure/core counters if optional aggregation fails.
                         detail.update(memory=observed, memorySource='POST_FAILURE_READBACK')
                 failure.runner = D.runner(detail, _closed_memory); failure.refresh()
                 try:
@@ -997,7 +1035,9 @@ def launch(request, private_payload):
     created, process, failure, result, identity, latch = False, None, None, None, None, P.StopLatch()
     last, empty_observed = {'memory': None}, False
     try:
-        PHASE = 'parent'; P.privileged('prepare', ctx); created = True
+        PHASE = 'parent'
+        host_admission = P.R.capacity().host_admission() if request['mode'] == CAPACITY else None
+        P.privileged('prepare', ctx); created = True
         identity = P.identity(P.R.KERNEL_ROOT / P.names(ctx)[0])
         initial = _parent_readback(P, ctx, identity, last, empty=True)
         PHASE = 'service'
@@ -1019,10 +1059,16 @@ def launch(request, private_payload):
         need(type(result.get('result')) is dict)
         result['result']['worker'] = _worker_result(result['result']['worker'], request)
         PHASE = 'closure'
+        if request['mode'] == CAPACITY:
+            need(P.R.capacity().closed(result['result'].get('capacityMeasurement')) is not None)
+            last['capacity'] = result['result']['capacityMeasurement']
         final = _parent_readback(P, ctx, identity, last, empty=True)
         need(final['kernelLifetimePeakBytes'] >= initial['kernelLifetimePeakBytes'] and not latch.seen)
         empty_observed = True
-        return {'status': 'PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY', 'exactCommit': ctx['exactCommit'],
+        return {'status': ('COMPLETED_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == CAPACITY
+                           else 'PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY'), 'exactCommit': ctx['exactCommit'],
+                **({'hostAdmission': host_admission, 'capacityMeasurement': last['capacity'],
+                    'legacyRestoreAccepted': False} if request['mode'] == CAPACITY else {}),
                 'runId': ctx['runId'], 'runAttempt': 1, 'mode': request['mode'],
                 'initialCommonParent': initial, 'finalCommonParentAfterOwnedExits': final,
                 'sameKernelParentIdentity': True, 'ownedChildrenExited': True,
@@ -1049,8 +1095,11 @@ def main(argv=None):
     parser.add_argument('--internal-supervisor', action='store_true', required=True)
     parser.add_argument('--expected-commit', required=True); parser.add_argument('--run-id', required=True)
     parser.add_argument('--nonce', required=True); parser.add_argument('--ipc-dir', required=True)
+    parser.add_argument('--capacity-diagnostic', action='store_true')
     args = parser.parse_args(argv)
     ctx = P.context(args.run_id, args.expected_commit, args.nonce)
+    if args.capacity_diagnostic:
+        ctx['capacityDiagnostic'] = True
     # This process must never send Python output to the journal or Actions log.
     null = os.open('/dev/null', os.O_WRONLY)
     try:

@@ -155,7 +155,7 @@ def _inventory(snapshot):
     return {'tableInventory': tables, 'sequenceInventory': sequences, 'foreignTables': 0}
 
 
-def _restore_closure(work_fd):
+def _restore_closure(work_fd, *, capacity_diagnostic=False):
     """Re-read all genuine five-step outputs/lifecycles; no caller PASS flag."""
     state_fd = restore_fd = None
     try:
@@ -171,7 +171,7 @@ def _restore_closure(work_fd):
                     'mock500Started', 'executionAuthority'):
             require(closure.get(key) is False)
         for key in ('initialKernelSample', 'finalKernelSample'):
-            Q.C.assess(closure[key])
+            (Q.C.capacity().assess if capacity_diagnostic is True else Q.C.assess)(closure[key])
         require(set(closure['pins']) == set(T.ACTIONS))
         for action in T.ACTIONS:
             receipt = _json(restore_fd, action + '.SAFE.json')
@@ -220,7 +220,10 @@ def export_restore_database(context, *, expected_context, work, container, datab
         work = Path(work)
         work_fd = S._directory(str(work), private=True)
         state_fd = S._directory(str(work / 'state'), private=True)
-        _restore_closure(work_fd)
+        if getattr(getattr(supervisor, 'common_resources', None), 'capacity_diagnostic', False) is True:
+            _restore_closure(work_fd, capacity_diagnostic=True)
+        else:
+            _restore_closure(work_fd)
         before = _sample(supervisor)
         os.mkdir('final-backup', 0o700, dir_fd=state_fd)
         output_fd = os.open('final-backup', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=state_fd)
@@ -685,8 +688,8 @@ def restore_readback(verified_root, *, context, controller_context, resources,
         require(info['Name'] == '/' + container and re.fullmatch('[a-f0-9]{64}', info['Id']))
         require(owned_id is None or info['Id'] == owned_id)
         host = info['HostConfig']
-        require(host['NetworkMode'] == 'none' and host['Memory'] == Q.C.LIMIT
-                and host['MemorySwap'] == Q.C.LIMIT and host['CgroupParent'] == resources.unit
+        require(host['NetworkMode'] == 'none' and host['Memory'] == getattr(resources, 'container_limit', Q.C.LIMIT)
+                and host['MemorySwap'] == getattr(resources, 'container_limit', Q.C.LIMIT) and host['CgroupParent'] == resources.unit
                 and host['RestartPolicy']['Name'] == 'no')
         require(not info['NetworkSettings']['Ports'])
         require(len(info['Mounts']) == len(mounts))
@@ -700,7 +703,8 @@ def restore_readback(verified_root, *, context, controller_context, resources,
         require(not m.docker('ps', '-a', '--filter', 'name=^/' + container + '$', '--format', '{{.ID}}').strip())
         attempted = True
         m.docker('create', '--name', container, '--pull=never', '--network=none', '--restart=no',
-            '--memory=' + str(Q.C.LIMIT), '--memory-swap=' + str(Q.C.LIMIT),
+            '--memory=' + str(getattr(resources, 'container_limit', Q.C.LIMIT)),
+            '--memory-swap=' + str(getattr(resources, 'container_limit', Q.C.LIMIT)),
             '--cgroup-parent=' + resources.unit, *label_args, *mount_args,
             '-e', 'POSTGRES_HOST_AUTH_METHOD=trust', m.IMAGE, 'postgres',
             '-c', 'helmut.local_usage_experiment=on', '-c', 'max_wal_size=128MB',

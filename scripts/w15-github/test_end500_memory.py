@@ -61,6 +61,7 @@ class End500MemoryChecks(unittest.TestCase):
     def sample(self):
         watch=self.scope['Watch'].__new__(self.scope['Watch'])
         watch.cgroup=self.cgroup;watch.stage_name=None;watch.maximum=0
+        watch.start_guard=None;watch.disk_guard=None;watch.mock_backup_closure=False
         watch.common_resources=None
         watch.last_component=float('inf');watch.memory_failure=None
         watch.disk_check=lambda:None

@@ -8,6 +8,7 @@ import sys
 sys.dont_write_bytecode = True
 
 import json
+import importlib.util
 import os
 from pathlib import Path
 import re
@@ -18,6 +19,18 @@ LIMIT, MAXIMUM, RESERVE = 2560000000, 2048000000, 512000000
 KERNEL_ROOT = Path('/sys/fs/cgroup')
 TOKEN = object()
 MEMORY_STAT_FIELDS = ('anon', 'file', 'kernel', 'shmem', 'file_dirty', 'file_writeback')
+
+
+_CAPACITY = None
+
+
+def capacity():
+    global _CAPACITY
+    if _CAPACITY is None:
+        spec = importlib.util.spec_from_file_location('w15_common_capacity', Path(__file__).with_name('restore_capacity.py'))
+        _CAPACITY = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_CAPACITY)
+    return _CAPACITY
 
 
 class ResourceError(RuntimeError):
@@ -55,7 +68,7 @@ def closed_failure_memory(value):
     keys = {'configuredLimitBytes', 'kernelLifetimePeakBytes', 'currentBytes',
             'swapMaximumBytes', 'swapCurrentBytes', 'lastReadbackValid', 'events'}
     events = ('max', 'oom', 'oom_kill', 'oom_group_kill')
-    if (type(value) is not dict or set(value) not in (keys, keys | {'postFailureMemoryStat'})
+    if (type(value) is not dict or not keys <= set(value) <= keys | {'postFailureMemoryStat', 'capacityMeasurement'}
             or type(value['lastReadbackValid']) is not bool):
         return None
     if any(type(value[k]) is not int or not 0 <= value[k] <= 2**53 - 1
@@ -69,6 +82,10 @@ def closed_failure_memory(value):
         detail = closed_post_failure_memory_stat(value['postFailureMemoryStat'])
         if detail is not None:
             result['postFailureMemoryStat'] = detail
+    if 'capacityMeasurement' in value and value['configuredLimitBytes'] == capacity().HARD_LIMIT:
+        detail = capacity().closed(value['capacityMeasurement'])
+        if detail is not None:
+            result['capacityMeasurement'] = detail
     # Optional malformed details cannot erase an already known first sample.
     return json.loads(json.dumps(result))
 
@@ -133,17 +150,22 @@ def project_failure_memory(value, valid):
             events={key: value['events'][key] for key in ('max', 'oom', 'oom_kill', 'oom_group_kill')})
         if 'postFailureMemoryStat' in value:
             result['postFailureMemoryStat'] = value['postFailureMemoryStat']
+        if 'capacityMeasurement' in value:
+            result['capacityMeasurement'] = value['capacityMeasurement']
         return closed_failure_memory(result)
     except (KeyError, TypeError, ValueError):
         return None
 
 
 class CommonResources:
-    def __init__(self, token, context, path, identity):
+    def __init__(self, token, context, path, identity, *, capacity_diagnostic=False):
         require(token is TOKEN)
         self._context = json.loads(json.dumps(context))
         self.path, self._identity = path, identity
         self._last_observed, self._last_valid = None, False
+        require(type(capacity_diagnostic) is bool)
+        self.capacity_diagnostic = capacity_diagnostic
+        self.container_limit = capacity().HARD_LIMIT if capacity_diagnostic else LIMIT
         self.unit = path.name
         self._relative = '/' + self.unit
 
@@ -183,7 +205,9 @@ class CommonResources:
                      'events': {k: int(v) for k, v in (x.split() for x in read('memory.events').splitlines())}}
             current = value
             self._last_observed, self._last_valid = value, False
-            assess(value)
+            if self.capacity_diagnostic:
+                value['capacityMeasurement'] = capacity().snapshot(value, fd)
+            (capacity().assess if self.capacity_diagnostic else assess)(value)
             self._last_valid = True
             return value
         except KeyboardInterrupt as error:
@@ -211,6 +235,9 @@ class CommonResources:
 
     def safe_summary(self):
         value = self.sample()
+        if self.capacity_diagnostic:
+            return {'status': 'CAPACITY_DIAGNOSTIC_CURRENT_SAMPLE_ONLY', **value,
+                    'legacyContractAccepted': False, 'executionAuthority': False}
         return {'status': 'PASS_OBSERVED_COMMON_PARENT_CURRENT_SAMPLE_ONLY', **value,
                 'pythonOrchestratorInsideParent': True, 'containerMemoryLimitBytes': LIMIT,
                 'maximumActualCommonLifetimePeakBytes': MAXIMUM, 'requiredReserveBytes': RESERVE,
@@ -234,7 +261,7 @@ def _kernel_directory(path):
         os.close(root)
 
 
-def observe(context):
+def observe(context, *, capacity_diagnostic=False):
     """Only after entering the externally prepared, actually limited parent.
 
     This is an observation API, not a systemd bootstrap, UID conversion, fresh
@@ -252,7 +279,7 @@ def observe(context):
             value = os.fstat(fd)
         finally:
             os.close(fd)
-        result = CommonResources(TOKEN, context, path, (value.st_dev, value.st_ino))
+        result = CommonResources(TOKEN, context, path, (value.st_dev, value.st_ino), capacity_diagnostic=capacity_diagnostic)
         result.sample()
         return result
     except Exception:
