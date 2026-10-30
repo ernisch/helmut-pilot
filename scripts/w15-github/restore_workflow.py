@@ -26,6 +26,8 @@ LIMITS = {'comparisonBudgetBytes': 2560000000, 'maximumConsumptionBytes': 204800
 DIAGNOSTIC = 'end500-restore-export-diagnostic'
 EXPORT_ACTIONS = ('backup-before', 'backup-dump', 'backup-roles', 'backup-after')
 EXPORT_PHASES = {'export-' + action for action in EXPORT_ACTIONS}
+RESTORE_ACTIONS = ('restore-create', 'restore-roles', 'restore-render', 'restore-apply', 'restore-check')
+RESTORE_PHASES = set(RESTORE_ACTIONS)
 WALL = {DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
 SCOPES = {DIAGNOSTIC: 'ISOLATED_GITHUB_RESTORE_EXPORT_DIAGNOSTIC_ONLY', 'end500-restore-gated': 'ISOLATED_GITHUB_RECEPTION_RESTORE_ONLY',
           'end500-full-gated': 'ISOLATED_GITHUB_END500_ONLY'}
@@ -42,7 +44,7 @@ CONNECTION_PHASES = {'binding', 'receive', 'input-binding', 'cache', 'prepare', 
                      'prepared-check', 'materialization', 'container-start', 'readiness', 'native-restore', 'backup'}
 BACKUP_PHASES = {'backup-export', 'backup-freeze', 'backup-collect', 'backup-seal',
                  'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'}
-CONNECTION_PHASES |= BACKUP_PHASES | EXPORT_PHASES
+CONNECTION_PHASES |= BACKUP_PHASES | EXPORT_PHASES | RESTORE_PHASES
 RECEIVER_PHASES = {'arguments', 'source-binding', 'private-inputs', 'index', 'disk-admission',
                    'key-import', 'encrypted-index', 'download', 'cipher-readback',
                    'authenticated-reception', 'relocation', 'agent-close'}

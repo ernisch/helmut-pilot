@@ -25,7 +25,8 @@ PHASES = {'binding', 'receive', 'input-binding', 'cache', 'prepare', 'restore', 
 BACKUP_PHASES = {'backup-export', 'backup-freeze', 'backup-collect', 'backup-seal',
                  'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'}
 EXPORT_ACTIONS = frozenset(('backup-before', 'backup-dump', 'backup-roles', 'backup-after'))
-PHASES |= BACKUP_PHASES | {'export-' + action for action in EXPORT_ACTIONS}
+RESTORE_ACTIONS = frozenset(('restore-create', 'restore-roles', 'restore-render', 'restore-apply', 'restore-check'))
+PHASES |= BACKUP_PHASES | {'export-' + action for action in EXPORT_ACTIONS} | RESTORE_ACTIONS
 
 
 class RestoreConnectionError(RuntimeError):
@@ -263,6 +264,8 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
         action = getattr(error, 'actionName', None)
         if phase == 'backup' and action in EXPORT_ACTIONS:
             failure = 'export-' + action
+        if phase == 'native-restore' and action in RESTORE_ACTIONS:
+            failure = action
     finally:
         phase = 'closure'
         if attempted:

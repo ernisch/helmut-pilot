@@ -75,6 +75,7 @@ WORKER_PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', '
                  'receiver-authenticated-reception', 'receiver-relocation', 'receiver-agent-close'}
 BACKUP_PHASES = {'backup-export', 'backup-freeze', 'backup-collect', 'backup-seal',
                  'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'}
+WORKER_PHASES |= {'connection-' + action for action in ('restore-create', 'restore-roles', 'restore-render', 'restore-apply', 'restore-check')}
 WORKER_PHASES |= {'connection-export-' + action for action in ('backup-before', 'backup-dump', 'backup-roles', 'backup-after')}
 WORKER_PHASES |= BACKUP_PHASES | {'connection-' + phase for phase in BACKUP_PHASES}
 

@@ -96,6 +96,7 @@ function main() {
       'connection-prepared-check','connection-materialization','connection-container-start',
       'connection-readiness','connection-native-restore','connection-backup',
       ...['backup-before','backup-dump','backup-roles','backup-after'].map(p=>'connection-export-'+p),
+      ...['restore-create','restore-roles','restore-render','restore-apply','restore-check'].map(p=>'connection-'+p),
       ...['backup-export','backup-freeze','backup-collect','backup-seal','backup-transport',
         'backup-authenticate','backup-recovery','backup-postcheck'].flatMap(p=>[p,'connection-'+p]),
       'receiver-source-binding','receiver-private-inputs','receiver-index','receiver-disk-admission',
