@@ -87,13 +87,31 @@ class WorkflowChecks(unittest.TestCase):
                 'approvedEnd500Commit': '225e76d7b7618e36c189d205294dfd073e6d88a4'}
             for baseline in ('225e76d7b7618e36c189d205294dfd073e6d88a4',
                              'deb812f9e7e3a2d58e5b4e593a1eec00ef1e22d8',
-                             '13b858b1a1e83a695e1fa64446573b5b550921ea'):
+                             '13b858b1a1e83a695e1fa64446573b5b550921ea',
+                             'a2d0f542df9526534c239e3db8291e366798a67a',
+                             '99ca7a0e899804ed84860f01f8cfb4eb546f2f1e'):
                 value['bindings']['approvedEnd500Commit'] = baseline
                 with self.subTest(baseline=baseline), self.assertRaises(RuntimeError):
                     W.validate_admission(value, {})
                 self.assertEqual(start.validate_admission.call_args.kwargs['expected_end500_commit'], baseline)
             start.validate_admission.side_effect = None
             with self.assertRaises(W.WorkflowRejected): W.validate_admission(value, {})
+
+    def test_ready537_candidate_only_reaches_the_still_closed_end_acceptance_gate(self):
+        value = request(W.FULL)
+        candidate = '537adaa323337518e5ba294e2647bfe084f520c1'
+        value['bindings'] = {'end500Acceptance': {}, 'compatibilityBridge': {},
+            'inputBindingSHA256': 'e' * 64, 'additionalAssetBytes': 217550486,
+            'approvedEnd500Commit': candidate}
+        qualification = SimpleNamespace(decode_qualification=Mock(return_value=(b'{}', 'd' * 64, {})))
+        start = SimpleNamespace(validate_admission=Mock(side_effect=RuntimeError('FICTIONAL_NO_END_ACCEPTANCE')))
+        runtime = SimpleNamespace(_validate_qualification=Mock())
+        modules = {'restore_workflow': qualification, 'runtime_inputs': runtime, 'mock500_start': start}
+        with patch.object(W, 'component', side_effect=lambda n, *args: modules[n]), \
+                patch.dict(os.environ, environment(value), clear=True):
+            with self.assertRaisesRegex(RuntimeError, 'FICTIONAL_NO_END_ACCEPTANCE'):
+                W.validate_admission(value, {})
+        self.assertEqual(start.validate_admission.call_args.kwargs['expected_end500_commit'], candidate)
 
     def test_failed_launch_retains_fixed_phase_without_private_text_or_retry(self):
         value = request(); private = {}; output = io.StringIO()

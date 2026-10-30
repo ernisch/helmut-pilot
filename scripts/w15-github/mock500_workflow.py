@@ -26,7 +26,10 @@ END_BASELINES = {'7e3d96e99fc687b03bcb9a7cbe4a0f59c174859b', 'b6eb74495cd9cf4d7b
                  'c89d423fd8431b42a5351de82e640f40e8517ee4', 'ecae6400d720528ecd6f78bff5d9936364a83222',
                  '60195031c9187cf91ce4497f8875977683914f20', '225e76d7b7618e36c189d205294dfd073e6d88a4',
                  'deb812f9e7e3a2d58e5b4e593a1eec00ef1e22d8',
-                 '13b858b1a1e83a695e1fa64446573b5b550921ea'}
+                 '13b858b1a1e83a695e1fa64446573b5b550921ea',
+                 'a2d0f542df9526534c239e3db8291e366798a67a',
+                 '99ca7a0e899804ed84860f01f8cfb4eb546f2f1e',
+                 '537adaa323337518e5ba294e2647bfe084f520c1'}
 LIMITS = {'comparisonBudgetBytes': 2048000000, 'maximumConsumptionBytes': 1638400000,
           'requiredReserveBytes': 409600000, 'swapBytes': 0}
 WALL = {SYNTHETIC: 300, FULL: 12600}
