@@ -1,5 +1,18 @@
 # CURRENT STATE — Helmut
 
+## W15 Mock-Originalarchiv: GitHub-Anschluss vorbereitet, echte Annahme offen
+
+Betreiber benennt vorhandenes privates GPG/gzip/USTAR-Archiv:11Originale mit
+217563454Bytes und allen Pins einschließlich Replacements jetzt übergeben.
+Quelle/Größe/Owner-Metadaten bestätigt, keine lokale/GitHub-Entschlüsselung.
+Neuer Empfangsdecoder und derselbe Anschluss im späteren gemeinsamen Mockjob
+vorbereitet; nur bestehende GitHub-Empfängersecrets, kein Klartextartefakt/Cache.
+Kein späterer Job hängt von temporären Dateien des vorigen Runners ab.
+NochBLOCKED: heutiger runnerlesbarer Kurzzeitlink nicht nachgewiesen; erlaubter
+Environmentbranch unverändert225e76d7. Keine Schutzregeländerung/echte Annahme.
+Codekopf, Pflicht-CI/Review und enger Empfangsvertrag stehen im zugehörigenDraftPR.
+[Format, Nachweise, Transportgrenze und Freigabevorbedingungen](betrieb/w15-mock500-originalarchiv-empfang-20261030.md).
+
 ## W15 Nachtauftrag30.10.: Minimalbeleg abgenommen, echte Startstufen BLOCKIERT
 
 Bestehende native Minimalprobe40982718647 aufdeb812f9 jetzt unabhängig PASS:

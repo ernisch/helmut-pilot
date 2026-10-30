@@ -63,7 +63,7 @@ def dispatch_payload(commit, armored, *, mode=MODE, extra_inputs=None):
     """Bound all actual inputs AND their serialized dispatch below 65,535 chars."""
     need(type(commit) is str and re.fullmatch('[a-f0-9]{40}', commit))
     cipher_bytes(armored)
-    need(mode in (MODE, 'end500-restore-gated', 'end500-full-gated', 'mock500-full-gated'))
+    need(mode in (MODE, 'end500-restore-gated', 'end500-full-gated', 'mock500-full-gated', 'mock500-receive-originals'))
     need((mode == MODE and extra_inputs is None) or
          (mode != MODE and isinstance(extra_inputs, dict) and set(extra_inputs) == {'w15_request'}
           and type(extra_inputs['w15_request']) is str))
@@ -113,7 +113,8 @@ def encrypt_index(raw, commit, root, *, index_schema='helmut-w15-private-cipher-
     """Encrypt only an index, using the existing pinned public recipient key."""
     need(type(raw) is str and 0 < len(raw.encode('utf-8')) <= MAX_PLAINTEXT_BYTES)
     value = P.decode(raw)
-    need(index_schema in ('helmut-w15-private-cipher-url-index/1', 'helmut-w15-mock500-private-url-index/1'))
+    need(index_schema in ('helmut-w15-private-cipher-url-index/1', 'helmut-w15-mock500-private-url-index/1',
+                           'helmut-w15-mock500-original-archive-url-index/1'))
     need(type(value) is dict and value.get('schema') == index_schema
          and value.get('expectedCommit') == commit)
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))

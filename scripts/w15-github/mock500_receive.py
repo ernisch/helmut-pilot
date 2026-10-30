@@ -37,6 +37,9 @@ SOURCE_KEYS = {'schema', 'scope', 'nonce', 'exactCommit', 'runId', 'runAttempt',
 PHASES = {'arguments', 'binding', 'private-inputs', 'key-import', 'outer-index', 'original-download',
           'original-reception', 'original-relocation', 'asset-download', 'asset-reception', 'asset-readback', 'agent-close'}
 
+ARCHIVE_PHASES = set(('arguments', 'cipher', 'recipient', 'destination', 'decrypt', 'gzip', 'archive', 'manifest', 'files', 'integrity', 'readback', 'cleanup'))
+PHASES |= {'archive-' + phase for phase in ARCHIVE_PHASES}
+
 
 class MockReceiveError(ValueError):
     def __init__(self, phase='arguments'):
@@ -105,6 +108,15 @@ def checked_index(raw, commit, *, input_binding_sha256, additional_asset_bytes, 
          and compared['qualificationSHA256'] == binding['assets']['qualificationReport']['sha256']
          and compared['sourceDatesRewritten'] is False and compared['originalsUnchanged'] is True)
     assets = value['assets']
+    if type(assets) is dict and assets.get('format') == 'gpg-gzip-ustar-mock-originals/1':
+        handoff, decoder = _load('mock500_archive_receive'), _load('mock500_original_archive')
+        archive = handoff.archive_description(assets)
+        expected_pins = {key: {'bytes': row[1], 'sha256': row[2]} for key, row in decoder.FILES.items()}
+        need(set(expected_pins) == ASSET_KEYS and additional_asset_bytes == decoder.TOTAL
+             and all(binding['assets'][key] == pin for key, pin in expected_pins.items()))
+        return {'original_urls': original_urls, 'original_expires': min(expires, original_expires),
+                'archive_format': handoff.FORMAT, 'archive': archive, 'asset_expires': expires,
+                'binding_raw': binding_raw}
     need(type(assets) is dict and set(assets) == {'sourceContext', 'manifestSHA256', 'cipherBytes', 'cipherSHA256', 'parts'})
     source = assets['sourceContext']
     need(type(source) is dict and set(source) == SOURCE_KEYS and source['schema'] == 'helmut-w15-backup-context/1'
@@ -225,34 +237,47 @@ def prepare_inputs(context, private_payload, *, input_binding_sha256, additional
              and relocated['checkoutCommit'] == commit and relocated['transferContext'] == E.SOURCE
              and relocated['originalPathFieldsModified'] is False, phase)
         phase = 'asset-download'; guard()
-        asset_cipher = download_assets(root, index['asset_urls'], index['asset_expires'], index['asset_pins'],
-            cipher_bytes=index['cipher_bytes'], cipher_sha256=index['cipher_sha256'], guard=guard)
-        phase = 'asset-reception'
         asset_root = root / 'assets-received'
-        authenticated = B.authenticated_readback(asset_cipher, cipher_bytes=index['cipher_bytes'], cipher_sha256=index['cipher_sha256'],
-            expected_manifest=index['source_manifest'], expected_manifest_sha256=index['manifest_sha256'],
-            context=index['source_context'], destination=str(asset_root), private_home=str(home),
-            passphrase_file=str(root / 'receiver-passphrase.PRIVATE'), guard=guard, backup_scope=SCOPE)
-        need(type(authenticated.get('verifiedFiles')) is int and authenticated['verifiedFiles'] == 11
-             and type(authenticated.get('verifiedBytes')) is int and authenticated['verifiedBytes'] == additional_asset_bytes
-             and authenticated.get('localAuthenticatedReadbackObserved') is True, phase)
-        phase = 'asset-readback'; guard()
-        fd = P.open_root(str(asset_root))
-        try:
-            expected = {row['path'] for row in index['source_manifest']['files']} | {'manifest.PRIVATE.json'}
-            files, directories = P.tree_files(fd)
-            need(files == expected and directories == {'assets'}, phase)
-            for pin in index['source_manifest']['files']: P.inspect_file(fd, pin['path'], pin)
-            P.inspect_file(fd, 'manifest.PRIVATE.json', {'bytes': len(index['source_manifest_raw']), 'sha256': index['manifest_sha256']})
-        finally: os.close(fd)
+        if index.get('archive_format') == 'gpg-gzip-ustar-mock-originals/1':
+            handoff, decoder = _load('mock500_archive_receive'), _load('mock500_original_archive')
+            asset_cipher = handoff.download(root, index['archive'], index['asset_expires'], guard=guard)
+            phase = 'asset-reception'
+            received_assets = decoder.receive(str(asset_cipher), destination=str(asset_root), private_home=str(home),
+                passphrase_file=str(root / 'receiver-passphrase.PRIVATE'), guard=guard)
+            authenticated = received_assets['safe_receipt']
+            need(authenticated['verifiedFiles'] == 11 and authenticated['verifiedBytes'] == additional_asset_bytes, phase)
+            asset_paths = received_assets['asset_paths']
+        else:
+            asset_cipher = download_assets(root, index['asset_urls'], index['asset_expires'], index['asset_pins'],
+                cipher_bytes=index['cipher_bytes'], cipher_sha256=index['cipher_sha256'], guard=guard)
+            phase = 'asset-reception'
+            authenticated = B.authenticated_readback(asset_cipher, cipher_bytes=index['cipher_bytes'], cipher_sha256=index['cipher_sha256'],
+                expected_manifest=index['source_manifest'], expected_manifest_sha256=index['manifest_sha256'],
+                context=index['source_context'], destination=str(asset_root), private_home=str(home),
+                passphrase_file=str(root / 'receiver-passphrase.PRIVATE'), guard=guard, backup_scope=SCOPE)
+            need(type(authenticated.get('verifiedFiles')) is int and authenticated['verifiedFiles'] == 11
+                 and type(authenticated.get('verifiedBytes')) is int and authenticated['verifiedBytes'] == additional_asset_bytes
+                 and authenticated.get('localAuthenticatedReadbackObserved') is True, phase)
+            phase = 'asset-readback'; guard()
+            fd = P.open_root(str(asset_root))
+            try:
+                expected = {row['path'] for row in index['source_manifest']['files']} | {'manifest.PRIVATE.json'}
+                files, directories = P.tree_files(fd)
+                need(files == expected and directories == {'assets'}, phase)
+                for pin in index['source_manifest']['files']: P.inspect_file(fd, pin['path'], pin)
+                P.inspect_file(fd, 'manifest.PRIVATE.json', {'bytes': len(index['source_manifest_raw']), 'sha256': index['manifest_sha256']})
+            finally: os.close(fd)
+            asset_paths = {key: asset_root / 'assets' / (key + '.PRIVATE') for key in ASSET_KEYS}
         guard()
         answer = {'received_root': root / 'received',
-            'asset_paths': {key: asset_root / 'assets' / (key + '.PRIVATE') for key in ASSET_KEYS},
+            'asset_paths': asset_paths,
             'binding_raw': index['binding_raw'], 'receiver_home': home, 'passphrase_file': root / 'receiver-passphrase.PRIVATE',
             'safe_receipt': {'verifiedFiles': relocated['verifiedFiles'], 'verifiedBytes': relocated['verifiedBytes'],
                 'additionalFiles': authenticated['verifiedFiles'], 'additionalBytes': authenticated['verifiedBytes'], 'originalsUnchanged': True}}
-    except BaseException:
+    except BaseException as error:
         failure = phase
+        if phase == 'asset-reception' and getattr(error, 'phase', None) in ARCHIVE_PHASES:
+            failure = 'archive-' + error.phase
     finally:
         if home is not None:
             try: N._close_agent(home)
