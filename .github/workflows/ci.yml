@@ -178,6 +178,8 @@ jobs:
           python3 -B scripts/w15-github/test_runner_diagnostics.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_post_failure_memory_stat.py
           node scripts/lokal.js -- node scripts/w15-github/test_post_failure_memory_stat.js
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_worker_phase_witness.py
+          node scripts/lokal.js -- node scripts/w15-github/test_worker_phase_witness.js
           python3 -B scripts/w15-github/test_restore_workflow.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_export_diagnostic.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_export_phase.py

@@ -119,6 +119,9 @@ class OwnedBackupRunner:
                 and isinstance(argv[-1], str))
         require(w.backup_runner is self and w.thread.is_alive() and not w.finished.is_set()
                 and w.failure is None and w.stop_failure is None and w.process is None)
+        observer = getattr(w, 'phase_observer', None)
+        if observer is not None:
+            observer(('connection-' if action.startswith('restore-') else 'connection-export-') + action)
         previous = w.closure_mode
         self.started.add(action)
         w.closure_mode = False  # Existing stage timeout/first-failure checks stay on.

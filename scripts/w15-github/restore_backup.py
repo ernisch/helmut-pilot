@@ -82,6 +82,12 @@ BACKUP_PHASES = frozenset(('backup-export', 'backup-freeze', 'backup-collect', '
     'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'))
 
 
+def _observe(resources, name):
+    observer = getattr(resources, 'phase_observer', None)
+    if observer is not None:
+        observer(name)
+
+
 class BackupRuntimeError(RuntimeError):
     def __init__(self, code='RESTORE_BACKUP_REJECTED', *, phase=None, actionName=None,
                  runnerReturncode=None):
@@ -795,6 +801,7 @@ def completion_hook(manifest, private_payload, disk_guard):
         nonlocal used
         phase = 'backup-transport'
         try:
+            _observe(resources, phase)
             require(not used, 'BACKUP_COMPLETION_REUSE_REJECTED')
             used = True
             disk_guard()
@@ -832,6 +839,7 @@ def completion_hook(manifest, private_payload, disk_guard):
                     and type(returned['artifactId']) is int and returned['artifactId'] > 0
                     and all(returned[k] == sealed[k] for k in ('cipherBytes', 'cipherSHA256')))
             phase = 'backup-authenticate'
+            _observe(resources, phase)
             # Received original inputs remain in a sibling tree of the existing
             # key home. No new key import, token, key system or retrieval is needed.
             received = Path(inputs.path('auth')).parent.parent
@@ -843,11 +851,13 @@ def completion_hook(manifest, private_payload, disk_guard):
                 destination=str(verified), private_home=str(receive_root / 'gnupg'),
                 passphrase_file=str(receive_root / 'receiver-passphrase.PRIVATE'), guard=disk_guard)
             phase = 'backup-recovery'
+            _observe(resources, phase)
             recovery = restore_readback(verified, context=context,
                 controller_context=inputs.controller_context(), resources=resources,
                 expected_manifest=collection['manifest'], expected_manifest_sha256=collection['manifestSHA256'],
                 rollback_root=manifest['rollbackRoot'], guard=disk_guard)
             phase = 'backup-postcheck'
+            _observe(resources, phase)
             inputs.check_sources()
             for path in inputs.backup_input_files().values():
                 require(Path(path).is_file())
@@ -883,6 +893,7 @@ def restore_completion_hook(manifest, private_payload, disk_guard):
         nonlocal used
         phase = 'backup-export'
         try:
+            _observe(resources, phase)
             require(not used and restored['profiles'] == 500 and restored['active'] == 0)
             used = True
             disk_guard()
@@ -895,6 +906,7 @@ def restore_completion_hook(manifest, private_payload, disk_guard):
                 run_owned=watch.backup_runner.run_owned)
             # Freeze original private outputs before independently walking them.
             phase = 'backup-freeze'
+            _observe(resources, phase)
             info = json.loads(forward.M.docker('inspect', forward.CONTAINER))[0]
             require(info['Image'] == forward.M.IMAGE and info['State']['Running'] is True
                     and re.fullmatch('[a-f0-9]{64}', info['Id']))
@@ -911,20 +923,24 @@ def restore_completion_hook(manifest, private_payload, disk_guard):
             require(watch.failure is None and watch.stop_failure is None and watch.finished.is_set()
                     and not watch.thread.is_alive() and not watch.reporter.is_alive())
             phase = 'backup-collect'
+            _observe(resources, phase)
             disk_guard()
             root = Path(manifest['backupRoot'])
             collection = collect_restore_backup(context, expected_context=context,
                 input_files=inputs.backup_input_files(), work=forward.WORK, prepared=forward.PREP,
                 provenance_files=inputs.backup_provenance_files(), destination=root / 'selection', guard=disk_guard)
             phase = 'backup-seal'
+            _observe(resources, phase)
             cipher = root / 'restore-complete.PRIVATE.gpg'
             sealed = seal_restore_backup(collection, root=root / 'selection', output=cipher,
                 public_key=forward.ROOT / 'docs/betrieb/belege/w15-end500-transfer-20261029/receiver-public.asc',
                 guard=disk_guard)
             phase = 'backup-transport'
+            _observe(resources, phase)
             result = finish(forward=forward, inputs=inputs, resources=resources,
                 collection=collection, sealed=sealed, cipher=cipher)
             phase = 'backup-postcheck'
+            _observe(resources, phase)
             return {**result, 'watchClosed': True, 'ownedContainerStopped': True}
         except (Exception, KeyboardInterrupt) as error:
             raise _checkpoint_error(error, phase) from None

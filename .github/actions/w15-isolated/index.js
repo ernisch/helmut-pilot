@@ -1,4 +1,13 @@
 'use strict';
+function closedPhaseObservation(value){
+  if(value==='UNKNOWN')return value;
+  const phases=new Set(["approval","arguments","backup","backup-authenticate","backup-collect","backup-export","backup-freeze","backup-postcheck","backup-recovery","backup-seal","backup-transport","binding","closure","connection-backup","connection-backup-authenticate","connection-backup-collect","connection-backup-export","connection-backup-freeze","connection-backup-postcheck","connection-backup-recovery","connection-backup-seal","connection-backup-transport","connection-binding","connection-cache","connection-closure","connection-container-start","connection-export-backup-after","connection-export-backup-before","connection-export-backup-dump","connection-export-backup-roles","connection-input-binding","connection-materialization","connection-native-restore","connection-prepare","connection-prepared-check","connection-readiness","connection-receive","connection-restore","connection-restore-apply","connection-restore-check","connection-restore-create","connection-restore-render","connection-restore-roles","end500","event","qualification","receive-prepare","receiver-agent-close","receiver-arguments","receiver-authenticated-reception","receiver-cipher-readback","receiver-disk-admission","receiver-download","receiver-encrypted-index","receiver-index","receiver-key-import","receiver-private-inputs","receiver-relocation","receiver-source-binding","resources","restore","synthetic"]);
+  if(!value||typeof value!=='object'||Array.isArray(value)||
+    Object.keys(value).sort().join(',')!=='meaning,name,sequence'||!phases.has(value.name)||
+    !Number.isInteger(value.sequence)||value.sequence<1||value.sequence>128||
+    value.meaning!=='ENTERED_NOT_COMPLETED')return null;
+  return {name:value.name,sequence:value.sequence,meaning:'ENTERED_NOT_COMPLETED'};
+}
 function closedRunnerDetail(value){
   const reasons=new Set(['PARENT_READBACK_REJECTED','SUPERVISOR_DEADLINE','SUPERVISOR_INTERRUPTED','SUPERVISOR_REJECTED',
     'WORKER_START_REJECTED','WORKER_SETUP_REJECTED','WORKER_INTERRUPTED','WORKER_RESULT_REJECTED','WORKER_CLEANUP_UNCONFIRMED',
@@ -6,7 +15,7 @@ function closedRunnerDetail(value){
     'WORKER_EXIT_REJECTED','WORKER_REPORTED_FAILURE','SERVICE_IPC_EOF','SERVICE_IPC_TIMEOUT','SERVICE_IPC_REJECTED',
     'SERVICE_EXIT_WITHOUT_REPORT','SERVICE_EXIT_REJECTED','PARENT_CLOSURE_REJECTED','CLEANUP_UNCONFIRMED','SIGNAL_DURING_CLEANUP']);
   if(!value||typeof value!=='object'||Array.isArray(value)||!reasons.has(value.reason)||
-    !Object.keys(value).every(k=>['reason','secondaryReason','memory','memorySource','workerExitCode','serviceExitCode'].includes(k)))return null;
+    !Object.keys(value).every(k=>['reason','secondaryReason','memory','memorySource','workerExitCode','serviceExitCode','lastObservedPhase'].includes(k)))return null;
   const out={reason:value.reason};
   if(Object.hasOwn(value,'secondaryReason')){
     if(!reasons.has(value.secondaryReason))return null;out.secondaryReason=value.secondaryReason;
@@ -19,6 +28,8 @@ function closedRunnerDetail(value){
   for(const key of ['workerExitCode','serviceExitCode'])if(Object.hasOwn(value,key)){
     if(!Number.isInteger(value[key])||value[key]<-255||value[key]>255)return null;out[key]=value[key];
   }
+  const phase=closedPhaseObservation(value.lastObservedPhase);
+  if(phase!==null)out.lastObservedPhase=phase;
   return out;
 }
 function closedCleanup(value){

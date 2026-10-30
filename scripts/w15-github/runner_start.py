@@ -516,6 +516,21 @@ def _worker_failure(error, reason, *, error_type=RunnerStartError):
     return error_type('worker', phase, memory, runner=None if phase is not None else {'reason': reason})
 
 
+def _phase_reporter(sender):
+    sequence, previous = 0, None
+    def observe(name):
+        nonlocal sequence, previous
+        need(type(name) is str and name in D.OBSERVED_PHASES)
+        if name == previous:
+            return
+        need(sequence < D.MAX_PHASE_FRAMES)
+        sequence += 1
+        # Small send_bytes frames use the existing private pipe, no new IO path.
+        sender.send_bytes(_encode({'kind': 'phase', 'sequence': sequence, 'phase': name}, 256))
+        previous = name
+    return observe
+
+
 def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
     code, latch, result, failure = 1, None, None, None
     reason = 'WORKER_SETUP_REJECTED'
@@ -532,7 +547,7 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
         spec = importlib.util.spec_from_file_location('w15_fixed_staged_restore_worker', script)
         module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
         reason = 'WORKER_RESULT_REJECTED'
-        result = module.run_worker(manifest, private_payload)
+        result = module.run_worker(manifest, private_payload, phase_observer=_phase_reporter(sender))
         result = _worker_result(result, manifest)
         need(not latch.seen)
     except BaseException as error:
@@ -565,7 +580,7 @@ def _members(ctx):
     return {int(pid) for file in root.rglob('cgroup.procs') for pid in file.read_text().split()}
 
 
-def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartError):
+def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartError, observed=None):
     """Read one existing Pipe frame with bounded reads, including partial EOF."""
     try:
         if not receiver.poll(wait):
@@ -576,6 +591,8 @@ def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartE
             raw = b''
             while len(raw) < size:
                 remaining = max(0, end - time.monotonic())
+                if remaining <= 0:
+                    raise error_type('ipc', runner={'reason': 'WORKER_IPC_TIMEOUT'})
                 if not select.select([fd], [], [], remaining)[0]:
                     raise error_type('ipc', runner={'reason': 'WORKER_IPC_TIMEOUT'})
                 part = os.read(fd, size - len(raw))
@@ -583,17 +600,34 @@ def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartE
                     raise error_type('ipc', runner={'reason': 'WORKER_IPC_EOF'})
                 raw += part
             return raw
-        length = struct.unpack('!i', read(4))[0]
-        if not 0 < length <= MAX_RESULT:
-            raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
-        value = _decode(read(length))
-        if type(value) is not dict or value.get('ok') not in (True, False) or type(value['ok']) is not bool:
-            raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
-        if value['ok'] is False:
-            _response_error(value, error_type=error_type)  # Validate before it can become a witness.
-        elif set(value) != {'ok', 'result'} or type(value['result']) is not dict:
-            raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
-        return value
+        # ONE existing read deadline for the whole drain, never one second per
+        # checkpoint. The lifetime frame cap also bounds aggregate bytes.
+        for _ in range(D.MAX_PHASE_FRAMES + 1):
+            length = struct.unpack('!i', read(4))[0]
+            if not 0 < length <= MAX_RESULT:
+                raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
+            value = _decode(read(length))
+            if type(value) is dict and value.get('kind') == 'phase':
+                valid = (observed is not None and length <= 256
+                    and set(value) == {'kind', 'phase', 'sequence'}
+                    and type(value['sequence']) is int
+                    and value['sequence'] == observed.get('sequence', 0) + 1
+                    and D.phase_observation({'name': value['phase'], 'sequence': value['sequence'],
+                        'meaning': 'ENTERED_NOT_COMPLETED'}) is not None)
+                if not valid:
+                    raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
+                observed.update(name=value['phase'], sequence=value['sequence'], meaning='ENTERED_NOT_COMPLETED')
+                if not receiver.poll(0):
+                    return None
+                continue
+            if type(value) is not dict or type(value.get('ok')) is not bool:
+                raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
+            if value['ok'] is False:
+                _response_error(value, error_type=error_type)
+            elif set(value) != {'ok', 'result'} or type(value['result']) is not dict:
+                raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
+            return value
+        raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
     except error_type:
         raise
     except Exception:
@@ -611,7 +645,7 @@ def _parent_readback(parent, ctx, identity, last, *, empty=False, error_type=Run
 
 
 def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: None,
-                   latch=None, error_type=RunnerStartError):
+                   latch=None, error_type=RunnerStartError, observed=None):
     """Keep the first validated failure, then stop only this owned child."""
     response, failure = None, None
     cleanup = D.unknown_cleanup()
@@ -622,14 +656,14 @@ def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: N
             raise _diagnose(error, 'worker', 'WORKER_START_REJECTED', memory(), error_type=error_type) from None
         while child.is_alive():
             if response is None:
-                response = _read_worker_response(receiver, deadline, error_type=error_type)
+                response = _read_worker_response(receiver, deadline, error_type=error_type, observed=observed)
             if type(response) is dict and response['ok'] is False:
                 raise _response_error(response, error_type=error_type)
             guard()
             time.sleep(.1)
         child.join(timeout=5)
         if response is None:
-            response = _read_worker_response(receiver, deadline, wait=1, error_type=error_type)
+            response = _read_worker_response(receiver, deadline, wait=1, error_type=error_type, observed=observed)
         if type(response) is dict and response['ok'] is False:
             raise _response_error(response, error_type=error_type)
         code = child.exitcode
@@ -649,7 +683,7 @@ def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: N
             try:
                 pending = response
                 if pending is None and failure.runner['reason'] != 'SUPERVISOR_INTERRUPTED':
-                    pending = _read_worker_response(receiver, deadline, error_type=error_type)
+                    pending = _read_worker_response(receiver, deadline, error_type=error_type, observed=observed)
                 if type(pending) is dict and pending.get('ok') is False:
                     first = _response_error(pending, error_type=error_type)
                     detail = dict(first.runner or failure.runner)
@@ -662,6 +696,13 @@ def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: N
                     failure = first
             except BaseException:
                 pass
+        checkpoint = None if observed is None else D.phase_observation(observed) or 'UNKNOWN'
+        if checkpoint is not None:
+            # May have been received in the final pre-stop drain. No temporal
+            # alignment to memory.peak or the first failure is asserted.
+            detail = dict(failure.runner or {'reason': 'WORKER_REPORTED_FAILURE'})
+            detail['lastObservedPhase'] = checkpoint
+            failure.runner = D.runner(detail, _closed_memory); failure.refresh()
     finally:
         if latch is not None:
             latch.cleaning = True
@@ -690,6 +731,11 @@ def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: N
         if bad and failure is None:
             failure = error_type('worker', runner={'reason': 'CLEANUP_UNCONFIRMED'})
         if failure is not None:
+            checkpoint = None if observed is None else D.phase_observation(observed) or 'UNKNOWN'
+            if checkpoint is not None:
+                detail = dict(failure.runner or {'reason': 'WORKER_REPORTED_FAILURE'})
+                detail['lastObservedPhase'] = checkpoint
+                failure.runner = D.runner(detail, _closed_memory)
             code = D.attribute(child, 'exitcode')
             if not stopped_by_us and type(code) is int and -255 <= code <= 255:
                 detail = dict(failure.runner or {'reason': 'WORKER_REPORTED_FAILURE' if failure.worker_phase is not None else 'WORKER_EXIT_REJECTED'})
@@ -732,10 +778,10 @@ def supervise(request, private_payload, *, latch=None):
         child = fork.Process(target=_fork_worker, args=(manifest, private_payload, sender, receiver, docker_gid))
     except BaseException as error:
         raise _diagnose(error, 'worker', 'WORKER_START_REJECTED', last['memory']) from None
-    cleanup = None
+    cleanup, observed = None, {}
     try:
         response, cleanup = _monitor_child(child, receiver, sender, guard, deadline,
-            memory=lambda: last['memory'], latch=latch)
+            memory=lambda: last['memory'], latch=latch, observed=observed)
         response['result'] = _worker_result(response['result'], request)
         PHASE = 'closure'; guard()
         need(_members(ctx) == {os.getpid()})
@@ -746,6 +792,9 @@ def supervise(request, private_payload, *, latch=None):
     except BaseException as error:
         reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'WORKER_RESULT_REJECTED'
         failure = _diagnose(error, PHASE, reason, last['memory'])
+        detail = dict(failure.runner or {'reason': reason})
+        detail.setdefault('lastObservedPhase', D.phase_observation(observed) or 'UNKNOWN')
+        failure.runner = D.runner(detail, _closed_memory); failure.refresh()
         if cleanup is not None:
             failure.cleanup = cleanup; failure.refresh()
         raise failure from None
