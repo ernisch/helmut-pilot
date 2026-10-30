@@ -18,6 +18,7 @@ import re
 import stat
 import subprocess
 import time
+import traceback
 import uuid
 
 HERE = Path(__file__).absolute().parent
@@ -25,9 +26,10 @@ SCRIPT, REPO = Path(__file__).absolute(), HERE.parents[1]
 IMAGE = 'postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3'
 NODE_SHA = 'bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12'
 MAX_BYTES, WALL = 8 * 1024 * 1024, 300
+PASSES = ('PASS_REAL_SYNTHETIC_CONNECTION_ONLY', 'PASS_RESOURCE_PREFLIGHT_ONLY_NO_NATIVE_WORK')
 ACTIONS = ('restore-create', 'restore-roles', 'restore-render', 'restore-apply', 'restore-check',
            'backup-before', 'backup-dump', 'backup-roles', 'backup-after')
-PHASES = {'binding', 'parent', 'service', 'resources', 'fixture', 'container-start', 'readiness',
+PHASES = {'binding', 'parent', 'service', 'source-load', 'resources', 'fixture', 'container-start', 'readiness',
           'fixture-dump', 'native-restore', 'backup-export', 'backup-freeze', 'backup-selection',
           'backup-seal', 'backup-local-readback', 'backup-recovery', 'closure'}
 PHASES |= set(ACTIONS)
@@ -43,6 +45,10 @@ def load(name):
 def need(value):
     if not value:
         raise RuntimeError('SYNTHETIC_NATIVE_CONNECTION_REJECTED')
+
+
+class PreflightComplete(Exception):
+    pass
 
 
 def write(path, raw):
@@ -109,6 +115,14 @@ def failure_details(work, phase, error):
     return result
 
 
+def closed_frames(error):
+    allowed = {'test_restore_native_minimal.py', 'synthetik-500-w15-memory-forward.py',
+               'synthetik-500-w15-full500-controller.py', 'common_resources.py'}
+    return [{'file': Path(row.filename).name, 'line': row.lineno, 'function': row.name}
+        for row in traceback.extract_tb(error.__traceback__) if Path(row.filename).name in allowed
+        and 0 < row.lineno < 10000 and re.fullmatch('[A-Za-z0-9_<>]{1,100}', row.name)][-8:]
+
+
 def call(argv, *, raw=None, timeout=25):
     result = subprocess.run(argv, input=raw, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             close_fds=True, timeout=timeout, env={'PATH': os.defpath, 'LANG': 'C.UTF-8'})
@@ -163,8 +177,8 @@ def stop_service(ctx):
     need(value['ActiveState'] in ('inactive', 'failed') and value['MainPID'] == '0')
 
 
-def worker(ctx, root, node, image):
-    phase, watch, resources, work, failure = 'resources', None, None, None, None
+def worker(ctx, root, node, image, preflight=False):
+    phase, watch, resources, work, failure = 'binding', None, None, None, None
     result = {'schema': 'helmut-w15-real-synthetic-connection/1', 'status': 'FAIL',
         'restoreSteps': 0, 'exportActions': 0, 'sealVerified': False, 'secondRestoreVerified': False,
         'originalDataRead': False, 'originalAdmissionExercised': False,
@@ -174,12 +188,16 @@ def worker(ctx, root, node, image):
         'newStorageUSD': '0', 'memory': None, 'containerStop': 'UNKNOWN', 'watchStop': 'UNKNOWN'}
     try:
         need(os.getuid() == os.getgid() == 1000)
+        root.mkdir(mode=0o700)
+        phase = 'source-load'
         spec = importlib.util.spec_from_file_location('w15_minimal_forward', REPO / 'scripts/synthetik-500-w15-memory-forward.py')
         forward = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(forward)
         m = forward.M
+        phase = 'resources'
         resources = forward.open_common_resources(ctx)
-        root.mkdir(mode=0o700)
+        if preflight:
+            raise PreflightComplete()
         # Public tools are copied into the UID1000 fixture tree. The real runner
         # also stages tools; checkout/setup-node ownership is not the worker's.
         staged_node = root / 'node'
@@ -319,8 +337,11 @@ def worker(ctx, root, node, image):
         result['secondRestoreVerified'] = True
         phase = 'closure'
         resources.sample()
+    except PreflightComplete:
+        result['status'] = PASSES[1]
     except BaseException as error:
         failure = failure_details(work, phase, error)
+        result['sourceFrames'] = closed_frames(error)
         if phase == 'backup-recovery':
             failure = failure_details(root / 'rollback/work', phase, error)
     finally:
@@ -340,12 +361,12 @@ def worker(ctx, root, node, image):
                 failure = failure or failure_details(work, 'closure', RuntimeError())
     if failure is not None:
         result['failure'] = failure
-    else:
+    elif not preflight:
         result['status'] = 'PASS_REAL_SYNTHETIC_CONNECTION_ONLY'
     return result
 
 
-def fork_worker(ctx, root, node, image, sender, receiver, docker_gid):
+def fork_worker(ctx, root, node, image, sender, receiver, docker_gid, preflight):
     receiver.close()
     start = load('runner_start')
     try:
@@ -355,7 +376,7 @@ def fork_worker(ctx, root, node, image, sender, receiver, docker_gid):
         os.setgid(1000)
         os.setuid(1000)
         start._close_stdio()
-        value = worker(ctx, root, node, image)
+        value = worker(ctx, root, node, image, preflight)
         if root.is_dir():
             write(root / 'RESULT.SAFE.json', start._encode(value, start.MAX_RESULT))
         if value['status'] == 'FAIL':
@@ -370,7 +391,7 @@ def fork_worker(ctx, root, node, image, sender, receiver, docker_gid):
         sender.close()
 
 
-def supervise(ctx, root, node, image):
+def supervise(ctx, root, node, image, preflight):
     start = load('runner_start')
     p = start.P
     identity = p.identity(p.R.KERNEL_ROOT / p.names(ctx)[0])
@@ -382,7 +403,7 @@ def supervise(ctx, root, node, image):
         return start._parent_readback(p, ctx, identity, last)
     fork = multiprocessing.get_context('fork')
     receiver, sender = fork.Pipe(duplex=False)
-    child = fork.Process(target=fork_worker, args=(ctx, root, node, image, sender, receiver, p.socket_gid()))
+    child = fork.Process(target=fork_worker, args=(ctx, root, node, image, sender, receiver, p.socket_gid(), preflight))
     class NativeFixtureError(start.RunnerStartError):
         allowed_worker_phases = PHASES
     try:
@@ -417,6 +438,15 @@ def supervise(ctx, root, node, image):
                      and detail['nativeSignal'] in (None, 'SIGTERM', 'SIGKILL', 'SIGINT', 'SIGSEGV', 'SIGABRT', 'SIGBUS'))
                 result['failure'] = detail
                 result['memory'] = start._closed_memory(value['memory'])
+                frames = value.get('sourceFrames')
+                if type(frames) is list and len(frames) <= 8 and all(type(row) is dict
+                    and set(row) == {'file', 'line', 'function'}
+                    and row['file'] in ('test_restore_native_minimal.py', 'synthetik-500-w15-memory-forward.py',
+                                       'synthetik-500-w15-full500-controller.py', 'common_resources.py')
+                    and type(row['line']) is int and 0 < row['line'] < 10000
+                    and type(row['function']) is str and re.fullmatch('[A-Za-z0-9_<>]{1,100}', row['function'])
+                    for row in frames):
+                    result['sourceFrames'] = frames
                 for key in ('restoreSteps', 'exportActions', 'ownedContainersStopped'):
                     if type(value.get(key)) is int and 0 <= value[key] <= 9:
                         result[key] = value[key]
@@ -439,12 +469,14 @@ def main(argv=None):
     service_attempted = False
     p, ctx, image = load('runner_parent'), None, None
     try:
-        if len(argv) == 7 and argv[0] == '--internal-minimal':
+        if len(argv) == 8 and argv[0] == '--internal-minimal':
             ctx = p.context(argv[1], argv[2], argv[3])
-            result = supervise(ctx, Path(argv[4]), Path(argv[5]), argv[6])
+            need(argv[7] in ('native', 'preflight'))
+            result = supervise(ctx, Path(argv[4]), Path(argv[5]), argv[6], argv[7] == 'preflight')
             print(json.dumps(result, sort_keys=True))
-            return 0 if result['status'] == 'PASS_REAL_SYNTHETIC_CONNECTION_ONLY' else 1
-        need(len(argv) == 2 and argv[0] == '--native-minimal' and os.getuid() == 0)
+            return 0 if result['status'] in PASSES else 1
+        need(len(argv) == 2 and argv[0] in ('--native-minimal', '--resource-preflight') and os.getuid() == 0)
+        preflight = argv[0] == '--resource-preflight'
         need(os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('GITHUB_RUN_ATTEMPT') == '1')
         ctx = p.context(os.environ['GITHUB_RUN_ID'], os.environ['GITHUB_SHA'], str(uuid.uuid4()))
         p.github_binding(ctx['runId'], ctx['exactCommit'])
@@ -472,11 +504,11 @@ def main(argv=None):
             '--property=TimeoutStopSec=10', '--property=KillMode=control-group',
             '/usr/bin/env', '-i', *[k + '=' + v for k, v in p.process_env(ctx).items()],
             '/usr/bin/python3', '-I', '-B', str(SCRIPT), '--internal-minimal', ctx['runId'],
-            ctx['exactCommit'], ctx['nonce'], str(root), str(node), image],
+            ctx['exactCommit'], ctx['nonce'], str(root), str(node), image, 'preflight' if preflight else 'native'],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=WALL, close_fds=True)
         need(len(response.stdout) <= 65536)
         result = json.loads(response.stdout)
-        need(type(result) is dict and result.get('status') in ('PASS_REAL_SYNTHETIC_CONNECTION_ONLY', 'FAIL'))
+        need(type(result) is dict and result.get('status') in (*PASSES, 'FAIL'))
         need(response.returncode == (0 if result['status'].startswith('PASS_') else 1))
         phase = 'closure'
         result['initialCommonParent'] = initial
@@ -510,7 +542,7 @@ def main(argv=None):
             result.update(exactCommit=ctx['exactCommit'], runId=ctx['runId'], runAttempt=1)
         result['retryAllowed'] = False
     print(json.dumps(result, sort_keys=True))
-    return 0 if result['status'] == 'PASS_REAL_SYNTHETIC_CONNECTION_ONLY' else 1
+    return 0 if result['status'] in PASSES else 1
 
 
 if __name__ == '__main__':

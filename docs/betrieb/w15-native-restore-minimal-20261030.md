@@ -1,5 +1,14 @@
 # Echter synthetischer Restore-Minimalanschluss
 
+Erster tatsächlicher Versuch40981762750 auf8e12da22: FAIL vor Datenbankstart,
+gemeinsame frühe Phase resources (umfasste auch den Codeimport),0Container,
+Peak24219648Bytes, Swap0/OOM-Zähler0. Worker/IPC/Service/Parentstillstand belegt.
+Kein Beweis eines RAM-Fehlers und keine Aussage zur historischen Originalursache.
+Deshalb nur die frühe lesende Quellen-/Import-/Ressourcenbindung unterscheiden;
+keine automatische Wiederholung der nativen Kette. Neuer Präzisionsschritt
+--resource-preflight startet weder PostgreSQL noch Restore/Export/GPG und
+bewahrt feste Quellendatei/Zeile/Funktion, niemals freie Fehlermeldungen.
+
 Betreiberauftrag30.10.: Den unbekannten inneren Fehler mit einem echten kleinen
 durchgehenden PostgreSQL-Test eingrenzen, ohne Originale oder500er-Controllerlauf.
 PR978/cf466883 und PR979/53dde52a bleiben unveränderte Vorfahren; PR975/977 bleiben
