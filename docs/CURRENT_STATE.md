@@ -1,19 +1,17 @@
 # CURRENT STATE — Helmut
 
-## W15 Mock-Originalarchiv: GitHub-Anschluss vorbereitet, echte Annahme offen
+## W15 Mock-Originalempfang: elf Dateien tatsächlich unabhängig abgenommen
 
-Betreiber benennt vorhandenes privates GPG/gzip/USTAR-Archiv:11Originale mit
-217563454Bytes und allen Pins einschließlich Replacements jetzt übergeben.
-Quelle/Größe/Owner-Metadaten bestätigt, keine lokale/GitHub-Entschlüsselung.
-Neuer Empfangsdecoder und derselbe Anschluss im späteren gemeinsamen Mockjob
-vorbereitet; nur bestehende GitHub-Empfängersecrets, kein Klartextartefakt/Cache.
-Kein späterer Job hängt von temporären Dateien des vorigen Runners ab.
-Transport inzwischenPASS: vollständiger privater Cipherabruf17780398Bytes/SHA
-bestätigt. Einmalige Vorprüfung stoppte bei68,707s Restzeit unter90s, kein Job.
-Externe Ablaufsteuerung wird vor Linkerzeugung vollständig vorbereitet; erlaubter
-Environmentbranch unverändert225e76d7. Keine Schutzregeländerung/echte Annahme.
-Codekopf, Pflicht-CI/Review und enger Empfangsvertrag stehen im zugehörigenDraftPR.
-[Format, Nachweise, Transportgrenze und Freigabevorbedingungen](betrieb/w15-mock500-originalarchiv-empfang-20261030.md).
+Run41037459441/Job124001742313 auf13b858b1 PASS: elf Originale217563454Bytes,
+alle ursprünglichen Einzelgrößen/SHA256, Manifest/GPG/volle Rücklesung bestätigt.
+Unabhängige AnnahmePASS; Quelle/fehlendeDateien/Replacements-Pin als Blocker geschlossen.
+Empfangsschritt6s/Job13s; eigener GPG-Prozess/AgentPASS beendet, keine Wiederholung.
+Launcher6c42716d stellte vorfrischemLink den erlaubten Branch sicher225→13 vor.
+Dispatch2764Zeichen; alle übrigen JobsSKIPPED, kein Restore/End500/Mock500/Production.
+Keine Klartextartefakte/Caches: Dateien nur im vergangenen temporären Runner;
+späterer Mock empfängt dasselbe erhaltene Drive-Cipherarchiv im eigenen Job mit GO.
+RAM-v2 und Original-Restoreursache weiteroffen; kein500er-PASS aus Empfang.
+[Quittung, unabhängige Abnahme und ausschließlich verbleibende Startvoraussetzungen](betrieb/w15-mock-original-reception-20261030.md).
 
 ## W15 Nachtauftrag30.10.: Minimalbeleg abgenommen, echte Startstufen BLOCKIERT
 
@@ -26,10 +24,11 @@ Neue Mock-Abschlusslücken nachgestellt und gezielt geschlossen: jede Providerph
 <20s, tatsächliche Auth-/CAS-ACKs und1500Einzelergebnisse statt nur grüner Header.
 Exakter Integrationskopf, Pflicht-CI und Schlussreview sind im Nacht-Draft-PR belegt;
 keine Startbereitschaft oder echte500er-Abnahme aus Codefertigstellung abgeleitet.
-Quellen weiterhinBLOCKIERT:10Zusatzoriginale+1Replacements-Pin fehlen;13,7MB-Bericht
-nicht erreichbar. Keine Inventurwiederholung, Neuqualifikation oder Übertragung.
+Historischer Quellenblocker inzwischen geschlossen: alle11Zusatzoriginale
+inRun41037459441 vollständig angenommen; keine Neuqualifikation wiederholt.
 Historischer Mock-RAM-Fehler nach69Units bleibtFAIL/UNKNOWN, Verträge unverändert.
-PR975/977/978/979/980-Köpfe erhalten; kein Branchvorstellen/Merge/Productioneingriff.
+Historischer Nachtstand: PR975/977/978/979/980-Köpfe damals erhalten;
+später erlaubter Fast Forward vonPR975 auf13, kein Merge/Productioneingriff.
 [Gesamtbefund, genaue Blocker und getrennte spätere Freigabeverträge](betrieb/w15-night-startreadiness-20261030.md).
 Noch kein startbereites Restore-/End500-/Mock500-GO: erst belegte Diagnoseentscheidung,
 zugängliche Originalbindungen und positive vorgelagerte Abnahmen. Keine echten Läufe.

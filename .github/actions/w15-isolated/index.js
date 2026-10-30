@@ -48,6 +48,7 @@ const KEYS = ['ACTIONS_RUNTIME_TOKEN','ACTIONS_RESULTS_URL','ACTIONS_RUNTIME_URL
 function main() {
   const mode = process.env.W15_MODE;
   const synthetic = mode === 'end500-restore-synthetic';
+  const diagnostic = mode === 'end500-restore-export-diagnostic';
   const declared = JSON.parse(process.env.W15_REQUEST || '{}');
   const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
   const privatePayload = synthetic ? {} : {
@@ -55,7 +56,7 @@ function main() {
     keyB64: process.env.HELMUT_W15_RECEIVER_PROTECTED_KEY_B64,
     passphrase: process.env.HELMUT_W15_RECEIVER_PASSPHRASE,
     eventInputs: event.inputs,
-    artifactCredentials: Object.fromEntries(KEYS.filter(k => process.env[k]).map(k => [k,process.env[k]]))
+    artifactCredentials: diagnostic ? {} : Object.fromEntries(KEYS.filter(k => process.env[k]).map(k => [k,process.env[k]]))
   };
   for (const key of ['HELMUT_W15_CIPHER_INDEX_GPG','HELMUT_W15_RECEIVER_PROTECTED_KEY_B64',
     'HELMUT_W15_RECEIVER_PASSPHRASE',...KEYS.filter(k => k.includes('TOKEN'))]) delete process.env[key];
@@ -94,6 +95,8 @@ function main() {
       'connection-prepare','connection-restore','connection-closure','receiver-arguments',
       'connection-prepared-check','connection-materialization','connection-container-start',
       'connection-readiness','connection-native-restore','connection-backup',
+      ...['backup-before','backup-dump','backup-roles','backup-after'].map(p=>'connection-export-'+p),
+      ...['restore-create','restore-roles','restore-render','restore-apply','restore-check'].map(p=>'connection-'+p),
       ...['backup-export','backup-freeze','backup-collect','backup-seal','backup-transport',
         'backup-authenticate','backup-recovery','backup-postcheck'].flatMap(p=>[p,'connection-'+p]),
       'receiver-source-binding','receiver-private-inputs','receiver-index','receiver-disk-admission',

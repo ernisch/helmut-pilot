@@ -42,7 +42,8 @@ P, C = _load('runner_parent'), _load('controller_context')
 D = _load('runner_diagnostics')
 LIMITS = {'comparisonBudgetBytes': 2560000000, 'maximumConsumptionBytes': 2048000000,
           'requiredReserveBytes': 512000000, 'swapBytes': 0}
-WALL = {'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
+DIAGNOSTIC = 'end500-restore-export-diagnostic'
+WALL = {DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
 BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 MAX_FILES, MAX_SOURCE_BYTES, MAX_BLOB = 4096, 128 * 1024 * 1024, 16 * 1024 * 1024
 MAX_IPC, MAX_RESULT, CHUNK = 1024 * 1024, 65536, 1024 * 1024
@@ -55,7 +56,7 @@ GIT_OPTIONS = ['--no-optional-locks', '-c', 'core.hooksPath=/dev/null', '-c', 'c
                '-c', 'maintenance.auto=false']
 PHASE = 'arguments'
 PHASES = {'arguments', 'binding', 'parent', 'service', 'staging', 'worker', 'closure', 'ipc'}
-WORKER_STATUS = {'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
+WORKER_STATUS = {DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
                  'end500-restore-gated': 'PASS_SAME_JOB_RESTORE_BACKUP_500_INACTIVE_ONLY_START_BLOCKED',
                  'end500-full-gated': 'PASS_END500_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING'}
 WORKER_BOOLEANS = {'isolatedRestoreObserved', 'end500BodyCompleted', 'originalTransferPerformed',
@@ -74,6 +75,8 @@ WORKER_PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', '
                  'receiver-authenticated-reception', 'receiver-relocation', 'receiver-agent-close'}
 BACKUP_PHASES = {'backup-export', 'backup-freeze', 'backup-collect', 'backup-seal',
                  'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'}
+WORKER_PHASES |= {'connection-' + action for action in ('restore-create', 'restore-roles', 'restore-render', 'restore-apply', 'restore-check')}
+WORKER_PHASES |= {'connection-export-' + action for action in ('backup-before', 'backup-dump', 'backup-roles', 'backup-after')}
 WORKER_PHASES |= BACKUP_PHASES | {'connection-' + phase for phase in BACKUP_PHASES}
 
 
@@ -159,6 +162,10 @@ def _encode(value, maximum=MAX_IPC):
 def _worker_result(result, request):
     """Only B's closed public scalar receipt can leave the private IPC channel."""
     fields = {'status', 'mode', 'exactCommit', 'runId', 'runAttempt', 'verifiedFiles', 'verifiedBytes'}
+    diagnostic = request['mode'] == DIAGNOSTIC
+    if diagnostic:
+        fields |= {'diagnosticExportOnly', 'restoreSteps', 'exportActions', 'profiles', 'activeProfiles',
+            'ownedContainerStopped', 'watchStopped', 'remoteReadbackObserved', 'databaseRestoreObserved', 'fullRestoreAccepted'}
     need(type(result) is dict and set(result) == fields | WORKER_BOOLEANS | WORKER_FALSE
          and result['status'] == WORKER_STATUS[request['mode']]
          and all(result[key] == request[key] for key in ('mode', 'exactCommit', 'runId', 'runAttempt'))
@@ -173,8 +180,14 @@ def _worker_result(result, request):
          and result['syntheticQualification'] is synthetic
          and result['originalTransferPerformed'] is (not synthetic)
          and result['isolatedRestoreObserved'] is (not synthetic)
-         and result['backupRoundtripVerified'] is (not synthetic)
+         and result['backupRoundtripVerified'] is (not synthetic and not diagnostic)
          and result['end500BodyCompleted'] is (request['mode'] == 'end500-full-gated'))
+    if diagnostic:
+        need(result['diagnosticExportOnly'] is True and result['ownedContainerStopped'] is True
+             and result['watchStopped'] is True and result['remoteReadbackObserved'] is False
+             and result['databaseRestoreObserved'] is False and result['fullRestoreAccepted'] is False
+             and all(type(result[k]) is int for k in ('restoreSteps', 'exportActions', 'profiles', 'activeProfiles'))
+             and (result['restoreSteps'], result['exportActions'], result['profiles'], result['activeProfiles']) == (5, 4, 500, 0))
     return {key: result[key] for key in sorted(result)}
 
 

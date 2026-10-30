@@ -85,7 +85,9 @@ class WorkflowChecks(unittest.TestCase):
             value['bindings'] = {'end500Acceptance': {}, 'compatibilityBridge': {},
                 'inputBindingSHA256': 'e' * 64, 'additionalAssetBytes': 217550486,
                 'approvedEnd500Commit': '225e76d7b7618e36c189d205294dfd073e6d88a4'}
-            for baseline in ('225e76d7b7618e36c189d205294dfd073e6d88a4', 'deb812f9e7e3a2d58e5b4e593a1eec00ef1e22d8'):
+            for baseline in ('225e76d7b7618e36c189d205294dfd073e6d88a4',
+                             'deb812f9e7e3a2d58e5b4e593a1eec00ef1e22d8',
+                             '13b858b1a1e83a695e1fa64446573b5b550921ea'):
                 value['bindings']['approvedEnd500Commit'] = baseline
                 with self.subTest(baseline=baseline), self.assertRaises(RuntimeError):
                     W.validate_admission(value, {})

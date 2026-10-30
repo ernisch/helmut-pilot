@@ -133,6 +133,55 @@ class StartChecks(unittest.TestCase):
         with self.assertRaises(S.StartRejected):
             self.admit()
 
+    def bind_receiver13_candidate(self):
+        candidate = '13b858b1a1e83a695e1fa64446573b5b550921ea'
+        self.end['exactCommit'] = candidate
+        self.end_envelope = envelope(self.end)
+        self.bridge.update(baselineExactCommit=candidate, end500AcceptanceSHA256=self.end_envelope['sha256'])
+        self.bridge_envelope = envelope(self.bridge)
+        self.approval.update(end500AcceptanceSHA256=self.end_envelope['sha256'],
+                             compatibilitySHA256=self.bridge_envelope['sha256'])
+        return candidate
+
+    def test_receiver13_candidate_rejects_receive_native_fixture_and_incomplete_end500_records(self):
+        changes = [('status', 'PASS_MOCK_ORIGINALS_RECEIVED_ONLY_START_BLOCKED'),
+                   ('status', 'PASS_REAL_SYNTHETIC_CONNECTION_ONLY'),
+                   ('status', 'PASS_SYNTHETIC_NATIVE_FIXTURE_ONLY_START_BLOCKED'),
+                   ('commonLifetimeMemoryAccepted', False), ('completeBackupAccepted', False),
+                   ('independentRestoreAccepted', False), ('profiles', 499), ('activeProfiles', 1),
+                   ('resourceContract', 'helmut-w15-memory-check/2')]
+        original = dict(self.end)
+        for key, value in changes:
+            with self.subTest(key=key, value=value):
+                self.end = {**original, key: value}
+                candidate = self.bind_receiver13_candidate()
+                with self.assertRaisesRegex(S.StartRejected, 'POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED'):
+                    S.validate_admission(self.request, self.end_envelope,
+                        compatibility_bridge=self.bridge_envelope, observed_context=self.observed,
+                        expected_end500_commit=candidate, now=NOW)
+
+    def test_fictional_positive13_gate_keeps_bridge_distinct_head_and_separate_go_requirements(self):
+        candidate = self.bind_receiver13_candidate()
+        def admit():
+            return S.validate_admission(self.request, self.end_envelope,
+                compatibility_bridge=self.bridge_envelope, observed_context=self.observed,
+                expected_end500_commit=candidate, now=NOW)
+        # Only fictional admission records: no real End500 or Mock acceptance.
+        result = admit()
+        self.assertEqual(result['end500BaselineCommit'], candidate)
+        self.assertFalse(result['executionAuthority'] or result['mock500Acceptance'])
+        self.approval['authorized'] = False
+        with self.assertRaisesRegex(S.StartRejected, 'SEPARATE_EXPLICIT_GO_REQUIRED'): admit()
+        self.approval['authorized'] = True
+        self.bridge['status'] = 'PENDING'
+        self.bridge_envelope = envelope(self.bridge)
+        self.approval['compatibilitySHA256'] = self.bridge_envelope['sha256']
+        with self.assertRaisesRegex(S.StartRejected, 'REVIEWED_BASELINE_BRIDGE_REQUIRED'): admit()
+        self.request['exactCommit'] = candidate
+        self.observed['exactCommit'] = candidate
+        self.approval['exactCommit'] = candidate
+        with self.assertRaises(S.StartRejected): admit()
+
     def test_original_start_sets_same_three_hour_and_thirty_minute_window(self):
         guard = self.guard()
         self.assertEqual(guard.window, {'startsAtUTC': '2026-10-29T09:55:00.001Z',

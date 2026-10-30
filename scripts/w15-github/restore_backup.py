@@ -83,15 +83,24 @@ BACKUP_PHASES = frozenset(('backup-export', 'backup-freeze', 'backup-collect', '
 
 
 class BackupRuntimeError(RuntimeError):
-    def __init__(self, code='RESTORE_BACKUP_REJECTED', *, phase=None):
+    def __init__(self, code='RESTORE_BACKUP_REJECTED', *, phase=None, actionName=None,
+                 runnerReturncode=None):
         self.phase = phase if type(phase) is str and phase in BACKUP_PHASES else None
+        self.actionName = actionName if type(actionName) is str and actionName in ACTIONS else None
+        # This is the directly observed docker-exec client status, never an
+        # inferred PostgreSQL exit or a potentially stale supervisor cache.
+        self.runnerReturncode = runnerReturncode if type(runnerReturncode) is int and -255 <= runnerReturncode <= 255 else None
+        self.nativeExit = None
         super().__init__(code)
 
 
 def _checkpoint_error(error, checkpoint):
-    """Keep only a known nested checkpoint, never its text or other attributes."""
-    if type(error) is BackupRuntimeError and type(error.phase) is str and error.phase in BACKUP_PHASES:
-        checkpoint = error.phase
+    """Keep only closed checkpoints/action metadata, never exception text."""
+    if type(error) is BackupRuntimeError:
+        if type(error.phase) is str and error.phase in BACKUP_PHASES:
+            checkpoint = error.phase
+        return BackupRuntimeError(phase=checkpoint, actionName=error.actionName,
+                                  runnerReturncode=error.runnerReturncode)
     return BackupRuntimeError(phase=checkpoint)
 
 
@@ -199,6 +208,8 @@ def export_restore_database(context, *, expected_context, work, container, datab
     require(callable(run_owned) and type(seconds) is int and 30 <= seconds <= 600)
     deadline = time.monotonic() + seconds
     work_fd = state_fd = output_fd = None
+    current_action = observed_returncode = None
+    failure = result = None
     try:
         work = Path(work)
         work_fd = S._directory(str(work), private=True)
@@ -210,6 +221,7 @@ def export_restore_database(context, *, expected_context, work, container, datab
         os.fsync(state_fd)
         pins = {}
         for action in ACTIONS:
+            current_action, observed_returncode = action, None
             _sample(supervisor)
             remaining = int(deadline - time.monotonic())
             require(remaining > 10, 'BACKUP_EXPORT_DEADLINE')
@@ -220,7 +232,14 @@ def export_restore_database(context, *, expected_context, work, container, datab
                        + B.BASE + '/node -e ' + shlex.quote(NODE_WORKER) + ' '
                        + ' '.join(shlex.quote(x) for x in (B.BASE, action, database, SNAPSHOT_SQL)))
             argv = list(DOCKER) + ['exec', '--user', '1000:1000', container, 'sh', '-c', command]
-            process = run_owned(argv, action, remaining)
+            try:
+                process = run_owned(argv, action, remaining)
+            except subprocess.CalledProcessError as error:
+                if type(error) is subprocess.CalledProcessError and error.cmd == argv:
+                    observed_returncode = error.returncode
+                raise
+            if type(process) is subprocess.CompletedProcess and process.args == argv:
+                observed_returncode = process.returncode
             require(isinstance(process, subprocess.CompletedProcess) and process.args == argv
                     and type(process.returncode) is int and process.returncode == 0, 'BACKUP_OWNED_EXECUTION_UNCONFIRMED')
             receipt = _json(output_fd, action + '.SAFE.json')
@@ -237,6 +256,9 @@ def export_restore_database(context, *, expected_context, work, container, datab
             require(_pin(output_fd, action + '.lifecycle.PRIVATE.jsonl') == receipt['lifecycle'])
             require(pins[action]['bytes'] > 0)
             _sample(supervisor)
+        # These remaining checks compare the whole export; failure here must
+        # not be attributed to whichever native action happened to run last.
+        current_action = observed_returncode = None
         a, z = (_json(output_fd, OUTPUTS[k], limit=8 * 1024 * 1024) for k in ('backup-before', 'backup-after'))
         for observed in (a, z):
             require(set(observed) == {'database', 'profiles', 'activeProfiles', 'otherClientBackends',
@@ -263,13 +285,20 @@ def export_restore_database(context, *, expected_context, work, container, datab
                   'acceptedAsCompleteBackup': False, 'executionAuthority': False,
                   'retryAllowed': False}
         _write(output_fd, 'SNAPSHOT_CLOSURE.PRIVATE.json', (json.dumps(result, sort_keys=True) + '\n').encode())
-        return result
-    except (Exception, KeyboardInterrupt):
-        raise BackupRuntimeError('RESTORE_DATABASE_EXPORT_FAILED_OR_UNKNOWN_PARTIALS_PRESERVED') from None
+    except (Exception, KeyboardInterrupt) as error:
+        if type(error) is BackupRuntimeError and error.actionName is not None:
+            current_action, observed_returncode = error.actionName, error.runnerReturncode
+        failure = BackupRuntimeError('RESTORE_DATABASE_EXPORT_FAILED_OR_UNKNOWN_PARTIALS_PRESERVED',
+            phase='backup-export', actionName=current_action, runnerReturncode=observed_returncode)
     finally:
         for fd in (output_fd, state_fd, work_fd):
             if fd is not None:
-                os.close(fd)
+                try: os.close(fd)
+                except (OSError, KeyboardInterrupt):
+                    failure = failure or BackupRuntimeError('RESTORE_EXPORT_CLEANUP_UNCONFIRMED', phase='backup-export')
+    if failure is not None:
+        raise failure from None
+    return result
 
 
 def seal_restore_backup(collection, *, root, output, public_key, guard):

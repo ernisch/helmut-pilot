@@ -32,7 +32,14 @@ CHECK_SQL = "select jsonb_build_object('profiles',count(*),'active',count(*)filt
 
 
 class RestoreRuntimeError(RuntimeError):
-    pass
+    def __init__(self, code='ISOLATED_RESTORE_FAILED_OR_UNKNOWN_PARTIALS_PRESERVED', *, actionName=None,
+                 runnerReturncode=None):
+        self.actionName = actionName if type(actionName) is str and actionName in ACTIONS else None
+        # Direct docker-exec client observation only. No cached supervisor status
+        # can establish a PostgreSQL/native exit, including a cached zero.
+        self.runnerReturncode = runnerReturncode if type(runnerReturncode) is int and -255 <= runnerReturncode <= 255 else None
+        self.nativeExit = None
+        super().__init__(code)
 
 
 def require(value):
@@ -163,7 +170,8 @@ def _lifecycle(fd, action):
 def restore_owned(controller, supervisor, *, run_owned):
     """Five fixed restore actions only, through the existing owned-stage runner."""
     work_fd = state_fd = restore_fd = None
-    action = None
+    action = observed_returncode = None
+    failure = result = None
     try:
         require(controller.BASE == BASE and controller.DB == DATABASE
                 and re.fullmatch(r'w15-end500-[1-9][0-9]{4,19}-[a-f0-9]{32}', controller.CONTAINER)
@@ -185,6 +193,7 @@ def restore_owned(controller, supervisor, *, run_owned):
         os.fsync(state_fd)
         pins = {}
         for action in ACTIONS:
+            observed_returncode = None
             guard()
             remaining = int(deadline - time.monotonic())
             require(remaining > 10)
@@ -193,7 +202,14 @@ def restore_owned(controller, supervisor, *, run_owned):
                        + BASE + '/node -e ' + shlex.quote(NODE_WORKER) + ' '
                        + ' '.join(shlex.quote(value) for value in (BASE, action, DATABASE)))
             argv = list(DOCKER) + ['exec', '--user', '1000:1000', controller.CONTAINER, 'sh', '-c', command]
-            process = run_owned(argv, action, remaining)
+            try:
+                process = run_owned(argv, action, remaining)
+            except subprocess.CalledProcessError as error:
+                if type(error) is subprocess.CalledProcessError and error.cmd == argv:
+                    observed_returncode = error.returncode
+                raise
+            if type(process) is subprocess.CompletedProcess and process.args == argv:
+                observed_returncode = process.returncode
             require(isinstance(process, subprocess.CompletedProcess) and process.args == argv
                     and type(process.returncode) is int and process.returncode == 0)
             receipt = B._json(restore_fd, action + '.SAFE.json')
@@ -221,6 +237,9 @@ def restore_owned(controller, supervisor, *, run_owned):
                         and type(receipt['renderedSQL']['bytes']) is int and receipt['renderedSQL']['bytes'] > 0
                         and re.fullmatch('[a-f0-9]{64}', receipt['renderedSQL']['sha256']))
             guard()
+        # Whole-restore closure failures are not failures of whichever action
+        # happened to run last.
+        action = observed_returncode = None
         restored = B._json(restore_fd, OUTPUTS['restore-check'])
         require(set(restored) == {'profiles', 'active'}
                 and type(restored['profiles']) is int and restored['profiles'] == 500
@@ -233,11 +252,19 @@ def restore_owned(controller, supervisor, *, run_owned):
                   'fullRestoreAccepted': False, 'acceptedAsCompleteBackup': False,
                   'end500Started': False, 'mock500Started': False, 'executionAuthority': False}
         B._write(restore_fd, 'RESTORE_CLOSURE.PRIVATE.json', (json.dumps(closed, sort_keys=True) + '\n').encode())
-        return {key: value for key, value in closed.items()
+        result = {key: value for key, value in closed.items()
                 if key not in ('pins', 'initialKernelSample', 'finalKernelSample')}
-    except (Exception, KeyboardInterrupt):
-        raise RestoreRuntimeError('ISOLATED_RESTORE_FAILED_OR_UNKNOWN_PARTIALS_PRESERVED') from None
+    except (Exception, KeyboardInterrupt) as error:
+        if type(error) is RestoreRuntimeError and error.actionName is not None:
+            action, observed_returncode = error.actionName, error.runnerReturncode
+        failure = RestoreRuntimeError('ISOLATED_RESTORE_FAILED_OR_UNKNOWN_PARTIALS_PRESERVED',
+            actionName=action, runnerReturncode=observed_returncode)
     finally:
         for fd in (restore_fd, state_fd, work_fd):
             if fd is not None:
-                os.close(fd)
+                try: os.close(fd)
+                except (OSError, KeyboardInterrupt):
+                    failure = failure or RestoreRuntimeError('ISOLATED_RESTORE_CLEANUP_UNCONFIRMED')
+    if failure is not None:
+        raise failure from None
+    return result
