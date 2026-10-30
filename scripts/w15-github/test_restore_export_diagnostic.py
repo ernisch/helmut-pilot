@@ -179,29 +179,97 @@ class DiagnosticChecks(unittest.TestCase):
             self.assertEqual(observed.worker_memory, sample())
 
     def test_javascript_projects_action_phase_cache_and_unknown_cleanup_without_tokens(self):
+        failed = {'status': 'FAIL_W15_ISOLATED_WORKFLOW', 'phase': 'worker',
+            'worker': {'phase': 'connection-export-backup-dump', 'memory': sample()},
+            'cleanup': R.D.unknown_cleanup(), 'executionAuthority': False, 'retryAllowed': False}
+        rows = self.javascript_projection(failed)
+        self.assertEqual(rows[-1]['worker']['phase'], 'connection-export-backup-dump')
+        self.assertEqual(rows[-1]['worker']['memory'], sample())
+        self.assertEqual(set(rows[-1]['cleanup'].values()), {'UNKNOWN'})
+
+    def javascript_projection(self, failed, *, node=None):
         action = HERE.parents[1] / '.github/actions/w15-isolated/index.js'
         code = r'''const fs=require('node:fs'),cp=require('node:child_process');
 const original=fs.readFileSync;fs.readFileSync=(p,...a)=>p==='FICTIONAL_EVENT'?JSON.stringify({inputs:{}}):original(p,...a);
 const logs=[];const print=console.log;console.log=x=>logs.push(JSON.parse(x));
 cp.spawnSync=(...a)=>{const p=JSON.parse(a[2].input).privatePayload;
 if(Object.keys(p.artifactCredentials).length)throw Error('UNEXPECTED_ARTIFACT_CREDENTIAL');
-return {status:1,stdout:JSON.stringify({status:'FAIL_W15_ISOLATED_WORKFLOW',phase:'worker',
-worker:{phase:'connection-export-backup-dump',memory:JSON.parse(process.env.FICTIONAL_MEMORY)},
-cleanup:Object.fromEntries(['workerExited','workerIPCClosed','parentStopRequested','parentEmpty','parentUnitRemoved',
-'serviceLauncherExited','launcherListenerClosed','launcherSignalsRestored'].map(k=>[k,'UNKNOWN'])),
-executionAuthority:false,retryAllowed:false})};};
+return {status:1,stdout:process.env.FICTIONAL_FAILURE};};
 require(process.env.FICTIONAL_ACTION);print(JSON.stringify(logs));'''
         env = {'PATH': os.defpath, 'W15_MODE': MODE, 'W15_REQUEST': '{}', 'GITHUB_EVENT_PATH': 'FICTIONAL_EVENT',
-            'FICTIONAL_ACTION': str(action), 'FICTIONAL_MEMORY': json.dumps(sample()),
+            'FICTIONAL_ACTION': str(action), 'FICTIONAL_FAILURE': json.dumps(failed),
             'GITHUB_TOKEN': 'FICTIONAL_PRIVATE_TOKEN', 'ACTIONS_RUNTIME_TOKEN': 'FICTIONAL_PRIVATE_TOKEN'}
-        node = shutil.which('node'); self.assertIsNotNone(node)
+        node = node or shutil.which('node'); self.assertIsNotNone(node)
         result = subprocess.run([node, '-e', code], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, timeout=10)
         self.assertEqual(result.returncode, 1)  # Action correctly retains failure.
         rows = json.loads(result.stdout)
-        self.assertEqual(rows[-1]['worker']['phase'], 'connection-export-backup-dump')
-        self.assertEqual(rows[-1]['worker']['memory'], sample())
-        self.assertEqual(set(rows[-1]['cleanup'].values()), {'UNKNOWN'})
         self.assertNotIn(b'FICTIONAL_PRIVATE_TOKEN', result.stdout + result.stderr)
+        return rows
+
+    def test_real_export_exception_survives_connection_workflow_runner_ipc_and_javascript(self):
+        """Use the actual exporter: only native processes/physical outputs are fictional."""
+        node = shutil.which('node'); self.assertIsNotNone(node)
+        backup = load('restore_backup'); common = load('common_resources')
+        fixture, connection = self.connection_fixture()
+        fixture.watch_close_failure = True
+        context = {'schema': 'helmut-w15-backup-context/1', 'scope': 'ISOLATED_GITHUB_END500_BACKUP_ONLY',
+            **{k: fixture.context[k] for k in ('nonce', 'exactCommit', 'runId', 'runAttempt')},
+            'inputManifestSHA': 'b' * 64, 'recipientFingerprint': backup.FINGERPRINT, 'executionAuthority': False}
+        fixture.inputs.backup_context = lambda: context
+        cached = sample(); fixture.resources.failure_observation = Mock(return_value=cached)
+        original_watch = fixture.forward.Watch
+        def watch(path):
+            value = original_watch(path); value.disk_check = Mock(); return value
+        fixture.forward.Watch = watch
+        calls = []; pin = {'bytes': 1, 'sha256': 'c' * 64}
+        def identity(action): return {'phase': action, 'pid': 1234, 'startTicks': '5678'}
+        def physical_receipt(fd, name, **kwargs):
+            if name.endswith('.node.SAFE.json'): return identity(name[:-len('.node.SAFE.json')])
+            action = name[:-len('.SAFE.json')]
+            return {'status': 'PASS_OWNED_DATABASE_EXPORT_STEP', 'action': action, 'returncode': 0,
+                'signal': None, 'output': pin, 'stderr': pin, 'identity': identity(action), 'lifecycle': pin}
+        def native_runner(argv, action, seconds):
+            calls.append(action)
+            if action == 'backup-dump':
+                raise subprocess.CalledProcessError(7, argv, stderr=b'FICTIONAL_PRIVATE_SQL_ERROR')
+            return subprocess.CompletedProcess(argv, 0)
+        owned = SimpleNamespace(run_owned=native_runner)
+        worker = F.WorkerChecks(); worker.setUp(); self.addCleanup(worker.doCleanups)
+        manifest, private = worker.setup_worker(MODE)
+        manifest['approval']['maxStorageUSD'] = '0'; private['artifactCredentials'] = {}
+        private['eventInputs'] = F.inputs(manifest)
+        worker.prepare.return_value = connection
+        worker.forward.open_common_resources.return_value = fixture.resources
+        old_load = W._load.side_effect
+        connection_code = old_load('restore_connection')
+        connection_code.RestoreConnectionError = FC.R.RestoreConnectionError
+        def modules(name, repo=None):
+            if name == 'restore_backup': return backup
+            if name == 'common_resources': return common
+            return old_load(name, repo)
+        W._load.side_effect = modules
+        with patch.object(FC.R.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0)), \
+                patch.object(backup, '_restore_closure'), patch.object(backup, '_sample', return_value={'fictional': True}), \
+                patch.object(backup, '_json', side_effect=physical_receipt), patch.object(backup, '_pin', return_value=pin), \
+                patch.object(backup, '_lifecycle', side_effect=lambda fd, action: identity(action)), \
+                patch.object(backup.T.O, 'OwnedBackupRunner', return_value=owned), \
+                self.assertRaises(W.WorkflowRejected) as got:
+            W.run_worker(manifest, private)
+        self.assertEqual(calls, ['backup-before', 'backup-dump'])
+        self.assertEqual(got.exception.phase, 'connection-export-backup-dump')
+        self.assertEqual(got.exception.worker_memory, cached)
+        self.assertEqual(fixture.stop_calls, [FC.CID]); self.assertEqual(fixture.watch.stopped, 1)
+        fixture.resources.failure_observation.assert_called_once()
+        worker.backup.completion_hook.assert_not_called(); worker.backup.restore_completion_hook.assert_not_called()
+        projected = R._worker_failure(got.exception, 'WORKER_REPORTED_FAILURE')
+        projected.cleanup = R.D.unknown_cleanup(); projected.refresh()
+        packet = R._failure_packet(projected); observed = R._response_error(packet)
+        failed = {'status': 'FAIL_W15_ISOLATED_WORKFLOW', **W._safe_failure(observed),
+            'executionAuthority': False, 'retryAllowed': False}
+        rows = self.javascript_projection(failed, node=node)
+        self.assertEqual(rows[-1]['worker'], {'phase': 'connection-export-backup-dump', 'memory': cached})
+        self.assertEqual(set(rows[-1]['cleanup'].values()), {'UNKNOWN'})
+        self.assertNotIn('FICTIONAL_PRIVATE_SQL_ERROR', json.dumps(rows))
 
 
 if __name__ == '__main__': unittest.main()
