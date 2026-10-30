@@ -74,7 +74,7 @@ gemeinsame Lesefrist, UNKNOWN, Alt-/Mockkanal und Rücksicherungskontext. Beide
 GitHub-Adapter werden ohne echte Kindprozesse mit geschlossenen Beispielen
 geprüft. Betroffene bisherige Runner-/Workflow-/Verbindungsprüfungen werden
 übernommen bzw. nur wegen des tatsächlich geänderten Anschlusses erneut geprüft.
-Die neue optionale Callback-Signatur wurde in drei alten Testadaptern ergänzt.
+Die neue optionale Callback-Signatur wurde in den betroffenen alten Testadaptern ergänzt.
 
 Keine erfolgreichen Originaltransfers, ursprünglichen sechs Python-Heapprofile,
 500/500-Quellenqualifikationen oder nativen Minimalrestore-Belege werden wiederholt.
