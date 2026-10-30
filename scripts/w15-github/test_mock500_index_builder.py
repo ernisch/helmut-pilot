@@ -95,7 +95,8 @@ class MockIndexChecks(unittest.TestCase):
         for position in range(16):
             rows = sources(); rows[position]['url'] = rows[position]['url'].replace('sp=r&', 'sp=rw&')
             with self.subTest(position=position), self.assertRaises(M.MockIndexBuildError): self.build(rows)
-        for change in ('container', 'ip', 'missing-expiry', 'duplicate-query', 'duplicate-url', 'same-blob-other-signature', 'scheme', 'host', 'fragment'):
+        for change in ('container', 'ip', 'missing-expiry', 'duplicate-query', 'duplicate-url', 'same-blob-other-signature',
+                       'same-blob-default-port-alias', 'scheme', 'host', 'fragment'):
             rows = sources(); url = rows[-1]['url']
             if change == 'container': url = url.replace('sr=b', 'sr=c')
             elif change == 'ip': url += '&sip=127.0.0.1'
@@ -103,6 +104,8 @@ class MockIndexChecks(unittest.TestCase):
             elif change == 'duplicate-query': url += '&sp=r'
             elif change == 'duplicate-url': url = rows[0]['url']
             elif change == 'same-blob-other-signature': url = rows[0]['url'].replace(FICTIONAL, 'FICTIONAL_OTHER_SIGNATURE')
+            elif change == 'same-blob-default-port-alias':
+                url = rows[0]['url'].replace('fictional.oaiusercontent.com/', 'fictional.oaiusercontent.com:443/').replace(FICTIONAL, 'FICTIONAL_OTHER_SIGNATURE')
             elif change == 'scheme': url = url.replace('https:', 'http:')
             elif change == 'host': url = url.replace('fictional.oaiusercontent.com', 'invalid.example')
             else: url += '#fragment'
