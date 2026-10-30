@@ -8,7 +8,9 @@ Quelle/Größe/Owner-Metadaten bestätigt, keine lokale/GitHub-Entschlüsselung.
 Neuer Empfangsdecoder und derselbe Anschluss im späteren gemeinsamen Mockjob
 vorbereitet; nur bestehende GitHub-Empfängersecrets, kein Klartextartefakt/Cache.
 Kein späterer Job hängt von temporären Dateien des vorigen Runners ab.
-NochBLOCKED: heutiger runnerlesbarer Kurzzeitlink nicht nachgewiesen; erlaubter
+Transport inzwischenPASS: vollständiger privater Cipherabruf17780398Bytes/SHA
+bestätigt. Einmalige Vorprüfung stoppte bei68,707s Restzeit unter90s, kein Job.
+Externe Ablaufsteuerung wird vor Linkerzeugung vollständig vorbereitet; erlaubter
 Environmentbranch unverändert225e76d7. Keine Schutzregeländerung/echte Annahme.
 Codekopf, Pflicht-CI/Review und enger Empfangsvertrag stehen im zugehörigenDraftPR.
 [Format, Nachweise, Transportgrenze und Freigabevorbedingungen](betrieb/w15-mock500-originalarchiv-empfang-20261030.md).

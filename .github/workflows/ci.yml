@@ -188,6 +188,8 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_original_archive.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_archive_receive.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_archive_handoff_lifecycle.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_receive_dispatch.py
+          node scripts/lokal.js -- node scripts/w15-github/test_mock500_receive_dispatch_exec.js
           python3 -B scripts/w15-github/test_mock500_workflow.py
           python3 -B scripts/w15-github/test_mock500_context.py
           python3 -B scripts/w15-github/test_mock500_shared_scopes.py
