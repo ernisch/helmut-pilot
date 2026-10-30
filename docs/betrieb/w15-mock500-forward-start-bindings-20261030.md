@@ -5,9 +5,16 @@ neue Beschaffung oder Wiederholung der500/500-Quellenqualifikation.
 Der Stand dieses Nachfolgers bereitet ausschließlich die technisch möglichen
 Code-/Eingabebindungen vor; er startet weder End500 noch Mock500.
 
-Der getrennte qualifizierte Restore-/Export-Diagnosekopf ist
-`a2d0f542df9526534c239e3db8291e366798a67a`. Dieser Nachfolger lässt ihn als
-**künftige** End500-Baseline zu, zusätzlich zum erhaltenen Receiver13.
+Der Restore-/Export-Diagnosekopf
+`a2d0f542df9526534c239e3db8291e366798a67a` ist in Run41049571965 mit
+zwölf Originaleingängen, fünf Restoreaktionen500/0 und vier Exportaktionen
+unabhängig PASS. Die vollständige Sicherung und Rücksicherung bleiben offen.
+Der vorbereitete Vollrestore-Nachfolger ist
+`99ca7a0e899804ed84860f01f8cfb4eb546f2f1e` aus PR986. Er erhält diesen
+ausgeführten Kopf, korrigiert den zusätzlich nachgestellten Fullcapture-
+Diagnoseverlust und bindet den getrennt gesperrten Vollrestore-Sender.
+Dieser Mock-Nachfolger lässt ihn ausschließlich als **künftige** End500-Baseline
+zu;13 unda2 bleiben als historische Kandidaten erhalten.
 Die Zulassung ist keine positive End500-Abnahme. Ein bloßer Diagnose-PASS
 wird gezielt als End500-Beleg abgelehnt. Der bestehende Startwächter verlangt
 weiterhin vollständige positive unabhängige Original-Restore-/Sicherungs- und
@@ -26,7 +33,7 @@ Eine echte Bridge kann erst nach einer tatsächlichen positiven End500-Abnahme
 deren genaue Quittung binden. Sie wird vorher nicht erfunden. SourceQualification,
 InputBinding und Code-CI verleihen keine Ausführungsfreigabe.
 
-Weiter offen: begründeter einmaliger Diagnose-/Restoreversuch, vollständige
+Weiter offen: konkrete einmalige Vollrestorefreigabe und tatsächliche vollständige
 Sicherung mit Fernrücklesen und zweiter Rücksicherung, separates End500-GO und
 Abnahme. Für Mock danach eigenes GO, frischer Empfang im selben Runner, echte
 Linkgültigkeit/gesamter verschlüsselter Dispatch≤65535Zeichen, zulässiger UTC-/
