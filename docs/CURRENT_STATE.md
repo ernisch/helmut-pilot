@@ -1,5 +1,18 @@
 # CURRENT STATE — Helmut
 
+## W15: echter synthetischer Minimalanschluss vorbereitet
+
+Neuer Betreiberauftrag30.10.: echte PostgreSQL-Prozesse, Watch, Ressourcen,
+Restore→Export→öffentliche Verschlüsselung→zweite isolierte Wiederherstellung
+mit vorhandener kleiner SQL-Fixture, kein Original-/500er-Controllerlauf.
+300s, unveränderter gemeinsamer RAM-Vertrag,0USD neue Speicherung/0Modellaufrufe.
+Nur eigener CI-Entwicklungszweig; reale Ausführung/CI-Ergebnis siehe Draft-PR.
+Kein nativer PASS vorweggenommen. Vollständige Originalsammlung und
+authentifizierte Fernrücklesung ausdrücklich nicht durch die Fixture abgenommen.
+PR978/979 erhalten, PR975/977 unverändert. Historischer innerer Fehler UNKNOWN;
+kein neues echtes GO auf Verdacht. Mock-Dateisuche mangels neuer Quellenhinweise
+nicht wiederholt. [Umfang und Abnahmegrenzen](betrieb/w15-native-restore-minimal-20261030.md).
+
 ## W15: Diagnosefix grün; innerer Restorefehler weiter UNKNOWN
 
 PR978/cf466883 und Pflicht-CI40967332952 sind unabhängig PASS; Fix unverändert
