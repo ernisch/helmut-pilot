@@ -13,6 +13,9 @@ Nächster Schritt: bestehende Freeze/Collect/Seal/Remote/zweite Restore-Stufe;
 getrennter getesteter Sender, gezielter Fullcapture-Diagnosefix und neues GO.
 Der ausgeführte Receiver N und CI41042712858 bleiben unverändert erhalten.
 [Belege und Aussagegrenze](betrieb/w15-restore-export-diagnostic-result-20261030.md).
+Der gemeinsame nächste Receiver ergänzt den gesperrten End500-Sender und schließt
+die separat synthetisch nachgestellte TCP-Bereitschaftslücke im End500-Pfad.
+[End500-Vorbereitung ohne Ausführung](betrieb/w15-end500-dispatch-preparation-20261030.md).
 
 Elf Mockzusatzoriginale in Run41037459441 auf13b858b1 unabhängig PASS:
 217563454 Bytes, alle Größen/SHA256/Manifest/GPG/Rücklesung bestätigt.

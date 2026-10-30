@@ -398,7 +398,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
         if inputs is not None:w.backup_runner=_runtime_module('runtime_owned_backup').OwnedBackupRunner(w,M,base=BASE,container=CONTAINER,database=DB)
         w.sample();w.thread.start()
         for _ in range(100):
-            r=subprocess.run(M.DOCKER+['exec',CONTAINER,'pg_isready','-U','postgres'],env=M.ENV,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=5)
+            r=subprocess.run(M.DOCKER+['exec',CONTAINER,'pg_isready','-h','127.0.0.1','-U','postgres'],env=M.ENV,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=5)
             if r.returncode==0:break
             time.sleep(.2)
         assert r.returncode==0,'w15-forward-pg-readiness'
