@@ -1,5 +1,15 @@
 # Echter synthetischer Restore-Minimalanschluss
 
+Gezielte Leseprobe40982398386/f064c21c beweist FILESYSTEM_ACCESS_DENIED bei
+source-load, UID1000-Import des direkten Checkouts,0native Aktionen. Bestehender
+echter Runner verwendet schon eine UID1000-eigene geprüfte Quellkopie; nur die
+neue Fixture hatte sie ausgelassen. Korrektur ausschließlich der Fixture: exakt
+copy_committed_repo/_binary/_own_new_tree im selben gemessenen Parent verwenden,
+keine Quellrechte ändern. Kein Produktfix und keine historische Ursache behauptet.
+Die anschließende native Nachprüfung betrifft diese belegte Vorstartkorrektur,
+keinen unveränderten vollständigen Wiederholungsversuch. Beide FAIL-Belege bleiben
+unverändert erhalten.
+
 Erster tatsächlicher Versuch40981762750 auf8e12da22: FAIL vor Datenbankstart,
 gemeinsame frühe Phase resources (umfasste auch den Codeimport),0Container,
 Peak24219648Bytes, Swap0/OOM-Zähler0. Worker/IPC/Service/Parentstillstand belegt.

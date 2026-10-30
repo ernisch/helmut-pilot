@@ -366,8 +366,12 @@ def worker(ctx, root, node, image, preflight=False):
     return result
 
 
-def fork_worker(ctx, root, node, image, sender, receiver, docker_gid, preflight):
+def fork_worker(ctx, root, node, image, sender, receiver, docker_gid, preflight, staged_repo):
+    global REPO, HERE
     receiver.close()
+    if staged_repo is not None:
+        REPO = staged_repo
+        HERE = REPO / 'scripts/w15-github'
     start = load('runner_start')
     try:
         os.environ.clear()
@@ -401,9 +405,27 @@ def supervise(ctx, root, node, image, preflight):
         if time.monotonic() >= deadline:
             raise start.RunnerStartError('worker', runner={'reason': 'SUPERVISOR_DEADLINE'})
         return start._parent_readback(p, ctx, identity, last)
+    staged_repo = None
+    if not preflight:
+        try:
+            # Exact production staging, inside this same fresh limited parent.
+            # UID1000 must not import from a potentially inaccessible checkout.
+            stage = Path('/tmp/w15-native-code-' + uuid.UUID(ctx['nonce']).hex)
+            stage.mkdir(mode=0o700)
+            staged_repo = stage / 'repo'
+            start.copy_committed_repo(ctx, staged_repo, guard)
+            staged_node = stage / 'node'
+            start._binary(node, staged_node, start.C.RUNTIME['node'], node.lstat().st_uid, guard)
+            start._own_new_tree(stage)
+            node = staged_node
+            guard()
+        except BaseException as error:
+            failure = start._diagnose(error, 'staging', 'SUPERVISOR_REJECTED', last['memory'])
+            return {'status': 'FAIL', 'runnerFailure': failure.safe_failure}
     fork = multiprocessing.get_context('fork')
     receiver, sender = fork.Pipe(duplex=False)
-    child = fork.Process(target=fork_worker, args=(ctx, root, node, image, sender, receiver, p.socket_gid(), preflight))
+    child = fork.Process(target=fork_worker, args=(ctx, root, node, image, sender, receiver,
+        p.socket_gid(), preflight, staged_repo))
     class NativeFixtureError(start.RunnerStartError):
         allowed_worker_phases = PHASES
     try:
