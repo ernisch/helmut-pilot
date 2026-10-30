@@ -1,0 +1,102 @@
+{
+  "authenticatedRemoteReadbackAccepted": false,
+  "cipherBytes": 126079713,
+  "containerStop": "PASS",
+  "end500Acceptance": false,
+  "exactCommit": "59c13b3d65cc0abd3cda5a1d1fe9445d49638f7f",
+  "executionAuthority": false,
+  "exportActions": 4,
+  "finalCommonParent": {
+    "configuredLimit": "2560000000",
+    "currentBytes": 872501248,
+    "events": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0,
+      "sock_throttled": 0
+    },
+    "kernelLifetimePeakBytes": 960356352,
+    "swapCurrentBytes": 0,
+    "swapMaximum": "0"
+  },
+  "fullBackupCollectionAccepted": false,
+  "historicalCauseProven": false,
+  "initialCommonParent": {
+    "configuredLimit": "2560000000",
+    "currentBytes": 0,
+    "events": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0,
+      "sock_throttled": 0
+    },
+    "kernelLifetimePeakBytes": 0,
+    "swapCurrentBytes": 0,
+    "swapMaximum": "0"
+  },
+  "ipcCleanup": {
+    "launcherListenerClosed": "UNKNOWN",
+    "launcherSignalsRestored": "UNKNOWN",
+    "parentEmpty": "UNKNOWN",
+    "parentStopRequested": "UNKNOWN",
+    "parentUnitRemoved": "UNKNOWN",
+    "serviceLauncherExited": "UNKNOWN",
+    "workerExited": "PASS",
+    "workerIPCClosed": "PASS"
+  },
+  "memory": {
+    "configuredLimitBytes": 2560000000,
+    "currentBytes": 902311936,
+    "events": {
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+    },
+    "kernelLifetimePeakBytes": 960356352,
+    "lastReadbackValid": true,
+    "swapCurrentBytes": 0,
+    "swapMaximumBytes": 0
+  },
+  "mock500Acceptance": false,
+  "newStorageUSD": "0",
+  "originalAdmissionExercised": false,
+  "originalDataRead": false,
+  "ownedContainersStopped": 2,
+  "parentEmpty": "PASS",
+  "parentRemoved": "PASS",
+  "postStopCommonParent": {
+    "configuredLimit": "2560000000",
+    "currentBytes": 871481344,
+    "events": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0,
+      "sock_throttled": 0
+    },
+    "kernelLifetimePeakBytes": 960356352,
+    "swapCurrentBytes": 0,
+    "swapMaximum": "0"
+  },
+  "profileActivations": 0,
+  "providerCalls": 0,
+  "restoreSteps": 5,
+  "retryAllowed": false,
+  "runAttempt": 1,
+  "runId": "40982718647",
+  "schema": "helmut-w15-real-synthetic-connection/1",
+  "sealVerified": true,
+  "secondRestoreVerified": true,
+  "serviceStop": "PASS",
+  "status": "PASS_REAL_SYNTHETIC_CONNECTION_ONLY",
+  "watchStop": "PASS"
+}

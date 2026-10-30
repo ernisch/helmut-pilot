@@ -1,38 +1,23 @@
 # CURRENT STATE — Helmut
 
-## W15: echter synthetischer Minimalanschluss vorbereitet
+## W15 Nachtauftrag30.10.: Minimalbeleg abgenommen, echte Startstufen BLOCKIERT
 
-Neuer Betreiberauftrag30.10.: echte PostgreSQL-Prozesse, Watch, Ressourcen,
-Restore→Export→öffentliche Verschlüsselung→zweite isolierte Wiederherstellung
-mit vorhandener kleiner SQL-Fixture, kein Original-/500er-Controllerlauf.
-300s, unveränderter gemeinsamer RAM-Vertrag,0USD neue Speicherung/0Modellaufrufe.
-Nur eigener CI-Entwicklungszweig; reale Ausführung/CI-Ergebnis siehe Draft-PR.
-Kein nativer PASS vorweggenommen. Vollständige Originalsammlung und
-authentifizierte Fernrücklesung ausdrücklich nicht durch die Fixture abgenommen.
-PR978/979 erhalten, PR975/977 unverändert. Historischer innerer Fehler UNKNOWN;
-kein neues echtes GO auf Verdacht. Mock-Dateisuche mangels neuer Quellenhinweise
-nicht wiederholt. [Umfang und Abnahmegrenzen](betrieb/w15-native-restore-minimal-20261030.md).
-
-## W15: Diagnosefix grün; innerer Restorefehler weiter UNKNOWN
-
-PR978/cf466883 und Pflicht-CI40967332952 sind unabhängig PASS; Fix unverändert
-als Vorfahre erhalten. PR975 bleibt225e76d7, PR977 bleibt8de90cbe, kein Merge.
-Run40958135662 bleibt FAIL/worker mit UNKNOWN für innere Phase, RAM, Fortschritt
-und Bereinigung;76sJoblaufzeit belegt, keine Übernahme alter Laufwerte.
-Neue gezielte Trennprobe: fünf echte Node-Producer→Restore→Backup-Einstiegsprüfung,
-3Tests und unabhängiger Review PASS. NativeCP/RAM/Dockertransport ausdrücklich
-synthetisch; kein neuer Produktbug oder Originalrestore-PASS. Keine früheren
-Exportaktionen manuell wiederholt. Pflicht-CI am neuen Prüfkopf siehe Draft-PR.
-Drivequellen gezielt geprüft:605direkte Metadateneinträge, Qualifikationsbericht
-13706128Bytes/d2603d92… nicht lokalisiert, alter30Teil-Index nur Revision26.10.
-ohne Mitgliederinventar. Zehn Originale+ein Replacements-Pin weiter BLOCKED;
-Builder-ZIP bleibt lokalisiert. Kein globaler Verlustbeweis, keine Inventur,
-Neuqualifikation oder Übertragung wiederholt. Codex-Threadindex nicht erreichbar.
-[Neue Ursachenabgrenzung und Quellenbelege](betrieb/w15-restore-cause-20261030.md),
-[abgenommener Diagnosefix](betrieb/w15-restore-diagnostics-20261030.md).
-Weitere echte Ausführung braucht konkrete Begründung und neues GO; kein weiterer
-vollständiger Originallauf auf Verdacht. End500/Mock500 bleiben gesperrt.
-Beide RAM-Verträge und Schutzregeln unverändert.
+Bestehende native Minimalprobe40982718647 aufdeb812f9 jetzt unabhängig PASS:
+5Restore/4Export, lokale Versiegelung/zweiter lokaler Auswahlrestore,
+Peak960356352Bytes, Reserve1599643648, Swap0/Zähler0, eigene Prozesse/Parent
+belegt gestoppt/leer. Keine Wiederholung; kein Original-/Remote-/End500-PASS.
+Historischer Originalfehler40958135662 innerlich weiterUNKNOWN, alte GOs verbraucht.
+Neue Mock-Abschlusslücken nachgestellt und gezielt geschlossen: jede Providerphase
+<20s, tatsächliche Auth-/CAS-ACKs und1500Einzelergebnisse statt nur grüner Header.
+Exakter Integrationskopf, Pflicht-CI und Schlussreview sind im Nacht-Draft-PR belegt;
+keine Startbereitschaft oder echte500er-Abnahme aus Codefertigstellung abgeleitet.
+Quellen weiterhinBLOCKIERT:10Zusatzoriginale+1Replacements-Pin fehlen;13,7MB-Bericht
+nicht erreichbar. Keine Inventurwiederholung, Neuqualifikation oder Übertragung.
+Historischer Mock-RAM-Fehler nach69Units bleibtFAIL/UNKNOWN, Verträge unverändert.
+PR975/977/978/979/980-Köpfe erhalten; kein Branchvorstellen/Merge/Productioneingriff.
+[Gesamtbefund, genaue Blocker und getrennte spätere Freigabeverträge](betrieb/w15-night-startreadiness-20261030.md).
+Noch kein startbereites Restore-/End500-/Mock500-GO: erst belegte Diagnoseentscheidung,
+zugängliche Originalbindungen und positive vorgelagerte Abnahmen. Keine echten Läufe.
 
 ## W15 Fortschreibung: primärer Restore durchlaufen, Backup noch FAIL
 
