@@ -64,7 +64,7 @@ def build_index(sources, *, input_binding_raw, input_binding_sha256, expected_co
         checked = [SIGNED.signed_link(row['url'], now) for row in sources]
         urls = [row[0] for row in checked]
         # Two signatures for the same blob are still one source, not two parts.
-        blobs = [(parsed.netloc, parsed.path) for parsed in map(MR.E.urllib.parse.urlsplit, urls)]
+        blobs = [(parsed.hostname, parsed.path) for parsed in map(MR.E.urllib.parse.urlsplit, urls)]
         need(len(set(urls)) == len(SOURCE_CODES) and len(set(blobs)) == len(SOURCE_CODES), phase)
         earliest = min(row[1] for row in checked)
         expires = min(earliest, now + timedelta(minutes=30))
