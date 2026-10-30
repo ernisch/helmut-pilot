@@ -111,6 +111,19 @@ class StartChecks(unittest.TestCase):
         with self.assertRaises(S.StartRejected):
             self.admit()
 
+    def test_frozen_native_fixture_candidate_still_requires_positive_original_end500_acceptance(self):
+        candidate = 'deb812f9e7e3a2d58e5b4e593a1eec00ef1e22d8'
+        self.end.update(exactCommit=candidate, status='PASS_SYNTHETIC_NATIVE_FIXTURE_ONLY_START_BLOCKED')
+        self.end_envelope = envelope(self.end)
+        self.bridge.update(baselineExactCommit=candidate, end500AcceptanceSHA256=self.end_envelope['sha256'])
+        self.bridge_envelope = envelope(self.bridge)
+        self.approval.update(end500AcceptanceSHA256=self.end_envelope['sha256'],
+                             compatibilitySHA256=self.bridge_envelope['sha256'])
+        with self.assertRaisesRegex(S.StartRejected, 'POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED'):
+            S.validate_admission(self.request, self.end_envelope,
+                compatibility_bridge=self.bridge_envelope, observed_context=self.observed,
+                expected_end500_commit=candidate, now=NOW)
+
     def test_expired_start_go_or_wrong_actual_run_binding_is_rejected(self):
         self.approval['expiresAt'] = '2026-10-29T10:00:00Z'
         with self.assertRaises(S.StartRejected):

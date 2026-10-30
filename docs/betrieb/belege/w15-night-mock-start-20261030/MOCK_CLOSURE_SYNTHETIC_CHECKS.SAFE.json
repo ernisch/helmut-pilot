@@ -1,0 +1,33 @@
+{
+  "schema": "helmut-w15-mock500-night-closure-synthetic-checks/1",
+  "status": "PASS_SYNTHETIC_MOCK_CLOSURE_REJECTIONS_ONLY",
+  "dateUTC": "2026-10-30",
+  "baselineExactCommit": "deb812f9e7e3a2d58e5b4e593a1eec00ef1e22d8",
+  "retainedBaselineAdapterCommit": "63fac078",
+  "tests": {
+    "mock500Backup": 13,
+    "mock500Workflow": 6,
+    "mock500Start": 9,
+    "newNegativeObservationSubcases": 42,
+    "allPassed": true,
+    "viaProductionEnvironmentRemovingLocalLauncher": true
+  },
+  "directOldClosureComparison": [
+    {"case": "middle-provider-phase-exactly20s", "baselineAcceptedIncompleteObservation": true, "fixedRejected": true},
+    {"case": "missing-native-auth-ack", "baselineAcceptedIncompleteObservation": true, "fixedRejected": true},
+    {"case": "missing-persisted-readback-position", "baselineAcceptedIncompleteObservation": true, "fixedRejected": true}
+  ],
+  "sharedRuntimeIntegrationRequired": true,
+  "finalSourceQualificationAvailable": false,
+  "positiveEnd500AcceptanceAvailable": false,
+  "originalsRead": false,
+  "sourcesRequalified": false,
+  "nativeDatabaseStarted": false,
+  "providerCalled": false,
+  "mock500Executed": false,
+  "actualRAMAccepted": false,
+  "executionAuthority": false,
+  "mock500Acceptance": false,
+  "productionAcceptance": false,
+  "startStatus": "BLOCKED"
+}

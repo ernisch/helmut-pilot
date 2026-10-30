@@ -10,6 +10,7 @@ sys.dont_write_bytecode = True
 import hashlib
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -192,6 +193,102 @@ def _native_steps(controller, resources, supervisor, guard, *, restore=False):
         os.close(fd)
 
 
+def _number(value):
+    return type(value) in (int, float) and math.isfinite(value) and value >= 0
+
+
+def _auth_observations(runtime):
+    """Validate retained native ACKs, never infer them from a PASS header."""
+    mutations, usage, writes = (runtime.get(key) for key in ('authMutations', 'usageSinks', 'casWrites'))
+    need(type(mutations) is list and bool(mutations) and type(usage) is list and len(usage) == 1000
+         and type(writes) is list and bool(writes))
+    envelopes, finish, usage_by_unit = {}, {}, [0] * 500
+    for row in mutations + usage:
+        need(type(row) is dict and type(row.get('id')) is int and row['id'] > 0 and row['id'] not in envelopes
+             and type(row.get('index')) is int and 0 <= row['index'] < 500
+             and row.get('acknowledged') is True and 'failure' not in row
+             and all(_number(row.get(key)) for key in ('beginMS', 'ackMS', 'endMS', 'wallMs'))
+             and row['beginMS'] <= row['ackMS'] <= row['endMS']
+             and row['wallMs'] < 30000 and row['endMS'] - row['beginMS'] < 30000)
+        envelopes[row['id']] = row
+        if 'finishIndex' in row:
+            need(type(row['finishIndex']) is int and row['finishIndex'] == row['index']
+                 and row['finishIndex'] not in finish and row.get('kind') == 'public-mutation')
+            finish[row['finishIndex']] = row['ackMS']
+    need(set(finish) == set(range(500)))
+    for row in usage:
+        need(row.get('kind') == 'usage-sink' and row.get('storageAcknowledged') is True
+             and row.get('storageMode') == 'relational-atomic-v1')
+        usage_by_unit[row['index']] += 1
+    need(usage_by_unit == [2] * 500)
+    used, write_ids = set(), set()
+    for row in writes:
+        need(type(row) is dict and type(row.get('id')) is int and row['id'] >= 0 and row['id'] not in write_ids
+             and type(row.get('envelopeId')) is int and row['envelopeId'] in envelopes
+             and row.get('rowId') == 'main-auth' and row.get('storageMode') == 'relational-atomic-v1'
+             and row.get('acknowledged') is True and 'failure' not in row
+             and all(_number(row.get(key)) for key in ('beginMS', 'ackMS', 'endMS', 'wallMs'))
+             and row['beginMS'] <= row['ackMS'] <= row['endMS']
+             and row['wallMs'] < 30000 and row['endMS'] - row['beginMS'] < 30000)
+        outer = envelopes[row['envelopeId']]
+        need(type(row.get('index')) is int and row['index'] == outer['index']
+             and outer['beginMS'] <= row['beginMS'] <= row['ackMS'] <= outer['ackMS']
+             and row['endMS'] <= outer['endMS'])
+        used.add(row['envelopeId']); write_ids.add(row['id'])
+    need(used == set(envelopes))
+    return finish
+
+
+def _provider_observations(runtime):
+    phases = runtime.get('providerPhases')
+    need(type(runtime.get('localSimulations')) is int and runtime['localSimulations'] == 1000
+         and type(phases) is list and len(phases) == 1000)
+    for offset, row in enumerate(phases):
+        index, phase = divmod(offset, 2)
+        need(type(row) is dict and type(row.get('index')) is int and row['index'] == index
+             and row.get('phase') == ('D', 'R')[phase]
+             and row.get('nativePermanentSendClaim') is True and row.get('nativeCostReservation') is True
+             and row.get('actualModelOutput') is False and row.get('simulatedUsage') is True
+             and all(_number(row.get(key)) for key in ('beginMS', 'endMS', 'actualDelayMS'))
+             and 0 <= row['endMS'] - row['beginMS'] < 20000 and row['actualDelayMS'] < 20000
+             and row['actualDelayMS'] == row['endMS'] - row['beginMS'])
+        if index in (0, 499):
+            need(row.get('requiredDelayMs') == 19900 and row['actualDelayMS'] >= 19900)
+
+
+def _stored_result_observations(audit, units):
+    areas = {'mandatsbriefing', 'morgenbriefing', 'lage'}
+    observed, positions = audit.get('units'), audit.get('positions')
+    categories = audit.get('categories')
+    need(type(observed) is list and len(observed) == 500 and type(positions) is list and len(positions) == 1500
+         and type(audit.get('storedPrivateDraftReviewRows')) is int and audit['storedPrivateDraftReviewRows'] == 1000
+         and type(audit.get('passedChecks')) is int and audit['passedChecks'] == 17000
+         and type(categories) is dict and set(categories) == {'missing', 'empty', 'duplicate', 'technicallyInvalid', 'unusable'}
+         and all(type(value) is int and value == 0 for value in categories.values()))
+    ids, selected = set(), set()
+    for index, row in enumerate(observed):
+        need(type(row) is dict and type(row.get('index')) is int and row['index'] == index
+             and row.get('owner') == units[index]['owner'] and type(row.get('checks')) is int and row['checks'] == 34
+             and type(row.get('passedChecks')) is int and row['passedChecks'] == 34
+             and row.get('failedChecks') == [] and row.get('queryOrReadbackFailure') is False
+             and type(row.get('results')) is list and len(row['results']) == 3
+             and {entry.get('area') for entry in row['results']} == areas)
+        for entry in row['results']:
+            need(type(entry.get('id')) is str and bool(entry['id']) and entry['id'] not in ids
+                 and type(entry.get('canonicalHash')) is str and re.fullmatch('[a-f0-9]{64}', entry['canonicalHash']))
+            retained = [position for position in units[index]['positions'] if position.get('bereich') == entry['area']]
+            need(len(retained) == 1 and retained[0].get('mandatsId') == row['owner']
+                 and retained[0].get('status') == 'stored-unreviewed'
+                 and retained[0].get('ergebnisHash') == entry['canonicalHash'])
+            ids.add(entry['id'])
+    for row in positions:
+        need(type(row) is dict and type(row.get('index')) is int and 0 <= row['index'] < 500
+             and row.get('owner') == units[row['index']]['owner'] and row.get('area') in areas
+             and row.get('categories') == [] and row.get('status') == 'stored-unreviewed')
+        key = (row['index'], row['area'])
+        need(key not in selected); selected.add(key)
+
+
 def _mock_closure(work, result):
     fd = S._directory(str(work), private=True)
     try:
@@ -201,7 +298,8 @@ def _mock_closure(work, result):
         body = R._json(fd, 'CONTROLLER_BODY.SAFE.json')
         service = R._json(fd, 'SERVICE_CLOSURE.SAFE.json')
         need(cleanup.get('confirmedZero') is True and cleanup.get('nativeBoundZero') is True
-             and cleanup['after']['active'] == 0 and cleanup.get('writeOutcome') != 'UNKNOWN')
+             and type(cleanup['after']['active']) is int and cleanup['after']['active'] == 0
+             and cleanup.get('writeOutcome') != 'UNKNOWN')
         need(audit.get('storedResultsAccepted') is True and audit.get('status') == 'PASS_ALL500_STORED_MOCK_RESULTS_ONLY'
              and type(audit.get('unitChecksCompleted')) is int and audit['unitChecksCompleted'] == 17000
              and type(audit.get('positionCount')) is int and audit['positionCount'] == 1500
@@ -211,29 +309,39 @@ def _mock_closure(work, result):
         required_checks = {'exactly500ClosedFinalACKs', 'exactly1000AccountedCalls', 'all8000FreshControls',
             'all500UnitsUnder60', 'all500PreparedOpenUnder60', 'coldThenWarm', 'everyAuthAssignedAndUnder30',
             'exactly500UniqueFinishACKs', 'usageHistoryNotTruncated', 'active500AtLastRead',
-            'sharedCapAnd20PercentReserve', 'noObservedErrors', 'privateKeyAbsent'}
+            'sharedCapAnd20PercentReserve', 'allObservedWritesAtomic', 'all1000ProviderPhasesUnder20',
+            'noObservedErrors', 'privateKeyAbsent'}
         need(runtime.get('status') == 'PASS_RUNTIME_AUDIT_AND_CLEANUP_PENDING'
              and isinstance(checks, dict) and required_checks <= set(checks)
              and all(value is True for value in checks.values())
              and type(runtime.get('modelCalls')) is int and runtime['modelCalls'] == 0
              and type(runtime.get('completedUnits')) is int and runtime['completedUnits'] == 500
-             and type(runtime.get('technicallyStoredPositions')) is int and runtime['technicallyStoredPositions'] == 1500)
+             and type(runtime.get('technicallyStoredPositions')) is int and runtime['technicallyStoredPositions'] == 1500
+             and type(runtime.get('activeProfilesAtLastRead')) is int and runtime['activeProfilesAtLastRead'] == 500
+             and runtime.get('journalState') == 'closed' and runtime.get('errors') == [])
         units = runtime.get('unitReports')
         need(isinstance(units, list) and len(units) == 500)
+        finish_acks = _auth_observations(runtime)
+        _provider_observations(runtime)
         owners = set()
         for index, unit in enumerate(units):
             need(type(unit.get('index')) is int and unit['index'] == index
                  and isinstance(unit.get('owner'), str) and bool(unit['owner']) and unit['owner'] not in owners
                  and unit.get('original16FreshControls') is True and type(unit.get('count')) is int and unit['count'] == 16
-                 and unit.get('under60') is True and type(unit.get('wallMS')) in (int, float)
-                 and 0 <= unit['wallMS'] < 60000)
+                 and unit.get('under60') is True and all(_number(unit.get(key)) for key in ('beginMS', 'finalACKMS', 'wallMS'))
+                 and unit['finalACKMS'] == finish_acks[index]
+                 and 0 <= unit['finalACKMS'] - unit['beginMS'] < 60000 and unit['wallMS'] < 60000
+                 and math.isclose(unit['wallMS'], unit['finalACKMS'] - unit['beginMS'], rel_tol=1e-12, abs_tol=1e-6))
             owners.add(unit['owner'])
+            positions = unit.get('positions')
+            need(type(positions) is list and len(positions) == 3)
             points = unit.get('checkpoints')
             need(isinstance(points, list) and len(points) == 16
                  and sum(point.get('kind') == 'load' for point in points) == 10
                  and sum(point.get('kind') == 'admission' for point in points) == 6
                  and all(type(point.get('observedAt')) is int and point['observedAt'] > 0 for point in points)
                  and all(points[i]['observedAt'] >= points[i-1]['observedAt'] for i in range(1, 16)))
+        _stored_result_observations(audit, units)
         need(result == body and body.get('status') == 'PASS_LOCAL_MOCK500_BODY_ONLY')
         postgrest = service.get('postgrestChildClose')
         need(isinstance(postgrest, dict) and set(postgrest) == {'code', 'signal'}
