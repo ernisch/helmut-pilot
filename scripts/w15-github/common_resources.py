@@ -17,6 +17,7 @@ import uuid
 LIMIT, MAXIMUM, RESERVE = 2560000000, 2048000000, 512000000
 KERNEL_ROOT = Path('/sys/fs/cgroup')
 TOKEN = object()
+MEMORY_STAT_FIELDS = ('anon', 'file', 'kernel', 'shmem', 'file_dirty', 'file_writeback')
 
 
 class ResourceError(RuntimeError):
@@ -54,7 +55,8 @@ def closed_failure_memory(value):
     keys = {'configuredLimitBytes', 'kernelLifetimePeakBytes', 'currentBytes',
             'swapMaximumBytes', 'swapCurrentBytes', 'lastReadbackValid', 'events'}
     events = ('max', 'oom', 'oom_kill', 'oom_group_kill')
-    if type(value) is not dict or set(value) != keys or type(value['lastReadbackValid']) is not bool:
+    if (type(value) is not dict or set(value) not in (keys, keys | {'postFailureMemoryStat'})
+            or type(value['lastReadbackValid']) is not bool):
         return None
     if any(type(value[k]) is not int or not 0 <= value[k] <= 2**53 - 1
            for k in keys - {'lastReadbackValid', 'events'}):
@@ -62,7 +64,59 @@ def closed_failure_memory(value):
     if type(value['events']) is not dict or set(value['events']) != set(events) or any(
             type(value['events'][k]) is not int or not 0 <= value['events'][k] <= 2**53 - 1 for k in events):
         return None
+    result = {key: value[key] for key in keys}
+    if 'postFailureMemoryStat' in value and value['lastReadbackValid'] is False:
+        detail = closed_post_failure_memory_stat(value['postFailureMemoryStat'])
+        if detail is not None:
+            result['postFailureMemoryStat'] = detail
+    # Optional malformed details cannot erase an already known first sample.
+    return json.loads(json.dumps(result))
+
+
+def closed_post_failure_memory_stat(value):
+    """Numeric categories observed after rejection, never a peak breakdown."""
+    keys = set(MEMORY_STAT_FIELDS) | {'observedAfterFailure', 'peakCompositionKnown'}
+    if (type(value) is not dict or set(value) != keys or value['observedAfterFailure'] is not True
+            or value['peakCompositionKnown'] is not False):
+        return None
+    if any(not (type(value[key]) is int and 0 <= value[key] <= 2**53 - 1
+                or type(value[key]) is str and value[key] == 'UNKNOWN') for key in MEMORY_STAT_FIELDS):
+        return None
     return json.loads(json.dumps(value))
+
+
+def capture_post_failure_memory_stat(parent_fd):
+    """Failure-only best effort on the already identity-checked open parent.
+
+    Never replace the first failure, sample peak/current again, or treat absent
+    categories as zero. The later category counters do not explain a past peak.
+    """
+    unknown = {**dict.fromkeys(MEMORY_STAT_FIELDS, 'UNKNOWN'),
+               'observedAfterFailure': True, 'peakCompositionKnown': False}
+    child = None
+    try:
+        child = os.open('memory.stat', os.O_RDONLY | os.O_NOFOLLOW, dir_fd=parent_fd)
+        raw = os.read(child, 8193)
+        if not 0 < len(raw) <= 8192:
+            return unknown
+        value, seen = dict(unknown), set()
+        for line in raw.decode('ascii').splitlines():
+            parts = line.split()
+            if parts and parts[0] in MEMORY_STAT_FIELDS:
+                if (len(parts) != 2 or parts[0] in seen or re.fullmatch('[0-9]{1,16}', parts[1]) is None
+                        or int(parts[1]) > 2**53 - 1):
+                    return unknown
+                seen.add(parts[0])
+                value[parts[0]] = int(parts[1])
+        return closed_post_failure_memory_stat(value) or unknown
+    except BaseException:
+        return unknown
+    finally:
+        if child is not None:
+            try:
+                os.close(child)
+            except BaseException:
+                pass  # A diagnostic close cannot displace the first failure.
 
 
 def project_failure_memory(value, valid):
@@ -77,6 +131,8 @@ def project_failure_memory(value, valid):
         result.update(configuredLimitBytes=int(value['configuredLimit']), swapMaximumBytes=int(value['swapMaximum']),
             lastReadbackValid=valid,
             events={key: value['events'][key] for key in ('max', 'oom', 'oom_kill', 'oom_group_kill')})
+        if 'postFailureMemoryStat' in value:
+            result['postFailureMemoryStat'] = value['postFailureMemoryStat']
         return closed_failure_memory(result)
     except (KeyError, TypeError, ValueError):
         return None
@@ -132,10 +188,14 @@ class CommonResources:
             return value
         except KeyboardInterrupt as error:
             self._last_valid = False
+            if current is not None:
+                current['postFailureMemoryStat'] = capture_post_failure_memory_stat(fd)
             error.failure_memory = project_failure_memory(current, False)
             raise
         except Exception:
             self._last_valid = False
+            if current is not None:
+                current['postFailureMemoryStat'] = capture_post_failure_memory_stat(fd)
             raise ResourceError('COMMON_TEST_RESOURCE_BINDING_REJECTED') from None
         finally:
             os.close(fd)

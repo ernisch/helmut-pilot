@@ -1,34 +1,37 @@
 # CURRENT STATE — Helmut
 
-## W15 Originaldiagnose: zwölf Eingänge, Restore500/0 und vier Exporte PASS
+## W15 Vollrestore: RAM-Grenze überschritten, unabhängig FAIL
 
-Einmaliges GO auf a2d0f542: Run41049571965/Job124041996489 unabhängig PASS.
-Tatsächliche Quittung: 12 Originale, 242570240 Bytes, 5 Restoreaktionen500/0,
-4 Exportaktionen; eigener Container, Watch und Worker beendet, gleicher Parent leer.
-Peak1644433408 Bytes, Reserve915566592, Swap0/Ereignisse0; Job70s/Ausführung47s.
-Kein Retry, 0 Artefakte, kein vollständiger Sicherungsrundlauf/End500/Mock500.
-Vollrestore-, End500-, Mock500- und vollständige RAM-Abnahmeflags bleiben false.
-Historische innere Ursache40958135662 weiter UNKNOWN; heutiger5+4-Pfad belegt.
-Nächster Schritt: bestehende Freeze/Collect/Seal/Remote/zweite Restore-Stufe;
-getrennter getesteter Sender, gezielter Fullcapture-Diagnosefix und neues GO.
-Der ausgeführte Receiver N und CI41042712858 bleiben unverändert erhalten.
-[Belege und Aussagegrenze](betrieb/w15-restore-export-diagnostic-result-20261030.md).
-Der gemeinsame nächste Receiver ergänzt den gesperrten End500-Sender und schließt
-die separat synthetisch nachgestellte TCP-Bereitschaftslücke im End500-Pfad.
-[End500-Vorbereitung ohne Ausführung](betrieb/w15-end500-dispatch-preparation-20261030.md).
+Einmaliges Vollrestore-GO auf537adaa32/PR988 verbraucht: Run41073062264,
+Job124121902354, Attempt1 FAIL; Job90s/geschützter Schritt62s,0Artefakte.
+Erste öffentliche Phase worker, PARENT_READBACK_REJECTED: gemeinsamer Peak
+2048073728Bytes,73728über2048000000; Reserve511926272,73728unter512000000.
+Hartes RAM2560000000, Swap0, alle OOM-/Maxereignisse0; Wächter korrekt gestoppt.
+Alle acht eigenen Bereinigungsprüfungen PASS, Parent leer/entfernt, Worker und
+Launcher beendet. Innere Arbeitsphase und aktueller Restore-/Backupfortschritt
+UNKNOWN; keine Vollrestore-/End500-/Mock500-Abnahme, kein Retry/Linkrefresh.
+Ausführungsbranch sicher a2d0f542→537adaa32, Schutzregeln/Secrets unverändert.
+Nächster Schritt: belegten RAM-Verbrauch gezielt synthetisch eingrenzen; nur
+nachgewiesenen Fix prüfen/CI/reviewen. Weiterer echter Lauf braucht neues GO.
+Separater Diagnosezweig ergänzt nur nach Fehler erfasste Kernel-Speicheranteile
+und eine 32-MiB-Datei/Kopie-Probe in bestehender PR-CI; Limits unverändert.
+Tatsächlicher CI-/Probenbefund im Draft-PR; keine behauptete RAM-Ursachenbehebung.
+[Fehlerbeleg, Ressourcen und unabhängige Abnahme](betrieb/w15-full-restore-result-20261030.md).
 
-Elf Mockzusatzoriginale in Run41037459441 auf13b858b1 unabhängig PASS:
-217563454 Bytes, alle Größen/SHA256/Manifest/GPG/Rücklesung bestätigt.
-Dateien/Replacements-Pin als Beschaffungsblocker geschlossen; temporärer Runner,
-späterer Mock empfängt das erhaltene Cipherarchiv im eigenen Job mit passendem GO.
-[Empfangsabnahme](betrieb/w15-mock-original-reception-20261030.md).
-
-Native Minimalprobe40982718647 auf deb812f9 unabhängig PASS, nicht wiederholt:
-5 Restore/4 Export/lokale Versiegelung/zweiter Auswahlrestore, Peak960356352/Swap0.
-Mockcode, AtomicACK, Tag, Namespace, Auswertung und Ressourcenwächter vorbereitet;
-End500-Abnahme und echte Bridge fehlen derzeit. Historischer Mock-RAM-v2-Fehler
-nach69Units bleibt FAIL/UNKNOWN; keine RAM-Erhöhung oder Verdachtsoptimierung.
-[Historischer Nachtbefund](betrieb/w15-night-startreadiness-20261030.md).
+Übernommen: Originaldiagnose41049571965 aufa2d0f542 unabhängig PASS, zwölf
+Originale/242570240Bytes, fünf native Restoreaktionen500/0, vier Exporte,
+Peak1644433408/Reserve915566592/Swap0; keine vollständige Sicherungsabnahme.
+Historische innere Ursache40958135662 bleibt UNKNOWN.
+[Diagnose](betrieb/w15-restore-export-diagnostic-result-20261030.md).
+Elf Mockzusatzoriginale217563454Bytes in41037459441 auf13b858b1 unabhängig PASS;
+alle Größen/Hashes/Manifest/GPG/Rücklesung bestätigt, Replacements-Pin geschlossen.
+Späterer Mockjob empfängt erhaltenes Cipherarchiv selbst mit passendem GO.
+[Empfang](betrieb/w15-mock-original-reception-20261030.md).
+Native Minimalprobe40982718647 aufdeb812f9 PASS übernommen, nicht wiederholt.
+End500-Sender und TCP-Fix vorbereitet; Vollrestoreabnahme/End500-GO fehlen.
+Mockcode/AtomicACK/Tag/Namespace/Auswertung vorbereitet, End500-Abnahme/Bridge
+fehlen; historischer Mock-RAM-v2-Fehler nach69Units bleibt FAIL/UNKNOWN.
+Keine RAM-Erhöhung, weitere Originaltests, End500-/Mock500-/Production-Aktion.
 
 ## W15 Fortschreibung: primärer Restore durchlaufen, Backup noch FAIL
 

@@ -95,6 +95,18 @@ jobs:
           # W15's closed worker validates this exact native runtime.
           node-version: 24.19.0
           cache: npm
+      - name: W15 gezielte Speicherzuordnung — nur 32 MiB synthetische Datei und Kopie
+        if: github.event_name == 'pull_request' && github.head_ref == 'codex/w15-full-restore-result-20261030'
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_memory_probe.py --unit-only
+          sudo -n env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 \
+            GITHUB_ACTIONS=true GITHUB_EVENT_NAME=pull_request W15_MEMORY_PROBE_HEAD_REF=codex/w15-full-restore-result-20261030 \
+            GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" GITHUB_SHA="$GITHUB_SHA" \
+            /usr/bin/python3 -I -B scripts/w15-github/test_restore_memory_probe.py --probe-synthetic-copy-only \
+              --run-id "$GITHUB_RUN_ID" --expected-commit "$GITHUB_SHA"
       - name: W15 echter synthetischer Minimalanschluss — einmalige Diagnose
         if: github.event_name == 'pull_request' && github.head_ref == 'codex/w15-native-restore-minimal-20261030'
         timeout-minutes: 7
@@ -164,6 +176,8 @@ jobs:
           python3 -B scripts/w15-github/test_runtime_qualification.py
           python3 -B scripts/w15-github/test_runner_start.py
           python3 -B scripts/w15-github/test_runner_diagnostics.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_post_failure_memory_stat.py
+          node scripts/lokal.js -- node scripts/w15-github/test_post_failure_memory_stat.js
           python3 -B scripts/w15-github/test_restore_workflow.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_export_diagnostic.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_export_phase.py
