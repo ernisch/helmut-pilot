@@ -460,6 +460,29 @@ class MockBackupChecks(unittest.TestCase):
         collect.assert_not_called()
 
     def test_fresh_recovery_uses_original_v2_parent_and_detects_full_table_drift(self):
+        self._check_fresh_recovery()
+
+    def test_phased_fresh_recovery_uses_acknowledged_backup_limit_and_detects_full_table_drift(self):
+        self._check_fresh_recovery(phased=True)
+
+    def _check_fresh_recovery(self, phased=False):
+        if phased:
+            pc = B.P.phases(); cap = pc.capacity()
+            self.resources.processing_backup_stage = 'mock500'
+            self.resources.memory_phase = 'backup'
+            self.resources.backup_ack = {'FICTIONAL': 'PREVIOUSLY VERIFIED BY COMMON RESOURCES'}
+            self.resources.container_limit = pc.HARD_LIMIT
+            self.resources.profile = pc.MOCK_PROFILE
+            observed = sample()
+            observed.update(configuredLimit=str(pc.HARD_LIMIT), currentBytes=3000000000, kernelLifetimePeakBytes=3100000000)
+            observed['capacityMeasurement'] = {'schema': cap.SCHEMA, 'diagnosticOnly': True,
+                'legacyPeakLimitBytes': cap.LEGACY_PEAK, 'legacyPeakExceeded': True, 'legacyContractAccepted': False,
+                'sampleCount': 1, 'maximumObservedCurrentBytes': 3000000000,
+                'categoryMaxima': dict.fromkeys(cap.CATEGORIES, 'UNKNOWN'), 'phaseObservations': [],
+                'last': {'hostAvailableBytes': 3 * 1024**3, 'memoryStat': dict.fromkeys(cap.CATEGORIES, 'UNKNOWN'),
+                         'memoryPressure': 'UNKNOWN', 'observedMonotonicNS': 1, 'peakCompositionKnown': False}}
+            self.resources.sample = Mock(side_effect=lambda: copy.deepcopy(observed))
+        expected_limit = self.resources.container_limit if phased else B.P.LIMIT
         for corrupt in (False, True):
             with self.subTest(changed_restored_table=corrupt):
                 root = self.root / ('recovery-bad' if corrupt else 'recovery-good')
@@ -524,7 +547,7 @@ class MockBackupChecks(unittest.TestCase):
                                                'RW': 'readonly' not in options})
                         return json.dumps([{'Id': owned_id, 'Name': '/' + module.CONTAINER, 'Image': image,
                             'Config': {'Labels': labels}, 'NetworkSettings': {'Ports': {}}, 'Mounts': mounts,
-                            'HostConfig': {'Memory': 2048000000, 'MemorySwap': 2048000000,
+                            'HostConfig': {'Memory': expected_limit, 'MemorySwap': expected_limit,
                                 'CgroupParent': self.resources.unit, 'NetworkMode': 'none', 'RestartPolicy': {'Name': 'no'}},
                             'State': {'Running': state['running'], 'Pid': 1234 if state['running'] else 0,
                                       'OOMKilled': False, 'ExitCode': 0}}]).encode()
@@ -563,9 +586,10 @@ class MockBackupChecks(unittest.TestCase):
                         self.assertTrue(receipt['completeTableAndSequenceInventoryMatched'])
                         self.assertTrue(receipt['rolesSemanticsMatched'])
                         self.assertTrue(receipt['ownedRecoveryContainerStopped'])
-                        self.assertEqual(receipt['memoryProfile'], B.P.PROFILE)
+                        self.assertEqual(receipt['memoryProfile'], B.P.phases().MOCK_PROFILE if phased else B.P.PROFILE)
                         self.assertFalse(receipt['mock500Acceptance'])
                 self.assertFalse(state['running'])
+                self.assertIn('--memory=' + str(expected_limit), state['create'])
                 self.assertEqual(len(self.restore_fixture.calls) - initial_restore_calls, 5)
                 self.assertEqual(len(self.export_fixture.calls) - initial_export_calls, 4)
                 self.assertEqual((verified / 'database/roles.PRIVATE.sql').read_bytes(), self.roles)

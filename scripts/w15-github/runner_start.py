@@ -43,8 +43,9 @@ D = _load('runner_diagnostics')
 LIMITS = {'comparisonBudgetBytes': 2560000000, 'maximumConsumptionBytes': 2048000000,
           'requiredReserveBytes': 512000000, 'swapBytes': 0}
 CAPACITY = 'end500-restore-capacity-diagnostic'
+PHASED = 'end500-full-phased-gated'
 DIAGNOSTIC = 'end500-restore-export-diagnostic'
-WALL = {CAPACITY: 1800, DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
+WALL = {PHASED: 3600, CAPACITY: 1800, DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
 BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 MAX_FILES, MAX_SOURCE_BYTES, MAX_BLOB = 4096, 128 * 1024 * 1024, 16 * 1024 * 1024
 MAX_IPC, MAX_RESULT, CHUNK = 1024 * 1024, 65536, 1024 * 1024
@@ -58,6 +59,7 @@ GIT_OPTIONS = ['--no-optional-locks', '-c', 'core.hooksPath=/dev/null', '-c', 'c
 PHASE = 'arguments'
 PHASES = {'arguments', 'binding', 'parent', 'service', 'staging', 'worker', 'closure', 'ipc'}
 WORKER_STATUS = {DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
+                 PHASED: 'PASS_END500_PHASED_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING',
                  CAPACITY: 'MEASURED_FULL_RESTORE_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED',
                  'end500-restore-gated': 'PASS_SAME_JOB_RESTORE_BACKUP_500_INACTIVE_ONLY_START_BLOCKED',
                  'end500-full-gated': 'PASS_END500_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING'}
@@ -167,6 +169,8 @@ def _worker_result(result, request):
     diagnostic = request['mode'] == DIAGNOSTIC
     if request['mode'] == CAPACITY:
         fields |= {'capacityDiagnosticOnly', 'legacyRestoreAccepted'}
+    if request['mode'] == PHASED:
+        fields |= {'resourcePhases', 'processingMemoryChecksCompleted', 'backupSafetyChecksCompleted'}
     if diagnostic:
         fields |= {'diagnosticExportOnly', 'restoreSteps', 'exportActions', 'profiles', 'activeProfiles',
             'ownedContainerStopped', 'watchStopped', 'remoteReadbackObserved', 'databaseRestoreObserved', 'fullRestoreAccepted'}
@@ -185,7 +189,7 @@ def _worker_result(result, request):
          and result['originalTransferPerformed'] is (not synthetic)
          and result['isolatedRestoreObserved'] is (not synthetic)
          and result['backupRoundtripVerified'] is (not synthetic and not diagnostic)
-         and result['end500BodyCompleted'] is (request['mode'] == 'end500-full-gated'))
+         and result['end500BodyCompleted'] is (request['mode'] in ('end500-full-gated', PHASED)))
     if diagnostic:
         need(result['diagnosticExportOnly'] is True and result['ownedContainerStopped'] is True
              and result['watchStopped'] is True and result['remoteReadbackObserved'] is False
@@ -194,6 +198,9 @@ def _worker_result(result, request):
              and (result['restoreSteps'], result['exportActions'], result['profiles'], result['activeProfiles']) == (5, 4, 500, 0))
     if request['mode'] == CAPACITY:
         need(result['capacityDiagnosticOnly'] is True and result['legacyRestoreAccepted'] is False)
+    if request['mode'] == PHASED:
+        need(result['processingMemoryChecksCompleted'] is True and result['backupSafetyChecksCompleted'] is True)
+        P.R.phase_contract().validate_closure(result['resourcePhases'], 'end500', P.R.phase_context(request))
     return {key: result[key] for key in sorted(result)}
 
 
@@ -264,6 +271,10 @@ def _ctx(request):
     value = P.context(request['runId'], request['exactCommit'], request['nonce'])
     if request['mode'] == CAPACITY:
         value['capacityDiagnostic'] = True
+    stage = (P.R.phase_contract().stage(request['mode'])
+             if request['mode'] in (PHASED, 'mock500-full-phased-gated') else None)
+    if stage is not None:
+        value.update(processingBackupStage=stage, processingBackupPhase='processing', processingImageId=request['imageId'])
     return value
 
 
@@ -291,7 +302,8 @@ def github_binding(request):
     need(_git(REPO, ['rev-parse', 'HEAD']) == (request['exactCommit'] + '\n').encode())
     for file in (SCRIPT, SCRIPT.with_name('runner_parent.py'), SCRIPT.with_name('common_resources.py'), SCRIPT.with_name('runner_diagnostics.py'),
                  SCRIPT.with_name('controller_context.py'),
-                 *([SCRIPT.with_name('restore_capacity.py')] if request['mode'] == CAPACITY else [])):
+                 *([SCRIPT.with_name('restore_capacity.py')] if request['mode'] == CAPACITY or request['mode'] == PHASED else []),
+                 *([SCRIPT.with_name('phase_contract.py')] if request['mode'] == PHASED else [])):
         relative = str(file.relative_to(REPO))
         entry = _git(REPO, ['ls-tree', '-z', request['exactCommit'], '--', relative])
         header, name = entry.rstrip(b'\0').split(b'\t')
@@ -557,7 +569,9 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
         spec = importlib.util.spec_from_file_location('w15_fixed_staged_restore_worker', script)
         module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
         reason = 'WORKER_RESULT_REJECTED'
-        result = module.run_worker(manifest, private_payload, phase_observer=_phase_reporter(sender))
+        extra = ({'backup_transition': _worker_backup_transition(sender, manifest, 'end500')}
+                 if manifest['mode'] == PHASED else {})
+        result = module.run_worker(manifest, private_payload, phase_observer=_phase_reporter(sender), **extra)
         result = _worker_result(result, manifest)
         need(not latch.seen)
     except BaseException as error:
@@ -590,7 +604,58 @@ def _members(ctx):
     return {int(pid) for file in root.rglob('cgroup.procs') for pid in file.read_text().split()}
 
 
-def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartError, observed=None):
+def _worker_backup_transition(sender, manifest, stage):
+    """One private request/ACK on the existing new-mode duplex channel."""
+    used = False
+    def transition(proof):
+        nonlocal used
+        need(not used and P.R.phase_contract().stage(manifest['mode']) == stage)
+        used = True
+        P.R.phase_contract().validate_boundary(proof, stage, P.R.phase_context(manifest))
+        sender.send_bytes(_encode({'kind': 'backup-transition', 'boundary': proof}, 4096))
+        need(sender.poll(30))
+        value = _decode(sender.recv_bytes(MAX_RESULT))
+        need(type(value) is dict and set(value) == {'kind', 'ack'} and value['kind'] == 'backup-transition-ack')
+        return P.R.phase_contract().validate_ack(value['ack'], stage, P.R.phase_context(manifest))
+    return transition
+
+
+def _supervisor_backup_transition(ctx, identity, last, child, stage, *, error_type=RunnerStartError, guard=None):
+    """The root supervisor independently closes the old window before writing."""
+    used = False
+    def transition(proof):
+        nonlocal used
+        try:
+            need(not used and os.getuid() == 0 and child.is_alive()
+                 and ctx.get('processingBackupStage') == stage
+                 and ctx.get('processingBackupPhase') == 'processing')
+            used = True  # A rejected request can never be repaired by another frame.
+            P.R.phase_contract().validate_boundary(proof, stage, P.R.phase_context(ctx))
+            info = json.loads(_command(P.DOCKER + ['inspect', proof['primaryContainerId']], timeout=15))[0]
+            labels = info['Config']['Labels']
+            need(info['Id'] == proof['primaryContainerId'] and info['Image'] == ctx['processingImageId']
+                 and info['HostConfig']['CgroupParent'] == P.names(ctx)[0]
+                 and labels.get('helmut.w15.scope') == 'isolated-' + stage + '-only'
+                 and all(labels.get('helmut.w15.' + k) == ctx[v] for k, v in
+                         (('run', 'runId'), ('nonce', 'nonce'), ('commit', 'exactCommit')))
+                 and info['State']['Running'] is False and info['State']['Pid'] == 0
+                 and info['State'].get('ExitCode') == 0 and info['State'].get('OOMKilled') is False)
+            need(_members(ctx) == {os.getpid(), child.pid})
+            if guard is not None:
+                guard()  # Preserve the original deadline/stop guard at the write barrier.
+            before, after, host = P.advance_backup(ctx, identity)
+            ack = P.R.phase_contract().ack(proof, before, after, host,
+                {'device': identity[0], 'inode': identity[1]})
+            last['backupAck'] = ack
+            last['memory'] = P.R.project_failure_memory(after, True)
+            return ack
+        except BaseException as error:
+            reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'PARENT_READBACK_REJECTED'
+            raise _diagnose(error, 'worker', reason, last.get('memory'), error_type=error_type) from None
+    return transition
+
+
+def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartError, observed=None, transition=None):
     """Read one existing Pipe frame with bounded reads, including partial EOF."""
     try:
         if not receiver.poll(wait):
@@ -617,6 +682,12 @@ def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartE
             if not 0 < length <= MAX_RESULT:
                 raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
             value = _decode(read(length))
+            if type(value) is dict and value.get('kind') == 'backup-transition':
+                if transition is None or set(value) != {'kind', 'boundary'} or length > 4096:
+                    raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
+                ack = transition(value['boundary'])
+                receiver.send_bytes(_encode({'kind': 'backup-transition-ack', 'ack': ack}, MAX_RESULT))
+                return None  # Start a fresh bounded read after the synchronous barrier.
             if type(value) is dict and value.get('kind') == 'phase':
                 valid = (observed is not None and length <= 256
                     and set(value) == {'kind', 'phase', 'sequence'}
@@ -648,7 +719,7 @@ def _parent_readback(parent, ctx, identity, last, *, empty=False, error_type=Run
     try:
         value = parent.read_parent(ctx, identity, empty=empty)
     except BaseException as error:
-        if ctx.get('capacityDiagnostic') is True:
+        if ctx.get('capacityDiagnostic') is True or ctx.get('processingBackupPhase') == 'backup':
             try:
                 detail = _closed_memory(D.attribute(error, 'failure_memory'))
                 if detail is not None:
@@ -662,7 +733,7 @@ def _parent_readback(parent, ctx, identity, last, *, empty=False, error_type=Run
                 pass  # Optional enrichment must never displace the first failure or signal.
         reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'PARENT_READBACK_REJECTED'
         raise _diagnose(error, phase or PHASE, reason, last.get('memory'), error_type=error_type) from None
-    if ctx.get('capacityDiagnostic') is True:
+    if ctx.get('capacityDiagnostic') is True or ctx.get('processingBackupPhase') == 'backup':
         value['capacityMeasurement'] = P.R.capacity().merge(last.get('capacity'), value['capacityMeasurement'],
             value, last.get('observedPhase'))
         last['capacity'] = value['capacityMeasurement']
@@ -671,7 +742,7 @@ def _parent_readback(parent, ctx, identity, last, *, empty=False, error_type=Run
 
 
 def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: None,
-                   latch=None, error_type=RunnerStartError, observed=None):
+                   latch=None, error_type=RunnerStartError, observed=None, transition=None):
     """Keep the first validated failure, then stop only this owned child."""
     response, failure = None, None
     cleanup = D.unknown_cleanup()
@@ -682,14 +753,14 @@ def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: N
             raise _diagnose(error, 'worker', 'WORKER_START_REJECTED', memory(), error_type=error_type) from None
         while child.is_alive():
             if response is None:
-                response = _read_worker_response(receiver, deadline, error_type=error_type, observed=observed)
+                response = _read_worker_response(receiver, deadline, error_type=error_type, observed=observed, transition=transition)
             if type(response) is dict and response['ok'] is False:
                 raise _response_error(response, error_type=error_type)
             guard()
             time.sleep(.1)
         child.join(timeout=5)
         if response is None:
-            response = _read_worker_response(receiver, deadline, wait=1, error_type=error_type, observed=observed)
+            response = _read_worker_response(receiver, deadline, wait=1, error_type=error_type, observed=observed, transition=transition)
         if type(response) is dict and response['ok'] is False:
             raise _response_error(response, error_type=error_type)
         code = child.exitcode
@@ -800,7 +871,7 @@ def supervise(request, private_payload, *, latch=None):
     PHASE = 'worker'
     try:
         fork = multiprocessing.get_context('fork')
-        receiver, sender = fork.Pipe(duplex=False)
+        receiver, sender = fork.Pipe(duplex=request['mode'] == PHASED)
         child = fork.Process(target=_fork_worker, args=(manifest, private_payload, sender, receiver, docker_gid))
     except BaseException as error:
         raise _diagnose(error, 'worker', 'WORKER_START_REJECTED', last['memory']) from None
@@ -808,15 +879,21 @@ def supervise(request, private_payload, *, latch=None):
     last['observedPhase'] = observed
     try:
         response, cleanup = _monitor_child(child, receiver, sender, guard, deadline,
-            memory=lambda: last['memory'], latch=latch, observed=observed)
+            memory=lambda: last['memory'], latch=latch, observed=observed,
+            transition=_supervisor_backup_transition(ctx, identity, last, child, 'end500', guard=guard) if request['mode'] == PHASED else None)
         response['result'] = _worker_result(response['result'], request)
+        if request['mode'] == PHASED:
+            need(last.get('backupAck') == response['result']['resourcePhases']['transition'])
         PHASE = 'closure'; guard()
         need(_members(ctx) == {os.getpid()})
         return {'worker': response['result'], 'workerExited': True,
                 'checkoutFiles': len(manifest['sourcePins']), 'checkoutBytes': manifest['checkoutBytes'],
                 'binaryBytes': manifest['binaryBytes'], 'dockerSocketGID': docker_gid,
                 'workerUID': 1000, 'workerGID': 1000,
-                **({'capacityMeasurement': last['capacity']} if request['mode'] == CAPACITY else {})}
+                **({'capacityMeasurement': last['capacity']} if request['mode'] == CAPACITY else {}),
+                **({'resourcePhases': P.R.phase_contract().closure(last['backupAck'], guard()),
+                    'processingMemoryChecksCompleted': True, 'backupSafetyChecksCompleted': True}
+                   if request['mode'] == PHASED else {})}
     except BaseException as error:
         reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'WORKER_RESULT_REJECTED'
         failure = _diagnose(error, PHASE, reason, last['memory'])
@@ -933,7 +1010,8 @@ def _cleanup_launch(ctx, parent, identity, created, process, listener, latch, fa
                     except BaseException as error:
                         observed = _closed_memory(D.attribute(error, 'failure_memory'))
                     if observed is not None:
-                        if ctx.get('capacityDiagnostic') is True:
+                        if (ctx.get('capacityDiagnostic') is True or ctx.get('processingBackupPhase') == 'backup'
+                                or ctx.get('processingBackupStage') in ('end500', 'mock500')):
                             try:
                                 previous = detail.get('memory', {}).get('capacityMeasurement')
                                 if 'capacityMeasurement' in observed:
@@ -1036,7 +1114,7 @@ def launch(request, private_payload):
     last, empty_observed = {'memory': None}, False
     try:
         PHASE = 'parent'
-        host_admission = P.R.capacity().host_admission() if request['mode'] == CAPACITY else None
+        host_admission = P.R.capacity().host_admission() if request['mode'] in (CAPACITY, PHASED) else None
         P.privileged('prepare', ctx); created = True
         identity = P.identity(P.R.KERNEL_ROOT / P.names(ctx)[0])
         initial = _parent_readback(P, ctx, identity, last, empty=True)
@@ -1062,13 +1140,24 @@ def launch(request, private_payload):
         if request['mode'] == CAPACITY:
             need(P.R.capacity().closed(result['result'].get('capacityMeasurement')) is not None)
             last['capacity'] = result['result']['capacityMeasurement']
+        if request['mode'] == PHASED:
+            phases = result['result'].get('resourcePhases')
+            P.R.phase_contract().validate_closure(phases, 'end500', P.R.phase_context(ctx))
+            need(phases['transition']['parentIdentity'] == {'device': identity[0], 'inode': identity[1]})
+            need(phases['transition'] == result['result']['worker']['resourcePhases']['transition'])
+            last['capacity'] = phases['finalBackupSample']['capacityMeasurement']
+            ctx['processingBackupPhase'] = 'backup'
         final = _parent_readback(P, ctx, identity, last, empty=True)
         need(final['kernelLifetimePeakBytes'] >= initial['kernelLifetimePeakBytes'] and not latch.seen)
         empty_observed = True
-        return {'status': ('COMPLETED_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == CAPACITY
+        return {'status': ('PASS_FRESH_PHASED_RUNNER_OWNED_LIFETIME_ONLY' if request['mode'] == PHASED else
+                           'COMPLETED_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == CAPACITY
                            else 'PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY'), 'exactCommit': ctx['exactCommit'],
                 **({'hostAdmission': host_admission, 'capacityMeasurement': last['capacity'],
                     'legacyRestoreAccepted': False} if request['mode'] == CAPACITY else {}),
+                **({'resourcePhases': P.R.phase_contract().closure(phases['transition'], final),
+                    'processingMemoryChecksCompleted': True, 'backupSafetyChecksCompleted': True}
+                   if request['mode'] == PHASED else {}),
                 'runId': ctx['runId'], 'runAttempt': 1, 'mode': request['mode'],
                 'initialCommonParent': initial, 'finalCommonParentAfterOwnedExits': final,
                 'sameKernelParentIdentity': True, 'ownedChildrenExited': True,
@@ -1113,7 +1202,10 @@ def main(argv=None):
         need(type(envelope) is dict and set(envelope) == {'request', 'private'})
         request, private_payload = envelope['request'], envelope['private']
         validate_request(request, private_payload)
-        need(_ctx(request) == ctx)
+        actual_ctx = _ctx(request)
+        need({key: value for key, value in actual_ctx.items()
+              if key not in ('processingBackupStage', 'processingBackupPhase', 'processingImageId')} == ctx)
+        ctx = actual_ctx
         # root privileged helper env intentionally contains no secret values.
         result = supervise(request, private_payload, latch=latch)
         need(not latch.seen)

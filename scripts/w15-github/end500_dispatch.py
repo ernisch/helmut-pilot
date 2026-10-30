@@ -31,6 +31,12 @@ def component(name):
 F = component('full_restore_dispatch')
 M, W, N, canonical, decode = F.M, F.W, F.N, F.canonical, F.decode
 MODE = 'end500-full-gated'
+PC = component('phase_contract')
+FUNCTION = component('restore_function_acceptance')
+
+def mode_scope(value):
+    return (PC.END_MODE, PC.SCOPES[PC.END_MODE]) if type(value) is dict and value.get('scope') == PC.SCOPES[PC.END_MODE] else (MODE, SCOPE)
+
 ACCEPTANCE_SCHEMA = 'helmut-w15-independent-limited-restore-acceptance/1'
 SCOPE = W.SCOPES[MODE]
 LAUNCHER_REVIEW_SCHEMA = 'helmut-w15-independent-end500-launcher-review/1'
@@ -59,12 +65,13 @@ Git = F.Git
 public_file = F.public_file
 
 def validate_approval(value, target, launcher, request, now):
+    selected_mode, selected_scope = mode_scope(value)
     keys = {'schema', 'scope', 'authorized', 'targetCommit', 'launcherCommit', 'branch', 'environment',
         'workflowId', 'nonce', 'runAttempt', 'maxReceiveAttempts', 'targetCI', 'targetPR', 'reviewSHA256', 'launcherCI', 'launcherPR', 'launcherReviewSHA256', 'sourceQualificationSHA256',
         'restoreAcceptanceReviewSHA256', 'requestSHA256', 'advanceAllowedBranch', 'stateDir', 'issuedAt', 'expiresAt'}
     need(type(value) is dict and set(value) == keys and type(target) is str and M.HEX.fullmatch(target)
          and type(launcher) is str and M.HEX.fullmatch(launcher) and value['schema'] == 'helmut-w15-end500-dispatch-approval/1'
-         and value['scope'] == SCOPE and value['authorized'] is True
+         and value['scope'] == selected_scope and value['authorized'] is True
          and value['targetCommit'] == target and value['launcherCommit'] == launcher
          and value['branch'] == BRANCH and value['environment'] == ENVIRONMENT
          and type(value['workflowId']) is int and value['workflowId'] == WORKFLOW
@@ -85,15 +92,21 @@ def validate_approval(value, target, launcher, request, now):
          and all(type(x) is int for x in request['limits'].values())
          and type(request['maximumWallSeconds']) is int and request['maximumWallSeconds'] == 3600, 'approval')
     approval = request['approval']
-    expected = {'schema': 'helmut-w15-workflow-start-approval/1', 'scope': SCOPE, 'authorized': True,
+    expected = {'schema': 'helmut-w15-workflow-start-approval/1', 'scope': selected_scope, 'authorized': True,
         'exactCommit': target, 'branch': 'refs/heads/' + BRANCH, 'runAttempt': 1, 'nonce': value['nonce'],
-        'mode': MODE, 'limits': W.LIMITS, 'maximumWallSeconds': 3600,
+        'mode': selected_mode, 'limits': W.LIMITS, 'maximumWallSeconds': 3600,
         'sourceQualificationSHA256': request['sourceQualification']['sha256'], 'maxReceiveAttempts': 1,
-        'restoreAcceptance': approval.get('restoreAcceptance'), 'issuedAt': value['issuedAt'], 'expiresAt': value['expiresAt'], 'maxStorageUSD': '0.05', 'maxProviderCalls': 0}
+        **({'restoreFunctionAcceptance': approval.get('restoreFunctionAcceptance'), 'resourceContract': PC.END_PROFILE}
+           if selected_mode == PC.END_MODE else {'restoreAcceptance': approval.get('restoreAcceptance')}), 'issuedAt': value['issuedAt'], 'expiresAt': value['expiresAt'], 'maxStorageUSD': '0.05', 'maxProviderCalls': 0}
     need(type(approval) is dict and approval == expected
          and all(type(approval[k]) is int for k in ('runAttempt', 'maximumWallSeconds', 'maxReceiveAttempts', 'maxProviderCalls'))
          and all(type(x) is int for x in approval['limits'].values())
          and approval['authorized'] is True, 'approval')
+    if selected_mode == PC.END_MODE:
+        FUNCTION.reference(approval['restoreFunctionAcceptance'], target)
+        issued, expires = W._utc(value['issuedAt']), W._utc(value['expiresAt'])
+        need(issued <= now < expires and timedelta(0) < expires - issued <= timedelta(hours=2), 'approval')
+        return
     previous = approval['restoreAcceptance']
     need(type(previous) is dict and set(previous) == {'runId', 'exactCommit', 'receiptSHA256', 'status'}
          and previous['status'] == 'PASS_INDEPENDENT_LIMITED_RESTORE_ACCEPTANCE'
@@ -139,7 +152,8 @@ def verify_restore_acceptance(pr, target, approval, previous, *, api):
     # previous.runId != its actual GITHUB_RUN_ID in W.validate_admission.
 
 
-def prepare(value, target, launcher, request, *, api, git, now, progress):
+def prepare(value, target, launcher, request, *, api, git, now, progress, restore_function_evidence=None):
+    selected_mode, selected_scope = mode_scope(value)
     validate_approval(value, target, launcher, request, now())
     git.check_launcher(launcher)
     raw, digest, qualification = W.decode_qualification(request['sourceQualification'])
@@ -155,12 +169,16 @@ def prepare(value, target, launcher, request, *, api, git, now, progress):
         M.verify_review(pr, commit, schema, digest, phase)
         records = [decode(block) for block in re.findall(r'```json\s*\n(.*?)\n```', pr['body'], re.DOTALL)]
         reviews = [row for row in records if type(row) is dict and row.get('schema') == schema]
-        need(len(reviews) == 1 and reviews[0].get('scope') == SCOPE
+        need(len(reviews) == 1 and reviews[0].get('scope') == selected_scope
              and reviews[0].get('executionAuthority') is False, phase)
         if phase == 'receiver-review':
             receiver_pr = pr
             need(reviews[0].get('sourceQualificationSHA256') == digest_qualification, phase)
-    verify_restore_acceptance(receiver_pr, target, value, request['approval']['restoreAcceptance'], api=api)
+    if selected_mode == PC.END_MODE:
+        FUNCTION.verify(restore_function_evidence, request['approval']['restoreFunctionAcceptance'], target,
+            digest_qualification, value['restoreAcceptanceReviewSHA256'], git=git, api=api)
+    else:
+        verify_restore_acceptance(receiver_pr, target, value, request['approval']['restoreAcceptance'], api=api)
     M.verify_ci(api, value['targetCI'], target, 'receiver-ci')
     M.verify_ci(api, value['launcherCI'], launcher, 'launcher-ci')
     workflow = M.remote(api, 'GET', '/actions/workflows/' + str(WORKFLOW), 'workflow')
@@ -184,12 +202,13 @@ def prepare(value, target, launcher, request, *, api, git, now, progress):
     validate_approval(value, target, launcher, request, now())
 
 
-def execute(value, target, launcher, request, *, api, git, now, encrypt, link_provider, ready, state_dir, cleanup=None):
+def execute(value, target, launcher, request, *, api, git, now, encrypt, link_provider, ready, state_dir, cleanup=None, restore_function_evidence=None):
+    selected_mode, _ = mode_scope(value)
     phase, fd, attempted, accepted = 'approval', None, False, False
     progress = {'branchChanged': False, 'branchUpdateAttempted': False}
     first, secondary = None, []
     result = {'schema': 'helmut-w15-end500-dispatch-attempt/1', 'targetCommit': target,
-        'launcherCommit': launcher, 'mode': MODE, 'dispatchAttempted': False, 'dispatchAccepted': False,
+        'launcherCommit': launcher, 'mode': selected_mode, 'dispatchAttempted': False, 'dispatchAccepted': False,
         'restoreAcceptedByDispatch': False, 'end500Accepted': False, 'retryAllowed': False, 'executionAuthority': False}
     try:
         validate_approval(value, target, launcher, request, now())
@@ -197,7 +216,8 @@ def execute(value, target, launcher, request, *, api, git, now, encrypt, link_pr
         nonce = value['nonce']; result['nonce'] = nonce
         phase = 'private-root'; fd = M.private_directory(state_dir)
         M.write_public(fd, 'STARTED_' + nonce + '.SAFE.json', result)
-        phase = 'launcher'; prepare(value, target, launcher, request, api=api, git=git, now=now, progress=progress)
+        phase = 'launcher'; prepare(value, target, launcher, request, api=api, git=git, now=now, progress=progress,
+            **({'restore_function_evidence': restore_function_evidence} if selected_mode == PC.END_MODE else {}))
         phase = 'link'; ready(); links = link_provider()
         need(type(links) is list and len(links) == 15, phase)
         checked = [M.signed_link(link, now()) for link in links]
@@ -210,7 +230,7 @@ def execute(value, target, launcher, request, *, api, git, now, encrypt, link_pr
         M.H.E.url_index(canonical(index).decode('ascii'), target, now=issued)
         phase = 'encryption'; armored = encrypt(canonical(index).decode('ascii'), target, Path(state_dir))
         phase = 'payload'
-        payload = N.dispatch_payload(target, armored, mode=MODE, extra_inputs={'w15_request': canonical(request).decode('ascii')})
+        payload = N.dispatch_payload(target, armored, mode=selected_mode, extra_inputs={'w15_request': canonical(request).decode('ascii')})
         need(type(payload) is bytes and len(payload) <= 65535, phase)
         phase = 'final-expiry'; validate_approval(value, target, launcher, request, now())
         need((expiry - now()).total_seconds() > M.MIN_LINK_SECONDS, phase)
@@ -268,6 +288,7 @@ def main():
     parser.add_argument('--approval-file')
     parser.add_argument('--request-file')
     parser.add_argument('--state-dir')
+    parser.add_argument('--restore-function-evidence-file')
     args = parser.parse_args()
     if not args.execute_after_go:
         print(json.dumps({'status': 'BLOCKED_SEPARATE_END500_GO_REQUIRED', 'mode': MODE,
@@ -279,7 +300,9 @@ def main():
         private_input = PrivateLinksInput()
         result = execute(value, args.expected_receiver_commit, args.expected_launcher_commit, request, api=M.GitHub(), git=Git(),
             now=lambda: datetime.now(timezone.utc), encrypt=N.encrypt_index, link_provider=private_input.read,
-            ready=private_input.ready, state_dir=args.state_dir, cleanup=private_input.close)
+            ready=private_input.ready, state_dir=args.state_dir, cleanup=private_input.close,
+            **({'restore_function_evidence': public_file(args.restore_function_evidence_file)}
+               if args.restore_function_evidence_file else {}))
         print(json.dumps(result, sort_keys=True)); return 0 if result['dispatchAccepted'] and not result['secondaryCleanupFailures'] else 1
     except BaseException as error:
         print(json.dumps({'status': 'BLOCKED_END500_DISPATCH', 'phase':

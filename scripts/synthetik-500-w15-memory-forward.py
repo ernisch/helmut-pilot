@@ -181,7 +181,7 @@ class Watch(M.Supervisor):
         memory_error=None
         try:
             if self.common_resources is not None:self.common_resources.sample()
-            if getattr(self.common_resources,'capacity_diagnostic',False) is True:
+            if getattr(self.common_resources,'capacity_diagnostic',False) is True or getattr(self.common_resources,'memory_phase',None)=='backup':
                 # Restore-only admission owns time/disk checks; no Full500 body runs.
                 assert self.start_guard is None and not self.mock_backup_closure
                 self.last=self.common_resources.sample()
@@ -210,7 +210,7 @@ class Watch(M.Supervisor):
     def publish(self,name,index=None,status=None):
         with self.progress_lock:
             mem=self.last;peak=None if mem is None else mem['kernelLifetimePeakBytes']
-            capacity=getattr(self.common_resources,'capacity_diagnostic',False) is True
+            capacity=getattr(self.common_resources,'capacity_diagnostic',False) is True or getattr(self.common_resources,'memory_phase',None)=='backup'
             physical=self.common_resources.container_limit if capacity else M.LIMIT
             message=('Restore-Kapazitaet | '+name if capacity else 'RAM-Diagnose | CAS '+str(len(self.cas_records))+'/500 | '+name)
             if mem:
@@ -581,6 +581,13 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
             # guarded at each streamed chunk after the progress files freeze.
             try:
                 assert not failure and actual_memory_accepted,'w15-backup-requires-successful-owned-closure'
+                if getattr(common_resources,'processing_backup_stage',None)=='end500':
+                    assert service_closure['status']=='PASS_GENUINE_OWNED_SERVICE_EXIT'
+                    assert w.finished.is_set() and not w.thread.is_alive() and not w.reporter.is_alive() and not w.stop_failure
+                    phase_contract=_runtime_module('common_resources').phase_contract()
+                    proof=phase_contract.boundary('end500',_runtime_module('common_resources').phase_context(inputs.controller_context()),
+                      owned_id,result_counts={'authCAS':len(w.cas_records),'usageRows':final_audit['fullLogicalUsageRows'],'nativePostimages':final_audit['totalExactPostimages']})
+                    common_resources.begin_backup(proof)
                 run_root=WORK.parent
                 backup_result=_runtime_module('runtime_backup').collect_backup(
                   inputs.backup_context(),expected_context=inputs.backup_context(),

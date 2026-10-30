@@ -30,6 +30,7 @@ def _load(name):
 E, B, I = _load('receive_existing_inputs'), _load('restore_backup'), _load('mock500_inputs')
 V, N, A, P, R, IP = E.V, E.N, E.A, E.P, E.R, E.IP
 MODE = 'mock500-full-gated'
+PHASED = 'mock500-full-phased-gated'
 SCOPE = 'ISOLATED_GITHUB_MOCK500_INPUTS_ONLY'
 ASSET_KEYS = frozenset(I.ASSETS - {'originalReception'})
 SOURCE_KEYS = {'schema', 'scope', 'nonce', 'exactCommit', 'runId', 'runAttempt',
@@ -205,9 +206,9 @@ def prepare_inputs(context, private_payload, *, input_binding_sha256, additional
         need(type(private_payload) is dict and {'cipherIndex', 'keyB64', 'passphrase', 'eventInputs'} <= set(private_payload), phase)
         armored, inputs = private_payload['cipherIndex'], private_payload['eventInputs']
         need(type(inputs) is dict and set(inputs) == {'w15_mode', 'expected_commit', 'w15_request', 'w15_cipher_index'}
-             and inputs['w15_mode'] == MODE and inputs['expected_commit'] == commit
+             and inputs['w15_mode'] in (MODE, PHASED) and inputs['expected_commit'] == commit
              and inputs['w15_cipher_index'] == armored and type(inputs['w15_request']) is str, phase)
-        N.check_event(commit, armored, mode=MODE, extra_inputs={'w15_request': inputs['w15_request']}, event_inputs=inputs)
+        N.check_event(commit, armored, mode=inputs['w15_mode'], extra_inputs={'w15_request': inputs['w15_request']}, event_inputs=inputs)
         encoded, passphrase = private_payload['keyB64'], private_payload['passphrase']
         need(type(encoded) is str and 0 < len(encoded) <= 49152 and type(passphrase) is str, phase)
         key, secret = base64.b64decode(encoded, validate=True), passphrase.encode('utf-8')

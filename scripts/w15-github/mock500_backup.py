@@ -37,6 +37,21 @@ SCOPE = 'ISOLATED_GITHUB_MOCK500_BACKUP_ONLY'
 FINGERPRINT = C.FINGERPRINT
 
 
+def _phased(resources):
+    return getattr(resources, 'processing_backup_stage', None) == 'mock500'
+
+
+def _resource_profile(resources):
+    return P.phases().MOCK_PROFILE if _phased(resources) else P.PROFILE
+
+
+def _resource_sample(resources):
+    sample = resources.sample()
+    if _phased(resources):
+        return P.phases().assess(sample, 'mock500', phase=resources.memory_phase)
+    return P.assess(sample)
+
+
 class BackupRejected(RuntimeError):
     pass
 
@@ -74,11 +89,11 @@ def _context(context):
 
 def _sample(supervisor, resources, guard):
     guard()
-    need(getattr(resources, 'profile', None) == P.PROFILE
+    need(getattr(resources, 'profile', None) == _resource_profile(resources)
          and supervisor.common_resources is resources and supervisor.thread.is_alive()
          and not supervisor.finished.is_set())
     supervisor.sample()
-    return json.loads(json.dumps(P.assess(resources.sample())))
+    return json.loads(json.dumps(_resource_sample(resources)))
 
 
 class MockOwnedRunner(O.OwnedBackupRunner):
@@ -87,7 +102,7 @@ class MockOwnedRunner(O.OwnedBackupRunner):
         need(controller.BASE == BASE and controller.DB == DATABASE
              and re.fullmatch(r'w15-mock500-[1-9][0-9]{4,19}-[a-f0-9]{32}', controller.CONTAINER)
              and controller.DOCKER == list(R.DOCKER)
-             and getattr(supervisor.common_resources, 'profile', None) == P.PROFILE)
+             and getattr(supervisor.common_resources, 'profile', None) == _resource_profile(supervisor.common_resources))
         self.watch, self.controller = supervisor, controller
         self.base, self.container, self.database = BASE, controller.CONTAINER, DATABASE
         self.scope = 'mock500-restore' if restore else 'mock500-backup'
@@ -521,6 +536,9 @@ def restore_readback(verified, *, context, controller_context, collection, resou
     controller = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(controller)
     need(controller.LIMIT == P.LIMIT and controller.MAXIMUM == P.MAXIMUM and controller.RESERVE == P.RESERVE)
+    if _phased(resources):
+        need(resources.memory_phase == 'backup' and resources.backup_ack is not None)
+    recovery_limit = resources.container_limit if _phased(resources) else P.LIMIT
     controller.WORK = root / 'work'
     controller.WORK.mkdir(mode=0o700)
     for name in ('pgdata', 'state'):
@@ -548,7 +566,7 @@ def restore_readback(verified, *, context, controller_context, collection, resou
              and re.fullmatch('[a-f0-9]{64}', info['Id']) and (owned_id is None or info['Id'] == owned_id)
              and all(info['Config']['Labels'].get(k) == v for k, v in labels.items()))
         host = info['HostConfig']
-        need(host['Memory'] == P.LIMIT and host['MemorySwap'] == P.LIMIT
+        need(host['Memory'] == recovery_limit and host['MemorySwap'] == recovery_limit
              and host['CgroupParent'] == resources.unit and host['NetworkMode'] == 'none'
              and host['RestartPolicy']['Name'] == 'no' and not info['NetworkSettings']['Ports'])
         need(len(info['Mounts']) == len(mounts))
@@ -563,7 +581,7 @@ def restore_readback(verified, *, context, controller_context, collection, resou
         need(not controller.docker('ps', '-a', '--filter', 'name=^/' + controller.CONTAINER + '$', '--format', '{{.ID}}').strip())
         attempted = True
         controller.docker('create', '--name', controller.CONTAINER, '--pull=never', '--network=none', '--restart=no',
-            '--memory=' + str(P.LIMIT), '--memory-swap=' + str(P.LIMIT), '--cgroup-parent=' + resources.unit,
+            '--memory=' + str(recovery_limit), '--memory-swap=' + str(recovery_limit), '--cgroup-parent=' + resources.unit,
             *args, '-e', 'POSTGRES_HOST_AUTH_METHOD=trust', controller.IMAGE, 'postgres',
             '-c', 'helmut.local_usage_experiment=on', '-c', 'max_wal_size=128MB',
             '-c', 'work_mem=32MB', '-c', 'autovacuum_naptime=10s')
@@ -579,7 +597,7 @@ def restore_readback(verified, *, context, controller_context, collection, resou
         def monitored_sample():
             guard()
             original_sample()
-            P.assess(resources.sample())
+            _resource_sample(resources)
         supervisor.sample = monitored_sample
         supervisor.sample()
         supervisor.thread.start()
@@ -606,7 +624,7 @@ def restore_readback(verified, *, context, controller_context, collection, resou
             'profiles': 500, 'active': 0, 'restoreSteps': restored['steps'],
             'completeTableAndSequenceInventoryMatched': True, 'rolesSemanticsMatched': True,
             'independentFreshPGDATA': True, 'originalRolesUnchanged': True,
-            'databaseRestoreObserved': True, 'memoryProfile': P.PROFILE,
+            'databaseRestoreObserved': True, 'memoryProfile': _resource_profile(resources),
             'mock500Acceptance': False, 'acceptedAsCompleteBackup': False, 'executionAuthority': False}
     except (Exception, KeyboardInterrupt):
         failed = True
@@ -659,6 +677,18 @@ def completion_hook(manifest, private_payload, disk_guard):
             closed = close_owned()
         need(isinstance(closed, dict) and closed.get('ownedContainerStopped') is True
              and closed.get('watchClosed') is True)
+        if _phased(resources):
+            # Export and every real service/watch stop still use the old v2
+            # limits. Only a confirmed root ACK can open the backup phase.
+            need(resources.memory_phase == 'processing' and 'primaryContainerId' in closed)
+            proof = P.phases().boundary('mock500',
+                {key: context[key] for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')},
+                closed['primaryContainerId'], result_counts={
+                    'simultaneouslyActiveProfiles': result['profiles'], 'units': result['units'],
+                    'providerPhases': result['localProviderPhases'], 'storedResults': result['positions'],
+                    'controls': result['controls']})
+            resources.begin_backup(proof)
+            need(resources.memory_phase == 'backup')
         root = Path(manifest['backupRoot'])
         collection = collect(context, inputs=inputs, work=controller.WORK,
             prepared=Path(inputs.controller_context()['hostPaths']['prepare']),
@@ -708,7 +738,7 @@ def completion_hook(manifest, private_payload, disk_guard):
             'remoteReadbackObserved': True, 'databaseRestoreObserved': True,
             'ownedContainerStopped': True, 'watchClosed': True,
             'authenticatedReadback': readback, 'independentRecovery': recovery,
-            'finalResourceSample': final, 'memoryProfile': P.PROFILE,
+            'finalResourceSample': final, 'memoryProfile': _resource_profile(resources),
             'acceptedAsCompleteBackup': False, 'independentAcceptanceRequired': True,
             'mock500Acceptance': False, 'productionAcceptance': False, 'executionAuthority': False,
             'retryAllowed': False, 'automaticDeletionAllowed': False}

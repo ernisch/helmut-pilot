@@ -220,7 +220,8 @@ def export_restore_database(context, *, expected_context, work, container, datab
         work = Path(work)
         work_fd = S._directory(str(work), private=True)
         state_fd = S._directory(str(work / 'state'), private=True)
-        if getattr(getattr(supervisor, 'common_resources', None), 'capacity_diagnostic', False) is True:
+        if (getattr(getattr(supervisor, 'common_resources', None), 'capacity_diagnostic', False) is True
+                or getattr(getattr(supervisor, 'common_resources', None), 'memory_phase', None) == 'backup'):
             _restore_closure(work_fd, capacity_diagnostic=True)
         else:
             _restore_closure(work_fd)
