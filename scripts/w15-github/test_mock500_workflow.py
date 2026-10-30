@@ -97,6 +97,22 @@ class WorkflowChecks(unittest.TestCase):
             start.validate_admission.side_effect = None
             with self.assertRaises(W.WorkflowRejected): W.validate_admission(value, {})
 
+    def test_ready537_candidate_only_reaches_the_still_closed_end_acceptance_gate(self):
+        value = request(W.FULL)
+        candidate = '537adaa323337518e5ba294e2647bfe084f520c1'
+        value['bindings'] = {'end500Acceptance': {}, 'compatibilityBridge': {},
+            'inputBindingSHA256': 'e' * 64, 'additionalAssetBytes': 217550486,
+            'approvedEnd500Commit': candidate}
+        qualification = SimpleNamespace(decode_qualification=Mock(return_value=(b'{}', 'd' * 64, {})))
+        start = SimpleNamespace(validate_admission=Mock(side_effect=RuntimeError('FICTIONAL_NO_END_ACCEPTANCE')))
+        runtime = SimpleNamespace(_validate_qualification=Mock())
+        modules = {'restore_workflow': qualification, 'runtime_inputs': runtime, 'mock500_start': start}
+        with patch.object(W, 'component', side_effect=lambda n, *args: modules[n]), \
+                patch.dict(os.environ, environment(value), clear=True):
+            with self.assertRaisesRegex(RuntimeError, 'FICTIONAL_NO_END_ACCEPTANCE'):
+                W.validate_admission(value, {})
+        self.assertEqual(start.validate_admission.call_args.kwargs['expected_end500_commit'], candidate)
+
     def test_failed_launch_retains_fixed_phase_without_private_text_or_retry(self):
         value = request(); private = {}; output = io.StringIO()
         class Failed(RuntimeError):

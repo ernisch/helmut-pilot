@@ -13,8 +13,13 @@ Der vorbereitete Vollrestore-Nachfolger ist
 `99ca7a0e899804ed84860f01f8cfb4eb546f2f1e` aus PR986. Er erhält diesen
 ausgeführten Kopf, korrigiert den zusätzlich nachgestellten Fullcapture-
 Diagnoseverlust und bindet den getrennt gesperrten Vollrestore-Sender.
-Dieser Mock-Nachfolger lässt ihn ausschließlich als **künftige** End500-Baseline
-zu;13 unda2 bleiben als historische Kandidaten erhalten.
+Der neue gemeinsame Receiver-/Launcher-Superset ist
+`537adaa323337518e5ba294e2647bfe084f520c1` aus Draft PR988. Er erhält R99
+und ergänzt die nachgestellte TCP-Bereitschaft des End500-Nativepfads sowie
+den getrennt gesperrten End500-Sender. Die Prüfung verlangt weiterhin eine
+tatsächliche vollständige Restoreabnahme vor End500; der Diagnosebeleg allein
+reicht ausdrücklich nicht. Dieser Mock-Nachfolger lässt S537 ausschließlich
+als **künftige** End500-Baseline zu; R99,13 unda2 bleiben historische Kandidaten.
 Die Zulassung ist keine positive End500-Abnahme. Ein bloßer Diagnose-PASS
 wird gezielt als End500-Beleg abgelehnt. Der bestehende Startwächter verlangt
 weiterhin vollständige positive unabhängige Original-Restore-/Sicherungs- und
@@ -22,7 +27,9 @@ End500-Abnahmen, einen anderen Mockkopf, passende Bridge und eigenes GO.
 
 Nach Festlegung des tatsächlichen Codekopfs werden die statische
 SourceQualification und die kanonische MockInputBinding außerhalb von Git
-veröffentlicht, damit kein Commit sich selbst enthalten muss. Bindungen:
+lokal bereitgestellt, damit kein Commit sich selbst enthalten muss.
+Komprimierte Qualifikationen und vollständige Eingabebindungen werden nicht
+öffentlich in Git oder PR-Texten abgelegt. Bindungen:
 elf tatsächlich angenommene Originalpins plus vorhandener originalReception-Pin,
 exakter Mockcommit und unabhängig geprüfter öffentlicher16-Dateien-/2-Abschnitt-
 Vergleich. Der private Originalbericht wird hier nicht neu gelesen oder
@@ -51,3 +58,13 @@ ersetzen den tatsächlichen Ressourcen- und vollständigen Mock500-Nachweis nich
 Kein echter Restore-/End500-/Mock500-Lauf, keine Profilaktivierung, kein Merge,
 Deployment oder Productioneingriff in dieser Vorbereitung. Originale, Drive-
 Archiv und bestehende Secrets bleiben erhalten; keine automatische Löschung.
+
+Gezielte S537-Vorwärtsgegenproben prüfen den weiterhin geschlossenen
+Workflowanschluss und die fiktive Zulassung ausschließlich mit vollständiger
+End500-Abnahme/Bridge/anderem Mockkopf/GO/RAMv2. Native-TCP-Fix und End500-Sender
+aus dem unveränderten Parent S537 bleiben erhalten; der reine16-Quellen-Builder
+und die HTTPS-443-Blobnormalisierung werden unverändert übernommen.
+Dies wiederholt weder die500/500-Quellenqualifikation noch einen Controllerlauf.
+Pflicht-CI und unabhängige Prüfung des tatsächlichen neuen Kopfes sind vor
+einer Startbereitschaftsmeldung erforderlich; keine echten Abnahmen werden
+durch diese fiktiven Gegenproben erklärt.

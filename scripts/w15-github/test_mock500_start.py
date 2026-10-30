@@ -228,6 +228,49 @@ class StartChecks(unittest.TestCase):
         self.approval['exactCommit'] = candidate
         with self.assertRaises(S.StartRejected): admit()
 
+    def test_fictional_positive537_gate_requires_complete_restore_end_bridge_distinct_head_and_go(self):
+        candidate = self.bind_receiver13_candidate('537adaa323337518e5ba294e2647bfe084f520c1')
+        def admit():
+            return S.validate_admission(self.request, self.end_envelope,
+                compatibility_bridge=self.bridge_envelope, observed_context=self.observed,
+                expected_end500_commit=candidate, now=NOW)
+        # Fictional gate records only; no actual Restore, End500 or Mock acceptance.
+        result = admit()
+        self.assertEqual(result['end500BaselineCommit'], candidate)
+        self.assertFalse(result['executionAuthority'] or result['mock500Acceptance'])
+        original = dict(self.end)
+        for key, value in [('status', 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED'),
+                           ('status', 'PASS_INDEPENDENT_LIMITED_RESTORE_ACCEPTANCE'),
+                           ('status', 'PASS_INDEPENDENT_GITHUB_RESTORE_ACCEPTANCE'),
+                           ('completeBackupAccepted', False), ('independentRestoreAccepted', False),
+                           ('commonLifetimeMemoryAccepted', False)]:
+            with self.subTest(key=key, value=value):
+                self.end = {**original, key: value}
+                self.bind_receiver13_candidate(candidate)
+                with self.assertRaisesRegex(S.StartRejected, 'POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED'):
+                    admit()
+        self.end = original
+        self.bind_receiver13_candidate(candidate)
+        self.approval['authorized'] = False
+        with self.assertRaisesRegex(S.StartRejected, 'SEPARATE_EXPLICIT_GO_REQUIRED'): admit()
+        self.approval['authorized'] = True
+        original_bridge = dict(self.bridge)
+        self.bridge['status'] = 'PENDING'
+        self.bridge_envelope = envelope(self.bridge)
+        self.approval['compatibilitySHA256'] = self.bridge_envelope['sha256']
+        with self.assertRaisesRegex(S.StartRejected, 'REVIEWED_BASELINE_BRIDGE_REQUIRED'): admit()
+        self.bridge = original_bridge
+        self.bridge_envelope = envelope(self.bridge)
+        self.approval['compatibilitySHA256'] = self.bridge_envelope['sha256']
+        original_limits = self.request['limits']
+        self.request['limits'] = {**original_limits, 'comparisonBudgetBytes': 2560000000}
+        with self.assertRaises(S.StartRejected): admit()
+        self.request['limits'] = original_limits
+        self.request['exactCommit'] = candidate
+        self.observed['exactCommit'] = candidate
+        self.approval['exactCommit'] = candidate
+        with self.assertRaises(S.StartRejected): admit()
+
     def test_original_start_sets_same_three_hour_and_thirty_minute_window(self):
         guard = self.guard()
         self.assertEqual(guard.window, {'startsAtUTC': '2026-10-29T09:55:00.001Z',
