@@ -424,7 +424,7 @@ def run_worker(manifest, private_payload, *, phase_observer=None):
         plan = resource_code.admit_disk_plan(manifest['runnerTemp'], checkout_bytes=manifest['checkoutBytes'],
             binary_bytes=manifest['binaryBytes'], maximum_wall_seconds=manifest['maximumWallSeconds'])
         if manifest['mode'] == CAPACITY:
-            plan.update(commonMemoryLimitBytes=5000000000, maximumActualCommonLifetimePeakBytes=5000000000,
+            plan.update(commonMemoryLimitBytes=4999999488, maximumActualCommonLifetimePeakBytes=4999999488,
                         requiredMemoryReserveBytes=0, capacityDiagnosticOnly=True, legacyContractAccepted=False)
         guard = resource_code.DiskGuard(manifest['runnerTemp'], plan, resources)
         guard()

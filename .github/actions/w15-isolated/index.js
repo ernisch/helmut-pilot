@@ -86,7 +86,7 @@ function closedFailureMemory(value){
     detail.observedAfterFailure===true&&detail.peakCompositionKnown===false&&
     categories.every(k=>Number.isSafeInteger(detail[k])&&detail[k]>=0||detail[k]==='UNKNOWN'))
     out.postFailureMemoryStat=Object.fromEntries([...categories,'observedAfterFailure','peakCompositionKnown'].map(k=>[k,detail[k]]));
-  if(value.configuredLimitBytes===5000000000){
+  if(value.configuredLimitBytes===4999999488){
     const capacity=closedCapacityMeasurement(value.capacityMeasurement);
     if(capacity)out.capacityMeasurement=capacity;
   }

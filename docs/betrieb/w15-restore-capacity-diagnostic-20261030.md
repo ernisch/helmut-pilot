@@ -15,7 +15,7 @@ unverändert. Die neue Vorbereitung erteilt keine Laufberechtigung.
 
 | Bindung des späteren einmaligen GO | Festgelegter Wert |
 |---|---:|
-| Hartes Kernel-/Containerlimit | 5000000000Bytes |
+| Hartes Kernel-/Containerlimit | 4999999488Bytes |
 | Alte Peakgrenze, ausschließlich Messmaßstab | 2048000000Bytes |
 | Nicht für den Parent verfügbare Hostreserve | 2147483648Bytes (2GiB) |
 | Gemeinsame Laufzeit einschließlich Staging/Empfang/Sicherung/Rücksicherung | höchstens1800Sekunden |
@@ -27,11 +27,15 @@ unverändert. Die neue Vorbereitung erteilt keine Laufberechtigung.
 Die2GiB Hostreserve sind eine ausdrücklich vorgeschlagene technische
 Sicherheitsannahme für diesen isolierten Diagnosemodus, kein Anbieterwert und
 kein neuer Productionvertrag. Die5MilliardenBytes folgen der vom Betreiber
-genannten Diagnoseobergrenze. Es gibt keine automatische Anpassung des Limits.
+genannten Diagnoseobergrenze. Linux kann nicht seitengenaue Memory-Werte beim
+Readback runden; deshalb wird vorab ausdrücklich der nächstkleinere4KiB-Wert
+4999999488Bytes gebunden. Die tatsächliche Seitengröße muss4096Bytes sein;
+sonst BLOCKED. Es gibt keine automatische Anpassung des Limits. Referenz:
+https://docs.kernel.org/admin-guide/cgroup-v2.html#memory-interface-files
 Der vorhandene Plattenplan einschließlich aller Kopien bleibt vollständig.
 
 Die vorab gebundene Diagnose-Limitsabbildung lautet
-`comparisonBudgetBytes=5000000000`, `maximumConsumptionBytes=5000000000`,
+`comparisonBudgetBytes=4999999488`, `maximumConsumptionBytes=4999999488`,
 `requiredReserveBytes=0`, `swapBytes=0`. DieNull bezieht sich ausschließlich
 auf einen weiteren Puffer **innerhalb** dieses Diagnose-Parents. Die getrennte
 2GiB Hostreserve wird zusätzlich geprüft. Das ist keine neue End500-Abnahme.
@@ -47,7 +51,7 @@ Vor dem späteren geschützten Lauf wird dieselbe Prüfung **auf dessen tatsäch
 Runner vor Parentanlage, Staging und Originalempfang** erneut verlangt. Der
 bestehende Parent liegt unmittelbar unter der Cgroup-Mountwurzel; deshalb ist
 deren Root der einzige Cgroup-Ahne. MemAvailable und gegebenenfalls endliches
-Root-Headroom müssen jeweils mindestens7147483648Bytes tragen. Fehlen Pflichtwerte,
+Root-Headroom müssen jeweils mindestens7147483136Bytes tragen. Fehlen Pflichtwerte,
 ist die Kapazität unzureichend oder ist das Modell der Root-Hierarchie unbekannt,
 wird vorher BLOCKED. Kein kleineres automatisches Ersatzlimit, kein Originalabruf.
 
@@ -56,7 +60,7 @@ aus tatsächlichem MemAvailable und endlichem Rootlimit mindestens2GiB bleiben.
 Das schützt gegen anderweitiges Hostwachstum. Die Prüfung allokiert diese Reserve
 nicht und garantiert keine gegen beliebige externe Hoständerungen reservierte
 Maschine. Beide isolierten PostgreSQL-Container und der gemeinsame Parent sind
-fest auf5MilliardenBytes und Swap0 begrenzt. Der Parent ist die maßgebliche
+fest auf4999999488Bytes und Swap0 begrenzt. Der Parent ist die maßgebliche
 Gesamtgrenze; Containerlimits werden nicht addiert.
 
 ## Vorhandener Ablauf und vollständige Messung
@@ -135,7 +139,7 @@ Grenzen und Assertions ändern sich nicht.
 
 Nach grüner Pflicht-CI auf dem tatsächlichen Kopf, tatsächlichem CI-Hostbeleg und
 unabhängigem Review folgt ein separates einmaliges GO mit exaktem Commit,
-Environmenthelmut-ci-originals, festem5GB-Diagnoselimit und2GiB Hostreserve.
+Environmenthelmut-ci-originals, festem4999999488Byte-Diagnoselimit und2GiB Hostreserve.
 Erst dieses GO erlaubt den sicheren Fast Forward des zugelassenen
 Ausführungsbranches und genau einen Diagnoselauf. Alle Code-/CI-/Review-/
 Branchprüfungen vor frischen Links; unmittelbar vor dem einzigen POST weiter

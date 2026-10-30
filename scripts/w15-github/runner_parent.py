@@ -257,7 +257,7 @@ def parent_empty(ctx, expected_identity):
 def unit_bytes(ctx=None):
     if ctx is not None and ctx.get('capacityDiagnostic') is True:
         return (b'[Unit]\nDescription=W15 full restore capacity diagnostic only\n'
-                b'[Slice]\nMemoryAccounting=yes\nMemoryMax=5000000000\nMemorySwapMax=0\n')
+                b'[Slice]\nMemoryAccounting=yes\nMemoryMax=4999999488\nMemorySwapMax=0\n')
     return (b'[Unit]\nDescription=W15 secret-free parent topology probe\n'
             b'[Slice]\nMemoryAccounting=yes\nMemoryMax=2560000000\nMemorySwapMax=0\n')
 

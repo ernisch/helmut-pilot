@@ -11,7 +11,7 @@ const value={schema:'helmut-w15-full-restore-capacity-measurement/1',diagnosticO
   maximumObservedCurrentBytes:3100000000,categoryMaxima:cats,
   last:{hostAvailableBytes:8000000000,memoryStat:cats,memoryPressure:psi,observedMonotonicNS:1234,peakCompositionKnown:false},
   phaseObservations:[{name:'backup-seal',sequence:40,meaning:'ENTERED_NOT_COMPLETED',observedKernelPeakBytes:3200000000,observedCurrentBytes:3100000000}]};
-const core={configuredLimitBytes:5000000000,kernelLifetimePeakBytes:3200000000,currentBytes:3100000000,
+const core={configuredLimitBytes:4999999488,kernelLifetimePeakBytes:3200000000,currentBytes:3100000000,
   swapMaximumBytes:0,swapCurrentBytes:0,lastReadbackValid:false,events:{max:0,oom:0,oom_kill:0,oom_group_kill:0}};
 assert.deepEqual(clone(context.closedCapacityMeasurement(value)),value);
 assert.deepEqual(clone(context.closedFailureMemory({...core,capacityMeasurement:value})),{...core,capacityMeasurement:value});

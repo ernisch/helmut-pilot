@@ -16,7 +16,7 @@ import time
 
 MODE = 'end500-restore-capacity-diagnostic'
 SCOPE = 'ISOLATED_GITHUB_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY'
-HARD_LIMIT = 5000000000
+HARD_LIMIT = 4999999488
 HOST_RESERVE = 2 * 1024**3  # Explicit technical safety floor, not a vendor claim.
 LEGACY_PEAK = 2048000000
 LIMITS = {'comparisonBudgetBytes': HARD_LIMIT, 'maximumConsumptionBytes': HARD_LIMIT,
@@ -99,6 +99,9 @@ def host_admission(*, meminfo=None, ancestor=None, psi=None):
     missing root memory.max means the root has no such controller limit; any
     other unknown/invalid observation blocks. No child headroom is substituted.
     """
+    page_bytes = os.sysconf('SC_PAGE_SIZE')
+    need(type(page_bytes) is int and page_bytes == 4096 and HARD_LIMIT % page_bytes == 0
+         and HARD_LIMIT <= 5000000000)
     raw = read('/proc/meminfo') if meminfo is None else meminfo
     values = {}
     for line in raw.splitlines():
@@ -131,7 +134,7 @@ def host_admission(*, meminfo=None, ancestor=None, psi=None):
         available = min(available, headroom)
     observed_pressure = pressure(read('/proc/pressure/memory') if psi is None else psi)
     need(available >= HARD_LIMIT + HOST_RESERVE)
-    return {'status': 'PASS_ACTUAL_HOST_CAPACITY_ADMISSION_ONLY', 'hostTotalBytes': values['MemTotal:'],
+    return {'kernelPageBytes': page_bytes, 'status': 'PASS_ACTUAL_HOST_CAPACITY_ADMISSION_ONLY', 'hostTotalBytes': values['MemTotal:'],
             'hostAvailableBytes': values['MemAvailable:'], 'ancestorHeadroomBytes': headroom,
             'effectiveAvailableBytes': available, 'diagnosticHardLimitBytes': HARD_LIMIT,
             'minimumUnallocatedHostReserveBytes': HOST_RESERVE,

@@ -27,7 +27,7 @@ PSI = 'some avg10=0.01 avg60=0.00 avg300=0.00 total=12\nfull avg10=0.00 avg60=0.
 
 
 def sample(peak=3100000000):
-    return {'configuredLimit': '5000000000', 'swapMaximum': '0',
+    return {'configuredLimit': '4999999488', 'swapMaximum': '0',
             'kernelLifetimePeakBytes': peak, 'currentBytes': 3000000000,
             'swapCurrentBytes': 0, 'events': dict.fromkeys(('max', 'oom', 'oom_kill', 'oom_group_kill'), 0)}
 
@@ -58,6 +58,11 @@ class CapacityChecks(unittest.TestCase):
         unlimited = {'maximum': 'max', 'current': None}
         result = D.host_admission(meminfo=info, ancestor=unlimited, psi=PSI)
         self.assertEqual(result['hostTotalBytes'], 16000000 * 1024)
+        self.assertEqual(result['kernelPageBytes'], 4096)
+        self.assertEqual(D.HARD_LIMIT % result['kernelPageBytes'], 0)
+        self.assertLessEqual(D.HARD_LIMIT, 5000000000)
+        with patch.object(D.os, 'sysconf', return_value=65536):
+            with self.assertRaises(ValueError): D.host_admission(meminfo=info, ancestor=unlimited, psi=PSI)
         self.assertGreaterEqual(result['availableBeyondDiagnosticHardLimitBytes'], D.HOST_RESERVE)
         for kwargs in ({'meminfo': 'MemTotal: 16000000 kB\n'},
                        {'meminfo': 'MemTotal: 7000000 kB\nMemAvailable: 6000000 kB\n'},
@@ -78,7 +83,7 @@ class CapacityChecks(unittest.TestCase):
         ctx['capacityDiagnostic'] = True
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            values = {'memory.max': '5000000000', 'memory.swap.max': '0', 'memory.peak': '3100000000',
+            values = {'memory.max': '4999999488', 'memory.swap.max': '0', 'memory.peak': '3100000000',
                 'memory.current': '3000000000', 'memory.swap.current': '0',
                 'memory.events': 'max 0\noom 0\noom_kill 0\noom_group_kill 0\n', 'cgroup.events': 'populated 0\n',
                 'memory.stat': 'anon 1000\nfile 2900000000\nkernel 2000\nfile_dirty 1000\n', 'memory.pressure': PSI}
@@ -97,7 +102,7 @@ class CapacityChecks(unittest.TestCase):
                 self.assertFalse(last['memory']['capacityMeasurement']['legacyContractAccepted'])
             self.assertEqual((root / 'memory.peak').read_text(), '3100000000')
             self.assertEqual((root / 'memory.stat').read_text(), values['memory.stat'])
-        self.assertIn(b'MemoryMax=5000000000', P.unit_bytes(ctx))
+        self.assertIn(b'MemoryMax=4999999488', P.unit_bytes(ctx))
         self.assertIn('--capacity-diagnostic', P.internal_argv('remove', ctx))
         self.assertIn(b'MemoryMax=2560000000', P.unit_bytes())
 
@@ -204,7 +209,7 @@ class CapacityChecks(unittest.TestCase):
         scope = {'M': SimpleNamespace(LIMIT=2560000000), 'datetime': datetime, 'time': time}
         exec(compile(ast.fix_missing_locations(ast.Module(body=[publish], type_ignores=[])), 'selected-capacity-publish', 'exec'), scope)
         current = SimpleNamespace(progress_lock=threading.RLock(), last=sample(),
-            common_resources=SimpleNamespace(capacity_diagnostic=True, container_limit=5000000000),
+            common_resources=SimpleNamespace(capacity_diagnostic=True, container_limit=4999999488),
             cas_records=[], disk=None, failure=None, progress_queue=queue.SimpleQueue())
         scope['publish'](current, 'backup-seal')
         record = current.progress_queue.get_nowait()
