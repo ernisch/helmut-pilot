@@ -95,6 +95,16 @@ jobs:
           # W15's closed worker validates this exact native runtime.
           node-version: 24.19.0
           cache: npm
+      - name: W15 echter synthetischer Minimalanschluss — einmalige Diagnose
+        if: github.event_name == 'pull_request' && github.head_ref == 'codex/w15-native-restore-minimal-20261030'
+        timeout-minutes: 7
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+          sudo -n env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 \
+            GITHUB_ACTIONS=true GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" GITHUB_SHA="$GITHUB_SHA" \
+            /usr/bin/python3 -I -B scripts/w15-github/test_restore_native_minimal.py --native-minimal "$(command -v node)"
       - name: Prüfplan aus geänderten Dateien
         id: plan
         run: |

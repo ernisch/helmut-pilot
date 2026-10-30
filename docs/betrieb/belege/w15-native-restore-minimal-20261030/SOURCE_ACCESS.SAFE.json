@@ -1,0 +1,123 @@
+{
+  "schema": "helmut-w15-native-minimal-source-access/1",
+  "headCommit": "f064c21c6d345a06f55f0ab11d935580c0702cd0",
+  "runId": 40982398386,
+  "jobId": 123825325247,
+  "readOnlyPreflight": true,
+  "provenFixtureCause": "UID1000_CHECKOUT_FORWARD_IMPORT_ACCESS_DENIED",
+  "historicalCauseProven": false,
+  "observation": {
+    "containerStop": "PASS",
+    "exactCommit": "a782bc2c23b9ae67b94a15d09ae798d5505d4d91",
+    "exportActions": 0,
+    "failure": {
+      "category": "FILESYSTEM_ACCESS_DENIED",
+      "nativeReturnCode": null,
+      "nativeSignal": null,
+      "phase": "source-load",
+      "sqlState": null
+    },
+    "finalCommonParent": {
+      "configuredLimit": "2560000000",
+      "currentBytes": 1060864,
+      "events": {
+        "high": 0,
+        "low": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_group_kill": 0,
+        "oom_kill": 0,
+        "sock_throttled": 0
+      },
+      "kernelLifetimePeakBytes": 23986176,
+      "swapCurrentBytes": 0,
+      "swapMaximum": "0"
+    },
+    "initialCommonParent": {
+      "configuredLimit": "2560000000",
+      "currentBytes": 0,
+      "events": {
+        "high": 0,
+        "low": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_group_kill": 0,
+        "oom_kill": 0,
+        "sock_throttled": 0
+      },
+      "kernelLifetimePeakBytes": 0,
+      "swapCurrentBytes": 0,
+      "swapMaximum": "0"
+    },
+    "memory": null,
+    "ownedContainersStopped": 0,
+    "parentEmpty": "PASS",
+    "parentRemoved": "PASS",
+    "postStopCommonParent": {
+      "configuredLimit": "2560000000",
+      "currentBytes": 143360,
+      "events": {
+        "high": 0,
+        "low": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_group_kill": 0,
+        "oom_kill": 0,
+        "sock_throttled": 0
+      },
+      "kernelLifetimePeakBytes": 23986176,
+      "swapCurrentBytes": 0,
+      "swapMaximum": "0"
+    },
+    "restoreSteps": 0,
+    "retryAllowed": false,
+    "runAttempt": 1,
+    "runId": "40982398386",
+    "runnerFailure": {
+      "cleanup": {
+        "launcherListenerClosed": "UNKNOWN",
+        "launcherSignalsRestored": "UNKNOWN",
+        "parentEmpty": "UNKNOWN",
+        "parentStopRequested": "UNKNOWN",
+        "parentUnitRemoved": "UNKNOWN",
+        "serviceLauncherExited": "UNKNOWN",
+        "workerExited": "PASS",
+        "workerIPCClosed": "PASS"
+      },
+      "phase": "worker",
+      "runner": {
+        "memory": {
+          "configuredLimitBytes": 2560000000,
+          "currentBytes": 17436672,
+          "events": {
+            "max": 0,
+            "oom": 0,
+            "oom_group_kill": 0,
+            "oom_kill": 0
+          },
+          "kernelLifetimePeakBytes": 17436672,
+          "lastReadbackValid": true,
+          "swapCurrentBytes": 0,
+          "swapMaximumBytes": 0
+        },
+        "memorySource": "CACHED_READBACK",
+        "reason": "WORKER_REPORTED_FAILURE",
+        "workerExitCode": 0
+      },
+      "worker": {
+        "phase": "source-load"
+      }
+    },
+    "sealVerified": false,
+    "secondRestoreVerified": false,
+    "serviceStop": "PASS",
+    "sourceFrames": [
+      {
+        "file": "test_restore_native_minimal.py",
+        "function": "worker",
+        "line": 195
+      }
+    ],
+    "status": "FAIL"
+  }
+}
