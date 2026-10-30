@@ -24,7 +24,8 @@ PHASES = {'binding', 'receive', 'input-binding', 'cache', 'prepare', 'restore', 
           'prepared-check', 'materialization', 'container-start', 'readiness', 'native-restore', 'backup'}
 BACKUP_PHASES = {'backup-export', 'backup-freeze', 'backup-collect', 'backup-seal',
                  'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'}
-PHASES |= BACKUP_PHASES
+EXPORT_ACTIONS = frozenset(('backup-before', 'backup-dump', 'backup-roles', 'backup-after'))
+PHASES |= BACKUP_PHASES | {'export-' + action for action in EXPORT_ACTIONS}
 
 
 class RestoreConnectionError(RuntimeError):
@@ -127,11 +128,11 @@ class RestoreConnection:
                 'databaseStarted': False, 'restoreObserved': False, 'fullRestoreAccepted': False,
                 'executionAuthority': False, 'readiness': 'SEPARATE_RECEIVE_AND_RESTORE_GO_REQUIRED'}
 
-    def restore_only(self, *, backup_completion=None):
+    def restore_only(self, *, backup_completion=None, export_diagnostic=False):
         need(not self._used)
         self._used = True
         return _restore_prepared(self._forward, self.controller_inputs(), self._resources,
-                                 backup_completion=backup_completion, disk_guard=self._disk_guard)
+                                 backup_completion=backup_completion, disk_guard=self._disk_guard, export_diagnostic=export_diagnostic)
 
 
 def _labels(context):
@@ -153,8 +154,9 @@ def _inspect(controller, container):
     return value[0]
 
 
-def _restore_prepared(forward, inputs, resources, *, backup_completion=None, disk_guard=None):
+def _restore_prepared(forward, inputs, resources, *, backup_completion=None, disk_guard=None, export_diagnostic=False):
     """Restore only; never seed, call fullmain, Auth CAS, provider or backup closure."""
+    need(type(export_diagnostic) is bool and (not export_diagnostic or callable(backup_completion)))
     phase, failure, attempted, watch, owned_id, restored = 'prepared-check', None, False, None, None, None
     backup_receipt = None
     context = inputs.controller_context()
@@ -242,9 +244,15 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
             phase = 'backup'
             backup_receipt = backup_completion(forward=forward, inputs=inputs, resources=resources, watch=watch, restored=restored)
             phase = 'backup-postcheck'
-            need(isinstance(backup_receipt, dict) and backup_receipt.get('watchClosed') is True
-                 and backup_receipt.get('remoteReadbackObserved') is True
-                 and backup_receipt.get('databaseRestoreObserved') is True)
+            if export_diagnostic:
+                need(type(backup_receipt) is dict and backup_receipt.get('status') == 'PASS_FOUR_RESTORE_EXPORT_ACTIONS_ONLY'
+                     and type(backup_receipt.get('exportActions')) is int and backup_receipt['exportActions'] == 4
+                     and backup_receipt.get('watchClosed') is False and backup_receipt.get('remoteReadbackObserved') is False
+                     and backup_receipt.get('databaseRestoreObserved') is False and backup_receipt.get('acceptedAsCompleteBackup') is False)
+            else:
+                need(isinstance(backup_receipt, dict) and backup_receipt.get('watchClosed') is True
+                     and backup_receipt.get('remoteReadbackObserved') is True
+                     and backup_receipt.get('databaseRestoreObserved') is True)
         forward.check_seed(inputs)
         inputs.path('localRoles')
         inputs.path('frozenSourceDump')
@@ -252,6 +260,9 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
     except (Exception, KeyboardInterrupt) as error:
         nested = getattr(error, 'phase', None)
         failure = nested if phase == 'backup' and type(nested) is str and nested in BACKUP_PHASES else phase
+        action = getattr(error, 'actionName', None)
+        if phase == 'backup' and action in EXPORT_ACTIONS:
+            failure = 'export-' + action
     finally:
         phase = 'closure'
         if attempted:
@@ -277,7 +288,7 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
                     failure = failure or phase
             if watch.failure is not None or watch.stop_failure is not None:
                 failure = failure or phase
-            if not operations and (not watch.finished.is_set() or watch.thread.is_alive() or watch.reporter.is_alive()):
+            if (export_diagnostic or not operations) and (not watch.finished.is_set() or watch.thread.is_alive() or watch.reporter.is_alive()):
                 failure = failure or phase
     if failure:
         raise RestoreConnectionError(failure) from None
@@ -291,7 +302,8 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
         resources.sample()
     except (Exception, KeyboardInterrupt):
         raise RestoreConnectionError('input-binding') from None
-    return {'status': 'PASS_ISOLATED_RESTORE_ONLY_END500_BLOCKED', 'profiles': 500, 'active': 0,
+    return {**({'diagnosticExportOnly': True, 'exportActions': 4, 'watchStopped': True} if export_diagnostic else {}),
+            'status': 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY' if export_diagnostic else 'PASS_ISOLATED_RESTORE_ONLY_END500_BLOCKED', 'profiles': 500, 'active': 0,
             'restoreSteps': restored['steps'], 'ownedContainerStopped': True,
             'backupInputBindings': len(backup_inputs), 'backupProvenanceBindings': len(backup_provenance),
             'originalInputsModified': False, 'authCalls': 0, 'units': 0, 'providerCalls': 0,

@@ -25,7 +25,7 @@ on:
       w15_mode:
         description: 'Standard-CI oder begrenzte W15-Vorbereitung; kein End500-Start'
         type: choice
-        options: [standard, end500-plan, end500-parent-probe, end500-handoff-canary, end500-receiver-check, end500-receive-inputs, end500-restore-synthetic, end500-restore-gated, end500-full-gated, mock500-runner-synthetic, mock500-full-gated, mock500-receive-originals]
+        options: [standard, end500-plan, end500-parent-probe, end500-handoff-canary, end500-receiver-check, end500-receive-inputs, end500-restore-synthetic, end500-restore-gated, end500-restore-export-diagnostic, end500-full-gated, mock500-runner-synthetic, mock500-full-gated, mock500-receive-originals]
         default: standard
       w15_request:
         description: 'Oeffentliche laufgebundene Qualifikation und getrennte Freigabe; keine Geheimnisse'
@@ -44,12 +44,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}${{ (inputs.w15_mode == 'end500-plan' || inputs.w15_mode == 'end500-parent-probe' || inputs.w15_mode == 'end500-handoff-canary' || inputs.w15_mode == 'end500-receiver-check' || inputs.w15_mode == 'end500-receive-inputs' || inputs.w15_mode == 'end500-restore-synthetic' || inputs.w15_mode == 'end500-restore-gated' || inputs.w15_mode == 'end500-full-gated' || inputs.w15_mode == 'mock500-runner-synthetic' || inputs.w15_mode == 'mock500-full-gated' || inputs.w15_mode == 'mock500-receive-originals') && format('-w15-{0}', inputs.w15_mode) || '' }}
-  cancel-in-progress: ${{ inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-receive-originals' }}
+  group: ci-${{ github.ref }}${{ (inputs.w15_mode == 'end500-plan' || inputs.w15_mode == 'end500-parent-probe' || inputs.w15_mode == 'end500-handoff-canary' || inputs.w15_mode == 'end500-receiver-check' || inputs.w15_mode == 'end500-receive-inputs' || inputs.w15_mode == 'end500-restore-synthetic' || inputs.w15_mode == 'end500-restore-gated' || inputs.w15_mode == 'end500-restore-export-diagnostic' || inputs.w15_mode == 'end500-full-gated' || inputs.w15_mode == 'mock500-runner-synthetic' || inputs.w15_mode == 'mock500-full-gated' || inputs.w15_mode == 'mock500-receive-originals') && format('-w15-{0}', inputs.w15_mode) || '' }}
+  cancel-in-progress: ${{ inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-restore-export-diagnostic' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-receive-originals' }}
 
 jobs:
   offline-suite:
-    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-receive-originals')
+    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-restore-export-diagnostic' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-receive-originals')
     name: Syntax + Offline-Suiten
     runs-on: ubuntu-latest
     # CI35207010979: 397/397 Suiten erfolgreich in779s, aber inklusive Setup
@@ -165,6 +165,7 @@ jobs:
           python3 -B scripts/w15-github/test_runner_start.py
           python3 -B scripts/w15-github/test_runner_diagnostics.py
           python3 -B scripts/w15-github/test_restore_workflow.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_export_diagnostic.py
           python3 -B scripts/w15-github/test_restore_resources.py
           python3 -B scripts/w15-github/test_restore_backup.py
           python3 -B scripts/w15-github/test_artifact_transport.py
@@ -553,7 +554,7 @@ jobs:
 
 
   browser-smoke:
-    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-receive-originals')
+    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-restore-export-diagnostic' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-receive-originals')
     name: Browser-/Mobile-Smoke (Chromium)
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -800,7 +801,7 @@ jobs:
 
   w15-isolated:
     name: W15 gemeinsamer Runner — getrennt gesperrter Restore und End500
-    if: github.event_name == 'workflow_dispatch' && (inputs.w15_mode == 'end500-restore-synthetic' || inputs.w15_mode == 'end500-restore-gated' || inputs.w15_mode == 'end500-full-gated')
+    if: github.event_name == 'workflow_dispatch' && (inputs.w15_mode == 'end500-restore-synthetic' || inputs.w15_mode == 'end500-restore-gated' || inputs.w15_mode == 'end500-restore-export-diagnostic' || inputs.w15_mode == 'end500-full-gated')
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     environment: helmut-ci-originals

@@ -23,8 +23,11 @@ HERE = Path(__file__).absolute().parent
 BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 LIMITS = {'comparisonBudgetBytes': 2560000000, 'maximumConsumptionBytes': 2048000000,
           'requiredReserveBytes': 512000000, 'swapBytes': 0}
-WALL = {'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
-SCOPES = {'end500-restore-gated': 'ISOLATED_GITHUB_RECEPTION_RESTORE_ONLY',
+DIAGNOSTIC = 'end500-restore-export-diagnostic'
+EXPORT_ACTIONS = ('backup-before', 'backup-dump', 'backup-roles', 'backup-after')
+EXPORT_PHASES = {'export-' + action for action in EXPORT_ACTIONS}
+WALL = {DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
+SCOPES = {DIAGNOSTIC: 'ISOLATED_GITHUB_RESTORE_EXPORT_DIAGNOSTIC_ONLY', 'end500-restore-gated': 'ISOLATED_GITHUB_RECEPTION_RESTORE_ONLY',
           'end500-full-gated': 'ISOLATED_GITHUB_END500_ONLY'}
 MAX_IPC, MAX_QUALIFICATION, MAX_INPUT = 1024 * 1024, 8 * 1024 * 1024, 65535
 SEALED_SHA = 'af3bd654fa292ad256e0fa265c2fb3d968e945633f1439a12da72f015aeab86f'
@@ -39,7 +42,7 @@ CONNECTION_PHASES = {'binding', 'receive', 'input-binding', 'cache', 'prepare', 
                      'prepared-check', 'materialization', 'container-start', 'readiness', 'native-restore', 'backup'}
 BACKUP_PHASES = {'backup-export', 'backup-freeze', 'backup-collect', 'backup-seal',
                  'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'}
-CONNECTION_PHASES |= BACKUP_PHASES
+CONNECTION_PHASES |= BACKUP_PHASES | EXPORT_PHASES
 RECEIVER_PHASES = {'arguments', 'source-binding', 'private-inputs', 'index', 'disk-admission',
                    'key-import', 'encrypted-index', 'download', 'cipher-readback',
                    'authenticated-reception', 'relocation', 'agent-close'}
@@ -48,9 +51,11 @@ PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', 'resourc
               'connection-' + phase for phase in CONNECTION_PHASES} | {
               'receiver-' + phase for phase in RECEIVER_PHASES} | BACKUP_PHASES
 RUNNER_PHASES = {'arguments', 'binding', 'parent', 'service', 'staging', 'worker', 'closure', 'ipc'}
-STATUSES = {'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
+STATUSES = {DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
             'end500-restore-gated': 'PASS_SAME_JOB_RESTORE_BACKUP_500_INACTIVE_ONLY_START_BLOCKED',
             'end500-full-gated': 'PASS_END500_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING'}
+DIAGNOSTIC_RESULT = {'diagnosticExportOnly', 'restoreSteps', 'exportActions', 'profiles', 'activeProfiles',
+    'ownedContainerStopped', 'watchStopped', 'remoteReadbackObserved', 'databaseRestoreObserved', 'fullRestoreAccepted'}
 RESULT_BOOLS = {'isolatedRestoreObserved', 'end500BodyCompleted', 'originalTransferPerformed',
                 'backupRoundtripVerified', 'sourceQualificationBound', 'syntheticQualification'}
 RESULT_FALSE = {'executionAuthority', 'end500Acceptance', 'mock500Acceptance',
@@ -186,7 +191,7 @@ def validate_admission(value, private_payload, *, now=None):
          and all(type(n) is int for n in approval['limits'].values())
          and approval['sourceQualificationSHA256'] == digest
          and type(approval['maxReceiveAttempts']) is int and approval['maxReceiveAttempts'] == 1
-         and approval['maxStorageUSD'] == '0.05'
+         and approval['maxStorageUSD'] == ('0' if value['mode'] == DIAGNOSTIC else '0.05')
          and type(approval['maxProviderCalls']) is int and approval['maxProviderCalls'] == 0, 'approval')
     issued, expires = _utc(approval['issuedAt']), _utc(approval['expiresAt'])
     now = datetime.now(timezone.utc) if now is None else now
@@ -203,6 +208,8 @@ def validate_admission(value, private_payload, *, now=None):
         need(type(private_payload[key]) is str and 0 < len(private_payload[key].encode()) <= maximum, 'binding')
     need(type(private_payload['eventInputs']) is dict and type(private_payload['artifactCredentials']) is dict
          and len(_encode(private_payload['artifactCredentials'])) <= 65536, 'binding')
+    if value['mode'] == DIAGNOSTIC:
+        need(private_payload['artifactCredentials'] == {}, 'binding')
     return raw, digest, qualification
 
 
@@ -298,6 +305,8 @@ def _synthetic(manifest, runtime, context, qualification, guard):
 
 def validate_public_result(result):
     keys = {'status', 'mode', 'exactCommit', 'runId', 'runAttempt', 'verifiedFiles', 'verifiedBytes'} | RESULT_BOOLS | RESULT_FALSE
+    diagnostic = type(result) is dict and result.get('mode') == DIAGNOSTIC
+    if diagnostic: keys |= DIAGNOSTIC_RESULT
     need(type(result) is dict and set(result) == keys and result['mode'] in STATUSES
          and result['status'] == STATUSES[result['mode']] and type(result['exactCommit']) is str
          and re.fullmatch('[a-f0-9]{40}', result['exactCommit']) and type(result['runId']) is str
@@ -311,8 +320,14 @@ def validate_public_result(result):
          and result['syntheticQualification'] is synthetic and result['sourceQualificationBound'] is True
          and result['originalTransferPerformed'] is (not synthetic)
          and result['isolatedRestoreObserved'] is (not synthetic)
-         and result['backupRoundtripVerified'] is (not synthetic)
+         and result['backupRoundtripVerified'] is (not synthetic and not diagnostic)
          and result['end500BodyCompleted'] is (result['mode'] == 'end500-full-gated'), 'closure')
+    if diagnostic:
+        need(result['diagnosticExportOnly'] is True and result['ownedContainerStopped'] is True
+             and result['watchStopped'] is True and result['remoteReadbackObserved'] is False
+             and result['databaseRestoreObserved'] is False and result['fullRestoreAccepted'] is False
+             and all(type(result[k]) is int for k in ('restoreSteps', 'exportActions', 'profiles', 'activeProfiles'))
+             and (result['restoreSteps'], result['exportActions'], result['profiles'], result['activeProfiles']) == (5, 4, 500, 0), 'closure')
     return result
 
 
@@ -322,9 +337,38 @@ def _result(manifest):
         **{key: manifest[key] for key in ('mode', 'exactCommit', 'runId', 'runAttempt')},
         'verifiedFiles': 0 if synthetic else 12, 'verifiedBytes': 0 if synthetic else 242570240,
         'isolatedRestoreObserved': not synthetic, 'end500BodyCompleted': manifest['mode'] == 'end500-full-gated',
-        'originalTransferPerformed': not synthetic, 'backupRoundtripVerified': not synthetic,
+        'originalTransferPerformed': not synthetic, 'backupRoundtripVerified': not synthetic and manifest['mode'] != DIAGNOSTIC,
         'sourceQualificationBound': True, 'syntheticQualification': synthetic,
-        **dict.fromkeys(RESULT_FALSE, False)})
+        **dict.fromkeys(RESULT_FALSE, False),
+        **({'diagnosticExportOnly': True, 'restoreSteps': 5, 'exportActions': 4, 'profiles': 500, 'activeProfiles': 0,
+            'ownedContainerStopped': True, 'watchStopped': True, 'remoteReadbackObserved': False,
+            'databaseRestoreObserved': False, 'fullRestoreAccepted': False} if manifest['mode'] == DIAGNOSTIC else {})})
+
+
+def _diagnostic_export_hook(backup_code, guard):
+    """Only the four existing export actions; no complete-backup hook is opened."""
+    used = False
+    def export(*, forward, inputs, resources, watch, restored):
+        nonlocal used
+        need(not used and restored['profiles'] == 500 and restored['active'] == 0 and restored['steps'] == 5, 'backup-export')
+        used = True
+        guard()
+        context = inputs.backup_context()
+        backup_code._bind_disk_guard(watch, guard)
+        watch.backup_runner = backup_code.T.O.OwnedBackupRunner(watch, forward.M, base=forward.BASE,
+            container=forward.CONTAINER, database=forward.DB, scope='end500-backup')
+        result = backup_code.export_restore_database(context, expected_context=context, work=forward.WORK,
+            container=forward.CONTAINER, database=forward.DB, supervisor=watch,
+            run_owned=watch.backup_runner.run_owned)
+        need(type(result) is dict and result.get('status') == 'PASS_DATABASE_AND_ROLES_EXPORTED_RESTORE_AND_READBACK_PENDING'
+             and type(result.get('pins')) is dict and set(result['pins']) == set(EXPORT_ACTIONS)
+             and result.get('databaseRestoreObserved') is False and result.get('remoteReadbackObserved') is False
+             and result.get('acceptedAsCompleteBackup') is False, 'backup-postcheck')
+        guard()
+        return {'status': 'PASS_FOUR_RESTORE_EXPORT_ACTIONS_ONLY', 'exportActions': 4,
+            'watchClosed': False, 'remoteReadbackObserved': False, 'databaseRestoreObserved': False,
+            'acceptedAsCompleteBackup': False}
+    return export
 
 
 def _connection_failure_phase(error, connection_code, fallback):
@@ -382,37 +426,46 @@ def run_worker(manifest, private_payload):
             summary = connection.safe_summary()
             need(summary['verifiedFiles'] == 12 and summary['verifiedBytes'] == 242570240, phase)
             backup_code = _load('restore_backup', manifest['stagedRepo'])
-            receipts = []
-            full = manifest['mode'] == 'end500-full-gated'
-            complete = (backup_code.completion_hook if full else backup_code.restore_completion_hook)(manifest, private_payload, guard)
-            def capture(**kwargs):
-                nonlocal backup_failure
-                need(not receipts, 'backup')
-                try:
-                    receipt = complete(**kwargs)
-                    need(type(receipt) is dict and receipt.get('remoteReadbackObserved') is True
-                         and receipt.get('databaseRestoreObserved') is True, 'backup-postcheck')
-                    receipts.append(receipt)
-                    return receipt
-                except BaseException as error:
-                    # The legacy full controller retains its own closure and
-                    # exits SystemExit(1). Keep only this first closed phase
-                    # across that exit; never retain exception text or paths.
-                    if backup_failure is None:
-                        nested = getattr(error, 'phase', None)
-                        backup_failure = nested if type(nested) is str and nested in BACKUP_PHASES else 'backup'
-                    raise
-            if full:
-                phase = 'end500'
-                forward.main(inputs=connection.controller_inputs(), common_resources=resources,
-                             backup_completion=capture, disk_guard=guard)
-            else:
+            if manifest['mode'] == DIAGNOSTIC:
                 phase = 'restore'
-                restored = connection.restore_only(backup_completion=capture)
-                need(restored['profiles'] == 500 and restored['active'] == 0
-                     and restored['ownedContainerStopped'] is True
-                     and restored['remoteReadbackObserved'] is True and restored['databaseRestoreObserved'] is True, phase)
-            need(len(receipts) == 1, 'backup')
+                restored = connection.restore_only(backup_completion=_diagnostic_export_hook(backup_code, guard),
+                    export_diagnostic=True)
+                need(restored['profiles'] == 500 and restored['active'] == 0 and restored['restoreSteps'] == 5
+                     and restored['exportActions'] == 4 and restored['ownedContainerStopped'] is True
+                     and restored['watchStopped'] is True and restored['diagnosticExportOnly'] is True
+                     and restored['remoteReadbackObserved'] is False and restored['databaseRestoreObserved'] is False, phase)
+            else:
+                receipts = []
+                full = manifest['mode'] == 'end500-full-gated'
+                complete = (backup_code.completion_hook if full else backup_code.restore_completion_hook)(manifest, private_payload, guard)
+                def capture(**kwargs):
+                    nonlocal backup_failure
+                    need(not receipts, 'backup')
+                    try:
+                        receipt = complete(**kwargs)
+                        need(type(receipt) is dict and receipt.get('remoteReadbackObserved') is True
+                             and receipt.get('databaseRestoreObserved') is True, 'backup-postcheck')
+                        receipts.append(receipt)
+                        return receipt
+                    except BaseException as error:
+                        # The legacy full controller retains its own closure and
+                        # exits SystemExit(1). Keep only this first closed phase
+                        # across that exit; never retain exception text or paths.
+                        if backup_failure is None:
+                            nested = getattr(error, 'phase', None)
+                            backup_failure = nested if type(nested) is str and nested in BACKUP_PHASES else 'backup'
+                        raise
+                if full:
+                    phase = 'end500'
+                    forward.main(inputs=connection.controller_inputs(), common_resources=resources,
+                                 backup_completion=capture, disk_guard=guard)
+                else:
+                    phase = 'restore'
+                    restored = connection.restore_only(backup_completion=capture)
+                    need(restored['profiles'] == 500 and restored['active'] == 0
+                         and restored['ownedContainerStopped'] is True
+                         and restored['remoteReadbackObserved'] is True and restored['databaseRestoreObserved'] is True, phase)
+                need(len(receipts) == 1, 'backup')
         phase = 'closure'
         guard()
         resources.sample()
