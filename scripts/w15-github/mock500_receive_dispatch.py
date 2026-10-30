@@ -262,7 +262,8 @@ def execute(value, expected_launcher_commit, *, api, git, now, encrypt, link_pro
         phase = 'attempt-marker'
         write_public(root_fd, 'POST_ATTEMPT_' + nonce + '.SAFE.json', {**result, **progress, 'dispatchAttempted': True})
         # The last check is deliberately after fsync, directly before the POST.
-        phase = 'final-expiry'; need((expires - now()).total_seconds() > MIN_LINK_SECONDS, phase)
+        phase = 'final-expiry'; validate_approval(value, expected_launcher_commit, now())
+        need((expires - now()).total_seconds() > MIN_LINK_SECONDS, phase)
         phase = 'dispatch'; attempted = True
         response = api('POST', '/actions/workflows/' + str(WORKFLOW) + '/dispatches', decode(payload))
         need(response is None, phase); accepted = True

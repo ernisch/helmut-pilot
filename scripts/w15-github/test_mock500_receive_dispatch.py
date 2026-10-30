@@ -182,6 +182,16 @@ class TimingChecks(unittest.TestCase):
                 self.assertEqual(result['firstFailedPhase'], 'link')
                 self.assertNotIn(('ENCRYPT', None), self.events); self.assertEqual(self.api.posts, [])
 
+    def test_go_expiring_during_marker_fsync_also_blocks_dispatch(self):
+        self.go['expiresAt'] = M.iso(self.clock() + timedelta(seconds=5))
+        original = M.write_public
+        def marker(fd, name, value):
+            original(fd, name, value)
+            if name.startswith('POST_ATTEMPT_'): self.clock.advance(6)
+        with patch.object(M, 'write_public', side_effect=marker): result = self.run_case(margin=150)
+        self.assertEqual(result['firstFailedPhase'], 'approval')
+        self.assertFalse(result['dispatchAttempted']); self.assertEqual(self.api.posts, [])
+
     def test_oversized_entire_parameter_payload_stops_before_post(self):
         result = self.run_case(encoded=armor(49100))
         self.assertEqual(result['firstFailedPhase'], 'payload'); self.assertEqual(self.api.posts, [])
