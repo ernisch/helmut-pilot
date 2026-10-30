@@ -44,7 +44,8 @@ erst nach abgeschlossener externer Startvorbereitung erzeugen.
 
 ## Diagnose und Abnahme
 
-Die erste vorhandene feste Restore-/Exportfehlerphase bleibt durch Connection,
+Die erste feste Restoreaktion (create/roles/render/apply/check) oder
+Exportaktion bleibt durch Connection,
 Worker, Supervisor, IPC und JavaScript-Ausgabe erhalten. Ein beobachteter
 Exportaktionsname wird als`connection-export-backup-before`,
 `connection-export-backup-dump`, `connection-export-backup-roles` oder
@@ -71,3 +72,18 @@ Löschung. Keine echte Ausführung dieses neuen Pfads ohne separates GO.
 
 Vorbereitung: gezielte fiktive Aufnahme-/Connection-/Export-/IPC-/Ausgabetests;
 keine Original-, native DB- oder500er-Ausführung in diesem Entwicklungsauftrag.
+
+Der versionierte15-Link-Sender `restore_diagnostic_dispatch.py` mit
+`restore_diagnostic_dispatch.exec.js` prüft alle Metadaten/Codequalifikation/CI/
+Review/Branchübernahme vor READY. Erst dann genau ein frischer Link pro
+bestehendem Cipherteil, parallel höchstens3, geordnet an den wartenden Sender.
+Reale früheste SAS-Ablaufzeit>90s wird nach Verschlüsselung und nach
+Versuchsmarker-fsync direkt vor dem einzigen POST geprüft. Kein Sourceprobe-
+Download/Refresh/Retry. Die vorhandene SAFE-Drivequittung17136Bytes wurde
+metadatenrein verifiziert; 15Source-IDs/Pins sind als öffentliche Projektion
+versioniert. Keine Originalcipherteile in dieser Vorbereitung abgerufen.
+
+Vor dem nächsten GO wurden zusätzlich alle15exakten Drive-Objekte gezielt
+metadatenrein auf Zugänglichkeit, Namen, Größen, erwarteten privaten Ordner
+und ausschließlich Ownerrechte geprüft: PASS. Kein Cipher-/Originalabruf,
+keine erneute Hashprüfung der Cipherpayloads und keine frischen Links dabei.

@@ -166,6 +166,10 @@ jobs:
           python3 -B scripts/w15-github/test_runner_diagnostics.py
           python3 -B scripts/w15-github/test_restore_workflow.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_export_diagnostic.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_export_phase.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_action_phase.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_diagnostic_dispatch.py
+          node scripts/lokal.js -- node scripts/w15-github/test_restore_diagnostic_dispatch.js
           python3 -B scripts/w15-github/test_restore_resources.py
           python3 -B scripts/w15-github/test_restore_backup.py
           python3 -B scripts/w15-github/test_artifact_transport.py
