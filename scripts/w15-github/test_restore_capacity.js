@@ -23,4 +23,28 @@ for(const mutate of [v=>{v.private='FICTIONAL_PRIVATE';},v=>{v.last.private='FIC
   assert.deepEqual(projected,core);assert(!JSON.stringify(projected).includes('FICTIONAL_PRIVATE'));
 }
 assert(!Object.hasOwn(context.closedFailureMemory({...core,configuredLimitBytes:2560000000,capacityMeasurement:value}),'capacityMeasurement'));
-console.log(JSON.stringify({status:'PASS_CAPACITY_CLOSED_PROJECTION_ONLY',groups:3,executionAuthority:false}));
+// Exercise the actual action entry, including private stdin and its error exit.
+for(const success of [true,false]){
+  const output=[],env={W15_MODE:'end500-restore-capacity-diagnostic',W15_REQUEST:JSON.stringify({nonce:'FICTIONAL',limits:{}}),
+    GITHUB_EVENT_PATH:'/FICTIONAL_EVENT',EXPECTED_COMMIT:'a'.repeat(40),GITHUB_RUN_ID:'123456789',GITHUB_RUN_ATTEMPT:'1',
+    HELMUT_W15_CIPHER_INDEX_GPG:'FICTIONAL_PRIVATE_CIPHER',HELMUT_W15_RECEIVER_PROTECTED_KEY_B64:'FICTIONAL_PRIVATE_KEY',
+    HELMUT_W15_RECEIVER_PASSPHRASE:'FICTIONAL_PRIVATE_PASSPHRASE',GITHUB_TOKEN:'FICTIONAL_PRIVATE_TOKEN'};
+  const packet=success?{status:'COMPLETED_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY',legacyRestoreAccepted:false,capacityMeasurement:value}:
+    {status:'FAIL_W15_ISOLATED_WORKFLOW',phase:'worker',executionAuthority:false,retryAllowed:false,
+      runner:{reason:'PARENT_READBACK_REJECTED',memorySource:'CURRENT_REJECTED_READBACK',memory:{...core,capacityMeasurement:value}}};
+  const child={spawnSync(cmd,args,options){
+    assert.equal(cmd,'/usr/bin/python3');assert(args.includes('--launch'));
+    const input=JSON.parse(options.input);assert.equal(input.request.mode,env.W15_MODE);
+    assert.equal(input.privatePayload.passphrase,'FICTIONAL_PRIVATE_PASSPHRASE');
+    return {status:success?0:1,stdout:JSON.stringify(packet)};
+  }};
+  const sandbox={Buffer,process:{env},console:{log:x=>output.push(x)},require:name=>{
+    if(name==='node:fs')return {readFileSync:()=>JSON.stringify({inputs:{}})};
+    if(name==='node:child_process')return child;throw Error('UNEXPECTED_IMPORT');
+  }};
+  vm.runInNewContext(source,sandbox,{timeout:1000});
+  assert.equal(sandbox.process.exitCode,success?undefined:1);
+  assert.deepEqual(JSON.parse(output.at(-1)),packet);
+  assert(!output.join('').includes('FICTIONAL_PRIVATE'));
+}
+console.log(JSON.stringify({status:'PASS_CAPACITY_CLOSED_PROJECTION_AND_ACTION_ENTRY_ONLY',groups:5,executionAuthority:false}));

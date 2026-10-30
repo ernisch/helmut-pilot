@@ -556,7 +556,12 @@ def main(argv=None):
         receipt = _load('runner_start').launch(request, private)
         # The outer bootstrap observes the actual lifetime after worker exit;
         # preserve that evidence and validate the worker's closed scalar part.
-        need(type(receipt) is dict and receipt.get('status') == 'PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY', 'closure')
+        expected_status = ('COMPLETED_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == CAPACITY
+                           else 'PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY')
+        need(type(receipt) is dict and receipt.get('status') == expected_status, 'closure')
+        if request['mode'] == CAPACITY:
+            need(receipt.get('legacyRestoreAccepted') is False
+                 and _load('restore_capacity').closed(receipt.get('capacityMeasurement')) is not None, 'closure')
         validate_public_result(receipt['workerResult'])
         need(all(receipt['workerResult'][k] == request[k] for k in ('mode', 'exactCommit', 'runId', 'runAttempt')), 'closure')
         print(_encode(receipt).decode())

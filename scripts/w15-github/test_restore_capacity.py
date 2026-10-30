@@ -244,6 +244,30 @@ class CapacityChecks(unittest.TestCase):
             end.verify_restore_acceptance(pr, 'a' * 40, approval, previous, api=api)
         api.assert_not_called()
 
+    def test_actual_cli_preserves_diagnostic_completion_and_rejects_old_pass_status(self):
+        import io
+        value = F.request(D.MODE)
+        value['limits'] = copy.deepcopy(D.LIMITS); value['approval']['limits'] = copy.deepcopy(D.LIMITS)
+        private = F.payload(value)
+        result = {'status': 'COMPLETED_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY',
+                  'workerResult': F.W._result(value), 'legacyRestoreAccepted': False,
+                  'capacityMeasurement': measurement()}
+        original_load = F.W._load
+        for status, expected in ((result['status'], 0), ('PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY', 1)):
+            returned = copy.deepcopy(result); returned['status'] = status
+            launcher = SimpleNamespace(launch=lambda *args: returned)
+            output = io.StringIO()
+            def selected(name, *args):
+                return launcher if name == 'runner_start' else original_load(name, *args)
+            body = F.W._encode({'request': value, 'privatePayload': private})
+            with patch.dict(os.environ, F.environment(value), clear=True), \
+                 patch.object(F.W, 'validate_event'), patch.object(F.W, '_load', side_effect=selected), \
+                 patch.object(sys, 'stdin', SimpleNamespace(buffer=io.BytesIO(body))), patch.object(sys, 'stdout', output):
+                self.assertEqual(F.W.main(['--launch']), expected)
+            reported = json.loads(output.getvalue())
+            self.assertEqual(reported['status'], status if expected == 0 else 'FAIL_W15_ISOLATED_WORKFLOW')
+            if expected == 0: self.assertFalse(reported['legacyRestoreAccepted'])
+
     def test_new_sender_profile_requires_new_scope_limits_and_reviews(self):
         with tempfile.TemporaryDirectory() as temporary:
             clock = S.Clock(); approval, request = S.packets(Path(temporary), clock)
