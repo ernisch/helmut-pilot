@@ -41,7 +41,9 @@ class MockResourceChecks(unittest.TestCase):
             R.C.assess(sample())
         with self.assertRaises(R.ResourceRejected):
             R.assess({**sample(), 'configuredLimit': '2560000000'})
-        self.assertEqual(R.HISTORICAL_FAILURE['peakBytes'], 1644748800)
+        self.assertEqual(R.HISTORICAL_FAILURE['peakBytes'], 1640103936)
+        self.assertEqual(R.HISTORICAL_AUTH_DIAGNOSTIC_FAILURE['peakBytes'], 1644748800)
+        self.assertEqual(R.HISTORICAL_AUTH_DIAGNOSTIC_FAILURE['completedUnits'], 0)
         self.assertFalse(R.HISTORICAL_FAILURE['acceptedAsPass'])
         with self.assertRaises(R.ResourceRejected):
             R.assess(sample(R.HISTORICAL_FAILURE['peakBytes']))

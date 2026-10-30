@@ -57,6 +57,8 @@ def resources():
 
 def read_parent(ctx, expected_identity, *, empty=False):
     """Read the unchanged kernel lifetime; never reset any peak/counter."""
+    if ctx.get('processingBackupStage') == 'mock500':
+        return P.read_parent(ctx, expected_identity, empty=empty)
     fd = P.R._kernel_directory(P.R.KERNEL_ROOT / names(ctx)[0])
     try:
         value = os.fstat(fd)
@@ -132,8 +134,11 @@ def remove_parent(ctx):
 
 
 def github_binding(ctx):
-    P.github_binding(ctx['runId'], ctx['exactCommit'])
-    for file in (SCRIPT, SCRIPT.with_name('mock500_resources.py')):
+    P.github_binding(ctx['runId'], ctx['exactCommit'],
+        **({'processing_backup_stage': ctx['processingBackupStage']}
+           if ctx.get('processingBackupStage') == 'mock500' else {}))
+    for file in (SCRIPT, SCRIPT.with_name('mock500_resources.py'),
+                 *([SCRIPT.with_name('phase_contract.py')] if ctx.get('processingBackupStage') == 'mock500' else [])):
         relative = str(file.relative_to(P.REPO))
         row = P.command(['/usr/bin/git', '--no-optional-locks', '-c', 'core.hooksPath=/dev/null',
             '-c', 'core.fsmonitor=false', '-c', 'safe.directory=' + str(P.REPO), '-C', str(P.REPO),
@@ -150,6 +155,8 @@ def privileged(mode, ctx):
     require(mode in ('prepare', 'remove'))
     argv = ['/usr/bin/python3', '-B', str(SCRIPT), '--internal', mode,
             '--run-id', ctx['runId'], '--expected-commit', ctx['exactCommit'], '--nonce', ctx['nonce']]
+    if ctx.get('processingBackupStage') == 'mock500':
+        argv += ['--processing-backup-stage', 'mock500', '--processing-backup-phase', ctx.get('processingBackupPhase', 'processing')]
     return P.command(['/usr/bin/sudo', '-n', '/usr/bin/env', '-i',
                      *[key + '=' + value for key, value in P.process_env(ctx).items()], *argv], timeout=40)
 
@@ -161,8 +168,16 @@ def main(argv=None):
         parser.add_argument('--run-id', required=True)
         parser.add_argument('--expected-commit', required=True)
         parser.add_argument('--nonce', required=True)
+        parser.add_argument('--processing-backup-stage', choices=('mock500',))
+        parser.add_argument('--processing-backup-phase', choices=('processing', 'backup'))
         args = parser.parse_args(argv)
         ctx = context(args.run_id, args.expected_commit, args.nonce)
+        if args.processing_backup_stage:
+            require(args.processing_backup_phase is not None)
+            ctx['processingBackupStage'] = 'mock500'
+            ctx['processingBackupPhase'] = args.processing_backup_phase
+        else:
+            require(args.processing_backup_phase is None)
         github_binding(ctx)
         {'prepare': prepare_parent, 'remove': remove_parent}[args.internal](ctx)
         return 0

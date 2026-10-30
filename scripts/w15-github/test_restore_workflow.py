@@ -361,6 +361,10 @@ class WorkerChecks(unittest.TestCase):
 
     def test_public_result_is_closed_and_semantically_bound(self):
         for mode in W.WALL:
+            if mode == W.PHASED:
+                with self.assertRaises(W.WorkflowRejected):
+                    W._result(request(mode))  # A mode alone cannot fabricate a processing closure.
+                continue
             good = W._result(request(mode))
             self.assertIs(W.validate_public_result(good), good)
             bad = copy.deepcopy(good)

@@ -185,14 +185,18 @@ class Supervisor:
         with self.progress_lock:
             now=time.monotonic();m=self.last
             actual_limit=None if m is None else m['configuredLimit']
-            memory=None if m is None else {'sampleAtUTC':m['sampleAtUTC'],'comparisonBudgetBytes':LIMIT,
+            backup=(getattr(self.common_resources,'processing_backup_stage',None)=='mock500'
+                    and self.common_resources.memory_phase=='backup')
+            budget=self.common_resources.container_limit if backup else LIMIT
+            reserve=0 if backup else RESERVE;maximum=budget if backup else MAXIMUM
+            memory=None if m is None else {'sampleAtUTC':m['sampleAtUTC'],'comparisonBudgetBytes':budget,
               'kernelLimitBytes':int(actual_limit)if actual_limit.isdigit()else actual_limit,
               'kernelLimitMB':int(actual_limit)/1000000 if actual_limit.isdigit()else None,'kernelSwapMaximum':m['swapMaximum'],
-              'currentBytes':m['currentBytes'],'currentMB':round(m['currentBytes']/1000000,3),'currentPercentOfCap':round(100*m['currentBytes']/LIMIT,6),
-              'kernelLifetimePeakBytes':m['kernelLifetimePeakBytes'],'peakMB':round(m['kernelLifetimePeakBytes']/1000000,3),'peakPercentOfCap':round(100*m['kernelLifetimePeakBytes']/LIMIT,6),
-              'reserveBytes':LIMIT-m['kernelLifetimePeakBytes'],'reserveMB':round((LIMIT-m['kernelLifetimePeakBytes'])/1000000,3),
-              'reservePercentOfCap':round(100*(LIMIT-m['kernelLifetimePeakBytes'])/LIMIT,6),'requiredReserveBytes':RESERVE,
-              'requiredReservePercent':MEMORY['minimumReservePercent'],'maximumAllowedPeakBytes':MAXIMUM,'maximumAllowedPeakMB':MAXIMUM/1000000,
+              'currentBytes':m['currentBytes'],'currentMB':round(m['currentBytes']/1000000,3),'currentPercentOfCap':round(100*m['currentBytes']/budget,6),
+              'kernelLifetimePeakBytes':m['kernelLifetimePeakBytes'],'peakMB':round(m['kernelLifetimePeakBytes']/1000000,3),'peakPercentOfCap':round(100*m['kernelLifetimePeakBytes']/budget,6),
+              'reserveBytes':budget-m['kernelLifetimePeakBytes'],'reserveMB':round((budget-m['kernelLifetimePeakBytes'])/1000000,3),
+              'reservePercentOfCap':round(100*(budget-m['kernelLifetimePeakBytes'])/budget,6),'requiredReserveBytes':reserve,
+              'requiredReservePercent':0 if backup else MEMORY['minimumReservePercent'],'maximumAllowedPeakBytes':maximum,'maximumAllowedPeakMB':maximum/1000000,
               'swapCurrentBytes':m['swapCurrentBytes'],'events':m['events']}
             record={'name':name,'observedAtUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'phase':self.stage_name or 'between-stages-or-cleanup',
               'acceptedProfiles':len(self.accepted_indexes),'expectedProfiles':500,'lastAcceptedIndex':self.last_accepted_index,
@@ -269,7 +273,19 @@ class Supervisor:
         if self.start_guard is not None:
             (self.start_guard.closure_guard if self.closure_mode or self.mock_backup_closure else self.start_guard.before_dispatch)()
         if self.disk_guard is not None:self.disk_guard()
-        if self.common_resources is not None:self.common_resources.sample()
+        if self.common_resources is not None:
+            common=self.common_resources.sample()
+            if (getattr(self.common_resources,'processing_backup_stage',None)=='mock500'
+                    and self.common_resources.memory_phase=='backup'):
+                # The sole higher-cap phase starts after the original
+                # services/watch have actually closed. Existing recovery uses
+                # this supervisor with the same monotone parent, not v2 again.
+                self.maximum=max(self.maximum,common['kernelLifetimePeakBytes'])
+                self.last={**common,'sampleAtUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                  'comparisonBudgetBytes':self.common_resources.container_limit,
+                  'requiredReserveBytes':0,'maximumConsumptionBytes':self.common_resources.container_limit,
+                  'comparisonReserveBytes':self.common_resources.container_limit-common['kernelLifetimePeakBytes']}
+                return
         if self.stage_name!='materials'and(WORK/'processing-materials.PRIVATE.json').exists():
             m=json.loads((WORK/'processing-materials.PRIVATE.json').read_text())
             now=datetime.datetime.now(datetime.timezone.utc)
@@ -467,7 +483,8 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
         closed=not supervisor.thread.is_alive()and not supervisor.reporter.is_alive()
         assert closed and observation_error is None and supervisor.failure is None and supervisor.stop_failure is None
         resources.sample()
-        return {'ownedContainerStopped':True,'watchClosed':True}
+        return {'ownedContainerStopped':True,'watchClosed':True,
+          **({'primaryContainerId':owned_id}if getattr(resources,'processing_backup_stage',None)=='mock500'else{})}
     try:
         root.mkdir(mode=0o700)
         for key in ('work','prepare','cache'):pathlib.Path(context['hostPaths'][key]).mkdir(mode=0o700)

@@ -20,6 +20,7 @@ import uuid
 HERE = Path(__file__).absolute().parent
 REPO = HERE.parents[1]
 FULL, SYNTHETIC = 'mock500-full-gated', 'mock500-runner-synthetic'
+PHASED = 'mock500-full-phased-gated'
 BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 SYNTHETIC_BRANCH = 'refs/heads/codex/w15-mock500-integration-20261029'
 END_BASELINES = {'7e3d96e99fc687b03bcb9a7cbe4a0f59c174859b', 'b6eb74495cd9cf4d7bee04ec4b37da6244b5c6a2',
@@ -29,7 +30,7 @@ END_BASELINES = {'7e3d96e99fc687b03bcb9a7cbe4a0f59c174859b', 'b6eb74495cd9cf4d7b
                  '13b858b1a1e83a695e1fa64446573b5b550921ea'}
 LIMITS = {'comparisonBudgetBytes': 2048000000, 'maximumConsumptionBytes': 1638400000,
           'requiredReserveBytes': 409600000, 'swapBytes': 0}
-WALL = {SYNTHETIC: 300, FULL: 12600}
+WALL = {SYNTHETIC: 300, FULL: 12600, PHASED: 12600}
 DECLARATION_KEYS = {'nonce', 'sourceQualification', 'approval', 'limits', 'maximumWallSeconds', 'bindings'}
 MAX_IPC = 1024 * 1024
 MAX_INPUT = 65535
@@ -125,7 +126,9 @@ def validate_admission(value, private_payload, *, repo=REPO):
     bindings = value['bindings']
     need(type(bindings) is dict and set(bindings) == {'end500Acceptance', 'compatibilityBridge',
          'inputBindingSHA256', 'additionalAssetBytes', 'approvedEnd500Commit'}
-         and bindings['approvedEnd500Commit'] in END_BASELINES
+         and (bindings['approvedEnd500Commit'] in END_BASELINES
+              or (value['mode'] == PHASED and type(bindings['approvedEnd500Commit']) is str
+                  and re.fullmatch('[a-f0-9]{40}', bindings['approvedEnd500Commit'])))
          and type(bindings['additionalAssetBytes']) is int and 0 < bindings['additionalAssetBytes'] <= 1024 ** 3
          and type(bindings['inputBindingSHA256']) is str
          and re.fullmatch('[a-f0-9]{64}', bindings['inputBindingSHA256']), 'approval')
@@ -165,7 +168,7 @@ def validate_event(value, private_payload, *, event_inputs=None):
     else:
         need(private_payload['eventInputs'] == inputs and private_payload['cipherIndex'] == inputs['w15_cipher_index'], 'event')
         component('encrypted_index').check_event(value['exactCommit'], private_payload['cipherIndex'],
-            mode=FULL, extra_inputs={'w15_request': inputs['w15_request']}, event_inputs=inputs)
+            mode=value['mode'], extra_inputs={'w15_request': inputs['w15_request']}, event_inputs=inputs)
 
 
 def validate_manifest(value):
@@ -188,28 +191,40 @@ def validate_manifest(value):
             os.close(fd)
 
 
-def _result(manifest):
+def _result(manifest, resources=None):
     synthetic = manifest['mode'] == SYNTHETIC
     result = {**{key: manifest[key] for key in ('mode', 'exactCommit', 'runId', 'runAttempt')},
-        'status': 'PASS_MOCK500_SYNTHETIC_RUNNER_ONLY_START_BLOCKED' if synthetic else 'PASS_MOCK500_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING',
+        'status': ('PASS_MOCK500_SYNTHETIC_RUNNER_ONLY_START_BLOCKED' if synthetic
+                   else 'PASS_MOCK500_PHASED_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING' if manifest['mode'] == PHASED
+                   else 'PASS_MOCK500_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING'),
         'syntheticQualification': synthetic, 'originalTransferPerformed': not synthetic,
         'profiles': 0 if synthetic else 500, 'activeProfiles': 0, 'units': 0 if synthetic else 500,
         'providerPhases': 0 if synthetic else 1000, 'results': 0 if synthetic else 1500,
         'controls': 0 if synthetic else 8000, 'backupRoundtripVerified': not synthetic,
         'executionAuthority': False, 'mock500Acceptance': False, 'end500Acceptance': False}
+    if manifest['mode'] == PHASED:
+        need(resources is not None, 'closure')
+        result.update(resourcePhases=resources.phase_closure(), processingMemoryChecksCompleted=True,
+                      backupSafetyChecksCompleted=True)
     return component('mock500_runner').validate_public_result(result, manifest)
 
 
-def run_worker(manifest, private_payload):
+def run_worker(manifest, private_payload, *, backup_transition=None):
     phase, resources = 'binding', None
     try:
         raw, digest = validate_admission(manifest, private_payload)
         validate_manifest(manifest)
-        if manifest['mode'] == FULL:
+        if manifest['mode'] in (FULL, PHASED):
             validate_event(manifest, private_payload, event_inputs=private_payload['eventInputs'])
         context_code = component('mock500_context')
         context = context_code.build_context(manifest)
-        resources = component('mock500_resources').observe(context)
+        if manifest['mode'] == PHASED:
+            need(callable(backup_transition), 'binding')
+            resources = component('mock500_resources').observe(context, processing_backup_stage='mock500')
+            resources.backup_transition = backup_transition
+        else:
+            need(backup_transition is None, 'binding')
+            resources = component('mock500_resources').observe(context)
         if manifest['mode'] == SYNTHETIC:
             phase = 'synthetic'
             resources.sample()
@@ -224,7 +239,8 @@ def run_worker(manifest, private_payload):
         phase = 'resources'
         bindings = manifest['bindings']; resource_code = component('mock500_resources')
         plan = resource_code.admit_disk_plan(manifest['runnerTemp'], checkout_bytes=manifest['checkoutBytes'],
-            binary_bytes=manifest['binaryBytes'], additional_asset_bytes=bindings['additionalAssetBytes'])
+            binary_bytes=manifest['binaryBytes'], additional_asset_bytes=bindings['additionalAssetBytes'],
+            **({'processing_backup_stage': 'mock500'} if manifest['mode'] == PHASED else {}))
         disk = resource_code.DiskGuard(manifest['runnerTemp'], plan, resources,
             started_monotonic=manifest['startedMonotonic'])
         start = component('mock500_start').StartGuard(context, manifest['approval'], bindings['end500Acceptance'],
@@ -263,7 +279,7 @@ def run_worker(manifest, private_payload):
              and final['bodyCompleted'] is True and final['ownedContainerStopped'] is True
              and len(receipts) == 1, 'closure')
         phase = 'closure'; closing_guard(); resources.sample()
-        return _result(manifest)
+        return _result(manifest, resources)
     except WorkflowRejected as error:
         error.worker_memory = _cached_memory(resources)
         raise
@@ -321,7 +337,8 @@ def main(argv=None):
         validate_admission(request, private)
         validate_event(request, private)
         receipt = runner.launch(request, private)
-        need(receipt.get('status') == 'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY', 'closure')
+        need(receipt.get('status') == ('PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY'
+                                     if request['mode'] == PHASED else 'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY'), 'closure')
         runner.validate_public_result(receipt['workerResult'], request)
         print(canonical(receipt).decode()); return 0
     except BaseException as error:

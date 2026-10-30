@@ -24,13 +24,14 @@ BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 LIMITS = {'comparisonBudgetBytes': 2560000000, 'maximumConsumptionBytes': 2048000000,
           'requiredReserveBytes': 512000000, 'swapBytes': 0}
 CAPACITY = 'end500-restore-capacity-diagnostic'
+PHASED = 'end500-full-phased-gated'
 DIAGNOSTIC = 'end500-restore-export-diagnostic'
 EXPORT_ACTIONS = ('backup-before', 'backup-dump', 'backup-roles', 'backup-after')
 EXPORT_PHASES = {'export-' + action for action in EXPORT_ACTIONS}
 RESTORE_ACTIONS = ('restore-create', 'restore-roles', 'restore-render', 'restore-apply', 'restore-check')
 RESTORE_PHASES = set(RESTORE_ACTIONS)
-WALL = {CAPACITY: 1800, DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
-SCOPES = {CAPACITY: 'ISOLATED_GITHUB_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY', DIAGNOSTIC: 'ISOLATED_GITHUB_RESTORE_EXPORT_DIAGNOSTIC_ONLY', 'end500-restore-gated': 'ISOLATED_GITHUB_RECEPTION_RESTORE_ONLY',
+WALL = {PHASED: 3600, CAPACITY: 1800, DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
+SCOPES = {PHASED: 'ISOLATED_GITHUB_END500_PHASED_ONLY', CAPACITY: 'ISOLATED_GITHUB_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY', DIAGNOSTIC: 'ISOLATED_GITHUB_RESTORE_EXPORT_DIAGNOSTIC_ONLY', 'end500-restore-gated': 'ISOLATED_GITHUB_RECEPTION_RESTORE_ONLY',
           'end500-full-gated': 'ISOLATED_GITHUB_END500_ONLY'}
 MAX_IPC, MAX_QUALIFICATION, MAX_INPUT = 1024 * 1024, 8 * 1024 * 1024, 65535
 SEALED_SHA = 'af3bd654fa292ad256e0fa265c2fb3d968e945633f1439a12da72f015aeab86f'
@@ -54,7 +55,7 @@ PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', 'resourc
               'connection-' + phase for phase in CONNECTION_PHASES} | {
               'receiver-' + phase for phase in RECEIVER_PHASES} | BACKUP_PHASES
 RUNNER_PHASES = {'arguments', 'binding', 'parent', 'service', 'staging', 'worker', 'closure', 'ipc'}
-STATUSES = {DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
+STATUSES = {PHASED: 'PASS_END500_PHASED_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING', DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
             CAPACITY: 'MEASURED_FULL_RESTORE_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED',
                  'end500-restore-gated': 'PASS_SAME_JOB_RESTORE_BACKUP_500_INACTIVE_ONLY_START_BLOCKED',
             'end500-full-gated': 'PASS_END500_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING'}
@@ -186,6 +187,8 @@ def validate_admission(value, private_payload, *, now=None):
                 'issuedAt', 'expiresAt', 'maxStorageUSD', 'maxProviderCalls'}
     if value['mode'] == 'end500-full-gated':
         required.add('restoreAcceptance')
+    if value['mode'] == PHASED:
+        required |= {'restoreFunctionAcceptance', 'resourceContract'}
     need(type(approval) is dict and set(approval) == required
          and approval['schema'] == 'helmut-w15-workflow-start-approval/1'
          and approval['scope'] == SCOPES[value['mode']] and approval['authorized'] is True
@@ -207,6 +210,16 @@ def validate_admission(value, private_payload, *, now=None):
              and previous['exactCommit'] == value['exactCommit'] and type(previous['runId']) is str
              and re.fullmatch('[1-9][0-9]{4,19}', previous['runId']) and previous['runId'] != value['runId']
              and type(previous['receiptSHA256']) is str and re.fullmatch('[a-f0-9]{64}', previous['receiptSHA256']), 'approval')
+    if value['mode'] == PHASED:
+        contract = _load('phase_contract')
+        reference = approval['restoreFunctionAcceptance']
+        need(approval['resourceContract'] == contract.END_PROFILE and type(reference) is dict
+             and set(reference) == set(contract.FUNCTION_REFERENCE) | {'targetCommit', 'compatibilityReviewSHA256'}
+             and all(reference[k] == v for k, v in contract.FUNCTION_REFERENCE.items())
+             and reference['legacyRestoreAccepted'] is False
+             and reference['targetCommit'] == value['exactCommit']
+             and type(reference['compatibilityReviewSHA256']) is str
+             and re.fullmatch('[a-f0-9]{64}', reference['compatibilityReviewSHA256']), 'approval')
     need(type(private_payload) is dict and set(private_payload) == PRIVATE_KEYS, 'binding')
     for key, maximum in (('cipherIndex', MAX_INPUT), ('keyB64', 49152), ('passphrase', 4096)):
         need(type(private_payload[key]) is str and 0 < len(private_payload[key].encode()) <= maximum, 'binding')
@@ -312,6 +325,8 @@ def validate_public_result(result):
     diagnostic = type(result) is dict and result.get('mode') == DIAGNOSTIC
     if type(result) is dict and result.get('mode') == CAPACITY:
         keys |= {'capacityDiagnosticOnly', 'legacyRestoreAccepted'}
+    if type(result) is dict and result.get('mode') == PHASED:
+        keys |= {'resourcePhases', 'processingMemoryChecksCompleted', 'backupSafetyChecksCompleted'}
     if diagnostic: keys |= DIAGNOSTIC_RESULT
     need(type(result) is dict and set(result) == keys and result['mode'] in STATUSES
          and result['status'] == STATUSES[result['mode']] and type(result['exactCommit']) is str
@@ -327,7 +342,7 @@ def validate_public_result(result):
          and result['originalTransferPerformed'] is (not synthetic)
          and result['isolatedRestoreObserved'] is (not synthetic)
          and result['backupRoundtripVerified'] is (not synthetic and not diagnostic)
-         and result['end500BodyCompleted'] is (result['mode'] == 'end500-full-gated'), 'closure')
+         and result['end500BodyCompleted'] is (result['mode'] in ('end500-full-gated', PHASED)), 'closure')
     if diagnostic:
         need(result['diagnosticExportOnly'] is True and result['ownedContainerStopped'] is True
              and result['watchStopped'] is True and result['remoteReadbackObserved'] is False
@@ -336,18 +351,26 @@ def validate_public_result(result):
              and (result['restoreSteps'], result['exportActions'], result['profiles'], result['activeProfiles']) == (5, 4, 500, 0), 'closure')
     if result['mode'] == CAPACITY:
         need(result['capacityDiagnosticOnly'] is True and result['legacyRestoreAccepted'] is False, 'closure')
+    if result['mode'] == PHASED:
+        need(result['processingMemoryChecksCompleted'] is True and result['backupSafetyChecksCompleted'] is True, 'closure')
+        need(type(result['resourcePhases']) is dict and 'context' in result['resourcePhases'], 'closure')
+        context = result['resourcePhases']['context']
+        _load('phase_contract').validate_closure(result['resourcePhases'], 'end500', context)
+        need(all(context[k] == result[k] for k in ('exactCommit', 'runId', 'runAttempt')), 'closure')
     return result
 
 
-def _result(manifest):
+def _result(manifest, resource_phases=None):
     synthetic = manifest['mode'] == 'end500-restore-synthetic'
     return validate_public_result({'status': STATUSES[manifest['mode']],
         **{key: manifest[key] for key in ('mode', 'exactCommit', 'runId', 'runAttempt')},
         'verifiedFiles': 0 if synthetic else 12, 'verifiedBytes': 0 if synthetic else 242570240,
-        'isolatedRestoreObserved': not synthetic, 'end500BodyCompleted': manifest['mode'] == 'end500-full-gated',
+        'isolatedRestoreObserved': not synthetic, 'end500BodyCompleted': manifest['mode'] in ('end500-full-gated', PHASED),
         'originalTransferPerformed': not synthetic, 'backupRoundtripVerified': not synthetic and manifest['mode'] != DIAGNOSTIC,
         'sourceQualificationBound': True, 'syntheticQualification': synthetic,
         **dict.fromkeys(RESULT_FALSE, False),
+        **({'resourcePhases': resource_phases, 'processingMemoryChecksCompleted': True,
+            'backupSafetyChecksCompleted': True} if manifest['mode'] == PHASED else {}),
         **({'capacityDiagnosticOnly': True, 'legacyRestoreAccepted': False} if manifest['mode'] == CAPACITY else {}),
         **({'diagnosticExportOnly': True, 'restoreSteps': 5, 'exportActions': 4, 'profiles': 500, 'activeProfiles': 0,
             'ownedContainerStopped': True, 'watchStopped': True, 'remoteReadbackObserved': False,
@@ -399,7 +422,7 @@ def _connection_failure_phase(error, connection_code, fallback):
     return 'connection-' + phase
 
 
-def run_worker(manifest, private_payload, *, phase_observer=None):
+def run_worker(manifest, private_payload, *, phase_observer=None, backup_transition=None):
     """A's single fixed UID1000 worker. Call only after measured bootstrap."""
     phase, connection_code, resources, backup_code, backup_failure = 'binding', None, None, None, None
     def observe(name):
@@ -415,9 +438,13 @@ def run_worker(manifest, private_payload, *, phase_observer=None):
         runtime = forward._runtime_module('runtime_inputs')
         context = _context(manifest, runtime)
         runtime.C.validate_context(context, forward.ROOT)
-        resources = (forward._runtime_module('common_resources').observe(context, capacity_diagnostic=True)
+        resources = (forward._runtime_module('common_resources').observe(context, processing_backup_stage='end500')
+                     if manifest['mode'] == PHASED else forward._runtime_module('common_resources').observe(context, capacity_diagnostic=True)
                      if manifest['mode'] == CAPACITY else forward.open_common_resources(context))
         resources.phase_observer = phase_observer
+        if manifest['mode'] == PHASED:
+            need(callable(backup_transition), 'binding')
+            resources.backup_transition = backup_transition
         phase = 'resources'
         observe(phase)
         resource_code = _load('restore_resources', manifest['stagedRepo'])
@@ -458,7 +485,7 @@ def run_worker(manifest, private_payload, *, phase_observer=None):
                      and restored['remoteReadbackObserved'] is False and restored['databaseRestoreObserved'] is False, phase)
             else:
                 receipts = []
-                full = manifest['mode'] == 'end500-full-gated'
+                full = manifest['mode'] in ('end500-full-gated', PHASED)
                 complete = (backup_code.completion_hook if full else backup_code.restore_completion_hook)(manifest, private_payload, guard)
                 def capture(**kwargs):
                     nonlocal backup_failure
@@ -498,7 +525,7 @@ def run_worker(manifest, private_payload, *, phase_observer=None):
         observe(phase)
         guard()
         resources.sample()
-        return _result(manifest)
+        return _result(manifest, resources.phase_closure() if manifest['mode'] == PHASED else None)
     except WorkflowRejected as error:
         error.worker_memory = _cached_failure_memory(resources)
         raise
@@ -556,12 +583,16 @@ def main(argv=None):
         receipt = _load('runner_start').launch(request, private)
         # The outer bootstrap observes the actual lifetime after worker exit;
         # preserve that evidence and validate the worker's closed scalar part.
-        expected_status = ('COMPLETED_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == CAPACITY
+        expected_status = ('PASS_FRESH_PHASED_RUNNER_OWNED_LIFETIME_ONLY' if request['mode'] == PHASED else
+                           'COMPLETED_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == CAPACITY
                            else 'PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY')
         need(type(receipt) is dict and receipt.get('status') == expected_status, 'closure')
         if request['mode'] == CAPACITY:
             need(receipt.get('legacyRestoreAccepted') is False
                  and _load('restore_capacity').closed(receipt.get('capacityMeasurement')) is not None, 'closure')
+        if request['mode'] == PHASED:
+            _load('phase_contract').validate_closure(receipt.get('resourcePhases'), 'end500',
+                {k: request[k] for k in ('exactCommit', 'runId', 'runAttempt', 'nonce')})
         validate_public_result(receipt['workerResult'])
         need(all(receipt['workerResult'][k] == request[k] for k in ('mode', 'exactCommit', 'runId', 'runAttempt')), 'closure')
         print(_encode(receipt).decode())

@@ -22,6 +22,7 @@ SPEC.loader.exec_module(R)
 BASELINE_COMMIT = '7e3d96e99fc687b03bcb9a7cbe4a0f59c174859b'
 BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 MODE = 'mock500-full-gated'
+PHASED = 'mock500-full-phased-gated'
 LIMITS = {'comparisonBudgetBytes': R.LIMIT, 'maximumConsumptionBytes': R.MAXIMUM,
           'requiredReserveBytes': R.RESERVE, 'swapBytes': 0}
 FINGERPRINT = '7E3998A6C2CB948C69A2EE51F4267ABF26796EDC'
@@ -71,7 +72,7 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
     Record envelopes preserve their actual reviewed bytes and SHA256.
     """
     need(isinstance(expected_end500_commit, str) and HEX.fullmatch(expected_end500_commit))
-    need(isinstance(request, dict) and request.get('mode') == MODE
+    need(isinstance(request, dict) and request.get('mode') in (MODE, PHASED)
          and request.get('branch') == BRANCH and isinstance(request.get('exactCommit'), str)
          and HEX.fullmatch(request['exactCommit']) and request['exactCommit'] != expected_end500_commit
          and type(request.get('runAttempt')) is int and request['runAttempt'] == 1
@@ -86,18 +87,31 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
          and isinstance(observed_context['runId'], str) and re.fullmatch('[1-9][0-9]{4,19}', observed_context['runId'])
          and type(observed_context['runAttempt']) is int)
     end500, bridge = _record(end500_acceptance), _record(compatibility_bridge)
-    need(end500.get('schema') == 'helmut-w15-independent-end500-acceptance/1'
-         and end500.get('scope') == 'ISOLATED_GITHUB_END500_ONLY'
-         and end500.get('status') == 'PASS_INDEPENDENT_GITHUB_END500_ACCEPTANCE'
+    phased = request['mode'] == PHASED
+    if phased:
+        need(end500.get('schema') == 'helmut-w15-independent-end500-acceptance/2'
+             and end500.get('status') == 'PASS_INDEPENDENT_GITHUB_END500_PHASED_ACCEPTANCE'
+             and end500.get('resourceContract') == R.phases().END_PROFILE
+             and end500.get('processingMemoryAccepted') is True
+             and end500.get('backupSafetyAccepted') is True
+             and end500.get('commonLifetimeMemoryAccepted') is False
+             and end500.get('independentRestoreFunctionAccepted') is True,
+             'MOCK500_POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED')
+    else:
+        need(end500.get('schema') == 'helmut-w15-independent-end500-acceptance/1'
+             and end500.get('status') == 'PASS_INDEPENDENT_GITHUB_END500_ACCEPTANCE'
+             and end500.get('resourceContract') == 'helmut-w15-end500-memory-check/3'
+             and end500.get('commonLifetimeMemoryAccepted') is True
+             and end500.get('independentRestoreAccepted') is True,
+             'MOCK500_POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED')
+    need(
+         end500.get('scope') == ('ISOLATED_GITHUB_END500_PHASED_ONLY' if phased else 'ISOLATED_GITHUB_END500_ONLY')
          and end500.get('exactCommit') == expected_end500_commit
          and isinstance(end500.get('runId'), str) and re.fullmatch('[1-9][0-9]{4,19}', end500['runId'])
          and end500['runId'] != observed_context['runId']
          and type(end500.get('runAttempt')) is int and end500['runAttempt'] == 1
          and isinstance(end500.get('receiptSHA256'), str) and SHA.fullmatch(end500['receiptSHA256'])
-         and end500.get('resourceContract') == 'helmut-w15-end500-memory-check/3'
-         and end500.get('commonLifetimeMemoryAccepted') is True
          and end500.get('completeBackupAccepted') is True
-         and end500.get('independentRestoreAccepted') is True
          and type(end500.get('profiles')) is int and end500['profiles'] == 500
          and type(end500.get('activeProfiles')) is int and end500['activeProfiles'] == 0
          and end500.get('inputManifestSHA') == INPUT_SHA and end500.get('recipientFingerprint') == FINGERPRINT
@@ -111,7 +125,7 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
          and bridge.get('end500AcceptanceSHA256') == end500_acceptance['sha256']
          and bridge.get('inputManifestSHA') == INPUT_SHA and bridge.get('recipientFingerprint') == FINGERPRINT
          and bridge.get('end500CodeReexecuted') is False
-         and bridge.get('mockMemoryContract') == R.PROFILE
+         and bridge.get('mockMemoryContract') == (R.phases().MOCK_PROFILE if phased else R.PROFILE)
          and bridge.get('executionAuthority') is False, 'MOCK500_REVIEWED_BASELINE_BRIDGE_REQUIRED')
     approval = request.get('approval')
     keys = {'schema', 'scope', 'authorized', 'mode', 'exactCommit', 'branch', 'runAttempt', 'nonce',
@@ -121,7 +135,8 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
         'maxReceiveAttempts', 'issuedAt', 'expiresAt'}
     need(isinstance(approval, dict) and set(approval) == keys
          and approval['schema'] == 'helmut-w15-mock500-start-approval/1'
-         and approval['scope'] == 'ISOLATED_GITHUB_MOCK500_ONLY' and approval['authorized'] is True
+         and approval['scope'] == ('ISOLATED_GITHUB_MOCK500_PHASED_ONLY' if phased else 'ISOLATED_GITHUB_MOCK500_ONLY')
+         and approval['authorized'] is True
          and all(approval[k] == request[k] for k in ('mode', 'exactCommit', 'branch', 'runAttempt',
              'nonce', 'sourceQualificationSHA256', 'limits'))
          and approval['end500AcceptanceSHA256'] == end500_acceptance['sha256']
@@ -140,7 +155,7 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
         'runId': observed_context['runId'], 'exactCommit': request['exactCommit'],
         'sourceQualificationSHA256': request['sourceQualificationSHA256'],
         'end500AcceptanceSHA256': end500_acceptance['sha256'], 'compatibilitySHA256': compatibility_bridge['sha256'],
-        'end500BaselineCommit': expected_end500_commit, 'memoryProfile': R.PROFILE,
+        'end500BaselineCommit': expected_end500_commit, 'memoryProfile': R.phases().MOCK_PROFILE if phased else R.PROFILE,
         'executionAuthority': False, 'mock500Acceptance': False}
 
 
@@ -155,7 +170,7 @@ class StartGuard:
             expected_end500_commit=expected_end500_commit, now=now)
         need(context.get('schema') == 'helmut-w15-mock500-controller-context/1' and context.get('scope') == R.SCOPE
              and all(context[k] == observed_context[k] for k in ('exactCommit', 'runId', 'runAttempt', 'nonce'))
-             and getattr(resources, 'profile', None) == R.PROFILE)
+             and getattr(resources, 'profile', None) == self.admission['memoryProfile'])
         now = datetime.now(timezone.utc) if now is None else now
         need(isinstance(started_at, datetime) and started_at.tzinfo is not None and started_at <= now
              and type(started_monotonic) in (int, float) and 0 <= started_monotonic <= time.monotonic())
@@ -186,9 +201,15 @@ class StartGuard:
         elapsed = time.monotonic() - self.started_monotonic
         maximum = 12600 if closure else 10800
         try:
+            if not closure and getattr(self.resources, 'processing_backup_stage', None) == 'mock500':
+                need(self.resources.memory_phase == 'processing', 'MOCK500_RETURN_TO_PROCESSING_REJECTED')
             need(0 <= elapsed < maximum and now < (self.completion_deadline if closure else self.processing_deadline),
                  'MOCK500_ORIGINAL_CLOCK_DEADLINE')
-            sample = R.assess(self.resources.check_context(self.context))
+            sample = self.resources.check_context(self.context)
+            if getattr(self.resources, 'processing_backup_stage', None) == 'mock500':
+                R.phases().assess(sample, 'mock500', phase=self.resources.memory_phase)
+            else:
+                R.assess(sample)
             need(self.failure is None or closure, 'MOCK500_FIRST_FAILURE_BLOCKS_DISPATCH')
             return sample
         except (Exception, KeyboardInterrupt):

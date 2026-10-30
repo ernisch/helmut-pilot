@@ -139,7 +139,7 @@ function main() {
   if (Buffer.byteLength(input) > 1024*1024) throw Error('bound');
   const result = cp.spawnSync('/usr/bin/python3', ['-B','scripts/w15-github/restore_workflow.py','--launch'],
     {input, encoding:'utf8', env:process.env, maxBuffer:1024*1024,
-     timeout:(synthetic ? 420 : mode === 'end500-full-gated' ? 3720 : 1920)*1000});
+     timeout:(synthetic ? 420 : ['end500-full-gated','end500-full-phased-gated'].includes(mode) ? 3720 : 1920)*1000});
   if (result.error || result.status !== 0) {
     const failed = JSON.parse(result.stdout);
     const phases = ['arguments','event','approval','qualification','binding','resources','synthetic',

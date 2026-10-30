@@ -22,6 +22,20 @@ MEMORY_STAT_FIELDS = ('anon', 'file', 'kernel', 'shmem', 'file_dirty', 'file_wri
 
 
 _CAPACITY = None
+_PHASE_CONTRACT = None
+
+
+def phase_contract():
+    global _PHASE_CONTRACT
+    if _PHASE_CONTRACT is None:
+        spec = importlib.util.spec_from_file_location('w15_common_phases', Path(__file__).with_name('phase_contract.py'))
+        _PHASE_CONTRACT = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_PHASE_CONTRACT)
+    return _PHASE_CONTRACT
+
+
+def phase_context(context):
+    return {key: context[key] for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')}
 
 
 def capacity():
@@ -158,7 +172,7 @@ def project_failure_memory(value, valid):
 
 
 class CommonResources:
-    def __init__(self, token, context, path, identity, *, capacity_diagnostic=False):
+    def __init__(self, token, context, path, identity, *, capacity_diagnostic=False, processing_backup_stage=None):
         require(token is TOKEN)
         self._context = json.loads(json.dumps(context))
         self.path, self._identity = path, identity
@@ -166,8 +180,48 @@ class CommonResources:
         require(type(capacity_diagnostic) is bool)
         self.capacity_diagnostic = capacity_diagnostic
         self.container_limit = capacity().HARD_LIMIT if capacity_diagnostic else LIMIT
+        require(processing_backup_stage in (None, 'end500', 'mock500')
+                and not (capacity_diagnostic and processing_backup_stage is not None))
+        self.processing_backup_stage = processing_backup_stage
+        self.memory_phase, self.backup_ack, self.backup_transition = 'processing', None, None
+        self._phase_state, self._transition_attempted = None, False
+        if processing_backup_stage is not None:
+            self.container_limit = phase_contract().processing_limits(processing_backup_stage)['comparisonBudgetBytes']
+            self._phase_state = phase_contract().OneWayState(processing_backup_stage, phase_context(context),
+                parent_identity={'device': identity[0], 'inode': identity[1]})
         self.unit = path.name
         self._relative = '/' + self.unit
+
+    def accept_backup_ack(self, ack):
+        try:
+            require(self.processing_backup_stage is not None and self.memory_phase == 'processing' and self.backup_ack is None)
+            self.backup_ack = self._phase_state.accept_ack(ack)
+            self.memory_phase, self.container_limit = 'backup', capacity().HARD_LIMIT
+            self.sample()
+            return self.backup_ack
+        except BaseException:
+            if self._phase_state is not None:
+                self._phase_state.fail()
+            raise
+
+    def begin_backup(self, proof):
+        try:
+            require(self.processing_backup_stage is not None and self.memory_phase == 'processing'
+                    and self.backup_ack is None and callable(self.backup_transition)
+                    and not self._transition_attempted and not self._phase_state.failed)
+            self._transition_attempted = True
+            phase_contract().validate_boundary(proof, self.processing_backup_stage, phase_context(self._context))
+            return self.accept_backup_ack(self.backup_transition(proof))
+        except BaseException:
+            if self._phase_state is not None:
+                self._phase_state.fail()
+            raise
+
+    def phase_closure(self, final_sample=None):
+        require(self.memory_phase == 'backup' and self.backup_ack is not None)
+        value = self.sample() if final_sample is None else final_sample
+        self._phase_state.observe(value)
+        return phase_contract().closure(self.backup_ack, value)
 
     def check_context(self, context):
         require(self._context == context)
@@ -205,18 +259,25 @@ class CommonResources:
                      'events': {k: int(v) for k, v in (x.split() for x in read('memory.events').splitlines())}}
             current = value
             self._last_observed, self._last_valid = value, False
-            if self.capacity_diagnostic:
+            if self.capacity_diagnostic or self.processing_backup_stage is not None and self.memory_phase == 'backup':
                 value['capacityMeasurement'] = capacity().snapshot(value, fd)
-            (capacity().assess if self.capacity_diagnostic else assess)(value)
+            if self.processing_backup_stage is not None:
+                self._phase_state.observe(value)
+            else:
+                (capacity().assess if self.capacity_diagnostic else assess)(value)
             self._last_valid = True
             return value
         except KeyboardInterrupt as error:
+            if self._phase_state is not None:
+                self._phase_state.fail()
             self._last_valid = False
             if current is not None:
                 current['postFailureMemoryStat'] = capture_post_failure_memory_stat(fd)
             error.failure_memory = project_failure_memory(current, False)
             raise
         except Exception:
+            if self._phase_state is not None:
+                self._phase_state.fail()
             self._last_valid = False
             if current is not None:
                 current['postFailureMemoryStat'] = capture_post_failure_memory_stat(fd)
@@ -235,6 +296,10 @@ class CommonResources:
 
     def safe_summary(self):
         value = self.sample()
+        if self.processing_backup_stage is not None:
+            return {'status': 'PHASED_PARENT_CURRENT_SAMPLE_ONLY', **value,
+                    'resourceContract': phase_contract().profile(self.processing_backup_stage),
+                    'phase': self.memory_phase, 'commonLifetimeMemoryAccepted': False, 'executionAuthority': False}
         if self.capacity_diagnostic:
             return {'status': 'CAPACITY_DIAGNOSTIC_CURRENT_SAMPLE_ONLY', **value,
                     'legacyContractAccepted': False, 'executionAuthority': False}
@@ -261,7 +326,7 @@ def _kernel_directory(path):
         os.close(root)
 
 
-def observe(context, *, capacity_diagnostic=False):
+def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None):
     """Only after entering the externally prepared, actually limited parent.
 
     This is an observation API, not a systemd bootstrap, UID conversion, fresh
@@ -279,7 +344,8 @@ def observe(context, *, capacity_diagnostic=False):
             value = os.fstat(fd)
         finally:
             os.close(fd)
-        result = CommonResources(TOKEN, context, path, (value.st_dev, value.st_ino), capacity_diagnostic=capacity_diagnostic)
+        result = CommonResources(TOKEN, context, path, (value.st_dev, value.st_ino),
+            capacity_diagnostic=capacity_diagnostic, processing_backup_stage=processing_backup_stage)
         result.sample()
         return result
     except Exception:

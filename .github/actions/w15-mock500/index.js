@@ -100,7 +100,8 @@ function main(){
     const cleanup=closedCleanup(receipt.cleanup);if(cleanup)safe.cleanup=cleanup;
     console.log(JSON.stringify(safe));process.exitCode=1;return;
   }
-  if(receipt.status!=='PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY')throw Error('receipt');
+  const expected=mode==='mock500-full-phased-gated'?'PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY':'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY';
+  if(receipt.status!==expected)throw Error('receipt');
   console.log(JSON.stringify(receipt));
 }
 try{main();}catch(_){console.log('{"status":"FAIL_OR_BLOCKED_MOCK500_ACTION","executionAuthority":false}');process.exitCode=1;}

@@ -172,7 +172,10 @@ class DiskGuard:
     def __call__(self):
         need(time.monotonic() - self.started < self.plan['maximumWallSeconds'], 'RESTORE_WALL_DEADLINE')
         sample = self.common.sample()
-        (C.capacity().assess if getattr(self.common, 'capacity_diagnostic', False) is True else C.assess)(sample)
+        if getattr(self.common, 'processing_backup_stage', None) in ('end500', 'mock500'):
+            C.phase_contract().assess(sample, self.common.processing_backup_stage, phase=self.common.memory_phase)
+        else:
+            (C.capacity().assess if getattr(self.common, 'capacity_diagnostic', False) is True else C.assess)(sample)
         observed = _disk(self.root)
         need(observed['device'] == self.plan['disk']['device'])
         growth = max(0, self.plan['disk']['availableBytes'] - observed['availableBytes'])
