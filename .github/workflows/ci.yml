@@ -170,6 +170,9 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_action_phase.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_diagnostic_dispatch.py
           node scripts/lokal.js -- node scripts/w15-github/test_restore_diagnostic_dispatch.js
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_full_restore_capture_phase.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_full_restore_dispatch.py
+          node scripts/lokal.js -- node scripts/w15-github/test_full_restore_dispatch.js
           python3 -B scripts/w15-github/test_restore_resources.py
           python3 -B scripts/w15-github/test_restore_backup.py
           python3 -B scripts/w15-github/test_artifact_transport.py

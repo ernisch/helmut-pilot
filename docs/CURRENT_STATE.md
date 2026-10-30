@@ -1,37 +1,31 @@
 # CURRENT STATE — Helmut
 
-## W15 Mock-Originalempfang: elf Dateien tatsächlich unabhängig abgenommen
+## W15 Originaldiagnose: zwölf Eingänge, Restore500/0 und vier Exporte PASS
 
-Run41037459441/Job124001742313 auf13b858b1 PASS: elf Originale217563454Bytes,
-alle ursprünglichen Einzelgrößen/SHA256, Manifest/GPG/volle Rücklesung bestätigt.
-Unabhängige AnnahmePASS; Quelle/fehlendeDateien/Replacements-Pin als Blocker geschlossen.
-Empfangsschritt6s/Job13s; eigener GPG-Prozess/AgentPASS beendet, keine Wiederholung.
-Launcher6c42716d stellte vorfrischemLink den erlaubten Branch sicher225→13 vor.
-Dispatch2764Zeichen; alle übrigen JobsSKIPPED, kein Restore/End500/Mock500/Production.
-Keine Klartextartefakte/Caches: Dateien nur im vergangenen temporären Runner;
-späterer Mock empfängt dasselbe erhaltene Drive-Cipherarchiv im eigenen Job mit GO.
-RAM-v2 und Original-Restoreursache weiteroffen; kein500er-PASS aus Empfang.
-[Quittung, unabhängige Abnahme und ausschließlich verbleibende Startvoraussetzungen](betrieb/w15-mock-original-reception-20261030.md).
+Einmaliges GO auf a2d0f542: Run41049571965/Job124041996489 unabhängig PASS.
+Tatsächliche Quittung: 12 Originale, 242570240 Bytes, 5 Restoreaktionen500/0,
+4 Exportaktionen; eigener Container, Watch und Worker beendet, gleicher Parent leer.
+Peak1644433408 Bytes, Reserve915566592, Swap0/Ereignisse0; Job70s/Ausführung47s.
+Kein Retry, 0 Artefakte, kein vollständiger Sicherungsrundlauf/End500/Mock500.
+Vollrestore-, End500-, Mock500- und vollständige RAM-Abnahmeflags bleiben false.
+Historische innere Ursache40958135662 weiter UNKNOWN; heutiger5+4-Pfad belegt.
+Nächster Schritt: bestehende Freeze/Collect/Seal/Remote/zweite Restore-Stufe;
+getrennter getesteter Sender, gezielter Fullcapture-Diagnosefix und neues GO.
+Der ausgeführte Receiver N und CI41042712858 bleiben unverändert erhalten.
+[Belege und Aussagegrenze](betrieb/w15-restore-export-diagnostic-result-20261030.md).
 
-## W15 Nachtauftrag30.10.: Minimalbeleg abgenommen, echte Startstufen BLOCKIERT
+Elf Mockzusatzoriginale in Run41037459441 auf13b858b1 unabhängig PASS:
+217563454 Bytes, alle Größen/SHA256/Manifest/GPG/Rücklesung bestätigt.
+Dateien/Replacements-Pin als Beschaffungsblocker geschlossen; temporärer Runner,
+späterer Mock empfängt das erhaltene Cipherarchiv im eigenen Job mit passendem GO.
+[Empfangsabnahme](betrieb/w15-mock-original-reception-20261030.md).
 
-Bestehende native Minimalprobe40982718647 aufdeb812f9 jetzt unabhängig PASS:
-5Restore/4Export, lokale Versiegelung/zweiter lokaler Auswahlrestore,
-Peak960356352Bytes, Reserve1599643648, Swap0/Zähler0, eigene Prozesse/Parent
-belegt gestoppt/leer. Keine Wiederholung; kein Original-/Remote-/End500-PASS.
-Historischer Originalfehler40958135662 innerlich weiterUNKNOWN, alte GOs verbraucht.
-Neue Mock-Abschlusslücken nachgestellt und gezielt geschlossen: jede Providerphase
-<20s, tatsächliche Auth-/CAS-ACKs und1500Einzelergebnisse statt nur grüner Header.
-Exakter Integrationskopf, Pflicht-CI und Schlussreview sind im Nacht-Draft-PR belegt;
-keine Startbereitschaft oder echte500er-Abnahme aus Codefertigstellung abgeleitet.
-Historischer Quellenblocker inzwischen geschlossen: alle11Zusatzoriginale
-inRun41037459441 vollständig angenommen; keine Neuqualifikation wiederholt.
-Historischer Mock-RAM-Fehler nach69Units bleibtFAIL/UNKNOWN, Verträge unverändert.
-Historischer Nachtstand: PR975/977/978/979/980-Köpfe damals erhalten;
-später erlaubter Fast Forward vonPR975 auf13, kein Merge/Productioneingriff.
-[Gesamtbefund, genaue Blocker und getrennte spätere Freigabeverträge](betrieb/w15-night-startreadiness-20261030.md).
-Noch kein startbereites Restore-/End500-/Mock500-GO: erst belegte Diagnoseentscheidung,
-zugängliche Originalbindungen und positive vorgelagerte Abnahmen. Keine echten Läufe.
+Native Minimalprobe40982718647 auf deb812f9 unabhängig PASS, nicht wiederholt:
+5 Restore/4 Export/lokale Versiegelung/zweiter Auswahlrestore, Peak960356352/Swap0.
+Mockcode, AtomicACK, Tag, Namespace, Auswertung und Ressourcenwächter vorbereitet;
+End500-Abnahme und echte Bridge fehlen derzeit. Historischer Mock-RAM-v2-Fehler
+nach69Units bleibt FAIL/UNKNOWN; keine RAM-Erhöhung oder Verdachtsoptimierung.
+[Historischer Nachtbefund](betrieb/w15-night-startreadiness-20261030.md).
 
 ## W15 Fortschreibung: primärer Restore durchlaufen, Backup noch FAIL
 

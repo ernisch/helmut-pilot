@@ -456,6 +456,10 @@ def run_worker(manifest, private_payload):
                         if backup_failure is None:
                             nested = getattr(error, 'phase', None)
                             backup_failure = nested if type(nested) is str and nested in BACKUP_PHASES else 'backup'
+                            action = getattr(error, 'actionName', None)
+                            if (type(error) is getattr(backup_code, 'BackupRuntimeError', None)
+                                    and nested == 'backup-export' and type(action) is str and action in EXPORT_ACTIONS):
+                                backup_failure = 'connection-export-' + action
                         raise
                 if full:
                     phase = 'end500'
@@ -479,7 +483,7 @@ def run_worker(manifest, private_payload):
         selected = _connection_failure_phase(error, connection_code, phase)
         if backup_failure is not None:
             selected = backup_failure
-        if backup_code is not None and type(error) is getattr(backup_code, 'BackupRuntimeError', None):
+        elif backup_code is not None and type(error) is getattr(backup_code, 'BackupRuntimeError', None):
             nested = getattr(error, 'phase', None)
             if type(nested) is str and nested in BACKUP_PHASES:
                 selected = nested
