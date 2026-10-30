@@ -81,6 +81,12 @@ function sql(query) {
     encoding: "utf8", timeout: 20000, maxBuffer: 24 * 1024 * 1024, env: { PATH: "/usr/bin:/bin", LANG: "C.UTF-8" } });
   assert.equal(r.status, 0, "w15-full500-readonly-sql"); return JSON.parse(r.stdout.trim());
 }
+function providerPhasesUnder20(phases) {
+  return Array.isArray(phases) && phases.length > 0 && phases.every(p => p &&
+    Number.isFinite(p.beginMS) && Number.isFinite(p.endMS) && Number.isFinite(p.actualDelayMS) &&
+    p.beginMS <= p.endMS && p.actualDelayMS >= 0 && p.actualDelayMS < 20000 &&
+    p.endMS - p.beginMS < 20000 && p.actualDelayMS === p.endMS - p.beginMS);
+}
 function checkpointAssessment(points) {
   const checkpointKinds = {};
   if (Array.isArray(points)) for (const p of points) checkpointKinds[p.kind] = (checkpointKinds[p.kind] || 0) + 1;
@@ -495,6 +501,7 @@ async function run() {
       const phases = providerPhases.slice(phaseOffset);
       assert.equal(phases.length, 2); assert.deepEqual(phases.map(p => p.phase), ["D", "R"]);
       assert(phases.every(p => p.index === index && p.nativePermanentSendClaim && p.nativeCostReservation), "w15-full500-actual-send-claims");
+      assert(providerPhasesUnder20(phases), "w15-full500-every-provider-phase-under20");
       if ([0, 499].includes(index)) assert(phases.every(p => p.actualDelayMS >= 19900 && p.actualDelayMS < 20000), "w15-full500-worst-provider-delays");
       const unitAuth = { mutations: observation.mutations.slice(mutationOffset), usageSinks: observation.usageSinks.slice(usageOffset), casWrites: observation.casWrites.slice(casOffset) };
       const authCheck = authCoverageAssessment(unitAuth);
@@ -531,6 +538,7 @@ async function run() {
       exactly1000AccountedCalls: Object.keys(op.attempts).length === 1000 && Object.values(op.attempts).every(a => a.status === "accounted") && providerPhases.length === 1000,
       all8000FreshControls: unitReports.every(u => u.original16FreshControls) && unitReports.reduce((n, u) => n + u.count, 0) === 8000,
       all500UnitsUnder60: unitReports.every(u => u.under60), all500PreparedOpenUnder60: scopeReports.length === 500 && scopeReports.every(s => s.openMs < 60000),
+      all1000ProviderPhasesUnder20: providerPhasesUnder20(providerPhases),
       coldThenWarm: scopeReports[0].restorePhases.some(p => p.name === "restoreFullTWithoutC") && scopeReports.slice(1).every(s => s.restorePhases.length === 0),
       everyAuthAssignedAndUnder30: coverage.pass && coverage.usage1000,
       exactly500UniqueFinishACKs: observation.mutations.filter(m => m.finishIndex !== undefined).length === 500
@@ -574,4 +582,4 @@ if (require.main === module) main(process.argv[2]).catch(e => {
     atUTC: new Date().toISOString(), noAutomaticRetry: true, cleanupConfirmed: false }); } catch { /* first report retained */ }
   console.error(JSON.stringify(safeError(e))); process.exitCode = 1;
 });
-module.exports = { checkpointAssessment, authCoverageAssessment, observeAuth };
+module.exports = { checkpointAssessment, authCoverageAssessment, observeAuth, providerPhasesUnder20 };
