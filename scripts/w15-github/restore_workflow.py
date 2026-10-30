@@ -392,10 +392,14 @@ def _connection_failure_phase(error, connection_code, fallback):
     return 'connection-' + phase
 
 
-def run_worker(manifest, private_payload):
+def run_worker(manifest, private_payload, *, phase_observer=None):
     """A's single fixed UID1000 worker. Call only after measured bootstrap."""
     phase, connection_code, resources, backup_code, backup_failure = 'binding', None, None, None, None
+    def observe(name):
+        if phase_observer is not None:
+            phase_observer(name)
     try:
+        observe(phase)
         raw, digest, qualification = validate_admission(manifest, private_payload)
         _manifest(manifest)
         if manifest['mode'] != 'end500-restore-synthetic':
@@ -405,7 +409,9 @@ def run_worker(manifest, private_payload):
         context = _context(manifest, runtime)
         runtime.C.validate_context(context, forward.ROOT)
         resources = forward.open_common_resources(context)
+        resources.phase_observer = phase_observer
         phase = 'resources'
+        observe(phase)
         resource_code = _load('restore_resources', manifest['stagedRepo'])
         plan = resource_code.admit_disk_plan(manifest['runnerTemp'], checkout_bytes=manifest['checkoutBytes'],
             binary_bytes=manifest['binaryBytes'], maximum_wall_seconds=manifest['maximumWallSeconds'])
@@ -416,11 +422,13 @@ def run_worker(manifest, private_payload):
                  {k: runtime.C.RUNTIME[name][k] for k in ('bytes', 'sha256')}, 'binding')
         if manifest['mode'] == 'end500-restore-synthetic':
             phase = 'synthetic'
+            observe(phase)
             _synthetic(manifest, runtime, context, qualification, guard)
         else:
             connection_code = _load('restore_connection', manifest['stagedRepo'])
             observed = {key: manifest[key] for key in ('exactCommit', 'branch', 'runId', 'runAttempt', 'mode', 'nonce')}
             phase = 'receive-prepare'
+            observe(phase)
             connection = connection_code.prepare_same_job(forward, context, resources,
                 source_qualification_raw=raw, source_qualification_sha256=digest, observed_context=observed,
                 private_payload=private_payload, node_source=manifest['binaries']['node']['path'],
@@ -430,6 +438,7 @@ def run_worker(manifest, private_payload):
             backup_code = _load('restore_backup', manifest['stagedRepo'])
             if manifest['mode'] == DIAGNOSTIC:
                 phase = 'restore'
+                observe(phase)
                 restored = connection.restore_only(backup_completion=_diagnostic_export_hook(backup_code, guard),
                     export_diagnostic=True)
                 need(restored['profiles'] == 500 and restored['active'] == 0 and restored['restoreSteps'] == 5
@@ -463,16 +472,19 @@ def run_worker(manifest, private_payload):
                         raise
                 if full:
                     phase = 'end500'
+                    observe(phase)
                     forward.main(inputs=connection.controller_inputs(), common_resources=resources,
                                  backup_completion=capture, disk_guard=guard)
                 else:
                     phase = 'restore'
+                    observe(phase)
                     restored = connection.restore_only(backup_completion=capture)
                     need(restored['profiles'] == 500 and restored['active'] == 0
                          and restored['ownedContainerStopped'] is True
                          and restored['remoteReadbackObserved'] is True and restored['databaseRestoreObserved'] is True, phase)
                 need(len(receipts) == 1, 'backup')
         phase = 'closure'
+        observe(phase)
         guard()
         resources.sample()
         return _result(manifest)

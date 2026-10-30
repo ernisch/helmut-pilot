@@ -197,7 +197,7 @@ class RunnerStartChecks(unittest.TestCase):
     def test_worker_identity_drop_closed_output_fixed_code_and_private_pipe(self):
         root = self.root(); script = root / 'scripts/w15-github/restore_workflow.py'
         script.parent.mkdir(parents=True)
-        raw = ('def run_worker(manifest, private_payload):\n return ' + repr(worker_result()) + '\n').encode()
+        raw = ('def run_worker(manifest, private_payload, *, phase_observer=None):\n phase_observer("binding")\n return ' + repr(worker_result()) + '\n').encode()
         script.write_bytes(raw)
         manifest = {**REQUEST, 'stagedRepo': str(root), 'runnerTemp': str(root / 'worker'),
                     'sourcePins': {'scripts/w15-github/restore_workflow.py': {'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}}}
@@ -210,6 +210,8 @@ class RunnerStartChecks(unittest.TestCase):
         self.assertEqual(ended.exception.code, 0)
         stdio.assert_called_once(); groups.assert_called_once_with([987]); gid.assert_called_once_with(1000); uid.assert_called_once_with(1000)
         self.assertTrue(json.loads(sender.send_bytes.call_args.args[0])['ok'])
+        self.assertEqual(json.loads(sender.send_bytes.call_args_list[0].args[0]),
+                         {'kind': 'phase', 'sequence': 1, 'phase': 'binding'})
         receiver.close.assert_called_once(); sender.close.assert_called_once()
 
     def test_only_closed_context_bound_public_receipt_can_cross_ipc(self):
@@ -235,7 +237,7 @@ class RunnerStartChecks(unittest.TestCase):
                 R._response_error(value)
         root = self.root(); script = root / 'scripts/w15-github/restore_workflow.py'
         script.parent.mkdir(parents=True)
-        raw = b'class WorkflowRejected(Exception):\n phase="qualification"\ndef run_worker(manifest, private_payload):\n raise WorkflowRejected("/PRIVATE/DO_NOT_LOG")\n'
+        raw = b'class WorkflowRejected(Exception):\n phase="qualification"\ndef run_worker(manifest, private_payload, *, phase_observer=None):\n raise WorkflowRejected("/PRIVATE/DO_NOT_LOG")\n'
         script.write_bytes(raw)
         manifest = {**REQUEST, 'stagedRepo': str(root), 'runnerTemp': str(root / 'worker'),
                     'sourcePins': {'scripts/w15-github/restore_workflow.py': {'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}}}

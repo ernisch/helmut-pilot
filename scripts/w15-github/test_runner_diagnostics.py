@@ -258,8 +258,8 @@ class DiagnosticChecks(unittest.TestCase):
 
     def test_worker_optional_getter_and_systemexit_cannot_erase_phase_or_make_pass(self):
         programs = [
-            'class Failure(Exception):\n phase="backup-export"\n @property\n def worker_memory(self): raise RuntimeError("FICTIONAL_PRIVATE_CANARY")\ndef run_worker(*args): raise Failure("FICTIONAL_PRIVATE_CANARY")\n',
-            *['def run_worker(*args): raise SystemExit(' + value + ')\n' for value in ('0', '1', '"FICTIONAL_PRIVATE_CANARY"')]]
+            'class Failure(Exception):\n phase="backup-export"\n @property\n def worker_memory(self): raise RuntimeError("FICTIONAL_PRIVATE_CANARY")\ndef run_worker(*args, **kwargs): raise Failure("FICTIONAL_PRIVATE_CANARY")\n',
+            *['def run_worker(*args, **kwargs): raise SystemExit(' + value + ')\n' for value in ('0', '1', '"FICTIONAL_PRIVATE_CANARY"')]]
         for index, program in enumerate(programs):
             with self.subTest(case=index), tempfile.TemporaryDirectory() as folder:
                 root = Path(folder); script = root / 'scripts/w15-github/restore_workflow.py'

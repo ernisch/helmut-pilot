@@ -15,6 +15,29 @@ CLEANUP_KEYS = frozenset(('workerExited', 'workerIPCClosed', 'parentStopRequeste
     'parentEmpty', 'parentUnitRemoved', 'serviceLauncherExited', 'launcherListenerClosed',
     'launcherSignalsRestored'))
 STATES = frozenset(('PASS', 'FAIL', 'UNKNOWN'))
+OBSERVED_PHASES = frozenset(('arguments', 'event', 'approval', 'qualification', 'binding', 'resources',
+    'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure')) | frozenset(
+    'connection-' + name for name in ('binding', 'receive', 'input-binding', 'cache', 'prepare',
+        'restore', 'closure', 'prepared-check', 'materialization', 'container-start', 'readiness',
+        'native-restore', 'backup', 'restore-create', 'restore-roles', 'restore-render', 'restore-apply',
+        'restore-check', 'export-backup-before', 'export-backup-dump', 'export-backup-roles', 'export-backup-after')) | frozenset(
+    'receiver-' + name for name in ('arguments', 'source-binding', 'private-inputs', 'index', 'disk-admission',
+        'key-import', 'encrypted-index', 'download', 'cipher-readback', 'authenticated-reception', 'relocation', 'agent-close')) | frozenset(
+    prefix + name for prefix in ('', 'connection-') for name in ('backup-export', 'backup-freeze',
+        'backup-collect', 'backup-seal', 'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'))
+MAX_PHASE_FRAMES = 128
+
+
+def phase_observation(value):
+    """Last entered phase received by the supervisor, never completion or cause."""
+    if type(value) is str and value == 'UNKNOWN':
+        return value
+    if (type(value) is not dict or set(value) != {'name', 'sequence', 'meaning'}
+            or type(value['name']) is not str or value['name'] not in OBSERVED_PHASES
+            or type(value['sequence']) is not int or not 1 <= value['sequence'] <= MAX_PHASE_FRAMES
+            or type(value['meaning']) is not str or value['meaning'] != 'ENTERED_NOT_COMPLETED'):
+        return None
+    return dict(value)
 
 
 def attribute(value, name, default=None):
@@ -36,7 +59,7 @@ def unknown_cleanup():
 
 
 def runner(value, memory_validator):
-    keys = {'reason', 'secondaryReason', 'memory', 'memorySource', 'workerExitCode', 'serviceExitCode'}
+    keys = {'reason', 'secondaryReason', 'memory', 'memorySource', 'workerExitCode', 'serviceExitCode', 'lastObservedPhase'}
     if type(value) is not dict or not set(value) <= keys or type(value.get('reason')) is not str or value['reason'] not in REASONS:
         return None
     out = {'reason': value['reason']}
@@ -54,6 +77,9 @@ def runner(value, memory_validator):
             if type(value[key]) is not int or not -255 <= value[key] <= 255:
                 return None
             out[key] = value[key]
+    observed = phase_observation(value.get('lastObservedPhase'))
+    if observed is not None:
+        out['lastObservedPhase'] = observed
     return out
 
 

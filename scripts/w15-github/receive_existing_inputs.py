@@ -129,7 +129,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         raise ValueError('REDIRECT_REJECTED')
 
 
-def download(root, urls, expires, pins, *, guard=None):
+def download(root, urls, expires, pins, *, guard=None, phase_observer=None):
     # Default proxy and TLS verification are preserved; redirects are prohibited.
     opener = urllib.request.build_opener(NoRedirect())
     deadline = time.monotonic() + 300
@@ -174,6 +174,8 @@ def download(root, urls, expires, pins, *, guard=None):
         # os.fdopen owns the descriptor after successful construction.
         pass
     phase('cipher-readback')
+    if phase_observer is not None:
+        phase_observer('receiver-cipher-readback')
     parent = P.open_root(str(root))
     try:
         for pin in pins:
@@ -184,19 +186,23 @@ def download(root, urls, expires, pins, *, guard=None):
     return root / 'source-cipher.PRIVATE.gpg'
 
 
-def _receive_existing_verified(commit, runner_temp, *, private_payload=None, mode=N.MODE, guard=None):
+def _receive_existing_verified(commit, runner_temp, *, private_payload=None, mode=N.MODE, guard=None, phase_observer=None):
     """Internal same-process handoff; never expose this private path in output.
 
     The received tree remains available to a later, separately authorized local
     consumer in this job. No path is returned until the owned GPG agent closes.
     """
-    phase('source-binding'); binding = source_binding(commit); pins = projection()
-    phase('private-inputs')
+    def enter(value):
+        phase(value)
+        if phase_observer is not None:
+            phase_observer('receiver-' + value)
+    enter('source-binding'); binding = source_binding(commit); pins = projection()
+    enter('private-inputs')
     if private_payload is None:
         need(mode == N.MODE)
         armored_index = os.environ.pop(INDEX_NAME, None)
         key, secret = V.read_environment()
-        phase('encrypted-index'); input_chars = N.check_event(commit, armored_index)
+        enter('encrypted-index'); input_chars = N.check_event(commit, armored_index)
     else:
         need(mode in ('end500-restore-gated', 'end500-full-gated', 'end500-restore-export-diagnostic') and isinstance(private_payload, dict))
         armored_index = private_payload['cipherIndex']
@@ -206,32 +212,37 @@ def _receive_existing_verified(commit, runner_temp, *, private_payload=None, mod
         need(0 < len(key) <= 36864 and 0 < len(secret) <= 4096
              and not any(value in secret for value in (b'\0', b'\r', b'\n')))
         event_inputs = private_payload['eventInputs']
-        phase('encrypted-index')
+        enter('encrypted-index')
         input_chars = N.check_event(commit, armored_index, mode=mode,
             extra_inputs={'w15_request': event_inputs['w15_request']}, event_inputs=event_inputs)
     root = V.private_root(runner_temp)
-    phase('disk-admission'); disk = os.statvfs(root); need(disk.f_bavail * disk.f_frsize >= 1024 ** 3)
+    enter('disk-admission'); disk = os.statvfs(root); need(disk.f_bavail * disk.f_frsize >= 1024 ** 3)
     A.resource.setrlimit(A.resource.RLIMIT_CORE, (0, 0))
     home = root / 'gnupg'; home.mkdir(mode=0o700)
     failure = None
     try:
-        phase('key-import')
+        enter('key-import')
         A._run(root, home, 'key-import', ['--disable-dirmngr', '--import'], data=key, secret=secret)
         V.primary(A._run(root, home, 'secret-primary', ['--disable-dirmngr', '--with-colons', '--fingerprint', '--list-secret-keys']), 'sec')
-        phase('encrypted-index')
+        enter('encrypted-index')
         raw_index = N.decrypt_index(armored_index, root, home, secret)
-        phase('index'); urls, expires = url_index(raw_index, commit)
+        enter('index'); urls, expires = url_index(raw_index, commit)
         with os.fdopen(A._file(root, 'receiver-passphrase.PRIVATE'), 'wb') as stream:
             stream.write(secret); stream.flush(); os.fsync(stream.fileno())
-        phase('download')
-        cipher = download(root, urls, expires, pins) if guard is None else download(root, urls, expires, pins, guard=guard)
-        phase('authenticated-reception')
+        enter('download')
+        options = {}
+        if guard is not None:
+            options['guard'] = guard
+        if phase_observer is not None:
+            options['phase_observer'] = phase_observer
+        cipher = download(root, urls, expires, pins, **options)
+        enter('authenticated-reception')
         receipt = R.receive(str(cipher), cipher_sha256=CIPHER_SHA, cipher_bytes=TOTAL, destination=str(root / 'received'),
                             private_home=str(home), passphrase_file=str(root / 'receiver-passphrase.PRIVATE'),
                             exact_commit=SOURCE['exactCommit'], run_id=SOURCE['runId'], input_manifest_sha256=SOURCE['inputManifestSHA'],
                             recipient_fingerprint=SOURCE['recipientFingerprint'])
         need(receipt['sealedManifestSHA256'] == SEALED_SHA)
-        phase('relocation')
+        enter('relocation')
         relocated = IP.verify_received(str(root / 'received'), expected_transfer_context=SOURCE,
                                       expected_sealed_manifest_sha256=SEALED_SHA, checkout_commit=commit, repo=REPO).safe_summary()
         need(relocated['verifiedFiles'] == 12 and relocated['verifiedBytes'] == 242570240

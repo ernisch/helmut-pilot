@@ -40,6 +40,12 @@ def need(value):
         raise ValueError('SAME_JOB_RESTORE_CONNECTION_REJECTED')
 
 
+def _observe(resources, name):
+    observer = getattr(resources, 'phase_observer', None)
+    if observer is not None:
+        observer('connection-' + name)
+
+
 def prepare_same_job(forward, context, common_resources, *, source_review_raw=None,
                      source_review_sha256=None, node_source, postgrest_source,
                      source_qualification_raw=None, source_qualification_sha256=None,
@@ -52,6 +58,7 @@ def prepare_same_job(forward, context, common_resources, *, source_review_raw=No
     """
     phase = 'binding'
     try:
+        _observe(common_resources, phase)
         need(isinstance(context, dict) and common_resources is not None)
         if disk_guard is not None:
             disk_guard()
@@ -74,16 +81,20 @@ def prepare_same_job(forward, context, common_resources, *, source_review_raw=No
         runtime.validate_source_review(context, source_review_raw, source_review_sha256, forward.ROOT)
         runtime.C.apply_context(forward, context, repo=forward.ROOT)
         phase = 'receive'
+        _observe(common_resources, phase)
+        observer = getattr(common_resources, 'phase_observer', None)
+        phase_options = {} if observer is None else {'phase_observer': observer}
         if private_payload is None:
-            received_root, receipt = E._receive_existing_verified(context['exactCommit'], context['runnerTemp'])
+            received_root, receipt = E._receive_existing_verified(context['exactCommit'], context['runnerTemp'], **phase_options)
         else:
             received_root, receipt = E._receive_existing_verified(context['exactCommit'], context['runnerTemp'],
-                private_payload=private_payload, mode=observed_context['mode'], guard=disk_guard)
+                private_payload=private_payload, mode=observed_context['mode'], guard=disk_guard, **phase_options)
         need(receipt['exactCommit'] == context['exactCommit'] and receipt['runId'] == context['runId']
              and receipt['runAttempt'] == 1 and receipt['verifiedFiles'] == 12
              and receipt['verifiedBytes'] == 242570240 and receipt['relocationVerified'] is True)
         common_resources.check_context(context)
         phase = 'input-binding'
+        _observe(common_resources, phase)
         if disk_guard is not None:
             disk_guard()
         # Use forward's canonical loader: a separately loaded RuntimeInputs
@@ -95,9 +106,11 @@ def prepare_same_job(forward, context, common_resources, *, source_review_raw=No
         forward._checked_runtime_inputs(inputs)
         forward._checked_common_resources(inputs, common_resources)
         phase = 'cache'
+        _observe(common_resources, phase)
         cache = forward._runtime_module('runtime_cache').stage_cache(
             forward, inputs, common_resources, node_source=node_source, postgrest_source=postgrest_source)
         phase = 'prepare'
+        _observe(common_resources, phase)
         forward.prepare(inputs, common_resources)
         if disk_guard is not None:
             disk_guard()
@@ -163,13 +176,16 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
     context = inputs.controller_context()
     m = forward.M
     try:
+        _observe(resources, phase)
         forward._checked_prepared(inputs, resources)
         resources.check_context(context)
         need(not forward.WORK.exists())
         phase = 'container-start'
+        _observe(resources, phase)
         need(json.loads(m.docker('image', 'inspect', m.IMAGE))[0]['Id'] == m.IMAGE)
         need(not m.docker('ps', '-a', '--filter', 'name=^/' + forward.CONTAINER + '$', '--format', '{{.ID}}').strip())
         phase = 'materialization'
+        _observe(resources, phase)
         forward.WORK.mkdir(mode=0o700)
         for name in ('pgdata', 'state'):
             (forward.WORK / name).mkdir(mode=0o700)
@@ -193,6 +209,7 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
         seed = forward.check_seed(inputs)
         labels = tuple(item for key, value in _labels(context).items() for item in ('--label', key + '=' + value))
         phase = 'container-start'
+        _observe(resources, phase)
         attempted = True
         m.docker('create', '--name', forward.CONTAINER, '--pull=never', '--network=none', '--restart=no',
                  '--memory=' + str(m.LIMIT), '--memory-swap=' + str(m.LIMIT), '--cgroup-parent=' + resources.unit,
@@ -217,6 +234,7 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
         resources.check_pid(info['State']['Pid'], owned_id)
         watch = forward.Watch(resources.path)
         watch.common_resources = resources
+        watch.phase_observer = getattr(resources, 'phase_observer', None)
         watch.disk_guard = disk_guard
         watch.backup_runner = forward._runtime_module('runtime_owned_backup').OwnedBackupRunner(
             watch, m, base=forward.BASE, container=forward.CONTAINER, database=forward.DB, scope='end500-restore')
@@ -226,6 +244,7 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
         # restore action is retried. A timed-out client fails into owned
         # container closure rather than being treated as a completed restore.
         phase = 'readiness'
+        _observe(resources, phase)
         for _ in range(100):
             watch.sample()
             # The entrypoint's temporary init server accepts Unix sockets only.
@@ -236,6 +255,7 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
             time.sleep(.2)
         need(ready.returncode == 0)
         phase = 'native-restore'
+        _observe(resources, phase)
         m.docker('exec', owned_id, 'mkdir', '-p', forward.BASE)
         m.docker('exec', owned_id, 'chmod', '700', forward.BASE)
         m.docker('exec', owned_id, 'chown', '1000:1000', forward.BASE)
@@ -243,8 +263,10 @@ def _restore_prepared(forward, inputs, resources, *, backup_completion=None, dis
         need(restored['profiles'] == 500 and restored['active'] == 0)
         if backup_completion is not None:
             phase = 'backup'
+            _observe(resources, phase)
             backup_receipt = backup_completion(forward=forward, inputs=inputs, resources=resources, watch=watch, restored=restored)
             phase = 'backup-postcheck'
+            _observe(resources, phase)
             if export_diagnostic:
                 need(type(backup_receipt) is dict and backup_receipt.get('status') == 'PASS_FOUR_RESTORE_EXPORT_ACTIONS_ONLY'
                      and type(backup_receipt.get('exportActions')) is int and backup_receipt['exportActions'] == 4

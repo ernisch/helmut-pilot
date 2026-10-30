@@ -84,7 +84,7 @@ class FailureProjectionChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='w15-fictional-failure-memory-') as temp:
             root = Path(temp); script = root / 'scripts/w15-github/restore_workflow.py'; script.parent.mkdir(parents=True)
             raw = ('class Failure(Exception):\n phase="connection-backup-export"\n worker_memory=' + repr(memory()) +
-                '\ndef run_worker(manifest, private_payload):\n raise Failure(' + repr(CANARY) + ')\n').encode()
+                '\ndef run_worker(manifest, private_payload, *, phase_observer=None):\n raise Failure(' + repr(CANARY) + ')\n').encode()
             script.write_bytes(raw)
             manifest = {**F.REQUEST, 'stagedRepo': str(root), 'runnerTemp': str(root / 'worker'),
                 'sourcePins': {'scripts/w15-github/restore_workflow.py': {'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}}}
