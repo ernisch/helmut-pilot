@@ -193,6 +193,7 @@ jobs:
           node scripts/lokal.js -- node scripts/synthetik-500-w15-provider-time-boundary-test.js
           python3 -B scripts/w15-github/test_mock500_existing_inventory.py
           python3 -B scripts/w15-github/test_mock500_receive.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_index_builder.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_original_archive.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_archive_receive.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_archive_handoff_lifecycle.py
