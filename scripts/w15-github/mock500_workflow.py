@@ -37,6 +37,7 @@ PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', 'resourc
 MOCK_RECEIVER_PHASES = {'arguments', 'binding', 'private-inputs', 'key-import', 'outer-index',
     'original-download', 'original-reception', 'original-relocation', 'asset-download',
     'asset-reception', 'asset-readback', 'agent-close'}
+MOCK_RECEIVER_PHASES |= {'archive-' + phase for phase in ('arguments', 'cipher', 'recipient', 'destination', 'decrypt', 'gzip', 'archive', 'manifest', 'files', 'integrity', 'readback', 'cleanup')}
 PHASES |= {'mock-receiver-' + value for value in MOCK_RECEIVER_PHASES}
 
 

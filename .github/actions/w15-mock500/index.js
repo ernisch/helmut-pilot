@@ -67,7 +67,8 @@ function main(){
     const phases=['arguments','event','approval','qualification','binding','resources','synthetic',
       'receive-prepare','restore','mock500','backup','closure','parent','service','staging','worker','ipc'];
     phases.push(...['arguments','binding','private-inputs','key-import','outer-index','original-download',
-      'original-reception','original-relocation','asset-download','asset-reception','asset-readback','agent-close']
+      'original-reception','original-relocation','asset-download','asset-reception','asset-readback','agent-close',
+       ...['arguments','cipher','recipient','destination','decrypt','gzip','archive','manifest','files','integrity','readback','cleanup'].map(p=>'archive-'+p)]
       .map(value=>'mock-receiver-'+value));
     if(receipt.status!=='FAIL_OR_BLOCKED_MOCK500_WORKFLOW'||!phases.includes(receipt.phase)
       ||receipt.executionAuthority!==false||receipt.retryAllowed!==false)throw Error('receipt');

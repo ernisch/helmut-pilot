@@ -41,6 +41,7 @@ WORKER_PHASES = (S.WORKER_PHASES - {'end500'}) | {'mock500'}
 WORKER_PHASES |= {'mock-receiver-' + value for value in ('arguments', 'binding', 'private-inputs',
     'key-import', 'outer-index', 'original-download', 'original-reception', 'original-relocation',
     'asset-download', 'asset-reception', 'asset-readback', 'agent-close')}
+WORKER_PHASES |= {'mock-receiver-archive-' + phase for phase in ('arguments', 'cipher', 'recipient', 'destination', 'decrypt', 'gzip', 'archive', 'manifest', 'files', 'integrity', 'readback', 'cleanup')}
 STATUS = {'mock500-runner-synthetic': 'PASS_MOCK500_SYNTHETIC_RUNNER_ONLY_START_BLOCKED',
           'mock500-full-gated': 'PASS_MOCK500_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING'}
 RESULT_KEYS = {'status', 'mode', 'exactCommit', 'runId', 'runAttempt', 'syntheticQualification',
