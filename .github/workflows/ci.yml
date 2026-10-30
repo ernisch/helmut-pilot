@@ -182,6 +182,7 @@ jobs:
           python3 -B scripts/w15-github/test_mock500_resources.py
           python3 -B scripts/w15-github/test_mock500_start.py
           python3 -B scripts/w15-github/test_mock500_backup.py
+          node scripts/lokal.js -- node scripts/synthetik-500-w15-provider-time-boundary-test.js
           python3 -B scripts/w15-github/test_mock500_existing_inventory.py
           python3 -B scripts/w15-github/test_mock500_receive.py
           python3 -B scripts/w15-github/test_mock500_workflow.py
