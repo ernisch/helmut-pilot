@@ -83,7 +83,7 @@ let pushConfig = null;
 let pushAutoSyncStarted = false;
 let selectedDecisionId = "";
 let selectedVorgangId = "";
-let currentView = "briefing";
+let currentView = "helmut";
 let detailOriginView = "briefing";
 let navOpen = false;
 let updatesOpen = false;
@@ -173,9 +173,13 @@ let expandedSections = new Set();
 let onboardingActive = false;
 let onboardingStep = 0;
 let onboardingDraft = {};
+let onboardingSaving = false;
 
 const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
+// Hydrate existing boot markup without changing the server's HTML generator.
+const orientationMessage = document.querySelector(".orientation-lock-text");
+if (orientationMessage) orientationMessage.textContent = "Bitte drehe dein Gerät ins Hochformat.";
 
 function fmtCost(n) {
   if (typeof n !== "number") return "—";
@@ -259,16 +263,16 @@ let csrfTokenPromise = null;
 // Die IDs sind interner Zustand/Vertrag (data-view, Router, Tests) und bleiben bewusst
 // unveraendert — nur das sichtbare Label wurde umbenannt. Marke/Produkt heisst weiter Helmut.
 const navItems = [
+  ["helmut", "Briefing"],
   ["briefing", "Lage"],
   ["radar", "Radar"],
-  ["helmut", "Briefing"],
   ["office", "Büro"]
 ];
 
 const mobileNavItems = [
+  ["helmut", "Briefing"],
   ["briefing", "Lage"],
   ["radar", "Radar"],
-  ["helmut", "Briefing"],
   ["office", "Büro"]
 ];
 
@@ -595,8 +599,9 @@ function renderOnboarding() {
   if (onboardingStep === 0) {
     body = `
       <h2>Willkommen bei Helmut.</h2>
-      <p class="onboarding-lead">Lass uns ${escapeHtml(mandateName)} in unter 2 Minuten einrichten, damit dein Briefing sofort passt.</p>
-      <p class="onboarding-note">Diese Angaben nutzt Helmut nur zur Personalisierung deiner Briefings. Du kannst sie jederzeit ändern oder löschen.</p>`;
+      <p class="onboarding-lead">Lass uns dein Mandatsprofil einrichten. Das dauert etwa zwei Minuten.</p>
+      <dl class="ui-onboarding-mandate"><dt>Mandat</dt><dd>${escapeHtml(mandateName)}</dd></dl>
+      <p class="onboarding-note">Das Mandat ist deinem Zugang fest zugeordnet. Deine Angaben nutzt Helmut zur persönlichen Einordnung. Alle Felder sind freiwillig und lassen sich später im Profil ändern.</p>`;
   } else if (onboardingStep === 1) {
     body = `
       <h2>Partei & Fraktion</h2>
@@ -630,7 +635,7 @@ function renderOnboarding() {
     const selectedFormats = new Set(d.officeFormats || ["presse", "linkedin"]);
     body = `
       <h2>Büro-Formate</h2>
-      <p class="onboarding-note">Was soll Helmut automatisch vorbereiten, wenn dein Briefing kommt? Du kannst das jederzeit in den Einstellungen ändern.</p>
+      <p class="onboarding-note">Welche Entwürfe soll Helmut dir im Büro anbieten? Du kannst das jederzeit in den Einstellungen ändern.</p>
       <div class="onboarding-chips">
         ${OFFICE_FORMATS.map((f) => `<label class="onboarding-chip"><input type="checkbox" name="officeFormat" value="${escapeAttribute(f.id)}" ${selectedFormats.has(f.id) ? "checked" : ""}/> ${escapeHtml(f.label)}</label>`).join("")}
       </div>`;
@@ -639,22 +644,24 @@ function renderOnboarding() {
       <h2>Risiken & Chancen (optional)</h2>
       <label>Risiko-Themen (Komma-getrennt)<input name="riskTopics" type="text" value="${escapeAttribute(d.riskTopics || "")}" placeholder="z. B. Klinikschließungen" /></label>
       <label>Chancen-Themen (Komma-getrennt)<input name="opportunityTopics" type="text" value="${escapeAttribute(d.opportunityTopics || "")}" placeholder="z. B. Pflege-Offensive" /></label>
-      <p class="onboarding-note">Fertig — danach ist Helmut auf dich eingestellt.</p>`;
+      <p class="onboarding-note">Mit „Fertig & speichern“ wird dein Profil gespeichert. Alles lässt sich später im Profil ändern.</p>`;
   }
   const isFirst = onboardingStep === 0;
   const isLast = onboardingStep === ONBOARDING_STEPS - 1;
   return `
-    <div class="onboarding-layer">
-      <form class="onboarding-card" id="onboardingForm" onsubmit="return false">
-        <div class="onboarding-progress">Schritt ${onboardingStep + 1} von ${ONBOARDING_STEPS}</div>
+    <div class="onboarding-layer" role="dialog" aria-modal="true" aria-label="Ersteinrichtung">
+      <form class="onboarding-card" id="onboardingForm" onsubmit="return false" aria-busy="${onboardingSaving}">
+        <header class="ui-onboarding-header"><span class="ui-onboarding-brand"><img src="assets/ui/logo/helmut-zeichen.svg" width="34" height="34" alt="" />Helmut</span><span class="onboarding-progress">Schritt ${onboardingStep + 1} von ${ONBOARDING_STEPS}</span><button type="button" class="text-button" data-onboard-skip ${onboardingSaving ? "disabled" : ""}>Später</button></header>
+        <progress class="ui-onboarding-progress" value="${onboardingStep + 1}" max="${ONBOARDING_STEPS}" aria-label="Fortschritt der Ersteinrichtung"></progress>
+        <fieldset class="ui-onboarding-fields" ${onboardingSaving ? "disabled" : ""}>
         <div class="onboarding-body">${body}</div>
         <div class="onboarding-actions">
           ${!isFirst ? `<button type="button" class="secondary-button" data-onboard-back>Zurück</button>` : ""}
-          <button type="button" class="account-logout" data-onboard-skip>Später</button>
           ${isLast
-            ? `<button type="button" class="primary-button" data-onboard-finish>Fertig & speichern</button>`
+            ? `<button type="button" class="primary-button" data-onboard-finish>${onboardingSaving ? "Wird gespeichert …" : "Fertig & speichern"}</button>`
             : `<button type="button" class="primary-button" data-onboard-next>${isFirst ? "Los geht's" : "Weiter"}</button>`}
         </div>
+        </fieldset>
       </form>
     </div>
   `;
@@ -678,7 +685,9 @@ function captureOnboardingStep() {
 }
 
 async function finishOnboarding(skip) {
-  onboardingActive = false;
+  if (onboardingSaving) return;
+  if (previewMode) { showToast("Vorschau: Profil nicht gespeichert"); return; }
+  onboardingSaving = true;
   const now = new Date().toISOString();
   const payload = skip
     ? { id: activePoliticianId, onboardedAt: now }
@@ -700,15 +709,31 @@ async function finishOnboarding(skip) {
   render();
   try {
     const res = await apiSend("PATCH", `/api/profile/current?${apiScopeQuery()}`, payload);
-    if (res.ok && res.json) profile = res.json;
-    showToast(skip ? "Du kannst dein Profil jederzeit in den Einstellungen ergänzen." : "Profil eingerichtet — Helmut ist startklar.");
+    if (!res.ok || !res.json || res.json.ok === false) throw new Error("Profile save not confirmed");
+    profile = res.json;
+    onboardingActive = false;
+    showToast(skip ? "Du kannst dein Profil jederzeit ergänzen." : "Profil gespeichert");
   } catch (error) {
     console.warn("Onboarding speichern fehlgeschlagen", error);
+    showToast("Profil konnte nicht gespeichert werden. Deine Eingaben bleiben erhalten.");
+  } finally {
+    onboardingSaving = false;
   }
   render();
 }
 
 function bindOnboarding() {
+  const layer = app.querySelector(".onboarding-layer");
+  if (layer) {
+    layer.addEventListener("keydown", event => {
+      if (event.key !== "Tab") return;
+      const controls = Array.from(layer.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled)'));
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    });
+    layer.querySelector("button:not(:disabled)")?.focus({ preventScroll: true });
+  }
   const next = app.querySelector("[data-onboard-next]");
   if (next) next.addEventListener("click", () => { captureOnboardingStep(); onboardingStep = Math.min(ONBOARDING_STEPS - 1, onboardingStep + 1); render(); });
   const back = app.querySelector("[data-onboard-back]");
@@ -4347,20 +4372,24 @@ function render() {
   // bleiben ruhig -> keine mehrfach aufpoppenden Karten. Klasse VOR innerHTML setzen,
   // damit die neu gemounteten Knoten den Zustand sehen.
   const enterAnim = animateNextRender || currentView !== lastAnimatedView;
+  const pageScroll = currentView === lastAnimatedView ? (app.querySelector(".ui-page")?.scrollTop || 0) : 0;
   if (app) app.classList.toggle("anim-enter", enterAnim);
   app.innerHTML = `
     <div class="app-frame view-${escapeAttribute(currentView || "")}">
       ${renderSidebar()}
-      <main class="content-shell">
+      <div class="content-shell" ${onboardingActive ? "inert" : ""}>
         ${renderTopbar()}
-        ${renderView()}
-      </main>
+        <div class="ui-page" id="uiPage" tabindex="-1">${renderView()}</div>
+        ${renderUiFooter()}
+      </div>
       ${renderMobileDock()}
       ${renderUpdatesPanel()}
       ${renderTaskHandoffPanel()}
       ${renderOnboarding()}
     </div>
   `;
+  const page = app.querySelector(".ui-page");
+  if (page) page.scrollTop = pageScroll;
   lastAnimatedView = currentView;
   animateNextRender = false;
   hideStartupSplash();
@@ -4383,6 +4412,56 @@ function hideStartupSplash() {
   }, 980);
 }
 
+// Shared presentation components. These read the already loaded client state;
+// they never load data, start the motor or write to a backend.
+let uiLageSelectedId = "";
+let uiLageDetailOpen = false;
+
+function uiIcon(name) {
+  const paths = {
+    helmut: '<path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/>',
+    briefing: '<path d="M6 3h8l4 4v14H6zM14 3v5h5M9 12h6M9 16h6"/>',
+    radar: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    office: '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M3 12h18"/>',
+    bell: '<path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5zM10 21h4"/>',
+    arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
+    back: '<path d="m15 5-7 7 7 7"/>',
+    source: '<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v14c0 4 14 4 14 0V5M5 12c0 4 14 4 14 0"/>'
+  };
+  return `<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths[name] || paths.briefing}</svg>`;
+}
+
+function renderUiPageHeader(title, subtitle = "", extra = "") {
+  const dateLabel = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
+  return `<header class="ui-page-header">
+    <p class="ui-date">${escapeHtml(dateLabel)}</p>
+    <h1>${escapeHtml(title)}</h1>
+    ${subtitle ? `<p class="ui-page-subtitle">${escapeHtml(subtitle)}</p>` : ""}
+    ${extra}
+  </header>`;
+}
+
+function renderUiEmpty(title, detail) {
+  return `<div class="ui-empty" role="status"><span class="ui-priority-dot" aria-hidden="true"></span><h2>${escapeHtml(title)}</h2><p>${escapeHtml(detail)}</p></div>`;
+}
+
+function renderUiFooter() {
+  const label = currentView === "settings" || currentView === "profile-settings"
+    ? "Dein Mandatsprofil steuert die persönliche Einordnung."
+    : "Quellen und Stand findest du direkt bei den angezeigten Inhalten.";
+  return `<footer class="ui-footer">${uiIcon("source")}<span>${escapeHtml(label)}</span>${previewMode ? '<span class="ui-preview-label">Vorschau · Beispieldaten</span>' : ""}</footer>`;
+}
+
+function renderUiAccountTools() {
+  const roles = roleNavItems();
+  const showSwitcher = isAccountMode() && currentUser && allowedProfiles.length > 1;
+  if (!roles.length && !showSwitcher) return "";
+  return `<section class="ui-account-tools" aria-label="Weitere Arbeitsbereiche">
+    ${showSwitcher ? `<label>Mandat wählen<select class="account-switch" data-profile-switch>${allowedProfiles.map(entry => `<option value="${escapeAttribute(entry.id)}" ${entry.id === activePoliticianId ? "selected" : ""}>${escapeHtml(entry.name)}</option>`).join("")}</select></label>` : ""}
+    ${roles.map(([id, label]) => `<button class="secondary-button" type="button" data-view="${escapeAttribute(id)}">${escapeHtml(label)}</button>`).join("")}
+  </section>`;
+}
+
 function renderSidebar() {
   const displayName = currentUser?.name || profile?.fullName || "Profil";
   const displayRole = currentUser ? roleLabel(currentUser.role) : (profile?.function || "MdB");
@@ -4394,27 +4473,23 @@ function renderSidebar() {
       </select>`
     : "";
   return `
-    <aside class="sidebar ${navOpen ? "open" : ""}">
+    <aside class="sidebar ${navOpen ? "open" : ""}" ${onboardingActive ? "inert" : ""}>
       <div>
-        <div class="brand">
-          <b class="brand-mark" aria-hidden="true">H</b>
-          <span>HELMUT</span>
-          <small>Dein politischer Stabschef</small>
-        </div>
+        <div class="brand"><span>Helmut</span><small>Was jetzt zählt.</small></div>
         <nav class="nav-list" aria-label="Hauptnavigation">
-          ${navItems.map(([id, label]) => `<button class="${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">${label}${id === "helmut" && hasNewHelmutAssessment() ? `<i class="helmut-new-dot"></i>` : ""}</button>`).join("")}
+          ${navItems.map(([id, label]) => `<button class="${isMobileNavActive(id) ? "active" : ""}" ${isMobileNavActive(id) ? 'aria-current="page"' : ""} type="button" data-view="${id}">${uiIcon(id)}<span>${label}</span>${id === "helmut" && hasNewHelmutAssessment() ? `<i class="helmut-new-dot"></i>` : ""}</button>`).join("")}
           ${roleNavItems().map(([id, label]) => `<button class="${currentView === id ? "active" : ""}" type="button" data-view="${id}">${label}</button>`).join("")}
         </nav>
       </div>
       <div class="sidebar-foot">
         ${profileSwitcher}
-        <div class="sidebar-user-card">
+        <button class="sidebar-user-card" type="button" data-view="settings" aria-label="Profil und Einstellungen öffnen" ${currentView === "settings" || currentView === "profile-settings" ? 'aria-current="page"' : ""}>
           <div class="sidebar-user-avatar">${escapeHtml(initials)}</div>
           <div class="sidebar-user-info">
             <strong>${escapeHtml(displayName)}</strong>
             <span>${escapeHtml(displayRole)}</span>
           </div>
-        </div>
+        </button>
         ${isAccountMode() && currentUser ? `<button class="account-logout sidebar-logout" type="button" data-logout>Abmelden</button>` : ""}
       </div>
     </aside>
@@ -4423,10 +4498,10 @@ function renderSidebar() {
 
 function renderMobileDock() {
   return `
-    <nav class="mobile-dock" aria-label="Mobile Navigation">
+    <nav class="mobile-dock" aria-label="Mobile Navigation" ${onboardingActive ? "inert" : ""}>
       ${mobileNavItems.map(([id, label]) => `
-        <button class="nav-${escapeAttribute(id)} ${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">
-          <span>${escapeHtml(mobileNavSymbol(id))}</span>
+        <button class="nav-${escapeAttribute(id)} ${isMobileNavActive(id) ? "active" : ""}" ${isMobileNavActive(id) ? 'aria-current="page"' : ""} type="button" data-view="${id}">
+          ${uiIcon(id)}
           ${id === "office" && actionableOfficeTaskCount() ? `<i>${escapeHtml(String(actionableOfficeTaskCount()))}</i>` : ""}
           ${id === "helmut" && hasNewHelmutAssessment() ? `<i class="helmut-new-dot"></i>` : ""}
           ${escapeHtml(label)}
@@ -4460,23 +4535,24 @@ function roleNavItems() {
 
 function renderTopbar() {
   const hasUpdates = hasUnreadUpdates();
+  const statusLabel = displayStatusLabel();
+  const tone = /fehler|störung|fehlgeschlagen/i.test(statusLabel) ? "error"
+    : /^aktuell$/i.test(statusLabel) ? "fresh" : "stale";
   return `
     <header class="topbar">
       <button class="menu-button ${navOpen ? "close" : ""}" type="button" data-menu aria-label="${navOpen ? "Menü schließen" : "Menü öffnen"}">
         ${navOpen ? "×" : "<span></span><span></span><span></span>"}
       </button>
-      <span class="topbar-brand">HELMUT</span>
+      <span class="topbar-brand">Helmut</span>
       <div class="topbar-meta">
+        <span class="ui-status ui-status--${tone}"><i aria-hidden="true"></i><span data-berlin-clock>${escapeHtml(statusLabel)} · ${formatBerlinNow()}</span></span>
         <button class="update-heart ${hasUpdates ? "has-updates" : ""}" type="button" data-updates aria-expanded="${updatesOpen ? "true" : "false"}" title="${hasUpdates ? "Mitteilungen anzeigen" : "Keine neuen Mitteilungen"}" aria-label="${hasUpdates ? "Mitteilungen anzeigen" : "Keine neuen Mitteilungen"}">
-          <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-            <path d="M31.7 54.2 11.9 34.5C4.4 27 4.8 15.4 12.8 9.4c6.1-4.6 14.8-3.4 19.1 2.9 4.4-6.3 13.1-7.5 19.2-2.9 8 6 8.3 17.6.8 25.1L31.7 54.2Z" />
-          </svg>
+          ${uiIcon("bell")}
           <i></i>
         </button>
         <button class="profile-avatar" type="button" data-view="settings" aria-label="Profil öffnen">
           ${escapeHtml(profileInitials())}
         </button>
-        <span data-berlin-clock>${escapeHtml(briefing.status)} · ${formatBerlinNow()}</span>
       </div>
     </header>
   `;
@@ -4532,7 +4608,7 @@ function renderView() {
   if (currentView === "detail") return renderDetailView();
   if (currentView === "communication") return renderCommunicationView();
   if (currentView === "office" || currentView === "tasks") return renderOfficeView();
-  if (currentView === "office-detail") return renderOfficeDraftDetail();
+  if (currentView === "office-detail") return renderOfficeView();
   if (currentView === "topics") return renderTopicsView();
   if (currentView === "radar") return renderRadarView();
   if (currentView === "helmut") return renderHelmutView();
@@ -5042,47 +5118,37 @@ function renderProsaEinordnung(data) {
 function renderLageView() {
   const data = lageData();
   if (data?.prosaVorschau === true) return renderProsaEinordnung(data.prosaEinordnung);
-  const firstName = (profile && profile.fullName ? profile.fullName : "").split(" ")[0];
-  const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : (firstName ? `Guten Morgen, ${firstName}.` : "Guten Morgen."));
-  const dateLabel = lageDateLabel();
-  const vorgaenge = lageVisibleVorgaenge(data);
-  if (!vorgaenge.length) return renderLageEmpty(greeting, dateLabel, data && data.emptyState, data);
-  const count = vorgaenge.length;
-  // EHRLICHE KOPFZEILE (Audit-Fix 2026-07): "Heute gibt es N NEUE Vorgänge"
-  // etikettierte beliebig alte Vorgänge als heutige Neuigkeiten. Jetzt: neutrale
-  // Zählung + sichtbare Frische der neuesten Quelle (macht veraltete Daten ruhig
-  // und ohne Alarmismus erkennbar).
-  const countWord = count === 1 ? "relevanter Vorgang" : "relevante Vorgänge";
-  // Block 5 (Lage-Frische): PRIMÄRE Frische = echte Analysezeit ("Zuletzt aktualisiert:
-  // heute, HH:MM"), deckungsgleich mit dem Kopf-"Aktuell". Die Quellen-Aktualität
-  // ("Neueste Quelle vom …") bleibt eine GETRENNT beschriftete Zeile: ein wochenaltes
-  // Artikeldatum darf die frisch geprüfte Lage nicht fälschlich alt aussehen lassen.
-  // Fehlt die Analysezeit ausnahmsweise, tritt die Quellen-Aktualität an ihre Stelle
-  // (die Frische verschwindet nie mehr komplett still).
-  const sourceRecency = lageFreshnessLabel(vorgaenge);
+  const items = lageVisibleVorgaenge(data);
+  const header = renderUiPageHeader("Politische Lage", "Relevante Vorgänge, aktueller Sachstand und belastbare Quellen.");
+  if (!items.length) {
+    return header + renderLageEmpty("Politische Lage", lageDateLabel(), data && data.emptyState, data);
+  }
+  const selected = items.find(v => String(v.vorgangId || v.id) === uiLageSelectedId) || items[0];
+  const selectedId = String(selected.vorgangId || selected.id || "");
   const checked = lageCheckedLabel(data && data.latestUpdatedAt);
-  const standLine = checked || sourceRecency;
-  const secondRecency = checked ? sourceRecency : "";
-  return `
-    <section class="lage2">
-      <header class="lage2-head">
-        <span class="lage2-date">${escapeHtml(dateLabel)}</span>
-        <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
-        <p class="lage2-count"><b>${count}</b> ${countWord} in deiner Lage.${standLine ? ` <span class="lage2-stand">${escapeHtml(standLine)}</span>` : ""}</p>
-        ${secondRecency ? `<p class="lage2-source-recency">${escapeHtml(secondRecency)}</p>` : ""}
-      </header>
-      ${data.demo ? `<span class="lage2-demo">Beispiel-Briefing · Demodaten</span>` : ""}
-
-      <div class="lage2-carousel-bleed">
-        <div class="lage2-carousel" data-lage-track>
-          ${vorgaenge.map(renderVorgangCard).join("")}
+  return `${header}
+    ${data.demo ? '<p class="ui-preview-label">Beispiel-Lage · Demodaten</p>' : ""}
+    <div class="ui-master-detail ui-lage-workspace ${uiLageDetailOpen ? "is-detail" : ""}">
+      <section class="ui-master" aria-label="Politische Vorgänge">
+        <div class="ui-section-heading"><span>Politische Vorgänge</span><span>${checked ? escapeHtml(checked) : `${items.length} Vorgänge`}</span></div>
+        <div class="ui-vorgang-list">
+          ${items.map((v, index) => {
+            const id = String(v.vorgangId || v.id || "");
+            const title = lageField(v.displayTitle) || lageDisplayHeadline(v.title);
+            const summary = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
+            return `<button class="ui-vorgang-row ${id === selectedId ? "is-selected" : ""}" type="button" data-ui-lage-select="${escapeAttribute(id)}" aria-pressed="${id === selectedId}">
+              <span class="ui-row-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
+              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(summary)}</span>` : ""}${lageStatusChip(v) ? `<span class="ui-row-meta">${escapeHtml(lageStatusChip(v))}</span>` : ""}</span>
+              <span class="ui-row-chevron" aria-hidden="true">›</span>
+            </button>`;
+          }).join("")}
         </div>
-        ${count > 1 ? `
-        <div class="lage2-dots" data-lage-dots aria-hidden="true">
-          ${vorgaenge.map((_, i) => `<span class="lage2-dot-item${i === 0 ? " active" : ""}"></span>`).join("")}
-        </div>` : ""}
-      </div>
-    </section>`;
+      </section>
+      <article class="ui-detail ui-lage-detail" aria-labelledby="ui-lage-detail-title">
+        <button class="ui-mobile-back" type="button" data-ui-lage-back>${uiIcon("back")} Zurück zur Lage</button>
+        ${vsheetContentHtml(selected).replace('id="vsheet-title"', 'id="ui-lage-detail-title"')}
+      </article>
+    </div>`;
 }
 
 // Merkt sich die Scroll-Position übers volle Re-Rendern hinweg (z. B. Menü/Update-
@@ -5706,7 +5772,7 @@ function vsheetTeardown() {
 }
 
 function lageStarIcon() {
-  return `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m10 2.5 2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L2.8 7.8l5-.7L10 2.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`;
+  return `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4" fill="currentColor"/></svg>`;
 }
 
 function renderVorgangDetailView() {
@@ -6132,21 +6198,10 @@ function renderLageSnapshot() {
 }
 
 function renderLearningPulse() {
-  const learning = opsStatus?.learning || briefing.learning || briefing.learningProfile || {};
-  const count = Number(learning.eventCount || 0);
-  const positive = learning.topicWeights?.find((entry) => Number(entry.score || 0) > 0);
-  const negative = learning.topicWeights?.find((entry) => Number(entry.score || 0) < 0);
-  const message = count
-    ? learning.summary || `Helmut hat ${count} Nutzungssignale und passt die Priorisierung vorsichtig an.`
-    : "Markiere Empfehlungen als relevant, später, erledigt oder nicht relevant. Daraus lernt Helmut, was für dein Mandat wirklich zählt.";
-  const focus = positive ? `Stärker: ${positive.label}` : negative ? `Weniger: ${negative.label}` : "Lernmodus bereit";
-  return `
-    <section class="learning-pulse" aria-label="Lernmodus">
-      <span>${escapeHtml(focus)}</span>
-      <p>${escapeHtml(message)}</p>
-    </section>
-  `;
+  const learning = opsStatus?.learning || briefing?.learning || briefing?.learningProfile || {};
+  return `<section class="learning-pulse" aria-label="Rückmeldungen"><span>Rückmeldungen</span><p>${escapeHtml(learningSummary(learning))}</p></section>`;
 }
+
 
 function renderFeedbackActions(decision) {
   if (!decision?.id) return "";
@@ -6414,7 +6469,9 @@ function renderHelmutView() {
   // (deterministisch, serverseitig gebaut). Der Refresh-/Intro-Ring bleibt als reiner
   // TECHNISCHER Ladezustand erhalten; danach rendert der ruhige Stand. Die alte
   // Assessment-/Typing-Ansicht (mit berechneten Ersatztexten) wird nicht mehr genutzt.
-  return (refreshActive || helmutThinking) ? renderHelmutThinkingView() : renderHelmutStandView();
+  return (refreshActive || helmutThinking)
+    ? renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.") + renderHelmutThinkingView()
+    : renderHelmutStandView();
 }
 
 function renderRefreshButton() {
@@ -6451,7 +6508,7 @@ function renderHelmutThinkingView() {
       <section class="helmut-refresh helmut-refresh--error" aria-live="polite">
         <div class="helmut-refresh-core" aria-hidden="true"><span class="helmut-refresh-mark">H</span></div>
         <p class="helmut-refresh-title">Aktualisierung gerade nicht möglich</p>
-        <p class="helmut-refresh-sub">Helmut konnte den Stand gerade nicht neu prüfen. Der zuletzt bekannte Stand bleibt sichtbar. Bitte in einem Moment erneut auf „neu prüfen" tippen.</p>
+        <p class="helmut-refresh-sub">Helmut konnte den Stand gerade nicht neu prüfen. Der zuletzt bekannte Stand bleibt sichtbar. Ein neuer Versuch ist in einigen Minuten möglich.</p>
       </section>
     `;
   }
@@ -6648,15 +6705,34 @@ function renderHelmutStandView() {
   return `
     <section class="hstand" aria-label="Briefing – aktueller Stabschefstand">
       ${renderHstandHeader(state)}
-      ${renderHstandPrimary(state)}
-      ${renderHstandProposal(state)}
-      ${renderHstandWhy(state)}
-      ${renderHstandRiskChance(state)}
+      ${renderUiBriefingHero(state)}
+      <div class="ui-briefing-context">${renderHstandWhy(state)}${renderHstandRiskChance(state)}</div>
       ${renderHstandComms(state)}
       ${renderHstandActions(state)}
       ${renderHstandItems(state)}
+      <details class="ui-source-details"><summary>Einordnung und Quellen zum wichtigsten Vorgang</summary>${renderHstandPrimary(state)}</details>
       ${renderHstandSources(state)}
     </section>`;
+}
+
+function renderUiBriefingHero(state) {
+  const item = state.primaryItem;
+  const title = hstandText(item.displayTitle) || hstandText(item.title);
+  const recommendation = hstandText(state.recommendation);
+  const stale = state.status === "stale" || state.staleState === true || state.datenstandVonHeute === false || state.frischeVertrag?.aktuell === false;
+  const eyebrow = stale ? "Letzter Stand" : state.status === "fresh" ? "Heute entscheidend" : "Aktueller Vorgang";
+  const urgency = hstandUrgencyChip(state.urgency || item.urgency);
+  return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang">
+    <div class="ui-hero-main"><span class="ui-eyebrow"><span class="ui-priority-dot" aria-hidden="true"></span>${eyebrow}</span>
+      <h2>${escapeHtml(title)}</h2>
+      <div class="hstand-chiprow">${urgency}${hstandContextChips(item.contextChips, 3)}</div>
+      ${briefingLageVerweis(item)}
+    </div>
+    <div class="ui-hero-next"><span class="ui-eyebrow">Dein nächster Schritt</span>
+      ${recommendation ? `<p>${escapeHtml(recommendation)}</p>` : '<p>Prüfe die Einordnung und Quellen zu diesem Vorgang.</p>'}
+      <button type="button" class="ui-arrow-action" data-view="office"><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span>Im Büro öffnen</span></button>
+    </div>
+  </section>`;
 }
 
 function renderHstandHeader(state) {
@@ -6688,21 +6764,16 @@ function renderHstandHeader(state) {
     : (HSTAND_TYPE_LABEL[String(state.briefingType || "").toLowerCase()] || "Briefing");
   const partial = state.qualityStatus === "partial";
   return `
-    <header class="hstand-head">
-      <div class="hstand-head-row">
-        <div class="hstand-head-titles">
-          <h1 class="hstand-title">Helmut</h1>
-          <p class="hstand-subtitle">Dein politischer Stabschef</p>
-        </div>
+    ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.")}
+    <div class="hstand-head ui-briefing-status">
         <div class="hstand-head-actions">
           <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
           ${renderRefreshButton()}
         </div>
-      </div>
       <p class="hstand-meta-line">${HELMUT_ICON_CLOCK}<span>${escapeHtml(type)}${when ? ` · ${escapeHtml(when)}` : ""}</span></p>
       ${partial ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>Nur teilweise vollständig – einige Angaben fehlen noch.</span></p>` : ""}
       ${renderHstandFrische(state)}
-    </header>`;
+    </div>`;
 }
 
 // Wichtigster Bereich: Mein Vorschlag (recommendation + urgency + contextChips).
@@ -6958,6 +7029,7 @@ function renderHstandSources(state) {
 function renderHstandUnavailable() {
   return `
     <section class="hstand hstand--state" aria-label="Briefing">
+      ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.")}
       <div class="hstand-state-card">
         <span class="hstand-state-mark" aria-hidden="true">H</span>
         <p class="hstand-state-title">Kein aktueller Stand verfügbar</p>
@@ -7156,7 +7228,7 @@ function renderHelmutDeckSection() {
   if (!helmutDeck.length) {
     return `
       <section class="helmut-deck-section" aria-label="Deine wichtigsten Entscheidungen">
-        <p class="helmut-deck-empty">Heute ist wenig Dringendes dabei — ich melde mich, sobald sich etwas bewegt.</p>
+        <p class="helmut-deck-empty">Heute ist wenig Dringendes dabei.</p>
       </section>`;
   }
   const remaining = Math.max(0, helmutDeck.length - helmutDecisionsMade);
@@ -9017,11 +9089,6 @@ function renderOfficeView() {
   const readyCount = allCards.filter(({ decision, format }) => officeCardStatus(decision, format) === "Entwurf bereit").length;
   const holdCount = allCards.filter(({ format }) => draftStatus(format) !== "Entwurf bereit").length;
 
-  const firstTwoFormats = formats.slice(0, 2).map((f) => OFFICE_FORMAT_META[f.id]?.formatLabel || f.label).filter(Boolean);
-  const eyebrow = hasBriefing && totalCount
-    ? `Heute vorbereitet: ${totalCount} ${totalCount !== 1 ? "Entwürfe" : "Entwurf"}. Prüfe zuerst ${firstTwoFormats.join(" und ")}.`
-    : "Heute vorbereitet.";
-
   const summaryText = hasBriefing
     ? (readyCount ? `${readyCount} ${readyCount !== 1 ? "Entwürfe" : "Entwurf"} bereit` : "")
       + (holdCount ? `${readyCount ? `<span class="buero-summary-sep">·</span>` : ""}${holdCount} zum Bereithalten` : "")
@@ -9044,15 +9111,17 @@ function renderOfficeView() {
     </div>
   ` : "";
 
+  if (selectedOfficeDraft && !allCards.some(({decision, format}) => officeDraftKey(decision, format) === officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format))) selectedOfficeDraft = null;
+  const selectedCard = selectedOfficeDraft && allCards.find(({decision, format}) => officeDraftKey(decision, format) === officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format));
+  if (selectedCard) selectedOfficeDraft = uiOfficeSelection(selectedCard.decision, selectedCard.format);
+  else if (allCards.length) selectedOfficeDraft = uiOfficeSelection(allCards[0].decision, allCards[0].format);
   return `
     <div class="buero-view">
-      <header class="buero-header">
-        <h1 class="buero-title">Büro</h1>
-        <p class="buero-eyebrow">${escapeHtml(eyebrow)}</p>
-        <p class="buero-summary">${summaryText}</p>
-      </header>
+      ${renderUiPageHeader("Büro", "Entwürfe für deine politische Arbeit. Prüfe Inhalt und Quellen vor der Verwendung.")}
+      <p class="buero-summary">${summaryText || "Noch kein Entwurf bereit"}</p>
       ${priorityHint}
-      <div class="buero-draft-list">
+      <div class="ui-master-detail ui-office-workspace ${currentView === "office-detail" ? "is-detail" : ""}">
+      <div class="buero-draft-list ui-master">
         ${topDecisions.map((decision, di) => `
           <div class="buero-group">
             <h2 class="buero-group-title">
@@ -9062,9 +9131,22 @@ function renderOfficeView() {
             ${formats.map((format, fi) => renderOfficeDraftCard(decision, format, di * formats.length + fi)).join("")}
           </div>
         `).join("")}
+        ${!hasBriefing ? renderUiEmpty("Noch keine Entwürfe", "Sobald belastbare Vorgänge vorliegen, kannst du hier passende Entwürfe prüfen.") : !formats.length ? renderUiEmpty("Keine Büro-Formate ausgewählt", "Wähle die gewünschten Formate in deinem Profil.") : ""}
+      </div>
+      <aside class="ui-detail ui-office-detail" aria-label="Entwurf im Detail">${selectedOfficeDraft ? renderOfficeDraftDetail() : renderUiEmpty("Dein Arbeitsbereich", "Wähle einen Entwurf, um den vollständigen Text und seine Quellen zu prüfen.")}</aside>
       </div>
     </div>
   `;
+}
+
+function uiOfficeSelection(decision, format) {
+  const cached = officeDrafts[officeDraftKey(decision, format)];
+  const cachedText = officeDraftText(cached);
+  const valid = isValidDraft(cachedText);
+  return { decision, format,
+    text: (valid ? cachedText : null) || channelFallbackStatement(decision, format.channel || "press"),
+    provenance: draftProvenanceLabel(officeDraftProvenance(cached), valid)
+  };
 }
 
 function renderOfficeDraftCard(decision, format, index = 0) {
@@ -9089,7 +9171,7 @@ function renderOfficeDraftCard(decision, format, index = 0) {
   const formatLabel = meta.formatLabel || title;
 
   return `
-    <article class="buero-draft-card${isLoading ? " is-loading" : ""}" style="animation-delay:${delay}"
+    <article class="buero-draft-card${isLoading ? " is-loading" : ""}${selectedOfficeDraft && officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format) === key ? " is-selected" : ""}" style="animation-delay:${delay}"
       data-office-open="${escapeAttribute(key)}"
       data-office-decision="${escapeAttribute(JSON.stringify({ id: decision.id, signalId: decision.signalId, title: decision.title }))}"
       data-office-format="${escapeAttribute(format.id)}"
@@ -9184,7 +9266,7 @@ function renderOfficeDraftDetail() {
           <span class="buero-card-type">${escapeHtml(meta.typeLabel)}</span>
           <span class="buero-status-pill ${statusClass}">${escapeHtml(status)}</span>
         </div>
-        <h1 class="buero-detail-title">${escapeHtml(meta.formatLabel || draftTitle(decision))}</h1>
+        <h2 class="buero-detail-title">${escapeHtml(meta.formatLabel || draftTitle(decision))}</h2>
         <p class="buero-detail-anlass">Anlass: ${escapeHtml(draftTitle(decision))}</p>
         <p class="buero-detail-meta">
           ${time ? `Erstellt heute um ${escapeHtml(time)}` : "Heute erstellt"}
@@ -9544,12 +9626,11 @@ function renderRadarHeader(state) {
   return `
     <header class="radar2-header">
       <div class="radar2-header-row">
-        <h1 class="radar2-h1">Radar</h1>
+        ${renderUiPageHeader("Radar", "Was sich abzeichnet. Was du im Blick behalten solltest.")}
         <button class="radar2-refresh ${radarRefreshing ? "is-loading" : ""}" type="button" data-radar-refresh aria-label="Radar aktualisieren" ${radarRefreshing ? "aria-busy=\"true\"" : ""}>
           ${radarIcon("refresh")}
         </button>
       </div>
-      <p class="radar2-lede">Was zeichnet sich ab, was solltest du beobachten?</p>
       ${failNote}
       <div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
         <span class="radar2-status-dot" aria-hidden="true"></span>
@@ -10047,8 +10128,8 @@ function mentionRows(items, options = {}) {
     if (options.empty === false) return "";
     return `
       <div class="radar-empty-hint">
-        <p><strong>Keine neue Erwähnung</strong><br>Personensuche läuft weiter. Nächster Quellenlauf heute Abend.</p>
-        <button class="secondary-button" type="button" data-radar-search>Suche prüfen</button>
+        <p><strong>Keine neue Erwähnung</strong><br>Helmut prüft die Quellen morgens und abends.</p>
+        <button class="secondary-button" type="button" data-radar-search>Quellen jetzt prüfen</button>
       </div>
     `;
   }
@@ -10235,11 +10316,7 @@ function renderSettingsView() {
 
   const learning = ops.learning || {};
   const learnCount = Number(learning.eventCount || 0);
-  const learnLabel = learnCount === 0
-    ? "Noch keine Signale"
-    : learnCount < 5
-      ? `${learnCount} Signal${learnCount === 1 ? "" : "e"} · lernt an`
-      : `${learnCount} Signale · Vertrauen ${learning.confidence || "mittel"}`;
+  const learnLabel = learnCount ? `${learnCount} Rückmeldungen gespeichert` : "Noch keine Rückmeldungen";
 
   const systemOk = opsStatusLoaded && storage.backend === "supabase" && ops.ai?.enabled;
   const systemBadge = !opsStatusLoaded
@@ -10249,9 +10326,8 @@ function renderSettingsView() {
       : `<span class="stg-system-badge stg-system-badge--warn">${escapeHtml(ops.readiness?.issues?.[0] || "Prüfen")}</span>`;
 
   return `
-    <section class="page-intro compact">
-      <h1 class="${headlineClass("Einstellungen.")}">Einstellungen.</h1>
-    </section>
+    ${renderUiPageHeader("Profil & Einstellungen", "Dein Mandatsprofil und wie Helmut für dich formuliert.")}
+    ${renderUiAccountTools()}
 
     <div class="stg-section">
       <span class="stg-label">Profil</span>
@@ -10288,7 +10364,7 @@ function renderSettingsView() {
           </label>`;
         }).join("")}
         <div class="stg-row">
-          <span class="stg-row-label">Helmut lernt</span>
+          <span class="stg-row-label">Rückmeldungen</span>
           <span class="stg-row-value">${escapeHtml(learnLabel)}</span>
         </div>
       </div>
@@ -10317,7 +10393,7 @@ function renderSettingsView() {
             ${pushBlocked ? `<div class="stg-row-sublabel">In den Browser-Einstellungen erlauben</div>` : ""}
           </div>
           <label class="stg-toggle">
-            <input type="checkbox" data-enable-push ${push.enabled && pushPermissionState() === "granted" ? "checked" : ""} ${!pushSupported || pushBlocked ? "disabled" : ""}/>
+            <input type="checkbox" data-enable-push aria-label="Push-Benachrichtigungen" ${push.enabled && pushPermissionState() === "granted" ? "checked" : ""} ${!pushSupported || pushBlocked ? "disabled" : ""}/>
             <span class="stg-toggle-track"></span>
             <span class="stg-toggle-thumb"></span>
           </label>
@@ -10350,7 +10426,7 @@ function renderSettingsView() {
                 <div class="stg-row-sublabel">${escapeHtml(c.sub)}</div>
               </div>
               <label class="stg-toggle">
-                <input type="checkbox" data-notif-toggle="${escapeAttribute(c.id)}" ${on ? "checked" : ""}/>
+                <input type="checkbox" data-notif-toggle="${escapeAttribute(c.id)}" aria-label="${escapeAttribute(c.label)}" ${on ? "checked" : ""}/>
                 <span class="stg-toggle-track"></span>
                 <span class="stg-toggle-thumb"></span>
               </label>
@@ -10486,8 +10562,8 @@ function qualitySummary(quality) {
 }
 
 function learningSummary(learning) {
-  if (!learning || !learning.eventCount) return "Helmut lernt aus Relevant, Später, Nicht relevant, Kopieren, Notizen und Büroaufträgen. Noch gibt es keine gespeicherten Nutzungssignale.";
-  return `${learning.eventCount} Signale · Vertrauen ${learning.confidence}. ${learning.summary || "Ähnliche Themen werden künftig vorsichtig angepasst."}`;
+  if (!learning || !learning.eventCount) return "Noch keine Rückmeldungen gespeichert.";
+  return `${learning.eventCount} Rückmeldungen gespeichert. Die Priorisierung ändern sie derzeit nicht.`;
 }
 
 function readinessSummary(readiness) {
@@ -10749,10 +10825,7 @@ function renderProfileReleaseStatus() {
 
 function renderProfileSettingsView() {
   return `
-    <section class="page-intro compact">
-      <h1 class="${headlineClass("Mandatsprofil.")}">Mandatsprofil.</h1>
-      <p>Diese Angaben entscheiden, warum Helmut ein Thema genau für dich priorisiert.</p>
-    </section>
+    ${renderUiPageHeader("Dein Mandatsprofil", "Diese Angaben steuern die persönliche Einordnung deiner Themen.")}
 
     ${renderProfileReleaseStatus()}
 
@@ -11322,6 +11395,34 @@ function bindAccountActions() {
 }
 
 function bindActions() {
+  // Existing settings rows support Enter/Space; native buttons keep their
+  // native keyboard behavior. No additional request handlers are introduced.
+  app.querySelectorAll('.stg-row[role="button"], .stg-profile-row[role="button"]').forEach(row => {
+    row.tabIndex = 0;
+    row.addEventListener("keydown", event => {
+      if (event.target === row && (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        row.click();
+      }
+    });
+  });
+  // Master/detail selection is purely local; both viewport sizes use the same data.
+  app.querySelectorAll("[data-ui-lage-select]").forEach(button => {
+    button.addEventListener("click", () => {
+      uiLageSelectedId = button.dataset.uiLageSelect;
+      uiLageDetailOpen = true;
+      render();
+      app.querySelector(".ui-lage-detail")?.scrollIntoView({ block: "start" });
+      app.querySelector(".ui-mobile-back")?.focus({ preventScroll: true });
+    });
+  });
+  app.querySelectorAll("[data-ui-lage-back]").forEach(button => {
+    button.addEventListener("click", () => {
+      uiLageDetailOpen = false;
+      render();
+      Array.from(app.querySelectorAll("[data-ui-lage-select]")).find(el => el.dataset.uiLageSelect === uiLageSelectedId)?.focus({ preventScroll: true });
+    });
+  });
   // Interne Sprung-Anker (Statuskacheln & Handlungsbedarf-Hinweise): NUR sanftes
   // Scrollen zum Zielabschnitt + kurzer, dezenter Flash. Es wird NIE eine Aktion
   // ausgelöst (kein Pipeline-/Understanding-Lauf, kein Lock-Lösen, keine Recovery,
@@ -11421,6 +11522,7 @@ function bindActions() {
     button.addEventListener("click", () => {
       if (vsheetEl) closeVorgangSheet(true); // Detail-Sheet bei Navigation schließen
       currentView = button.dataset.view;
+      uiLageDetailOpen = false;
       persistView(currentView);
       navOpen = false;
       updatesOpen = false;
@@ -11428,6 +11530,7 @@ function bindActions() {
       if (currentView === "helmut") { markHelmutSeen(); startHelmutThinking(); }
       else stopHelmutTyping();
       render();
+      app.querySelector(".ui-page")?.scrollTo({ top: 0 });
       ensureViewData(currentView);
     });
   });
@@ -11496,20 +11599,28 @@ function bindActions() {
   app.querySelectorAll("[data-lage-done]").forEach((button) => {
     button.addEventListener("click", async () => {
       const decision = decisions.find((entry) => entry.id === button.dataset.lageDone);
+      if (previewMode) { showToast("Vorschau: Rückmeldung nicht gespeichert"); return; }
+      button.disabled = true;
+      const saved = await logDecisionInteraction("done", decision);
+      button.disabled = false;
+      if (!saved) { showToast("Rückmeldung nicht gespeichert"); return; }
       if (decision) { decision.status = "done"; decision.feedback = "done"; }
       render();
-      showToast("Als erledigt markiert");
-      logDecisionInteraction("done", decision);
+      showToast("Als erledigt gespeichert");
     });
   });
 
   app.querySelectorAll("[data-lage-ignore]").forEach((button) => {
     button.addEventListener("click", async () => {
       const decision = decisions.find((entry) => entry.id === button.dataset.lageIgnore);
+      if (previewMode) { showToast("Vorschau: Rückmeldung nicht gespeichert"); return; }
+      button.disabled = true;
+      const saved = await logDecisionInteraction("ignored", decision);
+      button.disabled = false;
+      if (!saved) { showToast("Rückmeldung nicht gespeichert"); return; }
       if (decision) { decision.status = "ignored"; decision.feedback = "ignored"; }
       render();
-      showToast("Wird niedriger gewichtet");
-      logDecisionInteraction("ignored", decision);
+      showToast("Als nicht relevant gespeichert");
     });
   });
 
@@ -11553,10 +11664,10 @@ function bindActions() {
             status: "open"
           })
         });
-        if (res.ok) {
-          const saved = await res.json();
-          if (saved && saved.id) tasks = [saved, ...tasks.filter((t) => t.id !== saved.id)];
-        }
+        if (!res.ok) throw new Error("Delegation not confirmed");
+        const saved = await res.json();
+        if (!saved?.id) throw new Error("Saved task missing");
+        tasks = [saved, ...tasks.filter((t) => t.id !== saved.id)];
         logDecisionInteraction("delegated", decision);
         showToast("An Büro delegiert");
       } catch (error) {
@@ -11604,10 +11715,10 @@ function bindActions() {
       };
       currentView = "office-detail";
       render();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      app.querySelector(".ui-page")?.scrollTo({ top: 0 });
     };
     card.addEventListener("click", open);
-    card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+    card.addEventListener("keydown", (e) => { if (e.target === card && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); open(); } });
   });
 
   app.querySelectorAll("[data-office-back]").forEach((btn) => {
@@ -11615,7 +11726,7 @@ function bindActions() {
       selectedOfficeDraft = null;
       currentView = "office";
       render();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      app.querySelector(".ui-page")?.scrollTo({ top: 0 });
     });
   });
 
@@ -11686,9 +11797,13 @@ function bindActions() {
   app.querySelectorAll("[data-vorgang]").forEach((button) => {
     button.addEventListener("click", () => {
       if (button.hasAttribute("data-lage-verweis")) {
-        // Dieser Handler laeuft bereits im click Ereignis. Nur der bestehende
-        // pointerup Kartenpfad muss einen nachfolgenden Geisterklick abfangen.
-        openVorgangSheet(button.dataset.vorgang, { viaClick: true });
+        uiLageSelectedId = button.dataset.vorgang;
+        uiLageDetailOpen = true;
+        currentView = "briefing";
+        navOpen = false;
+        updatesOpen = false;
+        render();
+        app.querySelector(".ui-page")?.scrollTo({ top: 0 });
         return;
       }
       selectedVorgangId = button.dataset.vorgang;
@@ -11816,19 +11931,23 @@ function bindActions() {
 
   app.querySelectorAll("[data-feedback]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (previewMode) { showToast("Vorschau: Rückmeldung nicht gespeichert"); return; }
       const decision = decisions.find((entry) => entry.id === button.dataset.feedbackId);
       const type = button.dataset.feedback === "ignored" ? "ignored"
         : button.dataset.feedback === "later" ? "snoozed"
           : button.dataset.feedback === "done" ? "done"
           : "marked_relevant";
-      await logDecisionInteraction(type, decision);
+      button.disabled = true;
+      const saved = await logDecisionInteraction(type, decision);
+      button.disabled = false;
+      if (!saved) { showToast("Rückmeldung nicht gespeichert"); return; }
       if (decision) {
         decision.feedback = type;
         decision.status = type === "ignored" ? "ignored" : type === "snoozed" ? "snoozed" : type === "done" ? "done" : "relevant";
       }
       button.closest(".learning-actions")?.querySelectorAll("[data-feedback]").forEach((entry) => entry.classList.remove("is-active"));
       button.classList.add("is-active");
-      showToast(type === "ignored" ? "Wird niedriger gewichtet" : type === "snoozed" ? "Für später gemerkt" : type === "done" ? "Als erledigt gelernt" : "Als relevant gemerkt");
+      showToast(type === "ignored" ? "Als nicht relevant gespeichert" : type === "snoozed" ? "Für später vermerkt" : type === "done" ? "Als erledigt gespeichert" : "Als relevant gespeichert");
     });
   });
 
@@ -11855,7 +11974,7 @@ function bindActions() {
         const response = await fetchWithTimeout(`/api/pipeline/run?${apiScopeQuery()}`);
         if (!response.ok) throw new Error(`Pilot check failed: ${response.status}`);
         const result = await response.json();
-        showToast(result.skippedReason ? "Letzter Lauf wird genutzt" : "Helmut ist aktualisiert");
+        showToast(result.ok === false ? "Prüfung nicht abgeschlossen – letzter Stand bleibt sichtbar" : result.skippedReason ? "Letzter Lauf wird genutzt" : "Helmut ist aktualisiert");
         await loadBriefing();
       } catch (error) {
         console.error(error);
@@ -11869,18 +11988,19 @@ function bindActions() {
 
   app.querySelectorAll("[data-radar-search]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (previewMode) { showToast("Vorschau: kein Quellenlauf gestartet"); return; }
       const originalText = button.textContent;
       button.disabled = true;
-      button.textContent = "Suche wird geprüft";
+      button.textContent = "Prüft …";
       try {
         const response = await fetchWithTimeout(`/api/pipeline/run?${apiScopeQuery()}`);
         if (!response.ok) throw new Error(`Search failed: ${response.status}`);
         const result = await response.json();
-        button.textContent = result.skippedReason ? "Keine neue Erwähnung gefunden." : "Suche aktualisiert.";
+        button.textContent = result.ok === false ? "Prüfung nicht abgeschlossen." : result.skippedReason ? "Gerade erst geprüft – letzter Lauf gilt." : "Quellen geprüft.";
         window.setTimeout(() => { button.disabled = false; button.textContent = originalText; }, 2600);
         await loadBriefing();
       } catch {
-        button.textContent = "Suche wird beim nächsten Quellenlauf aktualisiert.";
+        button.textContent = "Prüfung konnte nicht gestartet werden.";
         window.setTimeout(() => { button.disabled = false; button.textContent = originalText; }, 2600);
       }
     });
@@ -11899,7 +12019,7 @@ function bindActions() {
         const response = await fetchWithTimeout(`/api/lage/check?${apiScopeQuery()}`);
         if (!response.ok) throw new Error(`Lage check failed: ${response.status}`);
         const result = await response.json();
-        showToast(result.skippedReason ? "Letzter Lage-Check wird genutzt" : result.status === "changed" ? "Neue Lage erkannt" : "Priorität stabil");
+        showToast(result.ok === false ? "Lage-Check nicht abgeschlossen – letzter Stand bleibt sichtbar" : result.skippedReason ? "Letzter Lage-Check wird genutzt" : result.status === "changed" ? "Neue Lage erkannt" : "Priorität stabil");
         await loadBriefing();
       } catch (error) {
         console.error(error);
@@ -13326,21 +13446,22 @@ function showToast(message) {
 }
 
 async function logInteraction(interaction) {
-  if (previewMode) return;
-  if (!profile) return;
+  if (previewMode || !profile) return false;
   try {
-    await fetchWithTimeout(`/api/interactions?${apiScopeQuery()}`, {
+    const response = await fetchWithTimeout(`/api/interactions?${apiScopeQuery()}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ politicianId: profile.id, ...interaction })
     });
+    return response.ok;
   } catch (error) {
     console.warn("Interaction not saved", error);
+    return false;
   }
 }
 
 async function logDecisionInteraction(type, decision, extra = {}) {
-  if (!decision) return;
+  if (!decision) return false;
   return logInteraction({
     type,
     signalId: decision.signalId || decision.id || "",
