@@ -183,6 +183,7 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_phase_runtime.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_phased_end500.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_phased_adapter.py
+          node scripts/lokal.js -- python3 -I -B scripts/w15-github/test_mock500_full_dispatch.py
           node scripts/lokal.js -- node scripts/w15-github/test_restore_capacity.js
           python3 -B scripts/w15-github/restore_capacity.py --host-admission
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_worker_phase_witness.py
