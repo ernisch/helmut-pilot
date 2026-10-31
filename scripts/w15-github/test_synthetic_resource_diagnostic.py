@@ -109,6 +109,21 @@ class DiagnosticChecks(unittest.TestCase):
         self.assertEqual(claims['resourceDiagnosticNonce'],NONCE);self.assertEqual(claims['role'],'service_role')
         self.assertNotIn('fictional-secret',token)
 
+    def test_nested_component_identity_preserves_parent_restriction_and_rejects_links(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);s=D.Supervisor(state(root));s.parent=root
+            child=root/'application.slice';child.mkdir();leaf=child/'bound_node';leaf.mkdir()
+            fd=os.open(root,os.O_RDONLY|os.O_DIRECTORY)
+            try:
+                with patch.object(s,'_parent_fd',side_effect=lambda:os.dup(fd)):
+                    self.assertEqual(s.component_identity(leaf),(leaf.stat().st_dev,leaf.stat().st_ino))
+                    link=root/'linked';link.symlink_to(child,target_is_directory=True)
+                    with self.assertRaises(OSError):s.component_identity(link)
+                    with self.assertRaises(ValueError):s.component_identity(root.parent)
+            finally:os.close(fd)
+        value=D.closed_failure(FileNotFoundError(),'groups')
+        self.assertEqual(value,{'phase':'groups','code':'FILESYSTEM_ENTRY_MISSING'})
+
     def test_component_guard_unknown_peak_swap_oom_and_cpu_fail_closed(self):
         self.assertTrue(D.group_fit(kernel(),D.APP_HARD))
         at_limit=kernel();at_limit['memory']['kernelLifetimePeakBytes']=D.APP_HARD

@@ -262,7 +262,7 @@ def simulated_ai_result(value):
 
 def closed_failure(error, phase):
     code=error.code if type(error) is Rejected else 'FAIL_OR_UNKNOWN'
-    if isinstance(error,P.ProbeError):
+    if not isinstance(error,Rejected):
         candidate=P.failure_record(error).get('code')
         if candidate in P.CODES:code=candidate
     return {'phase':getattr(error,'phase',phase) if getattr(error,'phase',phase) in PHASES else 'closure',
@@ -355,6 +355,20 @@ class Supervisor:
         need((os.fstat(fd).st_dev, os.fstat(fd).st_ino) == self.identity, self.phase, 'PARENT_IDENTITY')
         return fd
 
+    def component_identity(self, path):
+        # Existing parent helper intentionally accepts top-level W15 parents only.
+        # Descendants are attested relative to that still-bound parent, no links.
+        parts=path.relative_to(self.parent).parts
+        need(0<len(parts)<=2,self.phase,'LEAF_IDENTITY')
+        fd=self._parent_fd();parent=os.fstat(fd)
+        try:
+            for part in parts:
+                child=os.open(part,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW,dir_fd=fd)
+                os.close(fd);fd=child;observed=os.fstat(fd)
+                need(observed.st_dev==parent.st_dev and observed.st_uid==parent.st_uid,self.phase,'LEAF_IDENTITY')
+            value=os.fstat(fd);return value.st_dev,value.st_ino
+        finally:os.close(fd)
+
     def command(self, argv, *, input=None, seconds=30, check=True):
         self.guard()
         try:
@@ -377,17 +391,17 @@ class Supervisor:
         self.command(['/usr/bin/systemctl', 'daemon-reload'])
         for role in ('application', 'database'):
             self.command(['/usr/bin/systemctl', 'start', self.names[role]])
-            path = self.parent / self.names[role]; identity = P.identity(path)
+            path = self.parent / self.names[role]; identity = self.component_identity(path)
             self.groups[role] = {'path': path, 'parts': (self.names[role],), 'identity': identity}
             if role == 'application':
                 leaf = path / 'bound_node'; leaf.mkdir(mode=0o755)
-                self.app_leaf = leaf; self.app_leaf_identity = P.identity(leaf)
+                self.app_leaf = leaf; self.app_leaf_identity = self.component_identity(leaf)
         raw = Path('/proc/self/cgroup').read_text(); member = P.R.membership(raw)
         need(member == '/' + self.parent.name + '/' + self.names['tools'], self.phase, 'TOOLS_MEMBERSHIP')
         path = P.R.KERNEL_ROOT / member.lstrip('/')
-        self.groups['test-tools'] = {'path': path, 'parts': (self.names['tools'],), 'identity': P.identity(path)}
+        self.groups['test-tools'] = {'path': path, 'parts': (self.names['tools'],), 'identity': self.component_identity(path)}
         self.tools_leaf = path / 'bound_mock_services'; self.tools_leaf.mkdir(mode=0o755)
-        self.tools_leaf_identity = P.identity(self.tools_leaf)
+        self.tools_leaf_identity = self.component_identity(self.tools_leaf)
         self.guard()
 
     def stage(self):
@@ -517,7 +531,7 @@ class Supervisor:
         if role != 'database':
             leaf = self.app_leaf if role=='application' else self.tools_leaf
             identity = self.app_leaf_identity if role=='application' else self.tools_leaf_identity
-            need(P.identity(leaf)==identity,self.phase,'LEAF_IDENTITY')
+            need(self.component_identity(leaf)==identity,self.phase,'LEAF_IDENTITY')
             fd=os.open(leaf/'cgroup.procs',os.O_WRONLY|os.O_NOFOLLOW)
             try:need(os.write(fd,str(host).encode())==len(str(host)),self.phase,'PLACEMENT_WRITE')
             finally:os.close(fd)

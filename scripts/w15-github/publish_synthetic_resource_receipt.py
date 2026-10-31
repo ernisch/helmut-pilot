@@ -11,7 +11,9 @@ from pathlib import Path
 import re
 import stat
 import urllib.request
+import urllib.error
 
+PUBLICATION_PHASE = 'receipt-read'
 SCHEMA = 'helmut-w15-synthetic-resource-diagnostic-result/1'
 REF = 'refs/heads/codex/w15-separated-resource-metering-20261031'
 FALSE_FLAGS = ('executionAuthority', 'retryAllowed', 'providerParityAccepted',
@@ -92,6 +94,7 @@ def compact_notice(report):
 
 
 def main():
+    global PUBLICATION_PHASE
     p = Path(os.environ['RUNNER_TEMP']) / 'resource-diagnostic.SAFE.json'
     fd = os.open(p, os.O_RDONLY | os.O_NOFOLLOW)
     try:
@@ -102,12 +105,14 @@ def main():
         report = json.loads(raw)
     finally:
         os.close(fd)
+    PUBLICATION_PHASE='closed-projection'
     print(compact_notice(report), flush=True)
     data = json.dumps(prepare(report, os.environ), ensure_ascii=True).encode('ascii')
     req = urllib.request.Request('https://api.github.com/repos/ernisch/helmut-pilot/check-runs',
         data=data, method='POST', headers={'Authorization': 'Bearer ' + os.environ['GITHUB_TOKEN'],
             'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json',
             'User-Agent': 'helmut-isolated-resource-receipt'})
+    PUBLICATION_PHASE='check-post'
     with urllib.request.urlopen(req, timeout=20) as response:
         assert response.status == 201
     print('SAFE_RESOURCE_RECEIPT_CHECK_PUBLISHED')
@@ -115,6 +120,7 @@ def main():
 
 if __name__ == '__main__':
     try: main()
-    except Exception:
-        print('::error title=SAFE Messquittung::SAFE_RESOURCE_RECEIPT_PUBLICATION_UNKNOWN', file=sys.stderr)
+    except Exception as error:
+        code=('HTTP_'+str(error.code) if isinstance(error,urllib.error.HTTPError) else 'CLOSED_PROJECTION_OR_IO_UNKNOWN')
+        print('::error title=SAFE Messquittung::SAFE_RESOURCE_RECEIPT_PUBLICATION_UNKNOWN '+PUBLICATION_PHASE+' '+code, file=sys.stderr)
         raise SystemExit(1) from None
