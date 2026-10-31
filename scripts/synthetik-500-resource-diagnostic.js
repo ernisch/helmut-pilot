@@ -93,6 +93,14 @@ function bindings(c,value){
   const s=fs.lstatSync(value.caPath);assert(s.isFile()&&!s.isSymbolicLink()&&s.uid===process.getuid()&&(s.mode&511)===384);
   return value;
 }
+function localAIReport(service){
+  try{const r=service?.bericht();if(!r)return"UNKNOWN";const n=value=>typeof value==="number"&&Number.isFinite(value)&&value>=0&&value<=Number.MAX_SAFE_INTEGER?value:"UNKNOWN";
+    return{aufrufe:n(r.aufrufe),erfolgreich:n(r.erfolgreich),fehler:n(r.fehler),abgewiesenWegenObergrenze:n(r.abgewiesenWegenObergrenze),
+      eingabeBytes:n(r.eingabeZeichen),ausgabeBytes:n(r.ausgabeZeichen),eingabeTokenGeschaetzt:n(r.eingabeTokenGeschaetzt),ausgabeTokenGeschaetzt:n(r.ausgabeTokenGeschaetzt),
+      bytesJeGeschaetztemToken:n(r.zeichenJeToken),gleichzeitigSpitze:n(r.gleichzeitigSpitze),
+      dauerMs:Object.fromEntries(["n","min","p50","p95","max","mittel"].map(key=>[key,n(r.dauerMs?.[key])]))};
+  }catch(_){return"UNKNOWN";}
+}
 async function services(c){
   const Z=require("./fixtures/z3-plattform"),data=Fixture.cases(c.datasetEpochUTC);
   const started=[];let first=null;
@@ -110,7 +118,7 @@ async function services(c){
   finally{
     const outcomes=await Promise.allSettled(started.map(s=>s.stoppe()));
     write(c.resultRoot,"SERVICES_CLOSED.SAFE.json",{schema:SCHEMA,nonce:c.nonce,
-      closed:outcomes.every(r=>r.status==="fulfilled"),failed:first!==null,executionAuthority:false});
+      closed:outcomes.every(r=>r.status==="fulfilled"),failed:first!==null,localSimulatedAI:localAIReport(started[2]),executionAuthority:false});
   }
   if(first)throw first;
 }
@@ -211,4 +219,4 @@ async function main(argv=process.argv.slice(2)){
 function osGuard(){const guard=require("./lokaler-netzschutz");assert.deepEqual(guard.pruefe(process.env),[]);}
 if(require.main===module)main().catch(error=>{console.error(JSON.stringify({schema:SCHEMA,status:"FAIL_OR_UNKNOWN_DIAGNOSTIC",
   ...(error.diagnosticReceipt||{phase:"configuration",failureDetail:closedFailure(error),retryAllowed:false})}));process.exitCode=1;});
-module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt};
+module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport};

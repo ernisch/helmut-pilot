@@ -22,6 +22,16 @@ function fake(root,{failWork=false,wrongActive=false,count=2}={}){
     storeResult:async()=>{counts.briefings++;return true;},count:async table=>counts[table]};
 }
 let passed=0;async function test(name,run){await run();passed++;console.log("PASS "+name);}
+async function localAIProjectionCase(){
+  await test("local simulated AI receipt retains finite aggregate counters only",()=>{
+    const value=D.localAIReport({bericht:()=>({aufrufe:3,erfolgreich:2,fehler:1,abgewiesenWegenObergrenze:0,
+      eingabeZeichen:4096,ausgabeZeichen:1024,eingabeTokenGeschaetzt:1000,ausgabeTokenGeschaetzt:270,zeichenJeToken:3.8,
+      gleichzeitigSpitze:1,dauerMs:{n:3,min:1,p50:2,p95:3,max:4,mittel:2.3,private:"FICTIONAL_PRIVATE"},nachModell:{FICTIONAL_PRIVATE:3},apiKey:"FICTIONAL_PRIVATE"})});
+    assert.equal(value.aufrufe,3);assert.equal(value.erfolgreich,2);assert.equal(value.eingabeBytes,4096);assert.equal(value.dauerMs.p95,3);
+    assert(!JSON.stringify(value).includes("FICTIONAL_PRIVATE"));assert.equal(D.localAIReport(null),"UNKNOWN");
+    assert.equal(D.localAIReport({bericht:()=>({aufrufe:NaN})}).aufrufe,"UNKNOWN");
+  });
+}
 async function representativeCoverageCases(){
   await test("all 500 selectors and three canonical geographic scopes are covered by valid synthetic responses",()=>{
     const data=F.cases(epoch),profiles=F.selectedSpecs(3),selected=F.selectedCases(data,profiles),m=F.manifest(epoch);
@@ -139,7 +149,8 @@ async function main(){
     }finally{fs.rmSync(root,{recursive:true,force:true});}});
   await failureProjectionCases();
   await representativeCoverageCases();
+  await localAIProjectionCase();
   console.log(passed+" PASS; synthetic unit cases only; native preflight and 500 run NOT executed");
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={main,failureProjectionCases,representativeCoverageCases};
+module.exports={main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase};
