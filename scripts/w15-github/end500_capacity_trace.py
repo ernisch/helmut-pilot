@@ -150,6 +150,27 @@ class Collector:
         self._safety_failure_or_unknown_count = 0
         self._history_stride = 1
 
+    def _confirm(self, progress, observed_monotonic_ns, time_basis):
+        for name, value in _progress(progress).items():
+            if type(value) is not dict: continue
+            old = self._progress[name]
+            if type(old) is dict and (value['value'] < old['value']
+                or _number(old['observedMonotonicNS']) and _number(observed_monotonic_ns)
+                   and observed_monotonic_ns < old['observedMonotonicNS']):
+                continue
+            self._progress[name] = {**value, 'observedMonotonicNS': observed_monotonic_ns,
+                'sampleNumber': self._count, 'timeBasis': time_basis}
+
+    def confirm_progress(self, progress, observed_monotonic_ns):
+        """Confirm drained IPC counters without inventing another RAM sample.
+
+        The timestamp is the root receiver's progress time. sampleNumber only
+        references the last existing guard observation, not a simultaneous read.
+        """
+        if self._count > 0 and _number(observed_monotonic_ns):
+            self._confirm(progress, observed_monotonic_ns, 'CONFIRMED_PROGRESS_RECEIVED')
+        return None
+
     def observe(self, sample, *, phase=UNKNOWN, progress=None, components=None):
         self._count += 1
         row = _snapshot(sample, phase, progress, components, self._count)
@@ -174,10 +195,7 @@ class Collector:
             old = self._components[name]; value = row['componentPSSBytes'][name]
             if type(value) is list and (old == UNKNOWN or value[0] > old['componentPSSBytes'][name][0]):
                 self._components[name] = copy.deepcopy(row)
-        for name in COUNTERS:
-            value = row['progress'][name]
-            if type(value) is dict:
-                self._progress[name] = {**value, 'observedMonotonicNS': row['observedMonotonicNS'], 'sampleNumber': row['sampleNumber']}
+        self._confirm(progress, row['observedMonotonicNS'], 'GUARD_SAMPLE_OBSERVED')
         self._safety_failed_or_unknown |= row['capacitySafetyObservation'] != 'PASS_OBSERVED_CAPACITY_SAFETY_ONLY'
         if row['capacitySafetyObservation'] != 'PASS_OBSERVED_CAPACITY_SAFETY_ONLY':
             self._safety_failure_or_unknown_count += 1
@@ -237,6 +255,7 @@ class Collector:
             'seriesColumns': list(SERIES_COLUMNS), 'history': history,
             'historyDecimated': self._history_stride > 1, 'observedHistoryStride': self._history_stride,
             'progress': copy.deepcopy(self._progress),
+            'progressSampleReferenceMeaning': 'LAST_EXISTING_GUARD_SAMPLE_NOT_SIMULTANEOUS_MEASUREMENT',
             'kernelPeakMonotonic': self._peak_monotone, 'observedTimeMonotonic': self._time_monotone,
             'phaseSequenceMonotonic': self._phase_monotone,
             'anyCapacitySafetyFailureOrUnknown': self._safety_failed_or_unknown,
@@ -301,6 +320,7 @@ def closed(value):
         constants = ('schema', 'mode', 'scope', 'profile', 'diagnosticOnly', 'executionAuthority', 'legacyContractAccepted',
             'end500Acceptance', 'productionAcceptance', 'hardLimitBytes', 'minimumHostReserveBytes', 'legacyPeakLimitBytes', 'legacyPeakScope',
             'kernelPeakOccurrenceTime', 'categoryOrder', 'phasePointColumns', 'seriesColumns',
+            'progressSampleReferenceMeaning',
             'peakCompositionKnown', 'snapshotAtomic', 'fileCacheAdditiveToPSS')
         if any(type(value[key]) is not type(template[key]) or value[key] != template[key] for key in constants): return None
         if not _number(value['sampleCount']) or not _valid_number(value['kernelLifetimePeakBytes']): return None
@@ -343,9 +363,10 @@ def closed(value):
         if type(value['progress']) is not dict or set(value['progress']) != set(COUNTERS): return None
         for name, row in value['progress'].items():
             if row == UNKNOWN: continue
-            if (type(row) is not dict or set(row) != {'value', 'kind', 'observedMonotonicNS', 'sampleNumber'}
+            if (type(row) is not dict or set(row) != {'value', 'kind', 'observedMonotonicNS', 'sampleNumber', 'timeBasis'}
                 or _progress({name: {k: row[k] for k in ('value', 'kind')}})[name] == UNKNOWN
                 or not _valid_number(row['observedMonotonicNS']) or not _number(row['sampleNumber'])
+                or row['timeBasis'] not in ('GUARD_SAMPLE_OBSERVED', 'CONFIRMED_PROGRESS_RECEIVED')
                 or not 1 <= row['sampleNumber'] <= value['sampleCount']): return None
         phases = value['phaseObservations']
         if type(phases) is not list or len(phases) > MAX_PHASES: return None

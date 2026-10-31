@@ -55,6 +55,12 @@ nativePostimages0..3501. Fehlende/ungültige Angaben bleiben UNKNOWN. Auch die
 History bewahrt je Zähler den Unterschied zwischen exaktem Wert und bestätigter
 Untergrenze. Das globale `progress` nennt jeweils die zuletzt bestätigte Probe
 und deren Zeit; es behauptet keinen neuen Messwert nach einer unbekannten Probe.
+`confirm_progress(progress, observed_monotonic_ns)` kann nach mindestens einer
+RAM-Probe separat empfangene bestätigte IPC-Zähler sichern. Es akzeptiert nur
+monotone Werte und Beobachtungszeiten; es erzeugt keine RAM-Probe und keinen
+unbekannten Sicherheitsbefund. `timeBasis=CONFIRMED_PROGRESS_RECEIVED` benennt
+die gesonderte Empfangszeit. Die SampleNummer verweist lediglich auf die letzte
+vorhandene RAM-Probe und behauptet keine Gleichzeitigkeit.
 
 Optionale Komponenten entsprechen dem vorhandenen `memory_components`-Ergebnis.
 Nur stabile Inventur und bestätigte Parentidentität erlauben Rollenwerte.

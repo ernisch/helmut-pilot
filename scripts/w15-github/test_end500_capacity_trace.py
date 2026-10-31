@@ -187,5 +187,28 @@ class CapacityTraceChecks(unittest.TestCase):
         self.assertEqual(result['progress']['authCAS']['value'], 500)
         self.assertFalse(result['legacyContractAccepted'])
 
+    def test_drained_confirmed_progress_has_its_own_time_and_never_adds_ram_samples(self):
+        trace = T.Collector()
+        trace.confirm_progress({'authCAS': {'value': 3, 'kind': 'EXACT'}}, 50)
+        self.assertEqual(trace.summary()['progress']['authCAS'], 'UNKNOWN')
+        trace.observe(sample(stamp=100), phase=phase())
+        before = trace.summary()
+        trace.confirm_progress({'authCAS': {'value': 12, 'kind': 'CONFIRMED_LOWER_BOUND'},
+            'usageRows': {'value': 6000, 'kind': 'EXACT'}}, 150)
+        after = trace.summary(); self.assertIsNotNone(T.closed(after))
+        self.assertEqual(after['sampleCount'], 1); self.assertEqual(after['snapshots'], before['snapshots'])
+        self.assertEqual(after['history'], before['history'])
+        self.assertFalse(after['anyCapacitySafetyFailureOrUnknown'])
+        self.assertEqual(after['progress']['authCAS']['observedMonotonicNS'], 150)
+        self.assertEqual(after['progress']['authCAS']['sampleNumber'], 1)
+        self.assertEqual(after['progress']['authCAS']['timeBasis'], 'CONFIRMED_PROGRESS_RECEIVED')
+        self.assertEqual(at(after, 'last')['observedMonotonicNS'], 100)
+        for value, stamp in [(11, 160), (13, 140), (501, 170), (True, 170)]:
+            trace.confirm_progress({'authCAS': {'value': value, 'kind': 'EXACT'}}, stamp)
+        self.assertEqual(trace.summary()['progress']['authCAS'], after['progress']['authCAS'])
+        trace.confirm_progress({'authCAS': {'value': 13, 'kind': 'EXACT'}}, 200)
+        trace.observe(sample(stamp=210), progress={'authCAS': {'value': 12, 'kind': 'EXACT'}})
+        self.assertEqual(trace.summary()['progress']['authCAS']['value'], 13)
+
 
 if __name__ == '__main__': unittest.main()
