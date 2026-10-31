@@ -8,20 +8,44 @@ function config(root){const claims={role:"service_role",resourceDiagnosticNonce:
   return{schema:D.SCHEMA,mode:"preflight",count:2,nonce,database:{host:"127.0.0.1",port:5432,name:"resource_diag_preflight",user:"postgres",password:"FICTIONAL_ONLY"},
     postgrestURL:"http://127.0.0.1:3000",serviceToken:"e30."+Buffer.from(JSON.stringify(claims)).toString("base64url")+".FICTIONAL",
     resultRoot:root,maxWallSeconds:120,datasetEpochUTC:epoch};}
-function fake(root,{failWork=false,wrongActive=false}={}){
+function fake(root,{failWork=false,wrongActive=false,count=2}={}){
   const profiles=new Map(),active=new Set(),events=[];let counts={raw_documents:0,knowledge_objects:0,ko_document_links:0,matching_results:0,briefings:0};
   return{events,profiles,active,
-    activeIDs:async()=>wrongActive&&active.size===2?["FICTIONAL_FOREIGN"]:[...active].sort(),
+    activeIDs:async()=>wrongActive&&active.size===count?["FICTIONAL_FOREIGN"]:[...active].sort(),
     profile:async id=>profiles.get(id)||null,
     provision:async spec=>{events.push("provision");profiles.set(spec.id,{id:spec.id,profileActive:false,provisionedBy:"helmut-provisioning"});return{ok:true};},
     participate:async(id,on)=>{events.push(on?"activate":"deactivate");profiles.get(id).profileActive=on;on?active.add(id):active.delete(id);return{ok:true};},
     saveSource:async()=>{counts.raw_documents++;return{saved:true};},
-    understand:async cluster=>{assert.equal(active.size,2);assert.equal(cluster.documents.length,4);events.push("understand");counts.knowledge_objects++;counts.ko_document_links+=4;return{status:"saved"};},
+    understand:async cluster=>{assert.equal(active.size,count);assert.equal(cluster.documents.length,4);events.push("understand");counts.knowledge_objects++;counts.ko_document_links+=4;return{status:"saved"};},
     match:async()=>{counts.matching_results++;return{saved:1};},decide:async()=>({saved:1}),
-    build:async()=>{assert.equal(active.size,2);events.push("actual-work-seam");if(failWork)throw Error("FICTIONAL_PRIVATE_FAILURE_MUST_NOT_ESCAPE");return{available:true,items:[{id:"FICTIONAL_RESULT"}]};},
+    build:async()=>{assert.equal(active.size,count);events.push("actual-work-seam");if(failWork)throw Error("FICTIONAL_PRIVATE_FAILURE_MUST_NOT_ESCAPE");return{available:true,items:[{id:"FICTIONAL_RESULT"}]};},
     storeResult:async()=>{counts.briefings++;return true;},count:async table=>counts[table]};
 }
 let passed=0;async function test(name,run){await run();passed++;console.log("PASS "+name);}
+async function representativeCoverageCases(){
+  await test("all 500 selectors and three canonical geographic scopes are covered by valid synthetic responses",()=>{
+    const data=F.cases(epoch),profiles=F.selectedSpecs(3),selected=F.selectedCases(data,profiles),m=F.manifest(epoch);
+    const U=require("../lib/helmut/understanding"),S=require("../lib/helmut/understanding-schema");
+    assert.equal(m.fixtureRequiredSelectors.profileSelectorCoverage,500);assert.equal(data.length,96);
+    assert.deepEqual(profiles.map(p=>p.id),F.specs().filter((_,index)=>[0,330,450].includes(index)).map(p=>p.id));
+    assert.deepEqual(selected.map(c=>c.geography.geography_id),["geo-bund","geo-land-berlin","geo-land-brandenburg"]);
+    for(const [index,c]of selected.entries()){
+      assert(F.matches(c,profiles[index]));const value=F.response({input:c.documents.map(d=>d.summary)},S.KNOWLEDGE_OBJECT_SCHEMA,epoch,data);
+      assert.equal(S.validateKnowledgeObject(value).valid,true);assert.equal(value.political_level,index===0?"bund":"land");
+      assert.equal(value.decision_level,value.political_level);assert.deepEqual(value.affected_geographies,[c.geography]);
+      const actual=U.assembleKnowledgeObject(value,{documents:c.documents},U.deriveVorgangId({documents:c.documents}));
+      assert.equal(S.validateKnowledgeObject(actual).valid,true);assert.equal(actual.decision_level,value.decision_level);
+      assert.deepEqual(actual.affected_geographies.map(({name,level,geography_id})=>({name,level,geography_id})),value.affected_geographies);
+      assert(c.documents.every(d=>d.raw.geography_id===c.geography.geography_id&&d.raw.facts.every(f=>f.region===c.geography.name)));
+    }
+  });
+  await test("three-profile preflight explicitly executes BT, Berlin and Brandenburg then returns zero",async()=>{
+    const root=temp();try{const c={...config(root),count:3};assert.equal(D.configuration(c),c);const deps=fake(root,{count:3});
+      const result=await D.workload(c,{},deps);assert.equal(result.requestedProfiles,3);assert.equal(result.positiveProfileResults,3);
+      assert.equal(result.understoodCases,3);assert.equal(result.finalActiveProfiles,0);assert.equal(result.formal1500Acceptance,false);
+      assert.deepEqual([...deps.profiles.keys()],F.selectedSpecs(3).map(p=>p.id));
+    }finally{fs.rmSync(root,{recursive:true,force:true});}});
+}
 async function failureProjectionCases(){
   await test("closed action failure preserves SQLSTATE and excludes private text",()=>{
     const root=temp();try{const c=config(root),error=Object.assign(Error("FICTIONAL_PRIVATE_DSN_JWT_SQL_MUST_NOT_ESCAPE"),{
@@ -114,7 +138,8 @@ async function main(){
       const link=path.join(root,"LINK.PRIVATE.json");fs.symlinkSync(file,link);assert.throws(()=>D.privateJSON(link));
     }finally{fs.rmSync(root,{recursive:true,force:true});}});
   await failureProjectionCases();
+  await representativeCoverageCases();
   console.log(passed+" PASS; synthetic unit cases only; native preflight and 500 run NOT executed");
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={main,failureProjectionCases};
+module.exports={main,failureProjectionCases,representativeCoverageCases};

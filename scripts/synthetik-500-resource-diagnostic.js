@@ -6,6 +6,7 @@ const Fixture=require("./fixtures/resource500-diagnostic");
 const SCHEMA="helmut-synthetic500-resource-diagnostic/1";
 const PHASES=new Set(["configuration","prepare-database","services","dataset","provision","activate","understanding","work","readback","deactivate","closed"]);
 const ASSERTIONS=new Set(["diagnostic-fresh-database-required","diagnostic-ca-required-before-node-start","diagnostic-stop-or-deadline","diagnostic-exact-active-cohort-required","diagnostic-initial-zero-required","diagnostic-provision-refused","diagnostic-positive-native-understanding-required","diagnostic-native-matches-required","diagnostic-native-decisions-required","diagnostic-positive-current-briefing-required","diagnostic-cleanup-only-newly-owned-profiles","diagnostic-local-preload-required"]);
+ASSERTIONS.add("diagnostic-synthetic-profile-selector-required");
 const CODES=new Set(["ERR_ASSERTION","MODULE_NOT_FOUND","ERR_MODULE_NOT_FOUND","EACCES","EPERM","ENOENT","EEXIST","ECONNREFUSED","ETIMEDOUT","EPIPE","ENOTFOUND","ECONNRESET"]);
 const SQLSTATES=new Set(["42P01","42703","42883","42501","23505","23503","3D000","28P01","57014","22023","42601","XX000","08006"]);
 function nativeStatus(value){return["saved","skipped","failed","disabled"].includes(value)?value:"unknown";}
@@ -40,7 +41,7 @@ function write(root,name,value){
 function configuration(value){
   exact(value,["schema","mode","count","nonce","database","postgrestURL","serviceToken","resultRoot","maxWallSeconds","datasetEpochUTC"]);
   assert.equal(value.schema,SCHEMA);assert(["synthetic500","preflight"].includes(value.mode));
-  assert.equal(value.count,value.mode==="synthetic500"?500:2);
+  assert(value.mode==="synthetic500"?value.count===500:[2,3].includes(value.count));
   assert(/^(?:[a-f0-9]{32}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/.test(value.nonce));
   exact(value.database,["host","port","name","user","password"]);
   assert.equal(value.database.host,"127.0.0.1");assert.equal(value.database.port,5432);
@@ -146,8 +147,8 @@ async function workload(c,b,deps=null){
   let stop=false;const deadline=Date.now()+c.maxWallSeconds*1000;
   const onStop=()=>{stop=true;};process.once("SIGTERM",onStop);process.once("SIGINT",onStop);
   const check=()=>assert(!stop&&Date.now()<deadline,"diagnostic-stop-or-deadline");
-  const all=Fixture.specs().slice(0,c.count),ids=all.map(p=>p.id).sort(),created=new Set();
-  const allCases=Fixture.cases(c.datasetEpochUTC),data=c.mode==="preflight"?[allCases[0],allCases[9]]:allCases;
+  const all=Fixture.selectedSpecs(c.count),ids=all.map(p=>p.id).sort(),created=new Set();
+  const allCases=Fixture.cases(c.datasetEpochUTC),data=c.mode==="preflight"?Fixture.selectedCases(allCases,all):allCases;
   write(c.resultRoot,"APP_ATTEMPT.PRIVATE.json",{schema:SCHEMA,nonce:c.nonce,count:c.count});
   write(c.resultRoot,"DATASET.SAFE.json",{...Fixture.manifest(c.datasetEpochUTC),executedCaseCount:data.length,executedSourceCount:data.length*4,executedProfileCount:c.count});
   if(!deps){environment(c,b);deps=production(c);}
