@@ -13,7 +13,12 @@ function firstFailureReporter(send) {
   return (error,context)=>{if(first===null){first=NativeFailure.project(error,context);
     if(first!==null){try{send({name:"memory-forward-first-failure",failure:first});}catch{}}}return first;};
 }
-const reportFirstNativeFailure=firstFailureReporter(value=>console.log(JSON.stringify(value)));
+function writeNativeFailureFrame(value){
+  const raw=Buffer.from(JSON.stringify(value)+"\n");assert(raw.length<=1024,"w15-forward-native-frame-bound");
+  let offset=0;while(offset<raw.length){const written=fs.writeSync(1,raw,offset,raw.length-offset);
+    assert(Number.isSafeInteger(written)&&written>0&&written<=raw.length-offset,"w15-forward-native-frame-write");offset+=written;}
+}
+const reportFirstNativeFailure=firstFailureReporter(writeNativeFailureFrame);
 function emitNativeFailure(error){let check;try{check=error?.nativeCheck;}catch{}
   return reportFirstNativeFailure(error,{stage:nativeStage,check,acknowledgedCAS:nativeAcknowledgedCAS});}
 function checked(label,work){try{return work();}catch(error){
@@ -106,7 +111,8 @@ async function run() {
     persistAbort:(phase,value)=>save(phase==="initial"?"FORWARD_ABORT_INITIAL.SAFE.json":"FORWARD_ABORT.SAFE.json",value)});
   const removeAbort=AuthReport.retainOnTermination(lifetime.signalSnapshot,lifetime.abort);
   const telemetryFailure=error=>{if(abortScheduled||lifetime.isTerminating())return;abortScheduled=true;lifetime.stop();
-    report.status="FAIL_OR_UNKNOWN";report.error||=AuthReport.failureMetadata(error);process.kill(process.pid,"SIGTERM");};
+    report.status="FAIL_OR_UNKNOWN";report.error||=AuthReport.failureMetadata(error);
+    report.nativeFailure||=emitNativeFailure(error);process.kill(process.pid,"SIGTERM");};
   gcObserver=new PerformanceObserver(list=>{try{persistGC(list.getEntries());}catch(e){telemetryFailure(e);}});
   gcObserver.observe({entryTypes:["gc"]});
   timer=setInterval(()=>{try{const s=journal.snapshot();if(s.failureCode){const error=Error(s.failureCode);error.code=s.failureCode;throw error;}sample();}catch(e){telemetryFailure(e);}},250);
@@ -236,4 +242,4 @@ async function run() {
 async function main(action){assert(require.cache[require.resolve("./lokaler-netzschutz")]);assert.deepEqual(require("./lokaler-netzschutz").pruefe(process.env),[]);
   assert(["setup","run"].includes(action));assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")),"w15-forward-stop-requested");return({setup,run})[action]();}
 if(require.main===module)main(process.argv[2]).catch(error=>{emitNativeFailure(error);console.error("w15-forward-first-failure");process.exitCode=1;});
-module.exports = { databaseStatsSQL, database: DB, base: BASE, observationLifetime, firstFailureReporter };
+module.exports = { databaseStatsSQL, database: DB, base: BASE, observationLifetime, firstFailureReporter, writeNativeFailureFrame };

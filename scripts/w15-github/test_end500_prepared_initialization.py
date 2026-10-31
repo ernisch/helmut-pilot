@@ -128,5 +128,38 @@ console.log(JSON.stringify(H.project(e,{stage:'server-import',acknowledgedCAS:0}
         self.assertEqual(caught.exception.code, 1)
         self.assertIs(caught.exception.native_failure, failure)
 
+    def test_internal_telemetry_error_is_synchronously_emitted_before_sigterm_and_cleanup(self):
+        script = r'''const fs=require('node:fs'),F=require(process.argv[1]),A=require(process.argv[2]);
+const source=fs.readFileSync(process.argv[1],'utf8');
+const begin=source.indexOf('const telemetryFailure=error=>');const end=source.indexOf('\n  gcObserver=',begin);
+if(begin<0||end<begin)throw Error('fixture-source');
+const report={},emit=F.firstFailureReporter(F.writeNativeFailureFrame);
+const project=error=>emit(error,{stage:'auth-mutate',acknowledgedCAS:0});
+const lifetime={stop(){},isTerminating(){return false;}};
+const telemetry=Function('lifetime','report','AuthReport','emitNativeFailure','process',
+  'let abortScheduled=false;'+source.slice(begin,end)+';return telemetryFailure;')(lifetime,report,A,project,process);
+process.once('SIGTERM',()=>fs.writeSync(1,JSON.stringify({name:'synthetic-signal-observed'})+'\n'));
+A.retainOnTermination(()=>({nativeFailure:report.nativeFailure}),async value=>{
+  const later=Error('DO_NOT_EXPORT_CLEANUP');later.code='ECONNRESET';
+  const preserved=emit(later,{stage:'journal-close',acknowledgedCAS:500});
+  fs.writeSync(1,JSON.stringify({name:'synthetic-cleanup-completed',same:preserved===value.nativeFailure,
+    originalErrorCode:report.error.code,firstStage:preserved.stage,firstKind:preserved.kind})+'\n');
+});
+const error=Error('DO_NOT_EXPORT_DURABLE');error.code='W15_DURABLE_SYNC_FAILED';
+setTimeout(()=>process.exit(88),5000); // Owned fixture deadline; the real run already has its telemetry timer.
+setImmediate(()=>telemetry(error));'''
+        result, rows = self.node(script, self.prep / 'app/scripts/synthetik-500-w15-memory-forward.js',
+                                 self.prep / 'app/scripts/fixtures/w15-auth-measurement-report.js')
+        self.assertEqual(result.returncode, 143)
+        self.assertEqual([row['name'] for row in rows], ['memory-forward-first-failure', 'synthetic-signal-observed', 'synthetic-cleanup-completed'])
+        self.assertEqual(rows[0]['failure']['kind'], 'durable-io-error')
+        self.assertEqual(rows[0]['failure']['code'], 'W15_DURABLE_SYNC_FAILED')
+        self.assertEqual(rows[0]['failure']['stage'], 'auth-mutate')
+        self.assertTrue(rows[2]['same']); self.assertEqual(rows[2]['originalErrorCode'], 'W15_DURABLE_SYNC_FAILED')
+        self.assertEqual(rows[2]['firstStage'], 'auth-mutate')
+        self.assertEqual(rows[2]['firstKind'], 'durable-io-error')
+        self.assertLessEqual(len(result.stdout.splitlines()[0]) + 1, 1024)
+        self.assertNotIn('DO_NOT_EXPORT', result.stdout.decode())
+
 
 if __name__ == '__main__': unittest.main()
