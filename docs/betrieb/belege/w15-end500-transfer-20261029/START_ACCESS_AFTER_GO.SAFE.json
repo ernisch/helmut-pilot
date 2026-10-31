@@ -1,0 +1,74 @@
+{
+  "schema": "helmut-w15-start-access-after-go/1",
+  "observedAtUTC": "2026-10-29T05:49:08.281934+00:00",
+  "status": "GITHUB_DATA_GO_RECEIVED_TECHNICAL_RESTORE_AND_ACCESS_BLOCKED",
+  "approvedScope": "Previously described additional protected GitHub Actions data and recipient key provisioning only",
+  "operatorReply": "Freigegeben",
+  "githubDataProvisioningAuthorized": true,
+  "githubDataProvisioningPerformed": false,
+  "end500OrMock500StartAuthorized": false,
+  "end500OrMock500Started": false,
+  "developmentCommit": "6b24c890eb967405dfdde850fe53556b136d6dbf",
+  "requiredCI": {
+    "runId": 40793217236,
+    "conclusion": "success",
+    "commit": "6b24c890eb967405dfdde850fe53556b136d6dbf"
+  },
+  "publicSourceCommitBlobObservation": {
+    "files": 431,
+    "historicalPinTriples": 42,
+    "sourceDeltas": 6,
+    "status": "PASS_PUBLIC_BYTES_MATCH_GIT_BLOBS_ONLY",
+    "runReviewIssued": false
+  },
+  "actualCurrentRuntimeObservation": {
+    "atUTC": "2026-10-29T05:46:22.508891+00:00",
+    "uid": 1000,
+    "gid": 1000,
+    "previousPrivateReceiverHomeAccessible": false,
+    "previousReceiverPassphraseAccessible": false,
+    "previousReceivedInputRootAccessible": false,
+    "previousCombinedCipherRootAccessible": false,
+    "publicWorktreeRecoveredFromGitHub": true,
+    "earlierOriginalHashAcceptanceInvalidated": false,
+    "currentOriginalAvailabilityProved": false
+  },
+  "freshPrivateDriveMetadata": {
+    "recoveryWrapper": {
+      "fileId": "1QqKoON859fDE-iwvk3nErSZnN68Tkz8C",
+      "bytes": 3298,
+      "permissions": [
+        {
+          "type": "user",
+          "role": "owner"
+        }
+      ],
+      "originalFullReadbackSHA256": "753b8bdaad77d992ee21d0099dd43614ab367403c97ba1213d6206aa7b959714",
+      "newContentDownloadOrHashRepeated": false
+    },
+    "sourceReceipt": {
+      "fileId": "1BbH3cBQJHbbxh5fsqs2CSnxwuVW5asWH",
+      "bytes": 17136,
+      "permissions": [
+        {
+          "type": "user",
+          "role": "owner"
+        }
+      ],
+      "newContentDownloadOrHashRepeated": false
+    }
+  },
+  "requiredRecipientFingerprint": "7E3998A6C2CB948C69A2EE51F4267ABF26796EDC",
+  "existingIndependentRecoveryFingerprint": "DCFD605ED28EEACA9B826105E769DE07A68BA8E4",
+  "oldPrivateRecoveryKeyExportAllowed": false,
+  "newSourceTransferNeeded": false,
+  "lastGitHubSecretsMetadataHTTPStatus": 403,
+  "gitHubSecretAccessChangedOrProvedByOperatorGO": false,
+  "additionalIdenticalAccessRetries": 0,
+  "productionActions": false,
+  "mergesOrDeployments": false,
+  "paidResourcesCreated": false,
+  "dataDeletions": false,
+  "executionAuthority": false,
+  "readiness": "BLOCKED_NOT_FULLY_EXECUTABLE"
+}

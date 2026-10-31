@@ -1,0 +1,826 @@
+{
+  "schema": "helmut-w15-RAM-B-late-window-addendum/1",
+  "status": "DESCRIPTIVE_LATE_LEVELS_NOT_END500_PROOF",
+  "analyzedAtUTC": "2026-10-28T16:37:43.961066+00:00",
+  "method": "Existing files only. Same nearest-rank p95/median and PID-separated nonadditive method as main analysis. Both last90/40completed-count positions and literal last90/40seconds are supplied. Seconds windows end at last accepted postimage,exclude failed291st read/cleanup. No future forecast.",
+  "mainAnalysisPin": {
+    "path": "RAM_B_GROWTH_ANALYSIS.SAFE.json",
+    "bytes": 117254,
+    "sha256": "c8fe6e65e1fdb16577b8dda3d217f09abad6ad87b5c497a412413575c7d9f503"
+  },
+  "windows": {
+    "last90CompletedCounts": {
+      "samples": 268,
+      "firstUTC": "2026-10-28T15:48:03.429387+00:00",
+      "lastUTC": "2026-10-28T15:52:35.990950+00:00",
+      "completedCASMin": 200,
+      "completedCASMax": 289,
+      "commonCurrent": {
+        "n": 268,
+        "median": 1286225920.0,
+        "p95": 1367158784,
+        "max": 1435398144,
+        "min": 1201778688
+      },
+      "anon": {
+        "n": 268,
+        "median": 922265600.0,
+        "p95": 1006862336,
+        "max": 1077477376,
+        "min": 835665920
+      },
+      "file": {
+        "n": 268,
+        "median": 339136512.0,
+        "p95": 346157056,
+        "max": 346181632,
+        "min": 333615104
+      },
+      "shmem": {
+        "n": 268,
+        "median": 146792448.0,
+        "p95": 146792448,
+        "max": 146792448,
+        "min": 146792448
+      },
+      "processes": {
+        "postgrest": {
+          "rss": {
+            "n": 268,
+            "median": 423002112.0,
+            "p95": 438964224,
+            "max": 452300800,
+            "min": 379850752
+          },
+          "anon": {
+            "n": 268,
+            "median": 411197440.0,
+            "p95": 427159552,
+            "max": 440496128,
+            "min": 368046080
+          },
+          "file": {
+            "n": 268,
+            "median": 11804672.0,
+            "p95": 11804672,
+            "max": 11804672,
+            "min": 11804672
+          },
+          "shmem": {
+            "n": 268,
+            "median": 0.0,
+            "p95": 0,
+            "max": 0,
+            "min": 0
+          }
+        },
+        "node-command": {
+          "rss": {
+            "n": 268,
+            "median": 362330112.0,
+            "p95": 402202624,
+            "max": 418414592,
+            "min": 307548160
+          },
+          "anon": {
+            "n": 268,
+            "median": 305326080.0,
+            "p95": 345198592,
+            "max": 361410560,
+            "min": 250544128
+          },
+          "file": {
+            "n": 268,
+            "median": 57004032.0,
+            "p95": 57004032,
+            "max": 57004032,
+            "min": 57004032
+          },
+          "shmem": {
+            "n": 268,
+            "median": 0.0,
+            "p95": 0,
+            "max": 0,
+            "min": 0
+          }
+        },
+        "node-gateway": {
+          "rss": {
+            "n": 268,
+            "median": 109172736.0,
+            "p95": 119750656,
+            "max": 121257984,
+            "min": 104951808
+          },
+          "anon": {
+            "n": 268,
+            "median": 57460736.0,
+            "p95": 68038656,
+            "max": 69545984,
+            "min": 53239808
+          },
+          "file": {
+            "n": 268,
+            "median": 51712000.0,
+            "p95": 51712000,
+            "max": 51712000,
+            "min": 51712000
+          },
+          "shmem": {
+            "n": 268,
+            "median": 0.0,
+            "p95": 0,
+            "max": 0,
+            "min": 0
+          }
+        },
+        "postgres-process-16": {
+          "rss": {
+            "n": 268,
+            "median": 198475776.0,
+            "p95": 316084224,
+            "max": 327536640,
+            "min": 177922048
+          },
+          "anon": {
+            "n": 268,
+            "median": 135327744.0,
+            "p95": 252936192,
+            "max": 264388608,
+            "min": 114774016
+          },
+          "file": {
+            "n": 268,
+            "median": 14823424.0,
+            "p95": 14823424,
+            "max": 14823424,
+            "min": 14823424
+          },
+          "shmem": {
+            "n": 268,
+            "median": 48324608.0,
+            "p95": 48324608,
+            "max": 48324608,
+            "min": 48324608
+          }
+        }
+      },
+      "nodeHeapUsed": {
+        "n": 795,
+        "median": 100897560,
+        "p95": 101493384,
+        "max": 102352256,
+        "min": 55682336
+      },
+      "nodeHeapTotal": {
+        "n": 795,
+        "median": 171896832,
+        "p95": 172945408,
+        "max": 173207552,
+        "min": 127614976
+      },
+      "gcCounts": {
+        "8": 290,
+        "4": 290,
+        "1": 732
+      },
+      "gcPauseMs": {
+        "n": 1312,
+        "median": 4.197539001703262,
+        "p95": 15.379217997193336,
+        "max": 526.3779510036111,
+        "min": 0.3809169977903366
+      }
+    },
+    "last40CompletedCounts": {
+      "samples": 125,
+      "firstUTC": "2026-10-28T15:50:29.246442+00:00",
+      "lastUTC": "2026-10-28T15:52:35.990950+00:00",
+      "completedCASMin": 250,
+      "completedCASMax": 289,
+      "commonCurrent": {
+        "n": 125,
+        "median": 1288552448,
+        "p95": 1377792000,
+        "max": 1434259456,
+        "min": 1218486272
+      },
+      "anon": {
+        "n": 125,
+        "median": 925151232,
+        "p95": 1015267328,
+        "max": 1074995200,
+        "min": 856764416
+      },
+      "file": {
+        "n": 125,
+        "median": 339058688,
+        "p95": 341942272,
+        "max": 341950464,
+        "min": 336097280
+      },
+      "shmem": {
+        "n": 125,
+        "median": 146792448,
+        "p95": 146792448,
+        "max": 146792448,
+        "min": 146792448
+      },
+      "processes": {
+        "postgrest": {
+          "rss": {
+            "n": 125,
+            "median": 423104512,
+            "p95": 438665216,
+            "max": 444162048,
+            "min": 393547776
+          },
+          "anon": {
+            "n": 125,
+            "median": 411299840,
+            "p95": 426860544,
+            "max": 432357376,
+            "min": 381743104
+          },
+          "file": {
+            "n": 125,
+            "median": 11804672,
+            "p95": 11804672,
+            "max": 11804672,
+            "min": 11804672
+          },
+          "shmem": {
+            "n": 125,
+            "median": 0,
+            "p95": 0,
+            "max": 0,
+            "min": 0
+          }
+        },
+        "node-command": {
+          "rss": {
+            "n": 125,
+            "median": 363061248,
+            "p95": 401207296,
+            "max": 418414592,
+            "min": 307634176
+          },
+          "anon": {
+            "n": 125,
+            "median": 306057216,
+            "p95": 344203264,
+            "max": 361410560,
+            "min": 250630144
+          },
+          "file": {
+            "n": 125,
+            "median": 57004032,
+            "p95": 57004032,
+            "max": 57004032,
+            "min": 57004032
+          },
+          "shmem": {
+            "n": 125,
+            "median": 0,
+            "p95": 0,
+            "max": 0,
+            "min": 0
+          }
+        },
+        "node-gateway": {
+          "rss": {
+            "n": 125,
+            "median": 109088768,
+            "p95": 119750656,
+            "max": 120774656,
+            "min": 104951808
+          },
+          "anon": {
+            "n": 125,
+            "median": 57376768,
+            "p95": 68038656,
+            "max": 69062656,
+            "min": 53239808
+          },
+          "file": {
+            "n": 125,
+            "median": 51712000,
+            "p95": 51712000,
+            "max": 51712000,
+            "min": 51712000
+          },
+          "shmem": {
+            "n": 125,
+            "median": 0,
+            "p95": 0,
+            "max": 0,
+            "min": 0
+          }
+        },
+        "postgres-process-16": {
+          "rss": {
+            "n": 125,
+            "median": 198475776,
+            "p95": 316084224,
+            "max": 327536640,
+            "min": 184156160
+          },
+          "anon": {
+            "n": 125,
+            "median": 135327744,
+            "p95": 252936192,
+            "max": 264388608,
+            "min": 121008128
+          },
+          "file": {
+            "n": 125,
+            "median": 14823424,
+            "p95": 14823424,
+            "max": 14823424,
+            "min": 14823424
+          },
+          "shmem": {
+            "n": 125,
+            "median": 48324608,
+            "p95": 48324608,
+            "max": 48324608,
+            "min": 48324608
+          }
+        }
+      },
+      "nodeHeapUsed": {
+        "n": 372,
+        "median": 101071420.0,
+        "p95": 101632256,
+        "max": 102352256,
+        "min": 55997816
+      },
+      "nodeHeapTotal": {
+        "n": 372,
+        "median": 172421120.0,
+        "p95": 172945408,
+        "max": 173207552,
+        "min": 128139264
+      },
+      "gcCounts": {
+        "8": 129,
+        "4": 129,
+        "1": 332
+      },
+      "gcPauseMs": {
+        "n": 590,
+        "median": 4.1880409978330135,
+        "p95": 16.931199997663498,
+        "max": 526.3779510036111,
+        "min": 0.3976359963417053
+      }
+    },
+    "last90SecondsBeforeLastAcceptedPostimage": {
+      "samples": 88,
+      "firstUTC": "2026-10-28T15:51:07.076660+00:00",
+      "lastUTC": "2026-10-28T15:52:35.990950+00:00",
+      "completedCASMin": 262,
+      "completedCASMax": 289,
+      "commonCurrent": {
+        "n": 88,
+        "median": 1287084032.0,
+        "p95": 1367158784,
+        "max": 1434259456,
+        "min": 1218486272
+      },
+      "anon": {
+        "n": 88,
+        "median": 921757696.0,
+        "p95": 1002012672,
+        "max": 1074995200,
+        "min": 856764416
+      },
+      "file": {
+        "n": 88,
+        "median": 339109888.0,
+        "p95": 341946368,
+        "max": 341950464,
+        "min": 336203776
+      },
+      "shmem": {
+        "n": 88,
+        "median": 146792448.0,
+        "p95": 146792448,
+        "max": 146792448,
+        "min": 146792448
+      },
+      "processes": {
+        "postgrest": {
+          "rss": {
+            "n": 88,
+            "median": 421275648.0,
+            "p95": 432713728,
+            "max": 436101120,
+            "min": 393547776
+          },
+          "anon": {
+            "n": 88,
+            "median": 409470976.0,
+            "p95": 420909056,
+            "max": 424296448,
+            "min": 381743104
+          },
+          "file": {
+            "n": 88,
+            "median": 11804672.0,
+            "p95": 11804672,
+            "max": 11804672,
+            "min": 11804672
+          },
+          "shmem": {
+            "n": 88,
+            "median": 0.0,
+            "p95": 0,
+            "max": 0,
+            "min": 0
+          }
+        },
+        "node-command": {
+          "rss": {
+            "n": 88,
+            "median": 362262528.0,
+            "p95": 402202624,
+            "max": 418414592,
+            "min": 307634176
+          },
+          "anon": {
+            "n": 88,
+            "median": 305258496.0,
+            "p95": 345198592,
+            "max": 361410560,
+            "min": 250630144
+          },
+          "file": {
+            "n": 88,
+            "median": 57004032.0,
+            "p95": 57004032,
+            "max": 57004032,
+            "min": 57004032
+          },
+          "shmem": {
+            "n": 88,
+            "median": 0.0,
+            "p95": 0,
+            "max": 0,
+            "min": 0
+          }
+        },
+        "node-gateway": {
+          "rss": {
+            "n": 88,
+            "median": 109332480.0,
+            "p95": 119750656,
+            "max": 120774656,
+            "min": 104955904
+          },
+          "anon": {
+            "n": 88,
+            "median": 57620480.0,
+            "p95": 68038656,
+            "max": 69062656,
+            "min": 53243904
+          },
+          "file": {
+            "n": 88,
+            "median": 51712000.0,
+            "p95": 51712000,
+            "max": 51712000,
+            "min": 51712000
+          },
+          "shmem": {
+            "n": 88,
+            "median": 0.0,
+            "p95": 0,
+            "max": 0,
+            "min": 0
+          }
+        },
+        "postgres-process-16": {
+          "rss": {
+            "n": 88,
+            "median": 198475776.0,
+            "p95": 299372544,
+            "max": 327536640,
+            "min": 184156160
+          },
+          "anon": {
+            "n": 88,
+            "median": 135327744.0,
+            "p95": 236224512,
+            "max": 264388608,
+            "min": 121008128
+          },
+          "file": {
+            "n": 88,
+            "median": 14823424.0,
+            "p95": 14823424,
+            "max": 14823424,
+            "min": 14823424
+          },
+          "shmem": {
+            "n": 88,
+            "median": 48324608.0,
+            "p95": 48324608,
+            "max": 48324608,
+            "min": 48324608
+          }
+        }
+      },
+      "nodeHeapUsed": {
+        "n": 263,
+        "median": 101140664,
+        "p95": 101683600,
+        "max": 102352256,
+        "min": 56068224
+      },
+      "nodeHeapTotal": {
+        "n": 263,
+        "median": 172421120,
+        "p95": 172945408,
+        "max": 173207552,
+        "min": 128139264
+      },
+      "gcCounts": {
+        "8": 88,
+        "4": 88,
+        "1": 228
+      },
+      "gcPauseMs": {
+        "n": 404,
+        "median": 4.11540699750185,
+        "p95": 16.616098999977112,
+        "max": 526.3779510036111,
+        "min": 0.3976359963417053
+      }
+    },
+    "last40SecondsBeforeLastAcceptedPostimage": {
+      "samples": 40,
+      "firstUTC": "2026-10-28T15:51:56.294510+00:00",
+      "lastUTC": "2026-10-28T15:52:35.990950+00:00",
+      "completedCASMin": 278,
+      "completedCASMax": 289,
+      "commonCurrent": {
+        "n": 40,
+        "median": 1285294080.0,
+        "p95": 1368911872,
+        "max": 1389064192,
+        "min": 1218486272
+      },
+      "anon": {
+        "n": 40,
+        "median": 921757696.0,
+        "p95": 1006862336,
+        "max": 1027104768,
+        "min": 856764416
+      },
+      "file": {
+        "n": 40,
+        "median": 339136512.0,
+        "p95": 339165184,
+        "max": 339169280,
+        "min": 339099648
+      },
+      "shmem": {
+        "n": 40,
+        "median": 146792448.0,
+        "p95": 146792448,
+        "max": 146792448,
+        "min": 146792448
+      },
+      "processes": {
+        "postgrest": {
+          "rss": {
+            "n": 40,
+            "median": 419166208.0,
+            "p95": 427581440,
+            "max": 431685632,
+            "min": 405172224
+          },
+          "anon": {
+            "n": 40,
+            "median": 407361536.0,
+            "p95": 415776768,
+            "max": 419880960,
+            "min": 393367552
+          },
+          "file": {
+            "n": 40,
+            "median": 11804672.0,
+            "p95": 11804672,
+            "max": 11804672,
+            "min": 11804672
+          },
+          "shmem": {
+            "n": 40,
+            "median": 0.0,
+            "p95": 0,
+            "max": 0,
+            "min": 0
+          }
+        },
+        "node-command": {
+          "rss": {
+            "n": 40,
+            "median": 361809920.0,
+            "p95": 391335936,
+            "max": 398757888,
+            "min": 327286784
+          },
+          "anon": {
+            "n": 40,
+            "median": 304805888.0,
+            "p95": 334331904,
+            "max": 341753856,
+            "min": 270282752
+          },
+          "file": {
+            "n": 40,
+            "median": 57004032.0,
+            "p95": 57004032,
+            "max": 57004032,
+            "min": 57004032
+          },
+          "shmem": {
+            "n": 40,
+            "median": 0.0,
+            "p95": 0,
+            "max": 0,
+            "min": 0
+          }
+        },
+        "node-gateway": {
+          "rss": {
+            "n": 40,
+            "median": 109402112.0,
+            "p95": 118308864,
+            "max": 119750656,
+            "min": 105263104
+          },
+          "anon": {
+            "n": 40,
+            "median": 57690112.0,
+            "p95": 66596864,
+            "max": 68038656,
+            "min": 53551104
+          },
+          "file": {
+            "n": 40,
+            "median": 51712000.0,
+            "p95": 51712000,
+            "max": 51712000,
+            "min": 51712000
+          },
+          "shmem": {
+            "n": 40,
+            "median": 0.0,
+            "p95": 0,
+            "max": 0,
+            "min": 0
+          }
+        },
+        "postgres-process-16": {
+          "rss": {
+            "n": 40,
+            "median": 198475776.0,
+            "p95": 299372544,
+            "max": 327536640,
+            "min": 184156160
+          },
+          "anon": {
+            "n": 40,
+            "median": 135327744.0,
+            "p95": 236224512,
+            "max": 264388608,
+            "min": 121008128
+          },
+          "file": {
+            "n": 40,
+            "median": 14823424.0,
+            "p95": 14823424,
+            "max": 14823424,
+            "min": 14823424
+          },
+          "shmem": {
+            "n": 40,
+            "median": 48324608.0,
+            "p95": 48324608,
+            "max": 48324608,
+            "min": 48324608
+          }
+        }
+      },
+      "nodeHeapUsed": {
+        "n": 120,
+        "median": 101238680.0,
+        "p95": 101683600,
+        "max": 102352256,
+        "min": 56068224
+      },
+      "nodeHeapTotal": {
+        "n": 120,
+        "median": 172421120.0,
+        "p95": 172945408,
+        "max": 172945408,
+        "min": 128925696
+      },
+      "gcCounts": {
+        "8": 38,
+        "4": 38,
+        "1": 89
+      },
+      "gcPauseMs": {
+        "n": 165,
+        "median": 4.14240799844265,
+        "p95": 18.808102004230022,
+        "max": 41.467353999614716,
+        "min": 0.3976359963417053
+      }
+    }
+  },
+  "largestObservedLateCurrentSnapshotNotTruePeakVector": {
+    "atUTC": "2026-10-28T15:49:49.280821+00:00",
+    "kernelSampleAtUTC": "2026-10-28T15:49:49.280509+00:00",
+    "processesObservedAtUTC": "2026-10-28T15:49:49.284233+00:00",
+    "commonCurrentBytes": 1435398144,
+    "statFields": {
+      "anon": 1077477376,
+      "file": 334581760,
+      "shmem": 146792448,
+      "kernel": 22376448,
+      "slab_reclaimable": 10023592,
+      "slab_unreclaimable": 1506816,
+      "file_dirty": 7831552,
+      "file_writeback": 0
+    },
+    "individualProcesses": [
+      {
+        "alias": "postgrest",
+        "rssBytes": 437972992,
+        "anonBytes": 426168320,
+        "fileBytes": 11804672,
+        "shmemBytes": 0,
+        "pssBytes": null
+      },
+      {
+        "alias": "postgres-process-16",
+        "rssBytes": 327364608,
+        "anonBytes": 264216576,
+        "fileBytes": 14823424,
+        "shmemBytes": 48324608,
+        "pssBytes": null
+      },
+      {
+        "alias": "node-gateway",
+        "rssBytes": 105009152,
+        "anonBytes": 53297152,
+        "fileBytes": 51712000,
+        "shmemBytes": 0,
+        "pssBytes": null
+      },
+      {
+        "alias": "node-command",
+        "rssBytes": 388882432,
+        "anonBytes": 331878400,
+        "fileBytes": 57004032,
+        "shmemBytes": 0,
+        "pssBytes": null
+      }
+    ],
+    "nonAdditive": true
+  },
+  "peakInterpretation": {
+    "actualCommonLifetimePeakBytes": 1444556800,
+    "largestObservedProcessSnapshotCurrentBytes": 1435398144,
+    "gapToLifetimePeakBytes": 9158656,
+    "trueLifetimePeakProcessVectorAvailable": false,
+    "reason": "Kernel100ms safety highwater includes shorter peaks than1s process snapshots; do not falsely assign the full highwater to this vector. file includes shmem, neither file+shmem nor RSS values may be summed."
+  },
+  "decision": {
+    "specificPerCallLeakProven": false,
+    "specificAllocatorCauseProven": false,
+    "largestEarlierGrowthOwner": "PostgREST anonymous resident memory; median+80285696B fromCAS50..99to250..289",
+    "latePostgrestLevelNearlyFlatObserved": true,
+    "commonFullStabilityProven": false,
+    "mandatoryRAMOptimizationJustifiedNow": false,
+    "speculativeGHCFlagsOrPoolLimitChangeJustified": false,
+    "oneFurtherUnchangedRAMPipelineDiagnosticDefensible": true,
+    "conditions": [
+      "Independent closure of safe error capture and end-control gaps before any new attempt.",
+      "Valid explicit one-attempt authorization and fresh nonreused target; no retry/replay.",
+      "Complete unchanged End500fixture already loaded; genuine shared2.048GB/20%reserve/Swap0 watchdog,firstFAILUNKNOWNstop.",
+      "Keep all journals/history/results; exactAuth30/ACK/postimage checks; independent native0+endstate+kernelafteraudit.",
+      "Next attempt is measurement opportunity, not a guarantee of500/6500fit orProductionproof."
+    ],
+    "basis": "Large earlyPostgRESTwarmup/retention established; last90/40observedlevels approximatelybounded. Commonlatep95fluctuates and late>=349/500is absent, so no proven fullstability. No demonstrated ongoing allocator leak currently requires a speculative optimization before the authorized guarded diagnosis.",
+    "oneGBWishIsNotBinding": true
+  },
+  "newQueriesTestsSignalsOrWorkloads": 0,
+  "sourceFilesModified": false,
+  "optimizationApplied": false,
+  "existingActualFAILUnchanged": true
+}

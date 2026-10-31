@@ -1,0 +1,101 @@
+{
+  "schema": "helmut-w15-schema-fix-sprint/1",
+  "status": "RESTORE_PASS_ADDITIONAL_DATE_PREFLIGHT_FAILED_STOPPED",
+  "reportedAtUTC": "2026-10-27T19:47:44.150923+00:00",
+  "actualSchemaFix": "One-line UPDATE public.mandate_profiles in atomic post-restore command; adjacent commands reviewed, no global search_path change",
+  "targetDatabase": "helmut_w15_restorecheck_20261027",
+  "restoreAttempts": 1,
+  "restoreStatus": "PASS_COMMITTED_ORIGINAL_RESTORE_WITH_500_INACTIVE_PROFILES",
+  "committedCounts": {
+    "active": 0,
+    "database": "helmut_w15_restorecheck_20261027",
+    "profiles": 500,
+    "identities": 501
+  },
+  "completeCatalog": {
+    "tables": 13,
+    "functions": 10,
+    "primaryKeys": 11,
+    "foreignKeys": 4,
+    "rlsTables": 13,
+    "alwaysTriggers": 2
+  },
+  "originalData": {
+    "all13TableDataHashesMatch": true,
+    "onlyTargetDifference": "mandate_profiles.aktiv=false; comparison uses SELECT projection only",
+    "originalBeforeAfterEqual": true,
+    "fullDumpRawDocuments": 931,
+    "fullDumpKnowledgeObjects": 517,
+    "fullDumpLinks": 979,
+    "actualW15SelectionDocuments": 7,
+    "actualW15SelectionKnowledgeObjects": 6
+  },
+  "independentPostRestoreReview": "PASS14of14",
+  "newAttemptConfiguration": {
+    "database": "helmut_w15_full500_20261028",
+    "container": "w15-full500-20261028",
+    "minimumStartUTC": "2026-10-28T00:00:00Z",
+    "lastOrderDayUTC": "2026-10-31",
+    "processingHours": 3,
+    "closureMinutes": 30,
+    "enforcedBudgetBytes": 2048000000,
+    "requiredReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "swapBytes": 0,
+    "created": false
+  },
+  "additionalPureDatePreflight": {
+    "executions": 1,
+    "status": "FAIL",
+    "error": "w15-full500-window-order-date",
+    "source": "scripts/synthetik-500-w15-full500-preflight-test.js:35",
+    "cause": "One ISO equivalence assertion retains two old positive27Oct dates, correctly rejected by earliest28Oct guard",
+    "correctionOrRetryAfterFailure": false,
+    "coverageCaptured": true,
+    "applicationCoverageAccepted": false
+  },
+  "full500NewAttemptStarted": false,
+  "newFull500ActiveProfiles": 0,
+  "unitExecutions": 0,
+  "mockResponses": 0,
+  "realModelCalls": 0,
+  "productionChanges": 0,
+  "merges": 0,
+  "retryOrScheduledExecution": false,
+  "readySealCreated": false,
+  "historicFirstAttemptEvidenceUnchanged": true,
+  "full500LocalOrProductionAccepted": false,
+  "nextNecessaryAction": "Correct only the two stale positive ISO inputs27Oct->28Oct and rerun the pure date/preflight check with permission under the explicit stop rule; then refresh independent review and start exactly one already conditionally authorized full500 attempt no earlier28Oct if all time/data gates hold. No new overall attempt has been consumed.",
+  "evidence": [
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/RESTORECHECK_20261027_RESULT.SAFE.json",
+      "bytes": 37841,
+      "sha256": "19cf4de850fe980b5a2ca59eb05bf19ff9b544a3318159c9b9b3880fbe98213a"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/RESTORECHECK_20261027_INDEPENDENT.SAFE.json",
+      "bytes": 5087,
+      "sha256": "9c578b21f30aec717a769de68b500f037b4ee5a8b930f6012b006d047800b74b"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/RESTORECHECK_20261027_DATE_PREFLIGHT_FAILURE.SAFE.json",
+      "bytes": 1219,
+      "sha256": "088f5ad94d360fb8808d7baf54e0b2b4e7bba6030478ef4df13fe22b28b1da6b"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/RESTORECHECK_20261027_COVERAGE.SAFE.json",
+      "bytes": 1029,
+      "sha256": "cc85ad585f8a177d01ede880e42964ca642d180472a5a9edffeab9d2d2b55346"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/RESTORECHECK_20261028_FUNCTION_REVIEW.SAFE.json",
+      "bytes": 4933,
+      "sha256": "12de1bedba9d54de001bb9434be0d44c4753a08d18f04f46df6b24bc241ca35b"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-processing-20261027/RESTORECHECK_20261028_MEMORY_REVIEW.SAFE.json",
+      "bytes": 5440,
+      "sha256": "4b74302698c5a059ad6dd1ee2fed4617ae7b80cbe7f5ece176b3b48f182321de"
+    }
+  ]
+}

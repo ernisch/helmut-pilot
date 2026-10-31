@@ -1,0 +1,14 @@
+{
+  "baselineCommit": "225e76d7b7618e36c189d205294dfd073e6d88a4",
+  "cases": [
+    "test_pipe_close_cannot_replace_first_inner_failure",
+    "test_queued_inner_failure_cannot_be_masked_by_next_guard",
+    "test_rejected_complete_kernel_sample_is_not_lost",
+    "test_stored_inner_failure_cannot_be_masked_by_later_guard"
+  ],
+  "originalDataRead": false,
+  "originalRunCauseProven": false,
+  "regressionsDetected": 4,
+  "schema": "helmut-w15-diagnostic-loss-baseline-reproduction/1",
+  "syntheticCases": 4
+}

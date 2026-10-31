@@ -1,0 +1,53 @@
+{
+  "schema": "helmut-w15-github-explicit-token-probe/1",
+  "observedDateOperator": "2026-10-29",
+  "repository": "ernisch/helmut-pilot",
+  "environmentName": "helmut-ci-originals",
+  "checkedCommit": "dffc51a161bbdd54af3d805dc021e829f3157e8f",
+  "credentialBinding": {
+    "variable": "HELMUT_GITHUB_CI_ADMIN_TOKEN",
+    "cloudObservationCurrent": true,
+    "cloudSecretState": "ready",
+    "defaultGHTokenPresent": true,
+    "defaultGHTokenEqualsHelmutBinding": false,
+    "probeGHTokenExplicitlyReplacedByHelmutBinding": true,
+    "probeGITHUBTokenRemoved": true,
+    "probeHostname": "github.com",
+    "priorPythonRequestUsedExplicitHelmutAuthorization": true,
+    "storedLoginCouldOverrideProbe": false
+  },
+  "publicKeyProbe": {
+    "countInThisRequest": 1,
+    "method": "GET",
+    "endpoint": "/repos/ernisch/helmut-pilot/environments/helmut-ci-originals/secrets/public-key",
+    "httpStatus": 403,
+    "message": "Resource not accessible by integration",
+    "acceptedGitHubPermissions": "environments=read",
+    "oauthScopesHeader": "",
+    "requestId": "3432:330D91:1DDA97B:629B43D:6AE32CD4"
+  },
+  "identityProbe": {
+    "sameExplicitCredentialBinding": true,
+    "endpoint": "/user",
+    "httpStatus": 200,
+    "login": "ernisch",
+    "accountType": "User"
+  },
+  "diagnosis": {
+    "cliCredentialPrecedenceExcluded": true,
+    "authenticationSuccessful": true,
+    "effectiveEnvironmentSecretAccess": "DENIED",
+    "accountIdentityProvesExactTokenSelectedInGitHubUI": false,
+    "operatorReportsFineGrainedEnvironmentsReadWrite": true,
+    "effectiveCredentialVersusGitHubUIGrantMismatch": "UNRESOLVED",
+    "sameEndpointRetryAllowed": false
+  },
+  "tokenValuesFingerprintsOrSecretContentsRecorded": false,
+  "secretOrProtectionWritesPerformed": false,
+  "workflowDispatched": false,
+  "end500Started": false,
+  "mock500Started": false,
+  "productionActions": false,
+  "executionAuthority": false,
+  "status": "FAIL_REQUIRED_ENVIRONMENT_SECRET_ACCESS"
+}

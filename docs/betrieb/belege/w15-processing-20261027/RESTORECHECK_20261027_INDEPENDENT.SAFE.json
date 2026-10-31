@@ -1,0 +1,167 @@
+{
+  "schema": "helmut-w15-independent-targeted-restorecheck/1",
+  "status": "PASS_INDEPENDENT_READONLY_COMMITTED_RESTORE_500_INACTIVE",
+  "reviewer": "required_data_audit",
+  "observedAtUTC": "2026-10-27T19:44:56.762030+00:00",
+  "priorReportSHA256": "19cf4de850fe980b5a2ca59eb05bf19ff9b544a3318159c9b9b3880fbe98213a",
+  "targetDatabase": "helmut_w15_restorecheck_20261027",
+  "targetContainer": "w15-full500-20261027",
+  "actions": {
+    "readOnlyQueries": 2,
+    "databaseWrites": 0,
+    "restores": 0,
+    "profileActivations": 0,
+    "unitExecutions": 0,
+    "mockCalls": 0,
+    "tests": 0,
+    "retries": 0,
+    "oldFailedDatabaseAccesses": 0
+  },
+  "checks": [
+    {
+      "name": "exact target and source identities and READ ONLY transactions",
+      "status": "PASS"
+    },
+    {
+      "name": "PG17.6 unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "exact13originaltables committed",
+      "status": "PASS"
+    },
+    {
+      "name": "full13tablecatalog and10functioncontracts match executed precheck",
+      "status": "PASS"
+    },
+    {
+      "name": "fresh original catalog matches restored catalog",
+      "status": "PASS"
+    },
+    {
+      "name": "500inactive mandates and501 identities",
+      "status": "PASS"
+    },
+    {
+      "name": "source remains500active",
+      "status": "PASS"
+    },
+    {
+      "name": "all13datahashes equal prior receipt and current original using SELECT active projection only",
+      "status": "PASS"
+    },
+    {
+      "name": "profile factual hash excludes only active flag",
+      "status": "PASS"
+    },
+    {
+      "name": "main and main-auth bodies identical to original",
+      "status": "PASS"
+    },
+    {
+      "name": "11PK4FK13RLS2ALWAYS match archive",
+      "status": "PASS"
+    },
+    {
+      "name": "no other target database sessions",
+      "status": "PASS"
+    },
+    {
+      "name": "zero persisted unit outputs and empty job queue",
+      "status": "PASS"
+    },
+    {
+      "name": "original before-after SAFE receipts preserved",
+      "status": "PASS"
+    }
+  ],
+  "full500Started": false,
+  "performanceAccepted": false,
+  "productionProof": false,
+  "counts": {
+    "mandate_profiles": 500,
+    "active": 0,
+    "profiles": 501,
+    "publicTables": 13,
+    "functions": 10,
+    "primaryKeys": 11,
+    "foreignKeys": 4,
+    "alwaysTriggers": 2
+  },
+  "dataHashes": [
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "briefings",
+      "rows": 0
+    },
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "helmut_job_outbox",
+      "rows": 0
+    },
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "helmut_jobs",
+      "rows": 0
+    },
+    {
+      "hash": "b096fa764c03a2fdbbb36e3d1d9e14ed34da7cd8a1ff32e354d132a4a7b7b284",
+      "name": "helmut_store",
+      "rows": 6
+    },
+    {
+      "hash": "c12ba16811c3d4220409229f523e45ea159203bd2be6c32523198ea526114890",
+      "name": "knowledge_objects",
+      "rows": 517
+    },
+    {
+      "hash": "f55c31ba06b2e9566dd624ab09fa328d1e89d452c73bc98bd4cf98ddfef047c4",
+      "name": "ko_document_links",
+      "rows": 979
+    },
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "llm_budget_counters",
+      "rows": 0
+    },
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "llm_usage",
+      "rows": 0
+    },
+    {
+      "hash": "da286517dcdfecf1d7cfd922f4d3d4ac191803297e0bf911bcd7e12b73704fad",
+      "name": "mandate_profiles",
+      "rows": 500
+    },
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "pipeline_locks",
+      "rows": 0
+    },
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "process_runs",
+      "rows": 0
+    },
+    {
+      "hash": "b298a5014f7c574d0e28f27d16fb729ced5090e3b08c4de30b64f3f2f9a0ef6c",
+      "name": "profiles",
+      "rows": 501
+    },
+    {
+      "hash": "c44e74d5463f9a7fdda7e07e3bb125b7ac2e316065e2bf26939e7541b3944e17",
+      "name": "raw_documents",
+      "rows": 931
+    }
+  ],
+  "profileFachHash": "2ea736730520aebc224fc778ef0926bbe01271cbbafac1144a4e2b869cbeb29d",
+  "mainHash": "58d5f89d3da06a0319383870e0c88acf8be96400bcbfd9df16d17d6570b7fb00",
+  "mainAuthHash": "f4f51819c7d8cc3f60f4651707af7aa697b6d9066310880bd861f3ef8b1de39c",
+  "catalogSHA256": "a1091cc731b9340b2147ddb1f1ba732c8482e54870c912d565a2f6b92b3d2794",
+  "catalogComparedColumnsConstraintsRLSOwnTriggersAndFunctionContracts": true,
+  "dataDifference": "Only persisted mandate_profiles.aktiv=false; comparison projects true in SELECT only, never writes active flags.",
+  "physicalInventoryClarification": "931 raw_documents,517 knowledge_objects,979 ko_document_links are original complete database counts;7 documents/6 KOs refer only to the selected W15 execution input subset.",
+  "oldFailedAttemptUnmodified": true,
+  "completedAtUTC": "2026-10-27T19:44:58.701526+00:00"
+}

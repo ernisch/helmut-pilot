@@ -1,0 +1,148 @@
+{
+  "schema": "helmut-w15-readonly-async-integration-conditions/1",
+  "status": "UNEXECUTED_DRAFT_NOT_READY_STOP_LATCH_AND_LIFECYCLE_BINDINGS_REQUIRED",
+  "reviewedAtUTC": "2026-10-28T18:58:04.783483+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "baseHead": "fdf693426c5798456d612205626e13be61713404",
+  "method": "Existingcontroller/gateway/journal/storage andprotectedunexecuteddraft sourcesonly. No codeedit/test/HTTP/DB/signal/cleanup.",
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/scripts/synthetik-500-w15-memory-forward.js",
+      "bytes": 12137,
+      "sha256": "bcee2d77c001d52cbe8d36bfa59cc19b38602f92372f2ccb9f34be575bd89c96"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/scripts/synthetik-500-w15-memory-forward.py",
+      "bytes": 26290,
+      "sha256": "6ebf276cd774de23a7a58038f85594b15afd3d774c34fab596d1c47b88ac371c"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 25944,
+      "sha256": "77357f3871aada76433161e466de471888853743f63c0bfcec7eb7f58db4489d"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/scripts/fixtures/w15-durable-observations.js",
+      "bytes": 13410,
+      "sha256": "0737e8dd5c570f65b8e57dba1670870497eca8c889b340a5cc6b4d54ffd3356f"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 5598,
+      "sha256": "a49ff1c7b5b3c3b4eae789a580894d4cb5e847d678ee9678811f8919bd95db22"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 6301,
+      "sha256": "677ab387df1147619328be32f5601e98280ae434c49eb753ad7873cd41017b21"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/lib/helmut/storage.js",
+      "bytes": 545054,
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/scripts/fixtures/z3-plattform.js",
+      "bytes": 28609,
+      "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+    }
+  ],
+  "draftPin": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/UNEXECUTED_ASYNC_MEMORY_DRAFT.PRIVATE.patch",
+    "bytes": 7003,
+    "sha256": "56850cfc930acdf1ddab2abd2199183a4e8bd1e2c5587ab15192a0e485b6fff4"
+  },
+  "reusedComponentProofPin": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json",
+    "bytes": 12102,
+    "sha256": "25157d93434b749c8dbd38fa9dc5e5336b62f7be328f414ea5449c715525b3ac"
+  },
+  "findings": [
+    {
+      "id": "STOP_LATCH",
+      "severity": "REQUIRED_BEFORE_INTEGRATION_PASS",
+      "actualGap": "Oldprivatepatchawaitsjournal.closewithoutasynchronousabortlatch. Mutationawaitreadcancontinueintocallback/nativewritewhilehandlerdrains.",
+      "minimumCorrection": "Synchronousstoplatchbeforecapturingsnapshot/anyawait. Guardnewpubliccall,diagnosticcallback,andnative.apply immediatelybeforeexistingnativewriter. Recheckafterawaitsbeforereadback/newiteration/progress. AlreadyissuedwriteoutcomeUNKNOWNuntilgenuineproof;no retry."
+    },
+    {
+      "id": "IMMUTABLE_ABORT",
+      "severity": "REQUIRED_BEFORE_INTEGRATION_PASS",
+      "actualGap": "Shallowreportspread/authMutationsreferencescanmutatewhileabortawaits.",
+      "minimumCorrection": "Capturedeepprivatevaluessnapshotatsignalafterlatch;neverfreezeorchangeactualObserverobjects. StorestatusFAIL_OR_UNKNOWN andinflightUNKNOWN permanently;laterACKcannotretroactivelychangesnapshot."
+    },
+    {
+      "id": "ONE_FINALIZER",
+      "severity": "REQUIRED_BEFORE_INTEGRATION_PASS",
+      "actualGap": "NormalfinallyandSIGTERMcallbackcanconcurrentlywriteGC/stats/rowendsandclosethejournal.",
+      "minimumCorrection": "Oneidempotentteardownowner;stopproducerTimers/GCtakeRecords/disconnectonce;coordinatedinflightobservationcompletionorboundedUNKNOWN;flush/closeonlyafterallallowedobserverwritersfinish. Same15soverallabortbound,no duplicateclose/writeafterclosed races."
+    },
+    {
+      "id": "DURABLE_ACCEPTANCE",
+      "severity": "REQUIRED_BEFORE_INTEGRATION_PASS",
+      "actualGap": "Acceptedpostimage/newprogressneedjournalACKbarrier,butasyncrejectionmustalsostopfutureworkimmediately.",
+      "minimumCorrection": "Propagatejournalfailuretofirstfailure/stoplatch;explicitflushbeforeacceptedpostimage/progress. PreserveAPIthroughACKtimingandseparaterealelapsedthroughdurableobservation,nosubtractionorreset. NoAPI/nativewritecanbeginafterlatchorknownjournalfailure."
+    },
+    {
+      "id": "GATEWAY_LIFECYCLE",
+      "severity": "REQUIRED_BEFORE_INTEGRATION_PASS",
+      "actualGap": "Existingserveuseslog.close synchronously;changingonlylogimplementationwouldexit/sendconfirmedbeforeasyncdrain. Startupawaitscancontinueafterstop.",
+      "minimumCorrection": "MEMORY_SERVICE-onlyasyncpath;setstoppingbeforeawait,preventnewdispatch/readiness/gatewaystartupafterlatch,retainrealPGexit+allSocketcloseevents,awaitlogflush/closebeforeconfirmedIPC/process.exit. Sharedstoppromise,caughtrejections.4sPG/1.5ssocket/15sdrain/20sownedstoplimitsunchanged."
+    },
+    {
+      "id": "RO_SEED_BINDING",
+      "severity": "REQUIRED_DISK_PREPARATION_INVARIANT",
+      "actualGap": "Read-onlyhistoricseedunderBASEcanbetraversedbyexistingrecursivechown/chmod. Sharingwholehistoricstate/PGDATAwouldviolateisolation.",
+      "minimumCorrection": "Bindonlyexactpinnedregular0600seedfilereadonly,notdirectory/PGDATA/state. Placeoutsidepostmountrecursivepermissionsorselectivechown. Sourcepermissionsunchanged;verifyRW=false andpre/postsizeSHA;explicitfreshDdatabasepsql. No mutablehardlink/reflink/dataalias."
+    }
+  ],
+  "minimumNewControlCases": [
+    "SIGTERMduringpendingread=>zero newnativeCASafterlatch.",
+    "SIGTERMduringalreadyissuedCAS=>immutableUNKNOWNsnapshot,nofurtherloop/progress/retry.",
+    "Asyncloggerfailure=>samefirstfailurelatch,nofurtherbusinessdispatch/falseACK.",
+    "RealgatewayclosureconfirmedonlyafterjournalACKclose;nostartupcontinuationafterstopping."
+  ],
+  "reuseWithoutRepetition": [
+    "Priorfull10820eventpayload/sync/asyncnormalcomparison.",
+    "RealcontrolledjournalSIGTERM+10822durableACKs+fourfaultcases.",
+    "500sources,16Auth/49HTTP,3501nativepostimages/6000usageoriginalpreservation inexacthistoricalscope."
+  ],
+  "unchangedLimits": {
+    "storageReadTimeoutMs": 10000,
+    "AuthMs": 30000,
+    "journalAbortMs": 15000,
+    "journalQueueBytes": 8388608,
+    "PGStopMs": 4000,
+    "socketDrainMs": 1500,
+    "ownedStopMs": 20000,
+    "memoryLimitBytes": 2048000000,
+    "minimumReserveBytes": 409600000,
+    "SwapBytes": 0
+  },
+  "ROSeedParentFacts": {
+    "sourceBytes": 118800333,
+    "sourceSHA256": "a91d74064c3a717777cd25a743de27aaba4cb3dd0529b85270d24c503e5717d4",
+    "provenance": "Parentread-onlyinventory,notrehashbythisreview. Runtimepre/postpinchecksmandatory.",
+    "safeScope": "ImmutableSQLseedinputonly;allnewDBrowsmaterializedinfreshisolatedD,oldoriginalDB/sourceunchanged."
+  },
+  "reviewActions": {
+    "tests": 0,
+    "HTTP": 0,
+    "SQL": 0,
+    "signals": 0,
+    "sourceChanges": 0
+  },
+  "verdict": {
+    "oldPrivateDraftReady": false,
+    "JournalComponentPASSReused": true,
+    "newIntegrationPASS": false,
+    "End500StartApproved": false,
+    "fullMock500Approved": false,
+    "diskBudget": "Independentparent/otherreviewerscope,nocapacityPASSfromthisreport",
+    "historicalCCause": "UNCHANGED_UNKNOWN"
+  }
+}

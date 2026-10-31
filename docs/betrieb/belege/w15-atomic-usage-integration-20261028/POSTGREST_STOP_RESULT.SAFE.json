@@ -1,0 +1,152 @@
+{
+  "status": "PASS_REAL_POSTGREST_CONTROLLED_STOP",
+  "failure": null,
+  "inner": {
+    "status": "PASS_REAL_POSTGREST_CONTROLLED_STOP",
+    "signalRequest": {
+      "sequence": 1,
+      "atUTC": "2026-10-28T15:26:01.391Z",
+      "monoNS": "37143455078721",
+      "name": "postgrest-signal-request",
+      "pid": 2924,
+      "signal": "SIGTERM",
+      "accepted": true
+    },
+    "postgrestExit": {
+      "sequence": 2,
+      "atUTC": "2026-10-28T15:26:01.406Z",
+      "monoNS": "37143470446876",
+      "name": "postgrest-exit",
+      "code": null,
+      "signal": "SIGINT"
+    },
+    "servicesStopped": {
+      "sequence": 3,
+      "atUTC": "2026-10-28T15:26:01.410Z",
+      "monoNS": "37143473626365",
+      "name": "services-stopped",
+      "pgExit": {
+        "code": null,
+        "signal": "SIGINT"
+      },
+      "gateway": {
+        "anfragen": 0,
+        "fehler": 0,
+        "nachStatus": {},
+        "nachRpc": {},
+        "fehlerbeispiele": [],
+        "dauerMs": {
+          "n": 0,
+          "min": null,
+          "p50": null,
+          "p95": null,
+          "max": null,
+          "mittel": null
+        },
+        "gleichzeitigSpitze": 0
+      },
+      "forced": false,
+      "openSockets": 0,
+      "agentSockets": 0,
+      "agentFreeSockets": 0,
+      "confirmed": true
+    },
+    "childExit": {
+      "code": 0,
+      "signal": null
+    },
+    "stoppedReceipt": {
+      "type": "stopped",
+      "confirmed": true
+    },
+    "realElapsedMs": 552.6139489999999,
+    "authCalls": 0,
+    "CASWrites": 0,
+    "units": 0,
+    "modelCalls": 0,
+    "gatewayHTTPRequests": 0,
+    "HTTPscope": "Only existing serve() bounded small authenticated OpenAPI readiness GETs, no RPC.",
+    "memoryAcceptance": false,
+    "common": {
+      "currentBytes": 782524416,
+      "lifetimePeakBytes": 1475330048,
+      "limit": "2048000000",
+      "swapMax": "0",
+      "swap": 0,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "sourceSHA256": "49c6f9daf1e5e1cf3d793f2400fbe555de49c6049c28d19522e820deb224c926",
+    "serveSHA256": "264b60071c2fef3dd708d29221737f824642e3c92290a79cbf1d41423077a52f",
+    "expectedStopSHA256": "0535b9e7a7c3a945c696d027b342b7003d939af002851153234dec3edacaaa77"
+  },
+  "ownedStops": [
+    {
+      "action": "run",
+      "exitCode": 0
+    },
+    {
+      "action": "gateway",
+      "exitCode": 0
+    },
+    {
+      "action": "postgrest",
+      "exitCode": 0
+    }
+  ],
+  "databaseUnchanged": true,
+  "profiles": 500,
+  "activeProfiles": 0,
+  "usage": 6000,
+  "authCalls": 0,
+  "CASWrites": 0,
+  "units": 0,
+  "modelCalls": 0,
+  "newDatabase": false,
+  "gatewayRPCs": 0,
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 24850,
+      "sha256": "49c6f9daf1e5e1cf3d793f2400fbe555de49c6049c28d19522e820deb224c926"
+    },
+    {
+      "path": "scripts/fixtures/z3-plattform.js",
+      "bytes": 28609,
+      "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 3018,
+      "sha256": "95c24fa1ccd2e47467cbd22ecfb89e69ca441fc9fb9c8a21fab8c4583ce78a8b"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 4335,
+      "sha256": "e2ac57c7f7f47740ca98d1f48e767ab540a6d10af9c4d5041cde7fdf889b0482"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-postgrest-stop-check.py",
+      "bytes": 8418,
+      "sha256": "d29d2895b2440ee03f2e25f2209f18c9df92ae5372ccc55fd5f0500a538049a7"
+    }
+  ],
+  "retryAllowed": false,
+  "RAMAcceptance": false
+}

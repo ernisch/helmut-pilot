@@ -1,0 +1,225 @@
+{
+  "schema": "helmut-w15-unit0b-sanitized-receipt/1",
+  "status": "FAIL_COMMON_MEMORY_RESERVE",
+  "sprintState": "GESCHITERT_ODER_ABGEBROCHEN_MEMORY_ACCEPTANCE_ONLY",
+  "applicationSourceCommit": "8fd37534eb077299b240d66d7ff8318fb6a65985",
+  "harnessSourceCommit": "82a091af18369f441403e240cc8e47c6eae27ece",
+  "scope": "Exactly one authorized DR unit; actual signed chain/HTTP/PostgREST/native PG; mock provider only",
+  "database": "helmut_w15_unit0b_20261027",
+  "network": "none; no published ports",
+  "selector": {
+    "operationId": "synthetik500-w15-unit0b-1793123453661",
+    "commandHash": "e13d89021858457c911254012b187cee2c1f4f94b80c8c8f80905ea21372b169"
+  },
+  "temporaryActiveSyntheticProfilesConfirmed": 500,
+  "enteredUnits": 1,
+  "completedUnits": 1,
+  "localProviderResponses": 2,
+  "realModelCalls": 0,
+  "full500Proof": false,
+  "freshOperation": true,
+  "freshSignatures": true,
+  "newSigningPublicKeySHA256": "ee323d02b30f49d9e9bb32c4e6e1292f652bd03c407d7a1bb3f773765ab42b11",
+  "privateSigningKeyExported": false,
+  "localAzureDeployment": "gpt-5-mini-eu",
+  "realSystemClock": true,
+  "checks": {
+    "noObservedApplicationErrors": true,
+    "httpSuccess": true,
+    "exactlyOneEntered": true,
+    "exactlyTwoMockCalls": true,
+    "bothProviderDelaysAtLeast19900MS": true,
+    "unitBelow60000MS": true,
+    "everyAuthAcknowledgedBelow30000MS": true,
+    "threeExpectedStoredPositions": true,
+    "twoAttemptsAccounted": true,
+    "oneOutputNoInFlight": true,
+    "nativeActive500AtEntryAndEndRead": true,
+    "commonComparisonReserveAtLeast500MB": false,
+    "memoryEventsUnchanged": true
+  },
+  "timing": {
+    "unitStartToFinalACKMs": 55924.351053000006,
+    "unitLimitMs": 60000,
+    "unitHeadroomMs": 4075.648946999994,
+    "signedPreparationMs": 12371.214004,
+    "coldPreparedOpenMs": 2671.5554580000003,
+    "httpWallMs": 60737.070731,
+    "httpIncludesColdOpenAndClaimAndIsNotUnitTime": true,
+    "observedAuthMutations": 9,
+    "maximumObservedAuthWallMs": 662.9583869999988,
+    "authLimitMs": 30000,
+    "authScope": "Installation and this single completed unit only; not final fully grown500-unit ledger",
+    "providerActualDelaysMs": [
+      19901.801131,
+      19904.912811999995
+    ]
+  },
+  "results": [
+    {
+      "area": "mandatsbriefing",
+      "id": "bf-test-kohorte-synthetik-bb-001-mandatsbriefing-2026-10-27",
+      "userId": "test-kohorte-synthetik-bb-001",
+      "slot": "mandatsbriefing",
+      "generatedAt": "2026-10-27T17:52:52.043+00:00",
+      "canonicalHash": "207634a3f1523606ac90f8b1ebf1e359b8f53cf353227336aa7f4f720ceabfd0",
+      "matchesRetainedEvidence": true,
+      "professionalStatus": "pending"
+    },
+    {
+      "area": "morgenbriefing",
+      "id": "bf-test-kohorte-synthetik-bb-001-morgenlage-2026-10-27",
+      "userId": "test-kohorte-synthetik-bb-001",
+      "slot": "morgenlage",
+      "generatedAt": "2026-10-27T17:52:52.851+00:00",
+      "canonicalHash": "1a50aae3264dffe5af127767556939b7fb7d2223c535be7c0c2318c8e4e3e3a3",
+      "matchesRetainedEvidence": true,
+      "professionalStatus": "pending"
+    },
+    {
+      "area": "lage",
+      "id": "bf-test-kohorte-synthetik-bb-001-lage-2026-10-27",
+      "userId": "test-kohorte-synthetik-bb-001",
+      "slot": "lage",
+      "generatedAt": "2026-10-27T17:52:49.946+00:00",
+      "canonicalHash": "30b323b902aef41afd4458b2f0c127ed846f425f37ac0f557e829b9432258b28",
+      "matchesRetainedEvidence": true,
+      "professionalStatus": "pending"
+    }
+  ],
+  "independentResultChecksPassed": 34,
+  "storedPrivateDraftReviewRows": 2,
+  "technicalResultsVerified": true,
+  "professionalAcceptance": false,
+  "outputsAreLocalMocks": true,
+  "memory": {
+    "currentBytes": 813367296,
+    "kernelLifetimePeakBytes": 1558614016,
+    "configuredLimit": "max",
+    "swapCurrentBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "comparisonBudgetBytes": 2048000000,
+    "requiredReserveBytes": 500000000,
+    "comparisonReserveBytes": 489385984,
+    "technicalCapEnforced": false,
+    "peakReset": false,
+    "comparisonReserveAtLeast500MB": false,
+    "reserveShortfallBytes": 10614016,
+    "scope": "Whole existing common PG-container cgroup: DB/PostgREST/gateway/Node/workers/charged cache. Kernel lifetime peak not reset. Host input assembly excluded.",
+    "exactHistoricalPeakCompositionOrCauseEstablished": false,
+    "laterCurrentStatsDoNotDecomposePeak": true,
+    "sameCgroupLifetimePeakCannotDecrease": true
+  },
+  "cleanup": {
+    "nativeEndWriteAttempts": 1,
+    "nativeResponseState": "beendet",
+    "nativeResponseActive": 0,
+    "independentSQLActive": 0,
+    "nativeReadbackActive": 0,
+    "independentReviewerNativeEndState": "beendet",
+    "independentReviewerActive": 0,
+    "journalState": "running",
+    "journalCompletedIndex": 1,
+    "noInFlight": true,
+    "journalNotClosedAsFull500": true,
+    "noNextOrRetry": true,
+    "ownedUnitAndGatewayServicesStopped": true,
+    "furtherExecutionAuthorized": false
+  },
+  "originalSourcePreserved": true,
+  "originalSourceComparison": "Canonical profile/store/raw-document hashes and counts before/after equal",
+  "budgetLimitsChanged": false,
+  "productionChanges": 0,
+  "hetznerChanges": 0,
+  "merges": 0,
+  "containerResourceLimitsChanged": false,
+  "applicationCodeCI": {
+    "runId": 40534410137,
+    "commit": "da63309c44625f072afb8ccaf924fc0b3da77877",
+    "conclusion": "success",
+    "applicationCodeUnchanged": true,
+    "newHeadCISuccessClaimed": false
+  },
+  "coverage": "Captured only in required host input-material run; no coverage/profiler in performance phase; no extra application suite",
+  "independentAuditPathError": {
+    "retainedReport": "RESULTS_INDEPENDENT_FIRST_AUDIT_PATH_FAILURE.SAFE.json",
+    "sha256": "feb60f85134c5008a6c075806109606f525c761c48f4e7b12bdd8656873bc2de",
+    "correction": "Read basis.eingabe.eingabeHash as required by the existing B/local-calendar contract; no application or original-data change"
+  },
+  "rawReportPins": [
+    {
+      "name": "ACTIVATION.SAFE.json",
+      "bytes": 1069,
+      "sha256": "b4b9ec23f644c45492839bdfed087619ae3f2023cad418bf7a6c91b1229f4738"
+    },
+    {
+      "name": "PROCESSING_INPUTS.SAFE.json",
+      "bytes": 117794,
+      "sha256": "0678e0b00f6a2c77142dfbea74a846bf6d90a2c5a433645fab3fd57547ae031d"
+    },
+    {
+      "name": "PREPARE.SAFE.json",
+      "bytes": 6516,
+      "sha256": "b6b045bf76104f1abc5ef2a9434c62d93be9ee54f3ef83ea06a24e816f560fcc"
+    },
+    {
+      "name": "UNIT0_RESULT.SAFE.json",
+      "bytes": 11719,
+      "sha256": "a06b920a6169a40d666d69ed5b5dce5ffe2c203e9fb12dabfdbb6a5be8781645"
+    },
+    {
+      "name": "CLEANUP.SAFE.json",
+      "bytes": 2103,
+      "sha256": "44000938e42a3fbca48138e9cf71af7db73f2eab89d732ffb31cd560d3ba8689"
+    },
+    {
+      "name": "FINAL_COMMON_MEMORY.SAFE.json",
+      "bytes": 415,
+      "sha256": "ab890c36dcfe148952505f2038dc78f789fefa2296d6cbcda536aaf093def4a6"
+    },
+    {
+      "name": "CONTROLLER_RESULT.SAFE.json",
+      "bytes": 502,
+      "sha256": "262e0f8b5bba7b3027a17d0eb8cab02d49d1608fc17c10c38a13861c6004cab1"
+    },
+    {
+      "name": "SOURCE_BEFORE.SAFE.json",
+      "bytes": 309,
+      "sha256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27"
+    },
+    {
+      "name": "SOURCE_AFTER.SAFE.json",
+      "bytes": 309,
+      "sha256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27"
+    },
+    {
+      "name": "RESULTS_INDEPENDENT.SAFE.json",
+      "bytes": 6794,
+      "sha256": "4bca35415f7c5433c9f044df578e24544a102da27951f8e439b501919627d0ad"
+    },
+    {
+      "name": "RESULTS_INDEPENDENT_FIRST_AUDIT_PATH_FAILURE.SAFE.json",
+      "bytes": 4887,
+      "sha256": "feb60f85134c5008a6c075806109606f525c761c48f4e7b12bdd8656873bc2de"
+    },
+    {
+      "name": "MEMORY_INDEPENDENT.SAFE.json",
+      "bytes": 5456,
+      "sha256": "b08607130ff1564195fb2e7a61a7097270d024570329d51560418d413b0e6d32"
+    }
+  ],
+  "next": "No new unit. Prepare a fresh isolated memory measurement with real cap before seeking separate run approval; preserve existing DBs/source/reports and do not subtract caches or reset the historical peak.",
+  "remaining": [
+    "common reserve>=500000000B and technically enforced2048000000B limit",
+    "Auth30 on final fully grown500-unit ledger",
+    "full500 profiles/1500complete results with separate authorization",
+    "live sources and independent professional quality before Production"
+  ]
+}

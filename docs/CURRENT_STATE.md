@@ -1,20 +1,98 @@
 # CURRENT STATE — Helmut
 
-## Siffi: vereinfachter Testweg (27.10.2026)
+## W15 Vollrestore: RAM-Grenze überschritten, unabhängig FAIL
 
-Codex und GitHub CI statt Hetzner als Entwicklungstor. Vorhandene Offline-,
-Browser- und isolierte PostgreSQL/PostgREST-Tests mit Mocks nutzen;
-keine Doppeltests. Coverage und fehlende 500er-Integrationsfaelle gezielt
-pruefen. Mac: maximal 5 GB mobiler Traffic pro Tag, keine grossen Downloads.
-Hetzner unveraendert; neuer Aufbau/native Tests nur bei belegtem Bedarf und GO.
-Finaler Production-Test mit 500 aktiven Profilen/1500 Sollpositionen nur
-nach getrennter Freigabe.
+Einmaliges Vollrestore-GO auf537adaa32/PR988 verbraucht: Run41073062264,
+Job124121902354, Attempt1 FAIL; Job90s/geschützter Schritt62s,0Artefakte.
+Erste öffentliche Phase worker, PARENT_READBACK_REJECTED: gemeinsamer Peak
+2048073728Bytes,73728über2048000000; Reserve511926272,73728unter512000000.
+Hartes RAM2560000000, Swap0, alle OOM-/Maxereignisse0; Wächter korrekt gestoppt.
+Alle acht eigenen Bereinigungsprüfungen PASS, Parent leer/entfernt, Worker und
+Launcher beendet. Innere Arbeitsphase und aktueller Restore-/Backupfortschritt
+UNKNOWN; keine Vollrestore-/End500-/Mock500-Abnahme, kein Retry/Linkrefresh.
+Ausführungsbranch sicher a2d0f542→537adaa32, Schutzregeln/Secrets unverändert.
+Nächster Schritt: belegten RAM-Verbrauch gezielt synthetisch eingrenzen; nur
+nachgewiesenen Fix prüfen/CI/reviewen. Weiterer echter Lauf braucht neues GO.
+Separater Diagnosezweig ergänzt nur nach Fehler erfasste Kernel-Speicheranteile
+und eine 32-MiB-Datei/Kopie-Probe in bestehender PR-CI; Limits unverändert.
+Tatsächlicher CI-/Probenbefund im Draft-PR; keine behauptete RAM-Ursachenbehebung.
+[Fehlerbeleg, Ressourcen und unabhängige Abnahme](betrieb/w15-full-restore-result-20261030.md).
 
-Letzter Hetzner-Lauf 40428805792: Tools/Quelle bereit, Image PROCESS_UNKNOWN,
-Test-DB offen, native Tests 0. PR966 gemergt, kein positiver Zielnachweis.
-Kein Productionumzug. [Belege](betrieb/hetzner-development-environment-20261026.md).
+Übernommen: Originaldiagnose41049571965 aufa2d0f542 unabhängig PASS, zwölf
+Originale/242570240Bytes, fünf native Restoreaktionen500/0, vier Exporte,
+Peak1644433408/Reserve915566592/Swap0; keine vollständige Sicherungsabnahme.
+Historische innere Ursache40958135662 bleibt UNKNOWN.
+[Diagnose](betrieb/w15-restore-export-diagnostic-result-20261030.md).
+Elf Mockzusatzoriginale217563454Bytes in41037459441 auf13b858b1 unabhängig PASS;
+alle Größen/Hashes/Manifest/GPG/Rücklesung bestätigt, Replacements-Pin geschlossen.
+Späterer Mockjob empfängt erhaltenes Cipherarchiv selbst mit passendem GO.
+[Empfang](betrieb/w15-mock-original-reception-20261030.md).
+Native Minimalprobe40982718647 aufdeb812f9 PASS übernommen, nicht wiederholt.
+End500-Sender und TCP-Fix vorbereitet; Vollrestoreabnahme/End500-GO fehlen.
+Mockcode/AtomicACK/Tag/Namespace/Auswertung vorbereitet, End500-Abnahme/Bridge
+fehlen; historischer Mock-RAM-v2-Fehler nach69Units bleibt FAIL/UNKNOWN.
+Keine RAM-Erhöhung, weitere Originaltests, End500-/Mock500-/Production-Aktion.
 
-**Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
+## W15 Fortschreibung: primärer Restore durchlaufen, Backup noch FAIL
+
+Neues exaktes Betreiber-GO aufc89d423f wurde genau einmal genutzt: Run40931663329
+FAIL`connection-backup`,47864Zeichen verschlüsselter Dispatch. Primäre fünf
+Native-Schritte und500/0 nur durch verifizierten Codefluss belegt; keine
+unabhängige Gesamt-Restore-/Backup-/RAM-Abnahme, keine finalisierten Artefakte.
+Kein Retry/End500/Mock500. Alte7e3d96e9/b6/c89d und ihre FAIL-Belege erhalten.
+
+Gezielte anschließende Entwicklung: acht feste Backup-Unterphasen, geschlossen
+numerische Diagnose ausschließlich aus bestehendem RAM-Cache ohne Neumessung,
+Erhalt einer Callbackphase über Legacy-SystemExit. Kein tatsächlicher Backupbug
+als repariert behauptet; historische UrsacheUNKNOWN. Neue fiktive Tests und
+unabhängige Reviews PASS. Unverändertes echtes Snapshot-SQL wird im vorhandenen
+synthetischen CI-PostgreSQL mit kleinen500/0Fixturezeilen geprüft; native CI
+noch erforderlich. Kein Original-/500er-Controller-/Modelllauf durch den Test.
+Der folgende Diagnosekopf ecae6400 wird unverändert für einen später separat
+freizugebenden Restore-/End500-Lauf eingefroren; Mock-Folgeadapter erlaubt ihn
+nur mit späterer positiver End500-Abnahme/Bridge/Mock-GO. Nächster echter
+Datenlauf erfordert neue konkrete Freigabe und aktuelle CI.
+Mock-Dateiblocker und bestehende Zeit-/RAM-Verträge bleiben unverändert.
+
+
+## W15: Restore-Einzelversuch FAIL; Mock500 integriert, Ausführung gesperrt
+
+PR975-Branch wurde ohne Force-Push auf den geprüften gemeinsamen Integrationsstand
+c89d423fd8431b42a5351de82e640f40e8517ee4 vorgerückt;7e3d96e9/b6eb7449 als
+unveränderte Vorfahren erhalten, Schutzregeln unverändert. GitHub markierte
+den vorbereitenden Draft976 dadurch automatisch als gemergt in diesen
+Entwicklungsbranch; kein Merge nachmain/Deployment/Production. Der getrennte
+Mock-Baselineadapter läuft als Draft977 auf direktem Nachfolgerc4d035dd.
+Bisherige b6-Pflicht-CI40909894080/40915289161 bestanden. Nach explizitem Betreiber-GO
+wurde genau ein Restore gestartet:40920225333 FAIL, Phase`connection-restore`.
+Erster Versuch40905370350 auf7e3d96e9 bleibt FAIL. Kein Retry, keine positive
+Restoreabnahme, kein End500/Mock500. TCP-Readinessrace in primärem und zweitem
+Restore korrigiert, feste Fehlerunterphasen/gezielte fiktive Tests und unabhängiger
+Review bestanden; genaue historische Ursache weiterUNKNOWN. Ein nächster echter
+Restore aufc89d423f braucht grüne aktuelle CI und neues exaktesGO.
+Erfolgreicher Empfang aller zwölf Originaldateien
+40876458074 bleibt übernommen; seine Qualifikation wurde nicht wiederholt.
+
+Mock500-Anschlüsse auf getrenntem Integrationszweig vorbereitet: Atomic12ACK,
+Tages-/Namespacebindung, bestehende500/500-Quellenprüfung, vollständiger Controller
+und Auswertung, eigene gemeinsame RAM-v2-Messung, vollständiger Plattenplan,
+verschlüsselte Sicherung/Remote-Readback/zweite Rücksicherung und Einmalstartwächter.
+Standardmäßig gesperrt; gezielte fiktive Verbindungstests sind keine500er-Abnahme.
+Synthetischer neuer v2-Runner40922859278 aufc89d423f unabhängigPASS:
+Peak302014464Bytes/Swap0,UID1000,gleicherParentnachKindernleer,keineOriginale/DB.
+Pflicht-CI40922851354/40923999187 aufc89d423f und40924138247 auf
+c4d035dd bestanden; aktuellste Dokumentationskopfchecks sieheDraft977. Historischer RAM-v2-Fehler bleibt FAIL.
+
+Dateiinventur lokalBLOCKED wird nicht wiederholt. GitHub-/Drive-Belege bestätigen
+das bestehende269598Byte-Builder-ZIP samt historischem SHA; keine Payloads geladen.
+Zehn weitere Originale weiter nicht erreichbar bestätigt; zehn der elf Zusatzpins
+bekannt(217550485Bytes), nur aktueller Replacements-Pin unbekannt. Keine neue
+Qualifikation/Übertragung freigegeben. Zwölf vorhandene End500-Originale ersetzen
+nicht diese elf Zusatzdateien. Kein Beweis globalen Datenverlusts. Auch364084Einträge des
+vorhandenen komprimierten SAFE-Metainventars27.10. liefern keinen Zusatzbeleg:
+nur Statfelder, keine Inhaltshashes,0exakte Namens-/Pin-Treffer; keine neue
+Inventur/Original-/Cipherdateien gelesen.
+[Mock-Vertrag, Nachweise, fehlende Dateien und getrennte Freigaben](betrieb/w15-mock500-github-start-20261029.md).
 
 ## Vollständiges Root-Paket und Caller-Vorbereitung (13.10.2026)
 
@@ -28,26 +106,7 @@ UTC13-Tagesbuch einmal angelegt:35 Bücher/Kapazität35, EU-Limit82,036000USD, d
 
 [Draft-PR907](https://github.com/ernisch/helmut-pilot/pull/907), Headc0d0bd48, unabhängig akzeptiert; Pflicht-CI38334575016 mit175+330Suiten, nativen Schritten undZ22 grün. [PR906](https://github.com/ernisch/helmut-pilot/pull/906), Head2b6fbfe7, ebenfalls unabhängig geprüft/Pflicht-CI38317468800 grün. Beide ungemergt. Statischer tatsächlicher Composite-Dictionary und unverändertes unfreigegebenes Kandidatenfenster erhalten; finaler Commandhash/Fit erst mit echten frischen Laufbelegen. Kein neuer Initializer-Aufruf oder neue Finanzierung.
 
-## Historischer Git- und Deployment-Beleg (12.10.2026, vor PR902–905)
-
-- **PR901 gemergt:** [PR901](https://github.com/ernisch/helmut-pilot/pull/901) MERGED am 2026-10-12T00:33:24Z, Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Beide Pflichtchecks SUCCESS auf PR-Head `36b2e573d8e9ee9d677129553025e3eb4f744194`; `origin/main` identisch zum Merge.
-- **Frisch gelesenes Deployment:** Vercel `dpl_3FWWM3CtEj324fjTrgkD7b6UWSsi` READY, Target production, auf demselben SHA, Alias `helmut-pilot.vercel.app`. Belegt nur die Auslieferung dieses Git-Stands, nicht Funktion, Aktivierung oder 500er-Test.
-- **Betreiberübergabe (übernommen, in dieser Sitzung nicht unabhängig nachgemessen):** Blocker1, Blocker2, Blocker3 und Blocker4 geschlossen; der begrenzte B2→D-Abschluss wurde mit **500/500 gültigen Kontexten** übergeben. Der finale Blocker3-Abnahmebeleg lag beim Merge nicht im Repository und ist inzwischen aus dem privaten [Übergabearchiv vom12.10.](https://drive.google.com/drive/folders/1jLuYGXdJtXy08s461-gVwvlsIX7CvCXU) übernommen: ZIP-SHA256 `30ca1ffa643ef177f30e7e9a958d002ab426429fdf4387eeb0f4d05f7eb919a8`, alle42 ausgewählten Mitgliedshashes stimmen mit dem [Index](https://drive.google.com/file/d/1axu7LC6YzDn3WQW0ZzPT4-SJcXB-j8JW/view) überein. Maschinenlesbare finale Abnahme SHA256 `70169288d112a6bf43c46ae455b4d138752195c6f80a4bea1d7550613ae39ceb`, historische Beobachtung00:36:00.861949UTC. Keine Abnahme wiederholt.
-
-## Frische RO-Vorbereitung (12.10.2026, rein lesend)
-
-- **Native READ ONLY beobachtet 2026-10-12T06:16:27.299425Z:** 500 Profile / 0 aktiv / 0 AfD; Verteilung 330 BT / 120 BE / 50 BB; laufende Prozesse 0, offene Jobs 0, offene Outbox 0, lebende Locks 0, lebende Leases 0.
-- **Endwächter:** schedulerActive true, recentSuccessfulRuns 3, lastTick 06:16:17.098857Z, keine offene Endbindung. Die alte Qualifikationsbindung wurde am 07.10.2026 gestoppt und darf nie wiederverwendet werden; es gibt keine neue Testbindung. Migrationsversionen 20261007111136 und 20261012002250 vorhanden.
-- **Auth-Kostenbuch, beobachtet 06:12:40.239273Z:** Auftragversion 5, Limit 88845364 µUSD, ab Tag 2026-09-25, id `autonom-bis500-20260926`; extern gebunden 5195303 µUSD, private Reserve 636000 µUSD, gesamte konservative Auftragsbindung 7445364 µUSD; genau 34 erhaltene Tagesbücher, bookCapacity 34, runDayUTC null. 12.10.: Buchversion 3 / Limit 82036000 µUSD / spent 0 / baseline 0 / manualCalls 0 / calls 0 / frozen null; 5000 historische Usage-Zeilen, 0 heutige Usage.
-- **Globaler Tageszähler 12.10.: 0 nach bestehendem Lesevertrag.** Die native Zeile fehlt; `leseLlmTageszaehler` wertet genau diesen gelesenen Nullbestand als `used=0`. Der übernommene Runtimebeleg von11:42Istanbul bestätigt used0 und die wirksamen Deckel; keine Reservierung oder Startquittung.
-- **Vercel-Projektkonfiguration:** EU-HASH `78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f`, 2416 global / 702 U / 200 real, Kommunikation gesperrt. Secretwerte werden nicht gelesen oder übertragen. Effektive Runtime ist inzwischen für den unten angegebenen Beobachtungszeitpunkt belegt; dieser ersetzt keine Startfrische.
-- **Azure Management, frisch:** Deployment `gpt-5-mini-eu` / DataZoneStandard / swedencentral / Version 2025-08-07 / NoAutoUpgrade / Succeeded, 250 RPM, 250000 TPM, keine Inference. GitHub: keine laufenden oder queued Runs, kein relevanter lokaler Productionprozess.
-- **Bekannter B2-Drivebankindex erreichbar**, verschlüsselte 184 Parts; privateKeys/Credentials/EphemeralURLs Included false. Die42 ausgewählten B3-Übergabedateien sind übernommen und hashverifiziert. Der Index schließt Secrets/Bearer/vollständige Auth-Snapshots ausdrücklich aus. Originaltransfer, Transportquittung und tatsächliches500er-Eingabepaket sind inzwischen ebenfalls privat übernommen; kein weiterer Originaldatenbestand wird hierfür angefordert. Finale Command-/Startidentität bleibt offen.
-- **In dieser Sitzung keine kostenpflichtigen Production-Modellaufrufe, Profiländerungen, Commandinstallation oder Journalmutation.** Start-GO bleibt ausgeschlossen, solange der Datumsfix nicht auf Production READY ist und die endgültige Laufbindung sowie frische Startbelege fehlen.
-
-**Fortsetzung nach Archivübernahme (12.10.,09:45–09:46 Europe/Istanbul /06:45–06:46 UTC):** Native READ ONLY bestätigt500/0, keine offene Facharbeit, Endwächter mit3 aktuellen erfolgreichenRuns. Profil-/Main-/vollständigerAuth-SQL-Hash stimmen mit dem übernommenen Abschlussbeleg überein; ebenso alle3 EU-Funktionshashes, der historische4h-Binder und der4h-/9h-Constraint. Frischer eigener Auth-Primärbezug bleibt0600 außerhalbGit; die bereinigten Archivprojektionen werden nicht als vollständige Originale dargestellt.34Bücher/5000Usage/0heutigerVerbrauch, privateReserve0,636000USD undAuftragsbindung7,445364USD unverändert. Keine Qualifikation wiederholt.
-
-**Separates Tagesbindungs-Starttor festgestellt (Codeanalyse, kein Test):** AufPR901 bindet `blocker2-d-historical-binding.js` die unveränderte angenommeneVersion2-Eingabe und ihren Prüftag fest anBerlin11.10.; `synthetik-500-production-command.js` verlangt dasselbe Briefingdatum wie denUTC-Lauftag, `synthetik-500-production-adapter.js` zusätzlich den aktuellenBerlinerTag. Dieser übernommeneStand ist am12.10. oder später deshalb nicht unverändert ausführbar. Ein GO/Bearer/Archiv hebt den technischen Riegel nicht auf. Der frühere lokale Terminvorschlag11:00Istanbul ist zurückgenommen; kein neuer Termin oder automatische Umdatierung. Blocker1–4 bleiben geschlossen; der begrenzte Kalender-/Snapshotübergang wird jetzt im eigenen Entwicklungsbranch vorbereitet; auf Production ist er noch nicht geändert. Weitere unabhängige Vorbereitung:1500Sollpositionen und12000ausstehende Kriterienpositionen vollständig angelegt,0Fachurteile. Vercel bestätigt zusätzlichSSO-Schutz für den unveränderlichenDeploymenthost; dessen Zugangsweg bleibt getrennt vomHelmutRuntime-Lesebearer.
+Historische Deployment- und Read-only-Beobachtungen vom12.10. sind [wortgleich archiviert](archive/project_state/2026_10_28_historischer_Deployment_und_RO_Beleg_20261012.md); sie sind keine aktuellen Production-Belege.
 
 ## Kalenderfix im Entwicklungsbranch (12.10.2026, noch nicht Production)
 

@@ -1,0 +1,167 @@
+{
+  "schema": "helmut-w15-transport-metadata-independent-static-review/1",
+  "status": "PASS_STATIC_TRACE_ONLY_HISTORICAL_CAUSE_UNKNOWN",
+  "reviewer": "/root/atomic_integration_audit",
+  "reviewedAtUTC": "2026-10-28T13:44:38.347524+00:00",
+  "baseCommit": "55dda919069acd2d29689193c449639514912860",
+  "reviewedCommit": "e1a62accc9e70ca71e739746d826b53dee265b05",
+  "checks": [
+    {
+      "name": "three_trace_files_only",
+      "status": "PASS",
+      "evidence": "Exactdiffchangesonlysharedreporthelperand2catchprojections."
+    },
+    {
+      "name": "strict_names",
+      "status": "PASS",
+      "evidence": "OnlyError/TypeError/AbortError/TimeoutError emitted; unknownnamesbecomeError."
+    },
+    {
+      "name": "strict_code_enum",
+      "status": "PASS",
+      "evidence": "Only12exactconstanttransportcodes atouter/causelevel; unknown/customcodesnotcopied."
+    },
+    {
+      "name": "bounded_byte_counters",
+      "status": "PASS",
+      "evidence": "OnlybytesRead/bytesWritten fromcause.socket; Number.isSafeIntegerand>=0."
+    },
+    {
+      "name": "private_fields_excluded",
+      "status": "PASS",
+      "evidence": "No rawcause/message/stack/headers/body/URL/host/address/port copiedbynewmetadatahelper. Existingreasonfilterunchanged."
+    },
+    {
+      "name": "no_business_effect",
+      "status": "PASS",
+      "evidence": "NoRPC/DB/API/clock/retry/activation/resource/safetychanges; metadataonlyonexistingfailurepaths."
+    },
+    {
+      "name": "actual_Auth_observer_reused",
+      "status": "PASS",
+      "evidence": "Observer+assessmentbodies6245B exactlyunchanged; duration/ACK/rowbindinglogicunaltered."
+    },
+    {
+      "name": "timing_and_abort_reused",
+      "status": "PASS",
+      "evidence": "Summarize1196B andtermination726B exactlyunchanged; unfinishedcallsremainunknown."
+    },
+    {
+      "name": "application_and_source_bindings_same",
+      "status": "PASS",
+      "evidence": "7coreapp/SQL/CPUmanifest/fullcontrollerfilesexactlyunchanged; no newfull500rights."
+    },
+    {
+      "name": "prior_pure_checks_retained",
+      "status": "PASS",
+      "evidence": "Rootretainedactual3casepureinvocationexit0claimwithexacthelperpin; reviewerreadandstaticcheckedwithoutrepeatingit."
+    },
+    {
+      "name": "historical_unknown_not_reconstructed",
+      "status": "PASS",
+      "evidence": "Newcandidatecanrecordfuturecausecode; absenthistorical11thcausecannotberecoveredandremainsUNKNOWN."
+    },
+    {
+      "name": "scoped_reuse_only",
+      "status": "PASS",
+      "evidence": "HistoricalDcomponentPASSandsourceevidencekeptattheiractualtestedhead; newmetadataisnotnewdiagnosisorRAM/full500PASS."
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 3018,
+      "sha256": "95c24fa1ccd2e47467cbd22ecfb89e69ca441fc9fb9c8a21fab8c4583ce78a8b"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 43294,
+      "sha256": "1dc68b22e57f69e191693693766e1628e83b0c2253fb3c22d83791ebbb3ce1cd"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.js",
+      "bytes": 12569,
+      "sha256": "53b5ae0a40e97ed2cc5cc74a74a841c29ad5466d684eebac9e11d4aaba342e67"
+    }
+  ],
+  "unchangedSegmentPins": [
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "segmentStarts": "function authCoverageAssessment(",
+      "byteIdentical": true,
+      "bytes": 6245,
+      "sha256": "faa0a46d0c80ec34960ddaa1f7dfd64133ed76715bd1623af97001c4276df696"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "segmentStarts": "function summarize(",
+      "byteIdentical": true,
+      "bytes": 1196,
+      "sha256": "b508bff0c0974c0e4bc06ca2c516e7098cc51f9e016ac7b055d95faccb44dca5"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "segmentStarts": "function retainOnTermination(",
+      "byteIdentical": true,
+      "bytes": 726,
+      "sha256": "a820b49119fb899fa2f1fc0b0ee454d64b322bf762af79102edac6ad845c1ea7"
+    }
+  ],
+  "unchangedCoreSourcePins": [
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 545054,
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/ai.js",
+      "bytes": 100108,
+      "sha256": "949bbf8c26486342682588f227b7729925eb523b772733ca2db8316e9f1bfa8d"
+    },
+    {
+      "path": "lib/helmut/testkosten-budget.js",
+      "bytes": 33501,
+      "sha256": "012d52bb9cb891c5634a788953861f83299ba632b1b8e614686ad717d7cfdbb7"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
+      "bytes": 12237,
+      "sha256": "bc2409e35d68d52d0ba92914ffa1e427de42da738b73197e9bf7fe428f71b5fe"
+    },
+    {
+      "path": "supabase/proposals/auth_usage_atomic_local.sql",
+      "bytes": 20726,
+      "sha256": "5a8c07670354b504c85984618999feaa93f78f3107f96236ce61b2f7bbcd438a"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 44655,
+      "sha256": "4fe9b65671af956a3ec88e82b43e2a9af48f1709271808c41381824583428ec8"
+    }
+  ],
+  "retainedPureCheckPin": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/TRANSPORT_METADATA_PURE_CHECK.SAFE.json",
+    "bytes": 652,
+    "sha256": "9f14e44f998384ec3b461ae863358031e8d9fa5e6a6ac937e5e93751d2426dcb"
+  },
+  "priorDResultsPin": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/D_RESULTS_INDEPENDENT_REVIEW.SAFE.json",
+    "bytes": 15279,
+    "sha256": "45ed6642e60ad704f4d4f50c06bfd43f3347b39a838bd369d65eace3339baed1"
+  },
+  "reviewerTestsRun": 0,
+  "reviewerDatabaseQueries": 0,
+  "reviewerHTTPRequests": 0,
+  "workloadRetry": false,
+  "full500Authorized": false,
+  "historicalEleventhWriteCause": "UNKNOWN_NOT_OBSERVED_OR_PERSISTED",
+  "failureCodeExampleIsHistoricalEvidence": false,
+  "RAMAcceptance": false,
+  "productionAcceptance": false,
+  "scope": "Future sanitized failureobservabilityonly. Noactualdiagnosisorfunctiontestbyreviewer. Existingcomponent/sourcepassesreusedonlyforunchangedcode; originalfailedrunremainsfailed/unknown."
+}

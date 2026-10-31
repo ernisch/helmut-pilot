@@ -1,0 +1,14 @@
+{
+  "schema": "helmut-w15-memory-timeline-export/1",
+  "sourcePin": {
+    "bytes": 4191102,
+    "sha256": "3d51f6bb952f13975d33105dea3b06c53eed169f021cf743cc6807c487213498"
+  },
+  "exportedRows": 1297,
+  "exportPin": {
+    "bytes": 1061634,
+    "sha256": "0a390f498f16b932550241c2653af87846f503ea1019b960b261ec390954d2ec"
+  },
+  "scope": "All outer kernel-component,accepted-CAS,heartbeat and first-failure records; process IDs/command lines excluded; exact bytes unchanged; no reset/subtraction.",
+  "commonAcceptance": false
+}

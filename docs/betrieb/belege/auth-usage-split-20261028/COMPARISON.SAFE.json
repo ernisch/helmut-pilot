@@ -1,0 +1,253 @@
+{
+  "schema": "helmut-auth-usage-split-comparison-summary/1",
+  "status": "FOUR_COMPONENT_CASES_PASS_INDEPENDENT_RESOURCE_REVIEW_PENDING",
+  "basePR": 972,
+  "baseSHA": "c36bd427dab7cc57c857ed179dc58dc1a6bb1424",
+  "order": [
+    "ab-01-old",
+    "ab-02-new",
+    "ab-03-new",
+    "ab-04-old"
+  ],
+  "rows": [
+    {
+      "case": "ab-01-old",
+      "mode": "old",
+      "peakBytes": 1912393728,
+      "wallMs": 35038.87072,
+      "maximumOperationMs": 1959.967528000001,
+      "walBytes": 375165392,
+      "tempBytes": 341529888,
+      "requestBodyBytes": 326831851,
+      "responseBodyBytes": 667781418,
+      "requestCount": 72,
+      "setupWallMs": 3665.8776869999997,
+      "workloadCpuUsec": 37609866,
+      "nodeMaxRSSBytes": 475840512,
+      "initialHash": "656c616e9fa6ce8b6eaafa6c523a62074469542e7c9582bc717b8bf11c2623ef",
+      "finalHash": "f78daacc81e16efdddb4af17832b0ea823d1c7b13195387cc9335d3c485e2894",
+      "historyHash": "cf6150cddcd38397314e2e6785324d63ae68d66ec81ec2f25fae029f1b300fc1",
+      "historyCount": 6004,
+      "image": "sha256:8d9b8f13a74bf2e26485ea289fd9f2d576f5f558c5e88758020a83aa8f1d5638"
+    },
+    {
+      "case": "ab-02-new",
+      "mode": "new",
+      "peakBytes": 1531035648,
+      "wallMs": 34659.739137,
+      "maximumOperationMs": 1854.3803429999998,
+      "walBytes": 253028800,
+      "tempBytes": 0,
+      "requestBodyBytes": 230336697,
+      "responseBodyBytes": 667799922,
+      "requestCount": 72,
+      "setupWallMs": 3293.655459,
+      "workloadCpuUsec": 38083336,
+      "nodeMaxRSSBytes": 451719168,
+      "initialHash": "656c616e9fa6ce8b6eaafa6c523a62074469542e7c9582bc717b8bf11c2623ef",
+      "finalHash": "f78daacc81e16efdddb4af17832b0ea823d1c7b13195387cc9335d3c485e2894",
+      "historyHash": "cf6150cddcd38397314e2e6785324d63ae68d66ec81ec2f25fae029f1b300fc1",
+      "historyCount": 6004,
+      "image": "sha256:8d9b8f13a74bf2e26485ea289fd9f2d576f5f558c5e88758020a83aa8f1d5638"
+    },
+    {
+      "case": "ab-03-new",
+      "mode": "new",
+      "peakBytes": 1535172608,
+      "wallMs": 40090.88377099999,
+      "maximumOperationMs": 4008.405010000002,
+      "walBytes": 253028800,
+      "tempBytes": 0,
+      "requestBodyBytes": 230336697,
+      "responseBodyBytes": 667799922,
+      "requestCount": 72,
+      "setupWallMs": 2783.5707159999997,
+      "workloadCpuUsec": 44308658,
+      "nodeMaxRSSBytes": 476196864,
+      "initialHash": "656c616e9fa6ce8b6eaafa6c523a62074469542e7c9582bc717b8bf11c2623ef",
+      "finalHash": "f78daacc81e16efdddb4af17832b0ea823d1c7b13195387cc9335d3c485e2894",
+      "historyHash": "cf6150cddcd38397314e2e6785324d63ae68d66ec81ec2f25fae029f1b300fc1",
+      "historyCount": 6004,
+      "image": "sha256:8d9b8f13a74bf2e26485ea289fd9f2d576f5f558c5e88758020a83aa8f1d5638"
+    },
+    {
+      "case": "ab-04-old",
+      "mode": "old",
+      "peakBytes": 1944104960,
+      "wallMs": 43805.902143,
+      "maximumOperationMs": 2261.7312299999994,
+      "walBytes": 375165448,
+      "tempBytes": 341529888,
+      "requestBodyBytes": 326831851,
+      "responseBodyBytes": 667781418,
+      "requestCount": 72,
+      "setupWallMs": 1889.096669,
+      "workloadCpuUsec": 47440577,
+      "nodeMaxRSSBytes": 494170112,
+      "initialHash": "656c616e9fa6ce8b6eaafa6c523a62074469542e7c9582bc717b8bf11c2623ef",
+      "finalHash": "f78daacc81e16efdddb4af17832b0ea823d1c7b13195387cc9335d3c485e2894",
+      "historyHash": "cf6150cddcd38397314e2e6785324d63ae68d66ec81ec2f25fae029f1b300fc1",
+      "historyCount": 6004,
+      "image": "sha256:8d9b8f13a74bf2e26485ea289fd9f2d576f5f558c5e88758020a83aa8f1d5638"
+    }
+  ],
+  "averages": {
+    "peakBytes": {
+      "old": 1928249344,
+      "new": 1533104128,
+      "reduction": 395145216,
+      "reductionPercent": 20.49243357605934
+    },
+    "walBytes": {
+      "old": 375165420,
+      "new": 253028800,
+      "reduction": 122136620,
+      "reductionPercent": 32.55540449330325
+    },
+    "tempBytes": {
+      "old": 341529888,
+      "new": 0,
+      "reduction": 341529888,
+      "reductionPercent": 100.0
+    },
+    "requestBodyBytes": {
+      "old": 326831851,
+      "new": 230336697,
+      "reduction": 96495154,
+      "reductionPercent": 29.52440336055252
+    },
+    "responseBodyBytes": {
+      "old": 667781418,
+      "new": 667799922,
+      "reduction": -18504,
+      "reductionPercent": -0.00277096659194551
+    },
+    "wallMs": {
+      "old": 39422.386431499996,
+      "new": 37375.311453999995,
+      "reduction": 2047.0749775000004,
+      "reductionPercent": 5.192671379894722
+    },
+    "workloadCpuUsec": {
+      "old": 42525221.5,
+      "new": 41195997,
+      "reduction": 1329224.5,
+      "reductionPercent": 3.125732102300749
+    }
+  },
+  "pairs": [
+    {
+      "old": "ab-01-old",
+      "new": "ab-02-new",
+      "peakReductionBytes": 381358080,
+      "peakReductionPercent": 19.941399849644352
+    },
+    {
+      "old": "ab-04-old",
+      "new": "ab-03-new",
+      "peakReductionBytes": 408932352,
+      "peakReductionPercent": 21.034479126065293
+    }
+  ],
+  "initialFixtureHash": "656c616e9fa6ce8b6eaafa6c523a62074469542e7c9582bc717b8bf11c2623ef",
+  "finalLogicalHash": "f78daacc81e16efdddb4af17832b0ea823d1c7b13195387cc9335d3c485e2894",
+  "allInitialAndFinalHashesEqualAcrossModes": true,
+  "fullInitialHistoryPreservedEachCase": 6000,
+  "fullFinalHistoryEachCase": 6004,
+  "fixtureJSONBytes": 13616853,
+  "usageJSONBytes": 4020001,
+  "syntheticOtherDataBytes": 9596852,
+  "allOperationsPerCase": 24,
+  "appendsPerCase": 4,
+  "commonCgroupIncludes": [
+    "PostgreSQL",
+    "PostgREST",
+    "Node driver",
+    "SQL client children",
+    "setup and bootstrap",
+    "container file cache"
+  ],
+  "excludedFromPeak": [
+    "host Docker daemon",
+    "host Python launcher",
+    "image build/pull"
+  ],
+  "cacheClearing": false,
+  "forcedGC": false,
+  "peakSubtraction": false,
+  "workMem": "4MB",
+  "memoryMaxBytes": 2048000000,
+  "cpus": 2,
+  "node": "v24.19.0",
+  "postgres": "17.6",
+  "postgrest": "12.2.3",
+  "profiles": 0,
+  "engineUnits": 0,
+  "paidProviderCalls": 0,
+  "complete500Attempts": 0,
+  "sourcePins": [
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "supabase/proposals/auth_usage_atomic_local.sql",
+      "sha256": "3640d7eefcac0c7e5cc7e3c30cff27d1b0772ae03f5ee13e0a7f2addd5c6369b"
+    },
+    {
+      "path": "lib/helmut/auth-store-cas.js",
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/ai.js",
+      "sha256": "949bbf8c26486342682588f227b7729925eb523b772733ca2db8316e9f1bfa8d"
+    },
+    {
+      "path": "lib/helmut/testkosten-budget.js",
+      "sha256": "012d52bb9cb891c5634a788953861f83299ba632b1b8e614686ad717d7cfdbb7"
+    },
+    {
+      "path": "scripts/auth-usage-split-container.py",
+      "sha256": "651916497b9dedf65392084d7e758e83efaded5c3c88d92a566fd6e3196d9a2e"
+    },
+    {
+      "path": "scripts/auth-usage-split.Dockerfile",
+      "sha256": "67923faf0bcce99cf11d32c751d20bf6165b3f58e7565f16184bfe33e9cf1029"
+    },
+    {
+      "path": "scripts/auth-usage-split/component-workload.js",
+      "sha256": "fa41dc8354cfaf7ff2f71f52b5c2c40929df33e27a7ecb3419283e1381303c4d"
+    },
+    {
+      "path": "scripts/auth-usage-split/fixture.js",
+      "sha256": "1f9108b4c52f6b90a820cf1f68a8aed9c44360ad1833687109d5522f992e2779"
+    },
+    {
+      "path": "scripts/auth-usage-split/integration-check.js",
+      "sha256": "00707e99a8ed3a96c3d7d960f543e8300b8fa17c63d817889addb7b5e6d21361"
+    },
+    {
+      "path": "scripts/auth-usage-split/module-test.js",
+      "sha256": "5080461b72893f574e643b98190fb30616d863606c59b507ef2715f4beaa9cc8"
+    },
+    {
+      "path": "scripts/auth-usage-split/native-check.js",
+      "sha256": "1c19bd32558f157722ee722120c16550e974b246535239378a4766db080ed6fe"
+    },
+    {
+      "path": "scripts/auth-usage-split/support.js",
+      "sha256": "39b2f3e0fdae496c60afaf017617a182bd2b5d68626273bc609c2f9585318cdb"
+    }
+  ],
+  "limitations": [
+    "Synthetic byte-volume surrogate, not a reconstruction of private W15 shapes; 29.52% usage versus large declared inert nonusage padding.",
+    "Only24 mutations and four additions; no long-run plateau, Unit60, Auth30, EU500 full integration or 500 MB reserve admission.",
+    "Reads still reconstruct and verify every historical record; no read reduction claimed.",
+    "No Production data or schema inspected/changed; no merge or new complete500 run.",
+    "Do not subtract component savings from historical PR972 peak or add savings from other PRs."
+  ]
+}

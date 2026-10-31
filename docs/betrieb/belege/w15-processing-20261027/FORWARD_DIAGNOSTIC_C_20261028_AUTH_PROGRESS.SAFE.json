@@ -1,0 +1,2480 @@
+{
+  "schema": "helmut-w15-forward-c-public-accepted-auth-progress/1",
+  "scope": "247 diagnostic CAS/readback acknowledgements, not DR units or profiles; pending mutation248 timing UNKNOWN. Internal per-call times cannot be recovered from cumulative maxima.",
+  "sourcePin": {
+    "bytes": 115105,
+    "sha256": "299d797fa8c60557e6799014dcc1e705ec09368e373e7b678bbb39387bef3e15"
+  },
+  "rows": [
+    {
+      "completedDiagnosticCAS": 1,
+      "awaitedCallMs": 4411.0577410000005,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 1,
+      "completedCASWrites": 1,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 2,
+      "awaitedCallMs": 2611.0011889999987,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 2,
+      "completedCASWrites": 2,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 3,
+      "awaitedCallMs": 2041.264451000001,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 3,
+      "completedCASWrites": 3,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 4,
+      "awaitedCallMs": 3278.4980849999993,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 4,
+      "completedCASWrites": 4,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 5,
+      "awaitedCallMs": 2041.7814150000013,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 5,
+      "completedCASWrites": 5,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 6,
+      "awaitedCallMs": 1574.1212940000005,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 6,
+      "completedCASWrites": 6,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 7,
+      "awaitedCallMs": 1364.9898319999993,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 7,
+      "completedCASWrites": 7,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 8,
+      "awaitedCallMs": 1266.4433080000017,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 8,
+      "completedCASWrites": 8,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 9,
+      "awaitedCallMs": 1638.4619650000022,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 9,
+      "completedCASWrites": 9,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 10,
+      "awaitedCallMs": 2163.5754120000056,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 10,
+      "completedCASWrites": 10,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 11,
+      "awaitedCallMs": 1413.35671,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 11,
+      "completedCASWrites": 11,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 12,
+      "awaitedCallMs": 1452.6971580000027,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 12,
+      "completedCASWrites": 12,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 13,
+      "awaitedCallMs": 1425.7142680000034,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 13,
+      "completedCASWrites": 13,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 14,
+      "awaitedCallMs": 1609.678473,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 14,
+      "completedCASWrites": 14,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 15,
+      "awaitedCallMs": 1577.7710850000003,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 15,
+      "completedCASWrites": 15,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 16,
+      "awaitedCallMs": 1646.526238999999,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 16,
+      "completedCASWrites": 16,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 17,
+      "awaitedCallMs": 1434.836728000002,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 17,
+      "completedCASWrites": 17,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 18,
+      "awaitedCallMs": 1512.6287329999977,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 18,
+      "completedCASWrites": 18,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 19,
+      "awaitedCallMs": 1622.2327060000025,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 19,
+      "completedCASWrites": 19,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 20,
+      "awaitedCallMs": 1479.7825049999956,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 20,
+      "completedCASWrites": 20,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 21,
+      "awaitedCallMs": 1577.5953660000014,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 21,
+      "completedCASWrites": 21,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 22,
+      "awaitedCallMs": 1516.1925120000014,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 22,
+      "completedCASWrites": 22,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 23,
+      "awaitedCallMs": 1480.0191259999992,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 23,
+      "completedCASWrites": 23,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 24,
+      "awaitedCallMs": 1975.492556000012,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 24,
+      "completedCASWrites": 24,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 25,
+      "awaitedCallMs": 1460.9846969999926,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 25,
+      "completedCASWrites": 25,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 26,
+      "awaitedCallMs": 1404.1789439999993,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 26,
+      "completedCASWrites": 26,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 27,
+      "awaitedCallMs": 1392.2539430000033,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 27,
+      "completedCASWrites": 27,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 28,
+      "awaitedCallMs": 1684.071735000005,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 28,
+      "completedCASWrites": 28,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 29,
+      "awaitedCallMs": 1408.6853310000006,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 29,
+      "completedCASWrites": 29,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 30,
+      "awaitedCallMs": 1398.3109600000025,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 30,
+      "completedCASWrites": 30,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 31,
+      "awaitedCallMs": 1415.9373020000057,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 31,
+      "completedCASWrites": 31,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 32,
+      "awaitedCallMs": 1356.9831970000087,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 32,
+      "completedCASWrites": 32,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 33,
+      "awaitedCallMs": 1362.1209249999956,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 33,
+      "completedCASWrites": 33,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 34,
+      "awaitedCallMs": 1377.1995610000013,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 34,
+      "completedCASWrites": 34,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 35,
+      "awaitedCallMs": 1293.776926999999,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 35,
+      "completedCASWrites": 35,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 36,
+      "awaitedCallMs": 1462.6437510000105,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 36,
+      "completedCASWrites": 36,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 37,
+      "awaitedCallMs": 1360.3000659999961,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 37,
+      "completedCASWrites": 37,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 38,
+      "awaitedCallMs": 1323.0214149999956,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 38,
+      "completedCASWrites": 38,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 39,
+      "awaitedCallMs": 1347.5571749999945,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 39,
+      "completedCASWrites": 39,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 40,
+      "awaitedCallMs": 1488.5488420000038,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 40,
+      "completedCASWrites": 40,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 41,
+      "awaitedCallMs": 1503.4370250000065,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 41,
+      "completedCASWrites": 41,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 42,
+      "awaitedCallMs": 1370.124364999996,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 42,
+      "completedCASWrites": 42,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 43,
+      "awaitedCallMs": 1322.803350000002,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 43,
+      "completedCASWrites": 43,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 44,
+      "awaitedCallMs": 1472.7692699999898,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 44,
+      "completedCASWrites": 44,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 45,
+      "awaitedCallMs": 1537.3615979999886,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 45,
+      "completedCASWrites": 45,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 46,
+      "awaitedCallMs": 1382.60775499999,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 46,
+      "completedCASWrites": 46,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 47,
+      "awaitedCallMs": 1349.5722950000054,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 47,
+      "completedCASWrites": 47,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 48,
+      "awaitedCallMs": 1469.7130780000007,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 48,
+      "completedCASWrites": 48,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 49,
+      "awaitedCallMs": 1441.2919010000041,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 49,
+      "completedCASWrites": 49,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 50,
+      "awaitedCallMs": 1441.3655290000024,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 50,
+      "completedCASWrites": 50,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 51,
+      "awaitedCallMs": 1446.0600179999892,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 51,
+      "completedCASWrites": 51,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 52,
+      "awaitedCallMs": 1333.5664360000083,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 52,
+      "completedCASWrites": 52,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 53,
+      "awaitedCallMs": 1911.904767,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 53,
+      "completedCASWrites": 53,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 54,
+      "awaitedCallMs": 1409.9013160000031,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 54,
+      "completedCASWrites": 54,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 55,
+      "awaitedCallMs": 1451.2934810000006,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 55,
+      "completedCASWrites": 55,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 56,
+      "awaitedCallMs": 1609.1799039999896,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 56,
+      "completedCASWrites": 56,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 57,
+      "awaitedCallMs": 1652.3538570000092,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 57,
+      "completedCASWrites": 57,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 58,
+      "awaitedCallMs": 1549.963025999983,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 58,
+      "completedCASWrites": 58,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 59,
+      "awaitedCallMs": 1415.1249219999881,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 59,
+      "completedCASWrites": 59,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 60,
+      "awaitedCallMs": 1464.2184629999974,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 60,
+      "completedCASWrites": 60,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 61,
+      "awaitedCallMs": 1634.2357970000012,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 61,
+      "completedCASWrites": 61,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 62,
+      "awaitedCallMs": 1390.945402000012,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 62,
+      "completedCASWrites": 62,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 63,
+      "awaitedCallMs": 1384.305813999992,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 63,
+      "completedCASWrites": 63,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 64,
+      "awaitedCallMs": 1496.7377740000084,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 64,
+      "completedCASWrites": 64,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 65,
+      "awaitedCallMs": 1343.3445219999994,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 65,
+      "completedCASWrites": 65,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 66,
+      "awaitedCallMs": 1472.2928020000109,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 66,
+      "completedCASWrites": 66,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 67,
+      "awaitedCallMs": 1381.5952580000157,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 67,
+      "completedCASWrites": 67,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 68,
+      "awaitedCallMs": 1680.4534500000009,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 68,
+      "completedCASWrites": 68,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 69,
+      "awaitedCallMs": 1374.6406580000184,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 69,
+      "completedCASWrites": 69,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 70,
+      "awaitedCallMs": 1286.0375500000082,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 70,
+      "completedCASWrites": 70,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 71,
+      "awaitedCallMs": 1383.3675450000155,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 71,
+      "completedCASWrites": 71,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 72,
+      "awaitedCallMs": 1293.2559569999867,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 72,
+      "completedCASWrites": 72,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 73,
+      "awaitedCallMs": 1446.6986819999875,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 73,
+      "completedCASWrites": 73,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 74,
+      "awaitedCallMs": 1887.9830549999897,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 74,
+      "completedCASWrites": 74,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 75,
+      "awaitedCallMs": 1615.7292029999953,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 75,
+      "completedCASWrites": 75,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 76,
+      "awaitedCallMs": 1378.3152249999985,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 76,
+      "completedCASWrites": 76,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 77,
+      "awaitedCallMs": 1193.6143579999916,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 77,
+      "completedCASWrites": 77,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 78,
+      "awaitedCallMs": 1440.939115999994,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 78,
+      "completedCASWrites": 78,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 79,
+      "awaitedCallMs": 1338.1747190000024,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 79,
+      "completedCASWrites": 79,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 80,
+      "awaitedCallMs": 1284.0701620000182,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 80,
+      "completedCASWrites": 80,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 81,
+      "awaitedCallMs": 1483.691777,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 81,
+      "completedCASWrites": 81,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 82,
+      "awaitedCallMs": 1301.559798000002,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 82,
+      "completedCASWrites": 82,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 83,
+      "awaitedCallMs": 1381.1699650000082,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 83,
+      "completedCASWrites": 83,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 84,
+      "awaitedCallMs": 1462.8525400000217,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 84,
+      "completedCASWrites": 84,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 85,
+      "awaitedCallMs": 1277.8488319999888,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 85,
+      "completedCASWrites": 85,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 86,
+      "awaitedCallMs": 1499.9931670000078,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 86,
+      "completedCASWrites": 86,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 87,
+      "awaitedCallMs": 1427.7125159999996,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 87,
+      "completedCASWrites": 87,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 88,
+      "awaitedCallMs": 2173.8251650000166,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 88,
+      "completedCASWrites": 88,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 89,
+      "awaitedCallMs": 1266.3548759999976,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 89,
+      "completedCASWrites": 89,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 90,
+      "awaitedCallMs": 1377.9761540000036,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 90,
+      "completedCASWrites": 90,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 91,
+      "awaitedCallMs": 1481.4004190000123,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 91,
+      "completedCASWrites": 91,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 92,
+      "awaitedCallMs": 1954.8151589999907,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 92,
+      "completedCASWrites": 92,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 93,
+      "awaitedCallMs": 1341.3552620000264,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 93,
+      "completedCASWrites": 93,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 94,
+      "awaitedCallMs": 1303.9738420000067,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 94,
+      "completedCASWrites": 94,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 95,
+      "awaitedCallMs": 1281.550802999991,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 95,
+      "completedCASWrites": 95,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 96,
+      "awaitedCallMs": 1244.8956820000021,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 96,
+      "completedCASWrites": 96,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 97,
+      "awaitedCallMs": 1260.163276999985,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 97,
+      "completedCASWrites": 97,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 98,
+      "awaitedCallMs": 1321.0280040000216,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 98,
+      "completedCASWrites": 98,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 99,
+      "awaitedCallMs": 1299.4784229999932,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 99,
+      "completedCASWrites": 99,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 100,
+      "awaitedCallMs": 1380.2381300000125,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 100,
+      "completedCASWrites": 100,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 101,
+      "awaitedCallMs": 1247.9821829999855,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 101,
+      "completedCASWrites": 101,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 102,
+      "awaitedCallMs": 1231.8589079999947,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 102,
+      "completedCASWrites": 102,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 103,
+      "awaitedCallMs": 1297.4679739999992,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 103,
+      "completedCASWrites": 103,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 104,
+      "awaitedCallMs": 1304.9694909999962,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 104,
+      "completedCASWrites": 104,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 105,
+      "awaitedCallMs": 1381.1534159999865,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 105,
+      "completedCASWrites": 105,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 106,
+      "awaitedCallMs": 1649.1274400000111,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 106,
+      "completedCASWrites": 106,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 107,
+      "awaitedCallMs": 1244.540347000002,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 107,
+      "completedCASWrites": 107,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 108,
+      "awaitedCallMs": 1416.6634500000218,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 108,
+      "completedCASWrites": 108,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 109,
+      "awaitedCallMs": 1339.4488899999997,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 109,
+      "completedCASWrites": 109,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 110,
+      "awaitedCallMs": 1300.0060670000094,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 110,
+      "completedCASWrites": 110,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 111,
+      "awaitedCallMs": 1329.3412550000066,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 111,
+      "completedCASWrites": 111,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 112,
+      "awaitedCallMs": 1329.124953999999,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 112,
+      "completedCASWrites": 112,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 113,
+      "awaitedCallMs": 1237.1517570000142,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 113,
+      "completedCASWrites": 113,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 114,
+      "awaitedCallMs": 1782.8763219999964,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 114,
+      "completedCASWrites": 114,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 115,
+      "awaitedCallMs": 1300.9400690000039,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 115,
+      "completedCASWrites": 115,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 116,
+      "awaitedCallMs": 1337.7286670000176,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 116,
+      "completedCASWrites": 116,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 117,
+      "awaitedCallMs": 1247.741473000031,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 117,
+      "completedCASWrites": 117,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 118,
+      "awaitedCallMs": 1235.061856000044,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 118,
+      "completedCASWrites": 118,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 119,
+      "awaitedCallMs": 1336.32684600004,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 119,
+      "completedCASWrites": 119,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 120,
+      "awaitedCallMs": 1435.0222099999664,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 120,
+      "completedCASWrites": 120,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 121,
+      "awaitedCallMs": 1270.4365790000302,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 121,
+      "completedCASWrites": 121,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 122,
+      "awaitedCallMs": 1291.838402000023,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 122,
+      "completedCASWrites": 122,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 123,
+      "awaitedCallMs": 1228.9901240000036,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 123,
+      "completedCASWrites": 123,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 124,
+      "awaitedCallMs": 1448.8633750000154,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 124,
+      "completedCASWrites": 124,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 125,
+      "awaitedCallMs": 1301.6659510000027,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 125,
+      "completedCASWrites": 125,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 126,
+      "awaitedCallMs": 1349.0975460000336,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 126,
+      "completedCASWrites": 126,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 127,
+      "awaitedCallMs": 1305.048202999984,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 127,
+      "completedCASWrites": 127,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 128,
+      "awaitedCallMs": 1348.1390510000056,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 128,
+      "completedCASWrites": 128,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 129,
+      "awaitedCallMs": 1368.6866739999969,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 129,
+      "completedCASWrites": 129,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 130,
+      "awaitedCallMs": 1327.731987999985,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 130,
+      "completedCASWrites": 130,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 131,
+      "awaitedCallMs": 1326.2579050000058,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 131,
+      "completedCASWrites": 131,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 132,
+      "awaitedCallMs": 1286.075448000047,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 132,
+      "completedCASWrites": 132,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 133,
+      "awaitedCallMs": 1219.7258389999624,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 133,
+      "completedCASWrites": 133,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 134,
+      "awaitedCallMs": 1342.144947999972,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 134,
+      "completedCASWrites": 134,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 135,
+      "awaitedCallMs": 1431.9079619999975,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 135,
+      "completedCASWrites": 135,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 136,
+      "awaitedCallMs": 1386.9326429999783,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 136,
+      "completedCASWrites": 136,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 137,
+      "awaitedCallMs": 1348.074144000013,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 137,
+      "completedCASWrites": 137,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 138,
+      "awaitedCallMs": 1363.8378909999738,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 138,
+      "completedCASWrites": 138,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 139,
+      "awaitedCallMs": 1379.752221999981,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 139,
+      "completedCASWrites": 139,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 140,
+      "awaitedCallMs": 1455.6200720000197,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 140,
+      "completedCASWrites": 140,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 141,
+      "awaitedCallMs": 1372.4485949999653,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 141,
+      "completedCASWrites": 141,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 142,
+      "awaitedCallMs": 1398.0714110000408,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 142,
+      "completedCASWrites": 142,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 143,
+      "awaitedCallMs": 1494.5651860000216,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 143,
+      "completedCASWrites": 143,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 144,
+      "awaitedCallMs": 1519.59455899999,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 144,
+      "completedCASWrites": 144,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 145,
+      "awaitedCallMs": 1500.531480000005,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 145,
+      "completedCASWrites": 145,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 146,
+      "awaitedCallMs": 1345.3560130000114,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 146,
+      "completedCASWrites": 146,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 147,
+      "awaitedCallMs": 1641.5136339999735,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 147,
+      "completedCASWrites": 147,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 148,
+      "awaitedCallMs": 1461.0014330000267,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 148,
+      "completedCASWrites": 148,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 149,
+      "awaitedCallMs": 1492.130864000006,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 149,
+      "completedCASWrites": 149,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 150,
+      "awaitedCallMs": 1502.7677360000089,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 150,
+      "completedCASWrites": 150,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 151,
+      "awaitedCallMs": 1342.0557089999784,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 151,
+      "completedCASWrites": 151,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 152,
+      "awaitedCallMs": 1269.2345090000308,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 152,
+      "completedCASWrites": 152,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 153,
+      "awaitedCallMs": 1885.9492679999676,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 153,
+      "completedCASWrites": 153,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 154,
+      "awaitedCallMs": 1331.6264569999767,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 154,
+      "completedCASWrites": 154,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 155,
+      "awaitedCallMs": 1369.9332860000432,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 155,
+      "completedCASWrites": 155,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 156,
+      "awaitedCallMs": 1372.2110229999525,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 156,
+      "completedCASWrites": 156,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 157,
+      "awaitedCallMs": 1466.3743729999987,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 157,
+      "completedCASWrites": 157,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 158,
+      "awaitedCallMs": 1762.8933720000205,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 158,
+      "completedCASWrites": 158,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 159,
+      "awaitedCallMs": 1249.7747399999644,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 159,
+      "completedCASWrites": 159,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 160,
+      "awaitedCallMs": 1327.8292320000473,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 160,
+      "completedCASWrites": 160,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 161,
+      "awaitedCallMs": 1306.3358519999892,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 161,
+      "completedCASWrites": 161,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 162,
+      "awaitedCallMs": 1369.932054999983,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 162,
+      "completedCASWrites": 162,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 163,
+      "awaitedCallMs": 1310.023770000029,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 163,
+      "completedCASWrites": 163,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 164,
+      "awaitedCallMs": 1326.4500289999996,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 164,
+      "completedCASWrites": 164,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 165,
+      "awaitedCallMs": 1414.2186770000262,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 165,
+      "completedCASWrites": 165,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 166,
+      "awaitedCallMs": 1320.2534030000097,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 166,
+      "completedCASWrites": 166,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 167,
+      "awaitedCallMs": 1279.0533970000106,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 167,
+      "completedCASWrites": 167,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 168,
+      "awaitedCallMs": 1321.2377639999613,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 168,
+      "completedCASWrites": 168,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 169,
+      "awaitedCallMs": 1295.8041089999606,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 169,
+      "completedCASWrites": 169,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 170,
+      "awaitedCallMs": 1375.6160060000257,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 170,
+      "completedCASWrites": 170,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 171,
+      "awaitedCallMs": 1272.9892929999623,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 171,
+      "completedCASWrites": 171,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 172,
+      "awaitedCallMs": 1382.062076000031,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 172,
+      "completedCASWrites": 172,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 173,
+      "awaitedCallMs": 1360.8368379999883,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 173,
+      "completedCASWrites": 173,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 174,
+      "awaitedCallMs": 1344.314685999998,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 174,
+      "completedCASWrites": 174,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 175,
+      "awaitedCallMs": 1584.6513130000094,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 175,
+      "completedCASWrites": 175,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 176,
+      "awaitedCallMs": 1786.9156599999988,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 176,
+      "completedCASWrites": 176,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 177,
+      "awaitedCallMs": 1407.3906229999848,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 177,
+      "completedCASWrites": 177,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 178,
+      "awaitedCallMs": 1407.9911119999597,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 178,
+      "completedCASWrites": 178,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 179,
+      "awaitedCallMs": 1313.304160999949,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 179,
+      "completedCASWrites": 179,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 180,
+      "awaitedCallMs": 1443.0364079999854,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 180,
+      "completedCASWrites": 180,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 181,
+      "awaitedCallMs": 1398.0103699999745,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 181,
+      "completedCASWrites": 181,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 182,
+      "awaitedCallMs": 1452.055584000016,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 182,
+      "completedCASWrites": 182,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 183,
+      "awaitedCallMs": 1379.783713999961,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 183,
+      "completedCASWrites": 183,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 184,
+      "awaitedCallMs": 1357.3872040000279,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 184,
+      "completedCASWrites": 184,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 185,
+      "awaitedCallMs": 1318.7665990000241,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 185,
+      "completedCASWrites": 185,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 186,
+      "awaitedCallMs": 1370.8091700000223,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 186,
+      "completedCASWrites": 186,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 187,
+      "awaitedCallMs": 1310.1915969999973,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 187,
+      "completedCASWrites": 187,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 188,
+      "awaitedCallMs": 1359.8595730000525,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 188,
+      "completedCASWrites": 188,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 189,
+      "awaitedCallMs": 1371.4135210000095,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 189,
+      "completedCASWrites": 189,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 190,
+      "awaitedCallMs": 1389.874833000009,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 190,
+      "completedCASWrites": 190,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 191,
+      "awaitedCallMs": 1699.4009969999897,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 191,
+      "completedCASWrites": 191,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 192,
+      "awaitedCallMs": 1380.2797589999973,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 192,
+      "completedCASWrites": 192,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 193,
+      "awaitedCallMs": 1362.813976000005,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 193,
+      "completedCASWrites": 193,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 194,
+      "awaitedCallMs": 1427.260076000006,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 194,
+      "completedCASWrites": 194,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 195,
+      "awaitedCallMs": 1189.3653829999967,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 195,
+      "completedCASWrites": 195,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 196,
+      "awaitedCallMs": 1322.4720849999576,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 196,
+      "completedCASWrites": 196,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 197,
+      "awaitedCallMs": 1224.3125989999971,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 197,
+      "completedCASWrites": 197,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 198,
+      "awaitedCallMs": 1463.9802950000158,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 198,
+      "completedCASWrites": 198,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 199,
+      "awaitedCallMs": 1377.9425500000361,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 199,
+      "completedCASWrites": 199,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 200,
+      "awaitedCallMs": 1692.4877250000136,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 200,
+      "completedCASWrites": 200,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 201,
+      "awaitedCallMs": 1374.3371160000097,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 201,
+      "completedCASWrites": 201,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 202,
+      "awaitedCallMs": 1218.2342979999958,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 202,
+      "completedCASWrites": 202,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 203,
+      "awaitedCallMs": 1444.499205,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 203,
+      "completedCASWrites": 203,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 204,
+      "awaitedCallMs": 1458.0222519999952,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 204,
+      "completedCASWrites": 204,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 205,
+      "awaitedCallMs": 1260.6651560000028,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 205,
+      "completedCASWrites": 205,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 206,
+      "awaitedCallMs": 1523.8677940000198,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 206,
+      "completedCASWrites": 206,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 207,
+      "awaitedCallMs": 1371.2852650000132,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 207,
+      "completedCASWrites": 207,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 208,
+      "awaitedCallMs": 1466.8659059999627,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 208,
+      "completedCASWrites": 208,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 209,
+      "awaitedCallMs": 1290.2532449999708,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 209,
+      "completedCASWrites": 209,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 210,
+      "awaitedCallMs": 1403.4033849999541,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 210,
+      "completedCASWrites": 210,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 211,
+      "awaitedCallMs": 1383.3507659999887,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 211,
+      "completedCASWrites": 211,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 212,
+      "awaitedCallMs": 1457.9931210000068,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 212,
+      "completedCASWrites": 212,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 213,
+      "awaitedCallMs": 1508.5478960000328,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 213,
+      "completedCASWrites": 213,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 214,
+      "awaitedCallMs": 1718.5059400000027,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 214,
+      "completedCASWrites": 214,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 215,
+      "awaitedCallMs": 1416.4827870000154,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 215,
+      "completedCASWrites": 215,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 216,
+      "awaitedCallMs": 1251.470937999955,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 216,
+      "completedCASWrites": 216,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 217,
+      "awaitedCallMs": 1268.6667080000043,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 217,
+      "completedCASWrites": 217,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 218,
+      "awaitedCallMs": 1306.9014410000527,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 218,
+      "completedCASWrites": 218,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 219,
+      "awaitedCallMs": 1256.6299320000107,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 219,
+      "completedCASWrites": 219,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 220,
+      "awaitedCallMs": 1596.646961999999,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 220,
+      "completedCASWrites": 220,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 221,
+      "awaitedCallMs": 1735.9438070000033,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 221,
+      "completedCASWrites": 221,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 222,
+      "awaitedCallMs": 1435.577949999948,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 222,
+      "completedCASWrites": 222,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 223,
+      "awaitedCallMs": 1340.3142370000132,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 223,
+      "completedCASWrites": 223,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 224,
+      "awaitedCallMs": 1289.0127500000526,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 224,
+      "completedCASWrites": 224,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 225,
+      "awaitedCallMs": 1314.7871130000567,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 225,
+      "completedCASWrites": 225,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 226,
+      "awaitedCallMs": 1320.4023870000383,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 226,
+      "completedCASWrites": 226,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 227,
+      "awaitedCallMs": 1228.302480000013,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 227,
+      "completedCASWrites": 227,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 228,
+      "awaitedCallMs": 1295.4991099999752,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 228,
+      "completedCASWrites": 228,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 229,
+      "awaitedCallMs": 1378.4253559999634,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 229,
+      "completedCASWrites": 229,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 230,
+      "awaitedCallMs": 1354.0512809999636,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 230,
+      "completedCASWrites": 230,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 231,
+      "awaitedCallMs": 1330.0642389999703,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 231,
+      "completedCASWrites": 231,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 232,
+      "awaitedCallMs": 1446.173349000048,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 232,
+      "completedCASWrites": 232,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 233,
+      "awaitedCallMs": 1458.605699000007,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 233,
+      "completedCASWrites": 233,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 234,
+      "awaitedCallMs": 2077.1503309999825,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 234,
+      "completedCASWrites": 234,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 235,
+      "awaitedCallMs": 1386.2628550000372,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 235,
+      "completedCASWrites": 235,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 236,
+      "awaitedCallMs": 1371.1471859999583,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 236,
+      "completedCASWrites": 236,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 237,
+      "awaitedCallMs": 1241.2854030000162,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 237,
+      "completedCASWrites": 237,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 238,
+      "awaitedCallMs": 1284.921765999985,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 238,
+      "completedCASWrites": 238,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 239,
+      "awaitedCallMs": 1279.2655769999838,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 239,
+      "completedCASWrites": 239,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 240,
+      "awaitedCallMs": 1343.3383890000405,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 240,
+      "completedCASWrites": 240,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 241,
+      "awaitedCallMs": 1266.359786999994,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 241,
+      "completedCASWrites": 241,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 242,
+      "awaitedCallMs": 1301.8363019999815,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 242,
+      "completedCASWrites": 242,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 243,
+      "awaitedCallMs": 1273.7431579999393,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 243,
+      "completedCASWrites": 243,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 244,
+      "awaitedCallMs": 1320.0074100000784,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 244,
+      "completedCASWrites": 244,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 245,
+      "awaitedCallMs": 1228.2731829999248,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 245,
+      "completedCASWrites": 245,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 246,
+      "awaitedCallMs": 1364.2628650000552,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 246,
+      "completedCASWrites": 246,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    },
+    {
+      "completedDiagnosticCAS": 247,
+      "awaitedCallMs": 1252.8034089999273,
+      "maximumWholeMutationThroughACKMs": 4410.963033,
+      "maximumNativeCASThroughACKMs": 3827.9169570000004,
+      "completedFullCalls": 247,
+      "completedCASWrites": 247,
+      "revisionReadback": true,
+      "postimagePreserved": true
+    }
+  ]
+}

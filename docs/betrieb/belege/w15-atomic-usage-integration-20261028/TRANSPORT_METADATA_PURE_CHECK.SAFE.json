@@ -1,0 +1,18 @@
+{
+  "status": "PASS_ALLOWLISTED_TRANSPORT_METADATA_NO_PRIVATE_CONTENT",
+  "checks": 3,
+  "httpRequests": 0,
+  "databaseWrites": 0,
+  "priorFailureRetrospectivelyExplained": false,
+  "sourcePin": {
+    "path": "scripts/fixtures/w15-auth-measurement-report.js",
+    "bytes": 3018,
+    "sha256": "95c24fa1ccd2e47467cbd22ecfb89e69ca441fc9fb9c8a21fab8c4583ce78a8b"
+  },
+  "evidenceOrigin": "Actual node scripts/lokal.js pure invocation in this sprint, exit0; retained without rerun",
+  "checked": [
+    "Genuine TypeError cause enum and bytecounters retained",
+    "Untrusted names/codes excluded",
+    "Raw private messages/address never serialized"
+  ]
+}

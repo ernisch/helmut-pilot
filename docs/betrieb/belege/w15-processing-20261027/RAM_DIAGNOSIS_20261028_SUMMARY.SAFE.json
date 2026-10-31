@@ -1,0 +1,280 @@
+{
+  "schema": "helmut-w15-ram-forensic-public/1",
+  "status": "PARTIAL_CAUSAL_SPILL_CONFIRMED_FULL500_START_UNKNOWN",
+  "historicalAttempt": "20261028C",
+  "historicalPeakBytes": 1640103936,
+  "historicalRequiredReserveBytes": 409600000,
+  "historicalReserveBytes": 407896064,
+  "scope": "Read-only old-run forensics followed by one narrowly scoped two-CAS diagnostic in a NEW inactive database. No complete attempt.",
+  "componentEvidence": {
+    "earlierLiveSample": {
+      "acceptedProfiles": 26,
+      "anonBytes": 579096576,
+      "fileBytes": 648536064,
+      "shmemIncludedInFileBytes": 96247808,
+      "isPeakTimeBreakdown": false
+    },
+    "afterApplicationExit": {
+      "anonBytes": 4685824,
+      "fileBytes": 781438976,
+      "shmemIncludedInFileBytes": 105701376,
+      "isPeakTimeBreakdown": false
+    },
+    "postgres": {
+      "observedAtUTC": "2026-10-28T07:54:13+00:00",
+      "databaseBytes": 79744147,
+      "helmutStore": {
+        "liveRows": 149,
+        "updates": 837,
+        "hotUpdates": 834,
+        "heapBytes": 32768,
+        "totalRelationBytes": 65232896,
+        "toastTotalBytes": 65126400,
+        "deadTupleEstimate": 0,
+        "autovacuumCount": 1,
+        "caution": "Physical relation capacity includes current tuples and reusable/dead-space history; n_dead_tup is a post-run statistics estimate, not proof of zero prior rewrite pressure."
+      },
+      "wal": {
+        "physicalFiles": 33,
+        "physicalBytes": 553648128,
+        "generatedBytesSinceClusterStart": 1227383222,
+        "records": 2072352,
+        "fullPageImages": 19019,
+        "bufferFullEvents": 169
+      },
+      "temp": {
+        "cumulativeBytes": 4504080717,
+        "cumulativeFiles": 842,
+        "currentFiles": 0,
+        "currentBytes": 0,
+        "statementAttributionAvailable": false,
+        "pgStatStatementsInstalled": false,
+        "caution": "TEMP statistics include restore/setup, runtime, audit and diagnostic queries.842 files close to837 Auth updates is correlation, not a per-statement causal proof."
+      },
+      "checkpointer": {
+        "timed": 8,
+        "requested": 1,
+        "buffersWritten": 33335
+      },
+      "settings": {
+        "sharedBuffersBytes": 134217728,
+        "workMemBytes": 4194304,
+        "maintenanceWorkMemBytes": 67108864,
+        "walBuffersBytes": 4194304,
+        "maxWalSizeBytes": 1073741824,
+        "minWalSizeBytes": 83886080,
+        "checkpointTimeoutSeconds": 300,
+        "checkpointCompletionTarget": 0.9,
+        "walCompression": "off",
+        "maxConnections": 100,
+        "autovacuum": "on"
+      }
+    },
+    "storedRepresentations": {
+      "mainAuth": {
+        "jsonTextBytes": 5458615,
+        "storedCompressedDatumBytes": 1396404,
+        "usageRows": 5139,
+        "historicalUsageRows": 5000,
+        "newCurrentPlanUsageRows": 139,
+        "usageJsonTextBytes": 2799052,
+        "admissionJsonTextBytes": 695063,
+        "journalJsonTextBytes": 208035,
+        "daybooksJsonTextBytes": 690772,
+        "orderJsonTextBytes": 376
+      },
+      "currentCommand": {
+        "jsonTextBytes": 1169833,
+        "storedDatumBytes": 1169850,
+        "retainedEncodedFileBytes": 1169848
+      }
+    },
+    "walResidency": {
+      "physicalBytes": 553648128,
+      "residentBytes": 553648128,
+      "files": 33,
+      "method": "mincore metadata; no content faults or cache modification",
+      "limitation": "Global residency is not a proof of per-page cgroup ownership or historical peak-time charge."
+    },
+    "node": {
+      "insideCappedContainerHeapSizeLimitBytes": 1124859904,
+      "isRSSLimit": false,
+      "historicalPeakHeapMeasured": false,
+      "liveRetainedObjectsAtPeakMeasured": false
+    },
+    "postgrest": {
+      "gatewayStreamsBodies": true,
+      "processRSSAtHistoricalPeakMeasured": false
+    },
+    "runtimeRetention": {
+      "oneCurrentImmutableCommand": "Source inspection confirms one current command graph; no accumulating per-unit command copies were established.",
+      "reports": "Bounded timing, checkpoint and result metadata; no measured heap leak is claimed."
+    }
+  },
+  "historicalPartialUsageRefinement": {
+    "historicalRowsRetained": 5000,
+    "newCurrentPlanRows": 139,
+    "draftRows": 70,
+    "reviewRows": 69,
+    "completedUnits": 69,
+    "additionalPartialDraftReceipt": 1,
+    "scope": "Supplement to the previous partial-counter UNKNOWN; no old report rewritten. Local mock provenance comes from closed provider hook, pinned fixtures and network isolation, not invented database mock flags."
+  },
+  "casDiagnostic": {
+    "status": "PASS_CAUSAL_POSTGREST_AUTH_SPILL_DIAGNOSIS_ONLY",
+    "startedAtUTC": "2026-10-28T08:12:00.354Z",
+    "completedAtUTC": "2026-10-28T08:12:08.953Z",
+    "inputMinifiedJSONBytes": 5097216,
+    "usageRows": 5139,
+    "readControl": {
+      "before": {
+        "active": 0,
+        "workMem": "4MB",
+        "walBytes": "1245002286",
+        "tempBytes": 0,
+        "tempFiles": 0
+      },
+      "after": {
+        "active": 0,
+        "workMem": "4MB",
+        "walBytes": "1245002906",
+        "tempBytes": 0,
+        "tempFiles": 0
+      },
+      "tempFilesDelta": 0,
+      "tempBytesDelta": 0
+    },
+    "phases": [
+      {
+        "name": "default",
+        "workMem": "4MB",
+        "wallMs": 1171.4342309999997,
+        "before": {
+          "active": 0,
+          "workMem": "4MB",
+          "walBytes": "1245002906",
+          "tempBytes": 0,
+          "tempFiles": 0
+        },
+        "after": {
+          "active": 0,
+          "workMem": "4MB",
+          "walBytes": "1246530654",
+          "tempBytes": 5729274,
+          "tempFiles": 1
+        },
+        "tempFilesDelta": 1,
+        "tempBytesDelta": 5729274,
+        "clusterWalBytesDelta": "1527748",
+        "contentPreserved": true,
+        "rawInputPreserved": true,
+        "conditionalWriteAcknowledged": true,
+        "nativeCASAttempts": 1,
+        "actualRevisionReadBack": true
+      },
+      {
+        "name": "single-parameter",
+        "workMem": "16MB",
+        "wallMs": 841.601506,
+        "before": {
+          "active": 0,
+          "workMem": "16MB",
+          "walBytes": "1246530978",
+          "tempBytes": 5729274,
+          "tempFiles": 1
+        },
+        "after": {
+          "active": 0,
+          "workMem": "16MB",
+          "walBytes": "1248058741",
+          "tempBytes": 5729274,
+          "tempFiles": 1
+        },
+        "tempFilesDelta": 0,
+        "tempBytesDelta": 0,
+        "clusterWalBytesDelta": "1527763",
+        "contentPreserved": true,
+        "rawInputPreserved": true,
+        "conditionalWriteAcknowledged": true,
+        "nativeCASAttempts": 1,
+        "actualRevisionReadBack": true
+      }
+    ],
+    "genuineCASWrites": 2,
+    "GETRequests": 5,
+    "PATCHRequests": 2,
+    "gatewayErrors": 0,
+    "newDatabaseOnlyWorkMem16MB": true,
+    "full500ProgramConfigurationChanged": false,
+    "rawInputPreservedExceptDiagnosticMarkerAndRevision": true,
+    "profileActivations": 0,
+    "unitExecutions": 0,
+    "modelCalls": 0,
+    "largestSampledProbeNodeRSSBytes": 301477888,
+    "probeRSSIsCommonPeak": false,
+    "naturalGCEvents": 31,
+    "forcedGC": false,
+    "cacheClearing": false,
+    "memorySubtraction": false,
+    "commonRAMGainProven": false,
+    "walReductionProven": false
+  },
+  "independentReview": {
+    "staticReviewStatus": "PASS_STATIC_TARGETED_CAUSAL_DIAGNOSTIC_SCOPE",
+    "causalReviewStatus": "PASS_CAUSAL_SPILL_ONLY_FULL500_FORWARD_RESERVE_UNPROVEN",
+    "memoryResultReviewStatus": "PASS_NARROW_CAUSAL_TEMP_SPILL_FULL500_START_UNKNOWN",
+    "freshReadOnlyPoststate": {
+      "workMem": "16MB",
+      "profiles": 500,
+      "readOnly": "on",
+      "isolation": "repeatable read",
+      "usageRows": 5139,
+      "identities": 501,
+      "markerPhase": "single-parameter",
+      "activeProfiles": 0,
+      "revisionPresent": true,
+      "rawContentEqualExcludingMarkerAndRevision": true
+    },
+    "reviewUnitExecutions": 0,
+    "reviewCASWrites": 0
+  },
+  "newFull500StartGate": {
+    "status": "UNKNOWN_NOT_CLEARED",
+    "startAccepted": false,
+    "criteria": {
+      "end500LargestAuthBlobMeasured": false,
+      "realFullTCommandRetainedBaselinePresentAndMeasured": false,
+      "PostgresWALRecyclingAtCandidateConfigurationMeasured": false,
+      "steadyStateNaturalGCWithRealCommandAndLargestAuthMeasured": false,
+      "freshCommonKernelPeakWithin1638400000BytesMeasured": false
+    },
+    "reason": "User4 start conditions require evidence beyond removal of TEMP spill for the69/70-profile5139-usage Auth snapshot. The largest end500 Auth state, actual retained command baseline, PG WAL recycling and long-running natural-GC/common-memory behavior remain unmeasured. No new full500 run is cleared by this diagnostic review.",
+    "unchangedCapBytes": 2048000000,
+    "unchangedRequiredReserveBytes": 409600000,
+    "unchangedRequiredReservePercent": 20
+  },
+  "reusedEvidence": {
+    "sourceQualification500PASSRepeated": false,
+    "genuineFourWriterAuthPASSRepeated": false
+  },
+  "newFull500Attempts": 0,
+  "newMockResponses": 0,
+  "newGeneratedResults": 0,
+  "originalDataChanges": 0,
+  "productionChanges": 0,
+  "paidResources": 0,
+  "modelCalls": 0,
+  "merges": 0,
+  "exactAuthMaximaDurability": "Still open for the next full attempt; no accepted-profile/abort telemetry change was applied after the UNKNOWN gate.",
+  "nextNecessaryEvidence": [
+    "Conservative largest end500 Auth state with1000 current Usage/attempts and500 output records, preserving5000 historical Usage.",
+    "Real retained W15 command baseline plus transient Node/PG/PostgREST allocation and natural GC.",
+    "Common kernel memory over representative WAL checkpoint/recycling and growing stored outputs, without cache removal or subtraction."
+  ],
+  "limitations": [
+    "The two-CAS comparison proves a TEMP spill mechanism, not the cause or removal of the whole historical1640103936B peak.",
+    "Higher work_mem can increase PG transient RAM and is per operator/connection. It was not blindly ported to the full controller.",
+    "WAL/TEMP cumulative byte totals are not simultaneous RAM. max_wal_size is a soft checkpoint target.",
+    "No new complete500 memory or Production proof."
+  ]
+}

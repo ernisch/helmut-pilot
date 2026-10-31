@@ -1,0 +1,301 @@
+{
+  "status": "PASS_INDEPENDENT_REVIEW_OF_FIRST_FAILED_CURRENT_SOURCE_QUALIFICATION",
+  "applicationQualificationStatus": "FAIL_50_PASSED_1_FAILED_449_UNATTEMPTED",
+  "createdAtUTC": "2026-10-28T06:05:10.884979+00:00",
+  "scope": "Existing51records, original evidence/current source pins and actual publication guard source inspected only. No constructor or validator rerun, DB, activation, model, repair or retry.",
+  "checks": [
+    {
+      "name": "actual single attempt report hash",
+      "status": "PASS"
+    },
+    {
+      "name": "private directory and report",
+      "status": "PASS"
+    },
+    {
+      "name": "receipt hash unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "original unchanged normalizedCurrentPolicy",
+      "status": "PASS"
+    },
+    {
+      "name": "original unchanged nativeInventoryHistoricalTemplate",
+      "status": "PASS"
+    },
+    {
+      "name": "original unchanged reviewedMockCandidates",
+      "status": "PASS"
+    },
+    {
+      "name": "original unchanged staticMockTemplates",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin scripts/synthetik-500-w15-mock-bindings-check.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin scripts/fixtures/w15-local-calendar.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin scripts/fixtures/w15-unit0-provider.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin scripts/fixtures/w15-full500-provider.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin scripts/fixtures/w15-current-input-bindings.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin scripts/fixtures/w15-current-mock-data.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin scripts/fixtures/w15-current-native-data.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin lib/helmut/briefing-lagebindung.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin lib/helmut/lage.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin lib/helmut/ai.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin lib/helmut/lage-textqualitaet.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin lib/helmut/lage-quellenbeleg.js",
+      "status": "PASS"
+    },
+    {
+      "name": "source pin lib/helmut/briefing-frische.js",
+      "status": "PASS"
+    },
+    {
+      "name": "current evidence pin BERLIN_TAX_20261023.SOURCE_NORMALIZATION.PRIVATE.json",
+      "status": "PASS"
+    },
+    {
+      "name": "current evidence pin BT_HOUSING_20261016.SOURCE.PRIVATE.json",
+      "status": "PASS"
+    },
+    {
+      "name": "current evidence pin MANUAL_SOURCE_REVIEW.SAFE.json",
+      "status": "PASS"
+    },
+    {
+      "name": "current evidence pin BERLIN_TAX_20261023.ORIGINAL.html",
+      "status": "PASS"
+    },
+    {
+      "name": "current evidence pin BT_HOUSING_20261016.ORIGINAL.html",
+      "status": "PASS"
+    },
+    {
+      "name": "policy unchanged493B",
+      "status": "PASS"
+    },
+    {
+      "name": "51 consecutive unique original owner records",
+      "status": "PASS"
+    },
+    {
+      "name": "all51 original variant mappings",
+      "status": "PASS"
+    },
+    {
+      "name": "50 BB qualified no other pass",
+      "status": "PASS"
+    },
+    {
+      "name": "50 genuine BAF L provider D R passes",
+      "status": "PASS"
+    },
+    {
+      "name": "50 final shared-inventory derivation metadata present",
+      "status": "PASS"
+    },
+    {
+      "name": "single index50 BE001 first construction failure",
+      "status": "PASS"
+    },
+    {
+      "name": "failed owner no BAF L AI Q D R success asserted",
+      "status": "PASS"
+    },
+    {
+      "name": "one flat failure exact guard reason and type",
+      "status": "PASS"
+    },
+    {
+      "name": "449 remaining owners unattempted",
+      "status": "PASS"
+    },
+    {
+      "name": "first failure stop and overall FAIL",
+      "status": "PASS"
+    },
+    {
+      "name": "no qualified assets produced",
+      "status": "PASS"
+    },
+    {
+      "name": "native inventory original unchanged derived6 6 6 manual U0",
+      "status": "PASS"
+    },
+    {
+      "name": "actual new BE selected source and VG recorded",
+      "status": "PASS"
+    },
+    {
+      "name": "manual coverage witness file hash",
+      "status": "PASS"
+    },
+    {
+      "name": "failure metadata is original source not mislabeled new source",
+      "status": "PASS"
+    },
+    {
+      "name": "actual14day scope retained",
+      "status": "PASS"
+    },
+    {
+      "name": "zero DB activation unit or provider effects recorded",
+      "status": "PASS"
+    },
+    {
+      "name": "no retry full500 production or model acceptance",
+      "status": "PASS"
+    }
+  ],
+  "checkCount": 44,
+  "reportPin": {
+    "path": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification/ALL500_MOCK_BINDINGS_CHECK.SAFE.json",
+    "bytes": 620284,
+    "sha256": "dfd20fe8aea431be91c2ca80e58000bd6be1ed15ca7e92ad9e97cc43c2f1e0fa"
+  },
+  "sourceCodePins": [
+    {
+      "path": "scripts/synthetik-500-w15-mock-bindings-check.js",
+      "bytes": 21644,
+      "sha256": "e40b4beae276f92a989287c521f837e88485464849defba8fe12455ff915ca22"
+    },
+    {
+      "path": "scripts/fixtures/w15-local-calendar.js",
+      "bytes": 4937,
+      "sha256": "4e7cd70c70dcfad6ef4e4f97c7dd1f6ce6385a57e04b642140814b38bcf2f4f6"
+    },
+    {
+      "path": "scripts/fixtures/w15-unit0-provider.js",
+      "bytes": 8826,
+      "sha256": "fdf4ac5a036dfa03347a562c99ef3a330080e5b23db0ea5e9cd47be3ce95e221"
+    },
+    {
+      "path": "scripts/fixtures/w15-full500-provider.js",
+      "bytes": 6616,
+      "sha256": "df71e0c063274f0d65d6eaa7ab291b42d435b985d15824b785e2ac6e22507d6a"
+    },
+    {
+      "path": "scripts/fixtures/w15-current-input-bindings.js",
+      "bytes": 24516,
+      "sha256": "33a97deec2511fe6690246801eefd269a4984db128e3f8edfd4c10f5b32cc663"
+    },
+    {
+      "path": "scripts/fixtures/w15-current-mock-data.js",
+      "bytes": 14178,
+      "sha256": "606ab86623ae68b9b33644d09cbde33c3eaee1a5ae11bcc229054dbe74a95587"
+    },
+    {
+      "path": "scripts/fixtures/w15-current-native-data.js",
+      "bytes": 4575,
+      "sha256": "c7650ad5bd75039d9a64e13b84fc97a594718441a8a042ce5ad27eeb4fe5401d"
+    },
+    {
+      "path": "lib/helmut/briefing-lagebindung.js",
+      "bytes": 2933,
+      "sha256": "6cca21f32919cf3df2c6f6661886b1c8fc5a4aa99f5c0016953d3f043095a5a3"
+    },
+    {
+      "path": "lib/helmut/lage.js",
+      "bytes": 56155,
+      "sha256": "b69d8abc8793be120980bfd86f3d4e65682a6f885ddd6d16b10671d4c67995b3"
+    },
+    {
+      "path": "lib/helmut/ai.js",
+      "bytes": 100090,
+      "sha256": "33a64efbe45989f4ee5f3f1268c0874c0a2c4924b2ac4c825977005824ccbd5a"
+    },
+    {
+      "path": "lib/helmut/lage-textqualitaet.js",
+      "bytes": 24722,
+      "sha256": "efb6d4a512f84e74454d6ef1f93d3e00661c5b4ec560f7fb2c6256c41e4e9cd1"
+    },
+    {
+      "path": "lib/helmut/lage-quellenbeleg.js",
+      "bytes": 13666,
+      "sha256": "94583ff0cffc77934117ad4f36146b74c050cf11dd780e7b4b5e69501a2084bf"
+    },
+    {
+      "path": "lib/helmut/briefing-frische.js",
+      "bytes": 21804,
+      "sha256": "748209a7a2217e8a8d5adc99755ad981176b2fac6a2071c04209795b78ea54a4"
+    }
+  ],
+  "firstFailure": {
+    "index": 50,
+    "owner": "test-kohorte-synthetik-be-001",
+    "variantIndex": 4,
+    "phase": "current-source-bindings-constructed",
+    "reason": "publication-eligibility-candidate-unchecked",
+    "newSelectedSourceId": "rd-717c311350b734ae503946cb238d531f7d0c66a77e4bc2b037635fb8f1b24e3d",
+    "newSelectedVorgangId": "vg-w15-current-be-steuerschaetzung-20261023",
+    "newLocalKnowledgeObjectId": "ko-w15-current-be-steuerschaetzung-20261023",
+    "newSourcePublicationUTC": "2026-10-23T10:52:00.000Z",
+    "sourcePrecision": "Official23Oct12:52Europe/Berlin minute, not exact second.",
+    "recordOriginalSourceMetadataMeaning": "The failure occurs before deriveRow returns; originalSources and mockReferences remain predecessor RBB metadata by design. They do not identify the newly attempted source as old RBB.",
+    "downstreamStages": "No current B/A/F/L context or new D/R fixture/request qualification reached for owner50."
+  },
+  "sourceOnlyRootCause": {
+    "callChain": [
+      "w15-current-input-bindings.buildCurrentCase -> Contract.toBriefingContractV3 with newly created plain KO",
+      "briefingContract.js1153 -> radarState.buildCurrentRadarState",
+      "radarState.js985-991 -> allowed(ko) -> eligibility.assertKnown",
+      "publication-eligibility.js87-91 -> nonempty policy requires known process-local candidate proof; throws candidate-unchecked"
+    ],
+    "requiredProof": "WeakSet-backed symbol proof bound to current policy hash and KO identity, produced only after filterCandidates obtains the bounded complete publication-source identity read (publication-eligibility.js97-116).",
+    "missingIntegration": "New manual KO is constructed from plain JSON fields. Input helper invokes the real B constructor without having obtained that candidate proof. Copying public policy metadata later does not create the missing process-local proof.",
+    "guardDisabledOrWeakened": false,
+    "newSourceFactuallyRejectedByThisError": false,
+    "staticReviewMiss": "Previous independent source review missed this constructor prerequisite. The static PASS never constituted execution acceptance; actual first failure supersedes readiness."
+  },
+  "limits": {
+    "independentlyRecomputedConstructorOrRowHashes": false,
+    "all500Qualified": false,
+    "nativeUReceiptClaimed": false,
+    "currentProfessionalAcceptance": false,
+    "full500Or1500OutputAcceptance": false,
+    "databaseStateIndependentlyQueried": false,
+    "qualifiedAssetsWritten": false
+  },
+  "nextAction": "Preserve first failure and stop. No repair, constructor retry, qualification retry or full500 run was performed or authorized by this review.",
+  "priorReviewRecord": {
+    "path": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification/INDEPENDENT_REVIEW.SAFE.json",
+    "bytes": 9909,
+    "sha256": "95b601ec6c00ed20b2101eefdafec79f6fd79ec1c9a9b1972ccd21fb141be594",
+    "preserved": true,
+    "note": "Same completed independent review additionally retained under the exact filename subsequently requested by Root; no application or validation repetition."
+  }
+}

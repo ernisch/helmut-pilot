@@ -123,6 +123,10 @@ const WERKZEUG_VERWEIGERUNG = new Set([
 // Suiten, die NICHT offline lauffähig sind (Netz, Production-URL, Live-LLM, echte DB)
 // oder die keine Tests, sondern Werkzeuge/Backfills sind.
 const DENYLIST = new Set([
+  "synthetik-500-w15-signed-chain-test.js", // nur explizit: private Originale, vorhandene isolierte DB und lokale Signaturschluessel
+  "synthetik-500-w15-original-content-test.js", // nur explizit mit privaten geprueften Originalen; keine CI-Datenuebertragung
+  "synthetik-500-w15-original-db-test.js", // nur explizit mit Originaldump und isoliertem Container
+  "synthetik-500-w15-original-worker-test.js", // nur explizit mit grossem Originalcommand aus dem privaten Dump
   "starttor-native-reader-datenbank-test.js", // eigener Pflichtschritt: echter netzloser PG17.6, kein Offline-Scheinbeleg
   "end500-unabhaengig-datenbank-test.js", // eigener CI-Schritt: echter netzloser PG17/pg_cron, kein Offline-Skip
   "synthetik-500-eu-time-datenbank-test.js", // eigener Pflichtschritt: netzloser PG17, reale EU-Zeitmigration und Rueckweg
@@ -224,6 +228,7 @@ const STANDARD = new Set([
   "blocker2-d-historical-binding-test.js",   // festes B2-Snapshot-Membership, keine erfundene Fachabnahme
   "blocker2-d-historical-context-test.js",   // historische Ausnahme bleibt dem geschlossenen direkten Pfad vorbehalten
   "synthetik-500-direct-dictionary-test.js", // verlustfreie endliche gemeinsame Originaldaten, keine Quellenreduktion
+  "synthetik-500-stored-command-test.js", // W15 Signatur/ALS/Freshguards; explizite Worker-/RPC-Mocks, kein Vollrun
   "streaming-canonical-hash-test.js",        // gleiche Hashwerte auch jenseits der V8-Stringgrenze
   "synthetik-500-direct-vercel-test.js",     // geschuetzter Operatorzugang: bestehende Vercelheader, kein Tokenaufbau, Frist/keinRetry
   "synthetik-500-u-prestage-entry-test.js", // geschlossener Einzel-U Einstieg, ohne reale Effekte
@@ -237,6 +242,7 @@ const STANDARD = new Set([
   "synthetik-500-ab-review-v2-test.js",     // explizite Kostenplan-/Executorbindung an den gespeicherten D/R-Vertrag
   "synthetik-500-artikelkontext-kostenbindung-test.js", // identische Runtime-/Plan-/3-Bindung von Artikelprompt und40er Vertrag
   "synthetik-500-eu-service-contract-test.js", // approved closed EU financing/usage contract
+  "synthetik-500-order-renewal-test.js", // nur vorbereitete enge31.10.-Bindung, keine Productionfreigabe/SQLinstallation
   "synthetik-500-eu-daybook-init-test.js", // reine Tagesbuchplanung ohne Reserve, Schreiber oder Laufautoritaet
   "synthetik-500-route-contract-test.js",   // opt-in Route/Deployment/Auth-Auswahl vor Reserve und nach Await-Gates binden
   "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle

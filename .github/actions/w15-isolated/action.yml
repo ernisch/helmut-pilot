@@ -1,0 +1,5 @@
+name: W15 isolated gated runner
+description: Bind the existing receiver and controller to one bounded runner lifetime
+runs:
+  using: node24
+  main: index.js

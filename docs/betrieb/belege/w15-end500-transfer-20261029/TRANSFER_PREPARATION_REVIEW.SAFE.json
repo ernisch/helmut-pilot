@@ -1,0 +1,199 @@
+{
+  "schema": "helmut-w15-transfer-preparation-review/1",
+  "status": "PASS_PREPARATION_ONLY_REQUIRES_EXPLICIT_ONCE_TRANSFER_GO",
+  "reviewedAtUTC": "2026-10-28T22:40:07.777977+00:00",
+  "transferId": "w15-end500-20261029-26d5a4135ca7415ca41262fc45b561c8",
+  "planSHA256": "84b730490014c5d17f81ac350677275ce33f368731c8f4a979a4d1b2c9165bf5",
+  "sealedManifestTemplateSHA256": "af3bd654fa292ad256e0fa265c2fb3d968e945633f1439a12da72f015aeab86f",
+  "source": {
+    "freshSourceInventoryVerified": true,
+    "selectedFiles": 12,
+    "selectedBytes": 242570240,
+    "sourceToolCommit": "66efb89a42e3d1bee739844ac32a258d79b38ebb",
+    "originalsRetained": true
+  },
+  "receiver": {
+    "fingerprint": "7E3998A6C2CB948C69A2EE51F4267ABF26796EDC",
+    "publicKeySHA256": "3075683711733f6c7fc5836c9b4f5f1d94eaf35dec7f9a401132f52995122443",
+    "privateRootOutsideRepository": true,
+    "all14PrivateRegularFiles0600OwnedNoLinks": true,
+    "directories0700OwnedNoLinks": true,
+    "localChallengeDecryptVerified": true,
+    "protectedSecretExportRestoreVerifiedLocally": true,
+    "keyAndPassphraseNeverPublished": true
+  },
+  "durableRecovery": {
+    "existingPrivateDriveFolderId": "1gvYcdBSGYscOmTxYeJSJ3TpbacyJWBFd",
+    "encryptedNewReceiverWrapperBytes": 3298,
+    "encryptedNewReceiverWrapperSHA256": "753b8bdaad77d992ee21d0099dd43614ab367403c97ba1213d6206aa7b959714",
+    "encryptedNewReceiverWrapperUploaded": false,
+    "newWrapperOffhostRestoreVerified": false,
+    "independentOldRecoveryKeyControlVerified": true,
+    "uploadPublicKeyAndEncryptedNewRecoveryThenFullHashReadbackBeforeW15Cipher": true
+  },
+  "targetedValidation": {
+    "receiverGuardCases": {
+      "passed": 13,
+      "failed": 0,
+      "data": "FICTIONAL_ONLY",
+      "gpg": "FAKE_PROCESS"
+    },
+    "controllerContextCases": {
+      "passed": 7,
+      "failed": 0,
+      "startsController": false
+    },
+    "smallRealGPGProbe": {
+      "passed": true,
+      "fictionalFiles": 12,
+      "plaintextBytes": 1711,
+      "cipherBytes": 2144,
+      "originalW15Files": 0,
+      "uploads": 0,
+      "scope": "Real new protected receiver and GPG agent interoperability; no original input or full-size resource qualification. Performed after agent-path fix, before additional cleanup/type guards covered by targeted guard cases."
+    },
+    "finalBindings": {
+      "planTemplateSourceAndCodePins": "PASS",
+      "sourceManifestAcceptedByReceiverManifestValidator": true,
+      "maximumCipherParts": 15,
+      "maximumPartBytes": 16777216,
+      "localDownloadToolLimitBytes": 33554432,
+      "pythonASTAndJSONSyntax": "PASS"
+    },
+    "independentReviews": [
+      {
+        "agent": "final_transfer_review",
+        "result": "PASS_SCOPE",
+        "scope": "Plan, template, inventory, key pins, recovery, authority and failure boundaries; read-only."
+      },
+      {
+        "agent": "public_push_review",
+        "result": "PASS_SCOPE",
+        "scope": "Changed public files only; no private inputs/key, branch deployment disabled, no automatic full500/paid model calls; read-only."
+      }
+    ],
+    "noBroadSuiteRepeatedForFinalDocumentationEdits": true
+  },
+  "memoryContract": {
+    "version": "helmut-w15-end500-memory-check/3",
+    "containerMemoryLimitBytes": 2560000000,
+    "maximumActualCommonLifetimePeakBytes": 2048000000,
+    "requiredPhysicalReserveBytes": 512000000,
+    "swapBytes": 0,
+    "executionAuthority": false
+  },
+  "publicCodePublication": {
+    "priorUserPushAndDraftPRAuthorization": true,
+    "branch": "codex/w15-github-end500-preparation-20261028",
+    "draftPR": "https://github.com/ernisch/helmut-pilot/pull/975",
+    "priorGreenCommit": "66efb89a42e3d1bee739844ac32a258d79b38ebb",
+    "priorGreenRun": "https://github.com/ernisch/helmut-pilot/actions/runs/40772174428",
+    "newHeadCI": "NOT_OBSERVED_AT_PREPUSH_REVIEW",
+    "branchVercelDeploymentEnabled": false,
+    "automaticEnd500OrMock500": false,
+    "privatePayloadsExcluded": true,
+    "encryptedRecoveryWrapperExcluded": true,
+    "publicRecipientKeyOnly": true
+  },
+  "unprovenAndBlockingClaims": [
+    "Current Drive upload write access and maximum upload size have not been tested before the required upload GO.",
+    "New encrypted receiver-key wrapper and W15 cipher have no remote readback yet.",
+    "New wrapper offhost restore is not verified.",
+    "Controller context binding is preparation only; complete input port, qualification, backup, independent runtime review and separate End500 GO remain blocked."
+  ],
+  "authority": {
+    "inputDataTransfer": false,
+    "end500Start": false,
+    "mock500Start": false,
+    "merge": false,
+    "deployment": false,
+    "productionChange": false,
+    "paidResourceOrModelCalls": false
+  },
+  "observedSideEffects": {
+    "w15InputsReceived": 0,
+    "w15PayloadUploads": 0,
+    "encryptedPrivateKeyBackupUploads": 0,
+    "oldPrivateKeyOrPassphraseTransfers": 0,
+    "full500Starts": 0,
+    "sourceFilesModified": 0
+  },
+  "filePins": [
+    {
+      "path": "docs/CURRENT_STATE.md",
+      "bytes": 29688,
+      "sha256": "9c3d5371a76d996cf03702f185925a5ae5926e398c61c4e0c173891d7a80c320"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-end500-transfer-20261029/SEALED_MANIFEST_TEMPLATE.json",
+      "bytes": 2150,
+      "sha256": "af3bd654fa292ad256e0fa265c2fb3d968e945633f1439a12da72f015aeab86f"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-end500-transfer-20261029/SOURCE_INVENTORY.SAFE.json",
+      "bytes": 3886,
+      "sha256": "8be2200303e555fab66648f88068244f35ba19eee599d9b7243e43b647ccbe84"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-end500-transfer-20261029/TRANSFER_PLAN.SAFE.json",
+      "bytes": 10045,
+      "sha256": "84b730490014c5d17f81ac350677275ce33f368731c8f4a979a4d1b2c9165bf5"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-end500-transfer-20261029/receiver-public.asc",
+      "bytes": 1367,
+      "sha256": "3075683711733f6c7fc5836c9b4f5f1d94eaf35dec7f9a401132f52995122443"
+    },
+    {
+      "path": "docs/betrieb/w15-end500-uebertragungsfreigabe-20261029.md",
+      "bytes": 10608,
+      "sha256": "4696ab19a68333fd1a255c8fe8fbbfba9c7f888a97c0cc64007c7e4c089d8f8e"
+    },
+    {
+      "path": "scripts/w15-github/controller_context.py",
+      "bytes": 10339,
+      "sha256": "6d7fd10838a2173abca2024a1279b2eea41af24703ce174f5c86c474413ac3b9"
+    },
+    {
+      "path": "scripts/w15-github/prepare.py",
+      "bytes": 9625,
+      "sha256": "01eff4df5b5f6d9ef28d5e55f1ba09c0d54d6f25ba3c4fc4db59c590ddf4bbb9"
+    },
+    {
+      "path": "scripts/w15-github/receive.py",
+      "bytes": 14801,
+      "sha256": "0870bd71792649ddec6570f99a77e0755a9172a08ec61869e211edb3880ed8d9"
+    },
+    {
+      "path": "scripts/w15-github/seal.py",
+      "bytes": 17712,
+      "sha256": "8b53d00bce0551a85b4def441c579c0d5933e82d538d08cbeca189220579e0e5"
+    },
+    {
+      "path": "scripts/w15-github/source-export-request.json",
+      "bytes": 5819,
+      "sha256": "010ccfd7f5dc639b8a852cd4eeaf8929550d779ad0c755a16fed1895c763d464"
+    },
+    {
+      "path": "scripts/w15-github/source_inventory.py",
+      "bytes": 8012,
+      "sha256": "87af2db104d4f03d2417695f0f00354506293fedde207c62e068a86ec3b6ceb1"
+    },
+    {
+      "path": "scripts/w15-github/test_controller_context.py",
+      "bytes": 8885,
+      "sha256": "a472babfe1151f61a52c20f4bdce5f78bd905eeabbd6558cf130dbb156a38bbb"
+    },
+    {
+      "path": "scripts/w15-github/test_receive.py",
+      "bytes": 13828,
+      "sha256": "acd3b6edf307c1dcceda063f77438b8a8792bbac182c9c41ef8a669651a9dbc0"
+    },
+    {
+      "path": "vercel.json",
+      "bytes": 8082,
+      "sha256": "530a2a820f4f7cf666595be377b2ab5ffec700067c305c8e69ebe03de0191e69"
+    }
+  ],
+  "selfExcludedFromFilePins": true
+}

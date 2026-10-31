@@ -1,0 +1,234 @@
+{
+  "schema": "helmut-w15-selected-data-audit/1",
+  "atUTC": "2026-10-27",
+  "scope": "Read-only data inventory and selected transfer preparation; no restore, tests, activation, Production or Hetzner access.",
+  "motor": "W15 11ca02dbea72603ccdabc3560edf93f45caabe3a",
+  "references": [
+    {
+      "key": "normalizedCurrentPolicy",
+      "path": "/workspace/helmut-parallel-20261015/wave13/NORMALIZED500_CURRENT_POLICY.PRIVATE.json",
+      "bytes": 89982254,
+      "sha256": "90e11a4228e2e568edf03c3feb9ea2c79e71449e68fdc6c563a3355f1fbaaa14",
+      "availableHereByVerifiedContent": false,
+      "verifiedCopies": []
+    },
+    {
+      "key": "package",
+      "path": "/workspace/helmut-parallel-20261015/wave13/input-extraction/ORIGINAL_PACKAGE.PRIVATE.json",
+      "bytes": 631359,
+      "sha256": "52b4a49c334a2d537f642cddf3f95d3eb6e6830e0f3b1b7280c8bd8fd3812f10",
+      "availableHereByVerifiedContent": false,
+      "verifiedCopies": []
+    },
+    {
+      "key": "nativeInventoryHistoricalTemplate",
+      "path": "/workspace/helmut-parallel-20261015/wave13/NATIVE_INVENTORY_TEMPLATE.PRIVATE.json",
+      "bytes": 44832,
+      "sha256": "9285dd06daf66d9ecaafa045d7cdfa2e8793f21cc1d7d70aeda9fe97267c5f97",
+      "availableHereByVerifiedContent": false,
+      "verifiedCopies": []
+    },
+    {
+      "key": "actualSource23KO60",
+      "path": "/workspace/helmut-parallel-20261015/wave12/native-pdf-inputs/ACTUAL_NATIVE_SOURCE23_KO60_WITH_PDF.PRIVATE.json",
+      "bytes": 82170,
+      "sha256": "2057d97278d80d1ec37b2355c41c90fbfab315250d9eefbf30d4e45128f0c967",
+      "availableHereByVerifiedContent": false,
+      "verifiedCopies": []
+    },
+    {
+      "key": "originalUPacket",
+      "path": "/workspace/helmut-parallel-20261015/wave9/native-fixture/ORIGINAL_U_PACKET.PRIVATE.json",
+      "bytes": 53018,
+      "sha256": "8d732cb88dc6df457b66682a45831e60b8ecdb28d92b35d4c1db4440991f2ed2",
+      "availableHereByVerifiedContent": false,
+      "verifiedCopies": []
+    },
+    {
+      "key": "originalUReview",
+      "path": "/workspace/helmut-parallel-20261015/wave9/native-fixture/ORIGINAL_U_EXISTING_REVIEW.PRIVATE.json",
+      "bytes": 2073,
+      "sha256": "8a907f6241a7fc2b202d6a32a064c57b67e854d262f35da8eed461f53ebb9475",
+      "availableHereByVerifiedContent": true,
+      "verifiedCopies": [
+        {
+          "archiveName": "HELMUT_RESOURCE_DEPENDENCIES_20261016.zip",
+          "member": "originals/helmut-parallel-20261015/wave9/native-fixture/ORIGINAL_U_EXISTING_REVIEW.PRIVATE.json"
+        }
+      ]
+    },
+    {
+      "key": "originalUPredecessor",
+      "path": "/workspace/helmut-parallel-20261015/wave9/native-fixture/PREDECESSOR_BINDING.SAFE.json",
+      "bytes": 2107,
+      "sha256": "29be696bca85e8168c9724906a1b8e9a46c74bf939795e97293df5ea10e503d4",
+      "availableHereByVerifiedContent": true,
+      "verifiedCopies": [
+        {
+          "archiveName": "HELMUT_RESOURCE_DEPENDENCIES_20261016.zip",
+          "member": "originals/helmut-parallel-20261015/wave9/native-fixture/PREDECESSOR_BINDING.SAFE.json"
+        }
+      ]
+    },
+    {
+      "key": "currentPolicyAcceptance",
+      "path": "/workspace/helmut-parallel-20261015/wave13/ROOT_POLICY_CONTEXT_ACCEPTANCE.SAFE.json",
+      "bytes": 1140,
+      "sha256": "eb895b11875949012eaa0d5c2183777c319c4870264905fd27c86c267e50a40f",
+      "availableHereByVerifiedContent": true,
+      "verifiedCopies": [
+        {
+          "archiveName": "HELMUT_ORIGINAL_FILES_SUPPLEMENT_20261016.zip",
+          "member": "original-metadata/ROOT_POLICY_CONTEXT_ACCEPTANCE.SAFE.json"
+        }
+      ]
+    },
+    {
+      "key": "existingContentAcceptance",
+      "path": "/workspace/helmut-parallel-20261015/wave13/ROOT_ALL500_CONTENT_ACCEPTANCE.PRIVATE.json",
+      "bytes": 2701,
+      "sha256": "44b39d511667a085d040f1246617f263ddd62988bccdc906fe273a5dcbd909de",
+      "availableHereByVerifiedContent": true,
+      "verifiedCopies": [
+        {
+          "archiveName": "HELMUT_ORIGINAL_FILES_SUPPLEMENT_20261016.zip",
+          "member": "original-metadata/ROOT_ALL500_CONTENT_ACCEPTANCE.PRIVATE.json"
+        }
+      ]
+    },
+    {
+      "key": "staticMockAcceptance",
+      "path": "/workspace/helmut-parallel-20261015/wave12/ROOT_STATIC_LOCAL_R_TEMPLATE_ACCEPTANCE.SAFE.json",
+      "bytes": 3409,
+      "sha256": "c3088f502d3b5c278af583929712cd4b43d8b80412c36a3f291d8c00c63ee0d4",
+      "availableHereByVerifiedContent": true,
+      "verifiedCopies": [
+        {
+          "archiveName": "HELMUT_ORIGINAL_FILES_SUPPLEMENT_20261016.zip",
+          "member": "original-metadata/ROOT_STATIC_LOCAL_R_TEMPLATE_ACCEPTANCE.SAFE.json"
+        }
+      ]
+    },
+    {
+      "key": "reviewedMockCandidates",
+      "path": "/workspace/helmut-parallel-20261015/wave12/local-provider-candidates/REVIEWED_LOCAL_PROVIDER_CANDIDATES.PRIVATE.json",
+      "bytes": 213986,
+      "sha256": "90a789d058f503dfb4cc58a988866fe80a7d39bdfeb26b4039cc8d5cde3bf515",
+      "availableHereByVerifiedContent": false,
+      "verifiedCopies": []
+    },
+    {
+      "key": "staticMockTemplates",
+      "path": "/workspace/helmut-parallel-20261015/wave12/local-r-mock-templates/STATIC_UNBOUND_R_TEMPLATES.PRIVATE.json",
+      "bytes": 97720,
+      "sha256": "cb80981e72a5ce74ab9e2530dd7f32005ae088d45359f22e8cdb20afa7c3e4f0",
+      "availableHereByVerifiedContent": false,
+      "verifiedCopies": []
+    },
+    {
+      "key": "originalProfileReference",
+      "path": "/workspace/helmut-parallel-20261015/wave11/cohort-requirements/PROFILES.PRIVATE.json",
+      "bytes": 439524,
+      "sha256": "92567bd9602cbd0e30644359b77d8996cbb56aeeb2c4c3de53818beb15a7626f",
+      "availableHereByVerifiedContent": false,
+      "verifiedCopies": []
+    }
+  ],
+  "availableReferenceFiles": 5,
+  "missingReferenceFilesHere": 8,
+  "missingReferenceBytes": 91544863,
+  "sourceAccess": {
+    "currentCloud": "ccarenv_b64_Y2NhcmVudl83ZTFjMmY3NGI0Mjg4MTkxYmM4Y2UzNzI1YzU3ZGNhYw",
+    "originalSourceCloud": "ccarenv_b64_Y2NhcmVudl8yMzI3YWRjOGE3ZjA4MTkxOTdlMjczNjc2NjliOTIzNw",
+    "preservedMigrationTargetCloud": "ccarenv_b64_Y2NhcmVudl8yOTU4NWEyOWM5NjA4MTkxYjhjNTkwOTY0ZGZkYjllOQ",
+    "canonicalInputPathsPresentHere": false,
+    "originalCloudReadableFromThisSession": false,
+    "reason": "Current runtime only; no remote execution/file channel or SSH binding to the preserved source is available. Historical retention reports do not prove current access or loss."
+  },
+  "selectedDatabase": {
+    "database": "helmut_fresh_input_fixture_d2e98984",
+    "capture": "wave20-resource-integration/source-capture/READ_ONLY_SOURCE_CAPTURE.SAFE.json",
+    "dump": "wave20-resource-integration/source-capture/FROZEN_SOURCE.PRIVATE.dump",
+    "sha256": "06c6f37c7189dd166641d867809d42424f5c44618ab5cf6974939057ad61025c",
+    "absoluteDumpPath": "/workspace/helmut-parallel-20261015/wave20-resource-integration/source-capture/FROZEN_SOURCE.PRIVATE.dump",
+    "bytes": null,
+    "bytesStatus": "Not exposed in the available safe control manifest; must read original stat/inner manifest before transfer.",
+    "availability": "Recorded inside encrypted Drive migration; no dump downloaded/decrypted or restored here.",
+    "backupControlDriveId": "1DG1uKBfEZjuMUhzIiItuJIgNgyr_yb6G",
+    "backupControlBytes": 15999,
+    "backupControlSHA256": "979cae32eb0f24ae9df6640094a061c593e486a3d467933774224b72569eded1",
+    "cipherBytes": 111247647,
+    "cipherSHA256": "bf17f9d691bbeb64d340aa14b3d286e47d2a6085d4014ae8588a65c82d81de23",
+    "recipientFingerprint": "895EEED7DB15FD3026444551D71226C661B94F79",
+    "fullArchiveTransferPrepared": false
+  },
+  "databaseReferenceState": {
+    "profiles": 500,
+    "activeProfilesInHistoricalReadOnlySource": 500,
+    "identities": 501,
+    "helmutStoreRows": 6,
+    "storeHash": "b096fa764c03a2fdbbb36e3d1d9e14ed34da7cd8a1ff32e354d132a4a7b7b284",
+    "profileHash": "fafba5723cb6be289b5bf092acbf439e9bd7247c96ab970228e99b3aaf7bf675",
+    "identityHash": "b298a5014f7c574d0e28f27d16fb729ced5090e3b08c4de30b64f3f2f9a0ef6c",
+    "originalUJSONBHash": "34a8cd6cb9356ec3eac08cac021d22dea9d8da86c04cb4f1324e2bc6181b9ac7",
+    "evidence": "Oct16 minimal archive FINAL_NATIVE_INTEGRITY.SAFE.json and prepare-current-local-runtime.js; preserve profiles/identities, original U, Auth money/reservations/journal and counters.",
+    "replay": "Clone frozen input into new isolated state; build fresh operation and grow all500 outputs normally. Historical finished runtime/authority DB and V12 raw image are not initial fixtures to rewind.",
+    "lateSnapshotRequiredForFreshFullRun": false,
+    "lateSnapshotQualification": "No pre-last-unit snapshot required if original full state growth is measured. An isolated last-unit-only shortcut would require an authentic late-state snapshot not established here."
+  },
+  "localRoles": {
+    "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/source-capture/EXACT_LOCAL_ROLES.PRIVATE.sql",
+    "bytes": 658,
+    "sha256": "d9a99d567346768110a91f10033fd32cfa6e2a88dedd52ee59bfe62136ba0e02",
+    "passwordsIncluded": false,
+    "evidence": "PR936 private-original-ci-manifest.json and Oct19 migration control; body not recovered here."
+  },
+  "preparedTransfer": {
+    "originalFiles": [
+      "normalizedCurrentPolicy",
+      "package",
+      "nativeInventoryHistoricalTemplate",
+      "actualSource23KO60",
+      "originalUPacket",
+      "reviewedMockCandidates",
+      "staticMockTemplates",
+      "originalProfileReference"
+    ],
+    "databaseDumps": [
+      "wave20-resource-integration/source-capture/FROZEN_SOURCE.PRIVATE.dump"
+    ],
+    "auxiliaryFiles": [
+      "wave20-resource-integration/source-capture/READ_ONLY_SOURCE_CAPTURE.SAFE.json",
+      "/workspace/helmut-parallel-20261015/wave20-resource-integration/source-capture/EXACT_LOCAL_ROLES.PRIVATE.sql"
+    ],
+    "exclude": [
+      "5 already available reference files",
+      "other3 later input dumps",
+      "V12 2GiB physical image",
+      "old finished runtime and authority databases",
+      "whole historical archives unless subset recovery requires it",
+      "consumed run approvals as reusable authority"
+    ],
+    "exactTotalBytesKnown": false,
+    "reason": "Selected original body total is exact; selected dump/capture size and complete encrypted archive membership are not visible yet. No claimed final complete transfer size.",
+    "nextAction": "Read stat/hash and selected member presence in preserved source; copy only listed missing files/dump and required role/capture metadata directly into current Cloud over authenticated channel. Use existing recipient private key if needed and accessible; no new key scheme required."
+  },
+  "authorization": {
+    "privateKeyTransferAuthorizedByCurrentUser": true,
+    "additionalApprovalNeededForSelectedPreparation": false,
+    "technicalBlocker": "Source workspace or existing decrypting recipient/key is not accessible from this session. No additional generic GO resolves missing technical access.",
+    "productionAndPaidTestsStillBlocked": true
+  },
+  "verification": {
+    "gitObjectsExaminedMetadataOnly": 24374,
+    "exactSizeGitBlobsHashed": 1,
+    "additionalProfileReferenceGitBlobSearch": {
+      "exactSizeBlobsHashed": 0,
+      "matches": []
+    },
+    "driveSearchAbsenceIsNotGlobalAbsence": true,
+    "smallPackagesDownloadedOnlyForMissingCatalogs": true,
+    "originalBodiesOrCipherPartsDownloaded": false,
+    "newTestsStarted": false
+  }
+}

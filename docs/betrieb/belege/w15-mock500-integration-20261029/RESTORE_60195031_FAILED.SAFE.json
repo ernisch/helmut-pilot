@@ -1,0 +1,35 @@
+{
+  "attempt": 1,
+  "conclusion": "FAIL",
+  "end500Acceptance": false,
+  "exactCommit": "60195031c9187cf91ce4497f8875977683914f20",
+  "jobId": "123701901518",
+  "mock500Acceptance": false,
+  "restoreAcceptance": false,
+  "retryAllowed": false,
+  "runId": "40946145190",
+  "safeResult": {
+    "executionAuthority": false,
+    "phase": "worker",
+    "retryAllowed": false,
+    "status": "FAIL_W15_ISOLATED_WORKFLOW",
+    "worker": {
+      "memory": {
+        "configuredLimitBytes": 2560000000,
+        "currentBytes": 1510432768,
+        "events": {
+          "max": 0,
+          "oom": 0,
+          "oom_group_kill": 0,
+          "oom_kill": 0
+        },
+        "kernelLifetimePeakBytes": 1638682624,
+        "lastReadbackValid": true,
+        "swapCurrentBytes": 0,
+        "swapMaximumBytes": 0
+      },
+      "phase": "backup-export"
+    }
+  },
+  "schema": "helmut-w15-restore-diagnostic-workflow-result/1"
+}

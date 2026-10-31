@@ -1,0 +1,53 @@
+{
+  "status": "PASS_FILE_ONLY_LOSSLESS_GZIP_AND_EXACT_DECIMAL",
+  "error": null,
+  "historicalSourcePin": {
+    "bytes": 120268457,
+    "sha256": "e3111216d4fa6e57c99f747e970cc853609f4f07fa01e0b44d895d570ae7ef6c"
+  },
+  "newArchivePin": {
+    "path": "/tmp/w15-audit-codec-check-20261028d/C_NATIVE_AUDIT.PRIVATE.jsonl.gz",
+    "bytes": 42139672,
+    "sha256": "6e5753dba457fb6cdf71b29fb88471e4815b4e744ab2609d33e66e3eae497f83"
+  },
+  "newAdapterVerification": {
+    "status": "PASS_COMPLETE_LOSSLESS_NATIVE_POSTIMAGES_AND_ZERO_ONLY",
+    "activeProfiles": 0,
+    "profiles": 500,
+    "identities": 501,
+    "snapshotReadOnly": true,
+    "snapshotIsolation": "repeatable read",
+    "exactAuthPostimages": 1,
+    "exactStorePostimages": 1000,
+    "exactBriefingPostimages": 2500,
+    "totalExactPostimages": 3501,
+    "fullLogicalUsageRows": 6000,
+    "allHistoricalAndInertAuthFieldsEqual": true,
+    "authExcludedFields": [
+      "_authStoreRevision",
+      "w15MemoryProbeSequence"
+    ],
+    "observedNativeProbeSequence": 368,
+    "expectedProbeRequired": 368,
+    "rawBytes": 120268457,
+    "rawSHA256": "e3111216d4fa6e57c99f747e970cc853609f4f07fa01e0b44d895d570ae7ef6c",
+    "gzipEOFAndCRCVerified": true,
+    "separateFreshAfterSnapshotZeroReadStillRequired": true,
+    "executionAuthority": false,
+    "full500Acceptance": false
+  },
+  "rawBytes": 120268457,
+  "sourceOriginalPreserved": true,
+  "historicalCOutcome": "UNCHANGED_FAIL_AT369_NOT_A_NEW_DATABASE_RESULT",
+  "temporaryFileIsSeparateFromEnd500RAMContainer": true,
+  "HTTP": 0,
+  "databaseCalls": 0,
+  "AuthCalls": 0,
+  "profileActivations": 0,
+  "UnitCalls": 0,
+  "retryAllowed": false,
+  "sourcePins": {
+    "scripts/synthetik-500-w15-audit-codec-check.py": "059c127dd23c113a6f9181518b6685705f89748e4193176d606db5fc59fc4508",
+    "scripts/synthetik-500-w15-memory-final-audit.py": "42dda99ed17450a1bd678894f9549b64c8790cfbd91af0fc28f072b9f6bb29b7"
+  }
+}

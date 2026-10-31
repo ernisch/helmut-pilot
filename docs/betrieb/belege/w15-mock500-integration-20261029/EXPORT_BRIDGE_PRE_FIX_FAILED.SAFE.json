@@ -1,0 +1,23 @@
+{
+  "backupRoundtripAccepted": false,
+  "checksPassed": 3,
+  "createdSyntheticPostgresRole": true,
+  "end500Acceptance": false,
+  "exactCommit": "32eb2dd222480b461782aafce572952357888df0",
+  "executionAuthority": false,
+  "fixtureDatabaseDropped": true,
+  "fullLifetimeMemoryAccepted": false,
+  "mock500Acceptance": false,
+  "nativeActionsCompleted": 2,
+  "nativeActionsVerified": 0,
+  "nativeWorkerReturnCode": 1,
+  "originalDataRead": false,
+  "originalRestoreObserved": false,
+  "ownedRunnerAccepted": false,
+  "ownedSyntheticRoleCleaned": true,
+  "phase": "backup-roles-native",
+  "runId": "40948554553",
+  "schema": "helmut-w15-native-export-bridge-observation/1",
+  "status": "FAIL_NATIVE_EXPORT_BRIDGE_ONLY",
+  "workerFilesCleaned": true
+}

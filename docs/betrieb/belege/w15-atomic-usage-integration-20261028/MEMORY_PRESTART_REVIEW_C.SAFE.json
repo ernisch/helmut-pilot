@@ -1,0 +1,344 @@
+{
+  "schema": "helmut-w15-independent-prestart-review/1",
+  "status": "PASS_PRESTART_ATOMIC_END500_ALLOCATION_ONLY",
+  "recordedAtUTC": "2026-10-28T17:13:22.042359+00:00",
+  "sourceCommit": "ee36720d",
+  "reviewMethod": "Independent source/evidence reading only; offline hashes and filesystem metadata. No HTTP, SQL, tests, signals, child service or database/container started by reviewer.",
+  "authorizedScope": {
+    "diagnoses": 1,
+    "namespace": "20261028c",
+    "maximumMarkerCAS": 500,
+    "profileActivations": 0,
+    "units": 0,
+    "modelCalls": 0,
+    "full500Acceptance": false,
+    "retryAllowed": false
+  },
+  "observationCorrectionsReviewSHA256": "f7f335be3ca17e683f81c0efdefe731ffc1f78c90cfb08429083db385ec6c2ba",
+  "growthAnalysisSHA256": "c812728a95fddd76b507a1501da82797e6f8939b2b1d06cd5e99d1f9873aef22",
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.py",
+      "bytes": 26290,
+      "sha256": "6ebf276cd774de23a7a58038f85594b15afd3d774c34fab596d1c47b88ac371c"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.js",
+      "bytes": 12137,
+      "sha256": "bcee2d77c001d52cbe8d36bfa59cc19b38602f92372f2ccb9f34be575bd89c96"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-sql-preflight.py",
+      "bytes": 11247,
+      "sha256": "58df08038a407d944086133da7acb528e51bebe66d6f3532b74e47e29e90fe6e"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-controller.py",
+      "bytes": 46446,
+      "sha256": "cf2e79b47f8ea87cac5a2240d554ac49c90f478002aa822928b43a6a1f53e2aa"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-full500-runtime.js",
+      "bytes": 43294,
+      "sha256": "1dc68b22e57f69e191693693766e1628e83b0c2253fb3c22d83791ebbb3ce1cd"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 6301,
+      "sha256": "677ab387df1147619328be32f5601e98280ae434c49eb753ad7873cd41017b21"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 4508,
+      "sha256": "b4f7ab49b92a39366ce440ca000ea815e0ddaa3edd2d37733c9f0a311cb90874"
+    },
+    {
+      "path": "scripts/fixtures/w15-local-memory-budget.json",
+      "bytes": 641,
+      "sha256": "83414ddc04a025b20eedd9119657d62689f8e18d2f660b8a3bad85556e2566c7"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.json",
+      "bytes": 115,
+      "sha256": "acffec2e146c8b104605eb27b52a02822cb189f0c0468303fa2061240cc7bff2"
+    },
+    {
+      "path": "scripts/fixtures/w15-memory-contract.js",
+      "bytes": 1096,
+      "sha256": "7fde8ef7bd10210da3d20ffb9d03fe9115ec4cf1716d45a2a79faf24ad8bc994"
+    },
+    {
+      "path": "scripts/fixtures/w15-atomic-integration-target.json",
+      "bytes": 299,
+      "sha256": "e396b8bf990df0d773211e8c1483c938e3b57f3787481891334cc73d51c0abc5"
+    },
+    {
+      "path": "scripts/fixtures/z3-plattform.js",
+      "bytes": 28609,
+      "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 545054,
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496"
+    },
+    {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 6779,
+      "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442"
+    },
+    {
+      "path": "lib/helmut/auth-store-cas.js",
+      "bytes": 2753,
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-direct-codec.js",
+      "bytes": 13651,
+      "sha256": "f4390028c1c8f7cad40899c74cf2e5b3203f542b5617af48c3c56aecbbf22645"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
+      "bytes": 12237,
+      "sha256": "bc2409e35d68d52d0ba92914ffa1e427de42da738b73197e9bf7fe428f71b5fe"
+    },
+    {
+      "path": "supabase/proposals/auth_usage_atomic_local.sql",
+      "bytes": 20726,
+      "sha256": "5a8c07670354b504c85984618999feaa93f78f3107f96236ce61b2f7bbcd438a"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 25944,
+      "sha256": "77357f3871aada76433161e466de471888853743f63c0bfcec7eb7f58db4489d"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-postgrest-stop-check.py",
+      "bytes": 8418,
+      "sha256": "d29d2895b2440ee03f2e25f2209f18c9df92ae5372ccc55fd5f0500a538049a7"
+    },
+    {
+      "path": "scripts/fixtures/w15-end500-memory-fixture.js",
+      "bytes": 17280,
+      "sha256": "cca76fa363e1a85801241a6b1a58b8d559d0d57d757a0488170345ebd66bd209"
+    },
+    {
+      "path": "server.js",
+      "bytes": 547868,
+      "sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9"
+    },
+    {
+      "path": "scripts/lokal.js",
+      "bytes": 5431,
+      "sha256": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-observation-check.js",
+      "bytes": 10325,
+      "sha256": "0cef55042d782ac8ed9a06d8148408b0ea3bb15d66a97ecd61089c408656c48c"
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/sql-preflight-atomic-d/SQL_PREFLIGHT.SAFE.json",
+      "bytes": 441802,
+      "sha256": "90511bd429de443743a6476d623a30953142e45c0f0d07dd5f80fc59696f82ff"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/OBSERVATION_RESULTS_REVIEW.SAFE.json",
+      "bytes": 5328,
+      "sha256": "f7f335be3ca17e683f81c0efdefe731ffc1f78c90cfb08429083db385ec6c2ba"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_B_GROWTH_LATE_WINDOWS.SAFE.json",
+      "bytes": 21418,
+      "sha256": "c812728a95fddd76b507a1501da82797e6f8939b2b1d06cd5e99d1f9873aef22"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/POSTGREST_STOP_AND_TRANSPORT_REVIEW.SAFE.json",
+      "bytes": 5643,
+      "sha256": "5d8e01a755465fb7570c5ffc5d9b57c537702aa32de2cef610d0210ff3bb6a61"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_B_GROWTH_ANALYSIS.SAFE.json",
+      "bytes": 117254,
+      "sha256": "c8fe6e65e1fdb16577b8dda3d217f09abad6ad87b5c497a412413575c7d9f503"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/D_RESULTS_INDEPENDENT_REVIEW.SAFE.json",
+      "bytes": 15279,
+      "sha256": "45ed6642e60ad704f4d4f50c06bfd43f3347b39a838bd369d65eace3339baed1"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/AUTH_TRANSPORT_PROBE_RESULTS_REVIEW.SAFE.json",
+      "bytes": 12672,
+      "sha256": "af3b64cdaeb2e91128b6df8a3a785ad1f9d55f44049251a8042bd0df913ad2f5"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/END500_MEMORY_BOUND.SAFE.json",
+      "bytes": 4985,
+      "sha256": "5d61bb67ff0def43d4cc24ad11db59bb388e0a0b630393b173a9178b5bd2bf2c"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-memory-forward-20261028/END500_FIXTURE_INDEPENDENT_REVIEW.SAFE.json",
+      "bytes": 4438,
+      "sha256": "dae2ff8b04ba57ae021cd9c129556edc7e06af0b717eea123ba056f890b5b499"
+    },
+    {
+      "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_B_RESULTS_INDEPENDENT_REVIEW.SAFE.json",
+      "bytes": 17533,
+      "sha256": "66f81adb8f7d579d4d0ec8768c1c6c5adb34049add8e23d45dd3ead26256a675"
+    }
+  ],
+  "checks": [
+    {
+      "name": "scope",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Exactly one isolated inert End500 allocation diagnosis C; 500 marker CAS operations only; 0 profile activations, 0 DR units, 0 providers, no Mock500 authority."
+    },
+    {
+      "name": "fresh_target",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Controller, JS, service mode and parser all bind fresh C work/base/database/container; C work absent at review. Parent read-only fact confirms C container absent. Existing B and originals retained."
+    },
+    {
+      "name": "resource_gate",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Pre-resource source hash gates bind prepared0 D, stop result/review, observation review and growth report. WORK existence is a once-only latch; no automatic rerun/resume."
+    },
+    {
+      "name": "sql",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "3512 exact statement hashes: 3511 retained parser proofs, 1 new CREATE C parsed/described, 0 workload Execute, no database created, existing D snapshot unchanged. All 8 parser source hashes equal reviewed sources."
+    },
+    {
+      "name": "database_arguments",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "All nine imported SQL/read callsites explicitly specify the intended database, including CREATE on postgres and final zero check on C."
+    },
+    {
+      "name": "fixture",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Existing full end-state fixture precedes CAS0: 3501 exact native postimages, 6000 complete usage entries, original 5139 entries preserved; original dump/roles hashes and private output hashes checked; no fixture truncation."
+    },
+    {
+      "name": "command",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Actual bound D W15 Command is decoded, retained and deeply frozen with 500 drafts/500 units. It conveys no execution authority; server module baseline loaded without route/job activation."
+    },
+    {
+      "name": "service_mode",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Strict --serve-memory [--dry-run] selects fixed C BASE/DB and port3218. Configuration requires inert mode, nonce, maximumMutations500 and executionAuthority false; STOP marker forbidden before launch."
+    },
+    {
+      "name": "staged_dry",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Actual staged file dry invocation precedes service launch; requires expected database, 0 HTTP and 0 child starts. This reviewer has not executed it."
+    },
+    {
+      "name": "service_parent",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Existing serve() owns real pinned PostgREST child, same gateway factory and readiness catalog. Replaces orphan direct launch without an extra persistent process; genuine child exit event retained."
+    },
+    {
+      "name": "controlled_stop",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Real standalone 552.613949ms controlled-stop evidence reused. Predicate still requires accepted owned TERM, expected real child exit, no forced kill and zero server/agent sockets; historical B missing receipt is not repaired retroactively."
+    },
+    {
+      "name": "closure_fail_closed",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "C closure requires exactly one signal/exit/stopped entry, accepted TERM, valid exit, confirmed true, forced false, all three socket counts0 and no SERVICE_FAILURE. Missing or duplicate evidence remains FAIL/UNKNOWN."
+    },
+    {
+      "name": "cleanup",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Each owned phase stop is bounded and attempted once; stop failures retained separately. Native active-profile count is attempted in its own try even after stop failure and is null/UNKNOWN on read failure; no fabricated zero."
+    },
+    {
+      "name": "transport",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Existing genuine16 ACK/postimages and49 HTTP observations reused; no retry added, original historical eleventh UNKNOWN unchanged. Real accepted mutation requires one native CAS, revision readback and full unchanged logical postimage."
+    },
+    {
+      "name": "auth_observation",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Independent actual Observation correction PASS:14 closed metadata cases plus genuine ownership reject without signal and exactly one owned child TERM/exit0. Eight root Python command-failure checks reused. Generic AbortError remains aborted, not invented timeout."
+    },
+    {
+      "name": "auth30",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Each whole mutation timed with real performance clock and required <30000ms; full observer assessment mandatory after each accepted CAS. Durable events and exact maxima retained on termination and final result."
+    },
+    {
+      "name": "common_kernel",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Fresh network-none container enforces2048000000B memory, swap maximum0 and swap current0. Outer0.1s watcher checks real lifetime peak<=1638400000B, kernel event counters and all component allocations. No peak reset, cache subtraction or forced GC."
+    },
+    {
+      "name": "time",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "One run stage outer3600/inner3590s; readiness bounded, initial service dry before startup. Existing measured warm500 projection about1664s is planning evidence only; timeout remains first FAIL and no retry. JWT expires at setup+3600s and is neither extended nor ignored."
+    },
+    {
+      "name": "growth_gate",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Unchanged conservative physical late-growth formula requires successful full500 observations, real natural GC/checkpoints/autovacuum and native zero/TEMP/durability settings; peak+projected physical growth+67108864B must fit1638400000B. Old290 observations cannot prove6500-write stability."
+    },
+    {
+      "name": "ram_interpretation",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Full fixture already present before old CAS0; old late PostgREST anonymous plateau is bounded evidence, not proof of a persistent leak or500 fit. No GHC/pool/limit/cache/SQL business-rule change introduced."
+    },
+    {
+      "name": "disk",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "Actual read-only df at review:3481690112B available on workspace. Parent observed prior B total delta approximately1.88GB, cached pinned image and B PGdata276172800B. Room sufficient for one planned copy, not a future capacity guarantee. PGdata remains workspace, no /tmp PG mount, deletion or download."
+    },
+    {
+      "name": "final_independent_read",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "After explicit end signal only: one independent native read-only3501-postimage/6000-usage/500-profile0 stream, kernel before/after, exact Auth completion/maxima and real service receipts. No such query or diagnosis executed in this review."
+    },
+    {
+      "name": "historical_integrity",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "RAM-B remains FAIL at290 accepted/291 observed with unknown first cause; successful current control proofs do not relabel historical missing acknowledgements, invalid timing or incomplete work."
+    },
+    {
+      "name": "production_boundary",
+      "status": "PASS_STATIC_OR_PINNED_SCOPED_EVIDENCE",
+      "finding": "No Production route/config/database/model, cost budget, Hetzner, merge or full500 execution is authorized by this report; full500 controller unconditional no-start guard remains."
+    }
+  ],
+  "resourceObservation": {
+    "workspaceAvailableBytes": 3481690112,
+    "method": "read-only local statvfs/df",
+    "cachedImageAndAbsentContainer": "parent read-only start facts, not independently re-queried",
+    "spaceGuarantee": false
+  },
+  "limits": {
+    "memoryLimitBytes": 2048000000,
+    "minimumReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "swapBytes": 0,
+    "additionalPhysicalGrowthMarginBytes": 67108864
+  },
+  "limitations": [
+    "PASS is permission to start exactly one diagnosis, not a completed RAM diagnosis or Mock500 proof.",
+    "No6500-write or final500 stability promise is derived from the old290 accepted operations.",
+    "Late growth projection remains an unchanged mandatory acceptance blocker until actual complete C data exist.",
+    "All previous FAIL/UNKNOWN outcomes remain preserved."
+  ]
+}

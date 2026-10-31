@@ -1,0 +1,17 @@
+{
+  "stopExitCode": 0,
+  "state": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-10-28T12:25:39.708704454Z",
+    "FinishedAt": "2026-10-28T12:26:30.680000649Z"
+  },
+  "elapsedMs": 56759.782513000115
+}

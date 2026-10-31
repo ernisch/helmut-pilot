@@ -1,0 +1,147 @@
+{
+  "schema": "helmut-w15-independent-journal-io-prestart/1",
+  "status": "PASS_BOUNDED_JOURNAL_IO_PRESTART",
+  "reviewedAtUTC": "2026-10-28T18:15:55.471346+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "reviewMethod": "Static source and existingevidence read only; no runtime/test/HTTP/SQL/signals executed by reviewer.",
+  "sourcePin": {
+    "bytes": 2230255,
+    "sha256": "730e4a9755490c386af8720fb376133b6d7354dd870e965326b135aa0a1447b9"
+  },
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-journal-io-check.js",
+      "bytes": 15197,
+      "sha256": "aaaeb4575424b8a54c232f23099a22e4ec33166c3d00c06a7c5a9f9a363ea8e4"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 13410,
+      "sha256": "0737e8dd5c570f65b8e57dba1670870497eca8c889b340a5cc6b4d54ffd3356f"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 5598,
+      "sha256": "a49ff1c7b5b3c3b4eae789a580894d4cb5e847d678ee9678811f8919bd95db22"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    }
+  ],
+  "checks": [
+    {
+      "name": "exact_scope",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "One bounded private fileIOcomparison only: sync/async/controlleddrain once each, then four predefinedcomponentfaultcases.0DB/HTTP/Auth/profiles/models/GC/cache/clockchanges. No runtimeintegration or End500start approved."
+    },
+    {
+      "name": "args_and_source",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Strict argv2/3 --dry-run/--run/--child mode; privateCsource regularnonlink0600, fixed2230255B/SHA,10820contiguoussequence rows inertpayload. ProtectedfixedWORK once-only, neveroverwrites."
+    },
+    {
+      "name": "prestart_gate",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Run checks exactreviewstatus, sourcepin, allfourcodepins beforeWORKcreation. Existing rootonedry result reused; reviewer didnotexecute."
+    },
+    {
+      "name": "original_behavior",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "SynchronousDurable.open prefix byte-identical to C; no Auth/business/storageobserver sourcechanged. Newasyncpath opt-in only; oldcomponentresults retain exactscope."
+    },
+    {
+      "name": "snapshot",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Asyncwrite serializesBuffer at eventcall before queue insertion; latermutableAuthRowchanges cannot rewrite queuedstarted/finished snapshots. Partialnativewrites iterate remainingbyteoffsets before sync."
+    },
+    {
+      "name": "ack_durability",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Exactlyone serial nativewrite chain/fdatasync perentry; ACKsequence advances only after successful sync and nofailure. Outputsequence/content/hash/rowcount checked independently afterchildexit."
+    },
+    {
+      "name": "queue",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "8MiBmaxpendingbytes fail-closed. Overflow/serialization/write/sync/observer/closed/deadline errors are closedmachinecodes. IgnoredobserverPromisereturns have rejectionhandlers and cannotunhandledrejectsilently."
+    },
+    {
+      "name": "fd_close_race",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "close marksclosing, waitsflush; ifnativeIOrunning afterfailure, descriptorretainedopen and close rejects. No fs.close/reuse duringrunningwrite/sync; latecompletion cannot ACKafterfailure."
+    },
+    {
+      "name": "async_close",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Successfulclose requiresdrainedpendingqueue and realnativeclose. Anyclose/deadlinefailure staysFAIL/UNKNOWN; repeatedclose sharesoriginaloutcome; no silentretry."
+    },
+    {
+      "name": "termination",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "AuthretainOnTermination waitsoptionalPromise bounded15s; snapshotexplicitFAIL_OR_UNKNOWN and unfinishedUNKNOWN. Existing synccallback behavior unchanged. Drainsuccessprovesjournalretention only, notAuthsuccess."
+    },
+    {
+      "name": "closed_metadata",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Added8durableerrorcodes disjointfrom prior14case domain. Existingfallbackclassification logic otherwise unchanged; old14cases reused onlyfortheirpreviousinputs."
+    },
+    {
+      "name": "liveness",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Refed10mspulse alreadykeepsdrainchildalive; newexplicit200sdeadline adds bound untilparentsignal. Myearlierclaim thatdrainhadnoalivehandle was incorrectandhasbeencorrected."
+    },
+    {
+      "name": "ownership_IPC",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Fork createsownedknownfile/mode undernetguardclearedENV. IPCvalidation caught andfail-closed, no uncaughtassertions; termRequests guardsoneTERM. Parent210sdeadline canforceKILLonlyonfailedboundedchild; suchfailure cannotPASS orstartnextmode."
+    },
+    {
+      "name": "whole_payload_proof",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Eachmode readsall10820sameCpayloads, deepcomparesallvalues, verifiescontiguoussequenceandidenticalpayloadSHA; asynccloseACKcompleteSyncs,lastsequence,pending0,closedtrue mandatory."
+    },
+    {
+      "name": "nonblocking_claim",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Newproducermaxgap mustbe smallerthan sync and<1000ms, withindependentParentpulse preserved. This onlymeasurescurrentfileIOeffect; no retrospective8.4sfsyncclaim and noAuth/Unitperformanceacceptance."
+    },
+    {
+      "name": "controlled_drain",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Preflushfirst10756payloads then enqueue64, exactlyone ownedTERM; privateDRAINrecord requiresfulljournalclosedACK/0pending, childcode143/null, expectedsignalTERM, all10820payloadsplusprocessstartandterminationevent retained."
+    },
+    {
+      "name": "predefined_faults",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Fourprior-declaredcases: real31bytepartialwrites/capturedsnapshot; injectedasyncEIO noACK; blockednativeIO25msdeadline noFDclose/reuse/lateACK;8MiBoverflow noextraACK. Firstunexpectedassertion stopsremainingcases/modes; no actualCoperationreplayed."
+    },
+    {
+      "name": "failure_report",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "failedMode plusclosedreason retained. Anyunexpectedmodeexit/IPC/integrity/ACK/lag/faultcase failure yieldsFAIL_OR_UNKNOWN and retryAllowedfalse. Failedchild output remainsprivate."
+    },
+    {
+      "name": "privacy_and_resources",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "RawtechnicalCpayloadcopies/newIOlogs privateonly0600/0700, no newCredentials/Originaldatatransfer. Boundedsmallfileallocation fitscurrentworkspace; no database/image/containerallocation implied."
+    },
+    {
+      "name": "boundaries",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Historical11UNKNOWN/B291UNKNOWN/CFAIL and existing 3501 postimages /6000 usage /500 profiles with0 active readproofs remainunchanged. Positivecomparisonalone doesnotauthorizeEnd500: runtimewiring, failure/abortbarriers andindependentstartreview stillrequired."
+    }
+  ],
+  "permittedNextAction": "ExactlyoneboundedIOcheckrun with sync/async/drain modes and four predefinedexpectedcomponentfaultcases, noDB/HTTP/Auth/workload. Stop firstunexpectedFAIL/UNKNOWN; noRetry.",
+  "historicalCCause": "UNCHANGED_UNKNOWN",
+  "historicalCOverall": "UNCHANGED_FAIL",
+  "runtimeIntegrationTested": false,
+  "RAMStartApproved": false,
+  "full500Approved": false,
+  "limitations": [
+    "StaticPASS permits only the boundedIOcheck. Actualresultsnotknown.",
+    "Noexistingtimeout,cost,security,Auth30,Unit60,RAMreserve or full500criteria changed.",
+    "PredefinedfakeIOerrors testloggerfailurehandling,notdatabaseortransportbusinessbehavior.",
+    "Prior dry/syntax claims are rootprovided results, not new execution by reviewer."
+  ]
+}

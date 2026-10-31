@@ -1,0 +1,26 @@
+{
+  "schema": "helmut-auth-usage-split-preserved-start-failures/1",
+  "native01": {
+    "status": "FAIL",
+    "cause": "PGRST202: table visible before newly created RPC schema cache",
+    "productChecksReached": 0,
+    "correction": "Readiness now verifies OpenAPI table/readRPC/CASRPC paths before data cases."
+  },
+  "native02": {
+    "status": "FAIL",
+    "cause": "Child Node spawn EACCES after Docker COPY preserved mode0700 under root; isolated probe confirmed absolute Node EACCES and psql exit0.",
+    "productChecksReached": 0,
+    "correction": "Explicit COPY --chmod=755; isolated nonroot Node child start v24.19.0 exit0 observed before native03."
+  },
+  "native03": {
+    "status": "PASS",
+    "nativeGroups": 13,
+    "actualStorageAiBudgetGroups": 5,
+    "productionActions": 0,
+    "engineUnits": 0,
+    "profiles": 0,
+    "complete500Attempts": 0
+  },
+  "historyRewritten": false,
+  "policyWeakened": false
+}

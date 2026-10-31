@@ -1,0 +1,71 @@
+{
+  "schema": "helmut-w15-atomic-RAM-B-final-readonly/1",
+  "status": "PASS_RETAINED_ALL3501_POSTIMAGES_AND_ZERO_ONLY_NOT_RAM_ACCEPTANCE",
+  "reviewer": "independent atomic_integration_audit",
+  "observedAtUTC": "2026-10-28T15:57:07.246603+00:00",
+  "nativeReadOnlyTransactions": 1,
+  "database": "helmut_w15_memory_atomic_20261028b",
+  "metadata": {
+    "kind": "metadata",
+    "active": 0,
+    "database": "helmut_w15_memory_atomic_20261028b",
+    "profiles": 500,
+    "readonly": "on",
+    "identities": 501,
+    "mainUsageRows": 6000,
+    "physicalUsageRows": 6000,
+    "physicalAuthHasUsage": false
+  },
+  "logicalAuthExactlyPreservedExcluding": [
+    "freshRevision",
+    "diagnosticProbeSequence"
+  ],
+  "observedProbeSequence": 289,
+  "authUsageRows": 6000,
+  "allHistoricalAndInertAuthFieldsEqual": true,
+  "exactAuthPostimages": 1,
+  "exactStorePostimages": 1000,
+  "exactBriefingPostimages": 2500,
+  "totalExactPostimages": 3501,
+  "kernelBeforeAudit": {
+    "atUTC": "2026-10-28T15:56:54.671904+00:00",
+    "peak": 1444556800,
+    "current": 357724160,
+    "limit": "2048000000",
+    "swapMax": "0",
+    "swap": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    }
+  },
+  "kernelAfterAudit": {
+    "atUTC": "2026-10-28T15:57:07.245049+00:00",
+    "peak": 1444556800,
+    "current": 358064128,
+    "limit": "2048000000",
+    "swapMax": "0",
+    "swap": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    }
+  },
+  "privateRawPin": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_B_NATIVE_FINAL_PRIVATE.jsonl",
+    "bytes": 120268457,
+    "sha256": "4b6b2cb6f6bf997454af46ae3bc6100453d3ed833ae354321df9c23f6cf35f6e"
+  },
+  "workloadOrHTTPAttempts": 0,
+  "databaseWrites": 0,
+  "activations": 0,
+  "retryAllowed": false
+}

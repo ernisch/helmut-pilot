@@ -1,0 +1,203 @@
+{
+  "schema": "helmut-w15-one-time-encrypted-transfer-plan/1",
+  "status": "PREPARED_REQUIRES_EXPLICIT_ONCE_GO",
+  "transferId": "w15-end500-20261029-26d5a4135ca7415ca41262fc45b561c8",
+  "nonce": "26d5a413-5ca7-415c-a412-62fc45b561c8",
+  "transferRunId": "20261029010443",
+  "transferRunIdIsGitHubActionsRun": false,
+  "runAttempt": 1,
+  "inputDataTransferAuthorized": false,
+  "end500StartAuthorized": false,
+  "source": {
+    "threadTitle": "Hauptthread",
+    "threadId": "01a17c84-6676-71ca-ab08-d63e6e5cf05c",
+    "sourceToolCommit": "66efb89a42e3d1bee739844ac32a258d79b38ebb",
+    "sourceInventoryProofSHA256": "8be2200303e555fab66648f88068244f35ba19eee599d9b7243e43b647ccbe84",
+    "sourceInventoryCanonicalSHA256": "9ebcca77ae305c5dad16054b2f23384d9acc72dfdf0e66b28cb8f98cdc405437",
+    "freshlyVerifiedFiles": 12,
+    "freshlyVerifiedBytes": 242570240,
+    "observedFreeDiskBytes": 2084634624,
+    "selectedInputPins": {
+      "auth": {
+        "stagedPath": "auth.json",
+        "bytes": 13616854,
+        "sha256": "21581de406364417f262d9e17afff42e9c95b8f857b738e6889e75709e9176ac"
+      },
+      "evidenceRows": {
+        "stagedPath": "evidenceRows.json",
+        "bytes": 60645822,
+        "sha256": "dd600aa4e272e8cf7b6f3125c6de2a347a8346f37fc9ae4e075cfa1d96bffcd5"
+      },
+      "privateDraftStoreRows": {
+        "stagedPath": "privateDraftStoreRows.json",
+        "bytes": 5771345,
+        "sha256": "338d27b38389f524cb8bb4326458f36ca299d6bd0088e440616193ee8f69e353"
+      },
+      "resultRows": {
+        "stagedPath": "resultRows.json",
+        "bytes": 29294535,
+        "sha256": "42b4abc1e79559a6fe1af20a9fd9f34ada459e60ce1c4aa6d6284ad81b5b059b"
+      },
+      "privateDraftReviewRows": {
+        "stagedPath": "privateDraftReviewRows.json",
+        "bytes": 8267504,
+        "sha256": "8ec9271230a7bdee63a08fbeacd0d8ee190d13b2b9522e3f5a90936245010628"
+      },
+      "seed": {
+        "stagedPath": "seed.sql",
+        "bytes": 118800333,
+        "sha256": "a91d74064c3a717777cd25a743de27aaba4cb3dd0529b85270d24c503e5717d4"
+      },
+      "currentCommand": {
+        "stagedPath": "currentCommand.json",
+        "bytes": 1169844,
+        "sha256": "ee866daff1c7c2b2e13f8b28938a4d14344f11c815e074f78d9acb9713413ee9"
+      },
+      "frozenSourceDump": {
+        "stagedPath": "frozenSourceDump.dump",
+        "bytes": 4981565,
+        "sha256": "06c6f37c7189dd166641d867809d42424f5c44618ab5cf6974939057ad61025c"
+      },
+      "localRoles": {
+        "stagedPath": "localRoles.sql",
+        "bytes": 658,
+        "sha256": "d9a99d567346768110a91f10033fd32cfa6e2a88dedd52ee59bfe62136ba0e02"
+      },
+      "bound": {
+        "stagedPath": "bound.json",
+        "bytes": 4985,
+        "sha256": "5d61bb67ff0def43d4cc24ad11db59bb388e0a0b630393b173a9178b5bd2bf2c"
+      },
+      "boundReview": {
+        "stagedPath": "boundReview.json",
+        "bytes": 4438,
+        "sha256": "dae2ff8b04ba57ae021cd9c129556edc7e06af0b717eea123ba056f890b5b499"
+      },
+      "reception": {
+        "stagedPath": "reception.json",
+        "bytes": 12357,
+        "sha256": "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1"
+      }
+    },
+    "originalPathResolution": "Use the pinned source-export-request and immutable reception report. Do not guess dump/role receivedPath values.",
+    "privateStagingRequired": true,
+    "privateStageRoot": "/workspace/shared/w15-end500-20261029-26d5a4135ca7415ca41262fc45b561c8/input",
+    "cipherRoot": "/workspace/shared/w15-end500-20261029-26d5a4135ca7415ca41262fc45b561c8/cipher",
+    "stagePolicy": "Exactly one private byte-identical selected staging copy, 0700/0600, no hardlinks/symlinks; no original changes.",
+    "minimumFreeDiskBeforeOperationBytes": 1400000000,
+    "originalsRetained": true
+  },
+  "receiver": {
+    "threadTitle": "W15 GitHub-End500-Test vorbereiten",
+    "threadId": "01a18445-5b02-7203-bf2e-3146831d6050",
+    "fingerprint": "7E3998A6C2CB948C69A2EE51F4267ABF26796EDC",
+    "publicKeyBytes": 1367,
+    "publicKeySHA256": "3075683711733f6c7fc5836c9b4f5f1d94eaf35dec7f9a401132f52995122443",
+    "publicKeyRepositoryAsset": "docs/betrieb/belege/w15-end500-transfer-20261029/receiver-public.asc",
+    "privateKeyOutsideRepository": true,
+    "privateKeyPassphraseProtected": true,
+    "localChallengeDecryptVerified": true,
+    "localProtectedSecretExportRestoreVerified": true,
+    "receiverPrivateRoot": "/workspace/shared/helmut-w15-end500-receiver-20261029",
+    "targetCipherRoot": "/workspace/shared/helmut-w15-end500-receiver-20261029/private/incoming-cipher",
+    "targetSelectedInputRoot": "/workspace/shared/helmut-w15-end500-receiver-20261029/private/received-26d5a4135ca7415ca41262fc45b561c8",
+    "minimumFreeDiskBeforeOperationBytes": 1400000000
+  },
+  "durableRecovery": {
+    "method": "Encrypted new receiver-key recovery wrapper in the existing private Drive folder, encrypted only to the already verified independent recovery public key.",
+    "recoveryRecipientFingerprint": "DCFD605ED28EEACA9B826105E769DE07A68BA8E4",
+    "recoveryPublicSHA256": "b2618129787ffbacaa1abbe6b46cd90f549022318feb4c473e663dd03c8e1bf8",
+    "recoveryCipherBytes": 3298,
+    "recoveryCipherSHA256": "753b8bdaad77d992ee21d0099dd43614ab367403c97ba1213d6206aa7b959714",
+    "independentOldRecoveryKeyProof": "https://drive.google.com/file/d/1MKZY2BMltoqlo-YeD__05UypywupjkSY/view",
+    "oldKeyControlRecoveryVerified": true,
+    "newWrapperOffhostRestoreVerified": false,
+    "alreadyUploaded": false,
+    "requiredFirstAfterGO": "Upload public receiver key and encrypted recovery wrapper only to the specified existing folder, then fully read both back and verify bytes/SHA before uploading W15 ciphertext."
+  },
+  "transport": {
+    "route": "SOURCE_CODEX_CLOUD -> EXISTING_PRIVATE_GOOGLE_DRIVE -> THIS_CODEX_CLOUD",
+    "folderId": "1gvYcdBSGYscOmTxYeJSJ3TpbacyJWBFd",
+    "folderURL": "https://drive.google.com/drive/folders/1gvYcdBSGYscOmTxYeJSJ3TpbacyJWBFd",
+    "macInDataPath": false,
+    "newInfrastructure": false,
+    "uploadTool": "google_drive_upload_file",
+    "uploadFileArgument": "absolute local cipher-part path as file_uri; parent_folder_id is the fixed folder ID",
+    "currentUploadWriteAndSizeLimitVerified": false,
+    "downloadToolSequence": [
+      "google_drive_get_file_metadata",
+      "google_drive_fetch(download_raw_file=true,include_base64=false)",
+      "download_file for returned sediment://file_ IDs only"
+    ],
+    "downloadToolMaximumBytesPerFile": 33554432,
+    "cipherPartBytes": 16777216,
+    "maximumCipherBytes": 242701312,
+    "maximumCipherParts": 15,
+    "plaintextArchiveCreated": false,
+    "sourceSealFormat": "Existing seal.py binary GPG encryption without compression, stream tar with short regular file names, exact 12-file manifest.",
+    "remotePlaintext": false,
+    "publicLogsOrArtifacts": false,
+    "cacheAllowed": false
+  },
+  "verification": {
+    "beforeCipher": "Repeat exact source inventory, compare 12 input SHA/bytes/owner/mode, stage exactly selected files, compare stage hashes, bind recipient fingerprint/public SHA and transfer manifest.",
+    "beforeDecrypt": "Verify each ordered part SHA/bytes and full reassembled cipher SHA/bytes against the sender receipt; verify context and key fingerprint.",
+    "afterDecrypt": "GPG authenticated EOF and zero exit; only 12 expected ordinary tar members; preserve private source bytes, verify all 12 hashes twice and total242570240; validate Bound/review/reception; no test authority.",
+    "durableReadback": "Keep verified private Drive cipher parts and key-recovery wrapper; keep sender originals and all receipts. Local received files alone do not establish offhost durability.",
+    "offhostRecoveryLimit": "The existing recovery key is historically independently restored. The newly generated wrapper is recipient-bound and its protected inner key restored locally; new-wrapper offhost restore is not yet performed."
+  },
+  "failureAndRollback": {
+    "unknownUploadOutcome": "Stop and inspect metadata read-only; no blind second upload or retry/resume.",
+    "changedPinWrongRecipientOrMissingData": "Stop before upload/decrypt; keep private evidence, never weaken validation.",
+    "partialReceiver": "Keep partial private destination; no overwrite/reuse and no acceptance receipt.",
+    "sourceDeletion": false,
+    "keyDeletion": false,
+    "productionRollbackNeeded": false,
+    "fallback": "Retain originals. Recovery is through the existing recovery private key and encrypted receiver wrapper; a new export needs a new concrete authorization if the first operation is unresolved."
+  },
+  "scopeExcludes": [
+    "End500/Mock500 start",
+    "profile changes",
+    "Production changes",
+    "GitHub secret/environment changes",
+    "old private key or passphrase transfer",
+    "whole historical archives",
+    "unrelated original files",
+    "automatic deletion or paid resources"
+  ],
+  "preparedCodePins": [
+    {
+      "path": "scripts/w15-github/seal.py",
+      "bytes": 17712,
+      "sha256": "8b53d00bce0551a85b4def441c579c0d5933e82d538d08cbeca189220579e0e5"
+    },
+    {
+      "path": "scripts/w15-github/receive.py",
+      "bytes": 14801,
+      "sha256": "0870bd71792649ddec6570f99a77e0755a9172a08ec61869e211edb3880ed8d9"
+    },
+    {
+      "path": "scripts/w15-github/prepare.py",
+      "bytes": 9625,
+      "sha256": "01eff4df5b5f6d9ef28d5e55f1ba09c0d54d6f25ba3c4fc4db59c590ddf4bbb9"
+    },
+    {
+      "path": "scripts/w15-github/source_inventory.py",
+      "bytes": 8012,
+      "sha256": "87af2db104d4f03d2417695f0f00354506293fedde207c62e068a86ec3b6ceb1"
+    },
+    {
+      "path": "scripts/w15-github/controller_context.py",
+      "bytes": 10339,
+      "sha256": "6d7fd10838a2173abca2024a1279b2eea41af24703ce174f5c86c474413ac3b9"
+    }
+  ],
+  "githubMemoryContract": {
+    "version": "helmut-w15-end500-memory-check/3",
+    "containerMemoryLimitBytes": 2560000000,
+    "maximumActualCommonLifetimePeakBytes": 2048000000,
+    "requiredPhysicalReserveBytes": 512000000,
+    "swapBytes": 0,
+    "executionAuthority": false
+  }
+}

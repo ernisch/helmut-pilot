@@ -1,0 +1,12 @@
+{
+  "schema": "helmut-w15-root-readonly-owned-process-observation/1",
+  "recordedAtUTC": "2026-10-28T15:59:23.325239+00:00",
+  "method": "One actual cached Node /proc inspection, excluded the inspecting process, matched owned command lines against /tmp/w15-memory-atomic-20261028b; no signal, SQL, restart or write request",
+  "ownedLiveProcesses": [],
+  "ownedObserved": [],
+  "commonKernelPeakBytes": 1444556800,
+  "commonCurrentBytesAtObservation": 367247360,
+  "observationTimestampNotRetainedByOriginalCommand": true,
+  "historicalMissingPostgrestStopReceiptPreserved": true,
+  "newDiagnosticAttempt": false
+}

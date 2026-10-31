@@ -1,0 +1,146 @@
+{
+  "schema": "helmut-w15-public-minimal-full500-result/1",
+  "status": "FAIL_LOCAL_MOCK500_FIRST_AUTH_COVERAGE_ERROR",
+  "scope": "One new actual isolated local mock attempt, not historical results and not Production proof. Detailed immutable source evidence retained in protected cloud; public report deliberately omits private paths/input payloads.",
+  "codeCommit": "98be4f6687b40145a8bc4907b8a7dc48197f6d49",
+  "sourceQualification": {
+    "profiles": 500,
+    "pass": 500,
+    "fail": 0,
+    "independentReviewAccepted": true
+  },
+  "firstFailure": {
+    "name": "AssertionError",
+    "reason": "w15-full500-all-unit-auth30-cas-assigned"
+  },
+  "failedProfileNumber": 1,
+  "failedIndex": 0,
+  "failedOwner": "test-kohorte-synthetik-bb-001",
+  "concurrentActiveProfiles": 500,
+  "completedNativeDRUnits": 1,
+  "acceptedFullRunnerUnits": 0,
+  "unattemptedUnits": 499,
+  "localMockResponses": 2,
+  "actualStoredResults": 3,
+  "privateDraftReviewReceipts": 2,
+  "genuineSafetyControls": 16,
+  "requiredSafetyControls": 8000,
+  "unitTiming": {
+    "definition": "Immediately before J.enter through ACK of J.finish mutation, as existing approved contract",
+    "wallMs": 56435.357164,
+    "under60": true,
+    "httpWallMs": 61202.063472,
+    "httpUnder60": false,
+    "endToEndUnder60Claimed": false
+  },
+  "authObserved": {
+    "authMutations": {
+      "observed": 8,
+      "maximumWallMs": 667.2950560000027
+    },
+    "usageSinks": {
+      "observed": 2,
+      "maximumWallMs": 619.2274850000031
+    },
+    "casWrites": {
+      "observed": 12,
+      "maximumWallMs": 568.1140739999973
+    }
+  },
+  "authCoverage": {
+    "allEnvelopesAcknowledgedUnder30": true,
+    "allWritesAssigned": false,
+    "allWritesAcknowledged": true,
+    "allWritesBoundedByEnvelope": false,
+    "eachEnvelopeHasWrite": true,
+    "observedCASWrites": 12,
+    "mutationEnvelopes": 8,
+    "usageEnvelopes": 2,
+    "usage1000": false,
+    "pass": false
+  },
+  "unassignedCAS": [
+    {
+      "id": 1,
+      "wallMs": 418.36206800000036,
+      "acknowledged": true
+    },
+    {
+      "id": 10,
+      "wallMs": 427.28974899999594,
+      "acknowledged": true
+    }
+  ],
+  "auth30FullyProved": false,
+  "cause": "Existing observer covers public mutateAuthStore and usage sinks; two lexical pipeline-lock writes have no full call envelope. Native write ACKs were observed; queue/read/callback-to-ACK duration of these calls was not fully bound. No threshold relaxation or retrospective PASS.",
+  "exactCASIDToCallerStack": "NOT_CAPTURED; lock acquire/release association inferred from actual timing and source call paths, not an original stack trace",
+  "resultFlags": {
+    "missing": 1497,
+    "empty": 0,
+    "duplicate": 0,
+    "technicallyInvalid": 1500,
+    "unusable": 1497
+  },
+  "flagsMayOverlap": true,
+  "resultFlagInterpretation": "1497 missing;0 empty;0 duplicate;1500 formally technically unaccepted because the required full journal closure is absent. The3 existing results pass individual payload/retained/hash/source checks and await professional acceptance.1497 unusable flags here identify missing results, not generated junk.",
+  "independentReadback": {
+    "owners": 500,
+    "positions": 1500,
+    "checks": 17000,
+    "passedChecks": 1530,
+    "failedChecks": 15470,
+    "storedOwnerPassedChecks": 33,
+    "storedOwnerTotalChecks": 34,
+    "storedOwnerOnlyFailedCheck": "all500 journal closed without in-flight work",
+    "activeProfiles": 0,
+    "nativeEndState": "beendet",
+    "authUnchangedDuringAudit": true
+  },
+  "memory": {
+    "kernelPeakBytes": 966053888,
+    "limitBytes": 2048000000,
+    "technicallyEnforced": true,
+    "swapMaximumBytes": 0,
+    "swapCurrentBytes": 0,
+    "reserveBytes": 1081946112,
+    "minimumReserveBytes": 409600000,
+    "reservePercent": 52.8294,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "recoveryOccurred": false,
+    "scope": "Common original cgroup including actual PG/PostgREST/gateway/HTTP-driver/mock and closure. Only this aborted1-unit run, not full500 memory proof."
+  },
+  "cleanup": {
+    "beforeActive": 500,
+    "afterActive": 0,
+    "nativeBoundZero": true,
+    "confirmedZero": true,
+    "independentlyConfirmedZero": true
+  },
+  "originalFiles": {
+    "count": 11,
+    "bytes": 96530256,
+    "hashesUnchanged": true
+  },
+  "originalSourceDatabaseUnchanged": true,
+  "newTestContainers": 1,
+  "newFullAttempts": 1,
+  "retryOrResumePerformed": false,
+  "unitReplaysPerformed": 0,
+  "realModelCalls": 0,
+  "productionActions": 0,
+  "merges": 0,
+  "newPaidResources": 0,
+  "professionalOrProductionAcceptance": false,
+  "realModelQualityAccepted": false,
+  "localMock500Pass": false,
+  "productionProof": false,
+  "currentOneFullAttemptAuthorizationConsumed": true,
+  "nextRequiredStep": "After new GO only: bind the existing pipeline-lock acquire/release APIs into complete auth call timing and CAS assignment. No security/threshold changes; no retrospective reclassification or replay. A further full attempt needs renewed explicit authorization."
+}

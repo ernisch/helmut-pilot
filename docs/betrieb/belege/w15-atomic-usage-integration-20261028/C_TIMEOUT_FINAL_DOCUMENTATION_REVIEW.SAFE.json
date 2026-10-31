@@ -1,0 +1,159 @@
+{
+  "schema": "helmut-w15-independent-documentation-review/1",
+  "status": "PASS_STATIC_DOCUMENTATION_PRIVACY_AND_EVIDENCE",
+  "reviewedAtUTC": "2026-10-28T18:30:12.573992+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "actualIOCodeCommit": "63f37c7d",
+  "manifestFilesReviewed": 76,
+  "manifestPayloadBytes": 4259336,
+  "unchangedHistoricalFiles": 68,
+  "newTechnicalFiles": 8,
+  "checks": [
+    {
+      "name": "manifest",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "76technicalfiles4259336Bexactsize/hash;all68historicalentries unchanged;8newfiles and noRAWIOresult orOriginalAuth/native120MBdata."
+    },
+    {
+      "name": "actual_outcomes",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "OverallIOcheckFAIL/drainpreparation retained;sync andasynccompleteonly,4faultcasesNOT_EXECUTED,controlleddrainnotaccepted. End500conditionalattemptunused/notstarted; noMock500/ProductionPASS."
+    },
+    {
+      "name": "normal_IO_proof",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "Bothmodes10820exactoriginalpayloads+10821completednativeSyncs/ACK; payloadhashidentical5aa7c192... . Producerloop16226.024010→182.817406ms,normalasynctotal17575.737520msvssync16266.034718ms:notafasterIOclaim."
+    },
+    {
+      "name": "summary_exactness",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "AllnonIOresultfieldsbyte/JSONvalueexactfromprivate11,375,407Bresult;phasecounts/sums/p95/max recomputedfromoriginalmeasurements agree. Rawresultpinb5e37a1e... referencedonly."
+    },
+    {
+      "name": "drain_UNKNOWN",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "10756payloadprepareprefix/default15sbarrierfailedbeforelast64/readysignal;10299parsedpayloads/lastsourceindex10298 arepresentdata,notdurableacceptedACKcount. AllCsource10820unchanged."
+    },
+    {
+      "name": "process_and_signals",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "Parentexit1Rootprimary;failedchildexit/signalUNKNOWNnotinventedSIGKILLreceipt. All3registeredchildPIDsabsent inpostfailureROinspection;0externalRootsignalssent afterfailedbindingchecks. CPostgRESTgenuineclosurePASS separate."
+    },
+    {
+      "name": "native_zero",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "ExactlyoneindependentauthorizedREADONLY500profile/0active query reused;no3501/6000repetitionorDBmutationbyIOprogram."
+    },
+    {
+      "name": "causality",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "Cclosed10000msreadtimeouttriggerproven,causeshared8.4s/8.5sgapUNKNOWN. Successfulindex368nativewrappervs1.100660sGatewaydurationskeptseparate. CPU/IO/PSIcounterlimits andcheckpoint4.268snotmisattributed."
+    },
+    {
+      "name": "proposed_only_patch",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "3smallchanges shownunapplied/untested:64eventprefixflushes underexisting15sdeadline,fatalchildexit1,exitreceiptfilebeforeassertion. Patchsourcehash/payloadhash exact;nofdatasyncdurabilitypromise inferred fromsave(). Existing source remainsunchanged."
+    },
+    {
+      "name": "privacy",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "All8newpublicfilesscannedstructurally;noJWT/privatekeys/email/credential/payloadbody/originalAuthcontent. Technicalhashes/loop/io/cgroupcounters andproposedcodeonly;allprivatepayloadcopiesremainoutsideGit."
+    },
+    {
+      "name": "source_CI",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "Actualcode63f37c7dpinsunchangedafterFAIL;unexecutedmemory-Dwiringnotactive.319bf131CIgreen/browseractualskipscopedto319;63headCIstillseparate/nogreenrelabel."
+    },
+    {
+      "name": "docs_and_bounds",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "CURRENT_STATE26533characters,localMarkdownlinksexist. Noglobalclock/timeout/RAM/cost/safetyrelaxation, retry ornewinfrastructure. NewtargetedGOrequiredforcorrectedboundedabruptdrainproof;laterEnd500requiresindependentbinding/space/RAMreadiness."
+    },
+    {
+      "name": "review_scope",
+      "status": "PASS_STATIC_PUBLICATION_REVIEW",
+      "finding": "Thisfinalpublicationreviewusedonlyexistingfiles/offlinehashes;0tests/HTTP/SQL/signals/containerstarts/sourcechanges. Positivefindingsarenotabruptdrainacceptance."
+    }
+  ],
+  "documentAndManifestPins": [
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/docs/CURRENT_STATE.md",
+      "bytes": 26813,
+      "sha256": "3d0f2d5d4306fadb105f0e64d579654cd6a36f2438b286ac9279372494e4d38d"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/docs/betrieb/w15-atomic-usage-integration-20261028.md",
+      "bytes": 35004,
+      "sha256": "e053199b1db90f403f1170facdc8b2835f8be9dc9eddc2668ea9e81e6ed28980"
+    },
+    {
+      "path": "/workspace/helmut-w15-atomic-integration/docs/betrieb/belege/w15-atomic-usage-integration-20261028/MANIFEST.SAFE.json",
+      "bytes": 17340,
+      "sha256": "aa941cb3b26de4aa7e2160d6a200f96e932a2103a9a0d4ed06791979be22762b"
+    }
+  ],
+  "newPublicFilePins": [
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/C_TIMEOUT_CAUSAL_ANALYSIS.SAFE.json",
+      "bytes": 22573,
+      "sha256": "6d448448e1ffff14f93e3cc2bd462dbe22d2263c09b4a85d2e79c75aeda7eb39"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/C_TIMEOUT_READONLY_KERNEL_COUNTERS.SAFE.json",
+      "bytes": 2781,
+      "sha256": "08656ab43a6e3738a57aa74d32cbda8a37e54372662f257de767c04e4c988d29"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_FIX_PROPOSAL.SAFE.json",
+      "bytes": 684,
+      "sha256": "08c4c79a08982bcacfdb8c974d2c511fc524d333668e03ed4d8751ab4924164b"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_DRAIN_FIX_UNAPPLIED.patch",
+      "bytes": 3073,
+      "sha256": "edf50dde23439b17ceeb920ca9fecd9e742b07f638319b071b3c24ed5e6db2ce"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_IO_NATIVE_ZERO_AND_PROCESS_END.SAFE.json",
+      "bytes": 1443,
+      "sha256": "79f5e866d10c0dcbf850e6ea99b16f71ace9073ab1340e99d99a69b9807dfc1f"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_IO_PRESTART_REVIEW.SAFE.json",
+      "bytes": 7938,
+      "sha256": "ee76532b2bcb80ea926edea1cfe2d82ddeacabd50be0091e922041f05fdea3db"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_IO_RESULTS_REVIEW.SAFE.json",
+      "bytes": 14045,
+      "sha256": "c8a42edba6a3f36661648adca4dc3f0d9fff87e1a52ae840400eb7f613e86434"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/JOURNAL_IO_RUN_SUMMARY.SAFE.json",
+      "bytes": 5813,
+      "sha256": "924ea275f7fb05b9ca0445ac55aa1b91fc952c5afa185360745917495e6f4932"
+    }
+  ],
+  "currentIndependentIOReviewSHA256": "c8a42edba6a3f36661648adca4dc3f0d9fff87e1a52ae840400eb7f613e86434",
+  "reviewActions": {
+    "runtimeTests": 0,
+    "HTTP": 0,
+    "SQL": 0,
+    "signals": 0,
+    "sourceChanges": 0
+  },
+  "verdict": {
+    "publicationAccuracyPrivacy": "PASS",
+    "actualIOOverall": "UNCHANGED_FAIL",
+    "normalAsyncPayloadAndACK": "SCOPED_PASS",
+    "controlledAbortDrain": "NOT_ACCEPTED",
+    "historicalCSharedGapCause": "UNCHANGED_UNKNOWN",
+    "newEnd500Started": false,
+    "full500Acceptance": false
+  },
+  "limitations": [
+    "Reviewcoverscurrent76entrymanifest excludingthisnewreview. Copyingreviewrequiresnewmanifestentrywithfreshsize/hash.",
+    "Unappliedpatchisproposedcode,nottestedorapprovedruntimecorrection.",
+    "CIafterpushmustbelabeledbyexacthead;no manualCIrepeatrequested."
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "schema": "helmut-w15-full500-public-independent-memory-zero/1",
+  "status": "FAIL_MEMORY_RESERVE_CONFIRMED_ZERO_AND_ORIGINALS_PRESERVED",
+  "reviewedAtUTC": "2026-10-28T07:39:58.467452+00:00",
+  "reviewActions": {
+    "readOnlyDatabaseSnapshots": 1,
+    "databaseWrites": 0,
+    "unitExecutions": 0,
+    "providerCalls": 0,
+    "sourceQualifierReruns": 0,
+    "containerStartsOrRestarts": 0,
+    "memoryOrCacheChanges": 0,
+    "codeOrConfigEdits": 0
+  },
+  "memoryVerdict": {
+    "comparisonBudgetBytes": 2048000000,
+    "minimumReservePercent": 20,
+    "requiredReserveBytes": 409600000,
+    "maximumAllowedPeakBytes": 1638400000,
+    "firstStopPeakBytes": 1640103936,
+    "firstStopCurrentBytes": 1460740096,
+    "firstStopReserveBytes": 407896064,
+    "firstStopReservePercent": 19.9168,
+    "finalLifetimePeakBytes": 1640103936,
+    "finalReserveBytes": 407896064,
+    "finalReservePercent": 19.9168,
+    "reserveShortfallBytes": 1703936,
+    "reserveCriterionPassed": false,
+    "firstStopAndFinalPeakEqual": true,
+    "postCleanupAuditRaisedPeakFurther": false,
+    "hardCapReached": false,
+    "oomObserved": false,
+    "swapObserved": false,
+    "originalCgroupStillPresentAndIndependentlyReadable": true,
+    "controllerOriginalFinalPeakVerifiedFlag": false,
+    "controllerFlagLimitation": "Controller flag remains false because its existing supervisor memory failure prevents acceptance; this independent review verifies the numerical peak in the same unrestarted original cgroup and does not convert the failed reserve criterion into PASS.",
+    "noBaselineOrFileCacheSubtraction": true
+  },
+  "samplingEvidence": {
+    "configuredSupervisorIntervalSeconds": 0.1,
+    "actualTotalSupervisorSamples": null,
+    "actualTotalSupervisorSamplesKnown": false,
+    "retainedOuterMemorySamples": 86,
+    "uniqueRetainedOuterSampleTimestamps": 86,
+    "finalCommonMemorySamples": 1,
+    "existingDiagnosticMemorySamples": 1,
+    "independentKernelSnapshots": 2,
+    "limitation": "The controller retains progress snapshots rather than every0.1s iteration.86 retained outer snapshots are verified; total monitoring-iteration count cannot be reconstructed exactly."
+  },
+  "hardCap": {
+    "restartCount": 0,
+    "oomKilled": false,
+    "dockerMemoryBytes": 2048000000,
+    "dockerMemorySwapBytes": 2048000000,
+    "network": "none"
+  },
+  "finalKernelObservation": {
+    "observedAtUTC": "2026-10-28T07:39:58.462498+00:00",
+    "memoryMax": "2048000000",
+    "swapMax": "0",
+    "peakBytes": 1640103936,
+    "currentBytes": 811974656,
+    "swapCurrentBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    }
+  },
+  "zero": {
+    "active": 0,
+    "profiles": 500,
+    "identities": 501,
+    "readOnly": "on",
+    "nativeEndState": "beendet",
+    "nativeBindingMatchesCleanupContext": true,
+    "cleanup500To0Confirmed": true
+  },
+  "originals": {
+    "files": 11,
+    "totalBytes": 96530256,
+    "allMatchReceipt": true,
+    "sourceDatabaseBeforeAfterByteEqual": true
+  },
+  "exactPeakCauseKnown": false,
+  "noCacheOrBaselineSubtraction": true,
+  "full500Proof": false,
+  "productionProof": false
+}

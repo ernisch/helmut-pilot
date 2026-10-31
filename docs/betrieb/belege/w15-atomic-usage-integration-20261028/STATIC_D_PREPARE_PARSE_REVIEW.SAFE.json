@@ -1,0 +1,148 @@
+{
+  "schema": "helmut-w15-independent-D-static-preparation-review/1",
+  "status": "PASS_STATIC_LOCAL_PREPARATION_AND_PARSE_ONLY",
+  "reviewedAtUTC": "2026-10-28T19:20:44.830387+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "baseHead": "fdf693426c5798456d612205626e13be61713404",
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.js",
+      "bytes": 17599,
+      "sha256": "939d7c9c71d4f39161f2693034b057ac8167d4dbd4eee638c7b4252c0f797efe"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 28552,
+      "sha256": "d57be24369cd8d36aa74ca55163d9171e76be810da5e0ceaa81daaeee3f72b82"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-forward.py",
+      "bytes": 32256,
+      "sha256": "8533748af9e2b66f6c07d51f34c7d74435313d1bd1f9b65c3d83169372bf0054"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-sql-preflight.py",
+      "bytes": 10841,
+      "sha256": "5909a31eac1d6769785788c2cf0ad417cc38ce28ff5aa7e725dd882c2a6ecf85"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-memory-final-audit.py",
+      "bytes": 19123,
+      "sha256": "dc9afa6f60814ffbde291734b7c4b1628cfccfe22b93965a59505a2102b9eaaa"
+    }
+  ],
+  "checks": [
+    {
+      "name": "scope",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Onlytargetedfile/static-controlproofs,SQLParse/DescribeonexistingDandapproximately9MiBprotectedappstagingpermitted. NofreshDB/container/500CASdiagnosisuntilfinalstartreview."
+    },
+    {
+      "name": "prepare",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Existingreviewedplanstatusand1512501248Bfreeguard beforeonce-onlyPREP;app-onlycopywithout143MiBbin-stageduplicate,treefilespinned/nonsymlinkaftercopy;actualappallocatedbytessubtractedonceatlaterstartgate."
+    },
+    {
+      "name": "seed",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Exactregularprivate118800333Bhistoricseed/SHAa91d7406...reusedROonefilemount/runoutsideBASE;actualRW=falseinspected;pre/posthashchecks;uid1000/0600readablebynewpsqlwithoutoriginalpermissionchange. NoPGDATA/state/mutablealias."
+    },
+    {
+      "name": "isolation",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "FreshDDB/container/work/base consistentlybound;networknone/pinnedcachedimage/nopull/restartno;2.048GBkernelcap/Swap0originalreserveguardunchanged."
+    },
+    {
+      "name": "restore",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Explicit500profiles+0activeverifiedandpersistedafterrestore;actual3501seednativepostimageconfirmation+complete6000bootstraplogicalhash beforeprocessing."
+    },
+    {
+      "name": "lifecycle",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Synchronousstoplatchguardsoperation/diagnosticcallback/nativewriter beforecallandafterawait;deepcopiedinitialUNKNOWNcapturedbeforewaiting;alreadyinflightresultcannotbeacceptedprogressafterstop."
+    },
+    {
+      "name": "close",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Oneidempotentsealstopstimers/GConce,preservesallGCrowsbeforewritefailure,awaitsinflight/flush/closewithinremainingreal15s;protectedfinalsampledoesnotskipclosing;firsterrorUTC/metadataretained."
+    },
+    {
+      "name": "durable_progress",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "AcceptedpostimageawaitsrealjournalwriteACKbeforereport.cas/terminalprogress. AuthAPIanddurableobservationelapsedbothretained/no subtraction. JournalfailureandserviceSTOPblockfreshnativecall."
+    },
+    {
+      "name": "gateway",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "MEMORY-onlyasynclog;firstPGexitcallbacklatchesunexpectedexitbeforestartupawait;READYrechecks. Newrequestsrejectedafterstop. RealownedPGexit/socketsretainedthenlogclosed/confirmedreceipt;15scombinedtimer,4sPG/1.5ssocket/20sownedstopunchanged."
+    },
+    {
+      "name": "disk_guard",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Outer0.1skernel/diskwatchplusper-public/mutator/nativeSTATEstatfs224MiBfloor. Phasecapturefloorremaining64MiBarchiveallowance+64MiBclosure;verify64MiB. Knownpressurestopsfurtherprocessing,notanallocationquota/fitguarantee."
+    },
+    {
+      "name": "parser",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "ExistingintegrationDonlymetadata/permissionchecks plusParse/Describechangedgeneratedstatements;noExecute,newDBorDDL.3501exactseedSQLhashproofsreused;newDCreateand4newAuditSELECTsbuiltfromactualsource,allimportedDBcalls explicit."
+    },
+    {
+      "name": "audit",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "ExactlyonefreshDrepeatable-read/read-onlynativecapturewithhistorical45sstatementlimit,3slocklimit. Metadata500/0/6000andall3501fullpostimages;onlyrevision/probeexcluded;Decimalcomparisonpreventsfloatconflation."
+    },
+    {
+      "name": "lossless_gzip",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "No120MBsecondrawfile;fullprivategzip<=64MiB,raw<=128MiB,row<=20MiB,EOF/CRC+rawsize/hashroundtrip+deepverify;300sactivebudget+boundedownedprocesscleanupseparatelydisclosed. No truncatedsuccess."
+    },
+    {
+      "name": "audit_stop",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Mandatorydiskguard/owned-audit-groupcallback;registeredfreshauditPID/psqlDBnamespace,ownedinnerstopbeforeclientgroupfallback. Failedownership/cleanuprecordsUNKNOWN/FAIL,noreadretry."
+    },
+    {
+      "name": "final_guards",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Independentnativeauditafterserviceclosure,andfreshzeroafteritsconsistenttransaction;CGkernelpeakstillwatched/checkedafterauditandwithconservativephysicalprojection+64MiBmargin. Unknownprojectionnot0."
+    },
+    {
+      "name": "reuse",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Journal10820/realdrain/fourfaults,source500/Auth16/HTTP49/prepared0componentproofsreusedonlyintheirexactscope. NohistoricalFAIL/UNKNOWNrelabel,noCoreStorage/Auth/cost/sourceweakening."
+    },
+    {
+      "name": "pending",
+      "status": "PASS_STATIC_SCOPED",
+      "finding": "Newlifetimecheckfilehasnotbeenreviewedorperformed;actualnewcodeccontrols/parser/preparation/finaldiskcapacity&sourcebindingresultsremainpending. NoEnd500orMock500startapprovalfromthisreport."
+    }
+  ],
+  "allowedNextActions": {
+    "sourceBoundFileControlsAfterOwnTestPrestart": true,
+    "SQLParseDescribeExistingIntegrationD": true,
+    "smallLocalAppPrepareOnly": true,
+    "newDatabase": false,
+    "newContainer": false,
+    "End500CASDiagnostic": false,
+    "Mock500": false
+  },
+  "sourceSeedMetadataObserved": {
+    "bytes": 118800333,
+    "uid": 1000,
+    "mode": "0600",
+    "hashReusedFromParentAndRuntimeCheckRequired": "a91d74064c3a717777cd25a743de27aaba4cb3dd0529b85270d24c503e5717d4"
+  },
+  "reviewActions": {
+    "tests": 0,
+    "HTTP": 0,
+    "SQL": 0,
+    "signals": 0,
+    "sourceChanges": 0
+  },
+  "limitations": [
+    "Staticreadinessonly;actualtargetedcheckresultsnotknown.",
+    "Preparationplanand224MiBguardarenotfilesystemquotaorfullstartPASS.",
+    "NewLifecyclefileprestart/execution/reviewandfinaldisk/startapprovalmandatorybeforeoneDdiagnosis."
+  ]
+}

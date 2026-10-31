@@ -1,0 +1,50 @@
+{
+  "status": "PASS_ALL_GENERATED_DIAGNOSTIC_SQL_PARSE_DESCRIBE_NO_EXECUTION",
+  "statements": 3512,
+  "newlyParsedStatements": 1,
+  "exactPriorHashReusedStatements": 3511,
+  "workloadStatementsExecuted": 0,
+  "newDatabaseCreated": false,
+  "plannedDatabase": "helmut_w15_memory_atomic_20261028b",
+  "sourceSnapshotUnchanged": true,
+  "parserReportPin": {
+    "bytes": 441802,
+    "sha256": "b5c10b6a6c2bd0725abcde130487c901f4592ddfc64ca34438241d9d186da514"
+  },
+  "sourceRebinding": {
+    "parentReportPath": "/workspace/shared/helmut-w15-memory-forward-20261028/sql-preflight-atomic-c/SQL_PREFLIGHT.SAFE.json",
+    "parentReportSHA256": "b5c10b6a6c2bd0725abcde130487c901f4592ddfc64ca34438241d9d186da514",
+    "parentNewlyParsedStatements": 1,
+    "originalPythonSHA256": "f6e6222f524b60c875372ef8957ea33658ef5b00613676d7aa5b856fcfc2fa0c",
+    "currentPythonSHA256": "1ad6a44ad7f7bf4696579d2b9c00ab1b3ae109c204ca417690891114785c99fd",
+    "reverseSubstitutionExactlyMatches": true,
+    "changedLiteralPairs": [
+      [
+        "inner(w,'run',1800)",
+        "inner(w,'run',3600)"
+      ],
+      [
+        "sql-preflight-atomic-c/SQL_PREFLIGHT.SAFE.json",
+        "sql-preflight-atomic-c/SQL_PREFLIGHT_REBOUND.SAFE.json"
+      ]
+    ],
+    "parserInvocations": 0,
+    "workloadExecutions": 0,
+    "metadataChecksReused": true
+  },
+  "reboundReportPin": {
+    "bytes": 442654,
+    "sha256": "71df76872199585359fbab673c6d3e12e72321486e04e2c2da8f722b53ba3c7c"
+  },
+  "newParserExecutionsForRebinding": 0,
+  "currentSourcePins": {
+    "scripts/synthetik-500-w15-memory-forward.js": "ad35b95c28360fc79799b3f72c34afaa1a0e85815622b0e383f4cdbd11f19338",
+    "scripts/synthetik-500-w15-memory-forward.py": "1ad6a44ad7f7bf4696579d2b9c00ab1b3ae109c204ca417690891114785c99fd",
+    "scripts/synthetik-500-w15-memory-sql-preflight.py": "7b8665c2d6fae085f05216f25418bc8afc93e8afd90ba7ba822f414523b101ad",
+    "scripts/fixtures/w15-durable-observations.js": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8",
+    "scripts/fixtures/w15-owned-process-stop.js": "e2ac57c7f7f47740ca98d1f48e767ab540a6d10af9c4d5041cde7fdf889b0482",
+    "scripts/fixtures/w15-local-memory-budget.json": "83414ddc04a025b20eedd9119657d62689f8e18d2f660b8a3bad85556e2566c7",
+    "scripts/synthetik-500-w15-full500-controller.py": "4fe9b65671af956a3ec88e82b43e2a9af48f1709271808c41381824583428ec8",
+    "scripts/synthetik-500-w15-full500-runtime.js": "1dc68b22e57f69e191693693766e1628e83b0c2253fb3c22d83791ebbb3ce1cd"
+  }
+}

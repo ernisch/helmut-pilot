@@ -1,0 +1,82 @@
+{
+  "schema": "helmut-w15-uploaded-offline-proof-verification/1",
+  "observedAtUTC": "2026-10-29T07:42:16.076292+00:00",
+  "status": "PASS_UPLOADED_OFFLINE_RECOVERY_AND_CONTROL_BINDINGS_ONLY",
+  "uploadedEvidence": {
+    "fileName": "HELMUT_INDEPENDENT_KEY_PROOF.SAFE.json",
+    "bytes": 1338,
+    "sha256": "54ef567fa960508f630bba6c0d33795239e12ef7177ad64535f09cc85aa8f889",
+    "schema": "helmut-independent-browser-key-proof-v1"
+  },
+  "sourceFingerprint": "DCFD605ED28EEACA9B826105E769DE07A68BA8E4",
+  "backupCipherSHA256": "1d7c25d1041fdc91da2151f28cb15ca6d7944fc66107e7c236787c2fd62b77f5",
+  "secretExportSHA256": "d671166bc1a8d387a85b07e1b63ce7aebf57d27458147321142cb3db9aa6f00d",
+  "canonicalControlResponseSHA256": "54768587e5a7330c5f62ed9fbabefba98911fb1cbd497575e39fd1867e762928",
+  "canonicalResponseEncoding": "UTF-8 compact sorted JSON plus LF",
+  "allFiveChecksTrue": true,
+  "challengeIdMatchesPriorEvidence": true,
+  "browserReportedTimeUTC": "2026-10-29T07:08:47.175Z",
+  "executionSurface": "local_file_browser",
+  "operatorOfflineRecoveryVerified": true,
+  "cloudRecoveryKeyRestored": false,
+  "cloudW15RecipientRestored": false,
+  "archiveOrDatabaseRestoreAccepted": false,
+  "rawProofOrControlNoncePublished": false,
+  "archivePassphraseReceived": false,
+  "privateKeyReceived": false,
+  "wrapperFreshMetadata": {
+    "fileId": "1QqKoON859fDE-iwvk3nErSZnN68Tkz8C",
+    "bytes": 3298,
+    "permissions": [
+      {
+        "type": "user",
+        "role": "owner"
+      }
+    ],
+    "newCipherContentDownloadPerformed": false
+  },
+  "handoff": {
+    "protectedLocalOrFileChannelVerified": false,
+    "publicCanaryName": "HELMUT_W15_HANDOFF_CANARY",
+    "publicCanaryValue": "HELMUT-W15-LOCAL-CANARY-20261029",
+    "actualCanaryCheck": "BLOCKED_PUBLIC_CANARY_NOT_LOCAL",
+    "realSecretTransferPerformed": false,
+    "canaryMatchAloneAuthorizesTransfer": false,
+    "newThreadCreated": false,
+    "newKeysGenerated": false,
+    "originalFilesRetransferred": false
+  },
+  "developmentChecks": {
+    "publicCanaryFocusedCases": 5,
+    "runnerPreflightFocusedCases": 6,
+    "status": "PASS",
+    "staticIndependentSecurityReview": "PASS_SCOPED",
+    "hashingOfCanaryInputFindingClosed": true,
+    "actualRunnerPreflightExecuted": false
+  },
+  "changedPublicCodePins": {
+    "scripts/w15-github/handoff_canary.py": {
+      "bytes": 3018,
+      "sha256": "36ae4770e8a28df25a17b517a29c7ec8cdbed08b3d70e9bc819c76e3112ac30f"
+    },
+    "scripts/w15-github/test_handoff_canary.py": {
+      "bytes": 3674,
+      "sha256": "841240de85b4bb8b7f70a7e9ee2a79bddc4c82f3955158d7e170cd8c39e19118"
+    },
+    "scripts/w15-github/runner_preflight.py": {
+      "bytes": 6284,
+      "sha256": "0ce3a479e9db358a26f2934ea3d1fd6ef07783b9f834abc9859ae784bfaaefa7"
+    },
+    "scripts/w15-github/test_runner_preflight.py": {
+      "bytes": 7097,
+      "sha256": "a386618a236e9992fd4f1c64d0f9d77233092d33e635115a9e62fc8ebb8b46f5"
+    },
+    ".github/workflows/ci.yml": {
+      "bytes": 29333,
+      "sha256": "d36389c8a5ced7770bf51310f9a40b66b4ac3b08c9cce6e4e8d30bb09cdee698"
+    }
+  },
+  "executionAuthority": false,
+  "testStarted": false,
+  "end500OrMock500Started": false
+}

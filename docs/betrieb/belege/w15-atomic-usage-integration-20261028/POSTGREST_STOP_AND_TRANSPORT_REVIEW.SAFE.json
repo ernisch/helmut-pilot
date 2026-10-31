@@ -1,0 +1,145 @@
+{
+  "schema": "helmut-w15-postgrest-stop-and-transport-review/1",
+  "status": "PASS_REAL_STOP_AND_EXISTING_TRANSPORT_PROTECTIONS",
+  "reviewedAtUTC": "2026-10-28T15:27:22.729302+00:00",
+  "reviewer": "independent atomic_integration_audit",
+  "stopReportSHA256": "9d96d1873f33a7cbfa4b8e1cfdf64ce77e79c9d6425e04183c4f95362798267f",
+  "historicalEleventhOutcome": "UNCHANGED_UNKNOWN_NOT_REPLAYED",
+  "checks": [
+    {
+      "id": "actual-owned-stop",
+      "status": "PASS",
+      "finding": "Accepted owned SIGTERM precedes documented SIGINT exit and confirmed service receipt; parent exits0/null in552.613949ms."
+    },
+    {
+      "id": "complete-closure",
+      "status": "PASS",
+      "finding": "No force,0gateway sockets,0actual child HTTP Agent sockets/free sockets; native DB authenticator connections0 before/after. All owned processes independently recorded already exited."
+    },
+    {
+      "id": "state-preserved",
+      "status": "PASS",
+      "finding": "Native before/after JSON exactly equal:500profiles,0active,6000complete physical usage,unchanged full physical usage and main Auth hashes."
+    },
+    {
+      "id": "reused-auth",
+      "status": "PASS",
+      "finding": "Existing16/16 genuine private ACK+full logical readbacks and49/49HTTP200 retained, not repeated. This test sends only bounded authenticated OpenAPI readiness GETs,0Auth/0CAS/0gatewayRPC/0Unit/0model."
+    },
+    {
+      "id": "unknown-protection",
+      "status": "PASS",
+      "finding": "Historical11th unchanged UNKNOWN. Real atomic one-row revision/proof/private ACK plus full content readback required; wrapper refuses second native CAS, request abort cap20s, wholeAuth30 measured, abort durable starts/finishes preserve incomplete UNKNOWN."
+    },
+    {
+      "id": "bound-and-isolated",
+      "status": "PASS",
+      "finding": "Reviewed exact sourcepins and actual hashes match. Netless isolated container shared hard limit2048000000/swap0 retained; inner35s/outer45s and verified owned cleanup. No source DB mutation/new DB/retry."
+    },
+    {
+      "id": "scope",
+      "status": "PASS",
+      "finding": "PASS only the missing real shutdown proof plus existing transport protections. Historical transport-probe FAIL not relabeled; old TypeError cause unproven. No RAM/full500/Production acceptance."
+    }
+  ],
+  "realElapsedMs": 552.6139489999999,
+  "sourcePins": [
+    {
+      "path": "scripts/synthetik-500-w15-auth-transport-probe.js",
+      "bytes": 24850,
+      "sha256": "49c6f9daf1e5e1cf3d793f2400fbe555de49c6049c28d19522e820deb224c926"
+    },
+    {
+      "path": "scripts/fixtures/z3-plattform.js",
+      "bytes": 28609,
+      "sha256": "d1a470d6c1823f4fbf23db8fb5b1ac6273800e0871517f21d902577d7eda62ba"
+    },
+    {
+      "path": "scripts/fixtures/w15-durable-observations.js",
+      "bytes": 4877,
+      "sha256": "811a2da02180d26fb6f7fdd1c33b56fd8a109a6b4df9cbc66695bfb2401b73e8"
+    },
+    {
+      "path": "scripts/fixtures/w15-auth-measurement-report.js",
+      "bytes": 3018,
+      "sha256": "95c24fa1ccd2e47467cbd22ecfb89e69ca441fc9fb9c8a21fab8c4583ce78a8b"
+    },
+    {
+      "path": "scripts/fixtures/w15-owned-process-stop.js",
+      "bytes": 4335,
+      "sha256": "e2ac57c7f7f47740ca98d1f48e767ab540a6d10af9c4d5041cde7fdf889b0482"
+    },
+    {
+      "path": "scripts/lokaler-netzschutz.js",
+      "bytes": 17384,
+      "sha256": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-postgrest-stop-check.py",
+      "bytes": 8418,
+      "sha256": "d29d2895b2440ee03f2e25f2209f18c9df92ae5372ccc55fd5f0500a538049a7"
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "RESULT.SAFE.json",
+      "bytes": 4023,
+      "sha256": "9d96d1873f33a7cbfa4b8e1cfdf64ce77e79c9d6425e04183c4f95362798267f"
+    },
+    {
+      "path": "NATIVE_BEFORE_READONLY.SAFE.json",
+      "bytes": 326,
+      "sha256": "152252b9802348b45addf9bb7609071d16b00708dcbe956b9139cbce7ba59c8e"
+    },
+    {
+      "path": "NATIVE_AFTER_READONLY.SAFE.json",
+      "bytes": 326,
+      "sha256": "152252b9802348b45addf9bb7609071d16b00708dcbe956b9139cbce7ba59c8e"
+    },
+    {
+      "path": "SOURCE_PINS.SAFE.json",
+      "bytes": 1265,
+      "sha256": "a25de17cee9a01d27d48a0b3606937455d17cd43309d099f21b4351bead64c96"
+    },
+    {
+      "path": "STAGED_FILE_DRY.SAFE.json",
+      "bytes": 266,
+      "sha256": "b974a82f1e7f3e174a6728ba27ab9c78073c05f3fceacb0c6989cb8f0ea1c590"
+    },
+    {
+      "path": "state/gateway-observations.SAFE.jsonl",
+      "bytes": 922,
+      "sha256": "20def9eda7dc0aaa72ef413b496a3d58eb89587e57bb683c6e75acc487ac4014"
+    },
+    {
+      "path": "state/run-observations.SAFE.jsonl",
+      "bytes": 1905,
+      "sha256": "7e3b2933f130f2e1405b1a14d9d9662a44e1492d74403e2f8f107c30ce902b7b"
+    },
+    {
+      "path": "state/stop-run.SAFE.jsonl",
+      "bytes": 92,
+      "sha256": "ee4e4db52c0c462ec62bfa033c8ef46681744e9866c5a0634bee76703db4bd87"
+    },
+    {
+      "path": "state/stop-gateway.SAFE.jsonl",
+      "bytes": 96,
+      "sha256": "1d1d892259e7c41e9b537102a56013384e3be1024c467ebdd3f99e70f78039e6"
+    },
+    {
+      "path": "state/stop-postgrest.SAFE.jsonl",
+      "bytes": 98,
+      "sha256": "f3bd801837ce2f0019528617b13ce23c5a7b260c872b2502b77d61ecd85e45d9"
+    }
+  ],
+  "existingAuthEvidenceReviewPin": {
+    "path": "AUTH_TRANSPORT_PROBE_RESULTS_REVIEW.SAFE.json",
+    "bytes": 12672,
+    "sha256": "af3b64cdaeb2e91128b6df8a3a785ad1f9d55f44049251a8042bd0df913ad2f5"
+  },
+  "existingTransportProbeFailurePreserved": true,
+  "historicalRootCauseProven": false,
+  "RAMAcceptance": false,
+  "full500Authority": false,
+  "queriesOrTestsByReviewer": false
+}

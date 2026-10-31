@@ -1,0 +1,96 @@
+{
+  "schema": "helmut-w15-auth-measurement-public-summary/1",
+  "status": "PASS_GENUINE_ALL_AUTH_WRITES_TIMED",
+  "testedCodeCommit": "3092efecf98b989d90d0b2c7948bd850826bd990",
+  "startedAtUTC": "2026-10-28T07:03:01.916Z",
+  "completedAtUTC": "2026-10-28T07:03:05.339Z",
+  "scope": "Single genuine isolated PostgreSQL/PostgREST Auth timing check; no unit, activation or model call.",
+  "coverage": {
+    "allEnvelopesAcknowledgedUnder30": true,
+    "allWritesAssigned": true,
+    "allWritesAcknowledged": true,
+    "allWritesBoundedByEnvelope": true,
+    "eachEnvelopeHasWrite": true,
+    "observedCASWrites": 4,
+    "mutationEnvelopes": 3,
+    "usageEnvelopes": 1,
+    "usage1000": false,
+    "pass": true
+  },
+  "unassignedCASWrites": 0,
+  "fullCalls": [
+    {
+      "api": "acquirePipelineLock",
+      "wallMs": 859.089335,
+      "acknowledged": true
+    },
+    {
+      "api": "public-mutation",
+      "wallMs": 582.465254,
+      "acknowledged": true
+    },
+    {
+      "api": "releasePipelineLock",
+      "wallMs": 474.6156759999999,
+      "acknowledged": true
+    },
+    {
+      "api": "usage-sink",
+      "wallMs": 467.07607700000017,
+      "acknowledged": true
+    }
+  ],
+  "maximumFullCallWallMs": 859.089335,
+  "maximumCASWallMs": 663.495627,
+  "independentReview": {
+    "status": "PASS_INDEPENDENT_GENUINE_AUTH_MEASUREMENT_REVIEW",
+    "checkCount": 23
+  },
+  "activeProfilesBefore": 0,
+  "activeProfilesAfter": 0,
+  "retainedHistoricalUsageRows": 5000,
+  "newZeroCostSkipRecords": 1,
+  "unitExecutions": 0,
+  "providerCalls": 0,
+  "productionWrites": 0,
+  "sourceQualificationRepeated": false,
+  "limitations": [
+    "This targeted four-write check is not a complete500-unit or Production proof."
+  ],
+  "v8Coverage": {
+    "capturedDuringNecessaryProbe": true,
+    "existingFiles": 2,
+    "totalBytes": 876433,
+    "selectedFiles": [
+      {
+        "file": "scripts/synthetik-500-w15-auth-observer-check.js",
+        "functions": 22,
+        "executedFunctions": 19,
+        "ranges": 27,
+        "executedRanges": 22
+      },
+      {
+        "file": "lib/helmut/storage.js",
+        "functions": 449,
+        "executedFunctions": 24,
+        "ranges": 533,
+        "executedRanges": 29
+      },
+      {
+        "file": "lib/helmut/auth-store-cas.js",
+        "functions": 4,
+        "executedFunctions": 3,
+        "ranges": 11,
+        "executedRanges": 3
+      },
+      {
+        "file": "scripts/synthetik-500-w15-full500-runtime.js",
+        "functions": 46,
+        "executedFunctions": 23,
+        "ranges": 58,
+        "executedRanges": 27
+      }
+    ],
+    "scope": "Raw V8 function/range counters for this targeted four-write probe; no whole-project, line or branch coverage percentage inferred. No extra test execution."
+  }
+}

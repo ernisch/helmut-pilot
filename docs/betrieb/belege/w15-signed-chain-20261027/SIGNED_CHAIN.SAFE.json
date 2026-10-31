@@ -1,0 +1,248 @@
+{
+  "schema": "helmut-w15-signed-chain-summary/1",
+  "date": "2026-10-27",
+  "status": "PASS_ISOLATED_SIGNED_CHAIN_PREPARED0",
+  "applicationBase": "7c99ee34e95119c8f5ad3013c4b14553d06c2fac",
+  "scope": "actual signed prepare/open, HTTP, actual PostgREST and native prepared0 on isolated restored original-data copy; no active unit execution",
+  "successfulAttempt": 4,
+  "rawResultPin": {
+    "file": "SIGNED_CHAIN_ATTEMPT_4_RESULT.SAFE.json",
+    "bytes": 139596,
+    "sha256": "f5623abbf0c1e3299ad9c1f3e2aca310fe49a4704d9e5cbf72d3f9def674c4cb"
+  },
+  "targetedChecks": [
+    {
+      "name": "derived calendar fixture preserves original content/profile/source/verdict texts",
+      "status": "PASS"
+    },
+    {
+      "name": "real native runtime prepared0 installed without activation",
+      "status": "PASS"
+    },
+    {
+      "name": "current original-v1 D preflight correctly rejects expired source context",
+      "status": "PASS"
+    },
+    {
+      "name": "actual prepare fullC/native readback/Ed25519 proof",
+      "status": "PASS"
+    },
+    {
+      "name": "fresh local Root authority file pins and Ed25519 installation via actual adapter",
+      "status": "PASS"
+    },
+    {
+      "name": "cold public-key-only open/restore/ALS and actual PostgREST native runtime",
+      "status": "PASS"
+    },
+    {
+      "name": "actual server HTTP route returns installed status, not dispatched results",
+      "status": "PASS"
+    },
+    {
+      "name": "real HTTP unauthorized/profile injection/start before activation rejected without dispatch",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong stored profile rejected by actual native runtime; entire negative transaction rolled back",
+      "status": "PASS"
+    },
+    {
+      "name": "actual signature/expiry verification and real HTTP reject bad-signature",
+      "status": "PASS"
+    },
+    {
+      "name": "actual signature/expiry verification and real HTTP reject expired",
+      "status": "PASS"
+    },
+    {
+      "name": "persistent one-time execution claim rejects duplicate and process restart; zero unit entries",
+      "status": "PASS"
+    }
+  ],
+  "historicalRequestFixture": {
+    "historicalRequestFixture": true,
+    "currentDPreflightRejected": true,
+    "currentSenderQualified": false,
+    "historicalRequestsReconstructedWithActualOriginalPreparer": true,
+    "reusedHistoricalRequestBytesClaimed": false,
+    "currentPreflights": 51,
+    "rejectedCurrentOwner": "test-kohorte-synthetik-be-001",
+    "historicalRequestDates": [
+      "2026-10-16T10:01:00.000Z"
+    ],
+    "currentDescriptorDate": "2026-10-27T15:38:22.340Z"
+  },
+  "historicalRequestCount": 500,
+  "historicalRequestHashesSHA256": "17a2ce532945dff85ac61fcd68000fa3ca30223e3b7bed4613ff9a3da90dd594",
+  "freshCurrentCalendarLocalApproval": true,
+  "realClockUnmodified": true,
+  "securityFunctionsMocked": false,
+  "privateSigningKeyPresentInColdServer": false,
+  "originalReceiptSHA256": "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1",
+  "sourcePreservedComparison": "complete mandate_profiles and helmut_store hashes; profiles count, not all tables",
+  "renewal": {
+    "originalContractHash": "78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f",
+    "renewalHash": "a649603fa8f18c6a3db65aab09b67e15d6bda80befa20e5394bce7eeda1d6415",
+    "lastOrderUTCDate": "2026-10-31",
+    "productionApplied": false
+  },
+  "measurements": {
+    "instrumentation": "required run with host V8 coverage; not a Production/common-cgroup performance acceptance",
+    "prepareWallMs": 24409.228110000004,
+    "prepareLimitMs": 90000,
+    "fullCWallMs": 20602.072268000004,
+    "prepareProcessMaxRSSBytes": 1402634240,
+    "coldOpenWallMs": 5546.7634,
+    "coldOpenLimitMs": 60000,
+    "coldServerProcessMaxRSSBytes": 441159680,
+    "commonKernelPeakMeasured": false,
+    "unit60sMeasured": false,
+    "auth30sMeasured": false
+  },
+  "runtime": {
+    "zustand": "vorbereitet",
+    "aktiv": 0,
+    "gesamt": 500,
+    "identitaeten": 501
+  },
+  "proofExecutionAuthorized": false,
+  "unitEntries": 0,
+  "providerCalls": 0,
+  "productionActions": 0,
+  "full500Dispatch": false,
+  "claimScope": "actual CAS-persisted claim only; no J.enter, attempts or model tickets; own operation permanently stopped; replay rejected across restart",
+  "negativeEvidenceLimit": "real HTTP start 409 plus no claim/attempts; exact adapter rejection reason NOT captured",
+  "preservedFailures": [
+    {
+      "file": "SIGNED_CHAIN_FIRST_FAILURE.SAFE.json",
+      "bytes": 874,
+      "sha256": "58548aa24b3805cdc3f1972918191ecf1ac2e3b54207acd82e995e5678ed0fa4"
+    },
+    {
+      "file": "SIGNED_CHAIN_ATTEMPT_2_FAILURE.SAFE.json",
+      "bytes": 644,
+      "sha256": "146bc77d878ea8599d2bc84e1090f3573dd1537192c38d4749511997f45571de"
+    },
+    {
+      "file": "SIGNED_CHAIN_ATTEMPT_3_FAILURE.SAFE.json",
+      "bytes": 879,
+      "sha256": "d8f46856bb4ecce09cd7abf9964caa1adb07fe6fbadf22114f66452d8055e8d9"
+    },
+    {
+      "file": "activation-guard.log",
+      "bytes": 562,
+      "sha256": "4caabe0180b5ead5edad8cbafd0f7a233c81d3e43b1640015550ae5868b45425"
+    }
+  ],
+  "failureExplanation": [
+    "Attempt1: current-v1 source context empty; first rejection preserved",
+    "Attempt2: harness incorrectly expected first unsorted row to fail; no command prepared",
+    "Attempt3: fixture construction time equalled start; real strict inequality rejected",
+    "Additional exact-guard probe was attempted only after original ephemeral gateway closed; fetch failed; not counted as application evidence"
+  ],
+  "harnessEditsAfterSuccessfulRun": [
+    "pristine target assertion",
+    "exact activation guard IPC and assertion",
+    "clearer proofExecutionAuthorized field name",
+    "explicit source-preservation comparison scope"
+  ],
+  "rawReportNamingCorrection": "raw proofExecutionWasNotAuthorized:false actually stores prepared.executionAuthorized=false; normalized here without changing the raw file",
+  "coverage": {
+    "rawFiles": 13,
+    "loadedHelmutModules": 168,
+    "changedModuleFunctionEntries": [
+      {
+        "path": "lib/helmut/synthetik-500-eu-service-contract.js",
+        "observedFunctions": 16,
+        "executedFunctions": 13,
+        "executedPercent": 81.25
+      },
+      {
+        "path": "lib/helmut/synthetik-500-kosten-admission.js",
+        "observedFunctions": 34,
+        "executedFunctions": 29,
+        "executedPercent": 85.29
+      },
+      {
+        "path": "lib/helmut/synthetik-500-date-binding.js",
+        "observedFunctions": 9,
+        "executedFunctions": 1,
+        "executedPercent": 11.11
+      },
+      {
+        "path": "lib/helmut/testkosten-budget.js",
+        "observedFunctions": 40,
+        "executedFunctions": 29,
+        "executedPercent": 72.5
+      },
+      {
+        "path": "lib/helmut/synthetik-500-production-adapter.js",
+        "observedFunctions": 37,
+        "executedFunctions": 19,
+        "executedPercent": 51.35
+      }
+    ],
+    "closedWorkerCoverageCaptured": false,
+    "coverageOnlyReruns": 0,
+    "rawCoverageIndexPin": {
+      "file": "TARGETED_COVERAGE.SAFE.json",
+      "bytes": 3769,
+      "sha256": "ff80ccde64df8f304a83de9348666dee46168f61409ee1a3fb0efe2849d6ff8f"
+    }
+  },
+  "additionalTargetedTests": {
+    "renewalGroups": 5,
+    "selectionAssertions": 20,
+    "renewalLog": {
+      "file": "renewal-contract-boundary.log",
+      "bytes": 535,
+      "sha256": "cd877f7c62462e6c695ad8ac8242aa16654be6b37a59ac8fc1996dca15b4715f"
+    }
+  },
+  "independentReview": "Codex read-only review: no blocker for bounded prepared0 scope; later harness assertions not executed in attempt4",
+  "requiredCI": {
+    "baselineRun": 40510429293,
+    "baselineHead": "7c99ee34e95119c8f5ad3013c4b14553d06c2fac",
+    "baselineConclusion": "success",
+    "newHeadConclusion": "success",
+    "codeHead": "da63309c44625f072afb8ccaf924fc0b3da77877",
+    "runId": 40534410137,
+    "url": "https://github.com/ernisch/helmut-pilot/actions/runs/40534410137",
+    "offlineJob": {
+      "id": 122295624529,
+      "conclusion": "success",
+      "syntax": true,
+      "standard": true,
+      "area": true,
+      "nativeDatabaseStepsIncludingZ22": true
+    },
+    "browserJob": {
+      "id": 122295626165,
+      "conclusion": "success",
+      "actualUITestsSkippedByExistingPlan": true,
+      "existingBrowserEvidenceReusedFrom": "7c99ee34e95119c8f5ad3013c4b14553d06c2fac"
+    },
+    "subsequentDocumentationOnlyCommitSkipsCI": true,
+    "applicationCodeChangedAfterSuccess": false
+  },
+  "remaining": [
+    "Original v1 sources do not qualify all500 current D contexts (one verified BE rejection after51 preflights)",
+    "active500 native runtime and actual unit execution not authorized/performed",
+    "shared process+database memory peak/headroom and Unit60/Auth30 bound remain open",
+    "new branch CI required; Production merge/deploy/activation/paid-model/full500 authorization remains separate"
+  ],
+  "readOnlySourceDiagnosis": {
+    "schema": "helmut-w15-source-context-readonly-diagnosis/1",
+    "scope": "read-only metadata of first rejected profile only; no new preflight or source modification",
+    "profile": "test-kohorte-synthetik-be-001",
+    "normalizedOriginalSHA256": "90e11a4228e2e568edf03c3feb9ea2c79e71449e68fdc6c563a3355f1fbaaa14",
+    "originalInputDay": "2026-10-16",
+    "selectedSourceCount": 1,
+    "documentId": "rd-691117a4712de0582634fca3081d3ee6c2d6a65c3c4360086dd5caffbd44800d",
+    "publishedAtUTC": "2026-10-13T11:02:48+00:00",
+    "currentTestBriefingDatum": "2026-10-27T15:38:22.340Z",
+    "unchanged14DayCutoffUTC": "2026-10-13T15:38:22.340000+00:00",
+    "full500CurrentDPreflightClaimed": false
+  }
+}

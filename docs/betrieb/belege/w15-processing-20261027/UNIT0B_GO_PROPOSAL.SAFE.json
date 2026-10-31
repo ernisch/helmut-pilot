@@ -1,0 +1,55 @@
+{
+  "schema": "helmut-w15-one-unit-next-go-proposal/1",
+  "status": "PREPARED_NOT_AUTHORIZED_NOT_EXECUTED",
+  "localRouteCheck": "PASS_ALL_SEVEN_FIELDS_AGAINST_HISTORICAL_SIGNED_PLAN",
+  "container": "synthetik500-runtime-pg-7e1c20261027",
+  "network": "none; no published ports",
+  "newDatabase": "helmut_w15_unit0b_20261027",
+  "newDatabaseNameConfirmedUnused": true,
+  "newDatabaseCreatedNow": false,
+  "newWorkDirectory": "/workspace/shared/helmut-w15-unit0b-20261027",
+  "newContainerDirectory": "/tmp/w15-unit0b-20261027",
+  "newOperationPrefix": "synthetik500-w15-unit0b-",
+  "operationIdCreatedNow": false,
+  "freshSigningKeyAndSignaturesCreatedNow": false,
+  "freshness": "Create new database, unique operation, Ed25519 key/signatures and observations only after explicit execution GO. Existing start observations must be <=60s old; no pre-issued approvals reused.",
+  "maximumTemporarilyActiveSyntheticProfiles": 500,
+  "maximumUnits": 1,
+  "unitIndex": 0,
+  "owner": "test-kohorte-synthetik-bb-001",
+  "provider": "reviewed local mock only",
+  "localSimulations": 2,
+  "minimumProviderDelayMsEach": 19900,
+  "unitLimitMs": 60000,
+  "authLimitMs": 30000,
+  "memoryComparisonLimitBytes": 2048000000,
+  "requiredReserveBytes": 500000000,
+  "technicalMemoryLimitEnforced": false,
+  "noFull500Run": true,
+  "noNextOrRetry": true,
+  "firstErrorOrUnknownStops": true,
+  "requiredEnd": "Bound original native end RPC, separate zero/readback; exactly500 to0 on success or failure",
+  "originalsPreserved": true,
+  "productionAllowed": false,
+  "paidModelsAllowed": false,
+  "hetznerAllowed": false,
+  "mergeAllowed": false,
+  "executionAuthorizationRequired": "Separate explicit GO for exactly one new isolated DR mock single-unit run and temporary500-profile activation",
+  "harnessPins": [
+    {
+      "path": "scripts/synthetik-500-w15-unit0-controller.py",
+      "bytes": 13126,
+      "sha256": "25accb4824834694340fe298ab98fd37ee4076398b30c926479d4d7f2909ef34"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-processing-materials.js",
+      "bytes": 19699,
+      "sha256": "25267cf53d10e1f61f4a55453ead6606b0e609001754869e46c6fcfed7f5070c"
+    },
+    {
+      "path": "scripts/synthetik-500-w15-unit0-runtime.js",
+      "bytes": 17436,
+      "sha256": "86345beb678b17abf7e05e12f694a177470b042d6ac33a0d6abb28de4203acff"
+    }
+  ]
+}

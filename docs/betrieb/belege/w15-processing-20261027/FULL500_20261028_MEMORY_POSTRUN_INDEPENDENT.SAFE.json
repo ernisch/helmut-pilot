@@ -1,0 +1,163 @@
+{
+  "schema": "helmut-w15-full500-postrun-independent-memory-review/1",
+  "status": "PASS_OBSERVED_CAP_AND_SOURCE_INTEGRITY_ONLY_RUN_FAILED",
+  "reviewCreatedAtUTC": "2026-10-28T05:11:23.367294+00:00",
+  "reviewer": "independent-memory-time-review-agent",
+  "runStatus": "FAIL_OR_UNKNOWN",
+  "runFailureStage": "materials",
+  "reportedMaterialFailureReason": "ai-text-source-reference",
+  "failureReasonSource": "Parent execution report; this reviewer did not execute materials or read private input/configuration contents.",
+  "scope": "Read-only actual Docker metadata, direct original fresh-cgroup kernel files, retained SAFE reports and original-source before/after byte comparison. No DB query or operational action.",
+  "actualContainer": {
+    "name": "w15-full500-20261028",
+    "id": "ca34f4d35b7674b57894e849ba02a91f26e05a4fdcab119beec1c396a6130d98",
+    "image": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+    "running": true,
+    "postgresMainPID": 897,
+    "OOMKilled": false,
+    "network": "none",
+    "publishedPorts": {},
+    "restartPolicy": "no",
+    "HostConfigMemoryBytes": 2048000000,
+    "HostConfigMemorySwapBytes": 2048000000,
+    "mounts": [
+      {
+        "type": "bind",
+        "source": "/workspace/shared/helmut-w15-full500-20261028/pgdata",
+        "destination": "/var/lib/postgresql/data",
+        "RW": true
+      }
+    ],
+    "existingPGDataMountObserved": false
+  },
+  "directOriginalCgroupRead": {
+    "capturedAtUTC": "2026-10-28T05:10:39.460913+00:00",
+    "path": "/sys/fs/cgroup/docker/ca34f4d35b7674b57894e849ba02a91f26e05a4fdcab119beec1c396a6130d98",
+    "postgresProcCgroup": "0::/../docker/ca34f4d35b7674b57894e849ba02a91f26e05a4fdcab119beec1c396a6130d98",
+    "containerIDMatchesReportAndProcCgroup": true,
+    "postgresMainPIDListedInCgroupProcs": true,
+    "memoryMax": "2048000000",
+    "memorySwapMax": "0",
+    "currentBytes": 140922880,
+    "kernelLifetimePeakBytes": 369651712,
+    "swapCurrentBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "readsSequentialNotAtomic": true
+  },
+  "reportedFinalCommonMemory": {
+    "sampleAtUTC": "2026-10-28T05:09:37.178433+00:00",
+    "kernelLifetimePeakBytes": 369651712,
+    "currentBytes": 141357056,
+    "comparisonBudgetBytes": 2048000000,
+    "minimumReservePercent": 20,
+    "requiredReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "comparisonReserveBytes": 1678348288,
+    "originalFinalPeakVerified": true,
+    "recoveryOccurred": false,
+    "failure": null,
+    "samePeakInLaterDirectKernelRead": true
+  },
+  "memoryInterpretation": {
+    "actualExactKernelCapObserved": true,
+    "actualSwapDisabledObserved": true,
+    "memoryOrOOMEventsObserved": false,
+    "coveredScope": "Initialization and local preparation up to the failed materials stage only; no activated unit processing.",
+    "hostOfflineFixtureAssemblyExcludedFromCgroupScope": true,
+    "initializationComparisonReserveSatisfied": true,
+    "full500ProcessingMemoryProven": false,
+    "actualUnitOrAuthPerformanceProven": false,
+    "baselineSubtractionOrPeakResetUsed": false
+  },
+  "retainedCleanupEvidence": {
+    "database": "helmut_w15_full500_20261028",
+    "beforeActive": 0,
+    "afterActive": 0,
+    "confirmedZero": true,
+    "endWriteAttempts": 0,
+    "nativeEndRPCOrEndedStateProven": false,
+    "cleanupFailure": null,
+    "recoveryOccurred": false,
+    "interpretation": "The new target was already inactive. No activation context or native end-write is inferred; retained readbacks show target active0 before and after cleanup."
+  },
+  "retainedAuditBoundary": {
+    "status": "FAIL_OR_UNKNOWN_AUDIT_PREREQUISITE",
+    "unitChecksCompleted": 0,
+    "positionsAudited": 0,
+    "actualStoredRowsReported": 0,
+    "independent1500ResultsAccepted": false,
+    "all1500RequiredPositionsRemainUnaccepted": true,
+    "rawCategoryZerosAreNot1500PositionAcceptance": true,
+    "note": "The raw auditor exited on a prerequisite before per-position classification. Zero missing/empty/duplicate/invalid counters do not prove that1500 positions were checked or accepted."
+  },
+  "originalSourceComparison": {
+    "sourceDatabase": "helmut_w15_input_20261027",
+    "beforeAfterBytesEqual": true,
+    "bytesEach": 309,
+    "sha256Each": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27",
+    "profiles": 500,
+    "identities": 501,
+    "sourceActive": 500,
+    "profileStoreRawDocumentHashesEqual": true,
+    "sourceActiveIsSeparateFromNewTargetActive0": true
+  },
+  "rawReportPins": [
+    {
+      "name": "FINAL_COMMON_MEMORY.SAFE.json",
+      "bytes": 793,
+      "sha256": "4b603afa91c68890c955ae91bf0a35ce32432f568051f581900f6b632dcbc6e1"
+    },
+    {
+      "name": "CONTROLLER_RESULT.SAFE.json",
+      "bytes": 523,
+      "sha256": "ae4ed55a569774fe5d6b48b0a9e5886d835a6fd4ce6e3eb373835379ea056bec"
+    },
+    {
+      "name": "CLEANUP.SAFE.json",
+      "bytes": 247,
+      "sha256": "d193b6d021a24143290b0e185dbca4a85de5974904feed03ef46dba326f4741f"
+    },
+    {
+      "name": "RESULTS_INDEPENDENT.SAFE.json",
+      "bytes": 1137,
+      "sha256": "dfd471679857cd0e66a9d0027711618e0a15c39d0dcac18fb380e4efee0ef9f9"
+    },
+    {
+      "name": "SOURCE_BEFORE.SAFE.json",
+      "bytes": 309,
+      "sha256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27"
+    },
+    {
+      "name": "SOURCE_AFTER.SAFE.json",
+      "bytes": 309,
+      "sha256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27"
+    }
+  ],
+  "reportedModelCalls": 0,
+  "reportedUnitExecutions": 0,
+  "independent1500ResultProof": false,
+  "full500Proof": false,
+  "productionProof": false,
+  "reviewActions": {
+    "tests": 0,
+    "controllerOrMaterialsRuns": 0,
+    "unitRuns": 0,
+    "databaseQueries": 0,
+    "databaseWrites": 0,
+    "containerCreates": 0,
+    "startsOrRestarts": 0,
+    "signalsSent": 0,
+    "limitChanges": 0,
+    "cacheDrops": 0,
+    "deletions": 0,
+    "reportFileCreatedOnly": true
+  },
+  "retryOrFurtherExecutionAuthorizedByThisReview": false
+}

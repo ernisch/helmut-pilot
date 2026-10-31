@@ -1,0 +1,7 @@
+{
+  "node": "v24.19.0",
+  "postgres": "postgres (PostgreSQL) 17.6 (Debian 17.6-2.pgdg12+1)",
+  "postgrest": "PostgREST 12.2.3",
+  "cgroup": "0::/",
+  "peakScope": "PostgreSQL, PostgREST, Node driver, their children and setup in one container cgroup"
+}

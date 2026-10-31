@@ -1,0 +1,189 @@
+{
+  "schema": "helmut-w15-manual-original-source-review/1",
+  "status": "PASS_MANUAL_ORIGINAL_SOURCE_CONTENT_AND_PUBLICATION_REVIEW",
+  "reviewedAtUTC": "2026-10-28T05:57:31.143376+00:00",
+  "reviewer": "required_data_audit",
+  "scope": "Manually original-source-checked isolated offline test fixture only; independent of later KO/mock builders and future Root review. No model review, Production acceptance or native U receipt.",
+  "independenceQualification": {
+    "BE_normalizationAuthoredByThisReviewer": true,
+    "BT_normalizationAuthoredByDifferentAgent": true,
+    "originalHTMLReadDirectlyForBoth": true,
+    "differentModelOrReviewerAcceptanceOfBEClaimed": false
+  },
+  "checks": [
+    {
+      "name": "BE originalHTML matches normalized and fetch pins",
+      "status": "PASS"
+    },
+    {
+      "name": "BT originalHTML matches normalized and fetch pins",
+      "status": "PASS"
+    },
+    {
+      "name": "BE first3complete consecutive paragraphs equal1139character excerpt",
+      "status": "PASS"
+    },
+    {
+      "name": "BE exact original paragraph1 bytes and normalized text",
+      "status": "PASS"
+    },
+    {
+      "name": "BE exact original paragraph2 bytes and normalized text",
+      "status": "PASS"
+    },
+    {
+      "name": "BE exact original paragraph3 bytes and normalized text",
+      "status": "PASS"
+    },
+    {
+      "name": "BT full selected consecutive paragraphs equal1177character excerpt",
+      "status": "PASS"
+    },
+    {
+      "name": "BE article metadata and visible date agree23Oct",
+      "status": "PASS"
+    },
+    {
+      "name": "BE official index binds12:52 to sameURL/title and original section",
+      "status": "PASS"
+    },
+    {
+      "name": "BE BerlinUTCplus2 conversion is10:52UTC with minute precision",
+      "status": "PASS"
+    },
+    {
+      "name": "BT visible and metadata publicationDay16Oct no publisher timestamp claimed",
+      "status": "PASS"
+    },
+    {
+      "name": "BE entire evidenced publicationMinute inside current14daywindow",
+      "status": "PASS"
+    },
+    {
+      "name": "BT entire evidenced publicationDay inside current14daywindow",
+      "status": "PASS"
+    },
+    {
+      "name": "BE exact taxprognosis and uncertainty statements supported",
+      "status": "PASS"
+    },
+    {
+      "name": "BT two distinct construction-policy and permitting-barrier statements supported",
+      "status": "PASS"
+    },
+    {
+      "name": "BT proposal21/8579 attribution not enactedgovernmentpolicy",
+      "status": "PASS"
+    }
+  ],
+  "window": {
+    "days": 14,
+    "actualNowUTC": "2026-10-28T05:57:31.143376+00:00",
+    "cutoffUTC": "2026-10-14T05:57:31.143376+00:00",
+    "futureQualificationGuaranteed": false
+  },
+  "scopes": {
+    "BE": {
+      "normalizationPath": "/workspace/shared/helmut-w15-current-source-update-20261028/BERLIN_TAX_20261023.SOURCE_NORMALIZATION.PRIVATE.json",
+      "normalizationSHA256": "9300b1a47434b4d9e4f5d3a55a2777ab15ce1ede53d78b6a2d37462f80676de2",
+      "originalHTMLPath": "/workspace/shared/helmut-w15-current-source-update-20261028/BERLIN_TAX_20261023.ORIGINAL.html",
+      "originalHTMLSHA256": "717c311350b734ae503946cb238d531f7d0c66a77e4bc2b037635fb8f1b24e3d",
+      "originalHTMLBytes": 50643,
+      "excerptSHA256": "196faa76f4a11db1853bd1636c8b8a2d38d9551c4f287cae55d3ddbd479b8a10",
+      "excerptCharacters": 1139,
+      "excerptSelection": "Complete first3consecutive body paragraphs; no source sentence omitted or reordered.",
+      "publication": {
+        "day": "2026-10-23",
+        "precision": "minute",
+        "visibleOfficialIndexTime": "23.10.2026 12:52 Uhr",
+        "timeZone": "Europe/Berlin",
+        "offset": "+02:00",
+        "minuteStartUTC": "2026-10-23T10:52:00+00:00",
+        "minuteEndExclusiveUTC": "2026-10-23T10:53:00+00:00",
+        "exactSecondKnown": false,
+        "officialIndexHTMLPath": "/workspace/shared/helmut-w15-current-source-update-20261028/BERLIN_FINANZEN_INDEX.ORIGINAL.html",
+        "officialIndexHTMLSHA256": "3e841e2e93fa5357d987bcfafaf83149a2aa8dc60b5da1b90ea407941fbb0e36",
+        "indexSectionByteStart": 39508,
+        "indexSectionByteEndExclusive": 40499
+      },
+      "sourceURL": "https://www.berlin.de/sen/finanzen/presse/pressemitteilungen/pressemitteilung.1730442.php",
+      "publisher": "Senatsverwaltung für Finanzen",
+      "supportedStatements": [
+        {
+          "id": "BE1",
+          "statement": "Die regionalisierte Steuerschätzung prognostiziert für Berlin rund 31,3 Mrd. Euro Steuereinnahmen 2026 und 32,4 Mrd. Euro 2027.",
+          "exactQuote": "Nach den regionalisierten Ergebnissen der Steuerschätzung vom Oktober 2026 wird für das Land Berlin mit Steuereinnahmen im Jahr 2026 von rund 31,3 Mrd. Euro gerechnet und im Jahr 2027 mit rund 32,4 Mrd. Euro.",
+          "passage": 1,
+          "qualification": "Prognosis attributed to Senatefinance administration, not actual collected revenue."
+        },
+        {
+          "id": "BE2",
+          "statement": "Die Quelle benennt erhebliche Unsicherheit über die weitere Wirtschaftsentwicklung wegen der geopolitischen Situation und der weiteren Energiepreisentwicklung.",
+          "exactQuote": "Die weitere wirtschaftliche Entwicklung unterliegt allerdings erheblichen Unsicherheiten in der geopolitischen Situation und darin, wie sich die Energiepreise in den nächsten Monaten tatsächlich entwickeln werden.",
+          "passage": 3,
+          "qualification": "Separate explicit uncertainty assessment, not artificial splitting of two taxamounts."
+        }
+      ]
+    },
+    "BT": {
+      "normalizationPath": "/workspace/shared/helmut-w15-current-source-update-20261028/BT_HOUSING_20261016.SOURCE.PRIVATE.json",
+      "normalizationSHA256": "486363135d2ebe47f183a7b70fa3ec756d9dca2bad57542d911f83b74cc4368b",
+      "originalHTMLPath": "/workspace/shared/helmut-w15-current-source-update-20261028/BT_HOUSING_20261016.ORIGINAL.html",
+      "originalHTMLSHA256": "c6938aebddb2e5c2203b6c5892802010ae78cc46e6d1cf76554995136f2c12ca",
+      "originalHTMLBytes": 256798,
+      "excerptSHA256": "2ee4ba234eae1fcd52abb8f650f9e1c137b45a358363a3922573f130a7430050",
+      "excerptCharacters": 1177,
+      "excerptSelection": "Complete contiguous second and third nonempty article paragraphs; empty HTML paragraph separators do not omit text.",
+      "exactByteStart": 240568,
+      "exactByteEndExclusive": 241777,
+      "originalFragmentSHA256": "9748fea73d67d520fd3339d77579f33c7f14fcfb27dc146d9ce2d0ddff605919",
+      "publication": {
+        "day": "2026-10-16",
+        "precision": "day",
+        "visibleDate": "16.10.2026",
+        "metaDate": "16.10.2026",
+        "publisherTimestamp": null,
+        "publicationDayStartUTCForWindowOnly": "2026-10-15T22:00:00+00:00",
+        "publicationDayEndExclusiveUTCForWindowOnly": "2026-10-16T22:00:00+00:00",
+        "boundaryTimesAreNotPublisherClockClaims": true
+      },
+      "sourceURL": "https://www.bundestag.de/presse/hib/kurzmeldungen-1225362",
+      "publisher": "Deutscher Bundestag, Parlamentsnachrichten",
+      "supportedStatements": [
+        {
+          "id": "BT1",
+          "statement": "Die Grünen fordern eine aktive soziale Wohnungsbaupolitik und die Nutzung bestehender Gebäude einschließlich Büroumwandlungen.",
+          "exactQuote": "Die Bundesregierung wird aufgefordert, den Zugang zu bezahlbarem und dauerhaftem Wohnraum für wohnungslose und von Wohnungslosigkeit bedrohte Menschen zu verbessern, indem sie eine aktive soziale Wohnungsbaupolitik betreiben und die vorhandenen Möglichkeiten im Bestand nutzen soll wie zum Beispiel die Umwandlungen von Büros in Wohnungen.",
+          "passage": "Second nonempty article paragraph",
+          "qualification": "Demand in faction motion21/8579; no adopted law or executed governmentmeasure claimed."
+        },
+        {
+          "id": "BT2",
+          "statement": "Die Grünen beschreiben langwierige Genehmigungen als Neubauhemmnis und fehlende Umwandlungsmöglichkeiten für heruntergekommene Immobilien.",
+          "exactQuote": "So werde der Neubau durch langwierige Genehmigungsverfahren verzögert, heruntergekommene und verwahrloste Immobilien könnten nicht in angemessenen Wohnraum umgewandelt werden.",
+          "passage": "Third nonempty article paragraph",
+          "qualification": "Attributed diagnosis, distinct from constructionpolicy demand; no stale foreclosurePDF statistics."
+        }
+      ],
+      "excludedUnsupportedTransfer": [
+        "No old8OctPDF foreclosurefigures",
+        "NoWohngeldclaim outside selected1177character excerpt",
+        "No false Bundestagtextarchiv articleStand namespace forHIBurl"
+      ]
+    }
+  },
+  "actions": {
+    "appValidatorCalls": 0,
+    "modelReviewCalls": 0,
+    "providerCalls": 0,
+    "databaseReads": 0,
+    "databaseWrites": 0,
+    "unitExecutions": 0,
+    "profileActivations": 0,
+    "tests": 0,
+    "sourceOriginalFilesModified": false
+  },
+  "nativeUnderstandingReceipt": false,
+  "full500Qualified": false,
+  "productionAcceptance": false
+}

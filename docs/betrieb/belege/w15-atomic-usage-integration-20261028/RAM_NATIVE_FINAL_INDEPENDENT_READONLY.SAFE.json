@@ -1,0 +1,44 @@
+{
+  "schema": "helmut-w15-atomic-RAM-final-readonly/1",
+  "status": "PASS_RETAINED_ALL3501_POSTIMAGES_AND_ZERO_ONLY_NOT_RAM_ACCEPTANCE",
+  "reviewer": "/root/eu_atomic_check_author",
+  "observedAtUTC": "2026-10-28T13:42:38.945356+00:00",
+  "nativeReadOnlyTransactions": 1,
+  "database": "helmut_w15_memory_atomic_20261028a",
+  "metadata": {
+    "kind": "metadata",
+    "active": 0,
+    "database": "helmut_w15_memory_atomic_20261028a",
+    "profiles": 500,
+    "readonly": "on",
+    "identities": 501,
+    "physicalUsageRows": 6000,
+    "physicalAuthHasUsage": false
+  },
+  "logicalAuthExactlyPreservedExcluding": [
+    "freshRevision",
+    "diagnosticProbeSequence"
+  ],
+  "observedProbeSequence": 9,
+  "authUsageRows": 6000,
+  "allHistoricalAndInertAuthFieldsEqual": true,
+  "exactAuthPostimages": 1,
+  "exactStorePostimages": 1000,
+  "exactBriefingPostimages": 2500,
+  "totalExactPostimages": 3501,
+  "kernelAfterAudit": {
+    "kind": "kernelAfterAudit",
+    "peak": 1154990080,
+    "swap": 0,
+    "current": 348987392
+  },
+  "privateRawPin": {
+    "path": "/workspace/shared/helmut-w15-atomic-integration-source-20261028/RAM_NATIVE_FINAL_PRIVATE.jsonl",
+    "bytes": 120268514,
+    "sha256": "b94e71349827bf4f1f1515d1120694ecbda5d1ff9fae3a6b11b26f10e9d3285b"
+  },
+  "workloadOrHTTPAttempts": 0,
+  "databaseWrites": 0,
+  "activations": 0,
+  "retryAllowed": false
+}

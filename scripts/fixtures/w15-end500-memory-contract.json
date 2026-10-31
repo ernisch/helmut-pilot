@@ -1,0 +1,11 @@
+{
+  "version": "helmut-w15-end500-memory-check/3",
+  "scope": "ISOLATED_GITHUB_END500_ONLY",
+  "comparisonBudgetBytes": 2560000000,
+  "minimumReservePercent": 20,
+  "requiredReserveBytes": 512000000,
+  "maximumConsumptionBytes": 2048000000,
+  "swapBytes": 0,
+  "mock500Acceptance": false,
+  "executionAuthority": false
+}

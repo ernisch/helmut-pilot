@@ -1,0 +1,18 @@
+{
+  "attempt": 1,
+  "conclusion": "FAIL",
+  "end500Acceptance": false,
+  "exactCommit": "225e76d7b7618e36c189d205294dfd073e6d88a4",
+  "jobId": "123743558573",
+  "mock500Acceptance": false,
+  "restoreAcceptance": false,
+  "retryAllowed": false,
+  "runId": "40958135662",
+  "safeResult": {
+    "executionAuthority": false,
+    "phase": "worker",
+    "retryAllowed": false,
+    "status": "FAIL_W15_ISOLATED_WORKFLOW"
+  },
+  "schema": "helmut-w15-restore-workflow-result/1"
+}

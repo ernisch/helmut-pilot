@@ -1,0 +1,236 @@
+{
+  "schema": "helmut-w15-mock500-combined-existing-backup-inventory/1",
+  "observedAtUTC": "2026-10-29T17:24:33.763834+00:00",
+  "status": "BLOCKED_TEN_SOURCE_PAYLOADS_AND_ONE_REPLACEMENT_PIN_NOT_CONFIRMED",
+  "inventoryRepeated": false,
+  "githubAndDriveMetadataOnly": true,
+  "mainThreadReadDuringThisSearch": false,
+  "builder": {
+    "assetKey": "originalBuilderArchive",
+    "fileName": "HELMUT_HANDOFF_20261016_MINIMAL.zip",
+    "driveFileId": "1_yaGlXYrG2ExYbE2MFBq_ucE4YtgMFCm",
+    "mimeType": "application/zip",
+    "observedBytes": 269598,
+    "expectedSHA256": "c979e18775f285ddf7af4328c8efc8f0642954eb6d0e52e50636d3b4ab902d15",
+    "driveModifiedTime": "2026-10-16T15:56:33.287Z",
+    "currentPresence": "FOUND_METADATA_WITH_MATCHING_HISTORICAL_PIN",
+    "payloadFetched": false,
+    "freshContentHashVerified": false,
+    "proofs": [
+      {
+        "file": "docs/betrieb/500er-main-abgleich-20261027.json",
+        "pointer": "archiveReadback",
+        "reportedByRoot": true
+      },
+      {
+        "driveFileId": "1DQxJt1EJOWasn9ZhnFj5Y6iJGnVatTE1",
+        "name": "HELMUT_HANDOFF_20261016_MANIFEST.json",
+        "pointer": "archive",
+        "verifiedAtUTC": "2026-10-16T15:56:56.942942+00:00",
+        "all79FileSHA256Verified": true
+      },
+      {
+        "driveFileId": "1Uxnico7h1oF6XBS_Q-GYvPQgMt-Dk_If",
+        "name": "HELMUT_HANDOFF_20261019_MANIFEST.SAFE.json",
+        "pointer": "priorArchivesVerified/0",
+        "verifiedAtUTC": "2026-10-19T17:33:59.408854+00:00",
+        "verifiedMembers": 81,
+        "allDeclaredMemberHashesVerified": true
+      }
+    ]
+  },
+  "olderCipherRecoveryCandidate": {
+    "indexDriveId": "17DDhInbRwN20nqRPuNp3KTLq6AqMEhWc",
+    "name": "HELMUT_HETZNER_SOURCE_BACKUP_08f_46861032_INDEX_20261026.SAFE.json",
+    "status": "ENCRYPTED_DRIVE_BACKUP_RETURN_VERIFIED_NOT_TARGET_RESTORED",
+    "parts": 30,
+    "cipherBytes": 487267152,
+    "cipherSHA256": "468610327368d51360815d18538ad0c3fcdc4d98825bb8bf0499daa96112ab3c",
+    "scopeSHA256": "08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd",
+    "declaredRegularFiles": 1767,
+    "declaredRegularBytes": 2865680705,
+    "targetThreeOriginalMemberHashesProven": false,
+    "targetNewQualificationFilesProven": false,
+    "payloadFetched": false,
+    "scope": "Candidate only; readable index has no exact target-member inventory"
+  },
+  "metadataInventories": {
+    "v2ReceiptDriveId": "17YH1IMChEHBH6yjmhrXdVHc2BsLasdQr",
+    "v2VerificationDriveId": "119HrbfGBo0UGfe0UjayZtivCdXtWI1b6",
+    "v2Entries": 364084,
+    "fileContentsCollected": false,
+    "credentialValuesCollected": false,
+    "status": "FILESYSTEM_METADATA_INVENTORY_COMPLETE_DATA_BACKUP_NOT_COMPLETE",
+    "compressedInventoryPayloadFetched": false
+  },
+  "threeOldOriginalsManifest": {
+    "driveFileId": "1Z52ScvFMY5Ge6QVAIEjnQ6RaYFiZ77YK",
+    "name": "HELMUT_HANDOFF_20261016_MANIFEST_ADDITIONS.SAFE.json",
+    "recordedAtUTC": "2026-10-16T19:10:58.621314+00:00",
+    "section": "pendingNotTransferred",
+    "status": "NOT_TRANSFERRED_REQUIRES_CONFIRMED_PUBLIC_ENCRYPTION_RECIPIENT",
+    "provesArchiveMembership": false,
+    "pins": [
+      {
+        "assetKey": "normalizedCurrentPolicy",
+        "path": "/workspace/helmut-parallel-20261015/wave13/NORMALIZED500_CURRENT_POLICY.PRIVATE.json",
+        "bytes": 89982254,
+        "sha256": "90e11a4228e2e568edf03c3feb9ea2c79e71449e68fdc6c563a3355f1fbaaa14"
+      },
+      {
+        "assetKey": "package",
+        "path": "/workspace/helmut-parallel-20261015/wave13/input-extraction/ORIGINAL_PACKAGE.PRIVATE.json",
+        "bytes": 631359,
+        "sha256": "52b4a49c334a2d537f642cddf3f95d3eb6e6830e0f3b1b7280c8bd8fd3812f10"
+      },
+      {
+        "assetKey": "originalUPacket",
+        "path": "/workspace/helmut-parallel-20261015/wave9/native-fixture/ORIGINAL_U_PACKET.PRIVATE.json",
+        "bytes": 53018,
+        "sha256": "8d732cb88dc6df457b66682a45831e60b8ecdb28d92b35d4c1db4440991f2ed2"
+      }
+    ]
+  },
+  "assets": [
+    {
+      "key": "originalReception",
+      "historicalPath": "/workspace/shared/helmut-w15-receipt-20261027/reports/W15_RECEPTION_REPORT.SAFE.json",
+      "reuseExistingReceivedKey": "reception",
+      "newAcquisitionRequired": false,
+      "bytes": 12357,
+      "sha256": "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1",
+      "publicPinEvidence": "docs/betrieb/belege/w15-end500-transfer-20261029/SOURCE_INVENTORY.SAFE.json#/inventory/controlFiles/reception",
+      "currentAvailability": "REUSE_EXISTING_END500_RECEPTION"
+    },
+    {
+      "key": "package",
+      "historicalPath": "/workspace/helmut-parallel-20261015/wave13/input-extraction/ORIGINAL_PACKAGE.PRIVATE.json",
+      "historicalPathResolution": "originalReception.files.find(entry => entry.key === 'package').receivedPath",
+      "bytes": 631359,
+      "sha256": "52b4a49c334a2d537f642cddf3f95d3eb6e6830e0f3b1b7280c8bd8fd3812f10",
+      "publicPinEvidence": "docs/betrieb/belege/w15-processing-20261027/CURRENT_SOURCES_20261028_ORIGINALS.SAFE.json#/originalPreservation/originalPins",
+      "historicalPathEvidence": "docs/betrieb/w15-minimal-datenuebernahme-20261027.json",
+      "currentAvailability": "NOT_CONFIRMED_IN_ACCESSIBLE_BACKUP_INVENTORIES"
+    },
+    {
+      "key": "normalizedCurrentPolicy",
+      "historicalPath": "/workspace/helmut-parallel-20261015/wave13/NORMALIZED500_CURRENT_POLICY.PRIVATE.json",
+      "historicalPathResolution": "originalReception.files.find(entry => entry.key === 'normalizedCurrentPolicy').receivedPath",
+      "bytes": 89982254,
+      "sha256": "90e11a4228e2e568edf03c3feb9ea2c79e71449e68fdc6c563a3355f1fbaaa14",
+      "publicPinEvidence": "docs/betrieb/belege/w15-processing-20261027/CURRENT_SOURCES_20261028_ORIGINALS.SAFE.json#/originalPreservation/originalPins",
+      "historicalPathEvidence": "docs/betrieb/w15-minimal-datenuebernahme-20261027.json",
+      "currentAvailability": "NOT_CONFIRMED_IN_ACCESSIBLE_BACKUP_INVENTORIES"
+    },
+    {
+      "key": "originalUPacket",
+      "historicalPath": "/workspace/helmut-parallel-20261015/wave9/native-fixture/ORIGINAL_U_PACKET.PRIVATE.json",
+      "historicalPathResolution": "originalReception.files.find(entry => entry.key === 'originalUPacket').receivedPath",
+      "bytes": 53018,
+      "sha256": "8d732cb88dc6df457b66682a45831e60b8ecdb28d92b35d4c1db4440991f2ed2",
+      "publicPinEvidence": "docs/betrieb/belege/w15-processing-20261027/CURRENT_SOURCES_20261028_ORIGINALS.SAFE.json#/originalPreservation/originalPins",
+      "historicalPathEvidence": "docs/betrieb/w15-minimal-datenuebernahme-20261027.json",
+      "currentAvailability": "NOT_CONFIRMED_IN_ACCESSIBLE_BACKUP_INVENTORIES"
+    },
+    {
+      "key": "qualificationReport",
+      "historicalPath": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b/ALL500_MOCK_BINDINGS_CHECK.SAFE.json",
+      "bytes": 13706128,
+      "sha256": "d2603d926508a1655b415b18734fe37bc1a660dccb6f139ae43b1859a11bed3d",
+      "publicPinEvidence": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/SOURCE_COMPATIBILITY.SAFE.json#/qualificationPin",
+      "currentAvailability": "NOT_CONFIRMED_IN_ACCESSIBLE_BACKUP_INVENTORIES"
+    },
+    {
+      "key": "qualifiedRows",
+      "historicalPath": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b/QUALIFIED_ROWS.PRIVATE.json",
+      "bytes": 99566746,
+      "sha256": "22d4f73337178ec260c6d963f5539044f15e07d952aafc83e258cfdc4d267359",
+      "deferredExactPin": "qualificationReport.qualifiedAssets.rows",
+      "pinSourceKnownButPrivateRecordUnavailable": false,
+      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets",
+      "retainedMetadataEvidence": "Existing Hauptthread recorded qualification-b report read; no qualification repeated. Payload not available in this runner.",
+      "currentAvailability": "NOT_CONFIRMED_IN_ACCESSIBLE_BACKUP_INVENTORIES"
+    },
+    {
+      "key": "qualifiedFixtures",
+      "historicalPath": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b/QUALIFIED_MOCK_FIXTURES.PRIVATE.json",
+      "bytes": 1895933,
+      "sha256": "548a5bd3e268be76a85ba8088c6993c0860b4f90659b47da1c76526cf486d9d1",
+      "deferredExactPin": "qualificationReport.qualifiedAssets.fixtures",
+      "pinSourceKnownButPrivateRecordUnavailable": false,
+      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets",
+      "retainedMetadataEvidence": "Existing Hauptthread recorded qualification-b report read; no qualification repeated. Payload not available in this runner.",
+      "currentAvailability": "NOT_CONFIRMED_IN_ACCESSIBLE_BACKUP_INVENTORIES"
+    },
+    {
+      "key": "qualifiedNative",
+      "historicalPath": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b/QUALIFIED_NATIVE.PRIVATE.json",
+      "bytes": 53017,
+      "sha256": "986379885a2e7ea74de82d5075201183f8fc3837eec1f24c3ece4480561dee8b",
+      "deferredExactPin": "qualificationReport.qualifiedAssets.native",
+      "pinSourceKnownButPrivateRecordUnavailable": false,
+      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets",
+      "retainedMetadataEvidence": "Existing Hauptthread recorded qualification-b report read; no qualification repeated. Payload not available in this runner.",
+      "currentAvailability": "NOT_CONFIRMED_IN_ACCESSIBLE_BACKUP_INVENTORIES"
+    },
+    {
+      "key": "qualifiedDerivations",
+      "historicalPath": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b/QUALIFIED_DERIVATIONS.PRIVATE.json",
+      "bytes": 11391939,
+      "sha256": "c19a56ea20ee4d05f8c6578b2bfe5af603fe89c0418df4fda7be085a1e19c261",
+      "deferredExactPin": "qualificationReport.qualifiedAssets.derivations",
+      "pinSourceKnownButPrivateRecordUnavailable": false,
+      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets",
+      "retainedMetadataEvidence": "Existing Hauptthread recorded qualification-b report read; no qualification repeated. Payload not available in this runner.",
+      "currentAvailability": "NOT_CONFIRMED_IN_ACCESSIBLE_BACKUP_INVENTORIES"
+    },
+    {
+      "key": "currentReplacements",
+      "historicalPath": "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b/CURRENT_NATIVE_REPLACEMENTS.PRIVATE.json",
+      "bytes": null,
+      "sha256": null,
+      "deferredExactPin": "qualificationReport.currentNativeReplacementsPin",
+      "pinSourceKnownButPrivateRecordUnavailable": true,
+      "publicPinEvidence": "scripts/synthetik-500-w15-full500-materials.js#qualifiedAssets",
+      "currentAvailability": "NOT_CONFIRMED_IN_ACCESSIBLE_BACKUP_INVENTORIES"
+    },
+    {
+      "key": "publicationPolicy",
+      "historicalPath": "/workspace/shared/helmut-w15-development-20261027/publication-policy.PRIVATE.json",
+      "bytes": 493,
+      "sha256": "274033cdfdd5f1527d0e961a6c00482d61b7be317eeea03e736a6a5948aa6a04",
+      "publicPinEvidence": "docs/betrieb/belege/w15-processing-20261027/MOCK_BINDINGS_20261028_ALL500.SAFE.json#/policyPin",
+      "currentAvailability": "NOT_CONFIRMED_IN_ACCESSIBLE_BACKUP_INVENTORIES"
+    },
+    {
+      "key": "originalBuilderArchive",
+      "historicalPath": "/workspace/attachments/1ba8d4a9-bf54-4cbe-b89b-2fb3f2b7518b/HELMUT_HANDOFF_20261016_MINIMAL.zip",
+      "bytes": 269598,
+      "sha256": "c979e18775f285ddf7af4328c8efc8f0642954eb6d0e52e50636d3b4ab902d15",
+      "publicPinEvidence": "scripts/synthetik-500-w15-signed-chain-test.js#originalBuilder",
+      "existingDriveMetadata": {
+        "fileId": "1_yaGlXYrG2ExYbE2MFBq_ucE4YtgMFCm",
+        "bytes": 269598,
+        "historicalSHA256Evidence": "docs/betrieb/500er-main-abgleich-20261027.json#/archiveReadback",
+        "payloadReadDuringThisInventory": false,
+        "freshByteHashVerified": false
+      },
+      "currentAvailability": "EXISTING_DRIVE_METADATA_AND_HISTORICAL_PIN"
+    }
+  ],
+  "remainingAdditionalSourcePayloadsNotLocated": 10,
+  "knownAdditionalBytesExcludingUnknownReplacement": 217550485,
+  "unknownPinAssets": [
+    "currentReplacements"
+  ],
+  "payloadDownloads": 0,
+  "cipherDownloads": 0,
+  "decryptions": 0,
+  "transfers": 0,
+  "qualificationsRepeated": 0,
+  "hashMismatchesObserved": 0,
+  "globalDataLossProven": false,
+  "githubArtifactCoverage": "Repository-wide response truncated; not evidence of global absence.",
+  "executionAuthority": false,
+  "transferAuthorized": false
+}

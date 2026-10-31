@@ -1,0 +1,205 @@
+{
+  "schema": "helmut-w15-full500-mock-go-proposal/1",
+  "status": "PLAN_READY_FOR_REVIEW_EXECUTOR_CONNECTIONS_PENDING",
+  "executionAuthorized": false,
+  "newPerformanceTests": 0,
+  "activationsNow": 0,
+  "containersCreatedNow": 0,
+  "motor": "W15 ordinary-v1 only",
+  "basisPR": 972,
+  "basisCommit": "b6a883c120ad5e4747e4341af551f6ba5a5f4aa1",
+  "scope": "One local synthetic mock run only; no Production proof",
+  "readiness": {
+    "originalFiles": 11,
+    "originalBytes": 96530256,
+    "originalReceiptStatus": "PASS_ALL_11_FILES_COMPLETE_RECEPTION",
+    "cohortProfiles": 500,
+    "identities": 501,
+    "distribution": {
+      "BT": 330,
+      "BE": 120,
+      "BB": 50
+    },
+    "ownerMappings": 500,
+    "reviewedVariants": 7,
+    "additionalOriginalTransferRequired": false,
+    "cachedPostgresImageID": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e"
+  },
+  "memory": {
+    "contract": "scripts/fixtures/w15-memory-contract.json",
+    "limitBytes": 2048000000,
+    "minimumReservePercent": 20,
+    "minimumReserveBytes": 409600000,
+    "maximumConsumptionBytes": 1638400000,
+    "technicalCapProvenNow": false,
+    "freshSingleCgroupRequired": true,
+    "allAppDBGatewayDriverMockWorkersAndAuditInside": true,
+    "externalSupervisorOnly": true,
+    "swapLimitBytes": 0,
+    "baselineSubtractionOrPeakReset": false
+  },
+  "plannedContainer": {
+    "createNow": false,
+    "flags": [
+      "--pull=never",
+      "--network=none",
+      "--restart=no",
+      "--memory=2048000000",
+      "--memory-swap=2048000000"
+    ],
+    "existingPGDataMountAllowed": false,
+    "publishedPortsAllowed": false,
+    "newServerOrHetznerAllowed": false,
+    "mustVerifyKernelLimitsBeforeActivation": true
+  },
+  "sequence": {
+    "runs": 1,
+    "simultaneouslyActiveSyntheticProfiles": 500,
+    "units": 500,
+    "HTTPstart": 1,
+    "HTTPnextMaximum": 499,
+    "sequential": true,
+    "calls": 1000,
+    "D": 500,
+    "R": 500,
+    "realModelCalls": 0,
+    "expectedStoredPositions": 1500,
+    "newOperationAndSignatures": true,
+    "additionalSingleUnitTrial": false,
+    "firstErrorOrUnknownStops": true,
+    "retryOrResumeAllowed": false,
+    "worstCaseDelayUnitIndexes": [
+      0,
+      499
+    ],
+    "delaysEachWorstCaseUnitMS": [
+      19900,
+      19900
+    ],
+    "otherUnitsArtificialDelayMS": 0,
+    "newUnderstandingExecutions": 0,
+    "preloadedDocumentCount": 7,
+    "preloadedKOCount": 6
+  },
+  "limits": {
+    "unitStartThroughFinishACKMS": 60000,
+    "everyAuthMutationThroughACKMS": 30000,
+    "providerMS": 20000,
+    "activeWindowMS": 10800000,
+    "cleanupAndCompletionWindowMS": 1800000,
+    "sameUTCAndBerlinDayMustFitTotalWindow": true,
+    "startObservationMaxAgeMS": 60000,
+    "extendDuringRun": false,
+    "EUContractMaxActiveMS": 32400000,
+    "boundLastOrderUTCDate": "2026-10-31",
+    "offlineFullContentPreparationMS": 90000,
+    "everyPreparedOpenMS": 60000
+  },
+  "securityCheckpoints": {
+    "units": 500,
+    "perUnit": 16,
+    "perUnitKinds": {
+      "load": 10,
+      "admission": 6
+    },
+    "total": 8000,
+    "slice": "immediately before J.enter through final persistent ACK; exclude entry and pre-unit checkpoints",
+    "allAdditionalOriginalGuardsRemain": true
+  },
+  "mandatoryConnectionsBeforeRun": [
+    "fresh capped single-container isolation and outer cleanup supervisor",
+    "500 fresh owner/run/request bindings and index-aware local provider",
+    "start then499 gated next requests using existing motor",
+    "per-unit control slicing; full90s/open60s; all Auth/FinishACK plus internal Usage-sink CAS coverage and no unassigned native Auth write",
+    "bounded independent1500-row/evidence/DR-provenance audit",
+    "replace single-unit30min/150s scope with fixed3h plus30min completion and actual500-scope GO"
+  ],
+  "acceptance": [
+    "500entered/500FinalACK/500outputs/1000accounted/index500/stateclosed/inFlightnull",
+    "1500 unique full stored positions for all500owners",
+    "one offlineFullC<90s and all500PreparedOpen<60s within this same run",
+    "all500Units<60s and all observedAuth<30s including grown ledger",
+    "8000 actual native freshness/admission points:16 perUnit",
+    "common kernel peak<=1638400000 and enforced memory.max2048000000/swap0",
+    "bound native end and independent active0, original source unchanged"
+  ],
+  "cleanup": {
+    "requiredOnSuccessOrFailure": true,
+    "stopOwnedDispatchFirst": true,
+    "existingBoundNativeEndRPC": true,
+    "SQLAndNativeAndIndependentZeroReadback": true,
+    "onePGOnlyRecoveryIfPGDies": true,
+    "sameFreshPersistentPGDATAAndMemoryCap": true,
+    "noAppOrDispatchDuringRecovery": true,
+    "unknownEndWriteMeansReadbackNoBlindWriteRetry": true,
+    "zeroNotConfirmedMeansFailUnknownManualBoundCleanup": true,
+    "containerRestartMayRecreateCgroup": true,
+    "recoveryPeakMustNotReplaceOriginalPeak": true,
+    "missingOriginalFinalPeakOrEventsMeansUnknownNotPass": true
+  },
+  "reuse": {
+    "UNIT0BUnitMS": 55924.351053000006,
+    "UNIT0BMaximumAuthMS": 662.9583869999988,
+    "UNIT0BIndependentChecks": 34,
+    "historicalRuntimeProcessMS": 8043674.110064,
+    "historicalCSVUnitSumMS": 7628043.233074,
+    "historicalWholeSequenceMS": 8061305.058283,
+    "historicalExactHTTPTimeSumAvailable": false,
+    "historicalClaimsNotRelabeledAsNewProof": true,
+    "historicalSourcePins": [
+      {
+        "name": "assess-runtime.js",
+        "archivePath": "blobs/366d956089598d9d06b1a62b01614123d37a1a89343471a23d22f41857445aa5",
+        "bytes": 5836,
+        "sha256": "366d956089598d9d06b1a62b01614123d37a1a89343471a23d22f41857445aa5"
+      },
+      {
+        "name": "observe-app.js",
+        "archivePath": "blobs/c065679dafb64c007b72782eac7cd9fdc246a4ae26c29714a3532f0faf612411",
+        "bytes": 9109,
+        "sha256": "c065679dafb64c007b72782eac7cd9fdc246a4ae26c29714a3532f0faf612411"
+      },
+      {
+        "name": "measure-runtime.js",
+        "archivePath": "blobs/67287ef090c93a4bebfd2c39df259d2201795f8441950a40fb3268fa157c7e69",
+        "bytes": 2498,
+        "sha256": "67287ef090c93a4bebfd2c39df259d2201795f8441950a40fb3268fa157c7e69"
+      },
+      {
+        "name": "local-provider.js",
+        "archivePath": "blobs/56992037a0c08f1208f53ba8f16f5e66d95efb1a7699d78881df90ab1f23d132",
+        "bytes": 3920,
+        "sha256": "56992037a0c08f1208f53ba8f16f5e66d95efb1a7699d78881df90ab1f23d132"
+      },
+      {
+        "name": "LOCAL500_TIMINGS_AND_CONTROLS.csv",
+        "archivePath": "blobs/3f8889e11f8b13f2d4ae5cda5cb2605a3d65aa77310ea76df78249d1f00b2166",
+        "bytes": 36257,
+        "sha256": "3f8889e11f8b13f2d4ae5cda5cb2605a3d65aa77310ea76df78249d1f00b2166"
+      },
+      {
+        "name": "AUTH4000_TIMINGS.csv",
+        "archivePath": "blobs/87fd761d746e754046791f12d2326a0ec3c88458561017a031f53568e0e79ef5",
+        "bytes": 111403,
+        "sha256": "87fd761d746e754046791f12d2326a0ec3c88458561017a031f53568e0e79ef5"
+      },
+      {
+        "name": "SEQUENCE_RESULT.SAFE.json",
+        "archivePath": "blobs/555fcc4ba50589633e1a9c1c9bd9f76b22f36aeabab7cebdb5499d4b7ceaacdd",
+        "bytes": 1783,
+        "sha256": "555fcc4ba50589633e1a9c1c9bd9f76b22f36aeabab7cebdb5499d4b7ceaacdd"
+      }
+    ]
+  },
+  "productionProof": false,
+  "productionOrPaidModelOrBudgetOrMergeActionsAllowed": false,
+  "planDocument": "docs/betrieb/w15-voll500-mock-testplan-20261027.md",
+  "authCoverage": {
+    "existingExportWrapperInsufficientForAllCAS": true,
+    "internalUsageSink": "storage.recordLlmUsage calls lexical mutateAuthStore",
+    "requiredAdditionalCoverage": "Acknowledged original Usage-sink envelope <30000ms as conservative upper bound for internal CAS; reconcile every native Auth write to complete measurement",
+    "expectedUsageReceipts": 1000,
+    "observedExportCASCountNotTreatedAsAllCAS": true,
+    "atLeastDistinctFinishACKs": 500
+  }
+}

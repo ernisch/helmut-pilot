@@ -1,0 +1,1516 @@
+{
+  "schema": "helmut-w15-targeted-restorecheck/1",
+  "startedAtUTC": "2026-10-27T19:43:50.904814+00:00",
+  "database": "helmut_w15_restorecheck_20261027",
+  "status": "PASS_COMMITTED_ORIGINAL_RESTORE_WITH_500_INACTIVE_PROFILES",
+  "restoreAttempts": 1,
+  "unitExecutions": 0,
+  "profileActivations": 0,
+  "mockResponses": 0,
+  "realModelCalls": 0,
+  "controllerSHA256": "5841938710cba1f4e0d5907441554009c6b329435a40eeefe36790ab4c956353",
+  "counts": {
+    "active": 0,
+    "database": "helmut_w15_restorecheck_20261027",
+    "profiles": 500,
+    "identities": 501
+  },
+  "tables": [
+    {
+      "rls": true,
+      "name": "briefings",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "slot",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "generated_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "payload",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "notNull": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": true
+        }
+      ],
+      "constraints": [
+        {
+          "kind": "p",
+          "name": "briefings_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "kind": "f",
+          "name": "briefings_user_id_fkey",
+          "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE"
+        }
+      ],
+      "ownTriggers": []
+    },
+    {
+      "rls": true,
+      "name": "helmut_job_outbox",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        }
+      ],
+      "constraints": [
+        {
+          "kind": "p",
+          "name": "helmut_job_outbox_pkey",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "ownTriggers": []
+    },
+    {
+      "rls": true,
+      "name": "helmut_jobs",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "lease_expires_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        }
+      ],
+      "constraints": [],
+      "ownTriggers": []
+    },
+    {
+      "rls": true,
+      "name": "helmut_store",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "data",
+          "type": "jsonb",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": false
+        }
+      ],
+      "constraints": [
+        {
+          "kind": "p",
+          "name": "helmut_store_pkey",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "ownTriggers": [
+        {
+          "name": "helmut_s500_command_immutable_row_v1",
+          "enabled": "A",
+          "definition": "CREATE TRIGGER helmut_s500_command_immutable_row_v1 BEFORE DELETE OR UPDATE ON helmut_store FOR EACH ROW EXECUTE FUNCTION helmut_s500_command_immutable_row_v1()"
+        },
+        {
+          "name": "helmut_s500_command_no_truncate_v1",
+          "enabled": "A",
+          "definition": "CREATE TRIGGER helmut_s500_command_no_truncate_v1 BEFORE TRUNCATE ON helmut_store FOR EACH STATEMENT EXECUTE FUNCTION helmut_s500_command_no_truncate_v1()"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "name": "knowledge_objects",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "vorgang_id",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "ko_version",
+          "type": "integer",
+          "default": "1",
+          "notNull": true
+        },
+        {
+          "name": "headline",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "was_ist_passiert",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "warum_wichtig",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "wer_ist_betroffen",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "parteien",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "ausschuesse",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "ministerien",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "risiken",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "chancen",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "zeitdruck",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "handlungsempfehlung",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "confidence_score",
+          "type": "integer",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "source_document_count",
+          "type": "integer",
+          "default": "0",
+          "notNull": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'neu'::text",
+          "notNull": true
+        },
+        {
+          "name": "understanding_status",
+          "type": "text",
+          "default": "'pending'::text",
+          "notNull": true
+        },
+        {
+          "name": "mentioned_people",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "mentioned_mps",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "mentioned_parties",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "mentioned_committees",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "mentioned_ministries",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "mentioned_locations",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "mentioned_organizations",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "policy_field",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "political_level",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "instrument",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "stage",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "tags",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "deadline",
+          "type": "timestamp with time zone",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "display_title",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "display_summary",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "why_relevant",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "recommendation",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "display_category",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "risk_of_no_action",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "opportunity_summary",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "recommended_communication",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "action_items",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": false
+        },
+        {
+          "name": "risk_level",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "opportunity_level",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "recommended_communication_struct",
+          "type": "jsonb",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "action_items_struct",
+          "type": "jsonb",
+          "default": "'[]'::jsonb",
+          "notNull": false
+        },
+        {
+          "name": "best_source_url",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "best_link_type",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "source_trust",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "understanding_model",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "understanding_tokens",
+          "type": "integer",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": true
+        },
+        {
+          "name": "decision_level",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "related_levels",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "event_type",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "affected_geographies",
+          "type": "jsonb",
+          "default": "'[]'::jsonb",
+          "notNull": true
+        },
+        {
+          "name": "mentioned_geographies",
+          "type": "jsonb",
+          "default": "'[]'::jsonb",
+          "notNull": true
+        },
+        {
+          "name": "decision_entities",
+          "type": "jsonb",
+          "default": "'[]'::jsonb",
+          "notNull": true
+        },
+        {
+          "name": "related_entities",
+          "type": "jsonb",
+          "default": "'[]'::jsonb",
+          "notNull": true
+        },
+        {
+          "name": "classification_confidence",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "notNull": true
+        },
+        {
+          "name": "verstehen_fencing",
+          "type": "bigint",
+          "default": null,
+          "notNull": false
+        }
+      ],
+      "constraints": [
+        {
+          "kind": "p",
+          "name": "knowledge_objects_pkey",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "ownTriggers": []
+    },
+    {
+      "rls": true,
+      "name": "ko_document_links",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "knowledge_object_id",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "raw_document_id",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": true
+        }
+      ],
+      "constraints": [
+        {
+          "kind": "f",
+          "name": "ko_document_links_knowledge_object_id_fkey",
+          "definition": "FOREIGN KEY (knowledge_object_id) REFERENCES knowledge_objects(id) ON DELETE CASCADE"
+        },
+        {
+          "kind": "p",
+          "name": "ko_document_links_pkey",
+          "definition": "PRIMARY KEY (knowledge_object_id, raw_document_id)"
+        },
+        {
+          "kind": "f",
+          "name": "ko_document_links_raw_document_id_fkey",
+          "definition": "FOREIGN KEY (raw_document_id) REFERENCES raw_documents(id) ON DELETE CASCADE"
+        }
+      ],
+      "ownTriggers": []
+    },
+    {
+      "rls": true,
+      "name": "llm_budget_counters",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "day",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "scope",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "used",
+          "type": "integer",
+          "default": "0",
+          "notNull": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": true
+        }
+      ],
+      "constraints": [
+        {
+          "kind": "p",
+          "name": "llm_budget_counters_pkey",
+          "definition": "PRIMARY KEY (day, scope)"
+        }
+      ],
+      "ownTriggers": []
+    },
+    {
+      "rls": true,
+      "name": "llm_usage",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "tenant_id",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "profile_id",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "run_id",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "pipeline_step",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "politician_id",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "model",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "call_type",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "prompt_tokens",
+          "type": "integer",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "completion_tokens",
+          "type": "integer",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "total_tokens",
+          "type": "integer",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "estimated_cost",
+          "type": "numeric",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "duration_ms",
+          "type": "integer",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "success",
+          "type": "boolean",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "error",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": true
+        }
+      ],
+      "constraints": [
+        {
+          "kind": "p",
+          "name": "llm_usage_pkey",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "ownTriggers": []
+    },
+    {
+      "rls": true,
+      "name": "mandate_profiles",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "partei",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "fraktion",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "rolle",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "politische_ebene",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "wahlkreis",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "bundesland",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "ausschuesse",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "berichterstatter_themen",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "fachpolitische_schwerpunkte",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "aktuelle_kampagnen",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "oeffentliche_positionen",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "wichtige_zielgruppen",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "kommunikationsstil",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "risiko_themen",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "chancen_themen",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "no_go_themen",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "bevorzugte_kanaele",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "naechste_termine",
+          "type": "jsonb",
+          "default": "'[]'::jsonb",
+          "notNull": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": true
+        },
+        {
+          "name": "namensvarianten",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "stellvertretende_ausschuesse",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "regionale_themen",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "regierungsrolle",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "aktiv",
+          "type": "boolean",
+          "default": "true",
+          "notNull": true
+        },
+        {
+          "name": "onboarding_status",
+          "type": "text",
+          "default": "'neu'::text",
+          "notNull": true
+        },
+        {
+          "name": "ki_budget_taeglich_cent",
+          "type": "integer",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "ki_budget_monatlich_cent",
+          "type": "integer",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "datenschutz_bestaetigt_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "geloescht_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "relevante_ministerien",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "gegner",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "monitoring_ziele",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "regionale_interessen",
+          "type": "text[]",
+          "default": "'{}'::text[]",
+          "notNull": true
+        },
+        {
+          "name": "themen_prioritaeten",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "notNull": true
+        },
+        {
+          "name": "buero_uebergabe",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "profil_extras",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "notNull": true
+        }
+      ],
+      "constraints": [
+        {
+          "kind": "c",
+          "name": "mandate_profiles_ki_budget_monatlich_check",
+          "definition": "CHECK (ki_budget_monatlich_cent IS NULL OR ki_budget_monatlich_cent > 0)"
+        },
+        {
+          "kind": "c",
+          "name": "mandate_profiles_ki_budget_taeglich_check",
+          "definition": "CHECK (ki_budget_taeglich_cent IS NULL OR ki_budget_taeglich_cent > 0)"
+        },
+        {
+          "kind": "c",
+          "name": "mandate_profiles_onboarding_status_check",
+          "definition": "CHECK (onboarding_status = ANY (ARRAY['neu'::text, 'in_bearbeitung'::text, 'abgeschlossen'::text]))"
+        },
+        {
+          "kind": "p",
+          "name": "mandate_profiles_pkey",
+          "definition": "PRIMARY KEY (user_id)"
+        },
+        {
+          "kind": "c",
+          "name": "mandate_profiles_politische_ebene_check",
+          "definition": "CHECK (politische_ebene IS NULL OR (politische_ebene = ANY (ARRAY['bundestag'::text, 'landtag'::text])))"
+        },
+        {
+          "kind": "c",
+          "name": "mandate_profiles_regierungsrolle_check",
+          "definition": "CHECK (regierungsrolle IS NULL OR (regierungsrolle = ANY (ARRAY['regierung'::text, 'opposition'::text, 'unbekannt'::text])))"
+        },
+        {
+          "kind": "f",
+          "name": "mandate_profiles_user_id_fkey",
+          "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE"
+        }
+      ],
+      "ownTriggers": []
+    },
+    {
+      "rls": true,
+      "name": "pipeline_locks",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "job_name",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "locked_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": true
+        },
+        {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "token",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        }
+      ],
+      "constraints": [
+        {
+          "kind": "p",
+          "name": "pipeline_locks_pkey",
+          "definition": "PRIMARY KEY (job_name)"
+        }
+      ],
+      "ownTriggers": []
+    },
+    {
+      "rls": true,
+      "name": "process_runs",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        }
+      ],
+      "constraints": [],
+      "ownTriggers": []
+    },
+    {
+      "rls": true,
+      "name": "profiles",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": true
+        },
+        {
+          "name": "role",
+          "type": "jsonb",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "party",
+          "type": "jsonb",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "state",
+          "type": "jsonb",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "faction",
+          "type": "jsonb",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "location",
+          "type": "jsonb",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "committee",
+          "type": "jsonb",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "embedding",
+          "type": "jsonb",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "committees",
+          "type": "jsonb",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "focustopics",
+          "type": "jsonb",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "constituency",
+          "type": "jsonb",
+          "default": null,
+          "notNull": false
+        }
+      ],
+      "constraints": [
+        {
+          "kind": "p",
+          "name": "profiles_pkey",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "ownTriggers": []
+    },
+    {
+      "rls": true,
+      "name": "raw_documents",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "default": null,
+          "notNull": true
+        },
+        {
+          "name": "canonical_url",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "content_hash",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "cluster_id",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "summary",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "url",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "source_name",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "source_id",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "source_type",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "confidence",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "link_type",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "retrieved_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "document_type",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "wahlperiode",
+          "type": "text",
+          "default": null,
+          "notNull": false
+        },
+        {
+          "name": "raw",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "notNull": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "notNull": true
+        }
+      ],
+      "constraints": [
+        {
+          "kind": "p",
+          "name": "raw_documents_pkey",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "ownTriggers": []
+    }
+  ],
+  "functions": [
+    {
+      "name": "json_compact",
+      "config": [
+        "search_path=pg_catalog"
+      ],
+      "result": "text",
+      "schema": "helmut_synthetik500_internal",
+      "language": "plpgsql",
+      "arguments": "p jsonb",
+      "bodySHA256": "17224efe2081e0473b3f43541bd06a43733fd28db7833a66c771855bbf194100",
+      "volatility": "i",
+      "securityDefiner": false
+    },
+    {
+      "name": "pruefe",
+      "config": [
+        "search_path=pg_catalog"
+      ],
+      "result": "jsonb",
+      "schema": "helmut_synthetik500_internal",
+      "language": "plpgsql",
+      "arguments": "p_operation_id text, p_manifest_hash text, p_production_commit text",
+      "bodySHA256": "65a8b70432e8393d62b2dc4654de763153927882eb500a1863abf015c5b0d39d",
+      "volatility": "s",
+      "securityDefiner": false
+    },
+    {
+      "name": "status",
+      "config": [
+        "search_path=pg_catalog"
+      ],
+      "result": "jsonb",
+      "schema": "helmut_synthetik500_internal",
+      "language": "sql",
+      "arguments": "e jsonb, n integer",
+      "bodySHA256": "f5601b059040aa076a4a3f7d13758aa22de3ebd3af4a659651ef109691de0e77",
+      "volatility": "v",
+      "securityDefiner": false
+    },
+    {
+      "name": "helmut_reserve_llm_call",
+      "config": null,
+      "result": "TABLE(allowed boolean, used integer)",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_day text, p_scope text, p_max integer",
+      "bodySHA256": "798d7d0a4a57682b84787f0381f15938360075250a66aad2bb156bdfc708fae5",
+      "volatility": "v",
+      "securityDefiner": false
+    },
+    {
+      "name": "helmut_s500_command_immutable_row_v1",
+      "config": [
+        "search_path=pg_catalog"
+      ],
+      "result": "trigger",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "bodySHA256": "eca91f5d879cc5e0811370f769aa98bf7dfbaba8941a6bf14644f22913fb1826",
+      "volatility": "v",
+      "securityDefiner": false
+    },
+    {
+      "name": "helmut_s500_command_no_truncate_v1",
+      "config": [
+        "search_path=pg_catalog"
+      ],
+      "result": "trigger",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "bodySHA256": "e911523512516397afab7b79b8393fe662e13abd89bedf14847efcf84be9e0f2",
+      "volatility": "v",
+      "securityDefiner": false
+    },
+    {
+      "name": "helmut_s500_read_command_binding_v1",
+      "config": [
+        "search_path=pg_catalog"
+      ],
+      "result": "jsonb",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_operation_id text, p_nonce text, p_include_data boolean",
+      "bodySHA256": "e690c13a70c791e1fc07ee7fe532b646ecb1da1f863f8d14dfbc9d1303865641",
+      "volatility": "s",
+      "securityDefiner": false
+    },
+    {
+      "name": "helmut_synthetik500_current_inputs_v1",
+      "config": [
+        "search_path=pg_catalog"
+      ],
+      "result": "jsonb",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_document_ids text[], p_knowledge_object_ids text[], p_read_nonce text",
+      "bodySHA256": "29b193c958d52f1395ed5fbe5b80cd4520aef5b7cc4fecebf665bd4d28fc209e",
+      "volatility": "s",
+      "securityDefiner": false
+    },
+    {
+      "name": "helmut_synthetik500_ende",
+      "config": [
+        "search_path=pg_catalog",
+        "lock_timeout=3s",
+        "statement_timeout=15s"
+      ],
+      "result": "jsonb",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_operation_id text, p_manifest_hash text, p_production_commit text, p_grund text, p_bestaetigung text",
+      "bodySHA256": "f5cd383a947761351cd8bb1418b360d34ef2a8de040bd7429f377235ef66969d",
+      "volatility": "v",
+      "securityDefiner": false
+    },
+    {
+      "name": "helmut_synthetik500_lesung",
+      "config": [
+        "search_path=pg_catalog",
+        "lock_timeout=3s",
+        "statement_timeout=15s"
+      ],
+      "result": "jsonb",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_operation_id text, p_manifest_hash text, p_production_commit text",
+      "bodySHA256": "4b7d4ed218326552646772c558f2b0ee440df493fb5727e20e3e8c5dd70463bb",
+      "volatility": "s",
+      "securityDefiner": false
+    }
+  ],
+  "projectedDataHashes": [
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "briefings",
+      "rows": 0
+    },
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "helmut_job_outbox",
+      "rows": 0
+    },
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "helmut_jobs",
+      "rows": 0
+    },
+    {
+      "hash": "b096fa764c03a2fdbbb36e3d1d9e14ed34da7cd8a1ff32e354d132a4a7b7b284",
+      "name": "helmut_store",
+      "rows": 6
+    },
+    {
+      "hash": "c12ba16811c3d4220409229f523e45ea159203bd2be6c32523198ea526114890",
+      "name": "knowledge_objects",
+      "rows": 517
+    },
+    {
+      "hash": "f55c31ba06b2e9566dd624ab09fa328d1e89d452c73bc98bd4cf98ddfef047c4",
+      "name": "ko_document_links",
+      "rows": 979
+    },
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "llm_budget_counters",
+      "rows": 0
+    },
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "llm_usage",
+      "rows": 0
+    },
+    {
+      "hash": "da286517dcdfecf1d7cfd922f4d3d4ac191803297e0bf911bcd7e12b73704fad",
+      "name": "mandate_profiles",
+      "rows": 500
+    },
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "pipeline_locks",
+      "rows": 0
+    },
+    {
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "process_runs",
+      "rows": 0
+    },
+    {
+      "hash": "b298a5014f7c574d0e28f27d16fb729ced5090e3b08c4de30b64f3f2f9a0ef6c",
+      "name": "profiles",
+      "rows": 501
+    },
+    {
+      "hash": "c44e74d5463f9a7fdda7e07e3bb125b7ac2e316065e2bf26939e7541b3944e17",
+      "name": "raw_documents",
+      "rows": 931
+    }
+  ],
+  "originalBeforeAfterEqual": true,
+  "dataDifference": "Only mandate_profiles.aktiv=false; comparison projects true in SELECT only, never an activation/write",
+  "publicTableCount": 13,
+  "functionCount": 10,
+  "primaryKeys": 11,
+  "foreignKeys": 4,
+  "allTablesRLS": true,
+  "alwaysTriggers": 2,
+  "firstFailedAttemptUnchanged": true,
+  "full500Started": false,
+  "productionProof": false,
+  "completedAtUTC": "2026-10-27T19:43:56.528080+00:00"
+}

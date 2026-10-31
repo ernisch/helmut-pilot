@@ -1,0 +1,14 @@
+{
+  "status": "PASS_FULL_LOGICAL_HASH_PRESERVED",
+  "before": {
+    "usage": 5000,
+    "logicalHash": "3e8e141477d6af032b7f6882eb31363833715f56982c70ad9bc94b16d5fb9032",
+    "physicalUsage": 0
+  },
+  "after": {
+    "usage": 5000,
+    "logicalHash": "3e8e141477d6af032b7f6882eb31363833715f56982c70ad9bc94b16d5fb9032",
+    "physicalUsage": 5000
+  },
+  "existingPhysicalRowsRetained": true
+}

@@ -1,0 +1,265 @@
+{
+  "schema": "helmut-w15-github-preparation-evidence/1",
+  "sprintDateEuropeIstanbul": "2026-10-28",
+  "observedAtUTC": "2026-10-28T21:03:03Z",
+  "observedAtEuropeIstanbul": "2026-10-29T00:03:03+03:00",
+  "status": "PARTIAL_PREPARATION_SELECTED_EXPORT_BLOCKED",
+  "sourceCommit": "186ebfa62fbd55b0143d9c65a424386ba55dabe9",
+  "branch": "codex/w15-github-end500-preparation-20261028",
+  "executionAuthority": false,
+  "tests": {
+    "end500Runs": 0,
+    "mock500Runs": 0,
+    "productionActions": 0,
+    "profileChanges": 0,
+    "paidProviderCalls": 0,
+    "newInfrastructureResources": 0,
+    "workflowDispatches": 0
+  },
+  "scope": {
+    "completeExecutableEnd500Path": false,
+    "portableControllerAdapterComplete": false,
+    "actualRunnerResourcesVerified": false,
+    "fullRemoteBackupVerified": false,
+    "explicitStartGO": false,
+    "syntheticEquivalenceProven": false
+  },
+  "parallelWork": {
+    "maximumConcurrentWriters": 3,
+    "actualMaximumConcurrentWriters": 3,
+    "separateAreas": [
+      ".github/workflows/ci.yml and operational documentation",
+      "scripts/w15-github/prepare.py,test_prepare.py,end500-contract.json",
+      "scripts/w15-github/seal.py,test_seal.py"
+    ],
+    "integrationOwner": "root",
+    "independentScopeReview": "PASS_SCOPE_LIMITED"
+  },
+  "checks": [
+    {
+      "name": "private input byte and filesystem guards",
+      "command": "python3 -B scripts/w15-github/test_prepare.py -v",
+      "result": "PASS",
+      "testCases": 14,
+      "executor": "ci_path agent",
+      "data": "fictional temporary files only"
+    },
+    {
+      "name": "streaming local seal",
+      "command": "python3 -B scripts/w15-github/test_seal.py -v",
+      "result": "PASS",
+      "testCases": 6,
+      "executor": "root",
+      "roundtripPlaintextBytes": 9437184,
+      "temporarySyntheticKeyOnly": true
+    },
+    {
+      "name": "GitHub workflow syntax",
+      "tool": "actionlint",
+      "version": "1.7.12",
+      "shellcheck": false,
+      "pyflakes": false,
+      "result": "PASS",
+      "exitCode": 0
+    },
+    {
+      "name": "manual plan wiring and public output",
+      "result": "PASS",
+      "startState": "BLOCKED",
+      "noPrivateAccess": true,
+      "noContainerStarts": true
+    },
+    {
+      "name": "Python syntax and JSON parsing",
+      "result": "PASS"
+    },
+    {
+      "name": "historical D source preservation",
+      "result": "PASS",
+      "reviewedSourceFiles": 28,
+      "driftFiles": [],
+      "historicalAuthorizationReusable": false
+    },
+    {
+      "name": "git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "drive": {
+    "folderURL": "https://drive.google.com/drive/folders/1gvYcdBSGYscOmTxYeJSJ3TpbacyJWBFd",
+    "folderReadable": true,
+    "directEntries": 587,
+    "entriesModifiedOn20261028": 14,
+    "smallCurrentControlReportsRead": 7,
+    "originalDataOrArchivesDownloaded": false,
+    "keysOrPassphrasesRead": false,
+    "directEnd500SubsetFound": false,
+    "separateDumpOrRolesFound": false,
+    "selectedTransport": {
+      "url": "https://drive.google.com/file/d/175ANFmW32gcoisJf2YJmntxNaywhYJme/view",
+      "metadataBytes": 12491342,
+      "documentedSHA256": "44603988decffe2a1f712aa72e2fd924860695d042cc3238f79d753dbf047252",
+      "cipherHashFreshlyMeasured": false,
+      "documentedOriginalFiles": 11,
+      "documentedPayloadBytes": 96530256,
+      "documentedKeys": [
+        "normalizedCurrentPolicy",
+        "package",
+        "nativeInventoryHistoricalTemplate",
+        "actualSource23KO60",
+        "originalUPacket",
+        "reviewedMockCandidates",
+        "staticMockTemplates",
+        "originalProfileReference",
+        "frozenSourceDump",
+        "localRoles",
+        "readOnlyCapture"
+      ]
+    },
+    "controls": [
+      {
+        "url": "https://drive.google.com/file/d/1QD1enw8xuSM5j0NGtrBveweKgDbImzWy/view",
+        "actual_Hetzner_run_performed": false
+      },
+      {
+        "url": "https://drive.google.com/file/d/1CGj5MffVN96ZkOtmxlYlRQEkEhZrbr15/view",
+        "upload_stage_reached": false,
+        "accepted_as_complete_backup": false
+      }
+    ],
+    "concreteMissingPrerequisite": "Reachable selected source-side End500 export: immutable Bound, five complete pinned fixtures, seed, actual command and provenance, plus frozen dump/local roles from existing inputs. No full archive or old private-key transfer."
+  },
+  "runner": {
+    "selectedLabel": "ubuntu-24.04",
+    "kind": "standard public GitHub-hosted x64",
+    "documentedCPU": 4,
+    "documentedRAMGB": 16,
+    "documentedSSDGB": 14,
+    "documentedMaximumJobHours": 6,
+    "actualResourcesReadback": null,
+    "standardComputeCost": "Free for this public repository; no larger runner selected",
+    "artifactQuotaAndRemoteStorageAvailability": "UNKNOWN; plan job uploads no artifacts",
+    "existingComponentRunURL": "https://github.com/ernisch/helmut-pilot/actions/runs/40758148874/job/123062515489",
+    "existingComponentCommit": "186ebfa62fbd55b0143d9c65a424386ba55dabe9",
+    "observedComponentJobSeconds": 43,
+    "observedCheckoutSeconds": 8,
+    "observedNodeSetupSeconds": 5,
+    "observedToolsImageSeconds": 16,
+    "observedComponentCaseSeconds": 8,
+    "end500TransferRestoreSeedAndClosureDuration": "UNKNOWN_NOT_ESTIMATED_FROM_COMPONENT_CASE",
+    "documentation": [
+      "https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
+      "https://docs.github.com/en/actions/reference/limits",
+      "https://docs.github.com/en/billing/concepts/product-billing/github-actions"
+    ]
+  },
+  "access": {
+    "repositorySecretsMetadataHTTP": 403,
+    "environmentSecretsMetadataHTTP": 403,
+    "environmentMetadataHTTP": 200,
+    "environment": "helmut-ci-originals",
+    "protectionRules": [],
+    "deploymentBranchPolicy": null,
+    "secretExistenceAndSuitability": "UNKNOWN",
+    "noSecretValuesReadOrPrinted": true
+  },
+  "preserved": {
+    "originalWorktree": "/workspace/helmut-pilot",
+    "originalBranch": "work",
+    "originalCommit": "6b4012cd912fd0e1f5ec79969168d0dcc010927f",
+    "originalUntrackedEntry": "supabase/.temp/",
+    "originalWorktreeUnchanged": true,
+    "oldW15WorkspaceAvailableHere": false,
+    "oldUnpublishedReportsAvailableHere": false,
+    "oldDataLossClaimed": false,
+    "additionalCleanupPerformed": false
+  },
+  "unchangedContract": {
+    "commonMemoryBytes": 2048000000,
+    "minimumReservePercent": 20,
+    "maximumLifetimePeakBytes": 1638400000,
+    "swapBytes": 0,
+    "authMaximumExclusiveMs": 30000,
+    "unitMaximumExclusiveMs": 60000,
+    "providerMaximumExclusiveMs": 20000,
+    "fullNativeIntegrityRequired": true
+  },
+  "stageSeparation": {
+    "end500": {
+      "inert": true,
+      "CASWrites": 500,
+      "usageRows": 6000,
+      "preservedUsageRows": 5139,
+      "nativePostimages": 3501,
+      "activeProfiles": 0,
+      "units": 0,
+      "providerCalls": 0,
+      "fullFunctionAcceptance": false
+    },
+    "mock500": {
+      "separateGO": true,
+      "activeProfiles": 500,
+      "units": 500,
+      "providerPhases": 1000,
+      "independentResults": 1500,
+      "freshControls": 8000,
+      "returnToZero": true
+    }
+  },
+  "publication": {
+    "localCommitAtObservation": false,
+    "nextLocalAction": "Save prepared files in a local Git checkpoint; do not push or dispatch.",
+    "pushed": false,
+    "pushWithCurrentWorkflowChangesWouldSelectBroadCI": true,
+    "broadCIGONotGranted": true,
+    "merge": false,
+    "deployment": false
+  },
+  "preparedFilePins": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 29129,
+      "sha256": "f7c8c92d5c46393445ede752fbbc3b313f1eb7c39f64279937a06855d2e633cd"
+    },
+    {
+      "path": "scripts/w15-github/prepare.py",
+      "bytes": 9475,
+      "sha256": "7284fbe4c48bc03c38cad3dc715858d1f769925d6859488d80a374b50d125f27"
+    },
+    {
+      "path": "scripts/w15-github/test_prepare.py",
+      "bytes": 6915,
+      "sha256": "6c11e09ccb4594689a58d9e5a3e8c5db6164e61c6a9ae85c005a7778fdadfd06"
+    },
+    {
+      "path": "scripts/w15-github/end500-contract.json",
+      "bytes": 2771,
+      "sha256": "41351f4f2a1f59bc7c4ba80e21828c71cd1a3d15fdf0c716c81015658c632a20"
+    },
+    {
+      "path": "scripts/w15-github/seal.py",
+      "bytes": 17712,
+      "sha256": "8b53d00bce0551a85b4def441c579c0d5933e82d538d08cbeca189220579e0e5"
+    },
+    {
+      "path": "scripts/w15-github/test_seal.py",
+      "bytes": 9385,
+      "sha256": "af9e0e78e8d6cdbecce36e85473cfe296e43c324d82f9ecfbf3747f233a67fdf"
+    },
+    {
+      "path": "docs/betrieb/w15-github-end500-vorbereitung-20261028.md",
+      "bytes": 12313,
+      "sha256": "68e6674f7b82716e4e5827365071b224ec9d2a6c317018ef95215ceec2b8ac24"
+    },
+    {
+      "path": "docs/CURRENT_STATE.md",
+      "bytes": 28926,
+      "sha256": "4daa9cd2325bca9ed19aef97cd507f2f26b533420a64862b80147d53d22d5104"
+    },
+    {
+      "path": "docs/betrieb/w15-atomic-usage-integration-20261028.md",
+      "bytes": 48716,
+      "sha256": "e3f6923fc62de41ec60f7ab9777585560aa0f0a36f46d39e543bea842910d2d6"
+    }
+  ]
+}

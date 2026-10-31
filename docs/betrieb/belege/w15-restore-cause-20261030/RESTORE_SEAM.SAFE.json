@@ -1,0 +1,55 @@
+{
+  "baselineCommit": "cf466883696cbce45fa8f1817c1c7df84bea280a",
+  "conclusion": {
+    "actualStatementTimeoutOrRAMFailureProven": false,
+    "completeRestoreOrEnd500OrMock500Accepted": false,
+    "fullOriginalRetryJustifiedByThisProbe": false,
+    "historicalInnerCauseProven": false,
+    "newProductDefectProven": false,
+    "newRealExecutionAuthorized": false
+  },
+  "diagnosticFixRetained": true,
+  "historicalRun": {
+    "cleanupStatus": "UNKNOWN",
+    "elapsedSeconds": 76,
+    "exactCommit": "225e76d7b7618e36c189d205294dfd073e6d88a4",
+    "firstAvailablePhase": "worker",
+    "innerCause": "UNKNOWN",
+    "jobCompletedAt": "2026-10-29T21:30:10Z",
+    "jobId": "123743558573",
+    "jobStartedAt": "2026-10-29T21:28:54Z",
+    "newEvidenceAfterDiagnosticFix": false,
+    "resourceValues": null,
+    "runId": "40958135662",
+    "status": "FAIL"
+  },
+  "newSyntheticProbe": {
+    "actualNodeProducerBodies": 5,
+    "databaseStarted": false,
+    "dockerTransport": "LOCAL_SYNTHETIC_ADAPTER",
+    "gpgExecuted": false,
+    "independentReadonlyReview": "PASS",
+    "kernelSamples": "FICTIONAL",
+    "nativeChildProcesses": "FICTIONAL",
+    "originalDataRead": false,
+    "ownedWatchContainerSQLOrRAMAcceptance": false,
+    "previousFourExportActionsRepeated": false,
+    "realBackupRestoreClosureValidator": true,
+    "realExportPlanValidator": true,
+    "realFilesystemReceiptsLifecyclesAndPins": true,
+    "realRestoreOwnedValidator": true,
+    "realSampleShapeValidator": true,
+    "status": "PASS",
+    "tests": 3
+  },
+  "prDependencies": {
+    "975": "225e76d7b7618e36c189d205294dfd073e6d88a4",
+    "977": "8de90cbec626b1aa063c5ece3e01f495303bfcc9",
+    "978": "cf466883696cbce45fa8f1817c1c7df84bea280a",
+    "mergePerformed": false,
+    "originalBranchAdvanced": false,
+    "readOnlyThreeTreeConflictCheck": "NO_TEXT_CONFLICT",
+    "sharedBase977And978": "225e76d7b7618e36c189d205294dfd073e6d88a4"
+  },
+  "schema": "helmut-w15-restore-cause-separation/1"
+}

@@ -68,6 +68,7 @@ const MUSS_STANDARD = [
   "synthetik-500-native-import-test.js",
   "synthetik-500-runtime-test.js",
   "synthetik-500-nachweis-test.js",
+  "synthetik-500-stored-command-test.js",
   // grundlegende Vertraege des heutigen Production-Pfads
   "flags-test.js",
   "source-mode-test.js",
@@ -190,6 +191,10 @@ function main() {
     HISTORISCH.filter((f) => !fs.existsSync(path.join(ROOT, "scripts", f))).join(", ") || "alle");
   check("C3 Eine unbekannte neue Suite ist NICHT Standard (Testauswahl bleibt bewusst)",
     !standard.suiten.has("gaenzlich-neuer-beispiel-test.js"), "");
+  check("C4 Private W15-Originalpruefungen bleiben ausserhalb aller automatischen Sammellaeufe",
+    ["synthetik-500-w15-original-content-test.js", "synthetik-500-w15-original-db-test.js", "synthetik-500-w15-original-worker-test.js",
+      "synthetik-500-w15-signed-chain-test.js"]
+      .every(f => fs.existsSync(path.join(ROOT, "scripts", f)) && !standard.suiten.has(f) && !erweitert.suiten.has(f)), "");
 
   console.log(`\n${pass} PASS / ${fail} FAIL`);
   process.exit(fail ? 1 : 0);

@@ -1,0 +1,4 @@
+{
+  "output": "1535172608\n1086427136\nusage_usec 49581373\nuser_usec 36182765\nsystem_usec 13398608\nnice_usec 0\nnr_periods 469\nnr_throttled 8\nthrottled_usec 760471\nnr_bursts 0\nburst_usec 0\n",
+  "exitCode": 0
+}

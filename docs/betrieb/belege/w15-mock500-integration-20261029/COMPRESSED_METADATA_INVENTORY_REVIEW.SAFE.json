@@ -1,0 +1,94 @@
+{
+  "schema": "helmut-w15-compressed-existing-inventory-review/1",
+  "observedAtUTC": "2026-10-29T18:04:46.941715+00:00",
+  "status": "STAT_METADATA_REVIEW_NO_EXACT_HASH_OR_CIPHER_MEMBERSHIP_PROOF",
+  "inventoryDriveId": "1MwUUbZxzq251-ojl5a2NY_-CpNj238Kp",
+  "name": "INVENTORY_V2.SAFE.json.gz",
+  "compressedBytes": 5362478,
+  "compressedSHA256": "d00829c8600f1f94de5455c383a2463c39d7626cc53ecd537802713c22e1e385",
+  "compressedHashMatchesExistingVerification": true,
+  "recordsScanned": 364084,
+  "streamedExpandedBytesBeforeTrailingMetadata": 82444288,
+  "rowShapes": {
+    "11": 25010,
+    "10": 339074
+  },
+  "columns": [
+    "path",
+    "kind",
+    "size",
+    "mode",
+    "uid",
+    "gid",
+    "mtime_ns",
+    "device",
+    "inode",
+    "hardlinks",
+    "optional_symlink_target"
+  ],
+  "trailingMetadataFlags": {
+    "archive_restore_verified": false,
+    "database_contents_verified": false,
+    "credential_values_collected": false
+  },
+  "trailingMetadataFirstKeys": [
+    "archive_restore_verified",
+    "columns",
+    "counts",
+    "entries",
+    "logical_file_bytes",
+    "regular_file_paths",
+    "symlinks",
+    "credential_values_collected",
+    "database_contents_verified",
+    "directory_aliases",
+    "directory_scans"
+  ],
+  "allCompressedSectionsExpanded": false,
+  "stopReason": "TRAILING_METADATA_NOT_EXPANDED_STAT_RECORDS_HAVE_NO_CONTENT_HASHES",
+  "matchingRecords": [],
+  "knownContentHashMatches": [],
+  "receiptFileContentsCollected": false,
+  "receiptCredentialValuesCollected": false,
+  "exactTargetContentHashProven": false,
+  "archiveMembershipProven": false,
+  "olderCipherScopeSHA256": "08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd",
+  "olderCipherIndexDriveId": "17DDhInbRwN20nqRPuNp3KTLq6AqMEhWc",
+  "olderCipherIndexHasTargetMemberHashes": false,
+  "scopeInventoryDriveReferenceInExistingIndex": null,
+  "existingBuilderStillLocated": true,
+  "otherTenSourcesCurrentlyVerified": false,
+  "replacementPin": {
+    "bytes": null,
+    "sha256": null
+  },
+  "minimalExistingSourceNeed": {
+    "existingBuilderDriveId": "1_yaGlXYrG2ExYbE2MFBq_ucE4YtgMFCm",
+    "otherExistingFilesToLocate": 10,
+    "knownOtherBytesExcludingReplacement": 217280887,
+    "resolveReplacementPin": true
+  },
+  "archivePayloadReads": 0,
+  "cipherPayloadReads": 0,
+  "keyReads": 0,
+  "decryptions": 0,
+  "originalTransfers": 0,
+  "newInventoryOrQualification": false,
+  "repositoryWrites": false,
+  "testsRepeated": false,
+  "githubActions": false,
+  "executionAuthority": false,
+  "coverage": {
+    "reviewedCompressedInventories": [
+      "INVENTORY_V2.SAFE.json.gz"
+    ],
+    "recordsArrayCompletelyScanned": true,
+    "all11ExactBasenamesMatched": false,
+    "exactBasenameMatchCount": 0,
+    "known10ContentHashesMatched": false,
+    "olderInventoryNotFetchedReason": "V2 schema is stat-only with no content hashes or archive membership; stop condition reached, no broader inventory reads",
+    "trailingDirectoryAliasesNotExpanded": true,
+    "priorTrailingMetadataReadCapBytes": 2097152
+  },
+  "interpretation": "No searched exact basename occurs among all 364084 V2 records. This is metadata from 2026-10-27, not proof of deletion/current absence on original host; the five 2026-10-28 qualification assets cannot be proven by this earlier metadata inventory. No content-hash column exists. The readable existing 30-part index supplies a scope digest, counts and cipher part IDs but no target-member hash list or separate SAFE scope-inventory reference."
+}

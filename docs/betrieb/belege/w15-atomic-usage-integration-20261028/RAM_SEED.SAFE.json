@@ -1,0 +1,12 @@
+{
+  "nativeCommittedCounts": {
+    "evidenceRows": 500,
+    "privateDraftStoreRows": 500,
+    "resultRows": 1500,
+    "privateDraftReviewRows": 1000
+  },
+  "nativeExactPostimageChecks": 3501,
+  "activeProfiles": 0,
+  "executionAuthority": false,
+  "actualResults": false
+}

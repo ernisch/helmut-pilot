@@ -1,0 +1,232 @@
+{
+  "schema": "helmut-w15-unit0-sanitized-receipt/1",
+  "status": "STOPPED_FIRST_FAILURE_OR_UNKNOWN",
+  "sprintState": "GESCHITERT_ODER_ABGEBROCHEN",
+  "dateUTC": "2026-10-27",
+  "scope": "ONE_NEW_ISOLATED_DATABASE_ONE_HTTP_START_NO_NEXT_NO_RETRY",
+  "database": "helmut_w15_unit0_20261027",
+  "network": "none; no published ports",
+  "temporaryActiveProfilesConfirmed": 500,
+  "maximumUnits": 1,
+  "enteredUnits": 1,
+  "finishedUnits": 0,
+  "modelCalls": 0,
+  "localProviderResponses": 0,
+  "freshOperation": {
+    "operationId": "synthetik500-w15-unit0-1793122269459",
+    "commandHash": "98899024c6e9b37e838c46aef9c7eb52baebeca47394c4e564763caf471f6e24"
+  },
+  "freshEd25519Signatures": true,
+  "privateSigningKeyExported": false,
+  "realSystemClock": true,
+  "failure": {
+    "code": "synthetik500-admission-reservation-route-drift",
+    "httpStatus": 409,
+    "httpWallMs": 12192.165964,
+    "beforeFirstProvider": true,
+    "cause": "Local harness omitted AZURE_OPENAI_DEPLOYMENT. Azure resolveModels uses that name or gpt-5-mini and ignores HELMUT_UNDERSTANDING_MODEL. Signed route requires gpt-5-mini-eu; exact route reservation correctly rejected.",
+    "actualSenderModelDerivedFromSource": "gpt-5-mini",
+    "signedPlanModel": "gpt-5-mini-eu",
+    "correctiveChangeApplied": false,
+    "repeated": false
+  },
+  "timing": {
+    "signedPreparationWallMs": 12775.348894,
+    "signedPreparationLimitMs": 90000,
+    "coldPreparedOpenWallMs": 2737.7412729999996,
+    "coldPreparedOpenLimitMs": 60000,
+    "unitStartToFinalACKMs": null,
+    "unitLimitMs": 60000,
+    "unit60Proven": false,
+    "installationAuth": [
+      {
+        "callbackRuns": 1,
+        "callbackMs": 117.65323699999863,
+        "acknowledged": true,
+        "wallMs": 675.4542249999995
+      }
+    ],
+    "runtimeAuthMutations": [
+      {
+        "callbackRuns": 1,
+        "callbackMs": 44.32101999999941,
+        "acknowledged": true,
+        "ackMS": 5804.493924,
+        "wallMs": 634.0466420000002
+      },
+      {
+        "callbackRuns": 1,
+        "callbackMs": 54.9795610000001,
+        "failure": "synthetik500-admission-reservation-route-drift",
+        "wallMs": 185.99483599999985
+      },
+      {
+        "callbackRuns": 1,
+        "callbackMs": 1.5224699999998847,
+        "acknowledged": true,
+        "ackMS": 12596.183251,
+        "wallMs": 626.5692340000005
+      }
+    ],
+    "authLimitMs": 30000,
+    "auth30CompleteProven": false,
+    "note": "Reservation wall185.995ms/callback54.980ms ended in rejection without ACK. Completed claim/stop/install timings do not make that failed case pass."
+  },
+  "expectedResults": [
+    {
+      "area": "mandatsbriefing",
+      "status": "NOT_CREATED",
+      "stored": false
+    },
+    {
+      "area": "morgenbriefing",
+      "status": "NOT_CREATED",
+      "stored": false
+    },
+    {
+      "area": "lage",
+      "status": "NOT_CREATED",
+      "stored": false
+    }
+  ],
+  "memory": {
+    "currentBytes": 608911360,
+    "kernelLifetimePeakBytes": 1378390016,
+    "configuredLimit": "max",
+    "swapCurrentBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "comparisonBudgetBytes": 2048000000,
+    "requiredReserveBytes": 500000000,
+    "comparisonReserveBytes": 669609984,
+    "technicalCapEnforced": false,
+    "peakReset": false,
+    "scope": "Existing common cgroup includes PostgreSQL/PostgREST/gateway/Node/worker threads/charged cache. Lifetime peak not reset; host assembly excluded. Aborted path plus cleanup only.",
+    "comparisonReserveAtLeast500MB": true,
+    "activeCompletedDRMemoryProven": false
+  },
+  "cleanup": {
+    "nativeEndWriteAttempts": 1,
+    "nativeResultState": "beendet",
+    "nativeResultActive": 0,
+    "independentSQLActiveCount": 0,
+    "nativeReadbackState": "beendet",
+    "nativeReadbackActive": 0,
+    "confirmedZero": true,
+    "operationJournalState": "unknown",
+    "operationReusable": false,
+    "unitAndOwnedServicesStopped": true,
+    "noAutomaticRetry": true
+  },
+  "originalSourceUnchanged": true,
+  "originalSourceComparison": "Profile/store/raw-document canonical hashes and counts before/after",
+  "productionActions": 0,
+  "hetznerActions": 0,
+  "budgetsChanged": false,
+  "existingContainerResourceConfigurationChanged": false,
+  "full500Run": false,
+  "applicationCodeCI": {
+    "commit": "da63309c44625f072afb8ccaf924fc0b3da77877",
+    "runId": 40534410137,
+    "conclusion": "success",
+    "applicationCodeUnchangedSince": true,
+    "newHeadCISuccessClaimed": false
+  },
+  "coverage": {
+    "rawV8CaptureFiles": 2,
+    "scope": "required host input-material preparation only; no coverage/profiler in performance phase; no project-wide percentage claimed"
+  },
+  "rawReportPins": [
+    {
+      "name": "ACTIVATION.SAFE.json",
+      "bytes": 1068,
+      "sha256": "6ed76977c3ebba6037f06dd28fdc8e55e7cfcf13163631f2cd50be3428063572"
+    },
+    {
+      "name": "PROCESSING_INPUTS.SAFE.json",
+      "bytes": 117794,
+      "sha256": "4d73093b58dcf259014bd422cce2966ee576e130e3caa8a9462513744a0e9443"
+    },
+    {
+      "name": "PREPARE.SAFE.json",
+      "bytes": 6533,
+      "sha256": "1733aba44b31d83ac015d21b68a971108b7e4085e2e4ea3b7e2a3350f6959acc"
+    },
+    {
+      "name": "UNIT0_RESULT.SAFE.json",
+      "bytes": 11629,
+      "sha256": "2236e33a2add157850b22b0f8d6355256792c119418d9efb51365e9219940c4f"
+    },
+    {
+      "name": "run-FIRST-FAILURE.SAFE.json",
+      "bytes": 510,
+      "sha256": "503cb597d659ce1d5c078c8f47ddbde5128ea12137ab166c2b8efc4571484da1"
+    },
+    {
+      "name": "CLEANUP.SAFE.json",
+      "bytes": 2099,
+      "sha256": "451be91580d7f895bbd6bc0ca22f4147256a2995c4c67e3534eb132537ec6fa8"
+    },
+    {
+      "name": "FINAL_DATABASE_STATE.SAFE.json",
+      "bytes": 177,
+      "sha256": "2b72a703fd1a4fc76ed6ed6f7b09135395cb538b7f75a3d6ff897024dc4bedc9"
+    },
+    {
+      "name": "FINAL_COMMON_MEMORY.SAFE.json",
+      "bytes": 415,
+      "sha256": "067cd623df1c105f28bb666a26a4d6436bda6f7eb48d1e3b7365967029811d19"
+    },
+    {
+      "name": "CONTROLLER_RESULT.SAFE.json",
+      "bytes": 501,
+      "sha256": "9c35fd61f00538a2cef131eaafc195bf1981d5e7086d5f863b1f259d2e4ba8e0"
+    },
+    {
+      "name": "SOURCE_BEFORE.SAFE.json",
+      "bytes": 309,
+      "sha256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27"
+    },
+    {
+      "name": "SOURCE_AFTER.SAFE.json",
+      "bytes": 309,
+      "sha256": "dc7eaf1d67c736855a8b160cedcb74ba392f36a9e85c2710a2128d07225e1b27"
+    }
+  ],
+  "harnessPins": [
+    {
+      "name": "synthetik-500-w15-processing-materials.js",
+      "bytes": 19601,
+      "sha256": "ca8358aa5893c2c08c3f28dde8c45e1878ed7e8494521c42d963153b4a7a3cd5"
+    },
+    {
+      "name": "synthetik-500-w15-unit0-runtime.js",
+      "bytes": 17284,
+      "sha256": "4e8b398b4fe58a45a5e583840a1f5bd894e32d23b6dce5a23ba36a9d80c02ea5"
+    },
+    {
+      "name": "synthetik-500-w15-unit0-controller.py",
+      "bytes": 13123,
+      "sha256": "72b5eb09e9830462b2b9893d072285872d975f6357cec893973b447f592035df"
+    },
+    {
+      "name": "w15-unit0-provider.js",
+      "bytes": 8826,
+      "sha256": "fdf4ac5a036dfa03347a562c99ef3a330080e5b23db0ea5e9cd47be3ce95e221"
+    }
+  ],
+  "next": "Only local Azure test configuration correction and complete resolved-route comparison, then separate new GO for one fresh isolated activation/DR mock attempt. Current operation never retry/resume.",
+  "remainingAcceptance": [
+    "completed Unit60 with two real19900ms mock delays and three stored positions",
+    "Auth30 including complete and later fully grown500 ledger",
+    "common technically enforced2048000000B cap and500000000B reserve on completed path",
+    "full500 profiles/1500results proof with separate authorization",
+    "live source supply and independent quality before Production"
+  ]
+}

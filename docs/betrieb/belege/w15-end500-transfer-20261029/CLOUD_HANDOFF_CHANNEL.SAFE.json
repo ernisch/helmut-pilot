@@ -1,0 +1,33 @@
+{
+  "schema": "helmut-w15-cloud-handoff-channel-observation/1",
+  "observedDateOperator": "2026-10-29",
+  "operatorTimezone": "Europe/Istanbul",
+  "source": "cloud_environment.environment_status; current chat canary process check",
+  "environmentId": "ccarenv_b64_Y2NhcmVudl8wOTU3NjdkNDgyNjQ4MTkxOGQ1ODNiYjA5YjBjNzM4NQ",
+  "specRevision": "1",
+  "observedSpecRevision": "1",
+  "observationsCurrent": true,
+  "connectivity": "connected",
+  "observedPhase": "running",
+  "networkPolicy": {"mode": "unrestricted", "state": "enforced"},
+  "publicCanary": {
+    "name": "HELMUT_W15_HANDOFF_CANARY",
+    "bindingType": "runtime_variable",
+    "state": "ready",
+    "processExactMatchPreviouslyObservedInThisChat": true,
+    "processCheckRepeated": false
+  },
+  "configuredSecretTargetTypes": ["domain_bound_api_environment_variable"],
+  "protectedLocalSecretFileBindingObserved": false,
+  "protectedLocalHandoffChannelEstablished": false,
+  "sameThreadProtectedConfigurationApplyEstablished": false,
+  "configurationMutationToolAvailable": false,
+  "operatorReportsProtectedProvisioningTypeRecognizable": false,
+  "privateKeyRequested": false,
+  "passphraseRequested": false,
+  "privateDataTransferred": false,
+  "status": "BLOCKED_PROTECTED_LOCAL_CHANNEL_NOT_ESTABLISHED",
+  "readiness": "BLOCKED",
+  "executionAuthority": false,
+  "testStarted": false
+}
