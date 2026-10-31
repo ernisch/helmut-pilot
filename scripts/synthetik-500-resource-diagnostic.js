@@ -8,6 +8,7 @@ const PHASES=new Set(["configuration","prepare-database","services","dataset","p
 const ASSERTIONS=new Set(["diagnostic-fresh-database-required","diagnostic-ca-required-before-node-start","diagnostic-stop-or-deadline","diagnostic-exact-active-cohort-required","diagnostic-initial-zero-required","diagnostic-provision-refused","diagnostic-positive-native-understanding-required","diagnostic-native-matches-required","diagnostic-native-decisions-required","diagnostic-positive-current-briefing-required","diagnostic-cleanup-only-newly-owned-profiles","diagnostic-local-preload-required"]);
 ASSERTIONS.add("diagnostic-synthetic-profile-selector-required");
 ASSERTIONS.add("diagnostic-required-schema-migration-missing");ASSERTIONS.add("diagnostic-schema-migration-list-unique");
+for(const label of["diagnostic-mock-schema-required","diagnostic-one-explicit-case","diagnostic-mock-case-binding","diagnostic-mock-current-understanding-schema"])ASSERTIONS.add(label);
 // Only the current application seams used below: profiles/RLS, sources/KO,
 // budgets/locks, matching audit, Understanding leases/CAS and usage recording.
 // Historical cohort gates/timers/daybooks are separate operator installations.
@@ -138,6 +139,11 @@ function localAIReport(service){
       dauerMs:Object.fromEntries(["n","min","p50","p95","max","mittel"].map(key=>[key,n(r.dauerMs?.[key])]))};
   }catch(_){return"UNKNOWN";}
 }
+function mockResponseFactory(c,data){let first=false;return(request,schema)=>{
+  try{return Fixture.response(request,schema,c.datasetEpochUTC,data);}
+  catch(error){if(!first){first=true;try{write(c.resultRoot,"MOCK_RESPONSE_FAILURE.SAFE.json",{schema:SCHEMA,nonce:c.nonce,phase:"services",failureDetail:closedFailure(error),retryAllowed:false});}catch(_){}}
+    throw error;}
+};}
 async function services(c){
   const Z=require("./fixtures/z3-plattform"),data=Fixture.cases(c.datasetEpochUTC);
   const started=[];let first=null;
@@ -145,7 +151,7 @@ async function services(c){
     started.push(await Z.starteDatenbankTor({postgrestPort:3000}));
     started.push(await Z.starteAnbieterUrsprung({latenzMs:0,ausfallAnteil:0,drosselAnteil:0}));
     started.push(await Z.starteKiEndpunkt({verzeichnis:path.join(c.resultRoot,"tls"),latenzMs:5,latenzStreuungMs:0,fehlerAnteil:0,
-      hoechstzahlAufrufe:128,responseForRequest:(request,schema)=>Fixture.response(request,schema,c.datasetEpochUTC,data)}));
+      hoechstzahlAufrufe:128,responseForRequest:mockResponseFactory(c,data)}));
     const [database,rss,ki]=started;
     write(c.resultRoot,"SERVICE_BINDINGS.PRIVATE.json",{schema:SCHEMA,nonce:c.nonce,databaseURL:database.url,rssURL:rss.url,kiURL:ki.url,caPath:ki.caPfad});
     write(c.resultRoot,"SERVICES_READY.SAFE.json",{schema:SCHEMA,nonce:c.nonce,ready:true,pid:process.pid,
@@ -258,4 +264,4 @@ async function main(argv=process.argv.slice(2)){
 function osGuard(){const guard=require("./lokaler-netzschutz");assert.deepEqual(guard.pruefe(process.env),[]);}
 if(require.main===module)main().catch(error=>{console.error(JSON.stringify({schema:SCHEMA,status:"FAIL_OR_UNKNOWN_DIAGNOSTIC",
   ...(error.diagnosticReceipt||{phase:"configuration",failureDetail:closedFailure(error),retryAllowed:false})}));process.exitCode=1;});
-module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport,diagnosticMigrations,understandingErrorCode};
+module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport,diagnosticMigrations,understandingErrorCode,mockResponseFactory};

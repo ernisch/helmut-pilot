@@ -22,6 +22,25 @@ function fake(root,{failWork=false,wrongActive=false,count=2}={}){
     storeResult:async()=>{counts.briefings++;return true;},count:async table=>counts[table]};
 }
 let passed=0;async function test(name,run){await run();passed++;console.log("PASS "+name);}
+async function mockResponseFailureCase(){
+  await test("mock response failure keeps its first closed assertion without request or response text",()=>{
+    const data=F.cases(epoch),schema={type:"object"},input={input:"CASE_R500_000"};
+    for(const [request,shape,prepared,label]of[[input,null,data,"diagnostic-mock-schema-required"],
+      [{input:"FICTIONAL_PRIVATE_NO_MARKER"},schema,data,"diagnostic-one-explicit-case"],
+      [input,schema,[],"diagnostic-mock-case-binding"],
+      [input,schema,[{...data[0],party:123}],"diagnostic-mock-current-understanding-schema"]]){
+      let failure;try{F.response(request,shape,epoch,prepared);}catch(error){failure=D.closedFailure(error);}
+      assert.equal(failure?.assertion,label);assert.equal(failure.code,"ERR_ASSERTION");assert(!JSON.stringify(failure).includes("FICTIONAL_PRIVATE"));
+    }
+    const root=temp();try{const c=config(root),factory=D.mockResponseFactory(c,data),request={input:"CASE_R500_000",secret:"FICTIONAL_PRIVATE"};
+      assert.throws(()=>factory(request,null));const file=path.join(root,"MOCK_RESPONSE_FAILURE.SAFE.json"),first=fs.readFileSync(file),value=JSON.parse(first);
+      assert.deepEqual(Object.keys(value).sort(),["schema","nonce","phase","failureDetail","retryAllowed"].sort());
+      assert.equal(value.schema,D.SCHEMA);assert.equal(value.nonce,c.nonce);assert.equal(value.phase,"services");assert.equal(value.retryAllowed,false);
+      assert.equal(value.failureDetail.assertion,"diagnostic-mock-schema-required");assert(!first.includes("FICTIONAL_PRIVATE"));
+      assert.throws(()=>factory({input:"FICTIONAL_PRIVATE_NO_MARKER"},schema));assert.deepEqual(fs.readFileSync(file),first);
+    }finally{fs.rmSync(root,{recursive:true,force:true});}
+  });
+}
 async function understandingErrorProjectionCase(){
   await test("Understanding failures retain fixed AI categories while private raw values remain UNKNOWN",async()=>{
     for(const [message,code]of[["KI Kostenbeleg nicht bestaetigt","LLM_USAGE_NOT_CONFIRMED"],["Azure HTTP 422","AI_PROVIDER_HTTP_422"],
@@ -200,7 +219,8 @@ async function main(){
   await diagnosticMigrationSelectionCase();
   await understandingErrorProjectionCase();
   await currentSourceValidationCase();
+  await mockResponseFailureCase();
   console.log(passed+" PASS; synthetic unit cases only; native preflight and 500 run NOT executed");
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase,understandingErrorProjectionCase};
+module.exports={currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase,understandingErrorProjectionCase,mockResponseFailureCase};

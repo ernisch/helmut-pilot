@@ -43,10 +43,12 @@ function cases(epoch){
   });
 }
 function response(request,schema,epoch,prepared=cases(epoch)){
-  assert(schema&&typeof schema==="object");
-  const markers=[...new Set(JSON.stringify(request.input).match(/CASE_R500_[0-9]{3}/g)||[])];
+  assert(schema&&typeof schema==="object"&&!Array.isArray(schema),"diagnostic-mock-schema-required");
+  const input=JSON.stringify(request?.input);
+  const markers=[...new Set((typeof input==="string"?input:"").match(/CASE_R500_[0-9]{3}/g)||[])];
   assert.equal(markers.length,1,"diagnostic-one-explicit-case");
-  const data=prepared[Number(markers[0].slice(-3))];assert(data&&data.marker===markers[0]);
+  const index=Number(markers[0].slice(-3)),data=prepared[index];
+  assert(data&&data.marker===markers[0]&&data.index===index,"diagnostic-mock-case-binding");
   const value={id:"ko-resource500-"+data.index,vorgang_id:"vg-resource500-"+data.index,
     ko_version:1,status:"neu",confidence_score:85,source_document_count:4,
     headline:data.title,display_title:data.title,display_summary:"Im vollstaendig fiktiven Modellprojekt werden Bestand, Planung und offene Pruefschritte zu "+data.topic+" getrennt dargestellt.",
