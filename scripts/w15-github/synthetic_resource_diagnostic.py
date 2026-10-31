@@ -39,7 +39,7 @@ RECEIPT_MAX = 65536
 WORKLOAD_SCHEMA = 'helmut-synthetic500-resource-diagnostic/1'
 WORKLOAD_PHASES = frozenset(('configuration','prepare-database','services','dataset','provision',
     'activate','understanding','work','readback','deactivate','closed'))
-ASSERTIONS = frozenset(('diagnostic-fresh-database-required','diagnostic-ca-required-before-node-start',
+ASSERTIONS = frozenset(('diagnostic-native-vector-bootstrap-required','diagnostic-native-vector-version-required','diagnostic-native-postgres-version-required','diagnostic-fresh-database-required','diagnostic-ca-required-before-node-start',
     'diagnostic-stop-or-deadline','diagnostic-exact-active-cohort-required','diagnostic-initial-zero-required',
     'diagnostic-provision-refused','diagnostic-positive-native-understanding-required','diagnostic-native-matches-required',
     'diagnostic-native-decisions-required','diagnostic-positive-current-briefing-required',
