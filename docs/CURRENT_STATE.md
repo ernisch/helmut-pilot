@@ -1,5 +1,30 @@
 # CURRENT STATE — Helmut
 
+## Aktueller Entscheidungsstand: Anbieter-RAM und End500 (31.10.2026)
+
+**Oberstes Ziel:** Belastbarer Production-Nachweis für exakt 500 gleichzeitig aktive synthetische Profile, 1.500 vollständige Ergebnisse und 8.000 Sicherheitskontrollen. End500, Mock500 und Production sind getrennte Abnahmen; keine aktuelle Production-500-Abnahme.
+
+**Aktueller End500-Diagnosebefund:** [GitHub Run 41208876552](https://github.com/ernisch/helmut-pilot/actions/runs/41208876552) auf `123bbd06850f0687ada26265d6e0e1b7d1fad787` ist **Gesamtlauf FAIL**, jedoch **Verarbeitung nachgewiesen**: 500 Auth-CAS, 6.000 Usagezeilen, 3.501 native Postimages, 0 aktive Profile, Export und bestätigter Stopp. Sicherung, authentifizierte entfernte Rücklesung und zweite Rücksicherung sind nicht bestätigt. Kernel-Lebenszeitpeak **3.132.653.568 B** bei **4.999.999.488 B hartem End500-Diagnoselimit**; Swap/OOM/Max **0/0/0**, Bereinigung **8/8 PASS**. **Kein RAM-Limit-Fail dieses Diagnoselaufs.** Die ursprüngliche Sicherungsfehlerursache bleibt UNKNOWN; der separat reproduzierte private Gateway-Dateirechtefehler (0644 statt 0600) ist auf [PR #1002](https://github.com/ernisch/helmut-pilot/pull/1002), Kopf `56ae2a68f2b3e3de6ae5fff878c3e9e7f50e0549`, synthetisch korrigiert, unabhängig geprüft; [Pflicht-CI 41211894017](https://github.com/ernisch/helmut-pilot/actions/runs/41211894017) PASS. Noch kein neuer Originalnachweis mit diesem Fix.
+
+**Die fünf GB wurden bereits umgesetzt**, und zwar in dem ausdrücklich getrennten Diagnosemodus `end500-full-capacity-diagnostic` über den **gesamten** isolierten Ablauf. Die früheren 2.048.000.000 B sind dabei nur historisches Vergleichskriterium und keine Abbruchgrenze. Das reguläre **phasengetrennte** End500-Verarbeitungskriterium bleibt bis zu einer ausdrücklich genehmigten, geprüften Vertragsänderung bei einem zulässigen Peak von 2.048.000.000 B, der reguläre Mock500-Verarbeitungspeak bei 1.638.400.000 B. Nach nachweislich bestandenem Verarbeitungsabschluss sind für die Sicherung bis 4.999.999.488 B hart vorgesehen. Keine frühere RAM-Abnahme rückwirkend bestanden; Mock500 (historischer Abbruch nach 69 Units) weiter BLOCKED.
+
+**Anbietergetrennte Production-Basis und ihre Beleggrenzen:**
+
+| Bereich | Bisher belegte Basis | Was ist noch NICHT bewiesen? |
+| --- | --- | --- |
+| Vercel Anwendung | 2 GB Standard **je Funktionsinstanz**, 1 vCPU, laut Betreiberbefund 30.10.2026 und [PR #992](https://github.com/ernisch/helmut-pilot/pull/992). Das verbundene Projekt `helmut-pilot` ist lesbar. | Aktuell effektive Byte-Hartgrenze und peak RAM **je echter Funktionsinstanz bei Last von 500 Profilen**, Instanzparallelität, CPU und Laufzeit sind nicht als Lastnachweis belegt. |
+| Supabase Datenbank | Micro 1 GB inklusive System-/Dienstanteilen laut früherem Dashboardbeleg und Supabase-Dokumentation; verbundene Datenbank am 31.10.2026 erreichbar. Rein lesend aktuell: `max_connections=60`, `shared_buffers=256 MiB`, `work_mem=3500 kB`. | Aktuelle vollständige RAM/CPU-Last bei 500 Profilen, Poolbelegung, freie Verbindungen und tatsächliches Byte-Limit der Micro-Instanz sind nicht als 500er Nachweis belegt. |
+| Isoliertes GitHub W15 | Gemeinsamer Kernel-Parent umfasst zusätzlich Orchestrator, Empfang, Datenbankkopien, Dateicache, Archivierung, Verschlüsselung, Rücklesung und Rücksicherung. | **3,13 GB gemeinsamer Peak ist nicht der Vercel-Peak und nicht der Supabase-Peak.** Daraus folgt weder ein Überschreiten von 2 GB je Vercel-Funktion noch, dass diese zwei GB ausreichen. |
+
+**Entscheidung zu 2 GB:** Angemessenheit für 500 Profile ist **UNKNOWN**, nicht PASS und nicht automatisch FAIL. Keine unbelegte Erhöhung auf 4 GB und keine Gleichsetzung der getrennten Anbieterressourcen mit einer gemeinsamen 2- oder 3-GB-Grenze. Messung ist grundsätzlich möglich: Vercel stellt `vercel.function_invocation.peak_memory_mb` für Funktionen bereit; Supabase bietet Datenbank-Ressourcenberichte und eine authentifizierte Metrics API. Aktuelle Produktionsmetriken ohne entsprechenden 500er Lastlauf beweisen jedoch **keine** 500er Kapazität. Die Vercel-Metrikabfrage lieferte in dieser Prüfung keinen verwertbaren Messwert (API 400), die Supabase-SQL-Konfigurationswerte sind keine RAM-Verbrauchsmessung. Keine neue Infrastruktur-/Monitoringaktivierung oder Production-Last allein dafür.
+
+**Kürzester sicherer Weg:** Den vorhandenen Entwurf zur **getrennten Ressourcenabnahme** aus [PR #993](https://github.com/ernisch/helmut-pilot/pull/993) und die belegte Basis aus PR #992 als Ausgangspunkt verwenden. Vor Änderung des Prüfvertrags genaue Komponenten-/Prozesszuordnung, reale Anbieter-Hartlimits und Einheiten, begründete Reserven, CPU- und DB-Verbindungslimits klären. Danach minimal die Anbieterbudgets je Instanz bzw. Datenbank in der isolierten Mock500-Umgebung gesondert erzwingen und messen; Testwerkzeuge/Backup getrennt erfassen und einen gemeinsamen Hostschutz behalten. Nur nach ausdrücklicher Freigabe des neuen Vertrags umstellen; bestehende historische FAILs bleiben. Keine unerforderlichen erneuten Original-Restores. Der gezielte Backupfix in PR1002 bleibt unabhängig vom noch offenen regulären RAM- und Mock500-Nachweis. Ein echter Production-Test benötigt eigene Kosten- und Aktivierungsfreigaben.
+
+**Hinweis:** Die nachfolgenden W15-Einträge sind datierte **historische** Berichte. Sie dürfen diesen neueren Entscheidungsstand nicht überschreiben. Die vollständige alte Historie bleibt unverändert erhalten.
+
+---
+
+
 ## W15 Vollrestore: RAM-Grenze überschritten, unabhängig FAIL
 
 Einmaliges Vollrestore-GO auf537adaa32/PR988 verbraucht: Run41073062264,
