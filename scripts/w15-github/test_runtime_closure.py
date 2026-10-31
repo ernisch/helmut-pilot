@@ -17,6 +17,7 @@ class RuntimeClosureChecks(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         code = compile(ast.Expression(calls[0].args[1]), 'actual-pre-backup-report', 'eval')
         scope = dict(failure=None, zero=True, actual_memory_accepted=True,
+                     capacity_diagnostic=False, physical_limit=2560000000, functional_closure_completed=True,
                      w=SimpleNamespace(stop_failure=None, cas_records=[None] * 500,
                                        maximum=1900000000, last={}, memory_failure=None, disk={}),
                      stop_failures=[], zero_check_failure=None, service_closure={},
@@ -30,6 +31,15 @@ class RuntimeClosureChecks(unittest.TestCase):
         self.assertFalse(runtime['full500Acceptance'])
         legacy = eval(code, {**scope, 'inputs': None})
         self.assertTrue(legacy['end500ActualMemoryAccepted'])
+        diagnostic = eval(code, {**scope, 'inputs': object(), 'capacity_diagnostic': True,
+            'physical_limit':4999999488, 'actual_memory_accepted':False,
+            '_runtime_module':lambda _:SimpleNamespace(end_capacity_trace=lambda:SimpleNamespace(PROFILE='helmut-w15-end500-capacity-diagnostic/1'))})
+        self.assertTrue(diagnostic['functionalProcessingClosureCompleted'])
+        self.assertFalse(diagnostic['preBackupMemoryChecksPassed'])
+        self.assertFalse(diagnostic['end500ActualMemoryAccepted'])
+        self.assertEqual(diagnostic['physicalHardCapBytes'],4999999488)
+        self.assertEqual(diagnostic['requiredPhysicalReserveBytes'],0)
+        self.assertEqual(diagnostic['requiredHostReserveBytes'],2147483648)
 
     def test_final_closure_retains_failure_and_requires_real_seal_result(self):
         tree = ast.parse(SOURCE.read_text())
