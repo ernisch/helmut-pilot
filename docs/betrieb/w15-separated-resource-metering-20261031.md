@@ -33,7 +33,7 @@ Quellen: [Vercel Observability](https://vercel.com/docs/observability),
 |---|---|---|
 | Helmut-Anwendung je modellierter Funktionsinstanz | Vercel Standard: 2 GB, 1 vCPU pro Instanz. Effektives Anbieter-Hartlimit in Bytes UNKNOWN. | Dezimale Unterstellung 2.000.000.000 B; auf 4.096-B-Seiten abgerundet **1.999.998.976 B hart**; Referenzpeak höchstens **1.999.994.880 B**. `cpu.max=100000 100000`. |
 | PostgreSQL/Datenbank | Micro: 1 GB einschließlich System/Diensten, geteilte CPU, höchstens 60 DB-Clientverbindungen. Historischer OS-`MemTotal`-Messwert 948.191.232 B vom 30.10.2026 17:59:47 UTC; kein Anbieter-Hartlimit. | Kleinerer Wert aus dezimalen 1.000.000.000 B und diesem OS-Wert: **948.191.232 B hart**, Referenzpeak höchstens **948.187.136 B**. Lokales 1-vCPU-Limit ist eine Laborwahl und **kein** belegter konservativer Ersatz für Shared CPU. |
-| Testwerkzeuge, PostgREST und Sicherung | Keine Vercel-App-Budgets. PostgREST ist Supabase-Dienst; seine tatsächliche Anbieter-Platzierung UNKNOWN. | Eigene, disjunkte Zuordnung und Messung. Kein erfundener zusätzlicher Anbieter-RAM-Anteil. |
+| Testwerkzeuge, PostgREST und Sicherung | Keine Vercel-App-Budgets. PostgREST ist Supabase-Dienst; seine tatsächliche Anbieter-Platzierung UNKNOWN. | Testwerkzeuge/Sicherung disjunkt zuordnen. PostgREST benötigt noch eine separat qualifizierte Dienst-/PID-/PSS-Zuordnung; bisher kein eigener cgroup-Slot. Kein erfundener zusätzlicher Anbieter-RAM-Anteil. |
 | Gemeinsamer GitHub-Schutz | Vorhandener Kapazitätsdiagnosemodus wurde gesondert geprüft. | Wiederverwendung **4.999.999.488 B hart**, mindestens **2.147.483.648 B tatsächlich verfügbarer Hostreserve**, Swap/OOM/Maxereignisse 0; mindestens **536.870.912 B** freie Platte. Dies ist ein Vorschlag für das Referenzlabor, **keine** bereits aktivierte Erhöhung des Mock-Vertrags. |
 
 Die Differenz von genau einer Seite zwischen Referenzpeak und Hartlimit bedeutet
@@ -63,14 +63,19 @@ unbekannte Reservierungen bleiben UNKNOWN. Keine Rolle/Pools still erhöhen.
   Max/OOM-Ereignisse, anon/file/kernel/shmem/dirty/writeback, CPU-Zeit,
   Throttling, tatsächliches `cpu.max`, Cpuset und vorhandene Druckwerte.
   CPU-Raten erst nach zwei gültigen Beobachtungen gleicher Identität.
+  `cpu.max` ist die konfigurierte Gruppenquota, keine garantierte CPU-Lieferung;
+  engere Vorfahrengrenzen, Hostkonkurrenz und Shared-CPU-Effekte bleiben gesondert.
 * Kernel- und PID-Identitäten vor und nach der Zuordnung prüfen. Eine deklarierte
   Rolle bestätigt Programmsemantik nur durch den Aufrufer, nicht durch den Kernel.
   Gemeinsamer App-/Treiber-PID oder fehlende Bindung: reine App UNKNOWN.
   Der bestehende Node-Gateway ist nicht automatisch der Helmut-Appserver.
-* Dateicache bleibt dem verursachenden cgroup-Budget zugeordnet und wird zusätzlich
-  als Unterkategorie sichtbar. PSS, Cache und unterschiedliche zeitliche Peaks
+* Dateicache wird als Unterkategorie des vom Kernel belasteten cgroup-Budgets
+  sichtbar. Das beweist wegen Shared-/First-touch-/Restcache nicht den Verursacher.
+  PSS, Cache und unterschiedliche zeitliche Peaks
   niemals addieren. Beobachtungen sind nicht atomar; Zusammensetzung des
   lebenslangen Peaks bleibt ohne zeitgleichen Beleg UNKNOWN.
+  Vollständige beobachtete PID-Zuordnung beweist keine vollständige Parent-/Cache-
+  Bilanz: auch unbesetzte/verbliebene Untergruppen können Speicher halten.
 * `separated_resources.py` stellt den inaktiven Plan, eine geschlossene numerische
   Verbindungsprojektion und eine ausdrücklich begrenzte Referenz-Snapshot-Bewertung
   bereit. Keine Abnahme-/Startbefugnis, keine DB-Verbindung beim Import.
@@ -82,7 +87,10 @@ mehrere Komponenten ab. Der Leser macht daraus keine scheinbare Trennung.
 Nach Vertragsentscheidung ist die tatsächliche separate Platzierung samt
 Limit-Rücklesung, vollständiger PID-Abdeckung und zuverlässigem Stopp noch gezielt
 zu qualifizieren. Teststeuerung muss außerhalb der App-/DB-Budgets liegen;
-PostgREST separat sichtbar, sein Micro-Systemanteil ohne Beleg UNKNOWN.
+PostgREST muss dabei separat qualifiziert sichtbar werden oder UNKNOWN bleiben;
+PG und PostgREST im selben Datenbank-Unterbaum sind derzeit ein kombinierter Wert,
+kein getrennt gemessener PostgREST-cgroup-/CPU-Beitrag. Sein Micro-Systemanteil
+bleibt ohne Beleg UNKNOWN.
 Genau diese fehlende Qualifikation verhindert derzeit eine Anbieterabnahme.
 
 ## Abnahme und Freigabegrenzen
