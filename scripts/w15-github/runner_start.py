@@ -45,8 +45,9 @@ LIMITS = {'comparisonBudgetBytes': 2560000000, 'maximumConsumptionBytes': 204800
 CAPACITY = 'end500-restore-capacity-diagnostic'
 END_CAPACITY = 'end500-full-capacity-diagnostic'
 PHASED = 'end500-full-phased-gated'
+FUNCTIONAL = 'end500-full-functional-gated'
 DIAGNOSTIC = 'end500-restore-export-diagnostic'
-WALL = {END_CAPACITY: 3600, PHASED: 3600, CAPACITY: 1800, DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
+WALL = {FUNCTIONAL: 3600, END_CAPACITY: 3600, PHASED: 3600, CAPACITY: 1800, DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
 BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 MAX_FILES, MAX_SOURCE_BYTES, MAX_BLOB = 4096, 128 * 1024 * 1024, 16 * 1024 * 1024
 MAX_IPC, MAX_RESULT, CHUNK = 1024 * 1024, 65536, 1024 * 1024
@@ -59,7 +60,7 @@ GIT_OPTIONS = ['--no-optional-locks', '-c', 'core.hooksPath=/dev/null', '-c', 'c
                '-c', 'maintenance.auto=false']
 PHASE = 'arguments'
 PHASES = {'arguments', 'binding', 'parent', 'service', 'staging', 'worker', 'closure', 'ipc'}
-WORKER_STATUS = {END_CAPACITY: 'MEASURED_FULL_END500_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED', DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
+WORKER_STATUS = {FUNCTIONAL: 'PASS_END500_FUNCTIONAL_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING', END_CAPACITY: 'MEASURED_FULL_END500_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED', DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
                  PHASED: 'PASS_END500_PHASED_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING',
                  CAPACITY: 'MEASURED_FULL_RESTORE_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED',
                  'end500-restore-gated': 'PASS_SAME_JOB_RESTORE_BACKUP_500_INACTIVE_ONLY_START_BLOCKED',
@@ -165,6 +166,8 @@ def _worker_result(result, request):
         fields |= {'capacityDiagnosticOnly', 'legacyRestoreAccepted'}
     if request['mode'] == PHASED:
         fields |= {'resourcePhases', 'processingMemoryChecksCompleted', 'backupSafetyChecksCompleted'}
+    if request['mode'] == FUNCTIONAL:
+        fields |= {'functionalContract','functionalSafetyChecksCompleted','legacyRegularMemoryAccepted','functionalResults'}
     if diagnostic:
         fields |= {'diagnosticExportOnly', 'restoreSteps', 'exportActions', 'profiles', 'activeProfiles',
             'ownedContainerStopped', 'watchStopped', 'remoteReadbackObserved', 'databaseRestoreObserved', 'fullRestoreAccepted'}
@@ -183,7 +186,14 @@ def _worker_result(result, request):
          and result['originalTransferPerformed'] is (not synthetic)
          and result['isolatedRestoreObserved'] is (not synthetic)
          and result['backupRoundtripVerified'] is (not synthetic and not diagnostic)
-         and result['end500BodyCompleted'] is (request['mode'] in ('end500-full-gated', PHASED, END_CAPACITY)))
+         and result['end500BodyCompleted'] is (request['mode'] in ('end500-full-gated', PHASED, END_CAPACITY, FUNCTIONAL)))
+    if request['mode'] == FUNCTIONAL:
+        need(result['functionalContract'] == _load('functional_contract').CONTRACT
+             and result['functionalSafetyChecksCompleted'] is True and result['legacyRegularMemoryAccepted'] is False)
+        try:
+            _load('restore_workflow').validate_functional_results(result['functionalResults'])
+        except Exception:
+            raise RunnerStartError() from None
     if diagnostic:
         need(result['diagnosticExportOnly'] is True and result['ownedContainerStopped'] is True
              and result['watchStopped'] is True and result['remoteReadbackObserved'] is False
@@ -238,7 +248,7 @@ def validate_request(request, private_payload):
     need(type(request) is dict and set(request) == REQUEST_KEYS
          and request['schema'] == 'helmut-w15-runner-request/1' and request['mode'] in WALL
          and type(request['runAttempt']) is int and request['runAttempt'] == 1
-         and request['branch'] == BRANCH and request['limits'] == (P.R.capacity().LIMITS if request['mode'] in (CAPACITY, END_CAPACITY) else LIMITS)
+         and request['branch'] == BRANCH and request['limits'] == (_load('functional_contract').limits('end500') if request['mode'] == FUNCTIONAL else P.R.capacity().LIMITS if request['mode'] in (CAPACITY, END_CAPACITY) else LIMITS)
          and all(type(v) is int for v in request['limits'].values())
          and type(request['maximumWallSeconds']) is int
          and request['maximumWallSeconds'] == WALL[request['mode']]
@@ -267,6 +277,8 @@ def _ctx(request):
         value['capacityDiagnostic'] = True
         if request['mode'] == END_CAPACITY:
             value['endCapacityDiagnostic'] = True
+    if request['mode'] in (FUNCTIONAL, 'mock500-full-functional-gated'):
+        value['functionalStage'] = _load('functional_contract').stage(request['mode'])
     stage = (P.R.phase_contract().stage(request['mode'])
              if request['mode'] in (PHASED, 'mock500-full-phased-gated') else None)
     if stage is not None:
@@ -298,9 +310,10 @@ def github_binding(request):
     need(_git(REPO, ['rev-parse', 'HEAD']) == (request['exactCommit'] + '\n').encode())
     for file in (SCRIPT, SCRIPT.with_name('runner_parent.py'), SCRIPT.with_name('common_resources.py'), SCRIPT.with_name('runner_diagnostics.py'),
                  SCRIPT.with_name('controller_context.py'),
-                 *([SCRIPT.with_name('restore_capacity.py')] if request['mode'] in (CAPACITY, END_CAPACITY, PHASED) else []),
-                 *([SCRIPT.with_name('phase_contract.py')] if request['mode'] == PHASED else []),
-                 *([SCRIPT.with_name('end500_capacity_trace.py'), SCRIPT.with_name('memory_components.py'), SCRIPT.with_name('end500_capacity_roles.py')] if request['mode'] == END_CAPACITY else [])):
+                 *([SCRIPT.with_name('restore_capacity.py')] if request['mode'] in (CAPACITY, END_CAPACITY, PHASED, FUNCTIONAL) else []),
+                 *([SCRIPT.with_name('phase_contract.py')] if request['mode'] in (PHASED, FUNCTIONAL) else []),
+                 *([SCRIPT.with_name('functional_contract.py')] if request['mode'] == FUNCTIONAL else []),
+                 *([SCRIPT.with_name('end500_capacity_trace.py'), SCRIPT.with_name('memory_components.py'), SCRIPT.with_name('end500_capacity_roles.py')] if request['mode'] in (END_CAPACITY, FUNCTIONAL) else [])):
         relative = str(file.relative_to(REPO))
         entry = _git(REPO, ['ls-tree', '-z', request['exactCommit'], '--', relative])
         header, name = entry.rstrip(b'\0').split(b'\t')
@@ -593,9 +606,9 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
         reason = 'WORKER_RESULT_REJECTED'
         extra = ({'backup_transition': _worker_backup_transition(sender, manifest, 'end500')}
                  if manifest['mode'] == PHASED else {})
-        if manifest['mode'] == END_CAPACITY:
+        if manifest['mode'] in (END_CAPACITY, FUNCTIONAL):
             extra['capacity_observer'] = _capacity_reporter(sender)
-        if manifest['mode'] in (END_CAPACITY, PHASED, 'end500-full-gated'):
+        if manifest['mode'] in (END_CAPACITY, PHASED, FUNCTIONAL, 'end500-full-gated'):
             extra['native_failure_observer'] = _native_failure_reporter(sender)
         result = module.run_worker(manifest, private_payload, phase_observer=_phase_reporter(sender), **extra)
         result = _worker_result(result, manifest)
@@ -762,7 +775,7 @@ def _parent_readback(parent, ctx, identity, last, *, empty=False, error_type=Run
     try:
         value = parent.read_parent(ctx, identity, empty=empty)
     except BaseException as error:
-        if ctx.get('capacityDiagnostic') is True or ctx.get('processingBackupPhase') == 'backup':
+        if ctx.get('capacityDiagnostic') is True or ctx.get('functionalStage') in ('end500','mock500') or ctx.get('processingBackupPhase') == 'backup':
             try:
                 detail = _closed_memory(D.attribute(error, 'failure_memory'))
                 if detail is not None:
@@ -781,11 +794,11 @@ def _parent_readback(parent, ctx, identity, last, *, empty=False, error_type=Run
                 pass  # Optional enrichment must never displace the first failure or signal.
         reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'PARENT_READBACK_REJECTED'
         raise _diagnose(error, phase or PHASE, reason, last.get('memory'), error_type=error_type) from None
-    if ctx.get('capacityDiagnostic') is True or ctx.get('processingBackupPhase') == 'backup':
+    if ctx.get('capacityDiagnostic') is True or ctx.get('functionalStage') in ('end500','mock500') or ctx.get('processingBackupPhase') == 'backup':
         value['capacityMeasurement'] = P.R.capacity().merge(last.get('capacity'), value['capacityMeasurement'],
             value, last.get('observedPhase'))
         last['capacity'] = value['capacityMeasurement']
-    if ctx.get('endCapacityDiagnostic') is True:
+    if ctx.get('endCapacityDiagnostic') is True or ctx.get('functionalStage') == 'end500':
         if 'endTrace' not in last:
             last['endTrace'] = P.R.end_capacity_trace().Collector()
         collector = last['endTrace']
@@ -995,17 +1008,17 @@ def supervise(request, private_payload, *, latch=None):
     except BaseException as error:
         raise _diagnose(error, 'worker', 'WORKER_START_REJECTED', last['memory']) from None
     cleanup, observed = None, {}
-    native_failure = {} if request['mode'] in (END_CAPACITY, PHASED, 'end500-full-gated') else None
+    native_failure = {} if request['mode'] in (END_CAPACITY, PHASED, FUNCTIONAL, 'end500-full-gated') else None
     last['observedPhase'] = observed
     try:
         response, cleanup = _monitor_child(child, receiver, sender, guard, deadline,
             memory=lambda: last['memory'], latch=latch, observed=observed, native_failure=native_failure,
-            **({'capacity_checkpoint': _capacity_checkpoint(last, ctx, identity)} if request['mode'] == END_CAPACITY else {}),
+            **({'capacity_checkpoint': _capacity_checkpoint(last, ctx, identity)} if request['mode'] in (END_CAPACITY, FUNCTIONAL) else {}),
             transition=_supervisor_backup_transition(ctx, identity, last, child, 'end500', guard=guard) if request['mode'] == PHASED else None)
         response['result'] = _worker_result(response['result'], request)
         if request['mode'] == PHASED:
             need(last.get('backupAck') == response['result']['resourcePhases']['transition'])
-        if request['mode'] == END_CAPACITY:
+        if request['mode'] in (END_CAPACITY, FUNCTIONAL):
             need(last.get('progress') == {key: {'value': n, 'kind': 'EXACT'}
                 for key, n in (('authCAS', 500), ('usageRows', 6000), ('nativePostimages', 3501))})
         PHASE = 'closure'; guard()
@@ -1014,8 +1027,8 @@ def supervise(request, private_payload, *, latch=None):
                 'checkoutFiles': len(manifest['sourcePins']), 'checkoutBytes': manifest['checkoutBytes'],
                 'binaryBytes': manifest['binaryBytes'], 'dockerSocketGID': docker_gid,
                 'workerUID': 1000, 'workerGID': 1000,
-                **({'capacityMeasurement': last['capacity']} if request['mode'] in (CAPACITY, END_CAPACITY) else {}),
-                **({'end500CapacityTrace': last['endTrace'].summary()} if request['mode'] == END_CAPACITY else {}),
+                **({'capacityMeasurement': last['capacity']} if request['mode'] in (CAPACITY, END_CAPACITY, FUNCTIONAL) else {}),
+                **({'end500CapacityTrace': last['endTrace'].summary()} if request['mode'] in (END_CAPACITY, FUNCTIONAL) else {}),
                 **({'resourcePhases': P.R.phase_contract().closure(last['backupAck'], guard()),
                     'processingMemoryChecksCompleted': True, 'backupSafetyChecksCompleted': True}
                    if request['mode'] == PHASED else {})}
@@ -1048,7 +1061,8 @@ def _service_argv(request, ipc_dir):
             '/usr/bin/env', '-i', *[key + '=' + value for key, value in P.process_env(ctx).items()],
             '/usr/bin/python3', '-B', str(SCRIPT), '--internal-supervisor', '--expected-commit', ctx['exactCommit'],
             '--run-id', ctx['runId'], '--nonce', ctx['nonce'], '--ipc-dir', str(ipc_dir),
-            *(['--capacity-diagnostic'] if request['mode'] in (CAPACITY, END_CAPACITY) else [])]
+            *(['--capacity-diagnostic'] if request['mode'] in (CAPACITY, END_CAPACITY) else []),
+            *(['--functional-stage','end500'] if request['mode'] == FUNCTIONAL else [])]
 
 
 def _receive_result(listener, process, deadline, *, error_type=RunnerStartError):
@@ -1135,7 +1149,7 @@ def _cleanup_launch(ctx, parent, identity, created, process, listener, latch, fa
                     except BaseException as error:
                         observed = _closed_memory(D.attribute(error, 'failure_memory'))
                     if observed is not None:
-                        if (ctx.get('capacityDiagnostic') is True or ctx.get('processingBackupPhase') == 'backup'
+                        if (ctx.get('capacityDiagnostic') is True or ctx.get('functionalStage') in ('end500','mock500') or ctx.get('processingBackupPhase') == 'backup'
                                 or ctx.get('processingBackupStage') in ('end500', 'mock500')):
                             try:
                                 previous = detail.get('memory', {}).get('capacityMeasurement')
@@ -1146,7 +1160,7 @@ def _cleanup_launch(ctx, parent, identity, created, process, listener, latch, fa
                             except BaseException:
                                 pass  # Keep original failure/core counters if optional aggregation fails.
                         previous_trace = detail.get('memory', {}).get('end500CapacityTrace')
-                        if ctx.get('endCapacityDiagnostic') is True and P.R.end_capacity_trace().closed(previous_trace) is not None:
+                        if (ctx.get('endCapacityDiagnostic') is True or ctx.get('functionalStage') == 'end500') and P.R.end_capacity_trace().closed(previous_trace) is not None:
                             observed['end500CapacityTrace'] = previous_trace
                         detail.update(memory=observed, memorySource='POST_FAILURE_READBACK')
                 failure.runner = D.runner(detail, _closed_memory); failure.refresh()
@@ -1242,7 +1256,7 @@ def launch(request, private_payload):
     last, empty_observed = {'memory': None}, False
     try:
         PHASE = 'parent'
-        host_admission = P.R.capacity().host_admission() if request['mode'] in (CAPACITY, PHASED, END_CAPACITY) else None
+        host_admission = P.R.capacity().host_admission() if request['mode'] in (CAPACITY, PHASED, END_CAPACITY, FUNCTIONAL) else None
         P.privileged('prepare', ctx); created = True
         identity = P.identity(P.R.KERNEL_ROOT / P.names(ctx)[0])
         initial = _parent_readback(P, ctx, identity, last, empty=True)
@@ -1265,10 +1279,10 @@ def launch(request, private_payload):
         need(type(result.get('result')) is dict)
         result['result']['worker'] = _worker_result(result['result']['worker'], request)
         PHASE = 'closure'
-        if request['mode'] in (CAPACITY, END_CAPACITY):
+        if request['mode'] in (CAPACITY, END_CAPACITY, FUNCTIONAL):
             need(P.R.capacity().closed(result['result'].get('capacityMeasurement')) is not None)
             last['capacity'] = result['result']['capacityMeasurement']
-        if request['mode'] == END_CAPACITY:
+        if request['mode'] in (END_CAPACITY, FUNCTIONAL):
             need(P.R.end_capacity_trace().closed(result['result'].get('end500CapacityTrace')) is not None)
             last['serviceEndTrace'] = result['result']['end500CapacityTrace']
         if request['mode'] == PHASED:
@@ -1281,12 +1295,18 @@ def launch(request, private_payload):
         final = _parent_readback(P, ctx, identity, last, empty=True)
         need(final['kernelLifetimePeakBytes'] >= initial['kernelLifetimePeakBytes'] and not latch.seen)
         empty_observed = True
-        return {'status': ('PASS_FRESH_PHASED_RUNNER_OWNED_LIFETIME_ONLY' if request['mode'] == PHASED else
+        return {'status': ('PASS_FRESH_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY' if request['mode'] == FUNCTIONAL else
+                           'PASS_FRESH_PHASED_RUNNER_OWNED_LIFETIME_ONLY' if request['mode'] == PHASED else
                            'COMPLETED_FULL_END500_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == END_CAPACITY else
                            'COMPLETED_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == CAPACITY
                            else 'PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY'), 'exactCommit': ctx['exactCommit'],
                 **({'hostAdmission': host_admission, 'capacityMeasurement': last['capacity'],
-                    'legacyRestoreAccepted': False} if request['mode'] in (CAPACITY, END_CAPACITY) else {}),
+                    'legacyRestoreAccepted': False} if request['mode'] in (CAPACITY, END_CAPACITY, FUNCTIONAL) else {}),
+                **({'functionalContract': _load('functional_contract').CONTRACT,
+                    'memoryProfile': _load('functional_contract').END_PROFILE,
+                    'functionalSafetyAccepted': True, 'legacyRegularMemoryAccepted': False,
+                    'providerResourceAccepted': False} if request['mode'] == FUNCTIONAL else {}),
+                **({'end500CapacityTrace': last['serviceEndTrace']} if request['mode'] == FUNCTIONAL else {}),
                 **({'end500CapacityTrace': last['serviceEndTrace'], 'legacyEnd500Accepted': False,
                     'diagnosticOnly': True} if request['mode'] == END_CAPACITY else {}),
                 **({'resourcePhases': P.R.phase_contract().closure(phases['transition'], final),
@@ -1319,10 +1339,14 @@ def main(argv=None):
     parser.add_argument('--expected-commit', required=True); parser.add_argument('--run-id', required=True)
     parser.add_argument('--nonce', required=True); parser.add_argument('--ipc-dir', required=True)
     parser.add_argument('--capacity-diagnostic', action='store_true')
+    parser.add_argument('--functional-stage', choices=['end500'])
     args = parser.parse_args(argv)
     ctx = P.context(args.run_id, args.expected_commit, args.nonce)
     if args.capacity_diagnostic:
         ctx['capacityDiagnostic'] = True
+    if args.functional_stage:
+        need(not args.capacity_diagnostic)
+        ctx['functionalStage'] = args.functional_stage
     # This process must never send Python output to the journal or Actions log.
     null = os.open('/dev/null', os.O_WRONLY)
     try:

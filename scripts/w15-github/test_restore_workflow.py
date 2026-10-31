@@ -434,7 +434,7 @@ class WorkerChecks(unittest.TestCase):
 
     def test_public_result_is_closed_and_semantically_bound(self):
         for mode in W.WALL:
-            if mode == W.PHASED:
+            if mode in (W.PHASED, W.FUNCTIONAL):
                 with self.assertRaises(W.WorkflowRejected):
                     W._result(request(mode))  # A mode alone cannot fabricate a processing closure.
                 continue

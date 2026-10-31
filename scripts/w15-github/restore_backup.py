@@ -708,6 +708,7 @@ def restore_readback(verified_root, *, context, controller_context, resources,
             '--memory-swap=' + str(getattr(resources, 'container_limit', Q.C.LIMIT)),
             '--cgroup-parent=' + resources.unit, *label_args, *mount_args,
             '-e', 'POSTGRES_HOST_AUTH_METHOD=trust', m.IMAGE, 'postgres',
+            *(['-c', 'max_connections=60'] if getattr(resources, 'functional_stage', None) in ('end500','mock500') else []),
             '-c', 'helmut.local_usage_experiment=on', '-c', 'max_wal_size=128MB',
             '-c', 'work_mem=32MB', '-c', 'autovacuum_naptime=10s')
         owned_id = inspect(container)['Id']
@@ -731,6 +732,8 @@ def restore_readback(verified_root, *, context, controller_context, resources,
                 break
             time.sleep(.2)
         require(ready.returncode == 0)
+        if getattr(resources, 'functional_stage', None) in ('end500','mock500'):
+            require(m.read('show max_connections;', database='postgres') == 60, 'BACKUP_RECOVERY_CONNECTION_LIMIT_INVALID')
         m.docker('exec', owned_id, 'mkdir', '-p', m.BASE)
         m.docker('exec', owned_id, 'chmod', '700', m.BASE)
         m.docker('exec', owned_id, 'chown', '1000:1000', m.BASE)

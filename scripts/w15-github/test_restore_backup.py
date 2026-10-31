@@ -315,9 +315,9 @@ class BackupChecks(unittest.TestCase):
 
     def test_executable_recovery_uses_fresh_netless_owned_native_steps_and_matches_all_rows(self):
         """Exercise the new orchestration; native/GPG work remains fictional."""
-        for corrupt in (False, True):
-            with self.subTest(changed_recovered_row=corrupt):
-                root = self.root / ('native-bad' if corrupt else 'native-good')
+        for case,(corrupt,functional,configured) in enumerate(((False,False,60),(True,False,60),(False,True,60),(False,True,61))):
+            with self.subTest(changed_recovered_row=corrupt,functional=functional,configured=configured):
+                root = self.root / ('native-case-' + str(case))
                 root.mkdir(mode=0o700)
                 verified, rollback = root / 'verified', root / 'rollback'
                 verified.mkdir(mode=0o700)
@@ -345,10 +345,12 @@ class BackupChecks(unittest.TestCase):
                 image = 'sha256:' + 'd' * 64
                 resources = SimpleNamespace(path=Path('/FICTIONAL/common.slice'), unit='FICTIONAL.slice',
                                             check_pid=Mock(), sample=Mock(side_effect=RF.sample))
+                if functional:
+                    resources.functional_stage='end500';resources.container_limit=4999999488
                 state = {'running': False, 'create': None}
                 owned_id = 'e' * 64
                 m = SimpleNamespace(BASE=R.T.BASE, DB=R.T.DATABASE, DOCKER=list(R.DOCKER),
-                                    ENV={'PATH': '/usr/bin:/bin'})
+                                    ENV={'PATH': '/usr/bin:/bin'},read=Mock(return_value=configured))
                 def docker(*args, **kwargs):
                     if args[:2] == ('image', 'inspect'):
                         return json.dumps([{'Id': image}]).encode()
@@ -374,7 +376,7 @@ class BackupChecks(unittest.TestCase):
                                            'RW': 'readonly' not in parts})
                         return json.dumps([{'Id': owned_id, 'Name': '/' + m.CONTAINER, 'Image': image,
                             'Config': {'Labels': labels}, 'NetworkSettings': {'Ports': {}},
-                            'HostConfig': {'NetworkMode': 'none', 'Memory': 2560000000, 'MemorySwap': 2560000000,
+                            'HostConfig': {'NetworkMode': 'none', 'Memory': getattr(resources,'container_limit',2560000000), 'MemorySwap': getattr(resources,'container_limit',2560000000),
                                 'CgroupParent': resources.unit, 'RestartPolicy': {'Name': 'no'}},
                             'State': {'Running': state['running'], 'Pid': 1234 if state['running'] else 0,
                                       'OOMKilled': False, 'ExitCode': 0}, 'Mounts': mounts}]).encode()
@@ -427,7 +429,7 @@ class BackupChecks(unittest.TestCase):
                         controller_context={'runtimePins': {'imageId': image, 'node': pin(node)}}, resources=resources,
                         expected_manifest=manifest, expected_manifest_sha256=hashlib.sha256(raw_manifest).hexdigest(),
                         rollback_root=rollback, guard=self.guard)
-                    if corrupt:
+                    if corrupt or (functional and configured != 60):
                         with self.assertRaisesRegex(R.BackupRuntimeError, 'RECOVERY_FAILED_OR_UNKNOWN'):
                             R.restore_readback(verified, **kwargs)
                     else:
@@ -437,8 +439,13 @@ class BackupChecks(unittest.TestCase):
                         self.assertTrue(result['ownedRecoveryContainerStopped'])
                         self.assertFalse(result['acceptedAsCompleteBackup'])
                 self.assertFalse(state['running'])
-                self.assertEqual([x[1] for x in fixture.calls], list(R.T.ACTIONS))
-                self.assertEqual([x[1] for x in exporter.calls], list(R.ACTIONS))
+                if functional:
+                    self.assertIn('max_connections=60',state['create'])
+                    m.read.assert_called_once_with('show max_connections;',database='postgres')
+                else:
+                    self.assertNotIn('max_connections=60',state['create']);m.read.assert_not_called()
+                self.assertEqual([x[1] for x in fixture.calls], [] if functional and configured != 60 else list(R.T.ACTIONS))
+                self.assertEqual([x[1] for x in exporter.calls], [] if functional and configured != 60 else list(R.ACTIONS))
                 self.assertTrue(w.finished.is_set())
                 self.assertEqual((verified / 'database/roles.PRIVATE.sql').read_bytes(), roles)
 
