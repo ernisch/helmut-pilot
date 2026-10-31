@@ -44,7 +44,8 @@ ASSERTIONS = frozenset(('diagnostic-fresh-database-required','diagnostic-ca-requ
     'diagnostic-provision-refused','diagnostic-positive-native-understanding-required','diagnostic-native-matches-required',
     'diagnostic-native-decisions-required','diagnostic-positive-current-briefing-required',
     'diagnostic-cleanup-only-newly-owned-profiles','diagnostic-local-preload-required',
-    'diagnostic-synthetic-profile-selector-required','UNKNOWN'))
+    'diagnostic-synthetic-profile-selector-required','diagnostic-required-schema-migration-missing',
+    'diagnostic-schema-migration-list-unique','UNKNOWN'))
 NODE_CODES = frozenset(('ERR_ASSERTION','MODULE_NOT_FOUND','ERR_MODULE_NOT_FOUND','EACCES','EPERM','ENOENT',
     'EEXIST','ECONNREFUSED','ETIMEDOUT','EPIPE','ENOTFOUND','ECONNRESET','UNKNOWN'))
 SQLSTATES = frozenset(('42P01','42703','42883','42501','23505','23503','3D000','28P01','57014',
@@ -396,7 +397,7 @@ class Supervisor:
         for key, name in (('nodeSource', 'node'), ('postgrestSource', 'postgrest')):
             source = Path(self.state[key]); fd = os.open(source, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
             try:
-                value = os.fstat(fd); need(stat.S_ISREG(value.st_mode) and value.st_nlink == 1 and value.st_uid in (0, self.state['callerUID'])
+                value = os.fstat(fd); need(stat.S_ISREG(value.st_mode) and value.st_nlink == 1 and value.st_uid in (0, self.state['callerUID'], REPO.stat().st_uid)
                     and 0<value.st_size<=256*1024*1024,self.phase)
                 destination = self.work / name
                 digest=hashlib.sha256()

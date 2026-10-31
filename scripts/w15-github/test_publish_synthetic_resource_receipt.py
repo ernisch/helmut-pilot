@@ -46,6 +46,15 @@ class ReceiptChecks(unittest.TestCase):
         self.assertEqual(P.prepare(self.report, env)['head_sha'], 'b' * 40)
         self.assertIn('a' * 40, P.prepare(self.report, env)['output']['text'])
 
+    def test_first_failure_remains_readable_when_whole_receipt_projection_rejects(self):
+        report={**self.report,'firstFailure':{'phase':'schema','code':'WORKLOAD_PROCESS_FAILED'},
+                'unapprovedNote':'FICTIONAL_PRIVATE_SENTINEL'}
+        with self.assertRaises(AssertionError):P.prepare(report,self.env)
+        notice=P.compact_notice(report)
+        self.assertIn('WORKLOAD_PROCESS_FAILED',notice)
+        self.assertNotIn('FICTIONAL_PRIVATE_SENTINEL',notice)
+        self.assertNotIn('unapprovedNote',notice)
+
     def test_event_scope_status_and_run_are_actually_bound(self):
         for key,value in [('scope','ORIGINAL_FREE_SYNTHETIC_3_PROFILE_CONNECTION_QUALIFICATION_ONLY'),
                           ('status','PASS'),('runId','654321')]:
