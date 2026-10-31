@@ -411,6 +411,14 @@ def _connection_failure_phase(error, connection_code, fallback):
     A receiver checkpoint records the last observed step, not a causal claim.
     In particular, receipt validation can fail after its final agent-close step.
     """
+    # The legacy full controller exits only after its own cleanup. Preserve
+    # its first fixed pre-hook backup boundary without exporting error text
+    # or replacing an already retained first native failure.
+    if type(error) is SystemExit and fallback == 'end500':
+        backup_phase = getattr(error, 'backup_failure_phase', None)
+        native = _DIAGNOSTICS.native_failure(_DIAGNOSTICS.attribute(error, 'native_failure'))
+        if type(backup_phase) is str and backup_phase in BACKUP_PHASES and native is None:
+            return backup_phase
     error_type = getattr(connection_code, 'RestoreConnectionError', None)
     if not isinstance(error_type, type) or type(error) is not error_type:
         return fallback

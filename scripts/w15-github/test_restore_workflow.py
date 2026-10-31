@@ -359,6 +359,59 @@ class WorkerChecks(unittest.TestCase):
         self.assertEqual(failed.exception.phase, 'receive-prepare')
         self.assertNotIn('PRIVATE', str(failed.exception))
 
+    def test_prehook_backup_exit_keeps_closed_phase_through_worker_and_ipc(self):
+        manifest, private = self.setup_worker('end500-full-gated')
+        spec = importlib.util.spec_from_file_location('backup_phase_ipc', Path(__file__).with_name('runner_start.py'))
+        runner = importlib.util.module_from_spec(spec); spec.loader.exec_module(runner)
+        for phase in ('backup-collect', 'backup-seal', 'backup-postcheck'):
+            error = SystemExit('FICTIONAL_PRIVATE_DETAIL')
+            error.backup_failure_phase = phase
+            self.forward.main.side_effect = error
+            with self.subTest(phase=phase), self.assertRaises(W.WorkflowRejected) as failed:
+                W.run_worker(manifest, private)
+            self.assertEqual(failed.exception.phase, phase)
+            framed = runner._worker_failure(failed.exception, 'WORKER_RESULT_REJECTED')
+            decoded = runner._response_error(runner._failure_packet(framed))
+            public = W._safe_failure(decoded)
+            self.assertEqual(public['worker']['phase'], phase)
+            self.assertNotIn('FICTIONAL_PRIVATE_DETAIL', json.dumps(public))
+
+    def test_prehook_backup_phase_rejects_unknown_and_preserves_primary_failures(self):
+        manifest, private = self.setup_worker('end500-full-gated')
+        for phase in (None, True, '/FICTIONAL_PRIVATE_PATH', ['backup-collect']):
+            error = SystemExit(1); error.backup_failure_phase = phase
+            self.forward.main.side_effect = error
+            with self.subTest(phase=phase), self.assertRaises(W.WorkflowRejected) as failed:
+                W.run_worker(manifest, private)
+            self.assertEqual(failed.exception.phase, 'end500')
+        native = {'schema': 'helmut-w15-native-end500-failure/1', 'stage': 'observer-install',
+            'kind': 'module-load-error', 'code': 'MODULE_NOT_FOUND', 'causeCode': 'UNKNOWN',
+            'httpStatus': 'UNKNOWN', 'timeoutMs': 'UNKNOWN', 'check': 'UNKNOWN',
+            'acknowledgedCAS': 'UNKNOWN', 'acknowledgedCASKind': 'UNKNOWN',
+            'writeOutcome': 'UNKNOWN', 'requiredAction': 'INSPECT_STAGED_CODE_DEPENDENCIES'}
+        error = SystemExit(1); error.backup_failure_phase = 'backup-collect'; error.native_failure = native
+        self.forward.main.side_effect = error
+        with self.assertRaises(W.WorkflowRejected) as failed:
+            W.run_worker(manifest, private)
+        self.assertEqual(failed.exception.phase, 'end500')
+        self.assertEqual(failed.exception.native_failure, native)
+        # The genuine completion hook's first fixed failure is more precise
+        # than the controller's later postcheck/exit boundary.
+        original = RuntimeError('FICTIONAL_PRIVATE_CALLBACK')
+        original.phase = 'backup-authenticate'
+        self.backup.completion_hook.return_value = Mock(side_effect=original)
+        def callback_then_exit(**kwargs):
+            try:
+                kwargs['backup_completion'](FICTIONAL=True)
+            finally:
+                error = SystemExit(1); error.backup_failure_phase = 'backup-postcheck'
+                raise error
+        self.forward.main.side_effect = callback_then_exit
+        with self.assertRaises(W.WorkflowRejected) as failed:
+            W.run_worker(manifest, private)
+        self.assertEqual(failed.exception.phase, 'backup-authenticate')
+        self.assertNotIn('FICTIONAL_PRIVATE_CALLBACK', str(failed.exception))
+
     def test_public_result_is_closed_and_semantically_bound(self):
         for mode in W.WALL:
             if mode == W.PHASED:
