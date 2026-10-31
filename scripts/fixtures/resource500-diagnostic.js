@@ -5,6 +5,17 @@ const assert=require("node:assert/strict"),crypto=require("node:crypto");
 const P=require("../../lib/helmut/synthetik-500-profile");
 const THEMES=["Wohnungsbau","Digitalisierung","Bildung","Pflege","Verkehr","Energie","Haushalt","Umwelt"];
 const VIEWS=["Planungsnotiz","Anhoerungsprotokoll","Finanzuebersicht","Projektbericht"];
+// Independent invented projects, rather than a shared document-form headline.
+// Each name describes its own subject; the full context remains in the sources.
+const PROJECT_TITLES=[
+  ["Wohnhof Ulmenbogen","Mietquartier Kieselhang","Dachausbau Silberlinde","Genossenschaftshaus Moosgarten","Bauluecke Amselnest","Siedlung Wiesenrain","Azubiheim Fuchsbau","Seniorenhaus Eichenkrone","Mehrgenerationenhof Quellenblick","Sozialwohnungen Kranichufer","Laermschutzwohnen Rosenanger","Wohnraumberatung Tannengrund"],
+  ["Buergerportal Wolkenpfad","Aktenregister Funkenspur","Datennetz Bernsteinknoten","Terminservice Mondwinkel","Bauaktenarchiv Birkenfeder","Ausweisautomat Morgenstern","Schuldatenverbund Nebeltau","Meldeplattform Rubinkreis","Datenkatalog Schwanenfeder","Barrierefreiforum Zedernhain","Verschluesselungsdienst Lotuskern","Funkloesung Drosseltal"],
+  ["Lernwerkstatt Nordlicht","Schulcampus Auenstern","Lesemobil Faerberwiese","Ausbildungslabor Kobaltinsel","Inklusionsatelier Eschenpfad","Ganztagszentrum Hafenrose","Sprachfoerderung Erlenwind","Musikraum Sonnenfalter","Mathematikzirkel Lavendelhof","Schwimmkurs Otterbach","Bibliotheksbus Zimtbruecke","Medienkompetenz Pfefferhain"],
+  ["Demenzgarten Buchfink","Kurzzeitstation Biberquell","Hebammenhaus Purpurweide","Rehaparcours Seidenweg","Nachbarschaftshilfe Wacholder","Palliativnetz Abendglanz","Tagespflegezentrum Steinmarder","Assistenzpool Regenquelle","Gesundheitslotsen Zaubernuss","Versorgungspraxis Perlensteg","Therapieraum Dattelpalme","Pflegeberatung Malachit"],
+  ["Radbruecke Flusskiesel","Buswendeschleife Lerchenfeld","Bahnhofsrampe Kupfertor","Fussgaengertunnel Muschelpfad","Mobilpunkt Weidenstern","Guetertrasse Basaltkante","Ampelschaltung Feldspat","Schulwegsicherung Haselhecke","Fahrradgarage Loewenzahn","Strassenbahnbogen Smaragd","Parkleitsystem Safran","Faehrsteg Maronenbank"],
+  ["Solarhalle Blautanne","Waermenetz Granitquelle","Windpark Zeisigwacht","Batteriespeicher Jadefels","Geothermiebohrung Kiebitzgrund","Biogasanlage Hopfengasse","Stromsparbuero Goldammer","Netzstation Korallenufer","Dachkollektor Zypressenhof","Heizungsverbund Wasserlinse","Lastmanagement Silizium","Wasserkraftstufe Schieferklamm"],
+  ["Beteiligungsetat Felsenbirne","Investitionsfonds Sanddorn","Kassenbericht Pappelkrone","Zuschussprogramm Kreuzdorn","Ruecklagentopf Akazienring","Gebuehrenmodell Bergahorn","Vergabepruefung Hagebutte","Wirtschaftsplan Schneebeere","Controllingstelle Duftjasmin","Steuerbescheid Walnuss","Rechnungsarchiv Stachelbeere","Finanzausgleich Holzapfel"],
+  ["Renaturierung Libellenau","Moorsteg Wollgras","Abfalltrennung Fliederbusch","Regenmulde Zaunkoenig","Baumkataster Ringelblume","Wildtierkorridor Feuerdorn","Messstation Glockenheide","Uferfilter Magnolienbucht","Artenwiese Storchschnabel","Kompostplatz Loewenmaul","Klimaanpassung Brombeerhang","Luftguetepruefung Schneeglanz"]];
 const SCOPES=[{politicalLevel:"bund",name:"Deutschland",level:"bund",geography_id:"geo-bund"},
   {politicalLevel:"land",name:"Berlin",level:"land",geography_id:"geo-land-berlin"},
   {politicalLevel:"land",name:"Brandenburg",level:"land",geography_id:"geo-land-brandenburg"}];
@@ -16,7 +27,7 @@ function cases(epoch){
     const topic=THEMES[index%8],party=parties[Math.floor(index/8)%6],marker="CASE_R500_"+String(index).padStart(3,"0");
     const scope=SCOPES[(Math.floor((index%8)/3)+Math.floor(index/48))%3];
     const date=new Date(Date.parse(epoch)-(index%3)*86400000-3600000).toISOString();
-    const title=topic+": synthetischer Projektbericht "+String(index).padStart(3,"0");
+    const title=PROJECT_TITLES[index%8][Math.floor(index/8)];
     const documents=VIEWS.map((view,variant)=>{
       const facts=Array.from({length:12},(_,n)=>({abschnitt:n+1,
         region:scope.name,thema:topic,
@@ -25,7 +36,7 @@ function cases(epoch){
         bedingung:["nach abgeschlossener Pruefung","unter Vorbehalt der Beratung","bei verfuegbarer Kapazitaet"][n%3],
         hinweis:["Eine Entscheidung ist noch offen.","Die Berechnung gilt ausschliesslich fuer dieses fiktive Szenario.",
           "Das Protokoll trennt den Bestand von vorgeschlagenen Aenderungen.","Die Projektgruppe benennt weitere Pruefschritte."][n%4]}));
-      const summary=[marker+". Vollstaendig erfundene Diagnosequelle, kein Bericht ueber reale Politik.",
+      const summary=[title+". "+marker+". Vollstaendig erfundene Diagnosequelle, kein Bericht ueber reale Politik.",
         view+" zum Thema "+topic+" im Modellprojekt "+index+".",
         "Ausschliesslich fiktive Beteiligung von "+party+" in diesem Modellvorgang; dies beschreibt kein reales Ereignis.",
         "Fiktive Entscheidungsebene "+scope.politicalLevel+"; betroffenes Gebiet "+scope.name+" ("+scope.geography_id+").",
@@ -33,7 +44,7 @@ function cases(epoch){
           " bestehende Einheiten und "+f.planung+" geplante Einheiten erfasst. Die Modellrechnung nennt "+
           f.betragTausendEuro+" Tausend Euro "+f.bedingung+". "+f.hinweis)].join("\n");
       const url="https://example.invalid/resource-diagnostic/"+index+"/"+variant;
-      return {id:"rd-resource500-"+index+"-"+variant,title:title+" / "+view,
+      return {id:"rd-resource500-"+index+"-"+variant,title,
         summary,url,canonical_url:url,source_name:"Fiktive Diagnosequelle "+variant,
         source_type:"media",document_type:"article",confidence:"high",link_type:"direct",
         published_at:date,retrieved_at:epoch,created_at:epoch,content_hash:sha(summary),

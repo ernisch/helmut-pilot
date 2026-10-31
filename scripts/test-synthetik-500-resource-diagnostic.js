@@ -22,6 +22,32 @@ function fake(root,{failWork=false,wrongActive=false,count=2}={}){
     storeResult:async()=>{counts.briefings++;return true;},count:async table=>counts[table]};
 }
 let passed=0;async function test(name,run){await run();passed++;console.log("PASS "+name);}
+async function projectIdentityCase(){
+  await test("independent invented project titles prevent the reproduced cross-case merge",async()=>{
+    const U=require("../lib/helmut/understanding"),V=require("../lib/helmut/vorgang-identity"),data=F.cases(epoch);
+    const views=["Planungsnotiz","Anhoerungsprotokoll","Finanzuebersicht","Projektbericht"];
+    const legacy=data.map(item=>{const title=item.topic+": synthetischer Projektbericht "+String(item.index).padStart(3,"0");
+      return{...item,title,documents:item.documents.map((doc,index)=>{const summary=doc.summary.slice(item.title.length+2);
+        return{...doc,title:title+" / "+views[index],summary,content_hash:F.sha(summary)};})};});
+    for(const [prepared,expected]of[[legacy,"bestand"],[data,"neu"]]){
+      const first=prepared[0],cluster={documents:first.documents},response=F.response({input:first.documents.map(d=>d.summary)},{type:"object"},epoch,prepared);
+      const ko=U.assembleKnowledgeObject(response,cluster,U.deriveVorgangId(cluster));
+      const deps={findVorgangCandidates:async()=>[ko],getExistingStreng:async()=>null,listVorgangDocuments:async()=>first.documents};
+      for(const index of[5,53]){const result=await U.resolveVorgang({documents:prepared[index].documents},deps);
+        assert.equal(result.resolution,expected);assert.equal(result.spuren.length,1);
+        if(expected==="bestand")assert.equal(result.begruendung,"dokumente:kernueberdeckung");
+        else assert.equal(result.spuren[0].gleich,false);
+      }
+    }
+    assert.equal(new Set(data.map(c=>U.deriveVorgangId({documents:c.documents}))).size,96);
+    assert.equal(new Set(data.map(c=>c.title)).size,96);
+    const titles=data.map(c=>V.anchorTokens(c.title));
+    for(let i=0;i<titles.length;i++)for(let j=0;j<i;j++)
+      assert.equal(V.anchorOverlap(titles[i],titles[j]).spezifischeFamilien,0,"distinct-invented-project-title-required");
+    assert(data.every(c=>c.documents.every(d=>d.title===c.title&&d.summary.startsWith(c.title+". "))));
+    assert(F.manifest(epoch).minimumSourceTextBytes>2000);
+  });
+}
 async function mockResponseFailureCase(){
   await test("mock response failure keeps its first closed assertion without request or response text",()=>{
     const data=F.cases(epoch),schema={type:"object"},input={input:"CASE_R500_000"};
@@ -220,7 +246,8 @@ async function main(){
   await understandingErrorProjectionCase();
   await currentSourceValidationCase();
   await mockResponseFailureCase();
+  await projectIdentityCase();
   console.log(passed+" PASS; synthetic unit cases only; native preflight and 500 run NOT executed");
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase,understandingErrorProjectionCase,mockResponseFailureCase};
+module.exports={currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase,understandingErrorProjectionCase,mockResponseFailureCase,projectIdentityCase};
