@@ -21,7 +21,7 @@ REPORTS=pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-202
 PLANNED_TOTAL=1512501248 # Includes64MiB in-flight allowance; not a filesystem quota.
 PROCESSING_DISK_FLOOR=224*1024*1024
 AUDIT_CLOSURE_FLOOR=64*1024*1024
-STAGED_SCRIPTS=['synthetik-500-w15-memory-forward.js','synthetik-500-w15-auth-transport-probe.js','synthetik-500-w15-full500-runtime.js','fixtures/w15-auth-measurement-report.js','fixtures/w15-native-failure.js','fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-local-memory-budget.json','fixtures/w15-atomic-integration-target.json','fixtures/z3-plattform.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-end500-memory-contract.json','lokal.js','lokaler-netzschutz.js','bb-nachweis-importpaket-generator.js']
+STAGED_SCRIPTS=['synthetik-500-w15-memory-forward.js','synthetik-500-w15-auth-transport-probe.js','synthetik-500-w15-full500-runtime.js','fixtures/w15-auth-measurement-report.js','fixtures/w15-native-failure.js','fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-local-memory-budget.json','fixtures/w15-atomic-integration-target.json','fixtures/z3-plattform.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-end500-memory-contract.json','lokal.js','lokaler-netzschutz.js','bb-nachweis-importpaket-generator.js','w15-github/mock500_bindings.js']
 spec=importlib.util.spec_from_file_location('existing_w15_controller',ROOT/'scripts/synthetik-500-w15-full500-controller.py')
 M=importlib.util.module_from_spec(spec);spec.loader.exec_module(M)
 M.WORK=WORK;M.BASE=BASE;M.DB=DB;M.CONTAINER=CONTAINER
@@ -120,6 +120,7 @@ def prepare(inputs=None,common_resources=None):
     shutil.copytree(ROOT/'lib',PREP/'app/lib',dirs_exist_ok=True)
     for name in ['server.js','vercel.json']:
         shutil.copy2(ROOT/name,PREP/'app'/name)
+    (PREP/'app/scripts/w15-github').mkdir(mode=0o700,exist_ok=True)
     for n in STAGED_SCRIPTS:shutil.copy2(ROOT/'scripts'/n,PREP/'app/scripts'/n)
     pins=[];allocated=0
     for p in sorted((PREP/'app').rglob('*')):
