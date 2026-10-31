@@ -22,6 +22,19 @@ function fake(root,{failWork=false,wrongActive=false,count=2}={}){
     storeResult:async()=>{counts.briefings++;return true;},count:async table=>counts[table]};
 }
 let passed=0;async function test(name,run){await run();passed++;console.log("PASS "+name);}
+async function nativeVectorBootstrapCase(){
+  await test("diagnostic schema requires raw native-vector bootstrap and rejects the legacy dummy prefix",()=>{
+    const calls=[],files={schemaDatei:"/tmp/FICTIONAL_NATIVE_SCHEMA.sql",migrationen:[]};
+    const bootstrap={VORBEREITUNG_NATIVE_SQL:"NATIVE_ROLES_PREFIX",VORBEREITUNG_SQL:"LEGACY_DUMMY_PREFIX",NACHBEREITUNG_SQL:"NATIVE_GRANTS_SUFFIX",
+      baueLokalesSchema:(root,options)=>{calls.push({root,options});return files;}};
+    const native=D.nativeSchemaBootstrap("/tmp/FICTIONAL_NATIVE_SCHEMA",bootstrap);
+    assert.deepEqual(calls,[{root:"/tmp/FICTIONAL_NATIVE_SCHEMA",options:{nativeVector:true}}]);
+    assert.equal(native.files,files);assert.equal(native.prefix,"NATIVE_ROLES_PREFIX");assert.equal(native.suffix,"NATIVE_GRANTS_SUFFIX");
+    for(const value of[undefined,"","create function public.match_knowledge_objects() returns void as 'select null where false'"])
+      assert.throws(()=>D.nativeSchemaBootstrap("/tmp/FICTIONAL_NATIVE_SCHEMA",{...bootstrap,VORBEREITUNG_NATIVE_SQL:value}),/diagnostic-native-vector-bootstrap-required/);
+    assert.equal(calls.length,1);assert.equal(D.closedFailure({message:"diagnostic-native-vector-version-required",code:"ERR_ASSERTION"}).assertion,"diagnostic-native-vector-version-required");
+  });
+}
 async function projectIdentityCase(){
   await test("independent invented project titles prevent the reproduced cross-case merge",async()=>{
     const U=require("../lib/helmut/understanding"),V=require("../lib/helmut/vorgang-identity"),data=F.cases(epoch);
@@ -247,7 +260,8 @@ async function main(){
   await currentSourceValidationCase();
   await mockResponseFailureCase();
   await projectIdentityCase();
+  await nativeVectorBootstrapCase();
   console.log(passed+" PASS; synthetic unit cases only; native preflight and 500 run NOT executed");
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase,understandingErrorProjectionCase,mockResponseFailureCase,projectIdentityCase};
+module.exports={currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase,understandingErrorProjectionCase,mockResponseFailureCase,projectIdentityCase,nativeVectorBootstrapCase};

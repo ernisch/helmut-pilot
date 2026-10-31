@@ -8,6 +8,7 @@ const PHASES=new Set(["configuration","prepare-database","services","dataset","p
 const ASSERTIONS=new Set(["diagnostic-fresh-database-required","diagnostic-ca-required-before-node-start","diagnostic-stop-or-deadline","diagnostic-exact-active-cohort-required","diagnostic-initial-zero-required","diagnostic-provision-refused","diagnostic-positive-native-understanding-required","diagnostic-native-matches-required","diagnostic-native-decisions-required","diagnostic-positive-current-briefing-required","diagnostic-cleanup-only-newly-owned-profiles","diagnostic-local-preload-required"]);
 ASSERTIONS.add("diagnostic-synthetic-profile-selector-required");
 ASSERTIONS.add("diagnostic-required-schema-migration-missing");ASSERTIONS.add("diagnostic-schema-migration-list-unique");
+for(const label of["diagnostic-native-vector-bootstrap-required","diagnostic-native-vector-version-required","diagnostic-native-postgres-version-required"])ASSERTIONS.add(label);
 for(const label of["diagnostic-mock-schema-required","diagnostic-one-explicit-case","diagnostic-mock-case-binding","diagnostic-mock-current-understanding-schema"])ASSERTIONS.add(label);
 // Only the current application seams used below: profiles/RLS, sources/KO,
 // budgets/locks, matching audit, Understanding leases/CAS and usage recording.
@@ -106,15 +107,21 @@ function psql(c,sql){
       env:{PATH:process.env.PATH,LANG:"C.UTF-8",PGPASSWORD:c.database.password,PGCONNECT_TIMEOUT:"5",PGOPTIONS:"-c statement_timeout=25000 -c lock_timeout=3000"}}).trim();
   }catch(error){throw databaseFailure(error);}
 }
+function nativeSchemaBootstrap(root,Z){
+  assert(typeof Z?.baueLokalesSchema==="function"&&typeof Z.VORBEREITUNG_NATIVE_SQL==="string"&&Z.VORBEREITUNG_NATIVE_SQL.length>0
+    &&typeof Z.NACHBEREITUNG_SQL==="string"&&!/match_knowledge_objects|where\s+false/i.test(Z.VORBEREITUNG_NATIVE_SQL),"diagnostic-native-vector-bootstrap-required");
+  return{files:Z.baueLokalesSchema(root,{nativeVector:true}),prefix:Z.VORBEREITUNG_NATIVE_SQL,suffix:Z.NACHBEREITUNG_SQL};
+}
 async function prepareDatabase(c,bootstrap=null){
   assert.equal(psql(c,"select current_database();"),c.database.name);
+  assert.equal(psql(c,"select current_setting('server_version_num');"),"170006","diagnostic-native-postgres-version-required");
   assert.equal(psql(c,"select count(*) from pg_tables where schemaname='public';"),"0","diagnostic-fresh-database-required");
   const Z=bootstrap||require("./skalierung-z3-realistiklauf");
-  assert.equal(typeof Z.baueLokalesSchema,"function");assert.equal(typeof Z.VORBEREITUNG_SQL,"string");assert.equal(typeof Z.NACHBEREITUNG_SQL,"string");
-  const root=path.join(c.resultRoot,"schema");fs.mkdirSync(root,{mode:0o700});const files=Z.baueLokalesSchema(root);
-  psql(c,Z.VORBEREITUNG_SQL);psql(c,fs.readFileSync(files.schemaDatei,"utf8"));
+  const root=path.join(c.resultRoot,"schema");fs.mkdirSync(root,{mode:0o700});const native=nativeSchemaBootstrap(root,Z),files=native.files;
+  psql(c,native.prefix);psql(c,fs.readFileSync(files.schemaDatei,"utf8"));
+  assert.equal(psql(c,"select extversion from pg_extension where extname='vector';"),"0.8.7","diagnostic-native-vector-version-required");
   for(const file of diagnosticMigrations(files.migrationen))psql(c,fs.readFileSync(file,"utf8"));
-  psql(c,Z.NACHBEREITUNG_SQL);
+  psql(c,native.suffix);
   psql(c,"insert into public.helmut_store(id,data)values('main-auth','{\"users\":[],\"llmUsage\":[]}'::jsonb)on conflict(id)do nothing;");
   assert.equal(psql(c,"select count(*)from public.mandate_profiles;"),"0");
   assert.equal(psql(c,"select count(*)from public.knowledge_objects;"),"0");
@@ -266,4 +273,4 @@ async function main(argv=process.argv.slice(2)){
 function osGuard(){const guard=require("./lokaler-netzschutz");assert.deepEqual(guard.pruefe(process.env),[]);}
 if(require.main===module)main().catch(error=>{console.error(JSON.stringify({schema:SCHEMA,status:"FAIL_OR_UNKNOWN_DIAGNOSTIC",
   ...(error.diagnosticReceipt||{phase:"configuration",failureDetail:closedFailure(error),retryAllowed:false})}));process.exitCode=1;});
-module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport,diagnosticMigrations,understandingErrorCode,mockResponseFactory};
+module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport,diagnosticMigrations,understandingErrorCode,mockResponseFactory,nativeSchemaBootstrap};
