@@ -4188,7 +4188,7 @@ function sendImpressumPage(response) {
       <p>Lüey Nohut<br>Eresburgstr. 42<br>12103 Berlin<br>Deutschland</p>
 
       <h2>Kontakt</h2>
-      <p>E-Mail: <a href="mailto:hi@nohut.de">hi@nohut.de</a></p>
+      <p>E-Mail: <a href="mailto:hallo@mithelmut.de">hallo@mithelmut.de</a></p>
 
       <h2>Verantwortlich für den Inhalt</h2>
       <p>Lüey Nohut (Anschrift wie oben).</p>
@@ -4413,7 +4413,7 @@ function sendPrivacyPage(response) {
       <p class="notice">Diese Erklärung beschreibt die Datenverarbeitung in der Helmut App nach dem aktuellen technischen Stand. Helmut befindet sich im Pilotbetrieb. Für den regulären Kundenbetrieb werden die noch offenen rechtlichen Festlegungen zu besonders geschützten politischen Daten und Aufbewahrungsfristen vorab verbindlich abgeschlossen.</p>
 
       <h2>1. Verantwortlicher</h2>
-      <p>Lüey Nohut<br>Eresburgstr. 42, 12103 Berlin<br>Deutschland<br>E-Mail: <a href="mailto:hi@nohut.de">hi@nohut.de</a></p>
+      <p>Lüey Nohut<br>Eresburgstr. 42, 12103 Berlin<br>Deutschland<br>E-Mail: <a href="mailto:hallo@mithelmut.de">hallo@mithelmut.de</a></p>
 
       <h2>2. Welche Daten Helmut verarbeitet</h2>
       <ul>
@@ -4472,7 +4472,7 @@ function sendPrivacyPage(response) {
       <p>Du hast das Recht, dich bei einer Datenschutzaufsichtsbehörde zu beschweren. Für den Verantwortlichen in Berlin ist insbesondere die Berliner Beauftragte für Datenschutz und Informationsfreiheit zuständig: <a href="https://www.datenschutz-berlin.de/">www.datenschutz-berlin.de</a>.</p>
 
       <h2>13. Kontakt und Stand</h2>
-      <p>Datenschutzanfragen: <a href="mailto:hi@nohut.de">hi@nohut.de</a><br>Stand: 6. Oktober 2026</p>
+      <p>Datenschutzanfragen: <a href="mailto:hallo@mithelmut.de">hallo@mithelmut.de</a><br>Stand: 6. Oktober 2026</p>
       <p><a href="/impressum">Impressum</a> · <a href="/">Zurück zu Helmut</a></p>
     </main>
   </body>

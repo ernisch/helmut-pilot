@@ -2217,7 +2217,7 @@ async function legalPagesChecks() {
     const imp = await get("/impressum");
     check("Recht: /impressum -> 200, öffentlich trotz scharfem Pilot-Gate", imp.status === 200, `status=${imp.status}`);
     check("Recht: /impressum nennt § 5 DDG + Kontakt + Verantwortlichen",
-      imp.body.includes("§ 5 DDG") && imp.body.includes("hi@nohut.de") && imp.body.includes("Lüey Nohut"));
+      imp.body.includes("§ 5 DDG") && imp.body.includes("hallo@mithelmut.de") && imp.body.includes("Lüey Nohut"));
     check("Recht: /impressum verlinkt Datenschutz", imp.body.includes("/datenschutz"));
 
     // Datenschutz, KI AUS
