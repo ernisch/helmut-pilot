@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/w15-end500-backup-causal-phase-20261031": false,
       "codex/w15-end500-observer-dependency-20261031": false,
       "codex/w15-end500-native-failure-repair-20261031": false,
       "codex/hetzner-native-automation-20261026": false,

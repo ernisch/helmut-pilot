@@ -412,6 +412,26 @@ class WorkerChecks(unittest.TestCase):
         self.assertEqual(failed.exception.phase, 'backup-authenticate')
         self.assertNotIn('FICTIONAL_PRIVATE_CALLBACK', str(failed.exception))
 
+    def test_actual_collection_failure_crosses_controller_worker_and_public_ipc(self):
+        spec = importlib.util.spec_from_file_location('actual_collection_boundary_fixture',
+            Path(__file__).with_name('test_end500_backup_failure_boundary.py'))
+        boundary = importlib.util.module_from_spec(spec); spec.loader.exec_module(boundary)
+        fixture = boundary.End500BackupFailureBoundaryChecks(); fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        fixture.inject = 'collect'; fixture.run_boundary()
+        error = fixture.exit_error()
+        manifest, private = self.setup_worker('end500-full-gated')
+        self.forward.main.side_effect = error
+        with self.assertRaises(W.WorkflowRejected) as failed:
+            W.run_worker(manifest, private)
+        spec = importlib.util.spec_from_file_location('actual_collection_ipc',
+            Path(__file__).with_name('runner_start.py'))
+        runner = importlib.util.module_from_spec(spec); spec.loader.exec_module(runner)
+        outer = runner._worker_failure(failed.exception, 'WORKER_RESULT_REJECTED')
+        public = W._safe_failure(runner._response_error(runner._failure_packet(outer)))
+        self.assertEqual(public['worker']['phase'], 'backup-collect')
+        self.assertNotIn('DO_NOT_EXPORT', json.dumps(public))
+
     def test_public_result_is_closed_and_semantically_bound(self):
         for mode in W.WALL:
             if mode == W.PHASED:
