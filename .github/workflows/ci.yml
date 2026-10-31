@@ -158,6 +158,8 @@ jobs:
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
       - name: W15 neue Parent- und Datenzugangsschutzgrenzen (synthetisch)
         if: steps.plan.outputs.standard == 'true'
+        env:
+          W15_EXISTING_CI_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: |
           python3 -B scripts/w15-github/test_runner_parent.py
           python3 -B scripts/w15-github/test_github_data_access.py
@@ -179,6 +181,24 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_native_failure_chain.py
           node scripts/lokal.js -- node scripts/w15-github/test_native_failure_chain.js
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_end500_prepared_initialization.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_end500_backup_failure_boundary.py
+          # Observe only the existing synthetic service's Docker-exec default.
+          # No new container, database command, original input or file write.
+          node scripts/lokal.js -- python3 -B - <<'PY'
+          import json, os, re, subprocess
+          container = os.environ['W15_EXISTING_CI_POSTGRES_CONTAINER']
+          assert re.fullmatch('[a-f0-9]{64}', container), 'ci-container-binding'
+          result = subprocess.run(['docker', '--host=unix:///var/run/docker.sock', 'exec',
+              '--user', '1000:1000', container, 'sh', '-c', 'umask'],
+              capture_output=True, timeout=10, env={'PATH': '/usr/bin:/bin'})
+          assert result.returncode == 0, 'ci-docker-exec-umask-probe'
+          mask = result.stdout.decode('ascii').strip()
+          assert re.fullmatch('[0-7]{1,4}', mask) and int(mask, 8) <= 0o777, 'ci-umask-shape'
+          print(json.dumps({'schema': 'helmut-w15-ci-docker-exec-umask/1',
+              'status': 'OBSERVED_EXISTING_SYNTHETIC_SERVICE_ONLY', 'umaskOctal': mask,
+              'originalRedirectModeUnderThisMask': format(0o666 & ~int(mask, 8), '04o'),
+              'actualOriginalFileModeObserved': False, 'databaseCommands': 0, 'newContainers': 0}))
+          PY
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_post_failure_memory_stat.py
           node scripts/lokal.js -- node scripts/w15-github/test_post_failure_memory_stat.js
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_capacity.py
