@@ -1,0 +1,92 @@
+{
+  "schema": "helmut-w15-separated-resources/1",
+  "status": "PROPOSED_REFERENCE_LAB_ONLY",
+  "activationEnabled": false,
+  "executionAuthority": false,
+  "legacyAcceptanceUnchanged": true,
+  "appliesTo": [
+    "End500",
+    "Mock500"
+  ],
+  "providerFacts": {
+    "application": {
+      "provider": "Vercel Standard",
+      "memoryLabel": "2 GB per function instance",
+      "vCPUPerInstance": 1,
+      "effectiveHardLimitBytes": "UNKNOWN",
+      "actual500ProfileUsage": "UNKNOWN",
+      "sourcePR": 992
+    },
+    "database": {
+      "provider": "Supabase Micro",
+      "memoryLabel": "1 GB including system and services",
+      "effectiveHardLimitBytes": "UNKNOWN",
+      "cpuEntitlement": "SHARED_UNKNOWN",
+      "maxConnections": 60,
+      "sharedBuffersBytes": 268435456,
+      "workMemBytes": 3584000,
+      "maxParallelWorkers": 2,
+      "hostedServicePlacement": "UNKNOWN",
+      "observedOSMemTotalBytes": 948191232,
+      "observedOSMemTotalAtUTC": "2026-10-30T17:59:47Z",
+      "sourcePRs": [
+        992,
+        993,
+        1003
+      ]
+    }
+  },
+  "referenceLabProposal": {
+    "pageSizeBytes": 4096,
+    "application": {
+      "assumedDecimalBudgetBytes": 2000000000,
+      "hardMemoryBytes": 1999998976,
+      "maximumKernelPeakBytes": 1999994880,
+      "quotaUsec": 100000,
+      "periodUsec": 100000
+    },
+    "database": {
+      "assumedDecimalBudgetBytes": 1000000000,
+      "hardMemoryBytes": 948191232,
+      "maximumKernelPeakBytes": 948187136,
+      "quotaUsec": 100000,
+      "periodUsec": 100000,
+      "cpuChoice": "LAB_UPPER_BOUND_ONLY_NOT_PROVEN_CONSERVATIVE_OR_MICRO_PARITY"
+    },
+    "peakGapMeaning": "ONE_KERNEL_PAGE_FOR_STRICT_PEAK_BELOW_HARD_NOT_A_SAFETY_RESERVE",
+    "realApplicationSafetyReserveBytes": "UNKNOWN",
+    "realDatabaseSafetyReserveBytes": "UNKNOWN",
+    "supabaseUnmodeledSystemServicesBytes": "UNKNOWN",
+    "commonHostHardBytes": 4999999488,
+    "hostAvailableReserveBytes": 2147483648,
+    "commonHostEnvelope": "PROPOSED_REUSE_OF_PROVEN_CAPACITY_DIAGNOSTIC_ONLY_NOT_ACTIVE_MOCK_LIMIT",
+    "swapBytes": 0,
+    "maximumEvents": 0,
+    "minimumDiskReserveBytes": 536870912,
+    "postgrestPool": 3
+  },
+  "measurementRules": {
+    "perApplicationInstance": true,
+    "profilesAreNotInstances": true,
+    "explicitDisjointCgroupsRequired": true,
+    "samePIDAppAndHarnessPureAppBytes": "UNKNOWN",
+    "postgrestClassification": "SUPABASE_SERVICE_NOT_HELMUT_APPLICATION",
+    "fileCacheRemainsChargedToItsCgroup": true,
+    "fileCacheAndPSSAdditive": false,
+    "differentTimePeaksAdditive": false,
+    "kernelPeakResetAllowed": false,
+    "newPollingProcessesAllowed": false,
+    "productionMetricsMissingValue": "UNKNOWN",
+    "databaseObserverConnectionCounted": true,
+    "productionScrapeRecommendedIntervalSeconds": 60
+  },
+  "approvalBoundaries": {
+    "referenceLabNumericsRequireExplicitGO": true,
+    "referenceFitIsProviderParity": false,
+    "referenceFitReplacesOldRAMAcceptance": false,
+    "legacyReplacementRequiresExplicitContractChange": true,
+    "physicalGroupingAndReadbackQualificationStillRequired": true,
+    "protectedRunRequiresSeparateExactCommitGO": true,
+    "productionOrPaidMonitoringAllowed": false
+  }
+}

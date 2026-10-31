@@ -1,5 +1,10 @@
 name: Existing pinned W15 tools
 description: Reuse the reviewed Node, PostgREST and PostgreSQL image
+inputs:
+  native-vector-diagnostic:
+    description: Add pinned pgvector only for the original-free resource diagnostic
+    required: false
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -7,6 +12,8 @@ runs:
       with:
         node-version: 24.19.0
     - shell: bash
+      env:
+        NATIVE_VECTOR_DIAGNOSTIC: ${{ inputs.native-vector-diagnostic }}
       run: |
         set -euo pipefail
         mkdir "$RUNNER_TEMP/w15-mock-image"
@@ -16,7 +23,15 @@ runs:
         tar -xJf "$RUNNER_TEMP/w15-mock-postgrest.tar.xz" -C "$RUNNER_TEMP/w15-mock-image"
         echo "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12  $RUNNER_TEMP/w15-mock-image/node" | sha256sum -c -
         echo "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617  $RUNNER_TEMP/w15-mock-image/postgrest" | sha256sum -c -
-        cp scripts/auth-usage-split.Dockerfile "$RUNNER_TEMP/w15-mock-image/Dockerfile"
+        if [[ "$NATIVE_VECTOR_DIAGNOSTIC" = 'true' ]]; then
+          curl -fsSL --max-time 90 -o "$RUNNER_TEMP/w15-mock-image/pgvector.deb" https://apt.postgresql.org/pub/repos/apt/pool/main/p/pgvector/postgresql-17-pgvector_0.8.7-1.pgdg12+1_amd64.deb
+          echo "acb5569b6a5bb71d5968205a4da15911ff3b2a15a57a2a9d765560882f53e3ea  $RUNNER_TEMP/w15-mock-image/pgvector.deb" | sha256sum -c -
+          cp scripts/fixtures/resource-diagnostic-pgvector.Dockerfile "$RUNNER_TEMP/w15-mock-image/Dockerfile"
+        elif [[ "$NATIVE_VECTOR_DIAGNOSTIC" = 'false' ]]; then
+          cp scripts/auth-usage-split.Dockerfile "$RUNNER_TEMP/w15-mock-image/Dockerfile"
+        else
+          exit 1
+        fi
         docker build -t helmut-w15-existing:20261029 "$RUNNER_TEMP/w15-mock-image"
         echo "W15_IMAGE_ID=$(docker image inspect --format '{{.Id}}' helmut-w15-existing:20261029)" >> "$GITHUB_ENV"
         echo "W15_NODE_SOURCE=$RUNNER_TEMP/w15-mock-image/node" >> "$GITHUB_ENV"

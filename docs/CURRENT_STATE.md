@@ -1,5 +1,26 @@
 # CURRENT STATE — Helmut
 
+## Einmalige originalfreie 500er Ressourcen-Diagnose (31.10.2026)
+
+**Tatsächlicher Einzellauf FAIL:** [41239213884](https://github.com/ernisch/helmut-pilot/actions/runs/41239213884), Kopf `d56e97b37468080aaff6d4bd47b045ba072a2c6f`, 383,989 s einschließlich Bereinigung. Unabhängig geprüft; Einmalfreigabe verbraucht, kein Retry. 500 gleichzeitig aktive vollsynthetische Profile sind durch native ID-Kontrollen vor 96 erfolgreichen lokalen KI-Antworten belegt. Vollständiger 500er Ergebnisabschluss und abschließende Profilflags 0 bleiben UNKNOWN; bestätigter Prozessstillstand ersetzt diese Profilprüfung nicht. Die erfolgreiche 3er Vorprobe ist keine 500er Abnahme.
+
+| Gruppe | Kernel-Lebenszeitpeak B | CPU-Zeit s | Befund bis Abbruch |
+| --- | ---: | ---: | --- |
+| App einschließlich Testtreiber | 408.981.504 | 166,158 | unter Laborlimit |
+| PostgreSQL + PostgREST + SQL-Messclients | 948.191.232 | 217,695 | DB-Laborlimit erreicht, 38 max-Ereignisse |
+| Testwerkzeuge / lokale Simulatoren | 450.027.520 | 61,225 | separat im gemeinsamen Parent |
+| Gemeinsamer Parent | 1.756.499.968 | 445,078 | kein belegter 5-GB-Engpass |
+
+Die DB-max-Ereignisse propagieren zum ersten Fehler `COMMON_PARENT_REJECTED`; keine OOM-Ereignisse. Swap/OOM 0, höchster Verbindungs-Sample 6/60, letzter gültiger Hostreserve-Sample 14.578.847.744 B. DB-Kategorie `file` maximal abgetastet 597.323.776 B einschließlich Shared Memory, `anon` 331.218.944 B; verschiedene Maxima nicht addieren. Größte Belastung in `synthetic500`, genaue innere Arbeitsphase/Peakzusammensetzung, echte Verbindungsspitze und Hostminimum UNKNOWN. PostgreSQL-/PostgREST-Einzelverbrauch und ihr gemeinsames Hosted-Micro-RAM-Budget bleiben UNKNOWN; Dateicache ist kein bewiesener irreduzibler PostgreSQL-Arbeitssatz.
+
+**Gezielter Diagnosesprint auf PR #1004:** Erster Speicherfehlersnapshot wird vor Überschreiben durch Bereinigungsnachkontrollen geschützt. Ein atomarer begrenzter Fortschrittsdatensatz über den bestehenden SAFE-Kanal erhält innere Arbeitsphase/Operation und ausschließlich bestätigte Zähler auch ohne Workerabschluss; Teilfortschritt ist keine Abnahme. Gezielte synthetische Gegenproben bestanden. Pflicht-CI und unabhängiger Endreview sind an den tatsächlichen neuen PR-Kopf zu binden und bleiben vor einer neuen Laufentscheidung zwingend. [Messbilanz, Prüfungen und Anbieterbelege](betrieb/w15-db-memory-diagnosis-20261031.md).
+
+Unveränderte Diagnosegrenzen: App 1.999.998.976 B, DB 948.191.232 B/60 Verbindungen, Parent 4.999.999.488 B, mindestens 2.147.483.648 B Hostreserve, Swap/OOM/Max 0; höchstens 1.800 s und mindestens 512 MiB freie Platte. Keine RAM-Erhöhung, Cachemanipulation, Originale, offiziellen Vertragsänderungen, Modellkosten oder Production-Wirkung. **Nächste Aufgabe:** Nach qualifiziertem Fehlerkanal ein neues konkretes GO für genau einen Gesamtversuch entscheiden; keine Ausführung aus diesem Entwicklungssprint ableiten. End500-/Mock500-Starttore bleiben gesperrt.
+
+## Getrennte Ressourcenmessung vorbereitet, Vertrag noch inaktiv (31.10.2026)
+
+Auf Basis von PR #992, #993 und #1003 liegt ein [konkreter Referenzvertrag](betrieb/w15-separated-resource-metering-20261031.md) mit maschinenlesbarem Entwurf `helmut-w15-separated-resources/1` vor. Passive, explizit zugeordnete cgroup-Messung je modellierter App-Instanz, Datenbank, Testwerkzeug und Sicherung; CPU-Zeit/Throttling, Kernel-Speicherarten, Swap/OOM sowie geschlossene numerische DB-Verbindungsbilanz sind vorbereitet. Keine kostenpflichtige Monitoringaktivierung. Neue Referenzwerte sind technische Laborannahmen, keine bewiesenen Anbieter-Hartlimits. Reale Sicherheitsreserven und Anbieterparität bleiben UNKNOWN. Bestehende RAM-Wächter, Testverträge, historische Ergebnisse und Startfreigaben unverändert. Physische Komponententrennung und deren Rücklesequalifikation bleiben vor einer echten getrennten Lastabnahme erforderlich. Kein Original-/500er-Lauf durch diese Entwicklung.
+
 ## Aktueller Entscheidungsstand: Anbieter-RAM und End500 (31.10.2026)
 
 **Oberstes Ziel:** Belastbarer Production-Nachweis für exakt 500 gleichzeitig aktive synthetische Profile, 1.500 vollständige Ergebnisse und 8.000 Sicherheitskontrollen. End500, Mock500 und Production sind getrennte Abnahmen; keine aktuelle Production-500-Abnahme.
@@ -20,104 +41,27 @@
 
 **Kürzester sicherer Weg:** Den vorhandenen Entwurf zur **getrennten Ressourcenabnahme** aus [PR #993](https://github.com/ernisch/helmut-pilot/pull/993) und die belegte Basis aus PR #992 als Ausgangspunkt verwenden. Vor Änderung des Prüfvertrags genaue Komponenten-/Prozesszuordnung, reale Anbieter-Hartlimits und Einheiten, begründete Reserven, CPU- und DB-Verbindungslimits klären. Danach minimal die Anbieterbudgets je Instanz bzw. Datenbank in der isolierten Mock500-Umgebung gesondert erzwingen und messen; Testwerkzeuge/Backup getrennt erfassen und einen gemeinsamen Hostschutz behalten. Nur nach ausdrücklicher Freigabe des neuen Vertrags umstellen; bestehende historische FAILs bleiben. Keine unerforderlichen erneuten Original-Restores. Der gezielte Backupfix in PR1002 bleibt unabhängig vom noch offenen regulären RAM- und Mock500-Nachweis. Ein echter Production-Test benötigt eigene Kosten- und Aktivierungsfreigaben.
 
-**Hinweis:** Die nachfolgenden W15-Einträge sind datierte **historische** Berichte. Sie dürfen diesen neueren Entscheidungsstand nicht überschreiben. Die vollständige alte Historie bleibt unverändert erhalten.
+**Historie:** Die früheren W15- und Kalenderberichte sind [bytegleich archiviert](archive/project_state/2026_10_31_b289fe5e_CURRENT_STATE_vor_groessenkorrektur.md). Datierte Altbefunde überschreiben nicht den neueren Entscheidungsstand; historische FAILs und alle Originalbelege bleiben erhalten.
 
 ---
 
 
-## W15 Vollrestore: RAM-Grenze überschritten, unabhängig FAIL
+## Übernommene W15-Belege und offene Abnahme
 
-Einmaliges Vollrestore-GO auf537adaa32/PR988 verbraucht: Run41073062264,
-Job124121902354, Attempt1 FAIL; Job90s/geschützter Schritt62s,0Artefakte.
-Erste öffentliche Phase worker, PARENT_READBACK_REJECTED: gemeinsamer Peak
-2048073728Bytes,73728über2048000000; Reserve511926272,73728unter512000000.
-Hartes RAM2560000000, Swap0, alle OOM-/Maxereignisse0; Wächter korrekt gestoppt.
-Alle acht eigenen Bereinigungsprüfungen PASS, Parent leer/entfernt, Worker und
-Launcher beendet. Innere Arbeitsphase und aktueller Restore-/Backupfortschritt
-UNKNOWN; keine Vollrestore-/End500-/Mock500-Abnahme, kein Retry/Linkrefresh.
-Ausführungsbranch sicher a2d0f542→537adaa32, Schutzregeln/Secrets unverändert.
-Nächster Schritt: belegten RAM-Verbrauch gezielt synthetisch eingrenzen; nur
-nachgewiesenen Fix prüfen/CI/reviewen. Weiterer echter Lauf braucht neues GO.
-Separater Diagnosezweig ergänzt nur nach Fehler erfasste Kernel-Speicheranteile
-und eine 32-MiB-Datei/Kopie-Probe in bestehender PR-CI; Limits unverändert.
-Tatsächlicher CI-/Probenbefund im Draft-PR; keine behauptete RAM-Ursachenbehebung.
-[Fehlerbeleg, Ressourcen und unabhängige Abnahme](betrieb/w15-full-restore-result-20261030.md).
+Elf Mock-Zusatzoriginale sind mit Run41037459441 auf13b858b1 vollständig bestätigt:
+217.563.454Bytes, Größen/Hashes/Manifest/GPG/Rücklesung PASS, Replacements-Pin geschlossen.
+Keine neue Inventur, Beschaffung oder Qualifikation. Der spätere Mockjob empfängt
+sein erhaltenes Cipherarchiv mit passendem eigenem GO.
+[Empfangsbeleg](betrieb/w15-mock-original-reception-20261030.md).
+Der erfolgreiche Empfang der zwölf End500-Originale40876458074 und die native
+Minimalprobe40982718647 bleiben übernommen; keine Wiederholung.
 
-Übernommen: Originaldiagnose41049571965 aufa2d0f542 unabhängig PASS, zwölf
-Originale/242570240Bytes, fünf native Restoreaktionen500/0, vier Exporte,
-Peak1644433408/Reserve915566592/Swap0; keine vollständige Sicherungsabnahme.
-Historische innere Ursache40958135662 bleibt UNKNOWN.
-[Diagnose](betrieb/w15-restore-export-diagnostic-result-20261030.md).
-Elf Mockzusatzoriginale217563454Bytes in41037459441 auf13b858b1 unabhängig PASS;
-alle Größen/Hashes/Manifest/GPG/Rücklesung bestätigt, Replacements-Pin geschlossen.
-Späterer Mockjob empfängt erhaltenes Cipherarchiv selbst mit passendem GO.
-[Empfang](betrieb/w15-mock-original-reception-20261030.md).
-Native Minimalprobe40982718647 aufdeb812f9 PASS übernommen, nicht wiederholt.
-End500-Sender und TCP-Fix vorbereitet; Vollrestoreabnahme/End500-GO fehlen.
-Mockcode/AtomicACK/Tag/Namespace/Auswertung vorbereitet, End500-Abnahme/Bridge
-fehlen; historischer Mock-RAM-v2-Fehler nach69Units bleibt FAIL/UNKNOWN.
-Keine RAM-Erhöhung, weitere Originaltests, End500-/Mock500-/Production-Aktion.
-
-## W15 Fortschreibung: primärer Restore durchlaufen, Backup noch FAIL
-
-Neues exaktes Betreiber-GO aufc89d423f wurde genau einmal genutzt: Run40931663329
-FAIL`connection-backup`,47864Zeichen verschlüsselter Dispatch. Primäre fünf
-Native-Schritte und500/0 nur durch verifizierten Codefluss belegt; keine
-unabhängige Gesamt-Restore-/Backup-/RAM-Abnahme, keine finalisierten Artefakte.
-Kein Retry/End500/Mock500. Alte7e3d96e9/b6/c89d und ihre FAIL-Belege erhalten.
-
-Gezielte anschließende Entwicklung: acht feste Backup-Unterphasen, geschlossen
-numerische Diagnose ausschließlich aus bestehendem RAM-Cache ohne Neumessung,
-Erhalt einer Callbackphase über Legacy-SystemExit. Kein tatsächlicher Backupbug
-als repariert behauptet; historische UrsacheUNKNOWN. Neue fiktive Tests und
-unabhängige Reviews PASS. Unverändertes echtes Snapshot-SQL wird im vorhandenen
-synthetischen CI-PostgreSQL mit kleinen500/0Fixturezeilen geprüft; native CI
-noch erforderlich. Kein Original-/500er-Controller-/Modelllauf durch den Test.
-Der folgende Diagnosekopf ecae6400 wird unverändert für einen später separat
-freizugebenden Restore-/End500-Lauf eingefroren; Mock-Folgeadapter erlaubt ihn
-nur mit späterer positiver End500-Abnahme/Bridge/Mock-GO. Nächster echter
-Datenlauf erfordert neue konkrete Freigabe und aktuelle CI.
-Mock-Dateiblocker und bestehende Zeit-/RAM-Verträge bleiben unverändert.
-
-
-## W15: Restore-Einzelversuch FAIL; Mock500 integriert, Ausführung gesperrt
-
-PR975-Branch wurde ohne Force-Push auf den geprüften gemeinsamen Integrationsstand
-c89d423fd8431b42a5351de82e640f40e8517ee4 vorgerückt;7e3d96e9/b6eb7449 als
-unveränderte Vorfahren erhalten, Schutzregeln unverändert. GitHub markierte
-den vorbereitenden Draft976 dadurch automatisch als gemergt in diesen
-Entwicklungsbranch; kein Merge nachmain/Deployment/Production. Der getrennte
-Mock-Baselineadapter läuft als Draft977 auf direktem Nachfolgerc4d035dd.
-Bisherige b6-Pflicht-CI40909894080/40915289161 bestanden. Nach explizitem Betreiber-GO
-wurde genau ein Restore gestartet:40920225333 FAIL, Phase`connection-restore`.
-Erster Versuch40905370350 auf7e3d96e9 bleibt FAIL. Kein Retry, keine positive
-Restoreabnahme, kein End500/Mock500. TCP-Readinessrace in primärem und zweitem
-Restore korrigiert, feste Fehlerunterphasen/gezielte fiktive Tests und unabhängiger
-Review bestanden; genaue historische Ursache weiterUNKNOWN. Ein nächster echter
-Restore aufc89d423f braucht grüne aktuelle CI und neues exaktesGO.
-Erfolgreicher Empfang aller zwölf Originaldateien
-40876458074 bleibt übernommen; seine Qualifikation wurde nicht wiederholt.
-
-Mock500-Anschlüsse auf getrenntem Integrationszweig vorbereitet: Atomic12ACK,
-Tages-/Namespacebindung, bestehende500/500-Quellenprüfung, vollständiger Controller
-und Auswertung, eigene gemeinsame RAM-v2-Messung, vollständiger Plattenplan,
-verschlüsselte Sicherung/Remote-Readback/zweite Rücksicherung und Einmalstartwächter.
-Standardmäßig gesperrt; gezielte fiktive Verbindungstests sind keine500er-Abnahme.
-Synthetischer neuer v2-Runner40922859278 aufc89d423f unabhängigPASS:
-Peak302014464Bytes/Swap0,UID1000,gleicherParentnachKindernleer,keineOriginale/DB.
-Pflicht-CI40922851354/40923999187 aufc89d423f und40924138247 auf
-c4d035dd bestanden; aktuellste Dokumentationskopfchecks sieheDraft977. Historischer RAM-v2-Fehler bleibt FAIL.
-
-Dateiinventur lokalBLOCKED wird nicht wiederholt. GitHub-/Drive-Belege bestätigen
-das bestehende269598Byte-Builder-ZIP samt historischem SHA; keine Payloads geladen.
-Zehn weitere Originale weiter nicht erreichbar bestätigt; zehn der elf Zusatzpins
-bekannt(217550485Bytes), nur aktueller Replacements-Pin unbekannt. Keine neue
-Qualifikation/Übertragung freigegeben. Zwölf vorhandene End500-Originale ersetzen
-nicht diese elf Zusatzdateien. Kein Beweis globalen Datenverlusts. Auch364084Einträge des
-vorhandenen komprimierten SAFE-Metainventars27.10. liefern keinen Zusatzbeleg:
-nur Statfelder, keine Inhaltshashes,0exakte Namens-/Pin-Treffer; keine neue
-Inventur/Original-/Cipherdateien gelesen.
-[Mock-Vertrag, Nachweise, fehlende Dateien und getrennte Freigaben](betrieb/w15-mock500-github-start-20261029.md).
+Mock500-Controller/Atomic12ACK/Tages-/Namespacebindung, Auswertung und Sicherungsanschlüsse
+sind vorbereitet und gesperrt. Positive End500-Gesamtabnahme, Kopfbindung und konkretes
+Mock-GO fehlen; der historische RAM-v2-Fehler nach69Units bleibt FAIL/UNKNOWN.
+Historische Restore-FAILs, damalige Fehlerphasen, Ressourcen und frühere Dateiblocker
+bleiben im bytegleichen Archiv erhalten; daraus entsteht keine neue Laufberechtigung.
+[Historische W15-Berichte](archive/project_state/2026_10_31_b289fe5e_CURRENT_STATE_vor_groessenkorrektur.md).
 
 ## Vollständiges Root-Paket und Caller-Vorbereitung (13.10.2026)
 
@@ -133,19 +77,15 @@ UTC13-Tagesbuch einmal angelegt:35 Bücher/Kapazität35, EU-Limit82,036000USD, d
 
 Historische Deployment- und Read-only-Beobachtungen vom12.10. sind [wortgleich archiviert](archive/project_state/2026_10_28_historischer_Deployment_und_RO_Beleg_20261012.md); sie sind keine aktuellen Production-Belege.
 
-## Kalenderfix im Entwicklungsbranch (12.10.2026, noch nicht Production)
+## Kalenderfix im Entwicklungsbranch (historische Vorbereitung 12.10.2026)
 
-Branch `codex/synthetik500-date-handoff-20261012`, Ausgangsstand PR901. Die neue strukturelle Datumsbindung trennt den unveränderten B2-Aufnahmetag vom tatsächlichen EU-Ausführungsfenster. Originaldatum, Merkle-/Body-/Profil-/Quellenhashes und Originalprüfung bleiben erhalten. Nur der vorhandene geschlossene EU-Vertrag erlaubt diesen Übergang; 9h, Preis-/Auftragsfenster und gleicher UTC-/Berliner Lauftag bleiben zwingend. Opaque Sender-Token und reale Motorwachen prüfen das tatsächliche Fenster. D und R kennzeichnen auch gewöhnliche Quellen aus der Aufnahme als historischen Hintergrund, ohne ausgewählte Belege zu entfernen; eine Überschreitung der bestehenden 16.000-Zeichen-Grenze stoppt. Schreibzeit, Cache und Entwurfs-/Prüfbelege verwenden den tatsächlichen Ausführungstag. Kein künstliches heutiges Quelldatum und kein neues Fachurteil.
-
-Lokal über `scripts/lokal.js` bestanden: 39 Datumsfälle in9 Gruppen,4 fiktive Integrationsgruppen und21 bestehende Quellenbelegprüfungen; weitere begrenzte Vertrags-/Adapterprüfungen im [Draft-PR902](https://github.com/ernisch/helmut-pilot/pull/902). Unabhängige DeepSeek-Pro-High-/Flash-High-Codeprüfungen im jeweiligen Scope positiv. Pflicht-CI auf Codekopf `556ba54d97a067ad08e29ad74957cb0ec1707e7f`: [Run38218238617](https://github.com/ernisch/helmut-pilot/actions/runs/38218238617),171/171 Standard- und330/330 Bereichssuiten sowie erforderliche isolierte DB-Prüfungen bestanden. Spätere reine Statuskorrekturen sind keine Änderung dieses Codebefunds; Pflichtchecks auf dem finalen PR-Kopf müssen vor Merge grün sein. Keine Production-Funktion daraus behauptet. Auf Production bleibt der Tageskonflikt von `8ca835ce` bis zum separat erlaubten Merge/Rollout wirksam.
-
-**Originale jetzt übernommen (12.10., privat außerhalbGit,0600):** `sender-final500-budget-transfer.json`,499.220Bytes,SHA256 `e7d062ddd3c528a25437e9fe28300ae6c2588ff5a9e191e4448c998a71902b02`; `actual-500-transport-receipt.json`,403.939Bytes,SHA256 `14db98343ace3113e30677bab22e21fc468122c481ced2ba1c5e932ef8ddfb83`; `actual-500-result-export.dictionary.json`,2.804.748Bytes,SHA256 `66c828bf113672c94539367bbfeef5aa763e3cf8c1387894fe13a8bc5f65e26b`. Bestehender Decoder bestätigt ursprünglichen UTF8-SHA256 `97c465b8437cc7dde7c975052728cee03e5133c4009c141cfe091ebcd0d7db86`. Alle500 ursprünglichen Draft-Eingaben, Mitgliedschaftsbelege und eingebetteten nativen Quellen verfügbar; keine fehlenden separaten Dateien aus eingebetteten Daten ableiten.
-
-**Neue Datums-/Kontextvorbereitung, keine erneute Fachabnahme:** Alle500 Originaleingaben im neuen Kalenderpfad vorbereitet,0Fehler, maximal15317 von16000 Kontextzeichen; alle ausgewählten Quellen erhalten. Originalkontexthashes stimmen mit dem übernommenen Transfer überein. Rein lesend erhobene Publikationspolicy und972 Publikationsidentitäten stimmen mit den ursprünglichen kanonischen Hashes überein. Alle1500 Sollpositionen und12000 Kriterienpositionen an diese Originaleingaben gebunden;0neue Qualitätsurteile. Struktureller Kandidat12.10.,12:00–21:00UTC (15:00–00:00Istanbul), ausdrücklich kein Testfenster-GO und keine finale Operation-/Command-/Deploymentbindung.
-
-**Runtime-Nachweispaket übernommen:** [B3-Paket](https://drive.google.com/file/d/1coyokq5wUCURFa3NYM7rCsXIxkjiRoLG/view),14.961Bytes,SHA256 `25de6c1c5b84932aec7d6ec39bf1c87861a5fb45fb38c7f95d87b47bb15f606c`. Beobachtung12.10.,08:42:08.296–08:42:10.365UTC /11:42Istanbul; unabhängige Offlineprüfung52/52 übernommen, nicht wiederholt. Zwei Runtime-GETs und zwei Deployment-/Alias-GETs HTTP200,20 Vertragsprüfungen positiv: Production8ca835ce/READY,EU-Route `gpt-5-mini-eu`,34Kostenbücher,runDayUTC null,used0,0offene Reservierungen,Tagesbindung0,636000USD/Auftragsbindung7,445364USD,startklartrue. Keine Anbieterrechnung, Modellqualität oder500er-Test bewiesen. Für diese Übernahme ist keine Bearerübertragung nötig.
-
-**Frische Prüfung bleibt erforderlich:** Der Runtime-Bearer liegt hier weiterhin nicht vor; der bestehende sichere Quellzugang hat die übergebenen GETs erbracht. Frische Startbelege können darüber geliefert oder über separat sicheren begrenzten Zugang gelesen werden, niemals Secrets im Chat/Git/Drive. Nach dem erlaubten Rollout sind sie an das neue Deployment zu binden und innerhalb60Sekunden vor Start zu erheben. Die bestehende EU-Leseautorität endet **13.10.2026,00:00UTC /03:00Istanbul**; Erneuerung nur falls später benötigt und ausdrücklich erlaubt. Keine Schutzumgehung oder automatische Secret-Einrichtung. **Noch keine vollständige Startbereitschaft und kein empfohlenes Test-GO.**
+Die strukturelle Datumsbindung trennt B2-Aufnahmetag und tatsächliches EU-Fenster;
+Original-/Merkle-/Profil-/Quellenbindungen und alle Schutzprüfungen bleiben erhalten.
+Codekopf556ba54d wurde mit Pflicht-CI38218238617 und unabhängigen Prüfungen qualifiziert.
+Dies ist kein frischer Production-/500er-Nachweis und keine Merge-/Rolloutfreigabe.
+Vollständige ursprüngliche Kalender-, Original- und Runtime-Befunde vom12.10. sind
+[bytegleich archiviert](archive/project_state/2026_10_31_b289fe5e_CURRENT_STATE_vor_groessenkorrektur.md).
+[Kalender-/Originalvertrag](betrieb/blocker2-d-integration-historische-uebergabe-20261011.md).
 
 ## Blocker-Kurzstand
 
