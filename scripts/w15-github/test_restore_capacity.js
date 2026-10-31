@@ -2,7 +2,8 @@
 // Pure output projection: fictional numbers only, no process/HTTP/database.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const source=fs.readFileSync(path.resolve(__dirname,'../../.github/actions/w15-isolated/index.js'),'utf8');
-const context={};vm.createContext(context);vm.runInContext(source.slice(0,source.indexOf('// Runtime artifact')),context,{timeout:1000});
+const capacity=require('../../.github/actions/w15-isolated/capacity-measurement');
+const context={require:name=>{assert.equal(name,'./capacity-measurement');return capacity;}};vm.createContext(context);vm.runInContext(source.slice(0,source.indexOf('// Runtime artifact')),context,{timeout:1000});
 const clone=x=>JSON.parse(JSON.stringify(x));
 const cats={anon:123,file:3000000000,kernel:456,shmem:0,file_dirty:100,file_writeback:'UNKNOWN'};
 const psi={some:{avg10:1,avg60:0,avg300:0,total:12},full:{avg10:0,avg60:0,avg300:0,total:4}};
@@ -40,7 +41,8 @@ for(const success of [true,false]){
   }};
   const sandbox={Buffer,process:{env},console:{log:x=>output.push(x)},require:name=>{
     if(name==='node:fs')return {readFileSync:()=>JSON.stringify({inputs:{}})};
-    if(name==='node:child_process')return child;throw Error('UNEXPECTED_IMPORT');
+    if(name==='node:child_process')return child;
+    if(name==='./capacity-measurement')return capacity;throw Error('UNEXPECTED_IMPORT');
   }};
   vm.runInNewContext(source,sandbox,{timeout:1000});
   assert.equal(sandbox.process.exitCode,success?undefined:1);
