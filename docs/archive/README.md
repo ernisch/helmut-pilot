@@ -15,6 +15,7 @@ ausschließlich aktueller Projektstatus neu aufgesetzt.
 
 | Datei | Inhalt |
 |---|---|
+| [`project_state/2026_10_31_b289fe5e_CURRENT_STATE_vor_groessenkorrektur.md`](project_state/2026_10_31_b289fe5e_CURRENT_STATE_vor_groessenkorrektur.md) | Bytegleicher PR1004-Stand `b289fe5e` vor der Größenkorrektur; SHA256 `eb09b573527b5b3677a537e3370cf9e04bb9ef042864dad8bb7f3f13f83b9f51`. Historische W15-/Kalenderberichte und alle alten FAILs erhalten. Herkunft: `docs/CURRENT_STATE.md`; ursprüngliche relative Links beziehen sich auf `docs/`. |
 | [`project_state/2026_10_29_4c28cd65_CURRENT_STATE_vor_w15_verdichtung.md`](project_state/2026_10_29_4c28cd65_CURRENT_STATE_vor_w15_verdichtung.md) | Bytegleicher PR975-Stand`4c28cd65` vor der notwendigen W15-Statusverdichtung; behebt die harte Dokumentgrößenschranke ohne Verlust alter Befunde. |
 | [`project_state/2026_10_29_CURRENT_STATE_vor_kanal_und_parentnachweis.md`](project_state/2026_10_29_CURRENT_STATE_vor_kanal_und_parentnachweis.md) | Bytegleicher PR975-Stand`51f03287` vor dem neuen Kanal-/Parentnachweis. Historische W15-D-Fehler, Messwerte und Recoverybefunde unverändert erhalten; keine neue Laufabnahme. |
 | [`project_state/2026_10_28_historischer_Deployment_und_RO_Beleg_20261012.md`](project_state/2026_10_28_historischer_Deployment_und_RO_Beleg_20261012.md) | Die beiden historischen Deployment-/RO-Abschnitte vom12.10. wortgleich aus CURRENT_STATE übernommen; SHA256 `72622750e75961613b0ce7f7d37ad6cba61c30a5dabf45ed0aafd5233ae55d51`. Keine neue Production-Prüfung. |
