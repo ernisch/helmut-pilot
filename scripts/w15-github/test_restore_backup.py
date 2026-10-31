@@ -347,6 +347,10 @@ class BackupChecks(unittest.TestCase):
                                             check_pid=Mock(), sample=Mock(side_effect=RF.sample))
                 if functional:
                     resources.functional_stage='end500';resources.container_limit=4999999488
+                    capacity=load('test_restore_capacity')
+                    def functional_sample():
+                        value=capacity.sample();value['capacityMeasurement']=capacity.measurement(value);return value
+                    resources.sample.side_effect=functional_sample
                 state = {'running': False, 'create': None}
                 owned_id = 'e' * 64
                 m = SimpleNamespace(BASE=R.T.BASE, DB=R.T.DATABASE, DOCKER=list(R.DOCKER),
