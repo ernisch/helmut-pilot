@@ -5,6 +5,21 @@ const {execFileSync}=require("node:child_process");
 const Fixture=require("./fixtures/resource500-diagnostic");
 const SCHEMA="helmut-synthetic500-resource-diagnostic/1";
 const PHASES=new Set(["configuration","prepare-database","services","dataset","provision","activate","understanding","work","readback","deactivate","closed"]);
+const ASSERTIONS=new Set(["diagnostic-fresh-database-required","diagnostic-ca-required-before-node-start","diagnostic-stop-or-deadline","diagnostic-exact-active-cohort-required","diagnostic-initial-zero-required","diagnostic-provision-refused","diagnostic-positive-native-understanding-required","diagnostic-native-matches-required","diagnostic-native-decisions-required","diagnostic-positive-current-briefing-required","diagnostic-cleanup-only-newly-owned-profiles","diagnostic-local-preload-required"]);
+const CODES=new Set(["ERR_ASSERTION","MODULE_NOT_FOUND","ERR_MODULE_NOT_FOUND","EACCES","EPERM","ENOENT","EEXIST","ECONNREFUSED","ETIMEDOUT","EPIPE","ENOTFOUND","ECONNRESET"]);
+const SQLSTATES=new Set(["42P01","42703","42883","42501","23505","23503","3D000","28P01","57014","22023","42601","XX000","08006"]);
+function nativeStatus(value){return["saved","skipped","failed","disabled"].includes(value)?value:"unknown";}
+function closedFailure(error,status="unknown"){
+  const assertion=typeof error?.message==="string"?error.message.split("\n",1)[0]:null;
+  return{assertion:ASSERTIONS.has(assertion)?assertion:"UNKNOWN",code:CODES.has(error?.code)?error.code:"UNKNOWN",
+    sqlstate:SQLSTATES.has(error?.diagnosticSQLSTATE)?error.diagnosticSQLSTATE:"UNKNOWN",nativeStatus:nativeStatus(status)};
+}
+function databaseFailure(error){
+  const line=String(error.stderr||"").match(/(?:^|\n)(?:psql:[^\r\n]*: )?(?:ERROR|FATAL):\s+([0-9A-Z]{5})\s*(?:\n|$)/);
+  error.diagnosticSQLSTATE=line&&SQLSTATES.has(line[1])?line[1]:"UNKNOWN";return error;
+}
+function failureReceipt(c,error,phase){return{schema:SCHEMA,nonce:c.nonce,phase:PHASES.has(phase)?phase:"configuration",
+  failureDetail:error.safeResult?.firstFailureDetail||closedFailure(error),retryAllowed:false};}
 function exact(v,keys){assert(v&&typeof v==="object"&&!Array.isArray(v));assert.deepEqual(Object.keys(v).sort(),keys.slice().sort());}
 function directory(filename){
   assert(path.isAbsolute(filename)&&path.normalize(filename)===filename);
@@ -46,9 +61,10 @@ function args(argv){
   assert.equal(argv[1],"--config");return{action:argv[0],configPath:argv[2]};
 }
 function psql(c,sql){
-  return execFileSync("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-h","127.0.0.1","-p","5432","-U",c.database.user,"-d",c.database.name,"-f","-"],
+  try{return execFileSync("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-v","VERBOSITY=sqlstate","-h","127.0.0.1","-p","5432","-U",c.database.user,"-d",c.database.name,"-f","-"],
     {input:sql,encoding:"utf8",timeout:30000,maxBuffer:32*1024*1024,stdio:["pipe","pipe","pipe"],
       env:{PATH:process.env.PATH,LANG:"C.UTF-8",PGPASSWORD:c.database.password,PGCONNECT_TIMEOUT:"5",PGOPTIONS:"-c statement_timeout=25000 -c lock_timeout=3000"}}).trim();
+  }catch(error){throw databaseFailure(error);}
 }
 async function prepareDatabase(c,bootstrap=null){
   assert.equal(psql(c,"select current_database();"),c.database.name);
@@ -125,7 +141,7 @@ function production(c){
       assert.equal(Fixture.sha(read),Fixture.sha(entry.payload));return true;},...native(c)};
 }
 async function workload(c,b,deps=null){
-  let phase="dataset",failure=null,zero="UNKNOWN",activeObservations=0,positive=0,understood=0,provisioned=0;
+  let phase="dataset",failure=null,firstFailureDetail=null,cleanupFailureDetail=null,status="unknown",zero="UNKNOWN",activeObservations=0,positive=0,understood=0,provisioned=0;
   let stop=false;const deadline=Date.now()+c.maxWallSeconds*1000;
   const onStop=()=>{stop=true;};process.once("SIGTERM",onStop);process.once("SIGINT",onStop);
   const check=()=>assert(!stop&&Date.now()<deadline,"diagnostic-stop-or-deadline");
@@ -145,9 +161,9 @@ async function workload(c,b,deps=null){
     for(const id of ids){check();assert.equal((await deps.participate(id,true)).ok,true);}
     await assertActive();
     phase="understanding";
-    for(const item of data){await assertActive();
+    for(const item of data){status="unknown";await assertActive();
       for(const doc of item.documents)assert.equal((await deps.saveSource(doc)).saved,true);
-      const result=await deps.understand({documents:item.documents});assert.equal(result.status,"saved","diagnostic-positive-native-understanding-required");understood++;
+      const result=await deps.understand({documents:item.documents});status=nativeStatus(result?.status);assert.equal(result?.status,"saved","diagnostic-positive-native-understanding-required");understood++;
     }
     phase="work";
     for(const id of ids){await assertActive();const profile=await deps.profile(id);assert(profile&&profile.profileActive===true&&profile.id===id);
@@ -160,17 +176,17 @@ async function workload(c,b,deps=null){
     assert.equal(positive,c.count);assert.equal(await deps.count("knowledge_objects"),data.length);
     assert.equal(await deps.count("raw_documents"),data.length*4);assert.equal(await deps.count("ko_document_links"),data.length*4);
     assert.equal(await deps.count("briefings"),c.count);assert(await deps.count("matching_results")>=c.count);
-  }catch(error){failure=PHASES.has(phase)?phase:"configuration";}
+  }catch(error){failure=PHASES.has(phase)?phase:"configuration";firstFailureDetail=closedFailure(error,phase==="understanding"?status:"unknown");}
   finally{
     const primary=failure;phase="deactivate";
     try{const active=await deps.activeIDs();assert(active.every(id=>created.has(id)),"diagnostic-cleanup-only-newly-owned-profiles");
       for(const id of active)assert.equal((await deps.participate(id,false)).ok,true);
       const after=await deps.activeIDs();assert.deepEqual(after,[]);zero=0;
-    }catch(error){failure=primary||"deactivate";}
+    }catch(error){cleanupFailureDetail=closedFailure(error);failure=primary||"deactivate";if(!primary)firstFailureDetail=cleanupFailureDetail;}
     process.removeListener("SIGTERM",onStop);process.removeListener("SIGINT",onStop);
   }
   const result={schema:SCHEMA,nonce:c.nonce,status:failure?"FAIL_OR_UNKNOWN_DIAGNOSTIC":"PASS_SYNTHETIC_DIAGNOSTIC_WORKLOAD_ONLY",
-    firstFailurePhase:failure,requestedProfiles:c.count,provisionedProfiles:provisioned,positiveProfileResults:positive,
+    firstFailurePhase:failure,firstFailureDetail,cleanupFailureDetail,requestedProfiles:c.count,provisionedProfiles:provisioned,positiveProfileResults:positive,
     activeCohortReadbacks:activeObservations,understoodCases:understood,finalActiveProfiles:zero,
     simulatedProviderOnly:true,originalDataUsed:false,formal1500Acceptance:false,end500Acceptance:false,mock500Acceptance:false,
     productionProof:false,executionAuthority:false,retryAllowed:false};
@@ -179,12 +195,18 @@ async function workload(c,b,deps=null){
 async function main(argv=process.argv.slice(2)){
   const parsed=args(argv);assert(require.cache[require.resolve("./lokaler-netzschutz")],"diagnostic-local-preload-required");
   osGuard();process.umask(0o077);const c=configuration(privateJSON(parsed.configPath));
-  if(parsed.action==="--services")return services(c);
-  if(parsed.action==="--prepare-database")return prepareDatabase(c);
-  assert.equal(parsed.action,c.mode==="preflight"?"--preflight-klein":"--app");
-  const b=bindings(c,privateJSON(path.join(c.resultRoot,"SERVICE_BINDINGS.PRIVATE.json")));
-  return workload(c,b);
+  const phase=parsed.action==="--services"?"services":parsed.action==="--prepare-database"?"prepare-database":"work";
+  try{
+    if(parsed.action==="--services")return await services(c);
+    if(parsed.action==="--prepare-database")return await prepareDatabase(c);
+    assert.equal(parsed.action,c.mode==="preflight"?"--preflight-klein":"--app");
+    const b=bindings(c,privateJSON(path.join(c.resultRoot,"SERVICE_BINDINGS.PRIVATE.json")));
+    return await workload(c,b);
+  }catch(error){const receipt=failureReceipt(c,error,error.safeResult?.firstFailurePhase||phase);
+    try{write(c.resultRoot,"WORKLOAD_FAILURE.SAFE.json",receipt);}catch(_){}
+    throw Object.assign(error,{diagnosticReceipt:receipt});}
 }
 function osGuard(){const guard=require("./lokaler-netzschutz");assert.deepEqual(guard.pruefe(process.env),[]);}
-if(require.main===module)main().catch(error=>{console.error(JSON.stringify({schema:SCHEMA,status:"FAIL_OR_UNKNOWN_DIAGNOSTIC",phase:error.safeResult?.firstFailurePhase||"configuration",retryAllowed:false}));process.exitCode=1;});
-module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main};
+if(require.main===module)main().catch(error=>{console.error(JSON.stringify({schema:SCHEMA,status:"FAIL_OR_UNKNOWN_DIAGNOSTIC",
+  ...(error.diagnosticReceipt||{phase:"configuration",failureDetail:closedFailure(error),retryAllowed:false})}));process.exitCode=1;});
+module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt};

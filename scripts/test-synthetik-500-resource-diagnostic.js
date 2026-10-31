@@ -22,6 +22,29 @@ function fake(root,{failWork=false,wrongActive=false}={}){
     storeResult:async()=>{counts.briefings++;return true;},count:async table=>counts[table]};
 }
 let passed=0;async function test(name,run){await run();passed++;console.log("PASS "+name);}
+async function failureProjectionCases(){
+  await test("closed action failure preserves SQLSTATE and excludes private text",()=>{
+    const root=temp();try{const c=config(root),error=Object.assign(Error("FICTIONAL_PRIVATE_DSN_JWT_SQL_MUST_NOT_ESCAPE"),{
+        stderr:"psql:<stdin>:12: ERROR:  42P01\nFICTIONAL_PRIVATE_DSN_JWT_SQL_MUST_NOT_ESCAPE",code:"UNLISTED_PRIVATE_CODE"});
+      const projected=D.closedFailure(D.databaseFailure(error));
+      assert.deepEqual(projected,{assertion:"UNKNOWN",code:"UNKNOWN",sqlstate:"42P01",nativeStatus:"unknown"});
+      const receipt=D.failureReceipt(c,error,"prepare-database");assert.equal(receipt.phase,"prepare-database");
+      assert.equal(D.failureReceipt(c,error,"services").phase,"services");assert(!JSON.stringify(receipt).includes("FICTIONAL_PRIVATE"));
+      assert.equal(D.closedFailure(Error("diagnostic-native-matches-required PRIVATE_SUFFIX")).assertion,"UNKNOWN");
+      assert.equal(D.closedFailure(D.databaseFailure({stderr:"ERROR:  ZZ999\n"})).sqlstate,"UNKNOWN");
+    }finally{fs.rmSync(root,{recursive:true,force:true});}});
+  await test("first Understanding assertion survives a secondary deactivation error",async()=>{
+    const root=temp();try{const deps=fake(root),original=deps.participate;
+      deps.understand=async()=>({status:"disabled",reason:"FICTIONAL_PRIVATE_REASON"});
+      deps.participate=async(id,on)=>{if(!on)throw Object.assign(Error("FICTIONAL_PRIVATE_CLEANUP"),{code:"EACCES"});return original(id,on);};
+      await assert.rejects(D.workload(config(root),{},deps));
+      const result=JSON.parse(fs.readFileSync(path.join(root,"APP_RESULT.SAFE.json")));
+      assert.equal(result.firstFailurePhase,"understanding");
+      assert.deepEqual(result.firstFailureDetail,{assertion:"diagnostic-positive-native-understanding-required",code:"ERR_ASSERTION",sqlstate:"UNKNOWN",nativeStatus:"disabled"});
+      assert.deepEqual(result.cleanupFailureDetail,{assertion:"UNKNOWN",code:"EACCES",sqlstate:"UNKNOWN",nativeStatus:"unknown"});
+      assert.equal(result.finalActiveProfiles,"UNKNOWN");assert.equal(result.retryAllowed,false);assert(!JSON.stringify(result).includes("FICTIONAL_PRIVATE"));
+    }finally{fs.rmSync(root,{recursive:true,force:true});}});
+}
 async function main(){
   await test("strict independent diagnostic configuration and no full-mode aliases",()=>{
     const root=temp();try{const c=config(root);assert.equal(D.configuration(c),c);
@@ -88,7 +111,8 @@ async function main(){
       assert.equal(D.privateJSON(file).schema,D.SCHEMA);fs.chmodSync(file,0o644);assert.throws(()=>D.privateJSON(file));
       const link=path.join(root,"LINK.PRIVATE.json");fs.symlinkSync(file,link);assert.throws(()=>D.privateJSON(link));
     }finally{fs.rmSync(root,{recursive:true,force:true});}});
+  await failureProjectionCases();
   console.log(passed+" PASS; synthetic unit cases only; native preflight and 500 run NOT executed");
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={main};
+module.exports={main,failureProjectionCases};
