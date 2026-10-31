@@ -413,6 +413,8 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
             assert info['HostConfig']['CgroupParent']==common_resources.unit,'w15-common-parent-container-setting'
             common_resources.check_pid(pid,info['Id']);cgroup=common_resources.path
         w=Watch(cgroup);w.common_resources=common_resources;w.disk_guard=disk_guard
+        if getattr(common_resources,'end_capacity_diagnostic',False):
+            w.phase_observer=common_resources.phase_observer
         if inputs is not None:w.backup_runner=_runtime_module('runtime_owned_backup').OwnedBackupRunner(w,M,base=BASE,container=CONTAINER,database=DB)
         w.sample();w.thread.start()
         for _ in range(100):

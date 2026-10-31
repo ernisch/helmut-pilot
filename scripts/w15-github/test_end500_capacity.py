@@ -74,6 +74,27 @@ class EndCapacityChecks(unittest.TestCase):
         with self.assertRaises(ValueError):scope['sample'](watch)
         self.assertIsNotNone(watch.memory_failure)
 
+    def test_full_controller_connects_existing_five_restore_and_four_export_checkpoints(self):
+        source=Path(__file__).parents[1]/'synthetik-500-w15-memory-forward.py'
+        tree=ast.parse(source.read_text())
+        node=next(x for x in ast.walk(tree) if isinstance(x,ast.If)
+            and any(isinstance(y,ast.Assign) and any(isinstance(z,ast.Attribute) and z.attr=='phase_observer'
+                for z in y.targets) for y in x.body))
+        observer=[];watch=SimpleNamespace(thread=SimpleNamespace(is_alive=lambda:True),
+            finished=SimpleNamespace(is_set=lambda:False),failure=None,stop_failure=None,process=None,
+            closure_mode=True,last_stage_exit_code=0,stage=lambda *args:None)
+        scope={'w':watch,'common_resources':SimpleNamespace(end_capacity_diagnostic=True,phase_observer=observer.append)}
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[node],type_ignores=[])),'actual-full-watch-binding','exec'),scope)
+        O=load('runtime_owned_backup');base='/tmp/w15-memory-atomic-20261028d';db='helmut_w15_memory_atomic_20261028d'
+        container='w15-end500-123456-'+'a'*32
+        controller=SimpleNamespace(BASE=base,DB=db,CONTAINER=container,DOCKER=['docker','--host=unix:///var/run/docker.sock'])
+        for domain,actions in (('end500-restore',O.RESTORE_ACTIONS),('end500-backup',O.ACTIONS)):
+            runner=O.OwnedBackupRunner(watch,controller,base=base,container=container,database=db,scope=domain)
+            watch.backup_runner=runner
+            for action in actions:
+                runner.run_owned(controller.DOCKER+['exec','--user','1000:1000',container,'sh','-c','FICTIONAL'],action,60)
+        self.assertEqual(observer,['connection-'+x for x in O.RESTORE_ACTIONS]+['connection-export-'+x for x in O.ACTIONS])
+
     def test_confirmed_progress_pipe_drain_survives_worker_eof_without_new_memory_sample(self):
         receive,send=multiprocessing.Pipe(duplex=False)
         last={'endTrace':TRACE.Collector(),'memory':C.project_failure_memory(sample(),True)}
