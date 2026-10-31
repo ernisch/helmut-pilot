@@ -89,8 +89,10 @@ function closedFailureMemory(value){
   if(value.configuredLimitBytes===4999999488){
     const capacity=closedCapacityMeasurement(value.capacityMeasurement);
     if(capacity)out.capacityMeasurement=capacity;
-    const trace=require('./capacity-trace').closed(value.end500CapacityTrace);
-    if(trace)out.end500CapacityTrace=trace;
+    if(Object.hasOwn(value,'end500CapacityTrace')){
+      const trace=require('./capacity-trace').closed(value.end500CapacityTrace);
+      if(trace)out.end500CapacityTrace=trace;
+    }
   }
   return out;
 }

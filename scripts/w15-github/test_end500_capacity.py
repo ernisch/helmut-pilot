@@ -199,6 +199,12 @@ class EndCapacityChecks(unittest.TestCase):
         program="const c=require(process.argv[1]).closed;const v=JSON.parse(require('fs').readFileSync(0,'utf8'));if(!c(v)||c({...v,secret:'PRIVATE'})||c({...v,hardLimitBytes:5000000000}))process.exit(1);"
         result=subprocess.run(['node','-e',program,str(validator)],input=json.dumps(core['end500CapacityTrace']),text=True,capture_output=True)
         self.assertEqual(result.returncode,0,result.stderr)
+        # Exercise the action's actual second projection, including its local
+        # module resolution, rather than only testing the separate validator.
+        action=validator.with_name('index.js')
+        program="const fs=require('fs'),vm=require('vm'),m=require('module');const p=process.argv[1],ctx={require:m.createRequire(p)};vm.createContext(ctx);vm.runInContext(fs.readFileSync(p,'utf8').split('// Runtime artifact')[0],ctx);const v=JSON.parse(fs.readFileSync(0,'utf8'));if(!ctx.closedFailureMemory(v)?.end500CapacityTrace)process.exit(1);v.end500CapacityTrace.secret='PRIVATE';if(ctx.closedFailureMemory(v)?.end500CapacityTrace)process.exit(2);if(!ctx.closedFailureMemory(v))process.exit(3);"
+        result=subprocess.run(['node','-e',program,str(action)],input=json.dumps(core),text=True,capture_output=True)
+        self.assertEqual(result.returncode,0,result.stderr)
 
     def test_sender_requires_capacity_scope_before_ready_and_single_bound_post(self):
         sender=A.EndSenderChecks();sender.setUp();self.addCleanup(sender.doCleanups)
