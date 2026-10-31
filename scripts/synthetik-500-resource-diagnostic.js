@@ -25,6 +25,26 @@ function diagnosticMigrations(files){
   return DIAGNOSTIC_MIGRATIONS.map(name=>{assert(available.has(name),"diagnostic-required-schema-migration-missing");return available.get(name);});
 }
 const CODES=new Set(["ERR_ASSERTION","MODULE_NOT_FOUND","ERR_MODULE_NOT_FOUND","EACCES","EPERM","ENOENT","EEXIST","ECONNREFUSED","ETIMEDOUT","EPIPE","ENOTFOUND","ECONNRESET"]);
+const AI_MESSAGES=new Map([["KI Kostenbeleg nicht bestaetigt","LLM_USAGE_NOT_CONFIRMED"],
+  ["AI request timeout","AI_REQUEST_TIMEOUT"],["AI request send error","AI_REQUEST_SEND_ERROR"],
+  ["AI response too large","AI_RESPONSE_TOO_LARGE"],["AI response aborted","AI_RESPONSE_ABORTED"],
+  ["AI response stream error","AI_RESPONSE_STREAM_ERROR"],["KI-Antwort war kein gueltiges JSON","AI_RESPONSE_INVALID_JSON"],
+  ["KI-Antwort wurde nicht vollstaendig abgeschlossen","AI_RESPONSE_NOT_COMPLETED"]]);
+const AI_HTTP_STATUS=new Set([400,401,403,404,408,422,429,500,502,503,504]);
+const AI_TLS_MESSAGES=new Set(["self-signed certificate","self-signed certificate in certificate chain",
+  "unable to verify the first certificate","unable to get local issuer certificate","certificate has expired","certificate is not yet valid",
+  "Client network socket disconnected before secure TLS connection was established"]);
+const AI_BUILD_CODES=new Set(["ERR_INVALID_URL","ERR_INVALID_CHAR","ERR_HTTP_INVALID_HEADER_VALUE","ERR_INVALID_ARG_TYPE","ERR_INVALID_ARG_VALUE","ERR_OUT_OF_RANGE"]);
+for(const code of [...AI_MESSAGES.values(),...Array.from(AI_HTTP_STATUS,status=>"AI_PROVIDER_HTTP_"+status),
+  "AI_PROVIDER_HTTP_4XX","AI_PROVIDER_HTTP_5XX","AI_REQUEST_BUILD_FAILED","AI_TLS_ERROR"])CODES.add(code);
+function understandingErrorCode(value){
+  if(typeof value!=="string")return"UNKNOWN";if(AI_MESSAGES.has(value))return AI_MESSAGES.get(value);
+  const http=/^(?:Azure|OpenAI) HTTP ([45][0-9]{2})$/.exec(value);
+  if(http)return"AI_PROVIDER_HTTP_"+(AI_HTTP_STATUS.has(Number(http[1]))?http[1]:http[1][0]+"XX");
+  const build=/^KI-Anfrage konnte nicht aufgebaut werden \(([A-Z_]+)\)$/.exec(value);
+  if(build&&AI_BUILD_CODES.has(build[1]))return"AI_REQUEST_BUILD_FAILED";
+  return AI_TLS_MESSAGES.has(value)?"AI_TLS_ERROR":"UNKNOWN";
+}
 const SQLSTATES=new Set(["42P01","42703","42883","42501","23505","23503","3D000","28P01","57014","22023","42601","XX000","08006"]);
 function nativeStatus(value){return["saved", "skipped", "failed", "disabled", "unknown", "duplicate", "merged", "skipped-artikelkontext", "skipped-ausgang-unbekannt", "skipped-bestandslesefehler", "skipped-budget", "skipped-cluster-belegt", "skipped-error", "skipped-failed", "skipped-gate-geparkt", "skipped-invalid", "skipped-modellstart-unklar", "skipped-no-cluster", "skipped-no-vorgang", "skipped-production-admission", "skipped-store", "skipped-terminal", "skipped-update-final", "skipped-veraltet", "skipped-zeitbudget"].includes(value)?value:"unknown";}
 function closedFailure(error,status="unknown"){
@@ -190,7 +210,9 @@ async function workload(c,b,deps=null){
     phase="understanding";
     for(const item of data){status="unknown";await assertActive();
       for(const doc of item.documents)assert.equal((await deps.saveSource(doc)).saved,true);
-      const result=await deps.understand({documents:item.documents});status=nativeStatus(result?.status);assert.equal(result?.status,"saved","diagnostic-positive-native-understanding-required");understood++;
+      const result=await deps.understand({documents:item.documents});status=nativeStatus(result?.status);
+      try{assert.equal(result?.status,"saved","diagnostic-positive-native-understanding-required");}
+      catch(error){if(typeof result?.errorCode==="string")error.code=understandingErrorCode(result.errorCode);throw error;}understood++;
     }
     phase="work";
     for(const id of ids){await assertActive();const profile=await deps.profile(id);assert(profile&&profile.profileActive===true&&profile.id===id);
@@ -236,4 +258,4 @@ async function main(argv=process.argv.slice(2)){
 function osGuard(){const guard=require("./lokaler-netzschutz");assert.deepEqual(guard.pruefe(process.env),[]);}
 if(require.main===module)main().catch(error=>{console.error(JSON.stringify({schema:SCHEMA,status:"FAIL_OR_UNKNOWN_DIAGNOSTIC",
   ...(error.diagnosticReceipt||{phase:"configuration",failureDetail:closedFailure(error),retryAllowed:false})}));process.exitCode=1;});
-module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport,diagnosticMigrations};
+module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport,diagnosticMigrations,understandingErrorCode};

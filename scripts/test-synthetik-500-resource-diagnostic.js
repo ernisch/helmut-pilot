@@ -22,6 +22,28 @@ function fake(root,{failWork=false,wrongActive=false,count=2}={}){
     storeResult:async()=>{counts.briefings++;return true;},count:async table=>counts[table]};
 }
 let passed=0;async function test(name,run){await run();passed++;console.log("PASS "+name);}
+async function understandingErrorProjectionCase(){
+  await test("Understanding failures retain fixed AI categories while private raw values remain UNKNOWN",async()=>{
+    for(const [message,code]of[["KI Kostenbeleg nicht bestaetigt","LLM_USAGE_NOT_CONFIRMED"],["Azure HTTP 422","AI_PROVIDER_HTTP_422"],
+      ["OpenAI HTTP 403","AI_PROVIDER_HTTP_403"],["Azure HTTP 404","AI_PROVIDER_HTTP_404"],["Azure HTTP 499","AI_PROVIDER_HTTP_4XX"],["OpenAI HTTP 599","AI_PROVIDER_HTTP_5XX"],
+      ["AI request timeout","AI_REQUEST_TIMEOUT"],["AI request send error","AI_REQUEST_SEND_ERROR"],
+      ["AI response too large","AI_RESPONSE_TOO_LARGE"],["AI response aborted","AI_RESPONSE_ABORTED"],["AI response stream error","AI_RESPONSE_STREAM_ERROR"],
+      ["KI-Antwort war kein gueltiges JSON","AI_RESPONSE_INVALID_JSON"],["KI-Antwort wurde nicht vollstaendig abgeschlossen","AI_RESPONSE_NOT_COMPLETED"],
+      ["KI-Anfrage konnte nicht aufgebaut werden (ERR_INVALID_URL)","AI_REQUEST_BUILD_FAILED"],["self-signed certificate in certificate chain","AI_TLS_ERROR"]]){
+      assert.equal(D.understandingErrorCode(message),code);assert.equal(D.closedFailure({code}).code,code);
+    }
+    for(const raw of["https://FICTIONAL_PRIVATE.invalid/secret","Azure HTTP 422 FICTIONAL_PRIVATE","AI request timeout\nFICTIONAL_PRIVATE",null])
+      assert.equal(D.understandingErrorCode(raw),"UNKNOWN");
+    for(const [errorCode,expected]of[["KI Kostenbeleg nicht bestaetigt","LLM_USAGE_NOT_CONFIRMED"],["https://FICTIONAL_PRIVATE.invalid/secret","UNKNOWN"]]){
+      const root=temp();try{const deps=fake(root);deps.understand=async()=>({status:"skipped-error",errorCode});
+        await assert.rejects(D.workload(config(root),{},deps));const result=JSON.parse(fs.readFileSync(path.join(root,"APP_RESULT.SAFE.json")));
+        assert.equal(result.firstFailurePhase,"understanding");assert.equal(result.firstFailureDetail.assertion,"diagnostic-positive-native-understanding-required");
+        assert.equal(result.firstFailureDetail.nativeStatus,"skipped-error");assert.equal(result.firstFailureDetail.code,expected);
+        assert.equal(result.finalActiveProfiles,0);assert(!JSON.stringify(result).includes("FICTIONAL_PRIVATE"));
+      }finally{fs.rmSync(root,{recursive:true,force:true});}
+    }
+  });
+}
 async function diagnosticMigrationSelectionCase(){
   await test("application schema selection excludes protected cohort installations and requires its dependencies",()=>{
     const root=path.join(__dirname,"../supabase/migrations"),all=fs.readdirSync(root).filter(n=>n.endsWith(".sql")&&!/rollback/i.test(n)).map(n=>path.join(root,n));
@@ -176,8 +198,9 @@ async function main(){
   await representativeCoverageCases();
   await localAIProjectionCase();
   await diagnosticMigrationSelectionCase();
+  await understandingErrorProjectionCase();
   await currentSourceValidationCase();
   console.log(passed+" PASS; synthetic unit cases only; native preflight and 500 run NOT executed");
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase};
+module.exports={currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase,understandingErrorProjectionCase};
