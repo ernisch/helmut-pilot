@@ -761,7 +761,7 @@ def _parent_readback(parent, ctx, identity, last, *, empty=False, error_type=Run
                         # A rejected sample is still an observation, never a PASS.
                         raw = dict(detail, configuredLimit=str(detail['configuredLimitBytes']), swapMaximum=str(detail['swapMaximumBytes']))
                         last['endTrace'].observe(raw, phase=last.get('observedPhase'), progress=last.get('progress'))
-                        detail['end500CapacityTrace'] = last['endTrace'].summary()
+                        detail['end500CapacityTrace'] = last.get('serviceEndTrace') or last['endTrace'].summary()
                     error.failure_memory = detail
             except BaseException:
                 pass  # Optional enrichment must never displace the first failure or signal.
@@ -784,7 +784,10 @@ def _parent_readback(parent, ctx, identity, last, *, empty=False, error_type=Run
                 pass  # Optional attribution cannot replace the resource guard.
             last['lastComponentsAt'] = time.monotonic()
         collector.observe(value, phase=last.get('observedPhase'), progress=last.get('progress'), components=components)
-        value['end500CapacityTrace'] = collector.summary()
+        # The outer launcher has no inner phase/counter stream. Once received,
+        # preserve the closed service trace through the final outer readback.
+        # The separate final parent sample remains the whole-lifetime authority.
+        value['end500CapacityTrace'] = last.get('serviceEndTrace') or collector.summary()
     last['memory'] = P.R.project_failure_memory(value, True)
     return value
 

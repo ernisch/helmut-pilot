@@ -168,6 +168,25 @@ class EndCapacityChecks(unittest.TestCase):
         self.assertEqual(memory['end500CapacityTrace']['phaseObservations'][-1]['phase']['name'],'capacity-seed')
         self.assertTrue(memory['end500CapacityTrace']['anyCapacitySafetyFailureOrUnknown'])
 
+    def test_final_outer_guard_rejection_cannot_erase_completed_inner_trace(self):
+        inner=TRACE.Collector();inner.observe(sample(),phase={'name':'capacity-processing-stopped','sequence':31,'meaning':'ENTERED_NOT_COMPLETED'})
+        inner.confirm_progress({key:{'value':n,'kind':'EXACT'} for key,n in
+            (('authCAS',500),('usageRows',6000),('nativePostimages',3501))},2000000)
+        last={'endTrace':TRACE.Collector(),'serviceEndTrace':inner.summary()}
+        last['endTrace'].observe(sample(100))
+        last['memory']=C.project_failure_memory(sample(100),True)
+        error=ValueError('synthetic final root rejection')
+        error.failure_memory=C.project_failure_memory(sample(4999999489),False)
+        parent=SimpleNamespace(read_parent=lambda *a,**k:(_ for _ in ()).throw(error))
+        with self.assertRaises(R.RunnerStartError) as caught:
+            R._parent_readback(parent,{'endCapacityDiagnostic':True,'capacityDiagnostic':True},(1,2),last,empty=True)
+        memory=caught.exception.runner['memory']
+        self.assertEqual(memory['kernelLifetimePeakBytes'],4999999489)
+        self.assertEqual(memory['end500CapacityTrace'],last['serviceEndTrace'])
+        for key,n in (('authCAS',500),('usageRows',6000),('nativePostimages',3501)):
+            self.assertEqual(memory['end500CapacityTrace']['progress'][key]['value'],n)
+            self.assertEqual(memory['end500CapacityTrace']['progress'][key]['kind'],'EXACT')
+
     def test_failure_envelope_deduplicates_only_optional_worker_history_and_js_closes_trace(self):
         collector=TRACE.Collector();collector.observe(sample(),phase={'name':'capacity-auth-cas','sequence':24,'meaning':'ENTERED_NOT_COMPLETED'})
         core=C.project_failure_memory(sample(),False);core['end500CapacityTrace']=collector.summary()
