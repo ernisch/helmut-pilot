@@ -23,7 +23,28 @@ function request(service, input) {
   });
 }
 
+function nativeSchemaCase() {
+  const path=require("node:path"),os=require("node:os"),Z=require("./skalierung-z3-realistiklauf");
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),"helmut-native-schema-contract-"));
+  try {
+    const native=path.join(root,"native"),legacy=path.join(root,"legacy");fs.mkdirSync(native);fs.mkdirSync(legacy);
+    const raw=Z.baueLokalesSchema(native,{nativeVector:true}),old=Z.baueLokalesSchema(legacy);
+    assert.equal(fs.readFileSync(raw.schemaDatei,"utf8"),fs.readFileSync(path.join(__dirname,"../supabase/schema.sql"),"utf8"));
+    assert(fs.readFileSync(raw.schemaDatei,"utf8").includes("create extension if not exists vector;"));
+    assert(fs.readFileSync(raw.schemaDatei,"utf8").includes("<=>"));
+    assert(!fs.readFileSync(old.schemaDatei,"utf8").includes("ko.embedding <=> query_embedding"));
+    assert(!/match_knowledge_objects|where false/i.test(Z.VORBEREITUNG_NATIVE_SQL));
+    assert(/where false/i.test(Z.VORBEREITUNG_SQL));
+    assert.throws(()=>Z.baueLokalesSchema(root,{nativeVector:"true"}),/options-invalid/);
+    for(const migration of raw.migrationen)
+      assert.equal(fs.readFileSync(migration,"utf8"),fs.readFileSync(path.join(__dirname,"../supabase/migrations",path.basename(migration)),"utf8"));
+    console.log("PASS native vector schema and SQL preserved; historical local adaptation unchanged");
+  } finally {fs.rmSync(root,{recursive:true,force:true});}
+}
+
 (async () => {
+  nativeSchemaCase();
+  if(process.argv.includes("--native-schema-only"))return;
   const bootstrap = spawnSync(process.execPath, ["-e", `
     const assert=require('node:assert/strict'), cp=require('node:child_process');
     let calls=0; cp.execFileSync=()=>{calls++;throw Error('unexpected-process');};

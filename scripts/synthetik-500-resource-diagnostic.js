@@ -169,6 +169,8 @@ function environment(c,b){
   Object.assign(process.env,{HELMUT_SOURCE_MODE:"off",HELMUT_STORAGE_BACKEND:"supabase",HELMUT_SUPABASE_AUTH_STORE_ID:"main-auth",
     HELMUT_V3_STORE:"1",HELMUT_PROFILE_DB_MODE:"1",HELMUT_PROFILE_DB_EXCLUSIVE:"1",HELMUT_V3_MATCHING:"1",
     HELMUT_KI_LOOPBACK_ERLAUBT:"1",SUPABASE_URL:b.databaseURL,SUPABASE_SERVICE_ROLE_KEY:c.serviceToken,
+    // Only this isolated loopback simulation: one bounded call for each public case.
+    HELMUT_MAX_LLM_CALLS_PER_DAY:"96",
     AZURE_OPENAI_ENDPOINT:b.kiURL,AZURE_OPENAI_KEY:"LOCAL_SYNTHETIC_DIAGNOSTIC_NOT_A_PROVIDER_CREDENTIAL"});
   assert.equal(process.env.NODE_EXTRA_CA_CERTS,b.caPath,"diagnostic-ca-required-before-node-start");
 }

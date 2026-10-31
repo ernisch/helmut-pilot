@@ -179,9 +179,13 @@ function servererreichbar() {
 // `20260808`-Dateien liegen, die auf ihr aufbauen.
 const VORRANG = ["20260808_scalable_job_queue.sql"];
 
-function baueLokalesSchema(arbeitsverzeichnis) {
+function baueLokalesSchema(arbeitsverzeichnis, optionen = {}) {
+  if (!optionen || typeof optionen !== "object" || Array.isArray(optionen)
+    || Object.keys(optionen).some(key => key !== "nativeVector")
+    || (optionen.nativeVector !== undefined && typeof optionen.nativeVector !== "boolean"))
+    throw new TypeError("z3-native-schema-options-invalid");
   const quelle = fs.readFileSync(path.join(ROOT, "supabase/schema.sql"), "utf8");
-  let s = quelle
+  let s = optionen.nativeVector === true ? quelle : quelle
     .replace("create extension if not exists vector;", "-- LOKALE ANPASSUNG: pgvector nicht verfuegbar")
     .replace(/create index if not exists knowledge_objects_embedding_idx\s*\n\s*on public\.knowledge_objects using ivfflat[^;]*;/,
       "-- LOKALE ANPASSUNG: ivfflat-Index entfaellt")
@@ -203,7 +207,8 @@ function baueLokalesSchema(arbeitsverzeichnis) {
     });
   const geordnet = [];
   for (const f of alle) {
-    const roh = fs.readFileSync(path.join(ROOT, "supabase/migrations", f), "utf8")
+    const source = fs.readFileSync(path.join(ROOT, "supabase/migrations", f), "utf8");
+    const roh = optionen.nativeVector === true ? source : source
       .replace(/match_knowledge_objects\(vector,/g, "match_knowledge_objects(jsonb,")
       .replace(/embedding vector,/g, "embedding jsonb,")
       .replace(/vector\(256\)/g, "jsonb");
@@ -236,6 +241,10 @@ create or replace function public.match_knowledge_objects(
 returns table (id text, vorgang_id text, similarity double precision)
 language sql stable as $fn$ select null::text, null::text, null::double precision where false $fn$;
 `;
+
+// Native vector diagnostics reuse roles but must never install the legacy empty RPC.
+const VORBEREITUNG_NATIVE_SQL = VORBEREITUNG_SQL.slice(0,
+  VORBEREITUNG_SQL.indexOf("create or replace function public.match_knowledge_objects("));
 
 const NACHBEREITUNG_SQL = `
 grant all on all tables in schema public to service_role;
@@ -1035,7 +1044,7 @@ async function main() {
 
 // Public schema preparation may be reused by an isolated diagnostic adapter.
 // Importing this file must never launch its historical stage chain or logging.
-module.exports = Object.freeze({ baueLokalesSchema, VORBEREITUNG_SQL, NACHBEREITUNG_SQL });
+module.exports = Object.freeze({ baueLokalesSchema, VORBEREITUNG_SQL, VORBEREITUNG_NATIVE_SQL, NACHBEREITUNG_SQL });
 if (require.main === module) main().catch((error) => {
   console.error("LAUFFEHLER:", (error && error.stack) || error);
   process.exit(1);

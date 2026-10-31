@@ -5,6 +5,11 @@ mit 500 gleichzeitig aktiven vollständig synthetischen Profilen, tatsächlichem
 Helmut-Verarbeitungscode und ausschließlich lokal simulierter KI. Keine
 geschützten Originaldateien, keine Production-Wirkung oder kostenpflichtige KI.
 Dies ist keine End500-/Mock500-/Anbieterabnahme und ersetzt keinen RAM-Vertrag.
+Der Kindprozess der lokalen KI-Simulation erhält einen festen Aufrufdeckel von
+96 für die 96 öffentlichen Diagnosevorgänge; der bestehende Simulator begrenzt
+zusätzlich auf 128. Der unkonfigurierte App-Fallback von 50 würde die geplante
+Messung vorzeitig stoppen. Diese ausschließlich lokale Testkonfiguration
+verändert keine Production-, Kosten- oder geschützten Ausführungsbudgets.
 
 ## Einziger neuer Anschluss
 
@@ -19,6 +24,13 @@ Schemaaufbereitung, lokale TLS-/KI-Fixture, Parent-/Hostwächter und passive
 Komponentenmessung aus PR #1004. Der KI-Fixture kann optional eine geprüfte rein
 synthetische Antwortfunktion übergeben werden; ihr Standard bleibt unverändert.
 Import der öffentlichen Schemaaufbereitung startet keinen historischen Z3-Lauf.
+Nur die beiden neuen Diagnosejobs ergänzen im vorhandenen kurzlebigen PG17.6-
+Testcontainer die echte pgvector-Abhängigkeit aus dem vollständig hashgebundenen
+PGDG-Paket 0.8.7. Sie verwenden das unveränderte native Repository-Schema und
+die tatsächliche Matching-RPC. Die alte Z3-Anpassung mit JSONB und leerer
+Matching-RPC darf hier keinen Kapazitätsnachweis liefern; ihr Standard bleibt
+für bestehende Aufrufer unverändert. PostgreSQL und Betriebssystemabhängigkeiten
+werden nicht aktualisiert. Die Anbieter-Version der Erweiterung ist UNKNOWN.
 
 ## Bindungen und begrenzter Ablauf
 

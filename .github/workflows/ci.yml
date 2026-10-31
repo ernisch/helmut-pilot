@@ -1001,6 +1001,8 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
       - uses: ./.github/actions/w15-existing-tools
+        with:
+          native-vector-diagnostic: 'true'
       - name: Vorhandene Anwendungsabhaengigkeiten aus unveraendertem Lockfile
         run: npm ci
       - name: Kleine positive Fachprobe und einmalige synthetische Ressourcenmessung
@@ -1049,6 +1051,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: ./.github/actions/w15-existing-tools
+        with:
+          native-vector-diagnostic: 'true'
       - name: Vorhandene Anwendungsabhaengigkeiten aus unveraendertem Lockfile
         run: npm ci
       - name: Kleine native Profil- und Fachprobe — kein 500er Lauf
