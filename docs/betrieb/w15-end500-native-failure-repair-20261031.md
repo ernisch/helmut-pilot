@@ -9,6 +9,10 @@ keine Originaldaten und keine Datenbank. Ein passender reproduzierbarer
 Importfehler beweist allein nicht nachträglich die Ursache eines historischen
 Laufs ohne innere Fehlerquittung.
 
+Die vorhandene `vercel.json` wird als weitere tatsächlich geladene öffentliche
+Datei unverändert mitkopiert und in der Codequalifikation gebunden. Weitere
+nur statisch vermutete Skripte werden nicht zusätzlich bereitgestellt.
+
 Die erste innere Fehlermeldung enthält ausschließlich feste Phasen,
 Fehlerkategorien, erlaubte technische Codes, begrenzte Zahlen und einen festen
 Prüfhinweis. Freie Meldungen, Stacktraces, Dateipfade, SQL, URLs, Geheimnisse und
@@ -16,6 +20,10 @@ Hashwerte privater Inhalte werden nicht weitergegeben. Nicht belegte Werte
 bleiben `UNKNOWN`. Die CAS-Zahl bezeichnet nur bereits dauerhaft bestätigte
 Vorgänge als Untergrenze; null bestätigte Vorgänge beweisen keine null
 Schreibversuche.
+
+Auch intern ausgelöste Telemetrieabbrüche schreiben den begrenzten ersten
+Fehler synchron vor ihrem Stoppsignal. Ein späterer Bereinigungsfehler ersetzt
+die ursprüngliche Ursache nicht.
 
 Ein einzelner kleiner Fehlercheckpoint erreicht den Supervisor über die
 vorhandene private Pipe vor der inneren Bereinigung. Der Supervisor erhält

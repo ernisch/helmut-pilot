@@ -7,9 +7,11 @@ import json
 import multiprocessing
 import os
 from pathlib import Path
+import subprocess
 import time
 import unittest
-from unittest.mock import Mock
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 
 def load(name):
@@ -60,6 +62,38 @@ class NativeFailureChecks(unittest.TestCase):
         self.assertEqual(public['worker']['phase'], 'end500')
         self.assertEqual(W._safe_failure(error)['runner']['nativeFailure'], native())
 
+    def test_actual_prepared_node_error_reaches_watch_pipe_supervisor_and_public_projection(self):
+        # Only public application files and a deliberately missing fictional
+        # state directory. No database, original input or 500-operation run.
+        prepared = load('test_end500_prepared_initialization')
+        fixture = prepared.PreparedInitializationChecks(); fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        source = fixture.prep / 'app/scripts/synthetik-500-w15-memory-forward.js'
+        raw = source.read_text(); marker = 'const BASE = "/tmp/w15-memory-atomic-20261028d"'
+        self.assertEqual(raw.count(marker), 1)
+        source.write_text(raw.replace(marker, 'const BASE = ' + json.dumps(str(fixture.root / CANARY))))
+        child = subprocess.run(['node','--require',str(fixture.prep/'app/scripts/lokaler-netzschutz.js'),str(source),'run'],
+            capture_output=True,timeout=15,env={**os.environ,'HELMUT_SOURCE_MODE':'off','HELMUT_STORAGE_BACKEND':'local'})
+        self.assertEqual(child.returncode, 1)
+        lines = child.stdout.splitlines(); self.assertEqual(len(lines), 1)
+        receiver, sender = multiprocessing.Pipe(duplex=False)
+        self.addCleanup(receiver.close); self.addCleanup(sender.close)
+        watch = SimpleNamespace(native_failure=None,cas_records=[],first_failure=Mock(),
+            common_resources=SimpleNamespace(native_failure_observer=R._native_failure_reporter(sender)))
+        with patch.object(prepared.F.M, 'save'):
+            prepared.F.Watch.observe_line(watch, lines[0], 'run')
+        watch.first_failure.assert_not_called()
+        final = R._worker_failure(W.WorkflowRejected('end500', native_failure=watch.native_failure), 'WORKER_RESULT_REJECTED')
+        sender.send_bytes(R._encode(R._failure_packet(final), R.MAX_RESULT))
+        with self.assertRaises(R.RunnerStartError) as caught:
+            R._monitor_child(F.Child(alive=False),receiver,sender,Mock(),time.monotonic()+5,native_failure={})
+        public = W._safe_failure(caught.exception)
+        self.assertEqual(public['runner']['nativeFailure'], watch.native_failure)
+        self.assertEqual(public['runner']['nativeFailure']['stage'], 'auth-fixture')
+        self.assertEqual(public['runner']['nativeFailure']['acknowledgedCAS'], 'UNKNOWN')
+        self.assertEqual(public['cleanup']['workerExited'], 'PASS')
+        self.assertNotIn(CANARY, json.dumps(public))
+
     def test_early_error_survives_worker_signal_without_final_report(self):
         error, state = self.monitor([frame()], close_sender=True, exitcode=-9)
         self.assertEqual(state['value'], native())
@@ -71,10 +105,16 @@ class NativeFailureChecks(unittest.TestCase):
         self.assertEqual(error.cleanup['parentEmpty'], 'UNKNOWN')
 
     def test_first_frame_survives_resource_rejection_and_cleanup_close_failure(self):
-        guard = Mock(side_effect=R.RunnerStartError('worker', runner={'reason':'PARENT_READBACK_REJECTED'}))
+        memory = {'configuredLimitBytes':4999999488,'kernelLifetimePeakBytes':3100000000,'currentBytes':2900000000,
+            'swapMaximumBytes':0,'swapCurrentBytes':0,'lastReadbackValid':False,
+            'events':{'max':0,'oom':0,'oom_kill':0,'oom_group_kill':0}}
+        guard = Mock(side_effect=R.RunnerStartError('worker', runner={'reason':'PARENT_READBACK_REJECTED',
+            'memory':memory,'memorySource':'CURRENT_REJECTED_READBACK'}))
         error, _ = self.monitor([frame()], guard=guard, close_failure=True)
         self.assertEqual(error.runner['nativeFailure'], native())
         self.assertEqual(error.runner['secondaryReason'], 'PARENT_READBACK_REJECTED')
+        self.assertEqual(error.runner['memory'], memory)
+        self.assertEqual(error.runner['memorySource'], 'CURRENT_REJECTED_READBACK')
         self.assertEqual(error.cleanup['workerIPCClosed'], 'UNKNOWN')
         self.assertNotIn(CANARY, json.dumps(error.safe_failure))
 
