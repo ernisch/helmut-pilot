@@ -138,6 +138,11 @@ def capacity_phase(resources,name):
     if getattr(resources,'end_capacity_diagnostic',False):
         resources.phase_observer('capacity-'+name)
 
+def backup_phase(resources,name):
+    assert name in ('backup-collect','backup-seal','backup-postcheck')
+    observer=getattr(resources,'phase_observer',None)
+    if observer is not None:observer(name)
+
 class Watch(M.Supervisor):
     def __init__(self,cgroup):
         self.backup_runner=None;self.common_resources=None;self.disk_guard=None
@@ -365,7 +370,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
     assert review['growthAnalysisSHA256']==hashlib.sha256(growth_path.read_bytes()).hexdigest()
     assert not WORK.exists(),'w15-forward-once-only'
     os.umask(0o077);WORK.mkdir(mode=0o700)
-    created=False;owned_id=None;seeded=False;w=None;failure=None;result=None;zero=False;stop_failures=[];zero_check_failure=None;service_closure=None;final_audit=None;database_export=None;backup_result=None;sealed_backup=None
+    created=False;owned_id=None;seeded=False;w=None;failure=None;result=None;zero=False;stop_failures=[];zero_check_failure=None;service_closure=None;final_audit=None;database_export=None;backup_result=None;sealed_backup=None;backup_stage=None;backup_failure_phase=None
     try:
         if inputs is not None:
             for name,raw in [('CURRENT_SOURCE_REVIEW.SAFE.json',inputs.source_review_bytes()),
@@ -496,7 +501,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
         dry_result=json.loads(staged_dry)
         assert dry_result['status']=='PASS_INERT_MEMORY_SERVICE_DRY'and dry_result['database']==DB and dry_result['HTTP']==dry_result['childStarts']==0
         M.save('SERVICE_STAGED_DRY.SAFE.json',dry_result)
-        M.docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --max-old-space-size='+str(BUDGET['nodeOldSpaceMiB'])+' --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/synthetik-500-w15-auth-transport-probe.js --serve-memory >'+BASE+'/state/gateway.PRIVATE.log 2>&1')
+        M.docker('exec','--user','1000:1000','-d',CONTAINER,'sh','-c','umask 077; env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --max-old-space-size='+str(BUDGET['nodeOldSpaceMiB'])+' --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/synthetik-500-w15-auth-transport-probe.js --serve-memory >'+BASE+'/state/gateway.PRIVATE.log 2>&1')
         for _ in range(120):
             r=subprocess.run(M.DOCKER+['exec',CONTAINER,'test','-f',BASE+'/state/gateway.PRIVATE.json'],env=M.ENV,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
             if r.returncode==0:break
@@ -647,11 +652,13 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
                       owned_id,result_counts={'authCAS':len(w.cas_records),'usageRows':final_audit['fullLogicalUsageRows'],'nativePostimages':final_audit['totalExactPostimages']})
                     common_resources.begin_backup(proof)
                 run_root=WORK.parent
+                backup_stage='backup-collect';backup_phase(common_resources,backup_stage)
                 backup_result=_runtime_module('runtime_backup').collect_backup(
                   inputs.backup_context(),expected_context=inputs.backup_context(),
                   input_files=inputs.backup_input_files(),work=WORK,prepared=PREP,
                   provenance_files=inputs.backup_provenance_files(),destination=run_root/'backup',
                   guard=common_resources.sample)
+                backup_stage='backup-seal';backup_phase(common_resources,backup_stage)
                 cipher_root=run_root/'cipher';cipher_root.mkdir(mode=0o700)
                 seal=_runtime_module('runtime_backup').S
                 public_key=ROOT/'docs/betrieb/belege/w15-end500-transfer-20261029/receiver-public.asc'
@@ -663,8 +670,10 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
                   run_id=context['runId'],input_manifest_sha256=context['inputManifestSHA'],
                   output=str(cipher_root/'end500-full.PRIVATE.gpg'),guard=common_resources.sample)
                 if backup_completion is not None:
+                    backup_stage=None # The completion hook retains its own first closed phase.
                     backup_completion(forward=sys.modules[__name__], inputs=inputs, resources=common_resources,
                         collection=backup_result, sealed=sealed_backup, cipher=cipher_root/'end500-full.PRIVATE.gpg')
+                backup_stage='backup-postcheck';backup_phase(common_resources,backup_stage)
                 final_common=common_resources.safe_summary()
                 receipt={'status':'PASS_LOCAL_BACKUP_BYTES_ONLY_RESTORE_AND_REMOTE_PENDING',
                   'sealed':sealed_backup,'finalCommonParent':final_common,'databaseRestoreObserved':False,
@@ -674,6 +683,8 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
                     os.chmod(output.name,0o600);json.dump(receipt,output);output.write('\n');output.flush();os.fdatasync(output.fileno())
                 common_resources.sample()
             except BaseException as error:
+                if failure is None and not getattr(w,'native_failure',None) and backup_failure_phase is None:
+                    backup_failure_phase=backup_stage
                 failure=failure or {'type':type(error).__name__,'reason':'w15-complete-backup-or-common-closure-failed-or-unknown'}
             # Outside the frozen archive tree, exclusive and durable. A later
             # closure failure never leaves a durable full-lifetime RAM PASS.
@@ -688,6 +699,8 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
                     os.chmod(output.name,0o600);json.dump(closing,output);output.write('\n');output.flush();os.fdatasync(output.fileno())
                 common_resources.sample()
             except BaseException as error:
+                if failure is None and not getattr(w,'native_failure',None) and backup_failure_phase is None:
+                    backup_failure_phase='backup-postcheck'
                 failure=failure or {'type':type(error).__name__,'reason':'w15-final-closure-receipt-or-kernel-unconfirmed'}
     status=('LOCAL_END500_WORK_AND_CIPHER_ONLY_ACCEPTANCE_PENDING'if inputs is not None else'PASS')if not failure and zero else'FAIL_OR_UNKNOWN'
     final_public={'status':status,'failure':failure,'zero':zero}
@@ -696,6 +709,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
     if failure or not zero:
         error=SystemExit(1)
         if w and w.native_failure is not None:error.native_failure=w.native_failure
+        if backup_failure_phase is not None:error.backup_failure_phase=backup_failure_phase
         raise error
 if __name__=='__main__':
     assert sys.argv[1:]in [['--prepare-only'],['--run']],'w15-memory-forward-explicit-action'

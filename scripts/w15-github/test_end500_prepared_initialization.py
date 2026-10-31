@@ -154,7 +154,7 @@ console.log(JSON.stringify(H.project(e,{stage:'server-import',acknowledgedCAS:0}
         final = main.body[-1]
         self.assertIsInstance(final, ast.If)
         failure = {'schema': 'FICTIONAL_NATIVE_ERROR_BINDING'}
-        scope = {'failure': True, 'zero': False, 'w': SimpleNamespace(native_failure=failure)}
+        scope = {'failure': True, 'zero': False, 'w': SimpleNamespace(native_failure=failure), 'backup_failure_phase': None}
         with self.assertRaises(SystemExit) as caught:
             exec(compile(ast.fix_missing_locations(ast.Module(body=[final], type_ignores=[])), 'actual-final-native-error-transfer', 'exec'), scope)
         self.assertEqual(caught.exception.code, 1)
