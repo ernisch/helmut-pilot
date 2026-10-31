@@ -68,6 +68,24 @@ class ReceiptChecks(unittest.TestCase):
             with self.subTest(key=key),self.assertRaises(AssertionError):
                 P.prepare({**self.report,key:value},self.env)
 
+    def test_partial_progress_survives_safe_check_and_first_failure_notice(self):
+        progress={'requestedProfiles':500,'lastConfirmedWorkloadProgress':{
+            'schema':'helmut-synthetic500-resource-diagnostic/1','nonce':'12345678-1234-4123-8123-123456789abc',
+            'requestedProfiles':500,'sequence':25,'phase':'work','operation':'briefing-build',
+            'provisionedProfiles':500,'activatedProfiles':500,'activeCohortReadbacks':99,'sourceDocumentsSaved':384,
+            'understoodCases':96,'matchingProfiles':1,'decisionProfiles':1,'positiveProfileResults':0,
+            'deactivatedProfiles':0,'finalActiveProfiles':'UNKNOWN'},'observedMonotonicNS':123000,
+            'sample':20,'meaning':'PARTIAL_PROGRESS_NOT_COMPLETION_PROOF'}
+        report={**self.report,'workloadProgress':[progress],'workloadProgressUnknownCounts':[],
+            'firstFailure':{'phase':'synthetic500','code':'COMMON_PARENT_REJECTED'},'full500Completed':False}
+        value=P.prepare(report,self.env)
+        published=json.loads(value['output']['text'].split('```json\n')[1].rsplit('\n```',1)[0])
+        self.assertEqual(published['workloadProgress'],[progress])
+        notice=P.compact_notice(report)
+        self.assertIn('briefing-build',notice);self.assertIn('COMMON_PARENT_REJECTED',notice)
+        self.assertIn('"positiveProfileResults":0',notice);self.assertNotIn(self.env['GITHUB_TOKEN'],notice)
+        self.assertFalse(published['full500Completed'])
+
     def test_arbitrary_top_and_nested_fields_cannot_publish_private_content(self):
         for report in ({**self.report, 'note': 'FICTIONAL_PRIVATE_CONTENT'},
                 {**self.report, 'components': {'application': {'note': 'FICTIONAL_PRIVATE_CONTENT'}}}):

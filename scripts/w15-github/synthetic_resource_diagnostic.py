@@ -39,6 +39,9 @@ RECEIPT_MAX = 65536
 WORKLOAD_SCHEMA = 'helmut-synthetic500-resource-diagnostic/1'
 WORKLOAD_PHASES = frozenset(('configuration','prepare-database','services','dataset','provision',
     'activate','understanding','work','readback','deactivate','closed'))
+PROGRESS_OPERATIONS = frozenset(('idle','profile-provision','profile-activation','active-cohort-readback',
+    'source-save','understand','match','decide','briefing-build','briefing-store','full-readback',
+    'profile-deactivation','closed'))
 ASSERTIONS = frozenset(('diagnostic-native-vector-bootstrap-required','diagnostic-native-vector-version-required','diagnostic-native-postgres-version-required','diagnostic-fresh-database-required','diagnostic-ca-required-before-node-start',
     'diagnostic-stop-or-deadline','diagnostic-exact-active-cohort-required','diagnostic-initial-zero-required',
     'diagnostic-provision-refused','diagnostic-positive-native-understanding-required','diagnostic-native-matches-required',
@@ -222,6 +225,28 @@ def workload_result(value, nonce, count):
     return dict(value)
 
 
+def workload_progress(value, nonce, count):
+    """A last observed partial frame is never an APP_RESULT or a completion proof."""
+    counters = {'provisionedProfiles':count, 'activatedProfiles':count,
+        'activeCohortReadbacks':10000, 'sourceDocumentsSaved':12 if count==SMALL_COUNT else 384,
+        'understoodCases':SMALL_COUNT if count==SMALL_COUNT else 96, 'matchingProfiles':count,
+        'decisionProfiles':count, 'positiveProfileResults':count, 'deactivatedProfiles':count}
+    keys = {'schema','nonce','requestedProfiles','sequence','phase','operation','finalActiveProfiles'} | set(counters)
+    need(type(value) is dict and set(value)==keys and value['schema']==WORKLOAD_SCHEMA
+         and value['nonce']==nonce and type(value['requestedProfiles']) is int
+         and value['requestedProfiles']==count, 'closure', 'WORKLOAD_PROGRESS_SCHEMA')
+    need(type(value['sequence']) is int and 1<=value['sequence']<=10000
+         and value['phase'] in WORKLOAD_PHASES and value['operation'] in PROGRESS_OPERATIONS,
+         'closure','WORKLOAD_PROGRESS_SCHEMA')
+    for key,maximum in counters.items():
+        need(type(value[key]) is int and 0<=value[key]<=maximum, 'closure','WORKLOAD_PROGRESS_SCHEMA')
+    need(value['positiveProfileResults']<=value['decisionProfiles']<=value['matchingProfiles']<=count
+         and value['deactivatedProfiles']<=value['activatedProfiles']<=value['provisionedProfiles']
+         and (value['finalActiveProfiles']=='UNKNOWN' or type(value['finalActiveProfiles']) is int
+              and value['finalActiveProfiles']==0), 'closure','WORKLOAD_PROGRESS_SCHEMA')
+    return dict(value)
+
+
 def request_for_preflight(expected):
     return {'schema':SCHEMA,'scope':SMALL_SCOPE,'expectedCommit':expected,'nonce':str(uuid.uuid4()),
             'profiles':SMALL_COUNT,'attempt':1,'maxSeconds':WALL}
@@ -305,7 +330,9 @@ class Supervisor:
         self.cleanup = {}
         self.cleaning = False; self.container_attempted = False
         self.workload_results = []; self.early_failure = None; self.common_failure_memory = None
+        self.common_failure_memory_seen = False
         self.common_kernel = None; self.phase_metrics = {}; self.bound_identities = [];self.datasets=[];self.services_results=[]
+        self.progress_target = None; self.workload_progress = {}; self.progress_unknown = set()
 
     def guard(self):
         need(self.cleaning or time.monotonic() < self.deadline, self.phase, 'WALL_LIMIT')
@@ -317,7 +344,11 @@ class Supervisor:
             need(self.common_last['configuredLimit'] == str(HOST_HARD), self.phase, 'COMMON_LIMIT')
         except BaseException as error:
             deferred = error
-            self.common_failure_memory = P.R.closed_failure_memory(getattr(error,'failure_memory',None))
+            # Cleanup reuses this guard. Preserve the first failing memory
+            # observation; later kernel/closure samples remain separately visible.
+            if not self.common_failure_memory_seen:
+                self.common_failure_memory_seen = True
+                self.common_failure_memory = P.R.closed_failure_memory(getattr(error,'failure_memory',None))
         self.samples += 1
         parent_fd=self._parent_fd()
         try:self.common_kernel=C._kernel(parent_fd)
@@ -484,6 +515,29 @@ class Supervisor:
         detail=failure_detail(value['failureDetail'])
         if self.early_failure is None:self.early_failure={'phase':value['phase'],'failureDetail':detail}
 
+    def collect_workload_progress(self):
+        """Read in the existing supervisor loop, before any cleanup can run."""
+        if self.progress_target is None:return
+        result,count = self.progress_target
+        try:
+            frame=workload_progress(read_private(result/'APP_PROGRESS.SAFE.json',maximum=8192),self.ctx['nonce'],count)
+            previous=self.workload_progress.get(count)
+            if previous is not None:
+                old=previous['lastConfirmedWorkloadProgress']
+                need(frame['sequence']>=old['sequence'],'closure','WORKLOAD_PROGRESS_SCHEMA')
+                if frame['sequence']==old['sequence']:need(frame==old,'closure','WORKLOAD_PROGRESS_SCHEMA')
+                for key in ('provisionedProfiles','activatedProfiles','activeCohortReadbacks','sourceDocumentsSaved',
+                            'understoodCases','matchingProfiles','decisionProfiles','positiveProfileResults','deactivatedProfiles'):
+                    need(frame[key]>=old[key],'closure','WORKLOAD_PROGRESS_SCHEMA')
+            self.workload_progress[count]={'requestedProfiles':count,'lastConfirmedWorkloadProgress':frame,
+                'observedMonotonicNS':time.monotonic_ns(),'sample':self.samples,
+                'meaning':'PARTIAL_PROGRESS_NOT_COMPLETION_PROOF'}
+            self.progress_unknown.discard(count)
+        except Exception:
+            # Missing, torn, foreign, or malformed metadata is UNKNOWN and never
+            # masks the first resource/worker failure or legitimizes acceptance.
+            self.progress_unknown.add(count)
+
     def prepare_config(self, count):
         mode = 'preflight' if count == SMALL_COUNT else 'synthetic500'
         db = 'resource_diag_preflight' if count == SMALL_COUNT else 'resource_diag500'
@@ -625,12 +679,15 @@ class Supervisor:
         ca=binding['caPath'];need(ca==config['resultRoot']+'/tls/ca.pem','services','CA_PATH')
         hostca=self.work/Path(ca).relative_to(BASE);v=hostca.lstat();need(stat.S_ISREG(v.st_mode) and v.st_uid==1000 and stat.S_IMODE(v.st_mode)==0o600,'services','CA_FILE')
         self.connections(config['database']['name'])
+        self.progress_target=(result,count)
         child=self.launch_bound('--preflight-klein' if count==SMALL_COUNT else '--app',ca_path=ca,role='application',full500_release=count==500)
         self.phase='preflight-small' if count==SMALL_COUNT else 'synthetic500'
         while child['process'].poll() is None:
+            self.collect_workload_progress()
             self.guard()
             if time.monotonic()-self.last_connection_time>=2:self.connections(config['database']['name'])
             time.sleep(.1)
+        self.collect_workload_progress()
         self.await_exit(child,self.phase,check=False)
         self.read_workload_failure(result)
         value=workload_result(read_private(result/'APP_RESULT.SAFE.json'),self.ctx['nonce'],count)
@@ -713,6 +770,8 @@ class Supervisor:
         except BaseException as error:
             self.first=closed_failure(error,self.phase)
             if self.early_failure is not None:self.first['workloadFailure']=self.early_failure
+            try:self.collect_workload_progress()
+            except BaseException:pass  # A later stop cannot displace the recorded first failure.
         finally:
             last_work_phase=self.phase
             try:self.close()
@@ -742,6 +801,8 @@ class Supervisor:
             'lastConnectionSample':self.connection_last,'cleanup':self.cleanup,
             'completedScenarios':len(results),'workloadResults':self.workload_results,'syntheticDatasetCoverage':self.datasets,
             'servicesResults':self.services_results,
+            'workloadProgress':list(self.workload_progress.values()),
+            'workloadProgressUnknownCounts':sorted(self.progress_unknown),
             'full500ReleaseAttempted':(self.root/'FULL500_RELEASE_ATTEMPT.SAFE.json').exists(),
             'full500Completed':any(x['requestedProfiles']==500 and x['status']=='PASS_SYNTHETIC_DIAGNOSTIC_WORKLOAD_ONLY' for x in results),
             'pureApplicationBytes':'UNKNOWN','scopeMeaning':'APPLICATION_WITH_INSEPARABLE_HARNESS_CHARGED_GROUP',

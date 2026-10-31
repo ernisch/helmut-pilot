@@ -2,7 +2,20 @@
 
 ## Einmalige originalfreie 500er Ressourcen-Diagnose (31.10.2026)
 
-Ausdrücklicher Betreiberauftrag: genau eine isolierte Diagnose mit 500 gleichzeitig aktiven vollsynthetischen Profilen und lokaler KI-Simulation. Der [Diagnoseanschluss](betrieb/w15-original-free-resource-diagnostic-20261031.md) verbindet tatsächliche Fachverarbeitung mit getrennten Gruppen: App einschließlich Testtreiber 1.999.998.976 B, DB-Dienste 948.191.232 B/60 Verbindungen, Testwerkzeuge separat; gemeinsamer Schutz 4.999.999.488 B und mindestens 2.147.483.648 B Hostreserve, Swap/OOM 0. Vorher positive native Kleinstprobe für Bundestag/Berlin/Brandenburg. Messwerte und Verbrauch der Einmalfreigabe sind ausschließlich in der laufgebundenen SAFE-CI-Quittung zu belegen; keine Wiederholung daraus ableiten. Keine Originale, Änderung offizieller RAM-Verträge, Production-Wirkung oder Modellkosten. End500-/Mock500-Starttore bleiben erhalten; nur dieser gesonderte Diagnoseumfang ist freigegeben.
+**Tatsächlicher Einzellauf FAIL:** [41239213884](https://github.com/ernisch/helmut-pilot/actions/runs/41239213884), Kopf `d56e97b37468080aaff6d4bd47b045ba072a2c6f`, 383,989 s einschließlich Bereinigung. Unabhängig geprüft; Einmalfreigabe verbraucht, kein Retry. 500 gleichzeitig aktive vollsynthetische Profile sind durch native ID-Kontrollen vor 96 erfolgreichen lokalen KI-Antworten belegt. Vollständiger 500er Ergebnisabschluss und abschließende Profilflags 0 bleiben UNKNOWN; bestätigter Prozessstillstand ersetzt diese Profilprüfung nicht. Die erfolgreiche 3er Vorprobe ist keine 500er Abnahme.
+
+| Gruppe | Kernel-Lebenszeitpeak B | CPU-Zeit s | Befund bis Abbruch |
+| --- | ---: | ---: | --- |
+| App einschließlich Testtreiber | 408.981.504 | 166,158 | unter Laborlimit |
+| PostgreSQL + PostgREST + SQL-Messclients | 948.191.232 | 217,695 | DB-Laborlimit erreicht, 38 max-Ereignisse |
+| Testwerkzeuge / lokale Simulatoren | 450.027.520 | 61,225 | separat im gemeinsamen Parent |
+| Gemeinsamer Parent | 1.756.499.968 | 445,078 | kein belegter 5-GB-Engpass |
+
+Die DB-max-Ereignisse propagieren zum ersten Fehler `COMMON_PARENT_REJECTED`; keine OOM-Ereignisse. Swap/OOM 0, höchster Verbindungs-Sample 6/60, letzter gültiger Hostreserve-Sample 14.578.847.744 B. DB-Kategorie `file` maximal abgetastet 597.323.776 B einschließlich Shared Memory, `anon` 331.218.944 B; verschiedene Maxima nicht addieren. Größte Belastung in `synthetic500`, genaue innere Arbeitsphase/Peakzusammensetzung, echte Verbindungsspitze und Hostminimum UNKNOWN. PostgreSQL-/PostgREST-Einzelverbrauch und ihr gemeinsames Hosted-Micro-RAM-Budget bleiben UNKNOWN; Dateicache ist kein bewiesener irreduzibler PostgreSQL-Arbeitssatz.
+
+**Gezielter Diagnosesprint auf PR #1004:** Erster Speicherfehlersnapshot wird vor Überschreiben durch Bereinigungsnachkontrollen geschützt. Ein atomarer begrenzter Fortschrittsdatensatz über den bestehenden SAFE-Kanal erhält innere Arbeitsphase/Operation und ausschließlich bestätigte Zähler auch ohne Workerabschluss; Teilfortschritt ist keine Abnahme. Gezielte synthetische Gegenproben bestanden. Pflicht-CI und unabhängiger Endreview sind an den tatsächlichen neuen PR-Kopf zu binden und bleiben vor einer neuen Laufentscheidung zwingend. [Messbilanz, Prüfungen und Anbieterbelege](betrieb/w15-db-memory-diagnosis-20261031.md).
+
+Unveränderte Diagnosegrenzen: App 1.999.998.976 B, DB 948.191.232 B/60 Verbindungen, Parent 4.999.999.488 B, mindestens 2.147.483.648 B Hostreserve, Swap/OOM/Max 0; höchstens 1.800 s und mindestens 512 MiB freie Platte. Keine RAM-Erhöhung, Cachemanipulation, Originale, offiziellen Vertragsänderungen, Modellkosten oder Production-Wirkung. **Nächste Aufgabe:** Nach qualifiziertem Fehlerkanal ein neues konkretes GO für genau einen Gesamtversuch entscheiden; keine Ausführung aus diesem Entwicklungssprint ableiten. End500-/Mock500-Starttore bleiben gesperrt.
 
 ## Getrennte Ressourcenmessung vorbereitet, Vertrag noch inaktiv (31.10.2026)
 

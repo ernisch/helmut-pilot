@@ -55,7 +55,95 @@ def app_result(count=500):
         'end500Acceptance':False,'mock500Acceptance':False,'productionProof':False,'executionAuthority':False,'retryAllowed':False}
 
 
+def progress(count=500):
+    return {'schema':D.WORKLOAD_SCHEMA,'nonce':NONCE,'requestedProfiles':count,'sequence':20,
+        'phase':'work','operation':'match','provisionedProfiles':count,'activatedProfiles':count,
+        'activeCohortReadbacks':4,'sourceDocumentsSaved':12 if count==3 else 384,
+        'understoodCases':3 if count==3 else 96,'matchingProfiles':1,'decisionProfiles':1,
+        'positiveProfileResults':1,'deactivatedProfiles':0,'finalActiveProfiles':'UNKNOWN'}
+
+
 class DiagnosticChecks(unittest.TestCase):
+    def test_partial_progress_is_bound_closed_and_never_a_completion_receipt(self):
+        value=progress();self.assertEqual(D.workload_progress(value,NONCE,500),value)
+        for key,bad in [('nonce','foreign'),('requestedProfiles',3),('phase','PRIVATE'),('operation','PRIVATE'),
+            ('sequence',True),('sequence',10001),('understoodCases',97),('matchingProfiles',False),
+            ('positiveProfileResults',2),('finalActiveProfiles',False)]:
+            with self.subTest(key=key),self.assertRaises(Exception):
+                D.workload_progress({**value,key:bad},NONCE,500)
+        with self.assertRaises(Exception):D.workload_progress({**value,'message':'PRIVATE_SENTINEL'},NONCE,500)
+        with self.assertRaises(Exception):D.workload_result(value,NONCE,500)
+
+    def test_partial_progress_survives_missing_worker_result_without_masking_first_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);s=D.Supervisor(state(root));s.progress_target=(root,500)
+            D.private_json(root/'APP_PROGRESS.SAFE.json',progress())
+            def cleanup():
+                # A later cleanup frame must not replace the pre-cleanup work observation.
+                path=root/'APP_PROGRESS.SAFE.json';path.unlink()
+                D.private_json(path,{**progress(),'sequence':21,'phase':'deactivate','operation':'profile-deactivation'})
+            with patch.object(s,'create_groups',side_effect=D.Rejected('synthetic500','COMMON_PARENT_REJECTED')), \
+                    patch.object(s,'close',side_effect=cleanup):
+                report=s.run()
+            self.assertEqual(report['firstFailure'],{'phase':'synthetic500','code':'COMMON_PARENT_REJECTED'})
+            self.assertEqual(report['workloadProgress'][0]['lastConfirmedWorkloadProgress'],progress())
+            self.assertEqual(report['workloadProgressUnknownCounts'],[])
+            self.assertEqual(report['workloadResults'],[]);self.assertFalse(report['full500Completed'])
+
+    def test_invalid_or_regressing_progress_is_unknown_and_keeps_last_valid_frame(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);s=D.Supervisor(state(root));s.progress_target=(root,500)
+            s.collect_workload_progress();self.assertEqual(s.progress_unknown,{500})
+            file=root/'APP_PROGRESS.SAFE.json';D.private_json(file,progress());s.collect_workload_progress()
+            self.assertEqual(s.progress_unknown,set())
+            for bad in [{**progress(),'sequence':19},{**progress(),'matchingProfiles':0},
+                        {**progress(),'nonce':'foreign'},{**progress(),'message':'PRIVATE_SENTINEL'}]:
+                file.unlink();D.private_json(file,bad);s.collect_workload_progress()
+                self.assertEqual(s.progress_unknown,{500})
+                self.assertEqual(s.workload_progress[500]['lastConfirmedWorkloadProgress'],progress())
+
+    def test_first_memory_failure_snapshot_is_not_overwritten_by_cleanup_guard(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            s=D.Supervisor(state(tmp));s.cleaning=True
+            first=RuntimeError('FIRST');first.failure_memory={'observedMonotonicNS':100}
+            cleanup=RuntimeError('CLEANUP');cleanup.failure_memory={'observedMonotonicNS':200}
+            fd=os.open(tmp,os.O_RDONLY|os.O_DIRECTORY)
+            try:
+                with patch.object(D.P,'read_parent',side_effect=[first,cleanup]), \
+                    patch.object(D.P.R,'closed_failure_memory',side_effect=lambda value:value), \
+                    patch.object(s,'_parent_fd',side_effect=lambda:os.dup(fd)), \
+                    patch.object(D.C,'_kernel',return_value=kernel(D.HOST_HARD)):
+                    with self.assertRaises(RuntimeError):s.guard()
+                    s.phase='closure'
+                    with self.assertRaises(RuntimeError):s.guard()
+                self.assertEqual(s.common_failure_memory,first.failure_memory)
+                self.assertIn('closure',s.phase_metrics)
+            finally:os.close(fd)
+
+    def test_progress_metadata_does_not_swallow_stop_and_unknown_first_memory_stays_unknown(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            s=D.Supervisor(state(tmp));s.progress_target=(Path(tmp),500)
+            with patch.object(D,'read_private',side_effect=KeyboardInterrupt):
+                with self.assertRaises(KeyboardInterrupt):s.collect_workload_progress()
+            self.assertEqual(s.progress_unknown,set())
+            with patch.object(s,'create_groups',side_effect=D.Rejected('synthetic500','COMMON_PARENT_REJECTED')), \
+                    patch.object(s,'collect_workload_progress',side_effect=KeyboardInterrupt),patch.object(s,'close'):
+                report=s.run()
+            self.assertEqual(report['firstFailure'],{'phase':'synthetic500','code':'COMMON_PARENT_REJECTED'})
+            s.cleaning=True;first=RuntimeError('FIRST_UNKNOWN')
+            later=RuntimeError('LATER');later.failure_memory={'observedMonotonicNS':200}
+            fd=os.open(tmp,os.O_RDONLY|os.O_DIRECTORY)
+            try:
+                with patch.object(D.P,'read_parent',side_effect=[first,later]), \
+                    patch.object(D.P.R,'closed_failure_memory',side_effect=lambda value:value), \
+                    patch.object(s,'_parent_fd',side_effect=lambda:os.dup(fd)), \
+                    patch.object(D.C,'_kernel',return_value=kernel(D.HOST_HARD)):
+                    with self.assertRaises(RuntimeError):s.guard()
+                    self.assertTrue(s.common_failure_memory_seen)
+                    with self.assertRaises(RuntimeError):s.guard()
+                self.assertIsNone(s.common_failure_memory)
+            finally:os.close(fd)
+
     @unittest.skipUnless(os.geteuid() == 0, 'ownership counterexample needs the isolated root test user')
     def test_root_verifies_runner_owned_public_checkout_without_global_git_trust(self):
         with tempfile.TemporaryDirectory(prefix='public-diagnostic-git-owner-') as tmp:
