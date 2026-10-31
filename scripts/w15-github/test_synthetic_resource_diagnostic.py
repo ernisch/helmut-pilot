@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import select
+import signal
 import subprocess
 import tempfile
 import time
@@ -64,6 +65,30 @@ def progress(count=500):
 
 
 class DiagnosticChecks(unittest.TestCase):
+    def test_actual_node_progress_survives_sigkill_and_crosses_supervisor_without_app_result(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);s=D.Supervisor(state(root));s.progress_target=(root,3)
+            source="""
+const D=require('./scripts/synthetik-500-resource-diagnostic');
+const p=D.appProgress({resultRoot:process.argv[1],count:3,nonce:process.argv[2]});
+for(let i=0;i<3;i++){p.confirmed('provisionedProfiles');p.confirmed('activatedProfiles');}
+for(let i=0;i<12;i++)p.confirmed('sourceDocumentsSaved');
+for(let i=0;i<3;i++)p.confirmed('understoodCases');
+p.confirmed('matchingProfiles');p.confirmed('decisionProfiles');
+p.before('work','briefing-build');process.kill(process.pid,'SIGKILL');
+"""
+            child=subprocess.run(['node','-e',source,str(root),NONCE],cwd=D.REPO,
+                env=os.environ.copy(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=5)
+            self.assertEqual(child.returncode,-signal.SIGKILL)
+            self.assertFalse((root/'APP_RESULT.SAFE.json').exists())
+            with patch.object(s,'create_groups',side_effect=D.Rejected('synthetic500','COMMON_PARENT_REJECTED')),patch.object(s,'close'):
+                report=s.run()
+            frame=report['workloadProgress'][0]['lastConfirmedWorkloadProgress']
+            self.assertEqual(frame['requestedProfiles'],3);self.assertEqual(frame['operation'],'briefing-build')
+            self.assertEqual(frame['understoodCases'],3);self.assertEqual(frame['decisionProfiles'],1)
+            self.assertEqual(frame['positiveProfileResults'],0);self.assertEqual(frame['finalActiveProfiles'],'UNKNOWN')
+            self.assertEqual(report['workloadResults'],[]);self.assertFalse(report['full500Completed'])
+
     def test_partial_progress_is_bound_closed_and_never_a_completion_receipt(self):
         value=progress();self.assertEqual(D.workload_progress(value,NONCE,500),value)
         for key,bad in [('nonce','foreign'),('requestedProfiles',3),('phase','PRIVATE'),('operation','PRIVATE'),

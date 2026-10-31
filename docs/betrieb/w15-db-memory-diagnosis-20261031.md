@@ -165,6 +165,21 @@ Der neutrale SAFE-Check und seine bestehende Fehlerannotation erhalten den
 Teilfortschritt auch ohne Worker-Abschluss. Teilfortschritt ersetzt niemals
 `APP_RESULT`, Ergebnisvollständigkeit oder die native Nullprofilprüfung.
 
+Die Operation beschreibt den zuletzt bestätigten Eintritt in einen Arbeitsschritt,
+nicht dessen erfolgreichen Abschluss. Die Zähler enthalten nur bereits
+bestätigte Ergebnisse. Bei einem abrupten Kill kann ein Erfolg nach dem letzten
+persistierten Frame fehlen; der Frame ist dann eine sichere Untergrenze.
+Der zusätzliche Dateischreibaufwand gehört zur gemessenen App-/Treibergruppe.
+
+Gezielte Entwicklungsnachweise: 26 Python-Fälle (25 PASS, ein bestehender
+rootabhängiger Fall lokal SKIP), 9 Publisher-Fälle, 23 kleine JS-Testgruppen und
+4 Prüfungen der CURRENT_STATE-Größe bestanden. Darunter ein tatsächlich per
+SIGKILL beendeter originalfreier Node-Metadatenworker ohne `APP_RESULT`, dessen
+letzte gültige Phase/Zähler vom Supervisor erhalten werden. Keine Datenbank oder
+500er Ausführung in diesen Gegenproben. Pflicht-CI und unabhängiger Review müssen
+auf dem tatsächlichen [PR-Kopf #1004](https://github.com/ernisch/helmut-pilot/pull/1004)
+belegt sein; diese Entwicklung erteilt keine Ausführungsfreigabe.
+
 ## Entscheidung und nächste Freigabegrenze
 
 **Am besten belegt:** Die gemeinsame DB-Dienstgruppe erreichte ihr enges
