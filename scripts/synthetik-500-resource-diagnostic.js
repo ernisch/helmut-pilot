@@ -7,6 +7,23 @@ const SCHEMA="helmut-synthetic500-resource-diagnostic/1";
 const PHASES=new Set(["configuration","prepare-database","services","dataset","provision","activate","understanding","work","readback","deactivate","closed"]);
 const ASSERTIONS=new Set(["diagnostic-fresh-database-required","diagnostic-ca-required-before-node-start","diagnostic-stop-or-deadline","diagnostic-exact-active-cohort-required","diagnostic-initial-zero-required","diagnostic-provision-refused","diagnostic-positive-native-understanding-required","diagnostic-native-matches-required","diagnostic-native-decisions-required","diagnostic-positive-current-briefing-required","diagnostic-cleanup-only-newly-owned-profiles","diagnostic-local-preload-required"]);
 ASSERTIONS.add("diagnostic-synthetic-profile-selector-required");
+ASSERTIONS.add("diagnostic-required-schema-migration-missing");ASSERTIONS.add("diagnostic-schema-migration-list-unique");
+// Only the current application seams used below: profiles/RLS, sources/KO,
+// budgets/locks, matching audit, Understanding leases/CAS and usage recording.
+// Historical cohort gates/timers/daybooks are separate operator installations.
+const DIAGNOSTIC_MIGRATIONS=Object.freeze([
+  "20260711_presale_hardening.sql","20260712_mandate_profile_completeness.sql","20260712_mandate_profile_fields.sql",
+  "20260712_tenant_rls_policies.sql","20260713_source_architecture.sql","20260714_ko_classification.sql",
+  "20260715_dedup_findings.sql","20260716_gate_shadow_telemetry.sql","20260716_llm_usage_source_attribution.sql",
+  "20260717_llm_budget_reservation.sql","20260718_source_crawl_telemetry.sql","20260719_pipeline_lock_atomic.sql",
+  "20260720_crawl_runs_relational.sql","20260721_security_advisor_hardening.sql","20260727_process_runs_relational.sql",
+  "20260728_matching_audit.sql","20260808_llm_budget_fairness.sql","20260813090100_verteilte_grenzen.sql",
+  "20260814180000_verstehen_cas.sql","20260823043633_verstehen_aufgeben_erneut_freigegeben.sql","20260902121500_llm_usage_relational.sql"]);
+function diagnosticMigrations(files){
+  assert(Array.isArray(files));const available=new Map();for(const file of files){assert(path.isAbsolute(file));
+    const name=path.basename(file);assert(!available.has(name),"diagnostic-schema-migration-list-unique");available.set(name,file);}
+  return DIAGNOSTIC_MIGRATIONS.map(name=>{assert(available.has(name),"diagnostic-required-schema-migration-missing");return available.get(name);});
+}
 const CODES=new Set(["ERR_ASSERTION","MODULE_NOT_FOUND","ERR_MODULE_NOT_FOUND","EACCES","EPERM","ENOENT","EEXIST","ECONNREFUSED","ETIMEDOUT","EPIPE","ENOTFOUND","ECONNRESET"]);
 const SQLSTATES=new Set(["42P01","42703","42883","42501","23505","23503","3D000","28P01","57014","22023","42601","XX000","08006"]);
 function nativeStatus(value){return["saved","skipped","failed","disabled"].includes(value)?value:"unknown";}
@@ -75,7 +92,7 @@ async function prepareDatabase(c,bootstrap=null){
   assert.equal(typeof Z.baueLokalesSchema,"function");assert.equal(typeof Z.VORBEREITUNG_SQL,"string");assert.equal(typeof Z.NACHBEREITUNG_SQL,"string");
   const root=path.join(c.resultRoot,"schema");fs.mkdirSync(root,{mode:0o700});const files=Z.baueLokalesSchema(root);
   psql(c,Z.VORBEREITUNG_SQL);psql(c,fs.readFileSync(files.schemaDatei,"utf8"));
-  for(const file of files.migrationen)psql(c,fs.readFileSync(file,"utf8"));
+  for(const file of diagnosticMigrations(files.migrationen))psql(c,fs.readFileSync(file,"utf8"));
   psql(c,Z.NACHBEREITUNG_SQL);
   psql(c,"insert into public.helmut_store(id,data)values('main-auth','{\"users\":[],\"llmUsage\":[]}'::jsonb)on conflict(id)do nothing;");
   assert.equal(psql(c,"select count(*)from public.mandate_profiles;"),"0");
@@ -219,4 +236,4 @@ async function main(argv=process.argv.slice(2)){
 function osGuard(){const guard=require("./lokaler-netzschutz");assert.deepEqual(guard.pruefe(process.env),[]);}
 if(require.main===module)main().catch(error=>{console.error(JSON.stringify({schema:SCHEMA,status:"FAIL_OR_UNKNOWN_DIAGNOSTIC",
   ...(error.diagnosticReceipt||{phase:"configuration",failureDetail:closedFailure(error),retryAllowed:false})}));process.exitCode=1;});
-module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport};
+module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport,diagnosticMigrations};

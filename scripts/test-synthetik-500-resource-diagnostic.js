@@ -22,6 +22,22 @@ function fake(root,{failWork=false,wrongActive=false,count=2}={}){
     storeResult:async()=>{counts.briefings++;return true;},count:async table=>counts[table]};
 }
 let passed=0;async function test(name,run){await run();passed++;console.log("PASS "+name);}
+async function diagnosticMigrationSelectionCase(){
+  await test("application schema selection excludes protected cohort installations and requires its dependencies",()=>{
+    const root=path.join(__dirname,"../supabase/migrations"),all=fs.readdirSync(root).filter(n=>n.endsWith(".sql")&&!/rollback/i.test(n)).map(n=>path.join(root,n));
+    const selected=D.diagnosticMigrations(all),names=selected.map(n=>path.basename(n));assert.equal(selected.length,21);
+    assert(!names.some(n=>/testfenster|end_runtime|endwaechter|eu_|current_inputs|vier_start|jobqueue/.test(n)));
+    const sql=selected.map(file=>fs.readFileSync(file,"utf8")).join("\n");
+    for(const symbol of["profil_extras","helmut_reserve_llm_call","helmut_acquire_pipeline_lock","helmut_publish_matching_run","helmut_klasse_belege","helmut_verstehen_speichere","kein_aufruf"])
+      assert(sql.includes(symbol));
+    assert(!/create extension[^;]*pg_cron|create schema helmut_end500_internal/i.test(sql));
+    const missing=all.filter(file=>!file.endsWith("20260728_matching_audit.sql"));assert.throws(()=>D.diagnosticMigrations(missing),/diagnostic-required-schema-migration-missing/);
+    assert.throws(()=>D.diagnosticMigrations([...all,selected[0]]),/diagnostic-schema-migration-list-unique/);
+    assert.deepEqual(D.diagnosticMigrations([...all,path.join(root,"20990101000000_UNAPPROVED_FUTURE.sql")]),selected);
+    const guard=fs.readFileSync(path.join(root,"20261007104720_synthetik500_unabhaengiger_endwaechter.sql"),"utf8");
+    assert(guard.includes("(select count(*) from public.mandate_profiles)<>500"));
+  });
+}
 async function localAIProjectionCase(){
   await test("local simulated AI receipt retains finite aggregate counters only",()=>{
     const value=D.localAIReport({bericht:()=>({aufrufe:3,erfolgreich:2,fehler:1,abgewiesenWegenObergrenze:0,
@@ -150,7 +166,8 @@ async function main(){
   await failureProjectionCases();
   await representativeCoverageCases();
   await localAIProjectionCase();
+  await diagnosticMigrationSelectionCase();
   console.log(passed+" PASS; synthetic unit cases only; native preflight and 500 run NOT executed");
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase};
+module.exports={main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase};
