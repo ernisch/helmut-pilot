@@ -22,6 +22,48 @@ function fake(root,{failWork=false,wrongActive=false,count=2}={}){
     storeResult:async()=>{counts.briefings++;return true;},count:async table=>counts[table]};
 }
 let passed=0;async function test(name,run){await run();passed++;console.log("PASS "+name);}
+const progressFile=root=>path.join(root,"APP_PROGRESS.SAFE.json");
+function readProgress(root){const file=progressFile(root),s=fs.lstatSync(file),raw=fs.readFileSync(file);assert(s.isFile()&&!s.isSymbolicLink()&&(s.mode&511)===384&&s.uid===process.getuid()&&s.nlink===1&&raw.length<=8192);return JSON.parse(raw);}
+async function progressChannelCases(){
+  await test("three-profile success publishes bounded atomic confirmed progress before every dependency await",async()=>{
+    const root=temp();try{const deps=fake(root,{count:3}),frames=[],c={...config(root),count:3};
+      for(const key of Object.keys(deps).filter(key=>typeof deps[key]==="function")){const run=deps[key];deps[key]=async(...args)=>{
+        const frame=readProgress(root);assert(frame.sequence>(frames.at(-1)?.sequence||0));frames.push(frame);return run(...args);};}
+      await D.workload(c,{},deps);const frame=readProgress(root);
+      assert.deepEqual(Object.keys(frame).sort(),["schema","nonce","requestedProfiles","sequence","phase","operation","provisionedProfiles","activatedProfiles","activeCohortReadbacks","sourceDocumentsSaved","understoodCases","matchingProfiles","decisionProfiles","positiveProfileResults","deactivatedProfiles","finalActiveProfiles"].sort());
+      assert.equal(frame.phase,"closed");assert.equal(frame.operation,"closed");assert.equal(frame.requestedProfiles,3);assert.equal(frame.finalActiveProfiles,0);
+      for(const key of["provisionedProfiles","activatedProfiles","understoodCases","matchingProfiles","decisionProfiles","positiveProfileResults","deactivatedProfiles"])assert.equal(frame[key],3);
+      assert.equal(frame.sourceDocumentsSaved,12);assert.equal(frame.activeCohortReadbacks,8);assert(frame.sequence<=10000);
+      assert(frames.every(f=>f.finalActiveProfiles==="UNKNOWN"));assert(!JSON.stringify(frame).includes("test-kohorte"));assert(!JSON.stringify(frame).includes("FICTIONAL"));
+    }finally{fs.rmSync(root,{recursive:true,force:true});}});
+  await test("second-profile work failure freezes its last confirmed counts despite UNKNOWN cleanup",async()=>{
+    const root=temp();try{const deps=fake(root),build=deps.build,participate=deps.participate;let attempts=0,frozen;
+      deps.build=async(...args)=>{if(++attempts===2)throw Error("FICTIONAL_PRIVATE_BUILD_CONTENT");return build(...args);};
+      deps.participate=async(id,on)=>{if(!on){frozen=fs.readFileSync(progressFile(root));throw Object.assign(Error("FICTIONAL_PRIVATE_CLEANUP"),{code:"EACCES"});}return participate(id,on);};
+      await assert.rejects(D.workload(config(root),{},deps));const frame=readProgress(root),result=JSON.parse(fs.readFileSync(path.join(root,"APP_RESULT.SAFE.json")));
+      assert.equal(frame.phase,"work");assert.equal(frame.operation,"briefing-build");assert.equal(frame.positiveProfileResults,1);assert.equal(frame.matchingProfiles,2);assert.equal(frame.decisionProfiles,2);
+      assert.equal(frame.deactivatedProfiles,0);assert.equal(frame.finalActiveProfiles,"UNKNOWN");assert.deepEqual(fs.readFileSync(progressFile(root)),frozen);
+      assert.equal(result.firstFailurePhase,"work");assert.equal(result.finalActiveProfiles,"UNKNOWN");assert(!JSON.stringify(frame).includes("FICTIONAL_PRIVATE"));
+    }finally{fs.rmSync(root,{recursive:true,force:true});}});
+  await test("signal freezes the current phase synchronously and successful cleanup cannot replace it",async()=>{
+    const root=temp();try{const deps=fake(root,{count:3}),match=deps.match;let attempts=0,frozen;
+      deps.match=async(...args)=>{if(++attempts===2){process.emit("SIGTERM");frozen=fs.readFileSync(progressFile(root));}return match(...args);};
+      await assert.rejects(D.workload({...config(root),count:3},{},deps));const frame=readProgress(root),result=JSON.parse(fs.readFileSync(path.join(root,"APP_RESULT.SAFE.json")));
+      assert.equal(frame.phase,"work");assert.equal(frame.operation,"match");assert.equal(frame.matchingProfiles,1);assert.equal(frame.positiveProfileResults,1);
+      assert.equal(frame.finalActiveProfiles,"UNKNOWN");assert.equal(frame.deactivatedProfiles,0);assert.deepEqual(fs.readFileSync(progressFile(root)),frozen);
+      assert.equal(result.finalActiveProfiles,0);assert.equal(deps.active.size,0);
+    }finally{fs.rmSync(root,{recursive:true,force:true});}});
+  await test("atomic progress never truncates an old frame or adopts an existing unsafe target",()=>{
+    const root=temp();try{const c=config(root),writer=D.appProgress(c);writer.before("dataset","idle");const before=fs.readFileSync(progressFile(root)),rename=fs.renameSync;let observed=false;
+      fs.renameSync=(from,to)=>{assert.deepEqual(fs.readFileSync(to),before);assert(JSON.parse(fs.readFileSync(from)).sequence>JSON.parse(before).sequence);observed=true;return rename(from,to);};
+      try{writer.confirmed("provisionedProfiles");writer.before("provision","profile-provision");}finally{fs.renameSync=rename;}
+      assert(observed);assert.equal(readProgress(root).provisionedProfiles,1);assert.equal(fs.readdirSync(root).length,1);
+      assert.throws(()=>writer.before("work","FICTIONAL_PRIVATE_URL"));assert.throws(()=>writer.confirmed("FICTIONAL_PRIVATE_ID"));
+      fs.chmodSync(progressFile(root),0o644);const old=fs.readFileSync(progressFile(root));assert.throws(()=>writer.before("work","match"));assert.deepEqual(fs.readFileSync(progressFile(root)),old);
+      fs.unlinkSync(progressFile(root));const target=path.join(root,"SOURCE.PRIVATE.json");fs.writeFileSync(target,"FICTIONAL_PRIVATE",{mode:0o600});fs.symlinkSync(target,progressFile(root));
+      assert.throws(()=>D.appProgress(c).before("dataset","idle"));assert.equal(fs.readFileSync(target,"utf8"),"FICTIONAL_PRIVATE");
+    }finally{fs.rmSync(root,{recursive:true,force:true});}});
+}
 async function nativeVectorBootstrapCase(){
   await test("diagnostic schema requires raw native-vector bootstrap and rejects the legacy dummy prefix",()=>{
     const calls=[],files={schemaDatei:"/tmp/FICTIONAL_NATIVE_SCHEMA.sql",migrationen:[]};
@@ -261,7 +303,8 @@ async function main(){
   await mockResponseFailureCase();
   await projectIdentityCase();
   await nativeVectorBootstrapCase();
+  await progressChannelCases();
   console.log(passed+" PASS; synthetic unit cases only; native preflight and 500 run NOT executed");
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase,understandingErrorProjectionCase,mockResponseFailureCase,projectIdentityCase,nativeVectorBootstrapCase};
+module.exports={currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase,understandingErrorProjectionCase,mockResponseFailureCase,projectIdentityCase,nativeVectorBootstrapCase,progressChannelCases};

@@ -77,6 +77,32 @@ function write(root,name,value){
   const fd=fs.openSync(path.join(root,name),"wx",0o600);
   try{fs.writeFileSync(fd,JSON.stringify(value)+"\n");fs.fsyncSync(fd);}finally{fs.closeSync(fd);}
 }
+const PROGRESS_OPERATIONS=new Set(["idle","profile-provision","profile-activation","active-cohort-readback","source-save","understand","match","decide","briefing-build","briefing-store","full-readback","profile-deactivation","closed"]);
+function appProgress(c){
+  directory(c.resultRoot);assert([2,3,500].includes(c.count)&&/^(?:[a-f0-9]{32}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/.test(c.nonce));let frozen=false,identity=null;
+  const value={schema:SCHEMA,nonce:c.nonce,requestedProfiles:c.count,sequence:0,phase:"dataset",operation:"idle",
+    provisionedProfiles:0,activatedProfiles:0,activeCohortReadbacks:0,sourceDocumentsSaved:0,understoodCases:0,
+    matchingProfiles:0,decisionProfiles:0,positiveProfileResults:0,deactivatedProfiles:0,finalActiveProfiles:"UNKNOWN"};
+  const counters=new Set(Object.keys(value).filter(key=>typeof value[key]==="number"&&!['requestedProfiles','sequence'].includes(key)));
+  const target=path.join(c.resultRoot,"APP_PROGRESS.SAFE.json");
+  function persist(){
+    directory(c.resultRoot);assert(value.sequence<10000);
+    try{const s=fs.lstatSync(target);assert(identity&&s.isFile()&&!s.isSymbolicLink()&&s.uid===process.getuid()&&(s.mode&511)===384&&s.nlink===1&&s.size<=8192&&s.dev===identity.dev&&s.ino===identity.ino);}
+    catch(error){if(error.code!=="ENOENT"||identity)throw error;}
+    const next={...value,sequence:value.sequence+1},raw=Buffer.from(JSON.stringify(next)+"\n");assert(raw.length<=8192);
+    const temp=path.join(c.resultRoot,".APP_PROGRESS_"+crypto.randomBytes(12).toString("hex")+".tmp");let fd=null,owned=false;
+    try{fd=fs.openSync(temp,fs.constants.O_WRONLY|fs.constants.O_CREAT|fs.constants.O_EXCL|fs.constants.O_NOFOLLOW,0o600);owned=true;
+      fs.writeFileSync(fd,raw);fs.fsyncSync(fd);const s=fs.fstatSync(fd);assert(s.isFile()&&s.uid===process.getuid()&&(s.mode&511)===384&&s.nlink===1&&s.size===raw.length);fs.closeSync(fd);fd=null;
+      fs.renameSync(temp,target);owned=false;identity={dev:s.dev,ino:s.ino};value.sequence=next.sequence;
+      const dir=fs.openSync(c.resultRoot,fs.constants.O_RDONLY|fs.constants.O_DIRECTORY|fs.constants.O_NOFOLLOW);
+      try{fs.fsyncSync(dir);}finally{fs.closeSync(dir);}
+    }finally{if(fd!==null)fs.closeSync(fd);if(owned)try{fs.unlinkSync(temp);}catch(_){}}
+  }
+  return{before(phase,operation){if(frozen)return;assert(PHASES.has(phase)&&PROGRESS_OPERATIONS.has(operation));value.phase=phase;value.operation=operation;persist();},
+    confirmed(key){if(frozen)return;const limit=key==="activeCohortReadbacks"?10000:key==="sourceDocumentsSaved"?(c.count===500?384:c.count*4):key==="understoodCases"?(c.count===500?96:c.count):c.count;assert(counters.has(key)&&value[key]<limit);value[key]++;},
+    zero(){if(!frozen){assert(value.phase==="deactivate"&&value.operation==="active-cohort-readback");value.finalActiveProfiles=0;}},
+    freeze(){if(frozen)return;try{persist();}catch(_){}finally{frozen=true;}}};
+}
 function configuration(value){
   exact(value,["schema","mode","count","nonce","database","postgrestURL","serviceToken","resultRoot","maxWallSeconds","datasetEpochUTC"]);
   assert.equal(value.schema,SCHEMA);assert(["synthetic500","preflight"].includes(value.mode));
@@ -204,49 +230,52 @@ function production(c){
 }
 async function workload(c,b,deps=null){
   let phase="dataset",failure=null,firstFailureDetail=null,cleanupFailureDetail=null,status="unknown",zero="UNKNOWN",activeObservations=0,positive=0,understood=0,provisioned=0;
-  let stop=false;const deadline=Date.now()+c.maxWallSeconds*1000;
-  const onStop=()=>{stop=true;};process.once("SIGTERM",onStop);process.once("SIGINT",onStop);
+  let stop=false,progress=null;const deadline=Date.now()+c.maxWallSeconds*1000;
+  const onStop=()=>{stop=true;progress?.freeze();};process.once("SIGTERM",onStop);process.once("SIGINT",onStop);
   const check=()=>assert(!stop&&Date.now()<deadline,"diagnostic-stop-or-deadline");
   const all=Fixture.selectedSpecs(c.count),ids=all.map(p=>p.id).sort(),created=new Set();
   const allCases=Fixture.cases(c.datasetEpochUTC),data=c.mode==="preflight"?Fixture.selectedCases(allCases,all):allCases;
   write(c.resultRoot,"APP_ATTEMPT.PRIVATE.json",{schema:SCHEMA,nonce:c.nonce,count:c.count});
+  progress=appProgress(c);progress.before(phase,"idle");
   write(c.resultRoot,"DATASET.SAFE.json",{...Fixture.manifest(c.datasetEpochUTC),executedCaseCount:data.length,executedSourceCount:data.length*4,executedProfileCount:c.count});
   if(!deps){environment(c,b);deps=production(c);}
-  const assertActive=async()=>{check();assert.deepEqual(await deps.activeIDs(),ids,"diagnostic-exact-active-cohort-required");activeObservations++;};
+  const observed=async(operation,run)=>{progress.before(phase,operation);return await run();};
+  const assertActive=async()=>{check();assert.deepEqual(await observed("active-cohort-readback",()=>deps.activeIDs()),ids,"diagnostic-exact-active-cohort-required");activeObservations++;progress.confirmed("activeCohortReadbacks");};
   try{
-    assert.deepEqual(await deps.activeIDs(),[],"diagnostic-initial-zero-required");
+    assert.deepEqual(await observed("active-cohort-readback",()=>deps.activeIDs()),[],"diagnostic-initial-zero-required");
     phase="provision";
-    for(const spec of all){check();assert.equal(await deps.profile(spec.id),null);
-      const made=await deps.provision({...spec,password:crypto.randomBytes(24).toString("hex")});assert.equal(made.ok,true,"diagnostic-provision-refused");provisioned++;
-      const actual=await deps.profile(spec.id);assert(actual&&actual.profileActive===false&&actual.provisionedBy==="helmut-provisioning");created.add(spec.id);}
+    for(const spec of all){check();assert.equal(await observed("profile-provision",()=>deps.profile(spec.id)),null);
+      const made=await observed("profile-provision",()=>deps.provision({...spec,password:crypto.randomBytes(24).toString("hex")}));assert.equal(made.ok,true,"diagnostic-provision-refused");provisioned++;
+      const actual=await observed("profile-provision",()=>deps.profile(spec.id));assert(actual&&actual.profileActive===false&&actual.provisionedBy==="helmut-provisioning");created.add(spec.id);progress.confirmed("provisionedProfiles");}
     phase="activate";
-    for(const id of ids){check();assert.equal((await deps.participate(id,true)).ok,true);}
+    for(const id of ids){check();assert.equal((await observed("profile-activation",()=>deps.participate(id,true))).ok,true);progress.confirmed("activatedProfiles");}
     await assertActive();
     phase="understanding";
     for(const item of data){status="unknown";await assertActive();
-      for(const doc of item.documents)assert.equal((await deps.saveSource(doc)).saved,true);
-      const result=await deps.understand({documents:item.documents});status=nativeStatus(result?.status);
+      for(const doc of item.documents){assert.equal((await observed("source-save",()=>deps.saveSource(doc))).saved,true);progress.confirmed("sourceDocumentsSaved");}
+      const result=await observed("understand",()=>deps.understand({documents:item.documents}));status=nativeStatus(result?.status);
       try{assert.equal(result?.status,"saved","diagnostic-positive-native-understanding-required");}
-      catch(error){if(typeof result?.errorCode==="string")error.code=understandingErrorCode(result.errorCode);throw error;}understood++;
+      catch(error){if(typeof result?.errorCode==="string")error.code=understandingErrorCode(result.errorCode);throw error;}understood++;progress.confirmed("understoodCases");
     }
     phase="work";
-    for(const id of ids){await assertActive();const profile=await deps.profile(id);assert(profile&&profile.profileActive===true&&profile.id===id);
-      const matching=await deps.match(profile);assert(!matching.skipped&&matching.saved>0,"diagnostic-native-matches-required");
-      const decisions=await deps.decide(profile);assert(!decisions.skipped&&decisions.saved>0,"diagnostic-native-decisions-required");
-      const result=await deps.build(profile);assert(result&&result.available===true&&Array.isArray(result.items)&&result.items.length>0,"diagnostic-positive-current-briefing-required");
-      assert.equal(await deps.storeResult(profile,result),true);positive++;
+    for(const id of ids){await assertActive();const profile=await observed("match",()=>deps.profile(id));assert(profile&&profile.profileActive===true&&profile.id===id);
+      const matching=await observed("match",()=>deps.match(profile));assert(!matching.skipped&&matching.saved>0,"diagnostic-native-matches-required");progress.confirmed("matchingProfiles");
+      const decisions=await observed("decide",()=>deps.decide(profile));assert(!decisions.skipped&&decisions.saved>0,"diagnostic-native-decisions-required");progress.confirmed("decisionProfiles");
+      const result=await observed("briefing-build",()=>deps.build(profile));assert(result&&result.available===true&&Array.isArray(result.items)&&result.items.length>0,"diagnostic-positive-current-briefing-required");
+      assert.equal(await observed("briefing-store",()=>deps.storeResult(profile,result)),true);positive++;progress.confirmed("positiveProfileResults");
     }
     phase="readback";await assertActive();
-    assert.equal(positive,c.count);assert.equal(await deps.count("knowledge_objects"),data.length);
-    assert.equal(await deps.count("raw_documents"),data.length*4);assert.equal(await deps.count("ko_document_links"),data.length*4);
-    assert.equal(await deps.count("briefings"),c.count);assert(await deps.count("matching_results")>=c.count);
-  }catch(error){failure=PHASES.has(phase)?phase:"configuration";firstFailureDetail=closedFailure(error,phase==="understanding"?status:"unknown");}
+    assert.equal(positive,c.count);assert.equal(await observed("full-readback",()=>deps.count("knowledge_objects")),data.length);
+    assert.equal(await observed("full-readback",()=>deps.count("raw_documents")),data.length*4);assert.equal(await observed("full-readback",()=>deps.count("ko_document_links")),data.length*4);
+    assert.equal(await observed("full-readback",()=>deps.count("briefings")),c.count);assert(await observed("full-readback",()=>deps.count("matching_results"))>=c.count);
+  }catch(error){progress.freeze();failure=PHASES.has(phase)?phase:"configuration";firstFailureDetail=closedFailure(error,phase==="understanding"?status:"unknown");}
   finally{
     const primary=failure;phase="deactivate";
-    try{const active=await deps.activeIDs();assert(active.every(id=>created.has(id)),"diagnostic-cleanup-only-newly-owned-profiles");
-      for(const id of active)assert.equal((await deps.participate(id,false)).ok,true);
-      const after=await deps.activeIDs();assert.deepEqual(after,[]);zero=0;
-    }catch(error){cleanupFailureDetail=closedFailure(error);failure=primary||"deactivate";if(!primary)firstFailureDetail=cleanupFailureDetail;}
+    try{const active=await observed("active-cohort-readback",()=>deps.activeIDs());assert(active.every(id=>created.has(id)),"diagnostic-cleanup-only-newly-owned-profiles");
+      for(const id of active){assert.equal((await observed("profile-deactivation",()=>deps.participate(id,false))).ok,true);progress.confirmed("deactivatedProfiles");}
+      const after=await observed("active-cohort-readback",()=>deps.activeIDs());assert.deepEqual(after,[]);zero=0;progress.zero();
+    }catch(error){progress.freeze();cleanupFailureDetail=closedFailure(error);failure=primary||"deactivate";if(!primary)firstFailureDetail=cleanupFailureDetail;}
+    if(!failure)progress.before("closed","closed");
     process.removeListener("SIGTERM",onStop);process.removeListener("SIGINT",onStop);
   }
   const result={schema:SCHEMA,nonce:c.nonce,status:failure?"FAIL_OR_UNKNOWN_DIAGNOSTIC":"PASS_SYNTHETIC_DIAGNOSTIC_WORKLOAD_ONLY",
@@ -273,4 +302,4 @@ async function main(argv=process.argv.slice(2)){
 function osGuard(){const guard=require("./lokaler-netzschutz");assert.deepEqual(guard.pruefe(process.env),[]);}
 if(require.main===module)main().catch(error=>{console.error(JSON.stringify({schema:SCHEMA,status:"FAIL_OR_UNKNOWN_DIAGNOSTIC",
   ...(error.diagnosticReceipt||{phase:"configuration",failureDetail:closedFailure(error),retryAllowed:false})}));process.exitCode=1;});
-module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport,diagnosticMigrations,understandingErrorCode,mockResponseFactory,nativeSchemaBootstrap};
+module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport,diagnosticMigrations,understandingErrorCode,mockResponseFactory,nativeSchemaBootstrap,appProgress};
