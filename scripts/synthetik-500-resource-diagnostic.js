@@ -165,7 +165,7 @@ function production(c){
       assert.equal((await S.insertRenderedBriefingV3(entry)).saved,true);
       // Strict native readback is additionally required below, never a Map result.
       const read=JSON.parse(psql(c,"select payload::text from public.briefings where id='"+id+"';"));
-      assert.deepEqual(read,entry.payload);return true;},...native(c)};
+      assert.deepEqual(read,JSON.parse(JSON.stringify(entry.payload)));return true;},...native(c)};
 }
 async function workload(c,b,deps=null){
   let phase="dataset",failure=null,firstFailureDetail=null,cleanupFailureDetail=null,status="unknown",zero="UNKNOWN",activeObservations=0,positive=0,understood=0,provisioned=0;

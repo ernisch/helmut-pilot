@@ -132,6 +132,19 @@ class DiagnosticChecks(unittest.TestCase):
         self.assertGreater(record['sourceLine'],0)
         self.assertNotIn('FICTIONAL_PRIVATE',json.dumps(record))
 
+    def test_connection_sql_reaches_psql_through_real_docker_stdin_contract(self):
+        with tempfile.TemporaryDirectory() as temp:
+            s=D.Supervisor(state(temp));s.container='fictional-owned-container'
+            snapshot=dict.fromkeys(D.S.SETTINGS+D.S.COUNTS,0)
+            snapshot.update(maxConnections=60,clientBackends=1,observerClients=1,activeClients=1)
+            def docker_exec(argv,*,input=None,seconds=30,check=True):
+                self.assertIsNotNone(input);self.assertIn(b'begin read only;',input);self.assertIn(b'rollback;',input)
+                # Docker exec without -i closes the inner stdin: psql succeeds but returns no row.
+                output=D.canonical(snapshot) if '-i' in argv[argv.index('exec')+1:argv.index(s.container)] else b''
+                return subprocess.CompletedProcess(argv,0,output)
+            with patch.object(s,'command',side_effect=docker_exec):s.connections('fictional')
+            self.assertEqual(s.connection_max,1)
+
     def test_component_guard_unknown_peak_swap_oom_and_cpu_fail_closed(self):
         self.assertTrue(D.group_fit(kernel(),D.APP_HARD))
         at_limit=kernel();at_limit['memory']['kernelLifetimePeakBytes']=D.APP_HARD

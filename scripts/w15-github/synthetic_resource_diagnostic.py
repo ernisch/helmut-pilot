@@ -582,7 +582,7 @@ class Supervisor:
         if not process.stdout.closed:process.stdout.close()
 
     def connections(self, db):
-        raw=self.command(P.DOCKER+['exec',self.container,'psql','-X','-w','-qAt','-U','postgres','-d',db,'-v','ON_ERROR_STOP=1'],
+        raw=self.command(P.DOCKER+['exec','-i',self.container,'psql','-X','-w','-qAt','-U','postgres','-d',db,'-v','ON_ERROR_STOP=1'],
             input=('begin read only;\n'+S.CONNECTION_SNAPSHOT_SQL+'\nrollback;').encode(),seconds=10).stdout
         value=S.connection_observation(decode(raw))
         need(value['status']=='OBSERVED_CLIENT_CONNECTIONS_ONLY' and value['maxConnections']==60

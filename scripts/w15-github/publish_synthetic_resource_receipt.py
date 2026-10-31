@@ -48,7 +48,7 @@ def metric_projection(value, key='', depth=0):
         assert len(value) <= 512
         return [metric_projection(item, key, depth+1) for item in value]
     assert type(value) is dict and len(value) <= 256
-    assert set(value) <= METRIC_KEYS, 'METRIC_FIELD_SET'
+    assert set(value) <= METRIC_KEYS, ('METRIC_FIELD_SET', key)
     return {name: metric_projection(item, name, depth+1) for name,item in value.items()}
 
 
@@ -125,5 +125,8 @@ if __name__ == '__main__':
         allowed={'ENV_ACTIONS','ENV_REPOSITORY','ENV_EVENT_REF','ENV_COMMIT_RUN','REPORT_SCOPE','REPORT_RUN','REPORT_COMMIT','REPORT_FLAGS','TOKEN_BINDING','METRIC_FIELD_SET'}
         code=('HTTP_'+str(error.code) if isinstance(error,urllib.error.HTTPError) else
               error.args[0] if isinstance(error,AssertionError) and error.args and error.args[0] in allowed else 'CLOSED_PROJECTION_OR_IO_UNKNOWN')
+        if isinstance(error,AssertionError) and error.args and type(error.args[0]) is tuple:
+            detail=error.args[0]
+            if len(detail)==2 and detail[0]=='METRIC_FIELD_SET' and detail[1] in METRIC_KEYS:code='METRIC_FIELD_SET_IN_'+detail[1]
         print('::error title=SAFE Messquittung::SAFE_RESOURCE_RECEIPT_PUBLICATION_UNKNOWN '+PUBLICATION_PHASE+' '+code, file=sys.stderr)
         raise SystemExit(1) from None
