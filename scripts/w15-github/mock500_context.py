@@ -126,7 +126,7 @@ def qualified_observation(context, raw, sha256, observed_context, repo=REPO):
     qualification = r.P.decode(raw)
     need(canonical(qualification) == raw)
     r._validate_qualification(context, qualification, repo)
-    need(type(observed_context) is dict and observed_context.get('mode') in ('mock500-full-gated', 'mock500-full-phased-gated')
+    need(type(observed_context) is dict and observed_context.get('mode') in ('mock500-full-gated', 'mock500-full-phased-gated','mock500-full-functional-gated')
          and observed_context == {key: context[key] for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')}
          | {'branch': BRANCH, 'mode': observed_context['mode']})
     need(os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch'

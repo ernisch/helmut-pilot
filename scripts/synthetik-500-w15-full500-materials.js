@@ -259,7 +259,8 @@ async function main() {
       const prepareSQL = G.baueSql(prepare, bytes, Date.now());
       const activateSQL = G.baueSql({runtimeManifest,snapshot,belege:full,schritt:"aktivieren",aktivierungsGo:activationGo},bytes,Date.now());
       const supervisor=JSON.parse(privateFile(path.join(WORK,"SUPERVISOR_READY.SAFE.json")));
-      process.kill(supervisor.pid,0);assert.equal(supervisor.container,CONTAINER);assert.equal(supervisor.realMemoryCap,2048000000);
+      process.kill(supervisor.pid,0);assert.equal(supervisor.container,CONTAINER);
+      assert.equal(supervisor.realMemoryCap,Bindings.memoryLimits(BOUND).comparisonBudgetBytes);
       stage("fresh-original-preparation-and-authorized-activation");
       sql(prepareSQL); sql(activateSQL);
       const nativeReceipt = read("set local role service_role;select public.helmut_synthetik500_lesung(" + [operationId,P.hash(runtimeManifest),config.commit].map(literal).join(",") + ");");

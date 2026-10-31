@@ -42,6 +42,29 @@ function readBound() {
   namespace(value.context); assert.match(value.bindingSHA256, /^[a-f0-9]{64}$/);
   return value;
 }
+function memoryLimits(bound) {
+  const legacy = require("../fixtures/w15-memory-contract").limits;
+  if (bound?.functionalResourceContract === undefined) return legacy;
+  namespace(bound.context);
+  const value = bound.functionalResourceContract;
+  const safety = require("./separated_resources_contract.json").referenceLabProposal;
+  assert.deepEqual(Object.keys(value).sort(), ["contract", "mode", "memoryProfile", "hardMemoryBytes", "hostReserveBytes",
+    "legacyRegularMemoryAccepted", "providerResourceAccepted"].sort());
+  assert.equal(value.contract, "helmut-w15-isolated-functional/1");
+  assert.equal(value.mode, "mock500-full-functional-gated");
+  assert.equal(value.memoryProfile, "helmut-w15-mock500-functional/1");
+  assert.equal(value.hardMemoryBytes, safety.commonHostHardBytes);
+  assert.equal(value.hostReserveBytes, safety.hostAvailableReserveBytes);
+  assert.equal(value.legacyRegularMemoryAccepted, false); assert.equal(value.providerResourceAccepted, false);
+  return Object.freeze({ version: value.memoryProfile, comparisonBudgetBytes: value.hardMemoryBytes,
+    requiredReserveBytes: 0, maximumConsumptionBytes: value.hardMemoryBytes, minimumReservePercent: 0 });
+}
+function memoryAssessment(bound, peak) {
+  assert(Number.isSafeInteger(peak) && peak >= 0);
+  const limits = memoryLimits(bound), reserve = limits.comparisonBudgetBytes - peak;
+  return { ...limits, kernelLifetimePeakBytes: peak, comparisonReserveBytes: reserve,
+    reserveMeetsContract: reserve >= limits.requiredReserveBytes };
+}
 function currentCalendar(bound, now = new Date().toISOString()) {
   assert.equal(new Date(now).toISOString(), now);
   assert.equal(now.slice(0, 10), bound.calendar.utcDay, "w15-mock500-current-utc-day");
@@ -126,4 +149,5 @@ function originalBuilder(bound, root) {
   const draft = load(source("original-draft-request.js"), req, "mock500-original-draft-request");
   return { build: builder.build, prepareDraft: draft.prepare, sourcePins: pins };
 }
-module.exports = { BASE, DB, namespace, privateBytes, readBound, currentCalendar, fixedWindow, qualifiedAssets, calendarRow, calendarFixture, originals, originalBuilder };
+module.exports = { BASE, DB, namespace, privateBytes, readBound, memoryLimits, memoryAssessment,
+  currentCalendar, fixedWindow, qualifiedAssets, calendarRow, calendarFixture, originals, originalBuilder };
