@@ -17,7 +17,7 @@ class ReceiptChecks(unittest.TestCase):
     def setUp(self):
         self.env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'ernisch/helmut-pilot',
             'GITHUB_EVENT_NAME': 'workflow_dispatch', 'GITHUB_REF': P.REF,
-            'GITHUB_SHA': 'a' * 40, 'SOURCE_HEAD_SHA': 'a' * 40, 'GITHUB_RUN_ID': '123456',
+            'GITHUB_SHA': 'a' * 40, 'SOURCE_HEAD_SHA': 'a' * 40, 'GITHUB_RUN_ID': '123456789',
             'GITHUB_TOKEN': 'FICTIONAL_TOKEN_NEVER_PUBLISHED'}
         self.report = {'schema': P.SCHEMA, 'exactCommit': 'a' * 40,
             'scope': 'ORIGINAL_FREE_SYNTHETIC_500_CAPACITY_ONLY',
