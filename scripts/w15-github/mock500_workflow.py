@@ -196,7 +196,7 @@ def validate_manifest(value):
             os.close(fd)
 
 
-def _result(manifest, resources=None):
+def _result(manifest, resources=None, functional_results=None):
     synthetic = manifest['mode'] == SYNTHETIC
     result = {**{key: manifest[key] for key in ('mode', 'exactCommit', 'runId', 'runAttempt')},
         'status': ('PASS_MOCK500_SYNTHETIC_RUNNER_ONLY_START_BLOCKED' if synthetic
@@ -217,7 +217,8 @@ def _result(manifest, resources=None):
         contract=component('functional_contract');contract.assess(resources.sample(),'mock500')
         result.update(functionalContract=contract.CONTRACT,functionalSafetyChecksCompleted=True,
                       legacyRegularMemoryAccepted=False,providerResourceAccepted=False,
-                      functionalResourceObservation=resources.functional_observation())
+                      functionalResourceObservation=resources.functional_observation(),
+                      functionalResults=functional_results)
     return component('mock500_runner').validate_public_result(result, manifest)
 
 
@@ -295,7 +296,8 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
              and final['bodyCompleted'] is True and final['ownedContainerStopped'] is True
              and len(receipts) == 1, 'closure')
         phase = 'closure'; closing_guard(); resources.sample()
-        return _result(manifest, resources)
+        return _result(manifest, resources,**({'functional_results':final.get('functionalResults')}
+                       if manifest['mode']==FUNCTIONAL else{}))
     except WorkflowRejected as error:
         error.worker_memory = _cached_memory(resources)
         raise

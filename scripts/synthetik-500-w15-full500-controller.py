@@ -174,6 +174,45 @@ def functional_role_bindings(resources,postgres_pid,container_id,work):
         finally:
             if fd is not None:os.close(fd)
     return _mock_module('end500_capacity_roles').bindings(resources.path,resources._identity,postgres_pid,container_id,peers)
+def functional_result_summary(runtime,audit,cleanup_result):
+    """Project only current-run measured numeric aggregates after existing audit.
+
+    Private rows/identities/content and their hashes never leave this boundary.
+    Missing timing observations remain UNKNOWN, even when other checks passed.
+    """
+    assert type(runtime)is dict and type(audit)is dict and type(cleanup_result)is dict
+    units=runtime.get('unitReports');phases=runtime.get('providerPhases');positions=audit.get('positions')
+    assert type(units)is list and len(units)==500 and type(phases)is list and len(phases)==1000
+    assert type(positions)is list and len(positions)==1500 and type(audit.get('units'))is list and len(audit['units'])==500
+    assert all(type(row)is dict for row in units+phases+positions+audit['units'])
+    assert len({row.get('owner')for row in units})==500
+    counts={'simultaneouslyActiveProfiles':runtime.get('activeProfilesAtLastRead'),
+      'completedUnits':runtime.get('completedUnits'),'localProviderPhases':len(phases),
+      'storedResults':audit.get('actualStoredRows'),'auditedPositions':len(positions),
+      'unitChecksCompleted':audit.get('unitChecksCompleted'),
+      'securityControls':sum(row['count']for row in units),
+      'activeProfiles':cleanup_result.get('after',{}).get('active')}
+    expected={'simultaneouslyActiveProfiles':500,'completedUnits':500,'localProviderPhases':1000,
+      'storedResults':1500,'auditedPositions':1500,'unitChecksCompleted':17000,'securityControls':8000,'activeProfiles':0}
+    assert all(type(counts[k])is int and counts[k]==v for k,v in expected.items())
+    assert all(type(row.get('count'))is int and row['count']==16 for row in units)
+    categories=audit.get('categories')
+    assert type(categories)is dict and set(categories)=={'missing','empty','duplicate','technicallyInvalid','unusable'}
+    assert all(type(v)is int and 0<=v<=1500 for v in categories.values())
+    assert audit.get('storedResultsAccepted')is True and cleanup_result.get('confirmedZero')is True and cleanup_result.get('nativeBoundZero')is True
+    def maximum(rows,key):
+        if type(rows)is not list or not rows:return 'UNKNOWN'
+        values=[row.get(key)if type(row)is dict else None for row in rows]
+        return max(values)if all(type(v)in(int,float)and math.isfinite(v)and v>=0 for v in values)else'UNKNOWN'
+    calls=(runtime['authMutations']+runtime['usageSinks']if type(runtime.get('authMutations'))is list and type(runtime.get('usageSinks'))is list else None)
+    timings={'auth':maximum(calls,'wallMs'),'cas':maximum(runtime.get('casWrites'),'wallMs'),
+      'unit':maximum(units,'wallMS'),'provider':maximum(phases,'actualDelayMS')}
+    complete=all(type(v)in(int,float)for v in timings.values())
+    bounds={'auth':30000,'cas':30000,'unit':60000,'provider':20000}
+    assert all(value=='UNKNOWN'or value<bounds[key]for key,value in timings.items())
+    return {'schema':'helmut-w15-mock500-functional-results/1',**counts,'categories':dict(categories),
+      'maximumTimingsMs':timings,'timingsComplete':complete,'timeLimitsObserved':True if complete else'UNKNOWN',
+      'executionAuthority':False,'mock500Acceptance':False,'productionAcceptance':False}
 def source_state():
     return read("select jsonb_build_object('active',(select count(*)from mandate_profiles where aktiv),'profiles',(select count(*)from mandate_profiles),'identities',(select count(*)from profiles),'profileHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by user_id collate \"C\")::text,'UTF8')),'hex')from mandate_profiles p),'storeHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by id collate \"C\")::text,'UTF8')),'hex')from helmut_store p),'rawHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by id collate \"C\")::text,'UTF8')),'hex')from raw_documents p));",SOURCE_DB,True)
 def copy_in(src,dst):docker('cp',str(src),CONTAINER+':'+dst)
@@ -504,7 +543,7 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
     WORK,BASE,DB,CONTAINER=plan['work'],plan['base'],plan['database'],plan['container']
     IMAGE=context['runtimePins']['imageId']
     failure=None;supervisor=None;gateway_process=None;gateway_log=None;owned_id=None;attempted=False
-    closed=False;close_started=False;cleanup_result=None;backup=None;result=None;mounts={}
+    closed=False;close_started=False;cleanup_result=None;backup=None;result=None;mounts={};actual_functional_results=None
     def guard():
         start_guard.closure_guard();disk_guard()
     def close_owned():
@@ -659,6 +698,7 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
                 backup=backup_completion(controller=sys.modules[__name__],inputs=inputs,resources=resources,
                   supervisor=supervisor,result=result,close_owned=close_owned)
                 assert all(backup[key]is True for key in ('remoteReadbackObserved','databaseRestoreObserved','ownedContainerStopped','watchClosed'))and closed
+                if functional:actual_functional_results=functional_result_summary(runtime,audit,cleanup_result)
             except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'backup-closure'}
             if not closed and not close_started:
                 try:close_owned()
@@ -678,6 +718,7 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
               'databaseRestoreObserved':bool(backup and backup.get('databaseRestoreObserved')),
               'ownedContainerStopped':closed,'mock500Acceptance':False,'executionAuthority':False,
               'productionAcceptance':False,'retryAllowed':False,'commonParent':resources.last_observation()}
+            if functional and actual_functional_results is not None:final['functionalResults']=actual_functional_results
             _private_write(root/'FINAL_MOCK500_CLOSURE.SAFE.json',final)
         except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'final-observation'}
         WORK,BASE,DB,CONTAINER,IMAGE,_BOUND_CONTEXT_SHA=previous

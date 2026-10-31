@@ -54,6 +54,16 @@ def resource_observation():
         'providerResourceAccepted': False, 'fullLifetimeClosureAccepted': False, 'executionAuthority': False}
 
 
+def functional_results():
+    return {'schema':'helmut-w15-mock500-functional-results/1','simultaneouslyActiveProfiles':500,
+        'completedUnits':500,'localProviderPhases':1000,'storedResults':1500,'auditedPositions':1500,
+        'unitChecksCompleted':17000,'securityControls':8000,'activeProfiles':0,
+        'categories':dict.fromkeys(('missing','empty','duplicate','technicallyInvalid','unusable'),0),
+        'maximumTimingsMs':{'auth':17.5,'cas':8.5,'unit':50.5,'provider':19.5},
+        'timingsComplete':True,'timeLimitsObserved':True,'executionAuthority':False,
+        'mock500Acceptance':False,'productionAcceptance':False}
+
+
 class FunctionalMockAdapters(unittest.TestCase):
     def fixture(self):
         case = F.StartChecks('runTest'); case.setUp(); self.addCleanup(case.doCleanups)
@@ -136,7 +146,7 @@ class FunctionalMockAdapters(unittest.TestCase):
         result = RF.result(request)
         result.update(functionalContract=FC.F.CONTRACT, functionalSafetyChecksCompleted=True,
                       legacyRegularMemoryAccepted=False, providerResourceAccepted=False,
-                      functionalResourceObservation=resource_observation())
+                      functionalResourceObservation=resource_observation(),functionalResults=functional_results())
         self.assertEqual(RF.R.validate_public_result(result, request), result)
         for key, bad in (('legacyRegularMemoryAccepted', True), ('providerResourceAccepted', True),
                          ('functionalSafetyChecksCompleted', False), ('functionalContract', 'unapproved'), ('results', 1499)):

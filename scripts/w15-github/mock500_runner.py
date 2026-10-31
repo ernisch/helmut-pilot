@@ -141,7 +141,7 @@ def validate_public_result(result, manifest):
     new_functional=manifest['mode']==FUNCTIONAL
     keys = RESULT_KEYS | ({'resourcePhases', 'processingMemoryChecksCompleted', 'backupSafetyChecksCompleted'} if phased else set())
     if new_functional:keys|={'functionalContract','functionalSafetyChecksCompleted','legacyRegularMemoryAccepted',
-                            'providerResourceAccepted','functionalResourceObservation'}
+                            'providerResourceAccepted','functionalResourceObservation','functionalResults'}
     need(type(result) is dict and set(result) == keys and result['mode'] == manifest['mode']
          and result['status'] == STATUS[manifest['mode']]
          and all(result[key] == manifest[key] for key in ('exactCommit', 'runId', 'runAttempt'))
@@ -159,6 +159,7 @@ def validate_public_result(result, manifest):
             {key: manifest[key] for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')})
         need(result['processingMemoryChecksCompleted'] is True and result['backupSafetyChecksCompleted'] is True)
     if new_functional:
+        validate_functional_results(result['functionalResults'])
         need(result['functionalContract']==functional().CONTRACT and result['functionalSafetyChecksCompleted'] is True
              and result['legacyRegularMemoryAccepted'] is result['providerResourceAccepted'] is False)
         observation=result['functionalResourceObservation']
@@ -172,6 +173,26 @@ def validate_public_result(result, manifest):
              and all(observation.get(k)is False for k in ('snapshotAtomic','peakCompositionKnown','fileCacheAdditiveToPSS',
                  'differentTimeMaximaAdditive','providerResourceAccepted','fullLifetimeClosureAccepted','executionAuthority')))
     return {key: result[key] for key in sorted(result)}
+
+
+def validate_functional_results(value):
+    counts={'simultaneouslyActiveProfiles':500,'completedUnits':500,'localProviderPhases':1000,
+        'storedResults':1500,'auditedPositions':1500,'unitChecksCompleted':17000,'securityControls':8000,'activeProfiles':0}
+    keys=set(counts)|{'schema','categories','maximumTimingsMs','timingsComplete','timeLimitsObserved',
+        'executionAuthority','mock500Acceptance','productionAcceptance'}
+    need(type(value)is dict and set(value)==keys and value['schema']=='helmut-w15-mock500-functional-results/1'
+         and all(type(value[k])is int and value[k]==v for k,v in counts.items())
+         and all(value[k]is False for k in ('executionAuthority','mock500Acceptance','productionAcceptance')))
+    categories=value['categories'];timings=value['maximumTimingsMs']
+    need(type(categories)is dict and set(categories)=={'missing','empty','duplicate','technicallyInvalid','unusable'}
+         and all(type(v)is int and v==0 for v in categories.values())
+         and type(timings)is dict and set(timings)=={'auth','cas','unit','provider'})
+    bounds={'auth':30000,'cas':30000,'unit':60000,'provider':20000}
+    need(all(v=='UNKNOWN'or type(v)in(int,float)and math.isfinite(v)and 0<=v<bounds[k]for k,v in timings.items()))
+    complete=all(type(v)in(int,float)for v in timings.values())
+    need(value['timingsComplete']is complete)
+    need(value['timeLimitsObserved']is True if complete else value['timeLimitsObserved']=='UNKNOWN')
+    return value
 
 
 def _failure(value):
@@ -354,7 +375,7 @@ def launch(request, private_payload):
         if request['mode']==FUNCTIONAL:
             functional().assess(final,'mock500')
             extra={'functionalContract':functional().CONTRACT,'functionalSafetyChecksCompleted':True,
-                   'legacyRegularMemoryAccepted':False,'providerResourceAccepted':False}
+                   'legacyRegularMemoryAccepted':False,'providerResourceAccepted':False,'nonce':ctx['nonce']}
         return {'status': ('PASS_FRESH_MOCK500_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY' if request['mode']==FUNCTIONAL
                            else 'PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY' if phased
                            else 'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY'), **extra, 'mode': request['mode'],
