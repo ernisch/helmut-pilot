@@ -320,7 +320,7 @@ class Mock500Inputs:
         for folder in ('lib', 'scripts'):
             shutil.copytree(self._repo / folder, app / folder, symlinks=False)
             guard()
-        for filename in ('server.js', 'package.json', 'package-lock.json'):
+        for filename in ('server.js', 'vercel.json', 'package.json', 'package-lock.json'):
             shutil.copyfile(self._repo / filename, app / filename)
         for name in ('node', 'postgrest'):
             pin = {key: self._context['runtimePins'][name][key] for key in ('bytes', 'sha256')}

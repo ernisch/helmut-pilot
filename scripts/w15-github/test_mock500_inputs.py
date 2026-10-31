@@ -382,4 +382,40 @@ class ControllerAdmissionChecks(unittest.TestCase):
         self.assertFalse((work / 'FINAL_MOCK500_CLOSURE.SAFE.json').exists())
 
 
+class RootConfigurationStagingChecks(unittest.TestCase):
+    def test_qualified_public_vercel_config_is_staged_byte_identically(self):
+        spec = importlib.util.spec_from_file_location('w15_mock_root_config_runtime', HERE / 'runtime_inputs.py')
+        runtime = importlib.util.module_from_spec(spec); spec.loader.exec_module(runtime)
+        with tempfile.TemporaryDirectory(prefix='w15-fictional-mock-root-config-') as temp:
+            root = Path(temp); repo = root / 'repo'; (repo / 'lib').mkdir(parents=True); (repo / 'scripts').mkdir()
+            (repo / 'lib/fixture.js').write_bytes(b'"use strict";\n')
+            (repo / 'scripts/fixture.js').write_bytes(b'"use strict";\n')
+            for name in ('server.js', 'package.json', 'package-lock.json'):
+                (repo / name).write_bytes(b'{}\n')
+            raw = b'{"version":2,"crons":[{"path":"/api/SYNTHETIC_ONLY","schedule":"0 0 * * *"}]}\n'
+            (repo / 'vercel.json').write_bytes(raw)
+            original_public_bytes = runtime._public_bytes
+            def public_bytes(checked_repo, relative):
+                if relative == 'vercel.json': return original_public_bytes(checked_repo, relative)
+                if relative == runtime.C.FORWARD: return b'STAGED_SCRIPTS=[]\n'
+                return b'FICTIONAL PUBLIC SOURCE ONLY\n'
+            with patch.object(runtime, '_reports', return_value={}), patch.object(runtime, '_historical_pins', return_value=[]), \
+                    patch.object(runtime, '_public_bytes', side_effect=public_bytes):
+                pins, _ = runtime.source_requirements(repo)
+            self.assertEqual(pins['vercel.json'], {'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()})
+            paths, runtime_pins = {}, {}
+            for name in ('node', 'postgrest'):
+                path = root / name; payload = b'FICTIONAL NONEXECUTED BINARY ONLY\n'; path.write_bytes(payload); path.chmod(0o700)
+                paths[name] = path
+                runtime_pins[name] = {'bytes': len(payload), 'sha256': hashlib.sha256(payload).hexdigest()}
+            inputs = SimpleNamespace(_repo=repo, _paths=paths, _context={'runtimePins': runtime_pins}, check_sources=Mock())
+            guard = Mock()
+            destination = root / 'stage'
+            M.Mock500Inputs.stage_sources(inputs, destination, guard)
+            staged = (destination / 'app/vercel.json').read_bytes()
+            self.assertEqual(staged, raw)
+            self.assertEqual({'bytes': len(staged), 'sha256': hashlib.sha256(staged).hexdigest()}, pins['vercel.json'])
+            self.assertEqual(guard.call_count, 4); inputs.check_sources.assert_called_once_with()
+
+
 if __name__ == '__main__': unittest.main()

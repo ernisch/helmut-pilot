@@ -103,7 +103,7 @@ def source_requirements(repo=REPO):
     reports = _reports(repo)
     historical = _historical_pins(reports)
     paths = {row['path'] for row in historical} | {
-        'server.js', 'package.json', 'package-lock.json', C.FORWARD, C.CONTROLLER,
+        'server.js', 'vercel.json', 'package.json', 'package-lock.json', C.FORWARD, C.CONTROLLER,
         C.AUDITOR, C.MEMORY, 'supabase/proposals/auth_usage_atomic_local.sql',
         'scripts/auth-usage-split.Dockerfile',
         'scripts/synthetik-500-w15-full500-materials.js', 'scripts/synthetik-500-w15-full500-audit.js',
