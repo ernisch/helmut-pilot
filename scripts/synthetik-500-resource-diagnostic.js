@@ -153,7 +153,7 @@ function native(c){
 function production(c){
   const S=require("../lib/helmut/storage"),P=require("../lib/helmut/provisioning"),U=require("../lib/helmut/understanding");
   return {profile:id=>S.getProfile(id),provision:spec=>P.provisionTenant(spec,{}, {neuAktiv:false,kontoBeiFehlerBehalten:true}),
-    participate:(id,active)=>P.setTestProfileParticipation(id,active),saveSource:d=>S.saveRawDocument(d),
+    participate:(id,active)=>active?P.activateTenant(id):P.deactivateTenant(id),saveSource:d=>S.saveRawDocument(d),
     understand:cluster=>U.understandOneCluster(cluster,U.defaultDeps({runId:"resource-diagnostic-"+c.nonce})),
     match:profile=>require("../lib/helmut/matching").runMatchingShadow({profile}),
     decide:profile=>require("../lib/helmut/decisions").runDecisionShadow({profile}),

@@ -46,6 +46,13 @@ class ReceiptChecks(unittest.TestCase):
         self.assertEqual(P.prepare(self.report, env)['head_sha'], 'b' * 40)
         self.assertIn('a' * 40, P.prepare(self.report, env)['output']['text'])
 
+    def test_new_kernel_event_is_omitted_without_losing_reviewed_counters(self):
+        report={**self.report,'lastCommonParent':{'events':{'max':0,'oom':0,'oom_kill':0,
+            'oom_group_kill':0,'new_unreviewed_kernel_counter':0}}}
+        value=P.prepare(report,self.env)
+        self.assertNotIn('new_unreviewed_kernel_counter',value['output']['text'])
+        self.assertIn('"oom_kill": 0',value['output']['text'])
+
     def test_first_failure_remains_readable_when_whole_receipt_projection_rejects(self):
         report={**self.report,'firstFailure':{'phase':'schema','code':'WORKLOAD_PROCESS_FAILED'},
                 'unapprovedNote':'FICTIONAL_PRIVATE_SENTINEL'}

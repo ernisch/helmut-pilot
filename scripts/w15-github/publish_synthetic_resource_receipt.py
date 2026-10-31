@@ -48,6 +48,10 @@ def metric_projection(value, key='', depth=0):
         assert len(value) <= 512
         return [metric_projection(item, key, depth+1) for item in value]
     assert type(value) is dict and len(value) <= 256
+    if key == 'events':
+        # Kernel event dictionaries may acquire new counters. Publish only the
+        # reviewed six counters; the unchanged parent guard already assessed them.
+        value={name:item for name,item in value.items() if name in ('low','high','max','oom','oom_kill','oom_group_kill')}
     assert set(value) <= METRIC_KEYS, ('METRIC_FIELD_SET', key)
     return {name: metric_projection(item, name, depth+1) for name,item in value.items()}
 
