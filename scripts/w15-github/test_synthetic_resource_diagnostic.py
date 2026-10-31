@@ -145,6 +145,21 @@ class DiagnosticChecks(unittest.TestCase):
             with patch.object(s,'command',side_effect=docker_exec):s.connections('fictional')
             self.assertEqual(s.connection_max,1)
 
+    def test_local_ai_counters_survive_work_failure_without_claiming_success(self):
+        with tempfile.TemporaryDirectory() as temp:
+            s=D.Supervisor(state(temp));root=s.work/'results'/'preflight';root.mkdir(parents=True)
+            keys=('aufrufe','erfolgreich','fehler','abgewiesenWegenObergrenze','eingabeBytes','ausgabeBytes',
+                  'eingabeTokenGeschaetzt','ausgabeTokenGeschaetzt','bytesJeGeschaetztemToken','gleichzeitigSpitze')
+            counters=dict.fromkeys(keys,1);counters['dauerMs']=dict.fromkeys(('n','min','p50','p95','max','mittel'),2)
+            D.private_json(root/'SERVICES_CLOSED.SAFE.json',{'schema':D.WORKLOAD_SCHEMA,'nonce':NONCE,
+                'closed':True,'failed':False,'executionAuthority':False,'localSimulatedAI':counters})
+            with patch.object(s,'create_groups',side_effect=D.Rejected('services','FIRST_SYNTHETIC_FAILURE')),patch.object(s,'close'):
+                report=s.run()
+            self.assertEqual(report['firstFailure']['code'],'FIRST_SYNTHETIC_FAILURE')
+            self.assertEqual(report['servicesResults'][0]['localSimulatedAI']['aufrufe'],1)
+            self.assertEqual(report['servicesResults'][0]['applicationExitAttestedBeforeServiceStop'],'UNKNOWN')
+            self.assertFalse(report['full500Completed'])
+
     def test_component_guard_unknown_peak_swap_oom_and_cpu_fail_closed(self):
         self.assertTrue(D.group_fit(kernel(),D.APP_HARD))
         at_limit=kernel();at_limit['memory']['kernelLifetimePeakBytes']=D.APP_HARD

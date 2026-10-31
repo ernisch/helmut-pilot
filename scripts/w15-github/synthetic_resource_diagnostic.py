@@ -48,6 +48,7 @@ ASSERTIONS = frozenset(('diagnostic-fresh-database-required','diagnostic-ca-requ
     'diagnostic-schema-migration-list-unique','UNKNOWN'))
 NODE_CODES = frozenset(('ERR_ASSERTION','MODULE_NOT_FOUND','ERR_MODULE_NOT_FOUND','EACCES','EPERM','ENOENT',
     'EEXIST','ECONNREFUSED','ETIMEDOUT','EPIPE','ENOTFOUND','ECONNRESET','UNKNOWN'))
+NODE_CODES = NODE_CODES | frozenset(['LLM_USAGE_NOT_CONFIRMED', 'AI_REQUEST_TIMEOUT', 'AI_REQUEST_SEND_ERROR', 'AI_RESPONSE_TOO_LARGE', 'AI_RESPONSE_ABORTED', 'AI_RESPONSE_STREAM_ERROR', 'AI_RESPONSE_INVALID_JSON', 'AI_RESPONSE_NOT_COMPLETED', 'AI_REQUEST_BUILD_FAILED', 'AI_TLS_ERROR', 'AI_PROVIDER_HTTP_4XX', 'AI_PROVIDER_HTTP_5XX', 'AI_PROVIDER_HTTP_400', 'AI_PROVIDER_HTTP_401', 'AI_PROVIDER_HTTP_403', 'AI_PROVIDER_HTTP_404', 'AI_PROVIDER_HTTP_408', 'AI_PROVIDER_HTTP_422', 'AI_PROVIDER_HTTP_429', 'AI_PROVIDER_HTTP_500', 'AI_PROVIDER_HTTP_502', 'AI_PROVIDER_HTTP_503', 'AI_PROVIDER_HTTP_504'])
 SQLSTATES = frozenset(('42P01','42703','42883','42501','23505','23503','3D000','28P01','57014',
     '22023','42601','XX000','08006','UNKNOWN'))
 BASE = '/tmp/helmut-public-resource-diagnostic'
@@ -639,15 +640,19 @@ class Supervisor:
         need(value['understoodCases']==dataset['executedCaseCount'],self.phase,'UNDERSTOOD_CASE_COUNT')
         self.stop_child(child);self.connections(config['database']['name'])
         self.stop_child(service)
+        self.collect_service_result(result,count,True)
+        self.stop_child(pgr)
+        return value
+
+    def collect_service_result(self, result, count, app_exit):
+        if any(row['profiles']==count for row in self.services_results):return
         closed=read_private(result/'SERVICES_CLOSED.SAFE.json')
         need(type(closed) is dict and set(closed)<= {'schema','nonce','closed','failed','localSimulatedAI','executionAuthority'}
             and all(closed.get(k)==v for k,v in {'schema':WORKLOAD_SCHEMA,'nonce':self.ctx['nonce'],
                 'closed':True,'failed':False,'executionAuthority':False}.items()),'services','MOCK_SERVICES_STOP_UNKNOWN')
         self.services_results.append({'profiles':count,'closed':True,'failed':False,
             'localSimulatedAI':simulated_ai_result(closed.get('localSimulatedAI')),
-            'applicationExitAttestedBeforeServiceStop':True})
-        self.stop_child(pgr)
-        return value
+            'applicationExitAttestedBeforeServiceStop':app_exit})
 
     def close(self):
         self.phase='closure';self.cleaning=True
@@ -712,6 +717,11 @@ class Supervisor:
             if path.exists() and not any(x['requestedProfiles']==count for x in self.workload_results):
                 try:self.workload_results.append(workload_result(read_private(path),self.ctx['nonce'],count))
                 except BaseException:pass
+        for mode,count in (('preflight',SMALL_COUNT),('synthetic500',500)):
+            result=self.work/'results'/mode
+            if (result/'SERVICES_CLOSED.SAFE.json').exists():
+                try:self.collect_service_result(result,count,'UNKNOWN')
+                except BaseException:pass  # Never replace the first work/guard failure.
         successful=self.first is None and len(results)==(1 if self.state['preflightOnly'] else 2) and all(x in ('PASS','NOT_STARTED') for x in self.cleanup.values())
         return {'schema':'helmut-w15-synthetic-resource-diagnostic-result/1','scope':self.state['request']['scope'],
             'status':'PASS_SYNTHETIC_RESOURCE_DIAGNOSTIC_ONLY' if successful else 'FAIL_OR_UNKNOWN_SYNTHETIC_RESOURCE_DIAGNOSTIC',
