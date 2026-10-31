@@ -1,0 +1,17 @@
+{
+  "branchChanged": true,
+  "branchUpdateAttempted": true,
+  "dispatchAccepted": true,
+  "dispatchAttempted": true,
+  "executionAuthority": false,
+  "firstFailedPhase": null,
+  "launcherCommit": "6c42716d35dfad1032a54a978e1551575e90d051",
+  "nonce": "71cc78fe-3957-4464-b94e-5fba0f234b23",
+  "originalReceptionAccepted": false,
+  "phase": "dispatch",
+  "receiverCommit": "13b858b1a1e83a695e1fa64446573b5b550921ea",
+  "retryAllowed": false,
+  "schema": "helmut-w15-mock-original-receive-dispatch-attempt/1",
+  "secondaryCleanupFailures": [],
+  "status": "PASS_SINGLE_RECEIVE_DISPATCH_SUBMITTED_ACCEPTANCE_PENDING"
+}

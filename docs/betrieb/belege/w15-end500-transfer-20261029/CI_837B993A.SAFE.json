@@ -1,0 +1,16 @@
+{
+  "schema": "helmut-w15-ci-head-observation/1",
+  "exactCommit": "837b993a4a73588cf136ed413d87adf1d032ce71",
+  "runId": "40853841698",
+  "url": "https://github.com/ernisch/helmut-pilot/actions/runs/40853841698",
+  "requiredJobs": {
+    "Syntax + Offline-Suiten": "success",
+    "Browser-/Mobile-Smoke (Chromium)": "success"
+  },
+  "previousDocumentationSizeFailureFixed": true,
+  "existingSuccessfulCapabilitiesRepeatedManually": false,
+  "originalDataReceiveAccepted": false,
+  "end500Acceptance": false,
+  "mock500Acceptance": false,
+  "executionAuthority": false
+}

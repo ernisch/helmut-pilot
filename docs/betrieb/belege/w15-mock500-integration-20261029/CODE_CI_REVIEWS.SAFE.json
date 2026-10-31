@@ -1,0 +1,23 @@
+{
+  "schema": "helmut-w15-code-ci-evidence/1",
+  "runs": [
+    {
+      "conclusion": "success",
+      "head_sha": "c89d423fd8431b42a5351de82e640f40e8517ee4",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/40922851354",
+      "id": 40922851354,
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "c4d035ddbc20ec092d759520fe72a0c3c61e6ff4",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/40924138247",
+      "id": 40924138247,
+      "status": "completed"
+    }
+  ],
+  "productionAcceptance": false,
+  "restoreAcceptance": false,
+  "mock500Acceptance": false,
+  "latestDocumentationHeadChecks": "See current PR977 checks; these retained records identify the actual code heads."
+}

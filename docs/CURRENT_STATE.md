@@ -1,55 +1,98 @@
 # CURRENT STATE — Helmut
 
-## W15: End500-D vor erstem Auth-Vorgang am Plattenwächter gescheitert (28.10.)
+## W15 Vollrestore: RAM-Grenze überschritten, unabhängig FAIL
 
-PR974 auf PR973 `fa506939`/PR972 `c36bd427`, alle ungemergt.
-Genau ein neuer End500-D-Versuch auf sauberem Codekopf `07b51319` ausgeführt;
-keine Wiederholung/kein Resume und kein Mock500-Gesamtstart.
-**FAIL bei0/500CAS:** am19:34:22.803560UTC frei224.247.808Bytes,
-erforderlicher Plattenfloor234.881.024Bytes. Primärfehler exakt
-`w15-forward-disk-closure-reserve`, nicht nur generischer Controllerabschluss.
-Kernelpeak einschließlich Abschluss548.626.432Bytes; Reserve1.499.373.568Bytes
-=73,2116%, hartes Limit2.048.000.000Bytes, Swap/OOM/max0. Nur Boot/Restore/Seed;
-kein W15-Node-Run/Gateway/Atomicbootstrap/Auth-Aufruf, keine Aktivierung oder Unit.
-Deshalb kein neuer End500-RAM-, Auth30- oder Unit60-PASS; Authmax nicht gemessen.
-**Unabhängig nativ500Profile/0aktiv bestätigt.** Seed-Daten committed beobachtet
-(2.500Briefings/1.006Storezeilen/Main-Auth6.000Usage); keine neue vollständige
-3.501Postimage-Endprüfung behauptet. Alles weiter inert, keine neuen DR-Ergebnisse.
-Original-Seed-SHA unverändert. Service-Abschlussdatei fehlt, weil Service nie startete;
-der ursprüngliche FileNotFound-/UNKNOWN-Befund bleibt erhalten, kein falsches Grün.
-Startplan war trotz bewachter unabhängiger Zulassung zu knapp: vor dem ersten
-Wächtersample schon rund911,7MB Abnahme gegenüber Admission. Genaue physische
-Zuordnung UNKNOWN; zusätzlicher VFS-Initlayer nur plausible, unbewiesene Erklärung.
-Der spätere Grenzschutz stoppte; keine Grenze erhöht/Cachebereinigung/Datenkürzung.
+Einmaliges Vollrestore-GO auf537adaa32/PR988 verbraucht: Run41073062264,
+Job124121902354, Attempt1 FAIL; Job90s/geschützter Schritt62s,0Artefakte.
+Erste öffentliche Phase worker, PARENT_READBACK_REJECTED: gemeinsamer Peak
+2048073728Bytes,73728über2048000000; Reserve511926272,73728unter512000000.
+Hartes RAM2560000000, Swap0, alle OOM-/Maxereignisse0; Wächter korrekt gestoppt.
+Alle acht eigenen Bereinigungsprüfungen PASS, Parent leer/entfernt, Worker und
+Launcher beendet. Innere Arbeitsphase und aktueller Restore-/Backupfortschritt
+UNKNOWN; keine Vollrestore-/End500-/Mock500-Abnahme, kein Retry/Linkrefresh.
+Ausführungsbranch sicher a2d0f542→537adaa32, Schutzregeln/Secrets unverändert.
+Nächster Schritt: belegten RAM-Verbrauch gezielt synthetisch eingrenzen; nur
+nachgewiesenen Fix prüfen/CI/reviewen. Weiterer echter Lauf braucht neues GO.
+Separater Diagnosezweig ergänzt nur nach Fehler erfasste Kernel-Speicheranteile
+und eine 32-MiB-Datei/Kopie-Probe in bestehender PR-CI; Limits unverändert.
+Tatsächlicher CI-/Probenbefund im Draft-PR; keine behauptete RAM-Ursachenbehebung.
+[Fehlerbeleg, Ressourcen und unabhängige Abnahme](betrieb/w15-full-restore-result-20261030.md).
 
-Vorher gezielt bestanden und unabhängig übernommen: Journal10.820Originalpayloads/
-10.822durableACKs, echterSIGTERM+4Fehlerfälle; neue3Lifecyclefälle mit2echtenTERMs,
-kein Weiterlauf, ursprünglicher UNKNOWN-Snapshot bleibt unverändert. Gzip-/Decimal-
-Dateiadapter erhält alle120.268.457C-Auditbytes verlustfrei in42.139.672Bytes und
-vergleicht3.501Postimages/6.000Usage; ausdrücklich keine neue Datenbankabnahme.
-SQL3517:3511exakt übernommen/6nurParseDescribe/0Arbeitsabfragen ausgeführt.
-KleineAppvorbereitung8.675.328Bytes; keine143MB-Binär-Stagingduplikation und
-keine118,8MB-Seedkopie, stattdessen hashgebundenerRO-Einzelfilemount außerhalbBASE.
-Asynchrone Diagnosehülle mit Stop-Latch, tiefem Abbruchbild, einem Abschlussowner,
-dauerhaftenACKs und exakten Zeiten eingebunden; tatsächlicher Runtime-Beleg noch offen.
-Bestehende16/16Integration, Worker81/81,500/500Quellen und16Auth-ACKs/49HTTP200
-im belegten Umfang übernommen, nicht wiederholt. HistorischeA/B/CFAILs,
-11.UNKNOWN, B291.UNKNOWN und C8,4s-Ursache unverändert erhalten.
+Übernommen: Originaldiagnose41049571965 aufa2d0f542 unabhängig PASS, zwölf
+Originale/242570240Bytes, fünf native Restoreaktionen500/0, vier Exporte,
+Peak1644433408/Reserve915566592/Swap0; keine vollständige Sicherungsabnahme.
+Historische innere Ursache40958135662 bleibt UNKNOWN.
+[Diagnose](betrieb/w15-restore-export-diagnostic-result-20261030.md).
+Elf Mockzusatzoriginale217563454Bytes in41037459441 auf13b858b1 unabhängig PASS;
+alle Größen/Hashes/Manifest/GPG/Rücklesung bestätigt, Replacements-Pin geschlossen.
+Späterer Mockjob empfängt erhaltenes Cipherarchiv selbst mit passendem GO.
+[Empfang](betrieb/w15-mock-original-reception-20261030.md).
+Native Minimalprobe40982718647 aufdeb812f9 PASS übernommen, nicht wiederholt.
+End500-Sender und TCP-Fix vorbereitet; Vollrestoreabnahme/End500-GO fehlen.
+Mockcode/AtomicACK/Tag/Namespace/Auswertung vorbereitet, End500-Abnahme/Bridge
+fehlen; historischer Mock-RAM-v2-Fehler nach69Units bleibt FAIL/UNKNOWN.
+Keine RAM-Erhöhung, weitere Originaltests, End500-/Mock500-/Production-Aktion.
 
-**Konkreter Vorschlag, noch NICHT ausgeführt:**26byteidentische Node-/PostgREST-
-Host-Stagingkopien,13Paare/26verschiedeneInodes, SHA/Größe/Modus vollständig erfasst.
-Sichtbar1.862.975.488Bytes; rechnerisch danach ca2,086GB frei, keine garantierte
-Reclamation/Startreserve. Keine Originale/DBs/Logs/Archive/Quellenbelege im Vorschlag.
-Kanonische Exemplare plus Originalruntime bleiben; Rückweg exklusive Kopie aus
-Kanonik mit vollständigerHash-/Rechtekontrolle. Alte Stagepfade fehlen bis Restore.
-Vor Löschung separates GO, danach echtesdf und neuer unabhängiger Kapazitätsreview;
-auch ein weiterer frischer End500-Versuch benötigt neues GO. AktuellesKontingent verbraucht.
-CI `fdf69342`: Pflicht40748463046/Integrität40748463085 abgeschlossen/grün;
-Browser gemäß Prüfplan übersprungen. Dies ist kein CI-PASS für `07b51319`;
-neue Kopf-CI nach Push separat. Vercel-includeFiles2.915>256 unverändert separat.
-[Belege, tatsächliche Messwerte und genaues Bereinigungsmanifest](betrieb/w15-atomic-usage-integration-20261028.md).
+## W15 Fortschreibung: primärer Restore durchlaufen, Backup noch FAIL
 
-**Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten.
+Neues exaktes Betreiber-GO aufc89d423f wurde genau einmal genutzt: Run40931663329
+FAIL`connection-backup`,47864Zeichen verschlüsselter Dispatch. Primäre fünf
+Native-Schritte und500/0 nur durch verifizierten Codefluss belegt; keine
+unabhängige Gesamt-Restore-/Backup-/RAM-Abnahme, keine finalisierten Artefakte.
+Kein Retry/End500/Mock500. Alte7e3d96e9/b6/c89d und ihre FAIL-Belege erhalten.
+
+Gezielte anschließende Entwicklung: acht feste Backup-Unterphasen, geschlossen
+numerische Diagnose ausschließlich aus bestehendem RAM-Cache ohne Neumessung,
+Erhalt einer Callbackphase über Legacy-SystemExit. Kein tatsächlicher Backupbug
+als repariert behauptet; historische UrsacheUNKNOWN. Neue fiktive Tests und
+unabhängige Reviews PASS. Unverändertes echtes Snapshot-SQL wird im vorhandenen
+synthetischen CI-PostgreSQL mit kleinen500/0Fixturezeilen geprüft; native CI
+noch erforderlich. Kein Original-/500er-Controller-/Modelllauf durch den Test.
+Der folgende Diagnosekopf ecae6400 wird unverändert für einen später separat
+freizugebenden Restore-/End500-Lauf eingefroren; Mock-Folgeadapter erlaubt ihn
+nur mit späterer positiver End500-Abnahme/Bridge/Mock-GO. Nächster echter
+Datenlauf erfordert neue konkrete Freigabe und aktuelle CI.
+Mock-Dateiblocker und bestehende Zeit-/RAM-Verträge bleiben unverändert.
+
+
+## W15: Restore-Einzelversuch FAIL; Mock500 integriert, Ausführung gesperrt
+
+PR975-Branch wurde ohne Force-Push auf den geprüften gemeinsamen Integrationsstand
+c89d423fd8431b42a5351de82e640f40e8517ee4 vorgerückt;7e3d96e9/b6eb7449 als
+unveränderte Vorfahren erhalten, Schutzregeln unverändert. GitHub markierte
+den vorbereitenden Draft976 dadurch automatisch als gemergt in diesen
+Entwicklungsbranch; kein Merge nachmain/Deployment/Production. Der getrennte
+Mock-Baselineadapter läuft als Draft977 auf direktem Nachfolgerc4d035dd.
+Bisherige b6-Pflicht-CI40909894080/40915289161 bestanden. Nach explizitem Betreiber-GO
+wurde genau ein Restore gestartet:40920225333 FAIL, Phase`connection-restore`.
+Erster Versuch40905370350 auf7e3d96e9 bleibt FAIL. Kein Retry, keine positive
+Restoreabnahme, kein End500/Mock500. TCP-Readinessrace in primärem und zweitem
+Restore korrigiert, feste Fehlerunterphasen/gezielte fiktive Tests und unabhängiger
+Review bestanden; genaue historische Ursache weiterUNKNOWN. Ein nächster echter
+Restore aufc89d423f braucht grüne aktuelle CI und neues exaktesGO.
+Erfolgreicher Empfang aller zwölf Originaldateien
+40876458074 bleibt übernommen; seine Qualifikation wurde nicht wiederholt.
+
+Mock500-Anschlüsse auf getrenntem Integrationszweig vorbereitet: Atomic12ACK,
+Tages-/Namespacebindung, bestehende500/500-Quellenprüfung, vollständiger Controller
+und Auswertung, eigene gemeinsame RAM-v2-Messung, vollständiger Plattenplan,
+verschlüsselte Sicherung/Remote-Readback/zweite Rücksicherung und Einmalstartwächter.
+Standardmäßig gesperrt; gezielte fiktive Verbindungstests sind keine500er-Abnahme.
+Synthetischer neuer v2-Runner40922859278 aufc89d423f unabhängigPASS:
+Peak302014464Bytes/Swap0,UID1000,gleicherParentnachKindernleer,keineOriginale/DB.
+Pflicht-CI40922851354/40923999187 aufc89d423f und40924138247 auf
+c4d035dd bestanden; aktuellste Dokumentationskopfchecks sieheDraft977. Historischer RAM-v2-Fehler bleibt FAIL.
+
+Dateiinventur lokalBLOCKED wird nicht wiederholt. GitHub-/Drive-Belege bestätigen
+das bestehende269598Byte-Builder-ZIP samt historischem SHA; keine Payloads geladen.
+Zehn weitere Originale weiter nicht erreichbar bestätigt; zehn der elf Zusatzpins
+bekannt(217550485Bytes), nur aktueller Replacements-Pin unbekannt. Keine neue
+Qualifikation/Übertragung freigegeben. Zwölf vorhandene End500-Originale ersetzen
+nicht diese elf Zusatzdateien. Kein Beweis globalen Datenverlusts. Auch364084Einträge des
+vorhandenen komprimierten SAFE-Metainventars27.10. liefern keinen Zusatzbeleg:
+nur Statfelder, keine Inhaltshashes,0exakte Namens-/Pin-Treffer; keine neue
+Inventur/Original-/Cipherdateien gelesen.
+[Mock-Vertrag, Nachweise, fehlende Dateien und getrennte Freigaben](betrieb/w15-mock500-github-start-20261029.md).
 
 ## Vollständiges Root-Paket und Caller-Vorbereitung (13.10.2026)
 

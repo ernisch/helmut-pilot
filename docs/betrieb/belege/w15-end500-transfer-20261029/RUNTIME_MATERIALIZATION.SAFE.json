@@ -1,0 +1,49 @@
+{
+  "schema": "helmut-w15-runtime-materialization-preparation/1",
+  "observedDateOperator": "2026-10-29",
+  "scope": "EXPLICIT_GITHUB_RUNTIME_FILE_ADAPTER_ONLY",
+  "status": "PASS_TARGETED_DEVELOPMENT_CHECKS_RUNTIME_ACCEPTANCE_PENDING",
+  "copiedAssets": ["app", "node", "postgrest", "roles.PRIVATE.sql", "input.PRIVATE.dump"],
+  "copyWriter": "existing Python orchestrator guarded by common_resources.sample",
+  "runtimeAssetTransport": "parent-local new inode copies and readonly bind mounts",
+  "actualMountReadbackRequiredBeforeRestore": true,
+  "maximumCopiedBytes": 1073741824,
+  "maximumCopiedFiles": 4096,
+  "newTargetedTests": {
+    "initialCases": 9,
+    "mountReadbackCasesAddedAfterReview": 2,
+    "mountReadbackNegativeVariants": 8,
+    "uniqueCasesPassed": 11,
+    "initialCasesRepeatedAfterAddition": false,
+    "actualDockerOrDatabaseStartedByTests": false,
+    "existingPreparedAndStateBackupWalkCompatibility": "PASS_FICTIONAL_FILES"
+  },
+  "independentReview": {
+    "task": "materialization_review",
+    "mode": "READ_ONLY",
+    "status": "PASS_SCOPED_STATIC_REVIEW",
+    "necessaryMountReadbackFindingResolved": true,
+    "testsRepeatedByReviewer": false
+  },
+  "deepSeekAttempt": {
+    "route": "flash high write",
+    "result": "EMPTY_PROVIDER_RESPONSE_INVALID_JSON",
+    "filesApplied": 0,
+    "automaticRetry": false,
+    "implementationCompletedByOrchestrator": true
+  },
+  "standaloneFull500ControllerChanged": false,
+  "privateOriginalsOrCredentialsPublished": false,
+  "actualRunnerObserved": false,
+  "databaseRestoreObserved": false,
+  "fullLifetimeMemoryAccepted": false,
+  "fullRestoreDiskCapacityAccepted": false,
+  "completeRemoteBackupAccepted": false,
+  "githubEnvironmentSecretAccess": "BLOCKED_403",
+  "historicalProofsRepeated": false,
+  "end500Started": false,
+  "mock500Started": false,
+  "productionActions": false,
+  "executionAuthority": false,
+  "readiness": "BLOCKED"
+}

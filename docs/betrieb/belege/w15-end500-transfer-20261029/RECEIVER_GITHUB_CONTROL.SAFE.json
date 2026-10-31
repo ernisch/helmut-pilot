@@ -1,0 +1,27 @@
+{
+  "schema": "helmut-w15-github-existing-recipient-control-observation/1",
+  "url": "https://github.com/ernisch/helmut-pilot/actions/runs/40855525798",
+  "jobId": "123385403882",
+  "environmentName": "helmut-ci-originals",
+  "environmentSecretScopeConfirmedByOperator": true,
+  "privateValuesReturnedToAgent": false,
+  "rawControlResult": {
+    "status": "PASS_EXISTING_RECIPIENT_CONTROL_ONLY_START_BLOCKED",
+    "recipientFingerprint": "7E3998A6C2CB948C69A2EE51F4267ABF26796EDC",
+    "existingRecipientControlVerified": true,
+    "originalCipherDecrypted": false,
+    "archiveOrDatabaseRestoreAccepted": false,
+    "commonLifetimeMemoryAccepted": false,
+    "privateHandoffAuthorized": false,
+    "end500Acceptance": false,
+    "mock500Acceptance": false,
+    "controllerStarted": false,
+    "executionAuthority": false,
+    "readiness": "BLOCKED",
+    "exactCommit": "837b993a4a73588cf136ed413d87adf1d032ce71",
+    "runId": "40855525798",
+    "runAttempt": 1
+  },
+  "sourceOriginalsReceived": false,
+  "fullEnd500OrMock500Started": false
+}

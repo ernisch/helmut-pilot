@@ -1,0 +1,204 @@
+{
+  "schema": "helmut-w15-post-go-integration/1",
+  "status": "TARGETED_PREPARATION_PASS_SOURCE_EXECUTION_UNAVAILABLE_END500_NOT_RUNNABLE",
+  "observedAtUTC": "2026-10-28T22:56:57.973224+00:00",
+  "operatorDate": "2026-10-29 Europe/Istanbul",
+  "publicBaseCommit": "6bee99575509c4ba162a87612b2aab1271ce5e17",
+  "transferId": "w15-end500-20261029-26d5a4135ca7415ca41262fc45b561c8",
+  "approvedPlanSHA256": "84b730490014c5d17f81ac350677275ce33f368731c8f4a979a4d1b2c9165bf5",
+  "authority": {
+    "concreteOnceTransferGO": "EXPLICIT_YES_IN_THIS_THREAD",
+    "receiverKeyRecoveryIncluded": true,
+    "newTransferGORequired": false,
+    "end500Start": false,
+    "mock500Start": false,
+    "merge": false,
+    "productionChange": false,
+    "deployment": false,
+    "paidResourcesOrModelCalls": false
+  },
+  "actualTransfer": {
+    "publicReceiverAndEncryptedNewKeyRecoveryUploaded": 2,
+    "fullAuthenticatedRemoteReadbacks": 2,
+    "remoteBytesVerified": 4665,
+    "oldPrivateKeysOrPassphrasesTransferred": 0,
+    "originalW15FilesTransferred": 0,
+    "originalW15BytesTransferred": 0,
+    "shared": false,
+    "drivePermissionsChanged": false,
+    "newWrapperOffhostDecryptVerified": false,
+    "cloudReadbackReceiptSHA256": "5987ef39b60f4d3c0b407a456352260a61a5d5fc6fef03520e4132e884c0aa4a"
+  },
+  "sourceExecution": {
+    "threadTitle": "Hauptthread",
+    "threadId": "01a17c84-6676-71ca-ab08-d63e6e5cf05c",
+    "hostId": "durable",
+    "readThreadAccessible": true,
+    "lastObservedThreadStatus": "idle",
+    "localSourceInventory": "SOURCE_UNAVAILABLE",
+    "availableCrossThreadCapabilities": [
+      "read_thread",
+      "wait_threads"
+    ],
+    "sendOrContinueOrRemoteExecutionToolAvailable": false,
+    "browserControlToolAvailable": false,
+    "sourceExportPerformed": false,
+    "selectedSourceFiles": 12,
+    "selectedSourceBytes": 242570240,
+    "concreteSourceHandoff": "docs/betrieb/w15-end500-quellstart-nach-go-20261029.md"
+  },
+  "targetedChecks": [
+    {
+      "command": "python3 -B scripts/w15-github/test_source_transfer.py -v",
+      "cases": 10,
+      "result": "PASS",
+      "data": "FICTIONAL_ONLY",
+      "scope": "Original preservation, private exclusive copy, symlink/hardlink/hash/size rejection, ordered cipher splitting, no overwrite, wrong GO cannot inventory; final version after readback hash binding."
+    },
+    {
+      "command": "python3 -B scripts/w15-github/test_input_port.py -v",
+      "cases": 9,
+      "result": "PASS",
+      "executor": "controller_port",
+      "data": "FICTIONAL_ONLY",
+      "repeatedByIntegrator": false
+    },
+    {
+      "command": "python3 -B scripts/w15-github/test_backup_contract.py -v",
+      "cases": 9,
+      "result": "PASS",
+      "executor": "backup_binding",
+      "data": "FICTIONAL_ONLY",
+      "repeatedByIntegrator": false
+    },
+    {
+      "name": "Nine existing public provenance reports",
+      "result": "PASS_BYTES_AND_HASH_ONLY",
+      "newSourceQualification": false,
+      "executor": "controller_port"
+    },
+    {
+      "name": "Old approved transfer plan and five prepared code pins unchanged",
+      "result": "PASS"
+    },
+    {
+      "name": "Historical CURRENT_STATE and RAM section byte-identical to publicBaseCommit",
+      "result": "PASS"
+    },
+    {
+      "name": "Python AST/JSON syntax, handoff hashes and diff whitespace",
+      "result": "PASS"
+    }
+  ],
+  "independentReviews": [
+    {
+      "scope": "source_transfer.py after leaf FD failure cleanup",
+      "executor": "controller_port",
+      "result": "PASS_SCOPE",
+      "subsequentAddition": "Exact 1360-byte readback receipt SHA check, covered by integration hash checks; no change to copy/seal/split."
+    },
+    {
+      "scope": "input_port.py",
+      "executor": "backup_binding",
+      "result": "PASS_SCOPE"
+    },
+    {
+      "scope": "backup_contract.py",
+      "executor": "controller_port",
+      "result": "PASS_SCOPE"
+    }
+  ],
+  "developmentResults": {
+    "sourceExportHelper": "EXPLICIT_ONCE_LOCAL_STAGE_SEAL_SPLIT_ONLY_NO_UPLOAD",
+    "inputPort": "VERIFIED_RELOCATION_ONLY_NOT_ORIGINAL_CONTROLLER_ADAPTER",
+    "backupContract": "SELECTION_AND_EXPORT_COMMAND_PLAN_ONLY_NOT_COMPLETE_BACKUP",
+    "acceptedAsCompleteBackup": false,
+    "githubEnd500Runnable": false
+  },
+  "remainingGates": [
+    "Execute the already authorized bound source export in Hauptthread; current chat cannot initiate that remote turn.",
+    "Receive and authenticate all twelve selected original files and provenance.",
+    "Explicitly integrate original controller and auditor path resolution without bypassing source qualification.",
+    "Observe fresh runner/image resources, complete disk/setup budget and current source/run-bound independent review.",
+    "Integrate final consistent database and role exports before stopping the original common-cgroup monitor, then collect all private runtime outputs.",
+    "Verify complete restore and authenticated external full-backup readback; preserve failures and originals.",
+    "Separate explicit once-only GitHub End500 start GO; Mock500 remains separate."
+  ],
+  "memory": {
+    "containerLimitBytes": 2560000000,
+    "maximumActualCommonLifetimePeakBytes": 2048000000,
+    "physicalReserveBytes": 512000000,
+    "swapBytes": 0,
+    "authMaximumExclusiveMs": 30000,
+    "unitMaximumExclusiveMs": 60000,
+    "providerMaximumExclusiveMs": 20000,
+    "historicalResultsModified": false
+  },
+  "prohibitedSideEffects": {
+    "fullEnd500Runs": 0,
+    "fullMock500Runs": 0,
+    "databaseOperations": 0,
+    "productionChanges": 0,
+    "originalFilesModifiedOrDeleted": 0,
+    "paidModelCalls": 0,
+    "newInfrastructure": 0
+  },
+  "filePins": [
+    {
+      "path": "docs/CURRENT_STATE.md",
+      "bytes": 29653,
+      "sha256": "87a54bcff4bf702b063672371f4ce07a4bc67084e8bbcd7658f7505ee715cd64"
+    },
+    {
+      "path": "docs/betrieb/w15-end500-quellstart-nach-go-20261029.md",
+      "bytes": 8825,
+      "sha256": "dc1427a9ae047383e78b5aaff29573a220ac9d70e3622337e7f486b95811e5e3"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-end500-transfer-20261029/RECIPIENT_CLOUD_READBACK.SAFE.json",
+      "bytes": 1360,
+      "sha256": "5987ef39b60f4d3c0b407a456352260a61a5d5fc6fef03520e4132e884c0aa4a"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-end500-transfer-20261029/TRANSFER_PLAN.SAFE.json",
+      "bytes": 10045,
+      "sha256": "84b730490014c5d17f81ac350677275ce33f368731c8f4a979a4d1b2c9165bf5"
+    },
+    {
+      "path": "docs/betrieb/belege/w15-end500-transfer-20261029/SEALED_MANIFEST_TEMPLATE.json",
+      "bytes": 2150,
+      "sha256": "af3bd654fa292ad256e0fa265c2fb3d968e945633f1439a12da72f015aeab86f"
+    },
+    {
+      "path": "scripts/w15-github/source_transfer.py",
+      "bytes": 10206,
+      "sha256": "c1a644ee2d5fa99d407746d07400eaf5c6e5b7a991c56c4bbb0302bb8dfd8832"
+    },
+    {
+      "path": "scripts/w15-github/test_source_transfer.py",
+      "bytes": 4287,
+      "sha256": "3dca33f7ffe63f70c158763e836b2dbeae22837f087ac30bccb5039c37c9aed2"
+    },
+    {
+      "path": "scripts/w15-github/input_port.py",
+      "bytes": 11864,
+      "sha256": "c30ee74ee63ecf427e20fece9453ec5bccc21baef3659611c02a6484d178728c"
+    },
+    {
+      "path": "scripts/w15-github/test_input_port.py",
+      "bytes": 10010,
+      "sha256": "fb7f44ad8372acb0ebe5fce29ae0bccc20ffae081cbd2b9bed7d384b18c81314"
+    },
+    {
+      "path": "scripts/w15-github/backup_contract.py",
+      "bytes": 10437,
+      "sha256": "cd2d11fbe064fa9e0b0cd0cd70453112543816731cf5b7f15179d238619ed9ea"
+    },
+    {
+      "path": "scripts/w15-github/test_backup_contract.py",
+      "bytes": 6002,
+      "sha256": "d15a8fbefe9531ac0d2e9db93c9842e05cc4a4378aba8082113542d2e1391308"
+    }
+  ],
+  "selfExcludedFromFilePins": true
+}

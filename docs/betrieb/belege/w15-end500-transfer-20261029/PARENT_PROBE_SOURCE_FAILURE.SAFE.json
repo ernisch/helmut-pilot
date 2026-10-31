@@ -1,0 +1,26 @@
+{
+  "schema": "helmut-w15-parent-topology-probe-observation/1",
+  "runId": "40846013963",
+  "runAttempt": 1,
+  "jobId": "123353574338",
+  "exactCommit": "cc534d6de57c06460bcec9c0f847962f355f0209",
+  "url": "https://github.com/ernisch/helmut-pilot/actions/runs/40846013963",
+  "status": "FAIL_OR_UNKNOWN_PARENT_PROBE_START_BLOCKED",
+  "failure": {
+    "phase": "worker-load",
+    "code": "WORKER_SOURCE_UNAVAILABLE",
+    "exitCode": null,
+    "via": ["supervisor-worker", "outer-supervisor"]
+  },
+  "sameMethodAttempts": 2,
+  "causeReevaluated": true,
+  "selectedAlternative": "prevalidated_module_fork_then_groups_gid_uid_drop",
+  "homeOrRepositoryPermissionsChanged": false,
+  "readiness": "BLOCKED",
+  "executionAuthority": false,
+  "controllerStarted": false,
+  "databaseStarted": false,
+  "end500Acceptance": false,
+  "mock500Acceptance": false,
+  "commonLifetimeMemoryAccepted": false
+}

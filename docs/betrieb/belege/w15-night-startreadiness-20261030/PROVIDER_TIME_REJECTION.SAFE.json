@@ -1,0 +1,24 @@
+{
+  "schema": "helmut-w15-provider-time-guard-rejection/1",
+  "dateUTC": "2026-10-30",
+  "baselineExactCommit": "deb812f9e7e3a2d58e5b4e593a1eec00ef1e22d8",
+  "provenRuntimeDefect": "Middle provider phases at the exclusive 20000ms limit were accepted by the actual per-unit runtime guard.",
+  "reproduction": {
+    "method": "Compile and execute only the real per-unit guard slice with fictional D/R observations; no runtime main action.",
+    "baselineAcceptedMiddle20000ms": true,
+    "correctedGuardRejectsMiddle20000msAnd20001ms": true,
+    "positive19999msAccepted": true,
+    "existingWorstDelayEdgesPreserved": true,
+    "discardedInitialHarness": "The first VM harness mixed Array realms; it was corrected before the actual baseline failure was reproduced."
+  },
+  "targetedChecks": 17,
+  "targetedStatus": "PASS_PROVIDER_GUARD_BOUNDARIES_ONLY",
+  "launcher": "node scripts/lokal.js -- node scripts/synthetik-500-w15-provider-time-boundary-test.js",
+  "newDatabaseStarted": false,
+  "providerCalled": false,
+  "fullMock500Started": false,
+  "originalDataRead": false,
+  "memoryAcceptance": false,
+  "executionAuthority": false,
+  "mock500Acceptance": false
+}

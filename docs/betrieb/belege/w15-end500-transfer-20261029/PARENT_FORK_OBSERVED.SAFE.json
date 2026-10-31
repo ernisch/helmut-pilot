@@ -1,0 +1,79 @@
+{
+  "runId": "40847487765",
+  "jobId": 123358463983,
+  "status": "PASS_PARENT_TOPOLOGY_ONLY_START_BLOCKED",
+  "readiness": "BLOCKED",
+  "exactCommit": "6a2a439ca06935c0842cdbc0ba940a4f8eeb6f5d",
+  "runAttempt": 1,
+  "roles": {
+    "rootSupervisorPID": 2638,
+    "uid1000WorkerPID": 2676,
+    "dockerClientPID": 2764,
+    "containerInitPID": 2742,
+    "dockerSocketGID": 118,
+    "workerSupplementaryGroups": [
+      118
+    ],
+    "observedImageId": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+    "sampleWhileAllRolesLive": {
+      "configuredLimit": "2560000000",
+      "swapMaximum": "0",
+      "kernelLifetimePeakBytes": 28372992,
+      "currentBytes": 16916480,
+      "swapCurrentBytes": 0,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      }
+    }
+  },
+  "initialCommonParent": {
+    "configuredLimit": "2560000000",
+    "swapMaximum": "0",
+    "kernelLifetimePeakBytes": 0,
+    "currentBytes": 0,
+    "swapCurrentBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0,
+      "sock_throttled": 0
+    }
+  },
+  "finalCommonParentAfterOwnedExits": {
+    "configuredLimit": "2560000000",
+    "swapMaximum": "0",
+    "kernelLifetimePeakBytes": 33669120,
+    "currentBytes": 1179648,
+    "swapCurrentBytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0,
+      "sock_throttled": 0
+    }
+  },
+  "sameKernelParentIdentity": true,
+  "ownedChildrenExited": true,
+  "executionAuthority": false,
+  "end500Acceptance": false,
+  "mock500Acceptance": false,
+  "commonLifetimeMemoryAccepted": false,
+  "fullRestoreCapacityAccepted": false,
+  "controllerStarted": false,
+  "databaseStarted": false,
+  "authCalls": 0,
+  "units": 0,
+  "providerCalls": 0
+}

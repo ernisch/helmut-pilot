@@ -1,0 +1,108 @@
+{
+  "schema": "helmut-w15-night-existing-original-source-search/1",
+  "observedAtUTC": "2026-10-30T01:55:10Z",
+  "status": "BLOCKED_NO_NEW_PHYSICAL_SOURCE_OR_MATCHING_SNAPSHOT_PROVEN",
+  "branch": "codex/w15-night-originals-20261030",
+  "baseCommit": "deb812f9e7e3a2d58e5b4e593a1eec00ef1e22d8",
+  "historicalQualificationPin": {
+    "fileName": "ALL500_MOCK_BINDINGS_CHECK.SAFE.json",
+    "bytes": 13706128,
+    "sha256": "d2603d926508a1655b415b18734fe37bc1a660dccb6f139ae43b1859a11bed3d",
+    "source": "docs/betrieb/belege/w15-atomic-usage-integration-20261028/SOURCE_COMPATIBILITY.SAFE.json#/qualificationPin",
+    "historicalOnly": true,
+    "physicalSourceConfirmed": false,
+    "freshHashComputed": false,
+    "knownHistoricalPathRetested": false
+  },
+  "driveExactLiveNameMethod": {
+    "attempts": 2,
+    "tool": "google_drive.search",
+    "bestEffortFetch": false,
+    "itemType": "document",
+    "topn": 100,
+    "trashed": false,
+    "knownFolderListingRepeated": false,
+    "trashSearchRepeated": false,
+    "responses": [
+      {
+        "attempt": 1,
+        "exactNames": ["ALL500_MOCK_BINDINGS_CHECK.SAFE.json"],
+        "results": [],
+        "continuationReturned": false,
+        "isError": false
+      },
+      {
+        "attempt": 2,
+        "exactNames": [
+          "ORIGINAL_PACKAGE.PRIVATE.json",
+          "NORMALIZED500_CURRENT_POLICY.PRIVATE.json",
+          "ORIGINAL_U_PACKET.PRIVATE.json",
+          "QUALIFIED_ROWS.PRIVATE.json",
+          "QUALIFIED_MOCK_FIXTURES.PRIVATE.json",
+          "QUALIFIED_NATIVE.PRIVATE.json",
+          "QUALIFIED_DERIVATIONS.PRIVATE.json",
+          "CURRENT_NATIVE_REPLACEMENTS.PRIVATE.json",
+          "publication-policy.PRIVATE.json"
+        ],
+        "results": [],
+        "continuationReturned": false,
+        "isError": false
+      }
+    ],
+    "reevaluatedAfterSecondAttempt": true,
+    "conclusion": "No new source grounded by these bounded connector name queries; no global absence or loss claim.",
+    "coverageLimits": [
+      "Connector document metadata filter and accessible-account scope",
+      "No renamed files or archive members searched",
+      "No original host or snapshot contents physically verified"
+    ]
+  },
+  "builderProviderChecksumMethodAfterReevaluation": {
+    "attempts": 1,
+    "tool": "google_drive.get_file_metadata",
+    "fileId": "1_yaGlXYrG2ExYbE2MFBq_ucE4YtgMFCm",
+    "fileName": "HELMUT_HANDOFF_20261016_MINIMAL.zip",
+    "requestedFields": "id,name,mimeType,size,sha256Checksum,modifiedTime,version,trashed",
+    "returnedBytes": 269598,
+    "returnedMimeType": "application/zip",
+    "returnedModifiedTime": "2026-10-16T15:56:33.287Z",
+    "returnedAccessStatus": "access_not_verified",
+    "providerSHA256Returned": false,
+    "historicalSHA256": "c979e18775f285ddf7af4328c8efc8f0642954eb6d0e52e50636d3b4ab902d15",
+    "historicalOnly": true,
+    "physicalPayloadRead": false,
+    "freshHashComputed": false,
+    "identicalRetryPerformed": false
+  },
+  "threadSource": {
+    "readThreadToolAvailable": false,
+    "listThreadsToolAvailable": false,
+    "knownUsableThreadIdInTargetedSourceDocuments": false,
+    "hangingIndexAttemptsRepeated": false
+  },
+  "remainingMissingAdditionalOriginals": 10,
+  "knownMissingBytesExcludingUnknownReplacement": 217280887,
+  "exactPinsReference": "docs/betrieb/belege/w15-mock500-integration-20261029/EXISTING_BACKUP_INVENTORY.SAFE.json#/assets",
+  "replacementPin": {
+    "fileName": "CURRENT_NATIVE_REPLACEMENTS.PRIVATE.json",
+    "bytes": null,
+    "sha256": null,
+    "retainedReportPointer": "currentNativeReplacementsPin"
+  },
+  "nextRequiredEvidence": "An accessible retained source location or concretely identified snapshot made after the 2026-10-28 report creation, proving the exact report member, bytes and SHA256; then read the existing report in place and resolve its retained bindings.",
+  "globalDataLossProven": false,
+  "hashMismatchObserved": false,
+  "newInventoriesCreated": 0,
+  "qualificationsRepeated": 0,
+  "originalPayloadDownloads": 0,
+  "cipherPayloadDownloads": 0,
+  "keyReads": 0,
+  "decryptions": 0,
+  "privatePayloadTransfers": 0,
+  "originalTestsStarted": 0,
+  "full500RunsStarted": 0,
+  "productionActions": 0,
+  "externalMessagesSent": 0,
+  "transferAuthorized": false,
+  "executionAuthority": false
+}

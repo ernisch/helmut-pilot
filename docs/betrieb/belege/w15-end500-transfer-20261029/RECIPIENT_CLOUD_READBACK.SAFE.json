@@ -1,0 +1,31 @@
+{
+  "schema": "helmut-w15-recipient-cloud-durability/1",
+  "status": "PASS_PUBLIC_RECIPIENT_AND_ENCRYPTED_NEW_KEY_BACKUP_REMOTE_BYTES_ONLY",
+  "atUTC": "2026-10-28T22:45:50.106496+00:00",
+  "planSHA256": "84b730490014c5d17f81ac350677275ce33f368731c8f4a979a4d1b2c9165bf5",
+  "transferId": "w15-end500-20261029-26d5a4135ca7415ca41262fc45b561c8",
+  "operatorGO": "Explicit yes in this thread on 2026-10-29 Europe/Istanbul; one bound transfer including receiver-key recovery only",
+  "receiverFingerprint": "7E3998A6C2CB948C69A2EE51F4267ABF26796EDC",
+  "recoveryRecipientFingerprint": "DCFD605ED28EEACA9B826105E769DE07A68BA8E4",
+  "driveFolderId": "1gvYcdBSGYscOmTxYeJSJ3TpbacyJWBFd",
+  "folderAndRecoveryCipherShared": false,
+  "recoveryCipherOnlyOwnerPermission": true,
+  "files": [
+    {
+      "driveFileId": "1D-Mycf7lZ42kCQdfSC9GAKMOA9HLR_PV",
+      "bytes": 1367,
+      "sha256": "3075683711733f6c7fc5836c9b4f5f1d94eaf35dec7f9a401132f52995122443",
+      "fullRemoteReadback": "PASS"
+    },
+    {
+      "driveFileId": "1QqKoON859fDE-iwvk3nErSZnN68Tkz8C",
+      "bytes": 3298,
+      "sha256": "753b8bdaad77d992ee21d0099dd43614ab367403c97ba1213d6206aa7b959714",
+      "fullRemoteReadback": "PASS"
+    }
+  ],
+  "newWrapperOffhostDecryptVerified": false,
+  "originalW15CipherUploaded": false,
+  "end500StartAuthorized": false,
+  "mock500StartAuthorized": false
+}

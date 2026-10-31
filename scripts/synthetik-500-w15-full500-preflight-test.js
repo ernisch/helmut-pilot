@@ -69,7 +69,7 @@ assert.equal(Observer.checkpointAssessment([...points, { kind: "load" }]).origin
 assert.equal(Observer.checkpointAssessment(points.map((point, index) => index === 0 ? { ...point, kind: "admission" } : point)).original16FreshControls, false);
 assert.equal(Observer.checkpointAssessment(points.map((point, index) => index === 0 ? { ...point, observedAt: NaN } : point)).original16FreshControls, false);
 const envelope = (id, kind, begin) => ({ id, kind, beginMS: begin, ackMS: begin + 50, endMS: begin + 51,
-  wallMs: 51, acknowledged: true, ...(kind === "usage-sink" ? { blobAcknowledged: true } : {}) });
+  wallMs: 51, acknowledged: true, ...(kind === "usage-sink" ? { blobAcknowledged: true, storageAcknowledged: true } : {}) });
 const write = (envelopeId, begin) => ({ envelopeId, rowId: "main-auth", beginMS: begin + 10,
   ackMS: begin + 40, endMS: begin + 41, wallMs: 31, acknowledged: true });
 const auth = { mutations: [envelope(1, "public-mutation", 0)], usageSinks: [envelope(2, "usage-sink", 100)],
@@ -85,7 +85,7 @@ for (const change of [
   x => { x.casWrites[0].acknowledged = false; },
   x => { x.casWrites[0].wallMs = 30000; },
   x => { x.mutations[0].wallMs = 30000; },
-  x => { x.usageSinks[0].blobAcknowledged = false; },
+  x => { x.usageSinks[0].storageAcknowledged = false; },
   x => { x.usageSinks[0].id = x.mutations[0].id; }
 ]) {
   const invalid = structuredClone(auth); change(invalid);

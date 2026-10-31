@@ -1,0 +1,62 @@
+{
+  "schema": "helmut-w15-same-job-restore-connection-preparation/1",
+  "observedDateOperator": "2026-10-29",
+  "status": "PASS_SCOPED_CODE_AND_SYNTHETIC_CHECKS_ACTUAL_RESTORE_PENDING",
+  "existingReceptionRunId": 40876458074,
+  "existingReceptionRepeated": false,
+  "sameProcessPrivateHandoffAfterAgentClose": true,
+  "canonicalRuntimeInputsReused": true,
+  "sourceReviewAndContextBeforeRunRootCreation": true,
+  "runtimeCache": {
+    "newPublicBinaryCopies": 2,
+    "newPackageCopies": 2,
+    "allCopiedBytesBoundToQualifiedPins": true,
+    "parentGuardAndPrivateReadback": true,
+    "historicalCacheRequired": false,
+    "downloadsOrNpmInstalls": false,
+    "fullAppAccepted": false
+  },
+  "restoreBoundary": {
+    "nativeOwnedSteps": 5,
+    "expectedProfiles": 500,
+    "expectedActiveProfiles": 0,
+    "sameRestoreCommandsInLegacyAndRuntimePaths": true,
+    "seedOrPostimagesOrAuthCASStartedByRestoreOnly": false,
+    "childExitAndLifecycleAndSQLReadbackRequired": true,
+    "containerOwnershipAndStopReadbackRequired": true,
+    "fullEnd500BackupClosureRelaxed": false
+  },
+  "newSyntheticCases": {
+    "receiveHandoff": 4,
+    "runtimeCache": 14,
+    "ownedRestore": 11,
+    "sameJobConnection": 9,
+    "total": 38,
+    "status": "PASS"
+  },
+  "necessarySharedOwnedBackupRegressionCases": 6,
+  "independentReviews": [
+    {"scope": "receive handoff and restore pipeline and native restore/stop", "status": "PASS_SCOPED_STATIC_REVIEW"},
+    {"scope": "cache package-pin correction and forward extraction", "status": "PASS_SCOPED_STATIC_REVIEW"}
+  ],
+  "standaloneFull500ControllerChanged": false,
+  "fullBackupClosureChanged": false,
+  "ramContractChanged": false,
+  "commonParentLimitBytes": 2560000000,
+  "maximumLifetimePeakBytes": 2048000000,
+  "requiredReserveBytes": 512000000,
+  "swapBytes": 0,
+  "actualOriginalReceptionPerformed": false,
+  "actualOriginalRestorePerformed": false,
+  "actualDatabaseOrDockerStarted": false,
+  "freshSameJobUIDCheckoutImageParentBootstrapObserved": false,
+  "freshFullDiskPlanAccepted": false,
+  "fullRestoreAccepted": false,
+  "completeBackupAccepted": false,
+  "newInfrastructureOrModelAPICalls": false,
+  "end500Started": false,
+  "mock500Started": false,
+  "productionActions": false,
+  "executionAuthority": false,
+  "nextProtectedScope": "After qualified bootstrap/CI/start review: exactly one freshly bound same-job reception and isolated restore to500 profiles/0active; no seed/AuthCAS/End500/Mock500. Separate GO required."
+}

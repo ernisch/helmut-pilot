@@ -1,0 +1,124 @@
+{
+  "schema": "helmut-w15-independent-restore-failure-review/1",
+  "status": "FAIL_INDEPENDENT_LIMITED_RESTORE_ACCEPTANCE",
+  "runId": "40931663329",
+  "runAttempt": 1,
+  "event": "workflow_dispatch",
+  "exactCommit": "c89d423fd8431b42a5351de82e640f40e8517ee4",
+  "branch": "codex/w15-github-end500-preparation-20261028",
+  "workflowStatus": "completed",
+  "conclusion": "failure",
+  "createdAtUTC": "2026-10-29T18:31:46Z",
+  "updatedAtUTC": "2026-10-29T18:33:18Z",
+  "url": "https://github.com/ernisch/helmut-pilot/actions/runs/40931663329",
+  "sourceQualificationSHA256": "c884d135e950986c4be3f4d90e0d9b4e20f4eb5994ddf11dcbd9d0ac5e16cdd4",
+  "safeFailure": {
+    "status": "FAIL_W15_ISOLATED_WORKFLOW",
+    "phase": "worker",
+    "executionAuthority": false,
+    "retryAllowed": false,
+    "worker": {
+      "phase": "connection-backup"
+    }
+  },
+  "jobs": {
+    "runId": 40931663329,
+    "selectedJobs": [
+      {
+        "id": 123651397901,
+        "name": "W15 gemeinsamer Runner \u2014 getrennt gesperrter Restore und End500",
+        "status": "completed",
+        "conclusion": "failure",
+        "steps": [
+          {
+            "number": 1,
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "number": 2,
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "number": 3,
+            "name": "Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "number": 4,
+            "name": "Vorhandene gepinnte Werkzeuge und Image bereitstellen",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "number": 5,
+            "name": "Einmaligen Ablauf gebunden ausfuehren \u2014 ohne passende Freigabe gesperrt",
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          {
+            "number": 9,
+            "name": "Post Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "number": 10,
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "number": 11,
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "otherJobsSkipped": true
+  },
+  "codeFlowEvidence": {
+    "exactReviewedCommitBound": true,
+    "receivePreparePassed": true,
+    "verifiedInputFilesExpected": 12,
+    "verifiedInputBytesExpected": 242570240,
+    "primaryNativeRestoreStepsPassed": 5,
+    "primaryProfilesCheckPassed": 500,
+    "primaryActiveProfilesCheckPassed": 0,
+    "evidenceKind": "INFERRED_FROM_REVIEWED_CONTROL_FLOW_AND_CLOSED_CONNECTION_BACKUP_FAILURE_PHASE",
+    "independentlyDownloadedOriginals": false,
+    "independentNativeReceiptReadback": false
+  },
+  "acceptance": {
+    "primaryRestore500ZeroAcceptedIndependently": false,
+    "completeBackupAccepted": false,
+    "remoteReadbackObserved": false,
+    "independentRecoveryObserved": false,
+    "tableSequenceRolesVerifiedIndependently": false,
+    "fullLifetimeRAMAccepted": false,
+    "finalEmptyParentObserved": false,
+    "restoreAccepted": false,
+    "end500Acceptance": false,
+    "mock500Acceptance": false
+  },
+  "boundary": {
+    "code": "scripts/w15-github/restore_connection.py",
+    "function": "_restore_prepared",
+    "publicPhase": "connection-backup",
+    "reason": "BACKUP_COMPLETION_OR_SUBSEQUENT_SOURCE_AND_RESOURCE_CHECK_FAILED",
+    "exactInnerBackupCheckpointAvailable": false
+  },
+  "rawLogsDisplayed": false,
+  "privateLogsPublished": false,
+  "originalFilesReadByReviewer": false,
+  "testsRepeated": false,
+  "additionalDispatches": 0,
+  "retryAllowed": false,
+  "executionAuthority": false
+}

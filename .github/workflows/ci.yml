@@ -20,17 +20,36 @@ on:
   pull_request:
   push:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      w15_mode:
+        description: 'Standard-CI oder begrenzte W15-Vorbereitung; kein End500-Start'
+        type: choice
+        options: [standard, end500-plan, end500-parent-probe, end500-handoff-canary, end500-receiver-check, end500-receive-inputs, end500-restore-synthetic, end500-restore-gated, end500-restore-export-diagnostic, end500-restore-capacity-diagnostic, end500-full-gated, end500-full-phased-gated, end500-full-capacity-diagnostic, mock500-runner-synthetic, mock500-full-gated, mock500-full-phased-gated, mock500-receive-originals]
+        default: standard
+      w15_request:
+        description: 'Oeffentliche laufgebundene Qualifikation und getrennte Freigabe; keine Geheimnisse'
+        type: string
+        default: ''
+      expected_commit:
+        description: 'Bei W15-Vorbereitung: exakt gepruefter 40-stelliger Commit des gewaehlten Refs'
+        type: string
+        default: ''
+      w15_cipher_index:
+        description: 'Nur GPG-verschluesselter Downloadindex fuer den vorhandenen Empfaenger; niemals Klartextadressen'
+        type: string
+        default: ''
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.ref }}${{ (inputs.w15_mode == 'end500-plan' || inputs.w15_mode == 'end500-parent-probe' || inputs.w15_mode == 'end500-handoff-canary' || inputs.w15_mode == 'end500-receiver-check' || inputs.w15_mode == 'end500-receive-inputs' || inputs.w15_mode == 'end500-restore-synthetic' || inputs.w15_mode == 'end500-restore-gated' || inputs.w15_mode == 'end500-restore-export-diagnostic' || inputs.w15_mode == 'end500-restore-capacity-diagnostic' || inputs.w15_mode == 'end500-full-gated' || inputs.w15_mode == 'end500-full-phased-gated' || inputs.w15_mode == 'end500-full-capacity-diagnostic' || inputs.w15_mode == 'mock500-runner-synthetic' || inputs.w15_mode == 'mock500-full-gated' || inputs.w15_mode == 'mock500-full-phased-gated' || inputs.w15_mode == 'mock500-receive-originals') && format('-w15-{0}', inputs.w15_mode) || '' }}
+  cancel-in-progress: ${{ inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-restore-export-diagnostic' && inputs.w15_mode != 'end500-restore-capacity-diagnostic' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'end500-full-phased-gated' && inputs.w15_mode != 'end500-full-capacity-diagnostic' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-full-phased-gated' && inputs.w15_mode != 'mock500-receive-originals' }}
 
 jobs:
   offline-suite:
+    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-restore-export-diagnostic' && inputs.w15_mode != 'end500-restore-capacity-diagnostic' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'end500-full-phased-gated' && inputs.w15_mode != 'end500-full-capacity-diagnostic' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-full-phased-gated' && inputs.w15_mode != 'mock500-receive-originals')
     name: Syntax + Offline-Suiten
     runs-on: ubuntu-latest
     # CI35207010979: 397/397 Suiten erfolgreich in779s, aber inklusive Setup
@@ -76,6 +95,28 @@ jobs:
           # W15's closed worker validates this exact native runtime.
           node-version: 24.19.0
           cache: npm
+      - name: W15 gezielte Speicherzuordnung — nur 32 MiB synthetische Datei und Kopie
+        if: github.event_name == 'pull_request' && github.head_ref == 'codex/w15-full-restore-result-20261030'
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_memory_probe.py --unit-only
+          sudo -n env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 \
+            GITHUB_ACTIONS=true GITHUB_EVENT_NAME=pull_request W15_MEMORY_PROBE_HEAD_REF=codex/w15-full-restore-result-20261030 \
+            GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" GITHUB_SHA="$GITHUB_SHA" \
+            /usr/bin/python3 -I -B scripts/w15-github/test_restore_memory_probe.py --probe-synthetic-copy-only \
+              --run-id "$GITHUB_RUN_ID" --expected-commit "$GITHUB_SHA"
+      - name: W15 echter synthetischer Minimalanschluss — einmalige Diagnose
+        if: github.event_name == 'pull_request' && github.head_ref == 'codex/w15-native-restore-minimal-20261030'
+        timeout-minutes: 7
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+          sudo -n env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 \
+            GITHUB_ACTIONS=true GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" GITHUB_SHA="$GITHUB_SHA" \
+            /usr/bin/python3 -I -B scripts/w15-github/test_restore_native_minimal.py --native-minimal "$(command -v node)"
       - name: Prüfplan aus geänderten Dateien
         id: plan
         run: |
@@ -115,6 +156,86 @@ jobs:
       - name: FinalContext Subject-Tupel-Codec (synthetisch/offline)
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
+      - name: W15 neue Parent- und Datenzugangsschutzgrenzen (synthetisch)
+        if: steps.plan.outputs.standard == 'true'
+        run: |
+          python3 -B scripts/w15-github/test_runner_parent.py
+          python3 -B scripts/w15-github/test_github_data_access.py
+          python3 -B scripts/w15-github/test_verify_receiver_key.py
+          python3 -B scripts/w15-github/test_build_receiver_browser.py
+          node scripts/w15-github/test_receiver_browser.js
+          python3 -B scripts/w15-github/test_receive_existing_inputs.py
+          python3 -B scripts/w15-github/test_runtime_materialization.py
+          python3 -B scripts/w15-github/test_encrypted_index.py
+          python3 -B scripts/w15-github/test_receive_runtime_handoff.py
+          python3 -B scripts/w15-github/test_runtime_cache.py
+          python3 -B scripts/w15-github/test_runtime_restore.py
+          python3 -B scripts/w15-github/test_restore_backup_seam.py
+          python3 -B scripts/w15-github/test_runtime_owned_backup.py
+          python3 -B scripts/w15-github/test_restore_connection.py
+          python3 -B scripts/w15-github/test_runtime_qualification.py
+          python3 -B scripts/w15-github/test_runner_start.py
+          python3 -B scripts/w15-github/test_runner_diagnostics.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_native_failure_chain.py
+          node scripts/lokal.js -- node scripts/w15-github/test_native_failure_chain.js
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_end500_prepared_initialization.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_post_failure_memory_stat.py
+          node scripts/lokal.js -- node scripts/w15-github/test_post_failure_memory_stat.js
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_capacity.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_phase_contract.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_phase_runtime.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_phased_end500.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_end500_capacity.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_end500_capacity_trace.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_end500_capacity_roles.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_phased_adapter.py
+          node scripts/lokal.js -- python3 -I -B scripts/w15-github/test_mock500_full_dispatch.py
+          node scripts/lokal.js -- node scripts/w15-github/test_restore_capacity.js
+          python3 -B scripts/w15-github/restore_capacity.py --host-admission
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_worker_phase_witness.py
+          node scripts/lokal.js -- node scripts/w15-github/test_worker_phase_witness.js
+          python3 -B scripts/w15-github/test_restore_workflow.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_export_diagnostic.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_export_phase.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_action_phase.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_diagnostic_dispatch.py
+          node scripts/lokal.js -- node scripts/w15-github/test_restore_diagnostic_dispatch.js
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_full_restore_capture_phase.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_full_restore_dispatch.py
+          node scripts/lokal.js -- node scripts/w15-github/test_full_restore_dispatch.js
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_end500_tcp_readiness.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_end500_dispatch.py
+          node scripts/lokal.js -- node scripts/w15-github/test_end500_dispatch.js
+          python3 -B scripts/w15-github/test_restore_resources.py
+          python3 -B scripts/w15-github/test_restore_backup.py
+          python3 -B scripts/w15-github/test_artifact_transport.py
+          python3 -B scripts/w15-github/test_gated_index.py
+          python3 -B scripts/w15-github/test_full_container_closure.py
+          python3 -B scripts/w15-github/test_receiver_socket_path.py
+          python3 -B scripts/w15-github/test_restore_failure_phase.py
+          python3 -B scripts/w15-github/test_restore_tcp_readiness.py
+          python3 -B scripts/w15-github/test_backup_checkpoints.py
+          python3 -B scripts/w15-github/test_backup_failure_projection.py
+          python3 -B scripts/w15-github/test_mock500_parent.py
+          python3 -B scripts/w15-github/test_mock500_runner.py
+          python3 -B scripts/w15-github/test_mock500_inputs.py
+          node scripts/w15-github/test_mock500_bindings.js
+          python3 -B scripts/w15-github/test_mock500_resources.py
+          python3 -B scripts/w15-github/test_mock500_start.py
+          python3 -B scripts/w15-github/test_mock500_backup.py
+          node scripts/lokal.js -- node scripts/synthetik-500-w15-provider-time-boundary-test.js
+          python3 -B scripts/w15-github/test_mock500_existing_inventory.py
+          python3 -B scripts/w15-github/test_mock500_receive.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_original_archive.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_archive_receive.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_archive_handoff_lifecycle.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_receive_dispatch.py
+          node scripts/lokal.js -- node scripts/w15-github/test_mock500_receive_dispatch_exec.js
+          python3 -B scripts/w15-github/test_mock500_workflow.py
+          python3 -B scripts/w15-github/test_mock500_context.py
+          python3 -B scripts/w15-github/test_mock500_shared_scopes.py
+          node --check .github/actions/w15-mock500/index.js
+          node --check .github/actions/w15-isolated/index.js
       - name: Native automation boundary qualification (synthetic)
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
@@ -135,6 +256,36 @@ jobs:
             sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
             psql --version
           fi
+
+      - name: W15 Snapshot-SQL nativ mit kleinen synthetischen Daten pruefen
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 3
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5433"
+          PGUSER: "helmut"
+          PGPASSWORD: "helmut"
+        run: python3 -B scripts/w15-github/test_backup_snapshot_postgres.py --postgres-fixture
+
+      - name: W15 native Exportverbindung mit kleinen synthetischen Daten pruefen
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 3
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5433"
+          PGUSER: "helmut"
+          PGPASSWORD: "helmut"
+          W15_BACKUP_EXPORT_FIXTURE_CONTAINER: ${{ job.services.postgres.id }}
+        run: python3 -B scripts/w15-github/test_backup_export_native.py --postgres-fixture
+
+      - name: Neue Backupinventare nativ mit drei fiktiven Profilen pruefen
+        if: steps.plan.outputs.database == 'true'
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5433'
+          PGUSER: helmut
+          PGPASSWORD: helmut
+        run: python3 -B scripts/w15-github/test_backup_inventory_sql.py --ci-postgres-only
 
       - name: PostgREST 12.2.3 bereitstellen (Voraussetzung des §11-Rückfallnachweises)
         if: steps.plan.outputs.database == 'true'
@@ -443,6 +594,7 @@ jobs:
 
 
   browser-smoke:
+    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-restore-export-diagnostic' && inputs.w15_mode != 'end500-restore-capacity-diagnostic' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'end500-full-phased-gated' && inputs.w15_mode != 'end500-full-capacity-diagnostic' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-full-phased-gated' && inputs.w15_mode != 'mock500-receive-originals')
     name: Browser-/Mobile-Smoke (Chromium)
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -511,3 +663,288 @@ jobs:
           HELMUT_REQUIRE_BROWSER: "1"
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js -- node scripts/prosa-vorschau-test.js
+
+  w15-end500-plan:
+    name: W15 Vorbereitungsplan — kein End500-Test
+    if: github.event_name == 'workflow_dispatch' && inputs.w15_mode == 'end500-plan'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Exakten freigegebenen Quellenstand lesen
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]] || [[ "$(git rev-parse HEAD)" != "$EXPECTED_COMMIT" ]]; then
+            echo 'W15_PLAN_COMMIT_BINDING_FAILED'
+            exit 1
+          fi
+      - name: Oeffentlichen Plan ohne Datenzugang oder Ressourcenstart erzeugen
+        run: python3 -B scripts/w15-github/prepare.py --plan
+      - name: Runnerfaehigkeiten rein lesend beobachten — kein Bootstrap oder Teststart
+        run: python3 -B scripts/w15-github/runner_preflight.py --observe-runner-only --runner-temp "$RUNNER_TEMP"
+      - name: Startgrenze anzeigen
+        shell: bash
+        run: |
+          echo 'Plan erzeugt. End500 und Mock500 wurden nicht gestartet.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Start bleibt BLOCKED: privater Eingang, Ressourcenmessung, CI-Adapter, Ruecksicherung und neues GO fehlen.' >> "$GITHUB_STEP_SUMMARY"
+
+  w15-end500-parent-probe:
+    name: W15 gemeinsamer Parent — nur synthetische Topologieprobe
+    if: github.event_name == 'workflow_dispatch' && inputs.w15_mode == 'end500-parent-probe'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Commit, Branch und ersten Versuch binden
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]] || [[ "$(git rev-parse HEAD)" != "$EXPECTED_COMMIT" ]] || [[ "$GITHUB_SHA" != "$EXPECTED_COMMIT" ]] || [[ "$GITHUB_RUN_ATTEMPT" != '1' ]] || [[ "$GITHUB_REF" != 'refs/heads/codex/w15-github-end500-preparation-20261028' ]]; then
+            echo 'W15_PARENT_PROBE_CONTEXT_REJECTED'
+            exit 1
+          fi
+      - name: Neue Schutzgrenzen ohne Bootstrap pruefen
+        run: python3 -B scripts/w15-github/test_runner_parent.py
+      - name: Vorhandenes gepinntes Image vor der Topologieprobe bereitstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+      - name: Gemeinsamen Parent mit festem Schlafprozess nachweisen
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+        run: python3 -B scripts/w15-github/runner_parent.py --probe-parent-only --run-id "$GITHUB_RUN_ID" --expected-commit "$EXPECTED_COMMIT"
+      - name: Reichweite des Nachweises anzeigen
+        shell: bash
+        run: |
+          echo 'Nur synthetische Parent-/UID-/Containerzuordnung; keine Originale, Datenbank, App oder Auth-Aufrufe.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Kein vollstaendiger Lebenszeit-RAM-, Restore-, Backup-, End500- oder Mock500-Nachweis. Start bleibt BLOCKED.' >> "$GITHUB_STEP_SUMMARY"
+
+  w15-handoff-canary:
+    name: W15 Uebergabekanal — ausschliesslich oeffentlicher Canary
+    if: github.event_name == 'workflow_dispatch' && inputs.w15_mode == 'end500-handoff-canary'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    environment: helmut-ci-originals
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Canary an Commit, Branch und ersten Versuch binden
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]] || [[ "$(git rev-parse HEAD)" != "$EXPECTED_COMMIT" ]] || [[ "$GITHUB_SHA" != "$EXPECTED_COMMIT" ]] || [[ "$GITHUB_RUN_ATTEMPT" != '1' ]] || [[ "$GITHUB_REF" != 'refs/heads/codex/w15-github-end500-preparation-20261028' ]]; then
+            echo 'W15_HANDOFF_CANARY_CONTEXT_REJECTED'
+            exit 1
+          fi
+      - name: Ausschliesslich oeffentlichen Environment-Secret-Canary vergleichen
+        env:
+          HELMUT_W15_HANDOFF_CANARY: ${{ secrets.HELMUT_W15_HANDOFF_CANARY }}
+        run: python3 -B scripts/w15-github/handoff_canary.py --check-public-canary-only
+      - name: Begrenzte Aussage des Kanalchecks festhalten
+        shell: bash
+        run: |
+          echo 'Nur bekannter oeffentlicher Testwert im vorhandenen GitHub-Environment; keine echten Schluessel oder Passphrasen.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Keine privaten Daten, kein Restore, kein End500/Mock500 und keine Startfreigabe.' >> "$GITHUB_STEP_SUMMARY"
+
+  w15-receiver-check:
+    name: W15 vorhandenen Empfaenger pruefen — keine Originale
+    if: github.event_name == 'workflow_dispatch' && inputs.w15_mode == 'end500-receiver-check'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: helmut-ci-originals
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Empfaengerpruefung an Commit, Branch und ersten Versuch binden
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]] || [[ "$(git rev-parse HEAD)" != "$EXPECTED_COMMIT" ]] || [[ "$GITHUB_SHA" != "$EXPECTED_COMMIT" ]] || [[ "$GITHUB_RUN_ATTEMPT" != '1' ]] || [[ "$GITHUB_REF" != 'refs/heads/codex/w15-github-end500-preparation-20261028' ]]; then
+            echo 'W15_RECEIVER_CHECK_CONTEXT_REJECTED'
+            exit 1
+          fi
+      - name: Ausschliesslich bestehenden Empfaenger am oeffentlichen Kontrolltext pruefen
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          HELMUT_W15_RECEIVER_PROTECTED_KEY_B64: ${{ secrets.HELMUT_W15_RECEIVER_PROTECTED_KEY_B64 }}
+          HELMUT_W15_RECEIVER_PASSPHRASE: ${{ secrets.HELMUT_W15_RECEIVER_PASSPHRASE }}
+        run: python3 -B scripts/w15-github/verify_receiver_key.py --verify-existing-recipient-only --runner-temp "$RUNNER_TEMP" --expected-commit "$EXPECTED_COMMIT"
+      - name: Reichweite der Empfaengerkontrolle festhalten
+        shell: bash
+        run: |
+          echo 'Nur vorhandener Empfaenger und oeffentlicher Kontrolltext; keine Originale, Datenbank oder Controller.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Keine Artefakte oder Caches. Restore, Ruecksicherung und vollstaendiger End500/Mock500 bleiben gesperrt.' >> "$GITHUB_STEP_SUMMARY"
+
+  w15-receive-inputs:
+    name: W15 vorhandene Eingangsdateien empfangen — kein Datenbankstart
+    if: github.event_name == 'workflow_dispatch' && inputs.w15_mode == 'end500-receive-inputs'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: helmut-ci-originals
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Originalempfang an Commit, Branch und ersten Versuch binden
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]] || [[ "$(git rev-parse HEAD)" != "$EXPECTED_COMMIT" ]] || [[ "$GITHUB_SHA" != "$EXPECTED_COMMIT" ]] || [[ "$GITHUB_RUN_ATTEMPT" != '1' ]] || [[ "$GITHUB_REF" != 'refs/heads/codex/w15-github-end500-preparation-20261028' ]]; then
+            echo 'W15_INPUT_RECEPTION_CONTEXT_REJECTED'
+            exit 1
+          fi
+      - name: Bestehende Cipherteile und alle zwoelf Originalpins pruefen
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          HELMUT_W15_CIPHER_INDEX_GPG: ${{ inputs.w15_cipher_index }}
+          HELMUT_W15_RECEIVER_PROTECTED_KEY_B64: ${{ secrets.HELMUT_W15_RECEIVER_PROTECTED_KEY_B64 }}
+          HELMUT_W15_RECEIVER_PASSPHRASE: ${{ secrets.HELMUT_W15_RECEIVER_PASSPHRASE }}
+        run: python3 -B scripts/w15-github/receive_existing_inputs.py --receive-existing-inputs-only --expected-commit "$EXPECTED_COMMIT" --runner-temp "$RUNNER_TEMP"
+      - name: Reichweite des Originalempfangs festhalten
+        shell: bash
+        run: |
+          echo 'Nur bestehender verschluesselter Bestand und vollstaendige zwoelf Dateipins; keine Datenbank oder Controller.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Kein Artefakt-/Cacheupload. Restore, gemeinsamer Lebenszeit-RAM-Nachweis und End500/Mock500 bleiben offen.' >> "$GITHUB_STEP_SUMMARY"
+
+  w15-isolated:
+    name: W15 gemeinsamer Runner — getrennt gesperrter Restore und End500
+    if: github.event_name == 'workflow_dispatch' && (inputs.w15_mode == 'end500-restore-synthetic' || inputs.w15_mode == 'end500-restore-gated' || inputs.w15_mode == 'end500-restore-export-diagnostic' || inputs.w15_mode == 'end500-restore-capacity-diagnostic' || inputs.w15_mode == 'end500-full-gated' || inputs.w15_mode == 'end500-full-phased-gated' || inputs.w15_mode == 'end500-full-capacity-diagnostic')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    environment: helmut-ci-originals
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+      - name: Vorhandene gepinnte Werkzeuge und Image bereitstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/w15-image"
+          cp "$(command -v node)" "$RUNNER_TEMP/w15-image/node"
+          curl -fsSL --max-time 90 -o "$RUNNER_TEMP/w15-postgrest.tar.xz" https://github.com/PostgREST/postgrest/releases/download/v12.2.3/postgrest-v12.2.3-linux-static-x64.tar.xz
+          echo "9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c  $RUNNER_TEMP/w15-postgrest.tar.xz" | sha256sum -c -
+          tar -xJf "$RUNNER_TEMP/w15-postgrest.tar.xz" -C "$RUNNER_TEMP/w15-image"
+          echo "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12  $RUNNER_TEMP/w15-image/node" | sha256sum -c -
+          echo "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617  $RUNNER_TEMP/w15-image/postgrest" | sha256sum -c -
+          cp scripts/auth-usage-split.Dockerfile "$RUNNER_TEMP/w15-image/Dockerfile"
+          docker build -t helmut-w15-existing:20261029 "$RUNNER_TEMP/w15-image"
+          echo "W15_IMAGE_ID=$(docker image inspect --format '{{.Id}}' helmut-w15-existing:20261029)" >> "$GITHUB_ENV"
+          echo "W15_NODE_SOURCE=$RUNNER_TEMP/w15-image/node" >> "$GITHUB_ENV"
+          echo "W15_POSTGREST_SOURCE=$RUNNER_TEMP/w15-image/postgrest" >> "$GITHUB_ENV"
+      - name: Einmaligen Ablauf gebunden ausfuehren — ohne passende Freigabe gesperrt
+        uses: ./.github/actions/w15-isolated
+        env:
+          W15_MODE: ${{ inputs.w15_mode }}
+          W15_REQUEST: ${{ inputs.w15_request }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          HELMUT_W15_CIPHER_INDEX_GPG: ${{ inputs.w15_cipher_index }}
+          HELMUT_W15_RECEIVER_PROTECTED_KEY_B64: ${{ inputs.w15_mode != 'end500-restore-synthetic' && secrets.HELMUT_W15_RECEIVER_PROTECTED_KEY_B64 || '' }}
+          HELMUT_W15_RECEIVER_PASSPHRASE: ${{ inputs.w15_mode != 'end500-restore-synthetic' && secrets.HELMUT_W15_RECEIVER_PASSPHRASE || '' }}
+          GITHUB_TOKEN: ${{ github.token }}
+
+  mock500-runner-synthetic:
+    name: Mock500 v2 Runner — nur neue synthetische Anbindung
+    if: github.event_name == 'workflow_dispatch' && inputs.w15_mode == 'mock500-runner-synthetic'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/w15-existing-tools
+      - uses: ./.github/actions/w15-mock500
+        env:
+          W15_MODE: ${{ inputs.w15_mode }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+
+  mock500-full-gated:
+    name: Mock500 v2 — getrenntes GO und positive End500-Abnahme erforderlich
+    if: github.event_name == 'workflow_dispatch' && (inputs.w15_mode == 'mock500-full-gated' || inputs.w15_mode == 'mock500-full-phased-gated')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    environment: helmut-ci-originals
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/w15-existing-tools
+      - uses: ./.github/actions/w15-mock500
+        env:
+          W15_MODE: ${{ inputs.w15_mode }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          HELMUT_W15_RECEIVER_PROTECTED_KEY_B64: ${{ secrets.HELMUT_W15_RECEIVER_PROTECTED_KEY_B64 }}
+          HELMUT_W15_RECEIVER_PASSPHRASE: ${{ secrets.HELMUT_W15_RECEIVER_PASSPHRASE }}
+          GITHUB_TOKEN: ${{ github.token }}
+
+  mock500-receive-originals:
+    name: Mock500 Originalarchiv empfangen — kein Restore oder Controller
+    if: github.event_name == 'workflow_dispatch' && inputs.w15_mode == 'mock500-receive-originals'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: helmut-ci-originals
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Einmalige separat freigegebene Annahme der elf Originaldateien
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          HELMUT_W15_CIPHER_INDEX_GPG: ${{ inputs.w15_cipher_index }}
+          HELMUT_W15_RECEIVER_PROTECTED_KEY_B64: ${{ secrets.HELMUT_W15_RECEIVER_PROTECTED_KEY_B64 }}
+          HELMUT_W15_RECEIVER_PASSPHRASE: ${{ secrets.HELMUT_W15_RECEIVER_PASSPHRASE }}
+        run: python3 -B scripts/w15-github/mock500_archive_receive.py --receive-mock-originals-only --expected-commit "$EXPECTED_COMMIT" --runner-temp "$RUNNER_TEMP"
+      - name: Reichweite der Empfangsquittung
+        run: |
+          echo 'Nur elf hashgepruefte Originaldateien im aktuellen privaten Runner. Kein Artefakt oder Cache.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Spaeterer Mock500 empfaengt das unveraenderte Cipherarchiv erneut im eigenen gemeinsamen Job; kein Runner-Uebergang.' >> "$GITHUB_STEP_SUMMARY"
