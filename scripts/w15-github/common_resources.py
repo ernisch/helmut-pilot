@@ -255,6 +255,16 @@ class CommonResources:
                     and container_id in path)
         return path
 
+    def component_snapshot(self, groups):
+        """Optional passive observation; never changes the existing guard or limits."""
+        if not hasattr(self, '_component_meter'):
+            spec = importlib.util.spec_from_file_location('w15_separate_component_meter',
+                Path(__file__).with_name('component_resource_meter.py'))
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            self._component_meter = module.Meter()
+        return self._component_meter.observe(self.path, self._identity, groups)
+
     def sample(self):
         current = None
         self._last_valid = False

@@ -1,5 +1,9 @@
 # CURRENT STATE — Helmut
 
+## Getrennte Ressourcenmessung vorbereitet, Vertrag noch inaktiv (31.10.2026)
+
+Auf Basis von PR #992, #993 und #1003 liegt ein [konkreter Referenzvertrag](betrieb/w15-separated-resource-metering-20261031.md) mit maschinenlesbarem Entwurf `helmut-w15-separated-resources/1` vor. Passive, explizit zugeordnete cgroup-Messung je modellierter App-Instanz, Datenbank, Testwerkzeug und Sicherung; CPU-Zeit/Throttling, Kernel-Speicherarten, Swap/OOM sowie geschlossene numerische DB-Verbindungsbilanz sind vorbereitet. Keine kostenpflichtige Monitoringaktivierung. Neue Referenzwerte sind technische Laborannahmen, keine bewiesenen Anbieter-Hartlimits. Reale Sicherheitsreserven und Anbieterparität bleiben UNKNOWN. Bestehende RAM-Wächter, Testverträge, historische Ergebnisse und Startfreigaben unverändert. Physische Komponententrennung und deren Rücklesequalifikation bleiben vor einer echten getrennten Lastabnahme erforderlich. Kein Original-/500er-Lauf durch diese Entwicklung.
+
 ## Aktueller Entscheidungsstand: Anbieter-RAM und End500 (31.10.2026)
 
 **Oberstes Ziel:** Belastbarer Production-Nachweis für exakt 500 gleichzeitig aktive synthetische Profile, 1.500 vollständige Ergebnisse und 8.000 Sicherheitskontrollen. End500, Mock500 und Production sind getrennte Abnahmen; keine aktuelle Production-500-Abnahme.

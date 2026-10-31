@@ -208,6 +208,8 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_end500_capacity.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_end500_capacity_trace.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_end500_capacity_roles.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_component_resource_meter.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_separated_resources.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_phased_adapter.py
           node scripts/lokal.js -- python3 -I -B scripts/w15-github/test_mock500_full_dispatch.py
           node scripts/lokal.js -- node scripts/w15-github/test_restore_capacity.js
@@ -276,6 +278,17 @@ jobs:
             sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
             psql --version
           fi
+
+      - name: W15 Verbindungsbilanz nur lesend im vorhandenen synthetischen Dienst
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 1
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5433"
+          PGUSER: "helmut"
+          PGDATABASE: "postgres"
+          HELMUT_SYNTHETIK500_PG_ISOLIERT: "JA"
+        run: node scripts/lokal.js -- python3 -B scripts/w15-github/test_separated_resources.py --native-connections
 
       - name: W15 Snapshot-SQL nativ mit kleinen synthetischen Daten pruefen
         if: steps.plan.outputs.database == 'true'
