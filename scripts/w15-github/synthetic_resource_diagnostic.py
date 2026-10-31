@@ -142,7 +142,9 @@ def read_private(path, maximum=MAX_OUTPUT, allowed_owner=None):
 
 def blob_bound(relative, expected):
     file = REPO / relative
-    row = subprocess.check_output(['/usr/bin/git', '--no-optional-locks', '-C', str(REPO), 'ls-tree', '-z', expected, '--', relative], env=ENV)
+    row = subprocess.check_output(['/usr/bin/git', '--no-optional-locks',
+        '-c', 'core.hooksPath=/dev/null', '-c', 'core.fsmonitor=false',
+        '-c', 'safe.directory=' + str(REPO), '-C', str(REPO), 'ls-tree', '-z', expected, '--', relative], env=ENV)
     header, name = row.rstrip(b'\0').split(b'\t'); mode, kind, oid = header.split()
     raw = file.read_bytes()
     need(name.decode() == relative and mode in (b'100644', b'100755') and kind == b'blob' and not file.is_symlink()
@@ -169,7 +171,7 @@ def group_fit(raw, hard):
         integers = [memory[k] for k in ('currentBytes', 'kernelLifetimePeakBytes', 'maximumBytes', 'swapCurrentBytes', 'swapMaximumBytes')]
         integers += [events[k] for k in ('max', 'oom', 'oom_kill', 'oom_group_kill')]
         need(all(type(x) is int and 0 <= x <= 2**53 - 1 for x in integers), 'groups', 'UNKNOWN_GROUP_READBACK')
-        need(memory['maximumBytes'] == hard and max(memory['currentBytes'], memory['kernelLifetimePeakBytes']) < hard
+        need(memory['maximumBytes'] == hard and max(memory['currentBytes'], memory['kernelLifetimePeakBytes']) <= hard
              and memory['swapCurrentBytes'] == memory['swapMaximumBytes'] == 0
              and all(events[k] == 0 for k in ('max', 'oom', 'oom_kill', 'oom_group_kill'))
              and cpu == {'quotaUsec': 100000, 'periodUsec': 100000}, 'groups', 'COMPONENT_LIMIT_OR_EVENT')

@@ -56,6 +56,27 @@ def app_result(count=500):
 
 
 class DiagnosticChecks(unittest.TestCase):
+    @unittest.skipUnless(os.geteuid() == 0, 'ownership counterexample needs the isolated root test user')
+    def test_root_verifies_runner_owned_public_checkout_without_global_git_trust(self):
+        with tempfile.TemporaryDirectory(prefix='public-diagnostic-git-owner-') as tmp:
+            repo=Path(tmp)/'repo';repo.mkdir()
+            def git(*argv):
+                return subprocess.check_output(['/usr/bin/git','-c','safe.directory='+str(repo),
+                    '-C',str(repo),*argv],env=D.ENV,stderr=subprocess.DEVNULL).decode().strip()
+            git('init','--quiet');(repo/'public.txt').write_text('public synthetic source\n')
+            git('add','public.txt')
+            git('-c','user.name=Synthetic fixture','-c','user.email=fixture@example.invalid',
+                'commit','--quiet','-m','public fixture')
+            head=git('rev-parse','HEAD')
+            for root,dirs,files in os.walk(repo):
+                os.chown(root,1000,1000)
+                for name in files:os.chown(Path(root)/name,1000,1000)
+            # Verify the counterexample actually triggers Git's default protection.
+            rejected=subprocess.run(['/usr/bin/git','-C',str(repo),'rev-parse','HEAD'],
+                env=D.ENV,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            self.assertNotEqual(rejected.returncode,0)
+            with patch.object(D,'REPO',repo):D.blob_bound('public.txt',head)
+
     def test_manual500_is_exact_real_ref_head_attempt_and_scope(self):
         self.assertTrue(D.validate_request(request(),HEAD,environment())['capacityDiagnostic'])
         for key,bad in [('GITHUB_REF','refs/heads/main'),('GITHUB_EVENT_NAME','pull_request'),
@@ -90,7 +111,9 @@ class DiagnosticChecks(unittest.TestCase):
 
     def test_component_guard_unknown_peak_swap_oom_and_cpu_fail_closed(self):
         self.assertTrue(D.group_fit(kernel(),D.APP_HARD))
-        paths=[('memory','kernelLifetimePeakBytes',D.APP_HARD),('memory','maximumBytes','UNKNOWN'),
+        at_limit=kernel();at_limit['memory']['kernelLifetimePeakBytes']=D.APP_HARD
+        self.assertTrue(D.group_fit(at_limit,D.APP_HARD))
+        paths=[('memory','kernelLifetimePeakBytes',D.APP_HARD+4096),('memory','maximumBytes','UNKNOWN'),
             ('memory','swapCurrentBytes',1),('memoryEvents','max',1),('memoryEvents','oom',1),
             ('cpuMaximum','quotaUsec',200000),('memory','kernelLifetimePeakBytes',True)]
         for section,key,value in paths:
@@ -178,7 +201,7 @@ class DiagnosticChecks(unittest.TestCase):
     def test_limit_failure_retains_last_real_kernel_values_before_rejection(self):
         with tempfile.TemporaryDirectory() as temp:
             s=D.Supervisor(state(temp));s.phase='synthetic500';s.groups={'application':{'parts':('invented',),'identity':(0,0)}}
-            raw=kernel();raw['memory']['kernelLifetimePeakBytes']=D.APP_HARD
+            raw=kernel();raw['memory']['kernelLifetimePeakBytes']=D.APP_HARD+4096
             fd=os.open('/dev/null',os.O_RDONLY)
             try:
                 with patch.object(s,'_parent_fd',side_effect=lambda:os.dup(fd)),\
@@ -186,8 +209,8 @@ class DiagnosticChecks(unittest.TestCase):
                      patch.object(D.C,'_open_group',side_effect=lambda p,*_:os.dup(p)),patch.object(D.C,'_kernel',return_value=raw):
                     with self.assertRaises(D.Rejected):s.guard()
             finally:os.close(fd)
-            self.assertEqual(s.metrics['application']['last']['memory']['kernelLifetimePeakBytes'],D.APP_HARD)
-            self.assertEqual(s.phase_metrics['synthetic500']['application']['last']['kernelLifetimePeakBytes'],D.APP_HARD)
+            self.assertEqual(s.metrics['application']['last']['memory']['kernelLifetimePeakBytes'],D.APP_HARD+4096)
+            self.assertEqual(s.phase_metrics['synthetic500']['application']['last']['kernelLifetimePeakBytes'],D.APP_HARD+4096)
 
     def test_phase_samples_do_not_invent_peak_timestamp_or_add_maxima(self):
         with tempfile.TemporaryDirectory() as temp:

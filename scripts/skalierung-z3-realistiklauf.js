@@ -90,7 +90,7 @@ const KI_HOECHSTZAHL = Number(process.env.HELMUT_Z3_KI_HOECHSTZAHL || 40000);   
 // Mitschrift geht seine Ausgabe verloren, sobald der startende Prozess endet. Der Lauf
 // schreibt deshalb ZUSAETZLICH in eine Datei, die er selbst oeffnet.
 const MITSCHRIFT = process.env.HELMUT_Z3_LOG || "";
-if (MITSCHRIFT) {
+if (require.main === module && MITSCHRIFT) {
   // BEWUSST `appendFileSync` und KEIN Schreibstrom. Belegter Fehler (26.08.): mit einem
   // Schreibstrom ging der gesamte Schlussteil verloren — `process.exit()` beendet den Prozess,
   // ohne die noch gepufferten Schreibvorgaenge abzuschliessen. Ausgerechnet die Bewertung, das
@@ -1033,7 +1033,10 @@ async function main() {
   process.exit(fail === 0 ? 0 : 1);
 }
 
-main().catch((error) => {
+// Public schema preparation may be reused by an isolated diagnostic adapter.
+// Importing this file must never launch its historical stage chain or logging.
+module.exports = Object.freeze({ baueLokalesSchema, VORBEREITUNG_SQL, NACHBEREITUNG_SQL });
+if (require.main === module) main().catch((error) => {
   console.error("LAUFFEHLER:", (error && error.stack) || error);
   process.exit(1);
 });

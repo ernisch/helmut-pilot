@@ -25,7 +25,7 @@ on:
       w15_mode:
         description: 'Standard-CI oder begrenzte W15-Vorbereitung; kein End500-Start'
         type: choice
-        options: [standard, end500-plan, end500-parent-probe, end500-handoff-canary, end500-receiver-check, end500-receive-inputs, end500-restore-synthetic, end500-restore-gated, end500-restore-export-diagnostic, end500-restore-capacity-diagnostic, end500-full-gated, end500-full-phased-gated, end500-full-capacity-diagnostic, mock500-runner-synthetic, mock500-full-gated, mock500-full-phased-gated, mock500-receive-originals]
+        options: [standard, end500-plan, end500-parent-probe, end500-handoff-canary, end500-receiver-check, end500-receive-inputs, end500-restore-synthetic, end500-restore-gated, end500-restore-export-diagnostic, end500-restore-capacity-diagnostic, end500-full-gated, end500-full-phased-gated, end500-full-capacity-diagnostic, mock500-runner-synthetic, mock500-full-gated, mock500-full-phased-gated, mock500-receive-originals, resource500-synthetic-diagnostic]
         default: standard
       w15_request:
         description: 'Oeffentliche laufgebundene Qualifikation und getrennte Freigabe; keine Geheimnisse'
@@ -44,12 +44,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}${{ (inputs.w15_mode == 'end500-plan' || inputs.w15_mode == 'end500-parent-probe' || inputs.w15_mode == 'end500-handoff-canary' || inputs.w15_mode == 'end500-receiver-check' || inputs.w15_mode == 'end500-receive-inputs' || inputs.w15_mode == 'end500-restore-synthetic' || inputs.w15_mode == 'end500-restore-gated' || inputs.w15_mode == 'end500-restore-export-diagnostic' || inputs.w15_mode == 'end500-restore-capacity-diagnostic' || inputs.w15_mode == 'end500-full-gated' || inputs.w15_mode == 'end500-full-phased-gated' || inputs.w15_mode == 'end500-full-capacity-diagnostic' || inputs.w15_mode == 'mock500-runner-synthetic' || inputs.w15_mode == 'mock500-full-gated' || inputs.w15_mode == 'mock500-full-phased-gated' || inputs.w15_mode == 'mock500-receive-originals') && format('-w15-{0}', inputs.w15_mode) || '' }}
-  cancel-in-progress: ${{ inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-restore-export-diagnostic' && inputs.w15_mode != 'end500-restore-capacity-diagnostic' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'end500-full-phased-gated' && inputs.w15_mode != 'end500-full-capacity-diagnostic' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-full-phased-gated' && inputs.w15_mode != 'mock500-receive-originals' }}
+  group: ci-${{ github.ref }}${{ (inputs.w15_mode == 'end500-plan' || inputs.w15_mode == 'end500-parent-probe' || inputs.w15_mode == 'end500-handoff-canary' || inputs.w15_mode == 'end500-receiver-check' || inputs.w15_mode == 'end500-receive-inputs' || inputs.w15_mode == 'end500-restore-synthetic' || inputs.w15_mode == 'end500-restore-gated' || inputs.w15_mode == 'end500-restore-export-diagnostic' || inputs.w15_mode == 'end500-restore-capacity-diagnostic' || inputs.w15_mode == 'end500-full-gated' || inputs.w15_mode == 'end500-full-phased-gated' || inputs.w15_mode == 'end500-full-capacity-diagnostic' || inputs.w15_mode == 'mock500-runner-synthetic' || inputs.w15_mode == 'mock500-full-gated' || inputs.w15_mode == 'mock500-full-phased-gated' || inputs.w15_mode == 'mock500-receive-originals' || inputs.w15_mode == 'resource500-synthetic-diagnostic') && format('-w15-{0}', inputs.w15_mode) || '' }}
+  cancel-in-progress: ${{ inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-restore-export-diagnostic' && inputs.w15_mode != 'end500-restore-capacity-diagnostic' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'end500-full-phased-gated' && inputs.w15_mode != 'end500-full-capacity-diagnostic' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-full-phased-gated' && inputs.w15_mode != 'mock500-receive-originals' && inputs.w15_mode != 'resource500-synthetic-diagnostic' }}
 
 jobs:
   offline-suite:
-    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-restore-export-diagnostic' && inputs.w15_mode != 'end500-restore-capacity-diagnostic' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'end500-full-phased-gated' && inputs.w15_mode != 'end500-full-capacity-diagnostic' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-full-phased-gated' && inputs.w15_mode != 'mock500-receive-originals')
+    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-restore-export-diagnostic' && inputs.w15_mode != 'end500-restore-capacity-diagnostic' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'end500-full-phased-gated' && inputs.w15_mode != 'end500-full-capacity-diagnostic' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-full-phased-gated' && inputs.w15_mode != 'mock500-receive-originals' && inputs.w15_mode != 'resource500-synthetic-diagnostic')
     name: Syntax + Offline-Suiten
     runs-on: ubuntu-latest
     # CI35207010979: 397/397 Suiten erfolgreich in779s, aber inklusive Setup
@@ -210,6 +210,10 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_end500_capacity_roles.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_component_resource_meter.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_separated_resources.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_synthetic_resource_diagnostic.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_publish_synthetic_resource_receipt.py
+          node scripts/lokal.js scripts/test-synthetik-500-resource-diagnostic.js
+          node scripts/lokal.js scripts/test-z3-response-fixture.js
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_phased_adapter.py
           node scripts/lokal.js -- python3 -I -B scripts/w15-github/test_mock500_full_dispatch.py
           node scripts/lokal.js -- node scripts/w15-github/test_restore_capacity.js
@@ -627,7 +631,7 @@ jobs:
 
 
   browser-smoke:
-    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-restore-export-diagnostic' && inputs.w15_mode != 'end500-restore-capacity-diagnostic' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'end500-full-phased-gated' && inputs.w15_mode != 'end500-full-capacity-diagnostic' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-full-phased-gated' && inputs.w15_mode != 'mock500-receive-originals')
+    if: github.event_name != 'workflow_dispatch' || (inputs.w15_mode != 'end500-plan' && inputs.w15_mode != 'end500-parent-probe' && inputs.w15_mode != 'end500-handoff-canary' && inputs.w15_mode != 'end500-receiver-check' && inputs.w15_mode != 'end500-receive-inputs' && inputs.w15_mode != 'end500-restore-synthetic' && inputs.w15_mode != 'end500-restore-gated' && inputs.w15_mode != 'end500-restore-export-diagnostic' && inputs.w15_mode != 'end500-restore-capacity-diagnostic' && inputs.w15_mode != 'end500-full-gated' && inputs.w15_mode != 'end500-full-phased-gated' && inputs.w15_mode != 'end500-full-capacity-diagnostic' && inputs.w15_mode != 'mock500-runner-synthetic' && inputs.w15_mode != 'mock500-full-gated' && inputs.w15_mode != 'mock500-full-phased-gated' && inputs.w15_mode != 'mock500-receive-originals' && inputs.w15_mode != 'resource500-synthetic-diagnostic')
     name: Browser-/Mobile-Smoke (Chromium)
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -981,3 +985,93 @@ jobs:
         run: |
           echo 'Nur elf hashgepruefte Originaldateien im aktuellen privaten Runner. Kein Artefakt oder Cache.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Spaeterer Mock500 empfaengt das unveraenderte Cipherarchiv erneut im eigenen gemeinsamen Job; kein Runner-Uebergang.' >> "$GITHUB_STEP_SUMMARY"
+
+
+  synthetic-resource-diagnostic:
+    name: Originalfreie Ressourcen-Diagnose — 500 synthetische Profile, keine Abnahme
+    if: github.event_name == 'workflow_dispatch' && inputs.w15_mode == 'resource500-synthetic-diagnostic'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/w15-existing-tools
+      - name: Vorhandene Anwendungsabhaengigkeiten aus unveraendertem Lockfile
+        run: npm ci
+      - name: Kleine positive Fachprobe und einmalige synthetische Ressourcenmessung
+        timeout-minutes: 32
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          W15_DIAGNOSTIC_REQUEST: ${{ inputs.w15_request }}
+          W15_DIAGNOSTIC_ORIGINAL_INPUT: ${{ inputs.w15_cipher_index != '' && 'PRESENT' || 'ABSENT' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$W15_DIAGNOSTIC_ORIGINAL_INPUT" = ABSENT
+          sudo -n env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 \
+            PYTHONDONTWRITEBYTECODE=1 GITHUB_ACTIONS=true GITHUB_EVENT_NAME="$GITHUB_EVENT_NAME" \
+            GITHUB_REPOSITORY="$GITHUB_REPOSITORY" GITHUB_REF="$GITHUB_REF" GITHUB_SHA="$GITHUB_SHA" \
+            GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" EXPECTED_COMMIT="$EXPECTED_COMMIT" \
+            RUNNER_TEMP="$RUNNER_TEMP" W15_IMAGE_ID="$W15_IMAGE_ID" \
+            W15_NODE_SOURCE="$W15_NODE_SOURCE" W15_POSTGREST_SOURCE="$W15_POSTGREST_SOURCE" \
+            W15_DIAGNOSTIC_REQUEST="$W15_DIAGNOSTIC_REQUEST" \
+            /usr/bin/python3 -I -B scripts/w15-github/synthetic_resource_diagnostic.py \
+              --qualify-and-run-once --expected-commit "$EXPECTED_COMMIT"
+
+
+      - name: Geschlossene SAFE-Messquittung als neutralen CI-Check bereitstellen
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo -n --preserve-env=GITHUB_ACTIONS,GITHUB_TOKEN,GITHUB_REPOSITORY,GITHUB_SHA,SOURCE_HEAD_SHA,GITHUB_RUN_ID,GITHUB_EVENT_NAME,GITHUB_REF,GITHUB_HEAD_REF,RUNNER_TEMP \
+            /usr/bin/python3 -I -B scripts/w15-github/publish_synthetic_resource_receipt.py
+
+  synthetic-resource-small-qualification:
+    name: Originalfreie Ressourcen-Anschlussprobe — 3 Profile
+    if: github.event_name == 'pull_request' && github.head_ref == 'codex/w15-separated-resource-metering-20261031'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/w15-existing-tools
+      - name: Vorhandene Anwendungsabhaengigkeiten aus unveraendertem Lockfile
+        run: npm ci
+      - name: Kleine native Profil- und Fachprobe — kein 500er Lauf
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo -n env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 \
+            PYTHONDONTWRITEBYTECODE=1 GITHUB_ACTIONS=true GITHUB_EVENT_NAME="$GITHUB_EVENT_NAME" \
+            GITHUB_REPOSITORY="$GITHUB_REPOSITORY" GITHUB_REF="$GITHUB_REF" GITHUB_HEAD_REF="$GITHUB_HEAD_REF" \
+            GITHUB_SHA="$GITHUB_SHA" GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" EXPECTED_COMMIT="$GITHUB_SHA" \
+            RUNNER_TEMP="$RUNNER_TEMP" W15_IMAGE_ID="$W15_IMAGE_ID" \
+            W15_NODE_SOURCE="$W15_NODE_SOURCE" W15_POSTGREST_SOURCE="$W15_POSTGREST_SOURCE" \
+            /usr/bin/python3 -I -B scripts/w15-github/synthetic_resource_diagnostic.py \
+              --preflight-klein --expected-commit "$GITHUB_SHA"
+
+      - name: Geschlossene SAFE-Messquittung als neutralen CI-Check bereitstellen
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo -n --preserve-env=GITHUB_ACTIONS,GITHUB_TOKEN,GITHUB_REPOSITORY,GITHUB_SHA,SOURCE_HEAD_SHA,GITHUB_RUN_ID,GITHUB_EVENT_NAME,GITHUB_REF,GITHUB_HEAD_REF,RUNNER_TEMP \
+            /usr/bin/python3 -I -B scripts/w15-github/publish_synthetic_resource_receipt.py
