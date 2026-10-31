@@ -75,6 +75,14 @@ async function main(){
       const result=JSON.parse(fs.readFileSync(path.join(root,"APP_RESULT.SAFE.json")));assert.equal(result.firstFailurePhase,"activate");
       assert.equal(result.finalActiveProfiles,"UNKNOWN");assert.equal(deps.events.includes("understand"),false);
     }finally{fs.rmSync(root,{recursive:true,force:true});}});
+  await test("an existing active cohort is preserved rather than adopted by cleanup",async()=>{
+    const root=temp();try{const deps=fake(root);for(const spec of F.specs().slice(0,2)){
+        deps.profiles.set(spec.id,{id:spec.id,profileActive:true,provisionedBy:"helmut-provisioning"});deps.active.add(spec.id);}
+      await assert.rejects(D.workload(config(root),{},deps));
+      const result=JSON.parse(fs.readFileSync(path.join(root,"APP_RESULT.SAFE.json")));
+      assert.equal(result.firstFailurePhase,"dataset");assert.equal(result.finalActiveProfiles,"UNKNOWN");
+      assert.equal(deps.events.length,0);assert.equal(deps.active.size,2);
+    }finally{fs.rmSync(root,{recursive:true,force:true});}});
   await test("private file mode and symlink errors fail closed",()=>{
     const root=temp();try{const file=path.join(root,"CONFIG.PRIVATE.json");fs.writeFileSync(file,JSON.stringify(config(root)),{mode:0o600});
       assert.equal(D.privateJSON(file).schema,D.SCHEMA);fs.chmodSync(file,0o644);assert.throws(()=>D.privateJSON(file));

@@ -129,7 +129,7 @@ async function workload(c,b,deps=null){
   let stop=false;const deadline=Date.now()+c.maxWallSeconds*1000;
   const onStop=()=>{stop=true;};process.once("SIGTERM",onStop);process.once("SIGINT",onStop);
   const check=()=>assert(!stop&&Date.now()<deadline,"diagnostic-stop-or-deadline");
-  const all=Fixture.specs().slice(0,c.count),ids=all.map(p=>p.id).sort();
+  const all=Fixture.specs().slice(0,c.count),ids=all.map(p=>p.id).sort(),created=new Set();
   const allCases=Fixture.cases(c.datasetEpochUTC),data=c.mode==="preflight"?[allCases[0],allCases[9]]:allCases;
   write(c.resultRoot,"APP_ATTEMPT.PRIVATE.json",{schema:SCHEMA,nonce:c.nonce,count:c.count});
   write(c.resultRoot,"DATASET.SAFE.json",{...Fixture.manifest(c.datasetEpochUTC),executedCaseCount:data.length,executedSourceCount:data.length*4,executedProfileCount:c.count});
@@ -140,7 +140,7 @@ async function workload(c,b,deps=null){
     phase="provision";
     for(const spec of all){check();assert.equal(await deps.profile(spec.id),null);
       const made=await deps.provision({...spec,password:crypto.randomBytes(24).toString("hex")});assert.equal(made.ok,true,"diagnostic-provision-refused");provisioned++;
-      const actual=await deps.profile(spec.id);assert(actual&&actual.profileActive===false&&actual.provisionedBy==="helmut-provisioning");}
+      const actual=await deps.profile(spec.id);assert(actual&&actual.profileActive===false&&actual.provisionedBy==="helmut-provisioning");created.add(spec.id);}
     phase="activate";
     for(const id of ids){check();assert.equal((await deps.participate(id,true)).ok,true);}
     await assertActive();
@@ -163,7 +163,7 @@ async function workload(c,b,deps=null){
   }catch(error){failure=PHASES.has(phase)?phase:"configuration";}
   finally{
     const primary=failure;phase="deactivate";
-    try{const active=await deps.activeIDs();assert(active.every(id=>ids.includes(id)));
+    try{const active=await deps.activeIDs();assert(active.every(id=>created.has(id)),"diagnostic-cleanup-only-newly-owned-profiles");
       for(const id of active)assert.equal((await deps.participate(id,false)).ok,true);
       const after=await deps.activeIDs();assert.deepEqual(after,[]);zero=0;
     }catch(error){failure=primary||"deactivate";}
