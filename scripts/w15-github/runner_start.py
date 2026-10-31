@@ -68,22 +68,9 @@ WORKER_BOOLEANS = {'isolatedRestoreObserved', 'end500BodyCompleted', 'originalTr
                    'backupRoundtripVerified', 'sourceQualificationBound', 'syntheticQualification'}
 WORKER_FALSE = {'executionAuthority', 'end500Acceptance', 'mock500Acceptance',
                 'productionActions', 'fullLifetimeMemoryAccepted'}
-WORKER_PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', 'resources',
-                 'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure',
-                 'connection-binding', 'connection-receive', 'connection-input-binding',
-                 'connection-cache', 'connection-prepare', 'connection-restore', 'connection-closure',
-                 'connection-prepared-check', 'connection-materialization', 'connection-container-start',
-                 'connection-readiness', 'connection-native-restore', 'connection-backup',
-                 'receiver-arguments', 'receiver-source-binding', 'receiver-private-inputs',
-                 'receiver-index', 'receiver-disk-admission', 'receiver-key-import',
-                 'receiver-encrypted-index', 'receiver-download', 'receiver-cipher-readback',
-                 'receiver-authenticated-reception', 'receiver-relocation', 'receiver-agent-close'}
 BACKUP_PHASES = {'backup-export', 'backup-freeze', 'backup-collect', 'backup-seal',
                  'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'}
-WORKER_PHASES |= {'connection-' + action for action in ('restore-create', 'restore-roles', 'restore-render', 'restore-apply', 'restore-check')}
-WORKER_PHASES |= {'connection-export-' + action for action in ('backup-before', 'backup-dump', 'backup-roles', 'backup-after')}
-WORKER_PHASES |= BACKUP_PHASES | {'connection-' + phase for phase in BACKUP_PHASES}
-WORKER_PHASES |= D.OBSERVED_PHASES
+WORKER_PHASES = set(D.OBSERVED_PHASES)
 
 
 class RunnerStartError(RuntimeError):

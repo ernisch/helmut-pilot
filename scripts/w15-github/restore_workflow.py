@@ -51,10 +51,6 @@ CONNECTION_PHASES |= BACKUP_PHASES | EXPORT_PHASES | RESTORE_PHASES
 RECEIVER_PHASES = {'arguments', 'source-binding', 'private-inputs', 'index', 'disk-admission',
                    'key-import', 'encrypted-index', 'download', 'cipher-readback',
                    'authenticated-reception', 'relocation', 'agent-close'}
-PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', 'resources',
-          'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure'} | {
-              'connection-' + phase for phase in CONNECTION_PHASES} | {
-              'receiver-' + phase for phase in RECEIVER_PHASES} | BACKUP_PHASES
 RUNNER_PHASES = {'arguments', 'binding', 'parent', 'service', 'staging', 'worker', 'closure', 'ipc'}
 STATUSES = {END_CAPACITY: 'MEASURED_FULL_END500_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED', PHASED: 'PASS_END500_PHASED_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING', DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
             CAPACITY: 'MEASURED_FULL_RESTORE_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED',
@@ -110,6 +106,10 @@ def _load(name, repo=None):
         sys.modules.pop(module_name, None)
         raise
     return module
+
+
+# One closed vocabulary across worker, supervisor and public failure projection.
+PHASES = set(_load('runner_diagnostics').OBSERVED_PHASES)
 
 
 def _forward(repo):

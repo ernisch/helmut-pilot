@@ -146,7 +146,7 @@ function main() {
      timeout:(synthetic ? 420 : ['end500-full-gated','end500-full-phased-gated','end500-full-capacity-diagnostic'].includes(mode) ? 3720 : 1920)*1000});
   if (result.error || result.status !== 0) {
     const failed = JSON.parse(result.stdout);
-    const phases = ['arguments','event','approval','qualification','binding','resources','synthetic',
+    const phases = ['capacity-transport-complete','capacity-materialization','capacity-restore-ready','capacity-seed','capacity-seed-ready','capacity-auth-cas','capacity-native-audit','capacity-export','capacity-processing-stopped','arguments','event','approval','qualification','binding','resources','synthetic',
       'receive-prepare','restore','end500','backup','closure','parent','service','staging','worker','ipc',
       'connection-binding','connection-receive','connection-input-binding','connection-cache',
       'connection-prepare','connection-restore','connection-closure','receiver-arguments',
