@@ -6,6 +6,18 @@ const { performance, PerformanceObserver, constants } = require("node:perf_hooks
 const BASE = "/tmp/w15-memory-atomic-20261028d", STATE = path.join(BASE, "state"), DB = "helmut_w15_memory_atomic_20261028d";
 const Budget = require("./fixtures/w15-local-memory-budget.json"), AuthReport = require("./fixtures/w15-auth-measurement-report");
 const Durable = require("./fixtures/w15-durable-observations");
+const NativeFailure = require("./fixtures/w15-native-failure");
+let nativeStage="setup",nativeAcknowledgedCAS="UNKNOWN";
+function firstFailureReporter(send) {
+  let first=null;
+  return (error,context)=>{if(first===null){first=NativeFailure.project(error,context);
+    if(first!==null){try{send({name:"memory-forward-first-failure",failure:first});}catch{}}}return first;};
+}
+const reportFirstNativeFailure=firstFailureReporter(value=>console.log(JSON.stringify(value)));
+function emitNativeFailure(error){let check;try{check=error?.nativeCheck;}catch{}
+  return reportFirstNativeFailure(error,{stage:nativeStage,check,acknowledgedCAS:nativeAcknowledgedCAS});}
+function checked(label,work){try{return work();}catch(error){
+  if(error?.code==="ERR_ASSERTION"){try{error.nativeCheck=label;}catch{}}throw error;}}
 const sha = x => crypto.createHash("sha256").update(x).digest("hex");
 const file = n => path.join(STATE, n);
 const read = n => JSON.parse(fs.readFileSync(file(n), "utf8"));
@@ -57,7 +69,7 @@ function query(sql) {
   const r = spawnSync("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-U","postgres","-d",DB,"-f","-"],{
     input:"begin read only;set local statement_timeout='10s';"+sql+"rollback;",encoding:"utf8",timeout:15000,maxBuffer:1024*1024,
     env:{PATH:"/usr/bin:/bin",LANG:"C.UTF-8"}});
-  assert.equal(r.status,0,"w15-forward-readonly-sql");return JSON.parse(r.stdout.trim());
+  checked("w15-forward-readonly-sql",()=>assert.equal(r.status,0,"w15-forward-readonly-sql"));return JSON.parse(r.stdout.trim());
 }
 const databaseStatsSQL = Durable.databaseStatsSQL;
 function databaseStats() { return query(databaseStatsSQL()); }
@@ -71,8 +83,9 @@ function setup() {
     +'db-schemas = "public"\nserver-host = "127.0.0.1"\nserver-port = 3218\ndb-pool = '+Budget.postgrestPool+'\njwt-secret = "'+secret+'"\n',{flag:"wx",mode:0o600});
 }
 async function run() {
+  nativeStage="auth-fixture";
   const c=read("configuration.PRIVATE.json"),g=read("gateway.PRIVATE.json"),bound=read("END500_MEMORY_BOUND.SAFE.json");
-  assert.equal(c.database,DB);assert.equal(c.executionAuthority,false);assert.equal(bound.executionAuthority,false);
+  checked("w15-forward-common-input-binding",()=>{assert.equal(c.database,DB);assert.equal(c.executionAuthority,false);assert.equal(bound.executionAuthority,false);});
   Object.assign(process.env,{SUPABASE_URL:g.url,SUPABASE_SERVICE_ROLE_KEY:c.token,HELMUT_STORAGE_BACKEND:"supabase",HELMUT_SUPABASE_AUTH_STORE_ID:"main-auth",HELMUT_LLM_USAGE_STORAGE:"relational-atomic-v1"});
   const P=require("../lib/helmut/synthetik-500-profile"),S=require("../lib/helmut/storage");
   const report={schema:"helmut-w15-memory-forward/1",status:"UNKNOWN",units:0,providerCalls:0,profileActivations:0,
@@ -98,49 +111,71 @@ async function run() {
   gcObserver.observe({entryTypes:["gc"]});
   timer=setInterval(()=>{try{const s=journal.snapshot();if(s.failureCode){const error=Error(s.failureCode);error.code=s.failureCode;throw error;}sample();}catch(e){telemetryFailure(e);}},250);
   try {
+    nativeStage="journal-ready";
     await journal.ready();lifetime.ensureRunning();sample();
-    assert.equal(databaseStats().active,0);
+    nativeStage="database-preflight";
+    checked("w15-forward-common-input-binding",()=>assert.equal(databaseStats().active,0));
+    nativeStage="command-read";
     const encoded=fs.readFileSync(file("current-command.PRIVATE.json"));
-    const commandBinding=read("CURRENT_COMMAND_BINDING.SAFE.json");assert.equal(commandBinding.executionAuthority,false);
-    assert.equal(encoded.length,commandBinding.bytes);assert.equal(sha(encoded),commandBinding.sha256);
+    const commandBinding=read("CURRENT_COMMAND_BINDING.SAFE.json");
+    checked("w15-forward-command-binding",()=>{assert.equal(commandBinding.executionAuthority,false);
+      assert.equal(encoded.length,commandBinding.bytes);assert.equal(sha(encoded),commandBinding.sha256);});
+    nativeStage="command-decode";
     const packet=require("../lib/helmut/synthetik-500-direct-codec").decode(JSON.parse(encoded));
     // A strong reference to actual immutable content, never authority/admission.
     const heldCommand=packet.command;
-    assert(heldCommand&&heldCommand.drafts.length===500&&heldCommand.units.length===500);
+    checked("w15-forward-command-shape",()=>assert(heldCommand&&heldCommand.drafts.length===500&&heldCommand.units.length===500));
+    nativeStage="command-freeze";
     const seen=new WeakSet();let objects=0;
     function freeze(x){if(!x||typeof x!=="object"||seen.has(x))return;seen.add(x);objects++;for(const y of Object.values(x))freeze(y);Object.freeze(x);}
     freeze(heldCommand);report.retainedCommand={encodedSHA256:sha(encoded),objects,drafts:500,units:500,authorityUsed:false};
     // Same module baseline as actual HTTP runtime. No listener/route/job starts.
-    assert.equal(typeof require("../server"),"function");
-    let before=await lifetime.operation(()=>S.readAuthStore({strict:true}));assert.equal(before.llmUsage.length,6000);
-    assert.equal(before.w15MemoryFixture.executionAuthority,false);
+    nativeStage="server-import";
+    checked("w15-forward-common-input-binding",()=>assert.equal(typeof require("../server"),"function"));
+    nativeStage="auth-read";
+    let before=await lifetime.operation(()=>S.readAuthStore({strict:true}));
+    nativeStage="auth-fixture";
+    checked("w15-forward-auth-usage-count",()=>assert.equal(before.llmUsage.length,6000));
+    checked("w15-forward-auth-fixture",()=>assert.equal(before.w15MemoryFixture.executionAuthority,false));
+    nativeStage="auth-baseline";
     report.contentHash=contentHash(before);report.authBytes=Buffer.byteLength(JSON.stringify(before));
-    assert.equal(report.authBytes,bound.authJSONBytes);assert(report.authBytes<=Budget.maximumFixtureAuthBytes);
-    assert(Budget.postgresWorkMemMiB*1024*1024>=2*report.authBytes);
+    checked("w15-forward-auth-baseline-bytes",()=>assert.equal(report.authBytes,bound.authJSONBytes));
+    checked("w15-forward-auth-baseline-budget",()=>assert(report.authBytes<=Budget.maximumFixtureAuthBytes));
+    checked("w15-forward-auth-workmem",()=>assert(Budget.postgresWorkMemMiB*1024*1024>=2*report.authBytes));
     before=null;sample();dbSample();
+    nativeStage="observer-install";
     const Atomic=require("../lib/helmut/llm-usage-atomic"),native=Atomic.write;
     Atomic.write=async function(...args){lifetime.ensureRunning();assert.equal(casAtIndex,0,"w15-forward-no-second-native-write");casAtIndex++;
       const result=await native.apply(this,args);expectedRevision=result._authStoreRevision;return result;};
     observed=require("./synthetik-500-w15-full500-runtime").observeAuth(S,{currentIndex:()=>index});
     journal.observe(observed);
+    nativeAcknowledgedCAS=0;
     for(index=0;index<Budget.diagnosticCASWrites;index++){
       lifetime.ensureRunning();
       casAtIndex=0;expectedRevision=null;const begin=performance.now();
+      nativeStage="auth-mutate";
       await lifetime.operation(()=>S.mutateAuthStore(store=>{lifetime.ensureRunning();store.w15MemoryProbeSequence=index;}));
+      nativeStage="auth-durable-ack";
       const apiThroughACKWallMs=performance.now()-begin;await journal.flush();lifetime.ensureRunning();
       const fullCallMs=performance.now()-begin;assert(fullCallMs<30000,"w15-forward-auth30-including-durable-observation");
       report.maximumAuthThroughDurableObservationWallMs=Math.max(report.maximumAuthThroughDurableObservationWallMs,fullCallMs);
-      assert.equal(casAtIndex,1);assert(expectedRevision);
+      checked("w15-forward-auth-coverage",()=>{assert.equal(casAtIndex,1);assert(expectedRevision);});
+      nativeStage="auth-readback";
       const after=await lifetime.operation(()=>S.readAuthStore({strict:true}));
-      assert.equal(after._authStoreRevision,expectedRevision);assert.equal(after.w15MemoryProbeSequence,index);
-      assert.equal(after.llmUsage.length,6000);assert.equal(contentHash(after),report.contentHash,"w15-forward-postimage");
-      assert(observed.assessment().pass,"w15-forward-auth-coverage");
+      nativeStage="auth-postimage";
+      checked("w15-forward-auth-revision",()=>assert.equal(after._authStoreRevision,expectedRevision));
+      checked("w15-forward-auth-sequence",()=>assert.equal(after.w15MemoryProbeSequence,index));
+      checked("w15-forward-auth-usage-count",()=>assert.equal(after.llmUsage.length,6000));
+      checked("w15-forward-postimage",()=>assert.equal(contentHash(after),report.contentHash,"w15-forward-postimage"));
+      checked("w15-forward-auth-coverage",()=>assert(observed.assessment().pass,"w15-forward-auth-coverage"));
       const row={index,fullCallMs,apiThroughACKWallMs,maximumAuthThroughDurableObservationWallMs:report.maximumAuthThroughDurableObservationWallMs,
         authTimings:AuthReport.summarize(observed),revisionReadback:true,postimagePreserved:true};
       await journal.write("accepted-postimage",row);lifetime.ensureRunning();report.cas.push(row);
+      nativeAcknowledgedCAS=report.cas.length;
       console.log(JSON.stringify({name:"memory-cas-accepted",...row}));
       if(index%25===24||index===Budget.diagnosticCASWrites-1){const stats=dbSample();assert.equal(stats.active,0);}
     }
+    nativeStage="processing-contract";
     assert(heldCommand.drafts.length===500&&Object.isFrozen(heldCommand)&&heldCommand.units.length===500);
     report.authTimings=AuthReport.summarize(observed);report.authCoverage=observed.assessment();
     report.naturalMajorGCs=report.gc.filter(x=>x.kind===constants.NODE_PERFORMANCE_GC_MAJOR).length;
@@ -173,6 +208,7 @@ async function run() {
     assert.equal(Number(last.settings.autovacuum_naptime),Budget.postgresAutovacuumNaptimeSeconds);
     report.status="PASS_FORWARD_COMPONENTS_COMMON_KERNEL_REVIEW_PENDING";
   } catch(e){report.status="FAIL_OR_UNKNOWN";report.failedAtUTC||=new Date().toISOString();
+    report.nativeFailure=emitNativeFailure(e);
     report.error||={...AuthReport.failureMetadata(e),reason:/^[a-z0-9-]{1,160}$/.test(e.message)?e.message:"details-retained-private"};
     try{journal.write("forward-first-failure",{index,error:report.error,failedAtUTC:report.failedAtUTC,
       authTimings:observed?AuthReport.summarize(observed):null});}catch{}
@@ -181,18 +217,23 @@ async function run() {
     // Preserve a genuine final native WAL/TEMP/table/checkpoint sample even
     // when failure occurs before the next25-CAS observation. Never replace
     // the original error or infer completion from a late database read.
+    nativeStage="final-native-sample";
     try { dbSample(); } catch (error) {
+      report.nativeFailure||=emitNativeFailure(error);
       report.finalDatabaseObservationFailure = AuthReport.failureMetadata(error);
       report.status = "FAIL_OR_UNKNOWN";process.exitCode = 1;
     }
-    try{sample();}catch(error){report.finalNodeObservationFailure=AuthReport.failureMetadata(error);report.status="FAIL_OR_UNKNOWN";process.exitCode=1;}
+    nativeStage="final-node-sample";
+    try{sample();}catch(error){report.nativeFailure||=emitNativeFailure(error);report.finalNodeObservationFailure=AuthReport.failureMetadata(error);report.status="FAIL_OR_UNKNOWN";process.exitCode=1;}
     report.authTimings=observed?AuthReport.summarize(observed):null;report.authMutations=observed?.mutations;report.casWrites=observed?.casWrites;
-    try{await lifetime.seal();}catch(error){report.durableJournalFailure=AuthReport.failureMetadata(error);report.status="FAIL_OR_UNKNOWN";process.exitCode=1;}
+    nativeStage="journal-close";
+    try{await lifetime.seal();}catch(error){report.nativeFailure||=emitNativeFailure(error);report.durableJournalFailure=AuthReport.failureMetadata(error);report.status="FAIL_OR_UNKNOWN";process.exitCode=1;}
     if(lifetime.isTerminating())return;
+    nativeStage="report-write";
     report.journal=journal.snapshot();report.completedAtUTC=new Date().toISOString();save("FORWARD_RESULT.SAFE.json",report);
     removeAbort();console.log(JSON.stringify({name:"memory-forward-result",status:report.status,cas:report.cas.length}));}
 }
 async function main(action){assert(require.cache[require.resolve("./lokaler-netzschutz")]);assert.deepEqual(require("./lokaler-netzschutz").pruefe(process.env),[]);
   assert(["setup","run"].includes(action));assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")),"w15-forward-stop-requested");return({setup,run})[action]();}
-if(require.main===module)main(process.argv[2]).catch(()=>{console.error("w15-forward-first-failure");process.exitCode=1;});
-module.exports = { databaseStatsSQL, database: DB, base: BASE, observationLifetime };
+if(require.main===module)main(process.argv[2]).catch(error=>{emitNativeFailure(error);console.error("w15-forward-first-failure");process.exitCode=1;});
+module.exports = { databaseStatsSQL, database: DB, base: BASE, observationLifetime, firstFailureReporter };

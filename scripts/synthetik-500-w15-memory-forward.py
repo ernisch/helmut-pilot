@@ -21,7 +21,7 @@ REPORTS=pathlib.Path('/workspace/shared/helmut-w15-atomic-integration-source-202
 PLANNED_TOTAL=1512501248 # Includes64MiB in-flight allowance; not a filesystem quota.
 PROCESSING_DISK_FLOOR=224*1024*1024
 AUDIT_CLOSURE_FLOOR=64*1024*1024
-STAGED_SCRIPTS=['synthetik-500-w15-memory-forward.js','synthetik-500-w15-auth-transport-probe.js','synthetik-500-w15-full500-runtime.js','fixtures/w15-auth-measurement-report.js','fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-local-memory-budget.json','fixtures/w15-atomic-integration-target.json','fixtures/z3-plattform.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-end500-memory-contract.json','lokal.js','lokaler-netzschutz.js']
+STAGED_SCRIPTS=['synthetik-500-w15-memory-forward.js','synthetik-500-w15-auth-transport-probe.js','synthetik-500-w15-full500-runtime.js','fixtures/w15-auth-measurement-report.js','fixtures/w15-native-failure.js','fixtures/w15-durable-observations.js','fixtures/w15-owned-process-stop.js','fixtures/w15-local-memory-budget.json','fixtures/w15-atomic-integration-target.json','fixtures/z3-plattform.js','fixtures/w15-memory-contract.js','fixtures/w15-memory-contract.json','fixtures/w15-end500-memory-contract.json','lokal.js','lokaler-netzschutz.js','bb-nachweis-importpaket-generator.js']
 spec=importlib.util.spec_from_file_location('existing_w15_controller',ROOT/'scripts/synthetik-500-w15-full500-controller.py')
 M=importlib.util.module_from_spec(spec);spec.loader.exec_module(M)
 M.WORK=WORK;M.BASE=BASE;M.DB=DB;M.CONTAINER=CONTAINER
@@ -38,7 +38,7 @@ audit_spec=importlib.util.spec_from_file_location('w15_final_native_audit',ROOT/
 AUDIT=importlib.util.module_from_spec(audit_spec);audit_spec.loader.exec_module(AUDIT)
 
 def _runtime_module(component='runtime_inputs'):
-    assert component in ['runtime_inputs','runtime_backup','runtime_owned_backup','common_resources','runtime_materialization','runtime_cache','runtime_restore']
+    assert component in ['runtime_inputs','runtime_backup','runtime_owned_backup','common_resources','runtime_materialization','runtime_cache','runtime_restore','runner_diagnostics']
     name='w15_github_'+component
     if name not in sys.modules:
         spec=importlib.util.spec_from_file_location(name,ROOT/'scripts/w15-github'/(component+'.py'))
@@ -118,7 +118,8 @@ def prepare(inputs=None,common_resources=None):
     check_seed(inputs);os.umask(0o077);PREP.mkdir(mode=0o700)
     shutil.copytree(CACHE/'app',PREP/'app')
     shutil.copytree(ROOT/'lib',PREP/'app/lib',dirs_exist_ok=True)
-    shutil.copy2(ROOT/'server.js',PREP/'app/server.js')
+    for name in ['server.js','vercel.json']:
+        shutil.copy2(ROOT/name,PREP/'app'/name)
     for n in STAGED_SCRIPTS:shutil.copy2(ROOT/'scripts'/n,PREP/'app/scripts'/n)
     pins=[];allocated=0
     for p in sorted((PREP/'app').rglob('*')):
@@ -141,9 +142,12 @@ class Watch(M.Supervisor):
         self.backup_runner=None;self.common_resources=None;self.disk_guard=None
         self.cas_records=[];self.last_component=0;self.disk_phase='processing';self.audit_remaining=64*1024*1024;self.disk=None
         self.memory_failure=None
+        self.native_failure=None
         self.initial_disk_free=available_disk()
         super().__init__(cgroup)
     def first_failure(self,error):
+        if getattr(self,'native_failure',None) is not None:
+            error.native_failure=self.native_failure
         if self.backup_runner is not None and self.stage_name in self.backup_runner.actions:
             return self.backup_runner.first_failure(error)
         return super().first_failure(error)
@@ -227,9 +231,24 @@ class Watch(M.Supervisor):
               'kernel':mem,'disk':self.disk,'failure':self.failure,'authTimings':self.cas_records[-1]['authTimings']if self.cas_records else None,'message':message})
             self.last_terminal_monotonic=time.monotonic()
     def observe_line(self,raw,stage):
-        if stage!='run'or len(raw)>4096:return
+        if stage not in ('setup','run')or len(raw)>4096:return
         try:x=json.loads(raw)
         except(ValueError,UnicodeError):return
+        if type(x)is not dict:return
+        if x.get('name')=='memory-forward-first-failure':
+            value=_runtime_module('runner_diagnostics').native_failure(x.get('failure'))
+            if value is not None and getattr(self,'native_failure',None) is None:
+                self.native_failure=value
+                try:M.save('NATIVE_FIRST_FAILURE.SAFE.json',value)
+                except Exception:pass
+                observer=getattr(self.common_resources,'native_failure_observer',None)
+                if callable(observer):
+                    try:observer(value)
+                    except Exception:pass
+            # Receiving a first failure must not interrupt the producer's
+            # finally/drain. The existing final-result/stage-exit stops Watch.
+            return
+        if stage!='run':return
         if x.get('name')=='memory-forward-result'and x.get('status')!='PASS_FORWARD_COMPONENTS_COMMON_KERNEL_REVIEW_PENDING':
             self.first_failure(RuntimeError('w15-forward-inner-failed-result'));return
         if x.get('name')!='memory-cas-accepted':return
@@ -673,7 +692,10 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
     final_public={'status':status,'failure':failure,'zero':zero}
     if common_resources is not None:final_public['commonParent']=common_resources.last_observation()
     print(json.dumps(final_public),flush=True)
-    if failure or not zero:raise SystemExit(1)
+    if failure or not zero:
+        error=SystemExit(1)
+        if w and w.native_failure is not None:error.native_failure=w.native_failure
+        raise error
 if __name__=='__main__':
     assert sys.argv[1:]in [['--prepare-only'],['--run']],'w15-memory-forward-explicit-action'
     (prepare if sys.argv[1]=='--prepare-only'else main)()
