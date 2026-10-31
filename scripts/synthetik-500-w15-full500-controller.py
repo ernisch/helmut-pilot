@@ -29,7 +29,8 @@ MAXIMUM=LIMIT-RESERVE
 _BOUND_CONTEXT_SHA=None
 
 def _mock_module(name):
-    assert name in ('mock500_inputs','mock500_resources','mock500_start','mock500_backup')
+    assert name in ('mock500_inputs','mock500_resources','mock500_start','mock500_backup',
+      'functional_contract','end500_capacity_roles')
     key='w15_github_'+name
     if key not in sys.modules:
         spec=importlib.util.spec_from_file_location(key,ROOT/'scripts/w15-github'/(name+'.py'))

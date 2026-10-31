@@ -254,5 +254,21 @@ class FunctionalMockAdapters(unittest.TestCase):
             namespace['functional_role_bindings'](resources, 6789, 'a'*64, root)
             self.assertEqual(roles.bindings.call_args.args[-1], {'helmut-node': 1234})
 
+    def test_controller_closed_module_loader_admits_only_the_actual_two_new_public_helpers(self):
+        source = HERE.parent / 'synthetik-500-w15-full500-controller.py'; tree = ast.parse(source.read_text())
+        function = next(row for row in tree.body if isinstance(row, ast.FunctionDef) and row.name == '_mock_module')
+        namespace = {'ROOT': HERE.parents[1], 'pathlib': __import__('pathlib'), 'sys': sys,
+                     'importlib': __import__('importlib')}
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[function], type_ignores=[])), str(source), 'exec'), namespace)
+        for name in ('functional_contract', 'end500_capacity_roles'):
+            key = 'w15_github_' + name; original = sys.modules.pop(key, None)
+            try:
+                module = namespace['_mock_module'](name)
+                self.assertEqual(Path(module.__file__).absolute(), (HERE / (name + '.py')).absolute())
+            finally:
+                sys.modules.pop(key, None)
+                if original is not None: sys.modules[key] = original
+        with self.assertRaises(AssertionError): namespace['_mock_module']('unapproved_module')
+
 
 if __name__ == '__main__': unittest.main()
