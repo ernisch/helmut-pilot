@@ -30,6 +30,8 @@ async function failureProjectionCases(){
       assert.deepEqual(projected,{assertion:"UNKNOWN",code:"UNKNOWN",sqlstate:"42P01",nativeStatus:"unknown"});
       const receipt=D.failureReceipt(c,error,"prepare-database");assert.equal(receipt.phase,"prepare-database");
       assert.equal(D.failureReceipt(c,error,"services").phase,"services");assert(!JSON.stringify(receipt).includes("FICTIONAL_PRIVATE"));
+      const untrusted={safeResult:{firstFailureDetail:{assertion:"FICTIONAL_PRIVATE",code:"FICTIONAL_PRIVATE",sqlstate:"FICTIONAL_PRIVATE",nativeStatus:"FICTIONAL_PRIVATE",extra:"FICTIONAL_PRIVATE"}}};
+      assert.deepEqual(D.failureReceipt(c,untrusted,"work").failureDetail,{assertion:"UNKNOWN",code:"UNKNOWN",sqlstate:"UNKNOWN",nativeStatus:"unknown"});
       assert.equal(D.closedFailure(Error("diagnostic-native-matches-required PRIVATE_SUFFIX")).assertion,"UNKNOWN");
       assert.equal(D.closedFailure(D.databaseFailure({stderr:"ERROR:  ZZ999\n"})).sqlstate,"UNKNOWN");
     }finally{fs.rmSync(root,{recursive:true,force:true});}});

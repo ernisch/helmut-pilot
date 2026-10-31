@@ -18,8 +18,9 @@ function databaseFailure(error){
   const line=String(error.stderr||"").match(/(?:^|\n)(?:psql:[^\r\n]*: )?(?:ERROR|FATAL):\s+([0-9A-Z]{5})\s*(?:\n|$)/);
   error.diagnosticSQLSTATE=line&&SQLSTATES.has(line[1])?line[1]:"UNKNOWN";return error;
 }
-function failureReceipt(c,error,phase){return{schema:SCHEMA,nonce:c.nonce,phase:PHASES.has(phase)?phase:"configuration",
-  failureDetail:error.safeResult?.firstFailureDetail||closedFailure(error),retryAllowed:false};}
+function failureReceipt(c,error,phase){const detail=error.safeResult?.firstFailureDetail;
+  return{schema:SCHEMA,nonce:c.nonce,phase:PHASES.has(phase)?phase:"configuration",
+    failureDetail:detail?closedFailure({message:detail.assertion,code:detail.code,diagnosticSQLSTATE:detail.sqlstate},detail.nativeStatus):closedFailure(error),retryAllowed:false};}
 function exact(v,keys){assert(v&&typeof v==="object"&&!Array.isArray(v));assert.deepEqual(Object.keys(v).sort(),keys.slice().sort());}
 function directory(filename){
   assert(path.isAbsolute(filename)&&path.normalize(filename)===filename);
