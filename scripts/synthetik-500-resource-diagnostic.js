@@ -1,0 +1,190 @@
+"use strict";
+// Separate synthetic resource diagnostic. Never an original/W15/full500 gate.
+const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypto");
+const {execFileSync}=require("node:child_process");
+const Fixture=require("./fixtures/resource500-diagnostic");
+const SCHEMA="helmut-synthetic500-resource-diagnostic/1";
+const PHASES=new Set(["configuration","prepare-database","services","dataset","provision","activate","understanding","work","readback","deactivate","closed"]);
+function exact(v,keys){assert(v&&typeof v==="object"&&!Array.isArray(v));assert.deepEqual(Object.keys(v).sort(),keys.slice().sort());}
+function directory(filename){
+  assert(path.isAbsolute(filename)&&path.normalize(filename)===filename);
+  for(let p=filename;;p=path.dirname(p)){const s=fs.lstatSync(p);assert(s.isDirectory()&&!s.isSymbolicLink());if(p===path.dirname(p))break;}
+  const s=fs.lstatSync(filename);assert.equal(s.uid,process.getuid());assert.equal(s.mode&511,448);return filename;
+}
+function privateJSON(filename){
+  directory(path.dirname(filename));const fd=fs.openSync(filename,fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW);
+  try{const s=fs.fstatSync(fd);assert(s.isFile()&&s.uid===process.getuid()&&(s.mode&511)===384&&s.nlink===1&&s.size>0&&s.size<=65536);
+    const raw=fs.readFileSync(fd);assert.equal(raw.length,s.size);return JSON.parse(raw);}finally{fs.closeSync(fd);}
+}
+function write(root,name,value){
+  directory(root);assert(/^[A-Z_]+\.(?:SAFE|PRIVATE)\.json$/.test(name));
+  const fd=fs.openSync(path.join(root,name),"wx",0o600);
+  try{fs.writeFileSync(fd,JSON.stringify(value)+"\n");fs.fsyncSync(fd);}finally{fs.closeSync(fd);}
+}
+function configuration(value){
+  exact(value,["schema","mode","count","nonce","database","postgrestURL","serviceToken","resultRoot","maxWallSeconds","datasetEpochUTC"]);
+  assert.equal(value.schema,SCHEMA);assert(["synthetic500","preflight"].includes(value.mode));
+  assert.equal(value.count,value.mode==="synthetic500"?500:2);
+  assert(/^(?:[a-f0-9]{32}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/.test(value.nonce));
+  exact(value.database,["host","port","name","user","password"]);
+  assert.equal(value.database.host,"127.0.0.1");assert.equal(value.database.port,5432);
+  assert.equal(value.database.name,value.mode==="synthetic500"?"resource_diag500":"resource_diag_preflight");
+  assert.equal(value.database.user,"postgres");assert(typeof value.database.password==="string"&&value.database.password.length<=256);
+  assert.equal(value.postgrestURL,"http://127.0.0.1:3000");
+  assert(typeof value.serviceToken==="string"&&/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value.serviceToken));
+  assert(value.serviceToken.length<=8192);
+  const claims=JSON.parse(Buffer.from(value.serviceToken.split(".")[1],"base64url"));
+  assert.equal(claims.role,"service_role");assert.equal(claims.resourceDiagnosticNonce,value.nonce);
+  assert(Number.isInteger(claims.exp)&&claims.exp>Math.floor(Date.now()/1000)&&claims.exp<=Math.floor(Date.now()/1000)+3600);
+  assert(Number.isInteger(value.maxWallSeconds)&&value.maxWallSeconds>=60&&value.maxWallSeconds<=3600);
+  assert.equal(new Date(value.datasetEpochUTC).toISOString(),value.datasetEpochUTC);
+  assert(Math.abs(Date.now()-Date.parse(value.datasetEpochUTC))<=3600000);
+  directory(value.resultRoot);return value;
+}
+function args(argv){
+  assert.equal(argv.length,3);assert(["--services","--prepare-database","--app","--preflight-klein"].includes(argv[0]));
+  assert.equal(argv[1],"--config");return{action:argv[0],configPath:argv[2]};
+}
+function psql(c,sql){
+  return execFileSync("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-h","127.0.0.1","-p","5432","-U",c.database.user,"-d",c.database.name,"-f","-"],
+    {input:sql,encoding:"utf8",timeout:30000,maxBuffer:32*1024*1024,stdio:["pipe","pipe","pipe"],
+      env:{PATH:process.env.PATH,LANG:"C.UTF-8",PGPASSWORD:c.database.password,PGCONNECT_TIMEOUT:"5",PGOPTIONS:"-c statement_timeout=25000 -c lock_timeout=3000"}}).trim();
+}
+async function prepareDatabase(c,bootstrap=null){
+  assert.equal(psql(c,"select current_database();"),c.database.name);
+  assert.equal(psql(c,"select count(*) from pg_tables where schemaname='public';"),"0","diagnostic-fresh-database-required");
+  const Z=bootstrap||require("./skalierung-z3-realistiklauf");
+  assert.equal(typeof Z.baueLokalesSchema,"function");assert.equal(typeof Z.VORBEREITUNG_SQL,"string");assert.equal(typeof Z.NACHBEREITUNG_SQL,"string");
+  const root=path.join(c.resultRoot,"schema");fs.mkdirSync(root,{mode:0o700});const files=Z.baueLokalesSchema(root);
+  psql(c,Z.VORBEREITUNG_SQL);psql(c,fs.readFileSync(files.schemaDatei,"utf8"));
+  for(const file of files.migrationen)psql(c,fs.readFileSync(file,"utf8"));
+  psql(c,Z.NACHBEREITUNG_SQL);
+  psql(c,"insert into public.helmut_store(id,data)values('main-auth','{\"users\":[],\"llmUsage\":[]}'::jsonb)on conflict(id)do nothing;");
+  assert.equal(psql(c,"select count(*)from public.mandate_profiles;"),"0");
+  assert.equal(psql(c,"select count(*)from public.knowledge_objects;"),"0");
+  assert.equal(psql(c,"select count(*)from public.raw_documents;"),"0");
+  psql(c,"notify pgrst,'reload schema';");
+  write(c.resultRoot,"PREPARED_DATABASE.SAFE.json",{schema:SCHEMA,nonce:c.nonce,database:c.database.name,
+    status:"PREPARED_EMPTY_SYNTHETIC_DATABASE_ONLY",profiles:0,executionAuthority:false});
+}
+function loopback(url,protocol){const u=new URL(url);assert.equal(u.hostname,"127.0.0.1");assert.equal(u.protocol,protocol);assert(!u.username&&!u.password);assert(Number(u.port)>0);return u.href.replace(/\/$/,"");}
+function bindings(c,value){
+  exact(value,["schema","nonce","databaseURL","rssURL","kiURL","caPath"]);assert.equal(value.schema,SCHEMA);assert.equal(value.nonce,c.nonce);
+  loopback(value.databaseURL,"http:");loopback(value.rssURL,"http:");loopback(value.kiURL,"https:");
+  assert(path.isAbsolute(value.caPath)&&value.caPath.startsWith(c.resultRoot+path.sep));
+  const s=fs.lstatSync(value.caPath);assert(s.isFile()&&!s.isSymbolicLink()&&s.uid===process.getuid()&&(s.mode&511)===384);
+  return value;
+}
+async function services(c){
+  const Z=require("./fixtures/z3-plattform"),data=Fixture.cases(c.datasetEpochUTC);
+  const started=[];let first=null;
+  try{
+    started.push(await Z.starteDatenbankTor({postgrestPort:3000}));
+    started.push(await Z.starteAnbieterUrsprung({latenzMs:0,ausfallAnteil:0,drosselAnteil:0}));
+    started.push(await Z.starteKiEndpunkt({verzeichnis:path.join(c.resultRoot,"tls"),latenzMs:5,latenzStreuungMs:0,fehlerAnteil:0,
+      hoechstzahlAufrufe:128,responseForRequest:(request,schema)=>Fixture.response(request,schema,c.datasetEpochUTC,data)}));
+    const [database,rss,ki]=started;
+    write(c.resultRoot,"SERVICE_BINDINGS.PRIVATE.json",{schema:SCHEMA,nonce:c.nonce,databaseURL:database.url,rssURL:rss.url,kiURL:ki.url,caPath:ki.caPfad});
+    write(c.resultRoot,"SERVICES_READY.SAFE.json",{schema:SCHEMA,nonce:c.nonce,ready:true,pid:process.pid,
+      databasePort:new URL(database.url).port*1,rssPort:rss.port,kiPort:ki.port});
+    await new Promise(resolve=>{process.once("SIGTERM",resolve);process.once("SIGINT",resolve);});
+  }catch(error){first=error;}
+  finally{
+    const outcomes=await Promise.allSettled(started.map(s=>s.stoppe()));
+    write(c.resultRoot,"SERVICES_CLOSED.SAFE.json",{schema:SCHEMA,nonce:c.nonce,
+      closed:outcomes.every(r=>r.status==="fulfilled"),failed:first!==null,executionAuthority:false});
+  }
+  if(first)throw first;
+}
+function environment(c,b){
+  Object.assign(process.env,{HELMUT_SOURCE_MODE:"off",HELMUT_STORAGE_BACKEND:"supabase",HELMUT_SUPABASE_AUTH_STORE_ID:"main-auth",
+    HELMUT_V3_STORE:"1",HELMUT_PROFILE_DB_MODE:"1",HELMUT_PROFILE_DB_EXCLUSIVE:"1",HELMUT_V3_MATCHING:"1",
+    HELMUT_KI_LOOPBACK_ERLAUBT:"1",SUPABASE_URL:b.databaseURL,SUPABASE_SERVICE_ROLE_KEY:c.serviceToken,
+    AZURE_OPENAI_ENDPOINT:b.kiURL,AZURE_OPENAI_KEY:"LOCAL_SYNTHETIC_DIAGNOSTIC_NOT_A_PROVIDER_CREDENTIAL"});
+  assert.equal(process.env.NODE_EXTRA_CA_CERTS,b.caPath,"diagnostic-ca-required-before-node-start");
+}
+function native(c){
+  return {activeIDs:()=>JSON.parse(psql(c,"select coalesce(json_agg(user_id order by user_id),'[]')from public.mandate_profiles where aktiv;")),
+    count:table=>{assert(["knowledge_objects","raw_documents","ko_document_links","matching_results","briefings"].includes(table));return Number(psql(c,"select count(*)from public."+table+";"));}};
+}
+function production(c){
+  const S=require("../lib/helmut/storage"),P=require("../lib/helmut/provisioning"),U=require("../lib/helmut/understanding");
+  return {profile:id=>S.getProfile(id),provision:spec=>P.provisionTenant(spec,{}, {neuAktiv:false,kontoBeiFehlerBehalten:true}),
+    participate:(id,active)=>P.setTestProfileParticipation(id,active),saveSource:d=>S.saveRawDocument(d),
+    understand:cluster=>U.understandOneCluster(cluster,U.defaultDeps({runId:"resource-diagnostic-"+c.nonce})),
+    match:profile=>require("../lib/helmut/matching").runMatchingShadow({profile}),
+    decide:profile=>require("../lib/helmut/decisions").runDecisionShadow({profile}),
+    build:profile=>require("../server").__buildV3Briefing(profile,profile.id),
+    storeResult:async(profile,result)=>{const day=require("../lib/helmut/briefing-frische").berlinTagKey(new Date());
+      const id="resource-diagnostic-"+profile.id;
+      const entry={id,user_id:profile.id,slot:"mandatsbriefing",generated_at:new Date().toISOString(),
+        payload:{schema:SCHEMA,diagnosticOnly:true,formalBriefingAcceptance:false,nonce:c.nonce,profileId:profile.id,day,briefing:result}};
+      assert.equal((await S.insertRenderedBriefingV3(entry)).saved,true);
+      // Strict native readback is additionally required below, never a Map result.
+      const read=JSON.parse(psql(c,"select payload::text from public.briefings where id='"+id+"';"));
+      assert.equal(Fixture.sha(read),Fixture.sha(entry.payload));return true;},...native(c)};
+}
+async function workload(c,b,deps=null){
+  let phase="dataset",failure=null,zero="UNKNOWN",activeObservations=0,positive=0,understood=0,provisioned=0;
+  let stop=false;const deadline=Date.now()+c.maxWallSeconds*1000;
+  const onStop=()=>{stop=true;};process.once("SIGTERM",onStop);process.once("SIGINT",onStop);
+  const check=()=>assert(!stop&&Date.now()<deadline,"diagnostic-stop-or-deadline");
+  const all=Fixture.specs().slice(0,c.count),ids=all.map(p=>p.id).sort();
+  const allCases=Fixture.cases(c.datasetEpochUTC),data=c.mode==="preflight"?[allCases[0],allCases[9]]:allCases;
+  write(c.resultRoot,"APP_ATTEMPT.PRIVATE.json",{schema:SCHEMA,nonce:c.nonce,count:c.count});
+  write(c.resultRoot,"DATASET.SAFE.json",{...Fixture.manifest(c.datasetEpochUTC),executedCaseCount:data.length,executedSourceCount:data.length*4,executedProfileCount:c.count});
+  if(!deps){environment(c,b);deps=production(c);}
+  const assertActive=async()=>{check();assert.deepEqual(await deps.activeIDs(),ids,"diagnostic-exact-active-cohort-required");activeObservations++;};
+  try{
+    assert.deepEqual(await deps.activeIDs(),[],"diagnostic-initial-zero-required");
+    phase="provision";
+    for(const spec of all){check();assert.equal(await deps.profile(spec.id),null);
+      const made=await deps.provision({...spec,password:crypto.randomBytes(24).toString("hex")});assert.equal(made.ok,true,"diagnostic-provision-refused");provisioned++;
+      const actual=await deps.profile(spec.id);assert(actual&&actual.profileActive===false&&actual.provisionedBy==="helmut-provisioning");}
+    phase="activate";
+    for(const id of ids){check();assert.equal((await deps.participate(id,true)).ok,true);}
+    await assertActive();
+    phase="understanding";
+    for(const item of data){await assertActive();
+      for(const doc of item.documents)assert.equal((await deps.saveSource(doc)).saved,true);
+      const result=await deps.understand({documents:item.documents});assert.equal(result.status,"saved","diagnostic-positive-native-understanding-required");understood++;
+    }
+    phase="work";
+    for(const id of ids){await assertActive();const profile=await deps.profile(id);assert(profile&&profile.profileActive===true&&profile.id===id);
+      const matching=await deps.match(profile);assert(!matching.skipped&&matching.saved>0,"diagnostic-native-matches-required");
+      const decisions=await deps.decide(profile);assert(!decisions.skipped&&decisions.saved>0,"diagnostic-native-decisions-required");
+      const result=await deps.build(profile);assert(result&&result.available===true&&Array.isArray(result.items)&&result.items.length>0,"diagnostic-positive-current-briefing-required");
+      assert.equal(await deps.storeResult(profile,result),true);positive++;
+    }
+    phase="readback";await assertActive();
+    assert.equal(positive,c.count);assert.equal(await deps.count("knowledge_objects"),data.length);
+    assert.equal(await deps.count("raw_documents"),data.length*4);assert.equal(await deps.count("ko_document_links"),data.length*4);
+    assert.equal(await deps.count("briefings"),c.count);assert(await deps.count("matching_results")>=c.count);
+  }catch(error){failure=PHASES.has(phase)?phase:"configuration";}
+  finally{
+    const primary=failure;phase="deactivate";
+    try{const active=await deps.activeIDs();assert(active.every(id=>ids.includes(id)));
+      for(const id of active)assert.equal((await deps.participate(id,false)).ok,true);
+      const after=await deps.activeIDs();assert.deepEqual(after,[]);zero=0;
+    }catch(error){failure=primary||"deactivate";}
+    process.removeListener("SIGTERM",onStop);process.removeListener("SIGINT",onStop);
+  }
+  const result={schema:SCHEMA,nonce:c.nonce,status:failure?"FAIL_OR_UNKNOWN_DIAGNOSTIC":"PASS_SYNTHETIC_DIAGNOSTIC_WORKLOAD_ONLY",
+    firstFailurePhase:failure,requestedProfiles:c.count,provisionedProfiles:provisioned,positiveProfileResults:positive,
+    activeCohortReadbacks:activeObservations,understoodCases:understood,finalActiveProfiles:zero,
+    simulatedProviderOnly:true,originalDataUsed:false,formal1500Acceptance:false,end500Acceptance:false,mock500Acceptance:false,
+    productionProof:false,executionAuthority:false,retryAllowed:false};
+  write(c.resultRoot,"APP_RESULT.SAFE.json",result);if(failure)throw Object.assign(Error("RESOURCE_DIAGNOSTIC_FAILED"),{safeResult:result});return result;
+}
+async function main(argv=process.argv.slice(2)){
+  const parsed=args(argv);assert(require.cache[require.resolve("./lokaler-netzschutz")],"diagnostic-local-preload-required");
+  osGuard();process.umask(0o077);const c=configuration(privateJSON(parsed.configPath));
+  if(parsed.action==="--services")return services(c);
+  if(parsed.action==="--prepare-database")return prepareDatabase(c);
+  assert.equal(parsed.action,c.mode==="preflight"?"--preflight-klein":"--app");
+  const b=bindings(c,privateJSON(path.join(c.resultRoot,"SERVICE_BINDINGS.PRIVATE.json")));
+  return workload(c,b);
+}
+function osGuard(){const guard=require("./lokaler-netzschutz");assert.deepEqual(guard.pruefe(process.env),[]);}
+if(require.main===module)main().catch(error=>{console.error(JSON.stringify({schema:SCHEMA,status:"FAIL_OR_UNKNOWN_DIAGNOSTIC",phase:error.safeResult?.firstFailurePhase||"configuration",retryAllowed:false}));process.exitCode=1;});
+module.exports={SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main};
