@@ -27,6 +27,7 @@ function cases(epoch){
           "Das Protokoll trennt den Bestand von vorgeschlagenen Aenderungen.","Die Projektgruppe benennt weitere Pruefschritte."][n%4]}));
       const summary=[marker+". Vollstaendig erfundene Diagnosequelle, kein Bericht ueber reale Politik.",
         view+" zum Thema "+topic+" im Modellprojekt "+index+".",
+        "Ausschliesslich fiktive Beteiligung von "+party+" in diesem Modellvorgang; dies beschreibt kein reales Ereignis.",
         "Fiktive Entscheidungsebene "+scope.politicalLevel+"; betroffenes Gebiet "+scope.name+" ("+scope.geography_id+").",
         ...facts.map(f=>"Abschnitt "+f.abschnitt+": Im Szenario "+f.region+" werden "+f.bestand+
           " bestehende Einheiten und "+f.planung+" geplante Einheiten erfasst. Die Modellrechnung nennt "+

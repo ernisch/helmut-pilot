@@ -192,7 +192,7 @@ def failure_detail(value):
     if value is None: return None
     need(type(value) is dict and set(value) == {'assertion','code','sqlstate','nativeStatus'})
     need(value['assertion'] in ASSERTIONS and value['code'] in NODE_CODES and value['sqlstate'] in SQLSTATES
-         and value['nativeStatus'] in ('saved','skipped','failed','disabled','unknown'))
+         and value['nativeStatus'] in ('saved', 'skipped', 'failed', 'disabled', 'unknown', 'duplicate', 'merged', 'skipped-artikelkontext', 'skipped-ausgang-unbekannt', 'skipped-bestandslesefehler', 'skipped-budget', 'skipped-cluster-belegt', 'skipped-error', 'skipped-failed', 'skipped-gate-geparkt', 'skipped-invalid', 'skipped-modellstart-unklar', 'skipped-no-cluster', 'skipped-no-vorgang', 'skipped-production-admission', 'skipped-store', 'skipped-terminal', 'skipped-update-final', 'skipped-veraltet', 'skipped-zeitbudget'))
     return dict(value)
 
 

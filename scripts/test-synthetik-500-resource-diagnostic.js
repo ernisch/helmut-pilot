@@ -97,6 +97,15 @@ async function failureProjectionCases(){
       assert.equal(result.finalActiveProfiles,"UNKNOWN");assert.equal(result.retryAllowed,false);assert(!JSON.stringify(result).includes("FICTIONAL_PRIVATE"));
     }finally{fs.rmSync(root,{recursive:true,force:true});}});
 }
+async function currentSourceValidationCase(){
+  const U=require("../lib/helmut/understanding"),data=F.cases(epoch);
+  for(const item of F.selectedCases(data,F.selectedSpecs(3))){
+    const result=await U.evaluateUnderstandingCase({name:"invented-fixture-binding",raw_documents:item.documents},
+      prompt=>F.response({input:prompt},{type:"object"},epoch,data));
+    assert.equal(result.valid,true,JSON.stringify(result.errors));
+  }
+  console.log("PASS invented BT/BE/BB responses satisfy actual source binding without gate changes");
+}
 async function main(){
   await test("strict independent diagnostic configuration and no full-mode aliases",()=>{
     const root=temp();try{const c=config(root);assert.equal(D.configuration(c),c);
@@ -167,7 +176,8 @@ async function main(){
   await representativeCoverageCases();
   await localAIProjectionCase();
   await diagnosticMigrationSelectionCase();
+  await currentSourceValidationCase();
   console.log(passed+" PASS; synthetic unit cases only; native preflight and 500 run NOT executed");
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase};
+module.exports={currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase};

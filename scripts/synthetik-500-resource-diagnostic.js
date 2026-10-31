@@ -26,7 +26,7 @@ function diagnosticMigrations(files){
 }
 const CODES=new Set(["ERR_ASSERTION","MODULE_NOT_FOUND","ERR_MODULE_NOT_FOUND","EACCES","EPERM","ENOENT","EEXIST","ECONNREFUSED","ETIMEDOUT","EPIPE","ENOTFOUND","ECONNRESET"]);
 const SQLSTATES=new Set(["42P01","42703","42883","42501","23505","23503","3D000","28P01","57014","22023","42601","XX000","08006"]);
-function nativeStatus(value){return["saved","skipped","failed","disabled"].includes(value)?value:"unknown";}
+function nativeStatus(value){return["saved", "skipped", "failed", "disabled", "unknown", "duplicate", "merged", "skipped-artikelkontext", "skipped-ausgang-unbekannt", "skipped-bestandslesefehler", "skipped-budget", "skipped-cluster-belegt", "skipped-error", "skipped-failed", "skipped-gate-geparkt", "skipped-invalid", "skipped-modellstart-unklar", "skipped-no-cluster", "skipped-no-vorgang", "skipped-production-admission", "skipped-store", "skipped-terminal", "skipped-update-final", "skipped-veraltet", "skipped-zeitbudget"].includes(value)?value:"unknown";}
 function closedFailure(error,status="unknown"){
   const assertion=typeof error?.message==="string"?error.message.split("\n",1)[0]:null;
   return{assertion:ASSERTIONS.has(assertion)?assertion:"UNKNOWN",code:CODES.has(error?.code)?error.code:"UNKNOWN",
