@@ -45,6 +45,13 @@ class ChainChecks(unittest.TestCase):
         correction={'causeProofSHA256':'1'*64,'targetedTestsSHA256':'2'*64}
         fixed=self.reserve('mock500',commit='3'*40,correction=correction)
         self.finish(fixed,'PASS')
+    def test_readonly_preview_does_not_consume_and_blocks_known_unknown(self):
+        self.chain.preview('end500','a'*40,str(uuid.uuid4()),'b'*64,'c'*64,'d'*64)
+        self.assertFalse((Path(self.temp.name)/'CHAIN.SAFE.json').exists())
+        self.reserve()
+        before=(Path(self.temp.name)/'CHAIN.SAFE.json').read_bytes()
+        with self.assertRaises(ValueError):self.chain.preview('end500','a'*40,str(uuid.uuid4()),'b'*64,'c'*64,'d'*64)
+        self.assertEqual((Path(self.temp.name)/'CHAIN.SAFE.json').read_bytes(),before)
     def test_actual_shared_encrypted_payload_all_new_modes_and_full_limit(self):
         for mode in ('end500-full-functional-gated','mock500-full-functional-gated'):
             raw=N.dispatch_payload('a'*40,T.armor(),mode=mode,extra_inputs={'w15_request':'{}'})

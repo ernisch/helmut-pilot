@@ -204,7 +204,9 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_capacity.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_functional_contract.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_functional_end500.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_functional_export_guard.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_functional_adapter.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_functional_results.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_functional_chain.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_functional_public.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_phase_contract.py

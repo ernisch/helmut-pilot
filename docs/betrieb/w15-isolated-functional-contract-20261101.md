@@ -83,7 +83,10 @@ Vorhandene Kernel-, PSS-, Phasen- und Fortschrittsmessung wiederverwenden.
 Gemeinsamen Kernel-Lifetime-Peak vollständig erhalten; Cache und PSS nicht
 addieren, zeitverschiedene Maxima nicht als simultane Summe ausgeben.
 PostgreSQL, Node einschließlich Treiber, PostgREST und Werkzeuge soweit belegt
-zuordnen. Unvollständige PSS-Zuordnung ist ein beobachteter Unterwert. End500
+zuordnen. Die Laufquittung enthält die validierte Nonce. Mock500 projiziert
+nur aktuelle numerische Ergebniszähler, fünf Fehlerkategorien und Maximalzeiten;
+fehlende Zeiten bleiben UNKNOWN. Private Inhalte und IDs werden nicht ausgegeben.
+Unvollständige PSS-Zuordnung ist ein beobachteter Unterwert. End500
 verwendet die vorhandene Phasen-/Kernel-/PSS-Trace; nicht öffentlich durchgeleitete
 CPU-Komponenten bleiben UNKNOWN. Mock liefert zusätzlich die geschlossene passive
 Ressourcenbeobachtung. Keine neuen Überwachungsprozesse.

@@ -30,7 +30,7 @@ class Chain:
              and self.root.stat().st_mode & 0o777 == 0o700)
         self.chain_id = chain_id
 
-    def change(self, operation):
+    def change(self, operation, *, persist=True):
         lock = os.open(self.root/'chain.lock', os.O_CREAT|os.O_RDWR|os.O_NOFOLLOW, 0o600)
         try:
             fcntl.flock(lock, fcntl.LOCK_EX)
@@ -45,6 +45,7 @@ class Chain:
                  and record['resourceContract'] == CONTRACT and record['maxAttempts'] == 3
                  and record['maxStorageCents'] == 15)
             result = operation(record)
+            if not persist: return result
             raw = json.dumps(record, sort_keys=True, separators=(',', ':')).encode()
             temp = self.root/('CHAIN-'+str(uuid.uuid4())+'.tmp')
             fd = os.open(temp, os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW, 0o600)
@@ -56,8 +57,8 @@ class Chain:
             return result
         finally: os.close(lock)
 
-    def reserve(self, stage, commit, nonce, binding_sha, review_sha, ci_sha, *, correction=None):
-        need(stage in ('end500', 'mock500') and HEAD.fullmatch(commit)
+    def reserve(self, stage, commit, nonce, binding_sha, review_sha, ci_sha, *, correction=None, _preview=False):
+        need(type(_preview) is bool and stage in ('end500', 'mock500') and HEAD.fullmatch(commit)
              and str(uuid.UUID(nonce)) == nonce
              and all(type(x) is str and SHA.fullmatch(x) for x in (binding_sha, review_sha, ci_sha)))
         def operation(record):
@@ -83,7 +84,11 @@ class Chain:
                 status='UNKNOWN', runId='UNKNOWN', processesStopped='UNKNOWN',
                 independentAcceptanceSHA256='UNKNOWN')
             rows.append(row); return dict(row)
-        return self.change(operation)
+        return self.change(operation, persist=not _preview)
+
+    def preview(self, *args, **kwargs):
+        need("_preview" not in kwargs)
+        return self.reserve(*args, **kwargs, _preview=True)
 
     def bind_run(self, nonce, run_id):
         need(type(run_id) is str and re.fullmatch('[1-9][0-9]{4,19}', run_id))

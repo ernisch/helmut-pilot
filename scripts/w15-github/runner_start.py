@@ -1302,7 +1302,7 @@ def launch(request, private_payload):
                            else 'PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY'), 'exactCommit': ctx['exactCommit'],
                 **({'hostAdmission': host_admission, 'capacityMeasurement': last['capacity'],
                     'legacyRestoreAccepted': False} if request['mode'] in (CAPACITY, END_CAPACITY, FUNCTIONAL) else {}),
-                **({'functionalContract': _load('functional_contract').CONTRACT,
+                **({'functionalContract': _load('functional_contract').CONTRACT, 'nonce': ctx['nonce'],
                     'memoryProfile': _load('functional_contract').END_PROFILE,
                     'functionalSafetyAccepted': True, 'legacyRegularMemoryAccepted': False,
                     'providerResourceAccepted': False} if request['mode'] == FUNCTIONAL else {}),
