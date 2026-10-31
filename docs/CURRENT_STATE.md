@@ -1,25 +1,33 @@
 # CURRENT STATE — Helmut
 
-## Einmalige originalfreie 500er Ressourcen-Diagnose (31.10.2026)
+## Mock500-Startprüfung: BLOCKED, einmaliges GO ungenutzt (31.10.2026)
 
-**Tatsächlicher Einzellauf FAIL:** [41239213884](https://github.com/ernisch/helmut-pilot/actions/runs/41239213884), Kopf `d56e97b37468080aaff6d4bd47b045ba072a2c6f`, 383,989 s einschließlich Bereinigung. Unabhängig geprüft; Einmalfreigabe verbraucht, kein Retry. 500 gleichzeitig aktive vollsynthetische Profile sind durch native ID-Kontrollen vor 96 erfolgreichen lokalen KI-Antworten belegt. Vollständiger 500er Ergebnisabschluss und abschließende Profilflags 0 bleiben UNKNOWN; bestätigter Prozessstillstand ersetzt diese Profilprüfung nicht. Die erfolgreiche 3er Vorprobe ist keine 500er Abnahme.
+Genau ein vollständiger isolierter Mock500 ist bedingt freigegeben. **Kein Dispatch, GO nicht verbraucht.** [Gesamtbewertung mit zehn PASS/FAIL/UNKNOWN-Bereichen](betrieb/w15-mock500-admission-audit-20261031.md). Zwingend fehlen: positive unabhängige End500-Gesamtabnahme samt regulärer RAM-Abnahme und vollständiger Sicherung sowie gültiges Tagesfenster. Der Mockvertrag endet am 31.10., Start nur vor 19:30 UTC für 12.600 s im selben UTC-/Berlin-Tag. Keine stillschweigende Datumsverlängerung.
 
-| Gruppe | Kernel-Lebenszeitpeak B | CPU-Zeit s | Befund bis Abbruch |
+Elf Mockoriginale, Atomic12ACK und 500/500 Quellenqualifikation PASS, nicht wiederholen. Controller/Sicherung implementiert, vollständige 1.500-/8.000-Laufabnahme fehlt. Mock69: 69 Units/207 Ergebnisse/1.104 Kontrollen, unabhängig 500→0; Peak 1.640.103.936 B statt maximal 1.638.400.000 B, Reserveverletzung 1.703.936 B bei max/OOM/Swap 0. Kein belegter kleiner Speicherfix; TEMP-Spill-Probe belegt keinen gemeinsamen RAM-Gewinn.
+
+**Nächste Grenze:** Für vollständige End500-Funktion/Sicherung auf PR1002 ist ein separates GO nötig, vom aktuellen Auftrag ausdrücklich ausgeschlossen. Ein Kapazitäts-PASS ersetzt keine reguläre End500-RAM-Abnahme. Vor Mock außerdem gültigen Tagesvertrag und frischen Mock-Ressourcenpreflight herstellen; gewollte Vertragsänderungen separat genehmigen. Erst danach End→Mock-Brücke und exakte Startbindung. Kein vorausgesetzter Mock-Vollpass vor dem ersten Versuch; bedingtes GO ungenutzt lassen.
+
+## Ressourcen500-Messung und geprüfter Diagnoseanschluss (31.10.2026)
+
+[Run 41239213884](https://github.com/ernisch/helmut-pilot/actions/runs/41239213884), d56e97b3: **FAIL**, 383,989 s; Diagnose-GO verbraucht. 500 gleichzeitig aktiv vor 96 lokalen KI-Antworten belegt; vollständiger Ergebnisabschluss/finale Profilflags 0 UNKNOWN, Prozesse gestoppt. Kein formaler Mock500-1.500-/8.000-Nachweis.
+
+| Gruppe | Kernel-Peak B | CPU-s | Befund bis Abbruch |
 | --- | ---: | ---: | --- |
-| App einschließlich Testtreiber | 408.981.504 | 166,158 | unter Laborlimit |
-| PostgreSQL + PostgREST + SQL-Messclients | 948.191.232 | 217,695 | DB-Laborlimit erreicht, 38 max-Ereignisse |
-| Testwerkzeuge / lokale Simulatoren | 450.027.520 | 61,225 | separat im gemeinsamen Parent |
+| App einschließlich Treiber | 408.981.504 | 166,158 | unter Laborlimit im Teilabschnitt |
+| PostgreSQL + PostgREST + SQL-Messclients | 948.191.232 | 217,695 | Laborlimit erreicht, max 38 |
+| Testwerkzeuge / Simulatoren | 450.027.520 | 61,225 | separat im Parent |
 | Gemeinsamer Parent | 1.756.499.968 | 445,078 | kein belegter 5-GB-Engpass |
 
-Die DB-max-Ereignisse propagieren zum ersten Fehler `COMMON_PARENT_REJECTED`; keine OOM-Ereignisse. Swap/OOM 0, höchster Verbindungs-Sample 6/60, letzter gültiger Hostreserve-Sample 14.578.847.744 B. DB-Kategorie `file` maximal abgetastet 597.323.776 B einschließlich Shared Memory, `anon` 331.218.944 B; verschiedene Maxima nicht addieren. Größte Belastung in `synthetic500`, genaue innere Arbeitsphase/Peakzusammensetzung, echte Verbindungsspitze und Hostminimum UNKNOWN. PostgreSQL-/PostgREST-Einzelverbrauch und ihr gemeinsames Hosted-Micro-RAM-Budget bleiben UNKNOWN; Dateicache ist kein bewiesener irreduzibler PostgreSQL-Arbeitssatz.
+Swap/OOM 0; Verbindungssample 6/60; letzter gültiger Hostreservewert 14.578.847.744 B. DB-file-Maximum 597.323.776 B einschließlich Shared Memory, anon 331.218.944 B; Maxima nicht addieren. Alte innere Operation/Peakzusammensetzung/Prozessanteile UNKNOWN. 948.191.232 B ist historisches Micro-OS-MemTotal, kein bewiesenes Hartlimit; gehostetes PostgreSQL-/PostgREST-Gemeinschaftsbudget UNKNOWN.
 
-**Gezielter Diagnosesprint auf PR #1004:** Erster Speicherfehlersnapshot wird vor Überschreiben durch Bereinigungsnachkontrollen geschützt. Ein atomarer begrenzter Fortschrittsdatensatz über den bestehenden SAFE-Kanal erhält innere Arbeitsphase/Operation und ausschließlich bestätigte Zähler auch ohne Workerabschluss; Teilfortschritt ist keine Abnahme. Gezielte synthetische Gegenproben bestanden. Pflicht-CI und unabhängiger Endreview sind an den tatsächlichen neuen PR-Kopf zu binden und bleiben vor einer neuen Laufentscheidung zwingend. [Messbilanz, Prüfungen und Anbieterbelege](betrieb/w15-db-memory-diagnosis-20261031.md).
+**PR1004/b4b3afea qualifiziert:** erster Speicherfehlersnapshot unveränderlich; atomarer SAFE-Fortschritt erhält Phase/Operation und bestätigte Zähler ohne Workerabschluss. Fehler-/SIGKILL-Proben, [Pflicht-CI41241981900](https://github.com/ernisch/helmut-pilot/actions/runs/41241981900) und unabhängiger Code-/Dreierreview PASS; 3 Profile/12 Quellen/finale0. [Messbilanz](betrieb/w15-db-memory-diagnosis-20261031.md).
 
-Unveränderte Diagnosegrenzen: App 1.999.998.976 B, DB 948.191.232 B/60 Verbindungen, Parent 4.999.999.488 B, mindestens 2.147.483.648 B Hostreserve, Swap/OOM/Max 0; höchstens 1.800 s und mindestens 512 MiB freie Platte. Keine RAM-Erhöhung, Cachemanipulation, Originale, offiziellen Vertragsänderungen, Modellkosten oder Production-Wirkung. **Nächste Aufgabe:** Nach qualifiziertem Fehlerkanal ein neues konkretes GO für genau einen Gesamtversuch entscheiden; keine Ausführung aus diesem Entwicklungssprint ableiten. End500-/Mock500-Starttore bleiben gesperrt.
+Diagnosegrenzen unverändert: App1.999.998.976 B, DB948.191.232 B/60Verbindungen, Parent4.999.999.488 B, Hostreserve2.147.483.648 B, Swap/OOM/Max0,1.800s,512MiB freie Platte. Offizieller Mock-v2-Vertrag separat:2.048.000.000 B hart/Peak1.638.400.000 B/Reserve409.600.000 B. [Vorheriger Stand bytegleich](archive/project_state/2026_10_31_b4b3afea_CURRENT_STATE_vor_Mockstarttorpruefung.md); keine historischen FAILs umgewertet.
 
 ## Getrennte Ressourcenmessung vorbereitet, Vertrag noch inaktiv (31.10.2026)
 
-Auf Basis von PR #992, #993 und #1003 liegt ein [konkreter Referenzvertrag](betrieb/w15-separated-resource-metering-20261031.md) mit maschinenlesbarem Entwurf `helmut-w15-separated-resources/1` vor. Passive, explizit zugeordnete cgroup-Messung je modellierter App-Instanz, Datenbank, Testwerkzeug und Sicherung; CPU-Zeit/Throttling, Kernel-Speicherarten, Swap/OOM sowie geschlossene numerische DB-Verbindungsbilanz sind vorbereitet. Keine kostenpflichtige Monitoringaktivierung. Neue Referenzwerte sind technische Laborannahmen, keine bewiesenen Anbieter-Hartlimits. Reale Sicherheitsreserven und Anbieterparität bleiben UNKNOWN. Bestehende RAM-Wächter, Testverträge, historische Ergebnisse und Startfreigaben unverändert. Physische Komponententrennung und deren Rücklesequalifikation bleiben vor einer echten getrennten Lastabnahme erforderlich. Kein Original-/500er-Lauf durch diese Entwicklung.
+Der [Referenzvertrag](betrieb/w15-separated-resource-metering-20261031.md) aus PR992/993/1003 bleibt **inaktiv** (helmut-w15-separated-resources/1). Komponentenmessung und numerische Verbindungsbilanz sind vorbereitet; Anbieterparität, echte Reserven und vollständige500erLastfähigkeit UNKNOWN. Laborannahmen aktivieren keinen offiziellen Vertrag. Bestehende Wächter, historische FAILs und getrennte Startfreigaben bleiben verbindlich.
 
 ## Aktueller Entscheidungsstand: Anbieter-RAM und End500 (31.10.2026)
 

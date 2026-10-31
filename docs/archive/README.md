@@ -15,6 +15,7 @@ ausschließlich aktueller Projektstatus neu aufgesetzt.
 
 | Datei | Inhalt |
 |---|---|
+| [`project_state/2026_10_31_b4b3afea_CURRENT_STATE_vor_Mockstarttorpruefung.md`](project_state/2026_10_31_b4b3afea_CURRENT_STATE_vor_Mockstarttorpruefung.md) | Bytegleicher PR1004-Stand `b4b3afea` vor der Mock500-Gesamtstartprüfung; SHA256 `4f2be60f04364a20182f0f4c868382e2925016e7a64780a99ffd574f9abb87ac`. Historische FAILs, Grenzen und Diagnosebelege erhalten. |
 | [`project_state/2026_10_31_b289fe5e_CURRENT_STATE_vor_groessenkorrektur.md`](project_state/2026_10_31_b289fe5e_CURRENT_STATE_vor_groessenkorrektur.md) | Bytegleicher PR1004-Stand `b289fe5e` vor der Größenkorrektur; SHA256 `eb09b573527b5b3677a537e3370cf9e04bb9ef042864dad8bb7f3f13f83b9f51`. Historische W15-/Kalenderberichte und alle alten FAILs erhalten. Herkunft: `docs/CURRENT_STATE.md`; ursprüngliche relative Links beziehen sich auf `docs/`. |
 | [`project_state/2026_10_29_4c28cd65_CURRENT_STATE_vor_w15_verdichtung.md`](project_state/2026_10_29_4c28cd65_CURRENT_STATE_vor_w15_verdichtung.md) | Bytegleicher PR975-Stand`4c28cd65` vor der notwendigen W15-Statusverdichtung; behebt die harte Dokumentgrößenschranke ohne Verlust alter Befunde. |
 | [`project_state/2026_10_29_CURRENT_STATE_vor_kanal_und_parentnachweis.md`](project_state/2026_10_29_CURRENT_STATE_vor_kanal_und_parentnachweis.md) | Bytegleicher PR975-Stand`51f03287` vor dem neuen Kanal-/Parentnachweis. Historische W15-D-Fehler, Messwerte und Recoverybefunde unverändert erhalten; keine neue Laufabnahme. |
