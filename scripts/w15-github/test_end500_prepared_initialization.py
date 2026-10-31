@@ -50,18 +50,50 @@ class PreparedInitializationChecks(unittest.TestCase):
             timeout=15, env={**os.environ, 'HELMUT_SOURCE_MODE': 'off', 'HELMUT_STORAGE_BACKEND': 'local'})
         return value, [json.loads(line) for line in value.stdout.decode().splitlines() if line.startswith('{')]
 
-    def test_actual_minimal_prepared_server_and_forward_import(self):
+    def test_actual_prepared_end_imports_through_observe_auth_without_mock_inputs(self):
         app = self.prep / 'app'
-        script = r'''const M=require('node:module'),resolve=M._resolveFilename,seen=new Set();
+        script = r'''const assert=require('node:assert/strict'),fs=require('node:fs');
+delete process.env.HELMUT_W15_MOCK_CONTEXT;delete process.env.HELMUT_W15_MOCK_CONTEXT_SHA256;
+const M=require('node:module'),resolve=M._resolveFilename,seen=new Set();
 M._resolveFilename=function(...args){const file=resolve.apply(this,args);if(file.startsWith(process.argv[1]+'/'))seen.add(file.slice(process.argv[1].length+1));return file;};
 const server=require(process.argv[1]+'/server');const forward=require(process.argv[1]+'/scripts/synthetik-500-w15-memory-forward');
 if(typeof server!=='function'||typeof forward.firstFailureReporter!=='function')throw Error('fixture-import');
-console.log(JSON.stringify({status:'IMPORTED_PUBLIC_CODE_ONLY',scripts:[...seen].filter(p=>p.startsWith('scripts/')).sort(),configs:[...seen].filter(p=>p.endsWith('.json')&&!p.includes('/')).sort()}));'''
+const S=require(process.argv[1]+'/lib/helmut/storage');
+const Cas=require(process.argv[1]+'/lib/helmut/auth-store-cas'),Atomic=require(process.argv[1]+'/lib/helmut/llm-usage-atomic');
+let storageCalls=0,mockFilesystemCalls=0,boundCalls=0;
+// Import the real storage modules, but fail before any write/read operation.
+for(const [target,names] of [[S,['readAuthStore','mutateAuthStore','recordLlmUsage','acquirePipelineLock','releasePipelineLock']],
+  [Cas,['writeConditional']],[Atomic,['write']]])for(const name of names){assert.equal(typeof target[name],'function');
+  target[name]=function(){storageCalls++;throw Error('fixture-storage-operation-forbidden');};}
+const Bound=require(process.argv[1]+'/scripts/w15-github/mock500_bindings'),readBound=Bound.readBound;
+// Exercise the genuine unbound fast path, including the Runtime's own call.
+Bound.readBound=function(){boundCalls++;const lstat=fs.lstatSync;
+  fs.lstatSync=function(){mockFilesystemCalls++;throw Error('fixture-mock-file-read-forbidden');};
+  try{return readBound();}finally{fs.lstatSync=lstat;}};
+assert.equal(Bound.readBound(),null);
+const oldMutate=S.mutateAuthStore,oldCAS=Cas.writeConditional,oldAtomic=Atomic.write;
+const Runtime=require(process.argv[1]+'/scripts/synthetik-500-w15-full500-runtime');
+const observed=Runtime.observeAuth(S,{currentIndex:()=>null});
+assert.notEqual(S.mutateAuthStore,oldMutate);assert.notEqual(Cas.writeConditional,oldCAS);assert.notEqual(Atomic.write,oldAtomic);
+assert.equal(observed.context(),undefined);assert.equal(boundCalls,2);
+assert.deepEqual([observed.mutations.length,observed.usageSinks.length,observed.casWrites.length],[0,0,0]);
+console.log(JSON.stringify({status:'END_OBSERVER_INSTALLED_PUBLIC_CODE_ONLY',storageCalls,mockFilesystemCalls,
+  confirmedACKs:observed.casWrites.length,scripts:[...seen].filter(p=>p.startsWith('scripts/')).sort(),
+  configs:[...seen].filter(p=>p.endsWith('.json')&&!p.includes('/')).sort()}));'''
         result, rows = self.node(script, app)
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(rows[0]['status'], 'IMPORTED_PUBLIC_CODE_ONLY')
+        self.assertEqual(rows[0]['status'], 'END_OBSERVER_INSTALLED_PUBLIC_CODE_ONLY')
+        self.assertEqual(rows[0]['storageCalls'], 0)
+        self.assertEqual(rows[0]['mockFilesystemCalls'], 0)
+        self.assertEqual(rows[0]['confirmedACKs'], 0)
         self.assertIn('scripts/bb-nachweis-importpaket-generator.js', rows[0]['scripts'])
         self.assertIn('scripts/fixtures/w15-native-failure.js', rows[0]['scripts'])
+        self.assertIn('scripts/w15-github/mock500_bindings.js', rows[0]['scripts'])
+        self.assertNotIn('scripts/fixtures/w15-full500-provider.js', rows[0]['scripts'])
+        pins = json.loads((self.prep / 'PREPARED.SAFE.json').read_text())['appPins']
+        pin = next(row for row in pins if row['path'] == 'app/scripts/w15-github/mock500_bindings.js')
+        self.assertEqual(pin['sha256'], F.digest_file(REPO / 'scripts/w15-github/mock500_bindings.js'))
+        self.assertEqual((app / 'scripts/w15-github').stat().st_mode & 0o777, 0o700)
         self.assertEqual(rows[0]['configs'], ['vercel.json'])
         self.assertFalse((app / 'helmut-flags.json').exists())
         self.assertFalse((app / 'scripts/github-fachzyklus-a.js').exists())
