@@ -20,6 +20,7 @@ class ReceiptChecks(unittest.TestCase):
             'GITHUB_SHA': 'a' * 40, 'SOURCE_HEAD_SHA': 'a' * 40, 'GITHUB_RUN_ID': '123456',
             'GITHUB_TOKEN': 'FICTIONAL_TOKEN_NEVER_PUBLISHED'}
         self.report = {'schema': P.SCHEMA, 'exactCommit': 'a' * 40,
+            'scope': 'ORIGINAL_FREE_SYNTHETIC_500_CAPACITY_ONLY',
             'status': 'FAIL_OR_UNKNOWN_SYNTHETIC_RESOURCE_DIAGNOSTIC',
             'components': {'application': {'kernelLifetimePeakBytes': 'UNKNOWN'}},
             **dict.fromkeys(P.FALSE_FLAGS, False)}
@@ -41,8 +42,15 @@ class ReceiptChecks(unittest.TestCase):
     def test_pr_receipt_uses_head_check_but_retains_actual_merge_commit(self):
         env = dict(self.env, GITHUB_EVENT_NAME='pull_request', GITHUB_REF='refs/pull/1004/merge',
                    GITHUB_HEAD_REF=P.REF.removeprefix('refs/heads/'), SOURCE_HEAD_SHA='b' * 40)
+        self.report['scope'] = 'ORIGINAL_FREE_SYNTHETIC_3_PROFILE_CONNECTION_QUALIFICATION_ONLY'
         self.assertEqual(P.prepare(self.report, env)['head_sha'], 'b' * 40)
         self.assertIn('a' * 40, P.prepare(self.report, env)['output']['text'])
+
+    def test_event_scope_status_and_run_are_actually_bound(self):
+        for key,value in [('scope','ORIGINAL_FREE_SYNTHETIC_3_PROFILE_CONNECTION_QUALIFICATION_ONLY'),
+                          ('status','PASS'),('runId','654321')]:
+            with self.subTest(key=key),self.assertRaises(AssertionError):
+                P.prepare({**self.report,key:value},self.env)
 
     def test_arbitrary_top_and_nested_fields_cannot_publish_private_content(self):
         for report in ({**self.report, 'note': 'FICTIONAL_PRIVATE_CONTENT'},

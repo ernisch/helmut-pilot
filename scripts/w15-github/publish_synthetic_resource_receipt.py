@@ -59,6 +59,12 @@ def prepare(report, env):
     commit, head, run = (env.get(k, '') for k in ('GITHUB_SHA', 'SOURCE_HEAD_SHA', 'GITHUB_RUN_ID'))
     assert re.fullmatch('[a-f0-9]{40}', commit) and re.fullmatch('[a-f0-9]{40}', head) and run.isdigit()
     assert type(report) is dict and report.get('schema') == SCHEMA
+    expected_scope = ('ORIGINAL_FREE_SYNTHETIC_500_CAPACITY_ONLY' if event == 'workflow_dispatch'
+                      else 'ORIGINAL_FREE_SYNTHETIC_3_PROFILE_CONNECTION_QUALIFICATION_ONLY')
+    assert report.get('scope') == expected_scope
+    assert report.get('status') in ('PASS_SYNTHETIC_RESOURCE_DIAGNOSTIC_ONLY',
+                                   'FAIL_OR_UNKNOWN_SYNTHETIC_RESOURCE_DIAGNOSTIC')
+    assert report.get('runId', 'UNKNOWN') in (run, 'UNKNOWN')
     assert report.get('exactCommit', 'UNKNOWN') in (commit, 'UNKNOWN')
     assert all(report.get(key) is False for key in FALSE_FLAGS)
     public = metric_projection(report)
