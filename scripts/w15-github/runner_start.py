@@ -532,7 +532,21 @@ def _worker_failure(error, reason, *, error_type=RunnerStartError):
     phase = D.attribute(error, 'phase')
     phase = phase if type(phase) is str and phase in error_type.allowed_worker_phases else None
     memory = _closed_memory(D.attribute(error, 'worker_memory')) if phase is not None else None
-    return error_type('worker', phase, memory, runner=None if phase is not None else {'reason': reason})
+    native = D.native_failure(D.attribute(error, 'native_failure'))
+    detail = {'reason': 'WORKER_REPORTED_FAILURE', 'nativeFailure': native} if native is not None else None
+    return error_type('worker', phase, memory, runner=detail if detail is not None else None if phase is not None else {'reason': reason})
+
+
+def _native_failure_reporter(sender):
+    sent = False
+    def observe(value):
+        nonlocal sent
+        closed = D.native_failure(value)
+        need(not sent and closed is not None)
+        sent = True
+        # One fixed, small first-error checkpoint on the existing private pipe.
+        sender.send_bytes(_encode({'kind': 'native-failure', 'failure': closed}, 1024))
+    return observe
 
 
 def _phase_reporter(sender):
@@ -581,6 +595,8 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
                  if manifest['mode'] == PHASED else {})
         if manifest['mode'] == END_CAPACITY:
             extra['capacity_observer'] = _capacity_reporter(sender)
+        if manifest['mode'] in (END_CAPACITY, PHASED, 'end500-full-gated'):
+            extra['native_failure_observer'] = _native_failure_reporter(sender)
         result = module.run_worker(manifest, private_payload, phase_observer=_phase_reporter(sender), **extra)
         result = _worker_result(result, manifest)
         need(not latch.seen)
@@ -665,7 +681,8 @@ def _supervisor_backup_transition(ctx, identity, last, child, stage, *, error_ty
     return transition
 
 
-def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartError, observed=None, transition=None, capacity_checkpoint=None):
+def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartError, observed=None, transition=None,
+                          capacity_checkpoint=None, native_failure=None):
     """Read one existing Pipe frame with bounded reads, including partial EOF."""
     try:
         if not receiver.poll(wait):
@@ -687,11 +704,20 @@ def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartE
             return raw
         # ONE existing read deadline for the whole drain, never one second per
         # checkpoint. The lifetime frame cap also bounds aggregate bytes.
-        for _ in range(D.MAX_PHASE_FRAMES + 1 + (504 if capacity_checkpoint is not None else 0)):
+        for _ in range(D.MAX_PHASE_FRAMES + 1 + (504 if capacity_checkpoint is not None else 0) + (1 if native_failure is not None else 0)):
             length = struct.unpack('!i', read(4))[0]
             if not 0 < length <= MAX_RESULT:
                 raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
             value = _decode(read(length))
+            if type(value) is dict and value.get('kind') == 'native-failure':
+                detail = D.native_failure(value.get('failure'))
+                if (native_failure is None or native_failure or length > 1024
+                        or set(value) != {'kind', 'failure'} or detail is None):
+                    raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
+                native_failure['value'] = detail
+                if not receiver.poll(0):
+                    return None
+                continue
             if type(value) is dict and value.get('kind') == 'capacity-checkpoint':
                 if capacity_checkpoint is None or length > 1024:
                     raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
@@ -814,7 +840,8 @@ def _capacity_checkpoint(last, ctx, identity):
 
 
 def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: None,
-                   latch=None, error_type=RunnerStartError, observed=None, transition=None, capacity_checkpoint=None):
+                   latch=None, error_type=RunnerStartError, observed=None, transition=None, capacity_checkpoint=None,
+                   native_failure=None):
     """Keep the first validated failure, then stop only this owned child."""
     response, failure = None, None
     cleanup = D.unknown_cleanup()
@@ -825,17 +852,19 @@ def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: N
             raise _diagnose(error, 'worker', 'WORKER_START_REJECTED', memory(), error_type=error_type) from None
         while child.is_alive():
             if response is None:
-                response = _read_worker_response(receiver, deadline, error_type=error_type, observed=observed, transition=transition, capacity_checkpoint=capacity_checkpoint)
+                response = _read_worker_response(receiver, deadline, error_type=error_type, observed=observed, transition=transition, capacity_checkpoint=capacity_checkpoint, native_failure=native_failure)
             if type(response) is dict and response['ok'] is False:
                 raise _response_error(response, error_type=error_type)
             guard()
             time.sleep(.1)
         child.join(timeout=5)
         if response is None:
-            response = _read_worker_response(receiver, deadline, wait=1, error_type=error_type, observed=observed, transition=transition, capacity_checkpoint=capacity_checkpoint)
+            response = _read_worker_response(receiver, deadline, wait=1, error_type=error_type, observed=observed, transition=transition, capacity_checkpoint=capacity_checkpoint, native_failure=native_failure)
         if type(response) is dict and response['ok'] is False:
             raise _response_error(response, error_type=error_type)
         code = child.exitcode
+        if native_failure:
+            raise error_type('worker', 'end500', runner={'reason': 'WORKER_REPORTED_FAILURE', 'nativeFailure': native_failure['value']})
         if code != 0 or response is None:
             detail = {'reason': 'WORKER_SIGNAL_EXIT' if type(code) is int and code < 0 else
                       'WORKER_EXIT_REJECTED' if response is not None else 'WORKER_EXIT_WITHOUT_REPORT'}
@@ -852,7 +881,7 @@ def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: N
             try:
                 pending = response
                 if pending is None and failure.runner['reason'] != 'SUPERVISOR_INTERRUPTED':
-                    pending = _read_worker_response(receiver, deadline, error_type=error_type, observed=observed, capacity_checkpoint=capacity_checkpoint)
+                    pending = _read_worker_response(receiver, deadline, error_type=error_type, observed=observed, capacity_checkpoint=capacity_checkpoint, native_failure=native_failure)
                 if type(pending) is dict and pending.get('ok') is False:
                     first = _response_error(pending, error_type=error_type)
                     detail = dict(first.runner or failure.runner)
@@ -865,6 +894,14 @@ def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: N
                     failure = first
             except BaseException:
                 pass
+        if native_failure:
+            # Received before cleanup; retain even if the worker dies without a
+            # final report. A later audit, signal or IPC fault is secondary.
+            detail = dict(failure.runner or {'reason': 'WORKER_REPORTED_FAILURE'})
+            if detail['reason'] != 'WORKER_REPORTED_FAILURE':
+                detail['secondaryReason'] = detail['reason']
+            detail.update(reason='WORKER_REPORTED_FAILURE', nativeFailure=native_failure['value'])
+            failure = error_type('worker', 'end500', failure.worker_memory, runner=detail, cleanup=failure.cleanup)
         checkpoint = None if observed is None else D.phase_observation(observed) or 'UNKNOWN'
         # The final pre-stop drain can confirm progress after the first RAM
         # rejection. Preserve its separate receipt time without replacing the
@@ -958,10 +995,11 @@ def supervise(request, private_payload, *, latch=None):
     except BaseException as error:
         raise _diagnose(error, 'worker', 'WORKER_START_REJECTED', last['memory']) from None
     cleanup, observed = None, {}
+    native_failure = {} if request['mode'] in (END_CAPACITY, PHASED, 'end500-full-gated') else None
     last['observedPhase'] = observed
     try:
         response, cleanup = _monitor_child(child, receiver, sender, guard, deadline,
-            memory=lambda: last['memory'], latch=latch, observed=observed,
+            memory=lambda: last['memory'], latch=latch, observed=observed, native_failure=native_failure,
             **({'capacity_checkpoint': _capacity_checkpoint(last, ctx, identity)} if request['mode'] == END_CAPACITY else {}),
             transition=_supervisor_backup_transition(ctx, identity, last, child, 'end500', guard=guard) if request['mode'] == PHASED else None)
         response['result'] = _worker_result(response['result'], request)

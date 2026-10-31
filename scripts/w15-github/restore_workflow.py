@@ -65,9 +65,10 @@ RESULT_FALSE = {'executionAuthority', 'end500Acceptance', 'mock500Acceptance',
 
 
 class WorkflowRejected(RuntimeError):
-    def __init__(self, phase='arguments', worker_memory=None):
+    def __init__(self, phase='arguments', worker_memory=None, native_failure=None):
         self.phase = phase if phase in PHASES else 'arguments'
         self.worker_memory = worker_memory
+        self.native_failure = _DIAGNOSTICS.native_failure(native_failure)
         super().__init__('W15_ISOLATED_WORKFLOW_FAILED_OR_UNKNOWN')
 
 
@@ -423,12 +424,20 @@ def _connection_failure_phase(error, connection_code, fallback):
     return 'connection-' + phase
 
 
-def run_worker(manifest, private_payload, *, phase_observer=None, backup_transition=None, capacity_observer=None):
+def run_worker(manifest, private_payload, *, phase_observer=None, backup_transition=None, capacity_observer=None,
+               native_failure_observer=None):
     """A's single fixed UID1000 worker. Call only after measured bootstrap."""
     phase, connection_code, resources, backup_code, backup_failure = 'binding', None, None, None, None
+    first_native = []
     def observe(name):
         if phase_observer is not None:
             phase_observer(name)
+    def observe_native(value):
+        closed = _DIAGNOSTICS.native_failure(value)
+        need(closed is not None and not first_native, 'end500')
+        first_native.append(closed)
+        if native_failure_observer is not None:
+            native_failure_observer(closed)
     try:
         observe(phase)
         raw, digest, qualification = validate_admission(manifest, private_payload)
@@ -444,6 +453,7 @@ def run_worker(manifest, private_payload, *, phase_observer=None, backup_transit
                          **({'end_capacity_diagnostic': True} if manifest['mode'] == END_CAPACITY else {}))
                      if manifest['mode'] in (CAPACITY, END_CAPACITY) else forward.open_common_resources(context))
         resources.phase_observer = phase_observer
+        resources.native_failure_observer = observe_native
         if manifest['mode'] == END_CAPACITY:
             need(callable(capacity_observer), 'binding')
             resources.capacity_observer = capacity_observer
@@ -535,6 +545,7 @@ def run_worker(manifest, private_payload, *, phase_observer=None, backup_transit
         return _result(manifest, resources.phase_closure() if manifest['mode'] == PHASED else None)
     except WorkflowRejected as error:
         error.worker_memory = _cached_failure_memory(resources)
+        error.native_failure = first_native[0] if first_native else error.native_failure
         raise
     except BaseException as error:
         selected = _connection_failure_phase(error, connection_code, phase)
@@ -544,7 +555,8 @@ def run_worker(manifest, private_payload, *, phase_observer=None, backup_transit
             nested = getattr(error, 'phase', None)
             if type(nested) is str and nested in BACKUP_PHASES:
                 selected = nested
-        raise WorkflowRejected(selected, _cached_failure_memory(resources)) from None
+        native = first_native[0] if first_native else _DIAGNOSTICS.native_failure(_DIAGNOSTICS.attribute(error, 'native_failure'))
+        raise WorkflowRejected(selected, _cached_failure_memory(resources), native) from None
 
 
 def _cached_failure_memory(resources):
@@ -567,7 +579,11 @@ _DIAGNOSTIC_MEMORY = _load('common_resources')
 
 def _safe_failure(error):
     if isinstance(error, WorkflowRejected):
-        return {'phase': error.phase}
+        result = {'phase': error.phase}
+        native = _DIAGNOSTICS.native_failure(error.native_failure)
+        if native is not None:
+            result['runner'] = {'reason': 'WORKER_REPORTED_FAILURE', 'nativeFailure': native}
+        return result
     candidate = _DIAGNOSTICS.attribute(error, 'safe_failure')
     return _DIAGNOSTICS.public(candidate, RUNNER_PHASES, PHASES,
         _DIAGNOSTIC_MEMORY.closed_failure_memory) or {'phase': 'arguments'}

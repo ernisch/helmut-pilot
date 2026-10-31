@@ -176,6 +176,8 @@ jobs:
           python3 -B scripts/w15-github/test_runtime_qualification.py
           python3 -B scripts/w15-github/test_runner_start.py
           python3 -B scripts/w15-github/test_runner_diagnostics.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_native_failure_chain.py
+          node scripts/lokal.js -- node scripts/w15-github/test_native_failure_chain.js
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_post_failure_memory_stat.py
           node scripts/lokal.js -- node scripts/w15-github/test_post_failure_memory_stat.js
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_capacity.py
