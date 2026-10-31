@@ -15,7 +15,7 @@ function closedRunnerDetail(value){
     'WORKER_EXIT_REJECTED','WORKER_REPORTED_FAILURE','SERVICE_IPC_EOF','SERVICE_IPC_TIMEOUT','SERVICE_IPC_REJECTED',
     'SERVICE_EXIT_WITHOUT_REPORT','SERVICE_EXIT_REJECTED','PARENT_CLOSURE_REJECTED','CLEANUP_UNCONFIRMED','SIGNAL_DURING_CLEANUP']);
   if(!value||typeof value!=='object'||Array.isArray(value)||!reasons.has(value.reason)||
-    !Object.keys(value).every(k=>['reason','secondaryReason','memory','memorySource','workerExitCode','serviceExitCode','lastObservedPhase'].includes(k)))return null;
+    !Object.keys(value).every(k=>['reason','secondaryReason','memory','memorySource','workerExitCode','serviceExitCode','lastObservedPhase','nativeFailure'].includes(k)))return null;
   const out={reason:value.reason};
   if(Object.hasOwn(value,'secondaryReason')){
     if(!reasons.has(value.secondaryReason))return null;out.secondaryReason=value.secondaryReason;
@@ -30,6 +30,10 @@ function closedRunnerDetail(value){
   }
   const phase=closedPhaseObservation(value.lastObservedPhase);
   if(phase!==null)out.lastObservedPhase=phase;
+  if(Object.hasOwn(value,'nativeFailure')){
+    const native=require('../../../scripts/fixtures/w15-native-failure').closed(value.nativeFailure);
+    if(native)out.nativeFailure=native;
+  }
   return out;
 }
 function closedCleanup(value){
