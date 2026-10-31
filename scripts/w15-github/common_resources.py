@@ -24,6 +24,16 @@ MEMORY_STAT_FIELDS = ('anon', 'file', 'kernel', 'shmem', 'file_dirty', 'file_wri
 _CAPACITY = None
 _PHASE_CONTRACT = None
 _END_TRACE = None
+_FUNCTIONAL_CONTRACT = None
+
+
+def functional_contract():
+    global _FUNCTIONAL_CONTRACT
+    if _FUNCTIONAL_CONTRACT is None:
+        spec = importlib.util.spec_from_file_location('w15_common_functional', Path(__file__).with_name('functional_contract.py'))
+        _FUNCTIONAL_CONTRACT = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_FUNCTIONAL_CONTRACT)
+    return _FUNCTIONAL_CONTRACT
 
 
 def end_capacity_trace():
@@ -188,7 +198,7 @@ def project_failure_memory(value, valid):
 
 
 class CommonResources:
-    def __init__(self, token, context, path, identity, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False):
+    def __init__(self, token, context, path, identity, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False, functional_stage=None):
         require(token is TOKEN)
         self._context = json.loads(json.dumps(context))
         self.path, self._identity = path, identity
@@ -202,6 +212,14 @@ class CommonResources:
         require(processing_backup_stage in (None, 'end500', 'mock500')
                 and not (capacity_diagnostic and processing_backup_stage is not None))
         self.processing_backup_stage = processing_backup_stage
+        require(functional_stage in (None, 'end500', 'mock500')
+                and not (functional_stage is not None and (capacity_diagnostic or processing_backup_stage is not None)))
+        self.functional_stage = functional_stage
+        self._functional_kernel, self._functional_first_kernel = 'UNKNOWN', 'UNKNOWN'
+        self._functional_samples, self._functional_component_maxima = 0, {}
+        if functional_stage is not None:
+            self.profile = functional_contract().profile(functional_stage)
+            self.container_limit = functional_contract().HARD_LIMIT
         self.memory_phase, self.backup_ack, self.backup_transition = 'processing', None, None
         self._phase_state, self._transition_attempted = None, False
         if processing_backup_stage is not None:
@@ -265,6 +283,30 @@ class CommonResources:
             self._component_meter = module.Meter()
         return self._component_meter.observe(self.path, self._identity, groups)
 
+    def functional_observation(self, role_bindings=()):
+        """Reuse existing passive PSS/kernel meters inside the owner's guard.
+
+        No process creation, names/argv guesses, limit changes or provider
+        acceptance. PSS maxima at different times are never a RAM sum.
+        """
+        require(self.functional_stage in ('end500','mock500'))
+        module=functional_contract().load('memory_components')
+        components=module.observe(self.path,self._identity,role_bindings)
+        for role,row in components['roles'].items():
+            amount=row['observedPSSBytes']
+            if type(amount) is int:
+                self._functional_component_maxima[role]=max(amount,self._functional_component_maxima.get(role,0))
+        return {'schema':'helmut-w15-functional-resource-observation/1',
+            'resourceContract':functional_contract().CONTRACT,'memoryProfile':self.profile,
+            'sampleCount':self._functional_samples,
+            'firstKernel':json.loads(json.dumps(self._functional_first_kernel)),
+            'lastKernel':json.loads(json.dumps(self._functional_kernel)),
+            'components':components,
+            'componentPSSMaxima':{role:self._functional_component_maxima.get(role,'UNKNOWN') for role in module.ROLES},
+            'snapshotAtomic':False,'peakCompositionKnown':False,'fileCacheAdditiveToPSS':False,
+            'differentTimeMaximaAdditive':False,'applicationWithTestDriverCombined':True,
+            'providerResourceAccepted':False,'fullLifetimeClosureAccepted':False,'executionAuthority':False}
+
     def sample(self):
         current = None
         self._last_valid = False
@@ -288,9 +330,18 @@ class CommonResources:
                      'events': {k: int(v) for k, v in (x.split() for x in read('memory.events').splitlines())}}
             current = value
             self._last_observed, self._last_valid = value, False
-            if self.capacity_diagnostic or self.processing_backup_stage is not None and self.memory_phase == 'backup':
+            if self.functional_stage is not None or self.capacity_diagnostic or self.processing_backup_stage is not None and self.memory_phase == 'backup':
                 value['capacityMeasurement'] = capacity().snapshot(value, fd)
-            if self.processing_backup_stage is not None:
+            if self.functional_stage is not None:
+                functional_contract().assess(value, self.functional_stage)
+                try:
+                    self._functional_kernel=functional_contract().load('component_resource_meter')._kernel(fd)
+                    if self._functional_samples==0:
+                        self._functional_first_kernel=json.loads(json.dumps(self._functional_kernel))
+                except Exception:
+                    self._functional_kernel='UNKNOWN'
+                self._functional_samples+=1
+            elif self.processing_backup_stage is not None:
                 self._phase_state.observe(value)
             else:
                 (capacity().assess if self.capacity_diagnostic else assess)(value)
@@ -325,6 +376,10 @@ class CommonResources:
 
     def safe_summary(self):
         value = self.sample()
+        if self.functional_stage is not None:
+            return {'status': 'FUNCTIONAL_PARENT_CURRENT_SAMPLE_ONLY', **value,
+                    **functional_contract().reference_summary(value, self.functional_stage),
+                    'pythonOrchestratorInsideParent': True, 'containerMemoryLimitBytes': self.container_limit}
         if self.processing_backup_stage is not None:
             return {'status': 'PHASED_PARENT_CURRENT_SAMPLE_ONLY', **value,
                     'resourceContract': phase_contract().profile(self.processing_backup_stage),
@@ -355,7 +410,7 @@ def _kernel_directory(path):
         os.close(root)
 
 
-def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False):
+def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False, functional_stage=None):
     """Only after entering the externally prepared, actually limited parent.
 
     This is an observation API, not a systemd bootstrap, UID conversion, fresh
@@ -375,7 +430,7 @@ def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None,
             os.close(fd)
         result = CommonResources(TOKEN, context, path, (value.st_dev, value.st_ino),
             capacity_diagnostic=capacity_diagnostic, processing_backup_stage=processing_backup_stage,
-            end_capacity_diagnostic=end_capacity_diagnostic)
+            end_capacity_diagnostic=end_capacity_diagnostic, functional_stage=functional_stage)
         result.sample()
         return result
     except Exception:

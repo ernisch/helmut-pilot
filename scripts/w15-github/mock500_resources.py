@@ -44,6 +44,11 @@ def phases():
     return _load('phase_contract')
 
 
+@lru_cache(maxsize=1)
+def functional():
+    return _load('functional_contract')
+
+
 class ResourceRejected(RuntimeError):
     pass
 
@@ -69,9 +74,13 @@ def assess(value):
 class MockCommonResources(C.CommonResources):
     profile = PROFILE
 
-    def __init__(self, token, context, path, identity, *, processing_backup_stage=None):
+    def __init__(self, token, context, path, identity, *, processing_backup_stage=None, functional_stage=None):
         need(token is TOKEN)
-        if processing_backup_stage is None:
+        need(functional_stage in (None,'mock500') and not (functional_stage and processing_backup_stage))
+        if functional_stage is not None:
+            super().__init__(C.TOKEN, context, path, identity, functional_stage='mock500')
+            self.profile = functional().MOCK_PROFILE
+        elif processing_backup_stage is None:
             super().__init__(C.TOKEN, context, path, identity)
         else:
             need(processing_backup_stage == 'mock500')
@@ -79,7 +88,7 @@ class MockCommonResources(C.CommonResources):
             self.profile = phases().MOCK_PROFILE
 
     def sample(self):
-        if getattr(self, 'processing_backup_stage', None) == 'mock500':
+        if getattr(self, 'functional_stage', None) == 'mock500' or getattr(self, 'processing_backup_stage', None) == 'mock500':
             return super().sample()
         # Reuse the established no-follow kernel directory and actual process
         # membership checks. Only the immutable v2 assessment differs.
@@ -118,6 +127,11 @@ class MockCommonResources(C.CommonResources):
             os.close(fd)
 
     def safe_summary(self):
+        if getattr(self, 'functional_stage', None) == 'mock500':
+            value=self.sample()
+            return {'status':'FUNCTIONAL_PARENT_CURRENT_SAMPLE_ONLY', **value,
+                **functional().reference_summary(value,'mock500'), 'pythonOrchestratorInsideParent':True,
+                'containerMemoryLimitBytes':self.container_limit,'mock500Acceptance':False}
         phased = getattr(self, 'processing_backup_stage', None) == 'mock500'
         backup = phased and self.memory_phase == 'backup'
         return {'status': ('PASS_OBSERVED_MOCK500_PHASE_PARENT_SAMPLE_ONLY' if phased
@@ -129,7 +143,7 @@ class MockCommonResources(C.CommonResources):
             'fullLifetimeClosureAccepted': False, 'mock500Acceptance': False}
 
 
-def observe(context, *, processing_backup_stage=None):
+def observe(context, *, processing_backup_stage=None, functional_stage=None):
     try:
         need(isinstance(context, dict) and context.get('schema') == 'helmut-w15-mock500-controller-context/1'
              and context.get('scope') == SCOPE and context.get('executionAuthority') is False
@@ -145,7 +159,7 @@ def observe(context, *, processing_backup_stage=None):
         finally:
             os.close(fd)
         resource = MockCommonResources(TOKEN, context, path, (value.st_dev, value.st_ino),
-                                       processing_backup_stage=processing_backup_stage)
+                                       processing_backup_stage=processing_backup_stage,functional_stage=functional_stage)
         resource.sample()
         return resource
     except Exception:
@@ -169,8 +183,9 @@ BUDGETS.update({'completePrivateSelection': MAX_SELECTION_BYTES, 'encryptedBacku
 
 
 def admit_disk_plan(filesystem_root, *, checkout_bytes, binary_bytes, additional_asset_bytes,
-                    maximum_wall_seconds=COMPLETION_SECONDS, processing_backup_stage=None):
+                    maximum_wall_seconds=COMPLETION_SECONDS, processing_backup_stage=None, functional_stage=None):
     need(processing_backup_stage in (None, 'mock500'))
+    need(functional_stage in (None,'mock500') and not (functional_stage and processing_backup_stage))
     need(maximum_wall_seconds == COMPLETION_SECONDS and type(maximum_wall_seconds) is int)
     need(D._amount(checkout_bytes) > 0 and D._amount(binary_bytes) > 0)
     need(D._amount(additional_asset_bytes) > 0, 'MOCK500_ADDITIONAL_ASSET_BYTE_BOUND_REQUIRED')
@@ -180,14 +195,16 @@ def admit_disk_plan(filesystem_root, *, checkout_bytes, binary_bytes, additional
     disk = D._disk(filesystem_root)
     required = sum(budgets.values()) + D.FREE_RESERVE_BYTES
     need(disk['availableBytes'] >= required, 'MOCK500_COMPLETE_RETAINED_DISK_PLAN_DOES_NOT_FIT')
+    numeric=functional().limits('mock500') if functional_stage else {
+        'comparisonBudgetBytes':LIMIT,'maximumConsumptionBytes':MAXIMUM,'requiredReserveBytes':RESERVE,'swapBytes':0}
     return {'schema': 'helmut-w15-mock500-resource-plan/1', 'status': 'PASS_FRESH_DISK_ADMISSION_ONLY',
-        'memoryProfile': phases().MOCK_PROFILE if processing_backup_stage else PROFILE, 'disk': disk, 'budgets': budgets,
+        'memoryProfile': functional().MOCK_PROFILE if functional_stage else phases().MOCK_PROFILE if processing_backup_stage else PROFILE, 'disk': disk, 'budgets': budgets,
         'requiredAdditionalBytes': required, 'minimumFreeReserveBytes': D.FREE_RESERVE_BYTES,
         'additionalPrivateAssetBoundBytes': additional_asset_bytes,
         'maximumSelectionBytes': MAX_SELECTION_BYTES, 'maximumCipherBytes': MAX_CIPHER_BYTES,
         'processingSeconds': PROCESSING_SECONDS, 'maximumWallSeconds': COMPLETION_SECONDS,
-        'commonMemoryLimitBytes': LIMIT, 'maximumActualCommonLifetimePeakBytes': MAXIMUM,
-        'requiredMemoryReserveBytes': RESERVE, 'swapMaximumBytes': 0,
+        'commonMemoryLimitBytes': numeric['comparisonBudgetBytes'], 'maximumActualCommonLifetimePeakBytes': numeric['maximumConsumptionBytes'],
+        'requiredMemoryReserveBytes': numeric['requiredReserveBytes'], 'swapMaximumBytes': 0,
         'automaticDeletionAllowed': False, 'executionAuthority': False, 'mock500Acceptance': False}
 
 
@@ -197,9 +214,13 @@ class DiskGuard:
              and plan.get('memoryProfile') == getattr(resources, 'profile', None) and callable(getattr(resources, 'sample', None))
              and (getattr(resources, 'profile', None) == PROFILE
                   or (getattr(resources, 'processing_backup_stage', None) == 'mock500'
-                      and resources.profile == phases().MOCK_PROFILE)))
+                      and resources.profile == phases().MOCK_PROFILE)
+                  or (getattr(resources,'functional_stage',None)=='mock500'
+                      and resources.profile==functional().MOCK_PROFILE)))
         self.root, self.plan, self.resources = Path(filesystem_root), json.loads(json.dumps(plan)), resources
         budgets = self.plan['budgets']
+        numeric=functional().limits('mock500') if getattr(resources,'functional_stage',None)=='mock500' else {
+            'comparisonBudgetBytes':LIMIT,'maximumConsumptionBytes':MAXIMUM,'requiredReserveBytes':RESERVE,'swapBytes':0}
         need(D._amount(budgets['stagedCheckout']) > 0 and D._amount(budgets['stagedPinnedBinaries']) > 0
              and D._amount(self.plan['additionalPrivateAssetBoundBytes']) > 0
              and budgets == {'stagedCheckout': budgets['stagedCheckout'],
@@ -208,9 +229,9 @@ class DiskGuard:
                  'mockPrivateAssetMaterialization': self.plan['additionalPrivateAssetBoundBytes'], **BUDGETS}
              and self.plan['minimumFreeReserveBytes'] == D.FREE_RESERVE_BYTES
              and self.plan['maximumWallSeconds'] == COMPLETION_SECONDS
-             and self.plan['commonMemoryLimitBytes'] == LIMIT
-             and self.plan['maximumActualCommonLifetimePeakBytes'] == MAXIMUM
-             and self.plan['requiredMemoryReserveBytes'] == RESERVE)
+             and self.plan['commonMemoryLimitBytes'] == numeric['comparisonBudgetBytes']
+             and self.plan['maximumActualCommonLifetimePeakBytes'] == numeric['maximumConsumptionBytes']
+             and self.plan['requiredMemoryReserveBytes'] == numeric['requiredReserveBytes'])
         self.paths = {} if paths is None else dict(paths)
         self.started = started_monotonic
         need(type(self.started) in (int, float) and 0 <= self.started <= time.monotonic())
@@ -220,7 +241,9 @@ class DiskGuard:
     def __call__(self):
         need(0 <= time.monotonic() - self.started < COMPLETION_SECONDS, 'MOCK500_COMPLETION_DEADLINE')
         sample = self.resources.sample()
-        if getattr(self.resources, 'processing_backup_stage', None) == 'mock500':
+        if getattr(self.resources,'functional_stage',None)=='mock500':
+            functional().assess(sample,'mock500')
+        elif getattr(self.resources, 'processing_backup_stage', None) == 'mock500':
             phases().assess(sample, 'mock500', phase=self.resources.memory_phase)
         else:
             assess(sample)
@@ -242,6 +265,6 @@ class DiskGuard:
             need(total <= self.plan['budgets'][role], 'MOCK500_DISK_CATEGORY_LIMIT')
             totals[role] = total
         self.last = {'disk': disk, 'commonKernelSample': sample, 'growthBytes': growth,
-                     'measuredCategories': totals, 'memoryProfile': PROFILE,
+                     'measuredCategories': totals, 'memoryProfile': self.resources.profile,
                      'fullLifetimeClosureAccepted': False, 'mock500Acceptance': False}
         return self.last

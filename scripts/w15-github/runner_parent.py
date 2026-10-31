@@ -153,7 +153,9 @@ def process_env(ctx):
     return {**ENV, 'GITHUB_ACTIONS': 'true', 'GITHUB_RUN_ID': ctx['runId'], 'GITHUB_RUN_ATTEMPT': '1'}
 
 
-def github_binding(run_id, commit, *, capacity_diagnostic=False, processing_backup_stage=None):
+def github_binding(run_id, commit, *, capacity_diagnostic=False, processing_backup_stage=None, functional_stage=None):
+    require(functional_stage in (None,'end500','mock500')
+            and not (functional_stage is not None and (capacity_diagnostic or processing_backup_stage is not None)))
     phase('github-environment')
     require(os.environ.get('GITHUB_ACTIONS') == 'true'
             and os.environ.get('GITHUB_RUN_ID') == run_id
@@ -165,8 +167,10 @@ def github_binding(run_id, commit, *, capacity_diagnostic=False, processing_back
     require(head == (commit + '\n').encode())
     # Both executable repository sources must equal raw blobs at the exact HEAD.
     for file in (SCRIPT, SCRIPT.with_name('common_resources.py'),
-                 *([SCRIPT.with_name('restore_capacity.py')] if capacity_diagnostic or processing_backup_stage is not None else []),
-                 *([SCRIPT.with_name('phase_contract.py')] if processing_backup_stage is not None else []),
+                 *([SCRIPT.with_name('restore_capacity.py')] if capacity_diagnostic or processing_backup_stage is not None or functional_stage is not None else []),
+                 *([SCRIPT.with_name('phase_contract.py')] if processing_backup_stage is not None or functional_stage is not None else []),
+                 *([SCRIPT.with_name(name + '.py') for name in ('functional_contract','memory_components','component_resource_meter')]
+                   if functional_stage is not None else []),
                  *([SCRIPT.with_name(name + '.py') for name in ('end500_capacity_trace', 'memory_components', 'runner_diagnostics', 'end500_capacity_roles')] if capacity_diagnostic else [])):
         phase('github-entry-pin')
         relative = str(file.relative_to(REPO))
@@ -217,7 +221,12 @@ def read_parent(ctx, expected_identity, *, empty=False):
                   'events': {k: int(v) for k, v in (row.split() for row in read('memory.events').splitlines())}}
         try:
             stage = ctx.get('processingBackupStage')
-            if stage in ('end500', 'mock500'):
+            if 'functionalStage' in ctx:
+                functional = ctx['functionalStage']
+                require(functional in ('end500','mock500') and stage is None and ctx.get('capacityDiagnostic') is not True)
+                sample['capacityMeasurement'] = R.capacity().snapshot(sample, fd)
+                R.functional_contract().assess(sample, functional)
+            elif stage in ('end500', 'mock500'):
                 selected = ctx.get('processingBackupPhase', 'processing')
                 require(selected in ('processing', 'backup'))
                 if selected == 'backup':
@@ -264,6 +273,11 @@ def parent_empty(ctx, expected_identity):
 
 
 def unit_bytes(ctx=None):
+    if ctx is not None and 'functionalStage' in ctx:
+        require(ctx['functionalStage'] in ('end500','mock500')
+                and ctx.get('processingBackupStage') is None and ctx.get('capacityDiagnostic') is not True)
+        return (b'[Unit]\nDescription=W15 isolated functional safety contract\n'
+                b'[Slice]\nMemoryAccounting=yes\nMemoryMax=' + str(R.functional_contract().HARD_LIMIT).encode() + b'\nMemorySwapMax=0\n')
     if ctx is not None and ctx.get('processingBackupStage') in ('end500', 'mock500'):
         limit = R.phase_contract().processing_limits(ctx['processingBackupStage'])['comparisonBudgetBytes']
         return (b'[Unit]\nDescription=W15 processing then backup phase contract\n'
@@ -281,7 +295,7 @@ def prepare_parent(ctx):
     unit, _, _ = names(ctx)
     path = R.KERNEL_ROOT / unit
     require(not path.exists())
-    if ctx.get('capacityDiagnostic') is True or ctx.get('processingBackupStage') in ('end500', 'mock500'):
+    if ctx.get('functionalStage') in ('end500','mock500') or ctx.get('capacityDiagnostic') is True or ctx.get('processingBackupStage') in ('end500', 'mock500'):
         R.capacity().host_admission()
     phase('parent-unit-write')
     fd = os.open(UNIT_ROOT / unit, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
@@ -544,7 +558,9 @@ def internal_argv(mode, ctx):
             '--run-id', ctx['runId'], '--expected-commit', ctx['exactCommit'], '--nonce', ctx['nonce'],
             *(['--capacity-diagnostic'] if ctx.get('capacityDiagnostic') is True else []),
             *(['--processing-backup-stage', ctx['processingBackupStage']]
-              if ctx.get('processingBackupStage') in ('end500', 'mock500') else [])]
+              if ctx.get('processingBackupStage') in ('end500', 'mock500') else []),
+            *(['--functional-stage', ctx['functionalStage']]
+              if ctx.get('functionalStage') in ('end500', 'mock500') else [])]
 
 
 def privileged(mode, ctx):
@@ -616,6 +632,7 @@ def main(argv=None):
         parser.add_argument('--nonce')
         parser.add_argument('--capacity-diagnostic', action='store_true')
         parser.add_argument('--processing-backup-stage', choices=('end500', 'mock500'))
+        parser.add_argument('--functional-stage', choices=('end500','mock500'))
         args = parser.parse_args(argv)
         public = args.internal is None
         require((public and args.nonce is None) or (not public and args.nonce is not None))
@@ -623,14 +640,18 @@ def main(argv=None):
         require(not args.capacity_diagnostic or args.internal in ('prepare', 'remove'))
         require(args.processing_backup_stage is None or args.internal in ('prepare', 'remove'))
         require(not (args.capacity_diagnostic and args.processing_backup_stage is not None))
+        require(args.functional_stage is None or (args.internal in ('prepare','remove')
+                and not args.capacity_diagnostic and args.processing_backup_stage is None))
         if args.capacity_diagnostic:
             ctx['capacityDiagnostic'] = True
         if args.processing_backup_stage is not None:
             ctx['processingBackupStage'] = args.processing_backup_stage
+        if args.functional_stage is not None:
+            ctx['functionalStage'] = args.functional_stage
         if public:
             stop_latch = StopLatch()
         github_binding(args.run_id, args.expected_commit, capacity_diagnostic=args.capacity_diagnostic,
-                       processing_backup_stage=args.processing_backup_stage)
+                       processing_backup_stage=args.processing_backup_stage, functional_stage=args.functional_stage)
         if public:
             result = probe(ctx, stop_latch=stop_latch)
             stop_latch.cleaning = False
