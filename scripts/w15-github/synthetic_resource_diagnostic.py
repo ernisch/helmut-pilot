@@ -265,8 +265,15 @@ def closed_failure(error, phase):
     if not isinstance(error,Rejected):
         candidate=P.failure_record(error).get('code')
         if candidate in P.CODES:code=candidate
-    return {'phase':getattr(error,'phase',phase) if getattr(error,'phase',phase) in PHASES else 'closure',
-            'code':code}
+    result={'phase':getattr(error,'phase',phase) if getattr(error,'phase',phase) in PHASES else 'closure','code':code}
+    if code=='RUNTIME_REJECTED':
+        known={'AssertionError','JSONDecodeError','ValueError','TypeError','KeyError','AttributeError','ResourceError','StopIteration'}
+        result['exceptionType']=type(error).__name__ if type(error).__name__ in known else 'UNKNOWN'
+        tb=error.__traceback__
+        while tb is not None:
+            if Path(tb.tb_frame.f_code.co_filename).absolute()==Path(__file__).absolute():result['sourceLine']=tb.tb_lineno
+            tb=tb.tb_next
+    return result
 
 
 def final_receipt(temporary, value):
@@ -359,7 +366,7 @@ class Supervisor:
         # Existing parent helper intentionally accepts top-level W15 parents only.
         # Descendants are attested relative to that still-bound parent, no links.
         parts=path.relative_to(self.parent).parts
-        need(0<len(parts)<=2,self.phase,'LEAF_IDENTITY')
+        need(0<len(parts)<=2 and all(part not in ('.','..') for part in parts),self.phase,'LEAF_IDENTITY')
         fd=self._parent_fd();parent=os.fstat(fd)
         try:
             for part in parts:

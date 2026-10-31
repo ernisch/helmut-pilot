@@ -120,9 +120,17 @@ class DiagnosticChecks(unittest.TestCase):
                     link=root/'linked';link.symlink_to(child,target_is_directory=True)
                     with self.assertRaises(OSError):s.component_identity(link)
                     with self.assertRaises(ValueError):s.component_identity(root.parent)
+                    with self.assertRaises(D.Rejected):s.component_identity(root/'..'/'sibling')
             finally:os.close(fd)
         value=D.closed_failure(FileNotFoundError(),'groups')
         self.assertEqual(value,{'phase':'groups','code':'FILESYSTEM_ENTRY_MISSING'})
+
+    def test_unexpected_decoder_failure_keeps_public_location_but_no_raw_value(self):
+        try:D.decode(b'FICTIONAL_PRIVATE_INVALID_JSON')
+        except Exception as error:record=D.closed_failure(error,'services')
+        self.assertEqual(record['exceptionType'],'JSONDecodeError')
+        self.assertGreater(record['sourceLine'],0)
+        self.assertNotIn('FICTIONAL_PRIVATE',json.dumps(record))
 
     def test_component_guard_unknown_peak_swap_oom_and_cpu_fail_closed(self):
         self.assertTrue(D.group_fit(kernel(),D.APP_HARD))
