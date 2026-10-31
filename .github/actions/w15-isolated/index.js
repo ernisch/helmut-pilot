@@ -43,36 +43,7 @@ function closedCleanup(value){
     !keys.every(k=>['PASS','FAIL','UNKNOWN'].includes(value[k])))return null;
   return Object.fromEntries(keys.map(k=>[k,value[k]]));
 }
-function closedCapacityMeasurement(v){
-  const exact=(o,keys)=>o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).sort().join(',')===[...keys].sort().join(',');
-  const integer=n=>Number.isSafeInteger(n)&&n>=0;
-  const cats=['anon','file','kernel','shmem','file_dirty','file_writeback'];
-  const amounts=o=>exact(o,cats)&&cats.every(k=>integer(o[k])||o[k]==='UNKNOWN');
-  const keys=['schema','diagnosticOnly','legacyPeakLimitBytes','legacyPeakExceeded','legacyContractAccepted',
-    'sampleCount','maximumObservedCurrentBytes','categoryMaxima','last','phaseObservations'];
-  if(!exact(v,keys)||v.schema!=='helmut-w15-full-restore-capacity-measurement/1'||v.diagnosticOnly!==true||
-    v.legacyPeakLimitBytes!==2048000000||typeof v.legacyPeakExceeded!=='boolean'||v.legacyContractAccepted!==false||
-    !integer(v.sampleCount)||v.sampleCount<1||!integer(v.maximumObservedCurrentBytes)||!amounts(v.categoryMaxima))return null;
-  const last=v.last;
-  if(!exact(last,['hostAvailableBytes','memoryStat','memoryPressure','observedMonotonicNS','peakCompositionKnown'])||
-    !(integer(last.hostAvailableBytes)||last.hostAvailableBytes==='UNKNOWN')||!amounts(last.memoryStat)||
-    !integer(last.observedMonotonicNS)||last.peakCompositionKnown!==false)return null;
-  if(last.memoryPressure!=='UNKNOWN'){
-    if(!exact(last.memoryPressure,['some','full']))return null;
-    for(const row of Object.values(last.memoryPressure))if(!exact(row,['avg10','avg60','avg300','total'])||
-      !integer(row.total)||!['avg10','avg60','avg300'].every(k=>integer(row[k])&&row[k]<=10000))return null;
-  }
-  if(!Array.isArray(v.phaseObservations)||v.phaseObservations.length>128)return null;
-  let previous=0;
-  for(const row of v.phaseObservations){
-    if(!exact(row,['name','sequence','meaning','observedKernelPeakBytes','observedCurrentBytes'])||
-      !closedPhaseObservation({name:row.name,sequence:row.sequence,meaning:row.meaning})||row.sequence<=previous||
-      !integer(row.observedKernelPeakBytes)||!integer(row.observedCurrentBytes))return null;
-    previous=row.sequence;
-  }
-  if(JSON.stringify(v).length>32768)return null;
-  return JSON.parse(JSON.stringify(v));
-}
+function closedCapacityMeasurement(value){return require('./capacity-measurement').closedCapacityMeasurement(value);}
 function closedFailureMemory(value){
   const keys=['configuredLimitBytes','kernelLifetimePeakBytes','currentBytes','swapMaximumBytes','swapCurrentBytes','lastReadbackValid','events'];
   const events=['max','oom','oom_kill','oom_group_kill'];
@@ -147,7 +118,7 @@ function main() {
   if (Buffer.byteLength(input) > 1024*1024) throw Error('bound');
   const result = cp.spawnSync('/usr/bin/python3', ['-B','scripts/w15-github/restore_workflow.py','--launch'],
     {input, encoding:'utf8', env:process.env, maxBuffer:1024*1024,
-     timeout:(synthetic ? 420 : ['end500-full-gated','end500-full-phased-gated','end500-full-capacity-diagnostic'].includes(mode) ? 3720 : 1920)*1000});
+     timeout:(synthetic ? 420 : ['end500-full-gated','end500-full-phased-gated','end500-full-capacity-diagnostic','end500-full-functional-gated'].includes(mode) ? 3720 : 1920)*1000});
   if (result.error || result.status !== 0) {
     const failed = JSON.parse(result.stdout);
     const phases = ['capacity-transport-complete','capacity-materialization','capacity-restore-ready','capacity-seed','capacity-seed-ready','capacity-auth-cas','capacity-native-audit','capacity-export','capacity-processing-stopped','arguments','event','approval','qualification','binding','resources','synthetic',
@@ -177,6 +148,10 @@ function main() {
   }
   // The Python boundary emits one strictly bounded public receipt.
   const receipt = JSON.parse(result.stdout);
+  if(mode==='end500-full-functional-gated'&&Object.hasOwn(receipt,'functionalResourceObservation')){
+    const observed=require('./functional-resources').closed(receipt.functionalResourceObservation);
+    receipt.functionalResourceObservation=observed===null?'UNKNOWN':observed;
+  }
   console.log(JSON.stringify(receipt));
 }
 try { main(); } catch (_) { console.log('{"status":"FAIL_OR_BLOCKED_W15_ISOLATED_JOB"}'); process.exitCode=1; }

@@ -43,10 +43,10 @@ function memory() {
   return { currentBytes: Number(at("memory.current")), configuredLimit: at("memory.max"),
     swapMaximum: at("memory.swap.max"), swapCurrentBytes: Number(at("memory.swap.current")),
     events: Object.fromEntries(at("memory.events").split("\n").map(s => s.split(/\s+/)).map(([k, v]) => [k, Number(v)])),
-    ...Memory.assess(peak) };
+    ...Bound.memoryAssessment(BOUND, peak) };
 }
-function memoryAccepted(m) {
-  return m.configuredLimit === String(Memory.limits.comparisonBudgetBytes) && m.swapMaximum === "0"
+function memoryAccepted(m, bound = BOUND) {
+  return m.configuredLimit === String(Bound.memoryLimits(bound).comparisonBudgetBytes) && m.swapMaximum === "0"
     && m.swapCurrentBytes === 0 && m.reserveMeetsContract
     && ["oom", "oom_kill", "oom_group_kill", "max"].every(k => m.events[k] === 0);
 }
@@ -544,10 +544,14 @@ async function run() {
       exactly500UniqueFinishACKs: observation.mutations.filter(m => m.finishIndex !== undefined).length === 500
         && new Set(observation.mutations.filter(m => m.finishIndex !== undefined).map(m => m.finishIndex)).size === 500,
       usageHistoryNotTruncated: final.usageRows === before.usageRows + 1000,
-      active500AtLastRead: final.active === 500, sharedCapAnd20PercentReserve: memoryAccepted(mem),
+      active500AtLastRead: final.active === 500,
+      ...(BOUND?.functionalResourceContract ? { functionalSharedSafety: memoryAccepted(mem) }
+        : { sharedCapAnd20PercentReserve: memoryAccepted(mem) }),
       ...(BOUND ? { allObservedWritesAtomic: observation.casWrites.every(w => w.storageMode === "relational-atomic-v1") } : {}),
       noObservedErrors: errors.length === 0 && memoryViolation === null, privateKeyAbsent: !process.env[PRIV] };
     const result = { schema: "helmut-w15-full500-runtime/1", status: Object.values(checks).every(Boolean) ? "PASS_RUNTIME_AUDIT_AND_CLEANUP_PENDING" : "FAIL_OR_UNKNOWN",
+      ...(BOUND?.functionalResourceContract ? { functionalContract: BOUND.functionalResourceContract.contract,
+        memoryProfile: Bound.memoryLimits(BOUND).version, legacyRegularMemoryAccepted: false, providerResourceAccepted: false } : {}),
       selector: m.selector, runId: m.runId, checks, unitReports, scopeReports, responses, providerPhases,
       authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites, authCoverage: coverage,
       authTimings: AuthReport.summarize(observation),
@@ -582,4 +586,4 @@ if (require.main === module) main(process.argv[2]).catch(e => {
     atUTC: new Date().toISOString(), noAutomaticRetry: true, cleanupConfirmed: false }); } catch { /* first report retained */ }
   console.error(JSON.stringify(safeError(e))); process.exitCode = 1;
 });
-module.exports = { checkpointAssessment, authCoverageAssessment, observeAuth, providerPhasesUnder20 };
+module.exports = { checkpointAssessment, authCoverageAssessment, observeAuth, providerPhasesUnder20, memoryAccepted };

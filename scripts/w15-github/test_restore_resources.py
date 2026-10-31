@@ -110,6 +110,20 @@ class ResourceChecks(unittest.TestCase):
         with self.assertRaises(R.ResourceRejected):
             R.tree_bytes(root)
 
+    def test_functional_disk_guard_uses_same_disk_plan_and_whole_host_guard(self):
+        spec = importlib.util.spec_from_file_location('functional_disk_capacity_fixture', Path(__file__).with_name('test_restore_capacity.py'))
+        fixture = importlib.util.module_from_spec(spec); spec.loader.exec_module(fixture)
+        measured = fixture.sample(); measured['capacityMeasurement'] = fixture.measurement(measured)
+        self.common.functional_stage = 'end500'
+        self.common.sample.side_effect = lambda: measured
+        plan = self.plan()
+        guard = R.DiskGuard(self.root, plan, self.common)
+        self.assertEqual(guard()['commonKernelSample']['kernelLifetimePeakBytes'], 3100000000)
+        self.assertEqual(plan['maximumActualCommonLifetimePeakBytes'], 2048000000)
+        measured['capacityMeasurement']['last']['hostAvailableBytes'] = 2147483647
+        with self.assertRaises(ValueError): guard()
+        self.assertEqual(R.FREE_RESERVE_BYTES, 512 * 1024 * 1024)
+
     def test_cost_is_published_bounded_storage_and_does_not_invent_free_quota(self):
         envelope = R.cost_envelope()
         self.assertEqual(envelope['artifactPublishedStorageUSDPerGBMonth'], '0.25')

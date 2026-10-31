@@ -52,8 +52,8 @@ class End500BackupFailureBoundaryChecks(unittest.TestCase):
         inputs = SimpleNamespace(backup_context=lambda: dict(self.context),
             backup_input_files=lambda: {}, backup_provenance_files=lambda: {})
         self.scope = {'inputs': inputs, 'failure': None, 'zero': True,
-            'functional_closure_completed': True, 'actual_memory_accepted': True,
-            'capacity_diagnostic': False, 'common_resources': self.resources,
+            'functional_closure_completed': True, 'actual_memory_accepted': True,'functional_observation':lambda _:None,
+            'capacity_diagnostic': False, 'functional':False, 'common_resources': self.resources,
             'service_closure': {'status': 'PASS_GENUINE_OWNED_SERVICE_EXIT'},
             'w': SimpleNamespace(native_failure=None, finished=SimpleNamespace(is_set=lambda: True),
                 thread=SimpleNamespace(is_alive=lambda: False), reporter=SimpleNamespace(is_alive=lambda: False), stop_failure=None),

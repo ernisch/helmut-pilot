@@ -211,6 +211,14 @@ def _sample(supervisor):
             and supervisor.disk_phase == 'processing', 'BACKUP_MONITOR_NOT_LIVE')
     supervisor.sample()
     value = supervisor.last
+    resources = getattr(supervisor, 'common_resources', None)
+    functional_stage = getattr(resources, 'functional_stage', None)
+    if functional_stage in ('end500', 'mock500'):
+        # The immutable worker context selected this separate whole-host
+        # contract. Restore, export and second recovery share this guard.
+        value = resources.sample()
+        _load('functional_contract').assess(value, functional_stage)
+        return value
     if (getattr(getattr(supervisor, 'common_resources', None), 'capacity_diagnostic', False) is True
             or getattr(getattr(supervisor, 'common_resources', None), 'memory_phase', None) == 'backup'):
         return supervisor.common_resources.sample()

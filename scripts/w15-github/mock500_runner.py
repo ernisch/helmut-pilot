@@ -33,7 +33,8 @@ S, P = _load('runner_start'), _load('mock500_parent')
 LIMITS = {'comparisonBudgetBytes': P.LIMIT, 'maximumConsumptionBytes': P.MAXIMUM,
           'requiredReserveBytes': P.RESERVE, 'swapBytes': 0}
 PHASED = 'mock500-full-phased-gated'
-WALL = {'mock500-runner-synthetic': 300, 'mock500-full-gated': 12600, PHASED: 12600}
+FUNCTIONAL = 'mock500-full-functional-gated'
+WALL = {'mock500-runner-synthetic': 300, 'mock500-full-gated': 12600, PHASED: 12600, FUNCTIONAL:12600}
 BRANCH = S.BRANCH
 SYNTHETIC_BRANCH = 'refs/heads/codex/w15-mock500-integration-20261029'
 REQUEST_KEYS = S.REQUEST_KEYS | {'bindings'}
@@ -45,12 +46,21 @@ WORKER_PHASES |= {'mock-receiver-' + value for value in ('arguments', 'binding',
 WORKER_PHASES |= {'mock-receiver-archive-' + phase for phase in ('arguments', 'cipher', 'recipient', 'destination', 'decrypt', 'gzip', 'archive', 'manifest', 'files', 'integrity', 'readback', 'cleanup')}
 STATUS = {'mock500-runner-synthetic': 'PASS_MOCK500_SYNTHETIC_RUNNER_ONLY_START_BLOCKED',
           'mock500-full-gated': 'PASS_MOCK500_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING',
-          PHASED: 'PASS_MOCK500_PHASED_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING'}
+          PHASED: 'PASS_MOCK500_PHASED_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING',
+          FUNCTIONAL:'PASS_MOCK500_FUNCTIONAL_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING'}
 RESULT_KEYS = {'status', 'mode', 'exactCommit', 'runId', 'runAttempt', 'syntheticQualification',
                'originalTransferPerformed', 'profiles', 'activeProfiles', 'units', 'providerPhases',
                'results', 'controls', 'backupRoundtripVerified', 'executionAuthority',
                'mock500Acceptance', 'end500Acceptance'}
 PHASE = 'arguments'
+
+
+def functional():
+    return P.resources()._load('functional_contract')
+
+
+def limits(mode):
+    return functional().limits('mock500') if mode == FUNCTIONAL else dict(LIMITS)
 
 
 class MockRunnerError(S.RunnerStartError):
@@ -70,7 +80,7 @@ def need(value):
 def validate_request(request, private_payload):
     need(type(request) is dict and set(request) == REQUEST_KEYS
          and request['schema'] == 'helmut-w15-runner-request/1' and type(request['mode']) is str
-         and request['mode'] in WALL and request['limits'] == LIMITS
+         and request['mode'] in WALL and request['limits'] == limits(request['mode'])
          and all(type(value) is int for value in request['limits'].values())
          and type(request['maximumWallSeconds']) is int and request['maximumWallSeconds'] == WALL[request['mode']]
          and type(request['runAttempt']) is int and request['runAttempt'] == 1
@@ -113,7 +123,8 @@ def github_binding(request):
     need(S._git(REPO, ['rev-parse', 'HEAD']) == (request['exactCommit'] + '\n').encode())
     for name in ('mock500_runner.py', 'mock500_parent.py', 'mock500_resources.py', 'mock500_workflow.py',
                  'runner_start.py', 'runner_parent.py', 'common_resources.py', 'runner_diagnostics.py', 'controller_context.py',
-                 *(('restore_capacity.py', 'phase_contract.py') if request['mode'] == PHASED else ())):
+                 *(('restore_capacity.py', 'phase_contract.py') if request['mode'] in (PHASED,FUNCTIONAL) else ()),
+                 *(('functional_contract.py',) if request['mode'] == FUNCTIONAL else ())):
         file = SCRIPT.with_name(name)
         relative = str(file.relative_to(REPO))
         entry = S._git(REPO, ['ls-tree', '-z', request['exactCommit'], '--', relative])
@@ -127,7 +138,10 @@ def github_binding(request):
 
 def validate_public_result(result, manifest):
     phased = manifest['mode'] == PHASED
+    new_functional=manifest['mode']==FUNCTIONAL
     keys = RESULT_KEYS | ({'resourcePhases', 'processingMemoryChecksCompleted', 'backupSafetyChecksCompleted'} if phased else set())
+    if new_functional:keys|={'functionalContract','functionalSafetyChecksCompleted','legacyRegularMemoryAccepted',
+                            'providerResourceAccepted','functionalResourceObservation','functionalResults'}
     need(type(result) is dict and set(result) == keys and result['mode'] == manifest['mode']
          and result['status'] == STATUS[manifest['mode']]
          and all(result[key] == manifest[key] for key in ('exactCommit', 'runId', 'runAttempt'))
@@ -144,7 +158,41 @@ def validate_public_result(result, manifest):
         P.resources().phases().validate_closure(result['resourcePhases'], 'mock500',
             {key: manifest[key] for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')})
         need(result['processingMemoryChecksCompleted'] is True and result['backupSafetyChecksCompleted'] is True)
+    if new_functional:
+        validate_functional_results(result['functionalResults'])
+        need(result['functionalContract']==functional().CONTRACT and result['functionalSafetyChecksCompleted'] is True
+             and result['legacyRegularMemoryAccepted'] is result['providerResourceAccepted'] is False)
+        observation=result['functionalResourceObservation']
+        need(type(observation)is dict and set(observation)=={'schema','resourceContract','memoryProfile','sampleCount',
+             'firstKernel','lastKernel','components','componentPSSMaxima','snapshotAtomic','peakCompositionKnown',
+             'fileCacheAdditiveToPSS','differentTimeMaximaAdditive','applicationWithTestDriverCombined',
+             'providerResourceAccepted','fullLifetimeClosureAccepted','executionAuthority'}
+             and observation.get('schema')=='helmut-w15-functional-resource-observation/1'
+             and observation.get('resourceContract')==functional().CONTRACT
+             and observation.get('memoryProfile')==functional().MOCK_PROFILE
+             and all(observation.get(k)is False for k in ('snapshotAtomic','peakCompositionKnown','fileCacheAdditiveToPSS',
+                 'differentTimeMaximaAdditive','providerResourceAccepted','fullLifetimeClosureAccepted','executionAuthority')))
     return {key: result[key] for key in sorted(result)}
+
+
+def validate_functional_results(value):
+    counts={'simultaneouslyActiveProfiles':500,'completedUnits':500,'localProviderPhases':1000,
+        'storedResults':1500,'auditedPositions':1500,'unitChecksCompleted':17000,'securityControls':8000,'activeProfiles':0}
+    keys=set(counts)|{'schema','categories','maximumTimingsMs','timingsComplete','timeLimitsObserved',
+        'executionAuthority','mock500Acceptance','productionAcceptance'}
+    need(type(value)is dict and set(value)==keys and value['schema']=='helmut-w15-mock500-functional-results/1'
+         and all(type(value[k])is int and value[k]==v for k,v in counts.items())
+         and all(value[k]is False for k in ('executionAuthority','mock500Acceptance','productionAcceptance')))
+    categories=value['categories'];timings=value['maximumTimingsMs']
+    need(type(categories)is dict and set(categories)=={'missing','empty','duplicate','technicallyInvalid','unusable'}
+         and all(type(v)is int and v==0 for v in categories.values())
+         and type(timings)is dict and set(timings)=={'auth','cas','unit','provider'})
+    bounds={'auth':30000,'cas':30000,'unit':60000,'provider':20000}
+    need(all(v=='UNKNOWN'or type(v)in(int,float)and math.isfinite(v)and 0<=v<bounds[k]for k,v in timings.items()))
+    complete=all(type(v)in(int,float)for v in timings.values())
+    need(value['timingsComplete']is complete)
+    need(value['timeLimitsObserved']is True if complete else value['timeLimitsObserved']=='UNKNOWN')
+    return value
 
 
 def _failure(value):
@@ -283,7 +331,7 @@ def launch(request, private_payload):
     created, process, failure, inode, latch = False, None, None, None, P.P.StopLatch()
     last, empty_observed = {'memory': None}, False
     try:
-        if request['mode'] == PHASED:
+        if request['mode'] in (PHASED,FUNCTIONAL):
             P.P.R.capacity().host_admission()
         PHASE = 'parent'; P.privileged('prepare', ctx); created = True
         inode = P.identity(P.P.R.KERNEL_ROOT / P.names(ctx)[0])
@@ -324,7 +372,12 @@ def launch(request, private_payload):
                 {key: request[key] for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')})
             extra = {'resourcePhases': resource_phases, 'processingMemoryChecksCompleted': True,
                      'backupSafetyChecksCompleted': True}
-        return {'status': ('PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY' if phased
+        if request['mode']==FUNCTIONAL:
+            functional().assess(final,'mock500')
+            extra={'functionalContract':functional().CONTRACT,'functionalSafetyChecksCompleted':True,
+                   'legacyRegularMemoryAccepted':False,'providerResourceAccepted':False,'nonce':ctx['nonce']}
+        return {'status': ('PASS_FRESH_MOCK500_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY' if request['mode']==FUNCTIONAL
+                           else 'PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY' if phased
                            else 'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY'), **extra, 'mode': request['mode'],
             'exactCommit': ctx['exactCommit'], 'runId': ctx['runId'], 'runAttempt': 1,
             'startedAtUTC': started_at, 'startedMonotonic': started_mono,
@@ -368,7 +421,7 @@ def main(argv=None):
         validate_request(request, private_payload)
         actual_ctx = S._ctx(request)
         need({key: value for key, value in actual_ctx.items()
-              if key not in ('processingBackupStage', 'processingBackupPhase', 'processingImageId')} == ctx)
+              if key not in ('processingBackupStage', 'processingBackupPhase', 'processingImageId','functionalStage')} == ctx)
         ctx = actual_ctx
         result = supervise(request, private_payload, envelope['startedAtUTC'], envelope['startedMonotonic'], latch=latch)
         need(not latch.seen); S._send_result(ipc_dir, ctx, {'ok': True, 'result': result}); return 0

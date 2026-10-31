@@ -17,7 +17,7 @@ class RuntimeClosureChecks(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         code = compile(ast.Expression(calls[0].args[1]), 'actual-pre-backup-report', 'eval')
         scope = dict(failure=None, zero=True, actual_memory_accepted=True,
-                     capacity_diagnostic=False, physical_limit=2560000000, functional_closure_completed=True,
+                     capacity_diagnostic=False, functional=False, physical_limit=2560000000, functional_closure_completed=True,
                      w=SimpleNamespace(stop_failure=None, cas_records=[None] * 500,
                                        maximum=1900000000, last={}, memory_failure=None, disk={}),
                      stop_failures=[], zero_check_failure=None, service_closure={},
@@ -40,6 +40,13 @@ class RuntimeClosureChecks(unittest.TestCase):
         self.assertEqual(diagnostic['physicalHardCapBytes'],4999999488)
         self.assertEqual(diagnostic['requiredPhysicalReserveBytes'],0)
         self.assertEqual(diagnostic['requiredHostReserveBytes'],2147483648)
+        functional = eval(code, {**scope,'inputs':object(),'functional':True,'physical_limit':4999999488,
+            'actual_memory_accepted':False,'common_resources':None,'functional_observation':lambda _:None,'_runtime_module':lambda _:SimpleNamespace(END_PROFILE='helmut-w15-end500-functional/1',CONTRACT='helmut-w15-isolated-functional/1')})
+        self.assertEqual(functional['memoryContract'],'helmut-w15-end500-functional/1')
+        self.assertEqual(functional['maximumAllowedPeakBytes'],4999999488)
+        self.assertEqual(functional['historicalProcessingPeakBytes'],2048000000)
+        self.assertFalse(functional['preBackupMemoryChecksPassed'])
+        self.assertFalse(functional['legacyRegularMemoryAccepted'])
 
     def test_final_closure_retains_failure_and_requires_real_seal_result(self):
         tree = ast.parse(SOURCE.read_text())
@@ -48,7 +55,7 @@ class RuntimeClosureChecks(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         code = compile(ast.Expression(rows[0]), 'actual-final-closure', 'eval')
         observed = {'lastReadbackValid': False, 'lastObservedKernelSample': {'kernelLifetimePeakBytes': 2048000001}}
-        scope = {'common_resources': SimpleNamespace(last_observation=lambda: observed)}
+        scope = {'common_resources': SimpleNamespace(last_observation=lambda: observed),'functional':False}
         for failure, sealed in ((None, None), ({'reason': 'late-budget-failure'}, None), (None, {'cipherBytes': 123})):
             with self.subTest(failure=failure, sealed=sealed):
                 row = eval(code, {**scope, 'failure': failure, 'sealed_backup': sealed})

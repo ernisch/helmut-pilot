@@ -1,12 +1,14 @@
 # CURRENT STATE — Helmut
 
-## Mock500-Startprüfung: BLOCKED, einmaliges GO ungenutzt (31.10.2026)
+## Isolierte End500→Mock500-Funktionskette genehmigt (31.10.2026)
 
-Genau ein vollständiger isolierter Mock500 ist bedingt freigegeben. **Kein Dispatch, GO nicht verbraucht.** [Gesamtbewertung mit zehn PASS/FAIL/UNKNOWN-Bereichen](betrieb/w15-mock500-admission-audit-20261031.md). Zwingend fehlen: positive unabhängige End500-Gesamtabnahme samt regulärer RAM-Abnahme und vollständiger Sicherung sowie gültiges Tagesfenster. Der Mockvertrag endet am 31.10., Start nur vor 19:30 UTC für 12.600 s im selben UTC-/Berlin-Tag. Keine stillschweigende Datumsverlängerung.
+Neuer Vertrag **helmut-w15-isolated-functional/1**, Ausführung 1.–7.11.2026: End500 vollständig samt Sicherung/Rücklesung/zweiter Rücksicherung; erst nach unabhängiger positiver Gesamtabnahme ein vollständiger Mock500. Noch kein neuer Gesamtversuch gestartet. [Vertrag, Grenzen und Abnahme](betrieb/w15-isolated-functional-contract-20261101.md).
 
-Elf Mockoriginale, Atomic12ACK und 500/500 Quellenqualifikation PASS, nicht wiederholen. Controller/Sicherung implementiert, vollständige 1.500-/8.000-Laufabnahme fehlt. Mock69: 69 Units/207 Ergebnisse/1.104 Kontrollen, unabhängig 500→0; Peak 1.640.103.936 B statt maximal 1.638.400.000 B, Reserveverletzung 1.703.936 B bei max/OOM/Swap 0. Kein belegter kleiner Speicherfix; TEMP-Spill-Probe belegt keinen gemeinsamen RAM-Gewinn.
+Durchgehend bestehende gemeinsame Hartgrenze knapp 5 GB und separate Hostreserve rund 2,15 GB; Swap/OOM/max 0. Historische Verarbeitungsspitzen und Labor-Datenbankgrenze sind ausschließlich im neuen Modus Vergleichswerte. Alte Verträge und FAIL bleiben unverändert. Anbieterabnahme UNKNOWN, Production gesperrt.
 
-**Nächste Grenze:** Für vollständige End500-Funktion/Sicherung auf PR1002 ist ein separates GO nötig, vom aktuellen Auftrag ausdrücklich ausgeschlossen. Ein Kapazitäts-PASS ersetzt keine reguläre End500-RAM-Abnahme. Vor Mock außerdem gültigen Tagesvertrag und frischen Mock-Ressourcenpreflight herstellen; gewollte Vertragsänderungen separat genehmigen. Erst danach End→Mock-Brücke und exakte Startbindung. Kein vorausgesetzter Mock-Vollpass vor dem ersten Versuch; bedingtes GO ungenutzt lassen.
+End500 muss 500 CAS/6.000 Usage/3.501 Postimages liefern. Mock500 muss 500 gleichzeitig aktive Profile/500 Units/1.000 lokale Phasen/1.500 Einzelprüfungen/8.000 Sicherheitskontrollen sowie abschließend 0 aktive Profile, Prozessstopp und Sicherungsrundlauf desselben Laufs belegen. Elf Originale, Atomic12ACK und Quellenqualifikation übernommen. Maximal drei Gesamtversuche einschließlich genau einer belegten Korrektur; UNKNOWN sperrt Wiederholung.
+
+Nächster Schritt: integrierten Kopf gezielt prüfen, Pflicht-CI und unabhängigen Review abschließen; danach genehmigte Kette mit frischer Laufbindung ausführen. [Vorheriger Stand unverändert archiviert](betrieb/w15-current-state-before-functional-integration-20261031.md).
 
 ## Ressourcen500-Messung und geprüfter Diagnoseanschluss (31.10.2026)
 

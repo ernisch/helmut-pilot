@@ -172,7 +172,9 @@ class DiskGuard:
     def __call__(self):
         need(time.monotonic() - self.started < self.plan['maximumWallSeconds'], 'RESTORE_WALL_DEADLINE')
         sample = self.common.sample()
-        if getattr(self.common, 'processing_backup_stage', None) in ('end500', 'mock500'):
+        if getattr(self.common, 'functional_stage', None) in ('end500','mock500'):
+            _load('functional_contract').assess(sample,self.common.functional_stage)
+        elif getattr(self.common, 'processing_backup_stage', None) in ('end500', 'mock500'):
             C.phase_contract().assess(sample, self.common.processing_backup_stage, phase=self.common.memory_phase)
         else:
             (C.capacity().assess if getattr(self.common, 'capacity_diagnostic', False) is True else C.assess)(sample)

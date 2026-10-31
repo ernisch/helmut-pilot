@@ -166,6 +166,8 @@ async function simulatedObserver() {
     };
     const state = {}, finalACKs = [];
     const FakeS = {
+      async acquirePipelineLock() { throw Error("fictional-unused-lock"); },
+      async releasePipelineLock() { throw Error("fictional-unused-lock"); },
       async mutateAuthStore(fn) { await fn(state); return Cas.writeConditional(state, { rowId: "main-auth" }); },
       async recordLlmUsage() {
         await Cas.writeConditional(state, { rowId: "main-auth" });

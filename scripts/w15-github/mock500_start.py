@@ -9,6 +9,7 @@ sys.dont_write_bytecode = True
 from datetime import datetime, timedelta, timezone
 import hashlib
 import importlib.util
+from functools import lru_cache
 import json
 from pathlib import Path
 import re
@@ -23,12 +24,51 @@ BASELINE_COMMIT = '7e3d96e99fc687b03bcb9a7cbe4a0f59c174859b'
 BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 MODE = 'mock500-full-gated'
 PHASED = 'mock500-full-phased-gated'
+FUNCTIONAL = 'mock500-full-functional-gated'
 LIMITS = {'comparisonBudgetBytes': R.LIMIT, 'maximumConsumptionBytes': R.MAXIMUM,
           'requiredReserveBytes': R.RESERVE, 'swapBytes': 0}
 FINGERPRINT = '7E3998A6C2CB948C69A2EE51F4267ABF26796EDC'
 INPUT_SHA = 'af3bd654fa292ad256e0fa265c2fb3d968e945633f1439a12da72f015aeab86f'
 SHA = re.compile('[a-f0-9]{64}\\Z')
 HEX = re.compile('[a-f0-9]{40}\\Z')
+
+
+@lru_cache(maxsize=1)
+def functional():
+    spec = importlib.util.spec_from_file_location('w15_mock_start_functional', Path(__file__).with_name('functional_contract.py'))
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+
+def limits(mode):
+    return functional().limits('mock500') if mode == FUNCTIONAL else dict(LIMITS)
+
+
+def memory_profile(mode):
+    return (functional().MOCK_PROFILE if mode == FUNCTIONAL else
+            R.phases().MOCK_PROFILE if mode == PHASED else R.PROFILE)
+
+
+def mode_scope(mode):
+    return (functional().SCOPES[FUNCTIONAL] if mode == FUNCTIONAL else
+            'ISOLATED_GITHUB_MOCK500_PHASED_ONLY' if mode == PHASED else 'ISOLATED_GITHUB_MOCK500_ONLY')
+
+
+def validate_functional_end_acceptance(end500):
+    contract = functional()
+    need(end500.get('schema') == contract.ACCEPTANCE_SCHEMA
+         and end500.get('status') == 'PASS_INDEPENDENT_GITHUB_END500_FUNCTIONAL_ACCEPTANCE'
+         and end500.get('scope') == contract.SCOPES[contract.END_MODE]
+         and end500.get('resourceContract') == contract.CONTRACT
+         and end500.get('memoryProfile') == contract.END_PROFILE
+         and end500.get('processingCounts') == {'authCAS':500,'usageRows':6000,'nativePostimages':3501}
+         and all(type(v) is int for v in end500['processingCounts'].values())
+         and all(end500.get(k) is True for k in ('functionalSafetyAccepted','backupSafetyAccepted',
+             'independentRestoreFunctionAccepted','completeBackupAccepted','completeProcessingAccepted',
+             'ownedProcessesStopped','authenticatedRemoteReadback','secondRestoreIntegrityAccepted'))
+         and all(end500.get(k) is False for k in ('processingMemoryAccepted','commonLifetimeMemoryAccepted',
+             'legacyRegularMemoryAccepted','providerResourceAccepted')),
+         'MOCK500_POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED')
 
 
 class StartRejected(RuntimeError):
@@ -72,11 +112,12 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
     Record envelopes preserve their actual reviewed bytes and SHA256.
     """
     need(isinstance(expected_end500_commit, str) and HEX.fullmatch(expected_end500_commit))
-    need(isinstance(request, dict) and request.get('mode') in (MODE, PHASED)
+    need(isinstance(request, dict) and request.get('mode') in (MODE, PHASED, FUNCTIONAL)
          and request.get('branch') == BRANCH and isinstance(request.get('exactCommit'), str)
-         and HEX.fullmatch(request['exactCommit']) and request['exactCommit'] != expected_end500_commit
+         and HEX.fullmatch(request['exactCommit'])
+         and (request['mode'] == FUNCTIONAL or request['exactCommit'] != expected_end500_commit)
          and type(request.get('runAttempt')) is int and request['runAttempt'] == 1
-         and request.get('limits') == LIMITS and all(type(v) is int for v in request['limits'].values())
+         and request.get('limits') == limits(request.get('mode')) and all(type(v) is int for v in request['limits'].values())
          and isinstance(request.get('sourceQualificationSHA256'), str)
          and SHA.fullmatch(request['sourceQualificationSHA256']))
     nonce = uuid.UUID(request['nonce'])
@@ -88,7 +129,9 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
          and type(observed_context['runAttempt']) is int)
     end500, bridge = _record(end500_acceptance), _record(compatibility_bridge)
     phased = request['mode'] == PHASED
-    if phased:
+    if request['mode'] == FUNCTIONAL:
+        validate_functional_end_acceptance(end500)
+    elif phased:
         need(end500.get('schema') == 'helmut-w15-independent-end500-acceptance/2'
              and end500.get('status') == 'PASS_INDEPENDENT_GITHUB_END500_PHASED_ACCEPTANCE'
              and end500.get('resourceContract') == R.phases().END_PROFILE
@@ -105,7 +148,8 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
              and end500.get('independentRestoreAccepted') is True,
              'MOCK500_POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED')
     need(
-         end500.get('scope') == ('ISOLATED_GITHUB_END500_PHASED_ONLY' if phased else 'ISOLATED_GITHUB_END500_ONLY')
+         end500.get('scope') == (functional().SCOPES[functional().END_MODE] if request['mode'] == FUNCTIONAL
+                                else 'ISOLATED_GITHUB_END500_PHASED_ONLY' if phased else 'ISOLATED_GITHUB_END500_ONLY')
          and end500.get('exactCommit') == expected_end500_commit
          and isinstance(end500.get('runId'), str) and re.fullmatch('[1-9][0-9]{4,19}', end500['runId'])
          and end500['runId'] != observed_context['runId']
@@ -125,8 +169,11 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
          and bridge.get('end500AcceptanceSHA256') == end500_acceptance['sha256']
          and bridge.get('inputManifestSHA') == INPUT_SHA and bridge.get('recipientFingerprint') == FINGERPRINT
          and bridge.get('end500CodeReexecuted') is False
-         and bridge.get('mockMemoryContract') == (R.phases().MOCK_PROFILE if phased else R.PROFILE)
+         and bridge.get('mockMemoryContract') == memory_profile(request['mode'])
          and bridge.get('executionAuthority') is False, 'MOCK500_REVIEWED_BASELINE_BRIDGE_REQUIRED')
+    if request['mode'] == FUNCTIONAL:
+        need(bridge.get('functionalContract') == functional().CONTRACT,
+             'MOCK500_REVIEWED_BASELINE_BRIDGE_REQUIRED')
     approval = request.get('approval')
     keys = {'schema', 'scope', 'authorized', 'mode', 'exactCommit', 'branch', 'runAttempt', 'nonce',
         'sourceQualificationSHA256', 'end500AcceptanceSHA256', 'compatibilitySHA256', 'limits',
@@ -135,7 +182,7 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
         'maxReceiveAttempts', 'issuedAt', 'expiresAt'}
     need(isinstance(approval, dict) and set(approval) == keys
          and approval['schema'] == 'helmut-w15-mock500-start-approval/1'
-         and approval['scope'] == ('ISOLATED_GITHUB_MOCK500_PHASED_ONLY' if phased else 'ISOLATED_GITHUB_MOCK500_ONLY')
+         and approval['scope'] == mode_scope(request['mode'])
          and approval['authorized'] is True
          and all(approval[k] == request[k] for k in ('mode', 'exactCommit', 'branch', 'runAttempt',
              'nonce', 'sourceQualificationSHA256', 'limits'))
@@ -155,7 +202,7 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
         'runId': observed_context['runId'], 'exactCommit': request['exactCommit'],
         'sourceQualificationSHA256': request['sourceQualificationSHA256'],
         'end500AcceptanceSHA256': end500_acceptance['sha256'], 'compatibilitySHA256': compatibility_bridge['sha256'],
-        'end500BaselineCommit': expected_end500_commit, 'memoryProfile': R.phases().MOCK_PROFILE if phased else R.PROFILE,
+        'end500BaselineCommit': expected_end500_commit, 'memoryProfile': memory_profile(request['mode']),
         'executionAuthority': False, 'mock500Acceptance': False}
 
 
@@ -164,7 +211,7 @@ class StartGuard:
                  observed_context, started_at, started_monotonic,
                  expected_end500_commit=BASELINE_COMMIT, now=None):
         request = {**{k: observed_context[k] for k in ('mode', 'branch', 'exactCommit', 'runAttempt', 'nonce')},
-            'sourceQualificationSHA256': approval['sourceQualificationSHA256'], 'limits': LIMITS, 'approval': approval}
+            'sourceQualificationSHA256': approval['sourceQualificationSHA256'], 'limits': limits(observed_context['mode']), 'approval': approval}
         self.admission = validate_admission(request, end500_acceptance,
             compatibility_bridge=compatibility_bridge, observed_context=observed_context,
             expected_end500_commit=expected_end500_commit, now=now)
@@ -178,10 +225,13 @@ class StartGuard:
         self.processing_deadline = self.started_at + timedelta(seconds=10800)
         self.completion_deadline = self.started_at + timedelta(seconds=12600)
         berlin = ZoneInfo('Europe/Berlin')
-        need('2026-10-28' <= self.started_at.date().isoformat() <= '2026-10-31'
-             and self.started_at.date() == self.completion_deadline.date()
-             and self.started_at.astimezone(berlin).date() == self.completion_deadline.astimezone(berlin).date(),
-             'MOCK500_EXISTING_UTC_BERLIN_RUN_WINDOW_UNAVAILABLE')
+        if observed_context['mode'] == FUNCTIONAL:
+            functional().validate_window('mock500',self.started_at)
+        else:
+            need('2026-10-28' <= self.started_at.date().isoformat() <= '2026-10-31'
+                 and self.started_at.date() == self.completion_deadline.date()
+                 and self.started_at.astimezone(berlin).date() == self.completion_deadline.astimezone(berlin).date(),
+                 'MOCK500_EXISTING_UTC_BERLIN_RUN_WINDOW_UNAVAILABLE')
         self.context, self.resources = json.loads(json.dumps(context)), resources
         self.resources.check_context(context)
         self.failure = None
@@ -206,7 +256,9 @@ class StartGuard:
             need(0 <= elapsed < maximum and now < (self.completion_deadline if closure else self.processing_deadline),
                  'MOCK500_ORIGINAL_CLOCK_DEADLINE')
             sample = self.resources.check_context(self.context)
-            if getattr(self.resources, 'processing_backup_stage', None) == 'mock500':
+            if getattr(self.resources, 'functional_stage', None) == 'mock500':
+                functional().assess(sample,'mock500')
+            elif getattr(self.resources, 'processing_backup_stage', None) == 'mock500':
                 R.phases().assess(sample, 'mock500', phase=self.resources.memory_phase)
             else:
                 R.assess(sample)

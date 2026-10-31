@@ -38,7 +38,7 @@ audit_spec=importlib.util.spec_from_file_location('w15_final_native_audit',ROOT/
 AUDIT=importlib.util.module_from_spec(audit_spec);audit_spec.loader.exec_module(AUDIT)
 
 def _runtime_module(component='runtime_inputs'):
-    assert component in ['runtime_inputs','runtime_backup','runtime_owned_backup','common_resources','runtime_materialization','runtime_cache','runtime_restore','runner_diagnostics']
+    assert component in ['runtime_inputs','runtime_backup','runtime_owned_backup','common_resources','runtime_materialization','runtime_cache','runtime_restore','runner_diagnostics','functional_contract']
     name='w15_github_'+component
     if name not in sys.modules:
         spec=importlib.util.spec_from_file_location(name,ROOT/'scripts/w15-github'/(component+'.py'))
@@ -135,7 +135,7 @@ def prepare(inputs=None,common_resources=None):
     print(json.dumps({'status':'PASS_LOCAL_FILES_PREPARED_NO_DATABASE','appAllocatedBytes':allocated,'availableDiskBytes':available_disk()}),flush=True)
 
 def capacity_phase(resources,name):
-    if getattr(resources,'end_capacity_diagnostic',False):
+    if getattr(resources,'end_capacity_diagnostic',False) or getattr(resources,'functional_stage',None)=='end500':
         resources.phase_observer('capacity-'+name)
 
 def backup_phase(resources,name):
@@ -195,7 +195,13 @@ class Watch(M.Supervisor):
         memory_error=None
         try:
             if self.common_resources is not None:self.common_resources.sample()
-            if getattr(self.common_resources,'capacity_diagnostic',False) is True or getattr(self.common_resources,'memory_phase',None)=='backup':
+            if getattr(self.common_resources,'functional_stage',None) in ('end500','mock500'):
+                assert self.start_guard is None and not self.mock_backup_closure
+                self.last=self.common_resources.sample()
+                _runtime_module('functional_contract').assess(self.last,self.common_resources.functional_stage)
+                self.maximum=max(self.maximum,self.last['kernelLifetimePeakBytes'])
+                self.last.update({'functionalContract':_runtime_module('functional_contract').CONTRACT,'legacyRegularMemoryAccepted':False})
+            elif getattr(self.common_resources,'capacity_diagnostic',False) is True or getattr(self.common_resources,'memory_phase',None)=='backup':
                 # Explicit capacity admission owns the unchanged hard/time/disk safety checks.
                 assert self.start_guard is None and not self.mock_backup_closure
                 self.last=self.common_resources.sample()
@@ -224,11 +230,12 @@ class Watch(M.Supervisor):
     def publish(self,name,index=None,status=None):
         with self.progress_lock:
             mem=self.last;peak=None if mem is None else mem['kernelLifetimePeakBytes']
+            functional=getattr(self.common_resources,'functional_stage',None) in ('end500','mock500')
             capacity=getattr(self.common_resources,'capacity_diagnostic',False) is True or getattr(self.common_resources,'memory_phase',None)=='backup'
-            physical=self.common_resources.container_limit if capacity else M.LIMIT
-            message=('Restore-Kapazitaet | '+name if capacity else 'RAM-Diagnose | CAS '+str(len(self.cas_records))+'/500 | '+name)
+            physical=self.common_resources.container_limit if capacity or functional else M.LIMIT
+            message=('Isolierter Funktionslauf | '+name if functional else 'Restore-Kapazitaet | '+name if capacity else 'RAM-Diagnose | CAS '+str(len(self.cas_records))+'/500 | '+name)
             if mem:
-                label='Parentrest' if capacity else 'Reserve'
+                label='Parentrest' if capacity or functional else 'Reserve'
                 message+=(' | RAM {:.1f} MB | Peak {:.1f} MB | '+label+' {:.1f} MB ({:.2f} %)').format(mem['currentBytes']/1e6,peak/1e6,(physical-peak)/1e6,100*(physical-peak)/physical)
             if self.cas_records:message+=' | Auth-Max {:.9f} s'.format(self.cas_records[-1]['authTimings']['maximumFullCallWallMs']/1000)
             if self.cas_records:message+=' | Auth+Beleg-Max {:.9f} s'.format(self.cas_records[-1]['maximumAuthThroughDurableObservationWallMs']/1000)
@@ -261,7 +268,7 @@ class Watch(M.Supervisor):
         assert x.get('index')==len(self.cas_records),'w15-forward-cas-sequence'
         assert x['postimagePreserved']is True and x['revisionReadback']is True
         self.cas_records.append(x)
-        if getattr(self.common_resources,'end_capacity_diagnostic',False):
+        if getattr(self.common_resources,'end_capacity_diagnostic',False) or getattr(self.common_resources,'functional_stage',None)=='end500':
             self.common_resources.capacity_observer(progress={'authCAS':{'value':len(self.cas_records),'kind':'CONFIRMED_LOWER_BOUND'}})
         self.publish('memory-cas-accepted',x['index'],'PASS')
     def disk_check(self):
@@ -329,10 +336,18 @@ def _stop_runtime_container(inputs,resources,owned_id):
     resources.sample()
     return {'status':'PASS_OWNED_END500_DATABASE_STOP','confirmed':True,'exitCode':0,'oomKilled':False}
 
+def functional_observation(resources):
+    # Existing kernel meter captured all guard calls. PSS here is one closing
+    # sample, never the component lifetime peak (the parent trace owns that).
+    if getattr(resources,'functional_stage',None) not in ('end500','mock500'):return None
+    try:return {'componentObservationScope':'CLOSING_SINGLE_SAMPLE_ONLY','observation':resources.functional_observation()}
+    except Exception:return {'componentObservationScope':'CLOSING_SINGLE_SAMPLE_ONLY','observation':'UNKNOWN'}
+
 def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=None):
     inputs=_checked_runtime_inputs(inputs)
     common_resources=_checked_common_resources(inputs,common_resources)
-    physical_limit=common_resources.container_limit if getattr(common_resources,'end_capacity_diagnostic',False) else M.LIMIT
+    functional=getattr(common_resources,'functional_stage',None)=='end500'
+    physical_limit=common_resources.container_limit if functional or getattr(common_resources,'end_capacity_diagnostic',False) else M.LIMIT
     prepared=_checked_prepared(inputs,common_resources)
     journal_review=inputs.report('JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json')if inputs else json.loads((REPORTS/'JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json').read_text())
     assert journal_review['status']=='PASS_INDEPENDENT_BOUNDED_JOURNAL_DRAIN_AND_FOUR_FAULTS'
@@ -421,7 +436,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
           '--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
           '--mount','type=bind,src='+str(seed)+',dst='+SEED_MOUNT+',readonly',
           '--mount','type=bind,src='+str(state)+',dst='+BASE+'/state',*runtime_mounts,'-e','POSTGRES_HOST_AUTH_METHOD=trust',M.IMAGE,
-          'postgres','-c','helmut.local_usage_experiment=on','-c','max_wal_size='+str(BUDGET['postgresMaxWalMiB'])+'MB','-c','work_mem='+str(BUDGET['postgresWorkMemMiB'])+'MB',
+          'postgres',*(['-c','max_connections=60']if functional else[]),'-c','helmut.local_usage_experiment=on','-c','max_wal_size='+str(BUDGET['postgresMaxWalMiB'])+'MB','-c','work_mem='+str(BUDGET['postgresWorkMemMiB'])+'MB',
           '-c','autovacuum_naptime='+str(BUDGET['postgresAutovacuumNaptimeSeconds'])+'s');created=True
         if inputs is not None:owned_id=_owned_runtime_container(inputs,common_resources)['Id']
         M.docker('start',owned_id or CONTAINER);info=json.loads(M.docker('inspect',owned_id or CONTAINER))[0]
@@ -438,7 +453,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
             assert info['HostConfig']['CgroupParent']==common_resources.unit,'w15-common-parent-container-setting'
             common_resources.check_pid(pid,info['Id']);cgroup=common_resources.path
         w=Watch(cgroup);w.common_resources=common_resources;w.disk_guard=disk_guard
-        if getattr(common_resources,'end_capacity_diagnostic',False):
+        if getattr(common_resources,'end_capacity_diagnostic',False) or functional:
             w.phase_observer=common_resources.phase_observer
         if inputs is not None:w.backup_runner=_runtime_module('runtime_owned_backup').OwnedBackupRunner(w,M,base=BASE,container=CONTAINER,database=DB)
         w.sample();w.thread.start()
@@ -447,6 +462,9 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
             if r.returncode==0:break
             time.sleep(.2)
         assert r.returncode==0,'w15-forward-pg-readiness'
+        if functional:
+            assert M.read('show max_connections;',database='postgres')==60,'w15-functional-connections-limit'
+            M.save('CONNECTION_LIMIT.SAFE.json',{'configuredMaximum':60,'verifiedByNativeReadback':True,'observedConnectionsPeak':'UNKNOWN'})
         M.docker('exec',CONTAINER,'mkdir','-p',BASE)
         M.docker('exec',CONTAINER,'chmod','700',BASE)
         assert state.stat().st_mode&0o777==0o700
@@ -463,7 +481,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
             # The host copies already belong to UID1000; readonly mounts must
             # not be recursively chowned/chmodded by an out-of-parent daemon.
             M.docker('exec',CONTAINER,'chown','1000:1000',BASE)
-        if getattr(common_resources,'end_capacity_diagnostic',False):
+        if getattr(common_resources,'end_capacity_diagnostic',False) or functional:
             common_resources.capacity_observer(binding={'postgresHostPID':pid,'containerId':info['Id'],'namespacePIDs':{}})
         _restore_database(inputs,w)
         capacity_phase(common_resources,'restore-ready')
@@ -507,7 +525,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
             if r.returncode==0:break
             time.sleep(.1)
         assert r.returncode==0,'w15-forward-gateway-readiness'
-        if getattr(common_resources,'end_capacity_diagnostic',False):
+        if getattr(common_resources,'end_capacity_diagnostic',False) or functional:
             namespace_pids={}
             for role,filename in (('helmut-node','gateway.pid'),('postgrest','postgrest.pid')):
                 raw=(WORK/'state'/filename).read_text()
@@ -580,7 +598,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
                       input_binding=inputs,
                       guard=w.audit_guard,stop_owned=lambda:M.stop_owned(['audit'],require_registered=True))
                     assert final_audit['status']=='PASS_COMPLETE_LOSSLESS_NATIVE_POSTIMAGES_AND_ZERO_ONLY'
-                    if getattr(common_resources,'end_capacity_diagnostic',False) and not failure and len(w.cas_records)==500:
+                    if (getattr(common_resources,'end_capacity_diagnostic',False) or functional) and not failure and len(w.cas_records)==500:
                         assert final_audit['fullLogicalUsageRows']==6000 and final_audit['totalExactPostimages']==3501
                         common_resources.capacity_observer(progress={key:{'value':n,'kind':'EXACT'} for key,n in (('authCAS',500),('usageRows',6000),('nativePostimages',3501))})
                     # A second fresh0 read after the consistent audit snapshot.
@@ -616,14 +634,15 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
           and final_audit and final_audit['status']=='PASS_COMPLETE_LOSSLESS_NATIVE_POSTIMAGES_AND_ZERO_ONLY'and zero
           and(inputs is None or database_export is not None))
         capacity_diagnostic=getattr(common_resources,'end_capacity_diagnostic',False)
-        actual_memory_accepted=functional_closure_completed and not capacity_diagnostic
+        actual_memory_accepted=functional_closure_completed and not capacity_diagnostic and not functional
         M.save('CONTROLLER_RESULT.SAFE.json',{'status':('PASS_FORWARD_PHASE_COMMON_CLOSURE_PENDING'if inputs is not None else'PASS_FORWARD_ALLOCATION_INDEPENDENT_REVIEW_PENDING')if not failure and zero else'FAIL_OR_UNKNOWN',
           'failure':failure,'innerStopFailure':w.stop_failure if w else None,'stopFailures':stop_failures,'zeroCheckFailure':zero_check_failure,'serviceClosure':service_closure,'activeProfiles':0 if zero else None,'CASCompleted':len(w.cas_records)if w else 0,
           'commonKernelPeakBytes':w.maximum if w else None,'lastKernel':w.last if w else None,
-          'memoryContract':(_runtime_module('common_resources').end_capacity_trace().PROFILE if capacity_diagnostic else M.MEMORY),
-          'physicalHardCapBytes':physical_limit,'maximumAllowedPeakBytes':M.MAXIMUM,'legacyPeakDiagnosticOnly':capacity_diagnostic,
-          'requiredPhysicalReserveBytes':0 if capacity_diagnostic else M.RESERVE,
-          'requiredHostReserveBytes':2147483648 if capacity_diagnostic else None,
+          'memoryContract':(_runtime_module('functional_contract').END_PROFILE if functional else _runtime_module('common_resources').end_capacity_trace().PROFILE if capacity_diagnostic else M.MEMORY),
+          'physicalHardCapBytes':physical_limit,'maximumAllowedPeakBytes':physical_limit if functional else M.MAXIMUM,'legacyPeakDiagnosticOnly':capacity_diagnostic or functional,
+          'requiredPhysicalReserveBytes':0 if capacity_diagnostic or functional else M.RESERVE,
+          'requiredHostReserveBytes':2147483648 if capacity_diagnostic or functional else None,
+          **({'functionalContract':_runtime_module('functional_contract').CONTRACT,'functionalSafetyChecksCompleted':functional_closure_completed,'legacyRegularMemoryAccepted':False,'historicalProcessingPeakBytes':M.MAXIMUM,'functionalResourceObservation':functional_observation(common_resources)}if functional else{}),
           'functionalProcessingClosureCompleted':functional_closure_completed,'finalKernelReadbackVerified':final_sample_verified,
           'end500ActualMemoryAccepted':actual_memory_accepted if inputs is None else False,
           'preBackupMemoryChecksPassed':actual_memory_accepted if inputs is not None else None,
@@ -638,8 +657,8 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
             # Collection and encryption remain inside the same parent lifetime,
             # guarded at each streamed chunk after the progress files freeze.
             try:
-                assert not failure and (functional_closure_completed if capacity_diagnostic else actual_memory_accepted),'w15-backup-requires-successful-owned-closure'
-                if capacity_diagnostic:
+                assert not failure and (functional_closure_completed if capacity_diagnostic or functional else actual_memory_accepted),'w15-backup-requires-successful-owned-closure'
+                if capacity_diagnostic or functional:
                     assert service_closure['status']=='PASS_GENUINE_OWNED_SERVICE_EXIT'
                     assert w.finished.is_set() and not w.thread.is_alive() and not w.reporter.is_alive() and not w.stop_failure
                     common_resources.sample()
@@ -692,6 +711,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
               'failure':failure,'end500ActualMemoryAccepted':False,'fullLifetimeClosureAccepted':False,
               'localArchiveCreated':sealed_backup is not None,
               'commonParent':common_resources.last_observation(),
+              **({'functionalResourceObservation':functional_observation(common_resources)}if functional else{}),
               'databaseRestoreObserved':False,'remoteReadbackObserved':False,
               'acceptedAsCompleteBackup':False,'executionAuthority':False,'retryAllowed':False}
             try:

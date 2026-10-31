@@ -32,6 +32,7 @@ F, M, N, canonical, decode = E.F, E.M, E.N, E.canonical, E.decode
 W, S, R = component('mock500_workflow'), component('mock500_start'), component('mock500_receive')
 A, D, PC = component('mock500_archive_receive'), component('mock500_original_archive'), E.PC
 MODE, SCOPE = PC.MOCK_MODE, PC.SCOPES[PC.MOCK_MODE]
+FUNCTIONAL = 'mock500-full-functional-gated'
 BRANCH, ENVIRONMENT, WORKFLOW = M.BRANCH, M.ENVIRONMENT, M.WORKFLOW
 REVIEW_SCHEMA = 'helmut-w15-independent-mock500-receiver-review/1'
 LAUNCHER_REVIEW_SCHEMA = 'helmut-w15-independent-mock500-full-launcher-review/1'
@@ -56,10 +57,20 @@ def digest(value):
     return hashlib.sha256(canonical(value)).hexdigest()
 
 
-def check_start_window(now):
+def mode_scope(value):
+    if type(value) is dict and value.get('scope') == 'ISOLATED_GITHUB_MOCK500_FUNCTIONAL_ONLY':
+        return FUNCTIONAL,S.functional().SCOPES[FUNCTIONAL]
+    return MODE,SCOPE
+
+
+def check_start_window(now, mode=MODE):
     # Mirror the unchanged StartGuard's closed date range and its real 12600s
     # completion window. No future run id, changed clock or extended day is used.
-    completion = now + timedelta(seconds=W.WALL[MODE])
+    if mode == FUNCTIONAL:
+        try:S.functional().validate_window('mock500',now)
+        except (ValueError,TypeError,KeyError):raise DispatchRejected('start-window') from None
+        return
+    completion = now + timedelta(seconds=W.WALL[mode])
     berlin = S.ZoneInfo('Europe/Berlin')
     need('2026-10-28' <= now.date().isoformat() <= '2026-10-31'
          and now.date() == completion.date()
@@ -90,6 +101,7 @@ def check_static_input_binding(value, target, request, input_binding, now):
 
 
 def validate_approval(value, target, launcher, request, now):
+    mode,scope=mode_scope(value)
     keys = {'schema', 'scope', 'authorized', 'targetCommit', 'launcherCommit', 'branch', 'environment',
         'workflowId', 'nonce', 'runAttempt', 'maxReceiveAttempts', 'targetCI', 'targetPR', 'reviewSHA256',
         'launcherCI', 'launcherPR', 'launcherReviewSHA256', 'sourceQualificationSHA256', 'end500PR',
@@ -98,7 +110,7 @@ def validate_approval(value, target, launcher, request, now):
     need(type(value) is dict and set(value) == keys and type(target) is str and M.HEX.fullmatch(target)
          and type(launcher) is str and M.HEX.fullmatch(launcher)
          and value['schema'] == 'helmut-w15-mock500-full-dispatch-approval/1'
-         and value['scope'] == SCOPE and value['authorized'] is True
+         and value['scope'] == scope and value['authorized'] is True
          and value['targetCommit'] == target and value['launcherCommit'] == launcher
          and value['branch'] == BRANCH and value['environment'] == ENVIRONMENT
          and type(value['workflowId']) is int and value['workflowId'] == WORKFLOW
@@ -113,23 +125,23 @@ def validate_approval(value, target, launcher, request, now):
     nonce = uuid.UUID(value['nonce'])
     need(str(nonce) == value['nonce'] and nonce.version == 4 and nonce.variant == uuid.RFC_4122, 'approval')
     need(type(request) is dict and set(request) == W.DECLARATION_KEYS and digest(request) == value['requestSHA256']
-         and request['nonce'] == value['nonce'] and request['limits'] == W.LIMITS
+         and request['nonce'] == value['nonce'] and request['limits'] == W.limits(mode)
          and all(type(x) is int for x in request['limits'].values())
-         and type(request['maximumWallSeconds']) is int and request['maximumWallSeconds'] == W.WALL[MODE], 'approval')
+         and type(request['maximumWallSeconds']) is int and request['maximumWallSeconds'] == W.WALL[mode], 'approval')
     bindings = request['bindings']
     need(type(bindings) is dict and set(bindings) == {'end500Acceptance', 'compatibilityBridge',
          'inputBindingSHA256', 'additionalAssetBytes', 'approvedEnd500Commit'}
          and bindings['inputBindingSHA256'] == value['inputBindingSHA256']
          and bindings['additionalAssetBytes'] == D.TOTAL and type(bindings['additionalAssetBytes']) is int
          and type(bindings['approvedEnd500Commit']) is str and M.HEX.fullmatch(bindings['approvedEnd500Commit'])
-         and bindings['approvedEnd500Commit'] != target
+         and (mode == FUNCTIONAL or bindings['approvedEnd500Commit'] != target)
          and bindings['end500Acceptance']['sha256'] == value['end500AcceptanceSHA256']
          and bindings['compatibilityBridge']['sha256'] == value['compatibilitySHA256'], 'approval')
-    expected = {'schema': 'helmut-w15-mock500-start-approval/1', 'scope': SCOPE, 'authorized': True,
-        'mode': MODE, 'exactCommit': target, 'branch': 'refs/heads/' + BRANCH, 'runAttempt': 1,
+    expected = {'schema': 'helmut-w15-mock500-start-approval/1', 'scope': scope, 'authorized': True,
+        'mode': mode, 'exactCommit': target, 'branch': 'refs/heads/' + BRANCH, 'runAttempt': 1,
         'nonce': value['nonce'], 'sourceQualificationSHA256': value['sourceQualificationSHA256'],
         'end500AcceptanceSHA256': value['end500AcceptanceSHA256'], 'compatibilitySHA256': value['compatibilitySHA256'],
-        'limits': W.LIMITS, 'processingSeconds': 10800, 'completionSeconds': 12600,
+        'limits': W.limits(mode), 'processingSeconds': 10800, 'completionSeconds': 12600,
         'expectedProfiles': 500, 'expectedUnits': 500, 'expectedPositions': 1500, 'expectedControls': 8000,
         'maxProviderCalls': 0, 'maxStorageUSD': '0.05', 'maxReceiveAttempts': 1,
         'issuedAt': value['issuedAt'], 'expiresAt': value['expiresAt']}
@@ -140,7 +152,7 @@ def validate_approval(value, target, launcher, request, now):
          and all(type(x) is int for x in approval['limits'].values()), 'approval')
     issued, expires = S._utc(value['issuedAt']), S._utc(value['expiresAt'])
     need(issued <= now < expires and timedelta(0) < expires - issued <= timedelta(hours=2), 'approval')
-    check_start_window(now)
+    check_start_window(now,mode)
 
 
 def record_on_pr(pr, envelope, phase, *, commit):
@@ -156,17 +168,21 @@ def record_on_pr(pr, envelope, phase, *, commit):
     return record
 
 
-def verify_prior(bindings, target, qualification_sha, receiver_pr, end_pr, *, api):
+def verify_prior(bindings, target, qualification_sha, receiver_pr, end_pr, *, api, mode=MODE):
     """No invented future run id: only the real prior End run is queried here."""
     baseline = bindings['approvedEnd500Commit']
     end = record_on_pr(end_pr, bindings['end500Acceptance'], 'end500-acceptance', commit=baseline)
-    need(end.get('schema') == 'helmut-w15-independent-end500-acceptance/2'
+    if mode == FUNCTIONAL:
+        try:S.validate_functional_end_acceptance(end)
+        except (ValueError,RuntimeError,TypeError,KeyError):raise DispatchRejected('end500-acceptance') from None
+    need((mode == FUNCTIONAL or (end.get('schema') == 'helmut-w15-independent-end500-acceptance/2'
          and end.get('status') == 'PASS_INDEPENDENT_GITHUB_END500_PHASED_ACCEPTANCE'
          and end.get('scope') == PC.SCOPES[PC.END_MODE] and end.get('exactCommit') == baseline
          and end.get('resourceContract') == PC.END_PROFILE
          and all(end.get(key) is True for key in ('processingMemoryAccepted', 'backupSafetyAccepted',
              'independentRestoreFunctionAccepted', 'completeBackupAccepted'))
-         and end.get('commonLifetimeMemoryAccepted') is False
+         and end.get('commonLifetimeMemoryAccepted') is False))
+         and end.get('exactCommit') == baseline
          and type(end.get('runId')) is str and re.fullmatch('[1-9][0-9]{4,19}', end['runId'])
          and type(end.get('runAttempt')) is int and end['runAttempt'] == 1
          and type(end.get('receiptSHA256')) is str and M.SHA.fullmatch(end['receiptSHA256'])
@@ -181,8 +197,9 @@ def verify_prior(bindings, target, qualification_sha, receiver_pr, end_pr, *, ap
          and bridge.get('sourceQualificationSHA256') == qualification_sha
          and bridge.get('end500AcceptanceSHA256') == bindings['end500Acceptance']['sha256']
          and bridge.get('inputManifestSHA') == S.INPUT_SHA and bridge.get('recipientFingerprint') == S.FINGERPRINT
-         and bridge.get('mockMemoryContract') == PC.MOCK_PROFILE
+         and bridge.get('mockMemoryContract') == S.memory_profile(mode)
          and bridge.get('end500CodeReexecuted') is False and bridge.get('executionAuthority') is False, 'bridge')
+    if mode == FUNCTIONAL:need(bridge.get('functionalContract')==S.functional().CONTRACT,'bridge')
     try: run = api('GET', '/actions/runs/' + end['runId'])
     except BaseException: raise DispatchRejected('end500-run') from None
     need(type(run) is dict and type(run.get('id')) is int and str(run['id']) == end['runId']
@@ -193,6 +210,7 @@ def verify_prior(bindings, target, qualification_sha, receiver_pr, end_pr, *, ap
 
 
 def prepare(value, target, launcher, request, input_binding, *, api, git, now):
+    mode,scope=mode_scope(value)
     validate_approval(value, target, launcher, request, now())
     git.check_launcher(launcher)
     raw, qualification_sha, qualification = E.W.decode_qualification(request['sourceQualification'])
@@ -211,14 +229,14 @@ def prepare(value, target, launcher, request, input_binding, *, api, git, now):
         M.verify_review(pr, commit, schema, review_sha, phase)
         reviews = [decode(block) for block in re.findall(r'```json\s*\n(.*?)\n```', pr['body'], re.DOTALL)]
         reviews = [row for row in reviews if type(row) is dict and row.get('schema') == schema]
-        need(len(reviews) == 1 and reviews[0].get('scope') == SCOPE and reviews[0].get('executionAuthority') is False, phase)
+        need(len(reviews) == 1 and reviews[0].get('scope') == scope and reviews[0].get('executionAuthority') is False, phase)
         if phase == 'receiver-review':
             receiver_pr = pr
             need(reviews[0].get('sourceQualificationSHA256') == qualification_sha
                  and reviews[0].get('inputBindingSHA256') == value['inputBindingSHA256'], phase)
     try: end_pr = api('GET', '/pulls/' + str(value['end500PR']))
     except BaseException: raise DispatchRejected('end500-acceptance') from None
-    verify_prior(request['bindings'], target, qualification_sha, receiver_pr, end_pr, api=api)
+    verify_prior(request['bindings'], target, qualification_sha, receiver_pr, end_pr, api=api,mode=mode)
     M.verify_ci(api, value['targetCI'], target, 'receiver-ci')
     M.verify_ci(api, value['launcherCI'], launcher, 'launcher-ci')
     workflow = M.remote(api, 'GET', '/actions/workflows/' + str(WORKFLOW), 'workflow')
@@ -241,7 +259,8 @@ def prepare(value, target, launcher, request, input_binding, *, api, git, now):
 
 def execute(value, target, launcher, request, input_binding, *, api, git, now, encrypt, link_provider, ready, state_dir, cleanup=None):
     phase, fd, attempted, accepted, first, secondary = 'approval', None, False, False, None, []
-    result = {'schema': 'helmut-w15-mock500-full-dispatch-attempt/1', 'mode': MODE,
+    mode,_=mode_scope(value)
+    result = {'schema': 'helmut-w15-mock500-full-dispatch-attempt/1', 'mode': mode,
         'targetCommit': target, 'launcherCommit': launcher, 'branchChanged': False,
         'dispatchAttempted': False, 'dispatchAccepted': False, 'mock500Accepted': False,
         'originalReceptionAccepted': False, 'retryAllowed': False, 'executionAuthority': False}
@@ -266,7 +285,7 @@ def execute(value, target, launcher, request, input_binding, *, api, git, now, e
             input_binding_sha256=value['inputBindingSHA256'], additional_asset_bytes=request['bindings']['additionalAssetBytes'])
         phase = 'encryption'; armored = encrypt(canonical(index).decode('ascii'), target, Path(state_dir), index_schema=INDEX_SCHEMA)
         phase = 'payload'
-        payload = N.dispatch_payload(target, armored, mode=MODE, extra_inputs={'w15_request': canonical(request).decode('ascii')})
+        payload = N.dispatch_payload(target, armored, mode=mode, extra_inputs={'w15_request': canonical(request).decode('ascii')})
         need(type(payload) is bytes and len(payload) <= 65535, phase)
         body = decode(payload)
         phase = 'final-expiry'; validate_approval(value, target, launcher, request, now())

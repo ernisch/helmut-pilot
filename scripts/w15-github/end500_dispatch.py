@@ -35,8 +35,15 @@ PC = component('phase_contract')
 FUNCTION = component('restore_function_acceptance')
 CAP = component('restore_capacity')
 TRACE = component('end500_capacity_trace')
+FUNCTIONAL = 'end500-full-functional-gated'
+FUNCTIONAL_SCOPE = 'ISOLATED_GITHUB_END500_FUNCTIONAL_ONLY'
+
+def functional():
+    return component('functional_contract')
 
 def mode_scope(value):
+    if type(value) is dict and value.get('scope') == FUNCTIONAL_SCOPE:
+        return FUNCTIONAL, FUNCTIONAL_SCOPE
     if type(value) is dict and value.get('scope') == TRACE.SCOPE:
         return TRACE.MODE, TRACE.SCOPE
     return (PC.END_MODE, PC.SCOPES[PC.END_MODE]) if type(value) is dict and value.get('scope') == PC.SCOPES[PC.END_MODE] else (MODE, SCOPE)
@@ -70,6 +77,8 @@ public_file = F.public_file
 
 def validate_approval(value, target, launcher, request, now):
     selected_mode, selected_scope = mode_scope(value)
+    if selected_mode == FUNCTIONAL:
+        functional().validate_window('end500', now)
     keys = {'schema', 'scope', 'authorized', 'targetCommit', 'launcherCommit', 'branch', 'environment',
         'workflowId', 'nonce', 'runAttempt', 'maxReceiveAttempts', 'targetCI', 'targetPR', 'reviewSHA256', 'launcherCI', 'launcherPR', 'launcherReviewSHA256', 'sourceQualificationSHA256',
         'restoreAcceptanceReviewSHA256', 'requestSHA256', 'advanceAllowedBranch', 'stateDir', 'issuedAt', 'expiresAt'}
@@ -92,21 +101,21 @@ def validate_approval(value, target, launcher, request, now):
     need(str(nonce) == value['nonce'] and nonce.version == 4 and nonce.variant == uuid.RFC_4122, 'approval')
     need(type(request) is dict and set(request) == W.DECLARATION_KEYS
          and hashlib.sha256(canonical(request)).hexdigest() == value['requestSHA256']
-         and request['nonce'] == value['nonce'] and request['limits'] == (CAP.LIMITS if selected_mode == TRACE.MODE else W.LIMITS)
+         and request['nonce'] == value['nonce'] and request['limits'] == (functional().limits('end500') if selected_mode == FUNCTIONAL else CAP.LIMITS if selected_mode == TRACE.MODE else W.LIMITS)
          and all(type(x) is int for x in request['limits'].values())
          and type(request['maximumWallSeconds']) is int and request['maximumWallSeconds'] == 3600, 'approval')
     approval = request['approval']
     expected = {'schema': 'helmut-w15-workflow-start-approval/1', 'scope': selected_scope, 'authorized': True,
         'exactCommit': target, 'branch': 'refs/heads/' + BRANCH, 'runAttempt': 1, 'nonce': value['nonce'],
-        'mode': selected_mode, 'limits': (CAP.LIMITS if selected_mode == TRACE.MODE else W.LIMITS), 'maximumWallSeconds': 3600,
+        'mode': selected_mode, 'limits': (functional().limits('end500') if selected_mode == FUNCTIONAL else CAP.LIMITS if selected_mode == TRACE.MODE else W.LIMITS), 'maximumWallSeconds': 3600,
         'sourceQualificationSHA256': request['sourceQualification']['sha256'], 'maxReceiveAttempts': 1,
-        **({'restoreFunctionAcceptance': approval.get('restoreFunctionAcceptance'), 'resourceContract': (TRACE.PROFILE if selected_mode == TRACE.MODE else PC.END_PROFILE)}
-           if selected_mode in (PC.END_MODE, TRACE.MODE) else {'restoreAcceptance': approval.get('restoreAcceptance')}), 'issuedAt': value['issuedAt'], 'expiresAt': value['expiresAt'], 'maxStorageUSD': '0.05', 'maxProviderCalls': 0}
+        **({'restoreFunctionAcceptance': approval.get('restoreFunctionAcceptance'), 'resourceContract': (functional().CONTRACT if selected_mode == FUNCTIONAL else TRACE.PROFILE if selected_mode == TRACE.MODE else PC.END_PROFILE)}
+           if selected_mode in (PC.END_MODE, TRACE.MODE, FUNCTIONAL) else {'restoreAcceptance': approval.get('restoreAcceptance')}), 'issuedAt': value['issuedAt'], 'expiresAt': value['expiresAt'], 'maxStorageUSD': '0.05', 'maxProviderCalls': 0}
     need(type(approval) is dict and approval == expected
          and all(type(approval[k]) is int for k in ('runAttempt', 'maximumWallSeconds', 'maxReceiveAttempts', 'maxProviderCalls'))
          and all(type(x) is int for x in approval['limits'].values())
          and approval['authorized'] is True, 'approval')
-    if selected_mode in (PC.END_MODE, TRACE.MODE):
+    if selected_mode in (PC.END_MODE, TRACE.MODE, FUNCTIONAL):
         FUNCTION.reference(approval['restoreFunctionAcceptance'], target)
         issued, expires = W._utc(value['issuedAt']), W._utc(value['expiresAt'])
         need(issued <= now < expires and timedelta(0) < expires - issued <= timedelta(hours=2), 'approval')
@@ -178,7 +187,7 @@ def prepare(value, target, launcher, request, *, api, git, now, progress, restor
         if phase == 'receiver-review':
             receiver_pr = pr
             need(reviews[0].get('sourceQualificationSHA256') == digest_qualification, phase)
-    if selected_mode in (PC.END_MODE, TRACE.MODE):
+    if selected_mode in (PC.END_MODE, TRACE.MODE, FUNCTIONAL):
         FUNCTION.verify(restore_function_evidence, request['approval']['restoreFunctionAcceptance'], target,
             digest_qualification, value['restoreAcceptanceReviewSHA256'], git=git, api=api)
     else:
@@ -221,7 +230,7 @@ def execute(value, target, launcher, request, *, api, git, now, encrypt, link_pr
         phase = 'private-root'; fd = M.private_directory(state_dir)
         M.write_public(fd, 'STARTED_' + nonce + '.SAFE.json', result)
         phase = 'launcher'; prepare(value, target, launcher, request, api=api, git=git, now=now, progress=progress,
-            **({'restore_function_evidence': restore_function_evidence} if selected_mode in (PC.END_MODE, TRACE.MODE) else {}))
+            **({'restore_function_evidence': restore_function_evidence} if selected_mode in (PC.END_MODE, TRACE.MODE, FUNCTIONAL) else {}))
         phase = 'link'; ready(); links = link_provider()
         need(type(links) is list and len(links) == 15, phase)
         checked = [M.signed_link(link, now()) for link in links]

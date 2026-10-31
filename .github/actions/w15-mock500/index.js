@@ -47,7 +47,7 @@ function closedFailureMemory(value){
   const keys=['configuredLimitBytes','kernelLifetimePeakBytes','currentBytes','swapMaximumBytes','swapCurrentBytes','lastReadbackValid','events'];
   const events=['max','oom','oom_kill','oom_group_kill'];
   if(!value||typeof value!=='object'||Array.isArray(value)||!keys.every(k=>Object.hasOwn(value,k))||
-    !Object.keys(value).every(k=>keys.includes(k)||k==='postFailureMemoryStat')||
+    !Object.keys(value).every(k=>keys.includes(k)||k==='postFailureMemoryStat'||k==='capacityMeasurement'||k==='end500CapacityTrace')||
     typeof value.lastReadbackValid!=='boolean')return null;
   if(keys.filter(k=>!['lastReadbackValid','events'].includes(k)).some(k=>!Number.isSafeInteger(value[k])||value[k]<0))return null;
   if(!value.events||typeof value.events!=='object'||Array.isArray(value.events)||
@@ -60,6 +60,10 @@ function closedFailureMemory(value){
     detail.observedAfterFailure===true&&detail.peakCompositionKnown===false&&
     categories.every(k=>Number.isSafeInteger(detail[k])&&detail[k]>=0||detail[k]==='UNKNOWN'))
     out.postFailureMemoryStat=Object.fromEntries([...categories,'observedAfterFailure','peakCompositionKnown'].map(k=>[k,detail[k]]));
+  if(value.configuredLimitBytes===4999999488){
+    const capacity=require('../w15-isolated/capacity-measurement').closedCapacityMeasurement(value.capacityMeasurement);
+    if(capacity)out.capacityMeasurement=capacity;
+  }
   return out;
 }
 const fs=require('node:fs'),cp=require('node:child_process');
@@ -104,8 +108,13 @@ function main(){
     const cleanup=closedCleanup(receipt.cleanup);if(cleanup)safe.cleanup=cleanup;
     console.log(JSON.stringify(safe));process.exitCode=1;return;
   }
-  const expected=mode==='mock500-full-phased-gated'?'PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY':'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY';
+  const expected=mode==='mock500-full-functional-gated'?'PASS_FRESH_MOCK500_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY':mode==='mock500-full-phased-gated'?'PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY':'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY';
   if(receipt.status!==expected)throw Error('receipt');
+  if(mode==='mock500-full-functional-gated'){
+    if(!receipt.workerResult||typeof receipt.workerResult!=='object')throw Error('receipt');
+    const observed=require('../w15-isolated/functional-resources').closed(receipt.workerResult.functionalResourceObservation);
+    receipt.workerResult.functionalResourceObservation=observed===null?'UNKNOWN':observed;
+  }
   console.log(JSON.stringify(receipt));
 }
 try{main();}catch(_){console.log('{"status":"FAIL_OR_BLOCKED_MOCK500_ACTION","executionAuthority":false}');process.exitCode=1;}

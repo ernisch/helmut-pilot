@@ -9,6 +9,7 @@ sys.dont_write_bytecode = True
 
 import hashlib
 import importlib.util
+from functools import lru_cache
 import json
 import math
 import os
@@ -41,12 +42,24 @@ def _phased(resources):
     return getattr(resources, 'processing_backup_stage', None) == 'mock500'
 
 
+def _functional(resources):
+    return getattr(resources,'functional_stage',None)=='mock500'
+
+
+@lru_cache(maxsize=1)
+def _functional_contract():
+    return _load('functional_contract')
+
+
 def _resource_profile(resources):
-    return P.phases().MOCK_PROFILE if _phased(resources) else P.PROFILE
+    return (_functional_contract().MOCK_PROFILE if _functional(resources) else
+            P.phases().MOCK_PROFILE if _phased(resources) else P.PROFILE)
 
 
 def _resource_sample(resources):
     sample = resources.sample()
+    if _functional(resources):
+        return _functional_contract().assess(sample,'mock500')
     if _phased(resources):
         return P.phases().assess(sample, 'mock500', phase=resources.memory_phase)
     return P.assess(sample)
@@ -306,7 +319,7 @@ def _stored_result_observations(audit, units):
         need(key not in selected); selected.add(key)
 
 
-def _mock_closure(work, result):
+def _mock_closure(work, result, *, functional_stage=None):
     fd = S._directory(str(work), private=True)
     try:
         cleanup = R._json(fd, 'CLEANUP.SAFE.json')
@@ -328,6 +341,12 @@ def _mock_closure(work, result):
             'exactly500UniqueFinishACKs', 'usageHistoryNotTruncated', 'active500AtLastRead',
             'sharedCapAnd20PercentReserve', 'allObservedWritesAtomic', 'all1000ProviderPhasesUnder20',
             'noObservedErrors', 'privateKeyAbsent'}
+        if functional_stage is not None:
+            need(functional_stage=='mock500' and runtime.get('functionalContract')==_functional_contract().CONTRACT
+                 and runtime.get('memoryProfile')==_functional_contract().MOCK_PROFILE
+                 and runtime.get('legacyRegularMemoryAccepted')is False and runtime.get('providerResourceAccepted')is False
+                 and isinstance(checks,dict)and 'sharedCapAnd20PercentReserve'not in checks)
+            required_checks=(required_checks-{'sharedCapAnd20PercentReserve'})|{'functionalSharedSafety'}
         need(runtime.get('status') == 'PASS_RUNTIME_AUDIT_AND_CLEANUP_PENDING'
              and isinstance(checks, dict) and required_checks <= set(checks)
              and all(value is True for value in checks.values())
@@ -378,7 +397,7 @@ def _mock_closure(work, result):
 
 def export_database(context, *, controller, resources, supervisor, result, guard):
     _context(context)
-    _mock_closure(controller.WORK, result)
+    _mock_closure(controller.WORK, result,**({'functional_stage':'mock500'}if _functional(resources)else{}))
     exported = _native_steps(controller, resources, supervisor, guard)
     exported['context'] = context
     fd = S._directory(str(Path(controller.WORK) / 'state/final-backup'), private=True)
@@ -538,7 +557,7 @@ def restore_readback(verified, *, context, controller_context, collection, resou
     need(controller.LIMIT == P.LIMIT and controller.MAXIMUM == P.MAXIMUM and controller.RESERVE == P.RESERVE)
     if _phased(resources):
         need(resources.memory_phase == 'backup' and resources.backup_ack is not None)
-    recovery_limit = resources.container_limit if _phased(resources) else P.LIMIT
+    recovery_limit = resources.container_limit if _phased(resources) or _functional(resources) else P.LIMIT
     controller.WORK = root / 'work'
     controller.WORK.mkdir(mode=0o700)
     for name in ('pgdata', 'state'):
@@ -584,7 +603,8 @@ def restore_readback(verified, *, context, controller_context, collection, resou
             '--memory=' + str(recovery_limit), '--memory-swap=' + str(recovery_limit), '--cgroup-parent=' + resources.unit,
             *args, '-e', 'POSTGRES_HOST_AUTH_METHOD=trust', controller.IMAGE, 'postgres',
             '-c', 'helmut.local_usage_experiment=on', '-c', 'max_wal_size=128MB',
-            '-c', 'work_mem=32MB', '-c', 'autovacuum_naptime=10s')
+            '-c', 'work_mem=32MB', '-c', 'autovacuum_naptime=10s',
+            *(('-c','max_connections=60') if _functional(resources) else ()))
         owned_id = inspect(controller.CONTAINER)['Id']
         controller.docker('start', owned_id)
         info = inspect(owned_id)
@@ -609,6 +629,8 @@ def restore_readback(verified, *, context, controller_context, collection, resou
                 break
             time.sleep(.2)
         need(ready.returncode == 0)
+        if _functional(resources):
+            controller.verify_functional_connections()
         for argv in (('mkdir', '-p', BASE), ('chmod', '700', BASE), ('chown', '1000:1000', BASE)):
             controller.docker('exec', owned_id, *argv)
         restored = restore_database(controller, supervisor, resources, guard)

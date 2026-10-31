@@ -57,8 +57,9 @@ def resources():
 
 def read_parent(ctx, expected_identity, *, empty=False):
     """Read the unchanged kernel lifetime; never reset any peak/counter."""
-    if ctx.get('processingBackupStage') == 'mock500':
+    if ctx.get('functionalStage') == 'mock500' or ctx.get('processingBackupStage') == 'mock500':
         return P.read_parent(ctx, expected_identity, empty=empty)
+    require('functionalStage' not in ctx)
     fd = P.R._kernel_directory(P.R.KERNEL_ROOT / names(ctx)[0])
     try:
         value = os.fstat(fd)
@@ -92,12 +93,18 @@ def read_parent(ctx, expected_identity, *, empty=False):
         os.close(fd)
 
 
-def unit_bytes():
+def unit_bytes(ctx=None):
+    if ctx is not None and 'functionalStage' in ctx:
+        require(ctx['functionalStage'] == 'mock500')
+        return P.unit_bytes(ctx)
     return (b'[Unit]\nDescription=W15 isolated Mock500 V2 parent\n'
             b'[Slice]\nMemoryAccounting=yes\nMemoryMax=2048000000\nMemorySwapMax=0\n')
 
 
 def prepare_parent(ctx):
+    if ctx.get('functionalStage') == 'mock500':
+        return P.prepare_parent(ctx)
+    require('functionalStage' not in ctx)
     require(os.getuid() == 0 and Path('/proc/1/comm').read_text().strip() == 'systemd')
     unit = names(ctx)[0]
     path = P.R.KERNEL_ROOT / unit
@@ -122,6 +129,9 @@ def prepare_parent(ctx):
 
 
 def remove_parent(ctx):
+    if ctx.get('functionalStage') == 'mock500':
+        return P.remove_parent(ctx)
+    require('functionalStage' not in ctx)
     require(os.getuid() == 0)
     unit = names(ctx)[0]
     file = UNIT_ROOT / unit
@@ -134,9 +144,11 @@ def remove_parent(ctx):
 
 
 def github_binding(ctx):
+    require('functionalStage' not in ctx or ctx['functionalStage'] == 'mock500')
     P.github_binding(ctx['runId'], ctx['exactCommit'],
         **({'processing_backup_stage': ctx['processingBackupStage']}
-           if ctx.get('processingBackupStage') == 'mock500' else {}))
+           if ctx.get('processingBackupStage') == 'mock500' else {}),
+        **({'functional_stage': 'mock500'} if ctx.get('functionalStage') == 'mock500' else {}))
     for file in (SCRIPT, SCRIPT.with_name('mock500_resources.py'),
                  *([SCRIPT.with_name('phase_contract.py')] if ctx.get('processingBackupStage') == 'mock500' else [])):
         relative = str(file.relative_to(P.REPO))
@@ -153,10 +165,14 @@ def github_binding(ctx):
 
 def privileged(mode, ctx):
     require(mode in ('prepare', 'remove'))
+    require('functionalStage' not in ctx or (ctx['functionalStage']=='mock500' and ctx.get('processingBackupStage') is None))
     argv = ['/usr/bin/python3', '-B', str(SCRIPT), '--internal', mode,
             '--run-id', ctx['runId'], '--expected-commit', ctx['exactCommit'], '--nonce', ctx['nonce']]
     if ctx.get('processingBackupStage') == 'mock500':
         argv += ['--processing-backup-stage', 'mock500', '--processing-backup-phase', ctx.get('processingBackupPhase', 'processing')]
+    if ctx.get('functionalStage') == 'mock500':
+        require(ctx.get('processingBackupStage') is None)
+        argv += ['--functional-stage', 'mock500']
     return P.command(['/usr/bin/sudo', '-n', '/usr/bin/env', '-i',
                      *[key + '=' + value for key, value in P.process_env(ctx).items()], *argv], timeout=40)
 
@@ -170,6 +186,7 @@ def main(argv=None):
         parser.add_argument('--nonce', required=True)
         parser.add_argument('--processing-backup-stage', choices=('mock500',))
         parser.add_argument('--processing-backup-phase', choices=('processing', 'backup'))
+        parser.add_argument('--functional-stage', choices=('mock500',))
         args = parser.parse_args(argv)
         ctx = context(args.run_id, args.expected_commit, args.nonce)
         if args.processing_backup_stage:
@@ -178,6 +195,9 @@ def main(argv=None):
             ctx['processingBackupPhase'] = args.processing_backup_phase
         else:
             require(args.processing_backup_phase is None)
+        if args.functional_stage is not None:
+            require(args.processing_backup_stage is None and args.processing_backup_phase is None)
+            ctx['functionalStage'] = 'mock500'
         github_binding(ctx)
         {'prepare': prepare_parent, 'remove': remove_parent}[args.internal](ctx)
         return 0

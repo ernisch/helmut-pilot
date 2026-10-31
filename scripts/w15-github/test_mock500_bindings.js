@@ -7,6 +7,31 @@ const root = temp + "/w15-mock500-123456789-" + nonce.replaceAll("-", "");
 const context = { schema: "helmut-w15-mock500-controller-context/1", scope: "ISOLATED_GITHUB_MOCK500_BINDING_ONLY",
   nonce, runId: "123456789", runAttempt: 1, exactCommit: "a".repeat(40), runnerTemp: temp,
   hostPaths: { runRoot: root, work: root + "/work", prepare: root + "/prepare", cache: root + "/cache" } };
+const LegacyMemory = require("../fixtures/w15-memory-contract");
+const safety = require("./separated_resources_contract.json").referenceLabProposal;
+const functional = { context, functionalResourceContract: { contract: "helmut-w15-isolated-functional/1",
+  mode: "mock500-full-functional-gated", memoryProfile: "helmut-w15-mock500-functional/1",
+  hardMemoryBytes: safety.commonHostHardBytes, hostReserveBytes: safety.hostAvailableReserveBytes,
+  legacyRegularMemoryAccepted: false, providerResourceAccepted: false } };
+assert.deepEqual(B.memoryLimits(null), LegacyMemory.limits);
+assert.deepEqual(B.memoryLimits({}), LegacyMemory.limits);
+assert.equal(B.memoryAssessment(null, 1638400001).reserveMeetsContract, false);
+assert.equal(B.memoryAssessment(functional, 3680530432).reserveMeetsContract, true);
+assert.equal(B.memoryAssessment(functional, safety.commonHostHardBytes + 1).reserveMeetsContract, false);
+assert.equal(B.memoryLimits(functional).maximumConsumptionBytes, safety.commonHostHardBytes);
+assert.equal(B.memoryLimits(functional).requiredReserveBytes, 0);
+for (const [key, value] of [["hardMemoryBytes", 5000000000], ["mode", "mock500-full-gated"], ["memoryProfile", "unapproved"],
+  ["contract", "unapproved"], ["hostReserveBytes", 0], ["legacyRegularMemoryAccepted", true], ["providerResourceAccepted", true]])
+  assert.throws(() => B.memoryLimits({ ...functional, functionalResourceContract: { ...functional.functionalResourceContract, [key]: value } }));
+assert.throws(() => B.memoryAssessment(functional, true));
+const Runtime = require("../synthetik-500-w15-full500-runtime");
+const observation = { configuredLimit: String(safety.commonHostHardBytes), swapMaximum: "0", swapCurrentBytes: 0,
+  events: { max: 0, oom: 0, oom_kill: 0, oom_group_kill: 0 }, ...B.memoryAssessment(functional, 3680530432) };
+assert.equal(Runtime.memoryAccepted(observation, functional), true);
+assert.equal(Runtime.memoryAccepted(observation), false);
+for (const key of ["max", "oom", "oom_kill", "oom_group_kill"])
+  assert.equal(Runtime.memoryAccepted({ ...observation, events: { ...observation.events, [key]: 1 } }, functional), false);
+assert.equal(Runtime.memoryAccepted({ ...observation, swapCurrentBytes: 1 }, functional), false);
 assert.equal(B.namespace(context).base, B.BASE); assert.equal(B.namespace(context).database, B.DB);
 assert.throws(() => B.namespace({ ...context, runAttempt: 2 }));
 assert.throws(() => B.namespace({ ...context, hostPaths: { ...context.hostPaths, work: "/OLD" } }));
