@@ -4389,7 +4389,12 @@ function render() {
     </div>
   `;
   const page = app.querySelector(".ui-page");
-  if (page) page.scrollTop = pageScroll;
+  if (page) {
+    page.scrollTop = pageScroll;
+    const syncCompactHeader = () => page.parentElement.classList.toggle("ui-is-scrolled", page.scrollTop > 160);
+    syncCompactHeader();
+    page.addEventListener("scroll", syncCompactHeader, { passive: true });
+  }
   lastAnimatedView = currentView;
   animateNextRender = false;
   hideStartupSplash();
@@ -4536,10 +4541,12 @@ function roleNavItems() {
 function renderTopbar() {
   const hasUpdates = hasUnreadUpdates();
   const statusLabel = displayStatusLabel();
+  const title = ({ helmut: "Briefing", briefing: "Politische Lage", radar: "Radar", office: "Büro", "office-detail": "Büro", settings: "Profil & Einstellungen", "profile-settings": "Mandatsprofil", admin: "Admin", "daily-input": "Tagesinput" })[currentView] || "Helmut";
   const tone = /fehler|störung|fehlgeschlagen/i.test(statusLabel) ? "error"
     : /^aktuell$/i.test(statusLabel) ? "fresh" : "stale";
   return `
     <header class="topbar">
+      <span class="ui-compact-title" aria-hidden="true">${escapeHtml(title)}</span>
       <button class="menu-button ${navOpen ? "close" : ""}" type="button" data-menu aria-label="${navOpen ? "Menü schließen" : "Menü öffnen"}">
         ${navOpen ? "×" : "<span></span><span></span><span></span>"}
       </button>
@@ -11412,8 +11419,13 @@ function bindActions() {
       uiLageSelectedId = button.dataset.uiLageSelect;
       uiLageDetailOpen = true;
       render();
-      app.querySelector(".ui-lage-detail")?.scrollIntoView({ block: "start" });
-      app.querySelector(".ui-mobile-back")?.focus({ preventScroll: true });
+      const mobile = window.matchMedia && window.matchMedia("(max-width: 767px)").matches;
+      if (mobile) {
+        app.querySelector(".ui-page")?.scrollTo({ top: 0 });
+        app.querySelector(".ui-mobile-back")?.focus({ preventScroll: true });
+      } else {
+        Array.from(app.querySelectorAll("[data-ui-lage-select]")).find(el => el.dataset.uiLageSelect === uiLageSelectedId)?.focus({ preventScroll: true });
+      }
     });
   });
   app.querySelectorAll("[data-ui-lage-back]").forEach(button => {

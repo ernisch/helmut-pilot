@@ -12520,3 +12520,15 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
 .ui-page .helmut-refresh-title { font: 500 30px/1.2 var(--ui-serif); color: var(--ui-text); }
 .ui-page :is(.helmut-refresh-step,.helmut-refresh-sub) { font-size: 17px; line-height: 1.5; color: var(--ui-muted); }
 .sidebar .brand small, .ui-onboarding-header .onboarding-progress { font-size: 12px; }
+
+.app-frame .topbar { left: 32px; justify-content: space-between; }
+.topbar .ui-compact-title { visibility: hidden; opacity: 0; min-width: 0; padding-right: 20px; color: var(--ui-text); font: 500 24px/1.1 var(--ui-serif); transition: opacity 160ms; }
+.ui-is-scrolled .topbar .ui-compact-title { visibility: visible; opacity: 1; }
+.app-frame .ui-is-scrolled .topbar { left: 0; right: 0; top: 0; padding: 12px 32px; background: var(--ui-bg); border-bottom: 1px solid var(--ui-border); }
+.ui-page .radar2 { --radar-signal: var(--ui-accent); }
+@media (max-width: 767px) {
+  .app-frame .topbar { left: 16px; }
+  .topbar .ui-compact-title { display: none; }
+  .app-frame .ui-is-scrolled .topbar { padding: max(12px,env(safe-area-inset-top)) 16px 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .topbar .ui-compact-title { transition: none; } }

@@ -107,7 +107,7 @@ in die Anwendung übernommen. Referenzdateien bleiben ignoriert unter
 | --- | --- |
 | Gemeinsames Design | Spectral, Hanken Grotesk, IBM Plex Mono lokal; blaue Akzente, ruhige Flächen, Statusfarben, H-Zeichen und dekoratives Reichstagsbild aus den Uploads. |
 | Komponenten | Gemeinsame Icons, Seitenköpfe, Datumszeile, Statusanzeige, Leerzustand, Quellenfußzeile, Desktop- und Mobilnavigation. |
-| Responsive Shell | Desktop-Seitenleiste, Mobile-Leiste unten, Safe Areas, separat scrollender Inhalt, umbrechende Hinweise; Briefing als erste Ansicht bei fehlender gespeicherter Auswahl. Interne View-IDs bleiben erhalten. |
+| Responsive Shell | Desktop-Seitenleiste, Mobile-Leiste unten, Safe Areas, separat scrollender Inhalt mit kompaktem Desktop-Kopf beim Scrollen, umbrechende Hinweise; Briefing als erste Ansicht bei fehlender gespeicherter Auswahl. Interne View-IDs bleiben erhalten. |
 | Briefing | Hauptvorgang mit nächstem Schritt; Kontext-, Risiko-/Chancen-Karten, nummerierte Aufgaben, weitere Vorgänge und aufklappbare Quellen. Daten stammen aus `currentHelmutState`. Frische-/Fehler-/Leerzustände bleiben getrennt. |
 | Lage | Nummerierte Vorgangsliste, Desktop mit Detail daneben, Mobile mit Detail und Zurück. Vollständige vorhandene Einordnung, persönliche Relevanz, Betroffene, Quellen und Chronologie über den bestehenden Detailrenderer. |
 | Büro | Desktop-Liste und Entwurf nebeneinander, Mobile Liste → Detail; Text, Herkunft, Quellen, Kopieren und vorhandene Statusangaben bleiben angebunden. Auswahl nutzt ausschließlich den bestehenden Entwurfscache. |
@@ -123,6 +123,31 @@ funktionierender Bedienung. Die vorhandenen Backendverträge, Quellenfilter,
 Mandantentrennung, Budgetsteuerung und Hintergrundprozesse wurden nicht umgebaut.
 Ein normaler App-Start kann über bestehende Funktionen Hintergrundarbeit starten;
 deshalb wurde die App während des Motortests nicht ausgeführt.
+
+## Ausgeführte statische Prüfungen und lokale Sicherung
+
+- JavaScript-Syntax mit `node --check client.js`: erfolgreich. Dabei wurde kein
+  App-Code ausgeführt und kein Server gestartet.
+- `git diff --check`: erfolgreich.
+- Neue CSS-Blöcke: lexikalisch auf ausgeglichene Klammern, Zeichenketten und
+  Kommentare geprüft; keine neuen externen Ressourcen-URLs. Dies ist keine
+  CSS-Parser-, Layout- oder Browserabnahme. Kein Parser nachinstalliert.
+- Alle neuen CSS-Assetpfade existieren; SVG auf aktive Elemente und
+  Eventhandlerattribute geprüft. Keine Prototyp-Skripte übernommen.
+- Statischer API-Pfadvergleich: keine neuen Endpoints im Client.
+- `vercel.json` gegen Ausgangsstand: einzig die zusätzliche Sperre für den
+  eigenen UI-Branch; andere Felder identisch. Die tatsächliche externe Wirkung
+  ist weiterhin nicht durch einen Push erprobt.
+- Original-Worktree: HEAD, Index und vorhandener unversionierter Status wurden
+  unverändert rückgelesen; abschließender Inhaltsvergleich der versionierten
+  Dateien gegen die vorab erhobene SHA256-Gesamtbindung.
+- Erster lokaler Sicherungscommit: `6bc2c50f`. Weitere Detailkorrekturen werden
+  als nachfolgende lokale Commits gesichert. **Kein Push**, solange der
+  automatische Start nicht belastbar ausgeschlossen ist.
+
+Keine Offline-Suite, Browserprüfung, Installation, Datenbankprüfung oder
+GitHub-Action wurde für diesen UI-Auftrag gestartet. Es gibt noch keinen
+ausführbaren Screenshotnachweis der neuen App.
 
 ## Nach dem Motortest noch erforderlich
 
