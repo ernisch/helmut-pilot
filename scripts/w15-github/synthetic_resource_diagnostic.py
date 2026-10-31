@@ -45,7 +45,8 @@ ASSERTIONS = frozenset(('diagnostic-fresh-database-required','diagnostic-ca-requ
     'diagnostic-native-decisions-required','diagnostic-positive-current-briefing-required',
     'diagnostic-cleanup-only-newly-owned-profiles','diagnostic-local-preload-required',
     'diagnostic-synthetic-profile-selector-required','diagnostic-required-schema-migration-missing',
-    'diagnostic-schema-migration-list-unique','UNKNOWN'))
+    'diagnostic-schema-migration-list-unique','diagnostic-mock-schema-required',
+    'diagnostic-one-explicit-case','diagnostic-mock-case-binding','diagnostic-mock-current-understanding-schema','UNKNOWN'))
 NODE_CODES = frozenset(('ERR_ASSERTION','MODULE_NOT_FOUND','ERR_MODULE_NOT_FOUND','EACCES','EPERM','ENOENT',
     'EEXIST','ECONNREFUSED','ETIMEDOUT','EPIPE','ENOTFOUND','ECONNRESET','UNKNOWN'))
 NODE_CODES = NODE_CODES | frozenset(['LLM_USAGE_NOT_CONFIRMED', 'AI_REQUEST_TIMEOUT', 'AI_REQUEST_SEND_ERROR', 'AI_RESPONSE_TOO_LARGE', 'AI_RESPONSE_ABORTED', 'AI_RESPONSE_STREAM_ERROR', 'AI_RESPONSE_INVALID_JSON', 'AI_RESPONSE_NOT_COMPLETED', 'AI_REQUEST_BUILD_FAILED', 'AI_TLS_ERROR', 'AI_PROVIDER_HTTP_4XX', 'AI_PROVIDER_HTTP_5XX', 'AI_PROVIDER_HTTP_400', 'AI_PROVIDER_HTTP_401', 'AI_PROVIDER_HTTP_403', 'AI_PROVIDER_HTTP_404', 'AI_PROVIDER_HTTP_408', 'AI_PROVIDER_HTTP_422', 'AI_PROVIDER_HTTP_429', 'AI_PROVIDER_HTTP_500', 'AI_PROVIDER_HTTP_502', 'AI_PROVIDER_HTTP_503', 'AI_PROVIDER_HTTP_504'])
@@ -650,9 +651,17 @@ class Supervisor:
         need(type(closed) is dict and set(closed)<= {'schema','nonce','closed','failed','localSimulatedAI','executionAuthority'}
             and all(closed.get(k)==v for k,v in {'schema':WORKLOAD_SCHEMA,'nonce':self.ctx['nonce'],
                 'closed':True,'failed':False,'executionAuthority':False}.items()),'services','MOCK_SERVICES_STOP_UNKNOWN')
-        self.services_results.append({'profiles':count,'closed':True,'failed':False,
+        row={'profiles':count,'closed':True,'failed':False,
             'localSimulatedAI':simulated_ai_result(closed.get('localSimulatedAI')),
-            'applicationExitAttestedBeforeServiceStop':app_exit})
+            'applicationExitAttestedBeforeServiceStop':app_exit}
+        response=result/'MOCK_RESPONSE_FAILURE.SAFE.json'
+        if response.exists():
+            failure=read_private(response)
+            need(type(failure) is dict and set(failure)=={'schema','nonce','phase','failureDetail','retryAllowed'}
+                 and failure['schema']==WORKLOAD_SCHEMA and failure['nonce']==self.ctx['nonce']
+                 and failure['phase']=='services' and failure['retryAllowed'] is False,'services','WORKLOAD_FAILURE_SCHEMA')
+            row['responseFailure']=failure_detail(failure['failureDetail'])
+        self.services_results.append(row)
 
     def close(self):
         self.phase='closure';self.cleaning=True

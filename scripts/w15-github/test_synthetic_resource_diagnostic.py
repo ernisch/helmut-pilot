@@ -153,10 +153,14 @@ class DiagnosticChecks(unittest.TestCase):
             counters=dict.fromkeys(keys,1);counters['dauerMs']=dict.fromkeys(('n','min','p50','p95','max','mittel'),2)
             D.private_json(root/'SERVICES_CLOSED.SAFE.json',{'schema':D.WORKLOAD_SCHEMA,'nonce':NONCE,
                 'closed':True,'failed':False,'executionAuthority':False,'localSimulatedAI':counters})
+            D.private_json(root/'MOCK_RESPONSE_FAILURE.SAFE.json',{'schema':D.WORKLOAD_SCHEMA,'nonce':NONCE,
+                'phase':'services','failureDetail':{'assertion':'diagnostic-one-explicit-case','code':'ERR_ASSERTION',
+                  'sqlstate':'UNKNOWN','nativeStatus':'unknown'},'retryAllowed':False})
             with patch.object(s,'create_groups',side_effect=D.Rejected('services','FIRST_SYNTHETIC_FAILURE')),patch.object(s,'close'):
                 report=s.run()
             self.assertEqual(report['firstFailure']['code'],'FIRST_SYNTHETIC_FAILURE')
             self.assertEqual(report['servicesResults'][0]['localSimulatedAI']['aufrufe'],1)
+            self.assertEqual(report['servicesResults'][0]['responseFailure']['assertion'],'diagnostic-one-explicit-case')
             self.assertEqual(report['servicesResults'][0]['applicationExitAttestedBeforeServiceStop'],'UNKNOWN')
             self.assertFalse(report['full500Completed'])
 
