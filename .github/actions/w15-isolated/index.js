@@ -1,7 +1,7 @@
 'use strict';
 function closedPhaseObservation(value){
   if(value==='UNKNOWN')return value;
-  const phases=new Set(["approval","arguments","backup","backup-authenticate","backup-collect","backup-export","backup-freeze","backup-postcheck","backup-recovery","backup-seal","backup-transport","binding","closure","connection-backup","connection-backup-authenticate","connection-backup-collect","connection-backup-export","connection-backup-freeze","connection-backup-postcheck","connection-backup-recovery","connection-backup-seal","connection-backup-transport","connection-binding","connection-cache","connection-closure","connection-container-start","connection-export-backup-after","connection-export-backup-before","connection-export-backup-dump","connection-export-backup-roles","connection-input-binding","connection-materialization","connection-native-restore","connection-prepare","connection-prepared-check","connection-readiness","connection-receive","connection-restore","connection-restore-apply","connection-restore-check","connection-restore-create","connection-restore-render","connection-restore-roles","end500","event","qualification","receive-prepare","receiver-agent-close","receiver-arguments","receiver-authenticated-reception","receiver-cipher-readback","receiver-disk-admission","receiver-download","receiver-encrypted-index","receiver-index","receiver-key-import","receiver-private-inputs","receiver-relocation","receiver-source-binding","resources","restore","synthetic"]);
+  const phases=new Set(['capacity-transport-complete','capacity-materialization','capacity-restore-ready','capacity-seed','capacity-seed-ready','capacity-auth-cas','capacity-native-audit','capacity-export','capacity-processing-stopped',"approval","arguments","backup","backup-authenticate","backup-collect","backup-export","backup-freeze","backup-postcheck","backup-recovery","backup-seal","backup-transport","binding","closure","connection-backup","connection-backup-authenticate","connection-backup-collect","connection-backup-export","connection-backup-freeze","connection-backup-postcheck","connection-backup-recovery","connection-backup-seal","connection-backup-transport","connection-binding","connection-cache","connection-closure","connection-container-start","connection-export-backup-after","connection-export-backup-before","connection-export-backup-dump","connection-export-backup-roles","connection-input-binding","connection-materialization","connection-native-restore","connection-prepare","connection-prepared-check","connection-readiness","connection-receive","connection-restore","connection-restore-apply","connection-restore-check","connection-restore-create","connection-restore-render","connection-restore-roles","end500","event","qualification","receive-prepare","receiver-agent-close","receiver-arguments","receiver-authenticated-reception","receiver-cipher-readback","receiver-disk-admission","receiver-download","receiver-encrypted-index","receiver-index","receiver-key-import","receiver-private-inputs","receiver-relocation","receiver-source-binding","resources","restore","synthetic"]);
   if(!value||typeof value!=='object'||Array.isArray(value)||
     Object.keys(value).sort().join(',')!=='meaning,name,sequence'||!phases.has(value.name)||
     !Number.isInteger(value.sequence)||value.sequence<1||value.sequence>128||
@@ -73,7 +73,7 @@ function closedFailureMemory(value){
   const keys=['configuredLimitBytes','kernelLifetimePeakBytes','currentBytes','swapMaximumBytes','swapCurrentBytes','lastReadbackValid','events'];
   const events=['max','oom','oom_kill','oom_group_kill'];
   if(!value||typeof value!=='object'||Array.isArray(value)||!keys.every(k=>Object.hasOwn(value,k))||
-    !Object.keys(value).every(k=>keys.includes(k)||k==='postFailureMemoryStat'||k==='capacityMeasurement')||
+    !Object.keys(value).every(k=>keys.includes(k)||k==='postFailureMemoryStat'||k==='capacityMeasurement'||k==='end500CapacityTrace')||
     typeof value.lastReadbackValid!=='boolean')return null;
   if(keys.filter(k=>!['lastReadbackValid','events'].includes(k)).some(k=>!Number.isSafeInteger(value[k])||value[k]<0))return null;
   if(!value.events||typeof value.events!=='object'||Array.isArray(value.events)||
@@ -89,6 +89,8 @@ function closedFailureMemory(value){
   if(value.configuredLimitBytes===4999999488){
     const capacity=closedCapacityMeasurement(value.capacityMeasurement);
     if(capacity)out.capacityMeasurement=capacity;
+    const trace=require('./capacity-trace').closed(value.end500CapacityTrace);
+    if(trace)out.end500CapacityTrace=trace;
   }
   return out;
 }
@@ -139,7 +141,7 @@ function main() {
   if (Buffer.byteLength(input) > 1024*1024) throw Error('bound');
   const result = cp.spawnSync('/usr/bin/python3', ['-B','scripts/w15-github/restore_workflow.py','--launch'],
     {input, encoding:'utf8', env:process.env, maxBuffer:1024*1024,
-     timeout:(synthetic ? 420 : ['end500-full-gated','end500-full-phased-gated'].includes(mode) ? 3720 : 1920)*1000});
+     timeout:(synthetic ? 420 : ['end500-full-gated','end500-full-phased-gated','end500-full-capacity-diagnostic'].includes(mode) ? 3720 : 1920)*1000});
   if (result.error || result.status !== 0) {
     const failed = JSON.parse(result.stdout);
     const phases = ['arguments','event','approval','qualification','binding','resources','synthetic',

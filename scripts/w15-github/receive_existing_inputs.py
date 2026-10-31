@@ -204,7 +204,7 @@ def _receive_existing_verified(commit, runner_temp, *, private_payload=None, mod
         key, secret = V.read_environment()
         enter('encrypted-index'); input_chars = N.check_event(commit, armored_index)
     else:
-        need(mode in ('end500-restore-gated', 'end500-full-gated', 'end500-full-phased-gated', 'end500-restore-export-diagnostic', 'end500-restore-capacity-diagnostic') and isinstance(private_payload, dict))
+        need(mode in ('end500-restore-gated', 'end500-full-gated', 'end500-full-phased-gated', 'end500-restore-export-diagnostic', 'end500-restore-capacity-diagnostic', 'end500-full-capacity-diagnostic') and isinstance(private_payload, dict))
         armored_index = private_payload['cipherIndex']
         encoded, passphrase = private_payload['keyB64'], private_payload['passphrase']
         need(type(encoded) is str and 0 < len(encoded) <= 49152 and type(passphrase) is str)

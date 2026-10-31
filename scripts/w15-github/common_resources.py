@@ -23,6 +23,16 @@ MEMORY_STAT_FIELDS = ('anon', 'file', 'kernel', 'shmem', 'file_dirty', 'file_wri
 
 _CAPACITY = None
 _PHASE_CONTRACT = None
+_END_TRACE = None
+
+
+def end_capacity_trace():
+    global _END_TRACE
+    if _END_TRACE is None:
+        spec = importlib.util.spec_from_file_location('w15_common_end_trace', Path(__file__).with_name('end500_capacity_trace.py'))
+        _END_TRACE = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_END_TRACE)
+    return _END_TRACE
 
 
 def phase_contract():
@@ -82,7 +92,7 @@ def closed_failure_memory(value):
     keys = {'configuredLimitBytes', 'kernelLifetimePeakBytes', 'currentBytes',
             'swapMaximumBytes', 'swapCurrentBytes', 'lastReadbackValid', 'events'}
     events = ('max', 'oom', 'oom_kill', 'oom_group_kill')
-    if (type(value) is not dict or not keys <= set(value) <= keys | {'postFailureMemoryStat', 'capacityMeasurement'}
+    if (type(value) is not dict or not keys <= set(value) <= keys | {'postFailureMemoryStat', 'capacityMeasurement', 'end500CapacityTrace'}
             or type(value['lastReadbackValid']) is not bool):
         return None
     if any(type(value[k]) is not int or not 0 <= value[k] <= 2**53 - 1
@@ -101,6 +111,10 @@ def closed_failure_memory(value):
         if detail is not None:
             result['capacityMeasurement'] = detail
     # Optional malformed details cannot erase an already known first sample.
+    if 'end500CapacityTrace' in value and value['configuredLimitBytes'] == capacity().HARD_LIMIT:
+        trace = end_capacity_trace().closed(value['end500CapacityTrace'])
+        if trace is not None:
+            result['end500CapacityTrace'] = trace
     return json.loads(json.dumps(result))
 
 
@@ -166,19 +180,24 @@ def project_failure_memory(value, valid):
             result['postFailureMemoryStat'] = value['postFailureMemoryStat']
         if 'capacityMeasurement' in value:
             result['capacityMeasurement'] = value['capacityMeasurement']
+        if 'end500CapacityTrace' in value:
+            result['end500CapacityTrace'] = value['end500CapacityTrace']
         return closed_failure_memory(result)
     except (KeyError, TypeError, ValueError):
         return None
 
 
 class CommonResources:
-    def __init__(self, token, context, path, identity, *, capacity_diagnostic=False, processing_backup_stage=None):
+    def __init__(self, token, context, path, identity, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False):
         require(token is TOKEN)
         self._context = json.loads(json.dumps(context))
         self.path, self._identity = path, identity
         self._last_observed, self._last_valid = None, False
         require(type(capacity_diagnostic) is bool)
         self.capacity_diagnostic = capacity_diagnostic
+        require(type(end_capacity_diagnostic) is bool and (not end_capacity_diagnostic or capacity_diagnostic))
+        self.end_capacity_diagnostic = end_capacity_diagnostic
+        self.capacity_observer = None
         self.container_limit = capacity().HARD_LIMIT if capacity_diagnostic else LIMIT
         require(processing_backup_stage in (None, 'end500', 'mock500')
                 and not (capacity_diagnostic and processing_backup_stage is not None))
@@ -326,7 +345,7 @@ def _kernel_directory(path):
         os.close(root)
 
 
-def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None):
+def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False):
     """Only after entering the externally prepared, actually limited parent.
 
     This is an observation API, not a systemd bootstrap, UID conversion, fresh
@@ -345,7 +364,8 @@ def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None)
         finally:
             os.close(fd)
         result = CommonResources(TOKEN, context, path, (value.st_dev, value.st_ino),
-            capacity_diagnostic=capacity_diagnostic, processing_backup_stage=processing_backup_stage)
+            capacity_diagnostic=capacity_diagnostic, processing_backup_stage=processing_backup_stage,
+            end_capacity_diagnostic=end_capacity_diagnostic)
         result.sample()
         return result
     except Exception:

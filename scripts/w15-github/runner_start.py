@@ -43,9 +43,10 @@ D = _load('runner_diagnostics')
 LIMITS = {'comparisonBudgetBytes': 2560000000, 'maximumConsumptionBytes': 2048000000,
           'requiredReserveBytes': 512000000, 'swapBytes': 0}
 CAPACITY = 'end500-restore-capacity-diagnostic'
+END_CAPACITY = 'end500-full-capacity-diagnostic'
 PHASED = 'end500-full-phased-gated'
 DIAGNOSTIC = 'end500-restore-export-diagnostic'
-WALL = {PHASED: 3600, CAPACITY: 1800, DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
+WALL = {END_CAPACITY: 3600, PHASED: 3600, CAPACITY: 1800, DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
 BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 MAX_FILES, MAX_SOURCE_BYTES, MAX_BLOB = 4096, 128 * 1024 * 1024, 16 * 1024 * 1024
 MAX_IPC, MAX_RESULT, CHUNK = 1024 * 1024, 65536, 1024 * 1024
@@ -58,7 +59,7 @@ GIT_OPTIONS = ['--no-optional-locks', '-c', 'core.hooksPath=/dev/null', '-c', 'c
                '-c', 'maintenance.auto=false']
 PHASE = 'arguments'
 PHASES = {'arguments', 'binding', 'parent', 'service', 'staging', 'worker', 'closure', 'ipc'}
-WORKER_STATUS = {DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
+WORKER_STATUS = {END_CAPACITY: 'MEASURED_FULL_END500_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED', DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
                  PHASED: 'PASS_END500_PHASED_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING',
                  CAPACITY: 'MEASURED_FULL_RESTORE_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED',
                  'end500-restore-gated': 'PASS_SAME_JOB_RESTORE_BACKUP_500_INACTIVE_ONLY_START_BLOCKED',
@@ -144,6 +145,11 @@ def _failure_packet(error):
         packet['runner'] = error.runner
     if error.cleanup is not None:
         packet['cleanup'] = error.cleanup
+    # The root observation owns the capacity history. Avoid duplicating that
+    # bounded history in workerMemory across the unchanged 64-KiB result pipe.
+    if 'end500CapacityTrace' in packet.get('runner', {}).get('memory', {}) and 'workerMemory' in packet:
+        packet['workerMemory'] = {k: v for k, v in packet['workerMemory'].items()
+                                  if k not in ('capacityMeasurement', 'end500CapacityTrace')}
     return packet
 
 
@@ -167,7 +173,7 @@ def _worker_result(result, request):
     """Only B's closed public scalar receipt can leave the private IPC channel."""
     fields = {'status', 'mode', 'exactCommit', 'runId', 'runAttempt', 'verifiedFiles', 'verifiedBytes'}
     diagnostic = request['mode'] == DIAGNOSTIC
-    if request['mode'] == CAPACITY:
+    if request['mode'] in (CAPACITY, END_CAPACITY):
         fields |= {'capacityDiagnosticOnly', 'legacyRestoreAccepted'}
     if request['mode'] == PHASED:
         fields |= {'resourcePhases', 'processingMemoryChecksCompleted', 'backupSafetyChecksCompleted'}
@@ -189,14 +195,14 @@ def _worker_result(result, request):
          and result['originalTransferPerformed'] is (not synthetic)
          and result['isolatedRestoreObserved'] is (not synthetic)
          and result['backupRoundtripVerified'] is (not synthetic and not diagnostic)
-         and result['end500BodyCompleted'] is (request['mode'] in ('end500-full-gated', PHASED)))
+         and result['end500BodyCompleted'] is (request['mode'] in ('end500-full-gated', PHASED, END_CAPACITY)))
     if diagnostic:
         need(result['diagnosticExportOnly'] is True and result['ownedContainerStopped'] is True
              and result['watchStopped'] is True and result['remoteReadbackObserved'] is False
              and result['databaseRestoreObserved'] is False and result['fullRestoreAccepted'] is False
              and all(type(result[k]) is int for k in ('restoreSteps', 'exportActions', 'profiles', 'activeProfiles'))
              and (result['restoreSteps'], result['exportActions'], result['profiles'], result['activeProfiles']) == (5, 4, 500, 0))
-    if request['mode'] == CAPACITY:
+    if request['mode'] in (CAPACITY, END_CAPACITY):
         need(result['capacityDiagnosticOnly'] is True and result['legacyRestoreAccepted'] is False)
     if request['mode'] == PHASED:
         need(result['processingMemoryChecksCompleted'] is True and result['backupSafetyChecksCompleted'] is True)
@@ -244,7 +250,7 @@ def validate_request(request, private_payload):
     need(type(request) is dict and set(request) == REQUEST_KEYS
          and request['schema'] == 'helmut-w15-runner-request/1' and request['mode'] in WALL
          and type(request['runAttempt']) is int and request['runAttempt'] == 1
-         and request['branch'] == BRANCH and request['limits'] == (P.R.capacity().LIMITS if request['mode'] == CAPACITY else LIMITS)
+         and request['branch'] == BRANCH and request['limits'] == (P.R.capacity().LIMITS if request['mode'] in (CAPACITY, END_CAPACITY) else LIMITS)
          and all(type(v) is int for v in request['limits'].values())
          and type(request['maximumWallSeconds']) is int
          and request['maximumWallSeconds'] == WALL[request['mode']]
@@ -269,8 +275,10 @@ def validate_request(request, private_payload):
 
 def _ctx(request):
     value = P.context(request['runId'], request['exactCommit'], request['nonce'])
-    if request['mode'] == CAPACITY:
+    if request['mode'] in (CAPACITY, END_CAPACITY):
         value['capacityDiagnostic'] = True
+        if request['mode'] == END_CAPACITY:
+            value['endCapacityDiagnostic'] = True
     stage = (P.R.phase_contract().stage(request['mode'])
              if request['mode'] in (PHASED, 'mock500-full-phased-gated') else None)
     if stage is not None:
@@ -302,8 +310,9 @@ def github_binding(request):
     need(_git(REPO, ['rev-parse', 'HEAD']) == (request['exactCommit'] + '\n').encode())
     for file in (SCRIPT, SCRIPT.with_name('runner_parent.py'), SCRIPT.with_name('common_resources.py'), SCRIPT.with_name('runner_diagnostics.py'),
                  SCRIPT.with_name('controller_context.py'),
-                 *([SCRIPT.with_name('restore_capacity.py')] if request['mode'] == CAPACITY or request['mode'] == PHASED else []),
-                 *([SCRIPT.with_name('phase_contract.py')] if request['mode'] == PHASED else [])):
+                 *([SCRIPT.with_name('restore_capacity.py')] if request['mode'] in (CAPACITY, END_CAPACITY, PHASED) else []),
+                 *([SCRIPT.with_name('phase_contract.py')] if request['mode'] == PHASED else []),
+                 *([SCRIPT.with_name('end500_capacity_trace.py'), SCRIPT.with_name('memory_components.py'), SCRIPT.with_name('end500_capacity_roles.py')] if request['mode'] == END_CAPACITY else [])):
         relative = str(file.relative_to(REPO))
         entry = _git(REPO, ['ls-tree', '-z', request['exactCommit'], '--', relative])
         header, name = entry.rstrip(b'\0').split(b'\t')
@@ -553,6 +562,17 @@ def _phase_reporter(sender):
     return observe
 
 
+def _capacity_reporter(sender):
+    sequence = 0
+    def observe(progress=None, binding=None):
+        nonlocal sequence
+        need(sequence < 504)
+        sequence += 1
+        sender.send_bytes(_encode({'kind': 'capacity-checkpoint', 'sequence': sequence,
+            'progress': progress, 'binding': binding}, 1024))
+    return observe
+
+
 def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
     code, latch, result, failure = 1, None, None, None
     reason = 'WORKER_SETUP_REJECTED'
@@ -571,6 +591,8 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
         reason = 'WORKER_RESULT_REJECTED'
         extra = ({'backup_transition': _worker_backup_transition(sender, manifest, 'end500')}
                  if manifest['mode'] == PHASED else {})
+        if manifest['mode'] == END_CAPACITY:
+            extra['capacity_observer'] = _capacity_reporter(sender)
         result = module.run_worker(manifest, private_payload, phase_observer=_phase_reporter(sender), **extra)
         result = _worker_result(result, manifest)
         need(not latch.seen)
@@ -655,7 +677,7 @@ def _supervisor_backup_transition(ctx, identity, last, child, stage, *, error_ty
     return transition
 
 
-def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartError, observed=None, transition=None):
+def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartError, observed=None, transition=None, capacity_checkpoint=None):
     """Read one existing Pipe frame with bounded reads, including partial EOF."""
     try:
         if not receiver.poll(wait):
@@ -677,11 +699,18 @@ def _read_worker_response(receiver, deadline, *, wait=0, error_type=RunnerStartE
             return raw
         # ONE existing read deadline for the whole drain, never one second per
         # checkpoint. The lifetime frame cap also bounds aggregate bytes.
-        for _ in range(D.MAX_PHASE_FRAMES + 1):
+        for _ in range(D.MAX_PHASE_FRAMES + 1 + (504 if capacity_checkpoint is not None else 0)):
             length = struct.unpack('!i', read(4))[0]
             if not 0 < length <= MAX_RESULT:
                 raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
             value = _decode(read(length))
+            if type(value) is dict and value.get('kind') == 'capacity-checkpoint':
+                if capacity_checkpoint is None or length > 1024:
+                    raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
+                capacity_checkpoint(value)
+                if not receiver.poll(0):
+                    return None
+                continue
             if type(value) is dict and value.get('kind') == 'backup-transition':
                 if transition is None or set(value) != {'kind', 'boundary'} or length > 4096:
                     raise error_type('ipc', runner={'reason': 'WORKER_IPC_REJECTED'})
@@ -728,6 +757,11 @@ def _parent_readback(parent, ctx, identity, last, *, empty=False, error_type=Run
                             detail, last.get('observedPhase'))
                     elif P.R.capacity().closed(last.get('capacity')) is not None:
                         detail['capacityMeasurement'] = last['capacity']
+                    if last.get('endTrace') is not None:
+                        # A rejected sample is still an observation, never a PASS.
+                        raw = dict(detail, configuredLimit=str(detail['configuredLimitBytes']), swapMaximum=str(detail['swapMaximumBytes']))
+                        last['endTrace'].observe(raw, phase=last.get('observedPhase'), progress=last.get('progress'))
+                        detail['end500CapacityTrace'] = last['endTrace'].summary()
                     error.failure_memory = detail
             except BaseException:
                 pass  # Optional enrichment must never displace the first failure or signal.
@@ -737,12 +771,59 @@ def _parent_readback(parent, ctx, identity, last, *, empty=False, error_type=Run
         value['capacityMeasurement'] = P.R.capacity().merge(last.get('capacity'), value['capacityMeasurement'],
             value, last.get('observedPhase'))
         last['capacity'] = value['capacityMeasurement']
+    if ctx.get('endCapacityDiagnostic') is True:
+        if 'endTrace' not in last:
+            last['endTrace'] = P.R.end_capacity_trace().Collector()
+        collector = last['endTrace']
+        components = None
+        if time.monotonic() - last.get('lastComponentsAt', -10) >= 1:
+            try:
+                components = _load('memory_components').observe(P.R.KERNEL_ROOT / P.names(ctx)[0], identity,
+                    last.get('roleBindings', []))
+            except Exception:
+                pass  # Optional attribution cannot replace the resource guard.
+            last['lastComponentsAt'] = time.monotonic()
+        collector.observe(value, phase=last.get('observedPhase'), progress=last.get('progress'), components=components)
+        value['end500CapacityTrace'] = collector.summary()
     last['memory'] = P.R.project_failure_memory(value, True)
     return value
 
 
+def _capacity_checkpoint(last, ctx, identity):
+    def observe(value):
+        need(type(value) is dict and set(value) == {'kind', 'sequence', 'progress', 'binding'}
+             and value['kind'] == 'capacity-checkpoint' and type(value['sequence']) is int
+             and value['sequence'] == last.get('capacitySequence', 0) + 1 and value['sequence'] <= 504)
+        progress, binding = value['progress'], value['binding']
+        need((progress is None) != (binding is None))
+        if progress is not None:
+            maxima = {'authCAS': 500, 'usageRows': 6000, 'nativePostimages': 3501}
+            need(type(progress) is dict and 0 < len(progress) <= 3 and set(progress) <= set(maxima))
+            for key, row in progress.items():
+                need(type(row) is dict and set(row) == {'value', 'kind'} and type(row['value']) is int
+                     and 0 <= row['value'] <= maxima[key] and row['kind'] in ('EXACT', 'CONFIRMED_LOWER_BOUND'))
+                previous = last.get('progress', {}).get(key)
+                need(previous is None or row['value'] >= previous['value'])
+                need(previous is None or previous['kind'] != 'EXACT' or row == previous)
+            last.setdefault('progress', {}).update(progress)
+            last['endTrace'].confirm_progress(last['progress'], time.monotonic_ns())
+            if last.get('memory') is not None:
+                last['memory']['end500CapacityTrace'] = last['endTrace'].summary()
+        else:
+            need(type(binding) is dict and set(binding) == {'postgresHostPID', 'containerId', 'namespacePIDs'}
+                 and type(binding['postgresHostPID']) is int and 1 <= binding['postgresHostPID'] <= 2**31-1
+                 and type(binding['containerId']) is str and re.fullmatch('[a-f0-9]{64}', binding['containerId'])
+                 and type(binding['namespacePIDs']) is dict
+                 and set(binding['namespacePIDs']) <= {'helmut-node', 'postgrest'}
+                 and all(type(n) is int and 1 <= n <= 2**31-1 for n in binding['namespacePIDs'].values()))
+            last['roleBindings'] = _load('end500_capacity_roles').bindings(P.R.KERNEL_ROOT / P.names(ctx)[0], identity,
+                binding['postgresHostPID'], binding['containerId'], binding['namespacePIDs'])
+        last['capacitySequence'] = value['sequence']
+    return observe
+
+
 def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: None,
-                   latch=None, error_type=RunnerStartError, observed=None, transition=None):
+                   latch=None, error_type=RunnerStartError, observed=None, transition=None, capacity_checkpoint=None):
     """Keep the first validated failure, then stop only this owned child."""
     response, failure = None, None
     cleanup = D.unknown_cleanup()
@@ -753,14 +834,14 @@ def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: N
             raise _diagnose(error, 'worker', 'WORKER_START_REJECTED', memory(), error_type=error_type) from None
         while child.is_alive():
             if response is None:
-                response = _read_worker_response(receiver, deadline, error_type=error_type, observed=observed, transition=transition)
+                response = _read_worker_response(receiver, deadline, error_type=error_type, observed=observed, transition=transition, capacity_checkpoint=capacity_checkpoint)
             if type(response) is dict and response['ok'] is False:
                 raise _response_error(response, error_type=error_type)
             guard()
             time.sleep(.1)
         child.join(timeout=5)
         if response is None:
-            response = _read_worker_response(receiver, deadline, wait=1, error_type=error_type, observed=observed, transition=transition)
+            response = _read_worker_response(receiver, deadline, wait=1, error_type=error_type, observed=observed, transition=transition, capacity_checkpoint=capacity_checkpoint)
         if type(response) is dict and response['ok'] is False:
             raise _response_error(response, error_type=error_type)
         code = child.exitcode
@@ -780,7 +861,7 @@ def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: N
             try:
                 pending = response
                 if pending is None and failure.runner['reason'] != 'SUPERVISOR_INTERRUPTED':
-                    pending = _read_worker_response(receiver, deadline, error_type=error_type, observed=observed)
+                    pending = _read_worker_response(receiver, deadline, error_type=error_type, observed=observed, capacity_checkpoint=capacity_checkpoint)
                 if type(pending) is dict and pending.get('ok') is False:
                     first = _response_error(pending, error_type=error_type)
                     detail = dict(first.runner or failure.runner)
@@ -794,6 +875,16 @@ def _monitor_child(child, receiver, sender, guard, deadline, *, memory=lambda: N
             except BaseException:
                 pass
         checkpoint = None if observed is None else D.phase_observation(observed) or 'UNKNOWN'
+        # The final pre-stop drain can confirm progress after the first RAM
+        # rejection. Preserve its separate receipt time without replacing the
+        # first rejected counters or pretending it was a simultaneous sample.
+        if capacity_checkpoint is not None and failure.runner is not None:
+            cached = memory()
+            if type(cached) is dict and 'end500CapacityTrace' in cached:
+                detail = dict(failure.runner)
+                if 'memory' in detail:
+                    detail['memory'] = dict(detail['memory'], end500CapacityTrace=cached['end500CapacityTrace'])
+                    failure.runner = D.runner(detail, _closed_memory); failure.refresh()
         if checkpoint is not None:
             # May have been received in the final pre-stop drain. No temporal
             # alignment to memory.peak or the first failure is asserted.
@@ -880,17 +971,22 @@ def supervise(request, private_payload, *, latch=None):
     try:
         response, cleanup = _monitor_child(child, receiver, sender, guard, deadline,
             memory=lambda: last['memory'], latch=latch, observed=observed,
+            **({'capacity_checkpoint': _capacity_checkpoint(last, ctx, identity)} if request['mode'] == END_CAPACITY else {}),
             transition=_supervisor_backup_transition(ctx, identity, last, child, 'end500', guard=guard) if request['mode'] == PHASED else None)
         response['result'] = _worker_result(response['result'], request)
         if request['mode'] == PHASED:
             need(last.get('backupAck') == response['result']['resourcePhases']['transition'])
+        if request['mode'] == END_CAPACITY:
+            need(last.get('progress') == {key: {'value': n, 'kind': 'EXACT'}
+                for key, n in (('authCAS', 500), ('usageRows', 6000), ('nativePostimages', 3501))})
         PHASE = 'closure'; guard()
         need(_members(ctx) == {os.getpid()})
         return {'worker': response['result'], 'workerExited': True,
                 'checkoutFiles': len(manifest['sourcePins']), 'checkoutBytes': manifest['checkoutBytes'],
                 'binaryBytes': manifest['binaryBytes'], 'dockerSocketGID': docker_gid,
                 'workerUID': 1000, 'workerGID': 1000,
-                **({'capacityMeasurement': last['capacity']} if request['mode'] == CAPACITY else {}),
+                **({'capacityMeasurement': last['capacity']} if request['mode'] in (CAPACITY, END_CAPACITY) else {}),
+                **({'end500CapacityTrace': last['endTrace'].summary()} if request['mode'] == END_CAPACITY else {}),
                 **({'resourcePhases': P.R.phase_contract().closure(last['backupAck'], guard()),
                     'processingMemoryChecksCompleted': True, 'backupSafetyChecksCompleted': True}
                    if request['mode'] == PHASED else {})}
@@ -923,7 +1019,7 @@ def _service_argv(request, ipc_dir):
             '/usr/bin/env', '-i', *[key + '=' + value for key, value in P.process_env(ctx).items()],
             '/usr/bin/python3', '-B', str(SCRIPT), '--internal-supervisor', '--expected-commit', ctx['exactCommit'],
             '--run-id', ctx['runId'], '--nonce', ctx['nonce'], '--ipc-dir', str(ipc_dir),
-            *(['--capacity-diagnostic'] if request['mode'] == CAPACITY else [])]
+            *(['--capacity-diagnostic'] if request['mode'] in (CAPACITY, END_CAPACITY) else [])]
 
 
 def _receive_result(listener, process, deadline, *, error_type=RunnerStartError):
@@ -1020,6 +1116,9 @@ def _cleanup_launch(ctx, parent, identity, created, process, listener, latch, fa
                                     observed['capacityMeasurement'] = previous
                             except BaseException:
                                 pass  # Keep original failure/core counters if optional aggregation fails.
+                        previous_trace = detail.get('memory', {}).get('end500CapacityTrace')
+                        if ctx.get('endCapacityDiagnostic') is True and P.R.end_capacity_trace().closed(previous_trace) is not None:
+                            observed['end500CapacityTrace'] = previous_trace
                         detail.update(memory=observed, memorySource='POST_FAILURE_READBACK')
                 failure.runner = D.runner(detail, _closed_memory); failure.refresh()
                 try:
@@ -1114,7 +1213,7 @@ def launch(request, private_payload):
     last, empty_observed = {'memory': None}, False
     try:
         PHASE = 'parent'
-        host_admission = P.R.capacity().host_admission() if request['mode'] in (CAPACITY, PHASED) else None
+        host_admission = P.R.capacity().host_admission() if request['mode'] in (CAPACITY, PHASED, END_CAPACITY) else None
         P.privileged('prepare', ctx); created = True
         identity = P.identity(P.R.KERNEL_ROOT / P.names(ctx)[0])
         initial = _parent_readback(P, ctx, identity, last, empty=True)
@@ -1137,9 +1236,12 @@ def launch(request, private_payload):
         need(type(result.get('result')) is dict)
         result['result']['worker'] = _worker_result(result['result']['worker'], request)
         PHASE = 'closure'
-        if request['mode'] == CAPACITY:
+        if request['mode'] in (CAPACITY, END_CAPACITY):
             need(P.R.capacity().closed(result['result'].get('capacityMeasurement')) is not None)
             last['capacity'] = result['result']['capacityMeasurement']
+        if request['mode'] == END_CAPACITY:
+            need(P.R.end_capacity_trace().closed(result['result'].get('end500CapacityTrace')) is not None)
+            last['serviceEndTrace'] = result['result']['end500CapacityTrace']
         if request['mode'] == PHASED:
             phases = result['result'].get('resourcePhases')
             P.R.phase_contract().validate_closure(phases, 'end500', P.R.phase_context(ctx))
@@ -1151,10 +1253,13 @@ def launch(request, private_payload):
         need(final['kernelLifetimePeakBytes'] >= initial['kernelLifetimePeakBytes'] and not latch.seen)
         empty_observed = True
         return {'status': ('PASS_FRESH_PHASED_RUNNER_OWNED_LIFETIME_ONLY' if request['mode'] == PHASED else
+                           'COMPLETED_FULL_END500_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == END_CAPACITY else
                            'COMPLETED_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == CAPACITY
                            else 'PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY'), 'exactCommit': ctx['exactCommit'],
                 **({'hostAdmission': host_admission, 'capacityMeasurement': last['capacity'],
-                    'legacyRestoreAccepted': False} if request['mode'] == CAPACITY else {}),
+                    'legacyRestoreAccepted': False} if request['mode'] in (CAPACITY, END_CAPACITY) else {}),
+                **({'end500CapacityTrace': last['serviceEndTrace'], 'legacyEnd500Accepted': False,
+                    'diagnosticOnly': True} if request['mode'] == END_CAPACITY else {}),
                 **({'resourcePhases': P.R.phase_contract().closure(phases['transition'], final),
                     'processingMemoryChecksCompleted': True, 'backupSafetyChecksCompleted': True}
                    if request['mode'] == PHASED else {}),
@@ -1204,7 +1309,7 @@ def main(argv=None):
         validate_request(request, private_payload)
         actual_ctx = _ctx(request)
         need({key: value for key, value in actual_ctx.items()
-              if key not in ('processingBackupStage', 'processingBackupPhase', 'processingImageId')} == ctx)
+              if key not in ('processingBackupStage', 'processingBackupPhase', 'processingImageId', 'endCapacityDiagnostic')} == ctx)
         ctx = actual_ctx
         # root privileged helper env intentionally contains no secret values.
         result = supervise(request, private_payload, latch=latch)

@@ -25,6 +25,7 @@ OBSERVED_PHASES = frozenset(('arguments', 'event', 'approval', 'qualification', 
         'key-import', 'encrypted-index', 'download', 'cipher-readback', 'authenticated-reception', 'relocation', 'agent-close')) | frozenset(
     prefix + name for prefix in ('', 'connection-') for name in ('backup-export', 'backup-freeze',
         'backup-collect', 'backup-seal', 'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'))
+OBSERVED_PHASES |= frozenset('capacity-' + name for name in ('transport-complete', 'materialization', 'restore-ready', 'seed', 'seed-ready', 'auth-cas', 'native-audit', 'export', 'processing-stopped'))
 MAX_PHASE_FRAMES = 128
 
 

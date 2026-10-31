@@ -132,6 +132,10 @@ def prepare(inputs=None,common_resources=None):
           'availableDiskBytes':available_disk(),'seedSHA256':SEED_SHA,'appPins':pins,'databaseCreated':False,'journalTestsRepeated':False},f,indent=2);f.write('\n');f.flush();os.fdatasync(f.fileno())
     print(json.dumps({'status':'PASS_LOCAL_FILES_PREPARED_NO_DATABASE','appAllocatedBytes':allocated,'availableDiskBytes':available_disk()}),flush=True)
 
+def capacity_phase(resources,name):
+    if getattr(resources,'end_capacity_diagnostic',False):
+        resources.phase_observer('capacity-'+name)
+
 class Watch(M.Supervisor):
     def __init__(self,cgroup):
         self.backup_runner=None;self.common_resources=None;self.disk_guard=None
@@ -182,7 +186,7 @@ class Watch(M.Supervisor):
         try:
             if self.common_resources is not None:self.common_resources.sample()
             if getattr(self.common_resources,'capacity_diagnostic',False) is True or getattr(self.common_resources,'memory_phase',None)=='backup':
-                # Restore-only admission owns time/disk checks; no Full500 body runs.
+                # Explicit capacity admission owns the unchanged hard/time/disk safety checks.
                 assert self.start_guard is None and not self.mock_backup_closure
                 self.last=self.common_resources.sample()
                 self.maximum=max(self.maximum,self.last['kernelLifetimePeakBytes'])
@@ -232,6 +236,8 @@ class Watch(M.Supervisor):
         assert x.get('index')==len(self.cas_records),'w15-forward-cas-sequence'
         assert x['postimagePreserved']is True and x['revisionReadback']is True
         self.cas_records.append(x)
+        if getattr(self.common_resources,'end_capacity_diagnostic',False):
+            self.common_resources.capacity_observer(progress={'authCAS':{'value':len(self.cas_records),'kind':'CONFIRMED_LOWER_BOUND'}})
         self.publish('memory-cas-accepted',x['index'],'PASS')
     def disk_check(self):
         if self.disk_guard is not None:self.disk_guard()
@@ -301,6 +307,7 @@ def _stop_runtime_container(inputs,resources,owned_id):
 def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=None):
     inputs=_checked_runtime_inputs(inputs)
     common_resources=_checked_common_resources(inputs,common_resources)
+    physical_limit=common_resources.container_limit if getattr(common_resources,'end_capacity_diagnostic',False) else M.LIMIT
     prepared=_checked_prepared(inputs,common_resources)
     journal_review=inputs.report('JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json')if inputs else json.loads((REPORTS/'JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json').read_text())
     assert journal_review['status']=='PASS_INDEPENDENT_BOUNDED_JOURNAL_DRAIN_AND_FOUR_FAULTS'
@@ -376,13 +383,14 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
         pgdata=WORK/'pgdata';pgdata.mkdir(mode=0o700)
         state=WORK/'state';state.mkdir(mode=0o700)
         runtime_mounts=()
+        capacity_phase(common_resources,'materialization')
         if inputs is not None:
             runtime_mounts=_runtime_module('runtime_materialization').materialize(
               PREP/'runtime-files',app=stage/'app',node=CACHE/'node',postgrest=CACHE/'postgrest',
               roles=original_paths['localRoles'],dump=original_paths['frozenSourceDump'],state=state,
               command=command_path,command_binding=WORK/'CURRENT_COMMAND_BINDING.SAFE.json',
               bound=bound_path,guard=common_resources.sample)
-        M.docker('create','--name',CONTAINER,'--pull=never','--network=none','--restart=no','--memory='+str(M.LIMIT),'--memory-swap='+str(M.LIMIT),
+        M.docker('create','--name',CONTAINER,'--pull=never','--network=none','--restart=no','--memory='+str(physical_limit),'--memory-swap='+str(physical_limit),
           *(['--cgroup-parent='+common_resources.unit]if common_resources is not None else[]),
           *([item for key,value in _runtime_container_labels(inputs).items()for item in('--label',key+'='+value)]if inputs is not None else[]),
           '--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
@@ -393,7 +401,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
         if inputs is not None:owned_id=_owned_runtime_container(inputs,common_resources)['Id']
         M.docker('start',owned_id or CONTAINER);info=json.loads(M.docker('inspect',owned_id or CONTAINER))[0]
         if inputs is not None:_owned_runtime_container(inputs,common_resources,owned_id)
-        assert info['HostConfig']['NetworkMode']=='none'and info['HostConfig']['Memory']==M.LIMIT and info['HostConfig']['MemorySwap']==M.LIMIT
+        assert info['HostConfig']['NetworkMode']=='none'and info['HostConfig']['Memory']==physical_limit and info['HostConfig']['MemorySwap']==physical_limit
         if inputs is not None:
             _runtime_module('runtime_materialization').verify_mounts(info['Mounts'],PREP/'runtime-files')
         seed_mounts=[x for x in info['Mounts']if x['Destination']==SEED_MOUNT]
@@ -428,7 +436,11 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
             # The host copies already belong to UID1000; readonly mounts must
             # not be recursively chowned/chmodded by an out-of-parent daemon.
             M.docker('exec',CONTAINER,'chown','1000:1000',BASE)
+        if getattr(common_resources,'end_capacity_diagnostic',False):
+            common_resources.capacity_observer(binding={'postgresHostPID':pid,'containerId':info['Id'],'namespacePIDs':{}})
         _restore_database(inputs,w)
+        capacity_phase(common_resources,'restore-ready')
+        capacity_phase(common_resources,'seed')
         # Seed all retained500-end positions in native tables, one bounded row
         # per statement. No fake execution/quality claims or source mutation.
         row_ids={}
@@ -447,6 +459,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
         assert M.read('select count(*)from public.mandate_profiles where aktiv;',database=DB)==0
         M.save('SEED.SAFE.json',{'nativeCommittedCounts':counts,'nativeExactPostimageChecks':3501,'activeProfiles':0,'executionAuthority':False,'actualResults':False})
         seeded=True
+        capacity_phase(common_resources,'seed-ready')
         # Install only in this new netless copy after all native seed postimages.
         M.sql((ROOT/'supabase/proposals/auth_usage_atomic_local.sql').read_text(),database=DB)
         initial=M.read("select jsonb_build_object('logicalHash',encode(sha256(convert_to((data-'_authStoreRevision')::text,'UTF8')),'hex'),'usage',jsonb_array_length(data->'llmUsage'))from public.helmut_store where id='main-auth';",database=DB)
@@ -467,6 +480,14 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
             if r.returncode==0:break
             time.sleep(.1)
         assert r.returncode==0,'w15-forward-gateway-readiness'
+        if getattr(common_resources,'end_capacity_diagnostic',False):
+            namespace_pids={}
+            for role,filename in (('helmut-node','gateway.pid'),('postgrest','postgrest.pid')):
+                raw=(WORK/'state'/filename).read_text()
+                assert raw.isascii() and raw.isdigit() and 0<int(raw)<2**31,'w15-capacity-process-binding'
+                namespace_pids[role]=int(raw)
+            common_resources.capacity_observer(binding={'postgresHostPID':pid,'containerId':info['Id'],'namespacePIDs':namespace_pids})
+        capacity_phase(common_resources,'auth-cas')
         inner(w,'run',3600)
         M.copy_out('FORWARD_RESULT.SAFE.json');result=json.loads((WORK/'FORWARD_RESULT.SAFE.json').read_text())
         assert result['status']=='PASS_FORWARD_COMPONENTS_COMMON_KERNEL_REVIEW_PENDING'
@@ -525,12 +546,16 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
                 except BaseException:pass
             if seeded:
                 try:
+                    capacity_phase(common_resources,'native-audit')
                     w.disk_phase='capture';w.audit_remaining=64*1024*1024;w.disk_check()
                     M.STARTED_INNER_ACTIONS.add('audit')
                     final_audit=AUDIT.capture(CONTAINER,DB,WORK,paths,expectedProbe=499 if not failure and result and len(w.cas_records)==500 else None,
                       input_binding=inputs,
                       guard=w.audit_guard,stop_owned=lambda:M.stop_owned(['audit'],require_registered=True))
                     assert final_audit['status']=='PASS_COMPLETE_LOSSLESS_NATIVE_POSTIMAGES_AND_ZERO_ONLY'
+                    if getattr(common_resources,'end_capacity_diagnostic',False) and not failure and len(w.cas_records)==500:
+                        assert final_audit['fullLogicalUsageRows']==6000 and final_audit['totalExactPostimages']==3501
+                        common_resources.capacity_observer(progress={key:{'value':n,'kind':'EXACT'} for key,n in (('authCAS',500),('usageRows',6000),('nativePostimages',3501))})
                     # A second fresh0 read after the consistent audit snapshot.
                     zero=M.read('select count(*)from public.mandate_profiles where aktiv;',database=DB)==0
                     assert zero,'w15-forward-after-audit-active-unknown'
@@ -539,6 +564,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
                     failure=failure or {'type':type(error).__name__,'reason':'w15-forward-native-final-audit-failed-or-unknown'}
         if inputs is not None and w and created and seeded and zero and not failure and not w.failure and final_audit:
             try:
+                capacity_phase(common_resources,'export')
                 w.disk_phase='processing'
                 database_export=_runtime_module('runtime_backup').export_final_database(
                   inputs.backup_context(),expected_context=inputs.backup_context(),work=WORK,
@@ -558,15 +584,20 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
             w.stop()
             if w.failure:failure=failure or w.failure
         future_capacity=future_mock500_capacity(w.maximum,result.get('projectedAdditionalPhysicalBytes'))if w and result else None
-        actual_memory_accepted=bool(w and final_sample_verified and not failure and not w.failure and not w.memory_failure
+        functional_closure_completed=bool(w and final_sample_verified and not failure and not w.failure and not w.memory_failure
           and result and result['status']=='PASS_FORWARD_COMPONENTS_COMMON_KERNEL_REVIEW_PENDING'and len(w.cas_records)==500
           and final_audit and final_audit['status']=='PASS_COMPLETE_LOSSLESS_NATIVE_POSTIMAGES_AND_ZERO_ONLY'and zero
           and(inputs is None or database_export is not None))
+        capacity_diagnostic=getattr(common_resources,'end_capacity_diagnostic',False)
+        actual_memory_accepted=functional_closure_completed and not capacity_diagnostic
         M.save('CONTROLLER_RESULT.SAFE.json',{'status':('PASS_FORWARD_PHASE_COMMON_CLOSURE_PENDING'if inputs is not None else'PASS_FORWARD_ALLOCATION_INDEPENDENT_REVIEW_PENDING')if not failure and zero else'FAIL_OR_UNKNOWN',
           'failure':failure,'innerStopFailure':w.stop_failure if w else None,'stopFailures':stop_failures,'zeroCheckFailure':zero_check_failure,'serviceClosure':service_closure,'activeProfiles':0 if zero else None,'CASCompleted':len(w.cas_records)if w else 0,
           'commonKernelPeakBytes':w.maximum if w else None,'lastKernel':w.last if w else None,
-          'memoryContract':M.MEMORY,'physicalHardCapBytes':M.LIMIT,'maximumAllowedPeakBytes':M.MAXIMUM,
-          'requiredPhysicalReserveBytes':M.RESERVE,'finalKernelReadbackVerified':final_sample_verified,
+          'memoryContract':(_runtime_module('common_resources').end_capacity_trace().PROFILE if capacity_diagnostic else M.MEMORY),
+          'physicalHardCapBytes':physical_limit,'maximumAllowedPeakBytes':M.MAXIMUM,'legacyPeakDiagnosticOnly':capacity_diagnostic,
+          'requiredPhysicalReserveBytes':0 if capacity_diagnostic else M.RESERVE,
+          'requiredHostReserveBytes':2147483648 if capacity_diagnostic else None,
+          'functionalProcessingClosureCompleted':functional_closure_completed,'finalKernelReadbackVerified':final_sample_verified,
           'end500ActualMemoryAccepted':actual_memory_accepted if inputs is None else False,
           'preBackupMemoryChecksPassed':actual_memory_accepted if inputs is not None else None,
           'fullLifetimeClosureAccepted':False,'memoryMeasurementFailure':w.memory_failure if w else None,
@@ -580,7 +611,12 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
             # Collection and encryption remain inside the same parent lifetime,
             # guarded at each streamed chunk after the progress files freeze.
             try:
-                assert not failure and actual_memory_accepted,'w15-backup-requires-successful-owned-closure'
+                assert not failure and (functional_closure_completed if capacity_diagnostic else actual_memory_accepted),'w15-backup-requires-successful-owned-closure'
+                if capacity_diagnostic:
+                    assert service_closure['status']=='PASS_GENUINE_OWNED_SERVICE_EXIT'
+                    assert w.finished.is_set() and not w.thread.is_alive() and not w.reporter.is_alive() and not w.stop_failure
+                    common_resources.sample()
+                    capacity_phase(common_resources,'processing-stopped')
                 if getattr(common_resources,'processing_backup_stage',None)=='end500':
                     assert service_closure['status']=='PASS_GENUINE_OWNED_SERVICE_EXIT'
                     assert w.finished.is_set() and not w.thread.is_alive() and not w.reporter.is_alive() and not w.stop_failure

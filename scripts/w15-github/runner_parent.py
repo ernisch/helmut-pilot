@@ -166,7 +166,8 @@ def github_binding(run_id, commit, *, capacity_diagnostic=False, processing_back
     # Both executable repository sources must equal raw blobs at the exact HEAD.
     for file in (SCRIPT, SCRIPT.with_name('common_resources.py'),
                  *([SCRIPT.with_name('restore_capacity.py')] if capacity_diagnostic or processing_backup_stage is not None else []),
-                 *([SCRIPT.with_name('phase_contract.py')] if processing_backup_stage is not None else [])):
+                 *([SCRIPT.with_name('phase_contract.py')] if processing_backup_stage is not None else []),
+                 *([SCRIPT.with_name(name + '.py') for name in ('end500_capacity_trace', 'memory_components', 'runner_diagnostics', 'end500_capacity_roles')] if capacity_diagnostic else [])):
         phase('github-entry-pin')
         relative = str(file.relative_to(REPO))
         result = command(['/usr/bin/git', '--no-optional-locks', '-c', 'core.hooksPath=/dev/null',

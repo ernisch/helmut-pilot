@@ -24,14 +24,15 @@ BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 LIMITS = {'comparisonBudgetBytes': 2560000000, 'maximumConsumptionBytes': 2048000000,
           'requiredReserveBytes': 512000000, 'swapBytes': 0}
 CAPACITY = 'end500-restore-capacity-diagnostic'
+END_CAPACITY = 'end500-full-capacity-diagnostic'
 PHASED = 'end500-full-phased-gated'
 DIAGNOSTIC = 'end500-restore-export-diagnostic'
 EXPORT_ACTIONS = ('backup-before', 'backup-dump', 'backup-roles', 'backup-after')
 EXPORT_PHASES = {'export-' + action for action in EXPORT_ACTIONS}
 RESTORE_ACTIONS = ('restore-create', 'restore-roles', 'restore-render', 'restore-apply', 'restore-check')
 RESTORE_PHASES = set(RESTORE_ACTIONS)
-WALL = {PHASED: 3600, CAPACITY: 1800, DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
-SCOPES = {PHASED: 'ISOLATED_GITHUB_END500_PHASED_ONLY', CAPACITY: 'ISOLATED_GITHUB_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY', DIAGNOSTIC: 'ISOLATED_GITHUB_RESTORE_EXPORT_DIAGNOSTIC_ONLY', 'end500-restore-gated': 'ISOLATED_GITHUB_RECEPTION_RESTORE_ONLY',
+WALL = {END_CAPACITY: 3600, PHASED: 3600, CAPACITY: 1800, DIAGNOSTIC: 1800, 'end500-restore-synthetic': 300, 'end500-restore-gated': 1800, 'end500-full-gated': 3600}
+SCOPES = {END_CAPACITY: 'ISOLATED_GITHUB_END500_CAPACITY_DIAGNOSTIC_ONLY', PHASED: 'ISOLATED_GITHUB_END500_PHASED_ONLY', CAPACITY: 'ISOLATED_GITHUB_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY', DIAGNOSTIC: 'ISOLATED_GITHUB_RESTORE_EXPORT_DIAGNOSTIC_ONLY', 'end500-restore-gated': 'ISOLATED_GITHUB_RECEPTION_RESTORE_ONLY',
           'end500-full-gated': 'ISOLATED_GITHUB_END500_ONLY'}
 MAX_IPC, MAX_QUALIFICATION, MAX_INPUT = 1024 * 1024, 8 * 1024 * 1024, 65535
 SEALED_SHA = 'af3bd654fa292ad256e0fa265c2fb3d968e945633f1439a12da72f015aeab86f'
@@ -55,7 +56,7 @@ PHASES = {'arguments', 'event', 'approval', 'qualification', 'binding', 'resourc
               'connection-' + phase for phase in CONNECTION_PHASES} | {
               'receiver-' + phase for phase in RECEIVER_PHASES} | BACKUP_PHASES
 RUNNER_PHASES = {'arguments', 'binding', 'parent', 'service', 'staging', 'worker', 'closure', 'ipc'}
-STATUSES = {PHASED: 'PASS_END500_PHASED_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING', DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
+STATUSES = {END_CAPACITY: 'MEASURED_FULL_END500_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED', PHASED: 'PASS_END500_PHASED_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING', DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
             CAPACITY: 'MEASURED_FULL_RESTORE_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED',
                  'end500-restore-gated': 'PASS_SAME_JOB_RESTORE_BACKUP_500_INACTIVE_ONLY_START_BLOCKED',
             'end500-full-gated': 'PASS_END500_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING'}
@@ -157,7 +158,7 @@ def _public_binding(value):
          and re.fullmatch('[a-f0-9]{40}', value['exactCommit'])
          and type(value.get('runId')) is str and re.fullmatch('[1-9][0-9]{4,19}', value['runId'])
          and type(value.get('runAttempt')) is int and value['runAttempt'] == 1
-         and value.get('limits') == (_load('restore_capacity').LIMITS if value.get('mode') == CAPACITY else LIMITS) and all(type(n) is int for n in value['limits'].values())
+         and value.get('limits') == (_load('restore_capacity').LIMITS if value.get('mode') in (CAPACITY, END_CAPACITY) else LIMITS) and all(type(n) is int for n in value['limits'].values())
          and type(value.get('maximumWallSeconds')) is int
          and value['maximumWallSeconds'] == WALL[value['mode']]
          and type(value.get('imageId')) is str and re.fullmatch('sha256:[a-f0-9]{64}', value['imageId']), 'binding')
@@ -187,7 +188,7 @@ def validate_admission(value, private_payload, *, now=None):
                 'issuedAt', 'expiresAt', 'maxStorageUSD', 'maxProviderCalls'}
     if value['mode'] == 'end500-full-gated':
         required.add('restoreAcceptance')
-    if value['mode'] == PHASED:
+    if value['mode'] in (PHASED, END_CAPACITY):
         required |= {'restoreFunctionAcceptance', 'resourceContract'}
     need(type(approval) is dict and set(approval) == required
          and approval['schema'] == 'helmut-w15-workflow-start-approval/1'
@@ -210,10 +211,10 @@ def validate_admission(value, private_payload, *, now=None):
              and previous['exactCommit'] == value['exactCommit'] and type(previous['runId']) is str
              and re.fullmatch('[1-9][0-9]{4,19}', previous['runId']) and previous['runId'] != value['runId']
              and type(previous['receiptSHA256']) is str and re.fullmatch('[a-f0-9]{64}', previous['receiptSHA256']), 'approval')
-    if value['mode'] == PHASED:
+    if value['mode'] in (PHASED, END_CAPACITY):
         contract = _load('phase_contract')
         reference = approval['restoreFunctionAcceptance']
-        need(approval['resourceContract'] == contract.END_PROFILE and type(reference) is dict
+        need(approval['resourceContract'] == (contract.END_PROFILE if value['mode'] == PHASED else _load('end500_capacity_trace').PROFILE) and type(reference) is dict
              and set(reference) == set(contract.FUNCTION_REFERENCE) | {'targetCommit', 'compatibilityReviewSHA256'}
              and all(reference[k] == v for k, v in contract.FUNCTION_REFERENCE.items())
              and reference['legacyRestoreAccepted'] is False
@@ -323,7 +324,7 @@ def _synthetic(manifest, runtime, context, qualification, guard):
 def validate_public_result(result):
     keys = {'status', 'mode', 'exactCommit', 'runId', 'runAttempt', 'verifiedFiles', 'verifiedBytes'} | RESULT_BOOLS | RESULT_FALSE
     diagnostic = type(result) is dict and result.get('mode') == DIAGNOSTIC
-    if type(result) is dict and result.get('mode') == CAPACITY:
+    if type(result) is dict and result.get('mode') in (CAPACITY, END_CAPACITY):
         keys |= {'capacityDiagnosticOnly', 'legacyRestoreAccepted'}
     if type(result) is dict and result.get('mode') == PHASED:
         keys |= {'resourcePhases', 'processingMemoryChecksCompleted', 'backupSafetyChecksCompleted'}
@@ -342,14 +343,14 @@ def validate_public_result(result):
          and result['originalTransferPerformed'] is (not synthetic)
          and result['isolatedRestoreObserved'] is (not synthetic)
          and result['backupRoundtripVerified'] is (not synthetic and not diagnostic)
-         and result['end500BodyCompleted'] is (result['mode'] in ('end500-full-gated', PHASED)), 'closure')
+         and result['end500BodyCompleted'] is (result['mode'] in ('end500-full-gated', PHASED, END_CAPACITY)), 'closure')
     if diagnostic:
         need(result['diagnosticExportOnly'] is True and result['ownedContainerStopped'] is True
              and result['watchStopped'] is True and result['remoteReadbackObserved'] is False
              and result['databaseRestoreObserved'] is False and result['fullRestoreAccepted'] is False
              and all(type(result[k]) is int for k in ('restoreSteps', 'exportActions', 'profiles', 'activeProfiles'))
              and (result['restoreSteps'], result['exportActions'], result['profiles'], result['activeProfiles']) == (5, 4, 500, 0), 'closure')
-    if result['mode'] == CAPACITY:
+    if result['mode'] in (CAPACITY, END_CAPACITY):
         need(result['capacityDiagnosticOnly'] is True and result['legacyRestoreAccepted'] is False, 'closure')
     if result['mode'] == PHASED:
         need(result['processingMemoryChecksCompleted'] is True and result['backupSafetyChecksCompleted'] is True, 'closure')
@@ -365,13 +366,13 @@ def _result(manifest, resource_phases=None):
     return validate_public_result({'status': STATUSES[manifest['mode']],
         **{key: manifest[key] for key in ('mode', 'exactCommit', 'runId', 'runAttempt')},
         'verifiedFiles': 0 if synthetic else 12, 'verifiedBytes': 0 if synthetic else 242570240,
-        'isolatedRestoreObserved': not synthetic, 'end500BodyCompleted': manifest['mode'] in ('end500-full-gated', PHASED),
+        'isolatedRestoreObserved': not synthetic, 'end500BodyCompleted': manifest['mode'] in ('end500-full-gated', PHASED, END_CAPACITY),
         'originalTransferPerformed': not synthetic, 'backupRoundtripVerified': not synthetic and manifest['mode'] != DIAGNOSTIC,
         'sourceQualificationBound': True, 'syntheticQualification': synthetic,
         **dict.fromkeys(RESULT_FALSE, False),
         **({'resourcePhases': resource_phases, 'processingMemoryChecksCompleted': True,
             'backupSafetyChecksCompleted': True} if manifest['mode'] == PHASED else {}),
-        **({'capacityDiagnosticOnly': True, 'legacyRestoreAccepted': False} if manifest['mode'] == CAPACITY else {}),
+        **({'capacityDiagnosticOnly': True, 'legacyRestoreAccepted': False} if manifest['mode'] in (CAPACITY, END_CAPACITY) else {}),
         **({'diagnosticExportOnly': True, 'restoreSteps': 5, 'exportActions': 4, 'profiles': 500, 'activeProfiles': 0,
             'ownedContainerStopped': True, 'watchStopped': True, 'remoteReadbackObserved': False,
             'databaseRestoreObserved': False, 'fullRestoreAccepted': False} if manifest['mode'] == DIAGNOSTIC else {})})
@@ -422,7 +423,7 @@ def _connection_failure_phase(error, connection_code, fallback):
     return 'connection-' + phase
 
 
-def run_worker(manifest, private_payload, *, phase_observer=None, backup_transition=None):
+def run_worker(manifest, private_payload, *, phase_observer=None, backup_transition=None, capacity_observer=None):
     """A's single fixed UID1000 worker. Call only after measured bootstrap."""
     phase, connection_code, resources, backup_code, backup_failure = 'binding', None, None, None, None
     def observe(name):
@@ -439,9 +440,13 @@ def run_worker(manifest, private_payload, *, phase_observer=None, backup_transit
         context = _context(manifest, runtime)
         runtime.C.validate_context(context, forward.ROOT)
         resources = (forward._runtime_module('common_resources').observe(context, processing_backup_stage='end500')
-                     if manifest['mode'] == PHASED else forward._runtime_module('common_resources').observe(context, capacity_diagnostic=True)
-                     if manifest['mode'] == CAPACITY else forward.open_common_resources(context))
+                     if manifest['mode'] == PHASED else forward._runtime_module('common_resources').observe(context, capacity_diagnostic=True,
+                         **({'end_capacity_diagnostic': True} if manifest['mode'] == END_CAPACITY else {}))
+                     if manifest['mode'] in (CAPACITY, END_CAPACITY) else forward.open_common_resources(context))
         resources.phase_observer = phase_observer
+        if manifest['mode'] == END_CAPACITY:
+            need(callable(capacity_observer), 'binding')
+            resources.capacity_observer = capacity_observer
         if manifest['mode'] == PHASED:
             need(callable(backup_transition), 'binding')
             resources.backup_transition = backup_transition
@@ -450,7 +455,7 @@ def run_worker(manifest, private_payload, *, phase_observer=None, backup_transit
         resource_code = _load('restore_resources', manifest['stagedRepo'])
         plan = resource_code.admit_disk_plan(manifest['runnerTemp'], checkout_bytes=manifest['checkoutBytes'],
             binary_bytes=manifest['binaryBytes'], maximum_wall_seconds=manifest['maximumWallSeconds'])
-        if manifest['mode'] == CAPACITY:
+        if manifest['mode'] in (CAPACITY, END_CAPACITY):
             plan.update(commonMemoryLimitBytes=4999999488, maximumActualCommonLifetimePeakBytes=4999999488,
                         requiredMemoryReserveBytes=0, capacityDiagnosticOnly=True, legacyContractAccepted=False)
         guard = resource_code.DiskGuard(manifest['runnerTemp'], plan, resources)
@@ -485,7 +490,7 @@ def run_worker(manifest, private_payload, *, phase_observer=None, backup_transit
                      and restored['remoteReadbackObserved'] is False and restored['databaseRestoreObserved'] is False, phase)
             else:
                 receipts = []
-                full = manifest['mode'] in ('end500-full-gated', PHASED)
+                full = manifest['mode'] in ('end500-full-gated', PHASED, END_CAPACITY)
                 complete = (backup_code.completion_hook if full else backup_code.restore_completion_hook)(manifest, private_payload, guard)
                 def capture(**kwargs):
                     nonlocal backup_failure
@@ -511,6 +516,8 @@ def run_worker(manifest, private_payload, *, phase_observer=None, backup_transit
                 if full:
                     phase = 'end500'
                     observe(phase)
+                    if manifest['mode'] == END_CAPACITY:
+                        observe('capacity-transport-complete')
                     forward.main(inputs=connection.controller_inputs(), common_resources=resources,
                                  backup_completion=capture, disk_guard=guard)
                 else:
@@ -584,12 +591,16 @@ def main(argv=None):
         # The outer bootstrap observes the actual lifetime after worker exit;
         # preserve that evidence and validate the worker's closed scalar part.
         expected_status = ('PASS_FRESH_PHASED_RUNNER_OWNED_LIFETIME_ONLY' if request['mode'] == PHASED else
+                           'COMPLETED_FULL_END500_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == END_CAPACITY else
                            'COMPLETED_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == CAPACITY
                            else 'PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY')
         need(type(receipt) is dict and receipt.get('status') == expected_status, 'closure')
-        if request['mode'] == CAPACITY:
+        if request['mode'] in (CAPACITY, END_CAPACITY):
             need(receipt.get('legacyRestoreAccepted') is False
                  and _load('restore_capacity').closed(receipt.get('capacityMeasurement')) is not None, 'closure')
+        if request['mode'] == END_CAPACITY:
+            need(receipt.get('legacyEnd500Accepted') is False and receipt.get('diagnosticOnly') is True
+                 and _load('end500_capacity_trace').closed(receipt.get('end500CapacityTrace')) is not None, 'closure')
         if request['mode'] == PHASED:
             _load('phase_contract').validate_closure(receipt.get('resourcePhases'), 'end500',
                 {k: request[k] for k in ('exactCommit', 'runId', 'runAttempt', 'nonce')})
