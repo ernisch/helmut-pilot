@@ -7,8 +7,10 @@ import sys
 sys.dont_write_bytecode = True
 
 from datetime import datetime, timedelta, timezone
+from contextlib import contextmanager
 import base64
 import hashlib
+import http.client
 import importlib.util
 import json
 import os
@@ -17,6 +19,7 @@ import re
 import subprocess
 import time
 import urllib.parse
+import urllib.error
 import urllib.request
 
 HERE = Path(__file__).absolute().parent
@@ -43,6 +46,9 @@ SOURCE = {'exactCommit': '66efb89a42e3d1bee739844ac32a258d79b38ebb', 'runId': '2
           'recipientFingerprint': V.FINGERPRINT}
 PHASES = frozenset(('arguments', 'source-binding', 'private-inputs', 'index', 'disk-admission',
                     'key-import', 'encrypted-index', 'download', 'cipher-readback', 'authenticated-reception', 'relocation', 'agent-close'))
+DOWNLOAD_PHASES = frozenset(('download-expired', 'download-http', 'download-timeout', 'download-integrity',
+                            'download-guard', 'download-io', 'download-interrupted', 'download-unknown'))
+PHASES |= DOWNLOAD_PHASES
 PHASE = 'arguments'
 CHUNK = 1024 * 1024
 
@@ -126,33 +132,79 @@ def url_index(raw, commit, now=None):
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise ValueError('REDIRECT_REJECTED')
+        raise DownloadRejected('download-http')
+
+
+class DownloadRejected(ValueError):
+    def __init__(self, value):
+        need(value in DOWNLOAD_PHASES)
+        self.phase = value
+        super().__init__('EXISTING_INPUT_RECEPTION_REJECTED')
 
 
 def download(root, urls, expires, pins, *, guard=None, phase_observer=None):
     # Default proxy and TLS verification are preserved; redirects are prohibited.
-    opener = urllib.request.build_opener(NoRedirect())
     deadline = time.monotonic() + 300
     whole = hashlib.sha256(); total = 0
-    concat_fd = A._file(root, 'source-cipher.PRIVATE.gpg')
+    first_failure = None
+    def reject(value):
+        nonlocal first_failure
+        if first_failure is None:
+            first_failure = value
+            phase(value)
+            # Publish the fixed first cause before any stream/agent cleanup.
+            # A failed callback or a later signal cannot replace that cause.
+            try:
+                if phase_observer is not None: phase_observer('receiver-' + value)
+            except BaseException: pass
+        raise DownloadRejected(first_failure) from None
+    def require_download(value, cause):
+        if not value: reject(cause)
+    def reject_exception(error):
+        if first_failure is not None:
+            phase(first_failure)
+            raise DownloadRejected(first_failure) from None
+        if isinstance(error, DownloadRejected): reject(error.phase)
+        if isinstance(error, urllib.error.HTTPError): reject('download-http')
+        if isinstance(error, TimeoutError) or (isinstance(error, urllib.error.URLError)
+                and isinstance(error.reason, TimeoutError)): reject('download-timeout')
+        if isinstance(error, KeyboardInterrupt): reject('download-interrupted')
+        if isinstance(error, (P.Rejected, http.client.IncompleteRead)): reject('download-integrity')
+        if isinstance(error, OSError): reject('download-io')
+        reject('download-unknown')
+    @contextmanager
+    def preserve_first(manager):
+        with manager as value:
+            try: yield value
+            except BaseException as error:
+                # Classify IO/timeout before this context's __exit__/flush can
+                # fail or receive a signal and replace the original exception.
+                reject_exception(error)
     try:
-        with os.fdopen(concat_fd, 'wb') as concat:
+        opener = urllib.request.build_opener(NoRedirect())
+        concat_fd = A._file(root, 'source-cipher.PRIVATE.gpg')
+        with preserve_first(os.fdopen(concat_fd, 'wb')) as concat:
             for url, pin in zip(urls, pins, strict=True):
                 part_deadline = min(deadline, time.monotonic() + 60)
                 def remaining():
                     if guard is not None:
-                        guard()
+                        try: guard()
+                        except KeyboardInterrupt: reject('download-interrupted')
+                        except BaseException: reject('download-guard')
+                    utc_remaining = (expires - datetime.now(timezone.utc)).total_seconds()
+                    require_download(utc_remaining > 0, 'download-expired')
                     value = part_deadline - time.monotonic()
-                    need(value > 0 and datetime.now(timezone.utc) < expires)
-                    return value
+                    require_download(value > 0, 'download-timeout')
+                    return min(value, utc_remaining)
                 request = urllib.request.Request(url, method='GET', headers={'Accept-Encoding': 'identity', 'User-Agent': 'Helmut-W15-readonly/1'})
                 fd = A._file(root, 'part-' + str(pin['index']).zfill(2) + '.PRIVATE.pgp')
                 count, digest = 0, hashlib.sha256()
-                with os.fdopen(fd, 'wb') as output, opener.open(request, timeout=remaining()) as response:
-                    need(response.status == 200 and response.geturl() == url
-                         and response.headers.get('Content-Encoding', 'identity') == 'identity')
+                with preserve_first(os.fdopen(fd, 'wb')) as output, \
+                        preserve_first(opener.open(request, timeout=remaining())) as response:
+                    require_download(response.status == 200 and response.geturl() == url
+                         and response.headers.get('Content-Encoding', 'identity') == 'identity', 'download-http')
                     length = response.headers.get('Content-Length')
-                    need(length is None or length == str(pin['bytes']))
+                    require_download(length is None or length == str(pin['bytes']), 'download-integrity')
                     while True:
                         # read1 performs one underlying read; do not accumulate a
                         # dribbling response inside read(CHUNK) past the deadline.
@@ -163,26 +215,25 @@ def download(root, urls, expires, pins, *, guard=None, phase_observer=None):
                         remaining()
                         if not block: break
                         count += len(block); total += len(block)
-                        need(count <= pin['bytes'] and total <= TOTAL)
+                        require_download(count <= pin['bytes'] and total <= TOTAL, 'download-integrity')
                         output.write(block); concat.write(block); digest.update(block); whole.update(block)
                     output.flush(); os.fsync(output.fileno())
-                need(count == pin['bytes'] and digest.hexdigest() == pin['sha256'])
+                require_download(count == pin['bytes'] and digest.hexdigest() == pin['sha256'], 'download-integrity')
                 remaining()
             concat.flush(); os.fsync(concat.fileno())
-        need(total == TOTAL and whole.hexdigest() == CIPHER_SHA)
-    finally:
-        # os.fdopen owns the descriptor after successful construction.
-        pass
-    phase('cipher-readback')
-    if phase_observer is not None:
-        phase_observer('receiver-cipher-readback')
-    parent = P.open_root(str(root))
-    try:
-        for pin in pins:
-            P.inspect_file(parent, 'part-' + str(pin['index']).zfill(2) + '.PRIVATE.pgp', pin)
-        P.inspect_file(parent, 'source-cipher.PRIVATE.gpg', {'bytes': TOTAL, 'sha256': CIPHER_SHA})
-        os.fsync(parent)
-    finally: os.close(parent)
+        require_download(total == TOTAL and whole.hexdigest() == CIPHER_SHA, 'download-integrity')
+        phase('cipher-readback')
+        if phase_observer is not None:
+            phase_observer('receiver-cipher-readback')
+        parent = P.open_root(str(root))
+        try:
+            for pin in pins:
+                P.inspect_file(parent, 'part-' + str(pin['index']).zfill(2) + '.PRIVATE.pgp', pin)
+            P.inspect_file(parent, 'source-cipher.PRIVATE.gpg', {'bytes': TOTAL, 'sha256': CIPHER_SHA})
+            os.fsync(parent)
+        finally: os.close(parent)
+    except BaseException as error:
+        reject_exception(error)
     return root / 'source-cipher.PRIVATE.gpg'
 
 
