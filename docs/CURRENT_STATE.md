@@ -1,12 +1,12 @@
 # CURRENT STATE — Helmut
 
-## W15: End500-Linkrunde vor GitHub-Start blockiert (01.11.2026)
+## W15: End500-Funktion unabhängig PASS (01.11.2026)
 
-[PR1013](https://github.com/ernisch/helmut-pilot/pull/1013), Codekopf `f157d97ff3990a71623e7037437556dfcc8b48e6`: [Funktionsvertrag](betrieb/w15-end500-host-functional-20261101.md) unabhängig geprüft, CI41312283046/41315935455 PASS. Ausführungsbranch sicher4de→f157 vorgerückt, keine Rücksetzung. Dynamisches Hostlimit/Reserve2.147.483.648B und alle Schutzgrenzen erhalten. Mock benötigt positive Same-Run-End500-v4-Abnahme, Brücke und eigenesGO.
+[Run41325430429](https://github.com/ernisch/helmut-pilot/actions/runs/41325430429), [PR1013](https://github.com/ernisch/helmut-pilot/pull/1013), Code `f157d97ff3990a71623e7037437556dfcc8b48e6`: vollständige Same-Run-v4-Abnahme unter [HC1](betrieb/w15-end500-host-functional-20261101.md) **PASS**. Job1.356s/gemeinsamer Lauf1.333,674s. 15Cipherteile/12Originale(242.570.240B), Restore500/0,500Auth/6.000Usage/3.501Postimages, Export, finale0, Stopp und vollständiger verschlüsselter Sicherungsrundlauf einschließlich authentifizierter Rücklesung/zweiterRecoveryintegrität bestätigt.
 
-**BLOCKED vor Dispatch:** Einmalige Linkrunde/Nonce51916e24-0801-4b19-a0b6-451a5cbfd966:15Fetches, Launcher Exit1/Phase`link`;0POST/Jobs, keine neue RAM-Messung. GitHub-Rücklesung15:51UTC:0aktive geschützte Läufe; eigener Launcher beendet. Belegt:122,361s Start→Abrufbeginn bei120s Eingabefenster nachREADY; genauer Lesebeginn/innere ExceptionUNKNOWN. Private durchgehende READY→Abruf→Übergabe korrigiert;6+1synthetische Gegenproben und unabhängiger Review PASS,90s/65.535 unverändert. Belege: `/workspace/helmut-w15-private-evidence-20261101/HOST_FUNCTIONAL_OUTER_01/`. Nötig: neue ausdrückliche Linkrunde+maximal ersterGitHub-Job aufF157, neueNonce; kein Retry/Refresh der alten Akte.
+Peak5,103GB bei frisch berechnetem13,320GB-Limit, Hostreserve2,147GB geschützt, Swap/OOM/Max0. Peak zuerst bei backup-recovery beobachtet; file-Max4,582GB/anon1,309GB/kernel148MB, getrennte Maxima. Exakte Peakkomposition/CPU/AnbietereignungUNKNOWN; Prozess-PSS nur Untergrenzen. Keine reguläre5GB-/Production-/Mockabnahme oder Optimierung. Ein verschlüsseltes532,7MB-Artefakt/<1Tag;0aktive geschützte Läufe. AusführungsbranchF157 unverändert; CI41312283046/41315935455PASS.
 
-PR1012/799eb908-Abschlussfix erhalten. Run41300846909 bleibtFAIL/WORKER_RESULT_REJECTED,500Auth/6.000Usage/3.501Postimages; Peak5,118GB, Swap/OOM/Max0,8CleanupPASS. Kein End500-/Mock-/Production-PASS oder historisches Umwerten. [Voriger Stand bytegleich](archive/project_state/2026_11_01_799eb908_CURRENT_STATE_vor_Hostfunktionsvertrag.md).
+NeueNonceb3710fb5-378d-4d9c-88a6-83702cbdb0ea, eine Linkrunde/einPOST,284s Restgültigkeit/50.644Bytes. Frühere519-Linkrunde bleibtBLOCKED ohneJob; Run41300846909 bleibtFAIL. Belege: `/workspace/helmut-w15-private-evidence-20261101/HOST_FUNCTIONAL_OUTER_02/`. Mock-Funktionstor erkennt diese v4-Abnahme an; eigene aktuelle Kopf-/Eingabebrücke und eigenesGO bleiben Pflicht. Keine automatische Mock-/Production-Ausführung.
 
 ## Ressourcen500-Messung und geprüfter Diagnoseanschluss (31.10.2026)
 
