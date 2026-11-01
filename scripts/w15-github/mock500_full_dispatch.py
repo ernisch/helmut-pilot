@@ -200,6 +200,8 @@ def verify_prior(bindings, target, qualification_sha, receiver_pr, end_pr, *, ap
          and bridge.get('mockMemoryContract') == S.memory_profile(mode)
          and bridge.get('end500CodeReexecuted') is False and bridge.get('executionAuthority') is False, 'bridge')
     if mode == FUNCTIONAL:need(bridge.get('functionalContract')==S.functional().CONTRACT,'bridge')
+    if mode == FUNCTIONAL and end.get('schema') == S.host_functional().ACCEPTANCE_SCHEMA:
+        need(bridge.get('end500FunctionalContract') == S.host_functional().CONTRACT,'bridge')
     try: run = api('GET', '/actions/runs/' + end['runId'])
     except BaseException: raise DispatchRejected('end500-run') from None
     need(type(run) is dict and type(run.get('id')) is int and str(run['id']) == end['runId']

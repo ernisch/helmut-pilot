@@ -41,6 +41,10 @@ FUNCTIONAL_SCOPE = 'ISOLATED_GITHUB_END500_FUNCTIONAL_ONLY'
 def functional():
     return component('functional_contract')
 
+def host_contract(request):
+    contract = component('host_functional_contract')
+    return contract.CONTRACT if contract.selected(dict(request, mode=CAP.HOST_MODE)) else CAP.HOST_PROFILE
+
 def mode_scope(value):
     if type(value) is dict and value.get('scope') == CAP.HOST_SCOPE:
         return CAP.HOST_MODE, CAP.HOST_SCOPE
@@ -111,12 +115,15 @@ def validate_approval(value, target, launcher, request, now):
         'exactCommit': target, 'branch': 'refs/heads/' + BRANCH, 'runAttempt': 1, 'nonce': value['nonce'],
         'mode': selected_mode, 'limits': (CAP.HOST_POLICY if selected_mode == CAP.HOST_MODE else functional().limits('end500') if selected_mode == FUNCTIONAL else CAP.LIMITS if selected_mode == TRACE.MODE else W.LIMITS), 'maximumWallSeconds': 3600,
         'sourceQualificationSHA256': request['sourceQualification']['sha256'], 'maxReceiveAttempts': 1,
-        **({'restoreFunctionAcceptance': approval.get('restoreFunctionAcceptance'), 'resourceContract': (CAP.HOST_PROFILE if selected_mode == CAP.HOST_MODE else functional().CONTRACT if selected_mode == FUNCTIONAL else TRACE.PROFILE if selected_mode == TRACE.MODE else PC.END_PROFILE)}
+        **({'restoreFunctionAcceptance': approval.get('restoreFunctionAcceptance'), 'resourceContract': (host_contract(request) if selected_mode == CAP.HOST_MODE else functional().CONTRACT if selected_mode == FUNCTIONAL else TRACE.PROFILE if selected_mode == TRACE.MODE else PC.END_PROFILE)}
            if selected_mode in (PC.END_MODE, TRACE.MODE, FUNCTIONAL, CAP.HOST_MODE) else {'restoreAcceptance': approval.get('restoreAcceptance')}), 'issuedAt': value['issuedAt'], 'expiresAt': value['expiresAt'], 'maxStorageUSD': '0.05', 'maxProviderCalls': 0}
     need(type(approval) is dict and approval == expected
          and all(type(approval[k]) is int for k in ('runAttempt', 'maximumWallSeconds', 'maxReceiveAttempts', 'maxProviderCalls'))
          and all(type(x) is int for x in approval['limits'].values())
          and approval['authorized'] is True, 'approval')
+    if selected_mode == CAP.HOST_MODE and host_contract(request) != CAP.HOST_PROFILE:
+        component('host_functional_contract').validate_start(dict(request,
+            **{k: approval[k] for k in ('mode', 'exactCommit', 'branch', 'runAttempt')}), now)
     if selected_mode in (PC.END_MODE, TRACE.MODE, FUNCTIONAL, CAP.HOST_MODE):
         FUNCTION.reference(approval['restoreFunctionAcceptance'], target)
         issued, expires = W._utc(value['issuedAt']), W._utc(value['expiresAt'])

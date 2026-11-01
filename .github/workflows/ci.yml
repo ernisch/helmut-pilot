@@ -207,6 +207,8 @@ jobs:
           node scripts/lokal.js -- node scripts/w15-github/test_post_failure_memory_stat.js
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_restore_capacity.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_dynamic_host_capacity.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_host_functional_contract.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_host_functional_mock.py
           node scripts/lokal.js -- sudo -n /usr/bin/python3 -B scripts/w15-github/test_worker_result_handoff.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_host_capacity_telemetry.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_functional_contract.py
