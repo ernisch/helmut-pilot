@@ -90,7 +90,8 @@ class ExistingReceiveChecks(unittest.TestCase):
             self.assertEqual(result.read_bytes(), b''.join(data)); self.assertEqual(len(calls), 15)
             self.assertEqual([call.full_url for call in calls], URLS)
             for file in root.iterdir(): self.assertEqual(file.stat().st_mode & 0o777, 0o600)
-            with self.assertRaises(FileExistsError): self.download(root, data, pins)
+            with self.assertRaises(E.DownloadRejected): self.download(root, data, pins)
+            self.assertEqual(E.PHASE, 'download-io')
 
     def test_bad_status_hash_or_truncation_stops_without_retry_and_retains_private_partial(self):
         data, pins = self.fake_parts()

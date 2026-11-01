@@ -52,6 +52,7 @@ CONNECTION_PHASES |= BACKUP_PHASES | EXPORT_PHASES | RESTORE_PHASES
 RECEIVER_PHASES = {'arguments', 'source-binding', 'private-inputs', 'index', 'disk-admission',
                    'key-import', 'encrypted-index', 'download', 'cipher-readback',
                    'authenticated-reception', 'relocation', 'agent-close'}
+RECEIVER_PHASES |= {'download-io', 'download-interrupted', 'download-http', 'download-unknown', 'download-expired', 'download-timeout', 'download-integrity', 'download-guard'}
 RUNNER_PHASES = {'arguments', 'binding', 'parent', 'service', 'staging', 'worker', 'closure', 'ipc'}
 STATUSES = {FUNCTIONAL: 'PASS_END500_FUNCTIONAL_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING', END_CAPACITY: 'MEASURED_FULL_END500_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED', PHASED: 'PASS_END500_PHASED_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING', DIAGNOSTIC: 'PASS_RESTORE_EXPORT_DIAGNOSTIC_ONLY_FULL_RESTORE_BLOCKED', 'end500-restore-synthetic': 'PASS_SYNTHETIC_RUNNER_BINDINGS_ONLY_START_BLOCKED',
             CAPACITY: 'MEASURED_FULL_RESTORE_CAPACITY_ONLY_LEGACY_ACCEPTANCE_BLOCKED',

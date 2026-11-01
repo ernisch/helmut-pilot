@@ -3,6 +3,8 @@ import sys
 sys.dont_write_bytecode = True
 
 import importlib.util
+import io
+import copy
 import os
 from pathlib import Path
 import tempfile
@@ -123,6 +125,47 @@ class ResourceChecks(unittest.TestCase):
         measured['capacityMeasurement']['last']['hostAvailableBytes'] = 2147483647
         with self.assertRaises(ValueError): guard()
         self.assertEqual(R.FREE_RESERVE_BYTES, 512 * 1024 * 1024)
+
+    def test_functional_fragment_guards_reuse_one_module_and_keep_every_sample(self):
+        spec = importlib.util.spec_from_file_location('fragment_guard_capacity_fixture', Path(__file__).with_name('test_restore_capacity.py'))
+        fixture = importlib.util.module_from_spec(spec); spec.loader.exec_module(fixture)
+        measured = fixture.sample(); measured['capacityMeasurement'] = fixture.measurement(measured)
+        self.common.functional_stage = 'end500'
+        self.common.sample.side_effect = lambda: measured
+        plan = self.plan()
+        # read1 is permitted to return a TLS-sized fragment despite CHUNK=1MiB.
+        # The full guard still executes before AND after each such fragment.
+        fragment_bytes, fragments = 16384, 128
+        stream = io.BytesIO(b'x' * fragment_bytes * fragments)
+        original_spec = R.C.importlib.util.spec_from_file_location
+        imports = []
+        def counted_spec(name, path, *args, **kwargs):
+            if Path(path).name == 'functional_contract.py': imports.append(path)
+            return original_spec(name, path, *args, **kwargs)
+        with patch.object(R.C, '_FUNCTIONAL_CONTRACT', None), \
+             patch.object(R.C.importlib.util, 'spec_from_file_location', side_effect=counted_spec), \
+             patch.object(R, '_load', side_effect=AssertionError('uncached per-fragment module import')):
+            guard = R.DiskGuard(self.root, plan, self.common)
+            contract = R.C.functional_contract()
+            with patch.object(contract, 'assess', wraps=contract.assess) as assess:
+                for _ in range(fragments):
+                    guard(); self.assertEqual(len(stream.read(fragment_bytes)), fragment_bytes); guard()
+                self.assertEqual(assess.call_count, 2 * fragments)
+                self.assertEqual(self.common.sample.call_count, 1 + 2 * fragments)
+                self.assertEqual(len(imports), 1)
+                # Reusing code never reuses a kernel sample or a safety verdict.
+                bads = []
+                for key, value in (('kernelLifetimePeakBytes', 4999999489), ('swapCurrentBytes', 1)):
+                    bad = copy.deepcopy(measured); bad[key] = value; bads.append(bad)
+                bad = copy.deepcopy(measured); bad['events']['max'] = 1; bads.append(bad)
+                bad = copy.deepcopy(measured); bad['capacityMeasurement']['last']['hostAvailableBytes'] = 2147483647; bads.append(bad)
+                for bad in bads:
+                    self.common.sample.side_effect = lambda: bad
+                    with self.assertRaises(ValueError): guard()
+                self.common.sample.side_effect = lambda: measured
+                self.free = R.FREE_RESERVE_BYTES - 4096
+                with self.assertRaisesRegex(R.ResourceRejected, 'DISK_(GROWTH|RESERVE)'): guard()
+                self.assertEqual(len(imports), 1)
 
     def test_cost_is_published_bounded_storage_and_does_not_invent_free_quota(self):
         envelope = R.cost_envelope()

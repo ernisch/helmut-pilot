@@ -39,6 +39,8 @@ SOURCE_KEYS = {'schema', 'scope', 'nonce', 'exactCommit', 'runId', 'runAttempt',
 PHASES = {'arguments', 'binding', 'private-inputs', 'key-import', 'outer-index', 'original-download',
           'original-reception', 'original-relocation', 'asset-download', 'asset-reception', 'asset-readback', 'agent-close'}
 
+PHASES |= {'original-' + phase for phase in E.DOWNLOAD_PHASES}
+
 ARCHIVE_PHASES = set(('arguments', 'cipher', 'recipient', 'destination', 'decrypt', 'gzip', 'archive', 'manifest', 'files', 'integrity', 'readback', 'cleanup'))
 PHASES |= {'archive-' + phase for phase in ARCHIVE_PHASES}
 
@@ -278,6 +280,8 @@ def prepare_inputs(context, private_payload, *, input_binding_sha256, additional
                 'additionalFiles': authenticated['verifiedFiles'], 'additionalBytes': authenticated['verifiedBytes'], 'originalsUnchanged': True}}
     except BaseException as error:
         failure = phase
+        if phase == 'original-download' and type(error) is E.DownloadRejected and error.phase in E.DOWNLOAD_PHASES:
+            failure = 'original-' + error.phase
         if phase == 'asset-reception' and getattr(error, 'phase', None) in ARCHIVE_PHASES:
             failure = 'archive-' + error.phase
     finally:

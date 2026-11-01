@@ -82,7 +82,7 @@ class MockReceiveChecks(unittest.TestCase):
             else: bad['expiresAtUTC'] = (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()
             with self.subTest(change=change), self.assertRaises(Exception): self.index(bad, raw, data, **options)
 
-    def receive(self, root, *, close_failure=False, bad_declared_size=False):
+    def receive(self, root, *, close_failure=False, bad_declared_size=False, original_error=None):
         value, data, raw, cipher = fixture(); events = []
         context = {'schema': 'helmut-w15-mock500-controller-context/1', 'scope': 'ISOLATED_GITHUB_MOCK500_BINDING_ONLY',
             'exactCommit': COMMIT, 'runId': '123456789', 'runAttempt': 1, 'runnerTemp': str(root.parent)}
@@ -115,7 +115,7 @@ class MockReceiveChecks(unittest.TestCase):
         def close(home):
             events.append('agent-close-confirmed' if not close_failure else 'agent-close-failed')
             if close_failure: raise RuntimeError('FICTIONAL_PASSPHRASE_NOT_FOR_OUTPUT')
-        original_get, asset_get = Mock(return_value=root / 'source-cipher.PRIVATE.gpg'), Mock(return_value=root / 'assets-cipher.PRIVATE.gpg')
+        original_get, asset_get = Mock(return_value=root / 'source-cipher.PRIVATE.gpg', side_effect=original_error), Mock(return_value=root / 'assets-cipher.PRIVATE.gpg')
         with patch.object(M.E, 'source_binding', return_value={k: context[k] for k in ('exactCommit', 'runId', 'runAttempt')}), \
                 patch.object(M.E, 'projection', return_value=[]), patch.object(M.V, 'private_root', return_value=root), \
                 patch.object(M.N, 'check_event') as event, patch.object(M.A.resource, 'setrlimit'), \
