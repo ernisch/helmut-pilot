@@ -153,8 +153,9 @@ def process_env(ctx):
     return {**ENV, 'GITHUB_ACTIONS': 'true', 'GITHUB_RUN_ID': ctx['runId'], 'GITHUB_RUN_ATTEMPT': '1'}
 
 
-def github_binding(run_id, commit, *, capacity_diagnostic=False, processing_backup_stage=None, functional_stage=None):
-    require(functional_stage in (None,'end500','mock500')
+def github_binding(run_id, commit, *, capacity_diagnostic=False, processing_backup_stage=None, functional_stage=None, host_capacity_diagnostic=False):
+    require(type(host_capacity_diagnostic) is bool and (not host_capacity_diagnostic or capacity_diagnostic)
+            and functional_stage in (None,'end500','mock500')
             and not (functional_stage is not None and (capacity_diagnostic or processing_backup_stage is not None)))
     phase('github-environment')
     require(os.environ.get('GITHUB_ACTIONS') == 'true'
@@ -221,7 +222,15 @@ def read_parent(ctx, expected_identity, *, empty=False):
                   'events': {k: int(v) for k, v in (row.split() for row in read('memory.events').splitlines())}}
         try:
             stage = ctx.get('processingBackupStage')
-            if 'functionalStage' in ctx:
+            if ctx.get('hostCapacityDiagnostic') is True:
+                admission = ctx['hostCapacityAdmission']
+                sample['hostCapacityBudget'] = R.capacity().host_budget(admission)
+                sample['hostCapacitySafetyObserved'] = False
+                sample['capacityMeasurement'] = R.capacity().snapshot(sample, fd)
+                sample['hostCapacityObservation'] = R.capacity().host_runtime_guard(admission)
+                R.capacity().host_assess(sample, admission)
+                sample['hostCapacitySafetyObserved'] = True
+            elif 'functionalStage' in ctx:
                 functional = ctx['functionalStage']
                 require(functional in ('end500','mock500') and stage is None and ctx.get('capacityDiagnostic') is not True)
                 sample['capacityMeasurement'] = R.capacity().snapshot(sample, fd)
@@ -273,6 +282,12 @@ def parent_empty(ctx, expected_identity):
 
 
 def unit_bytes(ctx=None):
+    if ctx is not None and ctx.get('hostCapacityDiagnostic') is True:
+        require(ctx.get('capacityDiagnostic') is True and 'functionalStage' not in ctx
+                and ctx.get('processingBackupStage') is None)
+        budget = R.capacity().host_budget(ctx['hostCapacityAdmission'])
+        return (b'[Unit]\nDescription=W15 host capacity diagnostic only\n[Slice]\nMemoryAccounting=yes\nMemoryMax='
+                + str(budget['hardLimitBytes']).encode() + b'\nMemorySwapMax=0\n')
     if ctx is not None and 'functionalStage' in ctx:
         require(ctx['functionalStage'] in ('end500','mock500')
                 and ctx.get('processingBackupStage') is None and ctx.get('capacityDiagnostic') is not True)
@@ -295,7 +310,19 @@ def prepare_parent(ctx):
     unit, _, _ = names(ctx)
     path = R.KERNEL_ROOT / unit
     require(not path.exists())
-    if ctx.get('functionalStage') in ('end500','mock500') or ctx.get('capacityDiagnostic') is True or ctx.get('processingBackupStage') in ('end500', 'mock500'):
+    if ctx.get('hostCapacityDiagnostic') is True:
+        require('hostCapacityAdmission' not in ctx)
+        ctx['hostCapacityAdmission'] = R.capacity().host_admission_dynamic()
+        record = {'schema':'helmut-w15-root-host-capacity-binding/1',
+                  'context':{k:ctx[k] for k in ('runId','exactCommit','nonce')},
+                  'admission':ctx['hostCapacityAdmission']}
+        raw = json.dumps(record,sort_keys=True,separators=(',',':'),allow_nan=False).encode('ascii')
+        require(len(raw) <= 32768)
+        out = os.open(UNIT_ROOT/(unit+'.host-capacity.json'),os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+        try:
+            require(os.write(out,raw) == len(raw));os.fsync(out)
+        finally:os.close(out)
+    elif ctx.get('functionalStage') in ('end500','mock500') or ctx.get('capacityDiagnostic') is True or ctx.get('processingBackupStage') in ('end500', 'mock500'):
         R.capacity().host_admission()
     phase('parent-unit-write')
     fd = os.open(UNIT_ROOT / unit, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
@@ -324,6 +351,30 @@ def prepare_parent(ctx):
         except BaseException:
             pass  # Preserve the actual first failure, never a cleanup PASS.
         raise first from None
+    if ctx.get('hostCapacityDiagnostic') is True:
+        return {'status':'PASS_ROOT_BOUND_HOST_CAPACITY_PARENT_ONLY',
+                'hostCapacityAdmission':ctx['hostCapacityAdmission']}
+
+
+def load_host_admission(ctx):
+    """Only the root-owned, immutable pre-parent record can select this budget."""
+    require(os.getuid() == 0 and ctx.get('hostCapacityDiagnostic') is True)
+    path = UNIT_ROOT/(names(ctx)[0]+'.host-capacity.json')
+    fd = os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+    try:
+        before = os.fstat(fd)
+        require(stat.S_ISREG(before.st_mode) and before.st_uid == 0 and before.st_nlink == 1
+                and stat.S_IMODE(before.st_mode) == 0o600 and 0 < before.st_size <= 32768)
+        raw = os.read(fd,32769);after = os.fstat(fd)
+        require(len(raw) == before.st_size and (before.st_dev,before.st_ino,before.st_size,before.st_mtime_ns,before.st_ctime_ns)
+                == (after.st_dev,after.st_ino,after.st_size,after.st_mtime_ns,after.st_ctime_ns))
+        record = json.loads(raw)
+        require(type(record) is dict and set(record) == {'schema','context','admission'}
+                and record['schema'] == 'helmut-w15-root-host-capacity-binding/1'
+                and record['context'] == {k:ctx[k] for k in ('runId','exactCommit','nonce')}
+                and R.capacity().host_closed_admission(record['admission']) is not None)
+        return record['admission']
+    finally:os.close(fd)
 
 
 def remove_parent(ctx):
@@ -557,6 +608,7 @@ def internal_argv(mode, ctx):
     return ['/usr/bin/python3', '-B', str(SCRIPT), '--internal', mode,
             '--run-id', ctx['runId'], '--expected-commit', ctx['exactCommit'], '--nonce', ctx['nonce'],
             *(['--capacity-diagnostic'] if ctx.get('capacityDiagnostic') is True else []),
+            *(['--host-capacity-diagnostic'] if ctx.get('hostCapacityDiagnostic') is True else []),
             *(['--processing-backup-stage', ctx['processingBackupStage']]
               if ctx.get('processingBackupStage') in ('end500', 'mock500') else []),
             *(['--functional-stage', ctx['functionalStage']]
@@ -631,6 +683,7 @@ def main(argv=None):
         parser.add_argument('--expected-commit', required=True)
         parser.add_argument('--nonce')
         parser.add_argument('--capacity-diagnostic', action='store_true')
+        parser.add_argument('--host-capacity-diagnostic', action='store_true')
         parser.add_argument('--processing-backup-stage', choices=('end500', 'mock500'))
         parser.add_argument('--functional-stage', choices=('end500','mock500'))
         args = parser.parse_args(argv)
@@ -638,12 +691,17 @@ def main(argv=None):
         require((public and args.nonce is None) or (not public and args.nonce is not None))
         ctx = context(args.run_id, args.expected_commit, str(uuid.uuid4()) if public else args.nonce)
         require(not args.capacity_diagnostic or args.internal in ('prepare', 'remove'))
+        require(not args.host_capacity_diagnostic or (args.capacity_diagnostic
+                and args.internal in ('prepare','remove') and args.processing_backup_stage is None and args.functional_stage is None))
         require(args.processing_backup_stage is None or args.internal in ('prepare', 'remove'))
         require(not (args.capacity_diagnostic and args.processing_backup_stage is not None))
         require(args.functional_stage is None or (args.internal in ('prepare','remove')
                 and not args.capacity_diagnostic and args.processing_backup_stage is None))
         if args.capacity_diagnostic:
             ctx['capacityDiagnostic'] = True
+        if args.host_capacity_diagnostic:
+            ctx['hostCapacityDiagnostic'] = True
+            if args.internal == 'remove':ctx['hostCapacityAdmission'] = load_host_admission(ctx)
         if args.processing_backup_stage is not None:
             ctx['processingBackupStage'] = args.processing_backup_stage
         if args.functional_stage is not None:
@@ -651,7 +709,8 @@ def main(argv=None):
         if public:
             stop_latch = StopLatch()
         github_binding(args.run_id, args.expected_commit, capacity_diagnostic=args.capacity_diagnostic,
-                       processing_backup_stage=args.processing_backup_stage, functional_stage=args.functional_stage)
+                       processing_backup_stage=args.processing_backup_stage, functional_stage=args.functional_stage,
+                       host_capacity_diagnostic=args.host_capacity_diagnostic)
         if public:
             result = probe(ctx, stop_latch=stop_latch)
             stop_latch.cleaning = False

@@ -155,7 +155,7 @@ def _inventory(snapshot):
     return {'tableInventory': tables, 'sequenceInventory': sequences, 'foreignTables': 0}
 
 
-def _restore_closure(work_fd, *, capacity_diagnostic=False, functional_stage=None):
+def _restore_closure(work_fd, *, capacity_diagnostic=False, functional_stage=None, host_capacity_admission=None):
     """Re-read all genuine five-step outputs/lifecycles; no caller PASS flag."""
     require(functional_stage in (None, 'end500', 'mock500')
             and not (functional_stage is not None and capacity_diagnostic))
@@ -173,7 +173,9 @@ def _restore_closure(work_fd, *, capacity_diagnostic=False, functional_stage=Non
                     'mock500Started', 'executionAuthority'):
             require(closure.get(key) is False)
         for key in ('initialKernelSample', 'finalKernelSample'):
-            if functional_stage is not None:
+            if host_capacity_admission is not None:
+                Q.C.capacity().host_assess(closure[key],host_capacity_admission)
+            elif functional_stage is not None:
                 Q.C.functional_contract().assess(closure[key], functional_stage)
             else:
                 (Q.C.capacity().assess if capacity_diagnostic is True else Q.C.assess)(closure[key])
@@ -226,7 +228,10 @@ def export_restore_database(context, *, expected_context, work, container, datab
         work_fd = S._directory(str(work), private=True)
         state_fd = S._directory(str(work / 'state'), private=True)
         functional_stage = getattr(getattr(supervisor, 'common_resources', None), 'functional_stage', None)
-        if functional_stage in ('end500', 'mock500'):
+        host_admission=getattr(getattr(supervisor,'common_resources',None),'host_capacity_admission',None)
+        if host_admission is not None:
+            _restore_closure(work_fd,capacity_diagnostic=True,host_capacity_admission=host_admission)
+        elif functional_stage in ('end500', 'mock500'):
             _restore_closure(work_fd, functional_stage=functional_stage)
         elif (getattr(getattr(supervisor, 'common_resources', None), 'capacity_diagnostic', False) is True
                 or getattr(getattr(supervisor, 'common_resources', None), 'memory_phase', None) == 'backup'):
@@ -716,7 +721,7 @@ def restore_readback(verified_root, *, context, controller_context, resources,
             '--memory-swap=' + str(getattr(resources, 'container_limit', Q.C.LIMIT)),
             '--cgroup-parent=' + resources.unit, *label_args, *mount_args,
             '-e', 'POSTGRES_HOST_AUTH_METHOD=trust', m.IMAGE, 'postgres',
-            *(['-c', 'max_connections=60'] if getattr(resources, 'functional_stage', None) in ('end500','mock500') else []),
+            *(['-c', 'max_connections=60'] if getattr(resources, 'functional_stage', None) in ('end500','mock500') or getattr(resources,'host_capacity_admission',None) is not None else []),
             '-c', 'helmut.local_usage_experiment=on', '-c', 'max_wal_size=128MB',
             '-c', 'work_mem=32MB', '-c', 'autovacuum_naptime=10s')
         owned_id = inspect(container)['Id']
@@ -740,7 +745,7 @@ def restore_readback(verified_root, *, context, controller_context, resources,
                 break
             time.sleep(.2)
         require(ready.returncode == 0)
-        if getattr(resources, 'functional_stage', None) in ('end500','mock500'):
+        if getattr(resources, 'functional_stage', None) in ('end500','mock500') or getattr(resources,'host_capacity_admission',None) is not None:
             require(m.read('show max_connections;', database='postgres') == 60, 'BACKUP_RECOVERY_CONNECTION_LIMIT_INVALID')
         m.docker('exec', owned_id, 'mkdir', '-p', m.BASE)
         m.docker('exec', owned_id, 'chmod', '700', m.BASE)
