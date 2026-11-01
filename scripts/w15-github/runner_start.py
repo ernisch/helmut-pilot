@@ -1285,9 +1285,9 @@ def launch(request, private_payload):
         caller_provenance = P.R.capacity().host_caller_provenance() if request['mode'] == HOST_CAPACITY else None
         host_admission = P.R.capacity().host_admission() if request['mode'] in (CAPACITY, PHASED, END_CAPACITY, FUNCTIONAL) else None
         prepared = P.privileged('prepare', ctx); created = True
+        identity = P.identity(P.R.KERNEL_ROOT / P.names(ctx)[0])
         if request['mode'] == HOST_CAPACITY:
             host_admission = _bind_host_preparation(ctx, prepared, caller_provenance)
-        identity = P.identity(P.R.KERNEL_ROOT / P.names(ctx)[0])
         initial = _parent_readback(P, ctx, identity, last, empty=True)
         PHASE = 'service'
         process = subprocess.Popen(_service_argv(request, ipc_dir), stdin=subprocess.PIPE,

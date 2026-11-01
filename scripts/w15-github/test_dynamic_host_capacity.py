@@ -6,6 +6,7 @@ import importlib.util
 import json
 import os
 import re
+import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
@@ -128,5 +129,28 @@ class DynamicHostCapacity(unittest.TestCase):
         wrong=copy.deepcopy(provenance);wrong['callerRelativePath']='/different.scope'
         with self.assertRaises(R.RunnerStartError):R._bind_host_preparation(R._ctx(request()),reply,wrong)
         with self.assertRaises(R.RunnerStartError):R._bind_host_preparation({},reply,provenance)
+
+    def test_caller_mismatch_stops_and_removes_only_fresh_owned_empty_parent(self):
+        a=admission();expected=CAP.host_caller_provenance(a)
+        expected['callerRelativePath']='/outer-caller.scope'
+        module=R.P.R.capacity();pure=module.host_caller_provenance
+        reply=SimpleNamespace(stdout=json.dumps(dict(status='PASS_ROOT_BOUND_HOST_CAPACITY_PARENT_ONLY',hostCapacityAdmission=a)).encode())
+        calls=[]
+        def privileged(action,ctx):
+            calls.append(action)
+            return reply if action=='prepare' else None
+        with tempfile.TemporaryDirectory() as t,patch.object(R,'github_binding'),patch.object(R,'_identity_available'), \
+                patch.object(R,'_roots',return_value=(Path(t)/'run',Path(t)/'ipc')), \
+                patch.object(R.P,'StopLatch',return_value=SimpleNamespace(seen=False,cleaning=False,close=lambda:None)), \
+                patch.object(R.P,'privileged',side_effect=privileged),patch.object(R.P,'identity',return_value=(1,2)), \
+                patch.object(R.P,'read_parent',side_effect=OSError('SYNTHETIC_NO_MEMORY_SAMPLE')), \
+                patch.object(R.P,'parent_empty',return_value=True),patch.object(R,'_command') as command, \
+                patch.object(module,'host_caller_provenance',side_effect=lambda value=None:expected if value is None else pure(value)):
+            with self.assertRaises(R.RunnerStartError) as ended:R.launch(request(),F.payload(request()))
+        self.assertEqual(calls,['prepare','remove'])
+        self.assertEqual([c.args[0][3] for c in command.call_args_list],['kill'])
+        self.assertEqual(ended.exception.cleanup['parentStopRequested'],'PASS')
+        self.assertEqual(ended.exception.cleanup['parentEmpty'],'PASS')
+        self.assertEqual(ended.exception.cleanup['parentUnitRemoved'],'PASS')
 
 if __name__=='__main__':unittest.main()
