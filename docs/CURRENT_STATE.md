@@ -1,14 +1,14 @@
 # CURRENT STATE — Helmut
 
-## W15-Funktionskette: End500 FAIL vor Restore (01.11.2026)
+## W15: korrigierter End500 FAIL bei Rücksicherung (01.11.2026)
 
-[Run 41256099275](https://github.com/ernisch/helmut-pilot/actions/runs/41256099275), geprüfter Kopf `ed2a9642`, Pflicht-CI 41253721311 PASS: **FAIL** in `receiver-download`, unabhängig bestätigt. Genau ein Gesamtversuch verbraucht; kein Mock gestartet. Empfang unvollständig, Restore/Verarbeitung/Sicherung nicht erreicht, innere Erstursache UNKNOWN. [Befund und Reparaturen](betrieb/w15-functional-transport-failure-20261101.md).
+[Run41280267757](https://github.com/ernisch/helmut-pilot/actions/runs/41280267757), Kopf `efc990ba`, Pflicht-CI41258278927 PASS: **Gesamt-FAIL**, unabhängig bestätigt. Exakt500 Auth-CAS/6.000 Usage/3.501 Postimages belegt. Letzte Phase `backup-recovery` betreten, zweite Rücksicherung/Integritätsabschluss und finale Profilflags UNKNOWN. Keine positive End500-/Mock500-Abnahme.
 
-Höchster bestätigter RAM 658 MB, Swap/OOM/max 0; endgültiger Lifetimepeak UNKNOWN. Letzter Cachewert 587 MB, anonym 48 MB, Kernel 23 MB, zeitlich keine Peakkomposition. Alle acht Prozessbereinigungsprüfungen PASS; kein Artefakt. Früheste Linkexpiry 00:22:27 UTC, Fehlerquittung 0,502 s später; kein Beweis für einen bestimmten HTTP-/Socketfehler.
+Knapp5,00GB höchster bestätigter Kernelpeak; Hartgrenzkontakte2, OOM/Swap0. Letzte gültige Recoveryprobe:4,550GB Dateiseiten einschließlich Shared Memory,290MB anonym,148MB Kernel; keine atomare Peakkomposition. Finaler Lifetimepeak nach Cleanup UNKNOWN. Alle8 Bereinigungsprüfungen PASS/Stillstand belegt. Ein Cipherartefakt532MB/1Tag, Speicherbound0,00495USD<0,05USD.
 
-Nachgewiesene synthetische Fixes: vorhandenes Vertragsmodul wiederverwenden statt pro Lesefragment neu importieren; erste feste Transportfehlerklasse vor Bereinigung erhalten, UTC-Socketfrist beachten. Zentrale Weitergabe gezielt geprüft; Pflicht-CI und unabhängiger Review binden den Reparaturkopf. Kein weiterer Originallauf.
+Nachgewiesene vermeidbare SQL-Vollkopie im zweiten Restore: [Kandidat/Befund](betrieb/w15-end500-recovery-max-contact-20261101.md) rendert direkt in dieselbe private Auditdatei und erhält Hash-/Anwendungs-/Lifecycleprüfungen.8 kleine synthetische Fälle PASS; Pflicht-CI und unabhängiger Review binden den finalen Draft-PR-Kopf. Tatsächliche Einsparung/Ausreichen unter5GB UNKNOWN.
 
-[Funktionsvertrag v1](betrieb/w15-isolated-functional-contract-20261101.md) mit knapp 5 GB/Hostreserve rund 2,15 GB bleibt gültig. Alte RAM-FAIL unverändert, Anbieterparität UNKNOWN. Zusatzversuch verlangt laut Betreiber eine belegte Ursache; diese Bedingung ist aktuell nicht erfüllt. Nächste Grenze: konkrete neue Freigabe auf geprüften Reparaturkopf. Mock erst nach vollständiger positiver Endabnahme. Production gesperrt.
+Zwei Endversuche verbraucht; keine weitere Laufautorität. Einzige Korrekturwiederholung ausgeschöpft, kein Journalreset. Mock-GO bleibt durch fehlende positive Endabnahme gesperrt; elf Originale/Quellenqualifikation erhalten. Alte RAM-FAILs unverändert, Anbieterparität UNKNOWN, Production gesperrt. [Voriger Stand bytegleich](archive/project_state/2026_11_01_efc990ba_CURRENT_STATE_vor_End500_Maxkontakt.md).
 
 ## Ressourcen500-Messung und geprüfter Diagnoseanschluss (31.10.2026)
 

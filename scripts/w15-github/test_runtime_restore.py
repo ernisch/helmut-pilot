@@ -224,29 +224,34 @@ class RestoreNodeStopChecks(unittest.TestCase):
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
             self.assertNotEqual(result.returncode, 0)
 
-    def test_real_worker_term_waits_for_fictional_native_child_close(self):
+    def term_waits_for_fictional_native_child_close(self, action):
         root = self.root()
         process = None
         try:
             child = 'process.on("SIGTERM",()=>process.exit(0));setInterval(()=>{},100);'
+            if action == 'restore-render':
+                child = child.replace('setInterval',
+                    'require("node:fs").writeFileSync(1,"FICTIONAL_PARTIAL_SQL");setInterval')
             old = 'child=cp.spawn("/usr/lib/postgresql/17/bin/"+exe,args,'
             replacement = 'child=cp.spawn(process.execPath,["-e",' + json.dumps(child) + '],'
             self.assertIn(old, R.NODE_WORKER)
             worker = R.NODE_WORKER.replace(old, replacement, 1)
-            process = subprocess.Popen(['node', '-e', worker, str(root), 'restore-create', R.DATABASE],
+            process = subprocess.Popen(['node', '-e', worker, str(root), action, R.DATABASE],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-            pid = root / 'state/restore-create.pid'
+            pid = root / ('state/' + action + '.pid')
             pid.write_text(str(process.pid))
             pid.chmod(0o600)
-            journal = root / 'state/restore/restore-create.lifecycle.PRIVATE.jsonl'
+            journal = root / ('state/restore/' + action + '.lifecycle.PRIVATE.jsonl')
+            audit = root / 'state/restore/rendered.PRIVATE.sql'
             deadline = time.monotonic() + 4
             while time.monotonic() < deadline:
-                if journal.exists() and b'owned-child-spawned' in journal.read_bytes():
+                if (journal.exists() and b'owned-child-spawned' in journal.read_bytes()
+                        and (action != 'restore-render' or (audit.exists() and audit.stat().st_size > 0))):
                     break
                 time.sleep(.01)
             self.assertTrue(journal.exists())
             self.assertIn(b'owned-child-spawned', journal.read_bytes())
-            stopped = subprocess.run(['node', str(STOP), str(root), 'restore-create', R.DATABASE, 'active', 'end500-restore'],
+            stopped = subprocess.run(['node', str(STOP), str(root), action, R.DATABASE, 'active', 'end500-restore'],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8)
             self.assertEqual(stopped.returncode, 0, stopped.stderr.decode())
             self.assertNotEqual(process.wait(timeout=3), 0)
@@ -256,27 +261,53 @@ class RestoreNodeStopChecks(unittest.TestCase):
             self.assertIn('owned-child-exit', events)
             self.assertLess(events.index('signal-received'), events.index('owned-child-exit'))
             self.assertNotIn('owned-restore-closed', events)
-            self.assertFalse((root / 'state/restore/restore-create.SAFE.json').exists())
+            self.assertFalse((root / ('state/restore/' + action + '.SAFE.json')).exists())
+            if action == 'restore-render':
+                self.assertEqual(audit.read_bytes(), b'FICTIONAL_PARTIAL_SQL')
+                self.assertEqual(audit.stat().st_mode & 0o777, 0o600)
         finally:
             if process is not None and process.poll() is None:
                 os.killpg(process.pid, signal.SIGKILL)
                 process.wait(timeout=3)
 
-    def test_real_worker_render_copy_and_apply_pin_gate_with_fictional_child(self):
-        root = self.root('w15-restore-render-')
-        child = ('const fs=require("node:fs");fs.writeFileSync(process.argv[1],'
-                 '"FICTIONAL GENERATED SQL",{flag:"wx",mode:384});')
+    def test_real_worker_term_waits_for_fictional_native_child_close(self):
+        self.term_waits_for_fictional_native_child_close('restore-create')
+
+    def test_real_worker_term_render_waits_for_child_and_preserves_private_partial(self):
+        self.term_waits_for_fictional_native_child_close('restore-render')
+
+    def fictional_worker(self, child=None):
+        if child is None:
+            child = r'''const fs=require("node:fs"),args=process.argv.slice(2);
+const expected=Buffer.from("FICTIONAL GENERATED SQL\n".repeat(8193));
+if(process.argv[1]==="restore-render"){
+ if(!args.includes("--file=-"))process.exit(2);fs.writeFileSync(1,expected);
+}else{
+ const file=args[args.indexOf("-f")+1];
+ if(!file.endsWith("/state/restore/rendered.PRIVATE.sql")||!fs.readFileSync(file).equals(expected))process.exit(3);
+}'''
         original = 'child=cp.spawn("/usr/lib/postgresql/17/bin/"+exe,args,'
+        self.assertEqual(R.NODE_WORKER.count(original), 1)
         replacement = ('child=cp.spawn(process.execPath,["-e",' + json.dumps(child)
-                       + ',base+"/restore.PRIVATE.sql"],')
-        worker = R.NODE_WORKER.replace(original, replacement, 1)
-        rendered = subprocess.run(['node', '-e', worker, str(root), 'restore-render', R.DATABASE],
+                       + ',action,...args],')
+        return R.NODE_WORKER.replace(original, replacement, 1)
+
+    def render(self, root, worker):
+        return subprocess.run(['node', '-e', worker, str(root), 'restore-render', R.DATABASE],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
+
+    def test_real_worker_render_single_audit_file_and_apply_pin_gate_with_fictional_child(self):
+        root = self.root('w15-restore-render-')
+        worker = self.fictional_worker()
+        rendered = self.render(root, worker)
         self.assertEqual(rendered.returncode, 0, rendered.stderr.decode())
         self.assertEqual(rendered.stdout, b'')
-        copied = root / 'state/restore/rendered.PRIVATE.sql'
-        self.assertEqual(copied.read_bytes(), b'FICTIONAL GENERATED SQL')
-        self.assertEqual(copied.stat().st_mode & 0o777, 0o600)
+        audit = root / 'state/restore/rendered.PRIVATE.sql'
+        self.assertEqual(audit.read_bytes(), b'FICTIONAL GENERATED SQL\n' * 8193)
+        self.assertEqual(audit.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(audit.stat().st_nlink, 1)
+        self.assertFalse((root / 'restore.PRIVATE.sql').exists())
+        self.assertEqual((root / 'state/restore/restore-render.PRIVATE.stdout').read_bytes(), b'')
         fd = R.B.S._directory(str(root / 'state/restore'), private=True)
         try:
             receipt = R.B._json(fd, 'restore-render.SAFE.json')
@@ -284,13 +315,63 @@ class RestoreNodeStopChecks(unittest.TestCase):
             self.assertEqual(R._lifecycle(fd, 'restore-render'), receipt['identity'])
         finally:
             os.close(fd)
-        (root / 'restore.PRIVATE.sql').write_bytes(b'CHANGED-FICTIONAL-SQL')
+        audit.write_bytes(b'CHANGED-FICTIONAL-SQL')
         applied = subprocess.run(['node', '-e', worker, str(root), 'restore-apply', R.DATABASE],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
         self.assertNotEqual(applied.returncode, 0)
         journal = (root / 'state/restore/restore-apply.lifecycle.PRIVATE.jsonl').read_bytes()
         self.assertNotIn(b'owned-child-spawned', journal)
         self.assertFalse((root / 'state/restore/restore-apply.SAFE.json').exists())
+
+    def test_real_worker_applies_the_single_pinned_audit_file(self):
+        root = self.root('w15-restore-render-')
+        worker = self.fictional_worker()
+        self.assertEqual(self.render(root, worker).returncode, 0)
+        applied = subprocess.run(['node', '-e', worker, str(root), 'restore-apply', R.DATABASE],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
+        self.assertEqual(applied.returncode, 0, applied.stderr.decode())
+        self.assertEqual(applied.stdout, b'')
+        self.assertFalse((root / 'restore.PRIVATE.sql').exists())
+        fd = R.B.S._directory(str(root / 'state/restore'), private=True)
+        try:
+            receipt = R.B._json(fd, 'restore-apply.SAFE.json')
+            self.assertEqual(R._lifecycle(fd, 'restore-apply'), receipt['identity'])
+        finally:
+            os.close(fd)
+
+    def test_real_worker_render_rejects_existing_audit_file_or_link_before_child(self):
+        for kind in ('file', 'link'):
+            with self.subTest(kind=kind):
+                root = self.root('w15-restore-render-')
+                audit = root / 'state/restore/rendered.PRIVATE.sql'
+                target = root / 'existing.PRIVATE'
+                target.write_bytes(b'FICTIONAL_EXISTING_BYTES')
+                target.chmod(0o600)
+                if kind == 'link':
+                    audit.symlink_to(target)
+                else:
+                    audit.write_bytes(target.read_bytes())
+                    audit.chmod(0o600)
+                result = self.render(root, self.fictional_worker())
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(target.read_bytes(), b'FICTIONAL_EXISTING_BYTES')
+                self.assertEqual(audit.read_bytes(), b'FICTIONAL_EXISTING_BYTES')
+                journal = (root / 'state/restore/restore-render.lifecycle.PRIVATE.jsonl').read_bytes()
+                self.assertNotIn(b'owned-child-spawned', journal)
+                self.assertFalse((root / 'state/restore/restore-render.SAFE.json').exists())
+
+    def test_real_worker_failed_render_preserves_partial_and_no_receipt(self):
+        root = self.root('w15-restore-render-')
+        child = 'require("node:fs").writeFileSync(1,"FICTIONAL_PARTIAL_SQL");process.exit(7);'
+        result = self.render(root, self.fictional_worker(child))
+        self.assertNotEqual(result.returncode, 0)
+        audit = root / 'state/restore/rendered.PRIVATE.sql'
+        self.assertEqual(audit.read_bytes(), b'FICTIONAL_PARTIAL_SQL')
+        self.assertEqual(audit.stat().st_mode & 0o777, 0o600)
+        rows = [json.loads(line) for line in (root / 'state/restore/restore-render.lifecycle.PRIVATE.jsonl').read_bytes().splitlines()]
+        self.assertEqual(rows[-1]['event'], 'owned-child-exit')
+        self.assertEqual(rows[-1]['code'], 7)
+        self.assertFalse((root / 'state/restore/restore-render.SAFE.json').exists())
 
 
 if __name__ == '__main__':
