@@ -24,6 +24,11 @@ MODE = 'end500-full-capacity-diagnostic'
 SCOPE = 'ISOLATED_GITHUB_END500_CAPACITY_DIAGNOSTIC_ONLY'
 PROFILE = 'helmut-w15-end500-capacity-diagnostic/1'
 SCHEMA = 'helmut-w15-end500-capacity-trace/1'
+HOST_MODE = 'end500-full-host-capacity-diagnostic'
+HOST_SCOPE = 'ISOLATED_GITHUB_END500_HOST_CAPACITY_DIAGNOSTIC_ONLY'
+HOST_PROFILE = 'helmut-w15-end500-host-capacity-diagnostic/1'
+HOST_SCHEMA = 'helmut-w15-end500-capacity-trace/2'
+HOST_BUDGET_SCHEMA = 'helmut-w15-host-capacity-budget/1'
 UNKNOWN = CAP.UNKNOWN
 CATEGORIES, ROLES = CAP.CATEGORIES, COMPONENTS.ROLES
 EVENTS = ('max', 'oom', 'oom_kill', 'oom_group_kill')
@@ -44,6 +49,34 @@ def _measurement(value):
 
 def _decimal(value):
     return int(value) if type(value) is str and 1 <= len(value) <= 16 and value.isascii() and value.isdigit() and _number(int(value)) else UNKNOWN
+
+
+def _host_budget(value):
+    if (type(value) is not dict or set(value) != {
+            'schema', 'profile', 'hardLimitBytes', 'minimumHostReserveBytes'}
+        or value['schema'] != HOST_BUDGET_SCHEMA or value['profile'] != HOST_PROFILE
+        or type(value['hardLimitBytes']) is not int
+        or not 0 < value['hardLimitBytes'] <= 2**53 - 1 - CAP.HOST_RESERVE
+        or value['hardLimitBytes'] % 4096 != 0
+        or type(value['minimumHostReserveBytes']) is not int
+        or value['minimumHostReserveBytes'] != CAP.HOST_RESERVE):
+        return None
+    return copy.deepcopy(value)
+
+
+def _host_observation(value, budget):
+    checked = CAP.host_closed_observation(value)
+    if (checked is None
+            or checked['requiredAncestorHeadroomBytes'] != budget['hardLimitBytes'] + budget['minimumHostReserveBytes']):
+        return UNKNOWN
+    if checked['status'] == 'PASS' and (checked['ancestorIdentitiesMatch'] is not True
+            or not _number(checked['hostAvailableBytes'])
+            or checked['hostAvailableBytes'] < budget['minimumHostReserveBytes']
+            or checked['minimumAncestorHeadroomBytes'] != 'UNLIMITED'
+               and (not _number(checked['minimumAncestorHeadroomBytes'])
+                    or checked['minimumAncestorHeadroomBytes'] < checked['requiredAncestorHeadroomBytes'])):
+        return UNKNOWN
+    return copy.deepcopy(checked)
 
 
 def _phase(value):
@@ -93,7 +126,7 @@ def _component_pss(value):
     return result
 
 
-def _snapshot(sample, phase, progress, components, sequence):
+def _snapshot(sample, phase, progress, components, sequence, host_budget=None):
     sample = sample if type(sample) is dict else {}
     detail = sample.get('capacityMeasurement')
     last = detail.get('last') if type(detail) is dict else None
@@ -102,12 +135,22 @@ def _snapshot(sample, phase, progress, components, sequence):
     events = sample.get('events'); events = events if type(events) is dict else {}
     safety = 'FAIL_OR_UNKNOWN'
     try:
-        CAP.assess(sample)
+        if host_budget is None:
+            CAP.assess(sample)
+        else:
+            limit = host_budget['hardLimitBytes']
+            CAP.need(sample.get('hostCapacityBudget') == host_budget
+                     and sample.get('hostCapacitySafetyObserved') is True
+                     and sample.get('configuredLimit') == str(limit)
+                     and sample.get('swapMaximum') == '0' and sample.get('swapCurrentBytes') == 0
+                     and all(type(sample.get(k)) is int and 0 <= sample[k] <= limit
+                             for k in ('kernelLifetimePeakBytes', 'currentBytes'))
+                     and all(type(events.get(k)) is int and events[k] == 0 for k in EVENTS))
         if CAP.closed(detail) is not None and _number(last.get('hostAvailableBytes')) and last['hostAvailableBytes'] >= CAP.HOST_RESERVE:
             safety = 'PASS_OBSERVED_CAPACITY_SAFETY_ONLY'
     except Exception:
         pass
-    return {'sampleNumber': sequence, 'observedMonotonicNS': _measurement(last.get('observedMonotonicNS')),
+    result = {'sampleNumber': sequence, 'observedMonotonicNS': _measurement(last.get('observedMonotonicNS')),
         'phase': _phase(phase), 'kernelLifetimePeakBytes': _measurement(sample.get('kernelLifetimePeakBytes')),
         'currentBytes': _measurement(sample.get('currentBytes')),
         'configuredLimitBytes': _decimal(sample.get('configuredLimit')),
@@ -119,6 +162,11 @@ def _snapshot(sample, phase, progress, components, sequence):
         'memoryPressure': _pressure(last.get('memoryPressure')), 'componentPSSBytes': _component_pss(components),
         'progress': _progress(progress), 'capacitySafetyObservation': safety,
         'snapshotAtomic': False, 'peakCompositionKnown': False, 'fileCacheAdditiveToPSS': False}
+    if host_budget is not None:
+        result['hostCapacityObservation'] = _host_observation(sample.get('hostCapacityObservation'), host_budget)
+        if result['hostCapacityObservation'] == UNKNOWN or result['hostCapacityObservation']['status'] != 'PASS':
+            result['capacitySafetyObservation'] = 'FAIL_OR_UNKNOWN'
+    return result
 
 
 def _series(row):
@@ -136,7 +184,16 @@ def _point(row):
 
 class Collector:
     """Caller-owned aggregation only; observe never reads or changes the OS."""
-    def __init__(self):
+    def __init__(self, *, host_capacity_admission=None, host_capacity_budget=None):
+        if host_capacity_admission is not None:
+            CAP.need(host_capacity_budget is None)
+            admission = CAP.host_closed_admission(host_capacity_admission)
+            CAP.need(admission is not None)
+            host_capacity_budget = {'schema': HOST_BUDGET_SCHEMA, 'profile': HOST_PROFILE,
+                'hardLimitBytes': admission['diagnosticHardLimitBytes'],
+                'minimumHostReserveBytes': CAP.HOST_RESERVE}
+        self._host_budget = _host_budget(host_capacity_budget) if host_capacity_budget is not None else None
+        CAP.need(host_capacity_budget is None or self._host_budget is not None)
         self._count = 0; self._first = self._last = UNKNOWN
         self._peak = self._current = UNKNOWN
         self._categories = dict.fromkeys(CATEGORIES, UNKNOWN)
@@ -173,7 +230,7 @@ class Collector:
 
     def observe(self, sample, *, phase=UNKNOWN, progress=None, components=None):
         self._count += 1
-        row = _snapshot(sample, phase, progress, components, self._count)
+        row = _snapshot(sample, phase, progress, components, self._count, self._host_budget)
         if self._first == UNKNOWN: self._first = copy.deepcopy(row)
         self._last = row
         for name, previous in (('kernelLifetimePeakBytes', self._last_peak), ('observedMonotonicNS', self._last_time)):
@@ -262,6 +319,10 @@ class Collector:
             'capacitySafetyFailureOrUnknownCount': self._safety_failure_or_unknown_count,
             'firstCapacitySafetyFailureOrUnknown': reference(self._first_safety_failure_or_unknown),
             'peakCompositionKnown': False, 'snapshotAtomic': False, 'fileCacheAdditiveToPSS': False}
+        if self._host_budget is not None:
+            result.update(schema=HOST_SCHEMA, mode=HOST_MODE, scope=HOST_SCOPE, profile=HOST_PROFILE,
+                hardLimitBytes=self._host_budget['hardLimitBytes'], hostCapacityBudget=copy.deepcopy(self._host_budget),
+                mock500Acceptance=False, providerResourceAccepted=False)
         result['snapshots'] = [snapshots[index] for index in sorted(snapshots)]
         while len(result['history']) > MAX_HISTORY or len(_encode(result)) > MAX_BYTES:
             if result['history']:
@@ -284,12 +345,16 @@ def _valid_number(value):
     return _number(value) or type(value) is str and value == UNKNOWN
 
 
-def _valid_snapshot(row):
+def _valid_snapshot(row, hard_limit=CAP.HARD_LIMIT, host_budget=None):
     if row == UNKNOWN: return True
     keys = {'sampleNumber', 'observedMonotonicNS', 'phase', 'kernelLifetimePeakBytes', 'currentBytes', 'configuredLimitBytes',
         'swapMaximumBytes', 'swapCurrentBytes', 'events', 'hostAvailableBytes', 'memoryStat', 'memoryPressure',
         'componentPSSBytes', 'progress', 'capacitySafetyObservation', 'snapshotAtomic', 'peakCompositionKnown', 'fileCacheAdditiveToPSS'}
+    if host_budget is not None:
+        keys.add('hostCapacityObservation')
     if type(row) is not dict or set(row) != keys: return False
+    if host_budget is not None and _host_observation(row['hostCapacityObservation'], host_budget) != row['hostCapacityObservation']:
+        return False
     if (not _number(row['sampleNumber']) or not 1 <= row['sampleNumber'] or _phase(row['phase']) != row['phase']
         or any(not _valid_number(row[key]) for key in ('observedMonotonicNS', 'kernelLifetimePeakBytes', 'currentBytes',
             'configuredLimitBytes', 'swapMaximumBytes', 'swapCurrentBytes', 'hostAvailableBytes'))
@@ -305,23 +370,33 @@ def _valid_snapshot(row):
         or row['capacitySafetyObservation'] not in ('PASS_OBSERVED_CAPACITY_SAFETY_ONLY', 'FAIL_OR_UNKNOWN')
         or any(row[key] is not False for key in ('snapshotAtomic', 'peakCompositionKnown', 'fileCacheAdditiveToPSS'))): return False
     if row['capacitySafetyObservation'] == 'PASS_OBSERVED_CAPACITY_SAFETY_ONLY':
-        if (row['configuredLimitBytes'] != CAP.HARD_LIMIT or row['swapMaximumBytes'] != 0 or row['swapCurrentBytes'] != 0
+        if host_budget is not None and (row['hostCapacityObservation'] == UNKNOWN
+                or row['hostCapacityObservation']['status'] != 'PASS'): return False
+        if (row['configuredLimitBytes'] != hard_limit or row['swapMaximumBytes'] != 0 or row['swapCurrentBytes'] != 0
             or not _number(row['hostAvailableBytes']) or row['hostAvailableBytes'] < CAP.HOST_RESERVE
-            or any(not _number(row[k]) or row[k] > CAP.HARD_LIMIT for k in ('kernelLifetimePeakBytes', 'currentBytes'))
+            or any(not _number(row[k]) or row[k] > hard_limit for k in ('kernelLifetimePeakBytes', 'currentBytes'))
             or any(v != 0 for v in row['events'].values())): return False
     return True
 
 
-def closed(value):
+def closed(value, *, host_capacity_budget=None):
     """Validate fixed SAFE schema and size; arbitrary input returns None."""
     try:
-        template = Collector().summary()
+        host = None
+        if type(value) is dict and value.get('schema') == HOST_SCHEMA:
+            host = _host_budget(value.get('hostCapacityBudget'))
+            if host is None or host_capacity_budget is None or host != _host_budget(host_capacity_budget): return None
+        elif host_capacity_budget is not None:
+            return None
+        template = Collector(**({'host_capacity_budget': host} if host is not None else {})).summary()
         if type(value) is not dict or set(value) != set(template): return None
         constants = ('schema', 'mode', 'scope', 'profile', 'diagnosticOnly', 'executionAuthority', 'legacyContractAccepted',
             'end500Acceptance', 'productionAcceptance', 'hardLimitBytes', 'minimumHostReserveBytes', 'legacyPeakLimitBytes', 'legacyPeakScope',
             'kernelPeakOccurrenceTime', 'categoryOrder', 'phasePointColumns', 'seriesColumns',
             'progressSampleReferenceMeaning',
             'peakCompositionKnown', 'snapshotAtomic', 'fileCacheAdditiveToPSS')
+        if host is not None:
+            constants += ('hostCapacityBudget', 'mock500Acceptance', 'providerResourceAccepted')
         if any(type(value[key]) is not type(template[key]) or value[key] != template[key] for key in constants): return None
         if not _number(value['sampleCount']) or not _valid_number(value['kernelLifetimePeakBytes']): return None
         if not (type(value['legacyPeakExceeded']) is bool or value['legacyPeakExceeded'] == UNKNOWN): return None
@@ -329,7 +404,7 @@ def closed(value):
             if type(value[key]) is not bool: return None
         if not _number(value['observedHistoryStride']) or value['observedHistoryStride'] < 1: return None
         if type(value['snapshots']) is not list or len(value['snapshots']) > len(CATEGORIES) + 5: return None
-        if any(type(row) is not dict or not _valid_snapshot(row) for row in value['snapshots']): return None
+        if any(type(row) is not dict or not _valid_snapshot(row, template['hardLimitBytes'], host) for row in value['snapshots']): return None
         snapshots = {row['sampleNumber']: row for row in value['snapshots']}
         if len(snapshots) != len(value['snapshots']) or any(not 1 <= key <= value['sampleCount'] for key in snapshots): return None
         def valid_reference(row):

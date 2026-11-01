@@ -11,7 +11,22 @@ const FIXED = {
   legacyPeakScope:'COMMON_PARENT_LIFETIME_ALL_PHASES', legacyPeakLimitBytes:2048000000,
   kernelPeakOccurrenceTime:'UNKNOWN', peakCompositionKnown:false, snapshotAtomic:false, fileCacheAdditiveToPSS:false
 };
+const HOST_PROFILE='helmut-w15-end500-host-capacity-diagnostic/1';
+const HOST_BUDGET_SCHEMA='helmut-w15-host-capacity-budget/1';
+const LEGACY_KEYS=new Set(KEYS);
+const HOST_FIXED={...FIXED,schema:'helmut-w15-end500-capacity-trace/2',
+  mode:'end500-full-host-capacity-diagnostic',scope:'ISOLATED_GITHUB_END500_HOST_CAPACITY_DIAGNOSTIC_ONLY',
+  profile:HOST_PROFILE,mock500Acceptance:false,providerResourceAccepted:false};
+delete HOST_FIXED.hardLimitBytes;
+for(const key of ['hostCapacityBudget','mock500Acceptance','providerResourceAccepted'])KEYS.add(key);
+for(const key of ['hostCapacityObservation','status','minimumAncestorHeadroomBytes','requiredAncestorHeadroomBytes','ancestorIdentitiesMatch'])KEYS.add(key);
+const HOST_ONLY_TEXT=new Set([...KEYS].filter(k=>!LEGACY_KEYS.has(k)).concat([
+  'helmut-w15-end500-capacity-trace/2','end500-full-host-capacity-diagnostic',
+  'ISOLATED_GITHUB_END500_HOST_CAPACITY_DIAGNOSTIC_ONLY',HOST_PROFILE,HOST_BUDGET_SCHEMA,
+  'helmut-w15-host-capacity-reserve-observation/1','PASS','FAIL_HOST_RESERVE','FAIL_ANCESTOR_HEADROOM','UNLIMITED']));
 const TEXT = new Set([...KEYS,...Object.values(FIXED).filter(v=>typeof v==='string'),
+  ...Object.values(HOST_FIXED).filter(v=>typeof v==='string'),HOST_BUDGET_SCHEMA,
+  'helmut-w15-host-capacity-reserve-observation/1','PASS','FAIL_HOST_RESERVE','FAIL_ANCESTOR_HEADROOM','UNLIMITED',
   'UNKNOWN','EXACT','CONFIRMED_LOWER_BOUND','COMPLETE','ENTERED_NOT_COMPLETED',
   'PASS_OBSERVED_CAPACITY_SAFETY_ONLY','FAIL_OR_UNKNOWN',
   'LAST_EXISTING_GUARD_SAMPLE_NOT_SIMULTANEOUS_MEASUREMENT','GUARD_SAMPLE_OBSERVED','CONFIRMED_PROGRESS_RECEIVED']);
@@ -21,21 +36,95 @@ for(const s of 'arguments source-binding private-inputs index disk-admission key
 for(const s of 'backup-export backup-freeze backup-collect backup-seal backup-transport backup-authenticate backup-recovery backup-postcheck'.split(' ')){PHASES.add(s);PHASES.add('connection-'+s);}
 for(const s of PHASES)TEXT.add(s);
 for(const k of ['authCAS','usageRows','nativePostimages'])for(const suffix of ['Value','Kind'])TEXT.add(k+suffix);
-function closed(v){
+function closedHostBudget(v){
+  const keys=['schema','profile','hardLimitBytes','minimumHostReserveBytes'];
+  if(!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).sort().join(',')!==[...keys].sort().join(',')||
+    v.schema!==HOST_BUDGET_SCHEMA||v.profile!==HOST_PROFILE||!Number.isSafeInteger(v.hardLimitBytes)||
+    v.hardLimitBytes<=0||v.hardLimitBytes>Number.MAX_SAFE_INTEGER-2147483648||v.hardLimitBytes%4096!==0||
+    v.minimumHostReserveBytes!==2147483648)return null;
+  return Object.fromEntries(keys.map(k=>[k,v[k]]));
+}
+function closedHostObservation(v,budget){
+  const keys=['schema','status','hostAvailableBytes','minimumAncestorHeadroomBytes',
+    'requiredAncestorHeadroomBytes','minimumHostReserveBytes','observedMonotonicNS','ancestorIdentitiesMatch'];
+  const number=v=>Number.isSafeInteger(v)&&v>=0;
+  const host=closedHostBudget(budget);
+  if(!host||!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).sort().join(',')!==[...keys].sort().join(',')||
+    v.schema!=='helmut-w15-host-capacity-reserve-observation/1'||
+    !['PASS','FAIL_HOST_RESERVE','FAIL_ANCESTOR_HEADROOM','UNKNOWN'].includes(v.status)||
+    !(number(v.hostAvailableBytes)||v.hostAvailableBytes==='UNKNOWN')||
+    !(number(v.minimumAncestorHeadroomBytes)||['UNLIMITED','UNKNOWN'].includes(v.minimumAncestorHeadroomBytes))||
+    v.requiredAncestorHeadroomBytes!==host.hardLimitBytes+host.minimumHostReserveBytes||
+    v.minimumHostReserveBytes!==host.minimumHostReserveBytes||!number(v.observedMonotonicNS)||
+    typeof v.ancestorIdentitiesMatch!=='boolean')return null;
+  if(v.status==='PASS'&&(!v.ancestorIdentitiesMatch||!number(v.hostAvailableBytes)||v.hostAvailableBytes<host.minimumHostReserveBytes||
+    v.minimumAncestorHeadroomBytes!=='UNLIMITED'&&(!number(v.minimumAncestorHeadroomBytes)||
+      v.minimumAncestorHeadroomBytes<v.requiredAncestorHeadroomBytes)))return null;
+  return Object.fromEntries(keys.map(k=>[k,v[k]]));
+}
+function closedHostAdmission(v,budget){
+  const keys=['schema','profile','kernelPageBytes','hostTotalBytes','hostAvailableBytes','effectiveAvailableBytes',
+    'diagnosticHardLimitBytes','minimumUnallocatedHostReserveBytes','observedMonotonicNS','parentPlacement',
+    'executionAuthority','hierarchyRootProven','originalCallerConstraintsRetained','ancestorLimits'];
+  const host=closedHostBudget(budget),number=v=>Number.isSafeInteger(v)&&v>=0;
+  if(!host||!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).sort().join(',')!==[...keys].sort().join(',')||
+    v.schema!=='helmut-w15-dynamic-host-capacity-admission/1'||v.profile!==HOST_PROFILE||v.kernelPageBytes!==4096||
+    v.diagnosticHardLimitBytes!==host.hardLimitBytes||v.minimumUnallocatedHostReserveBytes!==host.minimumHostReserveBytes||
+    v.parentPlacement!=='DIRECT_HIERARCHY_ROOT'||v.executionAuthority!==false||v.hierarchyRootProven!==true||
+    v.originalCallerConstraintsRetained!==true||!['hostTotalBytes','hostAvailableBytes','effectiveAvailableBytes','observedMonotonicNS'].every(k=>number(v[k]))||
+    v.hostAvailableBytes>v.hostTotalBytes||!Array.isArray(v.ancestorLimits)||v.ancestorLimits.length<1||v.ancestorLimits.length>64)return null;
+  const finite=[];let rootCount=0;
+  for(const [index,row] of v.ancestorLimits.entries()){
+    if(!row||typeof row!=='object'||Array.isArray(row)||Object.keys(row).sort().join(',')!=='currentBytes,headroomBytes,maximumBytes')return null;
+    if(row.maximumBytes==='UNLIMITED_ROOT'){
+      if(row.currentBytes!=='NOT_APPLICABLE'||row.headroomBytes!=='UNLIMITED_ROOT'||index!==v.ancestorLimits.length-1)return null;
+      rootCount++;
+    }else if(row.maximumBytes==='UNLIMITED'){
+      if(!number(row.currentBytes)||row.headroomBytes!=='UNLIMITED')return null;
+    }else{
+      if(!number(row.maximumBytes)||!number(row.currentBytes)||row.maximumBytes<row.currentBytes||
+        row.headroomBytes!==row.maximumBytes-row.currentBytes)return null;
+      finite.push(row.headroomBytes);
+    }
+  }
+  const effective=Math.min(v.hostAvailableBytes,...finite);
+  if(rootCount!==1||v.effectiveAvailableBytes!==effective||
+    v.diagnosticHardLimitBytes!==Math.floor((effective-host.minimumHostReserveBytes)/4096)*4096)return null;
+  return JSON.parse(JSON.stringify(v));
+}
+function closed(v,expectedHostBudget){
   try{
     if(!v||typeof v!=='object'||Array.isArray(v)||JSON.stringify(v).length>20480)return null;
-    if(Object.entries(FIXED).some(([k,val])=>v[k]!==val))return null;
+    let fixed=FIXED,activeBudget=null;
+    if(v.schema===HOST_FIXED.schema){
+      const budget=closedHostBudget(v.hostCapacityBudget);
+      const expected=closedHostBudget(expectedHostBudget);
+      if(!budget||!expected||v.hardLimitBytes!==budget.hardLimitBytes||JSON.stringify(expected)!==JSON.stringify(budget))return null;
+      fixed=HOST_FIXED;
+      activeBudget=budget;
+    }else if(expectedHostBudget!==undefined||['hostCapacityBudget','mock500Acceptance','providerResourceAccepted'].some(k=>Object.hasOwn(v,k)))return null;
+    if(Object.entries(fixed).some(([k,val])=>v[k]!==val))return null;
+    if(activeBudget){
+      if(!Array.isArray(v.snapshots))return null;
+      for(const row of v.snapshots){
+        if(!row||typeof row!=='object'||Array.isArray(row)||
+          row.hostCapacityObservation!=='UNKNOWN'&&!closedHostObservation(row.hostCapacityObservation,activeBudget))return null;
+        if(row.capacitySafetyObservation==='PASS_OBSERVED_CAPACITY_SAFETY_ONLY'&&
+          (row.configuredLimitBytes!==activeBudget.hardLimitBytes||row.hostCapacityObservation?.status!=='PASS'))return null;
+      }
+    }
+    const activeKeys=activeBudget?KEYS:LEGACY_KEYS;
     let count=0;
     function safe(x,depth){
       if(++count>20000||depth>12)return false;
       if(typeof x==='boolean')return true;
       if(typeof x==='number')return Number.isSafeInteger(x)&&x>=0;
-      if(typeof x==='string')return TEXT.has(x);
+      if(typeof x==='string')return TEXT.has(x)&&(activeBudget||!HOST_ONLY_TEXT.has(x));
       if(Array.isArray(x))return x.length<=151&&x.every(y=>safe(y,depth+1));
-      return x&&typeof x==='object'&&Object.keys(x).length<=64&&Object.entries(x).every(([k,y])=>KEYS.has(k)&&safe(y,depth+1));
+      return x&&typeof x==='object'&&Object.keys(x).length<=64&&Object.entries(x).every(([k,y])=>activeKeys.has(k)&&safe(y,depth+1));
     }
     if(!safe(v,0))return null;
     return JSON.parse(JSON.stringify(v));
   }catch(_){return null;}
 }
-module.exports={closed};
+module.exports={closed,closedHostBudget,closedHostObservation,closedHostAdmission};
