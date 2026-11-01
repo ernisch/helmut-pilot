@@ -347,7 +347,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
     inputs=_checked_runtime_inputs(inputs)
     common_resources=_checked_common_resources(inputs,common_resources)
     functional=getattr(common_resources,'functional_stage',None)=='end500'
-    host_capacity=getattr(common_resources,'host_capacity_admission',None) is not None
+    host_capacity=type(getattr(common_resources,'host_capacity_admission',None)) is dict
     physical_limit=common_resources.container_limit if functional or getattr(common_resources,'end_capacity_diagnostic',False) else M.LIMIT
     prepared=_checked_prepared(inputs,common_resources)
     journal_review=inputs.report('JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json')if inputs else json.loads((REPORTS/'JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json').read_text())

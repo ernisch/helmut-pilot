@@ -229,7 +229,7 @@ def export_restore_database(context, *, expected_context, work, container, datab
         state_fd = S._directory(str(work / 'state'), private=True)
         functional_stage = getattr(getattr(supervisor, 'common_resources', None), 'functional_stage', None)
         host_admission=getattr(getattr(supervisor,'common_resources',None),'host_capacity_admission',None)
-        if host_admission is not None:
+        if type(host_admission) is dict:
             _restore_closure(work_fd,capacity_diagnostic=True,host_capacity_admission=host_admission)
         elif functional_stage in ('end500', 'mock500'):
             _restore_closure(work_fd, functional_stage=functional_stage)
@@ -721,7 +721,7 @@ def restore_readback(verified_root, *, context, controller_context, resources,
             '--memory-swap=' + str(getattr(resources, 'container_limit', Q.C.LIMIT)),
             '--cgroup-parent=' + resources.unit, *label_args, *mount_args,
             '-e', 'POSTGRES_HOST_AUTH_METHOD=trust', m.IMAGE, 'postgres',
-            *(['-c', 'max_connections=60'] if getattr(resources, 'functional_stage', None) in ('end500','mock500') or getattr(resources,'host_capacity_admission',None) is not None else []),
+            *(['-c', 'max_connections=60'] if getattr(resources, 'functional_stage', None) in ('end500','mock500') or type(getattr(resources,'host_capacity_admission',None)) is dict else []),
             '-c', 'helmut.local_usage_experiment=on', '-c', 'max_wal_size=128MB',
             '-c', 'work_mem=32MB', '-c', 'autovacuum_naptime=10s')
         owned_id = inspect(container)['Id']
@@ -745,7 +745,7 @@ def restore_readback(verified_root, *, context, controller_context, resources,
                 break
             time.sleep(.2)
         require(ready.returncode == 0)
-        if getattr(resources, 'functional_stage', None) in ('end500','mock500') or getattr(resources,'host_capacity_admission',None) is not None:
+        if getattr(resources, 'functional_stage', None) in ('end500','mock500') or type(getattr(resources,'host_capacity_admission',None)) is dict:
             require(m.read('show max_connections;', database='postgres') == 60, 'BACKUP_RECOVERY_CONNECTION_LIMIT_INVALID')
         m.docker('exec', owned_id, 'mkdir', '-p', m.BASE)
         m.docker('exec', owned_id, 'chmod', '700', m.BASE)

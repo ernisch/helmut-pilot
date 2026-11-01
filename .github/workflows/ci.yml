@@ -156,6 +156,8 @@ jobs:
       - name: FinalContext Subject-Tupel-Codec (synthetisch/offline)
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
+      - name: W15 vorhandene Hostkapazitaet rein lesend messen
+        run: node scripts/lokal.js -- python3 -B scripts/w15-github/restore_capacity.py --host-capacity-probe-only
       - name: W15 neue Parent- und Datenzugangsschutzgrenzen (synthetisch)
         if: steps.plan.outputs.standard == 'true'
         env:
@@ -566,8 +568,6 @@ jobs:
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js -- node scripts/run-offline-tests.js --fast-core
 
-      - name: W15 vorhandene Hostkapazitaet rein lesend messen
-        run: node scripts/lokal.js -- python3 -B scripts/w15-github/restore_capacity.py --host-capacity-probe-only
       - name: Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)
         if: steps.plan.outputs.standard == 'true'
         # Der Runner erzwingt Offline technisch: jede Suite läuft mit einem

@@ -172,7 +172,7 @@ class DiskGuard:
     def __call__(self):
         need(time.monotonic() - self.started < self.plan['maximumWallSeconds'], 'RESTORE_WALL_DEADLINE')
         sample = self.common.sample()
-        if getattr(self.common, 'host_capacity_admission', None) is not None:
+        if type(getattr(self.common, 'host_capacity_admission', None)) is dict:
             C.capacity().host_assess(sample,self.common.host_capacity_admission)
         elif getattr(self.common, 'functional_stage', None) in ('end500','mock500'):
             C.functional_contract().assess(sample,self.common.functional_stage)
