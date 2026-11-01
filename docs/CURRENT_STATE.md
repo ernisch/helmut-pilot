@@ -66,8 +66,9 @@ Der erfolgreiche Empfang der zwölf End500-Originale40876458074 und die native
 Minimalprobe40982718647 bleiben übernommen; keine Wiederholung.
 
 Mock500-Controller/Atomic12ACK/Tages-/Namespacebindung, Auswertung und Sicherungsanschlüsse
-sind vorbereitet und gesperrt. Positive End500-Gesamtabnahme, Kopfbindung und konkretes
-Mock-GO fehlen; der historische RAM-v2-Fehler nach69Units bleibt FAIL/UNKNOWN.
+sind vorbereitet und gesperrt. Positive End500-HC1/v4-Abnahme übernommen; die neue
+Mock-Kopf-/Quellen-/Kompatibilitätsbindung und ein eigenes Mock-GO fehlen noch.
+Der historische RAM-v2-Fehler nach69Units bleibt FAIL/UNKNOWN.
 Historische Restore-FAILs, damalige Fehlerphasen, Ressourcen und frühere Dateiblocker
 bleiben im bytegleichen Archiv erhalten; daraus entsteht keine neue Laufberechtigung.
 [Historische W15-Berichte](archive/project_state/2026_10_31_b289fe5e_CURRENT_STATE_vor_groessenkorrektur.md).
