@@ -1,0 +1,114 @@
+{
+  "schema": "helmut-w15-independent-restore-failure-review/1",
+  "status": "FAIL_INDEPENDENT_LIMITED_RESTORE_ACCEPTANCE",
+  "runId": "40920225333",
+  "runAttempt": 1,
+  "event": "workflow_dispatch",
+  "exactCommit": "b6eb74495cd9cf4d7bee04ec4b37da6244b5c6a2",
+  "branch": "codex/w15-github-end500-preparation-20261028",
+  "workflowStatus": "completed",
+  "conclusion": "failure",
+  "createdAtUTC": "2026-10-29T17:19:31Z",
+  "updatedAtUTC": "2026-10-29T17:20:53Z",
+  "url": "https://github.com/ernisch/helmut-pilot/actions/runs/40920225333",
+  "sourceQualificationSHA256": "15fae4a75cd1cbad02026a22bcf07cf675777bda932bf40c92d6b4024a045b1a",
+  "safeFailure": {
+    "status": "FAIL_W15_ISOLATED_WORKFLOW",
+    "phase": "worker",
+    "executionAuthority": false,
+    "retryAllowed": false,
+    "worker": {
+      "phase": "connection-restore"
+    }
+  },
+  "jobs": {
+    "runId": 40920225333,
+    "selectedJobs": [
+      {
+        "id": 123611138008,
+        "name": "W15 gemeinsamer Runner \u2014 getrennt gesperrter Restore und End500",
+        "status": "completed",
+        "conclusion": "failure",
+        "steps": [
+          {
+            "number": 1,
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "number": 2,
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "number": 3,
+            "name": "Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "number": 4,
+            "name": "Vorhandene gepinnte Werkzeuge und Image bereitstellen",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "number": 5,
+            "name": "Einmaligen Ablauf gebunden ausfuehren \u2014 ohne passende Freigabe gesperrt",
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          {
+            "number": 9,
+            "name": "Post Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "number": 10,
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "number": 11,
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "otherJobsSkipped": true,
+    "otherJobsCount": 7
+  },
+  "acceptance": {
+    "receivePreparePassedByStaticControlFlow": true,
+    "originalPinsIndependentlyObserved": false,
+    "restored500ZeroObserved": false,
+    "completeBackupAccepted": false,
+    "remoteReadbackObserved": false,
+    "independentRecoveryObserved": false,
+    "fullLifetimeRAMAccepted": false,
+    "finalEmptyParentObserved": false,
+    "restoreAccepted": false,
+    "end500Acceptance": false,
+    "mock500Acceptance": false
+  },
+  "boundary": {
+    "code": "scripts/w15-github/restore_connection.py",
+    "function": "_restore_prepared",
+    "publicPhase": "connection-restore",
+    "reason": "INNER_RESTORE_OR_BACKUP_CHECKPOINT_UNAVAILABLE_IN_SAFE_OUTPUT",
+    "privateRunnerLogsNeededForExactHistoricalCause": true
+  },
+  "rawLogsDisplayed": false,
+  "privateLogsPublished": false,
+  "originalFilesReadByReviewer": false,
+  "testsRepeated": false,
+  "additionalDispatches": 0,
+  "retryAllowed": false,
+  "executionAuthority": false
+}

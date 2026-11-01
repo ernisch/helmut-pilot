@@ -1,0 +1,124 @@
+{
+  "cipher": {
+    "bytes": 242693044,
+    "sha256": "eeec60f6f97f35b143f9fca22fae653ea9c8695a23d712c9fc74c1979e410231"
+  },
+  "originals": {
+    "bytes": 242570240,
+    "files": 12
+  },
+  "parts": [
+    {
+      "bytes": 16777216,
+      "driveFileId": "1Ayq9jyUETS8dHspU3IBD69-Sa8NBbJNP",
+      "index": 1,
+      "name": "end500.gpg.part-001",
+      "sha256": "0d511ba68e3a5c7c78e8f407ffd9d7d1ed6c2bbadda34d33e78672312c607c92"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "12nG2PV45T8ykvEWAhyR2W5khTw4zDxEu",
+      "index": 2,
+      "name": "end500.gpg.part-002",
+      "sha256": "0b9c04b33e31119984951944d054cda8f8d353907fd49c16d596395753acb02d"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "1LBmD_895_dN5gQIwuxwr9KPx20WWnSGS",
+      "index": 3,
+      "name": "end500.gpg.part-003",
+      "sha256": "5fa12d988c13389390380854cc8fc2940054c6c6fbdd8d3a96b036a1b0784471"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "1WYW7O50yytISi254tIKRVmnveBswQrfy",
+      "index": 4,
+      "name": "end500.gpg.part-004",
+      "sha256": "2462ff32f677d200d0cf2194908ec68e8b7c500b59a35438251b77ea1cf2a390"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "1R8ctZo7KIUSbyAw9rlN17CsqvT24tBEZ",
+      "index": 5,
+      "name": "end500.gpg.part-005",
+      "sha256": "4dfa9584b459b4bb18f1373a2cf6ee59f29f08b75c7cbf5d899e76d6ba203835"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "1v8APK-ASXtbVz5h2ZNrnhxJ4kqXZXi66",
+      "index": 6,
+      "name": "end500.gpg.part-006",
+      "sha256": "eaa5611ff0f40bc2b3228e9954e9506e4e3fd84dae2cec5bab7e70d867e86fd6"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "1IHNq9mnq0gNZbrr4NoFWR4HF3Kuw9OQX",
+      "index": 7,
+      "name": "end500.gpg.part-007",
+      "sha256": "3fe77b9ace59c4c477ca5be72552e742c36f9aefca6c157eaa5649e4226f61f7"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "1Ow6WmQyrupgvcYSSR0DIf3wDu5es3DKT",
+      "index": 8,
+      "name": "end500.gpg.part-008",
+      "sha256": "7b2f5751898b1ac8c1ce2710009e8a721e8b8c5ab92af1e364ebf16c91f8ca74"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "1De2HVrdY7QZVU9AmX_UCIrZSUdWTnezK",
+      "index": 9,
+      "name": "end500.gpg.part-009",
+      "sha256": "abd80e7dd823f51be5e58c4cd3cc34e7a6893c2675ad07220c2bdb212b01ff35"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "1qe4UPq9ToxdMbP34dkRfE1wZdstAX1AD",
+      "index": 10,
+      "name": "end500.gpg.part-010",
+      "sha256": "0d99137022d08fa39d63e2d21f754f8c0dcd4596a8bef933d9e6a4ba41b03792"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "1UkWjp6N_gZ3WtuBfIv9XPoHIUItbCWbh",
+      "index": 11,
+      "name": "end500.gpg.part-011",
+      "sha256": "635103f7078bd11bf0d64c29985b9942fe9abde32b59d4028a046c62c159808e"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "1eaIf41HYbo26KScJB_sPHuCjrcpr1gVa",
+      "index": 12,
+      "name": "end500.gpg.part-012",
+      "sha256": "137a28bf3f5a876350faf250d7fcc91ac5eeee514021a78df572d21a521007d6"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "1lM_lALP8TBDH-S67Utpy9CxfQPSmbTfS",
+      "index": 13,
+      "name": "end500.gpg.part-013",
+      "sha256": "804480d923d9da8aad67e41dd5689d3acf42053510684fd9a167a052b2e64682"
+    },
+    {
+      "bytes": 16777216,
+      "driveFileId": "1RdutCBAqxQr1WWdsiOe2fGK68-4OiqXB",
+      "index": 14,
+      "name": "end500.gpg.part-014",
+      "sha256": "ca6f3a6586f7f77f2d99478cd2b9e05f1f61939b448c308beda50df4fa648f74"
+    },
+    {
+      "bytes": 7812020,
+      "driveFileId": "12tw8CS8gFD22XjfMe3sS4ZcuNGKRz3UI",
+      "index": 15,
+      "name": "end500.gpg.part-015",
+      "sha256": "1c5ccbb23abd728da4fb0e23f3be9d38684db3c16917df86833e8e5bd546b3fa"
+    }
+  ],
+  "recipientFingerprint": "7E3998A6C2CB948C69A2EE51F4267ABF26796EDC",
+  "schema": "helmut-w15-existing-end500-source-parts/1",
+  "sourceReceipt": {
+    "bytes": 17136,
+    "driveFileId": "1BbH3cBQJHbbxh5fsqs2CSnxwuVW5asWH",
+    "sha256": "9f0a95928d6ca8dea0ae4d0aff522950f00bde7da815874fd736050fbca46cb7"
+  }
+}

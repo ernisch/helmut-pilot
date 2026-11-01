@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exactly one explicitly authorized full local mock run. No action on import."""
-import datetime, zoneinfo, hashlib, json, math, os, pathlib, posixpath, queue, signal, subprocess, threading, time
+import datetime, zoneinfo, hashlib, json, math, os, pathlib, posixpath, queue, signal, stat, subprocess, threading, time
+import importlib.util, sys
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 # Fresh server/container/PGDATA; the database namespace deliberately remains
 # unchanged so the already qualified source installer and its pins stay exact.
@@ -25,6 +26,19 @@ LOCAL_MEMORY=json.loads((ROOT/'scripts/fixtures/w15-local-memory-budget.json').r
 LIMIT=MEMORY['comparisonBudgetBytes']
 RESERVE=(LIMIT*MEMORY['minimumReservePercent']+99)//100
 MAXIMUM=LIMIT-RESERVE
+_BOUND_CONTEXT_SHA=None
+
+def _mock_module(name):
+    assert name in ('mock500_inputs','mock500_resources','mock500_start','mock500_backup',
+      'functional_contract','end500_capacity_roles')
+    key='w15_github_'+name
+    if key not in sys.modules:
+        spec=importlib.util.spec_from_file_location(key,ROOT/'scripts/w15-github'/(name+'.py'))
+        module=importlib.util.module_from_spec(spec);sys.modules[key]=module
+        try:spec.loader.exec_module(module)
+        except BaseException:del sys.modules[key];raise
+    assert pathlib.Path(sys.modules[key].__file__).absolute()==ROOT/'scripts/w15-github'/(name+'.py')
+    return sys.modules[key]
 
 def check_window(now=None):
     now=now or datetime.datetime.now(datetime.timezone.utc)
@@ -133,6 +147,72 @@ def sql(query,database=DB,source=False):
     assert (source and database==SOURCE_DB and query.startswith('begin read only;'))or(not source and database in [DB,'postgres'])
     return docker('exec','-i',SOURCE_CONTAINER if source else CONTAINER,'psql','-X','-w','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d',database,'-f','-',input=query.encode(),timeout=35).decode().strip()
 def read(query,database=DB,source=False):return json.loads(sql("begin read only;set local statement_timeout='15s';set local lock_timeout='3s';"+query+'rollback;',database,source))
+def verify_functional_connections():
+    """Native server limit and one explicitly partial client-count observation."""
+    value=read("select jsonb_build_object('maxConnections',current_setting('max_connections')::int,"
+      "'clientBackends',(select count(*)from pg_stat_activity where backend_type='client backend'));",database='postgres')
+    assert type(value)is dict and set(value)=={'maxConnections','clientBackends'}
+    assert type(value['maxConnections'])is int and value['maxConnections']==60
+    assert type(value['clientBackends'])is int and 1<=value['clientBackends']<=60
+    return {**value,'observerIncluded':True,'trueConnectionPeak':'UNKNOWN'}
+def functional_role_bindings(resources,postgres_pid,container_id,work):
+    """Reuse attested host/namespace identity; absent or changing peers stay unknown."""
+    peers={}
+    for role,name in (('helmut-node','gateway.pid'),('postgrest','postgrest.pid')):
+        fd=None
+        try:
+            fd=os.open(pathlib.Path(work)/'state'/name,os.O_RDONLY|os.O_NOFOLLOW)
+            before=os.fstat(fd);raw=os.read(fd,65)
+            assert stat.S_ISREG(before.st_mode)and before.st_uid==os.getuid()and stat.S_IMODE(before.st_mode)==0o600
+            assert before.st_nlink==1 and 0<before.st_size<=16 and len(raw)==before.st_size
+            after=os.fstat(fd)
+            assert all(getattr(after,k)==getattr(before,k)for k in
+              ('st_dev','st_ino','st_mode','st_uid','st_nlink','st_size','st_mtime_ns','st_ctime_ns'))
+            assert raw.isdigit()and 1<int(raw)<=2**53-1
+            peers[role]=int(raw)
+        except Exception:pass
+        finally:
+            if fd is not None:os.close(fd)
+    return _mock_module('end500_capacity_roles').bindings(resources.path,resources._identity,postgres_pid,container_id,peers)
+def functional_result_summary(runtime,audit,cleanup_result):
+    """Project only current-run measured numeric aggregates after existing audit.
+
+    Private rows/identities/content and their hashes never leave this boundary.
+    Missing timing observations remain UNKNOWN, even when other checks passed.
+    """
+    assert type(runtime)is dict and type(audit)is dict and type(cleanup_result)is dict
+    units=runtime.get('unitReports');phases=runtime.get('providerPhases');positions=audit.get('positions')
+    assert type(units)is list and len(units)==500 and type(phases)is list and len(phases)==1000
+    assert type(positions)is list and len(positions)==1500 and type(audit.get('units'))is list and len(audit['units'])==500
+    assert all(type(row)is dict for row in units+phases+positions+audit['units'])
+    assert len({row.get('owner')for row in units})==500
+    counts={'simultaneouslyActiveProfiles':runtime.get('activeProfilesAtLastRead'),
+      'completedUnits':runtime.get('completedUnits'),'localProviderPhases':len(phases),
+      'storedResults':audit.get('actualStoredRows'),'auditedPositions':len(positions),
+      'unitChecksCompleted':audit.get('unitChecksCompleted'),
+      'securityControls':sum(row['count']for row in units),
+      'activeProfiles':cleanup_result.get('after',{}).get('active')}
+    expected={'simultaneouslyActiveProfiles':500,'completedUnits':500,'localProviderPhases':1000,
+      'storedResults':1500,'auditedPositions':1500,'unitChecksCompleted':17000,'securityControls':8000,'activeProfiles':0}
+    assert all(type(counts[k])is int and counts[k]==v for k,v in expected.items())
+    assert all(type(row.get('count'))is int and row['count']==16 for row in units)
+    categories=audit.get('categories')
+    assert type(categories)is dict and set(categories)=={'missing','empty','duplicate','technicallyInvalid','unusable'}
+    assert all(type(v)is int and 0<=v<=1500 for v in categories.values())
+    assert audit.get('storedResultsAccepted')is True and cleanup_result.get('confirmedZero')is True and cleanup_result.get('nativeBoundZero')is True
+    def maximum(rows,key):
+        if type(rows)is not list or not rows:return 'UNKNOWN'
+        values=[row.get(key)if type(row)is dict else None for row in rows]
+        return max(values)if all(type(v)in(int,float)and math.isfinite(v)and v>=0 for v in values)else'UNKNOWN'
+    calls=(runtime['authMutations']+runtime['usageSinks']if type(runtime.get('authMutations'))is list and type(runtime.get('usageSinks'))is list else None)
+    timings={'auth':maximum(calls,'wallMs'),'cas':maximum(runtime.get('casWrites'),'wallMs'),
+      'unit':maximum(units,'wallMS'),'provider':maximum(phases,'actualDelayMS')}
+    complete=all(type(v)in(int,float)for v in timings.values())
+    bounds={'auth':30000,'cas':30000,'unit':60000,'provider':20000}
+    assert all(value=='UNKNOWN'or value<bounds[key]for key,value in timings.items())
+    return {'schema':'helmut-w15-mock500-functional-results/1',**counts,'categories':dict(categories),
+      'maximumTimingsMs':timings,'timingsComplete':complete,'timeLimitsObserved':True if complete else'UNKNOWN',
+      'executionAuthority':False,'mock500Acceptance':False,'productionAcceptance':False}
 def source_state():
     return read("select jsonb_build_object('active',(select count(*)from mandate_profiles where aktiv),'profiles',(select count(*)from mandate_profiles),'identities',(select count(*)from profiles),'profileHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by user_id collate \"C\")::text,'UTF8')),'hex')from mandate_profiles p),'storeHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by id collate \"C\")::text,'UTF8')),'hex')from helmut_store p),'rawHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by id collate \"C\")::text,'UTF8')),'hex')from raw_documents p));",SOURCE_DB,True)
 def copy_in(src,dst):docker('cp',str(src),CONTAINER+':'+dst)
@@ -152,6 +232,7 @@ class Supervisor:
         self.progress=(WORK/'outer-progress.SAFE.jsonl').open('x');os.chmod(WORK/'outer-progress.SAFE.jsonl',0o600)
         self.progress_queue=queue.Queue(maxsize=2048);self.progress_finished=threading.Event()
         self.unit_max_ms=None;self.auth_max_ms=None;self.cas_max_ms=None
+        self.common_resources=None;self.start_guard=None;self.disk_guard=None;self.backup_runner=None;self.mock_backup_closure=False
         self.reporter=threading.Thread(target=self.write_progress,daemon=True);self.reporter.start()
         self.thread=threading.Thread(target=self.monitor,daemon=True)
     def write_progress(self):
@@ -171,14 +252,20 @@ class Supervisor:
         with self.progress_lock:
             now=time.monotonic();m=self.last
             actual_limit=None if m is None else m['configuredLimit']
-            memory=None if m is None else {'sampleAtUTC':m['sampleAtUTC'],'comparisonBudgetBytes':LIMIT,
+            backup=(getattr(self.common_resources,'processing_backup_stage',None)=='mock500'
+                    and self.common_resources.memory_phase=='backup')
+            functional=getattr(self.common_resources,'functional_stage',None)=='mock500'
+            higher=backup or functional
+            budget=self.common_resources.container_limit if higher else LIMIT
+            reserve=0 if higher else RESERVE;maximum=budget if higher else MAXIMUM
+            memory=None if m is None else {'sampleAtUTC':m['sampleAtUTC'],'comparisonBudgetBytes':budget,
               'kernelLimitBytes':int(actual_limit)if actual_limit.isdigit()else actual_limit,
               'kernelLimitMB':int(actual_limit)/1000000 if actual_limit.isdigit()else None,'kernelSwapMaximum':m['swapMaximum'],
-              'currentBytes':m['currentBytes'],'currentMB':round(m['currentBytes']/1000000,3),'currentPercentOfCap':round(100*m['currentBytes']/LIMIT,6),
-              'kernelLifetimePeakBytes':m['kernelLifetimePeakBytes'],'peakMB':round(m['kernelLifetimePeakBytes']/1000000,3),'peakPercentOfCap':round(100*m['kernelLifetimePeakBytes']/LIMIT,6),
-              'reserveBytes':LIMIT-m['kernelLifetimePeakBytes'],'reserveMB':round((LIMIT-m['kernelLifetimePeakBytes'])/1000000,3),
-              'reservePercentOfCap':round(100*(LIMIT-m['kernelLifetimePeakBytes'])/LIMIT,6),'requiredReserveBytes':RESERVE,
-              'requiredReservePercent':MEMORY['minimumReservePercent'],'maximumAllowedPeakBytes':MAXIMUM,'maximumAllowedPeakMB':MAXIMUM/1000000,
+              'currentBytes':m['currentBytes'],'currentMB':round(m['currentBytes']/1000000,3),'currentPercentOfCap':round(100*m['currentBytes']/budget,6),
+              'kernelLifetimePeakBytes':m['kernelLifetimePeakBytes'],'peakMB':round(m['kernelLifetimePeakBytes']/1000000,3),'peakPercentOfCap':round(100*m['kernelLifetimePeakBytes']/budget,6),
+              'reserveBytes':budget-m['kernelLifetimePeakBytes'],'reserveMB':round((budget-m['kernelLifetimePeakBytes'])/1000000,3),
+              'reservePercentOfCap':round(100*(budget-m['kernelLifetimePeakBytes'])/budget,6),'requiredReserveBytes':reserve,
+              'requiredReservePercent':0 if higher else MEMORY['minimumReservePercent'],'maximumAllowedPeakBytes':maximum,'maximumAllowedPeakMB':maximum/1000000,
               'swapCurrentBytes':m['swapCurrentBytes'],'events':m['events']}
             record={'name':name,'observedAtUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'phase':self.stage_name or 'between-stages-or-cleanup',
               'acceptedProfiles':len(self.accepted_indexes),'expectedProfiles':500,'lastAcceptedIndex':self.last_accepted_index,
@@ -218,6 +305,8 @@ class Supervisor:
             self.accepted_indexes.add(index);self.last_accepted_index=index;self.last_ack_monotonic=time.monotonic()
             self.publish('unit-final-ack-accepted',index,'PASS')
     def first_failure(self,error):
+        if self.backup_runner is not None and self.stage_name in self.backup_runner.actions:
+            return self.backup_runner.first_failure(error)
         with self.failure_lock:
             first=self.failure is None
             self.failure=self.failure or {'type':type(error).__name__,'reason':str(error)}
@@ -250,6 +339,29 @@ class Supervisor:
             try:self.publish('supervisor-first-failure',status='FAIL')
             except BaseException:pass # First failure and bound stop already persist independently.
     def sample(self):
+        if self.start_guard is not None:
+            (self.start_guard.closure_guard if self.closure_mode or self.mock_backup_closure else self.start_guard.before_dispatch)()
+        if self.disk_guard is not None:self.disk_guard()
+        if self.common_resources is not None:
+            common=self.common_resources.sample()
+            functional=getattr(self.common_resources,'functional_stage',None)=='mock500'
+            if (functional or (getattr(self.common_resources,'processing_backup_stage',None)=='mock500'
+                    and self.common_resources.memory_phase=='backup')):
+                # The sole higher-cap phase starts after the original
+                # services/watch have actually closed. Existing recovery uses
+                # this supervisor with the same monotone parent, not v2 again.
+                self.maximum=max(self.maximum,common['kernelLifetimePeakBytes'])
+                self.last={**common,'sampleAtUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                  'comparisonBudgetBytes':self.common_resources.container_limit,
+                  'requiredReserveBytes':0,'maximumConsumptionBytes':self.common_resources.container_limit,
+                  'comparisonReserveBytes':self.common_resources.container_limit-common['kernelLifetimePeakBytes']}
+                if functional and time.monotonic()-getattr(self,'functional_last_observed',-1)>=1:
+                    self.functional_last_observed=time.monotonic()
+                    observer=getattr(self.common_resources,'functional_observation',None)
+                    if callable(observer):
+                        role_provider=getattr(self,'functional_role_provider',lambda:[])
+                        self.functional_resource_observation=observer(role_provider())
+                return
         if self.stage_name!='materials'and(WORK/'processing-materials.PRIVATE.json').exists():
             m=json.loads((WORK/'processing-materials.PRIVATE.json').read_text())
             now=datetime.datetime.now(datetime.timezone.utc)
@@ -331,7 +443,8 @@ def inner(supervisor,action,seconds=120):
     runtime='synthetik-500-w15-full500-runtime.js'
     script=runtime if action!='audit'else'synthetik-500-w15-full500-audit.js'
     suffix=' '+action if action!='audit'else''
-    cmd='umask 077; echo $$ >'+BASE+'/state/'+action+'.pid; exec timeout --signal=TERM --kill-after=5s '+str(seconds-10)+'s env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local '+BASE+'/node --max-old-space-size=512 --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/'+script+suffix
+    bound_env=(' HELMUT_W15_MOCK_CONTEXT='+BASE+'/state/mock-context.PRIVATE.json HELMUT_W15_MOCK_CONTEXT_SHA256='+_BOUND_CONTEXT_SHA)if _BOUND_CONTEXT_SHA else''
+    cmd='umask 077; echo $$ >'+BASE+'/state/'+action+'.pid; exec timeout --signal=TERM --kill-after=5s '+str(seconds-10)+'s env -i PATH=/usr/bin:/bin LANG=C.UTF-8 HELMUT_SOURCE_MODE=off HELMUT_STORAGE_BACKEND=local'+bound_env+' '+BASE+'/node --max-old-space-size=512 --require '+BASE+'/app/scripts/lokaler-netzschutz.js '+BASE+'/app/scripts/'+script+suffix
     supervisor.stage(DOCKER+['exec','--user','1000:1000',CONTAINER,'sh','-c',cmd],action,seconds)
 
 def stop_owned(actions,require_registered=False):
@@ -379,6 +492,238 @@ def recover_postgres_only(supervisor):
         if r.returncode==0:return
         time.sleep(.2)
     raise RuntimeError('full500-cleanup-only-pg-recovery-unavailable')
+
+def _private_write(path,value):
+    raw=json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=True,allow_nan=False).encode()+b'\n'
+    with pathlib.Path(path).open('xb')as stream:
+        os.fchmod(stream.fileno(),0o600);stream.write(raw);stream.flush();os.fsync(stream.fileno())
+    return sha(raw)
+
+def _bound_container(identifier,context,mounts,owned_id=None,*,memory_limit=LIMIT):
+    info=json.loads(docker('inspect',identifier))[0]
+    expected={'helmut.w15.scope':'isolated-mock500-only','helmut.w15.run':context['runId'],
+      'helmut.w15.nonce':context['nonce'],'helmut.w15.commit':context['exactCommit']}
+    assert info['Config']['Labels']==expected and info['Image']==IMAGE
+    assert info['Name']=='/'+CONTAINER and len(info['Id'])==64 and all(c in '0123456789abcdef'for c in info['Id'])
+    assert owned_id is None or info['Id']==owned_id
+    host=info['HostConfig']
+    assert host['NetworkMode']=='none'and host['Memory']==memory_limit and host['MemorySwap']==memory_limit
+    assert host['CgroupParent']=='w15_'+context['runId']+'_'+context['nonce'].replace('-','')+'.slice'
+    assert host['RestartPolicy']['Name']=='no'and not info['NetworkSettings']['Ports']
+    assert len(info['Mounts'])==len(mounts)
+    assert {row['Destination']for row in info['Mounts']}==set(mounts)
+    for row in info['Mounts']:
+        assert row['Destination']in mounts
+        source,readonly=mounts[row['Destination']]
+        assert row['Source']==str(source)and row['Type']=='bind'and row['RW']is(not readonly)
+    return info
+
+def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
+    """Explicit canonical Mock500 seam. main() and imports remain locked.
+
+    Reuses the actual runtime, native setup/prepare/run, cleanup,1500 auditor
+    and the existing supervisor. The caller must supply the independently
+    approved fresh V2 parent, inputs and start guard. No legacy approval is used.
+    """
+    global WORK,BASE,DB,CONTAINER,IMAGE,_BOUND_CONTEXT_SHA
+    assert type(inputs)is _mock_module('mock500_inputs').Mock500Inputs
+    assert type(resources)is _mock_module('mock500_resources').MockCommonResources
+    assert type(start_guard)is _mock_module('mock500_start').StartGuard
+    assert callable(backup_completion)and callable(disk_guard)
+    assert (LIMIT,RESERVE,MAXIMUM)==(2048000000,409600000,1638400000)
+    functional=getattr(resources,'functional_stage',None)=='mock500'
+    physical_limit=resources.container_limit if functional else LIMIT
+    container_options={'memory_limit':physical_limit}if functional else{}
+    context=inputs.controller_context();plan=_mock_module('mock500_inputs').namespace(context)
+    assert start_guard.context==context and start_guard.resources is resources
+    start_guard.before_dispatch(kind='prepare');inputs.claim(resources);disk_guard()
+    root=pathlib.Path(context['hostPaths']['runRoot'])
+    assert not root.exists()
+    previous=(WORK,BASE,DB,CONTAINER,IMAGE,_BOUND_CONTEXT_SHA)
+    WORK,BASE,DB,CONTAINER=plan['work'],plan['base'],plan['database'],plan['container']
+    IMAGE=context['runtimePins']['imageId']
+    failure=None;supervisor=None;gateway_process=None;gateway_log=None;owned_id=None;attempted=False
+    closed=False;close_started=False;cleanup_result=None;backup=None;result=None;mounts={};actual_functional_results=None
+    def guard():
+        start_guard.closure_guard();disk_guard()
+    def close_owned():
+        nonlocal closed,close_started
+        assert not closed and not close_started and owned_id is not None and supervisor is not None
+        close_started=True
+        info=_bound_container(owned_id,context,mounts,owned_id,**container_options)
+        if info['State']['Running']:docker('stop','--time','5',owned_id,timeout=12)
+        final=_bound_container(owned_id,context,mounts,owned_id,**container_options)
+        assert final['State']['Running']is False and final['State']['Pid']==0
+        assert final['State'].get('OOMKilled')is False and final['State'].get('ExitCode')==0
+        observation_error=None
+        try:supervisor.sample()
+        except BaseException:observation_error=True
+        finally:supervisor.stop()
+        closed=not supervisor.thread.is_alive()and not supervisor.reporter.is_alive()
+        assert closed and observation_error is None and supervisor.failure is None and supervisor.stop_failure is None
+        resources.sample()
+        return {'ownedContainerStopped':True,'watchClosed':True,
+          **({'primaryContainerId':owned_id}if getattr(resources,'processing_backup_stage',None)=='mock500'else{})}
+    try:
+        root.mkdir(mode=0o700)
+        for key in ('work','prepare','cache'):pathlib.Path(context['hostPaths'][key]).mkdir(mode=0o700)
+        for name in ('pgdata','state'):(WORK/name).mkdir(mode=0o700)
+        inputs.stage_sources(WORK/'stage',guard)
+        _private_write(WORK/'MOCK_INPUT_BINDING.PRIVATE.json',inputs._record)
+        _private_write(WORK/'OWNER_GO.PRIVATE.json',{'confirmation':'GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO',
+          'targetDatabase':DB,'maximumUnits':500,'temporarySyntheticProfiles':500,'paidModelsAllowed':False,
+          'productionAllowed':False,'full500Allowed':True,'authorizationBinding':start_guard.admission,
+          'noRetryOrResume':True})
+        _private_write(WORK/'state/OWNER_GO.PRIVATE.json',json.loads((WORK/'OWNER_GO.PRIVATE.json').read_bytes()))
+        _private_write(WORK/'state/setup-input.PRIVATE.json',{'commit':context['exactCommit']})
+        import shutil
+        shutil.copyfile(inputs.path('publicationPolicy'),WORK/'state/publication-policy.PRIVATE.json')
+        os.chmod(WORK/'state/publication-policy.PRIVATE.json',0o600)
+        mounts={'/var/lib/postgresql/data':(WORK/'pgdata',False),BASE+'/state':(WORK/'state',False),
+          BASE+'/app':(WORK/'stage/app',True),BASE+'/node':(WORK/'stage/node',True),
+          BASE+'/postgrest':(WORK/'stage/postgrest',True),
+          BASE+'/roles.PRIVATE.sql':(inputs.path('localRoles'),True),
+          BASE+'/input.PRIVATE.dump':(inputs.path('frozenSourceDump'),True)}
+        assert json.loads(docker('image','inspect',IMAGE))[0]['Id']==IMAGE
+        assert not docker('ps','-a','--filter','name=^/'+CONTAINER+'$','--format','{{.ID}}').strip()
+        labels={'helmut.w15.scope':'isolated-mock500-only','helmut.w15.run':context['runId'],
+          'helmut.w15.nonce':context['nonce'],'helmut.w15.commit':context['exactCommit']}
+        args=[item for key,value in labels.items()for item in ('--label',key+'='+value)]
+        args += [item for target,(source,readonly)in mounts.items()for item in ('--mount','type=bind,src='+str(source)+',dst='+target+(',readonly'if readonly else''))]
+        attempted=True
+        docker('create','--name',CONTAINER,'--pull=never','--network=none','--restart=no',
+          '--memory='+str(physical_limit),'--memory-swap='+str(physical_limit),'--cgroup-parent='+resources.unit,*args,
+          '-e','POSTGRES_HOST_AUTH_METHOD=trust',IMAGE,'postgres','-c','helmut.local_usage_experiment=on',
+          '-c','max_wal_size=128MB','-c','work_mem=32MB','-c','autovacuum_naptime=10s',
+          *(('-c','max_connections=60')if functional else()))
+        owned_id=_bound_container(CONTAINER,context,mounts,**container_options)['Id'];docker('start',owned_id)
+        info=_bound_container(owned_id,context,mounts,owned_id,**container_options)
+        assert info['State']['Running']is True;resources.check_pid(info['State']['Pid'],owned_id)
+        supervisor=Supervisor(resources.path);supervisor.common_resources=resources
+        if functional:
+            supervisor.functional_role_provider=lambda:functional_role_bindings(resources,info['State']['Pid'],owned_id,WORK)
+        supervisor.start_guard=start_guard;supervisor.disk_guard=disk_guard
+        supervisor.sample();supervisor.thread.start()
+        save('SUPERVISOR_READY.SAFE.json',{'pid':os.getpid(),'container':CONTAINER,'realMemoryCap':physical_limit,
+          'swapMaximum':0,'image':IMAGE,'commonParent':resources.unit})
+        ready=False
+        for _ in range(100):
+            guard()
+            p=subprocess.run(DOCKER+['exec',owned_id,'pg_isready','-h','127.0.0.1','-U','postgres','--timeout=1'],
+              env=ENV,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=5)
+            if p.returncode==0:ready=True;break
+            time.sleep(.2)
+        assert ready
+        if functional:save('FUNCTIONAL_DB_INITIAL.SAFE.json',verify_functional_connections())
+        docker('exec',owned_id,'mkdir','-p',BASE);docker('exec',owned_id,'chmod','700',BASE)
+        docker('exec',owned_id,'chown','1000:1000',BASE)
+        _mock_module('mock500_backup').restore_database(sys.modules[__name__],supervisor,resources,guard)
+        assert read('select count(*)from mandate_profiles where aktiv;')==0
+        baseline=read("select jsonb_build_object('database',current_database(),'profiles',(select count(*)from mandate_profiles),"
+          "'active',(select count(*)from mandate_profiles where aktiv),'identities',(select count(*)from profiles),"
+          "'storeRows',(select count(*)from helmut_store),"
+          "'profileHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by user_id collate \"C\")::text,'UTF8')),'hex')from mandate_profiles p),"
+          "'profileFachHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)-'aktiv' order by user_id collate \"C\")::text,'UTF8')),'hex')from mandate_profiles p),"
+          "'storeHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by id collate \"C\")::text,'UTF8')),'hex')from helmut_store p));")
+        descriptor=inputs.private_descriptor();descriptor['sourceBaseline']=baseline;descriptor['window']=start_guard.window
+        if functional:
+            contract=_mock_module('functional_contract')
+            descriptor['functionalResourceContract']={'contract':contract.CONTRACT,'mode':contract.MOCK_MODE,
+              'memoryProfile':contract.MOCK_PROFILE,'hardMemoryBytes':contract.HARD_LIMIT,
+              'hostReserveBytes':contract.HOST_RESERVE,'legacyRegularMemoryAccepted':False,'providerResourceAccepted':False}
+        descriptor_path=WORK/'mock-context.PRIVATE.json';_BOUND_CONTEXT_SHA=_private_write(descriptor_path,descriptor)
+        copy_in(descriptor_path,BASE+'/state/mock-context.PRIVATE.json')
+        inner(supervisor,'setup')
+        gateway_log=(WORK/'gateway-client.PRIVATE.log').open('xb');os.chmod(gateway_log.name,0o600)
+        command=['env','-i','PATH=/usr/bin:/bin','LANG=C.UTF-8','HELMUT_SOURCE_MODE=off','HELMUT_STORAGE_BACKEND=local',
+          'HELMUT_W15_MOCK_CONTEXT='+BASE+'/state/mock-context.PRIVATE.json','HELMUT_W15_MOCK_CONTEXT_SHA256='+_BOUND_CONTEXT_SHA,
+          BASE+'/node','--max-old-space-size=512','--require',BASE+'/app/scripts/lokaler-netzschutz.js',
+          BASE+'/app/scripts/synthetik-500-w15-full500-runtime.js','gateway']
+        gateway_process=subprocess.Popen(DOCKER+['exec','--user','1000:1000',owned_id,*command],
+          env=ENV,stdin=subprocess.DEVNULL,stdout=gateway_log,stderr=gateway_log,close_fds=True)
+        ready=False
+        for _ in range(100):
+            guard();assert gateway_process.poll()is None
+            if (WORK/'state/runtime-public.PRIVATE.json').exists():ready=True;break
+            time.sleep(.1)
+        assert ready;copy_out('runtime-public.PRIVATE.json')
+        start_guard.before_dispatch(kind='prepare')
+        material_env={**ENV,'HELMUT_SOURCE_MODE':'off','HELMUT_STORAGE_BACKEND':'local',
+          'HELMUT_W15_MOCK_CONTEXT':str(descriptor_path),'HELMUT_W15_MOCK_CONTEXT_SHA256':_BOUND_CONTEXT_SHA}
+        supervisor.stage([str(WORK/'stage/node'),'--require',str(ROOT/'scripts/lokaler-netzschutz.js'),
+          str(ROOT/'scripts/synthetik-500-w15-full500-materials.js')],'materials',240,material_env)
+        for name in ('processing-materials.PRIVATE.json','current-command.PRIVATE.json','mock-fixtures.PRIVATE.json','audit-inputs.PRIVATE.json'):
+            copy_in(WORK/name,BASE+'/state/'+name)
+        sql((ROOT/'supabase/proposals/auth_usage_atomic_local.sql').read_text(),database=DB)
+        sql("select public.helmut_auth_usage_bootstrap_v1(jsonb_build_object('id','main-auth','expectedHash',encode(sha256(convert_to(data::text,'UTF8')),'hex')))from public.helmut_store where id='main-auth';",database=DB)
+        sql("notify pgrst,'reload schema';",database=DB)
+        inner(supervisor,'prepare',130);start_guard.before_dispatch(kind='unit');inner(supervisor,'run',10815)
+    except BaseException:
+        failure={'status':'FAIL_OR_UNKNOWN','phase':'mock500-body','retryAllowed':False}
+    finally:
+        if attempted and owned_id is not None:
+            try:
+                if supervisor:supervisor.closure_mode=True
+                stop_owned(['prepare','run','setup','audit'])
+                cleanup_result=cleanup()
+                assert cleanup_result['confirmedZero']is True and cleanup_result.get('nativeBoundZero')is True
+                if supervisor:inner(supervisor,'audit',900)
+            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'cleanup-audit'}
+            try:
+                if gateway_process is not None:
+                    stop_owned(['gateway'],require_registered=True)
+                    assert gateway_process.wait(timeout=20)==0
+                    service=json.loads((WORK/'state/SERVICE_CLOSURE.SAFE.json').read_bytes())
+                    assert service['status']=='PASS_OWNED_MOCK500_SERVICES_CHILD_CLOSE'
+                    assert service['postgrestSignalAccepted']is True and service['gatewayStopped']is True
+                    assert service['forced']is False and service['journal']['closed']is True and service['journal']['pendingEntries']==0
+                    save('SERVICE_CLOSURE.SAFE.json',{**service,'gatewayClientReturncode':0})
+            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'services'}
+            try:
+                for name in ('PREPARE.SAFE.json','FULL500_RUNTIME_RESULT.SAFE.json','FULL500_RUNTIME_FAILURE.SAFE.json','RESULTS_INDEPENDENT.SAFE.json','runtime-progress.SAFE.jsonl'):
+                    copy_out(name)
+                audit=json.loads((WORK/'state/RESULTS_INDEPENDENT.SAFE.json').read_bytes())
+                assert audit['storedResultsAccepted']is True
+                runtime=json.loads((WORK/'state/FULL500_RUNTIME_RESULT.SAFE.json').read_bytes())
+                assert runtime['completedUnits']==500 and runtime['localSimulations']==1000
+                assert runtime['checks']['all8000FreshControls']is True and runtime['technicallyStoredPositions']==1500
+                assert runtime['checks']['everyAuthAssignedAndUnder30']is True
+                assert failure is None and supervisor.failure is None
+                if functional:save('FUNCTIONAL_DB_FINAL.SAFE.json',verify_functional_connections())
+                inputs.check_sources();guard()
+                result={'status':'PASS_LOCAL_MOCK500_BODY_ONLY','profiles':500,'units':500,'controls':8000,
+                  'positions':1500,'localProviderPhases':1000,'cleanupConfirmedZero':True,
+                  'executionAuthority':False,'mock500Acceptance':False,'productionAcceptance':False}
+                save('CONTROLLER_BODY.SAFE.json',result)
+                backup=backup_completion(controller=sys.modules[__name__],inputs=inputs,resources=resources,
+                  supervisor=supervisor,result=result,close_owned=close_owned)
+                assert all(backup[key]is True for key in ('remoteReadbackObserved','databaseRestoreObserved','ownedContainerStopped','watchClosed'))and closed
+                if functional:actual_functional_results=functional_result_summary(runtime,audit,cleanup_result)
+            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'backup-closure'}
+            if not closed and not close_started:
+                try:close_owned()
+                except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'owned-closure'}
+            if supervisor is not None and supervisor.thread.is_alive():
+                supervisor.stop()
+        if gateway_process is not None and gateway_process.poll()is None:
+            # Never signal an arbitrary service: owned gateway stop was already
+            # attempted, and closing our pinned container is the final boundary.
+            try:gateway_process.wait(timeout=10)
+            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'gateway-client-close'}
+        if gateway_log is not None:gateway_log.close()
+        try:
+            inputs.check_sources();resources.sample();disk_guard()
+            final={'status':'PASS_MOCK500_BODY_AND_BACKUP_INDEPENDENT_ACCEPTANCE_PENDING'if failure is None and backup else'FAIL_OR_UNKNOWN',
+              'failure':failure,'bodyCompleted':bool(result),'remoteReadbackObserved':bool(backup and backup.get('remoteReadbackObserved')),
+              'databaseRestoreObserved':bool(backup and backup.get('databaseRestoreObserved')),
+              'ownedContainerStopped':closed,'mock500Acceptance':False,'executionAuthority':False,
+              'productionAcceptance':False,'retryAllowed':False,'commonParent':resources.last_observation()}
+            if functional and actual_functional_results is not None:final['functionalResults']=actual_functional_results
+            _private_write(root/'FINAL_MOCK500_CLOSURE.SAFE.json',final)
+        except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'final-observation'}
+        WORK,BASE,DB,CONTAINER,IMAGE,_BOUND_CONTEXT_SHA=previous
+    if failure is not None or backup is None:raise RuntimeError('mock500-bound-sequence-failed-or-unknown')from None
+    return final
 
 def main():
     raise RuntimeError('full500-new-explicit-user-go-and-independent-atomic-review-required-no-start-in-integration-sprint')

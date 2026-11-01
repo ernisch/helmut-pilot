@@ -1,0 +1,17 @@
+{
+  "allExpectedNamesSizesParentAndOwnerOnlyPermissionsMatch": true,
+  "allObjectsAccessibleForMetadata": true,
+  "cipherPartsDownloaded": 0,
+  "currentCipherPartPayloadHashesRead": false,
+  "executionAuthority": false,
+  "freshSignedLinksCreated": 0,
+  "observedAtUTC": "2026-10-30T10:39:42.562975+00:00",
+  "originalFilesDownloaded": 0,
+  "schema": "helmut-w15-existing-restore-source-metadata-review/1",
+  "sourceProjection": "scripts/w15-github/restore-diagnostic-source-parts.SAFE.json",
+  "sourceReceiptBytes": 17136,
+  "sourceReceiptDriveFileId": "1BbH3cBQJHbbxh5fsqs2CSnxwuVW5asWH",
+  "sourceReceiptSHA256": "9f0a95928d6ca8dea0ae4d0aff522950f00bde7da815874fd736050fbca46cb7",
+  "status": "PASS_EXACT_15_OBJECT_METADATA_ONLY",
+  "verifiedObjects": 15
+}

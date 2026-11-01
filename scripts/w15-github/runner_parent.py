@@ -1,0 +1,741 @@
+"""One secret-free GitHub runner topology probe; never import/start W15.
+
+Only a fixed, already-local PostgreSQL image running /bin/sleep is permitted.
+The runtime slice remains active until an outside reader observes all owned
+children gone and reads its unchanged kernel lifetime counters. This is not an
+End500 memory, database, input, backup, restore or execution acceptance.
+"""
+import sys
+sys.dont_write_bytecode = True
+
+import argparse
+import hashlib
+import importlib.util
+import json
+import multiprocessing
+import os
+from pathlib import Path
+import re
+import signal
+import stat
+import subprocess
+import time
+import uuid
+
+SCRIPT = Path(__file__).absolute()
+REPO = SCRIPT.parents[2]
+SPEC = importlib.util.spec_from_file_location('w15_parent_resources', SCRIPT.with_name('common_resources.py'))
+R = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(R)
+IMAGE = 'postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3'
+ENV = {'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+       'LANG': 'C.UTF-8', 'LC_ALL': 'C.UTF-8', 'PYTHONDONTWRITEBYTECODE': '1'}
+DOCKER = ['/usr/bin/docker', '--host=unix:///var/run/docker.sock']
+UNIT_ROOT = Path('/run/systemd/system')
+INSPECT = ('{"id":{{json .Id}},"pid":{{json .State.Pid}},"running":{{json .State.Running}},'
+           '"exit":{{json .State.ExitCode}},"parent":{{json .HostConfig.CgroupParent}},'
+           '"memory":{{json .HostConfig.Memory}},"swap":{{json .HostConfig.MemorySwap}},'
+           '"network":{{json .HostConfig.NetworkMode}},"image":{{json .Image}},"labels":{{json .Config.Labels}}}')
+PHASES = frozenset(('arguments', 'github-environment', 'github-head', 'github-entry-pin',
+    'outer-image', 'outer-socket', 'outer-prepare', 'outer-initial-readback', 'outer-supervisor',
+    'outer-final-readback', 'outer-parent-stop', 'parent-entry', 'parent-unit-write',
+    'parent-daemon-reload', 'parent-start', 'parent-readback', 'parent-remove',
+    'supervisor-entry', 'supervisor-image', 'supervisor-worker', 'supervisor-readback',
+    'supervisor-container-stop', 'worker-load', 'worker-entry', 'worker-image',
+    'worker-container-start', 'worker-container-bind', 'worker-client', 'worker-container-stop'))
+CODES = frozenset(('CHECK_REJECTED', 'COMMAND_FAILED', 'COMMAND_TIMEOUT', 'COMMAND_UNAVAILABLE',
+    'OUTPUT_REJECTED', 'CHILD_EXIT_WITHOUT_REPORT', 'WORKER_SOURCE_UNAVAILABLE',
+    'FILESYSTEM_ACCESS_DENIED', 'FILESYSTEM_ENTRY_MISSING', 'FILESYSTEM_ERROR',
+    'COMMON_PARENT_REJECTED', 'CANCELLED', 'RUNTIME_REJECTED'))
+PHASE = 'arguments'
+
+
+class ProbeError(RuntimeError):
+    def __init__(self, message='RUNNER_PARENT_PROBE_REJECTED', *, code='CHECK_REJECTED', exit_code=None, record=None, memory=None):
+        super().__init__('RUNNER_PARENT_PROBE_REJECTED')
+        self.record = record if record is not None else {'phase': PHASE, 'code': code, 'exitCode': exit_code, 'via': []}
+        self.failure_memory = R.closed_failure_memory(memory)
+
+
+def phase(value):
+    global PHASE
+    require(value in PHASES)
+    PHASE = value
+
+
+def failure_record(error):
+    if isinstance(error, ProbeError):
+        return error.record
+    code = ('CANCELLED' if isinstance(error, KeyboardInterrupt) else
+            'COMMAND_TIMEOUT' if isinstance(error, subprocess.TimeoutExpired) else
+            'FILESYSTEM_ACCESS_DENIED' if isinstance(error, PermissionError) else
+            'FILESYSTEM_ENTRY_MISSING' if isinstance(error, FileNotFoundError) else
+            'FILESYSTEM_ERROR' if isinstance(error, OSError) else
+            'COMMON_PARENT_REJECTED' if isinstance(error, R.ResourceError) else 'RUNTIME_REJECTED')
+    return {'phase': PHASE, 'code': code, 'exitCode': None, 'via': []}
+
+
+def child_failure(raw):
+    """Only our closed scalar failure schema may cross an internal boundary."""
+    try:
+        require(isinstance(raw, bytes) and 0 < len(raw) <= 8192)
+        outer = json.loads(raw)
+        require(type(outer) is dict and set(outer) == {'w15ParentProbeFailure'})
+        row = outer['w15ParentProbeFailure']
+        require(type(row) is dict and set(row) == {'phase', 'code', 'exitCode', 'via'}
+                and row['phase'] in PHASES and row['code'] in CODES
+                and (row['exitCode'] is None or type(row['exitCode']) is int and -255 <= row['exitCode'] <= 255)
+                and type(row['via']) is list and len(row['via']) < 4
+                and all(type(item) is str and item in PHASES for item in row['via']))
+        return {**row, 'via': row['via'] + [PHASE]}
+    except Exception:
+        return None
+
+
+class StopLatch:
+    """First outer TERM enters finally; subsequent TERM cannot break cleanup."""
+    def __init__(self):
+        self.seen, self.cleaning = False, False
+        self.previous = signal.getsignal(signal.SIGTERM)
+        signal.signal(signal.SIGTERM, self.term)
+
+    def term(self, signum, frame):
+        first = not self.seen
+        self.seen = True
+        if first and not self.cleaning:
+            raise KeyboardInterrupt
+
+    def close(self):
+        signal.signal(signal.SIGTERM, self.previous)
+
+
+def require(value):
+    if not value:
+        raise ProbeError('RUNNER_PARENT_PROBE_REJECTED')
+
+
+class Parser(argparse.ArgumentParser):
+    def error(self, message):
+        raise ProbeError('RUNNER_PARENT_ARGUMENTS_REJECTED')
+
+
+def command(argv, *, timeout=15, check=True):
+    try:
+        result = subprocess.run(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL, env=ENV, timeout=timeout,
+                                close_fds=True, shell=False)
+    except subprocess.TimeoutExpired:
+        raise ProbeError(code='COMMAND_TIMEOUT') from None
+    except OSError:
+        raise ProbeError(code='COMMAND_UNAVAILABLE') from None
+    if len(result.stdout) > 65536:
+        raise ProbeError(code='OUTPUT_REJECTED')
+    if check and result.returncode != 0:
+        raise ProbeError(code='COMMAND_FAILED', exit_code=result.returncode,
+                         record=child_failure(result.stdout))
+    return result
+
+
+def context(run_id, commit, nonce):
+    require(isinstance(run_id, str) and re.fullmatch('[1-9][0-9]{4,19}', run_id)
+            and isinstance(commit, str) and re.fullmatch('[a-f0-9]{40}', commit))
+    value = uuid.UUID(nonce)
+    require(str(value) == nonce and value.version == 4 and value.variant == uuid.RFC_4122)
+    return {'runId': run_id, 'runAttempt': 1, 'nonce': nonce, 'exactCommit': commit}
+
+
+def names(ctx):
+    stem = 'w15_' + ctx['runId'] + '_' + uuid.UUID(ctx['nonce']).hex
+    return stem + '.slice', stem + '_supervisor.service', stem + '_probe'
+
+
+def process_env(ctx):
+    return {**ENV, 'GITHUB_ACTIONS': 'true', 'GITHUB_RUN_ID': ctx['runId'], 'GITHUB_RUN_ATTEMPT': '1'}
+
+
+def github_binding(run_id, commit, *, capacity_diagnostic=False, processing_backup_stage=None, functional_stage=None, host_capacity_diagnostic=False):
+    require(type(host_capacity_diagnostic) is bool and (not host_capacity_diagnostic or capacity_diagnostic)
+            and functional_stage in (None,'end500','mock500')
+            and not (functional_stage is not None and (capacity_diagnostic or processing_backup_stage is not None)))
+    phase('github-environment')
+    require(os.environ.get('GITHUB_ACTIONS') == 'true'
+            and os.environ.get('GITHUB_RUN_ID') == run_id
+            and os.environ.get('GITHUB_RUN_ATTEMPT') == '1')
+    phase('github-head')
+    head = command(['/usr/bin/git', '--no-optional-locks', '-c', 'core.hooksPath=/dev/null',
+                    '-c', 'core.fsmonitor=false', '-c', 'safe.directory=' + str(REPO),
+                    '-C', str(REPO), 'rev-parse', 'HEAD']).stdout
+    require(head == (commit + '\n').encode())
+    # Both executable repository sources must equal raw blobs at the exact HEAD.
+    for file in (SCRIPT, SCRIPT.with_name('common_resources.py'),
+                 *([SCRIPT.with_name('restore_capacity.py')] if capacity_diagnostic or processing_backup_stage is not None or functional_stage is not None else []),
+                 *([SCRIPT.with_name('phase_contract.py')] if processing_backup_stage is not None or functional_stage is not None else []),
+                 *([SCRIPT.with_name(name + '.py') for name in ('functional_contract','memory_components','component_resource_meter')]
+                   if functional_stage is not None else []),
+                 *([SCRIPT.with_name(name + '.py') for name in ('end500_capacity_trace', 'memory_components', 'runner_diagnostics', 'end500_capacity_roles')] if capacity_diagnostic else [])):
+        phase('github-entry-pin')
+        relative = str(file.relative_to(REPO))
+        result = command(['/usr/bin/git', '--no-optional-locks', '-c', 'core.hooksPath=/dev/null',
+                          '-c', 'core.fsmonitor=false', '-c', 'safe.directory=' + str(REPO), '-C', str(REPO),
+                          'ls-tree', '-z', commit, '--', relative]).stdout
+        header, name = result.rstrip(b'\x00').split(b'\t')
+        mode, kind, digest = header.split()
+        require(mode in (b'100644', b'100755') and kind == b'blob' and name.decode() == relative
+                and not file.is_symlink())
+        raw = file.read_bytes()
+        require(hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\x00' + raw).hexdigest().encode() == digest)
+
+
+def socket_gid():
+    value = Path('/var/run/docker.sock').lstat()
+    require(stat.S_ISSOCK(value.st_mode) and value.st_uid == 0 and value.st_gid > 0
+            and stat.S_IMODE(value.st_mode) & 0o007 == 0)
+    return value.st_gid
+
+
+def identity(path):
+    fd = R._kernel_directory(path)
+    try:
+        value = os.fstat(fd)
+        return value.st_dev, value.st_ino
+    finally:
+        os.close(fd)
+
+
+def read_parent(ctx, expected_identity, *, empty=False):
+    path = R.KERNEL_ROOT / names(ctx)[0]
+    fd = R._kernel_directory(path)
+    try:
+        value = os.fstat(fd)
+        require((value.st_dev, value.st_ino) == expected_identity)
+        def read(name):
+            child = os.open(name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=fd)
+            try:
+                raw = os.read(child, 8193)
+                require(len(raw) <= 8192)
+                return raw.decode('ascii').strip()
+            finally:
+                os.close(child)
+        sample = {'configuredLimit': read('memory.max'), 'swapMaximum': read('memory.swap.max'),
+                  'kernelLifetimePeakBytes': int(read('memory.peak')), 'currentBytes': int(read('memory.current')),
+                  'swapCurrentBytes': int(read('memory.swap.current')),
+                  'events': {k: int(v) for k, v in (row.split() for row in read('memory.events').splitlines())}}
+        try:
+            stage = ctx.get('processingBackupStage')
+            if ctx.get('hostCapacityDiagnostic') is True:
+                admission = ctx['hostCapacityAdmission']
+                sample['hostCapacityBudget'] = R.capacity().host_budget(admission)
+                sample['hostCapacitySafetyObserved'] = False
+                sample['capacityMeasurement'] = R.capacity().snapshot(sample, fd)
+                sample['hostCapacityObservation'] = R.capacity().host_runtime_guard(admission)
+                R.capacity().host_assess(sample, admission)
+                sample['hostCapacitySafetyObserved'] = True
+            elif 'functionalStage' in ctx:
+                functional = ctx['functionalStage']
+                require(functional in ('end500','mock500') and stage is None and ctx.get('capacityDiagnostic') is not True)
+                sample['capacityMeasurement'] = R.capacity().snapshot(sample, fd)
+                R.functional_contract().assess(sample, functional)
+            elif stage in ('end500', 'mock500'):
+                selected = ctx.get('processingBackupPhase', 'processing')
+                require(selected in ('processing', 'backup'))
+                if selected == 'backup':
+                    sample['capacityMeasurement'] = R.capacity().snapshot(sample, fd)
+                R.phase_contract().assess(sample, stage, phase=selected)
+            elif ctx.get('capacityDiagnostic') is True:
+                sample['capacityMeasurement'] = R.capacity().snapshot(sample, fd)
+                R.capacity().assess(sample)
+            else:
+                R.assess(sample)
+            populated = dict(row.split() for row in read('cgroup.events').splitlines())['populated']
+            require(populated in ('0', '1'))
+            if empty:
+                require(populated == '0')
+        except KeyboardInterrupt as error:
+            sample['postFailureMemoryStat'] = R.capture_post_failure_memory_stat(fd)
+            error.failure_memory = R.project_failure_memory(sample, False)
+            raise
+        except BaseException:
+            sample['postFailureMemoryStat'] = R.capture_post_failure_memory_stat(fd)
+            raise ProbeError(code='COMMON_PARENT_REJECTED', memory=R.project_failure_memory(sample, False)) from None
+        return sample
+    finally:
+        os.close(fd)
+
+
+def parent_empty(ctx, expected_identity):
+    """Separate stop fact; never accepts memory or changes a kernel counter."""
+    fd = R._kernel_directory(R.KERNEL_ROOT / names(ctx)[0])
+    try:
+        value = os.fstat(fd)
+        require((value.st_dev, value.st_ino) == expected_identity)
+        child = os.open('cgroup.events', os.O_RDONLY | os.O_NOFOLLOW, dir_fd=fd)
+        try:
+            raw = os.read(child, 8193)
+            require(len(raw) <= 8192)
+            populated = dict(row.split() for row in raw.decode('ascii').splitlines())['populated']
+            require(populated in ('0', '1'))
+            return populated == '0'
+        finally:
+            os.close(child)
+    finally:
+        os.close(fd)
+
+
+def unit_bytes(ctx=None):
+    if ctx is not None and ctx.get('hostCapacityDiagnostic') is True:
+        require(ctx.get('capacityDiagnostic') is True and 'functionalStage' not in ctx
+                and ctx.get('processingBackupStage') is None)
+        budget = R.capacity().host_budget(ctx['hostCapacityAdmission'])
+        return (b'[Unit]\nDescription=W15 host capacity diagnostic only\n[Slice]\nMemoryAccounting=yes\nMemoryMax='
+                + str(budget['hardLimitBytes']).encode() + b'\nMemorySwapMax=0\n')
+    if ctx is not None and 'functionalStage' in ctx:
+        require(ctx['functionalStage'] in ('end500','mock500')
+                and ctx.get('processingBackupStage') is None and ctx.get('capacityDiagnostic') is not True)
+        return (b'[Unit]\nDescription=W15 isolated functional safety contract\n'
+                b'[Slice]\nMemoryAccounting=yes\nMemoryMax=' + str(R.functional_contract().HARD_LIMIT).encode() + b'\nMemorySwapMax=0\n')
+    if ctx is not None and ctx.get('processingBackupStage') in ('end500', 'mock500'):
+        limit = R.phase_contract().processing_limits(ctx['processingBackupStage'])['comparisonBudgetBytes']
+        return (b'[Unit]\nDescription=W15 processing then backup phase contract\n'
+                b'[Slice]\nMemoryAccounting=yes\nMemoryMax=' + str(limit).encode() + b'\nMemorySwapMax=0\n')
+    if ctx is not None and ctx.get('capacityDiagnostic') is True:
+        return (b'[Unit]\nDescription=W15 full restore capacity diagnostic only\n'
+                b'[Slice]\nMemoryAccounting=yes\nMemoryMax=4999999488\nMemorySwapMax=0\n')
+    return (b'[Unit]\nDescription=W15 secret-free parent topology probe\n'
+            b'[Slice]\nMemoryAccounting=yes\nMemoryMax=2560000000\nMemorySwapMax=0\n')
+
+
+def prepare_parent(ctx):
+    phase('parent-entry')
+    require(os.getuid() == 0 and Path('/proc/1/comm').read_text().strip() == 'systemd')
+    unit, _, _ = names(ctx)
+    path = R.KERNEL_ROOT / unit
+    require(not path.exists())
+    if ctx.get('hostCapacityDiagnostic') is True:
+        require('hostCapacityAdmission' not in ctx)
+        ctx['hostCapacityAdmission'] = R.capacity().host_admission_dynamic()
+        record = {'schema':'helmut-w15-root-host-capacity-binding/1',
+                  'context':{k:ctx[k] for k in ('runId','exactCommit','nonce')},
+                  'admission':ctx['hostCapacityAdmission']}
+        raw = json.dumps(record,sort_keys=True,separators=(',',':'),allow_nan=False).encode('ascii')
+        require(len(raw) <= 32768)
+        out = os.open(UNIT_ROOT/(unit+'.host-capacity.json'),os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+        try:
+            require(os.write(out,raw) == len(raw));os.fsync(out)
+        finally:os.close(out)
+    elif ctx.get('functionalStage') in ('end500','mock500') or ctx.get('capacityDiagnostic') is True or ctx.get('processingBackupStage') in ('end500', 'mock500'):
+        R.capacity().host_admission()
+    phase('parent-unit-write')
+    fd = os.open(UNIT_ROOT / unit, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    try:
+        raw = unit_bytes(ctx)
+        require(os.write(fd, raw) == len(raw))
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+    # Explicit unit definition and start avoid relying on implicit set-property
+    # loading. No worker runs before the slice's actual limits are read back.
+    try:
+        phase('parent-daemon-reload')
+        command(['/usr/bin/systemctl', 'daemon-reload'])
+        phase('parent-start')
+        command(['/usr/bin/systemctl', 'start', unit])
+        phase('parent-readback')
+        observed = identity(path)
+        read_parent(ctx, observed, empty=True)
+    except BaseException as error:
+        # This invocation exclusively created the unit; a pre-existing unit
+        # would already have failed O_EXCL and is never stopped or removed.
+        first = ProbeError(record=failure_record(error))
+        try:
+            remove_parent(ctx)
+        except BaseException:
+            pass  # Preserve the actual first failure, never a cleanup PASS.
+        raise first from None
+    if ctx.get('hostCapacityDiagnostic') is True:
+        return {'status':'PASS_ROOT_BOUND_HOST_CAPACITY_PARENT_ONLY',
+                'hostCapacityAdmission':ctx['hostCapacityAdmission']}
+
+
+def load_host_admission(ctx):
+    """Only the root-owned, immutable pre-parent record can select this budget."""
+    require(os.getuid() == 0 and ctx.get('hostCapacityDiagnostic') is True)
+    path = UNIT_ROOT/(names(ctx)[0]+'.host-capacity.json')
+    fd = os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+    try:
+        before = os.fstat(fd)
+        require(stat.S_ISREG(before.st_mode) and before.st_uid == 0 and before.st_nlink == 1
+                and stat.S_IMODE(before.st_mode) == 0o600 and 0 < before.st_size <= 32768)
+        raw = os.read(fd,32769);after = os.fstat(fd)
+        require(len(raw) == before.st_size and (before.st_dev,before.st_ino,before.st_size,before.st_mtime_ns,before.st_ctime_ns)
+                == (after.st_dev,after.st_ino,after.st_size,after.st_mtime_ns,after.st_ctime_ns))
+        record = json.loads(raw)
+        require(type(record) is dict and set(record) == {'schema','context','admission'}
+                and record['schema'] == 'helmut-w15-root-host-capacity-binding/1'
+                and record['context'] == {k:ctx[k] for k in ('runId','exactCommit','nonce')}
+                and R.capacity().host_closed_admission(record['admission']) is not None)
+        return record['admission']
+    finally:os.close(fd)
+
+
+def remove_parent(ctx):
+    phase('parent-remove')
+    require(os.getuid() == 0)
+    unit, _, _ = names(ctx)
+    file = UNIT_ROOT / unit
+    value = file.lstat()
+    require(stat.S_ISREG(value.st_mode) and value.st_uid == 0 and value.st_nlink == 1
+            and stat.S_IMODE(value.st_mode) == 0o600 and file.read_bytes() == unit_bytes(ctx))
+    command(['/usr/bin/systemctl', 'stop', unit], timeout=30)
+    file.unlink()  # Only this exclusive, fixed-content transient probe unit.
+    command(['/usr/bin/systemctl', 'daemon-reload'])
+
+
+def advance_backup(ctx, expected_identity):
+    """Root-only, one-way fixed cap change; never touch peak/cache/swap files.
+
+    The supervising caller has verified the pinned worker boundary, stopped
+    primary container and actual remaining process inventory before this call.
+    An already raised or mismatched limit always rejects, including re-entry.
+    """
+    require(os.getuid() == 0 and ctx.get('processingBackupStage') in ('end500', 'mock500'))
+    require(ctx.get('processingBackupPhase', 'processing') == 'processing')
+    path = R.KERNEL_ROOT / names(ctx)[0]
+    before = read_parent(ctx, expected_identity)
+    R.phase_contract().assess(before, ctx['processingBackupStage'], phase='processing')
+    host = R.capacity().host_admission()
+    fd = R._kernel_directory(path)
+    child = None
+    try:
+        st = os.fstat(fd)
+        require((st.st_dev, st.st_ino) == expected_identity)
+        child = os.open('memory.max', os.O_WRONLY | os.O_NOFOLLOW, dir_fd=fd)
+        raw = str(R.capacity().HARD_LIMIT).encode('ascii')
+        require(os.write(child, raw) == len(raw))
+    finally:
+        if child is not None:
+            os.close(child)
+        os.close(fd)
+    ctx['processingBackupPhase'] = 'backup'
+    after = read_parent(ctx, expected_identity)
+    R.phase_contract().assess(after, ctx['processingBackupStage'], phase='backup')
+    require(after['kernelLifetimePeakBytes'] >= before['kernelLifetimePeakBytes'])
+    return before, after, host
+
+
+def inspect(container, *, check=True):
+    result = command(DOCKER + ['inspect', '--format', INSPECT, container], check=check)
+    return json.loads(result.stdout) if result.returncode == 0 else None
+
+
+def container_labels(ctx):
+    return {'helmut.w15.probe': 'parent-only', 'helmut.w15.run': ctx['runId'],
+            'helmut.w15.nonce': ctx['nonce'], 'helmut.w15.commit': ctx['exactCommit']}
+
+
+def container_owned(value, ctx, image):
+    require(isinstance(value, dict) and isinstance(value.get('id'), str)
+            and re.fullmatch('[a-f0-9]{64}', value['id'])
+            and value.get('labels') == container_labels(ctx) and value.get('parent') == names(ctx)[0]
+            and value.get('image') == image)
+
+
+def stop_container(ctx, image):
+    value = inspect(names(ctx)[2], check=False)
+    if value is None:
+        return
+    # A random-looking name is not ownership. After a daemon/client timeout,
+    # the fresh labels, fixed image and parent must still bind the exact ID.
+    container_owned(value, ctx, image)
+    owned_id = value['id']
+    if value['running']:
+        command(DOCKER + ['stop', '--time', '5', owned_id], timeout=12)
+    value = inspect(owned_id)
+    container_owned(value, ctx, image)
+    require(value['id'] == owned_id and value['running'] is False and value['pid'] == 0)
+    # Preserve the stopped synthetic container; no rm, volume or evidence purge.
+
+
+def worker(ctx):
+    phase('worker-entry')
+    require(os.getuid() == os.getgid() == 1000 and os.getgroups() == [socket_gid()])
+    unit, _, container = names(ctx)
+    resources = R.observe(ctx)
+    root_pid = os.getppid()
+    resources.check_pid(root_pid)
+    phase('worker-image')
+    image = command(DOCKER + ['image', 'inspect', '--format', '{{.Id}}', IMAGE]).stdout.decode().strip()
+    require(re.fullmatch('sha256:[a-f0-9]{64}', image))
+    require(inspect(container, check=False) is None)
+    wait = None
+    failure = None
+    try:
+        phase('worker-container-start')
+        command(DOCKER + ['run', '-d', '--name', container, '--pull=never', '--network=none',
+                          '--restart=no', '--read-only', '--pids-limit=16', '--cap-drop=ALL',
+                          '--security-opt=no-new-privileges', '--memory=2560000000',
+                          '--memory-swap=2560000000', '--cgroup-parent=' + unit,
+                          *[arg for key, value in container_labels(ctx).items() for arg in ('--label', key + '=' + value)],
+                          '--entrypoint=/bin/sleep', IMAGE, '90'], timeout=20)
+        phase('worker-container-bind')
+        value = inspect(container)
+        container_owned(value, ctx, image)
+        require(value['running'] is True and value['parent'] == unit and value['memory'] == R.LIMIT
+                and value['swap'] == R.LIMIT and value['network'] == 'none' and value['image'] == image)
+        resources.check_pid(value['pid'], value['id'])
+        # Hold an actual host Docker client in the parent while observing the
+        # separately daemon-created container child. No inherited runner env.
+        phase('worker-client')
+        wait = subprocess.Popen(DOCKER + ['wait', container], stdin=subprocess.DEVNULL,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                env=ENV, close_fds=True)
+        resources.check_pid(wait.pid)
+        sample = resources.sample()
+        result = {'rootSupervisorPID': root_pid, 'uid1000WorkerPID': os.getpid(),
+                  'dockerClientPID': wait.pid, 'containerInitPID': value['pid'],
+                  'dockerSocketGID': socket_gid(), 'workerSupplementaryGroups': os.getgroups(),
+                  'observedImageId': image, 'sampleWhileAllRolesLive': sample}
+    except BaseException as error:
+        failure = ProbeError(record=failure_record(error))
+        raise failure from None
+    finally:
+        try:
+            phase('worker-container-stop')
+            stop_container(ctx, image)
+            if wait is not None:
+                require(wait.wait(timeout=10) == 0)
+            resources.sample()
+        except BaseException:
+            if failure is None:
+                raise
+    return result
+
+
+def fork_worker(ctx, sender, receiver, docker_gid):
+    """Run only the already loaded fixed worker, after dropping root identity."""
+    receiver.close()
+    code = 1
+    try:
+        phase('worker-entry')
+        os.environ.clear()
+        os.environ.update(ENV)
+        os.setgroups([docker_gid])
+        os.setgid(1000)
+        os.setuid(1000)
+        result = worker(ctx)
+        raw = json.dumps(result, separators=(',', ':'), allow_nan=False).encode()
+        require(len(raw) <= 16384)
+        sender.send_bytes(raw)
+        code = 0
+    except BaseException as error:
+        raw = json.dumps({'w15ParentProbeFailure': failure_record(error)}, separators=(',', ':')).encode()
+        try:
+            sender.send_bytes(raw)
+        except (OSError, EOFError):
+            pass
+    finally:
+        sender.close()
+    raise SystemExit(code)
+
+
+def supervise(ctx):
+    phase('supervisor-entry')
+    require(os.getuid() == 0)
+    unit, _, container = names(ctx)
+    path = R.KERNEL_ROOT / unit
+    inode = identity(path)
+    require(R.membership(Path('/proc/self/cgroup').read_text()).startswith('/' + unit + '/'))
+    read_parent(ctx, inode)
+    phase('supervisor-image')
+    image = command(DOCKER + ['image', 'inspect', '--format', '{{.Id}}', IMAGE]).stdout.decode().strip()
+    require(re.fullmatch('sha256:[a-f0-9]{64}', image))
+    require(inspect(container, check=False) is None)
+    child = None
+    receiver = sender = None
+    failure = None
+    try:
+        phase('supervisor-worker')
+        fork = multiprocessing.get_context('fork')
+        receiver, sender = fork.Pipe(duplex=False)
+        child = fork.Process(target=fork_worker, args=(ctx, sender, receiver, socket_gid()))
+        child.start()
+        sender.close()
+        raw = None
+        deadline = time.monotonic() + 60
+        while child.is_alive():
+            require(time.monotonic() < deadline)
+            read_parent(ctx, inode)
+            if raw is None and receiver.poll(0):
+                raw = receiver.recv_bytes(maxlength=16384)
+            time.sleep(.1)
+        child.join(timeout=5)
+        require(type(child.exitcode) is int)
+        if raw is None and receiver.poll(1):
+            raw = receiver.recv_bytes(maxlength=16384)
+        if child.exitcode != 0 or raw is None:
+            raise ProbeError(code='CHILD_EXIT_WITHOUT_REPORT', exit_code=child.exitcode, record=child_failure(raw))
+        require(len(raw) <= 16384)
+        result = json.loads(raw)
+        require(result['rootSupervisorPID'] == os.getpid() and result['uid1000WorkerPID'] == child.pid)
+        phase('supervisor-readback')
+        read_parent(ctx, inode)
+        return result
+    except BaseException as error:
+        failure = ProbeError(record=failure_record(error))
+        raise failure from None
+    finally:
+        try:
+            if child is not None and child.pid is not None and child.is_alive():
+                child.terminate()
+                child.join(timeout=5)
+                if child.is_alive():
+                    child.kill()
+                    child.join(timeout=5)
+                require(not child.is_alive())
+            phase('supervisor-container-stop')
+            stop_container(ctx, image)
+            read_parent(ctx, inode)
+        except BaseException:
+            if failure is None:
+                raise
+        finally:
+            if receiver is not None:
+                receiver.close()
+            if sender is not None:
+                sender.close()
+
+
+def internal_argv(mode, ctx):
+    return ['/usr/bin/python3', '-B', str(SCRIPT), '--internal', mode,
+            '--run-id', ctx['runId'], '--expected-commit', ctx['exactCommit'], '--nonce', ctx['nonce'],
+            *(['--capacity-diagnostic'] if ctx.get('capacityDiagnostic') is True else []),
+            *(['--host-capacity-diagnostic'] if ctx.get('hostCapacityDiagnostic') is True else []),
+            *(['--processing-backup-stage', ctx['processingBackupStage']]
+              if ctx.get('processingBackupStage') in ('end500', 'mock500') else []),
+            *(['--functional-stage', ctx['functionalStage']]
+              if ctx.get('functionalStage') in ('end500', 'mock500') else [])]
+
+
+def privileged(mode, ctx):
+    return command(['/usr/bin/sudo', '-n', '/usr/bin/env', '-i', *[k + '=' + v for k, v in process_env(ctx).items()],
+                    *internal_argv(mode, ctx)], timeout=40)
+
+
+def probe(ctx, stop_latch=None):
+    unit, service, _ = names(ctx)
+    phase('outer-image')
+    image = command(DOCKER + ['image', 'inspect', '--format', '{{.Id}}', IMAGE]).stdout.decode().strip()
+    require(re.fullmatch('sha256:[a-f0-9]{64}', image))
+    phase('outer-socket')
+    socket_gid()
+    created = False
+    failure = None
+    try:
+        phase('outer-prepare')
+        privileged('prepare', ctx)
+        created = True
+        phase('outer-initial-readback')
+        inode = identity(R.KERNEL_ROOT / unit)
+        initial = read_parent(ctx, inode, empty=True)
+        argv = ['/usr/bin/sudo', '-n', '/usr/bin/systemd-run', '--quiet', '--wait', '--pipe', '--collect',
+                '--service-type=exec', '--unit=' + service, '--slice=' + unit,
+                '--property=User=0', '--property=Group=0', '--property=RuntimeMaxSec=75',
+                '--property=TimeoutStopSec=15', '--property=KillMode=control-group',
+                '/usr/bin/env', '-i', *[k + '=' + v for k, v in process_env(ctx).items()], *internal_argv('supervise', ctx)]
+        phase('outer-supervisor')
+        result = command(argv, timeout=100)
+        roles = json.loads(result.stdout)
+        require(roles['observedImageId'] == image)
+        phase('outer-final-readback')
+        final = read_parent(ctx, inode, empty=True)
+        require(final['kernelLifetimePeakBytes'] >= initial['kernelLifetimePeakBytes'])
+        return {'status': 'PASS_PARENT_TOPOLOGY_ONLY_START_BLOCKED', 'readiness': 'BLOCKED',
+                'exactCommit': ctx['exactCommit'], 'runId': ctx['runId'], 'runAttempt': 1,
+                'roles': roles, 'initialCommonParent': initial, 'finalCommonParentAfterOwnedExits': final,
+                'sameKernelParentIdentity': True, 'ownedChildrenExited': True,
+                'executionAuthority': False, 'end500Acceptance': False, 'mock500Acceptance': False,
+                'commonLifetimeMemoryAccepted': False, 'fullRestoreCapacityAccepted': False,
+                'controllerStarted': False, 'databaseStarted': False, 'authCalls': 0, 'units': 0, 'providerCalls': 0}
+    except BaseException as error:
+        failure = ProbeError(record=failure_record(error))
+        raise failure from None
+    finally:
+        if created:
+            if stop_latch is not None:
+                stop_latch.cleaning = True
+            try:
+                phase('outer-parent-stop')
+                privileged('remove', ctx)
+            except BaseException:
+                if failure is None:
+                    raise
+
+
+def main(argv=None):
+    public = True
+    stop_latch = None
+    try:
+        phase('arguments')
+        parser = Parser(allow_abbrev=False, add_help=False, description=__doc__)
+        mode = parser.add_mutually_exclusive_group(required=True)
+        mode.add_argument('--probe-parent-only', action='store_true')
+        mode.add_argument('--internal', choices=('prepare', 'remove', 'supervise'))
+        parser.add_argument('--run-id', required=True)
+        parser.add_argument('--expected-commit', required=True)
+        parser.add_argument('--nonce')
+        parser.add_argument('--capacity-diagnostic', action='store_true')
+        parser.add_argument('--host-capacity-diagnostic', action='store_true')
+        parser.add_argument('--processing-backup-stage', choices=('end500', 'mock500'))
+        parser.add_argument('--functional-stage', choices=('end500','mock500'))
+        args = parser.parse_args(argv)
+        public = args.internal is None
+        require((public and args.nonce is None) or (not public and args.nonce is not None))
+        ctx = context(args.run_id, args.expected_commit, str(uuid.uuid4()) if public else args.nonce)
+        require(not args.capacity_diagnostic or args.internal in ('prepare', 'remove'))
+        require(not args.host_capacity_diagnostic or (args.capacity_diagnostic
+                and args.internal in ('prepare','remove') and args.processing_backup_stage is None and args.functional_stage is None))
+        require(args.processing_backup_stage is None or args.internal in ('prepare', 'remove'))
+        require(not (args.capacity_diagnostic and args.processing_backup_stage is not None))
+        require(args.functional_stage is None or (args.internal in ('prepare','remove')
+                and not args.capacity_diagnostic and args.processing_backup_stage is None))
+        if args.capacity_diagnostic:
+            ctx['capacityDiagnostic'] = True
+        if args.host_capacity_diagnostic:
+            ctx['hostCapacityDiagnostic'] = True
+            if args.internal == 'remove':ctx['hostCapacityAdmission'] = load_host_admission(ctx)
+        if args.processing_backup_stage is not None:
+            ctx['processingBackupStage'] = args.processing_backup_stage
+        if args.functional_stage is not None:
+            ctx['functionalStage'] = args.functional_stage
+        if public:
+            stop_latch = StopLatch()
+        github_binding(args.run_id, args.expected_commit, capacity_diagnostic=args.capacity_diagnostic,
+                       processing_backup_stage=args.processing_backup_stage, functional_stage=args.functional_stage,
+                       host_capacity_diagnostic=args.host_capacity_diagnostic)
+        if public:
+            result = probe(ctx, stop_latch=stop_latch)
+            stop_latch.cleaning = False
+            require(not stop_latch.seen)
+        else:
+            result = {'prepare': prepare_parent, 'remove': remove_parent,
+                      'supervise': supervise}[args.internal](ctx)
+        if result is not None:
+            print(json.dumps(result, separators=(',', ':'), allow_nan=False))
+        return 0
+    except (Exception, KeyboardInterrupt) as error:
+        if public:
+            print(json.dumps({'status': 'FAIL_OR_UNKNOWN_PARENT_PROBE_START_BLOCKED',
+                              'reason': 'RUNNER_PARENT_PROBE_REJECTED', 'readiness': 'BLOCKED',
+                              'failure': failure_record(error),
+                              'executionAuthority': False, 'controllerStarted': False,
+                              'databaseStarted': False, 'end500Acceptance': False, 'mock500Acceptance': False,
+                              'commonLifetimeMemoryAccepted': False, 'retryAllowed': False}, separators=(',', ':')))
+        else:
+            print(json.dumps({'w15ParentProbeFailure': failure_record(error)}, separators=(',', ':')))
+        return 1
+    finally:
+        if stop_latch is not None:
+            stop_latch.close()
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

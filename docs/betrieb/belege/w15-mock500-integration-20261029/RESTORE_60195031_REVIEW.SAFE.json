@@ -1,0 +1,44 @@
+{
+  "backupExportInnerOperation": "UNKNOWN",
+  "backupFreezeReached": false,
+  "backupTransportReached": false,
+  "codeFlowOnly": {
+    "primaryActiveProfiles": 0,
+    "primaryNativeRestoreSteps": 5,
+    "primaryProfiles": 500,
+    "receivedOriginalBytes": 242570240,
+    "receivedOriginalFiles": 12
+  },
+  "completeBackupAccepted": false,
+  "end500Accepted": false,
+  "exactCommit": "60195031c9187cf91ce4497f8875977683914f20",
+  "finalParentEmptyAccepted": false,
+  "finalizedArtifacts": 0,
+  "firstConcretePhase": "backup-export",
+  "fullLifetimeMemoryAccepted": false,
+  "lastCachedWorkerObservation": {
+    "currentBytes": 1510432768,
+    "events": {
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+    },
+    "limitBytes": 2560000000,
+    "peakBytes": 1638682624,
+    "peakReserveBytes": 921317376,
+    "swapCurrentBytes": 0,
+    "swapMaximumBytes": 0,
+    "valid": true
+  },
+  "mock500Accepted": false,
+  "remoteReadbackAccepted": false,
+  "restoreAccepted": false,
+  "retryAllowed": false,
+  "reviewer": "independent-restore-diag-acceptance",
+  "runAttempt": 1,
+  "runId": "40946145190",
+  "schema": "helmut-w15-independent-restore-diagnostic-review/1",
+  "secondRecoveryAccepted": false,
+  "status": "FAIL_CONFIRMED"
+}

@@ -1,0 +1,87 @@
+{
+  "schema": "helmut-w15-existing-recovery-candidate/1",
+  "observedAtUTC": "2026-10-29T06:30:27.703897+00:00",
+  "status": "PASS_EXISTING_PASSWORD_BASED_CANDIDATE_CURRENT_DECRYPT_PENDING",
+  "existingRecoveryFingerprint": "DCFD605ED28EEACA9B826105E769DE07A68BA8E4",
+  "sourceHTML": {
+    "driveFileId": "1GJJTGwxc70YnLO-0RgOqUOY5lg6ttX8o",
+    "bytes": 414252,
+    "sha256": "8b47e0a77621baf29c44271769f4a4bdd3f44933105007a4b08786391aee7bb3"
+  },
+  "keyBackupDriveFileId": "1vr542BL3avsxWj_U3KjIUGaY8IY3PmBy",
+  "keyBackupCipherPin": {
+    "bytes": 569,
+    "sha256": "1d7c25d1041fdc91da2151f28cb15ca6d7944fc66107e7c236787c2fd62b77f5"
+  },
+  "controlCipherPin": {
+    "bytes": 467,
+    "sha256": "09bc1f7539359551afb03a02f3ee002b9dee1c4ad8de289cab563c26ab8927af"
+  },
+  "expectedSecretKeyExportSHA256": "d671166bc1a8d387a85b07e1b63ce7aebf57d27458147321142cb3db9aa6f00d",
+  "expectedChallengePlaintextSHA256": "54768587e5a7330c5f62ed9fbabefba98911fb1cbd497575e39fd1867e762928",
+  "backupEncryption": {
+    "SKESKPacketTag": 3,
+    "SKESKVersion": 4,
+    "symmetricCipherAlgorithm": 9,
+    "iteratedSaltedS2KType": 3,
+    "S2KHashAlgorithm": 10,
+    "encryptedDataPacketTag": 18,
+    "interpretation": "Password-based AES256 with iterated salted SHA512 S2K and integrity-protected encrypted data"
+  },
+  "historicalControlRecovery": {
+    "driveFileId": "1MKZY2BMltoqlo-YeD__05UypywupjkSY",
+    "status": "INDEPENDENT_KEY_RECOVERY_VERIFIED",
+    "observedUTC": "2026-10-27T19:11:06.277717+00:00",
+    "scope": "key_recovery_and_control_message_only",
+    "archiveRestoreVerified": false
+  },
+  "operatorReportHetznerDeleted": true,
+  "hetznerAccessAttempted": false,
+  "localPrivateKeySearchFoundCandidate": false,
+  "otherCodexRuntimeReachabilityVerified": false,
+  "bitwardenPassphraseAccessible": false,
+  "realCurrentPassphraseAttempted": false,
+  "currentRecoveryKeyRestored": false,
+  "currentW15RecipientRestored": false,
+  "originalCipherReusability": "CONDITIONAL_ON_EXISTING_RECOVERY_CHAIN_SUCCESS",
+  "newRecipientNecessityEstablished": false,
+  "newRecipientCreated": false,
+  "newOriginalTransferPerformed": false,
+  "localActualInputOnlyCheck": "PASS_PINNED_PASSWORD_BASED_KEY_INPUTS_ONLY",
+  "developmentChecks": {
+    "newRealGPGSyntheticCases": 5,
+    "status": "PASS",
+    "newContextCLIOnlyCases": 4,
+    "contextCLIStatus": "PASS",
+    "historicalEnd500OrComponentEvidenceRerun": false,
+    "newRecoveryChecksRepeatedOnlyAfterBinarySelectionFix": true,
+    "independentRecoveryCodeReview": "PASS_SCOPED_STATIC",
+    "reviewFinding": "Inherited GPG PATH selection",
+    "findingClosed": "System binary resolution restricted to /usr/bin:/bin and regression tested"
+  },
+  "actualRestoreAuthority": "Existing local recovery only after safe secret availability; no transfer or full test authority",
+  "dataDeletions": false,
+  "uploads": 0,
+  "productionActions": false,
+  "executionAuthority": false,
+  "testStarted": false,
+  "readiness": "BLOCKED_SECRET_UNAVAILABLE_AND_OTHER_PREEXISTING_GATES",
+  "changedPublicCodePins": {
+    "scripts/w15-github/controller_context.py": {
+      "bytes": 11424,
+      "sha256": "cecaf62a8c535e63851ababfbf342598dff556412c72a285526eed22dc365717"
+    },
+    "scripts/w15-github/test_controller_context_cli.py": {
+      "bytes": 4050,
+      "sha256": "b2ed62164017941ac11ed4b8462b65f41dbfa0fca4dd2f20290f0b7e67dab4e4"
+    },
+    "scripts/w15-github/verify_archive_key.py": {
+      "bytes": 8813,
+      "sha256": "85cc865d11c0bebdfd559fe8f511ffe2b40e864893c476ced1c542ea4e60571e"
+    },
+    "scripts/w15-github/test_verify_archive_key.py": {
+      "bytes": 6870,
+      "sha256": "d1cf19b4843b6a029dbf114fe0292fae454d818c9684085b2492a60b99fc65c4"
+    }
+  }
+}

@@ -2,16 +2,18 @@
 // Private original-data preparation only; not an automatic test suite or execution permission.
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypto");
 const {spawnSync}=require("node:child_process"),{performance}=require("node:perf_hooks");
-const {originalBuilder,localEnvironment}=require("./synthetik-500-w15-signed-chain-test");
+const {originalBuilder:legacyOriginalBuilder,localEnvironment}=require("./synthetik-500-w15-signed-chain-test");
+const Bindings = require("./w15-github/mock500_bindings"), BOUND = Bindings.readBound();
+const NAMESPACE = BOUND ? Bindings.namespace(BOUND.context) : null;
 const ATOMIC_PREPARED0 = process.argv.includes("--atomic-prepared0");
 const TARGET = require("./fixtures/w15-atomic-integration-target.json");
-const ROOT = path.resolve(__dirname, ".."), CONTAINER = ATOMIC_PREPARED0 ? TARGET.container : "w15-full500-20261028d";
+const ROOT = path.resolve(__dirname, ".."), CONTAINER = BOUND ? NAMESPACE.container : ATOMIC_PREPARED0 ? TARGET.container : "w15-full500-20261028d";
 const SOURCE_DB = "helmut_w15_input_20261027";
 const UNIT0 = !ATOMIC_PREPARED0;
 // This namespace lives only in the fresh28c server/PGDATA; never connect to28b's
 // existing container. Keeping it preserves the already qualified installer pin.
 const DB = "helmut_w15_full500_20261028b";
-const WORK = ATOMIC_PREPARED0 ? TARGET.work : "/workspace/shared/helmut-w15-full500-20261028d";
+const WORK = BOUND ? NAMESPACE.work : ATOMIC_PREPARED0 ? TARGET.work : "/workspace/shared/helmut-w15-full500-20261028d";
 const QUALIFICATION = "/workspace/shared/helmut-w15-current-source-update-20261028/qualification-b";
 const RECEIPT = "/workspace/shared/helmut-w15-receipt-20261027/reports/W15_RECEPTION_REPORT.SAFE.json";
 const RECEIPT_HASH = "2cee6eb467342cabbe28db958ac00cc6cd9699622c3a772796d68d2d6adb97f1";
@@ -38,19 +40,22 @@ function sql(text, database = DB) {
   return r.stdout.trim();
 }
 const read = (text, database = DB) => JSON.parse(sql("begin read only;set local statement_timeout='15s';" + text + "rollback;", database));
-function state(database) { return read("select jsonb_build_object('database',current_database(),"
+function state(database) { if (BOUND && database === SOURCE_DB) return structuredClone(BOUND.sourceBaseline);
+  return read("select jsonb_build_object('database',current_database(),"
   + "'profiles',(select count(*)from mandate_profiles),'active',(select count(*)from mandate_profiles where aktiv),"
   + "'identities',(select count(*)from profiles),'storeRows',(select count(*)from helmut_store),"
   + "'profileHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by user_id collate \"C\")::text,'UTF8')),'hex')from mandate_profiles p),"
   + "'profileFachHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)-'aktiv' order by user_id collate \"C\")::text,'UTF8')),'hex')from mandate_profiles p),"
   + "'storeHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by id collate \"C\")::text,'UTF8')),'hex')from helmut_store p));", database); }
-function originals() { const raw = privateFile(RECEIPT); assert.equal(sha(raw), RECEIPT_HASH);
+function originals() { if (BOUND) return Bindings.originals(BOUND);
+  const raw = privateFile(RECEIPT); assert.equal(sha(raw), RECEIPT_HASH);
   const m = JSON.parse(raw); assert.equal(m.actualFileCount, 11); assert.equal(m.actualPayloadBytes, 96530256);
   return key => { const p = m.files.find(x => x.key === key); assert(p && p.status === "PASS");
     const b = privateFile(p.receivedPath); assert.equal(b.length, p.expectedBytes); assert.equal(sha(b), p.expectedSHA256);
     return { value: JSON.parse(b), pin: { path: p.receivedPath, bytes: b.length, sha256: sha(b) } }; };
 }
 function qualifiedAssets() {
+  if (BOUND) return Bindings.qualifiedAssets(BOUND);
   const reportPath = path.join(QUALIFICATION, "ALL500_MOCK_BINDINGS_CHECK.SAFE.json");
   const raw = privateFile(reportPath), report = JSON.parse(raw);
   assert.equal(report.status, "PASS_ALL500_CURRENT_ORIGINAL_MOCK_BINDINGS", "w15-full500-qualification-not-pass");
@@ -119,8 +124,12 @@ async function main() {
   assert.deepEqual(require("./lokaler-netzschutz").pruefe(process.env), []);
   assert.equal(process.env.HELMUT_STORAGE_BACKEND, "local");
   assert.equal(process.version, "v24.19.0");
-  const beforeSource = state(SOURCE_DB); assert.equal(beforeSource.active, 500); assert.equal(beforeSource.storeRows, 6);
-  if(UNIT0 || ATOMIC_PREPARED0){
+  const beforeSource = state(SOURCE_DB);
+  assert.equal(beforeSource.active, BOUND ? 0 : 500); assert.equal(beforeSource.storeRows, 6);
+  if (BOUND) {
+    assert.deepEqual(state(DB), beforeSource, "w15-mock500-fresh-restored-baseline");
+    assert.equal(beforeSource.profiles, 500); assert.equal(beforeSource.identities, 501);
+  } else if(UNIT0 || ATOMIC_PREPARED0){
     const target=state(DB);assert.equal(target.active,0);
     const {profileHash:sourceHash,...sourceComparable}=beforeSource;
     const {profileHash:targetHash,...targetComparable}=target;
@@ -130,14 +139,14 @@ async function main() {
     "Test target must be a new pristine copy; never rerun against a prior test state");
   const config = JSON.parse(privateFile(path.join(WORK, "runtime-public.PRIVATE.json")));
   const get = originals(), packet = get("package").value, originalRows = get("normalizedCurrentPolicy").value;
-  const qualified = qualifiedAssets(), { rows, fixtures, derivations: derivationReports } = qualified;
+  const qualified = qualifiedAssets(); let { rows, fixtures, derivations: derivationReports } = qualified;
   const { native, report: nativeDerivation } = qualified.nativeBundle, oldU = get("originalUPacket");
   assert.equal(rows.length, 500); assert.equal(fixtures.length, 500); assert.equal(derivationReports.length, 500);
   assert.equal(new Set(rows.map(r => r.profile.id)).size, 500);
   const originalById = new Map(originalRows.map(r => [r.profile.id, r.profile]));
   for (const row of rows) {
     assert.deepEqual(row.profile, originalById.get(row.profile.id), "w15-full500-original-profile-unchanged");
-    assert.equal(row.briefingDatum, qualified.executionISO, "w15-full500-qualified-request-date-unchanged");
+    assert.equal(row.briefingDatum, BOUND ? qualified.historicalExecutionISO : qualified.executionISO, "w15-full500-qualified-request-date-unchanged");
   }
   const P = require("../lib/helmut/synthetik-500-profile"), EU = require("../lib/helmut/synthetik-500-eu-service-contract");
   localEnvironment(config);
@@ -151,6 +160,19 @@ async function main() {
     sql(Database.installSQL(qualified.replacements));
     const currentNativeDatabasePin = verifyCurrentDatabase(native);
     pass("pinned qualified rows reused and actual current native inputs independently read back", { qualificationSHA256: qualified.reportPin.sha256 });
+    if (BOUND) {
+      // A different actual day needs its five calendar/hash bindings and real
+      // current14-day guards. Historical qualification/content is not renamed.
+      const rebased = rows.map(row => Bindings.calendarRow(row, qualified.executionISO));
+      rows = rebased.map(item => item.row);
+      const byOwner = new Map(rows.map(row => [row.profile.id, row]));
+      fixtures = fixtures.map(fixture => Bindings.calendarFixture(fixture, byOwner.get(fixture.owner)));
+      for (const item of rebased) for (const changed of item.report.changedPaths) changedPaths.add(changed);
+      retain("CURRENT_CALENDAR_DERIVATION.PRIVATE.json", { status: "PASS_CURRENT_CALENDAR_DERIVATION_ONLY",
+        historicalQualificationExecutionISO: qualified.historicalExecutionISO, executionISO: qualified.executionISO,
+        historicalQualificationRepeated: false, currentCalendarGuardsObserved: true,
+        sourceDatesRewritten: false, signaturesReused: false, rows: rebased.map(item => item.report) });
+    }
     let source = read("select jsonb_build_object('mandates',(select jsonb_agg(to_jsonb(p)order by user_id collate \"C\")from mandate_profiles p),"
       + "'profiles',(select jsonb_agg(to_jsonb(p)order by id collate \"C\")from profiles p),"
       + "'auth',(select data from helmut_store where id='main-auth'),'main',(select data from helmut_store where id='main'));" );
@@ -182,7 +204,7 @@ async function main() {
     assert.deepEqual(source.mandates,priorSource.mandates);assert.deepEqual(source.profiles,priorSource.profiles);
     assert.deepEqual(source.main,priorSource.main);assert.deepEqual(source.auth,auth);
     const now=Date.now();assert(now-Date.parse(observed)<60000,"w15-full500-snapshot-real-freshness");
-    const plannedWindow=require("./fixtures/w15-full500-window").window(new Date(now).toISOString());
+    const plannedWindow=BOUND?Bindings.fixedWindow(BOUND,new Date(now).toISOString()):require("./fixtures/w15-full500-window").window(new Date(now).toISOString());
     const end=plannedWindow.endsAtUTC;
     const operationId = (UNIT0 ? "synthetik500-w15-full500-" : "synthetik500-w15-processing-") + now;
     const snapshot = { beobachtetAm: observed, mandate_profiles: source.mandates, profiles: source.profiles };
@@ -237,7 +259,8 @@ async function main() {
       const prepareSQL = G.baueSql(prepare, bytes, Date.now());
       const activateSQL = G.baueSql({runtimeManifest,snapshot,belege:full,schritt:"aktivieren",aktivierungsGo:activationGo},bytes,Date.now());
       const supervisor=JSON.parse(privateFile(path.join(WORK,"SUPERVISOR_READY.SAFE.json")));
-      process.kill(supervisor.pid,0);assert.equal(supervisor.container,CONTAINER);assert.equal(supervisor.realMemoryCap,2048000000);
+      process.kill(supervisor.pid,0);assert.equal(supervisor.container,CONTAINER);
+      assert.equal(supervisor.realMemoryCap,Bindings.memoryLimits(BOUND).comparisonBudgetBytes);
       stage("fresh-original-preparation-and-authorized-activation");
       sql(prepareSQL); sql(activateSQL);
       const nativeReceipt = read("set local role service_role;select public.helmut_synthetik500_lesung(" + [operationId,P.hash(runtimeManifest),config.commit].map(literal).join(",") + ");");
@@ -256,7 +279,7 @@ async function main() {
     const oldOperation = oldU.value.command.slot.plan.operationId, oldJournal = auth[J.KEY].operations[oldOperation]; assert(oldJournal);
     const prior = { predecessor: { operationId: oldOperation, commandHash: P.hash(oldU.value.command), planHash: oldU.value.command.slot.planHash,
       journalHash: P.hash(oldJournal) }, originalPacketPin: oldU.pin, originalJournalHash: P.hash(oldJournal) };
-    const builder = originalBuilder(), requests = [];
+    const builder = BOUND ? Bindings.originalBuilder(BOUND, ROOT) : legacyOriginalBuilder(), requests = [];
     stage("bind-qualified-all500-current-requests-with-fresh-native-command");
     const built = builder.build({ approval: { status: "ACCEPTED_ALL500_ORDINARY_V1_AND_ACTUAL_NATIVE_BINDING", actualNativeInputEquality: true,
       positiveBoundOrdinaryVerdicts: 500, scope: "SYNTHETIC PERFORMANCE FIXTURE ONLY; NO PROFESSIONAL/PRODUCTION OR UNIT EXECUTION APPROVAL" },
@@ -281,7 +304,7 @@ async function main() {
       scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION", full500DispatchAuthorized:!ATOMIC_PREPARED0, activatedProfiles:UNIT0?500:0 });
     retain("PROCESSING_INPUTS.SAFE.json", { status:"PASS_ALL500_ACTUAL_D_PREPARATIONS", scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION",
       actualOriginalPreparer:true, currentDescriptorAndActualRequestDatesMatch:true, originalFilesModified:false,
-      sourceRestorePreserved:true, sourceComparisonScope:"mandate/store hashes and profile counts", sourceReceiptSHA256:RECEIPT_HASH,
+      sourceRestorePreserved:true, sourceComparisonScope:BOUND?"immutable original file pins and fresh isolated restored baseline; no original source database contacted":"mandate/store hashes and profile counts", sourceReceiptSHA256:RECEIPT_HASH,
       sourceDatesRewritten:false,qualificationPin:qualified.reportPin,qualifiedAssets:qualified.report.qualifiedAssets,
       qualifiedExecutionISO:qualified.executionISO,currentNativeDatabasePin,nativeDerivation,derivedRows:derivationReports.length,
       derivationHash:P.hash(derivationReports),requests, changedPaths:[...changedPaths], securityClockReal:true,

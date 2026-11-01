@@ -1,0 +1,103 @@
+{
+  "schema": "helmut-w15-native-minimal-first-attempt/1",
+  "headCommit": "8e12da22143503364b773f565728cd45bf1ce49f",
+  "runId": 40981762750,
+  "jobId": 123823247486,
+  "actualNativeStagesReached": false,
+  "historicalCauseProven": false,
+  "observation": {
+    "containerStop": "PASS",
+    "exactCommit": "087d60aa38737d1061faa1bf16ce3db70ec1c8e8",
+    "finalCommonParent": {
+      "configuredLimit": "2560000000",
+      "currentBytes": 671744,
+      "events": {
+        "high": 0,
+        "low": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_group_kill": 0,
+        "oom_kill": 0,
+        "sock_throttled": 0
+      },
+      "kernelLifetimePeakBytes": 24219648,
+      "swapCurrentBytes": 0,
+      "swapMaximum": "0"
+    },
+    "initialCommonParent": {
+      "configuredLimit": "2560000000",
+      "currentBytes": 0,
+      "events": {
+        "high": 0,
+        "low": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_group_kill": 0,
+        "oom_kill": 0,
+        "sock_throttled": 0
+      },
+      "kernelLifetimePeakBytes": 0,
+      "swapCurrentBytes": 0,
+      "swapMaximum": "0"
+    },
+    "ownedContainersStopped": 0,
+    "parentEmpty": "PASS",
+    "parentRemoved": "PASS",
+    "postStopCommonParent": {
+      "configuredLimit": "2560000000",
+      "currentBytes": 135168,
+      "events": {
+        "high": 0,
+        "low": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_group_kill": 0,
+        "oom_kill": 0,
+        "sock_throttled": 0
+      },
+      "kernelLifetimePeakBytes": 24219648,
+      "swapCurrentBytes": 0,
+      "swapMaximum": "0"
+    },
+    "retryAllowed": false,
+    "runAttempt": 1,
+    "runId": "40981762750",
+    "runnerFailure": {
+      "cleanup": {
+        "launcherListenerClosed": "UNKNOWN",
+        "launcherSignalsRestored": "UNKNOWN",
+        "parentEmpty": "UNKNOWN",
+        "parentStopRequested": "UNKNOWN",
+        "parentUnitRemoved": "UNKNOWN",
+        "serviceLauncherExited": "UNKNOWN",
+        "workerExited": "PASS",
+        "workerIPCClosed": "PASS"
+      },
+      "phase": "worker",
+      "runner": {
+        "memory": {
+          "configuredLimitBytes": 2560000000,
+          "currentBytes": 16936960,
+          "events": {
+            "max": 0,
+            "oom": 0,
+            "oom_group_kill": 0,
+            "oom_kill": 0
+          },
+          "kernelLifetimePeakBytes": 16936960,
+          "lastReadbackValid": true,
+          "swapCurrentBytes": 0,
+          "swapMaximumBytes": 0
+        },
+        "memorySource": "CACHED_READBACK",
+        "reason": "WORKER_REPORTED_FAILURE",
+        "workerExitCode": 0
+      },
+      "worker": {
+        "phase": "resources"
+      }
+    },
+    "serviceStop": "PASS",
+    "status": "FAIL"
+  }
+}

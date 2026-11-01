@@ -1,0 +1,5 @@
+name: Gated isolated Mock500 entry
+description: Fixed v2 worker, one-shot admission and private stdin
+runs:
+  using: node24
+  main: index.js

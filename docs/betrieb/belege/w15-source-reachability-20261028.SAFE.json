@@ -1,0 +1,179 @@
+{
+  "schema": "helmut-w15-source-reachability-publication-review/1",
+  "observedAtUTC": "2026-10-28T21:26:05Z",
+  "observedAtEuropeIstanbul": "2026-10-29T00:26:05+03:00",
+  "status": "SOURCE_NOT_ATTACHED_EXACT_SELECTED_EXPORT_BOUND_PUBLICATION_APPROVED",
+  "basePreparedCommit": "a53d12c92251f079de4e35b743afae5ac7da925d",
+  "unchangedPR974Head": "186ebfa62fbd55b0143d9c65a424386ba55dabe9",
+  "mainAtCheck": "6b4012cd912fd0e1f5ec79969168d0dcc010927f",
+  "branch": "codex/w15-github-end500-preparation-20261028",
+  "sourceRoot": "/workspace",
+  "confirmedOldAssetsPath": "/workspace/shared/helmut-w15-memory-forward-20261028/",
+  "attachedEnvironment": "ccarenv_b64_Y2NhcmVudl81NGQwZWY1N2Y4MjA4MTkxYTRiOGRkMGM4YmI5MmYzYQ",
+  "sourceReachability": {
+    "sharedParentReadable": true,
+    "currentW15Entries": 0,
+    "oldAssetsPresent": false,
+    "tenExplicitKnownFilesPresent": false,
+    "dumpAndRolesReceivedPathsNotInvented": true,
+    "previousSourceLossClaimed": false,
+    "oldEnvironmentRemoteFileChannelAvailable": false
+  },
+  "recoveredMetadata": {
+    "lastRecordedProof": {
+      "sourceThreadTitle": "Hauptthread",
+      "sourceThreadId": "01a17c84-6676-71ca-ab08-d63e6e5cf05c",
+      "sourceHostId": "durable",
+      "commandId": "exec-6e6e6c23-3537-4339-bceb-ff1c02d19bff",
+      "turnStartedAtUTC": "2026-10-28T20:35:30Z",
+      "turnCompletedAtUTC": "2026-10-28T20:44:23Z",
+      "exactCommandTimestampAvailable": false,
+      "commandOverallExitCode": 2,
+      "qualification": "Reception metadata and all five Bound pin entries were printed successfully before an unrelated following sed command reported a missing script. This is historical metadata, not a fresh payload hash or current source-access proof.",
+      "receptionPayloadPathExistsAtHistoricalRead": true,
+      "currentSourceReachability": "NOT_AVAILABLE_IN_ATTACHED_ENVIRONMENT"
+    },
+    "fixtureFileCount": 5,
+    "fixtureBytes": 117596060,
+    "payloadFileCount": 9,
+    "payloadBytes": 242548460,
+    "controlFileCount": 3,
+    "knownControlBytesExcludingReception": 9423,
+    "totalBytesExcludingReception": 242557883,
+    "bytesFreshlyHashedFromOldSourceThisTurn": 0,
+    "recoveredFromHistoricalReadNotOriginalDataTransfer": true
+  },
+  "exactSelectedExportRequest": {
+    "path": "scripts/w15-github/source-export-request.json",
+    "sha256": "010ccfd7f5dc639b8a852cd4eeaf8929550d779ad0c755a16fed1895c763d464"
+  },
+  "actualLocalInventory": {
+    "command": "python3 -B scripts/w15-github/source_inventory.py --inventory-only",
+    "exitCode": 1,
+    "status": "SOURCE_UNAVAILABLE",
+    "filesFreshlyVerified": false,
+    "executionAuthority": false,
+    "transferAllowed": false,
+    "testStarted": false,
+    "stoppedBeforeFirstPayloadRead": true
+  },
+  "checks": [
+    {
+      "name": "prepare filesystem guards after bounded-retention fix",
+      "command": "python3 -B scripts/w15-github/test_prepare.py -v",
+      "testCases": 15,
+      "status": "PASS",
+      "scope": "FILE_GUARDS_ONLY"
+    },
+    {
+      "name": "source inventory with fictional temporary files",
+      "command": "python3 -B scripts/w15-github/test_source_inventory.py -v",
+      "testCases": 7,
+      "status": "PASS",
+      "scope": "FILE_GUARDS_ONLY"
+    },
+    {
+      "name": "inventory without -B creates no bytecode or source-tree writes",
+      "status": "PASS",
+      "sourceFilesAvailable": false
+    },
+    {
+      "name": "Python syntax",
+      "status": "PASS"
+    },
+    {
+      "name": "only candidate branch deployment-map entry changed",
+      "status": "PASS"
+    },
+    {
+      "name": "independent metadata form and totals",
+      "status": "PASS_METADATA_FORM_AND_SUM_ONLY",
+      "independentHistoricalSnippetReadStatus": "READ_TOOL_PENDING_NO_ADDITIONAL_ACCESS",
+      "currentSourceExistenceVerified": false
+    },
+    {
+      "name": "independent publication privacy, inventory and branch-scope review",
+      "status": "PASS_SCOPE"
+    },
+    {
+      "name": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "publication": {
+    "observationPhase": "BEFORE_PUSH",
+    "userExplicitlyRequestedPushAndDraftPR": true,
+    "normalPRChecksAllowed": true,
+    "draftPRBase": "codex/w15-atomic-usage-integration-20261028",
+    "protectedContentsFound": false,
+    "newSecretsOrPrivateKeysIncluded": false,
+    "vercelBranchDeploymentDisabled": true,
+    "otherVercelConfigurationChanged": false,
+    "matchedAutomaticPRWorkflows": [
+      "ci.yml"
+    ],
+    "manualDispatch": false,
+    "merge": false,
+    "productionActions": false,
+    "authorityDoesNotIncludePrivateDataTransfer": true
+  },
+  "prohibitedActionsPerformed": {
+    "privatePayloadCopies": 0,
+    "archivesCreated": 0,
+    "privatePayloadTransfers": 0,
+    "fullEnd500Runs": 0,
+    "fullMock500Runs": 0,
+    "syntheticEngineReplacementAttempts": 0,
+    "productionActions": 0,
+    "paidModelCalls": 0,
+    "resourceStarts": 0
+  },
+  "remainingBoundary": "Read access to the former source environment of Hauptthread, followed by exactly the pinned 12-file inventory. Private export transfer still requires explicit approval. No fresh source hashes, full controller port or full remote-backup completion claimed.",
+  "preparedFilePins": [
+    {
+      "path": "vercel.json",
+      "bytes": 8082,
+      "sha256": "530a2a820f4f7cf666595be377b2ab5ffec700067c305c8e69ebe03de0191e69"
+    },
+    {
+      "path": "scripts/w15-github/source-export-request.json",
+      "bytes": 5819,
+      "sha256": "010ccfd7f5dc639b8a852cd4eeaf8929550d779ad0c755a16fed1895c763d464"
+    },
+    {
+      "path": "scripts/w15-github/source_inventory.py",
+      "bytes": 8012,
+      "sha256": "87af2db104d4f03d2417695f0f00354506293fedde207c62e068a86ec3b6ceb1"
+    },
+    {
+      "path": "scripts/w15-github/test_source_inventory.py",
+      "bytes": 7202,
+      "sha256": "9b72411159060adacb01bc40c75589c9d165be3e7cffb13ce86cef78dcffab33"
+    },
+    {
+      "path": "scripts/w15-github/prepare.py",
+      "bytes": 9625,
+      "sha256": "01eff4df5b5f6d9ef28d5e55f1ba09c0d54d6f25ba3c4fc4db59c590ddf4bbb9"
+    },
+    {
+      "path": "scripts/w15-github/test_prepare.py",
+      "bytes": 7675,
+      "sha256": "4238cd09bb80d07cc33f052092ebcb0f349e95fa8f7e3f69a2982144c881b598"
+    },
+    {
+      "path": "docs/betrieb/w15-end500-quellbestand-export-20261028.md",
+      "bytes": 7682,
+      "sha256": "c541904bf0251a0564444901552330c0526698694781f93be053f62be73a8246"
+    },
+    {
+      "path": "docs/betrieb/w15-github-end500-vorbereitung-20261028.md",
+      "bytes": 12923,
+      "sha256": "e160866783085a85f82e3607d2c581d5ec80dbea7a5a4d9d1614d4680ee95c8b"
+    },
+    {
+      "path": "docs/CURRENT_STATE.md",
+      "bytes": 29955,
+      "sha256": "0c6ce0afe587c66d6b5d4e8b398cbd49e14538872f73d848ee566fac20e0b62b"
+    }
+  ]
+}

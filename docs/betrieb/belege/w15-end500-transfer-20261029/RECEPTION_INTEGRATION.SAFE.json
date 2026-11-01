@@ -1,0 +1,228 @@
+{
+  "schema": "helmut-w15-reception-integration-review/1",
+  "observedAtUTC": "2026-10-29T00:15:24.693835+00:00",
+  "baselineCommit": "8be7578719562dbbbaf98a30f303fd09a67fe308",
+  "status": "PASS_SCOPED_DEVELOPMENT_START_BLOCKED",
+  "sourceReception": {
+    "receipt": "RECEIVED_SOURCE.SAFE.json",
+    "bytes": 6700,
+    "sha256": "b020753b06a9cf42e302b1d55e4736b5a67e9ad22684b73226cf621c2bdfc927",
+    "originalFiles": 12,
+    "originalBytes": 242570240,
+    "sourceTransferRepeated": false
+  },
+  "developmentChecks": {
+    "newTargetedCases": 51,
+    "status": "PASS",
+    "groups": [
+      {
+        "file": "test_runtime_inputs.py",
+        "cases": 16,
+        "status": "PASS",
+        "finalHashFixRepeat": false
+      },
+      {
+        "file": "test_runtime_backup.py",
+        "cases": 13,
+        "status": "PASS",
+        "finalHashFixRepeat": true
+      },
+      {
+        "file": "test_common_resources.py",
+        "cases": 7,
+        "status": "PASS",
+        "finalHashFixRepeat": true
+      },
+      {
+        "file": "test_runtime_owned_backup.py",
+        "cases": 6,
+        "status": "PASS",
+        "finalHashFixRepeat": false
+      },
+      {
+        "file": "test_seal.py",
+        "cases": 7,
+        "status": "PASS",
+        "finalHashFixRepeat": true
+      },
+      {
+        "file": "test_runtime_closure.py",
+        "cases": 2,
+        "status": "PASS",
+        "finalHashFixRepeat": false
+      }
+    ],
+    "existingEnd500MemoryCases": {
+      "file": "test_end500_memory.py",
+      "cases": 9,
+      "status": "PASS",
+      "reason": "Watch.sample changed; fictional fixture has explicit common_resources=None"
+    },
+    "actualNodeTERMChildExitProbe": "PASS_FICTIONAL_CHILD_ONLY_NO_DATABASE",
+    "actualGPGStreamingAndBudgetAbortProbe": "PASS_SYNTHETIC_DISPOSABLE_KEY_ONLY",
+    "pythonASTAndJSONSyntax": "PASS",
+    "historicalCurrentStateSuffixByteIdentical": true,
+    "historicalRAMDossierPrefixPreserved": true,
+    "standaloneFull500ControllerByteIdentical": true,
+    "historicalMemoryV2ByteIdentical": true
+  },
+  "independentSecurityReview": {
+    "reviewerTask": "closure_security_final",
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "xhigh",
+    "mode": "READ_ONLY",
+    "status": "PASS_SCOPED_STATIC_SOURCE_ONLY",
+    "findings": [],
+    "confirmed": [
+      "new GitHub path never reports full lifetime RAM acceptance",
+      "initial and final collection and seal hashes guarded by same parent",
+      "owned final export before original Watch.stop",
+      "backup stop requires explicit end500-backup scope",
+      "no private payloads or keys in reviewed source changes"
+    ],
+    "actualRunnerOrRestoreAccepted": false
+  },
+  "memory": {
+    "commonParentLimitBytes": 2560000000,
+    "containerLimitBytes": 2560000000,
+    "maximumActualCommonLifetimePeakBytes": 2048000000,
+    "reserveBytes": 512000000,
+    "swapBytes": 0,
+    "containerOnlyMeasurementIsCompleteProof": false,
+    "parentIncludesPythonAuditorGPGCopyHashAndCacheRequired": true,
+    "actualFreshGitHubBootstrapVerified": false,
+    "actualUID1000MappingVerified": false,
+    "fullLifetimeAcceptance": false
+  },
+  "githubAccessObservation": {
+    "identityVariableName": "HELMUT_GITHUB_CI_ADMIN_TOKEN",
+    "environmentName": "helmut-ci-originals",
+    "environmentGet": {
+      "atUTC": "2026-10-28T23:33:25.047769+00:00",
+      "httpStatus": 200,
+      "protection_rules": [],
+      "deployment_branch_policy": null,
+      "can_admins_bypass": true
+    },
+    "environmentSecretsMetadataGet": {
+      "atUTC": "2026-10-28T23:33:25.042008+00:00",
+      "httpStatus": 403,
+      "message": "Resource not accessible by integration"
+    },
+    "readyBindingDoesNotProveAPIAccess": true,
+    "secretOrEnvironmentWritesPerformed": false,
+    "additionalIdenticalRetriesAllowed": false
+  },
+  "existingCI": {
+    "commit": "8be7578719562dbbbaf98a30f303fd09a67fe308",
+    "runId": 40783871139,
+    "conclusion": "success",
+    "newCommitCIInherited": false
+  },
+  "remainingGates": [
+    "protected environment access and independently confirmed controls",
+    "specific additional GitHub data and recipient key provisioning GO",
+    "secret access lifecycle consistent with no-deletion constraint",
+    "fresh common parent bootstrap and UID1000 host/container mapping",
+    "startable explicit new workflow or CLI",
+    "actual pinned image and runner disk/setup budget",
+    "fresh current source delta review and concrete run binding",
+    "full logical database and role restore and complete integrity observations",
+    "authenticated remote readback of final complete cipher",
+    "independent final acceptance and separate End500 start GO"
+  ],
+  "changedPublicFilePins": {
+    "docs/CURRENT_STATE.md": {
+      "bytes": 29935,
+      "sha256": "a83d7385efca8e3e787edd38b565ac2b206b2b879cd7828016b29cc05ad7162b"
+    },
+    "docs/betrieb/belege/w15-end500-transfer-20261029/RECEIVED_SOURCE.SAFE.json": {
+      "bytes": 6700,
+      "sha256": "b020753b06a9cf42e302b1d55e4736b5a67e9ad22684b73226cf621c2bdfc927"
+    },
+    "docs/betrieb/w15-end500-empfang-und-startgrenze-20261029.md": {
+      "bytes": 11134,
+      "sha256": "23baf2f918cb874bf20f6df619f50efe5b4fe472da1d020fd4827addd6dbc2de"
+    },
+    "docs/betrieb/w15-end500-ram-vertrag-20261028.md": {
+      "bytes": 9051,
+      "sha256": "334bf1d0332fd2ebb7229fbc788a15b46e0fc9dbfe9b7fe750e9b429da1ee8d1"
+    },
+    "scripts/fixtures/w15-owned-process-stop.js": {
+      "bytes": 6520,
+      "sha256": "ab882f21f342f0a449841f2b54b8018668186aab10e78da52589ddc516be0a1b"
+    },
+    "scripts/synthetik-500-w15-memory-final-audit.py": {
+      "bytes": 22404,
+      "sha256": "7d87554ac8eef47517652ef87e6155381fec9e49a71d3623a60de9906552cdc0"
+    },
+    "scripts/synthetik-500-w15-memory-forward.py": {
+      "bytes": 46370,
+      "sha256": "b29fbe8f98d21e59caf998212f982e1bf235dafaf58f7e65ce1b5313ca5b1b41"
+    },
+    "scripts/w15-github/common_resources.py": {
+      "bytes": 6375,
+      "sha256": "edfdf3c18a1b3d90cd5b260d9131cef4822e2b9e53793566154929417c6430c7"
+    },
+    "scripts/w15-github/end500-contract.json": {
+      "bytes": 4048,
+      "sha256": "00bb0a4ab3382e2129a3e0d7589042fd20a9dd2106b655f6acd105e59e205551"
+    },
+    "scripts/w15-github/runtime_backup.py": {
+      "bytes": 27185,
+      "sha256": "f10d7e1d6475124386c42f49af5afc5571674397666c07dab82feac62d5982f8"
+    },
+    "scripts/w15-github/runtime_inputs.py": {
+      "bytes": 14509,
+      "sha256": "6f8ea062b6d30677167b99c6f1994e20dea9be794138bd19da8002d77bfb8fa9"
+    },
+    "scripts/w15-github/runtime_owned_backup.py": {
+      "bytes": 6117,
+      "sha256": "d3105d5cfeca4e7ece30686ff5e39a89fbb31b25487edee57ba7c951cfcddae9"
+    },
+    "scripts/w15-github/seal.py": {
+      "bytes": 18340,
+      "sha256": "ddf3ee3cb0369daf1ba6d4668525e9429f1da97adbd477444f370984f905d51e"
+    },
+    "scripts/w15-github/test_common_resources.py": {
+      "bytes": 4567,
+      "sha256": "e2fbfd1a51bc3cdc0e5a4c01eb2f93de192b977a0000f6fb2cf08b51126171d4"
+    },
+    "scripts/w15-github/test_end500_memory.py": {
+      "bytes": 8290,
+      "sha256": "a43974965dd9a0e73bec9a278e2f8627a01543ab69a2f05764923721aaf3ceee"
+    },
+    "scripts/w15-github/test_runtime_backup.py": {
+      "bytes": 13524,
+      "sha256": "eb3901a8004b68b1fe14c1f5d13fb70f03896529f6e18cb198d19bf5cebdacab"
+    },
+    "scripts/w15-github/test_runtime_closure.py": {
+      "bytes": 3328,
+      "sha256": "4af665c84e2f65b03d9f486fd04a4275cd85f1485a009fd049707d6b01434671"
+    },
+    "scripts/w15-github/test_runtime_inputs.py": {
+      "bytes": 10284,
+      "sha256": "1dd87d01cece6ad693a946f1c5ba347c468b3283713e93d21ac29769a9e3ad8a"
+    },
+    "scripts/w15-github/test_runtime_owned_backup.py": {
+      "bytes": 6678,
+      "sha256": "ea3fa5fb6924ea5a66b315b45339f211d781b27b173ed1c330810bf3fc86119e"
+    },
+    "scripts/w15-github/test_seal.py": {
+      "bytes": 9919,
+      "sha256": "9df31e28f07756af24e28aa97e40457afd7a4299fd2968307dc96fdf401cebdb"
+    }
+  },
+  "privateOriginalsOrReceiptContentsPublished": false,
+  "githubDataProvisioningAuthorized": false,
+  "githubDataProvisioningPerformed": false,
+  "end500Started": false,
+  "mock500Started": false,
+  "productionActions": false,
+  "mergesOrDeployments": false,
+  "paidResourcesCreated": false,
+  "dataDeletions": false,
+  "executionAuthority": false,
+  "testStarted": false,
+  "readiness": "BLOCKED_NOT_FULLY_EXECUTABLE"
+}

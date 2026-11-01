@@ -1,0 +1,31 @@
+{
+  "schema": "helmut-w15-github-protection-observation/1",
+  "observedDateOperator": "2026-10-29",
+  "observationAfterOperatorSavedRules": true,
+  "repository": "ernisch/helmut-pilot",
+  "environmentName": "helmut-ci-originals",
+  "environmentId": 25001443837,
+  "expectedCommit": "b78ff84518ead36ee8956020c9847634331b1db8",
+  "canAdminsBypass": false,
+  "allowedBranches": ["codex/w15-github-end500-preparation-20261028"],
+  "allowedTags": [],
+  "requiredReviewerRulesCount": 0,
+  "selfReviewPreventionVerified": false,
+  "checks": {
+    "environmentIdentity": "PASS",
+    "adminBypassDisabled": "PASS",
+    "requiredReviewersConfigured": "FAIL",
+    "selfReviewPrevented": "FAIL",
+    "customBranchPoliciesOnly": "PASS",
+    "exactBranchPolicy": "PASS",
+    "branchHeadMatchesCommit": "PASS"
+  },
+  "status": "BLOCKED_GITHUB_PROTECTION_METADATA",
+  "configurationChangedByAgent": false,
+  "secretEndpointsCalled": false,
+  "secretAccessVerified": false,
+  "privateHandoffAuthorized": false,
+  "readiness": "BLOCKED",
+  "executionAuthority": false,
+  "testStarted": false
+}

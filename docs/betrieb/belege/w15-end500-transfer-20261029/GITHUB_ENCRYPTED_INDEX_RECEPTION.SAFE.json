@@ -1,0 +1,95 @@
+{
+  "schema": "helmut-w15-github-encrypted-index-reception/1",
+  "status": "PASS_EXISTING12_GITHUB_RECEPTION_ONLY_START_BLOCKED",
+  "workflowURL": "https://github.com/ernisch/helmut-pilot/actions/runs/40876458074",
+  "workflow": {
+    "conclusion": "success",
+    "created_at": "2026-10-29T12:49:21Z",
+    "event": "workflow_dispatch",
+    "head_sha": "596c5b1f26951bca77d894d03a956c87fc551274",
+    "id": 40876458074,
+    "run_attempt": 1,
+    "status": "completed",
+    "updated_at": "2026-10-29T12:50:10Z"
+  },
+  "requiredCI": {
+    "runId": 40872878459,
+    "headSHA": "596c5b1f26951bca77d894d03a956c87fc551274",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "Syntax + Offline-Suiten",
+        "status": "completed",
+        "conclusion": "success",
+        "current": [],
+        "completedSteps": 34
+      },
+      {
+        "name": "Browser-/Mobile-Smoke (Chromium)",
+        "status": "completed",
+        "conclusion": "success",
+        "current": [],
+        "completedSteps": 11
+      }
+    ]
+  },
+  "reception": {
+    "status": "PASS_EXISTING12_RECEIVED_AND_RELOCATED_ONLY_START_BLOCKED",
+    "exactCommit": "596c5b1f26951bca77d894d03a956c87fc551274",
+    "runId": "40876458074",
+    "runAttempt": 1,
+    "indexHandoff": "GPG_WORKFLOW_INPUT_NO_SECRET_WRITE",
+    "workflowPayloadChars": 9868,
+    "verifiedFiles": 12,
+    "verifiedBytes": 242570240,
+    "cipherSHA256": "eeec60f6f97f35b143f9fca22fae653ea9c8695a23d712c9fc74c1979e410231",
+    "sealedManifestSHA256": "af3bd654fa292ad256e0fa265c2fb3d968e945633f1439a12da72f015aeab86f",
+    "inputManifestSHA": "84b730490014c5d17f81ac350677275ce33f368731c8f4a979a4d1b2c9165bf5",
+    "relocationVerified": true,
+    "fullRestoreAccepted": false,
+    "databaseStarted": false,
+    "commonLifetimeMemoryAccepted": false,
+    "end500Acceptance": false,
+    "mock500Acceptance": false,
+    "controllerStarted": false,
+    "executionAuthority": false,
+    "readiness": "BLOCKED"
+  },
+  "handoff": {
+    "expectedCommit": "596c5b1f26951bca77d894d03a956c87fc551274",
+    "ciRunId": 40872878459,
+    "payloadChars": 9868,
+    "recipientFingerprint": "7E3998A6C2CB948C69A2EE51F4267ABF26796EDC",
+    "attemptedAtUTC": "2026-10-29T12:49:19.949866+00:00",
+    "expiresAtUTC": "2026-10-29T12:54:12+00:00",
+    "remainingValiditySeconds": 292,
+    "dispatchAccepted": true,
+    "automaticRetry": false,
+    "secretWritePerformed": false,
+    "plaintextIndexPublished": false
+  },
+  "workflowArtifactCount": 0,
+  "existingCipherPartsDownloaded": 15,
+  "originalPlaintextTransferredFromMainThread": false,
+  "originalCipherReencrypted": false,
+  "newKeysGenerated": false,
+  "receiverSecretsChanged": false,
+  "secretWriteEndpointUsed": false,
+  "tokenRotationPerformed": false,
+  "driveSharingChanged": false,
+  "existingRecipientControlRepeated": false,
+  "actualDispatchCount": 1,
+  "actualReceiveAttemptCount": 1,
+  "merges": false,
+  "deployments": false,
+  "productionActions": false,
+  "end500Started": false,
+  "mock500Started": false,
+  "independentResultReview": {
+    "task": "materialization_review",
+    "status": "PASS_SCOPED_ACTUAL_RECEIPT_REVIEW",
+    "testsRepeated": false
+  },
+  "continuedPlaintextAvailabilityAfterJobProven": false
+}

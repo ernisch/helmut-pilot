@@ -1,0 +1,101 @@
+{
+  "schema": "helmut-w15-real-synthetic-connection-independent-review/1",
+  "observedAtUTC": "2026-10-30T01:59:58Z",
+  "status": "PASS_SCOPED_REAL_SYNTHETIC_CONNECTION_ONLY",
+  "reviewerRole": "Agent B; independent of fixture execution and receipt acquisition by Agent A",
+  "reviewScope": "Read existing local SAFE receipt, compare its fields with relevant committed producer and cleanup code, and independently check base/head file equality through GitHub compare metadata. No execution repeated.",
+  "receipt": {
+    "sourceWorktree": "/workspace/helmut-w15-night-restore",
+    "relativePath": "docs/betrieb/belege/w15-night-restore-20261030/NATIVE_CONNECTION_40982718647.SAFE.json",
+    "freshLocalSHA256": "d50bfe5a0fbca28485c77776bdddcaabdfacf929c118dea912dfd2bedcd7fb8c",
+    "runId": "40982718647",
+    "runAttempt": 1,
+    "exactCommit": "59c13b3d65cc0abd3cda5a1d1fe9445d49638f7f",
+    "status": "PASS_REAL_SYNTHETIC_CONNECTION_ONLY"
+  },
+  "independentSourceBinding": {
+    "tool": "github.compare_commits",
+    "repo": "ernisch/helmut-pilot",
+    "base": "deb812f9e7e3a2d58e5b4e593a1eec00ef1e22d8",
+    "head": "59c13b3d65cc0abd3cda5a1d1fe9445d49638f7f",
+    "returnedBaseCommit": "deb812f9e7e3a2d58e5b4e593a1eec00ef1e22d8",
+    "returnedMergeBaseCommit": "deb812f9e7e3a2d58e5b4e593a1eec00ef1e22d8",
+    "status": "ahead",
+    "aheadBy": 1,
+    "behindBy": 0,
+    "totalCommits": 1,
+    "returnedFiles": [],
+    "returnedTooLarge": null,
+    "isError": false,
+    "interpretation": "Successful exact base/head comparison reports no changed files; the inspected base source is applicable to the receipt commit. No git fetch performed.",
+    "inspectedSources": [
+      "scripts/w15-github/test_restore_native_minimal.py: worker result projection, local seal check, second restore assertions, IPC projection and outer closure",
+      "scripts/w15-github/runner_parent.py: identity-bound cgroup.events populated check and parent-unit removal"
+    ]
+  },
+  "resourceReading": {
+    "configuredLimitBytes": 2560000000,
+    "kernelLifetimePeakBytes": 960356352,
+    "reserveBytesCalculated": 1599643648,
+    "peakPercentCalculated": 37.51392,
+    "reservePercentCalculated": 62.48608,
+    "swapCurrentBytes": 0,
+    "swapMaximumBytes": 0,
+    "allReportedMemoryEventsZero": true,
+    "initialFinalAndPostStopReadbacksConsistent": true,
+    "postStopCurrentBytes": 871481344,
+    "processEmptyInterpretation": "Outer parentEmpty PASS derives from cgroup.events populated=0, not from memory.current=0; retained memory charge does not contradict process emptiness."
+  },
+  "flowReading": {
+    "restoreSteps": 5,
+    "exportActions": 4,
+    "sealVerified": true,
+    "cipherBytes": 126079713,
+    "secondRestoreVerified": true,
+    "secondRestoreInventoryAndRolesAssertedByProducer": true,
+    "sealInterpretation": "Cipher was sealed with public-recipient path and its locally reread bytes/hash matched the seal result.",
+    "secondRestoreInterpretation": "Second isolated recovery consumes the local plaintext selection and asserts complete table/sequence inventory and role semantics. It does not consume a decrypted returned cipher."
+  },
+  "closureReading": {
+    "watchStop": "PASS",
+    "serviceStop": "PASS",
+    "containerStop": "PASS",
+    "ownedContainersStopped": 2,
+    "outerParentEmpty": "PASS",
+    "outerParentUnitRemoved": "PASS",
+    "ownedContainerChecks": "Exact ownership, Running=false, Pid=0, OOMKilled=false, ExitCode=0",
+    "serviceChecks": "Bound slice when present, inactive/failed state and MainPID=0",
+    "innerIPC": {
+      "workerExited": "PASS",
+      "workerIPCClosed": "PASS",
+      "launcherListenerClosed": "UNKNOWN",
+      "launcherSignalsRestored": "UNKNOWN",
+      "parentEmpty": "UNKNOWN",
+      "parentStopRequested": "UNKNOWN",
+      "parentUnitRemoved": "UNKNOWN",
+      "serviceLauncherExited": "UNKNOWN"
+    },
+    "innerUnknownsReinterpretedAsPass": false
+  },
+  "acceptanceLimits": {
+    "originalDataRead": false,
+    "originalAdmissionAccepted": false,
+    "fullBackupCollectionAccepted": false,
+    "cipherDecryptionRoundtripAccepted": false,
+    "authenticatedRemoteReadbackAccepted": false,
+    "historicalCauseProven": false,
+    "end500Acceptance": false,
+    "mock500Acceptance": false,
+    "executionAuthority": false,
+    "retryAllowed": false
+  },
+  "reviewActions": {
+    "newNativeExecutions": 0,
+    "newOriginalOr500Tests": 0,
+    "receiptPayloadDownloads": 0,
+    "gitFetches": 0,
+    "privatePayloadTransfers": 0,
+    "sourceWorktreeWrites": 0,
+    "githubReadOnlyCompareCalls": 1
+  }
+}

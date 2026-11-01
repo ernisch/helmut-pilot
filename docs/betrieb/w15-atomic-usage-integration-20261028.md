@@ -1,6 +1,22 @@
 # W15: lokale Integration des atomaren Nutzungsspeichers
 
 Stand: 28.10.2026. **Teilweise abgeschlossen; kein Mock500- oder Production-Nachweis.**
+
+**Neuester Folgesprint: GitHub-End500-Vorbereitung, Start BLOCKED.**
+Die neue Umgebung enthält die alte private W15-Arbeitskopie nicht.
+Drive ist frisch geprüft: Das vorhandene elfteilige Originalpaket enthält
+die späteren End500-Ableitungen nicht. Konkret fehlt ein erreichbarer
+quellseitiger Export von Bound, fünf vollständigen Fixtures, Seed und echtem
+Command/Provenienz samt Dump/Rollen. Reine neue Synthetik belegt den
+unveränderten Historien-/Quellenvertrag nicht. Ein manueller CI-Planmodus,
+neunfacher Byteprüfer und lokale Streaming-Verschlüsselung sind separat
+vorbereitet; vollständiger CI-Adapter und entfernte Rücksicherung noch offen.
+Kein neuer500er-Lauf, Push, Merge oder Deployment.26-Dateien-Bereinigung laut
+Betreiber bereits abgeschlossen; die folgenden damaligen Vorschlagsabschnitte
+sind Historie. Keine erneute Bereinigung.
+[Aktuelle Entscheidung, Drivebestand, Grenzen und konkreter Restweg](w15-github-end500-vorbereitung-20261028.md).
+
+Die nachfolgenden Abschnitte bewahren den früher veröffentlichten Integrationsstand.
 Eigener Branch `codex/w15-atomic-usage-integration-20261028`,
 [Draft-PR974](https://github.com/ernisch/helmut-pilot/pull/974), gestapelt auf
 PR973 `fa506939` und PR972 `c36bd427`. Neu ausgeführter Diagnosecode C: `ee36720d`;

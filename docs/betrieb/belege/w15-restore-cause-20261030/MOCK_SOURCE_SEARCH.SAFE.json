@@ -1,0 +1,47 @@
+{
+  "builderMetadataPreviouslyLocated": true,
+  "ciphertextDownloaded": false,
+  "codexThreadRead": {
+    "archiveContentsRead": false,
+    "boundedWaitSeconds": 8,
+    "status": "BLOCKED_BOUND_HOST_DID_NOT_RETURN_INDEX"
+  },
+  "driveFolder": {
+    "boundReached": false,
+    "directMetadataEntries": 605,
+    "exactAdditionalTargetNamesFound": [
+      "HELMUT_HANDOFF_20261016_MINIMAL.zip"
+    ],
+    "id": "1gvYcdBSGYscOmTxYeJSJ3TpbacyJWBFd",
+    "listingBound": 1000,
+    "qualifiedReportNameOrSizeMatch": false
+  },
+  "globalDataLossProven": false,
+  "gpgExecuted": false,
+  "hashMismatchObserved": false,
+  "inventoryScriptRepeated": false,
+  "olderEncryptedBackupIndex": {
+    "id": "17DDhInbRwN20nqRPuNp3KTLq6AqMEhWc",
+    "laterQualifiedBackupProven": false,
+    "originalMemberHashesProven": false,
+    "revisionDate": "2026-10-26",
+    "revisions": 1,
+    "scopeDigest": "08fafd5ec430fff7a5dbb0d4822933f1350b1a639edde63fb82cae2ff8d862bd",
+    "separateScopeInventoryReference": null
+  },
+  "originalTransferPerformed": false,
+  "payloadsFetched": false,
+  "qualifiedReport": {
+    "expectedBytes": 13706128,
+    "expectedSHA256": "d2603d926508a1655b415b18734fe37bc1a660dccb6f139ae43b1859a11bed3d",
+    "name": "ALL500_MOCK_BINDINGS_CHECK.SAFE.json",
+    "reachableLocationConfirmed": false
+  },
+  "requalificationPerformed": false,
+  "schema": "helmut-w15-mock-existing-source-targeted-search/1",
+  "smallestNecessaryRecovery": "LOCATE_EXISTING_EXACT_13706128_BYTE_QUALIFIED_REPORT_IN_RETAINED_ORIGIN_OR_SNAPSHOT_THEN_SEPARATE_TARGETED_ENCRYPTED_TRANSFER_GO",
+  "status": "BLOCKED_SOURCE_LOCATION_UNCONFIRMED",
+  "targetedScopeReferenceCheck": "EXISTING_SAFE_LEDGER_AND_ALREADY_RETRIEVED_METADATA_FILTER_ONLY",
+  "unconfirmedOriginalFiles": 10,
+  "unconfirmedReplacementPins": 1
+}

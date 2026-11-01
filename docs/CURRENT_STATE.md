@@ -1,55 +1,75 @@
 # CURRENT STATE — Helmut
 
-## W15: End500-D vor erstem Auth-Vorgang am Plattenwächter gescheitert (28.10.)
+## W15: dynamischer End500-Funktionsvertrag vorbereitet (01.11.2026)
 
-PR974 auf PR973 `fa506939`/PR972 `c36bd427`, alle ungemergt.
-Genau ein neuer End500-D-Versuch auf sauberem Codekopf `07b51319` ausgeführt;
-keine Wiederholung/kein Resume und kein Mock500-Gesamtstart.
-**FAIL bei0/500CAS:** am19:34:22.803560UTC frei224.247.808Bytes,
-erforderlicher Plattenfloor234.881.024Bytes. Primärfehler exakt
-`w15-forward-disk-closure-reserve`, nicht nur generischer Controllerabschluss.
-Kernelpeak einschließlich Abschluss548.626.432Bytes; Reserve1.499.373.568Bytes
-=73,2116%, hartes Limit2.048.000.000Bytes, Swap/OOM/max0. Nur Boot/Restore/Seed;
-kein W15-Node-Run/Gateway/Atomicbootstrap/Auth-Aufruf, keine Aktivierung oder Unit.
-Deshalb kein neuer End500-RAM-, Auth30- oder Unit60-PASS; Authmax nicht gemessen.
-**Unabhängig nativ500Profile/0aktiv bestätigt.** Seed-Daten committed beobachtet
-(2.500Briefings/1.006Storezeilen/Main-Auth6.000Usage); keine neue vollständige
-3.501Postimage-Endprüfung behauptet. Alles weiter inert, keine neuen DR-Ergebnisse.
-Original-Seed-SHA unverändert. Service-Abschlussdatei fehlt, weil Service nie startete;
-der ursprüngliche FileNotFound-/UNKNOWN-Befund bleibt erhalten, kein falsches Grün.
-Startplan war trotz bewachter unabhängiger Zulassung zu knapp: vor dem ersten
-Wächtersample schon rund911,7MB Abnahme gegenüber Admission. Genaue physische
-Zuordnung UNKNOWN; zusätzlicher VFS-Initlayer nur plausible, unbewiesene Erklärung.
-Der spätere Grenzschutz stoppte; keine Grenze erhöht/Cachebereinigung/Datenkürzung.
+Basis [PR1012](https://github.com/ernisch/helmut-pilot/pull/1012)/799eb908: UID1000-Abschluss mit hashgeprüftem Stagingmodul, Rootprüfung erhalten; sechs Gegenproben, CI41307373237 und unabhängiger Review PASS. Aktuelle GitHub-Probe bestätigt PermissionError; historische Exception/ACL bleibenUNKNOWN.
 
-Vorher gezielt bestanden und unabhängig übernommen: Journal10.820Originalpayloads/
-10.822durableACKs, echterSIGTERM+4Fehlerfälle; neue3Lifecyclefälle mit2echtenTERMs,
-kein Weiterlauf, ursprünglicher UNKNOWN-Snapshot bleibt unverändert. Gzip-/Decimal-
-Dateiadapter erhält alle120.268.457C-Auditbytes verlustfrei in42.139.672Bytes und
-vergleicht3.501Postimages/6.000Usage; ausdrücklich keine neue Datenbankabnahme.
-SQL3517:3511exakt übernommen/6nurParseDescribe/0Arbeitsabfragen ausgeführt.
-KleineAppvorbereitung8.675.328Bytes; keine143MB-Binär-Stagingduplikation und
-keine118,8MB-Seedkopie, stattdessen hashgebundenerRO-Einzelfilemount außerhalbBASE.
-Asynchrone Diagnosehülle mit Stop-Latch, tiefem Abbruchbild, einem Abschlussowner,
-dauerhaftenACKs und exakten Zeiten eingebunden; tatsächlicher Runtime-Beleg noch offen.
-Bestehende16/16Integration, Worker81/81,500/500Quellen und16Auth-ACKs/49HTTP200
-im belegten Umfang übernommen, nicht wiederholt. HistorischeA/B/CFAILs,
-11.UNKNOWN, B291.UNKNOWN und C8,4s-Ursache unverändert erhalten.
+Neuer eigener Branch `codex/w15-end500-host-functional-20261101`: [Vertrag](betrieb/w15-end500-host-functional-20261101.md) `helmut-w15-end500-host-functional/1` bindet vor Start den vorhandenen dynamischen Hostpfad. Kein festes5GB-Abnahmehindernis; Reserve2.147.483.648B und alle Schutzgrenzen erhalten. Erst vollständige Same-Run-Quittung plus unabhängige v4-Abnahme erfüllt das neue End500-Funktionstor. Mock behält eigenen Vertrag, Brücke und separatesGO. Finale CI/Reviews am Draft-PR; noch kein Originallauf freigegeben.
 
-**Konkreter Vorschlag, noch NICHT ausgeführt:**26byteidentische Node-/PostgREST-
-Host-Stagingkopien,13Paare/26verschiedeneInodes, SHA/Größe/Modus vollständig erfasst.
-Sichtbar1.862.975.488Bytes; rechnerisch danach ca2,086GB frei, keine garantierte
-Reclamation/Startreserve. Keine Originale/DBs/Logs/Archive/Quellenbelege im Vorschlag.
-Kanonische Exemplare plus Originalruntime bleiben; Rückweg exklusive Kopie aus
-Kanonik mit vollständigerHash-/Rechtekontrolle. Alte Stagepfade fehlen bis Restore.
-Vor Löschung separates GO, danach echtesdf und neuer unabhängiger Kapazitätsreview;
-auch ein weiterer frischer End500-Versuch benötigt neues GO. AktuellesKontingent verbraucht.
-CI `fdf69342`: Pflicht40748463046/Integrität40748463085 abgeschlossen/grün;
-Browser gemäß Prüfplan übersprungen. Dies ist kein CI-PASS für `07b51319`;
-neue Kopf-CI nach Push separat. Vercel-includeFiles2.915>256 unverändert separat.
-[Belege, tatsächliche Messwerte und genaues Bereinigungsmanifest](betrieb/w15-atomic-usage-integration-20261028.md).
+Run41300846909/4de6269a bleibt **FAIL**, WORKER_RESULT_REJECTED/closure;500Auth/6.000Usage/3.501Postimages bestätigt, positive Gesamtquittung fehlt. Gesicherter Peak5,118GB bei Limit13,354GB; Swap/OOM/Max0,8CleanupPASS. Keine rückwirkende RAM-/Production-/Mockabnahme, Optimierung oder neue Ausführung. Originale/Journale erhalten. Nächster Schritt: geprüften neuen Kopf exakt einmal separat freigeben. [Voriger Stand bytegleich](archive/project_state/2026_11_01_799eb908_CURRENT_STATE_vor_Hostfunktionsvertrag.md).
 
-**Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten.
+## Ressourcen500-Messung und geprüfter Diagnoseanschluss (31.10.2026)
+
+[Run 41239213884](https://github.com/ernisch/helmut-pilot/actions/runs/41239213884), d56e97b3: **FAIL**, 383,989 s; Diagnose-GO verbraucht. 500 gleichzeitig aktiv vor 96 lokalen KI-Antworten belegt; vollständiger Ergebnisabschluss/finale Profilflags 0 UNKNOWN, Prozesse gestoppt. Kein formaler Mock500-1.500-/8.000-Nachweis.
+
+| Gruppe | Kernel-Peak B | CPU-s | Befund bis Abbruch |
+| --- | ---: | ---: | --- |
+| App einschließlich Treiber | 408.981.504 | 166,158 | unter Laborlimit im Teilabschnitt |
+| PostgreSQL + PostgREST + SQL-Messclients | 948.191.232 | 217,695 | Laborlimit erreicht, max 38 |
+| Testwerkzeuge / Simulatoren | 450.027.520 | 61,225 | separat im Parent |
+| Gemeinsamer Parent | 1.756.499.968 | 445,078 | kein belegter 5-GB-Engpass |
+
+Swap/OOM 0; Verbindungssample 6/60; letzter gültiger Hostreservewert 14.578.847.744 B. DB-file-Maximum 597.323.776 B einschließlich Shared Memory, anon 331.218.944 B; Maxima nicht addieren. Alte innere Operation/Peakzusammensetzung/Prozessanteile UNKNOWN. 948.191.232 B ist historisches Micro-OS-MemTotal, kein bewiesenes Hartlimit; gehostetes PostgreSQL-/PostgREST-Gemeinschaftsbudget UNKNOWN.
+
+**PR1004/b4b3afea qualifiziert:** erster Speicherfehlersnapshot unveränderlich; atomarer SAFE-Fortschritt erhält Phase/Operation und bestätigte Zähler ohne Workerabschluss. Fehler-/SIGKILL-Proben, [Pflicht-CI41241981900](https://github.com/ernisch/helmut-pilot/actions/runs/41241981900) und unabhängiger Code-/Dreierreview PASS; 3 Profile/12 Quellen/finale0. [Messbilanz](betrieb/w15-db-memory-diagnosis-20261031.md).
+
+Diagnosegrenzen unverändert: App1.999.998.976 B, DB948.191.232 B/60Verbindungen, Parent4.999.999.488 B, Hostreserve2.147.483.648 B, Swap/OOM/Max0,1.800s,512MiB freie Platte. Offizieller Mock-v2-Vertrag separat:2.048.000.000 B hart/Peak1.638.400.000 B/Reserve409.600.000 B. [Vorheriger Stand bytegleich](archive/project_state/2026_10_31_b4b3afea_CURRENT_STATE_vor_Mockstarttorpruefung.md); keine historischen FAILs umgewertet.
+
+## Getrennte Ressourcenmessung vorbereitet, Vertrag noch inaktiv (31.10.2026)
+
+Der [Referenzvertrag](betrieb/w15-separated-resource-metering-20261031.md) aus PR992/993/1003 bleibt **inaktiv** (helmut-w15-separated-resources/1). Komponentenmessung und numerische Verbindungsbilanz sind vorbereitet; Anbieterparität, echte Reserven und vollständige500erLastfähigkeit UNKNOWN. Laborannahmen aktivieren keinen offiziellen Vertrag. Bestehende Wächter, historische FAILs und getrennte Startfreigaben bleiben verbindlich.
+
+## Aktueller Entscheidungsstand: Anbieter-RAM und End500 (31.10.2026)
+
+**Oberstes Ziel:** Belastbarer Production-Nachweis für exakt 500 gleichzeitig aktive synthetische Profile, 1.500 vollständige Ergebnisse und 8.000 Sicherheitskontrollen. End500, Mock500 und Production sind getrennte Abnahmen; keine aktuelle Production-500-Abnahme.
+
+**Aktueller End500-Diagnosebefund:** [GitHub Run 41208876552](https://github.com/ernisch/helmut-pilot/actions/runs/41208876552) auf `123bbd06850f0687ada26265d6e0e1b7d1fad787` ist **Gesamtlauf FAIL**, jedoch **Verarbeitung nachgewiesen**: 500 Auth-CAS, 6.000 Usagezeilen, 3.501 native Postimages, 0 aktive Profile, Export und bestätigter Stopp. Sicherung, authentifizierte entfernte Rücklesung und zweite Rücksicherung sind nicht bestätigt. Kernel-Lebenszeitpeak **3.132.653.568 B** bei **4.999.999.488 B hartem End500-Diagnoselimit**; Swap/OOM/Max **0/0/0**, Bereinigung **8/8 PASS**. **Kein RAM-Limit-Fail dieses Diagnoselaufs.** Die ursprüngliche Sicherungsfehlerursache bleibt UNKNOWN; der separat reproduzierte private Gateway-Dateirechtefehler (0644 statt 0600) ist auf [PR #1002](https://github.com/ernisch/helmut-pilot/pull/1002), Kopf `56ae2a68f2b3e3de6ae5fff878c3e9e7f50e0549`, synthetisch korrigiert, unabhängig geprüft; [Pflicht-CI 41211894017](https://github.com/ernisch/helmut-pilot/actions/runs/41211894017) PASS. Noch kein neuer Originalnachweis mit diesem Fix.
+
+**Die fünf GB wurden bereits umgesetzt**, und zwar in dem ausdrücklich getrennten Diagnosemodus `end500-full-capacity-diagnostic` über den **gesamten** isolierten Ablauf. Die früheren 2.048.000.000 B sind dabei nur historisches Vergleichskriterium und keine Abbruchgrenze. Das reguläre **phasengetrennte** End500-Verarbeitungskriterium bleibt bis zu einer ausdrücklich genehmigten, geprüften Vertragsänderung bei einem zulässigen Peak von 2.048.000.000 B, der reguläre Mock500-Verarbeitungspeak bei 1.638.400.000 B. Nach nachweislich bestandenem Verarbeitungsabschluss sind für die Sicherung bis 4.999.999.488 B hart vorgesehen. Keine frühere RAM-Abnahme rückwirkend bestanden; Mock500 (historischer Abbruch nach 69 Units) weiter BLOCKED.
+
+**Anbietergetrennte Production-Basis und ihre Beleggrenzen:**
+
+| Bereich | Bisher belegte Basis | Was ist noch NICHT bewiesen? |
+| --- | --- | --- |
+| Vercel Anwendung | 2 GB Standard **je Funktionsinstanz**, 1 vCPU, laut Betreiberbefund 30.10.2026 und [PR #992](https://github.com/ernisch/helmut-pilot/pull/992). Das verbundene Projekt `helmut-pilot` ist lesbar. | Aktuell effektive Byte-Hartgrenze und peak RAM **je echter Funktionsinstanz bei Last von 500 Profilen**, Instanzparallelität, CPU und Laufzeit sind nicht als Lastnachweis belegt. |
+| Supabase Datenbank | Micro 1 GB inklusive System-/Dienstanteilen laut früherem Dashboardbeleg und Supabase-Dokumentation; verbundene Datenbank am 31.10.2026 erreichbar. Rein lesend aktuell: `max_connections=60`, `shared_buffers=256 MiB`, `work_mem=3500 kB`. | Aktuelle vollständige RAM/CPU-Last bei 500 Profilen, Poolbelegung, freie Verbindungen und tatsächliches Byte-Limit der Micro-Instanz sind nicht als 500er Nachweis belegt. |
+| Isoliertes GitHub W15 | Gemeinsamer Kernel-Parent umfasst zusätzlich Orchestrator, Empfang, Datenbankkopien, Dateicache, Archivierung, Verschlüsselung, Rücklesung und Rücksicherung. | **3,13 GB gemeinsamer Peak ist nicht der Vercel-Peak und nicht der Supabase-Peak.** Daraus folgt weder ein Überschreiten von 2 GB je Vercel-Funktion noch, dass diese zwei GB ausreichen. |
+
+**Entscheidung zu 2 GB:** Angemessenheit für 500 Profile ist **UNKNOWN**, nicht PASS und nicht automatisch FAIL. Keine unbelegte Erhöhung auf 4 GB und keine Gleichsetzung der getrennten Anbieterressourcen mit einer gemeinsamen 2- oder 3-GB-Grenze. Messung ist grundsätzlich möglich: Vercel stellt `vercel.function_invocation.peak_memory_mb` für Funktionen bereit; Supabase bietet Datenbank-Ressourcenberichte und eine authentifizierte Metrics API. Aktuelle Produktionsmetriken ohne entsprechenden 500er Lastlauf beweisen jedoch **keine** 500er Kapazität. Die Vercel-Metrikabfrage lieferte in dieser Prüfung keinen verwertbaren Messwert (API 400), die Supabase-SQL-Konfigurationswerte sind keine RAM-Verbrauchsmessung. Keine neue Infrastruktur-/Monitoringaktivierung oder Production-Last allein dafür.
+
+**Kürzester sicherer Weg:** Den vorhandenen Entwurf zur **getrennten Ressourcenabnahme** aus [PR #993](https://github.com/ernisch/helmut-pilot/pull/993) und die belegte Basis aus PR #992 als Ausgangspunkt verwenden. Vor Änderung des Prüfvertrags genaue Komponenten-/Prozesszuordnung, reale Anbieter-Hartlimits und Einheiten, begründete Reserven, CPU- und DB-Verbindungslimits klären. Danach minimal die Anbieterbudgets je Instanz bzw. Datenbank in der isolierten Mock500-Umgebung gesondert erzwingen und messen; Testwerkzeuge/Backup getrennt erfassen und einen gemeinsamen Hostschutz behalten. Nur nach ausdrücklicher Freigabe des neuen Vertrags umstellen; bestehende historische FAILs bleiben. Keine unerforderlichen erneuten Original-Restores. Der gezielte Backupfix in PR1002 bleibt unabhängig vom noch offenen regulären RAM- und Mock500-Nachweis. Ein echter Production-Test benötigt eigene Kosten- und Aktivierungsfreigaben.
+
+**Historie:** Die früheren W15- und Kalenderberichte sind [bytegleich archiviert](archive/project_state/2026_10_31_b289fe5e_CURRENT_STATE_vor_groessenkorrektur.md). Datierte Altbefunde überschreiben nicht den neueren Entscheidungsstand; historische FAILs und alle Originalbelege bleiben erhalten.
+
+---
+
+
+## Übernommene W15-Belege und offene Abnahme
+
+Elf Mock-Zusatzoriginale sind mit Run41037459441 auf13b858b1 vollständig bestätigt:
+217.563.454Bytes, Größen/Hashes/Manifest/GPG/Rücklesung PASS, Replacements-Pin geschlossen.
+Keine neue Inventur, Beschaffung oder Qualifikation. Der spätere Mockjob empfängt
+sein erhaltenes Cipherarchiv mit passendem eigenem GO.
+[Empfangsbeleg](betrieb/w15-mock-original-reception-20261030.md).
+Der erfolgreiche Empfang der zwölf End500-Originale40876458074 und die native
+Minimalprobe40982718647 bleiben übernommen; keine Wiederholung.
+
+Mock500-Controller/Atomic12ACK/Tages-/Namespacebindung, Auswertung und Sicherungsanschlüsse
+sind vorbereitet und gesperrt. Positive End500-Gesamtabnahme, Kopfbindung und konkretes
+Mock-GO fehlen; der historische RAM-v2-Fehler nach69Units bleibt FAIL/UNKNOWN.
+Historische Restore-FAILs, damalige Fehlerphasen, Ressourcen und frühere Dateiblocker
+bleiben im bytegleichen Archiv erhalten; daraus entsteht keine neue Laufberechtigung.
+[Historische W15-Berichte](archive/project_state/2026_10_31_b289fe5e_CURRENT_STATE_vor_groessenkorrektur.md).
 
 ## Vollständiges Root-Paket und Caller-Vorbereitung (13.10.2026)
 
@@ -65,19 +85,15 @@ UTC13-Tagesbuch einmal angelegt:35 Bücher/Kapazität35, EU-Limit82,036000USD, d
 
 Historische Deployment- und Read-only-Beobachtungen vom12.10. sind [wortgleich archiviert](archive/project_state/2026_10_28_historischer_Deployment_und_RO_Beleg_20261012.md); sie sind keine aktuellen Production-Belege.
 
-## Kalenderfix im Entwicklungsbranch (12.10.2026, noch nicht Production)
+## Kalenderfix im Entwicklungsbranch (historische Vorbereitung 12.10.2026)
 
-Branch `codex/synthetik500-date-handoff-20261012`, Ausgangsstand PR901. Die neue strukturelle Datumsbindung trennt den unveränderten B2-Aufnahmetag vom tatsächlichen EU-Ausführungsfenster. Originaldatum, Merkle-/Body-/Profil-/Quellenhashes und Originalprüfung bleiben erhalten. Nur der vorhandene geschlossene EU-Vertrag erlaubt diesen Übergang; 9h, Preis-/Auftragsfenster und gleicher UTC-/Berliner Lauftag bleiben zwingend. Opaque Sender-Token und reale Motorwachen prüfen das tatsächliche Fenster. D und R kennzeichnen auch gewöhnliche Quellen aus der Aufnahme als historischen Hintergrund, ohne ausgewählte Belege zu entfernen; eine Überschreitung der bestehenden 16.000-Zeichen-Grenze stoppt. Schreibzeit, Cache und Entwurfs-/Prüfbelege verwenden den tatsächlichen Ausführungstag. Kein künstliches heutiges Quelldatum und kein neues Fachurteil.
-
-Lokal über `scripts/lokal.js` bestanden: 39 Datumsfälle in9 Gruppen,4 fiktive Integrationsgruppen und21 bestehende Quellenbelegprüfungen; weitere begrenzte Vertrags-/Adapterprüfungen im [Draft-PR902](https://github.com/ernisch/helmut-pilot/pull/902). Unabhängige DeepSeek-Pro-High-/Flash-High-Codeprüfungen im jeweiligen Scope positiv. Pflicht-CI auf Codekopf `556ba54d97a067ad08e29ad74957cb0ec1707e7f`: [Run38218238617](https://github.com/ernisch/helmut-pilot/actions/runs/38218238617),171/171 Standard- und330/330 Bereichssuiten sowie erforderliche isolierte DB-Prüfungen bestanden. Spätere reine Statuskorrekturen sind keine Änderung dieses Codebefunds; Pflichtchecks auf dem finalen PR-Kopf müssen vor Merge grün sein. Keine Production-Funktion daraus behauptet. Auf Production bleibt der Tageskonflikt von `8ca835ce` bis zum separat erlaubten Merge/Rollout wirksam.
-
-**Originale jetzt übernommen (12.10., privat außerhalbGit,0600):** `sender-final500-budget-transfer.json`,499.220Bytes,SHA256 `e7d062ddd3c528a25437e9fe28300ae6c2588ff5a9e191e4448c998a71902b02`; `actual-500-transport-receipt.json`,403.939Bytes,SHA256 `14db98343ace3113e30677bab22e21fc468122c481ced2ba1c5e932ef8ddfb83`; `actual-500-result-export.dictionary.json`,2.804.748Bytes,SHA256 `66c828bf113672c94539367bbfeef5aa763e3cf8c1387894fe13a8bc5f65e26b`. Bestehender Decoder bestätigt ursprünglichen UTF8-SHA256 `97c465b8437cc7dde7c975052728cee03e5133c4009c141cfe091ebcd0d7db86`. Alle500 ursprünglichen Draft-Eingaben, Mitgliedschaftsbelege und eingebetteten nativen Quellen verfügbar; keine fehlenden separaten Dateien aus eingebetteten Daten ableiten.
-
-**Neue Datums-/Kontextvorbereitung, keine erneute Fachabnahme:** Alle500 Originaleingaben im neuen Kalenderpfad vorbereitet,0Fehler, maximal15317 von16000 Kontextzeichen; alle ausgewählten Quellen erhalten. Originalkontexthashes stimmen mit dem übernommenen Transfer überein. Rein lesend erhobene Publikationspolicy und972 Publikationsidentitäten stimmen mit den ursprünglichen kanonischen Hashes überein. Alle1500 Sollpositionen und12000 Kriterienpositionen an diese Originaleingaben gebunden;0neue Qualitätsurteile. Struktureller Kandidat12.10.,12:00–21:00UTC (15:00–00:00Istanbul), ausdrücklich kein Testfenster-GO und keine finale Operation-/Command-/Deploymentbindung.
-
-**Runtime-Nachweispaket übernommen:** [B3-Paket](https://drive.google.com/file/d/1coyokq5wUCURFa3NYM7rCsXIxkjiRoLG/view),14.961Bytes,SHA256 `25de6c1c5b84932aec7d6ec39bf1c87861a5fb45fb38c7f95d87b47bb15f606c`. Beobachtung12.10.,08:42:08.296–08:42:10.365UTC /11:42Istanbul; unabhängige Offlineprüfung52/52 übernommen, nicht wiederholt. Zwei Runtime-GETs und zwei Deployment-/Alias-GETs HTTP200,20 Vertragsprüfungen positiv: Production8ca835ce/READY,EU-Route `gpt-5-mini-eu`,34Kostenbücher,runDayUTC null,used0,0offene Reservierungen,Tagesbindung0,636000USD/Auftragsbindung7,445364USD,startklartrue. Keine Anbieterrechnung, Modellqualität oder500er-Test bewiesen. Für diese Übernahme ist keine Bearerübertragung nötig.
-
-**Frische Prüfung bleibt erforderlich:** Der Runtime-Bearer liegt hier weiterhin nicht vor; der bestehende sichere Quellzugang hat die übergebenen GETs erbracht. Frische Startbelege können darüber geliefert oder über separat sicheren begrenzten Zugang gelesen werden, niemals Secrets im Chat/Git/Drive. Nach dem erlaubten Rollout sind sie an das neue Deployment zu binden und innerhalb60Sekunden vor Start zu erheben. Die bestehende EU-Leseautorität endet **13.10.2026,00:00UTC /03:00Istanbul**; Erneuerung nur falls später benötigt und ausdrücklich erlaubt. Keine Schutzumgehung oder automatische Secret-Einrichtung. **Noch keine vollständige Startbereitschaft und kein empfohlenes Test-GO.**
+Die strukturelle Datumsbindung trennt B2-Aufnahmetag und tatsächliches EU-Fenster;
+Original-/Merkle-/Profil-/Quellenbindungen und alle Schutzprüfungen bleiben erhalten.
+Codekopf556ba54d wurde mit Pflicht-CI38218238617 und unabhängigen Prüfungen qualifiziert.
+Dies ist kein frischer Production-/500er-Nachweis und keine Merge-/Rolloutfreigabe.
+Vollständige ursprüngliche Kalender-, Original- und Runtime-Befunde vom12.10. sind
+[bytegleich archiviert](archive/project_state/2026_10_31_b289fe5e_CURRENT_STATE_vor_groessenkorrektur.md).
+[Kalender-/Originalvertrag](betrieb/blocker2-d-integration-historische-uebergabe-20261011.md).
 
 ## Blocker-Kurzstand
 
