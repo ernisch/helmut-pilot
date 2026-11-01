@@ -227,9 +227,8 @@ def restore_owned(controller, supervisor, *, run_owned):
             require(B._pin(restore_fd, action + '.lifecycle.PRIVATE.jsonl', guard) == receipt['lifecycle'])
             pins[action] = pin
             if action == 'restore-render':
-                # The original BASE SQL stays in place for the unchanged apply
-                # command; this additional private state copy permits independent
-                # host readback and is covered by the existing state backup walk.
+                # The single private audit SQL is applied in place and retained
+                # for independent host readback and the existing state backup walk.
                 require(B._pin(restore_fd, 'rendered.PRIVATE.sql', guard) == receipt['renderedSQL']
                         and type(receipt['renderedSQL']) is dict
                         and set(receipt['renderedSQL']) == {'bytes', 'sha256'}
