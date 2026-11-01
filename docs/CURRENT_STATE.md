@@ -1,12 +1,12 @@
 # CURRENT STATE — Helmut
 
-## W15: dynamischer End500-Funktionsvertrag vorbereitet (01.11.2026)
+## W15: End500-Funktion unabhängig PASS (01.11.2026)
 
-Basis [PR1012](https://github.com/ernisch/helmut-pilot/pull/1012)/799eb908: UID1000-Abschluss mit hashgeprüftem Stagingmodul, Rootprüfung erhalten; sechs Gegenproben, CI41307373237 und unabhängiger Review PASS. Aktuelle GitHub-Probe bestätigt PermissionError; historische Exception/ACL bleibenUNKNOWN.
+[Run41325430429](https://github.com/ernisch/helmut-pilot/actions/runs/41325430429), [PR1013](https://github.com/ernisch/helmut-pilot/pull/1013), Code `f157d97ff3990a71623e7037437556dfcc8b48e6`: vollständige Same-Run-v4-Abnahme unter [HC1](betrieb/w15-end500-host-functional-20261101.md) **PASS**. Job1.356s/gemeinsamer Lauf1.333,674s. 15Cipherteile/12Originale(242.570.240B), Restore500/0,500Auth/6.000Usage/3.501Postimages, Export, finale0, Stopp und vollständiger verschlüsselter Sicherungsrundlauf einschließlich authentifizierter Rücklesung/zweiterRecoveryintegrität bestätigt.
 
-Neuer eigener Branch `codex/w15-end500-host-functional-20261101`: [Vertrag](betrieb/w15-end500-host-functional-20261101.md) `helmut-w15-end500-host-functional/1` bindet vor Start den vorhandenen dynamischen Hostpfad. Kein festes5GB-Abnahmehindernis; Reserve2.147.483.648B und alle Schutzgrenzen erhalten. Erst vollständige Same-Run-Quittung plus unabhängige v4-Abnahme erfüllt das neue End500-Funktionstor. Mock behält eigenen Vertrag, Brücke und separatesGO. Finale CI/Reviews am Draft-PR; noch kein Originallauf freigegeben.
+Peak5,103GB bei frisch berechnetem13,320GB-Limit, Hostreserve2,147GB geschützt, Swap/OOM/Max0. Peak zuerst bei backup-recovery beobachtet; file-Max4,582GB/anon1,309GB/kernel148MB, getrennte Maxima. Exakte Peakkomposition/CPU/AnbietereignungUNKNOWN; Prozess-PSS nur Untergrenzen. Keine reguläre5GB-/Production-/Mockabnahme oder Optimierung. Ein verschlüsseltes532,7MB-Artefakt/<1Tag;0aktive geschützte Läufe. AusführungsbranchF157 unverändert; CI41312283046/41315935455PASS.
 
-Run41300846909/4de6269a bleibt **FAIL**, WORKER_RESULT_REJECTED/closure;500Auth/6.000Usage/3.501Postimages bestätigt, positive Gesamtquittung fehlt. Gesicherter Peak5,118GB bei Limit13,354GB; Swap/OOM/Max0,8CleanupPASS. Keine rückwirkende RAM-/Production-/Mockabnahme, Optimierung oder neue Ausführung. Originale/Journale erhalten. Nächster Schritt: geprüften neuen Kopf exakt einmal separat freigeben. [Voriger Stand bytegleich](archive/project_state/2026_11_01_799eb908_CURRENT_STATE_vor_Hostfunktionsvertrag.md).
+NeueNonceb3710fb5-378d-4d9c-88a6-83702cbdb0ea, eine Linkrunde/einPOST,284s Restgültigkeit/50.644Bytes. Frühere519-Linkrunde bleibtBLOCKED ohneJob; Run41300846909 bleibtFAIL. Belege: `/workspace/helmut-w15-private-evidence-20261101/HOST_FUNCTIONAL_OUTER_02/`. Mock-Funktionstor erkennt diese v4-Abnahme an; eigene aktuelle Kopf-/Eingabebrücke und eigenesGO bleiben Pflicht. Keine automatische Mock-/Production-Ausführung.
 
 ## Ressourcen500-Messung und geprüfter Diagnoseanschluss (31.10.2026)
 
