@@ -167,6 +167,8 @@ jobs:
           python3 -B scripts/w15-github/test_build_receiver_browser.py
           node scripts/w15-github/test_receiver_browser.js
           python3 -B scripts/w15-github/test_receive_existing_inputs.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_receive_transport_phase.py
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_receive_transport_chain.py
           python3 -B scripts/w15-github/test_runtime_materialization.py
           python3 -B scripts/w15-github/test_encrypted_index.py
           python3 -B scripts/w15-github/test_receive_runtime_handoff.py

@@ -16,7 +16,7 @@ for(const action of ['w15-isolated','w15-mock500']){
   const memoryEnd=source.indexOf('\n// Runtime artifact')>=0?source.indexOf('\n// Runtime artifact'):source.indexOf('\nconst fs=');
   vm.runInContext(source.slice(memoryStart,memoryEnd),context,{timeout:1000});
   const clone=x=>JSON.parse(JSON.stringify(x));
-  for(const phase of ['backup-collect','backup-recovery','connection-restore-check','receiver-download']){
+  for(const phase of ['backup-collect','backup-recovery','connection-restore-check','receiver-download',...['expired','http','timeout','integrity','guard','io','interrupted','unknown'].map(x=>'receiver-download-'+x)]){
     const checkpoint={name:phase,sequence:2,meaning:'ENTERED_NOT_COMPLETED'};
     assert.deepEqual(clone(context.closedRunnerDetail({...core,lastObservedPhase:checkpoint})),{...core,lastObservedPhase:checkpoint});
   }

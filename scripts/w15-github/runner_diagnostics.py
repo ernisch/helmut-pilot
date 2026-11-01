@@ -26,6 +26,7 @@ OBSERVED_PHASES = frozenset(('arguments', 'event', 'approval', 'qualification', 
     prefix + name for prefix in ('', 'connection-') for name in ('backup-export', 'backup-freeze',
         'backup-collect', 'backup-seal', 'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'))
 OBSERVED_PHASES |= frozenset('capacity-' + name for name in ('transport-complete', 'materialization', 'restore-ready', 'seed', 'seed-ready', 'auth-cas', 'native-audit', 'export', 'processing-stopped'))
+OBSERVED_PHASES |= frozenset('receiver-download-' + kind for kind in ('expired', 'http', 'timeout', 'integrity', 'guard', 'io', 'interrupted', 'unknown'))
 MAX_PHASE_FRAMES = 128
 NATIVE_STAGES = frozenset(('UNKNOWN', 'setup', 'journal-ready', 'database-preflight', 'command-read', 'command-decode',
     'command-freeze', 'server-import', 'auth-read', 'auth-fixture', 'auth-baseline', 'observer-install', 'auth-mutate',

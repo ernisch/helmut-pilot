@@ -1,14 +1,14 @@
 # CURRENT STATE — Helmut
 
-## Isolierte End500→Mock500-Funktionskette genehmigt (31.10.2026)
+## W15-Funktionskette: End500 FAIL vor Restore (01.11.2026)
 
-Neuer Vertrag **helmut-w15-isolated-functional/1**, Ausführung 1.–7.11.2026: End500 vollständig samt Sicherung/Rücklesung/zweiter Rücksicherung; erst nach unabhängiger positiver Gesamtabnahme ein vollständiger Mock500. Noch kein neuer Gesamtversuch gestartet. [Vertrag, Grenzen und Abnahme](betrieb/w15-isolated-functional-contract-20261101.md).
+[Run 41256099275](https://github.com/ernisch/helmut-pilot/actions/runs/41256099275), geprüfter Kopf `ed2a9642`, Pflicht-CI 41253721311 PASS: **FAIL** in `receiver-download`, unabhängig bestätigt. Genau ein Gesamtversuch verbraucht; kein Mock gestartet. Empfang unvollständig, Restore/Verarbeitung/Sicherung nicht erreicht, innere Erstursache UNKNOWN. [Befund und Reparaturen](betrieb/w15-functional-transport-failure-20261101.md).
 
-Durchgehend bestehende gemeinsame Hartgrenze knapp 5 GB und separate Hostreserve rund 2,15 GB; Swap/OOM/max 0. Historische Verarbeitungsspitzen und Labor-Datenbankgrenze sind ausschließlich im neuen Modus Vergleichswerte. Alte Verträge und FAIL bleiben unverändert. Anbieterabnahme UNKNOWN, Production gesperrt.
+Höchster bestätigter RAM 658 MB, Swap/OOM/max 0; endgültiger Lifetimepeak UNKNOWN. Letzter Cachewert 587 MB, anonym 48 MB, Kernel 23 MB, zeitlich keine Peakkomposition. Alle acht Prozessbereinigungsprüfungen PASS; kein Artefakt. Früheste Linkexpiry 00:22:27 UTC, Fehlerquittung 0,502 s später; kein Beweis für einen bestimmten HTTP-/Socketfehler.
 
-End500 muss 500 CAS/6.000 Usage/3.501 Postimages liefern. Mock500 muss 500 gleichzeitig aktive Profile/500 Units/1.000 lokale Phasen/1.500 Einzelprüfungen/8.000 Sicherheitskontrollen sowie abschließend 0 aktive Profile, Prozessstopp und Sicherungsrundlauf desselben Laufs belegen. Elf Originale, Atomic12ACK und Quellenqualifikation übernommen. Maximal drei Gesamtversuche einschließlich genau einer belegten Korrektur; UNKNOWN sperrt Wiederholung.
+Nachgewiesene synthetische Fixes: vorhandenes Vertragsmodul wiederverwenden statt pro Lesefragment neu importieren; erste feste Transportfehlerklasse vor Bereinigung erhalten, UTC-Socketfrist beachten. Zentrale Weitergabe gezielt geprüft; neuer Kopf/CI/Review werden abgeschlossen. Kein weiterer Originallauf.
 
-Nächster Schritt: integrierten Kopf gezielt prüfen, Pflicht-CI und unabhängigen Review abschließen; danach genehmigte Kette mit frischer Laufbindung ausführen. [Vorheriger Stand unverändert archiviert](betrieb/w15-current-state-before-functional-integration-20261031.md).
+[Funktionsvertrag v1](betrieb/w15-isolated-functional-contract-20261101.md) mit knapp 5 GB/Hostreserve rund 2,15 GB bleibt gültig. Alte RAM-FAIL unverändert, Anbieterparität UNKNOWN. Zusatzversuch verlangt laut Betreiber eine belegte Ursache; diese Bedingung ist aktuell nicht erfüllt. Nächste Grenze: konkrete neue Freigabe auf geprüften Reparaturkopf. Mock erst nach vollständiger positiver Endabnahme. Production gesperrt.
 
 ## Ressourcen500-Messung und geprüfter Diagnoseanschluss (31.10.2026)
 
