@@ -27,6 +27,7 @@ _CAPACITY = None
 _PHASE_CONTRACT = None
 _END_TRACE = None
 _FUNCTIONAL_CONTRACT = None
+_MOCK_HOST_CONTRACT = None
 
 
 def functional_contract():
@@ -257,8 +258,16 @@ def project_failure_memory(value, valid):
         return None
 
 
+def mock_host_contract():
+    global _MOCK_HOST_CONTRACT
+    if _MOCK_HOST_CONTRACT is None:
+        spec=importlib.util.spec_from_file_location('w15_common_mock_host',Path(__file__).with_name('mock500_host_contract.py'))
+        _MOCK_HOST_CONTRACT=importlib.util.module_from_spec(spec);spec.loader.exec_module(_MOCK_HOST_CONTRACT)
+    return _MOCK_HOST_CONTRACT
+
+
 class CommonResources:
-    def __init__(self, token, context, path, identity, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False, functional_stage=None, host_capacity_admission=None):
+    def __init__(self, token, context, path, identity, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False, functional_stage=None, host_capacity_admission=None, host_functional_stage=None):
         require(token is TOKEN)
         self._context = json.loads(json.dumps(context))
         self.path, self._identity = path, identity
@@ -272,6 +281,8 @@ class CommonResources:
             require(self.host_capacity_admission is not None)
             self.host_capacity_budget = host_capacity_budget(self.host_capacity_admission)
             capacity_diagnostic, end_capacity_diagnostic = True, True
+        require(host_functional_stage in (None,'mock500') and (host_functional_stage is None or self.host_capacity_admission is not None))
+        self.host_functional_stage=host_functional_stage
         self.capacity_diagnostic = capacity_diagnostic
         require(type(end_capacity_diagnostic) is bool and (not end_capacity_diagnostic or capacity_diagnostic))
         self.end_capacity_diagnostic = end_capacity_diagnostic
@@ -280,6 +291,7 @@ class CommonResources:
         if self.host_capacity_admission is not None:
             self.profile = HOST_PROFILE
             self.container_limit = self.host_capacity_budget['hardLimitBytes']
+        if host_functional_stage is not None:self.profile=mock_host_contract().PROFILE
         require(processing_backup_stage in (None, 'end500', 'mock500')
                 and not (capacity_diagnostic and processing_backup_stage is not None))
         self.processing_backup_stage = processing_backup_stage
@@ -360,15 +372,17 @@ class CommonResources:
         No process creation, names/argv guesses, limit changes or provider
         acceptance. PSS maxima at different times are never a RAM sum.
         """
-        require(self.functional_stage in ('end500','mock500'))
+        require(self.functional_stage in ('end500','mock500') or getattr(self,'host_functional_stage',None)=='mock500')
+        contract=mock_host_contract() if getattr(self,'host_functional_stage',None)=='mock500' else functional_contract()
         module=functional_contract().load('memory_components')
         components=module.observe(self.path,self._identity,role_bindings)
         for role,row in components['roles'].items():
             amount=row['observedPSSBytes']
             if type(amount) is int:
                 self._functional_component_maxima[role]=max(amount,self._functional_component_maxima.get(role,0))
-        return {'schema':'helmut-w15-functional-resource-observation/1',
-            'resourceContract':functional_contract().CONTRACT,'memoryProfile':self.profile,
+        return {'schema':('helmut-w15-mock500-host-resource-observation/1' if getattr(self,'host_functional_stage',None)=='mock500' else 'helmut-w15-functional-resource-observation/1'),
+            **({'hostCapacityBudget':self.host_capacity_budget} if getattr(self,'host_functional_stage',None)=='mock500' else {}),
+            'resourceContract':contract.CONTRACT,'memoryProfile':self.profile,
             'sampleCount':self._functional_samples,
             'firstKernel':json.loads(json.dumps(self._functional_first_kernel)),
             'lastKernel':json.loads(json.dumps(self._functional_kernel)),
@@ -412,17 +426,16 @@ class CommonResources:
                 value['hostCapacitySafetyObserved'] = True
             elif self.functional_stage is not None:
                 functional_contract().assess(value, self.functional_stage)
-                try:
-                    self._functional_kernel=functional_contract().load('component_resource_meter')._kernel(fd)
-                    if self._functional_samples==0:
-                        self._functional_first_kernel=json.loads(json.dumps(self._functional_kernel))
-                except Exception:
-                    self._functional_kernel='UNKNOWN'
-                self._functional_samples+=1
             elif self.processing_backup_stage is not None:
                 self._phase_state.observe(value)
             else:
                 (capacity().assess if self.capacity_diagnostic else assess)(value)
+            if self.functional_stage is not None or getattr(self,'host_functional_stage',None)=='mock500':
+                try:
+                    self._functional_kernel=functional_contract().load('component_resource_meter')._kernel(fd)
+                    if self._functional_samples==0:self._functional_first_kernel=json.loads(json.dumps(self._functional_kernel))
+                except Exception:self._functional_kernel='UNKNOWN'
+                self._functional_samples+=1
             self._last_valid = True
             return value
         except KeyboardInterrupt as error:
@@ -494,7 +507,7 @@ def _kernel_directory(path):
         os.close(root)
 
 
-def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False, functional_stage=None, host_capacity_admission=None):
+def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False, functional_stage=None, host_capacity_admission=None, host_functional_stage=None):
     """Only after entering the externally prepared, actually limited parent.
 
     This is an observation API, not a systemd bootstrap, UID conversion, fresh
@@ -515,7 +528,7 @@ def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None,
         result = CommonResources(TOKEN, context, path, (value.st_dev, value.st_ino),
             capacity_diagnostic=capacity_diagnostic, processing_backup_stage=processing_backup_stage,
             end_capacity_diagnostic=end_capacity_diagnostic, functional_stage=functional_stage,
-            host_capacity_admission=host_capacity_admission)
+            host_capacity_admission=host_capacity_admission, host_functional_stage=host_functional_stage)
         result.sample()
         return result
     except Exception:

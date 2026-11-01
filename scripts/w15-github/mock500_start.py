@@ -25,6 +25,7 @@ BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 MODE = 'mock500-full-gated'
 PHASED = 'mock500-full-phased-gated'
 FUNCTIONAL = 'mock500-full-functional-gated'
+HOST_FUNCTIONAL = 'mock500-full-host-functional-gated'
 LIMITS = {'comparisonBudgetBytes': R.LIMIT, 'maximumConsumptionBytes': R.MAXIMUM,
           'requiredReserveBytes': R.RESERVE, 'swapBytes': 0}
 FINGERPRINT = '7E3998A6C2CB948C69A2EE51F4267ABF26796EDC'
@@ -47,17 +48,21 @@ def host_functional():
     return module
 
 
+def host():
+    return R.host()
+
+
 def limits(mode):
-    return functional().limits('mock500') if mode == FUNCTIONAL else dict(LIMITS)
+    return host().limits() if mode==HOST_FUNCTIONAL else functional().limits('mock500') if mode == FUNCTIONAL else dict(LIMITS)
 
 
 def memory_profile(mode):
-    return (functional().MOCK_PROFILE if mode == FUNCTIONAL else
+    return (host().PROFILE if mode==HOST_FUNCTIONAL else functional().MOCK_PROFILE if mode == FUNCTIONAL else
             R.phases().MOCK_PROFILE if mode == PHASED else R.PROFILE)
 
 
 def mode_scope(mode):
-    return (functional().SCOPES[FUNCTIONAL] if mode == FUNCTIONAL else
+    return (host().SCOPE if mode==HOST_FUNCTIONAL else functional().SCOPES[FUNCTIONAL] if mode == FUNCTIONAL else
             'ISOLATED_GITHUB_MOCK500_PHASED_ONLY' if mode == PHASED else 'ISOLATED_GITHUB_MOCK500_ONLY')
 
 
@@ -125,10 +130,10 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
     Record envelopes preserve their actual reviewed bytes and SHA256.
     """
     need(isinstance(expected_end500_commit, str) and HEX.fullmatch(expected_end500_commit))
-    need(isinstance(request, dict) and request.get('mode') in (MODE, PHASED, FUNCTIONAL)
+    need(isinstance(request, dict) and request.get('mode') in (MODE, PHASED, FUNCTIONAL, HOST_FUNCTIONAL)
          and request.get('branch') == BRANCH and isinstance(request.get('exactCommit'), str)
          and HEX.fullmatch(request['exactCommit'])
-         and (request['mode'] == FUNCTIONAL or request['exactCommit'] != expected_end500_commit)
+         and (request['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL) or request['exactCommit'] != expected_end500_commit)
          and type(request.get('runAttempt')) is int and request['runAttempt'] == 1
          and request.get('limits') == limits(request.get('mode')) and all(type(v) is int for v in request['limits'].values())
          and isinstance(request.get('sourceQualificationSHA256'), str)
@@ -142,7 +147,10 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
          and type(observed_context['runAttempt']) is int)
     end500, bridge = _record(end500_acceptance), _record(compatibility_bridge)
     phased = request['mode'] == PHASED
-    if request['mode'] == FUNCTIONAL:
+    if request['mode']==HOST_FUNCTIONAL:
+        need(end500.get('schema')==host_functional().ACCEPTANCE_SCHEMA,'MOCK500_POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED')
+        validate_functional_end_acceptance(end500)
+    elif request['mode'] == FUNCTIONAL:
         validate_functional_end_acceptance(end500)
     elif phased:
         need(end500.get('schema') == 'helmut-w15-independent-end500-acceptance/2'
@@ -162,7 +170,7 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
              'MOCK500_POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED')
     need(
          end500.get('scope') == ((host_functional().SCOPE if end500.get('schema') == host_functional().ACCEPTANCE_SCHEMA
-                                 else functional().SCOPES[functional().END_MODE]) if request['mode'] == FUNCTIONAL
+                                 else functional().SCOPES[functional().END_MODE]) if request['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL)
                                 else 'ISOLATED_GITHUB_END500_PHASED_ONLY' if phased else 'ISOLATED_GITHUB_END500_ONLY')
          and end500.get('exactCommit') == expected_end500_commit
          and isinstance(end500.get('runId'), str) and re.fullmatch('[1-9][0-9]{4,19}', end500['runId'])
@@ -185,6 +193,10 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
          and bridge.get('end500CodeReexecuted') is False
          and bridge.get('mockMemoryContract') == memory_profile(request['mode'])
          and bridge.get('executionAuthority') is False, 'MOCK500_REVIEWED_BASELINE_BRIDGE_REQUIRED')
+    if request['mode']==HOST_FUNCTIONAL:
+        need(bridge.get('functionalContract')==host().CONTRACT
+             and bridge.get('end500FunctionalContract')==host_functional().CONTRACT,
+             'MOCK500_REVIEWED_BASELINE_BRIDGE_REQUIRED')
     if request['mode'] == FUNCTIONAL:
         need(bridge.get('functionalContract') == functional().CONTRACT,
              'MOCK500_REVIEWED_BASELINE_BRIDGE_REQUIRED')
@@ -197,6 +209,7 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
         'processingSeconds', 'completionSeconds', 'expectedProfiles', 'expectedUnits',
         'expectedPositions', 'expectedControls', 'maxProviderCalls', 'maxStorageUSD',
         'maxReceiveAttempts', 'issuedAt', 'expiresAt'}
+    if request['mode']==HOST_FUNCTIONAL:keys|={'resourceContract'}
     need(isinstance(approval, dict) and set(approval) == keys
          and approval['schema'] == 'helmut-w15-mock500-start-approval/1'
          and approval['scope'] == mode_scope(request['mode'])
@@ -206,6 +219,8 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
          and approval['end500AcceptanceSHA256'] == end500_acceptance['sha256']
          and approval['compatibilitySHA256'] == compatibility_bridge['sha256']
          and approval['maxStorageUSD'] == '0.05', 'MOCK500_SEPARATE_EXPLICIT_GO_REQUIRED')
+    if request['mode']==HOST_FUNCTIONAL:
+        need(approval['resourceContract']==host().CONTRACT,'MOCK500_SEPARATE_EXPLICIT_GO_REQUIRED')
     exact = {'processingSeconds': 10800, 'completionSeconds': 12600, 'expectedProfiles': 500,
         'expectedUnits': 500, 'expectedPositions': 1500, 'expectedControls': 8000,
         'maxProviderCalls': 0, 'maxReceiveAttempts': 1, 'runAttempt': 1}
@@ -242,7 +257,7 @@ class StartGuard:
         self.processing_deadline = self.started_at + timedelta(seconds=10800)
         self.completion_deadline = self.started_at + timedelta(seconds=12600)
         berlin = ZoneInfo('Europe/Berlin')
-        if observed_context['mode'] == FUNCTIONAL:
+        if observed_context['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL):
             functional().validate_window('mock500',self.started_at)
         else:
             need('2026-10-28' <= self.started_at.date().isoformat() <= '2026-10-31'
@@ -273,7 +288,9 @@ class StartGuard:
             need(0 <= elapsed < maximum and now < (self.completion_deadline if closure else self.processing_deadline),
                  'MOCK500_ORIGINAL_CLOCK_DEADLINE')
             sample = self.resources.check_context(self.context)
-            if getattr(self.resources, 'functional_stage', None) == 'mock500':
+            if getattr(self.resources,'host_functional_stage',None)=='mock500':
+                host().assess(sample,self.resources.host_capacity_admission)
+            elif getattr(self.resources, 'functional_stage', None) == 'mock500':
                 functional().assess(sample,'mock500')
             elif getattr(self.resources, 'processing_backup_stage', None) == 'mock500':
                 R.phases().assess(sample, 'mock500', phase=self.resources.memory_phase)

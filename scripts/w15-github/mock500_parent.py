@@ -57,7 +57,7 @@ def resources():
 
 def read_parent(ctx, expected_identity, *, empty=False):
     """Read the unchanged kernel lifetime; never reset any peak/counter."""
-    if ctx.get('functionalStage') == 'mock500' or ctx.get('processingBackupStage') == 'mock500':
+    if ctx.get('hostCapacityDiagnostic') is True or ctx.get('functionalStage') == 'mock500' or ctx.get('processingBackupStage') == 'mock500':
         return P.read_parent(ctx, expected_identity, empty=empty)
     require('functionalStage' not in ctx)
     fd = P.R._kernel_directory(P.R.KERNEL_ROOT / names(ctx)[0])
@@ -94,6 +94,8 @@ def read_parent(ctx, expected_identity, *, empty=False):
 
 
 def unit_bytes(ctx=None):
+    if ctx is not None and ctx.get('hostCapacityDiagnostic') is True:
+        return P.unit_bytes(ctx)
     if ctx is not None and 'functionalStage' in ctx:
         require(ctx['functionalStage'] == 'mock500')
         return P.unit_bytes(ctx)
@@ -102,6 +104,8 @@ def unit_bytes(ctx=None):
 
 
 def prepare_parent(ctx):
+    if ctx.get('hostCapacityDiagnostic') is True:
+        return P.prepare_parent(ctx)
     if ctx.get('functionalStage') == 'mock500':
         return P.prepare_parent(ctx)
     require('functionalStage' not in ctx)
@@ -129,6 +133,8 @@ def prepare_parent(ctx):
 
 
 def remove_parent(ctx):
+    if ctx.get('hostCapacityDiagnostic') is True:
+        return P.remove_parent(ctx)
     if ctx.get('functionalStage') == 'mock500':
         return P.remove_parent(ctx)
     require('functionalStage' not in ctx)
@@ -146,10 +152,12 @@ def remove_parent(ctx):
 def github_binding(ctx):
     require('functionalStage' not in ctx or ctx['functionalStage'] == 'mock500')
     P.github_binding(ctx['runId'], ctx['exactCommit'],
+        **({'capacity_diagnostic':True,'host_capacity_diagnostic':True} if ctx.get('hostCapacityDiagnostic') is True else {}),
         **({'processing_backup_stage': ctx['processingBackupStage']}
            if ctx.get('processingBackupStage') == 'mock500' else {}),
         **({'functional_stage': 'mock500'} if ctx.get('functionalStage') == 'mock500' else {}))
     for file in (SCRIPT, SCRIPT.with_name('mock500_resources.py'),
+                 *([SCRIPT.with_name(n+'.py') for n in ('mock500_host_contract','host_functional_contract','component_resource_meter','functional_contract')] if ctx.get('hostCapacityDiagnostic') is True else []),
                  *([SCRIPT.with_name('phase_contract.py')] if ctx.get('processingBackupStage') == 'mock500' else [])):
         relative = str(file.relative_to(P.REPO))
         row = P.command(['/usr/bin/git', '--no-optional-locks', '-c', 'core.hooksPath=/dev/null',
@@ -168,6 +176,10 @@ def privileged(mode, ctx):
     require('functionalStage' not in ctx or (ctx['functionalStage']=='mock500' and ctx.get('processingBackupStage') is None))
     argv = ['/usr/bin/python3', '-B', str(SCRIPT), '--internal', mode,
             '--run-id', ctx['runId'], '--expected-commit', ctx['exactCommit'], '--nonce', ctx['nonce']]
+    if ctx.get('mockHostFunctional') is True:
+        require(ctx.get('hostCapacityDiagnostic') is True and ctx.get('capacityDiagnostic') is True
+                and ctx.get('functionalStage') is None and ctx.get('processingBackupStage') is None)
+        argv += ['--host-capacity-functional']
     if ctx.get('processingBackupStage') == 'mock500':
         argv += ['--processing-backup-stage', 'mock500', '--processing-backup-phase', ctx.get('processingBackupPhase', 'processing')]
     if ctx.get('functionalStage') == 'mock500':
@@ -187,6 +199,7 @@ def main(argv=None):
         parser.add_argument('--processing-backup-stage', choices=('mock500',))
         parser.add_argument('--processing-backup-phase', choices=('processing', 'backup'))
         parser.add_argument('--functional-stage', choices=('mock500',))
+        parser.add_argument('--host-capacity-functional', action='store_true')
         args = parser.parse_args(argv)
         ctx = context(args.run_id, args.expected_commit, args.nonce)
         if args.processing_backup_stage:
@@ -198,8 +211,14 @@ def main(argv=None):
         if args.functional_stage is not None:
             require(args.processing_backup_stage is None and args.processing_backup_phase is None)
             ctx['functionalStage'] = 'mock500'
+        if args.host_capacity_functional:
+            require(args.functional_stage is None and args.processing_backup_stage is None
+                    and args.processing_backup_phase is None)
+            ctx.update(capacityDiagnostic=True,hostCapacityDiagnostic=True,mockHostFunctional=True)
+            if args.internal=='remove':ctx['hostCapacityAdmission']=P.load_host_admission(ctx)
         github_binding(ctx)
-        {'prepare': prepare_parent, 'remove': remove_parent}[args.internal](ctx)
+        result={'prepare': prepare_parent, 'remove': remove_parent}[args.internal](ctx)
+        if result is not None:print(P.json.dumps(result,sort_keys=True,separators=(',',':')))
         return 0
     except BaseException:
         return 1

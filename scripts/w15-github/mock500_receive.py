@@ -32,6 +32,7 @@ V, N, A, P, R, IP = E.V, E.N, E.A, E.P, E.R, E.IP
 MODE = 'mock500-full-gated'
 PHASED = 'mock500-full-phased-gated'
 FUNCTIONAL = 'mock500-full-functional-gated'
+HOST_FUNCTIONAL = 'mock500-full-host-functional-gated'
 SCOPE = 'ISOLATED_GITHUB_MOCK500_INPUTS_ONLY'
 ASSET_KEYS = frozenset(I.ASSETS - {'originalReception'})
 SOURCE_KEYS = {'schema', 'scope', 'nonce', 'exactCommit', 'runId', 'runAttempt',
@@ -209,7 +210,7 @@ def prepare_inputs(context, private_payload, *, input_binding_sha256, additional
         need(type(private_payload) is dict and {'cipherIndex', 'keyB64', 'passphrase', 'eventInputs'} <= set(private_payload), phase)
         armored, inputs = private_payload['cipherIndex'], private_payload['eventInputs']
         need(type(inputs) is dict and set(inputs) == {'w15_mode', 'expected_commit', 'w15_request', 'w15_cipher_index'}
-             and inputs['w15_mode'] in (MODE, PHASED, FUNCTIONAL) and inputs['expected_commit'] == commit
+             and inputs['w15_mode'] in (MODE, PHASED, FUNCTIONAL, HOST_FUNCTIONAL) and inputs['expected_commit'] == commit
              and inputs['w15_cipher_index'] == armored and type(inputs['w15_request']) is str, phase)
         N.check_event(commit, armored, mode=inputs['w15_mode'], extra_inputs={'w15_request': inputs['w15_request']}, event_inputs=inputs)
         encoded, passphrase = private_payload['keyB64'], private_payload['passphrase']
