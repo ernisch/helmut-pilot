@@ -246,7 +246,7 @@ def _validate_observation(context, review, repo):
     require(observed == {key: context[key] for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')}
             | {'branch': 'refs/heads/codex/w15-github-end500-preparation-20261028',
                'mode': observed['mode']})
-    require(observed['mode'] in ('end500-restore-gated', 'end500-full-gated', 'end500-full-phased-gated', 'end500-restore-export-diagnostic', 'end500-restore-capacity-diagnostic', 'end500-full-capacity-diagnostic', 'end500-full-functional-gated')
+    require(observed['mode'] in ('end500-restore-gated', 'end500-full-gated', 'end500-full-phased-gated', 'end500-restore-export-diagnostic', 'end500-restore-capacity-diagnostic', 'end500-full-capacity-diagnostic', 'end500-full-functional-gated', 'end500-full-host-capacity-diagnostic')
             and os.environ.get('GITHUB_ACTIONS') == 'true'
             and os.environ.get('GITHUB_SHA') == observed['exactCommit']
             and os.environ.get('GITHUB_REF') == observed['branch']

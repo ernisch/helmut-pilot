@@ -347,6 +347,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
     inputs=_checked_runtime_inputs(inputs)
     common_resources=_checked_common_resources(inputs,common_resources)
     functional=getattr(common_resources,'functional_stage',None)=='end500'
+    host_capacity=type(getattr(common_resources,'host_capacity_admission',None)) is dict
     physical_limit=common_resources.container_limit if functional or getattr(common_resources,'end_capacity_diagnostic',False) else M.LIMIT
     prepared=_checked_prepared(inputs,common_resources)
     journal_review=inputs.report('JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json')if inputs else json.loads((REPORTS/'JOURNAL_DRAIN_RESULTS_REVIEW.SAFE.json').read_text())
@@ -436,7 +437,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
           '--mount','type=bind,src='+str(pgdata)+',dst=/var/lib/postgresql/data',
           '--mount','type=bind,src='+str(seed)+',dst='+SEED_MOUNT+',readonly',
           '--mount','type=bind,src='+str(state)+',dst='+BASE+'/state',*runtime_mounts,'-e','POSTGRES_HOST_AUTH_METHOD=trust',M.IMAGE,
-          'postgres',*(['-c','max_connections=60']if functional else[]),'-c','helmut.local_usage_experiment=on','-c','max_wal_size='+str(BUDGET['postgresMaxWalMiB'])+'MB','-c','work_mem='+str(BUDGET['postgresWorkMemMiB'])+'MB',
+          'postgres',*(['-c','max_connections=60']if functional or host_capacity else[]),'-c','helmut.local_usage_experiment=on','-c','max_wal_size='+str(BUDGET['postgresMaxWalMiB'])+'MB','-c','work_mem='+str(BUDGET['postgresWorkMemMiB'])+'MB',
           '-c','autovacuum_naptime='+str(BUDGET['postgresAutovacuumNaptimeSeconds'])+'s');created=True
         if inputs is not None:owned_id=_owned_runtime_container(inputs,common_resources)['Id']
         M.docker('start',owned_id or CONTAINER);info=json.loads(M.docker('inspect',owned_id or CONTAINER))[0]
@@ -462,7 +463,7 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
             if r.returncode==0:break
             time.sleep(.2)
         assert r.returncode==0,'w15-forward-pg-readiness'
-        if functional:
+        if functional or host_capacity:
             assert M.read('show max_connections;',database='postgres')==60,'w15-functional-connections-limit'
             M.save('CONNECTION_LIMIT.SAFE.json',{'configuredMaximum':60,'verifiedByNativeReadback':True,'observedConnectionsPeak':'UNKNOWN'})
         M.docker('exec',CONTAINER,'mkdir','-p',BASE)
@@ -638,11 +639,12 @@ def main(inputs=None,common_resources=None,*,backup_completion=None,disk_guard=N
         M.save('CONTROLLER_RESULT.SAFE.json',{'status':('PASS_FORWARD_PHASE_COMMON_CLOSURE_PENDING'if inputs is not None else'PASS_FORWARD_ALLOCATION_INDEPENDENT_REVIEW_PENDING')if not failure and zero else'FAIL_OR_UNKNOWN',
           'failure':failure,'innerStopFailure':w.stop_failure if w else None,'stopFailures':stop_failures,'zeroCheckFailure':zero_check_failure,'serviceClosure':service_closure,'activeProfiles':0 if zero else None,'CASCompleted':len(w.cas_records)if w else 0,
           'commonKernelPeakBytes':w.maximum if w else None,'lastKernel':w.last if w else None,
-          'memoryContract':(_runtime_module('functional_contract').END_PROFILE if functional else _runtime_module('common_resources').end_capacity_trace().PROFILE if capacity_diagnostic else M.MEMORY),
-          'physicalHardCapBytes':physical_limit,'maximumAllowedPeakBytes':physical_limit if functional else M.MAXIMUM,'legacyPeakDiagnosticOnly':capacity_diagnostic or functional,
+          'memoryContract':(_runtime_module('common_resources').capacity().HOST_PROFILE if host_capacity else _runtime_module('functional_contract').END_PROFILE if functional else _runtime_module('common_resources').end_capacity_trace().PROFILE if capacity_diagnostic else M.MEMORY),
+          'physicalHardCapBytes':physical_limit,'maximumAllowedPeakBytes':physical_limit if functional or host_capacity else M.MAXIMUM,'legacyPeakDiagnosticOnly':capacity_diagnostic or functional,
           'requiredPhysicalReserveBytes':0 if capacity_diagnostic or functional else M.RESERVE,
           'requiredHostReserveBytes':2147483648 if capacity_diagnostic or functional else None,
           **({'functionalContract':_runtime_module('functional_contract').CONTRACT,'functionalSafetyChecksCompleted':functional_closure_completed,'legacyRegularMemoryAccepted':False,'historicalProcessingPeakBytes':M.MAXIMUM,'functionalResourceObservation':functional_observation(common_resources)}if functional else{}),
+          **({'hostCapacityDiagnosticOnly':True,'hostCapacitySafetyChecksCompleted':functional_closure_completed}if host_capacity else{}),
           'functionalProcessingClosureCompleted':functional_closure_completed,'finalKernelReadbackVerified':final_sample_verified,
           'end500ActualMemoryAccepted':actual_memory_accepted if inputs is None else False,
           'preBackupMemoryChecksPassed':actual_memory_accepted if inputs is not None else None,

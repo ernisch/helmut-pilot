@@ -24,6 +24,254 @@ LIMITS = {'comparisonBudgetBytes': HARD_LIMIT, 'maximumConsumptionBytes': HARD_L
 CATEGORIES = ('anon', 'file', 'kernel', 'shmem', 'file_dirty', 'file_writeback')
 SCHEMA = 'helmut-w15-full-restore-capacity-measurement/1'
 UNKNOWN = 'UNKNOWN'
+HOST_MODE = 'end500-full-host-capacity-diagnostic'
+HOST_SCOPE = 'ISOLATED_GITHUB_END500_HOST_CAPACITY_DIAGNOSTIC_ONLY'
+HOST_PROFILE = 'helmut-w15-end500-host-capacity-diagnostic/1'
+HOST_POLICY = {'minimumHostReserveBytes': HOST_RESERVE, 'swapBytes': 0}
+HOST_ADMISSION_SCHEMA = 'helmut-w15-dynamic-host-capacity-admission/1'
+HOST_OBSERVATION_SCHEMA = 'helmut-w15-host-capacity-reserve-observation/1'
+
+
+def _host_path(value):
+    need(type(value) is str and 0 < len(value) <= 2048 and value.startswith('/')
+         and all(33 <= ord(c) <= 126 for c in value)
+         and '..' not in Path(value).parts and '.' not in value.split('/')
+         and str(Path(value)) == value)
+    return value
+
+
+def _host_raw(path, maximum=131072):
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    try:
+        raw = os.read(fd, maximum + 1)
+        need(0 < len(raw) <= maximum)
+        return raw.decode('ascii')
+    finally:
+        os.close(fd)
+
+
+def _host_identity(path):
+    fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        st = os.fstat(fd)
+        return [st.st_dev, st.st_ino]
+    finally:
+        os.close(fd)
+
+
+def _host_meminfo():
+    values = {}
+    for line in _host_raw('/proc/meminfo').splitlines():
+        row = line.split()
+        if row and row[0] in ('MemTotal:', 'MemAvailable:'):
+            need(len(row) == 3 and row[2] == 'kB' and row[0] not in values and row[1].isdigit())
+            values[row[0]] = int(row[1]) * 1024
+    need(set(values) == {'MemTotal:', 'MemAvailable:'}
+         and 0 <= values['MemAvailable:'] <= values['MemTotal:'] <= 2**53 - 1)
+    return values['MemTotal:'], values['MemAvailable:']
+
+
+def _host_root_proof():
+    root = Path('/sys/fs/cgroup')
+    mounts = [line.split() for line in _host_raw('/proc/self/mountinfo').splitlines()
+              if ' - cgroup2 ' in line and len(line.split()) > 6
+              and line.split()[4] == str(root)]
+    need(len(mounts) == 1 and mounts[0][3] == '/')
+    need('memory' in _host_raw(root/'cgroup.controllers', 8192).split())
+    try:
+        _host_raw(root/'memory.max', 64)
+    except FileNotFoundError:
+        pass  # The real cgroup2 hierarchy root has no memory.max interface.
+    else:
+        raise ValueError('HOST_CAPACITY_HIERARCHY_UNKNOWN')
+    return _host_identity(root)
+
+
+def _host_ancestor(relative):
+    _host_path(relative)
+    root = Path('/sys/fs/cgroup')
+    path = root/relative.lstrip('/')
+    identity = _host_identity(path)
+    if relative == '/':
+        return dict(relativePath=relative, identity=identity,
+                    maximumBytes='UNLIMITED_ROOT', currentBytes='NOT_APPLICABLE',
+                    headroomBytes='UNLIMITED_ROOT')
+    maximum = _host_raw(path/'memory.max', 64).strip()
+    current = _host_raw(path/'memory.current', 64).strip()
+    need(current.isdigit() and number(int(current)))
+    if maximum == 'max':
+        return dict(relativePath=relative, identity=identity,
+                    maximumBytes='UNLIMITED', currentBytes=int(current), headroomBytes='UNLIMITED')
+    need(maximum.isdigit() and number(int(maximum)) and int(maximum) >= int(current))
+    return dict(relativePath=relative, identity=identity, maximumBytes=int(maximum),
+                currentBytes=int(current), headroomBytes=int(maximum)-int(current))
+
+
+def host_admission_dynamic(*, observation=None):
+    """Read-only, one-time capacity selection; caller inputs cannot set a cap.
+
+    The test parent is a direct child of the proven kernel hierarchy root. The
+    original caller's additional limits are retained as conservative allocation
+    constraints even though that caller is outside the subsequent test parent.
+    """
+    if observation is None:
+        root_identity = _host_root_proof()
+        rows = _host_raw('/proc/self/cgroup', 8192).splitlines()
+        need(len(rows) == 1 and rows[0].startswith('0::'))
+        caller = _host_path(rows[0][3:])
+        paths = [str(p) for p in (Path(caller), *Path(caller).parents)]
+        need(1 <= len(paths) <= 64 and paths[-1] == '/')
+        total, available = _host_meminfo()
+        observation = dict(hostTotalBytes=total, hostAvailableBytes=available,
+            hierarchyRootIdentity=root_identity, callerRelativePath=caller,
+            ancestors=[_host_ancestor(p) for p in paths], observedMonotonicNS=time.monotonic_ns())
+    need(type(observation) is dict)
+    value = dict(observation, schema=HOST_ADMISSION_SCHEMA, profile=HOST_PROFILE,
+        kernelPageBytes=os.sysconf('SC_PAGE_SIZE'),
+        minimumUnallocatedHostReserveBytes=HOST_RESERVE,
+        parentPlacement='DIRECT_HIERARCHY_ROOT', executionAuthority=False)
+    finite = [r['headroomBytes'] for r in value['ancestors'] if type(r.get('headroomBytes')) is int]
+    value['effectiveAvailableBytes'] = min([value['hostAvailableBytes'], *finite])
+    value['diagnosticHardLimitBytes'] = ((value['effectiveAvailableBytes']-HOST_RESERVE)//4096)*4096
+    need(host_closed_admission(value) is not None)
+    return value
+
+
+def host_caller_provenance(admission=None):
+    """Identity/limit provenance, never another selected or activated cap."""
+    if admission is None:
+        root = _host_root_proof()
+        rows = _host_raw('/proc/self/cgroup',8192).splitlines()
+        need(len(rows) == 1 and rows[0].startswith('0::'))
+        caller = _host_path(rows[0][3:])
+        ancestors = [_host_ancestor(str(p)) for p in (Path(caller),*Path(caller).parents)]
+    else:
+        need(host_closed_admission(admission) is not None)
+        root,caller,ancestors = admission['hierarchyRootIdentity'],admission['callerRelativePath'],admission['ancestors']
+    return {'rootIdentity':root,'callerRelativePath':caller,
+            'ancestorIdentityLimits':[{k:r[k] for k in ('relativePath','identity','maximumBytes')} for r in ancestors]}
+
+
+def host_closed_admission(value):
+    try:
+        keys = {'schema','profile','kernelPageBytes','hostTotalBytes','hostAvailableBytes',
+            'hierarchyRootIdentity','callerRelativePath','ancestors','observedMonotonicNS',
+            'minimumUnallocatedHostReserveBytes','parentPlacement','executionAuthority',
+            'effectiveAvailableBytes','diagnosticHardLimitBytes'}
+        need(type(value) is dict and set(value) == keys and value['schema'] == HOST_ADMISSION_SCHEMA
+             and value['profile'] == HOST_PROFILE and value['kernelPageBytes'] == 4096
+             and value['minimumUnallocatedHostReserveBytes'] == HOST_RESERVE
+             and value['parentPlacement'] == 'DIRECT_HIERARCHY_ROOT' and value['executionAuthority'] is False)
+        need(len(json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=True).encode('ascii')) <= 32768)
+        for k in ('hostTotalBytes','hostAvailableBytes','observedMonotonicNS','effectiveAvailableBytes','diagnosticHardLimitBytes'):
+            need(number(value[k]))
+        need(0 < value['diagnosticHardLimitBytes'] and value['hostAvailableBytes'] <= value['hostTotalBytes'])
+        _host_path(value['callerRelativePath'])
+        expected_paths = [str(p) for p in (Path(value['callerRelativePath']), *Path(value['callerRelativePath']).parents)]
+        rows = value['ancestors']
+        need(type(rows) is list and 1 <= len(rows) <= 64
+             and [r['relativePath'] for r in rows] == expected_paths)
+        seen = set(); finite = []
+        for row in rows:
+            need(type(row) is dict and set(row) == {'relativePath','identity','maximumBytes','currentBytes','headroomBytes'})
+            _host_path(row['relativePath']); identity = row['identity']
+            need(type(identity) is list and len(identity) == 2 and all(number(x) for x in identity)
+                 and tuple(identity) not in seen)
+            seen.add(tuple(identity))
+            if row['relativePath'] == '/':
+                need(identity == value['hierarchyRootIdentity']
+                     and row['maximumBytes'] == row['headroomBytes'] == 'UNLIMITED_ROOT'
+                     and row['currentBytes'] == 'NOT_APPLICABLE')
+            elif row['maximumBytes'] == 'UNLIMITED':
+                need(number(row['currentBytes']) and row['headroomBytes'] == 'UNLIMITED')
+            else:
+                need(number(row['maximumBytes']) and number(row['currentBytes'])
+                     and row['maximumBytes'] >= row['currentBytes']
+                     and row['headroomBytes'] == row['maximumBytes']-row['currentBytes'])
+                finite.append(row['headroomBytes'])
+        effective = min([value['hostAvailableBytes'], *finite])
+        need(value['effectiveAvailableBytes'] == effective
+             and value['diagnosticHardLimitBytes'] == ((effective-HOST_RESERVE)//4096)*4096)
+        return json.loads(json.dumps(value))
+    except Exception:
+        return None
+
+
+def host_budget(admission):
+    need(host_closed_admission(admission) is not None)
+    return dict(schema='helmut-w15-host-capacity-budget/1', profile=HOST_PROFILE,
+                hardLimitBytes=admission['diagnosticHardLimitBytes'], minimumHostReserveBytes=HOST_RESERVE)
+
+
+def host_public_admission(admission):
+    need(host_closed_admission(admission) is not None)
+    return {k: admission[k] for k in ('schema','profile','kernelPageBytes','hostTotalBytes',
+        'hostAvailableBytes','effectiveAvailableBytes','diagnosticHardLimitBytes',
+        'minimumUnallocatedHostReserveBytes','observedMonotonicNS','parentPlacement','executionAuthority')} | {
+        'hierarchyRootProven': True, 'originalCallerConstraintsRetained': True,
+        'ancestorLimits': [{k:r[k] for k in ('maximumBytes','currentBytes','headroomBytes')} for r in admission['ancestors']]}
+
+
+def host_closed_observation(value):
+    try:
+        need(type(value) is dict and set(value) == {'schema','status','hostAvailableBytes',
+            'minimumAncestorHeadroomBytes','requiredAncestorHeadroomBytes','minimumHostReserveBytes',
+            'observedMonotonicNS','ancestorIdentitiesMatch'} and value['schema'] == HOST_OBSERVATION_SCHEMA
+            and value['status'] in ('PASS','FAIL_HOST_RESERVE','FAIL_ANCESTOR_HEADROOM','UNKNOWN')
+            and value['minimumHostReserveBytes'] == HOST_RESERVE
+            and number(value['requiredAncestorHeadroomBytes']) and number(value['observedMonotonicNS'])
+            and type(value['ancestorIdentitiesMatch']) is bool
+            and (number(value['hostAvailableBytes']) or value['hostAvailableBytes'] == UNKNOWN)
+            and (number(value['minimumAncestorHeadroomBytes']) or value['minimumAncestorHeadroomBytes'] in ('UNLIMITED',UNKNOWN)))
+        return json.loads(json.dumps(value))
+    except Exception:
+        return None
+
+
+def host_runtime_guard(admission):
+    need(host_closed_admission(admission) is not None)
+    value = dict(schema=HOST_OBSERVATION_SCHEMA, status=UNKNOWN, hostAvailableBytes=UNKNOWN,
+        minimumAncestorHeadroomBytes=UNKNOWN,
+        requiredAncestorHeadroomBytes=admission['diagnosticHardLimitBytes']+HOST_RESERVE,
+        minimumHostReserveBytes=HOST_RESERVE, observedMonotonicNS=time.monotonic_ns(), ancestorIdentitiesMatch=False)
+    try:
+        need(_host_root_proof() == admission['hierarchyRootIdentity'])
+        _, value['hostAvailableBytes'] = _host_meminfo()
+        finite = []
+        for old in admission['ancestors']:
+            now = _host_ancestor(old['relativePath'])
+            need(now['identity'] == old['identity'] and now['maximumBytes'] == old['maximumBytes'])
+            if type(now['headroomBytes']) is int:finite.append(now['headroomBytes'])
+        value['ancestorIdentitiesMatch'] = True
+        value['minimumAncestorHeadroomBytes'] = min(finite) if finite else 'UNLIMITED'
+        value['status'] = ('FAIL_HOST_RESERVE' if value['hostAvailableBytes'] < HOST_RESERVE else
+            'FAIL_ANCESTOR_HEADROOM' if finite and min(finite) < value['requiredAncestorHeadroomBytes'] else 'PASS')
+    except Exception:
+        value['status'] = UNKNOWN
+    need(host_closed_observation(value) is not None)
+    return value
+
+
+def host_assess(sample, admission):
+    budget = host_budget(admission); limit = budget['hardLimitBytes']
+    need(type(sample) is dict and sample.get('configuredLimit') == str(limit)
+         and sample.get('swapMaximum') == '0' and type(sample.get('swapCurrentBytes')) is int and sample['swapCurrentBytes'] == 0
+         and sample.get('hostCapacityBudget') == budget)
+    need(all(type(sample.get(k)) is int and 0 <= sample[k] <= limit for k in ('kernelLifetimePeakBytes','currentBytes')))
+    need(type(sample.get('events')) is dict and all(type(sample['events'].get(k)) is int and sample['events'][k] == 0
+         for k in ('max','oom','oom_kill','oom_group_kill')))
+    observed = host_closed_observation(sample.get('hostCapacityObservation'))
+    need(observed is not None and observed['status'] == 'PASS' and observed['ancestorIdentitiesMatch'] is True
+         and type(observed['hostAvailableBytes']) is int and observed['hostAvailableBytes'] >= HOST_RESERVE
+         and observed['requiredAncestorHeadroomBytes'] == limit+HOST_RESERVE
+         and (observed['minimumAncestorHeadroomBytes'] == 'UNLIMITED'
+              or type(observed['minimumAncestorHeadroomBytes']) is int
+              and observed['minimumAncestorHeadroomBytes'] >= limit+HOST_RESERVE))
+    if sample.get('capacityMeasurement') is not None:
+        detail = closed(sample['capacityMeasurement'])
+        need(detail is not None and type(detail['last']['hostAvailableBytes']) is int
+             and detail['last']['hostAvailableBytes'] >= HOST_RESERVE)
+    return sample
 
 
 def need(value):
@@ -266,8 +514,23 @@ def merge(previous, current, sample, phase=None):
 
 if __name__ == '__main__':
     try:
-        need(sys.argv[1:] == ['--host-admission'])
-        print(json.dumps(host_admission(), sort_keys=True))
+        need(sys.argv[1:] in (['--host-admission'], ['--host-capacity-probe-only'], ['--host-caller-provenance-only']))
+        if sys.argv[1:] == ['--host-capacity-probe-only']:
+            import subprocess
+            before = host_caller_provenance()
+            child = subprocess.run(['/usr/bin/sudo','-n','/usr/bin/python3','-B',str(Path(__file__).absolute()),
+                                    '--host-caller-provenance-only'],stdin=subprocess.DEVNULL,
+                                   stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=15,close_fds=True)
+            need(child.returncode == 0 and 0 < len(child.stdout) <= 32768 and json.loads(child.stdout) == before)
+            print(json.dumps({'status':'PASS_READ_ONLY_HOST_CAPACITY_PROBE_NO_ORIGINALS',
+                'hostCapacityAdmission':host_public_admission(host_admission_dynamic()),
+                'privilegedCallerProvenanceMatched':True,
+                'originalDataRead':False,'limitActivated':False,'executionAuthority':False},sort_keys=True))
+        elif sys.argv[1:] == ['--host-caller-provenance-only']:
+            need(os.getuid() == 0)
+            print(json.dumps(host_caller_provenance(),sort_keys=True))
+        else:
+            print(json.dumps(host_admission(), sort_keys=True))
     except BaseException:
         print('{"status":"BLOCKED_ACTUAL_HOST_CAPACITY_UNPROVEN","executionAuthority":false}')
         sys.exit(1)

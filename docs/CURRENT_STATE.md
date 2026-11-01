@@ -1,14 +1,14 @@
 # CURRENT STATE — Helmut
 
-## W15: korrigierter End500 FAIL bei Rücksicherung (01.11.2026)
+## W15: separate End500-Hostdiagnose vorbereitet (01.11.2026)
 
-[Run41280267757](https://github.com/ernisch/helmut-pilot/actions/runs/41280267757), Kopf `efc990ba`, Pflicht-CI41258278927 PASS: **Gesamt-FAIL**, unabhängig bestätigt. Exakt500 Auth-CAS/6.000 Usage/3.501 Postimages belegt. Letzte Phase `backup-recovery` betreten, zweite Rücksicherung/Integritätsabschluss und finale Profilflags UNKNOWN. Keine positive End500-/Mock500-Abnahme.
+[Vorbereitung und Sicherheitsvertrag](betrieb/w15-end500-dynamic-host-diagnose-20261101.md): SQL-Einzelablage aus PR1009/e5dd23a4 übernommen. Neuer separater Diagnosemodus berechnet vor Parentanlage einmalig das größtmögliche seitenrunde Hartlimit aus tatsächlichem Host-/Ancestor-Spielraum abzüglich exakt2GiB Reserve. Keine spätere Erhöhung; keine Cache- oder Peakmanipulation. Alte5GB-, Funktions- und reguläre Verträge unverändert.
 
-Knapp5,00GB höchster bestätigter Kernelpeak; Hartgrenzkontakte2, OOM/Swap0. Letzte gültige Recoveryprobe:4,550GB Dateiseiten einschließlich Shared Memory,290MB anonym,148MB Kernel; keine atomare Peakkomposition. Finaler Lifetimepeak nach Cleanup UNKNOWN. Alle8 Bereinigungsprüfungen PASS/Stillstand belegt. Ein Cipherartefakt532MB/1Tag, Speicherbound0,00495USD<0,05USD.
+Rootaufnahme und ursprünglicher Caller werden gebunden; Hostreserve/Ancestoridentität/Swap/OOM/Max0 bleiben bewacht. Alle Phasen einschließlich500Auth/6.000Usage/3.501Postimages, Export,0aktiv, verschlüsselter Sicherung, authentifizierter Rücklesung und zweiter Recovery bleiben Pflicht.60min/512MiBPlatte/0,05USD/einCipherartefakt1Tag/0Modellaufrufe.
 
-Nachgewiesene vermeidbare SQL-Vollkopie im zweiten Restore: [Kandidat/Befund](betrieb/w15-end500-recovery-max-contact-20261101.md) rendert direkt in dieselbe private Auditdatei und erhält Hash-/Anwendungs-/Lifecycleprüfungen.8 kleine synthetische Fälle PASS; Pflicht-CI und unabhängiger Review binden den finalen Draft-PR-Kopf. Tatsächliche Einsparung/Ausreichen unter5GB UNKNOWN.
+Pflicht-CI erhebt eine rein lesende Kapazitätsprobe auf ihrem tatsächlichen Standardrunner. Zahlen und finale Review-/Kopfbindungen am neuen Draft-PR; die später zugewiesene Originalmaschine wird vor Datenarbeit frisch geprüft. Noch kein Originallauf, kein neues GO und keine Ausführungsnonce. Erfolg bliebe ausschließlich DIAGNOSTIC_ONLY, kein End500-/Mock-/Anbieter-PASS.
 
-Zwei Endversuche verbraucht; keine weitere Laufautorität. Einzige Korrekturwiederholung ausgeschöpft, kein Journalreset. Mock-GO bleibt durch fehlende positive Endabnahme gesperrt; elf Originale/Quellenqualifikation erhalten. Alte RAM-FAILs unverändert, Anbieterparität UNKNOWN, Production gesperrt. [Voriger Stand bytegleich](archive/project_state/2026_11_01_efc990ba_CURRENT_STATE_vor_End500_Maxkontakt.md).
+Letzter echterEndlauf41280267757/efc990ba bleibtFAIL:500/6.000/3.501bestätigt, knapp5GBPeak/Max2/OOM0/Swap0, letztegültigeDateiseiten4,55GB; zweiteRecovery/FinalflagsUNKNOWN.8CleanupPASS. AltesJournal2FAIL/unverändert; neue eigenständige Einmalfreigabe erforderlich. Mock500/Production gesperrt. [Voriger Stand bytegleich](archive/project_state/2026_11_01_e5dd23a4_CURRENT_STATE_vor_Hostdiagnose.md).
 
 ## Ressourcen500-Messung und geprüfter Diagnoseanschluss (31.10.2026)
 

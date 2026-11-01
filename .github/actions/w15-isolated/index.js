@@ -48,24 +48,33 @@ function closedFailureMemory(value){
   const keys=['configuredLimitBytes','kernelLifetimePeakBytes','currentBytes','swapMaximumBytes','swapCurrentBytes','lastReadbackValid','events'];
   const events=['max','oom','oom_kill','oom_group_kill'];
   if(!value||typeof value!=='object'||Array.isArray(value)||!keys.every(k=>Object.hasOwn(value,k))||
-    !Object.keys(value).every(k=>keys.includes(k)||k==='postFailureMemoryStat'||k==='capacityMeasurement'||k==='end500CapacityTrace')||
+    !Object.keys(value).every(k=>keys.includes(k)||k==='postFailureMemoryStat'||k==='capacityMeasurement'||k==='end500CapacityTrace'||k==='hostCapacityBudget'||k==='hostCapacitySafetyObserved'||k==='hostCapacityObservation')||
     typeof value.lastReadbackValid!=='boolean')return null;
   if(keys.filter(k=>!['lastReadbackValid','events'].includes(k)).some(k=>!Number.isSafeInteger(value[k])||value[k]<0))return null;
   if(!value.events||typeof value.events!=='object'||Array.isArray(value.events)||
     Object.keys(value.events).sort().join(',')!==[...events].sort().join(',')||
     events.some(k=>!Number.isSafeInteger(value.events[k])||value.events[k]<0))return null;
   const out=Object.fromEntries(keys.map(k=>[k,value[k]])),detail=value.postFailureMemoryStat;
+  const hostBudget=Object.hasOwn(value,'hostCapacityBudget')?require('./capacity-trace').closedHostBudget(value.hostCapacityBudget):null;
+  const boundHost=hostBudget&&hostBudget.hardLimitBytes===value.configuredLimitBytes?hostBudget:null;
+  if(boundHost){
+    out.hostCapacityBudget=boundHost;
+    const observation=require('./capacity-trace').closedHostObservation(value.hostCapacityObservation,boundHost);
+    if(observation)out.hostCapacityObservation=observation;
+    if(value.hostCapacitySafetyObserved===false||value.hostCapacitySafetyObserved===true&&observation?.status==='PASS')
+      out.hostCapacitySafetyObserved=value.hostCapacitySafetyObserved;
+  }
   const categories=['anon','file','kernel','shmem','file_dirty','file_writeback'];
   if(value.lastReadbackValid===false&&detail&&typeof detail==='object'&&!Array.isArray(detail)&&
     Object.keys(detail).sort().join(',')===[...categories,'observedAfterFailure','peakCompositionKnown'].sort().join(',')&&
     detail.observedAfterFailure===true&&detail.peakCompositionKnown===false&&
     categories.every(k=>Number.isSafeInteger(detail[k])&&detail[k]>=0||detail[k]==='UNKNOWN'))
     out.postFailureMemoryStat=Object.fromEntries([...categories,'observedAfterFailure','peakCompositionKnown'].map(k=>[k,detail[k]]));
-  if(value.configuredLimitBytes===4999999488){
+  if(boundHost||value.configuredLimitBytes===4999999488){
     const capacity=closedCapacityMeasurement(value.capacityMeasurement);
     if(capacity)out.capacityMeasurement=capacity;
     if(Object.hasOwn(value,'end500CapacityTrace')){
-      const trace=require('./capacity-trace').closed(value.end500CapacityTrace);
+      const trace=require('./capacity-trace').closed(value.end500CapacityTrace,boundHost||undefined);
       if(trace)out.end500CapacityTrace=trace;
     }
   }
@@ -118,7 +127,7 @@ function main() {
   if (Buffer.byteLength(input) > 1024*1024) throw Error('bound');
   const result = cp.spawnSync('/usr/bin/python3', ['-B','scripts/w15-github/restore_workflow.py','--launch'],
     {input, encoding:'utf8', env:process.env, maxBuffer:1024*1024,
-     timeout:(synthetic ? 420 : ['end500-full-gated','end500-full-phased-gated','end500-full-capacity-diagnostic','end500-full-functional-gated'].includes(mode) ? 3720 : 1920)*1000});
+     timeout:(synthetic ? 420 : ['end500-full-gated','end500-full-phased-gated','end500-full-capacity-diagnostic','end500-full-functional-gated','end500-full-host-capacity-diagnostic'].includes(mode) ? 3720 : 1920)*1000});
   if (result.error || result.status !== 0) {
     const failed = JSON.parse(result.stdout);
     const phases = ['capacity-transport-complete','capacity-materialization','capacity-restore-ready','capacity-seed','capacity-seed-ready','capacity-auth-cas','capacity-native-audit','capacity-export','capacity-processing-stopped','arguments','event','approval','qualification','binding','resources','synthetic',
@@ -148,6 +157,19 @@ function main() {
   }
   // The Python boundary emits one strictly bounded public receipt.
   const receipt = JSON.parse(result.stdout);
+  if(mode==='end500-full-host-capacity-diagnostic'){
+    const host=require('./capacity-trace').closedHostBudget(receipt.hostCapacityBudget);
+    if(!host||receipt.status!=='COMPLETED_FULL_END500_HOST_CAPACITY_DIAGNOSTIC_ONLY'||receipt.mode!==mode||
+      receipt.diagnosticOnly!==true||receipt.end500Acceptance!==false||receipt.mock500Acceptance!==false||
+      receipt.commonLifetimeMemoryAccepted!==false||receipt.executionAuthority!==false||
+      receipt.legacyEnd500Accepted!==false||receipt.legacyRegularMemoryAccepted!==false||receipt.providerResourceAccepted!==false)throw Error('receipt');
+    const admission=require('./capacity-trace').closedHostAdmission(receipt.hostCapacityAdmission,host);
+    if(!admission)throw Error('receipt');
+    receipt.hostCapacityAdmission=admission;
+    receipt.hostCapacityBudget=host;
+    const trace=require('./capacity-trace').closed(receipt.end500CapacityTrace,host);
+    receipt.end500CapacityTrace=trace===null?'UNKNOWN':trace;
+  }
   if(mode==='end500-full-functional-gated'&&Object.hasOwn(receipt,'functionalResourceObservation')){
     const observed=require('./functional-resources').closed(receipt.functionalResourceObservation);
     receipt.functionalResourceObservation=observed===null?'UNKNOWN':observed;

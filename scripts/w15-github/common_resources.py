@@ -19,6 +19,8 @@ LIMIT, MAXIMUM, RESERVE = 2560000000, 2048000000, 512000000
 KERNEL_ROOT = Path('/sys/fs/cgroup')
 TOKEN = object()
 MEMORY_STAT_FIELDS = ('anon', 'file', 'kernel', 'shmem', 'file_dirty', 'file_writeback')
+HOST_PROFILE = 'helmut-w15-end500-host-capacity-diagnostic/1'
+HOST_BUDGET_SCHEMA = 'helmut-w15-host-capacity-budget/1'
 
 
 _CAPACITY = None
@@ -67,6 +69,45 @@ def capacity():
     return _CAPACITY
 
 
+def closed_host_capacity_budget(value):
+    """Public numeric reference only, never permission to select a limit."""
+    if (type(value) is not dict or set(value) != {
+            'schema', 'profile', 'hardLimitBytes', 'minimumHostReserveBytes'}
+            or value['schema'] != HOST_BUDGET_SCHEMA or value['profile'] != HOST_PROFILE
+            or type(value['hardLimitBytes']) is not int
+            or not 0 < value['hardLimitBytes'] <= 2**53 - 1 - capacity().HOST_RESERVE
+            or value['hardLimitBytes'] % 4096 != 0
+            or type(value['minimumHostReserveBytes']) is not int
+            or value['minimumHostReserveBytes'] != capacity().HOST_RESERVE):
+        return None
+    return dict(value)
+
+
+def host_capacity_budget(admission):
+    checked = capacity().host_closed_admission(admission)
+    require(checked is not None)
+    value = closed_host_capacity_budget({'schema': HOST_BUDGET_SCHEMA, 'profile': HOST_PROFILE,
+        'hardLimitBytes': checked['diagnosticHardLimitBytes'],
+        'minimumHostReserveBytes': capacity().HOST_RESERVE})
+    require(value is not None)
+    return value
+
+
+def closed_host_capacity_observation(value, budget):
+    observed = capacity().host_closed_observation(value)
+    if (observed is None
+            or observed['requiredAncestorHeadroomBytes'] != budget['hardLimitBytes'] + budget['minimumHostReserveBytes']):
+        return None
+    if observed['status'] == 'PASS' and (observed['ancestorIdentitiesMatch'] is not True
+            or type(observed['hostAvailableBytes']) is not int
+            or observed['hostAvailableBytes'] < budget['minimumHostReserveBytes']
+            or observed['minimumAncestorHeadroomBytes'] != 'UNLIMITED'
+               and (type(observed['minimumAncestorHeadroomBytes']) is not int
+                    or observed['minimumAncestorHeadroomBytes'] < observed['requiredAncestorHeadroomBytes'])):
+        return None
+    return observed
+
+
 class ResourceError(RuntimeError):
     pass
 
@@ -102,7 +143,9 @@ def closed_failure_memory(value):
     keys = {'configuredLimitBytes', 'kernelLifetimePeakBytes', 'currentBytes',
             'swapMaximumBytes', 'swapCurrentBytes', 'lastReadbackValid', 'events'}
     events = ('max', 'oom', 'oom_kill', 'oom_group_kill')
-    if (type(value) is not dict or not keys <= set(value) <= keys | {'postFailureMemoryStat', 'capacityMeasurement', 'end500CapacityTrace'}
+    if (type(value) is not dict or not keys <= set(value) <= keys | {
+            'postFailureMemoryStat', 'capacityMeasurement', 'end500CapacityTrace',
+            'hostCapacityBudget', 'hostCapacitySafetyObserved', 'hostCapacityObservation'}
             or type(value['lastReadbackValid']) is not bool):
         return None
     if any(type(value[k]) is not int or not 0 <= value[k] <= 2**53 - 1
@@ -112,17 +155,31 @@ def closed_failure_memory(value):
             type(value['events'][k]) is not int or not 0 <= value['events'][k] <= 2**53 - 1 for k in events):
         return None
     result = {key: value[key] for key in keys}
+    host = closed_host_capacity_budget(value.get('hostCapacityBudget'))
+    if host is not None and host['hardLimitBytes'] != value['configuredLimitBytes']:
+        host = None
+    if host is not None:
+        result['hostCapacityBudget'] = host
+        observed = closed_host_capacity_observation(value.get('hostCapacityObservation'), host)
+        if observed is not None:
+            result['hostCapacityObservation'] = observed
+        if (value.get('hostCapacitySafetyObserved') is False
+                or value.get('hostCapacitySafetyObserved') is True and observed is not None and observed['status'] == 'PASS'):
+            result['hostCapacitySafetyObserved'] = value['hostCapacitySafetyObserved']
     if 'postFailureMemoryStat' in value and value['lastReadbackValid'] is False:
         detail = closed_post_failure_memory_stat(value['postFailureMemoryStat'])
         if detail is not None:
             result['postFailureMemoryStat'] = detail
-    if 'capacityMeasurement' in value and value['configuredLimitBytes'] == capacity().HARD_LIMIT:
+    if 'capacityMeasurement' in value and (host is not None and host['hardLimitBytes'] == value['configuredLimitBytes']
+                                         or value['configuredLimitBytes'] == capacity().HARD_LIMIT):
         detail = capacity().closed(value['capacityMeasurement'])
         if detail is not None:
             result['capacityMeasurement'] = detail
     # Optional malformed details cannot erase an already known first sample.
-    if 'end500CapacityTrace' in value and value['configuredLimitBytes'] == capacity().HARD_LIMIT:
-        trace = end_capacity_trace().closed(value['end500CapacityTrace'])
+    if 'end500CapacityTrace' in value and (host is not None and host['hardLimitBytes'] == value['configuredLimitBytes']
+                                         or value['configuredLimitBytes'] == capacity().HARD_LIMIT):
+        trace = end_capacity_trace().closed(value['end500CapacityTrace'],
+            **({'host_capacity_budget': host} if host is not None else {}))
         if trace is not None:
             result['end500CapacityTrace'] = trace
     return json.loads(json.dumps(result))
@@ -192,23 +249,37 @@ def project_failure_memory(value, valid):
             result['capacityMeasurement'] = value['capacityMeasurement']
         if 'end500CapacityTrace' in value:
             result['end500CapacityTrace'] = value['end500CapacityTrace']
+        for key in ('hostCapacityBudget', 'hostCapacitySafetyObserved', 'hostCapacityObservation'):
+            if key in value:
+                result[key] = value[key]
         return closed_failure_memory(result)
     except (KeyError, TypeError, ValueError):
         return None
 
 
 class CommonResources:
-    def __init__(self, token, context, path, identity, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False, functional_stage=None):
+    def __init__(self, token, context, path, identity, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False, functional_stage=None, host_capacity_admission=None):
         require(token is TOKEN)
         self._context = json.loads(json.dumps(context))
         self.path, self._identity = path, identity
         self._last_observed, self._last_valid = None, False
-        require(type(capacity_diagnostic) is bool)
+        require(type(capacity_diagnostic) is bool and type(end_capacity_diagnostic) is bool)
+        self.host_capacity_admission = None
+        self.host_capacity_budget = None
+        if host_capacity_admission is not None:
+            require(processing_backup_stage is None and functional_stage is None)
+            self.host_capacity_admission = capacity().host_closed_admission(host_capacity_admission)
+            require(self.host_capacity_admission is not None)
+            self.host_capacity_budget = host_capacity_budget(self.host_capacity_admission)
+            capacity_diagnostic, end_capacity_diagnostic = True, True
         self.capacity_diagnostic = capacity_diagnostic
         require(type(end_capacity_diagnostic) is bool and (not end_capacity_diagnostic or capacity_diagnostic))
         self.end_capacity_diagnostic = end_capacity_diagnostic
         self.capacity_observer = None
         self.container_limit = capacity().HARD_LIMIT if capacity_diagnostic else LIMIT
+        if self.host_capacity_admission is not None:
+            self.profile = HOST_PROFILE
+            self.container_limit = self.host_capacity_budget['hardLimitBytes']
         require(processing_backup_stage in (None, 'end500', 'mock500')
                 and not (capacity_diagnostic and processing_backup_stage is not None))
         self.processing_backup_stage = processing_backup_stage
@@ -330,9 +401,16 @@ class CommonResources:
                      'events': {k: int(v) for k, v in (x.split() for x in read('memory.events').splitlines())}}
             current = value
             self._last_observed, self._last_valid = value, False
+            if self.host_capacity_admission is not None:
+                value['hostCapacityBudget'] = self.host_capacity_budget
+                value['hostCapacitySafetyObserved'] = False
             if self.functional_stage is not None or self.capacity_diagnostic or self.processing_backup_stage is not None and self.memory_phase == 'backup':
                 value['capacityMeasurement'] = capacity().snapshot(value, fd)
-            if self.functional_stage is not None:
+            if self.host_capacity_admission is not None:
+                value['hostCapacityObservation'] = capacity().host_runtime_guard(self.host_capacity_admission)
+                capacity().host_assess(value, self.host_capacity_admission)
+                value['hostCapacitySafetyObserved'] = True
+            elif self.functional_stage is not None:
                 functional_contract().assess(value, self.functional_stage)
                 try:
                     self._functional_kernel=functional_contract().load('component_resource_meter')._kernel(fd)
@@ -376,6 +454,12 @@ class CommonResources:
 
     def safe_summary(self):
         value = self.sample()
+        if self.host_capacity_admission is not None:
+            return {'status': 'HOST_CAPACITY_DIAGNOSTIC_CURRENT_SAMPLE_ONLY', **value,
+                    'memoryProfile': HOST_PROFILE, 'containerMemoryLimitBytes': self.container_limit,
+                    'legacyContractAccepted': False, 'end500Acceptance': False,
+                    'mock500Acceptance': False, 'providerResourceAccepted': False,
+                    'fullLifetimeClosureAccepted': False, 'executionAuthority': False}
         if self.functional_stage is not None:
             return {'status': 'FUNCTIONAL_PARENT_CURRENT_SAMPLE_ONLY', **value,
                     **functional_contract().reference_summary(value, self.functional_stage),
@@ -410,7 +494,7 @@ def _kernel_directory(path):
         os.close(root)
 
 
-def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False, functional_stage=None):
+def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None, end_capacity_diagnostic=False, functional_stage=None, host_capacity_admission=None):
     """Only after entering the externally prepared, actually limited parent.
 
     This is an observation API, not a systemd bootstrap, UID conversion, fresh
@@ -430,7 +514,8 @@ def observe(context, *, capacity_diagnostic=False, processing_backup_stage=None,
             os.close(fd)
         result = CommonResources(TOKEN, context, path, (value.st_dev, value.st_ino),
             capacity_diagnostic=capacity_diagnostic, processing_backup_stage=processing_backup_stage,
-            end_capacity_diagnostic=end_capacity_diagnostic, functional_stage=functional_stage)
+            end_capacity_diagnostic=end_capacity_diagnostic, functional_stage=functional_stage,
+            host_capacity_admission=host_capacity_admission)
         result.sample()
         return result
     except Exception:
