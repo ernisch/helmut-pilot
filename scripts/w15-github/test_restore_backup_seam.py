@@ -58,10 +58,9 @@ const synthetic={spawn(exe,args,options){
   let code=0;
   try{
    if(input.action==='restore-render'){
-    need(args.includes('--file='+input.base+'/restore.PRIVATE.sql'));
+    need(args.includes('--file=-'));
     need(args.includes(input.base+'/input.PRIVATE.dump'));
-    fs.writeFileSync(input.base+'/restore.PRIVATE.sql','-- FICTIONAL SQL; NEVER EXECUTED\n',
-      {flag:'wx',mode:384});
+    fs.writeSync(options.stdio[1],'-- FICTIONAL SQL; NEVER EXECUTED\n');
    }else if(input.action==='restore-check'){
     need(typeof sql==='string'&&sql.includes('jsonb_build_object'));
     fs.writeSync(options.stdio[1],'{"profiles":500,"active":0}\n');
@@ -71,7 +70,7 @@ const synthetic={spawn(exe,args,options){
     need(args.includes(input.base+'/roles.PRIVATE.sql'));
    }else{
     need(input.action==='restore-apply'&&args.includes('--single-transaction'));
-    need(args.includes(input.base+'/restore.PRIVATE.sql'));
+    need(args.includes(input.base+'/state/restore/rendered.PRIVATE.sql'));
    }
   }catch(_){code=1;}
   child.exitCode=code;child.emit('close',code,null);
@@ -183,6 +182,9 @@ class RestoreBackupSeamChecks(unittest.TestCase):
         self.assertEqual(self.transport.actions_seen, list(T.ACTIONS))
         self.assertEqual(self.result['steps'], 5)
         self.assertFalse(self.result['fullRestoreAccepted'])
+        self.assertFalse((self.root / 'restore.PRIVATE.sql').exists())
+        self.assertEqual((self.work / 'state/restore/rendered.PRIVATE.sql').read_bytes(),
+                         b'-- FICTIONAL SQL; NEVER EXECUTED\n')
         closed = self.closure()
         self.assertEqual(closed['profiles'], 500)
         self.assertEqual(closed['active'], 0)

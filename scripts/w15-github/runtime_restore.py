@@ -74,7 +74,7 @@ function directory(path){let fd=fs.openSync("/",fs.constants.O_RDONLY|fs.constan
   fs.closeSync(fd);fd=next;}const s=fs.fstatSync(fd);need(s.uid===process.getuid()&&(s.mode&511)===448);return fd;
  }catch(e){fs.closeSync(fd);throw e;}}
 function hash(fd){const h=crypto.createHash("sha256"),buf=Buffer.alloc(65536);let n,size=0;
- while((n=fs.readSync(fd,buf,0,buf.length,null))){h.update(buf.subarray(0,n));size+=n;}
+ while((n=fs.readSync(fd,buf,0,buf.length,size))){h.update(buf.subarray(0,n));size+=n;}
  return {bytes:size,sha256:h.digest("hex")};}
 function read(fd,name){const f=fs.openSync("/proc/self/fd/"+fd+"/"+name,
   fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW|fs.constants.O_NONBLOCK);
@@ -82,7 +82,7 @@ function read(fd,name){const f=fs.openSync("/proc/self/fd/"+fd+"/"+name,
   const pin=hash(f),z=fs.fstatSync(f);need(s.dev===z.dev&&s.ino===z.ino&&s.size===z.size
     &&s.mtimeMs===z.mtimeMs&&s.ctimeMs===z.ctimeMs&&pin.bytes===s.size);return pin;
  }finally{fs.closeSync(f);}}
-(async()=>{let dir,state,out,err,journal,child,closed,term=false,journalFailed=false,sequence=0;
+(async()=>{let dir,state,out,err,renderedOutput,journal,child,closed,term=false,journalFailed=false,sequence=0;
  const record=value=>{try{fs.writeFileSync(journal,JSON.stringify({sequence:sequence++,action,...value})+"\n");fs.fdatasyncSync(journal);}catch(e){journalFailed=true;throw e;}};
  const stop=()=>{term=true;try{record({event:"signal-received",signal:"SIGTERM"});}catch{}
    if(child&&child.exitCode===null&&child.signalCode===null)try{child.kill("SIGTERM");}catch{journalFailed=true;}};
@@ -102,18 +102,19 @@ function read(fd,name){const f=fs.openSync("/proc/self/fd/"+fd+"/"+name,
   out=open(action+".PRIVATE.stdout");err=open(action+".PRIVATE.stderr");
   if(action==="restore-apply"){const rendered=JSON.parse(fs.readFileSync("/proc/self/fd/"+dir+"/restore-render.SAFE.json","utf8"));
     need(rendered.status==="PASS_OWNED_ISOLATED_RESTORE_STEP"&&rendered.action==="restore-render");
-    const baseFD=directory(base);try{need(JSON.stringify(read(baseFD,"restore.PRIVATE.sql"))===JSON.stringify(rendered.renderedSQL));}finally{fs.closeSync(baseFD);}}
+    need(JSON.stringify(read(dir,"rendered.PRIVATE.sql"))===JSON.stringify(rendered.renderedSQL));}
   let exe="psql",args,sql;
   const common=["-X","-w","-q","-v","ON_ERROR_STOP=1"];
   if(action==="restore-create"){args=["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres","-f","-"];sql="create database "+database+";";}
   else if(action==="restore-roles"){args=[...common,"-U","postgres","-d",database,"-f",base+"/roles.PRIVATE.sql"];}
-  else if(action==="restore-render"){exe="pg_restore";args=["--exit-on-error","--file="+base+"/restore.PRIVATE.sql",base+"/input.PRIVATE.dump"];}
-  else if(action==="restore-apply"){args=[...common,"--single-transaction","-U","postgres","-d",database,"-f",base+"/restore.PRIVATE.sql","-c","update public.mandate_profiles set aktiv=false where aktiv;"];}
+  else if(action==="restore-render"){renderedOutput=open("rendered.PRIVATE.sql");
+    exe="pg_restore";args=["--exit-on-error","--file=-",base+"/input.PRIVATE.dump"];}
+  else if(action==="restore-apply"){args=[...common,"--single-transaction","-U","postgres","-d",database,"-f",root+"/rendered.PRIVATE.sql","-c","update public.mandate_profiles set aktiv=false where aktiv;"];}
   else{args=["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-U","postgres","-d",database,"-f","-"];
     sql="begin read only;set local statement_timeout='15s';set local lock_timeout='3s';select jsonb_build_object('profiles',count(*),'active',count(*)filter(where aktiv))from public.mandate_profiles;rollback;";}
   need(!term&&!fs.existsSync(base+"/state/STOP_REQUESTED.SAFE.json"));
   child=cp.spawn("/usr/lib/postgresql/17/bin/"+exe,args,{argv0:base+"/"+exe,
-    stdio:[sql===undefined?"ignore":"pipe",out,err],
+    stdio:[sql===undefined?"ignore":"pipe",renderedOutput===undefined?out:renderedOutput,err],
     env:{PATH:"/usr/lib/postgresql/17/bin:/usr/bin:/bin",LANG:"C.UTF-8",LC_ALL:"C.UTF-8"}});
   let spawnError=false,stdinError=false;child.once("error",()=>{spawnError=true;});
   closed=new Promise(resolve=>child.once("close",(code,signal)=>resolve({code,signal})));
@@ -124,16 +125,14 @@ function read(fd,name){const f=fs.openSync("/proc/self/fd/"+fd+"/"+name,
   need(!spawnError&&!stdinError&&!term&&!journalFailed&&ended.code===0&&ended.signal===null);
   const result={status:"PASS_OWNED_ISOLATED_RESTORE_STEP",action,returncode:ended.code,signal:ended.signal,
     output:read(dir,action+".PRIVATE.stdout"),stderr:read(dir,action+".PRIVATE.stderr"),identity};
-  if(action==="restore-render"){const baseFD=directory(base);let src,dest;
-    try{src=fs.openSync("/proc/self/fd/"+baseFD+"/restore.PRIVATE.sql",fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW|fs.constants.O_NONBLOCK);
-      const s=fs.fstatSync(src);need(s.isFile()&&s.uid===process.getuid()&&s.nlink===1&&(s.mode&511)===384);
-      dest=open("rendered.PRIVATE.sql");const h=crypto.createHash("sha256"),buf=Buffer.alloc(65536);let n,size=0;
-      while((n=fs.readSync(src,buf,0,buf.length,null))){need(!term&&!journalFailed);let at=0;
-        while(at<n){const written=fs.writeSync(dest,buf,at,n-at);need(written>0);at+=written;}h.update(buf.subarray(0,n));size+=n;need(size<=s.size);}
-      const z=fs.fstatSync(src);need(size===s.size&&s.dev===z.dev&&s.ino===z.ino&&s.size===z.size&&s.mtimeMs===z.mtimeMs&&s.ctimeMs===z.ctimeMs);
-      fs.fsyncSync(dest);result.renderedSQL={bytes:size,sha256:h.digest("hex")};
-      need(JSON.stringify(read(baseFD,"restore.PRIVATE.sql"))===JSON.stringify(result.renderedSQL));
-    }finally{for(const fd of [src,dest,baseFD])if(fd!==undefined)fs.closeSync(fd);}}
+  if(action==="restore-render"){
+    fs.fsyncSync(renderedOutput);const s=fs.fstatSync(renderedOutput);
+    need(s.isFile()&&s.uid===process.getuid()&&s.nlink===1&&(s.mode&511)===384);
+    result.renderedSQL=hash(renderedOutput);const z=fs.fstatSync(renderedOutput);
+    need(result.renderedSQL.bytes===s.size&&s.dev===z.dev&&s.ino===z.ino&&s.size===z.size
+      &&s.mtimeMs===z.mtimeMs&&s.ctimeMs===z.ctimeMs);
+    need(JSON.stringify(read(dir,"rendered.PRIVATE.sql"))===JSON.stringify(result.renderedSQL));
+    fs.closeSync(renderedOutput);renderedOutput=undefined;}
   need(!term&&!journalFailed);
   record({event:"owned-restore-closed",dataFilesOpen:0,termReceived:term});
   fs.closeSync(journal);journal=undefined;
@@ -144,7 +143,7 @@ function read(fd,name){const f=fs.openSync("/proc/self/fd/"+fd+"/"+name,
     const force=setTimeout(()=>{if(child.exitCode===null&&child.signalCode===null)try{child.kill("SIGKILL");}catch{}},4000);
     try{await closed;}finally{clearTimeout(force);}}
    process.stderr.write("W15_RESTORE_STEP_FAILED\n");process.exitCode=1;
- }finally{process.removeListener("SIGTERM",stop);for(const fd of [out,err,journal,state,dir])if(fd!==undefined)try{fs.closeSync(fd);}catch{}}
+ }finally{process.removeListener("SIGTERM",stop);for(const fd of [out,err,renderedOutput,journal,state,dir])if(fd!==undefined)try{fs.closeSync(fd);}catch{}}
 })();'''
 
 
