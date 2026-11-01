@@ -43,7 +43,8 @@ def _phased(resources):
 
 
 def _functional(resources):
-    return getattr(resources,'functional_stage',None)=='mock500'
+    return (getattr(resources,'functional_stage',None)=='mock500'
+            or getattr(resources,'host_functional_stage',None)=='mock500')
 
 
 @lru_cache(maxsize=1)
@@ -52,12 +53,15 @@ def _functional_contract():
 
 
 def _resource_profile(resources):
-    return (_functional_contract().MOCK_PROFILE if _functional(resources) else
+    return (P.host().PROFILE if getattr(resources,'host_functional_stage',None)=='mock500' else
+            _functional_contract().MOCK_PROFILE if _functional(resources) else
             P.phases().MOCK_PROFILE if _phased(resources) else P.PROFILE)
 
 
 def _resource_sample(resources):
     sample = resources.sample()
+    if getattr(resources,'host_functional_stage',None)=='mock500':
+        return P.host().assess(sample,resources.host_capacity_admission)
     if _functional(resources):
         return _functional_contract().assess(sample,'mock500')
     if _phased(resources):
@@ -342,8 +346,10 @@ def _mock_closure(work, result, *, functional_stage=None):
             'sharedCapAnd20PercentReserve', 'allObservedWritesAtomic', 'all1000ProviderPhasesUnder20',
             'noObservedErrors', 'privateKeyAbsent'}
         if functional_stage is not None:
-            need(functional_stage=='mock500' and runtime.get('functionalContract')==_functional_contract().CONTRACT
-                 and runtime.get('memoryProfile')==_functional_contract().MOCK_PROFILE
+            contract=P.host() if functional_stage=='mock500-host' else _functional_contract()
+            profile=contract.PROFILE if functional_stage=='mock500-host' else contract.MOCK_PROFILE
+            need(functional_stage in ('mock500','mock500-host') and runtime.get('functionalContract')==contract.CONTRACT
+                 and runtime.get('memoryProfile')==profile
                  and runtime.get('legacyRegularMemoryAccepted')is False and runtime.get('providerResourceAccepted')is False
                  and isinstance(checks,dict)and 'sharedCapAnd20PercentReserve'not in checks)
             required_checks=(required_checks-{'sharedCapAnd20PercentReserve'})|{'functionalSharedSafety'}
@@ -397,7 +403,8 @@ def _mock_closure(work, result, *, functional_stage=None):
 
 def export_database(context, *, controller, resources, supervisor, result, guard):
     _context(context)
-    _mock_closure(controller.WORK, result,**({'functional_stage':'mock500'}if _functional(resources)else{}))
+    stage='mock500-host' if getattr(resources,'host_functional_stage',None)=='mock500' else 'mock500'
+    _mock_closure(controller.WORK,result,**({'functional_stage':stage} if _functional(resources) else {}))
     exported = _native_steps(controller, resources, supervisor, guard)
     exported['context'] = context
     fd = S._directory(str(Path(controller.WORK) / 'state/final-backup'), private=True)

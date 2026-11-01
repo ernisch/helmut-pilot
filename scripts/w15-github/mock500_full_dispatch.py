@@ -33,6 +33,7 @@ W, S, R = component('mock500_workflow'), component('mock500_start'), component('
 A, D, PC = component('mock500_archive_receive'), component('mock500_original_archive'), E.PC
 MODE, SCOPE = PC.MOCK_MODE, PC.SCOPES[PC.MOCK_MODE]
 FUNCTIONAL = 'mock500-full-functional-gated'
+HOST_FUNCTIONAL = 'mock500-full-host-functional-gated'
 BRANCH, ENVIRONMENT, WORKFLOW = M.BRANCH, M.ENVIRONMENT, M.WORKFLOW
 REVIEW_SCHEMA = 'helmut-w15-independent-mock500-receiver-review/1'
 LAUNCHER_REVIEW_SCHEMA = 'helmut-w15-independent-mock500-full-launcher-review/1'
@@ -58,6 +59,8 @@ def digest(value):
 
 
 def mode_scope(value):
+    if type(value) is dict and value.get('scope')=='ISOLATED_GITHUB_MOCK500_HOST_FUNCTIONAL_ONLY':
+        return HOST_FUNCTIONAL,S.host().SCOPE
     if type(value) is dict and value.get('scope') == 'ISOLATED_GITHUB_MOCK500_FUNCTIONAL_ONLY':
         return FUNCTIONAL,S.functional().SCOPES[FUNCTIONAL]
     return MODE,SCOPE
@@ -66,7 +69,7 @@ def mode_scope(value):
 def check_start_window(now, mode=MODE):
     # Mirror the unchanged StartGuard's closed date range and its real 12600s
     # completion window. No future run id, changed clock or extended day is used.
-    if mode == FUNCTIONAL:
+    if mode in (FUNCTIONAL,HOST_FUNCTIONAL):
         try:S.functional().validate_window('mock500',now)
         except (ValueError,TypeError,KeyError):raise DispatchRejected('start-window') from None
         return
@@ -134,7 +137,7 @@ def validate_approval(value, target, launcher, request, now):
          and bindings['inputBindingSHA256'] == value['inputBindingSHA256']
          and bindings['additionalAssetBytes'] == D.TOTAL and type(bindings['additionalAssetBytes']) is int
          and type(bindings['approvedEnd500Commit']) is str and M.HEX.fullmatch(bindings['approvedEnd500Commit'])
-         and (mode == FUNCTIONAL or bindings['approvedEnd500Commit'] != target)
+         and (mode in (FUNCTIONAL,HOST_FUNCTIONAL) or bindings['approvedEnd500Commit'] != target)
          and bindings['end500Acceptance']['sha256'] == value['end500AcceptanceSHA256']
          and bindings['compatibilityBridge']['sha256'] == value['compatibilitySHA256'], 'approval')
     expected = {'schema': 'helmut-w15-mock500-start-approval/1', 'scope': scope, 'authorized': True,
@@ -145,6 +148,7 @@ def validate_approval(value, target, launcher, request, now):
         'expectedProfiles': 500, 'expectedUnits': 500, 'expectedPositions': 1500, 'expectedControls': 8000,
         'maxProviderCalls': 0, 'maxStorageUSD': '0.05', 'maxReceiveAttempts': 1,
         'issuedAt': value['issuedAt'], 'expiresAt': value['expiresAt']}
+    if mode==HOST_FUNCTIONAL:expected['resourceContract']=S.host().CONTRACT
     approval = request['approval']
     need(type(approval) is dict and approval == expected and approval['authorized'] is True
          and all(type(approval[k]) is int for k in ('runAttempt', 'processingSeconds', 'completionSeconds',
@@ -153,6 +157,8 @@ def validate_approval(value, target, launcher, request, now):
     issued, expires = S._utc(value['issuedAt']), S._utc(value['expiresAt'])
     need(issued <= now < expires and timedelta(0) < expires - issued <= timedelta(hours=2), 'approval')
     check_start_window(now,mode)
+    if mode==HOST_FUNCTIONAL:
+        S.host().validate_start(dict(request,mode=mode,exactCommit=target,branch='refs/heads/'+BRANCH,runAttempt=1),now)
 
 
 def record_on_pr(pr, envelope, phase, *, commit):
@@ -172,10 +178,11 @@ def verify_prior(bindings, target, qualification_sha, receiver_pr, end_pr, *, ap
     """No invented future run id: only the real prior End run is queried here."""
     baseline = bindings['approvedEnd500Commit']
     end = record_on_pr(end_pr, bindings['end500Acceptance'], 'end500-acceptance', commit=baseline)
-    if mode == FUNCTIONAL:
+    if mode==HOST_FUNCTIONAL:need(end.get('schema')==S.host_functional().ACCEPTANCE_SCHEMA,'end500-acceptance')
+    if mode in (FUNCTIONAL,HOST_FUNCTIONAL):
         try:S.validate_functional_end_acceptance(end)
         except (ValueError,RuntimeError,TypeError,KeyError):raise DispatchRejected('end500-acceptance') from None
-    need((mode == FUNCTIONAL or (end.get('schema') == 'helmut-w15-independent-end500-acceptance/2'
+    need((mode in (FUNCTIONAL,HOST_FUNCTIONAL) or (end.get('schema') == 'helmut-w15-independent-end500-acceptance/2'
          and end.get('status') == 'PASS_INDEPENDENT_GITHUB_END500_PHASED_ACCEPTANCE'
          and end.get('scope') == PC.SCOPES[PC.END_MODE] and end.get('exactCommit') == baseline
          and end.get('resourceContract') == PC.END_PROFILE
@@ -199,8 +206,9 @@ def verify_prior(bindings, target, qualification_sha, receiver_pr, end_pr, *, ap
          and bridge.get('inputManifestSHA') == S.INPUT_SHA and bridge.get('recipientFingerprint') == S.FINGERPRINT
          and bridge.get('mockMemoryContract') == S.memory_profile(mode)
          and bridge.get('end500CodeReexecuted') is False and bridge.get('executionAuthority') is False, 'bridge')
-    if mode == FUNCTIONAL:need(bridge.get('functionalContract')==S.functional().CONTRACT,'bridge')
-    if mode == FUNCTIONAL and end.get('schema') == S.host_functional().ACCEPTANCE_SCHEMA:
+    if mode in (FUNCTIONAL,HOST_FUNCTIONAL):
+        need(bridge.get('functionalContract')==(S.host().CONTRACT if mode==HOST_FUNCTIONAL else S.functional().CONTRACT),'bridge')
+    if mode in (FUNCTIONAL,HOST_FUNCTIONAL) and end.get('schema') == S.host_functional().ACCEPTANCE_SCHEMA:
         need(bridge.get('end500FunctionalContract') == S.host_functional().CONTRACT,'bridge')
     try: run = api('GET', '/actions/runs/' + end['runId'])
     except BaseException: raise DispatchRejected('end500-run') from None

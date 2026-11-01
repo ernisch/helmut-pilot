@@ -217,7 +217,7 @@ def open_inputs(runtime_inputs, *, context, binding_raw, binding_sha256, asset_p
              and type(comparison['currentSourceChecks']) is int and comparison['currentSourceChecks'] == 2
              and comparison['qualificationSHA256'] == record['assets']['qualificationReport']['sha256']
              and comparison['sourceDatesRewritten'] is False and comparison['originalsUnchanged'] is True)
-        need(type(observed_context) is dict and observed_context.get('mode') in ('mock500-full-gated', 'mock500-full-phased-gated','mock500-full-functional-gated')
+        need(type(observed_context) is dict and observed_context.get('mode') in ('mock500-full-gated', 'mock500-full-phased-gated','mock500-full-functional-gated','mock500-full-host-functional-gated')
              and observed_context == {key: context[key] for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')}
              | {'branch': 'refs/heads/codex/w15-github-end500-preparation-20261028', 'mode': observed_context['mode']})
         result = Mock500Inputs(TOKEN, runtime_inputs, context, record, asset_paths, Path(repo), binding_sha256)

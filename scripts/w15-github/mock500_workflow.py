@@ -22,6 +22,7 @@ REPO = HERE.parents[1]
 FULL, SYNTHETIC = 'mock500-full-gated', 'mock500-runner-synthetic'
 PHASED = 'mock500-full-phased-gated'
 FUNCTIONAL = 'mock500-full-functional-gated'
+HOST_FUNCTIONAL = 'mock500-full-host-functional-gated'
 BRANCH = 'refs/heads/codex/w15-github-end500-preparation-20261028'
 SYNTHETIC_BRANCH = 'refs/heads/codex/w15-mock500-integration-20261029'
 END_BASELINES = {'7e3d96e99fc687b03bcb9a7cbe4a0f59c174859b', 'b6eb74495cd9cf4d7bee04ec4b37da6244b5c6a2',
@@ -31,7 +32,7 @@ END_BASELINES = {'7e3d96e99fc687b03bcb9a7cbe4a0f59c174859b', 'b6eb74495cd9cf4d7b
                  '13b858b1a1e83a695e1fa64446573b5b550921ea'}
 LIMITS = {'comparisonBudgetBytes': 2048000000, 'maximumConsumptionBytes': 1638400000,
           'requiredReserveBytes': 409600000, 'swapBytes': 0}
-WALL = {SYNTHETIC: 300, FULL: 12600, PHASED: 12600, FUNCTIONAL:12600}
+WALL = {SYNTHETIC: 300, FULL: 12600, PHASED: 12600, FUNCTIONAL:12600, HOST_FUNCTIONAL:12600}
 DECLARATION_KEYS = {'nonce', 'sourceQualification', 'approval', 'limits', 'maximumWallSeconds', 'bindings'}
 MAX_IPC = 1024 * 1024
 MAX_INPUT = 65535
@@ -105,7 +106,7 @@ def observed_context(value):
 
 
 def limits(mode):
-    return component('functional_contract').limits('mock500') if mode == FUNCTIONAL else dict(LIMITS)
+    return component('mock500_host_contract').limits() if mode==HOST_FUNCTIONAL else component('functional_contract').limits('mock500') if mode == FUNCTIONAL else dict(LIMITS)
 
 
 def validate_admission(value, private_payload, *, repo=REPO):
@@ -133,7 +134,7 @@ def validate_admission(value, private_payload, *, repo=REPO):
     need(type(bindings) is dict and set(bindings) == {'end500Acceptance', 'compatibilityBridge',
          'inputBindingSHA256', 'additionalAssetBytes', 'approvedEnd500Commit'}
          and (bindings['approvedEnd500Commit'] in END_BASELINES
-              or (value['mode'] in (PHASED,FUNCTIONAL) and type(bindings['approvedEnd500Commit']) is str
+              or (value['mode'] in (PHASED,FUNCTIONAL,HOST_FUNCTIONAL) and type(bindings['approvedEnd500Commit']) is str
                   and re.fullmatch('[a-f0-9]{40}', bindings['approvedEnd500Commit'])))
          and type(bindings['additionalAssetBytes']) is int and 0 < bindings['additionalAssetBytes'] <= 1024 ** 3
          and type(bindings['inputBindingSHA256']) is str
@@ -142,6 +143,8 @@ def validate_admission(value, private_payload, *, repo=REPO):
     component('mock500_start', repo).validate_admission(request, bindings['end500Acceptance'],
         compatibility_bridge=bindings['compatibilityBridge'], observed_context=observed_context(value),
         expected_end500_commit=bindings['approvedEnd500Commit'])
+    if value['mode']==HOST_FUNCTIONAL:
+        component('mock500_host_contract',repo).validate_start(value,datetime.now(timezone.utc))
     need(type(private_payload) is dict and set(private_payload) == {
          'cipherIndex', 'keyB64', 'passphrase', 'eventInputs', 'artifactCredentials'}, 'binding')
     return raw, digest
@@ -179,7 +182,7 @@ def validate_event(value, private_payload, *, event_inputs=None):
 
 def validate_manifest(value):
     legacy = component('restore_workflow')
-    need(type(value) is dict and set(value) == legacy.MANIFEST_KEYS | {'bindings', 'startedAtUTC', 'startedMonotonic'}
+    need(type(value) is dict and set(value) == legacy.MANIFEST_KEYS | {'bindings', 'startedAtUTC', 'startedMonotonic'} | ({'hostCapacityAdmission'} if value.get('mode')==HOST_FUNCTIONAL else set())
          and value['schema'] == 'helmut-w15-runner-manifest/1' and os.getuid() == os.getgid() == 1000)
     root = Path('/tmp') / ('helmut-w15-runner-' + value['runId'] + '-' + uuid.UUID(value['nonce']).hex)
     need(all(value[key] == str(root / name) for key, name in (
@@ -201,6 +204,7 @@ def _result(manifest, resources=None, functional_results=None):
     synthetic = manifest['mode'] == SYNTHETIC
     result = {**{key: manifest[key] for key in ('mode', 'exactCommit', 'runId', 'runAttempt')},
         'status': ('PASS_MOCK500_SYNTHETIC_RUNNER_ONLY_START_BLOCKED' if synthetic
+                   else 'PASS_MOCK500_HOST_FUNCTIONAL_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING' if manifest['mode']==HOST_FUNCTIONAL
                    else 'PASS_MOCK500_FUNCTIONAL_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING' if manifest['mode'] == FUNCTIONAL
                    else 'PASS_MOCK500_PHASED_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING' if manifest['mode'] == PHASED
                    else 'PASS_MOCK500_BODY_ONLY_INDEPENDENT_ACCEPTANCE_PENDING'),
@@ -213,6 +217,12 @@ def _result(manifest, resources=None, functional_results=None):
         need(resources is not None, 'closure')
         result.update(resourcePhases=resources.phase_closure(), processingMemoryChecksCompleted=True,
                       backupSafetyChecksCompleted=True)
+    elif manifest['mode']==HOST_FUNCTIONAL:
+        need(resources is not None,'closure')
+        contract=component('mock500_host_contract');contract.assess(resources.sample(),resources.host_capacity_admission)
+        result.update(functionalContract=contract.CONTRACT,functionalSafetyChecksCompleted=True,
+                      legacyRegularMemoryAccepted=False,providerResourceAccepted=False,
+                      functionalResourceObservation=resources.functional_observation(),functionalResults=functional_results)
     elif manifest['mode'] == FUNCTIONAL:
         need(resources is not None,'closure')
         contract=component('functional_contract');contract.assess(resources.sample(),'mock500')
@@ -228,7 +238,7 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
     try:
         raw, digest = validate_admission(manifest, private_payload)
         validate_manifest(manifest)
-        if manifest['mode'] in (FULL, PHASED, FUNCTIONAL):
+        if manifest['mode'] in (FULL, PHASED, FUNCTIONAL, HOST_FUNCTIONAL):
             validate_event(manifest, private_payload, event_inputs=private_payload['eventInputs'])
         context_code = component('mock500_context')
         context = context_code.build_context(manifest)
@@ -236,6 +246,9 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
             need(callable(backup_transition), 'binding')
             resources = component('mock500_resources').observe(context, processing_backup_stage='mock500')
             resources.backup_transition = backup_transition
+        elif manifest['mode']==HOST_FUNCTIONAL:
+            need(backup_transition is None,'binding')
+            resources=component('mock500_resources').observe(context,host_capacity_admission=manifest['hostCapacityAdmission'])
         elif manifest['mode'] == FUNCTIONAL:
             need(backup_transition is None,'binding')
             resources = component('mock500_resources').observe(context,functional_stage='mock500')
@@ -258,7 +271,8 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
         plan = resource_code.admit_disk_plan(manifest['runnerTemp'], checkout_bytes=manifest['checkoutBytes'],
             binary_bytes=manifest['binaryBytes'], additional_asset_bytes=bindings['additionalAssetBytes'],
             **({'processing_backup_stage': 'mock500'} if manifest['mode'] == PHASED else
-               {'functional_stage':'mock500'} if manifest['mode'] == FUNCTIONAL else {}))
+               {'functional_stage':'mock500'} if manifest['mode'] == FUNCTIONAL else
+               {'host_capacity_admission':manifest['hostCapacityAdmission']} if manifest['mode']==HOST_FUNCTIONAL else {}))
         disk = resource_code.DiskGuard(manifest['runnerTemp'], plan, resources,
             started_monotonic=manifest['startedMonotonic'])
         start = component('mock500_start').StartGuard(context, manifest['approval'], bindings['end500Acceptance'],
@@ -298,7 +312,7 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
              and len(receipts) == 1, 'closure')
         phase = 'closure'; closing_guard(); resources.sample()
         return _result(manifest, resources,**({'functional_results':final.get('functionalResults')}
-                       if manifest['mode']==FUNCTIONAL else{}))
+                       if manifest['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL) else{}))
     except WorkflowRejected as error:
         error.worker_memory = _cached_memory(resources)
         raise
@@ -356,10 +370,19 @@ def main(argv=None):
         validate_admission(request, private)
         validate_event(request, private)
         receipt = runner.launch(request, private)
-        need(receipt.get('status') == ('PASS_FRESH_MOCK500_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY'
+        need(receipt.get('status') == ('PASS_FRESH_MOCK500_HOST_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY' if request['mode']==HOST_FUNCTIONAL else 'PASS_FRESH_MOCK500_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY'
                                      if request['mode'] == FUNCTIONAL else 'PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY'
                                      if request['mode'] == PHASED else 'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY'), 'closure')
-        runner.validate_public_result(receipt['workerResult'], request)
+        if request['mode']==HOST_FUNCTIONAL:
+            try:
+                validation_context=dict(request,hostCapacityAdmission=receipt['hostCapacityAdmission'])
+                runner.validate_public_result(receipt['workerResult'],validation_context,
+                    host_capacity_budget=receipt['hostCapacityBudget'])
+                receipt['hostFunctionalObservation']=component('mock500_host_contract').observe_receipt(receipt,request)
+            except (ValueError,TypeError,KeyError):
+                raise WorkflowRejected('closure') from None
+        else:
+            runner.validate_public_result(receipt['workerResult'],request)
         print(canonical(receipt).decode()); return 0
     except BaseException as error:
         safe = {'status': 'FAIL_OR_BLOCKED_MOCK500_WORKFLOW', **_safe_failure(error),

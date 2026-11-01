@@ -287,6 +287,8 @@ def _ctx(request):
             value['endCapacityDiagnostic'] = True
         if request['mode'] == HOST_CAPACITY:
             value['hostCapacityDiagnostic'] = True
+    if request['mode'] == 'mock500-full-host-functional-gated':
+        value.update(capacityDiagnostic=True, hostCapacityDiagnostic=True, mockHostFunctional=True)
     if request['mode'] in (FUNCTIONAL, 'mock500-full-functional-gated'):
         value['functionalStage'] = _load('functional_contract').stage(request['mode'])
     stage = (P.R.phase_contract().stage(request['mode'])

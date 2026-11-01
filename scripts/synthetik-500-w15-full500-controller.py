@@ -30,7 +30,7 @@ _BOUND_CONTEXT_SHA=None
 
 def _mock_module(name):
     assert name in ('mock500_inputs','mock500_resources','mock500_start','mock500_backup',
-      'functional_contract','end500_capacity_roles')
+      'functional_contract','mock500_host_contract','end500_capacity_roles')
     key='w15_github_'+name
     if key not in sys.modules:
         spec=importlib.util.spec_from_file_location(key,ROOT/'scripts/w15-github'/(name+'.py'))
@@ -254,7 +254,7 @@ class Supervisor:
             actual_limit=None if m is None else m['configuredLimit']
             backup=(getattr(self.common_resources,'processing_backup_stage',None)=='mock500'
                     and self.common_resources.memory_phase=='backup')
-            functional=getattr(self.common_resources,'functional_stage',None)=='mock500'
+            functional=(getattr(self.common_resources,'functional_stage',None)=='mock500' or getattr(self.common_resources,'host_functional_stage',None)=='mock500')
             higher=backup or functional
             budget=self.common_resources.container_limit if higher else LIMIT
             reserve=0 if higher else RESERVE;maximum=budget if higher else MAXIMUM
@@ -344,7 +344,7 @@ class Supervisor:
         if self.disk_guard is not None:self.disk_guard()
         if self.common_resources is not None:
             common=self.common_resources.sample()
-            functional=getattr(self.common_resources,'functional_stage',None)=='mock500'
+            functional=(getattr(self.common_resources,'functional_stage',None)=='mock500' or getattr(self.common_resources,'host_functional_stage',None)=='mock500')
             if (functional or (getattr(self.common_resources,'processing_backup_stage',None)=='mock500'
                     and self.common_resources.memory_phase=='backup')):
                 # The sole higher-cap phase starts after the original
@@ -531,7 +531,8 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
     assert type(start_guard)is _mock_module('mock500_start').StartGuard
     assert callable(backup_completion)and callable(disk_guard)
     assert (LIMIT,RESERVE,MAXIMUM)==(2048000000,409600000,1638400000)
-    functional=getattr(resources,'functional_stage',None)=='mock500'
+    host_functional=getattr(resources,'host_functional_stage',None)=='mock500'
+    functional=getattr(resources,'functional_stage',None)=='mock500' or host_functional
     physical_limit=resources.container_limit if functional else LIMIT
     container_options={'memory_limit':physical_limit}if functional else{}
     context=inputs.controller_context();plan=_mock_module('mock500_inputs').namespace(context)
@@ -627,10 +628,14 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
           "'storeHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by id collate \"C\")::text,'UTF8')),'hex')from helmut_store p));")
         descriptor=inputs.private_descriptor();descriptor['sourceBaseline']=baseline;descriptor['window']=start_guard.window
         if functional:
-            contract=_mock_module('functional_contract')
-            descriptor['functionalResourceContract']={'contract':contract.CONTRACT,'mode':contract.MOCK_MODE,
-              'memoryProfile':contract.MOCK_PROFILE,'hardMemoryBytes':contract.HARD_LIMIT,
-              'hostReserveBytes':contract.HOST_RESERVE,'legacyRegularMemoryAccepted':False,'providerResourceAccepted':False}
+            contract=_mock_module('mock500_host_contract' if host_functional else 'functional_contract')
+            descriptor['functionalResourceContract']={'contract':contract.CONTRACT,
+              'mode':contract.MODE if host_functional else contract.MOCK_MODE,
+              'memoryProfile':contract.PROFILE if host_functional else contract.MOCK_PROFILE,
+              'hardMemoryBytes':resources.container_limit if host_functional else contract.HARD_LIMIT,
+              'hostReserveBytes':_mock_module('functional_contract').HOST_RESERVE,
+              **({'hostCapacityBudget':resources.host_capacity_budget} if host_functional else {}),
+              'legacyRegularMemoryAccepted':False,'providerResourceAccepted':False}
         descriptor_path=WORK/'mock-context.PRIVATE.json';_BOUND_CONTEXT_SHA=_private_write(descriptor_path,descriptor)
         copy_in(descriptor_path,BASE+'/state/mock-context.PRIVATE.json')
         inner(supervisor,'setup')

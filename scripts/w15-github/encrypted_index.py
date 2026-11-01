@@ -63,7 +63,7 @@ def dispatch_payload(commit, armored, *, mode=MODE, extra_inputs=None):
     """Bound all actual inputs AND their serialized dispatch below 65,535 chars."""
     need(type(commit) is str and re.fullmatch('[a-f0-9]{40}', commit))
     cipher_bytes(armored)
-    need(mode in (MODE, 'end500-restore-gated', 'end500-full-gated', 'end500-full-phased-gated', 'mock500-full-gated', 'mock500-full-phased-gated', 'mock500-receive-originals', 'end500-restore-export-diagnostic', 'end500-restore-capacity-diagnostic', 'end500-full-capacity-diagnostic', 'end500-full-functional-gated', 'end500-full-host-capacity-diagnostic', 'mock500-full-functional-gated'))
+    need(mode in (MODE, 'end500-restore-gated', 'end500-full-gated', 'end500-full-phased-gated', 'mock500-full-gated', 'mock500-full-phased-gated', 'mock500-receive-originals', 'end500-restore-export-diagnostic', 'end500-restore-capacity-diagnostic', 'end500-full-capacity-diagnostic', 'end500-full-functional-gated', 'end500-full-host-capacity-diagnostic', 'mock500-full-functional-gated','mock500-full-host-functional-gated'))
     need((mode == MODE and extra_inputs is None) or
          (mode != MODE and isinstance(extra_inputs, dict) and set(extra_inputs) == {'w15_request'}
           and type(extra_inputs['w15_request']) is str))

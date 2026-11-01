@@ -48,12 +48,27 @@ function memoryLimits(bound) {
   namespace(bound.context);
   const value = bound.functionalResourceContract;
   const safety = require("./separated_resources_contract.json").referenceLabProposal;
+  const hosted = value.contract === "helmut-w15-mock500-host-functional/1";
   assert.deepEqual(Object.keys(value).sort(), ["contract", "mode", "memoryProfile", "hardMemoryBytes", "hostReserveBytes",
-    "legacyRegularMemoryAccepted", "providerResourceAccepted"].sort());
-  assert.equal(value.contract, "helmut-w15-isolated-functional/1");
-  assert.equal(value.mode, "mock500-full-functional-gated");
-  assert.equal(value.memoryProfile, "helmut-w15-mock500-functional/1");
-  assert.equal(value.hardMemoryBytes, safety.commonHostHardBytes);
+    "legacyRegularMemoryAccepted", "providerResourceAccepted", ...(hosted ? ["hostCapacityBudget"] : [])].sort());
+  if (hosted) {
+    assert.equal(value.mode, "mock500-full-host-functional-gated");
+    assert.equal(value.memoryProfile, "helmut-w15-mock500-host-functional/1");
+    const budget=value.hostCapacityBudget;
+    assert(budget && typeof budget === "object" && !Array.isArray(budget));
+    assert.deepEqual(Object.keys(budget).sort(), ["schema","profile","hardLimitBytes","minimumHostReserveBytes"].sort());
+    assert.equal(budget.schema,"helmut-w15-host-capacity-budget/1");
+    assert.equal(budget.profile,"helmut-w15-end500-host-capacity-diagnostic/1");
+    assert(Number.isSafeInteger(budget.hardLimitBytes) && budget.hardLimitBytes>0 && budget.hardLimitBytes%4096===0
+      && budget.hardLimitBytes<=Number.MAX_SAFE_INTEGER-safety.hostAvailableReserveBytes);
+    assert.equal(budget.minimumHostReserveBytes,safety.hostAvailableReserveBytes);
+    assert.equal(value.hardMemoryBytes,budget.hardLimitBytes);
+  } else {
+    assert.equal(value.contract, "helmut-w15-isolated-functional/1");
+    assert.equal(value.mode, "mock500-full-functional-gated");
+    assert.equal(value.memoryProfile, "helmut-w15-mock500-functional/1");
+    assert.equal(value.hardMemoryBytes, safety.commonHostHardBytes);
+  }
   assert.equal(value.hostReserveBytes, safety.hostAvailableReserveBytes);
   assert.equal(value.legacyRegularMemoryAccepted, false); assert.equal(value.providerResourceAccepted, false);
   return Object.freeze({ version: value.memoryProfile, comparisonBudgetBytes: value.hardMemoryBytes,

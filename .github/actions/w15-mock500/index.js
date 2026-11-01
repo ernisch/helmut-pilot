@@ -43,26 +43,40 @@ function closedCleanup(value){
     !keys.every(k=>['PASS','FAIL','UNKNOWN'].includes(value[k])))return null;
   return Object.fromEntries(keys.map(k=>[k,value[k]]));
 }
+function closedCapacityMeasurement(value){return require('../w15-isolated/capacity-measurement').closedCapacityMeasurement(value);}
 function closedFailureMemory(value){
   const keys=['configuredLimitBytes','kernelLifetimePeakBytes','currentBytes','swapMaximumBytes','swapCurrentBytes','lastReadbackValid','events'];
   const events=['max','oom','oom_kill','oom_group_kill'];
   if(!value||typeof value!=='object'||Array.isArray(value)||!keys.every(k=>Object.hasOwn(value,k))||
-    !Object.keys(value).every(k=>keys.includes(k)||k==='postFailureMemoryStat'||k==='capacityMeasurement'||k==='end500CapacityTrace')||
+    !Object.keys(value).every(k=>keys.includes(k)||k==='postFailureMemoryStat'||k==='capacityMeasurement'||k==='end500CapacityTrace'||k==='hostCapacityBudget'||k==='hostCapacitySafetyObserved'||k==='hostCapacityObservation')||
     typeof value.lastReadbackValid!=='boolean')return null;
   if(keys.filter(k=>!['lastReadbackValid','events'].includes(k)).some(k=>!Number.isSafeInteger(value[k])||value[k]<0))return null;
   if(!value.events||typeof value.events!=='object'||Array.isArray(value.events)||
     Object.keys(value.events).sort().join(',')!==[...events].sort().join(',')||
     events.some(k=>!Number.isSafeInteger(value.events[k])||value.events[k]<0))return null;
   const out=Object.fromEntries(keys.map(k=>[k,value[k]])),detail=value.postFailureMemoryStat;
+  const hostBudget=Object.hasOwn(value,'hostCapacityBudget')?require('../w15-isolated/capacity-trace').closedHostBudget(value.hostCapacityBudget):null;
+  const boundHost=hostBudget&&hostBudget.hardLimitBytes===value.configuredLimitBytes?hostBudget:null;
+  if(boundHost){
+    out.hostCapacityBudget=boundHost;
+    const observation=require('../w15-isolated/capacity-trace').closedHostObservation(value.hostCapacityObservation,boundHost);
+    if(observation)out.hostCapacityObservation=observation;
+    if(value.hostCapacitySafetyObserved===false||value.hostCapacitySafetyObserved===true&&observation?.status==='PASS')
+      out.hostCapacitySafetyObserved=value.hostCapacitySafetyObserved;
+  }
   const categories=['anon','file','kernel','shmem','file_dirty','file_writeback'];
   if(value.lastReadbackValid===false&&detail&&typeof detail==='object'&&!Array.isArray(detail)&&
     Object.keys(detail).sort().join(',')===[...categories,'observedAfterFailure','peakCompositionKnown'].sort().join(',')&&
     detail.observedAfterFailure===true&&detail.peakCompositionKnown===false&&
     categories.every(k=>Number.isSafeInteger(detail[k])&&detail[k]>=0||detail[k]==='UNKNOWN'))
     out.postFailureMemoryStat=Object.fromEntries([...categories,'observedAfterFailure','peakCompositionKnown'].map(k=>[k,detail[k]]));
-  if(value.configuredLimitBytes===4999999488){
-    const capacity=require('../w15-isolated/capacity-measurement').closedCapacityMeasurement(value.capacityMeasurement);
+  if(boundHost||value.configuredLimitBytes===4999999488){
+    const capacity=closedCapacityMeasurement(value.capacityMeasurement);
     if(capacity)out.capacityMeasurement=capacity;
+    if(Object.hasOwn(value,'end500CapacityTrace')){
+      const trace=require('../w15-isolated/capacity-trace').closed(value.end500CapacityTrace,boundHost||undefined);
+      if(trace)out.end500CapacityTrace=trace;
+    }
   }
   return out;
 }
@@ -108,8 +122,19 @@ function main(){
     const cleanup=closedCleanup(receipt.cleanup);if(cleanup)safe.cleanup=cleanup;
     console.log(JSON.stringify(safe));process.exitCode=1;return;
   }
-  const expected=mode==='mock500-full-functional-gated'?'PASS_FRESH_MOCK500_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY':mode==='mock500-full-phased-gated'?'PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY':'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY';
+  const expected=mode==='mock500-full-host-functional-gated'?'PASS_FRESH_MOCK500_HOST_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY':mode==='mock500-full-functional-gated'?'PASS_FRESH_MOCK500_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY':mode==='mock500-full-phased-gated'?'PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY':'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY';
   if(receipt.status!==expected)throw Error('receipt');
+  if(mode==='mock500-full-host-functional-gated'){
+    const cap=require('../w15-isolated/capacity-trace');
+    const budget=cap.closedHostBudget(receipt.hostCapacityBudget);
+    const admission=budget&&cap.closedHostAdmission(receipt.hostCapacityAdmission,budget);
+    if(!budget||!admission||receipt.mode!==mode||receipt.functionalContract!=='helmut-w15-mock500-host-functional/1'||
+       receipt.legacyRegularMemoryAccepted!==false||receipt.providerResourceAccepted!==false||
+       !receipt.hostFunctionalObservation||receipt.hostFunctionalObservation.resourceContract!=='helmut-w15-mock500-host-functional/1')throw Error('receipt');
+    receipt.hostCapacityBudget=budget;receipt.hostCapacityAdmission=admission;
+    const observed=require('../w15-isolated/functional-resources').closed(receipt.workerResult?.functionalResourceObservation,budget);
+    if(observed===null)throw Error('receipt');receipt.workerResult.functionalResourceObservation=observed;
+  }
   if(mode==='mock500-full-functional-gated'){
     if(!receipt.workerResult||typeof receipt.workerResult!=='object')throw Error('receipt');
     const observed=require('../w15-isolated/functional-resources').closed(receipt.workerResult.functionalResourceObservation);
