@@ -1,16 +1,12 @@
 # CURRENT STATE — Helmut
 
-## W15: End500-Abschlussfehler nachgestellt (01.11.2026)
+## W15: dynamischer End500-Funktionsvertrag vorbereitet (01.11.2026)
 
-[Run41300846909](https://github.com/ernisch/helmut-pilot/actions/runs/41300846909)/`4de6269a`: **FAIL**, WORKER_RESULT_REJECTED/Exit1, letzter Eintritt closure.500Auth/6.000Usage/3.501Postimages bestätigt;0aktiv/Export/Rücklese-/zweiteRecovery-Gates laut Kontrollfluss durchlaufen, positive Gesamtquittung fehlt. Historischer Run bleibtFAIL.
+Basis [PR1012](https://github.com/ernisch/helmut-pilot/pull/1012)/799eb908: UID1000-Abschluss mit hashgeprüftem Stagingmodul, Rootprüfung erhalten; sechs Gegenproben, CI41307373237 und unabhängiger Review PASS. Aktuelle GitHub-Probe bestätigt PermissionError; historische Exception/ACL bleibenUNKNOWN.
 
-Gesicherter Peak5,118GB bei dynamischem Limit13,354GB; Swap/OOM/Max0,8CleanupPASS. Dateiseitenmax4,584GB; vollständige Prozesspeaks/Peak nach CleanupUNKNOWN. Ein Cipherartefakt532MB/≤1Tag. Keine RAM-Optimierung oder neue Originalausführung.
+Neuer eigener Branch `codex/w15-end500-host-functional-20261101`: [Vertrag](betrieb/w15-end500-host-functional-20261101.md) `helmut-w15-end500-host-functional/1` bindet vor Start den vorhandenen dynamischen Hostpfad. Kein festes5GB-Abnahmehindernis; Reserve2.147.483.648B und alle Schutzgrenzen erhalten. Erst vollständige Same-Run-Quittung plus unabhängige v4-Abnahme erfüllt das neue End500-Funktionstor. Mock behält eigenen Vertrag, Brücke und separatesGO. Finale CI/Reviews am Draft-PR; noch kein Originallauf freigegeben.
 
-Nachgestellt: Der UID1000-Worker lädt für den HOST-Abschluss unnötig aus dem ursprünglichen Checkout nach. Ist dieser unlesbar, scheitert ein gültiges Staging-Ergebnis über echte Pipes exakt wie oben; lesbarer Checkout besteht. Historische Rechte/Exceptiontext bleibenUNKNOWN. Kein IPC-Überlauf belegt:64KiB Resultat,1KiB nur Fortschritt.
-
-HOST-Fix im Branch `codex/w15-worker-result-stage-fix-20261101`: geladenes hashgeprüftes Stagingmodul nutzen; unabhängige Rootprüfung, Fachgates und Grenzen unverändert. Kleine Regressions-/Negativtests bestanden; finaleCI/Review am Draft-PR. FUNCTIONAL nicht mitrepariert.
-
-Alte Belege/Originale/Journale erhalten; kein neues GO verbraucht. Neuer Originallauf nur separat. [Voriger Stand](archive/project_state/2026_11_01_4de6269a_CURRENT_STATE_vor_Abschlussfix.md).
+Run41300846909/4de6269a bleibt **FAIL**, WORKER_RESULT_REJECTED/closure;500Auth/6.000Usage/3.501Postimages bestätigt, positive Gesamtquittung fehlt. Gesicherter Peak5,118GB bei Limit13,354GB; Swap/OOM/Max0,8CleanupPASS. Keine rückwirkende RAM-/Production-/Mockabnahme, Optimierung oder neue Ausführung. Originale/Journale erhalten. Nächster Schritt: geprüften neuen Kopf exakt einmal separat freigeben. [Voriger Stand bytegleich](archive/project_state/2026_11_01_799eb908_CURRENT_STATE_vor_Hostfunktionsvertrag.md).
 
 ## Ressourcen500-Messung und geprüfter Diagnoseanschluss (31.10.2026)
 

@@ -218,7 +218,12 @@ def validate_admission(value, private_payload, *, now=None):
     if value['mode'] in (PHASED, END_CAPACITY, FUNCTIONAL, HOST_CAPACITY):
         contract = _load('phase_contract')
         reference = approval['restoreFunctionAcceptance']
-        need(approval['resourceContract'] == (_load('restore_capacity').HOST_PROFILE if value['mode'] == HOST_CAPACITY else _load('functional_contract').CONTRACT if value['mode'] == FUNCTIONAL else contract.END_PROFILE if value['mode'] == PHASED else _load('end500_capacity_trace').PROFILE) and type(reference) is dict
+        resource_contract = (_load('host_functional_contract').CONTRACT
+            if value['mode'] == HOST_CAPACITY and _load('host_functional_contract').selected(value) else
+            _load('restore_capacity').HOST_PROFILE if value['mode'] == HOST_CAPACITY else
+            _load('functional_contract').CONTRACT if value['mode'] == FUNCTIONAL else
+            contract.END_PROFILE if value['mode'] == PHASED else _load('end500_capacity_trace').PROFILE)
+        need(approval['resourceContract'] == resource_contract and type(reference) is dict
              and set(reference) == set(contract.FUNCTION_REFERENCE) | {'targetCommit', 'compatibilityReviewSHA256'}
              and all(reference[k] == v for k, v in contract.FUNCTION_REFERENCE.items())
              and reference['legacyRestoreAccepted'] is False
@@ -227,6 +232,11 @@ def validate_admission(value, private_payload, *, now=None):
              and re.fullmatch('[a-f0-9]{64}', reference['compatibilityReviewSHA256']), 'approval')
     if value['mode'] == FUNCTIONAL:
         _load('functional_contract').validate_window('end500', now)
+    if value['mode'] == HOST_CAPACITY and _load('host_functional_contract').selected(value):
+        try:
+            _load('host_functional_contract').validate_start(value, now)
+        except (ValueError, TypeError, KeyError):
+            raise WorkflowRejected('approval') from None
     need(type(private_payload) is dict and set(private_payload) == PRIVATE_KEYS, 'binding')
     for key, maximum in (('cipherIndex', MAX_INPUT), ('keyB64', 49152), ('passphrase', 4096)):
         need(type(private_payload[key]) is str and 0 < len(private_payload[key].encode()) <= maximum, 'binding')
@@ -718,6 +728,11 @@ def main(argv=None):
                 {k: request[k] for k in ('exactCommit', 'runId', 'runAttempt', 'nonce')})
         validate_public_result(receipt['workerResult'])
         need(all(receipt['workerResult'][k] == request[k] for k in ('mode', 'exactCommit', 'runId', 'runAttempt')), 'closure')
+        if request['mode'] == HOST_CAPACITY and _load('host_functional_contract').selected(request):
+            try:
+                receipt['hostFunctionalObservation'] = _load('host_functional_contract').observe_receipt(receipt, request)
+            except (ValueError, TypeError, KeyError):
+                raise WorkflowRejected('closure') from None
         print(_encode(receipt).decode())
         return 0
     except BaseException as error:

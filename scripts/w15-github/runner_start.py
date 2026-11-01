@@ -323,6 +323,7 @@ def github_binding(request):
                  *([SCRIPT.with_name('restore_capacity.py')] if request['mode'] in (CAPACITY, END_CAPACITY, PHASED, FUNCTIONAL, HOST_CAPACITY) else []),
                  *([SCRIPT.with_name('phase_contract.py')] if request['mode'] in (PHASED, FUNCTIONAL) else []),
                  *([SCRIPT.with_name('functional_contract.py')] if request['mode'] == FUNCTIONAL else []),
+                 *([SCRIPT.with_name('host_functional_contract.py')] if request['mode'] == HOST_CAPACITY else []),
                  *([SCRIPT.with_name('end500_capacity_trace.py'), SCRIPT.with_name('memory_components.py'), SCRIPT.with_name('end500_capacity_roles.py')] if request['mode'] in (END_CAPACITY, FUNCTIONAL, HOST_CAPACITY) else [])):
         relative = str(file.relative_to(REPO))
         entry = _git(REPO, ['ls-tree', '-z', request['exactCommit'], '--', relative])

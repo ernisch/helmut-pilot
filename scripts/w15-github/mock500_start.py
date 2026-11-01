@@ -40,6 +40,13 @@ def functional():
     return module
 
 
+@lru_cache(maxsize=1)
+def host_functional():
+    spec = importlib.util.spec_from_file_location('w15_mock_host_functional', Path(__file__).with_name('host_functional_contract.py'))
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+
 def limits(mode):
     return functional().limits('mock500') if mode == FUNCTIONAL else dict(LIMITS)
 
@@ -55,6 +62,12 @@ def mode_scope(mode):
 
 
 def validate_functional_end_acceptance(end500):
+    if end500.get('schema') == host_functional().ACCEPTANCE_SCHEMA:
+        try:
+            host_functional().validate_acceptance(end500)
+        except (ValueError, TypeError, KeyError):
+            raise StartRejected('MOCK500_POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED') from None
+        return
     contract = functional()
     need(end500.get('schema') == contract.ACCEPTANCE_SCHEMA
          and end500.get('status') == 'PASS_INDEPENDENT_GITHUB_END500_FUNCTIONAL_ACCEPTANCE'
@@ -148,7 +161,8 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
              and end500.get('independentRestoreAccepted') is True,
              'MOCK500_POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED')
     need(
-         end500.get('scope') == (functional().SCOPES[functional().END_MODE] if request['mode'] == FUNCTIONAL
+         end500.get('scope') == ((host_functional().SCOPE if end500.get('schema') == host_functional().ACCEPTANCE_SCHEMA
+                                 else functional().SCOPES[functional().END_MODE]) if request['mode'] == FUNCTIONAL
                                 else 'ISOLATED_GITHUB_END500_PHASED_ONLY' if phased else 'ISOLATED_GITHUB_END500_ONLY')
          and end500.get('exactCommit') == expected_end500_commit
          and isinstance(end500.get('runId'), str) and re.fullmatch('[1-9][0-9]{4,19}', end500['runId'])
@@ -174,6 +188,9 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
     if request['mode'] == FUNCTIONAL:
         need(bridge.get('functionalContract') == functional().CONTRACT,
              'MOCK500_REVIEWED_BASELINE_BRIDGE_REQUIRED')
+        if end500.get('schema') == host_functional().ACCEPTANCE_SCHEMA:
+            need(bridge.get('end500FunctionalContract') == host_functional().CONTRACT,
+                 'MOCK500_REVIEWED_BASELINE_BRIDGE_REQUIRED')
     approval = request.get('approval')
     keys = {'schema', 'scope', 'authorized', 'mode', 'exactCommit', 'branch', 'runAttempt', 'nonce',
         'sourceQualificationSHA256', 'end500AcceptanceSHA256', 'compatibilitySHA256', 'limits',
