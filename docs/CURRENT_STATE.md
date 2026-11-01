@@ -6,7 +6,7 @@
 
 Höchster bestätigter RAM 658 MB, Swap/OOM/max 0; endgültiger Lifetimepeak UNKNOWN. Letzter Cachewert 587 MB, anonym 48 MB, Kernel 23 MB, zeitlich keine Peakkomposition. Alle acht Prozessbereinigungsprüfungen PASS; kein Artefakt. Früheste Linkexpiry 00:22:27 UTC, Fehlerquittung 0,502 s später; kein Beweis für einen bestimmten HTTP-/Socketfehler.
 
-Nachgewiesene synthetische Fixes: vorhandenes Vertragsmodul wiederverwenden statt pro Lesefragment neu importieren; erste feste Transportfehlerklasse vor Bereinigung erhalten, UTC-Socketfrist beachten. Zentrale Weitergabe gezielt geprüft; neuer Kopf/CI/Review werden abgeschlossen. Kein weiterer Originallauf.
+Nachgewiesene synthetische Fixes: vorhandenes Vertragsmodul wiederverwenden statt pro Lesefragment neu importieren; erste feste Transportfehlerklasse vor Bereinigung erhalten, UTC-Socketfrist beachten. Zentrale Weitergabe gezielt geprüft; Pflicht-CI und unabhängiger Review binden den Reparaturkopf. Kein weiterer Originallauf.
 
 [Funktionsvertrag v1](betrieb/w15-isolated-functional-contract-20261101.md) mit knapp 5 GB/Hostreserve rund 2,15 GB bleibt gültig. Alte RAM-FAIL unverändert, Anbieterparität UNKNOWN. Zusatzversuch verlangt laut Betreiber eine belegte Ursache; diese Bedingung ist aktuell nicht erfüllt. Nächste Grenze: konkrete neue Freigabe auf geprüften Reparaturkopf. Mock erst nach vollständiger positiver Endabnahme. Production gesperrt.
 

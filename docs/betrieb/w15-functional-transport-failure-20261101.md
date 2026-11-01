@@ -18,7 +18,7 @@ Vor dem einzigen POST: tatsächliche minimale Linkrestzeit 297,480 Sekunden,
 vollständige Parameter 51.067 Zeichen. Frühester Ablauf 01.11.2026 00:22:27 UTC;
 Fehlerquittung 00:22:27,5019966 UTC. Die beobachtete Downloadphase dauerte rund
 214,600 Sekunden und blieb unter dem eigenen globalen 300-Sekunden-Limit.
-Die Links waren beim Fehlerabschluss tatsächlich abgelaufen. Ob zuerst die lokale
+Die früheste Linkfrist war beim Fehlerabschluss überschritten. Ob zuerst die lokale
 UTC-Prüfung, eine HTTP-Antwort, ein Sockettimeout oder ein anderer innerer Fehler
 auslöste, ist mangels damaliger Klassifikation **UNKNOWN**. Keine nachträgliche
 Behauptung von HTTP 403, Integritätsfehler oder erfolgreichem vollständigem Empfang.
