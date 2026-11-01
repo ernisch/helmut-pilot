@@ -159,7 +159,7 @@ def _encode(value, maximum=MAX_IPC):
     return raw
 
 
-def _worker_result(result, request):
+def _worker_result(result, request, *, workflow=None):
     """Only B's closed public scalar receipt can leave the private IPC channel."""
     fields = {'status', 'mode', 'exactCommit', 'runId', 'runAttempt', 'verifiedFiles', 'verifiedBytes'}
     diagnostic = request['mode'] == DIAGNOSTIC
@@ -192,7 +192,9 @@ def _worker_result(result, request):
          and result['end500BodyCompleted'] is (request['mode'] in ('end500-full-gated', PHASED, END_CAPACITY, FUNCTIONAL, HOST_CAPACITY)))
     if request['mode'] == HOST_CAPACITY:
         need(result['hostCapacityDiagnosticOnly'] is True)
-        _load('restore_workflow').validate_functional_results(result['diagnosticResults'])
+        # UID1000 may not read the original checkout; reuse the verified stage.
+        validator = _load('restore_workflow') if workflow is None else workflow
+        validator.validate_functional_results(result['diagnosticResults'])
     if request['mode'] == FUNCTIONAL:
         need(result['functionalContract'] == _load('functional_contract').CONTRACT
              and result['functionalSafetyChecksCompleted'] is True and result['legacyRegularMemoryAccepted'] is False)
@@ -619,7 +621,7 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
         if manifest['mode'] in (END_CAPACITY, HOST_CAPACITY, PHASED, FUNCTIONAL, 'end500-full-gated'):
             extra['native_failure_observer'] = _native_failure_reporter(sender)
         result = module.run_worker(manifest, private_payload, phase_observer=_phase_reporter(sender), **extra)
-        result = _worker_result(result, manifest)
+        result = _worker_result(result, manifest, workflow=module)
         need(not latch.seen)
     except BaseException as error:
         failure = _worker_failure(error, reason)

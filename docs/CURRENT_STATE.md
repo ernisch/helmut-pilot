@@ -1,14 +1,16 @@
 # CURRENT STATE — Helmut
 
-## W15: separate End500-Hostdiagnose vorbereitet (01.11.2026)
+## W15: End500-Abschlussfehler nachgestellt (01.11.2026)
 
-[Vorbereitung und Sicherheitsvertrag](betrieb/w15-end500-dynamic-host-diagnose-20261101.md): SQL-Einzelablage aus PR1009/e5dd23a4 übernommen. Neuer separater Diagnosemodus berechnet vor Parentanlage einmalig das größtmögliche seitenrunde Hartlimit aus tatsächlichem Host-/Ancestor-Spielraum abzüglich exakt2GiB Reserve. Keine spätere Erhöhung; keine Cache- oder Peakmanipulation. Alte5GB-, Funktions- und reguläre Verträge unverändert.
+[Run41300846909](https://github.com/ernisch/helmut-pilot/actions/runs/41300846909)/`4de6269a`: **FAIL**, WORKER_RESULT_REJECTED/Exit1, letzter Eintritt closure.500Auth/6.000Usage/3.501Postimages bestätigt;0aktiv/Export/Rücklese-/zweiteRecovery-Gates laut Kontrollfluss durchlaufen, positive Gesamtquittung fehlt. Historischer Run bleibtFAIL.
 
-Rootaufnahme und ursprünglicher Caller werden gebunden; Hostreserve/Ancestoridentität/Swap/OOM/Max0 bleiben bewacht. Alle Phasen einschließlich500Auth/6.000Usage/3.501Postimages, Export,0aktiv, verschlüsselter Sicherung, authentifizierter Rücklesung und zweiter Recovery bleiben Pflicht.60min/512MiBPlatte/0,05USD/einCipherartefakt1Tag/0Modellaufrufe.
+Gesicherter Peak5,118GB bei dynamischem Limit13,354GB; Swap/OOM/Max0,8CleanupPASS. Dateiseitenmax4,584GB; vollständige Prozesspeaks/Peak nach CleanupUNKNOWN. Ein Cipherartefakt532MB/≤1Tag. Keine RAM-Optimierung oder neue Originalausführung.
 
-Pflicht-CI erhebt eine rein lesende Kapazitätsprobe auf ihrem tatsächlichen Standardrunner. Zahlen und finale Review-/Kopfbindungen am neuen Draft-PR; die später zugewiesene Originalmaschine wird vor Datenarbeit frisch geprüft. Noch kein Originallauf, kein neues GO und keine Ausführungsnonce. Erfolg bliebe ausschließlich DIAGNOSTIC_ONLY, kein End500-/Mock-/Anbieter-PASS.
+Nachgestellt: Der UID1000-Worker lädt für den HOST-Abschluss unnötig aus dem ursprünglichen Checkout nach. Ist dieser unlesbar, scheitert ein gültiges Staging-Ergebnis über echte Pipes exakt wie oben; lesbarer Checkout besteht. Historische Rechte/Exceptiontext bleibenUNKNOWN. Kein IPC-Überlauf belegt:64KiB Resultat,1KiB nur Fortschritt.
 
-Letzter echterEndlauf41280267757/efc990ba bleibtFAIL:500/6.000/3.501bestätigt, knapp5GBPeak/Max2/OOM0/Swap0, letztegültigeDateiseiten4,55GB; zweiteRecovery/FinalflagsUNKNOWN.8CleanupPASS. AltesJournal2FAIL/unverändert; neue eigenständige Einmalfreigabe erforderlich. Mock500/Production gesperrt. [Voriger Stand bytegleich](archive/project_state/2026_11_01_e5dd23a4_CURRENT_STATE_vor_Hostdiagnose.md).
+HOST-Fix im Branch `codex/w15-worker-result-stage-fix-20261101`: geladenes hashgeprüftes Stagingmodul nutzen; unabhängige Rootprüfung, Fachgates und Grenzen unverändert. Kleine Regressions-/Negativtests bestanden; finaleCI/Review am Draft-PR. FUNCTIONAL nicht mitrepariert.
+
+Alte Belege/Originale/Journale erhalten; kein neues GO verbraucht. Neuer Originallauf nur separat. [Voriger Stand](archive/project_state/2026_11_01_4de6269a_CURRENT_STATE_vor_Abschlussfix.md).
 
 ## Ressourcen500-Messung und geprüfter Diagnoseanschluss (31.10.2026)
 
