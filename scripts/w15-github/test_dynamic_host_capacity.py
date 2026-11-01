@@ -5,7 +5,9 @@ import copy
 import importlib.util
 import json
 import os
+import re
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -106,5 +108,25 @@ class DynamicHostCapacity(unittest.TestCase):
         self.assertIn('--host-capacity-diagnostic',P.internal_argv('prepare',ctx))
         self.assertIn(b'MemoryMax=4999999488\n',P.unit_bytes(dict(ctx,hostCapacityDiagnostic=False)))
         self.assertEqual(F.W.LIMITS['maximumConsumptionBytes'],2048000000)
+
+    def test_workflow_selects_actual_host_job_and_provenance_is_not_budget(self):
+        workflow=Path(__file__).parents[2]/'.github/workflows/ci.yml'
+        section=re.search(r'(?ms)^  w15-isolated:\n(.*?)(?=^  [A-Za-z0-9_-]+:|\Z)',workflow.read_text()).group(1)
+        self.assertIn("inputs.w15_mode == '"+CAP.HOST_MODE+"'",section)
+        provenance=CAP.host_caller_provenance(admission())
+        changed=admission();changed['ancestors'][0]['identity']=[1,777]
+        self.assertNotEqual(provenance,CAP.host_caller_provenance(changed))
+        self.assertNotIn('diagnosticHardLimitBytes',provenance)
+
+    def test_privileged_reply_bound_to_actual_outer_caller_before_any_originals(self):
+        a=admission();provenance=CAP.host_caller_provenance(a)
+        reply=SimpleNamespace(stdout=json.dumps(dict(status='PASS_ROOT_BOUND_HOST_CAPACITY_PARENT_ONLY',hostCapacityAdmission=a)).encode())
+        ctx=R._ctx(request());public=R._bind_host_preparation(ctx,reply,provenance)
+        self.assertEqual(ctx['hostCapacityAdmission'],a)
+        self.assertEqual(public['diagnosticHardLimitBytes'],7*GiB)
+        self.assertNotIn('callerRelativePath',public)
+        wrong=copy.deepcopy(provenance);wrong['callerRelativePath']='/different.scope'
+        with self.assertRaises(R.RunnerStartError):R._bind_host_preparation(R._ctx(request()),reply,wrong)
+        with self.assertRaises(R.RunnerStartError):R._bind_host_preparation({},reply,provenance)
 
 if __name__=='__main__':unittest.main()

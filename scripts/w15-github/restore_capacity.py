@@ -137,6 +137,21 @@ def host_admission_dynamic(*, observation=None):
     return value
 
 
+def host_caller_provenance(admission=None):
+    """Identity/limit provenance, never another selected or activated cap."""
+    if admission is None:
+        root = _host_root_proof()
+        rows = _host_raw('/proc/self/cgroup',8192).splitlines()
+        need(len(rows) == 1 and rows[0].startswith('0::'))
+        caller = _host_path(rows[0][3:])
+        ancestors = [_host_ancestor(str(p)) for p in (Path(caller),*Path(caller).parents)]
+    else:
+        need(host_closed_admission(admission) is not None)
+        root,caller,ancestors = admission['hierarchyRootIdentity'],admission['callerRelativePath'],admission['ancestors']
+    return {'rootIdentity':root,'callerRelativePath':caller,
+            'ancestorIdentityLimits':[{k:r[k] for k in ('relativePath','identity','maximumBytes')} for r in ancestors]}
+
+
 def host_closed_admission(value):
     try:
         keys = {'schema','profile','kernelPageBytes','hostTotalBytes','hostAvailableBytes',
@@ -499,11 +514,21 @@ def merge(previous, current, sample, phase=None):
 
 if __name__ == '__main__':
     try:
-        need(sys.argv[1:] in (['--host-admission'], ['--host-capacity-probe-only']))
+        need(sys.argv[1:] in (['--host-admission'], ['--host-capacity-probe-only'], ['--host-caller-provenance-only']))
         if sys.argv[1:] == ['--host-capacity-probe-only']:
+            import subprocess
+            before = host_caller_provenance()
+            child = subprocess.run(['/usr/bin/sudo','-n','/usr/bin/python3','-B',str(Path(__file__).absolute()),
+                                    '--host-caller-provenance-only'],stdin=subprocess.DEVNULL,
+                                   stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=15,close_fds=True)
+            need(child.returncode == 0 and 0 < len(child.stdout) <= 32768 and json.loads(child.stdout) == before)
             print(json.dumps({'status':'PASS_READ_ONLY_HOST_CAPACITY_PROBE_NO_ORIGINALS',
                 'hostCapacityAdmission':host_public_admission(host_admission_dynamic()),
+                'privilegedCallerProvenanceMatched':True,
                 'originalDataRead':False,'limitActivated':False,'executionAuthority':False},sort_keys=True))
+        elif sys.argv[1:] == ['--host-caller-provenance-only']:
+            need(os.getuid() == 0)
+            print(json.dumps(host_caller_provenance(),sort_keys=True))
         else:
             print(json.dumps(host_admission(), sort_keys=True))
     except BaseException:

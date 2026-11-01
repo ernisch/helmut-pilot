@@ -1000,6 +1000,8 @@ def supervise(request, private_payload, *, latch=None):
     identity = P.identity(path)
     need(P.R.membership(Path('/proc/self/cgroup').read_text()).startswith('/' + P.names(ctx)[0] + '/'))
     deadline = time.monotonic() + request['maximumWallSeconds']
+    if request['mode'] == HOST_CAPACITY:
+        deadline = min(deadline,ctx['hostCapacityAdmission']['observedMonotonicNS']/1_000_000_000 + request['maximumWallSeconds'])
     last = {'memory': None}
     def guard():
         if time.monotonic() >= deadline:
@@ -1254,6 +1256,17 @@ def _cleanup_launch(ctx, parent, identity, created, process, listener, latch, fa
     return failure
 
 
+def _bind_host_preparation(ctx, prepared, caller_provenance):
+    need(ctx.get('hostCapacityDiagnostic') is True)
+    reply = _decode(prepared.stdout)
+    need(type(reply) is dict and set(reply) == {'status','hostCapacityAdmission'}
+         and reply['status'] == 'PASS_ROOT_BOUND_HOST_CAPACITY_PARENT_ONLY'
+         and P.R.capacity().host_closed_admission(reply['hostCapacityAdmission']) is not None)
+    ctx['hostCapacityAdmission'] = reply['hostCapacityAdmission']
+    need(P.R.capacity().host_caller_provenance(ctx['hostCapacityAdmission']) == caller_provenance)
+    return P.R.capacity().host_public_admission(ctx['hostCapacityAdmission'])
+
+
 def launch(request, private_payload):
     """Explicit entry, no arbitrary command/worker/path selector and no retry."""
     global PHASE
@@ -1269,15 +1282,11 @@ def launch(request, private_payload):
     last, empty_observed = {'memory': None}, False
     try:
         PHASE = 'parent'
+        caller_provenance = P.R.capacity().host_caller_provenance() if request['mode'] == HOST_CAPACITY else None
         host_admission = P.R.capacity().host_admission() if request['mode'] in (CAPACITY, PHASED, END_CAPACITY, FUNCTIONAL) else None
         prepared = P.privileged('prepare', ctx); created = True
         if request['mode'] == HOST_CAPACITY:
-            reply = _decode(prepared.stdout)
-            need(type(reply) is dict and set(reply) == {'status','hostCapacityAdmission'}
-                 and reply['status'] == 'PASS_ROOT_BOUND_HOST_CAPACITY_PARENT_ONLY'
-                 and P.R.capacity().host_closed_admission(reply['hostCapacityAdmission']) is not None)
-            ctx['hostCapacityAdmission'] = reply['hostCapacityAdmission']
-            host_admission = P.R.capacity().host_public_admission(ctx['hostCapacityAdmission'])
+            host_admission = _bind_host_preparation(ctx, prepared, caller_provenance)
         identity = P.identity(P.R.KERNEL_ROOT / P.names(ctx)[0])
         initial = _parent_readback(P, ctx, identity, last, empty=True)
         PHASE = 'service'
@@ -1321,8 +1330,9 @@ def launch(request, private_payload):
                            'COMPLETED_FULL_END500_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == END_CAPACITY else
                            'COMPLETED_FULL_RESTORE_CAPACITY_DIAGNOSTIC_ONLY' if request['mode'] == CAPACITY
                            else 'PASS_FRESH_RUNNER_OWNED_LIFETIME_ONLY'), 'exactCommit': ctx['exactCommit'],
-                **({'hostAdmission': host_admission, 'capacityMeasurement': last['capacity'],
+                **({'capacityMeasurement': last['capacity'],
                     'legacyRestoreAccepted': False} if request['mode'] in (CAPACITY, END_CAPACITY, FUNCTIONAL, HOST_CAPACITY) else {}),
+                **({'hostAdmission':host_admission} if request['mode'] in (CAPACITY, END_CAPACITY, FUNCTIONAL) else {}),
                 **({'functionalContract': _load('functional_contract').CONTRACT, 'nonce': ctx['nonce'],
                     'memoryProfile': _load('functional_contract').END_PROFILE,
                     'functionalSafetyAccepted': True, 'legacyRegularMemoryAccepted': False,

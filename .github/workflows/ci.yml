@@ -891,7 +891,7 @@ jobs:
 
   w15-isolated:
     name: W15 gemeinsamer Runner — getrennt gesperrter Restore und End500
-    if: github.event_name == 'workflow_dispatch' && (inputs.w15_mode == 'end500-restore-synthetic' || inputs.w15_mode == 'end500-restore-gated' || inputs.w15_mode == 'end500-restore-export-diagnostic' || inputs.w15_mode == 'end500-restore-capacity-diagnostic' || inputs.w15_mode == 'end500-full-gated' || inputs.w15_mode == 'end500-full-phased-gated' || inputs.w15_mode == 'end500-full-capacity-diagnostic' || inputs.w15_mode == 'end500-full-functional-gated')
+    if: github.event_name == 'workflow_dispatch' && (inputs.w15_mode == 'end500-restore-synthetic' || inputs.w15_mode == 'end500-restore-gated' || inputs.w15_mode == 'end500-restore-export-diagnostic' || inputs.w15_mode == 'end500-restore-capacity-diagnostic' || inputs.w15_mode == 'end500-full-gated' || inputs.w15_mode == 'end500-full-phased-gated' || inputs.w15_mode == 'end500-full-capacity-diagnostic' || inputs.w15_mode == 'end500-full-host-capacity-diagnostic' || inputs.w15_mode == 'end500-full-functional-gated')
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     environment: helmut-ci-originals
