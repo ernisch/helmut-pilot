@@ -1,28 +1,32 @@
 # CURRENT STATE — Helmut
 
-## W15: erste Mock500-Fehlerphase gesichert, Ursache noch offen (02.11.2026)
+## W15: Erstfehlerkanal repariert, neuer Vollversuch BLOCKED (02.11.2026)
 
-Eigener Branch `codex/w15-mock500-first-failure-checkpoint-20261102` ab71428476:
-nachgestellter Diagnoseverlust behoben. Der Controller erhält die erste feste
-Arbeitsphase auch bei späterem Supervisor-/Gateway-/Abschlussfehler; globale
-Bindungen werden wiederhergestellt. Ausschließlich exakte Controllerfehlertypen
-dürfen die geschlossene Phasenliste über den vorhandenen IPC-/Aktionskanal melden;
-private Fehlermeldungen, Pfade und SQL bleiben gesperrt. Sieben kleine Pythonfälle
-und26 Phasen durch den tatsächlichen Python-/JS-Fehlerkanal PASS; unabhängiger
-Quellreview ohne hohe/offene Befunde. Pflicht-CI/Probenbefund am
-[Draft-PR1017](https://github.com/ernisch/helmut-pilot/pull/1017), kein Merge.
+[Draft-PR1017](https://github.com/ernisch/helmut-pilot/pull/1017),
+`codex/w15-mock500-first-failure-checkpoint-20261102`, exakt1fb2cfe1:
+Der nachgestellte Diagnoseverlust ist behoben. Erste feste Controllerphase und
+unveränderte globale Bindungen bleiben auch nach späteren Supervisor-/Gateway-/
+Abschlussfehlern erhalten; private Meldungen/Pfade/SQL bleiben gesperrt. Sieben
+kleine Pythonfälle und26 Phasen durch den echten Python-/JS-Kanal PASS, unabhängige
+Quell-/Delta-/Kopfprüfung ohne offene Befunde. Pflicht-CI41413462459 mit beiden erforderlichen Checks PASS; Merge-Testbaum
+bytegleich zum unabhängig geprüften Kopf.
 
-Die erste innere Ursache von Run41365567913 bleibt **UNKNOWN**. Eine kleine native
-CI-Gegenprobe untersucht ausschließlich Docker-Kopiereigentum/UID1000-Leserechte
-an einer fiktiven Datei, ohne Datenbank, Originale oder500erLauf. Die lokale Probe
-belegte keinen solchen Fehler. CI41411724415: BrowserPASS, native Probe vor der
-Eigentumsmessung im Kopierabschnitt FAIL/INCONCLUSIVE, vier BereinigungenPASS.
-Eine korrigierte Probe gleicht Arbeitsverzeichnis/Containerbasis dem echten Worker
-an und hält feste Fehlerunterphasen fest. Kein spekulativer Empfangscodefix.
-Das neue bedingte Einmal-GO bleibt unverbraucht: echter Mock500 erst nach belegter,
-geprüfter Ursachenbehebung und vollständiger Startqualifikation. Kein neuer Link,
-Originalempfang, Ausführungsbranchwechsel oder geschützter Job. Historischer FAIL,
-End500-Funktionsbeleg und sämtliche Ressourcen-/Kosten-/Zeitgrenzen unverändert.
+Der Dateieigentümerverdacht wurde durch die korrigierte native CI-Probe nicht
+reproduziert; kontrollierter UID0-Negativfall funktioniert. Die erste Probe
+CI41411724415 bleibt FAIL/INCONCLUSIVE, ihre vier BereinigungenPASS. Ein separater
+kleiner Test des tatsächlichen Mock-Stagings importiert den Server auch ohne
+`vercel.json`; fehlende Cron-Metadaten werden bewusst als null behandelt. Dafür
+kein Empfangs-/Importfix und keine RAM-Optimierung. Belege/Versuchsgrenzen im
+[Ergebnisdokument](betrieb/w15-mock500-first-host-result-20261102.md).
+
+Historische erste innere Ursache von Run41365567913 weiterhin **UNKNOWN**.
+Das neue bedingte Mock-GO bleibt unverbraucht: ohne ausreichenden Ursachenbeleg
+kein frischer Link, Originalempfang, Ausführungsbranchwechsel oder geschützter Job.
+Erforderlich ist ein ausreichender, an diesen Run gebundener Ursachenbeleg oder
+eine neue konkrete Betreiberentscheidung, die diese bisher nicht erfüllte
+Voraussetzung ausdrücklich ändert. Kein Rückgriff auf das verbrauchte alte GO.
+End500-PASS und elf Originale
+übernommen; historische FAILs, Schutzgrenzen und Production-Sperre unverändert.
 
 ## W15: erster dynamischer Mock500-Lauf FAIL (02.11.2026)
 
