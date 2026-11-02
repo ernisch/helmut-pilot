@@ -1,20 +1,20 @@
 # CURRENT STATE — Helmut
 
-## W15: begrenzte Materialdiagnose vorbereitet, Ursache noch UNKNOWN (02.11.2026)
+## W15: Materialdiagnose FAIL; Abschlussanschluss korrigiert (02.11.2026)
 
-Eigener Branch`codex/w15-mock500-materials-diagnostic-20261102` ab6b412097/PR1019.
-Neuer [Vertrag](betrieb/w15-mock500-materials-diagnostic-20261102.md)
-`helmut-w15-mock500-materials-diagnostic/1`: ausdrückliches neues Betreiber-GO nur
-für einen geschützten Materialdiagnosejob, maximal eine Linkrunde. Vorbereitung
-verwendet Empfang/Restore/Materials unverändert; sperrt Controller-prepare/run,
-Fullaudit/Backup. Eigene Nullprüfung umfasst abwesend/vorbereitet/beendet, beendet
-nur eigene isolierte SQL-Sitzungen und belegt Nullaktivität vor Containerstopp.
-Erste Ausnahme begrenzt verschlüsselt erhalten; öffentlich nur feste Kategorien.
-GitHub20min, Worker1080s, Vorbereitung900s; dynamisches Hostlimit mit2,147GB Reserve,
-Swap/OOM/Grenzereignisse0,512MiB Plattenreserve,0,05USD/1Cipherartefakt/1Tag,0Modelle.
-Kleine gezielte Prüfungen/CI/unabhängige Abnahme am neuen Draft-PR. Noch kein neuer
-Link/Originaljob; Ausführungsbranch weiter1fb2cfe1. Bedingtes FullMock-GO ungenutzt,
-erst nach konkret belegter/geprüfter Ursachenbehebung und allen Startbedingungen.
+Branch`codex/w15-mock500-materials-diagnostic-20261102`, DraftPR1020;
+[Vertrag/Belege](betrieb/w15-mock500-materials-diagnostic-20261102.md).
+Diagnose[41455150159](https://github.com/ernisch/helmut-pilot/actions/runs/41455150159)
+auf582ca4e6: **FAIL**,199s,`WORKER_RESULT_REJECTED`, innere Kategorie UNKNOWN.
+1Linkrunde/1Job; GO verbraucht, kein Retry. Ausführungsbranch sicher1fb→582.
+Peak2,584GB/Limit13,374GB; Swap/OOM/Grenzereignisse0; acht äußere BereinigungenPASS.
+1Cipherartefakt13145634042/1Tag; DB-Nullaktivität/Endzähler/Rückleseabschluss UNKNOWN.
+Diagnosefehler klein reproduziert: UID1000-Validator las alten Checkout statt Stage;
+verweigerter Zugriff ergibt dieselbe Meldung. Minimalfix/3TestsGREEN nachRED,
+unabhängigerReviewPASS; historische Materialursache dadurch nicht bewiesen.
+Nötig: gesondert freigegebene Auswertung vorhandener Fehlerkapsel mit bestehenden
+GitHub-Empfängersecrets, ohne Originalempfang/Materiallauf/Profile. BedingtesFullMock-GO
+unverbraucht, bis belegte/geprüfte Materialreparatur gesperrt. Keine RAM-Optimierung.
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
 Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.

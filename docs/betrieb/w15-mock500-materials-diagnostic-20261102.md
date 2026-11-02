@@ -67,3 +67,43 @@ späteren vollständigen Mock500 erlauben. Dessen500 gleichzeitig aktive Profile
 500Einheiten/1.000Mockphasen/1.500Ergebnisse/8.000Kontrollen/17.000Auditprüfungen,
 Sicherung/Rücksicherung, Integrität und finale Nullaktivität bleiben unverändert.
 Production, Merge, Deployment und zusätzliche geschützte Versuche bleiben gesperrt.
+
+## Tatsächlicher Versuch und verbleibende Sperre
+
+[Run41455150159](https://github.com/ernisch/helmut-pilot/actions/runs/41455150159)
+auf582ca4e6, Job125309851388, Versuch1: **FAIL**,199s Joblaufzeit. Genau eine
+Linkrunde und ein Dispatch; Nonce262b03cf-414a-4540-a410-82d11f254e23.
+Unmittelbare Restgültigkeit281,02s, Gesamtparameter61.050Bytes. Das Diagnose-GO
+ist verbraucht. Ausführungsbranch wurde sicher von1fb2cfe1 auf582ca4e6 vorgespult;
+keine automatische Rücksetzung.
+
+Die tatsächliche äußere Quittung meldet `WORKER_RESULT_REJECTED`, Workerexit1.
+Alle acht äußeren Bereinigungen PASS. Kernelpeak2,584GB bei dynamischem
+Hartlimit13,374GB; Swap/OOM/harte Grenzereignisse0. Getrennte zeitliche Maxima:
+Dateianteil1,538GB, anonym973MB, Kernel78MB, Shmem41MB. Nicht addieren; Shmem ist
+im Dateianteil enthalten. Eine RAM-Grenzverletzung ist nicht belegt.
+
+Ein verschlüsseltes Artefakt13145634042 wurde gespeichert,1Tag Aufbewahrung.
+Das beweist allein weder seine authentifizierte Rücklesung noch DB-Nullaktivität
+oder vollständigen Diagnoseabschluss. Die äußere Quittung enthält keine innere
+Fehlerkategorie und keine Endzähler. Diese Werte bleiben UNKNOWN; acht äußere
+Bereinigungen ersetzen keine DB-Nullprüfung. Kein vollständiger Mock500 lief.
+
+Ein zusätzlicher Fehler des Diagnoseanschlusses ist synthetisch bewiesen:
+Der UID1000-Worker lud den abschließenden Materialvalidator erneut aus dem
+ursprünglichen Checkout statt aus dem geprüften Stage. Ein unlesbarer Checkout
+ergibt exakt `WORKER_RESULT_REJECTED` ohne innere Kategorie. Die kleine Korrektur
+verwendet im Worker den bereits hashgebundenen Stage; privilegierte äußere
+Grenzen validieren weiterhin unabhängig. Tatsächliche Dateirechte dieses Runs
+und die ursprüngliche Materialursache werden dadurch nicht nachträglich bewiesen.
+Die Gegenprobe war vor der Korrektur RED, danach sind drei gezielte Fälle GREEN;
+alte synthetische und Host-Worker-Abschlüsse bleiben separat strikt geprüft.
+
+Der geschützte Empfängerzugang besteht in GitHub, nicht in dieser Codex-Umgebung.
+Die vorhandene verschlüsselte Fehlerkapsel muss mit diesem bestehenden Zugang
+ausgewertet werden, um die eigentliche Materialursache zu erfahren. Kein neuer
+Originalempfang, keine Profilaktivierung und keine Wiederholung der Materialphase
+sind dafür erforderlich. Ein weiterer geschützter Job ist von dem verbrauchten
+Diagnose-GO nicht umfasst und benötigt eine gesonderte eng begrenzte Freigabe.
+Das bedingte vollständige Mock500-GO bleibt ungenutzt und gesperrt, solange die
+ursprüngliche Materialursache nicht konkret belegt, behoben und geprüft ist.

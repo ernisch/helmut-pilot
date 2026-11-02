@@ -146,9 +146,14 @@ def github_binding(request):
         need(hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest().encode() == digest)
 
 
-def validate_public_result(result, manifest, *, host_contract=None, host_capacity_budget=None):
+def validate_public_result(result, manifest, *, host_contract=None, host_capacity_budget=None,
+                           materials_contract=None):
     if manifest['mode'] == MATERIALS:
-        return S._load('mock500_materials_contract').validate_result(result,manifest)
+        # UID1000 may not traverse the original checkout. The fixed worker
+        # supplies the same pinned validator from its already verified stage;
+        # privileged readbacks still load and independently validate it here.
+        contract = S._load('mock500_materials_contract') if materials_contract is None else materials_contract
+        return contract.validate_result(result,manifest)
     phased = manifest['mode'] == PHASED
     hosted=manifest['mode'] in (HOST_FUNCTIONAL,MATERIALS)
     new_functional=manifest['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL)
@@ -254,8 +259,10 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
                 backup_transition=S._worker_backup_transition(sender, manifest, 'mock500'))
         else:
             result = module.run_worker(manifest, private_payload)
-        staged_contract=module.component('mock500_host_contract') if manifest['mode'] in (HOST_FUNCTIONAL,MATERIALS) else None
-        result = validate_public_result(result, manifest, host_contract=staged_contract)
+        staged_contract=module.component('mock500_host_contract') if manifest['mode'] == HOST_FUNCTIONAL else None
+        staged_materials=module.component('mock500_materials_contract') if manifest['mode'] == MATERIALS else None
+        result = validate_public_result(result, manifest, host_contract=staged_contract,
+            materials_contract=staged_materials)
         need(not latch.seen)
     except BaseException as error:
         failure = S._worker_failure(error, reason, error_type=MockRunnerError)
