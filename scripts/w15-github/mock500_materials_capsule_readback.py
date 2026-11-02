@@ -17,9 +17,7 @@ from pathlib import Path
 import re
 import resource
 import select
-import socket
 import stat
-import struct
 import subprocess
 import tarfile
 import uuid
@@ -198,33 +196,30 @@ def decrypt(cipher, root, home, key, secret):
 
 
 def stop_agent(home):
-    # A daemon may inherit a socket created before fork: SO_PEERCRED's PID then
-    # names its creator, not the serving agent. Use the fixed Assuan PID query;
-    # keep peer-UID ownership and the exact pidfd exit proof.
+    # SO_PEERCRED can identify a pre-fork socket creator. The existing official
+    # client already resolved this home's serving agent successfully in CI.
+    # Never autostart; bind the actual PID before scoped kill and require exit.
     pidfd = None
     try:
-        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as channel:
-            channel.settimeout(5); channel.connect(str(home / 'S.gpg-agent'))
-            _, uid, _ = struct.unpack('3i', channel.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
-            need(uid == os.getuid(), 'agent-close')
-            with channel.makefile('rb') as stream:
-                def line():
-                    raw = stream.readline(1025)
-                    need(0 < len(raw) <= 1024 and raw.endswith(b'\n'), 'agent-close')
-                    return raw.rstrip(b'\r\n')
-                def okay(raw): return raw == b'OK' or raw.startswith(b'OK ')
-                need(okay(line()), 'agent-close')
-                channel.sendall(b'GETINFO pid\n')
-                result = re.fullmatch(rb'D ([1-9][0-9]{0,9})', line())
-                need(result is not None and okay(line()), 'agent-close')
-                pid = int(result[1]); need(1 < pid < 2**31, 'agent-close')
+        try:
+            observed = subprocess.run(['/usr/bin/gpg-connect-agent', '--homedir', str(home),
+                '--no-autostart', 'GETINFO pid', '/bye'], stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=V.ENV,
+                timeout=5, close_fds=True)
+            raw = observed.stdout
+            need(observed.returncode == 0 and type(raw) is bytes and 0 < len(raw) <= 64,
+                 'agent-close')
+            result = re.fullmatch(rb'D ([1-9][0-9]{0,9})\nOK\n', raw)
+            need(result is not None, 'agent-close')
+            pid = int(result[1]); need(1 < pid < 2**31, 'agent-close')
             pidfd = os.pidfd_open(pid)
-    except (OSError, CapsuleError):
-        # Still request this home's existing close; absence of PID proof is
-        # UNKNOWN and can never produce a successful stop observation.
-        load('encrypted_index')._close_agent(home)
-        raise CapsuleError('agent-close') from None
-    try:
+            owner = os.stat('/proc/' + str(pid), follow_symlinks=False)
+            need(stat.S_ISDIR(owner.st_mode) and owner.st_uid == os.getuid(), 'agent-close')
+        except (OSError, subprocess.SubprocessError, CapsuleError):
+            # Request only this home's existing close, but never claim an
+            # observed stop without a positively identified agent and pidfd.
+            load('encrypted_index')._close_agent(home)
+            raise CapsuleError('agent-close') from None
         load('encrypted_index')._close_agent(home)
         poll = select.poll(); poll.register(pidfd, select.POLLIN)
         need(any(fd == pidfd and events & select.POLLIN for fd, events in poll.poll(5000)), 'agent-close')

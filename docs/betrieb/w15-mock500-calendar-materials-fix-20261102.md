@@ -64,13 +64,21 @@ dann dessen Erzeuger-PID statt der PID des tatsächlich bedienenden Agenten. Der
 alte Stoppbeleg schlug deshalb fehl, obwohl der unabhängig beobachtete leere
 Agent nach dem vorhandenen gezielten GPG-Stopp tatsächlich beendet war.
 
-Der kleine Fix fragt auf demselben privaten eigenen Socket begrenzt `GETINFO pid`
-ab. Die Peer-UID-Prüfung, bestehender homedirgebundener GPG-Stopp und tatsächlicher
-pidfd-Exitnachweis bleiben erhalten. Ungültiges Protokoll, fehlender PID-Beleg oder
-ein reines POLLNVAL-Ereignis erzeugen weiterhin keinen PASS. Drei gezielte Fälle
-einschließlich eines realen leeren Agenten bestanden. Keine Schlüssel wurden
-erzeugt oder importiert, keine Kapsel erneut gelesen und kein geschützter Job
-für diese Entwicklung gestartet.
+Der Fix verwendet den vorhandenen offiziellen GPG-Client mit exakt diesem Home,
+`--no-autostart`, `GETINFO pid` und `/bye`. Die geschlossene PID-Antwort ist begrenzt;
+ein pidfd wird vor dem Eigentumsbeleg und dem vorhandenen homedirgebundenen GPG-
+Stopp geöffnet. Nur dessen tatsächliches Exitereignis erlaubt den Stoppbeleg.
+Ungültiges Protokoll, fremde UID, fehlender PID-Beleg oder POLLNVAL ergeben keinen
+PASS. Deskriptoren werden auch bei gescheiterter Eigentumsprüfung geschlossen.
+
+Pflicht-CI41489867997 aufe7b89b2b blieb FAIL: Die native leere Agentprobe konnte den
+offiziellen Client erfolgreich verwenden, die anschließende manuelle Socket-
+Beobachtung scheiterte vor dem Stopp. Die genaue innere Socketursache ist nicht
+belegt. Der Fix nutzt deshalb denselben in dieser CI bereits erfolgreichen Client
+statt einer weiteren manuellen Socketannahme. Vier gezielte Agentfälle einschließlich
+eines tatsächlichen leeren Agenten bestanden lokal; neue Pflicht-CI steht aus.
+Keine Schlüssel wurden erzeugt oder importiert, keine Kapsel erneut gelesen und
+kein geschützter Job für diese Entwicklung gestartet.
 
 ## Freigabegrenze
 

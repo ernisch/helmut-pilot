@@ -15,8 +15,8 @@ import os
 from pathlib import Path
 import re
 import select
+import stat
 import shutil
-import struct
 import subprocess
 import tarfile
 import tempfile
@@ -186,38 +186,46 @@ class CapsuleReadbackChecks(unittest.TestCase):
 
 
 class AgentCloseChecks(unittest.TestCase):
-    def fixture(self, response=b'OK empty-agent\nD 4321\nOK\n', events=None):
-        channel = Mock()
-        channel.__enter__ = Mock(return_value=channel)
-        channel.__exit__ = Mock(return_value=False)
-        channel.getsockopt.return_value = struct.pack('3i', 12345, os.getuid(), os.getgid())
-        channel.makefile.return_value = io.BytesIO(response)
+    def fixture(self, response=b'D 4321\nOK\n', events=None):
         close = Mock(); poll = Mock()
         poll.poll.return_value = [(55, select.POLLIN)] if events is None else events
-        tasks = [patch.object(M.socket, 'socket', return_value=channel),
-            patch.object(M.os, 'pidfd_open', return_value=55), patch.object(M.os, 'close'),
-            patch.object(M.select, 'poll', return_value=poll),
+        tasks = [patch.object(M.os, 'pidfd_open', return_value=55), patch.object(M.os, 'close'),
+            patch.object(M.os, 'stat', return_value=SimpleNamespace(st_mode=stat.S_IFDIR,
+                st_uid=os.getuid())), patch.object(M.select, 'poll', return_value=poll),
+            patch.object(M.subprocess, 'run', return_value=SimpleNamespace(returncode=0, stdout=response)),
             patch.object(M, 'load', return_value=SimpleNamespace(_close_agent=close))]
         for task in tasks: task.start(); self.addCleanup(task.stop)
-        return channel, close, poll
+        return close, poll
 
-    def test_protocol_pid_is_used_instead_of_pre_fork_socket_creator(self):
-        channel, close, poll = self.fixture()
+    def test_official_client_pid_is_bound_without_autostart_before_scoped_stop(self):
+        close, poll = self.fixture()
         home = Path('/FICTIONAL_PRIVATE_AGENT_HOME')
+        def stop(_):
+            M.os.pidfd_open.assert_called_once_with(4321)
+            M.os.stat.assert_called_once_with('/proc/4321', follow_symlinks=False)
+        close.side_effect = stop
         M.stop_agent(home)
-        M.os.pidfd_open.assert_called_once_with(4321)
-        channel.sendall.assert_called_once_with(b'GETINFO pid\n')
+        self.assertEqual(M.subprocess.run.call_args.args[0], ['/usr/bin/gpg-connect-agent',
+            '--homedir', str(home), '--no-autostart', 'GETINFO pid', '/bye'])
+        self.assertEqual(M.subprocess.run.call_args.kwargs['timeout'], 5)
         close.assert_called_once_with(home)
         poll.register.assert_called_once_with(55, select.POLLIN)
         M.os.close.assert_called_once_with(55)
 
+    def test_unowned_pid_is_closed_but_never_accepted(self):
+        close, poll = self.fixture()
+        M.os.stat.return_value.st_uid = os.getuid() + 1
+        home = Path('/FICTIONAL_PRIVATE_AGENT_HOME')
+        with self.assertRaises(M.CapsuleError): M.stop_agent(home)
+        close.assert_called_once_with(home)
+        poll.register.assert_not_called(); M.os.close.assert_called_once_with(55)
+
     def test_bad_protocol_or_missing_exit_proof_never_claims_agent_stop(self):
-        channel, close, poll = self.fixture(response=b'OK empty-agent\nD private-invalid-pid\nOK\n')
+        close, poll = self.fixture(response=b'D private-invalid-pid\nOK\n')
         home = Path('/FICTIONAL_PRIVATE_AGENT_HOME')
         with self.assertRaises(M.CapsuleError): M.stop_agent(home)
         close.assert_called_once_with(home); M.os.pidfd_open.assert_not_called()
-        # Now a valid PID but only an invalid descriptor event: not an exit.
-        channel.makefile.return_value = io.BytesIO(b'OK empty-agent\nD 4321\nOK\n')
+        M.subprocess.run.return_value.stdout = b'D 4321\nOK\n'
         close.reset_mock(); poll.poll.return_value = [(55, select.POLLNVAL)]
         with self.assertRaises(M.CapsuleError): M.stop_agent(home)
         close.assert_called_once_with(home); M.os.close.assert_called_once_with(55)

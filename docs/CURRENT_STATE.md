@@ -1,20 +1,20 @@
 # CURRENT STATE — Helmut
 
-## W15: Materialursache gefunden; Korrektur vor neuem FullMock (02.11.2026)
+## W15: Materialursache behoben; FullMock vor Startprüfung (02.11.2026)
 
 [Beleg/Minimalfix](betrieb/w15-mock500-calendar-materials-fix-20261102.md).
-Kapsellesung41486209469/61d7b5c9: **FAIL**,12s,phaseagent-close. GO1/Nonce4450ad83
-verbraucht;Branch sicher582→61. Cipher/GPG/Archiv- und
-Memberhashprüfung durch tatsächliche geschlossene Projektion bestätigt; Materialfehler
+Kapsellesung41486209469/61d7b5c9: **FAIL**,12s,agent-close;GO/Nonce4450ad83verbraucht.
+Branch sicher582→61. Geschlossene Projektion nach GPG-/Archiv-/Dateihashprüfung:
 MATERIALS_BINDING_CHECK_123/assertion/calendar. Bereinigtes Materials liefertProvider
-none,erreichter echter Fixturekonstruktor verlangtazure. Kleinstfixnur lokalerMockkontext
-umKonstruktor,try/finally;echteKonstruktor-GegenprobeRED→GREEN,Outputs/Originaleunverändert.
-ZusätzlicherAgentbelegfehlermitLEEREMGPGdaemonbewiesen:SocketCreatorPIDistnichtAgentPID.
-GETINFOpid+UID/scopedKill/pidfdExitgezieltkorrigiert;3kleineFällePASS,keineKeys/Originale.
-HistorischerAgentstopp414862 bleibtUNKNOWN,keineFAIL-Umwertung. KeinReadRetry.
-Kapsel05/Lesung06privaterhalten. NeuerFixkopfbrauchtCI/Review;
-bedingtesFullMock-GO1weiterunverbraucht,nurdanachmitfrischenexaktenBindungen/Nonceundallen
-Startbedingungen.TatsächlicheFull-Zähler/SicherungnochUNKNOWN.KeineRAM-Änderung/Production.
+none,echterKonstruktor verlangtazure. Fix nur lokalerMockkontext mittry/finally;
+KonstruktorprobeRED→GREEN,Outputs/Originaleunverändert.
+Separat SocketCreatorPID≠AgentPID amLEERENAgentbelegt. CI41489867997/e7FAIL:
+offiziellerGPG-Client erfolgreich,manuelleSocketbeobachtung fehlgeschlagen.
+Fix nutzt offiziellenClient ohneAutostart,UID/scopedKill/pidfdExit;
+4gezielteAgentfällePASS,neuePflichtCI/Reviewoffen. HistorischerAgentstoppUNKNOWN,
+keineFAIL-Umwertung/ReadRetry. Belege05/06privaterhalten. BedingtesFullMock-GO1
+unverbraucht,nurmitfrischenexaktenBindungen/NonceundallenStartbedingungen.
+Full-Zähler/SicherungUNKNOWN. KeineRAM-Änderung/Production.
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
 Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.
