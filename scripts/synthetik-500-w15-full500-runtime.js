@@ -50,8 +50,17 @@ function memoryAccepted(m, bound = BOUND) {
     && m.swapCurrentBytes === 0 && m.reserveMeetsContract
     && ["oom", "oom_kill", "oom_group_kill", "max"].every(k => m.events[k] === 0);
 }
-function ownerGo() {
+function ownerGo({ materialsDiagnostic = false } = {}) {
   const go = read("OWNER_GO.PRIVATE.json");
+  if (BOUND?.materialsDiagnosticOnly === true) {
+    assert.equal(materialsDiagnostic, true, "w15-materials-diagnostic-runtime-action");
+    assert.equal(BOUND.functionalResourceContract?.mode, "mock500-materials-diagnostic-gated");
+    assert.equal(go.confirmation, "GO_ONE_ISOLATED_MATERIALS_DIAGNOSTIC_AND_RETURN_TO_ZERO");
+    assert.equal(go.targetDatabase, DB); assert.equal(go.maximumUnits, 0);
+    assert.equal(go.temporarySyntheticProfiles, 500); assert.equal(go.paidModelsAllowed, false);
+    assert.equal(go.productionAllowed, false); assert.equal(go.full500Allowed, false);
+    return go;
+  }
   assert.equal(go.confirmation, ATOMIC_PREPARED0 ? TARGET.scope : CONFIRMATION); assert.equal(go.targetDatabase, DB);
   assert.equal(go.maximumUnits, ATOMIC_PREPARED0 ? 0 : 500); assert.equal(go.temporarySyntheticProfiles, ATOMIC_PREPARED0 ? 0 : 500);
   assert.equal(go.paidModelsAllowed, false); assert.equal(go.productionAllowed, false); assert.equal(go.full500Allowed, !ATOMIC_PREPARED0);
@@ -188,7 +197,7 @@ function observeAuth(S, { currentIndex = () => null, onFinalACK = () => {}, expe
     assessment: () => authCoverageAssessment({ mutations, usageSinks, casWrites, expectedAuthRowId }) };
 }
 async function setup() {
-  ownerGo(); const metadata = read("setup-input.PRIVATE.json"); assert.match(metadata.commit, /^[a-f0-9]{40}$/);
+  ownerGo({ materialsDiagnostic: true }); const metadata = read("setup-input.PRIVATE.json"); assert.match(metadata.commit, /^[a-f0-9]{40}$/);
   const EU = require("../lib/helmut/synthetik-500-eu-service-contract"), key = crypto.generateKeyPairSync("ed25519");
   const secret = crypto.randomBytes(48).toString("hex"), now = Math.floor(Date.now() / 1000), b64 = x => Buffer.from(JSON.stringify(x)).toString("base64url");
   const unsigned = b64({ alg: "HS256", typ: "JWT" }) + "." + b64({ role: "service_role", iat: now, exp: now + 14400 });
@@ -577,6 +586,8 @@ async function run() {
   }
 }
 async function main(action) {
+  if (BOUND?.materialsDiagnosticOnly === true)
+    assert(["setup", "gateway"].includes(action), "w15-materials-diagnostic-runtime-action");
   assert(["setup", "gateway", "prepare", "run", "atomic-check"].includes(action), "w15-full500-runtime-action"); guard();
   assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")), "w15-full500-stop-requested");
   return ({ setup, gateway, prepare, run, "atomic-check": atomicPrepared0Check })[action]();
