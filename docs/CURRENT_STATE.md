@@ -9,12 +9,16 @@ Bindungen werden wiederhergestellt. Ausschließlich exakte Controllerfehlertypen
 dürfen die geschlossene Phasenliste über den vorhandenen IPC-/Aktionskanal melden;
 private Fehlermeldungen, Pfade und SQL bleiben gesperrt. Sieben kleine Pythonfälle
 und26 Phasen durch den tatsächlichen Python-/JS-Fehlerkanal PASS; unabhängiger
-Quellreview ohne hohe/offene Befunde. Pflicht-CI am veröffentlichten Kopf ausstehend.
+Quellreview ohne hohe/offene Befunde. Pflicht-CI/Probenbefund am
+[Draft-PR1017](https://github.com/ernisch/helmut-pilot/pull/1017), kein Merge.
 
 Die erste innere Ursache von Run41365567913 bleibt **UNKNOWN**. Eine kleine native
 CI-Gegenprobe untersucht ausschließlich Docker-Kopiereigentum/UID1000-Leserechte
 an einer fiktiven Datei, ohne Datenbank, Originale oder500erLauf. Die lokale Probe
-belegte keinen solchen Fehler; keine spekulative Änderung des Empfangscodes.
+belegte keinen solchen Fehler. CI41411724415: BrowserPASS, native Probe vor der
+Eigentumsmessung im Kopierabschnitt FAIL/INCONCLUSIVE, vier BereinigungenPASS.
+Eine korrigierte Probe gleicht Arbeitsverzeichnis/Containerbasis dem echten Worker
+an und hält feste Fehlerunterphasen fest. Kein spekulativer Empfangscodefix.
 Das neue bedingte Einmal-GO bleibt unverbraucht: echter Mock500 erst nach belegter,
 geprüfter Ursachenbehebung und vollständiger Startqualifikation. Kein neuer Link,
 Originalempfang, Ausführungsbranchwechsel oder geschützter Job. Historischer FAIL,

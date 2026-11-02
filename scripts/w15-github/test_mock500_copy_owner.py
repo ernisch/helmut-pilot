@@ -9,6 +9,7 @@ sys.dont_write_bytecode = True
 
 import argparse
 import ast
+import errno
 import hashlib
 import importlib.util
 import io
@@ -44,8 +45,14 @@ SHA = re.compile('[a-f0-9]{40}')
 ID = re.compile('[a-f0-9]{64}')
 LABEL = 'helmut.w15.synthetic-copy-owner'
 CATEGORIES = {'ACCEPTED', 'ACCESS_DENIED', 'ASSERTION_REJECTED', 'OTHER_REJECTION'}
-PHASES = {'binding', 'service-image', 'fixture', 'container', 'copy', 'default-reader',
+PHASES = {'binding', 'service-image', 'fixture', 'container', 'controller-import', 'copy', 'default-reader',
           'counter-reader', 'closure'}
+COPY_PHASES = {'uid-binding', 'original-cwd', 'fixture-cwd', 'copy-command', 'child-wait'}
+ERROR_CLASSES = {'NONE', 'PermissionError', 'FileNotFoundError', 'TimeoutExpired',
+                 'CommandFailure', 'RuntimeError', 'Other'}
+ERRNOS = {'NONE', 'EACCES', 'EPERM', 'ENOENT', 'UNKNOWN'}
+COMMAND_RESULTS = {'NO_RESULT', 'ACCEPTED', 'READ_ONLY_FILESYSTEM', 'ACCESS_DENIED',
+                   'ENTRY_MISSING', 'OTHER_REJECTION', 'TIMEOUT'}
 
 
 def need(value):
@@ -95,11 +102,64 @@ def provenance(security):
             'NO_USER_NAMESPACE_OPTION_REPORTED')
 
 
+def closed_error(error):
+    """No class names, exception arguments or messages from arbitrary errors."""
+    kind = ('PermissionError' if isinstance(error, PermissionError) else
+            'FileNotFoundError' if isinstance(error, FileNotFoundError) else
+            'TimeoutExpired' if isinstance(error, subprocess.TimeoutExpired) else
+            'RuntimeError' if type(error) is RuntimeError else 'Other')
+    number = error.errno if isinstance(error, OSError) else None
+    return kind, {errno.EACCES: 'EACCES', errno.EPERM: 'EPERM', errno.ENOENT: 'ENOENT'}.get(number, 'UNKNOWN')
+
+
+def command_stderr(raw):
+    """Classify a bounded prefix only; never retain or emit native error text."""
+    if type(raw) is not bytes:
+        return 'OTHER_REJECTION'
+    value = raw[:8192].lower()
+    if b'read-only' in value and any(part in value for part in (b'file system', b'filesystem', b'rootfs', b'container')):
+        return 'READ_ONLY_FILESYSTEM'
+    if b'permission denied' in value or b'access is denied' in value:
+        return 'ACCESS_DENIED'
+    if b'no such file or directory' in value or b'could not find the file' in value:
+        return 'ENTRY_MISSING'
+    return 'OTHER_REJECTION'
+
+
+def copy_report(raw):
+    need(type(raw) is bytes and 0 < len(raw) <= 1024)
+    value = json.loads(raw)
+    need(type(value) is dict and set(value) == {'status', 'phase', 'errorClass', 'errno', 'originalCwd', 'originalCwdErrno',
+         'fixtureCwd', 'uid', 'gid', 'copyCommandInvoked', 'commandResult', 'commandReturncode'}
+         and value['status'] in ('PASS', 'FAIL') and value['phase'] in COPY_PHASES
+         and value['errorClass'] in ERROR_CLASSES and value['errno'] in ERRNOS and value['originalCwdErrno'] in ERRNOS
+         and value['commandResult'] in COMMAND_RESULTS
+         and (type(value['commandReturncode']) is int and -255 <= value['commandReturncode'] <= 255
+              or value['commandReturncode'] == 'UNKNOWN')
+         and all(value[key] in ('PASS', 'ACCESS_DENIED', 'MISSING', 'UNKNOWN') for key in ('originalCwd', 'fixtureCwd'))
+         and all(type(value[key]) is int and 0 <= value[key] < 2**32 or value[key] == 'UNKNOWN' for key in ('uid', 'gid'))
+         and (type(value['copyCommandInvoked']) is bool or value['copyCommandInvoked'] == 'UNKNOWN'))
+    need(value['status'] != 'PASS' or (value['phase'] == 'copy-command' and value['uid'] == value['gid'] == 1000
+         and value['fixtureCwd'] == 'PASS' and value['copyCommandInvoked'] is True
+         and value['errorClass'] == value['errno'] == 'NONE'
+         and value['commandResult'] == 'ACCEPTED' and value['commandReturncode'] == 0))
+    return value
+
+
 def copy_as_worker(controller, source, container, deadline):
-    """Actual controller.copy_in under the worker's numeric IDs/socket group."""
+    """The exact copy function, with a UID-owned test cwd; source stays untouched."""
     socket_gid = os.stat('/var/run/docker.sock').st_gid
-    pid = os.fork()
+    receiver, sender = os.pipe()
+    try:
+        pid = os.fork()
+    except BaseException:
+        os.close(receiver); os.close(sender)
+        raise
     if pid == 0:
+        os.close(receiver)
+        report = {'status': 'FAIL', 'phase': 'uid-binding', 'errorClass': 'Other', 'errno': 'UNKNOWN',
+                  'originalCwd': 'UNKNOWN', 'originalCwdErrno': 'UNKNOWN', 'fixtureCwd': 'UNKNOWN', 'uid': 'UNKNOWN', 'gid': 'UNKNOWN',
+                  'copyCommandInvoked': False, 'commandResult': 'NO_RESULT', 'commandReturncode': 'UNKNOWN'}
         try:
             os.setsid()
             fd = os.open('/dev/null', os.O_RDWR)
@@ -108,29 +168,79 @@ def copy_as_worker(controller, source, container, deadline):
             if fd > 2:
                 os.close(fd)
             os.setgroups([socket_gid]); os.setgid(1000); os.setuid(1000)
+            report.update(uid=os.getuid(), gid=os.getgid())
             need(os.getuid() == os.getgid() == 1000 and os.getgroups() == [socket_gid])
+            report['phase'] = 'original-cwd'
+            try:
+                os.chdir(controller.ROOT)
+                report.update(originalCwd='PASS', originalCwdErrno='NONE')
+            except PermissionError as error:
+                report.update(originalCwd='ACCESS_DENIED', originalCwdErrno=closed_error(error)[1])
+            except FileNotFoundError:
+                report.update(originalCwd='MISSING', originalCwdErrno='ENOENT')
+            # Only the already imported test child changes this cwd selector.
+            # The real worker has its own UID1000 staged repository. The CI
+            # source checkout can have a different owner or ancestor access.
+            report['phase'] = 'fixture-cwd'
+            controller.ROOT = source.parent
+            os.chdir(controller.ROOT)
+            report['fixtureCwd'] = 'PASS'
             controller.CONTAINER = container
+            original_run = controller.subprocess.run
+            def observe_run(*argv, **kwargs):
+                try:
+                    completed = original_run(*argv, **kwargs)
+                except subprocess.TimeoutExpired:
+                    report['commandResult'] = 'TIMEOUT'
+                    raise
+                code = completed.returncode
+                if type(code) is int and -255 <= code <= 255:
+                    report['commandReturncode'] = code
+                report['commandResult'] = 'ACCEPTED' if code == 0 else command_stderr(completed.stderr)
+                return completed
+            # Observe the genuine call's result without changing its arguments,
+            # environment, cwd, return value or exception behavior. Child only.
+            controller.subprocess = SimpleNamespace(run=observe_run, PIPE=subprocess.PIPE,
+                                                    TimeoutExpired=subprocess.TimeoutExpired)
+            report.update(phase='copy-command', copyCommandInvoked=True)
             controller.copy_in(source, TARGET)
-            os._exit(0)
-        except BaseException:
-            os._exit(1)
+            report.update(status='PASS', errorClass='NONE', errno='NONE')
+        except BaseException as error:
+            kind, number = closed_error(error)
+            if type(error) is controller.CommandFailure:
+                kind = 'CommandFailure'
+            report.update(errorClass=kind, errno=number)
+        finally:
+            try:
+                os.write(sender, canonical(report))
+            except BaseException:
+                report['status'] = 'FAIL'
+            os.close(sender)
+        os._exit(0 if report['status'] == 'PASS' else 1)
+    os.close(sender)
     ended, end = False, min(deadline, time.monotonic() + 10)
     try:
         while time.monotonic() < end:
             child, status = os.waitpid(pid, os.WNOHANG)
             if child:
                 ended = True
-                need(os.waitstatus_to_exitcode(status) == 0)
-                return
+                report = copy_report(os.read(receiver, 1025))
+                report['childExitCode'] = os.waitstatus_to_exitcode(status)
+                need(report['childExitCode'] == (0 if report['status'] == 'PASS' else 1))
+                return report
             time.sleep(.02)
-        need(False)
+        raise subprocess.TimeoutExpired('FIXED_COPY_CHILD_WAIT', 10)
     finally:
         if not ended:
             try:
                 os.killpg(pid, signal.SIGKILL)
             except ProcessLookupError:
-                pass
+                try:
+                    os.kill(pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
             os.waitpid(pid, 0)
+        os.close(receiver)
 
 
 def native(args):
@@ -251,7 +361,7 @@ def native(args):
         phase = 'container'
         create_attempted = True
         p = docker('create', '--name', 'w15-copy-owner-' + token, '--pull=never', '--network=none',
-                   '--memory=134217728', '--memory-swap=134217728', '--pids-limit=16', '--read-only',
+                   '--memory=134217728', '--memory-swap=134217728', '--pids-limit=16',
                    '--label', LABEL + '=' + token,
                    '--tmpfs', '/var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=65536',
                    '--mount', 'type=bind,src=' + str(state) + ',dst=' + BASE + '/state',
@@ -262,17 +372,24 @@ def native(args):
         info = owned(); result['cleanup']['scopeVerified'] = 'PASS'
         need(info['HostConfig']['NetworkMode'] == 'none' and info['HostConfig']['Memory'] == 134217728
              and info['HostConfig']['MemorySwap'] == 134217728 and info['Config']['Entrypoint'] == ['/bin/sleep']
-             and info['Config']['Cmd'] == ['60'])
+             and info['Config']['Cmd'] == ['60'] and info['HostConfig']['ReadonlyRootfs'] is False)
+        result['containerReadonlyRootfs'] = False
         user = info['Config']['User']
         result['containerConfigUser'] = 'ROOT_DEFAULT' if user == '' else 'EXPLICIT_ROOT' if user in ('0', '0:0', 'root') else 'OTHER'
         result['containerUserNamespaceMode'] = 'DEFAULT' if info['HostConfig']['UsernsMode'] == '' else 'HOST' if info['HostConfig']['UsernsMode'] == 'host' else 'OTHER'
         docker('start', container)
         result['nativeRootUIDMap'] = uid_map(docker('exec', container, 'cat', '/proc/self/uid_map').stdout)
         result['nativeReaderUIDMap'] = uid_map(docker('exec', '--user', '1000:1000', container, 'cat', '/proc/self/uid_map').stdout)
-        phase = 'copy'
+        phase = 'controller-import'
         spec = importlib.util.spec_from_file_location('w15_synthetic_copy_owner_controller', REPO / CONTROLLER)
         controller = importlib.util.module_from_spec(spec); sys.modules[spec.name] = controller; spec.loader.exec_module(controller)
-        copy_as_worker(controller, source, container, deadline)
+        result['controllerImport'] = 'PASS'
+        phase = 'copy'; original_root = controller.ROOT
+        result['copyWorkingDirectory'] = 'OWN_SYNTHETIC_WORK_TEST_ONLY'
+        result['copyWorker'] = copy_as_worker(controller, source, container, deadline)
+        need(controller.ROOT == original_root)
+        result['parentControllerRootUnchanged'] = True
+        need(result['copyWorker']['status'] == 'PASS')
         source_stat, target_stat = source.stat(), (state / source.name).stat()
         need(source_stat.st_uid == source_stat.st_gid == 1000 and source_stat.st_mode & 0o777 == 0o600
              and source_stat.st_nlink == 1
@@ -294,8 +411,10 @@ def native(args):
                             'FAIL_SYNTHETIC_DEFAULT_COPY_OWNER_REPRODUCED' if result['finding'] ==
                             'DEFAULT_OWNER_ACCESS_DENIED_COUNTER_CORRECTED' else 'FAIL_OR_UNKNOWN')
         phase = 'closure'; source_bound()
-    except BaseException:
+    except BaseException as error:
         result['firstFailurePhase'] = phase if phase in PHASES else 'binding'
+        kind, number = closed_error(error)
+        result['errorClass'], result['errno'] = kind, number
     finally:
         if create_attempted and container is None:
             # A timed-out create may have succeeded before its response was lost.
@@ -375,6 +494,46 @@ class CopyOwnerPureChecks(unittest.TestCase):
         self.assertEqual(value['firstFailurePhase'], 'binding')
         self.assertEqual(value['newContainers'], 0)
         self.assertNotIn('FICTIONAL_PRIVATE', out.getvalue())
+
+    def test_actual_controller_call_requires_searchable_cwd_without_docker(self):
+        if os.getuid() == 0:
+            self.skipTest('Root bypasses the unprivileged directory search check')
+        spec = importlib.util.spec_from_file_location('w15_copy_cwd_fixture_controller', REPO / CONTROLLER)
+        controller = importlib.util.module_from_spec(spec); spec.loader.exec_module(controller)
+        with tempfile.TemporaryDirectory(prefix='w15-copy-cwd-only-') as temporary:
+            owned = Path(temporary); denied = owned / 'denied'; denied.mkdir(mode=0o700)
+            before = controller.ROOT
+            try:
+                denied.chmod(0)
+                controller.ROOT = denied
+                with self.assertRaises(PermissionError) as caught:
+                    controller.call(['/usr/bin/true'], timeout=2)
+                self.assertEqual(closed_error(caught.exception), ('PermissionError', 'EACCES'))
+                controller.ROOT = owned
+                self.assertEqual(controller.call(['/usr/bin/true'], timeout=2), b'')
+            finally:
+                controller.ROOT = before; denied.chmod(0o700)
+
+    def test_copy_error_and_worker_channel_are_closed(self):
+        error = PermissionError(errno.EACCES, 'FICTIONAL_PRIVATE', '/FICTIONAL_PRIVATE')
+        self.assertEqual(closed_error(error), ('PermissionError', 'EACCES'))
+        report = dict(status='FAIL', phase='copy-command', errorClass='PermissionError', errno='EACCES',
+                      originalCwd='ACCESS_DENIED', originalCwdErrno='EACCES', fixtureCwd='PASS',
+                      uid=1000, gid=1000, copyCommandInvoked=True, commandResult='NO_RESULT', commandReturncode='UNKNOWN')
+        self.assertEqual(copy_report(canonical(report)), report)
+        for changed in ({**report, 'private': 'FICTIONAL_PRIVATE'}, {**report, 'errorClass': 'FICTIONAL_PRIVATE'},
+                        {**report, 'phase': 'FICTIONAL_PRIVATE'}, {**report, 'errno': 'FICTIONAL_PRIVATE'}):
+            with self.subTest(value=changed), self.assertRaises(RuntimeError):
+                copy_report(canonical(changed))
+        self.assertNotIn('FICTIONAL_PRIVATE', canonical(report).decode())
+
+    def test_native_stderr_is_only_a_fixed_classification(self):
+        for raw, expected in ((b'rootfs is marked read-only', 'READ_ONLY_FILESYSTEM'),
+                              (b'Permission denied: FICTIONAL_PRIVATE', 'ACCESS_DENIED'),
+                              (b'No such file or directory: FICTIONAL_PRIVATE', 'ENTRY_MISSING'),
+                              (b'FICTIONAL_PRIVATE', 'OTHER_REJECTION')):
+            with self.subTest(expected=expected):
+                self.assertEqual(command_stderr(raw), expected)
 
 
 def main():
