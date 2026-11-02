@@ -110,7 +110,7 @@ Private Entwicklungs-/CI-Belege liegen unter
 unabhängige Prüfungen unter dem benachbarten `MOCK500_CHECKPOINT_INDEPENDENT/`.
 Bestehende Originale und ursprüngliche Laufbelege bleiben am oben genannten Ort.
 
-## Tatsächlicher nächster Schutzpunkt
+## Schutzpunkt vor der anschließenden Betreiber-Ausnahme
 
 Die historische erste innere Ursache bleibt UNKNOWN. Eine reparierte
 Fehlerweitergabe rekonstruiert keine verlorene Quittung. Auch ein reproduzierter
@@ -128,3 +128,68 @@ FAIL, vollständige Ergebniszähler/finale Profilflags/Sicherung UNKNOWN,
 End500-Funktionsbeleg und sämtliche Schutzgrenzen bleiben unverändert.
 Fehlende, leere, doppelte, unbrauchbare und technisch fehlerhafte Ergebnisse
 bleiben jeweils UNKNOWN; es liegen keine vollständigen Einzelbefunde vor.
+
+
+## Neuer ausdrücklich freigegebener Start: lokal BLOCKED, kein Mockjob
+
+Der Betreiber hat danach die historische Ursachenpflicht ausdrücklich für genau
+einen neuen Mock500-Funktionslauf auf1fb2cfe1 aufgehoben. Quelle, Pflicht-CI,
+End500-v4-Beleg, neue technische Quellen-/Eingabebindungen, frische Nonce,
+Umgebung/Schutzregeln und der sichere Fast Forward32655→1fb wurden geprüft und
+unabhängig abgenommen. Die Quellenqualifikation und öffentlichen technischen
+Review-/Brückenmetadaten sind an diesen Kopf gebunden; keine Originalinhalte oder
+privaten Downloadlinks veröffentlicht. Historische FAILs bleiben unverändert.
+
+Die neue Laufbindung führte genau eine16er-Linkrunde aus: erster Fetch278ms nach
+READY, Übergabe24.386ms nachREADY. Der Launcher endete kontrolliert mit
+`BLOCKED_MOCK500_DISPATCH`, erster Phase`encryption`, **vor dem GitHub-POST**.
+`dispatchAttempted=false`, `dispatchAccepted=false`, sekundäre Bereinigungsfehler
+leer, Launcher beendetPASS. STARTED-/Linkrunden-/Launchmarker erhalten; kein
+POST_ATTEMPT, ONE_POST_ACCOUNTED oder RUN_BINDING. Damit **kein neuer GitHubjob,
+keine Mockprofile aktiviert und keine neue Funktions-/RAM-/Sicherungsabnahme**.
+Die acht Workerbereinigungen sind für diesen nicht gestarteten Job nicht anwendbar;
+die acht PASS-Werte oben gehören ausschließlich zum historischen Run41365567913.
+Die abschließende Restzeit-/Gesamtparameterprüfung vor dem POST wurde nicht
+erreicht. Belegt sind45.599B für den Request vor dem verschlüsselten Index;
+eine tatsächliche finale Parametergröße oder POST-Restgültigkeit wird nicht behauptet.
+
+Der konkrete lokale Vorbereitungsfehler: Das für GPG gewählte Arbeitsverzeichnis
+leitete Socketpfade über der Linux-Grenze ab. Tatsächlich Home101B, längster
+Socketpfad121B; zulässig maximal107B ohne abschließendesNullbyte. Vorhanden waren
+nur öffentliche Schlüsselring-/Trustdateien; kein verschlüsselter Indexausgang.
+Rohes tatsächliches GPG-stderr wurde vom bestehenden Helfer nicht behalten.
+
+Eine kleine kontrollierte Gegenprobe rief den tatsächlichen unveränderten
+`encrypted_index.encrypt_index` mit demselben fiktiven Zweifeld-JSON und bestehenden
+öffentlichen Empfängerschlüssel auf. Langes Home100B/Socket120B: öffentliche
+Vorschau0, Import2 mit fest klassifiziertemNameTooLong/Agentbezug. Kurzes
+Home52B/Socket72B: Import/Verschlüsselung/Agentabschluss jeweils0 und validierter
+PGP-Cipher. Keine echten URLs, Originale, privaten oder neuen Schlüssel, Drive-/
+GitHub-Aufrufe oder500erAusführung. Eigene temporäre Testdateien entfernt.
+Ein vorheriger Syntaxfehler des Testtreibers wurde vor jeglicher GPG-Aktion
+korrigiert; die eigentliche Gegenprobe lief einmal. Der Befund ist unabhängig
+geprüft und passt zum tatsächlichen Importstadium. Dies ist ein lokaler Caller-
+Pfadfehler, kein nachgewiesener Mock-Worker-, Empfänger- oder Speicherfehler.
+Diese abgeleitete Pfadgrenze fehlte auch im ursprünglichen unabhängigen Review;
+dessen alte Quittung bleibt als begrenzter damaliger Nachweis unverändert.
+
+Kleinste Korrektur vorbereitet: echtes privates0700-Verzeichnis
+`/tmp/w15mr-next-20261102`, zukünftiger Zustand in dessen`dispatch-state`;
+längster GPG-Socketpfad79B, mitNullbyte80B unter108B. Keine Symlinks oder geänderten
+Wächter. Alle fünf Kontrollprogramme und statischen Quellen-/Eingabe-/End500-
+Bindungen sind bytegleich zum geprüften Stand. Keine neue Freigabe, Nonce,
+Linkrunde oder Laufmarker dort erzeugt; Laufzeitcode1fb unverändert, vorhandene
+Pflicht-CI weiter gültig. Die vorbereitete Pfadkorrektur ist unabhängig abgenommen.
+
+Belege einschließlich Launcher-/Übergabequittung, unveränderter Startjournale,
+öffentlichem Metadatenreadback, kontrollierter GPG-Gegenprobe und Pfadplan:
+`/workspace/helmut-w15-private-evidence-20261102/MOCK500_RESTART_02/`.
+Die alten Original-/Laufbelege bleiben an den oben genannten Orten erhalten.
+
+Die eine aktuelle Linkrunde bleibt verbraucht und gestoppt. Kein Retry, Refresh,
+zweiter Dispatcheraufruf oder automatischer Branchreset. Für eine neue Linkrunde
+und den ersten tatsächlichen GitHub-Mock500-Job auf exakt1fb ist eine neue
+explizite Betreiberfreigabe mit frischer Laufbindung erforderlich. Alle bisherigen
+210-Minuten-/Kalendertags-/Reserve-/Swap-/OOM-/Platten-/Kosten-/Sicherungs-/
+Integritäts-/Modell-/Production-Grenzen bleiben unverändert. Der spätere
+vollständige Funktionsnachweis und seine unabhängige Abnahme fehlen weiterhin.

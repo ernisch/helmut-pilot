@@ -1,32 +1,33 @@
 # CURRENT STATE — Helmut
 
-## W15: Erstfehlerkanal repariert, neuer Vollversuch BLOCKED (02.11.2026)
+## W15: neues GO am lokalen GPG-Pfad blockiert — kein GitHubjob (02.11.2026)
 
-[Draft-PR1017](https://github.com/ernisch/helmut-pilot/pull/1017),
-`codex/w15-mock500-first-failure-checkpoint-20261102`, exakt1fb2cfe1:
-Der nachgestellte Diagnoseverlust ist behoben. Erste feste Controllerphase und
-unveränderte globale Bindungen bleiben auch nach späteren Supervisor-/Gateway-/
-Abschlussfehlern erhalten; private Meldungen/Pfade/SQL bleiben gesperrt. Sieben
-kleine Pythonfälle und26 Phasen durch den echten Python-/JS-Kanal PASS, unabhängige
-Quell-/Delta-/Kopfprüfung ohne offene Befunde. Pflicht-CI41413462459 mit beiden erforderlichen Checks PASS; Merge-Testbaum
-bytegleich zum unabhängig geprüften Kopf.
+Nach ausdrücklicher Betreiber-Ausnahme für die unbekannte historische Ursache:
+Quelle1fb2cfe1/PR1017, Pflicht-CI41413462459, End500-v4-Abnahme und neue Quellen-/
+Eingabe-/Noncebindung unabhängig PASS. Schutzregeln unverändert; sicherer Fast
+Forward32655→1fb2cfe1 bestätigt, keine Rücksetzung. Anschließend genau eine16er-
+Linkrunde, READY→Übergabe24,386s, aber **BLOCKED bei encryption vor dem POST**.
+Dispatchversuche0, GitHubjobs0, Launcher beendetPASS, keine sekundären
+Bereinigungsfehler. Keine neue Mock500-, RAM-, Ergebnis- oder Sicherungsabnahme.
 
-Der Dateieigentümerverdacht wurde durch die korrigierte native CI-Probe nicht
-reproduziert; kontrollierter UID0-Negativfall funktioniert. Die erste Probe
-CI41411724415 bleibt FAIL/INCONCLUSIVE, ihre vier BereinigungenPASS. Ein separater
-kleiner Test des tatsächlichen Mock-Stagings importiert den Server auch ohne
-`vercel.json`; fehlende Cron-Metadaten werden bewusst als null behandelt. Dafür
-kein Empfangs-/Importfix und keine RAM-Optimierung. Belege/Versuchsgrenzen im
-[Ergebnisdokument](betrieb/w15-mock500-first-host-result-20261102.md).
+Der lokal gewählte GPG-Arbeitspfad war zu lang: Home101B, längster Socketpfad121B.
+Kleine Gegenprobe mit demselben unveränderten Verschlüsselungshelfer und nur
+fiktivem JSON/öffentlichem Bestandsschlüssel: lang→Import Exit2/NameTooLong,
+kurz→Import/Verschlüsselung/Schließen0 und gültiger Cipher. Keine Originale,
+privaten Schlüssel, neuen Schlüssel, Drive- oder GitHub-Aufrufe in der Gegenprobe.
+Die abgeleitete Socketpfadgrenze fehlte in Startvorbereitung und unabhängigem
+Review. Kein Worker-/RAM-Fehler; keine Änderung am geprüften Laufzeitcode.
 
-Historische erste innere Ursache von Run41365567913 weiterhin **UNKNOWN**.
-Das neue bedingte Mock-GO bleibt unverbraucht: ohne ausreichenden Ursachenbeleg
-kein frischer Link, Originalempfang, Ausführungsbranchwechsel oder geschützter Job.
-Erforderlich ist ein ausreichender, an diesen Run gebundener Ursachenbeleg oder
-eine neue konkrete Betreiberentscheidung, die diese bisher nicht erfüllte
-Voraussetzung ausdrücklich ändert. Kein Rückgriff auf das verbrauchte alte GO.
-End500-PASS und elf Originale
-übernommen; historische FAILs, Schutzgrenzen und Production-Sperre unverändert.
+Korrektur vorbereitet: echtes0700-Kontrollverzeichnis `/tmp/w15mr-next-20261102`,
+längster abgeleiteter Socketpfad79B statt maximal107B; fünf Kontrollprogramme und
+statische Bindungen bytegleich. Unabhängige Gegenproben-/Pfadabnahme PASS.
+Dort keine neue Freigabe, Nonce, Links oder Startmarker erzeugt. Aktueller Versuch
+bleibt gestoppt; alte Nonce und sämtliche Journale/Quittungen unverändert erhalten.
+Für eine neue Linkrunde und den ersten GitHub-Mockjob ist ein neues ausdrückliches
+GO nötig. [Ergebnis/Belege](betrieb/w15-mock500-first-host-result-20261102.md),
+[Dokumentations-PR1018](https://github.com/ernisch/helmut-pilot/pull/1018).
+Historischer Run41365567913 bleibtFAIL/innereUrsacheUNKNOWN; elf Originale,
+End500-PASS, alle Schutzgrenzen und Production-Sperre unverändert.
 
 ## W15: erster dynamischer Mock500-Lauf FAIL (02.11.2026)
 
