@@ -64,14 +64,19 @@ def canonical(value):
     return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True, allow_nan=False).encode()
 
 
-def decode(raw):
+def decode(raw, phase='admission'):
     def unique(rows):
         result = {}
         for key, value in rows:
-            need(key not in result); result[key] = value
+            need(key not in result, phase); result[key] = value
         return result
-    return json.loads(raw, object_pairs_hook=unique,
-        parse_constant=lambda _: (_ for _ in ()).throw(CapsuleError('admission')))
+    try:
+        return json.loads(raw, object_pairs_hook=unique,
+            parse_constant=lambda _: (_ for _ in ()).throw(CapsuleError(phase)))
+    except CapsuleError:
+        raise
+    except (ValueError, TypeError, UnicodeError):
+        raise CapsuleError(phase) from None
 
 
 def validate_request(value, expected_commit, *, now=None):
@@ -111,7 +116,8 @@ def bind_runtime(request, expected_commit):
     identity = V.bind_runtime(expected_commit)
     for relative in ('scripts/w15-github/mock500_materials_capsule_readback.py',
                      'scripts/w15-github/mock500_materials_contract.py', 'scripts/w15-github/seal.py',
-                     'scripts/w15-github/encrypted_index.py', '.github/workflows/ci.yml'):
+                     'scripts/w15-github/encrypted_index.py', 'scripts/w15-github/runner_diagnostics.py',
+                     'scripts/w15-github/artifact_transport.py', '.github/workflows/ci.yml'):
         source = REPO / relative
         result = subprocess.run(['/usr/bin/git', '--no-optional-locks', '-c', 'core.hooksPath=/dev/null',
             '-c', 'safe.directory=' + str(REPO), '-C', str(REPO), 'ls-tree', '-z', expected_commit, '--', relative],
@@ -243,7 +249,7 @@ def parse_capsule(plaintext, private_root):
         total += row.size; need(total <= MAX_PAYLOAD, 'archive')
         return raw
     with tarfile.open(fileobj=io.BytesIO(plaintext), mode='r:') as archive:
-        raw = member(archive, 'W15_MANIFEST.PRIVATE.json'); manifest = decode(raw)
+        raw = member(archive, 'W15_MANIFEST.PRIVATE.json'); manifest = decode(raw, 'archive')
         keys = {'version', 'exactCommit', 'runId', 'runAttempt', 'inputManifestSHA', 'recipientFingerprint', 'files'}
         need(type(manifest) is dict and set(manifest) == keys and manifest['version'] == 1
              and type(manifest['version']) is int and manifest['exactCommit'] == SOURCE_COMMIT
@@ -263,7 +269,7 @@ def parse_capsule(plaintext, private_root):
         need(archive.next() is None and len(plaintext) - offset >= 1024
              and len(plaintext) % 512 == 0 and not any(plaintext[offset:])
              and OUTCOME in contents and COLLECTION in contents, 'archive')
-    metadata = decode(contents[COLLECTION])
+    metadata = decode(contents[COLLECTION], 'archive')
     need(type(metadata) is dict and set(metadata) == {'scope', 'sources', 'privateSelectionOnly', 'completeBackup'}
          and metadata.get('scope') == 'ISOLATED_GITHUB_MOCK500_MATERIALS_DIAGNOSTIC_ONLY'
          and metadata.get('privateSelectionOnly') is True and metadata.get('completeBackup') is False
@@ -279,16 +285,17 @@ def parse_capsule(plaintext, private_root):
                  and record.get('strategy') == ('COMPLETE' if not record['truncated'] else 'FIRST_AND_LAST_32768_BYTES_NOT_COMPLETE')
                  and record['retainedBytes'] == min(record['originalBytes'], MAX_FILE), 'archive')
         states[record['path']] = record
-    outcome = decode(contents[OUTCOME]); need(type(outcome) is dict and type(outcome.get('materialsCompleted')) is bool, 'outcome')
+    outcome = decode(contents[OUTCOME], 'outcome'); need(type(outcome) is dict and type(outcome.get('materialsCompleted')) is bool, 'outcome')
     def complete_json(name):
         record = states[name]
         if not record['present'] or record.get('truncated') or not contents[name]: return None
-        try: return decode(contents[name])
+        try: return decode(contents[name], 'outcome')
         except (ValueError, UnicodeError): return None
     node = complete_json(SOURCES[0]); node_safe = node.get('safe') if type(node) is dict else None
     node_safe = CONTRACT.failure(node_safe) if node_safe is not None else None
     first = outcome.get('firstFailure')
     first = CONTRACT.failure(first) if first is not None else node_safe
+    need(first is None or node_safe is None or first == node_safe, 'outcome')
     zero = outcome.get('cleanup'); zero = zero if type(zero) is dict else {}
     zero_states = ('NO_OWNED_NATIVE_CONTEXT', 'NO_OWNED_NATIVE_SLOT', 'BOUND_PREPARED_ZERO', 'BOUND_ENDED_ZERO')
     observed_zero = (zero.get('confirmedZero') is True and zero.get('profileFieldsUnchanged') is True

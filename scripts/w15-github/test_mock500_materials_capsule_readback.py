@@ -1,4 +1,4 @@
-"""Four tiny fictional capsule cases; no keys, GPG, SDK, DB or network work."""
+"""Tiny fictional capsule cases; no keys, GPG, SDK, DB or network work."""
 import sys
 sys.dont_write_bytecode = True
 
@@ -27,11 +27,12 @@ def category():
         'category': 'MATERIALS_MAIN_CHECK_047', 'kind': 'assertion', 'stage': 'builder'}
 
 
-def archive(*, input_sha=None, truncated=False, extra=False):
+def archive(*, input_sha=None, truncated=False, extra=False, node_category=None):
     outcome = {'materialsCompleted': True, 'firstFailure': category(),
         'cleanup': {'confirmedZero': True, 'profileFieldsUnchanged': True,
             'profiles': 500, 'activeProfiles': 0, 'nativeZeroState': 'BOUND_PREPARED_ZERO'}}
-    node = M.canonical({'safe': category(), 'reason': PRIVATE, 'stack': PRIVATE})
+    node = M.canonical({'safe': category() if node_category is None else node_category,
+                        'reason': PRIVATE, 'stack': PRIVATE})
     controller = M.canonical({'phase': 'mock500-controller-materials', 'type': 'PermissionError',
         'message': PRIVATE, 'traceback': 'Traceback (most recent call last):\n'
         '  File "/private/' + PRIVATE + '/scripts/synthetik-500-w15-full500-controller.py", line 817, in run_bound\n'
@@ -156,6 +157,23 @@ class CapsuleReadbackChecks(unittest.TestCase):
         self.assertNotIn(PRIVATE, json.dumps(failed.exception.projection))
         self.assertEqual(str(failed.exception), 'EXISTING_MATERIALS_CAPSULE_REJECTED')
         self.stop.assert_called_once()
+
+    def test_duplicate_or_nonfinite_manifest_keeps_actual_archive_phase(self):
+        for raw in (b'{"version":1,"version":1}', b'{"version":NaN}'):
+            buffer = io.BytesIO()
+            with tarfile.open(fileobj=buffer, mode='w', format=tarfile.USTAR_FORMAT) as archive:
+                member = tarfile.TarInfo('W15_MANIFEST.PRIVATE.json')
+                member.size = len(raw)
+                archive.addfile(member, io.BytesIO(raw))
+            with self.subTest(raw=raw), self.assertRaises(M.CapsuleError) as failed:
+                M.parse_capsule(buffer.getvalue(), self.root)
+            self.assertEqual(failed.exception.phase, 'archive')
+
+    def test_conflicting_first_failure_witnesses_never_create_authoritative_cause(self):
+        conflicting = dict(category(), category='MATERIALS_MAIN_CHECK_048')
+        with self.assertRaises(M.CapsuleError) as failed:
+            M.parse_capsule(archive(node_category=conflicting), self.root)
+        self.assertEqual(failed.exception.phase, 'outcome')
 
 
 if __name__ == '__main__': unittest.main()

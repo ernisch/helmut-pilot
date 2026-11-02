@@ -64,11 +64,27 @@ def _tool(kind, root, guard):
     return output
 
 
-def _run(node, tool, root, credentials, inputs, guard):
+def _run(node, tool, root, credentials, inputs, guard, *, existing_capsule_readonly=False):
     need(isinstance(credentials, dict) and set(credentials) <= CREDENTIAL_KEYS
          and all(type(v) is str and '\0' not in v for v in credentials.values()))
-    need(all(credentials.get(key) for key in ('ACTIONS_RUNTIME_TOKEN', 'ACTIONS_RESULTS_URL',
-                                             'GITHUB_REPOSITORY', 'GITHUB_RUN_ID')))
+    if existing_capsule_readonly:
+        # The one existing capsule needs only the job's actions:read token.
+        # Keep SDK output private exactly as on the existing artifact channel;
+        # never manufacture upload/runtime credentials for a read-only job.
+        need(set(credentials) == {'GITHUB_TOKEN', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID'}
+             and all(credentials.values()) and credentials['GITHUB_REPOSITORY'] == 'ernisch/helmut-pilot'
+             and re.fullmatch('[1-9][0-9]{4,19}', credentials['GITHUB_RUN_ID'])
+             and tool == root / 'download.js'
+             and pin(tool, guard) == {'cipherBytes': TOOLS['download'][2], 'cipherSHA256': TOOLS['download'][3]}
+             and inputs == {'artifact-ids': '13145634042', 'run-id': '41455150159',
+                 'repository': 'ernisch/helmut-pilot', 'github-token': credentials['GITHUB_TOKEN'],
+                 'merge-multiple': 'true', 'path': str(root / 'cipher')})
+        folder = (root / 'cipher').lstat()
+        need(stat.S_ISDIR(folder.st_mode) and folder.st_uid == os.getuid()
+             and stat.S_IMODE(folder.st_mode) == 0o700)
+    else:
+        need(all(credentials.get(key) for key in ('ACTIONS_RUNTIME_TOKEN', 'ACTIONS_RESULTS_URL',
+                                                 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID')))
     output, log = root / (tool.stem + '.output.PRIVATE'), root / (tool.stem + '.log.PRIVATE')
     env = {'PATH': '/usr/bin:/bin', 'LANG': 'C', 'LC_ALL': 'C', 'GITHUB_WORKSPACE': str(root),
            'RUNNER_TEMP': str(root), 'GITHUB_OUTPUT': str(output), **credentials}

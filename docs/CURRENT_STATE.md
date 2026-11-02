@@ -1,20 +1,19 @@
 # CURRENT STATE — Helmut
 
-## W15: Materialdiagnose FAIL; Abschlussanschluss korrigiert (02.11.2026)
+## W15: reine Kapsellesung vorbereiten; FullMock weiter gesperrt (02.11.2026)
 
-Branch`codex/w15-mock500-materials-diagnostic-20261102`, DraftPR1020;
-[Vertrag/Belege](betrieb/w15-mock500-materials-diagnostic-20261102.md).
-Diagnose[41455150159](https://github.com/ernisch/helmut-pilot/actions/runs/41455150159)
-auf582ca4e6: **FAIL**,199s,`WORKER_RESULT_REJECTED`, innere Kategorie UNKNOWN.
-1Linkrunde/1Job; GO verbraucht, kein Retry. Ausführungsbranch sicher1fb→582.
-Peak2,584GB/Limit13,374GB; Swap/OOM/Grenzereignisse0; acht äußere BereinigungenPASS.
-1Cipherartefakt13145634042/1Tag; DB-Nullaktivität/Endzähler/Rückleseabschluss UNKNOWN.
-Diagnosefehler klein reproduziert: UID1000-Validator las alten Checkout statt Stage;
-verweigerter Zugriff ergibt dieselbe Meldung. Minimalfix/3TestsGREEN nachRED,
-unabhängigerReviewPASS; historische Materialursache dadurch nicht bewiesen.
-Nötig: gesondert freigegebene Auswertung vorhandener Fehlerkapsel mit bestehenden
-GitHub-Empfängersecrets, ohne Originalempfang/Materiallauf/Profile. BedingtesFullMock-GO
-unverbraucht, bis belegte/geprüfte Materialreparatur gesperrt. Keine RAM-Optimierung.
+[Lesepfad](betrieb/w15-mock500-capsule-readback-20261102.md) ab geprüftem32c9a3ef/PR1020;
+Pflicht-CI41457428169 und unabhängigerReviewPASS übernommen, nicht wiederholt.
+Diagnose41455150159/582ca4e6 bleibtFAIL/WORKER_RESULT_REJECTED;1Linkrunde/1Job verbraucht.
+Peak2,584GB/Limit13,374GB,Swap/OOM/Grenzereignisse0,acht äußere BereinigungenPASS.
+Fehlerkapsel13145634042 privat gesichert,noch nicht lokal entschlüsselbar;innere
+Materialursache/DB-Nullaktivität/Endzähler UNKNOWN. Der geprüfte Stage-Validatorfix
+beweist nicht die historische Materialursache. Ausführungsbranch unverändert582.
+Kleinster fehlender Anschluss: eigene begrenzte Lesekante im vorhandenen geschützten
+Workflow,ohne Originalempfang/Materialwiederholung/DB/Profile/Uploads. Nur Vorbereitung,
+gezielte synthetische Tests,CI undReview; neuergeschützterJob benötigt eigeneFreigabe.
+BedingtesFullMock-GO weiterunverbraucht undbis konkret belegter/geprüfterReparatur
+sowieallenStartbedingungen gesperrt. Keine RAM-Optimierung oder Production-Aktion.
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
 Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.
