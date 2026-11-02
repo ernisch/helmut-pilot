@@ -1,4 +1,7 @@
-"""Tiny fictional capsule cases; no keys, GPG, SDK, DB or network work."""
+"""Tiny capsule seams and one empty-agent lifecycle; no keys or original data.
+
+The empty agent uses existing local GPG tools only; no SDK, DB or external network.
+"""
 import sys
 sys.dont_write_bytecode = True
 
@@ -10,8 +13,14 @@ import io
 import json
 import os
 from pathlib import Path
+import re
+import select
+import shutil
+import struct
+import subprocess
 import tarfile
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
@@ -174,6 +183,73 @@ class CapsuleReadbackChecks(unittest.TestCase):
         with self.assertRaises(M.CapsuleError) as failed:
             M.parse_capsule(archive(node_category=conflicting), self.root)
         self.assertEqual(failed.exception.phase, 'outcome')
+
+
+class AgentCloseChecks(unittest.TestCase):
+    def fixture(self, response=b'OK empty-agent\nD 4321\nOK\n', events=None):
+        channel = Mock()
+        channel.__enter__ = Mock(return_value=channel)
+        channel.__exit__ = Mock(return_value=False)
+        channel.getsockopt.return_value = struct.pack('3i', 12345, os.getuid(), os.getgid())
+        channel.makefile.return_value = io.BytesIO(response)
+        close = Mock(); poll = Mock()
+        poll.poll.return_value = [(55, select.POLLIN)] if events is None else events
+        tasks = [patch.object(M.socket, 'socket', return_value=channel),
+            patch.object(M.os, 'pidfd_open', return_value=55), patch.object(M.os, 'close'),
+            patch.object(M.select, 'poll', return_value=poll),
+            patch.object(M, 'load', return_value=SimpleNamespace(_close_agent=close))]
+        for task in tasks: task.start(); self.addCleanup(task.stop)
+        return channel, close, poll
+
+    def test_protocol_pid_is_used_instead_of_pre_fork_socket_creator(self):
+        channel, close, poll = self.fixture()
+        home = Path('/FICTIONAL_PRIVATE_AGENT_HOME')
+        M.stop_agent(home)
+        M.os.pidfd_open.assert_called_once_with(4321)
+        channel.sendall.assert_called_once_with(b'GETINFO pid\n')
+        close.assert_called_once_with(home)
+        poll.register.assert_called_once_with(55, select.POLLIN)
+        M.os.close.assert_called_once_with(55)
+
+    def test_bad_protocol_or_missing_exit_proof_never_claims_agent_stop(self):
+        channel, close, poll = self.fixture(response=b'OK empty-agent\nD private-invalid-pid\nOK\n')
+        home = Path('/FICTIONAL_PRIVATE_AGENT_HOME')
+        with self.assertRaises(M.CapsuleError): M.stop_agent(home)
+        close.assert_called_once_with(home); M.os.pidfd_open.assert_not_called()
+        # Now a valid PID but only an invalid descriptor event: not an exit.
+        channel.makefile.return_value = io.BytesIO(b'OK empty-agent\nD 4321\nOK\n')
+        close.reset_mock(); poll.poll.return_value = [(55, select.POLLNVAL)]
+        with self.assertRaises(M.CapsuleError): M.stop_agent(home)
+        close.assert_called_once_with(home); M.os.close.assert_called_once_with(55)
+
+    @unittest.skipUnless(hasattr(os, 'pidfd_open') and shutil.which('gpgconf')
+                         and shutil.which('gpg-connect-agent'), 'Linux pidfd and existing GPG tools required')
+    def test_actual_empty_daemon_exits_without_keys_secrets_or_cipher(self):
+        with tempfile.TemporaryDirectory(prefix='w15ga-') as tmp:
+            home = Path(tmp); home.chmod(0o700)
+            observed_fd, stopped = None, False
+            try:
+                launched = subprocess.run(['/usr/bin/gpgconf', '--homedir', str(home), '--launch', 'gpg-agent'],
+                    stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    env=M.V.ENV, timeout=15)
+                self.assertEqual(launched.returncode, 0)
+                actual = subprocess.run(['/usr/bin/gpg-connect-agent', '--homedir', str(home),
+                    '--no-autostart', 'GETINFO pid', '/bye'], stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=M.V.ENV, timeout=15)
+                self.assertEqual(actual.returncode, 0)
+                found = re.findall(rb'^D ([1-9][0-9]+)$', actual.stdout, re.MULTILINE)
+                self.assertEqual(len(found), 1)
+                observed_fd = os.pidfd_open(int(found[0]))
+                M.stop_agent(home); stopped = True
+                poll = select.poll(); poll.register(observed_fd, select.POLLIN)
+                self.assertTrue(any(events & select.POLLIN for _, events in poll.poll(5000)))
+                self.assertEqual(list(home.glob('private-keys-v1.d/*.key')), [])
+            finally:
+                if not stopped:
+                    subprocess.run(['/usr/bin/gpgconf', '--homedir', str(home), '--kill', 'gpg-agent'],
+                        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                        env=M.V.ENV, timeout=15)
+                if observed_fd is not None: os.close(observed_fd)
 
 
 if __name__ == '__main__': unittest.main()

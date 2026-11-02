@@ -198,13 +198,26 @@ def decrypt(cipher, root, home, key, secret):
 
 
 def stop_agent(home):
-    # SO_PEERCRED and pidfd refer to this exact private agent, not a process name.
+    # A daemon may inherit a socket created before fork: SO_PEERCRED's PID then
+    # names its creator, not the serving agent. Use the fixed Assuan PID query;
+    # keep peer-UID ownership and the exact pidfd exit proof.
     pidfd = None
     try:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as channel:
             channel.settimeout(5); channel.connect(str(home / 'S.gpg-agent'))
-            pid, uid, _ = struct.unpack('3i', channel.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
-            need(pid > 1 and uid == os.getuid(), 'agent-close')
+            _, uid, _ = struct.unpack('3i', channel.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
+            need(uid == os.getuid(), 'agent-close')
+            with channel.makefile('rb') as stream:
+                def line():
+                    raw = stream.readline(1025)
+                    need(0 < len(raw) <= 1024 and raw.endswith(b'\n'), 'agent-close')
+                    return raw.rstrip(b'\r\n')
+                def okay(raw): return raw == b'OK' or raw.startswith(b'OK ')
+                need(okay(line()), 'agent-close')
+                channel.sendall(b'GETINFO pid\n')
+                result = re.fullmatch(rb'D ([1-9][0-9]{0,9})', line())
+                need(result is not None and okay(line()), 'agent-close')
+                pid = int(result[1]); need(1 < pid < 2**31, 'agent-close')
             pidfd = os.pidfd_open(pid)
     except (OSError, CapsuleError):
         # Still request this home's existing close; absence of PID proof is
@@ -214,7 +227,7 @@ def stop_agent(home):
     try:
         load('encrypted_index')._close_agent(home)
         poll = select.poll(); poll.register(pidfd, select.POLLIN)
-        need(bool(poll.poll(5000)), 'agent-close')
+        need(any(fd == pidfd and events & select.POLLIN for fd, events in poll.poll(5000)), 'agent-close')
     finally:
         if pidfd is not None: os.close(pidfd)
 
