@@ -1,5 +1,40 @@
 # CURRENT STATE — Helmut
 
+## W15: erster dynamischer Mock500-Lauf FAIL (02.11.2026)
+
+[Run41365567913](https://github.com/ernisch/helmut-pilot/actions/runs/41365567913),
+Job125024885163, exakt32655e8f/PR1015: **FAIL**. API-Jobdauer188s, Hauptaktion165s;
+219s war die spätere Watcherbeobachtung einschließlich Poll-Nachlauf. Einmal-GO
+verbraucht: eine16er-Linkrunde, ein POST, Restgültigkeit279,5203s, Parameter60.256B.
+Sicherer Fast ForwardF157→32655 bestätigt; Ausführungsbranch bleibt32655, kein Reset.
+
+Tatsächliche Fehlerquittung: Workerphase`mock500`, `WORKER_REPORTED_FAILURE`, Exit1.
+Die innere Ursache ist **UNKNOWN**: der Controller ersetzt Fehler durch eine breite
+`mock500-body`-Meldung und wirft anschließend einen generischen Fehler. Kein
+belegter RAM-Abbruch: gemeinsamer Kernelpeak2,592GB bei dynamischem Hartlimit13,419GB;
+Hostreservebeobachtungen PASS, Swap/OOM/harteGrenzereignisse0. Beobachtete getrennte
+Kategorie-Maxima: Dateicache1,522GB, anonym980MB, Kernel78MB, SharedMemory41MB.
+Zeitlich verschiedene Maxima nicht addieren; SharedMemory gehört zum Dateianteil.
+Vollständige PostgreSQL-/Node-/PostgREST-/Werkzeuganteile, CPU und Peakzusammensetzung
+UNKNOWN. Alte RAM-Verträge und Anbieterreferenzen unverändert, keine Optimierung.
+
+Alle acht Prozessbereinigungen PASS; frische Nachkontrolle0aktive manuelle Runs.
+Artefakte0/zusätzliche Artefaktspeicherung0. Die tatsächlichen500/1.000/1.500/8.000/
+17.000-Endzähler, Laufzeitmaxima, Sicherungsrundlauf und finale Profilflags0 bleiben
+UNKNOWN; Prozessstillstand ersetzt keinen Datenbank-Nullaktivitätsbeleg. Run/Job/
+Commit/Attempt eindeutig; explizite Runtime-Nonce und vollständige tatsächliche
+Workflowdeklaration sind in dieser Fehlerquittung nicht enthalten und bleiben UNKNOWN.
+Kein Ersatz aus den lokalen GO-Dateien. Kein Retry, Linkrefresh, Merge oder Production.
+
+Private Belege dauerhaft unter
+`/workspace/helmut-w15-private-evidence-20261102/MOCK500_HOST_FUNCTIONAL_01/`,
+Livecase`/tmp/w15-mockhc-20261102`; Originale/Drive/Secrets erhalten.
+[Ergebnis und nächste Aufgabe](betrieb/w15-mock500-first-host-result-20261102.md).
+Nächster Schritt: erste feste innere Fehlerphase im vorhandenen sicheren Kanal
+gezielt mit kleinen synthetischen Fehlerfällen erhalten. Keine neue RAM-Grenze,
+keine neue Infrastruktur und keine neue Originalfreigabe auf unbekannte Ursache.
+End500-HC1/v4-PASS bleibt übernommen; Production500 nicht ausgeführt/weiter gesperrt.
+
 ## W15: dynamischer Mock500-Vertrag vorbereitet (01.11.2026)
 
 Neuer Branch `codex/w15-mock500-host-functional-20261101` abF157: eigener
@@ -11,8 +46,8 @@ Hostreserve. B gilt unverändert für Parent/Docker/Treiber/Sicherung/Rücksiche
 500gleichzeitig aktive Synthetikprofile/500Units/1.000Mockphasen/1.500Ergebnisse/
 8.000Kontrollen/17.000Auditchecks und sämtliche Zeit-/Integritäts-/Sicherungs-/
 Nullaktivitäts-/Stoppprüfungen bleiben Pflicht. Gezielte Gegenproben grün; finaler
-Codekopf, Pflicht-CI und unabhängiger Review am Draft-PR. Noch kein Mock-GO oder
-Originallauf, kein Merge/Deployment/Production-Eingriff. Ausführungsbranch bleibtF157.
+Codekopf, Pflicht-CI und unabhängiger Review am Draft-PR. Historischer Vorbereitungsstand; das spätere Einmal-GO und sein tatsächlicher
+FAIL sind oben dokumentiert. Kein Merge/Deployment/Production-Eingriff.
 
 Übernommen: [End500-Run41325430429](https://github.com/ernisch/helmut-pilot/actions/runs/41325430429)
 aufF157/PR1013 ist unabhängig nachHC1/v4 **PASS**:500Auth/6.000Usage/3.501Postimages,
@@ -21,7 +56,8 @@ frischem13,320GB-Limit, Swap/OOM/Max0; Job1.356s. Belege unverändert unter
 `/workspace/helmut-w15-private-evidence-20261101/HOST_FUNCTIONAL_OUTER_02/`.
 Frühere519-Linkrunde bleibtBLOCKED ohneJob; Run41300846909 bleibtFAIL. Mockelfdateien
 und bestehende500/500-Quellenqualifikation nicht neu beschafft/geprüft.
-Nächste Grenze: neuer geprüfter Mockkopf, Quellen-/Endbrücke und konkrete Einmalfreigabe.
+Vorbereitungs-CI41339064129 und unabhängige Quellen-/Endbrücke PASS; dieser
+Vorbereitungsnachweis ersetzt den oben dokumentierten tatsächlichen Laufbefund nicht.
 [Voriger Stand bytegleich](archive/project_state/2026_11_01_e74ab598_CURRENT_STATE_vor_Mockhostvertrag.md).
 
 ## Ressourcen500-Messung und geprüfter Diagnoseanschluss (31.10.2026)
@@ -67,7 +103,8 @@ Minimalprobe40982718647 bleiben übernommen; keine Wiederholung.
 
 Mock500-Controller/Atomic12ACK/Tages-/Namespacebindung, Auswertung und Sicherungsanschlüsse
 sind vorbereitet und gesperrt. Positive End500-HC1/v4-Abnahme übernommen; die neue
-Mock-Kopf-/Quellen-/Kompatibilitätsbindung und ein eigenes Mock-GO fehlen noch.
+Mock-Kopf-/Quellen-/Kompatibilitätsbindung ist geprüft, das neue Einmal-GO
+ist durch Run41365567913 verbraucht; vollständige Mock500-Funktionsabnahme fehlt.
 Der historische RAM-v2-Fehler nach69Units bleibt FAIL/UNKNOWN.
 Historische Restore-FAILs, damalige Fehlerphasen, Ressourcen und frühere Dateiblocker
 bleiben im bytegleichen Archiv erhalten; daraus entsteht keine neue Laufberechtigung.
