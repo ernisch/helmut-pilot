@@ -49,10 +49,12 @@ function materials({diagnostic=true,go=diagGo,prepared0=true,mode=D}={}){
  for(const change of [{confirmation:'WRONG'},{targetDatabase:'WRONG'},{maximumUnits:500},
   {temporarySyntheticProfiles:500},{paidModelsAllowed:true},{productionAllowed:true},{full500Allowed:true}]){
   const rejected=materials({go:{...diagGo,...change}});
-  await assert.rejects(rejected.probe.main());assert.equal(rejected.calls.sql,0);
+  assert.throws(()=>rejected.probe.checkDiagnosticScope(),error=>error?.code==='ERR_ASSERTION');
+  assert.equal(rejected.calls.sql,0);
  }
  const wrongMode=materials({mode:'mock500-full-host-functional-gated'});
- await assert.rejects(wrongMode.probe.main());assert.deepEqual(wrongMode.calls,{sql:0,reads:0});
+ assert.throws(()=>wrongMode.probe.checkDiagnosticScope(),error=>error?.code==='ERR_ASSERTION');
+ assert.deepEqual(wrongMode.calls,{sql:0,reads:0});
  const unchangedFull=materials({diagnostic:false,prepared0:false});unchangedFull.probe.checkDiagnosticScope();
  assert.equal(unchangedFull.probe.unit0,true);assert.deepEqual(unchangedFull.calls,{sql:0,reads:0});
  const diag=runtime();assert.equal(diag.probe.ownerGo({materialsDiagnostic:true}).maximumUnits,0);
