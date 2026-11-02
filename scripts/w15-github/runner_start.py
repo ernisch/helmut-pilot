@@ -559,7 +559,12 @@ def _worker_failure(error, reason, *, error_type=RunnerStartError):
     phase = phase if type(phase) is str and phase in error_type.allowed_worker_phases else None
     memory = _closed_memory(D.attribute(error, 'worker_memory')) if phase is not None else None
     native = D.native_failure(D.attribute(error, 'native_failure'))
-    detail = {'reason': 'WORKER_REPORTED_FAILURE', 'nativeFailure': native} if native is not None else None
+    materials = D.materials_failure(D.attribute(error, 'materials_failure')) if phase is not None else None
+    detail = {'reason': 'WORKER_REPORTED_FAILURE'} if native is not None or materials is not None else None
+    if native is not None:
+        detail['nativeFailure'] = native
+    if materials is not None:
+        detail['materialsFailure'] = materials
     return error_type('worker', phase, memory, runner=detail if detail is not None else None if phase is not None else {'reason': reason})
 
 

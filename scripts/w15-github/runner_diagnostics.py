@@ -1,6 +1,7 @@
 """Closed failure metadata only; no IO, observations or execution authority."""
 import sys
 sys.dont_write_bytecode = True
+import re
 
 REASONS = frozenset(('PARENT_READBACK_REJECTED', 'SUPERVISOR_DEADLINE',
     'SUPERVISOR_INTERRUPTED', 'SUPERVISOR_REJECTED', 'WORKER_START_REJECTED',
@@ -20,6 +21,7 @@ MOCK_CONTROLLER_PHASES = frozenset('mock500-controller-' + name for name in (
     'binding', 'workspace', 'stage-sources', 'input-context', 'container-create',
     'container-start', 'supervisor-start', 'database-readiness', 'database-restore',
     'database-baseline', 'runtime-context', 'setup', 'gateway-start', 'materials',
+    'materials-copy-processing', 'materials-copy-command', 'materials-copy-fixtures', 'materials-copy-audit',
     'atomic-bootstrap', 'prepare', 'run', 'zero-audit', 'services', 'result-readback',
     'backup', 'owned-close', 'supervisor-stop', 'gateway-client-close',
     'gateway-log-close', 'final-observation'))
@@ -60,6 +62,31 @@ NATIVE_CHECKS = frozenset(('UNKNOWN', 'w15-forward-readonly-sql', 'w15-forward-c
     'w15-forward-natural-major-gc', 'w15-forward-checkpoint-cycles', 'w15-forward-natural-autovacuum',
     'w15-forward-wal-footprint', 'w15-forward-wal-segments-not-recycled', 'w15-forward-native-auth-spill',
     'w15-forward-close-deadline', 'w15-forward-pending-operation-at-close', 'w15-forward-concurrent-operation'))
+
+
+def materials_failure(value):
+    """Pure projection of the existing materials contract; no runtime imports.
+
+    Keep exact parity with mock500_materials_contract.failure. The worker may
+    already be UID1000 with no access to the original checkout at this point.
+    Optional invalid details must never erase its known first failure phase.
+    """
+    if (type(value) is not dict or set(value) != {'schema', 'category', 'kind', 'stage'}
+            or value['schema'] != 'helmut-w15-materials-first-failure/1'
+            or type(value['kind']) is not str or value['kind'] not in (
+                'assertion', 'filesystem', 'module', 'sql', 'type', 'timeout', 'unknown')
+            or type(value['stage']) is not str or value['stage'] not in (
+                'entry', 'baseline', 'config', 'originals', 'qualified', 'original-upacket',
+                'calendar', 'native-inputs', 'snapshot', 'native-manifest',
+                'activation', 'builder', 'output', 'complete')):
+        return None
+    category = value['category']
+    if type(category) is not str or not (category in (
+            'MATERIALS_ENTRY_REJECTED', 'MATERIALS_PROCESS_REJECTED',
+            'MATERIALS_PROCESS_TIMEOUT', 'MATERIALS_FAILURE_UNAVAILABLE') or
+            re.fullmatch(r'MATERIALS_(?:MAIN|BINDING)_CHECK_(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2}|10[01][0-9]|102[0-4])', category)):
+        return None
+    return dict(value)
 
 
 def native_failure(value):
@@ -114,7 +141,7 @@ def unknown_cleanup():
 
 
 def runner(value, memory_validator):
-    keys = {'reason', 'secondaryReason', 'memory', 'memorySource', 'workerExitCode', 'serviceExitCode', 'lastObservedPhase', 'nativeFailure'}
+    keys = {'reason', 'secondaryReason', 'memory', 'memorySource', 'workerExitCode', 'serviceExitCode', 'lastObservedPhase', 'nativeFailure', 'materialsFailure'}
     if type(value) is not dict or not set(value) <= keys or type(value.get('reason')) is not str or value['reason'] not in REASONS:
         return None
     out = {'reason': value['reason']}
@@ -138,6 +165,9 @@ def runner(value, memory_validator):
     native = native_failure(value.get('nativeFailure'))
     if native is not None:
         out['nativeFailure'] = native
+    materials = materials_failure(value.get('materialsFailure'))
+    if materials is not None:
+        out['materialsFailure'] = materials
     return out
 
 

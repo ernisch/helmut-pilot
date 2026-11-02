@@ -8,6 +8,18 @@ function closedPhaseObservation(value){
     value.meaning!=='ENTERED_NOT_COMPLETED')return null;
   return {name:value.name,sequence:value.sequence,meaning:'ENTERED_NOT_COMPLETED'};
 }
+function closedMaterialsFailure(value){
+  const stages=['entry','baseline','config','originals','qualified','original-upacket','calendar',
+    'native-inputs','snapshot','native-manifest','activation','builder','output','complete'];
+  if(!value||typeof value!=='object'||Array.isArray(value)||
+    Object.keys(value).sort().join(',')!=='category,kind,schema,stage'||
+    value.schema!=='helmut-w15-materials-first-failure/1'||!stages.includes(value.stage)||
+    !['assertion','filesystem','module','sql','type','timeout','unknown'].includes(value.kind)||
+    typeof value.category!=='string'||
+    !(['MATERIALS_ENTRY_REJECTED','MATERIALS_PROCESS_REJECTED','MATERIALS_PROCESS_TIMEOUT','MATERIALS_FAILURE_UNAVAILABLE'].includes(value.category)||
+      /^MATERIALS_(?:MAIN|BINDING)_CHECK_(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2}|10[01][0-9]|102[0-4])$/.exec(value.category)?.[0]===value.category))return null;
+  return {schema:value.schema,category:value.category,kind:value.kind,stage:value.stage};
+}
 function closedRunnerDetail(value){
   const reasons=new Set(['PARENT_READBACK_REJECTED','SUPERVISOR_DEADLINE','SUPERVISOR_INTERRUPTED','SUPERVISOR_REJECTED',
     'WORKER_START_REJECTED','WORKER_SETUP_REJECTED','WORKER_INTERRUPTED','WORKER_RESULT_REJECTED','WORKER_CLEANUP_UNCONFIRMED',
@@ -15,7 +27,7 @@ function closedRunnerDetail(value){
     'WORKER_EXIT_REJECTED','WORKER_REPORTED_FAILURE','SERVICE_IPC_EOF','SERVICE_IPC_TIMEOUT','SERVICE_IPC_REJECTED',
     'SERVICE_EXIT_WITHOUT_REPORT','SERVICE_EXIT_REJECTED','PARENT_CLOSURE_REJECTED','CLEANUP_UNCONFIRMED','SIGNAL_DURING_CLEANUP']);
   if(!value||typeof value!=='object'||Array.isArray(value)||!reasons.has(value.reason)||
-    !Object.keys(value).every(k=>['reason','secondaryReason','memory','memorySource','workerExitCode','serviceExitCode','lastObservedPhase','nativeFailure'].includes(k)))return null;
+    !Object.keys(value).every(k=>['reason','secondaryReason','memory','memorySource','workerExitCode','serviceExitCode','lastObservedPhase','nativeFailure','materialsFailure'].includes(k)))return null;
   const out={reason:value.reason};
   if(Object.hasOwn(value,'secondaryReason')){
     if(!reasons.has(value.secondaryReason))return null;out.secondaryReason=value.secondaryReason;
@@ -34,6 +46,8 @@ function closedRunnerDetail(value){
     const native=require('../../../scripts/fixtures/w15-native-failure').closed(value.nativeFailure);
     if(native)out.nativeFailure=native;
   }
+  const materials=closedMaterialsFailure(value.materialsFailure);
+  if(materials)out.materialsFailure=materials;
   return out;
 }
 function closedCleanup(value){
@@ -90,14 +104,9 @@ function closedMaterialsWorker(value){
      value.profiles!==500||value.activeProfiles!==0||value.units!==0||value.providerPhases!==0||
      !['profileFieldsUnchanged','ownedContainerStopped','watchClosed'].every(k=>value[k]===true)||
      !['executionAuthority','mock500Acceptance','end500Acceptance','productionAcceptance','backupRoundtripVerified','retryAllowed'].every(k=>value[k]===false))return null;
-  const first=value.firstFailure,stages=['entry','baseline','config','originals','qualified','original-upacket','calendar',
-    'native-inputs','snapshot','native-manifest','activation','builder','output','complete'];
+  const first=value.firstFailure;
   if(value.materialsCompleted){if(first!==null)return null;}
-  else if(!first||Object.keys(first).sort().join(',')!=='category,kind,schema,stage'||
-    first.schema!=='helmut-w15-materials-first-failure/1'||!stages.includes(first.stage)||
-    !['assertion','filesystem','module','sql','type','timeout','unknown'].includes(first.kind)||
-    !(['MATERIALS_ENTRY_REJECTED','MATERIALS_PROCESS_REJECTED','MATERIALS_PROCESS_TIMEOUT','MATERIALS_FAILURE_UNAVAILABLE'].includes(first.category)||
-       /^MATERIALS_(?:MAIN|BINDING)_CHECK_(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2}|10[01][0-9]|102[0-4])$/.test(first.category)))return null;
+  else if(!closedMaterialsFailure(first))return null;
   const e=value.evidence,ek=['schema','status','scope','artifactId','cipherBytes','cipherSHA256','retentionDays','maximumStorageUSD',
     'remoteReadbackObserved','authenticatedReadbackObserved','acceptedAsCompleteBackup','mock500Acceptance','productionAcceptance','executionAuthority','retryAllowed'];
   if(!e||Object.keys(e).sort().join(',')!==[...ek].sort().join(',')||e.schema!=='helmut-w15-materials-diagnostic-evidence/1'||
@@ -138,6 +147,7 @@ function main(){
     phases.push(...['binding','workspace','stage-sources','input-context','container-create',
       'container-start','supervisor-start','database-readiness','database-restore',
       'database-baseline','runtime-context','setup','gateway-start','materials',
+      'materials-copy-processing','materials-copy-command','materials-copy-fixtures','materials-copy-audit',
       'atomic-bootstrap','prepare','run','zero-audit','services','result-readback',
       'backup','owned-close','supervisor-stop','gateway-client-close','gateway-log-close',
       'final-observation'].map(value=>'mock500-controller-'+value));
