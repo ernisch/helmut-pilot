@@ -347,7 +347,14 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
         if receiver is not None and type(error) is getattr(receiver, 'MockReceiveError', None):
             if child_phase in MOCK_RECEIVER_PHASES:
                 child_phase = 'mock-receiver-' + child_phase
-        raise WorkflowRejected(child_phase if child_phase in PHASES else phase, _cached_memory(resources)) from None
+        failure=WorkflowRejected(child_phase if child_phase in PHASES else phase,_cached_memory(resources))
+        staged=sys.modules.get('w15_github_mock500_controller')
+        if (staged is not None and type(error)is getattr(staged,'Mock500ControllerFailure',None)
+                and child_phase in _DIAGNOSTICS.MOCK_CONTROLLER_PHASES
+                and child_phase.startswith('mock500-controller-materials')):
+            safe=_DIAGNOSTICS.materials_failure(_DIAGNOSTICS.attribute(error,'materials_failure'))
+            if safe is not None:failure.materials_failure=safe
+        raise failure from None
 
 
 def _cached_memory(resources):

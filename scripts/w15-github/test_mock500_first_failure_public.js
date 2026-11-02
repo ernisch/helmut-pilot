@@ -36,7 +36,7 @@ function run(receipt){
  vm.runInNewContext(fs.readFileSync(action,'utf8'),sandbox,{filename:action,timeout:3000});
  assert.equal(proc.exitCode,1);assert(!lines.join('\n').includes(CANARY));return JSON.parse(lines.at(-1));
 }
-assert.equal(fixture.length,40);
+assert.equal(fixture.length,44);
 for(const receipt of fixture){
  const out=run(receipt);assert.equal(out.status,receipt.status);assert.equal(out.worker.phase,receipt.worker.phase);
  assert.equal(out.retryAllowed,false);assert.equal(out.executionAuthority,false);
@@ -44,4 +44,4 @@ for(const receipt of fixture){
 const bad=structuredClone(fixture[0]);bad.worker.phase=CANARY;assert.equal(run(bad).worker,undefined);
 bad.worker={...fixture[0].worker,privateSQL:CANARY};assert.equal(run(bad).worker,undefined);
 bad.phase=CANARY;assert.equal(run(bad).status,'FAIL_OR_BLOCKED_MOCK500_ACTION');
-console.log('PASS 40 fixed controller phases cross real terminal packet and JS action; forged/private phases rejected; 0 real work');
+console.log('PASS 44 fixed controller phases cross real terminal packet and JS action; forged/private phases rejected; 0 real work');

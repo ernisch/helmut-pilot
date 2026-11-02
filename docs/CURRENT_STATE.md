@@ -1,20 +1,20 @@
 # CURRENT STATE — Helmut
 
-## W15: Materialursache behoben; FullMock vor Startprüfung (02.11.2026)
+## W15: neuer Mock500 FAIL; Fehlerkanal reparieren (02.11.2026)
 
-[Beleg/Minimalfix](betrieb/w15-mock500-calendar-materials-fix-20261102.md).
-Kapsellesung41486209469/61d7b5c9: **FAIL**,12s,agent-close;GO/Nonce4450ad83verbraucht.
-Branch sicher582→61. Geschlossene Projektion nach GPG-/Archiv-/Dateihashprüfung:
-MATERIALS_BINDING_CHECK_123/assertion/calendar. Bereinigtes Materials liefertProvider
-none,echterKonstruktor verlangtazure. Fix nur lokalerMockkontext mittry/finally;
-KonstruktorprobeRED→GREEN,Outputs/Originaleunverändert.
-Separat SocketCreatorPID≠AgentPID amLEERENAgentbelegt. CI41489867997/e7FAIL:
-offiziellerGPG-Client erfolgreich,manuelleSocketbeobachtung fehlgeschlagen.
-Fix nutzt offiziellenClient ohneAutostart,UID/scopedKill/pidfdExit;
-4gezielteAgentfällePASS,neuePflichtCI/Reviewoffen. HistorischerAgentstoppUNKNOWN,
-keineFAIL-Umwertung/ReadRetry. Belege05/06privaterhalten. BedingtesFullMock-GO1
-unverbraucht,nurmitfrischenexaktenBindungen/NonceundallenStartbedingungen.
-Full-Zähler/SicherungUNKNOWN. KeineRAM-Änderung/Production.
+[Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
+auf9d8e72e5: **FAIL**,Job124s/Hauptaktion98s,Materialssammelphase;innereUrsacheUNKNOWN.
+Versuch/Linkrundeverbraucht,keinRetry.
+Peak2,590GB/Limit13,287GB;Swap/OOM/max0,8äußereCleanupPASS,0Artefakte/aktiveManuals.
+Fullzählungen/Backup/innereDBnullUNKNOWN;keineRAM-/Provider-/Production-Abnahme.
+[Abnahme/kleinsterFolgeschritt](betrieb/w15-mock500-full-materials-failure-41500229995-20261102.md).
+BelegterMeldeverlust:SafeRecordernurDiag,FullignoriertWitness;Node+4copy_ingeteiltePhase.
+FiximneuenEntwicklungsbranch:geschlosseneVierfeldmeldungüberbestehendeIPC,
+4festeKopierphasen;vorhandenebegrenzteDiagnoseprüftauchKopien,weiter0Units/Provider.
+GezielteGegenprobengrün;KopfCI/ReviewimPRbelegen. NeuerOriginallaufgesperrt.
+End500/Originalempfangübernommen. Reader414862weiterFAIL/AgentstopUNKNOWN.
+Belegeprivatin07erhalten;Ausführungsbranchbleibt9d.
+NächsteGrenze:neuesGOerstfürgeprüftebegrenzteMaterials+Kopien-Diagnose,keinFullaufVerdacht.
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
 Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.

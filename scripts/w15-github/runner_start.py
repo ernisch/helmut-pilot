@@ -559,7 +559,8 @@ def _worker_failure(error, reason, *, error_type=RunnerStartError):
     phase = phase if type(phase) is str and phase in error_type.allowed_worker_phases else None
     memory = _closed_memory(D.attribute(error, 'worker_memory')) if phase is not None else None
     native = D.native_failure(D.attribute(error, 'native_failure'))
-    materials = D.materials_failure(D.attribute(error, 'materials_failure')) if phase is not None else None
+    materials = D.materials_failure(D.attribute(error, 'materials_failure')) if (
+        phase in D.MOCK_CONTROLLER_PHASES and phase.startswith('mock500-controller-materials')) else None
     detail = {'reason': 'WORKER_REPORTED_FAILURE'} if native is not None or materials is not None else None
     if native is not None:
         detail['nativeFailure'] = native

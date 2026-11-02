@@ -43,10 +43,59 @@ def _mock_module(name):
 MOCK_CONTROLLER_PHASES=_mock_module('runner_diagnostics').MOCK_CONTROLLER_PHASES
 
 class Mock500ControllerFailure(RuntimeError):
-    """Only a fixed first checkpoint; never an exception message or input path."""
-    def __init__(self,phase):
+    """Fixed first checkpoint and optional closed Materials category; no raw data."""
+    def __init__(self,phase,materials_failure=None):
         super().__init__('MOCK500_CONTROLLER_FAILED_OR_UNKNOWN')
         self.phase=phase if type(phase)is str and phase in MOCK_CONTROLLER_PHASES else 'mock500'
+        self.materials_failure=None
+        if materials_failure is not None and self.phase.startswith('mock500-controller-materials'):
+            try:self.materials_failure=_mock_module('mock500_materials_contract').failure(materials_failure)
+            except BaseException:pass
+
+
+def _prepare_bound_materials(supervisor,material_env):
+    """Use the same Node and four output copies before either scoped closure or Full.
+
+    The existing Node recorder writes fixed categories only to its safe file.
+    Raw Node/controller error text remains private; later cleanup cannot replace
+    this typed first checkpoint. No bootstrap, profile or unit action lives here.
+    """
+    environment={**material_env,'HELMUT_W15_MATERIALS_DIAGNOSTIC':'1'}
+    try:
+        supervisor.stage([str(WORK/'stage/node'),'--require',str(ROOT/'scripts/lokaler-netzschutz.js'),
+          str(ROOT/'scripts/synthetik-500-w15-full500-materials.js')],'materials',240,environment)
+    except Exception as error:
+        safe={'schema':'helmut-w15-materials-first-failure/1',
+              'category':'MATERIALS_FAILURE_UNAVAILABLE','kind':'unknown','stage':'entry'}
+        fd=None
+        try:
+            fd=os.open(WORK/'MATERIALS_DIAGNOSTIC_FAILURE.SAFE.json',os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+            meta=os.fstat(fd)
+            assert stat.S_ISREG(meta.st_mode)and meta.st_uid==os.getuid()and meta.st_nlink==1
+            assert stat.S_IMODE(meta.st_mode)==0o600 and 0<meta.st_size<=4096
+            raw=os.read(fd,4097);assert len(raw)==meta.st_size
+            safe=_mock_module('mock500_materials_contract').failure(json.loads(raw))
+        except BaseException:pass
+        finally:
+            if fd is not None:
+                try:os.close(fd)
+                except OSError:pass
+        phase='mock500-controller-materials'
+        if safe['category']!='MATERIALS_FAILURE_UNAVAILABLE':phase+='-'+safe['stage']
+        raise Mock500ControllerFailure(phase,safe)from error
+    outputs=(('processing-materials.PRIVATE.json','processing'),
+             ('current-command.PRIVATE.json','command'),('mock-fixtures.PRIVATE.json','fixtures'),
+             ('audit-inputs.PRIVATE.json','audit'))
+    for name,label in outputs:
+        try:copy_in(WORK/name,BASE+'/state/'+name)
+        except Exception as error:
+            kind=('timeout'if isinstance(error,subprocess.TimeoutExpired)else
+                  'filesystem'if isinstance(error,OSError)else'type'if isinstance(error,TypeError)else
+                  'assertion'if isinstance(error,AssertionError)else'unknown')
+            safe={'schema':'helmut-w15-materials-first-failure/1','category':'MATERIALS_PROCESS_REJECTED',
+                  'kind':kind,'stage':'output'}
+            raise Mock500ControllerFailure('mock500-controller-materials-copy-'+label,safe)from error
+
 
 def check_window(now=None):
     now=now or datetime.datetime.now(datetime.timezone.utc)
@@ -749,14 +798,10 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
         start_guard.before_dispatch(kind='prepare')
         material_env={**ENV,'HELMUT_SOURCE_MODE':'off','HELMUT_STORAGE_BACKEND':'local',
           'HELMUT_W15_MOCK_CONTEXT':str(descriptor_path),'HELMUT_W15_MOCK_CONTEXT_SHA256':_BOUND_CONTEXT_SHA}
-        if diagnostic:material_env['HELMUT_W15_MATERIALS_DIAGNOSTIC']='1'
         phase='mock500-controller-materials'
-        supervisor.stage([str(WORK/'stage/node'),'--require',str(ROOT/'scripts/lokaler-netzschutz.js'),
-          str(ROOT/'scripts/synthetik-500-w15-full500-materials.js')],'materials',240,material_env)
+        _prepare_bound_materials(supervisor,material_env)
         materials_completed=True
         if not diagnostic:
-            for name in ('processing-materials.PRIVATE.json','current-command.PRIVATE.json','mock-fixtures.PRIVATE.json','audit-inputs.PRIVATE.json'):
-                copy_in(WORK/name,BASE+'/state/'+name)
             phase='mock500-controller-atomic-bootstrap'
             sql((ROOT/'supabase/proposals/auth_usage_atomic_local.sql').read_text(),database=DB)
             sql("select public.helmut_auth_usage_bootstrap_v1(jsonb_build_object('id','main-auth','expectedHash',encode(sha256(convert_to(data::text,'UTF8')),'hex')))from public.helmut_store where id='main-auth';",database=DB)
@@ -766,14 +811,13 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
             phase='mock500-controller-run';inner(supervisor,'run',10815)
     except BaseException as error:
         failure={'status':'FAIL_OR_UNKNOWN','phase':phase,'retryAllowed':False}
+        if type(error)is Mock500ControllerFailure:
+            failure['phase']=error.phase
+            if error.materials_failure is not None:failure['materialsFailure']=dict(error.materials_failure)
         if diagnostic:
             import traceback
             try:_private_write(WORK/'MATERIALS_CONTROLLER_FIRST_FAILURE.PRIVATE.json',{'phase':phase,
                 'type':type(error).__name__,'message':str(error)[:16384],'traceback':traceback.format_exc()[:32768]})
-            except BaseException:pass
-            try:
-                safe=_mock_module('mock500_materials_contract').failure(json.loads((WORK/'MATERIALS_DIAGNOSTIC_FAILURE.SAFE.json').read_bytes()))
-                failure['phase']='mock500-controller-materials-'+safe['stage']
             except BaseException:pass
     finally:
         if attempted and owned_id is not None:
@@ -794,9 +838,9 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
             try:
                 if diagnostic:
                     if failure is not None:
-                        category={'schema':'helmut-w15-materials-first-failure/1','category':'MATERIALS_FAILURE_UNAVAILABLE','kind':'unknown','stage':'entry'}
-                        safe_path=WORK/'MATERIALS_DIAGNOSTIC_FAILURE.SAFE.json'
-                        if safe_path.exists():category=_mock_module('mock500_materials_contract').failure(json.loads(safe_path.read_bytes()))
+                        category=failure.get('materialsFailure')or{'schema':'helmut-w15-materials-first-failure/1',
+                            'category':'MATERIALS_FAILURE_UNAVAILABLE','kind':'unknown','stage':'entry'}
+                        category=_mock_module('mock500_materials_contract').failure(category)
                     else:category=None
                     outcome={'materialsCompleted':materials_completed,'firstFailure':category,'cleanup':cleanup_result,
                         'observationMoment':'BEFORE_CONTAINER_STOP','ownedContainerStopped':closed,
@@ -863,7 +907,8 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
         finally:WORK,BASE,DB,CONTAINER,IMAGE,_BOUND_CONTEXT_SHA=previous
     if diagnostic and diagnostic_final is not None and diagnostic_closure_ok:return diagnostic_final
     if failure is not None or backup is None:
-        raise Mock500ControllerFailure(failure['phase']if failure else'mock500-controller-backup')from None
+        raise Mock500ControllerFailure(failure['phase']if failure else'mock500-controller-backup',
+            failure.get('materialsFailure')if failure else None)from None
     return final
 
 def main():
