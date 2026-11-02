@@ -53,7 +53,7 @@ class Mock500ControllerFailure(RuntimeError):
             except BaseException:pass
 
 
-def _prepare_bound_materials(supervisor,material_env):
+def _prepare_bound_materials(supervisor,material_env,*,prepared0=False):
     """Use the same Node and four output copies before either scoped closure or Full.
 
     The existing Node recorder writes fixed categories only to its safe file.
@@ -61,9 +61,11 @@ def _prepare_bound_materials(supervisor,material_env):
     this typed first checkpoint. No bootstrap, profile or unit action lives here.
     """
     environment={**material_env,'HELMUT_W15_MATERIALS_DIAGNOSTIC':'1'}
+    command=[str(WORK/'stage/node'),'--require',str(ROOT/'scripts/lokaler-netzschutz.js'),
+      str(ROOT/'scripts/synthetik-500-w15-full500-materials.js')]
+    if prepared0:command.append('--atomic-prepared0')
     try:
-        supervisor.stage([str(WORK/'stage/node'),'--require',str(ROOT/'scripts/lokaler-netzschutz.js'),
-          str(ROOT/'scripts/synthetik-500-w15-full500-materials.js')],'materials',240,environment)
+        supervisor.stage(command,'materials',240,environment)
     except Exception as error:
         safe={'schema':'helmut-w15-materials-first-failure/1',
               'category':'MATERIALS_FAILURE_UNAVAILABLE','kind':'unknown','stage':'entry'}
@@ -706,7 +708,7 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
         phase='mock500-controller-input-context'
         _private_write(WORK/'MOCK_INPUT_BINDING.PRIVATE.json',inputs._record)
         _private_write(WORK/'OWNER_GO.PRIVATE.json',{'confirmation':('GO_ONE_ISOLATED_MATERIALS_DIAGNOSTIC_AND_RETURN_TO_ZERO'if diagnostic else'GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO'),
-          'targetDatabase':DB,'maximumUnits':0 if diagnostic else 500,'temporarySyntheticProfiles':500,'paidModelsAllowed':False,
+          'targetDatabase':DB,'maximumUnits':0 if diagnostic else 500,'temporarySyntheticProfiles':0 if diagnostic else 500,'paidModelsAllowed':False,
           'productionAllowed':False,'full500Allowed':not diagnostic,'authorizationBinding':start_guard.admission,
           'noRetryOrResume':True})
         _private_write(WORK/'state/OWNER_GO.PRIVATE.json',json.loads((WORK/'OWNER_GO.PRIVATE.json').read_bytes()))
@@ -799,7 +801,7 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
         material_env={**ENV,'HELMUT_SOURCE_MODE':'off','HELMUT_STORAGE_BACKEND':'local',
           'HELMUT_W15_MOCK_CONTEXT':str(descriptor_path),'HELMUT_W15_MOCK_CONTEXT_SHA256':_BOUND_CONTEXT_SHA}
         phase='mock500-controller-materials'
-        _prepare_bound_materials(supervisor,material_env)
+        _prepare_bound_materials(supervisor,material_env,prepared0=diagnostic)
         materials_completed=True
         if not diagnostic:
             phase='mock500-controller-atomic-bootstrap'

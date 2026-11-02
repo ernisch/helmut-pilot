@@ -43,6 +43,11 @@ class MaterialsOutputChecks(unittest.TestCase):
         self.assertEqual([call.args[0].name for call in copied.call_args_list], list(OUTPUTS))
         self.assertEqual([call.args[1] for call in copied.call_args_list],
                          [controller.BASE + '/state/' + name for name in OUTPUTS])
+        self.assertNotIn('--atomic-prepared0', supervisor.stage.call_args.args[0])
+        with patch.object(controller, 'copy_in') as copied:
+            controller._prepare_bound_materials(supervisor, environment, prepared0=True)
+        self.assertEqual(supervisor.stage.call_args.args[0][-1], '--atomic-prepared0')
+        self.assertEqual([call.args[0].name for call in copied.call_args_list], list(OUTPUTS))
 
     def test_node_first_category_survives_actual_workflow_and_terminal_projection(self):
         _, controller = self.fixture()
@@ -145,6 +150,9 @@ class MaterialsOutputChecks(unittest.TestCase):
                 task.start(); fixture.addCleanup(task.stop)
             with self.subTest(failed=failed):
                 result, events = helper._run_fictional_bound_pipeline(inject=inject, diagnostic=True)
+                observation = helper._last_materials_diagnostic_observation
+                go = json.loads((observation['root'] / 'work/OWNER_GO.PRIVATE.json').read_bytes())
+                self.assertEqual((go['maximumUnits'], go['temporarySyntheticProfiles']), (0, 0))
                 self.assertEqual((result['units'], result['providerPhases'], result['activeProfiles']), (0, 0, 0))
                 self.assertIs(result['materialsCompleted'], failed is None)
                 self.assertEqual(len(copied), len(OUTPUTS) if failed is None else OUTPUTS.index(failed) + 1)

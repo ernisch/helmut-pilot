@@ -1,5 +1,9 @@
 # Mock500 Run41500229995: tatsächlicher FAIL und Materials-Fehlerkanal
 
+Aktualisierung: Das spätere d0-GO verbietet jede Profilaktivierung. Die unten
+historisch vorgeschlagene temporäre Aktivierung ist damit nicht freigegeben.
+[Geprüfte notwendige Nullaktivitäts-Anbindung und neue Freigabegrenze](w15-mock500-materials-zero-active-20261102.md).
+
 ## Tatsächlicher Versuch
 
 Der einmalig freigegebene Full-Host-Lauf lief auf

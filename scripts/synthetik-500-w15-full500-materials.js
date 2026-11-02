@@ -28,6 +28,17 @@ function stage(name, extra = {}) { const x = { name, elapsedMs: performance.now(
 function pass(name, evidence = {}) { checks.push({ name, status: "PASS", ...evidence }); console.log("PASS " + name); }
 function privateFile(file) { const s = fs.lstatSync(file); assert(s.isFile() && !s.isSymbolicLink());
   assert.equal(s.uid, process.getuid()); assert.equal(s.mode & 0o777, 0o600); return fs.readFileSync(file); }
+function checkDiagnosticScope() {
+  if (BOUND?.materialsDiagnosticOnly !== true) return;
+  // Reuse the existing prepare-only path; reject before any database access.
+  assert(ATOMIC_PREPARED0, "w15-materials-diagnostic-prepared0-required");
+  assert.equal(BOUND.functionalResourceContract?.mode, "mock500-materials-diagnostic-gated");
+  const owner = JSON.parse(privateFile(path.join(WORK, "OWNER_GO.PRIVATE.json")));
+  assert.equal(owner.confirmation, "GO_ONE_ISOLATED_MATERIALS_DIAGNOSTIC_AND_RETURN_TO_ZERO");
+  assert.equal(owner.targetDatabase, DB); assert.equal(owner.maximumUnits, 0);
+  assert.equal(owner.temporarySyntheticProfiles, 0); assert.equal(owner.paidModelsAllowed, false);
+  assert.equal(owner.productionAllowed, false); assert.equal(owner.full500Allowed, false);
+}
 function retain(name, value) { const file = path.join(WORK, name), b = Buffer.from(JSON.stringify(value, null, 2) + "\n");
   fs.writeFileSync(file, b, { flag: "wx", mode: 0o600 }); return { path: file, bytes: b.length, sha256: sha(b) }; }
 function sql(text, database = DB) {
@@ -121,6 +132,7 @@ function verifyCurrentDatabase(native) {
     originalSourceDatabaseWritten: false, sourcePublicationDatesRewritten: false });
 }
 async function main() {
+  checkDiagnosticScope();
   assert(require.cache[require.resolve("./lokaler-netzschutz")]);
   assert.deepEqual(require("./lokaler-netzschutz").pruefe(process.env), []);
   assert.equal(process.env.HELMUT_STORAGE_BACKEND, "local");

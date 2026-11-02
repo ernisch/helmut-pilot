@@ -57,7 +57,7 @@ function ownerGo({ materialsDiagnostic = false } = {}) {
     assert.equal(BOUND.functionalResourceContract?.mode, "mock500-materials-diagnostic-gated");
     assert.equal(go.confirmation, "GO_ONE_ISOLATED_MATERIALS_DIAGNOSTIC_AND_RETURN_TO_ZERO");
     assert.equal(go.targetDatabase, DB); assert.equal(go.maximumUnits, 0);
-    assert.equal(go.temporarySyntheticProfiles, 500); assert.equal(go.paidModelsAllowed, false);
+    assert.equal(go.temporarySyntheticProfiles, 0); assert.equal(go.paidModelsAllowed, false);
     assert.equal(go.productionAllowed, false); assert.equal(go.full500Allowed, false);
     return go;
   }

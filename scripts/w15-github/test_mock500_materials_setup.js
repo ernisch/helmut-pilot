@@ -5,7 +5,7 @@ const {createRequire}=require('node:module');
 const filename=path.resolve(__dirname,'../synthetik-500-w15-full500-runtime.js'),actual=createRequire(filename);
 const D='mock500-materials-diagnostic-gated';
 const diagGo={confirmation:'GO_ONE_ISOLATED_MATERIALS_DIAGNOSTIC_AND_RETURN_TO_ZERO',
- targetDatabase:'helmut_w15_full500_20261028b',maximumUnits:0,temporarySyntheticProfiles:500,
+ targetDatabase:'helmut_w15_full500_20261028b',maximumUnits:0,temporarySyntheticProfiles:0,
  paidModelsAllowed:false,productionAllowed:false,full500Allowed:false};
 function runtime({diagnostic=true,go=diagGo,mode=D}={}){
  let keysGenerated=0;
@@ -21,7 +21,40 @@ function runtime({diagnostic=true,go=diagGo,mode=D}={}){
  vm.runInNewContext(fs.readFileSync(filename,'utf8')+'\nmodule.exports.probe={ownerGo,setup,main};guard=()=>{throw Error("SYNTHETIC_UNCHANGED_RUNTIME_GUARD_BOUNDARY")};',sandbox,{filename});
  return {probe:mod.exports.probe,keys:()=>keysGenerated};
 }
+function materials({diagnostic=true,go=diagGo,prepared0=true,mode=D}={}){
+ const file=path.resolve(__dirname,'../synthetik-500-w15-full500-materials.js'),req=createRequire(file);
+ const mod={exports:{}},calls={sql:0,reads:0};
+ const sandbox={module:mod,exports:mod.exports,__filename:file,__dirname:path.dirname(file),Buffer,console,
+  process:{argv:['node',file,...(prepared0?['--atomic-prepared0']:[])],getuid:()=>1000,env:{},memoryUsage:()=>({rss:0})},
+  require(name){
+   if(name==='node:fs')return {lstatSync:()=>({isFile:()=>true,isSymbolicLink:()=>false,uid:1000,mode:0o100600}),
+    readFileSync:()=>{calls.reads++;return Buffer.from(JSON.stringify(go));}};
+   if(name==='node:child_process')return {spawnSync(){calls.sql++;throw Error('SYNTHETIC_SQL_MUST_NOT_RUN');}};
+   if(name==='./w15-github/mock500_materials_failure')return {create:()=>({enter(){},record(){}})};
+   if(name==='./w15-github/mock500_bindings')return {readBound:()=>({materialsDiagnosticOnly:diagnostic,
+    functionalResourceContract:{mode},context:{}}),namespace:()=>({container:'FICTIONAL',work:'/FICTIONAL'})};
+   if(name==='./synthetik-500-w15-signed-chain-test')return {};
+   return req(name);
+  }};
+ sandbox.require.resolve=req.resolve;
+ vm.runInNewContext(fs.readFileSync(file,'utf8')+'\nmodule.exports.probe={checkDiagnosticScope,main,unit0:UNIT0};',sandbox,{filename:file});
+ return {probe:mod.exports.probe,calls};
+}
 (async()=>{
+ const scoped=materials();scoped.probe.checkDiagnosticScope();assert.equal(scoped.probe.unit0,false);
+ assert.deepEqual(scoped.calls,{sql:0,reads:1});
+ const missingFlag=materials({prepared0:false});
+ await assert.rejects(missingFlag.probe.main(),/w15-materials-diagnostic-prepared0-required/);
+ assert.deepEqual(missingFlag.calls,{sql:0,reads:0});
+ for(const change of [{confirmation:'WRONG'},{targetDatabase:'WRONG'},{maximumUnits:500},
+  {temporarySyntheticProfiles:500},{paidModelsAllowed:true},{productionAllowed:true},{full500Allowed:true}]){
+  const rejected=materials({go:{...diagGo,...change}});
+  await assert.rejects(rejected.probe.main());assert.equal(rejected.calls.sql,0);
+ }
+ const wrongMode=materials({mode:'mock500-full-host-functional-gated'});
+ await assert.rejects(wrongMode.probe.main());assert.deepEqual(wrongMode.calls,{sql:0,reads:0});
+ const unchangedFull=materials({diagnostic:false,prepared0:false});unchangedFull.probe.checkDiagnosticScope();
+ assert.equal(unchangedFull.probe.unit0,true);assert.deepEqual(unchangedFull.calls,{sql:0,reads:0});
  const diag=runtime();assert.equal(diag.probe.ownerGo({materialsDiagnostic:true}).maximumUnits,0);
  await assert.rejects(diag.probe.setup(),/SYNTHETIC_SETUP_KEY_BOUNDARY_NO_KEY_CREATED/);
  assert.equal(diag.keys(),1); // callback entered, no real crypto called
@@ -29,10 +62,10 @@ function runtime({diagnostic=true,go=diagGo,mode=D}={}){
  await assert.rejects(diag.probe.main('gateway'),/SYNTHETIC_UNCHANGED_RUNTIME_GUARD_BOUNDARY/);
  assert.throws(()=>diag.probe.ownerGo());
  assert.throws(()=>runtime({mode:'mock500-full-host-functional-gated'}).probe.ownerGo({materialsDiagnostic:true}));
- for(const change of [{maximumUnits:500},{full500Allowed:true},{paidModelsAllowed:true},{temporarySyntheticProfiles:0}])
+ for(const change of [{maximumUnits:500},{full500Allowed:true},{paidModelsAllowed:true},{temporarySyntheticProfiles:500}])
   assert.throws(()=>runtime({go:{...diagGo,...change}}).probe.ownerGo({materialsDiagnostic:true}));
- const full={...diagGo,confirmation:'GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO',maximumUnits:500,full500Allowed:true};
+ const full={...diagGo,confirmation:'GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO',maximumUnits:500,temporarySyntheticProfiles:500,full500Allowed:true};
  assert.equal(runtime({diagnostic:false,go:full}).probe.ownerGo().maximumUnits,500);
  assert.throws(()=>runtime({diagnostic:false,go:diagGo}).probe.ownerGo());
- console.log('PASS bounded diagnostic setup reaches existing key boundary; unit/run gates remain closed; full GO remains strict; no keys or DB created');
+ console.log('PASS diagnostic Materials rejects activation before SQL; prepared0 and all owner gates; runtime setup/unit/run gates; Full unchanged; no keys or DB created');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -1,20 +1,20 @@
 # CURRENT STATE — Helmut
 
-## W15: neuer Mock500 FAIL; Fehlerkanal reparieren (02.11.2026)
+## W15: Materials-Diagnose vor Start blockiert (02.11.2026)
+
+PR1023/d0b497cb: Pflicht-CI41505994851 und unabhängiger Review PASS.
+Neuestes GO bindet d0, verbietet aber Aktivierung; d0 erlaubt noch500 temporäre
+Profile. Kein FF/Nonce/Link/Job, GO unverbraucht. Ausführungsbranch bleibt9d.
+[Kleinste Nullaktivitäts-Korrektur und nächste Freigabe](betrieb/w15-mock500-materials-zero-active-20261102.md):
+vorhandenes prepared0 nur für Diagnose, Owner-GO0/0 und Eingangsriegel vor SQL;
+Node+4Kopien bleiben. Full unverändert. Gezielte Proben grün, finaler CI/Review im PR.
+Neues exaktes Fixcommit-GO nötig; Tagesstarttor am02.11. bereits geschlossen.
 
 [Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
-auf9d8e72e5: **FAIL**,Job124s/Hauptaktion98s,Materialssammelphase;innereUrsacheUNKNOWN.
-Versuch/Linkrundeverbraucht,keinRetry.
-Peak2,590GB/Limit13,287GB;Swap/OOM/max0,8äußereCleanupPASS,0Artefakte/aktiveManuals.
-Fullzählungen/Backup/innereDBnullUNKNOWN;keineRAM-/Provider-/Production-Abnahme.
-[Abnahme/kleinsterFolgeschritt](betrieb/w15-mock500-full-materials-failure-41500229995-20261102.md).
-BelegterMeldeverlust:SafeRecordernurDiag,FullignoriertWitness;Node+4copy_ingeteiltePhase.
-FiximneuenEntwicklungsbranch:geschlosseneVierfeldmeldungüberbestehendeIPC,
-4festeKopierphasen;vorhandenebegrenzteDiagnoseprüftauchKopien,weiter0Units/Provider.
-GezielteGegenprobengrün;KopfCI/ReviewimPRbelegen. NeuerOriginallaufgesperrt.
-End500/Originalempfangübernommen. Reader414862weiterFAIL/AgentstopUNKNOWN.
-Belegeprivatin07erhalten;Ausführungsbranchbleibt9d.
-NächsteGrenze:neuesGOerstfürgeprüftebegrenzteMaterials+Kopien-Diagnose,keinFullaufVerdacht.
+auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.
+Peak2,590GB/Limit13,287GB;Swap/OOM/max0;8äußereCleanupPASS,0Artefakte/aktiveManuals.
+Fullzählungen/Backup/innereDBnull UNKNOWN. [Belege](betrieb/w15-mock500-full-materials-failure-41500229995-20261102.md)
+privat in07 erhalten. End500/Empfang übernommen; alteFAILs/ProviderUNKNOWN erhalten.
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
 Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.
