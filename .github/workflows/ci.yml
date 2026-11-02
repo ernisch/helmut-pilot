@@ -95,6 +95,26 @@ jobs:
           # W15's closed worker validates this exact native runtime.
           node-version: 24.19.0
           cache: npm
+      - name: W15 Mock500 Kopiereigentuemer — nur kleine synthetische CI-Gegenprobe
+        if: github.event_name == 'pull_request' && github.head_ref == 'codex/w15-mock500-first-failure-checkpoint-20261102'
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          set -euo pipefail
+          COPY_NODE="$(command -v node)"
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_copy_owner.py --unit-only
+          COPY_ENV=(PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8)
+          for key in DOCKER_CONFIG HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy; do
+            if [[ -v "$key" ]]; then COPY_ENV+=("$key=${!key}"); fi
+          done
+          sudo -n env -i "${COPY_ENV[@]}" \
+            GITHUB_ACTIONS=true GITHUB_EVENT_NAME=pull_request \
+            GITHUB_HEAD_REF=codex/w15-mock500-first-failure-checkpoint-20261102 \
+            GITHUB_SHA="$GITHUB_SHA" GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+            W15_COPY_OWNER_SOURCE_HEAD="${{ github.event.pull_request.head.sha }}" \
+            "$COPY_NODE" scripts/lokal.js -- /usr/bin/python3 -I -B scripts/w15-github/test_mock500_copy_owner.py \
+            --native --node "$COPY_NODE" --service-container "${{ job.services.postgres.id }}" \
+            --expected-commit "$GITHUB_SHA" --source-head "${{ github.event.pull_request.head.sha }}"
       - name: W15 gezielte Speicherzuordnung — nur 32 MiB synthetische Datei und Kopie
         if: github.event_name == 'pull_request' && github.head_ref == 'codex/w15-full-restore-result-20261030'
         timeout-minutes: 5
@@ -213,6 +233,8 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_host_integration.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_host_main.py
           node scripts/lokal.js -- node scripts/w15-github/test_mock500_host_public.js
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_first_failure.py
+          node scripts/lokal.js -- node scripts/w15-github/test_mock500_first_failure_public.js
           node scripts/lokal.js -- sudo -n /usr/bin/python3 -B scripts/w15-github/test_worker_result_handoff.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_host_capacity_telemetry.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_functional_contract.py

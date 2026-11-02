@@ -111,6 +111,9 @@ class WorkflowChecks(unittest.TestCase):
         self.assertNotIn('FICTIONAL_PRIVATE_TEXT', output.getvalue()); self.assertFalse(result['retryAllowed'])
 
     def test_full_worker_connects_retained_inputs_controller_and_backup_on_one_clock(self):
+        self._fictional_full_worker()
+
+    def _fictional_full_worker(self, inject=None):
         value = request(W.FULL)
         value.update(runnerTemp='/FICTIONAL/temp', checkoutBytes=10, binaryBytes=20,
             startedAtUTC='2026-10-29T12:00:00Z', startedMonotonic=123.0,
@@ -143,6 +146,8 @@ class WorkflowChecks(unittest.TestCase):
                 patch.object(W, 'validate_manifest'), patch.object(W, 'validate_event'), \
                 patch.object(W, 'component', side_effect=lambda n: modules[n]), \
                 patch.object(W, 'controller', return_value=controller), patch.object(W, '_result', return_value='SAFE'):
+            if inject is not None:
+                inject(self, controller)
             self.assertEqual(W.run_worker(value, {'eventInputs': {}}), 'SAFE')
         modules['mock500_receive'].prepare_inputs.assert_called_once()
         controller.run_bound.assert_called_once(); finish.assert_called_once_with(FICTIONAL=True)

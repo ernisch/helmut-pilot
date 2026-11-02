@@ -227,7 +227,9 @@ class ControllerAdmissionChecks(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'new-explicit-user-go'):
                 controller.main()
             with patch.object(controller, '_mock_module', return_value=SimpleNamespace(Mock500Inputs=M.Mock500Inputs)):
-                with self.assertRaises(AssertionError): controller.run_bound(object(), object(), object(), Mock())
+                with self.assertRaises(controller.Mock500ControllerFailure) as caught:
+                    controller.run_bound(object(), object(), object(), Mock())
+                self.assertEqual(caught.exception.phase, 'mock500-controller-binding')
             docker.assert_not_called(); command.assert_not_called()
 
     def test_backup_deadline_is_independent_of_owned_stop_policy(self):
@@ -250,6 +252,9 @@ class ControllerAdmissionChecks(unittest.TestCase):
                 supervisor.start_guard.before_dispatch.assert_called_once()
 
     def test_fictional_bound_pipeline_orders_restore_materials_runtime_zero_audit_and_backup(self):
+        self._run_fictional_bound_pipeline()
+
+    def _run_fictional_bound_pipeline(self, *, inject=None, expect_failure=False):
         controller = self.load_controller()
         temp = tempfile.TemporaryDirectory(prefix='w15-fictional-mock-pipeline-'); self.addCleanup(temp.cleanup)
         ctx = context(temp.name); ctx['runtimePins']['imageId'] = 'sha256:' + 'c' * 64
@@ -365,8 +370,12 @@ class ControllerAdmissionChecks(unittest.TestCase):
                 patch.object(controller, 'copy_out', side_effect=copy_out), patch.object(controller, 'cleanup', side_effect=cleanup), \
                 patch.object(controller, 'stop_owned'), patch.object(controller.subprocess, 'Popen', Gateway), \
                 patch.object(controller.subprocess, 'run', side_effect=command), patch.object(controller.time, 'sleep'):
+            if inject is not None:
+                inject(self, controller)
             try: result = controller.run_bound(inputs, resource, start, complete, disk_guard=Mock())
-            except RuntimeError:
+            except BaseException:
+                if expect_failure:
+                    raise
                 final_path = Path(ctx['hostPaths']['runRoot']) / 'FINAL_MOCK500_CLOSURE.SAFE.json'
                 self.fail(str(events) + ' ' + str(json.loads(final_path.read_bytes()) if final_path.exists() else {}))
         self.assertEqual(result['status'], 'PASS_MOCK500_BODY_AND_BACKUP_INDEPENDENT_ACCEPTANCE_PENDING')

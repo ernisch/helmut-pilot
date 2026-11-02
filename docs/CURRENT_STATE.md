@@ -1,5 +1,25 @@
 # CURRENT STATE — Helmut
 
+## W15: erste Mock500-Fehlerphase gesichert, Ursache noch offen (02.11.2026)
+
+Eigener Branch `codex/w15-mock500-first-failure-checkpoint-20261102` ab71428476:
+nachgestellter Diagnoseverlust behoben. Der Controller erhält die erste feste
+Arbeitsphase auch bei späterem Supervisor-/Gateway-/Abschlussfehler; globale
+Bindungen werden wiederhergestellt. Ausschließlich exakte Controllerfehlertypen
+dürfen die geschlossene Phasenliste über den vorhandenen IPC-/Aktionskanal melden;
+private Fehlermeldungen, Pfade und SQL bleiben gesperrt. Sieben kleine Pythonfälle
+und26 Phasen durch den tatsächlichen Python-/JS-Fehlerkanal PASS; unabhängiger
+Quellreview ohne hohe/offene Befunde. Pflicht-CI am veröffentlichten Kopf ausstehend.
+
+Die erste innere Ursache von Run41365567913 bleibt **UNKNOWN**. Eine kleine native
+CI-Gegenprobe untersucht ausschließlich Docker-Kopiereigentum/UID1000-Leserechte
+an einer fiktiven Datei, ohne Datenbank, Originale oder500erLauf. Die lokale Probe
+belegte keinen solchen Fehler; keine spekulative Änderung des Empfangscodes.
+Das neue bedingte Einmal-GO bleibt unverbraucht: echter Mock500 erst nach belegter,
+geprüfter Ursachenbehebung und vollständiger Startqualifikation. Kein neuer Link,
+Originalempfang, Ausführungsbranchwechsel oder geschützter Job. Historischer FAIL,
+End500-Funktionsbeleg und sämtliche Ressourcen-/Kosten-/Zeitgrenzen unverändert.
+
 ## W15: erster dynamischer Mock500-Lauf FAIL (02.11.2026)
 
 [Run41365567913](https://github.com/ernisch/helmut-pilot/actions/runs/41365567913),

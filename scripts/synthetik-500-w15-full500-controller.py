@@ -30,7 +30,7 @@ _BOUND_CONTEXT_SHA=None
 
 def _mock_module(name):
     assert name in ('mock500_inputs','mock500_resources','mock500_start','mock500_backup',
-      'functional_contract','mock500_host_contract','end500_capacity_roles')
+      'functional_contract','mock500_host_contract','end500_capacity_roles','runner_diagnostics')
     key='w15_github_'+name
     if key not in sys.modules:
         spec=importlib.util.spec_from_file_location(key,ROOT/'scripts/w15-github'/(name+'.py'))
@@ -39,6 +39,14 @@ def _mock_module(name):
         except BaseException:del sys.modules[key];raise
     assert pathlib.Path(sys.modules[key].__file__).absolute()==ROOT/'scripts/w15-github'/(name+'.py')
     return sys.modules[key]
+
+MOCK_CONTROLLER_PHASES=_mock_module('runner_diagnostics').MOCK_CONTROLLER_PHASES
+
+class Mock500ControllerFailure(RuntimeError):
+    """Only a fixed first checkpoint; never an exception message or input path."""
+    def __init__(self,phase):
+        super().__init__('MOCK500_CONTROLLER_FAILED_OR_UNKNOWN')
+        self.phase=phase if type(phase)is str and phase in MOCK_CONTROLLER_PHASES else 'mock500'
 
 def check_window(now=None):
     now=now or datetime.datetime.now(datetime.timezone.utc)
@@ -526,24 +534,28 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
     approved fresh V2 parent, inputs and start guard. No legacy approval is used.
     """
     global WORK,BASE,DB,CONTAINER,IMAGE,_BOUND_CONTEXT_SHA
-    assert type(inputs)is _mock_module('mock500_inputs').Mock500Inputs
-    assert type(resources)is _mock_module('mock500_resources').MockCommonResources
-    assert type(start_guard)is _mock_module('mock500_start').StartGuard
-    assert callable(backup_completion)and callable(disk_guard)
-    assert (LIMIT,RESERVE,MAXIMUM)==(2048000000,409600000,1638400000)
-    host_functional=getattr(resources,'host_functional_stage',None)=='mock500'
-    functional=getattr(resources,'functional_stage',None)=='mock500' or host_functional
-    physical_limit=resources.container_limit if functional else LIMIT
-    container_options={'memory_limit':physical_limit}if functional else{}
-    context=inputs.controller_context();plan=_mock_module('mock500_inputs').namespace(context)
-    assert start_guard.context==context and start_guard.resources is resources
-    start_guard.before_dispatch(kind='prepare');inputs.claim(resources);disk_guard()
-    root=pathlib.Path(context['hostPaths']['runRoot'])
-    assert not root.exists()
+    try:
+        assert type(inputs)is _mock_module('mock500_inputs').Mock500Inputs
+        assert type(resources)is _mock_module('mock500_resources').MockCommonResources
+        assert type(start_guard)is _mock_module('mock500_start').StartGuard
+        assert callable(backup_completion)and callable(disk_guard)
+        assert (LIMIT,RESERVE,MAXIMUM)==(2048000000,409600000,1638400000)
+        host_functional=getattr(resources,'host_functional_stage',None)=='mock500'
+        functional=getattr(resources,'functional_stage',None)=='mock500' or host_functional
+        physical_limit=resources.container_limit if functional else LIMIT
+        container_options={'memory_limit':physical_limit}if functional else{}
+        context=inputs.controller_context();plan=_mock_module('mock500_inputs').namespace(context)
+        assert start_guard.context==context and start_guard.resources is resources
+        start_guard.before_dispatch(kind='prepare');inputs.claim(resources);disk_guard()
+        root=pathlib.Path(context['hostPaths']['runRoot'])
+        assert not root.exists()
+    except BaseException:
+        raise Mock500ControllerFailure('mock500-controller-binding')from None
     previous=(WORK,BASE,DB,CONTAINER,IMAGE,_BOUND_CONTEXT_SHA)
     WORK,BASE,DB,CONTAINER=plan['work'],plan['base'],plan['database'],plan['container']
     IMAGE=context['runtimePins']['imageId']
     failure=None;supervisor=None;gateway_process=None;gateway_log=None;owned_id=None;attempted=False
+    phase='mock500-controller-workspace'
     closed=False;close_started=False;cleanup_result=None;backup=None;result=None;mounts={};actual_functional_results=None
     def guard():
         start_guard.closure_guard();disk_guard()
@@ -569,7 +581,9 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
         root.mkdir(mode=0o700)
         for key in ('work','prepare','cache'):pathlib.Path(context['hostPaths'][key]).mkdir(mode=0o700)
         for name in ('pgdata','state'):(WORK/name).mkdir(mode=0o700)
+        phase='mock500-controller-stage-sources'
         inputs.stage_sources(WORK/'stage',guard)
+        phase='mock500-controller-input-context'
         _private_write(WORK/'MOCK_INPUT_BINDING.PRIVATE.json',inputs._record)
         _private_write(WORK/'OWNER_GO.PRIVATE.json',{'confirmation':'GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO',
           'targetDatabase':DB,'maximumUnits':500,'temporarySyntheticProfiles':500,'paidModelsAllowed':False,
@@ -591,15 +605,18 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
           'helmut.w15.nonce':context['nonce'],'helmut.w15.commit':context['exactCommit']}
         args=[item for key,value in labels.items()for item in ('--label',key+'='+value)]
         args += [item for target,(source,readonly)in mounts.items()for item in ('--mount','type=bind,src='+str(source)+',dst='+target+(',readonly'if readonly else''))]
+        phase='mock500-controller-container-create'
         attempted=True
         docker('create','--name',CONTAINER,'--pull=never','--network=none','--restart=no',
           '--memory='+str(physical_limit),'--memory-swap='+str(physical_limit),'--cgroup-parent='+resources.unit,*args,
           '-e','POSTGRES_HOST_AUTH_METHOD=trust',IMAGE,'postgres','-c','helmut.local_usage_experiment=on',
           '-c','max_wal_size=128MB','-c','work_mem=32MB','-c','autovacuum_naptime=10s',
           *(('-c','max_connections=60')if functional else()))
-        owned_id=_bound_container(CONTAINER,context,mounts,**container_options)['Id'];docker('start',owned_id)
+        owned_id=_bound_container(CONTAINER,context,mounts,**container_options)['Id']
+        phase='mock500-controller-container-start';docker('start',owned_id)
         info=_bound_container(owned_id,context,mounts,owned_id,**container_options)
         assert info['State']['Running']is True;resources.check_pid(info['State']['Pid'],owned_id)
+        phase='mock500-controller-supervisor-start'
         supervisor=Supervisor(resources.path);supervisor.common_resources=resources
         if functional:
             supervisor.functional_role_provider=lambda:functional_role_bindings(resources,info['State']['Pid'],owned_id,WORK)
@@ -607,6 +624,7 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
         supervisor.sample();supervisor.thread.start()
         save('SUPERVISOR_READY.SAFE.json',{'pid':os.getpid(),'container':CONTAINER,'realMemoryCap':physical_limit,
           'swapMaximum':0,'image':IMAGE,'commonParent':resources.unit})
+        phase='mock500-controller-database-readiness'
         ready=False
         for _ in range(100):
             guard()
@@ -618,7 +636,9 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
         if functional:save('FUNCTIONAL_DB_INITIAL.SAFE.json',verify_functional_connections())
         docker('exec',owned_id,'mkdir','-p',BASE);docker('exec',owned_id,'chmod','700',BASE)
         docker('exec',owned_id,'chown','1000:1000',BASE)
+        phase='mock500-controller-database-restore'
         _mock_module('mock500_backup').restore_database(sys.modules[__name__],supervisor,resources,guard)
+        phase='mock500-controller-database-baseline'
         assert read('select count(*)from mandate_profiles where aktiv;')==0
         baseline=read("select jsonb_build_object('database',current_database(),'profiles',(select count(*)from mandate_profiles),"
           "'active',(select count(*)from mandate_profiles where aktiv),'identities',(select count(*)from profiles),"
@@ -626,6 +646,7 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
           "'profileHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by user_id collate \"C\")::text,'UTF8')),'hex')from mandate_profiles p),"
           "'profileFachHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)-'aktiv' order by user_id collate \"C\")::text,'UTF8')),'hex')from mandate_profiles p),"
           "'storeHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by id collate \"C\")::text,'UTF8')),'hex')from helmut_store p));")
+        phase='mock500-controller-runtime-context'
         descriptor=inputs.private_descriptor();descriptor['sourceBaseline']=baseline;descriptor['window']=start_guard.window
         if functional:
             contract=_mock_module('mock500_host_contract' if host_functional else 'functional_contract')
@@ -638,7 +659,8 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
               'legacyRegularMemoryAccepted':False,'providerResourceAccepted':False}
         descriptor_path=WORK/'mock-context.PRIVATE.json';_BOUND_CONTEXT_SHA=_private_write(descriptor_path,descriptor)
         copy_in(descriptor_path,BASE+'/state/mock-context.PRIVATE.json')
-        inner(supervisor,'setup')
+        phase='mock500-controller-setup';inner(supervisor,'setup')
+        phase='mock500-controller-gateway-start'
         gateway_log=(WORK/'gateway-client.PRIVATE.log').open('xb');os.chmod(gateway_log.name,0o600)
         command=['env','-i','PATH=/usr/bin:/bin','LANG=C.UTF-8','HELMUT_SOURCE_MODE=off','HELMUT_STORAGE_BACKEND=local',
           'HELMUT_W15_MOCK_CONTEXT='+BASE+'/state/mock-context.PRIVATE.json','HELMUT_W15_MOCK_CONTEXT_SHA256='+_BOUND_CONTEXT_SHA,
@@ -655,16 +677,20 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
         start_guard.before_dispatch(kind='prepare')
         material_env={**ENV,'HELMUT_SOURCE_MODE':'off','HELMUT_STORAGE_BACKEND':'local',
           'HELMUT_W15_MOCK_CONTEXT':str(descriptor_path),'HELMUT_W15_MOCK_CONTEXT_SHA256':_BOUND_CONTEXT_SHA}
+        phase='mock500-controller-materials'
         supervisor.stage([str(WORK/'stage/node'),'--require',str(ROOT/'scripts/lokaler-netzschutz.js'),
           str(ROOT/'scripts/synthetik-500-w15-full500-materials.js')],'materials',240,material_env)
         for name in ('processing-materials.PRIVATE.json','current-command.PRIVATE.json','mock-fixtures.PRIVATE.json','audit-inputs.PRIVATE.json'):
             copy_in(WORK/name,BASE+'/state/'+name)
+        phase='mock500-controller-atomic-bootstrap'
         sql((ROOT/'supabase/proposals/auth_usage_atomic_local.sql').read_text(),database=DB)
         sql("select public.helmut_auth_usage_bootstrap_v1(jsonb_build_object('id','main-auth','expectedHash',encode(sha256(convert_to(data::text,'UTF8')),'hex')))from public.helmut_store where id='main-auth';",database=DB)
         sql("notify pgrst,'reload schema';",database=DB)
-        inner(supervisor,'prepare',130);start_guard.before_dispatch(kind='unit');inner(supervisor,'run',10815)
+        phase='mock500-controller-prepare';inner(supervisor,'prepare',130)
+        start_guard.before_dispatch(kind='unit')
+        phase='mock500-controller-run';inner(supervisor,'run',10815)
     except BaseException:
-        failure={'status':'FAIL_OR_UNKNOWN','phase':'mock500-body','retryAllowed':False}
+        failure={'status':'FAIL_OR_UNKNOWN','phase':phase,'retryAllowed':False}
     finally:
         if attempted and owned_id is not None:
             try:
@@ -673,7 +699,7 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
                 cleanup_result=cleanup()
                 assert cleanup_result['confirmedZero']is True and cleanup_result.get('nativeBoundZero')is True
                 if supervisor:inner(supervisor,'audit',900)
-            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'cleanup-audit'}
+            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-zero-audit'}
             try:
                 if gateway_process is not None:
                     stop_owned(['gateway'],require_registered=True)
@@ -683,7 +709,7 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
                     assert service['postgrestSignalAccepted']is True and service['gatewayStopped']is True
                     assert service['forced']is False and service['journal']['closed']is True and service['journal']['pendingEntries']==0
                     save('SERVICE_CLOSURE.SAFE.json',{**service,'gatewayClientReturncode':0})
-            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'services'}
+            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-services'}
             try:
                 for name in ('PREPARE.SAFE.json','FULL500_RUNTIME_RESULT.SAFE.json','FULL500_RUNTIME_FAILURE.SAFE.json','RESULTS_INDEPENDENT.SAFE.json','runtime-progress.SAFE.jsonl'):
                     copy_out(name)
@@ -704,18 +730,22 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
                   supervisor=supervisor,result=result,close_owned=close_owned)
                 assert all(backup[key]is True for key in ('remoteReadbackObserved','databaseRestoreObserved','ownedContainerStopped','watchClosed'))and closed
                 if functional:actual_functional_results=functional_result_summary(runtime,audit,cleanup_result)
-            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'backup-closure'}
+            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':
+                'mock500-controller-backup'if result is not None else'mock500-controller-result-readback'}
             if not closed and not close_started:
                 try:close_owned()
-                except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'owned-closure'}
-            if supervisor is not None and supervisor.thread.is_alive():
-                supervisor.stop()
-        if gateway_process is not None and gateway_process.poll()is None:
-            # Never signal an arbitrary service: owned gateway stop was already
-            # attempted, and closing our pinned container is the final boundary.
-            try:gateway_process.wait(timeout=10)
-            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'gateway-client-close'}
-        if gateway_log is not None:gateway_log.close()
+                except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-owned-close'}
+            try:
+                if supervisor is not None and supervisor.thread.is_alive():supervisor.stop()
+            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-supervisor-stop'}
+        try:
+            if gateway_process is not None and gateway_process.poll()is None:
+                # Only wait for our owned client; the parent remains the stop boundary.
+                gateway_process.wait(timeout=10)
+        except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-gateway-client-close'}
+        try:
+            if gateway_log is not None:gateway_log.close()
+        except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-gateway-log-close'}
         try:
             inputs.check_sources();resources.sample();disk_guard()
             final={'status':'PASS_MOCK500_BODY_AND_BACKUP_INDEPENDENT_ACCEPTANCE_PENDING'if failure is None and backup else'FAIL_OR_UNKNOWN',
@@ -725,9 +755,10 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
               'productionAcceptance':False,'retryAllowed':False,'commonParent':resources.last_observation()}
             if functional and actual_functional_results is not None:final['functionalResults']=actual_functional_results
             _private_write(root/'FINAL_MOCK500_CLOSURE.SAFE.json',final)
-        except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'final-observation'}
-        WORK,BASE,DB,CONTAINER,IMAGE,_BOUND_CONTEXT_SHA=previous
-    if failure is not None or backup is None:raise RuntimeError('mock500-bound-sequence-failed-or-unknown')from None
+        except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-final-observation'}
+        finally:WORK,BASE,DB,CONTAINER,IMAGE,_BOUND_CONTEXT_SHA=previous
+    if failure is not None or backup is None:
+        raise Mock500ControllerFailure(failure['phase']if failure else'mock500-controller-backup')from None
     return final
 
 def main():

@@ -41,6 +41,7 @@ SYNTHETIC_BRANCH = 'refs/heads/codex/w15-mock500-integration-20261029'
 REQUEST_KEYS = S.REQUEST_KEYS | {'bindings'}
 PHASES = S.PHASES
 WORKER_PHASES = (S.WORKER_PHASES - {'end500'}) | {'mock500'}
+WORKER_PHASES |= S.D.MOCK_CONTROLLER_PHASES
 WORKER_PHASES |= {'mock-receiver-' + value for value in ('arguments', 'binding', 'private-inputs',
     'key-import', 'outer-index', 'original-download', 'original-reception', 'original-relocation',
     'asset-download', 'asset-reception', 'asset-readback', 'agent-close')}

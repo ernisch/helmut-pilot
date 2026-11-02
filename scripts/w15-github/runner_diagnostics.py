@@ -15,6 +15,14 @@ CLEANUP_KEYS = frozenset(('workerExited', 'workerIPCClosed', 'parentStopRequeste
     'parentEmpty', 'parentUnitRemoved', 'serviceLauncherExited', 'launcherListenerClosed',
     'launcherSignalsRestored'))
 STATES = frozenset(('PASS', 'FAIL', 'UNKNOWN'))
+# Terminal Mock worker failures only. These are not generic End500 witness phases.
+MOCK_CONTROLLER_PHASES = frozenset('mock500-controller-' + name for name in (
+    'binding', 'workspace', 'stage-sources', 'input-context', 'container-create',
+    'container-start', 'supervisor-start', 'database-readiness', 'database-restore',
+    'database-baseline', 'runtime-context', 'setup', 'gateway-start', 'materials',
+    'atomic-bootstrap', 'prepare', 'run', 'zero-audit', 'services', 'result-readback',
+    'backup', 'owned-close', 'supervisor-stop', 'gateway-client-close',
+    'gateway-log-close', 'final-observation'))
 OBSERVED_PHASES = frozenset(('arguments', 'event', 'approval', 'qualification', 'binding', 'resources',
     'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure')) | frozenset(
     'connection-' + name for name in ('binding', 'receive', 'input-binding', 'cache', 'prepare',

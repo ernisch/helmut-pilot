@@ -107,6 +107,12 @@ function main(){
   if(result.error||result.status!==0){
     const phases=['arguments','event','approval','qualification','binding','resources','synthetic',
       'receive-prepare','restore','mock500','backup','closure','parent','service','staging','worker','ipc'];
+    phases.push(...['binding','workspace','stage-sources','input-context','container-create',
+      'container-start','supervisor-start','database-readiness','database-restore',
+      'database-baseline','runtime-context','setup','gateway-start','materials',
+      'atomic-bootstrap','prepare','run','zero-audit','services','result-readback',
+      'backup','owned-close','supervisor-stop','gateway-client-close','gateway-log-close',
+      'final-observation'].map(value=>'mock500-controller-'+value));
     phases.push(...['arguments','binding','private-inputs','key-import','outer-index','original-download',"original-download-expired","original-download-http","original-download-timeout","original-download-integrity","original-download-guard","original-download-io","original-download-interrupted","original-download-unknown",
       'original-reception','original-relocation','asset-download','asset-reception','asset-readback','agent-close',
        ...['arguments','cipher','recipient','destination','decrypt','gzip','archive','manifest','files','integrity','readback','cleanup'].map(p=>'archive-'+p)]

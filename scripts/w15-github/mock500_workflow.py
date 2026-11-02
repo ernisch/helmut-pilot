@@ -314,11 +314,24 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
         return _result(manifest, resources,**({'functional_results':final.get('functionalResults')}
                        if manifest['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL) else{}))
     except WorkflowRejected as error:
+        child_phase = _DIAGNOSTICS.attribute(error, 'phase')
+        if (type(child_phase) is not str or child_phase not in PHASES
+                or child_phase in _DIAGNOSTICS.MOCK_CONTROLLER_PHASES):
+            # A reflected/forged workflow error is not a typed controller error.
+            raise WorkflowRejected(phase, _cached_memory(resources)) from None
         error.worker_memory = _cached_memory(resources)
         raise
     except BaseException as error:
         # Only fixed component checkpoints survive; no exception text or paths.
-        child_phase = getattr(error, 'phase', None)
+        child_phase = _DIAGNOSTICS.attribute(error, 'phase')
+        if type(child_phase) is not str:
+            child_phase = None
+        # New controller labels cross this boundary only from the exact staged
+        # controller exception, never from a duck type or reflected input value.
+        if child_phase in _DIAGNOSTICS.MOCK_CONTROLLER_PHASES:
+            staged = sys.modules.get('w15_github_mock500_controller')
+            if staged is None or type(error) is not getattr(staged, 'Mock500ControllerFailure', None):
+                child_phase = None
         receiver = sys.modules.get('w15_github_mock500_receive')
         if receiver is not None and type(error) is getattr(receiver, 'MockReceiveError', None):
             if child_phase in MOCK_RECEIVER_PHASES:
@@ -342,6 +355,7 @@ def plan():
 
 _DIAGNOSTICS = component('runner_diagnostics')
 _DIAGNOSTIC_MEMORY = component('common_resources')
+PHASES |= _DIAGNOSTICS.MOCK_CONTROLLER_PHASES
 
 
 def _safe_failure(error):
