@@ -1,28 +1,36 @@
 # CURRENT STATE — Helmut
 
-## W15: erste Mock500-Fehlerphase gesichert, Ursache noch offen (02.11.2026)
+## W15: Materialphase FAIL, innere Ursache UNKNOWN (02.11.2026)
 
-Eigener Branch `codex/w15-mock500-first-failure-checkpoint-20261102` ab71428476:
-nachgestellter Diagnoseverlust behoben. Der Controller erhält die erste feste
-Arbeitsphase auch bei späterem Supervisor-/Gateway-/Abschlussfehler; globale
-Bindungen werden wiederhergestellt. Ausschließlich exakte Controllerfehlertypen
-dürfen die geschlossene Phasenliste über den vorhandenen IPC-/Aktionskanal melden;
-private Fehlermeldungen, Pfade und SQL bleiben gesperrt. Sieben kleine Pythonfälle
-und26 Phasen durch den tatsächlichen Python-/JS-Fehlerkanal PASS; unabhängiger
-Quellreview ohne hohe/offene Befunde. Pflicht-CI/Probenbefund am
-[Draft-PR1017](https://github.com/ernisch/helmut-pilot/pull/1017), kein Merge.
+[Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
+Job125217497980, exakt1fb2cfe1/PR1017: **FAIL**, API-Jobdauer189s.
+Der reparierte Kanal erhält`mock500-controller-materials`; die Kindprozessausnahme
+bleibt UNKNOWN. Private Materials-Protokolle blieben im temporären Runner;
+die erhaltenen vollständigen GitHub-Logs enthalten nur den sicheren Außenbeleg.
 
-Die erste innere Ursache von Run41365567913 bleibt **UNKNOWN**. Eine kleine native
-CI-Gegenprobe untersucht ausschließlich Docker-Kopiereigentum/UID1000-Leserechte
-an einer fiktiven Datei, ohne Datenbank, Originale oder500erLauf. Die lokale Probe
-belegte keinen solchen Fehler. CI41411724415: BrowserPASS, native Probe vor der
-Eigentumsmessung im Kopierabschnitt FAIL/INCONCLUSIVE, vier BereinigungenPASS.
-Eine korrigierte Probe gleicht Arbeitsverzeichnis/Containerbasis dem echten Worker
-an und hält feste Fehlerunterphasen fest. Kein spekulativer Empfangscodefix.
-Das neue bedingte Einmal-GO bleibt unverbraucht: echter Mock500 erst nach belegter,
-geprüfter Ursachenbehebung und vollständiger Startqualifikation. Kein neuer Link,
-Originalempfang, Ausführungsbranchwechsel oder geschützter Job. Historischer FAIL,
-End500-Funktionsbeleg und sämtliche Ressourcen-/Kosten-/Zeitgrenzen unverändert.
+Kernelpeak2,590GB bei dynamischem Limit13,197GB, Hostreserveschutz PASS,
+Swap/OOM/harte Grenzereignisse0. Getrennte Maxima: Dateianteil1,523GB, anonym984MB,
+Kernel78MB, SharedMemory41MB (in Dateianteil); nicht addieren.
+Komponenten/CPU UNKNOWN. Acht Prozessbereinigungen PASS, Nachkontrolle0aktive
+manuelle Runs/0Artefakte. Vollständige500/1.000/1.500/8.000/17.000-Endzähler,
+fünf Ergebnisfehlerkategorien, Sicherung und finale Datenbank-Nullaktivität UNKNOWN.
+
+Gezielte Node-Einstiegsprobe PASS: Node24.19.0, UID/GID1000, saubere Umgebung,
+privater0600-Kontext, Arbeitsverzeichnis/Netzschutz bis zur absichtlich gesetzten
+ersten Originalzugriffsgrenze. Eine synthetische schreibgeschützte Datenbankantwort;
+keine Originale, echten Datenbankzugriffe oder Aktivierung. Exit1 ist der erwartete
+Teststopp, kein Produktfehler. Unabhängiger Review bestätigt nur diese enge Aussage.
+Kein begründeter Laufzeitcodefix; tatsächliche Material-/Daten-/Zeitprüfungen offen.
+PR1017/1fb: Pflicht-CI41413462459 und unabhängige Codeprüfung PASS.
+
+Ausführungsbranch1fb2cfe1, kein Reset; GO für41427480765 verbraucht.
+Neues bedingtes Reparatur-GO ungenutzt/gesperrt: belegte Ursache und Korrektur fehlen.
+Kein neuer Link/Job. Nötig ist die erste private Materials-Ausnahme; falls der alte
+Runner unerreichbar bleibt, nur gesondert freigegebene begrenzte Materialdiagnose,
+kein voller Mocklauf auf Verdacht. Private Belege`MOCK500_SHORT_ROUND_03` und
+`MOCK500_MATERIALS_REPAIR_04` im bestehenden privaten Belegbereich vom02.11.2026.
+Empfang41037459441/End500-Abnahme41325430429 übernommen.
+Historische FAILs, Ressourcenverträge und Production-Sperre unverändert.
 
 ## W15: erster dynamischer Mock500-Lauf FAIL (02.11.2026)
 
@@ -30,7 +38,7 @@ End500-Funktionsbeleg und sämtliche Ressourcen-/Kosten-/Zeitgrenzen unveränder
 Job125024885163, exakt32655e8f/PR1015: **FAIL**. API-Jobdauer188s, Hauptaktion165s;
 219s war die spätere Watcherbeobachtung einschließlich Poll-Nachlauf. Einmal-GO
 verbraucht: eine16er-Linkrunde, ein POST, Restgültigkeit279,5203s, Parameter60.256B.
-Sicherer Fast ForwardF157→32655 bestätigt; Ausführungsbranch bleibt32655, kein Reset.
+Damals sicherer Fast ForwardF157→32655; späterer Branchstand siehe oben, kein Reset.
 
 Tatsächliche Fehlerquittung: Workerphase`mock500`, `WORKER_REPORTED_FAILURE`, Exit1.
 Die innere Ursache ist **UNKNOWN**: der Controller ersetzt Fehler durch eine breite
@@ -54,8 +62,8 @@ Private Belege dauerhaft unter
 `/workspace/helmut-w15-private-evidence-20261102/MOCK500_HOST_FUNCTIONAL_01/`,
 Livecase`/tmp/w15-mockhc-20261102`; Originale/Drive/Secrets erhalten.
 [Ergebnis und nächste Aufgabe](betrieb/w15-mock500-first-host-result-20261102.md).
-Nächster Schritt: erste feste innere Fehlerphase im vorhandenen sicheren Kanal
-gezielt mit kleinen synthetischen Fehlerfällen erhalten. Keine neue RAM-Grenze,
+Damals nächster Schritt (durch PR1017 erledigt): erste feste innere Fehlerphase
+im sicheren Kanal mit kleinen synthetischen Fehlerfällen erhalten. Keine neue RAM-Grenze,
 keine neue Infrastruktur und keine neue Originalfreigabe auf unbekannte Ursache.
 End500-HC1/v4-PASS bleibt übernommen; Production500 nicht ausgeführt/weiter gesperrt.
 
