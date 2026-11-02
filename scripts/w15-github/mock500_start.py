@@ -26,6 +26,7 @@ MODE = 'mock500-full-gated'
 PHASED = 'mock500-full-phased-gated'
 FUNCTIONAL = 'mock500-full-functional-gated'
 HOST_FUNCTIONAL = 'mock500-full-host-functional-gated'
+MATERIALS = 'mock500-materials-diagnostic-gated'
 LIMITS = {'comparisonBudgetBytes': R.LIMIT, 'maximumConsumptionBytes': R.MAXIMUM,
           'requiredReserveBytes': R.RESERVE, 'swapBytes': 0}
 FINGERPRINT = '7E3998A6C2CB948C69A2EE51F4267ABF26796EDC'
@@ -53,16 +54,16 @@ def host():
 
 
 def limits(mode):
-    return host().limits() if mode==HOST_FUNCTIONAL else functional().limits('mock500') if mode == FUNCTIONAL else dict(LIMITS)
+    return host().limits() if mode in (HOST_FUNCTIONAL,MATERIALS) else functional().limits('mock500') if mode == FUNCTIONAL else dict(LIMITS)
 
 
 def memory_profile(mode):
-    return (host().PROFILE if mode==HOST_FUNCTIONAL else functional().MOCK_PROFILE if mode == FUNCTIONAL else
+    return (host().PROFILE if mode in (HOST_FUNCTIONAL,MATERIALS) else functional().MOCK_PROFILE if mode == FUNCTIONAL else
             R.phases().MOCK_PROFILE if mode == PHASED else R.PROFILE)
 
 
 def mode_scope(mode):
-    return (host().SCOPE if mode==HOST_FUNCTIONAL else functional().SCOPES[FUNCTIONAL] if mode == FUNCTIONAL else
+    return ('ISOLATED_GITHUB_MOCK500_MATERIALS_DIAGNOSTIC_ONLY' if mode == MATERIALS else host().SCOPE if mode == HOST_FUNCTIONAL else functional().SCOPES[FUNCTIONAL] if mode == FUNCTIONAL else
             'ISOLATED_GITHUB_MOCK500_PHASED_ONLY' if mode == PHASED else 'ISOLATED_GITHUB_MOCK500_ONLY')
 
 
@@ -130,10 +131,10 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
     Record envelopes preserve their actual reviewed bytes and SHA256.
     """
     need(isinstance(expected_end500_commit, str) and HEX.fullmatch(expected_end500_commit))
-    need(isinstance(request, dict) and request.get('mode') in (MODE, PHASED, FUNCTIONAL, HOST_FUNCTIONAL)
+    need(isinstance(request, dict) and request.get('mode') in (MODE, PHASED, FUNCTIONAL, HOST_FUNCTIONAL, MATERIALS)
          and request.get('branch') == BRANCH and isinstance(request.get('exactCommit'), str)
          and HEX.fullmatch(request['exactCommit'])
-         and (request['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL) or request['exactCommit'] != expected_end500_commit)
+         and (request['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL,MATERIALS) or request['exactCommit'] != expected_end500_commit)
          and type(request.get('runAttempt')) is int and request['runAttempt'] == 1
          and request.get('limits') == limits(request.get('mode')) and all(type(v) is int for v in request['limits'].values())
          and isinstance(request.get('sourceQualificationSHA256'), str)
@@ -147,7 +148,7 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
          and type(observed_context['runAttempt']) is int)
     end500, bridge = _record(end500_acceptance), _record(compatibility_bridge)
     phased = request['mode'] == PHASED
-    if request['mode']==HOST_FUNCTIONAL:
+    if request['mode'] in (HOST_FUNCTIONAL,MATERIALS):
         need(end500.get('schema')==host_functional().ACCEPTANCE_SCHEMA,'MOCK500_POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED')
         validate_functional_end_acceptance(end500)
     elif request['mode'] == FUNCTIONAL:
@@ -170,7 +171,7 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
              'MOCK500_POSITIVE_FROZEN_END500_ACCEPTANCE_REQUIRED')
     need(
          end500.get('scope') == ((host_functional().SCOPE if end500.get('schema') == host_functional().ACCEPTANCE_SCHEMA
-                                 else functional().SCOPES[functional().END_MODE]) if request['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL)
+                                 else functional().SCOPES[functional().END_MODE]) if request['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL,MATERIALS)
                                 else 'ISOLATED_GITHUB_END500_PHASED_ONLY' if phased else 'ISOLATED_GITHUB_END500_ONLY')
          and end500.get('exactCommit') == expected_end500_commit
          and isinstance(end500.get('runId'), str) and re.fullmatch('[1-9][0-9]{4,19}', end500['runId'])
@@ -193,7 +194,7 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
          and bridge.get('end500CodeReexecuted') is False
          and bridge.get('mockMemoryContract') == memory_profile(request['mode'])
          and bridge.get('executionAuthority') is False, 'MOCK500_REVIEWED_BASELINE_BRIDGE_REQUIRED')
-    if request['mode']==HOST_FUNCTIONAL:
+    if request['mode'] in (HOST_FUNCTIONAL,MATERIALS):
         need(bridge.get('functionalContract')==host().CONTRACT
              and bridge.get('end500FunctionalContract')==host_functional().CONTRACT,
              'MOCK500_REVIEWED_BASELINE_BRIDGE_REQUIRED')
@@ -209,7 +210,7 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
         'processingSeconds', 'completionSeconds', 'expectedProfiles', 'expectedUnits',
         'expectedPositions', 'expectedControls', 'maxProviderCalls', 'maxStorageUSD',
         'maxReceiveAttempts', 'issuedAt', 'expiresAt'}
-    if request['mode']==HOST_FUNCTIONAL:keys|={'resourceContract'}
+    if request['mode'] in (HOST_FUNCTIONAL,MATERIALS):keys|={'resourceContract'}
     need(isinstance(approval, dict) and set(approval) == keys
          and approval['schema'] == 'helmut-w15-mock500-start-approval/1'
          and approval['scope'] == mode_scope(request['mode'])
@@ -219,11 +220,13 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
          and approval['end500AcceptanceSHA256'] == end500_acceptance['sha256']
          and approval['compatibilitySHA256'] == compatibility_bridge['sha256']
          and approval['maxStorageUSD'] == '0.05', 'MOCK500_SEPARATE_EXPLICIT_GO_REQUIRED')
-    if request['mode']==HOST_FUNCTIONAL:
-        need(approval['resourceContract']==host().CONTRACT,'MOCK500_SEPARATE_EXPLICIT_GO_REQUIRED')
+    if request['mode'] in (HOST_FUNCTIONAL,MATERIALS):
+        need(approval['resourceContract']==(R._load('mock500_materials_contract').CONTRACT if request['mode']==MATERIALS else host().CONTRACT),'MOCK500_SEPARATE_EXPLICIT_GO_REQUIRED')
     exact = {'processingSeconds': 10800, 'completionSeconds': 12600, 'expectedProfiles': 500,
         'expectedUnits': 500, 'expectedPositions': 1500, 'expectedControls': 8000,
         'maxProviderCalls': 0, 'maxReceiveAttempts': 1, 'runAttempt': 1}
+    if request['mode'] == MATERIALS:
+        exact.update(processingSeconds=900, completionSeconds=1080, expectedUnits=0, expectedPositions=0, expectedControls=0)
     need(all(type(approval[k]) is int and approval[k] == v for k, v in exact.items())
          and all(type(v) is int for v in approval['limits'].values()))
     issued, expires = _utc(approval['issuedAt']), _utc(approval['expiresAt'])
@@ -257,7 +260,7 @@ class StartGuard:
         self.processing_deadline = self.started_at + timedelta(seconds=10800)
         self.completion_deadline = self.started_at + timedelta(seconds=12600)
         berlin = ZoneInfo('Europe/Berlin')
-        if observed_context['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL):
+        if observed_context['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL,MATERIALS):
             functional().validate_window('mock500',self.started_at)
         else:
             need('2026-10-28' <= self.started_at.date().isoformat() <= '2026-10-31'
@@ -267,7 +270,8 @@ class StartGuard:
         self.context, self.resources = json.loads(json.dumps(context)), resources
         self.resources.check_context(context)
         self.failure = None
-        self.before_dispatch(now=now)
+        self.materials_diagnostic = observed_context['mode'] == MATERIALS
+        self.before_dispatch(kind='prepare' if self.materials_diagnostic else 'unit',now=now)
 
     @property
     def window(self):
@@ -281,7 +285,7 @@ class StartGuard:
         now = datetime.now(timezone.utc) if now is None else now
         need(isinstance(now, datetime) and now.tzinfo is not None)
         elapsed = time.monotonic() - self.started_monotonic
-        maximum = 12600 if closure else 10800
+        maximum = (1080 if closure else 900) if self.materials_diagnostic else (12600 if closure else 10800)
         try:
             if not closure and getattr(self.resources, 'processing_backup_stage', None) == 'mock500':
                 need(self.resources.memory_phase == 'processing', 'MOCK500_RETURN_TO_PROCESSING_REJECTED')
@@ -304,6 +308,7 @@ class StartGuard:
 
     def before_dispatch(self, *, kind='unit', now=None):
         need(kind in ('unit', 'auth', 'provider', 'prepare'))
+        need(not self.materials_diagnostic or kind == 'prepare', 'MATERIALS_DIAGNOSTIC_PROCESSING_FORBIDDEN')
         # "provider" denotes the existing isolated mock provider boundary.
         # Admission grants zero external/model calls for every kind.
         return self._check(False, now)

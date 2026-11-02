@@ -52,7 +52,7 @@ function memoryLimits(bound) {
   assert.deepEqual(Object.keys(value).sort(), ["contract", "mode", "memoryProfile", "hardMemoryBytes", "hostReserveBytes",
     "legacyRegularMemoryAccepted", "providerResourceAccepted", ...(hosted ? ["hostCapacityBudget"] : [])].sort());
   if (hosted) {
-    assert.equal(value.mode, "mock500-full-host-functional-gated");
+    assert(["mock500-full-host-functional-gated", "mock500-materials-diagnostic-gated"].includes(value.mode));
     assert.equal(value.memoryProfile, "helmut-w15-mock500-host-functional/1");
     const budget=value.hostCapacityBudget;
     assert(budget && typeof budget === "object" && !Array.isArray(budget));

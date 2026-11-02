@@ -1,4 +1,5 @@
 "use strict";
+const DIAGNOSTIC = require("./w15-github/mock500_materials_failure").create(__filename, require.resolve("./w15-github/mock500_bindings"));
 // Private original-data preparation only; not an automatic test suite or execution permission.
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypto");
 const {spawnSync}=require("node:child_process"),{performance}=require("node:perf_hooks");
@@ -124,6 +125,7 @@ async function main() {
   assert.deepEqual(require("./lokaler-netzschutz").pruefe(process.env), []);
   assert.equal(process.env.HELMUT_STORAGE_BACKEND, "local");
   assert.equal(process.version, "v24.19.0");
+  DIAGNOSTIC.enter("baseline");
   const beforeSource = state(SOURCE_DB);
   assert.equal(beforeSource.active, BOUND ? 0 : 500); assert.equal(beforeSource.storeRows, 6);
   if (BOUND) {
@@ -137,9 +139,13 @@ async function main() {
       "Only initial deactivation may differ in the newly cloned database");
   }else assert.deepEqual({ ...state(DB), database: SOURCE_DB }, beforeSource,
     "Test target must be a new pristine copy; never rerun against a prior test state");
+  DIAGNOSTIC.enter("config");
   const config = JSON.parse(privateFile(path.join(WORK, "runtime-public.PRIVATE.json")));
+  DIAGNOSTIC.enter("originals");
   const get = originals(), packet = get("package").value, originalRows = get("normalizedCurrentPolicy").value;
+  DIAGNOSTIC.enter("qualified");
   const qualified = qualifiedAssets(); let { rows, fixtures, derivations: derivationReports } = qualified;
+  DIAGNOSTIC.enter("original-upacket");
   const { native, report: nativeDerivation } = qualified.nativeBundle, oldU = get("originalUPacket");
   assert.equal(rows.length, 500); assert.equal(fixtures.length, 500); assert.equal(derivationReports.length, 500);
   assert.equal(new Set(rows.map(r => r.profile.id)).size, 500);
@@ -156,11 +162,13 @@ async function main() {
     stage("reuse-pinned-all500-current-qualification", { rows: rows.length, qualificationSHA256: qualified.reportPin.sha256 });
     const changedPaths = new Set(derivationReports.flatMap(r => r.changedPaths || [])), day = new Date().toISOString().slice(0, 10);
     assert.equal(qualified.replacements.length, 2);
+    DIAGNOSTIC.enter("native-inputs");
     const Database = require("./fixtures/w15-current-input-database");
     sql(Database.installSQL(qualified.replacements));
     const currentNativeDatabasePin = verifyCurrentDatabase(native);
     pass("pinned qualified rows reused and actual current native inputs independently read back", { qualificationSHA256: qualified.reportPin.sha256 });
     if (BOUND) {
+      DIAGNOSTIC.enter("calendar");
       // A different actual day needs its five calendar/hash bindings and real
       // current14-day guards. Historical qualification/content is not renamed.
       const rebased = rows.map(row => Bindings.calendarRow(row, qualified.executionISO));
@@ -173,6 +181,7 @@ async function main() {
         historicalQualificationRepeated: false, currentCalendarGuardsObserved: true,
         sourceDatesRewritten: false, signaturesReused: false, rows: rebased.map(item => item.report) });
     }
+    DIAGNOSTIC.enter("snapshot");
     let source = read("select jsonb_build_object('mandates',(select jsonb_agg(to_jsonb(p)order by user_id collate \"C\")from mandate_profiles p),"
       + "'profiles',(select jsonb_agg(to_jsonb(p)order by id collate \"C\")from profiles p),"
       + "'auth',(select data from helmut_store where id='main-auth'),'main',(select data from helmut_store where id='main'));" );
@@ -219,6 +228,7 @@ async function main() {
       auftragReserviertMikroUsd: 0, restreserveMikroUsd: Math.min(EU.DAY_MICRO_USD - spent - reserved, EU.ORDER_MICRO_USD - order.gebundenMicroUsd),
       laufreserveMikroUsd: EU.RUN_MAX_MICRO_USD };
     const bytes = P.serialisiere(packet), V = require("../lib/helmut/synthetik-500-vertrag");
+    DIAGNOSTIC.enter("native-manifest");
     const manifest = V.vorbereiten({ paketBytes: bytes, snapshot, operationId, vorflugAm: observed,
       startBis: new Date(now + 180000).toISOString(), endeAm: end, kosten: costs, serviceContractHash: EU.HASH });
     const full = require("./realkohorte-500-runtime-test").belegFixture({ manifest });
@@ -242,9 +252,12 @@ async function main() {
     }
     if (UNIT0) {
       const owner = JSON.parse(privateFile(path.join(WORK, "OWNER_GO.PRIVATE.json")));
-      assert.equal(owner.targetDatabase, DB); assert.equal(owner.maximumUnits, 500);
+      DIAGNOSTIC.enter("activation");
+      const diagnosticOnly = BOUND?.materialsDiagnosticOnly === true;
+      assert.equal(owner.targetDatabase, DB); assert.equal(owner.maximumUnits, diagnosticOnly ? 0 : 500);
       assert.equal(owner.temporarySyntheticProfiles, 500); assert.equal(owner.paidModelsAllowed, false);
-      assert.equal(owner.confirmation, "GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO");
+      assert.equal(owner.confirmation, diagnosticOnly ? "GO_ONE_ISOLATED_MATERIALS_DIAGNOSTIC_AND_RETURN_TO_ZERO" : "GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO");
+      if (diagnosticOnly) { assert.equal(owner.full500Allowed, false); assert.equal(owner.productionAllowed, false); }
       // Existing reviewed local external assumption, never a Production watcher receipt.
       // The independent outer controller performs the genuine bound native cleanup.
       full.endwaechter = {...endwaechter, operationId, manifestHash:P.hash(runtimeManifest),
@@ -279,6 +292,7 @@ async function main() {
     const oldOperation = oldU.value.command.slot.plan.operationId, oldJournal = auth[J.KEY].operations[oldOperation]; assert(oldJournal);
     const prior = { predecessor: { operationId: oldOperation, commandHash: P.hash(oldU.value.command), planHash: oldU.value.command.slot.planHash,
       journalHash: P.hash(oldJournal) }, originalPacketPin: oldU.pin, originalJournalHash: P.hash(oldJournal) };
+    DIAGNOSTIC.enter("builder");
     const builder = BOUND ? Bindings.originalBuilder(BOUND, ROOT) : legacyOriginalBuilder(), requests = [];
     stage("bind-qualified-all500-current-requests-with-fresh-native-command");
     const built = builder.build({ approval: { status: "ACCEPTED_ALL500_ORDINARY_V1_AND_ACTUAL_NATIVE_BINDING", actualNativeInputEquality: true,
@@ -294,6 +308,7 @@ async function main() {
     }
     const encoded = require("../lib/helmut/synthetik-500-direct-codec").encode(built.packet);
     const selector = { operationId, commandHash: built.commandHash };
+    DIAGNOSTIC.enter("output");
     const commandPin = retain("current-command.PRIVATE.json", encoded);
     sql("begin;insert into helmut_store(id,data)values(" + literal("synthetik500-command-" + operationId) + "," + json(encoded) + ");commit;");
     assert.deepEqual(state(SOURCE_DB),beforeSource);
@@ -301,16 +316,17 @@ async function main() {
       planHash:built.command.slot.planHash, paketHash:packet.bindung.paketHash, commandPin,
       controlHash:C.controlHash(auth), booksHash:C.booksHash(auth), sourceReceiptSHA256:RECEIPT_HASH,
       database: DB, runtimeManifestHash:P.hash(runtimeManifest), productionCommit:config.commit,
-      scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION", full500DispatchAuthorized:!ATOMIC_PREPARED0, activatedProfiles:UNIT0?500:0 });
+      scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION", full500DispatchAuthorized:!ATOMIC_PREPARED0 && BOUND?.materialsDiagnosticOnly !== true, activatedProfiles:UNIT0?500:0 });
     retain("PROCESSING_INPUTS.SAFE.json", { status:"PASS_ALL500_ACTUAL_D_PREPARATIONS", scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION",
       actualOriginalPreparer:true, currentDescriptorAndActualRequestDatesMatch:true, originalFilesModified:false,
       sourceRestorePreserved:true, sourceComparisonScope:BOUND?"immutable original file pins and fresh isolated restored baseline; no original source database contacted":"mandate/store hashes and profile counts", sourceReceiptSHA256:RECEIPT_HASH,
       sourceDatesRewritten:false,qualificationPin:qualified.reportPin,qualifiedAssets:qualified.report.qualifiedAssets,
       qualifiedExecutionISO:qualified.executionISO,currentNativeDatabasePin,nativeDerivation,derivedRows:derivationReports.length,
       derivationHash:P.hash(derivationReports),requests, changedPaths:[...changedPaths], securityClockReal:true,
-      globalDateReplaced:false, providerCalls:0, profileActivations:UNIT0?500:0, full500Dispatch:false,maximumAuthorizedUnits:ATOMIC_PREPARED0?0:500 });
+      globalDateReplaced:false, providerCalls:0, profileActivations:UNIT0?500:0, full500Dispatch:false,maximumAuthorizedUnits:ATOMIC_PREPARED0 || BOUND?.materialsDiagnosticOnly === true ? 0 : 500 });
     pass("all500 real D preparations have nonempty contexts and exact current request bindings");
+    DIAGNOSTIC.enter("complete");
 
   }
 }
-if(require.main===module)main().catch(error=>{try{retain(UNIT0?"MATERIALS_FIRST_FAILURE.SAFE.json":"PROCESSING_MATERIALS_ATTEMPT_B_FAILURE.SAFE.json",{status:"FAIL",reason:error.message,stages});}catch{}console.error(error.message);process.exitCode=1;});
+if(require.main===module)main().catch(error=>{try{DIAGNOSTIC.record(error);}catch{}try{retain(UNIT0?"MATERIALS_FIRST_FAILURE.SAFE.json":"PROCESSING_MATERIALS_ATTEMPT_B_FAILURE.SAFE.json",{status:"FAIL",reason:error.message,stages});}catch{}console.error(error.message);process.exitCode=1;});

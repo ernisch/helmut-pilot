@@ -1,36 +1,32 @@
 # CURRENT STATE — Helmut
 
-## W15: Materialphase FAIL, innere Ursache UNKNOWN (02.11.2026)
+## W15: begrenzte Materialdiagnose vorbereitet, Ursache noch UNKNOWN (02.11.2026)
+
+Eigener Branch`codex/w15-mock500-materials-diagnostic-20261102` ab6b412097/PR1019.
+Neuer [Vertrag](betrieb/w15-mock500-materials-diagnostic-20261102.md)
+`helmut-w15-mock500-materials-diagnostic/1`: ausdrückliches neues Betreiber-GO nur
+für einen geschützten Materialdiagnosejob, maximal eine Linkrunde. Vorbereitung
+verwendet Empfang/Restore/Materials unverändert; sperrt Controller-prepare/run,
+Fullaudit/Backup. Eigene Nullprüfung umfasst abwesend/vorbereitet/beendet, beendet
+nur eigene isolierte SQL-Sitzungen und belegt Nullaktivität vor Containerstopp.
+Erste Ausnahme begrenzt verschlüsselt erhalten; öffentlich nur feste Kategorien.
+GitHub20min, Worker1080s, Vorbereitung900s; dynamisches Hostlimit mit2,147GB Reserve,
+Swap/OOM/Grenzereignisse0,512MiB Plattenreserve,0,05USD/1Cipherartefakt/1Tag,0Modelle.
+Kleine gezielte Prüfungen/CI/unabhängige Abnahme am neuen Draft-PR. Noch kein neuer
+Link/Originaljob; Ausführungsbranch weiter1fb2cfe1. Bedingtes FullMock-GO ungenutzt,
+erst nach konkret belegter/geprüfter Ursachenbehebung und allen Startbedingungen.
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
-Job125217497980, exakt1fb2cfe1/PR1017: **FAIL**, API-Jobdauer189s.
-Der reparierte Kanal erhält`mock500-controller-materials`; die Kindprozessausnahme
-bleibt UNKNOWN. Private Materials-Protokolle sind im erhaltenen Beleg nicht
-verfügbar; die vollständigen GitHub-Logs enthalten nur den sicheren Außenbeleg.
-
-Kernelpeak2,590GB bei dynamischem Limit13,197GB, Hostreserveschutz PASS,
-Swap/OOM/harte Grenzereignisse0. Getrennte Maxima: Dateianteil1,523GB, anonym984MB,
-Kernel78MB, SharedMemory41MB (in Dateianteil); nicht addieren.
-Komponenten/CPU UNKNOWN. Acht Prozessbereinigungen PASS, Nachkontrolle0aktive
-manuelle Runs/0Artefakte. Vollständige500/1.000/1.500/8.000/17.000-Endzähler,
-fünf Ergebnisfehlerkategorien, Sicherung und finale Datenbank-Nullaktivität UNKNOWN.
-
-Gezielte Node-Einstiegsprobe PASS: Node24.19.0, UID/GID1000, saubere Umgebung,
-privater0600-Kontext, Arbeitsverzeichnis/Netzschutz bis zur absichtlich gesetzten
-ersten Originalzugriffsgrenze. Eine synthetische schreibgeschützte Datenbankantwort;
-keine Originale, echten Datenbankzugriffe oder Aktivierung. Exit1 ist der erwartete
-Teststopp, kein Produktfehler. Unabhängiger Review bestätigt nur diese enge Aussage.
-Kein begründeter Laufzeitcodefix; tatsächliche Material-/Daten-/Zeitprüfungen offen.
-PR1017/1fb: Pflicht-CI41413462459 und unabhängige Codeprüfung PASS.
-
-Ausführungsbranch1fb2cfe1, kein Reset; GO für41427480765 verbraucht.
-Neues bedingtes Reparatur-GO ungenutzt/gesperrt: belegte Ursache und Korrektur fehlen.
-Kein neuer Link/Job. Nötig ist die erste private Materials-Ausnahme; falls der alte
-Runner unerreichbar bleibt, nur gesondert freigegebene begrenzte Materialdiagnose,
-kein voller Mocklauf auf Verdacht. Private Belege`MOCK500_SHORT_ROUND_03` und
-`MOCK500_MATERIALS_REPAIR_04` im bestehenden privaten Belegbereich vom02.11.2026.
-Empfang41037459441/End500-Abnahme41325430429 übernommen.
-Historische FAILs, Ressourcenverträge und Production-Sperre unverändert.
+Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.
+Private innere Meldung in erhaltenen GitHub-/privaten Belegen nicht verfügbar;
+Node-Einstiegsprobe bis Originalgrenze PASS ersetzt keinen Ursachenbeleg.
+Peak2,590GB/Limit13,197GB; HostschutzPASS, Swap/OOM/Grenzereignisse0. Getrennte
+Maxima: Dateianteil1,523GB, anonym984MB, Kernel78MB, Shmem41MB(imDateianteil), nichtaddieren.
+Acht BereinigungenPASS;0aktive manuelle Runs/0Artefakte. VollständigeEndzähler,
+Ergebnisfehlerkategorien/Sicherung/finaleDB-Nullaktivität UNKNOWN. Damaliges GO verbraucht.
+Private Belege03/04 sowie neueDiagnose05 im vorhandenen privaten Belegbereich vom02.11.
+Empfang41037459441/End500-Abnahme41325430429 übernommen; historischeFAILs, alteRAM-
+Verträge undProduction-Sperre unverändert. Kein Mock500-Erfolg aus Diagnose ableiten.
 
 ## W15: erster dynamischer Mock500-Lauf FAIL (02.11.2026)
 

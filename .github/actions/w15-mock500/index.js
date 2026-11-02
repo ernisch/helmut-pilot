@@ -80,6 +80,34 @@ function closedFailureMemory(value){
   }
   return out;
 }
+function closedMaterialsWorker(value){
+  const keys=['status','mode','exactCommit','runId','runAttempt','nonce','contract','materialsCompleted','firstFailure',
+    'activeProfiles','profiles','units','providerPhases','profileFieldsUnchanged','ownedContainerStopped','watchClosed',
+    'evidence','executionAuthority','mock500Acceptance','end500Acceptance','productionAcceptance','backupRoundtripVerified','retryAllowed'];
+  if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).sort().join(',')!==[...keys].sort().join(',')||
+     value.status!=='PASS_MATERIALS_DIAGNOSTIC_CLOSED_ONLY_NOT_MOCK500'||value.mode!=='mock500-materials-diagnostic-gated'||
+     value.contract!=='helmut-w15-mock500-materials-diagnostic/1'||typeof value.materialsCompleted!=='boolean'||
+     value.profiles!==500||value.activeProfiles!==0||value.units!==0||value.providerPhases!==0||
+     !['profileFieldsUnchanged','ownedContainerStopped','watchClosed'].every(k=>value[k]===true)||
+     !['executionAuthority','mock500Acceptance','end500Acceptance','productionAcceptance','backupRoundtripVerified','retryAllowed'].every(k=>value[k]===false))return null;
+  const first=value.firstFailure,stages=['entry','baseline','config','originals','qualified','original-upacket','calendar',
+    'native-inputs','snapshot','native-manifest','activation','builder','output','complete'];
+  if(value.materialsCompleted){if(first!==null)return null;}
+  else if(!first||Object.keys(first).sort().join(',')!=='category,kind,schema,stage'||
+    first.schema!=='helmut-w15-materials-first-failure/1'||!stages.includes(first.stage)||
+    !['assertion','filesystem','module','sql','type','timeout','unknown'].includes(first.kind)||
+    !(['MATERIALS_ENTRY_REJECTED','MATERIALS_PROCESS_REJECTED','MATERIALS_PROCESS_TIMEOUT','MATERIALS_FAILURE_UNAVAILABLE'].includes(first.category)||
+       /^MATERIALS_(?:MAIN|BINDING)_CHECK_(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2}|10[01][0-9]|102[0-4])$/.test(first.category)))return null;
+  const e=value.evidence,ek=['schema','status','scope','artifactId','cipherBytes','cipherSHA256','retentionDays','maximumStorageUSD',
+    'remoteReadbackObserved','authenticatedReadbackObserved','acceptedAsCompleteBackup','mock500Acceptance','productionAcceptance','executionAuthority','retryAllowed'];
+  if(!e||Object.keys(e).sort().join(',')!==[...ek].sort().join(',')||e.schema!=='helmut-w15-materials-diagnostic-evidence/1'||
+    e.status!=='PASS_PRIVATE_MATERIALS_EVIDENCE_ONLY'||e.scope!=='ISOLATED_GITHUB_MOCK500_MATERIALS_DIAGNOSTIC_ONLY'||
+    !Number.isSafeInteger(e.artifactId)||e.artifactId<1||!Number.isSafeInteger(e.cipherBytes)||e.cipherBytes<1||e.cipherBytes>1048576||
+    typeof e.cipherSHA256!=='string'||!(/^[a-f0-9]{64}$/.test(e.cipherSHA256))||e.retentionDays!==1||e.maximumStorageUSD!=='0.05'||
+    e.remoteReadbackObserved!==true||e.authenticatedReadbackObserved!==true||
+    !['acceptedAsCompleteBackup','mock500Acceptance','productionAcceptance','executionAuthority','retryAllowed'].every(k=>e[k]===false))return null;
+  return value;
+}
 const fs=require('node:fs'),cp=require('node:child_process');
 const credentialKeys=['ACTIONS_RUNTIME_TOKEN','ACTIONS_RESULTS_URL','ACTIONS_RUNTIME_URL','GITHUB_TOKEN',
   'GITHUB_API_URL','GITHUB_SERVER_URL','GITHUB_REPOSITORY','GITHUB_RUN_ID','GITHUB_RUN_ATTEMPT'];
@@ -102,7 +130,7 @@ function main(){
   const input=JSON.stringify({request,privatePayload});
   if(Buffer.byteLength(input)>1024*1024)throw Error('bound');
   const result=cp.spawnSync('/usr/bin/python3',['-B','scripts/w15-github/mock500_workflow.py','--launch'],
-    {input,env:process.env,encoding:'utf8',maxBuffer:1024*1024,timeout:(synthetic?420:12720)*1000});
+    {input,env:process.env,encoding:'utf8',maxBuffer:1024*1024,timeout:(synthetic?420:mode==='mock500-materials-diagnostic-gated'?1140:12720)*1000});
   const receipt=JSON.parse(result.stdout);
   if(result.error||result.status!==0){
     const phases=['arguments','event','approval','qualification','binding','resources','synthetic',
@@ -117,6 +145,7 @@ function main(){
       'original-reception','original-relocation','asset-download','asset-reception','asset-readback','agent-close',
        ...['arguments','cipher','recipient','destination','decrypt','gzip','archive','manifest','files','integrity','readback','cleanup'].map(p=>'archive-'+p)]
       .map(value=>'mock-receiver-'+value));
+    phases.push(...['entry','baseline','config','originals','qualified','original-upacket','calendar','native-inputs','snapshot','native-manifest','activation','builder','output','complete'].map(value=>'mock500-controller-materials-'+value));
     if(receipt.status!=='FAIL_OR_BLOCKED_MOCK500_WORKFLOW'||!phases.includes(receipt.phase)
       ||receipt.executionAuthority!==false||receipt.retryAllowed!==false)throw Error('receipt');
     const safe={status:receipt.status,phase:receipt.phase,executionAuthority:false,retryAllowed:false};
@@ -127,6 +156,19 @@ function main(){
     const runner=closedRunnerDetail(receipt.runner);if(runner)safe.runner=runner;
     const cleanup=closedCleanup(receipt.cleanup);if(cleanup)safe.cleanup=cleanup;
     console.log(JSON.stringify(safe));process.exitCode=1;return;
+  }
+  if(mode==='mock500-materials-diagnostic-gated'){
+    const worker=closedMaterialsWorker(receipt.workerResult),cap=require('../w15-isolated/capacity-trace');
+    const budget=cap.closedHostBudget(receipt.hostCapacityBudget);
+    if(receipt.status!=='PASS_FRESH_MATERIALS_DIAGNOSTIC_OWNED_LIFETIME_ONLY'||receipt.mode!==mode||
+       !budget||!cap.closedHostAdmission(receipt.hostCapacityAdmission,budget)||!worker||
+       !closedCleanup(receipt.cleanup)||Object.values(receipt.cleanup).some(v=>v!=='PASS')||
+       worker.exactCommit!==request.exactCommit||worker.runId!==request.runId||worker.nonce!==request.nonce||
+       worker?.mode!==mode||worker.status!=='PASS_MATERIALS_DIAGNOSTIC_CLOSED_ONLY_NOT_MOCK500'||
+       worker.activeProfiles!==0||worker.units!==0||worker.providerPhases!==0||
+       worker.mock500Acceptance!==false||worker.backupRoundtripVerified!==false)throw Error('receipt');
+    console.log(JSON.stringify(receipt));
+    if(worker.materialsCompleted!==true)process.exitCode=1;return;
   }
   const expected=mode==='mock500-full-host-functional-gated'?'PASS_FRESH_MOCK500_HOST_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY':mode==='mock500-full-functional-gated'?'PASS_FRESH_MOCK500_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY':mode==='mock500-full-phased-gated'?'PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY':'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY';
   if(receipt.status!==expected)throw Error('receipt');

@@ -254,12 +254,17 @@ class ControllerAdmissionChecks(unittest.TestCase):
     def test_fictional_bound_pipeline_orders_restore_materials_runtime_zero_audit_and_backup(self):
         self._run_fictional_bound_pipeline()
 
-    def _run_fictional_bound_pipeline(self, *, inject=None, expect_failure=False):
+    def _run_fictional_bound_pipeline(self, *, inject=None, expect_failure=False, diagnostic=False):
         controller = self.load_controller()
         temp = tempfile.TemporaryDirectory(prefix='w15-fictional-mock-pipeline-'); self.addCleanup(temp.cleanup)
         ctx = context(temp.name); ctx['runtimePins']['imageId'] = 'sha256:' + 'c' * 64
         names = M.namespace(ctx); work = names['work']; events = []; container_state = {'running': False}
         original = controller.WORK, controller.BASE, controller.DB, controller.CONTAINER, controller.IMAGE
+        original_bound_sha = controller._BOUND_CONTEXT_SHA
+        if diagnostic:
+            self._last_materials_diagnostic_observation = {'events': events, 'evidenceOutcomes': [],
+                'root': Path(ctx['hostPaths']['runRoot']), 'controller': controller,
+                'originalGlobals': (*original, original_bound_sha)}
         def write(path, value):
             raw = value if isinstance(value, bytes) else M.canonical(value)
             path.write_bytes(raw); path.chmod(0o600)
@@ -284,10 +289,23 @@ class ControllerAdmissionChecks(unittest.TestCase):
             def sample(self): return {'FICTIONAL': True}
             def last_observation(self): return {'FICTIONAL': True}
         resource = Resource()
+        if diagnostic:
+            def fixture_module(name):
+                spec = importlib.util.spec_from_file_location('mock_pipeline_diagnostic_' + name,
+                    HERE / (name + '.py'))
+                module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+                return module
+            dynamic = fixture_module('test_dynamic_host_capacity')
+            material_contract = fixture_module('mock500_materials_contract')
+            host_contract = fixture_module('mock500_host_contract')
+            resource.host_functional_stage = 'mock500'
+            resource.container_limit = dynamic.admission()['diagnosticHardLimitBytes']
+            resource.host_capacity_budget = dynamic.CAP.host_budget(dynamic.admission())
         class Start:
             context = ctx
             resources = resource
             admission = {'FICTIONAL': True}
+            materials_diagnostic = diagnostic
             def before_dispatch(self, **kwargs): events.append('admission')
             def closure_guard(self): return None
             @property
@@ -320,6 +338,9 @@ class ControllerAdmissionChecks(unittest.TestCase):
         def native_restore(*args): events.append('restore'); return {'profiles': 500, 'active': 0}
         modules = {'mock500_inputs': M, 'mock500_resources': SimpleNamespace(MockCommonResources=Resource),
             'mock500_start': SimpleNamespace(StartGuard=Start), 'mock500_backup': SimpleNamespace(restore_database=native_restore)}
+        if diagnostic:
+            modules.update(mock500_materials_contract=material_contract, mock500_host_contract=host_contract,
+                functional_contract=fixture_module('functional_contract'))
         def docker(*args, **kwargs):
             if args[:2] == ('image', 'inspect'): return json.dumps([{'Id': ctx['runtimePins']['imageId']}]).encode()
             if args[0] == 'ps': return b''
@@ -327,7 +348,7 @@ class ControllerAdmissionChecks(unittest.TestCase):
             if args[0] == 'start': container_state['running'] = True
             if args[0] == 'stop': container_state['running'] = False; events.append('container-stopped')
             return b''
-        def inspect(*args):
+        def inspect(*args, **kwargs):
             return {'Id': 'e' * 64, 'State': {'Running': container_state['running'],
                 'Pid': 42 if container_state['running'] else 0, 'OOMKilled': False, 'ExitCode': 0}}
         def copy_in(source, destination): shutil.copyfile(source, work / 'state' / destination.rsplit('/', 1)[-1])
@@ -339,6 +360,7 @@ class ControllerAdmissionChecks(unittest.TestCase):
             def __init__(self, *args, **kwargs): write(work / 'state/runtime-public.PRIVATE.json', {'FICTIONAL': True})
             def poll(self): return 0 if self.stopped else None
             def wait(self, **kwargs):
+                if diagnostic and not self.stopped: events.append('gateway-stopped')
                 self.stopped = True
                 write(work / 'state/SERVICE_CLOSURE.SAFE.json', {'status': 'PASS_OWNED_MOCK500_SERVICES_CHILD_CLOSE',
                     'postgrestChildClose': {'code': 0, 'signal': None}, 'postgrestSignalAccepted': True,
@@ -354,6 +376,26 @@ class ControllerAdmissionChecks(unittest.TestCase):
             self.assertTrue((work / 'RESULTS_INDEPENDENT.SAFE.json').exists())
             kwargs['close_owned']()
             return dict.fromkeys(('remoteReadbackObserved', 'databaseRestoreObserved', 'ownedContainerStopped', 'watchClosed'), True)
+        def diagnostic_zero(baseline):
+            events.append('zero')
+            return {'confirmedZero': True, 'profileFieldsUnchanged': True, 'profiles': 500,
+                'activeProfiles': 0, 'nativeZeroState': 'FICTIONAL_BOUND_ENDED_ZERO'}
+        def diagnostic_evidence(**kwargs):
+            events.append('evidence')
+            self.assertIs(kwargs['controller'], controller)
+            self.assertTrue(container_state['running'])
+            self.assertTrue(kwargs['outcome']['cleanup']['confirmedZero'])
+            self.assertEqual(kwargs['outcome']['observationMoment'], 'BEFORE_CONTAINER_STOP')
+            self.assertIs(kwargs['outcome']['ownedContainerStopped'], False)
+            self.assertIs(kwargs['outcome']['watchClosed'], False)
+            self._last_materials_diagnostic_observation['evidenceOutcomes'].append(copy.deepcopy(kwargs['outcome']))
+            return {'schema': 'helmut-w15-materials-diagnostic-evidence/1',
+                'status': 'PASS_PRIVATE_MATERIALS_EVIDENCE_ONLY', 'scope': material_contract.SCOPE,
+                'artifactId': 123, 'cipherBytes': 512, 'cipherSHA256': 'e' * 64,
+                'retentionDays': 1, 'maximumStorageUSD': '0.05',
+                'remoteReadbackObserved': True, 'authenticatedReadbackObserved': True,
+                **dict.fromkeys(('acceptedAsCompleteBackup', 'mock500Acceptance',
+                    'productionAcceptance', 'executionAuthority', 'retryAllowed'), False)}
         readiness = []
         def command(argv, **kwargs):
             if 'pg_isready' in argv:
@@ -368,16 +410,38 @@ class ControllerAdmissionChecks(unittest.TestCase):
                 patch.object(controller, 'read', side_effect=lambda query: {'FICTIONAL': True} if 'jsonb_build_object' in query else 0), \
                 patch.object(controller, 'sql'), patch.object(controller, 'copy_in', side_effect=copy_in), \
                 patch.object(controller, 'copy_out', side_effect=copy_out), patch.object(controller, 'cleanup', side_effect=cleanup), \
+                patch.object(controller, 'materials_cleanup', side_effect=diagnostic_zero if diagnostic else controller.materials_cleanup), \
+                patch.object(controller, 'quiesce_materials', side_effect=(lambda: events.append('sql-mutators-stopped')) if diagnostic else controller.quiesce_materials), \
+                patch.object(controller, 'verify_functional_connections', side_effect=(lambda: {'FICTIONAL': True}) if diagnostic else controller.verify_functional_connections), \
                 patch.object(controller, 'stop_owned'), patch.object(controller.subprocess, 'Popen', Gateway), \
                 patch.object(controller.subprocess, 'run', side_effect=command), patch.object(controller.time, 'sleep'):
             if inject is not None:
                 inject(self, controller)
-            try: result = controller.run_bound(inputs, resource, start, complete, disk_guard=Mock())
+            try:
+                result = controller.run_bound(inputs, resource, start, None if diagnostic else complete,
+                    disk_guard=Mock(), **({'materials_diagnostic': diagnostic_evidence} if diagnostic else {}))
             except BaseException:
                 if expect_failure:
                     raise
                 final_path = Path(ctx['hostPaths']['runRoot']) / 'FINAL_MOCK500_CLOSURE.SAFE.json'
                 self.fail(str(events) + ' ' + str(json.loads(final_path.read_bytes()) if final_path.exists() else {}))
+        if diagnostic:
+            material_contract.validate_result(result, {**ctx, 'mode': material_contract.MODE})
+            self.assertFalse(result['mock500Acceptance'] or result['backupRoundtripVerified'])
+            for forbidden in ('prepare', 'run', 'audit', 'backup'):
+                self.assertNotIn(forbidden, events)
+            for before, after in [('restore', 'setup'), ('setup', 'materials'),
+                ('materials', 'gateway-stopped'), ('gateway-stopped', 'sql-mutators-stopped'),
+                ('sql-mutators-stopped', 'zero'), ('zero', 'evidence'),
+                ('evidence', 'container-stopped'), ('container-stopped', 'watch-closed')]:
+                self.assertLess(events.index(before), events.index(after))
+            for once in ('restore', 'materials', 'zero', 'gateway-stopped', 'container-stopped', 'evidence'):
+                self.assertEqual(events.count(once), 1)
+            self.assertEqual((controller.WORK, controller.BASE, controller.DB, controller.CONTAINER,
+                controller.IMAGE, controller._BOUND_CONTEXT_SHA), (*original, original_bound_sha))
+            self.assertTrue((Path(ctx['hostPaths']['runRoot']) / 'MATERIALS_DIAGNOSTIC_CLOSURE.SAFE.json').exists())
+            self.assertFalse((Path(ctx['hostPaths']['runRoot']) / 'FINAL_MOCK500_CLOSURE.SAFE.json').exists())
+            return result, events
         self.assertEqual(result['status'], 'PASS_MOCK500_BODY_AND_BACKUP_INDEPENDENT_ACCEPTANCE_PENDING')
         self.assertFalse(result['mock500Acceptance'])
         for before, after in [('restore', 'setup'), ('materials', 'prepare'), ('prepare', 'run'), ('run', 'zero'),

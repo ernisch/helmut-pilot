@@ -210,7 +210,7 @@ def prepare_inputs(context, private_payload, *, input_binding_sha256, additional
         need(type(private_payload) is dict and {'cipherIndex', 'keyB64', 'passphrase', 'eventInputs'} <= set(private_payload), phase)
         armored, inputs = private_payload['cipherIndex'], private_payload['eventInputs']
         need(type(inputs) is dict and set(inputs) == {'w15_mode', 'expected_commit', 'w15_request', 'w15_cipher_index'}
-             and inputs['w15_mode'] in (MODE, PHASED, FUNCTIONAL, HOST_FUNCTIONAL) and inputs['expected_commit'] == commit
+             and inputs['w15_mode'] in (MODE, PHASED, FUNCTIONAL, HOST_FUNCTIONAL, 'mock500-materials-diagnostic-gated') and inputs['expected_commit'] == commit
              and inputs['w15_cipher_index'] == armored and type(inputs['w15_request']) is str, phase)
         N.check_event(commit, armored, mode=inputs['w15_mode'], extra_inputs={'w15_request': inputs['w15_request']}, event_inputs=inputs)
         encoded, passphrase = private_payload['keyB64'], private_payload['passphrase']

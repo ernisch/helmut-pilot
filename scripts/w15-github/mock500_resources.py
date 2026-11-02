@@ -206,7 +206,8 @@ def admit_disk_plan(filesystem_root, *, checkout_bytes, binary_bytes, additional
     need(processing_backup_stage in (None, 'mock500'))
     need(functional_stage in (None,'mock500') and not (functional_stage and processing_backup_stage))
     need(host_capacity_admission is None or (functional_stage is None and processing_backup_stage is None))
-    need(maximum_wall_seconds == COMPLETION_SECONDS and type(maximum_wall_seconds) is int)
+    need(type(maximum_wall_seconds) is int and (maximum_wall_seconds == COMPLETION_SECONDS
+         or maximum_wall_seconds == 1080 and host_capacity_admission is not None))
     need(D._amount(checkout_bytes) > 0 and D._amount(binary_bytes) > 0)
     need(D._amount(additional_asset_bytes) > 0, 'MOCK500_ADDITIONAL_ASSET_BYTE_BOUND_REQUIRED')
     budgets = {'stagedCheckout': checkout_bytes, 'stagedPinnedBinaries': binary_bytes,
@@ -223,7 +224,7 @@ def admit_disk_plan(filesystem_root, *, checkout_bytes, binary_bytes, additional
         'requiredAdditionalBytes': required, 'minimumFreeReserveBytes': D.FREE_RESERVE_BYTES,
         'additionalPrivateAssetBoundBytes': additional_asset_bytes,
         'maximumSelectionBytes': MAX_SELECTION_BYTES, 'maximumCipherBytes': MAX_CIPHER_BYTES,
-        'processingSeconds': PROCESSING_SECONDS, 'maximumWallSeconds': COMPLETION_SECONDS,
+        'processingSeconds': min(PROCESSING_SECONDS, maximum_wall_seconds), 'maximumWallSeconds': maximum_wall_seconds,
         'commonMemoryLimitBytes': numeric['comparisonBudgetBytes'], 'maximumActualCommonLifetimePeakBytes': numeric['maximumConsumptionBytes'],
         'requiredMemoryReserveBytes': numeric['requiredReserveBytes'], 'swapMaximumBytes': 0,
         'automaticDeletionAllowed': False, 'executionAuthority': False, 'mock500Acceptance': False}
@@ -251,7 +252,8 @@ class DiskGuard:
                  'mockPrivateAssetSources': self.plan['additionalPrivateAssetBoundBytes'],
                  'mockPrivateAssetMaterialization': self.plan['additionalPrivateAssetBoundBytes'], **BUDGETS}
              and self.plan['minimumFreeReserveBytes'] == D.FREE_RESERVE_BYTES
-             and self.plan['maximumWallSeconds'] == COMPLETION_SECONDS
+             and self.plan['maximumWallSeconds'] in (1080,COMPLETION_SECONDS)
+             and (self.plan['maximumWallSeconds'] != 1080 or getattr(resources,'host_functional_stage',None)=='mock500')
              and self.plan['commonMemoryLimitBytes'] == numeric['comparisonBudgetBytes']
              and self.plan['maximumActualCommonLifetimePeakBytes'] == numeric['maximumConsumptionBytes']
              and self.plan['requiredMemoryReserveBytes'] == numeric['requiredReserveBytes'])
@@ -264,7 +266,7 @@ class DiskGuard:
         self()
 
     def __call__(self):
-        need(0 <= time.monotonic() - self.started < COMPLETION_SECONDS, 'MOCK500_COMPLETION_DEADLINE')
+        need(0 <= time.monotonic() - self.started < self.plan['maximumWallSeconds'], 'MOCK500_COMPLETION_DEADLINE')
         sample = self.resources.sample()
         if getattr(self.resources,'host_functional_stage',None)=='mock500':
             host().assess(sample,self.resources.host_capacity_admission)

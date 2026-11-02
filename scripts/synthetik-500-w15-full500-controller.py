@@ -30,7 +30,7 @@ _BOUND_CONTEXT_SHA=None
 
 def _mock_module(name):
     assert name in ('mock500_inputs','mock500_resources','mock500_start','mock500_backup',
-      'functional_contract','mock500_host_contract','end500_capacity_roles','runner_diagnostics')
+      'functional_contract','mock500_host_contract','end500_capacity_roles','runner_diagnostics','mock500_materials_contract')
     key='w15_github_'+name
     if key not in sys.modules:
         spec=importlib.util.spec_from_file_location(key,ROOT/'scripts/w15-github'/(name+'.py'))
@@ -348,7 +348,7 @@ class Supervisor:
             except BaseException:pass # First failure and bound stop already persist independently.
     def sample(self):
         if self.start_guard is not None:
-            (self.start_guard.closure_guard if self.closure_mode or self.mock_backup_closure else self.start_guard.before_dispatch)()
+            (self.start_guard.closure_guard if self.closure_mode or self.mock_backup_closure else lambda:self.start_guard.before_dispatch(kind='prepare' if getattr(self.start_guard,'materials_diagnostic',False)else'unit'))()
         if self.disk_guard is not None:self.disk_guard()
         if self.common_resources is not None:
             common=self.common_resources.sample()
@@ -401,6 +401,7 @@ class Supervisor:
         action={'seed':'setup'}.get(name,name)
         if action in ['prepare','run','setup','audit','signal-proof','eu-component']:STARTED_INNER_ACTIONS.add(action)
         with (WORK/(name+'.PRIVATE.log')).open('xb')as log:
+            os.fchmod(log.fileno(),0o600)
             self.process=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=extra_env or ENV,cwd=ROOT,start_new_session=True)
             process=self.process
             # A first failure may have arrived after the entry check while no
@@ -526,7 +527,62 @@ def _bound_container(identifier,context,mounts,owned_id=None,*,memory_limit=LIMI
         assert row['Source']==str(source)and row['Type']=='bind'and row['RW']is(not readonly)
     return info
 
-def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
+def materials_cleanup(baseline):
+    """Diagnostic-only zero proof, including failure before native preparation.
+
+    An absent native slot is established by a read, never by catching an RPC
+    error. The unchanged full-run cleanup remains mandatory after activation.
+    """
+    before=read("select jsonb_build_object('database',current_database(),'active',(select count(*)from mandate_profiles where aktiv));")
+    assert before['database']==DB and type(before['active'])is int and before['active']in(0,500)
+    path=WORK/'cleanup-context.PRIVATE.json';state='NO_OWNED_NATIVE_CONTEXT'
+    if path.exists():
+        c=json.loads(path.read_bytes());assert c['database']==DB
+        slot=read("select jsonb_build_object('present',exists(select 1 from public.helmut_store where id="+literal('synthetik500-runtime-'+c['operationId'])+"));")
+        assert type(slot['present'])is bool
+        if not slot['present']:
+            assert before['active']==0;state='NO_OWNED_NATIVE_SLOT'
+        else:
+            native=read('set local role service_role;select public.helmut_synthetik500_lesung('+','.join(map(literal,[c['operationId'],c['manifestHash'],c['productionCommit']]))+');')
+            assert all(native.get(k)==c[k]for k in('operationId','manifestHash','productionCommit'))
+            assert native.get('fachfelderUnveraendert')is True and native.get('quittungBindungBestaetigt')is True
+            if native.get('zustand')=='vorbereitet':
+                assert native.get('aktiv')==before['active']==0;state='BOUND_PREPARED_ZERO'
+            else:
+                if native.get('zustand')=='aktiv'and before['active']==0:
+                    marker=WORK/'END_WRITE_ATTEMPT_STARTED.SAFE.json'
+                    assert not marker.exists(),'materials-previous-end-outcome-unknown'
+                    save(marker.name,{'database':DB,'operationId':c['operationId']})
+                    args=[c['operationId'],c['manifestHash'],c['productionCommit'],'notstopp','GEBUNDENE_SYNTHETIK500_NUR_DEAKTIVIEREN']
+                    sql("begin;set local lock_timeout='3s';set local statement_timeout='15s';set local role service_role;select public.helmut_synthetik500_ende("+','.join(map(literal,args))+');commit;')
+                result=cleanup();assert result.get('nativeBoundZero')is True;state='BOUND_ENDED_ZERO'
+    else:assert before['active']==0
+    after=read("select jsonb_build_object('database',current_database(),'profiles',(select count(*)from mandate_profiles),'active',(select count(*)from mandate_profiles where aktiv),'profileFachHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)-'aktiv' order by user_id collate \"C\")::text,'UTF8')),'hex')from mandate_profiles p));")
+    assert after['database']==DB and after['profiles']==500 and after['active']==0
+    assert after['profileFachHash']==baseline['profileFachHash']
+    result={'confirmedZero':True,'profileFieldsUnchanged':True,'profiles':500,'activeProfiles':0,'nativeZeroState':state}
+    save('MATERIALS_ZERO.SAFE.json',result);return result
+
+
+def quiesce_materials():
+    """Drain only the freshly owned isolated database before its zero readback.
+
+    Host Node/docker clients may have exited while an in-container SQL statement
+    is still finishing. Signals are scoped to this owned container/database;
+    accepted signals are followed by an actual pg_stat_activity absence proof.
+    """
+    result=json.loads(sql("select jsonb_build_object('database',current_database(),'signalsAccepted',coalesce(bool_and(pg_terminate_backend(pid)),true))from pg_stat_activity where datname=current_database()and pid<>pg_backend_pid();"))
+    assert result['database']==DB and result['signalsAccepted']is True
+    for _ in range(50):
+        observed=read("select jsonb_build_object('database',current_database(),'otherSessions',(select count(*)from pg_stat_activity where datname=current_database()and pid<>pg_backend_pid()));")
+        assert observed['database']==DB and type(observed['otherSessions'])is int
+        if observed['otherSessions']==0:
+            save('MATERIALS_MUTATORS_STOPPED.SAFE.json',{'signalsAccepted':True,'otherSessions':0});return
+        time.sleep(.1)
+    raise RuntimeError('materials-isolated-mutators-not-stopped')
+
+
+def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,materials_diagnostic=None):
     """Explicit canonical Mock500 seam. main() and imports remain locked.
 
     Reuses the actual runtime, native setup/prepare/run, cleanup,1500 auditor
@@ -538,7 +594,9 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
         assert type(inputs)is _mock_module('mock500_inputs').Mock500Inputs
         assert type(resources)is _mock_module('mock500_resources').MockCommonResources
         assert type(start_guard)is _mock_module('mock500_start').StartGuard
-        assert callable(backup_completion)and callable(disk_guard)
+        diagnostic=materials_diagnostic is not None
+        assert callable(disk_guard)
+        assert (callable(materials_diagnostic)and backup_completion is None and start_guard.materials_diagnostic)if diagnostic else callable(backup_completion)
         assert (LIMIT,RESERVE,MAXIMUM)==(2048000000,409600000,1638400000)
         host_functional=getattr(resources,'host_functional_stage',None)=='mock500'
         functional=getattr(resources,'functional_stage',None)=='mock500' or host_functional
@@ -557,8 +615,18 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
     failure=None;supervisor=None;gateway_process=None;gateway_log=None;owned_id=None;attempted=False
     phase='mock500-controller-workspace'
     closed=False;close_started=False;cleanup_result=None;backup=None;result=None;mounts={};actual_functional_results=None
+    baseline=None;materials_completed=False;diagnostic_final=None;diagnostic_closure_ok=True
     def guard():
         start_guard.closure_guard();disk_guard()
+    def close_gateway():
+        if gateway_process is None:return
+        stop_owned(['gateway'],require_registered=True)
+        assert gateway_process.wait(timeout=20)==0
+        service=json.loads((WORK/'state/SERVICE_CLOSURE.SAFE.json').read_bytes())
+        assert service['status']=='PASS_OWNED_MOCK500_SERVICES_CHILD_CLOSE'
+        assert service['postgrestSignalAccepted']is True and service['gatewayStopped']is True
+        assert service['forced']is False and service['journal']['closed']is True and service['journal']['pendingEntries']==0
+        save('SERVICE_CLOSURE.SAFE.json',{**service,'gatewayClientReturncode':0})
     def close_owned():
         nonlocal closed,close_started
         assert not closed and not close_started and owned_id is not None and supervisor is not None
@@ -573,7 +641,10 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
         except BaseException:observation_error=True
         finally:supervisor.stop()
         closed=not supervisor.thread.is_alive()and not supervisor.reporter.is_alive()
-        assert closed and observation_error is None and supervisor.failure is None and supervisor.stop_failure is None
+        expected_material_failure=(diagnostic and phase=='mock500-controller-materials' and supervisor.failure is not None
+            and supervisor.failure.get('type')=='RuntimeError' and supervisor.failure.get('reason')in(
+                'full500-stage-failed:materials:'+str(getattr(supervisor,'last_stage_exit_code',None)),'full500-stage-timeout:materials'))
+        assert closed and observation_error is None and (supervisor.failure is None or expected_material_failure)and supervisor.stop_failure is None
         resources.sample()
         return {'ownedContainerStopped':True,'watchClosed':True,
           **({'primaryContainerId':owned_id}if getattr(resources,'processing_backup_stage',None)=='mock500'else{})}
@@ -585,9 +656,9 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
         inputs.stage_sources(WORK/'stage',guard)
         phase='mock500-controller-input-context'
         _private_write(WORK/'MOCK_INPUT_BINDING.PRIVATE.json',inputs._record)
-        _private_write(WORK/'OWNER_GO.PRIVATE.json',{'confirmation':'GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO',
-          'targetDatabase':DB,'maximumUnits':500,'temporarySyntheticProfiles':500,'paidModelsAllowed':False,
-          'productionAllowed':False,'full500Allowed':True,'authorizationBinding':start_guard.admission,
+        _private_write(WORK/'OWNER_GO.PRIVATE.json',{'confirmation':('GO_ONE_ISOLATED_MATERIALS_DIAGNOSTIC_AND_RETURN_TO_ZERO'if diagnostic else'GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO'),
+          'targetDatabase':DB,'maximumUnits':0 if diagnostic else 500,'temporarySyntheticProfiles':500,'paidModelsAllowed':False,
+          'productionAllowed':False,'full500Allowed':not diagnostic,'authorizationBinding':start_guard.admission,
           'noRetryOrResume':True})
         _private_write(WORK/'state/OWNER_GO.PRIVATE.json',json.loads((WORK/'OWNER_GO.PRIVATE.json').read_bytes()))
         _private_write(WORK/'state/setup-input.PRIVATE.json',{'commit':context['exactCommit']})
@@ -648,10 +719,11 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
           "'storeHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by id collate \"C\")::text,'UTF8')),'hex')from helmut_store p));")
         phase='mock500-controller-runtime-context'
         descriptor=inputs.private_descriptor();descriptor['sourceBaseline']=baseline;descriptor['window']=start_guard.window
+        if diagnostic:descriptor['materialsDiagnosticOnly']=True
         if functional:
             contract=_mock_module('mock500_host_contract' if host_functional else 'functional_contract')
             descriptor['functionalResourceContract']={'contract':contract.CONTRACT,
-              'mode':contract.MODE if host_functional else contract.MOCK_MODE,
+              'mode':_mock_module('mock500_materials_contract').MODE if diagnostic else contract.MODE if host_functional else contract.MOCK_MODE,
               'memoryProfile':contract.PROFILE if host_functional else contract.MOCK_PROFILE,
               'hardMemoryBytes':resources.container_limit if host_functional else contract.HARD_LIMIT,
               'hostReserveBytes':_mock_module('functional_contract').HOST_RESERVE,
@@ -677,86 +749,119 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None):
         start_guard.before_dispatch(kind='prepare')
         material_env={**ENV,'HELMUT_SOURCE_MODE':'off','HELMUT_STORAGE_BACKEND':'local',
           'HELMUT_W15_MOCK_CONTEXT':str(descriptor_path),'HELMUT_W15_MOCK_CONTEXT_SHA256':_BOUND_CONTEXT_SHA}
+        if diagnostic:material_env['HELMUT_W15_MATERIALS_DIAGNOSTIC']='1'
         phase='mock500-controller-materials'
         supervisor.stage([str(WORK/'stage/node'),'--require',str(ROOT/'scripts/lokaler-netzschutz.js'),
           str(ROOT/'scripts/synthetik-500-w15-full500-materials.js')],'materials',240,material_env)
-        for name in ('processing-materials.PRIVATE.json','current-command.PRIVATE.json','mock-fixtures.PRIVATE.json','audit-inputs.PRIVATE.json'):
-            copy_in(WORK/name,BASE+'/state/'+name)
-        phase='mock500-controller-atomic-bootstrap'
-        sql((ROOT/'supabase/proposals/auth_usage_atomic_local.sql').read_text(),database=DB)
-        sql("select public.helmut_auth_usage_bootstrap_v1(jsonb_build_object('id','main-auth','expectedHash',encode(sha256(convert_to(data::text,'UTF8')),'hex')))from public.helmut_store where id='main-auth';",database=DB)
-        sql("notify pgrst,'reload schema';",database=DB)
-        phase='mock500-controller-prepare';inner(supervisor,'prepare',130)
-        start_guard.before_dispatch(kind='unit')
-        phase='mock500-controller-run';inner(supervisor,'run',10815)
-    except BaseException:
+        materials_completed=True
+        if not diagnostic:
+            for name in ('processing-materials.PRIVATE.json','current-command.PRIVATE.json','mock-fixtures.PRIVATE.json','audit-inputs.PRIVATE.json'):
+                copy_in(WORK/name,BASE+'/state/'+name)
+            phase='mock500-controller-atomic-bootstrap'
+            sql((ROOT/'supabase/proposals/auth_usage_atomic_local.sql').read_text(),database=DB)
+            sql("select public.helmut_auth_usage_bootstrap_v1(jsonb_build_object('id','main-auth','expectedHash',encode(sha256(convert_to(data::text,'UTF8')),'hex')))from public.helmut_store where id='main-auth';",database=DB)
+            sql("notify pgrst,'reload schema';",database=DB)
+            phase='mock500-controller-prepare';inner(supervisor,'prepare',130)
+            start_guard.before_dispatch(kind='unit')
+            phase='mock500-controller-run';inner(supervisor,'run',10815)
+    except BaseException as error:
         failure={'status':'FAIL_OR_UNKNOWN','phase':phase,'retryAllowed':False}
+        if diagnostic:
+            import traceback
+            try:_private_write(WORK/'MATERIALS_CONTROLLER_FIRST_FAILURE.PRIVATE.json',{'phase':phase,
+                'type':type(error).__name__,'message':str(error)[:16384],'traceback':traceback.format_exc()[:32768]})
+            except BaseException:pass
+            try:
+                safe=_mock_module('mock500_materials_contract').failure(json.loads((WORK/'MATERIALS_DIAGNOSTIC_FAILURE.SAFE.json').read_bytes()))
+                failure['phase']='mock500-controller-materials-'+safe['stage']
+            except BaseException:pass
     finally:
         if attempted and owned_id is not None:
             try:
                 if supervisor:supervisor.closure_mode=True
                 stop_owned(['prepare','run','setup','audit'])
-                cleanup_result=cleanup()
-                assert cleanup_result['confirmedZero']is True and cleanup_result.get('nativeBoundZero')is True
-                if supervisor:inner(supervisor,'audit',900)
-            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-zero-audit'}
+                if diagnostic:
+                    close_gateway();quiesce_materials()
+                cleanup_result=materials_cleanup(baseline)if diagnostic else cleanup()
+                assert cleanup_result['confirmedZero']is True
+                if not diagnostic:
+                    assert cleanup_result.get('nativeBoundZero')is True
+                    if supervisor:inner(supervisor,'audit',900)
+            except BaseException:diagnostic_closure_ok=False;failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-zero-audit'}
             try:
-                if gateway_process is not None:
-                    stop_owned(['gateway'],require_registered=True)
-                    assert gateway_process.wait(timeout=20)==0
-                    service=json.loads((WORK/'state/SERVICE_CLOSURE.SAFE.json').read_bytes())
-                    assert service['status']=='PASS_OWNED_MOCK500_SERVICES_CHILD_CLOSE'
-                    assert service['postgrestSignalAccepted']is True and service['gatewayStopped']is True
-                    assert service['forced']is False and service['journal']['closed']is True and service['journal']['pendingEntries']==0
-                    save('SERVICE_CLOSURE.SAFE.json',{**service,'gatewayClientReturncode':0})
-            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-services'}
+                if not diagnostic:close_gateway()
+            except BaseException:diagnostic_closure_ok=False;failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-services'}
             try:
-                for name in ('PREPARE.SAFE.json','FULL500_RUNTIME_RESULT.SAFE.json','FULL500_RUNTIME_FAILURE.SAFE.json','RESULTS_INDEPENDENT.SAFE.json','runtime-progress.SAFE.jsonl'):
-                    copy_out(name)
-                audit=json.loads((WORK/'state/RESULTS_INDEPENDENT.SAFE.json').read_bytes())
-                assert audit['storedResultsAccepted']is True
-                runtime=json.loads((WORK/'state/FULL500_RUNTIME_RESULT.SAFE.json').read_bytes())
-                assert runtime['completedUnits']==500 and runtime['localSimulations']==1000
-                assert runtime['checks']['all8000FreshControls']is True and runtime['technicallyStoredPositions']==1500
-                assert runtime['checks']['everyAuthAssignedAndUnder30']is True
-                assert failure is None and supervisor.failure is None
-                if functional:save('FUNCTIONAL_DB_FINAL.SAFE.json',verify_functional_connections())
-                inputs.check_sources();guard()
-                result={'status':'PASS_LOCAL_MOCK500_BODY_ONLY','profiles':500,'units':500,'controls':8000,
-                  'positions':1500,'localProviderPhases':1000,'cleanupConfirmedZero':True,
-                  'executionAuthority':False,'mock500Acceptance':False,'productionAcceptance':False}
-                save('CONTROLLER_BODY.SAFE.json',result)
-                backup=backup_completion(controller=sys.modules[__name__],inputs=inputs,resources=resources,
-                  supervisor=supervisor,result=result,close_owned=close_owned)
-                assert all(backup[key]is True for key in ('remoteReadbackObserved','databaseRestoreObserved','ownedContainerStopped','watchClosed'))and closed
-                if functional:actual_functional_results=functional_result_summary(runtime,audit,cleanup_result)
-            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':
+                if diagnostic:
+                    if failure is not None:
+                        category={'schema':'helmut-w15-materials-first-failure/1','category':'MATERIALS_FAILURE_UNAVAILABLE','kind':'unknown','stage':'entry'}
+                        safe_path=WORK/'MATERIALS_DIAGNOSTIC_FAILURE.SAFE.json'
+                        if safe_path.exists():category=_mock_module('mock500_materials_contract').failure(json.loads(safe_path.read_bytes()))
+                    else:category=None
+                    outcome={'materialsCompleted':materials_completed,'firstFailure':category,'cleanup':cleanup_result,
+                        'observationMoment':'BEFORE_CONTAINER_STOP','ownedContainerStopped':closed,
+                        'watchClosed':False,'units':0,'providerPhases':0}
+                    evidence=materials_diagnostic(controller=sys.modules[__name__],outcome=outcome)
+                    if not closed and not close_started:close_owned()
+                    assert closed and gateway_process.wait(timeout=1)==0
+                    assert diagnostic_closure_ok and cleanup_result is not None and cleanup_result.get('confirmedZero')is True
+                    diagnostic_final={'status':_mock_module('mock500_materials_contract').WORKER_STATUS,
+                        'mode':_mock_module('mock500_materials_contract').MODE,'contract':_mock_module('mock500_materials_contract').CONTRACT,
+                        **{k:context[k]for k in('exactCommit','runId','runAttempt','nonce')},
+                        'materialsCompleted':materials_completed,'firstFailure':category,'profiles':500,'activeProfiles':0,
+                        'profileFieldsUnchanged':True,'units':0,'providerPhases':0,'evidence':evidence,
+                        'ownedContainerStopped':closed,'watchClosed':True,'backupRoundtripVerified':False,
+                        'executionAuthority':False,'mock500Acceptance':False,'end500Acceptance':False,'productionAcceptance':False,'retryAllowed':False}
+                    _private_write(root/'MATERIALS_DIAGNOSTIC_CLOSURE.SAFE.json',diagnostic_final)
+                else:
+                    for name in ('PREPARE.SAFE.json','FULL500_RUNTIME_RESULT.SAFE.json','FULL500_RUNTIME_FAILURE.SAFE.json','RESULTS_INDEPENDENT.SAFE.json','runtime-progress.SAFE.jsonl'):
+                        copy_out(name)
+                    audit=json.loads((WORK/'state/RESULTS_INDEPENDENT.SAFE.json').read_bytes())
+                    assert audit['storedResultsAccepted']is True
+                    runtime=json.loads((WORK/'state/FULL500_RUNTIME_RESULT.SAFE.json').read_bytes())
+                    assert runtime['completedUnits']==500 and runtime['localSimulations']==1000
+                    assert runtime['checks']['all8000FreshControls']is True and runtime['technicallyStoredPositions']==1500
+                    assert runtime['checks']['everyAuthAssignedAndUnder30']is True
+                    assert failure is None and supervisor.failure is None
+                    if functional:save('FUNCTIONAL_DB_FINAL.SAFE.json',verify_functional_connections())
+                    inputs.check_sources();guard()
+                    result={'status':'PASS_LOCAL_MOCK500_BODY_ONLY','profiles':500,'units':500,'controls':8000,
+                      'positions':1500,'localProviderPhases':1000,'cleanupConfirmedZero':True,
+                      'executionAuthority':False,'mock500Acceptance':False,'productionAcceptance':False}
+                    save('CONTROLLER_BODY.SAFE.json',result)
+                    backup=backup_completion(controller=sys.modules[__name__],inputs=inputs,resources=resources,
+                      supervisor=supervisor,result=result,close_owned=close_owned)
+                    assert all(backup[key]is True for key in ('remoteReadbackObserved','databaseRestoreObserved','ownedContainerStopped','watchClosed'))and closed
+                    if functional:actual_functional_results=functional_result_summary(runtime,audit,cleanup_result)
+            except BaseException:diagnostic_closure_ok=False;failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':
                 'mock500-controller-backup'if result is not None else'mock500-controller-result-readback'}
             if not closed and not close_started:
                 try:close_owned()
-                except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-owned-close'}
+                except BaseException:diagnostic_closure_ok=False;failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-owned-close'}
             try:
                 if supervisor is not None and supervisor.thread.is_alive():supervisor.stop()
-            except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-supervisor-stop'}
+            except BaseException:diagnostic_closure_ok=False;failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-supervisor-stop'}
         try:
             if gateway_process is not None and gateway_process.poll()is None:
                 # Only wait for our owned client; the parent remains the stop boundary.
                 gateway_process.wait(timeout=10)
-        except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-gateway-client-close'}
+        except BaseException:diagnostic_closure_ok=False;failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-gateway-client-close'}
         try:
             if gateway_log is not None:gateway_log.close()
-        except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-gateway-log-close'}
+        except BaseException:diagnostic_closure_ok=False;failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-gateway-log-close'}
         try:
             inputs.check_sources();resources.sample();disk_guard()
-            final={'status':'PASS_MOCK500_BODY_AND_BACKUP_INDEPENDENT_ACCEPTANCE_PENDING'if failure is None and backup else'FAIL_OR_UNKNOWN',
-              'failure':failure,'bodyCompleted':bool(result),'remoteReadbackObserved':bool(backup and backup.get('remoteReadbackObserved')),
-              'databaseRestoreObserved':bool(backup and backup.get('databaseRestoreObserved')),
-              'ownedContainerStopped':closed,'mock500Acceptance':False,'executionAuthority':False,
-              'productionAcceptance':False,'retryAllowed':False,'commonParent':resources.last_observation()}
-            if functional and actual_functional_results is not None:final['functionalResults']=actual_functional_results
-            _private_write(root/'FINAL_MOCK500_CLOSURE.SAFE.json',final)
-        except BaseException:failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-final-observation'}
+            if not diagnostic:
+                final={'status':'PASS_MOCK500_BODY_AND_BACKUP_INDEPENDENT_ACCEPTANCE_PENDING'if failure is None and backup else'FAIL_OR_UNKNOWN',
+                  'failure':failure,'bodyCompleted':bool(result),'remoteReadbackObserved':bool(backup and backup.get('remoteReadbackObserved')),
+                  'databaseRestoreObserved':bool(backup and backup.get('databaseRestoreObserved')),
+                  'ownedContainerStopped':closed,'mock500Acceptance':False,'executionAuthority':False,
+                  'productionAcceptance':False,'retryAllowed':False,'commonParent':resources.last_observation()}
+                if functional and actual_functional_results is not None:final['functionalResults']=actual_functional_results
+                _private_write(root/'FINAL_MOCK500_CLOSURE.SAFE.json',final)
+        except BaseException:diagnostic_closure_ok=False;failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-final-observation'}
         finally:WORK,BASE,DB,CONTAINER,IMAGE,_BOUND_CONTEXT_SHA=previous
+    if diagnostic and diagnostic_final is not None and diagnostic_closure_ok:return diagnostic_final
     if failure is not None or backup is None:
         raise Mock500ControllerFailure(failure['phase']if failure else'mock500-controller-backup')from None
     return final

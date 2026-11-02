@@ -35,7 +35,8 @@ LIMITS = {'comparisonBudgetBytes': P.LIMIT, 'maximumConsumptionBytes': P.MAXIMUM
 PHASED = 'mock500-full-phased-gated'
 FUNCTIONAL = 'mock500-full-functional-gated'
 HOST_FUNCTIONAL = 'mock500-full-host-functional-gated'
-WALL = {'mock500-runner-synthetic': 300, 'mock500-full-gated': 12600, PHASED: 12600, FUNCTIONAL:12600, HOST_FUNCTIONAL:12600}
+MATERIALS = 'mock500-materials-diagnostic-gated'
+WALL = {'mock500-runner-synthetic': 300, 'mock500-full-gated': 12600, PHASED: 12600, FUNCTIONAL:12600, HOST_FUNCTIONAL:12600, MATERIALS:1080}
 BRANCH = S.BRANCH
 SYNTHETIC_BRANCH = 'refs/heads/codex/w15-mock500-integration-20261029'
 REQUEST_KEYS = S.REQUEST_KEYS | {'bindings'}
@@ -68,7 +69,7 @@ def host():
 
 
 def limits(mode):
-    return host().limits() if mode==HOST_FUNCTIONAL else functional().limits('mock500') if mode == FUNCTIONAL else dict(LIMITS)
+    return host().limits() if mode in (HOST_FUNCTIONAL,MATERIALS) else functional().limits('mock500') if mode == FUNCTIONAL else dict(LIMITS)
 
 
 class MockRunnerError(S.RunnerStartError):
@@ -133,7 +134,7 @@ def github_binding(request):
                  'runner_start.py', 'runner_parent.py', 'common_resources.py', 'runner_diagnostics.py', 'controller_context.py',
                  *(('restore_capacity.py', 'phase_contract.py') if request['mode'] in (PHASED,FUNCTIONAL) else ()),
                  *(('functional_contract.py',) if request['mode'] == FUNCTIONAL else ()),
-                 *(('mock500_host_contract.py','host_functional_contract.py','restore_capacity.py','functional_contract.py','component_resource_meter.py','memory_components.py') if request['mode']==HOST_FUNCTIONAL else ())):
+                 *(('mock500_host_contract.py','host_functional_contract.py','restore_capacity.py','functional_contract.py','component_resource_meter.py','memory_components.py') if request['mode'] in (HOST_FUNCTIONAL,MATERIALS) else ())):
         file = SCRIPT.with_name(name)
         relative = str(file.relative_to(REPO))
         entry = S._git(REPO, ['ls-tree', '-z', request['exactCommit'], '--', relative])
@@ -146,8 +147,10 @@ def github_binding(request):
 
 
 def validate_public_result(result, manifest, *, host_contract=None, host_capacity_budget=None):
+    if manifest['mode'] == MATERIALS:
+        return S._load('mock500_materials_contract').validate_result(result,manifest)
     phased = manifest['mode'] == PHASED
-    hosted=manifest['mode']==HOST_FUNCTIONAL
+    hosted=manifest['mode'] in (HOST_FUNCTIONAL,MATERIALS)
     new_functional=manifest['mode'] in (FUNCTIONAL,HOST_FUNCTIONAL)
     keys = RESULT_KEYS | ({'resourcePhases', 'processingMemoryChecksCompleted', 'backupSafetyChecksCompleted'} if phased else set())
     if new_functional:keys|={'functionalContract','functionalSafetyChecksCompleted','legacyRegularMemoryAccepted',
@@ -251,7 +254,7 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
                 backup_transition=S._worker_backup_transition(sender, manifest, 'mock500'))
         else:
             result = module.run_worker(manifest, private_payload)
-        staged_contract=module.component('mock500_host_contract') if manifest['mode']==HOST_FUNCTIONAL else None
+        staged_contract=module.component('mock500_host_contract') if manifest['mode'] in (HOST_FUNCTIONAL,MATERIALS) else None
         result = validate_public_result(result, manifest, host_contract=staged_contract)
         need(not latch.seen)
     except BaseException as error:
@@ -283,7 +286,7 @@ def supervise(request, private_payload, started_at, started_mono, *, latch=None)
     PHASE = 'binding'
     validate_request(request, private_payload); need(os.getuid() == 0)
     ctx = S._ctx(request)
-    if request['mode']==HOST_FUNCTIONAL:ctx['hostCapacityAdmission']=P.P.load_host_admission(ctx)
+    if request['mode'] in (HOST_FUNCTIONAL,MATERIALS):ctx['hostCapacityAdmission']=P.P.load_host_admission(ctx)
     path = P.P.R.KERNEL_ROOT / P.names(ctx)[0]
     inode = P.identity(path)
     need(P.P.R.membership(Path('/proc/self/cgroup').read_text()).startswith('/' + P.names(ctx)[0] + '/'))
@@ -300,7 +303,7 @@ def supervise(request, private_payload, started_at, started_mono, *, latch=None)
     except BaseException as error:
         raise S._diagnose(error, PHASE, 'SUPERVISOR_REJECTED', last['memory'], error_type=MockRunnerError) from None
     manifest.update(startedAtUTC=started_at, startedMonotonic=started_mono)
-    if request['mode']==HOST_FUNCTIONAL:manifest['hostCapacityAdmission']=ctx['hostCapacityAdmission']
+    if request['mode'] in (HOST_FUNCTIONAL,MATERIALS):manifest['hostCapacityAdmission']=ctx['hostCapacityAdmission']
     need('scripts/w15-github/mock500_workflow.py' in manifest['sourcePins'])
     PHASE = 'worker'
     try:
@@ -323,7 +326,8 @@ def supervise(request, private_payload, started_at, started_mono, *, latch=None)
         PHASE = 'closure'; guard(); need(S._members(ctx) == {os.getpid()})
         return {'worker': result, 'workerExited': True, 'checkoutFiles': len(manifest['sourcePins']),
             'checkoutBytes': manifest['checkoutBytes'], 'binaryBytes': manifest['binaryBytes'],
-            'dockerSocketGID': docker_gid, 'workerUID': 1000, 'workerGID': 1000}
+            'dockerSocketGID': docker_gid, 'workerUID': 1000, 'workerGID': 1000,
+            **({'workerCleanup':S.D.cleanup(cleanup)}if request['mode']==MATERIALS else{})}
     except BaseException as error:
         reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'WORKER_RESULT_REJECTED'
         failure = S._diagnose(error, PHASE, reason, last['memory'], error_type=MockRunnerError)
@@ -357,13 +361,14 @@ def launch(request, private_payload):
     listener.bind(str(ipc_dir / 'result.sock')); os.chmod(ipc_dir / 'result.sock', 0o600); listener.listen(1)
     created, process, failure, inode, latch = False, None, None, None, P.P.StopLatch()
     last, empty_observed = {'memory': None}, False
+    observed_cleanup=S.D.unknown_cleanup()if request['mode']==MATERIALS else None
     try:
-        caller_provenance=P.P.R.capacity().host_caller_provenance() if request['mode']==HOST_FUNCTIONAL else None
+        caller_provenance=P.P.R.capacity().host_caller_provenance() if request['mode'] in (HOST_FUNCTIONAL,MATERIALS) else None
         if request['mode'] in (PHASED,FUNCTIONAL):
             P.P.R.capacity().host_admission()
         PHASE = 'parent'; prepared=P.privileged('prepare', ctx); created = True
         inode = P.identity(P.P.R.KERNEL_ROOT / P.names(ctx)[0])
-        if request['mode']==HOST_FUNCTIONAL:
+        if request['mode'] in (HOST_FUNCTIONAL,MATERIALS):
             admission=S._bind_host_preparation(ctx,prepared,caller_provenance)
         initial = S._parent_readback(P, ctx, inode, last, empty=True, error_type=MockRunnerError, phase=PHASE)
         _started(started_at, started_mono, request['maximumWallSeconds']); PHASE = 'service'
@@ -383,8 +388,11 @@ def launch(request, private_payload):
             raise MockRunnerError('service', runner=detail)
         need(type(response) is dict and set(response) == {'ok', 'result'}
              and response['ok'] is True and type(response['result']) is dict)
-        validation_context=dict(request,hostCapacityAdmission=ctx['hostCapacityAdmission']) if request['mode']==HOST_FUNCTIONAL else request
+        validation_context=dict(request,hostCapacityAdmission=ctx['hostCapacityAdmission']) if request['mode'] in (HOST_FUNCTIONAL,MATERIALS) else request
         result = response['result']; worker = validate_public_result(result['worker'], validation_context)
+        if request['mode']==MATERIALS:
+            need(S.D.cleanup(result.get('workerCleanup'))is not None)
+            observed_cleanup.update(result['workerCleanup'])
         if request['mode'] == PHASED:
             P.resources().phases().validate_closure(worker['resourcePhases'], 'mock500',
                 {key: request[key] for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')},
@@ -407,12 +415,12 @@ def launch(request, private_payload):
             functional().assess(final,'mock500')
             extra={'functionalContract':functional().CONTRACT,'functionalSafetyChecksCompleted':True,
                    'legacyRegularMemoryAccepted':False,'providerResourceAccepted':False,'nonce':ctx['nonce']}
-        if request['mode']==HOST_FUNCTIONAL:
+        if request['mode'] in (HOST_FUNCTIONAL,MATERIALS):
             host().assess(final,ctx['hostCapacityAdmission'])
             extra={'functionalContract':host().CONTRACT,'functionalSafetyChecksCompleted':True,
                    'legacyRegularMemoryAccepted':False,'providerResourceAccepted':False,'nonce':ctx['nonce'],
                    'hostCapacityAdmission':admission,'hostCapacityBudget':P.P.R.capacity().host_budget(ctx['hostCapacityAdmission'])}
-        return {'status': ('PASS_FRESH_MOCK500_HOST_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY' if request['mode']==HOST_FUNCTIONAL else
+        return {'status': ('PASS_FRESH_MATERIALS_DIAGNOSTIC_OWNED_LIFETIME_ONLY' if request['mode']==MATERIALS else 'PASS_FRESH_MOCK500_HOST_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY' if request['mode'] in (HOST_FUNCTIONAL,MATERIALS) else
                            'PASS_FRESH_MOCK500_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY' if request['mode']==FUNCTIONAL
                            else 'PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY' if phased
                            else 'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY'), **extra, 'mode': request['mode'],
@@ -423,14 +431,16 @@ def launch(request, private_payload):
             'workerRoles': {key: result[key] for key in ('workerExited', 'checkoutFiles', 'checkoutBytes',
                 'binaryBytes', 'dockerSocketGID', 'workerUID', 'workerGID')},
             'executionAuthority': False, 'mock500Acceptance': False, 'end500Acceptance': False,
-            'commonLifetimeMemoryAccepted': False, 'retryAllowed': False}
+            'commonLifetimeMemoryAccepted': False, 'retryAllowed': False,
+            **({'cleanup':observed_cleanup}if request['mode']==MATERIALS else{})}
     except BaseException as error:
         reason = 'SUPERVISOR_INTERRUPTED' if isinstance(error, KeyboardInterrupt) else 'SUPERVISOR_REJECTED'
         failure = S._diagnose(error, PHASE, reason, last['memory'], error_type=MockRunnerError)
         raise failure from None
     finally:
         after = S._cleanup_launch(ctx, P, inode, created, process, listener, latch, failure,
-            empty_observed=empty_observed, error_type=MockRunnerError, kernel_root=P.P.R.KERNEL_ROOT)
+            empty_observed=empty_observed, error_type=MockRunnerError, kernel_root=P.P.R.KERNEL_ROOT,
+            **({'observed_cleanup':observed_cleanup}if request['mode']==MATERIALS else{}))
         if failure is None and after is not None:
             raise after from None
 

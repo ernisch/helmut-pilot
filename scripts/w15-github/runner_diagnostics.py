@@ -23,6 +23,9 @@ MOCK_CONTROLLER_PHASES = frozenset('mock500-controller-' + name for name in (
     'atomic-bootstrap', 'prepare', 'run', 'zero-audit', 'services', 'result-readback',
     'backup', 'owned-close', 'supervisor-stop', 'gateway-client-close',
     'gateway-log-close', 'final-observation'))
+MOCK_CONTROLLER_PHASES |= frozenset('mock500-controller-materials-' + name for name in (
+    'entry','baseline','config','originals','qualified','original-upacket','calendar',
+    'native-inputs','snapshot','native-manifest','activation','builder','output','complete'))
 OBSERVED_PHASES = frozenset(('arguments', 'event', 'approval', 'qualification', 'binding', 'resources',
     'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure')) | frozenset(
     'connection-' + name for name in ('binding', 'receive', 'input-binding', 'cache', 'prepare',

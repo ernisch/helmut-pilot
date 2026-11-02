@@ -287,7 +287,7 @@ def _ctx(request):
             value['endCapacityDiagnostic'] = True
         if request['mode'] == HOST_CAPACITY:
             value['hostCapacityDiagnostic'] = True
-    if request['mode'] == 'mock500-full-host-functional-gated':
+    if request['mode'] in ('mock500-full-host-functional-gated', 'mock500-materials-diagnostic-gated'):
         value.update(capacityDiagnostic=True, hostCapacityDiagnostic=True, mockHostFunctional=True)
     if request['mode'] in (FUNCTIONAL, 'mock500-full-functional-gated'):
         value['functionalStage'] = _load('functional_contract').stage(request['mode'])
@@ -1143,9 +1143,10 @@ def _receive_result(listener, process, deadline, *, error_type=RunnerStartError)
 
 
 def _cleanup_launch(ctx, parent, identity, created, process, listener, latch, failure,
-                    *, empty_observed=False, error_type=RunnerStartError, kernel_root=None):
+                    *, empty_observed=False, error_type=RunnerStartError, kernel_root=None, observed_cleanup=None):
     """Separate observed cleanup facts from the immutable first failure."""
-    cleanup = dict(failure.cleanup) if failure is not None and failure.cleanup is not None else D.unknown_cleanup()
+    need(observed_cleanup is None or D.cleanup(observed_cleanup)is not None)
+    cleanup = dict(failure.cleanup) if failure is not None and failure.cleanup is not None else (dict(observed_cleanup) if D.cleanup(observed_cleanup) is not None else D.unknown_cleanup())
     seen_before_cleanup = latch.seen
     latch.cleaning = True
     bad = False
@@ -1224,6 +1225,10 @@ def _cleanup_launch(ctx, parent, identity, created, process, listener, latch, fa
                 if cleanup['parentEmpty'] == 'PASS' and parent.identity(path) == identity:
                     parent.privileged('remove', ctx)
                     cleanup['parentUnitRemoved'] = 'PASS'
+                    if observed_cleanup is not None:
+                        # The existing root remove path synchronously stops this
+                        # exact empty unit before removing its fixed unit file.
+                        cleanup['parentStopRequested'] = 'PASS'
                 else:
                     bad = True
             except BaseException:
@@ -1258,6 +1263,8 @@ def _cleanup_launch(ctx, parent, identity, created, process, listener, latch, fa
         if failure.runner is None and bad:
             failure.runner = {'reason': 'CLEANUP_UNCONFIRMED'}
         failure.refresh()
+    if observed_cleanup is not None:
+        observed_cleanup.clear();observed_cleanup.update(cleanup)
     return failure
 
 

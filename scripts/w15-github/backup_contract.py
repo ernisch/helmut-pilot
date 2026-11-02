@@ -84,7 +84,8 @@ def _pin(value, role=False):
 
 def _context(context, *, expected_scope='ISOLATED_GITHUB_END500_BACKUP_ONLY'):
     require(expected_scope in ('ISOLATED_GITHUB_END500_BACKUP_ONLY',
-        'ISOLATED_GITHUB_MOCK500_BACKUP_ONLY', 'ISOLATED_GITHUB_MOCK500_INPUTS_ONLY'))
+        'ISOLATED_GITHUB_MOCK500_BACKUP_ONLY', 'ISOLATED_GITHUB_MOCK500_INPUTS_ONLY',
+        'ISOLATED_GITHUB_MOCK500_MATERIALS_DIAGNOSTIC_ONLY'))
     require(isinstance(context, dict) and set(context) == {
         "schema", "scope", "nonce", "exactCommit", "runId", "runAttempt",
         "inputManifestSHA", "recipientFingerprint", "executionAuthority"})
