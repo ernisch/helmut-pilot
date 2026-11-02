@@ -1,19 +1,20 @@
 # CURRENT STATE — Helmut
 
-## W15: reine Kapsellesung vorbereiten; FullMock weiter gesperrt (02.11.2026)
+## W15: Materialursache gefunden; Korrektur vor neuem FullMock (02.11.2026)
 
-[Lesepfad](betrieb/w15-mock500-capsule-readback-20261102.md) ab geprüftem32c9a3ef/PR1020;
-Pflicht-CI41457428169 und unabhängigerReviewPASS übernommen, nicht wiederholt.
-Diagnose41455150159/582ca4e6 bleibtFAIL/WORKER_RESULT_REJECTED;1Linkrunde/1Job verbraucht.
-Peak2,584GB/Limit13,374GB,Swap/OOM/Grenzereignisse0,acht äußere BereinigungenPASS.
-Fehlerkapsel13145634042 privat gesichert,noch nicht lokal entschlüsselbar;innere
-Materialursache/DB-Nullaktivität/Endzähler UNKNOWN. Der geprüfte Stage-Validatorfix
-beweist nicht die historische Materialursache. Ausführungsbranch unverändert582.
-Kleinster fehlender Anschluss: eigene begrenzte Lesekante im vorhandenen geschützten
-Workflow,ohne Originalempfang/Materialwiederholung/DB/Profile/Uploads. Nur Vorbereitung,
-gezielte synthetische Tests,CI undReview; neuergeschützterJob benötigt eigeneFreigabe.
-BedingtesFullMock-GO weiterunverbraucht undbis konkret belegter/geprüfterReparatur
-sowieallenStartbedingungen gesperrt. Keine RAM-Optimierung oder Production-Aktion.
+[Beleg/Minimalfix](betrieb/w15-mock500-calendar-materials-fix-20261102.md).
+Kapsellesung41486209469/61d7b5c9: **FAIL**,12s,phaseagent-close. GO1/Nonce4450ad83
+verbraucht;Branch sicher582→61. Cipher/GPG/Archiv- und
+Memberhashprüfung durch tatsächliche geschlossene Projektion bestätigt; Materialfehler
+MATERIALS_BINDING_CHECK_123/assertion/calendar. Bereinigtes Materials liefertProvider
+none,erreichter echter Fixturekonstruktor verlangtazure. Kleinstfixnur lokalerMockkontext
+umKonstruktor,try/finally;echteKonstruktor-GegenprobeRED→GREEN,Outputs/Originaleunverändert.
+ZusätzlicherAgentbelegfehlermitLEEREMGPGdaemonbewiesen:SocketCreatorPIDistnichtAgentPID.
+GETINFOpid+UID/scopedKill/pidfdExitgezieltkorrigiert;3kleineFällePASS,keineKeys/Originale.
+HistorischerAgentstopp414862 bleibtUNKNOWN,keineFAIL-Umwertung. KeinReadRetry.
+Kapsel05/Lesung06privaterhalten. NeuerFixkopfbrauchtCI/Review;
+bedingtesFullMock-GO1weiterunverbraucht,nurdanachmitfrischenexaktenBindungen/Nonceundallen
+Startbedingungen.TatsächlicheFull-Zähler/SicherungnochUNKNOWN.KeineRAM-Änderung/Production.
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
 Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.

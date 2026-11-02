@@ -120,10 +120,23 @@ function calendarFixture(fixture, row) {
   // Reconstruct only the request binding for the changed real date. Responses,
   // source identities and independently reviewed content must remain exact.
   const old = structuredClone(fixture);
-  const prepared = require("../fixtures/w15-full500-provider").prepare({ index: old.index, row,
-    model: old.model, responsesURL: old.responsesURL, mockUsage: old.mockUsage,
-    candidate: { draftCandidate: old.draftOutput },
-    template: { response: old.reviewOutput, binding: { responseJSONSHA256: old.reviewOutputSHA256 } } });
+  // The actual constructor requires the same local Azure-shaped mock context
+  // as the existing runtime. Materials starts with provider credentials absent.
+  const route = require("../../lib/helmut/synthetik-500-eu-service-contract").CONTRACT;
+  const mock = { AZURE_OPENAI_ENDPOINT: new URL(route.responseURL).origin,
+    AZURE_OPENAI_KEY: "LOCAL_MOCK_NOT_A_VALID_PROVIDER_KEY", AZURE_OPENAI_DEPLOYMENT: route.model };
+  const previous = Object.fromEntries(Object.keys(mock).map(key => [key, process.env[key]]));
+  let prepared;
+  try {
+    Object.assign(process.env, mock);
+    prepared = require("../fixtures/w15-full500-provider").prepare({ index: old.index, row,
+      model: old.model, responsesURL: old.responsesURL, mockUsage: old.mockUsage,
+      candidate: { draftCandidate: old.draftOutput },
+      template: { response: old.reviewOutput, binding: { responseJSONSHA256: old.reviewOutputSHA256 } } });
+  } finally {
+    for (const [key, value] of Object.entries(previous))
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+  }
   for (const key of ["draftOutputSHA256", "reviewOutputSHA256"]) assert.equal(prepared[key], old[key]);
   assert.deepEqual(prepared.draftOutput, old.draftOutput); assert.deepEqual(prepared.reviewOutput, old.reviewOutput);
   return prepared;
