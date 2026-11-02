@@ -5,8 +5,8 @@
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
 Job125217497980, exakt1fb2cfe1/PR1017: **FAIL**, API-Jobdauer189s.
 Der reparierte Kanal erhält`mock500-controller-materials`; die Kindprozessausnahme
-bleibt UNKNOWN. Private Materials-Protokolle blieben im temporären Runner;
-die erhaltenen vollständigen GitHub-Logs enthalten nur den sicheren Außenbeleg.
+bleibt UNKNOWN. Private Materials-Protokolle sind im erhaltenen Beleg nicht
+verfügbar; die vollständigen GitHub-Logs enthalten nur den sicheren Außenbeleg.
 
 Kernelpeak2,590GB bei dynamischem Limit13,197GB, Hostreserveschutz PASS,
 Swap/OOM/harte Grenzereignisse0. Getrennte Maxima: Dateianteil1,523GB, anonym984MB,
