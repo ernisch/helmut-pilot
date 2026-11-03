@@ -18,6 +18,10 @@ ersetzt keine bestehenden Prüfungen. Jede tatsächlich zugelassene Ausführung
 braucht weiterhin ihre eigene frische Nonce, exakt gebundene Codequalifikation,
 Originalbindungen, Pflicht-CI, unabhängigen Review und einzelne technische
 Freigabe. Maximal eine private Linkrunde und ein Dispatch je Kindfreigabe.
+GO-/REQUEST-Metadaten dürfen vor der Reservierung vorbereitet und unabhängig
+geprüft werden. Ausführbar werden sie erst nach dauerhafter Reservierung und
+getrenntem Reservierungsanker: Launcherstart, Linkrunde und einziger POST prüfen
+diese Bindung jeweils selbst.
 
 Unverändert bleiben 180 Minuten Verarbeitung und 210 Minuten insgesamt,
 vollständig innerhalb desselben UTC- und Berliner Kalendertags im genehmigten
@@ -43,6 +47,10 @@ Dispatch gegen die drei Versuche und seine maximale Speicherreserve. Ein
 ungeklärter Startausgang bleibt gesperrt; er wird weder gelöscht noch durch
 einen frischen Prozess oder ein anderes Verzeichnis zu einem neuen Versuch.
 Ein unvollständiges oder widersprüchliches Journal ist kein leeres Journal.
+Getrennte exklusive Anker für Reservierungen, Abschlüsse und Serienstopps
+verhindern, dass ein verkürztes Journal einen beendeten Platz wieder öffnet.
+Die gesamte authentifizierte GitHub-Laufhistorie seit Serienfreigabe wird vor
+einer weiteren Zulassung mit diesen Belegen abgeglichen.
 
 Sol prüft vor jedem Start unabhängig zusätzlich die tatsächlichen GitHub-Läufe.
 Nie zwei geschützte Läufe gleichzeitig. Ein noch nicht abgeschlossener Platz
@@ -88,6 +96,9 @@ müssen ihr ursprünglicher Thread, die tatsächlich angebundene Arbeitsumgebung
 die geprüften Code-/Privatdateien und das persistente Journal erreichbar sein.
 Fehlender Zugriff ist BLOCKED, kein Anlass zur Rekonstruktion einer leeren Serie.
 Eine gespeicherte Zeitsteuerung ist noch kein Beweis ihres späteren Starts.
+Vor Zulassung muss deshalb ein tatsächlicher laufender Codex-Zeitsteuerungs-
+Aufruf mit passender Thread-/Umgebungsidentität beobachtet und an den frischen
+unabhängigen Vorflug gebunden sein. Ohne diesen Beleg erfolgt kein Dispatch.
 
 Rückweg: Automation pausieren, keine weiteren Empfangspfade benutzen, eigene
 Prozesse kontrolliert stoppen und Stillstand prüfen. Originale, Secrets, Drive,
