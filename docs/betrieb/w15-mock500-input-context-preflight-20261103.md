@@ -65,6 +65,8 @@ Originalquellen, Daten, qualifizierte Antworten und Prüftexte bleiben unveränd
 Für jeden geplanten Index wird derselbe echte `calendarFixture`-Pfad mit B/L/AI/Q
 verwendet, ohne Providerinstallation oder Versand. Jede Position erhält eine
 feste Klasse: gültig, fehlend, leer, fachlich/unbrauchbar oder technisch fehlerhaft.
+Unbrauchbar bezeichnet die tatsächlich abgelehnte Q-Kontext-/Reviewprüfung;
+Modell-/Hash-/Kalenderbindungen und unerwartete Programmfehler sind technisch.
 Ein Eingabefehler beendet die rein lesende Untersuchung der übrigen Positionen
 nicht; es findet keine500er-Verarbeitung statt. Ein tatsächlicher Schutzfehler
 stoppt dagegen sofort. Eine global ungültige Fixture-/Plan- oder Zeitbindung

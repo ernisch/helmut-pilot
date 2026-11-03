@@ -39,8 +39,7 @@ function inspectRows({rows,fixtures,executionISO,historicalExecutionISO} = {}) {
     if(duplicates.has(fixture.owner)||original.briefingDatum!==historicalExecutionISO)continue;
     let derived;
     try{derived=B.calendarRow(original,executionISO).row;}
-    catch(error){results[index]=empty(index,error?.message?.startsWith('w15-local-calendar-')
-      ||error?.message==='briefing-lagebindung-abweichend'?'UNUSABLE':'TECHNICAL','CALENDAR');continue;}
+    catch{results[index]=empty(index,'TECHNICAL','CALENDAR');continue;}
     try{
       const prepared=B.calendarFixture(fixture,derived);
       if(!Number.isSafeInteger(prepared.contextSources)||prepared.contextSources<=0||prepared.contextSources>500)
@@ -59,7 +58,8 @@ function inspectRows({rows,fixtures,executionISO,historicalExecutionISO} = {}) {
         }catch{}
         results[index]=result;
       }else results[index]=empty(index,error?.code==='ERR_ASSERTION'
-        ||error?.message==='briefing-lagebindung-abweichend'?'UNUSABLE':'TECHNICAL','PROVIDER');
+        &&typeof error.message==='string'
+        &&error.message.split('\n',1)[0]==='w15-unit0-reviewed-template-must-match-current-context'?'UNUSABLE':'TECHNICAL','PROVIDER');
     }
   }
   return finish();
