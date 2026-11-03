@@ -79,6 +79,12 @@ try{
    observer.record(error);return /^synthetik500-production-/.test(error.message);
   });
   const first=safe(folder);assert.match(first.category,/^MATERIALS_COMMAND_CHECK_[0-9]{3}$/);
+  const admission=fixture('actual-admission');admission.observer.enter('builder');
+  assert.throws(()=>require('../../lib/helmut/synthetik-500-kosten-admission').pruefeRouteContract({},{}),error=>{
+   admission.observer.record(error);return /^synthetik500-admission-/.test(error.message);
+  });
+  const rejected=safe(admission.folder);assert.match(rejected.category,/^MATERIALS_ADMISSION_CHECK_[0-9]{3}$/);
+  assert.notEqual(rejected.category,'MATERIALS_ADMISSION_CHECK_038');
   for(const [index,filename]of['private/mock500-current-date-builder','mock500-current-date-builder-extra',
     'mock500-current-date-builder\n'].entries()){
    const {folder,observer}=fixture('unrecognised-'+index);observer.enter('builder');

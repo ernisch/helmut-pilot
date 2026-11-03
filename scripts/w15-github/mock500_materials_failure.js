@@ -48,7 +48,7 @@ function create(mainFile, bindingFile) {
         // The validator's throw helpers do not identify the failed condition.
         // Retain its first actual caller instead of reporting a generic throw.
         if (!["MAIN", "BINDING", "BUILDER", "CONTRACTS", "DRAFT"].includes(prefix)
-          && /^\s+at (?:fail|need|requireThat|fordere) \(/.test(line)) continue;
+          && /^\s+at (?:fail|need|requireThat|fordere|fehler) \(/.test(line)) continue;
         if (number >= 1 && number <= 1024) {
           category = "MATERIALS_" + prefix + "_CHECK_" + String(number).padStart(3, "0"); found = true; break;
         }
