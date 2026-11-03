@@ -32,12 +32,13 @@ def load(name):
 E = load('receive_existing_inputs')
 V, N, A, P = E.V, E.N, E.A, E.P
 MODE = 'mock500-receive-originals'
+CONTEXT_MODE = 'mock500-input-context-preflight'
 FORMAT = 'gpg-gzip-ustar-mock-originals/1'
 INDEX_SCHEMA = 'helmut-w15-mock500-original-archive-url-index/1'
 DRIVE_ID = '1koFG3XkeJr82wVNmMZwu94wgFFtBklor'
 WALL_SECONDS = 600
 PHASES = {'arguments', 'binding', 'approval', 'private-inputs', 'key-import',
-          'outer-index', 'disk-admission', 'asset-download', 'asset-reception', 'agent-close'}
+          'outer-index', 'disk-admission', 'asset-download', 'asset-reception', 'agent-close', 'context-preflight', 'context-admission'}
 ARCHIVE_PHASES = {'arguments', 'cipher', 'recipient', 'destination', 'decrypt', 'gzip',
                   'archive', 'manifest', 'files', 'integrity', 'readback', 'cleanup'}
 
@@ -141,11 +142,13 @@ def source_binding(commit):
     return observed
 
 
-def validate_request(commit, request, inputs, *, now=None):
+def validate_request(commit, request, inputs, *, now=None, context_preflight=False):
+    need(type(context_preflight) is bool, 'approval')
+    mode = CONTEXT_MODE if context_preflight else MODE
     need(type(request) is dict and set(request) == {'schema', 'scope', 'authorized', 'exactCommit', 'branch',
          'nonce', 'runAttempt', 'archiveSHA256', 'maximumWallSeconds', 'maxReceiveAttempts', 'issuedAt', 'expiresAt'}
-         and request['schema'] == 'helmut-w15-mock-originals-receive-approval/1'
-         and request['scope'] == 'ISOLATED_GITHUB_MOCK_ORIGINALS_RECEIVE_ONLY' and request['authorized'] is True
+         and request['schema'] == ('helmut-w15-mock-input-context-approval/1' if context_preflight else 'helmut-w15-mock-originals-receive-approval/1')
+         and request['scope'] == ('ISOLATED_GITHUB_MOCK_INPUT_CONTEXTS_ONLY' if context_preflight else 'ISOLATED_GITHUB_MOCK_ORIGINALS_RECEIVE_ONLY') and request['authorized'] is True
          and request['exactCommit'] == commit and request['branch'] == V.BRANCH
          and type(request['runAttempt']) is int and request['runAttempt'] == 1
          and type(request['maximumWallSeconds']) is int and request['maximumWallSeconds'] == WALL_SECONDS
@@ -156,25 +159,43 @@ def validate_request(commit, request, inputs, *, now=None):
     now = datetime.now(timezone.utc) if now is None else now
     issued, expires = E.utc(request['issuedAt']), E.utc(request['expiresAt'])
     need(issued <= now < expires and timedelta(0) < expires - issued <= timedelta(hours=2), 'approval')
-    need(type(inputs) is dict and inputs.get('w15_mode') == MODE and inputs.get('expected_commit') == commit
+    if context_preflight:
+        from zoneinfo import ZoneInfo
+        berlin = ZoneInfo('Europe/Berlin')
+        latest_finish = now + timedelta(minutes=15)
+        need(expires - issued <= timedelta(minutes=15)
+             and '2026-11-03' <= now.date().isoformat() <= '2026-11-07'
+             and '2026-11-03' <= now.astimezone(berlin).date().isoformat() <= '2026-11-07'
+             and issued.date() == now.date()
+             and issued.astimezone(berlin).date() == now.astimezone(berlin).date()
+             and latest_finish.date() == now.date()
+             and latest_finish.astimezone(berlin).date() == now.astimezone(berlin).date(), 'approval')
+    need(type(inputs) is dict and inputs.get('w15_mode') == mode and inputs.get('expected_commit') == commit
          and P.decode(inputs.get('w15_request', '')) == request, 'approval')
-    N.check_event(commit, inputs['w15_cipher_index'], mode=MODE,
+    N.check_event(commit, inputs['w15_cipher_index'], mode=mode,
         extra_inputs={'w15_request': inputs['w15_request']})
     return request['nonce']
 
 
-def receive_only(commit, runner_temp):
+def receive_only(commit, runner_temp, *, context_preflight=None):
+    need(context_preflight is None or callable(context_preflight), 'approval')
+    is_context = context_preflight is not None
     phase, failure, answer, home = 'binding', None, None, None
     archive_phase, process_stopped, agent_stopped = None, 'UNKNOWN', 'UNKNOWN'
     started = time.monotonic()
     def guard():
         need(0 <= time.monotonic() - started < WALL_SECONDS, phase)
+        if is_context:
+            context_preflight.guard()
     try:
         observed = source_binding(commit)
         with open(os.environ['GITHUB_EVENT_PATH'], 'rb') as stream: raw_event = stream.read(1024 * 1024 + 1)
         need(len(raw_event) <= 1024 * 1024, 'approval')
         inputs = P.decode(raw_event)['inputs']; phase = 'approval'
-        request = P.decode(inputs['w15_request']); nonce = validate_request(commit, request, inputs)
+        request = P.decode(inputs['w15_request']); nonce = validate_request(commit, request, inputs, context_preflight=is_context)
+        if is_context:
+            phase = 'context-admission'
+            context_preflight.admit(request)
         phase = 'private-inputs'
         armored = os.environ.pop(N.ENV_NAME, None)
         need(armored == inputs['w15_cipher_index'], phase)
@@ -202,6 +223,12 @@ def receive_only(commit, runner_temp):
             'status': 'PASS_MOCK_ORIGINALS_RECEIVED_ONLY_START_BLOCKED', 'mode': MODE,
             'persistentRunnerStorage': False, 'laterMockMustReceiveInSameJob': True,
             'executionAuthority': False, 'end500Acceptance': False, 'mock500Acceptance': False}
+        if is_context:
+            phase = 'context-preflight'
+            answer['contexts'] = context_preflight(received['asset_paths'], root, guard)
+            answer['contextExecutionISO'] = context_preflight.execution_iso
+            answer['mode'] = CONTEXT_MODE
+            answer['status'] = ('PASS_MOCK500_INPUT_CONTEXTS_ONLY' if answer['contexts']['all500Valid'] else 'FAIL_MOCK500_INPUT_CONTEXTS_ONLY')
     except BaseException as error:
         failure = phase
         if phase == 'asset-reception':
@@ -210,7 +237,10 @@ def receive_only(commit, runner_temp):
     finally:
         if home is not None:
             try:
-                N._close_agent(home)
+                if is_context:
+                    load('mock500_materials_capsule_readback').stop_agent(home)
+                else:
+                    N._close_agent(home)
                 agent_stopped = 'PASS'
             except BaseException: failure = failure or 'agent-close'
     if failure is not None or answer is None:

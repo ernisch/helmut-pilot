@@ -22,6 +22,7 @@ function enabled(event, selected) {
   }).map(([name]) => name).sort();
 }
 assert.deepEqual(enabled('workflow_dispatch', mode), ['w15-materials-capsule-readback']);
+assert.deepEqual(enabled('workflow_dispatch', 'mock500-input-context-preflight'), ['mock500-input-context-preflight']);
 assert.deepEqual(enabled('pull_request', mode), ['browser-smoke', 'offline-suite']);
 assert.deepEqual(enabled('workflow_dispatch', 'standard'), ['browser-smoke', 'offline-suite']);
 for (const [selected, expected] of [
@@ -31,8 +32,15 @@ for (const [selected, expected] of [
 ]) assert.deepEqual(enabled('workflow_dispatch', selected), [expected]);
 const cancel = source.match(/^  cancel-in-progress: (.+)$/m)[1];
 assert.equal(evaluate(cancel, 'workflow_dispatch', mode), false);
+assert.equal(evaluate(cancel, 'workflow_dispatch', 'mock500-input-context-preflight'), false);
 const group = source.match(/^  group: (.+)$/m)[1];
 assert.equal(evaluate(group.slice(group.lastIndexOf('${{')), 'workflow_dispatch', mode), '-w15-functional-chain');
+assert.equal(evaluate(group.slice(group.lastIndexOf('${{')), 'workflow_dispatch', 'mock500-input-context-preflight'), '-w15-functional-chain');
+const preflight=jobs['mock500-input-context-preflight'];
+assert.match(preflight,/timeout-minutes: 15/);assert.match(preflight,/environment: helmut-ci-originals/);
+assert(!/upload-artifact|cache@|docker|postgrest|npm ci|restore_workflow|mock500_workflow/.test(preflight));
+assert.equal((preflight.match(/\$\{\{ secrets\./g)||[]).length,2);
+for(const line of preflight.split('\n').filter(line=>/^        run:/.test(line)))assert(!line.includes('${{'));
 const job = jobs['w15-materials-capsule-readback'];
 assert.match(job, /^    environment: helmut-ci-originals$/m);
 assert.match(job, /^    timeout-minutes: 5$/m);

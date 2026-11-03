@@ -1,14 +1,13 @@
 # CURRENT STATE — Helmut
 
-## W15: Kapsellesung PASS, Materials weiterhin FAIL (03.11.2026)
+## W15: Mock500 Eingabekontexte vorprüfen (03.11.2026)
 
-[Run41594105907](https://github.com/ernisch/helmut-pilot/actions/runs/41594105907),
-e1/PR1025,10s: **PASS_EXISTING_CAPSULE_READ_ONLY**, innerer Assert`PROVIDER_CURRENT_CONTEXT_EMPTY`.
-Aktueller Quellenkontext leer; genauer Filter/Datenfehler weiterUNKNOWN.
-Cipher/GPG/AgentstoppPASS;0DB/Units/Modelle/Uploads,13JobsSKIPPED,0aktiveManuals.
-GO/Nonceverbraucht,Branch e1. KeinMaterialfix/Mock500-Start.
-[Beleg und nächste Grenze](betrieb/w15-materials-context-empty-41594105907-20261103.md).
-Kapselprivatverschlüsselt erhalten. End500/Empfang und historischeFAILs unverändert.
+MaterialsFAIL: aktuellerKontextleer,QuellenalteralsOriginalursacheweiterUNKNOWN.
+SignedChain-Kommentar betrifft16Oct-Originale;B2-Oct11-Fallback nichtfürNov3zulässig.
+[Vorflug und Freigabegrenze](betrieb/w15-mock500-input-context-preflight-20261103.md):
+500Originaleingaben nochungeprüft. Neuer enger Vorflug vorbereitet;keineAusführung.
+Fiktiver500er-PrüfkernPASS ersetztkeineOriginalqualifikation. EigenesexaktesGO nötig.
+Ausführungsbranch e1;End500/Empfang und historischeFAILs erhalten.
 
 [Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
 auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.
