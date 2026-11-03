@@ -247,6 +247,9 @@ jobs:
           node scripts/lokal.js -- node scripts/synthetik-500-mock-source-asof-test.js
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_historical_source.py
           node scripts/lokal.js -- node scripts/w15-github/test_mock500_historical_bindings.js
+          node scripts/lokal.js -- node scripts/synthetik-500-mock-calendar-test.js
+          node scripts/lokal.js -- node scripts/w15-github/test_mock500_calendar_integration.js
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_calendar_admission.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_artifact_transport_capsule_readonly.py
           node scripts/lokal.js -- node scripts/w15-github/test_mock500_materials_failure.js
           node scripts/lokal.js -- node scripts/w15-github/test_mock500_materials_setup.js
@@ -353,6 +356,16 @@ jobs:
           PGDATABASE: "postgres"
           HELMUT_SYNTHETIK500_PG_ISOLIERT: "JA"
         run: node scripts/lokal.js -- python3 -B scripts/w15-github/test_separated_resources.py --native-connections
+
+      - name: W15 isolierter Mock-Kalender nativ mit kleinen synthetischen Daten
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 3
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5433"
+          PGUSER: "helmut"
+          PGPASSWORD: "helmut"
+        run: node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_calendar_sql.py --postgres-fixture
 
       - name: W15 Snapshot-SQL nativ mit kleinen synthetischen Daten pruefen
         if: steps.plan.outputs.database == 'true'

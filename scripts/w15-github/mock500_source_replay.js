@@ -113,4 +113,4 @@ function execution(bound,materials,fixtures){
  });
  const grant=issuer.issue();return {issuer,grant,record};
 }
-module.exports={CONTRACT,PINS,preparation,bind,tokenForRow,verifyActualBindings,executionRecord,execution};
+module.exports={privateJSON,CONTRACT,PINS,preparation,bind,tokenForRow,verifyActualBindings,executionRecord,execution};

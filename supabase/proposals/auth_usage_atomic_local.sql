@@ -1,7 +1,9 @@
 -- INERT, LOCAL EXPERIMENT ONLY. Not a Production migration or activation.
 -- Existing llm_usage and helmut_store only; no new service/table.
--- Reused usage-only proposal from #921, with exact v5/v6 order binding,
--- complete scalar projections and fail-closed NULL chain validation.
+-- Reused usage-only proposal from #921, retaining exact v5/v6 order binding.
+-- v7 accepts only the exact historical-price Mock simulation hash in the fixed
+-- isolated Mock database; it grants no operator/calendar or provider authority.
+-- Complete scalar projections and fail-closed NULL chain validation are retained.
 -- Apply only to a NEW drained isolated test COPY with writers stopped.
 -- Rollback is helmut_auth_usage_restore_v1 below: it reconstructs the full
 -- logical state under its row lock and RETAINS every relational history row.
@@ -158,7 +160,10 @@ begin
     or jsonb_typeof(a->'llmUsage') is distinct from 'array'
     or (a#>'{testKostenAuftrag,version}' is distinct from '5'::jsonb
       and (a#>'{testKostenAuftrag,version}' is distinct from '6'::jsonb
-        or a#>>'{testKostenAuftrag,orderRenewalHash}' is distinct from 'a649603fa8f18c6a3db65aab09b67e15d6bda80befa20e5394bce7eeda1d6415'))
+        or a#>>'{testKostenAuftrag,orderRenewalHash}' is distinct from 'a649603fa8f18c6a3db65aab09b67e15d6bda80befa20e5394bce7eeda1d6415')
+      and (current_database() <> 'helmut_w15_full500_20261028b'
+        or a#>'{testKostenAuftrag,version}' is distinct from '7'::jsonb
+        or a#>>'{testKostenAuftrag,orderRenewalHash}' is distinct from 'bd4ef2b3e73a9d64e6e2567eb8ad0c8ff717f2e63f7e8b60cac0f970f4eb850e'))
     or a#>>'{testKostenAuftrag,serviceContractHash}' is distinct from '78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f' then
     raise exception 'atomic-usage-bootstrap-state'; end if;
   -- Only an explicitly drained NEW local test copy may be converted. Reject
@@ -228,7 +233,10 @@ begin
     or d->>'_authStoreRevision' !~ '^[a-f0-9-]{36}$' or d->>'_authStoreRevision'=$1->>'expectedRevision'
     or (d#>'{testKostenAuftrag,version}' is distinct from '5'::jsonb
       and (d#>'{testKostenAuftrag,version}' is distinct from '6'::jsonb
-        or d#>>'{testKostenAuftrag,orderRenewalHash}' is distinct from 'a649603fa8f18c6a3db65aab09b67e15d6bda80befa20e5394bce7eeda1d6415'))
+        or d#>>'{testKostenAuftrag,orderRenewalHash}' is distinct from 'a649603fa8f18c6a3db65aab09b67e15d6bda80befa20e5394bce7eeda1d6415')
+      and (current_database() <> 'helmut_w15_full500_20261028b'
+        or d#>'{testKostenAuftrag,version}' is distinct from '7'::jsonb
+        or d#>>'{testKostenAuftrag,orderRenewalHash}' is distinct from 'bd4ef2b3e73a9d64e6e2567eb8ad0c8ff717f2e63f7e8b60cac0f970f4eb850e'))
     or d#>>'{testKostenAuftrag,serviceContractHash}' is distinct from '78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f'
     then raise exception 'atomic-usage-write-state'; end if;
   select data into a from public.helmut_store where id=s for update;

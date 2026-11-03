@@ -77,6 +77,8 @@ function guard() {
 function environment(config) {
   process.env.HELMUT_LLM_USAGE_STORAGE = "relational-atomic-v1";
   require("./synthetik-500-w15-signed-chain-test").localEnvironment(config);
+  if (require("../lib/helmut/synthetik-500-mock-calendar").active())
+    process.env.HELMUT_SYNTHETIK500_EU_ORDER_RENEWAL = require("../lib/helmut/synthetik-500-eu-service-contract").MOCK_CALENDAR_HASH;
   assert(!process.env[PRIV]); assert.equal(config.database, DB);
 }
 function azure(on) {
@@ -566,6 +568,7 @@ async function run() {
         memoryProfile: Bound.memoryLimits(BOUND).version, legacyRegularMemoryAccepted: false, providerResourceAccepted: false } : {}),
       ...(sourceReplayScope ? { sourceContract:sourceReplayScope.record.contract, sourceAsOfISO:sourceReplayScope.record.sourceAsOfISO,
         historicalSources:true, currentSourceAcceptance:false } : {}),
+      ...(BOUND?.simulationCalendarAuthorization ? { simulationCalendar: require("./w15-github/mock500_calendar").evidence() } : {}),
       selector: m.selector, runId: m.runId, checks, unitReports, scopeReports, responses, providerPhases,
       authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites, authCoverage: coverage,
       authTimings: AuthReport.summarize(observation),
@@ -597,7 +600,10 @@ async function main(action) {
     assert(["setup", "gateway"].includes(action), "w15-materials-diagnostic-runtime-action");
   assert(["setup", "gateway", "prepare", "run", "atomic-check"].includes(action), "w15-full500-runtime-action"); guard();
   assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")), "w15-full500-stop-requested");
-  return ({ setup, gateway, prepare, run, "atomic-check": atomicPrepared0Check })[action]();
+  const execute = () => ({ setup, gateway, prepare, run, "atomic-check": atomicPrepared0Check })[action]();
+  if (BOUND?.simulationCalendarAuthorization && ["prepare", "run"].includes(action))
+    return require("./w15-github/mock500_calendar").withBound(BOUND, read("processing-materials.PRIVATE.json"), execute);
+  return execute();
 }
 if (require.main === module) main(process.argv[2]).catch(e => {
   try { save(process.argv[2] + "-FIRST-FAILURE.SAFE.json", { status: "FAIL_OR_UNKNOWN", error: safeError(e),

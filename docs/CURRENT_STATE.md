@@ -1,15 +1,15 @@
 # CURRENT STATE — Helmut
 
-## W15: historische Mock-Quellenanbindung (03.11.2026)
+## W15: isolierter Mock500-Novemberkalender (03.11.2026)
 
-Replay/1 inklusive enger App-AsOf-Schnittstelle entwickelt; kein Originallauf.
-Opake Berechtigung aus gebundenem Mock-GO; reale Uhren/Production/B2 unverändert.
-Alle500 D/Provider/Review-Konstruktorbindungen müssen vor Aktivierung bestehen.
-Gezielte SynthetikPASS; Pflicht-CI und unabhängige Endabnahme siehe
-[Vertrag/Startblocker](betrieb/w15-mock500-historical-source-replay-20261103.md).
-Zusätzlicher Startblocker belegt: innerer EU-Kostenvertrag endet31.10.; kein
-November-Simulationsvertrag freigegeben. Keine Kosten-/RAM-Grenzen geändert.
-End50041325430429PASS/Empfang41037459441 übernommen; historischeFAILs bleiben.
+Quellen-AsOf/1 ausPR1029/ec5b3149 erhalten. Genehmigter Simulationskalender/1
+angebunden:1.–7.11., eigenev7/Hash,44Auftragstage/60Bücher; Geld unverändert.
+Nur privates gebundenesGO, keinAPI/ENV-Schalter. Production/B2 bleiben unverändert.
+Alle500 D/Provider/Review-Bindungen vor Aktivierung Pflicht. Gezielte SynthetikPASS;
+Pflicht-CI/nativeSQL und unabhängige Endabnahme am Endkopf prüfen.
+[Vertrag, Prüfbelege, nächste Einmalfreigabe](betrieb/w15-mock500-simulation-calendar-20261103.md).
+Kein neuer Originallauf. End50041325430429PASS/Empfang41037459441 übernommen;
+historischeFAILs bleiben. Mock500 erst nach konkretem neuemGO; Production gesperrt.
 
 [Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
 auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.

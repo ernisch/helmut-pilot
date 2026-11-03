@@ -154,6 +154,15 @@ def validate_approval(value, target, launcher, request, now):
     if mode in (HOST_FUNCTIONAL,MATERIALS):expected['resourceContract']=W.component('mock500_materials_contract').CONTRACT if mode==MATERIALS else S.host().CONTRACT
     if mode==MATERIALS:expected.update(processingSeconds=900,completionSeconds=1080,expectedUnits=0,expectedPositions=0,expectedControls=0)
     approval = request['approval']
+    # The unchanged outer GO hashes the entire request, including these exact
+    # optional contracts. Caller data or ENV cannot add them after approval.
+    if type(approval) is dict and 'sourceContract' in approval:
+        need(mode == HOST_FUNCTIONAL and approval['sourceContract'] == S.SOURCE_REPLAY, 'approval')
+        expected['sourceContract'] = S.SOURCE_REPLAY
+    if type(approval) is dict and 'simulationCalendar' in approval:
+        need(mode == HOST_FUNCTIONAL and expected.get('sourceContract') == S.SOURCE_REPLAY
+             and approval['simulationCalendar'] == S.SIMULATION_CALENDAR, 'approval')
+        expected['simulationCalendar'] = S.SIMULATION_CALENDAR
     need(type(approval) is dict and approval == expected and approval['authorized'] is True
          and all(type(approval[k]) is int for k in ('runAttempt', 'processingSeconds', 'completionSeconds',
              'expectedProfiles', 'expectedUnits', 'expectedPositions', 'expectedControls', 'maxProviderCalls', 'maxReceiveAttempts'))

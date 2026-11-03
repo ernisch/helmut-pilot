@@ -258,8 +258,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-eu-service-contract.js",
-      "bytes": 6229,
-      "sha256": "fc3a9f61a33424195b493824e18e0fba82076170880074459c735529a8ed3ef3"
+      "bytes": 8289,
+      "sha256": "2817b5632fb1546795f4d358998795edcaf04cd0564b61c0534bd8f2f85e7d84"
     },
     {
       "path": "lib/helmut/synthetik-500-executor.js",
@@ -273,8 +273,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-kosten-admission.js",
-      "bytes": 23099,
-      "sha256": "7a882404722dfc0313792f26768cfd35c29b05a948bb6d768d625c7db0ea2a9c"
+      "bytes": 23263,
+      "sha256": "e938ef1731809f9c6f844df9b8753933a3fccfde12b30b20485849c40c5fa3a4"
     },
     {
       "path": "lib/helmut/synthetik-500-kosten-intents.js",
@@ -290,6 +290,11 @@
       "path": "lib/helmut/synthetik-500-lage-input.js",
       "bytes": 1620,
       "sha256": "31dc6b3cb16ebf152ce45514b067a3a3c3c5a4a7fe67e625296be989c69120b5"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-mock-calendar.js",
+      "bytes": 6947,
+      "sha256": "f9c248110f82bf0806bcf6a56f351952159bc68572ca2582389934394d91152c"
     },
     {
       "path": "lib/helmut/synthetik-500-mock-source-replay.js",
@@ -338,8 +343,8 @@
     },
     {
       "path": "lib/helmut/testkosten-budget.js",
-      "bytes": 33501,
-      "sha256": "012d52bb9cb891c5634a788953861f83299ba632b1b8e614686ad717d7cfdbb7"
+      "bytes": 33477,
+      "sha256": "4314e88c6bab0729532e6a828d4027d839b841c0df6030322bb8d63c92b3a415"
     },
     {
       "path": "lib/helmut/understanding-schema.js",
@@ -365,8 +370,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-content-worker.js",
-      "bytes": 5169,
-      "sha256": "201a4f8ba027011a091bd82d0039a481c7796a2615bfdd6fec35e7b44b44779d"
+      "bytes": 5488,
+      "sha256": "72d27f88cfc5a5674332598189b4efc8aade4ea05f2a7a28c10cbe7f2f4403d2"
     }
   ]
 }

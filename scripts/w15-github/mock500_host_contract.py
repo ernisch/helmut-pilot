@@ -89,6 +89,10 @@ def validate_start(request, now):
     approval = request['approval']
     if 'sourceContract' in approval:
         need(approval['sourceContract'] == load('mock500_start').SOURCE_REPLAY)
+    if 'simulationCalendar' in approval:
+        start = load('mock500_start')
+        need(approval.get('sourceContract') == start.SOURCE_REPLAY
+             and approval['simulationCalendar'] == start.SIMULATION_CALENDAR)
     need(approval.get('schema') == 'helmut-w15-mock500-start-approval/1'
          and approval.get('scope') == SCOPE and approval.get('authorized') is True
          and all(approval.get(k) == request[k]

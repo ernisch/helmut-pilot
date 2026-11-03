@@ -169,7 +169,7 @@ async function main() {
   }
   const P = require("../lib/helmut/synthetik-500-profile"), EU = require("../lib/helmut/synthetik-500-eu-service-contract");
   localEnvironment(config);
-  {
+  return require("./w15-github/mock500_calendar").withBound(BOUND, null, () => {
     const K = require("../lib/helmut/testkosten-budget"), C = require("../lib/helmut/synthetik-500-production-command");
     const I = require("../lib/helmut/synthetik-500-import"), J = require("../lib/helmut/synthetik-500-dispatch-journal");
     stage("reuse-pinned-all500-current-qualification", { rows: rows.length, qualificationSHA256: qualified.reportPin.sha256 });
@@ -206,7 +206,8 @@ async function main() {
       auth[K.KEY][d] ||= { version: EU.DAY_VERSION, day: d, tarif: EU.RATE_ID, limit: EU.DAY_MICRO_USD,
         serviceContractHash: EU.HASH, spent: 0, baseline: 0, baselineCalls: 0, manualCalls: 0, manualUntil: null, calls: {}, frozen: null };
     }
-    Object.assign(auth[K.AUFTRAG_KEY], { version: EU.ORDER_RENEWAL.orderVersion, orderRenewalHash: EU.ORDER_RENEWAL_HASH,
+    Object.assign(auth[K.AUFTRAG_KEY], { version: (BOUND?.simulationCalendarAuthorization ? EU.MOCK_CALENDAR : EU.ORDER_RENEWAL).orderVersion,
+      orderRenewalHash: BOUND?.simulationCalendarAuthorization ? EU.MOCK_CALENDAR_HASH : EU.ORDER_RENEWAL_HASH,
       bookCapacity: Object.keys(auth[K.KEY]).length, runDayUTC: day });
     for (const [d, b] of Object.entries(originalBooks)) assert.deepEqual(auth[K.KEY][d], b);
     K.pruefeStart(auth, day, { ok: true, used: 0 });
@@ -265,7 +266,12 @@ async function main() {
       pass("real native runtime prepared0 installed without activation");
     }
     const route = structuredClone(native.costInputs.routeContract);
-    Object.assign(route, { runtimeManifestHash: P.hash(runtimeManifest), orderRenewalHash: EU.ORDER_RENEWAL_HASH });
+    Object.assign(route, { runtimeManifestHash: P.hash(runtimeManifest),
+      orderRenewalHash: BOUND?.simulationCalendarAuthorization ? EU.MOCK_CALENDAR_HASH : EU.ORDER_RENEWAL_HASH });
+    if (BOUND?.simulationCalendarAuthorization) {
+      route.mockSimulationCalendar = { ...require("../lib/helmut/synthetik-500-mock-calendar").LABEL };
+      route.management.versionPolicy = "historical-october-simulation-only";
+    }
     Object.assign(route.route, { productionCommit: config.commit, deploymentId: config.deploymentId, deploymentHost: config.host });
     Object.assign(route.management, { validFromUTC: plannedWindow.startsAtUTC, validUntilUTC: end });
     const startsAtUTC = plannedWindow.startsAtUTC;
@@ -331,12 +337,15 @@ async function main() {
     const commandPin = retain("current-command.PRIVATE.json", encoded);
     sql("begin;insert into helmut_store(id,data)values(" + literal("synthetik500-command-" + operationId) + "," + json(encoded) + ");commit;");
     assert.deepEqual(state(SOURCE_DB),beforeSource);
-    retain("processing-materials.PRIVATE.json", { ...(sourceReplay ? { sourceReplay } : {}), preactivationBindings, selector, runId: currentConfig.runId, startsAtUTC, endsAtUTC:end,completionDeadlineUTC:plannedWindow.completionDeadlineUTC,
+    retain("processing-materials.PRIVATE.json", { ...(sourceReplay ? { sourceReplay } : {}),
+      ...(BOUND?.simulationCalendarAuthorization ? { simulationCalendar: require("./w15-github/mock500_calendar").evidence() } : {}),
+      preactivationBindings, selector, runId: currentConfig.runId, startsAtUTC, endsAtUTC:end,completionDeadlineUTC:plannedWindow.completionDeadlineUTC,
       planHash:built.command.slot.planHash, paketHash:packet.bindung.paketHash, commandPin,
       controlHash:C.controlHash(auth), booksHash:C.booksHash(auth), sourceReceiptSHA256:RECEIPT_HASH,
       database: DB, runtimeManifestHash:P.hash(runtimeManifest), productionCommit:config.commit,
       scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION", full500DispatchAuthorized:!ATOMIC_PREPARED0 && BOUND?.materialsDiagnosticOnly !== true, activatedProfiles:UNIT0?500:0 });
     retain("PROCESSING_INPUTS.SAFE.json", { status:"PASS_ALL500_ACTUAL_D_PREPARATIONS", scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION",
+      ...(BOUND?.simulationCalendarAuthorization ? { simulationCalendar: require("./w15-github/mock500_calendar").evidence() } : {}),
       actualOriginalPreparer:true, currentDescriptorAndActualRequestDatesMatch:true, originalFilesModified:false,
       ...(sourceReplay ? { sourceContract:sourceReplay.contract, sourceAsOfISO:sourceReplay.sourceAsOfISO,
         historicalSources:true, currentSourceAcceptance:false, preactivationBindings } : {}),
@@ -348,6 +357,6 @@ async function main() {
     pass("all500 real D preparations have nonempty contexts and exact current request bindings");
     DIAGNOSTIC.enter("complete");
 
-  }
+  }, { host: true });
 }
 if(require.main===module)main().catch(error=>{try{DIAGNOSTIC.record(error);}catch{}try{retain(UNIT0?"MATERIALS_FIRST_FAILURE.SAFE.json":"PROCESSING_MATERIALS_ATTEMPT_B_FAILURE.SAFE.json",{status:"FAIL",reason:error.message,stages});}catch{}console.error(error.message);process.exitCode=1;});

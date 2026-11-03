@@ -28,6 +28,7 @@ FUNCTIONAL = 'mock500-full-functional-gated'
 HOST_FUNCTIONAL = 'mock500-full-host-functional-gated'
 MATERIALS = 'mock500-materials-diagnostic-gated'
 SOURCE_REPLAY = 'helmut-w15-mock-historical-qualified-source-replay/1'
+SIMULATION_CALENDAR = 'helmut-w15-mock-simulation-calendar/1'
 LIMITS = {'comparisonBudgetBytes': R.LIMIT, 'maximumConsumptionBytes': R.MAXIMUM,
           'requiredReserveBytes': R.RESERVE, 'swapBytes': 0}
 FINGERPRINT = '7E3998A6C2CB948C69A2EE51F4267ABF26796EDC'
@@ -217,6 +218,11 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
         need(request['mode'] == HOST_FUNCTIONAL and approval['sourceContract'] == SOURCE_REPLAY,
              'MOCK500_EXPLICIT_HISTORICAL_SOURCE_CONTRACT_REQUIRED')
         keys |= {'sourceContract'}
+    calendar = isinstance(approval, dict) and 'simulationCalendar' in approval
+    if calendar:
+        need(replay and request['mode'] == HOST_FUNCTIONAL and approval['simulationCalendar'] == SIMULATION_CALENDAR,
+             'MOCK500_EXPLICIT_SIMULATION_CALENDAR_REQUIRED')
+        keys |= {'simulationCalendar'}
     need(isinstance(approval, dict) and set(approval) == keys
          and approval['schema'] == 'helmut-w15-mock500-start-approval/1'
          and approval['scope'] == mode_scope(request['mode'])
@@ -253,6 +259,10 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
             'approvalSHA256': hashlib.sha256(json.dumps(approval, sort_keys=True, separators=(',', ':'), ensure_ascii=True, allow_nan=False).encode('ascii')).hexdigest(),
             'sourceQualificationSHA256': request['sourceQualificationSHA256'],
             'productionAllowed': False, 'paidModelsAllowed': False}
+    if calendar:
+        result['simulationCalendarAuthorization'] = {**result['sourceReplayAuthorization'],
+            'schema': 'helmut-w15-isolated-mock-calendar-authorization/1',
+            'contract': SIMULATION_CALENDAR, 'historicalPricesOnly': True}
     return result
 
 

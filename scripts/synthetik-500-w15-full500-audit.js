@@ -218,12 +218,18 @@ function main() {
   report.full500Proof = false; // This independent result audit does not replace performance/control acceptance.
 }
 
-if (require.main === module) {
-  try { main(); } catch (error) { report.status = "FAIL_OR_UNKNOWN_AUDIT_PREREQUISITE"; report.failureType = error.name; }
+if (require.main === module) (async () => {
+  try {
+    if (BOUND?.simulationCalendarAuthorization)
+      await require("./w15-github/mock500_calendar").withBound(BOUND, input("processing-materials.PRIVATE.json"), () => {
+        report.simulationCalendar = require("./w15-github/mock500_calendar").evidence(); return main();
+      }, { audit: true });
+    else main();
+  } catch (error) { report.status = "FAIL_OR_UNKNOWN_AUDIT_PREREQUISITE"; report.failureType = error.name; }
   report.completedAtUTC = new Date().toISOString();
   const bytes = JSON.stringify(report, null, 2) + "\n";
   fs.writeFileSync(path.join(STATE, "RESULTS_INDEPENDENT.SAFE.json"), bytes, { flag: "wx", mode: 0o600 });
   console.log(JSON.stringify({ status: report.status, checks: report.unitChecksCompleted, categories: report.categories, reportSHA256: sha(bytes) }));
   if (!report.storedResultsAccepted) process.exitCode = 1;
-}
+})();
 module.exports = { main };

@@ -102,7 +102,12 @@ Graph-/Pinprüfung wurde entfernt. Bestehende Provider-Fehlerzeilen bleiben erha
 - Pflicht-CI und unabhängiger Review werden am tatsächlichen veröffentlichten
   Endkopf nachgewiesen. Eine Codeprüfung ist keine Mock500-Funktionsabnahme.
 
-## Verbleibender zwingender Startblocker
+## Nachgewiesener Novemberblocker beim damaligen Quellenabschluss
+
+Dieser Absatz hält den damaligen Ausgangsstand fest. Die anschließende ausdrücklich
+freigegebene Kalenderkorrektur und der aktuelle Stand stehen im
+[isolierten Simulationskalendervertrag](w15-mock500-simulation-calendar-20261103.md).
+
 
 Der innere Native-EU-Geldvertrag endet weiterhin am31.10.2026. Eine kleine
 öffentliche synthetische Gegenprobe akzeptiert dieselbe Route und die erneuerten

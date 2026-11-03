@@ -773,6 +773,9 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
         if 'sourceReplayAuthorization' in start_guard.admission:
             assert not diagnostic
             descriptor['sourceReplayAuthorization']=dict(start_guard.admission['sourceReplayAuthorization'])
+        if 'simulationCalendarAuthorization' in start_guard.admission:
+            assert not diagnostic
+            descriptor['simulationCalendarAuthorization']=dict(start_guard.admission['simulationCalendarAuthorization'])
         if diagnostic:descriptor['materialsDiagnosticOnly']=True
         if functional:
             contract=_mock_module('mock500_host_contract' if host_functional else 'functional_contract')
