@@ -1,13 +1,14 @@
 # CURRENT STATE — Helmut
 
-## W15: Materials-Diagnose FAIL (03.11.2026)
+## W15: Kapsellesung PASS, Materials weiterhin FAIL (03.11.2026)
 
-[Run41554774560](https://github.com/ernisch/helmut-pilot/actions/runs/41554774560):
-3a/PR1024,183s, Check132/assertion/calendar; innerer Assert UNKNOWN.
-500Profile/final0,0Units/Provider,8CleanupPASS;Peak2,581GB/Limit13,407GB,Swap/OOM/max0.
-GO verbraucht. Kapsel13193926779 läuft04.11.00:45:42UTC ab; privateCipherkopie erhalten.
-[Quittung und Reader-Vorbereitung](betrieb/w15-materials-diagnostic-41554774560-20261103.md).
-Reader braucht eigenes exaktes GO nachCI/Review. Branch3a; alteFAILs erhalten.
+[Run41594105907](https://github.com/ernisch/helmut-pilot/actions/runs/41594105907),
+e1/PR1025,10s: **PASS_EXISTING_CAPSULE_READ_ONLY**, innerer Assert`PROVIDER_CURRENT_CONTEXT_EMPTY`.
+Aktueller Quellenkontext leer; genauer Filter/Datenfehler weiterUNKNOWN.
+Cipher/GPG/AgentstoppPASS;0DB/Units/Modelle/Uploads,13JobsSKIPPED,0aktiveManuals.
+GO/Nonceverbraucht,Branch e1. KeinMaterialfix/Mock500-Start.
+[Beleg und nächste Grenze](betrieb/w15-materials-context-empty-41594105907-20261103.md).
+Kapselprivatverschlüsselt erhalten. End500/Empfang und historischeFAILs unverändert.
 
 [Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
 auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.
