@@ -131,7 +131,7 @@ def run_fixture():
         need(physical(negative, 'forged-calendar') == saved_bad); checks += 1
     finally:
         for db, marker in reversed(owned):
-            need(command('postgres', "select obj_description(oid,'pg_database') from pg_database where datname=" + literal(db) + ';') == marker)
+            need(command('postgres', "select shobj_description(oid,'pg_database') from pg_database where datname=" + literal(db) + ';') == marker)
             command('postgres', 'drop database "' + db + '";')
     return {'status': 'PASS_NATIVE_MOCK_CALENDAR_SQL_BINDINGS', 'checks': checks,
             'ownedDatabasesDropped': len(owned), 'profiles': 0, 'units': 0, 'modelCalls': 0, 'executionAuthority': False}
