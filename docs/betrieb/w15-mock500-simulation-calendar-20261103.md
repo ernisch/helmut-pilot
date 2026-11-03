@@ -99,6 +99,9 @@ Mock-DB-Namespace wird durch das lokale SQL nicht zugelassen.
 -Native SQL-Gegenprobe im bestehenden CI-PostgreSQL17: exakt passendev7,
   unverändertev5/v6, CAS/History/Stalewrite, falscher Hash/Version und anderer
   DB-Namespace. Nur eigene frische kleine Datenbanken, keine Profile/Modelle.
+-Die beiden reinen Production-Provider-VMs inventarisieren den tatsächlichen
+  Kalender samt genau seinen reinen Abhängigkeiten. Ohne Mock-Scope ist er inaktiv;
+  ein JSON-Grant wird abgewiesen. Alle bisherigen IO-/Require-Sperren bleiben.
 -Pflicht-CI und unabhängige Abnahme werden am veröffentlichten Endkopf belegt.
   Historische End500-/Empfangs-/Quellen-/Atomic12ACK-Belege bleiben übernommen.
 

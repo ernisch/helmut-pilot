@@ -38,7 +38,8 @@ const dependencies = {
   "provider-runtime-attestation.js": ["./azure-endpunkt", "./testkosten-budget", "node:crypto", "./flags", "./synthetik-500-eu-service-contract"],
   "flags.js": ["fs", "path", "../../helmut-flags.json"],
   "azure-endpunkt.js": ["crypto"], "testkosten-budget.js": ["node:crypto", "./synthetik-500-eu-service-contract"],
-  "synthetik-500-eu-service-contract.js": ["./synthetik-500-profile"], "synthetik-500-profile.js": ["node:crypto", "./streaming-canonical-hash"],
+  "synthetik-500-eu-service-contract.js": ["./synthetik-500-profile", "./synthetik-500-mock-calendar"], "synthetik-500-profile.js": ["node:crypto", "./streaming-canonical-hash"],
+  "synthetik-500-mock-calendar.js": ["node:async_hooks", "./briefing-frische"], "briefing-frische.js": [],
   "streaming-canonical-hash.js": ["node:crypto"],
   "anbieter-steuerung.js": ["crypto"], "verstehen-restzeit.js": []
 };
@@ -74,6 +75,7 @@ function loadPureModule(name) {
     assert(dependencies[name].includes(specifier), "unexpected dependency in " + name);
     imported.push(name + ":" + specifier);
     if (["crypto", "node:crypto"].includes(specifier)) return testCrypto;
+    if (specifier === "node:async_hooks") return require("node:async_hooks");
     if (specifier === "path") return path;
     if (specifier === "fs") return { readFileSync(file, ...args) { assert.equal(path.resolve(file), path.resolve(__dirname, "../helmut-flags.json")); return fs.readFileSync(file, ...args); } };
     if (specifier === "../../helmut-flags.json") return JSON.parse(fs.readFileSync(path.join(__dirname, "../helmut-flags.json"), "utf8"));
@@ -264,6 +266,12 @@ check("inactive optimizer keeps the real canonical SHA fallback", () => {
   assert.equal(hash({ a: 1 }, canonical), crypto.createHash("sha256").update('{"a":1}').digest("hex"));
   assert.equal(inactiveEpochReads, before + 1);
   assert.equal(optimizerHashCalls, 0);
+});
+
+check("real calendar outside Mock scope stays inactive and rejects a forged JSON grant", () => {
+  const calendar = loadPureModule("synthetik-500-mock-calendar.js");
+  assert.equal(calendar.active(), null);
+  assert.throws(() => calendar.run({}, () => {}), /synthetik500-mock-calendar-scope/);
 });
 
 check("configuration entrypoint with explicitly inactive optimizer imports no DB and attempts no external effect", () => {

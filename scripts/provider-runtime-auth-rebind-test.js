@@ -47,8 +47,10 @@ assert.equal((source.match(/bearerSha256: "[a-f0-9]{64}"/g) || []).length, 1);
 // node:crypto ist die einzige erlaubte native Hashquelle; kein Netz, FS, Speicher, Timer.
 const INVENTORY = {
   "provider-runtime-attestation.js": ["node:crypto", "./azure-endpunkt", "./testkosten-budget", "./synthetik-500-eu-service-contract"],
-  "synthetik-500-eu-service-contract.js": ["./synthetik-500-profile"],
+  "synthetik-500-eu-service-contract.js": ["./synthetik-500-profile", "./synthetik-500-mock-calendar"],
   "synthetik-500-profile.js": ["node:crypto", "./streaming-canonical-hash"],
+  "synthetik-500-mock-calendar.js": ["node:async_hooks", "./briefing-frische"],
+  "briefing-frische.js": [],
   "streaming-canonical-hash.js": ["node:crypto"]
 };
 const loadedPure = new Map();
@@ -89,6 +91,7 @@ function loadPureModule(name) {
     if (name === CANONICAL_HASH && specifier === "./synthetik-500-cpu-epoch") return inactiveEpoch;
     assert.ok(INVENTORY[name].includes(specifier), "unexpected dependency in " + name);
     if (specifier === "node:crypto") return crypto;
+    if (specifier === "node:async_hooks") return require("node:async_hooks");
     return loadPureModule(specifier.slice(2) + ".js");
   };
   vm.runInNewContext("(function(require, module, exports) {\n" + text + "\n})",
@@ -160,6 +163,10 @@ assert.equal(loadPureModule(CANONICAL_HASH).hash({ a: 1 }, loadPureModule(PROFIL
   crypto.createHash("sha256").update('{"a":1}').digest("hex"));
 assert.equal(inactiveEpochReads, fallbackGateBefore + 1, "real fallback reads the explicitly inactive gate");
 assert.equal(optimizerHashCalls, 0, "optional optimizer hash is never used in this pure VM");
+const calendar = loadPureModule("synthetik-500-mock-calendar.js");
+assert.equal(calendar.active(), null, "calendar outside Mock scope has no active grant");
+assert.throws(() => calendar.run({}, () => {}), /synthetik500-mock-calendar-scope/,
+  "forged JSON grant must be rejected by the real calendar");
 const oldOperation = call(synthetic, OLD_NONCE, AT);
 assert.equal(oldOperation.status, 403);
 assert.equal(oldOperation.reads, 0);
