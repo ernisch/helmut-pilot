@@ -185,6 +185,7 @@ def main(argv=None):
     except BaseException as error:
         print(json.dumps({'status': 'FAIL_OR_UNKNOWN_MOCK_INPUT_CONTEXT_PREFLIGHT',
             'phase': error.phase if isinstance(error, H.ArchiveHandoffError) else stage,
+            'archivePhase': error.archive_phase if isinstance(error, H.ArchiveHandoffError) else None,
             'gpgProcessStopped': getattr(error, 'process_stopped', 'UNKNOWN'),
             'gpgAgentStopped': getattr(error, 'agent_stopped', 'UNKNOWN'),
             'nodeProcessStopped': check.node_stopped if check is not None else 'UNKNOWN',

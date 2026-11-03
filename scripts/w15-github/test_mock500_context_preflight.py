@@ -2,9 +2,11 @@
 import sys
 sys.dont_write_bytecode = True
 import copy
+from contextlib import redirect_stdout
 from datetime import datetime, timedelta, timezone
 import importlib.util
 import json
+import io
 import os
 from pathlib import Path
 import subprocess
@@ -20,6 +22,16 @@ M, F = load('mock500_context_preflight'), load('test_mock500_archive_receive')
 H = M.H
 
 class ContextChecks(unittest.TestCase):
+    def test_first_inner_archive_phase_survives_safe_entrypoint_without_raw_error(self):
+        stream=io.StringIO()
+        error=H.ArchiveHandoffError('asset-reception',archive_phase='manifest',process_stopped='PASS',agent_stopped='UNKNOWN')
+        with patch.object(H,'receive_only',side_effect=error),redirect_stdout(stream):
+            status=M.main(['--check-existing-input-contexts-only','--expected-commit',F.COMMIT,'--runner-temp','/FICTIONAL'])
+        result=json.loads(stream.getvalue());self.assertEqual(status,1)
+        self.assertEqual(result['phase'],'asset-reception');self.assertEqual(result['archivePhase'],'manifest')
+        self.assertEqual(result['gpgProcessStopped'],'PASS');self.assertEqual(result['gpgAgentStopped'],'UNKNOWN')
+        self.assertNotIn('/FICTIONAL',stream.getvalue());self.assertFalse(result['executionAuthority'])
+
     def test_existing_caller_finite_headroom_uses_real_reserve_and_keeps_identity_and_safety_checks(self):
         check=M.ContextCheck('/FICTIONAL');check.admission={};check.issued=datetime.now(timezone.utc);check.baseline={}
         reserve=M.C.HOST_RESERVE
