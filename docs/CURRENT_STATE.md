@@ -1,15 +1,14 @@
 # CURRENT STATE — Helmut
 
-## W15: aktuelle 500 Mockeingaben FAIL (03.11.2026)
+## W15: historische Quellenanbindung BLOCKED (03.11.2026)
 
-[Run41620895888](https://github.com/ernisch/helmut-pilot/actions/runs/41620895888),
-exakt82d9b14f: **FAIL**,25s. Alle500 geprüft:120gültig/380leer;
-fehlend/unbrauchbar/technisch jeweils0. Alle380 werden allein mit historischem
-Zeitbezug derselben Quellen nichtleer: Zeitfilter als Ursache belegt.
-11Originale/217,56MB,Hash/GPG/ManifestPASS;GPG/Agent/Node-StoppPASS.
-0DB/Aktivierung/Units/Calls/Uploads/aktiveManuals;1Linkrunde/1POST,GO verbraucht.
-Ausführungsbranch82;keinRetry/FullMock/Production. End500-PASS bleibt erhalten.
-[Nachweis und notwendige historische Vertragsfreigabe](betrieb/w15-mock500-input-context-preflight-20261103.md).
+Replay/1-Entwicklung freigegeben; keine Runtimeänderung.
+Mock-Dateien allein reichen nicht: finite-Apppfad koppelt Quellen- und Kalenderzeit.
+Benötigt: eng gebundene Opt-in-AsOf-Schnittstelle im Apppfad; noch unfreigegeben.
+[Run41620895888](https://github.com/ernisch/helmut-pilot/actions/runs/41620895888):
+500 geprüft,120gültig/380zeitbedingtleer,sonstige0;11Originale/Hash/GPGPASS.
+GO verbraucht,keinRetry;End500PASS erhalten. Kein FullMock/Production.
+[Codebeleg und Umfangsfreigabe](betrieb/w15-mock500-input-context-preflight-20261103.md).
 
 [Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
 auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.

@@ -176,8 +176,8 @@ Sol integrierte den Prüfkern, ohne weiteren Modellversuch.
 
 ## Kleinste notwendige Vertragsentscheidung
 
-**Entwurf `helmut-w15-mock-historical-qualified-source-replay/1`: noch nicht
-freigegeben, implementiert oder aktiviert.** Die aktuelle14-Tage-Regel arbeitet
+**`helmut-w15-mock-historical-qualified-source-replay/1`: am03.11. für die
+gezielte Entwicklung freigegeben, noch nicht implementiert oder aktiviert.** Die aktuelle14-Tage-Regel arbeitet
 wie vorgesehen. Es ist kein Reparaturgrund, sie stillschweigend zu lockern.
 Die alte Oct11-B2-Capability passt nicht zu diesem qualifizierten Bestand.
 
@@ -211,8 +211,9 @@ Datenweg ein ausdrücklich historischer Quellenfixture-Vertrag:
    Dynamischer Hostschutz, Reserven, Zeitfenster, Kosten, Kommunikationsriegel,
    Quellenintegrität und Production-Sperren bleiben erhalten.
 
-Eine ausdrückliche Betreiberentscheidung für diesen historischen Funktionsvertrag
-fehlt. Ohne sie bleibt der aktuelle Mock500 blockiert. Falls stattdessen aktuelle
+Die Betreiberentscheidung für die Entwicklung dieses historischen Vertrags liegt
+inzwischen vor. Die nachfolgend belegte technische Umfangsgrenze blockiert die
+Umsetzung weiterhin; daraus entsteht keine geschützte Ausführungsfreigabe. Falls stattdessen aktuelle
 Novemberquellen zwingend sind, benötigen die tatsächlich betroffenen380
 Kontexte neue freigegebene Fixtures und deren betroffene Bindungsprüfung;
 keine pauschale Wiederbeschaffung oder automatische Neuqualifikation.
@@ -220,3 +221,65 @@ keine pauschale Wiederbeschaffung oder automatische Neuqualifikation.
 Ein späterer Funktions-PASS nach einem genehmigten historischen Vertrag wäre
 weiterhin keine heutige Quellen-, Vercel-/Supabase- oder Production500-Abnahme.
 Der jetzt ausgeführte Vorflug hat keinen vollständigen Mock500 freigegeben.
+
+## Technische Grenze nach dem Entwicklungs-GO
+
+**BLOCKED im erteilten Bearbeitungsumfang.** Eine Änderung allein im Mock-Material-
+und Fixturepfad erreicht die tatsächliche Quellenprojektion der Anwendung nicht.
+Das wurde auf186dbcbb unabhängig rein lesend geprüft. Keine Runtimeänderung,
+Originalübertragung, Profilaktivierung oder weitere Ausführung wurde vorgenommen.
+
+Der konkrete Pfad:
+
+1. `scripts/fixtures/w15-unit0-provider.js:21–29` rekonstruiert Eingabe, D/R und
+   Q mit `row.briefingDatum`. Hier wäre ein getrennter Quellenzeitpunkt in der
+   Fixturevorbereitung ergänzbar.
+2. Der tatsächliche Mocklauf ruft danach die echte Anwendung über HTTP auf:
+   `scripts/synthetik-500-w15-full500-runtime.js:485–493`.
+3. `lib/helmut/synthetik-500-production-adapter.js:329–335` erzeugt den privaten
+   finite-D-Token. `synthetik-500-lage-input.js` führt Briefingdatum, Eingabe und
+   bestehende v2-Datumsbindung; es gibt keine getrennte Quellen-AsOf-Schnittstelle.
+4. `lib/helmut/lage.js:670–674,698,761–765` verwendet das aktuelle gebundene
+   Briefingdatum erneut für die private Quellenprojektion. Ein Override des
+   exportierten `prepareDContext` erreicht diesen internen Aufruf nicht.
+   `opts.now` trennt im finite-Pfad die Quellenzeit ebenfalls nicht.
+5. Die historische B2-Capability in
+   `lib/helmut/blocker2-d-historical-binding.js:71–83` bleibt an v2, einen anderen
+   festen Merkle-Bestand und den Berliner11.10. gebunden. Sie darf nicht für den
+   qualifizierten v1-Bestand übernommen werden.
+
+Eine allein in der Vorbereitung grüne historische Fixture wäre deshalb kein
+vollständiger Mock500-Nachweis. Der echte Senderpfad muss denselben zugelassenen
+Quellenkontext konstruieren und prüfen.
+
+Zusätzlich erfolgt die tatsächliche Original-D-Request-/Hashprüfung derzeit erst
+nach Aktivierung (`synthetik-500-w15-full500-materials.js:290,307–319`).
+Die prospektiven D/R/Q-Fixtures entstehen vorher(:186–189). Auch die vollständige
+tatsächliche Requestbindung aller500 muss im späteren Fix vor die Aktivierung;
+dies ist bereits Teil des Betreiberauftrags.
+
+### Kleinste notwendige zusätzliche Umfangsfreigabe
+
+Erforderlich ist die Erlaubnis für eine eng abgesicherte, ausschließlich unter
+dem genehmigten isolierten Mockvertrag nutzbare **Quellen-AsOf-Schnittstelle im
+tatsächlichen finite-D-Anwendungspfad**. Dazu müsste die Bearbeitung über reine
+Mock-Material-/Fixturedateien hinaus auf die bestehende finite-Eingabebindung und
+den tatsächlichen Lage-Konstruktor erweitert werden.
+
+Standardverhalten und Produktionsquellenfilter bleiben dabei unverändert.
+Kein allgemeiner Parameter aus HTTP oder Environment: Der historische Zeitpunkt
+darf nur dem bereits hashgebundenen Qualifikationsbericht entnommen werden und
+gilt einheitlich für alle500. Reale Kalender-/Laufzeit, Sendebindung, Nonce,
+Fristen, Originaldaten, Quellen-/Publikationsdaten sowie Ressourcen- und
+Kostengrenzen bleiben unverändert. Keine Öffnung der Oct11-Capability, kein
+globaler Date-Override, Filter-Monkeypatch oder Umschreiben privaten Quellcodes.
+
+Nach einer solchen Umfangsfreigabe wären vollständige Eingabe-/Provider-/Review-
+und tatsächliche Senderbindungen aller500 vor Aktivierung, historische
+Kennzeichnung, gezielte synthetische Prüfungen, Pflicht-CI und unabhängige Abnahme
+erforderlich. Erst danach käme ein neues konkretes einmaliges FullMock-GO.
+
+Diese zusätzliche Code-Umfangsfreigabe ist nicht erteilt. Die Grenze
+„keine Production Quellenlogik ändern“ wird nicht eigenmächtig uminterpretiert.
+Kein weiterer Originallauf oder geschützter Gesamtlauf ist erlaubt.
+Die Codeprüfung war rein lesend und ist keine ausgeführte Gegenprobe.
