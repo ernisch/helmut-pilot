@@ -9,8 +9,7 @@ const { performance } = require("node:perf_hooks");
 const EU = require("../../lib/helmut/synthetik-500-eu-service-contract");
 const sha = value => crypto.createHash("sha256").update(value).digest("hex");
 const SCOPE = "REVIEWED_LOCAL_MOCK_OUTPUT_SYNTHETIC_PERFORMANCE_FIXTURE_NOT_MODEL_OUTPUT";
-const DELAY_MS = 19900;
-const preparedRequests = new WeakMap();
+const DELAY_MS = 19900, preparedRequests = new WeakMap();
 
 function validIndex(index) {
   assert(Number.isInteger(index) && index >= 0 && index < 500, "w15-full500-index");
@@ -20,8 +19,7 @@ function delay(index) { return index === 0 || index === 499 ? DELAY_MS : 0; }
 function prepare({ index, ...inputs }) {
   validIndex(index);
   // Reuse every original constructor and deterministic template check unchanged.
-  const fixture = { ...require("./w15-unit0-provider").prepare(inputs), index, delayMs: delay(index) };
-  preparedRequests.set(fixture, structuredClone(fixture)); return fixture;
+  const fixture = { ...require("./w15-unit0-provider").prepare(inputs), index, delayMs: delay(index) }; preparedRequests.set(fixture, structuredClone(fixture)); return fixture;
 }
 
 function install({ fixture, selector, readSenderClaim, providerPhases = [] }) {

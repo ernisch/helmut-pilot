@@ -20,9 +20,7 @@ function prepare({ row, model, candidate, template, sourceReplayToken,
   assert.equal(model, EU.CONTRACT.model); assert.equal(responsesURL, EU.CONTRACT.responseURL);
   const time = new Date(row.briefingDatum); assert(Number.isFinite(time.getTime()));
   const bound = B.pruefe(row.briefingEingabe, row.profile, row.profile.id, time, { acceptedSnapshot: true });
-  const { koLite } = sourceReplayToken
-    ? L.projectFiniteDContext(bound.ranked, bound.sources, time, bound, sourceReplayToken, row.profile, { preparation: true })
-    : L.prepareDContext(bound.ranked, bound.sources, time, bound);
+  const { koLite } = sourceReplayToken ? L.projectFiniteDContext(bound.ranked, bound.sources, time, bound, sourceReplayToken, row.profile, { preparation: true }) : L.prepareDContext(bound.ranked, bound.sources, time, bound);
   assert(koLite.length > 0, "w15-unit0-provider-empty-context");
   assert(candidate?.draftCandidate && template?.response && template?.binding);
   assert.equal(sha(JSON.stringify(template.response)), template.binding.responseJSONSHA256);
