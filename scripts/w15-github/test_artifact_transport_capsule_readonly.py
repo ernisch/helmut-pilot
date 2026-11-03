@@ -34,7 +34,7 @@ class CapsuleTransportChecks(unittest.TestCase):
         self.addCleanup(task.stop)
         self.credentials = {'GITHUB_TOKEN': 'FICTIONAL_TOKEN', 'GITHUB_REPOSITORY': 'ernisch/helmut-pilot',
                             'GITHUB_RUN_ID': '12345678901'}
-        self.inputs = {'artifact-ids': '13145634042', 'run-id': '41455150159',
+        self.inputs = {'artifact-ids': '13193926779', 'run-id': '41554774560',
                        'repository': 'ernisch/helmut-pilot', 'github-token': 'FICTIONAL_TOKEN',
                        'merge-multiple': 'true', 'path': str(self.root / 'cipher')}
 

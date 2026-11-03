@@ -1,14 +1,13 @@
 # CURRENT STATE — Helmut
 
-## W15: Materials-Diagnose vor Start blockiert (02.11.2026)
+## W15: Materials-Diagnose FAIL (03.11.2026)
 
-PR1023/d0b497cb: Pflicht-CI41505994851 und unabhängiger Review PASS.
-Neuestes GO bindet d0, verbietet aber Aktivierung; d0 erlaubt noch500 temporäre
-Profile. Kein FF/Nonce/Link/Job, GO unverbraucht. Ausführungsbranch bleibt9d.
-[Kleinste Nullaktivitäts-Korrektur und nächste Freigabe](betrieb/w15-mock500-materials-zero-active-20261102.md):
-vorhandenes prepared0 nur für Diagnose, Owner-GO0/0 und Eingangsriegel vor SQL;
-Node+4Kopien bleiben. Full unverändert. Gezielte Proben grün, finaler CI/Review im PR.
-Neues exaktes Fixcommit-GO nötig; Tagesstarttor am02.11. bereits geschlossen.
+[Run41554774560](https://github.com/ernisch/helmut-pilot/actions/runs/41554774560):
+3a/PR1024,183s, Check132/assertion/calendar; innerer Assert UNKNOWN.
+500Profile/final0,0Units/Provider,8CleanupPASS;Peak2,581GB/Limit13,407GB,Swap/OOM/max0.
+GO verbraucht. Kapsel13193926779 läuft04.11.00:45:42UTC ab; privateCipherkopie erhalten.
+[Quittung und Reader-Vorbereitung](betrieb/w15-materials-diagnostic-41554774560-20261103.md).
+Reader braucht eigenes exaktes GO nachCI/Review. Branch3a; alteFAILs erhalten.
 
 [Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
 auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.

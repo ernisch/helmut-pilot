@@ -76,7 +76,7 @@ def _run(node, tool, root, credentials, inputs, guard, *, existing_capsule_reado
              and re.fullmatch('[1-9][0-9]{4,19}', credentials['GITHUB_RUN_ID'])
              and tool == root / 'download.js'
              and pin(tool, guard) == {'cipherBytes': TOOLS['download'][2], 'cipherSHA256': TOOLS['download'][3]}
-             and inputs == {'artifact-ids': '13145634042', 'run-id': '41455150159',
+             and inputs == {'artifact-ids': '13193926779', 'run-id': '41554774560',
                  'repository': 'ernisch/helmut-pilot', 'github-token': credentials['GITHUB_TOKEN'],
                  'merge-multiple': 'true', 'path': str(root / 'cipher')})
         folder = (root / 'cipher').lstat()

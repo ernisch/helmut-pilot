@@ -26,9 +26,9 @@ HERE = Path(__file__).absolute().parent
 REPO = HERE.parents[1]
 MODE = 'mock500-materials-capsule-readback'
 SCOPE = 'READ_EXISTING_MATERIALS_CAPSULE_ONLY'
-SOURCE_RUN, SOURCE_ARTIFACT = 41455150159, 13145634042
-SOURCE_COMMIT = '582ca4e6dca9d78b0008d8837ed1b171cf8fe920'
-CIPHER = {'bytes': 10699, 'sha256': 'fa9ff9bae552cf3998101470dc88c3e6c3347800113e0960afbe34609a5e5753'}
+SOURCE_RUN, SOURCE_ARTIFACT = 41554774560, 13193926779
+SOURCE_COMMIT = '3a052b3edace0413e7d9c4cbda8d1735ab4bfe64'
+CIPHER = {'bytes': 10699, 'sha256': 'ff439a2096781df92bab102d722acb42544ab8a09c63dfd51a45cede3810f298'}
 SOURCE_INPUT_SHA = 'af3bd654fa292ad256e0fa265c2fb3d968e945633f1439a12da72f015aeab86f'
 ROOT_NAME, CIPHER_NAME = 'w15-materials-capsule-readback', 'mock500-materials-diagnostic.PRIVATE.gpg'
 OUTCOME, COLLECTION = 'MATERIALS_DIAGNOSTIC_OUTCOME.PRIVATE.json', 'MATERIALS_COLLECTION.PRIVATE.json'
@@ -241,6 +241,42 @@ def controller_projection(raw):
             'location': 'CONTROLLER_PUBLIC_LINE_' + str(line).zfill(3) if 1 <= line <= 1024 else 'UNKNOWN'}
 
 
+def provider_projection(node, first):
+    """Fixed checks in the immutable source3a provider, never raw error values.
+
+    Check132 is a callsite shared by several inner assertions. Only complete
+    private Node evidence matching that actual first checkpoint can refine it.
+    """
+    if type(node) is not dict or first != {'schema': 'helmut-w15-materials-first-failure/1',
+            'category': 'MATERIALS_BINDING_CHECK_132', 'kind': 'assertion', 'stage': 'calendar'}:
+        return 'UNKNOWN'
+    stack, reason = node.get('stack'), node.get('reason')
+    if node.get('safe') != first or type(stack) is not str or not 0 < len(stack) < 4096 \
+            or type(reason) is not str or len(reason) >= 2048: return 'UNKNOWN'
+    # Assertion values can contain forged stack-looking lines. Remove the
+    # complete verified message before inspecting only the first actual frame.
+    headers = ('AssertionError [ERR_ASSERTION]: ', 'AssertionError: ')
+    prefix = next((header + reason + '\n' for header in headers
+                   if stack.startswith(header + reason + '\n')), None)
+    if prefix is None: return 'UNKNOWN'
+    frames = stack[len(prefix):].splitlines()
+    if not frames: return 'UNKNOWN'
+    frame = re.fullmatch(r'\s+at ((?:Object\.)?prepare|validIndex) \([^\r\n]*?/scripts/fixtures/'
+        r'(w15-(?:unit0|full500)-provider\.js):([0-9]{1,4}):([0-9]{1,4})\)\s*', frames[0])
+    if frame is None: return 'UNKNOWN'
+    function, name, line, column = frame[1], frame[2], int(frame[3]), int(frame[4])
+    if name == 'w15-full500-provider.js':
+        return 'PROVIDER_INDEX_REJECTED' if function == 'validIndex' and line == 15 else 'UNKNOWN'
+    if function not in ('Object.prepare', 'prepare'): return 'UNKNOWN'
+    if line == 20:
+        return {10: 'PROVIDER_MODEL_REJECTED', 50: 'PROVIDER_ENDPOINT_REJECTED'}.get(column, 'UNKNOWN')
+    return {19: 'PROVIDER_CONTEXT_REJECTED', 21: 'PROVIDER_EXECUTION_TIME_REJECTED',
+        22: 'PROVIDER_BRIEFING_BINDING_REJECTED', 24: 'PROVIDER_CURRENT_CONTEXT_EMPTY',
+        25: 'PROVIDER_FIXTURE_STRUCTURE_REJECTED', 26: 'PROVIDER_REVIEW_HASH_REJECTED',
+        29: 'PROVIDER_REVIEW_CONTEXT_REJECTED', 41: 'PROVIDER_INPUT_USAGE_REJECTED',
+        42: 'PROVIDER_OUTPUT_USAGE_REJECTED'}.get(line, 'UNKNOWN')
+
+
 def parse_capsule(plaintext, private_root):
     need(type(plaintext) is bytes and 0 < len(plaintext) <= MAX_PLAINTEXT, 'archive')
     contents, offset, total = {}, 0, 0
@@ -313,7 +349,8 @@ def parse_capsule(plaintext, private_root):
     for name, data in contents.items():
         with os.fdopen(A._file(destination, name), 'wb') as out: out.write(data)
     return {'materialsCompleted': outcome['materialsCompleted'], 'firstFailure': first,
-        'nodeFirstFailure': node_safe, 'controllerFailure': controller_projection(complete_json(SOURCES[1])),
+        'nodeFirstFailure': node_safe, 'providerCheck': provider_projection(node, first),
+        'controllerFailure': controller_projection(complete_json(SOURCES[1])),
         'sourceReportedActiveProfiles': 0 if observed_zero else 'UNKNOWN',
         'sourceNativeZeroState': zero['nativeZeroState'] if observed_zero else 'UNKNOWN',
         'sourceProfileFieldsUnchanged': True if observed_zero else 'UNKNOWN',

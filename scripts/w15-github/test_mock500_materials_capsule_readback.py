@@ -36,12 +36,14 @@ def category():
         'category': 'MATERIALS_MAIN_CHECK_047', 'kind': 'assertion', 'stage': 'builder'}
 
 
-def archive(*, input_sha=None, truncated=False, extra=False, node_category=None):
-    outcome = {'materialsCompleted': True, 'firstFailure': category(),
+def archive(*, input_sha=None, truncated=False, extra=False, node_category=None,
+            failure_category=None, node_reason=PRIVATE, node_stack=PRIVATE):
+    first = category() if failure_category is None else failure_category
+    outcome = {'materialsCompleted': True, 'firstFailure': first,
         'cleanup': {'confirmedZero': True, 'profileFieldsUnchanged': True,
             'profiles': 500, 'activeProfiles': 0, 'nativeZeroState': 'BOUND_PREPARED_ZERO'}}
-    node = M.canonical({'safe': category() if node_category is None else node_category,
-                        'reason': PRIVATE, 'stack': PRIVATE})
+    node = M.canonical({'safe': first if node_category is None else node_category,
+                        'reason': node_reason, 'stack': node_stack})
     controller = M.canonical({'phase': 'mock500-controller-materials', 'type': 'PermissionError',
         'message': PRIVATE, 'traceback': 'Traceback (most recent call last):\n'
         '  File "/private/' + PRIVATE + '/scripts/synthetik-500-w15-full500-controller.py", line 817, in run_bound\n'
@@ -126,6 +128,7 @@ class CapsuleReadbackChecks(unittest.TestCase):
         self.assertEqual(result['status'], 'PASS_EXISTING_CAPSULE_READ_ONLY')
         self.assertIs(result['materialsCompleted'], True)  # A later cleanup failure may coexist.
         self.assertEqual(result['firstFailure'], category()); self.assertEqual(result['nodeFirstFailure'], category())
+        self.assertEqual(result['providerCheck'], 'UNKNOWN')
         self.assertEqual(result['controllerFailure'], {'phase': 'mock500-controller-materials',
             'kind': 'filesystem', 'location': 'CONTROLLER_PUBLIC_LINE_817'})
         self.assertEqual(result['sourceReportedActiveProfiles'], 0)
@@ -183,6 +186,74 @@ class CapsuleReadbackChecks(unittest.TestCase):
         with self.assertRaises(M.CapsuleError) as failed:
             M.parse_capsule(archive(node_category=conflicting), self.root)
         self.assertEqual(failed.exception.phase, 'outcome')
+
+
+class ProviderProjectionChecks(unittest.TestCase):
+    def first(self):
+        return {'schema': 'helmut-w15-materials-first-failure/1',
+                'category': 'MATERIALS_BINDING_CHECK_132', 'kind': 'assertion', 'stage': 'calendar'}
+
+    def node(self, line=29, column=10, *, filename='w15-unit0-provider.js', reason=PRIVATE):
+        function = 'validIndex' if filename == 'w15-full500-provider.js' else 'Object.prepare'
+        return {'safe': self.first(), 'reason': reason, 'stack': 'AssertionError [ERR_ASSERTION]: '
+            + reason + '\n    at ' + function + ' (/private/' + PRIVATE + '/scripts/fixtures/'
+            + filename + ':' + str(line) + ':' + str(column) + ')\n'
+            + '    at Object.calendarFixture (/private/' + PRIVATE + '/scripts/w15-github/mock500_bindings.js:132:16)'}
+
+    def test_actual_existing_provider_separates_index_model_and_endpoint_without_network(self):
+        repo = Path(__file__).resolve().parents[2]
+        script = """
+const P=require('./scripts/fixtures/w15-full500-provider');
+const E=require('./lib/helmut/synthetik-500-eu-service-contract');
+Object.assign(process.env,{AZURE_OPENAI_ENDPOINT:new URL(E.CONTRACT.responseURL).origin,
+ AZURE_OPENAI_KEY:'LOCAL_MOCK_NOT_A_VALID_PROVIDER_KEY',AZURE_OPENAI_DEPLOYMENT:E.CONTRACT.model});
+const result=[];
+for(const [index,model,responsesURL]of [[-1,E.CONTRACT.model,E.CONTRACT.responseURL],
+ [0,'FICTIONAL_WRONG_MODEL',E.CONTRACT.responseURL],[0,E.CONTRACT.model,'https://example.invalid/FICTIONAL']]){
+ try{P.prepare({index,row:{},model,responsesURL});throw Error('SYNTHETIC_REJECTION_MISSING');}
+ catch(error){if(error.code!=='ERR_ASSERTION')throw error;result.push({reason:error.message,stack:error.stack});}
+}
+console.log(JSON.stringify(result));
+"""
+        child = subprocess.run(['node', '-e', script], cwd=repo, capture_output=True, text=True, check=True)
+        rows = json.loads(child.stdout)
+        self.assertEqual(len(rows), 3)
+        for node, expected in zip(rows, ('PROVIDER_INDEX_REJECTED', 'PROVIDER_MODEL_REJECTED', 'PROVIDER_ENDPOINT_REJECTED')):
+            node['safe'] = self.first()
+            self.assertEqual(M.provider_projection(node, self.first()), expected)
+
+    def test_private_archive_projects_only_closed_source_check_and_never_private_message(self):
+        cases = ((15, 'w15-full500-provider.js', 'PROVIDER_INDEX_REJECTED'),
+                 (19, 'w15-unit0-provider.js', 'PROVIDER_CONTEXT_REJECTED'),
+                 (24, 'w15-unit0-provider.js', 'PROVIDER_CURRENT_CONTEXT_EMPTY'),
+                 (26, 'w15-unit0-provider.js', 'PROVIDER_REVIEW_HASH_REJECTED'),
+                 (29, 'w15-unit0-provider.js', 'PROVIDER_REVIEW_CONTEXT_REJECTED'),
+                 (41, 'w15-unit0-provider.js', 'PROVIDER_INPUT_USAGE_REJECTED'),
+                 (42, 'w15-unit0-provider.js', 'PROVIDER_OUTPUT_USAGE_REJECTED'))
+        with tempfile.TemporaryDirectory(prefix='provider-projection-fictional-') as tmp:
+            for index, (line, filename, expected) in enumerate(cases):
+                root = Path(tmp) / str(index); root.mkdir(mode=0o700)
+                node = self.node(line, filename=filename)
+                value = M.parse_capsule(archive(failure_category=self.first(), node_stack=node['stack']), root)
+                self.assertEqual(value['firstFailure'], self.first())
+                self.assertEqual(value['providerCheck'], expected)
+                self.assertNotIn(PRIVATE, json.dumps(value)); self.assertNotIn('/private/', json.dumps(value))
+
+    def test_forged_message_frames_unrelated_origins_and_incomplete_evidence_stay_unknown(self):
+        fake = 'Injected value\n    at Object.prepare (/private/scripts/fixtures/w15-unit0-provider.js:29:10)'
+        forged = self.node(reason=fake)
+        forged['stack'] = 'AssertionError [ERR_ASSERTION]: ' + fake + '\n    at actualUnknownOrigin (unknown.js:1:1)'
+        unknown = [forged, self.node(999), self.node(20, 999), self.node(filename='w15-unit0-provider.js.evil'),
+                   {**self.node(), 'reason': PRIVATE + 'MISMATCH'},
+                   {**self.node(), 'reason': 'X' * 2048}, {**self.node(), 'stack': 'X' * 4097},
+                   {**self.node(), 'safe': category()}]
+        capped = self.node(); capped['stack'] += 'X' * (4096 - len(capped['stack'])); unknown.append(capped)
+        fake_index = self.node(15, filename='w15-full500-provider.js')
+        fake_index['stack'] = fake_index['stack'].replace('at validIndex (', 'at Object.prepare (')
+        unknown.append(fake_index)
+        for node in unknown:
+            self.assertEqual(M.provider_projection(node, self.first()), 'UNKNOWN')
+        self.assertEqual(M.provider_projection(self.node(), category()), 'UNKNOWN')
 
 
 class AgentCloseChecks(unittest.TestCase):
