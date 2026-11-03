@@ -1,15 +1,15 @@
 # CURRENT STATE — Helmut
 
-## W15: isolierter Mock500-Novemberkalender (03.11.2026)
+## W15: Mock500-Kalenderlauf FAIL (03.11.2026)
 
-Quellen-AsOf/1 ausPR1029/ec5b3149 erhalten. Genehmigter Simulationskalender/1
-angebunden:1.–7.11., eigenev7/Hash,44Auftragstage/60Bücher; Geld unverändert.
-Nur privates gebundenesGO, keinAPI/ENV-Schalter. Production/B2 bleiben unverändert.
-Alle500 D/Provider/Review-Bindungen vor Aktivierung Pflicht. Synthetik/nativeSQLPASS;
-Production-VM/RollenisolationPASS; Endkopf-CI/Review:PR1030.
-[Vertrag, Prüfbelege, nächste Einmalfreigabe](betrieb/w15-mock500-simulation-calendar-20261103.md).
-Kein neuer Originallauf. End50041325430429PASS/Empfang41037459441 übernommen;
-historischeFAILs bleiben. Mock500 erst nach konkretem neuemGO; Production gesperrt.
+[Run41694827024](https://github.com/ernisch/helmut-pilot/actions/runs/41694827024)/60019f03:
+**FAIL**,195s; `materials-builder`/`MATERIALS_MAIN_CHECK_286`, innereAssertionUNKNOWN.
+Peak2,77GB/Limit13,32GB;Swap/OOM/max0;8CleanupPASS;0Artefakte/aktiveManuals.
+Vollzählungen/Sicherung/DB-Endnull und Receipt-NonceUNKNOWN.
+GO/Linkrunde verbraucht, keinRetry. [Abnahme/Belege](betrieb/w15-mock500-calendar-builder-failure-41694827024-20261103.md).
+End50041325430429/Empfang41037459441 und Quellen-/Simulationsvertrag/1 erhalten;
+historischeFAILs unverändert,Productiongesperrt. Nächster Schritt: innere
+Builderprüfung sichererhalten/synthetisch; keinOriginallaufaufVerdacht.
 
 [Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
 auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.
