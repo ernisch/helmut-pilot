@@ -84,6 +84,10 @@ Lage- und beide Providerdateien. Die drei neuen vollständigen Pins stehen in
 `mock500_source_replay_pins.json`; unbekannte, fehlende oder abweichende Pins
 scheitern. Das ist keine neue500/500-Konstruktorqualifikation. Die vollständige
 aktuelle öffentliche Codequalifikation und unabhängige Abnahme bleiben Pflicht.
+Der vorhandene geschlossene Worker-Modulgraph bindet außerdem die geänderte
+Lage-Datei und beide finite-Input-/Berechtigungsmodule vollständig nach Bytes/SHA.
+Die gezielte echte Worker-Gegenprobe vor ungültigem Inhalt besteht; keine
+Graph-/Pinprüfung wurde entfernt. Bestehende Provider-Fehlerzeilen bleiben erhalten.
 
 ## Gezielte Prüfung
 

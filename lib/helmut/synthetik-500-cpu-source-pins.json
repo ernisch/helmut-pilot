@@ -148,8 +148,8 @@
     },
     {
       "path": "lib/helmut/lage.js",
-      "bytes": 56155,
-      "sha256": "b69d8abc8793be120980bfd86f3d4e65682a6f885ddd6d16b10671d4c67995b3"
+      "bytes": 58985,
+      "sha256": "3a478778baded4b1fd975f7c712daa974323d2d196fc54906445cbcd781d2b96"
     },
     {
       "path": "lib/helmut/llm-usage-atomic.js",
@@ -285,6 +285,16 @@
       "path": "lib/helmut/synthetik-500-kosten-plan.js",
       "bytes": 35886,
       "sha256": "0b8dfc354640159d20f88d3e563297187d0786a634a351e6af19da83ef09d50a"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-lage-input.js",
+      "bytes": 1620,
+      "sha256": "31dc6b3cb16ebf152ce45514b067a3a3c3c5a4a7fe67e625296be989c69120b5"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-mock-source-replay.js",
+      "bytes": 8506,
+      "sha256": "1fb8fef68ed72c5b6e4084bed8c39905a437266836465d7db92549975c8f1ac7"
     },
     {
       "path": "lib/helmut/synthetik-500-nachweis.js",
