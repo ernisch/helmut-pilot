@@ -102,6 +102,12 @@ Mock-DB-Namespace wird durch das lokale SQL nicht zugelassen.
 -Die beiden reinen Production-Provider-VMs inventarisieren den tatsächlichen
   Kalender samt genau seinen reinen Abhängigkeiten. Ohne Mock-Scope ist er inaktiv;
   ein JSON-Grant wird abgewiesen. Alle bisherigen IO-/Require-Sperren bleiben.
+-Kleine native RLS-Gegenprobe: eine liegengebliebene Testrolle ohne BYPASSRLS
+  erklärt0 statt1 sichtbarer Zeile. Die neue Fixture entfernt jetzt nach ihren
+  eigenen DBs nur selbst angelegte Rollen mit passender OID/Marker/Attributen.
+  Je11 Prüfungen mit vorher fehlenden und vorhandenen Rollen:PASS; drei eigene
+  Rollen entfernt beziehungsweise alle vorhandenen Attribute unverändert.
+  Die Anwendung, Production-Rollen und spätere Z22-Prüfungen bleiben unverändert.
 -Pflicht-CI und unabhängige Abnahme werden am veröffentlichten Endkopf belegt.
   Historische End500-/Empfangs-/Quellen-/Atomic12ACK-Belege bleiben übernommen.
 

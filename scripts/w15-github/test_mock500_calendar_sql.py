@@ -19,6 +19,7 @@ MOCK_DB = 'helmut_w15_full500_20261028b'
 SERVICE_HASH = '78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f'
 MOCK_HASH = 'bd4ef2b3e73a9d64e6e2567eb8ad0c8ff717f2e63f7e8b60cac0f970f4eb850e'
 OLD_HASH = 'a649603fa8f18c6a3db65aab09b67e15d6bda80befa20e5394bce7eeda1d6415'
+FIXTURE_ROLES = ('service_role', 'anon', 'authenticated')
 
 
 def need(value):
@@ -47,7 +48,19 @@ def run_fixture():
     psql = shutil.which('psql'); need(psql)
     env = {'PATH': os.defpath, 'LC_ALL': 'C.UTF-8', 'PGCLIENTENCODING': 'UTF8',
            'PGCONNECT_TIMEOUT': '3', 'PGAPPNAME': 'w15-synthetic-calendar-fixture', **SERVICE}
-    owned = []; checks = 0
+    owned = []; checks = 0; created_roles = []
+
+    def ensure_role(role):
+        need(role in FIXTURE_ROLES)
+        exists = command('postgres', 'select exists(select 1 from pg_roles where rolname=' + literal(role) + ');')
+        need(exists in ('t', 'f'))
+        if exists == 't':
+            return
+        marker = 'w15-synthetic-role-' + uuid.uuid4().hex
+        oid = command('postgres', 'begin; create role ' + role + '; comment on role ' + role + ' is ' + literal(marker)
+                      + '; select oid::text from pg_roles where rolname=' + literal(role) + '; commit;')
+        need(re.fullmatch('[0-9]+', oid) and int(oid) > 0)
+        created_roles.append((role, marker, oid))
 
     def command(db, sql, *, reject=False):
         prefix = "set helmut.local_usage_experiment='on';"
@@ -94,9 +107,8 @@ def run_fixture():
 
     try:
         need(170000 <= int(command('postgres', 'show server_version_num;')) < 180000)
-        for role in ('service_role', 'anon', 'authenticated'):
-            command('postgres', "do $f$ begin if not exists(select 1 from pg_roles where rolname=" + literal(role)
-                    + ') then create role ' + role + '; end if; end;$f$;')
+        for role in FIXTURE_ROLES:
+            ensure_role(role)
         create(MOCK_DB)
         seed(MOCK_DB, 'new-calendar', auth()); query(MOCK_DB, bootstrap_sql('new-calendar'))
         before = read(MOCK_DB, 'new-calendar'); need(before['data']['fixture'] == {'preserved': True}); checks += 1
@@ -133,8 +145,17 @@ def run_fixture():
         for db, marker in reversed(owned):
             need(command('postgres', "select shobj_description(oid,'pg_database') from pg_database where datname=" + literal(db) + ';') == marker)
             command('postgres', 'drop database "' + db + '";')
+        for role, marker, oid in reversed(created_roles):
+            need(role in FIXTURE_ROLES)
+            need(command('postgres', 'select 1 from pg_roles where rolname=' + literal(role)
+                        + ' and not rolcanlogin and not rolsuper and not rolbypassrls and not rolcreatedb'
+                        + ' and not rolcreaterole and not rolreplication'
+                        + ' and oid::text=' + literal(oid)
+                        + " and shobj_description(oid,'pg_authid')=" + literal(marker) + ';') == '1')
+            command('postgres', 'drop role ' + role + ';')
     return {'status': 'PASS_NATIVE_MOCK_CALENDAR_SQL_BINDINGS', 'checks': checks,
-            'ownedDatabasesDropped': len(owned), 'profiles': 0, 'units': 0, 'modelCalls': 0, 'executionAuthority': False}
+            'ownedDatabasesDropped': len(owned), 'ownRolesDropped': len(created_roles),
+            'profiles': 0, 'units': 0, 'modelCalls': 0, 'executionAuthority': False}
 
 
 if __name__ == '__main__':

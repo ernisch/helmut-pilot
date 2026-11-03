@@ -6,7 +6,7 @@ Quellen-AsOf/1 ausPR1029/ec5b3149 erhalten. Genehmigter Simulationskalender/1
 angebunden:1.–7.11., eigenev7/Hash,44Auftragstage/60Bücher; Geld unverändert.
 Nur privates gebundenesGO, keinAPI/ENV-Schalter. Production/B2 bleiben unverändert.
 Alle500 D/Provider/Review-Bindungen vor Aktivierung Pflicht. Synthetik/nativeSQLPASS;
-Production-VM-SchutzPASS. Endkopf-CI/Review und Bindungsbelege:PR1030.
+Production-VM/RollenisolationPASS; Endkopf-CI/Review:PR1030.
 [Vertrag, Prüfbelege, nächste Einmalfreigabe](betrieb/w15-mock500-simulation-calendar-20261103.md).
 Kein neuer Originallauf. End50041325430429PASS/Empfang41037459441 übernommen;
 historischeFAILs bleiben. Mock500 erst nach konkretem neuemGO; Production gesperrt.
