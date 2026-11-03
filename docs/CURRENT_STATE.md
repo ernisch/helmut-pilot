@@ -1,15 +1,16 @@
 # CURRENT STATE — Helmut
 
-## W15: Mock500-Kalenderlauf FAIL (03.11.2026)
+## W15: Originalbuilder repariert, Mock500-GO offen (03.11.2026)
 
-[Run41694827024](https://github.com/ernisch/helmut-pilot/actions/runs/41694827024)/60019f03:
-**FAIL**,195s; `materials-builder`/`MATERIALS_MAIN_CHECK_286`, innereAssertionUNKNOWN.
-Peak2,77GB/Limit13,32GB;Swap/OOM/max0;8CleanupPASS;0Artefakte/aktiveManuals.
-Vollzählungen/Sicherung/DB-Endnull und Receipt-NonceUNKNOWN.
-GO/Linkrunde verbraucht, keinRetry. [Abnahme/Belege](betrieb/w15-mock500-calendar-builder-failure-41694827024-20261103.md).
-End50041325430429/Empfang41037459441 und Quellen-/Simulationsvertrag/1 erhalten;
-historischeFAILs unverändert,Productiongesperrt. Nächster Schritt: innere
-Builderprüfung sichererhalten/synthetisch; keinOriginallaufaufVerdacht.
+[Builderabnahme](betrieb/w15-original-builder-integration-20261103.md): echter gepinnter
+Builder/Validator mit500synthetischen Eingaben PASS;0Aktivierungen/Modellaufrufe.
+Reproduziert: falsche Startreihenfolge und unvollständiger Kosten-Teilauftrag.
+Innerer Start am Vorflug; Fristen unverändert;
+vollständigeC-Prüfung und alle500D/Provider/Reviewbindungen vorAktivierung Pflicht.
+Fehlerkanal erhält innere Prüfstelle. CI/Review imPR; GO fehlt.
+Run41694827024/60019f03 bleibt FAIL(195s,Peak2,77GB), ursprünglicherRohfehlerUNKNOWN;
+8CleanupPASS; Endzähler/Sicherung/DBnullUNKNOWN. End50041325430429 erhalten.
+Productiongesperrt; alteVerträge/FAILs erhalten.
 
 [Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
 auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.

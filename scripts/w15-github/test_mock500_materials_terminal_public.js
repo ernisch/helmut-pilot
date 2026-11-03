@@ -32,6 +32,18 @@ for(const receipt of fixtures){
   assert.deepEqual(out.runner.materialsFailure,receipt.runner.materialsFailure);
   assert.equal(out.retryAllowed,false);assert.equal(out.executionAuthority,false);
 }
+for(const prefix of ['BUILDER','CONTRACTS','DRAFT','COMMAND','COST','ADMISSION','EXECUTOR','CALENDAR','RESULTPLAN']){
+ for(const number of ['001','999','1024']){
+  const detail={schema:'helmut-w15-materials-first-failure/1',category:'MATERIALS_'+prefix+'_CHECK_'+number,
+   kind:'assertion',stage:'builder'};
+  // The real Python validators, worker failure packet and OS Pipe feed the JS
+  // action. No hand-copied public receipt can hide a rejecting inner consumer.
+  const raw=cp.execFileSync('python3',['-I','-B','-c',
+   "import importlib.util,json,sys;s=importlib.util.spec_from_file_location('inner_terminal',sys.argv[1]);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);print(json.dumps(m.public_roundtrip(m.terminal('mock500-controller-materials-builder',json.load(sys.stdin)))))",
+   path.join(__dirname,'test_mock500_materials_terminal.py')],{input:JSON.stringify(detail),encoding:'utf8',timeout:10000});
+  const out=run(JSON.parse(raw));assert.deepEqual(out.runner.materialsFailure,detail);assert.equal(out.retryAllowed,false);
+ }
+}
 for(const mutate of [v=>({...v,raw:CANARY}),v=>({...v,category:CANARY}),v=>({...v,kind:CANARY}),
   v=>({...v,stage:CANARY}),()=>CANARY,()=>null,()=>[],v=>({...v,category:'MATERIALS_MAIN_CHECK_1025'}),
   v=>({...v,category:'MATERIALS_MAIN_CHECK_001\n'})]){
@@ -47,4 +59,4 @@ const preserved=run(late);
 assert.deepEqual(preserved.runner.materialsFailure,fixtures[0].runner.materialsFailure);
 assert.equal(preserved.runner.secondaryReason,'SIGNAL_DURING_CLEANUP');
 assert.equal(preserved.cleanup.parentEmpty,'UNKNOWN');
-console.log('PASS 5 real terminal/public Materials phases, 9 private/malformed rejections and late-cleanup preservation; no originals or DB');
+console.log('PASS 5 real terminal/public Materials phases, 27 inner-check Pipe/action roundtrips, 9 private/malformed rejections and late-cleanup preservation; no originals or DB');

@@ -8,7 +8,10 @@ const binding=path.resolve(__dirname,'mock500_bindings.js');
 const CANARY='FICTIONAL_PRIVATE_MESSAGE_PATH_DO_NOT_PUBLISH';
 const prior={flag:process.env.HELMUT_W15_MATERIALS_DIAGNOSTIC,context:process.env.HELMUT_W15_MOCK_CONTEXT};
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'w15-material-error-'));fs.chmodSync(root,0o700);
+const originalMonitors=new Set(process.listeners('uncaughtExceptionMonitor'));
 function fixture(name){
+ for(const listener of process.listeners('uncaughtExceptionMonitor'))
+  if(!originalMonitors.has(listener))process.removeListener('uncaughtExceptionMonitor',listener);
  const folder=path.join(root,name);fs.mkdirSync(folder,{mode:0o700});
  process.env.HELMUT_W15_MATERIALS_DIAGNOSTIC='1';process.env.HELMUT_W15_MOCK_CONTEXT=path.join(folder,'context.PRIVATE.json');
  return {folder,observer:create(main,binding)};
@@ -56,6 +59,34 @@ try{
   assert.equal(first.stage,'entry');assert.equal(first.kind,'assertion');assert.match(first.category,/^MATERIALS_BINDING_CHECK_[0-9]{3}$/);
  }
  {
+  // Real VM throws reproduce the archived adapter's exact virtual filenames.
+  // They test error transport only, not the unavailable Original builder logic.
+  const vm=require('node:vm');
+  for(const [filename,prefix]of[['mock500-current-date-builder','BUILDER'],
+    ['mock500-current-date-contracts','CONTRACTS'],['mock500-original-draft-request','DRAFT']]){
+   const {folder,observer}=fixture(prefix);observer.enter('builder');
+   const build=vm.runInThisContext('(function(assert,canary){return function build(){assert.equal(1,2,canary);};})',
+    {filename})(assert,CANARY);
+   const outer=vm.runInThisContext('(function invoke(build){return build();})',{filename:main,lineOffset:285});
+   assert.throws(()=>outer(build),error=>{observer.record(error);return error.name==='AssertionError';});
+   const first=safe(folder);assert.equal(first.category,'MATERIALS_'+prefix+'_CHECK_001');
+   assert.equal(first.stage,'builder');
+   observer.record(new Error('LATER_ERROR_MUST_NOT_REPLACE_FIRST'));assert.deepEqual(safe(folder),first);
+  }
+  const {folder,observer}=fixture('actual-command');observer.enter('builder');
+  // Invoke the actual downstream validator, without fixtures granting validity.
+  assert.throws(()=>require('../../lib/helmut/synthetik-500-production-command').validate({}),error=>{
+   observer.record(error);return /^synthetik500-production-/.test(error.message);
+  });
+  const first=safe(folder);assert.match(first.category,/^MATERIALS_COMMAND_CHECK_[0-9]{3}$/);
+  for(const [index,filename]of['private/mock500-current-date-builder','mock500-current-date-builder-extra',
+    'mock500-current-date-builder\n'].entries()){
+   const {folder,observer}=fixture('unrecognised-'+index);observer.enter('builder');
+   observer.record({stack:CANARY+'\n    at build ('+filename+':123:2)\n    at main ('+main+':286:1)'});
+   assert.equal(safe(folder).category,'MATERIALS_MAIN_CHECK_286');
+  }
+ }
+ {
   const vm=require('node:vm'),{createRequire}=require('node:module');
   const fixtureData=JSON.parse(cp.execFileSync('python3',['-I','-B','-c',
    "import importlib.util,json,sys;s=importlib.util.spec_from_file_location('tiny_materials_public',sys.argv[1]);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);q,v=m.MaterialsResultChecks('runTest').fixture();q['maximumWallSeconds']=1080;r=m.HOST.receipt(q);r.update(status=m.CONTRACT.OUTER_STATUS,workerResult=v,cleanup=dict.fromkeys(('workerExited','workerIPCClosed','parentStopRequested','parentEmpty','parentUnitRemoved','serviceLauncherExited','launcherListenerClosed','launcherSignalsRestored'),'PASS'));print(json.dumps({'request':q,'receipt':r}))",
@@ -90,8 +121,10 @@ try{
     assert.equal(rejected.code,1);assert.equal(rejected.value.status,'FAIL_OR_BLOCKED_MOCK500_ACTION');
   }
  }
- console.log('PASS 6 bounded Materials first-error/public-action groups, including actual pre-main CLI failure; no originals or DB');
+ console.log('PASS 7 bounded Materials first-error/public-action groups, including real VM and downstream-validator throws; no Original builder, originals or DB');
 }finally{
+ for(const listener of process.listeners('uncaughtExceptionMonitor'))
+  if(!originalMonitors.has(listener))process.removeListener('uncaughtExceptionMonitor',listener);
  for(const [key,value]of[['HELMUT_W15_MATERIALS_DIAGNOSTIC',prior.flag],['HELMUT_W15_MOCK_CONTEXT',prior.context]])
   if(value===undefined)delete process.env[key];else process.env[key]=value;
  fs.rmSync(root,{recursive:true,force:true});

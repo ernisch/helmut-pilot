@@ -17,7 +17,7 @@ function closedMaterialsFailure(value){
     !['assertion','filesystem','module','sql','type','timeout','unknown'].includes(value.kind)||
     typeof value.category!=='string'||
     !(['MATERIALS_ENTRY_REJECTED','MATERIALS_PROCESS_REJECTED','MATERIALS_PROCESS_TIMEOUT','MATERIALS_FAILURE_UNAVAILABLE'].includes(value.category)||
-      /^MATERIALS_(?:MAIN|BINDING)_CHECK_(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2}|10[01][0-9]|102[0-4])$/.exec(value.category)?.[0]===value.category))return null;
+      /^MATERIALS_(?:MAIN|BINDING|BUILDER|CONTRACTS|DRAFT|COMMAND|COST|ADMISSION|EXECUTOR|CALENDAR|RESULTPLAN)_CHECK_(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2}|10[01][0-9]|102[0-4])$/.exec(value.category)?.[0]===value.category))return null;
   return {schema:value.schema,category:value.category,kind:value.kind,stage:value.stage};
 }
 function closedRunnerDetail(value){

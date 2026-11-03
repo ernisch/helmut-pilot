@@ -12,6 +12,16 @@ function create(mainFile, bindingFile) {
   if (!s.isDirectory() || s.isSymbolicLink() || s.uid !== process.getuid() || (s.mode & 511) !== 448)
     throw Error("MATERIALS_DIAGNOSTIC_CONTEXT_REJECTED");
   let stage = "entry", recorded = false;
+  // These are the exact VM names used by the hash-pinned Original adapter.
+  // Select the first recognised frame, never the outer builder.build caller.
+  const frames = [[bindingFile, "BINDING"], [mainFile, "MAIN"],
+    ["mock500-current-date-builder", "BUILDER"],
+    ["mock500-current-date-contracts", "CONTRACTS"],
+    ["mock500-original-draft-request", "DRAFT"],
+    ...[["synthetik-500-production-command", "COMMAND"], ["synthetik-500-kosten-plan", "COST"],
+      ["synthetik-500-kosten-admission", "ADMISSION"], ["synthetik-500-executor", "EXECUTOR"],
+      ["synthetik-500-mock-calendar", "CALENDAR"], ["synthetik-500-nachweis", "RESULTPLAN"]]
+      .map(([name, prefix]) => [path.resolve(path.dirname(mainFile), "../lib/helmut/" + name + ".js"), prefix])];
   function write(name, value) {
     const raw = Buffer.from(JSON.stringify(value));
     if (raw.length > 65536) throw Error("MATERIALS_DIAGNOSTIC_RECORD_BOUND");
@@ -31,10 +41,14 @@ function create(mainFile, bindingFile) {
     const stack = typeof error?.stack === "string" ? error.stack : "";
     for (const line of stack.split("\n")) {
       let found = false;
-      for (const [filename, prefix] of [[bindingFile, "BINDING"], [mainFile, "MAIN"]]) {
+      for (const [filename, prefix] of frames) {
         const escaped = filename.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         const match = line.match(new RegExp("^\\s+at .*?(?:\\(| )" + escaped + ":([0-9]+):[0-9]+\\)?$"));
         const number = match ? Number(match[1]) : 0;
+        // The validator's throw helpers do not identify the failed condition.
+        // Retain its first actual caller instead of reporting a generic throw.
+        if (!["MAIN", "BINDING", "BUILDER", "CONTRACTS", "DRAFT"].includes(prefix)
+          && /^\s+at (?:fail|need|requireThat|fordere) \(/.test(line)) continue;
         if (number >= 1 && number <= 1024) {
           category = "MATERIALS_" + prefix + "_CHECK_" + String(number).padStart(3, "0"); found = true; break;
         }

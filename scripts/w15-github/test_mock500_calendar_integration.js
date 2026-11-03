@@ -88,6 +88,13 @@ plan.routeContract = route;
     assert.throws(() => K.auftragsStand(auth, day)); assert.equal(EU.isRoute(route), false);
     await Harness.withBound(bound, null, async () => {
       assert.equal(EU.isRoute(route), true); assert.equal(A.pruefeRouteContract(route, plan), P.hash(route));
+      const later={...plan,startsAtUTC:new Date(now.getTime()).toISOString()};
+      Cal.requirePlan(later);assert.equal(A.pruefeRouteContract(route,later),P.hash(route));
+      const partial=Object.fromEntries(['runtimeManifestHash','productionCommit','startsAtUTC','endsAtUTC'].map(k=>[k,later[k]]));
+      assert.equal(A.pruefeRouteContract(route,partial),P.hash(route));
+      assert.throws(()=>A.pruefeRouteContract(route,{...partial,productionCommit:'0'.repeat(40)}));
+      for(const startsAtUTC of [new Date(start-1).toISOString(),plan.endsAtUTC])
+        assert.throws(()=>Cal.requirePlan({...plan,startsAtUTC}),/plan-binding/);
       assert.equal(K.auftragsStand(auth, day).limitMicroUsd, EU.ORDER_MICRO_USD);
       K.pruefeStart(auth, day, { ok: true, used: 0 });
       assert.equal(P.hash(auth[K.KEY]), historyBefore);
@@ -121,6 +128,10 @@ plan.routeContract = route;
       assert(!e.phases?.some(p => p.name === "boundMockCalendarScope")); assert(!e.message.includes("mock-calendar")); return true;
     });
     await Cal.run(grant, async () => {
+      const partial={operationId:plan.operationId,runtimeManifestHash:plan.runtimeManifestHash,
+        productionCommit:plan.productionCommit,startsAtUTC:plan.startsAtUTC,endsAtUTC:plan.endsAtUTC};
+      assert.equal(A.pruefeRouteContract(route,partial),P.hash(route));
+      assert.throws(()=>A.pruefeRouteContract(route,{...partial,operationId:'synthetik500-wrong-operation'}));
       assert(Cal.workerSnapshot(workerInput)); assert.equal(Cal.workerSnapshot({ ...workerInput, commandHash: "0".repeat(64) }), null);
       await assert.rejects(Runner.validateStoredContent(workerInput, 10000), e => {
         assert(e.phases?.some(p => p.name === "boundMockCalendarScope")); assert(!e.message.includes("mock-calendar")); return true;

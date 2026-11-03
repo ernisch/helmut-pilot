@@ -84,7 +84,7 @@ def materials_failure(value):
     if type(category) is not str or not (category in (
             'MATERIALS_ENTRY_REJECTED', 'MATERIALS_PROCESS_REJECTED',
             'MATERIALS_PROCESS_TIMEOUT', 'MATERIALS_FAILURE_UNAVAILABLE') or
-            re.fullmatch(r'MATERIALS_(?:MAIN|BINDING)_CHECK_(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2}|10[01][0-9]|102[0-4])', category)):
+            re.fullmatch(r'MATERIALS_(?:MAIN|BINDING|BUILDER|CONTRACTS|DRAFT|COMMAND|COST|ADMISSION|EXECUTOR|CALENDAR|RESULTPLAN)_CHECK_(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2}|10[01][0-9]|102[0-4])', category)):
         return None
     return dict(value)
 

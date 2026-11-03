@@ -274,7 +274,10 @@ async function main() {
     }
     Object.assign(route.route, { productionCommit: config.commit, deploymentId: config.deploymentId, deploymentHost: config.host });
     Object.assign(route.management, { validFromUTC: plannedWindow.startsAtUTC, validUntilUTC: end });
-    const startsAtUTC = plannedWindow.startsAtUTC;
+    // The outer host window already started before receipt/restore. The real
+    // command starts at this actual fresh preflight, never before construction
+    // or its own runtime snapshot. Its outer processing deadline stays fixed.
+    const startsAtUTC = BOUND ? Bindings.commandWindow(BOUND, observed).startsAtUTC : plannedWindow.startsAtUTC;
     const currentConfig = { selector: { operationId }, runId: "nachlauf500-" + Date.now(), constructedAtUTC,
       window: { startsAtUTC, endsAtUTC: end } };
     const oldOperation = oldU.value.command.slot.plan.operationId, oldJournal = auth[J.KEY].operations[oldOperation]; assert(oldJournal);
@@ -295,6 +298,9 @@ async function main() {
       assert.equal(requests[index].owner,fixtures[index].owner);assert.equal(requests[index].requestBodySHA256,fixtures[index].requestBodySHA256);
     }
     const selector = { operationId, commandHash: built.commandHash };
+    // The archived builder explicitly does not validate full C. Accept the
+    // real complete command before any native profile activation is possible.
+    assert.equal(C.validate(built.command).commandHash, built.commandHash);
     const preactivationBindings = SourceReplay.verifyActualBindings(fixtures, requests, { prepared: !!sourceReplayScope });
     const sourceReplay = sourceReplayScope ? SourceReplay.executionRecord(sourceReplayScope, fixtures, requests, selector) : undefined;
     if (sourceReplayScope) sourceReplayScope.issuer.revoke(sourceReplayScope.grant);

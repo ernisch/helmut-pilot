@@ -76,6 +76,9 @@ class MaterialsTerminalChecks(unittest.TestCase):
         good = [first(kind=k) for k in M.KINDS] + [first(stage=s) for s in M.STAGES]
         good += [first(category='MATERIALS_MAIN_CHECK_' + str(n).zfill(3))
                  for n in (1, 9, 10, 99, 100, 999, 1000, 1019, 1020, 1024)]
+        good += [first(category='MATERIALS_' + prefix + '_CHECK_' + str(n).zfill(3))
+                 for prefix in ('BUILDER', 'CONTRACTS', 'DRAFT', 'COMMAND', 'COST', 'ADMISSION', 'EXECUTOR', 'CALENDAR', 'RESULTPLAN')
+                 for n in (1, 999, 1024)]
         good += [first(category=c) for c in ('MATERIALS_ENTRY_REJECTED', 'MATERIALS_PROCESS_REJECTED',
                                           'MATERIALS_PROCESS_TIMEOUT', 'MATERIALS_FAILURE_UNAVAILABLE')]
         for value in good:
@@ -84,6 +87,9 @@ class MaterialsTerminalChecks(unittest.TestCase):
                first(schema=CANARY), first(category=CANARY), first(category=[]),
                first(category='MATERIALS_MAIN_CHECK_001\n')]
         bad += [first(category='MATERIALS_MAIN_CHECK_' + str(n).zfill(3)) for n in (0, 1025, 9999)]
+        bad += [first(category='MATERIALS_' + prefix + '_CHECK_' + str(n).zfill(3))
+                for prefix in ('BUILDER', 'CONTRACTS', 'DRAFT', 'COMMAND', 'COST', 'ADMISSION', 'EXECUTOR', 'CALENDAR', 'RESULTPLAN', 'UNBOUND')
+                for n in (0, 1025, 9999)]
         for value in bad:
             with self.subTest(value=type(value).__name__):
                 self.assertIsNone(D.materials_failure(value))

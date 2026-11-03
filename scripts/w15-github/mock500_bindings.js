@@ -99,6 +99,16 @@ function fixedWindow(bound, now = new Date().toISOString()) {
   }
   return structuredClone(w);
 }
+function commandWindow(bound, observed) {
+  const outer = fixedWindow(bound, observed);
+  if (bound.simulationCalendarAuthorization === undefined)
+    return { startsAtUTC: outer.startsAtUTC, endsAtUTC: outer.endsAtUTC };
+  const active = require("../../lib/helmut/synthetik-500-mock-calendar").active();
+  assert(active, "w15-mock-command-calendar-authority-required");
+  assert.deepEqual(active.authorization, bound.simulationCalendarAuthorization);
+  assert.deepEqual(active.window, outer);
+  return { startsAtUTC: observed, endsAtUTC: outer.endsAtUTC };
+}
 function qualifiedAssets(bound) {
   const historical = JSON.parse(privateBytes(bound.assets.qualificationReport, 16 * 1024 ** 2));
   assert.equal(historical.status, "PASS_ALL500_CURRENT_ORIGINAL_MOCK_BINDINGS");
@@ -197,4 +207,4 @@ function originalBuilder(bound, root, sourceReplayScope = null) {
   return { build: builder.build, prepareDraft, sourcePins: pins };
 }
 module.exports = { BASE, DB, namespace, privateBytes, readBound, memoryLimits, memoryAssessment,
-  currentCalendar, fixedWindow, qualifiedAssets, calendarRow, calendarFixture, originals, originalBuilder };
+  currentCalendar, fixedWindow, commandWindow, qualifiedAssets, calendarRow, calendarFixture, originals, originalBuilder };

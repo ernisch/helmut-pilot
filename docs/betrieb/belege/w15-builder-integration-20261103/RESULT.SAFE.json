@@ -1,0 +1,36 @@
+{
+  "status": "PASS_PINNED_ORIGINAL_BUILDER_AND_REAL_COMMAND_VALIDATOR_SYNTHETIC_ONLY",
+  "archiveSHA256": "c979e18775f285ddf7af4328c8efc8f0642954eb6d0e52e50636d3b4ab902d15",
+  "sourcePins": [
+    {
+      "name": "contracts.js",
+      "bytes": 6100,
+      "sha256": "44210461f021f78df49bd17536d562d1125e8df16eb86360a2ed7af5a7765f46"
+    },
+    {
+      "name": "build-command.js",
+      "bytes": 7264,
+      "sha256": "594e2d459b7c5f61174ec8e87c917098c4f27a032ad90e8e50edcbe28d9c93f2"
+    },
+    {
+      "name": "original-draft-request.js",
+      "bytes": 1525,
+      "sha256": "d69eb7acd395416b83ba5a7b726b4c8123a481937410aded7f3820804708a3a2"
+    }
+  ],
+  "profiles": 500,
+  "preparedRequests": 500,
+  "commandUnits": 500,
+  "intents": 1000,
+  "expectedResultPositions": 1500,
+  "originalInputsQualified": false,
+  "profileActivations": 0,
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "commandWindowStartAtActualPreflight": true,
+  "outerDeadlineUnchanged": true,
+  "executionAuthority": false,
+  "mock500Acceptance": false,
+  "productionAcceptance": false,
+  "selectorBoundValidatorPassed": true
+}
