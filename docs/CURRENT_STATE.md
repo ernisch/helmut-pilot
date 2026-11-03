@@ -1,16 +1,15 @@
 # CURRENT STATE — Helmut
 
-## W15: Originalbuilder repariert, Mock500-GO offen (03.11.2026)
+## W15: begrenzte Mock500-Serie vorbereitet (04.11.2026)
 
-[Builderabnahme](betrieb/w15-original-builder-integration-20261103.md): echter gepinnter
-Builder/Validator mit500synthetischen Eingaben PASS;0Aktivierungen/Modellaufrufe.
-Reproduziert: falsche Startreihenfolge und unvollständiger Kosten-Teilauftrag.
-Innerer Start am Vorflug; Fristen unverändert;
-vollständigeC-Prüfung und alle500D/Provider/Reviewbindungen vorAktivierung Pflicht.
-Fehlerkanal erhält innere Prüfstelle. CI/Review imPR; GO fehlt.
-Run41694827024/60019f03 bleibt FAIL(195s,Peak2,77GB), ursprünglicherRohfehlerUNKNOWN;
-8CleanupPASS; Endzähler/Sicherung/DBnullUNKNOWN. End50041325430429 erhalten.
-Productiongesperrt; alteVerträge/FAILs erhalten.
+[Serienvertrag](betrieb/w15-mock500-bounded-night-series-20261104.md):maximal3Läufe,
+0,05USDjeLauf/0,15gesamt. ErsterKopf789/PR1032/PflichtCI41707992564PASS;
+weitereKöpfe nur nach belegterReparatur/CI/Review. Serienabnahme/Zeitsteuerung offen.
+[Originalbuilder](betrieb/w15-original-builder-integration-20261103.md):500synthetische
+EingabenPASS; vollständigesC/500D-Provider-Reviewbindungen vorAktivierung Pflicht.
+End50041325430429/Empfang41037459441 übernommen. Run41694827024/600bleibtFAIL
+(195s,2,77GB),RohursacheUNKNOWN;8CleanupPASS,Endzähler/Sicherung/DBnullUNKNOWN.
+KeinMock500PASS/Production; alteVerträge/FAILs erhalten.
 
 [Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
 auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.
