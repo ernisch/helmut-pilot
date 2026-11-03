@@ -143,7 +143,7 @@ def validate_atomic_auth(repo=REPO):
             'APIsRepeated': False, 'executionAuthority': False}
 
 
-def validate_source_compatibility(qualification, repo=REPO):
+def validate_source_compatibility(qualification, repo=REPO, *, source_replay=False):
     """Reuse16 exact source pins and the two already reviewed code segments.
 
     This reads code bytes only. It neither rebuilds a source candidate nor
@@ -164,8 +164,23 @@ def validate_source_compatibility(qualification, repo=REPO):
         need(type(relative) is str and not relative.startswith('/')
              and all(part not in ('', '.', '..') for part in relative.split('/')))
         return repo / relative
+    rebound_sources = {}
+    if source_replay:
+        bridge = decode((repo / 'scripts/w15-github/mock500_source_replay_pins.json').read_bytes())
+        need(set(bridge) == {'contract', 'historicalSourceRebindings'}
+             and bridge['contract'] == 'helmut-w15-mock-historical-qualified-source-replay/1')
+        rows = bridge['historicalSourceRebindings']
+        need(type(rows) is list and len(rows) == 3)
+        rebound_sources = {row['oldPin']['path']: row for row in rows}
+        need(set(rebound_sources) == {'lib/helmut/lage.js', 'scripts/fixtures/w15-unit0-provider.js',
+                                     'scripts/fixtures/w15-full500-provider.js'})
+        historical = {row['path']: row for row in old['unchangedSourcePins']}
+        for name, row in rebound_sources.items():
+            need(set(row) == {'oldPin', 'currentPin'} and row['oldPin'] == historical[name]
+                 and set(row['currentPin']) == {'bytes', 'sha256'})
     for row in old['unchangedSourcePins']:
-        file_bytes(public_path(row['path']), pin(row), private=False, maximum=16 * 1024 * 1024)
+        expected_pin = rebound_sources[row['path']]['currentPin'] if row['path'] in rebound_sources else pin(row)
+        file_bytes(public_path(row['path']), expected_pin, private=False, maximum=16 * 1024 * 1024)
     need({row['oldPin']['path'] for row in old['reboundSourcePins']} == {'lib/helmut/ai.js', 'lib/helmut/storage.js'})
     for row in old['reboundSourcePins']:
         name = row['oldPin']['path']
@@ -180,12 +195,14 @@ def validate_source_compatibility(qualification, repo=REPO):
             segment = raw[start:end]
         need(len(segment) == row['unchangedSegmentBytes']
              and hashlib.sha256(segment).hexdigest() == row['unchangedSegmentSHA256'])
-    return {'status': 'PASS_REUSED_16_EXACT_SOURCES_AND_2_SCOPED_CODE_BINDINGS_ONLY',
-            'unchangedSources': 16, 'scopedCodeBindings': 2, 'constructorChecksRepeated': False,
+    return {'status': ('PASS_REUSED_13_EXACT_SOURCES_AND_5_SCOPED_CODE_BINDINGS_ONLY' if source_replay
+                       else 'PASS_REUSED_16_EXACT_SOURCES_AND_2_SCOPED_CODE_BINDINGS_ONLY'),
+            'unchangedSources': 13 if source_replay else 16, 'scopedCodeBindings': 5 if source_replay else 2, 'constructorChecksRepeated': False,
+            **({'sourceContract': bridge['contract']} if source_replay else {}),
             'sourceDatesRewritten': False, 'executionAuthority': False}
 
 
-def open_inputs(runtime_inputs, *, context, binding_raw, binding_sha256, asset_paths, observed_context, repo=REPO):
+def open_inputs(runtime_inputs, *, context, binding_raw, binding_sha256, asset_paths, observed_context, repo=REPO, source_replay_authorization=None):
     """No file creation. Missing qualified/private assets are an explicit gate."""
     try:
         module = sys.modules.get('w15_github_runtime_inputs')
@@ -220,7 +237,13 @@ def open_inputs(runtime_inputs, *, context, binding_raw, binding_sha256, asset_p
         need(type(observed_context) is dict and observed_context.get('mode') in ('mock500-full-gated', 'mock500-full-phased-gated','mock500-full-functional-gated','mock500-full-host-functional-gated','mock500-materials-diagnostic-gated')
              and observed_context == {key: context[key] for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')}
              | {'branch': 'refs/heads/codex/w15-github-end500-preparation-20261028', 'mode': observed_context['mode']})
+        if source_replay_authorization is not None:
+            need(observed_context['mode'] == 'mock500-full-host-functional-gated'
+                 and source_replay_authorization['contract'] == 'helmut-w15-mock-historical-qualified-source-replay/1'
+                 and all(source_replay_authorization[key] == context[key]
+                         for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')))
         result = Mock500Inputs(TOKEN, runtime_inputs, context, record, asset_paths, Path(repo), binding_sha256)
+        result._source_replay = source_replay_authorization is not None
         result.check_sources()
         return result
     except MockInputError:
@@ -235,6 +258,7 @@ class Mock500Inputs:
         self._received, self._context, self._record = received, copy.deepcopy(context), copy.deepcopy(record)
         self._paths, self._repo, self._digest = dict(paths), repo, digest
         self._claimed = False
+        self._source_replay = False
 
     def controller_context(self):
         return copy.deepcopy(self._context)
@@ -284,7 +308,7 @@ class Mock500Inputs:
         for key, old in (('qualifiedRows', 'rows'), ('qualifiedFixtures', 'fixtures'), ('qualifiedNative', 'native'), ('qualifiedDerivations', 'derivations'), ('currentReplacements', None)):
             pin = qualification['currentNativeReplacementsPin'] if old is None else qualification['qualifiedAssets'][old]
             need({k: pin[k] for k in ('bytes', 'sha256')} == self._record['assets'][key])
-        validate_source_compatibility(qualification, self._repo)
+        validate_source_compatibility(qualification, self._repo, source_replay=self._source_replay)
         need(self._record['assets']['publicationPolicy']['sha256'] == '274033cdfdd5f1527d0e961a6c00482d61b7be317eeea03e736a6a5948aa6a04'
              and self._record['assets']['originalBuilderArchive'] == {'bytes': 269598, 'sha256': 'c979e18775f285ddf7af4328c8efc8f0642954eb6d0e52e50636d3b4ab902d15'})
         validate_atomic_auth(self._repo)

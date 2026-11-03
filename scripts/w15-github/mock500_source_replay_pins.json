@@ -1,0 +1,38 @@
+{
+  "contract": "helmut-w15-mock-historical-qualified-source-replay/1",
+  "historicalSourceRebindings": [
+    {
+      "oldPin": {
+        "path": "scripts/fixtures/w15-unit0-provider.js",
+        "bytes": 8826,
+        "sha256": "fdf4ac5a036dfa03347a562c99ef3a330080e5b23db0ea5e9cd47be3ce95e221"
+      },
+      "currentPin": {
+        "bytes": 8996,
+        "sha256": "517298b2a61a77e667fc11767d5e2d7eb50b0253fc60bc476167cfe8887884be"
+      }
+    },
+    {
+      "oldPin": {
+        "path": "scripts/fixtures/w15-full500-provider.js",
+        "bytes": 6616,
+        "sha256": "df71e0c063274f0d65d6eaa7ab291b42d435b985d15824b785e2ac6e22507d6a"
+      },
+      "currentPin": {
+        "bytes": 7153,
+        "sha256": "8a8231134e2e7bcfb89da6a25854d86e7d8cb7d843c9d3dc4214885acdb6c1f8"
+      }
+    },
+    {
+      "oldPin": {
+        "path": "lib/helmut/lage.js",
+        "bytes": 56155,
+        "sha256": "b69d8abc8793be120980bfd86f3d4e65682a6f885ddd6d16b10671d4c67995b3"
+      },
+      "currentPin": {
+        "bytes": 58985,
+        "sha256": "3a478778baded4b1fd975f7c712daa974323d2d196fc54906445cbcd781d2b96"
+      }
+    }
+  ]
+}

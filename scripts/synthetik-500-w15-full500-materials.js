@@ -157,6 +157,7 @@ async function main() {
   const get = originals(), packet = get("package").value, originalRows = get("normalizedCurrentPolicy").value;
   DIAGNOSTIC.enter("qualified");
   const qualified = qualifiedAssets(); let { rows, fixtures, derivations: derivationReports } = qualified;
+  const SourceReplay = require("./w15-github/mock500_source_replay"); let sourceReplayScope = null;
   DIAGNOSTIC.enter("original-upacket");
   const { native, report: nativeDerivation } = qualified.nativeBundle, oldU = get("originalUPacket");
   assert.equal(rows.length, 500); assert.equal(fixtures.length, 500); assert.equal(derivationReports.length, 500);
@@ -186,7 +187,8 @@ async function main() {
       const rebased = rows.map(row => Bindings.calendarRow(row, qualified.executionISO));
       rows = rebased.map(item => item.row);
       const byOwner = new Map(rows.map(row => [row.profile.id, row]));
-      fixtures = fixtures.map(fixture => Bindings.calendarFixture(fixture, byOwner.get(fixture.owner)));
+      sourceReplayScope = SourceReplay.preparation(BOUND, qualified, rows);
+      fixtures = fixtures.map(fixture => Bindings.calendarFixture(fixture, byOwner.get(fixture.owner), sourceReplayScope));
       for (const item of rebased) for (const changed of item.report.changedPaths) changedPaths.add(changed);
       retain("CURRENT_CALENDAR_DERIVATION.PRIVATE.json", { status: "PASS_CURRENT_CALENDAR_DERIVATION_ONLY",
         historicalQualificationExecutionISO: qualified.historicalExecutionISO, executionISO: qualified.executionISO,
@@ -262,6 +264,36 @@ async function main() {
       stage("install-real-prepared0-runtime"); sql(G.baueSql(prepare, bytes, Date.now()));
       pass("real native runtime prepared0 installed without activation");
     }
+    const route = structuredClone(native.costInputs.routeContract);
+    Object.assign(route, { runtimeManifestHash: P.hash(runtimeManifest), orderRenewalHash: EU.ORDER_RENEWAL_HASH });
+    Object.assign(route.route, { productionCommit: config.commit, deploymentId: config.deploymentId, deploymentHost: config.host });
+    Object.assign(route.management, { validFromUTC: plannedWindow.startsAtUTC, validUntilUTC: end });
+    const startsAtUTC = plannedWindow.startsAtUTC;
+    const currentConfig = { selector: { operationId }, runId: "nachlauf500-" + Date.now(), constructedAtUTC,
+      window: { startsAtUTC, endsAtUTC: end } };
+    const oldOperation = oldU.value.command.slot.plan.operationId, oldJournal = auth[J.KEY].operations[oldOperation]; assert(oldJournal);
+    const prior = { predecessor: { operationId: oldOperation, commandHash: P.hash(oldU.value.command), planHash: oldU.value.command.slot.planHash,
+      journalHash: P.hash(oldJournal) }, originalPacketPin: oldU.pin, originalJournalHash: P.hash(oldJournal) };
+    DIAGNOSTIC.enter("builder");
+    const builder = BOUND ? Bindings.originalBuilder(BOUND, ROOT, sourceReplayScope) : legacyOriginalBuilder(), requests = [];
+    stage("bind-qualified-all500-current-requests-with-fresh-native-command");
+    const built = builder.build({ approval: { status: "ACCEPTED_ALL500_ORDINARY_V1_AND_ACTUAL_NATIVE_BINDING", actualNativeInputEquality: true,
+      positiveBoundOrdinaryVerdicts: 500, scope: "SYNTHETIC PERFORMANCE FIXTURE ONLY; NO PROFESSIONAL/PRODUCTION OR UNIT EXECUTION APPROVAL" },
+      config: currentConfig, paket: packet, rows, native, runtime: { runtimeManifest, snapshot, productionCommit: config.commit,
+        briefingFensterStart: qualified.report.briefingReadingWindow.start }, routeContract: route, prior,
+      prepareDraft: row => { const result = builder.prepareDraft(row, route, native.routeId);
+        requests.push({ owner: row.profile.id, requestBodySHA256: sha(result.requestBody), inputDate: row.briefingDatum,
+          contextSources: result.sources.length }); return result; } });
+    assert.equal(requests.length,500); assert(requests.every(x=>x.contextSources>0));
+    for(let index=0;index<500;index++){
+      assert.equal(requests[index].owner,fixtures[index].owner);assert.equal(requests[index].requestBodySHA256,fixtures[index].requestBodySHA256);
+    }
+    const selector = { operationId, commandHash: built.commandHash };
+    const preactivationBindings = SourceReplay.verifyActualBindings(fixtures, requests, { prepared: !!sourceReplayScope });
+    const sourceReplay = sourceReplayScope ? SourceReplay.executionRecord(sourceReplayScope, fixtures, requests, selector) : undefined;
+    if (sourceReplayScope) sourceReplayScope.issuer.revoke(sourceReplayScope.grant);
+    // Every genuine D constructor and its provider/review fixture must match
+    // before any profile can become active. A failed binding leaves zero active.
     if (UNIT0) {
       const owner = JSON.parse(privateFile(path.join(WORK, "OWNER_GO.PRIVATE.json")));
       DIAGNOSTIC.enter("activation");
@@ -294,43 +326,20 @@ async function main() {
       retain("ACTIVATION.SAFE.json",{status:"PASS",nativeReceipt,temporaryActiveProfiles:500,maximumUnits:500,
         sourceUnchanged:JSON.stringify(state(SOURCE_DB))===JSON.stringify(beforeSource),productionWatcherClaimed:false});
     }
-    const route = structuredClone(native.costInputs.routeContract);
-    Object.assign(route, { runtimeManifestHash: P.hash(runtimeManifest), orderRenewalHash: EU.ORDER_RENEWAL_HASH });
-    Object.assign(route.route, { productionCommit: config.commit, deploymentId: config.deploymentId, deploymentHost: config.host });
-    Object.assign(route.management, { validFromUTC: plannedWindow.startsAtUTC, validUntilUTC: end });
-    const startsAtUTC = plannedWindow.startsAtUTC;
-    const currentConfig = { selector: { operationId }, runId: "nachlauf500-" + Date.now(), constructedAtUTC,
-      window: { startsAtUTC, endsAtUTC: end } };
-    const oldOperation = oldU.value.command.slot.plan.operationId, oldJournal = auth[J.KEY].operations[oldOperation]; assert(oldJournal);
-    const prior = { predecessor: { operationId: oldOperation, commandHash: P.hash(oldU.value.command), planHash: oldU.value.command.slot.planHash,
-      journalHash: P.hash(oldJournal) }, originalPacketPin: oldU.pin, originalJournalHash: P.hash(oldJournal) };
-    DIAGNOSTIC.enter("builder");
-    const builder = BOUND ? Bindings.originalBuilder(BOUND, ROOT) : legacyOriginalBuilder(), requests = [];
-    stage("bind-qualified-all500-current-requests-with-fresh-native-command");
-    const built = builder.build({ approval: { status: "ACCEPTED_ALL500_ORDINARY_V1_AND_ACTUAL_NATIVE_BINDING", actualNativeInputEquality: true,
-      positiveBoundOrdinaryVerdicts: 500, scope: "SYNTHETIC PERFORMANCE FIXTURE ONLY; NO PROFESSIONAL/PRODUCTION OR UNIT EXECUTION APPROVAL" },
-      config: currentConfig, paket: packet, rows, native, runtime: { runtimeManifest, snapshot, productionCommit: config.commit,
-        briefingFensterStart: qualified.report.briefingReadingWindow.start }, routeContract: route, prior,
-      prepareDraft: row => { const result = builder.prepareDraft(row, route, native.routeId);
-        requests.push({ owner: row.profile.id, requestBodySHA256: sha(result.requestBody), inputDate: row.briefingDatum,
-          contextSources: result.sources.length }); return result; } });
-    assert.equal(requests.length,500); assert(requests.every(x=>x.contextSources>0));
-    for(let index=0;index<500;index++){
-      assert.equal(requests[index].owner,fixtures[index].owner);assert.equal(requests[index].requestBodySHA256,fixtures[index].requestBodySHA256);
-    }
     const encoded = require("../lib/helmut/synthetik-500-direct-codec").encode(built.packet);
-    const selector = { operationId, commandHash: built.commandHash };
     DIAGNOSTIC.enter("output");
     const commandPin = retain("current-command.PRIVATE.json", encoded);
     sql("begin;insert into helmut_store(id,data)values(" + literal("synthetik500-command-" + operationId) + "," + json(encoded) + ");commit;");
     assert.deepEqual(state(SOURCE_DB),beforeSource);
-    retain("processing-materials.PRIVATE.json", { selector, runId: currentConfig.runId, startsAtUTC, endsAtUTC:end,completionDeadlineUTC:plannedWindow.completionDeadlineUTC,
+    retain("processing-materials.PRIVATE.json", { ...(sourceReplay ? { sourceReplay } : {}), preactivationBindings, selector, runId: currentConfig.runId, startsAtUTC, endsAtUTC:end,completionDeadlineUTC:plannedWindow.completionDeadlineUTC,
       planHash:built.command.slot.planHash, paketHash:packet.bindung.paketHash, commandPin,
       controlHash:C.controlHash(auth), booksHash:C.booksHash(auth), sourceReceiptSHA256:RECEIPT_HASH,
       database: DB, runtimeManifestHash:P.hash(runtimeManifest), productionCommit:config.commit,
       scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION", full500DispatchAuthorized:!ATOMIC_PREPARED0 && BOUND?.materialsDiagnosticOnly !== true, activatedProfiles:UNIT0?500:0 });
     retain("PROCESSING_INPUTS.SAFE.json", { status:"PASS_ALL500_ACTUAL_D_PREPARATIONS", scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION",
       actualOriginalPreparer:true, currentDescriptorAndActualRequestDatesMatch:true, originalFilesModified:false,
+      ...(sourceReplay ? { sourceContract:sourceReplay.contract, sourceAsOfISO:sourceReplay.sourceAsOfISO,
+        historicalSources:true, currentSourceAcceptance:false, preactivationBindings } : {}),
       sourceRestorePreserved:true, sourceComparisonScope:BOUND?"immutable original file pins and fresh isolated restored baseline; no original source database contacted":"mandate/store hashes and profile counts", sourceReceiptSHA256:RECEIPT_HASH,
       sourceDatesRewritten:false,qualificationPin:qualified.reportPin,qualifiedAssets:qualified.report.qualifiedAssets,
       qualifiedExecutionISO:qualified.executionISO,currentNativeDatabasePin,nativeDerivation,derivedRows:derivationReports.length,

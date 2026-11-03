@@ -87,6 +87,8 @@ def validate_start(request, now):
          and type(request['sourceQualification'].get('sha256')) is str
          and SHA.fullmatch(request['sourceQualification']['sha256']))
     approval = request['approval']
+    if 'sourceContract' in approval:
+        need(approval['sourceContract'] == load('mock500_start').SOURCE_REPLAY)
     need(approval.get('schema') == 'helmut-w15-mock500-start-approval/1'
          and approval.get('scope') == SCOPE and approval.get('authorized') is True
          and all(approval.get(k) == request[k]

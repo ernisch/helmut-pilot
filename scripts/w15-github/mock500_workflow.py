@@ -297,7 +297,8 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
             **{key: manifest['binaries'][key]['path'] for key in ('node', 'postgrest')}}
         inputs = component('mock500_inputs').open_inputs(runtime, context=context,
             binding_raw=reception['binding_raw'], binding_sha256=bindings['inputBindingSHA256'],
-            asset_paths=paths, observed_context=observed_context(manifest))
+            asset_paths=paths, observed_context=observed_context(manifest),
+            source_replay_authorization=start.admission.get('sourceReplayAuthorization'))
         need(inputs.declared_additional_input_bytes() == bindings['additionalAssetBytes'])
         if manifest['mode'] == MATERIALS:
             phase = 'mock500'

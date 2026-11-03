@@ -1,14 +1,15 @@
 # CURRENT STATE — Helmut
 
-## W15: historische Quellenanbindung BLOCKED (03.11.2026)
+## W15: historische Mock-Quellenanbindung (03.11.2026)
 
-Replay/1-Entwicklung freigegeben; keine Runtimeänderung.
-Mock-Dateien allein reichen nicht: finite-Apppfad koppelt Quellen- und Kalenderzeit.
-Benötigt: eng gebundene Opt-in-AsOf-Schnittstelle im Apppfad; noch unfreigegeben.
-[Run41620895888](https://github.com/ernisch/helmut-pilot/actions/runs/41620895888):
-500 geprüft,120gültig/380zeitbedingtleer,sonstige0;11Originale/Hash/GPGPASS.
-GO verbraucht,keinRetry;End500PASS erhalten. Kein FullMock/Production.
-[Codebeleg und Umfangsfreigabe](betrieb/w15-mock500-input-context-preflight-20261103.md).
+Replay/1 inklusive enger App-AsOf-Schnittstelle entwickelt; kein Originallauf.
+Opake Berechtigung aus gebundenem Mock-GO; reale Uhren/Production/B2 unverändert.
+Alle500 D/Provider/Review-Konstruktorbindungen müssen vor Aktivierung bestehen.
+Gezielte SynthetikPASS; Pflicht-CI und unabhängige Endabnahme siehe
+[Vertrag/Startblocker](betrieb/w15-mock500-historical-source-replay-20261103.md).
+Zusätzlicher Startblocker belegt: innerer EU-Kostenvertrag endet31.10.; kein
+November-Simulationsvertrag freigegeben. Keine Kosten-/RAM-Grenzen geändert.
+End50041325430429PASS/Empfang41037459441 übernommen; historischeFAILs bleiben.
 
 [Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
 auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.

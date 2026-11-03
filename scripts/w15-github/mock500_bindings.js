@@ -116,7 +116,7 @@ function qualifiedAssets(bound) {
 function calendarRow(row, executionISO) {
   return require("../fixtures/w15-local-calendar").rebindOrdinaryRow(row, executionISO);
 }
-function calendarFixture(fixture, row) {
+function calendarFixture(fixture, row, sourceReplayScope = null) {
   // Reconstruct only the request binding for the changed real date. Responses,
   // source identities and independently reviewed content must remain exact.
   const old = structuredClone(fixture);
@@ -131,6 +131,7 @@ function calendarFixture(fixture, row) {
     Object.assign(process.env, mock);
     prepared = require("../fixtures/w15-full500-provider").prepare({ index: old.index, row,
       model: old.model, responsesURL: old.responsesURL, mockUsage: old.mockUsage,
+      ...(sourceReplayScope ? { sourceReplayToken: require("./mock500_source_replay").tokenForRow(sourceReplayScope, row) } : {}),
       candidate: { draftCandidate: old.draftOutput },
       template: { response: old.reviewOutput, binding: { responseJSONSHA256: old.reviewOutputSHA256 } } });
   } finally {
@@ -151,7 +152,7 @@ function originals(bound) {
     return { value: JSON.parse(privateBytes(pin)), pin };
   };
 }
-function originalBuilder(bound, root) {
+function originalBuilder(bound, root, sourceReplayScope = null) {
   const archive = bound.assets.originalBuilderArchive;
   assert.equal(archive.bytes, 269598); assert.equal(archive.sha256, "c979e18775f285ddf7af4328c8efc8f0642954eb6d0e52e50636d3b4ab902d15");
   privateBytes(archive);
@@ -174,8 +175,26 @@ function originalBuilder(bound, root) {
   const old = "assert.equal(row.briefingDatum.slice(0,10),'2026-10-16');";
   assert.equal(text.split(old).length - 1, 1);
   const builder = load(text.replace(old, "assert.equal(row.briefingDatum.slice(0,10),config.window.startsAtUTC.slice(0,10));"), req, "mock500-current-date-builder");
-  const draft = load(source("original-draft-request.js"), req, "mock500-original-draft-request");
-  return { build: builder.build, prepareDraft: draft.prepare, sourcePins: pins };
+  // Route only this already pinned original constructor through the shared
+  // finite-D projector. No global app export or private source text is patched.
+  let active = null, projections = 0;
+  const Lage = require("../../lib/helmut/lage"), lagePath = originalRequire.resolve("../lib/helmut/lage");
+  const draftRequire = name => {
+    if (name === "./contracts" || !sourceReplayScope || originalRequire.resolve(name) !== lagePath) return req(name);
+    return { ...Lage, prepareDContext(ranked, sources, now, binding) {
+      assert(active, "w15-mock-source-draft-outside-binding"); projections++;
+      return Lage.projectFiniteDContext(ranked, sources, now, binding, active.token, active.row.profile, { preparation: true });
+    } };
+  };
+  const draft = load(source("original-draft-request.js"), sourceReplayScope ? draftRequire : req, "mock500-original-draft-request");
+  const prepareDraft = (row, ...args) => {
+    if (!sourceReplayScope) return draft.prepare(row, ...args);
+    assert.equal(active, null); const before = projections;
+    active = { row, token: require("./mock500_source_replay").tokenForRow(sourceReplayScope, row) };
+    try { const result = draft.prepare(row, ...args); assert(projections > before, "w15-mock-source-draft-projector-unused"); return result; }
+    finally { active = null; }
+  };
+  return { build: builder.build, prepareDraft, sourcePins: pins };
 }
 module.exports = { BASE, DB, namespace, privateBytes, readBound, memoryLimits, memoryAssessment,
   currentCalendar, fixedWindow, qualifiedAssets, calendarRow, calendarFixture, originals, originalBuilder };

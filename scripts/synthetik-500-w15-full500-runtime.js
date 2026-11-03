@@ -396,6 +396,7 @@ async function run() {
   const fixtures = read("mock-fixtures.PRIVATE.json"); assert(Array.isArray(fixtures) && fixtures.length === 500);
   assert.equal(new Set(fixtures.map(f => f.owner)).size, 500);
   for (let i = 0; i < 500; i++) assert.equal(fixtures[i].index, i);
+  const SourceReplay = require("./w15-github/mock500_source_replay"), sourceReplayScope = SourceReplay.execution(BOUND, m, fixtures);
   const S = require("../lib/helmut/storage"), J = require("../lib/helmut/synthetik-500-dispatch-journal");
   const P = require("../lib/helmut/synthetik-500-profile"), A = require("../lib/helmut/synthetik-500-kosten-admission");
   const H = require("./fixtures/w15-full500-provider"), unitReports = [], scopeReports = [], responses = [], providerPhases = [], errors = [];
@@ -415,7 +416,9 @@ async function run() {
   journal.ready();
   const Lage = require("../lib/helmut/lage"), actualLage = Lage.buildLageBriefing;
   Lage.buildLageBriefing = async function(...args) {
-    try { const result = await actualLage.apply(this, args);
+    try {
+      if (sourceReplayScope) SourceReplay.bind(sourceReplayScope, args[1].synthetik500Input, index);
+      const result = await actualLage.apply(this, args);
       if (result?.available !== true) errors.push({ index, phase: "buildLageBriefing", available: false,
         reason: /^[a-z0-9-]{1,120}$/.test(result?.reason || "") ? result.reason : "unavailable" });
       return result;
@@ -561,6 +564,8 @@ async function run() {
     const result = { schema: "helmut-w15-full500-runtime/1", status: Object.values(checks).every(Boolean) ? "PASS_RUNTIME_AUDIT_AND_CLEANUP_PENDING" : "FAIL_OR_UNKNOWN",
       ...(BOUND?.functionalResourceContract ? { functionalContract: BOUND.functionalResourceContract.contract,
         memoryProfile: Bound.memoryLimits(BOUND).version, legacyRegularMemoryAccepted: false, providerResourceAccepted: false } : {}),
+      ...(sourceReplayScope ? { sourceContract:sourceReplayScope.record.contract, sourceAsOfISO:sourceReplayScope.record.sourceAsOfISO,
+        historicalSources:true, currentSourceAcceptance:false } : {}),
       selector: m.selector, runId: m.runId, checks, unitReports, scopeReports, responses, providerPhases,
       authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites, authCoverage: coverage,
       authTimings: AuthReport.summarize(observation),
@@ -582,6 +587,8 @@ async function run() {
   } finally {
     stopTelemetry(); removeAbortReceipt();
     clearInterval(poll); if (provider) provider.restore(); azure(false);
+    Lage.buildLageBriefing = actualLage;
+    if (sourceReplayScope) sourceReplayScope.issuer.revoke(sourceReplayScope.grant);
     server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
   }
 }

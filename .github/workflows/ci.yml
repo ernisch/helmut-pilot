@@ -244,6 +244,9 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_materials_capsule_readback.py
           node scripts/lokal.js -- node scripts/w15-github/test_mock500_materials_capsule_workflow.js
           node scripts/lokal.js -- node scripts/w15-github/test_mock500_calendar_fixture.js
+          node scripts/lokal.js -- node scripts/synthetik-500-mock-source-asof-test.js
+          node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_historical_source.py
+          node scripts/lokal.js -- node scripts/w15-github/test_mock500_historical_bindings.js
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_artifact_transport_capsule_readonly.py
           node scripts/lokal.js -- node scripts/w15-github/test_mock500_materials_failure.js
           node scripts/lokal.js -- node scripts/w15-github/test_mock500_materials_setup.js

@@ -11,7 +11,7 @@ const sha = value => crypto.createHash("sha256").update(value).digest("hex");
 const SCOPE = "REVIEWED_LOCAL_MOCK_OUTPUT_SYNTHETIC_PERFORMANCE_FIXTURE_NOT_MODEL_OUTPUT";
 const DELAY_MS = 19900;
 
-function prepare({ row, model, candidate, template,
+function prepare({ row, model, candidate, template, sourceReplayToken,
   responsesURL = EU.CONTRACT.responseURL, mockUsage = { input_tokens: 100, output_tokens: 100 } }) {
   const B = require("../../lib/helmut/briefing-lagebindung");
   const L = require("../../lib/helmut/lage"), ai = require("../../lib/helmut/ai");
@@ -20,7 +20,9 @@ function prepare({ row, model, candidate, template,
   assert.equal(model, EU.CONTRACT.model); assert.equal(responsesURL, EU.CONTRACT.responseURL);
   const time = new Date(row.briefingDatum); assert(Number.isFinite(time.getTime()));
   const bound = B.pruefe(row.briefingEingabe, row.profile, row.profile.id, time, { acceptedSnapshot: true });
-  const { koLite } = L.prepareDContext(bound.ranked, bound.sources, time, bound);
+  const { koLite } = sourceReplayToken
+    ? L.projectFiniteDContext(bound.ranked, bound.sources, time, bound, sourceReplayToken, row.profile, { preparation: true })
+    : L.prepareDContext(bound.ranked, bound.sources, time, bound);
   assert(koLite.length > 0, "w15-unit0-provider-empty-context");
   assert(candidate?.draftCandidate && template?.response && template?.binding);
   assert.equal(sha(JSON.stringify(template.response)), template.binding.responseJSONSHA256);

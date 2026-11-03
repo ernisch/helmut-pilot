@@ -27,6 +27,7 @@ PHASED = 'mock500-full-phased-gated'
 FUNCTIONAL = 'mock500-full-functional-gated'
 HOST_FUNCTIONAL = 'mock500-full-host-functional-gated'
 MATERIALS = 'mock500-materials-diagnostic-gated'
+SOURCE_REPLAY = 'helmut-w15-mock-historical-qualified-source-replay/1'
 LIMITS = {'comparisonBudgetBytes': R.LIMIT, 'maximumConsumptionBytes': R.MAXIMUM,
           'requiredReserveBytes': R.RESERVE, 'swapBytes': 0}
 FINGERPRINT = '7E3998A6C2CB948C69A2EE51F4267ABF26796EDC'
@@ -211,6 +212,11 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
         'expectedPositions', 'expectedControls', 'maxProviderCalls', 'maxStorageUSD',
         'maxReceiveAttempts', 'issuedAt', 'expiresAt'}
     if request['mode'] in (HOST_FUNCTIONAL,MATERIALS):keys|={'resourceContract'}
+    replay = isinstance(approval, dict) and 'sourceContract' in approval
+    if replay:
+        need(request['mode'] == HOST_FUNCTIONAL and approval['sourceContract'] == SOURCE_REPLAY,
+             'MOCK500_EXPLICIT_HISTORICAL_SOURCE_CONTRACT_REQUIRED')
+        keys |= {'sourceContract'}
     need(isinstance(approval, dict) and set(approval) == keys
          and approval['schema'] == 'helmut-w15-mock500-start-approval/1'
          and approval['scope'] == mode_scope(request['mode'])
@@ -233,12 +239,21 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
     now = datetime.now(timezone.utc) if now is None else now
     need(isinstance(now, datetime) and now.tzinfo is not None and issued <= now < expires
          and 0 < (expires - issued).total_seconds() <= 7200, 'MOCK500_APPROVAL_START_WINDOW_EXPIRED')
-    return {'status': 'PASS_SEPARATE_MOCK500_ADMISSION_BINDINGS_ONLY',
+    result = {'status': 'PASS_SEPARATE_MOCK500_ADMISSION_BINDINGS_ONLY',
         'runId': observed_context['runId'], 'exactCommit': request['exactCommit'],
         'sourceQualificationSHA256': request['sourceQualificationSHA256'],
         'end500AcceptanceSHA256': end500_acceptance['sha256'], 'compatibilitySHA256': compatibility_bridge['sha256'],
         'end500BaselineCommit': expected_end500_commit, 'memoryProfile': memory_profile(request['mode']),
         'executionAuthority': False, 'mock500Acceptance': False}
+    if replay:
+        result['sourceReplayAuthorization'] = {
+            'schema': 'helmut-w15-isolated-mock-source-authorization/1',
+            'contract': SOURCE_REPLAY,
+            **{k: observed_context[k] for k in ('branch', 'exactCommit', 'runId', 'runAttempt', 'nonce')},
+            'approvalSHA256': hashlib.sha256(json.dumps(approval, sort_keys=True, separators=(',', ':'), ensure_ascii=True, allow_nan=False).encode('ascii')).hexdigest(),
+            'sourceQualificationSHA256': request['sourceQualificationSHA256'],
+            'productionAllowed': False, 'paidModelsAllowed': False}
+    return result
 
 
 class StartGuard:
