@@ -1,11 +1,62 @@
-# Mock500: heutige Eingaben vor dem nächsten Gesamtlauf prüfen
+# Mock500: heutige Eingabekontexte und notwendige Vertragsentscheidung
 
-## Belegte Ursache und offene Eingabefrage
+## Tatsächlicher Eingabevorflug am 03.11.2026
 
-Run41554774560 bleibt Materials-FAIL. Die unabhängig angenommene Kapsellesung
-41594105907 beweist `PROVIDER_CURRENT_CONTEXT_EMPTY`: der echte Providerkonstruktor
-erhielt nach `B.pruefe`/`L.prepareDContext` einen leeren aktuellen Quellenkontext.
-Es gibt noch keine originalgebundene Bilanz, welcher Filter ihn leert.
+[Run41620895888](https://github.com/ernisch/helmut-pilot/actions/runs/41620895888),
+Job125866042098, Attempt1, exakt
+`82d9b14fbf8095565eb775ca424f6eb852305b94`: **FAIL der heutigen Eingabezulassung**.
+Die API-Jobdauer beträgt25s. Der vollständige
+Mock500 wurde nicht gestartet. Die neue Nonce und der unveränderte Codekopf
+stimmen in Freigabe, Übergabe, GitHub-Lauf und tatsächlicher Abschlussquittung überein.
+
+Alle500 geplanten Eingaben wurden unter derselben Regel geprüft;
+`bindingAccepted=true`, `inspected=500`, `all500Valid=false`.
+
+| Kontextklasse | Tatsächliche Anzahl |
+| --- | ---: |
+| Gültig und nichtleer | 120 |
+| Leer | 380 |
+| Fehlend | 0 |
+| Fachlich unbrauchbar | 0 |
+| Technisch fehlerhaft | 0 |
+
+Für **alle380** Leerfälle ist `timeOnlyExclusion=true`: Dieselben gebundenen
+ranked/source-Objekte ergeben beim tatsächlichen heutigen Zeitpunkt keinen,
+beim unveränderten ursprünglichen Qualifikationszeitpunkt jedoch einen nichtleeren
+Kontext. Nur dieser Zeitparameter wurde in der reinen Vergleichsrechnung variiert.
+Damit ist die zeitliche Quellenfilterung als Ursache für diese380 aktuellen
+Leerzustände belegt. Weitere vollständige Mockphasen wurden nicht durchlaufen.
+Ein historisch nichtleerer Kontext wird dadurch
+nicht als heute zulässig oder als vollständiger Providererfolg ausgegeben.
+
+Alle elf vorhandenen Originale mit217.563.454Bytes sind vollständig nach Größe
+und SHA256 angenommen; GPG-Integrität, Manifest, gzip/USTAR und erneute private
+Dateirücklesung: PASS. GPG-Prozess, eigener GPG-Agent und Node-Prozessgruppe:
+PASS beendet.0Datenbankaktionen, Profilaktivierungen, Verarbeitungseinheiten,
+Modellaufrufe und Artefaktuploads. Andere14JobsSKIPPED; anschließend0aktive
+manuelle Läufe und0Artefakte. Originale, Drive, Secrets und historische Belege
+bleiben erhalten. Keine automatische Branchrücksetzung.
+
+Genau eine frische Drive-Linkrunde und ein POST. Tatsächliche Restgültigkeit
+direkt vor dem POST253,465884s, gesamte serialisierte Parameter2785Zeichen.
+Der Ausführungsbranch wurde sicher von e1 auf exakt82d9b14f vorgespult und bleibt
+dort. Das einmalige Eingabe-GO ist verbraucht; kein Retry oder Linkrefresh.
+Eine lokale Antwortauswertung wurde innerhalb derselben gespeicherten
+Drive-Antwort korrigiert; es gab keinen zweiten Fetch oder zweiten Link.
+
+Der vorhandene Reserve-/Swap-/Max-/OOM-Wächter wurde erfolgreich durchlaufen.
+Dieser reine Vorflug aktiviert weiterhin keinen neuen gemeinsamen cgroup-
+Hartgrenzwert (`dynamicHardLimitActivated=false`). Numerische RAM-, CPU- und
+Verbindungspeaks sind hier UNKNOWN; dies ist keine Lebenszeit-RAM-,
+Anbieter- oder vollständige Mock500-Abnahme.
+
+End500-Funktion41325430429 und Empfang41037459441 bleiben übernommen; frühere
+FAIL-Ergebnisse und die historische500/500-Qualifikation werden nicht umgewertet.
+Die vorherige Kapsellesung41594105907 hatte bereits
+`PROVIDER_CURRENT_CONTEXT_EMPTY` bewiesen, aber noch nicht den leeren Filter
+originalgebunden für alle500 erklärt. Diese konkrete Lücke ist jetzt geschlossen.
+
+## Warum der historische Bestandsweg nicht automatisch zulässig ist
 
 Der Kommentar in `synthetik-500-w15-signed-chain-test.js`, Zeilen242–246,
 bezeichnet die v1-Originale aus `NORMALIZED500_CURRENT_POLICY` mit Tag16.10.
@@ -17,8 +68,8 @@ Publikationsdatum. Der Kommentar allein beweist die Ursache für diesen Satz nic
 
 Die vorhandene BT-Quellenfixture in `w15-current-mock-data.js` bindet tatsächlich
 eine Publikation vom16.10.; am03.11. liegt dieser Tag außerhalb14Tagen. Die
-Berliner Ersatzquelle vom23.10. liegt dagegen noch im Fenster. Welche der500
-Originalzeilen betroffen sind, ist ohne ihren gebundenen Kontext nicht belegt.
+Berliner Ersatzquelle vom23.10. liegt dagegen noch im Fenster. Der neue Vorflug weist die tatsächliche Zahl380 an den gebundenen Originalen
+nach; private Ownerkennungen und Quelleninhalte werden nicht veröffentlicht.
 
 Die vorhandene historische B2-Verarbeitung ist kein allgemeiner Datumsfallback:
 `blocker2-d-historical-binding.js` verlangt Basisv2, festen Merkle-Bestand,
@@ -30,12 +81,13 @@ Vertragsentscheidung. Sie wird hier nicht aktiviert.
 
 Unabhängiger enger Quellen-/Vertragsreview:
 `02d94bc29a4b4c617473d72e5ceef10f4c3cb87c3e6a89d56df9977b20ea7672`.
-Quellenalterung ist damit ein konkreter Kandidat, für den tatsächlichen Lauf
-aber weder abschließend bewiesen noch widerlegt. Keine Schutzgrenze ändern.
+Dieser Review hatte die Ursache vor dem Originalvorflug noch offen gelassen.
+Der jetzige380er-Zeitvergleich belegt die heutige Ausschlussursache, erweitert
+aber die historische B2-Zulassung nicht. Keine Schutzgrenze wurde geändert.
 
 ## Kleinster notwendiger Anschluss
 
-Neuer begrenzter Mode `mock500-input-context-preflight` im vorhandenen manuellen
+Der begrenzte Mode `mock500-input-context-preflight` im vorhandenen manuellen
 CI-Workflow. Derselbe geprüfte Empfänger liest das bestehende17,78MB-GPG/gzip/
 USTAR-Archiv mit elf Originalen,217,56MB Nutzlast und unveränderten Manifest-/
 Größen-/Hash-/Empfängerbindungen. Keine neuen Quellen, Schlüssel oder Secrets.
@@ -122,21 +174,49 @@ Review am endgültigen Kopf im Draft-PR belegen; keine erfolgreiche500er-Ausfüh
 behaupten. Der versuchte DeepSeek-Helfer lieferte wegen Antwortlimit keine Änderungen;
 Sol integrierte den Prüfkern, ohne weiteren Modellversuch.
 
-## Nächste tatsächliche Freigabegrenze
+## Kleinste notwendige Vertragsentscheidung
 
-Nach grüner Pflicht-CI und unabhängigem Review: genau ein originalgebundener
-Eingabevorflug auf dem dann exakt benannten Kopf in `helmut-ci-originals`.
-Erlaubter sicherer FF vom unveränderten Ausführungsbranch e1 auf diesen Kopf;
-sämtliche Vorbereitungen vor genau einer frischen privaten Linkrunde zum
-bereits vorhandenen Archiv abschließen. Linkrestzeit unmittelbar vor dem
-einzigen POST>90s, sämtliche Parameter<=65535Zeichen. Neue Nonce und neue
-explizite Input-Prüffreigabe, keine stillschweigende Verwendung alter GOs.
+**Entwurf `helmut-w15-mock-historical-qualified-source-replay/1`: noch nicht
+freigegeben, implementiert oder aktiviert.** Die aktuelle14-Tage-Regel arbeitet
+wie vorgesehen. Es ist kein Reparaturgrund, sie stillschweigend zu lockern.
+Die alte Oct11-B2-Capability passt nicht zu diesem qualifizierten Bestand.
 
-Dieses GO ist noch nicht erteilt. Noch sind die500Originalkontexte UNKNOWN.
-Bei Altersnachweis nur den tatsächlich betroffenen Quellen-/Vertragsumfang
-zur Entscheidung vorlegen; keine pauschale Neuqualifikation. Bei anderem
-belegtem Übergabefehler nur diesen korrigieren und gezielt prüfen. Erst nach
-500/500gültigen Eingaben und unabhängiger Prüfung ein konkretes FullMock-GO
-vorlegen. Dessen500gleichzeitigaktiveProfile/500Units/1000Mockphasen/1500Ergebnisse/
-8000Kontrollen/17000Audits sowie Sicherung/Rücklesung/Rücksicherung/Integrität/
-finale0 und Prozessstillstand bleiben vollständig Pflicht. Production bleibt gesperrt.
+Für den verlangten isolierten Funktionsnachweis ist der kürzeste bestehende
+Datenweg ein ausdrücklich historischer Quellenfixture-Vertrag:
+
+1. Ausschließlich denselben bereits authentifizierten qualifizierten500er-Satz
+   aus dem vorhandenen gehashten Archiv zulassen. Originalgrößen, Hashes,
+   Quellen-/Publikationsdaten und der ursprüngliche Qualifikationsbericht bleiben
+   unverändert. Keine neuen Quellen, Ersatzdaten, Schlüssel oder Neuqualifikation.
+2. Für **alle500 gleich** den im Originalbericht gebundenen Qualifikationszeitpunkt
+   nur als Quellen-Kontextzeit verwenden. Keine selektive Ausnahme für die380
+   fehlgeschlagenen Positionen. Historischer Quellenbezug bleibt ausdrücklich
+   gekennzeichnet; er ist kein aktueller November-Quellennachweis.
+3. Reale Ausführungszeit, aktueller UTC-/Berliner Tag, Kalender-/Namespacebindung,
+   Nonce, Commit, Freigabeablauf und Fristen bleiben tatsächlich aktuell. Kein
+   manipuliertes Systemdatum, keine Rückdatierung von Originalen oder Laufrechten.
+4. Dies ausschließlich in einem eng gebundenen Mock-Vertragszweig der vorhandenen
+   Material-/Fixturebindung vorbereiten. Kein allgemeiner historischer Fallback,
+   keine Änderung des Produktionsquellenfilters und keine pauschale B2-Öffnung.
+5. Vor Aktivierung im späteren tatsächlichen Mockjob alle500 vollständigen
+   Eingabe-/Provider-/Reviewbindungen unter diesem Vertrag prüfen. Der jetzige
+   reine Zeitvergleich ersetzt diese Prüfung nicht. Bestehende Sicherheits- und
+   Abnahmebedingungen bleiben unverändert:500gleichzeitigaktiveProfile,
+   500Units,1000Mockphasen,1500einzelngeprüfteErgebnisse,8000Sicherheitskontrollen,
+   17000Audits, Sicherung/Rücklesung/zweiteWiederherstellung/Integritätsvergleich,
+   finale0 und bestätigter Prozessstillstand. Keine neue Originaldiagnose nur für
+   Informationen, die diese notwendige Vorstufe im selben Mockjob liefern kann.
+6. Pflicht-CI und unabhängige Bindungs-/Vertragsabnahme auf dem dann exakten Kopf.
+   Erst danach ein neues konkretes Einmal-GO für den vollständigen Mock500.
+   Dynamischer Hostschutz, Reserven, Zeitfenster, Kosten, Kommunikationsriegel,
+   Quellenintegrität und Production-Sperren bleiben erhalten.
+
+Eine ausdrückliche Betreiberentscheidung für diesen historischen Funktionsvertrag
+fehlt. Ohne sie bleibt der aktuelle Mock500 blockiert. Falls stattdessen aktuelle
+Novemberquellen zwingend sind, benötigen die tatsächlich betroffenen380
+Kontexte neue freigegebene Fixtures und deren betroffene Bindungsprüfung;
+keine pauschale Wiederbeschaffung oder automatische Neuqualifikation.
+
+Ein späterer Funktions-PASS nach einem genehmigten historischen Vertrag wäre
+weiterhin keine heutige Quellen-, Vercel-/Supabase- oder Production500-Abnahme.
+Der jetzt ausgeführte Vorflug hat keinen vollständigen Mock500 freigegeben.

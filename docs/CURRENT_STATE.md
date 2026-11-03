@@ -1,13 +1,15 @@
 # CURRENT STATE — Helmut
 
-## W15: Mock500 Eingabekontexte vorprüfen (03.11.2026)
+## W15: aktuelle 500 Mockeingaben FAIL (03.11.2026)
 
-MaterialsFAIL: aktuellerKontextleer,QuellenalteralsOriginalursacheweiterUNKNOWN.
-SignedChain-Kommentar betrifft16Oct-Originale;B2-Oct11-Fallback nichtfürNov3zulässig.
-[Vorflug und Freigabegrenze](betrieb/w15-mock500-input-context-preflight-20261103.md):
-500Originaleingaben nochungeprüft. Neuer enger Vorflug vorbereitet;keineAusführung.
-Fiktiver500er-PrüfkernPASS ersetztkeineOriginalqualifikation. EigenesexaktesGO nötig.
-Ausführungsbranch e1;End500/Empfang und historischeFAILs erhalten.
+[Run41620895888](https://github.com/ernisch/helmut-pilot/actions/runs/41620895888),
+exakt82d9b14f: **FAIL**,25s. Alle500 geprüft:120gültig/380leer;
+fehlend/unbrauchbar/technisch jeweils0. Alle380 werden allein mit historischem
+Zeitbezug derselben Quellen nichtleer: Zeitfilter als Ursache belegt.
+11Originale/217,56MB,Hash/GPG/ManifestPASS;GPG/Agent/Node-StoppPASS.
+0DB/Aktivierung/Units/Calls/Uploads/aktiveManuals;1Linkrunde/1POST,GO verbraucht.
+Ausführungsbranch82;keinRetry/FullMock/Production. End500-PASS bleibt erhalten.
+[Nachweis und notwendige historische Vertragsfreigabe](betrieb/w15-mock500-input-context-preflight-20261103.md).
 
 [Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
 auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.
