@@ -105,6 +105,58 @@ den Abschlussmetadaten. Bestehende Verzeichnisse, Symlinks oder Startbelege werd
 abgelehnt. Fünf kleine synthetische Regressionstests bestehen; keine Änderung des
 Runtimecodes, der Originale, Quellen-, Zeit-, Ressourcen- oder Kostenverträge.
 Der fehlgeschlagene Kindbereich und seine Prüfnachweise bleiben unverändert.
-Eine Wiederaufnahme der gestoppten Serie benötigt eine ausdrücklich genehmigte,
-geprüfte Behandlung dieses No-POST-Abschlusses; die bestehende Freigabe erlaubt
-keinen Ersatz aus einem neuen leeren Journal.
+Bis zur zusätzlichen Betreiberfreigabe war eine Wiederaufnahme ohne ausdrücklich
+genehmigte Behandlung dieses No-POST-Abschlusses gesperrt. Der folgende eng
+begrenzte Auftrag erlaubt diese Ergänzung; kein Ersatz aus einem leeren Journal.
+
+## Genehmigte No-POST-Fortsetzung/1
+
+Das zusätzliche Betreiber-GO vom04.11.2026 erlaubt ausschließlich den notwendigen
+Vertragsanschluss für den authentifiziert bestätigten Vorstartabbruch von Platz1.
+Runtime789ea3ad bleibt unverändert. Alle ursprünglichen Grant-, Reservierungs-,
+STOP-/UNKNOWN- und externen Ankerdateien bleiben bytegleich erhalten; Platz1
+bleibt dauerhaft gezählt. Es verbleiben höchstens zwei reservierbare Plätze und
+0,10USD Speicherreserve. Kein Refund, Reset, neues Journal oder Wiederverwenden
+des fehlgeschlagenen Kindes und seiner Nonce.
+
+Version `helmut-w15-mock500-no-post-continuation/1` ergänzt genau ein Ereignis
+`NO_POST_CONTINUATION` hinter dem ursprünglichen `RESERVE → STOP UNKNOWN`.
+Der Nachweis bindet ursprünglichen Slot/Nonce/Runtime, beide Stoppbelege,
+unveränderliche tatsächliche Betreiberautorität, unabhängige authentifizierte
+No-POST-Abnahme und die geprüfte Vorbereitungskorrektur. Ein zusätzlicher
+exklusiver Außenanker bindet das Ereignis. Fehlende oder widersprüchliche
+Anker sperren. Dies ist kein funktionaler FAIL, kein erfundener Run/Job und kein
+Mock500-Erfolg. Platz2 ist dadurch der erste mögliche tatsächliche Originaljob.
+
+Der neue Kontrollzweig ist ausdrücklich opt-in. Ohne qualifizierten Pin und
+vertrauenswürdigen Prüfer gilt die alte endgültige STOP-Regel. Die alten
+Scheduler-/Kontrollquellen bleiben unverändert und erhalten keine Wiederaufnahme.
+Nur der genehmigte erste Vorstartstopp darf ergänzt werden; spätere UNKNOWN-,
+PASS- oder Sicherheitsstopps bleiben endgültig. Die bestehende Folgelaufregel
+nach einem echten FAIL wird nicht aufgeweicht; insbesondere entsteht keine
+Erlaubnis, innerhalb dieses Vertragsanschlusses Runtime789 auszutauschen.
+
+Vor der Zulassung jedes Kindes wird die tatsächliche authentifizierte GitHub-
+Historie erneut abgeglichen. Platz1 wird dabei separat als No-POST geführt;
+nur tatsächlich angenommene Jobs dürfen echte Run-/Job- und Terminalbelege haben.
+Unabhängige frische Vorstartprüfung, vorhandene Code-/Original-/End500-Bindungen
+und sämtliche bisherigen Einzelprüfungen bleiben Pflicht. Die Vorbereitung
+erfolgt vor READY/frischen Links; danach bleiben nur die lokalen gepinnten
+Bindungs- und Einmalprüfungen sowie der einzige zulässige POST.
+
+Die Kontrollqualifikation muss tatsächliche neue Pflicht-CI, exakten Commit,
+Git-Blob des geänderten Moduls und unabhängigen Sicherheitsreview mit denselben
+öffentlichen/privaten Codepins binden. Eine alte grüne CI plus neue selbst
+behauptete Hashfelder genügt nicht. Ein zusätzlicher späterer Stoppanker sperrt
+auch als hängender Symlink. Die bereits geprüfte Zustandsverzeichnisvorbereitung
+wird im neuen Kind übernommen; das alte Kind bleibt unverändert.
+
+Acht neue synthetische Vertragsgruppen und zehn betroffene bisherige
+Seriengruppen bestehen. Die fünf früheren Zustandsverzeichnisproben werden
+übernommen. Acht private Anschlussgruppen einschließlich realer Launcher- und
+Linkrundensperren mit ausschließlich simulierten APIs bestehen ebenfalls.
+Finale Pflicht-CI und unabhängige Sicherheitsabnahme auf dem Kontrollkopf
+sind vor Aktivierung des Kontrollzweigs zwingend.
+Alle fachlichen500er-Anforderungen, Zeit-, Quellen-, Kosten-, Hostspeicher-,
+Platten-, Swap-/OOM-/Grenzereignis-, Verbindungs- und Sicherungsregeln oben
+bleiben unverändert. Keine Originalübertragung durch diese Entwicklungsprüfung.

@@ -34,6 +34,11 @@ TICKET_KEYS = {'schema', 'grantSHA256', 'ordinal', 'nonce', 'targetCommit', 'iss
 PROOF_KEYS = {'status', 'runId', 'jobId', 'exactCommit', 'nonce', 'reservationSHA256',
               'receiptSHA256', 'authenticatedInputsSHA256', 'cleanupKnown',
               'processesStopped', 'originalIntegrityKnown', 'securityViolation', 'dispatchOutcome'}
+NO_POST_SCHEMA = 'helmut-w15-mock500-no-post-continuation/1'
+NO_POST_KEYS = {'schema', 'status', 'seriesGrantSHA256', 'targetCommit', 'nonce',
+                'reservationSHA256', 'journalStopSHA256', 'externalStopSHA256',
+                'operatorAuthoritySHA256', 'evidenceSHA256', 'independentReviewSHA256',
+                'causeSHA256', 'fixSHA256', 'maximumRemainingAttempts', 'maximumRemainingStorageUSD'}
 
 
 class SeriesRejected(ValueError):
@@ -78,12 +83,16 @@ def utc(value):
 
 class Series:
     def __init__(self, root, grant, expected_grant_sha256, *, window_check, is_descendant,
-                 verify_admission, verify_terminal, clock=lambda: datetime.now(timezone.utc), initialize=False):
+                 verify_admission, verify_terminal, clock=lambda: datetime.now(timezone.utc), initialize=False,
+                 no_post_sha256=None, verify_no_post=None):
         try:
             self.root, self.grant = Path(root), json.loads(canonical(grant))
             self.pin = expected_grant_sha256
             self.window_check, self.is_descendant = window_check, is_descendant
             self.verify_admission, self.verify_terminal, self.clock = verify_admission, verify_terminal, clock
+            need((no_post_sha256 is None and verify_no_post is None)
+                 or sha(no_post_sha256) and callable(verify_no_post))
+            self.no_post_pin, self.verify_no_post = no_post_sha256, verify_no_post
             g = self.grant
             need(type(initialize) is bool and set(g) == GRANT_KEYS and g['schema'] == SCHEMA + '-grant')
             identifier(g['grantId']); utc(g['receivedAtUTC'])
@@ -164,6 +173,12 @@ class Series:
         if not attempts:
             need(ticket['targetCommit'] == FIRST and all(gates[k] is None
                  for k in ('baseCommit', 'priorTerminalSHA256', 'causeSHA256', 'fixSHA256')))
+        elif 'noPost' in attempts[-1]:
+            prior = attempts[-1]
+            need(len(attempts) == 1 and ticket['ordinal'] == 2 and ticket['targetCommit'] == FIRST
+                 and gates['baseCommit'] == FIRST and gates['priorTerminalSHA256'] is None
+                 and gates['causeSHA256'] == prior['noPost']['causeSHA256']
+                 and gates['fixSHA256'] == prior['noPost']['fixSHA256'])
         else:
             prior = attempts[-1]; proof = prior.get('proof')
             need(proof and proof['status'] == 'FAIL' and proof['dispatchOutcome'] == 'ACCEPTED'
@@ -185,26 +200,49 @@ class Series:
         for key in ('receiptSHA256', 'authenticatedInputsSHA256'):
             need(sha(proof[key]))
 
+    def _no_post(self, proof, ticket, stop_sha256):
+        need(self.no_post_pin is not None and type(proof) is dict and set(proof) == NO_POST_KEYS
+             and digest(proof) == self.no_post_pin and proof['schema'] == NO_POST_SCHEMA
+             and proof['status'] == 'VERIFIED_NOT_DISPATCHED'
+             and ticket['ordinal'] == 1 and proof['seriesGrantSHA256'] == self.pin
+             and proof['targetCommit'] == ticket['targetCommit'] == FIRST
+             and proof['nonce'] == ticket['nonce'] and proof['reservationSHA256'] == digest(ticket)
+             and proof['journalStopSHA256'] == stop_sha256
+             and type(proof['maximumRemainingAttempts']) is int and proof['maximumRemainingAttempts'] == 2
+             and proof['maximumRemainingStorageUSD'] == '0.10')
+        for key in NO_POST_KEYS - {'schema', 'status', 'targetCommit', 'nonce',
+                                  'maximumRemainingAttempts', 'maximumRemainingStorageUSD'}:
+            need(sha(proof[key]))
+
     def _state(self, fd):
         need(self._read(fd, 'GRANT.json') == self.grant)
         names = sorted(set(os.listdir(fd)) - {'lock', 'GRANT.json'})
-        need(len(names) <= 7 and names == [f'{i:06d}.json' for i in range(1, len(names) + 1)])
-        attempts, previous, closed = [], self.pin, False
+        need(len(names) <= (8 if self.no_post_pin else 7)
+             and names == [f'{i:06d}.json' for i in range(1, len(names) + 1)])
+        attempts, previous, closed, stop_reason = [], self.pin, False, None
         for i, name in enumerate(names, 1):
             event = self._read(fd, name)
             need(set(event) == {'schema', 'sequence', 'previousSHA256', 'kind', 'body'}
                  and event['schema'] == SCHEMA and type(event['sequence']) is int
                  and event['sequence'] == i and event['previousSHA256'] == previous)
-            body = event['body']; need(not closed and type(body) is dict)
-            if event['kind'] == 'RESERVE':
-                need(set(body) == {'ticket', 'gates'} and (not attempts or 'proof' in attempts[-1]))
+            body = event['body']; need(type(body) is dict)
+            if event['kind'] == 'NO_POST_CONTINUATION':
+                need(closed and stop_reason == 'UNKNOWN' and i == 3 and len(attempts) == 1
+                     and 'proof' not in attempts[0] and set(body) == {'proof'})
+                self._no_post(body['proof'], attempts[0]['ticket'], previous)
+                attempts[0]['noPost'] = body['proof']; closed = False
+            elif event['kind'] == 'RESERVE':
+                need(not closed and set(body) == {'ticket', 'gates'}
+                     and (not attempts or 'proof' in attempts[-1] or 'noPost' in attempts[-1]))
                 self._ticket(body['ticket'], body['gates'], attempts); attempts.append(body)
             elif event['kind'] == 'TERMINAL':
-                need(set(body) == {'proof'} and attempts and 'proof' not in attempts[-1])
+                need(not closed and set(body) == {'proof'} and attempts and 'proof' not in attempts[-1]
+                     and 'noPost' not in attempts[-1])
                 self._proof(body['proof'], attempts[-1]['ticket']); attempts[-1]['proof'] = body['proof']
             else:
-                need(event['kind'] == 'STOP' and set(body) == {'reason'}
-                     and body['reason'] in ('PASS', 'UNKNOWN', 'SECURITY_VIOLATION')); closed = True
+                need(not closed and event['kind'] == 'STOP' and set(body) == {'reason'}
+                     and body['reason'] in ('PASS', 'UNKNOWN', 'SECURITY_VIOLATION'))
+                stop_reason = body['reason']; closed = True
             previous = digest(event)
         return attempts, previous, len(names), closed
 
@@ -221,23 +259,37 @@ class Series:
                           nonce=nonce, targetCommit=target_commit, issuedAtUTC=now.astimezone(timezone.utc).isoformat(),
                           maximumStorageUSD='0.05', admissionSHA256=digest(gates))
             self._ticket(ticket, gates, attempts)
-            if attempts:
+            if attempts and 'noPost' not in attempts[-1]:
                 need(self.is_descendant(attempts[-1]['ticket']['targetCommit'], target_commit) is True)
             need(self.verify_admission(ticket, gates) is True)
             self._append(fd, previous, count, 'RESERVE', dict(ticket=ticket, gates=gates))
             return json.loads(canonical(ticket))
 
+    def continue_no_post(self, proof):
+        """Append one authenticated exception; never erase/refund the original STOP or slot."""
+        with self._locked() as fd:
+            attempts, previous, count, closed = self._state(fd)
+            need(closed and count == 2 and len(attempts) == 1 and 'proof' not in attempts[0]
+                 and self._read(fd, '000002.json')['body'] == {'reason': 'UNKNOWN'})
+            self._no_post(proof, attempts[0]['ticket'], previous)
+            now = self.clock(); need(now >= utc(self.grant['receivedAtUTC'])); self.window_check(now)
+            raw = canonical(proof)
+            need(self.verify_no_post(proof) is True and canonical(proof) == raw)
+            self._append(fd, previous, count, 'NO_POST_CONTINUATION', dict(proof=proof))
+
     def complete(self, ticket, proof):
         with self._locked() as fd:
             attempts, previous, count, closed = self._state(fd)
-            need(not closed and attempts and 'proof' not in attempts[-1] and attempts[-1]['ticket'] == ticket)
+            need(not closed and attempts and 'proof' not in attempts[-1] and 'noPost' not in attempts[-1]
+                 and attempts[-1]['ticket'] == ticket)
             self._proof(proof, ticket); need(self.verify_terminal(ticket, proof) is True)
             self._append(fd, previous, count, 'TERMINAL', dict(proof=proof))
 
     def require_active(self, ticket):
         with self._locked() as fd:
             attempts, _, _, closed = self._state(fd)
-            need(not closed and attempts and 'proof' not in attempts[-1] and attempts[-1]['ticket'] == ticket)
+            need(not closed and attempts and 'proof' not in attempts[-1] and 'noPost' not in attempts[-1]
+                 and attempts[-1]['ticket'] == ticket)
             return True
 
     def stop(self, reason):

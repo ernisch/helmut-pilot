@@ -232,6 +232,7 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_host_contract.py
           node scripts/lokal.js -- python3 -I -B scripts/w15-github/test_mock500_series.py
           node scripts/lokal.js -- python3 -I -B scripts/w15-github/test_mock500_manual_start.py
+          node scripts/lokal.js -- python3 -I -B scripts/w15-github/test_mock500_no_post_continuation.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_host_integration.py
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_host_main.py
           node scripts/lokal.js -- node scripts/w15-github/test_mock500_host_public.js

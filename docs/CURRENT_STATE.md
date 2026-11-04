@@ -1,11 +1,11 @@
 # CURRENT STATE — Helmut
 
-## W15: manueller Mock500 vor READY blockiert (04.11.2026)
+## W15: genehmigte No-POST-Fortsetzung vorbereitet (04.11.2026)
 
-[Bindung](betrieb/w15-mock500-manual-series-20261104.md): CI41793473003/904c63c8 PASS.
-FF600→789; Runtime unverändert. Platz1/3 vorREADY blockiert: Zustandsverzeichnis fehlte.
-0Links/POST/Jobs/DB/eigeneProzesse. NOT_DISPATCHED bekannt; KontrollSTOPUNKNOWN.
-Journal/Livecase erhalten, Automationpausiert. SeparaterFix:5ProbenPASS. KeinRetry.
+[Vertrag](betrieb/w15-mock500-manual-series-20261104.md): Platz1 verbraucht, NoPOST
+unabhängig authentifiziert. STOP/UNKNOWN/Altbelege erhalten; Runtime789 unverändert.
+Rest2Plätze/0,10USD;8neue/10Serienproben/8privateGruppen grün. FinaleCI/Review Pflicht.
+NochkeinResume/Link/POST/Job; Verzeichnisfix(5ProbenPASS) übernommen.
 End50041325430429/Empfang41037459441 übernommen; volle500Bindungen vorAktivierung Pflicht.
 Run41694827024/600bleibtFAIL
 (195s,2,77GB),RohursacheUNKNOWN;8CleanupPASS,Endzähler/Sicherung/DBnullUNKNOWN.
