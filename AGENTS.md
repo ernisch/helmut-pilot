@@ -1,5 +1,19 @@
 # HELMUT AGENT CONTRACT
 
+## Fokusregel vom 05.11.2026: Helmut fertigstellen, keine Nebenbaustellen
+
+**Vorrang bei der Arbeitsauswahl:** Der kuerzeste sichere Weg zum belastbaren Production-Nachweis mit exakt 500 gleichzeitig aktiven synthetischen Profilen hat Vorrang. Danach folgt die Verkaufsbereitschaft. Dieser Fokusblock ist weder ein neuer Testvertrag noch eine Production-, Merge-, Deployment-, Profil- oder Kostenfreigabe. Aktuelle ausdrueckliche Betreiberanweisungen und frische Primaerbelege haben Vorrang vor alten Statusnotizen.
+
+1. **Naechsten echten Meilenstein bestimmen:** Laut uebergebenem Bericht vom 04.11.2026 ist End500 bestanden (Run 41325430429); Mock500 ist noch nicht vollstaendig abgenommen; anschliessend folgt Production500 mit eigener ausdruecklicher Freigabe. Vor jeder Ausfuehrung den tatsaechlich neuesten Belegstand pruefen. Ein bereits bestandener Nachweis wird nicht grundlos wiederholt.
+2. **Pflichtfrage vor jeder neuen Aufgabe:** Welches konkret offene Abnahmekriterium oder welcher belegte Blocker wird damit unmittelbar geloest? Wenn die Antwort nicht konkret und belegbar ist, die Aufgabe zurueckstellen statt sie zu beginnen. Bereits ausdruecklich beauftragte, getrennte Arbeit nur in ihrem abgegrenzten Umfang fortsetzen und den 500er-Pfad nicht blockieren.
+3. **Minimaler Sprint:** Problem, ein notwendiger naechster Schritt, messbares Abnahmekriterium und Freigabegrenze kurz festlegen. Erst die kleinste sichere Korrektur, dann nur die erforderlichen gezielten Pruefungen. Bereits vorhandene gueltige Belege wiederverwenden.
+4. **Keine selbst erzeugten Umwege:** Keine ungefragten Features, Architektur- oder Infrastrukturumbauten, kosmetischen Arbeiten, zusaetzlichen Teststufen, pauschalen Wiederholungen, willkuerlichen Versuchskappen oder neuen Freigabehuerten. Gesetzliche, technische, ressourcenbezogene und bestehende Sicherheitsgrenzen bleiben unveraendert. Bei einem echten Fehler Ursache klaeren, gezielt beheben und nicht in Endlosschleifen geraten.
+5. **Keine falsche Abnahme:** End500, Mock500 und Production500 strikt unterscheiden. Fuer Mock500 und Production500 jeweils den zuletzt gueltigen vollstaendigen Pruefvertrag verwenden, alle Sollpositionen und Fehlerklassen bilanzierten, notwendige Sicherung und Wiederherstellung belegen und den Endzustand pruefen. Ein lokaler oder simulierter Erfolg ist kein Production-Erfolg.
+6. **Freigabe und Sicherheit:** Keine Schutzregel allein zur Beschleunigung abschalten. Vor kritischen Aktionen die geltenden konkreten Freigaben, Kostenlimits, Auswirkungen, Nachkontrolle und Rueckweg pruefen. Dieser Fokusauftrag aendert keine bestehende Berechtigung.
+7. **Kurzbericht bei jedem Sprintabschluss:** Welches Abnahmekriterium wurde nachweislich erreicht? Was ist weiterhin offen? Was ist genau der naechste notwendige Schritt? Welche nicht notwendigen Arbeiten wurden bewusst ausgelassen?
+
+**Wichtig:** Dieser datierte Meilensteinvermerk darf einen spaeteren aktuellen Beleg nicht ueberstimmen. Fuer den tatsaechlichen Stand gelten Production-Belege, GitHub und danach `docs/CURRENT_STATE.md`.
+
 ## Dauerfreigabe fuer autonome Arbeit (Betreiber, 26.10.2026 Istanbul)
 
 Der Betreiber hat im laufenden HELMUT-Auftrag ausdruecklich vollautonome Arbeit
