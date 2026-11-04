@@ -1,5 +1,9 @@
 # Helmut UI: isolierte Prüfung vom 04.11.2026
 
+Dieser Bericht belegt den Ausgangsstand `a9ea5993`. Die anschließende
+[Zuordnungskorrektur mit 69 gezielten Prüfungen](ui-zuordnung-20261104.md)
+ist separat dokumentiert; diese frühere Gesamtserie wurde dabei nicht wiederholt.
+
 Die vorhandenen vier Fachansichten sind mit synthetischen Daten in Chromium
 geprüft: **150 gezielte Prüfungen und 238 Browserprüfungen bestanden**.
 Das ist eine Prüfung der implementierten Oberfläche, kein Backend-, Production-

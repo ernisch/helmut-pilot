@@ -1,9 +1,10 @@
 # Neue Helmut UI — Entwicklungsstand und sichere Abnahme
 
-Aktuell, 04.11.2026: **Vier Fachansichten isoliert mit Fixtures geprüft: 150
-gezielte Prüfungen und 238 Browserprüfungen bestanden.** Screenshots, Netzbelege,
-PR-771-Abgleich und verbleibende Integrationsprüfungen stehen in der
-[aktuellen UI-Abnahme](ui-abnahme-20261104.md). Kein Push, Merge oder Deployment.
+Aktuell, 04.11.2026: **Clientzuordnung und Briefing→Büro korrigiert; 69 gezielte
+Browserprüfungen mit normalem Clientbootstrap und simulierten APIs bestanden.**
+[Aktueller Zuordnungsnachweis](ui-zuordnung-20261104.md). Der frühere
+[Darstellungsnachweis mit 150+238 Prüfungen](ui-abnahme-20261104.md) gehört zu
+`a9ea5993` und wurde nicht wiederholt. Kein Push, Merge oder Deployment.
 
 Die folgenden Abschnitte dokumentieren den **historischen Vorbereitungsstand
 vom 31.10.2026**. Die damalige Zurückstellung lokaler UI-Prüfungen wurde durch

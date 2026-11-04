@@ -117,6 +117,7 @@ let officeDrafts = {};
 let officeDraftErrors = {};
 let officeDraftsGenerating = false;
 let selectedOfficeDraft = null;
+let officeBriefingTarget = null;
 let selectedCommunicationChannel = "press";
 let berlinClockTimer = null;
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
@@ -531,6 +532,7 @@ function applyStartPayload(startPayload) {
   recommendations = briefing.personalizedRecommendations || [];
 
   const themeSignalId = briefing.themeOfDay?.signalId;
+  const primaryVorgangId = briefing.currentHelmutState?.primaryVorgangId || briefing.themeOfDay?.vorgangId;
   const activeItems = briefing.items.filter((item) => item.decision !== "Ignorieren" && hasPreciseSource(item));
   const personalizedItems = recommendations.map(recommendationToDecisionItem).filter(hasPreciseSource);
   // V3: situationalBriefing-Einträge sind bereits vollständige Entscheidungs-Items
@@ -538,12 +540,14 @@ function applyStartPayload(startPayload) {
   const situationalItems = (briefing.situationalBriefing || []).filter(hasPreciseSource);
   const prominentPool = (personalizedItems.length ? personalizedItems : (activeItems.length ? activeItems : situationalItems));
   const decisionComparator = (a, b) => {
-    if (a.signalId === themeSignalId) return -1;
-    if (b.signalId === themeSignalId) return 1;
+    const aPrimary = primaryVorgangId ? decisionEntityId(a, "vorgangId", "vorgang_id") === primaryVorgangId : Boolean(themeSignalId && a.signalId === themeSignalId);
+    const bPrimary = primaryVorgangId ? decisionEntityId(b, "vorgangId", "vorgang_id") === primaryVorgangId : Boolean(themeSignalId && b.signalId === themeSignalId);
+    if (aPrimary !== bPrimary) return aPrimary ? -1 : 1;
     return Number(b.priority || b.finalScore || b.totalScore || 0) - Number(a.priority || a.finalScore || a.totalScore || 0);
   };
   const sortedDecisions = prominentPool
     .filter(hasPreciseSource)
+    .filter((item) => item.decision !== "Ignorieren")
     .sort(decisionComparator)
     .map(toDecision);
   // decisions bleibt bei 3 (Home/Quick/Summary hängen daran). helmutDeck ist das
@@ -4221,12 +4225,32 @@ function renderAdminMandatesSection(mandates) {
     </div>`;
 }
 
+// These are different namespaces. Never derive a KO/vorgang identity from a
+// recommendation id, title or legacy signal id. Preserve both API spellings.
+function decisionIdentityFields(item) {
+  return {
+    knowledgeObjectId: item.knowledgeObjectId ?? item.knowledge_object_id,
+    knowledge_object_id: item.knowledge_object_id ?? item.knowledgeObjectId,
+    vorgangId: item.vorgangId ?? item.vorgang_id,
+    vorgang_id: item.vorgang_id ?? item.vorgangId
+  };
+}
+
+function decisionEntityId(item, camel, snake) {
+  const values = [item?.[camel], item?.[snake]].filter((value) => value != null);
+  if (values.some((value) => typeof value !== "string")) return "";
+  const ids = [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+  return ids.length === 1 ? ids[0] : "";
+}
+
 function toDecision(item) {
   return {
+    ...decisionIdentityFields(item),
     ereignisTeilrollen: item.ereignisTeilrollen,
     ereignisKontexte: item.ereignisKontexte,
     id: item.id,
     signalId: item.signalId,
+    decision: item.decision,
     title: item.title,
     priorityLabel: priorityLabelForDecision(item),
     priorityType: priorityTypeForDecision(item),
@@ -4274,10 +4298,12 @@ function toDecision(item) {
 
 function recommendationToDecisionItem(recommendation) {
   return {
+    ...decisionIdentityFields(recommendation),
     ereignisTeilrollen: recommendation.ereignisTeilrollen,
     ereignisKontexte: recommendation.ereignisKontexte,
     id: recommendation.id,
-    signalId: recommendation.signal_id,
+    // V3 item.signalId is the explicit KO id; legacy signals remain separate.
+    signalId: recommendation.signal_id ?? recommendation.knowledge_object_id,
     title: recommendation.title,
     topic: recommendation.topic,
     summary: recommendation.summary,
@@ -4307,7 +4333,7 @@ function recommendationToDecisionItem(recommendation) {
     priority: recommendation.relevance_score,
     // Entscheidung kommt vom Server (V3 Decision Engine) — der Client rechnet die
     // Schwelle NICHT mehr selbst nach (Server ist die einzige Quelle der Wahrheit).
-    decision: recommendation.decision || "Beobachten",
+    decision: recommendation.decision,
     classification: recommendation.priorityType === "risk" ? "risk" : "opportunity",
     action_type: recommendation.action_type,
     deadline: recommendation.deadline,
@@ -6730,6 +6756,7 @@ function renderUiBriefingHero(state) {
   const stale = state.status === "stale" || state.staleState === true || state.datenstandVonHeute === false || state.frischeVertrag?.aktuell === false;
   const eyebrow = stale ? "Letzter Stand" : state.status === "fresh" ? "Heute entscheidend" : "Aktueller Vorgang";
   const urgency = hstandUrgencyChip(state.urgency || item.urgency);
+  const officeAvailable = Boolean(briefingOfficeDecision() && activeOfficeFormats().length);
   return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang">
     <div class="ui-hero-main"><span class="ui-eyebrow"><span class="ui-priority-dot" aria-hidden="true"></span>${eyebrow}</span>
       <h2>${escapeHtml(title)}</h2>
@@ -6738,7 +6765,8 @@ function renderUiBriefingHero(state) {
     </div>
     <div class="ui-hero-next"><span class="ui-eyebrow">Dein nächster Schritt</span>
       ${recommendation ? `<p>${escapeHtml(recommendation)}</p>` : '<p>Prüfe die Einordnung und Quellen zu diesem Vorgang.</p>'}
-      <button type="button" class="ui-arrow-action" data-view="office"><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span>Im Büro öffnen</span></button>
+      <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span>Im Büro öffnen</span></button>
+      ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfe den Vorgang und deine Büro-Formate.</p>'}
     </div>
   </section>`;
 }
@@ -9087,9 +9115,55 @@ function draftTitle(decision) {
   return t;
 }
 
+function officeDecisions() {
+  const eligible = (decisions || []).filter((d) =>
+    typeof d.id === "string" && d.id.trim() && typeof d.title === "string" && d.title.trim()
+    && ["Sofort reagieren", "Beobachten"].includes(d.decision)
+    && decisionEntityId(d, "knowledgeObjectId", "knowledge_object_id")
+    && decisionEntityId(d, "vorgangId", "vorgang_id")
+    && hasPreciseSource(d));
+  const counts = new Map();
+  for (const d of eligible) {
+    const id = decisionEntityId(d, "vorgangId", "vorgang_id");
+    counts.set(id, (counts.get(id) || 0) + 1);
+  }
+  return eligible.filter((d) => counts.get(decisionEntityId(d, "vorgangId", "vorgang_id")) === 1).slice(0, 2);
+}
+
+function briefingOfficeDecision() {
+  const state = briefing?.currentHelmutState;
+  const id = typeof state?.primaryVorgangId === "string" ? state.primaryVorgangId.trim() : "";
+  if (!id || !state.primaryItem || state.status === "error" || state.errorState
+    || state.primaryItem.id !== id || !profile?.id
+    || (state.profileId && state.profileId !== profile.id)) return null;
+  return officeDecisions().find((d) => decisionEntityId(d, "vorgangId", "vorgang_id") === id) || null;
+}
+
+function openOfficeForBriefing() {
+  const decision = briefingOfficeDecision();
+  const format = activeOfficeFormats()[0];
+  if (!decision || !format) {
+    selectedOfficeDraft = null;
+    officeBriefingTarget = null;
+    showToast("Kein eindeutig zugeordneter Büroentwurf verfügbar.");
+    return false;
+  }
+  officeBriefingTarget = { profileId: profile.id,
+    vorgangId: decisionEntityId(decision, "vorgangId", "vorgang_id"),
+    knowledgeObjectId: decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id") };
+  selectedOfficeDraft = uiOfficeSelection(decision, format);
+  currentView = "office-detail";
+  persistView("office");
+  navOpen = updatesOpen = false;
+  render();
+  app.querySelector(".ui-page")?.scrollTo({ top: 0 });
+  return true;
+}
+
 function renderOfficeView() {
+  const detailOpen = currentView === "office-detail" || Boolean(officeBriefingTarget);
   const formats = activeOfficeFormats();
-  const topDecisions = (decisions || []).filter((d) => d.decision !== "Ignorieren" && d.title).slice(0, 2);
+  const topDecisions = officeDecisions();
   const allCards = topDecisions.flatMap((d) => formats.map((f) => ({ decision: d, format: f })));
   const totalCount = allCards.length;
   const hasBriefing = topDecisions.length > 0;
@@ -9126,16 +9200,24 @@ function renderOfficeView() {
     </div>
   ` : "";
 
+  if (officeBriefingTarget) {
+    const target = officeBriefingTarget;
+    const match = profile.id === target.profileId && allCards.find(({decision, format}) =>
+      decisionEntityId(decision, "vorgangId", "vorgang_id") === target.vorgangId
+      && decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id") === target.knowledgeObjectId
+      && (!selectedOfficeDraft || format.id === selectedOfficeDraft.format.id));
+    selectedOfficeDraft = match ? uiOfficeSelection(match.decision, match.format) : null;
+  }
   if (selectedOfficeDraft && !allCards.some(({decision, format}) => officeDraftKey(decision, format) === officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format))) selectedOfficeDraft = null;
   const selectedCard = selectedOfficeDraft && allCards.find(({decision, format}) => officeDraftKey(decision, format) === officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format));
   if (selectedCard) selectedOfficeDraft = uiOfficeSelection(selectedCard.decision, selectedCard.format);
-  else if (allCards.length) selectedOfficeDraft = uiOfficeSelection(allCards[0].decision, allCards[0].format);
+  else if (!officeBriefingTarget && currentView !== "office-detail" && allCards.length) selectedOfficeDraft = uiOfficeSelection(allCards[0].decision, allCards[0].format);
   return `
     <div class="buero-view">
       ${renderUiPageHeader("Büro", "Entwürfe für deine politische Arbeit. Prüfe Inhalt und Quellen vor der Verwendung.")}
       <p class="buero-summary">${summaryText || "Noch kein Entwurf bereit"}</p>
       ${priorityHint}
-      <div class="ui-master-detail ui-office-workspace ${currentView === "office-detail" ? "is-detail" : ""}">
+      <div class="ui-master-detail ui-office-workspace ${detailOpen ? "is-detail" : ""}">
       <div class="buero-draft-list ui-master">
         ${topDecisions.map((decision, di) => `
           <div class="buero-group">
@@ -9148,7 +9230,7 @@ function renderOfficeView() {
         `).join("")}
         ${!hasBriefing ? renderUiEmpty("Noch keine Entwürfe", "Sobald belastbare Vorgänge vorliegen, kannst du hier passende Entwürfe prüfen.") : !formats.length ? renderUiEmpty("Keine Büro-Formate ausgewählt", "Wähle die gewünschten Formate in deinem Profil.") : ""}
       </div>
-      <aside class="ui-detail ui-office-detail" aria-label="Entwurf im Detail">${selectedOfficeDraft ? renderOfficeDraftDetail() : renderUiEmpty("Dein Arbeitsbereich", "Wähle einen Entwurf, um den vollständigen Text und seine Quellen zu prüfen.")}</aside>
+      <aside class="ui-detail ui-office-detail" aria-label="Entwurf im Detail">${selectedOfficeDraft ? renderOfficeDraftDetail() : `${detailOpen ? `<button type="button" class="buero-back-btn" data-office-back>${uiIcon("back")} Büro</button>` : ""}${renderUiEmpty(officeBriefingTarget ? "Entwurf nicht eindeutig zugeordnet" : "Dein Arbeitsbereich", "Wähle einen vorhandenen Entwurf, um den vollständigen Text und seine Quellen zu prüfen.")}`}</aside>
       </div>
     </div>
   `;
@@ -9188,7 +9270,7 @@ function renderOfficeDraftCard(decision, format, index = 0) {
   return `
     <article class="buero-draft-card${isLoading ? " is-loading" : ""}${selectedOfficeDraft && officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format) === key ? " is-selected" : ""}" style="animation-delay:${delay}"
       data-office-open="${escapeAttribute(key)}"
-      data-office-decision="${escapeAttribute(JSON.stringify({ id: decision.id, signalId: decision.signalId, title: decision.title }))}"
+      data-office-decision="${escapeAttribute(JSON.stringify({ id: decision.id, knowledgeObjectId: decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id"), vorgangId: decisionEntityId(decision, "vorgangId", "vorgang_id") }))}"
       data-office-format="${escapeAttribute(format.id)}"
       role="button" tabindex="0" aria-label="${escapeAttribute(meta.typeLabel + ": " + title)}">
       <div class="buero-card-top">
@@ -11532,6 +11614,7 @@ function bindActions() {
   }
   app.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.dataset.view === "office") { officeBriefingTarget = null; selectedOfficeDraft = null; }
       if (vsheetEl) closeVorgangSheet(true); // Detail-Sheet bei Navigation schließen
       currentView = button.dataset.view;
       uiLageDetailOpen = false;
@@ -11698,33 +11781,19 @@ function bindActions() {
 
   app.querySelectorAll("[data-office-open]").forEach((card) => {
     const open = () => {
-      const key = card.dataset.officeOpen;
       const formatId = card.dataset.officeFormat;
       const format = OFFICE_FORMATS.find((f) => f.id === formatId);
       let cardDecision;
       try { cardDecision = JSON.parse(card.dataset.officeDecision || "{}"); } catch (_) { cardDecision = {}; }
-      // Volle Entscheidung aufloesen: die Karte traegt nur { id, signalId, title } —
-      // Quellenliste und -zaehler der Detailansicht brauchen sources/primarySource
-      // aus der globalen Entscheidungs-Menge. Ohne Treffer bleibt das schlanke
-      // Kartenobjekt (Zaehler ehrlich 0, kein erfundener Wert).
-      const decision = decisions.find((d) =>
-        (cardDecision.id && d.id === cardDecision.id)
-        || (cardDecision.signalId && d.signalId === cardDecision.signalId)
-      ) || cardDecision;
-      const resolvedFormat = format || { id: formatId, label: formatId, icon: "ti-file", channel: "press" };
-      const resolvedMeta = OFFICE_FORMAT_META[formatId] || {};
-      const cachedValue = officeDrafts[key];
-      const cachedText = officeDraftText(cachedValue);
-      const hasValidCached = isValidDraft(cachedText);
-      const text = (hasValidCached ? cachedText : null) || channelFallbackStatement(
-        decision,
-        resolvedFormat.channel || "press"
-      );
-      // Herkunft mitgeben, damit die Detailansicht ehrlich kennzeichnet.
-      selectedOfficeDraft = {
-        decision, format: resolvedFormat, text,
-        provenance: draftProvenanceLabel(officeDraftProvenance(cachedValue), hasValidCached)
-      };
+      const decision = officeDecisions().find((d) => d.id === cardDecision.id
+        && decisionEntityId(d, "knowledgeObjectId", "knowledge_object_id") === cardDecision.knowledgeObjectId
+        && decisionEntityId(d, "vorgangId", "vorgang_id") === cardDecision.vorgangId);
+      if (!decision || !format || !activeOfficeFormats().some((f) => f.id === format.id)) {
+        showToast("Dieser Entwurf ist nicht mehr eindeutig zugeordnet.");
+        return;
+      }
+      officeBriefingTarget = null;
+      selectedOfficeDraft = uiOfficeSelection(decision, format);
       currentView = "office-detail";
       render();
       app.querySelector(".ui-page")?.scrollTo({ top: 0 });
@@ -11735,11 +11804,16 @@ function bindActions() {
 
   app.querySelectorAll("[data-office-back]").forEach((btn) => {
     btn.addEventListener("click", () => {
+      officeBriefingTarget = null;
       selectedOfficeDraft = null;
       currentView = "office";
       render();
       app.querySelector(".ui-page")?.scrollTo({ top: 0 });
     });
+  });
+
+  app.querySelectorAll("[data-briefing-office]").forEach((button) => {
+    button.addEventListener("click", openOfficeForBriefing);
   });
 
   app.querySelectorAll("[data-refresh-helmut]").forEach((button) => {
@@ -12913,9 +12987,9 @@ function draftProvenanceLabel(source, hasValidDraft) {
 }
 
 async function generateOfficeDraftsInBackground() {
-  if (officeDraftsGenerating) return;
+  if (previewMode || officeDraftsGenerating || !briefingOfficeDecision()) return;
   const formats = activeOfficeFormats();
-  const topDecisions = (decisions || []).filter((d) => d.decision !== "Ignorieren" && d.title).slice(0, 2);
+  const topDecisions = officeDecisions();
   if (!formats.length || !topDecisions.length) return;
 
   const cacheKey = officeDraftCacheKey();
@@ -12949,13 +13023,19 @@ async function generateOfficeDraftsInBackground() {
   officeDraftsGenerating = true;
   render();
 
+  const stillAssigned = (decision) => cacheKey === officeDraftCacheKey() && briefingOfficeDecision()
+    && officeDecisions().some((current) => current.id === decision.id && current.decision === decision.decision
+      && decisionEntityId(current, "vorgangId", "vorgang_id") === decisionEntityId(decision, "vorgangId", "vorgang_id")
+      && decisionEntityId(current, "knowledgeObjectId", "knowledge_object_id") === decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id"));
   for (const { decision, format, key } of batch) {
+    if (!stillAssigned(decision)) break;
     try {
       const result = await generateStatementWithBackend(
         `Bereite einen ${format.label}-Entwurf vor zum Thema: ${decision.title}`,
         decision,
         format.channel || "press"
       );
+      if (!stillAssigned(decision)) continue;
       // Herkunft speichern: der Server kennzeichnet regelbasierte Fallbacks
       // ehrlich (aiEnabled=false) — das darf im UI nie als KI-Entwurf erscheinen.
       officeDrafts[key] = { text: result.text, source: result.aiEnabled ? "ki" : "regel" };
@@ -12964,7 +13044,7 @@ async function generateOfficeDraftsInBackground() {
     } catch (_) {
       // Ehrlicher Fehlerzustand statt stillem Fallback (Status "Erstellung
       // fehlgeschlagen"); beim nächsten App-Start wird erneut versucht.
-      officeDraftErrors[key] = true;
+      if (stillAssigned(decision)) officeDraftErrors[key] = true;
     }
   }
 
@@ -12972,7 +13052,7 @@ async function generateOfficeDraftsInBackground() {
   render();
   // Nur erfolgreiche Entwürfe cachen — fehlende Keys bleiben offen und werden
   // beim nächsten Lauf nachgeneriert (kein eingefrorener Teilerfolg mehr).
-  try { localStorage.setItem(cacheKey, JSON.stringify(officeDrafts)); } catch (_) {}
+  try { if (cacheKey === officeDraftCacheKey()) localStorage.setItem(cacheKey, JSON.stringify(officeDrafts)); } catch (_) {}
 }
 
 function preferredOfficeHandoffMethod() {

@@ -2,10 +2,13 @@
 
 ## Separate UI-Arbeit (04.11.2026, keine Production-Aussage)
 
-Nur Branch `codex/helmut-ui-20261031`: Lage, Radar, Briefing und Büro mit
-synthetischen Daten im eigenen Netzwerk-Namensraum geprüft; 150 gezielte und
-238 Browserprüfungen bestanden, null externe Übertragungen. Kopierfehler und
-UI-Datums-/Darstellungsfehler korrigiert. [Bericht, Screenshots und Netzbelege](ui-abnahme-20261104.md).
+Nur Branch `codex/helmut-ui-20261031`: Nach Ausgangskopf `a9ea5993` die
+KO-/Vorgangskennungen und `decision` im Client erhalten, ignorierte Vorgänge
+aus Büroentwürfen ausgeschlossen und Briefing→Büro eindeutig gebunden.
+69 gezielte Browserprüfungen mit vollständigem Clientbootstrap und ausschließlich
+simulierten APIs bestanden; eigener Netzwerk-Namensraum, null externe Übertragungen.
+[Aktueller Zuordnungsnachweis](ui-zuordnung-20261104.md). Die früheren 150+238
+[Darstellungsprüfungen](ui-abnahme-20261104.md) auf `a9ea5993` wurden nicht wiederholt.
 Kein Push, Merge, Deployment oder gemeinsamer CI-Start. Motor-/500er-Stand
 nicht neu erhoben; die folgenden operativen Einträge werden nicht aktualisiert.
 

@@ -70,7 +70,7 @@ with tempfile.TemporaryDirectory(prefix="ui-browser-", dir=out) as home:
                "ehrlichkeit-ui-test.js", "ui-preview-browser-check.js"]
     if "--only" in sys.argv:
         selected = sys.argv[sys.argv.index("--only") + 1]
-        assert selected in scripts, "Unsupported test selection"
+        assert selected in [*scripts, "ui-office-binding-browser-test.js"], "Unsupported test selection"
         scripts = [selected]
     for script in scripts:
         print("UI CHECK", script, flush=True)

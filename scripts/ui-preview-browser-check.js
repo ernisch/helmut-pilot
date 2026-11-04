@@ -8,8 +8,9 @@ const assert = require("assert/strict");
 const { createHash } = require("crypto");
 const { spawn } = require("child_process");
 const { payload, item } = require("./fixtures/ui-preview");
+const bindingCases = process.argv.includes("--office-binding") ? require("./ui-office-binding-browser-cases") : null;
 const root = path.resolve(__dirname, "..");
-const output = path.join(root, "tmp/ui-preview-artifacts");
+const output = path.join(root, bindingCases ? "tmp/ui-office-binding-artifacts" : "tmp/ui-preview-artifacts");
 assert(process.env.UI_NETWORK_PROOF, "Use ui-preview-isolated.py; app start prohibited without proof");
 const proof = JSON.parse(fs.readFileSync(process.env.UI_NETWORK_PROOF));
 assert(proof.verifiedBeforeAppStart && proof.parentNetNS !== proof.testNetNS);
@@ -20,7 +21,9 @@ const check = (name, condition, detail) => {
   assert.ok(condition, name + (detail ? ": " + JSON.stringify(detail) : ""));
   passes.push(name); console.log("PASS ", name);
 };
-const card = { ...item, status: "open", priorityType: "risk", priorityLabel: "Handeln", recommendation: "Den synthetischen UI Zustand prüfen." };
+const card = { ...item, knowledge_object_id: "ui-ko", knowledgeObjectId: "ui-ko", vorgang_id: item.id, vorgangId: item.id,
+  decision: "Sofort reagieren", status: "open", priorityType: "risk", priorityLabel: "Handeln", recommendation: "Den synthetischen UI Zustand prüfen." };
+payload.briefing.currentHelmutState.primaryVorgangId = item.id;
 payload.briefing.status = "Aktuell";
 payload.briefing.currentRadarState.articles = [
   { ...item, id: "article-party", title: "Synthetischer Parteibericht", relation: "party", type: "party", relationTypes: ["party"] },
@@ -80,7 +83,7 @@ const fixtureBootstrap = `
   };
   __resetUi(); currentView='helmut'; render();
 `;
-const client = source.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "") + fixtureBootstrap;
+const client = bindingCases ? source : source.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "") + fixtureBootstrap;
 
 class CDP {
   constructor(process) {
@@ -138,7 +141,7 @@ async function main() {
     if (url.pathname === "/client.js") { body=client; mime="text/javascript"; }
     else if (url.pathname.startsWith("/api/")) {
       mime="application/json";
-      const value = url.pathname === "/api/profile/current" ? payload.profile
+      const value = bindingCases ? await bindingCases.apiResponse(event.request) : url.pathname === "/api/profile/current" ? payload.profile
         : url.pathname === "/api/app/start" ? payload
         : {id:"simulated-saved",ok:true,text:"Synthetischer Antworttext",aiEnabled:false};
       body=JSON.stringify(value);
@@ -157,8 +160,13 @@ async function main() {
   let completed = false, browserVersion;
   try {
     browserVersion = await cdp.send("Browser.getVersion");
-    for (const [label,width,height,mobile] of [["desktop",1440,900,false],["mobile",390,844,true],["mobile-360",360,780,true]]) {
-      const {targetId} = await cdp.send("Target.createTarget", {url:"about:blank"});
+    const viewports = bindingCases ? [["desktop",1440,900,false],["mobile",390,844,true]] : [["desktop",1440,900,false],["mobile",390,844,true],["mobile-360",360,780,true]];
+    for (const [label,width,height,mobile] of viewports) {
+      if (bindingCases) bindingCases.reset();
+      // Fresh storage per binding viewport: a desktop draft cache must not mask
+      // the mobile bootstrap/CSRF/generation contract.
+      const browserContextId = bindingCases ? (await cdp.send("Target.createBrowserContext",{disposeOnDetach:true})).browserContextId : undefined;
+      const {targetId} = await cdp.send("Target.createTarget", {url:"about:blank",...(browserContextId ? {browserContextId} : {})});
       const {sessionId:s} = await cdp.send("Target.attachToTarget", {targetId,flatten:true});
       await cdp.send("Page.enable",{},s); await cdp.send("Runtime.enable",{},s);
       await cdp.send("Fetch.enable",{patterns:[{urlPattern:"*",requestStage:"Request"}]},s);
@@ -169,11 +177,18 @@ async function main() {
       await cdp.send("Page.navigate",{url:origin+"/"},s);
       let ready=false;
       for (let i=0;i<100;i++) {
-        try { ready=await cdp.evaluate(s,"typeof __uiPreview === 'object' && !!document.querySelector('.ui-briefing-hero') && document.body.classList.contains('splash-gone')"); } catch {}
+        try { ready=await cdp.evaluate(s,(bindingCases ? "typeof loadBriefing === 'function'" : "typeof __uiPreview === 'object'") + " && !!document.querySelector('.ui-briefing-hero') && document.body.classList.contains('splash-gone')"); } catch {}
         if (ready) break;
         await new Promise(r=>setTimeout(r,50));
       }
       check(label+": actual UI rendered",ready,{errors,chromeLog});
+      if (bindingCases) {
+        await bindingCases.run({cdp, session:s, label, mobile, check,
+          screenshot:async name=>{const r=await cdp.send("Page.captureScreenshot",{format:"png",captureBeyondViewport:false},s);fs.writeFileSync(path.join(output,label+"-"+name+".png"),Buffer.from(r.data,"base64"));}});
+        await cdp.send("Target.closeTarget",{targetId});
+        await cdp.send("Target.disposeBrowserContext",{browserContextId});
+        continue;
+      }
       await cdp.evaluate(s,"document.documentElement.dataset.theme='dark'; document.fonts.ready.then(()=>true)");
       const fonts=await cdp.evaluate(s,"[...document.fonts].filter(f=>f.status==='loaded').map(f=>f.family)");
       check(label+": all three design font families loaded",["Spectral","Hanken Grotesk","IBM Plex Mono"].every(n=>fonts.some(f=>f.includes(n))),fonts);
@@ -285,6 +300,7 @@ async function main() {
   } finally {
     fs.writeFileSync(path.join(output,"BROWSER_REQUESTS.json"),JSON.stringify(requests,null,2)+"\n");
     const files = new Set(["client.js", "scripts/fixtures/ui-preview.js", "scripts/ui-preview-browser-check.js", "scripts/ui-preview-isolated.py"]);
+    if (bindingCases) for (const file of ["scripts/ui-office-binding-browser-cases.js", "scripts/ui-office-binding-browser-test.js", "scripts/fixtures/ui-office-binding.js"]) files.add(file);
     for (const request of requests) {
       if (request.action !== "fulfilled-in-memory" || request.status !== 200) continue;
       const pathname = new URL(request.url).pathname;
@@ -292,7 +308,7 @@ async function main() {
     }
     const sha256 = value => createHash("sha256").update(value).digest("hex");
     const testedFiles = Object.fromEntries([...files].sort().map(file => [file, sha256(fs.readFileSync(path.join(root, file)))]));
-    fs.writeFileSync(path.join(output,"BROWSER_RESULT.json"),JSON.stringify({status:completed?"PASS":"FAIL",passes,errors,externalRequestsFulfilled:requests.filter(r=>new URL(r.url).origin!==origin && r.action!=="blocked").length,negativeControlsBlocked:requests.filter(r=>r.action==="blocked").length,bootstrap:"actual client with fixture initialization; real backend bootstrap removed",chromium:"/usr/bin/chromium",browserVersion,testedFiles,servedClientSha256:sha256(client)},null,2)+"\n");
+    fs.writeFileSync(path.join(output,"BROWSER_RESULT.json"),JSON.stringify({status:completed?"PASS":"FAIL",passes,errors,externalRequestsFulfilled:requests.filter(r=>new URL(r.url).origin!==origin && r.action!=="blocked").length,negativeControlsBlocked:requests.filter(r=>r.action==="blocked").length,bootstrap:bindingCases ? "unmodified full client including normal loadBriefing/auth/CSRF; every API mocked in memory" : "actual client with fixture initialization; real backend bootstrap removed",...(bindingCases ? {apiEvidence:bindingCases.evidence()} : {}),chromium:"/usr/bin/chromium",browserVersion,testedFiles,servedClientSha256:sha256(client)},null,2)+"\n");
     try { await cdp.send("Browser.close"); } catch {}
     if(chrome.exitCode===null) chrome.kill();
   }
