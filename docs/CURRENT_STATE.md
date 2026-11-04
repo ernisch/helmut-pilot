@@ -1,15 +1,15 @@
 # CURRENT STATE — Helmut
 
-## W15: Mock500-Nachtstart BLOCKED (04.11.2026)
+## W15: manueller Mock500-Start vorbereitet (04.11.2026)
 
-[Blockierstand](betrieb/w15-mock500-night-resume-blocked-20261104.md):
-Steuerungc6/PR1033/CI41730712562/ReviewPASS; Runtime789/CI41707992564 erhalten.
-Schedulerauftrag eingetroffen, aberAPIlast_run=null; Automationpausiert.
-Metadaten-Zeitformatfehler belegt/repariert/gezielttested/unabhängiggeprüft.
-0/3Slots,0Links,0Jobs. Originalbuilder500SynthetikPASS; volle500D/Provider/Review/C
-vorAktivierungPflicht. End50041325430429/Empfang41037459441 übernommen.
-Run41694827024/600bleibtFAIL(195s,2,77GB),RohursacheUNKNOWN;8CleanupPASS,
-Endzähler/Sicherung/DBnullUNKNOWN. KeinMock500PASS/Production; alteVerträge/FAILs erhalten.
+[Manuelle Bindung](betrieb/w15-mock500-manual-series-20261104.md): ausdrücklicherGO
+ersetzt nur Schedulerbeleg; bestehende3Slots/0,15USDgesamt unverändert.
+Runtime789/PR1032/CI41707992564 erhalten; Schedulerpfadbytegleich/Automationpausiert.
+NeueKontroll-CI/Review vorStartPflicht;0/3Slots,0Links,0Jobs. Zeitformatfixgeprüft.
+Originalbuilder500SynthetikPASS; volle500D/Provider/Review/C vorAktivierungPflicht.
+End50041325430429/Empfang41037459441 übernommen. Run41694827024/600bleibtFAIL
+(195s,2,77GB),RohursacheUNKNOWN;8CleanupPASS,Endzähler/Sicherung/DBnullUNKNOWN.
+KeinMock500PASS/Production; alteVerträge/FAILs erhalten.
 
 [Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
 auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.

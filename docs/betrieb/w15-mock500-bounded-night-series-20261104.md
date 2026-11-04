@@ -3,6 +3,11 @@
 Betreiberauftrag vom 03.11.2026 UTC. Gilt ausschließlich für die bestehende
 isolierte GitHub-Umgebung `helmut-ci-originals`, ohne Production-Wirkung.
 
+Ergänzendes ausdrückliches Betreiber-GO vom04.11.: Die getrennte
+[manuelle Startbindung](w15-mock500-manual-series-20261104.md) darf ausschließlich
+den fehlenden Schedulerbeleg ersetzen. Der unten beschriebene Schedulerpfad
+bleibt unverändert; Grant, Journal und gesamte Dreiergrenze gelten gemeinsam.
+
 ## Umfang und unveränderte Einzelverträge
 
 Höchstens drei vollständige Originalläufe insgesamt, nicht drei je Fehler,
