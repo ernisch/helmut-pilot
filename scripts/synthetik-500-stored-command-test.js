@@ -141,6 +141,34 @@ async function check(name, body) {
       return true;
     });
   });
+  await check("actual-pinned-worker-enters-dictionary-codec-before-operation-check", async () => {
+    const codec = require("../lib/helmut/synthetik-500-direct-codec");
+    const runner = require("../lib/helmut/synthetik-500-content-runner");
+    // A small shared graph selects the real >64 MiB dictionary transport.
+    // Its deliberately different operation stops before C or any authority.
+    const envelope = codec.encode({ command: { version: "helmut-synthetik500-production-command/2-direct",
+      mode: "D-R-500", slot: { plan: { operationId: "synthetik500-dictionary-fixture-only" } },
+      syntheticPadding: Array(65).fill("x".repeat(1024 * 1024)) } });
+    assert.equal(envelope.version, codec.DICTIONARY_VERSION);
+    for (const tampered of [false, true]) {
+      const dataText = JSON.stringify(tampered ? { ...envelope, sha256: "0".repeat(64) } : envelope);
+      await assert.rejects(runner.validateStoredContent({ dataText, storedSHA256: sha(dataText),
+        operationId: "synthetik500-dictionary-expected-operation", commandHash: "0".repeat(64)
+      }, 15000), error => {
+        assert.equal(error.message, tampered ? "synthetik500-production-direct-codec-invalid"
+          : "synthetik500-content-worker-operation");
+        const seal = error.phases?.find(p => p.name === "closedSeal");
+        assert.equal(seal?.diagnostics.bootQualified, true);
+        assert.equal(seal?.diagnostics.sealed, true);
+        assert.equal(error.diagnostics?.codecCalls, 1);
+        assert.equal(error.diagnostics?.codecEnteredCount, 1);
+        assert.equal(error.diagnostics?.lastFailure, "none");
+        assert.equal(error.diagnostics?.commandCalls, 0);
+        assert(!error.phases.some(p => p.name === "completeOriginalC"));
+        return true;
+      });
+    }
+  });
   await check("signed90-offline-once-then-warm-cross-request-content", async () => {
     const x = fixture(); x.state.fullMS = 65000; const offline = await x.offline();
     assert.equal(offline.metrics.wallMs, 65000); assert.equal(offline.executionAuthorized, false);

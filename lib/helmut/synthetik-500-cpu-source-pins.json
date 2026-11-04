@@ -370,8 +370,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-content-worker.js",
-      "bytes": 7304,
-      "sha256": "a47ccd5780a27cb96283a56c54d4c5384e32c0b78e84a8206f919aab0f017cb5"
+      "bytes": 7383,
+      "sha256": "8b07a669b962039960dd0ecde33ef3977f68876a4c4f023b78c484956f07a4d0"
     }
   ]
 }

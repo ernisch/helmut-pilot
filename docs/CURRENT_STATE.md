@@ -1,20 +1,18 @@
 # CURRENT STATE — Helmut
 
-## W15: Materials abgeschlossen, Prepare FAIL (04.11.2026)
+## W15: Stored-Worker-Blocker lokal nachgestellt (04.11.2026)
 
 [Run41870462562](https://github.com/ernisch/helmut-pilot/actions/runs/41870462562)
-auf015f: **FAIL**,175s. Materials abgeschlossen; Prepare`stored-command`/
-`PREPARE_UNMAPPED`, innere UrsacheUNKNOWN. Quittung/Nonce unabhaengig bestaetigt.
-500/aktiv0,Fachfelder unveraendert,nativ`BOUND_PREPARED_ZERO`;Units/Provider0,
-keineAuthority;8CleanupPASS/eigeneProzesse0. Peak2,828GB/Limit13,384GB;
-Swap/OOM/max0. Eine verschluesselte Kapsel/1Tag/authReadback, privat erhalten.
-GO verbraucht,keinRetry; Ausfuehrungsbranch015f. Serien-STOPs,2reservierte
-Plaetze/0Terminals,gesperrter dritter Platz und pausierte Automation unveraendert.
-[Diagnosefix/Belege](betrieb/w15-mock500-prepare-diagnostic-20261104.md): Worker-
-Guardstelle ging im Wrapper verloren; klein synthetisch nachgestellt/geprueft,
-finale Pflicht-CI/Abnahme am neuen Draft-PR. Keine neue Originalfreigabe oder
-Mock500-Abnahme. BaselineFAIL41854268479/1ccb bleibt erhalten, Materials-Fix belegt.
-[Voriger Vollstand](https://github.com/ernisch/helmut-pilot/blob/015f8e3025e8016363e7bbcacad03a0d04a9af1f/docs/CURRENT_STATE.md).
+auf015f bleibt **FAIL**,175s: Materials vollstaendig, Prepare`stored-command`/
+`PREPARE_UNMAPPED`; urspruengliche innere MeldungUNKNOWN. Nativ500/0,Units/Provider0,
+8CleanupPASS. Peak2,828GB/Limit13,384GB,Swap/OOM/max0; Kapsel privat erhalten.
+GO verbraucht,Ausfuehrungsbranch015f. Lokal auf015f reproduziert: Kalenderimport
+nach Worker-Seal veraendert dessen Module und sperrt den Dictionary-Transport.
+Fix: Import vor Seal, Worker-Pin aktualisiert; gezielte Regression rot→gruen.
+[Ursache und Abnahme](betrieb/w15-mock500-prepare-diagnostic-20261104.md), neuer Draft-PR.
+PR1041 erhalten. Kein neuer Originallauf/Prepare-/Mock500-PASS. Serien-STOPs,
+2reservierte Plaetze/0Terminals,Platz3 gesperrt,Automation pausiert; alteFAILs erhalten.
+[Voriger Vollstand](https://github.com/ernisch/helmut-pilot/blob/8f48e31a3825af538b92a49ae68d0aa6b080c3cf/docs/CURRENT_STATE.md).
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
 Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.

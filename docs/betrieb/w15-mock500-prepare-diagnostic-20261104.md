@@ -237,3 +237,49 @@ Fehlerkapsel, native Nullaktivitaet und bestaetigter Prozessstillstand. Grenzen
 wie oben; keine Aktivierung, Einheiten, Modelle, Serienfortsetzung oder Mock500.
 Bei FAIL/UNKNOWN sicher stoppen, kein Retry. Exakten Commit und aktuelle
 Pflicht-CI im konkreten GO nennen; diese Dokumentation ist selbst kein GO.
+
+## Konkreter Workerblocker, lokal nachgestellt (04.11.2026)
+
+Der Strategiewechsel verwendet vorhandene Belege statt eines neuen Originallaufs.
+Der positive Originalworker-Beleg auf058cc9e8 pruefte den Worker direkt; er
+schliesst den gespeicherten Backend-/PostgREST-Pfad ausdruecklich aus. Sein
+Oktober-Konstruktionszeitpunkt ist keine eingefrorene Worker-Uhr. Die damaligen67
+Quellmodule sind nicht der spaetere72-Modul-Graph. Unveraenderte Testdateien
+ersetzen keine Abnahme der spaeteren Kombination.
+
+Die begrenzte synthetische Gegenprobe am echten Worker auf015f und8f48 scheitert
+nach Bootstrap/Seal, vor C: `codecCalls:1`, `codecEnteredCount:0`,
+`commandCalls:0`, `passive-descriptor-drift:3682`. Der gueltige Dictionary-
+Transport expandiert auf etwa65MiB aus einer wiederholten synthetischen Zeichenfolge.
+Die bewusst falsche Operationsbindung wird erst nach der gescheiterten Codec-
+Pruefung kontrolliert. Keine Originale, Datenbank, Profile oder Modellaufrufe.
+
+Eine einmalige, unabhaengig gepruefte Trace-Kopie lokalisiert die Abweichung:
+`require.main.children` hat beim Seal vier und beim Decode fuenf Eintraege.
+Der vorhandene Kalenderimport erfolgt nach `epoch.seal()` und fuegt seinem
+Elternmodul den bereits vorgeladenen Kalender als Kind hinzu. Die passive
+Integritaetspruefung erkennt diese echte Zustandsaenderung korrekt. Das Verhalten
+tritt mit und ohne aktive Mock-Kalenderberechtigung auf.
+
+Die Korrektur verschiebt nur diesen Import vor Seal und aktualisiert den exakten
+Worker-Quellpin. Epoch, Kalenderberechtigung, Eingabe-/Hashpruefungen, Zeit-, RAM-
+und Ausfuehrungsgrenzen bleiben unveraendert. Die neue gezielte Regression ist
+vorher rot, danach gruen: echter Codec erreicht die beabsichtigte spaetere
+Operationsabweisung mit `codecEnteredCount:1`; manipulierte Hashes bleiben gesperrt.
+Pflicht-CI und unabhaengige Abnahme sind am neuen Draft-PR an den Codekopf gebunden.
+
+Dies belegt einen deterministischen technischen Startblocker. Die verworfene
+innere Meldung von Run41870462562 wird damit nicht nachtraeglich rekonstruiert.
+Seine Quittung beweist weder den konkreten Envelope-Typ noch das Erreichen des
+Workers; fruehere Fehler der gespeicherten Ruecklesung bleiben moeglich. Der
+lokale Transportnachweis ist keine vollstaendige aktuelle Prepare-/Mock500-Abnahme.
+
+Der bestehende Voll-Mock validiert den vollstaendigen C-Auftrag in Materials
+vor Aktivierung; Stored Prepare folgt nach Aktivierung, aber vor der ersten
+Einheit. Ein vorheriger separater Prepare-PASS ist kein bestehendes Starttor.
+Nach gruenen Pflichtchecks und unabhaengiger Fixabnahme ist der kuerzeste Weg ein
+neues konkretes Einmal-GO fuer den vollstaendigen Mock500 auf dem neuen Kopf,
+mit frischer Code-/Original-/Laufbindung und unveraenderten Sicherheitsgrenzen.
+Ein weiterer Prepare-only-Lauf waere eine optionale Pruefung ohne Aktivierung,
+keine Pflichtvorstufe. Kein Originalstart aus dieser Entwicklung ableiten.
+Serien-STOPs, gesperrter Platz3 und historische FAILs bleiben unveraendert.
