@@ -1,0 +1,42 @@
+{
+  "observedAt": "2026-11-04T13:45:50.437Z",
+  "main": "773f7aa545bfeac9429ef368c49e302e68772cc6",
+  "openPrCount": 92,
+  "latestMotorPr": {
+    "number": 1039,
+    "head": "1ccb592d165ffcde64cfcf8061eef40ce8e7e77b",
+    "ref": "codex/w15-mock500-prepare-diagnostic-20261104",
+    "base": "aa3c4eaf4100bd2c7cbb87a4930294ed85c35dfb",
+    "draft": true
+  },
+  "latestMotorChangedFiles": [
+    ".github/actions/w15-mock500/index.js",
+    ".github/workflows/ci.yml",
+    "docs/CURRENT_STATE.md",
+    "docs/betrieb/w15-mock500-prepare-diagnostic-20261104.md",
+    "scripts/synthetik-500-w15-full500-controller.py",
+    "scripts/synthetik-500-w15-full500-materials.js",
+    "scripts/synthetik-500-w15-full500-runtime.js",
+    "scripts/w15-github/mock500_bindings.js",
+    "scripts/w15-github/mock500_calendar.js",
+    "scripts/w15-github/mock500_full_dispatch.py",
+    "scripts/w15-github/mock500_inputs.py",
+    "scripts/w15-github/mock500_materials_contract.py",
+    "scripts/w15-github/mock500_materials_evidence.py",
+    "scripts/w15-github/mock500_prepare_contract.js",
+    "scripts/w15-github/mock500_prepare_contract.py",
+    "scripts/w15-github/mock500_runner.py",
+    "scripts/w15-github/mock500_source_replay.js",
+    "scripts/w15-github/mock500_start.py",
+    "scripts/w15-github/mock500_workflow.py",
+    "scripts/w15-github/test_mock500_inputs.py",
+    "scripts/w15-github/test_mock500_manual_start.py",
+    "scripts/w15-github/test_mock500_prepare_diagnostic.js",
+    "scripts/w15-github/test_mock500_prepare_diagnostic.py",
+    "scripts/w15-github/test_mock500_prepare_diagnostic_public.js",
+    "scripts/w15-github/test_mock500_workflow.py"
+  ],
+  "accountServerOrUiFilesInPrDiff": [],
+  "ownBackendPrs": [],
+  "actions": "GET only; no ref updates, workflow changes or tests triggered"
+}

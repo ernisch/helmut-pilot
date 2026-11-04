@@ -7,15 +7,16 @@ Ihre 25 Dateien sind bytegleich mit dem hochgeladenen Prototyp; der
 bereiten vorhandene Verwaltungsrouten für diese Originalkomponente vor.
 Es entsteht kein zweites Backend. Die gemeinsame Servereinbindung bleibt offen.
 
-Der aktuelle [Sprintbericht](../docs/backend-isolated/backend-parallel-abschluss-20261104.md)
-trennt nachgewiesene Funktionen, nicht angewandte Fehlerkorrekturen und
+Der aktuelle [Integrationsbericht](../docs/backend-isolated/backend-ui-integration-20261104.md)
+trennt nachgewiesene Funktionen, integrierte Kontofixes und
 Integrationsgrenzen. Der Paketbauer `scripts/original-verwaltung-paket.js`
 erhält Originalmarkup und Gestaltung, ersetzt simulierte Daten/Erfolgstexte und
 verwendet ausschließlich explizite lokale Runtimepfade. Die bereits im Original
 festgelegten React-/ReactDOM18.3.1-Dateien liegen mit Original-SRI-Prüfung und
 MIT-Lizenzen unter `runtime/`. Die Originalkomponente hat jetzt eine echte lokale
-interaktive Browserabnahme; Production-Einbindung und gemeinsame Kontofixes
-bleiben offen.
+interaktive Browserabnahme. Beide Kontofixes sind im isolierten Backend integriert;
+Production-Einbindung und die gemeinsame Abnahme mit UI-Commit `373c373d`
+bleiben offen. Dessen vollständige Quellen sind in dieser Cloud-Umgebung nicht zugänglich.
 
 `original-customer-form.mjs` vervollständigt das Originalformular über die
 vorhandenen Kontorouten. Gespeichert wird ein gesperrtes Konto ohne Einladung,

@@ -1,0 +1,70 @@
+{
+  "schema": "helmut-current-ui-source-access/1",
+  "observedAt": "2026-11-04T13:26:23.317Z",
+  "status": "BLOCKED_CURRENT_UI_SOURCE_UNAVAILABLE",
+  "identityStatus": "CONFIRMED_BY_USER_AND_PARENT_CURRENT_THREAD_READ",
+  "currentUI": {
+    "headAbbreviated": "373c373d",
+    "parentCommit": "a41d51f194dba526c7aab6b922f6dc33eed3d618",
+    "branch": "codex/helmut-ui-20261031",
+    "reportedWorkspace": "/workspace/helmut-ui",
+    "sourceAvailableInThisExecutor": false,
+    "reportedWorktreeClean": true
+  },
+  "identityProvenance": {
+    "userCorrection": true,
+    "parentReadThread": {
+      "id": "01a190f1-2719-715e-9e41-89a2fbac4055",
+      "host": "durable",
+      "title": "Helmut UI isoliert vorbereiten",
+      "latestTurnConfirmedByParent": true
+    },
+    "independentlyReadByThisReviewer": false,
+    "scope": "Identity and clean-worktree statement only, no full source snapshot or ownership release"
+  },
+  "githubCommitReads": [
+    {
+      "requested": "373c373d",
+      "method": "GET",
+      "url": "https://api.github.com/repos/ernisch/helmut-pilot/commits/373c373d",
+      "httpStatus": 422,
+      "result": "No commit found for SHA: 373c373d"
+    },
+    {
+      "requested": "a41d51f1",
+      "method": "GET",
+      "url": "https://api.github.com/repos/ernisch/helmut-pilot/commits/a41d51f1",
+      "httpStatus": 422,
+      "result": "No commit found for SHA: a41d51f1"
+    }
+  ],
+  "localRepositoriesChecked": [
+    "/workspace/helmut-backend-kunden-20261104",
+    "/workspace/helmut-backend-sicherheit-20261104",
+    "/workspace/helmut-backend-sprint-a-20261104",
+    "/workspace/helmut-backend-sprint-b-20261104",
+    "/workspace/helmut-claude-backend-isolated",
+    "/workspace/helmut-kontosicherheit-integration-20261104",
+    "/workspace/helmut-pilot"
+  ],
+  "localObjectsFound": false,
+  "registeredUiWorktreeFound": false,
+  "historicalSnapshot": {
+    "pr": 771,
+    "commit": "eaf0d5d517d104beaeac53ebeecc6957d3dcadc1",
+    "branch": "codex/ui-design-20261002",
+    "classification": "HISTORICAL_ONLY_NOT_CURRENT_UI_NOT_INTEGRATION_BASE",
+    "assetReadsCompletedBeforeCorrection": true,
+    "furtherHistoricalRemoteReadsAfterCorrection": false
+  },
+  "workAreaRelease": {
+    "actualCurrentUiSourcesVisible": false,
+    "currentUiAuthorCoordinationPerformed": false,
+    "workingAreaReleaseConfirmed": false
+  },
+  "refsChanged": false,
+  "foreignWorkspaceWritten": false,
+  "testsRun": false,
+  "productionAccessed": false,
+  "nextBoundary": "Access to the actual 373c373d source or an exact source export from its existing owner; preserve its independent worktree and establish working-area release separately."
+}

@@ -1,0 +1,17 @@
+{
+  "status": "PASS_UNAPPLIED_CANDIDATE_FUNCTION",
+  "checks": [
+    "Andere Routen bleiben unberuehrt",
+    "Echter boolescher authMode: Pilot404 und Accountmodus aktiv",
+    "Auth-Ausfall503, anonym401 und Mitglied403 vor jedem Asset",
+    "Admin nurGET/HEAD, feste Slashweiterleitung und private CSP",
+    "Nur paketierte Originalassets mit Original-SRI und richtigen MIME-Typen",
+    "Prototypgenerator, Rohquellen, Traversal und defekte Kodierung bleiben gesperrt"
+  ],
+  "patchSha256": "05026fdc4b29a4d7affad6d59d3f57abc33aef87a62c75a61b08c29858c701b2",
+  "actualAuthSourceSha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+  "serverSha256": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+  "testSha256": "3a4b6f32c7c3d3bbd2f2a9ae0932d59a761ac537c021e1ffedd35970a73837bd",
+  "patchApplied": false,
+  "limits": "VM-Kandidatenfunktion mit echtem booleschen authMode und echten Originalassets; synthetischer Authkontext. Kein realer Mount, keine aktuelle Kunden-UI, kein Browser-/Productionnachweis."
+}

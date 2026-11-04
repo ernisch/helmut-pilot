@@ -1,0 +1,4 @@
+PASS Anmeldung und anonyme Sitzung: echte Antworten und Cookie-Schutz
+PASS Sessionverlaengerung schreibt nur die eigene synthetische Sitzung
+{"status":"FAIL_BACKEND_HTTP","checks":2,"requests":10,"error":"The expression evaluated to a falsy value:\n\n  assert.ok(r.json.briefing.currentRadarState?.anzeige)\n"}
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.

@@ -1,0 +1,143 @@
+{
+  "schema": "helmut-independent-backend-http-and-unapplied-patches-review/1",
+  "reviewedAt": "2026-11-04T13:39:26.578846+00:00",
+  "status": "ACCEPTED_BACKEND_HTTP_EVIDENCE_AND_STATIC_PATCH_CANDIDATES_WITH_LIMITS",
+  "scope": "READ_ONLY_SOURCE_AND_EXISTING_EVIDENCE_REVIEW_NO_TEST_EXECUTION",
+  "sourceBindings": [
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/scripts/backend-ui-http-integration-test.js",
+      "sha256": "31077c6e33c3adacc9b67b9b13231d3afbace6d747e3bc5677a309433f42586b",
+      "bytes": 19817
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/verwaltung/original-actions.mjs",
+      "sha256": "eb77b7218513d6d7b324e36b211f502b92043520eeaf71bbbe03888fa7c905a8",
+      "bytes": 10829
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/integration-20261104/start.json",
+      "sha256": "999714769a68db10991814227a0eb0524bcf5f29ce5225dd525b143de0cfc6ca",
+      "bytes": 259621
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/integration-20261104/backend-ui-http-result.json",
+      "sha256": "abe4f87e50f8f109fe837430cf326f252b2aefb69f2afcc5f7f8b958194c11b7",
+      "bytes": 9951
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/integration-20261104/backend-ui-http-result.json.first-failure",
+      "sha256": "5522e92e70fee006c63527400210e3166f999978e660145528708111a9e054b8",
+      "bytes": 2949
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/integration-20261104/backend-ui-http.log.first-failure",
+      "sha256": "d62077bf0e42defcb3f548f53de3c7864e23433e1927ac2a3f69f08e44c522ea",
+      "bytes": 447
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/docs/backend-isolated/integration-01-verwaltung-server-kandidat.patch",
+      "sha256": "05026fdc4b29a4d7affad6d59d3f57abc33aef87a62c75a61b08c29858c701b2",
+      "bytes": 3325
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/docs/backend-isolated/integration-02-font-mime-kandidat.patch",
+      "sha256": "c16fa4ab6a697ddd744cc39d806f01434a890c44ca645cf9720cd759a6d3aed1",
+      "bytes": 371
+    }
+  ],
+  "backendEvidence": {
+    "reportedStatus": "PASS_BACKEND_HTTP_ONLY",
+    "passedGroups": 11,
+    "httpRequests": 41,
+    "runtimeCoreHashesMatchCurrentSources": true,
+    "actionsBoundInHttpJson": false,
+    "actionsSeparateBinding": {
+      "file": "/workspace/helmut-claude-backend-evidence/integration-20261104/start.json",
+      "timestamp": "2026-11-04T13:16:53.679483+00:00",
+      "entry": "files.verwaltung/original-actions.mjs",
+      "sha256": "eb77b7218513d6d7b324e36b211f502b92043520eeaf71bbbe03888fa7c905a8",
+      "currentSourceMatches": true
+    },
+    "firstFailurePreserved": {
+      "status": "FAIL_BACKEND_HTTP",
+      "testSha256": "560a7acfb7b101b5d712b7112edc85017c7f7a5f1819e59c376252f9e8be8bf5",
+      "groupsBeforeFailure": 2,
+      "requestsBeforeFailure": 10,
+      "cause": "Harness expected currentRadarState.anzeige on the actual empty Radar state",
+      "correctionAccepted": "Assert the actual empty status and empty collections; do not manufacture an anzeige"
+    },
+    "injections": [
+      "Synthetic inactive profile/account/task/note setup in a new local clone",
+      "Two explicit fault switches for accounts.resolveSession and storage.getProfile",
+      "AI/mail exports blocked; all global fetch calls rejected without forwarding"
+    ],
+    "isolation": {
+      "bind": "127.0.0.1 random port",
+      "storage": "local new temporary clone",
+      "credentials": "Explicit small child environment plus scripts/lokal.js network guard",
+      "providerHookCalls": 0,
+      "mailHookCalls": 0,
+      "blockedFetchAttempts": 7,
+      "externalFetchForwarded": 0,
+      "blockedFetchOrigin": "getLatestCompleteKnowledgeObjectAt: absent local/V3 short-circuit; failures become unknown",
+      "unexpectedRoutes": 0,
+      "notZeroAttempts": true
+    },
+    "acceptedClaims": [
+      "Real existing HTTP handlers, scrypt/session cookies, CSRF and local persistence were exercised",
+      "Member/staff foreign-mandate selections resolve to the authorized mandate; no-mandate403 is retained",
+      "The exact integrated accounts source was used",
+      "Session and cookie extension are shown for the selected session",
+      "Inactive customer creation, rule-based communication fallback and Office rejection paths are covered",
+      "Injected auth/profile failures and logout are handled through the real server"
+    ],
+    "limits": [
+      "No claim that every other session was unchanged: only target-session extension is explicitly checked",
+      "The current UI373c373d consumer/browser/runtime source is unavailable; no UI integration acceptance",
+      "Lage is v3-disabled, Radar is empty and Helmut state is stale in this local dataset; no positive-content or quality acceptance",
+      "Communication exercises KI-off fallback; Office exercises invalid/disabled/not-ready responses, not completed positive generation",
+      "Injected exceptions are controlled fault cases, not proof of real database outage behavior",
+      "No SQL/RLS, distributed CAS, HTTPS deployment or production acceptance",
+      "No claim of zero network-attempt paths: seven fetch attempts were intercepted"
+    ]
+  },
+  "patchReviews": [
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/docs/backend-isolated/integration-01-verwaltung-server-kandidat.patch",
+      "status": "STATIC_ACCEPTED_AFTER_REPORTED_BOOLEAN_GUARD_FIX",
+      "closedFinding": {
+        "priority": "P1_FUNCTIONAL_BLOCKER",
+        "before": "auth.authMode() !== string accounts always returned404 because helper returns Boolean",
+        "after": "if (!auth.authMode()) now matches lib/helmut/auth.js:15-16"
+      },
+      "observations": [
+        "Admin session and role are checked before package access",
+        "GET/HEAD only; fixed redirect; exact decoded-key lookup in manifest/SRI-verified asset map",
+        "No-store, Vary:Cookie, no-referrer and frame denial apply to this route",
+        "unsafe-inline/eval is restricted to the Original DC page response; global CSP is not modified",
+        "Package cache contains static source/assets, not API/customer responses"
+      ],
+      "limits": [
+        "Unapplied candidate; no real route/asset/CSP/packaged-build execution acceptance",
+        "Protected server.js remains unchanged; static review does not grant authority to apply or deploy"
+      ]
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/docs/backend-isolated/integration-02-font-mime-kandidat.patch",
+      "status": "STATIC_ACCEPTED",
+      "observations": [
+        "Adds font/ttf, font/woff, font/woff2 and JPEG MIME types only",
+        "Existing public-asset allowlist is unchanged"
+      ],
+      "limits": [
+        "Unapplied candidate; actual font loading and hosting/build output remain unverified"
+      ]
+    }
+  ],
+  "reviewerTestsRun": false,
+  "runtimeImportedByReviewer": false,
+  "sharedSourceFilesWrittenByReviewer": false,
+  "historicalEvidenceRewritten": false,
+  "patchesAppliedByReviewer": false,
+  "productionApproved": false
+}

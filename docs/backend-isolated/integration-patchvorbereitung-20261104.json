@@ -1,0 +1,22 @@
+{
+  "serverSha256": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+  "patches": [
+    {
+      "file": "integration-01-verwaltung-server-kandidat.patch",
+      "sha256": "05026fdc4b29a4d7affad6d59d3f57abc33aef87a62c75a61b08c29858c701b2",
+      "applyCheck": "PASS",
+      "syntax": "PASS"
+    },
+    {
+      "file": "integration-02-font-mime-kandidat.patch",
+      "sha256": "c16fa4ab6a697ddd744cc39d806f01434a890c44ca645cf9720cd759a6d3aed1",
+      "applyCheck": "PASS",
+      "syntax": "PASS"
+    }
+  ],
+  "applied": false,
+  "runtimeTests": false,
+  "limit": "Apply-check, syntax and 6 VM candidate-function groups only; no real mount, current UI runtime or production acceptance.",
+  "candidateFunctionVmChecks": 6,
+  "candidateFunctionVmResult": "verwaltungsroute-kandidat-pruefbeleg-20261104.json"
+}

@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "individualApplyChecks": 3,
+  "combinedApplyCheck": true,
+  "candidateSyntaxChecks": 3,
+  "sourceSyntaxChecks": 3,
+  "patchesApplied": false,
+  "invocation": "explicit env allowlist; node scripts/lokal.js -- absolute python3 verifier",
+  "serverSha256": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+  "scope": "syntax and applicability only, no patched server runtime"
+}
