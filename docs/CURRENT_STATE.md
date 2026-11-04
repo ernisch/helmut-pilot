@@ -1,5 +1,16 @@
 # CURRENT STATE — Helmut
 
+## Isolierte Backend-/UI-Integration (05.11.2026, Istanbul)
+
+Backend `e054c0bb` und UI `01191074` konfliktfrei im separaten Branch
+`integration/backend-ui-20261105` zusammengeführt. Alle 2.280 Produktdateien
+entsprechen unverändert einem Originalstand. Neun gezielte Integrationsgruppen
+lokal bestanden; vorhandene Konto-/PostgreSQL-/SW-Belege ohne Serienwiederholung
+wiederverwendet. Beide Designs erhalten. Öffentlicher Altcache liefert beim
+ersten Abruf möglicherweise noch alte UI-Dateien und muss vor einem späteren
+Rollout gesondert berücksichtigt werden. Für spätere isolierte Motorintegration
+vorbereitet, keine Productionfreigabe. [Bericht und Belege](betrieb/backend-ui-integration-20261105.md).
+
 [UI 97/97](ui-backend.md)
 ## Siffi: vereinfachter Testweg (27.10.2026)
 

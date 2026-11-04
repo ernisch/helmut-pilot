@@ -1,0 +1,22 @@
+{
+  "readAtUTC": "2026-11-04T22:32:27.728206+00:00",
+  "repository": "ernisch/helmut-integration-20261105",
+  "private": true,
+  "branches": {
+    "integration/backend-security-admin-20261104": "e054c0bb80fa4c330082bace3cfff6d9bb89a926",
+    "integration/ui-20261105": "011910746294109c04fd5dac8e153a22188b7467"
+  },
+  "openPullRequests": 0,
+  "actions": {
+    "disabled": "confirmed by user",
+    "administrationRead": "previous HTTP403 explicitly waived by user"
+  },
+  "hosting": {
+    "userConfirmedNoConnection": true,
+    "freshVercelContextLinkedRepositories": [
+      "ernisch/helmut-pilot",
+      "ernisch/helmut-website"
+    ],
+    "integrationRepositoryLinked": false
+  }
+}

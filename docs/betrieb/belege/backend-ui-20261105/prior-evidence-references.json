@@ -1,0 +1,26 @@
+[
+  {
+    "name": "backend-main-result",
+    "originalLocalPath": "/workspace/helmut-gemeinsame-integration-20261104/pruefung/main-result.json",
+    "sha256": "3032f8673d86b137601515753b42eb4dc53e4da3e0c6719496763321a8ddf6ce",
+    "rerun": false,
+    "packagedFile": "backend-main-result.json",
+    "projectionOnly": false
+  },
+  {
+    "name": "sw-primary-result",
+    "originalLocalPath": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/primary-result.json",
+    "sha256": "750a52678275153283bceef0e85702fc2d234887c76237c3a699f92958de4c27",
+    "rerun": false,
+    "packagedFile": "sw-primary-result.json",
+    "projectionOnly": false
+  },
+  {
+    "name": "motor-store-result",
+    "originalLocalPath": "/workspace/helmut-gemeinsame-integration-20261104/pruefung/evidence/motor-store-small/result.json",
+    "sha256": "4f016bc80de4090f9e5022b04b71170fd28fac3798ef2089834536d79aecd910",
+    "rerun": false,
+    "packagedFile": "motor-store-summary.json",
+    "projectionOnly": true
+  }
+]

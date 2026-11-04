@@ -1,0 +1,42 @@
+{
+  "projectionOnly": true,
+  "originalResultSha256": "4f016bc80de4090f9e5022b04b71170fd28fac3798ef2089834536d79aecd910",
+  "scope": "SEPARATE_CURRENT_STORAGE_ATOMIC_ACCOUNT_HTTP_CAS_ONLY",
+  "checks": [
+    {
+      "name": "Current atomic storage composes with actual product login CSRF and successful account restore while inert history is unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "Atomic native SQL CAS rejects stale HTTP restore after peer target-role",
+      "status": "PASS"
+    },
+    {
+      "name": "Atomic native SQL CAS rejects stale HTTP restore after peer actor-role",
+      "status": "PASS"
+    }
+  ],
+  "counters": {
+    "model": 0,
+    "mail": 0,
+    "external": 0
+  },
+  "productionAcceptance": false,
+  "preservedInvariants": {
+    "history": "892e96a7a5983c54ba97f8c927167a973667a873acf2e886c2490785b40f9d88",
+    "order": "848af41622c6103c344509a5b1e5b69ae28b8fe30fc6ee0d0f043d164eb2db29",
+    "costDays": "cc800dbead2b137b670ef6bfdf2928134a17ff989e35a1d3425d0ca09c3992d9",
+    "admission": "6839d1984ed976439ff6b4c28a0ef9eaeda8c2ffb66bd647b0df7500dd2790ef",
+    "journal": "8306535cb7714d938171417354aca264621cfa43faaf905372dd893bba745d01",
+    "unknown": "47e86fde01e69d12616f5c2caaff282fad31a428bf6e47ec1abca8b90d0c8099",
+    "physicalHistory": "63ee427b497db303bee1351eb92b5c9b7fc3936f921451b7dce9bcec3297b922",
+    "historyRows": "2"
+  },
+  "status": "PASS_SEPARATE_MOTOR_STORAGE_ACCOUNT_HTTP_CAS",
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "realProductHttp": 7,
+    "parentDatabaseResponses": 44
+  }
+}

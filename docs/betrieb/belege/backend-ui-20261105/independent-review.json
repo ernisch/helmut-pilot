@@ -1,0 +1,29 @@
+{
+  "scope": "independent read-only review by three agents; no test execution or product edits by reviewers",
+  "harness": {
+    "agent": "joint_harness_review",
+    "accepted": true,
+    "limits": [
+      "No first-load current UI guarantee for cached public client",
+      "No mixed-old-new client execution tested",
+      "No new model or production proof"
+    ]
+  },
+  "design": {
+    "agent": "joint_design_review",
+    "accepted": true,
+    "productTreeBytes": "all 2280 original files exact",
+    "visuals": [
+      "new UI desktop and mobile with completed Briefing",
+      "original admin desktop and mobile"
+    ]
+  },
+  "release": {
+    "agent": "joint_release_review",
+    "priorEvidenceVerified": [
+      "11 backend groups",
+      "7 SW groups"
+    ],
+    "newMotorVerificationClaimed": false
+  }
+}

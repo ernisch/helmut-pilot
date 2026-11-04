@@ -1,0 +1,483 @@
+{
+  "scope": "JOINT_EXACT_UI_AND_BACKEND_REAL_PRODUCT_HTTP",
+  "checks": [
+    {
+      "name": "desktop: real login, four views, original fonts and Briefing-to-Office identity",
+      "status": "FAIL",
+      "error": "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n  - waiting for locator('.hstand') to be visible\n"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/fonts/inter-latin-variable.woff2",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/styles.css?v=20260712-presale1",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/client.js?v=20260712-presale1",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/logo/helmut-zeichen.svg",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_logo.svg",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/sw.js",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_192.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_512.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/favicon.ico",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/fonts/inter-latin-variable.woff2",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/styles.css?v=20260712-presale1",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/client.js?v=20260712-presale1",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/logo/helmut-zeichen.svg",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_logo.svg",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/reichstag.jpg",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/Spectral-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/IBMPlexMono-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/Spectral-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/IBMPlexMono-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/security/csrf?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/parliament?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/communication/generate?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": true,
+      "syntheticInput": {
+        "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor",
+        "channel": "press",
+        "decision": {
+          "knowledgeObjectId": "ko-positive-a-mention",
+          "knowledge_object_id": "ko-positive-a-mention",
+          "vorgangId": "vg-positive-a-mention",
+          "vorgang_id": "vg-positive-a-mention",
+          "id": "rec-vg-positive-a-mention",
+          "signalId": "ko-positive-a-mention",
+          "decision": "Sofort reagieren",
+          "title": "Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor",
+          "priorityLabel": "Chance",
+          "priorityType": "chance",
+          "summary": "Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor. Die synthetische Mitteilung nennt die Beratung und die beteiligten Ausschussmitglieder.",
+          "action": "Die belegte Tagesordnung im Team besprechen.",
+          "whyItMatters": "Der Vorgang betrifft den Ausschuss Arbeit und Soziales und den Wahlkreis Testkreis Nord.",
+          "inaction": "",
+          "risk": "",
+          "opportunity": "",
+          "estimatedTime": "undefined Min.",
+          "sourceCount": 1,
+          "sources": [
+            {
+              "sourceName": "Synthetische Testquelle A",
+              "sourceType": "news",
+              "url": "https://quellen-a.example.invalid/artikel/a-mention",
+              "itemUrl": "https://quellen-a.example.invalid/artikel/a-mention",
+              "linkType": "direct",
+              "publishedAt": "2026-11-04T22:25:00.678Z",
+              "title": "Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor"
+            }
+          ],
+          "primarySource": {
+            "sourceName": "Synthetische Testquelle A",
+            "sourceType": "news",
+            "url": "https://quellen-a.example.invalid/artikel/a-mention",
+            "itemUrl": "https://quellen-a.example.invalid/artikel/a-mention",
+            "linkType": "direct",
+            "publishedAt": "2026-11-04T22:25:00.678Z",
+            "title": "Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor"
+          },
+          "totalScore": 78,
+          "memory": null,
+          "personalRelevanceExplanation": "Der Vorgang betrifft den Ausschuss Arbeit und Soziales und den Wahlkreis Testkreis Nord.",
+          "consequenceIfIgnored": "",
+          "possibleUpside": "",
+          "actionType": "react",
+          "lageMovement": null,
+          "lageMovementReason": "",
+          "lageDevelopment": "",
+          "sourceFreshness": "",
+          "priorityTrend": "",
+          "relevanceScore": 78
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/assets/favicon.ico",
+      "status": 200,
+      "csrfPresent": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/communication/generate?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": true,
+      "syntheticInput": {
+        "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord",
+        "channel": "press",
+        "decision": {
+          "knowledgeObjectId": "ko-positive-a-party",
+          "knowledge_object_id": "ko-positive-a-party",
+          "vorgangId": "vg-positive-a-party",
+          "vorgang_id": "vg-positive-a-party",
+          "id": "rec-vg-positive-a-party",
+          "signalId": "ko-positive-a-party",
+          "decision": "Sofort reagieren",
+          "title": "Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord",
+          "priorityLabel": "Chance",
+          "priorityType": "chance",
+          "summary": "Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord. Die synthetische Mitteilung nennt die Beratung und die beteiligten Ausschussmitglieder.",
+          "action": "Die belegte Tagesordnung im Team besprechen.",
+          "whyItMatters": "Der Vorgang betrifft den Ausschuss Arbeit und Soziales und den Wahlkreis Testkreis Nord.",
+          "inaction": "",
+          "risk": "",
+          "opportunity": "",
+          "estimatedTime": "undefined Min.",
+          "sourceCount": 1,
+          "sources": [
+            {
+              "sourceName": "Synthetische Testquelle A",
+              "sourceType": "news",
+              "url": "https://quellen-a.example.invalid/artikel/a-party",
+              "itemUrl": "https://quellen-a.example.invalid/artikel/a-party",
+              "linkType": "direct",
+              "publishedAt": "2026-11-04T22:24:00.678Z",
+              "title": "Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord"
+            }
+          ],
+          "primarySource": {
+            "sourceName": "Synthetische Testquelle A",
+            "sourceType": "news",
+            "url": "https://quellen-a.example.invalid/artikel/a-party",
+            "itemUrl": "https://quellen-a.example.invalid/artikel/a-party",
+            "linkType": "direct",
+            "publishedAt": "2026-11-04T22:24:00.678Z",
+            "title": "Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord"
+          },
+          "totalScore": 78,
+          "memory": null,
+          "personalRelevanceExplanation": "Der Vorgang betrifft den Ausschuss Arbeit und Soziales und den Wahlkreis Testkreis Nord.",
+          "consequenceIfIgnored": "",
+          "possibleUpside": "",
+          "actionType": "react",
+          "lageMovement": null,
+          "lageMovementReason": "",
+          "lageDevelopment": "",
+          "sourceFreshness": "",
+          "priorityTrend": "",
+          "relevanceScore": 78
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/sw.js",
+      "status": 200,
+      "csrfPresent": false
+    }
+  ],
+  "images": [],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "externalRequests": [],
+  "blockedOperations": [],
+  "counters": {
+    "model": 0,
+    "mail": 0,
+    "fetch": 0
+  },
+  "inputCommits": {
+    "backend": "e054c0bb80fa4c330082bace3cfff6d9bb89a926",
+    "ui": "011910746294109c04fd5dac8e153a22188b7467"
+  },
+  "syntheticReadSeams": true,
+  "realLocalFileStore": true,
+  "productionAcceptance": false,
+  "desktop": {
+    "profile": "integration-synthetic-alpha",
+    "lage": 4,
+    "radar": 1,
+    "primary": "vg-positive-a-mention",
+    "fonts": [
+      {
+        "family": "Inter",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter",
+        "status": "unloaded"
+      },
+      {
+        "family": "Hanken Grotesk",
+        "status": "loaded"
+      },
+      {
+        "family": "Spectral",
+        "status": "loaded"
+      },
+      {
+        "family": "Spectral",
+        "status": "loaded"
+      },
+      {
+        "family": "IBM Plex Mono",
+        "status": "loaded"
+      },
+      {
+        "family": "IBM Plex Mono",
+        "status": "loaded"
+      }
+    ],
+    "bodyFont": "\"Hanken Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  },
+  "status": "FAIL",
+  "error": {
+    "message": "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n  - waiting for locator('.hstand') to be visible\n",
+    "stack": "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n  - waiting for locator('.hstand') to be visible\n\n    at settled (/workspace/helmut-backend-ui-integration-20261105/source/scripts/backend-ui-integration/joint.cjs:47:56)\n    at /workspace/helmut-backend-ui-integration-20261105/source/scripts/backend-ui-integration/joint.cjs:59:90\n    at async check (/workspace/helmut-backend-ui-integration-20261105/source/scripts/backend-ui-integration/joint.cjs:14:126)\n    at async main (/workspace/helmut-backend-ui-integration-20261105/source/scripts/backend-ui-integration/joint.cjs:56:5)"
+  },
+  "fixture": {
+    "mandateA": "integration-synthetic-alpha",
+    "mandateB": "integration-synthetic-beta",
+    "now": "2026-11-04T22:27:00.678Z",
+    "localUserStore": true,
+    "knowledgeObjects": 4,
+    "rawDocuments": 4,
+    "sourceHosts": [
+      "quellen-a.example.invalid",
+      "quellen-b.example.invalid"
+    ],
+    "datasetSha256": "423916e18fbf78c1ee98dcc8e9859399492e3878c591e67b77d5bc02fcb7cb4e",
+    "noHttpResponsesMocked": true,
+    "realAdaptersUntouched": true,
+    "pendingNarrativeExpected": true,
+    "noRunReceipt": true,
+    "contentWriteGuards": [
+      "deleteProfileData",
+      "deleteProfileDataV3",
+      "deleteTenantScopedData",
+      "markUnderstandingGateGeparkt",
+      "saveSourceModeShadowRun",
+      "writeStore",
+      "acquirePipelineLock",
+      "releasePipelineLock",
+      "saveCronFairnessState",
+      "deleteCronFairnessTenant",
+      "acquirePipelineLockAtomic",
+      "saveAdminRecoveryLastRun",
+      "saveRawDocument",
+      "saveKnowledgeObject",
+      "saveProfileEmbedding",
+      "saveMatchingResults",
+      "saveMatchingRun",
+      "updateMatchingRun",
+      "saveDecisions",
+      "savePendingKnowledgeObject",
+      "savePendingKnowledgeObjectsBulk",
+      "resetUnderstandingToPending",
+      "markUnderstandingTerminal",
+      "markPendingUnderstandingTerminal",
+      "saveUnderstandingRetries",
+      "saveUpdateRetries",
+      "markUnderstandingFailed",
+      "saveKnowledgeObjectEnrichment",
+      "saveRenderedBriefingV3",
+      "saveKoDocumentLinks",
+      "saveOfficeOutput",
+      "recordLlmUsage",
+      "saveRawItems",
+      "updateSourceLastCrawled",
+      "saveBriefing",
+      "updateTopicMemoryFromBriefing",
+      "saveCrawlRun",
+      "saveLageCheck",
+      "savePipelineDebugReport",
+      "saveWatchdogState",
+      "saveMonitoringDeliveryState",
+      "updateTaskStatus",
+      "saveInteraction",
+      "saveProfileToDb",
+      "saveFeedback",
+      "savePersonalizedRecommendations",
+      "savePoliticalItems",
+      "savePriorityChanges",
+      "savePushSubscription",
+      "removePushSubscription",
+      "savePushEvent",
+      "deleteRetention"
+    ],
+    "allowedLocalWriteNames": [
+      "saveProfile",
+      "saveTask",
+      "saveUserNote"
+    ],
+    "communicationDraftUsesOriginalRuleFallback": true,
+    "counters": {
+      "reads": {
+        "getRenderedBriefingV3": 5,
+        "getLatestCompleteKnowledgeObjectAt": 2,
+        "v3StoreReady": 2,
+        "listKnowledgeObjects": 2,
+        "getSourcesForVorgang": 12,
+        "listMatchingResults": 1,
+        "listAktuelleLageQuellen": 1
+      },
+      "writes": {},
+      "allowedLocalWrites": {
+        "saveProfile": 2
+      },
+      "providerCalls": {},
+      "budgetAttempts": 0,
+      "profileIdsRead": [],
+      "localUserReadsInstrumented": false,
+      "authWritesInstrumented": false
+    }
+  },
+  "summary": {
+    "passed": 0,
+    "failed": 1,
+    "requests": 33
+  }
+}

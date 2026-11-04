@@ -1,0 +1,21 @@
+{
+  "atUTC": "2026-11-04T22:30:26.951581+00:00",
+  "backend": "e054c0bb80fa4c330082bace3cfff6d9bb89a926",
+  "ui": "011910746294109c04fd5dac8e153a22188b7467",
+  "commonBase": "6b4012cd912fd0e1f5ec79969168d0dcc010927f",
+  "mergeCommit": "d0a7a6a292de8302e3b425bf718d9c672121c6a5",
+  "mergeTree": "40a887f4e006889c9a80cef976d635e5a5ba2b9e",
+  "files": 2280,
+  "backendChanged": 126,
+  "uiChanged": 127,
+  "overlappingFiles": [],
+  "allProductFilesExactOriginal": true,
+  "allProductFilesMatchEightGroupRun": true,
+  "protectedOriginalsUnchanged": [
+    "/workspace/helmut-gemeinsame-integration-20261104/backend",
+    "/workspace/helmut-claude-backend-isolated",
+    "/workspace/helmut-pilot",
+    "/workspace/helmut-integration-373c-c3b-20261104/backend",
+    "/workspace/helmut-backend-finalisierung-20261104/security/source"
+  ]
+}
