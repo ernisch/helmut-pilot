@@ -1,0 +1,249 @@
+{
+  "schema": "helmut-account-security-latest-code-comparison/1",
+  "observedAt": "2026-11-04T12:28:46.445303+00:00",
+  "status": "PASS_SOURCE_AND_PATCH_COMPATIBILITY_ONLY",
+  "baseline": "ae18658e5caac2b39403c0e41e3a8af5c2b3d7be",
+  "main": "773f7aa545bfeac9429ef368c49e302e68772cc6",
+  "latestMotorPr": {
+    "number": 1038,
+    "title": "fix(w15): erste innere Prepare-Fehlerkennung sicher erhalten",
+    "state": "open",
+    "draft": true,
+    "head": "aa3c4eaf4100bd2c7cbb87a4930294ed85c35dfb",
+    "branch": "codex/w15-mock500-prepare-failure-20261104",
+    "base": "codex/w15-mock500-slot2-result-20261104",
+    "baseSha": "8bd3fd8c2db29f928e90d510b1dd6b108a56f4ee",
+    "updatedAt": "2026-11-04T12:03:26Z",
+    "url": "https://github.com/ernisch/helmut-pilot/pull/1038"
+  },
+  "remoteMetadataSha256": "51e3a841b35a86edd9ba74a4091fb17efa8d5117314bd10249830da590f677ba",
+  "files": [
+    {
+      "ref": "main",
+      "path": "lib/helmut/accounts.js",
+      "gitBlobSha1": "727e32cf91d5929b78e3c32980b25e3c3f401443",
+      "sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "bytes": 49716,
+      "sameAsBaseline": true,
+      "provenance": "local bytes reused after equality with exact remote Git blob"
+    },
+    {
+      "ref": "main",
+      "path": "lib/helmut/storage.js",
+      "gitBlobSha1": "9a9ed355474da9d79f78b9c87493aeaa5e6ff4e0",
+      "sha256": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+      "bytes": 535763,
+      "sameAsBaseline": true,
+      "provenance": "local bytes reused after equality with exact remote Git blob"
+    },
+    {
+      "ref": "main",
+      "path": "lib/helmut/auth.js",
+      "gitBlobSha1": "96b86d1451b5adc5fdd72725bbae78299c044a56",
+      "sha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+      "bytes": 5082,
+      "sameAsBaseline": true,
+      "provenance": "local bytes reused after equality with exact remote Git blob"
+    },
+    {
+      "ref": "main",
+      "path": "lib/helmut/auth-store-cas.js",
+      "gitBlobSha1": "37cdbb974c2b0481e6b494f6941dc7db2e335b5f",
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544",
+      "bytes": 2753,
+      "sameAsBaseline": true,
+      "provenance": "local bytes reused after equality with exact remote Git blob"
+    },
+    {
+      "ref": "main",
+      "path": "server.js",
+      "gitBlobSha1": "e2d62da7ce8ea2aff5881a07a81538791bc7ffa1",
+      "sha256": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+      "bytes": 547910,
+      "sameAsBaseline": true,
+      "provenance": "local bytes reused after equality with exact remote Git blob"
+    },
+    {
+      "ref": "motor",
+      "path": "lib/helmut/accounts.js",
+      "gitBlobSha1": "727e32cf91d5929b78e3c32980b25e3c3f401443",
+      "sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "bytes": 49716,
+      "sameAsBaseline": true,
+      "provenance": "local bytes reused after equality with exact remote Git blob"
+    },
+    {
+      "ref": "motor",
+      "path": "lib/helmut/storage.js",
+      "gitBlobSha1": "a6f00140b9d3dea39b34382f87df05e22dc3f8b6",
+      "sha256": "ec1f0c1ce162e40a9b810116c5fe3534466c14a998688eace8e761e7a5c1b496",
+      "bytes": 545054,
+      "sameAsBaseline": false,
+      "provenance": "exact remote-commit source downloaded through GitHub connector"
+    },
+    {
+      "ref": "motor",
+      "path": "lib/helmut/auth.js",
+      "gitBlobSha1": "96b86d1451b5adc5fdd72725bbae78299c044a56",
+      "sha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+      "bytes": 5082,
+      "sameAsBaseline": true,
+      "provenance": "local bytes reused after equality with exact remote Git blob"
+    },
+    {
+      "ref": "motor",
+      "path": "lib/helmut/auth-store-cas.js",
+      "gitBlobSha1": "37cdbb974c2b0481e6b494f6941dc7db2e335b5f",
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544",
+      "bytes": 2753,
+      "sameAsBaseline": true,
+      "provenance": "local bytes reused after equality with exact remote Git blob"
+    },
+    {
+      "ref": "motor",
+      "path": "server.js",
+      "gitBlobSha1": "c63e23de4fab1bf1cea1ee6e75ee5926243a906e",
+      "sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9",
+      "bytes": 547868,
+      "sameAsBaseline": false,
+      "provenance": "exact remote-commit source downloaded through GitHub connector"
+    }
+  ],
+  "additionalReviewedSource": {
+    "path": "lib/helmut/llm-usage-atomic.js",
+    "sha256": "123b62a7d6d22d58f240c323eaa819143fe7f6471178b35881a2ae22b70e3442",
+    "gitBlobSha1": "9f9119e48f39ee1e0c677600f23cb973b0e4c773",
+    "bytes": 6779
+  },
+  "unchangedRelevantSections": {
+    "mutateAuthStore": true,
+    "handleAuthLogin": true,
+    "adminUserRoutes": true
+  },
+  "applyChecks": [
+    {
+      "ref": "main",
+      "patches": [
+        "docs/backend-isolated/sprint-d-status-active.patch"
+      ],
+      "exitCode": 0,
+      "detail": ""
+    },
+    {
+      "ref": "main",
+      "patches": [
+        "docs/backend-isolated/sprint-d2-last-admin.patch"
+      ],
+      "exitCode": 0,
+      "detail": ""
+    },
+    {
+      "ref": "main",
+      "patches": [
+        "docs/backend-isolated/sprint-d-status-active.patch",
+        "docs/backend-isolated/sprint-d2-last-admin.patch"
+      ],
+      "exitCode": 0,
+      "detail": ""
+    },
+    {
+      "ref": "main",
+      "patches": [
+        "docs/backend-isolated/sprint-d2-last-admin.patch",
+        "docs/backend-isolated/sprint-d-status-active.patch"
+      ],
+      "exitCode": 0,
+      "detail": ""
+    },
+    {
+      "ref": "motor",
+      "patches": [
+        "docs/backend-isolated/sprint-d-status-active.patch"
+      ],
+      "exitCode": 0,
+      "detail": ""
+    },
+    {
+      "ref": "motor",
+      "patches": [
+        "docs/backend-isolated/sprint-d2-last-admin.patch"
+      ],
+      "exitCode": 0,
+      "detail": ""
+    },
+    {
+      "ref": "motor",
+      "patches": [
+        "docs/backend-isolated/sprint-d-status-active.patch",
+        "docs/backend-isolated/sprint-d2-last-admin.patch"
+      ],
+      "exitCode": 0,
+      "detail": ""
+    },
+    {
+      "ref": "motor",
+      "patches": [
+        "docs/backend-isolated/sprint-d2-last-admin.patch",
+        "docs/backend-isolated/sprint-d-status-active.patch"
+      ],
+      "exitCode": 0,
+      "detail": ""
+    }
+  ],
+  "priorCombinedEvidence": {
+    "path": "/workspace/helmut-backend-sicherheit-20261104/docs/backend-isolated/sprint-d-kombination-20261104.json",
+    "sha256": "b61157cae36ae0fa1884a447e06636f270369ab388887f7f230139268736b3a2",
+    "summary": {
+      "workerCases": 8,
+      "passedWorkerCases": 8,
+      "passedChecks": 30,
+      "failedChecks": 0,
+      "httpRequests": 56
+    },
+    "reusedWithoutRerun": true
+  },
+  "protectedBefore": {
+    "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/auth-store-cas.js": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544",
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+    "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+    "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+  },
+  "protectedAfter": {
+    "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/auth-store-cas.js": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544",
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+    "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+    "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+  },
+  "protectedUnchanged": true,
+  "snapshotTransportNewlineCorrections": [
+    "/workspace/helmut-claude-backend-evidence/parallel-20261104/latest-code/motor/lib/helmut/storage.js",
+    "/workspace/helmut-claude-backend-evidence/parallel-20261104/latest-code/motor/server.js",
+    "/workspace/helmut-claude-backend-evidence/parallel-20261104/latest-code/motor/lib/helmut/llm-usage-atomic.js"
+  ],
+  "patchesApplied": false,
+  "testsRun": false,
+  "runtimeImported": false,
+  "review": {
+    "storageDelta": "mutateAuthStore and ordinary CAS are unchanged; new atomic usage mode is explicit local-only and emits the same AUTH_STORE_CONFLICT for retries",
+    "serverDelta": "only three older legal contact email texts differ; account mutation and login sections are byte-identical",
+    "accountsAndAuth": "byte-identical on current main and latest motor head"
+  },
+  "limits": [
+    "Source and patch applicability only; no current-head runtime, distributed DB or production acceptance",
+    "Existing contradictory account records are not repaired by D1/D2",
+    "Open PR and workflow metadata are point-in-time observations",
+    "The latest motor PR is open and is not merged main"
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "method": "Statische DOM-Bildprojektion des Originaltemplates mit neuen Controller-View-Werten; keine React-/Interaktionsabnahme",
+  "views": [
+    {
+      "kind": "uebersicht",
+      "width": 1440,
+      "theme": "dunkel",
+      "url": "/uebersicht-dunkel-1440",
+      "screenshot": "original-angeschlossen-uebersicht-dunkel-1440.png",
+      "sha256": "1f3a9cbcaa3f1762c55d0f87a1c953f22e1dd77d456ca0fddb52d5ec3d5ee4ea",
+      "metadata": {
+        "headingFont": "Spectral, Georgia, serif",
+        "bodyFont": "\"Hanken Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "railWidth": 212,
+        "scrollWidth": 1440,
+        "innerWidth": 1440
+      }
+    },
+    {
+      "kind": "uebersicht",
+      "width": 1440,
+      "theme": "hell",
+      "url": "/uebersicht-hell-1440",
+      "screenshot": "original-angeschlossen-uebersicht-hell-1440.png",
+      "sha256": "a870e41c4cb335d414c0442e3c5c6939e00ff66813ed188d8550a5a8f7b582d3",
+      "metadata": {
+        "headingFont": "Spectral, Georgia, serif",
+        "bodyFont": "\"Hanken Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "railWidth": 212,
+        "scrollWidth": 1440,
+        "innerWidth": 1440
+      }
+    },
+    {
+      "kind": "uebersicht",
+      "width": 390,
+      "theme": "dunkel",
+      "url": "/uebersicht-dunkel-390",
+      "screenshot": "original-angeschlossen-uebersicht-dunkel-390.png",
+      "sha256": "bd30ff3e2231ef7da6e837d0edecef5873019d5eb434ed3ef0f16007cdd44ddf",
+      "metadata": {
+        "headingFont": "Spectral, Georgia, serif",
+        "bodyFont": "\"Hanken Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "railWidth": null,
+        "scrollWidth": 390,
+        "innerWidth": 390
+      }
+    },
+    {
+      "kind": "uebersicht",
+      "width": 390,
+      "theme": "hell",
+      "url": "/uebersicht-hell-390",
+      "screenshot": "original-angeschlossen-uebersicht-hell-390.png",
+      "sha256": "40dc1eb0178bcbd71f4c0b1e1984bf2d1057f645f0ce949cf86c23d978f88810",
+      "metadata": {
+        "headingFont": "Spectral, Georgia, serif",
+        "bodyFont": "\"Hanken Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "railWidth": null,
+        "scrollWidth": 390,
+        "innerWidth": 390
+      }
+    },
+    {
+      "kind": "kosten",
+      "width": 1440,
+      "theme": "dunkel",
+      "url": "/kosten-dunkel-1440",
+      "screenshot": "original-angeschlossen-kosten-dunkel-1440.png",
+      "sha256": "1835c14f8927c60bc7b4efe02de1db1f1558058e0a487b8addfac30efea4cd57",
+      "metadata": {
+        "headingFont": "Spectral, Georgia, serif",
+        "bodyFont": "\"Hanken Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "railWidth": 212,
+        "scrollWidth": 1440,
+        "innerWidth": 1440
+      }
+    },
+    {
+      "kind": "abrechnung",
+      "width": 1440,
+      "theme": "dunkel",
+      "url": "/abrechnung-dunkel-1440",
+      "screenshot": "original-angeschlossen-abrechnung-dunkel-1440.png",
+      "sha256": "fdbac2105aad73ed009663a67097505920a16cf5c8636ee49d0d5ca49cbafa9a",
+      "metadata": {
+        "headingFont": "Spectral, Georgia, serif",
+        "bodyFont": "\"Hanken Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "railWidth": 212,
+        "scrollWidth": 1440,
+        "innerWidth": 1440
+      }
+    }
+  ],
+  "browserErrors": [],
+  "blockedRequests": [],
+  "externalRequests": 0,
+  "apiRequests": 0
+}

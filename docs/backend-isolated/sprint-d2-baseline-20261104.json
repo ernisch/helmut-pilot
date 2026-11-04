@@ -1,0 +1,791 @@
+{
+  "baseline": "ae18658e5caac2b39403c0e41e3a8af5c2b3d7be",
+  "candidatePatchSha256": null,
+  "accountsBaseSha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+  "d1PatchAppliesCleanlyAfterD2": null,
+  "summary": {
+    "scenarios": 7,
+    "passedScenarios": 1,
+    "failedScenarios": 6,
+    "passedChecks": 6,
+    "failedChecks": 15,
+    "httpRequests": 29
+  },
+  "results": [
+    {
+      "scenario": "last-status",
+      "candidatePatch": null,
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/admin/users/user-5ede869bfe2b659642",
+          "status": 200
+        }
+      ],
+      "checks": [
+        {
+          "name": "Letzter anmeldbarer Admin bleibt bei Entzugsversuch erhalten",
+          "status": "FAIL",
+          "observed": {
+            "patch": {
+              "status": "deaktiviert"
+            },
+            "http": 200
+          }
+        },
+        {
+          "name": "Mindestens ein Administrator ist weiterhin anmeldbar",
+          "status": "FAIL",
+          "observed": {
+            "count": 0
+          }
+        },
+        {
+          "name": "Abgewiesener Entzug belaesst Konto atomar unveraendert",
+          "status": "FAIL",
+          "observed": {
+            "role": "admin",
+            "status": "deaktiviert",
+            "active": false
+          }
+        }
+      ],
+      "protectedBefore": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "initialUsableAdmins": 1,
+      "finalUsableAdmins": 0,
+      "finalUsers": [
+        {
+          "syntheticName": "Synthetischer D2 Admin A",
+          "role": "admin",
+          "active": false,
+          "status": "deaktiviert",
+          "hasPassword": true
+        }
+      ],
+      "isolation": {
+        "profileWrites": 0,
+        "persistedProfiles": 0,
+        "fetchAttempts": 0,
+        "syntheticEmailsOnly": true,
+        "backend": "local",
+        "communicationBlocked": true,
+        "listenAddress": "127.0.0.1"
+      },
+      "status": "FAIL_PRODUCT_DEFECT_REPRODUCED",
+      "protectedAfter": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "protectedUnchangedDuringTest": true,
+      "trackedChangedFiles": []
+    },
+    {
+      "scenario": "last-active",
+      "candidatePatch": null,
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/admin/users/user-ed60d8ae7b3122bec9",
+          "status": 200
+        }
+      ],
+      "checks": [
+        {
+          "name": "Letzter anmeldbarer Admin bleibt bei Entzugsversuch erhalten",
+          "status": "FAIL",
+          "observed": {
+            "patch": {
+              "active": false
+            },
+            "http": 200
+          }
+        },
+        {
+          "name": "Mindestens ein Administrator ist weiterhin anmeldbar",
+          "status": "FAIL",
+          "observed": {
+            "count": 0
+          }
+        },
+        {
+          "name": "Abgewiesener Entzug belaesst Konto atomar unveraendert",
+          "status": "FAIL",
+          "observed": {
+            "role": "admin",
+            "status": "aktiv",
+            "active": false
+          }
+        }
+      ],
+      "protectedBefore": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "initialUsableAdmins": 1,
+      "finalUsableAdmins": 0,
+      "finalUsers": [
+        {
+          "syntheticName": "Synthetischer D2 Admin A",
+          "role": "admin",
+          "active": false,
+          "status": "aktiv",
+          "hasPassword": true
+        }
+      ],
+      "isolation": {
+        "profileWrites": 0,
+        "persistedProfiles": 0,
+        "fetchAttempts": 0,
+        "syntheticEmailsOnly": true,
+        "backend": "local",
+        "communicationBlocked": true,
+        "listenAddress": "127.0.0.1"
+      },
+      "status": "FAIL_PRODUCT_DEFECT_REPRODUCED",
+      "protectedAfter": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "protectedUnchangedDuringTest": true,
+      "trackedChangedFiles": []
+    },
+    {
+      "scenario": "last-role",
+      "candidatePatch": null,
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/admin/users/user-6cd696cf0fb97efd7a",
+          "status": 200
+        }
+      ],
+      "checks": [
+        {
+          "name": "Letzter anmeldbarer Admin bleibt bei Entzugsversuch erhalten",
+          "status": "FAIL",
+          "observed": {
+            "patch": {
+              "role": "referent"
+            },
+            "http": 200
+          }
+        },
+        {
+          "name": "Mindestens ein Administrator ist weiterhin anmeldbar",
+          "status": "FAIL",
+          "observed": {
+            "count": 0
+          }
+        },
+        {
+          "name": "Abgewiesener Entzug belaesst Konto atomar unveraendert",
+          "status": "FAIL",
+          "observed": {
+            "role": "referent",
+            "status": "aktiv",
+            "active": true
+          }
+        }
+      ],
+      "protectedBefore": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "initialUsableAdmins": 1,
+      "finalUsableAdmins": 0,
+      "finalUsers": [
+        {
+          "syntheticName": "Synthetischer D2 Admin A",
+          "role": "referent",
+          "active": true,
+          "status": "aktiv",
+          "hasPassword": true
+        }
+      ],
+      "isolation": {
+        "profileWrites": 0,
+        "persistedProfiles": 0,
+        "fetchAttempts": 0,
+        "syntheticEmailsOnly": true,
+        "backend": "local",
+        "communicationBlocked": true,
+        "listenAddress": "127.0.0.1"
+      },
+      "status": "FAIL_PRODUCT_DEFECT_REPRODUCED",
+      "protectedAfter": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "protectedUnchangedDuringTest": true,
+      "trackedChangedFiles": []
+    },
+    {
+      "scenario": "unusable-backups",
+      "candidatePatch": null,
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/admin/users/user-0401553240e7f34e48",
+          "status": 200
+        }
+      ],
+      "checks": [
+        {
+          "name": "Letzter anmeldbarer Admin bleibt bei Entzugsversuch erhalten",
+          "status": "FAIL",
+          "observed": {
+            "patch": {
+              "status": "gekuendigt"
+            },
+            "http": 200
+          }
+        },
+        {
+          "name": "Mindestens ein Administrator ist weiterhin anmeldbar",
+          "status": "FAIL",
+          "observed": {
+            "count": 0
+          }
+        },
+        {
+          "name": "Abgewiesener Entzug belaesst Konto atomar unveraendert",
+          "status": "FAIL",
+          "observed": {
+            "role": "admin",
+            "status": "gekuendigt",
+            "active": false
+          }
+        }
+      ],
+      "protectedBefore": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "initialUsableAdmins": 1,
+      "finalUsableAdmins": 0,
+      "finalUsers": [
+        {
+          "syntheticName": "Synthetischer D2 Admin A",
+          "role": "admin",
+          "active": false,
+          "status": "gekuendigt",
+          "hasPassword": true
+        },
+        {
+          "syntheticName": "Synthetisch gesperrter Admin",
+          "role": "admin",
+          "active": false,
+          "status": "aktiv",
+          "hasPassword": true
+        },
+        {
+          "syntheticName": "Synthetisch eingeladener Admin",
+          "role": "admin",
+          "active": true,
+          "status": "eingeladen",
+          "hasPassword": false
+        }
+      ],
+      "isolation": {
+        "profileWrites": 0,
+        "persistedProfiles": 0,
+        "fetchAttempts": 0,
+        "syntheticEmailsOnly": true,
+        "backend": "local",
+        "communicationBlocked": true,
+        "listenAddress": "127.0.0.1"
+      },
+      "status": "FAIL_PRODUCT_DEFECT_REPRODUCED",
+      "protectedAfter": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "protectedUnchangedDuringTest": true,
+      "trackedChangedFiles": []
+    },
+    {
+      "scenario": "delete-and-handover",
+      "candidatePatch": null,
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/admin/users/user-4a2c0c8125c14312bf",
+          "status": 400
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/admin/users/user-6890d8df13f05f4aab",
+          "status": 403
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/admin/users/user-6890d8df13f05f4aab",
+          "status": 200
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/admin/users/user-6890d8df13f05f4aab",
+          "status": 200
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/admin/users/user-4a2c0c8125c14312bf",
+          "status": 400
+        }
+      ],
+      "checks": [
+        {
+          "name": "Selbstloeschung gesperrt",
+          "status": "PASS",
+          "observed": {
+            "http": 400
+          }
+        },
+        {
+          "name": "Fremder Administrator nicht loeschbar",
+          "status": "PASS",
+          "observed": {
+            "http": 403
+          }
+        },
+        {
+          "name": "Mit verbleibendem anmeldbarem Admin sind Entzug und Rollenwechsel erlaubt",
+          "status": "PASS",
+          "observed": {
+            "deactivation": 200,
+            "demotion": 200
+          }
+        },
+        {
+          "name": "Auch letzter Admin kann sich nicht loeschen",
+          "status": "PASS",
+          "observed": {
+            "http": 400
+          }
+        },
+        {
+          "name": "Mindestens ein Administrator ist weiterhin anmeldbar",
+          "status": "PASS",
+          "observed": {
+            "count": 1
+          }
+        }
+      ],
+      "protectedBefore": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "initialUsableAdmins": 2,
+      "finalUsableAdmins": 1,
+      "finalUsers": [
+        {
+          "syntheticName": "Synthetischer D2 Admin A",
+          "role": "admin",
+          "active": true,
+          "status": "aktiv",
+          "hasPassword": true
+        },
+        {
+          "syntheticName": "Synthetischer D2 Admin B",
+          "role": "referent",
+          "active": false,
+          "status": "deaktiviert",
+          "hasPassword": true
+        }
+      ],
+      "isolation": {
+        "profileWrites": 0,
+        "persistedProfiles": 0,
+        "fetchAttempts": 0,
+        "syntheticEmailsOnly": true,
+        "backend": "local",
+        "communicationBlocked": true,
+        "listenAddress": "127.0.0.1"
+      },
+      "status": "PASS",
+      "protectedAfter": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "protectedUnchangedDuringTest": true,
+      "trackedChangedFiles": []
+    },
+    {
+      "scenario": "concurrent-status",
+      "candidatePatch": null,
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/admin/users/user-24662141e3b345a36b",
+          "status": 200
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/admin/users/user-195fcae0a7c0197bef",
+          "status": 200
+        }
+      ],
+      "checks": [
+        {
+          "name": "Genau eine gleichzeitige Entzugsaktion wird abgewiesen",
+          "status": "FAIL",
+          "observed": {
+            "statuses": [
+              200,
+              200
+            ]
+          }
+        },
+        {
+          "name": "Mindestens ein Administrator ist weiterhin anmeldbar",
+          "status": "PASS",
+          "observed": {
+            "count": 1
+          }
+        }
+      ],
+      "protectedBefore": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "initialUsableAdmins": 2,
+      "barrier": {
+        "arrivals": 2,
+        "location": "after real HTTP authentication/CSRF/role checks, immediately before actual accounts.updateUser"
+      },
+      "finalUsableAdmins": 1,
+      "finalUsers": [
+        {
+          "syntheticName": "Synthetischer D2 Admin A",
+          "role": "admin",
+          "active": false,
+          "status": "deaktiviert",
+          "hasPassword": true
+        },
+        {
+          "syntheticName": "Synthetischer D2 Admin B",
+          "role": "admin",
+          "active": true,
+          "status": "aktiv",
+          "hasPassword": true
+        }
+      ],
+      "isolation": {
+        "profileWrites": 0,
+        "persistedProfiles": 0,
+        "fetchAttempts": 0,
+        "syntheticEmailsOnly": true,
+        "backend": "local",
+        "communicationBlocked": true,
+        "listenAddress": "127.0.0.1"
+      },
+      "status": "FAIL_PRODUCT_DEFECT_REPRODUCED",
+      "protectedAfter": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "protectedUnchangedDuringTest": true,
+      "trackedChangedFiles": []
+    },
+    {
+      "scenario": "concurrent-role",
+      "candidatePatch": null,
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/admin/users/user-eb5c15923534da7c24",
+          "status": 200
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/admin/users/user-f4b7cae2a7cce5c2db",
+          "status": 200
+        }
+      ],
+      "checks": [
+        {
+          "name": "Genau eine gleichzeitige Entzugsaktion wird abgewiesen",
+          "status": "FAIL",
+          "observed": {
+            "statuses": [
+              200,
+              200
+            ]
+          }
+        },
+        {
+          "name": "Mindestens ein Administrator ist weiterhin anmeldbar",
+          "status": "FAIL",
+          "observed": {
+            "count": 0
+          }
+        }
+      ],
+      "protectedBefore": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "initialUsableAdmins": 2,
+      "barrier": {
+        "arrivals": 2,
+        "location": "after real HTTP authentication/CSRF/role checks, immediately before actual accounts.updateUser"
+      },
+      "finalUsableAdmins": 0,
+      "finalUsers": [
+        {
+          "syntheticName": "Synthetischer D2 Admin A",
+          "role": "referent",
+          "active": true,
+          "status": "aktiv",
+          "hasPassword": true
+        },
+        {
+          "syntheticName": "Synthetischer D2 Admin B",
+          "role": "referent",
+          "active": true,
+          "status": "aktiv",
+          "hasPassword": true
+        }
+      ],
+      "isolation": {
+        "profileWrites": 0,
+        "persistedProfiles": 0,
+        "fetchAttempts": 0,
+        "syntheticEmailsOnly": true,
+        "backend": "local",
+        "communicationBlocked": true,
+        "listenAddress": "127.0.0.1"
+      },
+      "status": "FAIL_PRODUCT_DEFECT_REPRODUCED",
+      "protectedAfter": {
+        "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+        "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+        "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+        "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+        "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+        "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+        "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+        "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+        "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+      },
+      "protectedUnchangedDuringTest": true,
+      "trackedChangedFiles": []
+    }
+  ],
+  "sourceBefore": {
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+    "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+    "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+  },
+  "sourceAfter": {
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+    "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+    "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+  },
+  "sourceUnchanged": true,
+  "run": {
+    "timestamp": "2026-11-04T11:51:47.715Z",
+    "elapsedMs": 11823,
+    "testSha256": "0570d4fc80432ecf66cead592e64ddea39409cee1d7a5ad4bb576fc791e51a09",
+    "node": "v24.19.0",
+    "environmentKeys": [
+      "HELMUT_AUTH_MODE",
+      "HELMUT_STORE_CACHE_MS",
+      "HELMUT_TESTLAUF_KOMMUNIKATION",
+      "LANG",
+      "LC_ALL",
+      "NODE_PATH",
+      "PATH",
+      "TMPDIR",
+      "TZ"
+    ],
+    "runtimeClonesRemoved": true,
+    "invocation": "env -i [fixedEnv allowlist] node scripts/lokal.js scripts/sprint-d2-last-admin-test.js"
+  }
+}

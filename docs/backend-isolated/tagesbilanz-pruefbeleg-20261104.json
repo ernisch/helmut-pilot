@@ -1,0 +1,58 @@
+{
+  "checks": [
+    {
+      "name": "Echte vorhandene Lage-Produzentenbindung wird erkannt, Cache bleibt nur gemeldet",
+      "passed": true
+    },
+    {
+      "name": "Vollständigkeit, Qualität und Empfang bleiben trotz Speicherflag ungeprüft",
+      "passed": true
+    },
+    {
+      "name": "Aggregierter Erfolg oder processed:500 ist kein Einzelnachweis",
+      "passed": true
+    },
+    {
+      "name": "Fremde und derzeit inaktive Profile liefern keinen positiven Zähler",
+      "passed": true
+    },
+    {
+      "name": "Doppelte Übertragung und mehrere Läufe desselben Profils verdoppeln es nicht",
+      "passed": true
+    },
+    {
+      "name": "Widersprüchliche Laufkennung und doppelte Profilzeilen zählen nicht",
+      "passed": true
+    },
+    {
+      "name": "Gestern, Zukunft, Tageswechsel und unvollständiger Lauf werden verworfen",
+      "passed": true
+    },
+    {
+      "name": "Berliner Tag behandelt Sommer-/Winterzeit statt pauschalem24h-Fenster",
+      "passed": true
+    },
+    {
+      "name": "Lesefehler, fehlende Aktivflags und übergroßes Lesefenster bleiben unbekannt",
+      "passed": true
+    },
+    {
+      "name": "Leeres gelesenes Fenster bestätigt nur null gelesene Läufe",
+      "passed": true
+    },
+    {
+      "name": "Falscher Produzent und textuelle Booleans sind keine Speicherbestätigung",
+      "passed": true
+    },
+    {
+      "name": "Vorhandener Nachlauf kann Briefing und Lage getrennt melden",
+      "passed": true
+    }
+  ],
+  "moduleSha256": "20332af88adcc4e0a37993c336ccbda8c6fcac68cf1b2b44d8675f8cf752540e",
+  "limitations": [
+    "Nur begrenzte vorhandene Laufquittungen",
+    "Keine Qualität-/Vollständigkeits-/Empfangs-/Production-Abnahme",
+    "Keine Motorfunktion oder Datenablage verändert"
+  ]
+}

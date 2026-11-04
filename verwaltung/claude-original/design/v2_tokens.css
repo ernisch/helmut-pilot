@@ -1,0 +1,27 @@
+/* Helmut Verwaltung v2 – Tokens. Dunkel = Helmut Designsystem (tokens/colors.css). Hell = dieselben Namen mit den hellen Werten aus dem Dokument. */
+:root, [data-theme="dunkel"] {
+  color-scheme: dark;
+  --bg: #070B16; --bg-1: #0A0F1B; --bg-2: #0C1322; --bg-chrome: #05080F;
+  --ink: #EAEEF6; --text: #AEB8C9; --text-2: #9BA6B8; --muted: #828EA0; --muted-2: #7B879A;
+  --line: rgba(255,255,255,.08); --line-2: rgba(255,255,255,.13); --line-strong: rgba(255,255,255,.4);
+  --accent: #7FA8E0; --accent-strong: #a7c3ea; --accent-dim: rgba(127,168,224,.15); --accent-line: rgba(127,168,224,.34);
+  --risk: #ff5967; --chance: #39d18f; --watch: #d6a040;
+  --ok-ink: #39d18f; --warn-ink: #d6a040; --bad-ink: #ff5967;
+  --risk-dim: rgba(255,89,103,.14); --chance-dim: rgba(57,209,143,.14); --watch-dim: rgba(214,160,64,.13);
+  --solid: #E9EDF5; --solid-hover: #ffffff; --on-solid: #0A0F1C;
+  --rail: #05080F; --rail-ink: #EAEEF6; --rail-muted: #828EA0; --rail-line: rgba(255,255,255,.08);
+  --shadow-panel: 0 30px 70px -34px rgba(0,0,0,.8); --overlay: rgba(3,5,10,.6);
+}
+[data-theme="hell"] {
+  color-scheme: light;
+  --bg: #eef1f6; --bg-1: #f4f6fa; --bg-2: #ffffff; --bg-chrome: #e6eaf1;
+  --ink: #0f1729; --text: rgba(15,23,42,.8); --text-2: rgba(15,23,42,.7); --muted: rgba(15,23,42,.6); --muted-2: rgba(15,23,42,.5);
+  --line: rgba(15,23,42,.1); --line-2: rgba(15,23,42,.16); --line-strong: rgba(15,23,42,.4);
+  --accent: #4f6fe0; --accent-strong: #3956c4; --accent-dim: rgba(79,111,224,.12); --accent-line: rgba(79,111,224,.4);
+  --risk: #d12b39; --chance: #1f9d63; --watch: #b07414;
+  --ok-ink: color-mix(in oklab, #1f9d63 70%, #0f1729); --warn-ink: color-mix(in oklab, #b07414 76%, #0f1729); --bad-ink: color-mix(in oklab, #d12b39 78%, #0f1729);
+  --risk-dim: rgba(209,43,57,.1); --chance-dim: rgba(31,157,99,.12); --watch-dim: rgba(176,116,20,.13);
+  --solid: #0f1729; --solid-hover: #1c2742; --on-solid: #ffffff;
+  --rail: #070b14; --rail-ink: #f5f1e8; --rail-muted: rgba(245,241,232,.64); --rail-line: rgba(245,241,232,.1);
+  --shadow-panel: 0 30px 70px -40px rgba(15,23,42,.35); --overlay: rgba(7,11,20,.45);
+}

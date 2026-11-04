@@ -1,0 +1,44 @@
+/* ============================================================
+   HELMUT — SPACING, RADII, SHADOW, LAYOUT & MOTION TOKENS
+   ============================================================ */
+:root{
+  /* --- Radii (small & restrained — nothing is very round) --- */
+  --r-sm:   4px;    /* buttons, tags, inputs */
+  --r-md:   8px;    /* cards, panels */
+  --r-lg:   14px;   /* large surfaces */
+  --r-pill: 999px;  /* pills, dots */
+
+  /* --- Spacing scale --- */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  20px;
+  --s-6:  26px;
+  --s-8:  40px;
+  --s-10: 56px;
+  --s-12: 72px;
+  --s-16: 116px;
+
+  /* Vertical section rhythm (density lever) */
+  --sy:   88px;         /* Ruhig (calm) — default */
+  --sy-compact: 62px;   /* Kompakt */
+
+  /* Horizontal page inset */
+  --px:   clamp(20px, 5vw, 40px); /* @kind spacing */
+
+  /* --- Shadows (deep, soft, low — objects float on the dark) --- */
+  --shadow-panel: 0 30px 70px -34px rgba(0,0,0,.8);
+  --shadow-soft:  0 20px 50px -30px rgba(0,0,0,.55);
+
+  /* --- Layout max-widths --- */
+  --max:        1080px;  /* full content column */
+  --max-narrow: 820px;   /* narrower feature column */
+  --max-text:   640px;   /* reading measure */
+
+  /* --- Motion (one easing curve, three durations) --- */
+  --ease: cubic-bezier(.22, 1, .36, 1); /* @kind other */
+  --dur-fast: 120ms; /* @kind other */
+  --dur-base: 200ms; /* @kind other */
+  --dur-slow: 320ms; /* @kind other */
+}

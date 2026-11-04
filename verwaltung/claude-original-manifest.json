@@ -1,0 +1,105 @@
+{
+  "source_zip_sha256": "402c025b2b58b581312e290f70e3503af8e4b396867be78ae3415ad448938384",
+  "files": [
+    {
+      "path": "Helmut Verwaltung v3.dc.html",
+      "sha256": "9bdcf76ae6771655351c68ada79e4301348f452d12b5cbabe15c4ef4fe275418"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/_adherence.oxlintrc.json",
+      "sha256": "8197466e5bc69389417e411247be48a0879f92965c95d2e96ad823b49ad8879e"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/_ds_bundle.js",
+      "sha256": "066f520fe80585116691c8276afff4a86ee757cac1686e47f1f098e6a2a3e6fe"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/_ds_manifest.json",
+      "sha256": "949544ecfd827b707a2bed908352fb58708581ffb56e0cdd705785be8540f1e9"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/HankenGrotesk-var.ttf",
+      "sha256": "813b3f8fa0965405669a89b38e51bbefd95eef6b8e20d1cb2d8c10cce062662f"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Medium.ttf",
+      "sha256": "a9b4c49bb299e05b5f6c481e7fb5e78943d2793249a0c8874ab574a2d1ea6755"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Regular.ttf",
+      "sha256": "6a3412f058c7d8dfd9170c41e85ade48e5156ecb89356110ca57a0a27734af46"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Medium.ttf",
+      "sha256": "f385bc588599c879112272711d4acecc126674009d747a27284f59e93a240e83"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Regular.ttf",
+      "sha256": "c89021dc20720c8d0dcf40b0b2f6e00c13665fa8041717f581396f51b8c78f5d"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/readme.md",
+      "sha256": "5ede1e8dcf106083419a32f774737a9a559add935dfdae07bdb9b6ec74935c30"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "sha256": "9acb03ace9f271cd59694a3ca00c3314cd1100fec7c2b18c023ca266b90d2243"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "sha256": "031321710634f8a0a8d25c6ece3e1ac773ddb071757898f5b171e08e9688de0f"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "sha256": "53d384b0f4208dae8847429975568d43c626bd598b02f9271f990af3cc05be7d"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "sha256": "6611bf3c62d1635895737068ad847848d76f12023d8422db2b853fd25ba931fd"
+    },
+    {
+      "path": "_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "sha256": "c9d05456e2efa9f4e14a1a87b14686482eb5e5b71c811ac7039c2ddd51cb9364"
+    },
+    {
+      "path": "design/logo/README.md",
+      "sha256": "79b9836bd3ff107a158bbf68a239f22e60a274e5039236e9e035a4d323f4b334"
+    },
+    {
+      "path": "design/logo/favicon-32.png",
+      "sha256": "f2173c0277bb89ae745ac8ddebc3fd00e3fc2cdeda0d1820ff5d531d801d4af9"
+    },
+    {
+      "path": "design/logo/favicon.svg",
+      "sha256": "9ce6218af1ddec9aa469c1c99289626bca0953c044b1ed261f637e073c33bd95"
+    },
+    {
+      "path": "design/logo/helmut-h.svg",
+      "sha256": "ceb27237d05a1f44a9d267eb7ed62133c6eaa82d1f1ee2d8e7dbd4ef17ba147d"
+    },
+    {
+      "path": "design/logo/helmut-zeichen-invers.svg",
+      "sha256": "96c3db7dc7a847f0e1a5bcef9b458df8edc5da58d98b361ab194f837ae67d4e8"
+    },
+    {
+      "path": "design/logo/helmut-zeichen.svg",
+      "sha256": "9d885030b873da5e0796f361adfc183c2830b38011ee505fda8422ae138b8ab4"
+    },
+    {
+      "path": "design/logo/icon-192.png",
+      "sha256": "cbe90686046ef004c1ebf0235a33ff59572c3e52007a81d7c270bcb086c66193"
+    },
+    {
+      "path": "design/v2_tokens.css",
+      "sha256": "e102a0ae35c2a8db87e2a641abf5b1f3f3611688961bc30e2571818c515e00c9"
+    },
+    {
+      "path": "support.js",
+      "sha256": "8fe7df74405f3c55f49b7249c74ea1397e65d07dea2b1bd3b4a489bec2e28cbe"
+    },
+    {
+      "path": "v3_logik.js",
+      "sha256": "3bec6af65720908f67798591d0b74889959ebdabe3ebebfd4604624042dcd8a7"
+    }
+  ]
+}

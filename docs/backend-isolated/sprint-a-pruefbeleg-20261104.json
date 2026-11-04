@@ -1,0 +1,569 @@
+{
+  "schemaVersion": 1,
+  "testedCommit": "ae18658e5caac2b39403c0e41e3a8af5c2b3d7be",
+  "testScriptSha256": "b16bb1f4c10e8549f6aad22bf4a568e91c278dda4b3dd8b7bf43db20ad997526",
+  "actualServer": true,
+  "root": "/workspace/helmut-backend-sprint-a-20261104",
+  "isolatedLocalStore": true,
+  "externalAttempts": 0,
+  "providerCalls": 0,
+  "routes": [
+    "/api/admin/overview",
+    "/api/admin/stats/budget-today",
+    "/api/admin/customers",
+    "/api/admin/sources-status",
+    "/api/admin/stats/process-runs?limit=20",
+    "/api/admin/profile/sprint-a-synthetic-alpha"
+  ],
+  "groupsPassed": 56,
+  "checks": [
+    {
+      "name": "Leerer Kundenbestand ist ein echtes leeres Array",
+      "passed": true
+    },
+    {
+      "name": "Leere Laufhistorie wird ohne erfundenen Erfolg geliefert",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/overview: anonym → 401",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/overview: ungueltige Session → 401",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/overview: Abgeordneter → 403",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/overview: Referent ohne Mandat → 403",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/overview: Admin ohne Mandat → 200",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/stats/budget-today: anonym → 401",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/stats/budget-today: ungueltige Session → 401",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/stats/budget-today: Abgeordneter → 403",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/stats/budget-today: Referent ohne Mandat → 403",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/stats/budget-today: Admin ohne Mandat → 200",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/customers: anonym → 401",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/customers: ungueltige Session → 401",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/customers: Abgeordneter → 403",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/customers: Referent ohne Mandat → 403",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/customers: Admin ohne Mandat → 200",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/sources-status: anonym → 401",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/sources-status: ungueltige Session → 401",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/sources-status: Abgeordneter → 403",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/sources-status: Referent ohne Mandat → 403",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/sources-status: Admin ohne Mandat → 200",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/stats/process-runs?limit=20: anonym → 401",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/stats/process-runs?limit=20: ungueltige Session → 401",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/stats/process-runs?limit=20: Abgeordneter → 403",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/stats/process-runs?limit=20: Referent ohne Mandat → 403",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/stats/process-runs?limit=20: Admin ohne Mandat → 200",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/profile/sprint-a-synthetic-alpha: anonym → 401",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/profile/sprint-a-synthetic-alpha: ungueltige Session → 401",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/profile/sprint-a-synthetic-alpha: Abgeordneter → 403",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/profile/sprint-a-synthetic-alpha: Referent ohne Mandat → 403",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/profile/sprint-a-synthetic-alpha: Admin ohne Mandat → 200",
+      "passed": true
+    },
+    {
+      "name": "Overview: beide synthetischen Profile, Identitaet und Aktivstatus",
+      "passed": true
+    },
+    {
+      "name": "Budget: vorhandener USD-/Monats-/Kostenwahrheitsvertrag",
+      "passed": true
+    },
+    {
+      "name": "Kunden: reine Kontodaten und Sessionanzahl, keine Sitzungsobjekte",
+      "passed": true
+    },
+    {
+      "name": "Quellen: fehlender relationaler Katalog bleibt unbekannt",
+      "passed": true
+    },
+    {
+      "name": "Laeufe: leere Historie und vorhandene Zeitplanform",
+      "passed": true
+    },
+    {
+      "name": "Profildetail: vorhandenes Profil mit ausdruecklicher Validierung",
+      "passed": true
+    },
+    {
+      "name": "Fremdes Mandat ueber Adminroute bleibt fuer Mandat A gesperrt",
+      "passed": true
+    },
+    {
+      "name": "Unbrauchbare Profilkennung wird abgelehnt",
+      "passed": true
+    },
+    {
+      "name": "Nicht vorhandenes Profil: bestehender Leer-/Validierungsvertrag statt fremdem Profil",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/overview: injizierter Lesefehler bleibt generischer Serverfehler",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/customers: injizierter Lesefehler bleibt generischer Serverfehler",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/stats/budget-today: injizierter Lesefehler bleibt generischer Serverfehler",
+      "passed": true
+    },
+    {
+      "name": "/api/admin/stats/process-runs?limit=20: injizierter Lesefehler bleibt generischer Serverfehler",
+      "passed": true
+    },
+    {
+      "name": "Quellen-Lesefehler liefert unbekannte Daten statt gesunder Nullwerte",
+      "passed": true
+    },
+    {
+      "name": "Profillesefehler gibt keine fremden oder vollstaendigen Profildaten frei",
+      "passed": true
+    },
+    {
+      "name": "Vorbereiteter Datenleser liest overview vom echten lokalen Server",
+      "passed": true
+    },
+    {
+      "name": "Vorbereiteter Datenleser liest budget vom echten lokalen Server",
+      "passed": true
+    },
+    {
+      "name": "Vorbereiteter Datenleser liest customers vom echten lokalen Server",
+      "passed": true
+    },
+    {
+      "name": "Vorbereiteter Datenleser liest sources vom echten lokalen Server",
+      "passed": true
+    },
+    {
+      "name": "Vorbereiteter Datenleser liest runs vom echten lokalen Server",
+      "passed": true
+    },
+    {
+      "name": "Vorbereiteter Datenleser liest profile vom echten lokalen Server",
+      "passed": true
+    },
+    {
+      "name": "Bereits angemeldetes deaktiviertes Admin-Konto verliert den Zugriff",
+      "passed": true
+    },
+    {
+      "name": "Keine externen Zugriffsversuche oder Modellaufrufe",
+      "passed": true
+    },
+    {
+      "name": "Bestehende Server-, Motor-, UI- und Konfigurationsdateien unveraendert",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "route": "/api/auth/login",
+      "method": "POST",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/customers",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/process-runs?limit=20",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/auth/login",
+      "method": "POST",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/auth/login",
+      "method": "POST",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/overview",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/overview",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/overview",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/overview",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/overview",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/budget-today",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/budget-today",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/budget-today",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/budget-today",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/budget-today",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/customers",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/customers",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/customers",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/customers",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/customers",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/sources-status",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/sources-status",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/sources-status",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/sources-status",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/sources-status",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/process-runs?limit=20",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/process-runs?limit=20",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/process-runs?limit=20",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/process-runs?limit=20",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/process-runs?limit=20",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/profile/sprint-a-synthetic-alpha",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/profile/sprint-a-synthetic-alpha",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/profile/sprint-a-synthetic-alpha",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/profile/sprint-a-synthetic-alpha",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/profile/sprint-a-synthetic-alpha",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/overview",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/budget-today",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/customers",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/sources-status",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/stats/process-runs?limit=20",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/profile/sprint-a-synthetic-alpha",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/profile/sprint-a-synthetic-beta",
+      "method": "GET",
+      "status": 403,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/profile/%00",
+      "method": "GET",
+      "status": 404,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/profile/sprint-a-synthetic-missing",
+      "method": "GET",
+      "status": 200,
+      "fault": null
+    },
+    {
+      "route": "/api/admin/overview",
+      "method": "GET",
+      "status": 500,
+      "fault": "users"
+    },
+    {
+      "route": "/api/admin/customers",
+      "method": "GET",
+      "status": 500,
+      "fault": "users"
+    },
+    {
+      "route": "/api/admin/stats/budget-today",
+      "method": "GET",
+      "status": 500,
+      "fault": "budget"
+    },
+    {
+      "route": "/api/admin/stats/process-runs?limit=20",
+      "method": "GET",
+      "status": 500,
+      "fault": "runs"
+    },
+    {
+      "route": "/api/admin/sources-status",
+      "method": "GET",
+      "status": 200,
+      "fault": "sources"
+    },
+    {
+      "route": "/api/admin/profile/sprint-a-synthetic-alpha",
+      "method": "GET",
+      "status": 200,
+      "fault": "profile"
+    },
+    {
+      "route": "/api/admin/overview",
+      "method": "GET",
+      "status": 401,
+      "fault": null
+    }
+  ],
+  "observations": [
+    {
+      "code": "missing-profile-http200",
+      "explanation": "Bestehender Server liefert fuer fehlende Profile ein neutrales Profilobjekt mit nicht bereiter Validierung, kein HTTP404."
+    },
+    {
+      "code": "profile-read-error-http200",
+      "explanation": "Bestehendes catch setzt fehlgeschlagene Profillesung auf dasselbe neutrale Objekt wie fehlenden Bestand. Fehler und fehlendes Profil sind im Transport nicht unterscheidbar. Gemeinsamen Handler nicht veraendert."
+    }
+  ],
+  "limits": [
+    "Keine reale Supabase-/RLS-Pruefung",
+    "Fehler durch prozesslokale Abhaengigkeitsinjektion",
+    "Keine 500er-, Last-, Browser- oder Production-Abnahme",
+    "Keine Schreibmethoden der Verwaltungsfunktionen geprueft"
+  ]
+}

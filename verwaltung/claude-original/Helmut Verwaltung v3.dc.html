@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css">
+<link rel="stylesheet" href="design/v2_tokens.css">
+<link rel="icon" href="design/logo/favicon.svg" type="image/svg+xml">
+<script src="v3_logik.js"></script>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#070B16}
+body{font-family:'Hanken Grotesk',system-ui,-apple-system,"Segoe UI",sans-serif;color:#AEB8C9;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:var(--accent,#7FA8E0);text-decoration:none}
+a:hover{color:var(--accent-strong,#a7c3ea);text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit;margin:0}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent,#7FA8E0);outline-offset:3px}
+h1,h2,h3,p,dl,dd,dt,ul,ol{margin:0}
+summary{list-style:none}
+summary::-webkit-details-marker{display:none}
+@keyframes hvPulse{0%,100%{opacity:.35}50%{opacity:.8}}
+@keyframes hvIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" lang="de" style="min-height:100vh;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;display:flex;align-items:stretch">
+<sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+<nav aria-label="Hauptnavigation" style="width:212px;flex:none;background:var(--rail);color:var(--rail-ink);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;padding:22px 14px 18px;border-right:1px solid var(--rail-line)">
+<a href="#/uebersicht" onClick="{{ goHome }}" style="display:flex;align-items:center;gap:11px;padding:2px 8px 30px;color:var(--rail-ink);text-decoration:none"><img src="design/logo/helmut-zeichen.svg" width="34" height="34" alt="" style="flex:none;display:block"><span style="display:flex;flex-direction:column;line-height:1.1"><span style="font-family:'Spectral',Georgia,serif;font-weight:400;font-size:21px">Helmut</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--rail-muted);margin-top:3px">Verwaltung</span></span></a>
+<div style="display:flex;flex-direction:column;gap:2px">
+<sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5"><a href="{{ n.href }}" aria-current="{{ n.current }}" onClick="{{ n.onClick }}" title="{{ n.title }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;height:42px;padding:0 10px;border-radius:6px;font-size:15px;text-decoration:none;color:{{ n.color }};background:{{ n.bg }};font-weight:{{ n.weight }}" style-hover="color:var(--rail-ink)"><span>{{ n.label }}</span><span style="display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;color:{{ n.badgeColor }}">{{ n.badge }}<span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:{{ n.dot }};flex:none"></span></span></a></sc-for>
+</div>
+<div style="flex:1"></div>
+<div style="border-top:1px solid var(--rail-line);padding:14px 10px 0;display:flex;flex-direction:column;line-height:1.3"><span style="font-size:13.5px;color:var(--rail-ink)">Lüey</span><span style="font-size:12px;color:var(--rail-muted)">Betreiber</span></div>
+</nav>
+</sc-if>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<sc-if value="{{ narrow }}" hint-placeholder-val="{{ false }}">
+<header style="position:sticky;top:0;z-index:30;background:var(--rail);color:var(--rail-ink);display:flex;align-items:center;gap:4px;padding:6px 8px;min-height:56px;border-bottom:1px solid var(--rail-line)">
+<button type="button" aria-label="Menü öffnen" aria-expanded="{{ menuOpen }}" onClick="{{ toggleMenu }}" style="width:44px;height:44px;border-radius:8px;border:0;background:transparent;color:var(--rail-ink);display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+<a href="#/uebersicht" onClick="{{ goHome }}" style="display:flex;align-items:center;gap:8px;color:var(--rail-ink);text-decoration:none"><img src="design/logo/helmut-zeichen.svg" width="28" height="28" alt="" style="flex:none;display:block"><span style="font-family:'Spectral',Georgia,serif;font-size:18px">Helmut</span></a>
+<span style="flex:1"></span>
+<button type="button" onClick="{{ toggleProto }}" aria-expanded="{{ protoOpen }}" style="height:32px;padding:0 10px;border-radius:999px;border:1px solid var(--watch);background:transparent;color:var(--watch);font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap">Beispieldaten</button>
+</header>
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}"><nav aria-label="Hauptnavigation" style="position:sticky;top:56px;z-index:29;background:var(--rail);border-bottom:1px solid var(--rail-line);padding:6px 8px 12px;display:flex;flex-direction:column;animation:hvIn .18s ease-out"><sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5"><a href="{{ n.href }}" aria-current="{{ n.current }}" onClick="{{ n.onClick }}" style="display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 12px;border-radius:6px;font-size:16px;color:{{ n.color }};background:{{ n.bg }}"><span>{{ n.label }}</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:{{ n.badgeColor }}">{{ n.badge }}</span></a></sc-for></nav></sc-if>
+</sc-if>
+<main id="hauptbereich" style="flex:1;width:100%;max-width:1180px;padding:clamp(20px,3vw,44px) clamp(16px,3.5vw,48px) 80px">
+<sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}"><div style="display:flex;justify-content:flex-end;margin-bottom:18px"><button type="button" onClick="{{ toggleProto }}" aria-expanded="{{ protoOpen }}" title="Prototyp: Ansicht und Simulation" style="height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--watch);background:transparent;color:var(--warn-ink);font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap">Entwurf · Beispieldaten</button></div></sc-if>
+<sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}">
+<div role="status" aria-live="polite" style="display:flex;flex-direction:column;gap:16px">
+<div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">Wird gelesen</div>
+<div style="height:44px;width:40%;border-radius:6px;background:var(--bg-2);animation:hvPulse 1.6s ease-in-out infinite"></div>
+<div style="height:18px;width:70%;border-radius:6px;background:var(--bg-2);animation:hvPulse 1.6s ease-in-out infinite"></div>
+<div style="height:96px;border-radius:8px;background:var(--bg-2);animation:hvPulse 1.6s ease-in-out infinite;margin-top:14px"></div>
+<div style="height:220px;border-radius:8px;background:var(--bg-2);animation:hvPulse 1.6s ease-in-out infinite"></div>
+</div>
+</sc-if>
+<sc-if value="{{ pUebersicht }}" hint-placeholder-val="{{ false }}">
+<div style="animation:hvIn .25s ease-out">
+<div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">{{ dateLine }}</div>
+<div style="display:flex;align-items:center;gap:16px;margin-top:16px">
+<span aria-hidden="true" style="width:16px;height:16px;border-radius:50%;flex:none;background:{{ health.dot }};box-shadow:0 0 0 6px {{ health.halo }}"></span>
+<h1 tabindex="-1" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:clamp(32px,4vw,46px);letter-spacing:-.02em;line-height:1.05;color:var(--ink);outline:none">{{ health.label }}</h1>
+</div>
+<p style="margin-top:16px;font-size:17px;line-height:1.55;color:var(--ink);max-width:64ch;text-wrap:pretty">{{ health.text }}</p>
+<dl style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-top:34px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+<sc-for list="{{ bigNums }}" as="b" hint-placeholder-count="4"><a href="#/profile" onClick="{{ b.onClick }}" style="display:flex;flex-direction:column;gap:6px;padding:20px 20px 18px 0;color:var(--text);text-decoration:none;min-width:0" style-hover="color:var(--text)"><dt style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">{{ b.label }}</dt><dd style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:clamp(34px,3.6vw,46px);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:{{ b.ink }}">{{ b.value }}</dd><span style="font-size:12.5px;color:var(--muted)">{{ b.sub }}</span></a></sc-for>
+</dl>
+<div style="border-bottom:1px solid var(--line)">
+<sc-for list="{{ statusLines }}" as="s" hint-placeholder-count="2"><a href="{{ s.href }}" onClick="{{ s.onClick }}" style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 20px;padding:15px 0;border-top:1px solid var(--line);color:var(--text);text-decoration:none" style-hover="color:var(--ink)"><span style="flex:0 0 150px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">{{ s.label }}</span><span style="flex:1 1 300px;display:inline-flex;align-items:baseline;gap:10px;font-size:15.5px;color:var(--ink);text-wrap:pretty"><span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;flex:none;transform:translateY(-1px);background:{{ s.dot }};border:1.5px solid {{ s.ring }}"></span><span>{{ s.value }}<span style="color:var(--muted)">{{ s.sub }}</span></span></span><span aria-hidden="true" style="color:var(--muted-2)">→</span></a></sc-for>
+</div>
+<section aria-labelledby="att-h" style="margin-top:48px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap"><h2 id="att-h" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:24px;letter-spacing:-.01em;color:var(--ink)">Braucht Aufmerksamkeit</h2><span style="font-size:13.5px;color:var(--muted)">{{ attSub }}</span></div>
+<div style="margin-top:14px;border-bottom:1px solid var(--line)">
+<sc-for list="{{ groups }}" as="g" hint-placeholder-count="4"><a href="#/profile" onClick="{{ g.onClick }}" style="display:grid;grid-template-columns:{{ groupCols }};gap:6px 18px;align-items:center;padding:16px 0;border-top:1px solid var(--line);color:var(--text);text-decoration:none" style-hover="background:var(--bg-1)"><span aria-hidden="true" style="width:9px;height:9px;border-radius:50%;background:{{ g.dot }};border:1.5px solid {{ g.ring }}"></span><span style="min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:15.5px;color:var(--ink);font-weight:600;text-wrap:pretty">{{ g.title }}</span><span style="font-size:13.5px;color:var(--muted);text-wrap:pretty">{{ g.areaLabel }} · {{ g.detail }}</span></span><span style="font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right">{{ g.countLabel }}</span><span aria-hidden="true" style="color:var(--muted-2)">→</span></a></sc-for>
+<sc-if value="{{ groupsEmpty }}" hint-placeholder-val="{{ false }}"><p style="padding:22px 0;border-top:1px solid var(--line);font-size:15px;color:var(--text)">Nichts braucht gerade deine Aufmerksamkeit.</p></sc-if>
+</div>
+<sc-if value="{{ groupsMore }}" hint-placeholder-val="{{ false }}"><a href="#/profile" onClick="{{ goAttention }}" style="display:inline-block;margin-top:14px;font-size:14px">Alle {{ counts.problem }} Profile ansehen</a></sc-if>
+</section>
+</div>
+</sc-if>
+<sc-if value="{{ pProfile }}" hint-placeholder-val="{{ false }}">
+<div style="animation:hvIn .25s ease-out">
+<div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">{{ listEyebrow }}</div>
+<h1 tabindex="-1" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:clamp(30px,3.4vw,40px);letter-spacing:-.02em;line-height:1.08;color:var(--ink);margin-top:12px;outline:none">Profile</h1>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin-top:26px">
+<label style="position:relative;flex:1 1 240px;max-width:340px;display:block"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Profil suchen</span><input type="search" value="{{ q }}" onChange="{{ setQ }}" placeholder="Name oder Mandat suchen" style="width:100%;height:40px;padding:0 12px;border-radius:8px;border:1px solid var(--line-2);background:var(--bg-1);color:var(--ink);font-size:14px"></label>
+<label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)">Parlament<select value="{{ parl }}" onChange="{{ setParl }}" style="height:40px;padding:0 10px;border-radius:8px;border:1px solid var(--line-2);background:var(--bg-1);color:var(--ink);font-size:14px"><option value="alle">Alle</option><option value="bundestag">Bundestag</option><option value="berlin">Berlin</option><option value="brandenburg">Brandenburg</option></select></label>
+</div>
+<div role="group" aria-label="Zeigen" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px">
+<sc-for list="{{ zeigenOpts }}" as="z" hint-placeholder-count="4"><button type="button" aria-pressed="{{ z.on }}" onClick="{{ z.onClick }}" style="height:36px;padding:0 14px;border-radius:999px;border:1px solid {{ z.border }};background:{{ z.bg }};color:{{ z.color }};font-size:13.5px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap">{{ z.label }}<span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;color:{{ z.countColor }}">{{ z.count }}</span></button></sc-for>
+</div>
+<sc-if value="{{ hasDrill }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13.5px;color:var(--text)"><span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 6px 0 12px;border-radius:999px;border:1px solid var(--accent-line);background:var(--accent-dim);color:var(--ink)">{{ drillLabel }}<button type="button" aria-label="Auswahl entfernen" onClick="{{ clearDrill }}" style="width:24px;height:24px;border-radius:50%;border:0;background:transparent;color:var(--ink);font-size:15px;line-height:1">×</button></span></div></sc-if>
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:22px;font-size:13.5px;color:var(--muted)"><span>{{ listCount }}</span><span>{{ pageInfo }}</span></div>
+<sc-if value="{{ xl }}" hint-placeholder-val="{{ true }}">
+<div role="table" aria-label="Profile" style="margin-top:8px;border-bottom:1px solid var(--line)">
+<div role="row" style="display:grid;grid-template-columns:minmax(170px,1.4fr) 136px 104px 104px 104px 88px 124px 74px;gap:14px;padding:10px 0 8px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)"><span role="columnheader">Name · Mandat</span><span role="columnheader">Status</span><span role="columnheader">Briefing</span><span role="columnheader">Lage</span><span role="columnheader">Radar</span><span role="columnheader">Quellen</span><span role="columnheader">Letzter Erfolg</span><span role="columnheader" style="text-align:right">Kosten</span></div>
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="12">
+<a role="row" href="{{ r.href }}" onClick="{{ r.onClick }}" style="display:grid;grid-template-columns:minmax(170px,1.4fr) 136px 104px 104px 104px 88px 124px 74px;gap:14px;align-items:center;padding:11px 0;border-top:1px solid var(--line);color:var(--text);text-decoration:none" style-hover="background:var(--bg-1)">
+<span role="cell" style="min-width:0"><span style="display:block;color:var(--ink);font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span><span style="display:block;font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.sub }}</span></span>
+<span role="cell" style="display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:{{ r.st.ink }}"><span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;flex:none;background:{{ r.st.dot }};border:1.5px solid {{ r.st.ring }}"></span>{{ r.st.label }}</span>
+<span role="cell" title="{{ r.b.hint }}" style="display:inline-flex;align-items:center;gap:7px;font-size:13px;color:{{ r.b.ink }};white-space:nowrap"><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;flex:none;background:{{ r.b.dot }};border:1.5px solid {{ r.b.ring }}"></span>{{ r.b.label }}</span>
+<span role="cell" title="{{ r.l.hint }}" style="display:inline-flex;align-items:center;gap:7px;font-size:13px;color:{{ r.l.ink }};white-space:nowrap"><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;flex:none;background:{{ r.l.dot }};border:1.5px solid {{ r.l.ring }}"></span>{{ r.l.label }}</span>
+<span role="cell" title="{{ r.rd.hint }}" style="display:inline-flex;align-items:center;gap:7px;font-size:13px;color:{{ r.rd.ink }};white-space:nowrap"><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;flex:none;background:{{ r.rd.dot }};border:1.5px solid {{ r.rd.ring }}"></span>{{ r.rd.label }}</span>
+<span role="cell" style="font-size:13px;color:{{ r.qu.ink }}">{{ r.qu.label }}</span>
+<span role="cell" style="font-size:13px;color:var(--text);font-variant-numeric:tabular-nums">{{ r.last }}</span>
+<span role="cell" style="font-size:13px;color:{{ r.costInk }};font-variant-numeric:tabular-nums;text-align:right">{{ r.cost }}</span>
+</a>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ notXl }}" hint-placeholder-val="{{ false }}">
+<div role="list" style="margin-top:8px;border-bottom:1px solid var(--line)">
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="8"><a role="listitem" href="{{ r.href }}" onClick="{{ r.onClick }}" style="display:flex;flex-direction:column;gap:8px;padding:14px 0;border-top:1px solid var(--line);color:var(--text);text-decoration:none">
+<span style="display:flex;justify-content:space-between;gap:12px;align-items:baseline"><span style="min-width:0"><span style="display:block;color:var(--ink);font-weight:600;font-size:15.5px">{{ r.name }}</span><span style="display:block;font-size:13px;color:var(--muted)">{{ r.sub }}</span></span><span style="display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:{{ r.st.ink }};white-space:nowrap"><span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:{{ r.st.dot }};border:1.5px solid {{ r.st.ring }}"></span>{{ r.st.label }}</span></span>
+<span style="display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px"><span style="color:{{ r.b.ink }}">Briefing {{ r.b.low }}</span><span style="color:{{ r.l.ink }}">Lage {{ r.l.low }}</span><span style="color:{{ r.rd.ink }}">Radar {{ r.rd.low }}</span></span>
+<span style="display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--muted)"><span>Zuletzt erfolgreich {{ r.last }}</span><span>Quellen {{ r.qu.label }}</span><span>{{ r.cost }}</span></span>
+</a></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ listEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:28px 0;border-bottom:1px solid var(--line);font-size:15px;color:var(--text)">Keine Profile für diese Auswahl. <button type="button" onClick="{{ resetList }}" style="border:0;background:transparent;color:var(--accent);padding:0;font-size:15px">Auswahl zurücksetzen</button></div></sc-if>
+<sc-if value="{{ hasPages }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;margin-top:18px"><button type="button" onClick="{{ prevPage }}" disabled="{{ noPrev }}" style="height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font-size:13.5px;opacity:{{ prevOpacity }}">Zurück</button><button type="button" onClick="{{ nextPage }}" disabled="{{ noNext }}" style="height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font-size:13.5px;opacity:{{ nextOpacity }}">Weiter</button><span style="font-size:13px;color:var(--muted)">Seite {{ pageNo }} von {{ pageCount }}</span></div></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ pProfil }}" hint-placeholder-val="{{ false }}">
+<div style="animation:hvIn .25s ease-out">
+<a href="#/profile" onClick="{{ goBackList }}" style="display:inline-flex;align-items:center;gap:8px;font-size:14px;margin-bottom:26px;white-space:nowrap"><span aria-hidden="true">←</span>{{ backLabel }}</a>
+<sc-if value="{{ pdMissing }}" hint-placeholder-val="{{ false }}"><h1 style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:30px;color:var(--ink)">Profil nicht gefunden</h1><p style="margin-top:10px;font-size:15px">Das Profil existiert in dieser Ansicht nicht mehr.</p></sc-if>
+<sc-if value="{{ pdFound }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:10px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:8px;color:{{ pd.st.ink }}"><span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:{{ pd.st.dot }};border:1.5px solid {{ pd.st.ring }}"></span>{{ pd.st.label }}</span><span>·</span><span>{{ pd.sub }}</span></div>
+<h1 tabindex="-1" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:clamp(30px,3.4vw,40px);letter-spacing:-.02em;line-height:1.08;color:var(--ink);margin-top:12px;outline:none">{{ pd.name }}</h1>
+<dl style="margin-top:28px;border-bottom:1px solid var(--line);max-width:860px">
+<sc-for list="{{ pd.answers }}" as="x" hint-placeholder-count="4"><div style="display:flex;flex-wrap:wrap;gap:4px 24px;padding:14px 0;border-top:1px solid var(--line)"><dt style="flex:0 0 200px;font-size:14px;color:var(--muted)">{{ x.k }}</dt><dd style="flex:1 1 320px;font-size:16px;color:{{ x.ink }};text-wrap:pretty">{{ x.v }}</dd></div></sc-for>
+</dl>
+<section aria-labelledby="erg-h" style="margin-top:44px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap"><h2 id="erg-h" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:22px;color:var(--ink)">Ergebnisse heute</h2><span style="font-size:13px;color:var(--muted)">Grün nur, wenn der Inhalt brauchbar ist</span></div>
+<div style="margin-top:12px;border-bottom:1px solid var(--line)">
+<sc-for list="{{ pd.areas }}" as="ar" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:{{ areaCols }};gap:10px 24px;align-items:center;padding:18px 0;border-top:1px solid var(--line)">
+<span style="font-family:'Spectral',Georgia,serif;font-size:19px;color:var(--ink)">{{ ar.label }}</span>
+<span style="display:flex;flex-direction:column;gap:7px"><span aria-label="{{ ar.stageText }}" style="display:flex;gap:4px"><sc-for list="{{ ar.segs }}" as="sg" hint-placeholder-count="4"><span title="{{ sg.t }}" style="flex:1;height:4px;border-radius:2px;background:{{ sg.bg }}"></span></sc-for></span><span style="font-size:12.5px;color:var(--muted)">{{ ar.stageText }}</span></span>
+<span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="display:inline-flex;align-items:center;gap:8px;font-size:15px;color:{{ ar.st.ink }};font-weight:600"><span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:{{ ar.st.dot }};border:1.5px solid {{ ar.st.ring }}"></span>{{ ar.st.label }}</span><span style="font-size:13.5px;color:var(--text);text-wrap:pretty">{{ ar.text }}</span></span>
+</div></sc-for>
+</div>
+</section>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px 48px;margin-top:44px">
+<section aria-labelledby="pq-h"><h2 id="pq-h" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:20px;color:var(--ink)">Quellen</h2>
+<div style="margin-top:10px;border-bottom:1px solid var(--line)"><sc-for list="{{ pd.sources }}" as="s" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:11px 0;border-top:1px solid var(--line)"><span style="display:inline-flex;align-items:baseline;gap:9px;min-width:0;font-size:14px;color:var(--ink)"><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;flex:none;transform:translateY(-1px);background:{{ s.dot }};border:1.5px solid {{ s.ring }}"></span>{{ s.name }}</span><span style="font-size:13px;color:{{ s.ink }};white-space:nowrap">{{ s.label }}</span></div></sc-for></div>
+<p style="margin-top:22px;font-size:14px;color:var(--text)"><span style="color:var(--muted)">KI Kosten heute</span> {{ pd.cost }}<span style="display:block;font-size:13px;color:var(--muted);margin-top:2px">{{ pd.costNote }}</span></p>
+</section>
+<section aria-labelledby="pv-h"><h2 id="pv-h" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:20px;color:var(--ink)">Verlauf</h2>
+<ol style="list-style:none;padding:0;margin-top:10px;border-bottom:1px solid var(--line)"><sc-for list="{{ pd.verlauf }}" as="e" hint-placeholder-count="5"><li style="display:grid;grid-template-columns:108px 12px minmax(0,1fr);gap:10px;align-items:baseline;padding:10px 0;border-top:1px solid var(--line)"><span style="font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums">{{ e.t }}</span><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:{{ e.dot }};border:1.5px solid {{ e.ring }}"></span><span style="font-size:14px;color:var(--ink);text-wrap:pretty">{{ e.text }}</span></li></sc-for></ol>
+</section>
+</div>
+<details style="margin-top:36px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)"><summary style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;cursor:pointer;font-size:14px;color:var(--text)">Technische Details<span aria-hidden="true" style="color:var(--muted-2)">+</span></summary><div style="padding:0 0 16px;display:flex;flex-direction:column;gap:6px"><sc-for list="{{ pd.tech }}" as="t" hint-placeholder-count="4"><p style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:var(--muted);overflow-wrap:anywhere">{{ t.line }}</p></sc-for></div></details>
+<section aria-labelledby="gz-h" style="margin-top:80px;padding-top:22px;border-top:1px solid color-mix(in oklab,var(--risk) 40%,transparent)">
+<details><summary style="display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer"><span><span id="gz-h" style="display:block;font-family:'Spectral',Georgia,serif;font-weight:500;font-size:19px;color:var(--ink)">Weitere Aktionen</span><span style="display:block;font-size:13px;color:var(--muted);margin-top:2px">Deaktivieren und Löschen. Jede Aktion wird einzeln bestätigt.</span></span><span aria-hidden="true" style="color:var(--muted-2)">+</span></summary>
+<div style="margin-top:14px;border-bottom:1px solid var(--line)"><sc-for list="{{ pd.danger }}" as="d" hint-placeholder-count="3"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 24px;padding:14px 0;border-top:1px solid var(--line)"><span style="flex:1 1 320px;min-width:0"><span style="display:block;font-size:14.5px;color:var(--ink);font-weight:600">{{ d.title }}</span><span style="display:block;font-size:13.5px;color:var(--text);text-wrap:pretty">{{ d.text }}</span></span><button type="button" onClick="{{ d.onClick }}" style="height:36px;padding:0 14px;border-radius:8px;border:1px solid color-mix(in oklab,var(--risk) 55%,transparent);background:transparent;color:var(--bad-ink);font-size:13.5px;white-space:nowrap">{{ d.label }}</button></div></sc-for></div>
+</details>
+</section>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ hasTabs }}" hint-placeholder-val="{{ false }}">
+<div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">{{ secEyebrow }}</div>
+<h1 tabindex="-1" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:clamp(30px,3.4vw,40px);letter-spacing:-.02em;line-height:1.08;color:var(--ink);margin-top:12px;outline:none">{{ secTitle }}</h1>
+<nav aria-label="Unterbereich" style="display:flex;gap:24px;margin-top:22px;border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden"><sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3"><a href="{{ t.href }}" onClick="{{ t.onClick }}" aria-current="{{ t.current }}" style="display:inline-flex;align-items:center;gap:8px;height:44px;font-size:15px;color:{{ t.color }};border-bottom:2px solid {{ t.border }};margin-bottom:-1px;white-space:nowrap">{{ t.label }}<span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:{{ t.dot }}"></span></a></sc-for></nav>
+</sc-if>
+<sc-if value="{{ pBilanz }}" hint-placeholder-val="{{ false }}">
+<div style="animation:hvIn .25s ease-out">
+<p style="margin-top:30px;font-family:'Spectral',Georgia,serif;font-size:clamp(22px,2.4vw,28px);line-height:1.3;color:var(--ink);max-width:40ch;text-wrap:pretty">{{ bilanzHead }}</p>
+<p style="margin-top:8px;font-size:14px;color:var(--muted)">{{ bilanzSub }}</p>
+<sc-if value="{{ md }}" hint-placeholder-val="{{ true }}">
+<div role="table" aria-label="Betriebsbilanz" style="margin-top:28px;border-bottom:1px solid var(--line)">
+<div role="row" style="display:grid;grid-template-columns:120px repeat(6,minmax(0,1fr));gap:12px;padding:10px 0 8px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)"><span role="columnheader"></span><sc-for list="{{ bucketHeads }}" as="h" hint-placeholder-count="6"><span role="columnheader" style="text-align:right">{{ h.label }}</span></sc-for></div>
+<sc-for list="{{ bilanzRows }}" as="br" hint-placeholder-count="3"><div role="row" style="display:grid;grid-template-columns:120px repeat(6,minmax(0,1fr));gap:12px;align-items:center;padding:14px 0;border-top:1px solid var(--line)"><span role="rowheader" style="font-family:'Spectral',Georgia,serif;font-size:18px;color:var(--ink)">{{ br.label }}</span><sc-for list="{{ br.cells }}" as="c" hint-placeholder-count="6"><a role="cell" href="#/profile" onClick="{{ c.onClick }}" aria-label="{{ c.aria }}" style="text-align:right;font-size:20px;font-variant-numeric:tabular-nums;color:{{ c.ink }};pointer-events:{{ c.pe }};text-decoration:none" style-hover="text-decoration:underline">{{ c.v }}</a></sc-for></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ notMd }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:22px;display:flex;flex-direction:column;gap:22px"><sc-for list="{{ bilanzRows }}" as="br" hint-placeholder-count="3"><div><h3 style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:18px;color:var(--ink)">{{ br.label }}</h3><div style="margin-top:6px;border-bottom:1px solid var(--line)"><sc-for list="{{ br.cells }}" as="c" hint-placeholder-count="6"><a href="#/profile" onClick="{{ c.onClick }}" style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);font-size:14.5px;color:var(--text);pointer-events:{{ c.pe }}"><span>{{ c.label }}</span><span style="font-variant-numeric:tabular-nums;color:{{ c.ink }}">{{ c.v }}</span></a></sc-for></div></div></sc-for></div>
+</sc-if>
+<section aria-labelledby="lauf-h" style="margin-top:48px">
+<h2 id="lauf-h" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:22px;color:var(--ink)">Läufe heute</h2>
+<div style="margin-top:12px;border-bottom:1px solid var(--line)"><sc-for list="{{ runs }}" as="r" hint-placeholder-count="5"><div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 20px;padding:13px 0;border-top:1px solid var(--line)"><span style="flex:0 0 60px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ r.t }}</span><span style="flex:0 0 200px;font-size:15px;color:var(--ink)">{{ r.label }}</span><span style="flex:1 1 280px;display:inline-flex;align-items:baseline;gap:9px;font-size:14px;color:{{ r.ink }}"><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;flex:none;transform:translateY(-1px);background:{{ r.dot }};border:1.5px solid {{ r.ring }}"></span>{{ r.text }}</span><span title="{{ r.tech }}" style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;color:var(--muted-2)">{{ r.tech }}</span></div></sc-for></div>
+</section>
+<section aria-labelledby="wart-h" style="margin-top:72px;padding-top:22px;border-top:1px solid color-mix(in oklab,var(--watch) 40%,transparent)">
+<h2 id="wart-h" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:19px;color:var(--ink)">Wartung</h2>
+<p style="margin-top:4px;font-size:13.5px;color:var(--muted);max-width:70ch">Nur die bestehenden, sicheren Helmut Aktionen. Jede wird einzeln bestätigt.</p>
+<div style="margin-top:12px;border-bottom:1px solid var(--line)"><sc-for list="{{ wartung }}" as="w" hint-placeholder-count="3"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 24px;padding:14px 0;border-top:1px solid var(--line)"><span style="flex:1 1 320px;min-width:0"><span style="display:block;font-size:14.5px;color:var(--ink);font-weight:600">{{ w.title }}</span><span style="display:block;font-size:13.5px;color:var(--text);text-wrap:pretty">{{ w.text }}</span></span><sc-if value="{{ w.has }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ w.onClick }}" style="height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font-size:13.5px;white-space:nowrap" style-hover="border-color:var(--line-strong)">{{ w.label }}</button></sc-if><sc-if value="{{ w.none }}" hint-placeholder-val="{{ false }}"><span style="font-size:13.5px;color:var(--muted)">{{ w.label }}</span></sc-if></div></sc-for></div>
+</section>
+</div>
+</sc-if>
+<sc-if value="{{ pQuellen }}" hint-placeholder-val="{{ false }}">
+<div style="animation:hvIn .25s ease-out">
+<p style="margin-top:30px;font-family:'Spectral',Georgia,serif;font-size:clamp(22px,2.4vw,28px);line-height:1.3;color:var(--ink);max-width:44ch;text-wrap:pretty">{{ srcHead }}</p>
+<div style="margin-top:22px;border-bottom:1px solid var(--line)"><sc-for list="{{ srcRows }}" as="s" hint-placeholder-count="8"><div style="padding:15px 0;border-top:1px solid var(--line)"><div style="display:grid;grid-template-columns:{{ srcCols }};gap:6px 20px;align-items:baseline"><span style="display:inline-flex;align-items:baseline;gap:10px;min-width:0"><span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;flex:none;transform:translateY(-1px);background:{{ s.dot }};border:1.5px solid {{ s.ring }}"></span><span style="min-width:0"><span style="display:block;font-size:15px;color:var(--ink);font-weight:600">{{ s.name }}</span><span style="display:block;font-size:13px;color:var(--muted)">{{ s.scope }}</span></span></span><span style="font-size:14px;color:{{ s.ink }};text-wrap:pretty">{{ s.text }}<span style="display:block;font-size:13px;color:var(--muted)">Zuletzt erfolgreich geprüft {{ s.last }}</span></span><a href="#/profile" onClick="{{ s.onClick }}" style="font-size:14px;white-space:nowrap">{{ s.affected }}</a></div><sc-if value="{{ s.hasTech }}" hint-placeholder-val="{{ false }}"><details style="margin-top:8px;margin-left:18px"><summary style="cursor:pointer;font-size:13px;color:var(--muted)">Technische Details</summary><p style="margin-top:6px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:var(--muted)">{{ s.tech }}</p></details></sc-if></div></sc-for></div>
+</div>
+</sc-if>
+<sc-if value="{{ pKosten }}" hint-placeholder-val="{{ false }}">
+<div style="animation:hvIn .25s ease-out">
+<dl style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:30px;border-bottom:1px solid var(--line)"><sc-for list="{{ costNums }}" as="c" hint-placeholder-count="4"><div style="padding:18px 20px 16px 0"><dt style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">{{ c.label }}</dt><dd style="margin-top:6px;font-family:'Spectral',Georgia,serif;font-weight:500;font-size:clamp(28px,3vw,36px);line-height:1.05;font-variant-numeric:tabular-nums;color:{{ c.ink }}">{{ c.value }}</dd><dd style="margin-top:4px;font-size:12.5px;color:var(--muted)">{{ c.sub }}</dd></div></sc-for></dl>
+<div style="margin-top:28px;display:flex;flex-direction:column;gap:18px;max-width:720px"><sc-for list="{{ budgets }}" as="b" hint-placeholder-count="2"><div><div style="display:flex;justify-content:space-between;gap:12px;font-size:14px"><span style="color:var(--ink)">{{ b.label }}</span><span style="color:{{ b.ink }};font-variant-numeric:tabular-nums">{{ b.value }}</span></div><div aria-hidden="true" style="margin-top:8px;height:4px;border-radius:2px;background:var(--line-2);overflow:hidden"><div style="height:100%;width:{{ b.w }};background:{{ b.bar }};border-radius:2px;transition:width .4s ease"></div></div><p style="margin-top:6px;font-size:13px;color:{{ b.noteInk }}">{{ b.note }}</p></div></sc-for></div>
+<section aria-labelledby="teuer-h" style="margin-top:44px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap"><h2 id="teuer-h" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:22px;color:var(--ink)">Auffällig teure Profile</h2><span style="font-size:13px;color:var(--muted)">mehr als doppelt so teuer wie der Median</span></div>
+<div style="margin-top:12px;border-bottom:1px solid var(--line)"><sc-for list="{{ teuer }}" as="t" hint-placeholder-count="3"><a href="{{ t.href }}" onClick="{{ t.onClick }}" style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 20px;padding:13px 0;border-top:1px solid var(--line);color:var(--text);text-decoration:none" style-hover="background:var(--bg-1)"><span style="min-width:0"><span style="display:block;font-size:15px;color:var(--ink);font-weight:600">{{ t.name }}</span><span style="display:block;font-size:13px;color:var(--muted)">{{ t.sub }}</span></span><span style="text-align:right;font-variant-numeric:tabular-nums"><span style="display:block;font-size:15px;color:var(--ink)">{{ t.cost }}</span><span style="display:block;font-size:13px;color:var(--warn-ink)">{{ t.factor }}</span></span></a></sc-for><sc-if value="{{ teuerEmpty }}" hint-placeholder-val="{{ false }}"><p style="padding:16px 0;border-top:1px solid var(--line);font-size:14.5px">Kein Profil fällt auf.</p></sc-if></div>
+</section>
+<p style="margin-top:22px;font-size:13px;color:var(--muted);max-width:72ch;text-wrap:pretty">KI Anbieterkosten in USD, Kostentag UTC, Schätzwerte einschließlich offener Reservierungen. Kundenpreise stehen in EUR unter Kunden.</p>
+</div>
+</sc-if>
+<sc-if value="{{ pKunden }}" hint-placeholder-val="{{ false }}">
+<div style="animation:hvIn .25s ease-out">
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-top:26px"><p style="font-size:15px;color:var(--text)">{{ kundenHead }}</p><a href="#/kunde-neu" onClick="{{ goKundeNeu }}" style="display:inline-flex;align-items:center;flex:none;white-space:nowrap;height:40px;padding:0 16px;border-radius:8px;background:var(--solid);color:var(--on-solid);font-size:14px;font-weight:600" style-hover="background:var(--solid-hover);color:var(--on-solid)">Kunde anlegen</a></div>
+<div style="margin-top:18px;border-bottom:1px solid var(--line)"><sc-for list="{{ custRows }}" as="c" hint-placeholder-count="5"><a href="{{ c.href }}" onClick="{{ c.onClick }}" style="display:grid;grid-template-columns:{{ custCols }};gap:6px 20px;align-items:baseline;padding:15px 0;border-top:1px solid var(--line);color:var(--text);text-decoration:none" style-hover="background:var(--bg-1)"><span style="min-width:0"><span style="display:block;font-size:15px;color:var(--ink);font-weight:600">{{ c.name }}</span><span style="display:block;font-size:13px;color:var(--muted)">{{ c.person }}</span></span><span style="font-size:13.5px;color:var(--text);min-width:0;text-wrap:pretty">{{ c.profiles }}</span><span style="display:inline-flex;align-items:baseline;gap:8px;font-size:13.5px;color:{{ c.zu.ink }}"><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;flex:none;transform:translateY(-1px);background:{{ c.zu.dot }};border:1.5px solid {{ c.zu.ring }}"></span>{{ c.zuText }}</span><span style="font-size:13.5px;color:var(--text)">{{ c.status }} · {{ c.tarif }}</span><span style="font-size:13px;color:var(--muted);text-align:right">{{ c.last }}</span></a></sc-for></div>
+</div>
+</sc-if>
+<sc-if value="{{ pAbrechnung }}" hint-placeholder-val="{{ false }}">
+<div style="animation:hvIn .25s ease-out">
+<p style="margin-top:26px;display:inline-flex;align-items:baseline;gap:9px;font-size:14px;color:var(--text)"><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:var(--chance);transform:translateY(-1px)"></span>Lexware Office verbunden · letzter Abgleich 08:30 · offen {{ openSum }}</p>
+<div style="margin-top:18px;border-bottom:1px solid var(--line)"><sc-for list="{{ invRows }}" as="iv" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:{{ invCols }};gap:4px 20px;align-items:baseline;padding:14px 0;border-top:1px solid var(--line)"><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;color:var(--muted)">{{ iv.nr }}</span><span style="font-size:14.5px;color:var(--ink)">{{ iv.kunde }}</span><span style="font-size:14.5px;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right">{{ iv.betrag }}</span><span style="display:inline-flex;align-items:baseline;gap:8px;font-size:13.5px;color:{{ iv.z.ink }}"><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;flex:none;transform:translateY(-1px);background:{{ iv.z.dot }};border:1.5px solid {{ iv.z.ring }}"></span>{{ iv.z.label }}</span><span style="font-size:13px;color:var(--muted)">fällig {{ iv.faellig }}</span></div></sc-for></div>
+<p style="margin-top:14px;font-size:13px;color:var(--muted)">Rechnungsnummern und Zahlungen kommen aus Lexware. Storno zählt nie als Zahlung.</p>
+</div>
+</sc-if>
+<sc-if value="{{ pKunde }}" hint-placeholder-val="{{ false }}">
+<div style="animation:hvIn .25s ease-out">
+<a href="#/kunden" onClick="{{ goKunden }}" style="display:inline-flex;align-items:center;gap:8px;font-size:14px;margin-bottom:26px;white-space:nowrap"><span aria-hidden="true">←</span>Zurück zu den Kunden</a>
+<sc-if value="{{ kdMissing }}" hint-placeholder-val="{{ false }}"><h1 style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:30px;color:var(--ink)">Kunde nicht gefunden</h1></sc-if>
+<sc-if value="{{ kdFound }}" hint-placeholder-val="{{ false }}">
+<div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">{{ kd.status }} · {{ kd.tarif }}</div>
+<h1 tabindex="-1" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:clamp(30px,3.4vw,40px);letter-spacing:-.02em;line-height:1.08;color:var(--ink);margin-top:12px;outline:none">{{ kd.name }}</h1>
+<dl style="margin-top:26px;border-bottom:1px solid var(--line);max-width:760px"><sc-for list="{{ kd.facts }}" as="x" hint-placeholder-count="6"><div style="display:flex;flex-wrap:wrap;gap:4px 24px;padding:13px 0;border-top:1px solid var(--line)"><dt style="flex:0 0 180px;font-size:14px;color:var(--muted)">{{ x.k }}</dt><dd style="flex:1 1 280px;font-size:15px;color:{{ x.ink }}">{{ x.v }}</dd></div></sc-for></dl>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:36px 48px;margin-top:40px">
+<section><h2 style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:20px;color:var(--ink)">Profile</h2><div style="margin-top:10px;border-bottom:1px solid var(--line)"><sc-for list="{{ kd.profiles }}" as="p" hint-placeholder-count="1"><a href="{{ p.href }}" onClick="{{ p.onClick }}" style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line);color:var(--text)"><span><span style="display:block;font-size:14.5px;color:var(--ink);font-weight:600">{{ p.name }}</span><span style="display:block;font-size:13px;color:var(--muted)">{{ p.sub }}</span></span><span style="display:inline-flex;align-items:baseline;gap:8px;font-size:13.5px;color:{{ p.st.ink }}"><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;transform:translateY(-1px);background:{{ p.st.dot }};border:1.5px solid {{ p.st.ring }}"></span>{{ p.st.label }}</span></a></sc-for><sc-if value="{{ kd.noProfiles }}" hint-placeholder-val="{{ false }}"><p style="padding:12px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)">Noch kein Profil zugeordnet.</p></sc-if></div></section>
+<section><h2 style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:20px;color:var(--ink)">Benutzer</h2><div style="margin-top:10px;border-bottom:1px solid var(--line)"><sc-for list="{{ kd.users }}" as="u" hint-placeholder-count="2"><div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)"><span style="font-size:14.5px;color:var(--ink)">{{ u.name }}</span><span style="font-size:13.5px;color:{{ u.z.ink }}">{{ u.z.label }}</span></div></sc-for></div></section>
+</div>
+<section style="margin-top:80px;padding-top:22px;border-top:1px solid color-mix(in oklab,var(--risk) 40%,transparent)">
+<details><summary style="display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer"><span><span style="display:block;font-family:'Spectral',Georgia,serif;font-weight:500;font-size:19px;color:var(--ink)">Weitere Aktionen</span><span style="display:block;font-size:13px;color:var(--muted);margin-top:2px">Zugang sperren oder freigeben. Wird einzeln bestätigt.</span></span><span aria-hidden="true" style="color:var(--muted-2)">+</span></summary>
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 24px;padding:14px 0;margin-top:14px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)"><span style="flex:1 1 320px"><span style="display:block;font-size:14.5px;color:var(--ink);font-weight:600">{{ kd.lockTitle }}</span><span style="display:block;font-size:13.5px;color:var(--text)">{{ kd.lockText }}</span></span><button type="button" onClick="{{ kd.lockAction }}" style="height:36px;padding:0 14px;border-radius:8px;border:1px solid color-mix(in oklab,var(--risk) 55%,transparent);background:transparent;color:var(--bad-ink);font-size:13.5px">{{ kd.lockLabel }}</button></div>
+</details>
+</section>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ pKundeNeu }}" hint-placeholder-val="{{ false }}">
+<div style="animation:hvIn .25s ease-out">
+<a href="#/kunden" onClick="{{ goKunden }}" style="display:inline-flex;align-items:center;gap:8px;font-size:14px;margin-bottom:26px;white-space:nowrap"><span aria-hidden="true">←</span>Abbrechen</a>
+<h1 tabindex="-1" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:clamp(30px,3.4vw,40px);letter-spacing:-.02em;color:var(--ink);outline:none">Neuer Kunde</h1>
+<p style="margin-top:10px;font-size:15px;color:var(--text);max-width:60ch">Wird als Entwurf gespeichert. Einladung und Rechnung folgen erst nach Freigabe.</p>
+<form onSubmit="{{ formSubmit }}" noValidate="true" style="margin-top:28px;display:flex;flex-direction:column;gap:18px;max-width:560px">
+<sc-if value="{{ hasFormErr }}" hint-placeholder-val="{{ false }}"><p role="alert" style="padding:12px 14px;border:1px solid color-mix(in oklab,var(--risk) 45%,transparent);border-radius:8px;font-size:14px;color:var(--ink)">{{ formErr }}</p></sc-if>
+<sc-for list="{{ formFields }}" as="f" hint-placeholder-count="3"><label style="display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--text-2)">{{ f.label }}<input type="{{ f.type }}" value="{{ f.value }}" onChange="{{ f.onChange }}" aria-invalid="{{ f.invalid }}" style="height:44px;padding:0 12px;border-radius:8px;border:1px solid {{ f.border }};background:var(--bg-1);color:var(--ink);font-size:15px"></label></sc-for>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--text-2)">Tarif<select value="{{ form.tarif }}" onChange="{{ setTarif }}" style="height:44px;padding:0 10px;border-radius:8px;border:1px solid var(--line-2);background:var(--bg-1);color:var(--ink);font-size:15px"><option value="Basis">Basis · 290 EUR im Monat</option><option value="Büro">Büro · 490 EUR im Monat</option><option value="Fraktion">Fraktion · 1.200 EUR im Monat</option></select></label>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--text-2)">Profil zuordnen<select value="{{ form.profil }}" onChange="{{ setProfil }}" style="height:44px;padding:0 10px;border-radius:8px;border:1px solid var(--line-2);background:var(--bg-1);color:var(--ink);font-size:15px"><option value="">Später zuordnen</option><sc-for list="{{ freeProfiles }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select></label>
+<div style="display:flex;gap:10px;margin-top:6px"><button type="submit" style="height:44px;padding:0 18px;border-radius:8px;border:0;background:var(--solid);color:var(--on-solid);font-size:14.5px;font-weight:600">Als Entwurf speichern</button></div>
+</form>
+</div>
+</sc-if>
+<sc-if value="{{ pAllgemein }}" hint-placeholder-val="{{ false }}">
+<dl style="margin-top:26px;border-bottom:1px solid var(--line);max-width:760px">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;padding:14px 0;border-top:1px solid var(--line)"><dt style="flex:0 0 180px;font-size:14px;color:var(--muted)">Ansicht</dt><dd style="display:flex;gap:6px"><sc-for list="{{ themeOpts }}" as="o" hint-placeholder-count="2"><button type="button" aria-pressed="{{ o.on }}" onClick="{{ o.onClick }}" style="height:36px;padding:0 14px;border-radius:8px;border:1px solid {{ o.border }};background:{{ o.bg }};color:var(--ink);font-size:13.5px">{{ o.label }}</button></sc-for></dd></div>
+<sc-for list="{{ settingsRows }}" as="x" hint-placeholder-count="4"><div style="display:flex;flex-wrap:wrap;gap:4px 24px;padding:14px 0;border-top:1px solid var(--line)"><dt style="flex:0 0 180px;font-size:14px;color:var(--muted)">{{ x.k }}</dt><dd style="flex:1 1 280px;font-size:15px;color:var(--ink)">{{ x.v }}<span style="display:block;font-size:13px;color:var(--muted)">{{ x.sub }}</span></dd></div></sc-for>
+</dl>
+</sc-if>
+<sc-if value="{{ pIntegrationen }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:26px;border-bottom:1px solid var(--line);max-width:860px"><sc-for list="{{ integrations }}" as="x" hint-placeholder-count="2"><div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 24px;padding:16px 0;border-top:1px solid var(--line)"><span style="flex:0 0 200px;font-size:15px;color:var(--ink);font-weight:600">{{ x.name }}</span><span style="flex:1 1 300px;display:inline-flex;align-items:baseline;gap:9px;font-size:14px;color:var(--text)"><span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;flex:none;transform:translateY(-1px);background:{{ x.dot }}"></span><span>{{ x.v }}<span style="display:block;font-size:13px;color:var(--muted)">{{ x.sub }}</span></span></span></div></sc-for></div>
+</sc-if>
+</main>
+</div>
+<sc-if value="{{ protoOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;z-index:60">
+<div onClick="{{ toggleProto }}" style="position:absolute;inset:0"></div>
+<div role="dialog" aria-label="Prototyp" style="position:absolute;top:60px;right:12px;width:min(360px,calc(100vw - 24px));background:var(--bg-2);color:var(--text);border:1px solid var(--line-2);border-radius:10px;box-shadow:var(--shadow-panel);padding:18px;display:flex;flex-direction:column;gap:16px;animation:hvIn .18s ease-out">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:18px;color:var(--ink)">Prototyp</h2><button type="button" onClick="{{ toggleProto }}" aria-label="Schließen" style="width:32px;height:32px;border:0;background:transparent;color:var(--muted);font-size:18px">×</button></div>
+<sc-for list="{{ protoGroups }}" as="g" hint-placeholder-count="3"><div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">{{ g.label }}</div><div role="group" aria-label="{{ g.label }}" style="display:flex;gap:6px"><sc-for list="{{ g.opts }}" as="o" hint-placeholder-count="3"><button type="button" aria-pressed="{{ o.on }}" onClick="{{ o.onClick }}" style="flex:1;height:36px;border-radius:8px;border:1px solid {{ o.border }};background:{{ o.bg }};color:var(--ink);font-size:13px">{{ o.label }}</button></sc-for></div></div></sc-for>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" onClick="{{ showLoading }}" style="height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--line-2);background:transparent;color:var(--text);font-size:13px">Ladezustand zeigen</button><button type="button" onClick="{{ resetLocal }}" style="height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--line-2);background:transparent;color:var(--text);font-size:13px">Änderungen zurücksetzen</button></div>
+<p style="font-size:12.5px;color:var(--muted)">Beispieldaten. Keine echten Dienste oder Konten.</p>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ dlgOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;z-index:70;background:var(--overlay);display:flex;align-items:center;justify-content:center;padding:16px;animation:hvIn .18s ease-out">
+<div role="dialog" aria-modal="true" aria-labelledby="dlg-t" style="width:min(480px,100%);background:var(--bg-2);border:1px solid var(--line-2);border-radius:12px;box-shadow:var(--shadow-panel);padding:24px;display:flex;flex-direction:column;gap:12px">
+<h2 id="dlg-t" style="font-family:'Spectral',Georgia,serif;font-weight:500;font-size:22px;color:var(--ink)">{{ dlg.title }}</h2>
+<sc-for list="{{ dlg.lines }}" as="l" hint-placeholder-count="2"><p style="font-size:14.5px;line-height:1.55;text-wrap:pretty">{{ l.t }}</p></sc-for>
+<sc-if value="{{ dlg.needs }}" hint-placeholder-val="{{ false }}"><label style="display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--text-2);margin-top:4px">Zum Bestätigen „{{ dlg.need }}“ eingeben<input type="text" value="{{ dlgInput }}" onChange="{{ setDlgInput }}" autoComplete="off" style="height:42px;padding:0 12px;border-radius:8px;border:1px solid var(--line-2);background:var(--bg-1);color:var(--ink);font-size:15px"></label></sc-if>
+<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px"><button type="button" onClick="{{ closeDlg }}" style="height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font-size:14px">Abbrechen</button><button type="button" onClick="{{ confirmDlg }}" disabled="{{ dlgBlocked }}" style="height:40px;padding:0 16px;border-radius:8px;border:0;background:{{ dlgBtnBg }};color:{{ dlgBtnInk }};font-size:14px;font-weight:600;opacity:{{ dlgOpacity }}">{{ dlg.confirmLabel }}</button></div>
+<p style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Simulierte Aktion · {{ dlg.api }}</p>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}"><div role="status" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:80;max-width:calc(100vw - 32px);padding:12px 16px;border-radius:10px;background:var(--solid);color:var(--on-solid);font-size:14px;box-shadow:var(--shadow-panel);animation:hvIn .2s ease-out">{{ toast }}</div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;ansicht&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dunkel&quot;,&quot;hell&quot;],&quot;default&quot;:&quot;dunkel&quot;,&quot;tsType&quot;:&quot;'dunkel'|'hell'&quot;},&quot;profilanzahl&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[20,500,2000],&quot;default&quot;:500,&quot;tsType&quot;:&quot;number&quot;},&quot;zustand&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;gesund&quot;,&quot;achtung&quot;,&quot;stoerung&quot;],&quot;default&quot;:&quot;stoerung&quot;,&quot;tsType&quot;:&quot;'gesund'|'achtung'|'stoerung'&quot;}}">
+class Component extends DCLogic {
+  state = { route: this.parse(), theme: null, N: null, scen: null, loading: true, menuOpen: false, protoOpen: false,
+    zeigen: 'alle', parl: 'alle', q: '', drill: null, pg: 0, dlg: null, dlgInput: '', toast: null,
+    deact: [], deleted: [], extraCust: [], custOv: {}, form: { name: '', person: '', mail: '', tarif: 'Basis', profil: '' }, tried: false,
+    vw: typeof window !== 'undefined' ? window.innerWidth : 1400 };
+  componentDidMount() {
+    this.onHash = () => { this.setState({ route: this.parse(), menuOpen: false }); window.scrollTo(0, 0); };
+    this.onResize = () => this.setState({ vw: window.innerWidth });
+    this.onKey = e => { if (e.key === 'Escape') this.setState({ dlg: null, protoOpen: false, menuOpen: false }); };
+    window.addEventListener('hashchange', this.onHash); window.addEventListener('resize', this.onResize); window.addEventListener('keydown', this.onKey);
+    const ready = () => { if (window.HV3) this.t0 = setTimeout(() => this.setState({ loading: false }), 350); else this.t1 = setTimeout(ready, 60); };
+    ready();
+  }
+  componentWillUnmount() {
+    window.removeEventListener('hashchange', this.onHash); window.removeEventListener('resize', this.onResize); window.removeEventListener('keydown', this.onKey);
+    clearTimeout(this.t0); clearTimeout(this.t1); clearTimeout(this.tt);
+  }
+  parse() {
+    const h = ((typeof location !== 'undefined' && location.hash) || '').replace(/^#\/?/, '').split('/').map(decodeURIComponent);
+    const p = h[0] || 'uebersicht';
+    if (p === 'profil' || p === 'kunde') return { page: p, id: h[1] };
+    if (p === 'betrieb') return { page: p, tab: ['bilanz', 'quellen', 'kosten'].includes(h[1]) ? h[1] : 'bilanz' };
+    if (p === 'kunden') return { page: p, tab: h[1] === 'abrechnung' ? 'abrechnung' : 'kunden' };
+    if (p === 'einstellungen') return { page: p, tab: h[1] === 'integrationen' ? 'integrationen' : 'allgemein' };
+    if (['uebersicht', 'profile', 'kunde-neu'].includes(p)) return { page: p };
+    return { page: 'uebersicht' };
+  }
+  go(hash, patch) { return e => { if (e && e.preventDefault) e.preventDefault(); if (patch) this.setState(patch); if (location.hash === hash) this.onHash(); else location.hash = hash; }; }
+  goList(patch) { return this.go('#/profile', { zeigen: 'alle', drill: null, q: '', pg: 0, parl: 'alle', ...patch }); }
+  tone(t) {
+    const T = { ok: { dot: 'var(--chance)', ring: 'var(--chance)', ink: 'var(--ok-ink)', halo: 'var(--chance-dim)', bar: 'var(--chance)' },
+      warn: { dot: 'var(--watch)', ring: 'var(--watch)', ink: 'var(--warn-ink)', halo: 'var(--watch-dim)', bar: 'var(--watch)' },
+      bad: { dot: 'var(--risk)', ring: 'var(--risk)', ink: 'var(--bad-ink)', halo: 'var(--risk-dim)', bar: 'var(--risk)' },
+      neutral: { dot: 'transparent', ring: 'var(--muted-2)', ink: 'var(--muted)', halo: 'transparent', bar: 'var(--muted-2)' } };
+    return T[t] || T.neutral;
+  }
+  st(label, tone, extra) { return { label, ...this.tone(tone), ...(extra || {}) }; }
+  data() {
+    const N = this.state.N ?? Number(this.props.profilanzahl ?? 500), sc = this.state.scen ?? this.props.zustand ?? 'stoerung';
+    const key = [N, sc, this.state.deact.join(','), this.state.deleted.join(',')].join('|');
+    if (this._k !== key) { this._k = key; this._d = window.HV3.build(N, sc, { deact: this.state.deact, deleted: this.state.deleted }); }
+    return this._d;
+  }
+  say(t) { clearTimeout(this.tt); this.setState({ toast: t }); this.tt = setTimeout(() => this.setState({ toast: null }), 4000); }
+  ask(dlg) { return e => { if (e && e.preventDefault) e.preventDefault(); this.setState({ dlg, dlgInput: '' }); }; }
+  pstat(p) { const M = { ok: ['Funktioniert', 'ok'], offen: ['Nicht beurteilt', 'neutral'], eingeschraenkt: ['Nicht brauchbar', 'warn'], problem: ['Problem', 'bad'], inaktiv: ['Inaktiv', 'neutral'] }; const m = M[p.status]; return this.st(m[0], m[1]); }
+  cell(p, k) { const H = window.HV3, s = p.a[k], A = H.AST[s.k]; return this.st(s.k === 'inaktiv' ? '—' : A.label, A.tone, { low: s.k === 'inaktiv' ? '—' : A.label.toLowerCase(), hint: s.c ? H.CAUSES[s.c].title : (A.note ? A.label + ', ' + A.note : A.label) }); }
+  srcCell(p, D) { if (!p.aktiv) return { label: '—', ink: 'var(--muted)' }; const ss = D.sources.filter(s => p.sources.includes(s.id));
+    if (ss.some(s => s.state === 'ausgefallen')) return { label: 'Gestört', ink: 'var(--bad-ink)' }; if (ss.some(s => s.state === 'verzoegert')) return { label: 'Verzögert', ink: 'var(--warn-ink)' }; return { label: 'In Ordnung', ink: 'var(--text)' }; }
+  filtered(D) {
+    const H = window.HV3, s = this.state; let l = D.profiles; if (s.parl !== 'alle') l = l.filter(p => p.parl === s.parl); const base = l;
+    const Z = { alle: () => true, aufmerksamkeit: p => p.status === 'problem' || p.status === 'eingeschraenkt', ohne: p => p.runOk && p.status === 'eingeschraenkt', quelle: p => p.quelleBetroffen };
+    l = l.filter(Z[s.zeigen] || Z.alle);
+    const d = s.drill;
+    if (d) l = l.filter(p => d.status === 'aktiv' ? p.aktiv : d.status === 'ok' ? p.status === 'ok' : d.source ? p.aktiv && p.sources.includes(d.source)
+      : d.cause ? p.a[d.area].c === d.cause : d.bucket ? p.aktiv && H.AST[p.a[d.area].k].bucket === d.bucket : d.ids ? d.ids.includes(p.id) : true);
+    const q = s.q.trim().toLowerCase(); if (q) l = l.filter(p => (p.name + ' ' + p.mandat + ' ' + p.id).toLowerCase().includes(q));
+    const O = { problem: 0, eingeschraenkt: 1, offen: 2, ok: 3, inaktiv: 4 }; l = l.slice().sort((a, b) => O[a.status] - O[b.status] || a.i - b.i);
+    return { base, l, Z };
+  }
+  drillLabel(D) { const H = window.HV3, d = this.state.drill; if (!d) return '';
+    if (d.status === 'aktiv') return 'Aktive Profile'; if (d.status === 'ok') return 'Vollständig erfolgreich'; if (d.ids) return 'Auffällig teuer';
+    if (d.source) return 'Quelle · ' + (D.sources.find(s => s.id === d.source) || {}).name;
+    if (d.cause) return H.AREA_LABEL[d.area] + ' · ' + H.CAUSES[d.cause].title;
+    if (d.bucket) return H.AREA_LABEL[d.area] + ' · ' + (H.BUCKETS.find(b => b[0] === d.bucket) || [])[1]; return ''; }
+  renderVals() {
+    const s = this.state, vw = s.vw, theme = s.theme ?? this.props.ansicht ?? 'dunkel';
+    const v = { theme, wide: vw >= 900, narrow: vw < 900, xl: vw >= 1260, notXl: vw < 1260, md: vw >= 720, notMd: vw < 720,
+      menuOpen: s.menuOpen, protoOpen: s.protoOpen, toggleMenu: () => this.setState(x => ({ menuOpen: !x.menuOpen })), toggleProto: () => this.setState(x => ({ protoOpen: !x.protoOpen })),
+      goHome: this.go('#/uebersicht'), loading: s.loading || !window.HV3, toastOpen: !!s.toast, toast: s.toast || '', dlgOpen: !!s.dlg };
+    v.protoGroups = [
+      { label: 'Ansicht', opts: [['dunkel', 'Dunkel'], ['hell', 'Hell']].map(([k, l]) => this.opt(l, theme === k, () => this.setState({ theme: k }))) },
+      { label: 'Profile', opts: [20, 500, 2000].map(n => this.opt(window.HV3 ? window.HV3.fmt.int(n) : String(n), (s.N ?? Number(this.props.profilanzahl ?? 500)) === n, () => this.setState({ N: n, pg: 0 }))) },
+      { label: 'Zustand', opts: [['gesund', 'Gesund'], ['achtung', 'Achtung'], ['stoerung', 'Störung']].map(([k, l]) => this.opt(l, (s.scen ?? this.props.zustand ?? 'stoerung') === k, () => this.setState({ scen: k }))) }];
+    v.showLoading = () => { this.setState({ loading: true, protoOpen: false }); setTimeout(() => this.setState({ loading: false }), 1600); };
+    v.resetLocal = () => { this.setState({ deact: [], deleted: [], extraCust: [], custOv: {}, protoOpen: false }); this.say('Lokale Änderungen zurückgesetzt.'); };
+    if (v.loading) { v.navItems = []; return v; }
+    const H = window.HV3, D = this.data(), c = D.counts, page = s.route.page, area = page === 'profil' ? 'profile' : page === 'kunde' || page === 'kunde-neu' ? 'kunden' : page;
+    const ht = this.tone(D.health.tone);
+    v.navItems = [['uebersicht', 'Übersicht'], ['profile', 'Profile'], ['betrieb', 'Betrieb'], ['kunden', 'Kunden'], ['einstellungen', 'Einstellungen']].map(([k, l]) => {
+      const on = area === k;
+      return { label: l, href: '#/' + k, onClick: k === 'profile' ? this.goList({}) : this.go('#/' + k), current: on ? 'page' : 'false', color: on ? 'var(--rail-ink)' : 'var(--rail-muted)', bg: on ? 'rgba(255,255,255,.07)' : 'transparent', weight: on ? '600' : '400',
+        badge: k === 'profile' && c.problem ? H.fmt.int(c.problem) : '', badgeColor: 'var(--rail-muted)', dot: k === 'uebersicht' ? ht.dot : 'transparent', title: k === 'uebersicht' ? D.health.label : k === 'profile' && c.problem ? c.problem + ' Profile brauchen Aufmerksamkeit' : l };
+    });
+    v.counts = c;
+    Object.assign(v, { pUebersicht: page === 'uebersicht', pProfile: page === 'profile', pProfil: page === 'profil', pBilanz: page === 'betrieb' && s.route.tab === 'bilanz', pQuellen: page === 'betrieb' && s.route.tab === 'quellen', pKosten: page === 'betrieb' && s.route.tab === 'kosten',
+      pKunden: page === 'kunden' && s.route.tab === 'kunden', pAbrechnung: page === 'kunden' && s.route.tab === 'abrechnung', pKunde: page === 'kunde', pKundeNeu: page === 'kunde-neu', pAllgemein: page === 'einstellungen' && s.route.tab === 'allgemein', pIntegrationen: page === 'einstellungen' && s.route.tab === 'integrationen',
+      hasTabs: ['betrieb', 'kunden', 'einstellungen'].includes(page) });
+    // Übersicht
+    v.dateLine = 'Samstag, 3. Oktober 2026 · Stand 09:10 Berlin';
+    v.health = { label: D.health.label, text: D.health.text, dot: ht.dot, halo: ht.halo };
+    v.bigNums = [
+      { label: 'Profile', value: H.fmt.int(c.total), sub: c.inaktiv ? H.fmt.int(c.inaktiv) + ' inaktiv' : 'alle aktiv', ink: 'var(--ink)', onClick: this.goList({}) },
+      { label: 'Aktiv', value: H.fmt.int(c.aktiv), sub: 'gleichzeitig aktiv', ink: 'var(--ink)', onClick: this.goList({ drill: { status: 'aktiv' } }) },
+      { label: 'Vollständig erfolgreich', value: H.fmt.int(c.ok), sub: c.offen ? '+ ' + H.fmt.int(c.offen) + ' noch nicht beurteilt' : 'alle drei Ergebnisse brauchbar', ink: 'var(--ok-ink)', onClick: this.goList({ drill: { status: 'ok' } }) },
+      { label: 'Mit Problem', value: H.fmt.int(c.problem), sub: c.problem ? 'Ursachen unten' : 'keine', ink: c.problem ? (D.health.tone === 'bad' ? 'var(--bad-ink)' : 'var(--warn-ink)') : 'var(--ink)', onClick: this.goList({ zeigen: 'aufmerksamkeit' }) }];
+    const bad = D.sources.filter(x => x.state !== 'ok'), worst = bad.find(x => x.state === 'ausgefallen') || bad[0];
+    const cs = D.costs.dayShare, ct = cs >= 1 ? 'bad' : cs >= 0.8 ? 'warn' : 'ok';
+    v.statusLines = [
+      { label: 'Quellen', href: '#/betrieb/quellen', onClick: this.go('#/betrieb/quellen'), ...this.tone(worst ? (worst.state === 'ausgefallen' ? 'bad' : 'warn') : 'ok'),
+        value: worst ? (D.sources.length - bad.length) + ' von ' + D.sources.length + ' in Ordnung' : 'Alle ' + D.sources.length + ' Quellen erreichbar',
+        sub: worst ? ' · ' + worst.name + (worst.state === 'ausgefallen' ? ' seit ' + worst.since + ' nicht erreichbar' : ' verzögert') : ' · zuletzt geprüft 09:02' },
+      { label: 'KI Kosten heute', href: '#/betrieb/kosten', onClick: this.go('#/betrieb/kosten'), ...this.tone(ct), value: H.fmt.usd(D.costs.today), sub: ' · ' + H.fmt.pct(cs) + ' der Tagesgrenze von ' + H.fmt.usd(D.costs.dayLimit) }];
+    v.groups = D.groups.slice(0, 6).map(g => ({ ...this.tone(g.tone), title: g.title, detail: g.detail, areaLabel: H.AREA_LABEL[g.area], countLabel: H.fmt.int(g.count) + (g.count === 1 ? ' Profil' : ' Profile'), onClick: this.goList({ drill: { cause: g.cause, area: g.area } }) }));
+    v.groupsEmpty = !D.groups.length; v.groupsMore = D.groups.length > 6 || c.problem > 0; v.groupCols = '12px minmax(0,1fr) auto 16px';
+    v.attSub = c.problem ? H.fmt.int(c.problem) + (c.problem === 1 ? ' Profil' : ' Profile') + ' · nach Ursache' : '';
+    v.goAttention = this.goList({ zeigen: 'aufmerksamkeit' });
+    if (v.pProfile) this.valsList(D, v);
+    if (v.pProfil) this.valsDetail(D, v);
+    if (page === 'betrieb') this.valsBetrieb(D, v);
+    if (page === 'kunden' || page === 'kunde' || page === 'kunde-neu') this.valsKunden(D, v);
+    if (page === 'einstellungen') this.valsSettings(D, v, theme);
+    this.valsDlg(v);
+    return v;
+  }
+  opt(label, on, fn) { return { label, on, onClick: fn, border: on ? 'var(--accent)' : 'var(--line-2)', bg: on ? 'var(--accent-dim)' : 'transparent' }; }
+  valsList(D, v) {
+    const H = window.HV3, s = this.state, { base, l, Z } = this.filtered(D), per = 50;
+    const pages = Math.max(1, Math.ceil(l.length / per)), pg = Math.min(s.pg, pages - 1), slice = l.slice(pg * per, pg * per + per);
+    v.listEyebrow = H.fmt.int(D.counts.total) + ' Profile · Stand 09:10';
+    v.q = s.q; v.parl = s.parl;
+    v.setQ = e => this.setState({ q: e.target.value, pg: 0 }); v.setParl = e => this.setState({ parl: e.target.value, pg: 0 });
+    v.zeigenOpts = [['alle', 'Alle'], ['aufmerksamkeit', 'Braucht Aufmerksamkeit'], ['ohne', 'Aktiv, aber ohne brauchbares Ergebnis'], ['quelle', 'Quellenproblem']].map(([k, lb]) => {
+      const on = s.zeigen === k; return { label: lb, on, count: H.fmt.int(base.filter(Z[k]).length), onClick: () => this.setState({ zeigen: k, pg: 0 }),
+        border: on ? 'var(--solid)' : 'var(--line-2)', bg: on ? 'var(--solid)' : 'transparent', color: on ? 'var(--on-solid)' : 'var(--text)', countColor: on ? 'var(--on-solid)' : 'var(--muted)' }; });
+    v.hasDrill = !!s.drill; v.drillLabel = this.drillLabel(D); v.clearDrill = () => this.setState({ drill: null, pg: 0 });
+    v.listCount = H.fmt.int(l.length) + (l.length === 1 ? ' Profil' : ' Profile');
+    v.pageInfo = l.length > per ? H.fmt.int(pg * per + 1) + '–' + H.fmt.int(Math.min(l.length, pg * per + per)) : '';
+    v.rows = slice.map(p => ({ name: p.name, sub: p.mandat + ' · ' + p.parlLabel, href: '#/profil/' + p.id, onClick: this.go('#/profil/' + p.id), st: this.pstat(p),
+      b: this.cell(p, 'briefing'), l: this.cell(p, 'lage'), rd: this.cell(p, 'radar'), qu: this.srcCell(p, D), last: p.lastOk,
+      cost: p.aktiv ? H.fmt.usd(p.cost, 3) : '—', costInk: p.teuer ? 'var(--warn-ink)' : 'var(--text)' }));
+    v.listEmpty = !l.length; v.resetList = () => this.setState({ zeigen: 'alle', drill: null, q: '', parl: 'alle', pg: 0 });
+    v.hasPages = pages > 1; v.pageNo = pg + 1; v.pageCount = pages; v.noPrev = pg === 0; v.noNext = pg >= pages - 1;
+    v.prevOpacity = v.noPrev ? '.4' : '1'; v.nextOpacity = v.noNext ? '.4' : '1';
+    v.prevPage = () => { this.setState({ pg: Math.max(0, pg - 1) }); window.scrollTo(0, 0); }; v.nextPage = () => { this.setState({ pg: pg + 1 }); window.scrollTo(0, 0); };
+  }
+  valsDetail(D, v) {
+    const H = window.HV3, s = this.state, p = D.byId[s.route.id];
+    v.goBackList = this.go('#/profile'); v.backLabel = s.drill || s.zeigen !== 'alle' ? 'Zurück zur Auswahl' : 'Zurück zu den Profilen';
+    v.pdMissing = !p; v.pdFound = !!p; v.areaCols = s.vw >= 760 ? '110px 200px minmax(0,1fr)' : 'minmax(0,1fr)';
+    if (!p) return;
+    const good = [], miss = [], open = [], why = [];
+    H.AREAS.forEach(([k, lb]) => { const x = p.a[k]; if (x.k === 'brauchbar') good.push(lb); else if (x.k === 'nicht_beurteilt') open.push(lb);
+      else if (x.k !== 'inaktiv') { miss.push(lb + ' ' + H.AST[x.k].label.toLowerCase()); if (x.c && !why.includes(H.CAUSES[x.c].detail)) why.push(H.CAUSES[x.c].detail); } });
+    const answers = !p.aktiv ? [{ k: 'Zustand', v: 'Deaktiviert. Helmut erstellt keine Ergebnisse.', ink: 'var(--ink)' }, { k: 'Zuletzt vollständig erfolgreich', v: p.lastOk, ink: 'var(--ink)' }] : [
+      { k: 'Was funktioniert', v: good.length ? good.join(', ') : 'Nichts', ink: good.length ? 'var(--ok-ink)' : 'var(--muted)' },
+      { k: 'Was fehlt', v: miss.length ? miss.join(', ') : 'Nichts' + (open.length ? '. ' + open.join(', ') + ' wartet noch auf die Beurteilung.' : ''), ink: miss.length ? this.pstat(p).ink : 'var(--ink)' },
+      { k: 'Warum', v: why.length ? why.join(' ') : '—', ink: 'var(--ink)' },
+      { k: 'Zuletzt vollständig erfolgreich', v: p.lastOk, ink: 'var(--ink)' }];
+    const areas = H.AREAS.map(([k, lb]) => { const x = p.a[k], A = H.AST[x.k], t = this.tone(A.tone), stage = A.stage;
+      return { label: lb, st: this.st(x.k === 'inaktiv' ? 'Inaktiv' : A.label, A.tone),
+        segs: H.STAGES.map((tt, i) => ({ t: tt, bg: i < stage ? t.bar : 'var(--line-2)' })),
+        stageText: stage < 0 ? 'Kein Lauf' : stage === 0 ? 'Lauf nicht erfolgt' : stage === 4 ? 'Alle vier Stufen erreicht' : 'Erreicht: ' + H.STAGES[stage - 1],
+        text: x.c ? H.CAUSES[x.c].title + '. ' + H.CAUSES[x.c].detail : x.k === 'nicht_beurteilt' ? 'Inhalt vollständig. Die Qualitätsprüfung hat noch kein Urteil.' : x.k === 'brauchbar' ? 'Lauf erfolgt, Inhalt vollständig und brauchbar.' : 'Profil ist deaktiviert.' }; });
+    const sources = p.sources.map(id => { const q = D.sources.find(x => x.id === id);
+      return { name: q.name, ...(q.state === 'ausgefallen' ? this.st('Nicht erreichbar', 'bad') : q.state === 'verzoegert' ? this.st('Verzögert', 'warn') : this.st('Erreichbar', 'ok')) }; });
+    const tech = [{ line: 'Profil ' + p.id + ' · ' + p.parl + ' · aktiv=' + p.aktiv }, { line: 'Lauf lauf-20261003-morgen · Berliner Tag 2026-10-03' }]
+      .concat(H.AREAS.map(([k]) => ({ line: k + ': ' + p.a[k].k + (p.a[k].c ? ' · ' + H.CAUSES[p.a[k].c].tech : '') })));
+    const danger = [];
+    if (p.aktiv) danger.push({ title: 'Profil deaktivieren', text: 'Ab dem nächsten Lauf entstehen keine Ergebnisse. Daten bleiben erhalten.', label: 'Deaktivieren',
+      onClick: this.ask({ title: 'Profil deaktivieren?', lines: [{ t: p.name + ' bekommt ab dem nächsten Lauf kein Briefing, keine Lage und kein Radar.' }, { t: 'Daten und Kundenzuordnung bleiben erhalten.' }], confirmLabel: 'Deaktivieren', danger: true, api: 'PATCH /api/admin/profile/' + p.id,
+        run: () => { this.setState(x => ({ deact: x.deact.concat(p.id) })); this.say(p.name + ' ist deaktiviert.'); } }) });
+    else if (p.lokal) danger.push({ title: 'Profil wieder aktivieren', text: 'Ab dem nächsten Lauf entstehen wieder Ergebnisse.', label: 'Aktivieren',
+      onClick: this.ask({ title: 'Profil aktivieren?', lines: [{ t: p.name + ' wird ab dem nächsten Lauf wieder versorgt.' }], confirmLabel: 'Aktivieren', api: 'PATCH /api/admin/profile/' + p.id,
+        run: () => { this.setState(x => ({ deact: x.deact.filter(i => i !== p.id) })); this.say(p.name + ' ist wieder aktiv.'); } }) });
+    danger.push({ title: 'Daten löschen', text: 'Löscht gespeicherte Briefings, Lagen, Radar und Verlauf. Das Profil bleibt.', label: 'Daten löschen',
+      onClick: this.ask({ title: 'Daten von ' + p.name + ' löschen?', lines: [{ t: 'Alle gespeicherten Ergebnisse und der Verlauf werden gelöscht. Das lässt sich nicht rückgängig machen.' }], need: p.name, confirmLabel: 'Daten löschen', danger: true, api: 'POST /api/privacy/delete',
+        run: () => this.say('Daten von ' + p.name + ' gelöscht.') }) });
+    danger.push({ title: 'Profil löschen', text: 'Entfernt das Profil mit allen Daten und Zuordnungen. Nicht umkehrbar.', label: 'Profil löschen',
+      onClick: this.ask({ title: p.name + ' endgültig löschen?', lines: [{ t: 'Profil, Ergebnisse, Verlauf und Kundenzuordnung werden entfernt.' }, { t: 'Das lässt sich nicht rückgängig machen.' }], need: p.name, confirmLabel: 'Endgültig löschen', danger: true, api: 'POST /api/privacy/delete',
+        run: () => { this.setState(x => ({ deleted: x.deleted.concat(p.id) })); location.hash = '#/profile'; this.say(p.name + ' wurde gelöscht.'); } }) });
+    v.pd = { name: p.name, sub: p.mandat + ' · ' + p.parlLabel, st: this.pstat(p), answers, areas, sources, tech, danger,
+      cost: p.aktiv ? H.fmt.usd(p.cost, 4) : '—', costNote: 'Durchschnitt aller aktiven Profile ' + H.fmt.usd(D.costs.avg, 4) + (p.teuer ? ' · auffällig teuer' : ''),
+      verlauf: H.verlauf(p).map(e => ({ t: e.t, text: e.text, ...this.tone(e.tone) })) };
+  }
+  valsBetrieb(D, v) {
+    const H = window.HV3, s = this.state, c = D.counts, tab = s.route.tab;
+    const srcBad = D.sources.find(x => x.state === 'ausgefallen') || D.sources.find(x => x.state === 'verzoegert');
+    v.secEyebrow = 'Stand 09:10 Berlin · Kostentag UTC'; v.secTitle = 'Betrieb';
+    v.tabs = [['bilanz', 'Bilanz'], ['quellen', 'Quellen'], ['kosten', 'Kosten']].map(([k, l]) => this.tab('#/betrieb/' + k, l, tab === k,
+      k === 'quellen' && srcBad ? this.tone(srcBad.state === 'ausgefallen' ? 'bad' : 'warn').dot : k === 'kosten' && D.costs.dayShare >= 0.8 ? this.tone(D.costs.dayShare >= 1 ? 'bad' : 'warn').dot : 'transparent'));
+    v.bilanzHead = H.fmt.int(c.ok) + ' von ' + H.fmt.int(c.aktiv) + ' aktiven Profilen vollständig erfolgreich.';
+    v.bilanzSub = H.fmt.int(c.total) + ' Profile · ' + H.fmt.int(c.inaktiv) + ' inaktiv · ' + H.fmt.int(c.offen) + ' noch nicht beurteilt · ' + H.fmt.int(c.aktiv * 3) + ' Ergebnisse heute';
+    v.bucketHeads = H.BUCKETS.map(([, l]) => ({ label: l }));
+    v.bilanzRows = D.bilanz.map(r => ({ label: r.label, cells: H.BUCKETS.map(([b, bl]) => { const n = r.cells[b];
+      return { v: H.fmt.int(n), label: bl, aria: r.label + ', ' + bl + ': ' + n, pe: n ? 'auto' : 'none', onClick: this.goList({ drill: { area: r.area, bucket: b } }),
+        ink: !n ? 'var(--muted-2)' : b === 'brauchbar' ? 'var(--ok-ink)' : b === 'offen' ? 'var(--muted)' : b === 'fehlt' ? 'var(--bad-ink)' : 'var(--warn-ink)' }; }) }));
+    v.runs = D.runs.map(r => ({ t: r.t, label: r.label, text: r.text, tech: r.tech, ...this.tone(r.planned ? 'neutral' : r.ok ? 'ok' : 'warn'), ink: r.planned ? 'var(--muted)' : r.ok ? 'var(--text)' : 'var(--warn-ink)' }));
+    const n = D.failedRuns;
+    v.wartung = [
+      { title: 'Fehlgeschlagene Läufe freigeben', text: n ? H.fmt.int(n) + (n === 1 ? ' Profil' : ' Profile') + ' mit technischem Fehler. Sie werden beim nächsten Lauf erneut versucht.' : 'Keine fehlgeschlagenen Läufe.', has: !!n, none: !n, label: n ? 'Freigeben' : 'Nichts zu tun',
+        onClick: this.ask({ title: 'Fehlgeschlagene Läufe freigeben?', lines: [{ t: H.fmt.int(n) + ' Profile werden beim nächsten geplanten Lauf erneut versucht. Es startet jetzt kein neuer Lauf.' }], confirmLabel: 'Freigeben', api: 'POST /api/admin/recovery/reset-failed', run: () => this.say('Freigegeben. Neuer Versuch beim nächsten Lauf.') }) },
+      { title: 'Ausstehendes Verstehen nachholen', text: 'Keine offenen Vorgänge. Wenn welche offen sind, entstehen beim Nachholen KI Kosten.', has: false, none: true, label: 'Nichts offen' },
+      { title: 'Hängende Sperre lösen', text: 'Keine Sperre ist älter als ihre Laufzeit.', has: false, none: true, label: 'Keine Sperre' }];
+    const O = { ausgefallen: 0, verzoegert: 1, ok: 2 }, okN = D.sources.filter(x => x.state === 'ok').length;
+    v.srcHead = okN === D.sources.length ? 'Alle ' + D.sources.length + ' Quellen erreichbar.' : okN + ' von ' + D.sources.length + ' Quellen in Ordnung.';
+    v.srcCols = s.vw >= 900 ? 'minmax(0,1.2fr) minmax(0,1fr) 170px' : 'minmax(0,1fr)';
+    v.srcRows = D.sources.slice().sort((a, b) => O[a.state] - O[b.state]).map(q => ({ name: q.name, scope: q.scope.map(x => H.PARL[x]).join(' · ') + (q.haupt ? ' · Hauptquelle' : ''),
+      ...this.tone(q.state === 'ausgefallen' ? 'bad' : q.state === 'verzoegert' ? 'warn' : 'ok'), ink: q.state === 'ausgefallen' ? 'var(--bad-ink)' : q.state === 'verzoegert' ? 'var(--warn-ink)' : 'var(--text)',
+      text: q.text, last: q.last, affected: H.fmt.int(q.bound) + ' Profile' + (q.harmed ? ' · ' + H.fmt.int(q.harmed) + ' ohne Lage' : ''), onClick: this.goList({ drill: { source: q.id } }), hasTech: !!q.tech, tech: q.tech || '' }));
+    const k = D.costs, tone = x => x >= 1 ? 'bad' : x >= 0.8 ? 'warn' : 'neutral';
+    v.costNums = [
+      { label: 'Heute', value: H.fmt.usd(k.today), sub: 'Kostentag UTC', ink: k.dayShare >= 1 ? 'var(--bad-ink)' : 'var(--ink)' },
+      { label: 'Oktober bis heute', value: H.fmt.usd(k.month), sub: '3 Kostentage', ink: 'var(--ink)' },
+      { label: 'Pro Profil', value: H.fmt.usd(k.avg, 4), sub: 'Durchschnitt heute', ink: 'var(--ink)' },
+      { label: 'Gemeinsam', value: H.fmt.usd(k.shared), sub: 'Verstehen für alle Profile', ink: 'var(--ink)' }];
+    const bud = (label, val, lim, share, per) => { const t = this.tone(tone(share)); return { label, value: H.fmt.usd(val) + ' von ' + H.fmt.usd(lim), w: Math.min(100, share * 100).toFixed(1) + '%',
+      bar: share >= 0.8 ? t.bar : 'var(--accent)', ink: share >= 0.8 ? t.ink : 'var(--ink)', noteInk: share >= 0.8 ? t.ink : 'var(--muted)',
+      note: share >= 1 ? 'Grenze erreicht. Weitere KI Anfragen werden bis ' + per + ' abgelehnt.' : (share >= 0.8 ? 'Über 80 %. ' : '') + 'Rest ' + H.fmt.usd(Math.max(0, lim - val)) }; };
+    v.budgets = [bud('Tagesgrenze', k.today, k.dayLimit, k.dayShare, 'zum nächsten UTC Tag'), bud('Monatsgrenze', k.month, k.monthLimit, k.monthShare, 'zum Monatsende')];
+    v.teuer = k.expensive.slice(0, 8).map(p => ({ name: p.name, sub: p.mandat + ' · ' + p.parlLabel, cost: H.fmt.usd(p.cost, 4), factor: (p.cost / k.median).toFixed(1).replace('.', ',') + ' × Median', href: '#/profil/' + p.id, onClick: this.go('#/profil/' + p.id) }));
+    v.teuerEmpty = !v.teuer.length;
+  }
+  tab(href, label, on, dot) { return { href, label, onClick: this.go(href), current: on ? 'page' : 'false', color: on ? 'var(--ink)' : 'var(--muted)', border: on ? 'var(--ink)' : 'transparent', dot }; }
+  custs(D) { return D.customers.concat(this.state.extraCust).map(c => ({ ...c, ...(this.state.custOv[c.id] || {}) })); }
+  valsKunden(D, v) {
+    const H = window.HV3, s = this.state, list = this.custs(D);
+    const ZU = { aktiv: ['aktiv', 'ok'], eingeladen: ['eingeladen', 'neutral'], gesperrt: ['gesperrt', 'warn'], nicht_eingeladen: ['nicht eingeladen', 'neutral'] };
+    const SK = { vertrag: 'Vertrag', test: 'Testphase', pausiert: 'Pausiert', entwurf: 'Entwurf' };
+    const pname = id => D.byId[id] ? D.byId[id].name : null;
+    v.secEyebrow = H.fmt.int(list.length) + ' Kunden'; v.secTitle = 'Kunden';
+    v.tabs = [['kunden', 'Kunden'], ['abrechnung', 'Abrechnung']].map(([k, l]) => this.tab(k === 'kunden' ? '#/kunden' : '#/kunden/abrechnung', l, s.route.tab === k, k === 'abrechnung' ? 'var(--risk)' : 'transparent'));
+    if (s.route.page !== 'kunden') v.hasTabs = false;
+    v.kundenHead = H.fmt.int(list.filter(c => c.zugang === 'aktiv').length) + ' mit aktivem Zugang · ' + H.fmt.int(list.filter(c => c.status === 'entwurf').length) + ' Entwürfe';
+    v.goKundeNeu = this.go('#/kunde-neu'); v.goKunden = this.go('#/kunden');
+    v.custCols = s.vw >= 1100 ? 'minmax(0,1.2fr) minmax(0,1fr) 150px 220px 130px' : 'minmax(0,1fr)';
+    v.custRows = list.map(c => ({ name: c.name, person: c.person + ' · ' + c.mail, profiles: c.profiles.map(pname).filter(Boolean).join(', ') || 'Kein Profil', zu: this.st(...ZU[c.zugang]), zuText: 'Zugang ' + ZU[c.zugang][0],
+      status: SK[c.status], tarif: c.tarif + ' ' + H.fmt.eur(c.preis), last: c.last === '—' ? 'Noch nicht aktiv' : c.last, href: '#/kunde/' + c.id, onClick: this.go('#/kunde/' + c.id) }));
+    const ZA = { offen: ['Offen', 'neutral'], bezahlt: ['Bezahlt', 'ok'], teilweise: ['Teilweise bezahlt', 'warn'], ueberfaellig: ['Überfällig', 'bad'], storniert: ['Storniert', 'neutral'] };
+    v.invCols = s.vw >= 900 ? '130px minmax(0,1fr) 120px 170px 130px' : 'minmax(0,1fr)';
+    v.invRows = D.invoices.map(i => ({ nr: i.nr, kunde: (list.find(c => c.id === i.kunde) || {}).name, betrag: H.fmt.eur(i.betrag), faellig: i.faellig,
+      z: this.st(ZA[i.zahlung][0] + (i.rest ? ' · Rest ' + H.fmt.eur(i.rest) : ''), ZA[i.zahlung][1]) }));
+    v.openSum = H.fmt.eur(D.invoices.reduce((a, i) => a + (i.zahlung === 'offen' || i.zahlung === 'ueberfaellig' ? i.betrag : i.rest || 0), 0));
+    const k = list.find(c => c.id === s.route.id);
+    v.kdMissing = !k; v.kdFound = !!k;
+    if (k) { const locked = k.zugang === 'gesperrt';
+      v.kd = { name: k.name, status: SK[k.status], tarif: k.tarif,
+        facts: [{ k: 'Ansprechpartner', v: k.person }, { k: 'E-Mail', v: k.mail }, { k: 'Tarif', v: k.tarif + ' · ' + H.fmt.eur(k.preis) + ' im Monat' }, { k: 'Kundenstatus', v: SK[k.status] },
+          { k: 'Zugang', v: ZU[k.zugang][0], ink: this.tone(ZU[k.zugang][1]).ink }, { k: 'Letzte Aktivität', v: k.last === '—' ? 'Noch nicht aktiv' : k.last }].map(x => ({ ink: 'var(--ink)', ...x })),
+        profiles: k.profiles.filter(id => D.byId[id]).map(id => { const p = D.byId[id]; return { name: p.name, sub: p.mandat + ' · ' + p.parlLabel, st: this.pstat(p), href: '#/profil/' + id, onClick: this.go('#/profil/' + id) }; }),
+        users: k.users.map(([n, z]) => ({ name: n, z: this.st(ZU[z === 'nicht eingeladen' ? 'nicht_eingeladen' : z][0], ZU[z === 'nicht eingeladen' ? 'nicht_eingeladen' : z][1]) })),
+        lockTitle: locked ? 'Zugang freigeben' : 'Zugang sperren', lockLabel: locked ? 'Freigeben' : 'Sperren',
+        lockText: locked ? 'Alle Benutzer dieses Kunden können sich wieder anmelden.' : 'Alle Benutzer verlieren sofort den Zugang. Profile laufen weiter.',
+        lockAction: this.ask({ title: (locked ? 'Zugang freigeben' : 'Zugang sperren') + '?', lines: [{ t: k.name + ': ' + k.users.length + ' Benutzer betroffen.' }, { t: locked ? 'Anmeldung ist danach wieder möglich.' : 'Profile und Ergebnisse laufen weiter. Rechnungen bleiben unverändert.' }],
+          confirmLabel: locked ? 'Freigeben' : 'Sperren', danger: !locked, need: locked ? null : k.name, api: 'PATCH /api/admin/users/:id',
+          run: () => { this.setState(x => ({ custOv: { ...x.custOv, [k.id]: { zugang: locked ? 'aktiv' : 'gesperrt', users: k.users.map(([n]) => [n, locked ? 'aktiv' : 'gesperrt']) } } })); this.say(locked ? 'Zugang freigegeben.' : 'Zugang gesperrt.'); } }) };
+      v.kd.noProfiles = !v.kd.profiles.length; }
+    const f = s.form, bad = { name: !f.name.trim(), person: !f.person.trim(), mail: !/^\S+@\S+\.\S+$/.test(f.mail) };
+    const field = (key, label, type) => ({ label, type, value: f[key], invalid: s.tried && bad[key] ? 'true' : 'false', border: s.tried && bad[key] ? 'var(--risk)' : 'var(--line-2)', onChange: e => { const val = e.target.value; this.setState(x => ({ form: { ...x.form, [key]: val } })); } });
+    v.form = f; v.formFields = [field('name', 'Name des Kunden', 'text'), field('person', 'Ansprechpartner', 'text'), field('mail', 'E-Mail', 'email')];
+    v.setTarif = e => { const val = e.target.value; this.setState(x => ({ form: { ...x.form, tarif: val } })); };
+    v.setProfil = e => { const val = e.target.value; this.setState(x => ({ form: { ...x.form, profil: val } })); };
+    const used = new Set(list.flatMap(c => c.profiles));
+    v.freeProfiles = D.act.filter(p => !used.has(p.id)).slice(0, 300).map(p => ({ id: p.id, label: p.name + ' · ' + p.mandat + ' · ' + p.parlLabel }));
+    const missing = Object.keys(bad).filter(x => bad[x]);
+    v.hasFormErr = s.tried && missing.length > 0; v.formErr = 'Bitte ausfüllen: ' + missing.map(x => ({ name: 'Name', person: 'Ansprechpartner', mail: 'gültige E-Mail' })[x]).join(', ') + '.';
+    v.formSubmit = e => { e.preventDefault(); if (missing.length) { this.setState({ tried: true }); return; }
+      const id = 'k' + (6 + s.extraCust.length), P = { Basis: 290, 'Büro': 490, Fraktion: 1200 };
+      const nk = { id, name: f.name.trim(), person: f.person.trim(), mail: f.mail.trim(), tarif: f.tarif, preis: P[f.tarif], zugang: 'nicht_eingeladen', status: 'entwurf', last: '—', profiles: f.profil ? [f.profil] : [], users: [[f.person.trim(), 'nicht eingeladen']] };
+      this.setState(x => ({ extraCust: x.extraCust.concat(nk), tried: false, form: { name: '', person: '', mail: '', tarif: 'Basis', profil: '' } })); location.hash = '#/kunde/' + id; this.say('Entwurf gespeichert. Keine Einladung, keine Rechnung.'); };
+  }
+  valsSettings(D, v, theme) {
+    const H = window.HV3, s = this.state;
+    v.secEyebrow = 'Betreiber · Lüey'; v.secTitle = 'Einstellungen';
+    v.tabs = [['allgemein', 'Allgemein'], ['integrationen', 'Integrationen']].map(([k, l]) => this.tab(k === 'allgemein' ? '#/einstellungen' : '#/einstellungen/integrationen', l, s.route.tab === k, 'transparent'));
+    v.themeOpts = [['dunkel', 'Dunkel'], ['hell', 'Hell']].map(([k, l]) => this.opt(l, theme === k, () => this.setState({ theme: k })));
+    v.settingsRows = [{ k: 'Zeitzone', v: 'Europe/Berlin', sub: 'Alle Zeiten in Berliner Zeit' }, { k: 'Kostentag', v: 'UTC', sub: 'Wie beim KI Anbieter' },
+      { k: 'KI Tagesgrenze', v: H.fmt.usd(D.costs.dayLimit), sub: 'Aus der Helmut Konfiguration, hier nur lesend' }, { k: 'Umgebung', v: 'Production', sub: 'Im Prototyp mit Beispieldaten' }];
+    v.integrations = [{ name: 'KI Anbieter', v: 'Azure · gpt-5-mini · Sweden Central', sub: 'Antwortfrist 20 Sekunden · Kosten in USD', dot: 'var(--chance)' },
+      { name: 'Lexware Office', v: 'Verbunden', sub: 'Letzter Abgleich 08:30 · Rechnungen und Zahlungen', dot: 'var(--chance)' }];
+  }
+  valsDlg(v) {
+    const d = this.state.dlg; if (!d) { v.dlg = { lines: [] }; return; }
+    const blocked = !!d.need && this.state.dlgInput.trim() !== d.need;
+    v.dlg = { ...d, needs: !!d.need, need: d.need || '' }; v.dlgInput = this.state.dlgInput; v.dlgBlocked = blocked; v.dlgOpacity = blocked ? '.45' : '1';
+    v.dlgBtnBg = d.danger ? 'var(--risk)' : 'var(--solid)'; v.dlgBtnInk = d.danger ? '#fff' : 'var(--on-solid)';
+    v.setDlgInput = e => this.setState({ dlgInput: e.target.value });
+    v.closeDlg = () => this.setState({ dlg: null, dlgInput: '' });
+    v.confirmDlg = () => { if (blocked) return; const run = d.run; this.setState({ dlg: null, dlgInput: '' }); run && run(); };
+  }
+}
+</script>
+</body>
+</html>

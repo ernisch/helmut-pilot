@@ -1,0 +1,18 @@
+diff --git a/lib/helmut/accounts.js b/lib/helmut/accounts.js
+--- a/lib/helmut/accounts.js
++++ b/lib/helmut/accounts.js
+@@ -279,7 +279,13 @@ async function updateUser(id, patch = {}) {
+       // Status ist fuehrend fuer den Login: gekuendigt/deaktiviert sperren automatisch.
+       user.active = activeFromStatus(statusValue);
+     }
+-    if (patch.active !== undefined) user.active = patch.active !== false;
++    if (patch.active !== undefined) {
++      const nextActive = patch.active !== false;
++      if (nextActive && !activeFromStatus(user.status)) {
++        throw httpError(400, "Gekuendigte oder deaktivierte Konten zuerst ueber den Status aktivieren.");
++      }
++      user.active = nextActive;
++    }
+     if (patch.paidUntil !== undefined) user.paidUntil = patch.paidUntil ? String(patch.paidUntil).slice(0, 10) : null;
+     if (patch.customer !== undefined && typeof patch.customer === "object") {
+       const current = { ...defaultCustomer(), ...(user.customer || {}) };

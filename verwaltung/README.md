@@ -1,4 +1,33 @@
-# Helmut Verwaltung — isolierte Fassung
+# Helmut Verwaltung — Originalvorlage und isolierte Anbindung
+
+Verbindlich ist die ursprüngliche Claude-Verwaltung unter `claude-original/`.
+Ihre 25 Dateien sind bytegleich mit dem hochgeladenen Prototyp; der
+`claude-original-manifest.json` bindet ihre Prüfsummen. Die neuen Module
+`original-adapter.mjs`, `original-controller.mjs` und `original-actions.mjs`
+bereiten vorhandene Verwaltungsrouten für diese Originalkomponente vor.
+Es entsteht kein zweites Backend. Die gemeinsame Servereinbindung bleibt offen.
+
+Der aktuelle [Sprintbericht](../docs/backend-isolated/backend-parallel-abschluss-20261104.md)
+trennt nachgewiesene Funktionen, nicht angewandte Fehlerkorrekturen und
+Integrationsgrenzen. Der Paketbauer `scripts/original-verwaltung-paket.js`
+erhält Originalmarkup und Gestaltung, ersetzt simulierte Daten/Erfolgstexte und
+verwendet ausschließlich explizite lokale Runtimepfade. Die bereits im Original
+festgelegten React-/ReactDOM18.3.1-Dateien liegen mit Original-SRI-Prüfung und
+MIT-Lizenzen unter `runtime/`. Die Originalkomponente hat jetzt eine echte lokale
+interaktive Browserabnahme; Production-Einbindung und gemeinsame Kontofixes
+bleiben offen.
+
+`original-customer-form.mjs` vervollständigt das Originalformular über die
+vorhandenen Kontorouten. Gespeichert wird ein gesperrtes Konto ohne Einladung,
+mit Kundennamen und Tarifwunsch als bestehender lesbarer Notiz; Preis bleibt offen.
+`original-daily-ledger.mjs` zeigt ausschließlich Angaben aus dem begrenzten
+vorhandenen Laufquittungsfenster. Qualität, Vollständigkeit und tatsächlicher
+Empfang bleiben ausdrücklich ungeprüft.
+
+Die nachfolgend beschriebene ältere helle Vorschau aus `ae18658e` ist **keine
+freigegebene Designvorlage** und wird nicht als neue Produktoberfläche eingebunden.
+
+## Frühere separate Vorschau
 
 Vier Bereiche: **Überblick, Profile, Betrieb, Kunden**. Helle Oberfläche mit
 Systemschrift, klaren Hinweisen, Suche, Filtern und Profilseiten zu je 20 Einträgen.

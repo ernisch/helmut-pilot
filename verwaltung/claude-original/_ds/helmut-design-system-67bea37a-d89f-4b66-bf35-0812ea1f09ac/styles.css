@@ -1,0 +1,8 @@
+/* Helmut Design System — global entry point.
+   Consumers link this one file. It is a manifest of @import lines only.
+   Everything reachable from here ships to consumers, including the
+   @font-face declarations and every token layer. */
+@import url("tokens/fonts.css");
+@import url("tokens/colors.css");
+@import url("tokens/typography.css");
+@import url("tokens/spacing.css");
