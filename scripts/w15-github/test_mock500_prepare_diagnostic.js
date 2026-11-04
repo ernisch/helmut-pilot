@@ -2,6 +2,10 @@
 // Invented bound owner/inputs and actual reader bodies; no key, DB, Original or network.
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),os=require("node:os");
 const vm=require("node:vm"),{createRequire}=require("node:module");
+const {mock}=require("node:test");
+// Keep invented fixtures inside the existing simulation calendar, regardless of CI wall time.
+const fixtureTime=Date.parse("2026-11-04T12:00:00.000Z");
+mock.timers.enable({apis:["Date"],now:fixtureTime});
 const Prepare=require("./mock500_prepare_contract"),B=require("./mock500_bindings");
 const Calendar=require("../../lib/helmut/synthetik-500-mock-calendar"),EU=require("../../lib/helmut/synthetik-500-eu-service-contract");
 const Failure=require("./mock500_prepare_failure");
@@ -128,10 +132,19 @@ async function checks(){
    assert.throws(()=>Prepare.validate({...bound,prepareDiagnosticAuthorization:{...authorization,...change}},owner));
   const expired=structuredClone(bound);for(const k of Object.keys(expired.window))expired.window[k]=new Date(Date.parse(expired.window[k])-14400000).toISOString();
   assert.throws(()=>Prepare.validate(expired,owner));
+  // A fixed fixture clock must not weaken either real same-day guard.
+  try{
+   for(const iso of ["2026-11-04T20:00:00.000Z","2026-11-04T22:08:30.000Z"]){
+    const at=Date.parse(iso),overnight=structuredClone(bound);mock.timers.setTime(at);
+    overnight.calendar.utcDay=iso.slice(0,10);overnight.calendar.berlinDay=berlin(new Date(at));
+    for(const key of Object.keys(overnight.window))overnight.window[key]=new Date(Date.parse(bound.window[key])+at-fixtureTime).toISOString();
+    assert.throws(()=>Prepare.validate(overnight,owner),{code:"ERR_ASSERTION",actual:"2026-11-05",expected:"2026-11-04"});
+   }
+  }finally{mock.timers.setTime(fixtureTime);}
   const ambient=runtime({descriptor:null});ambient.fakeProcess.env.HELMUT_PREPARE_DIAGNOSTIC_ONLY="true";
   assert.throws(()=>ambient.ownerGo());assert.throws(()=>Prepare.validate({...bound,prepareDiagnosticOnly:false},owner));
   assert.throws(()=>Prepare.validate({...bound,materialsDiagnosticOnly:true},owner));
-  console.log("PASS forged/mixed owner scope, context, source/input hashes, expired window and ENV-only requests denied");
+  console.log("PASS forged/mixed owner scope, context, source/input hashes, expired/UTC-/Berlin-crossing windows and ENV-only requests denied");
 
   for(const action of ["run","atomic-check","unit","provider"]){
    const r=runtime();await assert.rejects(r.main(action),/w15-prepare-diagnostic-runtime-action/);assert.deepEqual(r.calls,[]);
@@ -203,4 +216,4 @@ async function checks(){
  }
  console.log("PASS 8 synthetic Prepare diagnostic groups; no Original/database/model/key execution");
 }
-checks().catch(error=>{console.error(error);process.exitCode=1;});
+checks().catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>mock.timers.reset());
