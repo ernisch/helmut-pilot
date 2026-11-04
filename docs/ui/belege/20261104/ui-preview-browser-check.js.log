@@ -1,0 +1,238 @@
+PASS  desktop: actual UI rendered
+PASS  desktop: all three design font families loaded
+PASS  desktop: bell is a thin outline icon
+PASS  desktop: Briefing refresh has a 44px target
+PASS  desktop: navigation helmut
+PASS  desktop: Briefing visible after normal intro
+PASS  desktop: helmut no horizontal overflow
+PASS  desktop: navigation briefing
+PASS  desktop: briefing no horizontal overflow
+PASS  desktop: Lage detail source preserved
+PASS  desktop: Lage back
+PASS  desktop: navigation radar
+PASS  desktop: radar no horizontal overflow
+PASS  desktop: Radar mention with source visible
+PASS  desktop: Radar environment filter constituency
+PASS  desktop: Radar environment filter committees
+PASS  desktop: Radar environment filter party
+PASS  desktop: Radar article filter exists
+PASS  desktop: Radar article filter changes displayed results
+PASS  desktop: Radar all filter restores both articles
+PASS  desktop: navigation office
+PASS  desktop: office no horizontal overflow
+PASS  desktop: office detail
+PASS  desktop: clipboard failure
+PASS  desktop: clipboard success
+PASS  desktop: office back
+PASS  desktop: empty helmut no horizontal overflow
+PASS  desktop: empty helmut visible content
+PASS  desktop: empty helmut has no invented items
+PASS  desktop: empty briefing no horizontal overflow
+PASS  desktop: empty briefing visible content
+PASS  desktop: empty briefing has no invented items
+PASS  desktop: empty radar no horizontal overflow
+PASS  desktop: empty radar visible content
+PASS  desktop: empty radar has no invented items
+PASS  desktop: empty office no horizontal overflow
+PASS  desktop: empty office visible content
+PASS  desktop: empty office has no invented items
+PASS  desktop: stale helmut no horizontal overflow
+PASS  desktop: stale helmut visible content
+PASS  desktop: stale briefing no horizontal overflow
+PASS  desktop: stale briefing visible content
+PASS  desktop: stale radar no horizontal overflow
+PASS  desktop: stale radar visible content
+PASS  desktop: stale office no horizontal overflow
+PASS  desktop: stale office visible content
+PASS  desktop: stale draft not labelled today
+PASS  desktop: error helmut no horizontal overflow
+PASS  desktop: error helmut visible content
+PASS  desktop: error helmut is explicit
+PASS  desktop: error briefing no horizontal overflow
+PASS  desktop: error briefing visible content
+PASS  desktop: error briefing is explicit
+PASS  desktop: error radar no horizontal overflow
+PASS  desktop: error radar visible content
+PASS  desktop: error radar is explicit
+PASS  desktop: error office no horizontal overflow
+PASS  desktop: error office visible content
+PASS  desktop: error office is explicit
+PASS  desktop: long helmut no horizontal overflow
+PASS  desktop: long helmut visible content
+PASS  desktop: long briefing no horizontal overflow
+PASS  desktop: long briefing visible content
+PASS  desktop: long radar no horizontal overflow
+PASS  desktop: long radar visible content
+PASS  desktop: long office no horizontal overflow
+PASS  desktop: long office visible content
+PASS  desktop: undated office source labelled honestly
+PASS  desktop: loading state
+PASS  desktop: light theme no horizontal overflow
+PASS  desktop: external fetch denied
+PASS  mobile: actual UI rendered
+PASS  mobile: all three design font families loaded
+PASS  mobile: bell is a thin outline icon
+PASS  mobile: Briefing refresh has a 44px target
+PASS  mobile: touch target at least 44px .mobile-dock [data-view="helmut"]
+PASS  mobile: navigation helmut
+PASS  mobile: Briefing visible after normal intro
+PASS  mobile: helmut no horizontal overflow
+PASS  mobile: touch target at least 44px .mobile-dock [data-view="briefing"]
+PASS  mobile: navigation briefing
+PASS  mobile: briefing no horizontal overflow
+PASS  mobile: Lage detail source preserved
+PASS  mobile: Lage back
+PASS  mobile: touch target at least 44px .mobile-dock [data-view="radar"]
+PASS  mobile: navigation radar
+PASS  mobile: radar no horizontal overflow
+PASS  mobile: Radar mention with source visible
+PASS  mobile: touch target at least 44px [data-radar-segment="constituency"]
+PASS  mobile: Radar environment filter constituency
+PASS  mobile: touch target at least 44px [data-radar-segment="committees"]
+PASS  mobile: Radar environment filter committees
+PASS  mobile: touch target at least 44px [data-radar-segment="party"]
+PASS  mobile: Radar environment filter party
+PASS  mobile: Radar article filter exists
+PASS  mobile: touch target at least 44px [data-radar-filter="party"]
+PASS  mobile: Radar article filter changes displayed results
+PASS  mobile: touch target at least 44px [data-radar-filter="all"]
+PASS  mobile: Radar all filter restores both articles
+PASS  mobile: touch target at least 44px .mobile-dock [data-view="office"]
+PASS  mobile: navigation office
+PASS  mobile: office no horizontal overflow
+PASS  mobile: touch target at least 44px [data-office-open]
+PASS  mobile: office detail
+PASS  mobile: clipboard failure
+PASS  mobile: clipboard success
+PASS  mobile: office back
+PASS  mobile: empty helmut no horizontal overflow
+PASS  mobile: empty helmut visible content
+PASS  mobile: empty helmut has no invented items
+PASS  mobile: empty briefing no horizontal overflow
+PASS  mobile: empty briefing visible content
+PASS  mobile: empty briefing has no invented items
+PASS  mobile: empty radar no horizontal overflow
+PASS  mobile: empty radar visible content
+PASS  mobile: empty radar has no invented items
+PASS  mobile: empty office no horizontal overflow
+PASS  mobile: empty office visible content
+PASS  mobile: empty office has no invented items
+PASS  mobile: stale helmut no horizontal overflow
+PASS  mobile: stale helmut visible content
+PASS  mobile: stale briefing no horizontal overflow
+PASS  mobile: stale briefing visible content
+PASS  mobile: stale radar no horizontal overflow
+PASS  mobile: stale radar visible content
+PASS  mobile: stale office no horizontal overflow
+PASS  mobile: stale office visible content
+PASS  mobile: stale draft not labelled today
+PASS  mobile: error helmut no horizontal overflow
+PASS  mobile: error helmut visible content
+PASS  mobile: error helmut is explicit
+PASS  mobile: error briefing no horizontal overflow
+PASS  mobile: error briefing visible content
+PASS  mobile: error briefing is explicit
+PASS  mobile: error radar no horizontal overflow
+PASS  mobile: error radar visible content
+PASS  mobile: error radar is explicit
+PASS  mobile: error office no horizontal overflow
+PASS  mobile: error office visible content
+PASS  mobile: error office is explicit
+PASS  mobile: long helmut no horizontal overflow
+PASS  mobile: long helmut visible content
+PASS  mobile: long briefing no horizontal overflow
+PASS  mobile: long briefing visible content
+PASS  mobile: long radar no horizontal overflow
+PASS  mobile: long radar visible content
+PASS  mobile: long office no horizontal overflow
+PASS  mobile: long office visible content
+PASS  mobile: undated office source labelled honestly
+PASS  mobile: loading state
+PASS  mobile: light theme no horizontal overflow
+PASS  mobile: external fetch denied
+PASS  mobile: smartphone landscape locked
+PASS  mobile-360: actual UI rendered
+PASS  mobile-360: all three design font families loaded
+PASS  mobile-360: bell is a thin outline icon
+PASS  mobile-360: Briefing refresh has a 44px target
+PASS  mobile-360: touch target at least 44px .mobile-dock [data-view="helmut"]
+PASS  mobile-360: navigation helmut
+PASS  mobile-360: Briefing visible after normal intro
+PASS  mobile-360: helmut no horizontal overflow
+PASS  mobile-360: touch target at least 44px .mobile-dock [data-view="briefing"]
+PASS  mobile-360: navigation briefing
+PASS  mobile-360: briefing no horizontal overflow
+PASS  mobile-360: Lage detail source preserved
+PASS  mobile-360: Lage back
+PASS  mobile-360: touch target at least 44px .mobile-dock [data-view="radar"]
+PASS  mobile-360: navigation radar
+PASS  mobile-360: radar no horizontal overflow
+PASS  mobile-360: Radar mention with source visible
+PASS  mobile-360: touch target at least 44px [data-radar-segment="constituency"]
+PASS  mobile-360: Radar environment filter constituency
+PASS  mobile-360: touch target at least 44px [data-radar-segment="committees"]
+PASS  mobile-360: Radar environment filter committees
+PASS  mobile-360: touch target at least 44px [data-radar-segment="party"]
+PASS  mobile-360: Radar environment filter party
+PASS  mobile-360: Radar article filter exists
+PASS  mobile-360: touch target at least 44px [data-radar-filter="party"]
+PASS  mobile-360: Radar article filter changes displayed results
+PASS  mobile-360: touch target at least 44px [data-radar-filter="all"]
+PASS  mobile-360: Radar all filter restores both articles
+PASS  mobile-360: touch target at least 44px .mobile-dock [data-view="office"]
+PASS  mobile-360: navigation office
+PASS  mobile-360: office no horizontal overflow
+PASS  mobile-360: touch target at least 44px [data-office-open]
+PASS  mobile-360: office detail
+PASS  mobile-360: clipboard failure
+PASS  mobile-360: clipboard success
+PASS  mobile-360: office back
+PASS  mobile-360: empty helmut no horizontal overflow
+PASS  mobile-360: empty helmut visible content
+PASS  mobile-360: empty helmut has no invented items
+PASS  mobile-360: empty briefing no horizontal overflow
+PASS  mobile-360: empty briefing visible content
+PASS  mobile-360: empty briefing has no invented items
+PASS  mobile-360: empty radar no horizontal overflow
+PASS  mobile-360: empty radar visible content
+PASS  mobile-360: empty radar has no invented items
+PASS  mobile-360: empty office no horizontal overflow
+PASS  mobile-360: empty office visible content
+PASS  mobile-360: empty office has no invented items
+PASS  mobile-360: stale helmut no horizontal overflow
+PASS  mobile-360: stale helmut visible content
+PASS  mobile-360: stale briefing no horizontal overflow
+PASS  mobile-360: stale briefing visible content
+PASS  mobile-360: stale radar no horizontal overflow
+PASS  mobile-360: stale radar visible content
+PASS  mobile-360: stale office no horizontal overflow
+PASS  mobile-360: stale office visible content
+PASS  mobile-360: stale draft not labelled today
+PASS  mobile-360: error helmut no horizontal overflow
+PASS  mobile-360: error helmut visible content
+PASS  mobile-360: error helmut is explicit
+PASS  mobile-360: error briefing no horizontal overflow
+PASS  mobile-360: error briefing visible content
+PASS  mobile-360: error briefing is explicit
+PASS  mobile-360: error radar no horizontal overflow
+PASS  mobile-360: error radar visible content
+PASS  mobile-360: error radar is explicit
+PASS  mobile-360: error office no horizontal overflow
+PASS  mobile-360: error office visible content
+PASS  mobile-360: error office is explicit
+PASS  mobile-360: long helmut no horizontal overflow
+PASS  mobile-360: long helmut visible content
+PASS  mobile-360: long briefing no horizontal overflow
+PASS  mobile-360: long briefing visible content
+PASS  mobile-360: long radar no horizontal overflow
+PASS  mobile-360: long radar visible content
+PASS  mobile-360: long office no horizontal overflow
+PASS  mobile-360: long office visible content
+PASS  mobile-360: undated office source labelled honestly
+PASS  mobile-360: loading state
+PASS  mobile-360: light theme no horizontal overflow
+PASS  mobile-360: external fetch denied
+PASS  mobile-360: smartphone landscape locked
+PASS  No uncaught browser errors
+PASS  No external request fulfilled
+PASS  No missing static resources

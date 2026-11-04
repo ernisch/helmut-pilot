@@ -1,5 +1,14 @@
 # CURRENT STATE — Helmut
 
+## Separate UI-Arbeit (04.11.2026, keine Production-Aussage)
+
+Nur Branch `codex/helmut-ui-20261031`: Lage, Radar, Briefing und Büro mit
+synthetischen Daten im eigenen Netzwerk-Namensraum geprüft; 150 gezielte und
+238 Browserprüfungen bestanden, null externe Übertragungen. Kopierfehler und
+UI-Datums-/Darstellungsfehler korrigiert. [Bericht, Screenshots und Netzbelege](ui-abnahme-20261104.md).
+Kein Push, Merge, Deployment oder gemeinsamer CI-Start. Motor-/500er-Stand
+nicht neu erhoben; die folgenden operativen Einträge werden nicht aktualisiert.
+
 ## Siffi: vereinfachter Testweg (27.10.2026)
 
 Codex und GitHub CI statt Hetzner als Entwicklungstor. Vorhandene Offline-,

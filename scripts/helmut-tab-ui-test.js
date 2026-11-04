@@ -157,8 +157,8 @@ const html = api.render();
 
 check("Voll: rendert den Stand (.hstand), nicht den Leerzustand",
   /class="hstand"/.test(html) && !/hstand--state/.test(html));
-check("Feinschliff: Untertitel 'Dein politischer Stabschef'",
-  html.includes("Dein politischer Stabschef") && !html.includes("Dein aktueller Stabschefstand"));
+check("Neuer Kopf: persönliches Briefing",
+  html.includes("Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.") && !html.includes("Dein aktueller Stabschefstand"));
 check("Feinschliff: 'Warum ist das wichtig?' mit Fragezeichen",
   html.includes("Warum ist das wichtig?"));
 check("Zielbild: Risiko/Chance-Level als gefülltes Badge in der jeweiligen Karte",
@@ -173,7 +173,7 @@ check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Formate')",
     commsBlock.includes("hstand-comms-rec-k") && commsBlock.includes(">Empfohlen<") && commsBlock.includes("Pressemitteilung · Presse"));
 }
 {
-  const prop = (html.match(/hstand-proposal"[\s\S]*?<\/section>/) || [""])[0];
+  const prop = (html.match(/class="ui-briefing-hero[^"]*"[\s\S]*?<\/section>/) || [""])[0];
   // Nur echte Chips zählen (jeder trägt einen --Modifier); NICHT den Container hstand-chiprow.
   const chipN = (prop.match(/hstand-chip--/g) || []).length;
   check("Feinschliff: Mein Vorschlag zeigt höchstens 3 Chips (ruhiger Kopf)",
@@ -184,7 +184,7 @@ check("Feinschliff: Output-Chips ruhig (keine Accent-Button-Klasse mehr am Chip-
 check("Feinschliff: Mobil-Kurzlabel 'Stand' vorhanden (neben 'Letzte Aktualisierung')",
   html.includes("hstand-mk-short") && html.includes(">Stand<") && html.includes(">Letzte Aktualisierung<"));
 check("Voll: Mein Vorschlag zeigt die recommendation",
-  html.includes("Mein Vorschlag") && html.includes("Intern abstimmen"));
+  html.includes("Dein nächster Schritt") && html.includes("Intern abstimmen"));
 check("Voll: Tagesanlass sichtbar, Lage-Einordnung nicht kopiert",
   html.includes("Warum ist das wichtig") && html.includes("heutigen Arbeitstag") && !html.includes("Die Debatte gewinnt an Dynamik"));
 check("Voll: Risiko bei Nichtreaktion + Risikostufe 'Hoch'",
@@ -209,9 +209,9 @@ check("Voll: Kopf-Status 'Aktuell' (fresh)", html.includes(">Aktuell<"));
 // (der aktuelle Vorgang/Thema muss ganz oben stehen), danach Vorschlag ->
 // Warum -> Risiko/Chance -> ... -> Quellen.
 const idx = (s) => html.indexOf(s);
-check("Mobil-Reihenfolge: Aktueller Vorgang zuerst, dann Vorschlag, Quellen zuletzt",
-  idx("Aktueller Vorgang") < idx("Mein Vorschlag") &&
-  idx("Mein Vorschlag") < idx("Warum ist das wichtig") &&
+check("Mobil-Reihenfolge: Hauptvorgang mit nächstem Schritt, Kontext und Quellen",
+  idx("ui-briefing-hero") < idx("Dein nächster Schritt") &&
+  idx("Dein nächster Schritt") < idx("Warum ist das wichtig") &&
   idx("Warum ist das wichtig") < idx("Risiko bei Nichtreaktion") &&
   idx("Risiko bei Nichtreaktion") < idx("Empfohlene Kommunikation") &&
   idx("Empfohlene Kommunikation") < idx("Was du jetzt tun solltest") &&
@@ -228,7 +228,7 @@ const htmlStale = api.render();
 check("Stale: Kopf-Status 'Nicht aktuell' (professionell, klar)",
   htmlStale.includes("Nicht aktuell") && !htmlStale.includes("Nicht mehr ganz frisch"));
 check("Stale: Inhalt bleibt sichtbar (Vorschlag rendert weiter)",
-  htmlStale.includes("Mein Vorschlag"));
+  htmlStale.includes("Dein nächster Schritt"));
 
 // === 2a) Kopf-Chip: Slot-Name NUR bei frischem Stand, sonst 'Letzter Stand' ===
 // Der Slot-NAME (z. B. „Mittagsbriefing") kommt aus der aktuellen Uhrzeit. Bei einem
@@ -280,8 +280,8 @@ api.setBriefing(briefingWith(oldState));
 const htmlOld = api.render();
 check("Prod-Repro: rendert den vollen Stand (.hstand), NICHT den Leerzustand",
   /class="hstand"/.test(htmlOld) && !/hstand--state/.test(htmlOld) && !htmlOld.includes("Heute kein Handlungsbedarf"));
-check("Prod-Repro: Vorschlag sichtbar (hstand-proposal-text mit Motor-Empfehlung)",
-  htmlOld.includes("hstand-proposal-text") && htmlOld.includes("Intern kurz abstimmen"));
+check("Prod-Repro: Vorschlag sichtbar (ui-hero-next mit Motor-Empfehlung)",
+  htmlOld.includes("ui-hero-next") && htmlOld.includes("Intern kurz abstimmen"));
 check("Prod-Repro: ehrlicher 'teilweise vollständig'-Hinweis im Kopf (keine erfundenen Inhalte)",
   htmlOld.includes("Nur teilweise vollständig"));
 check("Prod-Repro: leere Stabschef-Sektionen entfallen sauber (kein Risiko/Chance/Kommunikation erfunden)",
@@ -293,7 +293,7 @@ const htmlEmpty = api.render();
 check("Leer: neutraler Leerzustand (.hstand--state), kein Crash",
   /hstand--state/.test(htmlEmpty) && htmlEmpty.includes("Heute kein Handlungsbedarf"));
 check("Leer: kein Vorschlags-Fließtext (keine erfundenen Motor-Inhalte)",
-  !htmlEmpty.includes("hstand-proposal-text"));
+  !htmlEmpty.includes("ui-hero-next"));
 check("Leer: KEINE hartkodierte Partei / keine Personen-Logik",
   !/cem|ince|\bSPD\b|\bCDU\b|Gr[üu]ne|\bLinke\b|\bAfD\b|\bFDP\b/i.test(htmlEmpty));
 
@@ -369,7 +369,7 @@ const geteilterVorgang = {
 api.setBriefing({ ...fxBriefing, lageBriefing: { available: true, vorgaenge: [geteilterVorgang] } });
 const getrennt = api.render();
 const lageCard = api.lageCard(geteilterVorgang), lageSheet = api.lageSheet(geteilterVorgang);
-check("Geteiltes Thema: Empfehlung bleibt im Briefing", getrennt.includes("hstand-proposal") && getrennt.includes("Mein Vorschlag"));
+check("Geteiltes Thema: Empfehlung bleibt im Briefing", getrennt.includes("ui-briefing-hero") && getrennt.includes("Dein nächster Schritt"));
 check("Lage Karte und Detail wiederholen keine Empfehlung", !lageCard.includes("Empfehlung")
   && !lageSheet.includes('class="vsheet-reco"') && !lageSheet.includes(fxState.recommendation));
 check("Briefing verweist auf genau den vorhandenen Lage Vorgang", getrennt.includes(`data-vorgang="${geteilterVorgang.id}"`));

@@ -12532,3 +12532,9 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
   .app-frame .ui-is-scrolled .topbar { padding: max(12px,env(safe-area-inset-top)) 16px 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .topbar .ui-compact-title { transition: none; } }
+.topbar .update-heart .ui-icon path { fill: none; stroke: currentColor; stroke-width: 1.5; }
+.ui-briefing-status .text-button { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; min-width: 44px; height: 44px; padding: 0; border: 1px solid var(--ui-border); border-radius: 50%; color: var(--ui-muted); background: transparent; font-size: 24px; }
+.ui-briefing-status .refresh-cooldown { font-size: 13px; }
+.ui-page .buero-priority-hint { font-size: 14px; }
+.ui-page :is(.buero-priority-label,.buero-priority-value,.buero-priority-optional) { font-size: 14px; }
+.ui-page .buero-group-eyebrow { font: 500 12px/1.6 var(--ui-mono); }

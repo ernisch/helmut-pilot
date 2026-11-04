@@ -4431,6 +4431,7 @@ function uiIcon(name) {
     bell: '<path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5zM10 21h4"/>',
     arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
     back: '<path d="m15 5-7 7 7 7"/>',
+    copy: '<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V3H3v13h5"/>',
     source: '<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v14c0 4 14 4 14 0V5M5 12c0 4 14 4 14 0"/>'
   };
   return `<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths[name] || paths.briefing}</svg>`;
@@ -6732,7 +6733,7 @@ function renderUiBriefingHero(state) {
   return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang">
     <div class="ui-hero-main"><span class="ui-eyebrow"><span class="ui-priority-dot" aria-hidden="true"></span>${eyebrow}</span>
       <h2>${escapeHtml(title)}</h2>
-      <div class="hstand-chiprow">${urgency}${hstandContextChips(item.contextChips, 3)}</div>
+      <div class="hstand-chiprow">${urgency}${hstandContextChips(item.contextChips, 2)}</div>
       ${briefingLageVerweis(item)}
     </div>
     <div class="ui-hero-next"><span class="ui-eyebrow">Dein nächster Schritt</span>
@@ -9037,6 +9038,14 @@ function officeBriefingTime() {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} Uhr`;
 }
 
+// The cache has no independent creation timestamp. Label only the actual
+// briefing source date; never present an old or undated draft as created today.
+function officeBriefingStandLabel() {
+  const value = briefing?.generatedAt || briefing?.date;
+  if (!value || Number.isNaN(new Date(value).getTime())) return "Briefingdatum nicht belegt";
+  return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+}
+
 function draftStatus(format) {
   return OFFICE_FORMAT_META[format.id]?.defaultStatus || "Zum Bereithalten";
 }
@@ -9083,7 +9092,6 @@ function renderOfficeView() {
   const topDecisions = (decisions || []).filter((d) => d.decision !== "Ignorieren" && d.title).slice(0, 2);
   const allCards = topDecisions.flatMap((d) => formats.map((f) => ({ decision: d, format: f })));
   const totalCount = allCards.length;
-  const time = officeBriefingTime();
   const hasBriefing = topDecisions.length > 0;
   const generating = officeDraftsGenerating;
 
@@ -9099,7 +9107,7 @@ function renderOfficeView() {
   const summaryText = hasBriefing
     ? (readyCount ? `${readyCount} ${readyCount !== 1 ? "Entwürfe" : "Entwurf"} bereit` : "")
       + (holdCount ? `${readyCount ? `<span class="buero-summary-sep">·</span>` : ""}${holdCount} zum Bereithalten` : "")
-      + (time ? `<span class="buero-summary-sep">·</span>Vorbereitet um ${escapeHtml(time)}` : "")
+      + `<span class="buero-summary-sep">·</span>Briefingstand: ${escapeHtml(officeBriefingStandLabel())}`
     : generating
       ? "Entwürfe werden vorbereitet&hellip;"
       : "Deine Entwürfe erscheinen hier automatisch, sobald deine Lage geladen ist.";
@@ -9247,25 +9255,17 @@ function renderOfficeDraftDetail() {
   if (!selectedOfficeDraft) { currentView = "office"; return renderOfficeView(); }
   const { decision, format, text } = selectedOfficeDraft;
   const meta = OFFICE_FORMAT_META[format.id] || { formatLabel: format.label, typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", qualityTone: "Sachlich, klar, politisch anschlussfähig", qualityUsage: "Presse und Medien", iconBg: "#F0F0F0", iconColor: "#555" };
-  const time = officeBriefingTime();
   const sourceList = officeDraftSources(decision);
   const sources = sourceList.length;
   const status = officeCardStatus(decision, format);
   const statusClass = draftStatusClass(status);
   const paragraphs = String(text).split(/\n{1,}/).map((p) => p.trim()).filter(Boolean);
-  const lageDateStr = (() => {
-    const ts = briefing?.generatedAt || briefing?.date;
-    if (!ts) return "heute";
-    const d = new Date(ts);
-    if (Number.isNaN(d.getTime())) return "heute";
-    return d.toLocaleDateString("de-DE", { day: "numeric", month: "long" });
-  })();
 
   return `
     <div class="buero-detail-view">
       <nav class="buero-detail-nav">
         <button class="buero-back-btn" type="button" data-office-back>
-          <i class="ti ti-arrow-left" aria-hidden="true"></i> Büro
+          ${uiIcon("back")} Büro
         </button>
       </nav>
       <header class="buero-detail-header">
@@ -9276,7 +9276,7 @@ function renderOfficeDraftDetail() {
         <h2 class="buero-detail-title">${escapeHtml(meta.formatLabel || draftTitle(decision))}</h2>
         <p class="buero-detail-anlass">Anlass: ${escapeHtml(draftTitle(decision))}</p>
         <p class="buero-detail-meta">
-          ${time ? `Erstellt heute um ${escapeHtml(time)}` : "Heute erstellt"}
+          Briefingstand: ${escapeHtml(officeBriefingStandLabel())}
           ${sources > 0 ? `&nbsp;·&nbsp; Basiert auf ${sources} ${sources !== 1 ? "Quellen" : "Quelle"}` : ""}
         </p>
         <p class="buero-detail-linecheck">${escapeHtml(selectedOfficeDraft.provenance || draftProvenanceLabel("", isValidDraft(officeDraftText(officeDrafts[officeDraftKey(decision, format)]))))}${meta.lineCheck ? escapeHtml(" · " + meta.lineCheck) : ""}</p>
@@ -9300,14 +9300,14 @@ function renderOfficeDraftDetail() {
         </div>
         <div class="buero-quality-row">
           <span class="buero-quality-label">Basis</span>
-          <span class="buero-quality-value">Lage vom ${escapeHtml(lageDateStr)}</span>
+          <span class="buero-quality-value">${escapeHtml(officeBriefingStandLabel())}</span>
         </div>
       </div>
       <footer class="buero-detail-footer">
         <button class="buero-copy-btn buero-copy-btn--full" type="button"
           data-office-copy-inline="detail"
           data-office-text="${escapeAttribute(text)}">
-          <i class="ti ti-copy" aria-hidden="true"></i> Kopieren
+          ${uiIcon("copy")} Kopieren
         </button>
       </footer>
     </div>
@@ -11692,7 +11692,7 @@ function bindActions() {
     button.addEventListener("click", async (e) => {
       e.stopPropagation();
       const text = button.dataset.officeText || "";
-      await copyText(text, "Text kopiert.");
+      await copyText(text, "Kopieren nicht möglich – bitte manuell markieren.");
     });
   });
 
@@ -13465,7 +13465,9 @@ async function logInteraction(interaction) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ politicianId: profile.id, ...interaction })
     });
-    return response.ok;
+    if (!response.ok) return false;
+    const saved = await response.json();
+    return Boolean(saved && saved.id);
   } catch (error) {
     console.warn("Interaction not saved", error);
     return false;

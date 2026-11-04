@@ -1,0 +1,59 @@
+PASS  client.js laedt im vm (Boot ohne echten Browser)
+PASS  Voll: rendert den Stand (.hstand), nicht den Leerzustand
+PASS  Neuer Kopf: persönliches Briefing
+PASS  Feinschliff: 'Warum ist das wichtig?' mit Fragezeichen
+PASS  Zielbild: Risiko/Chance-Level als gefülltes Badge in der jeweiligen Karte
+PASS  Zielbild: farbige Sektions-Icon-Badges (hstand-kico) je Überschrift
+PASS  Feinschliff: Kommunikation labelt Format-Vorschläge ('Formate')
+PASS  Feinschliff: Kommunikation zeigt hervorgehobene Empfehlung (Label + Format · Kanal)
+PASS  Feinschliff: Mein Vorschlag zeigt höchstens 3 Chips (ruhiger Kopf)
+PASS  Feinschliff: Output-Chips ruhig (keine Accent-Button-Klasse mehr am Chip-Style)
+PASS  Feinschliff: Mobil-Kurzlabel 'Stand' vorhanden (neben 'Letzte Aktualisierung')
+PASS  Voll: Mein Vorschlag zeigt die recommendation
+PASS  Voll: Tagesanlass sichtbar, Lage-Einordnung nicht kopiert
+PASS  Voll: Risiko bei Nichtreaktion + Risikostufe 'Hoch'
+PASS  Voll: Chance + Chancenstufe 'Hoch'
+PASS  Voll: recommendedCommunication strukturiert (Format + Kanal + Outputs)
+PASS  Voll: actionItems strukturiert (Schritte mit Titel + dueHint)
+PASS  Voll: wenige Schritte (1..4)
+PASS  Voll: Aktueller Vorgang mit Titel + Quellenzahl 18 + Qualitaet
+PASS  Voll: weitere relevante Vorgaenge (1..3)
+PASS  Voll: Quellen-Fußzeile zeigt '18 Quellen'
+PASS  Voll: Kopf-Status 'Aktuell' (fresh)
+PASS  Mobil-Reihenfolge: Hauptvorgang mit nächstem Schritt, Kontext und Quellen
+PASS  Voll: KEINE Kostenwerte/Token im Markup
+PASS  Stale: Kopf-Status 'Nicht aktuell' (professionell, klar)
+PASS  Stale: Inhalt bleibt sichtbar (Vorschlag rendert weiter)
+PASS  Kopf: frischer Stand zeigt den Slot-Namen (Mittagsbriefing)
+PASS  Kopf: stale Stand zeigt 'Letzter Stand' statt Slot-Name (keine Vermischung)
+PASS  Kopf: stale Stand mischt KEINEN aktuellen Slot-Namen mit altem Datum
+PASS  Prod-Repro: aelteres KO (nur V3-Kern) -> qualityStatus partial, status fresh (nicht empty)
+PASS  Prod-Repro: recommendation aus handlungsempfehlung durchgereicht (echter Motor-Inhalt)
+PASS  Prod-Repro: rendert den vollen Stand (.hstand), NICHT den Leerzustand
+PASS  Prod-Repro: Vorschlag sichtbar (ui-hero-next mit Motor-Empfehlung)
+PASS  Prod-Repro: ehrlicher 'teilweise vollständig'-Hinweis im Kopf (keine erfundenen Inhalte)
+PASS  Prod-Repro: leere Stabschef-Sektionen entfallen sauber (kein Risiko/Chance/Kommunikation erfunden)
+PASS  Leer: neutraler Leerzustand (.hstand--state), kein Crash
+PASS  Leer: kein Vorschlags-Fließtext (keine erfundenen Motor-Inhalte)
+PASS  Leer: KEINE hartkodierte Partei / keine Personen-Logik
+PASS  Fehlt: neutraler technischer Leerzustand ohne Crash
+PASS  Error: ehrlicher Fehlerzustand
+PASS  Sicherheit: Motor-Text wird escaped (kein rohes <img> im Markup)
+PASS  Review: Flag ist per Default AUS (in Produktion inert)
+PASS  Review: in PRODUKTION immer inert (auch mit PR-Branch-Ref)
+PASS  Review: in Vorschau anderer Branches inert
+PASS  Review: in Vorschau DIESES PR-Branches aktiv
+PASS  Review: liefert einen VOLLEN currentHelmutState (status fresh, qualityStatus valid)
+PASS  Review: alle Abnahme-Felder befüllt
+PASS  Review: rendert den vollen Stand (kein Leerzustand)
+PASS  Review: KEINE Kostenwerte im gerenderten Review-Stand
+PASS  Review: keine hartkodierte Partei / keine Personen-Logik im Fixture
+PASS  Geteiltes Thema: Empfehlung bleibt im Briefing
+PASS  Lage Karte und Detail wiederholen keine Empfehlung
+PASS  Briefing verweist auf genau den vorhandenen Lage Vorgang
+PASS  Identische Einordnung erscheint einmal in der Lage
+PASS  Lage Detail verlinkt die Empfehlung statt sie zu kopieren
+PASS  Ohne zugehoerige Lage bleibt Einordnung im Briefing erhalten
+PASS  Fremder Vorgang bekommt keinen irrefuehrenden Briefing Verweis
+
+57/57 Helmut-Tab-UI-Assertions erfolgreich.

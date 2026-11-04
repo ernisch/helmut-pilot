@@ -1,7 +1,14 @@
 # Neue Helmut UI — Entwicklungsstand und sichere Abnahme
 
-Stand: 31.10.2026, Europe/Istanbul. **Code vorbereitet, Laufzeit- und visuelle
-Abnahme noch offen. Kein Merge und kein Deployment.**
+Aktuell, 04.11.2026: **Vier Fachansichten isoliert mit Fixtures geprüft: 150
+gezielte Prüfungen und 238 Browserprüfungen bestanden.** Screenshots, Netzbelege,
+PR-771-Abgleich und verbleibende Integrationsprüfungen stehen in der
+[aktuellen UI-Abnahme](ui-abnahme-20261104.md). Kein Push, Merge oder Deployment.
+
+Die folgenden Abschnitte dokumentieren den **historischen Vorbereitungsstand
+vom 31.10.2026**. Die damalige Zurückstellung lokaler UI-Prüfungen wurde durch
+den ausdrücklichen Auftrag vom 04.11. für die nachgewiesen netzisolierte
+Fixture-Vorschau ersetzt. Motor, Backend und 500er-Prüfungen bleiben unverändert.
 
 ## Arbeitsbereich und Schutz des Motortests
 
