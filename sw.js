@@ -1,5 +1,5 @@
-// Version bei jedem groesseren SW-Update erhoehen -> alte Asset-Caches werden
-// beim activate aufgeraeumt. BADGE_CACHE wird bewusst NICHT geloescht.
+// Cache-Namespace fuer oeffentliche App-Assets. Verwaltungsdateien werden
+// gezielt entfernt; andere App-Caches und der BADGE_CACHE bleiben erhalten.
 // v2: Icon-Hintergrundfarbe korrigiert (#0f172a -> #050914, sichtbares Kaesten
 // im Android-PWA-Splash behoben) -> neuer Cache-Namespace + versionierte
 // Precache-URLs, damit kein Client alte Icon-Bytes aus dem SW-Cache behaelt.
@@ -35,11 +35,23 @@ self.addEventListener("install", (event) => {
   })());
 });
 
+function isAdministrationUrl(url) {
+  return url.origin === self.location.origin &&
+    (url.pathname === "/verwaltung" || url.pathname.startsWith("/verwaltung/"));
+}
+
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
-    // Alte Asset-Caches aufraeumen, Badge-Cache behalten.
+    // Nur alte Verwaltungseintraege entfernen, auch aus frueheren Cache-Namen
+    // und mit Query-/Vary-Varianten. Kein Loeschen unbeteiligter App-Caches.
     const keys = await caches.keys();
-    await Promise.all(keys.map((k) => (k !== ASSET_CACHE && k !== BADGE_CACHE) ? caches.delete(k) : null));
+    await Promise.all(keys.map(async (key) => {
+      const cache = await caches.open(key);
+      const requests = await cache.keys();
+      await Promise.all(requests.map((request) => isAdministrationUrl(new URL(request.url))
+        ? cache.delete(request, { ignoreVary: true })
+        : null));
+    }));
     await self.clients.claim();
   })());
 });
@@ -69,7 +81,8 @@ async function pruneOldVersions(cache, req) {
 }
 
 // Fetch-Strategie:
-//  - Navigationen: erst Netz, bei Fehler elegante Offline-Seite (nie Browser-Fehler).
+//  - Verwaltung: ausschliesslich Netz ohne HTTP-Cache, niemals Cache-Fallback.
+//  - Andere Navigationen: erst Netz, bei Fehler elegante Offline-Seite.
 //  - Statische Assets (css/js/bilder/fonts): stale-while-revalidate -> schneller Start
 //    auch bei schlechtem Netz, im Hintergrund aktualisiert.
 //  - Alles andere (API, POST): unveraendert direkt ans Netz.
@@ -79,6 +92,13 @@ self.addEventListener("fetch", (event) => {
   let url;
   try { url = new URL(req.url); } catch { return; }
   if (url.origin !== self.location.origin) return;
+
+  // Jede Verwaltungsantwort muss erneut durch die serverseitige Sitzungs- und
+  // Rollenpruefung. no-store allein verhindert kein Cache-Storage.put().
+  if (isAdministrationUrl(url)) {
+    event.respondWith(fetch(req, { cache: "no-store" }));
+    return;
+  }
 
   if (req.mode === "navigate") {
     event.respondWith((async () => {
