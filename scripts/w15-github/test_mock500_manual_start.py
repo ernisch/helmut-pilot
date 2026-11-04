@@ -181,11 +181,12 @@ class ManualBindingChecks(unittest.TestCase):
             return True
         self.blocked(authenticate=mutate)
 
-    def test_approved_series_revision_and_unchanged_start_file_are_pinned(self):
+    def test_approved_series_revision_and_scoped_start_file_are_pinned(self):
         # The separately authorized No-POST branch has its own reviewed exact pin.
-        # Default STOP semantics remain covered by test_mock500_series.py.
+        # The separate Prepare-only scope changes StartGuard, not the series
+        # grant or its STOP semantics (test_mock500_series.py).
         expected = {'mock500_series.py': '6bb7392e1fc31b75982a3eb114d1313df9cf7d1b3a25728c34e05174734600de',
-                    'mock500_start.py': 'eb1365e8a5613245d954666c183fc0b5c297f4e090e4244a80442e821c00fbdc'}
+                    'mock500_start.py': '129d40d85fd569ce2168189d17666b228a111a345520f93e37dea4ed8f92c53e'}
         for name, digest in expected.items():
             self.assertEqual(hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest(), digest)
 
