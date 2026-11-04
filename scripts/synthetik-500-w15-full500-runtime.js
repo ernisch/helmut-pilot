@@ -7,6 +7,18 @@ const { performance } = require("node:perf_hooks");
 const Memory = require("./fixtures/w15-memory-contract");
 const AuthReport = require("./fixtures/w15-auth-measurement-report");
 const Durable = require("./fixtures/w15-durable-observations");
+const PrepareFailure = require("./w15-github/mock500_prepare_failure");
+let prepareStage = "entry", firstPrepareFailure = null;
+function retainPrepareFailure(error) {
+  if (firstPrepareFailure) return firstPrepareFailure;
+  // Existing stderr is drained into the private stage log. Synchronous, bounded
+  // metadata precedes finally/cleanup; no raw error text enters this frame.
+  try {
+    firstPrepareFailure = PrepareFailure.project(error, prepareStage);
+    fs.writeSync(2, JSON.stringify({ kind: "W15_MOCK500_PREPARE_FAILURE", failure: firstPrepareFailure }) + "\n");
+  } catch {}
+  return firstPrepareFailure;
+}
 const Bound = require("./w15-github/mock500_bindings"), BOUND = Bound.readBound();
 const ATOMIC_PREPARED0 = process.argv.includes("--atomic-prepared0");
 const TARGET = require("./fixtures/w15-atomic-integration-target.json");
@@ -274,6 +286,7 @@ async function boundGateway() {
   fs.writeFileSync(file("gateway.pid"), String(process.pid), { flag: "wx", mode: 384 });
 }
 async function prepare() {
+  prepareStage = "setup";
   ownerGo(); const c = read("configuration.PRIVATE.json"), m = read("processing-materials.PRIVATE.json"); environment(c);
   assert.equal(m.database, DB); assert.equal(m.productionCommit, c.commit);
   process.env[PRIV] = fs.readFileSync(file("signing-key.PRIVATE.pem"), "utf8");
@@ -285,17 +298,24 @@ async function prepare() {
     authTimings: AuthReport.summarize(observation) }), value => { journal.write("termination-received", value); save("PREPARE_ABORT_OBSERVATIONS.SAFE.json", value); });
   journal.ready();
   try {
+    prepareStage = "stored-command";
     const prepared = await S.prepareSynthetik500StoredCommand(m.selector);
     assert.equal(prepared.executionAuthorized, false); assert(prepared.metrics.wallMs < 90000, "w15-full500-offline90");
     const installationOpenStart = performance.now(); let installationOpenMs;
+    prepareStage = "installation";
     await S.withSynthetik500InstallationCommand(m.selector, async () => {
       installationOpenMs = performance.now() - installationOpenStart;
       assert(installationOpenMs < 60000, "w15-full500-installation-open60");
+      prepareStage = "command-read";
       const packet = await S.loadSynthetik500ProductionCommand(m.selector.operationId, m.selector.commandHash);
+      prepareStage = "current-inputs";
       await S.readSynthetik500CurrentInputs(packet.command.drafts[0].sources);
     });
+    prepareStage = "auth-read";
     const auth = await S.readAuthStore({ strict: true });
+    prepareStage = "bindings";
     assert.equal(C.controlHash(auth), m.controlHash); assert.equal(C.booksHash(auth), m.booksHash);
+    prepareStage = "admission";
     const primary = save("local-approval.PRIVATE.json", { scope: "EXACTLY_ONE_USER_AUTHORIZED_LOCAL_MOCK_FULL500_SEQUENCE_NOT_PRODUCTION",
       selector: m.selector, full500DispatchAuthorized: !ATOMIC_PREPARED0, maximumUnits: ATOMIC_PREPARED0 ? 0 : 500, profileActivationAuthorized: !ATOMIC_PREPARED0,
       paidModelsAllowed: false, ownerGoSHA256: sha(fs.readFileSync(file("OWNER_GO.PRIVATE.json"))), sourceReceiptSHA256: m.sourceReceiptSHA256 });
@@ -313,14 +333,19 @@ async function prepare() {
       commandHash: m.selector.commandHash, planHash: m.planHash, productionCommit: c.commit, admittedAtUTC: new Date().toISOString(),
       expiresAtUTC: m.endsAtUTC, controlHash: m.controlHash, booksHash: m.booksHash, gates, evidencePins });
     const bytes = fs.readFileSync(file("current-command.PRIVATE.json"));
+    prepareStage = "install";
     await require("../lib/helmut/synthetik-500-production-adapter").install({ path: file("current-command.PRIVATE.json"), bytes: bytes.length, sha256: sha(bytes) }, admission);
+    prepareStage = "auth-coverage";
     const coverage = observation.assessment(); assert(coverage.pass && coverage.usageEnvelopes === 0, "w15-full500-install-auth30-coverage");
+    prepareStage = "memory";
     assert(memoryAccepted(memory()), "w15-full500-preparation-common-memory");
+    prepareStage = "report";
     save("PREPARE.SAFE.json", { status: "PASS", selector: m.selector, fullC: prepared.metrics, installationOpenMs, fullStageWallMs: performance.now() - begin,
       authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites, authCoverage: coverage,
       authTimings: AuthReport.summarize(observation),
       actualSource23AndKO60PostimagesMatchDerivedInputs: true, providerCalls: 0, unitEntries: 0, memory: memory() });
-  } finally { stopTelemetry(); removeAbortReceipt(); delete process.env[PRIV]; }
+  } catch (error) { retainPrepareFailure(error); throw error; }
+  finally { stopTelemetry(); removeAbortReceipt(); delete process.env[PRIV]; }
 }
 function claimQuery(selector, index, phase) {
   assert(Number.isInteger(index) && index >= 0 && index < 500); assert(["D", "R"].includes(phase));
@@ -596,16 +621,24 @@ async function run() {
   }
 }
 async function main(action) {
+  if (action === "prepare") prepareStage = "preconditions";
   if (BOUND?.materialsDiagnosticOnly === true)
     assert(["setup", "gateway"].includes(action), "w15-materials-diagnostic-runtime-action");
   assert(["setup", "gateway", "prepare", "run", "atomic-check"].includes(action), "w15-full500-runtime-action"); guard();
   assert(!fs.existsSync(file("STOP_REQUESTED.SAFE.json")), "w15-full500-stop-requested");
   const execute = () => ({ setup, gateway, prepare, run, "atomic-check": atomicPrepared0Check })[action]();
+  if (action === "prepare") prepareStage = "calendar";
   if (BOUND?.simulationCalendarAuthorization && ["prepare", "run"].includes(action))
     return require("./w15-github/mock500_calendar").withBound(BOUND, read("processing-materials.PRIVATE.json"), execute);
   return execute();
 }
 if (require.main === module) main(process.argv[2]).catch(e => {
+  if (process.argv[2] === "prepare") {
+    const failure = retainPrepareFailure(e);
+    try { save("prepare-FIRST-FAILURE.SAFE.json", { status: "FAIL_OR_UNKNOWN", error: failure,
+      atUTC: new Date().toISOString(), noAutomaticRetry: true, cleanupConfirmed: false }); } catch {}
+    process.exitCode = 1; return;
+  }
   try { save(process.argv[2] + "-FIRST-FAILURE.SAFE.json", { status: "FAIL_OR_UNKNOWN", error: safeError(e),
     atUTC: new Date().toISOString(), noAutomaticRetry: true, cleanupConfirmed: false }); } catch { /* first report retained */ }
   console.error(JSON.stringify(safeError(e))); process.exitCode = 1;

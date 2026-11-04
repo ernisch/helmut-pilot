@@ -64,6 +64,25 @@ NATIVE_CHECKS = frozenset(('UNKNOWN', 'w15-forward-readonly-sql', 'w15-forward-c
     'w15-forward-close-deadline', 'w15-forward-pending-operation-at-close', 'w15-forward-concurrent-operation'))
 
 
+def prepare_failure(value):
+    """Closed Prepare code location only; never messages, paths or authority."""
+    if (type(value) is not dict or set(value) != {'schema', 'category', 'kind', 'stage'}
+            or value['schema'] != 'helmut-w15-mock500-prepare-failure/1'
+            or type(value['kind']) is not str or value['kind'] not in (
+                'assertion', 'filesystem', 'module', 'type', 'timeout', 'aborted', 'unknown')
+            or type(value['stage']) is not str or value['stage'] not in (
+                'entry', 'preconditions', 'calendar', 'setup', 'stored-command', 'installation',
+                'command-read', 'current-inputs', 'auth-read', 'bindings', 'admission',
+                'install', 'auth-coverage', 'memory', 'report')
+            or type(value['category']) is not str):
+        return None
+    category = value['category']
+    match = re.fullmatch(r'PREPARE_(?:RUNTIME|STORAGE|STORED|COMMAND|ADAPTER|EXECUTOR|CALENDAR|COST|ADMISSION|JOURNAL|CODEC|DURABLE)_CHECK_([1-9][0-9]{0,4})', category)
+    if category != 'PREPARE_UNMAPPED' and not (match and int(match[1]) <= 65535):
+        return None
+    return dict(value)
+
+
 def materials_failure(value):
     """Pure projection of the existing materials contract; no runtime imports.
 
@@ -141,7 +160,7 @@ def unknown_cleanup():
 
 
 def runner(value, memory_validator):
-    keys = {'reason', 'secondaryReason', 'memory', 'memorySource', 'workerExitCode', 'serviceExitCode', 'lastObservedPhase', 'nativeFailure', 'materialsFailure'}
+    keys = {'reason', 'secondaryReason', 'memory', 'memorySource', 'workerExitCode', 'serviceExitCode', 'lastObservedPhase', 'nativeFailure', 'materialsFailure', 'prepareFailure'}
     if type(value) is not dict or not set(value) <= keys or type(value.get('reason')) is not str or value['reason'] not in REASONS:
         return None
     out = {'reason': value['reason']}
@@ -168,6 +187,9 @@ def runner(value, memory_validator):
     materials = materials_failure(value.get('materialsFailure'))
     if materials is not None:
         out['materialsFailure'] = materials
+    prepared = prepare_failure(value.get('prepareFailure'))
+    if prepared is not None:
+        out['prepareFailure'] = prepared
     return out
 
 
@@ -186,6 +208,8 @@ def public(value, phases, worker_phases, memory_validator):
             out['worker']['memory'] = memory
     detail = runner(value.get('runner'), memory_validator)
     if detail is not None:
+        if out.get('worker', {}).get('phase') != 'mock500-controller-prepare':
+            detail.pop('prepareFailure', None)
         out['runner'] = detail
     closed = cleanup(value.get('cleanup'))
     if closed is not None:

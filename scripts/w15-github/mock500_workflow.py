@@ -355,6 +355,10 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
                 and child_phase.startswith('mock500-controller-materials')):
             safe=_DIAGNOSTICS.materials_failure(_DIAGNOSTICS.attribute(error,'materials_failure'))
             if safe is not None:failure.materials_failure=safe
+        if (staged is not None and type(error)is getattr(staged,'Mock500ControllerFailure',None)
+                and child_phase=='mock500-controller-prepare'):
+            safe=_DIAGNOSTICS.prepare_failure(_DIAGNOSTICS.attribute(error,'prepare_failure'))
+            if safe is not None:failure.prepare_failure=safe
         raise failure from None
 
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Exactly one explicitly authorized full local mock run. No action on import."""
-import datetime, zoneinfo, hashlib, json, math, os, pathlib, posixpath, queue, signal, stat, subprocess, threading, time
+import datetime, zoneinfo, hashlib, json, math, os, pathlib, posixpath, queue, re, signal, stat, subprocess, threading, time
 import importlib.util, sys
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 # Fresh server/container/PGDATA; the database namespace deliberately remains
@@ -40,14 +40,17 @@ def _mock_module(name):
     assert pathlib.Path(sys.modules[key].__file__).absolute()==ROOT/'scripts/w15-github'/(name+'.py')
     return sys.modules[key]
 
-MOCK_CONTROLLER_PHASES=_mock_module('runner_diagnostics').MOCK_CONTROLLER_PHASES
+_MOCK_DIAGNOSTICS=_mock_module('runner_diagnostics')
+MOCK_CONTROLLER_PHASES=_MOCK_DIAGNOSTICS.MOCK_CONTROLLER_PHASES
 
 class Mock500ControllerFailure(RuntimeError):
     """Fixed first checkpoint and optional closed Materials category; no raw data."""
-    def __init__(self,phase,materials_failure=None):
+    def __init__(self,phase,materials_failure=None,prepare_failure=None):
         super().__init__('MOCK500_CONTROLLER_FAILED_OR_UNKNOWN')
         self.phase=phase if type(phase)is str and phase in MOCK_CONTROLLER_PHASES else 'mock500'
         self.materials_failure=None
+        self.prepare_failure=(_MOCK_DIAGNOSTICS.prepare_failure(prepare_failure)
+          if self.phase=='mock500-controller-prepare' else None)
         if materials_failure is not None and self.phase.startswith('mock500-controller-materials'):
             try:self.materials_failure=_mock_module('mock500_materials_contract').failure(materials_failure)
             except BaseException:pass
@@ -285,6 +288,7 @@ def copy_out(name):
 class Supervisor:
     def __init__(self,cgroup):
         self.cgroup=cgroup;self.finished=threading.Event();self.failure=None;self.last=None;self.process=None;self.maximum=0;self.last_events=None;self.closure_mode=False;self.stage_name=None
+        self.prepare_failure=None
         self.progress_lock=threading.RLock();self.failure_lock=threading.Lock();self.accepted_indexes=set();self.last_accepted_index=None
         self.inner_stop_thread=None;self.stop_dispatched=False;self.stop_failure=None
         self.started_monotonic=time.monotonic();self.last_ack_monotonic=None;self.last_terminal_monotonic=self.started_monotonic
@@ -348,6 +352,24 @@ class Supervisor:
             # Terminal/disk backpressure must never stall the safety monitor.
             self.progress_queue.put_nowait(record);self.last_terminal_monotonic=now
     def observe_line(self,raw,stage):
+        if stage=='prepare' and len(raw)<=512:
+            try:
+                value=json.loads(raw)
+                safe=(_MOCK_DIAGNOSTICS.prepare_failure(value['failure'])
+                  if type(value)is dict and set(value)=={'kind','failure'}
+                  and value['kind']=='W15_MOCK500_PREPARE_FAILURE' else None)
+                with self.failure_lock:
+                    prior=self.failure
+                    # wait() may observe the nonzero exit before its final pipe
+                    # frame is drained. A prior guard/signal failure is different:
+                    # its subsequent cancellation must not become the cause.
+                    exited=(type(prior)is dict and prior.get('type')=='RuntimeError'
+                      and type(prior.get('reason'))is str
+                      and re.fullmatch(r'full500-stage-failed:prepare:-?[0-9]{1,3}',prior['reason']))
+                    if safe is not None and self.prepare_failure is None and (prior is None or exited):
+                        self.prepare_failure=safe
+            except (ValueError,UnicodeError,KeyError,TypeError):pass
+            return
         if stage!='run' or len(raw)>4096:return
         try:value=json.loads(raw)
         except (ValueError,UnicodeError):return
@@ -465,8 +487,10 @@ class Supervisor:
                     while True:
                         raw=process.stdout.readline(65536)
                         if not raw:break
+                        complete=not partial and raw.endswith(b'\n')
+                        if complete and name=='prepare':self.observe_line(raw,name)
                         log.write(raw);log.flush()
-                        if not partial and raw.endswith(b'\n'):self.observe_line(raw,name)
+                        if complete and name!='prepare':self.observe_line(raw,name)
                         partial=not raw.endswith(b'\n')
                 except BaseException as e:self.first_failure(e)
             reader=threading.Thread(target=drain,daemon=True);reader.start()
@@ -819,6 +843,9 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
             phase='mock500-controller-run';inner(supervisor,'run',10815)
     except BaseException as error:
         failure={'status':'FAIL_OR_UNKNOWN','phase':phase,'retryAllowed':False}
+        if phase=='mock500-controller-prepare' and supervisor is not None:
+            safe=_MOCK_DIAGNOSTICS.prepare_failure(getattr(supervisor,'prepare_failure',None))
+            if safe is not None:failure['prepareFailure']=safe
         if type(error)is Mock500ControllerFailure:
             failure['phase']=error.phase
             if error.materials_failure is not None:failure['materialsFailure']=dict(error.materials_failure)
@@ -916,7 +943,8 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
     if diagnostic and diagnostic_final is not None and diagnostic_closure_ok:return diagnostic_final
     if failure is not None or backup is None:
         raise Mock500ControllerFailure(failure['phase']if failure else'mock500-controller-backup',
-            failure.get('materialsFailure')if failure else None)from None
+            failure.get('materialsFailure')if failure else None,
+            failure.get('prepareFailure')if failure else None)from None
     return final
 
 def main():

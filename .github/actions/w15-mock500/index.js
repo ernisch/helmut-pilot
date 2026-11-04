@@ -27,7 +27,7 @@ function closedRunnerDetail(value){
     'WORKER_EXIT_REJECTED','WORKER_REPORTED_FAILURE','SERVICE_IPC_EOF','SERVICE_IPC_TIMEOUT','SERVICE_IPC_REJECTED',
     'SERVICE_EXIT_WITHOUT_REPORT','SERVICE_EXIT_REJECTED','PARENT_CLOSURE_REJECTED','CLEANUP_UNCONFIRMED','SIGNAL_DURING_CLEANUP']);
   if(!value||typeof value!=='object'||Array.isArray(value)||!reasons.has(value.reason)||
-    !Object.keys(value).every(k=>['reason','secondaryReason','memory','memorySource','workerExitCode','serviceExitCode','lastObservedPhase','nativeFailure','materialsFailure'].includes(k)))return null;
+    !Object.keys(value).every(k=>['reason','secondaryReason','memory','memorySource','workerExitCode','serviceExitCode','lastObservedPhase','nativeFailure','materialsFailure','prepareFailure'].includes(k)))return null;
   const out={reason:value.reason};
   if(Object.hasOwn(value,'secondaryReason')){
     if(!reasons.has(value.secondaryReason))return null;out.secondaryReason=value.secondaryReason;
@@ -48,6 +48,8 @@ function closedRunnerDetail(value){
   }
   const materials=closedMaterialsFailure(value.materialsFailure);
   if(materials)out.materialsFailure=materials;
+  const prepared=require('../../../scripts/w15-github/mock500_prepare_failure').closed(value.prepareFailure);
+  if(prepared)out.prepareFailure=prepared;
   return out;
 }
 function closedCleanup(value){
@@ -163,7 +165,8 @@ function main(){
       safe.worker={phase:receipt.worker.phase};
       const memory=closedFailureMemory(receipt.worker.memory);if(memory)safe.worker.memory=memory;
     }
-    const runner=closedRunnerDetail(receipt.runner);if(runner)safe.runner=runner;
+    const runner=closedRunnerDetail(receipt.runner);
+    if(runner){if(safe.worker?.phase!=='mock500-controller-prepare')delete runner.prepareFailure;safe.runner=runner;}
     const cleanup=closedCleanup(receipt.cleanup);if(cleanup)safe.cleanup=cleanup;
     console.log(JSON.stringify(safe));process.exitCode=1;return;
   }

@@ -1,18 +1,19 @@
 # CURRENT STATE — Helmut
 
-## W15: Serienplatz2 FAIL; UNKNOWN-Stopp (04.11.2026)
+## W15: sichere Prepare-Fehlerweitergabe vorbereitet (04.11.2026)
 
-[Ergebnis](betrieb/w15-mock500-manual-series-20261104.md): NoPOST-Anschluss e1ef1273/PR1036,
-gezielte8neue/10Serien-/8privateGruppen, CI41814049152/Review PASS. Platz1 verbraucht.
+[Diagnosefix](betrieb/w15-mock500-prepare-failure-20261104.md): Verlust innererKennung
+synthetisch reproduziert/behoben;8Python-/7JS-Gruppen und7betroffene Altprüfungen PASS.
+VorAusführung neueCodequalifikation/CI/Review Pflicht; kein Originallauf genehmigt.
 [Run41818696152](https://github.com/ernisch/helmut-pilot/actions/runs/41818696152),
 Job126536023497/Runtime789ea3ad unverändert: **FAIL**,425s, erstePhase
 `mock500-controller-prepare`; innereUrsache UNKNOWN. EineLinkrunde/einPOST.
 Peak2,956GB/Limit13,356GB;Swap/OOM/max0;8äußereCleanupPASS,0Artefakte/aktiveManuals.
 Endzähler/Ergebnisfehler/Sicherung/finaleDBnull/tatsächlicheWorker-Nonce UNKNOWN.
 ZweiPlätze verbraucht; dritter durch UNKNOWN-Anker gesperrt. Altanker erhalten;
-Automation pausiert. NächsterSchritt: innere Prepare-Ursache/sicheren Abschluss belegen,
-dann passende Freigabe; kein neuer Originallauf/Runtimefix. End500/Empfang übernommen.
-KeinMock500PASS/Production; alteFAILs/RAM-Verträge erhalten, Details im Ergebnislink.
+Automation pausiert; Runtime789/STOPs erhalten. NächsterSchritt: nachCodeabnahme
+kleinsten neuen Diagnoseumfang freigeben; Altursache bleibtUNKNOWN. End500/Empfang
+übernommen; keinMock500PASS/Production. [Serienbelege](betrieb/w15-mock500-manual-series-20261104.md).
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
 Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.
