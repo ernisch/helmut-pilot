@@ -155,6 +155,12 @@ Acht neue synthetische Vertragsgruppen und zehn betroffene bisherige
 Seriengruppen bestehen. Die fünf früheren Zustandsverzeichnisproben werden
 übernommen. Acht private Anschlussgruppen einschließlich realer Launcher- und
 Linkrundensperren mit ausschließlich simulierten APIs bestehen ebenfalls.
+CI41811474658 auf4610e20a brach am bisherigen Bytegleichheitspin des Serienmoduls
+ab: erwartet96599dc1, genehmigte neue Revision6bb7392e. Derselbe Fall wurde lokal
+vorher reproduziert und nach Korrektur des festen Versionspins bestanden; der
+Startdateipin bleibt unverändert. Keine Prüfung entfernt oder allgemein gelockert.
+Kontrollreviews werden je exaktem Commit separat erhalten, ohne den vorigen
+Prüfbeleg zu überschreiben. Acht private Anschlussgruppen bestehen auch damit.
 Finale Pflicht-CI und unabhängige Sicherheitsabnahme auf dem Kontrollkopf
 sind vor Aktivierung des Kontrollzweigs zwingend.
 Alle fachlichen500er-Anforderungen, Zeit-, Quellen-, Kosten-, Hostspeicher-,

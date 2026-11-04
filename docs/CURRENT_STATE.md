@@ -4,7 +4,8 @@
 
 [Vertrag](betrieb/w15-mock500-manual-series-20261104.md): Platz1 verbraucht, NoPOST
 unabhängig authentifiziert. STOP/UNKNOWN/Altbelege erhalten; Runtime789 unverändert.
-Rest2Plätze/0,10USD;8neue/10Serienproben/8privateGruppen grün. FinaleCI/Review Pflicht.
+Rest2Plätze/0,10USD;8neue/10Serienproben/8privateGruppen grün. CI418114: alterPin
+gezielt korrigiert; neueCI/Review Pflicht.
 NochkeinResume/Link/POST/Job; Verzeichnisfix(5ProbenPASS) übernommen.
 End50041325430429/Empfang41037459441 übernommen; volle500Bindungen vorAktivierung Pflicht.
 Run41694827024/600bleibtFAIL

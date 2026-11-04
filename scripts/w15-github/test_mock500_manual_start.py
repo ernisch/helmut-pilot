@@ -181,8 +181,10 @@ class ManualBindingChecks(unittest.TestCase):
             return True
         self.blocked(authenticate=mutate)
 
-    def test_existing_series_and_start_files_remain_byte_identical(self):
-        expected = {'mock500_series.py': '96599dc11fac29847288748f0719537276edc3754c3809bd9eba7d964630abc2',
+    def test_approved_series_revision_and_unchanged_start_file_are_pinned(self):
+        # The separately authorized No-POST branch has its own reviewed exact pin.
+        # Default STOP semantics remain covered by test_mock500_series.py.
+        expected = {'mock500_series.py': '6bb7392e1fc31b75982a3eb114d1313df9cf7d1b3a25728c34e05174734600de',
                     'mock500_start.py': 'eb1365e8a5613245d954666c183fc0b5c297f4e090e4244a80442e821c00fbdc'}
         for name, digest in expected.items():
             self.assertEqual(hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest(), digest)
