@@ -8,7 +8,8 @@ function authenticate(bound, materials, host) {
   B.namespace(bound.context); B.currentCalendar(bound); B.memoryLimits(bound);
   assert(require.cache[require.resolve("../lokaler-netzschutz")]);
   assert.equal(process.env.HELMUT_SOURCE_MODE, "off");
-  assert.equal(bound.functionalResourceContract.mode, "mock500-full-host-functional-gated");
+  const prepareOnly = bound.prepareDiagnosticOnly === true;
+  if (!prepareOnly) assert.equal(bound.functionalResourceContract.mode, "mock500-full-host-functional-gated");
   assert.notEqual(bound.materialsDiagnosticOnly, true);
   const root = host ? bound.context.hostPaths.work : path.join(B.BASE, "state");
   const owner = Source.privateJSON(path.join(root, "OWNER_GO.PRIVATE.json"));
@@ -16,10 +17,13 @@ function authenticate(bound, materials, host) {
   assert.equal(config.database, Calendar.DATABASE); assert.equal(config.host, Calendar.HOST);
   assert.equal(config.deploymentId, Calendar.DEPLOYMENT); assert.equal(config.commit, bound.context.exactCommit);
   assert.equal(new URL(config.url).hostname, "127.0.0.1");
-  assert.equal(owner.confirmation, "GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO");
-  assert.equal(owner.targetDatabase, Calendar.DATABASE); assert.equal(owner.maximumUnits, 500);
-  assert.equal(owner.temporarySyntheticProfiles, 500); assert.equal(owner.paidModelsAllowed, false);
-  assert.equal(owner.productionAllowed, false); assert.equal(owner.full500Allowed, true);
+  if (prepareOnly) require("./mock500_prepare_contract").validate(bound, owner);
+  else {
+    assert.equal(owner.confirmation, "GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO");
+    assert.equal(owner.targetDatabase, Calendar.DATABASE); assert.equal(owner.maximumUnits, 500);
+    assert.equal(owner.temporarySyntheticProfiles, 500); assert.equal(owner.paidModelsAllowed, false);
+    assert.equal(owner.productionAllowed, false); assert.equal(owner.full500Allowed, true);
+  }
   const authorization = bound.simulationCalendarAuthorization, sourceAuthorization = bound.sourceReplayAuthorization;
   assert.deepEqual(owner.authorizationBinding.simulationCalendarAuthorization, authorization);
   assert.deepEqual(owner.authorizationBinding.sourceReplayAuthorization, sourceAuthorization);

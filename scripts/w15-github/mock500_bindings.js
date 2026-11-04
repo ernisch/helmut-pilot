@@ -40,6 +40,8 @@ function readBound() {
   const value = JSON.parse(privateBytes({ path: filename, bytes: s.size, sha256: process.env.HELMUT_W15_MOCK_CONTEXT_SHA256 }, 1024 * 1024));
   assert.equal(value.schema, "helmut-w15-mock500-private-runtime/1");
   namespace(value.context); assert.match(value.bindingSHA256, /^[a-f0-9]{64}$/);
+  if (value.prepareDiagnosticOnly !== undefined || value.prepareDiagnosticAuthorization !== undefined)
+    require("./mock500_prepare_contract").descriptor(value);
   return value;
 }
 function memoryLimits(bound) {

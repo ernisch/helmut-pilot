@@ -21,16 +21,20 @@ function authority(bound,ownerPath){
  assert.equal(new URL(process.env.SUPABASE_URL).hostname,'127.0.0.1');
  assert.equal(process.env.VERCEL_URL,'helmut-w15-full500-local.vercel.app');
  assert.equal(process.env.VERCEL_DEPLOYMENT_ID,'dpl_W15Full500LocalNotProduction');
- assert.equal(bound.functionalResourceContract.mode,'mock500-full-host-functional-gated');
+ const prepareOnly=bound.prepareDiagnosticOnly===true;
+ if(!prepareOnly)assert.equal(bound.functionalResourceContract.mode,'mock500-full-host-functional-gated');
  assert.notEqual(bound.materialsDiagnosticOnly,true);
  const allowed=[path.join(bound.context.hostPaths.work,'OWNER_GO.PRIVATE.json'),path.join(B().BASE,'state/OWNER_GO.PRIVATE.json')];
  assert(allowed.includes(ownerPath));
  const owner=privateJSON(ownerPath),a=bound.sourceReplayAuthorization;
  assert(a&&a.contract===CONTRACT);assert.deepEqual(owner.authorizationBinding.sourceReplayAuthorization,a);
  assert.equal(owner.authorizationBinding.runId,bound.context.runId);assert.equal(owner.authorizationBinding.exactCommit,bound.context.exactCommit);
- assert.equal(owner.confirmation,'GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO');
- assert.equal(owner.targetDatabase,B().DB);assert.equal(owner.maximumUnits,500);assert.equal(owner.temporarySyntheticProfiles,500);
- assert.equal(owner.productionAllowed,false);assert.equal(owner.paidModelsAllowed,false);assert.equal(owner.full500Allowed,true);
+ if(prepareOnly)require('./mock500_prepare_contract').validate(bound,owner);
+ else{
+  assert.equal(owner.confirmation,'GO_EXACTLY_ONE_ISOLATED_W15_FULL500_MOCK_RUN_AND_RETURN_TO_ZERO');
+  assert.equal(owner.targetDatabase,B().DB);assert.equal(owner.maximumUnits,500);assert.equal(owner.temporarySyntheticProfiles,500);
+  assert.equal(owner.productionAllowed,false);assert.equal(owner.paidModelsAllowed,false);assert.equal(owner.full500Allowed,true);
+ }
  for(const k of ['runId','runAttempt','nonce','exactCommit'])assert.equal(a[k],bound.context[k]);
  return structuredClone(a);
 }

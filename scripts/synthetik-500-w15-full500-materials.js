@@ -29,6 +29,12 @@ function pass(name, evidence = {}) { checks.push({ name, status: "PASS", ...evid
 function privateFile(file) { const s = fs.lstatSync(file); assert(s.isFile() && !s.isSymbolicLink());
   assert.equal(s.uid, process.getuid()); assert.equal(s.mode & 0o777, 0o600); return fs.readFileSync(file); }
 function checkDiagnosticScope() {
+  if (BOUND?.prepareDiagnosticOnly === true) {
+    assert(ATOMIC_PREPARED0, "w15-prepare-diagnostic-prepared0-required");
+    require("./w15-github/mock500_prepare_contract").validate(BOUND,
+      JSON.parse(privateFile(path.join(WORK, "OWNER_GO.PRIVATE.json"))));
+    return;
+  }
   if (BOUND?.materialsDiagnosticOnly !== true) return;
   // Reuse the existing prepare-only path; reject before any database access.
   assert(ATOMIC_PREPARED0, "w15-materials-diagnostic-prepared0-required");
@@ -261,6 +267,8 @@ async function main() {
     const { endwaechter, ...belege } = full, G = require("./synthetik-500-start-sql").erzeugeStartSql(bytes);
     const runtimeManifest = G.baueRuntimeManifest({ manifest, snapshot, belege }, bytes, Date.now());
     const prepare = { runtimeManifest, snapshot, belege, schritt: "vorbereiten", aktivierungsGo: null };
+    if (BOUND?.prepareDiagnosticOnly === true)
+      retain("cleanup-context.PRIVATE.json", { operationId, manifestHash:P.hash(runtimeManifest), productionCommit:config.commit, database:DB });
     if (!UNIT0) {
       stage("install-real-prepared0-runtime"); sql(G.baueSql(prepare, bytes, Date.now()));
       pass("real native runtime prepared0 installed without activation");
@@ -349,7 +357,7 @@ async function main() {
       planHash:built.command.slot.planHash, paketHash:packet.bindung.paketHash, commandPin,
       controlHash:C.controlHash(auth), booksHash:C.booksHash(auth), sourceReceiptSHA256:RECEIPT_HASH,
       database: DB, runtimeManifestHash:P.hash(runtimeManifest), productionCommit:config.commit,
-      scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION", full500DispatchAuthorized:!ATOMIC_PREPARED0 && BOUND?.materialsDiagnosticOnly !== true, activatedProfiles:UNIT0?500:0 });
+      scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION", full500DispatchAuthorized:!ATOMIC_PREPARED0 && BOUND?.materialsDiagnosticOnly !== true && BOUND?.prepareDiagnosticOnly !== true, activatedProfiles:UNIT0?500:0 });
     retain("PROCESSING_INPUTS.SAFE.json", { status:"PASS_ALL500_ACTUAL_D_PREPARATIONS", scope:"SYNTHETIC_PERFORMANCE_FIXTURE_NOT_NEWS_OR_PRODUCTION",
       ...(BOUND?.simulationCalendarAuthorization ? { simulationCalendar: require("./w15-github/mock500_calendar").evidence() } : {}),
       actualOriginalPreparer:true, currentDescriptorAndActualRequestDatesMatch:true, originalFilesModified:false,

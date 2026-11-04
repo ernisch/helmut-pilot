@@ -63,6 +63,10 @@ function memoryAccepted(m, bound = BOUND) {
 }
 function ownerGo({ materialsDiagnostic = false } = {}) {
   const go = read("OWNER_GO.PRIVATE.json");
+  if (BOUND?.prepareDiagnosticOnly === true) {
+    require("./w15-github/mock500_prepare_contract").validate(BOUND, go);
+    return go;
+  }
   if (BOUND?.materialsDiagnosticOnly === true) {
     assert.equal(materialsDiagnostic, true, "w15-materials-diagnostic-runtime-action");
     assert.equal(BOUND.functionalResourceContract?.mode, "mock500-materials-diagnostic-gated");
@@ -288,6 +292,10 @@ async function prepare() {
   prepareStage = "setup";
   ownerGo(); const c = read("configuration.PRIVATE.json"), m = read("processing-materials.PRIVATE.json"); environment(c);
   assert.equal(m.database, DB); assert.equal(m.productionCommit, c.commit);
+  if (BOUND?.prepareDiagnosticOnly === true) {
+    assert.equal(c.commit, BOUND.context.exactCommit);
+    require("./w15-github/mock500_prepare_contract").materials(m);
+  }
   process.env[PRIV] = fs.readFileSync(file("signing-key.PRIVATE.pem"), "utf8");
   const S = require("../lib/helmut/storage"), C = require("../lib/helmut/synthetik-500-production-command");
   const journal = Durable.open(STATE, "prepare");
@@ -307,6 +315,7 @@ async function prepare() {
       assert(installationOpenMs < 60000, "w15-full500-installation-open60");
       prepareStage = "command-read";
       const packet = await S.loadSynthetik500ProductionCommand(m.selector.operationId, m.selector.commandHash);
+      if (BOUND?.prepareDiagnosticOnly === true) assert.equal(packet.command.drafts.length, 500);
       prepareStage = "current-inputs";
       await S.readSynthetik500CurrentInputs(packet.command.drafts[0].sources);
     });
@@ -314,6 +323,14 @@ async function prepare() {
     const auth = await S.readAuthStore({ strict: true });
     prepareStage = "bindings";
     assert.equal(C.controlHash(auth), m.controlHash); assert.equal(C.booksHash(auth), m.booksHash);
+    if (BOUND?.prepareDiagnosticOnly === true) {
+      save("PREPARE_DIAGNOSTIC_CHECKS.SAFE.json", { schema: "helmut-w15-mock500-prepare-checks/1",
+        status: "PASS_PREPARE_CHECKS_BEFORE_ADMISSION_INSTALL", contract: require("./w15-github/mock500_prepare_contract").CONTRACT,
+        ...Object.fromEntries(["exactCommit", "runId", "runAttempt", "nonce"].map(key => [key, BOUND.context[key]])),
+        validatedProfiles: 500, profileActivations: 0, unitEntries: 0, providerCalls: 0,
+        authorityInstalled: false, fullCValidated: true, preactivationBindingsVerified: true });
+      return;
+    }
     prepareStage = "admission";
     const primary = save("local-approval.PRIVATE.json", { scope: "EXACTLY_ONE_USER_AUTHORIZED_LOCAL_MOCK_FULL500_SEQUENCE_NOT_PRODUCTION",
       selector: m.selector, full500DispatchAuthorized: !ATOMIC_PREPARED0, maximumUnits: ATOMIC_PREPARED0 ? 0 : 500, profileActivationAuthorized: !ATOMIC_PREPARED0,
@@ -357,6 +374,7 @@ function claimQuery(selector, index, phase) {
     + "'planHash',call->'admission'->>'planHash','intentId',call->'admission'->>'intentId','expectedIntentId',op->'units'->" + index + "->'intentIds'->>" + offset + ")from c;";
 }
 async function atomicPrepared0Check() {
+  assert.notEqual(BOUND?.prepareDiagnosticOnly, true, "w15-prepare-diagnostic-runtime-action");
   assert(ATOMIC_PREPARED0); ownerGo();
   const c = read("configuration.PRIVATE.json"), m = read("processing-materials.PRIVATE.json"); environment(c);
   assert(!process.env[PRIV]);
@@ -416,6 +434,7 @@ async function atomicPrepared0Check() {
   } finally { removeAbort(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }
 }
 async function run() {
+  assert.notEqual(BOUND?.prepareDiagnosticOnly, true, "w15-prepare-diagnostic-runtime-action");
   assert(!ATOMIC_PREPARED0, "w15-atomic-integration-no-unit-permission");
   ownerGo(); const c = read("configuration.PRIVATE.json"), m = read("processing-materials.PRIVATE.json"); environment(c);
   assert.equal(m.database, DB); assert.equal(m.productionCommit, c.commit); assert(!process.env[PRIV]);
@@ -621,6 +640,8 @@ async function run() {
 }
 async function main(action) {
   if (action === "prepare") prepareStage = "preconditions";
+  if (BOUND?.prepareDiagnosticOnly === true)
+    assert(["setup", "gateway", "prepare"].includes(action), "w15-prepare-diagnostic-runtime-action");
   if (BOUND?.materialsDiagnosticOnly === true)
     assert(["setup", "gateway"].includes(action), "w15-materials-diagnostic-runtime-action");
   assert(["setup", "gateway", "prepare", "run", "atomic-check"].includes(action), "w15-full500-runtime-action"); guard();
