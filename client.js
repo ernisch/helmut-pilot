@@ -135,6 +135,106 @@ let previewMode = false;
 let authState = null;
 let currentUser = null;
 let allowedProfiles = [];
+
+// Private Antworten duerfen nur ihren noch gueltigen Zugriffsstand ergaenzen.
+let privateAccess = false;
+let privateAccessGeneration = 0;
+let mandateSwitchPending = false;
+const mandateSwitchControls = new Map();
+function privateAccessContext() {
+  return { generation: privateAccessGeneration, mandateId: activePoliticianId };
+}
+function privateAccessIsCurrent(context) {
+  return privateAccess && !mandateSwitchPending && context.generation === privateAccessGeneration
+    && context.mandateId === activePoliticianId && profile?.id === activePoliticianId;
+}
+function privateAccessChanged() {
+  const error = new Error("Der Zugriffsstand hat sich geaendert. Bitte neu laden.");
+  error.code = "PRIVATE_ACCESS_CHANGED";
+  return error;
+}
+function clearPrivateMandateState() {
+  profile = null; briefing = null; aiStatus = { enabled: false, model: "" };
+  tasks = []; notes = []; recommendations = []; decisions = [];
+  helmutBriefings = []; helmutDeck = []; helmutDecidedIds = new Set();
+  selectedDecisionId = ""; selectedVorgangId = ""; selectedTaskHandoffId = "";
+  generatedStatement = ""; generatedStatementSource = ""; communicationContextTitle = "";
+  officeDrafts = {}; officeDraftErrors = {}; officeDraftsGenerating = false;
+  selectedOfficeDraft = null; officeBriefingTarget = null;
+  parliamentItems = []; parliamentAssessments = {}; parliamentLoaded = false;
+  dailyInputs = []; dailyInputsLoaded = false; radarArchive = []; radarBuckets = null;
+  radarArchiveLoaded = false; opsStatus = null; opsStatusLoaded = false; pushConfig = null;
+  onboardingActive = false; onboardingDraft = {}; onboardingSaving = false;
+  admResetState(); admLastInvite = null; adminRecovery = null; adminRecoveryResult = null;
+  if (adminRecoveryPollTimer) window.clearInterval(adminRecoveryPollTimer);
+  adminRecoveryPollTimer = null;
+  pipelineRunning = false; pipelinePhase = null; helmutThinking = false;
+  if (pipelineStepTimer) window.clearTimeout(pipelineStepTimer);
+  if (pipelineCompletionTimer) window.clearTimeout(pipelineCompletionTimer);
+  if (helmutThinkingTimer) window.clearTimeout(helmutThinkingTimer);
+  pipelineStepTimer = null; pipelineCompletionTimer = null; helmutThinkingTimer = null;
+  stopHelmutTyping(); navOpen = false; updatesOpen = false; lastAnimatedView = null;
+}
+function invalidatePrivateAccess() {
+  privateAccess = false; ++privateAccessGeneration;
+  mandateSwitchPending = false; mandateSwitchControls.clear();
+  clearPrivateMandateState();
+  briefingRefreshing = false;
+  currentUser = null; allowedProfiles = [];
+  authState = authState ? { authenticated: false } : null;
+  csrfTokenPromise = null; activePoliticianId = "";
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i += 1) keys.push(localStorage.key(i));
+    for (const key of keys) if (key && (key.startsWith(appStartCachePrefix)
+      || key.startsWith("helmut:officeDrafts:") || key === lastPoliticianIdStorageKey)) localStorage.removeItem(key);
+  } catch (_) { /* Speicher kann gesperrt sein; Laufzeitdaten sind bereits geloescht. */ }
+  if (app) app.innerHTML = "";
+}
+function isPrivateApi(url) {
+  const pathname = new URL(url, window.location.href).pathname;
+  return pathname.startsWith("/api/") && !["/api/auth/login", "/api/auth/request-reset",
+    "/api/auth/set-password", "/api/auth/password-token", "/api/pilot/unlock"].includes(pathname);
+}
+function assertPrivateMutationAllowed(url, options) {
+  if (isPrivateApi(url) && needsCsrfToken(url, options)
+    && (mandateSwitchPending || !privateAccess || profile?.id !== activePoliticianId)) throw privateAccessChanged();
+}
+function bindPrivateResponseBody(response, generation) {
+  const check = () => { if (generation !== privateAccessGeneration) throw privateAccessChanged(); };
+  const readers = new Set(["json", "text", "blob", "arrayBuffer", "formData", "bytes"]);
+  return new Proxy(response, {
+    get(target, property) {
+      check();
+      if (property === "clone") return (...args) => { check(); return bindPrivateResponseBody(target.clone(...args), generation); };
+      if (readers.has(property) && typeof target[property] === "function") return async (...args) => {
+        check(); const body = await target[property](...args); check(); return body;
+      };
+      // Der Client liest private Antworten ausschliesslich ueber die gebundenen
+      // Bodymethoden; ein ungebundener Stream darf keinen Epochenschutz umgehen.
+      if (property === "body") throw privateAccessChanged();
+      const value = Reflect.get(target, property, target);
+      return typeof value === "function" ? value.bind(target) : value;
+    }
+  });
+}
+
+async function guardPrivateResponse(response, url, generation) {
+  if (generation !== privateAccessGeneration) throw privateAccessChanged();
+  if (isPrivateApi(url) && response.status === 401) {
+    if (authState || String(url).startsWith("/api/auth/")) renderLogin();
+    else renderPilotAccess();
+    throw privateAccessChanged();
+  }
+  if (isPrivateApi(url) && response.status === 403) {
+    let payload = null;
+    try { payload = await response.clone().json(); } catch (_) {}
+    if (generation !== privateAccessGeneration) throw privateAccessChanged();
+    if (payload?.reason === "no-mandate") { renderNoMandateState(); throw privateAccessChanged(); }
+  }
+  return isPrivateApi(url) ? bindPrivateResponseBody(response, generation) : response;
+}
+
 // --- Admin (Neuaufbau 2026-07): Bereichs-Zustand ---------------------------
 let admSection = "uebersicht";   // aktiver Admin-Bereich
 let admData = {};                // Endpoint-Key -> Payload (gemeinsamer Cache)
@@ -258,6 +358,7 @@ const pipelineCooldownMs = 10 * 60 * 1000;
 // verhindert Refresh-Stürme, wenn visibilitychange bei Tab-/OS-Wechseln rasch feuert.
 const foregroundRefreshMinMs = 60 * 1000;
 let csrfTokenPromise = null;
+let csrfTokenGeneration = -1;
 
 // SICHTBARE Reiter-Labels. Achtung Historie: die interne View-ID "briefing" gehoert zum
 // LAGE-Reiter, die ID "helmut" zum sichtbaren Reiter "Briefing" (frueher "Helmut").
@@ -402,6 +503,9 @@ const priorityTopics = [
 const communicationStyles = ["Sachlich", "Lösungsorientiert", "Angriffslustig", "Vermittelnd", "Aktivistisch"];
 
 async function loadBriefing() {
+  if (mandateSwitchPending) return false;
+  const accessGeneration = ++privateAccessGeneration;
+  officeDraftsGenerating = false;
   // Block 5 (Live-Flow): Re-Entrancy-Guard + Drossel-Stempel für ALLE Aufrufer
   // (Boot, manuelles ↻, Foreground-Refresh) in einem try/finally — so stößt der
   // Foreground-Handler nie einen bereits laufenden Ladevorgang doppelt an.
@@ -414,7 +518,9 @@ async function loadBriefing() {
   previewMode = isPreviewModeParam(params);
 
   // Account-Modus erkennen: /api/auth/session ist nur dort eine JSON-Antwort.
-  authState = await fetchAuthState();
+  const session = await fetchAuthState();
+  if (accessGeneration !== privateAccessGeneration) return;
+  authState = session;
   if (authState) {
     if (!authState.authenticated) {
       renderLogin();
@@ -430,7 +536,7 @@ async function loadBriefing() {
   const cachedStart = loadCachedStartPayload();
   if (cachedStart) {
     try {
-      applyStartPayload(cachedStart);
+      applyStartPayload(cachedStart, accessGeneration);
       renderedFromCache = true;
       render();
       generateOfficeDraftsInBackground();
@@ -441,6 +547,7 @@ async function loadBriefing() {
 
   try {
     const startResponse = await fetchWithTimeout(`/api/app/start?${scope}`, {}, renderedFromCache ? 15000 : 25000);
+    if (accessGeneration !== privateAccessGeneration) return;
 
     if (startResponse.status === 401) {
       // Echter Auth-Fehler: Session fehlt/ist ungueltig -> Login/Zugang zeigen.
@@ -459,6 +566,7 @@ async function loadBriefing() {
       // bleibt unangetastet: es werden weiterhin KEINE fremden Daten gezeigt,
       // nur ein ehrlicher Zustand statt eines irrefuehrenden Login-Screens.
       const payload = await startResponse.json().catch(() => ({}));
+      if (accessGeneration !== privateAccessGeneration) return;
       if (authState && authState.authenticated && payload && payload.reason === "no-mandate") {
         renderNoMandateState();
         return;
@@ -470,17 +578,19 @@ async function loadBriefing() {
     if (startResponse.status === 409) {
       // Legacy-Zugang mit mehreren aktiven Mandaten: Auswahl noetig (kein geratenes Mandat).
       const selection = await startResponse.json().catch(() => ({}));
+      if (accessGeneration !== privateAccessGeneration) return;
       renderMandateSelection(selection.mandates || []);
       return;
     }
     if (!startResponse.ok) throw new Error(`Helmut konnte nicht gestartet werden (${startResponse.status})`);
     const startPayload = await startResponse.json();
+    if (accessGeneration !== privateAccessGeneration) return;
     if (startPayload && (startPayload.needsMandateSelection || (startPayload.empty && !startPayload.profile))) {
       // Legacy-Zugang: mehrere aktive Mandate -> Auswahl; keine aktiven Mandate -> Leerzustand.
       renderMandateSelection(startPayload.mandates || []);
       return;
     }
-    applyStartPayload(startPayload);
+    applyStartPayload(startPayload, accessGeneration);
     saveCachedStartPayload(startPayload);
     restorePersistedView();
     render();
@@ -490,6 +600,7 @@ async function loadBriefing() {
     generateOfficeDraftsInBackground();
     return Boolean(profile.id);
   } catch (error) {
+    if (accessGeneration !== privateAccessGeneration) return;
     if (renderedFromCache) {
       // Der Live-Refresh nach dem Cache-Render ist DEFINITIV fehlgeschlagen (fetch-
       // Reject/Timeout/Abbruch, HTTP-Fehler oder JSON-Parse-Fehler). Es laeuft/plant
@@ -502,13 +613,20 @@ async function loadBriefing() {
     }
     throw error;
   }
+  } catch (error) {
+    if (accessGeneration !== privateAccessGeneration) return;
+    if (error?.code === "AUTH_UNAVAILABLE" || !privateAccess) { renderStartFailure(error); return; }
+    throw error;
   } finally {
-    briefingRefreshing = false;
-    lastBriefingLoadAt = Date.now();
+    if (accessGeneration === privateAccessGeneration) { briefingRefreshing = false; lastBriefingLoadAt = Date.now(); }
   }
 }
 
-function applyStartPayload(startPayload) {
+function applyStartPayload(startPayload, accessGeneration = privateAccessGeneration) {
+  if (accessGeneration !== privateAccessGeneration) return false;
+  if (!startPayload?.profile || !sanitizePoliticianId(startPayload.profile.id)
+    || !startPayload.briefing || typeof startPayload.briefing !== "object") throw new Error("Ungueltiger Startstand");
+  privateAccess = false;
   profile = startPayload.profile || {};
   // Serverseitig aufgeloestes Mandat uebernehmen (Quelle der Wahrheit) und fuer
   // stabile lokale Schluessel merken.
@@ -592,6 +710,7 @@ function applyStartPayload(startPayload) {
   selectedDecisionId = decisions[0]?.id || "";
   generatedStatement = decisions[0]?.statement || "";
   maybeStartOnboarding();
+  privateAccess = true;
 }
 
 const ONBOARDING_STEPS = 7;
@@ -792,25 +911,26 @@ function appStartCacheKey() {
 }
 
 async function ensureViewData(view) {
-  // Radar liest den fertigen Lesevertrag briefing.currentRadarState (beim App-Start
-  // über /api/app/start geladen) — KEIN separater Radar-Request pro Ansicht mehr
-  // (ein Read-State pro Start, keine unnötigen API-Aufrufe).
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context)) return;
+  // Radar verwendet weiterhin den vorhandenen gemeinsamen Startvertrag.
   if (view === "admin") {
-    // Neuaufbau 2026-07: bereichsweises Laden; ein fehlgeschlagener Endpoint
-    // blockiert nie den ganzen Admin (Details in ensureAdminSection).
     await ensureAdminSection(admSection);
+    if (!privateAccessIsCurrent(context)) return;
   }
   if (view === "daily-input" && !dailyInputsLoaded) {
     dailyInputsLoaded = true;
     try {
       const response = await fetchWithTimeout(`/api/daily-inputs?${apiScopeQuery()}`);
       const payload = response.ok ? await response.json() : { inputs: [] };
+      if (!privateAccessIsCurrent(context)) return;
       dailyInputs = Array.isArray(payload.inputs) ? payload.inputs : [];
     } catch (error) {
+      if (!privateAccessIsCurrent(context)) return;
       dailyInputsLoaded = false;
       console.warn("Daily inputs not loaded", error);
     }
-    render();
+    if (privateAccessIsCurrent(context)) render();
   }
   if ((view === "settings" || view === "profile-settings") && !opsStatusLoaded) {
     opsStatusLoaded = true;
@@ -819,18 +939,25 @@ async function ensureViewData(view) {
         fetchWithTimeout(`/api/ops/status?${apiScopeQuery()}`),
         fetchWithTimeout(`/api/push/public-key?${apiScopeQuery()}`).catch(() => null)
       ]);
-      opsStatus = response.ok ? await response.json() : null;
-      pushConfig = pushResponse?.ok ? await pushResponse.json() : null;
+      const nextOpsStatus = response.ok ? await response.json() : null;
+      const nextPushConfig = pushResponse?.ok ? await pushResponse.json() : null;
+      if (!privateAccessIsCurrent(context)) return;
+      opsStatus = nextOpsStatus; pushConfig = nextPushConfig;
     } catch (error) {
+      if (!privateAccessIsCurrent(context)) return;
       opsStatusLoaded = false;
       console.warn("Ops status not loaded", error);
     }
-    render();
+    if (privateAccessIsCurrent(context)) render();
   }
 }
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+  const generation = privateAccessGeneration;
+  assertPrivateMutationAllowed(url, options);
   const preparedOptions = await prepareRequestOptions(url, options);
+  if (generation !== privateAccessGeneration) throw privateAccessChanged();
+  assertPrivateMutationAllowed(url, options);
   const run = (opts) => {
     let timeoutId;
     const timeout = new Promise((_, reject) => {
@@ -838,21 +965,18 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
     });
     return Promise.race([fetch(url, opts), timeout]).finally(() => window.clearTimeout(timeoutId));
   };
-  const response = await run(preparedOptions);
-  // CSRF-Selbstheilung: Ein abgelaufener/verworfener Token (12h Serverfrist)
-  // fuehrte zu dauerhaftem 403 auf ALLEN POSTs (u. a. push/subscribe), bis der
-  // Nutzer neu lud. Einmal frischen Token holen und den Request wiederholen.
+  const response = await guardPrivateResponse(await run(preparedOptions), url, generation);
+  // Nur die ausdrueckliche CSRF-Ablehnung vor der Operation erlaubt Wiederholung.
   if (response.status === 403 && needsCsrfToken(url, options)) {
-    // A mandate/permission denial is not a token failure. Only the backend's
-    // explicit CSRF rejection happens before the operation and permits replay.
     let csrfRejected = false;
     try { csrfRejected = (await response.clone().json())?.error === "CSRF token missing or invalid"; } catch (_) {}
     if (!csrfRejected) return response;
+    if (generation !== privateAccessGeneration) throw privateAccessChanged();
     csrfTokenPromise = null;
-    try {
-      const retryOptions = await prepareRequestOptions(url, options);
-      return await run(retryOptions);
-    } catch (_) { return response; }
+    const retryOptions = await prepareRequestOptions(url, options);
+    if (generation !== privateAccessGeneration) throw privateAccessChanged();
+    assertPrivateMutationAllowed(url, options);
+    return guardPrivateResponse(await run(retryOptions), url, generation);
   }
   return response;
 }
@@ -871,23 +995,27 @@ function needsCsrfToken(url, options = {}) {
 }
 
 async function getCsrfToken() {
+  const generation = privateAccessGeneration;
+  if (csrfTokenGeneration !== generation) {
+    csrfTokenPromise = null;
+    csrfTokenGeneration = generation;
+  }
   if (!csrfTokenPromise) {
-    csrfTokenPromise = fetch(`/api/security/csrf?${apiScopeQuery()}`, { cache: "no-store" })
-      .then((response) => {
-        if (!response.ok) throw new Error("CSRF token request failed");
-        return response.json();
-      })
-      .then((payload) => {
+    const pending = fetch(`/api/security/csrf?${apiScopeQuery()}`, { cache: "no-store" })
+      .then(response => guardPrivateResponse(response, "/api/security/csrf", generation))
+      .then(response => { if (!response.ok) throw new Error("CSRF token request failed"); return response.json(); })
+      .then(payload => {
+        if (generation !== privateAccessGeneration) throw privateAccessChanged();
         if (typeof payload?.token !== "string" || !payload.token.trim()) throw new Error("CSRF token response invalid");
         return payload.token.trim();
       })
-      .catch((error) => {
-        // Eine abgelehnte Promise NIE cachen — sonst bleibt der Fehlversuch
-        // dauerhaft haengen und jeder Folge-POST scheitert. Beim naechsten
-        // Aufruf frisch versuchen.
-        csrfTokenPromise = null;
+      .catch(error => {
+        // Ein alter Request darf weder als verworfene Promise kleben bleiben
+        // noch eine inzwischen neu angelegte Tokenpromise beseitigen.
+        if (csrfTokenPromise === pending) csrfTokenPromise = null;
         throw error;
       });
+    csrfTokenPromise = pending;
   }
   return csrfTokenPromise;
 }
@@ -897,6 +1025,7 @@ async function getCsrfToken() {
 // 0 aktive Mandate -> ehrlicher Leerzustand. Die Auswahl wird als ?politicianId
 // uebernommen (Server loest sie auf) und lokal fuer Folgeaufrufe gemerkt.
 function renderMandateSelection(mandates = []) {
+  invalidatePrivateAccess();
   hideStartupSplash();
   const list = Array.isArray(mandates) ? mandates.filter((m) => m && m.id) : [];
   if (!list.length) {
@@ -938,6 +1067,7 @@ function renderMandateSelection(mandates = []) {
 // und KEINE fremden Daten — nur die Erklaerung + Abmelden, damit der Nutzer
 // nicht in einer Sackgasse haengt (Root-Cause-Fix, Umsetzungsnotiz §6-Folgefix).
 function renderNoMandateState() {
+  invalidatePrivateAccess();
   hideStartupSplash();
   app.innerHTML = `
     <section class="loading-card pilot-access-card">
@@ -953,6 +1083,7 @@ function renderNoMandateState() {
 }
 
 function renderPilotAccess(message = "") {
+  invalidatePrivateAccess();
   hideStartupSplash();
   app.innerHTML = `
     <section class="loading-card pilot-access-card">
@@ -1064,6 +1195,7 @@ function resolveAllowedActiveId(params) {
 }
 
 function renderLogin(message = "") {
+  invalidatePrivateAccess();
   hideStartupSplash();
   app.innerHTML = `
     <div class="login-screen">
@@ -1134,6 +1266,7 @@ function renderLogin(message = "") {
 }
 
 async function logout() {
+  invalidatePrivateAccess();
   try {
     await fetch("/api/auth/logout", { method: "POST" });
   } catch {}
@@ -1169,23 +1302,90 @@ async function requestPasswordChange(row) {
   }
 }
 
+function privateFormIsCurrent(form) {
+  return privateAccess && !mandateSwitchPending && profile?.id === activePoliticianId
+    && app.contains(form) && form.dataset.privateMandateId === activePoliticianId
+    && form.dataset.privateAccessGeneration === String(privateAccessGeneration);
+}
+function bindPrivateFormScopes() {
+  if (!privateAccess || mandateSwitchPending) return;
+  app.querySelectorAll("form").forEach(form => {
+    form.dataset.privateMandateId = activePoliticianId;
+    form.dataset.privateAccessGeneration = String(privateAccessGeneration);
+    if (form.dataset.privateScopeBound) return;
+    form.dataset.privateScopeBound = "1";
+    form.addEventListener("submit", event => {
+      if (privateFormIsCurrent(form)) return;
+      event.preventDefault(); event.stopImmediatePropagation();
+      showToast("Bitte den Mandatswechsel abwarten oder die Ansicht neu laden.");
+    }, true);
+  });
+}
+function setMandateSwitchPending(pending) {
+  mandateSwitchPending = pending;
+  if (pending) {
+    app.querySelectorAll("[data-profile-switch], form input, form select, form textarea, form button").forEach(control => {
+      if (!mandateSwitchControls.has(control)) mandateSwitchControls.set(control, control.disabled);
+      control.disabled = true;
+    });
+  } else {
+    for (const [control, disabled] of mandateSwitchControls) control.disabled = disabled;
+    mandateSwitchControls.clear();
+    app.querySelectorAll("[data-profile-switch]").forEach(select => { select.value = activePoliticianId; });
+    bindPrivateFormScopes();
+  }
+}
 async function switchPolitician(id) {
   const next = sanitizePoliticianId(id);
-  if (!next || next === activePoliticianId) return;
-  activePoliticianId = next;
-  radarArchiveLoaded = false;
-  opsStatusLoaded = false;
-  admResetState();
-  dailyInputsLoaded = false;
-  csrfTokenPromise = null;
-  try {
-    const res = await fetchWithTimeout(`/api/app/start?${apiScopeQuery()}`);
-    if (res.ok) applyStartPayload(await res.json());
-  } catch (error) {
-    console.warn("Mandatswechsel fehlgeschlagen", error);
+  if (!privateAccess || !next || (next === activePoliticianId && !mandateSwitchPending)) return;
+  if (authState && authState.allowedPoliticians !== "all" && !allowedProfiles.some(entry => entry.id === next)) {
+    showToast("Dieses Mandat ist nicht freigegeben."); return;
   }
-  currentView = "briefing";
-  render();
+  const accessGeneration = ++privateAccessGeneration;
+  setMandateSwitchPending(true);
+  let committed = false, commitStarted = false;
+  try {
+    // Ziel nur im Request; aktive Kennung und Formulardaten bleiben bis zur Bestaetigung zusammen.
+    const res = await fetchWithTimeout(`/api/app/start?${apiScopeQuery({ politicianId: next })}`);
+    if (accessGeneration !== privateAccessGeneration) return;
+    if (res.status === 403) { renderLogin("Mandatszugriff wurde nicht bestätigt."); return; }
+    if (!res.ok) throw new Error(`Mandatswechsel fehlgeschlagen (${res.status})`);
+    const payload = await res.json();
+    if (accessGeneration !== privateAccessGeneration) return;
+    if (!payload?.profile || payload.profile.id !== next || typeof payload.profile.fullName !== "string"
+      || !payload.profile.fullName.trim() || !payload.briefing || typeof payload.briefing !== "object"
+      || payload.needsMandateSelection || payload.empty) throw new Error("Mandatsantwort passt nicht zur Auswahl");
+    // Synchroner Commit ohne weitere Await-Grenze. Alte Antwortgenerationen bleiben verworfen.
+    commitStarted = true;
+    clearPrivateMandateState();
+    csrfTokenPromise = null;
+    const commitGeneration = ++privateAccessGeneration;
+    applyStartPayload(payload, commitGeneration);
+    committed = true;
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("politicianId", next); url.searchParams.delete("profileId");
+      window.history.replaceState(window.history.state, "", url);
+    } catch (_) { /* URL-Komfort ist kein Autorisierungsbeleg. */ }
+    currentView = "briefing";
+    setMandateSwitchPending(false);
+    render();
+    loadParliament();
+  } catch (error) {
+    if (commitStarted) {
+      invalidatePrivateAccess(); renderLogin("Der neue Mandatsstand konnte nicht sicher übernommen werden. Bitte erneut anmelden."); return;
+    }
+    if (accessGeneration !== privateAccessGeneration) return;
+    console.warn("Mandatswechsel fehlgeschlagen", error);
+    showToast("Mandatswechsel fehlgeschlagen – der bisherige Stand bleibt geöffnet.");
+  } finally {
+    if (accessGeneration === privateAccessGeneration && privateAccess) {
+      officeDraftsGenerating = false;
+      setMandateSwitchPending(false);
+    } else if (committed) {
+      // Der Commit hat seine Generation bewusst erhoeht und den Pendingzustand bereits beendet.
+    }
+  }
 }
 
 function roleLabel(role) {
@@ -1447,6 +1647,8 @@ function admResetState() {
 
 // Ein Endpoint, ein Fehlerpfad: Fehler landen in admErrors[key], nie als Wurf.
 async function admFetchEndpoint(key, { force = false } = {}) {
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context)) return;
   const spec = ADM_ENDPOINTS[key];
   if (!spec) return;
   if (!force && admData[key] !== undefined) return;
@@ -1455,16 +1657,15 @@ async function admFetchEndpoint(key, { force = false } = {}) {
     const base = spec.path();
     const url = `${base}${base.includes("?") ? "&" : "?"}${apiScopeQuery()}`;
     const res = await fetchWithTimeout(url, {}, spec.timeout || 15000);
+    if (!privateAccessIsCurrent(context)) return;
     if (!res.ok) {
       admErrors[key] = res.status === 401 ? "Anmeldung erforderlich" : res.status === 403 ? "Keine Berechtigung" : `HTTP ${res.status}`;
       if (key === "recovery" && adminRecovery) adminRecoveryStale = true;
     } else {
       const j = await res.json().catch(() => null);
+      if (!privateAccessIsCurrent(context)) return;
       if (j && typeof j === "object" && !Array.isArray(j)) {
-        admData[key] = j;
-        delete admErrors[key];
-        // Recovery-Status zusaetzlich in den bestehenden Recovery-Zustand spiegeln:
-        // runRecoveryAction/Status-Polling arbeiten unveraendert auf adminRecovery.
+        admData[key] = j; delete admErrors[key];
         if (key === "recovery") { adminRecovery = j; adminRecoveryStale = false; }
       } else {
         admErrors[key] = "Unerwartete Antwort";
@@ -1472,10 +1673,11 @@ async function admFetchEndpoint(key, { force = false } = {}) {
       }
     }
   } catch (_) {
+    if (!privateAccessIsCurrent(context)) return;
     admErrors[key] = "Zeitüberschreitung oder Netzwerkfehler";
     if (key === "recovery" && adminRecovery) adminRecoveryStale = true;
   } finally {
-    admLoading[key] = false;
+    if (privateAccessIsCurrent(context)) admLoading[key] = false;
   }
 }
 
@@ -4401,6 +4603,8 @@ function polishReferentText(value) {
 }
 
 function render() {
+  if (mandateSwitchPending) return;
+  if (!privateAccess || !profile?.id || profile.id !== activePoliticianId) return;
   // Eintritts-Animationen (Karten/Refresh-Screen) nur bei echtem (Wieder-)Eintritt
   // abspielen: Ansichtswechsel ODER ein bewusst gesetzter Einmal-Schuss. Alle
   // übrigen Rebuilds (Hintergrund-Nachladen von Parlament/Office, Refresh-Fortschritt)
@@ -5880,16 +6084,18 @@ function renderVorgangDetailView() {
 }
 
 async function loadParliament() {
-  if (parliamentLoaded) return;
+  if (parliamentLoaded || !privateAccess) return;
+  const context = privateAccessContext();
   parliamentLoaded = true;
   try {
     const res = await fetchWithTimeout(`/api/parliament?${apiScopeQuery()}`, {}, 12000);
     if (!res.ok) return;
     const data = await res.json();
+    if (!privateAccessIsCurrent(context)) return;
     parliamentItems = Array.isArray(data.items) ? data.items : [];
     if (parliamentItems.length) render();
   } catch (error) {
-    console.warn("Parlament-Daten nicht geladen", error);
+    if (privateAccessIsCurrent(context)) { parliamentLoaded = false; console.warn("Parlament-Daten nicht geladen", error); }
   }
 }
 
@@ -5946,6 +6152,8 @@ function renderParliamentItem(item) {
 }
 
 async function assessParliamentItem(id) {
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context)) return;
   const item = parliamentItems.find((entry) => entry.id === id);
   if (!item || parliamentAssessments[id]) return;
   parliamentAssessments[id] = { loading: true };
@@ -5954,11 +6162,12 @@ async function assessParliamentItem(id) {
     const res = await apiSend("POST", `/api/parliament/assess?${apiScopeQuery()}`, {
       type: item.type, title: item.title, urheber: item.urheber, date: item.date
     });
+    if (!privateAccessIsCurrent(context)) return;
     parliamentAssessments[id] = res.ok && res.json ? res.json : null;
   } catch (error) {
-    parliamentAssessments[id] = null;
+    if (privateAccessIsCurrent(context)) parliamentAssessments[id] = null;
   }
-  render();
+  if (privateAccessIsCurrent(context)) render();
 }
 
 function activeDecisions() {
@@ -10761,8 +10970,12 @@ function pushEnabledOnThisDevice(push = {}) {
 }
 
 async function loadPushConfig() {
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context)) throw privateAccessChanged();
   const configResponse = await fetchWithTimeout(`/api/push/public-key?${apiScopeQuery()}`);
-  pushConfig = configResponse.ok ? await configResponse.json() : null;
+  const config = configResponse.ok ? await configResponse.json() : null;
+  if (!privateAccessIsCurrent(context)) throw privateAccessChanged();
+  pushConfig = config;
   return pushConfig;
 }
 
@@ -11147,6 +11360,7 @@ function selectedDecision() {
 }
 
 async function apiSend(method, path, body) {
+  const generation = privateAccessGeneration;
   const options = { method, headers: { "Content-Type": "application/json" } };
   if (body !== undefined) options.body = JSON.stringify(body);
   const res = await fetchWithTimeout(path, options);
@@ -11154,6 +11368,7 @@ async function apiSend(method, path, body) {
   try {
     json = await res.json();
   } catch {}
+  if (generation !== privateAccessGeneration) throw privateAccessChanged();
   return { ok: res.ok, status: res.status, json };
 }
 
@@ -11495,6 +11710,7 @@ function bindAccountActions() {
 }
 
 function bindActions() {
+  bindPrivateFormScopes();
   // Existing settings rows support Enter/Space; native buttons keep their
   // native keyboard behavior. No additional request handlers are introduced.
   app.querySelectorAll('.stg-row[role="button"], .stg-profile-row[role="button"]').forEach(row => {
@@ -12525,6 +12741,9 @@ function stopHelmutTyping() {
 }
 
 async function saveProfileFromForm(form) {
+  if (!privateFormIsCurrent(form)) { showToast("Bitte den Mandatswechsel abwarten oder die Ansicht neu laden."); return; }
+  const context = privateAccessContext();
+  const targetId = profile.id;
   if (previewMode) {
     showToast("Vorschau: Profil nicht gespeichert");
     return;
@@ -12570,13 +12789,16 @@ async function saveProfileFromForm(form) {
   };
 
   try {
-    const response = await fetchWithTimeout(`/api/profile/current?${apiScopeQuery()}`, {
+    const response = await fetchWithTimeout(`/api/profile/current?${apiScopeQuery({ politicianId: targetId })}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, id: activePoliticianId })
+      body: JSON.stringify({ ...payload, id: targetId })
     });
     if (!response.ok) throw new Error("Profile save failed");
-    profile = await response.json();
+    const savedProfile = await response.json();
+    if (!privateAccessIsCurrent(context)) return;
+    if (savedProfile?.id !== targetId) throw new Error("Profilantwort passt nicht zum Formular");
+    profile = savedProfile;
     currentView = "settings";
     // Onboarding-Freigabe (Audit-Fix 2026-07): fehlende Pflichtangaben werden
     // beim Speichern MITGETEILT statt still ignoriert.
@@ -12591,7 +12813,7 @@ async function saveProfileFromForm(form) {
     render();
   } catch (error) {
     console.error(error);
-    showToast("Profil konnte nicht gespeichert werden");
+    if (privateAccessIsCurrent(context)) showToast("Profil konnte nicht gespeichert werden");
   }
 }
 
@@ -12634,6 +12856,8 @@ function isValidDraft(text) {
 }
 
 async function generateStatementWithBackend(input, decision, channel = selectedCommunicationChannel) {
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context)) throw privateAccessChanged();
   const response = await fetchWithTimeout(`/api/communication/generate?${apiScopeQuery()}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -12645,6 +12869,7 @@ async function generateStatementWithBackend(input, decision, channel = selectedC
   });
   if (!response.ok) throw new Error(`Communication API failed: ${response.status}`);
   const result = await response.json();
+  if (!privateAccessIsCurrent(context)) throw privateAccessChanged();
   return {
     aiEnabled: Boolean(result.aiEnabled),
     channelLabel: result.channelLabel,
@@ -12998,7 +13223,8 @@ function draftProvenanceLabel(source, hasValidDraft) {
 }
 
 async function generateOfficeDraftsInBackground() {
-  if (previewMode || officeDraftsGenerating || !briefingOfficeDecision()) return;
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context) || previewMode || officeDraftsGenerating || !briefingOfficeDecision()) return;
   const formats = activeOfficeFormats();
   const topDecisions = officeDecisions();
   if (!formats.length || !topDecisions.length) return;
@@ -13034,7 +13260,7 @@ async function generateOfficeDraftsInBackground() {
   officeDraftsGenerating = true;
   render();
 
-  const stillAssigned = (decision) => cacheKey === officeDraftCacheKey() && briefingOfficeDecision()
+  const stillAssigned = (decision) => privateAccessIsCurrent(context) && cacheKey === officeDraftCacheKey() && briefingOfficeDecision()
     && officeDecisions().some((current) => current.id === decision.id && current.decision === decision.decision
       && decisionEntityId(current, "vorgangId", "vorgang_id") === decisionEntityId(decision, "vorgangId", "vorgang_id")
       && decisionEntityId(current, "knowledgeObjectId", "knowledge_object_id") === decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id"));
@@ -13059,11 +13285,12 @@ async function generateOfficeDraftsInBackground() {
     }
   }
 
+  if (!privateAccessIsCurrent(context)) return;
   officeDraftsGenerating = false;
   render();
   // Nur erfolgreiche Entwürfe cachen — fehlende Keys bleiben offen und werden
   // beim nächsten Lauf nachgeneriert (kein eingefrorener Teilerfolg mehr).
-  try { if (cacheKey === officeDraftCacheKey()) localStorage.setItem(cacheKey, JSON.stringify(officeDrafts)); } catch (_) {}
+  try { if (privateAccessIsCurrent(context) && cacheKey === officeDraftCacheKey()) localStorage.setItem(cacheKey, JSON.stringify(officeDrafts)); } catch (_) {}
 }
 
 function preferredOfficeHandoffMethod() {
@@ -13822,10 +14049,8 @@ if (typeof document !== "undefined") {
   });
 }
 
-loadBriefing()
-  .then((loaded) => { if (loaded) schedulePushAutoSync(); })
-  .then(() => clearAppIconBadge())
-  .catch((error) => {
+function renderStartFailure(error) {
+  invalidatePrivateAccess();
     console.error(error);
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
       // Kein Netz -> elegante Offline-Ansicht im Helmut-Design statt Fehlermeldung.
@@ -13851,4 +14076,9 @@ loadBriefing()
       showToast(error?.code === "AUTH_UNAVAILABLE" ? "Anmeldung derzeit nicht erreichbar" : "Briefing konnte nicht geladen werden");
     }
     hideStartupSplash();
-  });
+}
+
+loadBriefing()
+  .then((loaded) => { if (loaded) schedulePushAutoSync(); })
+  .then(() => clearAppIconBadge())
+  .catch(renderStartFailure);
