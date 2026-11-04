@@ -2,14 +2,14 @@
 
 ## W15: unbegrenzte sequenzielle Mock500-Dauerfreigabe (04.11.2026)
 
-Die neue Betreiberanweisung ersetzt die 3er-Grenze und Einzel-GOs bis zum ersten
-vollständigen verifizierten PASS. [Dauervertrag](betrieb/w15-mock500-standing-control-20261104.md):
+Neue Dauerfreigabe ohne 3er-Grenze/Einzel-GOs bis zum verifizierten Voll-PASS. [Dauervertrag](betrieb/w15-mock500-standing-control-20261104.md):
 Alter Grant, beide STOPs, fünf Journalereignisse, zwei Reservierungen und UNKNOWNs
 bleiben bytegleich; eigene append-only Zulassung am selben Root, keine Versuchskappe.
 Sieben neue gezielte Übergangstests PASS; Control-CI und unabhängige Abnahme Pflicht.
 Nach FAIL nur sichere Bereinigung und belegter Fix; kein Blindretry.
-Keine Modelle/Production/neuen bezahlten Ressourcen. Artifact-Freikontingent UNKNOWN
-(Billing403): Start vor Links blockiert. Slot3-Stand1fa20107 bleibt erhalten.
+Keine Modelle/Production/neuen bezahlten Ressourcen. Public-Standard-Actions samt
+Artefakt sind anbieterbefreit, unabhängig geprüft; frische Bindung Pflicht. PR1044,
+CI41904312147 läuft; finale CI Pflicht.
 
 Erste Runtime exakt33d588b6209ad912c5045f6561c07b7dc3d60e63 unverändert;
 CI41889108711/Review, Empfang41037459441/End50041325430429 übernommen.

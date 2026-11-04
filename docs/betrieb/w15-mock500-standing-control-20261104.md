@@ -40,14 +40,29 @@ vollständige globale manuelle Historie liegen vor READY. Vor Links und POST wer
 lokale Bindungen, Ablauf, Verbrauchsanker und der frische authentisierte Nullkostenbeleg
 erneut geprüft. Eine JSON-Behauptung „kostenlos“ genügt ausdrücklich nicht.
 
-Aktuelle tatsächliche Startgrenze: Standard-Linux-Compute des öffentlichen Repositorys
-ist kostenlos; freier gemeinsam genutzter Artifact-/Packages-Speicher ist nicht
-authentisiert bekannt. Die einmalige Billingabfrage wurde mit 403 abgewiesen; keine
-Wiederholung oder zusätzliche Billingarchitektur. Die alte 0,05-USD-Obergrenze ersetzt
-keinen Nullkostenbeleg. Bei konservativ höchstens 1.326.437.376 Cipher-Bytes über
-25 Stunden wäre etwa 0,01234 USD zusätzlicher Speicherverbrauch möglich. Deshalb
-bleibt der tatsächliche Fullstart vor Links gesperrt, bis authentisierte verfügbare
-Freikontingente diesen möglichen Verbrauch vollständig decken.
+Kostenklärung: Die öffentliche Repository-Nutzung mit Standard-`ubuntu-24.04` und
+dem bestehenden GitHub-Actions-Artefaktpfad fällt unter die Anbieterbefreiung,
+einschließlich Public-Artifacts. Die aktuelle Billingdokumentation begrenzt die
+Compute-/Storage-Abrechnung auf private Repositories; die spezifische
+[GitHub-Anbieterantwort](https://github.com/orgs/community/discussions/26438)
+bestätigt, dass Public-Artifacts nicht auf das Storagekontingent angerechnet werden.
+Unabhängiger Quellenreview PASS. Der anfängliche UNKNOWN-Befund und die einmalige
+Billing-403 bleiben als vorläufige Beobachtung erhalten; sie belegen keine Kostenpflicht.
+
+Der private Kostenprüfer akzeptiert für diesen exakt gebundenen Pfad einen
+`PUBLIC_STANDARD_ACTIONS_ARTIFACT_EXEMPTION`-Nachweis: frische authentisierte öffentliche
+Repository-Eigenschaft vor READY, gepinnter Standardrunner/Workflow und unveränderter
+Transport für höchstens ein verschlüsseltes Artefakt mit einem Tag Aufbewahrung und
+der bestehenden Byteobergrenze. Danach nur lokale Bindungsprüfungen. Keine erfundenen
+freien Byte-Stunden und kein zusätzliches Quotenhindernis für den befreiten Public-Pfad.
+Private Repositories, größere Runner, anderer Storage oder neue kostenpflichtige
+Ressourcen sind damit nicht genehmigt; außerhalb des belegten Nullkostenpfads stoppen.
+Die alte 0,05-USD-Obergrenze ist weiterhin keine Berechtigung zu bezahltem Verbrauch.
+
+[Draft PR1044](https://github.com/ernisch/helmut-pilot/pull/1044) führt den neuen
+Controlstand. Die [CI41904312147](https://github.com/ernisch/helmut-pilot/actions/runs/41904312147)
+prüft Codehead32dbe0d7; der abschließende Dokumentationskopf benötigt eigene CI.
+Der erhaltene Slot-3-Stand1fa hat CI41901229088 SUCCESS und wird nicht ausgeführt.
 
 Sieben neue synthetische Übergangstests im bestehenden Testentry prüfen mehr als drei
 sichere Versuche bis PASS, Runtime-/Control-Reparaturgrenzen, Kostenbelege, HOLD und
