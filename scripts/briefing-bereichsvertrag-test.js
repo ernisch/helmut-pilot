@@ -181,4 +181,92 @@ test("Production-Zeitstempel und Berliner Tagesgrenze tragen denselben Fristvert
     assert.equal(B.tagesAnlass(ds, now, null, { deadline }), null);
   }
 });
+// Synthetische Vertragsdaten; keine redaktionelle Quellenabnahme.
+function tagQuelle(tag = "2026-10-14", nummer = "10001", absatz = "Die synthetische amtliche Meldung beschreibt den belegten Umbau einer Kreuzung und dient ausschließlich dem lokalen Test des Kalendertagvertrags.") {
+  const S = require("../lib/helmut/berlin-artikelstand"), crypto = require("node:crypto");
+  const sha = s => crypto.createHash("sha256").update(s).digest("hex");
+  const url = `https://berlin.de/sen/uvk/presse/pressemitteilungen/2026/pressemitteilung.${nummer}.php`;
+  const stand = { version: S.VERSION, herkunft: S.HERKUNFT_SONDER, url,
+    titel: "Synthetischer Artikelstand", publikationstag: tag,
+    absatzHash: sha(absatz), volltextHash: sha(absatz + "\n") };
+  stand.standHash = S.standHashFuer(stand);
+  return { id: "rd-" + stand.standHash, content_hash: stand.standHash, url, canonical_url: url,
+    title: stand.titel, summary: absatz, published_at: null, raw: { helmutBerlinArtikelstand: stand } };
+}
+const tageJetzt = new Date("2026-10-15T23:44:00.000Z"), gebunden = { start: "2026-10-13T00:00:00.000Z" };
+test("Ganzer belegter Artikelstandtag trägt Tagesanlass ohne Uhrzeit oder Datendrift", () => {
+  const d = tagQuelle(), before = JSON.stringify(d), r = B.tagesAnlass([d], tageJetzt, gebunden);
+  assert.deepEqual(r.documentIds, [d.id]); assert.match(r.text, /Quellenstand: 2026-10-14/);
+  assert.equal(JSON.stringify(d), before); assert.equal(d.published_at, null);
+  assert.equal(require("../lib/helmut/lage-quellenbeleg").baueEingabe(
+    [{ vorgang_id: "kalendertag" }], { kalendertag: [d] }, tageJetzt, {}).length, 1);
+});
+test("Artikelstand erreicht den sichtbaren Briefingvertrag mit unverändertem Quelltag", () => {
+  const d = tagQuelle(), k = ko(), args = { ...input([k], { "vg-a": [d] }),
+    now: tageJetzt, frischeFenster: gebunden };
+  const before = JSON.stringify(args);
+  const briefing = C.toBriefingContractV3(args);
+  assert.equal(briefing.currentHelmutState.primaryVorgangId, "vg-a");
+  assert.deepEqual(briefing.currentHelmutState.tagesAnlass.documentIds, [d.id]);
+  assert.match(briefing.currentHelmutState.whyItMatters, /Quellenstand: 2026-10-14/);
+  assert.equal(JSON.stringify(args), before);
+  const drift = structuredClone(d); drift.summary += " Nicht gebundener Text.";
+  const rejected = C.toBriefingContractV3({ ...args, sourcesByVorgang: { "vg-a": [drift] } });
+  assert.equal(rejected.currentHelmutState.primaryVorgangId, null);
+});
+test("Angeschnittener 13.10. bleibt trotz echtem Standtag außerhalb des gebundenen Fensters", () => {
+  assert.equal(B.tagesAnlass([tagQuelle("2026-10-13")], tageJetzt, gebunden), null);
+});
+test("Laufende und zukünftige Kalendertage bleiben gesperrt", () => {
+  for (const [tag, jetzt] of [["2026-10-15", "2026-10-15T12:00:00Z"], ["2026-10-16", tageJetzt]])
+    assert.equal(B.tagesAnlass([tagQuelle(tag)], new Date(jetzt), gebunden), null);
+});
+test("Volle Tagesgrenzen bleiben inklusive, eine Millisekunde Anschnitt sperrt", () => {
+  const d = tagQuelle(), beginn = "2026-10-13T22:00:00.000Z", ende = new Date("2026-10-14T22:00:00.000Z");
+  assert.ok(B.tagesAnlass([d], ende, { start: beginn }));
+  assert.equal(B.tagesAnlass([d], ende, { start: "2026-10-13T22:00:00.001Z" }), null);
+  assert.equal(B.tagesAnlass([d], new Date(ende.getTime() - 1), { start: beginn }), null);
+});
+test("Sommer- und Winterzeitwechsel werden als ganzer Berliner Tag geprüft", () => {
+  for (const [tag, start, end] of [["2026-03-29", "2026-03-28T23:00:00Z", "2026-03-29T22:00:00Z"],
+    ["2026-10-25", "2026-10-24T22:00:00Z", "2026-10-25T23:00:00Z"]]) {
+    assert.ok(B.tagesAnlass([tagQuelle(tag)], new Date(end), { start }));
+    assert.equal(B.tagesAnlass([tagQuelle(tag)], new Date(Date.parse(end) - 1), { start }), null);
+  }
+});
+test("Artikelstand erweitert weder Radar noch Personen- oder Fristbelege", () => {
+  const d = tagQuelle();
+  assert.deepEqual(B.quellen([d], tageJetzt), []); assert.equal(B.beobachtung([d], tageJetzt), null);
+  assert.deepEqual(B.personenQuellen([d], tageJetzt, profile), []);
+  assert.equal(B.fristTag({ deadline: "2026-10-16" }, [d], tageJetzt), null);
+});
+test("Ungültige Standhashes, Textänderung, fehlender Absatz und erfundene Uhrzeit sperren", () => {
+  for (const change of [d => { d.raw.helmutBerlinArtikelstand.standHash = "a".repeat(64); },
+    d => { d.summary += " Geändert."; }, d => { delete d.summary; },
+    d => { d.published_at = "2026-10-14T10:00:00Z"; }, d => { d.publishedAt = "2026-10-14T10:00:00Z"; }]) {
+    const d = tagQuelle(); change(d); assert.equal(B.tagesAnlass([d], tageJetzt, gebunden), null);
+  }
+});
+test("Undatierter, gewöhnlich datierter oder anders gebundener Alias sperrt in jeder Reihenfolge", () => {
+  const d = tagQuelle(), ohne = { ...d, raw: {} }, stamp = { ...ohne, published_at: "2026-10-14T12:00:00Z" };
+  const anderer = tagQuelle("2026-10-15");
+  for (const ds of [[d, ohne], [d, stamp], [d, anderer]])
+    for (const rows of [ds, [...ds].reverse()]) assert.equal(B.tagesAnlass(rows, tageJetzt, gebunden), null);
+});
+test("Transitive Aliasgruppen können ungültige Standvarianten nicht abtrennen", () => {
+  const d = tagQuelle(), alias = tagQuelle("2026-10-14", "10002");
+  const bruecke = { ...d, url: alias.url, canonical_url: alias.url, raw: {} };
+  for (const rows of [[d, bruecke, alias], [alias, bruecke, d]])
+    assert.equal(B.tagesAnlass(rows, tageJetzt, gebunden), null);
+});
+test("Gültige Duplikate zählen einmal; jüngster tatsächlicher Tag bleibt Quellenstand", () => {
+  const d = tagQuelle(), alt = doc("mit-stempel", "2026-10-13");
+  const r = B.tagesAnlass([d, structuredClone(d), alt], tageJetzt, gebunden);
+  assert.deepEqual(r.documentIds, [alt.id, d.id]); assert.match(r.text, /Quellenstand: 2026-10-14/);
+});
+test("Ungültige Zeitfenster und gewöhnliche undatierte Quellen bleiben gesperrt", () => {
+  for (const start of ["ungültig", "2026-10-16T00:00:00Z"])
+    assert.equal(B.tagesAnlass([tagQuelle()], tageJetzt, { start }), null);
+  assert.equal(B.tagesAnlass([{ ...doc("ohne", "2026-10-14"), published_at: null }], tageJetzt, gebunden), null);
+});
 console.log(`${count}/${count} Bereichsvertragsfälle bestanden; offline, ohne Modellaufruf.`);

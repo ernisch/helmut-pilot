@@ -144,6 +144,28 @@ async function main() {
       assert.equal(input[0].quellenbelege[0].veroeffentlichtAm, stand.publikationstag);
       assert.equal(input[0].quellenbelege[0].auszug, text);
       assert.equal(loaded[0].published_at, null);
+      // Gleiche echte REST-Zeilen muessen auch den Briefing-Tagesanlass tragen.
+      // Der ganze Berliner Standtag liegt im expliziten Testfenster. Weder
+      // gespeicherte Daten noch die fehlende Uhrzeit werden dafuer veraendert.
+      const contract = require("../lib/helmut/briefing-bereichsvertrag");
+      const before = JSON.stringify(loaded);
+      const occasion = contract.tagesAnlass(loaded, now, { start: "2026-09-11T22:00:00Z" });
+      assert.deepEqual(occasion.documentIds, [id]);
+      assert.match(occasion.text, /Quellenstand: 2026-09-12/);
+      assert.equal(JSON.stringify(loaded), before);
+      assert.equal(contract.tagesAnlass(loaded, now, { start: "2026-09-11T22:00:00.001Z" }), null);
+      assert.deepEqual(contract.quellen(loaded, now), []);
+      const ko = { id: "ko-stand", vorgang_id: "vg-stand", display_title: stand.titel,
+        display_summary: text, recommendation: "Die weitere Beratung vorbereiten." };
+      const briefing = require("../lib/helmut/briefingContract").toBriefingContractV3({
+        profile: { id: "synthetischer-rest-test", fullName: "Alex Beispiel" }, now,
+        frischeFenster: { start: "2026-09-11T22:00:00Z" }, knowledgeObjects: [ko],
+        kosById: { "ko-stand": ko }, sourcesByVorgang: { "vg-stand": loaded },
+        decisions: [{ knowledge_object_id: "ko-stand", vorgang_id: "vg-stand",
+          score: 70, decision: "Sofort reagieren", matched_features: [] }] });
+      assert.equal(briefing.currentHelmutState.primaryVorgangId, "vg-stand");
+      assert.deepEqual(briefing.currentHelmutState.tagesAnlass.documentIds, [id]);
+      assert.equal(JSON.stringify(loaded), before);
       psql(`update raw_documents set raw='{}'::jsonb where id=${sqlString(id)};`);
       await assert.rejects(bound("ko-stand", docs), readError);
       psql(`update raw_documents set raw=${sqlString(JSON.stringify({helmutBundestagArtikelstand:stand}))}::jsonb,

@@ -1,18 +1,15 @@
 # CURRENT STATE — Helmut
 
-## Siffi: vereinfachter Testweg (27.10.2026)
+## Siffi: ein Motorpfad festgelegt (27.10.2026)
 
-Codex und GitHub CI statt Hetzner als Entwicklungstor. Vorhandene Offline-,
-Browser- und isolierte PostgreSQL/PostgREST-Tests mit Mocks nutzen;
-keine Doppeltests. Coverage und fehlende 500er-Integrationsfaelle gezielt
-pruefen. Mac: maximal 5 GB mobiler Traffic pro Tag, keine grossen Downloads.
-Hetzner unveraendert; neuer Aufbau/native Tests nur bei belegtem Bedarf und GO.
-Finaler Production-Test mit 500 aktiven Profilen/1500 Sollpositionen nur
-nach getrennter Freigabe.
-
-Letzter Hetzner-Lauf 40428805792: Tools/Quelle bereit, Image PROCESS_UNKNOWN,
-Test-DB offen, native Tests 0. PR966 gemergt, kein positiver Zielnachweis.
-Kein Productionumzug. [Belege](betrieb/hetzner-development-environment-20261026.md).
+Main6b4012cd; PR969 bleibt ungemergt. Gewaehlt: W15-Kern11ca02db ausPR915,
+keine spaetere Native-/Auth-Architektur.27Runtimeaenderungen noch nicht importiert.
+Daten:5Belegdateien hashgleich vorhanden;8Originaldateien/91.544.863B fehlen hier.
+Passender Eingangsdump mit SHA in Drive belegt; Einzelgroesse/Zugriff noch offen.
+Schluesseltransfer erlaubt. Technischer Quellenzugang fehlt; kein weiteresGO noetig.
+Codebc9ff4a2:34Gruppen und CI40477575989 gruen; seither nur Doku, keine neuenTests.
+[Pfad,Daten,Recovery und naechster Schritt](betrieb/500er-main-abgleich-20261027.md).
+Kein Productioneingriff;500/1500 nur mit eigenemGO. Mac5GB/Tag,Cloud/CI bevorzugt.
 
 **Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
