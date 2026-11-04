@@ -1,7 +1,56 @@
 # W15: begrenzte Prepare-Diagnose vor Ausfuehrungsfreigabe
 
-Stand 04.11.2026. Ausschliesslich Entwicklung und synthetische Pruefung;
-**kein geschuetzter Start freigegeben oder ausgefuehrt**.
+Stand 04.11.2026. Das spaetere ausdrueckliche Einmal-GO wurde durch den unten
+belegten Diagnoselauf verbraucht. **Keine Wiederholung oder Serienfortsetzung.**
+
+## Tatsaechlicher Lauf und kleinste Korrektur
+
+[Run41854268479](https://github.com/ernisch/helmut-pilot/actions/runs/41854268479),
+Job126658515304 auf exakt `1ccb592d165ffcde64cfcf8061eef40ce8e7e77b` ist
+**FAIL**, unabhaengig bestaetigt. Jobdauer183Sekunden;193Sekunden waren der
+Beobachternachlauf. Genau eine frische16er-Linkrunde und ein angenommener POST:
+275,069331Sekunden Restgueltigkeit,62.057Parameterbytes,27,984Sekunden READY
+bis Uebergabe. Der genehmigte Fast Forward789→1ccb ist bestaetigt; kein Reset.
+
+Erstfehler `mock500-controller-materials-baseline` /
+`MATERIALS_MAIN_CHECK_150`, Assertion im echten Materials-Ausgangsvergleich.
+Der neue Controller ergaenzte `baseline` um `prepareNativeInventory` und
+`prepareDiagnosticCommit` und uebergab dasselbe Objekt als `sourceBaseline`.
+Materials vergleicht dieses mit seiner unveraenderten SQL-Projektion der acht
+Datenbankfelder. Die beiden lokalen Diagnosefelder erzwingen diese Abweichung;
+weitere moegliche Datenbankdifferenzen werden dadurch nicht ausgeschlossen.
+**Node-Prepare wurde nicht erreicht; die Ursache von Run41818696152 bleibt UNKNOWN.**
+
+Der minimale Entwicklungsfix kopiert den Materials-Ausgangsstand vor dem
+Hinzufuegen dieser lokalen Diagnosefelder. Die exakten Cleanup-/Commitbindungen
+bleiben lokal erhalten. Der echte Materials-Vergleich wird nicht gefiltert oder
+gelockert; keine SQL-, Quellen-, Kalender-, Ressourcen- oder Production-Aenderung.
+Eine kleine Python→Node-Gegenprobe verwendet den echten Controller-Deskriptor,
+die echte Materials-State-Funktion und deren Ausgangsvergleich gegen eine eigene
+synthetische SQL-Projektion. Geaenderte Hashes, Zaehler und zusaetzliche Felder
+muessen weiterhin scheitern. Pflicht-CI und unabhaengige Abnahme werden auf dem
+exakten Fixkopf am zugehoerigen Entwicklungs-PR gebunden. Kein neuer Originallauf.
+
+Die authentifizierte geschlossene Quittung stimmt mit der erwarteten Nonce
+ueberein. Bestaetigt:500Profile/aktiv0, Fachfelder unveraendert, natives Inventar
+unveraendert, Units/Providerphasen0, AuthorityInstalledfalse, Container-/Watcher-
+Stopp und alle acht aeusseren Bereinigungen PASS. Prozessstillstand und keine
+aktiven manuellen Laeufe unabhaengig nachgelesen. Kernelpeak1,916GB bei13,375GB
+Hartlimit; Swap/OOM/harte Grenzereignisse0. Andere Komponentenspitzen UNKNOWN;
+die zwei Samples und Dateicachewerte erklaeren nicht die Peakzusammensetzung.
+
+Genau eine verschluesselte Fehlerkapsel, Artifact13335454970:10.699Cipherbytes,
+10.893Bytes API-Archiv,86.399Sekunden Aufbewahrung; entfernte Ruecklesung und
+Authentifizierung bestaetigt. Dies ist kein vollstaendiger Ergebnisbackup- oder
+Mock500-Nachweis. Maximale Speicherung0,05USD, keine echten Modellaufrufe.
+Originale/Drive/Secrets und die alten Serien-STOPs unveraendert; zwei reservierte
+Serienplaetze, kein Terminal, Platz3 weiterhin gesperrt. Kein `complete_child`.
+
+Erhaltene private Primaerbelege ausschliesslich im bestehenden Bereich
+`/workspace/helmut-w15-private-evidence-20261104/MOCK500_PREPARE_DIAGNOSTIC_01/`:
+Operatorgrant, frische Bindungen, Vorflug, POST-/Laufzuordnung, authentifizierter
+Log, geschlossene Quittung, tatsaechliche API-Metadaten und unabhaengige Abnahme.
+Livecase `/tmp/w15pd1`; keine Originaldateien oder Rohmeldungen im Repository.
 
 ## Zweck und genaue Grenze
 
@@ -95,11 +144,12 @@ Entwicklungspruefungen. Pflicht-CI und unabhaengige Sicherheitsabnahme muessen
 den tatsaechlichen finalen Commit bestaetigen; Belege stehen am Draft-PR.
 
 Die Serienplaetze, Journal, UNKNOWN-/STOP-Anker und pausierte Ausfuehrungsautomation
-bleiben unveraendert. Platz3 wird weder reserviert noch freigeschaltet. Runtime789
-und der Ausfuehrungsbranch werden in dieser Vorbereitung nicht aktualisiert.
+bleiben unveraendert. Platz3 wird weder reserviert noch freigeschaltet. Die fruehere
+Vorbereitung aktualisierte die Runtime nicht; erst das spaetere ausdrueckliche GO
+autorisierte den oben belegten Fast Forward auf1ccb. Der Fixzweig ist getrennt.
 Die vorhandenen End500-/Originalempfangsbelege werden uebernommen.
 
-## Noch erforderliches separates GO
+## Erneutes separates GO erst fuer den geprueften Fixkopf
 
 Genau einen isolierten Prepare-Diagnosejob auf dem am Draft-PR unabhaengig
 abgenommenen exakten Commit in `helmut-ci-originals` genehmigen, einschliesslich

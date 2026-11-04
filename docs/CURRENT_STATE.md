@@ -1,20 +1,20 @@
 # CURRENT STATE — Helmut
 
-## W15: begrenzte Prepare-Diagnose vorbereitet (04.11.2026)
+## W15: Prepare-Diagnose FAIL, Baselinefix vorbereitet (04.11.2026)
 
-[Diagnosezweig](betrieb/w15-mock500-prepare-diagnostic-20261104.md) nutzt PR1038:
-echterPrepare endet vor Authority-Installation, Aktivierung/Units/Modelle0.
-EigeneGO-/Eingabebindung, nativeNullaktivität, festeFehlerkategorien/Kapsel;
-gezieltePrüfungen/CI/Review Pflicht. GeschützterStart braucht separatesGO.
-[Run41818696152](https://github.com/ernisch/helmut-pilot/actions/runs/41818696152),
-Job126536023497/Runtime789ea3ad unverändert: **FAIL**,425s, erstePhase
-`mock500-controller-prepare`; innereUrsache UNKNOWN. EineLinkrunde/einPOST.
-Peak2,956GB/Limit13,356GB;Swap/OOM/max0;8äußereCleanupPASS,0Artefakte/aktiveManuals.
-Endzähler/Ergebnisfehler/Sicherung/finaleDBnull/tatsächlicheWorker-Nonce UNKNOWN.
-ZweiPlätze verbraucht; dritter durch UNKNOWN-Anker gesperrt. Altanker erhalten;
-Automation pausiert; Runtime789/STOPs erhalten. NächsterSchritt: nachCodeabnahme
-einmaligenPrepareDiagnoseumfang freigeben; Altursache bleibtUNKNOWN. End500/Empfang
-übernommen; keinMock500PASS/Production. [Serienbelege](betrieb/w15-mock500-manual-series-20261104.md).
+[Run41854268479](https://github.com/ernisch/helmut-pilot/actions/runs/41854268479)
+auf1ccb: **FAIL**,183s, `MATERIALS_MAIN_CHECK_150`. Zwei lokale Diagnosefelder
+verunreinigen den8Feld-DB-Vergleich; Prepare nicht erreicht, Altursache UNKNOWN.
+[Minimalfix/Belege](betrieb/w15-mock500-prepare-diagnostic-20261104.md): Snapshot
+vor lokalen Zusatzfeldern kopieren, strengen Materials-Vergleich erhalten.
+Echter Python→Node-Gegenfall/9negative Varianten; Pflicht-CI/Review am Fix-PR.
+500/aktiv0, Fachfelder/Inventar unverändert;8CleanupPASS/eigeneProzesse0.
+Peak1,916GB/Limit13,375GB;Swap/OOM/max0;1verschlüsselte Kapsel/1Tag/authReadback.
+GO verbraucht, keinRetry; Ausführungsbranch1ccb, Fix getrennt. Serien-STOPs
+unverändert,2Plätze reserviert/0Terminals, dritter gesperrt; Automation pausiert.
+Neues gezieltes Diagnose-GO auf geprüftem Fixkopf erforderlich, keinMock500PASS.
+Vorgänger41818696152/789 bleibtFAIL/innereUrsacheUNKNOWN; End500/Empfang übernommen.
+[Vollständiger Vorgängerstand](https://github.com/ernisch/helmut-pilot/blob/1ccb592d165ffcde64cfcf8061eef40ce8e7e77b/docs/CURRENT_STATE.md).
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
 Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.

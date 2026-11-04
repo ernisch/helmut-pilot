@@ -854,11 +854,14 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
           "'profileHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by user_id collate \"C\")::text,'UTF8')),'hex')from mandate_profiles p),"
           "'profileFachHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)-'aktiv' order by user_id collate \"C\")::text,'UTF8')),'hex')from mandate_profiles p),"
           "'storeHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by id collate \"C\")::text,'UTF8')),'hex')from helmut_store p));")
+        # Materials compares the actual database row shape. Keep local cleanup
+        # bindings out of that unchanged snapshot, without weakening its check.
+        material_baseline=dict(baseline)
         if prepare_only:
             baseline['prepareNativeInventory']=prepare_native_inventory()
             baseline['prepareDiagnosticCommit']=context['exactCommit']
         phase='mock500-controller-runtime-context'
-        descriptor=inputs.private_descriptor();descriptor['sourceBaseline']=baseline;descriptor['window']=start_guard.window
+        descriptor=inputs.private_descriptor();descriptor['sourceBaseline']=material_baseline;descriptor['window']=start_guard.window
         if 'sourceReplayAuthorization' in start_guard.admission:
             assert not diagnostic or prepare_only
             descriptor['sourceReplayAuthorization']=dict(start_guard.admission['sourceReplayAuthorization'])
