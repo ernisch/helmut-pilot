@@ -73,3 +73,38 @@ Bei UNKNOWN/Sicherheitsverletzung/unklarem Prozesszustand stoppen, weitere Start
 sperren und eigene Prozesse sicher beenden; alle Belege erhalten. Kein Merge,
 Deployment, neue Ressource oder Production500. Keine automatische Löschung oder
 Branchrücksetzung. Ein manueller Start beweist noch keinen Mock500-PASS.
+
+## Tatsächlicher Startblock am 04.11.2026
+
+Kontrollcommit `904c63c8f33c29cb0e9bec1c76e78a5334765dc0`, Pflicht-CI41793473003
+mit beiden Pflichtchecks PASS. Zehn öffentliche und acht private gezielte
+Prüfgruppen sowie die Zeitformatprüfung wurden übernommen. Die unabhängige
+Vorstartprüfung übersah eine operative Voraussetzung: Das private gebundene
+Dispatchverzeichnis muss vor dem Launcherstart existieren und dem bestehenden
+Verzeichnisprüfer mit Eigentümer und Modus0700 genügen.
+
+Der sichere Fast Forward der Ausführungsbranchkette von60019f03 auf unverändert
+789ea3ad wurde bestätigt. Platz1 wurde dauerhaft reserviert. Der einzige
+Launcheraufruf endete anschließend in `private-root`, vor STARTED/READY:
+Das Verzeichnis fehlte; der vorhandene Prüfer öffnet nur bestehende Verzeichnisse.
+Der Ausgang ist **bekannt: NOT_DISPATCHED**. Keine Linkrunde, kein POST, kein
+GitHub-Job, keine Datenbank und keine Profilaktivierung; eigene Launcher- und
+Watcherprozesse sind beendet. Tatsächliche Mock500-Zähler, RAM, Sicherung und
+Nullaktivitätsquittung eines neuen Laufs liegen deshalb nicht vor.
+
+Der bestehende Terminalprüfer verlangt einen authentifizierten tatsächlichen
+Run/Job. Für diesen reservierten, nicht gestarteten Platz besteht kein erlaubter
+Fortsetzungsabschluss. Deshalb externer Stoppanker und STOP-Journal mit
+Kontrollgrund `UNKNOWN`; dies erklärt den fehlenden Vertragsabschluss und
+ändert den bekannten No-POST-Befund nicht. Platz1 bleibt gezählt, kein Freigeben,
+Reset, erfundener FAIL oder automatischer zweiter Start. Die Automation ist pausiert.
+
+Die kleinste separate Vorbereitungskorrektur erzeugt das exakt gebundene private
+Zustandsverzeichnis exklusiv mit0700 und prüft es mit demselben Runtimeprüfer vor
+den Abschlussmetadaten. Bestehende Verzeichnisse, Symlinks oder Startbelege werden
+abgelehnt. Fünf kleine synthetische Regressionstests bestehen; keine Änderung des
+Runtimecodes, der Originale, Quellen-, Zeit-, Ressourcen- oder Kostenverträge.
+Der fehlgeschlagene Kindbereich und seine Prüfnachweise bleiben unverändert.
+Eine Wiederaufnahme der gestoppten Serie benötigt eine ausdrücklich genehmigte,
+geprüfte Behandlung dieses No-POST-Abschlusses; die bestehende Freigabe erlaubt
+keinen Ersatz aus einem neuen leeren Journal.

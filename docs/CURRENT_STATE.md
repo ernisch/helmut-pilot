@@ -1,13 +1,13 @@
 # CURRENT STATE — Helmut
 
-## W15: manueller Mock500-Start vorbereitet (04.11.2026)
+## W15: manueller Mock500 vor READY blockiert (04.11.2026)
 
-[Manuelle Bindung](betrieb/w15-mock500-manual-series-20261104.md): ausdrücklicherGO
-ersetzt nur Schedulerbeleg; bestehende3Slots/0,15USDgesamt unverändert.
-Runtime789/PR1032/CI41707992564 erhalten; Schedulerpfadbytegleich/Automationpausiert.
-NeueKontroll-CI/Review vorStartPflicht;0/3Slots,0Links,0Jobs. Zeitformatfixgeprüft.
-Originalbuilder500SynthetikPASS; volle500D/Provider/Review/C vorAktivierungPflicht.
-End50041325430429/Empfang41037459441 übernommen. Run41694827024/600bleibtFAIL
+[Bindung](betrieb/w15-mock500-manual-series-20261104.md): CI41793473003/904c63c8 PASS.
+FF600→789; Runtime unverändert. Platz1/3 vorREADY blockiert: Zustandsverzeichnis fehlte.
+0Links/POST/Jobs/DB/eigeneProzesse. NOT_DISPATCHED bekannt; KontrollSTOPUNKNOWN.
+Journal/Livecase erhalten, Automationpausiert. SeparaterFix:5ProbenPASS. KeinRetry.
+End50041325430429/Empfang41037459441 übernommen; volle500Bindungen vorAktivierung Pflicht.
+Run41694827024/600bleibtFAIL
 (195s,2,77GB),RohursacheUNKNOWN;8CleanupPASS,Endzähler/Sicherung/DBnullUNKNOWN.
 KeinMock500PASS/Production; alteVerträge/FAILs erhalten.
 
