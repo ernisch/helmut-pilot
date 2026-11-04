@@ -7,6 +7,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+from subprocess import Popen as NativePopen, PIPE
 import tempfile
 import unittest
 from unittest.mock import patch, Mock
@@ -77,6 +78,98 @@ class PrepareDiagnosticChecks(unittest.TestCase):
         self.assertFalse(value['authorityInstalled']);self.assertEqual(events.count('prepare'),1)
         self.assertEqual(value['activeProfiles'],0)
         for action in ('run','audit','backup','atomic-check'):self.assertNotIn(action,events)
+
+    def materials_baseline_consumer(self, descriptor, database_snapshot):
+        """Actual Materials state/main prefix against independent invented SQL rows."""
+        program=r'''
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const data=JSON.parse(fs.readFileSync(0,'utf8')),file=process.argv[1],code=fs.readFileSync(file,'utf8');
+const state=code.slice(code.indexOf('function state(database)'),code.indexOf('function originals()'));
+const prefix=code.slice(code.indexOf('async function main() {'),code.indexOf('  DIAGNOSTIC.enter("config");'));
+assert(state.startsWith('function state(database)'));assert(prefix.startsWith('async function main() {'));
+const run=vm.runInThisContext('(async function(assert,BOUND,DB,SOURCE_DB,UNIT0,ATOMIC_PREPARED0,read,DIAGNOSTIC,checkDiagnosticScope,require,process){'
+ +state+'\n'+prefix+'\nreturn true;\n}\nreturn main();})',{filename:file});
+const baseline=data.snapshot,variants=[baseline,...[
+ {profileHash:'f'.repeat(64)},{profileFachHash:'f'.repeat(64)},{storeHash:'f'.repeat(64)},
+ {profiles:499},{active:1},{identities:500},{storeRows:7},{database:'FICTIONAL_WRONG_DATABASE'},
+ {unexpectedField:'FICTIONAL_EXTRA_FIELD'}].map(change=>({...baseline,...change}))];
+(async()=>{
+ const accepted=[],errors=[],reads=[];
+ for(const snapshot of variants){
+  function read(query,database){
+   assert.equal(database,baseline.database);assert(query.startsWith("select jsonb_build_object('database',current_database(),"));
+   for(const key of Object.keys(baseline))assert(query.includes("'"+key+"'"));
+   reads.push(database);return JSON.parse(JSON.stringify(snapshot));
+  }
+  const req=name=>{assert.equal(name,'./lokaler-netzschutz');return{pruefe:()=>[]};};
+  req.resolve=name=>name;req.cache={'./lokaler-netzschutz':true};
+  try{
+   accepted.push(await run(assert,data.descriptor,baseline.database,'helmut_w15_input_20261027',false,true,read,
+    {enter:stage=>assert.equal(stage,'baseline')},()=>assert.equal(data.descriptor.prepareDiagnosticOnly,true),req,
+    {version:'v24.19.0',env:{HELMUT_STORAGE_BACKEND:'local'}}));errors.push(null);
+  }catch(error){accepted.push(false);errors.push(error.code);}
+ }
+ console.log(JSON.stringify({accepted,errors,reads:reads.length,descriptorKeys:Object.keys(data.descriptor.sourceBaseline).sort(),
+  databaseKeys:Object.keys(baseline).sort()}));
+})().catch(()=>{process.exitCode=1;});
+'''
+        # Capture the native Popen class before the existing pipeline fixture
+        # substitutes its Docker/gateway transport; this child only runs a VM.
+        child=NativePopen(['node','-e',program,str(HERE.parent/'synthetik-500-w15-full500-materials.js')],
+            stdin=PIPE,stdout=PIPE,stderr=PIPE,cwd=HERE.parents[1])
+        try:
+            stdout,stderr=child.communicate(json.dumps({'descriptor':descriptor,'snapshot':database_snapshot}).encode(),timeout=10)
+        except BaseException:
+            child.kill();child.communicate();raise
+        self.assertEqual(child.returncode,0,stderr.decode())
+        return json.loads(stdout)
+
+    def test_real_materials_baseline_uses_only_database_fields_and_keeps_local_cleanup_metadata(self):
+        fixture=F.ControllerAdmissionChecks('runTest');self.addCleanup(fixture.doCleanups)
+        frames=[];cleanup_inputs=[];descriptors=[]
+        def inject(owner,c):
+            actual_read,actual_stage,actual_cleanup=c.read,c.Supervisor.stage,c.prepare_cleanup
+            snapshot=dict(database=c.DB,profiles=500,active=0,identities=501,storeRows=6,
+                profileHash='a'*64,profileFachHash='b'*64,storeHash='c'*64)
+            def read(query,*args,**kwargs):
+                if query.startswith("select jsonb_build_object('database',current_database(),'profiles'"):
+                    return dict(snapshot)  # independent object on every DB read
+                return actual_read(query,*args,**kwargs)
+            def stage(supervisor,command,name,seconds,extra_env=None):
+                if name=='materials':
+                    self.assertIn('--atomic-prepared0',command)
+                    descriptor=json.loads(Path(extra_env['HELMUT_W15_MOCK_CONTEXT']).read_bytes())
+                    descriptors.append(descriptor)
+                    frame=self.materials_baseline_consumer(descriptor,snapshot);frames.append(frame)
+                    if frame['accepted'][0] is not True:
+                        raise c.Mock500ControllerFailure('mock500-controller-materials',{
+                            'schema':'helmut-w15-materials-first-failure/1','category':'MATERIALS_PROCESS_REJECTED',
+                            'kind':'assertion','stage':'baseline'})
+                return actual_stage(supervisor,command,name,seconds,extra_env)
+            def cleanup(baseline):
+                cleanup_inputs.append(copy.deepcopy(baseline));return actual_cleanup(baseline)
+            for target,name,value in ((c,'read',read),(c.Supervisor,'stage',stage),(c,'prepare_cleanup',cleanup)):
+                task=patch.object(target,name,value);task.start();owner.addCleanup(task.stop)
+        pipeline_error=None
+        try:
+            value,events=fixture._run_fictional_bound_pipeline(diagnostic=True,prepare_diagnostic=True,inject=inject)
+        except (AssertionError,ValueError)as error:
+            pipeline_error=error
+        self.assertEqual(len(frames),1)
+        frame=frames[0]
+        self.assertIs(frame['accepted'][0],True,
+            'real Materials baseline rejected producer descriptor keys '+str(frame['descriptorKeys'])+
+            ' against independent SQL keys '+str(frame['databaseKeys']))
+        self.assertEqual(frame['accepted'][1:],[False]*9)
+        self.assertEqual(frame['errors'][1:],['ERR_ASSERTION']*9)
+        self.assertEqual(frame['reads'],10)
+        if pipeline_error is not None:raise pipeline_error
+        self.assertTrue(value['prepareCompleted']);self.assertEqual(events.count('prepare'),1)
+        self.assertEqual(set(descriptors[0]['sourceBaseline']),set(frame['databaseKeys']))
+        self.assertEqual(len(cleanup_inputs),1)
+        self.assertEqual(cleanup_inputs[0]['prepareNativeInventory'],'a'*64)
+        self.assertEqual(cleanup_inputs[0]['prepareDiagnosticCommit'],descriptors[0]['context']['exactCommit'])
+        self.assertEqual(set(cleanup_inputs[0]),set(frame['databaseKeys'])|{'prepareNativeInventory','prepareDiagnosticCommit'})
 
     def test_actual_workflow_forwards_only_bound_prepare_authorization_and_no_backup(self):
         t,start,c=self.admission();authorization=t.admit(start,c)['prepareDiagnosticAuthorization']
