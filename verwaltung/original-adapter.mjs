@@ -8,6 +8,10 @@ const originalBuckets = [["brauchbar", "Brauchbar"], ["fehlt", "Fehlt"], ["leer"
 const originalFmt = (n, digits = 0) => number(n) === null ? "Nicht bekannt" : n.toLocaleString("de-DE", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 // Der technische Status 'eingeladen' entsteht bereits ohne versandte Einladung.
 export const customerStatusLabel = status => ({ aktiv: "Aktiv", eingeladen: "Zugangseinrichtung offen", testphase: "Testphase", pausiert: "Pausiert", gekuendigt: "Gekündigt", deaktiviert: "Deaktiviert" })[status] || "Nicht bekannt";
+const customerAccessLabel = raw => raw.active === false ? "Gesperrt"
+  : raw.active === true && ["deaktiviert", "gekuendigt"].includes(raw.status) ? "Kontostatus widersprüchlich · Zugang nicht bestätigt"
+    : raw.status === "eingeladen" ? "Zugangseinrichtung offen"
+      : raw.active === true && ["aktiv", "testphase", "pausiert"].includes(raw.status) ? "Laut Kontostatus freigegeben" : "Nicht bestätigt";
 export const originalHelpers = Object.freeze({
   AREAS: originalAreas, AREA_LABEL: Object.fromEntries(originalAreas), BUCKETS: originalBuckets,
   STAGES: ["Lauf erfolgt", "Inhalt vorhanden", "Inhalt vollständig", "Inhalt brauchbar"],
@@ -131,6 +135,7 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
   if (v.tabs && component.state.route.page === "kunden") for (const tab of v.tabs) tab.dot = "transparent";
   if (v.custRows) for (const row of v.custRows) {
     const c = D.customers.find(x => `#/kunde/${x.id}` === row.href);
+    if (c) { row.zu = component.st(customerAccessLabel(c.raw), c.raw.active === false ? "warn" : "neutral"); row.zuText = `Zugang ${customerAccessLabel(c.raw)}`; }
     row.tarif = c?.preis === null ? "Preis nicht gepflegt" : originalHelpers.fmt.eur(c?.preis);
     row.status = customerStatusLabel(c?.raw.status);
     row.profiles = c?.profiles.length ? c.profiles.map(id => D.byId[id]?.name || `${id} · Details nicht verfügbar`).join(", ") : "Keine Kennung zugeordnet";
@@ -146,7 +151,7 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
       { k: "Ansprechpartner", v: c.person, ink: "var(--ink)" }, { k: "E-Mail", v: c.mail, ink: "var(--ink)" },
       { k: "Monatspreis", v: originalHelpers.fmt.eur(c.preis), ink: "var(--ink)" },
       { k: "Kontostatus", v: customerStatusLabel(c.raw.status), ink: "var(--ink)" },
-      { k: "Zugang", v: c.zugang === "gesperrt" ? "Gesperrt" : c.zugang === "eingeladen" ? "Einladung ausstehend" : "Laut Kontostatus aktiv", ink: "var(--ink)" },
+      { k: "Zugang", v: customerAccessLabel(c.raw), ink: "var(--ink)" },
       { k: "Letzte Aktivität", v: c.last === "—" ? "Nicht bekannt" : c.last, ink: "var(--ink)" }
     ];
     if (typeof c.raw.customer?.internalNote === "string" && c.raw.customer.internalNote.trim()) v.kd.facts.push({ k: "Interne Notiz", v: c.raw.customer.internalNote, ink: "var(--ink)" });
@@ -156,13 +161,27 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
         href: `#/profil/${encodeURIComponent(id)}`, onClick: profile ? component.go(`#/profil/${encodeURIComponent(id)}`) : event => { event?.preventDefault(); component.say("Die Profilübersicht konnte nicht bestätigt werden."); } };
     });
     v.kd.noProfiles = c.profiles.length === 0;
+    v.kd.users = [{ name: c.person, z: component.st(customerAccessLabel(c.raw), c.raw.active === false ? "warn" : "neutral") }];
     v.kd.lockText = "Ändert ausschließlich den Zugang dieses Kontos. Profilversorgung bleibt unverändert.";
-    if (c.zugang === "gesperrt" || c.raw.role === "admin") {
-      v.kd.lockText = "Die Zugangsfreigabe bleibt bis zur Korrektur der serverseitigen Kontosperre gesperrt.";
-      v.kd.lockLabel = "Noch gesperrt";
-      v.kd.lockAction = () => component.say("Die serverseitige Kontosperre muss zuerst korrigiert werden.");
-    } else v.kd.lockAction = component.ask({ title: "Kontozugang sperren?", lines: [{ t: c.name }, { t: "Genau ein Konto ist betroffen. Profil- und Motorstatus werden nicht geändert." }],
-      confirmLabel: "Sperren", danger: true, need: c.name, run: () => component.changeAccess(c.id, false) });
+    const knownRole = ["abgeordneter", "referent", "demo"].includes(c.raw.role);
+    const knownStatus = ["aktiv", "testphase", "pausiert", "eingeladen"].includes(c.raw.status);
+    if (!knownRole || !knownStatus || typeof c.raw.active !== "boolean") {
+      v.kd.lockTitle = "Kontozugang";
+      v.kd.lockText = c.raw.role === "admin" ? "Administratorzugänge werden hier nicht geändert."
+        : ["deaktiviert", "gekuendigt"].includes(c.raw.status) ? `Kontostatus: ${customerStatusLabel(c.raw.status)}. Dieser Schalter reaktiviert den Kontostatus nicht.`
+          : "Der aktuelle Kontostand ist nicht bestätigt. Bitte neu laden.";
+      v.kd.lockLabel = "Nicht verfügbar";
+      v.kd.lockAction = () => component.say(v.kd.lockText);
+    } else {
+      const restore = c.raw.active === false;
+      const setup = c.raw.status === "eingeladen" ? "Zugangseinrichtung bleibt offen. Keine Einladung oder Anmeldung bestätigt." : "Anmeldbarkeit wird hier nicht bestätigt.";
+      v.kd.lockTitle = restore ? "Kontozugang freigeben" : "Kontozugang sperren";
+      v.kd.lockLabel = restore ? "Freigeben" : "Sperren";
+      if (restore) v.kd.lockText = `Hebt nur die aktive Kontosperre auf. ${setup} Profilversorgung bleibt unverändert.`;
+      else if (c.raw.status === "eingeladen") v.kd.lockText = `Zugangseinrichtung offen. ${v.kd.lockText}`;
+      v.kd.lockAction = component.ask({ title: `${v.kd.lockTitle}?`, lines: [{ t: c.name }, { t: "Genau ein Konto ist betroffen. Status, Profilversorgung und Rechnungen werden nicht geändert." }, ...(restore ? [{ t: setup }] : [])],
+        confirmLabel: v.kd.lockLabel, danger: !restore, need: c.name, run: () => component.changeAccess(c.id, restore) });
+    }
   }
   if (v.pKundeNeu) v.formSubmit = event => { event?.preventDefault(); component.say("Nicht gespeichert: Kundenentwurf und Einladung brauchen einen abgestimmten Backendvertrag."); };
   if (v.pAllgemein || v.pIntegrationen) {

@@ -115,13 +115,60 @@ export function createAdminActions({ fetcher = globalThis.fetch, timeoutMs = 120
       clearTimeout(timer); pending.delete(controller); busy = false;
     }
   }
+  async function restoreAccess(id) {
+    if (disposed || busy) throw new AdminMutationError(409);
+    if (!validId(id)) throw new AdminMutationError(400);
+    busy = true;
+    const controller = new AbortController(); pending.add(controller);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const options = { credentials: "same-origin", mode: "same-origin", redirect: "error", cache: "no-store", signal: controller.signal };
+    const timestamp = value => typeof value === "string" && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
+    const eligible = user => plain(user) && ["role", "status", "active", "updatedAt"].every(key => Object.hasOwn(user, key))
+      && ["abgeordneter", "referent", "demo"].includes(user.role) && ["aktiv", "testphase", "pausiert", "eingeladen"].includes(user.status) && timestamp(user.updatedAt);
+    let sent = false;
+    try {
+      // Dieser frische Admin-/Zielbeleg ersetzt nicht die atomaren Serverguards.
+      const preflight = await fetcher("/api/admin/users", { ...options, method: "GET", headers: { Accept: "application/json" } });
+      if (!preflight.ok) throw new AdminMutationError(preflight.status);
+      const users = await preflight.json();
+      if (!Array.isArray(users)) throw new AdminMutationError();
+      const targets = users.filter(user => user?.id === id);
+      if (targets.length !== 1 || !eligible(targets[0]) || targets[0].active !== false) throw new AdminMutationError(409);
+      const { role, status, active, updatedAt } = targets[0];
+      const expected = { role, status, active, updatedAt };
+      const csrf = await fetcher("/api/security/csrf", { ...options, method: "GET", headers: { Accept: "application/json" } });
+      if (!csrf.ok) throw new AdminMutationError(csrf.status);
+      const { token } = await csrf.json();
+      if (typeof token !== "string" || token.length < 20 || token.length > 300 || /[\r\n]/.test(token)) throw new AdminMutationError();
+      if (disposed || controller.signal.aborted) throw new AdminMutationError();
+      sent = true;
+      const response = await fetcher(`/api/admin/users/${encodeURIComponent(id)}/restore-access`, {
+        ...options, method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json", "X-CSRF-Token": token }, body: JSON.stringify({ expected })
+      });
+      if (!response.ok) throw new AdminMutationError(response.status, response.status >= 500);
+      const user = await response.json();
+      const restored = value => eligible(value) && value.id === id && value.role === role && value.status === status && value.active === true
+        && !value.inviteUrl && !value.mail && !value.passwordHash && !value.passwordSalt;
+      if (!restored(user) || disposed || controller.signal.aborted) throw new AdminMutationError(0, true);
+      const readback = await fetcher("/api/admin/users", { ...options, method: "GET", headers: { Accept: "application/json" } });
+      if (!readback.ok) throw new AdminMutationError(readback.status, true);
+      const current = await readback.json();
+      const matches = Array.isArray(current) ? current.filter(entry => entry?.id === id) : [];
+      // Ein bestätigter Lesestand ist keine dauerhafte Login- oder ETag-Garantie.
+      if (matches.length !== 1 || !restored(matches[0]) || matches[0].updatedAt !== user.updatedAt || disposed || controller.signal.aborted) throw new AdminMutationError(0, true);
+      return matches[0];
+    } catch (error) {
+      if (error instanceof AdminMutationError) throw error;
+      throw new AdminMutationError(0, sent);
+    } finally {
+      clearTimeout(timer); pending.delete(controller); busy = false;
+    }
+  }
   return {
     createCustomerAccount,
     setAccess(id, active) {
       if (typeof active !== "boolean") return Promise.reject(new AdminMutationError(400));
-      // D-01: gemeinsamer Server kann deaktiviert/gekuendigt + active:true zulassen.
-      // Bis der geprüfte Serverfix integriert ist, hier nur sicheren Entzug anbieten.
-      if (active) return Promise.reject(new AdminMutationError(409));
+      if (active) return restoreAccess(id);
       return send(id, { active });
     },
     updateCustomer(id, customer) {
