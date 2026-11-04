@@ -1,0 +1,671 @@
+{
+  "status": "PASS",
+  "passes": [
+    "anonymous: actual UI rendered",
+    "anonymous: push-capable fixture active",
+    "anonymous: appropriate startup state",
+    "anonymous: no data fetch after failed session",
+    "anonymous: no generation, CSRF or push calls after blocked start",
+    "anonymous: no automatic push scheduled or subscribed",
+    "anonymous: no specialist content fabricated",
+    "anonymous: no unknown API request",
+    "session-503: actual UI rendered",
+    "session-503: push-capable fixture active",
+    "session-503: appropriate startup state",
+    "session-503: no data fetch after failed session",
+    "session-503: no generation, CSRF or push calls after blocked start",
+    "session-503: no automatic push scheduled or subscribed",
+    "session-503: no specialist content fabricated",
+    "session-503: no unknown API request",
+    "session-invalid: actual UI rendered",
+    "session-invalid: push-capable fixture active",
+    "session-invalid: appropriate startup state",
+    "session-invalid: no data fetch after failed session",
+    "session-invalid: no generation, CSRF or push calls after blocked start",
+    "session-invalid: no automatic push scheduled or subscribed",
+    "session-invalid: no specialist content fabricated",
+    "session-invalid: no unknown API request",
+    "no-mandate: actual UI rendered",
+    "no-mandate: push-capable fixture active",
+    "no-mandate: appropriate startup state",
+    "no-mandate: single app-start fetch before access/availability state",
+    "no-mandate: no generation, CSRF or push calls after blocked start",
+    "no-mandate: no automatic push scheduled or subscribed",
+    "no-mandate: no specialist content fabricated",
+    "no-mandate: no unknown API request",
+    "start-401: actual UI rendered",
+    "start-401: push-capable fixture active",
+    "start-401: appropriate startup state",
+    "start-401: single app-start fetch before access/availability state",
+    "start-401: no generation, CSRF or push calls after blocked start",
+    "start-401: no automatic push scheduled or subscribed",
+    "start-401: no specialist content fabricated",
+    "start-401: no unknown API request",
+    "start-503: actual UI rendered",
+    "start-503: push-capable fixture active",
+    "start-503: appropriate startup state",
+    "start-503: single app-start fetch before access/availability state",
+    "start-503: no generation, CSRF or push calls after blocked start",
+    "start-503: no automatic push scheduled or subscribed",
+    "start-503: no specialist content fabricated",
+    "start-503: no unknown API request",
+    "selection: actual UI rendered",
+    "selection: push-capable fixture active",
+    "selection: appropriate startup state",
+    "selection: single app-start fetch before access/availability state",
+    "selection: no generation, CSRF or push calls after blocked start",
+    "selection: no automatic push scheduled or subscribed",
+    "selection: no specialist content fabricated",
+    "selection: no unknown API request",
+    "empty: actual UI rendered",
+    "empty: push-capable fixture active",
+    "empty: appropriate startup state",
+    "empty: single app-start fetch before access/availability state",
+    "empty: no generation, CSRF or push calls after blocked start",
+    "empty: no automatic push scheduled or subscribed",
+    "empty: no specialist content fabricated",
+    "empty: no unknown API request",
+    "contract-desktop: actual UI rendered",
+    "contract-desktop: push-capable fixture active",
+    "contract-desktop: successful startup permits simulated push sync",
+    "contract-desktop: bootstrap writes only simulated push; empty office formats produce no drafts",
+    "contract-desktop: profile/version/tasks/notes adopted",
+    "contract-desktop: partial Lage keeps proven cards and exposes missing current text",
+    "contract-desktop: Lage source comes from actual name/url schema",
+    "contract-desktop: curated Radar projection wins over raw candidates",
+    "contract-desktop: curated freshness used and raw article feed withheld",
+    "contract-desktop: view switches cause no extra start/Radar fetch",
+    "contract-desktop: explicit CSRF rejection rotates token once",
+    "contract-desktop: permission denial not replayed and body remains readable",
+    "contract-desktop: persistent CSRF failure stops after one retry",
+    "contract-desktop: invalid CSRF prerequisite blocks write: unavailable",
+    "contract-desktop: invalid CSRF prerequisite blocks write: missing",
+    "contract-desktop: both additional state-changing GETs carry CSRF",
+    "contract-desktop: office HTTP 429 shown as failure without ready drafts",
+    "contract-desktop: budget fallback marked as rule output, not AI",
+    "contract-desktop: no unknown API request",
+    "contract-mobile: actual UI rendered",
+    "contract-mobile: push-capable fixture active",
+    "contract-mobile: successful startup permits simulated push sync",
+    "contract-mobile: bootstrap writes only simulated push; empty office formats produce no drafts",
+    "contract-mobile: profile/version/tasks/notes adopted",
+    "contract-mobile: partial Lage keeps proven cards and exposes missing current text",
+    "contract-mobile: Lage source comes from actual name/url schema",
+    "contract-mobile: curated Radar projection wins over raw candidates",
+    "contract-mobile: curated freshness used and raw article feed withheld",
+    "contract-mobile: view switches cause no extra start/Radar fetch",
+    "contract-mobile: no unknown API request",
+    "No uncaught browser errors",
+    "No external request fulfilled",
+    "No missing static resources"
+  ],
+  "errors": [],
+  "externalRequestsFulfilled": 0,
+  "negativeControlsBlocked": 0,
+  "bootstrap": "unmodified full client including normal loadBriefing/auth/CSRF; every API mocked in memory",
+  "apiEvidence": [
+    {
+      "label": "anonymous",
+      "calls": [
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        }
+      ],
+      "unexpected": [],
+      "push": {
+        "scheduled": 0,
+        "subscribed": 0
+      }
+    },
+    {
+      "label": "session-503",
+      "calls": [
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 503,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        }
+      ],
+      "unexpected": [],
+      "push": {
+        "scheduled": 0,
+        "subscribed": 0
+      }
+    },
+    {
+      "label": "session-invalid",
+      "calls": [
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        }
+      ],
+      "unexpected": [],
+      "push": {
+        "scheduled": 0,
+        "subscribed": 0
+      }
+    },
+    {
+      "label": "no-mandate",
+      "calls": [
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/app/start",
+          "status": 403,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        }
+      ],
+      "unexpected": [],
+      "push": {
+        "scheduled": 0,
+        "subscribed": 0
+      }
+    },
+    {
+      "label": "start-401",
+      "calls": [
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/app/start",
+          "status": 401,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        }
+      ],
+      "unexpected": [],
+      "push": {
+        "scheduled": 0,
+        "subscribed": 0
+      }
+    },
+    {
+      "label": "start-503",
+      "calls": [
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/app/start",
+          "status": 503,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        }
+      ],
+      "unexpected": [],
+      "push": {
+        "scheduled": 0,
+        "subscribed": 0
+      }
+    },
+    {
+      "label": "selection",
+      "calls": [
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 404,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/app/start",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        }
+      ],
+      "unexpected": [],
+      "push": {
+        "scheduled": 0,
+        "subscribed": 0
+      }
+    },
+    {
+      "label": "empty",
+      "calls": [
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 404,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/app/start",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        }
+      ],
+      "unexpected": [],
+      "push": {
+        "scheduled": 0,
+        "subscribed": 0
+      }
+    },
+    {
+      "label": "contract-desktop",
+      "calls": [
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/app/start",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/parliament",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/push/public-key",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "POST",
+          "path": "/api/push/subscribe",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true
+        },
+        {
+          "phase": "csrf-refresh",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "csrf-refresh",
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "status": 403,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true,
+          "decisionId": "rec-a",
+          "vorgangId": "vorgang-a"
+        },
+        {
+          "phase": "csrf-refresh",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "csrf-refresh",
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true,
+          "decisionId": "rec-a",
+          "vorgangId": "vorgang-a"
+        },
+        {
+          "phase": "business-denial",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "business-denial",
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "status": 403,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true,
+          "decisionId": "rec-a",
+          "vorgangId": "vorgang-a"
+        },
+        {
+          "phase": "csrf-persistent",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "csrf-persistent",
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "status": 403,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true,
+          "decisionId": "rec-a",
+          "vorgangId": "vorgang-a"
+        },
+        {
+          "phase": "csrf-persistent",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "csrf-persistent",
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "status": 403,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true,
+          "decisionId": "rec-a",
+          "vorgangId": "vorgang-a"
+        },
+        {
+          "phase": "csrf-token-unavailable",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 503,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "csrf-token-missing",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "protected-get",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "protected-get",
+          "method": "GET",
+          "path": "/api/lage/briefing",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true
+        },
+        {
+          "phase": "protected-get",
+          "method": "GET",
+          "path": "/api/push/test",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true
+        },
+        {
+          "phase": "office-rate-limit",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "office-rate-limit",
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "status": 429,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true,
+          "decisionId": "rec-a",
+          "vorgangId": "vorgang-a"
+        },
+        {
+          "phase": "office-rate-limit",
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "status": 429,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true,
+          "decisionId": "rec-b",
+          "vorgangId": "vorgang-b"
+        },
+        {
+          "phase": "office-budget-fallback",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "office-budget-fallback",
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true,
+          "decisionId": "rec-a",
+          "vorgangId": "vorgang-a"
+        },
+        {
+          "phase": "office-budget-fallback",
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true,
+          "decisionId": "rec-b",
+          "vorgangId": "vorgang-b"
+        }
+      ],
+      "unexpected": [],
+      "push": {
+        "scheduled": 1,
+        "subscribed": 1
+      }
+    },
+    {
+      "label": "contract-mobile",
+      "calls": [
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/app/start",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/parliament",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/push/public-key",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "POST",
+          "path": "/api/push/subscribe",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true
+        }
+      ],
+      "unexpected": [],
+      "push": {
+        "scheduled": 1,
+        "subscribed": 1
+      }
+    }
+  ],
+  "chromium": "/usr/bin/chromium",
+  "browserVersion": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/151.0.7922.173",
+    "revision": "@a96602f30358e9b5d256a0464e7e4d4bec223004",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+    "jsVersion": "15.1.206.23"
+  },
+  "testedFiles": {
+    "assets/favicon.ico": "e85b3d0de195bdc085ae71855f8b105a57f17aa5d9ba1b0ad03521fbcac1367b",
+    "assets/fonts/inter-latin-variable.woff2": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+    "assets/helmut_logo.svg": "cc5f304f50795e6f2d7e4798d09e76ac1fb957516a88c8d130520490e1fd3d78",
+    "assets/ui/fonts/HankenGrotesk-var.ttf": "813b3f8fa0965405669a89b38e51bbefd95eef6b8e20d1cb2d8c10cce062662f",
+    "assets/ui/fonts/IBMPlexMono-Medium.ttf": "a9b4c49bb299e05b5f6c481e7fb5e78943d2793249a0c8874ab574a2d1ea6755",
+    "assets/ui/fonts/IBMPlexMono-Regular.ttf": "6a3412f058c7d8dfd9170c41e85ade48e5156ecb89356110ca57a0a27734af46",
+    "assets/ui/fonts/Spectral-Medium.ttf": "f385bc588599c879112272711d4acecc126674009d747a27284f59e93a240e83",
+    "assets/ui/fonts/Spectral-Regular.ttf": "c89021dc20720c8d0dcf40b0b2f6e00c13665fa8041717f581396f51b8c78f5d",
+    "assets/ui/logo/helmut-zeichen.svg": "f8c3171326c88195e612cc6495d1e382db29f0cdde74b7aebd85191a05391915",
+    "assets/ui/reichstag.jpg": "06d4dc796dbb47631f4ed2c7b9b5137bc0c9f43d7080fddb707c512fbecbe5c7",
+    "client.js": "8226a3739bda2be77c6e8ed9e9ae2c940e430528a420bc7f9e2fa4e98b68916f",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "scripts/fixtures/ui-integration-contracts.js": "7223ddd3f6f13038b3829a41a4b6a41c232d67e770d01f59f4a5a0ef54880050",
+    "scripts/fixtures/ui-office-binding.js": "986572ef7a7a0402d228e9853f4079b5fb2d99e2972639913dd78500cce922f6",
+    "scripts/fixtures/ui-preview.js": "3a54b4d27ad7bd213033253015e21eb642ce6883c61a038b41ad0537df6429e0",
+    "scripts/ui-integration-contract-browser-cases.js": "2b10a987bd09a8733306cb784c8f37d8e43f349921bbb5d4c78cbaa5e32af875",
+    "scripts/ui-integration-contract-browser-test.js": "e474ae090bf7dda9021fc6999845fc1d21ec29c772ecc1246bca005429efb041",
+    "scripts/ui-preview-browser-check.js": "789c0c7a9dcc88e5f822369d101832207192e572ecfbc2bc3043af9427eeb636",
+    "scripts/ui-preview-isolated.py": "4d2e36aeb42346a70d1a986ff22fa02bb3e44777aa8c3e0126e31857501e5919",
+    "styles.css": "1569f470993b917bf53d51cfa9375025f1e2a6aef9bc29a7c2217e7e8dbc9737"
+  },
+  "servedClientSha256": "8226a3739bda2be77c6e8ed9e9ae2c940e430528a420bc7f9e2fa4e98b68916f"
+}

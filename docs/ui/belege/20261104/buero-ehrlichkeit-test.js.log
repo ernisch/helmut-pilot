@@ -1,0 +1,29 @@
+PASS  Ohne KI-Schlüssel: aiEnabled=false + degraded + fallbackReason
+PASS  Ohne KI-Schlüssel: regelbasierter Text vorhanden
+PASS  Ohne KI-Schlüssel: sourceNote erklärt die Herkunft
+PASS  KI-Fehler-Pfad existiert (fallbackReason 'ki-fehler', aiEnabled:false)
+PASS  Leere KI-Antwort wird als Regel-Fallback gekennzeichnet ('ki-antwort-leer')
+PASS  Erfolgs-Pfad behauptet KI nur bei echtem KI-Text (kein result.text||fallback-Mix mehr)
+PASS  Keine unwahre Prüf-Behauptung 'Linie geprüft' mehr
+PASS  Keine unwahre Behauptung 'Zitierfähig nach kurzem Check'
+PASS  Kein falscher Erfolgs-Toast im Fehlerpfad (catch setzt Quelle 'fehler' + ehrlichen Toast)
+PASS  Regel-Fallback wird im Erfolgspfad nie als KI gemeldet
+PASS  Büro-Loop speichert Herkunft ({text, source: ki|regel})
+PASS  Büro-Loop friert Teilerfolge nicht mehr ein (kein early-return auf beliebigen Cache)
+PASS  Fehlgeschlagene Erzeugung wird sichtbar gemacht (officeDraftErrors + Status)
+PASS  Karten tragen eine Herkunftszeile (buero-card-provenance)
+PASS  Kommunikations-View kennzeichnet Herkunft statt pauschal 'Generierter Entwurf'
+PASS  Header zählt readyCount über officeCardStatus (echter Entwurfsstand, nicht Format-Vorgabe)
+PASS  Alte editorische readyCount-Zählung (draftStatus) ist entfernt
+PASS  Priority-Hinweis (readyFormats) nutzt ebenfalls officeCardStatus (kein Widerspruch zur Summary)
+PASS  officeDraftText liest Legacy-Strings UND neue Objekte
+PASS  officeDraftProvenance behauptet bei Legacy/Unbekannt nichts
+PASS  draftProvenanceLabel: KI klar, Regel klar, ungültig ehrlich
+PASS  Fixture: ein Format mit editorischer Vorgabe 'Entwurf bereit' existiert
+PASS  bereit: gültiger Entwurf -> officeCardStatus 'Entwurf bereit'
+PASS  wird vorbereitet: kein Entwurf + generating -> 'Wird vorbereitet' (nicht bereit)
+PASS  fehlgeschlagen: officeDraftErrors -> 'Erstellung fehlgeschlagen' (nicht bereit)
+PASS  leer: kein Entwurf -> 'Noch kein Entwurf' (nicht bereit)
+PASS  gemischt: kein unfertiger Zustand ist 'Entwurf bereit'
+
+27 PASS, 0 FAIL

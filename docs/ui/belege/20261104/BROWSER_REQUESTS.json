@@ -1,0 +1,257 @@
+[
+  {
+    "url": "http://helmut-ui.test/",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/fonts/inter-latin-variable.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/site.webmanifest?v=20260712-iconfix1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/styles.css?v=20260712-presale1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/client.js?v=20260712-presale1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/logo/helmut-zeichen.svg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/reichstag.jpg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Regular.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Regular.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/HankenGrotesk-var.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Medium.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Medium.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/helmut_logo.svg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/favicon.ico",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "https://example.invalid/network-negative-control",
+    "action": "blocked",
+    "type": "XHR"
+  },
+  {
+    "url": "http://helmut-ui.test/",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/fonts/inter-latin-variable.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/site.webmanifest?v=20260712-iconfix1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/styles.css?v=20260712-presale1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/client.js?v=20260712-presale1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/logo/helmut-zeichen.svg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/HankenGrotesk-var.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Medium.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Medium.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Regular.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/helmut_logo.svg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "https://example.invalid/network-negative-control",
+    "action": "blocked",
+    "type": "XHR"
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/reichstag.jpg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Regular.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/fonts/inter-latin-variable.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/styles.css?v=20260712-presale1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/client.js?v=20260712-presale1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/site.webmanifest?v=20260712-iconfix1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/logo/helmut-zeichen.svg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/HankenGrotesk-var.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Medium.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Medium.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Regular.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/helmut_logo.svg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "https://example.invalid/network-negative-control",
+    "action": "blocked",
+    "type": "XHR"
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/reichstag.jpg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Regular.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  }
+]

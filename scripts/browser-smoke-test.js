@@ -217,9 +217,9 @@ function check(name, cond, detail = "") {
         }, data);
         // Die normale Eintrittsanzeige endet per Timer; erst danach ist die
         // Fachansicht sichtbar. Dieselbe Bedingung gilt fuer echte Nutzer.
-        await page.waitForSelector(".hstand-proposal", { timeout: 5000 });
+        await page.waitForSelector(".ui-briefing-hero", { timeout: 5000 });
         const displayed = await page.evaluate(() => ({
-          proposals: document.querySelectorAll(".hstand-proposal").length,
+          proposals: document.querySelectorAll(".ui-briefing-hero").length,
           why: document.querySelectorAll(".hstand-why").length
         }));
         check(`${label}: Briefing zeigt Empfehlung und eigenen Tagesanlass`,
@@ -233,7 +233,7 @@ function check(name, cond, detail = "") {
         check(`${label}: Lage Detail kopiert keine Empfehlung`, await page.locator(".vsheet-reco").count() === 0);
         await page.getByRole("button", { name: "Empfehlung im Briefing öffnen", exact: true }).click();
         check(`${label}: Rueckverweis schliesst Lage Detail und zeigt Briefing`,
-          await page.locator(".vsheet-title").count() === 0 && await page.locator(".hstand-proposal").count() === 1);
+          await page.locator(".vsheet-title").count() === 0 && await page.locator(".ui-briefing-hero").count() === 1);
         check(`${label}: Briefing begründet die Tagespriorität statt den Sachstand zu kopieren`,
           (await page.locator(".hstand-why").innerText()).includes("heutigen Arbeitstag")
             && !(await page.locator(".hstand-why").innerText()).includes("Arbeitsgebiet des Mandats"));

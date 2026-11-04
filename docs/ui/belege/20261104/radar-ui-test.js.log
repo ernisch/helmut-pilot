@@ -1,0 +1,34 @@
+PASS  client.js lädt im vm (Radar-Boot ohne Browser)
+PASS  Radar rendert den Stand (.radar2, nicht leer)
+PASS  Radar nennt den vollstaendigen Kalendertag statt einer erfundenen Uhrzeit
+PASS  Auch Quellen mit Uhrzeit bleiben im datumsgenauen Radarvertrag
+PASS  Radardatum folgt dem Berliner Kalendertag
+PASS  Historische Quellen behalten ihr Jahr
+PASS  Fehlende oder ungueltige Quelldaten bleiben leer
+PASS  Ganzer Radar zeigt Datum und heutigem Quellenstand ohne02:00
+PASS  Über dich zeigt die übergebene Erwähnung
+PASS  Über dich zeigt kein fremdes/erfundenes Item
+PASS  Artikelübersicht zeigt genau 5 Artikel (Premium-Verdichtung)
+PASS  'Alle anzeigen (8)' erscheint bei >5 Artikeln
+PASS  Aufgeklappt: alle 8 Artikel sichtbar (echte erweiterte Liste, kein Fake)
+PASS  Aufgeklappt: 'Weniger anzeigen' erscheint
+PASS  Dynamik leer -> ehrlicher Leerzustand statt erfundener Aktualität
+PASS  Umfeld zeigt dimensionsgenaues Label 'Betrifft deine Partei'
+PASS  Keine Kosten-/Token-/LLM-Felder im Radar-Markup
+PASS  Keine Demo-Marker im Radar-Markup
+PASS  Quelleninitiale ist ein Monogramm (radar2-badge, kein Bild/Hotlink)
+PASS  Kein bunter Per-Quelle-Avatar mehr (kein --radar-badge Inline-Style)
+PASS  Umfeld zeigt standardmäßig max. 3 Einträge pro Segment
+PASS  Umfeld zeigt segmentspezifischen 'Alle Partei- und Fraktionssignale anzeigen (5)'
+PASS  Umfeld aufgeklappt: alle 5 Einträge sichtbar (echte erweiterte Liste)
+PASS  Leeres Partei-Segment -> ehrlicher Leerzustand statt kaputt/leer
+PASS  Störung: store-error -> ehrliche Störungsmeldung statt Ruhige-Lage-Text
+PASS  Störung: v3-store-disabled wird ebenfalls als Störung gezeigt
+PASS  Keine Daten: keine-vorgaenge -> 'Noch keine Datengrundlage' (Datenlücke, kein ruhiger Tag)
+PASS  Ruhig: keine-treffer bleibt der beruhigende Leertext (echter ruhiger Tag, keine Störung)
+PASS  emptyState (Flag an) hat Vorrang vor der Störungslogik (unverändertes Sprint-5-Verhalten)
+PASS  Refresh-Fehlschlag -> sichtbare, ruhige Hinweiszeile (Anzeige bleibt letzter Stand)
+PASS  Refresh-Hinweis nennt den Zeitstempel des letzten erfolgreichen Stands
+PASS  Ohne Fehlschlag erscheint KEINE Hinweiszeile
+
+32/32 Radar-UI-Assertions erfolgreich.

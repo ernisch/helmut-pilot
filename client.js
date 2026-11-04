@@ -83,7 +83,7 @@ let pushConfig = null;
 let pushAutoSyncStarted = false;
 let selectedDecisionId = "";
 let selectedVorgangId = "";
-let currentView = "briefing";
+let currentView = "helmut";
 let detailOriginView = "briefing";
 let navOpen = false;
 let updatesOpen = false;
@@ -117,6 +117,7 @@ let officeDrafts = {};
 let officeDraftErrors = {};
 let officeDraftsGenerating = false;
 let selectedOfficeDraft = null;
+let officeBriefingTarget = null;
 let selectedCommunicationChannel = "press";
 let berlinClockTimer = null;
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
@@ -134,6 +135,106 @@ let previewMode = false;
 let authState = null;
 let currentUser = null;
 let allowedProfiles = [];
+
+// Private Antworten duerfen nur ihren noch gueltigen Zugriffsstand ergaenzen.
+let privateAccess = false;
+let privateAccessGeneration = 0;
+let mandateSwitchPending = false;
+const mandateSwitchControls = new Map();
+function privateAccessContext() {
+  return { generation: privateAccessGeneration, mandateId: activePoliticianId };
+}
+function privateAccessIsCurrent(context) {
+  return privateAccess && !mandateSwitchPending && context.generation === privateAccessGeneration
+    && context.mandateId === activePoliticianId && profile?.id === activePoliticianId;
+}
+function privateAccessChanged() {
+  const error = new Error("Der Zugriffsstand hat sich geaendert. Bitte neu laden.");
+  error.code = "PRIVATE_ACCESS_CHANGED";
+  return error;
+}
+function clearPrivateMandateState() {
+  profile = null; briefing = null; aiStatus = { enabled: false, model: "" };
+  tasks = []; notes = []; recommendations = []; decisions = [];
+  helmutBriefings = []; helmutDeck = []; helmutDecidedIds = new Set();
+  selectedDecisionId = ""; selectedVorgangId = ""; selectedTaskHandoffId = "";
+  generatedStatement = ""; generatedStatementSource = ""; communicationContextTitle = "";
+  officeDrafts = {}; officeDraftErrors = {}; officeDraftsGenerating = false;
+  selectedOfficeDraft = null; officeBriefingTarget = null;
+  parliamentItems = []; parliamentAssessments = {}; parliamentLoaded = false;
+  dailyInputs = []; dailyInputsLoaded = false; radarArchive = []; radarBuckets = null;
+  radarArchiveLoaded = false; opsStatus = null; opsStatusLoaded = false; pushConfig = null;
+  onboardingActive = false; onboardingDraft = {}; onboardingSaving = false;
+  admResetState(); admLastInvite = null; adminRecovery = null; adminRecoveryResult = null;
+  if (adminRecoveryPollTimer) window.clearInterval(adminRecoveryPollTimer);
+  adminRecoveryPollTimer = null;
+  pipelineRunning = false; pipelinePhase = null; helmutThinking = false;
+  if (pipelineStepTimer) window.clearTimeout(pipelineStepTimer);
+  if (pipelineCompletionTimer) window.clearTimeout(pipelineCompletionTimer);
+  if (helmutThinkingTimer) window.clearTimeout(helmutThinkingTimer);
+  pipelineStepTimer = null; pipelineCompletionTimer = null; helmutThinkingTimer = null;
+  stopHelmutTyping(); navOpen = false; updatesOpen = false; lastAnimatedView = null;
+}
+function invalidatePrivateAccess() {
+  privateAccess = false; ++privateAccessGeneration;
+  mandateSwitchPending = false; mandateSwitchControls.clear();
+  clearPrivateMandateState();
+  briefingRefreshing = false;
+  currentUser = null; allowedProfiles = [];
+  authState = authState ? { authenticated: false } : null;
+  csrfTokenPromise = null; activePoliticianId = "";
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i += 1) keys.push(localStorage.key(i));
+    for (const key of keys) if (key && (key.startsWith(appStartCachePrefix)
+      || key.startsWith("helmut:officeDrafts:") || key === lastPoliticianIdStorageKey)) localStorage.removeItem(key);
+  } catch (_) { /* Speicher kann gesperrt sein; Laufzeitdaten sind bereits geloescht. */ }
+  if (app) app.innerHTML = "";
+}
+function isPrivateApi(url) {
+  const pathname = new URL(url, window.location.href).pathname;
+  return pathname.startsWith("/api/") && !["/api/auth/login", "/api/auth/request-reset",
+    "/api/auth/set-password", "/api/auth/password-token", "/api/pilot/unlock"].includes(pathname);
+}
+function assertPrivateMutationAllowed(url, options) {
+  if (isPrivateApi(url) && needsCsrfToken(url, options)
+    && (mandateSwitchPending || !privateAccess || profile?.id !== activePoliticianId)) throw privateAccessChanged();
+}
+function bindPrivateResponseBody(response, generation) {
+  const check = () => { if (generation !== privateAccessGeneration) throw privateAccessChanged(); };
+  const readers = new Set(["json", "text", "blob", "arrayBuffer", "formData", "bytes"]);
+  return new Proxy(response, {
+    get(target, property) {
+      check();
+      if (property === "clone") return (...args) => { check(); return bindPrivateResponseBody(target.clone(...args), generation); };
+      if (readers.has(property) && typeof target[property] === "function") return async (...args) => {
+        check(); const body = await target[property](...args); check(); return body;
+      };
+      // Der Client liest private Antworten ausschliesslich ueber die gebundenen
+      // Bodymethoden; ein ungebundener Stream darf keinen Epochenschutz umgehen.
+      if (property === "body") throw privateAccessChanged();
+      const value = Reflect.get(target, property, target);
+      return typeof value === "function" ? value.bind(target) : value;
+    }
+  });
+}
+
+async function guardPrivateResponse(response, url, generation) {
+  if (generation !== privateAccessGeneration) throw privateAccessChanged();
+  if (isPrivateApi(url) && response.status === 401) {
+    if (authState || String(url).startsWith("/api/auth/")) renderLogin();
+    else renderPilotAccess();
+    throw privateAccessChanged();
+  }
+  if (isPrivateApi(url) && response.status === 403) {
+    let payload = null;
+    try { payload = await response.clone().json(); } catch (_) {}
+    if (generation !== privateAccessGeneration) throw privateAccessChanged();
+    if (payload?.reason === "no-mandate") { renderNoMandateState(); throw privateAccessChanged(); }
+  }
+  return isPrivateApi(url) ? bindPrivateResponseBody(response, generation) : response;
+}
+
 // --- Admin (Neuaufbau 2026-07): Bereichs-Zustand ---------------------------
 let admSection = "uebersicht";   // aktiver Admin-Bereich
 let admData = {};                // Endpoint-Key -> Payload (gemeinsamer Cache)
@@ -173,9 +274,13 @@ let expandedSections = new Set();
 let onboardingActive = false;
 let onboardingStep = 0;
 let onboardingDraft = {};
+let onboardingSaving = false;
 
 const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
+// Hydrate existing boot markup without changing the server's HTML generator.
+const orientationMessage = document.querySelector(".orientation-lock-text");
+if (orientationMessage) orientationMessage.textContent = "Bitte drehe dein Gerät ins Hochformat.";
 
 function fmtCost(n) {
   if (typeof n !== "number") return "—";
@@ -253,22 +358,23 @@ const pipelineCooldownMs = 10 * 60 * 1000;
 // verhindert Refresh-Stürme, wenn visibilitychange bei Tab-/OS-Wechseln rasch feuert.
 const foregroundRefreshMinMs = 60 * 1000;
 let csrfTokenPromise = null;
+let csrfTokenGeneration = -1;
 
 // SICHTBARE Reiter-Labels. Achtung Historie: die interne View-ID "briefing" gehoert zum
 // LAGE-Reiter, die ID "helmut" zum sichtbaren Reiter "Briefing" (frueher "Helmut").
 // Die IDs sind interner Zustand/Vertrag (data-view, Router, Tests) und bleiben bewusst
 // unveraendert — nur das sichtbare Label wurde umbenannt. Marke/Produkt heisst weiter Helmut.
 const navItems = [
+  ["helmut", "Briefing"],
   ["briefing", "Lage"],
   ["radar", "Radar"],
-  ["helmut", "Briefing"],
   ["office", "Büro"]
 ];
 
 const mobileNavItems = [
+  ["helmut", "Briefing"],
   ["briefing", "Lage"],
   ["radar", "Radar"],
-  ["helmut", "Briefing"],
   ["office", "Büro"]
 ];
 
@@ -397,6 +503,9 @@ const priorityTopics = [
 const communicationStyles = ["Sachlich", "Lösungsorientiert", "Angriffslustig", "Vermittelnd", "Aktivistisch"];
 
 async function loadBriefing() {
+  if (mandateSwitchPending) return false;
+  const accessGeneration = ++privateAccessGeneration;
+  officeDraftsGenerating = false;
   // Block 5 (Live-Flow): Re-Entrancy-Guard + Drossel-Stempel für ALLE Aufrufer
   // (Boot, manuelles ↻, Foreground-Refresh) in einem try/finally — so stößt der
   // Foreground-Handler nie einen bereits laufenden Ladevorgang doppelt an.
@@ -409,7 +518,9 @@ async function loadBriefing() {
   previewMode = isPreviewModeParam(params);
 
   // Account-Modus erkennen: /api/auth/session ist nur dort eine JSON-Antwort.
-  authState = await fetchAuthState();
+  const session = await fetchAuthState();
+  if (accessGeneration !== privateAccessGeneration) return;
+  authState = session;
   if (authState) {
     if (!authState.authenticated) {
       renderLogin();
@@ -425,7 +536,7 @@ async function loadBriefing() {
   const cachedStart = loadCachedStartPayload();
   if (cachedStart) {
     try {
-      applyStartPayload(cachedStart);
+      applyStartPayload(cachedStart, accessGeneration);
       renderedFromCache = true;
       render();
       generateOfficeDraftsInBackground();
@@ -436,6 +547,7 @@ async function loadBriefing() {
 
   try {
     const startResponse = await fetchWithTimeout(`/api/app/start?${scope}`, {}, renderedFromCache ? 15000 : 25000);
+    if (accessGeneration !== privateAccessGeneration) return;
 
     if (startResponse.status === 401) {
       // Echter Auth-Fehler: Session fehlt/ist ungueltig -> Login/Zugang zeigen.
@@ -454,6 +566,7 @@ async function loadBriefing() {
       // bleibt unangetastet: es werden weiterhin KEINE fremden Daten gezeigt,
       // nur ein ehrlicher Zustand statt eines irrefuehrenden Login-Screens.
       const payload = await startResponse.json().catch(() => ({}));
+      if (accessGeneration !== privateAccessGeneration) return;
       if (authState && authState.authenticated && payload && payload.reason === "no-mandate") {
         renderNoMandateState();
         return;
@@ -465,17 +578,19 @@ async function loadBriefing() {
     if (startResponse.status === 409) {
       // Legacy-Zugang mit mehreren aktiven Mandaten: Auswahl noetig (kein geratenes Mandat).
       const selection = await startResponse.json().catch(() => ({}));
+      if (accessGeneration !== privateAccessGeneration) return;
       renderMandateSelection(selection.mandates || []);
       return;
     }
     if (!startResponse.ok) throw new Error(`Helmut konnte nicht gestartet werden (${startResponse.status})`);
     const startPayload = await startResponse.json();
+    if (accessGeneration !== privateAccessGeneration) return;
     if (startPayload && (startPayload.needsMandateSelection || (startPayload.empty && !startPayload.profile))) {
       // Legacy-Zugang: mehrere aktive Mandate -> Auswahl; keine aktiven Mandate -> Leerzustand.
       renderMandateSelection(startPayload.mandates || []);
       return;
     }
-    applyStartPayload(startPayload);
+    applyStartPayload(startPayload, accessGeneration);
     saveCachedStartPayload(startPayload);
     restorePersistedView();
     render();
@@ -483,7 +598,9 @@ async function loadBriefing() {
     if (userRole() === "admin") ensureViewData("admin");
     loadParliament();
     generateOfficeDraftsInBackground();
+    return Boolean(profile.id);
   } catch (error) {
+    if (accessGeneration !== privateAccessGeneration) return;
     if (renderedFromCache) {
       // Der Live-Refresh nach dem Cache-Render ist DEFINITIV fehlgeschlagen (fetch-
       // Reject/Timeout/Abbruch, HTTP-Fehler oder JSON-Parse-Fehler). Es laeuft/plant
@@ -496,13 +613,20 @@ async function loadBriefing() {
     }
     throw error;
   }
+  } catch (error) {
+    if (accessGeneration !== privateAccessGeneration) return;
+    if (error?.code === "AUTH_UNAVAILABLE" || !privateAccess) { renderStartFailure(error); return; }
+    throw error;
   } finally {
-    briefingRefreshing = false;
-    lastBriefingLoadAt = Date.now();
+    if (accessGeneration === privateAccessGeneration) { briefingRefreshing = false; lastBriefingLoadAt = Date.now(); }
   }
 }
 
-function applyStartPayload(startPayload) {
+function applyStartPayload(startPayload, accessGeneration = privateAccessGeneration) {
+  if (accessGeneration !== privateAccessGeneration) return false;
+  if (!startPayload?.profile || !sanitizePoliticianId(startPayload.profile.id)
+    || !startPayload.briefing || typeof startPayload.briefing !== "object") throw new Error("Ungueltiger Startstand");
+  privateAccess = false;
   profile = startPayload.profile || {};
   // Serverseitig aufgeloestes Mandat uebernehmen (Quelle der Wahrheit) und fuer
   // stabile lokale Schluessel merken.
@@ -527,6 +651,7 @@ function applyStartPayload(startPayload) {
   recommendations = briefing.personalizedRecommendations || [];
 
   const themeSignalId = briefing.themeOfDay?.signalId;
+  const primaryVorgangId = briefing.currentHelmutState?.primaryVorgangId || briefing.themeOfDay?.vorgangId;
   const activeItems = briefing.items.filter((item) => item.decision !== "Ignorieren" && hasPreciseSource(item));
   const personalizedItems = recommendations.map(recommendationToDecisionItem).filter(hasPreciseSource);
   // V3: situationalBriefing-Einträge sind bereits vollständige Entscheidungs-Items
@@ -534,12 +659,14 @@ function applyStartPayload(startPayload) {
   const situationalItems = (briefing.situationalBriefing || []).filter(hasPreciseSource);
   const prominentPool = (personalizedItems.length ? personalizedItems : (activeItems.length ? activeItems : situationalItems));
   const decisionComparator = (a, b) => {
-    if (a.signalId === themeSignalId) return -1;
-    if (b.signalId === themeSignalId) return 1;
+    const aPrimary = primaryVorgangId ? decisionEntityId(a, "vorgangId", "vorgang_id") === primaryVorgangId : Boolean(themeSignalId && a.signalId === themeSignalId);
+    const bPrimary = primaryVorgangId ? decisionEntityId(b, "vorgangId", "vorgang_id") === primaryVorgangId : Boolean(themeSignalId && b.signalId === themeSignalId);
+    if (aPrimary !== bPrimary) return aPrimary ? -1 : 1;
     return Number(b.priority || b.finalScore || b.totalScore || 0) - Number(a.priority || a.finalScore || a.totalScore || 0);
   };
   const sortedDecisions = prominentPool
     .filter(hasPreciseSource)
+    .filter((item) => item.decision !== "Ignorieren")
     .sort(decisionComparator)
     .map(toDecision);
   // decisions bleibt bei 3 (Home/Quick/Summary hängen daran). helmutDeck ist das
@@ -583,6 +710,7 @@ function applyStartPayload(startPayload) {
   selectedDecisionId = decisions[0]?.id || "";
   generatedStatement = decisions[0]?.statement || "";
   maybeStartOnboarding();
+  privateAccess = true;
 }
 
 const ONBOARDING_STEPS = 7;
@@ -595,8 +723,9 @@ function renderOnboarding() {
   if (onboardingStep === 0) {
     body = `
       <h2>Willkommen bei Helmut.</h2>
-      <p class="onboarding-lead">Lass uns ${escapeHtml(mandateName)} in unter 2 Minuten einrichten, damit dein Briefing sofort passt.</p>
-      <p class="onboarding-note">Diese Angaben nutzt Helmut nur zur Personalisierung deiner Briefings. Du kannst sie jederzeit ändern oder löschen.</p>`;
+      <p class="onboarding-lead">Lass uns dein Mandatsprofil einrichten. Das dauert etwa zwei Minuten.</p>
+      <dl class="ui-onboarding-mandate"><dt>Mandat</dt><dd>${escapeHtml(mandateName)}</dd></dl>
+      <p class="onboarding-note">Das Mandat ist deinem Zugang fest zugeordnet. Deine Angaben nutzt Helmut zur persönlichen Einordnung. Alle Felder sind freiwillig und lassen sich später im Profil ändern.</p>`;
   } else if (onboardingStep === 1) {
     body = `
       <h2>Partei & Fraktion</h2>
@@ -630,7 +759,7 @@ function renderOnboarding() {
     const selectedFormats = new Set(d.officeFormats || ["presse", "linkedin"]);
     body = `
       <h2>Büro-Formate</h2>
-      <p class="onboarding-note">Was soll Helmut automatisch vorbereiten, wenn dein Briefing kommt? Du kannst das jederzeit in den Einstellungen ändern.</p>
+      <p class="onboarding-note">Welche Entwürfe soll Helmut dir im Büro anbieten? Du kannst das jederzeit in den Einstellungen ändern.</p>
       <div class="onboarding-chips">
         ${OFFICE_FORMATS.map((f) => `<label class="onboarding-chip"><input type="checkbox" name="officeFormat" value="${escapeAttribute(f.id)}" ${selectedFormats.has(f.id) ? "checked" : ""}/> ${escapeHtml(f.label)}</label>`).join("")}
       </div>`;
@@ -639,22 +768,24 @@ function renderOnboarding() {
       <h2>Risiken & Chancen (optional)</h2>
       <label>Risiko-Themen (Komma-getrennt)<input name="riskTopics" type="text" value="${escapeAttribute(d.riskTopics || "")}" placeholder="z. B. Klinikschließungen" /></label>
       <label>Chancen-Themen (Komma-getrennt)<input name="opportunityTopics" type="text" value="${escapeAttribute(d.opportunityTopics || "")}" placeholder="z. B. Pflege-Offensive" /></label>
-      <p class="onboarding-note">Fertig — danach ist Helmut auf dich eingestellt.</p>`;
+      <p class="onboarding-note">Mit „Fertig & speichern“ wird dein Profil gespeichert. Alles lässt sich später im Profil ändern.</p>`;
   }
   const isFirst = onboardingStep === 0;
   const isLast = onboardingStep === ONBOARDING_STEPS - 1;
   return `
-    <div class="onboarding-layer">
-      <form class="onboarding-card" id="onboardingForm" onsubmit="return false">
-        <div class="onboarding-progress">Schritt ${onboardingStep + 1} von ${ONBOARDING_STEPS}</div>
+    <div class="onboarding-layer" role="dialog" aria-modal="true" aria-label="Ersteinrichtung">
+      <form class="onboarding-card" id="onboardingForm" onsubmit="return false" aria-busy="${onboardingSaving}">
+        <header class="ui-onboarding-header"><span class="ui-onboarding-brand"><img src="assets/ui/logo/helmut-zeichen.svg" width="34" height="34" alt="" />Helmut</span><span class="onboarding-progress">Schritt ${onboardingStep + 1} von ${ONBOARDING_STEPS}</span><button type="button" class="text-button" data-onboard-skip ${onboardingSaving ? "disabled" : ""}>Später</button></header>
+        <progress class="ui-onboarding-progress" value="${onboardingStep + 1}" max="${ONBOARDING_STEPS}" aria-label="Fortschritt der Ersteinrichtung"></progress>
+        <fieldset class="ui-onboarding-fields" ${onboardingSaving ? "disabled" : ""}>
         <div class="onboarding-body">${body}</div>
         <div class="onboarding-actions">
           ${!isFirst ? `<button type="button" class="secondary-button" data-onboard-back>Zurück</button>` : ""}
-          <button type="button" class="account-logout" data-onboard-skip>Später</button>
           ${isLast
-            ? `<button type="button" class="primary-button" data-onboard-finish>Fertig & speichern</button>`
+            ? `<button type="button" class="primary-button" data-onboard-finish>${onboardingSaving ? "Wird gespeichert …" : "Fertig & speichern"}</button>`
             : `<button type="button" class="primary-button" data-onboard-next>${isFirst ? "Los geht's" : "Weiter"}</button>`}
         </div>
+        </fieldset>
       </form>
     </div>
   `;
@@ -678,7 +809,9 @@ function captureOnboardingStep() {
 }
 
 async function finishOnboarding(skip) {
-  onboardingActive = false;
+  if (onboardingSaving) return;
+  if (previewMode) { showToast("Vorschau: Profil nicht gespeichert"); return; }
+  onboardingSaving = true;
   const now = new Date().toISOString();
   const payload = skip
     ? { id: activePoliticianId, onboardedAt: now }
@@ -700,15 +833,31 @@ async function finishOnboarding(skip) {
   render();
   try {
     const res = await apiSend("PATCH", `/api/profile/current?${apiScopeQuery()}`, payload);
-    if (res.ok && res.json) profile = res.json;
-    showToast(skip ? "Du kannst dein Profil jederzeit in den Einstellungen ergänzen." : "Profil eingerichtet — Helmut ist startklar.");
+    if (!res.ok || !res.json || res.json.ok === false) throw new Error("Profile save not confirmed");
+    profile = res.json;
+    onboardingActive = false;
+    showToast(skip ? "Du kannst dein Profil jederzeit ergänzen." : "Profil gespeichert");
   } catch (error) {
     console.warn("Onboarding speichern fehlgeschlagen", error);
+    showToast("Profil konnte nicht gespeichert werden. Deine Eingaben bleiben erhalten.");
+  } finally {
+    onboardingSaving = false;
   }
   render();
 }
 
 function bindOnboarding() {
+  const layer = app.querySelector(".onboarding-layer");
+  if (layer) {
+    layer.addEventListener("keydown", event => {
+      if (event.key !== "Tab") return;
+      const controls = Array.from(layer.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled)'));
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    });
+    layer.querySelector("button:not(:disabled)")?.focus({ preventScroll: true });
+  }
   const next = app.querySelector("[data-onboard-next]");
   if (next) next.addEventListener("click", () => { captureOnboardingStep(); onboardingStep = Math.min(ONBOARDING_STEPS - 1, onboardingStep + 1); render(); });
   const back = app.querySelector("[data-onboard-back]");
@@ -762,25 +911,26 @@ function appStartCacheKey() {
 }
 
 async function ensureViewData(view) {
-  // Radar liest den fertigen Lesevertrag briefing.currentRadarState (beim App-Start
-  // über /api/app/start geladen) — KEIN separater Radar-Request pro Ansicht mehr
-  // (ein Read-State pro Start, keine unnötigen API-Aufrufe).
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context)) return;
+  // Radar verwendet weiterhin den vorhandenen gemeinsamen Startvertrag.
   if (view === "admin") {
-    // Neuaufbau 2026-07: bereichsweises Laden; ein fehlgeschlagener Endpoint
-    // blockiert nie den ganzen Admin (Details in ensureAdminSection).
     await ensureAdminSection(admSection);
+    if (!privateAccessIsCurrent(context)) return;
   }
   if (view === "daily-input" && !dailyInputsLoaded) {
     dailyInputsLoaded = true;
     try {
       const response = await fetchWithTimeout(`/api/daily-inputs?${apiScopeQuery()}`);
       const payload = response.ok ? await response.json() : { inputs: [] };
+      if (!privateAccessIsCurrent(context)) return;
       dailyInputs = Array.isArray(payload.inputs) ? payload.inputs : [];
     } catch (error) {
+      if (!privateAccessIsCurrent(context)) return;
       dailyInputsLoaded = false;
       console.warn("Daily inputs not loaded", error);
     }
-    render();
+    if (privateAccessIsCurrent(context)) render();
   }
   if ((view === "settings" || view === "profile-settings") && !opsStatusLoaded) {
     opsStatusLoaded = true;
@@ -789,18 +939,25 @@ async function ensureViewData(view) {
         fetchWithTimeout(`/api/ops/status?${apiScopeQuery()}`),
         fetchWithTimeout(`/api/push/public-key?${apiScopeQuery()}`).catch(() => null)
       ]);
-      opsStatus = response.ok ? await response.json() : null;
-      pushConfig = pushResponse?.ok ? await pushResponse.json() : null;
+      const nextOpsStatus = response.ok ? await response.json() : null;
+      const nextPushConfig = pushResponse?.ok ? await pushResponse.json() : null;
+      if (!privateAccessIsCurrent(context)) return;
+      opsStatus = nextOpsStatus; pushConfig = nextPushConfig;
     } catch (error) {
+      if (!privateAccessIsCurrent(context)) return;
       opsStatusLoaded = false;
       console.warn("Ops status not loaded", error);
     }
-    render();
+    if (privateAccessIsCurrent(context)) render();
   }
 }
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+  const generation = privateAccessGeneration;
+  assertPrivateMutationAllowed(url, options);
   const preparedOptions = await prepareRequestOptions(url, options);
+  if (generation !== privateAccessGeneration) throw privateAccessChanged();
+  assertPrivateMutationAllowed(url, options);
   const run = (opts) => {
     let timeoutId;
     const timeout = new Promise((_, reject) => {
@@ -808,16 +965,18 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
     });
     return Promise.race([fetch(url, opts), timeout]).finally(() => window.clearTimeout(timeoutId));
   };
-  const response = await run(preparedOptions);
-  // CSRF-Selbstheilung: Ein abgelaufener/verworfener Token (12h Serverfrist)
-  // fuehrte zu dauerhaftem 403 auf ALLEN POSTs (u. a. push/subscribe), bis der
-  // Nutzer neu lud. Einmal frischen Token holen und den Request wiederholen.
+  const response = await guardPrivateResponse(await run(preparedOptions), url, generation);
+  // Nur die ausdrueckliche CSRF-Ablehnung vor der Operation erlaubt Wiederholung.
   if (response.status === 403 && needsCsrfToken(url, options)) {
+    let csrfRejected = false;
+    try { csrfRejected = (await response.clone().json())?.error === "CSRF token missing or invalid"; } catch (_) {}
+    if (!csrfRejected) return response;
+    if (generation !== privateAccessGeneration) throw privateAccessChanged();
     csrfTokenPromise = null;
-    try {
-      const retryOptions = await prepareRequestOptions(url, options);
-      return await run(retryOptions);
-    } catch (_) { return response; }
+    const retryOptions = await prepareRequestOptions(url, options);
+    if (generation !== privateAccessGeneration) throw privateAccessChanged();
+    assertPrivateMutationAllowed(url, options);
+    return guardPrivateResponse(await run(retryOptions), url, generation);
   }
   return response;
 }
@@ -832,24 +991,31 @@ async function prepareRequestOptions(url, options = {}) {
 function needsCsrfToken(url, options = {}) {
   const method = String(options.method || "GET").toUpperCase();
   if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") return true;
-  return ["/api/pipeline/run", "/api/crawl/run", "/api/lage/check", "/api/briefing/run"].some((path) => String(url).startsWith(path));
+  return ["/api/pipeline/run", "/api/crawl/run", "/api/lage/check", "/api/briefing/run", "/api/lage/briefing", "/api/push/test"].some((path) => String(url).startsWith(path));
 }
 
 async function getCsrfToken() {
+  const generation = privateAccessGeneration;
+  if (csrfTokenGeneration !== generation) {
+    csrfTokenPromise = null;
+    csrfTokenGeneration = generation;
+  }
   if (!csrfTokenPromise) {
-    csrfTokenPromise = fetch(`/api/security/csrf?${apiScopeQuery()}`, { cache: "no-store" })
-      .then((response) => {
-        if (!response.ok) throw new Error("CSRF token request failed");
-        return response.json();
+    const pending = fetch(`/api/security/csrf?${apiScopeQuery()}`, { cache: "no-store" })
+      .then(response => guardPrivateResponse(response, "/api/security/csrf", generation))
+      .then(response => { if (!response.ok) throw new Error("CSRF token request failed"); return response.json(); })
+      .then(payload => {
+        if (generation !== privateAccessGeneration) throw privateAccessChanged();
+        if (typeof payload?.token !== "string" || !payload.token.trim()) throw new Error("CSRF token response invalid");
+        return payload.token.trim();
       })
-      .then((payload) => payload.token)
-      .catch((error) => {
-        // Eine abgelehnte Promise NIE cachen — sonst bleibt der Fehlversuch
-        // dauerhaft haengen und jeder Folge-POST scheitert. Beim naechsten
-        // Aufruf frisch versuchen.
-        csrfTokenPromise = null;
+      .catch(error => {
+        // Ein alter Request darf weder als verworfene Promise kleben bleiben
+        // noch eine inzwischen neu angelegte Tokenpromise beseitigen.
+        if (csrfTokenPromise === pending) csrfTokenPromise = null;
         throw error;
       });
+    csrfTokenPromise = pending;
   }
   return csrfTokenPromise;
 }
@@ -859,6 +1025,7 @@ async function getCsrfToken() {
 // 0 aktive Mandate -> ehrlicher Leerzustand. Die Auswahl wird als ?politicianId
 // uebernommen (Server loest sie auf) und lokal fuer Folgeaufrufe gemerkt.
 function renderMandateSelection(mandates = []) {
+  invalidatePrivateAccess();
   hideStartupSplash();
   const list = Array.isArray(mandates) ? mandates.filter((m) => m && m.id) : [];
   if (!list.length) {
@@ -900,6 +1067,7 @@ function renderMandateSelection(mandates = []) {
 // und KEINE fremden Daten — nur die Erklaerung + Abmelden, damit der Nutzer
 // nicht in einer Sackgasse haengt (Root-Cause-Fix, Umsetzungsnotiz §6-Folgefix).
 function renderNoMandateState() {
+  invalidatePrivateAccess();
   hideStartupSplash();
   app.innerHTML = `
     <section class="loading-card pilot-access-card">
@@ -915,6 +1083,7 @@ function renderNoMandateState() {
 }
 
 function renderPilotAccess(message = "") {
+  invalidatePrivateAccess();
   hideStartupSplash();
   app.innerHTML = `
     <section class="loading-card pilot-access-card">
@@ -1026,6 +1195,7 @@ function resolveAllowedActiveId(params) {
 }
 
 function renderLogin(message = "") {
+  invalidatePrivateAccess();
   hideStartupSplash();
   app.innerHTML = `
     <div class="login-screen">
@@ -1096,6 +1266,7 @@ function renderLogin(message = "") {
 }
 
 async function logout() {
+  invalidatePrivateAccess();
   try {
     await fetch("/api/auth/logout", { method: "POST" });
   } catch {}
@@ -1131,23 +1302,90 @@ async function requestPasswordChange(row) {
   }
 }
 
+function privateFormIsCurrent(form) {
+  return privateAccess && !mandateSwitchPending && profile?.id === activePoliticianId
+    && app.contains(form) && form.dataset.privateMandateId === activePoliticianId
+    && form.dataset.privateAccessGeneration === String(privateAccessGeneration);
+}
+function bindPrivateFormScopes() {
+  if (!privateAccess || mandateSwitchPending) return;
+  app.querySelectorAll("form").forEach(form => {
+    form.dataset.privateMandateId = activePoliticianId;
+    form.dataset.privateAccessGeneration = String(privateAccessGeneration);
+    if (form.dataset.privateScopeBound) return;
+    form.dataset.privateScopeBound = "1";
+    form.addEventListener("submit", event => {
+      if (privateFormIsCurrent(form)) return;
+      event.preventDefault(); event.stopImmediatePropagation();
+      showToast("Bitte den Mandatswechsel abwarten oder die Ansicht neu laden.");
+    }, true);
+  });
+}
+function setMandateSwitchPending(pending) {
+  mandateSwitchPending = pending;
+  if (pending) {
+    app.querySelectorAll("[data-profile-switch], form input, form select, form textarea, form button").forEach(control => {
+      if (!mandateSwitchControls.has(control)) mandateSwitchControls.set(control, control.disabled);
+      control.disabled = true;
+    });
+  } else {
+    for (const [control, disabled] of mandateSwitchControls) control.disabled = disabled;
+    mandateSwitchControls.clear();
+    app.querySelectorAll("[data-profile-switch]").forEach(select => { select.value = activePoliticianId; });
+    bindPrivateFormScopes();
+  }
+}
 async function switchPolitician(id) {
   const next = sanitizePoliticianId(id);
-  if (!next || next === activePoliticianId) return;
-  activePoliticianId = next;
-  radarArchiveLoaded = false;
-  opsStatusLoaded = false;
-  admResetState();
-  dailyInputsLoaded = false;
-  csrfTokenPromise = null;
-  try {
-    const res = await fetchWithTimeout(`/api/app/start?${apiScopeQuery()}`);
-    if (res.ok) applyStartPayload(await res.json());
-  } catch (error) {
-    console.warn("Mandatswechsel fehlgeschlagen", error);
+  if (!privateAccess || !next || (next === activePoliticianId && !mandateSwitchPending)) return;
+  if (authState && authState.allowedPoliticians !== "all" && !allowedProfiles.some(entry => entry.id === next)) {
+    showToast("Dieses Mandat ist nicht freigegeben."); return;
   }
-  currentView = "briefing";
-  render();
+  const accessGeneration = ++privateAccessGeneration;
+  setMandateSwitchPending(true);
+  let committed = false, commitStarted = false;
+  try {
+    // Ziel nur im Request; aktive Kennung und Formulardaten bleiben bis zur Bestaetigung zusammen.
+    const res = await fetchWithTimeout(`/api/app/start?${apiScopeQuery({ politicianId: next })}`);
+    if (accessGeneration !== privateAccessGeneration) return;
+    if (res.status === 403) { renderLogin("Mandatszugriff wurde nicht bestätigt."); return; }
+    if (!res.ok) throw new Error(`Mandatswechsel fehlgeschlagen (${res.status})`);
+    const payload = await res.json();
+    if (accessGeneration !== privateAccessGeneration) return;
+    if (!payload?.profile || payload.profile.id !== next || typeof payload.profile.fullName !== "string"
+      || !payload.profile.fullName.trim() || !payload.briefing || typeof payload.briefing !== "object"
+      || payload.needsMandateSelection || payload.empty) throw new Error("Mandatsantwort passt nicht zur Auswahl");
+    // Synchroner Commit ohne weitere Await-Grenze. Alte Antwortgenerationen bleiben verworfen.
+    commitStarted = true;
+    clearPrivateMandateState();
+    csrfTokenPromise = null;
+    const commitGeneration = ++privateAccessGeneration;
+    applyStartPayload(payload, commitGeneration);
+    committed = true;
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("politicianId", next); url.searchParams.delete("profileId");
+      window.history.replaceState(window.history.state, "", url);
+    } catch (_) { /* URL-Komfort ist kein Autorisierungsbeleg. */ }
+    currentView = "briefing";
+    setMandateSwitchPending(false);
+    render();
+    loadParliament();
+  } catch (error) {
+    if (commitStarted) {
+      invalidatePrivateAccess(); renderLogin("Der neue Mandatsstand konnte nicht sicher übernommen werden. Bitte erneut anmelden."); return;
+    }
+    if (accessGeneration !== privateAccessGeneration) return;
+    console.warn("Mandatswechsel fehlgeschlagen", error);
+    showToast("Mandatswechsel fehlgeschlagen – der bisherige Stand bleibt geöffnet.");
+  } finally {
+    if (accessGeneration === privateAccessGeneration && privateAccess) {
+      officeDraftsGenerating = false;
+      setMandateSwitchPending(false);
+    } else if (committed) {
+      // Der Commit hat seine Generation bewusst erhoeht und den Pendingzustand bereits beendet.
+    }
+  }
 }
 
 function roleLabel(role) {
@@ -1409,6 +1647,8 @@ function admResetState() {
 
 // Ein Endpoint, ein Fehlerpfad: Fehler landen in admErrors[key], nie als Wurf.
 async function admFetchEndpoint(key, { force = false } = {}) {
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context)) return;
   const spec = ADM_ENDPOINTS[key];
   if (!spec) return;
   if (!force && admData[key] !== undefined) return;
@@ -1417,16 +1657,15 @@ async function admFetchEndpoint(key, { force = false } = {}) {
     const base = spec.path();
     const url = `${base}${base.includes("?") ? "&" : "?"}${apiScopeQuery()}`;
     const res = await fetchWithTimeout(url, {}, spec.timeout || 15000);
+    if (!privateAccessIsCurrent(context)) return;
     if (!res.ok) {
       admErrors[key] = res.status === 401 ? "Anmeldung erforderlich" : res.status === 403 ? "Keine Berechtigung" : `HTTP ${res.status}`;
       if (key === "recovery" && adminRecovery) adminRecoveryStale = true;
     } else {
       const j = await res.json().catch(() => null);
+      if (!privateAccessIsCurrent(context)) return;
       if (j && typeof j === "object" && !Array.isArray(j)) {
-        admData[key] = j;
-        delete admErrors[key];
-        // Recovery-Status zusaetzlich in den bestehenden Recovery-Zustand spiegeln:
-        // runRecoveryAction/Status-Polling arbeiten unveraendert auf adminRecovery.
+        admData[key] = j; delete admErrors[key];
         if (key === "recovery") { adminRecovery = j; adminRecoveryStale = false; }
       } else {
         admErrors[key] = "Unerwartete Antwort";
@@ -1434,10 +1673,11 @@ async function admFetchEndpoint(key, { force = false } = {}) {
       }
     }
   } catch (_) {
+    if (!privateAccessIsCurrent(context)) return;
     admErrors[key] = "Zeitüberschreitung oder Netzwerkfehler";
     if (key === "recovery" && adminRecovery) adminRecoveryStale = true;
   } finally {
-    admLoading[key] = false;
+    if (privateAccessIsCurrent(context)) admLoading[key] = false;
   }
 }
 
@@ -4196,12 +4436,32 @@ function renderAdminMandatesSection(mandates) {
     </div>`;
 }
 
+// These are different namespaces. Never derive a KO/vorgang identity from a
+// recommendation id, title or legacy signal id. Preserve both API spellings.
+function decisionIdentityFields(item) {
+  return {
+    knowledgeObjectId: item.knowledgeObjectId ?? item.knowledge_object_id,
+    knowledge_object_id: item.knowledge_object_id ?? item.knowledgeObjectId,
+    vorgangId: item.vorgangId ?? item.vorgang_id,
+    vorgang_id: item.vorgang_id ?? item.vorgangId
+  };
+}
+
+function decisionEntityId(item, camel, snake) {
+  const values = [item?.[camel], item?.[snake]].filter((value) => value != null);
+  if (values.some((value) => typeof value !== "string")) return "";
+  const ids = [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+  return ids.length === 1 ? ids[0] : "";
+}
+
 function toDecision(item) {
   return {
+    ...decisionIdentityFields(item),
     ereignisTeilrollen: item.ereignisTeilrollen,
     ereignisKontexte: item.ereignisKontexte,
     id: item.id,
     signalId: item.signalId,
+    decision: item.decision,
     title: item.title,
     priorityLabel: priorityLabelForDecision(item),
     priorityType: priorityTypeForDecision(item),
@@ -4249,10 +4509,12 @@ function toDecision(item) {
 
 function recommendationToDecisionItem(recommendation) {
   return {
+    ...decisionIdentityFields(recommendation),
     ereignisTeilrollen: recommendation.ereignisTeilrollen,
     ereignisKontexte: recommendation.ereignisKontexte,
     id: recommendation.id,
-    signalId: recommendation.signal_id,
+    // V3 item.signalId is the explicit KO id; legacy signals remain separate.
+    signalId: recommendation.signal_id ?? recommendation.knowledge_object_id,
     title: recommendation.title,
     topic: recommendation.topic,
     summary: recommendation.summary,
@@ -4282,7 +4544,7 @@ function recommendationToDecisionItem(recommendation) {
     priority: recommendation.relevance_score,
     // Entscheidung kommt vom Server (V3 Decision Engine) — der Client rechnet die
     // Schwelle NICHT mehr selbst nach (Server ist die einzige Quelle der Wahrheit).
-    decision: recommendation.decision || "Beobachten",
+    decision: recommendation.decision,
     classification: recommendation.priorityType === "risk" ? "risk" : "opportunity",
     action_type: recommendation.action_type,
     deadline: recommendation.deadline,
@@ -4341,26 +4603,37 @@ function polishReferentText(value) {
 }
 
 function render() {
+  if (mandateSwitchPending) return;
+  if (!privateAccess || !profile?.id || profile.id !== activePoliticianId) return;
   // Eintritts-Animationen (Karten/Refresh-Screen) nur bei echtem (Wieder-)Eintritt
   // abspielen: Ansichtswechsel ODER ein bewusst gesetzter Einmal-Schuss. Alle
   // übrigen Rebuilds (Hintergrund-Nachladen von Parlament/Office, Refresh-Fortschritt)
   // bleiben ruhig -> keine mehrfach aufpoppenden Karten. Klasse VOR innerHTML setzen,
   // damit die neu gemounteten Knoten den Zustand sehen.
   const enterAnim = animateNextRender || currentView !== lastAnimatedView;
+  const pageScroll = currentView === lastAnimatedView ? (app.querySelector(".ui-page")?.scrollTop || 0) : 0;
   if (app) app.classList.toggle("anim-enter", enterAnim);
   app.innerHTML = `
     <div class="app-frame view-${escapeAttribute(currentView || "")}">
       ${renderSidebar()}
-      <main class="content-shell">
+      <div class="content-shell" ${onboardingActive ? "inert" : ""}>
         ${renderTopbar()}
-        ${renderView()}
-      </main>
+        <div class="ui-page" id="uiPage" tabindex="-1">${renderView()}</div>
+        ${renderUiFooter()}
+      </div>
       ${renderMobileDock()}
       ${renderUpdatesPanel()}
       ${renderTaskHandoffPanel()}
       ${renderOnboarding()}
     </div>
   `;
+  const page = app.querySelector(".ui-page");
+  if (page) {
+    page.scrollTop = pageScroll;
+    const syncCompactHeader = () => page.parentElement.classList.toggle("ui-is-scrolled", page.scrollTop > 160);
+    syncCompactHeader();
+    page.addEventListener("scroll", syncCompactHeader, { passive: true });
+  }
   lastAnimatedView = currentView;
   animateNextRender = false;
   hideStartupSplash();
@@ -4383,6 +4656,57 @@ function hideStartupSplash() {
   }, 980);
 }
 
+// Shared presentation components. These read the already loaded client state;
+// they never load data, start the motor or write to a backend.
+let uiLageSelectedId = "";
+let uiLageDetailOpen = false;
+
+function uiIcon(name) {
+  const paths = {
+    helmut: '<path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/>',
+    briefing: '<path d="M6 3h8l4 4v14H6zM14 3v5h5M9 12h6M9 16h6"/>',
+    radar: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    office: '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M3 12h18"/>',
+    bell: '<path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5zM10 21h4"/>',
+    arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
+    back: '<path d="m15 5-7 7 7 7"/>',
+    copy: '<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V3H3v13h5"/>',
+    source: '<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v14c0 4 14 4 14 0V5M5 12c0 4 14 4 14 0"/>'
+  };
+  return `<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths[name] || paths.briefing}</svg>`;
+}
+
+function renderUiPageHeader(title, subtitle = "", extra = "") {
+  const dateLabel = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
+  return `<header class="ui-page-header">
+    <p class="ui-date">${escapeHtml(dateLabel)}</p>
+    <h1>${escapeHtml(title)}</h1>
+    ${subtitle ? `<p class="ui-page-subtitle">${escapeHtml(subtitle)}</p>` : ""}
+    ${extra}
+  </header>`;
+}
+
+function renderUiEmpty(title, detail) {
+  return `<div class="ui-empty" role="status"><span class="ui-priority-dot" aria-hidden="true"></span><h2>${escapeHtml(title)}</h2><p>${escapeHtml(detail)}</p></div>`;
+}
+
+function renderUiFooter() {
+  const label = currentView === "settings" || currentView === "profile-settings"
+    ? "Dein Mandatsprofil steuert die persönliche Einordnung."
+    : "Quellen und Stand findest du direkt bei den angezeigten Inhalten.";
+  return `<footer class="ui-footer">${uiIcon("source")}<span>${escapeHtml(label)}</span>${previewMode ? '<span class="ui-preview-label">Vorschau · Beispieldaten</span>' : ""}</footer>`;
+}
+
+function renderUiAccountTools() {
+  const roles = roleNavItems();
+  const showSwitcher = isAccountMode() && currentUser && allowedProfiles.length > 1;
+  if (!roles.length && !showSwitcher) return "";
+  return `<section class="ui-account-tools" aria-label="Weitere Arbeitsbereiche">
+    ${showSwitcher ? `<label>Mandat wählen<select class="account-switch" data-profile-switch>${allowedProfiles.map(entry => `<option value="${escapeAttribute(entry.id)}" ${entry.id === activePoliticianId ? "selected" : ""}>${escapeHtml(entry.name)}</option>`).join("")}</select></label>` : ""}
+    ${roles.map(([id, label]) => `<button class="secondary-button" type="button" data-view="${escapeAttribute(id)}">${escapeHtml(label)}</button>`).join("")}
+  </section>`;
+}
+
 function renderSidebar() {
   const displayName = currentUser?.name || profile?.fullName || "Profil";
   const displayRole = currentUser ? roleLabel(currentUser.role) : (profile?.function || "MdB");
@@ -4394,27 +4718,23 @@ function renderSidebar() {
       </select>`
     : "";
   return `
-    <aside class="sidebar ${navOpen ? "open" : ""}">
+    <aside class="sidebar ${navOpen ? "open" : ""}" ${onboardingActive ? "inert" : ""}>
       <div>
-        <div class="brand">
-          <b class="brand-mark" aria-hidden="true">H</b>
-          <span>HELMUT</span>
-          <small>Dein politischer Stabschef</small>
-        </div>
+        <div class="brand"><span>Helmut</span><small>Was jetzt zählt.</small></div>
         <nav class="nav-list" aria-label="Hauptnavigation">
-          ${navItems.map(([id, label]) => `<button class="${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">${label}${id === "helmut" && hasNewHelmutAssessment() ? `<i class="helmut-new-dot"></i>` : ""}</button>`).join("")}
+          ${navItems.map(([id, label]) => `<button class="${isMobileNavActive(id) ? "active" : ""}" ${isMobileNavActive(id) ? 'aria-current="page"' : ""} type="button" data-view="${id}">${uiIcon(id)}<span>${label}</span>${id === "helmut" && hasNewHelmutAssessment() ? `<i class="helmut-new-dot"></i>` : ""}</button>`).join("")}
           ${roleNavItems().map(([id, label]) => `<button class="${currentView === id ? "active" : ""}" type="button" data-view="${id}">${label}</button>`).join("")}
         </nav>
       </div>
       <div class="sidebar-foot">
         ${profileSwitcher}
-        <div class="sidebar-user-card">
+        <button class="sidebar-user-card" type="button" data-view="settings" aria-label="Profil und Einstellungen öffnen" ${currentView === "settings" || currentView === "profile-settings" ? 'aria-current="page"' : ""}>
           <div class="sidebar-user-avatar">${escapeHtml(initials)}</div>
           <div class="sidebar-user-info">
             <strong>${escapeHtml(displayName)}</strong>
             <span>${escapeHtml(displayRole)}</span>
           </div>
-        </div>
+        </button>
         ${isAccountMode() && currentUser ? `<button class="account-logout sidebar-logout" type="button" data-logout>Abmelden</button>` : ""}
       </div>
     </aside>
@@ -4423,10 +4743,10 @@ function renderSidebar() {
 
 function renderMobileDock() {
   return `
-    <nav class="mobile-dock" aria-label="Mobile Navigation">
+    <nav class="mobile-dock" aria-label="Mobile Navigation" ${onboardingActive ? "inert" : ""}>
       ${mobileNavItems.map(([id, label]) => `
-        <button class="nav-${escapeAttribute(id)} ${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">
-          <span>${escapeHtml(mobileNavSymbol(id))}</span>
+        <button class="nav-${escapeAttribute(id)} ${isMobileNavActive(id) ? "active" : ""}" ${isMobileNavActive(id) ? 'aria-current="page"' : ""} type="button" data-view="${id}">
+          ${uiIcon(id)}
           ${id === "office" && actionableOfficeTaskCount() ? `<i>${escapeHtml(String(actionableOfficeTaskCount()))}</i>` : ""}
           ${id === "helmut" && hasNewHelmutAssessment() ? `<i class="helmut-new-dot"></i>` : ""}
           ${escapeHtml(label)}
@@ -4460,23 +4780,26 @@ function roleNavItems() {
 
 function renderTopbar() {
   const hasUpdates = hasUnreadUpdates();
+  const statusLabel = displayStatusLabel();
+  const title = ({ helmut: "Briefing", briefing: "Politische Lage", radar: "Radar", office: "Büro", "office-detail": "Büro", settings: "Profil & Einstellungen", "profile-settings": "Mandatsprofil", admin: "Admin", "daily-input": "Tagesinput" })[currentView] || "Helmut";
+  const tone = /fehler|störung|fehlgeschlagen/i.test(statusLabel) ? "error"
+    : /^aktuell$/i.test(statusLabel) ? "fresh" : "stale";
   return `
     <header class="topbar">
+      <span class="ui-compact-title" aria-hidden="true">${escapeHtml(title)}</span>
       <button class="menu-button ${navOpen ? "close" : ""}" type="button" data-menu aria-label="${navOpen ? "Menü schließen" : "Menü öffnen"}">
         ${navOpen ? "×" : "<span></span><span></span><span></span>"}
       </button>
-      <span class="topbar-brand">HELMUT</span>
+      <span class="topbar-brand">Helmut</span>
       <div class="topbar-meta">
+        <span class="ui-status ui-status--${tone}"><i aria-hidden="true"></i><span data-berlin-clock>${escapeHtml(statusLabel)} · ${formatBerlinNow()}</span></span>
         <button class="update-heart ${hasUpdates ? "has-updates" : ""}" type="button" data-updates aria-expanded="${updatesOpen ? "true" : "false"}" title="${hasUpdates ? "Mitteilungen anzeigen" : "Keine neuen Mitteilungen"}" aria-label="${hasUpdates ? "Mitteilungen anzeigen" : "Keine neuen Mitteilungen"}">
-          <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-            <path d="M31.7 54.2 11.9 34.5C4.4 27 4.8 15.4 12.8 9.4c6.1-4.6 14.8-3.4 19.1 2.9 4.4-6.3 13.1-7.5 19.2-2.9 8 6 8.3 17.6.8 25.1L31.7 54.2Z" />
-          </svg>
+          ${uiIcon("bell")}
           <i></i>
         </button>
         <button class="profile-avatar" type="button" data-view="settings" aria-label="Profil öffnen">
           ${escapeHtml(profileInitials())}
         </button>
-        <span data-berlin-clock>${escapeHtml(briefing.status)} · ${formatBerlinNow()}</span>
       </div>
     </header>
   `;
@@ -4532,7 +4855,7 @@ function renderView() {
   if (currentView === "detail") return renderDetailView();
   if (currentView === "communication") return renderCommunicationView();
   if (currentView === "office" || currentView === "tasks") return renderOfficeView();
-  if (currentView === "office-detail") return renderOfficeDraftDetail();
+  if (currentView === "office-detail") return renderOfficeView();
   if (currentView === "topics") return renderTopicsView();
   if (currentView === "radar") return renderRadarView();
   if (currentView === "helmut") return renderHelmutView();
@@ -5042,47 +5365,39 @@ function renderProsaEinordnung(data) {
 function renderLageView() {
   const data = lageData();
   if (data?.prosaVorschau === true) return renderProsaEinordnung(data.prosaEinordnung);
-  const firstName = (profile && profile.fullName ? profile.fullName : "").split(" ")[0];
-  const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : (firstName ? `Guten Morgen, ${firstName}.` : "Guten Morgen."));
-  const dateLabel = lageDateLabel();
-  const vorgaenge = lageVisibleVorgaenge(data);
-  if (!vorgaenge.length) return renderLageEmpty(greeting, dateLabel, data && data.emptyState, data);
-  const count = vorgaenge.length;
-  // EHRLICHE KOPFZEILE (Audit-Fix 2026-07): "Heute gibt es N NEUE Vorgänge"
-  // etikettierte beliebig alte Vorgänge als heutige Neuigkeiten. Jetzt: neutrale
-  // Zählung + sichtbare Frische der neuesten Quelle (macht veraltete Daten ruhig
-  // und ohne Alarmismus erkennbar).
-  const countWord = count === 1 ? "relevanter Vorgang" : "relevante Vorgänge";
-  // Block 5 (Lage-Frische): PRIMÄRE Frische = echte Analysezeit ("Zuletzt aktualisiert:
-  // heute, HH:MM"), deckungsgleich mit dem Kopf-"Aktuell". Die Quellen-Aktualität
-  // ("Neueste Quelle vom …") bleibt eine GETRENNT beschriftete Zeile: ein wochenaltes
-  // Artikeldatum darf die frisch geprüfte Lage nicht fälschlich alt aussehen lassen.
-  // Fehlt die Analysezeit ausnahmsweise, tritt die Quellen-Aktualität an ihre Stelle
-  // (die Frische verschwindet nie mehr komplett still).
-  const sourceRecency = lageFreshnessLabel(vorgaenge);
+  const items = lageVisibleVorgaenge(data);
+  const header = renderUiPageHeader("Politische Lage", "Relevante Vorgänge, aktueller Sachstand und belastbare Quellen.");
+  if (!items.length) {
+    return header + renderLageEmpty("Politische Lage", lageDateLabel(), data && data.emptyState, data);
+  }
+  const selected = items.find(v => String(v.vorgangId || v.id) === uiLageSelectedId) || items[0];
+  const selectedId = String(selected.vorgangId || selected.id || "");
   const checked = lageCheckedLabel(data && data.latestUpdatedAt);
-  const standLine = checked || sourceRecency;
-  const secondRecency = checked ? sourceRecency : "";
-  return `
-    <section class="lage2">
-      <header class="lage2-head">
-        <span class="lage2-date">${escapeHtml(dateLabel)}</span>
-        <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
-        <p class="lage2-count"><b>${count}</b> ${countWord} in deiner Lage.${standLine ? ` <span class="lage2-stand">${escapeHtml(standLine)}</span>` : ""}</p>
-        ${secondRecency ? `<p class="lage2-source-recency">${escapeHtml(secondRecency)}</p>` : ""}
-      </header>
-      ${data.demo ? `<span class="lage2-demo">Beispiel-Briefing · Demodaten</span>` : ""}
-
-      <div class="lage2-carousel-bleed">
-        <div class="lage2-carousel" data-lage-track>
-          ${vorgaenge.map(renderVorgangCard).join("")}
+  const disruption = lageDisruption(data);
+  return `${header}
+    ${data.demo ? '<p class="ui-preview-label">Beispiel-Lage · Demodaten</p>' : ""}
+    ${disruption ? `<div data-ui-lage-partial>${renderUiEmpty("Lage nur teilweise verfügbar", `${disruption.sub} Vorhandene Vorgangskarten bleiben sichtbar.`)}</div>` : ""}
+    <div class="ui-master-detail ui-lage-workspace ${uiLageDetailOpen ? "is-detail" : ""}">
+      <section class="ui-master" aria-label="Politische Vorgänge">
+        <div class="ui-section-heading"><span>Politische Vorgänge</span><span>${checked ? escapeHtml(checked) : `${items.length} Vorgänge`}</span></div>
+        <div class="ui-vorgang-list">
+          ${items.map((v, index) => {
+            const id = String(v.vorgangId || v.id || "");
+            const title = lageField(v.displayTitle) || lageDisplayHeadline(v.title);
+            const summary = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
+            return `<button class="ui-vorgang-row ${id === selectedId ? "is-selected" : ""}" type="button" data-ui-lage-select="${escapeAttribute(id)}" aria-pressed="${id === selectedId}">
+              <span class="ui-row-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
+              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(summary)}</span>` : ""}${lageStatusChip(v) ? `<span class="ui-row-meta">${escapeHtml(lageStatusChip(v))}</span>` : ""}</span>
+              <span class="ui-row-chevron" aria-hidden="true">›</span>
+            </button>`;
+          }).join("")}
         </div>
-        ${count > 1 ? `
-        <div class="lage2-dots" data-lage-dots aria-hidden="true">
-          ${vorgaenge.map((_, i) => `<span class="lage2-dot-item${i === 0 ? " active" : ""}"></span>`).join("")}
-        </div>` : ""}
-      </div>
-    </section>`;
+      </section>
+      <article class="ui-detail ui-lage-detail" aria-labelledby="ui-lage-detail-title">
+        <button class="ui-mobile-back" type="button" data-ui-lage-back>${uiIcon("back")} Zurück zur Lage</button>
+        ${vsheetContentHtml(selected).replace('id="vsheet-title"', 'id="ui-lage-detail-title"')}
+      </article>
+    </div>`;
 }
 
 // Merkt sich die Scroll-Position übers volle Re-Rendern hinweg (z. B. Menü/Update-
@@ -5706,7 +6021,7 @@ function vsheetTeardown() {
 }
 
 function lageStarIcon() {
-  return `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m10 2.5 2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L2.8 7.8l5-.7L10 2.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`;
+  return `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4" fill="currentColor"/></svg>`;
 }
 
 function renderVorgangDetailView() {
@@ -5769,16 +6084,18 @@ function renderVorgangDetailView() {
 }
 
 async function loadParliament() {
-  if (parliamentLoaded) return;
+  if (parliamentLoaded || !privateAccess) return;
+  const context = privateAccessContext();
   parliamentLoaded = true;
   try {
     const res = await fetchWithTimeout(`/api/parliament?${apiScopeQuery()}`, {}, 12000);
     if (!res.ok) return;
     const data = await res.json();
+    if (!privateAccessIsCurrent(context)) return;
     parliamentItems = Array.isArray(data.items) ? data.items : [];
     if (parliamentItems.length) render();
   } catch (error) {
-    console.warn("Parlament-Daten nicht geladen", error);
+    if (privateAccessIsCurrent(context)) { parliamentLoaded = false; console.warn("Parlament-Daten nicht geladen", error); }
   }
 }
 
@@ -5835,6 +6152,8 @@ function renderParliamentItem(item) {
 }
 
 async function assessParliamentItem(id) {
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context)) return;
   const item = parliamentItems.find((entry) => entry.id === id);
   if (!item || parliamentAssessments[id]) return;
   parliamentAssessments[id] = { loading: true };
@@ -5843,11 +6162,12 @@ async function assessParliamentItem(id) {
     const res = await apiSend("POST", `/api/parliament/assess?${apiScopeQuery()}`, {
       type: item.type, title: item.title, urheber: item.urheber, date: item.date
     });
+    if (!privateAccessIsCurrent(context)) return;
     parliamentAssessments[id] = res.ok && res.json ? res.json : null;
   } catch (error) {
-    parliamentAssessments[id] = null;
+    if (privateAccessIsCurrent(context)) parliamentAssessments[id] = null;
   }
-  render();
+  if (privateAccessIsCurrent(context)) render();
 }
 
 function activeDecisions() {
@@ -6132,21 +6452,10 @@ function renderLageSnapshot() {
 }
 
 function renderLearningPulse() {
-  const learning = opsStatus?.learning || briefing.learning || briefing.learningProfile || {};
-  const count = Number(learning.eventCount || 0);
-  const positive = learning.topicWeights?.find((entry) => Number(entry.score || 0) > 0);
-  const negative = learning.topicWeights?.find((entry) => Number(entry.score || 0) < 0);
-  const message = count
-    ? learning.summary || `Helmut hat ${count} Nutzungssignale und passt die Priorisierung vorsichtig an.`
-    : "Markiere Empfehlungen als relevant, später, erledigt oder nicht relevant. Daraus lernt Helmut, was für dein Mandat wirklich zählt.";
-  const focus = positive ? `Stärker: ${positive.label}` : negative ? `Weniger: ${negative.label}` : "Lernmodus bereit";
-  return `
-    <section class="learning-pulse" aria-label="Lernmodus">
-      <span>${escapeHtml(focus)}</span>
-      <p>${escapeHtml(message)}</p>
-    </section>
-  `;
+  const learning = opsStatus?.learning || briefing?.learning || briefing?.learningProfile || {};
+  return `<section class="learning-pulse" aria-label="Rückmeldungen"><span>Rückmeldungen</span><p>${escapeHtml(learningSummary(learning))}</p></section>`;
 }
+
 
 function renderFeedbackActions(decision) {
   if (!decision?.id) return "";
@@ -6414,7 +6723,9 @@ function renderHelmutView() {
   // (deterministisch, serverseitig gebaut). Der Refresh-/Intro-Ring bleibt als reiner
   // TECHNISCHER Ladezustand erhalten; danach rendert der ruhige Stand. Die alte
   // Assessment-/Typing-Ansicht (mit berechneten Ersatztexten) wird nicht mehr genutzt.
-  return (refreshActive || helmutThinking) ? renderHelmutThinkingView() : renderHelmutStandView();
+  return (refreshActive || helmutThinking)
+    ? renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.") + renderHelmutThinkingView()
+    : renderHelmutStandView();
 }
 
 function renderRefreshButton() {
@@ -6451,7 +6762,7 @@ function renderHelmutThinkingView() {
       <section class="helmut-refresh helmut-refresh--error" aria-live="polite">
         <div class="helmut-refresh-core" aria-hidden="true"><span class="helmut-refresh-mark">H</span></div>
         <p class="helmut-refresh-title">Aktualisierung gerade nicht möglich</p>
-        <p class="helmut-refresh-sub">Helmut konnte den Stand gerade nicht neu prüfen. Der zuletzt bekannte Stand bleibt sichtbar. Bitte in einem Moment erneut auf „neu prüfen" tippen.</p>
+        <p class="helmut-refresh-sub">Helmut konnte den Stand gerade nicht neu prüfen. Der zuletzt bekannte Stand bleibt sichtbar. Ein neuer Versuch ist in einigen Minuten möglich.</p>
       </section>
     `;
   }
@@ -6648,15 +6959,36 @@ function renderHelmutStandView() {
   return `
     <section class="hstand" aria-label="Briefing – aktueller Stabschefstand">
       ${renderHstandHeader(state)}
-      ${renderHstandPrimary(state)}
-      ${renderHstandProposal(state)}
-      ${renderHstandWhy(state)}
-      ${renderHstandRiskChance(state)}
+      ${renderUiBriefingHero(state)}
+      <div class="ui-briefing-context">${renderHstandWhy(state)}${renderHstandRiskChance(state)}</div>
       ${renderHstandComms(state)}
       ${renderHstandActions(state)}
       ${renderHstandItems(state)}
+      <details class="ui-source-details"><summary>Einordnung und Quellen zum wichtigsten Vorgang</summary>${renderHstandPrimary(state)}</details>
       ${renderHstandSources(state)}
     </section>`;
+}
+
+function renderUiBriefingHero(state) {
+  const item = state.primaryItem;
+  const title = hstandText(item.displayTitle) || hstandText(item.title);
+  const recommendation = hstandText(state.recommendation);
+  const stale = state.status === "stale" || state.staleState === true || state.datenstandVonHeute === false || state.frischeVertrag?.aktuell === false;
+  const eyebrow = stale ? "Letzter Stand" : state.status === "fresh" ? "Heute entscheidend" : "Aktueller Vorgang";
+  const urgency = hstandUrgencyChip(state.urgency || item.urgency);
+  const officeAvailable = Boolean(briefingOfficeDecision() && activeOfficeFormats().length);
+  return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang">
+    <div class="ui-hero-main"><span class="ui-eyebrow"><span class="ui-priority-dot" aria-hidden="true"></span>${eyebrow}</span>
+      <h2>${escapeHtml(title)}</h2>
+      <div class="hstand-chiprow">${urgency}${hstandContextChips(item.contextChips, 2)}</div>
+      ${briefingLageVerweis(item)}
+    </div>
+    <div class="ui-hero-next"><span class="ui-eyebrow">Dein nächster Schritt</span>
+      ${recommendation ? `<p>${escapeHtml(recommendation)}</p>` : '<p>Prüfe die Einordnung und Quellen zu diesem Vorgang.</p>'}
+      <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span>Im Büro öffnen</span></button>
+      ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfe den Vorgang und deine Büro-Formate.</p>'}
+    </div>
+  </section>`;
 }
 
 function renderHstandHeader(state) {
@@ -6688,21 +7020,16 @@ function renderHstandHeader(state) {
     : (HSTAND_TYPE_LABEL[String(state.briefingType || "").toLowerCase()] || "Briefing");
   const partial = state.qualityStatus === "partial";
   return `
-    <header class="hstand-head">
-      <div class="hstand-head-row">
-        <div class="hstand-head-titles">
-          <h1 class="hstand-title">Helmut</h1>
-          <p class="hstand-subtitle">Dein politischer Stabschef</p>
-        </div>
+    ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.")}
+    <div class="hstand-head ui-briefing-status">
         <div class="hstand-head-actions">
           <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
           ${renderRefreshButton()}
         </div>
-      </div>
       <p class="hstand-meta-line">${HELMUT_ICON_CLOCK}<span>${escapeHtml(type)}${when ? ` · ${escapeHtml(when)}` : ""}</span></p>
       ${partial ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>Nur teilweise vollständig – einige Angaben fehlen noch.</span></p>` : ""}
       ${renderHstandFrische(state)}
-    </header>`;
+    </div>`;
 }
 
 // Wichtigster Bereich: Mein Vorschlag (recommendation + urgency + contextChips).
@@ -6958,6 +7285,7 @@ function renderHstandSources(state) {
 function renderHstandUnavailable() {
   return `
     <section class="hstand hstand--state" aria-label="Briefing">
+      ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.")}
       <div class="hstand-state-card">
         <span class="hstand-state-mark" aria-hidden="true">H</span>
         <p class="hstand-state-title">Kein aktueller Stand verfügbar</p>
@@ -7156,7 +7484,7 @@ function renderHelmutDeckSection() {
   if (!helmutDeck.length) {
     return `
       <section class="helmut-deck-section" aria-label="Deine wichtigsten Entscheidungen">
-        <p class="helmut-deck-empty">Heute ist wenig Dringendes dabei — ich melde mich, sobald sich etwas bewegt.</p>
+        <p class="helmut-deck-empty">Heute ist wenig Dringendes dabei.</p>
       </section>`;
   }
   const remaining = Math.max(0, helmutDeck.length - helmutDecisionsMade);
@@ -8958,6 +9286,14 @@ function officeBriefingTime() {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} Uhr`;
 }
 
+// The cache has no independent creation timestamp. Label only the actual
+// briefing source date; never present an old or undated draft as created today.
+function officeBriefingStandLabel() {
+  const value = briefing?.generatedAt || briefing?.date;
+  if (!value || Number.isNaN(new Date(value).getTime())) return "Briefingdatum nicht belegt";
+  return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+}
+
 function draftStatus(format) {
   return OFFICE_FORMAT_META[format.id]?.defaultStatus || "Zum Bereithalten";
 }
@@ -8999,12 +9335,57 @@ function draftTitle(decision) {
   return t;
 }
 
+function officeDecisions() {
+  const eligible = (decisions || []).filter((d) =>
+    typeof d.id === "string" && d.id.trim() && typeof d.title === "string" && d.title.trim()
+    && ["Sofort reagieren", "Beobachten"].includes(d.decision)
+    && decisionEntityId(d, "knowledgeObjectId", "knowledge_object_id")
+    && decisionEntityId(d, "vorgangId", "vorgang_id")
+    && hasPreciseSource(d));
+  const counts = new Map();
+  for (const d of eligible) {
+    const id = decisionEntityId(d, "vorgangId", "vorgang_id");
+    counts.set(id, (counts.get(id) || 0) + 1);
+  }
+  return eligible.filter((d) => counts.get(decisionEntityId(d, "vorgangId", "vorgang_id")) === 1).slice(0, 2);
+}
+
+function briefingOfficeDecision() {
+  const state = briefing?.currentHelmutState;
+  const id = typeof state?.primaryVorgangId === "string" ? state.primaryVorgangId.trim() : "";
+  if (!id || !state.primaryItem || state.status === "error" || state.errorState
+    || state.primaryItem.id !== id || !profile?.id
+    || (state.profileId && state.profileId !== profile.id)) return null;
+  return officeDecisions().find((d) => decisionEntityId(d, "vorgangId", "vorgang_id") === id) || null;
+}
+
+function openOfficeForBriefing() {
+  const decision = briefingOfficeDecision();
+  const format = activeOfficeFormats()[0];
+  if (!decision || !format) {
+    selectedOfficeDraft = null;
+    officeBriefingTarget = null;
+    showToast("Kein eindeutig zugeordneter Büroentwurf verfügbar.");
+    return false;
+  }
+  officeBriefingTarget = { profileId: profile.id,
+    vorgangId: decisionEntityId(decision, "vorgangId", "vorgang_id"),
+    knowledgeObjectId: decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id") };
+  selectedOfficeDraft = uiOfficeSelection(decision, format);
+  currentView = "office-detail";
+  persistView("office");
+  navOpen = updatesOpen = false;
+  render();
+  app.querySelector(".ui-page")?.scrollTo({ top: 0 });
+  return true;
+}
+
 function renderOfficeView() {
+  const detailOpen = currentView === "office-detail" || Boolean(officeBriefingTarget);
   const formats = activeOfficeFormats();
-  const topDecisions = (decisions || []).filter((d) => d.decision !== "Ignorieren" && d.title).slice(0, 2);
+  const topDecisions = officeDecisions();
   const allCards = topDecisions.flatMap((d) => formats.map((f) => ({ decision: d, format: f })));
   const totalCount = allCards.length;
-  const time = officeBriefingTime();
   const hasBriefing = topDecisions.length > 0;
   const generating = officeDraftsGenerating;
 
@@ -9017,15 +9398,10 @@ function renderOfficeView() {
   const readyCount = allCards.filter(({ decision, format }) => officeCardStatus(decision, format) === "Entwurf bereit").length;
   const holdCount = allCards.filter(({ format }) => draftStatus(format) !== "Entwurf bereit").length;
 
-  const firstTwoFormats = formats.slice(0, 2).map((f) => OFFICE_FORMAT_META[f.id]?.formatLabel || f.label).filter(Boolean);
-  const eyebrow = hasBriefing && totalCount
-    ? `Heute vorbereitet: ${totalCount} ${totalCount !== 1 ? "Entwürfe" : "Entwurf"}. Prüfe zuerst ${firstTwoFormats.join(" und ")}.`
-    : "Heute vorbereitet.";
-
   const summaryText = hasBriefing
     ? (readyCount ? `${readyCount} ${readyCount !== 1 ? "Entwürfe" : "Entwurf"} bereit` : "")
       + (holdCount ? `${readyCount ? `<span class="buero-summary-sep">·</span>` : ""}${holdCount} zum Bereithalten` : "")
-      + (time ? `<span class="buero-summary-sep">·</span>Vorbereitet um ${escapeHtml(time)}` : "")
+      + `<span class="buero-summary-sep">·</span>Briefingstand: ${escapeHtml(officeBriefingStandLabel())}`
     : generating
       ? "Entwürfe werden vorbereitet&hellip;"
       : "Deine Entwürfe erscheinen hier automatisch, sobald deine Lage geladen ist.";
@@ -9044,15 +9420,25 @@ function renderOfficeView() {
     </div>
   ` : "";
 
+  if (officeBriefingTarget) {
+    const target = officeBriefingTarget;
+    const match = profile.id === target.profileId && allCards.find(({decision, format}) =>
+      decisionEntityId(decision, "vorgangId", "vorgang_id") === target.vorgangId
+      && decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id") === target.knowledgeObjectId
+      && (!selectedOfficeDraft || format.id === selectedOfficeDraft.format.id));
+    selectedOfficeDraft = match ? uiOfficeSelection(match.decision, match.format) : null;
+  }
+  if (selectedOfficeDraft && !allCards.some(({decision, format}) => officeDraftKey(decision, format) === officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format))) selectedOfficeDraft = null;
+  const selectedCard = selectedOfficeDraft && allCards.find(({decision, format}) => officeDraftKey(decision, format) === officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format));
+  if (selectedCard) selectedOfficeDraft = uiOfficeSelection(selectedCard.decision, selectedCard.format);
+  else if (!officeBriefingTarget && currentView !== "office-detail" && allCards.length) selectedOfficeDraft = uiOfficeSelection(allCards[0].decision, allCards[0].format);
   return `
     <div class="buero-view">
-      <header class="buero-header">
-        <h1 class="buero-title">Büro</h1>
-        <p class="buero-eyebrow">${escapeHtml(eyebrow)}</p>
-        <p class="buero-summary">${summaryText}</p>
-      </header>
+      ${renderUiPageHeader("Büro", "Entwürfe für deine politische Arbeit. Prüfe Inhalt und Quellen vor der Verwendung.")}
+      <p class="buero-summary">${summaryText || "Noch kein Entwurf bereit"}</p>
       ${priorityHint}
-      <div class="buero-draft-list">
+      <div class="ui-master-detail ui-office-workspace ${detailOpen ? "is-detail" : ""}">
+      <div class="buero-draft-list ui-master">
         ${topDecisions.map((decision, di) => `
           <div class="buero-group">
             <h2 class="buero-group-title">
@@ -9062,9 +9448,22 @@ function renderOfficeView() {
             ${formats.map((format, fi) => renderOfficeDraftCard(decision, format, di * formats.length + fi)).join("")}
           </div>
         `).join("")}
+        ${!hasBriefing ? renderUiEmpty("Noch keine Entwürfe", "Sobald belastbare Vorgänge vorliegen, kannst du hier passende Entwürfe prüfen.") : !formats.length ? renderUiEmpty("Keine Büro-Formate ausgewählt", "Wähle die gewünschten Formate in deinem Profil.") : ""}
+      </div>
+      <aside class="ui-detail ui-office-detail" aria-label="Entwurf im Detail">${selectedOfficeDraft ? renderOfficeDraftDetail() : `${detailOpen ? `<button type="button" class="buero-back-btn" data-office-back>${uiIcon("back")} Büro</button>` : ""}${renderUiEmpty(officeBriefingTarget ? "Entwurf nicht eindeutig zugeordnet" : "Dein Arbeitsbereich", "Wähle einen vorhandenen Entwurf, um den vollständigen Text und seine Quellen zu prüfen.")}`}</aside>
       </div>
     </div>
   `;
+}
+
+function uiOfficeSelection(decision, format) {
+  const cached = officeDrafts[officeDraftKey(decision, format)];
+  const cachedText = officeDraftText(cached);
+  const valid = isValidDraft(cachedText);
+  return { decision, format,
+    text: (valid ? cachedText : null) || channelFallbackStatement(decision, format.channel || "press"),
+    provenance: draftProvenanceLabel(officeDraftProvenance(cached), valid)
+  };
 }
 
 function renderOfficeDraftCard(decision, format, index = 0) {
@@ -9089,9 +9488,9 @@ function renderOfficeDraftCard(decision, format, index = 0) {
   const formatLabel = meta.formatLabel || title;
 
   return `
-    <article class="buero-draft-card${isLoading ? " is-loading" : ""}" style="animation-delay:${delay}"
+    <article class="buero-draft-card${isLoading ? " is-loading" : ""}${selectedOfficeDraft && officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format) === key ? " is-selected" : ""}" style="animation-delay:${delay}"
       data-office-open="${escapeAttribute(key)}"
-      data-office-decision="${escapeAttribute(JSON.stringify({ id: decision.id, signalId: decision.signalId, title: decision.title }))}"
+      data-office-decision="${escapeAttribute(JSON.stringify({ id: decision.id, knowledgeObjectId: decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id"), vorgangId: decisionEntityId(decision, "vorgangId", "vorgang_id") }))}"
       data-office-format="${escapeAttribute(format.id)}"
       role="button" tabindex="0" aria-label="${escapeAttribute(meta.typeLabel + ": " + title)}">
       <div class="buero-card-top">
@@ -9158,25 +9557,17 @@ function renderOfficeDraftDetail() {
   if (!selectedOfficeDraft) { currentView = "office"; return renderOfficeView(); }
   const { decision, format, text } = selectedOfficeDraft;
   const meta = OFFICE_FORMAT_META[format.id] || { formatLabel: format.label, typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", qualityTone: "Sachlich, klar, politisch anschlussfähig", qualityUsage: "Presse und Medien", iconBg: "#F0F0F0", iconColor: "#555" };
-  const time = officeBriefingTime();
   const sourceList = officeDraftSources(decision);
   const sources = sourceList.length;
   const status = officeCardStatus(decision, format);
   const statusClass = draftStatusClass(status);
   const paragraphs = String(text).split(/\n{1,}/).map((p) => p.trim()).filter(Boolean);
-  const lageDateStr = (() => {
-    const ts = briefing?.generatedAt || briefing?.date;
-    if (!ts) return "heute";
-    const d = new Date(ts);
-    if (Number.isNaN(d.getTime())) return "heute";
-    return d.toLocaleDateString("de-DE", { day: "numeric", month: "long" });
-  })();
 
   return `
     <div class="buero-detail-view">
       <nav class="buero-detail-nav">
         <button class="buero-back-btn" type="button" data-office-back>
-          <i class="ti ti-arrow-left" aria-hidden="true"></i> Büro
+          ${uiIcon("back")} Büro
         </button>
       </nav>
       <header class="buero-detail-header">
@@ -9184,10 +9575,10 @@ function renderOfficeDraftDetail() {
           <span class="buero-card-type">${escapeHtml(meta.typeLabel)}</span>
           <span class="buero-status-pill ${statusClass}">${escapeHtml(status)}</span>
         </div>
-        <h1 class="buero-detail-title">${escapeHtml(meta.formatLabel || draftTitle(decision))}</h1>
+        <h2 class="buero-detail-title">${escapeHtml(meta.formatLabel || draftTitle(decision))}</h2>
         <p class="buero-detail-anlass">Anlass: ${escapeHtml(draftTitle(decision))}</p>
         <p class="buero-detail-meta">
-          ${time ? `Erstellt heute um ${escapeHtml(time)}` : "Heute erstellt"}
+          Briefingstand: ${escapeHtml(officeBriefingStandLabel())}
           ${sources > 0 ? `&nbsp;·&nbsp; Basiert auf ${sources} ${sources !== 1 ? "Quellen" : "Quelle"}` : ""}
         </p>
         <p class="buero-detail-linecheck">${escapeHtml(selectedOfficeDraft.provenance || draftProvenanceLabel("", isValidDraft(officeDraftText(officeDrafts[officeDraftKey(decision, format)]))))}${meta.lineCheck ? escapeHtml(" · " + meta.lineCheck) : ""}</p>
@@ -9211,14 +9602,14 @@ function renderOfficeDraftDetail() {
         </div>
         <div class="buero-quality-row">
           <span class="buero-quality-label">Basis</span>
-          <span class="buero-quality-value">Lage vom ${escapeHtml(lageDateStr)}</span>
+          <span class="buero-quality-value">${escapeHtml(officeBriefingStandLabel())}</span>
         </div>
       </div>
       <footer class="buero-detail-footer">
         <button class="buero-copy-btn buero-copy-btn--full" type="button"
           data-office-copy-inline="detail"
           data-office-text="${escapeAttribute(text)}">
-          <i class="ti ti-copy" aria-hidden="true"></i> Kopieren
+          ${uiIcon("copy")} Kopieren
         </button>
       </footer>
     </div>
@@ -9544,12 +9935,11 @@ function renderRadarHeader(state) {
   return `
     <header class="radar2-header">
       <div class="radar2-header-row">
-        <h1 class="radar2-h1">Radar</h1>
+        ${renderUiPageHeader("Radar", "Was sich abzeichnet. Was du im Blick behalten solltest.")}
         <button class="radar2-refresh ${radarRefreshing ? "is-loading" : ""}" type="button" data-radar-refresh aria-label="Radar aktualisieren" ${radarRefreshing ? "aria-busy=\"true\"" : ""}>
           ${radarIcon("refresh")}
         </button>
       </div>
-      <p class="radar2-lede">Was zeichnet sich ab, was solltest du beobachten?</p>
       ${failNote}
       <div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
         <span class="radar2-status-dot" aria-hidden="true"></span>
@@ -10047,8 +10437,8 @@ function mentionRows(items, options = {}) {
     if (options.empty === false) return "";
     return `
       <div class="radar-empty-hint">
-        <p><strong>Keine neue Erwähnung</strong><br>Personensuche läuft weiter. Nächster Quellenlauf heute Abend.</p>
-        <button class="secondary-button" type="button" data-radar-search>Suche prüfen</button>
+        <p><strong>Keine neue Erwähnung</strong><br>Helmut prüft die Quellen morgens und abends.</p>
+        <button class="secondary-button" type="button" data-radar-search>Quellen jetzt prüfen</button>
       </div>
     `;
   }
@@ -10235,11 +10625,7 @@ function renderSettingsView() {
 
   const learning = ops.learning || {};
   const learnCount = Number(learning.eventCount || 0);
-  const learnLabel = learnCount === 0
-    ? "Noch keine Signale"
-    : learnCount < 5
-      ? `${learnCount} Signal${learnCount === 1 ? "" : "e"} · lernt an`
-      : `${learnCount} Signale · Vertrauen ${learning.confidence || "mittel"}`;
+  const learnLabel = learnCount ? `${learnCount} Rückmeldungen gespeichert` : "Noch keine Rückmeldungen";
 
   const systemOk = opsStatusLoaded && storage.backend === "supabase" && ops.ai?.enabled;
   const systemBadge = !opsStatusLoaded
@@ -10249,9 +10635,8 @@ function renderSettingsView() {
       : `<span class="stg-system-badge stg-system-badge--warn">${escapeHtml(ops.readiness?.issues?.[0] || "Prüfen")}</span>`;
 
   return `
-    <section class="page-intro compact">
-      <h1 class="${headlineClass("Einstellungen.")}">Einstellungen.</h1>
-    </section>
+    ${renderUiPageHeader("Profil & Einstellungen", "Dein Mandatsprofil und wie Helmut für dich formuliert.")}
+    ${renderUiAccountTools()}
 
     <div class="stg-section">
       <span class="stg-label">Profil</span>
@@ -10288,7 +10673,7 @@ function renderSettingsView() {
           </label>`;
         }).join("")}
         <div class="stg-row">
-          <span class="stg-row-label">Helmut lernt</span>
+          <span class="stg-row-label">Rückmeldungen</span>
           <span class="stg-row-value">${escapeHtml(learnLabel)}</span>
         </div>
       </div>
@@ -10317,7 +10702,7 @@ function renderSettingsView() {
             ${pushBlocked ? `<div class="stg-row-sublabel">In den Browser-Einstellungen erlauben</div>` : ""}
           </div>
           <label class="stg-toggle">
-            <input type="checkbox" data-enable-push ${push.enabled && pushPermissionState() === "granted" ? "checked" : ""} ${!pushSupported || pushBlocked ? "disabled" : ""}/>
+            <input type="checkbox" data-enable-push aria-label="Push-Benachrichtigungen" ${push.enabled && pushPermissionState() === "granted" ? "checked" : ""} ${!pushSupported || pushBlocked ? "disabled" : ""}/>
             <span class="stg-toggle-track"></span>
             <span class="stg-toggle-thumb"></span>
           </label>
@@ -10350,7 +10735,7 @@ function renderSettingsView() {
                 <div class="stg-row-sublabel">${escapeHtml(c.sub)}</div>
               </div>
               <label class="stg-toggle">
-                <input type="checkbox" data-notif-toggle="${escapeAttribute(c.id)}" ${on ? "checked" : ""}/>
+                <input type="checkbox" data-notif-toggle="${escapeAttribute(c.id)}" aria-label="${escapeAttribute(c.label)}" ${on ? "checked" : ""}/>
                 <span class="stg-toggle-track"></span>
                 <span class="stg-toggle-thumb"></span>
               </label>
@@ -10486,8 +10871,8 @@ function qualitySummary(quality) {
 }
 
 function learningSummary(learning) {
-  if (!learning || !learning.eventCount) return "Helmut lernt aus Relevant, Später, Nicht relevant, Kopieren, Notizen und Büroaufträgen. Noch gibt es keine gespeicherten Nutzungssignale.";
-  return `${learning.eventCount} Signale · Vertrauen ${learning.confidence}. ${learning.summary || "Ähnliche Themen werden künftig vorsichtig angepasst."}`;
+  if (!learning || !learning.eventCount) return "Noch keine Rückmeldungen gespeichert.";
+  return `${learning.eventCount} Rückmeldungen gespeichert. Die Priorisierung ändern sie derzeit nicht.`;
 }
 
 function readinessSummary(readiness) {
@@ -10585,8 +10970,12 @@ function pushEnabledOnThisDevice(push = {}) {
 }
 
 async function loadPushConfig() {
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context)) throw privateAccessChanged();
   const configResponse = await fetchWithTimeout(`/api/push/public-key?${apiScopeQuery()}`);
-  pushConfig = configResponse.ok ? await configResponse.json() : null;
+  const config = configResponse.ok ? await configResponse.json() : null;
+  if (!privateAccessIsCurrent(context)) throw privateAccessChanged();
+  pushConfig = config;
   return pushConfig;
 }
 
@@ -10749,10 +11138,7 @@ function renderProfileReleaseStatus() {
 
 function renderProfileSettingsView() {
   return `
-    <section class="page-intro compact">
-      <h1 class="${headlineClass("Mandatsprofil.")}">Mandatsprofil.</h1>
-      <p>Diese Angaben entscheiden, warum Helmut ein Thema genau für dich priorisiert.</p>
-    </section>
+    ${renderUiPageHeader("Dein Mandatsprofil", "Diese Angaben steuern die persönliche Einordnung deiner Themen.")}
 
     ${renderProfileReleaseStatus()}
 
@@ -10974,6 +11360,7 @@ function selectedDecision() {
 }
 
 async function apiSend(method, path, body) {
+  const generation = privateAccessGeneration;
   const options = { method, headers: { "Content-Type": "application/json" } };
   if (body !== undefined) options.body = JSON.stringify(body);
   const res = await fetchWithTimeout(path, options);
@@ -10981,6 +11368,7 @@ async function apiSend(method, path, body) {
   try {
     json = await res.json();
   } catch {}
+  if (generation !== privateAccessGeneration) throw privateAccessChanged();
   return { ok: res.ok, status: res.status, json };
 }
 
@@ -11322,6 +11710,40 @@ function bindAccountActions() {
 }
 
 function bindActions() {
+  bindPrivateFormScopes();
+  // Existing settings rows support Enter/Space; native buttons keep their
+  // native keyboard behavior. No additional request handlers are introduced.
+  app.querySelectorAll('.stg-row[role="button"], .stg-profile-row[role="button"]').forEach(row => {
+    row.tabIndex = 0;
+    row.addEventListener("keydown", event => {
+      if (event.target === row && (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        row.click();
+      }
+    });
+  });
+  // Master/detail selection is purely local; both viewport sizes use the same data.
+  app.querySelectorAll("[data-ui-lage-select]").forEach(button => {
+    button.addEventListener("click", () => {
+      uiLageSelectedId = button.dataset.uiLageSelect;
+      uiLageDetailOpen = true;
+      render();
+      const mobile = window.matchMedia && window.matchMedia("(max-width: 767px)").matches;
+      if (mobile) {
+        app.querySelector(".ui-page")?.scrollTo({ top: 0 });
+        app.querySelector(".ui-mobile-back")?.focus({ preventScroll: true });
+      } else {
+        Array.from(app.querySelectorAll("[data-ui-lage-select]")).find(el => el.dataset.uiLageSelect === uiLageSelectedId)?.focus({ preventScroll: true });
+      }
+    });
+  });
+  app.querySelectorAll("[data-ui-lage-back]").forEach(button => {
+    button.addEventListener("click", () => {
+      uiLageDetailOpen = false;
+      render();
+      Array.from(app.querySelectorAll("[data-ui-lage-select]")).find(el => el.dataset.uiLageSelect === uiLageSelectedId)?.focus({ preventScroll: true });
+    });
+  });
   // Interne Sprung-Anker (Statuskacheln & Handlungsbedarf-Hinweise): NUR sanftes
   // Scrollen zum Zielabschnitt + kurzer, dezenter Flash. Es wird NIE eine Aktion
   // ausgelöst (kein Pipeline-/Understanding-Lauf, kein Lock-Lösen, keine Recovery,
@@ -11419,8 +11841,10 @@ function bindActions() {
   }
   app.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.dataset.view === "office") { officeBriefingTarget = null; selectedOfficeDraft = null; }
       if (vsheetEl) closeVorgangSheet(true); // Detail-Sheet bei Navigation schließen
       currentView = button.dataset.view;
+      uiLageDetailOpen = false;
       persistView(currentView);
       navOpen = false;
       updatesOpen = false;
@@ -11428,6 +11852,7 @@ function bindActions() {
       if (currentView === "helmut") { markHelmutSeen(); startHelmutThinking(); }
       else stopHelmutTyping();
       render();
+      app.querySelector(".ui-page")?.scrollTo({ top: 0 });
       ensureViewData(currentView);
     });
   });
@@ -11496,20 +11921,28 @@ function bindActions() {
   app.querySelectorAll("[data-lage-done]").forEach((button) => {
     button.addEventListener("click", async () => {
       const decision = decisions.find((entry) => entry.id === button.dataset.lageDone);
+      if (previewMode) { showToast("Vorschau: Rückmeldung nicht gespeichert"); return; }
+      button.disabled = true;
+      const saved = await logDecisionInteraction("done", decision);
+      button.disabled = false;
+      if (!saved) { showToast("Rückmeldung nicht gespeichert"); return; }
       if (decision) { decision.status = "done"; decision.feedback = "done"; }
       render();
-      showToast("Als erledigt markiert");
-      logDecisionInteraction("done", decision);
+      showToast("Als erledigt gespeichert");
     });
   });
 
   app.querySelectorAll("[data-lage-ignore]").forEach((button) => {
     button.addEventListener("click", async () => {
       const decision = decisions.find((entry) => entry.id === button.dataset.lageIgnore);
+      if (previewMode) { showToast("Vorschau: Rückmeldung nicht gespeichert"); return; }
+      button.disabled = true;
+      const saved = await logDecisionInteraction("ignored", decision);
+      button.disabled = false;
+      if (!saved) { showToast("Rückmeldung nicht gespeichert"); return; }
       if (decision) { decision.status = "ignored"; decision.feedback = "ignored"; }
       render();
-      showToast("Wird niedriger gewichtet");
-      logDecisionInteraction("ignored", decision);
+      showToast("Als nicht relevant gespeichert");
     });
   });
 
@@ -11553,10 +11986,10 @@ function bindActions() {
             status: "open"
           })
         });
-        if (res.ok) {
-          const saved = await res.json();
-          if (saved && saved.id) tasks = [saved, ...tasks.filter((t) => t.id !== saved.id)];
-        }
+        if (!res.ok) throw new Error("Delegation not confirmed");
+        const saved = await res.json();
+        if (!saved?.id) throw new Error("Saved task missing");
+        tasks = [saved, ...tasks.filter((t) => t.id !== saved.id)];
         logDecisionInteraction("delegated", decision);
         showToast("An Büro delegiert");
       } catch (error) {
@@ -11569,54 +12002,45 @@ function bindActions() {
     button.addEventListener("click", async (e) => {
       e.stopPropagation();
       const text = button.dataset.officeText || "";
-      await copyText(text, "Text kopiert.");
+      await copyText(text, "Kopieren nicht möglich – bitte manuell markieren.");
     });
   });
 
   app.querySelectorAll("[data-office-open]").forEach((card) => {
     const open = () => {
-      const key = card.dataset.officeOpen;
       const formatId = card.dataset.officeFormat;
       const format = OFFICE_FORMATS.find((f) => f.id === formatId);
       let cardDecision;
       try { cardDecision = JSON.parse(card.dataset.officeDecision || "{}"); } catch (_) { cardDecision = {}; }
-      // Volle Entscheidung aufloesen: die Karte traegt nur { id, signalId, title } —
-      // Quellenliste und -zaehler der Detailansicht brauchen sources/primarySource
-      // aus der globalen Entscheidungs-Menge. Ohne Treffer bleibt das schlanke
-      // Kartenobjekt (Zaehler ehrlich 0, kein erfundener Wert).
-      const decision = decisions.find((d) =>
-        (cardDecision.id && d.id === cardDecision.id)
-        || (cardDecision.signalId && d.signalId === cardDecision.signalId)
-      ) || cardDecision;
-      const resolvedFormat = format || { id: formatId, label: formatId, icon: "ti-file", channel: "press" };
-      const resolvedMeta = OFFICE_FORMAT_META[formatId] || {};
-      const cachedValue = officeDrafts[key];
-      const cachedText = officeDraftText(cachedValue);
-      const hasValidCached = isValidDraft(cachedText);
-      const text = (hasValidCached ? cachedText : null) || channelFallbackStatement(
-        decision,
-        resolvedFormat.channel || "press"
-      );
-      // Herkunft mitgeben, damit die Detailansicht ehrlich kennzeichnet.
-      selectedOfficeDraft = {
-        decision, format: resolvedFormat, text,
-        provenance: draftProvenanceLabel(officeDraftProvenance(cachedValue), hasValidCached)
-      };
+      const decision = officeDecisions().find((d) => d.id === cardDecision.id
+        && decisionEntityId(d, "knowledgeObjectId", "knowledge_object_id") === cardDecision.knowledgeObjectId
+        && decisionEntityId(d, "vorgangId", "vorgang_id") === cardDecision.vorgangId);
+      if (!decision || !format || !activeOfficeFormats().some((f) => f.id === format.id)) {
+        showToast("Dieser Entwurf ist nicht mehr eindeutig zugeordnet.");
+        return;
+      }
+      officeBriefingTarget = null;
+      selectedOfficeDraft = uiOfficeSelection(decision, format);
       currentView = "office-detail";
       render();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      app.querySelector(".ui-page")?.scrollTo({ top: 0 });
     };
     card.addEventListener("click", open);
-    card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+    card.addEventListener("keydown", (e) => { if (e.target === card && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); open(); } });
   });
 
   app.querySelectorAll("[data-office-back]").forEach((btn) => {
     btn.addEventListener("click", () => {
+      officeBriefingTarget = null;
       selectedOfficeDraft = null;
       currentView = "office";
       render();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      app.querySelector(".ui-page")?.scrollTo({ top: 0 });
     });
+  });
+
+  app.querySelectorAll("[data-briefing-office]").forEach((button) => {
+    button.addEventListener("click", openOfficeForBriefing);
   });
 
   app.querySelectorAll("[data-refresh-helmut]").forEach((button) => {
@@ -11686,9 +12110,13 @@ function bindActions() {
   app.querySelectorAll("[data-vorgang]").forEach((button) => {
     button.addEventListener("click", () => {
       if (button.hasAttribute("data-lage-verweis")) {
-        // Dieser Handler laeuft bereits im click Ereignis. Nur der bestehende
-        // pointerup Kartenpfad muss einen nachfolgenden Geisterklick abfangen.
-        openVorgangSheet(button.dataset.vorgang, { viaClick: true });
+        uiLageSelectedId = button.dataset.vorgang;
+        uiLageDetailOpen = true;
+        currentView = "briefing";
+        navOpen = false;
+        updatesOpen = false;
+        render();
+        app.querySelector(".ui-page")?.scrollTo({ top: 0 });
         return;
       }
       selectedVorgangId = button.dataset.vorgang;
@@ -11816,19 +12244,23 @@ function bindActions() {
 
   app.querySelectorAll("[data-feedback]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (previewMode) { showToast("Vorschau: Rückmeldung nicht gespeichert"); return; }
       const decision = decisions.find((entry) => entry.id === button.dataset.feedbackId);
       const type = button.dataset.feedback === "ignored" ? "ignored"
         : button.dataset.feedback === "later" ? "snoozed"
           : button.dataset.feedback === "done" ? "done"
           : "marked_relevant";
-      await logDecisionInteraction(type, decision);
+      button.disabled = true;
+      const saved = await logDecisionInteraction(type, decision);
+      button.disabled = false;
+      if (!saved) { showToast("Rückmeldung nicht gespeichert"); return; }
       if (decision) {
         decision.feedback = type;
         decision.status = type === "ignored" ? "ignored" : type === "snoozed" ? "snoozed" : type === "done" ? "done" : "relevant";
       }
       button.closest(".learning-actions")?.querySelectorAll("[data-feedback]").forEach((entry) => entry.classList.remove("is-active"));
       button.classList.add("is-active");
-      showToast(type === "ignored" ? "Wird niedriger gewichtet" : type === "snoozed" ? "Für später gemerkt" : type === "done" ? "Als erledigt gelernt" : "Als relevant gemerkt");
+      showToast(type === "ignored" ? "Als nicht relevant gespeichert" : type === "snoozed" ? "Für später vermerkt" : type === "done" ? "Als erledigt gespeichert" : "Als relevant gespeichert");
     });
   });
 
@@ -11855,7 +12287,7 @@ function bindActions() {
         const response = await fetchWithTimeout(`/api/pipeline/run?${apiScopeQuery()}`);
         if (!response.ok) throw new Error(`Pilot check failed: ${response.status}`);
         const result = await response.json();
-        showToast(result.skippedReason ? "Letzter Lauf wird genutzt" : "Helmut ist aktualisiert");
+        showToast(result.ok === false ? "Prüfung nicht abgeschlossen – letzter Stand bleibt sichtbar" : result.skippedReason ? "Letzter Lauf wird genutzt" : "Helmut ist aktualisiert");
         await loadBriefing();
       } catch (error) {
         console.error(error);
@@ -11869,18 +12301,19 @@ function bindActions() {
 
   app.querySelectorAll("[data-radar-search]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (previewMode) { showToast("Vorschau: kein Quellenlauf gestartet"); return; }
       const originalText = button.textContent;
       button.disabled = true;
-      button.textContent = "Suche wird geprüft";
+      button.textContent = "Prüft …";
       try {
         const response = await fetchWithTimeout(`/api/pipeline/run?${apiScopeQuery()}`);
         if (!response.ok) throw new Error(`Search failed: ${response.status}`);
         const result = await response.json();
-        button.textContent = result.skippedReason ? "Keine neue Erwähnung gefunden." : "Suche aktualisiert.";
+        button.textContent = result.ok === false ? "Prüfung nicht abgeschlossen." : result.skippedReason ? "Gerade erst geprüft – letzter Lauf gilt." : "Quellen geprüft.";
         window.setTimeout(() => { button.disabled = false; button.textContent = originalText; }, 2600);
         await loadBriefing();
       } catch {
-        button.textContent = "Suche wird beim nächsten Quellenlauf aktualisiert.";
+        button.textContent = "Prüfung konnte nicht gestartet werden.";
         window.setTimeout(() => { button.disabled = false; button.textContent = originalText; }, 2600);
       }
     });
@@ -11899,7 +12332,7 @@ function bindActions() {
         const response = await fetchWithTimeout(`/api/lage/check?${apiScopeQuery()}`);
         if (!response.ok) throw new Error(`Lage check failed: ${response.status}`);
         const result = await response.json();
-        showToast(result.skippedReason ? "Letzter Lage-Check wird genutzt" : result.status === "changed" ? "Neue Lage erkannt" : "Priorität stabil");
+        showToast(result.ok === false ? "Lage-Check nicht abgeschlossen – letzter Stand bleibt sichtbar" : result.skippedReason ? "Letzter Lage-Check wird genutzt" : result.status === "changed" ? "Neue Lage erkannt" : "Priorität stabil");
         await loadBriefing();
       } catch (error) {
         console.error(error);
@@ -12308,6 +12741,9 @@ function stopHelmutTyping() {
 }
 
 async function saveProfileFromForm(form) {
+  if (!privateFormIsCurrent(form)) { showToast("Bitte den Mandatswechsel abwarten oder die Ansicht neu laden."); return; }
+  const context = privateAccessContext();
+  const targetId = profile.id;
   if (previewMode) {
     showToast("Vorschau: Profil nicht gespeichert");
     return;
@@ -12353,13 +12789,16 @@ async function saveProfileFromForm(form) {
   };
 
   try {
-    const response = await fetchWithTimeout(`/api/profile/current?${apiScopeQuery()}`, {
+    const response = await fetchWithTimeout(`/api/profile/current?${apiScopeQuery({ politicianId: targetId })}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, id: activePoliticianId })
+      body: JSON.stringify({ ...payload, id: targetId })
     });
     if (!response.ok) throw new Error("Profile save failed");
-    profile = await response.json();
+    const savedProfile = await response.json();
+    if (!privateAccessIsCurrent(context)) return;
+    if (savedProfile?.id !== targetId) throw new Error("Profilantwort passt nicht zum Formular");
+    profile = savedProfile;
     currentView = "settings";
     // Onboarding-Freigabe (Audit-Fix 2026-07): fehlende Pflichtangaben werden
     // beim Speichern MITGETEILT statt still ignoriert.
@@ -12374,7 +12813,7 @@ async function saveProfileFromForm(form) {
     render();
   } catch (error) {
     console.error(error);
-    showToast("Profil konnte nicht gespeichert werden");
+    if (privateAccessIsCurrent(context)) showToast("Profil konnte nicht gespeichert werden");
   }
 }
 
@@ -12417,6 +12856,8 @@ function isValidDraft(text) {
 }
 
 async function generateStatementWithBackend(input, decision, channel = selectedCommunicationChannel) {
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context)) throw privateAccessChanged();
   const response = await fetchWithTimeout(`/api/communication/generate?${apiScopeQuery()}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -12428,6 +12869,7 @@ async function generateStatementWithBackend(input, decision, channel = selectedC
   });
   if (!response.ok) throw new Error(`Communication API failed: ${response.status}`);
   const result = await response.json();
+  if (!privateAccessIsCurrent(context)) throw privateAccessChanged();
   return {
     aiEnabled: Boolean(result.aiEnabled),
     channelLabel: result.channelLabel,
@@ -12781,9 +13223,10 @@ function draftProvenanceLabel(source, hasValidDraft) {
 }
 
 async function generateOfficeDraftsInBackground() {
-  if (officeDraftsGenerating) return;
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context) || previewMode || officeDraftsGenerating || !briefingOfficeDecision()) return;
   const formats = activeOfficeFormats();
-  const topDecisions = (decisions || []).filter((d) => d.decision !== "Ignorieren" && d.title).slice(0, 2);
+  const topDecisions = officeDecisions();
   if (!formats.length || !topDecisions.length) return;
 
   const cacheKey = officeDraftCacheKey();
@@ -12817,13 +13260,19 @@ async function generateOfficeDraftsInBackground() {
   officeDraftsGenerating = true;
   render();
 
+  const stillAssigned = (decision) => privateAccessIsCurrent(context) && cacheKey === officeDraftCacheKey() && briefingOfficeDecision()
+    && officeDecisions().some((current) => current.id === decision.id && current.decision === decision.decision
+      && decisionEntityId(current, "vorgangId", "vorgang_id") === decisionEntityId(decision, "vorgangId", "vorgang_id")
+      && decisionEntityId(current, "knowledgeObjectId", "knowledge_object_id") === decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id"));
   for (const { decision, format, key } of batch) {
+    if (!stillAssigned(decision)) break;
     try {
       const result = await generateStatementWithBackend(
         `Bereite einen ${format.label}-Entwurf vor zum Thema: ${decision.title}`,
         decision,
         format.channel || "press"
       );
+      if (!stillAssigned(decision)) continue;
       // Herkunft speichern: der Server kennzeichnet regelbasierte Fallbacks
       // ehrlich (aiEnabled=false) — das darf im UI nie als KI-Entwurf erscheinen.
       officeDrafts[key] = { text: result.text, source: result.aiEnabled ? "ki" : "regel" };
@@ -12832,15 +13281,16 @@ async function generateOfficeDraftsInBackground() {
     } catch (_) {
       // Ehrlicher Fehlerzustand statt stillem Fallback (Status "Erstellung
       // fehlgeschlagen"); beim nächsten App-Start wird erneut versucht.
-      officeDraftErrors[key] = true;
+      if (stillAssigned(decision)) officeDraftErrors[key] = true;
     }
   }
 
+  if (!privateAccessIsCurrent(context)) return;
   officeDraftsGenerating = false;
   render();
   // Nur erfolgreiche Entwürfe cachen — fehlende Keys bleiben offen und werden
   // beim nächsten Lauf nachgeneriert (kein eingefrorener Teilerfolg mehr).
-  try { localStorage.setItem(cacheKey, JSON.stringify(officeDrafts)); } catch (_) {}
+  try { if (privateAccessIsCurrent(context) && cacheKey === officeDraftCacheKey()) localStorage.setItem(cacheKey, JSON.stringify(officeDrafts)); } catch (_) {}
 }
 
 function preferredOfficeHandoffMethod() {
@@ -13326,21 +13776,24 @@ function showToast(message) {
 }
 
 async function logInteraction(interaction) {
-  if (previewMode) return;
-  if (!profile) return;
+  if (previewMode || !profile) return false;
   try {
-    await fetchWithTimeout(`/api/interactions?${apiScopeQuery()}`, {
+    const response = await fetchWithTimeout(`/api/interactions?${apiScopeQuery()}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ politicianId: profile.id, ...interaction })
     });
+    if (!response.ok) return false;
+    const saved = await response.json();
+    return Boolean(saved && saved.id);
   } catch (error) {
     console.warn("Interaction not saved", error);
+    return false;
   }
 }
 
 async function logDecisionInteraction(type, decision, extra = {}) {
-  if (!decision) return;
+  if (!decision) return false;
   return logInteraction({
     type,
     signalId: decision.signalId || decision.id || "",
@@ -13596,10 +14049,8 @@ if (typeof document !== "undefined") {
   });
 }
 
-loadBriefing()
-  .then(() => schedulePushAutoSync())
-  .then(() => clearAppIconBadge())
-  .catch((error) => {
+function renderStartFailure(error) {
+  invalidatePrivateAccess();
     console.error(error);
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
       // Kein Netz -> elegante Offline-Ansicht im Helmut-Design statt Fehlermeldung.
@@ -13625,4 +14076,9 @@ loadBriefing()
       showToast(error?.code === "AUTH_UNAVAILABLE" ? "Anmeldung derzeit nicht erreichbar" : "Briefing konnte nicht geladen werden");
     }
     hideStartupSplash();
-  });
+}
+
+loadBriefing()
+  .then((loaded) => { if (loaded) schedulePushAutoSync(); })
+  .then(() => clearAppIconBadge())
+  .catch(renderStartFailure);
