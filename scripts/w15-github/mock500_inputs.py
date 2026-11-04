@@ -8,6 +8,7 @@ import sys
 sys.dont_write_bytecode = True
 import copy
 import hashlib
+import importlib.util
 import json
 import math
 import os
@@ -202,7 +203,7 @@ def validate_source_compatibility(qualification, repo=REPO, *, source_replay=Fal
             'sourceDatesRewritten': False, 'executionAuthority': False}
 
 
-def open_inputs(runtime_inputs, *, context, binding_raw, binding_sha256, asset_paths, observed_context, repo=REPO, source_replay_authorization=None):
+def open_inputs(runtime_inputs, *, context, binding_raw, binding_sha256, asset_paths, observed_context, repo=REPO, source_replay_authorization=None, prepare_diagnostic_authorization=None):
     """No file creation. Missing qualified/private assets are an explicit gate."""
     try:
         module = sys.modules.get('w15_github_runtime_inputs')
@@ -238,7 +239,21 @@ def open_inputs(runtime_inputs, *, context, binding_raw, binding_sha256, asset_p
              and observed_context == {key: context[key] for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')}
              | {'branch': 'refs/heads/codex/w15-github-end500-preparation-20261028', 'mode': observed_context['mode']})
         if source_replay_authorization is not None:
-            need(observed_context['mode'] == 'mock500-full-host-functional-gated'
+            if prepare_diagnostic_authorization is not None:
+                spec=importlib.util.spec_from_file_location('mock_inputs_prepare_contract',Path(repo)/'scripts/w15-github/mock500_prepare_contract.py')
+                contract=importlib.util.module_from_spec(spec);spec.loader.exec_module(contract)
+                contract.validate_authorization(prepare_diagnostic_authorization,context,
+                    binding_sha=binding_sha256,source_sha=source_replay_authorization.get('sourceQualificationSHA256'),
+                    approval_sha=source_replay_authorization.get('approvalSHA256'))
+            prepare_bound=(type(prepare_diagnostic_authorization) is dict
+                and prepare_diagnostic_authorization.get('contract')=='helmut-w15-mock500-prepare-diagnostic/1'
+                and prepare_diagnostic_authorization.get('scope')=='ISOLATED_GITHUB_MOCK500_PREPARE_DIAGNOSTIC_ONLY'
+                and prepare_diagnostic_authorization.get('inputBindingSHA256')==binding_sha256
+                and prepare_diagnostic_authorization.get('approvalSHA256')==source_replay_authorization.get('approvalSHA256')
+                and all(prepare_diagnostic_authorization.get(k)==context[k]for k in ('exactCommit','runId','runAttempt','nonce')))
+            need((observed_context['mode'] == 'mock500-full-host-functional-gated'
+                  or observed_context['mode'] == 'mock500-materials-diagnostic-gated'
+                  and prepare_bound)
                  and source_replay_authorization['contract'] == 'helmut-w15-mock-historical-qualified-source-replay/1'
                  and all(source_replay_authorization[key] == context[key]
                          for key in ('exactCommit', 'runId', 'runAttempt', 'nonce')))

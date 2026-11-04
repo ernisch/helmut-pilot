@@ -111,7 +111,11 @@ function closedMaterialsWorker(value){
   const first=value.firstFailure;
   if(value.materialsCompleted){if(first!==null)return null;}
   else if(!closedMaterialsFailure(first))return null;
-  const e=value.evidence,ek=['schema','status','scope','artifactId','cipherBytes','cipherSHA256','retentionDays','maximumStorageUSD',
+  if(!closedDiagnosticEvidence(value.evidence))return null;
+  return value;
+}
+function closedDiagnosticEvidence(e){
+  const ek=['schema','status','scope','artifactId','cipherBytes','cipherSHA256','retentionDays','maximumStorageUSD',
     'remoteReadbackObserved','authenticatedReadbackObserved','acceptedAsCompleteBackup','mock500Acceptance','productionAcceptance','executionAuthority','retryAllowed'];
   if(!e||Object.keys(e).sort().join(',')!==[...ek].sort().join(',')||e.schema!=='helmut-w15-materials-diagnostic-evidence/1'||
     e.status!=='PASS_PRIVATE_MATERIALS_EVIDENCE_ONLY'||e.scope!=='ISOLATED_GITHUB_MOCK500_MATERIALS_DIAGNOSTIC_ONLY'||
@@ -119,7 +123,7 @@ function closedMaterialsWorker(value){
     typeof e.cipherSHA256!=='string'||!(/^[a-f0-9]{64}$/.test(e.cipherSHA256))||e.retentionDays!==1||e.maximumStorageUSD!=='0.05'||
     e.remoteReadbackObserved!==true||e.authenticatedReadbackObserved!==true||
     !['acceptedAsCompleteBackup','mock500Acceptance','productionAcceptance','executionAuthority','retryAllowed'].every(k=>e[k]===false))return null;
-  return value;
+  return e;
 }
 const fs=require('node:fs'),cp=require('node:child_process');
 const credentialKeys=['ACTIONS_RUNTIME_TOKEN','ACTIONS_RESULTS_URL','ACTIONS_RUNTIME_URL','GITHUB_TOKEN',
@@ -173,6 +177,36 @@ function main(){
     console.log(JSON.stringify(safe));process.exitCode=1;return;
   }
   if(mode==='mock500-materials-diagnostic-gated'){
+    if(declared.approval?.resourceContract==='helmut-w15-mock500-prepare-diagnostic/1'){
+      const P=require('../../../scripts/w15-github/mock500_prepare_contract');
+      const cap=require('../w15-isolated/capacity-trace'),budget=cap.closedHostBudget(receipt.hostCapacityBudget);
+      const admission=budget&&cap.closedHostAdmission(receipt.hostCapacityAdmission,budget);
+      const worker=P.closedWorker(receipt.workerResult,{
+        closedPrepareFailure:require('../../../scripts/w15-github/mock500_prepare_failure').closed,
+        closedMaterialsFailure,closedEvidence:closedDiagnosticEvidence});
+      const cleanup=closedCleanup(receipt.cleanup),sample=receipt.finalCommonParentAfterOwnedExits;
+      if(declared.approval.scope!==P.SCOPE||receipt.status!=='PASS_FRESH_PREPARE_DIAGNOSTIC_OWNED_LIFETIME_ONLY'
+        ||receipt.mode!==mode||!admission||!worker||!cleanup||Object.values(cleanup).some(v=>v!=='PASS')
+        ||worker.exactCommit!==request.exactCommit||worker.runId!==request.runId||worker.runAttempt!==request.runAttempt
+        ||worker.nonce!==request.nonce||receipt.nonce!==request.nonce||receipt.exactCommit!==request.exactCommit
+        ||receipt.runId!==request.runId||receipt.runAttempt!==request.runAttempt
+        ||receipt.sameKernelParentIdentity!==true||receipt.ownedChildrenExited!==true||!sample
+        ||!/^[0-9]+$/.test(sample.configuredLimit)||!/^[0-9]+$/.test(sample.swapMaximum))throw Error('receipt');
+      const memory=closedFailureMemory({configuredLimitBytes:Number(sample.configuredLimit),swapMaximumBytes:Number(sample.swapMaximum),
+        kernelLifetimePeakBytes:sample.kernelLifetimePeakBytes,currentBytes:sample.currentBytes,swapCurrentBytes:sample.swapCurrentBytes,
+        lastReadbackValid:true,events:Object.fromEntries(['max','oom','oom_kill','oom_group_kill'].map(k=>[k,sample.events?.[k]])),
+        ...Object.fromEntries(['capacityMeasurement','hostCapacityBudget','hostCapacityObservation','hostCapacitySafetyObserved']
+          .filter(k=>Object.hasOwn(sample,k)).map(k=>[k,sample[k]]))});
+      if(!memory||memory.configuredLimitBytes!==budget.hardLimitBytes||memory.swapCurrentBytes!==0
+        ||memory.swapMaximumBytes!==0||Object.values(memory.events).some(v=>v!==0)
+        ||memory.kernelLifetimePeakBytes>budget.hardLimitBytes||memory.currentBytes>budget.hardLimitBytes
+        ||memory.hostCapacitySafetyObserved!==true)throw Error('receipt');
+      console.log(JSON.stringify({status:receipt.status,mode,contract:P.CONTRACT,exactCommit:request.exactCommit,
+        runId:request.runId,runAttempt:request.runAttempt,nonce:request.nonce,workerResult:worker,cleanup,
+        hostCapacityBudget:budget,hostCapacityAdmission:admission,memory,
+        executionAuthority:false,mock500Acceptance:false,end500Acceptance:false,retryAllowed:false}));
+      if(worker.prepareCompleted!==true)process.exitCode=1;return;
+    }
     const worker=closedMaterialsWorker(receipt.workerResult),cap=require('../w15-isolated/capacity-trace');
     const budget=cap.closedHostBudget(receipt.hostCapacityBudget);
     if(receipt.status!=='PASS_FRESH_MATERIALS_DIAGNOSTIC_OWNED_LIFETIME_ONLY'||receipt.mode!==mode||

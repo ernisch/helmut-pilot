@@ -64,7 +64,13 @@ def memory_profile(mode):
             R.phases().MOCK_PROFILE if mode == PHASED else R.PROFILE)
 
 
-def mode_scope(mode):
+def prepare_diagnostic(approval):
+    return type(approval) is dict and approval.get('resourceContract') == 'helmut-w15-mock500-prepare-diagnostic/1'
+
+
+def mode_scope(mode, approval=None):
+    if mode == MATERIALS and prepare_diagnostic(approval):
+        return 'ISOLATED_GITHUB_MOCK500_PREPARE_DIAGNOSTIC_ONLY'
     return ('ISOLATED_GITHUB_MOCK500_MATERIALS_DIAGNOSTIC_ONLY' if mode == MATERIALS else host().SCOPE if mode == HOST_FUNCTIONAL else functional().SCOPES[FUNCTIONAL] if mode == FUNCTIONAL else
             'ISOLATED_GITHUB_MOCK500_PHASED_ONLY' if mode == PHASED else 'ISOLATED_GITHUB_MOCK500_ONLY')
 
@@ -207,25 +213,27 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
             need(bridge.get('end500FunctionalContract') == host_functional().CONTRACT,
                  'MOCK500_REVIEWED_BASELINE_BRIDGE_REQUIRED')
     approval = request.get('approval')
+    prepare_only = request['mode'] == MATERIALS and prepare_diagnostic(approval)
     keys = {'schema', 'scope', 'authorized', 'mode', 'exactCommit', 'branch', 'runAttempt', 'nonce',
         'sourceQualificationSHA256', 'end500AcceptanceSHA256', 'compatibilitySHA256', 'limits',
         'processingSeconds', 'completionSeconds', 'expectedProfiles', 'expectedUnits',
         'expectedPositions', 'expectedControls', 'maxProviderCalls', 'maxStorageUSD',
         'maxReceiveAttempts', 'issuedAt', 'expiresAt'}
     if request['mode'] in (HOST_FUNCTIONAL,MATERIALS):keys|={'resourceContract'}
+    if prepare_only: keys |= {'diagnosticOfRunId','inputBindingSHA256'}
     replay = isinstance(approval, dict) and 'sourceContract' in approval
     if replay:
-        need(request['mode'] == HOST_FUNCTIONAL and approval['sourceContract'] == SOURCE_REPLAY,
+        need((request['mode'] == HOST_FUNCTIONAL or prepare_only) and approval['sourceContract'] == SOURCE_REPLAY,
              'MOCK500_EXPLICIT_HISTORICAL_SOURCE_CONTRACT_REQUIRED')
         keys |= {'sourceContract'}
     calendar = isinstance(approval, dict) and 'simulationCalendar' in approval
     if calendar:
-        need(replay and request['mode'] == HOST_FUNCTIONAL and approval['simulationCalendar'] == SIMULATION_CALENDAR,
+        need(replay and (request['mode'] == HOST_FUNCTIONAL or prepare_only) and approval['simulationCalendar'] == SIMULATION_CALENDAR,
              'MOCK500_EXPLICIT_SIMULATION_CALENDAR_REQUIRED')
         keys |= {'simulationCalendar'}
     need(isinstance(approval, dict) and set(approval) == keys
          and approval['schema'] == 'helmut-w15-mock500-start-approval/1'
-         and approval['scope'] == mode_scope(request['mode'])
+         and approval['scope'] == mode_scope(request['mode'], approval)
          and approval['authorized'] is True
          and all(approval[k] == request[k] for k in ('mode', 'exactCommit', 'branch', 'runAttempt',
              'nonce', 'sourceQualificationSHA256', 'limits'))
@@ -233,7 +241,12 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
          and approval['compatibilitySHA256'] == compatibility_bridge['sha256']
          and approval['maxStorageUSD'] == '0.05', 'MOCK500_SEPARATE_EXPLICIT_GO_REQUIRED')
     if request['mode'] in (HOST_FUNCTIONAL,MATERIALS):
-        need(approval['resourceContract']==(R._load('mock500_materials_contract').CONTRACT if request['mode']==MATERIALS else host().CONTRACT),'MOCK500_SEPARATE_EXPLICIT_GO_REQUIRED')
+        need(approval['resourceContract']==(R._load('mock500_prepare_contract').CONTRACT if prepare_only else R._load('mock500_materials_contract').CONTRACT if request['mode']==MATERIALS else host().CONTRACT),'MOCK500_SEPARATE_EXPLICIT_GO_REQUIRED')
+    if prepare_only:
+        need(replay and calendar and approval['diagnosticOfRunId']=='41818696152'
+             and type(approval['inputBindingSHA256']) is str and SHA.fullmatch(approval['inputBindingSHA256'])
+             and ('bindings' not in request or approval['inputBindingSHA256']==request['bindings']['inputBindingSHA256']),
+             'PREPARE_DIAGNOSTIC_EXACT_BINDING_REQUIRED')
     exact = {'processingSeconds': 10800, 'completionSeconds': 12600, 'expectedProfiles': 500,
         'expectedUnits': 500, 'expectedPositions': 1500, 'expectedControls': 8000,
         'maxProviderCalls': 0, 'maxReceiveAttempts': 1, 'runAttempt': 1}
@@ -263,6 +276,14 @@ def validate_admission(request, end500_acceptance, *, compatibility_bridge, obse
         result['simulationCalendarAuthorization'] = {**result['sourceReplayAuthorization'],
             'schema': 'helmut-w15-isolated-mock-calendar-authorization/1',
             'contract': SIMULATION_CALENDAR, 'historicalPricesOnly': True}
+    if prepare_only:
+        result['prepareDiagnosticAuthorization'] = {
+            'schema':'helmut-w15-mock500-prepare-diagnostic-authorization/1',
+            'contract':approval['resourceContract'],'scope':approval['scope'],
+            **{k:observed_context[k]for k in ('runId','runAttempt','nonce','exactCommit')},
+            'sourceQualificationSHA256':request['sourceQualificationSHA256'],
+            'approvalSHA256':result['sourceReplayAuthorization']['approvalSHA256'],
+            'inputBindingSHA256':approval['inputBindingSHA256'],'diagnosticOfRunId':'41818696152'}
     return result
 
 
@@ -296,6 +317,7 @@ class StartGuard:
         self.resources.check_context(context)
         self.failure = None
         self.materials_diagnostic = observed_context['mode'] == MATERIALS
+        self.prepare_diagnostic = self.materials_diagnostic and prepare_diagnostic(approval)
         self.before_dispatch(kind='prepare' if self.materials_diagnostic else 'unit',now=now)
 
     @property

@@ -298,7 +298,9 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
         inputs = component('mock500_inputs').open_inputs(runtime, context=context,
             binding_raw=reception['binding_raw'], binding_sha256=bindings['inputBindingSHA256'],
             asset_paths=paths, observed_context=observed_context(manifest),
-            source_replay_authorization=start.admission.get('sourceReplayAuthorization'))
+            source_replay_authorization=start.admission.get('sourceReplayAuthorization'),
+            **({'prepare_diagnostic_authorization':start.admission['prepareDiagnosticAuthorization']}
+               if 'prepareDiagnosticAuthorization' in start.admission else {}))
         need(inputs.declared_additional_input_bytes() == bindings['additionalAssetBytes'])
         if manifest['mode'] == MATERIALS:
             phase = 'mock500'
@@ -307,7 +309,8 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
                     kwargs['controller'],closing_guard,kwargs['outcome'])
             final=controller(REPO).run_bound(inputs,resources,start,None,disk_guard=disk,
                 materials_diagnostic=preserve)
-            return component('mock500_materials_contract').validate_result(final,manifest)
+            contract='mock500_prepare_contract' if component('mock500_start').prepare_diagnostic(manifest['approval']) else 'mock500_materials_contract'
+            return component(contract).validate_result(final,manifest)
         receipts = []
         finish = component('mock500_backup').completion_hook(manifest, private_payload, closing_guard)
         def capture(**kwargs):
@@ -407,7 +410,7 @@ def main(argv=None):
         validate_admission(request, private)
         validate_event(request, private)
         receipt = runner.launch(request, private)
-        need(receipt.get('status') == ('PASS_FRESH_MATERIALS_DIAGNOSTIC_OWNED_LIFETIME_ONLY' if request['mode']==MATERIALS else 'PASS_FRESH_MOCK500_HOST_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY' if request['mode']==HOST_FUNCTIONAL else 'PASS_FRESH_MOCK500_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY'
+        need(receipt.get('status') == ('PASS_FRESH_PREPARE_DIAGNOSTIC_OWNED_LIFETIME_ONLY' if request['mode']==MATERIALS and component('mock500_start').prepare_diagnostic(request['approval']) else 'PASS_FRESH_MATERIALS_DIAGNOSTIC_OWNED_LIFETIME_ONLY' if request['mode']==MATERIALS else 'PASS_FRESH_MOCK500_HOST_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY' if request['mode']==HOST_FUNCTIONAL else 'PASS_FRESH_MOCK500_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY'
                                      if request['mode'] == FUNCTIONAL else 'PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY'
                                      if request['mode'] == PHASED else 'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY'), 'closure')
         if request['mode']==HOST_FUNCTIONAL:

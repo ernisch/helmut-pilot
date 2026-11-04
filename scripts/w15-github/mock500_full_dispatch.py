@@ -60,6 +60,8 @@ def digest(value):
 
 
 def mode_scope(value):
+    if type(value) is dict and value.get('scope') == 'ISOLATED_GITHUB_MOCK500_PREPARE_DIAGNOSTIC_ONLY':
+        return MATERIALS, value['scope']
     if type(value) is dict and value.get('scope') == 'ISOLATED_GITHUB_MOCK500_MATERIALS_DIAGNOSTIC_ONLY':
         return MATERIALS,S.mode_scope(MATERIALS)
     if type(value) is dict and value.get('scope')=='ISOLATED_GITHUB_MOCK500_HOST_FUNCTIONAL_ONLY':
@@ -151,18 +153,23 @@ def validate_approval(value, target, launcher, request, now):
         'expectedProfiles': 500, 'expectedUnits': 500, 'expectedPositions': 1500, 'expectedControls': 8000,
         'maxProviderCalls': 0, 'maxStorageUSD': '0.05', 'maxReceiveAttempts': 1,
         'issuedAt': value['issuedAt'], 'expiresAt': value['expiresAt']}
-    if mode in (HOST_FUNCTIONAL,MATERIALS):expected['resourceContract']=W.component('mock500_materials_contract').CONTRACT if mode==MATERIALS else S.host().CONTRACT
+    prepare_only=scope=='ISOLATED_GITHUB_MOCK500_PREPARE_DIAGNOSTIC_ONLY'
+    if mode in (HOST_FUNCTIONAL,MATERIALS):expected['resourceContract']=W.component('mock500_prepare_contract').CONTRACT if prepare_only else W.component('mock500_materials_contract').CONTRACT if mode==MATERIALS else S.host().CONTRACT
     if mode==MATERIALS:expected.update(processingSeconds=900,completionSeconds=1080,expectedUnits=0,expectedPositions=0,expectedControls=0)
+    if prepare_only:expected.update(diagnosticOfRunId='41818696152',inputBindingSHA256=value['inputBindingSHA256'])
     approval = request['approval']
     # The unchanged outer GO hashes the entire request, including these exact
     # optional contracts. Caller data or ENV cannot add them after approval.
     if type(approval) is dict and 'sourceContract' in approval:
-        need(mode == HOST_FUNCTIONAL and approval['sourceContract'] == S.SOURCE_REPLAY, 'approval')
+        need((mode == HOST_FUNCTIONAL or prepare_only) and approval['sourceContract'] == S.SOURCE_REPLAY, 'approval')
         expected['sourceContract'] = S.SOURCE_REPLAY
     if type(approval) is dict and 'simulationCalendar' in approval:
-        need(mode == HOST_FUNCTIONAL and expected.get('sourceContract') == S.SOURCE_REPLAY
+        need((mode == HOST_FUNCTIONAL or prepare_only) and expected.get('sourceContract') == S.SOURCE_REPLAY
              and approval['simulationCalendar'] == S.SIMULATION_CALENDAR, 'approval')
         expected['simulationCalendar'] = S.SIMULATION_CALENDAR
+    if prepare_only:
+        need(expected.get('sourceContract') == S.SOURCE_REPLAY
+             and expected.get('simulationCalendar') == S.SIMULATION_CALENDAR, 'approval')
     need(type(approval) is dict and approval == expected and approval['authorized'] is True
          and all(type(approval[k]) is int for k in ('runAttempt', 'processingSeconds', 'completionSeconds',
              'expectedProfiles', 'expectedUnits', 'expectedPositions', 'expectedControls', 'maxProviderCalls', 'maxReceiveAttempts'))

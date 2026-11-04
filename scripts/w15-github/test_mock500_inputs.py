@@ -254,7 +254,8 @@ class ControllerAdmissionChecks(unittest.TestCase):
     def test_fictional_bound_pipeline_orders_restore_materials_runtime_zero_audit_and_backup(self):
         self._run_fictional_bound_pipeline()
 
-    def _run_fictional_bound_pipeline(self, *, inject=None, expect_failure=False, diagnostic=False):
+    def _run_fictional_bound_pipeline(self, *, inject=None, expect_failure=False, diagnostic=False, prepare_diagnostic=False):
+        assert not prepare_diagnostic or diagnostic
         controller = self.load_controller()
         temp = tempfile.TemporaryDirectory(prefix='w15-fictional-mock-pipeline-'); self.addCleanup(temp.cleanup)
         ctx = context(temp.name); ctx['runtimePins']['imageId'] = 'sha256:' + 'c' * 64
@@ -297,15 +298,20 @@ class ControllerAdmissionChecks(unittest.TestCase):
                 return module
             dynamic = fixture_module('test_dynamic_host_capacity')
             material_contract = fixture_module('mock500_materials_contract')
+            if prepare_diagnostic:prepare_contract=fixture_module('mock500_prepare_contract')
             host_contract = fixture_module('mock500_host_contract')
             resource.host_functional_stage = 'mock500'
             resource.container_limit = dynamic.admission()['diagnosticHardLimitBytes']
             resource.host_capacity_budget = dynamic.CAP.host_budget(dynamic.admission())
+        prepare_only_fixture=prepare_diagnostic
         class Start:
             context = ctx
             resources = resource
             admission = {'FICTIONAL': True}
             materials_diagnostic = diagnostic
+            if prepare_only_fixture:
+                prepare_diagnostic=True
+                admission={'prepareDiagnosticAuthorization':{'inputBindingSHA256':'d'*64}}
             def before_dispatch(self, **kwargs): events.append('admission')
             def closure_guard(self): return None
             @property
@@ -329,6 +335,12 @@ class ControllerAdmissionChecks(unittest.TestCase):
                     for name in ('current-command.PRIVATE.json', 'mock-fixtures.PRIVATE.json', 'audit-inputs.PRIVATE.json'):
                         write(work / name, {'FICTIONAL': True})
                     write(work / 'processing-materials.PRIVATE.json', start.window)
+                elif phase == 'prepare' and prepare_diagnostic:
+                    write(work/'state/PREPARE_DIAGNOSTIC_CHECKS.SAFE.json',{
+                        'schema':'helmut-w15-mock500-prepare-checks/1','status':'PASS_PREPARE_CHECKS_BEFORE_ADMISSION_INSTALL',
+                        'contract':prepare_contract.CONTRACT,**{k:ctx[k]for k in ('exactCommit','runId','runAttempt','nonce')},
+                        'validatedProfiles':500,'profileActivations':0,'unitEntries':0,'providerCalls':0,
+                        'authorityInstalled':False,'fullCValidated':True,'preactivationBindingsVerified':True})
                 elif phase == 'run':
                     write(work / 'state/FULL500_RUNTIME_RESULT.SAFE.json', {'completedUnits': 500, 'localSimulations': 1000,
                         'technicallyStoredPositions': 1500, 'checks': {'all8000FreshControls': True, 'everyAuthAssignedAndUnder30': True}})
@@ -341,6 +353,7 @@ class ControllerAdmissionChecks(unittest.TestCase):
         if diagnostic:
             modules.update(mock500_materials_contract=material_contract, mock500_host_contract=host_contract,
                 functional_contract=fixture_module('functional_contract'))
+            if prepare_diagnostic:modules['mock500_prepare_contract']=prepare_contract
         def docker(*args, **kwargs):
             if args[:2] == ('image', 'inspect'): return json.dumps([{'Id': ctx['runtimePins']['imageId']}]).encode()
             if args[0] == 'ps': return b''
@@ -411,6 +424,8 @@ class ControllerAdmissionChecks(unittest.TestCase):
                 patch.object(controller, 'sql'), patch.object(controller, 'copy_in', side_effect=copy_in), \
                 patch.object(controller, 'copy_out', side_effect=copy_out), patch.object(controller, 'cleanup', side_effect=cleanup), \
                 patch.object(controller, 'materials_cleanup', side_effect=diagnostic_zero if diagnostic else controller.materials_cleanup), \
+                patch.object(controller,'prepare_cleanup',side_effect=(lambda baseline:{**diagnostic_zero(baseline),'nativeZeroState':'BOUND_PREPARED_ZERO'})if prepare_diagnostic else controller.prepare_cleanup), \
+                patch.object(controller,'prepare_native_inventory',return_value='a'*64), \
                 patch.object(controller, 'quiesce_materials', side_effect=(lambda: events.append('sql-mutators-stopped')) if diagnostic else controller.quiesce_materials), \
                 patch.object(controller, 'verify_functional_connections', side_effect=(lambda: {'FICTIONAL': True}) if diagnostic else controller.verify_functional_connections), \
                 patch.object(controller, 'stop_owned'), patch.object(controller.subprocess, 'Popen', Gateway), \
@@ -426,6 +441,15 @@ class ControllerAdmissionChecks(unittest.TestCase):
                 final_path = Path(ctx['hostPaths']['runRoot']) / 'FINAL_MOCK500_CLOSURE.SAFE.json'
                 self.fail(str(events) + ' ' + str(json.loads(final_path.read_bytes()) if final_path.exists() else {}))
         if diagnostic:
+            if prepare_diagnostic:
+                prepare_contract.validate_result(result,{**ctx,'mode':prepare_contract.MODE,
+                    'approval':{'scope':prepare_contract.SCOPE,'resourceContract':prepare_contract.CONTRACT}})
+                for forbidden in ('run','audit','backup'):self.assertNotIn(forbidden,events)
+                for before,after in [('materials','prepare'),('prepare','gateway-stopped'),('gateway-stopped','sql-mutators-stopped'),('sql-mutators-stopped','zero'),('zero','evidence'),('evidence','container-stopped')]:
+                    self.assertLess(events.index(before),events.index(after))
+                self.assertTrue((Path(ctx['hostPaths']['runRoot'])/'PREPARE_DIAGNOSTIC_CLOSURE.SAFE.json').exists())
+                self.assertFalse((Path(ctx['hostPaths']['runRoot'])/'MATERIALS_DIAGNOSTIC_CLOSURE.SAFE.json').exists())
+                return result,events
             material_contract.validate_result(result, {**ctx, 'mode': material_contract.MODE})
             self.assertFalse(result['mock500Acceptance'] or result['backupRoundtripVerified'])
             for forbidden in ('prepare', 'run', 'audit', 'backup'):

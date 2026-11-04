@@ -82,7 +82,8 @@ function closedWorker(value, { closedPrepareFailure, closedMaterialsFailure, clo
       || !["BOUND_PREPARED_ZERO", "NO_OWNED_NATIVE_SLOT", "NO_NEW_NATIVE_SLOT_OBSERVED"].includes(value.nativeZeroState)) return null;
     let prepareFailure = null, materialsFailure = null;
     if (value.prepareCompleted) {
-      if (!value.materialsCompleted || value.firstFailurePhase !== null || value.prepareFailure !== null || value.materialsFailure !== null) return null;
+      if (!value.materialsCompleted || value.firstFailurePhase !== null || value.prepareFailure !== null || value.materialsFailure !== null
+        || value.nativeZeroState !== "BOUND_PREPARED_ZERO") return null;
     } else {
       if (!PHASES.has(value.firstFailurePhase)) return null;
       if (value.prepareFailure !== null) {

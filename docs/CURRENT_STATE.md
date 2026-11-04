@@ -1,10 +1,11 @@
 # CURRENT STATE — Helmut
 
-## W15: sichere Prepare-Fehlerweitergabe vorbereitet (04.11.2026)
+## W15: begrenzte Prepare-Diagnose vorbereitet (04.11.2026)
 
-[Diagnosefix](betrieb/w15-mock500-prepare-failure-20261104.md): Verlust innererKennung
-synthetisch reproduziert/behoben;9Python-/7JS-Gruppen und9betroffene Altprüfungen PASS.
-VorAusführung neueCodequalifikation/CI/Review Pflicht; kein Originallauf genehmigt.
+[Diagnosezweig](betrieb/w15-mock500-prepare-diagnostic-20261104.md) nutzt PR1038:
+echterPrepare endet vor Authority-Installation, Aktivierung/Units/Modelle0.
+EigeneGO-/Eingabebindung, nativeNullaktivität, festeFehlerkategorien/Kapsel;
+gezieltePrüfungen/CI/Review Pflicht. GeschützterStart braucht separatesGO.
 [Run41818696152](https://github.com/ernisch/helmut-pilot/actions/runs/41818696152),
 Job126536023497/Runtime789ea3ad unverändert: **FAIL**,425s, erstePhase
 `mock500-controller-prepare`; innereUrsache UNKNOWN. EineLinkrunde/einPOST.
@@ -12,7 +13,7 @@ Peak2,956GB/Limit13,356GB;Swap/OOM/max0;8äußereCleanupPASS,0Artefakte/aktiveMa
 Endzähler/Ergebnisfehler/Sicherung/finaleDBnull/tatsächlicheWorker-Nonce UNKNOWN.
 ZweiPlätze verbraucht; dritter durch UNKNOWN-Anker gesperrt. Altanker erhalten;
 Automation pausiert; Runtime789/STOPs erhalten. NächsterSchritt: nachCodeabnahme
-kleinsten neuen Diagnoseumfang freigeben; Altursache bleibtUNKNOWN. End500/Empfang
+einmaligenPrepareDiagnoseumfang freigeben; Altursache bleibtUNKNOWN. End500/Empfang
 übernommen; keinMock500PASS/Production. [Serienbelege](betrieb/w15-mock500-manual-series-20261104.md).
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),

@@ -54,7 +54,12 @@ def validate_result(value, manifest):
         need(value['firstFailure'] is None)
     else:
         failure(value['firstFailure'])
-    evidence = value['evidence']
+    validate_evidence(value['evidence'])
+    return value
+
+
+def validate_evidence(evidence):
+    """The unchanged cipher-only capsule transport, also reused by Prepare."""
     evidence_keys={'schema','status','scope','artifactId','cipherBytes','cipherSHA256','retentionDays',
         'maximumStorageUSD','remoteReadbackObserved','authenticatedReadbackObserved','acceptedAsCompleteBackup',
         'mock500Acceptance','productionAcceptance','executionAuthority','retryAllowed'}
@@ -72,4 +77,4 @@ def validate_result(value, manifest):
          and evidence.get('acceptedAsCompleteBackup') is False
          and all(evidence.get(k) is False for k in ('executionAuthority', 'mock500Acceptance',
              'productionAcceptance', 'retryAllowed')))
-    return value
+    return evidence

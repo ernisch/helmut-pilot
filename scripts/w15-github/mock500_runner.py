@@ -152,7 +152,7 @@ def validate_public_result(result, manifest, *, host_contract=None, host_capacit
         # UID1000 may not traverse the original checkout. The fixed worker
         # supplies the same pinned validator from its already verified stage;
         # privileged readbacks still load and independently validate it here.
-        contract = S._load('mock500_materials_contract') if materials_contract is None else materials_contract
+        contract = S._load('mock500_prepare_contract' if manifest.get('approval',{}).get('resourceContract')=='helmut-w15-mock500-prepare-diagnostic/1' else 'mock500_materials_contract') if materials_contract is None else materials_contract
         return contract.validate_result(result,manifest)
     phased = manifest['mode'] == PHASED
     hosted=manifest['mode'] in (HOST_FUNCTIONAL,MATERIALS)
@@ -260,7 +260,7 @@ def _fork_worker(manifest, private_payload, sender, receiver, docker_gid):
         else:
             result = module.run_worker(manifest, private_payload)
         staged_contract=module.component('mock500_host_contract') if manifest['mode'] == HOST_FUNCTIONAL else None
-        staged_materials=module.component('mock500_materials_contract') if manifest['mode'] == MATERIALS else None
+        staged_materials=module.component('mock500_prepare_contract' if manifest.get('approval',{}).get('resourceContract')=='helmut-w15-mock500-prepare-diagnostic/1' else 'mock500_materials_contract') if manifest['mode'] == MATERIALS else None
         result = validate_public_result(result, manifest, host_contract=staged_contract,
             materials_contract=staged_materials)
         need(not latch.seen)
@@ -427,7 +427,7 @@ def launch(request, private_payload):
             extra={'functionalContract':host().CONTRACT,'functionalSafetyChecksCompleted':True,
                    'legacyRegularMemoryAccepted':False,'providerResourceAccepted':False,'nonce':ctx['nonce'],
                    'hostCapacityAdmission':admission,'hostCapacityBudget':P.P.R.capacity().host_budget(ctx['hostCapacityAdmission'])}
-        return {'status': ('PASS_FRESH_MATERIALS_DIAGNOSTIC_OWNED_LIFETIME_ONLY' if request['mode']==MATERIALS else 'PASS_FRESH_MOCK500_HOST_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY' if request['mode'] in (HOST_FUNCTIONAL,MATERIALS) else
+        return {'status': ('PASS_FRESH_PREPARE_DIAGNOSTIC_OWNED_LIFETIME_ONLY' if request['mode']==MATERIALS and request.get('approval',{}).get('resourceContract')=='helmut-w15-mock500-prepare-diagnostic/1' else 'PASS_FRESH_MATERIALS_DIAGNOSTIC_OWNED_LIFETIME_ONLY' if request['mode']==MATERIALS else 'PASS_FRESH_MOCK500_HOST_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY' if request['mode'] in (HOST_FUNCTIONAL,MATERIALS) else
                            'PASS_FRESH_MOCK500_FUNCTIONAL_RUNNER_OWNED_LIFETIME_ONLY' if request['mode']==FUNCTIONAL
                            else 'PASS_FRESH_MOCK500_PHASED_RUNNER_OWNED_LIFETIME_ONLY' if phased
                            else 'PASS_FRESH_MOCK500_RUNNER_OWNED_LIFETIME_ONLY'), **extra, 'mode': request['mode'],

@@ -62,7 +62,7 @@ def _write(directory, name, raw):
     return {'path': name, 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
 
 
-def _bounded_source(seal, directory, name, guard):
+def _bounded_source(seal, directory, name, guard, maximum=MAX_FILE):
     try:
         fd, before = seal._file(directory, name)
     except FileNotFoundError:
@@ -70,20 +70,20 @@ def _bounded_source(seal, directory, name, guard):
     try:
         guard()
         size = before[2]
-        if size <= MAX_FILE:
-            raw = os.pread(fd, MAX_FILE, 0)
+        if size <= maximum:
+            raw = os.pread(fd, maximum, 0)
             need(len(raw) == size)
             strategy = 'COMPLETE'
         else:
-            half = MAX_FILE // 2
+            half = maximum // 2
             raw = os.pread(fd, half, 0) + os.pread(fd, half, size - half)
-            need(len(raw) == MAX_FILE)
-            strategy = 'FIRST_AND_LAST_32768_BYTES_NOT_COMPLETE'
+            need(len(raw) == maximum)
+            strategy = 'FIRST_AND_LAST_32768_BYTES_NOT_COMPLETE' if maximum==MAX_FILE else 'BOUNDED_FIRST_AND_LAST_NOT_COMPLETE'
         guard()
         need(seal._snapshot(os.fstat(fd)) == before)
         return raw, {'path': name, 'present': True, 'originalBytes': size,
                      'retainedBytes': len(raw), 'strategy': strategy,
-                     'truncated': size > MAX_FILE}
+                     'truncated': size > maximum}
     finally:
         os.close(fd)
 
@@ -118,11 +118,22 @@ def preserve(manifest, private_payload, inputs, controller, guard, outcome):
         try:
             work = seal._directory(str(controller.WORK), private=True)
             entries, observed = [], []
-            for name in SOURCES:
-                raw, record = _bounded_source(seal, work, name, guard)
+            prepare_only=manifest.get('approval',{}).get('resourceContract')=='helmut-w15-mock500-prepare-diagnostic/1'
+            sources=(('materials.PRIVATE.log',MAX_FILE),('prepare.PRIVATE.log',MAX_FILE),
+                ('MATERIALS_CONTROLLER_FIRST_FAILURE.PRIVATE.json',MAX_FILE),('MATERIALS_DIAGNOSTIC_FAILURE.SAFE.json',4096)) if prepare_only else tuple((n,MAX_FILE)for n in SOURCES)
+            for name,maximum in sources:
+                raw, record = _bounded_source(seal, work, name, guard,maximum)
                 observed.append(record)
                 if raw is not None:
                     entries.append(_write(target, name, raw))
+            if prepare_only:
+                state=seal._directory(str(controller.WORK/'state'),private=True)
+                try:
+                    for name in ('prepare-FIRST-FAILURE.SAFE.json','PREPARE_DIAGNOSTIC_CHECKS.SAFE.json'):
+                        raw,record=_bounded_source(seal,state,name,guard,4096)
+                        observed.append({**record,'path':'state/'+name})
+                        if raw is not None:entries.append(_write(target,name,raw))
+                finally:os.close(state)
             entries.append(_write(target, 'MATERIALS_DIAGNOSTIC_OUTCOME.PRIVATE.json', private_outcome))
             metadata = canonical({'scope': SCOPE, 'sources': observed,
                                   'privateSelectionOnly': True, 'completeBackup': False})
