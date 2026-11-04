@@ -7,14 +7,13 @@ const { performance } = require("node:perf_hooks");
 const Memory = require("./fixtures/w15-memory-contract");
 const AuthReport = require("./fixtures/w15-auth-measurement-report");
 const Durable = require("./fixtures/w15-durable-observations");
-const PrepareFailure = require("./w15-github/mock500_prepare_failure");
 let prepareStage = "entry", firstPrepareFailure = null;
 function retainPrepareFailure(error) {
   if (firstPrepareFailure) return firstPrepareFailure;
   // Existing stderr is drained into the private stage log. Synchronous, bounded
   // metadata precedes finally/cleanup; no raw error text enters this frame.
   try {
-    firstPrepareFailure = PrepareFailure.project(error, prepareStage);
+    firstPrepareFailure = require("./w15-github/mock500_prepare_failure").project(error, prepareStage);
     fs.writeSync(2, JSON.stringify({ kind: "W15_MOCK500_PREPARE_FAILURE", failure: firstPrepareFailure }) + "\n");
   } catch {}
   return firstPrepareFailure;

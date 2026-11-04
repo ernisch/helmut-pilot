@@ -21,7 +21,7 @@ function runtime({fail=null,cleanup=null,recordingFailure=false,calendar=null}={
     withSynthetik500InstallationCommand:async(_s,work)=>work(),loadSynthetik500ProductionCommand:async()=>({command:{drafts:[{sources:{}}]}}),
     readSynthetik500CurrentInputs:async()=>{},readAuthStore:async()=>({})};
   const C={controlHash:()=>m.controlHash,booksHash:()=>m.booksHash,DIRECT_GATES:[]};
-  const context={console,assert,performance,PrepareFailure:recordingFailure?{project(){throw Error(CANARY);}}:P,
+  const context={console,assert,performance,
     process:{env:{}},fs:{readFileSync:()=>Buffer.from('{}'),existsSync:()=>false,writeSync:(_fd,line)=>frames.push(JSON.parse(line))},
     read:name=>name==='configuration.PRIVATE.json'?c:m,file:()=>'/FICTIONAL',STATE:'/FICTIONAL',PRIV:'FICTIONAL_KEY',DB:m.database,
     ownerGo(){},environment(){},guard(){},setup(){},gateway(){},run(){},atomicPrepared0Check(){},
@@ -31,6 +31,7 @@ function runtime({fail=null,cleanup=null,recordingFailure=false,calendar=null}={
     BOUND:calendar?{simulationCalendarAuthorization:true}:null,memory:()=>({}),memoryAccepted:()=>true,
     sha:()=> 'd'.repeat(64),save:(name,value)=>{saved.push({name,value});return{sha256:'e'.repeat(64)};},
     require(name){
+      if(name==='./w15-github/mock500_prepare_failure')return recordingFailure?{project(){throw Error(CANARY);}}:P;
       if(name==='../lib/helmut/storage')return S;
       if(name==='../lib/helmut/synthetik-500-production-command')return C;
       if(name==='../lib/helmut/synthetik-500-production-adapter')return{install:async()=>{}};

@@ -56,9 +56,11 @@ ersten Frame. KeyboardInterrupt, Warte-IO-Fehler und negativer Signalexit wurden
 vor der Korrektur reproduziert; danach behalten sie Vorrang. Nur ein normaler
 positiver Fehlerexit darf seinen vollständig nachlaufenden Frame übernehmen.
 Die sieben betroffenen bestehenden Erstfehlerprüfungen bestehen ebenfalls.
-Die erste Pflicht-CI fand einen zusätzlichen unnötigen Projektorimport ohne
-Prepare-Details. Der Import erfolgt jetzt ausschließlich bei vorhandenem Feld;
-die unveränderte bestehende Spawnfehler-Gegenprobe besteht danach ebenfalls.
+Die Pflicht-CI fand unnötige Projektorimporte ohne Prepare-Details und beim
+bestehenden End500-Beobachterimport. Der Import erfolgt jetzt ausschließlich
+bei vorhandenem Diagnosefeld beziehungsweise tatsächlich gemeldetem Prepare-Fehler.
+Die unveränderten bestehenden Spawnfehler- und End500-Importgegenproben bestehen
+danach ebenfalls; keine Erweiterung des End500-Vorbereitungspakets nötig.
 Pflicht-CI und unabhängige Sicherheitsabnahme des exakten Endkopfs sind Pflicht;
 ihre tatsächlichen Belege werden am zugehörigen PR gebunden.
 
