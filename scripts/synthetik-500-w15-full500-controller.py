@@ -365,7 +365,7 @@ class Supervisor:
                     # its subsequent cancellation must not become the cause.
                     exited=(type(prior)is dict and prior.get('type')=='RuntimeError'
                       and type(prior.get('reason'))is str
-                      and re.fullmatch(r'full500-stage-failed:prepare:-?[0-9]{1,3}',prior['reason']))
+                      and re.fullmatch(r'full500-stage-failed:prepare:[1-9][0-9]{0,2}',prior['reason']))
                     if safe is not None and self.prepare_failure is None and (prior is None or exited):
                         self.prepare_failure=safe
             except (ValueError,UnicodeError,KeyError,TypeError):pass
@@ -505,6 +505,13 @@ class Supervisor:
                 except subprocess.TimeoutExpired:
                     os.killpg(self.process.pid,signal.SIGKILL);self.process.wait()
                 raise RuntimeError('full500-stage-timeout:'+name)
+            except BaseException as error:
+                if name=='prepare':
+                    # Record the wait interruption before finally drains later
+                    # child output; never expose the exception's arbitrary text.
+                    kind='interrupted'if isinstance(error,(KeyboardInterrupt,SystemExit))else'rejected'
+                    self.first_failure(RuntimeError('full500-prepare-wait-'+kind))
+                raise
             finally:
                 if self.inner_stop_thread:self.inner_stop_thread.join(timeout=25)
                 if self.stop_failure:self.failure=self.failure or self.stop_failure

@@ -88,12 +88,34 @@ class PrepareFailureChecks(unittest.TestCase):
                         s.stage(['FICTIONAL_NO_COMMAND'],'prepare',1)
                 self.assertEqual(s.prepare_failure, first()if accepted else None)
 
+    def test_signal_or_wait_io_before_late_frame_remains_primary(self):
+        fixture=FIRST.F.ControllerAdmissionChecks('runTest');self.addCleanup(fixture.doCleanups)
+        c=fixture.load_controller()
+        raw=json.dumps({'kind':'W15_MOCK500_PREPARE_FAILURE','failure':first()}).encode()+b'\n'
+        class DeferredDrain:
+            def __init__(self,target,**kwargs):self.target=target
+            def start(self):pass
+            def join(self,**kwargs):self.target()
+            def is_alive(self):return False
+        for error in (KeyboardInterrupt(CANARY),OSError(CANARY)):
+            with self.subTest(kind=type(error).__name__),tempfile.TemporaryDirectory(prefix='fictional-prepare-wait-')as tmp:
+                s=c.Supervisor.__new__(c.Supervisor);s.prepare_failure=None;s.failure=None
+                s.failure_lock=threading.Lock();s.closure_mode=False;s.thread=SimpleNamespace(is_alive=lambda:True)
+                s.process=None;s.inner_stop_thread=None;s.stop_failure=None;s.backup_runner=None;s.publish=lambda *a:None
+                def wait(**kwargs):raise error
+                child=SimpleNamespace(stdout=io.BytesIO(raw),wait=wait,poll=lambda:1)
+                with patch.object(c,'WORK',Path(tmp)),patch.object(c.subprocess,'Popen',return_value=child),\
+                     patch.object(c.threading,'Thread',DeferredDrain):
+                    with self.assertRaises(type(error)):s.stage(['FICTIONAL_NO_COMMAND'],'prepare',1)
+                self.assertIsNone(s.prepare_failure)
+
     def test_exit_before_pipe_drain_allowed_but_prior_guard_or_signal_remains_primary(self):
         fixture = FIRST.F.ControllerAdmissionChecks('runTest'); self.addCleanup(fixture.doCleanups)
         c = fixture.load_controller()
         raw = json.dumps({'kind':'W15_MOCK500_PREPARE_FAILURE','failure':first()}).encode()
         for reason, accepted in [('full500-stage-failed:prepare:1', True),
                                  ('full500-memory-reserve-or-oom', False),
+                                 ('full500-stage-failed:prepare:-15', False),
                                  ('full500-stage-timeout:prepare', False),
                                  ('full500-output-reader-not-drained', False)]:
             with self.subTest(reason=reason):

@@ -44,13 +44,17 @@ ersetzen. Eine Diagnose erzeugt weder Ausführungsrechte noch Ergebnis-/Cleanup-
 
 ## Gezielte Prüfungen und Grenzen
 
-Acht Python-Gruppen prüfen den tatsächlichen Controller-/Workflow-/Pipe-Weg,
+Neun Python-Gruppen prüfen den tatsächlichen Controller-/Workflow-/Pipe-Weg,
 die echten Stage-Reader, verspäteten Exit, partielle/überlange Frames, vorherige
 Wächterfehler, Signal/Bereinigungsfehler und die exakte Fehlerklassenbindung.
 Sieben JS-Gruppen prüfen die tatsächlichen Prepare-/Kalender-/Recorder-Funktionen,
 Erstfehler vor `finally`, Recorderfehler, den unveränderten Erfolgsweg, sichere
 Codestellen, Canary-/Getterfälle, JS-/Python-Parität und die echte öffentliche
 Action nach dem realen Pipe-Transport. Alle bestehen ausschließlich synthetisch.
+Ein unabhängiger Review fand zusätzlich Signal-/Wartefehler vor dem verspäteten
+ersten Frame. KeyboardInterrupt, Warte-IO-Fehler und negativer Signalexit wurden
+vor der Korrektur reproduziert; danach behalten sie Vorrang. Nur ein normaler
+positiver Fehlerexit darf seinen vollständig nachlaufenden Frame übernehmen.
 Die sieben betroffenen bestehenden Erstfehlerprüfungen bestehen ebenfalls.
 Pflicht-CI und unabhängige Sicherheitsabnahme des exakten Endkopfs sind Pflicht;
 ihre tatsächlichen Belege werden am zugehörigen PR gebunden.
