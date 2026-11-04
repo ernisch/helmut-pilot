@@ -1,21 +1,21 @@
 # CURRENT STATE — Helmut
 
-## W15: einmalige Full-Ausnahme nach STOP entwickelt (04.11.2026)
+## W15: unbegrenzte sequenzielle Mock500-Dauerfreigabe (04.11.2026)
 
-[Control-Vertrag](betrieb/w15-mock500-single-after-stop-control-20261104.md):
-Die Serie bleibt STOP; zwei Plätze verbraucht, fünf Journalereignisse unverändert,
-Slot-2-UNKNOWN und fehlender sicherer Terminalbeleg erhalten. Der neue getrennte
-Control-Helfer bindet höchstens Platz3/0,05USD, insgesamt0,15USD, an eine spätere echte
-Voll-GO-Anweisung. Acht neue synthetische Zulassungstests und fünf private Tests des
-kopierten Child-Pfads PASS; eigene Control-CI und unabhängige Abnahme noch Pflicht.
-Kein tatsächlicher Claim, Case, GO, Nonce, Link, POST oder geschützter Job erzeugt.
+Die neue Betreiberanweisung ersetzt die 3er-Grenze und Einzel-GOs bis zum ersten
+vollständigen verifizierten PASS. [Dauervertrag](betrieb/w15-mock500-standing-control-20261104.md):
+Alter Grant, beide STOPs, fünf Journalereignisse, zwei Reservierungen und UNKNOWNs
+bleiben bytegleich; eigene append-only Zulassung am selben Root, keine Versuchskappe.
+Sieben neue gezielte Übergangstests PASS; Control-CI und unabhängige Abnahme Pflicht.
+Nach FAIL nur sichere Bereinigung und belegter Fix; kein Blindretry.
+Keine Modelle/Production/neuen bezahlten Ressourcen. Artifact-Freikontingent UNKNOWN
+(Billing403): Start vor Links blockiert. Slot3-Stand1fa20107 bleibt erhalten.
 
-Runtime exakt33d588b6209ad912c5045f6561c07b7dc3d60e63 bleibt unverändert; CI41889108711
-und unabhängiger Kalender-vor-Seal-Review übernommen. Nächster später genehmigter
-Lauf direkt Full-Mock, keine zusätzliche Prepare-Diagnose. Neue Quellen-/Original-
-Bindungen auf33d bleiben Pflicht. Empfang41037459441/End50041325430429 übernommen.
-Run41818696152 bleibt historisch FAIL/UNKNOWN; spätere Prepare-Diagnosen41854268479
-und41870462562 ersetzen seinen fehlenden sicheren Terminalbeleg nicht.
+Erste Runtime exakt33d588b6209ad912c5045f6561c07b7dc3d60e63 unverändert;
+CI41889108711/Review, Empfang41037459441/End50041325430429 übernommen.
+Später direkt Full-Mock; keine neue Prepare-Diagnose. Frische Quellen-/Originalbindung
+Pflicht. Run41818696152 bleibt FAIL/UNKNOWN; Diagnosen41854268479/41870462562
+ersetzen seinen fehlenden sicheren Terminalbeleg nicht. Kein neuer Claim, Link, POST, geschützter Job oder Mock500-PASS.
 
 Historische Materials-FAILs bleiben erhalten: Run41500229995/9d,124s, Peak2,590GB,
 8CleanupPASS; innere Ursache/Endzähler/Sicherung/DBnull UNKNOWN

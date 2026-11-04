@@ -352,5 +352,137 @@ class AfterStopChecks(unittest.TestCase):
         self.blocked(lambda: gate.launch()); self.blocked(lambda: gate.consume('POST')); self.preserved()
 
 
+T = load('mock500_standing')
+
+
+class StandingChecks(unittest.TestCase):
+    def setUp(self):
+        self.f = AfterStopChecks(); self.f.setUp(); self.addCleanup(self.f.doCleanups)
+        self.authority = dict(schema=T.SCHEMA+'-grant', purpose='SEQUENTIAL_FULL_MOCK_UNTIL_FIRST_VERIFIED_PASS',
+            actualOperatorInstruction='SYNTHETIC standing instruction; no actual execution authority.',
+            operatorObservedAtUTC='2026-11-03T23:59:00Z', legacyBaselineSHA256=S.digest(self.f.baseline),
+            firstRuntimeCommit=A.RUNTIME, maximumActualUSD='0.00', maximumModelCalls=0,
+            productionAllowed=False, newPaidResourcesAllowed=False, stopAfterFirstPASS=True)
+        self.authority_pin = S.digest(self.authority)
+        self.binding = dict(self.f.binding, authoritySHA256=self.authority_pin, costProofSHA256=S.digest('authenticated free quota'),
+            priorTerminalSHA256=None, causeSHA256=None, fixSHA256=None, targetedTestsSHA256=S.digest('exact-head focused tests'))
+        self.cost_ok = self.admission_ok = True; self.terminals = set(); self.remote_checks = 0
+
+    def gate(self, **changes):
+        def before(binding, prior):
+            self.remote_checks += 1
+            return self.admission_ok
+        options = dict(expected_root=str(self.f.root), baseline=self.f.baseline, authority=self.authority,
+            binding=self.binding, authenticate=lambda value:S.digest(value)==self.authority_pin,
+            verify_before_launch=before, verify_local=lambda binding,now:self.f.local_ok,
+            verify_cost=lambda binding,now:self.cost_ok,
+            verify_terminal=lambda proof,claim:S.digest(proof) in self.terminals,
+            window_check=lambda now:W.validate_window('mock500',now), clock=lambda:self.f.now)
+        options.update(changes); return T.Standing(self.f.root,**options)
+
+    def initialized(self):
+        gate=self.gate();gate.initialize();return gate
+
+    def proof(self,claim,**changes):
+        value=dict(status='FAIL',dispatchOutcome='ACCEPTED',claimSHA256=S.digest(claim),
+            runtimeCommit=claim['binding']['runtimeCommit'],nonce=claim['binding']['nonce'],
+            processesStopped=True,originalIntegrityKnown=True,cleanupKnown=True,nativeZeroKnown=True,
+            allEightCleanupPassed=True,securityViolation=False,actualPaidUSD='0.00',
+            evidenceSHA256=S.digest(['actual synthetic terminal',claim]),fullMock500Accepted=False)
+        value.update(changes);self.terminals.add(S.digest(value));return value
+
+    def next_binding(self,proof,index,**changes):
+        self.binding=dict(self.binding,runtimeCommit=('%040x'%index),nonce=str(uuid.uuid4()),
+            priorTerminalSHA256=S.digest(proof),causeSHA256=S.digest(['actual cause',index]),
+            fixSHA256=S.digest(['concrete repair',index]),targetedTestsSHA256=S.digest(['targeted repair check',index]),
+            sourceQualificationSHA256=S.digest(['fresh source',index]),originalBindingSHA256=S.digest(['fresh original binding',index]))
+        self.binding.update(changes)
+
+    def blocked(self,callback):
+        with self.assertRaises(T.A.AfterStopRejected): callback()
+
+    def test_more_than_three_sequential_safe_repairs_then_actual_pass_ends_grant(self):
+        gate=self.initialized()
+        for index in range(1,6):
+            claim=gate.launch();gate.consume('LINKS');gate.consume('POST')
+            proof=self.proof(claim,**({'status':'PASS','fullMock500Accepted':True} if index==5 else {}))
+            gate.complete(proof)
+            self.next_binding(proof,index);gate=self.gate()
+        self.blocked(gate.launch);self.assertEqual(self.remote_checks,5);self.f.preserved()
+        self.assertEqual(len(list((self.f.root/T.LEDGER).iterdir())),20)
+
+    def test_functional_fail_needs_runtime_fix_control_only_repair_requires_proved_no_post(self):
+        gate=self.initialized();claim=gate.launch();gate.consume('LINKS');gate.consume('POST')
+        proof=self.proof(claim);gate.complete(proof)
+        self.next_binding(proof,1,runtimeCommit=A.RUNTIME,controlCommit='d'*40)
+        self.blocked(lambda:self.gate().launch())
+        self.binding['runtimeCommit']='1'*40;self.admission_ok=False
+        self.blocked(lambda:self.gate().launch());self.admission_ok=True
+        gate=self.gate();claim=gate.launch()
+        # A real NOT_DISPATCHED finding is authenticated, including local quiescence.
+        proof=self.proof(claim,dispatchOutcome='NOT_DISPATCHED');gate.complete(proof)
+        self.next_binding(proof,2,runtimeCommit='1'*40,controlCommit='e'*40)
+        self.gate().launch();self.f.preserved()
+
+    def test_zero_cost_authentication_and_freshness_are_required_before_every_effect(self):
+        gate=self.initialized();self.cost_ok=False;self.blocked(gate.launch)
+        self.assertEqual(list((self.f.root/T.LEDGER).iterdir()),[])
+        self.cost_ok=1;self.blocked(gate.launch);self.cost_ok=True
+        gate=self.gate();gate.launch();self.cost_ok=False;self.blocked(lambda:gate.consume('LINKS'))
+        self.cost_ok=True;gate.consume('LINKS');self.cost_ok=False;self.blocked(lambda:gate.consume('POST'))
+        self.cost_ok=True;self.f.now=datetime(2026,11,4,1,0,tzinfo=timezone.utc)
+        self.blocked(lambda:gate.consume('POST'));self.assertEqual(self.remote_checks,1);self.f.preserved()
+
+    def test_holds_and_fake_terminal_flags_never_resume_without_actual_safe_evidence(self):
+        gate=self.initialized();claim=gate.launch();gate.consume('LINKS');gate.consume('POST');gate.hold('SECURITY_VIOLATION')
+        self.blocked(gate.launch);self.blocked(lambda:gate.consume('POST'))
+        proof=self.proof(claim);self.terminals.clear();self.blocked(lambda:gate.complete(proof))
+        no_post=self.proof(claim,dispatchOutcome='NOT_DISPATCHED')
+        self.blocked(lambda:gate.complete(no_post))  # An existing POST phase is never a no-post shortcut.
+        for change in ({'nativeZeroKnown':False},{'allEightCleanupPassed':False},{'actualPaidUSD':'0.01'},
+                       {'originalIntegrityKnown':False},{'securityViolation':True},{'status':'UNKNOWN'}):
+            bad=dict(proof,**change);self.terminals.add(S.digest(bad));self.blocked(lambda:gate.complete(bad))
+        self.terminals.add(S.digest(proof));gate.complete(proof)
+        rows=[json.loads(p.read_bytes()) for p in sorted((self.f.root/T.LEDGER).iterdir())]
+        self.assertEqual(rows[-2]['kind'],'HOLD');self.assertEqual(rows[-2]['body']['reason'],'SECURITY_VIOLATION')
+        self.next_binding(proof,1);self.gate().launch();self.f.preserved()
+
+    def test_crash_partial_write_missing_anchor_and_reentry_do_not_create_another_attempt(self):
+        gate=self.initialized()
+        with patch.object(S.os,'fsync',side_effect=OSError('synthetic durability failure')):
+            self.blocked(gate.launch)
+        self.assertEqual(len(list((self.f.root/T.ANCHORS).iterdir())),1)
+        self.assertEqual(len(list((self.f.root/T.LEDGER).iterdir())),0)
+        self.blocked(lambda:self.gate().launch());self.blocked(lambda:self.gate().initialize());self.f.preserved()
+
+    def test_concurrent_claim_and_owner_death_block_overlap_and_restart(self):
+        self.initialized();ctx=multiprocessing.get_context('fork');barrier,queue=ctx.Barrier(2),ctx.Queue()
+        def child():
+            barrier.wait(timeout=5)
+            try:self.gate().launch();queue.put('claimed')
+            except T.A.AfterStopRejected:queue.put('blocked')
+        processes=[ctx.Process(target=child) for _ in range(2)]
+        try:
+            for process in processes:process.start()
+            for process in processes:process.join(timeout=10)
+            self.assertTrue(all(p.exitcode==0 for p in processes))
+            self.assertEqual(sorted(queue.get(timeout=2) for _ in processes),['blocked','claimed'])
+            self.blocked(lambda:self.gate().launch());self.blocked(lambda:self.gate().consume('LINKS'))
+            self.f.preserved()
+        finally:
+            for process in processes:
+                if process.is_alive():process.terminate();process.join()
+            queue.close();queue.join_thread()
+
+    def test_development_grant_old_caps_extra_state_and_stale_binding_rejected(self):
+        for changes in ({'purpose':'DEVELOP_ONLY'},{'maximumAttempts':3},{'maximumActualUSD':'0.15'},
+                        {'newPaidResourcesAllowed':True},{'stopAfterFirstPASS':False}):
+            self.blocked(lambda:self.gate(authority=dict(self.authority,**changes),authenticate=lambda _:True).initialize())
+        self.initialized();self.f.put('NEW_STOP.SAFE.json',{});self.blocked(lambda:self.gate().launch())
+        (self.f.root/'NEW_STOP.SAFE.json').unlink();gate=self.gate();gate.launch();gate.consume('LINKS')
+        self.blocked(lambda:self.gate(binding=dict(self.binding,requestSHA256='0'*64)).consume('POST'))
+        self.f.preserved()
+
+
 if __name__ == '__main__':
     unittest.main()
