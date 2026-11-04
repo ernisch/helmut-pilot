@@ -1,5 +1,9 @@
 # Briefing → Büro: Zuordnung und Integrationsvorbereitung
 
+Dieser Zuordnungsnachweis gehört zu `a41d51f1`. Die folgende
+[Backend-Vertragsübergabe mit 97 neuen Prüfungen](ui-backend.md)
+führt den neueren Stand; die 69 Fälle unten wurden dabei nicht wiederholt.
+
 Stand 04.11.2026, Betreiberzeit Europe/Istanbul. Ausgangspunkt `a9ea5993`,
 ausschließlich Branch `codex/helmut-ui-20261031` und Worktree `/workspace/helmut-ui`.
 **69 gezielte Browserprüfungen bestanden.** Die früheren 388 Prüfungen wurden

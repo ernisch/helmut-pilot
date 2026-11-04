@@ -488,6 +488,7 @@ async function loadBriefing() {
     if (userRole() === "admin") ensureViewData("admin");
     loadParliament();
     generateOfficeDraftsInBackground();
+    return Boolean(profile.id);
   } catch (error) {
     if (renderedFromCache) {
       // Der Live-Refresh nach dem Cache-Render ist DEFINITIV fehlgeschlagen (fetch-
@@ -842,6 +843,11 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
   // fuehrte zu dauerhaftem 403 auf ALLEN POSTs (u. a. push/subscribe), bis der
   // Nutzer neu lud. Einmal frischen Token holen und den Request wiederholen.
   if (response.status === 403 && needsCsrfToken(url, options)) {
+    // A mandate/permission denial is not a token failure. Only the backend's
+    // explicit CSRF rejection happens before the operation and permits replay.
+    let csrfRejected = false;
+    try { csrfRejected = (await response.clone().json())?.error === "CSRF token missing or invalid"; } catch (_) {}
+    if (!csrfRejected) return response;
     csrfTokenPromise = null;
     try {
       const retryOptions = await prepareRequestOptions(url, options);
@@ -861,7 +867,7 @@ async function prepareRequestOptions(url, options = {}) {
 function needsCsrfToken(url, options = {}) {
   const method = String(options.method || "GET").toUpperCase();
   if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") return true;
-  return ["/api/pipeline/run", "/api/crawl/run", "/api/lage/check", "/api/briefing/run"].some((path) => String(url).startsWith(path));
+  return ["/api/pipeline/run", "/api/crawl/run", "/api/lage/check", "/api/briefing/run", "/api/lage/briefing", "/api/push/test"].some((path) => String(url).startsWith(path));
 }
 
 async function getCsrfToken() {
@@ -871,7 +877,10 @@ async function getCsrfToken() {
         if (!response.ok) throw new Error("CSRF token request failed");
         return response.json();
       })
-      .then((payload) => payload.token)
+      .then((payload) => {
+        if (typeof payload?.token !== "string" || !payload.token.trim()) throw new Error("CSRF token response invalid");
+        return payload.token.trim();
+      })
       .catch((error) => {
         // Eine abgelehnte Promise NIE cachen — sonst bleibt der Fehlversuch
         // dauerhaft haengen und jeder Folge-POST scheitert. Beim naechsten
@@ -5160,8 +5169,10 @@ function renderLageView() {
   const selected = items.find(v => String(v.vorgangId || v.id) === uiLageSelectedId) || items[0];
   const selectedId = String(selected.vorgangId || selected.id || "");
   const checked = lageCheckedLabel(data && data.latestUpdatedAt);
+  const disruption = lageDisruption(data);
   return `${header}
     ${data.demo ? '<p class="ui-preview-label">Beispiel-Lage · Demodaten</p>' : ""}
+    ${disruption ? `<div data-ui-lage-partial>${renderUiEmpty("Lage nur teilweise verfügbar", `${disruption.sub} Vorhandene Vorgangskarten bleiben sichtbar.`)}</div>` : ""}
     <div class="ui-master-detail ui-lage-workspace ${uiLageDetailOpen ? "is-detail" : ""}">
       <section class="ui-master" aria-label="Politische Vorgänge">
         <div class="ui-section-heading"><span>Politische Vorgänge</span><span>${checked ? escapeHtml(checked) : `${items.length} Vorgänge`}</span></div>
@@ -13812,7 +13823,7 @@ if (typeof document !== "undefined") {
 }
 
 loadBriefing()
-  .then(() => schedulePushAutoSync())
+  .then((loaded) => { if (loaded) schedulePushAutoSync(); })
   .then(() => clearAppIconBadge())
   .catch((error) => {
     console.error(error);

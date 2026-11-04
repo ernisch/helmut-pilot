@@ -1,8 +1,10 @@
 # Neue Helmut UI — Entwicklungsstand und sichere Abnahme
 
-Aktuell, 04.11.2026: **Clientzuordnung und Briefing→Büro korrigiert; 69 gezielte
-Browserprüfungen mit normalem Clientbootstrap und simulierten APIs bestanden.**
-[Aktueller Zuordnungsnachweis](ui-zuordnung-20261104.md). Der frühere
+Aktuell, 04.11.2026: **Backendverträge abgeglichen; 97 neue Vertragsprüfungen
+mit normalem Clientbootstrap und simulierten HTTP-/Push-APIs bestanden.**
+[Aktuelle Integrationsübergabe](ui-backend.md).
+Der [Zuordnungsnachweis mit 69 Fällen](ui-zuordnung-20261104.md) gehört zu `a41d51f1`.
+Der frühere
 [Darstellungsnachweis mit 150+238 Prüfungen](ui-abnahme-20261104.md) gehört zu
 `a9ea5993` und wurde nicht wiederholt. Kein Push, Merge oder Deployment.
 

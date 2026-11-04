@@ -1,6 +1,6 @@
 "use strict";
 
-// Real Chromium + real client/CSS, fixture bootstrap only. No HTTP server,
+// Real Chromium + real client/CSS with fixture responses. No HTTP server,
 // Playwright installation, server.js, database, provider or motor import.
 const fs = require("fs");
 const path = require("path");
@@ -8,9 +8,10 @@ const assert = require("assert/strict");
 const { createHash } = require("crypto");
 const { spawn } = require("child_process");
 const { payload, item } = require("./fixtures/ui-preview");
-const bindingCases = process.argv.includes("--office-binding") ? require("./ui-office-binding-browser-cases") : null;
+const contractCases = process.argv.includes("--integration-contracts") ? require("./ui-integration-contract-browser-cases") : null;
+const bindingCases = contractCases || (process.argv.includes("--office-binding") ? require("./ui-office-binding-browser-cases") : null);
 const root = path.resolve(__dirname, "..");
-const output = path.join(root, bindingCases ? "tmp/ui-office-binding-artifacts" : "tmp/ui-preview-artifacts");
+const output = path.join(root, contractCases ? "tmp/ui-integration-contract-artifacts" : bindingCases ? "tmp/ui-office-binding-artifacts" : "tmp/ui-preview-artifacts");
 assert(process.env.UI_NETWORK_PROOF, "Use ui-preview-isolated.py; app start prohibited without proof");
 const proof = JSON.parse(fs.readFileSync(process.env.UI_NETWORK_PROOF));
 assert(proof.verifiedBeforeAppStart && proof.parentNetNS !== proof.testNetNS);
@@ -144,7 +145,10 @@ async function main() {
       const value = bindingCases ? await bindingCases.apiResponse(event.request) : url.pathname === "/api/profile/current" ? payload.profile
         : url.pathname === "/api/app/start" ? payload
         : {id:"simulated-saved",ok:true,text:"Synthetischer Antworttext",aiEnabled:false};
-      body=JSON.stringify(value);
+      if (contractCases) {
+        code=value.status ?? 200; mime=value.contentType || mime;
+        body=value.rawBody ?? JSON.stringify(value.body);
+      } else body=JSON.stringify(value);
     } else {
       const relative = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
       const file = path.resolve(root, relative);
@@ -160,9 +164,9 @@ async function main() {
   let completed = false, browserVersion;
   try {
     browserVersion = await cdp.send("Browser.getVersion");
-    const viewports = bindingCases ? [["desktop",1440,900,false],["mobile",390,844,true]] : [["desktop",1440,900,false],["mobile",390,844,true],["mobile-360",360,780,true]];
+    const viewports = contractCases ? contractCases.viewports : bindingCases ? [["desktop",1440,900,false],["mobile",390,844,true]] : [["desktop",1440,900,false],["mobile",390,844,true],["mobile-360",360,780,true]];
     for (const [label,width,height,mobile] of viewports) {
-      if (bindingCases) bindingCases.reset();
+      if (bindingCases) bindingCases.reset(label);
       // Fresh storage per binding viewport: a desktop draft cache must not mask
       // the mobile bootstrap/CSRF/generation contract.
       const browserContextId = bindingCases ? (await cdp.send("Target.createBrowserContext",{disposeOnDetach:true})).browserContextId : undefined;
@@ -174,10 +178,11 @@ async function main() {
       await cdp.send("Emulation.setDeviceMetricsOverride",{width,height,deviceScaleFactor:1,mobile},s);
       await cdp.send("Emulation.setTouchEmulationEnabled",{enabled:mobile},s);
       await cdp.send("Emulation.setEmulatedMedia",{features:[{name:"prefers-reduced-motion",value:"reduce"}]},s);
+      if (contractCases) await cdp.send("Page.addScriptToEvaluateOnNewDocument",{source:contractCases.preload},s);
       await cdp.send("Page.navigate",{url:origin+"/"},s);
       let ready=false;
       for (let i=0;i<100;i++) {
-        try { ready=await cdp.evaluate(s,(bindingCases ? "typeof loadBriefing === 'function'" : "typeof __uiPreview === 'object'") + " && !!document.querySelector('.ui-briefing-hero') && document.body.classList.contains('splash-gone')"); } catch {}
+        try { ready=await cdp.evaluate(s,contractCases ? contractCases.readyExpression : (bindingCases ? "typeof loadBriefing === 'function'" : "typeof __uiPreview === 'object'") + " && !!document.querySelector('.ui-briefing-hero') && document.body.classList.contains('splash-gone')"); } catch {}
         if (ready) break;
         await new Promise(r=>setTimeout(r,50));
       }
@@ -295,12 +300,13 @@ async function main() {
     }
     check("No uncaught browser errors",errors.length===0,errors);
     check("No external request fulfilled",requests.filter(r=>new URL(r.url).origin!==origin && r.action!=="blocked").length===0);
-    check("No missing static resources",requests.every(r=>r.status!==404),requests.filter(r=>r.status===404));
+    check("No missing static resources",requests.every(r=>r.status!==404 || new URL(r.url).pathname.startsWith('/api/')),requests.filter(r=>r.status===404 && !new URL(r.url).pathname.startsWith('/api/')));
     completed = true;
   } finally {
     fs.writeFileSync(path.join(output,"BROWSER_REQUESTS.json"),JSON.stringify(requests,null,2)+"\n");
     const files = new Set(["client.js", "scripts/fixtures/ui-preview.js", "scripts/ui-preview-browser-check.js", "scripts/ui-preview-isolated.py"]);
-    if (bindingCases) for (const file of ["scripts/ui-office-binding-browser-cases.js", "scripts/ui-office-binding-browser-test.js", "scripts/fixtures/ui-office-binding.js"]) files.add(file);
+    if (bindingCases && !contractCases) for (const file of ["scripts/ui-office-binding-browser-cases.js", "scripts/ui-office-binding-browser-test.js", "scripts/fixtures/ui-office-binding.js"]) files.add(file);
+    if (contractCases) for (const file of ["scripts/ui-integration-contract-browser-cases.js", "scripts/ui-integration-contract-browser-test.js", "scripts/fixtures/ui-integration-contracts.js", "scripts/fixtures/ui-office-binding.js"]) files.add(file);
     for (const request of requests) {
       if (request.action !== "fulfilled-in-memory" || request.status !== 200) continue;
       const pathname = new URL(request.url).pathname;
