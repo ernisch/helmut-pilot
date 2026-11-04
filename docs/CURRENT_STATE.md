@@ -1,34 +1,30 @@
 # CURRENT STATE — Helmut
 
-## W15: genehmigte No-POST-Fortsetzung vorbereitet (04.11.2026)
+## W15: einmalige Full-Ausnahme nach STOP entwickelt (04.11.2026)
 
-[Vertrag](betrieb/w15-mock500-manual-series-20261104.md): Platz1 verbraucht, NoPOST
-unabhängig authentifiziert. STOP/UNKNOWN/Altbelege erhalten; Runtime789 unverändert.
-Rest2Plätze/0,10USD;8neue/10Serienproben/8privateGruppen grün. CI418114: alterPin
-gezielt korrigiert; neueCI/Review Pflicht.
-NochkeinResume/Link/POST/Job; Verzeichnisfix(5ProbenPASS) übernommen.
-End50041325430429/Empfang41037459441 übernommen; volle500Bindungen vorAktivierung Pflicht.
-Run41694827024/600bleibtFAIL
-(195s,2,77GB),RohursacheUNKNOWN;8CleanupPASS,Endzähler/Sicherung/DBnullUNKNOWN.
-KeinMock500PASS/Production; alteVerträge/FAILs erhalten.
+[Control-Vertrag](betrieb/w15-mock500-single-after-stop-control-20261104.md):
+Die Serie bleibt STOP; zwei Plätze verbraucht, fünf Journalereignisse unverändert,
+Slot-2-UNKNOWN und fehlender sicherer Terminalbeleg erhalten. Der neue getrennte
+Control-Helfer bindet höchstens Platz3/0,05USD, insgesamt0,15USD, an eine spätere echte
+Voll-GO-Anweisung. Acht neue synthetische Zulassungstests und fünf private Tests des
+kopierten Child-Pfads PASS; eigene Control-CI und unabhängige Abnahme noch Pflicht.
+Kein tatsächlicher Claim, Case, GO, Nonce, Link, POST oder geschützter Job erzeugt.
 
-[Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
-auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.
-Peak2,590GB/Limit13,287GB;Swap/OOM/max0;8äußereCleanupPASS,0Artefakte/aktiveManuals.
-Fullzählungen/Backup/innereDBnull UNKNOWN. [Belege](betrieb/w15-mock500-full-materials-failure-41500229995-20261102.md)
-privat in07 erhalten. End500/Empfang übernommen; alteFAILs/ProviderUNKNOWN erhalten.
+Runtime exakt33d588b6209ad912c5045f6561c07b7dc3d60e63 bleibt unverändert; CI41889108711
+und unabhängiger Kalender-vor-Seal-Review übernommen. Nächster später genehmigter
+Lauf direkt Full-Mock, keine zusätzliche Prepare-Diagnose. Neue Quellen-/Original-
+Bindungen auf33d bleiben Pflicht. Empfang41037459441/End50041325430429 übernommen.
+Run41818696152 bleibt historisch FAIL/UNKNOWN; spätere Prepare-Diagnosen41854268479
+und41870462562 ersetzen seinen fehlenden sicheren Terminalbeleg nicht.
 
-[Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
-Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.
-Private innere Meldung in erhaltenen GitHub-/privaten Belegen nicht verfügbar;
-Node-Einstiegsprobe bis Originalgrenze PASS ersetzt keinen Ursachenbeleg.
-Peak2,590GB/Limit13,197GB; HostschutzPASS, Swap/OOM/Grenzereignisse0. Getrennte
-Maxima: Dateianteil1,523GB, anonym984MB, Kernel78MB, Shmem41MB(imDateianteil), nichtaddieren.
-Acht BereinigungenPASS;0aktive manuelle Runs/0Artefakte. VollständigeEndzähler,
-Ergebnisfehlerkategorien/Sicherung/finaleDB-Nullaktivität UNKNOWN. Damaliges GO verbraucht.
-Private Belege03/04 sowie neueDiagnose05 im vorhandenen privaten Belegbereich vom02.11.
-Empfang41037459441/End500-Abnahme41325430429 übernommen; historischeFAILs, alteRAM-
-Verträge undProduction-Sperre unverändert. Kein Mock500-Erfolg aus Diagnose ableiten.
+Historische Materials-FAILs bleiben erhalten: Run41500229995/9d,124s, Peak2,590GB,
+8CleanupPASS; innere Ursache/Endzähler/Sicherung/DBnull UNKNOWN
+([Beleg](betrieb/w15-mock500-full-materials-failure-41500229995-20261102.md)).
+Run41427480765/1fb2cfe1,189s, Materials-FAIL, Peak2,590GB,8CleanupPASS; innere Ursache
+und finale DBnull UNKNOWN. Run41694827024/600 bleibt FAIL,195s,2,77GB,8CleanupPASS;
+Rohursache/Endzähler/Sicherung/DBnull UNKNOWN. Kein Mock500-PASS oder Production.
+Die früher genehmigte No-POST-Fortsetzung ist historisch erhalten
+([Vertrag](betrieb/w15-mock500-manual-series-20261104.md)); sie öffnet den jetzigen STOP nicht.
 
 ## W15: erster dynamischer Mock500-Lauf FAIL (02.11.2026)
 

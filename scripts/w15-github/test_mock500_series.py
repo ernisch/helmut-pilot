@@ -192,5 +192,165 @@ class SeriesChecks(unittest.TestCase):
         self.assertBlocked(lambda: self.reserve(self.open()))
 
 
+A = load('mock500_after_stop')
+
+
+class AfterStopChecks(unittest.TestCase):
+    """Only synthetic roots and authenticated-API doubles; never the actual series."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='w15-after-stop-synthetic-')
+        self.addCleanup(self.temp.cleanup); self.root = Path(self.temp.name)
+        self.case = self.root / 'child'; self.case.mkdir(mode=0o700)
+        for name in ('journal', 'reservations', 'terminals'):
+            (self.root / name).mkdir(mode=0o700)
+        self.put('journal/lock', {}, raw=b'')
+        self.grant = dict(maximumAttempts=3, maximumPerRunUSD='0.05', maximumTotalUSD='0.15',
+                          excludedNonces=[], grantId=str(uuid.uuid4()), receivedAtUTC='2026-11-03T22:00:00Z')
+        self.put('OPERATOR_SERIES_GRANT.SAFE.json', self.grant); self.put('journal/GRANT.json', self.grant)
+        self.put('INITIALIZED.SAFE.json', {'journalRoot': str(self.root / 'journal')})
+        previous = S.digest(self.grant)
+        for i, kind in enumerate(('RESERVE', 'STOP', 'NO_POST_CONTINUATION', 'RESERVE', 'STOP'), 1):
+            body = {'reason': 'UNKNOWN'}
+            if kind == 'RESERVE':
+                ordinal = 1 if i == 1 else 2
+                ticket = dict(ordinal=ordinal, nonce=str(uuid.uuid4()))
+                body = {'ticket': ticket}
+                self.put('reservations/%06d.json' % ordinal, dict(ordinal=ordinal, reservationSHA256=S.digest(ticket)))
+            row = dict(sequence=i, kind=kind, body=body, previousSHA256=previous)
+            self.put('journal/%06d.json' % i, row); previous = S.digest(row)
+        for name in ('SERIES_STOP.SAFE.json', 'NO_POST_LATER_STOP.SAFE.json'):
+            self.put(name, dict(reason='UNKNOWN', grantSHA256=S.digest(self.grant)))
+        self.history = [dict(id=41818696152, head_sha=S.FIRST, event='workflow_dispatch',
+            head_branch='synthetic', workflow_id=313506164, run_attempt=1, status='completed',
+            conclusion='failure', created_at='2026-11-03T23:00:00Z', updated_at='2026-11-03T23:01:00Z')]
+        self.baseline = dict(rootEntries=sorted(p.name for p in self.root.iterdir()), history=self.history,
+            files=[dict(relativePath=name, bytes=len((self.root/name).read_bytes()),
+                        sha256=A.hashlib.sha256((self.root/name).read_bytes()).hexdigest()) for name in sorted(A.PIN_NAMES)])
+        self.original = {name: (self.root/name).read_bytes() for name in A.PIN_NAMES}
+        self.binding = dict(runtimeCommit=A.RUNTIME, controlCommit='c'*40, nonce=str(uuid.uuid4()),
+            casePath=str(self.case), mode=A.MODE, scope=A.SCOPE, authoritySHA256='a'*64,
+            approvalSHA256=S.digest('fresh go'), requestSHA256=S.digest('fresh request'),
+            originalBindingSHA256=S.digest('fresh original metadata'), sourceQualificationSHA256=S.digest('33d source'),
+            controlQualificationSHA256=S.digest('new control CI and review'), reviewSHA256=S.digest('independent review'),
+            issuedAtUTC='2026-11-04T00:00:00Z', expiresAtUTC='2026-11-04T01:00:00Z')
+        self.authority = dict(schema=A.SCHEMA+'-authority', purpose='EXECUTE_ONE_FULL_MOCK_AFTER_STOP',
+            actualOperatorInstruction='SYNTHETIC authenticated execution instruction, no real authority.',
+            operatorObservedAtUTC='2026-11-03T23:59:00Z', seriesBaselineSHA256=S.digest(self.baseline),
+            runtimeCommit=A.RUNTIME, controlCommit=self.binding['controlCommit'], nonce=self.binding['nonce'],
+            casePath=str(self.case), approvalSHA256=self.binding['approvalSHA256'], requestSHA256=self.binding['requestSHA256'],
+            scope=A.SCOPE, environment='helmut-ci-originals', ordinal=3, maximumAttempts=1, maximumLinkRounds=1,
+            maximumPerRunUSD='0.05', maximumTotalUSD='0.15', maximumModelCalls=0,
+            preservePriorStopsAndUnknown=True, automaticRetry=False, linkRefresh=False)
+        self.binding['authoritySHA256'] = S.digest(self.authority)
+        self.trusted_authority = S.digest(self.authority); self.now = NOW
+        self.local_ok = True; self.remote_calls = []
+
+    def put(self, name, value, raw=None):
+        path = self.root/name
+        path.write_bytes(S.canonical(value)+b'\n' if raw is None else raw); os.chmod(path, 0o600)
+
+    def gate(self, **changes):
+        def api(method, path):
+            self.remote_calls.append((method, path)); return {'workflow_runs': self.history}
+        options = dict(expected_root=str(self.root), baseline=self.baseline, authority=self.authority,
+            binding=self.binding, authenticate=lambda value: S.digest(value) == self.trusted_authority,
+            verify_before_launch=lambda binding, expected: A.authenticate_history(api, self.grant['receivedAtUTC'], expected),
+            verify_local=lambda binding, now: self.local_ok,
+            window_check=lambda now: W.validate_window('mock500', now), clock=lambda: self.now)
+        options.update(changes)
+        return A.AfterStop(self.root, **options)
+
+    def blocked(self, action):
+        with self.assertRaises(A.AfterStopRejected): action()
+
+    def preserved(self):
+        self.assertEqual(self.original, {name: (self.root/name).read_bytes() for name in self.original})
+
+    def test_after_stop_full_order_only_one_post_and_old_evidence_byte_identical(self):
+        gate = self.gate(); claim = gate.launch()
+        self.assertEqual((claim['ordinal'], claim['maximumStorageUSD']), (3, '0.05'))
+        self.blocked(gate.launch); self.blocked(lambda: gate.consume('POST'))
+        self.assertTrue(gate.consume('LINKS')); self.blocked(lambda: gate.consume('LINKS'))
+        self.assertTrue(gate.consume('POST')); self.blocked(lambda: gate.consume('POST'))
+        self.assertEqual(len(self.remote_calls), 1)  # No GET after READY/fresh links.
+        gate.close('UNKNOWN'); self.blocked(lambda: self.gate().consume('POST'))
+        self.blocked(lambda: self.gate().launch()); self.preserved()
+
+    def test_after_stop_development_forged_authority_and_wrong_bindings_fail_before_claim(self):
+        for changes in ({'purpose': 'DEVELOP_ONLY'}, {'maximumAttempts': 2}, {'ordinal': 2},
+                        {'maximumTotalUSD': '0.20'}, {'preservePriorStopsAndUnknown': False}):
+            bad = dict(self.authority, **changes)
+            binding = dict(self.binding, authoritySHA256=S.digest(bad))
+            self.blocked(lambda: self.gate(authority=bad, binding=binding, authenticate=lambda _:True).launch())
+        self.blocked(lambda: self.gate(authenticate=lambda _:1).launch())
+        self.blocked(lambda: self.gate(authenticate=lambda _:False).launch())
+        for changes in ({'runtimeCommit': S.FIRST}, {'controlCommit': A.RUNTIME}, {'mode': 'prepare-only'},
+                        {'casePath': str(self.root/'absent')}, {'nonce': self.grant['grantId']}):
+            self.blocked(lambda: self.gate(binding=dict(self.binding, **changes)).launch())
+        self.assertFalse(any((self.root/name).exists() for name in A.FILES)); self.preserved()
+
+    def test_after_stop_changed_missing_extra_state_and_different_root_rejected(self):
+        self.blocked(lambda: self.gate(expected_root=str(self.root/'other')).launch())
+        for name in sorted(A.PIN_NAMES):
+            path = self.root/name; original = path.read_bytes()
+            path.write_bytes(original+b' '); self.blocked(lambda: self.gate().launch())
+            path.unlink(); self.blocked(lambda: self.gate().launch())
+            self.put(name, None, raw=original)
+        for name in ('journal/000006.json', 'reservations/000003.json', 'terminals/000001.json', 'NEW_STOP.SAFE.json'):
+            self.put(name, {}); self.blocked(lambda: self.gate().launch()); (self.root/name).unlink()
+        self.preserved()
+
+    def test_after_stop_authenticated_complete_history_blocks_unknown_active_and_changed_runs(self):
+        expected = json.loads(S.canonical(self.baseline))
+        for rows in ([], [dict(self.history[0], status='in_progress')], [dict(self.history[0], head_sha='d'*40)],
+                     self.history + [dict(self.history[0], id=41818696153)]):
+            self.history = rows
+            self.blocked(lambda: self.gate(baseline=expected).launch())
+        self.assertFalse((self.root/A.FILES[0]).exists())
+
+    def test_after_stop_state_go_and_local_qualification_rechecked_between_ready_and_post(self):
+        gate = self.gate(); gate.launch(); gate.consume('LINKS')
+        self.now = datetime(2026, 11, 4, 1, 0, tzinfo=timezone.utc)
+        self.blocked(lambda: gate.consume('POST')); self.now = NOW
+        self.local_ok = False; self.blocked(lambda: gate.consume('POST')); self.local_ok = True
+        self.blocked(lambda: self.gate(binding=dict(self.binding, requestSHA256='0'*64)).consume('POST'))
+        self.put('SERIES_STOP.SAFE.json', {}); self.blocked(lambda: gate.consume('POST'))
+        # Closing failure must still work after expiry or evidence drift; never permits another action.
+        gate.close('UNKNOWN'); self.blocked(lambda: gate.consume('POST'))
+
+    def test_after_stop_race_has_one_global_claim(self):
+        ctx = multiprocessing.get_context('fork'); barrier, queue = ctx.Barrier(2), ctx.Queue()
+        def child():
+            barrier.wait(timeout=5)
+            try: self.gate().launch(); queue.put('claimed')
+            except A.AfterStopRejected: queue.put('blocked')
+        processes = [ctx.Process(target=child) for _ in range(2)]
+        try:
+            for process in processes: process.start()
+            for process in processes: process.join(timeout=10)
+            self.assertTrue(all(process.exitcode == 0 for process in processes))
+            self.assertEqual(sorted(queue.get(timeout=2) for _ in processes), ['blocked', 'claimed'])
+            self.blocked(lambda: self.gate().consume('LINKS'))  # Claim owner exited: no resumed launch.
+            self.blocked(lambda: self.gate().launch()); self.preserved()
+        finally:
+            for process in processes:
+                if process.is_alive(): process.terminate(); process.join()
+            queue.close(); queue.join_thread()
+
+    def test_after_stop_durability_failure_and_no_post_never_refund(self):
+        with patch.object(S.os, 'fsync', side_effect=OSError('synthetic fsync failure')):
+            self.blocked(lambda: self.gate().launch())
+        self.assertTrue((self.root/A.SPENT).exists()); self.blocked(lambda: self.gate().launch())
+        self.blocked(lambda: self.gate().consume('LINKS')); self.preserved()
+
+    def test_after_stop_terminal_requires_actual_authentication_and_never_reopens(self):
+        gate = self.gate(); claim = gate.launch(); gate.consume('LINKS'); gate.consume('POST')
+        proof = dict(status='PASS', runtimeCommit=A.RUNTIME, nonce=self.binding['nonce'], claimSHA256=S.digest(claim))
+        self.blocked(lambda: gate.close('PASS', proof=proof))
+        self.blocked(lambda: gate.close('PASS', proof=proof, verify_terminal=lambda _:False))
+        self.assertTrue(gate.close('PASS', proof=proof, verify_terminal=lambda observed: observed == proof))
+        self.blocked(lambda: gate.launch()); self.blocked(lambda: gate.consume('POST')); self.preserved()
+
+
 if __name__ == '__main__':
     unittest.main()
