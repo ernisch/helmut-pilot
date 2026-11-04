@@ -113,7 +113,7 @@ class WorkflowChecks(unittest.TestCase):
     def test_full_worker_connects_retained_inputs_controller_and_backup_on_one_clock(self):
         self._fictional_full_worker()
 
-    def _fictional_full_worker(self, inject=None):
+    def _fictional_full_worker(self, inject=None, *, prepare_authorization=None):
         value = request(W.FULL)
         value.update(runnerTemp='/FICTIONAL/temp', checkoutBytes=10, binaryBytes=20,
             startedAtUTC='2026-10-29T12:00:00Z', startedMonotonic=123.0,
@@ -121,6 +121,10 @@ class WorkflowChecks(unittest.TestCase):
         value['bindings'] = {'additionalAssetBytes': 42, 'inputBindingSHA256': 'e' * 64,
             'end500Acceptance': {}, 'compatibilityBridge': {}, 'approvedEnd500Commit': 'b6eb74495cd9cf4d7bee04ec4b37da6244b5c6a2'}
         resources, disk, start = Mock(), Mock(), Mock()
+        if prepare_authorization is not None:
+            value.update(mode=W.MATERIALS,hostCapacityAdmission={})
+            value['approval']['resourceContract']='helmut-w15-mock500-prepare-diagnostic/1'
+            start.admission={'prepareDiagnosticAuthorization':prepare_authorization}
         runtime = SimpleNamespace(path=Mock(return_value='/FICTIONAL/reception'))
         inputs = SimpleNamespace(declared_additional_input_bytes=Mock(return_value=42))
         reception = {'received_root': '/FICTIONAL/received', 'asset_paths': {'qualifiedRows': '/FICTIONAL/rows'}, 'binding_raw': b'{}'}
@@ -131,14 +135,17 @@ class WorkflowChecks(unittest.TestCase):
                 open_runtime_inputs=Mock(return_value=runtime)),
             'mock500_resources': SimpleNamespace(observe=Mock(return_value=resources),
                 admit_disk_plan=Mock(return_value={'FICTIONAL': True}), DiskGuard=Mock(return_value=disk)),
-            'mock500_start': SimpleNamespace(StartGuard=Mock(return_value=start)),
+            'mock500_start': SimpleNamespace(StartGuard=Mock(return_value=start),prepare_diagnostic=lambda a:prepare_authorization is not None),
             'mock500_receive': SimpleNamespace(prepare_inputs=Mock(return_value=reception)),
             'mock500_inputs': SimpleNamespace(open_inputs=Mock(return_value=inputs)),
-            'mock500_backup': SimpleNamespace(completion_hook=Mock(return_value=finish))}
-        def run(bound_inputs, bound_resources, bound_start, capture, *, disk_guard):
+            'mock500_backup': SimpleNamespace(completion_hook=Mock(return_value=finish)),
+            'mock500_prepare_contract':SimpleNamespace(validate_result=Mock(return_value='SAFE'))}
+        def run(bound_inputs, bound_resources, bound_start, capture, *, disk_guard,**kwargs):
             self.assertIs(bound_inputs, inputs); self.assertIs(bound_resources, resources)
             self.assertIs(bound_start, start); self.assertIs(disk_guard, disk)
-            capture(FICTIONAL=True)
+            if prepare_authorization is not None:
+                self.assertIsNone(capture);self.assertTrue(callable(kwargs['materials_diagnostic']))
+            else:capture(FICTIONAL=True)
             return {'status': 'PASS_MOCK500_BODY_AND_BACKUP_INDEPENDENT_ACCEPTANCE_PENDING',
                 'bodyCompleted': True, 'ownedContainerStopped': True}
         controller = SimpleNamespace(run_bound=Mock(side_effect=run))
@@ -150,7 +157,11 @@ class WorkflowChecks(unittest.TestCase):
                 inject(self, controller)
             self.assertEqual(W.run_worker(value, {'eventInputs': {}}), 'SAFE')
         modules['mock500_receive'].prepare_inputs.assert_called_once()
-        controller.run_bound.assert_called_once(); finish.assert_called_once_with(FICTIONAL=True)
+        controller.run_bound.assert_called_once()
+        if prepare_authorization is not None:
+            finish.assert_not_called()
+            self.assertEqual(modules['mock500_inputs'].open_inputs.call_args.kwargs['prepare_diagnostic_authorization'],prepare_authorization)
+        else:finish.assert_called_once_with(FICTIONAL=True)
         self.assertEqual(modules['mock500_start'].StartGuard.call_args.kwargs['started_monotonic'], 123.0)
         self.assertEqual(modules['mock500_resources'].DiskGuard.call_args.kwargs['started_monotonic'], 123.0)
         self.assertEqual(modules['mock500_inputs'].open_inputs.call_args.kwargs['asset_paths']['originalReception'],

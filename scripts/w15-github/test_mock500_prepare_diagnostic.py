@@ -78,6 +78,11 @@ class PrepareDiagnosticChecks(unittest.TestCase):
         self.assertEqual(value['activeProfiles'],0)
         for action in ('run','audit','backup','atomic-check'):self.assertNotIn(action,events)
 
+    def test_actual_workflow_forwards_only_bound_prepare_authorization_and_no_backup(self):
+        t,start,c=self.admission();authorization=t.admit(start,c)['prepareDiagnosticAuthorization']
+        w=load('test_mock500_workflow').WorkflowChecks('runTest');self.addCleanup(w.doCleanups)
+        w._fictional_full_worker(prepare_authorization=authorization)
+
     def test_actual_prepare_failure_and_bad_stop_check_cannot_become_function_success(self):
         value,_=self.pipeline(fail=True);self.assertFalse(value['prepareCompleted'])
         self.assertEqual(value['firstFailurePhase'],'mock500-controller-prepare')

@@ -300,7 +300,8 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
             asset_paths=paths, observed_context=observed_context(manifest),
             source_replay_authorization=start.admission.get('sourceReplayAuthorization'),
             **({'prepare_diagnostic_authorization':start.admission['prepareDiagnosticAuthorization']}
-               if 'prepareDiagnosticAuthorization' in start.admission else {}))
+               if manifest['mode']==MATERIALS and manifest['approval'].get('resourceContract')
+                  =='helmut-w15-mock500-prepare-diagnostic/1' else {}))
         need(inputs.declared_additional_input_bytes() == bindings['additionalAssetBytes'])
         if manifest['mode'] == MATERIALS:
             phase = 'mock500'
