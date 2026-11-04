@@ -1,22 +1,18 @@
 # CURRENT STATE — Helmut
 
-## W15: genehmigte No-POST-Fortsetzung vorbereitet (04.11.2026)
+## W15: Serienplatz2 FAIL; UNKNOWN-Stopp (04.11.2026)
 
-[Vertrag](betrieb/w15-mock500-manual-series-20261104.md): Platz1 verbraucht, NoPOST
-unabhängig authentifiziert. STOP/UNKNOWN/Altbelege erhalten; Runtime789 unverändert.
-Rest2Plätze/0,10USD;8neue/10Serienproben/8privateGruppen grün. CI418114: alterPin
-gezielt korrigiert; neueCI/Review Pflicht.
-NochkeinResume/Link/POST/Job; Verzeichnisfix(5ProbenPASS) übernommen.
-End50041325430429/Empfang41037459441 übernommen; volle500Bindungen vorAktivierung Pflicht.
-Run41694827024/600bleibtFAIL
-(195s,2,77GB),RohursacheUNKNOWN;8CleanupPASS,Endzähler/Sicherung/DBnullUNKNOWN.
-KeinMock500PASS/Production; alteVerträge/FAILs erhalten.
-
-[Run41500229995](https://github.com/ernisch/helmut-pilot/actions/runs/41500229995)
-auf9d: **FAIL**,124s, Materials-Ursache UNKNOWN. Versuch/Linkrunde verbraucht.
-Peak2,590GB/Limit13,287GB;Swap/OOM/max0;8äußereCleanupPASS,0Artefakte/aktiveManuals.
-Fullzählungen/Backup/innereDBnull UNKNOWN. [Belege](betrieb/w15-mock500-full-materials-failure-41500229995-20261102.md)
-privat in07 erhalten. End500/Empfang übernommen; alteFAILs/ProviderUNKNOWN erhalten.
+[Ergebnis](betrieb/w15-mock500-manual-series-20261104.md): NoPOST-Anschluss e1ef1273/PR1036,
+gezielte8neue/10Serien-/8privateGruppen, CI41814049152/Review PASS. Platz1 verbraucht.
+[Run41818696152](https://github.com/ernisch/helmut-pilot/actions/runs/41818696152),
+Job126536023497/Runtime789ea3ad unverändert: **FAIL**,425s, erstePhase
+`mock500-controller-prepare`; innereUrsache UNKNOWN. EineLinkrunde/einPOST.
+Peak2,956GB/Limit13,356GB;Swap/OOM/max0;8äußereCleanupPASS,0Artefakte/aktiveManuals.
+Endzähler/Ergebnisfehler/Sicherung/finaleDBnull/tatsächlicheWorker-Nonce UNKNOWN.
+ZweiPlätze verbraucht; dritter durch UNKNOWN-Anker gesperrt. Altanker erhalten;
+Automation pausiert. NächsterSchritt: innere Prepare-Ursache/sicheren Abschluss belegen,
+dann passende Freigabe; kein neuer Originallauf/Runtimefix. End500/Empfang übernommen.
+KeinMock500PASS/Production; alteFAILs/RAM-Verträge erhalten, Details im Ergebnislink.
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
 Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.

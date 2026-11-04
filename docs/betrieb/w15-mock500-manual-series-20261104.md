@@ -161,8 +161,79 @@ vorher reproduziert und nach Korrektur des festen Versionspins bestanden; der
 Startdateipin bleibt unverändert. Keine Prüfung entfernt oder allgemein gelockert.
 Kontrollreviews werden je exaktem Commit separat erhalten, ohne den vorigen
 Prüfbeleg zu überschreiben. Acht private Anschlussgruppen bestehen auch damit.
-Finale Pflicht-CI und unabhängige Sicherheitsabnahme auf dem Kontrollkopf
-sind vor Aktivierung des Kontrollzweigs zwingend.
+Pflicht-CI41814049152 auf Kontrollcommit
+`e1ef1273dad2255985964fe984eebf556cb4fe83` besteht mit beiden Pflichtchecks.
+Der unabhängige Sicherheitsreview bindet diesen Kopf, die tatsächlichen neuen
+öffentlichen/privaten Codepins sowie die erhaltenen No-POST-/Betreiberbelege
+und bestätigt die Kontrollregeln. Der erste Runtimekopf789ea3ad bleibt unverändert.
 Alle fachlichen500er-Anforderungen, Zeit-, Quellen-, Kosten-, Hostspeicher-,
 Platten-, Swap-/OOM-/Grenzereignis-, Verbindungs- und Sicherungsregeln oben
 bleiben unverändert. Keine Originalübertragung durch diese Entwicklungsprüfung.
+
+## Tatsächlicher Serienplatz2: FAIL und erneuter UNKNOWN-Stopp
+
+Nach positiver Kontroll-CI, unabhängiger Sicherheitsabnahme und frischer
+vollständiger Vorstartprüfung wurde ausschließlich Platz2 zugelassen. Platz1
+bleibt dauerhaft verbraucht. Alle alten STOP-/UNKNOWN-Dateien und Journalzeilen
+bleiben erhalten. Genau eine authentifizierte16er-Linkrunde und ein akzeptierter
+POST führten zu [Run41818696152](https://github.com/ernisch/helmut-pilot/actions/runs/41818696152)
+auf unverändertem Runtimecommit `789ea3ad49509d8a575a3e545333505f64e0f2ea`.
+Unmittelbar vor POST: tatsächliche Mindestrestgültigkeit276,775Sekunden und
+61.147Parameterbytes. Keine zweite Linkrunde oder Wiederholung.
+
+Job126536023497 endete tatsächlich mit **FAIL** nach425Sekunden
+(04.11.2026,11:07:05–11:14:10UTC). Der längere Watcherzeitraum einschließlich
+Polling ist keine Joblaufzeit. Erste bestätigte Workerphase:
+`mock500-controller-prepare`; sichere Runnerklasse `WORKER_REPORTED_FAILURE`.
+Die konkrete innere Assertion bleibt **UNKNOWN**. Die Materialphase ist keine
+belegte Erklärung für diesen neuen Fehler; auch eine Speichergrenzverletzung
+ist nicht belegt. Die innere Prepare-Ausgabe wird im vorhandenen Controller
+privat gesammelt, aber die erhaltene sichere Fehlerquittung enthält nur die
+Phase. Es existiert kein Artefakt dieses Laufs und damit keine abrufbare
+verschlüsselte Fehlerkapsel. Aus dem Code allein wird keine Ursache abgeleitet.
+
+| Tatsächlich beobachteter Speicher | Wert |
+| --- | ---: |
+| Gemeinsamer Kernel-Lebenszeitpeak | 2,956GB |
+| Frisch zugelassenes dynamisches Hartlimit | 13,356GB |
+| Getrenntes Dateianteil-Maximum | 1,566GB |
+| Getrenntes anonymes Maximum | 1,316GB |
+| Getrenntes Kernelmaximum | 95,7MB |
+| Shared-Memory-Maximum, im Dateianteil enthalten | 50,4MB |
+| Swap / OOM / harte Grenzereignisse | 0 / 0 / 0 |
+
+Die Kategorie-Maxima stammen aus verschiedenen Zeitpunkten und werden nicht
+addiert. Der Hostreservewächter meldet gültige Beobachtungen; zuletzt waren
+15,194GB Hostspeicher verfügbar, verpflichtende Reserve2,147GB. Einzelbeiträge
+von PostgreSQL, Node, PostgREST und Testwerkzeugen sowie CPU bleiben UNKNOWN.
+Die alten RAM-Abnahmen und die unbekannte Vercel-/Supabase-Eignung ändern sich nicht.
+
+Alle acht äußeren Bereinigungsprüfungen sind PASS: Worker beendet, IPC geschlossen,
+Elternstopp angefordert, Elterngruppe leer, Elterneinheit entfernt, Launcher
+beendet, Listener geschlossen und Signalbehandlung wiederhergestellt. Die native
+Datenbank-Nullaktivität bleibt ausdrücklich **UNKNOWN**; sie wird nicht aus der
+Prozessbereinigung abgeleitet. Die vollständigen500/1.000/1.500/8.000/17.000-
+Endzähler, alle fünf Ergebnisfehlerkategorien, Sicherung, entfernte Rücklesung,
+zweite Wiederherstellung und tatsächliche Worker-Nonce/Inputquittung bleiben
+UNKNOWN. Run/Job/Commit/Attempt sind authentifiziert, eine geplante lokale
+Freigabebindung ersetzt keine tatsächliche innere Abschlussquittung.
+
+Die vorgeschriebene Serienaktion `stop UNKNOWN` wurde ausgeführt: Das Journal
+enthält nun RESERVE → STOP UNKNOWN → NO_POST_CONTINUATION → RESERVE → STOP UNKNOWN.
+Der neue separate äußere Stoppanker sperrt weitere Starts; der erste Stoppanker
+bleibt bytegleich. Zwei Plätze sind verbraucht. Der dritte ist unreserviert,
+aber gesperrt; es gibt keine sichere Terminalquittung und keinen Refund.
+Keine Umdeutung von UNKNOWN in einen bereinigten funktionalen FAIL.
+
+Frische Nachkontrollen bestätigen keinen aktiven manuellen GitHub-Lauf, keine
+eigenen laufenden Launcher-/Watcherprozesse und null Artefakte. Die
+Ausführungsautomation bleibt pausiert. Alle privaten Laufbelege, Originale,
+Drive-Daten und Secrets bleiben erhalten. Kein Merge, Deployment oder Production.
+
+**Zustand: blockiert.** Der eng begrenzte No-POST-Vertragsanschluss ist geprüft;
+Mock500 hat nicht bestanden. Der kleinste nächste Schritt ist eine belegte
+Einordnung der inneren Prepare-Fehlermeldung und des fehlenden nativen Abschlusses.
+Die genehmigte Ausnahme betraf ausschließlich den ersten Vorstartabbruch;
+sie erlaubt weder die Aufhebung dieses neuen UNKNOWN-Stopps noch einen blinden
+dritten Originallauf. Für einen geschützten neuen Diagnose-/Ausführungsschritt
+oder eine Runtimeänderung ist eine dazu passende konkrete Freigabe erforderlich.
