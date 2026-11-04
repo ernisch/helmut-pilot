@@ -48,8 +48,10 @@ function closedRunnerDetail(value){
   }
   const materials=closedMaterialsFailure(value.materialsFailure);
   if(materials)out.materialsFailure=materials;
-  const prepared=require('../../../scripts/w15-github/mock500_prepare_failure').closed(value.prepareFailure);
-  if(prepared)out.prepareFailure=prepared;
+  if(Object.hasOwn(value,'prepareFailure')){
+    const prepared=require('../../../scripts/w15-github/mock500_prepare_failure').closed(value.prepareFailure);
+    if(prepared)out.prepareFailure=prepared;
+  }
   return out;
 }
 function closedCleanup(value){

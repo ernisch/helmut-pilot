@@ -3,7 +3,7 @@
 ## W15: sichere Prepare-Fehlerweitergabe vorbereitet (04.11.2026)
 
 [Diagnosefix](betrieb/w15-mock500-prepare-failure-20261104.md): Verlust innererKennung
-synthetisch reproduziert/behoben;9Python-/7JS-Gruppen und7betroffene Altprüfungen PASS.
+synthetisch reproduziert/behoben;9Python-/7JS-Gruppen und8betroffene Altprüfungen PASS.
 VorAusführung neueCodequalifikation/CI/Review Pflicht; kein Originallauf genehmigt.
 [Run41818696152](https://github.com/ernisch/helmut-pilot/actions/runs/41818696152),
 Job126536023497/Runtime789ea3ad unverändert: **FAIL**,425s, erstePhase

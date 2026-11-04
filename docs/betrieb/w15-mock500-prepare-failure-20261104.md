@@ -56,6 +56,9 @@ ersten Frame. KeyboardInterrupt, Warte-IO-Fehler und negativer Signalexit wurden
 vor der Korrektur reproduziert; danach behalten sie Vorrang. Nur ein normaler
 positiver Fehlerexit darf seinen vollständig nachlaufenden Frame übernehmen.
 Die sieben betroffenen bestehenden Erstfehlerprüfungen bestehen ebenfalls.
+Die erste Pflicht-CI fand einen zusätzlichen unnötigen Projektorimport ohne
+Prepare-Details. Der Import erfolgt jetzt ausschließlich bei vorhandenem Feld;
+die unveränderte bestehende Spawnfehler-Gegenprobe besteht danach ebenfalls.
 Pflicht-CI und unabhängige Sicherheitsabnahme des exakten Endkopfs sind Pflicht;
 ihre tatsächlichen Belege werden am zugehörigen PR gebunden.
 
