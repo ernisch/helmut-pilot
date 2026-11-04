@@ -7,8 +7,8 @@ belegten Diagnoselauf verbraucht. **Keine Wiederholung oder Serienfortsetzung.**
 
 [Run41854268479](https://github.com/ernisch/helmut-pilot/actions/runs/41854268479),
 Job126658515304 auf exakt `1ccb592d165ffcde64cfcf8061eef40ce8e7e77b` ist
-**FAIL**, unabhaengig bestaetigt. Jobdauer183Sekunden;193Sekunden waren der
-Beobachternachlauf. Genau eine frische16er-Linkrunde und ein angenommener POST:
+**FAIL**, unabhaengig bestaetigt. Jobdauer183Sekunden; die Watchermessung von
+193Sekunden enthaelt etwa10Sekunden Pollnachlauf. Genau eine16er-Linkrunde/ein POST:
 275,069331Sekunden Restgueltigkeit,62.057Parameterbytes,27,984Sekunden READY
 bis Uebergabe. Der genehmigte Fast Forward789→1ccb ist bestaetigt; kein Reset.
 
