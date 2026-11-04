@@ -3,6 +3,83 @@
 Stand 04.11.2026. Das spaetere ausdrueckliche Einmal-GO wurde durch den unten
 belegten Diagnoselauf verbraucht. **Keine Wiederholung oder Serienfortsetzung.**
 
+## Zweite tatsaechliche Prepare-Diagnose (04.11.2026)
+
+[Run41870462562](https://github.com/ernisch/helmut-pilot/actions/runs/41870462562),
+Job126715819710 auf exakt `015f8e3025e8016363e7bbcacad03a0d04a9af1f`: **FAIL**,
+175Sekunden (16:44:36 bis16:47:31UTC), Versuch1, unabhaengig bestaetigt.
+Der Baselinefix ist durch die tatsaechlich abgeschlossene Materials-Phase
+bestaetigt. Prepare wurde erstmals erreicht und scheitert bei
+`mock500-controller-prepare` / `stored-command` / `PREPARE_UNMAPPED`, ArtUNKNOWN.
+**Die konkrete innere Ursache ist weiterhin UNKNOWN; kein Mock500-PASS.**
+
+Genau eine16er-Linkrunde/einPOST:270,418762Sekunden Restgueltigkeit und
+61.665Parameterbytes; READY bis Uebergabe33,129Sekunden. Sicherer FastForward
+1ccb auf015f bestaetigt, keine Branchruecksetzung. Eine vor den Links erkannte
+falsche Metadatenverpackung wurde korrigiert, ohne Inhalt/Qualifikationshash,
+Nonce oder Freigabeumfang zu aendern; alte unausgefuehrte Metadaten erhalten.
+Beide Pflichtchecks [41857975247](https://github.com/ernisch/helmut-pilot/actions/runs/41857975247)
+und frischer unabhaengiger Vorflug PASS. Keine frueheren Originaltests wiederholt.
+
+Die authentifizierte geschlossene Quittung bindet dieselbe Runtime-Nonce.
+Kanonischer SHA256 `ecfab3469ae8c3b232db7dc11d94d33829bef8df9d6a75a3c37c622c9bf3d29b`.
+500Profile/aktiv0, Fachfelder unveraendert, nativer gebundener Zustand
+`BOUND_PREPARED_ZERO` aus dem tatsaechlichen SQL-Readback; Units/Providerphasen0,
+keine Authority-Installation. Container/Watcher und alle acht aeusseren
+Bereinigungen PASS; aktive manuelle Laeufe und eigene Case-Prozesse0.
+Die PASS-Felder fuer den geschlossenen Diagnose-/Prozesslebenszyklus sind
+**kein positiver Prepare-Funktionsabschluss**: `prepareCompleted` bleibtfalse.
+
+Gemeinsamer Kernelpeak2,828GB, frisch ermitteltes Hartlimit13,384GB,
+Hostreserve2,147GB geschuetzt; Swap/OOM/harte Grenzereignisse0.
+Nur zwei Kategorie-Samples; Dateianteil-Maximum1,516GB und Kernel54,45MB
+stammen nicht nachweislich vom Peak. Komponentenanteile, Peakzusammensetzung
+und Anbieter-Eignung bleibenUNKNOWN; keine Speicheroptimierung.
+
+Genau eine verschluesselte Fehlerkapsel: Artifact13343449269,20.943Cipherbytes,
+21.137API-Archivbytes,86.399Sekunden Aufbewahrung, authentifizierte Ruecklesung.
+Cipher-SHA256 `ad33cf206610db14ced4db40dfd512ba3a45b66b00fe21a66f8d8f05439e546a`.
+Zusaetzliche private verschluesselte Kopie erhalten und vollstaendig geprueft,
+keine Entschluesselung. Kein vollstaendiger Sicherungsrundlauf in diesem Scope.
+Das Einmal-GO ist verbraucht. Serien-STOPs, zwei Reservierungen/keine Terminals,
+gesperrter dritter Platz und pausierte Ausfuehrungsautomation bleiben erhalten.
+
+## Nachgewiesener Diagnoseverlust, gezielte Entwicklung
+
+Der echte Content-Worker uebermittelte bei Fehlern nur die Meldung, Phasen und
+Diagnostik. Der Runner erzeugte daraus einen neuen Error an derselben Callback-
+Stelle; der Prepare-Catch bewahrte nur die geschlossene Projektion. Die beiden
+Content-Module fehlten zudem in der festen Framezuordnung. Ein gezielter echter
+Worker-Fall mit synthetischen falschen Stored-Bytes lieferte deshalb vor dem
+Fix `PREPARE_UNMAPPED`. Das ist ein nachgewiesener Diagnosefehler, **kein Beweis,
+dass genau dieser Worker-Guard den tatsaechlichen Originalfehler ausloeste**.
+
+Der kleinste Anschluss transportiert ueber denselben Workerkanal ausschliesslich
+relative Anwendungscode-Datei, begrenzte Zeile und feste Fehlerart. Der Worker
+entfernt vor der Framewahl den vollstaendigen echten Meldungsheader; erfundene
+Frames innerhalb einer Meldung werden nicht uebernommen. Der Verbraucher
+akzeptiert nur exakt drei Felder, bekannte oeffentliche Dateien, gueltige Zeilen
+und feste Arten. Unbekannte/ungueltige innere Stellen bleibenUNKNOWN; die
+Runner-Callbackzeile wird nicht als Ersatz fuer eine innere Ursache ausgegeben.
+Keine Rohmeldung, kein Rohstack und keine privaten Pfade gelangen zusaetzlich
+in Transport oder oeffentliche Ausgaben. Bisherige Fehlermeldung und Verhalten,
+fachliche Validatoren, Grenzen, Ressourcen und Freigaben bleiben unveraendert.
+Nur der geaenderte Workerpin im bestehenden CPU-Manifest wird aktualisiert;
+keine SQL-Version, Nativepins oder Production-Migration.
+
+Derselbe echte Worker -> echte Prepare-Fehlerfunktion -> Python-Filter besteht
+nach der Korrektur und nennt die innere Stored-Bytes-Guardzeile. Negative Faelle
+fuer private/gefalschte Frames, falsche Header, uebergrosse Werte, zusaetzliche
+Felder und Getterfehler bleiben abgewiesen. Keine DB, Originale, Profilaktivierung
+oder Modelle. Pflicht-CI und unabhaengige Abnahme werden am finalen Draft-PR-Kopf
+gebunden. Daraus entsteht keine neue Originalausfuehrungsfreigabe.
+
+Der alte Kapselrueckleser ist auf einen anderen Materials-Lauf und eine andere
+Dateiauswahl gepinnt. Er wird nicht ungeprueft gestartet. Eine Entschluesselung
+kann verworfene Errorinformationen nicht nachtraeglich erzeugen; kein solcher
+Kapseljob und kein weiterer Originalversuch auf Verdacht. Der naechste konkrete
+Entscheidungspunkt folgt erst nach der gezielten technischen Abnahme.
+
 ## Tatsaechlicher Lauf und kleinste Korrektur
 
 [Run41854268479](https://github.com/ernisch/helmut-pilot/actions/runs/41854268479),

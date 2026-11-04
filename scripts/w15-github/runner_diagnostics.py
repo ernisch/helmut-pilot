@@ -77,7 +77,7 @@ def prepare_failure(value):
             or type(value['category']) is not str):
         return None
     category = value['category']
-    match = re.fullmatch(r'PREPARE_(?:RUNTIME|STORAGE|STORED|COMMAND|ADAPTER|EXECUTOR|CALENDAR|COST|ADMISSION|JOURNAL|CODEC|DURABLE)_CHECK_([1-9][0-9]{0,4})', category)
+    match = re.fullmatch(r'PREPARE_(?:RUNTIME|STORAGE|STORED|COMMAND|ADAPTER|EXECUTOR|CALENDAR|COST|ADMISSION|JOURNAL|CODEC|DURABLE|CONTENT_RUNNER|CONTENT_WORKER)_CHECK_([1-9][0-9]{0,4})', category)
     if category != 'PREPARE_UNMAPPED' and not (match and int(match[1]) <= 65535):
         return None
     return dict(value)

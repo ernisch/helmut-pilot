@@ -6,7 +6,7 @@ const stages = new Set(["entry", "preconditions", "calendar", "setup", "stored-c
   "installation", "command-read", "current-inputs", "auth-read", "bindings", "admission",
   "install", "auth-coverage", "memory", "report"]);
 const kinds = new Set(["assertion", "filesystem", "module", "type", "timeout", "aborted", "unknown"]);
-const prefixes = "RUNTIME|STORAGE|STORED|COMMAND|ADAPTER|EXECUTOR|CALENDAR|COST|ADMISSION|JOURNAL|CODEC|DURABLE";
+const prefixes = "RUNTIME|STORAGE|STORED|COMMAND|ADAPTER|EXECUTOR|CALENDAR|COST|ADMISSION|JOURNAL|CODEC|DURABLE|CONTENT_RUNNER|CONTENT_WORKER";
 const check = new RegExp("^PREPARE_(?:" + prefixes + ")_CHECK_([1-9][0-9]{0,4})$");
 function closed(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)
@@ -20,15 +20,31 @@ function closed(value) {
 const get = (value, key) => { try { return value?.[key]; } catch { return undefined; } };
 function project(error, stage) {
   const root = path.resolve(__dirname, "../..");
-  const frames = [["scripts/synthetik-500-w15-full500-runtime.js", "RUNTIME"],
+  const relativeFrames = [["scripts/synthetik-500-w15-full500-runtime.js", "RUNTIME"],
     ["lib/helmut/storage.js", "STORAGE"],
+    ["lib/helmut/synthetik-500-content-runner.js", "CONTENT_RUNNER"],
+    ["lib/helmut/synthetik-500-content-worker.js", "CONTENT_WORKER"],
     ...[["synthetik-500-stored-command", "STORED"], ["synthetik-500-production-command", "COMMAND"],
       ["synthetik-500-production-adapter", "ADAPTER"], ["synthetik-500-executor", "EXECUTOR"],
       ["synthetik-500-mock-calendar", "CALENDAR"], ["synthetik-500-kosten-plan", "COST"],
       ["synthetik-500-kosten-admission", "ADMISSION"], ["synthetik-500-dispatch-journal", "JOURNAL"],
       ["synthetik-500-direct-codec", "CODEC"]].map(([name, prefix]) => ["lib/helmut/" + name + ".js", prefix]),
-    ["scripts/fixtures/w15-durable-observations.js", "DURABLE"]]
-    .map(([name, prefix]) => [path.join(root, name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), prefix]);
+    ["scripts/fixtures/w15-durable-observations.js", "DURABLE"]];
+  const inner = get(error, "failureFrame");
+  if (inner !== undefined) {
+    try {
+      if (inner && typeof inner === "object" && !Array.isArray(inner)
+        && Object.keys(inner).sort().join(",") === "file,kind,line"
+        && Number.isInteger(inner.line) && inner.line >= 1 && inner.line <= 65535 && kinds.has(inner.kind)) {
+        const row = relativeFrames.find(([filename]) => filename === inner.file);
+        if (row) return closed({ schema, stage: stages.has(stage) ? stage : "entry",
+          category: "PREPARE_" + row[1] + "_CHECK_" + inner.line, kind: inner.kind });
+      }
+    } catch {}
+    // Do not substitute the shared runner callback for an unknown inner site.
+    return closed({ schema, stage: stages.has(stage) ? stage : "entry", category: "PREPARE_UNMAPPED", kind: "unknown" });
+  }
+  const frames = relativeFrames.map(([name, prefix]) => [path.join(root, name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), prefix]);
   const code = get(error, "code"), name = get(error, "name");
   const kind = name === "AssertionError" ? "assertion" : name === "TypeError" ? "type"
     : ["MODULE_NOT_FOUND", "ERR_MODULE_NOT_FOUND"].includes(code) ? "module"

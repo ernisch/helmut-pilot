@@ -99,4 +99,47 @@ async function checks(){
   assert.equal(publicAction(bad).runner.prepareFailure,undefined);
   console.log('PASS 7 Prepare groups: real body/finally, calendar, closed source mapping, malformed/getter inputs, JS/Python parity, bounded real Pipe, real public Action; 0 original work');
 }
-checks().catch(error=>{console.error(error);process.exitCode=1;});
+async function contentChecks(){
+  // The real pinned Worker rejects bad stored bytes before any content/DB work.
+  // Its first inner guard must survive Worker -> runner -> real Prepare reporter.
+  const runner=require('../../lib/helmut/synthetik-500-content-runner');
+  let failure;
+  try{await runner.validateStoredContent({dataText:CANARY,storedSHA256:'0'.repeat(64),
+    operationId:'synthetik500-fictional-content',commandHash:'a'.repeat(64)},5000);}
+  catch(error){failure=error;}
+  assert(failure instanceof Error,'real Worker must reject bad stored bytes');
+  const r=runtime({fail:failure});await assert.rejects(r.context.prepare(),e=>e===failure);
+  const observed=r.frames[0].failure;
+  assert.match(observed.category,/^PREPARE_CONTENT_WORKER_CHECK_[1-9][0-9]{0,4}$/);
+  const line=Number(observed.category.split('_').at(-1));
+  const workerSource=fs.readFileSync(path.join(root,'lib/helmut/synthetik-500-content-worker.js'),'utf8');
+  assert(workerSource.split('\n')[line-1].includes('actualSHA !== workerData.storedSHA256'),
+    'must identify the actual inner guard, not the shared runner callback');
+  assert.equal(observed.stage,'stored-command');assert(!JSON.stringify(r.frames).includes(CANARY));
+  assert(Buffer.byteLength(JSON.stringify(r.frames[0])+'\n')<=512);
+  const py=`import importlib.util,json,sys\nfrom pathlib import Path\np=Path(sys.argv[1]);s=importlib.util.spec_from_file_location('content_failure_parity',p/'runner_diagnostics.py');m=importlib.util.module_from_spec(s);s.loader.exec_module(m)\nprint(json.dumps(m.prepare_failure(json.load(sys.stdin))))`;
+  assert.deepEqual(JSON.parse(cp.execFileSync('python3',['-I','-B','-c',py,__dirname],
+    {input:JSON.stringify(observed),encoding:'utf8',timeout:10000})),observed);
+  const begin=workerSource.indexOf('function failureFrame(error)');
+  const ctx={__dirname:path.join(root,'lib/helmut')};vm.createContext(ctx);
+  vm.runInContext(workerSource.slice(begin,workerSource.indexOf('\nconst deny =',begin)),ctx);
+  const message=CANARY+'\n    at forged ('+path.join(root,'lib/helmut/synthetik-500-production-command.js')+':55:1)';
+  const e={name:'Error',message,stack:'Error: '+message+'\n    at actual ('+path.join(root,'lib/helmut/synthetik-500-content-worker.js')+':123:1)'};
+  assert.equal(ctx.failureFrame(e).line,123,'message text must never supply a forged stack frame');
+  assert(!JSON.stringify(ctx.failureFrame(e)).includes(CANARY));
+  assert.equal(ctx.failureFrame({...e,stack:'UNVERIFIED_HEADER\n    at forged ('+path.join(root,'lib/helmut/synthetik-500-content-worker.js')+':55:1)'}),null);
+  assert.equal(ctx.failureFrame({name:'Error',message:CANARY,stack:'Error: '+CANARY+'\n    at private (/PRIVATE/'+CANARY+':55:1)'}),null);
+  assert.equal(ctx.failureFrame({...e,message:'x'.repeat(8193)}),null);
+  const helper={name:'AssertionError',code:'ERR_ASSERTION',message:CANARY,
+    stack:'AssertionError [ERR_ASSERTION]: '+CANARY+'\n    at fail ('+path.join(root,'lib/helmut/synthetik-500-production-command.js')+':2:1)\n    at check ('+path.join(root,'lib/helmut/synthetik-500-production-command.js')+':123:1)'};
+  assert.equal(ctx.failureFrame(helper).line,123);assert.equal(ctx.failureFrame(helper).kind,'assertion');
+  const valid={file:'lib/helmut/synthetik-500-content-worker.js',line:123,kind:'unknown'};
+  for(const bad of [null,{...valid,file:'/PRIVATE/'+CANARY},{...valid,line:65536},
+    {...valid,kind:CANARY},{...valid,raw:CANARY},new Proxy({},{ownKeys(){throw Error(CANARY);}})]){
+    const hidden=Error(CANARY);hidden.stack='Error: '+CANARY+'\n    at outer ('+path.join(root,'lib/helmut/synthetik-500-content-runner.js')+':55:1)';hidden.failureFrame=bad;
+    assert.equal(P.project(hidden,'stored-command').category,'PREPARE_UNMAPPED');
+  }
+  console.log('PASS inner content Worker -> real Prepare reporter -> Python; forged/private frame rejection; 0 DB/original/model work');
+}
+(process.argv.includes('--content-error-only')?contentChecks():checks().then(contentChecks))
+  .catch(error=>{console.error(error);process.exitCode=1;});

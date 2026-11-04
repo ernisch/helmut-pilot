@@ -1,20 +1,20 @@
 # CURRENT STATE — Helmut
 
-## W15: Prepare-Diagnose FAIL, Baselinefix vorbereitet (04.11.2026)
+## W15: Materials abgeschlossen, Prepare FAIL (04.11.2026)
 
-[Run41854268479](https://github.com/ernisch/helmut-pilot/actions/runs/41854268479)
-auf1ccb: **FAIL**,183s, `MATERIALS_MAIN_CHECK_150`. Zwei lokale Diagnosefelder
-verunreinigen den8Feld-DB-Vergleich; Prepare nicht erreicht, Altursache UNKNOWN.
-[Minimalfix/Belege](betrieb/w15-mock500-prepare-diagnostic-20261104.md): Snapshot
-vor lokalen Zusatzfeldern kopieren, strengen Materials-Vergleich erhalten.
-Echter Python→Node-Gegenfall/9negative Varianten; Pflicht-CI/Review am Fix-PR.
-500/aktiv0, Fachfelder/Inventar unverändert;8CleanupPASS/eigeneProzesse0.
-Peak1,916GB/Limit13,375GB;Swap/OOM/max0;1verschlüsselte Kapsel/1Tag/authReadback.
-GO verbraucht, keinRetry; Ausführungsbranch1ccb, Fix getrennt. Serien-STOPs
-unverändert,2Plätze reserviert/0Terminals, dritter gesperrt; Automation pausiert.
-Neues gezieltes Diagnose-GO auf geprüftem Fixkopf erforderlich, keinMock500PASS.
-Vorgänger41818696152/789 bleibtFAIL/innereUrsacheUNKNOWN; End500/Empfang übernommen.
-[Vollständiger Vorgängerstand](https://github.com/ernisch/helmut-pilot/blob/1ccb592d165ffcde64cfcf8061eef40ce8e7e77b/docs/CURRENT_STATE.md).
+[Run41870462562](https://github.com/ernisch/helmut-pilot/actions/runs/41870462562)
+auf015f: **FAIL**,175s. Materials abgeschlossen; Prepare`stored-command`/
+`PREPARE_UNMAPPED`, innere UrsacheUNKNOWN. Quittung/Nonce unabhaengig bestaetigt.
+500/aktiv0,Fachfelder unveraendert,nativ`BOUND_PREPARED_ZERO`;Units/Provider0,
+keineAuthority;8CleanupPASS/eigeneProzesse0. Peak2,828GB/Limit13,384GB;
+Swap/OOM/max0. Eine verschluesselte Kapsel/1Tag/authReadback, privat erhalten.
+GO verbraucht,keinRetry; Ausfuehrungsbranch015f. Serien-STOPs,2reservierte
+Plaetze/0Terminals,gesperrter dritter Platz und pausierte Automation unveraendert.
+[Diagnosefix/Belege](betrieb/w15-mock500-prepare-diagnostic-20261104.md): Worker-
+Guardstelle ging im Wrapper verloren; klein synthetisch nachgestellt/geprueft,
+finale Pflicht-CI/Abnahme am neuen Draft-PR. Keine neue Originalfreigabe oder
+Mock500-Abnahme. BaselineFAIL41854268479/1ccb bleibt erhalten, Materials-Fix belegt.
+[Voriger Vollstand](https://github.com/ernisch/helmut-pilot/blob/015f8e3025e8016363e7bbcacad03a0d04a9af1f/docs/CURRENT_STATE.md).
 
 [Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
 Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.
