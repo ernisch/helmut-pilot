@@ -1,0 +1,292 @@
+"""Closed failure metadata only; no IO, observations or execution authority."""
+import sys
+sys.dont_write_bytecode = True
+import re
+
+REASONS = frozenset(('PARENT_READBACK_REJECTED', 'SUPERVISOR_DEADLINE',
+    'SUPERVISOR_INTERRUPTED', 'SUPERVISOR_REJECTED', 'WORKER_START_REJECTED',
+    'WORKER_SETUP_REJECTED', 'WORKER_INTERRUPTED', 'WORKER_RESULT_REJECTED', 'WORKER_CLEANUP_UNCONFIRMED',
+    'WORKER_IPC_EOF', 'WORKER_IPC_TIMEOUT', 'WORKER_IPC_REJECTED',
+    'WORKER_EXIT_WITHOUT_REPORT', 'WORKER_SIGNAL_EXIT', 'WORKER_EXIT_REJECTED', 'WORKER_REPORTED_FAILURE',
+    'SERVICE_IPC_EOF', 'SERVICE_IPC_TIMEOUT', 'SERVICE_IPC_REJECTED',
+    'SERVICE_EXIT_WITHOUT_REPORT', 'SERVICE_EXIT_REJECTED',
+    'PARENT_CLOSURE_REJECTED', 'CLEANUP_UNCONFIRMED', 'SIGNAL_DURING_CLEANUP'))
+MEMORY_SOURCES = frozenset(('CURRENT_REJECTED_READBACK', 'CACHED_READBACK', 'POST_FAILURE_READBACK'))
+CLEANUP_KEYS = frozenset(('workerExited', 'workerIPCClosed', 'parentStopRequested',
+    'parentEmpty', 'parentUnitRemoved', 'serviceLauncherExited', 'launcherListenerClosed',
+    'launcherSignalsRestored'))
+STATES = frozenset(('PASS', 'FAIL', 'UNKNOWN'))
+# Terminal Mock worker failures only. These are not generic End500 witness phases.
+MOCK_CONTROLLER_PHASES = frozenset('mock500-controller-' + name for name in (
+    'binding', 'workspace', 'stage-sources', 'input-context', 'container-create',
+    'container-start', 'supervisor-start', 'database-readiness', 'database-restore',
+    'database-baseline', 'runtime-context', 'setup', 'gateway-start', 'materials',
+    'materials-copy-processing', 'materials-copy-command', 'materials-copy-fixtures', 'materials-copy-audit',
+    'atomic-bootstrap', 'prepare', 'run', 'zero-audit', 'services', 'result-readback',
+    'backup', 'owned-close', 'supervisor-stop', 'gateway-client-close',
+    'gateway-log-close', 'final-observation'))
+MOCK_CONTROLLER_PHASES |= frozenset('mock500-controller-materials-' + name for name in (
+    'entry','baseline','config','originals','qualified','original-upacket','calendar',
+    'native-inputs','snapshot','native-manifest','activation','builder','output','complete'))
+RUN_EVIDENCE_PHASES = frozenset('mock500-controller-' + name for name in (
+    'run', 'zero-audit', 'services', 'result-readback', 'backup', 'owned-close',
+    'supervisor-stop', 'gateway-client-close', 'gateway-log-close', 'final-observation'))
+OBSERVED_PHASES = frozenset(('arguments', 'event', 'approval', 'qualification', 'binding', 'resources',
+    'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure')) | frozenset(
+    'connection-' + name for name in ('binding', 'receive', 'input-binding', 'cache', 'prepare',
+        'restore', 'closure', 'prepared-check', 'materialization', 'container-start', 'readiness',
+        'native-restore', 'backup', 'restore-create', 'restore-roles', 'restore-render', 'restore-apply',
+        'restore-check', 'export-backup-before', 'export-backup-dump', 'export-backup-roles', 'export-backup-after')) | frozenset(
+    'receiver-' + name for name in ('arguments', 'source-binding', 'private-inputs', 'index', 'disk-admission',
+        'key-import', 'encrypted-index', 'download', 'cipher-readback', 'authenticated-reception', 'relocation', 'agent-close')) | frozenset(
+    prefix + name for prefix in ('', 'connection-') for name in ('backup-export', 'backup-freeze',
+        'backup-collect', 'backup-seal', 'backup-transport', 'backup-authenticate', 'backup-recovery', 'backup-postcheck'))
+OBSERVED_PHASES |= frozenset('capacity-' + name for name in ('transport-complete', 'materialization', 'restore-ready', 'seed', 'seed-ready', 'auth-cas', 'native-audit', 'export', 'processing-stopped'))
+OBSERVED_PHASES |= frozenset('receiver-download-' + kind for kind in ('expired', 'http', 'timeout', 'integrity', 'guard', 'io', 'interrupted', 'unknown'))
+MAX_PHASE_FRAMES = 128
+NATIVE_STAGES = frozenset(('UNKNOWN', 'setup', 'journal-ready', 'database-preflight', 'command-read', 'command-decode',
+    'command-freeze', 'server-import', 'auth-read', 'auth-fixture', 'auth-baseline', 'observer-install', 'auth-mutate',
+    'auth-durable-ack', 'auth-readback', 'auth-postimage', 'processing-contract', 'final-native-sample', 'final-node-sample',
+    'journal-close', 'report-write'))
+NATIVE_ACTIONS = {'assertion': 'INSPECT_NAMED_CHECK', 'atomic-read-invalid': 'INSPECT_ATOMIC_READ_BINDING',
+    'store-read-invalid': 'INSPECT_AUTH_ROW_BINDING', 'storage-timeout': 'INSPECT_LOCAL_STORAGE_TIMEOUT',
+    'storage-http-error': 'INSPECT_STORAGE_PERMISSION_OR_RPC', 'transport-error': 'INSPECT_LOCAL_TRANSPORT',
+    'durable-io-error': 'INSPECT_DURABLE_OBSERVATION', 'module-load-error': 'INSPECT_STAGED_CODE_DEPENDENCIES',
+    'aborted': 'INSPECT_OWNED_STOP', 'unknown': 'INSPECT_FIXED_STAGE'}
+NATIVE_CODES = frozenset(('UNKNOWN', 'MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND', 'UND_ERR_SOCKET', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT',
+    'UND_ERR_ABORTED', 'UND_ERR_RES_CONTENT_LENGTH_MISMATCH', 'ECONNRESET', 'ECONNREFUSED', 'EPIPE', 'ETIMEDOUT', 'ABORT_ERR', 'ENOTFOUND',
+    'W15_DURABLE_QUEUE_OVERFLOW', 'W15_DURABLE_WRITE_FAILED', 'W15_DURABLE_SYNC_FAILED', 'W15_DURABLE_DEADLINE', 'W15_DURABLE_CLOSED',
+    'W15_DURABLE_SERIALIZE_FAILED', 'W15_DURABLE_OBSERVER_FAILED', 'W15_DURABLE_CLOSE_FAILED'))
+NATIVE_CHECKS = frozenset(('UNKNOWN', 'w15-forward-readonly-sql', 'w15-forward-common-input-binding', 'w15-forward-command-binding',
+    'w15-forward-command-shape', 'w15-forward-auth-usage-count', 'w15-forward-auth-fixture', 'w15-forward-auth-baseline-bytes',
+    'w15-forward-auth-baseline-budget', 'w15-forward-auth-workmem', 'w15-forward-no-second-native-write',
+    'w15-forward-auth30-including-durable-observation', 'w15-forward-auth-revision', 'w15-forward-auth-sequence',
+    'w15-forward-postimage', 'w15-forward-auth-coverage', 'w15-forward-stop-requested', 'w15-forward-disk-closure-reserve',
+    'w15-forward-natural-major-gc', 'w15-forward-checkpoint-cycles', 'w15-forward-natural-autovacuum',
+    'w15-forward-wal-footprint', 'w15-forward-wal-segments-not-recycled', 'w15-forward-native-auth-spill',
+    'w15-forward-close-deadline', 'w15-forward-pending-operation-at-close', 'w15-forward-concurrent-operation'))
+
+
+def prepare_failure(value):
+    """Closed Prepare code location only; never messages, paths or authority."""
+    if (type(value) is not dict or set(value) != {'schema', 'category', 'kind', 'stage'}
+            or value['schema'] != 'helmut-w15-mock500-prepare-failure/1'
+            or type(value['kind']) is not str or value['kind'] not in (
+                'assertion', 'filesystem', 'module', 'type', 'timeout', 'aborted', 'unknown')
+            or type(value['stage']) is not str or value['stage'] not in (
+                'entry', 'preconditions', 'calendar', 'setup', 'stored-command', 'installation',
+                'command-read', 'current-inputs', 'auth-read', 'bindings', 'admission',
+                'install', 'auth-coverage', 'memory', 'report')
+            or type(value['category']) is not str):
+        return None
+    category = value['category']
+    match = re.fullmatch(r'PREPARE_(?:RUNTIME|STORAGE|STORED|COMMAND|ADAPTER|EXECUTOR|CALENDAR|COST|ADMISSION|JOURNAL|CODEC|DURABLE|CONTENT_RUNNER|CONTENT_WORKER)_CHECK_([1-9][0-9]{0,4})', category)
+    if category != 'PREPARE_UNMAPPED' and not (match and int(match[1]) <= 65535):
+        return None
+    return dict(value)
+
+
+def run_failure(value):
+    """Closed Run code location only; never raw messages or execution authority."""
+    if (type(value) is not dict or set(value) != {'schema', 'stage', 'category', 'kind'}
+            or value['schema'] != 'helmut-w15-mock500-run-failure/1' or value['stage'] != 'run'
+            or type(value['kind']) is not str or value['kind'] not in (
+                'assertion', 'filesystem', 'module', 'type', 'timeout', 'aborted', 'unknown')
+            or type(value['category']) is not str):
+        return None
+    category = value['category']
+    match = re.fullmatch(r'RUN_(?:RUNTIME|STORAGE|STORED|COMMAND|ADAPTER|EXECUTOR|CALENDAR|COST|ADMISSION|JOURNAL|CODEC|DURABLE|CONTENT_RUNNER|CONTENT_WORKER)_CHECK_([1-9][0-9]{0,4})', category)
+    if category not in ('RUN_UNMAPPED', 'RUN_PROCESS_EXIT', 'RUN_PROCESS_TIMEOUT',
+            'RUN_SUPERVISOR_REJECTED', 'RUN_FAILURE_UNAVAILABLE') and not (match and int(match[1]) <= 65535):
+        return None
+    return dict(value)
+
+
+def native_cleanup(value):
+    """Native database observations, separate from process/IPC cleanup."""
+    if type(value) is not dict or set(value) != {'status', 'activeProfiles', 'confirmedZero', 'nativeBoundZero'}:
+        return None
+    active = value['activeProfiles']
+    if not (type(active) is int and 0 <= active <= 500 or type(active) is str and active == 'UNKNOWN'):
+        return None
+    if any(type(value[key]) is not bool and not (type(value[key]) is str and value[key] == 'UNKNOWN')
+           for key in ('confirmedZero', 'nativeBoundZero')):
+        return None
+    expected = ('PASS' if active == 0 and value['confirmedZero'] is True and value['nativeBoundZero'] is True
+                else 'FAIL' if type(active) is int and active > 0 or value['confirmedZero'] is False or value['nativeBoundZero'] is False
+                else 'UNKNOWN')
+    if type(value['status']) is not str or value['status'] != expected:
+        return None
+    return dict(value)
+
+
+def unknown_native_cleanup():
+    return dict.fromkeys(('status', 'activeProfiles', 'confirmedZero', 'nativeBoundZero'), 'UNKNOWN')
+
+
+def run_evidence(value):
+    """Closed current-run lower bound and native closure, never success authority."""
+    if (type(value) is not dict or set(value) != {'schema', 'binding', 'firstFailure',
+            'completedProfiles', 'completionMeaning', 'nativeCleanup'}
+            or value['schema'] != 'helmut-w15-mock500-run-evidence/1'):
+        return None
+    binding = value['binding']
+    if (type(binding) is not dict or set(binding) != {'exactCommit', 'runId', 'runAttempt', 'nonce', 'inputBindingSHA256'}
+            or type(binding['runAttempt']) is not int or binding['runAttempt'] != 1
+            or any(type(binding[key]) is not str or not re.fullmatch(pattern, binding[key]) for key, pattern in (
+                ('exactCommit', '[a-f0-9]{40}'), ('runId', '[1-9][0-9]{4,19}'),
+                ('nonce', '[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}'),
+                ('inputBindingSHA256', '[a-f0-9]{64}')))):
+        return None
+    failure = run_failure(value['firstFailure'])
+    if failure is None and not (type(value['firstFailure']) is str and value['firstFailure'] == 'UNKNOWN'):
+        return None
+    count = value['completedProfiles']
+    if not (type(count) is int and 0 <= count <= 500 or type(count) is str and count == 'UNKNOWN'):
+        return None
+    if value['completionMeaning'] != ('UNKNOWN' if count == 'UNKNOWN' else 'CONFIRMED_LOWER_BOUND'):
+        return None
+    cleanup = native_cleanup(value['nativeCleanup'])
+    if cleanup is None:
+        return None
+    return {**value, 'binding': dict(binding), 'firstFailure': failure if failure is not None else 'UNKNOWN',
+            'nativeCleanup': cleanup}
+
+
+def materials_failure(value):
+    """Pure projection of the existing materials contract; no runtime imports.
+
+    Keep exact parity with mock500_materials_contract.failure. The worker may
+    already be UID1000 with no access to the original checkout at this point.
+    Optional invalid details must never erase its known first failure phase.
+    """
+    if (type(value) is not dict or set(value) != {'schema', 'category', 'kind', 'stage'}
+            or value['schema'] != 'helmut-w15-materials-first-failure/1'
+            or type(value['kind']) is not str or value['kind'] not in (
+                'assertion', 'filesystem', 'module', 'sql', 'type', 'timeout', 'unknown')
+            or type(value['stage']) is not str or value['stage'] not in (
+                'entry', 'baseline', 'config', 'originals', 'qualified', 'original-upacket',
+                'calendar', 'native-inputs', 'snapshot', 'native-manifest',
+                'activation', 'builder', 'output', 'complete')):
+        return None
+    category = value['category']
+    if type(category) is not str or not (category in (
+            'MATERIALS_ENTRY_REJECTED', 'MATERIALS_PROCESS_REJECTED',
+            'MATERIALS_PROCESS_TIMEOUT', 'MATERIALS_FAILURE_UNAVAILABLE') or
+            re.fullmatch(r'MATERIALS_(?:MAIN|BINDING|BUILDER|CONTRACTS|DRAFT|COMMAND|COST|ADMISSION|EXECUTOR|CALENDAR|RESULTPLAN)_CHECK_(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2}|10[01][0-9]|102[0-4])', category)):
+        return None
+    return dict(value)
+
+
+def native_failure(value):
+    """First native failure, fixed vocabulary; never raw error text or private data."""
+    keys = {'schema', 'stage', 'kind', 'code', 'causeCode', 'httpStatus', 'timeoutMs', 'check',
+            'acknowledgedCAS', 'acknowledgedCASKind', 'writeOutcome', 'requiredAction'}
+    if (type(value) is not dict or set(value) != keys
+            or value['schema'] != 'helmut-w15-native-end500-failure/1'
+            or type(value['stage']) is not str or value['stage'] not in NATIVE_STAGES
+            or type(value['kind']) is not str or value['kind'] not in NATIVE_ACTIONS
+            or any(type(value[k]) is not str or value[k] not in NATIVE_CODES for k in ('code', 'causeCode'))
+            or type(value['check']) is not str or value['check'] not in NATIVE_CHECKS
+            or value['writeOutcome'] != 'UNKNOWN' or value['requiredAction'] != NATIVE_ACTIONS[value['kind']]):
+        return None
+    for key, lower, upper in (('httpStatus', 400, 599), ('timeoutMs', 1, 20000), ('acknowledgedCAS', 0, 500)):
+        if not (type(value[key]) is str and value[key] == 'UNKNOWN'
+                or type(value[key]) is int and lower <= value[key] <= upper):
+            return None
+    if value['acknowledgedCASKind'] != ('UNKNOWN' if value['acknowledgedCAS'] == 'UNKNOWN' else 'CONFIRMED_LOWER_BOUND'):
+        return None
+    return dict(value)
+
+
+def phase_observation(value):
+    """Last entered phase received by the supervisor, never completion or cause."""
+    if type(value) is str and value == 'UNKNOWN':
+        return value
+    if (type(value) is not dict or set(value) != {'name', 'sequence', 'meaning'}
+            or type(value['name']) is not str or value['name'] not in OBSERVED_PHASES
+            or type(value['sequence']) is not int or not 1 <= value['sequence'] <= MAX_PHASE_FRAMES
+            or type(value['meaning']) is not str or value['meaning'] != 'ENTERED_NOT_COMPLETED'):
+        return None
+    return dict(value)
+
+
+def attribute(value, name, default=None):
+    try:
+        return getattr(value, name, default)
+    except BaseException:
+        return default
+
+
+def cleanup(value):
+    if type(value) is not dict or set(value) != CLEANUP_KEYS or any(
+            type(v) is not str or v not in STATES for v in value.values()):
+        return None
+    return dict(value)
+
+
+def unknown_cleanup():
+    return dict.fromkeys(CLEANUP_KEYS, 'UNKNOWN')
+
+
+def runner(value, memory_validator):
+    keys = {'reason', 'secondaryReason', 'memory', 'memorySource', 'workerExitCode', 'serviceExitCode', 'lastObservedPhase', 'nativeFailure', 'materialsFailure', 'prepareFailure', 'runEvidence'}
+    if type(value) is not dict or not set(value) <= keys or type(value.get('reason')) is not str or value['reason'] not in REASONS:
+        return None
+    out = {'reason': value['reason']}
+    if 'secondaryReason' in value:
+        if type(value['secondaryReason']) is not str or value['secondaryReason'] not in REASONS:
+            return None
+        out['secondaryReason'] = value['secondaryReason']
+    if 'memory' in value or 'memorySource' in value:
+        memory = memory_validator(value.get('memory'))
+        if memory is None or type(value.get('memorySource')) is not str or value['memorySource'] not in MEMORY_SOURCES:
+            return None
+        out.update(memory=memory, memorySource=value['memorySource'])
+    for key in ('workerExitCode', 'serviceExitCode'):
+        if key in value:
+            if type(value[key]) is not int or not -255 <= value[key] <= 255:
+                return None
+            out[key] = value[key]
+    observed = phase_observation(value.get('lastObservedPhase'))
+    if observed is not None:
+        out['lastObservedPhase'] = observed
+    native = native_failure(value.get('nativeFailure'))
+    if native is not None:
+        out['nativeFailure'] = native
+    materials = materials_failure(value.get('materialsFailure'))
+    if materials is not None:
+        out['materialsFailure'] = materials
+    prepared = prepare_failure(value.get('prepareFailure'))
+    if prepared is not None:
+        out['prepareFailure'] = prepared
+    evidence = run_evidence(value.get('runEvidence'))
+    if evidence is not None:
+        out['runEvidence'] = evidence
+    return out
+
+
+def public(value, phases, worker_phases, memory_validator):
+    """Optional malformed metadata cannot erase an already known fixed phase."""
+    if type(value) is not dict or not set(value) <= {'phase', 'worker', 'runner', 'cleanup'}:
+        return None
+    if type(value.get('phase')) is not str or value['phase'] not in phases:
+        return None
+    out = {'phase': value['phase']}
+    worker = value.get('worker')
+    if type(worker) is dict and set(worker) <= {'phase', 'memory'} and type(worker.get('phase')) is str and worker['phase'] in worker_phases:
+        out['worker'] = {'phase': worker['phase']}
+        memory = memory_validator(worker.get('memory'))
+        if memory is not None:
+            out['worker']['memory'] = memory
+    detail = runner(value.get('runner'), memory_validator)
+    if detail is not None:
+        if out.get('worker', {}).get('phase') != 'mock500-controller-prepare':
+            detail.pop('prepareFailure', None)
+        if out.get('worker', {}).get('phase') not in RUN_EVIDENCE_PHASES:
+            detail.pop('runEvidence', None)
+        out['runner'] = detail
+    closed = cleanup(value.get('cleanup'))
+    if closed is not None:
+        out['cleanup'] = closed
+    return out

@@ -20,17 +20,36 @@ on:
   pull_request:
   push:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Standard-CI oder genau ein Mock100 nach bestandener Pflicht-CI'
+        type: choice
+        options: [standard, mock100]
+        default: standard
+      expected_commit:
+        description: 'Mock100: exakt gepruefter 40-stelliger Kandidatencommit'
+        type: string
+        default: ''
+      prerequisite_ci_run_id:
+        description: 'Mock100: erfolgreicher Pflicht-CI-Lauf auf diesem Kandidatencommit'
+        type: string
+        default: ''
+      mock100_nonce:
+        description: 'Mock100: frische UUIDv4; keine Wiederholung eines Laufes'
+        type: string
+        default: ''
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.ref }}${{ inputs.mode == 'mock100' && '-mock100' || '' }}
+  cancel-in-progress: ${{ inputs.mode != 'mock100' }}
 
 jobs:
   offline-suite:
+    if: inputs.mode != 'mock100'
     name: Syntax + Offline-Suiten
     runs-on: ubuntu-latest
     # CI35207010979: 397/397 Suiten erfolgreich in779s, aber inklusive Setup
@@ -43,7 +62,9 @@ jobs:
     # CI38183359329: Standard169/169 ~14min plus DB/Setup und Bereichsregression;
     # der neue echte EU-Migrationsnachweis und Z22 behalten eigene Pflichtschritte.
     # Endliches Gesamtfenster35min, keine Suite oder Einzelgrenze entfaellt.
-    timeout-minutes: 35
+    # Existing mandatory suites retain their limits; reserve ten minutes for the
+    # pinned tool build and separately bounded native three-profile preflight.
+    timeout-minutes: 45
     # KURZLEBIGE CI-TESTDATENBANK (Korrektur 2026-08-28, Befund „falsches Grün").
     # ---------------------------------------------------------------------------
     # Für die Datenbanknachweise zu Z22 und Kontoschreibschutz. Der Dienst lebt so lange wie
@@ -70,6 +91,7 @@ jobs:
           # Volle Historie: der Bereichs-Regressionsschritt vergleicht den PR-Kopf mit dem
           # Basis-Commit (github.event.pull_request.base.sha). Ohne fetch-depth: 0 fehlt der
           # Basis-Commit im flachen Checkout.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -80,7 +102,7 @@ jobs:
         run: |
           BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
           if [ -n "$BASE" ] && [ "$BASE" != "0000000000000000000000000000000000000000" ]; then
-            CHANGED="$(git diff --name-only "$BASE" "${{ github.sha }}")"
+            CHANGED="$(git diff --name-only "$BASE" "${{ github.event.pull_request.head.sha || github.sha }}")"
           else
             CHANGED=""
           fi
@@ -119,6 +141,50 @@ jobs:
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
         # external APIs, originals, native resource cases or Production access.
         run: node scripts/lokal.js -- python3 -I -S -B scripts/hetzner-native-automation-tests.py
+      - name: Mock100 Fehlerkanal, Abbruch und Vertragsgegenproben (synthetisch)
+        if: steps.plan.outputs.standard == 'true'
+        run: |
+          node scripts/lokal.js -- node scripts/test-synthetik-500-resource-diagnostic.js
+          sudo -n env -i PATH="$PATH" LANG=C.UTF-8 node scripts/lokal.js -- python3 -B scripts/w15-github/test_synthetic_resource_diagnostic.py
+      - name: Vorhandene gepinnte Werkzeuge fuer die kleine Mock100-Anschlussprobe
+        if: steps.plan.outputs.database == 'true'
+        uses: ./.github/actions/w15-existing-tools
+        with:
+          native-vector-diagnostic: 'true'
+      - name: Mock100 native Anschlussprobe (nur drei synthetische Profile)
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 10
+        env:
+          EXPECTED_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          sudo -n env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 \
+            PYTHONDONTWRITEBYTECODE=1 GITHUB_ACTIONS=true GITHUB_EVENT_NAME="$GITHUB_EVENT_NAME" \
+            GITHUB_REPOSITORY="$GITHUB_REPOSITORY" GITHUB_REF="$GITHUB_REF" GITHUB_HEAD_REF="$GITHUB_HEAD_REF" \
+            GITHUB_SHA="$EXPECTED_COMMIT" GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+            EXPECTED_COMMIT="$EXPECTED_COMMIT" RUNNER_TEMP="$RUNNER_TEMP" W15_IMAGE_ID="$W15_IMAGE_ID" \
+            W15_NODE_SOURCE="$W15_NODE_SOURCE" W15_POSTGREST_SOURCE="$W15_POSTGREST_SOURCE" \
+            /usr/bin/python3 -I -B scripts/w15-github/synthetic_resource_diagnostic.py \
+              --preflight-klein --expected-commit "$EXPECTED_COMMIT"
+      - name: Geschlossene Mock100-Anschlussquittung sichern
+        if: always() && steps.plan.outputs.database == 'true'
+        env:
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          sudo -n --preserve-env=GITHUB_ACTIONS,GITHUB_REPOSITORY,GITHUB_SHA,SOURCE_HEAD_SHA,GITHUB_RUN_ID,GITHUB_EVENT_NAME,GITHUB_REF,GITHUB_HEAD_REF,RUNNER_TEMP,GITHUB_STEP_SUMMARY \
+            /usr/bin/python3 -I -B scripts/w15-github/publish_synthetic_resource_receipt.py --artifact-only
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.plan.outputs.database == 'true'
+        with:
+          name: mock100-preflight-${{ github.run_id }}
+          path: ${{ runner.temp }}/mock100.PUBLIC.json
+          if-no-files-found: error
+          retention-days: 90
+      # Restore the ordinary CI Node version after the pinned diagnostic tool build.
+      - uses: actions/setup-node@v4
+        if: steps.plan.outputs.database == 'true'
+        with:
+          node-version: 22
+          cache: npm
       - name: psql bereitstellen (Voraussetzung des Datenbanknachweises)
         if: steps.plan.outputs.database == 'true'
         # Das ubuntu-latest-Image bringt psql heute mit — aber GitHub darf den Umfang
@@ -401,7 +467,7 @@ jobs:
             exit 0
           fi
           echo "Geaenderte Dateien seit $BASE:"
-          CHANGED="$(git diff --name-only "$BASE" "${{ github.sha }}")"
+          CHANGED="$(git diff --name-only "$BASE" "${{ github.event.pull_request.head.sha || github.sha }}")"
           printf '%s\n' "$CHANGED"
           node scripts/lokal.js -- node scripts/run-offline-tests.js --aendert "$CHANGED" --nur-bereich
 
@@ -442,12 +508,14 @@ jobs:
 
 
   browser-smoke:
+    if: inputs.mode != 'mock100'
     name: Browser-/Mobile-Smoke (Chromium)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -458,7 +526,7 @@ jobs:
         run: |
           BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
           if [ -n "$BASE" ] && [ "$BASE" != "0000000000000000000000000000000000000000" ]; then
-            CHANGED="$(git diff --name-only "$BASE" "${{ github.sha }}")"
+            CHANGED="$(git diff --name-only "$BASE" "${{ github.event.pull_request.head.sha || github.sha }}")"
           else
             CHANGED=""
           fi
@@ -510,3 +578,90 @@ jobs:
           HELMUT_REQUIRE_BROWSER: "1"
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js -- node scripts/prosa-vorschau-test.js
+
+  synthetic-resource-diagnostic:
+    name: Mock100 — einmalig, synthetisch und ohne Anbieteraufrufe
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'mock100'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Erfolgreiche Pflicht-CI des exakten Kandidaten nachweisen
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          PREREQUISITE_CI_RUN: ${{ inputs.prerequisite_ci_run_id }}
+          MOCK100_NONCE: ${{ inputs.mock100_nonce }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, uuid, urllib.request
+          e=os.environ
+          expected=e['EXPECTED_COMMIT']; run=e['PREREQUISITE_CI_RUN']; nonce=e['MOCK100_NONCE']
+          assert re.fullmatch('[a-f0-9]{40}',expected) and expected==e['GITHUB_SHA']
+          assert e['GITHUB_REPOSITORY']=='ernisch/helmut-pilot' and e['GITHUB_RUN_ATTEMPT']=='1'
+          assert e['GITHUB_REF']=='refs/heads/codex/mock100-local-20261105'
+          assert re.fullmatch('[1-9][0-9]{0,19}',run) and run!=e['GITHUB_RUN_ID']
+          n=uuid.UUID(nonce); assert str(n)==nonce and n.version==4
+          base='https://api.github.com/repos/ernisch/helmut-pilot/actions/runs/'+run
+          def read(url):
+              request=urllib.request.Request(url,headers={'Authorization':'Bearer '+e['GITHUB_TOKEN'],'Accept':'application/vnd.github+json'})
+              with urllib.request.urlopen(request,timeout=20) as response:
+                  assert response.status==200
+                  return json.load(response)
+          result=read(base)
+          assert result['head_sha']==expected and result['status']=='completed' and result['conclusion']=='success'
+          assert result['event']=='pull_request' and result['path']=='.github/workflows/ci.yml'
+          jobs=read(base+'/jobs?per_page=100')
+          assert jobs['total_count']<=100
+          for name in ('Syntax + Offline-Suiten','Browser-/Mobile-Smoke (Chromium)'):
+              matching=[j for j in jobs['jobs'] if j['name']==name]
+              assert len(matching)==1 and matching[0]['status']=='completed' and matching[0]['conclusion']=='success'
+              if name=='Syntax + Offline-Suiten':
+                  native=[s for s in matching[0]['steps'] if s['name']=='Mock100 native Anschlussprobe (nur drei synthetische Profile)']
+                  assert len(native)==1 and native[0]['status']=='completed' and native[0]['conclusion']=='success'
+          print('PASS: beide Pflichtchecks auf exakt '+expected+'; Run '+run)
+          request={'schema':'helmut-mock100-request/1','scope':'ORIGINAL_FREE_SYNTHETIC_100_MOCK_ONLY',
+                   'expectedCommit':expected,'nonce':nonce,'profiles':100,'attempt':1,'maxSeconds':1800}
+          with open(e['GITHUB_ENV'],'a') as output:
+              output.write('W15_DIAGNOSTIC_REQUEST='+json.dumps(request,separators=(',',':'))+'\n')
+          PY
+      - uses: ./.github/actions/w15-existing-tools
+        with:
+          native-vector-diagnostic: 'true'
+      - name: Vorhandene Anwendungsabhaengigkeiten aus dem Lockfile
+        run: npm ci
+      - name: Genau ein vollstaendiger Mock100
+        timeout-minutes: 32
+        env:
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+        run: |
+          sudo -n env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 \
+            PYTHONDONTWRITEBYTECODE=1 GITHUB_ACTIONS=true GITHUB_EVENT_NAME="$GITHUB_EVENT_NAME" \
+            GITHUB_REPOSITORY="$GITHUB_REPOSITORY" GITHUB_REF="$GITHUB_REF" GITHUB_SHA="$GITHUB_SHA" \
+            GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" EXPECTED_COMMIT="$EXPECTED_COMMIT" \
+            RUNNER_TEMP="$RUNNER_TEMP" W15_IMAGE_ID="$W15_IMAGE_ID" W15_NODE_SOURCE="$W15_NODE_SOURCE" \
+            W15_POSTGREST_SOURCE="$W15_POSTGREST_SOURCE" W15_DIAGNOSTIC_REQUEST="$W15_DIAGNOSTIC_REQUEST" \
+            /usr/bin/python3 -I -B scripts/w15-github/synthetic_resource_diagnostic.py \
+              --qualify-and-run-once --expected-commit "$EXPECTED_COMMIT"
+      - name: Geschlossene Mock100-Belege dauerhaft als GitHub-Check sichern
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SOURCE_HEAD_SHA: ${{ github.sha }}
+        run: |
+          sudo -n --preserve-env=GITHUB_ACTIONS,GITHUB_TOKEN,GITHUB_REPOSITORY,GITHUB_SHA,SOURCE_HEAD_SHA,GITHUB_RUN_ID,GITHUB_EVENT_NAME,GITHUB_REF,GITHUB_HEAD_REF,RUNNER_TEMP,GITHUB_STEP_SUMMARY \
+            /usr/bin/python3 -I -B scripts/w15-github/publish_synthetic_resource_receipt.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mock100-${{ github.run_id }}
+          path: ${{ runner.temp }}/mock100.PUBLIC.json
+          if-no-files-found: error
+          retention-days: 90

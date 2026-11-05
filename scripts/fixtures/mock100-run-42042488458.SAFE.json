@@ -1,0 +1,1927 @@
+{
+  "actualSecondsIncludingOwnedCleanup": 77.38779898,
+  "actualTotalSecondsIncludingOuterCleanup": 77.633010625,
+  "boundProcessIdentities": [
+    {
+      "attestedBeforeRelease": true,
+      "barrierBeforeNodeImport": true,
+      "hostPID": 3136,
+      "namespacePID": 118,
+      "role": "test-tools",
+      "startTicks": 25288
+    },
+    {
+      "attestedBeforeRelease": true,
+      "barrierBeforeNodeImport": false,
+      "hostPID": 3238,
+      "namespacePID": 197,
+      "role": "database",
+      "startTicks": 25383
+    },
+    {
+      "attestedBeforeRelease": true,
+      "barrierBeforeNodeImport": true,
+      "hostPID": 3350,
+      "namespacePID": 243,
+      "role": "test-tools",
+      "startTicks": 25412
+    },
+    {
+      "attestedBeforeRelease": true,
+      "barrierBeforeNodeImport": true,
+      "hostPID": 3417,
+      "namespacePID": 267,
+      "role": "application",
+      "startTicks": 25476
+    }
+  ],
+  "cacheProducerAttribution": "UNKNOWN",
+  "cleanup": {
+    "childExit": "PASS",
+    "componentGroupsEmpty": "PASS",
+    "componentUnitsRemoved": "PASS",
+    "databaseStopped": "PASS",
+    "systemdReload": "PASS"
+  },
+  "commonFailureMemory": null,
+  "commonIsWholeGitHubHostConsumption": false,
+  "completedScenarios": 0,
+  "components": {
+    "application": {
+      "categoryMaxima": {
+        "anon": {
+          "phase": "mock100",
+          "sample": 13196,
+          "value": 367591424
+        },
+        "file": {
+          "phase": "mock100",
+          "sample": 13196,
+          "value": 28672
+        },
+        "file_dirty": {
+          "phase": "mock100",
+          "sample": 13196,
+          "value": 8192
+        },
+        "file_writeback": {
+          "phase": "mock100",
+          "sample": 13072,
+          "value": 4096
+        },
+        "kernel": {
+          "phase": "mock100",
+          "sample": 12932,
+          "value": 8437760
+        },
+        "shmem": {
+          "phase": "groups",
+          "sample": 5,
+          "value": 0
+        }
+      },
+      "first": {
+        "cpuMaximum": {
+          "periodUsec": 100000,
+          "quotaUsec": 100000
+        },
+        "cpuPressure": {
+          "full": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          }
+        },
+        "cpuStat": {
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "system_usec": 0,
+          "throttled_usec": 0,
+          "usage_usec": 0,
+          "user_usec": 0
+        },
+        "effectiveCpuset": "UNKNOWN",
+        "memory": {
+          "currentBytes": 0,
+          "kernelLifetimePeakBytes": 0,
+          "maximumBytes": 1999998976,
+          "swapCurrentBytes": 0,
+          "swapMaximumBytes": 0
+        },
+        "memoryEvents": {
+          "high": 0,
+          "low": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_group_kill": 0,
+          "oom_kill": 0
+        },
+        "memoryPressure": {
+          "full": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          }
+        },
+        "memoryStat": {
+          "anon": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "shmem": 0
+        }
+      },
+      "firstObservedMonotonicNS": 239387495585,
+      "kernelPeakFirstObserved": {
+        "meaning": "FIRST_OBSERVATION_NOT_KERNEL_PEAK_OCCURRENCE_TIME",
+        "phase": "mock100",
+        "sample": 13196,
+        "value": 411918336
+      },
+      "last": {
+        "cpuMaximum": {
+          "periodUsec": 100000,
+          "quotaUsec": 100000
+        },
+        "cpuPressure": {
+          "full": {
+            "avg10": 41,
+            "avg300": 10,
+            "avg60": 36,
+            "total": 533866
+          },
+          "some": {
+            "avg10": 90,
+            "avg300": 14,
+            "avg60": 55,
+            "total": 735274
+          }
+        },
+        "cpuStat": {
+          "nr_periods": 613,
+          "nr_throttled": 34,
+          "system_usec": 4850478,
+          "throttled_usec": 1043751,
+          "usage_usec": 28085152,
+          "user_usec": 23234674
+        },
+        "effectiveCpuset": "UNKNOWN",
+        "memory": {
+          "currentBytes": 151552,
+          "kernelLifetimePeakBytes": 411918336,
+          "maximumBytes": 1999998976,
+          "swapCurrentBytes": 0,
+          "swapMaximumBytes": 0
+        },
+        "memoryEvents": {
+          "high": 0,
+          "low": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_group_kill": 0,
+          "oom_kill": 0
+        },
+        "memoryPressure": {
+          "full": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          }
+        },
+        "memoryStat": {
+          "anon": 0,
+          "file": 28672,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 53248,
+          "shmem": 0
+        }
+      },
+      "lastObservedMonotonicNS": 316021443919
+    },
+    "database": {
+      "categoryMaxima": {
+        "anon": {
+          "phase": "mock100",
+          "sample": 13195,
+          "value": 244350976
+        },
+        "file": {
+          "phase": "mock100",
+          "sample": 13192,
+          "value": 155156480
+        },
+        "file_dirty": {
+          "phase": "database",
+          "sample": 12524,
+          "value": 33923072
+        },
+        "file_writeback": {
+          "phase": "database",
+          "sample": 12527,
+          "value": 16777216
+        },
+        "kernel": {
+          "phase": "mock100",
+          "sample": 13195,
+          "value": 14438400
+        },
+        "shmem": {
+          "phase": "mock100",
+          "sample": 13192,
+          "value": 55627776
+        }
+      },
+      "first": {
+        "cpuMaximum": {
+          "periodUsec": 100000,
+          "quotaUsec": 100000
+        },
+        "cpuPressure": {
+          "full": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          }
+        },
+        "cpuStat": {
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "system_usec": 0,
+          "throttled_usec": 0,
+          "usage_usec": 0,
+          "user_usec": 0
+        },
+        "effectiveCpuset": "UNKNOWN",
+        "memory": {
+          "currentBytes": 0,
+          "kernelLifetimePeakBytes": 0,
+          "maximumBytes": 948191232,
+          "swapCurrentBytes": 0,
+          "swapMaximumBytes": 0
+        },
+        "memoryEvents": {
+          "high": 0,
+          "low": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_group_kill": 0,
+          "oom_kill": 0
+        },
+        "memoryPressure": {
+          "full": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          }
+        },
+        "memoryStat": {
+          "anon": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "shmem": 0
+        }
+      },
+      "firstObservedMonotonicNS": 239392727394,
+      "kernelPeakFirstObserved": {
+        "meaning": "FIRST_OBSERVATION_NOT_KERNEL_PEAK_OCCURRENCE_TIME",
+        "phase": "mock100",
+        "sample": 13195,
+        "value": 501088256
+      },
+      "last": {
+        "cpuMaximum": {
+          "periodUsec": 100000,
+          "quotaUsec": 100000
+        },
+        "cpuPressure": {
+          "full": {
+            "avg10": 394,
+            "avg300": 58,
+            "avg60": 220,
+            "total": 2108201
+          },
+          "some": {
+            "avg10": 660,
+            "avg300": 94,
+            "avg60": 357,
+            "total": 3155262
+          }
+        },
+        "cpuStat": {
+          "nr_periods": 643,
+          "nr_throttled": 64,
+          "system_usec": 5273130,
+          "throttled_usec": 2848434,
+          "usage_usec": 24540889,
+          "user_usec": 19267758
+        },
+        "effectiveCpuset": "UNKNOWN",
+        "memory": {
+          "currentBytes": 111316992,
+          "kernelLifetimePeakBytes": 501088256,
+          "maximumBytes": 948191232,
+          "swapCurrentBytes": 0,
+          "swapMaximumBytes": 0
+        },
+        "memoryEvents": {
+          "high": 0,
+          "low": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_group_kill": 0,
+          "oom_kill": 0
+        },
+        "memoryPressure": {
+          "full": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          }
+        },
+        "memoryStat": {
+          "anon": 0,
+          "file": 105144320,
+          "file_dirty": 4096,
+          "file_writeback": 0,
+          "kernel": 5910528,
+          "shmem": 0
+        }
+      },
+      "lastObservedMonotonicNS": 316021602115
+    },
+    "test-tools": {
+      "categoryMaxima": {
+        "anon": {
+          "phase": "mock100",
+          "sample": 13192,
+          "value": 276144128
+        },
+        "file": {
+          "phase": "closure",
+          "sample": 13198,
+          "value": 237297664
+        },
+        "file_dirty": {
+          "phase": "staging",
+          "sample": 12510,
+          "value": 144195584
+        },
+        "file_writeback": {
+          "phase": "staging",
+          "sample": 3139,
+          "value": 135168
+        },
+        "kernel": {
+          "phase": "mock100",
+          "sample": 12981,
+          "value": 19107840
+        },
+        "shmem": {
+          "phase": "groups",
+          "sample": 7,
+          "value": 8192
+        }
+      },
+      "first": {
+        "cpuMaximum": {
+          "periodUsec": 100000,
+          "quotaUsec": "UNLIMITED"
+        },
+        "cpuPressure": {
+          "full": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 490
+          },
+          "some": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 490
+          }
+        },
+        "cpuStat": {
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "system_usec": 37124,
+          "throttled_usec": 0,
+          "usage_usec": 105353,
+          "user_usec": 68228
+        },
+        "effectiveCpuset": "UNKNOWN",
+        "memory": {
+          "currentBytes": 17780736,
+          "kernelLifetimePeakBytes": 19775488,
+          "maximumBytes": "UNLIMITED",
+          "swapCurrentBytes": 0,
+          "swapMaximumBytes": "UNLIMITED"
+        },
+        "memoryEvents": {
+          "high": 0,
+          "low": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_group_kill": 0,
+          "oom_kill": 0
+        },
+        "memoryPressure": {
+          "full": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          }
+        },
+        "memoryStat": {
+          "anon": 16826368,
+          "file": 8192,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 294912,
+          "shmem": 8192
+        }
+      },
+      "firstObservedMonotonicNS": 239392886602,
+      "kernelPeakFirstObserved": {
+        "meaning": "FIRST_OBSERVATION_NOT_KERNEL_PEAK_OCCURRENCE_TIME",
+        "phase": "mock100",
+        "sample": 13192,
+        "value": 533217280
+      },
+      "last": {
+        "cpuMaximum": {
+          "periodUsec": 100000,
+          "quotaUsec": "UNLIMITED"
+        },
+        "cpuPressure": {
+          "full": {
+            "avg10": 1,
+            "avg300": 0,
+            "avg60": 2,
+            "total": 270926
+          },
+          "some": {
+            "avg10": 6,
+            "avg300": 0,
+            "avg60": 4,
+            "total": 356069
+          }
+        },
+        "cpuStat": {
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "system_usec": 7126487,
+          "throttled_usec": 0,
+          "usage_usec": 27618526,
+          "user_usec": 20492039
+        },
+        "effectiveCpuset": "UNKNOWN",
+        "memory": {
+          "currentBytes": 267022336,
+          "kernelLifetimePeakBytes": 533217280,
+          "maximumBytes": "UNLIMITED",
+          "swapCurrentBytes": 0,
+          "swapMaximumBytes": "UNLIMITED"
+        },
+        "memoryEvents": {
+          "high": 0,
+          "low": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_group_kill": 0,
+          "oom_kill": 0
+        },
+        "memoryPressure": {
+          "full": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          }
+        },
+        "memoryStat": {
+          "anon": 17702912,
+          "file": 237297664,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 11247616,
+          "shmem": 8192
+        }
+      },
+      "lastObservedMonotonicNS": 316021756847
+    }
+  },
+  "connectionsHighestSampled": 5,
+  "connectionsTruePeak": "UNKNOWN",
+  "databaseCPUQuotaIsLabChoiceNotSupabaseGuarantee": true,
+  "databaseGroupIncludesPostgRESTAndTransientSQLObserverClients": true,
+  "differentTimeMaximaAdditive": false,
+  "end500Acceptance": false,
+  "exactCommit": "c1becb24428efdff07cc226781f8989182957dcc",
+  "executionAuthority": false,
+  "finalCommonParentAfterOwnedExits": {
+    "capacityMeasurement": {
+      "categoryMaxima": {
+        "anon": 0,
+        "file": 342462464,
+        "file_dirty": 4096,
+        "file_writeback": 0,
+        "kernel": 16662528,
+        "shmem": 0
+      },
+      "diagnosticOnly": true,
+      "last": {
+        "hostAvailableBytes": 15230042112,
+        "memoryPressure": {
+          "full": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          }
+        },
+        "memoryStat": {
+          "anon": 0,
+          "file": 342462464,
+          "file_dirty": 4096,
+          "file_writeback": 0,
+          "kernel": 16662528,
+          "shmem": 0
+        },
+        "observedMonotonicNS": 316263793450,
+        "peakCompositionKnown": false
+      },
+      "legacyContractAccepted": false,
+      "legacyPeakExceeded": false,
+      "legacyPeakLimitBytes": 2048000000,
+      "maximumObservedCurrentBytes": 359112704,
+      "phaseObservations": [],
+      "sampleCount": 1,
+      "schema": "helmut-w15-full-restore-capacity-measurement/1"
+    },
+    "configuredLimit": "4999999488",
+    "currentBytes": 359112704,
+    "events": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0,
+      "sock_throttled": 0
+    },
+    "kernelLifetimePeakBytes": 1391341568,
+    "swapCurrentBytes": 0,
+    "swapMaximum": "0"
+  },
+  "firstFailure": {
+    "code": "APP_RESULT",
+    "phase": "mock100",
+    "workloadFailure": {
+      "failureDetail": {
+        "assertion": "diagnostic-positive-native-lage-required",
+        "code": "LAGE_AI_PROVIDER_HTTP_422",
+        "codepoint": {
+          "function": "workload",
+          "line": 402,
+          "module": "scripts/synthetik-500-resource-diagnostic.js"
+        },
+        "nativeStatus": "unknown",
+        "sqlstate": "UNKNOWN"
+      },
+      "phase": "work"
+    }
+  },
+  "full100Completed": false,
+  "full100ReleaseAttempted": true,
+  "kernelPeakScope": "WHOLE_GROUP_LIFETIME_NO_RESET",
+  "lastCommonKernel": {
+    "cpuMaximum": {
+      "periodUsec": 100000,
+      "quotaUsec": "UNLIMITED"
+    },
+    "cpuPressure": {
+      "full": {
+        "avg10": 412,
+        "avg300": 62,
+        "avg60": 230,
+        "total": 2191336
+      },
+      "some": {
+        "avg10": 773,
+        "avg300": 109,
+        "avg60": 413,
+        "total": 3824699
+      }
+    },
+    "cpuStat": {
+      "nr_periods": 0,
+      "nr_throttled": 0,
+      "system_usec": 17251067,
+      "throttled_usec": 0,
+      "usage_usec": 80244567,
+      "user_usec": 62993499
+    },
+    "effectiveCpuset": "0-3",
+    "memory": {
+      "currentBytes": 378535936,
+      "kernelLifetimePeakBytes": 1391341568,
+      "maximumBytes": 4999999488,
+      "swapCurrentBytes": 0,
+      "swapMaximumBytes": 0
+    },
+    "memoryEvents": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+    },
+    "memoryPressure": {
+      "full": {
+        "avg10": 0,
+        "avg300": 0,
+        "avg60": 0,
+        "total": 0
+      },
+      "some": {
+        "avg10": 0,
+        "avg300": 0,
+        "avg60": 0,
+        "total": 0
+      }
+    },
+    "memoryStat": {
+      "anon": 17702912,
+      "file": 342470656,
+      "file_dirty": 4096,
+      "file_writeback": 0,
+      "kernel": 17256448,
+      "shmem": 8192
+    }
+  },
+  "lastCommonParent": {
+    "capacityMeasurement": {
+      "categoryMaxima": {
+        "anon": 17702912,
+        "file": 342470656,
+        "file_dirty": 4096,
+        "file_writeback": 0,
+        "kernel": 17256448,
+        "shmem": 8192
+      },
+      "diagnosticOnly": true,
+      "last": {
+        "hostAvailableBytes": 15157661696,
+        "memoryPressure": {
+          "full": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 0,
+            "avg300": 0,
+            "avg60": 0,
+            "total": 0
+          }
+        },
+        "memoryStat": {
+          "anon": 17702912,
+          "file": 342470656,
+          "file_dirty": 4096,
+          "file_writeback": 0,
+          "kernel": 17256448,
+          "shmem": 8192
+        },
+        "observedMonotonicNS": 316020975439,
+        "peakCompositionKnown": false
+      },
+      "legacyContractAccepted": false,
+      "legacyPeakExceeded": false,
+      "legacyPeakLimitBytes": 2048000000,
+      "maximumObservedCurrentBytes": 378814464,
+      "phaseObservations": [],
+      "sampleCount": 1,
+      "schema": "helmut-w15-full-restore-capacity-measurement/1"
+    },
+    "configuredLimit": "4999999488",
+    "currentBytes": 378814464,
+    "events": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0,
+      "sock_throttled": 0
+    },
+    "kernelLifetimePeakBytes": 1391341568,
+    "swapCurrentBytes": 0,
+    "swapMaximum": "0"
+  },
+  "lastConnectionSample": {
+    "activeClients": 1,
+    "authClients": 0,
+    "backgroundBackends": 5,
+    "capacityAt500Profiles": "UNKNOWN",
+    "clientBackends": 5,
+    "clientStateCoverageComplete": true,
+    "executionAuthority": false,
+    "freeNonReservedClientSlotsAtSample": 52,
+    "idleClients": 4,
+    "idleTransactionClients": 0,
+    "maxConnections": 60,
+    "maxParallelWorkers": 2,
+    "observerClients": 1,
+    "observerIncludedInTotal": true,
+    "otherClients": 0,
+    "poolQueueDepth": "UNKNOWN",
+    "postgrestClients": 4,
+    "reservedConnections": 0,
+    "resourceContractAccepted": false,
+    "schema": "helmut-w15-db-connection-observation/1",
+    "sharedBuffersBytes": 268435456,
+    "sharedPlatformClients": 0,
+    "status": "OBSERVED_CLIENT_CONNECTIONS_ONLY",
+    "storageClients": 0,
+    "superuserReservedConnections": 3,
+    "unknownStateClients": 0,
+    "workMemBytes": 3584000
+  },
+  "lastWorkPhase": "mock100",
+  "maximumTotalSeconds": 1800,
+  "maximumWorkingSecondsIncludingPreparation": 1620,
+  "mock500Acceptance": false,
+  "nonce": "b72dfc50-d285-42e0-a1c5-97cdd23dd3f8",
+  "originalsAccessed": false,
+  "outsideOuterLauncherMemoryBytes": "UNKNOWN_NOT_IN_COMMON_PARENT",
+  "parentStoppedAndRemoved": "PASS",
+  "peakCompositionKnown": false,
+  "phaseMeasurements": {
+    "barrier": {
+      "application": {
+        "first": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 252863056098,
+          "sample": 12534,
+          "shmem": 0
+        },
+        "last": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 254782801712,
+          "sample": 12562,
+          "shmem": 0
+        }
+      },
+      "common-parent": {
+        "first": {
+          "anon": 22212608,
+          "cpuUsageUsec": 11932721,
+          "currentBytes": 353550336,
+          "file": 311566336,
+          "file_dirty": 2699264,
+          "file_writeback": 0,
+          "kernel": 18518016,
+          "kernelLifetimePeakBytes": 364621824,
+          "monotonicNS": 252862884262,
+          "sample": 12534,
+          "shmem": 32980992
+        },
+        "last": {
+          "anon": 110161920,
+          "cpuUsageUsec": 13998179,
+          "currentBytes": 455720960,
+          "file": 319176704,
+          "file_dirty": 7471104,
+          "file_writeback": 0,
+          "kernel": 25178112,
+          "kernelLifetimePeakBytes": 459378688,
+          "monotonicNS": 254782637907,
+          "sample": 12562,
+          "shmem": 35835904
+        }
+      },
+      "database": {
+        "first": {
+          "anon": 4476928,
+          "cpuUsageUsec": 944531,
+          "currentBytes": 87994368,
+          "file": 75587584,
+          "file_dirty": 2674688,
+          "file_writeback": 0,
+          "kernel": 7344128,
+          "kernelLifetimePeakBytes": 91164672,
+          "monotonicNS": 252863217429,
+          "sample": 12534,
+          "shmem": 32972800
+        },
+        "last": {
+          "anon": 30748672,
+          "cpuUsageUsec": 1594534,
+          "currentBytes": 124620800,
+          "file": 82444288,
+          "file_dirty": 6643712,
+          "file_writeback": 0,
+          "kernel": 10838016,
+          "kernelLifetimePeakBytes": 139161600,
+          "monotonicNS": 254782967410,
+          "sample": 12562,
+          "shmem": 35827712
+        }
+      },
+      "test-tools": {
+        "first": {
+          "anon": 18931712,
+          "cpuUsageUsec": 10989489,
+          "currentBytes": 266297344,
+          "file": 235978752,
+          "file_dirty": 24576,
+          "file_writeback": 0,
+          "kernel": 11145216,
+          "kernelLifetimePeakBytes": 273936384,
+          "monotonicNS": 252863376117,
+          "sample": 12534,
+          "shmem": 8192
+        },
+        "last": {
+          "anon": 79413248,
+          "cpuUsageUsec": 12404614,
+          "currentBytes": 331055104,
+          "file": 236732416,
+          "file_dirty": 827392,
+          "file_writeback": 0,
+          "kernel": 14295040,
+          "kernelLifetimePeakBytes": 331055104,
+          "monotonicNS": 254783156753,
+          "sample": 12562,
+          "shmem": 8192
+        }
+      }
+    },
+    "closure": {
+      "application": {
+        "first": {
+          "anon": 0,
+          "cpuUsageUsec": 28085152,
+          "currentBytes": 151552,
+          "file": 28672,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 53248,
+          "kernelLifetimePeakBytes": 411918336,
+          "monotonicNS": 316021448636,
+          "sample": 13198,
+          "shmem": 0
+        },
+        "last": {
+          "anon": 0,
+          "cpuUsageUsec": 28085152,
+          "currentBytes": 151552,
+          "file": 28672,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 53248,
+          "kernelLifetimePeakBytes": 411918336,
+          "monotonicNS": 316021448636,
+          "sample": 13198,
+          "shmem": 0
+        }
+      },
+      "common-parent": {
+        "first": {
+          "anon": 17702912,
+          "cpuUsageUsec": 80244567,
+          "currentBytes": 378535936,
+          "file": 342470656,
+          "file_dirty": 4096,
+          "file_writeback": 0,
+          "kernel": 17256448,
+          "kernelLifetimePeakBytes": 1391341568,
+          "monotonicNS": 316021272463,
+          "sample": 13198,
+          "shmem": 8192
+        },
+        "last": {
+          "anon": 17702912,
+          "cpuUsageUsec": 80244567,
+          "currentBytes": 378535936,
+          "file": 342470656,
+          "file_dirty": 4096,
+          "file_writeback": 0,
+          "kernel": 17256448,
+          "kernelLifetimePeakBytes": 1391341568,
+          "monotonicNS": 316021272463,
+          "sample": 13198,
+          "shmem": 8192
+        }
+      },
+      "database": {
+        "first": {
+          "anon": 0,
+          "cpuUsageUsec": 24540889,
+          "currentBytes": 111316992,
+          "file": 105144320,
+          "file_dirty": 4096,
+          "file_writeback": 0,
+          "kernel": 5910528,
+          "kernelLifetimePeakBytes": 501088256,
+          "monotonicNS": 316021606502,
+          "sample": 13198,
+          "shmem": 0
+        },
+        "last": {
+          "anon": 0,
+          "cpuUsageUsec": 24540889,
+          "currentBytes": 111316992,
+          "file": 105144320,
+          "file_dirty": 4096,
+          "file_writeback": 0,
+          "kernel": 5910528,
+          "kernelLifetimePeakBytes": 501088256,
+          "monotonicNS": 316021606502,
+          "sample": 13198,
+          "shmem": 0
+        }
+      },
+      "test-tools": {
+        "first": {
+          "anon": 17702912,
+          "cpuUsageUsec": 27618526,
+          "currentBytes": 267022336,
+          "file": 237297664,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 11247616,
+          "kernelLifetimePeakBytes": 533217280,
+          "monotonicNS": 316021759290,
+          "sample": 13198,
+          "shmem": 8192
+        },
+        "last": {
+          "anon": 17702912,
+          "cpuUsageUsec": 27618526,
+          "currentBytes": 267022336,
+          "file": 237297664,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 11247616,
+          "kernelLifetimePeakBytes": 533217280,
+          "monotonicNS": 316021759290,
+          "sample": 13198,
+          "shmem": 8192
+        }
+      }
+    },
+    "database": {
+      "application": {
+        "first": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 250622805953,
+          "sample": 12511,
+          "shmem": 0
+        },
+        "last": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 252758102829,
+          "sample": 12531,
+          "shmem": 0
+        }
+      },
+      "common-parent": {
+        "first": {
+          "anon": 17702912,
+          "cpuUsageUsec": 10798442,
+          "currentBytes": 264077312,
+          "file": 235122688,
+          "file_dirty": 144195584,
+          "file_writeback": 0,
+          "kernel": 10702848,
+          "kernelLifetimePeakBytes": 266043392,
+          "monotonicNS": 250622652123,
+          "sample": 12511,
+          "shmem": 8192
+        },
+        "last": {
+          "anon": 22179840,
+          "cpuUsageUsec": 11840749,
+          "currentBytes": 336310272,
+          "file": 295342080,
+          "file_dirty": 589824,
+          "file_writeback": 0,
+          "kernel": 17481728,
+          "kernelLifetimePeakBytes": 349306880,
+          "monotonicNS": 252757879485,
+          "sample": 12531,
+          "shmem": 18866176
+        }
+      },
+      "database": {
+        "first": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 250622955356,
+          "sample": 12511,
+          "shmem": 0
+        },
+        "last": {
+          "anon": 4476928,
+          "cpuUsageUsec": 870548,
+          "currentBytes": 70627328,
+          "file": 59379712,
+          "file_dirty": 589824,
+          "file_writeback": 0,
+          "kernel": 6406144,
+          "kernelLifetimePeakBytes": 80216064,
+          "monotonicNS": 252758285993,
+          "sample": 12531,
+          "shmem": 18857984
+        }
+      },
+      "test-tools": {
+        "first": {
+          "anon": 17702912,
+          "cpuUsageUsec": 10799445,
+          "currentBytes": 264032256,
+          "file": 235122688,
+          "file_dirty": 144195584,
+          "file_writeback": 0,
+          "kernel": 10657792,
+          "kernelLifetimePeakBytes": 265998336,
+          "monotonicNS": 250623119562,
+          "sample": 12511,
+          "shmem": 8192
+        },
+        "last": {
+          "anon": 17702912,
+          "cpuUsageUsec": 10971066,
+          "currentBytes": 265371648,
+          "file": 235962368,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 11030528,
+          "kernelLifetimePeakBytes": 273936384,
+          "monotonicNS": 252758458511,
+          "sample": 12531,
+          "shmem": 8192
+        }
+      }
+    },
+    "groups": {
+      "application": {
+        "first": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 239387503908,
+          "sample": 5,
+          "shmem": 0
+        },
+        "last": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 239392567826,
+          "sample": 7,
+          "shmem": 0
+        }
+      },
+      "common-parent": {
+        "first": {
+          "anon": 16588800,
+          "cpuUsageUsec": 84346,
+          "currentBytes": 17293312,
+          "file": 8192,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 622592,
+          "kernelLifetimePeakBytes": 17801216,
+          "monotonicNS": 239203620580,
+          "sample": 1,
+          "shmem": 8192
+        },
+        "last": {
+          "anon": 16826368,
+          "cpuUsageUsec": 105353,
+          "currentBytes": 18321408,
+          "file": 8192,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 339968,
+          "kernelLifetimePeakBytes": 19791872,
+          "monotonicNS": 239392420716,
+          "sample": 7,
+          "shmem": 8192
+        }
+      },
+      "database": {
+        "first": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 239392731701,
+          "sample": 7,
+          "shmem": 0
+        },
+        "last": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 239392731701,
+          "sample": 7,
+          "shmem": 0
+        }
+      },
+      "test-tools": {
+        "first": {
+          "anon": 16826368,
+          "cpuUsageUsec": 105353,
+          "currentBytes": 17780736,
+          "file": 8192,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 294912,
+          "kernelLifetimePeakBytes": 19775488,
+          "monotonicNS": 239392890428,
+          "sample": 7,
+          "shmem": 8192
+        },
+        "last": {
+          "anon": 16826368,
+          "cpuUsageUsec": 105353,
+          "currentBytes": 17780736,
+          "file": 8192,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 294912,
+          "kernelLifetimePeakBytes": 19775488,
+          "monotonicNS": 239392890428,
+          "sample": 7,
+          "shmem": 8192
+        }
+      }
+    },
+    "mock100": {
+      "application": {
+        "first": {
+          "anon": 4096,
+          "cpuUsageUsec": 266,
+          "currentBytes": 262144,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 4096,
+          "kernelLifetimePeakBytes": 262144,
+          "monotonicNS": 254784513204,
+          "sample": 12563,
+          "shmem": 0
+        },
+        "last": {
+          "anon": 0,
+          "cpuUsageUsec": 28085152,
+          "currentBytes": 471040,
+          "file": 28672,
+          "file_dirty": 8192,
+          "file_writeback": 0,
+          "kernel": 126976,
+          "kernelLifetimePeakBytes": 411918336,
+          "monotonicNS": 315700832357,
+          "sample": 13197,
+          "shmem": 0
+        }
+      },
+      "common-parent": {
+        "first": {
+          "anon": 110166016,
+          "cpuUsageUsec": 14000222,
+          "currentBytes": 455729152,
+          "file": 319180800,
+          "file_dirty": 7471104,
+          "file_writeback": 0,
+          "kernel": 25178112,
+          "kernelLifetimePeakBytes": 459378688,
+          "monotonicNS": 254784304302,
+          "sample": 12563,
+          "shmem": 35835904
+        },
+        "last": {
+          "anon": 386658304,
+          "cpuUsageUsec": 80081126,
+          "currentBytes": 812232704,
+          "file": 392392704,
+          "file_dirty": 5038080,
+          "file_writeback": 0,
+          "kernel": 32006144,
+          "kernelLifetimePeakBytes": 1391341568,
+          "monotonicNS": 315700665778,
+          "sample": 13197,
+          "shmem": 55635968
+        }
+      },
+      "database": {
+        "first": {
+          "anon": 30748672,
+          "cpuUsageUsec": 1594534,
+          "currentBytes": 124583936,
+          "file": 82444288,
+          "file_dirty": 6643712,
+          "file_writeback": 0,
+          "kernel": 10825728,
+          "kernelLifetimePeakBytes": 139161600,
+          "monotonicNS": 254784683228,
+          "sample": 12563,
+          "shmem": 35827712
+        },
+        "last": {
+          "anon": 118833152,
+          "cpuUsageUsec": 24460295,
+          "currentBytes": 287813632,
+          "file": 155156480,
+          "file_dirty": 5013504,
+          "file_writeback": 0,
+          "kernel": 13586432,
+          "kernelLifetimePeakBytes": 501088256,
+          "monotonicNS": 315700997303,
+          "sample": 13197,
+          "shmem": 55627776
+        }
+      },
+      "test-tools": {
+        "first": {
+          "anon": 79413248,
+          "cpuUsageUsec": 12405420,
+          "currentBytes": 330833920,
+          "file": 236736512,
+          "file_dirty": 827392,
+          "file_writeback": 0,
+          "kernel": 14299136,
+          "kernelLifetimePeakBytes": 331055104,
+          "monotonicNS": 254784839131,
+          "sample": 12563,
+          "shmem": 8192
+        },
+        "last": {
+          "anon": 267825152,
+          "cpuUsageUsec": 27536673,
+          "currentBytes": 523902976,
+          "file": 237207552,
+          "file_dirty": 16384,
+          "file_writeback": 0,
+          "kernel": 18247680,
+          "kernelLifetimePeakBytes": 533217280,
+          "monotonicNS": 315701180217,
+          "sample": 13197,
+          "shmem": 8192
+        }
+      }
+    },
+    "schema": {
+      "application": {
+        "first": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 252758979760,
+          "sample": 12532,
+          "shmem": 0
+        },
+        "last": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 253814866532,
+          "sample": 12545,
+          "shmem": 0
+        }
+      },
+      "common-parent": {
+        "first": {
+          "anon": 22179840,
+          "cpuUsageUsec": 11841614,
+          "currentBytes": 336044032,
+          "file": 295342080,
+          "file_dirty": 589824,
+          "file_writeback": 0,
+          "kernel": 17367040,
+          "kernelLifetimePeakBytes": 349306880,
+          "monotonicNS": 252758829936,
+          "sample": 12532,
+          "shmem": 18866176
+        },
+        "last": {
+          "anon": 22188032,
+          "cpuUsageUsec": 12931813,
+          "currentBytes": 361467904,
+          "file": 319119360,
+          "file_dirty": 7426048,
+          "file_writeback": 0,
+          "kernel": 18915328,
+          "kernelLifetimePeakBytes": 391864320,
+          "monotonicNS": 253814688937,
+          "sample": 12545,
+          "shmem": 35827712
+        }
+      },
+      "database": {
+        "first": {
+          "anon": 4476928,
+          "cpuUsageUsec": 870548,
+          "currentBytes": 70627328,
+          "file": 59379712,
+          "file_dirty": 589824,
+          "file_writeback": 0,
+          "kernel": 6291456,
+          "kernelLifetimePeakBytes": 80216064,
+          "monotonicNS": 252759153490,
+          "sample": 12532,
+          "shmem": 18857984
+        },
+        "last": {
+          "anon": 4485120,
+          "cpuUsageUsec": 1208947,
+          "currentBytes": 95584256,
+          "file": 82432000,
+          "file_dirty": 6639616,
+          "file_writeback": 0,
+          "kernel": 7974912,
+          "kernelLifetimePeakBytes": 98799616,
+          "monotonicNS": 253815062645,
+          "sample": 12545,
+          "shmem": 35819520
+        }
+      },
+      "test-tools": {
+        "first": {
+          "anon": 17702912,
+          "cpuUsageUsec": 10972064,
+          "currentBytes": 265371648,
+          "file": 235962368,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 11030528,
+          "kernelLifetimePeakBytes": 273936384,
+          "monotonicNS": 252759306148,
+          "sample": 12532,
+          "shmem": 8192
+        },
+        "last": {
+          "anon": 17702912,
+          "cpuUsageUsec": 11723868,
+          "currentBytes": 265838592,
+          "file": 236687360,
+          "file_dirty": 786432,
+          "file_writeback": 0,
+          "kernel": 10895360,
+          "kernelLifetimePeakBytes": 296325120,
+          "monotonicNS": 253815232048,
+          "sample": 12545,
+          "shmem": 8192
+        }
+      }
+    },
+    "services": {
+      "application": {
+        "first": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 254178946084,
+          "sample": 12554,
+          "shmem": 0
+        },
+        "last": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 254744820533,
+          "sample": 12560,
+          "shmem": 0
+        }
+      },
+      "common-parent": {
+        "first": {
+          "anon": 62754816,
+          "cpuUsageUsec": 13303734,
+          "currentBytes": 406073344,
+          "file": 319131648,
+          "file_dirty": 7430144,
+          "file_writeback": 0,
+          "kernel": 22736896,
+          "kernelLifetimePeakBytes": 422952960,
+          "monotonicNS": 254178735249,
+          "sample": 12554,
+          "shmem": 35835904
+        },
+        "last": {
+          "anon": 101736448,
+          "cpuUsageUsec": 13965962,
+          "currentBytes": 447008768,
+          "file": 319176704,
+          "file_dirty": 7471104,
+          "file_writeback": 0,
+          "kernel": 25157632,
+          "kernelLifetimePeakBytes": 459231232,
+          "monotonicNS": 254744642728,
+          "sample": 12560,
+          "shmem": 35835904
+        }
+      },
+      "database": {
+        "first": {
+          "anon": 28237824,
+          "cpuUsageUsec": 1510642,
+          "currentBytes": 121978880,
+          "file": 82444288,
+          "file_dirty": 6643712,
+          "file_writeback": 0,
+          "kernel": 10702848,
+          "kernelLifetimePeakBytes": 139161600,
+          "monotonicNS": 254179203429,
+          "sample": 12554,
+          "shmem": 35827712
+        },
+        "last": {
+          "anon": 30633984,
+          "cpuUsageUsec": 1578413,
+          "currentBytes": 124555264,
+          "file": 82444288,
+          "file_dirty": 6643712,
+          "file_writeback": 0,
+          "kernel": 10993664,
+          "kernelLifetimePeakBytes": 139161600,
+          "monotonicNS": 254745030367,
+          "sample": 12560,
+          "shmem": 35827712
+        }
+      },
+      "test-tools": {
+        "first": {
+          "anon": 34516992,
+          "cpuUsageUsec": 11795597,
+          "currentBytes": 283955200,
+          "file": 236687360,
+          "file_dirty": 786432,
+          "file_writeback": 0,
+          "kernel": 11988992,
+          "kernelLifetimePeakBytes": 296325120,
+          "monotonicNS": 254179421815,
+          "sample": 12554,
+          "shmem": 8192
+        },
+        "last": {
+          "anon": 71102464,
+          "cpuUsageUsec": 12388549,
+          "currentBytes": 322408448,
+          "file": 236732416,
+          "file_dirty": 827392,
+          "file_writeback": 0,
+          "kernel": 14118912,
+          "kernelLifetimePeakBytes": 330719232,
+          "monotonicNS": 254745203466,
+          "sample": 12560,
+          "shmem": 8192
+        }
+      }
+    },
+    "staging": {
+      "application": {
+        "first": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 239393522633,
+          "sample": 8,
+          "shmem": 0
+        },
+        "last": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 250583927043,
+          "sample": 12510,
+          "shmem": 0
+        }
+      },
+      "common-parent": {
+        "first": {
+          "anon": 16826368,
+          "cpuUsageUsec": 106352,
+          "currentBytes": 18321408,
+          "file": 16384,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 348160,
+          "kernelLifetimePeakBytes": 19791872,
+          "monotonicNS": 239393379018,
+          "sample": 8,
+          "shmem": 8192
+        },
+        "last": {
+          "anon": 19664896,
+          "cpuUsageUsec": 10759443,
+          "currentBytes": 266043392,
+          "file": 235110400,
+          "file_dirty": 144195584,
+          "file_writeback": 0,
+          "kernel": 10706944,
+          "kernelLifetimePeakBytes": 266043392,
+          "monotonicNS": 250583785381,
+          "sample": 12510,
+          "shmem": 8192
+        }
+      },
+      "database": {
+        "first": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 239393665376,
+          "sample": 8,
+          "shmem": 0
+        },
+        "last": {
+          "anon": 0,
+          "cpuUsageUsec": 0,
+          "currentBytes": 0,
+          "file": 0,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 0,
+          "kernelLifetimePeakBytes": 0,
+          "monotonicNS": 250584080672,
+          "sample": 12510,
+          "shmem": 0
+        }
+      },
+      "test-tools": {
+        "first": {
+          "anon": 16826368,
+          "cpuUsageUsec": 106352,
+          "currentBytes": 17780736,
+          "file": 16384,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "kernel": 303104,
+          "kernelLifetimePeakBytes": 19775488,
+          "monotonicNS": 239393810323,
+          "sample": 8,
+          "shmem": 8192
+        },
+        "last": {
+          "anon": 19664896,
+          "cpuUsageUsec": 10760444,
+          "currentBytes": 265998336,
+          "file": 235110400,
+          "file_dirty": 144195584,
+          "file_writeback": 0,
+          "kernel": 10661888,
+          "kernelLifetimePeakBytes": 265998336,
+          "monotonicNS": 250584224667,
+          "sample": 12510,
+          "shmem": 8192
+        }
+      }
+    }
+  },
+  "preexistingSharedPageChargeCompleteness": "UNKNOWN",
+  "productionAccepted": false,
+  "providerParityAccepted": false,
+  "pureApplicationBytes": "UNKNOWN",
+  "resourceContractAccepted": false,
+  "retryAllowed": false,
+  "runId": "42042488458",
+  "schema": "helmut-w15-synthetic-resource-diagnostic-result/1",
+  "scope": "ORIGINAL_FREE_SYNTHETIC_100_MOCK_ONLY",
+  "scopeMeaning": "APPLICATION_WITH_INSEPARABLE_HARNESS_CHARGED_GROUP",
+  "servicesResults": [
+    {
+      "applicationExitAttestedBeforeServiceStop": "UNKNOWN",
+      "closed": true,
+      "failed": false,
+      "localSimulatedAI": {
+        "abgewiesenWegenObergrenze": 0,
+        "actualPaidProviderUsage": false,
+        "aufrufe": 165,
+        "ausgabeBytes": 269691,
+        "ausgabeTokenGeschaetzt": 70982,
+        "bytesJeGeschaetztemToken": 3.8,
+        "dauerMs": {
+          "max": 117,
+          "min": 2,
+          "mittel": 66,
+          "n": 165,
+          "p50": 53,
+          "p95": 95
+        },
+        "eingabeBytes": 4736480,
+        "eingabeTokenGeschaetzt": 1238613,
+        "erfolgreich": 164,
+        "fehler": 1,
+        "gleichzeitigSpitze": 1,
+        "tokensAreEstimates": true
+      },
+      "profiles": 100,
+      "responseFailure": {
+        "assertion": "diagnostic-mock-case-binding",
+        "code": "ERR_ASSERTION",
+        "codepoint": {
+          "function": "lageResponse",
+          "line": 111,
+          "module": "scripts/fixtures/resource500-diagnostic.js"
+        },
+        "nativeStatus": "unknown",
+        "sqlstate": "UNKNOWN"
+      }
+    }
+  ],
+  "status": "FAIL_OR_UNKNOWN_SYNTHETIC_RESOURCE_DIAGNOSTIC",
+  "syntheticDatasetCoverage": [
+    {
+      "caseCount": 96,
+      "epoch": "2026-11-05T14:11:48.283Z",
+      "executedCaseCount": 96,
+      "executedProfileCount": 100,
+      "executedSourceCount": 384,
+      "fixtureRequiredSelectors": {
+        "geographyIDs": [
+          "geo-bund",
+          "geo-land-berlin",
+          "geo-land-brandenburg"
+        ],
+        "politicalLevels": [
+          "bund",
+          "land"
+        ],
+        "preflightProfileIndices": [
+          0,
+          330,
+          450
+        ],
+        "profileSelectorCoverage": 100
+      },
+      "maximumSourceTextBytes": 1090,
+      "minimumSourceTextBytes": 1041,
+      "originalEquivalent": false,
+      "originalQualificationClaimed": false,
+      "productionProof": false,
+      "professionalAcceptance": false,
+      "profileCount": 100,
+      "profileDistribution": {
+        "berlin": 24,
+        "brandenburg": 10,
+        "bundestag": 66
+      },
+      "profileSpecsSHA256": "4757ff9927a9b4e32e06a06819fc6759b3ed1acb73a8b6d5d7952eaca428d019",
+      "schema": "helmut-mock100-synthetic-dataset/1",
+      "sourceDatasetSHA256": "4b48fbf0564e01fa2dc3ace1d4800b8234380380956e10c8bb07649f12501613",
+      "sourceDocumentCount": 384,
+      "sourceTextBytes": 409660,
+      "syntheticOnly": true
+    }
+  ],
+  "workloadProgress": [
+    {
+      "lastConfirmedWorkloadProgress": {
+        "activatedProfiles": 100,
+        "activeCohortReadbacks": 166,
+        "deactivatedProfiles": 0,
+        "decisionProfiles": 35,
+        "finalActiveProfiles": "UNKNOWN",
+        "matchingProfiles": 35,
+        "nonce": "b72dfc50-d285-42e0-a1c5-97cdd23dd3f8",
+        "operation": "lage-generate",
+        "phase": "work",
+        "positiveProfileResults": 34,
+        "provisionedProfiles": 100,
+        "requestedProfiles": 100,
+        "schema": "helmut-synthetic100-mock/1",
+        "sequence": 1257,
+        "sourceDocumentsSaved": 384,
+        "understoodCases": 96
+      },
+      "meaning": "PARTIAL_PROGRESS_NOT_COMPLETION_PROOF",
+      "observedMonotonicNS": 315701478362,
+      "requestedProfiles": 100,
+      "sample": 13197
+    }
+  ],
+  "workloadProgressUnknownCounts": [],
+  "workloadResults": [
+    {
+      "acknowledgedResultsSHA256": "50d416fa324d090d8192156f9c4508858b5221b23f58aad7e1e8ae938014ab0e",
+      "activeCohortReadbacks": 166,
+      "cleanupFailureDetail": {
+        "assertion": "UNKNOWN",
+        "code": "UNKNOWN",
+        "codepoint": {
+          "function": "workload",
+          "line": 426,
+          "module": "scripts/synthetik-500-resource-diagnostic.js"
+        },
+        "nativeStatus": "unknown",
+        "sqlstate": "UNKNOWN"
+      },
+      "confirmedCountsOnly": true,
+      "end500Acceptance": false,
+      "executionAuthority": false,
+      "finalActiveProfiles": 0,
+      "firstFailureDetail": {
+        "assertion": "diagnostic-positive-native-lage-required",
+        "code": "LAGE_AI_PROVIDER_HTTP_422",
+        "codepoint": {
+          "function": "workload",
+          "line": 402,
+          "module": "scripts/synthetik-500-resource-diagnostic.js"
+        },
+        "nativeStatus": "unknown",
+        "sqlstate": "UNKNOWN"
+      },
+      "firstFailurePhase": "work",
+      "formal1500Acceptance": false,
+      "mock500Acceptance": false,
+      "modelPhases": {
+        "entwurf": 34,
+        "pruefung": 34,
+        "understanding": 96
+      },
+      "nativeAuditSHA256": null,
+      "nativeObserved": null,
+      "nonce": "b72dfc50-d285-42e0-a1c5-97cdd23dd3f8",
+      "originalDataUsed": false,
+      "outputErrors": null,
+      "outputKinds": {
+        "lage": 34,
+        "mandatsbriefing": 34,
+        "morgenlageReceipt": 34
+      },
+      "outputPositions": 102,
+      "positiveProfileResults": 34,
+      "productionProof": false,
+      "professionalAcceptance": false,
+      "provisionedProfiles": 100,
+      "requestedProfiles": 100,
+      "retryAllowed": false,
+      "schema": "helmut-synthetic100-mock/1",
+      "simulatedProviderOnly": true,
+      "status": "FAIL_OR_UNKNOWN_DIAGNOSTIC",
+      "tenantGuardChecks": 136,
+      "understoodCases": 96
+    }
+  ]
+}
