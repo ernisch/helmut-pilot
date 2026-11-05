@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "fix/verwaltung-favicon-production-20261105": false,
       "release/helmut-product-20261105": false,
       "codex/helmut-ui-20261031": false,
       "codex/hetzner-native-automation-20261026": false,
@@ -80,7 +81,7 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 300,
-      "includeFiles": ".github/workflows/{briefing-watchdog,health-watch}.yml"
+      "includeFiles": "{.github/workflows/briefing-watchdog.yml,.github/workflows/health-watch.yml,verwaltung/**,scripts/original-verwaltung-paket.js}"
     }
   },
   "routes": [
