@@ -3309,7 +3309,10 @@ async function serveOriginalAdministration(request, response, url) {
     const type = types[path.extname(key)];
     if (!type || !pkg.assets.has(key)) return end(404, '{"error":"Nicht gefunden."}');
     return end(200, pkg.assets.get(key), type);
-  } catch { return end(503, '{"error":"Verwaltung derzeit nicht verfuegbar."}'); }
+  } catch (error) {
+    console.error("[verwaltung] Paketladung fehlgeschlagen:", String(error?.code || "unbekannt").slice(0, 50));
+    return end(503, '{"error":"Verwaltung derzeit nicht verfuegbar."}');
+  }
 }
 
 function sendAppAsset(response, url) {
