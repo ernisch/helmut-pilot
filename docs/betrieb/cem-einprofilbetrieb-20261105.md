@@ -90,6 +90,12 @@ Alle lokalen Tests ueber `scripts/lokal.js`, ohne Netz/Productionzugang:
 Pflicht-CI, Produktionskonfiguration, Deployment und aktuelle fachliche
 Briefingausgabe sind vor dem Abschluss noch nachzuweisen.
 
+Erster Pflichtlauf42118060914:179/180 Standardsuiten PASS. Zwei Erwartungen
+in `testkohorte-vorwaerts-cli-test.js` setzten noch eine produktive leere
+Cronliste voraus. Der historische Pausenfall wird jetzt explizit nur im
+Kindprozess isoliert; aktuelle Tagesplaene prueft die eigene Plansuite.
+Kein Produkt- oder Kostenfehler, keine Abschwaechung der Schreibsperren.
+
 ## Wirkung und Rueckweg
 
 Neue Kosten bleiben bei1 USD/UTC-Tag und30 USD insgesamt einschliesslich
