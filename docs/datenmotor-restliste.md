@@ -2407,11 +2407,12 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-32 · Tagesinput bewusst pausiert (06.11.2026; P3)
 
-- **Status: offen / zurückgestellt auf Betreiberwunsch.** Die Navigation wird in
-  `codex/navigation-tagesinput-admin-20261106` ausgeblendet. `DAILY_INPUT_ENABLED`
+- **Status: offen / zurückgestellt auf Betreiberwunsch.** Seit
+  [PR #1057](https://github.com/ernisch/helmut-pilot/pull/1057) ist der Tagesinput
+  in Production ausgeblendet. `DAILY_INPUT_ENABLED`
   in `client.js` verhindert auch Wiederherstellung, Laden und Formulare der
   pausierten Ansicht. Das ist eine UI-Pause; bestehende Daten und die geschützten
-  API-Funktionen bleiben erhalten. Kein Production-Nachweis aus diesem Eintrag.
+  API-Funktionen bleiben erhalten. Rollout-Beleg in `CURRENT_STATE.md`.
 - **Wiedervorlage:** Bei der nächsten Arbeit am Bereich Büro ausdrücklich prüfen,
   wie Termine/Themen tatsächlich in Vorbereitung und Briefing einfließen sollen.
   Tagesinput ist eine Büro-/Referentenfunktion, keine Betreiberverwaltung.
@@ -2421,8 +2422,8 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-33 · Admin-Funktionen schrittweise in Verwaltung einordnen (06.11.2026; P2)
 
-- **Status: offen, Übergangsweg vorbereitet.** Die Hauptnavigation verliert den
-  doppelten Admin-Eintrag. Administratoren erreichen `/verwaltung/` über
+- **Status: offen, Übergangsweg seit PR #1057 live.** Die Hauptnavigation enthält
+  keinen doppelten Admin-Eintrag mehr. Administratoren erreichen `/verwaltung/` über
   Profil & Einstellungen. Dort führt **Erweiterte Werkzeuge** vorerst zur
   bestehenden Admin-Ansicht (`/?admin-tools=1`); diese bietet einen Rücklink.
   Bestehende Funktionen, Backendrouten und Berechtigungen werden nicht entfernt.
