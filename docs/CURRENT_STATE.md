@@ -107,6 +107,18 @@ Reviews positiv. Main-CI42069590393 gruen, Kandidaten-Pflicht-CI noch offen.
 [Abnahme und konkrete Mergevoraussetzungen](betrieb/release-prep-20261105.md).
 Keine Productionfreigabe.
 
+## Designangleich an Claude Design (05.11.2026, Branch, teilweise abgeschlossen)
+
+Branch `claude/helmut-pilot-design-cccztl`: Darstellung an das freigegebene
+Claude Design „Helmut Desktop Prototyp“ (finale Ueberarbeitung) angeglichen.
+Nur `styles.css` (Angleichblock am Dateiende), drei Darstellungsstellen in
+`client.js` (Status-Pille „Aktuell · HH:MM Uhr“, mobil nur Uhrzeit; Fusszeile
+mobil am Inhaltsende) und `index.html` (`?v=`). Kein Backend, Motor, keine
+Datenbank, Adminverwaltung, Auth oder Datenbindung geaendert. Browser-Smoke
+78/0 lokal. Bewusst offen: Profilseite behaelt ihre Listenstruktur (nur Tokens
+angeglichen), Briefing-Inhaltsbloecke folgen der echten Datenlage statt der
+Prototyp-Kulisse. Merge/Production nur mit ausdruecklicher Freigabe.
+
 ## Genau ein naechster Schritt
 
 **Die beiden Pflichtchecks der Release-PR auf genau deren aktuellem Kopf abschliessen
