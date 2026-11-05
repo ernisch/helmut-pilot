@@ -12789,3 +12789,10 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
   .topbar .ui-compact-title { display: block; flex: 1 1 auto; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 12px; font-size: 22px; }
   .topbar .topbar-meta { width: auto; flex: 0 0 auto; }
 }
+/* Keine Goldschrift: Warn-/Veraltet-Zustände in neutraler Schrift, das Signal
+   trägt allein der kleine gelbe Punkt (Designregel „gelber Punkt = veraltet“). */
+.ui-page .hstand-status--warn { display: inline-flex; align-items: center; gap: 8px; color: var(--ui-text); background: transparent; border-color: var(--ui-border); }
+.ui-page .hstand-status--warn::before { content: ""; flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--ui-yellow); }
+.ui-page :is(.hstand-frische--warn, .hstand-partial) { color: var(--ui-muted); }
+.ui-page :is(.hstand-frische--warn, .hstand-partial) svg { color: var(--ui-dim); }
+.ui-preview-label { color: var(--ui-muted); }
