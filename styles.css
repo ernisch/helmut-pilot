@@ -12796,3 +12796,10 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
 .ui-page :is(.hstand-frische--warn, .hstand-partial) { color: var(--ui-muted); }
 .ui-page :is(.hstand-frische--warn, .hstand-partial) svg { color: var(--ui-dim); }
 .ui-preview-label { color: var(--ui-muted); }
+/* Kein Goldton im Produkt (Betreiberentscheid 05.11.2026): Warn-/Veraltet-/
+   Beobachten-Farbe zentral auf neutrales Grau. Zustände bleiben über Text,
+   Punkt und Position erkennbar, nie nur über Farbe. */
+:root, :root:not([data-theme="light"]) { --ui-yellow: #8c97aa; --watch: #8c97aa; --gold: #8c97aa; }
+:root[data-theme="light"] { --ui-yellow: #5d6b80; --watch: #5d6b80; --gold: #5d6b80; }
+.ui-page .helmut-refresh-fill { background: var(--ui-accent); }
+.helmut-deck-bullets .helmut-bullet-ico, .helmut-list-row.beobachten .helmut-list-badge, .helmut-action-btn.watch .helmut-action-ico { color: var(--watch); border-color: var(--hairline); }
