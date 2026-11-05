@@ -836,7 +836,8 @@ class Supervisor:
 
     def stop_child(self, child):
         process=child['process']
-        if child.get('action')=='--services' and process.poll() is None:
+        if (child.get('action')=='--services' and process.poll() is None
+                and child.get('pidfd') is not None and not select.select([child['pidfd']],[],[],0)[0]):
             applications=[c for c in self.children if c.get('role')=='application']
             if len(applications)==1 and applications[0].get('exitAttested') is True:
                 self.application_exit_before_service_stop=True

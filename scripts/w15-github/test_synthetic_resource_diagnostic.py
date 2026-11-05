@@ -582,5 +582,25 @@ p.before('work','briefing-build');process.kill(process.pid,'SIGKILL');
             self.assertEqual(instance.application_exit_before_service_stop,'UNKNOWN')
             self.assertFalse(service['exitAttested'])
 
+    @unittest.skipUnless(hasattr(os,'pidfd_open'),'requires Linux bound process descriptors')
+    def test_exited_native_service_with_running_docker_client_does_not_invent_exit_order(self):
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as temp:
+            instance=D.Supervisor(state(temp))
+            process=subprocess.Popen([sys.executable,'-c','pass'],env=D.ENV)
+            descriptor=os.pidfd_open(process.pid)
+            try:
+                process.wait(timeout=3)
+                client=Mock();client.poll.return_value=None;client.stdin=None;client.stdout.closed=True
+                application={'role':'application','exitAttested':True}
+                service={'process':client,'pidfd':descriptor,'role':'test-tools','action':'--services','exitAttested':False}
+                instance.children=[application,service];instance.stop_child(service)
+                descriptor=None
+                self.assertEqual(instance.application_exit_before_service_stop,'UNKNOWN')
+                self.assertTrue(service['exitAttested'])
+            finally:
+                if process.poll() is None:process.kill();process.wait(timeout=3)
+                if descriptor is not None:os.close(descriptor)
+
 
 if __name__=='__main__':unittest.main()
