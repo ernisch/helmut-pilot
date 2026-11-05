@@ -12803,3 +12803,22 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
 :root[data-theme="light"] { --ui-yellow: #5d6b80; --watch: #5d6b80; --gold: #5d6b80; }
 .ui-page .helmut-refresh-fill { background: var(--ui-accent); }
 .helmut-deck-bullets .helmut-bullet-ico, .helmut-list-row.beobachten .helmut-list-badge, .helmut-action-btn.watch .helmut-action-ico { color: var(--watch); border-color: var(--hairline); }
+/* Lage „nur teilweise verfügbar“: Hinweis ohne Kasten, wie der Radar-Hinweis
+   (Punkt, Titel, Text, Haarlinie) und mit klarem Abstand zur Arbeitsfläche. */
+.ui-page [data-ui-lage-partial] { margin: 0 0 32px; }
+.ui-page [data-ui-lage-partial] .ui-empty { display: grid; grid-template-columns: 8px minmax(0,1fr); column-gap: 14px; align-items: baseline; padding: 0 0 20px; background: transparent; border: 0; border-bottom: 1px solid var(--hairline); border-radius: 0; }
+.ui-page [data-ui-lage-partial] .ui-priority-dot { width: 8px; height: 8px; flex-basis: 8px; margin: 0; background: var(--ui-label); transform: translateY(-3px); }
+.ui-page [data-ui-lage-partial] h2 { grid-column: 2; margin: 0 0 6px; font: 400 17px/1.5 var(--ui-sans); color: var(--ui-text); }
+.ui-page [data-ui-lage-partial] p { grid-column: 2; max-width: 75ch; font-size: 15px; line-height: 1.55; color: var(--ui-muted); }
+/* Abschnittskopf der Liste: Stand rechtsbündig, Detailpanel bündig zur Liste. */
+.ui-lage-workspace .ui-section-heading > span:last-child { text-align: right; line-height: 1.5; }
+.ui-lage-workspace > .ui-detail { margin-top: 0; }
+/* Titel nicht mitten im Wort trennen. */
+.ui-page :is(.ui-row-title, .ui-lage-detail .vsheet-title, .ui-hero-main h2, .buero-detail-title, .radar2-card-title) { hyphens: manual; -webkit-hyphens: manual; }
+@media (max-width: 767px) {
+  .ui-lage-workspace .ui-section-heading > span:last-child { text-align: left; }
+}
+/* Restliche Bernstein-/Goldtöne in Nutzeransichten neutralisieren (Admin unberührt). */
+.vsheet-status-dot.is-amber { background: var(--ui-accent); }
+.vsheet-status-dot.is-green { background: var(--ui-green); }
+.ui-page .buero-status--nachfrage { background: transparent; color: var(--ui-muted); }
