@@ -9141,3 +9141,27 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
 .install-banner__mark, :root[data-theme="light"] .install-banner__mark { color: transparent; font-size: 0; background: url("assets/ui/logo/helmut-zeichen.svg") center / contain no-repeat; border: 0; box-shadow: none; }
 /* Zustandskarten ohne Signet: die Überschrift trägt die Aussage allein. */
 .ui-page .hstand-state-mark { display: none; }
+
+/* Anmeldung / Zugang / Mandat wählen im Design: Wortmarke „Helmut“ weiß in
+   Spectral (wie Seitenleiste), Spectral-Überschrift, ruhiges Panel, blauer
+   Fokus, Pillen-Knopf. Nur Darstellung, Formulare unverändert. */
+body .login-screen { background: radial-gradient(70% 40% at 50% 0, rgba(127,168,224,.07), transparent 70%), var(--ui-bg); }
+body .pilot-access-card { max-width: 440px; padding: 44px 36px 36px; background: var(--ui-panel); border: 1px solid var(--ui-panel-line); border-radius: 14px; box-shadow: 0 30px 70px -34px rgba(0,0,0,.8); color: var(--ui-text); font-family: var(--ui-sans); }
+body .pilot-access-card .loading-logo { display: none; }
+body .pilot-access-card > p:not(.pilot-access-copy) { margin: 0 0 28px; font: 400 40px/1.1 var(--ui-serif); letter-spacing: -.01em; text-transform: none; color: var(--ui-text); opacity: 1; filter: none; }
+body .pilot-access-card h1 { margin: 0 0 12px; font: 400 clamp(30px,5vw,38px)/1.1 var(--ui-serif); letter-spacing: -.01em; color: var(--ui-text); }
+body .pilot-access-card .pilot-access-copy { margin: 0 auto 4px; max-width: 34ch; font-size: 16px; line-height: 1.55; color: var(--ui-muted); }
+body .pilot-access-form { gap: 12px; margin-top: 24px; }
+body .pilot-access-form input, body .pilot-access-form .password-field input { min-height: 50px; padding: 0 14px; border: 1px solid var(--ui-border); border-radius: 8px; background: rgba(255,255,255,.03); color: var(--ui-text); font: 400 16px/1.2 var(--ui-sans); box-shadow: none; }
+body .pilot-access-form .password-field input { padding-right: 48px; }
+body .pilot-access-form input::placeholder { color: var(--ui-dim); }
+body .pilot-access-form input:focus, body .pilot-access-form input:focus-visible { outline: none; border-color: var(--ui-accent); box-shadow: 0 0 0 3px rgba(127,168,224,.18); }
+body .pilot-access-form .primary-button { min-height: 48px; border: 0; border-radius: 24px; background: var(--ui-solid); color: var(--ui-on-solid); font: 500 16px/1 var(--ui-sans); box-shadow: none; }
+body .pilot-access-form .primary-button:not(:disabled):hover { background: var(--ui-solid-hover); transform: none; }
+body .pilot-access-form .primary-button:disabled { background: rgba(255,255,255,.06); color: var(--ui-dim); opacity: 1; }
+:root[data-theme="light"] body .pilot-access-form .primary-button:disabled { background: rgba(19,35,57,.06) !important; color: var(--ui-dim) !important; }
+:root[data-theme="light"] body .pilot-access-form input { background: #fff; }
+body .pilot-access-form small { color: var(--ui-red); font-size: 14px; }
+body .password-toggle--icon { color: var(--ui-dim); }
+body .password-toggle--icon:hover { color: var(--ui-text); background: transparent; }
+@media (max-width: 480px) { body .pilot-access-card { padding: 36px 22px 28px; } }
