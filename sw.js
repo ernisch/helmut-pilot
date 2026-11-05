@@ -4,7 +4,7 @@
 // im Android-PWA-Splash behoben) -> neuer Cache-Namespace + versionierte
 // Precache-URLs, damit kein Client alte Icon-Bytes aus dem SW-Cache behaelt.
 const ASSET_CACHE = "helmut-assets-v2";
-const ICON_VERSION = "20261105-design1";
+const ICON_VERSION = "20261105-design2";
 const PRECACHE_URLS = [
   `/assets/helmut_appicon_192.png?v=${ICON_VERSION}`,
   `/assets/helmut_appicon_512.png?v=${ICON_VERSION}`

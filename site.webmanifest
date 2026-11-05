@@ -12,25 +12,25 @@
   "theme_color": "#050914",
   "icons": [
     {
-      "src": "assets/helmut_appicon_192.png?v=20261105-design1",
+      "src": "assets/helmut_appicon_192.png?v=20261105-design2",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/helmut_appicon_512.png?v=20261105-design1",
+      "src": "assets/helmut_appicon_512.png?v=20261105-design2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/helmut_maskable_192.png?v=20261105-design1",
+      "src": "assets/helmut_maskable_192.png?v=20261105-design2",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "assets/helmut_maskable_512.png?v=20261105-design1",
+      "src": "assets/helmut_maskable_512.png?v=20261105-design2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
