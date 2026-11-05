@@ -1,25 +1,25 @@
 # CURRENT STATE — Helmut
 
-## W15: isolierter Nachfolger nach UNKNOWN (05.11.2026)
+## W15: Run-Fehler, innere Ursache UNKNOWN (05.11.2026)
 
-Run41939166457/Runtime33d588b6 ist authentisiert `completed/cancelled`, bleibt
-**UNKNOWN**: native Nullaktivität, acht Bereinigungen, Ergebnisse und Sicherung fehlen.
-Alte Grants, STOPs und Journale bleiben bytegleich.
-[Enger Vertragszusatz](betrieb/w15-mock500-isolated-abandonment-20261105.md) bindet
-genau einen gesondert genehmigten unabhängigen Nachfolger.
-Frische GitHub-VM und neuer Testbestand; der Isolationsbeleg ist kein sicherer Terminal.
-17 gezielte Standing-Prüfungen PASS; eigene finale Pflicht-CI und unabhängige
-Sicherheitsabnahme des gesamten Kontrollzugangs vor Nutzung Pflicht.
-Keine neue Ausführung.
+[Run41996804804](https://github.com/ernisch/helmut-pilot/actions/runs/41996804804),
+Runtime33d588b6/Job127141874157: **FAIL**,176min02s, `mock500-controller-run`.
+Innerer Fehler/Profilfortschritt/nativeFinal0 fehlen; UNKNOWN, nicht0.
+Peak3,55GB bei13,39GB Hartlimit; Swap/OOM/max0, kein belegter Speicherabsturz.
+8äußereCleanupPASS, eigeneCase-Helfer0, Artefakte0. Vollzähler/Sicherungsabnahme fehlen.
+Unabhängig bestätigt: Run-Details nicht exportiert, private Erstfehler-/ACK-/Nullbelege
+fehlen. Kein funktionaler Auslöser bewiesen, keine Runtimekorrektur.
+[Belege und kleinste Maßnahme](betrieb/w15-mock500-run-failure-41996804804-20261105.md):
+bestehenden sicheren Fehlerkanal für Run-Erstfehler/Fortschritt/nativeCleanup schließen.
+Journal9/Gegenanker stimmen, neuer `HOLD_UNKNOWN`, kein sicherer Terminal/Retry.
 
-[Dauervertrag](betrieb/w15-mock500-standing-control-20261104.md) ohne Versuchskappe
-bleibt bestehen: nach funktionalem FAIL nur sicherer Abschluss und belegte Reparatur;
-kein Blindretry, kein erneutes UNKNOWN automatisch freigeben. Kosten nur im geprüften
-kostenlosen Public-Standard-Actions-Pfad; keine Modelle/Production/neuen Ressourcen.
-Voriger Kontrollkopf109297eb/PR1044: CI41906667602 und unabhängiger Review übernommen.
-Runtime exakt33d588b6209ad912c5045f6561c07b7dc3d60e63 bleibt unverändert;
-CI41889108711/Review, Empfang41037459441/End50041325430429 übernommen.
-Kein Mock500-PASS. Frische Code-/Originalbindung und vollständiger Vorflug Pflicht.
+Alter Run41939166457 bleibt UNKNOWN; alle alten Grants/STOPs/Journale bytegleich.
+[Einmaliger Isolationszusatz](betrieb/w15-mock500-isolated-abandonment-20261105.md)
+auf6309d9c1/PR1048 verbraucht. [Dauervertrag](betrieb/w15-mock500-standing-control-20261104.md)
+öffnet UNKNOWN nicht. Runtime33d588b6/CI41889108711 und
+Control6309d9c1/CI41987857455 samt Reviews übernommen, Empfang41037459441 und
+End50041325430429 unverändert PASS. Mock500 BLOCKED, Production nicht ausgeführt.
+Keine Originalaktionen, Optimierung, Modelle, Merges oder Deployments.
 
 Historische Materials-FAILs bleiben erhalten: Run41500229995/9d,124s, Peak2,590GB,
 8CleanupPASS; innere Ursache/Endzähler/Sicherung/DBnull UNKNOWN
