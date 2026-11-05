@@ -1,144 +1,118 @@
 # CURRENT STATE — Helmut
 
-## Isolierte Backend-/UI-Integration (05.11.2026, Istanbul)
+**Stand: 05.11.2026.** Aktuelle Projektsteuerung nach ausdruecklicher
+Betreiberentscheidung. Historische Berichte sind keine aktuellen
+Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
+Tests und diesem Statusdokument.
 
-Backend `e054c0bb` und UI `01191074` konfliktfrei im separaten Branch
-`integration/backend-ui-20261105` zusammengeführt. Alle 2.280 Produktdateien
-entsprechen unverändert einem Originalstand. Neun gezielte Integrationsgruppen
-lokal bestanden; vorhandene Konto-/PostgreSQL-/SW-Belege ohne Serienwiederholung
-wiederverwendet. Beide Designs erhalten. Öffentlicher Altcache liefert beim
-ersten Abruf möglicherweise noch alte UI-Dateien und muss vor einem späteren
-Rollout gesondert berücksichtigt werden. Für spätere isolierte Motorintegration
-vorbereitet, keine Productionfreigabe. [Bericht und Belege](betrieb/backend-ui-integration-20261105.md).
+## Oberstes Ziel: Mock100 PASS, dann Helmut sicher live
 
-[UI 97/97](ui-backend.md)
-## Siffi: vereinfachter Testweg (27.10.2026)
+1. **Mock100 PASS**: exakt **100 gleichzeitig aktive synthetische
+   Mandatsprofile** wurden vollstaendig und nachvollziehbar verarbeitet,
+   ohne kostenpflichtige Helmut KI Modellaufrufe. Beleg: Run 42053461090.
+2. **Danach Helmut sicher live bringen**: die vorbereitete UI und
+   Backend Integration fertigstellen, notwendige Sicherheits-,
+   Datenschutz-, Mandantentrennungs-, Funktions- und
+   Kostenkontrollanforderungen fuer den ersten kleinen
+   Kundenkreis erfuellen; geeigneten Produktstand auf `main`
+   zusammenfuehren und Vercel Production ausrollen.
+3. **Kein Production100 oder Production500 Lasttest.** Der
+   Betreiber hat diese kostenpflichtigen Vollnachweise
+   ausdruecklich verworfen. Kein Mock500 mehr und keine
+   neuen mehrstuendigen Blindtests.
 
-Codex und GitHub CI statt Hetzner als Entwicklungstor. Vorhandene Offline-,
-Browser- und isolierte PostgreSQL/PostgREST-Tests mit Mocks nutzen;
-keine Doppeltests. Coverage und fehlende 500er-Integrationsfaelle gezielt
-pruefen. Mac: maximal 5 GB mobiler Traffic pro Tag, keine grossen Downloads.
-Hetzner unveraendert; neuer Aufbau/native Tests nur bei belegtem Bedarf und GO.
-Finaler Production-Test mit 500 aktiven Profilen/1500 Sollpositionen nur
-nach getrennter Freigabe.
+Die Absicht fuer den spaeteren Livegang ist noch **keine**
+Freigabe fuer einen nicht festgelegten Production Commit,
+ein konkretes Deployment, eine Datenmutation oder einen
+zahlungswirksamen Aufruf. Bestehende Sicherheitsregeln und
+konkrete Freigaben bleiben gueltig.
 
-Letzter Hetzner-Lauf 40428805792: Tools/Quelle bereit, Image PROCESS_UNKNOWN,
-Test-DB offen, native Tests 0. PR966 gemergt, kein positiver Zielnachweis.
-Kein Productionumzug. [Belege](betrieb/hetzner-development-environment-20261026.md).
+## Nachweisstand
 
-**Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
+| Meilenstein | Aktueller Stand |
+| --- | --- |
+| End500, historisch | **PASS**: [GitHub Run 41325430429](https://github.com/ernisch/helmut-pilot/actions/runs/41325430429), Commit f157d97f. Bereits bestandene Backup-, Restore- und Authnachweise nicht unnoetig wiederholen. |
+| Mock500, historisch | **ABGEBROCHEN ALS PROJEKTZIEL, KEIN PASS**. [Run 41939166457](https://github.com/ernisch/helmut-pilot/actions/runs/41939166457) cancelled/UNKNOWN; [Run 41996804804](https://github.com/ernisch/helmut-pilot/actions/runs/41996804804) nach 176min02s FAIL im Controller. Innere Ursache und Profilfortschritt UNKNOWN, nicht null. Acht aeussere Bereinigungen PASS, native Datenbanknullaktivitaet nicht belegt. [Beleg PR1049](https://github.com/ernisch/helmut-pilot/pull/1049). |
+| Mock100, neues Ziel | **PASS**: [Run 42053461090](https://github.com/ernisch/helmut-pilot/actions/runs/42053461090), exakt Commit `be0c6d1630f5987e755eb4030cc23a4f7d7247d7` nach [Pflicht-CI 42047654519](https://github.com/ernisch/helmut-pilot/actions/runs/42047654519). 100/100 Profile und 300/300 Ergebnisse nativ geprueft, 400 Tenant-/Quellenschutzkontrollen, alle fuenf Fehlerkategorien null; 296 simulierte Modellaufrufe, keine bezahlten Anbieteraufrufe. Nach 242,633 s einschliesslich Abschluss null aktive Profile, Bereinigung PASS. [Quittung und Fortschritt in PR #1052](https://github.com/ernisch/helmut-pilot/pull/1052) und [vollstaendiger Laufbericht](betrieb/mock100-20261105.md). Historischer erster [FAIL 42042488458](https://github.com/ernisch/helmut-pilot/actions/runs/42042488458) bleibt unveraendert. |
+| Production100 / Production500 | **ABBESTELLT.** Keine neue Vollastpruefung mit echten KI Aufrufen, keine Kostenfreigabe. |
+| Produktintegration und Livegang | **NOCH NICHT ABGENOMMEN.** UI, Backend und Adminarbeit sind getrennt beziehungsweise in privaten Integrationsstaenden vorhanden; gepruefte komplette Produktfreigabe und neuer Livegang sind noch offen. Keine Production Bereitschaft aus gruenen Teiltests ableiten. |
 
-## Vollständiges Root-Paket und Caller-Vorbereitung (13.10.2026)
+## Neuer Testumfang und Arbeitsweise
 
-Branch `codex/starttor-full-packet-optin-20261013` auf ungemergtem PR907: Die vollständige500er-Fixture hat1.529.110Paketbytes und überschritt den1-MiB-Transportdeckel. Nur der exakte v3-Paketversionsheader wählt jetzt2MiB; Versionsabweichung/Übergröße schließen vor Originaldaten. Default1MiB, Original4MiB, Gesamt8MiB, vierGETs,20s/8KiB sowie alle Fach-/Betriebstore bleiben erhalten. SQL weiterhin inert mit sechs NULLs/noGrant. Lokal5 physische Transport-/Verbrauchergruppen,8 echte netzlose PG17.6-,11 Verbraucher-,16 vorhandene Transport- und38 Auswahlprüfungen bestanden. Der neue physische Fall ergänzt die bisherigen Komponentenbelege; keine echte Runtime- oder500er-Abnahme. [Dossier](betrieb/starttor-full-packet-optin-20261013.md).
+Verbindlich ist **Mock100** mit genau 100 gleichzeitig
+aktiven, vollstaendig fiktiven Profilen aus Bundestag,
+Berlin und Brandenburg. Die fruehere 330/120/50
+Verteilung ergibt 66/24/10; diese konkrete synthetische Auswahl
+ist im neuen Diagnosepfad reproduzierbar hashgebunden.
+Keine realen personenbezogenen Testprofile.
 
-Aktueller offizieller Cloud-Beleg73/73, sieben konfigurierte Secrets/fünf Variablen ready, Netzwerk enforced; CRON_SECRET fehlt. Neue reine Rollenmetadaten bestätigen Authenticator8s und keinen Service-Role-Override; nominal passender dokumentierter REST-Default, keine globale Änderung empfohlen. Tatsächlicher Caller-/Cache-/vorStatement-Beleg bleibt offen. Source-/Metadatenabnahme und neue Head-CI noch erforderlich. Keine neue Operator-Anfrage, Installation, Staging, Merge, Aktivierung oder bezahlter500er-Lauf.
+Der bestandene Vollversuch umfasst 100 Profile, 200 simulierte
+Entwurfs-/Pruefphasen und 96 separat ausgewiesene Understanding-
+Simulationen (insgesamt 296). Alle 300 Ergebnispositionen wurden
+nativ geprueft.
+Weitere vorbestehende Schutz- und Kontrollanforderungen
+sind technisch korrekt auf 100 abzubilden, nicht
+blind aus alten 500er Artefakten als PASS uebernehmen.
+Bestehende gueltige Sicherungs- und Restorebelege
+wiederverwenden, soweit sachlich zulaessig.
+Ein wirklicher Mock100 PASS erfordert einen
+tatsaechlichen vollstaendigen 100er Lauf und
+belastbare Profil-, Ergebnis- und Abschlussbelege.
 
-## Erhaltener freigegebener Abschluss
+**Neue Effizienzregel:** Erstfehler und letzten bestaetigten
+Fortschritt aus dem schon bestehenden Controllerkanal
+zuverlaessig erhalten, danach zielgerichtete Unit und
+Integrationstests, dann genau der noetige synthetische
+Mock100 Gesamtversuch. Keine weiteren Blindtests,
+zusaetzlichen Teststufen, neuen Runner oder
+Infrastrukturprojekte ohne konkrete Notwendigkeit.
 
-UTC13-Tagesbuch einmal angelegt:35 Bücher/Kapazität35, EU-Limit82,036000USD, damalige Kosten/Baseline/Zähler0. Historische34 Bücher/5000Usage und übrige Bestände erhalten;46 unabhängige tatsächliche Delta-Prüfungen PASS. Auftragsbindung7,445364USD inklusive0,636000USD privater Reserve; runDayUTC null, kein500er-Funding. [Voriger Umfang](betrieb/starttor-native-reader-source-20261013.md).
+## Noch relevant
 
-[Draft-PR907](https://github.com/ernisch/helmut-pilot/pull/907), Headc0d0bd48, unabhängig akzeptiert; Pflicht-CI38334575016 mit175+330Suiten, nativen Schritten undZ22 grün. [PR906](https://github.com/ernisch/helmut-pilot/pull/906), Head2b6fbfe7, ebenfalls unabhängig geprüft/Pflicht-CI38317468800 grün. Beide ungemergt. Statischer tatsächlicher Composite-Dictionary und unverändertes unfreigegebenes Kandidatenfenster erhalten; finaler Commandhash/Fit erst mit echten frischen Laufbelegen. Kein neuer Initializer-Aufruf oder neue Finanzierung.
+- Der letzte 500er Controllerfehler ist **nicht aufgeklart**.
+  Der Verlust seiner ersten inneren Fehler- und
+  Fortschrittsdetails ist nachgewiesen. [PR1049](https://github.com/ernisch/helmut-pilot/pull/1049)
+  ist nur Dokumentation; keine Runtimekorrektur oder
+  Mock100 Freigabe.
+- Mock100 PASS wurde auf dem unveraenderten, vollstaendig geprueften
+  Runtimecommit `be0c6d1630f5987e755eb4030cc23a4f7d7247d7` belegt.
+  Der originale freie Diagnosepfad aus PR1050 wurde auf main 8901385d
+  angepasst. Die native Drei-Profil-Probe, Pflicht-CI und unabhaengige
+  Abschlusspruefung waren erfolgreich. Historische W15-Originale,
+  Runtimepins, Claims und STOP-/UNKNOWN-Belege bleiben unveraendert.
+  Aeltere FAIL-/GO-offen-Aussagen in ueberlieferten Commits sind
+  ausdruecklich historische Zwischenstaende, keine aktuellen Blocker.
+- UI und Backend Integration sowie die fuer den
+  ersten zahlenden Kunden erforderliche Produktsicherheit
+  sind getrennt nachzuweisen. Ein simulierter
+  Mock100 PASS ist kein Production Funktionsnachweis.
+- Vorhandenes Vercel Production Deployment war
+  bei letzter lesender Pruefung READY, aber das
+  beweist keinen aktuellen Stand der neuen
+  Produktintegration. Es wurde nichts neu deployed.
 
-## Historischer Git- und Deployment-Beleg (12.10.2026, vor PR902–905)
+## Private Produktintegration (05.11.2026, in Arbeit)
 
-- **PR901 gemergt:** [PR901](https://github.com/ernisch/helmut-pilot/pull/901) MERGED am 2026-10-12T00:33:24Z, Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Beide Pflichtchecks SUCCESS auf PR-Head `36b2e573d8e9ee9d677129553025e3eb4f744194`; `origin/main` identisch zum Merge.
-- **Frisch gelesenes Deployment:** Vercel `dpl_3FWWM3CtEj324fjTrgkD7b6UWSsi` READY, Target production, auf demselben SHA, Alias `helmut-pilot.vercel.app`. Belegt nur die Auslieferung dieses Git-Stands, nicht Funktion, Aktivierung oder 500er-Test.
-- **Betreiberübergabe (übernommen, in dieser Sitzung nicht unabhängig nachgemessen):** Blocker1, Blocker2, Blocker3 und Blocker4 geschlossen; der begrenzte B2→D-Abschluss wurde mit **500/500 gültigen Kontexten** übergeben. Der finale Blocker3-Abnahmebeleg lag beim Merge nicht im Repository und ist inzwischen aus dem privaten [Übergabearchiv vom12.10.](https://drive.google.com/drive/folders/1jLuYGXdJtXy08s461-gVwvlsIX7CvCXU) übernommen: ZIP-SHA256 `30ca1ffa643ef177f30e7e9a958d002ab426429fdf4387eeb0f4d05f7eb919a8`, alle42 ausgewählten Mitgliedshashes stimmen mit dem [Index](https://drive.google.com/file/d/1axu7LC6YzDn3WQW0ZzPT4-SJcXB-j8JW/view) überein. Maschinenlesbare finale Abnahme SHA256 `70169288d112a6bf43c46ae455b4d138752195c6f80a4bea1d7550613ae39ceb`, historische Beobachtung00:36:00.861949UTC. Keine Abnahme wiederholt.
+PR #1052 ist auf `76b75e371c7db69d7c9381071e23443182fc3607` gemergt.
+Der bestandene Mock100-Meilenstein bleibt abgeschlossen und wird nicht wiederholt.
+Der private Branch `integration/release-prep-20261105` verbindet diesen main-Stand
+mit Backend/UI `3c5765c577b35641ba107a4d6b863ab1e5ab7456`.
+Kontosicherheit, beide Designs und historische Belege bleiben erhalten.
+Die [vorige lokale Integration](betrieb/backend-ui-integration-20261105.md)
+und [UI-Abnahme](ui-backend.md) bleiben historische, quellengebundene Belege.
+Gezielte Cache-/Produktabnahme dieses Kandidaten läuft; keine Productionfreigabe.
 
-## Frische RO-Vorbereitung (12.10.2026, rein lesend)
+## Genau ein naechster Schritt
 
-- **Native READ ONLY beobachtet 2026-10-12T06:16:27.299425Z:** 500 Profile / 0 aktiv / 0 AfD; Verteilung 330 BT / 120 BE / 50 BB; laufende Prozesse 0, offene Jobs 0, offene Outbox 0, lebende Locks 0, lebende Leases 0.
-- **Endwächter:** schedulerActive true, recentSuccessfulRuns 3, lastTick 06:16:17.098857Z, keine offene Endbindung. Die alte Qualifikationsbindung wurde am 07.10.2026 gestoppt und darf nie wiederverwendet werden; es gibt keine neue Testbindung. Migrationsversionen 20261007111136 und 20261012002250 vorhanden.
-- **Auth-Kostenbuch, beobachtet 06:12:40.239273Z:** Auftragversion 5, Limit 88845364 µUSD, ab Tag 2026-09-25, id `autonom-bis500-20260926`; extern gebunden 5195303 µUSD, private Reserve 636000 µUSD, gesamte konservative Auftragsbindung 7445364 µUSD; genau 34 erhaltene Tagesbücher, bookCapacity 34, runDayUTC null. 12.10.: Buchversion 3 / Limit 82036000 µUSD / spent 0 / baseline 0 / manualCalls 0 / calls 0 / frozen null; 5000 historische Usage-Zeilen, 0 heutige Usage.
-- **Globaler Tageszähler 12.10.: 0 nach bestehendem Lesevertrag.** Die native Zeile fehlt; `leseLlmTageszaehler` wertet genau diesen gelesenen Nullbestand als `used=0`. Der übernommene Runtimebeleg von11:42Istanbul bestätigt used0 und die wirksamen Deckel; keine Reservierung oder Startquittung.
-- **Vercel-Projektkonfiguration:** EU-HASH `78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f`, 2416 global / 702 U / 200 real, Kommunikation gesperrt. Secretwerte werden nicht gelesen oder übertragen. Effektive Runtime ist inzwischen für den unten angegebenen Beobachtungszeitpunkt belegt; dieser ersetzt keine Startfrische.
-- **Azure Management, frisch:** Deployment `gpt-5-mini-eu` / DataZoneStandard / swedencentral / Version 2025-08-07 / NoAutoUpgrade / Succeeded, 250 RPM, 250000 TPM, keine Inference. GitHub: keine laufenden oder queued Runs, kein relevanter lokaler Productionprozess.
-- **Bekannter B2-Drivebankindex erreichbar**, verschlüsselte 184 Parts; privateKeys/Credentials/EphemeralURLs Included false. Die42 ausgewählten B3-Übergabedateien sind übernommen und hashverifiziert. Der Index schließt Secrets/Bearer/vollständige Auth-Snapshots ausdrücklich aus. Originaltransfer, Transportquittung und tatsächliches500er-Eingabepaket sind inzwischen ebenfalls privat übernommen; kein weiterer Originaldatenbestand wird hierfür angefordert. Finale Command-/Startidentität bleibt offen.
-- **In dieser Sitzung keine kostenpflichtigen Production-Modellaufrufe, Profiländerungen, Commandinstallation oder Journalmutation.** Start-GO bleibt ausgeschlossen, solange der Datumsfix nicht auf Production READY ist und die endgültige Laufbindung sowie frische Startbelege fehlen.
+**Die private Produktintegration auf dem gemergten Stand von PR #1052
+gezielt abschliessen und den konkreten Releasekandidaten zur Freigabe vorlegen.** Keine weiteren
+synthetischen Vollversuche und keine bezahlten Lasttests. Ein spaeterer
+Merge/Production-Deploy benoetigt konkrete Releasefreigabe,
+Rueckweg und nachgewiesene Betriebsreife.
 
-**Fortsetzung nach Archivübernahme (12.10.,09:45–09:46 Europe/Istanbul /06:45–06:46 UTC):** Native READ ONLY bestätigt500/0, keine offene Facharbeit, Endwächter mit3 aktuellen erfolgreichenRuns. Profil-/Main-/vollständigerAuth-SQL-Hash stimmen mit dem übernommenen Abschlussbeleg überein; ebenso alle3 EU-Funktionshashes, der historische4h-Binder und der4h-/9h-Constraint. Frischer eigener Auth-Primärbezug bleibt0600 außerhalbGit; die bereinigten Archivprojektionen werden nicht als vollständige Originale dargestellt.34Bücher/5000Usage/0heutigerVerbrauch, privateReserve0,636000USD undAuftragsbindung7,445364USD unverändert. Keine Qualifikation wiederholt.
-
-**Separates Tagesbindungs-Starttor festgestellt (Codeanalyse, kein Test):** AufPR901 bindet `blocker2-d-historical-binding.js` die unveränderte angenommeneVersion2-Eingabe und ihren Prüftag fest anBerlin11.10.; `synthetik-500-production-command.js` verlangt dasselbe Briefingdatum wie denUTC-Lauftag, `synthetik-500-production-adapter.js` zusätzlich den aktuellenBerlinerTag. Dieser übernommeneStand ist am12.10. oder später deshalb nicht unverändert ausführbar. Ein GO/Bearer/Archiv hebt den technischen Riegel nicht auf. Der frühere lokale Terminvorschlag11:00Istanbul ist zurückgenommen; kein neuer Termin oder automatische Umdatierung. Blocker1–4 bleiben geschlossen; der begrenzte Kalender-/Snapshotübergang wird jetzt im eigenen Entwicklungsbranch vorbereitet; auf Production ist er noch nicht geändert. Weitere unabhängige Vorbereitung:1500Sollpositionen und12000ausstehende Kriterienpositionen vollständig angelegt,0Fachurteile. Vercel bestätigt zusätzlichSSO-Schutz für den unveränderlichenDeploymenthost; dessen Zugangsweg bleibt getrennt vomHelmutRuntime-Lesebearer.
-
-## Kalenderfix im Entwicklungsbranch (12.10.2026, noch nicht Production)
-
-Branch `codex/synthetik500-date-handoff-20261012`, Ausgangsstand PR901. Die neue strukturelle Datumsbindung trennt den unveränderten B2-Aufnahmetag vom tatsächlichen EU-Ausführungsfenster. Originaldatum, Merkle-/Body-/Profil-/Quellenhashes und Originalprüfung bleiben erhalten. Nur der vorhandene geschlossene EU-Vertrag erlaubt diesen Übergang; 9h, Preis-/Auftragsfenster und gleicher UTC-/Berliner Lauftag bleiben zwingend. Opaque Sender-Token und reale Motorwachen prüfen das tatsächliche Fenster. D und R kennzeichnen auch gewöhnliche Quellen aus der Aufnahme als historischen Hintergrund, ohne ausgewählte Belege zu entfernen; eine Überschreitung der bestehenden 16.000-Zeichen-Grenze stoppt. Schreibzeit, Cache und Entwurfs-/Prüfbelege verwenden den tatsächlichen Ausführungstag. Kein künstliches heutiges Quelldatum und kein neues Fachurteil.
-
-Lokal über `scripts/lokal.js` bestanden: 39 Datumsfälle in9 Gruppen,4 fiktive Integrationsgruppen und21 bestehende Quellenbelegprüfungen; weitere begrenzte Vertrags-/Adapterprüfungen im [Draft-PR902](https://github.com/ernisch/helmut-pilot/pull/902). Unabhängige DeepSeek-Pro-High-/Flash-High-Codeprüfungen im jeweiligen Scope positiv. Pflicht-CI auf Codekopf `556ba54d97a067ad08e29ad74957cb0ec1707e7f`: [Run38218238617](https://github.com/ernisch/helmut-pilot/actions/runs/38218238617),171/171 Standard- und330/330 Bereichssuiten sowie erforderliche isolierte DB-Prüfungen bestanden. Spätere reine Statuskorrekturen sind keine Änderung dieses Codebefunds; Pflichtchecks auf dem finalen PR-Kopf müssen vor Merge grün sein. Keine Production-Funktion daraus behauptet. Auf Production bleibt der Tageskonflikt von `8ca835ce` bis zum separat erlaubten Merge/Rollout wirksam.
-
-**Originale jetzt übernommen (12.10., privat außerhalbGit,0600):** `sender-final500-budget-transfer.json`,499.220Bytes,SHA256 `e7d062ddd3c528a25437e9fe28300ae6c2588ff5a9e191e4448c998a71902b02`; `actual-500-transport-receipt.json`,403.939Bytes,SHA256 `14db98343ace3113e30677bab22e21fc468122c481ced2ba1c5e932ef8ddfb83`; `actual-500-result-export.dictionary.json`,2.804.748Bytes,SHA256 `66c828bf113672c94539367bbfeef5aa763e3cf8c1387894fe13a8bc5f65e26b`. Bestehender Decoder bestätigt ursprünglichen UTF8-SHA256 `97c465b8437cc7dde7c975052728cee03e5133c4009c141cfe091ebcd0d7db86`. Alle500 ursprünglichen Draft-Eingaben, Mitgliedschaftsbelege und eingebetteten nativen Quellen verfügbar; keine fehlenden separaten Dateien aus eingebetteten Daten ableiten.
-
-**Neue Datums-/Kontextvorbereitung, keine erneute Fachabnahme:** Alle500 Originaleingaben im neuen Kalenderpfad vorbereitet,0Fehler, maximal15317 von16000 Kontextzeichen; alle ausgewählten Quellen erhalten. Originalkontexthashes stimmen mit dem übernommenen Transfer überein. Rein lesend erhobene Publikationspolicy und972 Publikationsidentitäten stimmen mit den ursprünglichen kanonischen Hashes überein. Alle1500 Sollpositionen und12000 Kriterienpositionen an diese Originaleingaben gebunden;0neue Qualitätsurteile. Struktureller Kandidat12.10.,12:00–21:00UTC (15:00–00:00Istanbul), ausdrücklich kein Testfenster-GO und keine finale Operation-/Command-/Deploymentbindung.
-
-**Runtime-Nachweispaket übernommen:** [B3-Paket](https://drive.google.com/file/d/1coyokq5wUCURFa3NYM7rCsXIxkjiRoLG/view),14.961Bytes,SHA256 `25de6c1c5b84932aec7d6ec39bf1c87861a5fb45fb38c7f95d87b47bb15f606c`. Beobachtung12.10.,08:42:08.296–08:42:10.365UTC /11:42Istanbul; unabhängige Offlineprüfung52/52 übernommen, nicht wiederholt. Zwei Runtime-GETs und zwei Deployment-/Alias-GETs HTTP200,20 Vertragsprüfungen positiv: Production8ca835ce/READY,EU-Route `gpt-5-mini-eu`,34Kostenbücher,runDayUTC null,used0,0offene Reservierungen,Tagesbindung0,636000USD/Auftragsbindung7,445364USD,startklartrue. Keine Anbieterrechnung, Modellqualität oder500er-Test bewiesen. Für diese Übernahme ist keine Bearerübertragung nötig.
-
-**Frische Prüfung bleibt erforderlich:** Der Runtime-Bearer liegt hier weiterhin nicht vor; der bestehende sichere Quellzugang hat die übergebenen GETs erbracht. Frische Startbelege können darüber geliefert oder über separat sicheren begrenzten Zugang gelesen werden, niemals Secrets im Chat/Git/Drive. Nach dem erlaubten Rollout sind sie an das neue Deployment zu binden und innerhalb60Sekunden vor Start zu erheben. Die bestehende EU-Leseautorität endet **13.10.2026,00:00UTC /03:00Istanbul**; Erneuerung nur falls später benötigt und ausdrücklich erlaubt. Keine Schutzumgehung oder automatische Secret-Einrichtung. **Noch keine vollständige Startbereitschaft und kein empfohlenes Test-GO.**
-
-## Blocker-Kurzstand
-
-- **Blocker 3 (EU-Servicekostenvertrag) geschlossen, PR901 gemergt:** laut Übergabe und Rollout/Git bestätigt. Gültiger Vertrag: exakt 82,036000 USD/UTC-Tag; 88,845364 USD kumulativ desselben Auftrags; 0,081400 USD Reserve nur für künftige EU-Tickets; 81,400000 USD absolutes Sicherheitsmaximum für genau 500 D + 500 R/U0. Modellbereitstellung `gpt-5-mini-eu`, DataZoneStandard, Sweden Central, 9 h aktiv + 30 min Endbeleg. Der EU-GO vom 11.10. und die damaligen Teilschritte (Umsetzung lokal, Rollout bis Abnahme gesperrt, gemeinsamer Hash, lokal 6 EU / 26 Geld / 64 End / 12 Runtime / Routen) bleiben **historisch** und sind nicht der aktuelle Vertragsstand. Die früheren 6-/7-USD-Grenzen sind **nicht** der aktuelle EU-Vertrag. [Vertrag/Prüfung](betrieb/blocker3-eu-servicekostenvertrag-umsetzung-20261011.md).
-- **Blocker 2 (geschlossen, Abschluss 11.10.2026):** [Run 38102593796](https://github.com/ernisch/helmut-pilot/actions/runs/38102593796), Workflow/Runtime `6cdaa1cd3cdf16b9e5d18cb9add267583a730292`: 500/500 fachlich angenommen, alle 180397 aktuellen Claimpositionen und 4000 individuellen Kriterienurteile positiv, alle 42 Pflichtbindungen erhalten; frische unabhängige Endprüfung und Root-Abnahme positiv; verschlüsselte Serverbank vollständig frisch rückgelesen/verifiziert (2026-10-11T04:18:30.484466+00:00). KZW-Original erhalten und gesperrt, alte Relation UNKNOWN archiviert, eigene NWZ-Alternative gebunden. Kein Aktivierungs- oder bezahlter 500er-Funktionstestnachweis. [Vollbelege und Grenzen](betrieb/blocker2-abschluss-20261011.md). Zahlen sind der übergebene Abschluss, keine neue DB-Messung dieser Sitzung.
-- **Blocker 4 (geschlossen, Endsteuerung abgenommen 07.10., 11:19:02 UTC):** Persistenter 30s-Cron lebt; Authentifizierung, Frist und Notstopp produktiv mit 0→0, Rückführung 500/499→0 nur isoliert belegt. Profil-/Auth-/Hauptdaten unverändert; Pro High akzeptiert. Ersetzt historische Hinweise „lebender Wächter offen“. Konkretes Testfenster vorbereitet, ungebunden. Keine Aktivierung/500er-Test. [Dossier](betrieb/blocker4-endsteuerung-20261007.md).
-- **Blocker 1 (geschlossen; technisch abgenommen 07.10.):** PR846 gemergt und ausgerollt; unabhängige Prüfung und Pflicht-CI grün. Authentifizierter GET auf das gebundene READY-Deployment `53e1e369` ergab HTTP405/`Allow: POST` vor Datenbank- und Motorzugriff; direkter Motorweg für exakt 500 synthetische Profile technisch abgenommen, kein 500er-Test, keine Aktivierung oder Modellaufrufe. **Der frühere Satz „Quellen-, Kosten- und Test-GO-Tore bleiben offen“ beschreibt den alten Stand vom 07.10.**; aktuell bleiben für einen Lauf eine frische Laufbindung und ein Test-GO erforderlich. [Abnahme](betrieb/blocker1-direkter-500er-motor-20261007.md).
-- **Begrenzter B2→D-Integrationssprint (11.10., abgeschlossen laut Übergabe):** Gemeinsame Ursache der 32 leeren Kontexte belegt (vorhandene Quellen außerhalb der 14 Tage). Übergabevertrag als PR899 gemergt, Runtime `1ad00cd4` auf Production READY `dpl_76HSdbWhPMaDRJzQqQ1GsrGx3wcE`; Pflicht-CI 168+330 Suiten grün, identischer Git-Tree; lokal exakt 500/500 gültige, nichtleere Kontexte am tatsächlichen Sendercode (468 normal, 32 historisch); verlustfreier 500er Drafttransport und feste Original-/Merklebindung belegt. Keine neue B2-Fachabnahme, Installation, Aktivierung, Productiondaten-/Konfigurations-/Budgetänderung oder Modellaufrufe. Der vollständige Production-Senderabnahmeweg bleibt an der Command-/Installations-/Aktivierungsgrenze offen. [Vertrag und Abnahmegrenze](betrieb/blocker2-d-integration-historische-uebergabe-20261011.md).
-- **Blocker-2-Vorlauf (historisch, 10./11.10.):** Data13, 499er-Fachabnahme, Brake-Ereignisvergleich, leere Publikationsauswahl und Freigabegrenze: [Data13-Dossier](betrieb/blocker2-data13-und-aktuelle-500er-fachabnahme-20261010.md), [Stern-/499er-Dossier](betrieb/blocker2-stern-originalminimum-und-499er-fachabnahme-20261010.md), [Publikationsauswahl](betrieb/blocker2-publikationsauswahl-und-freigabegrenze-20261011.md). Originale, alte Eingaben und Einzelurteile bleiben erhalten.
-- **Blocker-2-Historie vor V8 (historisch):** [wortgleich archiviert](archive/project_state/2026_10_10_CURRENT_STATE_vor_blocker2_v8_ausfuehrung.md); von Run 38036221630 getrennt.
-- **Betreiberentscheidung Native-D (07.10., historisch):** zurückgestellt bis Helmut funktional fertig UND 500er-Nachweis erfolgreich; aktuell keine Voraussetzung für Production, Motor oder 500er-Test. Ersetzt alte Starttorhinweise. [Wortlaut](archive/project_state/2026_10_07_CURRENT_STATE_vor_blocker1_komprimierung.md).
-- **Native-D-Diagnose (07.10., historisch, zurückgestellt):** 500 synthetisch/0 aktiv (330/120/50), Journal 58; nicht installiert. Pooler 5432 am TCP-Proxy abgewiesen; HTTPS RO. [Zugang](betrieb/pre500-native-zugangswege-20261007.md).
-- **Guard-Capture behoben (07.10., 06:10 UTC; historisch):** V3-Guard, 52 Relationen / 372067 Zeilen, Native-D nicht installiert, mehrere Installations-/Schutzpunkte offen. [Belege und nächster Schritt](betrieb/pre500-guard-capture-20261007.md).
-- **U-Vorbereitung (06.10., historisch):** [Originale/Rückweg](betrieb/gebundene-u-vorbereitung-cron-ruhe-20261006.md), [Kostenplan](betrieb/blocker3-kosten-zeitplan-20261007.md).
-- **W-Zusatzquellen (06.10., Codeentwurf, historisch):** Runtime-DTO, Quellvollständigkeit und Zulassungstore erhalten; vollständige Native-W-/Caller-/Root-Abnahme und 500er-Start offen.
-- **Native Katalogbindung (06.10.; historisch):** genau ein freigegebener RO-Abruf, semantische Gleichheit zum privaten Original, fünf physische Wartungsfelder ausgenommen; keine Installation, 0 Daten-/Schemaänderungen.
-- **Supabase-Plattformgrenze und Audit-Diagnose (05.10.; historisch):** [Umfang und Beleggrenzen](betrieb/supabase-plattformgrenze-audit-20261005.md).
-- **500 Synthetikprofile inaktiv importiert (05.10.; historisch):** 501 Identitäten / 500 Mandate / 0 aktiv; [Beleggrenzen](betrieb/synthetik-500-inaktiver-import-20261005.md).
-- **Historische inerte Synthetikruntime (01.10.):** [Erhaltener Vollstand](archive/project_state/2026_10_06_CURRENT_STATE_inerte_runtime.md).
-- **Prozessaltlasttor erledigt (historisch):** drei alte `process_runs` nativ auf failed/operatorcleanupabandoned; Rückweg vor Anwendung neu binden. [Details](betrieb/synthetischer-500er-auftrag-20261001.md).
-- **Kostentage (05.10., historisch):** zwei Nullbücher; vollständige Statuszeile im [Kostenplan](betrieb/blocker3-kosten-zeitplan-20261007.md).
-- **Synthetikpaket und 20s-Transport (PR #762, historisch):** [Generator](../lib/helmut/synthetik-500-profile.js); kein 500er-Nachweis.
-- **Synthetikbrücken (PR #763, historisch):** Import 43/43, Runtime 11/11 offline + 11/11 PostgreSQL, Realregression 36/36, Nachweis 64/64 grün; kleine SQL-Fixtures beweisen keine Vollbestandsperformance.
-- **Historischer V7-/Decoderstand (02.10.):** [Unveränderte Einzelbefunde](archive/project_state/2026_10_05_CURRENT_STATE_historische_transporte.md).
-- **Historische Betreibersteuerung (01.10.2026):** [Synthetikauftrag](betrieb/synthetischer-500er-auftrag-20261001.md) — Verteilung 330/120/50, keine Realpersonen umbenennen; der alte Azure-`GlobalStandard`-Befund ist überholt (aktuell `gpt-5-mini-eu`, DataZoneStandard).
-- **Historischer Production-Befund (01.10.):** [Einzelbefunde](archive/project_state/2026_10_05_CURRENT_STATE_historische_transporte.md).
-- **Merge-/CI-Stand (02.10., historisch):** [PR #769](https://github.com/ernisch/helmut-pilot/pull/769), Merge `484a74ee`; datierter Befund, keine 500er-Freigabe.
-- **Begrenzte Cutover-Korrektur (01.10.2026, historisch):** Code-/Offline-Absicherung, kein ausgeführter Production-Cutover.
-- **Historische Deployments:** PR #725/#724/#722/#723/#699 (28.–30.09.); kein Beleg für die synthetische Zielkohorte.
-- **Wiederaufnahme 04.10.2026 (historisch, rein lesend):** [Belegzusammenfassung](betrieb/source23-closed-tuples-20261004.md).
-- **Vorbereitung 06.10.2026 (historisch):** `noPaidModel:true` nach PR #828; keine Wiederholung des Pakets.
-- **Aktuelle Berliner Artikel (06.10., lokal, historisch):** sechs amtliche Artikel im kanonischen Offline-Weg; kein Quellenimport oder 500er-Nachweis.
-- **Historische Import-/Realkohortenvorbereitung (29./30.09.):** [unverändert archiviert](archive/project_state/2026_10_06_CURRENT_STATE_vor_pr829_komprimierung.md).
-- **Zulassung:** AfD-zugehörige Abgeordnete ausgeschlossen; Partei und Fraktion vor jedem Import amtlich prüfen. [Testvertrag](betrieb/bundestag-landtage-testvertrag-20260927.md), [Zulassungscode](../lib/helmut/profil-zulassung.js).
-- **Landesversorgung:** Berlin-/Brandenburg-Pfade offline geprüft. [PARDOK-Vertrag](quellenarchitektur/17-pardok-parser.md), [Brandenburg](betrieb/landesversorgung-brandenburg-20260928.md), [Berlin](betrieb/landesversorgung-berlin-20260928.md), [Quellenzeile](betrieb/berlin-senat-quellenzeile-vorbereitung-20260928.md).
-- **Berlin/Brandenburg-Teilnachweis (30.09.2026, historisch):** nur Teilnachweis, kein 500er-Test.
-- **Radar-Ursprungsbindung (29.09.2026, historisch):** fünf Suiten lokal grün; kein produktiver Funktionsnachweis.
-- **Historische Nachrichtenqualität / lokale Bereichsabnahme:** [archiviert](archive/project_state/2026_10_10_CURRENT_STATE_vor_blocker2_v8_ausfuehrung.md).
-
-## Starttor und Schutzgrenzen
-
-**Realkohorten-Endweg (historisch, 01.10.):** [Vollständige Vorarbeit](archive/project_state/2026_10_07_realkohorten_endweg_historisch.md). Aktueller Wächter siehe Blocker 4.
-
-**Runtime (01.10.2026, inert installiert, historisch):** End-RPCs vorhanden, Endwächter vorbereitet; Manifest, Nullbestandsbelege, lebender Wächter und Aktivierungs-GO bleiben Pflicht. Bei unbekanntem Schreibausgang: Stop, lesende Klärung, kein Retry. [CLI-/Journalzuordnung](betrieb/synthetischer-500er-auftrag-20261001.md).
-
-Aktueller technischer 500er-Nachweis: **synthetische Profile für Bundestag, Berlin und Brandenburg**; die weiteren 14 Landesparlamente folgen danach. Alle 500 fiktiven Profile brauchen vorab festgelegte Szenarioparameter, die richtige Mandatsebene und Erwartungen; keine amtlichen Personenbelege für fiktive Profile erfinden. [Synthetikauftrag](betrieb/synthetischer-500er-auftrag-20261001.md), [Roadmap](ROADMAP_BIS_500.md).
-
-Vor Aktivierung müssen Paketbindung, aktuelle Ebenen-/Landesversorgung bis in die sichtbare Ausgabe, Kosten-/Zeitplan, Testfenster und Endwächter belegt sein. **Aktivierung und eigentlicher 500er-Test brauchen danach ein gesondertes Betreiber-GO; kein Test ist freigegeben oder durchgeführt.** Der Test bilanziert bei exakt 500 gleichzeitig aktiven Profilen 1500 Positionen (500 Mandatsbriefings, 500 Morgenbriefings, 500 Lage-Ergebnisse), weist fehlende, leere, doppelte, unbrauchbare und technisch fehlerhafte Positionen getrennt aus und belegt Qualität, Gesamtzeit, Gesamtkosten, automatisches Ende und Rückweg auf 0 aktive Profile. Frühere kleinere oder unvollständige Läufe ersetzen das nicht. [Sicherheitsrahmen](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md), [Betriebsplan](betrieb/500-betriebsplan-2026-09-20.md).
-
-Für die aktuelle Vorbereitung erlaubt der Betreiber gezielte Entwicklung, lokale Tests, eigenen Branch, Commit, Push und PR. **Merge und Production-Änderungen sind ausdrücklich nicht freigegeben.** Migrationen, Production-Daten-/Profil-/Konfigurations-/Budgetänderungen und bezahlte Modellaufrufe brauchen ausdrückliches GO; Aktivierung und 500er-Test sind nicht freigegeben. **Maßgeblich für die EU-Route ist der Blocker3-Vertrag** (82,036000 USD/UTC-Tag; 88,845364 USD kumulativ desselben Auftrags; 0,081400 USD Reserve; 81,400000 USD Sicherheitsmaximum für 500 D + 500 R/U0); die alten 6/7-USD-Grenzen sind ausdrücklich kein EU-Vertrag. **Codex Cloud:** Modell und Denkstufe wählt der Betreiber; Sol führt, DeepSeek übernimmt klar abgegrenzte Arbeit nach AGENTS.md; diese Nutzung ist vom Production-Anbieterbudget getrennt. Production-Konfiguration, Migrationen, Cron- und Profilschutz vor Wirkung frisch lesen; historische Flags oder alte Profilzahlen sind keine Freigabe. [Autonomer Auftrag](betrieb/autonom-bis-500-starttor-20260926.md), [Production-Beweisprotokoll](betrieb/production_beweisprotokoll.md).
-
-## Arbeitssteuerung
-
-Codex Cloud ist der direkte Arbeitsweg zum 500er-Starttor; Modell und Denkstufe wählt der Betreiber, das Repository setzt keinen Standard. Der geprüfte Cloud Router ist aktiv: Sol führt, DeepSeek übernimmt abgegrenzte Arbeit nach AGENTS.md. Es gibt keine zeitabhängige Peak-Sperre; Entwicklungsarbeit darf jederzeit starten. Production-Schutzgrenzen, das gesonderte GO vor Aktivierung/500er-Test und die Production-Kostenlimits bleiben unverändert. Parallele Schreibarbeit nur in klar getrennten Bereichen; bei Überschneidung nacheinander.
-
-## Nächster notwendiger Schritt
-
-**Erlaubten Merge/Rollout des Datumsfixes abwarten; danach endgültige Lauf-/Commandbindung und frische Startprüfung, anschließend genau ein separates Test-GO.** Originalübergabe und zeitpunktgebundener Runtime-Nachweis sind übernommen. Kein Test ist freigegeben oder durchgeführt. Profilaktivierung, Commandinstallation, Journalmutation und bezahlte Calls bleiben gesperrt. Der geschlossene B2→D-Abschluss wird nicht erneut fachlich gemessen.
-
-Die Production-Vorbereitung bleibt rein lesend: Nach READY auf dem erlaubten Datumsfix müssen Startschutz, aktuelle Kostenbücher, EU-Route,0aktive Profile, ruhende Facharbeit und lebender Endwächter frisch belegt werden. Finale Operation,Command,Sollplan,Kalender und Deployment müssen dieselben Originaleingaben binden. **Vorher kein empfohlenes Test-GO.** Keine automatische Datumsverschiebung. Es folgt genau **eine GO-Vorlage**, noch keine Freigabe; darin werden erst die erlaubten Schutzbindungen/Installation/Aktivierung konkret.
-
-Die500 Zielkennungen stimmen mit dem kanonischen Paket überein (IDs-SHA256 `4d6d7b169831128cc69f0f3beb04c2fe05b57b7b4f528934b52e5c155f54e258`); Pakethash `aa79ae64ab76bb96b3190eea1352366cffe2d448d4c28d5407da480096d52cc5` entspricht der nativen Importquittung. Alle1500 Sollpositionen sind originaleingabe-/quellengebunden, finale Lauf-/Commandbindung noch offen. Alter U-Marker vom06.10. bleibt `unknown` mit `inFlight`; kein aktueller Lauf/Entlastungsbeleg,private Reserve erhalten,kein Retry. Aktuelle Operationsspitze ist separat eine abgelaufene unbeanspruchte U-Installation ohne Versuch; ein neuer DR-Command muss ihren Originalvorgänger nach dem bestehenden Vertrag exakt binden, keine Journalbereinigung.
-
-Im 500er-Test sind alle 500 Profile vollständig zu prüfen: 1500 Sollpositionen (500 Mandatsbriefings, 500 Morgenbriefings, 500 Lage-Ergebnisse); fehlende, leere, doppelte, unbrauchbare und technisch fehlerhafte Positionen getrennt ausweisen; Qualität, Kosten, Laufzeit, automatisches Ende und Rückweg auf 0 aktive Profile belegen; die vorab definierten Erwartungen gelten; die Endabnahme erfolgt unabhängig vom ausführenden Lauf. Blocker1–4 sind laut Übergabe geschlossen; erledigte Nachweise nicht wiederholen — auch kein B1/B2/B3/B4-Re-Test.
-
-Die Dokumentationskorrektur ist in den notwendigen Kalenderfix-Branch integriert; kein separater Dokumentations-PR. Merge und Production-Rollout bleiben gesperrt. Archive und historischer Belegwert bleiben erhalten; keine frischen DB-Zahlen oder Kosten erfinden, die jetzt nicht gelesen wurden. [Integrationsvertrag](betrieb/blocker2-d-integration-historische-uebergabe-20261011.md), [Blocker2-Abschluss](betrieb/blocker2-abschluss-20261011.md), [EU-Kostenvertrag/Blocker3](betrieb/blocker3-eu-servicekostenvertrag-umsetzung-20261011.md).
-
-Historische Läufe, frühere Kostenstände und erledigte Zwischenentscheidungen: [Archivfassung vom 28.09.](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md). Andere Aufgaben nach dem 500er-Nachweis: [Datenmotor-Restliste](datenmotor-restliste.md).
+Historische alte Anweisungen, darunter
+[`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind
+keine aktuellen Testauftraege. Alle alten Laufbelege,
+STOPs, UNKNOWNs, Grants und Journale bleiben erhalten.
+Vor konkreten Production Aktionen Wirkung, Risiko,
+Kosten, Nachkontrolle und Rueckweg benennen.

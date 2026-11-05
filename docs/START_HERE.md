@@ -4,7 +4,7 @@
 Historie. Für den aktuellen Stand → [`CURRENT_STATE.md`](CURRENT_STATE.md), für die
 Systemkarte → [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-**Letzte Aktualisierung:** 2026-09-27 (aktuelle Priorität: 500er Production-Nachweis; laufender Betriebszustand nur in `CURRENT_STATE.md`)
+**Letzte Aktualisierung:** 2026-11-05 (aktuelle Prioritaet: Mock100 und sicherer Livegang; laufender Betriebszustand nur in `CURRENT_STATE.md`)
 
 ---
 
@@ -32,17 +32,25 @@ Kommunikation und Aufgaben.*
 
 ## 2 · Aktuelles Projektziel
 
-**Oberstes Projektziel ist der belastbare Production-Nachweis mit exakt 500
-gleichzeitig aktiven Profilen beider Mandatsebenen.** Ein reiner Bundestagstest
-belegt dieses Gesamtziel nicht. Die Stufen und den aktuellen Stand führt ausschließlich
-[`CURRENT_STATE.md`](CURRENT_STATE.md).
+**Oberstes Projektziel seit 05.11.2026:** Mock100 mit exakt
+100 gleichzeitig aktiven synthetischen Mandatsprofilen aus Bundestag,
+Berlin und Brandenburg nachvollziehbar nachweisen. Der bisherige
+verpflichtende Mock500- und Production500-Pfad ist beendet.
+Ein gesonderter Production100- oder Production500-Belastungstest
+wird nicht durchgefuehrt.
 
-Danach ist die **Verkaufsbereitschaft für den ersten zahlenden Zweitmandanten** das
-Produktziel. Was dort fehlt, ist nicht Funktionsumfang, sondern Betriebs-, Rechts- und
-Sicherheitsreife — geführt als **P0-Verkaufsblocker** (OP-01…OP-04) in
-[`datenmotor-restliste.md`](datenmotor-restliste.md).
+**Danach soll Helmut live gehen und verkauft werden.**
+Die Integration von Oberflaeche und Backend, funktionierende
+Anmeldung und Mandantentrennung, Datenschutz, technische
+Betriebssicherheit und Kostenkontrolle bleiben dafuer notwendig.
+Der Mock100 Test mit simulierten Modellantworten ersetzt nicht die
+notwendige sichere Produktfreigabe, ist aber der einzige geplante
+grosse synthetische Kapazitaetstest.
 
-Neue Funktionen sind nachrangig, solange der 500er-Nachweis und die P0-Punkte offen sind.
+Die alten 500er Belege und Fehler werden unveraendert archiviert;
+sie sind keine neue Zielvorgabe. Laufstatus und naechsten Schritt
+enthaelt ausschliesslich [`CURRENT_STATE.md`](CURRENT_STATE.md).
+Neue Funktionen sind nachrangig gegenueber diesem Ziel.
 
 ## 3 · Zielgruppe und Pilotlogik
 
@@ -138,5 +146,6 @@ trennt Produktziel, ausgerollte Absicherung und noch offene fachliche Abnahme.
 > `helmut_datenmotor_thread2_handoff.md`, `audit/*`. Diese Dokumente tragen
 > Historisch-Banner und bleiben nur als Beleg erhalten.
 
-Betreiberpraezisierung27.09.: exakt500 Profile insgesamt, alle gleich behandeln.
-Keine gesonderte Bestandsgruppe; gleiche Auswahl-, Versorgungs- und Pruefregeln.
+**Historische Betreiberpraezisierung vom 27.09.2026:** exakt 500 gleich behandelte
+Profile. Seit 05.11.2026 ersetzt durch den aktuellen Mock100 Beschluss;
+Gleichbehandlung und Mandantenschutz bleiben bestehen.
