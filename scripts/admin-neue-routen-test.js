@@ -11,8 +11,8 @@
 //  - CSRF-Pflicht fuer schreibende Privacy-Aktion + Server-Confirm
 //  - keine Kostenwerte im Abgeordneten-Endpoint (/api/app/start)
 //
-// Belegter Ist-Stand der Betriebsmetadaten: die reale vercel.json hat `crons: []`,
-// also ist der Zeitplan ehrlich leer; briefing-watchdog.yml hat keinen schedule
+// Betriebsmetadaten zeigen den aktuellen vercel.json-Zeitplan unverfaelscht;
+// briefing-watchdog.yml hat keinen schedule
 // (verfuegbar + inaktiv, zeitplanUtc:null, manuell dispatchbar) und health-watch.yml
 // hat den Zeitplan auskommentiert (verfuegbar + inaktiv, zeitplanUtc:null).
 // Es werden keine Fixtures oder Caches im Admin angelegt.
@@ -136,8 +136,9 @@ async function login(port, email, password) {
 
     const pr = await getJson("/api/admin/stats/process-runs");
     check("B process-runs: processRuns Array + latestByProcess Objekt", Array.isArray(pr.processRuns) && pr.latestByProcess && typeof pr.latestByProcess === "object");
-    check("B process-runs: Zeitplan ehrlich als verfuegbare LEERE Liste aus vercel.json (crons: [])",
-      Array.isArray(pr.zeitplan) && pr.zeitplan.length === 0, `zeitplan=${JSON.stringify(pr.zeitplan)}`);
+    check("B process-runs: aktueller Zeitplan aus vercel.json vollstaendig und unverfaelscht",
+      Array.isArray(pr.zeitplan) && JSON.stringify(pr.zeitplan) === JSON.stringify(require("../vercel.json").crons),
+      `zeitplan=${JSON.stringify(pr.zeitplan)}`);
 
     const audit = await getJson("/api/admin/audit?limit=20");
     check("B audit: auditEvents Array mit login-Ereignis", Array.isArray(audit.auditEvents) && audit.auditEvents.some((e) => e.action === "auth.login"));

@@ -5,6 +5,26 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
+## Aktueller Auftrag: taegliche Versorgung nur fuer Cem Ince
+
+Der Betreiber hat die Wiederaufnahme ausschliesslich fuer Cem Ince und die
+Deaktivierung aller anderen Profile beauftragt. Zusaetzlich ausdruecklich
+freigegeben: **1 USD je Tag, maximal 30 USD insgesamt** fuer diesen neuen Betrieb.
+Entwicklung und Review nur mit GPT-6.1 Sol/Astra, kein DeepSeek.
+
+Production am05.11.2026 gegen21:54UTC: `main`14501c59 ist ausgerollt;
+Cems aus dem Bestand wiederhergestelltes relationales Profil ist als einziges
+aktiv, die500 anderen bleiben unveraendert inaktiv. Quellenaktualisierung
+147/147 erfolgreich, keine Modellaufrufe. Ein Morgenpaket ist gespeichert,
+aber wegen alter verstandener Inhalte weiterhin **partial/nicht aktuell**.
+Die nachfolgenden Aussagen zum noch ausstehenden Release1053 sind historisch.
+
+Vorbereitet: separater atomarer Betriebskostendeckel, Eingrenzung der KI-Arbeit
+auf relevante Quellen dieses Profil-Crawls, drei geordnete Tagesjobs.
+Noch kein Nachweis eines aktuellen vollstaendigen KI-Briefings und noch keine
+Aktivierung der neuen Produktionskonfiguration.
+[Umsetzung, Nachweise und Rueckweg](betrieb/cem-einprofilbetrieb-20261105.md).
+
 ## Navigation und Verwaltung live (06.11.2026)
 
 [PR #1057](https://github.com/ernisch/helmut-pilot/pull/1057) nach ausdrücklichem
@@ -138,13 +158,9 @@ Keine Productionfreigabe.
 
 ## Genau ein naechster Schritt
 
-**Die beiden Pflichtchecks der Release-PR auf genau deren aktuellem Kopf abschliessen
-und danach auf konkrete Mergefreigabe warten.** Die Uebernahme ist freigegeben;
-der neue Branch `release/helmut-product-20261105` ist gegen automatische
-Vercel-Git-Deployments gesperrt. Keine weiteren
-synthetischen Vollversuche und keine bezahlten Lasttests. Ein spaeterer
-Merge/Production-Deploy benoetigt konkrete Releasefreigabe,
-Rueckweg und nachgewiesene Betriebsreife.
+**Die Pflichtchecks der Einprofil-Aenderung abschliessen, den freigegebenen
+1/30-USD-Vertrag aktivieren und Cems aktuelle Tagesversorgung gegenlesen.**
+Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
 Historische alte Anweisungen, darunter
 [`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind
