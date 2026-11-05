@@ -5373,13 +5373,15 @@ function renderLageView() {
   const selected = items.find(v => String(v.vorgangId || v.id) === uiLageSelectedId) || items[0];
   const selectedId = String(selected.vorgangId || selected.id || "");
   const checked = lageCheckedLabel(data && data.latestUpdatedAt);
+  const freshness = lageFreshnessLabel(items);
+  const stand = checked || freshness;
   const disruption = lageDisruption(data);
   return `${header}
     ${data.demo ? '<p class="ui-preview-label">Beispiel-Lage · Demodaten</p>' : ""}
     ${disruption ? `<div data-ui-lage-partial>${renderUiEmpty("Lage nur teilweise verfügbar", `${disruption.sub} Vorhandene Vorgangskarten bleiben sichtbar.`)}</div>` : ""}
     <div class="ui-master-detail ui-lage-workspace ${uiLageDetailOpen ? "is-detail" : ""}">
       <section class="ui-master" aria-label="Politische Vorgänge">
-        <div class="ui-section-heading"><span>Politische Vorgänge</span><span>${checked ? escapeHtml(checked) : `${items.length} Vorgänge`}</span></div>
+        <div class="ui-section-heading"><span>Politische Vorgänge</span><span>${stand ? `<span data-lage-stand>${escapeHtml(stand)}</span>` : `${items.length} Vorgänge`}${checked && freshness ? `<br><span data-lage-source-recency>${escapeHtml(freshness)}</span>` : ""}</span></div>
         <div class="ui-vorgang-list">
           ${items.map((v, index) => {
             const id = String(v.vorgangId || v.id || "");

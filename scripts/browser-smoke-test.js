@@ -205,12 +205,12 @@ function check(name, cond, detail = "") {
           `${fixture.profile.fullName} erlaeutert den vorgelegten Arbeitszeitentwurf.`;
         const data = contract.toBriefingContractV3({ ...fixture, now: at });
         const state = data.currentHelmutState;
-        data.lageBriefing = { available: true, vorgaenge: [{
+        data.lageBriefing = { available: true, latestUpdatedAt: new Date().toISOString(), vorgaenge: [{
           id: state.primaryItem.id, vorgangId: state.primaryItem.id,
           title: state.primaryItem.title, displayTitle: state.primaryItem.displayTitle,
           displaySummary: "Die belegten Fakten gehoeren in die Lage.",
           whyRelevant: "Der Entwurf betrifft das Arbeitsgebiet des Mandats.", recommendation: state.recommendation,
-          sources: [{ name: "Testquelle", url: state.primaryItem.sourceUrl }]
+          sources: [{ name: "Testquelle", url: state.primaryItem.sourceUrl, publishedAt: "2025-06-22T07:00:00Z" }]
         }] };
         await page.evaluate((fixtureData) => {
           briefing = fixtureData; currentView = "helmut"; render();
@@ -249,6 +249,21 @@ function check(name, cond, detail = "") {
         const lageText = await page.locator(".ui-vorgang-row").first().innerText();
         check(`${label}: Lage Karte zeigt Fakten und keine Briefing Handlungsanweisung`,
           lageText.includes("Die belegten Fakten") && !lageText.includes("Heute nicht öffentlich zuspitzen"));
+        check(`${label}: Lage trennt aktuelle Analyse und aeltere Quellenfrische sichtbar`,
+          await page.locator("[data-lage-stand]").isVisible()
+            && (await page.locator("[data-lage-stand]").innerText()).includes("Zuletzt aktualisiert: heute")
+            && await page.locator("[data-lage-source-recency]").isVisible()
+            && await page.locator("[data-lage-source-recency]").innerText() === "Neueste Quelle vom 22. Juni."
+            && await page.evaluate(() => {
+              const checked = document.querySelector("[data-lage-stand]").getBoundingClientRect();
+              const source = document.querySelector("[data-lage-source-recency]").getBoundingClientRect();
+              return source.top >= checked.bottom && document.documentElement.scrollWidth <= innerWidth;
+            }));
+        await page.evaluate(() => { delete briefing.lageBriefing.latestUpdatedAt; render(); });
+        check(`${label}: Ohne Analysezeit bleibt nur die belegte Quellenfrische sichtbar`,
+          await page.locator("[data-lage-stand]").isVisible()
+            && await page.locator("[data-lage-stand]").innerText() === "Neueste Quelle vom 22. Juni."
+            && await page.locator("[data-lage-source-recency]").count() === 0);
         await page.locator((isMobile ? ".mobile-dock" : ".nav-list") + ' [data-view="radar"]').click();
         await page.locator('[data-radar-segment="committees"]').click();
         const radarText = await page.locator("#radar2-root").innerText();

@@ -64,6 +64,26 @@ Lokal: vorhandener System-Chromium/Playwright1.62.1, saubere Umgebung,
 keine externen Routen, unveraendertes `scripts/lokal.js`, Teststore bereinigt.
 Die endgueltige Browserabnahme erfolgt mit dem bestehenden gepinnten CI-Browser.
 
+Auf `28f8bb85828e66ed57ec73424ddec8d8787e6ead` bestand der
+[Browserjob127440511418](https://github.com/ernisch/helmut-pilot/actions/runs/42082749563/job/127440511418)
+vollstaendig:74 PASS/0 FAIL sowie19/19 Prosa-Vorschaugruppen. Seine Online-503-
+Pruefungen bestanden unveraendert; die lokale Offlineabweichung war kein Produktfehler.
+
+Eine gezielte Kontrolle der spaeter ausgewaehlten Lage-Suite bestaetigte einen
+weiteren Integrationsfehler: Die neue Ansicht hatte die bereits auf main
+vorhandene getrennte Quellenfrische und deren Fallback verloren. Die bestehende
+`lage-frische-live-flow-test.js` reproduzierte24/27 PASS,3 FAIL. `renderLageView()`
+verwendet jetzt wieder den vorhandenen `lageFreshnessLabel()` im bestehenden
+Statusfeld: Analysezeit zuerst, Quellenfrische separat; ohne Analysezeit nur
+Quellenfrische, ohne beide Zeitstempel weiterhin die Vorgangszahl.
+Alle Texte bleiben escaped; CSS, Farben, Schrift, Bilder, Backend und Motor
+unveraendert. Die bestehenden27 Assertions bestehen nun vollstaendig.
+Der vorhandene Browser-Smoke prueft zusaetzlich diese Trennung, den Fallback
+und den Umbruch ohne horizontalen Ueberlauf in beiden Viewports.
+Wegen der Clientkorrektur sind beide inhaltsgebundenen Assetversionen in
+`index.html` auf `3321e2b51ec511af` aktualisiert. Historische Cachebelege bleiben
+erhalten; die Hashregel ist unveraendert.
+
 Verbindlicher Abschlussnachweis sind der exakte PR-Kopf und seine
 beiden GitHub-Checkruns; die fruehere main-CI ersetzt sie nicht. Endergebnisse werden
 in der PR und im Abschlussbericht belegt, ohne gruene CI durch einen reinen
