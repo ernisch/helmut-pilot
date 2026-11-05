@@ -396,6 +396,7 @@ class StandingChecks(unittest.TestCase):
             priorTerminalSHA256=S.digest(proof),causeSHA256=S.digest(['actual cause',index]),
             fixSHA256=S.digest(['concrete repair',index]),targetedTestsSHA256=S.digest(['targeted repair check',index]),
             sourceQualificationSHA256=S.digest(['fresh source',index]),originalBindingSHA256=S.digest(['fresh original binding',index]))
+        self.binding.pop('priorAbandonmentSHA256',None)
         self.binding.update(changes)
 
     def blocked(self,callback):
@@ -482,6 +483,180 @@ class StandingChecks(unittest.TestCase):
         (self.f.root/'NEW_STOP.SAFE.json').unlink();gate=self.gate();gate.launch();gate.consume('LINKS')
         self.blocked(lambda:self.gate(binding=dict(self.binding,requestSHA256='0'*64)).consume('POST'))
         self.f.preserved()
+
+    def held_abandonment(self, reason='UNKNOWN', phase='POST'):
+        old = self.initialized(); claim = old.launch()
+        if phase in ('LINKS', 'POST'): old.consume('LINKS')
+        if phase == 'POST': old.consume('POST')
+        old.hold(reason)
+        hold = json.loads(sorted((self.f.root/T.LEDGER).iterdir())[-1].read_bytes())
+        case = self.f.case/'successor'; case.mkdir(mode=0o700)
+        self.binding = dict(self.binding, nonce=str(uuid.uuid4()), casePath=str(case), controlCommit='d'*40,
+            approvalSHA256=S.digest('separate fresh technical GO'), requestSHA256=S.digest('fresh next request'),
+            issuedAtUTC='2026-11-04T00:01:00Z', sourceQualificationSHA256=S.digest('next source qualification'))
+        run = dict(id=41939166457, head_sha=A.RUNTIME, event='workflow_dispatch',
+            head_branch='codex/w15-github-end500-preparation-20261028', workflow_id=313506164,
+            run_attempt=1, status='completed', conclusion='cancelled',
+            created_at='2026-11-04T00:00:30Z', updated_at='2026-11-04T00:00:59Z')
+        proof = dict(schema=T.ABANDONMENT_SCHEMA, status='ISOLATED_ABANDONMENT_NO_SAFE_TERMINAL',
+            claimSHA256=S.digest(claim), holdSHA256=S.digest(hold), runtimeCommit=A.RUNTIME,
+            nonce=claim['binding']['nonce'], runId=str(run['id']), jobId='126955218752', runProjection=run,
+            jobStatus='completed', jobConclusion='cancelled', evidenceSHA256=S.digest('actual isolated cancellation'),
+            operatorAuthoritySHA256=S.digest('separate actual once-only operator GO'),
+            independentReviewSHA256=S.digest('independent actual isolation and terminal review'),
+            nextBinding={key:self.binding[key] for key in T.NEXT_BINDING_KEYS})
+        self.binding['priorAbandonmentSHA256'] = S.digest(proof)
+        return old, claim, proof
+
+    def authenticated_abandonment_gate(self, proof, **changes):
+        pin = S.digest(proof)
+        return self.gate(verify_abandonment=lambda value,current:S.digest(value)==pin, **changes)
+
+    def test_isolated_abandonment_keeps_hold_and_binds_exactly_one_same_runtime_successor(self):
+        old, claim, proof = self.held_abandonment()
+        preserved = {str(p):p.read_bytes() for folder in (T.LEDGER, T.ANCHORS)
+                     for p in (self.f.root/folder).iterdir()}
+        next_gate = self.authenticated_abandonment_gate(proof)
+        self.assertTrue(next_gate.abandon(proof))
+        state = next_gate._state()[0]
+        self.assertTrue(state['held']); self.assertNotIn('proof',state)
+        self.assertEqual(state['hold']['body']['reason'],'UNKNOWN')
+        self.assertEqual(state['abandonment'],proof)
+        self.blocked(lambda:old.consume('POST'));self.blocked(old.launch)
+        self.blocked(lambda:old.complete(self.proof(claim)))
+        successor = next_gate.launch();next_gate.consume('LINKS');next_gate.consume('POST')
+        self.blocked(next_gate.launch)
+        next_gate.complete(self.proof(successor,status='PASS',fullMock500Accepted=True))
+        self.blocked(next_gate.launch)
+        rows = [json.loads(p.read_bytes()) for p in sorted((self.f.root/T.LEDGER).iterdir())]
+        self.assertEqual([r['kind'] for r in rows],
+            ['CLAIM','LINKS','POST','HOLD','ISOLATED_ABANDONMENT','CLAIM','LINKS','POST','TERMINAL'])
+        self.assertEqual(rows[4]['schema'],T.ABANDONMENT_SCHEMA)
+        self.assertTrue(all(r['schema']==T.SCHEMA for i,r in enumerate(rows) if i!=4))
+        self.assertEqual(preserved,{path:Path(path).read_bytes() for path in preserved});self.f.preserved()
+
+    def test_abandonment_requires_separate_trusted_authentication_and_rechecks_before_launch(self):
+        _, _, proof = self.held_abandonment()
+        self.blocked(lambda:self.gate().abandon(proof))  # Existing API defaults remain closed.
+        for answer in (False, None, 1):
+            self.blocked(lambda:self.gate(verify_abandonment=lambda *_:answer).abandon(proof))
+        self.blocked(lambda:self.authenticated_abandonment_gate(proof).launch())
+        gate = self.authenticated_abandonment_gate(proof);gate.abandon(proof)
+        self.blocked(lambda:self.gate().launch())
+        self.blocked(lambda:self.gate(verify_abandonment=lambda *_:False).launch())
+        gate.launch();self.f.preserved()
+
+    def test_abandonment_rejects_pending_wrong_run_job_nonce_and_history_bindings(self):
+        _, _, proof = self.held_abandonment()
+        changes = [{'runId':'41939166458'}, {'jobId':'invalid'}, {'nonce':str(uuid.uuid4())},
+            {'claimSHA256':'0'*64}, {'holdSHA256':'0'*64}, {'runtimeCommit':'b'*40},
+            {'jobStatus':'in_progress'}, {'jobConclusion':'failure'}, {'operatorAuthoritySHA256':None},
+            {'independentReviewSHA256':'bad'}, {'nativeZeroKnown':True}]
+        for field,value in (('status','in_progress'),('conclusion','failure'),('head_sha','b'*40),
+                            ('run_attempt',2),('workflow_id',1),('head_branch','main'),('event','push'),
+                            ('created_at','2026-11-03T23:00:00Z')):
+            changes.append({'runProjection':dict(proof['runProjection'],**{field:value})})
+        changes.append({'runProjection':{k:v for k,v in proof['runProjection'].items() if k!='updated_at'}})
+        for change in changes:
+            bad = dict(proof,**change)
+            # Even a permissive callback cannot waive structural ownership/terminal constraints.
+            self.binding['priorAbandonmentSHA256']=S.digest(bad)
+            self.blocked(lambda:self.gate(verify_abandonment=lambda *_:True).abandon(bad))
+        self.binding['priorAbandonmentSHA256']=S.digest(proof)
+        other_job=dict(proof,jobId='126955218753')
+        self.binding['priorAbandonmentSHA256']=S.digest(other_job)
+        self.blocked(lambda:self.authenticated_abandonment_gate(proof).abandon(other_job))
+        self.assertEqual(len(list((self.f.root/T.LEDGER).iterdir())),4);self.f.preserved()
+
+    def test_abandonment_requires_unknown_post_hold_not_security_cost_or_prepost(self):
+        for reason,phase in (('SECURITY_VIOLATION','POST'),('COST_UNKNOWN','POST'),
+                             ('UNKNOWN','CLAIM'),('UNKNOWN','LINKS')):
+            with self.subTest(reason=reason,phase=phase):
+                fixture=StandingChecks();fixture.setUp()
+                try:
+                    _,_,proof=fixture.held_abandonment(reason,phase)
+                    fixture.blocked(lambda:fixture.authenticated_abandonment_gate(proof).abandon(proof))
+                    fixture.f.preserved()
+                finally:fixture.doCleanups()
+
+    def test_abandonment_rejects_wrong_next_case_nonce_input_scope_and_terminal_shortcuts(self):
+        _, _, proof = self.held_abandonment()
+        gate=self.authenticated_abandonment_gate(proof);gate.abandon(proof)
+        for change in ({'nonce':str(uuid.uuid4())},{'casePath':str(self.f.case)}, {'runtimeCommit':'e'*40},
+                       {'controlCommit':'f'*40},{'originalBindingSHA256':'a'*64},{'sourceQualificationSHA256':'b'*64},
+                       {'scope':'PRODUCTION'},{'mode':'other'},{'approvalSHA256':'c'*64},
+                       {'requestSHA256':'d'*64},{'priorTerminalSHA256':S.digest(proof)},
+                       {'priorAbandonmentSHA256':'e'*64},{'causeSHA256':'f'*64},
+                       {'issuedAtUTC':'2026-11-04T00:00:00Z'}):
+            self.blocked(lambda:self.authenticated_abandonment_gate(proof,binding=dict(self.binding,**change)).launch())
+        gate.launch();self.f.preserved()
+
+    def test_abandonment_record_itself_requires_fresh_case_nonce_control_and_same_runtime_scope(self):
+        _, claim, proof = self.held_abandonment()
+        original = dict(self.binding)
+        for change in ({'nonce':claim['binding']['nonce']},{'casePath':claim['binding']['casePath']},
+                       {'controlCommit':claim['binding']['controlCommit']},{'runtimeCommit':'e'*40},
+                       {'scope':'PRODUCTION'},{'mode':'other'},{'authoritySHA256':'a'*64}):
+            bad=dict(proof,nextBinding=dict(proof['nextBinding'],**change))
+            self.binding=dict(original,**change,priorAbandonmentSHA256=S.digest(bad))
+            self.blocked(lambda:self.gate(verify_abandonment=lambda *_:True).abandon(bad))
+        self.binding=original
+        self.authenticated_abandonment_gate(proof).abandon(proof);self.f.preserved()
+
+    def test_successor_safe_failure_returns_to_existing_repair_rules_without_abandonment_shortcut(self):
+        _, _, proof = self.held_abandonment()
+        gate=self.authenticated_abandonment_gate(proof);gate.abandon(proof)
+        claim=gate.launch();gate.consume('LINKS');gate.consume('POST')
+        terminal=self.proof(claim);gate.complete(terminal)
+        self.next_binding(terminal,1,runtimeCommit=A.RUNTIME,controlCommit='e'*40)
+        self.blocked(lambda:self.gate().launch())
+        self.binding['runtimeCommit']='1'*40
+        self.blocked(lambda:self.gate(binding=dict(self.binding,priorAbandonmentSHA256=S.digest(proof))).launch())
+        self.gate().launch();self.f.preserved()
+
+    def test_abandonment_cost_window_and_callback_mutation_cannot_append_or_launch(self):
+        _, _, proof = self.held_abandonment()
+        gate=self.authenticated_abandonment_gate(proof)
+        self.cost_ok=False;self.blocked(lambda:gate.abandon(proof));self.cost_ok=True
+        self.f.now=datetime(2026,11,4,1,0,tzinfo=timezone.utc)
+        self.blocked(lambda:gate.abandon(proof));self.f.now=NOW
+        def mutate(value,current):
+            current['held']=False;return True
+        self.blocked(lambda:self.gate(verify_abandonment=mutate).abandon(proof))
+        self.assertEqual(len(list((self.f.root/T.LEDGER).iterdir())),4)
+        gate.abandon(proof);self.cost_ok=False;self.blocked(gate.launch);self.f.preserved()
+
+    def test_abandonment_is_once_only_and_missing_counteranchor_or_modified_hold_blocks(self):
+        _, _, proof = self.held_abandonment()
+        gate=self.authenticated_abandonment_gate(proof);gate.abandon(proof)
+        self.blocked(lambda:gate.abandon(proof))
+        anchor=self.f.root/T.ANCHORS/'000000000005.json';saved=anchor.read_bytes();anchor.unlink()
+        self.blocked(gate.launch);anchor.write_bytes(saved);os.chmod(anchor,0o600)
+        hold=self.f.root/T.LEDGER/'000000000004.json';saved=hold.read_bytes()
+        changed=json.loads(saved);changed['body']['reason']='SECURITY_VIOLATION'
+        hold.write_bytes(S.canonical(changed)+b'\n');self.blocked(gate.launch);hold.write_bytes(saved)
+        claim=gate.launch();gate.consume('LINKS');gate.consume('POST');gate.hold('UNKNOWN')
+        current=gate._state()[0]
+        next_case=self.f.case/'another-successor';next_case.mkdir(mode=0o700)
+        self.binding=dict(self.binding,nonce=str(uuid.uuid4()),casePath=str(next_case),controlCommit='e'*40,
+            issuedAtUTC='2026-11-04T00:01:03Z')
+        second=dict(proof,claimSHA256=S.digest(claim),nonce=claim['binding']['nonce'],
+            holdSHA256=S.digest(current['hold']),runId='41939166458',jobId='126955218753',
+            runProjection=dict(proof['runProjection'],id=41939166458,
+                created_at='2026-11-04T00:01:01Z',updated_at='2026-11-04T00:01:02Z'),
+            nextBinding={key:self.binding[key] for key in T.NEXT_BINDING_KEYS})
+        self.binding['priorAbandonmentSHA256']=S.digest(second)
+        self.f.now=datetime(2026,11,4,0,1,3,tzinfo=timezone.utc)
+        self.blocked(lambda:self.authenticated_abandonment_gate(second).abandon(second));self.f.preserved()
+
+    def test_abandonment_anchor_first_crash_cannot_be_replayed_or_skipped(self):
+        _, _, proof = self.held_abandonment()
+        gate=self.authenticated_abandonment_gate(proof)
+        with patch.object(S.os,'fsync',side_effect=OSError('synthetic abandonment durability failure')):
+            self.blocked(lambda:gate.abandon(proof))
+        self.assertEqual(len(list((self.f.root/T.ANCHORS).iterdir())),5)
+        self.assertEqual(len(list((self.f.root/T.LEDGER).iterdir())),4)
+        self.blocked(lambda:gate.abandon(proof));self.blocked(gate.launch);self.f.preserved()
 
 
 if __name__ == '__main__':

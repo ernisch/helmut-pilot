@@ -11,6 +11,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -25,16 +26,27 @@ AUTHORITY_KEYS = {'schema', 'purpose', 'actualOperatorInstruction', 'operatorObs
                   'legacyBaselineSHA256', 'firstRuntimeCommit', 'maximumActualUSD',
                   'maximumModelCalls', 'productionAllowed', 'newPaidResourcesAllowed', 'stopAfterFirstPASS'}
 BINDING_KEYS = A.BINDING_KEYS | {'priorTerminalSHA256', 'causeSHA256', 'fixSHA256', 'targetedTestsSHA256'}
+ABANDONMENT_SCHEMA = 'helmut-w15-mock500-isolated-abandonment/1'
+NEXT_BINDING_KEYS = {'nonce', 'casePath', 'runtimeCommit', 'controlCommit', 'mode', 'scope',
+                     'authoritySHA256', 'approvalSHA256', 'requestSHA256',
+                     'originalBindingSHA256', 'sourceQualificationSHA256'}
+ABANDONMENT_KEYS = {'schema', 'status', 'claimSHA256', 'holdSHA256', 'runtimeCommit', 'nonce',
+                    'runId', 'jobId', 'runProjection', 'jobStatus', 'jobConclusion',
+                    'evidenceSHA256', 'operatorAuthoritySHA256', 'independentReviewSHA256', 'nextBinding'}
+RUN_PROJECTION_KEYS = {'id', 'head_sha', 'event', 'head_branch', 'workflow_id', 'run_attempt',
+                       'status', 'conclusion', 'created_at', 'updated_at'}
 
 
 class Standing(A.AfterStop):
     def __init__(self, root, *, expected_root, baseline, authority, binding,
                  authenticate, verify_before_launch, verify_local, verify_cost,
-                 verify_terminal, window_check, clock=lambda: datetime.now(timezone.utc)):
+                 verify_terminal, window_check, clock=lambda: datetime.now(timezone.utc),
+                 verify_abandonment=None):
         super().__init__(root, expected_root=expected_root, baseline=baseline, authority=authority,
             binding=binding, authenticate=authenticate, verify_before_launch=verify_before_launch,
             verify_local=verify_local, window_check=window_check, clock=clock)
         self.verify_cost, self.verify_terminal = verify_cost, verify_terminal
+        self.verify_abandonment = verify_abandonment
 
     def _authority(self):
         a = self.authority
@@ -73,7 +85,8 @@ class Standing(A.AfterStop):
                 os.mkdir(name, mode=0o700, dir_fd=fd); os.fsync(fd)
 
     def _binding(self, value, prior, used):
-        need(set(value) == BINDING_KEYS | {'costProofSHA256'}
+        abandoned = prior is not None and 'abandonment' in prior
+        need(set(value) == BINDING_KEYS | {'costProofSHA256'} | ({'priorAbandonmentSHA256'} if abandoned else set())
              and value['authoritySHA256'] == S.digest(self.authority)
              and S.commit(value['runtimeCommit']) and S.commit(value['controlCommit'])
              and value['mode'] == A.MODE and value['scope'] == A.SCOPE)
@@ -85,6 +98,12 @@ class Standing(A.AfterStop):
         if prior is None:
             need(value['runtimeCommit'] == A.RUNTIME
                  and all(value[k] is None for k in ('priorTerminalSHA256', 'causeSHA256', 'fixSHA256')))
+        elif abandoned:
+            proof = prior['abandonment']
+            need(value['priorAbandonmentSHA256'] == S.digest(proof)
+                 and {k:value[k] for k in NEXT_BINDING_KEYS} == proof['nextBinding']
+                 and all(value[k] is None for k in ('priorTerminalSHA256', 'causeSHA256', 'fixSHA256'))
+                 and S.utc(value['issuedAtUTC']) >= S.utc(proof['runProjection']['updated_at']))
         else:
             proof, before = prior['proof'], prior['claim']['binding']
             need(proof['status'] == 'FAIL' and value['priorTerminalSHA256'] == S.digest(proof)
@@ -95,6 +114,56 @@ class Standing(A.AfterStop):
                 need(proof['dispatchOutcome'] == 'NOT_DISPATCHED'
                      and (value['runtimeCommit'] != before['runtimeCommit']
                           or value['controlCommit'] != before['controlCommit']))
+
+    def _abandonment(self, proof, current):
+        """One explicitly bound isolated successor; no assertion of a safe terminal."""
+        need(current is not None and 'proof' not in current and 'abandonment' not in current
+             and not current['abandonmentUsed'] and current['held'] and current['phase'] == 'POST'
+             and current['hold']['body']['reason'] == 'UNKNOWN'
+             and type(proof) is dict and set(proof) == ABANDONMENT_KEYS
+             and proof['schema'] == ABANDONMENT_SCHEMA
+             and proof['status'] == 'ISOLATED_ABANDONMENT_NO_SAFE_TERMINAL')
+        before = current['claim']['binding']
+        need(proof['claimSHA256'] == S.digest(current['claim'])
+             and proof['holdSHA256'] == S.digest(current['hold'])
+             and proof['runtimeCommit'] == before['runtimeCommit'] == A.RUNTIME
+             and proof['nonce'] == before['nonce'])
+        for key in ('evidenceSHA256', 'operatorAuthoritySHA256', 'independentReviewSHA256'):
+            need(S.sha(proof[key]))
+        for key in ('runId', 'jobId'):
+            need(type(proof[key]) is str and re.fullmatch('[1-9][0-9]{4,19}', proof[key]) is not None)
+        run = proof['runProjection']
+        need(type(run) is dict and set(run) == RUN_PROJECTION_KEYS
+             and type(run['id']) is int and str(run['id']) == proof['runId']
+             and run['head_sha'] == proof['runtimeCommit'] and run['event'] == 'workflow_dispatch'
+             and run['head_branch'] == 'codex/w15-github-end500-preparation-20261028'
+             and type(run['workflow_id']) is int and run['workflow_id'] == 313506164
+             and type(run['run_attempt']) is int and run['run_attempt'] == 1
+             and run['status'] == proof['jobStatus'] == 'completed'
+             and run['conclusion'] == proof['jobConclusion'] == 'cancelled'
+             and S.utc(before['issuedAtUTC']) <= S.utc(run['created_at']) < S.utc(before['expiresAtUTC'])
+             and S.utc(run['created_at']) <= S.utc(run['updated_at']))
+        successor = proof['nextBinding']
+        need(type(successor) is dict and set(successor) == NEXT_BINDING_KEYS
+             and successor['runtimeCommit'] == before['runtimeCommit']
+             and S.commit(successor['controlCommit']) and successor['controlCommit'] != before['controlCommit']
+             and successor['mode'] == A.MODE and successor['scope'] == A.SCOPE
+             and successor['authoritySHA256'] == S.digest(self.authority)
+             and successor['nonce'] not in current['usedNonces']
+             and type(successor['casePath']) is str and Path(successor['casePath']).is_absolute()
+             and successor['casePath'] not in current['usedCases'])
+        S.identifier(successor['nonce'])
+        for key in NEXT_BINDING_KEYS:
+            if key.endswith('SHA256'): need(S.sha(successor[key]))
+
+    def _authenticate_abandonment(self, proof, current):
+        before = S.canonical([proof, current, self.binding])
+        need(callable(self.verify_abandonment) and self.verify_abandonment(proof, current) is True
+             and S.canonical([proof, current, self.binding]) == before)
+
+    @staticmethod
+    def _can_claim(current):
+        return current is None or 'abandonment' in current or 'proof' in current and current['proof']['status'] == 'FAIL'
 
     @staticmethod
     def _proof(proof, claim):
@@ -124,22 +193,26 @@ class Standing(A.AfterStop):
             finally: os.close(fd)
         need(names == ['%012d.json' % i for i in range(1, len(names) + 1)])
         previous, current, prior, used = S.digest(self.authority), None, None, []
+        used_cases, abandonment_used = [], False
         for sequence, name in enumerate(names, 1):
             raw = self._raw(self.root / LEDGER / name); event = json.loads(raw)
             need(raw == S.canonical(event) + b'\n'
                  and json.loads(self._raw(self.root / ANCHORS / name)) == {'eventSHA256': S.digest(event)}
                  and set(event) == {'schema', 'sequence', 'previousSHA256', 'kind', 'body'}
-                 and event['schema'] == SCHEMA and event['sequence'] == sequence
+                 and event['schema'] == (ABANDONMENT_SCHEMA if event['kind'] == 'ISOLATED_ABANDONMENT' else SCHEMA)
+                 and event['sequence'] == sequence
                  and event['previousSHA256'] == previous)
             kind, body = event['kind'], event['body']
             if kind == 'CLAIM':
-                need(current is None or 'proof' in current and current['proof']['status'] == 'FAIL')
+                need(self._can_claim(current))
                 prior = current
                 need(set(body) == {'binding', 'owner'})
                 self._binding(body['binding'], prior, used); used.append(body['binding']['nonce'])
-                current = {'claim': body, 'phase': 'CLAIM', 'held': False}
+                used_cases.append(body['binding']['casePath'])
+                current = {'claim': body, 'phase': 'CLAIM', 'held': False,
+                           'usedNonces': list(used), 'usedCases': list(used_cases), 'abandonmentUsed': abandonment_used}
             else:
-                need(current is not None and 'proof' not in current)
+                need(current is not None and 'proof' not in current and 'abandonment' not in current)
                 if kind in ('LINKS', 'POST'):
                     need(not current['held'] and current['phase'] == ('CLAIM' if kind == 'LINKS' else 'LINKS')
                          and body == {'claimSHA256': S.digest(current['claim'])})
@@ -149,6 +222,11 @@ class Standing(A.AfterStop):
                          and body['claimSHA256'] == S.digest(current['claim'])
                          and body['reason'] in ('UNKNOWN', 'SECURITY_VIOLATION', 'COST_UNKNOWN'))
                     current['held'] = True
+                    current['hold'] = event
+                elif kind == 'ISOLATED_ABANDONMENT':
+                    self._abandonment(body, current)
+                    current['abandonment'] = body
+                    current['abandonmentUsed'] = abandonment_used = True
                 else:
                     need(kind == 'TERMINAL'); self._proof(body, current['claim'])
                     need((body['dispatchOutcome'] == 'NOT_DISPATCHED' and current['phase'] != 'POST')
@@ -158,7 +236,8 @@ class Standing(A.AfterStop):
         return current, previous, len(names), used
 
     def _append(self, previous, count, kind, body):
-        event = dict(schema=SCHEMA, sequence=count + 1, previousSHA256=previous, kind=kind, body=body)
+        schema = ABANDONMENT_SCHEMA if kind == 'ISOLATED_ABANDONMENT' else SCHEMA
+        event = dict(schema=schema, sequence=count + 1, previousSHA256=previous, kind=kind, body=body)
         name = '%012d.json' % (count + 1)
         # Independent permanent anchor first: truncation/partial write/missing
         # counterpart cannot silently recreate a fresh claim or another POST.
@@ -180,14 +259,29 @@ class Standing(A.AfterStop):
     def launch(self):
         with self._locked():
             current, previous, count, used = self._state()
-            need(current is None or 'proof' in current and current['proof']['status'] == 'FAIL')
+            need(self._can_claim(current))
             self._binding(self.binding, current, used); self._local()
+            if current is not None and 'abandonment' in current:
+                self._authenticate_abandonment(current['abandonment'], current)
             before = S.canonical(self.binding)
             need(self.verify_before_launch(self.binding, current) is True and S.canonical(self.binding) == before)
             self._state(); self._local()  # Repeat local state/time/cost after slow authenticated checks.
             claim = {'binding': self.binding, 'owner': A.process_identity()}
             self._append(previous, count, 'CLAIM', claim)
             return json.loads(S.canonical(claim))
+
+    def abandon(self, proof):
+        """Append the separately authenticated exception from the fresh NEXT gate."""
+        with self._locked():
+            current, previous, count, used = self._state()
+            self._abandonment(proof, current)
+            self._binding(self.binding, dict(current, abandonment=proof), used)
+            self._local()
+            self._authenticate_abandonment(proof, current)
+            need(self._state()[0] == current)
+            self._local()
+            self._append(previous, count, 'ISOLATED_ABANDONMENT', proof)
+            return True
 
     def consume(self, phase):
         with self._locked():
@@ -212,7 +306,8 @@ class Standing(A.AfterStop):
     def complete(self, proof):
         with self._locked():
             current, previous, count, _ = self._state()
-            need(current is not None and 'proof' not in current and current['claim']['binding'] == self.binding)
+            need(current is not None and 'proof' not in current and 'abandonment' not in current
+                 and current['claim']['binding'] == self.binding)
             self._proof(proof, current['claim'])
             need((proof['dispatchOutcome'] == 'NOT_DISPATCHED' and current['phase'] != 'POST')
                  or proof['dispatchOutcome'] == 'ACCEPTED' and current['phase'] == 'POST')

@@ -1,21 +1,25 @@
 # CURRENT STATE — Helmut
 
-## W15: unbegrenzte sequenzielle Mock500-Dauerfreigabe (04.11.2026)
+## W15: isolierter Nachfolger nach UNKNOWN (05.11.2026)
 
-Neue Dauerfreigabe ohne 3er-Grenze/Einzel-GOs bis zum verifizierten Voll-PASS. [Dauervertrag](betrieb/w15-mock500-standing-control-20261104.md):
-Alter Grant, beide STOPs, fünf Journalereignisse, zwei Reservierungen und UNKNOWNs
-bleiben bytegleich; eigene append-only Zulassung am selben Root, keine Versuchskappe.
-Sieben neue gezielte Übergangstests PASS; Control-CI und unabhängige Abnahme Pflicht.
-Nach FAIL nur sichere Bereinigung und belegter Fix; kein Blindretry.
-Keine Modelle/Production/neuen bezahlten Ressourcen. Public-Standard-Actions samt
-Artefakt sind anbieterbefreit, unabhängig geprüft; frische Bindung Pflicht. PR1044,
-CI41904312147 läuft; finale CI Pflicht.
+Run41939166457/Runtime33d588b6 ist authentisiert `completed/cancelled`, bleibt
+**UNKNOWN**: native Nullaktivität, acht Bereinigungen, Ergebnisse und Sicherung fehlen.
+Alte Grants, STOPs und Journale bleiben bytegleich.
+[Enger Vertragszusatz](betrieb/w15-mock500-isolated-abandonment-20261105.md) bindet
+genau einen gesondert genehmigten unabhängigen Nachfolger.
+Frische GitHub-VM und neuer Testbestand; der Isolationsbeleg ist kein sicherer Terminal.
+17 gezielte Standing-Prüfungen PASS; eigene finale Pflicht-CI und unabhängige
+Sicherheitsabnahme des gesamten Kontrollzugangs vor Nutzung Pflicht.
+Keine neue Ausführung.
 
-Erste Runtime exakt33d588b6209ad912c5045f6561c07b7dc3d60e63 unverändert;
+[Dauervertrag](betrieb/w15-mock500-standing-control-20261104.md) ohne Versuchskappe
+bleibt bestehen: nach funktionalem FAIL nur sicherer Abschluss und belegte Reparatur;
+kein Blindretry, kein erneutes UNKNOWN automatisch freigeben. Kosten nur im geprüften
+kostenlosen Public-Standard-Actions-Pfad; keine Modelle/Production/neuen Ressourcen.
+Voriger Kontrollkopf109297eb/PR1044: CI41906667602 und unabhängiger Review übernommen.
+Runtime exakt33d588b6209ad912c5045f6561c07b7dc3d60e63 bleibt unverändert;
 CI41889108711/Review, Empfang41037459441/End50041325430429 übernommen.
-Später direkt Full-Mock; keine neue Prepare-Diagnose. Frische Quellen-/Originalbindung
-Pflicht. Run41818696152 bleibt FAIL/UNKNOWN; Diagnosen41854268479/41870462562
-ersetzen seinen fehlenden sicheren Terminalbeleg nicht. Kein neuer Claim, Link, POST, geschützter Job oder Mock500-PASS.
+Kein Mock500-PASS. Frische Code-/Originalbindung und vollständiger Vorflug Pflicht.
 
 Historische Materials-FAILs bleiben erhalten: Run41500229995/9d,124s, Peak2,590GB,
 8CleanupPASS; innere Ursache/Endzähler/Sicherung/DBnull UNKNOWN
