@@ -62,6 +62,9 @@ Jeder Modellaufruf prueft genau ein aktives Profil und den passenden
 Profil-/Aufgabenbezug. Globales Understanding bekommt seine Bindung nur aus
 dem direkten Profil-Crawl. Dessen bestehender Rohquellenfilter waehlt maximal
 25 relevante aktuelle Crawl-Eingaben; kein Abarbeiten des alten Backlogs.
+Bereits beim No-Paid-Vorlauf gespeicherte Artikel bleiben bei Wiederbeobachtung
+in genau diesem Crawl verwendbar. Rohspeicher-Dedup ist kein Beleg fuer bereits
+abgeschlossenes Understanding; dessen eigener KO-/Hashschutz bleibt erhalten.
 Nur Briefing-Aufgaben sind freigegeben; andere KI-Funktionen und historische
 Testrequests koennen den Betriebsvertrag nicht als Ausweichpfad nutzen.
 
@@ -82,7 +85,7 @@ Alle lokalen Tests ueber `scripts/lokal.js`, ohne Netz/Productionzugang:
   unbekannte Ausgaenge, nicht umgehbare HTTPS-Naht.
 - Historische Testkosten26, AI-Deadline11, Admission20, Lage-Kostenbelege30:
   alle PASS; bestehende Regeln bleiben erhalten.
-- No-Paid-/Crawl-Bindung25 PASS; echte Rohquellen-Relevanz und inaktive Profile
+- No-Paid-/Crawl-Bindung29 PASS; echte Rohquellen-Relevanz und inaktive Profile
   PASS; Tagesplan/Historienerhalt PASS; CI-Testauswahl19 PASS.
 - Unabhaengiger Astra-Review meldet keine offenen Blocker an der Kostennaht.
   Ein im Review entdeckter Filterfehler wurde vor Aktivierung korrigiert.
@@ -109,7 +112,11 @@ Gezielte Korrekturpruefung59/59 PASS. Zwei entsprechende Admin-Erwartungen
 aus der noch nicht gelaufenen Bereichssuite pruefen jetzt den wirklichen
 Zeitplan; leere Konfiguration bleibt gesondert abgedeckt:12/12 und74/74 PASS.
 Ein lesender Sol-Abgleich fand keine weiteren unisolierten Pausenannahmen
-in der aktuellen Pflicht-/Bereichsauswahl. Der Runtimecode blieb unveraendert.
+in der aktuellen Pflicht-/Bereichsauswahl. Der Runtimecode blieb bei diesen Testkorrekturen unveraendert.
+Im abschliessenden Vorabcheck wurde danach die konkrete No-Paid-Uebergangsluecke
+behoben: Der Betriebs-Crawl speiste zuvor nur neue Rohhashes ein. Vier weitere
+Regressionen pruefen nun Wiederbeobachtung, Quellen-/Profilbindung, No-Paid und
+den unveraenderten Altpfad ohne Betriebsvertrag (29/29 PASS).
 
 ## Wirkung und Rueckweg
 

@@ -87,6 +87,7 @@ let operatingContract = null;
 let eagerInput = null;
 let eagerOptions = null;
 let lazyProfiles = null;
+let rawAlreadySaved = false;
 let rawItems = [{ id: "raw-1", url: "https://example.invalid/a", title: "Test", sourceId: "s1" }];
 
 function stub(relPath, exports) {
@@ -118,7 +119,7 @@ stub("storage", {
   getTopicMemory: async () => null,
   saveCrawlRun: async (run) => ({ ok: true, ...run }),
   saveLageCheck: async () => ({}),
-  saveRawItems: async (items) => { spy.saveRaw += 1; return items; },
+  saveRawItems: async (items) => { spy.saveRaw += 1; return rawAlreadySaved ? [] : items; },
   acquirePipelineLock: async () => true,
   releasePipelineLock: async () => {},
   saveRawDocument: async () => ({ saved: true }),
@@ -238,6 +239,31 @@ function resetSpy() { for (const k of Object.keys(spy)) spy[k] = 0; }
   }
   check("3.5 Fremdes Profil scheitert vor Quellenabruf und Modellarbeit",
     denied && spy.crawl === 0 && spy.eager === 0 && spy.lazy === 0);
+
+  // Ein No-Paid-Vorlauf hat die Rohartikel bereits gespeichert. Der erneute
+  // Crawl beobachtet sie weiterhin; die Roh-Dedup darf Verstehen nicht sperren.
+  rawAlreadySaved = true;
+  resetSpy();
+  const repeated = await scheduler.runSourceCrawl(TENANT);
+  check("4.1 Bereits gespeicherter aktueller Artikel erreicht gebundenes Understanding",
+    repeated.savedItemsList.length === 0 && spy.saveRaw === 1 && spy.eager === 1
+    && eagerInput.length === 1 && eagerInput[0].id === "raw-1"
+    && eagerOptions.betriebskostenProfileId === TENANT);
+  check("4.2 Wiederbeobachtung erhaelt URL und Quellenbezug ohne fremde Eingaben",
+    eagerInput[0].url === rawItems[0].url && eagerInput[0].sourceId === rawItems[0].sourceId
+    && eagerInput[0].title === rawItems[0].title && spy.lazy === 1
+    && lazyProfiles.length === 1 && lazyProfiles[0].id === TENANT);
+  resetSpy();
+  const repeatedNoPaid = await scheduler.runSourceCrawl(TENANT, { noPaidModel: true });
+  check("4.3 Wiederbeobachtung mit No-Paid startet weiterhin keine Modellphase",
+    spy.lazy === 0 && spy.eager === 0 && spy.crawl === 1
+    && repeatedNoPaid.savedItemsList.length === 0 && repeatedNoPaid.paidModelCalls === 0);
+  operatingContract = null;
+  resetSpy();
+  await scheduler.runSourceCrawl(TENANT);
+  check("4.4 Ohne Betriebsvertrag bleibt Understanding auf neue Rohartikel begrenzt",
+    spy.eager === 1 && eagerInput.length === 0 && spy.lazy === 0
+    && eagerOptions.betriebskostenProfileId === undefined);
 
   console.log(`\nErgebnis: ${pass} PASS, ${fail} FAIL`);
   process.exit(fail === 0 ? 0 : 1);
