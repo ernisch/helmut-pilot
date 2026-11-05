@@ -44,8 +44,27 @@ an seinen ausdruecklichen historischen `workflow_dispatch` gebunden.
 Die zusaetzlichen PR-Pfadfilter einschliesslich DeepSeek treffen diesen Diff nicht.
 Die beiden Pflichtjobs enthalten keine bezahlten Modellaufrufe oder Deployments.
 
-Zum Zeitpunkt dieses Dokumentationscommits sind Push, PR und Kandidaten-CI noch
-ausstehend. Verbindlicher spaeterer Nachweis sind der exakte PR-Kopf und seine
+Die Uebernahme ist als [PR #1053](https://github.com/ernisch/helmut-pilot/pull/1053)
+offen. Der erste [CI-Lauf42080697282](https://github.com/ernisch/helmut-pilot/actions/runs/42080697282)
+auf `d4247661e67d53549bdd1367748c559d4d01e324` brach im Browsercheck ab:
+Der Test suchte das alte Lage-Karussell statt der vorhandenen Liste/Detailansicht.
+Nur die betroffenen Testselektoren und der bereits geaenderte finale
+Querformat-Hinweis werden angepasst. Fakten-, Quellen-, Bereichs- und
+Eingabeschutzbehauptungen bleiben unveraendert; kein Produkt-/Designfix erforderlich.
+
+Gezielte lokale Nachpruefung des bestehenden Browserjobs: beide Lagepfade auf
+Desktop/Mobil bestanden; der erste lokale Lauf ergab71 PASS/3 FAIL. Davon war
+ein Fehler die hier korrigierte alte Querformat-Texterwartung. Zwei weitere
+Textabweichungen stammen von `navigator.onLine=false` im ausschliesslichen
+Loopback-Netzraum: die App zeigt dort korrekt ihren Offlinezustand statt des
+Online-503-Texts. Das wurde separat am echten Browser belegt; die 503-Assertion
+wird nicht aufgeweicht. Keine Fachabfragen mit unbekannter Identitaet und
+Erholung nach dem Fehler bestanden in beiden Viewports. Prosa19/19 bestanden.
+Lokal: vorhandener System-Chromium/Playwright1.62.1, saubere Umgebung,
+keine externen Routen, unveraendertes `scripts/lokal.js`, Teststore bereinigt.
+Die endgueltige Browserabnahme erfolgt mit dem bestehenden gepinnten CI-Browser.
+
+Verbindlicher Abschlussnachweis sind der exakte PR-Kopf und seine
 beiden GitHub-Checkruns; die fruehere main-CI ersetzt sie nicht. Endergebnisse werden
 in der PR und im Abschlussbericht belegt, ohne gruene CI durch einen reinen
 nachtraeglichen Statuscommit erneut ungueltig zu machen.

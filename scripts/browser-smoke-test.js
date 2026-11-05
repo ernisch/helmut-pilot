@@ -246,7 +246,7 @@ function check(name, cond, detail = "") {
         const installClose = page.locator("#helmutInstallClose");
         if (await installClose.isVisible()) await installClose.click();
         await page.locator((isMobile ? ".mobile-dock" : ".nav-list") + ' [data-view="briefing"]').click();
-        const lageText = await page.locator(".lage2-card").first().innerText();
+        const lageText = await page.locator(".ui-vorgang-row").first().innerText();
         check(`${label}: Lage Karte zeigt Fakten und keine Briefing Handlungsanweisung`,
           lageText.includes("Die belegten Fakten") && !lageText.includes("Heute nicht öffentlich zuspitzen"));
         await page.locator((isMobile ? ".mobile-dock" : ".nav-list") + ' [data-view="radar"]').click();
@@ -310,10 +310,12 @@ function check(name, cond, detail = "") {
         currentView = "briefing"; render();
       }, memberFixture);
       check(`${label}: Teilmitgliedskarten erhalten einen Remagen- und zwei BR-Stufenpunkte`,
-        await page.locator(".lage2-card").count() === 3);
-      await page.locator('[data-lage-open="vg-browser-remagen"]').click();
-      await page.waitForSelector(".vsheet-title", { timeout: 5000 });
-      const greenRoles = page.locator(".vsheet .source-basis article");
+        await page.locator(".ui-vorgang-row").count() === 3);
+      // Lage verwendet die bestehende Master-/Detailansicht; der Briefing-
+      // Querverweis oben oeffnet weiterhin den separat geprueften Dialog.
+      await page.locator('[data-ui-lage-select="vg-browser-remagen"]').click();
+      await page.waitForSelector(".ui-lage-detail", { timeout: 5000 });
+      const greenRoles = page.locator(".ui-lage-detail .source-basis article");
       const greenTexts = await greenRoles.allTextContents();
       const greenLinks = await greenRoles.locator("a[href]").evaluateAll(nodes => nodes.map(n => n.href));
       check(`${label}: Remagen Detail zeigt beide unveraenderten Kontexte mit eigenen Quellen`,
@@ -321,19 +323,17 @@ function check(name, cond, detail = "") {
           && greenTexts[1].includes(memberFixture[0].ereignisKontexte[1].summary)
           && greenLinks.includes("https://publisher.test/articles/context-a")
           && greenLinks.includes("https://publisher.test/articles/context-b"));
-      await page.locator("button[data-vsheet-close]").click();
-      await page.waitForSelector(".vsheet-title", { state: "detached" });
-      await page.locator('[data-lage-open="vg-browser-br-rest"]').click();
-      await page.waitForSelector(".vsheet-title", { timeout: 5000 });
-      const brRoles = page.locator(".vsheet .source-basis article");
+      if (isMobile) await page.locator("[data-ui-lage-back]").click();
+      await page.locator('[data-ui-lage-select="vg-browser-br-rest"]').click();
+      await page.waitForSelector(".ui-lage-detail", { timeout: 5000 });
+      const brRoles = page.locator(".ui-lage-detail .source-basis article");
       const brLinks = await brRoles.locator("a[href]").evaluateAll(nodes => nodes.map(n => n.href));
       check(`${label}: BR Restdetail bindet Vorentwurf und Bundestagsstand an getrennte Originale`,
         await brRoles.count() === 2 && brLinks.length === 2
           && brLinks[0] === "https://publisher.test/articles/draft"
           && brLinks[1] === "https://publisher.test/articles/bt"
-          && !(await page.locator(".vsheet").innerText()).includes("Bundesrat billigt Reform"));
-      await page.locator("button[data-vsheet-close]").click();
-      await page.waitForSelector(".vsheet-title", { state: "detached" });
+          && !(await page.locator(".ui-lage-detail").innerText()).includes("Bundesrat billigt Reform"));
+      if (isMobile) await page.locator("[data-ui-lage-back]").click();
       check(`${label}: keine JS Fehler bei Teilrollen und Quellenwechsel`, pageErrors.length === 0);
 
       if (isMobile) {
@@ -420,7 +420,7 @@ function check(name, cond, detail = "") {
       if (device.expectLocked) {
         const text = await page.evaluate(`document.getElementById("orientationLock").textContent`).catch(() => "");
         check(`${device.label}: Sperrtext enthaelt die geforderte Aufforderung`,
-          text.includes("Bitte drehe dein Smartphone ins Hochformat, um Helmut zu verwenden."));
+          text.includes("Bitte drehe dein Gerät ins Hochformat."));
       }
 
       await context.close();
