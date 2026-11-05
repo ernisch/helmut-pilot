@@ -95,6 +95,11 @@ in `testkohorte-vorwaerts-cli-test.js` setzten noch eine produktive leere
 Cronliste voraus. Der historische Pausenfall wird jetzt explizit nur im
 Kindprozess isoliert; aktuelle Tagesplaene prueft die eigene Plansuite.
 Kein Produkt- oder Kostenfehler, keine Abschwaechung der Schreibsperren.
+Gezielte Korrekturpruefung59/59 PASS. Zwei entsprechende Admin-Erwartungen
+aus der noch nicht gelaufenen Bereichssuite pruefen jetzt den wirklichen
+Zeitplan; leere Konfiguration bleibt gesondert abgedeckt:12/12 und74/74 PASS.
+Ein lesender Sol-Abgleich fand keine weiteren unisolierten Pausenannahmen
+in der aktuellen Pflicht-/Bereichsauswahl. Der Runtimecode blieb unveraendert.
 
 ## Wirkung und Rueckweg
 
