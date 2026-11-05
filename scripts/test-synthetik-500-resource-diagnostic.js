@@ -352,10 +352,10 @@ async function mock100ReactionCases(){
     }finally{fs.openSync=open;fs.rmSync(root,{recursive:true,force:true});}
   });
 }
-function nativeRowsFixture(){
+function nativeRowsFixture(id="mock100-unit-fictional",generatedAt=new Date().toISOString()){
   const B=require("../lib/helmut/briefing-speicher"),L=require("../lib/helmut/briefing-lauf"),A=require("../lib/helmut/briefing-ausgabebeleg");
-  const profile={id:"mock100-unit-fictional",committees:["Haushalt"],focusTopics:["Rentenreform"]};
-  const generatedAt=new Date().toISOString(),day=require("../lib/helmut/briefing-frische").berlinTagKey(generatedAt);
+  const profile={id,committees:["Haushalt"],focusTopics:["Rentenreform"]};
+  const day=require("../lib/helmut/briefing-frische").berlinTagKey(generatedAt);
   const lage=require("./fixtures/lage-beleg").payload(),Q=require("../lib/helmut/lage-quellenbeleg");
   for(const group of lage.quellen)for(const q of group.quellenbelege){const previous=q.quelle_id;
     q.quelle_id=Q.quelleIdFuer(group.vorgang_id,q.url);q.auszug=q.titel;q.veroeffentlichtAm=generatedAt;
@@ -422,7 +422,87 @@ async function nativeResultsCases(){
     ]){const f=nativeRowsFixture();mutate(f);assert.throws(()=>D.verifyProfileRows(f.profile,f.rows,f.options));}
   });
 }
+async function completeFixtureContextCases(){
+  const U=require("../lib/helmut/understanding"),M=require("../lib/helmut/matching"),L=require("../lib/helmut/lage"),
+    A=require("../lib/helmut/ai"),Q=require("../lib/helmut/lage-textqualitaet"),P=require("../lib/helmut/provisioning");
+  const data=F.cases(epoch),sources={};
+  const kos=data.map(item=>{const cluster={documents:item.documents},vorgang=U.deriveVorgangId(cluster);
+    sources[vorgang]=item.documents;
+    return U.assembleKnowledgeObject(F.response({input:item.documents.map(d=>d.summary)},{type:"object"},epoch,data),cluster,vorgang);});
+  const specimens=F.selectedSpecs(100).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+  const documentByURL=new Map(data.flatMap(item=>item.documents.map(doc=>[doc.url,item])));
+  async function context(profile){const matched=M.matchProfileToKnowledgeObjects(profile,kos,{limit:12});
+    const ranked=await L.loadRankedVorgaenge({listKnowledgeObjects:async()=>kos,listMatchingResults:async()=>matched},M.matchProfileToKnowledgeObjects,profile,profile.id);
+    return L.prepareDContext(ranked,sources,new Date(epoch)).koLite;}
+  function draftAndReview(profile,input){
+    const prompt=A.buildLageBriefingPrompt(input,profile,{briefingDatum:epoch});
+    const draft=F.response({input:prompt},A.LAGE_BRIEFING_SCHEMA,epoch,data);
+    const reviewInput=A.prepareLageReviewInput(draft,input,profile);
+    const review=F.response({input:reviewInput.prompt},Q.SCHEMA,epoch,data);
+    const result=Q.pruefe(reviewInput.paragraphs,input,review,profile);
+    assert.equal(result.ok,true,"real source and profile review must pass");assert.equal(result.paragraphs.length,2);
+    for(const p of draft.paragraphs){const q=input.flatMap(v=>v.quellenbelege).find(q=>q.quelle_id===p.quelle_id),item=documentByURL.get(q?.url);
+      assert(item);assert(profile.focusTopics.includes(item.topic));
+      assert(item.politicalLevel==="land"&&item.geography.name===profile.state
+        ||profile.parliamentType==="Bundestag"&&item.politicalLevel==="bund");}
+    return{draft,reviewInput};
+  }
+  await test("failed35th profile accepts its actual Berlin source context from the96-case app ranking",async()=>{
+    assert.equal(specimens[34].id,"test-kohorte-synthetik-bt-001");
+    const profile=P.buildProfile(specimens[34],{aktiv:false}),input=await context(profile);
+    assert(input.length>0);assert(input.every(v=>v.quellenbelege.every(q=>{
+      const item=documentByURL.get(q.url);return item.politicalLevel==="land"&&item.geography.name==="Berlin";})));
+    draftAndReview(profile,input);
+  });
+  await test("all100 pure profile contexts pass actual96-case ranking, draft fixture and real source-review rules without running a workload",async()=>{
+    let checked=0;for(const spec of specimens){const profile=P.buildProfile(spec,{aktiv:false});
+      draftAndReview(profile,await context(profile));checked++;}
+    assert.equal(checked,100);
+  });
+  await test("same-topic sources from a foreign state remain rejected for Bundestag and Landtag fixtures",()=>{
+    for(const spec of[specimens[34],specimens[0]]){const profile=P.buildProfile(spec,{aktiv:false});
+      const foreign=data.find(item=>item.politicalLevel==="land"&&item.geography.name!==profile.state&&profile.focusTopics.includes(item.topic));
+      assert(foreign);const ko=kos[foreign.index],input=L.prepareDContext([ko],sources,new Date(epoch)).koLite;assert(input.length>0);
+      assert.throws(()=>F.response({input:A.buildLageBriefingPrompt(input,profile,{briefingDatum:epoch})},A.LAGE_BRIEFING_SCHEMA,epoch,data),/diagnostic-mock-case-binding/);
+    }
+  });
+}
+async function boundedNativeReadbackCases(){
+  await test("native final audit reads complete packages per tenant and still rejects extra, changed or foreign results",()=>{
+    const now=new Date().toISOString(),a=nativeRowsFixture("mock100-unit-a",now),b=nativeRowsFixture("mock100-unit-b",now),all=[a,b];
+    const accepted=new Map(all.map(f=>[f.profile.id,D.verifyProfileRows(f.profile,f.rows,f.options).rowsSHA256])),calls=[];
+    const native={count:table=>{assert.equal(table,"briefings");return 6;},rows:id=>{assert.equal(typeof id,"string","aggregate payload reader is forbidden");calls.push(id);return structuredClone(all.find(f=>f.profile.id===id).rows);}};
+    const result=D.auditNativeProfiles(all.map(f=>f.profile),native,a.options,accepted);
+    assert.deepEqual(calls,all.map(f=>f.profile.id));assert.match(result.rowsSHA256,/^[a-f0-9]{64}$/);
+    assert(Object.values(result.outputErrors).every(n=>n===0));
+    assert.throws(()=>D.auditNativeProfiles(all.map(f=>f.profile),{...native,count:()=>7},a.options,accepted));
+    let countReads=0;assert.throws(()=>D.auditNativeProfiles(all.map(f=>f.profile),{...native,count:()=>++countReads===1?6:7},a.options,accepted));
+    assert.equal(countReads,2,"concurrent extra rows must be detected by the final native count");
+    assert.throws(()=>D.auditNativeProfiles(all.map(f=>f.profile),native,a.options,new Map([[a.profile.id,"0".repeat(64)],[b.profile.id,accepted.get(b.profile.id)]])));
+    assert.throws(()=>D.auditNativeProfiles(all.map(f=>f.profile),{...native,rows:id=>{const rows=native.rows(id);rows[0].user_id="foreign";return rows;}},a.options,accepted));
+  });
+  await test("native failure snapshot uses bounded counts without reading all stored payloads",()=>{
+    const root=temp();try{const c=config(root),phases=[...Array(3).fill({phase:"understanding"}),{phase:"entwurf"},{phase:"pruefung"}];
+      fs.writeFileSync(path.join(root,"MODEL_PHASES.SAFE.json"),JSON.stringify({nonce:c.nonce,phases}),{mode:0o600});
+      const snapshot=D.nativeSnapshot(c,{count:table=>{assert.equal(table,"briefings");return 3;},usage:()=>Array(5).fill({}),rows:()=>{throw Error("all payloads must not be read");}});
+      assert.deepEqual(snapshot,{positions:3,usage:5,understanding:3,entwurf:1,pruefung:1});
+    }finally{fs.rmSync(root,{recursive:true,force:true});}
+  });
+  await test("secondary native snapshot UNKNOWN cannot overwrite the first model failure or observed final zero",async()=>{
+    const root=temp();try{const deps=fake(root);deps.generateLage=async()=>({available:false,reason:"ai-provider-http-422"});
+      deps.snapshot=()=>{throw Error("FICTIONAL_PRIVATE_SNAPSHOT_FAILURE");};
+      await assert.rejects(D.workload(config(root),{},deps));const result=JSON.parse(fs.readFileSync(path.join(root,"APP_RESULT.SAFE.json")));
+      assert.equal(result.firstFailurePhase,"work");assert.equal(result.firstFailureDetail.code,"LAGE_AI_PROVIDER_HTTP_422");
+      assert.equal(result.firstFailureDetail.assertion,"diagnostic-positive-native-lage-required");
+      assert.equal(result.cleanupFailureDetail.code,"UNKNOWN");assert.equal(result.nativeObserved,null);
+      assert.equal(result.finalActiveProfiles,0);assert.equal(deps.active.size,0);assert.equal(readProgress(root).finalActiveProfiles,"UNKNOWN");
+      assert.equal(result.positiveProfileResults,0);assert.equal(result.retryAllowed,false);assert(!JSON.stringify(result).includes("FICTIONAL_PRIVATE"));
+    }finally{fs.rmSync(root,{recursive:true,force:true});}
+  });
+}
 async function main(){
+  await completeFixtureContextCases();
+  await boundedNativeReadbackCases();
   await mock100ContractCases();
   await mock100ReactionCases();
   await nativeResultsCases();
@@ -506,4 +586,4 @@ async function main(){
   console.log(passed+" PASS; synthetic unit cases only; native preflight and full Mock100 NOT executed");
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase,understandingErrorProjectionCase,mockResponseFailureCase,projectIdentityCase,nativeVectorBootstrapCase,progressChannelCases};
+module.exports={completeFixtureContextCases,boundedNativeReadbackCases,currentSourceValidationCase,main,failureProjectionCases,representativeCoverageCases,localAIProjectionCase,diagnosticMigrationSelectionCase,understandingErrorProjectionCase,mockResponseFailureCase,projectIdentityCase,nativeVectorBootstrapCase,progressChannelCases};

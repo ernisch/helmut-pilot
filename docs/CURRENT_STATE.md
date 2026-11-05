@@ -33,7 +33,7 @@ konkrete Freigaben bleiben gueltig.
 | --- | --- |
 | End500, historisch | **PASS**: [GitHub Run 41325430429](https://github.com/ernisch/helmut-pilot/actions/runs/41325430429), Commit f157d97f. Bereits bestandene Backup-, Restore- und Authnachweise nicht unnoetig wiederholen. |
 | Mock500, historisch | **ABGEBROCHEN ALS PROJEKTZIEL, KEIN PASS**. [Run 41939166457](https://github.com/ernisch/helmut-pilot/actions/runs/41939166457) cancelled/UNKNOWN; [Run 41996804804](https://github.com/ernisch/helmut-pilot/actions/runs/41996804804) nach 176min02s FAIL im Controller. Innere Ursache und Profilfortschritt UNKNOWN, nicht null. Acht aeussere Bereinigungen PASS, native Datenbanknullaktivitaet nicht belegt. [Beleg PR1049](https://github.com/ernisch/helmut-pilot/pull/1049). |
-| Mock100, neues Ziel | **VORBEREITET, ABNAHME OFFEN.** Auf Branch `codex/mock100-local-20261105` ist der bestehende originalfreie Diagnosepfad auf 100 Profile (66/24/10), echte App-Verarbeitung und 300 native Ergebnispositionen erweitert. Gezielte JavaScript-Pruefungen 36/36 PASS; native Anschlussprobe, Pflicht-CI und vollstaendiger Mock100 noch offen. Kein Gesamtversuch gestartet. [Vertrag und Belege](betrieb/mock100-20261105.md). |
+| Mock100, neues Ziel | **FAIL, EIN VOLLVERSUCH.** [Run42042488458](https://github.com/ernisch/helmut-pilot/actions/runs/42042488458), Commit c1becb24: 100 aktiv, 34 Profile/102 Positionen bestaetigt; Simulator422 bei Profil35. Native Endaktivitaet0 und aeusserer Cleanup PASS; Gesamtaudit offen. Gezielt repariert in [PR1052](https://github.com/ernisch/helmut-pilot/pull/1052), 42 JS-Gruppen PASS; Reparatur-CI separat am PR-Kopf pruefen. Kein zweiter Gesamtversuch. [Dauerhafte Belege](betrieb/mock100-20261105.md). |
 | Production100 / Production500 | **ABBESTELLT.** Keine neue Vollastpruefung mit echten KI Aufrufen, keine Kostenfreigabe. |
 | Produktintegration und Livegang | **NOCH NICHT ABGENOMMEN.** UI, Backend und Adminarbeit sind getrennt beziehungsweise in privaten Integrationsstaenden vorhanden; gepruefte komplette Produktfreigabe und neuer Livegang sind noch offen. Keine Production Bereitschaft aus gruenen Teiltests ableiten. |
 
@@ -42,8 +42,8 @@ konkrete Freigaben bleiben gueltig.
 Verbindlich ist **Mock100** mit genau 100 gleichzeitig
 aktiven, vollstaendig fiktiven Profilen aus Bundestag,
 Berlin und Brandenburg. Die fruehere 330/120/50
-Verteilung ergibt proportional als **Vorschlag** 66/24/10;
-die konkrete sichere Auswahl muss Codex erst binden.
+Verteilung ergibt 66/24/10; diese konkrete synthetische Auswahl
+ist im neuen Diagnosepfad reproduzierbar hashgebunden.
 Keine realen personenbezogenen Testprofile.
 
 Als fachliche Orientierung aus dem bisherigen
@@ -77,7 +77,10 @@ Infrastrukturprojekte ohne konkrete Notwendigkeit.
   PR1050 auf aktuellem `main` uebernommen. Er verwendet die regulaeren
   App-Pfade, echte isolierte PostgreSQL/PostgREST-Zugriffe und lokale
   Modellantworten. Historische W15-Originale, Runtimepins und Claims
-  werden nicht umgewidmet. Native und unabhaengige Schlussabnahme offen.
+  werden nicht umgewidmet. Kleine native Anschlussprobe und Pflicht-CI
+  auf c1becb24 bestanden; der anschliessende einzige Vollversuch scheiterte.
+  Der erste Controllerfehler ist belegt, sein Simulatorausloeser gezielt
+  repariert. Der reparierte Stand hat noch keinen Mock100-PASS.
 - UI und Backend Integration sowie die fuer den
   ersten zahlenden Kunden erforderliche Produktsicherheit
   sind getrennt nachzuweisen. Ein simulierter
@@ -89,11 +92,10 @@ Infrastrukturprojekte ohne konkrete Notwendigkeit.
 
 ## Genau ein naechster Schritt
 
-**Den vorbereiteten Kandidaten ueber die vorhandene GitHub-CI mit
-der kleinen nativen Anschlussprobe abnehmen.** Danach ist im aktuellen
-Betreiberauftrag genau ein vollstaendiger Mock100 auf dem geprueften
-Stand erlaubt, sofern alle Voraussetzungen bestanden sind. Kein
-automatischer Gesamt-Retry, kein Mock500, Merge oder Deployment.
+**Nach gruener Pflicht-CI des Reparaturcommits genau einen neuen
+vollstaendigen Mock100 ausdruecklich beauftragen.** Der bisher erlaubte
+Einmalversuch ist verbraucht. Kein automatischer Gesamt-Retry, Mock500,
+Merge oder Deployment. Der konkrete CI-Stand steht dauerhaft an PR1052.
 
 Historische alte Anweisungen, darunter
 [`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind

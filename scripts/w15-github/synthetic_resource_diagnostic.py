@@ -52,7 +52,7 @@ ASSERTIONS = frozenset(('diagnostic-native-vector-bootstrap-required','diagnosti
     'diagnostic-one-explicit-case','diagnostic-mock-case-binding','diagnostic-mock-current-understanding-schema','UNKNOWN'))
 ASSERTIONS = ASSERTIONS | frozenset(('diagnostic-mock-profile-binding','diagnostic-three-native-slots-required','diagnostic-native-output-binding','diagnostic-native-source-binding','diagnostic-native-receipt-binding','diagnostic-complete-app-package-required','diagnostic-exact-model-phases-required','diagnostic-five-output-categories-required'))
 NODE_CODES = frozenset(('ERR_ASSERTION','MODULE_NOT_FOUND','ERR_MODULE_NOT_FOUND','EACCES','EPERM','ENOENT',
-    'EEXIST','ECONNREFUSED','ETIMEDOUT','EPIPE','ENOTFOUND','ECONNRESET','UNKNOWN'))
+    'EEXIST','ECONNREFUSED','ETIMEDOUT','EPIPE','ENOTFOUND','ECONNRESET','ENOBUFS','ERR_CHILD_PROCESS_STDIO_MAXBUFFER','UNKNOWN'))
 NODE_CODES = NODE_CODES | frozenset(['LLM_USAGE_NOT_CONFIRMED', 'AI_REQUEST_TIMEOUT', 'AI_REQUEST_SEND_ERROR', 'AI_RESPONSE_TOO_LARGE', 'AI_RESPONSE_ABORTED', 'AI_RESPONSE_STREAM_ERROR', 'AI_RESPONSE_INVALID_JSON', 'AI_RESPONSE_NOT_COMPLETED', 'AI_REQUEST_BUILD_FAILED', 'AI_TLS_ERROR', 'AI_PROVIDER_HTTP_4XX', 'AI_PROVIDER_HTTP_5XX', 'AI_PROVIDER_HTTP_400', 'AI_PROVIDER_HTTP_401', 'AI_PROVIDER_HTTP_403', 'AI_PROVIDER_HTTP_404', 'AI_PROVIDER_HTTP_408', 'AI_PROVIDER_HTTP_422', 'AI_PROVIDER_HTTP_429', 'AI_PROVIDER_HTTP_500', 'AI_PROVIDER_HTTP_502', 'AI_PROVIDER_HTTP_503', 'AI_PROVIDER_HTTP_504'])
 NODE_CODES = NODE_CODES | frozenset(['LAGE_AI_TEXT_PARAGRAPH_COUNT', 'LAGE_AI_TEXT_EMPTY_OR_TYPE', 'LAGE_AI_TEXT_SOURCE_REFERENCE', 'LAGE_AI_TEXT_PROFILE_REFERENCE', 'LAGE_AI_TEXT_AUSWAHLBEGRUENDUNG', 'LAGE_AI_TEXT_VISIBLE_ID', 'LAGE_AI_TEXT_WORD_LIMIT', 'LAGE_AI_COST_RECEIPT_MISSING', 'LAGE_AI_RESPONSE_INCOMPLETE', 'LAGE_AI_RESPONSE_INVALID_JSON', 'LAGE_AI_PROVIDER_UNAVAILABLE', 'LAGE_BUDGET', 'LAGE_STORE_ERROR', 'LAGE_NO_VORGAENGE', 'LAGE_NO_SOURCES', 'LAGE_NO_AI', 'LAGE_AI_ERROR', 'LAGE_EXISTING_RESULT', 'LAGE_NO_CURRENT_SOURCES', 'LAGE_GENERATING', 'LAGE_AI_UNAVAILABLE', 'LAGE_AI_TEXT_SOURCE_SUPPORT', 'LAGE_AI_TEXT_QUALITY_INCOMPLETE', 'LAGE_AI_TEXT_EVIDENCE_QUOTE', 'LAGE_AI_TEXT_REPETITION', 'LAGE_AI_EMPTY', 'LAGE_AI_INVALID', 'LAGE_LOCK_BUSY', 'LAGE_AI_PROVIDER_HTTP_400', 'LAGE_AI_PROVIDER_HTTP_401', 'LAGE_AI_PROVIDER_HTTP_403', 'LAGE_AI_PROVIDER_HTTP_404', 'LAGE_AI_PROVIDER_HTTP_408', 'LAGE_AI_PROVIDER_HTTP_422', 'LAGE_AI_PROVIDER_HTTP_429', 'LAGE_AI_PROVIDER_HTTP_500', 'LAGE_AI_PROVIDER_HTTP_502', 'LAGE_AI_PROVIDER_HTTP_503', 'LAGE_AI_PROVIDER_HTTP_504'])
 ASSERTIONS = ASSERTIONS | frozenset(['diagnostic-ca-required-before-node-start', 'diagnostic-cleanup-only-newly-owned-profiles', 'diagnostic-complete-app-package-required', 'diagnostic-exact-active-cohort-required', 'diagnostic-exact-model-phases-required', 'diagnostic-five-output-categories-required', 'diagnostic-fresh-database-required', 'diagnostic-initial-zero-required', 'diagnostic-local-preload-required', 'diagnostic-mock-case-binding', 'diagnostic-mock-current-understanding-schema', 'diagnostic-mock-profile-binding', 'diagnostic-mock-schema-required', 'diagnostic-native-decisions-required', 'diagnostic-native-matches-required', 'diagnostic-native-output-binding', 'diagnostic-native-postgres-version-required', 'diagnostic-native-receipt-binding', 'diagnostic-native-source-binding', 'diagnostic-native-vector-bootstrap-required', 'diagnostic-native-vector-version-required', 'diagnostic-one-explicit-case', 'diagnostic-positive-current-briefing-required', 'diagnostic-positive-native-lage-required', 'diagnostic-positive-native-understanding-required', 'diagnostic-provision-refused', 'diagnostic-required-schema-migration-missing', 'diagnostic-schema-migration-list-unique', 'diagnostic-stop-or-deadline', 'diagnostic-synthetic-profile-selector-required', 'diagnostic-three-native-slots-required'])
@@ -547,6 +547,7 @@ class Supervisor:
         self.common_failure_memory_seen = False
         self.common_kernel = None; self.phase_metrics = {}; self.bound_identities = [];self.datasets=[];self.services_results=[]
         self.progress_target = None; self.workload_progress = {}; self.progress_unknown = set()
+        self.application_exit_before_service_stop = 'UNKNOWN'
 
     def guard(self):
         need(self.cleaning or time.monotonic() < self.deadline, self.phase, 'WALL_LIMIT')
@@ -795,7 +796,7 @@ class Supervisor:
         command = P.DOCKER + ['exec','--user','1000:1000','--workdir',BASE+'/app','-i',self.container,
                              '/bin/sh','-c',BOUND_SHELL,'w15-bound-child',log,*argv]
         process = subprocess.Popen(command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,env=ENV,close_fds=True)
-        child = {'process':process,'hostPID':None,'startTicks':None,'pidfd':None,'role':role}; self.children.append(child)
+        child = {'process':process,'hostPID':None,'startTicks':None,'pidfd':None,'role':role,'action':action,'exitAttested':False}; self.children.append(child)
         until = min(self.deadline,time.monotonic()+15); raw=b''
         while b'\n' not in raw:
             self.guard(); need(process.poll() is None and time.monotonic()<until,self.phase,'BARRIER_NOT_READY')
@@ -835,6 +836,10 @@ class Supervisor:
 
     def stop_child(self, child):
         process=child['process']
+        if child.get('action')=='--services' and process.poll() is None:
+            applications=[c for c in self.children if c.get('role')=='application']
+            if len(applications)==1 and applications[0].get('exitAttested') is True:
+                self.application_exit_before_service_stop=True
         if process.stdin is not None and not process.stdin.closed: process.stdin.close()
         if process.poll() is None:
             if child['pidfd'] is not None:
@@ -849,7 +854,7 @@ class Supervisor:
                 process.kill();process.wait(timeout=5)
         if child['pidfd'] is not None:
             need(select.select([child['pidfd']],[],[],2)[0],'closure','BOUND_PROCESS_EXIT_UNKNOWN')
-            os.close(child['pidfd']);child['pidfd']=None
+            os.close(child['pidfd']);child['pidfd']=None;child['exitAttested']=True
         if not process.stdout.closed:process.stdout.close()
 
     def connections(self, db):
@@ -913,7 +918,7 @@ class Supervisor:
         need(value['understoodCases']==dataset['executedCaseCount'],self.phase,'UNDERSTOOD_CASE_COUNT')
         self.stop_child(child);self.connections(config['database']['name'])
         self.stop_child(service)
-        self.collect_service_result(result,count,True)
+        self.collect_service_result(result,count,self.application_exit_before_service_stop)
         self.verify_model_phases(result,count,value)
         self.stop_child(pgr)
         return value
@@ -1030,7 +1035,7 @@ class Supervisor:
         for mode,count in (('preflight',SMALL_COUNT),('mock100',100)):
             result=self.work/'results'/mode
             if (result/'SERVICES_CLOSED.SAFE.json').exists():
-                try:self.collect_service_result(result,count,'UNKNOWN')
+                try:self.collect_service_result(result,count,self.application_exit_before_service_stop)
                 except BaseException:pass  # Never replace the first work/guard failure.
         successful=self.first is None and len(results)==1 and all(x in ('PASS','NOT_STARTED') for x in self.cleanup.values())
         return {'schema':'helmut-w15-synthetic-resource-diagnostic-result/1','scope':self.state['request']['scope'],

@@ -1,0 +1,11 @@
+{
+  "schema": "helmut-mock100-dispatch-attempt/1",
+  "repository": "ernisch/helmut-pilot",
+  "commit": "c1becb24428efdff07cc226781f8989182957dcc",
+  "prerequisiteCI": 42037167005,
+  "nonce": "b72dfc50-d285-42e0-a1c5-97cdd23dd3f8",
+  "attempt": 1,
+  "requestedAtUTC": "2026-11-05T14:10:34.045831+00:00",
+  "maximumDispatches": 1,
+  "retryAllowed": false
+}

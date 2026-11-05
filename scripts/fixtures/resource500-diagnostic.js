@@ -98,7 +98,11 @@ function requestContext(request,schema){
 function lageResponse(request,schema,data){
   const input=String(request?.input||""),lines=input.split("\n"),context=requestContext(request,schema);
   const parse=prefix=>{const line=lines.find(x=>x.startsWith(prefix));assert(line,"diagnostic-mock-case-binding");return JSON.parse(line.slice(prefix.length));};
-  const scopeMatches=item=>context.ebene==="Bundestag"?item.politicalLevel==="bund":item.politicalLevel==="land"&&item.geography.name===context.bundesland;
+  // A Bundestag mandate retains its declared constituency state. A subject-
+  // bound report from that state is legitimate context; it does not manufacture
+  // a Landtag membership. The real application still validates the exact topic.
+  const scopeMatches=item=>item.politicalLevel==="land"&&item.geography.name===context.bundesland
+    ||context.ebene==="Bundestag"&&item.politicalLevel==="bund";
   const known=new Map(data.flatMap(item=>item.documents.map(doc=>[doc.url,{item,doc}])));
   const source=(q)=>{const match=known.get(q?.url);assert(match&&q.titel===match.doc.title
     &&typeof q.auszug==="string"&&q.auszug.length>20,"diagnostic-mock-case-binding");

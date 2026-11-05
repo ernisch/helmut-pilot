@@ -499,6 +499,8 @@ p.before('work','briefing-build');process.kill(process.pid,'SIGKILL');
         source=(D.REPO/D.WORKLOAD).read_text()
         assertions=set(re.findall(r'"(diagnostic-[a-z-]+)"',source))
         self.assertLessEqual(assertions,D.ASSERTIONS)
+        declared_codes=re.search(r'const CODES=new Set\(\[(.*?)\]\);',source,re.S)[1]
+        self.assertLessEqual(set(re.findall(r'"([^\"]+)"',declared_codes)),D.NODE_CODES)
         declared=re.search(r'const CODEPOINT_SYMBOLS=new Set\(\[(.*?)\]\);',source,re.S)[1]
         self.assertEqual(set(re.findall(r'"([^"]+)"',declared)),set(D.CODEPOINT_SYMBOLS))
         publisher=D.load('publish_synthetic_resource_receipt')
@@ -507,6 +509,9 @@ p.before('work','briefing-build');process.kill(process.pid,'SIGKILL');
         detail={'assertion':'diagnostic-positive-native-lage-required','code':'LAGE_AI_PROVIDER_HTTP_429',
                 'sqlstate':'UNKNOWN','nativeStatus':'failed','codepoint':{'module':D.WORKLOAD,'function':'Object.workload','line':123}}
         self.assertEqual(publisher.metric_projection(D.failure_detail(detail)),detail)
+        for code in ('ENOBUFS','ERR_CHILD_PROCESS_STDIO_MAXBUFFER'):
+            bounded={**detail,'code':code}
+            self.assertEqual(publisher.metric_projection(D.failure_detail(bounded)),bounded)
 
     def test_cleanup_first_failure_is_closed_and_never_replaces_an_earlier_cause(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -518,6 +523,64 @@ p.before('work','briefing-build');process.kill(process.pid,'SIGKILL');
             self.assertEqual(instance.first,first)
             self.assertEqual(instance.cleanup,{'databaseStopped':'UNKNOWN','systemdReload':'UNKNOWN'})
             self.assertNotIn('SENTINEL',json.dumps(instance.first))
+
+    def test_actual_failed_mock100_receipt_keeps_phase_metrics_and_first_cause_publishable(self):
+        publisher=D.load('publish_synthetic_resource_receipt')
+        original=json.loads((D.REPO/'scripts/fixtures/mock100-run-42042488458.SAFE.json').read_text())
+        projected=publisher.metric_projection(original)
+        self.assertEqual(projected['phaseMeasurements']['mock100'],original['phaseMeasurements']['mock100'])
+        self.assertEqual(projected['firstFailure'],original['firstFailure'])
+        workload=projected['workloadResults'][0]
+        self.assertEqual(workload['positiveProfileResults'],34)
+        self.assertEqual(workload['finalActiveProfiles'],0)
+        self.assertEqual(projected['servicesResults'][0]['applicationExitAttestedBeforeServiceStop'],'UNKNOWN')
+        env={'GITHUB_ACTIONS':'true','GITHUB_REPOSITORY':'ernisch/helmut-pilot',
+          'GITHUB_EVENT_NAME':'workflow_dispatch','GITHUB_REF':D.REF,'GITHUB_SHA':original['exactCommit'],
+          'SOURCE_HEAD_SHA':original['exactCommit'],'GITHUB_RUN_ID':original['runId'],'GITHUB_TOKEN':'SYNTHETIC_FIXTURE_TOKEN'}
+        check=publisher.prepare(original,env)
+        self.assertEqual(check['head_sha'],original['exactCommit'])
+        self.assertIn('LAGE_AI_PROVIDER_HTTP_422',check['output']['text'])
+        self.assertNotIn('SYNTHETIC_FIXTURE_TOKEN',check['output']['text'])
+        self.assertLess(len(check['output']['text']),60020)
+        for key in ('PRIVATE_SENTINEL','mock101'):
+            bad=copy.deepcopy(original);bad['phaseMeasurements'][key]={}
+            with self.assertRaises(AssertionError):publisher.metric_projection(bad)
+
+    @unittest.skipUnless(hasattr(os,'pidfd_open'),'requires Linux bound process descriptors')
+    def test_failed_application_exit_is_attested_before_live_mock_service_stop(self):
+        with tempfile.TemporaryDirectory() as temp:
+            instance=D.Supervisor(state(temp));children=[]
+            try:
+                for action,role in [('--services','test-tools'),('--app','application')]:
+                    process=subprocess.Popen([sys.executable,'-c','import time;time.sleep(30)'],
+                      stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,env=D.ENV)
+                    child={'process':process,'pidfd':os.pidfd_open(process.pid),'role':role,'action':action,'exitAttested':False}
+                    children.append(child)
+                instance.children=children
+                instance.first={'phase':'mock100','code':'APP_RESULT'}
+                with patch.object(instance,'guard'),patch.object(instance,'raw_command',return_value=subprocess.CompletedProcess([],0,b'')):
+                    instance.close()
+                self.assertTrue(instance.application_exit_before_service_stop)
+                self.assertEqual(instance.first,{'phase':'mock100','code':'APP_RESULT'})
+                self.assertTrue(all(c['exitAttested'] for c in children))
+            finally:
+                for child in children:
+                    process=child['process']
+                    if process.poll() is None:process.kill();process.wait(timeout=3)
+                    if child['pidfd'] is not None:os.close(child['pidfd'])
+                    if process.stdin and not process.stdin.closed:process.stdin.close()
+                    if process.stdout and not process.stdout.closed:process.stdout.close()
+
+    def test_already_stopped_service_does_not_invent_application_exit_order(self):
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as temp:
+            instance=D.Supervisor(state(temp));process=Mock();process.poll.return_value=0
+            process.stdin=None;process.stdout.closed=True
+            application={'role':'application','exitAttested':True}
+            service={'process':process,'pidfd':None,'role':'test-tools','action':'--services','exitAttested':False}
+            instance.children=[application,service];instance.stop_child(service)
+            self.assertEqual(instance.application_exit_before_service_stop,'UNKNOWN')
+            self.assertFalse(service['exitAttested'])
 
 
 if __name__=='__main__':unittest.main()

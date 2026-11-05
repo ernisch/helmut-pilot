@@ -27,7 +27,7 @@ function diagnosticMigrations(files){
   return DIAGNOSTIC_MIGRATIONS.map(name=>{assert(available.has(name),"diagnostic-required-schema-migration-missing");return available.get(name);});
 }
 for(const label of["diagnostic-mock-profile-binding","diagnostic-positive-native-lage-required","diagnostic-five-output-categories-required","diagnostic-three-native-slots-required","diagnostic-native-output-binding","diagnostic-native-source-binding","diagnostic-native-receipt-binding","diagnostic-complete-app-package-required","diagnostic-exact-model-phases-required"])ASSERTIONS.add(label);
-const CODES=new Set(["ERR_ASSERTION","MODULE_NOT_FOUND","ERR_MODULE_NOT_FOUND","EACCES","EPERM","ENOENT","EEXIST","ECONNREFUSED","ETIMEDOUT","EPIPE","ENOTFOUND","ECONNRESET"]);
+const CODES=new Set(["ERR_ASSERTION","MODULE_NOT_FOUND","ERR_MODULE_NOT_FOUND","EACCES","EPERM","ENOENT","EEXIST","ECONNREFUSED","ETIMEDOUT","EPIPE","ENOTFOUND","ECONNRESET","ENOBUFS","ERR_CHILD_PROCESS_STDIO_MAXBUFFER"]);
 const AI_MESSAGES=new Map([["KI Kostenbeleg nicht bestaetigt","LLM_USAGE_NOT_CONFIRMED"],
   ["AI request timeout","AI_REQUEST_TIMEOUT"],["AI request send error","AI_REQUEST_SEND_ERROR"],
   ["AI response too large","AI_RESPONSE_TOO_LARGE"],["AI response aborted","AI_RESPONSE_ABORTED"],
@@ -318,6 +318,29 @@ function verifyProfileRows(profile,rows,{day,startedAt,expectedSources}){
   assert.equal(Q.gespeicherterTextGueltig(tampered),false);
   return{verified:true,positions:3,rowsSHA256:B.hash(rows),tenantChecks:4,outputErrors};
 }
+// Read one complete native package at a time. Aggregating all payloads into
+// psql stdout is unnecessary and can exceed its deliberately bounded buffer.
+function auditNativeProfiles(profiles,N,options,accepted){
+  const B=require("../lib/helmut/briefing-speicher"),outputErrors={missing:0,empty:0,duplicate:0,technicallyInvalid:0,unusable:0},bindings=[];
+  const positions=N.count("briefings");let verifiedPositions=0;
+  for(const profile of profiles){
+    const rows=N.rows(profile.id),receipt=verifyProfileRows(profile,rows,options);
+    assert.equal(receipt.rowsSHA256,accepted.get(profile.id),"diagnostic-native-output-binding");
+    verifiedPositions+=rows.length;for(const key of Object.keys(outputErrors))outputErrors[key]+=receipt.outputErrors[key];
+    bindings.push({profileSHA256:Fixture.sha(profile.id),rowsSHA256:receipt.rowsSHA256});
+  }
+  const finalPositions=N.count("briefings");
+  if(positions!==verifiedPositions||positions!==profiles.length*3||finalPositions!==positions){
+    outputErrors.technicallyInvalid+=Math.max(Math.abs(positions-verifiedPositions),Math.abs(finalPositions-positions));
+    const error=Error("diagnostic-five-output-categories-required");error.diagnosticOutputErrors=outputErrors;throw error;
+  }
+  return{rowsSHA256:B.hash({positions,bindings}),outputErrors};
+}
+function nativeSnapshot(c,N){
+  const ledger=privateJSON(path.join(c.resultRoot,"MODEL_PHASES.SAFE.json"),262144);
+  return{positions:N.count("briefings"),usage:N.usage().length,
+    ...Object.fromEntries(["understanding","entwurf","pruefung"].map(phase=>[phase,ledger.phases.filter(p=>p.phase===phase).length]))};
+}
 function production(c){
   const S=require("../lib/helmut/storage"),P=require("../lib/helmut/provisioning"),U=require("../lib/helmut/understanding"),N=native(c);
   const day=require("../lib/helmut/briefing-frische").berlinTagKey(new Date()),startedAt=new Date().toISOString();
@@ -348,21 +371,15 @@ function production(c){
       const receipt={...verifyProfileRows(profile,N.rows(profile.id),{day,startedAt,expectedSources}),...phases(profile)};
       accepted.set(profile.id,receipt.rowsSHA256);return receipt;},
     audit:async profiles=>{
-      const rows=N.rows(),outputErrors=profiles.reduce((total,p)=>{const e=assessProfileRows(p,rows.filter(r=>r.user_id===p.id),{day,startedAt,expectedSources});
-        for(const k of Object.keys(e))total[k]+=e[k];return total;},{missing:0,empty:0,duplicate:0,technicallyInvalid:rows.filter(r=>!profiles.some(p=>p.id===r.user_id)).length,unusable:0});
-      try{assert(rows.length===profiles.length*3&&Object.values(outputErrors).every(n=>n===0),"diagnostic-five-output-categories-required");}
-      catch(error){error.diagnosticOutputErrors=outputErrors;throw error;}
-      for(const profile of profiles){const receipt=verifyProfileRows(profile,rows.filter(r=>r.user_id===profile.id),{day,startedAt,expectedSources});
-        assert.equal(receipt.rowsSHA256,accepted.get(profile.id),"diagnostic-native-output-binding");phases(profile);}
+      const audit=auditNativeProfiles(profiles,N,{day,startedAt,expectedSources},accepted);
+      for(const profile of profiles)phases(profile);
       const ledger=privateJSON(path.join(c.resultRoot,"MODEL_PHASES.SAFE.json"),262144),usage=N.usage();
       const understanding=ledger.phases.filter(p=>p.phase==="understanding").length;
       assert.equal(ledger.phases.length,understanding+2*profiles.length,"diagnostic-exact-model-phases-required");
       assert.equal(usage.length,ledger.phases.length,"diagnostic-exact-model-phases-required");
       assert(usage.every(r=>r.success===true&&!r.keinAufruf),"diagnostic-exact-model-phases-required");
-      return{rowsSHA256:require("../lib/helmut/briefing-speicher").hash(rows),understanding,draftPhases:profiles.length,reviewPhases:profiles.length,
-        outputErrors};},
-    snapshot:()=>{const ledger=privateJSON(path.join(c.resultRoot,"MODEL_PHASES.SAFE.json"),262144);return{positions:N.rows().length,usage:N.usage().length,
-      ...Object.fromEntries(["understanding","entwurf","pruefung"].map(phase=>[phase,ledger.phases.filter(p=>p.phase===phase).length]))};},...N};
+      return{...audit,understanding,draftPhases:profiles.length,reviewPhases:profiles.length};},
+    snapshot:()=>nativeSnapshot(c,N),...N};
 }
 async function workload(c,b,deps=null){
   let phase="dataset",failure=null,firstFailureDetail=null,cleanupFailureDetail=null,status="unknown",zero="UNKNOWN",activeObservations=0,positive=0,understood=0,provisioned=0;
@@ -458,4 +475,4 @@ async function main(argv=process.argv.slice(2)){
 function osGuard(){const guard=require("./lokaler-netzschutz");assert.deepEqual(guard.pruefe(process.env),[]);}
 if(require.main===module)main().catch(error=>{console.error(JSON.stringify({schema:SCHEMA,status:"FAIL_OR_UNKNOWN_DIAGNOSTIC",
   ...(error.diagnosticReceipt||{phase:"configuration",failureDetail:closedFailure(error),retryAllowed:false})}));process.exitCode=1;});
-module.exports={assessProfileRows,verifyProfileRows,SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport,diagnosticMigrations,understandingErrorCode,mockResponseFactory,nativeSchemaBootstrap,appProgress};
+module.exports={auditNativeProfiles,nativeSnapshot,assessProfileRows,verifyProfileRows,SCHEMA,args,configuration,bindings,privateJSON,write,workload,prepareDatabase,services,main,closedFailure,databaseFailure,failureReceipt,localAIReport,diagnosticMigrations,understandingErrorCode,mockResponseFactory,nativeSchemaBootstrap,appProgress};
