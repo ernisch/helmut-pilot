@@ -12897,3 +12897,27 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
   34% { transform: scaleX(.42); opacity: .9; }
 }
 @media (prefers-reduced-motion: reduce) { .splash-pulse-trace { animation: none; transform: scaleX(.3); opacity: .8; } }
+
+/* Kein altes „H“-Signet in der App (Betreiberhinweis 05.11.2026).
+   Zustandskarten: Designpunkt statt Buchstabe. Hohler Ring = nichts zu tun,
+   gefüllter Punkt = Störung. Der Text bleibt für Screenreader ohnehin verborgen. */
+.ui-page .hstand-state-mark { width: 10px; height: 10px; min-height: 0; padding: 0; border: 1.5px solid var(--ui-label); border-radius: 50%; background: transparent; color: transparent; font-size: 0; line-height: 0; overflow: hidden; }
+.ui-page .hstand-state-card--error .hstand-state-mark { border: 0; background: var(--ui-red); }
+/* Lade- und Aktualisieren-Ansichten: derselbe ruhige Puls wie im Startbild. */
+.loading-logo, .helmut-refresh-mark { position: relative; display: block; width: 160px; height: 1px; padding: 0; margin: 0 auto; border: 0; border-radius: 0; background: var(--hairline); box-shadow: none; color: transparent; font-size: 0; line-height: 0; overflow: visible; }
+.loading-logo span { display: none; }
+.loading-logo::after, .helmut-refresh-mark::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1.5px; margin: 0 auto; border-radius: 2px; background: var(--ui-accent); transform: scaleX(.08); opacity: .3; animation: ui-splash-pulse 3.6s cubic-bezier(.45,0,.25,1) infinite; }
+.helmut-refresh-core .helmut-refresh-ring { display: none; }
+.ui-page .helmut-refresh-core { width: auto; height: 40px; }
+/* Ruhigerer Puls: langsamer (3,6 s), kleinere Ausdehnung, sanfter Nachhall. */
+.splash-pulse-trace { animation: ui-splash-pulse 3.6s cubic-bezier(.45,0,.25,1) infinite; }
+@keyframes ui-splash-pulse {
+  0%, 100% { transform: scaleX(.08); opacity: .3; }
+  22% { transform: scaleX(.36); opacity: .85; }
+  34% { transform: scaleX(.22); opacity: .55; }
+  46% { transform: scaleX(.28); opacity: .65; }
+  78% { transform: scaleX(.08); opacity: .3; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-logo::after, .helmut-refresh-mark::after { animation: none; transform: scaleX(.25); opacity: .7; }
+}
