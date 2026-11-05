@@ -12921,3 +12921,5 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
 @media (prefers-reduced-motion: reduce) {
   .loading-logo::after, .helmut-refresh-mark::after { animation: none; transform: scaleX(.25); opacity: .7; }
 }
+/* Install-Banner: Design-Zeichen statt altem Buchstaben-„H“. */
+.install-banner__mark, :root[data-theme="light"] .install-banner__mark { color: transparent; font-size: 0; background: url("assets/ui/logo/helmut-zeichen.svg") center / contain no-repeat; border: 0; box-shadow: none; }
