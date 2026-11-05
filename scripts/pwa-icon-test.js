@@ -85,8 +85,10 @@ function hex(rgb) {
 }
 
 const OLD_BG = [0x0f, 0x17, 0x2a]; // #0f172a
-const NEW_BG = [0x05, 0x09, 0x14]; // #050914
-const WHITE = [255, 255, 255];
+// Designangleich 05.11.2026 (Claude Design „Helmut Desktop Prototyp“): Zeichen =
+// helle Fläche #EDEFF4 mit dunklem Serifen-H #0A0F1C. Vorher: #050914 + weißes H.
+const NEW_BG = [0xed, 0xef, 0xf4]; // #EDEFF4
+const INK = [0x0a, 0x0f, 0x1c]; // #0A0F1C
 
 const ICONS = [
   { file: "helmut_appicon_192.png", size: 192 },
@@ -98,7 +100,7 @@ const ICONS = [
   { file: "favicon-16.png", size: 16 },
 ];
 
-console.log("PNG-Icon-Pruefung (Hintergrund #0f172a -> #050914)");
+console.log("PNG-Icon-Pruefung (Zeichen: #EDEFF4 mit dunklem H #0A0F1C)");
 for (const { file, size } of ICONS) {
   const fp = path.join(assetsDir, file);
   check(`${file}: Datei existiert`, fs.existsSync(fp));
@@ -111,21 +113,21 @@ for (const { file, size } of ICONS) {
   check(`${file}: RGB opak, kein Alpha-Kanal (bleibt vollflaechig)`, img.channels === 3, `channels=${img.channels}`);
 
   const corner = getPixel(img, 0, 0);
-  check(`${file}: Eck-Hintergrund exakt #050914`, corner.every((v, i) => v === NEW_BG[i]),
+  check(`${file}: Eck-Hintergrund exakt #EDEFF4`, corner.every((v, i) => v === NEW_BG[i]),
     `ist ${hex(corner)}`);
 
   // Ganzflaechig auf Rest der alten Farbe #0f172a scannen (kein Pixel darf sie mehr tragen).
   let oldColorFound = false;
-  let whiteFound = false;
+  let inkFound = false;
   for (let y = 0; y < img.height && !oldColorFound; y++) {
     for (let x = 0; x < img.width; x++) {
       const px = getPixel(img, x, y);
       if (px[0] === OLD_BG[0] && px[1] === OLD_BG[1] && px[2] === OLD_BG[2]) { oldColorFound = true; break; }
-      if (px[0] === WHITE[0] && px[1] === WHITE[1] && px[2] === WHITE[2]) whiteFound = true;
+      if (px[0] === INK[0] && px[1] === INK[1] && px[2] === INK[2]) inkFound = true;
     }
   }
   check(`${file}: kein Rest von #0f172a mehr im Bild`, !oldColorFound);
-  check(`${file}: weisses H (reines #ffffff) vorhanden`, whiteFound);
+  check(`${file}: dunkles H (#0A0F1C) vorhanden`, inkFound);
 }
 
 // --- Maskable Safe-Area (W3C: Inhalt innerhalb der inneren 80% / 40%-Radius) ---
@@ -192,12 +194,12 @@ check("server.js: favicon.ico und SVG-Logo NICHT angefasst (unveraendert)",
 // --- index.html: statisch versionierte Icon-Links (Konsistenz zum Repo) ---
 console.log("\nindex.html Icon-Referenzen");
 const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
-check("index.html: Icon-Links + Manifest-Link versioniert (?v=20260712-iconfix1)",
-  /favicon-32\.png\?v=20260712-iconfix1/.test(indexHtml) &&
-  /favicon-16\.png\?v=20260712-iconfix1/.test(indexHtml) &&
-  /helmut_appletouch_180\.png\?v=20260712-iconfix1/.test(indexHtml) &&
-  /helmut_appicon_192\.png\?v=20260712-iconfix1/.test(indexHtml) &&
-  /site\.webmanifest\?v=20260712-iconfix1/.test(indexHtml));
+check("index.html: Icon-Links + Manifest-Link versioniert (?v=20261105-design1)",
+  /favicon-32\.png\?v=20261105-design1/.test(indexHtml) &&
+  /favicon-16\.png\?v=20261105-design1/.test(indexHtml) &&
+  /helmut_appletouch_180\.png\?v=20261105-design1/.test(indexHtml) &&
+  /helmut_appicon_192\.png\?v=20261105-design1/.test(indexHtml) &&
+  /site\.webmanifest\?v=20261105-design1/.test(indexHtml));
 
 // --- sw.js: Cache-Namespace erhoeht + Precache-URLs versioniert ---
 console.log("\nsw.js Cache-Versionierung");
