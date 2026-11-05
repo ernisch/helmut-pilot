@@ -84,6 +84,32 @@ Wegen der Clientkorrektur sind beide inhaltsgebundenen Assetversionen in
 `index.html` auf `3321e2b51ec511af` aktualisiert. Historische Cachebelege bleiben
 erhalten; die Hashregel ist unveraendert.
 
+Auf `9feb99693a8362852a69a723f5e02220ae33cb6c` bestand der
+[Browserjob127449182035](https://github.com/ernisch/helmut-pilot/actions/runs/42085257869/job/127449182035)
+78/78 Pruefungen plus19/19 Prosa-Gruppen, einschliesslich Quellenfrische und
+mobilem Umbruch. Die Standard-Offlinesuite bestand ebenfalls. Der
+[Offlinejob127449182436](https://github.com/ernisch/helmut-pilot/actions/runs/42085257869/job/127449182436)
+scheiterte danach in der Bereichsregression:330/332 Suiten bestanden.
+Genau zwei ueberholte Testannahmen wurden korrigiert:
+
+- `admin-profil-lesefehler-kandidat-test.js` war noch an den alten Serverhash,
+  einen alten Branch und die inzwischen integrierte Patchanwendung gebunden.
+  Er prueft jetzt einmal den exakten aktuellen HEAD im bestehenden Wegwerfklon;
+  Commit-/Quellhash, HTTP200/404/500/401/403, Geheimnisschutz und Bereinigung
+  bleiben erhalten. Gezielter echter lokaler HTTP-Lauf:5/5 Gruppen PASS.
+  Historische Patch- und JSON-Belege bleiben unveraendert.
+- `splash-boot-test.js` erwartete den Splashabschluss direkt hinter der
+  Boot-Catch-Kette. Die UI verwendet bereits korrekt `renderStartFailure`.
+  Statt der alten Regex werden echter Handler, Catchbindung und Splashfunktion
+  im vorhandenen VM-Harness ausgefuehrt: Online503 und Offline,
+  Splashende, Zugriffsentzug und passende Fehlermeldung.33/33 Assertions PASS.
+
+Beide Nachpruefungen liefen mit sauberer Umgebung ueber `scripts/lokal.js` in
+einem eigenen Netz-/Prozessraum ohne externe Routen. Unabhaengige Lesereviews
+akzeptierten beide Testkorrekturen. Kein weiterer Produkt-/Motor-/Designfix.
+Ein neuer Kopf verlangt erneut die beiden unveraenderten Pflichtchecks;
+bestandene Einzelserien wurden darueber hinaus nicht wiederholt.
+
 Verbindlicher Abschlussnachweis sind der exakte PR-Kopf und seine
 beiden GitHub-Checkruns; die fruehere main-CI ersetzt sie nicht. Endergebnisse werden
 in der PR und im Abschlussbericht belegt, ohne gruene CI durch einen reinen
