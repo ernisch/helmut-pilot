@@ -1,0 +1,7 @@
+{
+  "productDefect": false,
+  "cause": "Relative test key resolved under /verwaltung/ and was correctly removed by private cache cleanup; later read used different root-relative key.",
+  "testCorrection": "Use explicit /release-unrelated for both writes and reads.",
+  "priorFirstNavigationAndAssetCheckPassed": true,
+  "productUnchangedBetweenAttempts": true
+}

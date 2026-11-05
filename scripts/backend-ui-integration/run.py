@@ -44,8 +44,9 @@ parser.add_argument('--output', required=True)
 parser.add_argument('--inside')
 parser.add_argument('--views-only', action='store_true', help='Repeat only the two viewport checks after a visual-oracle change')
 parser.add_argument('--cache-only', action='store_true', help='Only inspect a previously cached public UI upgrade')
+parser.add_argument('--release', action='store_true', help='Only the final first-navigation cache upgrade and connected product paths')
 args = parser.parse_args()
-assert not (args.views_only and args.cache_only)
+assert sum([args.views_only, args.cache_only, args.release]) <= 1
 OUT = pathlib.Path(args.output).resolve()
 if not args.inside:
     assert not OUT.exists(), 'Never overwrite a previous result'
@@ -62,9 +63,14 @@ if not args.inside:
         assert digest(target) == sha
     (OUT / 'source-binding.json').write_text(json.dumps({'hashes': before, 'head': subprocess.check_output(['git', '-C', str(SOURCE), 'rev-parse', 'HEAD']).decode().strip()}, indent=2))
     seeds = []
+    legacy_ref = '76b75e371c7db69d7c9381071e23443182fc3607' if args.release else 'e054c0bb80fa4c330082bace3cfff6d9bb89a926'
+    legacy_html = subprocess.check_output(['git', '-C', str(SOURCE), 'show', legacy_ref + ':index.html']).decode()
+    if args.release:
+        (OUT / 'legacy-sw.js').write_bytes(subprocess.check_output(['git', '-C', str(SOURCE), 'show', legacy_ref + ':sw.js']))
     for file, destination, mime in [('client.js', 'script', 'text/javascript'), ('styles.css', 'style', 'text/css')]:
-        old = subprocess.check_output(['git', '-C', str(SOURCE), 'show', 'e054c0bb80fa4c330082bace3cfff6d9bb89a926:' + file])
-        url = '/' + re.search(r'(?:src|href)="(' + re.escape(file) + r'[^\"]*)"', (SOURCE / 'index.html').read_text()).group(1)
+        old = subprocess.check_output(['git', '-C', str(SOURCE), 'show', legacy_ref + ':' + file])
+        html = legacy_html if args.release else (SOURCE / 'index.html').read_text()
+        url = '/' + re.search(r'(?:src|href)="(' + re.escape(file) + r'[^\"]*)"', html).group(1)
         seeds.append({'file': file, 'url': url, 'destination': destination, 'mime': mime, 'base64': base64.b64encode(old).decode(), 'oldSha256': hashlib.sha256(old).hexdigest(), 'currentSha256': before[file]})
     (OUT / 'cache-upgrade-seed.json').write_text(json.dumps(seeds))
     for p in HERE.iterdir():
@@ -74,7 +80,7 @@ if not args.inside:
     code = None
     try:
         with (OUT / 'test.log').open('w') as log:
-            child = subprocess.Popen(['unshare', '--user', '--map-root-user', '--net', sys.executable, '-I', str(HERE / 'run.py'), '--output', str(OUT), '--inside', os.readlink('/proc/self/ns/net')] + (['--views-only'] if args.views_only else []) + (['--cache-only'] if args.cache_only else []), cwd=SOURCE, env=clean, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+            child = subprocess.Popen(['unshare', '--user', '--map-root-user', '--net', sys.executable, '-I', str(HERE / 'run.py'), '--output', str(OUT), '--inside', os.readlink('/proc/self/ns/net')] + (['--views-only'] if args.views_only else []) + (['--cache-only'] if args.cache_only else []) + (['--release'] if args.release else []), cwd=SOURCE, env=clean, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
             try: code = child.wait(timeout=300)
             except subprocess.TimeoutExpired: code = 124
     finally:
@@ -107,7 +113,7 @@ if args.views_only: clean['HELMUT_JOINT_VIEWS_ONLY'] = '1'
 if args.cache_only: clean['HELMUT_JOINT_CACHE_ONLY'] = '1'
 code = 124
 try:
-    code = subprocess.run([NODE, str(OUT / 'runtime/scripts/lokal.js'), '--', NODE, str(HERE / 'joint.cjs')], cwd=OUT, env=clean, timeout=270).returncode
+    code = subprocess.run([NODE, str(OUT / 'runtime/scripts/lokal.js'), '--', NODE, str(HERE / ('release.cjs' if args.release else 'joint.cjs'))], cwd=OUT, env=clean, timeout=270).returncode
 except subprocess.TimeoutExpired:
     (OUT / 'timeout.json').write_text(json.dumps({'scope': 'isolated-node', 'exit': code, 'seconds': 270}))
 finally:

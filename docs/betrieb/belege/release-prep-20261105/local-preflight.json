@@ -1,0 +1,60 @@
+{
+  "timeUTC": "2026-11-05T17:08:22.458978+00:00",
+  "originals": [
+    {
+      "path": "/workspace/helmut-backend-ui-integration-20261105/source",
+      "head": "3c5765c577b35641ba107a4d6b863ab1e5ab7456",
+      "branch": "integration/backend-ui-20261105",
+      "status": "",
+      "refs": "e054c0bb80fa4c330082bace3cfff6d9bb89a926 refs/heads/integration/backend-security-admin-20261104\n3c5765c577b35641ba107a4d6b863ab1e5ab7456 refs/heads/integration/backend-ui-20261105\ne054c0bb80fa4c330082bace3cfff6d9bb89a926 refs/remotes/backup/HEAD\ne054c0bb80fa4c330082bace3cfff6d9bb89a926 refs/remotes/backup/integration/backend-security-admin-20261104\n3c5765c577b35641ba107a4d6b863ab1e5ab7456 refs/remotes/backup/integration/backend-ui-20261105\n011910746294109c04fd5dac8e153a22188b7467 refs/remotes/backup/integration/ui-20261105",
+      "worktrees": "worktree /workspace/helmut-backend-ui-integration-20261105/source\nHEAD 3c5765c577b35641ba107a4d6b863ab1e5ab7456\nbranch refs/heads/integration/backend-ui-20261105"
+    },
+    {
+      "path": "/workspace/helmut-gemeinsame-integration-20261104/backend",
+      "head": "e054c0bb80fa4c330082bace3cfff6d9bb89a926",
+      "branch": "integration/backend-security-admin-20261104",
+      "status": "",
+      "refs": "c3b2851fc253410727e73f659b5abcc8c6c6f4f4 refs/heads/feat/claude-backend-isolated\ne054c0bb80fa4c330082bace3cfff6d9bb89a926 refs/heads/integration/backend-security-admin-20261104\nc3b2851fc253410727e73f659b5abcc8c6c6f4f4 refs/remotes/origin/HEAD\nc3b2851fc253410727e73f659b5abcc8c6c6f4f4 refs/remotes/origin/feat/claude-backend-isolated\n6b4012cd912fd0e1f5ec79969168d0dcc010927f refs/remotes/origin/work",
+      "worktrees": "worktree /workspace/helmut-gemeinsame-integration-20261104/backend\nHEAD e054c0bb80fa4c330082bace3cfff6d9bb89a926\nbranch refs/heads/integration/backend-security-admin-20261104"
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated",
+      "head": "c3b2851fc253410727e73f659b5abcc8c6c6f4f4",
+      "branch": "feat/claude-backend-isolated",
+      "status": "",
+      "refs": "c3b2851fc253410727e73f659b5abcc8c6c6f4f4 refs/heads/feat/claude-backend-isolated\n6b4012cd912fd0e1f5ec79969168d0dcc010927f refs/heads/work\n6b4012cd912fd0e1f5ec79969168d0dcc010927f refs/remotes/origin/HEAD\n773f7aa545bfeac9429ef368c49e302e68772cc6 refs/remotes/origin/main\n6b4012cd912fd0e1f5ec79969168d0dcc010927f refs/remotes/origin/work",
+      "worktrees": "worktree /workspace/helmut-claude-backend-isolated\nHEAD c3b2851fc253410727e73f659b5abcc8c6c6f4f4\nbranch refs/heads/feat/claude-backend-isolated"
+    },
+    {
+      "path": "/workspace/helmut-pilot",
+      "head": "6b4012cd912fd0e1f5ec79969168d0dcc010927f",
+      "branch": "work",
+      "status": "?? supabase/.temp/",
+      "refs": "6b4012cd912fd0e1f5ec79969168d0dcc010927f refs/heads/work\nf6477d44e4abf02804d8766bd77cfd7ec298d84a refs/remotes/origin/main",
+      "worktrees": "worktree /workspace/helmut-pilot\nHEAD 6b4012cd912fd0e1f5ec79969168d0dcc010927f\nbranch refs/heads/work"
+    },
+    {
+      "path": "/workspace/helmut-integration-373c-c3b-20261104/backend",
+      "head": "c3b2851fc253410727e73f659b5abcc8c6c6f4f4",
+      "branch": "integration/ui-373c-backend-c3b-20261104",
+      "status": "M client.js\n M styles.css\n?? assets/ui/",
+      "refs": "c3b2851fc253410727e73f659b5abcc8c6c6f4f4 refs/heads/feat/claude-backend-isolated\nc3b2851fc253410727e73f659b5abcc8c6c6f4f4 refs/heads/integration/ui-373c-backend-c3b-20261104\nc3b2851fc253410727e73f659b5abcc8c6c6f4f4 refs/remotes/origin/feat/claude-backend-isolated\n373c373d0d74aed80a7872c3fda6abb922d872f7 refs/remotes/ui-handoff/373c373d\n6b4012cd912fd0e1f5ec79969168d0dcc010927f refs/remotes/ui-handoff/base",
+      "worktrees": "worktree /workspace/helmut-integration-373c-c3b-20261104/backend\nHEAD c3b2851fc253410727e73f659b5abcc8c6c6f4f4\nbranch refs/heads/integration/ui-373c-backend-c3b-20261104"
+    },
+    {
+      "path": "/workspace/helmut-backend-finalisierung-20261104/security/source",
+      "head": "c3b2851fc253410727e73f659b5abcc8c6c6f4f4",
+      "branch": "candidate/account-restore-atomic-20261104",
+      "status": "M lib/helmut/accounts.js\n M server.js\n?? scripts/account-restore-atomic-test.js",
+      "refs": "c3b2851fc253410727e73f659b5abcc8c6c6f4f4 refs/heads/candidate/account-restore-atomic-20261104\nc3b2851fc253410727e73f659b5abcc8c6c6f4f4 refs/heads/feat/claude-backend-isolated\nc3b2851fc253410727e73f659b5abcc8c6c6f4f4 refs/remotes/origin/HEAD\nc3b2851fc253410727e73f659b5abcc8c6c6f4f4 refs/remotes/origin/feat/claude-backend-isolated\n6b4012cd912fd0e1f5ec79969168d0dcc010927f refs/remotes/origin/work",
+      "worktrees": "worktree /workspace/helmut-backend-finalisierung-20261104/security/source\nHEAD c3b2851fc253410727e73f659b5abcc8c6c6f4f4\nbranch refs/heads/candidate/account-restore-atomic-20261104"
+    }
+  ],
+  "relevantProcesses": [
+    {
+      "pid": "123",
+      "name": "dockerd",
+      "state": "S"
+    }
+  ]
+}

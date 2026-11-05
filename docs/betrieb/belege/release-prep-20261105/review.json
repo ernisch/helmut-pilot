@@ -1,0 +1,36 @@
+{
+  "independentReadOnlyAgents": 3,
+  "onlyRootWrites": true,
+  "accounts": {
+    "agent": "release_accounts_review",
+    "accepted": true,
+    "newResult": "4/4 groups,202HTTP,completecleanup",
+    "sources": "accounts/auth/storage/server/p1 unchanged; old PG/CAS evidence reused"
+  },
+  "ui": {
+    "agent": "release_ui_review",
+    "accepted": true,
+    "screenshots": [
+      "desktop-helmut.png",
+      "mobile-helmut.png",
+      "desktop-office-bound.png",
+      "mobile-office-bound.png",
+      "admin-desktop.png",
+      "admin-mobile-customer.png"
+    ],
+    "cache": "first executed current client/style under legacy worker; current worker update and unrelated cache preservation verified",
+    "design": "unchanged"
+  },
+  "motor": {
+    "agent": "release_motor_review",
+    "accepted": true,
+    "mainDeltaPreservedOutsideCurrentState": 30,
+    "libraryFilesExactMainExceptAccounts": 318,
+    "historicalEvidenceUnchanged": true
+  },
+  "limits": [
+    "no new Mock100",
+    "no production verification",
+    "candidate-head mandatory CI still required before main merge"
+  ]
+}

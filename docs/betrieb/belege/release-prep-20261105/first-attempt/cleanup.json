@@ -1,0 +1,11 @@
+{
+  "exit": 1,
+  "sourceUnchanged": true,
+  "runtimeSourceUnchanged": true,
+  "runtimeRemoved": true,
+  "browserTempRemoved": true,
+  "processes": {
+    "seen": [],
+    "remaining": []
+  }
+}

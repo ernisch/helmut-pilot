@@ -1,0 +1,39 @@
+{
+  "observedUTC": "2026-11-05T17:22:05.452074+00:00",
+  "mainCI": {
+    "id": 42069590393,
+    "head_sha": "76b75e371c7db69d7c9381071e23443182fc3607",
+    "status": "completed",
+    "conclusion": "success",
+    "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42069590393"
+  },
+  "jobs": [
+    {
+      "name": "Browser-/Mobile-Smoke (Chromium)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Syntax + Offline-Suiten",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Mock100 \u2014 einmalig, synthetisch und ohne Anbieteraufrufe",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ],
+  "private": true,
+  "remoteRefs": {
+    "integration/backend-security-admin-20261104": "e054c0bb80fa4c330082bace3cfff6d9bb89a926",
+    "integration/backend-ui-20261105": "3c5765c577b35641ba107a4d6b863ab1e5ab7456",
+    "integration/release-prep-20261105": "3c5765c577b35641ba107a4d6b863ab1e5ab7456",
+    "integration/ui-20261105": "011910746294109c04fd5dac8e153a22188b7467"
+  },
+  "privateActionsRuns": 0,
+  "actionsSettings": {
+    "apiReadExit": 1,
+    "error": "HTTP403 Administration Read unavailable; prior explicit operator confirmation remains authoritative"
+  }
+}

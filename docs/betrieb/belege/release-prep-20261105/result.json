@@ -1,0 +1,1958 @@
+{
+  "scope": "RELEASE_FIRST_NAVIGATION_CACHE_AND_CONNECTED_PRODUCT_PATHS",
+  "checks": [
+    {
+      "name": "Content-bound version and real server assets preserve security and legal routes",
+      "status": "PASS"
+    },
+    {
+      "name": "desktop: first executed UI after old-cache upgrade, four views and tenant/session protection",
+      "status": "PASS"
+    },
+    {
+      "name": "mobile: first executed UI after old-cache upgrade, four views and tenant/session protection",
+      "status": "PASS"
+    },
+    {
+      "name": "Original administration keeps locked customer creation and native Office separate",
+      "status": "PASS"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/client.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/styles.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/reichstag.jpg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/IBMPlexMono-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/IBMPlexMono-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/Spectral-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/Spectral-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/",
+      "status": 401,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/server.js",
+      "status": 404,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/impressum",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/datenschutz",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "document"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/support.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "script"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/logo/helmut-zeichen.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/runtime/react-18.3.1.production.min.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "script"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/runtime/react-dom-18.3.1.production.min.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "script"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/overview",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/budget-today",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/customers",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/sources-status",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/process-runs?limit=20",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/favicon.ico",
+      "status": 404,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/logo/favicon.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/sw.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "serviceworker"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_192.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_512.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_192.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css?release-proof",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/styles.css?v=7d7abc524dd2e2ec",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/fonts/inter-latin-variable.woff2",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/client.js?v=7d7abc524dd2e2ec",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/logo/helmut-zeichen.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_logo.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/favicon.ico",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/sw.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "serviceworker"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_192.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_512.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/styles.css?v=7d7abc524dd2e2ec",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/fonts/inter-latin-variable.woff2",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/client.js?v=7d7abc524dd2e2ec",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/logo/helmut-zeichen.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_logo.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/favicon.ico",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/reichstag.jpg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/Spectral-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/IBMPlexMono-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/Spectral-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/IBMPlexMono-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/security/csrf?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/parliament?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "POST",
+      "path": "/api/communication/generate?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": true,
+      "destination": "empty",
+      "syntheticInput": {
+        "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor",
+        "channel": "press",
+        "decision": {
+          "knowledgeObjectId": "ko-positive-a-mention",
+          "knowledge_object_id": "ko-positive-a-mention",
+          "vorgangId": "vg-positive-a-mention",
+          "vorgang_id": "vg-positive-a-mention",
+          "id": "rec-vg-positive-a-mention",
+          "signalId": "ko-positive-a-mention",
+          "decision": "Sofort reagieren",
+          "title": "Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor",
+          "priorityLabel": "Chance",
+          "priorityType": "chance",
+          "summary": "Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor. Die synthetische Mitteilung nennt die Beratung und die beteiligten Ausschussmitglieder.",
+          "action": "Die belegte Tagesordnung im Team besprechen.",
+          "whyItMatters": "Der Vorgang betrifft den Ausschuss Arbeit und Soziales und den Wahlkreis Testkreis Nord.",
+          "inaction": "",
+          "risk": "",
+          "opportunity": "",
+          "estimatedTime": "undefined Min.",
+          "sourceCount": 1,
+          "sources": [
+            {
+              "sourceName": "Synthetische Testquelle A",
+              "sourceType": "news",
+              "url": "https://quellen-a.example.invalid/artikel/a-mention",
+              "itemUrl": "https://quellen-a.example.invalid/artikel/a-mention",
+              "linkType": "direct",
+              "publishedAt": "2026-11-05T17:20:32.515Z",
+              "title": "Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor"
+            }
+          ],
+          "primarySource": {
+            "sourceName": "Synthetische Testquelle A",
+            "sourceType": "news",
+            "url": "https://quellen-a.example.invalid/artikel/a-mention",
+            "itemUrl": "https://quellen-a.example.invalid/artikel/a-mention",
+            "linkType": "direct",
+            "publishedAt": "2026-11-05T17:20:32.515Z",
+            "title": "Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor"
+          },
+          "totalScore": 78,
+          "memory": null,
+          "personalRelevanceExplanation": "Der Vorgang betrifft den Ausschuss Arbeit und Soziales und den Wahlkreis Testkreis Nord.",
+          "consequenceIfIgnored": "",
+          "possibleUpside": "",
+          "actionType": "react",
+          "lageMovement": null,
+          "lageMovementReason": "",
+          "lageDevelopment": "",
+          "sourceFreshness": "",
+          "priorityTrend": "",
+          "relevanceScore": 78
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/communication/generate?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": true,
+      "destination": "empty",
+      "syntheticInput": {
+        "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord",
+        "channel": "press",
+        "decision": {
+          "knowledgeObjectId": "ko-positive-a-party",
+          "knowledge_object_id": "ko-positive-a-party",
+          "vorgangId": "vg-positive-a-party",
+          "vorgang_id": "vg-positive-a-party",
+          "id": "rec-vg-positive-a-party",
+          "signalId": "ko-positive-a-party",
+          "decision": "Sofort reagieren",
+          "title": "Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord",
+          "priorityLabel": "Chance",
+          "priorityType": "chance",
+          "summary": "Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord. Die synthetische Mitteilung nennt die Beratung und die beteiligten Ausschussmitglieder.",
+          "action": "Die belegte Tagesordnung im Team besprechen.",
+          "whyItMatters": "Der Vorgang betrifft den Ausschuss Arbeit und Soziales und den Wahlkreis Testkreis Nord.",
+          "inaction": "",
+          "risk": "",
+          "opportunity": "",
+          "estimatedTime": "undefined Min.",
+          "sourceCount": 1,
+          "sources": [
+            {
+              "sourceName": "Synthetische Testquelle A",
+              "sourceType": "news",
+              "url": "https://quellen-a.example.invalid/artikel/a-party",
+              "itemUrl": "https://quellen-a.example.invalid/artikel/a-party",
+              "linkType": "direct",
+              "publishedAt": "2026-11-05T17:19:32.515Z",
+              "title": "Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord"
+            }
+          ],
+          "primarySource": {
+            "sourceName": "Synthetische Testquelle A",
+            "sourceType": "news",
+            "url": "https://quellen-a.example.invalid/artikel/a-party",
+            "itemUrl": "https://quellen-a.example.invalid/artikel/a-party",
+            "linkType": "direct",
+            "publishedAt": "2026-11-05T17:19:32.515Z",
+            "title": "Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord"
+          },
+          "totalScore": 78,
+          "memory": null,
+          "personalRelevanceExplanation": "Der Vorgang betrifft den Ausschuss Arbeit und Soziales und den Wahlkreis Testkreis Nord.",
+          "consequenceIfIgnored": "",
+          "possibleUpside": "",
+          "actionType": "react",
+          "lageMovement": null,
+          "lageMovementReason": "",
+          "lageDevelopment": "",
+          "sourceFreshness": "",
+          "priorityTrend": "",
+          "relevanceScore": 78
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/sw.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "serviceworker"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "status": 403,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/profile/current",
+      "status": 403,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start?politicianId=integration-synthetic-beta",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css?release-proof",
+      "status": 403,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "document"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/support.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "script"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/logo/helmut-zeichen.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/runtime/react-18.3.1.production.min.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "script"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/runtime/react-dom-18.3.1.production.min.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "script"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/overview",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/budget-today",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/customers",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/sources-status",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/process-runs?limit=20",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/favicon.ico",
+      "status": 404,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/logo/favicon.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/sw.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "serviceworker"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_192.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_512.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_192.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css?release-proof",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/fonts/inter-latin-variable.woff2",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/styles.css?v=7d7abc524dd2e2ec",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/client.js?v=7d7abc524dd2e2ec",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/logo/helmut-zeichen.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_logo.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/favicon.ico",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/sw.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "serviceworker"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_192.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_512.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/styles.css?v=7d7abc524dd2e2ec",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/fonts/inter-latin-variable.woff2",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/client.js?v=7d7abc524dd2e2ec",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/logo/helmut-zeichen.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_logo.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/favicon.ico",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/Spectral-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/IBMPlexMono-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/ui/fonts/Spectral-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/security/csrf?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/parliament?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "POST",
+      "path": "/api/communication/generate?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": true,
+      "destination": "empty",
+      "syntheticInput": {
+        "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor",
+        "channel": "press",
+        "decision": {
+          "knowledgeObjectId": "ko-positive-a-mention",
+          "knowledge_object_id": "ko-positive-a-mention",
+          "vorgangId": "vg-positive-a-mention",
+          "vorgang_id": "vg-positive-a-mention",
+          "id": "rec-vg-positive-a-mention",
+          "signalId": "ko-positive-a-mention",
+          "decision": "Sofort reagieren",
+          "title": "Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor",
+          "priorityLabel": "Chance",
+          "priorityType": "chance",
+          "summary": "Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor. Die synthetische Mitteilung nennt die Beratung und die beteiligten Ausschussmitglieder.",
+          "action": "Die belegte Tagesordnung im Team besprechen.",
+          "whyItMatters": "Der Vorgang betrifft den Ausschuss Arbeit und Soziales und den Wahlkreis Testkreis Nord.",
+          "inaction": "",
+          "risk": "",
+          "opportunity": "",
+          "estimatedTime": "undefined Min.",
+          "sourceCount": 1,
+          "sources": [
+            {
+              "sourceName": "Synthetische Testquelle A",
+              "sourceType": "news",
+              "url": "https://quellen-a.example.invalid/artikel/a-mention",
+              "itemUrl": "https://quellen-a.example.invalid/artikel/a-mention",
+              "linkType": "direct",
+              "publishedAt": "2026-11-05T17:20:32.515Z",
+              "title": "Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor"
+            }
+          ],
+          "primarySource": {
+            "sourceName": "Synthetische Testquelle A",
+            "sourceType": "news",
+            "url": "https://quellen-a.example.invalid/artikel/a-mention",
+            "itemUrl": "https://quellen-a.example.invalid/artikel/a-mention",
+            "linkType": "direct",
+            "publishedAt": "2026-11-05T17:20:32.515Z",
+            "title": "Test Politician One stellt die Tagesordnung zu Arbeit und Soziales im Testkreis Nord vor"
+          },
+          "totalScore": 78,
+          "memory": null,
+          "personalRelevanceExplanation": "Der Vorgang betrifft den Ausschuss Arbeit und Soziales und den Wahlkreis Testkreis Nord.",
+          "consequenceIfIgnored": "",
+          "possibleUpside": "",
+          "actionType": "react",
+          "lageMovement": null,
+          "lageMovementReason": "",
+          "lageDevelopment": "",
+          "sourceFreshness": "",
+          "priorityTrend": "",
+          "relevanceScore": 78
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/communication/generate?politicianId=integration-synthetic-alpha",
+      "status": 200,
+      "csrfPresent": true,
+      "destination": "empty",
+      "syntheticInput": {
+        "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord",
+        "channel": "press",
+        "decision": {
+          "knowledgeObjectId": "ko-positive-a-party",
+          "knowledge_object_id": "ko-positive-a-party",
+          "vorgangId": "vg-positive-a-party",
+          "vorgang_id": "vg-positive-a-party",
+          "id": "rec-vg-positive-a-party",
+          "signalId": "ko-positive-a-party",
+          "decision": "Sofort reagieren",
+          "title": "Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord",
+          "priorityLabel": "Chance",
+          "priorityType": "chance",
+          "summary": "Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord. Die synthetische Mitteilung nennt die Beratung und die beteiligten Ausschussmitglieder.",
+          "action": "Die belegte Tagesordnung im Team besprechen.",
+          "whyItMatters": "Der Vorgang betrifft den Ausschuss Arbeit und Soziales und den Wahlkreis Testkreis Nord.",
+          "inaction": "",
+          "risk": "",
+          "opportunity": "",
+          "estimatedTime": "undefined Min.",
+          "sourceCount": 1,
+          "sources": [
+            {
+              "sourceName": "Synthetische Testquelle A",
+              "sourceType": "news",
+              "url": "https://quellen-a.example.invalid/artikel/a-party",
+              "itemUrl": "https://quellen-a.example.invalid/artikel/a-party",
+              "linkType": "direct",
+              "publishedAt": "2026-11-05T17:19:32.515Z",
+              "title": "Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord"
+            }
+          ],
+          "primarySource": {
+            "sourceName": "Synthetische Testquelle A",
+            "sourceType": "news",
+            "url": "https://quellen-a.example.invalid/artikel/a-party",
+            "itemUrl": "https://quellen-a.example.invalid/artikel/a-party",
+            "linkType": "direct",
+            "publishedAt": "2026-11-05T17:19:32.515Z",
+            "title": "Testpartei Alpha bespricht Arbeit und Soziales im Testkreis Nord"
+          },
+          "totalScore": 78,
+          "memory": null,
+          "personalRelevanceExplanation": "Der Vorgang betrifft den Ausschuss Arbeit und Soziales und den Wahlkreis Testkreis Nord.",
+          "consequenceIfIgnored": "",
+          "possibleUpside": "",
+          "actionType": "react",
+          "lageMovement": null,
+          "lageMovementReason": "",
+          "lageDevelopment": "",
+          "sourceFreshness": "",
+          "priorityTrend": "",
+          "relevanceScore": 78
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/sw.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "serviceworker"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "status": 403,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/profile/current",
+      "status": 403,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start?politicianId=integration-synthetic-beta",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css?release-proof",
+      "status": 403,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "document"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/support.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "script"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/logo/helmut-zeichen.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/runtime/react-18.3.1.production.min.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "script"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/runtime/react-dom-18.3.1.production.min.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "script"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/overview",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/budget-today",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/customers",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/sources-status",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/process-runs?limit=20",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/favicon.ico",
+      "status": 404,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/logo/favicon.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/logo/favicon.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/security/csrf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users",
+      "status": 200,
+      "csrfPresent": true,
+      "destination": "empty"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/users/user-d72c356c4243b5e87d",
+      "status": 200,
+      "csrfPresent": true,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/overview",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/budget-today",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/customers",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/sources-status",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/process-runs?limit=20",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/logo/favicon.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/security/csrf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/office/generate",
+      "status": 400,
+      "csrfPresent": true,
+      "destination": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/office/generate",
+      "status": 200,
+      "csrfPresent": true,
+      "destination": ""
+    }
+  ],
+  "images": [
+    {
+      "file": "desktop-briefing.png",
+      "sha256": "3fb169dfd33b8abfc5e5b6faee4a2109173d04f6e59f63ed8a301e3d066d0aee"
+    },
+    {
+      "file": "desktop-radar.png",
+      "sha256": "8f1aa2e3c39ebd160e15510733e8cca620188cdba6106f5890fa1f390fa08acc"
+    },
+    {
+      "file": "desktop-helmut.png",
+      "sha256": "e2dd225fbd4bae78b25f4456e5d07a07c6eeee7e9fd127ff6df5028184a0ffd7"
+    },
+    {
+      "file": "desktop-office.png",
+      "sha256": "b09cbd63ce3a61f4d64ca7517f3350487a0e4432ddce08a91d05551b5fcbc2db"
+    },
+    {
+      "file": "desktop-office-bound.png",
+      "sha256": "7becfee933e5a3ba374c9183c752c609e6ccdbd88b0a3290502aa62a86867907"
+    },
+    {
+      "file": "mobile-briefing.png",
+      "sha256": "1d6127e2998f01ddb5a78570a8756fd54fc4dffd0d91a9ea2b9cb146adbc77e0"
+    },
+    {
+      "file": "mobile-radar.png",
+      "sha256": "ea72438a8136b5bd74d9041a3fca2798dcae938458c8d8977de11e752d243863"
+    },
+    {
+      "file": "mobile-helmut.png",
+      "sha256": "96e7896f21e91d28440c04f1198515f552aa3aa993d6c116e80131d5872153bc"
+    },
+    {
+      "file": "mobile-office.png",
+      "sha256": "2fa2bb06d8055496058627503f0e8e50ee1c1ef16d9ff75b2d10d86744407800"
+    },
+    {
+      "file": "mobile-office-bound.png",
+      "sha256": "1c8564174b07f94a6c00cea3f0a397f8607e5b1a410c4613792241746efa6e0a"
+    },
+    {
+      "file": "admin-desktop.png",
+      "sha256": "99e83d81862b1c7faf74a7eba3caac369119f0fdd0c69449befd2e03581cfa98"
+    },
+    {
+      "file": "admin-mobile-customer.png",
+      "sha256": "5fd783eeaec21c63d7eeb827f75ed57cd236b00ceaf170fe8f6fd29026d31064"
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "externalRequests": [],
+  "blockedOperations": [],
+  "counters": {
+    "model": 0,
+    "mail": 0,
+    "fetch": 0
+  },
+  "inputCommits": {
+    "backend": "e054c0bb80fa4c330082bace3cfff6d9bb89a926",
+    "ui": "011910746294109c04fd5dac8e153a22188b7467",
+    "main": "76b75e371c7db69d7c9381071e23443182fc3607"
+  },
+  "syntheticReadSeams": true,
+  "realLocalFileStore": true,
+  "productionAcceptance": false,
+  "workerResponses": [
+    {
+      "legacy": true,
+      "sha256": "bdb5d34af59de9907070097c8cf33d99cfbe26074fe8cafef8d1060ffbc77cc1"
+    },
+    {
+      "legacy": false,
+      "sha256": "17ff2b0434002f1aaecddee7aaffa44b29d1b79d9e586564428e17ffbba97402"
+    },
+    {
+      "legacy": false,
+      "sha256": "17ff2b0434002f1aaecddee7aaffa44b29d1b79d9e586564428e17ffbba97402"
+    },
+    {
+      "legacy": true,
+      "sha256": "bdb5d34af59de9907070097c8cf33d99cfbe26074fe8cafef8d1060ffbc77cc1"
+    },
+    {
+      "legacy": false,
+      "sha256": "17ff2b0434002f1aaecddee7aaffa44b29d1b79d9e586564428e17ffbba97402"
+    },
+    {
+      "legacy": false,
+      "sha256": "17ff2b0434002f1aaecddee7aaffa44b29d1b79d9e586564428e17ffbba97402"
+    }
+  ],
+  "assets": [
+    {
+      "file": "client.js",
+      "sha256": "0dd6a60172d118b3ac427f5f54b8741bd279ca350c7d60441f266564ac2816e9",
+      "type": "text/javascript; charset=utf-8"
+    },
+    {
+      "file": "styles.css",
+      "sha256": "1569f470993b917bf53d51cfa9375025f1e2a6aef9bc29a7c2217e7e8dbc9737",
+      "type": "text/css; charset=utf-8"
+    },
+    {
+      "file": "assets/ui/reichstag.jpg",
+      "sha256": "06d4dc796dbb47631f4ed2c7b9b5137bc0c9f43d7080fddb707c512fbecbe5c7",
+      "type": "image/jpeg"
+    },
+    {
+      "file": "assets/ui/fonts/HankenGrotesk-var.ttf",
+      "sha256": "813b3f8fa0965405669a89b38e51bbefd95eef6b8e20d1cb2d8c10cce062662f",
+      "type": "font/ttf"
+    },
+    {
+      "file": "assets/ui/fonts/IBMPlexMono-Medium.ttf",
+      "sha256": "a9b4c49bb299e05b5f6c481e7fb5e78943d2793249a0c8874ab574a2d1ea6755",
+      "type": "font/ttf"
+    },
+    {
+      "file": "assets/ui/fonts/IBMPlexMono-Regular.ttf",
+      "sha256": "6a3412f058c7d8dfd9170c41e85ade48e5156ecb89356110ca57a0a27734af46",
+      "type": "font/ttf"
+    },
+    {
+      "file": "assets/ui/fonts/Spectral-Medium.ttf",
+      "sha256": "f385bc588599c879112272711d4acecc126674009d747a27284f59e93a240e83",
+      "type": "font/ttf"
+    },
+    {
+      "file": "assets/ui/fonts/Spectral-Regular.ttf",
+      "sha256": "c89021dc20720c8d0dcf40b0b2f6e00c13665fa8041717f581396f51b8c78f5d",
+      "type": "font/ttf"
+    }
+  ],
+  "assetVersion": "7d7abc524dd2e2ec",
+  "desktop": {
+    "state": {
+      "profile": "integration-synthetic-alpha",
+      "lage": 4,
+      "radar": 1,
+      "primary": "vg-positive-a-mention"
+    },
+    "firstAssets": [
+      {
+        "file": "client.js",
+        "url": "/client.js?v=7d7abc524dd2e2ec",
+        "sha256": "0dd6a60172d118b3ac427f5f54b8741bd279ca350c7d60441f266564ac2816e9",
+        "fromServiceWorker": true
+      },
+      {
+        "file": "styles.css",
+        "url": "/styles.css?v=7d7abc524dd2e2ec",
+        "sha256": "1569f470993b917bf53d51cfa9375025f1e2a6aef9bc29a7c2217e7e8dbc9737",
+        "fromServiceWorker": true
+      }
+    ],
+    "unrelatedCachesPreserved": true,
+    "oldPublicEntriesPruned": true,
+    "oldWorkerFirstNavigation": true
+  },
+  "mobile": {
+    "state": {
+      "profile": "integration-synthetic-alpha",
+      "lage": 4,
+      "radar": 1,
+      "primary": "vg-positive-a-mention"
+    },
+    "firstAssets": [
+      {
+        "file": "client.js",
+        "url": "/client.js?v=7d7abc524dd2e2ec",
+        "sha256": "0dd6a60172d118b3ac427f5f54b8741bd279ca350c7d60441f266564ac2816e9",
+        "fromServiceWorker": true
+      },
+      {
+        "file": "styles.css",
+        "url": "/styles.css?v=7d7abc524dd2e2ec",
+        "sha256": "1569f470993b917bf53d51cfa9375025f1e2a6aef9bc29a7c2217e7e8dbc9737",
+        "fromServiceWorker": true
+      }
+    ],
+    "unrelatedCachesPreserved": true,
+    "oldPublicEntriesPruned": true,
+    "oldWorkerFirstNavigation": true
+  },
+  "fixture": {
+    "mandateA": "integration-synthetic-alpha",
+    "mandateB": "integration-synthetic-beta",
+    "now": "2026-11-05T17:22:32.515Z",
+    "localUserStore": true,
+    "knowledgeObjects": 4,
+    "rawDocuments": 4,
+    "sourceHosts": [
+      "quellen-a.example.invalid",
+      "quellen-b.example.invalid"
+    ],
+    "datasetSha256": "22d9f41fb09d3c3c81b3acb86e8acc2053a8797cf139e2c021cfc866740785bf",
+    "noHttpResponsesMocked": true,
+    "realAdaptersUntouched": true,
+    "pendingNarrativeExpected": true,
+    "noRunReceipt": true,
+    "contentWriteGuards": [
+      "deleteProfileData",
+      "deleteProfileDataV3",
+      "deleteTenantScopedData",
+      "markUnderstandingGateGeparkt",
+      "saveSourceModeShadowRun",
+      "writeStore",
+      "acquirePipelineLock",
+      "releasePipelineLock",
+      "saveCronFairnessState",
+      "deleteCronFairnessTenant",
+      "acquirePipelineLockAtomic",
+      "saveAdminRecoveryLastRun",
+      "saveRawDocument",
+      "saveKnowledgeObject",
+      "saveProfileEmbedding",
+      "saveMatchingResults",
+      "saveMatchingRun",
+      "updateMatchingRun",
+      "saveDecisions",
+      "savePendingKnowledgeObject",
+      "savePendingKnowledgeObjectsBulk",
+      "resetUnderstandingToPending",
+      "markUnderstandingTerminal",
+      "markPendingUnderstandingTerminal",
+      "saveUnderstandingRetries",
+      "saveUpdateRetries",
+      "markUnderstandingFailed",
+      "saveKnowledgeObjectEnrichment",
+      "saveRenderedBriefingV3",
+      "saveKoDocumentLinks",
+      "saveOfficeOutput",
+      "recordLlmUsage",
+      "saveRawItems",
+      "updateSourceLastCrawled",
+      "saveBriefing",
+      "updateTopicMemoryFromBriefing",
+      "saveCrawlRun",
+      "saveLageCheck",
+      "savePipelineDebugReport",
+      "saveWatchdogState",
+      "saveMonitoringDeliveryState",
+      "updateTaskStatus",
+      "saveInteraction",
+      "saveProfileToDb",
+      "saveFeedback",
+      "savePersonalizedRecommendations",
+      "savePoliticalItems",
+      "savePriorityChanges",
+      "savePushSubscription",
+      "removePushSubscription",
+      "savePushEvent",
+      "deleteRetention"
+    ],
+    "allowedLocalWriteNames": [
+      "saveProfile",
+      "saveTask",
+      "saveUserNote"
+    ],
+    "communicationDraftUsesOriginalRuleFallback": true,
+    "counters": {
+      "reads": {
+        "getSources": 4,
+        "getRenderedBriefingV3": 20,
+        "getLatestCompleteKnowledgeObjectAt": 8,
+        "v3StoreReady": 8,
+        "listKnowledgeObjects": 8,
+        "getSourcesForVorgang": 48,
+        "listMatchingResults": 4,
+        "listAktuelleLageQuellen": 4,
+        "getKnowledgeObjectByVorgang": 1
+      },
+      "writes": {},
+      "allowedLocalWrites": {
+        "saveProfile": 2
+      },
+      "providerCalls": {},
+      "budgetAttempts": 0,
+      "profileIdsRead": [],
+      "localUserReadsInstrumented": false,
+      "authWritesInstrumented": false
+    }
+  },
+  "status": "PASS",
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "requests": 202
+  }
+}

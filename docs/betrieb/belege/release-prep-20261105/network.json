@@ -1,0 +1,9 @@
+{
+  "parentNamespace": "net:[4026531833]",
+  "testNamespace": "net:[4026532210]",
+  "interfaces": [
+    "lo"
+  ],
+  "externalRoutes": 0,
+  "verifiedBeforeServer": true
+}
