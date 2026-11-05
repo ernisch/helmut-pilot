@@ -12923,3 +12923,5 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
 }
 /* Install-Banner: Design-Zeichen statt altem Buchstaben-„H“. */
 .install-banner__mark, :root[data-theme="light"] .install-banner__mark { color: transparent; font-size: 0; background: url("assets/ui/logo/helmut-zeichen.svg") center / contain no-repeat; border: 0; box-shadow: none; }
+/* Zustandskarten ohne Signet: die Überschrift trägt die Aussage allein. */
+.ui-page .hstand-state-mark { display: none; }
