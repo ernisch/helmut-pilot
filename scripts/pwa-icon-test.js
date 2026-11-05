@@ -187,9 +187,11 @@ check("server.js: apple-touch-icon Fallback (192) mit ASSET_VERSION versioniert"
   /helmut_appicon_192\.png\?v=\$\{ASSET_VERSION\}/.test(serverJs));
 check("server.js: Manifest-Link mit ASSET_VERSION versioniert (dynamisch statt statischem String)",
   /site\.webmanifest\?v=\$\{ASSET_VERSION\}/.test(serverJs));
-check("server.js: favicon.ico und SVG-Logo NICHT angefasst (unveraendert)",
-  /href="assets\/favicon\.ico" sizes="any"/.test(serverJs) &&
-  /href="assets\/helmut_logo\.svg" type="image\/svg\+xml"/.test(serverJs));
+// Designangleich 05.11.2026: favicon.ico und SVG-Logo haben neue Bytes unter der
+// immutable /assets-Route — ohne ?v= behielten Browser das alte Icon dauerhaft.
+check("server.js: favicon.ico und SVG-Logo mit ASSET_VERSION versioniert",
+  /href="assets\/favicon\.ico\?v=\$\{ASSET_VERSION\}" sizes="any"/.test(serverJs) &&
+  /href="assets\/helmut_logo\.svg\?v=\$\{ASSET_VERSION\}" type="image\/svg\+xml"/.test(serverJs));
 
 // --- index.html: statisch versionierte Icon-Links (Konsistenz zum Repo) ---
 console.log("\nindex.html Icon-Referenzen");

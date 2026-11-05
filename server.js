@@ -4607,10 +4607,10 @@ function indexHtml() {
     <meta name="apple-mobile-web-app-title" content="Helmut" />
     <meta name="application-name" content="Helmut" />
     <title>Helmut</title>
-    <link rel="icon" href="assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="assets/favicon.ico?v=${ASSET_VERSION}" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=${ASSET_VERSION}" />
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png?v=${ASSET_VERSION}" />
-    <link rel="icon" href="assets/helmut_logo.svg" type="image/svg+xml" />
+    <link rel="icon" href="assets/helmut_logo.svg?v=${ASSET_VERSION}" type="image/svg+xml" />
     <link rel="apple-touch-icon" sizes="180x180" href="assets/helmut_appletouch_180.png?v=${ASSET_VERSION}" />
     <link rel="apple-touch-icon" href="assets/helmut_appicon_192.png?v=${ASSET_VERSION}" />
     <link rel="manifest" href="site.webmanifest?v=${ASSET_VERSION}" />
