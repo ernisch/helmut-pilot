@@ -4615,7 +4615,7 @@ function indexHtml() {
     <link rel="apple-touch-icon" href="assets/helmut_appicon_192.png?v=${ASSET_VERSION}" />
     <link rel="manifest" href="site.webmanifest?v=${ASSET_VERSION}" />
     <style>
-      :root{color-scheme:dark;background:#050914}html,body{width:100%;min-height:100%;margin:0;background:#050914;color:#f5f1e8}body.is-loading{background:radial-gradient(circle at 50% 42%,rgba(140,92,255,.12),transparent 26%),linear-gradient(180deg,#070b15 0%,#050914 72%,#03050b 100%)}.app-splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,rgba(140,92,255,.12),transparent 26%),linear-gradient(180deg,#070b15 0%,#050914 72%,#03050b 100%)}.splash-mark,.loading-mark{display:grid;place-items:center;color:#fbf7ef;background:transparent}.splash-mark span,.loading-mark span{font:720 clamp(42px,13vw,72px)/1 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.04em;text-shadow:0 20px 70px rgba(140,92,255,.34)}.shell{width:100%;min-height:100dvh}.loading-screen{display:grid;place-items:center;min-height:100dvh;width:100%;background:#050914}
+      :root{color-scheme:dark;background:#050914}html,body{width:100%;min-height:100%;margin:0;background:#050914;color:#f5f1e8}body.is-loading{background:radial-gradient(circle at 50% 42%,rgba(127,168,224,.07),transparent 26%),linear-gradient(180deg,#070b15 0%,#050914 72%,#03050b 100%)}.app-splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,rgba(127,168,224,.07),transparent 26%),linear-gradient(180deg,#070b15 0%,#050914 72%,#03050b 100%)}.splash-mark,.loading-mark{display:grid;place-items:center;color:#fbf7ef;background:transparent}.splash-mark span,.loading-mark span{font:400 52px/1 Spectral,Georgia,"Times New Roman",serif;letter-spacing:-.01em;text-shadow:none}.shell{width:100%;min-height:100dvh}.loading-screen{display:grid;place-items:center;min-height:100dvh;width:100%;background:#050914}
     </style>
     <style>
       :root[data-theme="light"] body.is-loading,:root[data-theme="light"] .app-splash,:root[data-theme="light"] .loading-screen{background:#f7f9fc}
@@ -4626,11 +4626,11 @@ function indexHtml() {
   </head>
   <body class="is-loading">
     <div class="app-splash" id="appSplash" aria-hidden="true">
-      <div class="splash-mark"><span>H</span></div>
+      <div class="splash-mark"><span class="splash-word">Helmut</span><svg class="splash-pulse" viewBox="0 0 200 40" aria-hidden="true" focusable="false"><path class="splash-pulse-base" d="M0 20H200"/><path class="splash-pulse-trace" d="M0 20H78l8-12 10 26 8-22 6 8H200"/></svg><small class="splash-tag">Was jetzt zählt.</small></div>
     </div>
     <main class="shell" id="app">
       <section class="loading-screen" aria-label="Bereite deine Morgenlage vor">
-        <div class="loading-mark"><span>H</span></div>
+        <div class="loading-mark"><span class="splash-word">Helmut</span></div>
       </section>
     </main>
 

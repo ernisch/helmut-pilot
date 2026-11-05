@@ -12868,3 +12868,22 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
 :root[data-theme="light"] .sidebar-foot .account-switch { background-color: var(--ui-surface); }
 .sidebar-foot .sidebar-logout { justify-content: flex-start; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: var(--ui-muted); font-size: 15px; text-align: left; }
 .sidebar-foot .sidebar-logout:hover { background: var(--ui-hover); color: var(--ui-text); }
+
+/* Startbildschirm (Variante 2, Betreiberwahl 05.11.2026): Wortmarke „Helmut“
+   in Spectral, darunter eine Haarlinie, über die im Herzschlag-Takt (2,4 s)
+   ein kurzer blauer Ausschlag läuft. Bewegung reduziert -> ruhiges Standbild. */
+.app-splash, body.is-loading { background: radial-gradient(70% 40% at 50% 42%, rgba(127,168,224,.07), transparent 70%), var(--ui-bg); }
+.app-splash .splash-mark, .loading-screen .loading-mark { width: auto; height: auto; display: grid; justify-items: center; gap: 22px; background: none; animation: none; text-align: center; }
+.app-splash .splash-mark span, .loading-mark .splash-word { visibility: visible; }
+.splash-word { font: 400 52px/1 var(--ui-serif) !important; letter-spacing: -.01em !important; color: var(--ui-text) !important; text-shadow: none !important; opacity: 0; animation: ui-splash-fade 900ms cubic-bezier(.22,1,.36,1) forwards; }
+.splash-pulse { width: 200px; height: 40px; overflow: visible; }
+.splash-pulse-base { fill: none; stroke: var(--hairline); stroke-width: 1; }
+.splash-pulse-trace { fill: none; stroke: var(--ui-accent); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 60 400; stroke-dashoffset: 60; animation: ui-splash-trace 2.4s cubic-bezier(.22,1,.36,1) infinite; }
+.splash-tag { font: 400 10.5px/1 var(--ui-mono); letter-spacing: .24em; text-transform: uppercase; color: var(--ui-label); opacity: 0; animation: ui-splash-fade 900ms 350ms cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes ui-splash-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes ui-splash-trace { 0% { stroke-dashoffset: 60; opacity: 0; } 8% { opacity: 1; } 70% { stroke-dashoffset: -260; opacity: 1; } 85%, 100% { stroke-dashoffset: -260; opacity: 0; } }
+@media (max-width: 767px) { .splash-word { font-size: 44px !important; } .splash-pulse { width: 180px; } }
+@media (prefers-reduced-motion: reduce) {
+  .splash-word, .splash-tag { animation: none; opacity: 1; }
+  .splash-pulse-trace { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; opacity: .9; }
+}
