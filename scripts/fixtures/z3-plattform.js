@@ -403,8 +403,11 @@ function starteKiEndpunkt({
   latenzStreuungMs = 700,
   fehlerAnteil = 0,
   hoechstzahlAufrufe = 100000,     // KOSTENRIEGEL: harte Obergrenze, auch lokal
-  verzeichnis = null
+  verzeichnis = null,
+  responseForRequest = null
 } = {}) {
+  if (responseForRequest !== null && typeof responseForRequest !== "function")
+    throw new TypeError("z3-local-response-factory-invalid");
   const arbeitsverzeichnis = verzeichnis || fs.mkdtempSync(path.join(os.tmpdir(), "helmut-z3-tls-"));
   const zert = erzeugeZertifikat(arbeitsverzeichnis, host);
 
@@ -462,7 +465,15 @@ function starteKiEndpunkt({
       // schemafremde Antwort haette den Fachpfad an einer Stelle abgebrochen, die mit
       // Kapazitaet nichts zu tun hat.
       const schema = anfrage.text && anfrage.text.format && anfrage.text.format.schema;
-      const ausgabe = JSON.stringify(baueSchemaAntwort(schema));
+      let ausgabe;
+      try {
+        ausgabe = JSON.stringify(responseForRequest === null
+          ? baueSchemaAntwort(schema) : responseForRequest(anfrage, schema));
+        if (typeof ausgabe !== "string") throw new TypeError("z3-local-response-missing");
+      } catch (_) {
+        messung.fehler += 1;
+        return beenden(422, { error: { message: "Lokale synthetische Antwort nicht verfuegbar" } });
+      }
       messung.ausgabeZeichen += Buffer.byteLength(ausgabe, "utf8");
       const eToken = schaetzeToken(roh);
       const aToken = schaetzeToken(ausgabe);

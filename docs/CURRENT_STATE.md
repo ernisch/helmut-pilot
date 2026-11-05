@@ -33,7 +33,7 @@ konkrete Freigaben bleiben gueltig.
 | --- | --- |
 | End500, historisch | **PASS**: [GitHub Run 41325430429](https://github.com/ernisch/helmut-pilot/actions/runs/41325430429), Commit f157d97f. Bereits bestandene Backup-, Restore- und Authnachweise nicht unnoetig wiederholen. |
 | Mock500, historisch | **ABGEBROCHEN ALS PROJEKTZIEL, KEIN PASS**. [Run 41939166457](https://github.com/ernisch/helmut-pilot/actions/runs/41939166457) cancelled/UNKNOWN; [Run 41996804804](https://github.com/ernisch/helmut-pilot/actions/runs/41996804804) nach 176min02s FAIL im Controller. Innere Ursache und Profilfortschritt UNKNOWN, nicht null. Acht aeussere Bereinigungen PASS, native Datenbanknullaktivitaet nicht belegt. [Beleg PR1049](https://github.com/ernisch/helmut-pilot/pull/1049). |
-| Mock100, neues Ziel | **OFFEN.** Noch kein eigener nachgewiesener Mock100 Lauf. Die bestehende Runtime ist auf 500 gebunden. Ein 100er Lauf, eine gepruefte 100er Vertragsbindung und eine vollstaendige Abnahme sind noch nicht belegt. |
+| Mock100, neues Ziel | **VORBEREITET, ABNAHME OFFEN.** Auf Branch `codex/mock100-local-20261105` ist der bestehende originalfreie Diagnosepfad auf 100 Profile (66/24/10), echte App-Verarbeitung und 300 native Ergebnispositionen erweitert. Gezielte JavaScript-Pruefungen 36/36 PASS; native Anschlussprobe, Pflicht-CI und vollstaendiger Mock100 noch offen. Kein Gesamtversuch gestartet. [Vertrag und Belege](betrieb/mock100-20261105.md). |
 | Production100 / Production500 | **ABBESTELLT.** Keine neue Vollastpruefung mit echten KI Aufrufen, keine Kostenfreigabe. |
 | Produktintegration und Livegang | **NOCH NICHT ABGENOMMEN.** UI, Backend und Adminarbeit sind getrennt beziehungsweise in privaten Integrationsstaenden vorhanden; gepruefte komplette Produktfreigabe und neuer Livegang sind noch offen. Keine Production Bereitschaft aus gruenen Teiltests ableiten. |
 
@@ -73,10 +73,11 @@ Infrastrukturprojekte ohne konkrete Notwendigkeit.
   Fortschrittsdetails ist nachgewiesen. [PR1049](https://github.com/ernisch/helmut-pilot/pull/1049)
   ist nur Dokumentation; keine Runtimekorrektur oder
   Mock100 Freigabe.
-- Die Mock100 Variante des bestehenden 500er Testpfads
-  muss noch minimal implementiert, gezielt geprueft
-  und unabhaengig abgenommen werden. Bestehende
-  Runtimepins und historische Claims nicht umwidmen.
+- Der vorhandene originalfreie Ressourcendiagnosepfad wird gezielt aus
+  PR1050 auf aktuellem `main` uebernommen. Er verwendet die regulaeren
+  App-Pfade, echte isolierte PostgreSQL/PostgREST-Zugriffe und lokale
+  Modellantworten. Historische W15-Originale, Runtimepins und Claims
+  werden nicht umgewidmet. Native und unabhaengige Schlussabnahme offen.
 - UI und Backend Integration sowie die fuer den
   ersten zahlenden Kunden erforderliche Produktsicherheit
   sind getrennt nachzuweisen. Ein simulierter
@@ -88,15 +89,11 @@ Infrastrukturprojekte ohne konkrete Notwendigkeit.
 
 ## Genau ein naechster Schritt
 
-**Codex soll im bestehenden Projektauftrag die bereits
-begonnene Arbeit am sicheren Controllerfehlerkanal
-uebernehmen und den vorhandenen synthetischen
-Testpfad minimal auf Mock100 mit 100 aktiven
-Profilen umstellen.** Nur die wirklich erforderlichen
-Unit und Integrationstests, bestehende Pflicht CI
-und die gueltige unabhängige Pruefung. Kein
-geschuetzter Lastlauf und kein Merge ohne eigene
-gueltige Start- beziehungsweise Releasefreigabe.
+**Den vorbereiteten Kandidaten ueber die vorhandene GitHub-CI mit
+der kleinen nativen Anschlussprobe abnehmen.** Danach ist im aktuellen
+Betreiberauftrag genau ein vollstaendiger Mock100 auf dem geprueften
+Stand erlaubt, sofern alle Voraussetzungen bestanden sind. Kein
+automatischer Gesamt-Retry, kein Mock500, Merge oder Deployment.
 
 Historische alte Anweisungen, darunter
 [`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind
