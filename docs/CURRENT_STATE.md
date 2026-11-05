@@ -5,11 +5,11 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
-## Oberstes Ziel: Mock100 und dann sicher live
+## Oberstes Ziel: Mock100 PASS, dann Helmut sicher live
 
-1. **Mock100**: exakt **100 gleichzeitig aktive synthetische
-   Mandatsprofile** vollstaendig und nachvollziehbar verarbeiten,
-   ohne kostenpflichtige Helmut KI Modellaufrufe.
+1. **Mock100 PASS**: exakt **100 gleichzeitig aktive synthetische
+   Mandatsprofile** wurden vollstaendig und nachvollziehbar verarbeitet,
+   ohne kostenpflichtige Helmut KI Modellaufrufe. Beleg: Run 42053461090.
 2. **Danach Helmut sicher live bringen**: die vorbereitete UI und
    Backend Integration fertigstellen, notwendige Sicherheits-,
    Datenschutz-, Mandantentrennungs-, Funktions- und
@@ -33,7 +33,7 @@ konkrete Freigaben bleiben gueltig.
 | --- | --- |
 | End500, historisch | **PASS**: [GitHub Run 41325430429](https://github.com/ernisch/helmut-pilot/actions/runs/41325430429), Commit f157d97f. Bereits bestandene Backup-, Restore- und Authnachweise nicht unnoetig wiederholen. |
 | Mock500, historisch | **ABGEBROCHEN ALS PROJEKTZIEL, KEIN PASS**. [Run 41939166457](https://github.com/ernisch/helmut-pilot/actions/runs/41939166457) cancelled/UNKNOWN; [Run 41996804804](https://github.com/ernisch/helmut-pilot/actions/runs/41996804804) nach 176min02s FAIL im Controller. Innere Ursache und Profilfortschritt UNKNOWN, nicht null. Acht aeussere Bereinigungen PASS, native Datenbanknullaktivitaet nicht belegt. [Beleg PR1049](https://github.com/ernisch/helmut-pilot/pull/1049). |
-| Mock100, neues Ziel | **FAIL, EIN VOLLVERSUCH.** [Run42042488458](https://github.com/ernisch/helmut-pilot/actions/runs/42042488458), Commit c1becb24: 100 aktiv, 34 Profile/102 Positionen bestaetigt; Simulator422 bei Profil35. Native Endaktivitaet0 und aeusserer Cleanup PASS; Gesamtaudit offen. Gezielt repariert in [PR1052](https://github.com/ernisch/helmut-pilot/pull/1052), 42 JS-Gruppen PASS; Reparatur-CI separat am PR-Kopf pruefen. Kein zweiter Gesamtversuch. [Dauerhafte Belege](betrieb/mock100-20261105.md). |
+| Mock100, neues Ziel | **PASS**: [Run 42053461090](https://github.com/ernisch/helmut-pilot/actions/runs/42053461090), exakt Commit `be0c6d1630f5987e755eb4030cc23a4f7d7247d7` nach [Pflicht-CI 42047654519](https://github.com/ernisch/helmut-pilot/actions/runs/42047654519). 100/100 Profile und 300/300 Ergebnisse nativ geprueft, 400 Tenant-/Quellenschutzkontrollen, alle fuenf Fehlerkategorien null; 296 simulierte Modellaufrufe, keine bezahlten Anbieteraufrufe. Nach 242,633 s einschliesslich Abschluss null aktive Profile, Bereinigung PASS. [Quittung und Fortschritt in PR #1052](https://github.com/ernisch/helmut-pilot/pull/1052) und [vollstaendiger Laufbericht](betrieb/mock100-20261105.md). Historischer erster [FAIL 42042488458](https://github.com/ernisch/helmut-pilot/actions/runs/42042488458) bleibt unveraendert. |
 | Production100 / Production500 | **ABBESTELLT.** Keine neue Vollastpruefung mit echten KI Aufrufen, keine Kostenfreigabe. |
 | Produktintegration und Livegang | **NOCH NICHT ABGENOMMEN.** UI, Backend und Adminarbeit sind getrennt beziehungsweise in privaten Integrationsstaenden vorhanden; gepruefte komplette Produktfreigabe und neuer Livegang sind noch offen. Keine Production Bereitschaft aus gruenen Teiltests ableiten. |
 
@@ -46,9 +46,10 @@ Verteilung ergibt 66/24/10; diese konkrete synthetische Auswahl
 ist im neuen Diagnosepfad reproduzierbar hashgebunden.
 Keine realen personenbezogenen Testprofile.
 
-Als fachliche Orientierung aus dem bisherigen
-Verarbeitungsschema gelten 100 Einheiten, 200 simulierte
-Modellphasen und 300 zu pruefende Ergebnispositionen.
+Der bestandene Vollversuch umfasst 100 Profile, 200 simulierte
+Entwurfs-/Pruefphasen und 96 separat ausgewiesene Understanding-
+Simulationen (insgesamt 296). Alle 300 Ergebnispositionen wurden
+nativ geprueft.
 Weitere vorbestehende Schutz- und Kontrollanforderungen
 sind technisch korrekt auf 100 abzubilden, nicht
 blind aus alten 500er Artefakten als PASS uebernehmen.
@@ -73,14 +74,14 @@ Infrastrukturprojekte ohne konkrete Notwendigkeit.
   Fortschrittsdetails ist nachgewiesen. [PR1049](https://github.com/ernisch/helmut-pilot/pull/1049)
   ist nur Dokumentation; keine Runtimekorrektur oder
   Mock100 Freigabe.
-- Der vorhandene originalfreie Ressourcendiagnosepfad wird gezielt aus
-  PR1050 auf aktuellem `main` uebernommen. Er verwendet die regulaeren
-  App-Pfade, echte isolierte PostgreSQL/PostgREST-Zugriffe und lokale
-  Modellantworten. Historische W15-Originale, Runtimepins und Claims
-  werden nicht umgewidmet. Kleine native Anschlussprobe und Pflicht-CI
-  auf c1becb24 bestanden; der anschliessende einzige Vollversuch scheiterte.
-  Der erste Controllerfehler ist belegt, sein Simulatorausloeser gezielt
-  repariert. Der reparierte Stand hat noch keinen Mock100-PASS.
+- Mock100 PASS wurde auf dem unveraenderten, vollstaendig geprueften
+  Runtimecommit `be0c6d1630f5987e755eb4030cc23a4f7d7247d7` belegt.
+  Der originale freie Diagnosepfad aus PR1050 wurde auf main 8901385d
+  angepasst. Die native Drei-Profil-Probe, Pflicht-CI und unabhaengige
+  Abschlusspruefung waren erfolgreich. Historische W15-Originale,
+  Runtimepins, Claims und STOP-/UNKNOWN-Belege bleiben unveraendert.
+  Aeltere FAIL-/GO-offen-Aussagen in ueberlieferten Commits sind
+  ausdruecklich historische Zwischenstaende, keine aktuellen Blocker.
 - UI und Backend Integration sowie die fuer den
   ersten zahlenden Kunden erforderliche Produktsicherheit
   sind getrennt nachzuweisen. Ein simulierter
@@ -92,10 +93,12 @@ Infrastrukturprojekte ohne konkrete Notwendigkeit.
 
 ## Genau ein naechster Schritt
 
-**Nach gruener Pflicht-CI des Reparaturcommits genau einen neuen
-vollstaendigen Mock100 ausdruecklich beauftragen.** Der bisher erlaubte
-Einmalversuch ist verbraucht. Kein automatischer Gesamt-Retry, Mock500,
-Merge oder Deployment. Der konkrete CI-Stand steht dauerhaft an PR1052.
+**PR #1052 auf unveraenderte Mock100-Runtime und aktuelle Pflichtchecks
+abschliessend pruefen, dann die vorbereitete Produktintegration und
+erforderliche Live-Sicherheit gezielt fertigstellen.** Keine weiteren
+synthetischen Vollversuche und keine bezahlten Lasttests. Ein spaeterer
+Merge/Production-Deploy benoetigt konkrete Releasefreigabe,
+Rueckweg und nachgewiesene Betriebsreife.
 
 Historische alte Anweisungen, darunter
 [`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind
