@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "fix/cem-single-profile-20261106": false,
       "fix/verwaltung-favicon-production-20261105": false,
       "release/helmut-product-20261105": false,
       "codex/helmut-ui-20261031": false,
@@ -134,6 +135,10 @@
       "dest": "/api/index.js"
     }
   ],
-  "crons": [],
+  "crons": [
+    { "path": "/api/cron/crawl", "schedule": "0 4 * * *" },
+    { "path": "/api/cron/lage-briefing", "schedule": "0 5 * * *" },
+    { "path": "/api/cron/morning-briefing", "schedule": "15 5 * * *" }
+  ],
   "ignoreCommand": "node scripts/vercel-ignore-build.js"
 }

@@ -83,6 +83,11 @@ console.log("\nAbschnitt 2: Laufzeit-Spike (sichere Fakes, echter runSourceCrawl
 
 // Spione + Fake-Module MUESSEN vor dem Laden von scheduler.js im require-Cache stehen.
 const spy = { lazy: 0, eager: 0, crawl: 0, saveRaw: 0, matching: 0, decisions: 0 };
+let operatingContract = null;
+let eagerInput = null;
+let eagerOptions = null;
+let lazyProfiles = null;
+let rawItems = [{ id: "raw-1", url: "https://example.invalid/a", title: "Test", sourceId: "s1" }];
 
 function stub(relPath, exports) {
   const abs = require.resolve(path.join(LIB, relPath));
@@ -94,7 +99,7 @@ stub("crawler", {
     spy.crawl += 1;
     return {
       results: [],
-      rawItems: [{ id: "raw-1", url: "https://example.invalid/a", title: "Test", sourceId: "s1" }],
+      rawItems,
       newCandidateItems: 0,
       checkedSources: 0, successfulSources: 0, failedSources: 0,
       skippedSources: 0, circuitOpenSources: 0, sharedSkippedSources: 0, retriesTotal: 0,
@@ -107,7 +112,7 @@ stub("crawler", {
 });
 
 stub("storage", {
-  getProfile: async () => null,
+  getProfile: async (id) => operatingContract ? { id, fullName: "Fiktives Mandat", party: "Fiktive Partei", focusTopics: ["Pflege"] } : null,
   getRawItemsSince: async () => [],
   getSources: async () => [],
   getTopicMemory: async () => null,
@@ -152,13 +157,19 @@ stub("quellenarchitektur/source-mode", {
 });
 stub("quellenarchitektur/dedup-global", { planDedupWrites: (items) => items });
 stub("dedup", { toRawDocumentRow: (x) => ({ id: x.id }), dedupeRawDocuments: (rows) => rows });
+stub("betriebskosten-budget", { aktiv: () => operatingContract !== null, vertrag: () => operatingContract });
 stub("understanding", {
-  clusterRawDocuments: (rows) => rows.map((r) => ({ id: `cluster-${r.id}` })),
+  clusterRawDocuments: (rows) => rows.map((r) => ({ id: `cluster-${r.id}`, documents: [r] })),
   deriveVorgangId: (cluster) => `vorgang-${cluster.id}`,
   buildOutcomeTelemetry: () => ({})
 });
-stub("artikelkontext-lauf", { runUnderstandingShadow: async () => { spy.eager += 1; return { processed: 1, deferred: 0 }; } });
-stub("lazyUnderstanding", { runLazyUnderstandingShadow: async () => { spy.lazy += 1; return { ok: true }; } });
+stub("artikelkontext-lauf", { runUnderstandingShadow: async (items, options) => {
+  spy.eager += 1; eagerInput = items; eagerOptions = options; return { processed: 1, deferred: 0 };
+} });
+stub("lazyUnderstanding", {
+  runLazyUnderstandingShadow: async ({ profiles }) => { spy.lazy += 1; lazyProfiles = profiles; return { ok: true }; },
+  interestedProfiles: (cluster, profiles) => cluster.documents.some(doc => doc.id === "raw-1") ? profiles : []
+});
 stub("matching", { runMatchingShadow: async () => { spy.matching += 1; return { ok: true }; } });
 stub("decisions", { runDecisionShadow: async () => { spy.decisions += 1; return { ok: true }; } });
 
@@ -204,6 +215,29 @@ function resetSpy() { for (const k of Object.keys(spy)) spy[k] = 0; }
     check(`2.9 noPaidModel=${JSON.stringify(wert)} ist NICHT strikt true -> Normalpfad (Eager laeuft)`,
       spy.eager === 1 && spy.lazy === 1 && r.noPaidModel === undefined);
   }
+
+  // Der bezahlte Einprofilpfad bindet ausschliesslich relevante neue Eingaben.
+  operatingContract = { profileId: TENANT };
+  rawItems = [{ ...rawItems[0], title: "Pflege: Bundesregierung plant Reform", content: "Ein Gesetzentwurf zur Pflege.", sourceName: "Testquelle" },
+    { id: "raw-unrelated", url: "https://example.invalid/other", title: "Fremdes Thema", sourceId: "s2" }];
+  resetSpy();
+  await scheduler.runSourceCrawl(TENANT);
+  check("3.1 Einprofilbetrieb versteht nur relevante Eingaben dieses Crawls",
+    eagerInput.length === 1 && eagerInput[0].id === "raw-1" && spy.lazy === 1);
+  check("3.2 Kostenbindung wird explizit an Eager weitergegeben",
+    eagerOptions.betriebskostenProfileId === TENANT);
+  check("3.3 Lazy bekommt ausschliesslich das freigegebene Profil",
+    lazyProfiles.length === 1 && lazyProfiles[0].id === TENANT);
+  resetSpy();
+  await scheduler.runSourceCrawl(TENANT, { noPaidModel: true });
+  check("3.4 No-Paid bleibt auch im Einprofilbetrieb wirksam", spy.eager === 0 && spy.lazy === 0 && spy.crawl === 1);
+  resetSpy();
+  let denied = false;
+  try { await scheduler.runSourceCrawl("mdb-not-authorized"); } catch (error) {
+    denied = error.message === "betriebskosten-profil-nicht-freigegeben";
+  }
+  check("3.5 Fremdes Profil scheitert vor Quellenabruf und Modellarbeit",
+    denied && spy.crawl === 0 && spy.eager === 0 && spy.lazy === 0);
 
   console.log(`\nErgebnis: ${pass} PASS, ${fail} FAIL`);
   process.exit(fail === 0 ? 0 : 1);
