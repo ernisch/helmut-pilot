@@ -17,8 +17,8 @@ dauerhaft verbindliche technische Projektregel entsteht.
   und die **einzige** Quelle für laufende Betriebszustände (aktive Profile, offene
   Migrationen, Blocker).
 
-**Stand:** 2026-09-24 (kompakter Sprintstart und konkretes Merge-GO je PR nach
-neuester Nutzeranweisung; AGENTS.md führt den Arbeitsmodus)
+**Stand:** 2026-11-05 (Betreiberziel Mock100 statt Mock500/Production500;
+AGENTS.md führt die aktuelle Arbeitsordnung)
 
 ---
 
@@ -28,11 +28,19 @@ Helmut ist ein **politischer KI-Stabschef** für Mandatsträger — kein
 Medienmonitoring-Tool, kein News-Reader, kein Dashboard. Helmut reduziert die
 politische Morgenlage auf **Entscheidungen, Kommunikation und Aufgaben**.
 
-**Aktuelles oberstes Projektziel:** der belastbare **Production-Nachweis mit exakt 500
-gleichzeitig aktiven Profilen** (Stufen und Stand ausschließlich in
-[`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)). Danach bleibt die **Verkaufsbereitschaft
-für den ersten zahlenden Zweitmandanten** das Produktziel; ihre Blocker sind Betriebs-,
-Rechts- und Sicherheitsreife (P0: OP-01…OP-04), nicht Funktionsumfang.
+**Aktuelles oberstes Projektziel seit 05.11.2026:** Der
+**synthetische Mock100 Nachweis mit exakt 100 gleichzeitig aktiven
+Mandatsprofilen** und anschliessend eine sichere, nutzbare und
+verkaufbare Production Anwendung. Der alte verpflichtende
+Mock500/Production500 Zielpfad ist aufgehoben und historisch.
+Es ist **kein separater Production100 oder Production500 Lasttest**
+geplant oder freigegeben. Bestehende Anforderungen an Authentifizierung,
+Mandantentrennung, Datenschutz, Kostenkontrolle, sicherheitsrelevante
+Aenderungen und reale Betriebsfreigaben gelten unveraendert.
+Der Mock100 PASS allein beweist nicht, dass die Anwendung
+bereits live und verkaufsbereit ist. Aktueller Belegstand:
+[`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md).
+Die bisherige 500er Historie und ihre Fehlschlaege bleiben erhalten.
 
 ## 2 · Pflichtlektüre bei jedem neuen Thread
 

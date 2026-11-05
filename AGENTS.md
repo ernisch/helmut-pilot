@@ -1,18 +1,17 @@
 # HELMUT AGENT CONTRACT
 
-## Fokusregel vom 05.11.2026: Helmut fertigstellen, keine Nebenbaustellen
+## Aktueller Betreiberbeschluss vom 05.11.2026: Mock100, dann sicher live gehen
 
-**Vorrang bei der Arbeitsauswahl:** Der kuerzeste sichere Weg zum belastbaren Production-Nachweis mit exakt 500 gleichzeitig aktiven synthetischen Profilen hat Vorrang. Danach folgt die Verkaufsbereitschaft. Dieser Fokusblock ist weder ein neuer Testvertrag noch eine Production-, Merge-, Deployment-, Profil- oder Kostenfreigabe. Aktuelle ausdrueckliche Betreiberanweisungen und frische Primaerbelege haben Vorrang vor alten Statusnotizen.
+**Aktuelle oberste Prioritaet:** Helmut mit **Mock100**, exakt 100 gleichzeitig aktiven **synthetischen** Mandatsprofilen, nachvollziehbar pruefen. Danach die bereits vorbereitete Anwendung sicher und verkaufbar auf Production bringen. **Ein gesonderter Production100- oder Production500-Belastungstest ist ausdruecklich abbestellt.** Der bisherige verpflichtende Mock500/Production500-Meilenstein und alle widersprechenden alten 500er Arbeitsanweisungen in diesem Repository sind insoweit **historisch und nicht mehr handlungsleitend**. Aeltere Testbelege, Claims, STOPs und UNKNOWNs bleiben unveraendert.
 
-1. **Naechsten echten Meilenstein bestimmen:** Laut uebergebenem Bericht vom 04.11.2026 ist End500 bestanden (Run 41325430429); Mock500 ist noch nicht vollstaendig abgenommen; anschliessend folgt Production500 mit eigener ausdruecklicher Freigabe. Vor jeder Ausfuehrung den tatsaechlich neuesten Belegstand pruefen. Ein bereits bestandener Nachweis wird nicht grundlos wiederholt.
-2. **Pflichtfrage vor jeder neuen Aufgabe:** Welches konkret offene Abnahmekriterium oder welcher belegte Blocker wird damit unmittelbar geloest? Wenn die Antwort nicht konkret und belegbar ist, die Aufgabe zurueckstellen statt sie zu beginnen. Bereits ausdruecklich beauftragte, getrennte Arbeit nur in ihrem abgegrenzten Umfang fortsetzen und den 500er-Pfad nicht blockieren.
-3. **Minimaler Sprint:** Problem, ein notwendiger naechster Schritt, messbares Abnahmekriterium und Freigabegrenze kurz festlegen. Erst die kleinste sichere Korrektur, dann nur die erforderlichen gezielten Pruefungen. Bereits vorhandene gueltige Belege wiederverwenden.
-4. **Keine selbst erzeugten Umwege:** Keine ungefragten Features, Architektur- oder Infrastrukturumbauten, kosmetischen Arbeiten, zusaetzlichen Teststufen, pauschalen Wiederholungen, willkuerlichen Versuchskappen oder neuen Freigabehuerten. Gesetzliche, technische, ressourcenbezogene und bestehende Sicherheitsgrenzen bleiben unveraendert. Bei einem echten Fehler Ursache klaeren, gezielt beheben und nicht in Endlosschleifen geraten.
-5. **Keine falsche Abnahme:** End500, Mock500 und Production500 strikt unterscheiden. Fuer Mock500 und Production500 jeweils den zuletzt gueltigen vollstaendigen Pruefvertrag verwenden, alle Sollpositionen und Fehlerklassen bilanzieren, notwendige Sicherung und Wiederherstellung belegen und den Endzustand pruefen. Ein lokaler oder simulierter Erfolg ist kein Production-Erfolg.
-6. **Freigabe und Sicherheit:** Keine Schutzregel allein zur Beschleunigung abschalten. Vor kritischen Aktionen die geltenden konkreten Freigaben, Kostenlimits, Auswirkungen, Nachkontrolle und Rueckweg pruefen. Dieser Fokusauftrag aendert keine bestehende Berechtigung.
-7. **Kurzbericht bei jedem Sprintabschluss:** Welches Abnahmekriterium wurde nachweislich erreicht? Was ist weiterhin offen? Was ist genau der naechste notwendige Schritt? Welche nicht notwendigen Arbeiten wurden bewusst ausgelassen?
+1. **Wirtschaftlichkeit:** Keine weiteren mehrstuendigen Mock500-Laeufe, keine neuen Lasttestsysteme und keine pauschalen Wiederholungen. Vorhandene erfolgreiche Unit- und Integrationstests wiederverwenden; nur konkret betroffene Funktionen gezielt pruefen.
+2. **Keine Blindtests:** Die erste tatsaechliche Controllerfehlerursache, der letzte bestaetigte Profilfortschritt und native Abschlussdaten muessen im vorhandenen sicheren Fehlerkanal sichtbar bleiben. Fehlende Belege bleiben UNKNOWN; keine erfundenen Ergebnisse oder Datenlecks.
+3. **Mock100 als einziger synthetischer Kapazitaetsnachweis:** Exakt 100 gleichzeitig aktive fiktive Profile, nachweisbare vollstaendige Verarbeitung, Nutzertrennung, Ergebnisvollstaendigkeit und bestehende relevante Sicherheitsgrenzen. Der alte Code mit fest verdrahteten 500 ist **noch nicht** automatisch auf 100 umgestellt. Den kleinsten kompatiblen Mock100-Vertrag samt Code zielgerichtet implementieren und pruefen, ohne alte Belege umzuwerten. Ein PASS muss aus einem neuen echten 100er Lauf stammen.
+4. **Produkt fertigstellen:** Vor dem Livegang muessen die bestehenden erforderlichen Produktfunktionen, Authentifizierung, Mandantentrennung, Datenschutz, Kostenkontrolle und Betriebsbereitschaft fuer einen kleinen Kundenkreis ausreichend geprueft sein. Kein weiterer grossskaliger Production-Lasttest. Mock100 PASS allein beweist keinen sicheren Produktivbetrieb.
+5. **Livegang nach Mock100:** Der Betreiber will nach Mock100 PASS die geeignete Produktintegration auf `main` mergen und regulaer auf Vercel Production ausrollen. Das ist eine **bedingte Zielentscheidung**, noch keine Freigabe fuer einen unbekannten konkreten PR/Commit, Datenmutation, Migration oder kostenpflichtigen Modelltest. Vor dem tatsaechlichen Merge/Deploy gelten die konkreten Sicherheits- und Freigaberegeln, Risiko/Kosten/Nachkontrolle/Rueckweg.
+6. **Arbeitsregel:** Nur nachgewiesene aktuelle Blocker bearbeiten, notwendige Arbeiten parallelisieren ohne gemeinsame Schreibkonflikte, vorhandene Pruefungen nicht grundlos wiederholen und jeweils genau einen naechsten Schritt benennen. Keine neuen Schutzwachen oder Freigabestufen erfinden.
 
-**Wichtig:** Dieser datierte Meilensteinvermerk darf einen spaeteren aktuellen Beleg nicht ueberstimmen. Fuer den tatsaechlichen Stand gelten Production-Belege, GitHub und danach `docs/CURRENT_STATE.md`.
+Bei Widerspruch haben dieser neue Betreiberbeschluss, frische explizite Freigaben und die bestehenden zwingenden Sicherheitsregeln Vorrang vor alten 500er Plaenen. Fuer den tatsaechlichen Stand gilt `docs/CURRENT_STATE.md`.
 
 ## Dauerfreigabe fuer autonome Arbeit (Betreiber, 26.10.2026 Istanbul)
 
@@ -66,16 +65,14 @@ Keine erfundenen Quellen, politischen Aussagen oder individuellen Standpunkte.
 Tatsachen und Einordnung trennen, bei Unsicherheit ehrlichen Leerzustand.
 Kein gleicher Sachstand als vorgetaeuschte neue Aussage in mehreren Bereichen.
 
-Der technische 500er Nachweis umfasst ausschliesslich fiktive
-Profile: 330 Bundestag, 120 Berlin und 50 Brandenburg.
-Ein reiner Bundestagstest reicht nicht. Damit sind die
-weiteren 14 Landesparlamente noch nicht abgenommen.
-Alle exakt 500 Zielprofile sind gleichberechtigt; keine
-bevorzugte Bestandsgruppe. Nur technische, fachlich
-saubere Szenariowerte verwenden. Keine echten Namen,
-realen Personenkennungen, individuellen realen
-Feldkombinationen oder erfundenen amtlichen Quellen
-in die Synthetikprofile uebernehmen.
+Der neue synthetische Zielnachweis **Mock100** umfasst exakt 100
+gleichzeitig aktive fiktive Profile aus Bundestag, Berlin und Brandenburg.
+Als proportionaler Planungsvorschlag aus der alten Verteilung gelten
+66 Bundestag, 24 Berlin und 10 Brandenburg. Die konkrete Auswahl,
+Eingabe- und Ergebnisbindung muss im Mock100-Testvertrag erst technisch
+qualifiziert werden. Keine realen personenbezogenen Testprofile.
+Historische 500er Kohorten, Quellenvertraege und Laufbelege bleiben
+unveraendert dokumentiert, sind aber keine neue Ausfuehrungsfreigabe.
 
 Bestehende echte Daten werden durch den Synthetiktest
 nicht anonymisiert. Vor regulaerem Betrieb bleiben
@@ -179,8 +176,8 @@ Vor jedem technischen Sprint die geltenden
 und fuer betroffene Unterordner geltende
 `AGENTS.md` vollstaendig lesen. Anschliessend
 nur benoetigte Dateien und Primaerbelege.
-`docs/ROADMAP_BIS_500.md` liefert Orientierung,
-nicht den tatsaechlich aktuellen Laufstand.
+`docs/ROADMAP_BIS_500.md` ist historische Orientierung,
+keine aktuelle Handlungsanweisung. Der neue Fokus steht in `docs/CURRENT_STATE.md`.
 Keine Vollhistorie ohne konkreten Anlass.
 
 ## Wahrheitsquellen
@@ -242,10 +239,8 @@ Umfang nutzen; keine neuen GO herleiten.
 Ein Merge kann automatisch Production
 anstoßen. Bei reiner Doku kann Vercel
 den Build ueberspringen, was nachher
-tatsaechlich zu pruefen ist. Bei unklarer
-Beeintraechtigung des gerade laufenden
-Mock500 Originaltests wegen neuer main
-SHA oder konkurrierender CI: nicht mergen,
+tatsaechlich zu pruefen ist. Bei unklarer Beeintraechtigung einer tatsaechlich laufenden
+Mock100 Pruefung oder anderen parallelen Produktarbeit: nicht mergen,
 erst rein lesend klaeren.
 
 ## Threadwechsel und Übergabesicherung
@@ -346,11 +341,12 @@ Testumfang richtet sich nach den tatsächlich geänderten Dateien:
    betroffenen Bereichs.
 3. UI Änderung:
    schnelle Kernschutzprüfung, zugehörige Bereichstests und Browser Smoke.
-4. Datenbank, 500er Schutzlogik, geteilte Kerndateien, CI Testauswahl,
+4. Datenbank, Mock100 Schutzlogik, geteilte Kerndateien, CI Testauswahl,
    Abhängigkeiten oder nicht sicher zuordenbare relevante Dateien:
    konservative große Offline Prüfung und die erforderlichen Datenbanknachweise.
-5. Der finale 500er Production Nachweis folgt unabhängig davon immer seinem
-   ausdrücklich freigegebenen vollständigen Prüfvertrag.
+5. Kein gesonderter Production100 oder Production500 Belastungstest.
+   Vor dem produktiven Merge bleiben die erforderlichen Sicherheitspruefungen
+   und die fachliche Betriebsreife verbindlich.
 
 Die Auswahl muss fail closed sein: Ist unklar, ob eine Änderung breit wirken kann,
 wird mehr geprüft statt still weniger. Ein grüner Pflichtcheck darf bei eindeutig
@@ -453,57 +449,37 @@ EU 82,036/88,845364 USD sind nicht
 ohne neue Pruefung auf diesen Lauf
 uebertragbar.
 
-## 500er Production Nachweis
+## Mock100 Nachweis und anschliessender Livegang
 
-Das zentrale Projektziel ist der belastbare Nachweis mit exakt 500 gleichzeitig aktiven Profilen.
+Der einzige geplante grosse synthetische Lastnachweis ist **Mock100**
+mit **exakt 100 gleichzeitig aktiven synthetischen Profilen**.
+Die Runtime, Eingabesaetze und Abnahmebedingungen muessen dafuer erst
+gezielt von 500 auf 100 angepasst und geprueft werden. Bestehende
+Mandantentrennung, Datenschutz, Authentifizierung, Budgetschutz,
+Fehlererfassung, Ergebnisintegritaet und sichere Bereinigung bleiben
+verbindlich. Keine echten zahlungspflichtigen KI-Modellaufrufe im Mock100.
 
-Aktivierung allein ist kein Funktionsnachweis.
+Die geplanten proportionalen fachlichen Sollwerte sind 100 Einheiten,
+200 simulierte Modellphasen und 300 Ergebnispositionen, entsprechend
+dem bisherigen Muster pro Profil. Weitere alte 500er Zaehler sind
+nicht ungeprueft als gueltiger 100er Vertrag auszugeben; Codex muss
+die wirklich benoetigten Invarianten im bestehenden Testpfad
+nachvollziehbar binden. Ein PASS ist nur bei einem tatsaechlich
+vollstaendigen Lauf mit belastbaren Abschlussbelegen erlaubt.
 
-Für exakt 500 aktive Testprofile müssen 500 Mandatsbriefings, 500 Morgenbriefings
-und 500 Lage-Ergebnisse vollständig bilanziert werden: 1500 erwartete Ergebnisse.
-Fehlend, leer, doppelt, unbrauchbar und technisch fehlerhaft getrennt ausweisen.
+Historische Mock500 Fehl- und UNKNOWN-Laeufe bleiben unveraendert.
+Der nachgewiesene Fehlerverlust im Controller ist vor dem naechsten
+langen Lastlauf zu beheben und gezielt synthetisch zu testen.
+Kein blindes Wiederholen eines mehrstuendigen Laufs.
 
-Der gültige Testplan bestimmt die notwendigen Stufen.
-
-Bereits erfolgreich belegte Teststufen nicht wegen älterer Regeln wiederholen.
-
-Für die endgültige Prüfung müssen die erwarteten Ergebnisse vor dem Lauf definiert sein.
-
-Für alle 500 Profile muss Vollständigkeit geprüft werden.
-
-Fehlende Ergebnisse müssen vollständig ausgewiesen werden.
-
-Leere Ergebnisse müssen vollständig ausgewiesen werden.
-
-Doppelte Ergebnisse müssen vollständig ausgewiesen werden.
-
-Unbrauchbare Ergebnisse müssen vollständig ausgewiesen werden.
-
-Stichproben niemals als vollständige Prüfung darstellen.
-
-Alle500 Zielprofile erhalten dieselben fachlichen Pruefungen und denselben technischen Schutz vor versehentlicher Beschaedigung; keine besondere Profilgruppe.
-
-### Gesonderte unabhaengige Endpruefung
-
-Der vom Betreiber in Codex für den freigegebenen Production Lauf gewählte
-Hauptlauf verantwortet Startschutz, vollständige Bilanz und ein nachprüfbares
-Belegpaket. Dieses enthält mindestens Laufkennung, Production Commit und
-Deployment, den Beleg für exakt 500 gleichzeitig aktive Profile, die 1500
-erwarteten Ergebnispositionen mit getrennten Fehler und Leergründen, die vorab
-festgelegten Fachkriterien und zugehörigen Belege, transparent abgegrenzte
-Textprüfungen, Kosten, Laufzeit, Endzustand und Rückweg.
-
-Nach dem Lauf wird dieses Belegpaket einer gesonderten unabhängigen Endprüfung
-vorgelegt. Der ausführende Hauptlauf darf nicht allein seine eigene kritische
-Endabnahme erteilen. Für den endgültigen Production Nachweis ist ein anderes
-geeignetes Modell oder eine anderweitig unabhängige Prüfinstanz erforderlich. Diese Pruefung wiederholt den bezahlten Production Test
-nicht und erteilt keine zusaetzliche Production Freigabe.
-
-Bis diese unabhaengige Pruefung anhand erreichbarer Primaerbelege erfolgt ist und
-keine abnahmeverhindernden Luecken bestehen, lautet der Endstatus
-**Production Lauf durchgefuehrt, unabhaengige Endabnahme offen** und nicht
-"500er Production Nachweis erfolgreich abgeschlossen". Bei fehlendem Zugang zu
-Primaerbelegen oder nicht geklaerten Widerspruechen bleibt die Abnahme offen.
+**Kein Production100 und kein Production500 Test.**
+Nach Mock100 PASS wird der geeignete, tatsaechlich integrierte
+Produktstand fuer einen kontrollierten Livegang vorbereitet.
+Erforderliche Datenschutz-, Sicherheits-, Funktions-, Kosten-,
+Freigabe-, Nachkontroll- und Rueckwegpruefungen gelten weiterhin.
+Ein Merge, Vercel Production Deploy oder die Aktivierung realer
+Profile sind separate wirksame Aktionen, die nur im konkret
+gueltig freigegebenen Umfang ausgefuehrt werden duerfen.
 
 ## Dokumentation
 
@@ -577,11 +553,13 @@ oder scheinbaren Fortschritte.
 
 Sicherheit und belegbare Wahrheit haben Vorrang vor Geschwindigkeit.
 
-Innerhalb dieser Grenze ist Geschwindigkeit zum 500er Production Nachweis wichtiger als Perfektion, neue Funktionen oder unnötige technische Aufräumarbeiten.
+Innerhalb dieser Grenze sind Mock100 und ein sicherer, verkaufbarer Livegang wichtiger als Perfektion, neue Funktionen oder unnötige technische Aufräumarbeiten.
 
-## Reihenfolge bis zum 500er Nachweis
+## Reihenfolge bis zum Livegang
 
-Die verbindliche Arbeitsreihenfolge steht in `docs/ROADMAP_BIS_500.md`.
-Codex nutzt sie zusammen mit dem aktuellen Production Stand aus
-`docs/CURRENT_STATE.md`. Abgeschlossene Schritte nicht wiederholen und keine
-Nebenprojekte vor dem 500er Production Nachweis beginnen.
+Aktuelle Reihenfolge: gezielte Fehlertransparenz und Regressionen,
+Mock100 als synthetischen Nachweis fertigstellen, dann sichere
+Produktintegration und kontrollierter Livegang.
+`docs/ROADMAP_BIS_500.md` ist ausschliesslich historische Dokumentation;
+`docs/CURRENT_STATE.md` fuehrt den tatsaechlichen aktuellen Stand.
+Kein Production100- oder Production500-Belastungstest.
