@@ -107,17 +107,19 @@ Reviews positiv. Main-CI42069590393 gruen, Kandidaten-Pflicht-CI noch offen.
 [Abnahme und konkrete Mergevoraussetzungen](betrieb/release-prep-20261105.md).
 Keine Productionfreigabe.
 
-## Designangleich an Claude Design (05.11.2026, Branch, teilweise abgeschlossen)
+## Designangleich und UI-Aufraeumen (05.11.2026)
 
-Branch `claude/helmut-pilot-design-cccztl`: Darstellung an das freigegebene
-Claude Design „Helmut Desktop Prototyp“ (finale Ueberarbeitung) angeglichen.
-Nur `styles.css` (Angleichblock am Dateiende), drei Darstellungsstellen in
-`client.js` (Status-Pille „Aktuell · HH:MM Uhr“, mobil nur Uhrzeit; Fusszeile
-mobil am Inhaltsende) und `index.html` (`?v=`). Kein Backend, Motor, keine
-Datenbank, Adminverwaltung, Auth oder Datenbindung geaendert. Browser-Smoke
-78/0 lokal. Bewusst offen: Profilseite behaelt ihre Listenstruktur (nur Tokens
-angeglichen), Briefing-Inhaltsbloecke folgen der echten Datenlage statt der
-Prototyp-Kulisse. Merge/Production nur mit ausdruecklicher Freigabe.
+PR #1055 (`claude/helmut-pilot-design-cccztl`): Darstellung nach freigegebenem
+Claude Design (Desktop/Mobil), Status-Pille, keine Goldtoene, Buero-Panels,
+dunkles Favicon wie Website, Startbild Wortmarke mit ruhigem Puls, Anmeldung im
+Design, Mitteilungen ueber sichtbarer Seite. Nur Darstellung; in `server.js`
+ausschliesslich Shell-Markup (Startbild, Favicon-Versionierung).
+Aufraeum-PR (`claude/helmut-pilot-cleanup-cccztl`): 108 nie aufgerufene
+Client-Funktionen, 768 CSS-Regeln ohne verwendete Klassen, `assets/helmut-mark.svg`
+entfernt; Zugangs-/Passwortseite im Design. Beleg: 134 Regressions-Screenshots
+vorher/nachher pixelgleich, Browser-Smoke 78/0. Lokale Altfehler unveraendert:
+`kalender-ics-test.js` (Modul `ical.js` fehlt lokal), `admin-nutzer-loeschen-test.js`
+(Farbannahme). Merge nach Betreiber-GO vom 05.11.2026 nur bei gruener Pflicht-CI.
 
 ## Genau ein naechster Schritt
 
