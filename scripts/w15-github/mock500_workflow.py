@@ -363,6 +363,15 @@ def run_worker(manifest, private_payload, *, backup_transition=None):
                 and child_phase=='mock500-controller-prepare'):
             safe=_DIAGNOSTICS.prepare_failure(_DIAGNOSTICS.attribute(error,'prepare_failure'))
             if safe is not None:failure.prepare_failure=safe
+        if (staged is not None and type(error)is getattr(staged,'Mock500ControllerFailure',None)
+                and child_phase in _DIAGNOSTICS.RUN_EVIDENCE_PHASES):
+            safe=_DIAGNOSTICS.run_evidence(_DIAGNOSTICS.attribute(error,'run_evidence'))
+            if safe is not None:
+                try:
+                    expected={**{key:manifest[key]for key in('exactCommit','runId','runAttempt','nonce')},
+                        'inputBindingSHA256':manifest['bindings']['inputBindingSHA256']}
+                    if safe['binding']==expected:failure.run_evidence=safe
+                except (KeyError,TypeError):pass  # Optional evidence cannot replace the first fixed phase.
         raise failure from None
 
 

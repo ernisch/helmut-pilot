@@ -27,7 +27,7 @@ function closedRunnerDetail(value){
     'WORKER_EXIT_REJECTED','WORKER_REPORTED_FAILURE','SERVICE_IPC_EOF','SERVICE_IPC_TIMEOUT','SERVICE_IPC_REJECTED',
     'SERVICE_EXIT_WITHOUT_REPORT','SERVICE_EXIT_REJECTED','PARENT_CLOSURE_REJECTED','CLEANUP_UNCONFIRMED','SIGNAL_DURING_CLEANUP']);
   if(!value||typeof value!=='object'||Array.isArray(value)||!reasons.has(value.reason)||
-    !Object.keys(value).every(k=>['reason','secondaryReason','memory','memorySource','workerExitCode','serviceExitCode','lastObservedPhase','nativeFailure','materialsFailure','prepareFailure'].includes(k)))return null;
+    !Object.keys(value).every(k=>['reason','secondaryReason','memory','memorySource','workerExitCode','serviceExitCode','lastObservedPhase','nativeFailure','materialsFailure','prepareFailure','runEvidence'].includes(k)))return null;
   const out={reason:value.reason};
   if(Object.hasOwn(value,'secondaryReason')){
     if(!reasons.has(value.secondaryReason))return null;out.secondaryReason=value.secondaryReason;
@@ -52,6 +52,12 @@ function closedRunnerDetail(value){
     const prepared=require('../../../scripts/w15-github/mock500_prepare_failure').closed(value.prepareFailure);
     if(prepared)out.prepareFailure=prepared;
   }
+  try {
+    if(Object.hasOwn(value,'runEvidence')){
+      const evidence=require('../../../scripts/w15-github/mock500_run_failure').closedEvidence(value.runEvidence);
+      if(evidence)out.runEvidence=evidence;
+    }
+  } catch {}
   return out;
 }
 function closedCleanup(value){
@@ -172,7 +178,18 @@ function main(){
       const memory=closedFailureMemory(receipt.worker.memory);if(memory)safe.worker.memory=memory;
     }
     const runner=closedRunnerDetail(receipt.runner);
-    if(runner){if(safe.worker?.phase!=='mock500-controller-prepare')delete runner.prepareFailure;safe.runner=runner;}
+    if(runner){
+      if(safe.worker?.phase!=='mock500-controller-prepare')delete runner.prepareFailure;
+      if(runner.runEvidence){
+        const postRun=['run','zero-audit','services','result-readback','backup','owned-close','supervisor-stop',
+          'gateway-client-close','gateway-log-close','final-observation'].map(value=>'mock500-controller-'+value);
+        const bound=runner.runEvidence.binding;
+        if(!postRun.includes(safe.worker?.phase)||bound.exactCommit!==request.exactCommit||bound.runId!==request.runId
+          ||bound.runAttempt!==request.runAttempt||bound.nonce!==request.nonce
+          ||bound.inputBindingSHA256!==request.bindings?.inputBindingSHA256)delete runner.runEvidence;
+      }
+      safe.runner=runner;
+    }
     const cleanup=closedCleanup(receipt.cleanup);if(cleanup)safe.cleanup=cleanup;
     console.log(JSON.stringify(safe));process.exitCode=1;return;
   }

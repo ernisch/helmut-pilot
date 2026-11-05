@@ -28,6 +28,9 @@ MOCK_CONTROLLER_PHASES = frozenset('mock500-controller-' + name for name in (
 MOCK_CONTROLLER_PHASES |= frozenset('mock500-controller-materials-' + name for name in (
     'entry','baseline','config','originals','qualified','original-upacket','calendar',
     'native-inputs','snapshot','native-manifest','activation','builder','output','complete'))
+RUN_EVIDENCE_PHASES = frozenset('mock500-controller-' + name for name in (
+    'run', 'zero-audit', 'services', 'result-readback', 'backup', 'owned-close',
+    'supervisor-stop', 'gateway-client-close', 'gateway-log-close', 'final-observation'))
 OBSERVED_PHASES = frozenset(('arguments', 'event', 'approval', 'qualification', 'binding', 'resources',
     'synthetic', 'receive-prepare', 'restore', 'end500', 'backup', 'closure')) | frozenset(
     'connection-' + name for name in ('binding', 'receive', 'input-binding', 'cache', 'prepare',
@@ -81,6 +84,73 @@ def prepare_failure(value):
     if category != 'PREPARE_UNMAPPED' and not (match and int(match[1]) <= 65535):
         return None
     return dict(value)
+
+
+def run_failure(value):
+    """Closed Run code location only; never raw messages or execution authority."""
+    if (type(value) is not dict or set(value) != {'schema', 'stage', 'category', 'kind'}
+            or value['schema'] != 'helmut-w15-mock500-run-failure/1' or value['stage'] != 'run'
+            or type(value['kind']) is not str or value['kind'] not in (
+                'assertion', 'filesystem', 'module', 'type', 'timeout', 'aborted', 'unknown')
+            or type(value['category']) is not str):
+        return None
+    category = value['category']
+    match = re.fullmatch(r'RUN_(?:RUNTIME|STORAGE|STORED|COMMAND|ADAPTER|EXECUTOR|CALENDAR|COST|ADMISSION|JOURNAL|CODEC|DURABLE|CONTENT_RUNNER|CONTENT_WORKER)_CHECK_([1-9][0-9]{0,4})', category)
+    if category not in ('RUN_UNMAPPED', 'RUN_PROCESS_EXIT', 'RUN_PROCESS_TIMEOUT',
+            'RUN_SUPERVISOR_REJECTED', 'RUN_FAILURE_UNAVAILABLE') and not (match and int(match[1]) <= 65535):
+        return None
+    return dict(value)
+
+
+def native_cleanup(value):
+    """Native database observations, separate from process/IPC cleanup."""
+    if type(value) is not dict or set(value) != {'status', 'activeProfiles', 'confirmedZero', 'nativeBoundZero'}:
+        return None
+    active = value['activeProfiles']
+    if not (type(active) is int and 0 <= active <= 500 or type(active) is str and active == 'UNKNOWN'):
+        return None
+    if any(type(value[key]) is not bool and not (type(value[key]) is str and value[key] == 'UNKNOWN')
+           for key in ('confirmedZero', 'nativeBoundZero')):
+        return None
+    expected = ('PASS' if active == 0 and value['confirmedZero'] is True and value['nativeBoundZero'] is True
+                else 'FAIL' if type(active) is int and active > 0 or value['confirmedZero'] is False or value['nativeBoundZero'] is False
+                else 'UNKNOWN')
+    if type(value['status']) is not str or value['status'] != expected:
+        return None
+    return dict(value)
+
+
+def unknown_native_cleanup():
+    return dict.fromkeys(('status', 'activeProfiles', 'confirmedZero', 'nativeBoundZero'), 'UNKNOWN')
+
+
+def run_evidence(value):
+    """Closed current-run lower bound and native closure, never success authority."""
+    if (type(value) is not dict or set(value) != {'schema', 'binding', 'firstFailure',
+            'completedProfiles', 'completionMeaning', 'nativeCleanup'}
+            or value['schema'] != 'helmut-w15-mock500-run-evidence/1'):
+        return None
+    binding = value['binding']
+    if (type(binding) is not dict or set(binding) != {'exactCommit', 'runId', 'runAttempt', 'nonce', 'inputBindingSHA256'}
+            or type(binding['runAttempt']) is not int or binding['runAttempt'] != 1
+            or any(type(binding[key]) is not str or not re.fullmatch(pattern, binding[key]) for key, pattern in (
+                ('exactCommit', '[a-f0-9]{40}'), ('runId', '[1-9][0-9]{4,19}'),
+                ('nonce', '[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}'),
+                ('inputBindingSHA256', '[a-f0-9]{64}')))):
+        return None
+    failure = run_failure(value['firstFailure'])
+    if failure is None and not (type(value['firstFailure']) is str and value['firstFailure'] == 'UNKNOWN'):
+        return None
+    count = value['completedProfiles']
+    if not (type(count) is int and 0 <= count <= 500 or type(count) is str and count == 'UNKNOWN'):
+        return None
+    if value['completionMeaning'] != ('UNKNOWN' if count == 'UNKNOWN' else 'CONFIRMED_LOWER_BOUND'):
+        return None
+    cleanup = native_cleanup(value['nativeCleanup'])
+    if cleanup is None:
+        return None
+    return {**value, 'binding': dict(binding), 'firstFailure': failure if failure is not None else 'UNKNOWN',
+            'nativeCleanup': cleanup}
 
 
 def materials_failure(value):
@@ -160,7 +230,7 @@ def unknown_cleanup():
 
 
 def runner(value, memory_validator):
-    keys = {'reason', 'secondaryReason', 'memory', 'memorySource', 'workerExitCode', 'serviceExitCode', 'lastObservedPhase', 'nativeFailure', 'materialsFailure', 'prepareFailure'}
+    keys = {'reason', 'secondaryReason', 'memory', 'memorySource', 'workerExitCode', 'serviceExitCode', 'lastObservedPhase', 'nativeFailure', 'materialsFailure', 'prepareFailure', 'runEvidence'}
     if type(value) is not dict or not set(value) <= keys or type(value.get('reason')) is not str or value['reason'] not in REASONS:
         return None
     out = {'reason': value['reason']}
@@ -190,6 +260,9 @@ def runner(value, memory_validator):
     prepared = prepare_failure(value.get('prepareFailure'))
     if prepared is not None:
         out['prepareFailure'] = prepared
+    evidence = run_evidence(value.get('runEvidence'))
+    if evidence is not None:
+        out['runEvidence'] = evidence
     return out
 
 
@@ -210,6 +283,8 @@ def public(value, phases, worker_phases, memory_validator):
     if detail is not None:
         if out.get('worker', {}).get('phase') != 'mock500-controller-prepare':
             detail.pop('prepareFailure', None)
+        if out.get('worker', {}).get('phase') not in RUN_EVIDENCE_PHASES:
+            detail.pop('runEvidence', None)
         out['runner'] = detail
     closed = cleanup(value.get('cleanup'))
     if closed is not None:

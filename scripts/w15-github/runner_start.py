@@ -562,13 +562,16 @@ def _worker_failure(error, reason, *, error_type=RunnerStartError):
     materials = D.materials_failure(D.attribute(error, 'materials_failure')) if (
         phase in D.MOCK_CONTROLLER_PHASES and phase.startswith('mock500-controller-materials')) else None
     prepared = D.prepare_failure(D.attribute(error, 'prepare_failure')) if phase == 'mock500-controller-prepare' else None
-    detail = {'reason': 'WORKER_REPORTED_FAILURE'} if native is not None or materials is not None or prepared is not None else None
+    evidence = D.run_evidence(D.attribute(error, 'run_evidence')) if phase in D.RUN_EVIDENCE_PHASES else None
+    detail = {'reason': 'WORKER_REPORTED_FAILURE'} if native is not None or materials is not None or prepared is not None or evidence is not None else None
     if native is not None:
         detail['nativeFailure'] = native
     if materials is not None:
         detail['materialsFailure'] = materials
     if prepared is not None:
         detail['prepareFailure'] = prepared
+    if evidence is not None:
+        detail['runEvidence'] = evidence
     return error_type('worker', phase, memory, runner=detail if detail is not None else None if phase is not None else {'reason': reason})
 
 

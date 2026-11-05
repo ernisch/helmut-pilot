@@ -379,8 +379,11 @@ class ControllerAdmissionChecks(unittest.TestCase):
                     'postgrestChildClose': {'code': 0, 'signal': None}, 'postgrestSignalAccepted': True,
                     'gatewayStopped': True, 'forced': False, 'journal': {'closed': True, 'pendingEntries': 0}})
                 return 0
-        def cleanup():
+        def cleanup(observation=None):
             events.append('zero'); value = {'confirmedZero': True, 'nativeBoundZero': True, 'after': {'active': 0}}
+            if observation is not None:
+                observation.update(status='PASS', activeProfiles=value['after']['active'],
+                    confirmedZero=value['confirmedZero'], nativeBoundZero=value['nativeBoundZero'])
             controller.save('CLEANUP.SAFE.json', value); return value
         def complete(**kwargs):
             events.append('backup')

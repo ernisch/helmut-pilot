@@ -7,6 +7,8 @@ const { performance } = require("node:perf_hooks");
 const Memory = require("./fixtures/w15-memory-contract");
 const AuthReport = require("./fixtures/w15-auth-measurement-report");
 const Durable = require("./fixtures/w15-durable-observations");
+// Resolve diagnostic modules before any application Worker seals its own graph.
+const RunFailure = process.argv[2] === "run" ? require("./w15-github/mock500_run_failure") : null;
 let prepareStage = "entry", firstPrepareFailure = null;
 function retainPrepareFailure(error) {
   if (firstPrepareFailure) return firstPrepareFailure;
@@ -17,6 +19,19 @@ function retainPrepareFailure(error) {
     fs.writeSync(2, JSON.stringify({ kind: "W15_MOCK500_PREPARE_FAILURE", failure: firstPrepareFailure }) + "\n");
   } catch {}
   return firstPrepareFailure;
+}
+let firstRunFailure = null, firstRunError = null;
+function retainRunFailure(error) {
+  if (!RunFailure || firstRunFailure) return firstRunFailure;
+  firstRunError = error;
+  firstRunFailure = { schema: "helmut-w15-mock500-run-failure/1", stage: "run", category: "RUN_UNMAPPED", kind: "unknown" };
+  try { firstRunFailure = RunFailure.closed(RunFailure.project(error)) || firstRunFailure; } catch {}
+  // Retain the first error before private reporting or cleanup can fail.
+  try {
+    const line = JSON.stringify({ kind: "W15_MOCK500_RUN_FAILURE", failure: firstRunFailure }) + "\n";
+    if (Buffer.byteLength(line) <= 512) fs.writeSync(2, line);
+  } catch {}
+  return firstRunFailure;
 }
 const Bound = require("./w15-github/mock500_bindings"), BOUND = Bound.readBound();
 const ATOMIC_PREPARED0 = process.argv.includes("--atomic-prepared0");
@@ -467,7 +482,7 @@ async function run() {
       if (result?.available !== true) errors.push({ index, phase: "buildLageBriefing", available: false,
         reason: /^[a-z0-9-]{1,120}$/.test(result?.reason || "") ? result.reason : "unavailable" });
       return result;
-    } catch (e) { errors.push({ index, phase: "buildLageBriefing", ...safeError(e) }); throw e; }
+    } catch (e) { retainRunFailure(e); errors.push({ index, phase: "buildLageBriefing", ...safeError(e) }); throw e; }
   };
   const enter = J.enter, finish = J.finish;
   J.enter = function(...args) {
@@ -485,14 +500,15 @@ async function run() {
   S.withSynthetik500PreparedCommand = async function(args, work) {
     const row = { index, beginMS: performance.now() }; scopeReports.push(row); activeScope = row;
     try { return await actualScope.call(this, args, async () => { row.openedMS = performance.now();
-      try { return await work(); } finally { row.diagnostics = S.synthetik500PreparedDiagnostics(); }
-    }); } catch (e) { row.failure = safeError(e); throw e; }
+      try { return await work(); } catch (e) { retainRunFailure(e); throw e; }
+      finally { row.diagnostics = S.synthetik500PreparedDiagnostics(); }
+    }); } catch (e) { retainRunFailure(e); row.failure = safeError(e); throw e; }
     finally { row.endMS = performance.now(); row.wallMS = row.endMS - row.beginMS; activeScope = null; }
   };
   for (const name of ["readSynthetik500Runtime", "readSynthetik500CurrentInputs", "getProfileFromDb", "synthetik500ReviewStorageContract",
     "storeSynthetik500ImmutableDraft", "getSynthetik500ImmutableDraft", "insertLageEntwurfsbeleg", "retainSynthetik500ProductionEvidence"]) {
     const real = S[name]; S[name] = async function(...args) { try { return await real.apply(this, args); }
-      catch (e) { errors.push({ index, phase: name, ...safeError(e) }); throw e; } };
+      catch (e) { retainRunFailure(e); errors.push({ index, phase: name, ...safeError(e) }); throw e; } };
   }
   const before = sql("select jsonb_build_object('active',(select count(*)from mandate_profiles where aktiv),'journal',data->'synthetik500DispatchJournal'->'operations'->"
     + literal(m.selector.operationId) + ",'route',data->'synthetik500KostenAdmission'->'plan'->'routeContract'->'route','usageRows',jsonb_array_length(public.helmut_auth_usage_read_v1(jsonb_build_object('id','main-auth'))->'data'->'llmUsage'))from helmut_store where id='main-auth';");
@@ -515,7 +531,7 @@ async function run() {
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
   const memoryBefore = memory(), poll = setInterval(() => { try { const mem = memory();
     if (!memoryAccepted(mem) && memoryViolation === null) { memoryViolation = mem; event("memory-limit-or-reserve-failure", { index }); }
-  } catch (e) { memoryViolation ||= { error: safeError(e) }; } }, 1000);
+  } catch (e) { retainRunFailure(e); memoryViolation ||= { error: safeError(e) }; } }, 1000);
   let provider = null;
   const started = performance.now();
   try {
@@ -538,7 +554,11 @@ async function run() {
           method: "POST", headers: { Authorization: "Bearer " + c.adminSecret, "Content-Type": "application/json", Connection: "close" },
           body: JSON.stringify({ action, ...m.selector }), signal: AbortSignal.timeout(120000) });
         status = response.status; body = await response.json();
-      } finally { provider.restore(); }
+      } catch (e) { retainRunFailure(e); throw e; }
+      finally {
+        try { provider.restore(); }
+        catch (e) { retainRunFailure(e); throw firstRunFailure ? firstRunError : e; }
+      }
       const response = { index, action, status, ok: body?.ok === true, completedUnits: body?.result?.completedUnits,
         dispatchedUnits: body?.result?.dispatchedUnits, state: body?.result?.state, wallMs: performance.now() - t, providerCalls: provider.count() };
       responses.push(response);
@@ -582,10 +602,10 @@ async function run() {
       // Preserve bounded metadata only. The native evidence retains full rows.
       delete scope.diagnostics;
       unit.authTimings = AuthReport.summarize(unitAuth);
-      event("unit-final-ack-accepted", { index, status: "PASS", unit, response, authCoverage: authCheck,
-        authTimings: AuthReport.summarize(observation) });
       if (index % 25 === 24) journal.write("database-statistics", sql(Durable.databaseStatsSQL()));
       assert(errors.length === 0 && !memoryViolation && memoryAccepted(memory()), "w15-full500-observed-failure-before-next");
+      event("unit-final-ack-accepted", { index, status: "PASS", unit, response, authCoverage: authCheck,
+        authTimings: AuthReport.summarize(observation) });
     }
     const final = sql("select jsonb_build_object('active',(select count(*)from mandate_profiles where aktiv),'journal',data->'synthetik500DispatchJournal'->'operations'->"
       + literal(m.selector.operationId) + ",'usageRows',jsonb_array_length(public.helmut_auth_usage_read_v1(jsonb_build_object('id','main-auth'))->'data'->'llmUsage'))from helmut_store where id='main-auth';");
@@ -624,18 +644,21 @@ async function run() {
     save("FULL500_RUNTIME_RESULT.SAFE.json", result);
     assert(Object.values(checks).every(Boolean), "w15-full500-runtime-first-failure-stop");
   } catch (e) {
-    save("FULL500_RUNTIME_FAILURE.SAFE.json", { status: "FAIL_OR_UNKNOWN", error: safeError(e), selector: m.selector,
+    retainRunFailure(e);
+    try { save("FULL500_RUNTIME_FAILURE.SAFE.json", { status: "FAIL_OR_UNKNOWN", error: safeError(firstRunFailure ? firstRunError : e), selector: m.selector,
       currentIndex: index, completedHTTPRequests: responses.length, unitReports, scopeReports, responses, providerPhases,
       authMutations: observation.mutations, usageSinks: observation.usageSinks, casWrites: observation.casWrites,
       authCoverage: observation.assessment(), authTimings: AuthReport.summarize(observation), errors, memory: memory(), memoryViolation,
-      noAutomaticRetry: true, independent1500RowAcceptance: false, cleanupConfirmed: false, productionProof: false });
-    throw e;
+      noAutomaticRetry: true, independent1500RowAcceptance: false, cleanupConfirmed: false, productionProof: false }); } catch {}
+    throw firstRunFailure ? firstRunError : e;
   } finally {
-    stopTelemetry(); removeAbortReceipt();
-    clearInterval(poll); if (provider) provider.restore(); azure(false);
-    Lage.buildLageBriefing = actualLage;
-    if (sourceReplayScope) sourceReplayScope.issuer.revoke(sourceReplayScope.grant);
-    server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+    try {
+      stopTelemetry(); removeAbortReceipt();
+      clearInterval(poll); if (provider) provider.restore(); azure(false);
+      Lage.buildLageBriefing = actualLage;
+      if (sourceReplayScope) sourceReplayScope.issuer.revoke(sourceReplayScope.grant);
+      server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+    } catch (e) { retainRunFailure(e); throw firstRunFailure ? firstRunError : e; }
   }
 }
 async function main(action) {
@@ -653,6 +676,12 @@ async function main(action) {
   return execute();
 }
 if (require.main === module) main(process.argv[2]).catch(e => {
+  if (process.argv[2] === "run") {
+    retainRunFailure(e);
+    try { save("run-FIRST-FAILURE.SAFE.json", { status: "FAIL_OR_UNKNOWN", error: safeError(firstRunError),
+      atUTC: new Date().toISOString(), noAutomaticRetry: true, cleanupConfirmed: false }); } catch {}
+    process.exitCode = 1; return;
+  }
   if (process.argv[2] === "prepare") {
     const failure = retainPrepareFailure(e);
     try { save("prepare-FIRST-FAILURE.SAFE.json", { status: "FAIL_OR_UNKNOWN", error: failure,

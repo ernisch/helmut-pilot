@@ -45,12 +45,14 @@ MOCK_CONTROLLER_PHASES=_MOCK_DIAGNOSTICS.MOCK_CONTROLLER_PHASES
 
 class Mock500ControllerFailure(RuntimeError):
     """Fixed first checkpoint and optional closed Materials category; no raw data."""
-    def __init__(self,phase,materials_failure=None,prepare_failure=None):
+    def __init__(self,phase,materials_failure=None,prepare_failure=None,run_evidence=None):
         super().__init__('MOCK500_CONTROLLER_FAILED_OR_UNKNOWN')
         self.phase=phase if type(phase)is str and phase in MOCK_CONTROLLER_PHASES else 'mock500'
         self.materials_failure=None
         self.prepare_failure=(_MOCK_DIAGNOSTICS.prepare_failure(prepare_failure)
           if self.phase=='mock500-controller-prepare' else None)
+        self.run_evidence=(_MOCK_DIAGNOSTICS.run_evidence(run_evidence)
+          if self.phase in _MOCK_DIAGNOSTICS.RUN_EVIDENCE_PHASES else None)
         if materials_failure is not None and self.phase.startswith('mock500-controller-materials'):
             try:self.materials_failure=_mock_module('mock500_materials_contract').failure(materials_failure)
             except BaseException:pass
@@ -288,8 +290,8 @@ def copy_out(name):
 class Supervisor:
     def __init__(self,cgroup):
         self.cgroup=cgroup;self.finished=threading.Event();self.failure=None;self.last=None;self.process=None;self.maximum=0;self.last_events=None;self.closure_mode=False;self.stage_name=None
-        self.prepare_failure=None
-        self.progress_lock=threading.RLock();self.failure_lock=threading.Lock();self.accepted_indexes=set();self.last_accepted_index=None
+        self.prepare_failure=None;self.run_failure=None
+        self.progress_lock=threading.RLock();self.failure_lock=threading.Lock();self.accepted_indexes=set();self.last_accepted_index=None;self.ack_channel_rejected=False
         self.inner_stop_thread=None;self.stop_dispatched=False;self.stop_failure=None
         self.started_monotonic=time.monotonic();self.last_ack_monotonic=None;self.last_terminal_monotonic=self.started_monotonic
         self.progress=(WORK/'outer-progress.SAFE.jsonl').open('x');os.chmod(WORK/'outer-progress.SAFE.jsonl',0o600)
@@ -373,14 +375,32 @@ class Supervisor:
         if stage!='run' or len(raw)>4096:return
         try:value=json.loads(raw)
         except (ValueError,UnicodeError):return
+        if type(value)is dict and value.get('kind')=='W15_MOCK500_RUN_FAILURE':
+            safe=(_MOCK_DIAGNOSTICS.run_failure(value.get('failure'))
+              if len(raw)<=512 and set(value)=={'kind','failure'} else None)
+            with self.failure_lock:
+                prior=self.failure
+                exited=(type(prior)is dict and prior.get('type')=='RuntimeError'
+                  and type(prior.get('reason'))is str
+                  and re.fullmatch(r'full500-stage-failed:run:[1-9][0-9]{0,2}',prior['reason']))
+                if safe is not None and getattr(self,'run_failure',None)is None and (prior is None or exited):
+                    self.run_failure=safe
+            return
         if not isinstance(value,dict)or value.get('name')!='unit-final-ack-accepted'or value.get('status')!='PASS':return
         index=value.get('index')
         with self.progress_lock:
+            if getattr(self,'ack_channel_rejected',False):return
             if type(index)is not int or not 0<=index<500 or index!=len(self.accepted_indexes):
+                self.ack_channel_rejected=True
                 self.first_failure(RuntimeError('full500-accepted-ack-sequence-unknown'));return
-            timings=value.get('authTimings')or{}
+            timings=value.get('authTimings')
+            if type(timings)is not dict:
+                self.ack_channel_rejected=True
+                self.first_failure(RuntimeError('full500-live-auth-timing-unknown'));return
             numbers=[value.get('unitWallMs'),timings.get('maximumFullCallWallMs'),timings.get('maximumCASWallMs')]
-            if not all(type(x)in [int,float]and math.isfinite(x)and x>=0 for x in numbers)or timings.get('incompleteFullCalls')or timings.get('incompleteCASWrites'):
+            if (not all(type(x)in [int,float]and math.isfinite(x)and 0<=x<limit for x,limit in zip(numbers,(60000,30000,30000)))
+                or any(type(timings.get(key))is not int or timings[key]!=0 for key in ('incompleteFullCalls','incompleteCASWrites'))):
+                self.ack_channel_rejected=True
                 self.first_failure(RuntimeError('full500-live-auth-timing-unknown'));return
             self.unit_max_ms=max(self.unit_max_ms or 0,numbers[0]);self.auth_max_ms=max(self.auth_max_ms or 0,numbers[1]);self.cas_max_ms=max(self.cas_max_ms or 0,numbers[2])
             self.accepted_indexes.add(index);self.last_accepted_index=index;self.last_ack_monotonic=time.monotonic()
@@ -488,9 +508,9 @@ class Supervisor:
                         raw=process.stdout.readline(65536)
                         if not raw:break
                         complete=not partial and raw.endswith(b'\n')
-                        if complete and name=='prepare':self.observe_line(raw,name)
+                        if complete and name in ('prepare','run'):self.observe_line(raw,name)
                         log.write(raw);log.flush()
-                        if complete and name!='prepare':self.observe_line(raw,name)
+                        if complete and name not in ('prepare','run'):self.observe_line(raw,name)
                         partial=not raw.endswith(b'\n')
                 except BaseException as e:self.first_failure(e)
             reader=threading.Thread(target=drain,daemon=True);reader.start()
@@ -506,11 +526,11 @@ class Supervisor:
                     os.killpg(self.process.pid,signal.SIGKILL);self.process.wait()
                 raise RuntimeError('full500-stage-timeout:'+name)
             except BaseException as error:
-                if name=='prepare':
+                if name in ('prepare','run'):
                     # Record the wait interruption before finally drains later
                     # child output; never expose the exception's arbitrary text.
                     kind='interrupted'if isinstance(error,(KeyboardInterrupt,SystemExit))else'rejected'
-                    self.first_failure(RuntimeError('full500-prepare-wait-'+kind))
+                    self.first_failure(RuntimeError('full500-'+name+'-wait-'+kind))
                 raise
             finally:
                 if self.inner_stop_thread:self.inner_stop_thread.join(timeout=25)
@@ -545,7 +565,33 @@ def stop_owned(actions,require_registered=False):
           BASE+'/app/scripts/fixtures/w15-owned-process-stop.js',BASE,action,DB,
           'active'if require_registered or action in STARTED_INNER_ACTIONS else'never-started',timeout=27)
 
-def cleanup():
+def _observe_native_cleanup(observation,**values):
+    """Retain only facts from existing reads, even if a later cleanup step raises."""
+    if observation is None:return
+    candidate={**observation,**values}
+    candidate['status']=('PASS'if candidate['activeProfiles']==0 and candidate['confirmedZero']is True and candidate['nativeBoundZero']is True
+      else'FAIL'if type(candidate['activeProfiles'])is int and candidate['activeProfiles']>0 or candidate['confirmedZero']is False or candidate['nativeBoundZero']is False
+      else'UNKNOWN')
+    closed=_MOCK_DIAGNOSTICS.native_cleanup(candidate)
+    if closed is not None:observation.clear();observation.update(closed)
+
+
+def _run_first_failure(supervisor,error):
+    safe=_MOCK_DIAGNOSTICS.run_failure(getattr(supervisor,'run_failure',None))
+    if safe is not None:return safe
+    prior=getattr(supervisor,'failure',None)
+    reason=prior.get('reason')if type(prior)is dict else None
+    category=('RUN_PROCESS_EXIT'if type(reason)is str and re.fullmatch(r'full500-stage-failed:run:-?[1-9][0-9]{0,2}',reason)
+      else'RUN_PROCESS_TIMEOUT'if reason=='full500-stage-timeout:run' or isinstance(error,subprocess.TimeoutExpired)
+      else'RUN_SUPERVISOR_REJECTED'if prior is not None or isinstance(error,(KeyboardInterrupt,SystemExit))
+      else'RUN_FAILURE_UNAVAILABLE')
+    kind=('timeout'if category=='RUN_PROCESS_TIMEOUT'else'aborted'if isinstance(error,(KeyboardInterrupt,SystemExit))
+      else'assertion'if isinstance(error,AssertionError)else'filesystem'if isinstance(error,OSError)
+      else'type'if isinstance(error,TypeError)else'unknown')
+    return {'schema':'helmut-w15-mock500-run-failure/1','stage':'run','category':category,'kind':kind}
+
+
+def cleanup(observation=None):
     cpath=WORK/'cleanup-context.PRIVATE.json'
     result={'automaticUnitRetry':False,'endWriteAttempts':0}
     active=read("select jsonb_build_object('database',current_database(),'active',(select count(*)from mandate_profiles where aktiv));")
@@ -562,11 +608,17 @@ def cleanup():
         try:result['nativeResponse']=json.loads(sql("begin;set local lock_timeout='3s';set local statement_timeout='15s';set local role service_role;select public.helmut_synthetik500_ende("+','.join(map(literal,args))+');commit;'))
         except BaseException as e:result['writeOutcome']='UNKNOWN';result['writeFailureType']=type(e).__name__
     result['after']=read("select jsonb_build_object('database',current_database(),'active',(select count(*)from mandate_profiles where aktiv));")
+    after=result['after']
+    if after.get('database')==DB and type(after.get('active'))is int and 0<=after['active']<=500:
+        _observe_native_cleanup(observation,activeProfiles=after['active'])
     if cpath.exists():
         c=json.loads(cpath.read_text());result['nativeReadback']=read('set local role service_role;select public.helmut_synthetik500_lesung('+','.join(map(literal,[c['operationId'],c['manifestHash'],c['productionCommit']]))+');')
         native=result['nativeReadback']
         result['nativeBoundZero']=native.get('operationId')==c['operationId']and native.get('manifestHash')==c['manifestHash']and native.get('productionCommit')==c['productionCommit']and native.get('zustand')=='beendet'and native.get('aktiv')==0 and native.get('fachfelderUnveraendert')is True and native.get('quittungBindungBestaetigt')is True
+        _observe_native_cleanup(observation,nativeBoundZero=result['nativeBoundZero']and type(native.get('aktiv'))is int)
     result['confirmedZero']=result['after']['active']==0 and (not cpath.exists()or result.get('nativeBoundZero')is True)
+    if after.get('database')==DB and type(after.get('active'))is int and 0<=after['active']<=500:
+        _observe_native_cleanup(observation,confirmedZero=result['confirmedZero'])
     save('CLEANUP.SAFE.json',result)
     assert result['confirmedZero'],'full500-zero-not-confirmed'
     return result
@@ -748,6 +800,7 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
     phase='mock500-controller-workspace'
     closed=False;close_started=False;cleanup_result=None;backup=None;result=None;mounts={};actual_functional_results=None
     baseline=None;materials_completed=False;prepare_completed=False;diagnostic_final=None;diagnostic_closure_ok=True
+    run_evidence=None;native_cleanup=_MOCK_DIAGNOSTICS.unknown_native_cleanup()
     def guard():
         start_guard.closure_guard();disk_guard()
     def close_gateway():
@@ -916,12 +969,20 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
                 prepare_completed=True
             else:
                 start_guard.before_dispatch(kind='unit')
-                phase='mock500-controller-run';inner(supervisor,'run',10815)
+                phase='mock500-controller-run'
+                run_evidence={'schema':'helmut-w15-mock500-run-evidence/1',
+                  'binding':{**{key:context[key]for key in('exactCommit','runId','runAttempt','nonce')},
+                    'inputBindingSHA256':descriptor['bindingSHA256']},
+                  'firstFailure':'UNKNOWN','completedProfiles':'UNKNOWN','completionMeaning':'UNKNOWN',
+                  'nativeCleanup':native_cleanup}
+                inner(supervisor,'run',10815)
     except BaseException as error:
         failure={'status':'FAIL_OR_UNKNOWN','phase':phase,'retryAllowed':False}
         if phase=='mock500-controller-prepare' and supervisor is not None:
             safe=_MOCK_DIAGNOSTICS.prepare_failure(getattr(supervisor,'prepare_failure',None))
             if safe is not None:failure['prepareFailure']=safe
+        if phase=='mock500-controller-run' and run_evidence is not None:
+            run_evidence['firstFailure']=_run_first_failure(supervisor,error)
         if type(error)is Mock500ControllerFailure:
             failure['phase']=error.phase
             if error.materials_failure is not None:failure['materialsFailure']=dict(error.materials_failure)
@@ -937,7 +998,7 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
                 stop_owned(['prepare','run','setup','audit'])
                 if diagnostic:
                     close_gateway();quiesce_materials()
-                cleanup_result=prepare_cleanup(baseline)if prepare_only else materials_cleanup(baseline)if diagnostic else cleanup()
+                cleanup_result=prepare_cleanup(baseline)if prepare_only else materials_cleanup(baseline)if diagnostic else cleanup(observation=native_cleanup)
                 assert cleanup_result['confirmedZero']is True
                 if not diagnostic:
                     assert cleanup_result.get('nativeBoundZero')is True
@@ -1027,12 +1088,21 @@ def run_bound(inputs,resources,start_guard,backup_completion,*,disk_guard=None,m
                 if functional and actual_functional_results is not None:final['functionalResults']=actual_functional_results
                 _private_write(root/'FINAL_MOCK500_CLOSURE.SAFE.json',final)
         except BaseException:diagnostic_closure_ok=False;failure=failure or {'status':'FAIL_OR_UNKNOWN','phase':'mock500-controller-final-observation'}
-        finally:WORK,BASE,DB,CONTAINER,IMAGE,_BOUND_CONTEXT_SHA=previous
+        finally:
+            WORK,BASE,DB,CONTAINER,IMAGE,_BOUND_CONTEXT_SHA=previous
+            if run_evidence is not None and supervisor is not None:
+                # No ACK is not evidence of zero. Keep the already validated
+                # sequential lower bound even when the channel or cleanup fails.
+                accepted=getattr(supervisor,'accepted_indexes',set())
+                if type(accepted)is set and accepted and accepted==set(range(len(accepted)))and len(accepted)<=500:
+                    run_evidence['completedProfiles']=len(accepted)
+                    run_evidence['completionMeaning']='CONFIRMED_LOWER_BOUND'
+                run_evidence=_MOCK_DIAGNOSTICS.run_evidence(run_evidence)
     if diagnostic and diagnostic_final is not None and diagnostic_closure_ok:return diagnostic_final
     if failure is not None or backup is None:
         raise Mock500ControllerFailure(failure['phase']if failure else'mock500-controller-backup',
             failure.get('materialsFailure')if failure else None,
-            failure.get('prepareFailure')if failure else None)from None
+            failure.get('prepareFailure')if failure else None,run_evidence)from None
     return final
 
 def main():

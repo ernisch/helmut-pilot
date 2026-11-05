@@ -1,30 +1,32 @@
 # CURRENT STATE — Helmut
 
-## W15: Stored-Worker-Blocker lokal nachgestellt (04.11.2026)
+## W15: Run-Fehlerkanal angeschlossen, Ursache weiterhin UNKNOWN (05.11.2026)
 
-[Run41870462562](https://github.com/ernisch/helmut-pilot/actions/runs/41870462562)
-auf015f bleibt **FAIL**,175s: Materials vollstaendig, Prepare`stored-command`/
-`PREPARE_UNMAPPED`; urspruengliche innere MeldungUNKNOWN. Nativ500/0,Units/Provider0,
-8CleanupPASS. Peak2,828GB/Limit13,384GB,Swap/OOM/max0; Kapsel privat erhalten.
-GO verbraucht,Ausfuehrungsbranch015f. Lokal auf015f reproduziert: Kalenderimport
-nach Worker-Seal veraendert dessen Module und sperrt den Dictionary-Transport.
-Fix: Import vor Seal, Worker-Pin aktualisiert; gezielte Regression rot→gruen.
-[Ursache und Abnahme](betrieb/w15-mock500-prepare-diagnostic-20261104.md), neuer Draft-PR.
-PR1041 erhalten. Kein neuer Originallauf/Prepare-/Mock500-PASS. Serien-STOPs,
-2reservierte Plaetze/0Terminals,Platz3 gesperrt,Automation pausiert; alteFAILs erhalten.
-[Voriger Vollstand](https://github.com/ernisch/helmut-pilot/blob/8f48e31a3825af538b92a49ae68d0aa6b080c3cf/docs/CURRENT_STATE.md).
+[Run41996804804](https://github.com/ernisch/helmut-pilot/actions/runs/41996804804),
+Runtime33d588b6/Job127141874157: **FAIL**,176min02s, `mock500-controller-run`.
+Innerer Fehler, bestätigter Profilfortschritt und native Final0 fehlen: UNKNOWN,
+nicht0. Peak3,55GB bei13,39GB Hartlimit; Swap/OOM/max0, kein belegter Speicherabsturz.
+8äußereCleanupPASS, Artefakte0. Vollzähler/Sicherungsabnahme fehlen. Journal9 und
+Gegenanker erhalten, `HOLD_UNKNOWN`; kein sicherer Terminal und kein neuer Lauf.
 
-[Run41427480765](https://github.com/ernisch/helmut-pilot/actions/runs/41427480765),
-Job125217497980/1fb2cfe1 bleibt **FAIL**,189s, erste Phase`mock500-controller-materials`.
-Private innere Meldung in erhaltenen GitHub-/privaten Belegen nicht verfügbar;
-Node-Einstiegsprobe bis Originalgrenze PASS ersetzt keinen Ursachenbeleg.
-Peak2,590GB/Limit13,197GB; HostschutzPASS, Swap/OOM/Grenzereignisse0. Getrennte
-Maxima: Dateianteil1,523GB, anonym984MB, Kernel78MB, Shmem41MB(imDateianteil), nichtaddieren.
-Acht BereinigungenPASS;0aktive manuelle Runs/0Artefakte. VollständigeEndzähler,
-Ergebnisfehlerkategorien/Sicherung/finaleDB-Nullaktivität UNKNOWN. Damaliges GO verbraucht.
-Private Belege03/04 sowie neueDiagnose05 im vorhandenen privaten Belegbereich vom02.11.
-Empfang41037459441/End500-Abnahme41325430429 übernommen; historischeFAILs, alteRAM-
-Verträge undProduction-Sperre unverändert. Kein Mock500-Erfolg aus Diagnose ableiten.
+Entwicklungsreparatur auf der ausgeführten Runtime33d588b6: bestehender begrenzter
+Fehlerframe/IPC trägt jetzt die erste geschlossene Run-Fehlerkennung, bestätigte
+sequentielle ACK-Untergrenze und native Cleanup-Lesebefunde getrennt weiter.
+Bindung an Commit, Run/Attempt, Nonce und Eingabedigest; keine Rohfehler oder
+privaten Inhalte öffentlich. Kein ACK oder fehlende native Lesung bleibt UNKNOWN;
+äußere Bereinigung ersetzt niemals DBnull. Kein zusätzlicher Monitor oder DBaufruf.
+[Belege, Reparatur und Prüfgrenzen](betrieb/w15-mock500-run-failure-41996804804-20261105.md).
+Gezielte Prüfungen/Pflicht-CI/unabhängige Abnahme sind am zugehörigen Reparatur-PR
+nachzuweisen. Dies behebt den Informationsverlust, keinen bewiesenen funktionalen
+Auslöser des alten Runs. Neue Runtime braucht vor Ausführung frische Bindungen;
+der aktuelle Auftrag erlaubt keinen geschützten Lauf. Mock500 bleibt BLOCKED.
+
+Alter Run41939166457 bleibt UNKNOWN; Grants, STOPs und Journale unverändert.
+Der Isolationszusatz aus PR1048/6309d9c1 ist verbraucht; keine automatische
+HOLD-Aufhebung. Empfang41037459441 und End50041325430429 bleiben übernommen PASS.
+[Voriger Runtime-/Historienstand](https://github.com/ernisch/helmut-pilot/blob/33d588b6209ad912c5045f6561c07b7dc3d60e63/docs/CURRENT_STATE.md)
+und PR1049 bleiben erhalten. Alte RAM-Verträge, Sicherheitsgrenzen und Production-
+Sperre unverändert. Kein Originaltest, Merge, Deployment oder Modellaufruf.
 
 ## W15: erster dynamischer Mock500-Lauf FAIL (02.11.2026)
 

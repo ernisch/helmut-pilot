@@ -239,6 +239,8 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/w15-github/test_mock500_first_failure.py
           node scripts/lokal.js -- python3 -I -B scripts/w15-github/test_mock500_prepare_failure.py
           node scripts/lokal.js -- node scripts/w15-github/test_mock500_prepare_failure.js
+          node scripts/lokal.js -- python3 -I -B scripts/w15-github/test_mock500_run_failure.py
+          node scripts/lokal.js -- node scripts/w15-github/test_mock500_run_failure.js
           node scripts/lokal.js -- python3 -I -B scripts/w15-github/test_mock500_prepare_diagnostic.py
           node scripts/lokal.js -- node scripts/w15-github/test_mock500_prepare_diagnostic.js
           node scripts/lokal.js -- node scripts/w15-github/test_mock500_prepare_diagnostic_public.js
