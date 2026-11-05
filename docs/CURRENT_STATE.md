@@ -35,7 +35,7 @@ konkrete Freigaben bleiben gueltig.
 | Mock500, historisch | **ABGEBROCHEN ALS PROJEKTZIEL, KEIN PASS**. [Run 41939166457](https://github.com/ernisch/helmut-pilot/actions/runs/41939166457) cancelled/UNKNOWN; [Run 41996804804](https://github.com/ernisch/helmut-pilot/actions/runs/41996804804) nach 176min02s FAIL im Controller. Innere Ursache und Profilfortschritt UNKNOWN, nicht null. Acht aeussere Bereinigungen PASS, native Datenbanknullaktivitaet nicht belegt. [Beleg PR1049](https://github.com/ernisch/helmut-pilot/pull/1049). |
 | Mock100, neues Ziel | **PASS**: [Run 42053461090](https://github.com/ernisch/helmut-pilot/actions/runs/42053461090), exakt Commit `be0c6d1630f5987e755eb4030cc23a4f7d7247d7` nach [Pflicht-CI 42047654519](https://github.com/ernisch/helmut-pilot/actions/runs/42047654519). 100/100 Profile und 300/300 Ergebnisse nativ geprueft, 400 Tenant-/Quellenschutzkontrollen, alle fuenf Fehlerkategorien null; 296 simulierte Modellaufrufe, keine bezahlten Anbieteraufrufe. Nach 242,633 s einschliesslich Abschluss null aktive Profile, Bereinigung PASS. [Quittung und Fortschritt in PR #1052](https://github.com/ernisch/helmut-pilot/pull/1052) und [vollstaendiger Laufbericht](betrieb/mock100-20261105.md). Historischer erster [FAIL 42042488458](https://github.com/ernisch/helmut-pilot/actions/runs/42042488458) bleibt unveraendert. |
 | Production100 / Production500 | **ABBESTELLT.** Keine neue Vollastpruefung mit echten KI Aufrufen, keine Kostenfreigabe. |
-| Produktintegration und Livegang | **PRIVATER TECHNISCHER KANDIDAT VORBEREITET.** UI, Backend und main76b75e37 zusammengefuehrt; Altcachekorrektur und vier gezielte lokale Gruppen bestanden. Konkrete Kandidaten-Pflicht-CI, main-Merge und Productionfreigabe bleiben offen. [Bericht](betrieb/release-prep-20261105.md). |
+| Produktintegration und Livegang | **RELEASEBRANCH FUER PFLICHT-CI VORBEREITET.** Privater Kandidat814c8b63 einschliesslich UI, Backend und main76b75e37 unveraendert uebernommen. Nur die notwendige Vercel-Git-Sperre fuer den neuen Releasebranch und Dokumentation ergaenzt. Pflicht-CI wird auf dem konkreten PR-Kopf abgenommen; main-Merge und Production bleiben gesperrt. [Uebernahme](betrieb/release-ci-20261105.md), [lokale Abnahme](betrieb/release-prep-20261105.md). |
 
 ## Neuer Testumfang und Arbeitsweise
 
@@ -109,8 +109,10 @@ Keine Productionfreigabe.
 
 ## Genau ein naechster Schritt
 
-**Den konkreten privaten Releasekandidaten samt Uebernahmepfad freigeben
-und die erforderliche Pflicht-CI auf genau diesem Kandidatenkopf abschliessen.** Keine weiteren
+**Die beiden Pflichtchecks der Release-PR auf genau deren aktuellem Kopf abschliessen
+und danach auf konkrete Mergefreigabe warten.** Die Uebernahme ist freigegeben;
+der neue Branch `release/helmut-product-20261105` ist gegen automatische
+Vercel-Git-Deployments gesperrt. Keine weiteren
 synthetischen Vollversuche und keine bezahlten Lasttests. Ein spaeterer
 Merge/Production-Deploy benoetigt konkrete Releasefreigabe,
 Rueckweg und nachgewiesene Betriebsreife.

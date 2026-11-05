@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "release/helmut-product-20261105": false,
       "codex/helmut-ui-20261031": false,
       "codex/hetzner-native-automation-20261026": false,
       "codex/hetzner-ci-diagnostics-20261025": false,
