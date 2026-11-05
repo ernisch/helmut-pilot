@@ -87,8 +87,18 @@ Alle lokalen Tests ueber `scripts/lokal.js`, ohne Netz/Productionzugang:
 - Unabhaengiger Astra-Review meldet keine offenen Blocker an der Kostennaht.
   Ein im Review entdeckter Filterfehler wurde vor Aktivierung korrigiert.
 
-Pflicht-CI, Produktionskonfiguration, Deployment und aktuelle fachliche
-Briefingausgabe sind vor dem Abschluss noch nachzuweisen.
+Pflicht-CI42121896987 auf52d37479 vollstaendig PASS:180/180 Standardsuiten,
+Bereichsregression und native PostgreSQL/PostgREST-Nachweise. Der Browserjob
+ist erfolgreich; seine eigentlichen Browserschritte wurden nach Backend-Scope
+planmaessig uebersprungen. Nach parallelen Navigationsmerges wurde main25476a4a
+uebernommen; nur der Statusdokument-Konflikt wurde unter Erhalt beider Eintraege
+geloest. Pflichtchecks auf dem zusammengefuehrten Kopf, Deployment und aktuelle
+fachliche Briefingausgabe sind vor dem Abschluss noch nachzuweisen.
+
+Die Produktionsvariablen sind vorbereitet: Vertragsstart
+`2026-11-05T23:00:10.000Z`,1/30 USD; SCALABLE_PIPELINE, GLOBALABRUF,
+GLOBALPHASE und NARRATIV_QUEUE jeweils off. Kommunikation gesperrt und
+Dispatch shadow gegengelesen. Sie werden mit dem neuen Deployment wirksam.
 
 Erster Pflichtlauf42118060914:179/180 Standardsuiten PASS. Zwei Erwartungen
 in `testkohorte-vorwaerts-cli-test.js` setzten noch eine produktive leere

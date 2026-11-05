@@ -25,6 +25,35 @@ Noch kein Nachweis eines aktuellen vollstaendigen KI-Briefings und noch keine
 Aktivierung der neuen Produktionskonfiguration.
 [Umsetzung, Nachweise und Rueckweg](betrieb/cem-einprofilbetrieb-20261105.md).
 
+## Navigation und Verwaltung live (06.11.2026)
+
+[PR #1057](https://github.com/ernisch/helmut-pilot/pull/1057) nach ausdrücklichem
+„merge wenn grün“ auf `7d115a41fb84598fcc3849ed556ad0ede31d65b5` gemergt.
+Tagesinput ist in der UI pausiert, einschließlich gespeicherter Ansicht und Formular.
+Der doppelte Admin-Eintrag entfällt; Profil & Einstellungen führt für Admins zur
+Verwaltung, dort erhält **Erweiterte Werkzeuge** alle bisherigen Admin-Bereiche
+mit Rücklink. Funktionen und Daten bleiben erhalten.
+Die verbindliche Wiedervorlage und schrittweise Zielzuordnung stehen in
+[OP-32 und OP-33](datenmotor-restliste.md#op-32--tagesinput-bewusst-pausiert-06112026-p3).
+Gezielt geprüft: Syntax, Schnellkern 14/14, Verwaltungsnavigation 8/8,
+Browser-Smoke 78/78. Übergangsweg im echten Browser bei 1280 und 390 Pixeln
+bestanden, alle sieben Werkzeugbereiche erhalten; Referenten und Abgeordnete
+erhalten keinen Verwaltungszugang (HTTP403, kein Link/URL-Einstieg).
+Beide Pflichtchecks auf Kopf `abeecebb` erfolgreich:
+[CI 42119327817](https://github.com/ernisch/helmut-pilot/actions/runs/42119327817),
+176/176 Standard- und 332/332 Bereichssuiten, Browsercheck und isolierte
+Datenbankprüfungen grün. Production-Deployment
+`dpl_CJoBeMTV6V7MHeH86MuhM3iA1Qbj` READY auf Merge `7d115a41`, Alias
+`helmut-pilot.vercel.app`. Lesende Nachkontrolle: Startseite HTTP200,
+`client.js?v=7d115a41` bytegleich zur geprüften Datei, Tagesinput aus,
+Verwaltung ohne Sitzung HTTP401. Kein authentifizierter Production-Klicktest;
+dieser Übergangsweg wurde lokal mit echten Sessions geprüft.
+Der umfassendere historische Verwaltungstest
+stoppt im unveränderten Kontoclient an einer alten Null-IO-Erwartung beim Freigeben
+eines Kontos; die gezielte Navigationsauswahl führt keine Schreibaktion aus.
+Dieser Auftrag ist abgeschlossen. Nächster fachlicher Schritt bei weiterer
+Verwaltungsarbeit: fehlende Funktionen nach OP-33 einzeln zuordnen.
+
 ## Oberstes Ziel: Mock100 PASS, dann Helmut sicher live
 
 1. **Mock100 PASS**: exakt **100 gleichzeitig aktive synthetische
