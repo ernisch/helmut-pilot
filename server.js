@@ -4626,7 +4626,7 @@ function indexHtml() {
   </head>
   <body class="is-loading">
     <div class="app-splash" id="appSplash" aria-hidden="true">
-      <div class="splash-mark"><span class="splash-word">Helmut</span><svg class="splash-pulse" viewBox="0 0 200 40" aria-hidden="true" focusable="false"><path class="splash-pulse-base" d="M0 20H200"/><path class="splash-pulse-trace" d="M0 20H78l8-12 10 26 8-22 6 8H200"/></svg><small class="splash-tag">Was jetzt zählt.</small></div>
+      <div class="splash-mark"><span class="splash-word">Helmut</span><svg class="splash-pulse" viewBox="0 0 200 40" aria-hidden="true" focusable="false"><path class="splash-pulse-base" d="M0 20H200"/><path class="splash-pulse-trace" d="M0 20H200"/></svg><small class="splash-tag">Was jetzt zählt.</small></div>
     </div>
     <main class="shell" id="app">
       <section class="loading-screen" aria-label="Bereite deine Morgenlage vor">

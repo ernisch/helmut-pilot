@@ -12887,3 +12887,13 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
   .splash-word, .splash-tag { animation: none; opacity: 1; }
   .splash-pulse-trace { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; opacity: .9; }
 }
+/* Startbild-Puls minimalistisch (statt EKG-Zacke): Ein blaues Linienstück
+   leuchtet aus der Mitte im Doppelschlag auf und klingt wieder ab. */
+.splash-pulse-trace { stroke-dasharray: none; stroke-dashoffset: 0; transform-box: fill-box; transform-origin: 50% 50%; transform: scaleX(.08); opacity: .35; animation: ui-splash-pulse 2.4s ease-in-out infinite; }
+@keyframes ui-splash-pulse {
+  0%, 60%, 100% { transform: scaleX(.08); opacity: .35; }
+  12% { transform: scaleX(.55); opacity: 1; }
+  22% { transform: scaleX(.22); opacity: .6; }
+  34% { transform: scaleX(.42); opacity: .9; }
+}
+@media (prefers-reduced-motion: reduce) { .splash-pulse-trace { animation: none; transform: scaleX(.3); opacity: .8; } }
