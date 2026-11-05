@@ -1,21 +1,22 @@
-# Roadmap bis zum 500er Production Nachweis
+# Historische Roadmap bis zum 500er Production Nachweis
 
-Stand: 10.10.2026
+**Archivierter Projektplan, Stand 10.10.2026. Nicht mehr als aktiver
+Arbeitsauftrag verwenden.**
 
-Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis.
-Sie dient Codex als kurze Arbeitsroadmap. Aktueller Production Stand und Belege
-stehen weiterhin in `docs/CURRENT_STATE.md`.
+**Neuer Betreiberbeschluss vom 05.11.2026:** Statt Mock500 und
+Production500 gilt **Mock100 mit genau 100 gleichzeitig aktiven
+synthetischen Mandatsprofilen**, danach ein sicherer Livegang
+des nutzbaren und verkaufbaren Produkts. Kein separater
+Production100/Production500 Lasttest. Aktuelle Prioritaeten,
+offene Blocker, Sicherheit und konkrete Freigabegrenzen stehen
+in [`docs/CURRENT_STATE.md`](CURRENT_STATE.md) und
+[`AGENTS.md`](../AGENTS.md).
 
-**Aktuelle Steuerung vom 01.10.2026:** Der technische 500er Nachweis verwendet
-ausschliesslich vollstaendig synthetische Profile. Die bisher vorbereitete reale
-500er Kohorte wird dafuer nicht importiert oder aktiviert. Datenschutzfreigabe
-und Vertragsunterlagen existieren laut Betreiber derzeit nicht und bleiben vor
-regulaerem Betrieb offen; sie sperren diesen technischen Synthetiknachweis nicht.
-Verteilung 330 Bundestag / 120 Berlin / 50 Brandenburg, technischer Profilschutz,
-Kosten 6 USD/UTC-Tag und 7 USD insgesamt sowie separates GO vor Aktivierung/Test
-gelten weiter. [Aktueller Umfang und Nachweisgrenzen](betrieb/synthetischer-500er-auftrag-20261001.md).
-Die nachfolgenden historischen Realprofilvorarbeiten sind keine aktuelle
-Importanweisung und kein Beleg synthetischer Startbereitschaft.
+Alle folgenden Abschnitte dokumentieren nur die historische
+500er Planung und die damaligen Belege. Sie duerfen nicht
+als aktuelle Aufforderung zur Aktivierung, zum Start, zu
+einem Production Lasttest oder zu bezahlten Modellaufrufen
+ausgelegt werden. Historische Belege bleiben unveraendert.
 
 ## Kritischer Pfad und Parallelitaet
 
