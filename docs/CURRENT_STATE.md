@@ -5,6 +5,26 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
+## Navigation und Verwaltung vorbereitet (06.11.2026)
+
+Branch `codex/navigation-tagesinput-admin-20261106`, Basis main `14501c59`:
+Tagesinput in der UI pausiert, einschließlich gespeicherter Ansicht und Formular.
+Der doppelte Admin-Eintrag entfällt; Profil & Einstellungen führt für Admins zur
+Verwaltung, dort erhält **Erweiterte Werkzeuge** alle bisherigen Admin-Bereiche
+mit Rücklink. Keine Daten-/Backendänderung und noch kein Production-Rollout.
+Die verbindliche Wiedervorlage und schrittweise Zielzuordnung stehen in
+[OP-32 und OP-33](datenmotor-restliste.md#op-32--tagesinput-bewusst-pausiert-06112026-p3).
+Gezielt geprüft: Syntax, Schnellkern 14/14, Verwaltungsnavigation 8/8,
+Browser-Smoke 78/78. Übergangsweg im echten Browser bei 1280 und 390 Pixeln
+bestanden, alle sieben Werkzeugbereiche erhalten; Referenten und Abgeordnete
+erhalten keinen Verwaltungszugang (HTTP403, kein Link/URL-Einstieg).
+Änderungsentwurf vorbereitet; Pflicht-CI und Merge bleiben offen.
+Der umfassendere historische Verwaltungstest
+stoppt im unveränderten Kontoclient an einer alten Null-IO-Erwartung beim Freigeben
+eines Kontos; die gezielte Navigationsauswahl führt keine Schreibaktion aus.
+Nächster Schritt für diesen Auftrag: Änderungsentwurf nach Pflicht-CI zur
+späteren Zusammenführung mit dem laufenden Designentwurf prüfen.
+
 ## Oberstes Ziel: Mock100 PASS, dann Helmut sicher live
 
 1. **Mock100 PASS**: exakt **100 gleichzeitig aktive synthetische
