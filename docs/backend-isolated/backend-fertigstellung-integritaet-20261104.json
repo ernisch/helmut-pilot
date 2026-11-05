@@ -1,0 +1,824 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-11-04T12:03:40.913668+00:00",
+  "branch": "feat/claude-backend-isolated",
+  "tested_head": "ae18658e5caac2b39403c0e41e3a8af5c2b3d7be",
+  "head_unchanged": true,
+  "tracked_diff": " verwaltung/README.md | 21 ++++++++++++++++++++-\n 1 file changed, 20 insertions(+), 1 deletion(-)",
+  "existing_runtime_files_unchanged": true,
+  "protected_files": [
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "server.js",
+      "sha256": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "server.js",
+      "sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "client.js",
+      "sha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "client.js",
+      "sha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "styles.css",
+      "sha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "styles.css",
+      "sha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "index.html",
+      "sha256": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "index.html",
+      "sha256": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "lib/helmut/storage.js",
+      "sha256": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "lib/helmut/storage.js",
+      "sha256": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "lib/helmut/auth.js",
+      "sha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "lib/helmut/auth.js",
+      "sha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "lib/helmut/accounts.js",
+      "sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "lib/helmut/accounts.js",
+      "sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "lib/helmut/scheduler.js",
+      "sha256": "e6db7e15d7b8241c3de082e1989e1003e9eba7dcb0e4d41f7ab22f67e88ee8fc",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "lib/helmut/scheduler.js",
+      "sha256": "e6db7e15d7b8241c3de082e1989e1003e9eba7dcb0e4d41f7ab22f67e88ee8fc",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "lib/helmut/tenant-context.js",
+      "sha256": "23aca09ee6218c178581ca7d3fc6cc4126b5336f3c6ad808b68f289ea36f38ac",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "lib/helmut/tenant-context.js",
+      "sha256": "23aca09ee6218c178581ca7d3fc6cc4126b5336f3c6ad808b68f289ea36f38ac",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "vercel.json",
+      "sha256": "adba635b8282354a44c14d9d15570601c94d36c8fad568aa3c543f0c5955cbf9",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "vercel.json",
+      "sha256": "adba635b8282354a44c14d9d15570601c94d36c8fad568aa3c543f0c5955cbf9",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": ".github/workflows/ci.yml",
+      "sha256": "4631c1817fac0950d16a54cb7ee7aaa29713a4e36ad4cb2b8423633e784a70d3",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": ".github/workflows/ci.yml",
+      "sha256": "4631c1817fac0950d16a54cb7ee7aaa29713a4e36ad4cb2b8423633e784a70d3",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "docs/CURRENT_STATE.md",
+      "sha256": "25eb03b2998d4496aff451684a4b1845491622cdd1621cc2278faacba4d49900",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "docs/CURRENT_STATE.md",
+      "sha256": "25eb03b2998d4496aff451684a4b1845491622cdd1621cc2278faacba4d49900",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "AGENTS.md",
+      "sha256": "d739fe1cfe3e389990f89b6bf5a6f16ef546df62a5d6ae65a3aa4e7196a594a6",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "AGENTS.md",
+      "sha256": "d739fe1cfe3e389990f89b6bf5a6f16ef546df62a5d6ae65a3aa4e7196a594a6",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "CLAUDE.md",
+      "sha256": "d26b84468942de3bec4ade070992e7e66638cfa7460149f1854d2baaf4b6a393",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "CLAUDE.md",
+      "sha256": "d26b84468942de3bec4ade070992e7e66638cfa7460149f1854d2baaf4b6a393",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "docs/START_HERE.md",
+      "sha256": "60609675bfb3158cfef9a859d213e07268ba3ddeeb4277088a85fa14b958b030",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-pilot",
+      "path": "docs/START_HERE.md",
+      "sha256": "60609675bfb3158cfef9a859d213e07268ba3ddeeb4277088a85fa14b958b030",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "lib/helmut/ai.js",
+      "sha256": "33a64efbe45989f4ee5f3f1268c0874c0a2c4924b2ac4c825977005824ccbd5a",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "lib/helmut/lage.js",
+      "sha256": "a622d2c5e3aea1aee7149a7749d77cc736a9b3891bb5b0f351c112f638694758",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "lib/helmut/office.js",
+      "sha256": "597d1344dc3c092bfa065e05bb17224880bbecb112ce4421f86b661a4226119c",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "lib/helmut/briefingContract.js",
+      "sha256": "285939d8d37432c16ed48346b26787f6ed14448cd090713b47eb4005104a7e02",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "lib/helmut/radarState.js",
+      "sha256": "aad627cc79c73b4004c6049ab73fbc0440c319f6978c1d74b93a2616988dcc06",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "lib/helmut/accounts.js",
+      "sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "verwaltung/styles.css",
+      "sha256": "26fc3a5230fd7a193e2211cd7a2db1d1c01559c609f5a0a7018435b4b357bb65",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "verwaltung/index.html",
+      "sha256": "6e7b703b10fc0193e63aef3baf0446514f8f62e60a542e22049635b8a3345d39",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "verwaltung/app.mjs",
+      "sha256": "497ed4b54c4f6733bf890d7154bd822a8eda59ef7004df4bdb81ed5038d2e025",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "verwaltung/vorschau.mjs",
+      "sha256": "371a8c1ee2d8a6d03559222c56ef29bb8973e2f624b97ae7095351377f0a9eb0",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "verwaltung/beispieldaten.mjs",
+      "sha256": "beb5e04886537db3b4d88f9117ea8746a809a1fa6a7c9844ca226869a7dfef14",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "verwaltung/model.mjs",
+      "sha256": "ebdc851760c703324a718662e44160daca8528cbe7056fc5e89ea8ad89b277c3",
+      "unchanged": true
+    },
+    {
+      "workspace": "/workspace/helmut-claude-backend-isolated",
+      "path": "verwaltung/api.mjs",
+      "sha256": "553052b47779d9ce6d5d06ef7489805e0f67dddf0b4dd0ab9aba48949359d374",
+      "unchanged": true
+    }
+  ],
+  "original_files_byte_equal": 25,
+  "changes_before_this_evidence": [
+    {
+      "status": " M",
+      "path": "verwaltung/README.md",
+      "sha256": "a8748ab3abacb882c59074a0218bb92781f04b959a779a4c03db8a65be54d097",
+      "bytes": 6393
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/backend-fertigstellung-20261104.md",
+      "sha256": "9a15584f45cfda415430fc4c4dcecba6ee2cec5e9329d2bd36eeee3bb11e8748",
+      "bytes": 11917
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/backend-fertigstellung-review-20261104.json",
+      "sha256": "9a69c3f9b308d9c746aa69fc1b26a010c7575c6dfd26251d2aaff532a168d7fd",
+      "bytes": 1286
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/original-verwaltung-bildbeleg-20261104.json",
+      "sha256": "ada0dccf899c44423a50b836cf0dc3fce2f57d2003cc002277d078a19cccf48d",
+      "bytes": 3448
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/original-verwaltung-pruefbeleg-20261104.json",
+      "sha256": "3fb03640e5d1cb1bb8712ecee96b70c6d4ce70d08768dfe5cb8c3d7a70c289b2",
+      "bytes": 5943
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/profil-lesefehler-kandidat-20261104.patch",
+      "sha256": "9fc450c2440996be32df46d7ece842b041f9e34aedce8504693fc2a05afd7484",
+      "bytes": 858
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/profil-lesefehler-pruefbeleg-20261104.json",
+      "sha256": "5494e80141d2c5ef4ba6da95f25d9dc3c2c1d8455b8a48025c1af5e1c98fd2f4",
+      "bytes": 4922
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-a-pruefbeleg-20261104.json",
+      "sha256": "be0ca449e0fe785b6c122dc64ebac5cf5c93c00b400a464fc7d0d74ed5aef2d9",
+      "bytes": 13967
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-b-pruefbeleg-20261104.json",
+      "sha256": "24b16ade187cf3e5308b9bd02aa35018e2461e37e56829635caa6fd8b054346e",
+      "bytes": 22337
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-b-schnittstellen-20261104.md",
+      "sha256": "64135dc570c2df9ba0042e03f239dc80a93090782c6c3c045733449678ac08ce",
+      "bytes": 9172
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d-kombination-20261104.json",
+      "sha256": "b61157cae36ae0fa1884a447e06636f270369ab388887f7f230139268736b3a2",
+      "bytes": 44320
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d-kontoverwaltung-20261104.md",
+      "sha256": "a07c4f88138e750efec4778e828650a67bb09befbb1531a2a3c3af7094f39c19",
+      "bytes": 11131
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d-pruefbeleg-20261104.json",
+      "sha256": "9b692ac8e650636dbbd10053dc2e5b499a1f895f9716a1f18ec3d508a1647a1c",
+      "bytes": 12473
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d-status-active.patch",
+      "sha256": "bf0c77ecc2950cfc34fee9bfd49c707d934e975500f3817cb9e232d7fe70954e",
+      "bytes": 986
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d-status-baseline-20261104.json",
+      "sha256": "08b4007e85b41b8ef09bfdb97081602ed347008283bd8eb46ae8dfc853363d35",
+      "bytes": 9356
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d-status-kandidat-20261104.json",
+      "sha256": "6e50cd86a4c283cd75bc44aee7a8ad4317060be5eaefb6c3b8fdda314f831150",
+      "bytes": 9426
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d2-baseline-20261104.json",
+      "sha256": "be8ce834b8fa60f67fdc43f4055eb1bfe64cb9a57ccda6e56b7f5bf254a0245a",
+      "bytes": 30251
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d2-kandidat-20261104.json",
+      "sha256": "430d31843011da7a6ad43e5410c92b893fc4351826ab3f664461e66b9be66861",
+      "bytes": 30901
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d2-last-admin-20261104.md",
+      "sha256": "ed7693f9b5ae6fb85ba642e5e93a776e2549e4e074f86c20c2e128ffe76b6461",
+      "bytes": 8865
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d2-last-admin.patch",
+      "sha256": "e5c2f1abf7d340c671c76187bf743d55e3fbca0a5b18398aca52bd967957868a",
+      "bytes": 1381
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprints-ab-abschluss-20261104.md",
+      "sha256": "2b80cf882fcb4ea55b2960e887f99783965cfae67833ec26df9da152c2e5bd31",
+      "bytes": 10720
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprints-ab-designvergleich-20261104.json",
+      "sha256": "212cb9c8988b73855b3983c97cc7226aabbec9a0f192aeccc452325fdbd70776",
+      "bytes": 4513
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprints-ab-integritaet-20261104.json",
+      "sha256": "d1f23167c85262afd291dcc3f39204212a223c4264b8d398fb3ba45af54db6ac",
+      "bytes": 23548
+    },
+    {
+      "status": "??",
+      "path": "scripts/admin-profil-lesefehler-kandidat-test.js",
+      "sha256": "cceed14f8b22209e8eb0ae0553fba73885ea8f2c99714caee13889d7f010e6c7",
+      "bytes": 6682
+    },
+    {
+      "status": "??",
+      "path": "scripts/original-verwaltung-bildtest.js",
+      "sha256": "5133cd0e726b52d2b579b867b806c1289debf01dc7acf9cd128f79e4df8c4f34",
+      "bytes": 10834
+    },
+    {
+      "status": "??",
+      "path": "scripts/original-verwaltung-paket.js",
+      "sha256": "5ab62c6cc1166f9f7f4b66b43c96a58c064740cd28e4cf6cc00149319cfd4a47",
+      "bytes": 5109
+    },
+    {
+      "status": "??",
+      "path": "scripts/original-verwaltung-test.js",
+      "sha256": "dd8bafe1e4167689b217074edf77fad49626085c4107594d4149d72c716821a2",
+      "bytes": 20016
+    },
+    {
+      "status": "??",
+      "path": "scripts/sprint-a-admin-leserouten-test.js",
+      "sha256": "b16bb1f4c10e8549f6aad22bf4a568e91c278dda4b3dd8b7bf43db20ad997526",
+      "bytes": 15330
+    },
+    {
+      "status": "??",
+      "path": "scripts/sprint-ab-designvergleich.js",
+      "sha256": "94037a5d14b80793b864e61867ad809fddbbf01552e920c8cfad0e40f0048188",
+      "bytes": 14360
+    },
+    {
+      "status": "??",
+      "path": "scripts/sprint-b-schnittstellen-test.js",
+      "sha256": "637cc90be84155971c5927f7d15eb3312d0d67d29005cd44490ee00d7d540e6e",
+      "bytes": 9369
+    },
+    {
+      "status": "??",
+      "path": "scripts/sprint-d-kombination-test.js",
+      "sha256": "520ff7a1e3fdcbad4f197a1ecc44b1b7f9a422945358cbefcb5cbb79aa42607b",
+      "bytes": 7515
+    },
+    {
+      "status": "??",
+      "path": "scripts/sprint-d-kontoverwaltung-test.js",
+      "sha256": "5eb0699c03616e0db8aec32c01197e456b853f98dbc5d137a37dedb3a04bd068",
+      "bytes": 26480
+    },
+    {
+      "status": "??",
+      "path": "scripts/sprint-d2-last-admin-test.js",
+      "sha256": "0570d4fc80432ecf66cead592e64ddea39409cee1d7a5ad4bb576fc791e51a09",
+      "bytes": 16488
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original-manifest.json",
+      "sha256": "8d33b3ba188671c77cda52634f7bf961a992e9bb3a7829b0f6f7ebd4c250b384",
+      "bytes": 4398
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/Helmut Verwaltung v3.dc.html",
+      "sha256": "9bdcf76ae6771655351c68ada79e4301348f452d12b5cbabe15c4ef4fe275418",
+      "bytes": 91184
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/_adherence.oxlintrc.json",
+      "sha256": "8197466e5bc69389417e411247be48a0879f92965c95d2e96ad823b49ad8879e",
+      "bytes": 11160
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/_ds_bundle.js",
+      "sha256": "066f520fe80585116691c8276afff4a86ee757cac1686e47f1f098e6a2a3e6fe",
+      "bytes": 52666
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/_ds_manifest.json",
+      "sha256": "949544ecfd827b707a2bed908352fb58708581ffb56e0cdd705785be8540f1e9",
+      "bytes": 15678
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/HankenGrotesk-var.ttf",
+      "sha256": "813b3f8fa0965405669a89b38e51bbefd95eef6b8e20d1cb2d8c10cce062662f",
+      "bytes": 132892
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Medium.ttf",
+      "sha256": "a9b4c49bb299e05b5f6c481e7fb5e78943d2793249a0c8874ab574a2d1ea6755",
+      "bytes": 136704
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Regular.ttf",
+      "sha256": "6a3412f058c7d8dfd9170c41e85ade48e5156ecb89356110ca57a0a27734af46",
+      "bytes": 135580
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Medium.ttf",
+      "sha256": "f385bc588599c879112272711d4acecc126674009d747a27284f59e93a240e83",
+      "bytes": 272920
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Regular.ttf",
+      "sha256": "c89021dc20720c8d0dcf40b0b2f6e00c13665fa8041717f581396f51b8c78f5d",
+      "bytes": 261088
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/readme.md",
+      "sha256": "5ede1e8dcf106083419a32f774737a9a559add935dfdae07bdb9b6ec74935c30",
+      "bytes": 13429
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "sha256": "9acb03ace9f271cd59694a3ca00c3314cd1100fec7c2b18c023ca266b90d2243",
+      "bytes": 382
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "sha256": "031321710634f8a0a8d25c6ece3e1ac773ddb071757898f5b171e08e9688de0f",
+      "bytes": 2953
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "sha256": "53d384b0f4208dae8847429975568d43c626bd598b02f9271f990af3cc05be7d",
+      "bytes": 913
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "sha256": "6611bf3c62d1635895737068ad847848d76f12023d8422db2b853fd25ba931fd",
+      "bytes": 1455
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "sha256": "c9d05456e2efa9f4e14a1a87b14686482eb5e5b71c811ac7039c2ddd51cb9364",
+      "bytes": 2018
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/README.md",
+      "sha256": "79b9836bd3ff107a158bbf68a239f22e60a274e5039236e9e035a4d323f4b334",
+      "bytes": 1697
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/favicon-32.png",
+      "sha256": "f2173c0277bb89ae745ac8ddebc3fd00e3fc2cdeda0d1820ff5d531d801d4af9",
+      "bytes": 6361
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/favicon.svg",
+      "sha256": "9ce6218af1ddec9aa469c1c99289626bca0953c044b1ed261f637e073c33bd95",
+      "bytes": 8318
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/helmut-h.svg",
+      "sha256": "ceb27237d05a1f44a9d267eb7ed62133c6eaa82d1f1ee2d8e7dbd4ef17ba147d",
+      "bytes": 8284
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/helmut-zeichen-invers.svg",
+      "sha256": "96c3db7dc7a847f0e1a5bcef9b458df8edc5da58d98b361ab194f837ae67d4e8",
+      "bytes": 8348
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/helmut-zeichen.svg",
+      "sha256": "9d885030b873da5e0796f361adfc183c2830b38011ee505fda8422ae138b8ab4",
+      "bytes": 8348
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/icon-192.png",
+      "sha256": "cbe90686046ef004c1ebf0235a33ff59572c3e52007a81d7c270bcb086c66193",
+      "bytes": 10184
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/v2_tokens.css",
+      "sha256": "e102a0ae35c2a8db87e2a641abf5b1f3f3611688961bc30e2571818c515e00c9",
+      "bytes": 2117
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/support.js",
+      "sha256": "8fe7df74405f3c55f49b7249c74ea1397e65d07dea2b1bd3b4a489bec2e28cbe",
+      "bytes": 69150
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/v3_logik.js",
+      "sha256": "3bec6af65720908f67798591d0b74889959ebdabe3ebebfd4604624042dcd8a7",
+      "bytes": 18331
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/original-actions.mjs",
+      "sha256": "a303e6f9f6259ec5e2b6f4c11b881ecd795e638411151c08bce0840ffc4693fa",
+      "bytes": 3961
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/original-adapter.mjs",
+      "sha256": "8854d2298848b30d142cb84a3637ef194f6192aa035379613421dfd272293351",
+      "bytes": 15950
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/original-controller.mjs",
+      "sha256": "0a61f799a6cba14b62e8bc1ef204858511e047f89bacb1aaa92e7cd71f741eb6",
+      "bytes": 5176
+    }
+  ],
+  "candidate_patches": [
+    {
+      "path": "docs/backend-isolated/sprint-d-status-active.patch",
+      "sha256": "bf0c77ecc2950cfc34fee9bfd49c707d934e975500f3817cb9e232d7fe70954e",
+      "applied_in_working_branch": false
+    },
+    {
+      "path": "docs/backend-isolated/sprint-d2-last-admin.patch",
+      "sha256": "e5c2f1abf7d340c671c76187bf743d55e3fbca0a5b18398aca52bd967957868a",
+      "applied_in_working_branch": false
+    },
+    {
+      "path": "docs/backend-isolated/profil-lesefehler-kandidat-20261104.patch",
+      "sha256": "9fc450c2440996be32df46d7ece842b041f9e34aedce8504693fc2a05afd7484",
+      "applied_in_working_branch": false
+    }
+  ],
+  "test_evidence_files": [
+    "sprints-ab-integritaet-20261104.json",
+    "sprint-d-kombination-20261104.json",
+    "sprint-b-pruefbeleg-20261104.json",
+    "backend-fertigstellung-review-20261104.json",
+    "sprint-d2-baseline-20261104.json",
+    "profil-lesefehler-pruefbeleg-20261104.json",
+    "sprint-d-pruefbeleg-20261104.json",
+    "sprint-a-pruefbeleg-20261104.json",
+    "sprints-ab-designvergleich-20261104.json",
+    "sprint-d-status-baseline-20261104.json",
+    "original-verwaltung-pruefbeleg-20261104.json",
+    "sprint-d-status-kandidat-20261104.json",
+    "original-verwaltung-bildbeleg-20261104.json",
+    "sprint-d2-kandidat-20261104.json"
+  ],
+  "syntax_checks": [
+    {
+      "file": "verwaltung/original-adapter.mjs",
+      "exit_code": 0,
+      "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+    },
+    {
+      "file": "verwaltung/original-controller.mjs",
+      "exit_code": 0,
+      "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+    },
+    {
+      "file": "verwaltung/original-actions.mjs",
+      "exit_code": 0,
+      "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+    },
+    {
+      "file": "scripts/original-verwaltung-paket.js",
+      "exit_code": 0,
+      "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+    },
+    {
+      "file": "scripts/original-verwaltung-test.js",
+      "exit_code": 0,
+      "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+    },
+    {
+      "file": "scripts/original-verwaltung-bildtest.js",
+      "exit_code": 0,
+      "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+    },
+    {
+      "file": "scripts/admin-profil-lesefehler-kandidat-test.js",
+      "exit_code": 0,
+      "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+    },
+    {
+      "file": "scripts/sprint-d-kontoverwaltung-test.js",
+      "exit_code": 0,
+      "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+    },
+    {
+      "file": "scripts/sprint-d2-last-admin-test.js",
+      "exit_code": 0,
+      "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+    },
+    {
+      "file": "scripts/sprint-d-kombination-test.js",
+      "exit_code": 0,
+      "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+    }
+  ],
+  "local_artifacts": [
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/endstand-syntax.json",
+      "sha256": "e02a0fefe405bbec6fadba96918e78219a4d7d4a108ea9108a7abf7df5456b24",
+      "bytes": 2359
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-angeschlossen-abrechnung-dunkel-1440.png",
+      "sha256": "fdbac2105aad73ed009663a67097505920a16cf5c8636ee49d0d5ca49cbafa9a",
+      "bytes": 39350
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-angeschlossen-kosten-dunkel-1440.png",
+      "sha256": "1835c14f8927c60bc7b4efe02de1db1f1558058e0a487b8addfac30efea4cd57",
+      "bytes": 76459
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-angeschlossen-uebersicht-dunkel-1440.png",
+      "sha256": "1f3a9cbcaa3f1762c55d0f87a1c953f22e1dd77d456ca0fddb52d5ec3d5ee4ea",
+      "bytes": 76574
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-angeschlossen-uebersicht-dunkel-390.png",
+      "sha256": "bd30ff3e2231ef7da6e837d0edecef5873019d5eb434ed3ef0f16007cdd44ddf",
+      "bytes": 61308
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-angeschlossen-uebersicht-hell-1440.png",
+      "sha256": "a870e41c4cb335d414c0442e3c5c6939e00ff66813ed188d8550a5a8f7b582d3",
+      "bytes": 75981
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-angeschlossen-uebersicht-hell-390.png",
+      "sha256": "40dc1eb0178bcbd71f4c0b1e1984bf2d1057f645f0ce949cf86c23d978f88810",
+      "bytes": 59880
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-bildtest-endstand.log",
+      "sha256": "10cd0e371cf61ee763b0bfea115416090e28a33c43afe275745079323b26c346",
+      "bytes": 456
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-bildtest-lauf-1.log",
+      "sha256": "10cd0e371cf61ee763b0bfea115416090e28a33c43afe275745079323b26c346",
+      "bytes": 456
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-verwaltung-bildbeleg.json",
+      "sha256": "ada0dccf899c44423a50b836cf0dc3fce2f57d2003cc002277d078a19cccf48d",
+      "bytes": 3448
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-verwaltung-endstand.log",
+      "sha256": "ba2af52e3a750f8c2161e2a88c9a3ff4ef3cd2f7b6bc88447f8d642d29bd4c52",
+      "bytes": 1944
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-verwaltung-ergebnis.json",
+      "sha256": "3fb03640e5d1cb1bb8712ecee96b70c6d4ce70d08768dfe5cb8c3d7a70c289b2",
+      "bytes": 5943
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-verwaltung-lauf-1.log",
+      "sha256": "755856e4c2c4febd0b528e0ae4d3585627bb40831fc0155c08cd85bbf9f0309a",
+      "bytes": 1555
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/original-verwaltung-nach-review.log",
+      "sha256": "ba2af52e3a750f8c2161e2a88c9a3ff4ef3cd2f7b6bc88447f8d642d29bd4c52",
+      "bytes": 1944
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/profil-lesefehler-kandidat-ergebnis.json",
+      "sha256": "5494e80141d2c5ef4ba6da95f25d9dc3c2c1d8455b8a48025c1af5e1c98fd2f4",
+      "bytes": 4922
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/backend-fertigstellung-20261104/profil-lesefehler-kandidat-lauf-1.log",
+      "sha256": "f25695cb8d995386b7ba1e6e989f265d36cd784d591000447a02bb93081871ba",
+      "bytes": 213
+    }
+  ],
+  "active_test_servers_or_browsers": [],
+  "separate_clones_at_original_head": true,
+  "original_checkout_status": "?? supabase/.temp/",
+  "no_remote_access": true,
+  "no_paid_calls_or_production": true,
+  "no_commit_push_merge_deployment": true,
+  "limits": [
+    "Keine vollständige Original-React-/Bedienabnahme",
+    "Keine SQL-/RLS- oder verteilte CAS-Abnahme",
+    "Gemeinsame Korrekturen nur als geprüfte Patches",
+    "Keine Mock500-/Production500-Abnahme",
+    "Kein aktueller Remote-/PR-/Production-Bestand"
+  ]
+}

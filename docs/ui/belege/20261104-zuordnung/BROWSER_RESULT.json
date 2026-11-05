@@ -1,0 +1,1099 @@
+{
+  "status": "PASS",
+  "passes": [
+    "desktop: actual UI rendered",
+    "desktop: normal bootstrap and automatic drafts complete",
+    "desktop: real auth and CSRF path simulated",
+    "desktop: two formats per eligible record; ignored record never generated",
+    "desktop: record, KO and vorgang identities remain distinct",
+    "desktop: server primary remains first despite higher scores",
+    "desktop: legacy signal kept separate",
+    "desktop: V3 signal uses explicit KO identity",
+    "desktop: missing identities not guessed from id or signal",
+    "desktop: equal-looking namespace values not swapped",
+    "desktop: camelCase item identity and decision retained",
+    "desktop: second record selected through real card",
+    "desktop: Briefing after navigation ready",
+    "desktop: Briefing opens its own record, not previous selection",
+    "desktop: handoff itself starts no generation",
+    "desktop: lost target does not silently select another record",
+    "desktop: missing-target hint stays visible after refresh",
+    "desktop: lost primary causes no automatic generation",
+    "desktop: missing-vorgang blocks automatic generation",
+    "desktop: missing-vorgang disables handoff with honest hint",
+    "desktop: missing-vorgang rejects programmatic handoff without fallback",
+    "desktop: missing-knowledge blocks automatic generation",
+    "desktop: missing-knowledge disables handoff with honest hint",
+    "desktop: missing-knowledge rejects programmatic handoff without fallback",
+    "desktop: missing-record blocks automatic generation",
+    "desktop: missing-record disables handoff with honest hint",
+    "desktop: missing-record rejects programmatic handoff without fallback",
+    "desktop: missing-primary blocks automatic generation",
+    "desktop: missing-primary disables handoff with honest hint",
+    "desktop: missing-primary rejects programmatic handoff without fallback",
+    "desktop: missing-decision blocks automatic generation",
+    "desktop: missing-decision disables handoff with honest hint",
+    "desktop: missing-decision rejects programmatic handoff without fallback",
+    "desktop: ignored blocks automatic generation",
+    "desktop: ignored disables handoff with honest hint",
+    "desktop: ignored rejects programmatic handoff without fallback",
+    "desktop: conflicting-id blocks automatic generation",
+    "desktop: conflicting-id disables handoff with honest hint",
+    "desktop: conflicting-id rejects programmatic handoff without fallback",
+    "desktop: duplicate blocks automatic generation",
+    "desktop: duplicate disables handoff with honest hint",
+    "desktop: duplicate rejects programmatic handoff without fallback",
+    "desktop: valid mapping recovers after missing data",
+    "desktop: simulated generation response can be delayed",
+    "desktop: reclassified record stops subsequent generation",
+    "desktop: outdated pending draft is not adopted",
+    "desktop: generation recovers with a valid assignment",
+    "desktop: read-only preview generates no drafts",
+    "desktop: only explicitly mocked APIs requested",
+    "mobile: actual UI rendered",
+    "mobile: normal bootstrap and automatic drafts complete",
+    "mobile: real auth and CSRF path simulated",
+    "mobile: two formats per eligible record; ignored record never generated",
+    "mobile: record, KO and vorgang identities remain distinct",
+    "mobile: server primary remains first despite higher scores",
+    "mobile: second record selected through real card",
+    "mobile: Briefing after navigation ready",
+    "mobile: Briefing opens its own record, not previous selection",
+    "mobile: handoff itself starts no generation",
+    "mobile: lost target does not silently select another record",
+    "mobile: missing-target hint stays visible after refresh",
+    "mobile: lost primary causes no automatic generation",
+    "mobile: missing-vorgang blocks automatic generation",
+    "mobile: missing-vorgang disables handoff with honest hint",
+    "mobile: missing-vorgang rejects programmatic handoff without fallback",
+    "mobile: only explicitly mocked APIs requested",
+    "No uncaught browser errors",
+    "No external request fulfilled",
+    "No missing static resources"
+  ],
+  "errors": [],
+  "externalRequestsFulfilled": 0,
+  "negativeControlsBlocked": 0,
+  "bootstrap": "unmodified full client including normal loadBriefing/auth/CSRF; every API mocked in memory",
+  "apiEvidence": [
+    {
+      "label": "desktop",
+      "writes": [
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Synthetischer Vorgang A",
+            "channel": "press",
+            "decision": {
+              "knowledgeObjectId": "ko-a",
+              "knowledge_object_id": "ko-a",
+              "vorgangId": "vorgang-a",
+              "vorgang_id": "vorgang-a",
+              "id": "rec-a",
+              "signalId": "ko-a",
+              "decision": "Beobachten",
+              "title": "Synthetischer Vorgang A",
+              "priorityLabel": "Intern vorbereiten",
+              "priorityType": "watch",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:38.811Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:38.811Z"
+              },
+              "totalScore": 40,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 40
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen LinkedIn-Entwurf vor zum Thema: Synthetischer Vorgang A",
+            "channel": "linkedin",
+            "decision": {
+              "knowledgeObjectId": "ko-a",
+              "knowledge_object_id": "ko-a",
+              "vorgangId": "vorgang-a",
+              "vorgang_id": "vorgang-a",
+              "id": "rec-a",
+              "signalId": "ko-a",
+              "decision": "Beobachten",
+              "title": "Synthetischer Vorgang A",
+              "priorityLabel": "Intern vorbereiten",
+              "priorityType": "watch",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:38.811Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:38.811Z"
+              },
+              "totalScore": 40,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 40
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Synthetischer Vorgang B",
+            "channel": "press",
+            "decision": {
+              "knowledgeObjectId": "ko-b",
+              "knowledge_object_id": "ko-b",
+              "vorgangId": "vorgang-b",
+              "vorgang_id": "vorgang-b",
+              "id": "rec-b",
+              "signalId": "ko-b",
+              "decision": "Sofort reagieren",
+              "title": "Synthetischer Vorgang B",
+              "priorityLabel": "Chance",
+              "priorityType": "chance",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:38.811Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:38.811Z"
+              },
+              "totalScore": 75,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 75
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen LinkedIn-Entwurf vor zum Thema: Synthetischer Vorgang B",
+            "channel": "linkedin",
+            "decision": {
+              "knowledgeObjectId": "ko-b",
+              "knowledge_object_id": "ko-b",
+              "vorgangId": "vorgang-b",
+              "vorgang_id": "vorgang-b",
+              "id": "rec-b",
+              "signalId": "ko-b",
+              "decision": "Sofort reagieren",
+              "title": "Synthetischer Vorgang B",
+              "priorityLabel": "Chance",
+              "priorityType": "chance",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:38.811Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:38.811Z"
+              },
+              "totalScore": 75,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 75
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Synthetischer Vorgang A",
+            "channel": "press",
+            "decision": {
+              "knowledgeObjectId": "ko-a",
+              "knowledge_object_id": "ko-a",
+              "vorgangId": "vorgang-a",
+              "vorgang_id": "vorgang-a",
+              "id": "rec-a",
+              "signalId": "ko-a",
+              "decision": "Beobachten",
+              "title": "Synthetischer Vorgang A",
+              "priorityLabel": "Intern vorbereiten",
+              "priorityType": "watch",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:41.923Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:41.923Z"
+              },
+              "totalScore": 40,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 40
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen LinkedIn-Entwurf vor zum Thema: Synthetischer Vorgang A",
+            "channel": "linkedin",
+            "decision": {
+              "knowledgeObjectId": "ko-a",
+              "knowledge_object_id": "ko-a",
+              "vorgangId": "vorgang-a",
+              "vorgang_id": "vorgang-a",
+              "id": "rec-a",
+              "signalId": "ko-a",
+              "decision": "Beobachten",
+              "title": "Synthetischer Vorgang A",
+              "priorityLabel": "Intern vorbereiten",
+              "priorityType": "watch",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:41.923Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:41.923Z"
+              },
+              "totalScore": 40,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 40
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Synthetischer Vorgang B",
+            "channel": "press",
+            "decision": {
+              "knowledgeObjectId": "ko-b",
+              "knowledge_object_id": "ko-b",
+              "vorgangId": "vorgang-b",
+              "vorgang_id": "vorgang-b",
+              "id": "rec-b",
+              "signalId": "ko-b",
+              "decision": "Sofort reagieren",
+              "title": "Synthetischer Vorgang B",
+              "priorityLabel": "Chance",
+              "priorityType": "chance",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:41.923Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:41.923Z"
+              },
+              "totalScore": 75,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 75
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen LinkedIn-Entwurf vor zum Thema: Synthetischer Vorgang B",
+            "channel": "linkedin",
+            "decision": {
+              "knowledgeObjectId": "ko-b",
+              "knowledge_object_id": "ko-b",
+              "vorgangId": "vorgang-b",
+              "vorgang_id": "vorgang-b",
+              "id": "rec-b",
+              "signalId": "ko-b",
+              "decision": "Sofort reagieren",
+              "title": "Synthetischer Vorgang B",
+              "priorityLabel": "Chance",
+              "priorityType": "chance",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:41.923Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:41.923Z"
+              },
+              "totalScore": 75,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 75
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Synthetischer Vorgang A",
+            "channel": "press",
+            "decision": {
+              "knowledgeObjectId": "ko-a",
+              "knowledge_object_id": "ko-a",
+              "vorgangId": "vorgang-a",
+              "vorgang_id": "vorgang-a",
+              "id": "rec-a",
+              "signalId": "ko-a",
+              "decision": "Beobachten",
+              "title": "Synthetischer Vorgang A",
+              "priorityLabel": "Intern vorbereiten",
+              "priorityType": "watch",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:41.986Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:41.986Z"
+              },
+              "totalScore": 40,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 40
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Synthetischer Vorgang A",
+            "channel": "press",
+            "decision": {
+              "knowledgeObjectId": "ko-a",
+              "knowledge_object_id": "ko-a",
+              "vorgangId": "vorgang-a",
+              "vorgang_id": "vorgang-a",
+              "id": "rec-a",
+              "signalId": "ko-a",
+              "decision": "Beobachten",
+              "title": "Synthetischer Vorgang A",
+              "priorityLabel": "Intern vorbereiten",
+              "priorityType": "watch",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:42.077Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:42.077Z"
+              },
+              "totalScore": 40,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 40
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen LinkedIn-Entwurf vor zum Thema: Synthetischer Vorgang A",
+            "channel": "linkedin",
+            "decision": {
+              "knowledgeObjectId": "ko-a",
+              "knowledge_object_id": "ko-a",
+              "vorgangId": "vorgang-a",
+              "vorgang_id": "vorgang-a",
+              "id": "rec-a",
+              "signalId": "ko-a",
+              "decision": "Beobachten",
+              "title": "Synthetischer Vorgang A",
+              "priorityLabel": "Intern vorbereiten",
+              "priorityType": "watch",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:42.077Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:42.077Z"
+              },
+              "totalScore": 40,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 40
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Synthetischer Vorgang B",
+            "channel": "press",
+            "decision": {
+              "knowledgeObjectId": "ko-b",
+              "knowledge_object_id": "ko-b",
+              "vorgangId": "vorgang-b",
+              "vorgang_id": "vorgang-b",
+              "id": "rec-b",
+              "signalId": "ko-b",
+              "decision": "Sofort reagieren",
+              "title": "Synthetischer Vorgang B",
+              "priorityLabel": "Chance",
+              "priorityType": "chance",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:42.077Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:42.077Z"
+              },
+              "totalScore": 75,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 75
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen LinkedIn-Entwurf vor zum Thema: Synthetischer Vorgang B",
+            "channel": "linkedin",
+            "decision": {
+              "knowledgeObjectId": "ko-b",
+              "knowledge_object_id": "ko-b",
+              "vorgangId": "vorgang-b",
+              "vorgang_id": "vorgang-b",
+              "id": "rec-b",
+              "signalId": "ko-b",
+              "decision": "Sofort reagieren",
+              "title": "Synthetischer Vorgang B",
+              "priorityLabel": "Chance",
+              "priorityType": "chance",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:42.077Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:42.077Z"
+              },
+              "totalScore": 75,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 75
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        }
+      ],
+      "reads": [
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/security/csrf",
+        "/api/parliament",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start"
+      ],
+      "unexpected": []
+    },
+    {
+      "label": "mobile",
+      "writes": [
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Synthetischer Vorgang A",
+            "channel": "press",
+            "decision": {
+              "knowledgeObjectId": "ko-a",
+              "knowledge_object_id": "ko-a",
+              "vorgangId": "vorgang-a",
+              "vorgang_id": "vorgang-a",
+              "id": "rec-a",
+              "signalId": "ko-a",
+              "decision": "Beobachten",
+              "title": "Synthetischer Vorgang A",
+              "priorityLabel": "Intern vorbereiten",
+              "priorityType": "watch",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:42.332Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:42.332Z"
+              },
+              "totalScore": 40,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 40
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen LinkedIn-Entwurf vor zum Thema: Synthetischer Vorgang A",
+            "channel": "linkedin",
+            "decision": {
+              "knowledgeObjectId": "ko-a",
+              "knowledge_object_id": "ko-a",
+              "vorgangId": "vorgang-a",
+              "vorgang_id": "vorgang-a",
+              "id": "rec-a",
+              "signalId": "ko-a",
+              "decision": "Beobachten",
+              "title": "Synthetischer Vorgang A",
+              "priorityLabel": "Intern vorbereiten",
+              "priorityType": "watch",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:42.332Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:42.332Z"
+              },
+              "totalScore": 40,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 40
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen Pressemitteilung-Entwurf vor zum Thema: Synthetischer Vorgang B",
+            "channel": "press",
+            "decision": {
+              "knowledgeObjectId": "ko-b",
+              "knowledge_object_id": "ko-b",
+              "vorgangId": "vorgang-b",
+              "vorgang_id": "vorgang-b",
+              "id": "rec-b",
+              "signalId": "ko-b",
+              "decision": "Sofort reagieren",
+              "title": "Synthetischer Vorgang B",
+              "priorityLabel": "Chance",
+              "priorityType": "chance",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:42.332Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:42.332Z"
+              },
+              "totalScore": 75,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 75
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/communication/generate",
+          "scenario": "valid",
+          "body": {
+            "prompt": "Bereite einen LinkedIn-Entwurf vor zum Thema: Synthetischer Vorgang B",
+            "channel": "linkedin",
+            "decision": {
+              "knowledgeObjectId": "ko-b",
+              "knowledge_object_id": "ko-b",
+              "vorgangId": "vorgang-b",
+              "vorgang_id": "vorgang-b",
+              "id": "rec-b",
+              "signalId": "ko-b",
+              "decision": "Sofort reagieren",
+              "title": "Synthetischer Vorgang B",
+              "priorityLabel": "Chance",
+              "priorityType": "chance",
+              "summary": "Synthetischer Sachstand.",
+              "action": "Den synthetischen Vorgang prüfen.",
+              "whyItMatters": "Synthetischer Profilbezug.",
+              "inaction": "",
+              "estimatedTime": "undefined Min.",
+              "sourceCount": 1,
+              "sources": [
+                {
+                  "name": "Synthetische UI Quelle",
+                  "sourceName": "Synthetische UI Quelle",
+                  "url": "https://example.test/ui/beleg",
+                  "linkType": "direct",
+                  "publishedAt": "2026-11-04T11:19:42.332Z"
+                }
+              ],
+              "primarySource": {
+                "name": "Synthetische UI Quelle",
+                "sourceName": "Synthetische UI Quelle",
+                "url": "https://example.test/ui/beleg",
+                "linkType": "direct",
+                "publishedAt": "2026-11-04T11:19:42.332Z"
+              },
+              "totalScore": 75,
+              "memory": null,
+              "personalRelevanceExplanation": "Synthetischer Profilbezug.",
+              "actionType": "observe",
+              "lageMovement": null,
+              "lageMovementReason": "",
+              "lageDevelopment": "",
+              "sourceFreshness": "",
+              "priorityTrend": "",
+              "relevanceScore": 75
+            }
+          },
+          "csrfVerified": true,
+          "simulated": true
+        }
+      ],
+      "reads": [
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/security/csrf",
+        "/api/parliament",
+        "/api/auth/session",
+        "/api/app/start",
+        "/api/auth/session",
+        "/api/app/start"
+      ],
+      "unexpected": []
+    }
+  ],
+  "chromium": "/usr/bin/chromium",
+  "browserVersion": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/151.0.7922.173",
+    "revision": "@a96602f30358e9b5d256a0464e7e4d4bec223004",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+    "jsVersion": "15.1.206.23"
+  },
+  "testedFiles": {
+    "assets/favicon.ico": "e85b3d0de195bdc085ae71855f8b105a57f17aa5d9ba1b0ad03521fbcac1367b",
+    "assets/fonts/inter-latin-variable.woff2": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+    "assets/helmut_logo.svg": "cc5f304f50795e6f2d7e4798d09e76ac1fb957516a88c8d130520490e1fd3d78",
+    "assets/ui/fonts/HankenGrotesk-var.ttf": "813b3f8fa0965405669a89b38e51bbefd95eef6b8e20d1cb2d8c10cce062662f",
+    "assets/ui/fonts/IBMPlexMono-Medium.ttf": "a9b4c49bb299e05b5f6c481e7fb5e78943d2793249a0c8874ab574a2d1ea6755",
+    "assets/ui/fonts/IBMPlexMono-Regular.ttf": "6a3412f058c7d8dfd9170c41e85ade48e5156ecb89356110ca57a0a27734af46",
+    "assets/ui/fonts/Spectral-Medium.ttf": "f385bc588599c879112272711d4acecc126674009d747a27284f59e93a240e83",
+    "assets/ui/fonts/Spectral-Regular.ttf": "c89021dc20720c8d0dcf40b0b2f6e00c13665fa8041717f581396f51b8c78f5d",
+    "assets/ui/logo/helmut-zeichen.svg": "f8c3171326c88195e612cc6495d1e382db29f0cdde74b7aebd85191a05391915",
+    "assets/ui/reichstag.jpg": "06d4dc796dbb47631f4ed2c7b9b5137bc0c9f43d7080fddb707c512fbecbe5c7",
+    "client.js": "ed10b4efa8ecb56f560007d1d18ff65d151f9652d5b92491b69bdc37ed1e2b84",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "scripts/fixtures/ui-office-binding.js": "986572ef7a7a0402d228e9853f4079b5fb2d99e2972639913dd78500cce922f6",
+    "scripts/fixtures/ui-preview.js": "3a54b4d27ad7bd213033253015e21eb642ce6883c61a038b41ad0537df6429e0",
+    "scripts/ui-office-binding-browser-cases.js": "7cba2c5d5a1cc0bd0e9d385bb9a123861e6d6d1645637bb110dca243967bb4f9",
+    "scripts/ui-office-binding-browser-test.js": "4c92c80e6b31b06135d3c5155b55772f74a5ccff01ec500dff1d6f560d4a9384",
+    "scripts/ui-preview-browser-check.js": "58948e61f7d120aaa05a2cd7812ebe2c643b62251e20795765b42fe7b2438199",
+    "scripts/ui-preview-isolated.py": "64bdfc23c70fb5ce453e51d21d63007341b30ad315495e7d7a061ef67fe01f25",
+    "styles.css": "1569f470993b917bf53d51cfa9375025f1e2a6aef9bc29a7c2217e7e8dbc9737"
+  },
+  "servedClientSha256": "ed10b4efa8ecb56f560007d1d18ff65d151f9652d5b92491b69bdc37ed1e2b84"
+}

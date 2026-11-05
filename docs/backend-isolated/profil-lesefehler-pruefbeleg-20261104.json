@@ -1,0 +1,122 @@
+{
+  "testedCommit": "ae18658e5caac2b39403c0e41e3a8af5c2b3d7be",
+  "serverSha256": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+  "patchSha256": "9fc450c2440996be32df46d7ece842b041f9e34aedce8504693fc2a05afd7484",
+  "patchAppliedOnlyInDisposableClone": true,
+  "results": [
+    {
+      "kind": "baseline",
+      "groups": 5,
+      "checks": [
+        {
+          "name": "Vorhandenes Profil unverändert HTTP200 mit Validierung/Bereitschaft",
+          "passed": true
+        },
+        {
+          "name": "Baseline: fehlendes Profil liefert Blankprofil HTTP200",
+          "passed": true
+        },
+        {
+          "name": "Baseline: Lesefehler versteckt sich in HTTP200",
+          "passed": true
+        },
+        {
+          "name": "Anonym weiterhin HTTP401",
+          "passed": true
+        },
+        {
+          "name": "Mandatskonto weiterhin HTTP403",
+          "passed": true
+        }
+      ],
+      "requests": [
+        {
+          "id": "profile-synthetic-alpha",
+          "status": 200,
+          "fault": false
+        },
+        {
+          "id": "profile-synthetic-missing",
+          "status": 200,
+          "fault": false
+        },
+        {
+          "id": "profile-synthetic-alpha",
+          "status": 200,
+          "fault": true
+        },
+        {
+          "id": "profile-synthetic-alpha",
+          "status": 401,
+          "fault": false
+        },
+        {
+          "id": "profile-synthetic-alpha",
+          "status": 403,
+          "fault": false
+        }
+      ],
+      "sharedSourceChanged": false,
+      "output": "{\"kind\":\"baseline\",\"groups\":5,\"checks\":[{\"name\":\"Vorhandenes Profil unverändert HTTP200 mit Validierung/Bereitschaft\",\"passed\":true},{\"name\":\"Baseline: fehlendes Profil liefert Blankprofil HTTP200\",\"passed\":true},{\"name\":\"Baseline: Lesefehler versteckt sich in HTTP200\",\"passed\":true},{\"name\":\"Anonym weiterhin HTTP401\",\"passed\":true},{\"name\":\"Mandatskonto weiterhin HTTP403\",\"passed\":true}],\"requests\":[{\"id\":\"profile-synthetic-alpha\",\"status\":200,\"fault\":false},{\"id\":\"profile-synthetic-missing\",\"status\":200,\"fault\":false},{\"id\":\"profile-synthetic-alpha\",\"status\":200,\"fault\":true},{\"id\":\"profile-synthetic-alpha\",\"status\":401,\"fault\":false},{\"id\":\"profile-synthetic-alpha\",\"status\":403,\"fault\":false}],\"sharedSourceChanged\":false}\n",
+      "diagnostic": ""
+    },
+    {
+      "kind": "candidate",
+      "groups": 5,
+      "checks": [
+        {
+          "name": "Vorhandenes Profil unverändert HTTP200 mit Validierung/Bereitschaft",
+          "passed": true
+        },
+        {
+          "name": "Fehlendes Profil ehrlich HTTP404",
+          "passed": true
+        },
+        {
+          "name": "Lesefehler ehrlich generischer HTTP500",
+          "passed": true
+        },
+        {
+          "name": "Anonym weiterhin HTTP401",
+          "passed": true
+        },
+        {
+          "name": "Mandatskonto weiterhin HTTP403",
+          "passed": true
+        }
+      ],
+      "requests": [
+        {
+          "id": "profile-synthetic-alpha",
+          "status": 200,
+          "fault": false
+        },
+        {
+          "id": "profile-synthetic-missing",
+          "status": 404,
+          "fault": false
+        },
+        {
+          "id": "profile-synthetic-alpha",
+          "status": 500,
+          "fault": true
+        },
+        {
+          "id": "profile-synthetic-alpha",
+          "status": 401,
+          "fault": false
+        },
+        {
+          "id": "profile-synthetic-alpha",
+          "status": 403,
+          "fault": false
+        }
+      ],
+      "sharedSourceChanged": false,
+      "output": "{\"kind\":\"candidate\",\"groups\":5,\"checks\":[{\"name\":\"Vorhandenes Profil unverändert HTTP200 mit Validierung/Bereitschaft\",\"passed\":true},{\"name\":\"Fehlendes Profil ehrlich HTTP404\",\"passed\":true},{\"name\":\"Lesefehler ehrlich generischer HTTP500\",\"passed\":true},{\"name\":\"Anonym weiterhin HTTP401\",\"passed\":true},{\"name\":\"Mandatskonto weiterhin HTTP403\",\"passed\":true}],\"requests\":[{\"id\":\"profile-synthetic-alpha\",\"status\":200,\"fault\":false},{\"id\":\"profile-synthetic-missing\",\"status\":404,\"fault\":false},{\"id\":\"profile-synthetic-alpha\",\"status\":500,\"fault\":true},{\"id\":\"profile-synthetic-alpha\",\"status\":401,\"fault\":false},{\"id\":\"profile-synthetic-alpha\",\"status\":403,\"fault\":false}],\"sharedSourceChanged\":false}\n",
+      "diagnostic": "Server error Error: synthetic-private-profile-error\n    at storage.getProfile (/workspace/helmut-claude-backend-isolated/scripts/admin-profil-lesefehler-kandidat-test.js:37:61)\n    at /tmp/helmut-profile-candidate-ksGESE/candidate/server.js:2590:30\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n"
+    }
+  ],
+  "noProduction": true,
+  "noOriginalSourceChange": true
+}

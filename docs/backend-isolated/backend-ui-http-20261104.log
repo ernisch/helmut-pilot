@@ -1,0 +1,19 @@
+PASS Anmeldung und anonyme Sitzung: echte Antworten und Cookie-Schutz
+PASS Sessionverlaengerung schreibt nur die eigene synthetische Sitzung
+PASS Appstart liefert echte Profil-, Aufgaben-, Notiz- und Bereichsvertraege
+PASS Mandantentrennung fuer Mitglied und Referent; fehlende Zuweisung bleibt403
+PASS CSRF blockiert alle sechs schreibfaehigen GETs und beide Buero-POSTs
+PASS Profilpflege erzwingt die Sitzungskennung trotz fremder URL und Body-ID
+PASS Original-Verwaltungsadapter legt reales gesperrtes Kundenkonto ohne Mail an
+PASS Kommunikations-POST bleibt regelbasiert und ist kein persistierter KI-Entwurf
+PASS Native Office-API verlangt eigene DTO/Kanaele und prueft Flag sowie fertiges KO
+PASS Echte Serverfehler: Auth503 und Profil500 liefern keine fremden Daten
+PASS Abmeldung entwertet die echte lokale Sitzung
+{"status":"PASS_BACKEND_HTTP_ONLY","checks":11,"requests":41}
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+Kontenablage fuer die Anmeldung nicht erreichbar
+Server error Error: Synthetischer Profilspeicher-Ausfall
+    at storage.getProfile (/workspace/helmut-claude-backend-isolated/scripts/backend-ui-http-integration-test.js:44:103)
+    at activeProfile (/tmp/helmut-ui-contract-http-qUOIHn/backend/server.js:7702:24)
+    at /tmp/helmut-ui-contract-http-qUOIHn/backend/server.js:677:29
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)

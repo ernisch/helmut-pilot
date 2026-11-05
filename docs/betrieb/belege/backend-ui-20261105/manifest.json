@@ -1,0 +1,32 @@
+{
+  "inputCommits": {
+    "backend": "e054c0bb80fa4c330082bace3cfff6d9bb89a926",
+    "ui": "011910746294109c04fd5dac8e153a22188b7467"
+  },
+  "acceptedRuns": [
+    {
+      "run": "joint-v2",
+      "passed": 8,
+      "requests": 269,
+      "resultSha256": "6bc224bcd644685498a26498e2ba1a610902011ad23f0db74e4766270cf6877a",
+      "purpose": "8 targeted joint integration groups"
+    },
+    {
+      "run": "joint-visual-v4",
+      "passed": 2,
+      "requests": 64,
+      "resultSha256": "8e49a9d5a8063ff365ea55c9193c8b3f60c7b72e1af7602bd0ec0f8701ecbc62",
+      "purpose": "only 2 viewport groups repeated after fixing screenshot timing"
+    },
+    {
+      "run": "joint-public-cache-v6",
+      "passed": 1,
+      "requests": 64,
+      "resultSha256": "08c7906998821ef65edbdeb6769238a877296043ff26ee3a13041445ccb071c4",
+      "purpose": "1 additional public old-cache upgrade group"
+    }
+  ],
+  "uniqueGroups": 9,
+  "fullSingleRunClaimed": false,
+  "productionAcceptance": false
+}

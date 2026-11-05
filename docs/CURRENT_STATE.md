@@ -35,7 +35,7 @@ konkrete Freigaben bleiben gueltig.
 | Mock500, historisch | **ABGEBROCHEN ALS PROJEKTZIEL, KEIN PASS**. [Run 41939166457](https://github.com/ernisch/helmut-pilot/actions/runs/41939166457) cancelled/UNKNOWN; [Run 41996804804](https://github.com/ernisch/helmut-pilot/actions/runs/41996804804) nach 176min02s FAIL im Controller. Innere Ursache und Profilfortschritt UNKNOWN, nicht null. Acht aeussere Bereinigungen PASS, native Datenbanknullaktivitaet nicht belegt. [Beleg PR1049](https://github.com/ernisch/helmut-pilot/pull/1049). |
 | Mock100, neues Ziel | **PASS**: [Run 42053461090](https://github.com/ernisch/helmut-pilot/actions/runs/42053461090), exakt Commit `be0c6d1630f5987e755eb4030cc23a4f7d7247d7` nach [Pflicht-CI 42047654519](https://github.com/ernisch/helmut-pilot/actions/runs/42047654519). 100/100 Profile und 300/300 Ergebnisse nativ geprueft, 400 Tenant-/Quellenschutzkontrollen, alle fuenf Fehlerkategorien null; 296 simulierte Modellaufrufe, keine bezahlten Anbieteraufrufe. Nach 242,633 s einschliesslich Abschluss null aktive Profile, Bereinigung PASS. [Quittung und Fortschritt in PR #1052](https://github.com/ernisch/helmut-pilot/pull/1052) und [vollstaendiger Laufbericht](betrieb/mock100-20261105.md). Historischer erster [FAIL 42042488458](https://github.com/ernisch/helmut-pilot/actions/runs/42042488458) bleibt unveraendert. |
 | Production100 / Production500 | **ABBESTELLT.** Keine neue Vollastpruefung mit echten KI Aufrufen, keine Kostenfreigabe. |
-| Produktintegration und Livegang | **NOCH NICHT ABGENOMMEN.** UI, Backend und Adminarbeit sind getrennt beziehungsweise in privaten Integrationsstaenden vorhanden; gepruefte komplette Produktfreigabe und neuer Livegang sind noch offen. Keine Production Bereitschaft aus gruenen Teiltests ableiten. |
+| Produktintegration und Livegang | **RELEASE-PR #1053 IN PFLICHT-CI.** Privater Kandidat814c8b63 einschliesslich UI, Backend und main76b75e37 uebernommen; Vercel-Git-Sperre fuer den Releasebranch ergaenzt. Alte Browser-Testselektoren und verlorene Lage-Quellenfrische/Fallback korrigiert; Assetversion erneuert. Browser78+19 und Standard-Offlinesuite auf9feb9969 PASS; Bereich330/332. Zwei alte Profil-/Splash-Testannahmen gezielt korrigiert (5/5 HTTP,33/33 VM), ohne weiteren Produktfix. Pflicht-CI wird auf dem neuesten PR-Kopf abgenommen; main-Merge und Production bleiben gesperrt. [Uebernahme](betrieb/release-ci-20261105.md), [lokale Abnahme](betrieb/release-prep-20261105.md). |
 
 ## Neuer Testumfang und Arbeitsweise
 
@@ -91,11 +91,28 @@ Infrastrukturprojekte ohne konkrete Notwendigkeit.
   beweist keinen aktuellen Stand der neuen
   Produktintegration. Es wurde nichts neu deployed.
 
+## Private Produktintegration (05.11.2026, lokal geprueft)
+
+PR #1052 ist auf `76b75e371c7db69d7c9381071e23443182fc3607` gemergt.
+Der bestandene Mock100-Meilenstein bleibt abgeschlossen und wird nicht wiederholt.
+Der private Branch `integration/release-prep-20261105` verbindet diesen main-Stand
+mit Backend/UI `3c5765c577b35641ba107a4d6b863ab1e5ab7456`.
+Kontosicherheit, beide Designs und historische Belege bleiben erhalten.
+Die [vorige lokale Integration](betrieb/backend-ui-integration-20261105.md)
+und [UI-Abnahme](ui-backend.md) bleiben historische, quellengebundene Belege.
+Vier gezielte Gruppen mit202 echten lokalen HTTP-Antworten bestanden. Zwei
+inhaltsgebundene Assetversionen beseitigen den belegten Altcache-Erststartfehler.
+Motor, beide Designs und historische Nachweise unveraendert; drei lesende
+Reviews positiv. Main-CI42069590393 gruen, Kandidaten-Pflicht-CI noch offen.
+[Abnahme und konkrete Mergevoraussetzungen](betrieb/release-prep-20261105.md).
+Keine Productionfreigabe.
+
 ## Genau ein naechster Schritt
 
-**PR #1052 auf unveraenderte Mock100-Runtime und aktuelle Pflichtchecks
-abschliessend pruefen, dann die vorbereitete Produktintegration und
-erforderliche Live-Sicherheit gezielt fertigstellen.** Keine weiteren
+**Die beiden Pflichtchecks der Release-PR auf genau deren aktuellem Kopf abschliessen
+und danach auf konkrete Mergefreigabe warten.** Die Uebernahme ist freigegeben;
+der neue Branch `release/helmut-product-20261105` ist gegen automatische
+Vercel-Git-Deployments gesperrt. Keine weiteren
 synthetischen Vollversuche und keine bezahlten Lasttests. Ein spaeterer
 Merge/Production-Deploy benoetigt konkrete Releasefreigabe,
 Rueckweg und nachgewiesene Betriebsreife.

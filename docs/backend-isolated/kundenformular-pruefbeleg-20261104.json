@@ -1,0 +1,238 @@
+{
+  "baseline": "ae18658e5caac2b39403c0e41e3a8af5c2b3d7be",
+  "checks": [
+    {
+      "name": "Alle Originaldateien einschliesslich Template/CSS bleiben bytegleich",
+      "status": "PASS"
+    },
+    {
+      "name": "Validierung markiert Name, Person, E-Mail und Tarif-/Profilfehler ohne IO",
+      "status": "PASS"
+    },
+    {
+      "name": "Original hasFormErr/formFields zeigen Feldfehler; kein Simulationsentwurf",
+      "status": "PASS"
+    },
+    {
+      "name": "DTO erlaubt keine Rollen, Passwoerter, echten Preise oder freien Routen",
+      "status": "PASS"
+    },
+    {
+      "name": "Fester gesperrter POST und bestehende Notiz statt Simulationspreis/CRM",
+      "status": "PASS"
+    },
+    {
+      "name": "Frischer admin-geschuetzter Rollenbeleg verweigert 401/403 vor POST",
+      "status": "PASS"
+    },
+    {
+      "name": "Bestehende E-Mail/Profilbindung verhindert Anlage vor Schreibaufruf",
+      "status": "PASS"
+    },
+    {
+      "name": "Busy/Doppelsubmit laesst genau eine Anlage zu und behaelt Eingaben",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP400/409 nach POST werden ohne falschen Erfolg behandelt",
+      "status": "PASS"
+    },
+    {
+      "name": "PATCH-Fehler nennt bestaetigtes Teilkonto; keine Wiederholung/Loeschung",
+      "status": "PASS"
+    },
+    {
+      "name": "Verlorene POST-/PATCH-Antwort und falsche 2xx-Antwort bleiben unklar",
+      "status": "PASS"
+    },
+    {
+      "name": "Serverseitig suffixierte Profilreferenz wird als Teilanlage offengelegt",
+      "status": "PASS"
+    },
+    {
+      "name": "Unklares/teilweise angelegtes Formular bleibt gesperrt statt erneutem POST",
+      "status": "PASS"
+    },
+    {
+      "name": "Schreib-401/403 loescht Eingaben und private Bestandsdaten",
+      "status": "PASS"
+    },
+    {
+      "name": "Echter HTTP-POST+PATCH persistiert gesperrtes Konto und beide Namen/Tarifwunsch",
+      "status": "PASS"
+    },
+    {
+      "name": "Echter Server: aktive:false ohne Passwort erzeugt weder Einladung noch Passworttoken",
+      "status": "PASS"
+    },
+    {
+      "name": "Echter Server verweigert Anonym/Nicht-Admin vor Kundenanlage",
+      "status": "PASS"
+    },
+    {
+      "name": "Echte CSRF- und Duplikatsperren erzeugen kein zweites Konto",
+      "status": "PASS"
+    },
+    {
+      "name": "Echter Profil-ID-Wettlauf wird als bekannte Teilanlage statt falscher Zuordnung erkannt",
+      "status": "PASS"
+    },
+    {
+      "name": "Echte verlorene POST-Antwort bleibt unklar; vorhandenes Konto bleibt gesperrt",
+      "status": "PASS"
+    },
+    {
+      "name": "Echte verlorene PATCH-Antwort nennt bekannte ID und behauptet keinen Gesamterfolg",
+      "status": "PASS"
+    }
+  ],
+  "observations": [],
+  "httpRequests": [
+    {
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/security/csrf",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/users/user-92e4a6dbfdef0898b5",
+      "method": "PATCH",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/customers",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET",
+      "status": 403
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "POST",
+      "status": 403
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/security/csrf",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/security/csrf",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/security/csrf",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/users/user-2482c57a65fd94adca",
+      "method": "PATCH",
+      "status": 200
+    }
+  ],
+  "sourceBefore": {
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee"
+  },
+  "originalFiles": 25,
+  "isolation": {
+    "backend": "local",
+    "profileWrites": 0,
+    "persistedProfiles": 0,
+    "mailAttempts": 0,
+    "passwordTokens": 0,
+    "fetchAttempts": 0,
+    "syntheticEmailsOnly": true,
+    "bindAddress": "127.0.0.1",
+    "runtimeCloneRemoved": true
+  },
+  "sourceAfter": {
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee"
+  },
+  "testSha256": "a1a1fa79013c0cefc19b205cd45dd7fc5d0b89d65e5fd6e1e53658fb11b4c50b",
+  "modules": {
+    "verwaltung/original-actions.mjs": "1b6f7366761195db8bffbfd6cb50df949009a418fceb3855920bd2e7ef6eaee3",
+    "verwaltung/original-customer-form.mjs": "a47309d6168a54ad715379d188b2e6057ed24e919f9a839c580cbca33ba63098"
+  },
+  "status": "PASS",
+  "summary": {
+    "passedGroups": 21,
+    "httpRequests": 21
+  },
+  "timestamp": "2026-11-04T12:34:09.988Z"
+}

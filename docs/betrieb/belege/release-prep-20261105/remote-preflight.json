@@ -1,0 +1,322 @@
+{
+  "observedUTC": "2026-11-05T17:08:26.406928+00:00",
+  "main": "76b75e371c7db69d7c9381071e23443182fc3607",
+  "privateBranches": [
+    {
+      "name": "integration/backend-security-admin-20261104",
+      "sha": "e054c0bb80fa4c330082bace3cfff6d9bb89a926"
+    },
+    {
+      "name": "integration/backend-ui-20261105",
+      "sha": "3c5765c577b35641ba107a4d6b863ab1e5ab7456"
+    },
+    {
+      "name": "integration/release-prep-20261105",
+      "sha": "3c5765c577b35641ba107a4d6b863ab1e5ab7456"
+    },
+    {
+      "name": "integration/ui-20261105",
+      "sha": "011910746294109c04fd5dac8e153a22188b7467"
+    }
+  ],
+  "pr1052": {
+    "number": 1052,
+    "state": "closed",
+    "merged": true,
+    "merge_commit_sha": "76b75e371c7db69d7c9381071e23443182fc3607",
+    "merged_at": "2026-11-05T16:56:13Z",
+    "html_url": "https://github.com/ernisch/helmut-pilot/pull/1052"
+  },
+  "ci": [
+    {
+      "id": 42069590393,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "76b75e371c7db69d7c9381071e23443182fc3607",
+      "event": "push",
+      "status": "in_progress",
+      "conclusion": null,
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42069590393"
+    },
+    {
+      "id": 42065868535,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "8901385dbad83c1f62b04f7ec1685ed6e1828d3d",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42065868535"
+    },
+    {
+      "id": 42065383327,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "8901385dbad83c1f62b04f7ec1685ed6e1828d3d",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42065383327"
+    },
+    {
+      "id": 42065199452,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "8901385dbad83c1f62b04f7ec1685ed6e1828d3d",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42065199452"
+    },
+    {
+      "id": 42065180565,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "8901385dbad83c1f62b04f7ec1685ed6e1828d3d",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42065180565"
+    },
+    {
+      "id": 42063137794,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "dd60088ac51e908fbd1d3df40eb9257b9f34d0e1",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42063137794"
+    },
+    {
+      "id": 42054955785,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "8901385dbad83c1f62b04f7ec1685ed6e1828d3d",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42054955785"
+    },
+    {
+      "id": 42054933789,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "8901385dbad83c1f62b04f7ec1685ed6e1828d3d",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42054933789"
+    },
+    {
+      "id": 42053647389,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "8901385dbad83c1f62b04f7ec1685ed6e1828d3d",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42053647389"
+    },
+    {
+      "id": 42053461090,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "be0c6d1630f5987e755eb4030cc23a4f7d7247d7",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42053461090"
+    },
+    {
+      "id": 42048861855,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "8901385dbad83c1f62b04f7ec1685ed6e1828d3d",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42048861855"
+    },
+    {
+      "id": 42048536525,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "8901385dbad83c1f62b04f7ec1685ed6e1828d3d",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42048536525"
+    },
+    {
+      "id": 42047654519,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "be0c6d1630f5987e755eb4030cc23a4f7d7247d7",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42047654519"
+    },
+    {
+      "id": 42047155644,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "8901385dbad83c1f62b04f7ec1685ed6e1828d3d",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42047155644"
+    },
+    {
+      "id": 42046299658,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "e80d572016d6f7807368bed91afe1b3359834bb5",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42046299658"
+    },
+    {
+      "id": 42042488458,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "c1becb24428efdff07cc226781f8989182957dcc",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "failure",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42042488458"
+    },
+    {
+      "id": 42037178632,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "8901385dbad83c1f62b04f7ec1685ed6e1828d3d",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42037178632"
+    },
+    {
+      "id": 42037167005,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "c1becb24428efdff07cc226781f8989182957dcc",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42037167005"
+    },
+    {
+      "id": 42031468213,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "8901385dbad83c1f62b04f7ec1685ed6e1828d3d",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42031468213"
+    },
+    {
+      "id": 42030815890,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "58a248bf5492db40eaadd326edfbe215a46e9bee",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42030815890"
+    },
+    {
+      "id": 42030805845,
+      "name": "DeepSeek Router Check",
+      "head_sha": "e26f00f936a1fd0f299df60db813602c8b938b9d",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42030805845"
+    },
+    {
+      "id": 42030805827,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "e26f00f936a1fd0f299df60db813602c8b938b9d",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42030805827"
+    },
+    {
+      "id": 42029819770,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "58a248bf5492db40eaadd326edfbe215a46e9bee",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42029819770"
+    },
+    {
+      "id": 42029809173,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "e81f7f3218d7c1849ef257fa721ff73b4b71c451",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42029809173"
+    },
+    {
+      "id": 42024469720,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "58a248bf5492db40eaadd326edfbe215a46e9bee",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42024469720"
+    },
+    {
+      "id": 42024459286,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "6769d0eee3d0e353601a65eefb52b30c72307b92",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/42024459286"
+    },
+    {
+      "id": 41996804804,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "33d588b6209ad912c5045f6561c07b7dc3d60e63",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "failure",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/41996804804"
+    },
+    {
+      "id": 41987864597,
+      "name": "Claude Visible Routine Bridge",
+      "head_sha": "58a248bf5492db40eaadd326edfbe215a46e9bee",
+      "event": "issue_comment",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/41987864597"
+    },
+    {
+      "id": 41987857455,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "6309d9c110640838c4921fbe5e8f696b047b3225",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/41987857455"
+    },
+    {
+      "id": 41939166457,
+      "name": "CI \u2014 Offline-Suite + Browser-Smoke",
+      "head_sha": "33d588b6209ad912c5045f6561c07b7dc3d60e63",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "html_url": "https://github.com/ernisch/helmut-pilot/actions/runs/41939166457"
+    }
+  ],
+  "openPRs": [
+    {
+      "number": 969,
+      "head": "217a84971605adbe910a9ae45b5f6bb62f3a9dc0",
+      "branch": "codex/siffi-500-proof-integration-20261027",
+      "title": "Amtliche Artikelstandtage bis ins Briefing erhalten; 500er-Belege abgleichen"
+    },
+    {
+      "number": 811,
+      "head": "f267a0f4ae4b76152e778084eb9eddb6f60de870",
+      "branch": "codex/datenschutz-masterakte-20261005",
+      "title": "docs: Datenschutz Masterakte f\u00fcr Helmut"
+    },
+    {
+      "number": 771,
+      "head": "eaf0d5d517d104beaeac53ebeecc6957d3dcadc1",
+      "branch": "codex/ui-design-20261002",
+      "title": "UI: Desktop- und Mobile-Design mit ehrlichen R\u00fcckmeldungen"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+--- a/server.js
++++ b/server.js
+@@ -2587,8 +2587,10 @@
+     if (!pid) return sendNotFound(response);
+     if (request.method === "GET") {
+       return handleAsync(response, async () => {
+-        const profile = await activeProfile(pid).catch(() => null);
+-        const validation = validateProfile(profile || { id: pid });
++        const stored = await getProfile(tenantContext.requireTenantId(pid, "admin.profile.read"));
++        if (!stored) throw accounts.httpError(404, "Profil nicht gefunden.");
++        const profile = mergeProfileDefaults(stored);
++        const validation = validateProfile(profile);
+         // Bundestags-Bereitschaft additiv mitliefern (rein lesend, deterministisch;
+         // fuer Landtagsprofile meldet sie sich selbst als nicht zutreffend).
+         const bereitschaft = bewerteBundestagsprofil(profile || { id: pid });

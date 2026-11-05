@@ -1,0 +1,17 @@
+{
+  "kind": "reported_independent_read_only_review",
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "xhigh",
+  "findings": [
+    "Unbestätigten Sperrstatus bei Teilkonto nicht als gesperrt bestätigen",
+    "Automatische Profilkennung vor/nach Speichern offenlegen"
+  ],
+  "result": "Beide P2 geschlossen, neue Quelldateihashes und25erNachreviewbeleg unabhängig gelesen und akzeptiert",
+  "dailyLedger": "Begrenztes Lesefenster, Produzenten-/Hashbindung und Tagesgrenzen akzeptiert; gemeldet ist kein Qualitäts-/Empfangsnachweis",
+  "no_tests_by_reviewer": true,
+  "remaining": [
+    "Server-/Accounts-Dateisperre und gemeinsame Integration",
+    "Keine Production-/SQL-/RLS-/500er-Abnahme",
+    "Keine atomare Zwei-Routen-Kundenanlage; Teilanlagen ausdrücklich behandeln"
+  ]
+}

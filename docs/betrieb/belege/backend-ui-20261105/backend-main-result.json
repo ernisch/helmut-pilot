@@ -1,0 +1,142 @@
+{
+  "status": "PASS_TARGETED_JOINT_LOCAL_INTEGRATION",
+  "base": "c3b2851fc253410727e73f659b5abcc8c6c6f4f4",
+  "freeze": "root-freeze-v2",
+  "sourceHashes": {
+    "lib/helmut/accounts.js": "ee70a608057a44fa7fc9d8cc48b1b3ab24d44f40fb5d6c4c295e23b5363e2ac9",
+    "server.js": "cb06e435f0a18ac7757c25c19c6baaa0811fae4139eb07891f74a983ac829c94",
+    "verwaltung/original-actions.mjs": "2cc14966167a36e35fe10a313eb6ee3b796d3515361f69536aa9060572ef11d9",
+    "verwaltung/original-adapter.mjs": "60a2e3fdd4384657917a60d1d893dbfff3d96d5d31fe5dda48c2e4975ac1a459",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/auth-store-cas.js": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544",
+    "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+    "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+  },
+  "uniquePassedGroups": 11,
+  "newGroupsInFinalExecution": 3,
+  "reusedSourceBoundGroups": 8,
+  "singleShotWholeSuite": false,
+  "checks": [
+    {
+      "name": "Actual mounted product administration gates anonymous/member assets and serves private original runtime fonts CSP",
+      "status": "PASS",
+      "sourceResult": "evidence/combined-v2-netns/combined-result.json",
+      "sourceResultSha256": "8b0f028928f32389573fbc2b730a9537828d16db88b003b8ab40cf4b6214348e",
+      "newInFinalExecution": false
+    },
+    {
+      "name": "Browser-origin real login and mounted Original React form persist a locked customer to genuine PostgreSQL",
+      "status": "PASS",
+      "sourceResult": "evidence/combined-v2-document/combined-result.json",
+      "sourceResultSha256": "378232299cb4690cf8d67bbdea8fb11b4a7a9ff3b437f7fd6d351fb2667a1615",
+      "newInFinalExecution": false
+    },
+    {
+      "name": "Frozen-v2 Original view labels inconsistent synthetic legacy account without claiming verified access and offers no restore",
+      "status": "PASS",
+      "sourceResult": "evidence/combined-v2-final/combined-result.json",
+      "sourceResultSha256": "e3d871e055c1143e66beab6d4aa76a5925d06b19f011deb2aeccf0556abeaacd",
+      "newInFinalExecution": true
+    },
+    {
+      "name": "Original customer action restores only access via actual CSRF-protected POST and leaves profile rows unchanged",
+      "status": "PASS",
+      "sourceResult": "evidence/combined-v2-final/combined-result.json",
+      "sourceResultSha256": "e3d871e055c1143e66beab6d4aa76a5925d06b19f011deb2aeccf0556abeaacd",
+      "newInFinalExecution": true
+    },
+    {
+      "name": "D1 and database-backed session revocation compose with mounted asset protection; last admin survives D2",
+      "status": "PASS",
+      "sourceResult": "evidence/combined-v2-browser/combined-result.json",
+      "sourceResultSha256": "eebb1e4b1fd1c296ae46a17db41f88af78c9e4c29d31cc2761a8e6d81c5beff9",
+      "newInFinalExecution": false
+    },
+    {
+      "name": "Restore CSRF casing stale-state and role negatives reject through actual product HTTP without target mutation",
+      "status": "PASS",
+      "sourceResult": "evidence/combined-v2-browser/combined-result.json",
+      "sourceResultSha256": "eebb1e4b1fd1c296ae46a17db41f88af78c9e4c29d31cc2761a8e6d81c5beff9",
+      "newInFinalExecution": false
+    },
+    {
+      "name": "Actual HTTP restore rechecks target and actor after separate-process writes cause genuine PostgreSQL CAS conflicts",
+      "status": "PASS",
+      "sourceResult": "evidence/combined-v2-browser/combined-result.json",
+      "sourceResultSha256": "eebb1e4b1fd1c296ae46a17db41f88af78c9e4c29d31cc2761a8e6d81c5beff9",
+      "newInFinalExecution": false
+    },
+    {
+      "name": "Real relational tenant profile PATCH and assignment preserve the complete foreign SQL row",
+      "status": "PASS",
+      "sourceResult": "evidence/combined-v2-browser/combined-result.json",
+      "sourceResultSha256": "eebb1e4b1fd1c296ae46a17db41f88af78c9e4c29d31cc2761a8e6d81c5beff9",
+      "newInFinalExecution": false
+    },
+    {
+      "name": "Mounted admin profile differentiates genuine missing404 and native DB read failure500; detail shows no false success",
+      "status": "PASS",
+      "sourceResult": "evidence/combined-v2-document/combined-result.json",
+      "sourceResultSha256": "378232299cb4690cf8d67bbdea8fb11b4a7a9ff3b437f7fd6d351fb2667a1615",
+      "newInFinalExecution": false
+    },
+    {
+      "name": "Revoked browser admin session loses mounted HTML and assets; no model mail external traffic or data-file mutation",
+      "status": "PASS",
+      "sourceResult": "evidence/combined-v2-document/combined-result.json",
+      "sourceResultSha256": "378232299cb4690cf8d67bbdea8fb11b4a7a9ff3b437f7fd6d351fb2667a1615",
+      "newInFinalExecution": false
+    },
+    {
+      "name": "Fresh process after own PostgreSQL restart rereads exact persisted customers profiles assignment and session",
+      "status": "PASS",
+      "sourceResult": "evidence/combined-v2-final/reread-result.json",
+      "sourceResultSha256": "ab382cdee7672fc8d9fbe209b7143b14958e5bfffabb5c7e985e296f4fe0b12a",
+      "newInFinalExecution": true
+    }
+  ],
+  "finalExecution": {
+    "combinedRealProductHttp": 72,
+    "combinedNativeDatabaseResponses": 271,
+    "rereadNativeDatabaseResponses": 4,
+    "pageErrors": 0,
+    "externalRequests": 0,
+    "modelMailExternalFetch": {
+      "model": 0,
+      "mail": 0,
+      "externalFetch": 0
+    }
+  },
+  "firstFailureRunsRetained": [
+    "combined-v2-once",
+    "combined-v2-netns",
+    "combined-v2-browser",
+    "combined-v2-shortpath",
+    "combined-v2-document"
+  ],
+  "limits": [
+    "Synthetic local accounts/data and local service_role BYPASSRLS only",
+    "Source metadata/telemetry tables publishers,retrieval_paths,source_packages,package_paths,geographies,source_crawl_telemetry absent in fixture: real local DB404 and honest unknown source states",
+    "First partial CAS run lacks aggregate gateway report; parent-only DB response count must not be presented as all peer traffic",
+    "No full20/old32/old17/old12 repeat; no motor/500/model/mail/Production acceptance",
+    "Restart persistence is not universal disaster recovery",
+    "Browser contexts used serviceWorkers:block; revocation proves server guard, not removal of previously cached static administration assets; sw.js unchanged"
+  ],
+  "cleanup": {
+    "completed": true,
+    "allTrackedSourceBytesUnchanged": true,
+    "trackedFiles": 2159,
+    "ownContainersRemaining": [],
+    "databaseFilesRemoved": true,
+    "privateLocalSessionRemoved": true,
+    "externalEgress": false,
+    "productionCredentialsForwarded": false,
+    "hostSoftwareInstalled": false,
+    "otherContainerOrDaemonModified": false,
+    "testsStartedThrough": "unchanged backend/scripts/lokal.js; env allowlist"
+  },
+  "restartDataset": "Fresh module-created continuation fixture; browser form creation is separately evidenced, not reread after restart",
+  "retainedCrashArtifacts": "evidence/browser-crash-artifacts/archive-manifest.json",
+  "ownRuntimeDirectoryRemoved": true
+}

@@ -1,0 +1,476 @@
+[
+  {
+    "url": "http://helmut-ui.test/",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/fonts/inter-latin-variable.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/styles.css?v=20260712-presale1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/client.js?v=20260712-presale1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/logo/helmut-zeichen.svg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/helmut_logo.svg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/reichstag.jpg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Regular.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Regular.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/HankenGrotesk-var.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Medium.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Medium.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/security/csrf?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/parliament?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/favicon.ico",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/fonts/inter-latin-variable.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/styles.css?v=20260712-presale1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/client.js?v=20260712-presale1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/logo/helmut-zeichen.svg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/helmut_logo.svg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/HankenGrotesk-var.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Medium.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Medium.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Regular.ttf",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/security/csrf?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/parliament?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/favicon.ico",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/communication/generate?politicianId=ui-binding-profile",
+    "method": "POST",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/auth/session",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?politicianId=ui-binding-profile",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  }
+]

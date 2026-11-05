@@ -1,0 +1,22 @@
+[
+  {
+    "run": "joint-v1",
+    "reason": "Sandbox prevented creation of network namespace; no application test started.",
+    "logSha256": "731fa347449bfb63ad97dd72dadf5ae4776694f1365e5638d81b7860c7819cfd",
+    "cleanup.json": "763a7b487892a74a7a5911e4e2d0d24c03996a48b6b2f4d199cd8e8b60b33798"
+  },
+  {
+    "run": "joint-visual-v3",
+    "reason": "Test incorrectly waited for the Briefing-only .hstand in another view.",
+    "logSha256": "71c8af39a72af915bf793e2922306e005aa8ec160bc844a8963a5bf3d9e0ef48",
+    "result.json": "84fdcc10c0b48ee9a4cf787bc9105aeb2009321527562eec9565a53ad7b72348",
+    "cleanup.json": "763a7b487892a74a7a5911e4e2d0d24c03996a48b6b2f4d199cd8e8b60b33798"
+  },
+  {
+    "run": "joint-public-cache-v5",
+    "reason": "Test incorrectly expected the forwarded service-worker request to retain the browser destination. Browser resourceType is the correct observation.",
+    "logSha256": "5be836ae4634f1b8b67bda198f4d502c6a5b8dbfd0d258c8a5d3366405ca40bb",
+    "result.json": "6f93b9f065a7f99136fd30c406d3c03b27a31b17e0c463939ce1ea934f6d5ebc",
+    "cleanup.json": "763a7b487892a74a7a5911e4e2d0d24c03996a48b6b2f4d199cd8e8b60b33798"
+  }
+]

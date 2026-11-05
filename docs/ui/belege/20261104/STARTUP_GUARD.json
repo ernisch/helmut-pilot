@@ -1,0 +1,5 @@
+{
+  "status": "PASS",
+  "missingNetworkProof": "startup refused before Chromium spawn",
+  "exitCode": 1
+}

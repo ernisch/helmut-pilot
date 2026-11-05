@@ -205,21 +205,21 @@ function check(name, cond, detail = "") {
           `${fixture.profile.fullName} erlaeutert den vorgelegten Arbeitszeitentwurf.`;
         const data = contract.toBriefingContractV3({ ...fixture, now: at });
         const state = data.currentHelmutState;
-        data.lageBriefing = { available: true, vorgaenge: [{
+        data.lageBriefing = { available: true, latestUpdatedAt: new Date().toISOString(), vorgaenge: [{
           id: state.primaryItem.id, vorgangId: state.primaryItem.id,
           title: state.primaryItem.title, displayTitle: state.primaryItem.displayTitle,
           displaySummary: "Die belegten Fakten gehoeren in die Lage.",
           whyRelevant: "Der Entwurf betrifft das Arbeitsgebiet des Mandats.", recommendation: state.recommendation,
-          sources: [{ name: "Testquelle", url: state.primaryItem.sourceUrl }]
+          sources: [{ name: "Testquelle", url: state.primaryItem.sourceUrl, publishedAt: "2025-06-22T07:00:00Z" }]
         }] };
         await page.evaluate((fixtureData) => {
           briefing = fixtureData; currentView = "helmut"; render();
         }, data);
         // Die normale Eintrittsanzeige endet per Timer; erst danach ist die
         // Fachansicht sichtbar. Dieselbe Bedingung gilt fuer echte Nutzer.
-        await page.waitForSelector(".hstand-proposal", { timeout: 5000 });
+        await page.waitForSelector(".ui-briefing-hero", { timeout: 5000 });
         const displayed = await page.evaluate(() => ({
-          proposals: document.querySelectorAll(".hstand-proposal").length,
+          proposals: document.querySelectorAll(".ui-briefing-hero").length,
           why: document.querySelectorAll(".hstand-why").length
         }));
         check(`${label}: Briefing zeigt Empfehlung und eigenen Tagesanlass`,
@@ -233,7 +233,7 @@ function check(name, cond, detail = "") {
         check(`${label}: Lage Detail kopiert keine Empfehlung`, await page.locator(".vsheet-reco").count() === 0);
         await page.getByRole("button", { name: "Empfehlung im Briefing öffnen", exact: true }).click();
         check(`${label}: Rueckverweis schliesst Lage Detail und zeigt Briefing`,
-          await page.locator(".vsheet-title").count() === 0 && await page.locator(".hstand-proposal").count() === 1);
+          await page.locator(".vsheet-title").count() === 0 && await page.locator(".ui-briefing-hero").count() === 1);
         check(`${label}: Briefing begründet die Tagespriorität statt den Sachstand zu kopieren`,
           (await page.locator(".hstand-why").innerText()).includes("heutigen Arbeitstag")
             && !(await page.locator(".hstand-why").innerText()).includes("Arbeitsgebiet des Mandats"));
@@ -246,9 +246,24 @@ function check(name, cond, detail = "") {
         const installClose = page.locator("#helmutInstallClose");
         if (await installClose.isVisible()) await installClose.click();
         await page.locator((isMobile ? ".mobile-dock" : ".nav-list") + ' [data-view="briefing"]').click();
-        const lageText = await page.locator(".lage2-card").first().innerText();
+        const lageText = await page.locator(".ui-vorgang-row").first().innerText();
         check(`${label}: Lage Karte zeigt Fakten und keine Briefing Handlungsanweisung`,
           lageText.includes("Die belegten Fakten") && !lageText.includes("Heute nicht öffentlich zuspitzen"));
+        check(`${label}: Lage trennt aktuelle Analyse und aeltere Quellenfrische sichtbar`,
+          await page.locator("[data-lage-stand]").isVisible()
+            && (await page.locator("[data-lage-stand]").innerText()).includes("Zuletzt aktualisiert: heute")
+            && await page.locator("[data-lage-source-recency]").isVisible()
+            && await page.locator("[data-lage-source-recency]").innerText() === "Neueste Quelle vom 22. Juni."
+            && await page.evaluate(() => {
+              const checked = document.querySelector("[data-lage-stand]").getBoundingClientRect();
+              const source = document.querySelector("[data-lage-source-recency]").getBoundingClientRect();
+              return source.top >= checked.bottom && document.documentElement.scrollWidth <= innerWidth;
+            }));
+        await page.evaluate(() => { delete briefing.lageBriefing.latestUpdatedAt; render(); });
+        check(`${label}: Ohne Analysezeit bleibt nur die belegte Quellenfrische sichtbar`,
+          await page.locator("[data-lage-stand]").isVisible()
+            && await page.locator("[data-lage-stand]").innerText() === "Neueste Quelle vom 22. Juni."
+            && await page.locator("[data-lage-source-recency]").count() === 0);
         await page.locator((isMobile ? ".mobile-dock" : ".nav-list") + ' [data-view="radar"]').click();
         await page.locator('[data-radar-segment="committees"]').click();
         const radarText = await page.locator("#radar2-root").innerText();
@@ -310,10 +325,12 @@ function check(name, cond, detail = "") {
         currentView = "briefing"; render();
       }, memberFixture);
       check(`${label}: Teilmitgliedskarten erhalten einen Remagen- und zwei BR-Stufenpunkte`,
-        await page.locator(".lage2-card").count() === 3);
-      await page.locator('[data-lage-open="vg-browser-remagen"]').click();
-      await page.waitForSelector(".vsheet-title", { timeout: 5000 });
-      const greenRoles = page.locator(".vsheet .source-basis article");
+        await page.locator(".ui-vorgang-row").count() === 3);
+      // Lage verwendet die bestehende Master-/Detailansicht; der Briefing-
+      // Querverweis oben oeffnet weiterhin den separat geprueften Dialog.
+      await page.locator('[data-ui-lage-select="vg-browser-remagen"]').click();
+      await page.waitForSelector(".ui-lage-detail", { timeout: 5000 });
+      const greenRoles = page.locator(".ui-lage-detail .source-basis article");
       const greenTexts = await greenRoles.allTextContents();
       const greenLinks = await greenRoles.locator("a[href]").evaluateAll(nodes => nodes.map(n => n.href));
       check(`${label}: Remagen Detail zeigt beide unveraenderten Kontexte mit eigenen Quellen`,
@@ -321,19 +338,17 @@ function check(name, cond, detail = "") {
           && greenTexts[1].includes(memberFixture[0].ereignisKontexte[1].summary)
           && greenLinks.includes("https://publisher.test/articles/context-a")
           && greenLinks.includes("https://publisher.test/articles/context-b"));
-      await page.locator("button[data-vsheet-close]").click();
-      await page.waitForSelector(".vsheet-title", { state: "detached" });
-      await page.locator('[data-lage-open="vg-browser-br-rest"]').click();
-      await page.waitForSelector(".vsheet-title", { timeout: 5000 });
-      const brRoles = page.locator(".vsheet .source-basis article");
+      if (isMobile) await page.locator("[data-ui-lage-back]").click();
+      await page.locator('[data-ui-lage-select="vg-browser-br-rest"]').click();
+      await page.waitForSelector(".ui-lage-detail", { timeout: 5000 });
+      const brRoles = page.locator(".ui-lage-detail .source-basis article");
       const brLinks = await brRoles.locator("a[href]").evaluateAll(nodes => nodes.map(n => n.href));
       check(`${label}: BR Restdetail bindet Vorentwurf und Bundestagsstand an getrennte Originale`,
         await brRoles.count() === 2 && brLinks.length === 2
           && brLinks[0] === "https://publisher.test/articles/draft"
           && brLinks[1] === "https://publisher.test/articles/bt"
-          && !(await page.locator(".vsheet").innerText()).includes("Bundesrat billigt Reform"));
-      await page.locator("button[data-vsheet-close]").click();
-      await page.waitForSelector(".vsheet-title", { state: "detached" });
+          && !(await page.locator(".ui-lage-detail").innerText()).includes("Bundesrat billigt Reform"));
+      if (isMobile) await page.locator("[data-ui-lage-back]").click();
       check(`${label}: keine JS Fehler bei Teilrollen und Quellenwechsel`, pageErrors.length === 0);
 
       if (isMobile) {
@@ -420,7 +435,7 @@ function check(name, cond, detail = "") {
       if (device.expectLocked) {
         const text = await page.evaluate(`document.getElementById("orientationLock").textContent`).catch(() => "");
         check(`${device.label}: Sperrtext enthaelt die geforderte Aufforderung`,
-          text.includes("Bitte drehe dein Smartphone ins Hochformat, um Helmut zu verwenden."));
+          text.includes("Bitte drehe dein Gerät ins Hochformat."));
       }
 
       await context.close();

@@ -1,0 +1,307 @@
+{
+  "kind": "interactive-original-react-real-http",
+  "reactVersion": "18.3.1",
+  "reactDOMBuildVersion": "18.3.1-next-f1338f8080-20240426",
+  "checks": [
+    {
+      "name": "Original-React18.3.1 und DC-Komponente starten mit echten lokalen Verwaltungsdaten",
+      "passed": true
+    },
+    {
+      "name": "Originalsuche und50er-Seitenwechsel reagieren auf echte Browserereignisse",
+      "passed": true
+    },
+    {
+      "name": "Profildetail wird interaktiv über die bestehende sechste Leseroute geladen",
+      "passed": true
+    },
+    {
+      "name": "Betriebsbilanz trennt Briefing, Lage und Zustellung ohne falsche Qualitätsurteile",
+      "passed": true
+    },
+    {
+      "name": "Original-Themenwechsel und Menü funktionieren auf390Pixeln",
+      "passed": true
+    },
+    {
+      "name": "Originalformular zeigt Feldfehler und behauptet keine simulierten Tarife",
+      "passed": true
+    },
+    {
+      "name": "Browser → Originalformular → echter POST/PATCH speichert gesperrtes Konto ohne Einladung",
+      "passed": true
+    },
+    {
+      "name": "Vorhandene E-Mail wird im Originalformular ohne zweiten POST zurückgewiesen",
+      "passed": true
+    },
+    {
+      "name": "Verlorene POST-Antwort sperrt weitere Submitversuche ohne automatische Wiederholung",
+      "passed": true
+    },
+    {
+      "name": "Teilweise Kontoanlage zeigt bestätigte Kennung und bleibt gegen Doppelanlage gesperrt",
+      "passed": true
+    },
+    {
+      "name": "Partieller Übersichtsausfall erhält bekannte Kundenkennungen",
+      "passed": true
+    },
+    {
+      "name": "Echte anonyme401- und Mandats403-Antworten geben keine Verwaltungsdaten frei",
+      "passed": true
+    },
+    {
+      "name": "Nur eigene lokale Assets und erlaubte APIs; kein Mail-, Provider- oder Profilwrite",
+      "passed": true
+    }
+  ],
+  "images": [
+    {
+      "file": "interaktiv-original-uebersicht-dunkel-1440.png",
+      "sha256": "f7354a95aff0dc887b9bf2fdcc7f97475e84f439f414e6101cdaa168594597e4"
+    },
+    {
+      "file": "interaktiv-original-tagesbilanz-1440.png",
+      "sha256": "b1ff6c2301ab884ccea6c14c5a84d8349b9b92a77728a8bfc2d10a30ab625a74"
+    },
+    {
+      "file": "interaktiv-original-kunden-hell-390.png",
+      "sha256": "fd311448aa3bd43bfe1dae215acff2563dd752f3ef632424d138939d86208c7a"
+    },
+    {
+      "file": "interaktiv-original-formular-fehler-1440.png",
+      "sha256": "0f7b4f70423d5e7709bbdcd2df6078ee6f3437a284ca0ff08ea0efce76e12d08"
+    },
+    {
+      "file": "interaktiv-original-kunde-gespeichert-1440.png",
+      "sha256": "a7204a587b4ae2d1297f6def4e5b321d6f6579d6329005ebeb9f8f58fa761628"
+    }
+  ],
+  "requests": [
+    {
+      "path": "/api/auth/login",
+      "method": "POST"
+    },
+    {
+      "path": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/stats/budget-today",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/profile/browser-synthetic-051",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "path": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "POST"
+    },
+    {
+      "path": "/api/admin/users/user-8b682130f9921495d9",
+      "method": "PATCH"
+    },
+    {
+      "path": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/stats/budget-today",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "path": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "POST"
+    },
+    {
+      "path": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/stats/budget-today",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "path": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "POST"
+    },
+    {
+      "path": "/api/admin/users/user-63dd34998951d3e6f4",
+      "method": "PATCH"
+    },
+    {
+      "path": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/stats/budget-today",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/stats/budget-today",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "path": "/api/auth/login",
+      "method": "POST"
+    },
+    {
+      "path": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/stats/budget-today",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "path": "/api/admin/stats/process-runs",
+      "method": "GET"
+    }
+  ],
+  "isolation": {
+    "bind": "127.0.0.1",
+    "localStore": true,
+    "mailCalls": 0,
+    "providerCalls": 0,
+    "externalFetch": 0,
+    "profileWrites": 0,
+    "passwordTokens": 0
+  },
+  "pageErrors": [],
+  "consoleErrors": [
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ],
+  "forbiddenRequests": [],
+  "protectedFiles": [
+    {
+      "file": "server.js",
+      "sha256": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c"
+    },
+    {
+      "file": "lib/helmut/accounts.js",
+      "sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e"
+    },
+    {
+      "file": "client.js",
+      "sha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919"
+    },
+    {
+      "file": "styles.css",
+      "sha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee"
+    },
+    {
+      "file": "index.html",
+      "sha256": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145"
+    }
+  ],
+  "limits": [
+    "Synthetic local accounts/data only",
+    "No SQL/RLS or500acceptance",
+    "Productionroute/CSP unchanged",
+    "Faultresponses explicitly synthetic"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "helmut-independent-applied-accounts-review/1",
+  "observedAt": "2026-11-04T13:25:12.448862+00:00",
+  "status": "ACCEPTED_EXACT_PREVIOUSLY_REVIEWED_COMBINATION",
+  "workspace": "/workspace/helmut-claude-backend-isolated",
+  "branch": "feat/claude-backend-isolated",
+  "baseline": "ae18658e5caac2b39403c0e41e3a8af5c2b3d7be",
+  "appliedAccountsSha256": "608838b6674a17c1028bd3cda3edcb129188f6d75923fbb7b62bab04fdf6e703",
+  "numstat": "16\t1\tlib/helmut/accounts.js",
+  "diffSha256": "3de0c76b192b57216784d86ad658bba3adf6ec42828020ce79e188654e0a122a",
+  "patches": [
+    {
+      "file": "sprint-d-status-active.patch",
+      "sha256": "bf0c77ecc2950cfc34fee9bfd49c707d934e975500f3817cb9e232d7fe70954e"
+    },
+    {
+      "file": "sprint-d2-last-admin.patch",
+      "sha256": "e5c2f1abf7d340c671c76187bf743d55e3fbca0a5b18398aca52bd967957868a"
+    }
+  ],
+  "priorCombinedEvidenceSha256": "b61157cae36ae0fa1884a447e06636f270369ab388887f7f230139268736b3a2",
+  "priorCombinedSummary": {
+    "workerCases": 8,
+    "passedWorkerCases": 8,
+    "passedChecks": 30,
+    "failedChecks": 0,
+    "httpRequests": 56
+  },
+  "matchesPreviouslyReviewedCandidateExactly": true,
+  "newTestsRunByReviewer": false,
+  "sharedFilesWrittenByReviewer": false,
+  "acceptedSemantics": [
+    "D1 rejects active:true under blocked status before persistence",
+    "D2 preserves a structurally usable administrator inside each retryable mutation",
+    "The whole applied source exactly matches the reviewed 30-check candidate"
+  ],
+  "limits": [
+    "No repair of inconsistent legacy accounts or already lost administrator access",
+    "No new distributed-database, current-UI or production acceptance",
+    "User authorization is limited to this isolated backend workspace"
+  ]
+}

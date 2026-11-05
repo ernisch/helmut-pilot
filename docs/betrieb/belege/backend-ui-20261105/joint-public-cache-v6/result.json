@@ -1,0 +1,592 @@
+{
+  "scope": "JOINT_EXACT_UI_AND_BACKEND_REAL_PRODUCT_HTTP",
+  "checks": [
+    {
+      "name": "Public cached old UI is served once and refreshed from the real server",
+      "status": "PASS"
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": ""
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "document"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/support.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "script"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/logo/helmut-zeichen.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/runtime/react-18.3.1.production.min.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "script"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/runtime/react-dom-18.3.1.production.min.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "script"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/overview",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/budget-today",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/customers",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/sources-status",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/favicon.ico",
+      "status": 404,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/process-runs?limit=20",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "style"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/logo/favicon.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "image"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "font"
+    },
+    {
+      "method": "GET",
+      "path": "/sw.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "serviceworker"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_192.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/helmut_appicon_512.png?v=20260712-iconfix1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/client.js?v=20260712-presale1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/styles.css?v=20260712-presale1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/support.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/logo/helmut-zeichen.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/runtime/react-18.3.1.production.min.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/runtime/react-dom-18.3.1.production.min.js",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/v2_tokens.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/overview",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/budget-today",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/customers",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/sources-status",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/process-runs?limit=20",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/design/logo/favicon.svg",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/favicon.ico",
+      "status": 404,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Regular.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/HankenGrotesk-var.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/verwaltung/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Medium.ttf",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/client.js?v=20260712-presale1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    },
+    {
+      "method": "GET",
+      "path": "/styles.css?v=20260712-presale1",
+      "status": 200,
+      "csrfPresent": false,
+      "destination": "empty"
+    }
+  ],
+  "images": [],
+  "pageErrors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "externalRequests": [],
+  "blockedOperations": [],
+  "counters": {
+    "model": 0,
+    "mail": 0,
+    "fetch": 0
+  },
+  "inputCommits": {
+    "backend": "e054c0bb80fa4c330082bace3cfff6d9bb89a926",
+    "ui": "011910746294109c04fd5dac8e153a22188b7467"
+  },
+  "syntheticReadSeams": true,
+  "realLocalFileStore": true,
+  "productionAcceptance": false,
+  "publicCacheUpgrade": [
+    {
+      "file": "client.js",
+      "url": "/client.js?v=20260712-presale1",
+      "firstSha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+      "expectedCurrentSha256": "0dd6a60172d118b3ac427f5f54b8741bd279ca350c7d60441f266564ac2816e9",
+      "secondSha256": "0dd6a60172d118b3ac427f5f54b8741bd279ca350c7d60441f266564ac2816e9"
+    },
+    {
+      "file": "styles.css",
+      "url": "/styles.css?v=20260712-presale1",
+      "firstSha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+      "expectedCurrentSha256": "1569f470993b917bf53d51cfa9375025f1e2a6aef9bc29a7c2217e7e8dbc9737",
+      "secondSha256": "1569f470993b917bf53d51cfa9375025f1e2a6aef9bc29a7c2217e7e8dbc9737"
+    }
+  ],
+  "fixture": {
+    "mandateA": "integration-synthetic-alpha",
+    "mandateB": "integration-synthetic-beta",
+    "now": "2026-11-04T22:29:58.806Z",
+    "localUserStore": true,
+    "knowledgeObjects": 4,
+    "rawDocuments": 4,
+    "sourceHosts": [
+      "quellen-a.example.invalid",
+      "quellen-b.example.invalid"
+    ],
+    "datasetSha256": "805c1fddf5b7f5710c84840ffed1dd4c1d1d8c2e24afd97b302b3d1d3d74f91b",
+    "noHttpResponsesMocked": true,
+    "realAdaptersUntouched": true,
+    "pendingNarrativeExpected": true,
+    "noRunReceipt": true,
+    "contentWriteGuards": [
+      "deleteProfileData",
+      "deleteProfileDataV3",
+      "deleteTenantScopedData",
+      "markUnderstandingGateGeparkt",
+      "saveSourceModeShadowRun",
+      "writeStore",
+      "acquirePipelineLock",
+      "releasePipelineLock",
+      "saveCronFairnessState",
+      "deleteCronFairnessTenant",
+      "acquirePipelineLockAtomic",
+      "saveAdminRecoveryLastRun",
+      "saveRawDocument",
+      "saveKnowledgeObject",
+      "saveProfileEmbedding",
+      "saveMatchingResults",
+      "saveMatchingRun",
+      "updateMatchingRun",
+      "saveDecisions",
+      "savePendingKnowledgeObject",
+      "savePendingKnowledgeObjectsBulk",
+      "resetUnderstandingToPending",
+      "markUnderstandingTerminal",
+      "markPendingUnderstandingTerminal",
+      "saveUnderstandingRetries",
+      "saveUpdateRetries",
+      "markUnderstandingFailed",
+      "saveKnowledgeObjectEnrichment",
+      "saveRenderedBriefingV3",
+      "saveKoDocumentLinks",
+      "saveOfficeOutput",
+      "recordLlmUsage",
+      "saveRawItems",
+      "updateSourceLastCrawled",
+      "saveBriefing",
+      "updateTopicMemoryFromBriefing",
+      "saveCrawlRun",
+      "saveLageCheck",
+      "savePipelineDebugReport",
+      "saveWatchdogState",
+      "saveMonitoringDeliveryState",
+      "updateTaskStatus",
+      "saveInteraction",
+      "saveProfileToDb",
+      "saveFeedback",
+      "savePersonalizedRecommendations",
+      "savePoliticalItems",
+      "savePriorityChanges",
+      "savePushSubscription",
+      "removePushSubscription",
+      "savePushEvent",
+      "deleteRetention"
+    ],
+    "allowedLocalWriteNames": [
+      "saveProfile",
+      "saveTask",
+      "saveUserNote"
+    ],
+    "communicationDraftUsesOriginalRuleFallback": true,
+    "counters": {
+      "reads": {
+        "getSources": 2
+      },
+      "writes": {},
+      "allowedLocalWrites": {
+        "saveProfile": 2
+      },
+      "providerCalls": {},
+      "budgetAttempts": 0,
+      "profileIdsRead": [],
+      "localUserReadsInstrumented": false,
+      "authWritesInstrumented": false
+    }
+  },
+  "status": "PASS",
+  "summary": {
+    "passed": 1,
+    "failed": 0,
+    "requests": 64
+  }
+}

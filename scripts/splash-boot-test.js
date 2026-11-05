@@ -151,9 +151,30 @@ check("client.js: fetchAuthState nutzt Timeout (kein rohes fetch)", /fetchWithTi
 check("client.js: fetchAuthState nutzt KEIN rohes fetch mehr", !/=\s*await\s+fetch\("\/api\/auth\/session"/.test(client));
 check("client.js: hideStartupSplash in renderLogin", /function renderLogin[\s\S]{0,80}hideStartupSplash\(\)/.test(client));
 check("client.js: hideStartupSplash in renderPilotAccess", /function renderPilotAccess[\s\S]{0,80}hideStartupSplash\(\)/.test(client));
-// Boot-Aufrufkette am Dateiende: loadBriefing().then(...).catch(...) mit hideStartupSplash.
-const bootTail = client.slice(client.lastIndexOf("loadBriefing()\n") >= 0 ? client.lastIndexOf("loadBriefing()") : client.length - 2000);
-check("client.js: hideStartupSplash im Boot-catch (loadBriefing)", /\.catch\(/.test(bootTail) && /hideStartupSplash\(\)/.test(bootTail));
+// Die echte Bootkette verwendet inzwischen einen benannten Fehlerhandler.
+// Handler UND Catchbindung ausfuehren; kein Regex-PASS fuer ungenutzten Code.
+const hideSplash = client.match(/^function hideStartupSplash\(\) \{[\s\S]*?^\}/m)?.[0];
+const failureStart = client.indexOf("function renderStartFailure(");
+check("client.js: echter Splashabschluss und Boot-Fehlerhandler extrahierbar", Boolean(hideSplash) && failureStart >= 0);
+for (const online of [true, false]) {
+  const env = makeEnv();
+  let invalidations = 0;
+  env.win.addEventListener = () => {};
+  env.app.innerHTML = "Vorheriger privater Inhalt";
+  const rejected = { then() { return this; }, catch(handler) { handler({ code: "AUTH_UNAVAILABLE" }); } };
+  vm.runInNewContext(hideSplash + "\n" + client.slice(failureStart), {
+    window: env.win, document: env.document, app: env.app,
+    navigator: { onLine: online }, console: { error() {} }, showToast() {},
+    invalidatePrivateAccess() { invalidations += 1; }, loadBriefing: () => rejected
+  });
+  env.runTimersUpTo(1000);
+  const label = online ? "Online-503" : "Offline";
+  check(`client.js: ${label} Boot-catch beendet den Splash tatsaechlich`,
+    !env.classes.has("is-loading") && env.classes.has("app-ready") && env.classes.has("splash-gone"));
+  check(`client.js: ${label} Boot-catch entzieht privaten Zugriff und zeigt den passenden Fehler`,
+    invalidations === 1 && !env.app.innerHTML.includes("Vorheriger privater Inhalt")
+      && env.app.innerHTML.includes(online ? "Helmut ist gerade nicht erreichbar." : "Ich hab gerade keine Verbindung"));
+}
 
 // --- styles.css: kein Kaesten hinter dem H ---------------------------------
 const logoRule = (css.match(/\.loading-logo\s*\{[\s\S]*?\}/) || [""])[0];

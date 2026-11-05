@@ -108,6 +108,11 @@ const contentTypes = {
   ".ico": "image/x-icon",
   ".png": "image/png",
   ".svg": "image/svg+xml",
+  ".ttf": "font/ttf",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
   ".webmanifest": "application/manifest+json; charset=utf-8",
   ".json": "application/json; charset=utf-8"
 };
@@ -345,6 +350,8 @@ async function handleRequest(request, response) {
     response.end();
     return;
   }
+
+  if (await serveOriginalAdministration(request, response, url)) return;
 
   if (url.pathname === "/api/pilot/unlock" && request.method === "POST") {
     // SICHERHEIT: frueher voellig unbegrenzt erratbar (kein Rate-Limit, kein
@@ -2472,6 +2479,29 @@ async function handleRequest(request, response) {
     }
   }
 
+  // Explizite Wiederfreigabe: keine Status-/Rollen-/Profilaenderung und kein Invite.
+  // Erwarteten Zielzustand innerhalb derselben wiederholbaren Kontomutation pruefen.
+  const restoreAccessPath = url.pathname.match(/^\/api\/admin\/users\/([A-Za-z0-9][A-Za-z0-9-]{0,119})\/restore-access$/);
+  if (restoreAccessPath) {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    if (request.method !== "POST") {
+      response.writeHead(405, jsonHeaders({ Allow: "POST" }));
+      response.end(JSON.stringify({ error: "Kontowiederfreigabe verlangt POST." }, null, 2));
+      return undefined;
+    }
+    return handleJson(request, response, async (body) => {
+      if (!body || Object.getPrototypeOf(body) !== Object.prototype
+          || Object.keys(body).length !== 1 || !Object.hasOwn(body, "expected")) {
+        throw accounts.httpError(400, "Erwarteter Kontostand ist erforderlich.");
+      }
+      const user = await accounts.restoreUserAccess(restoreAccessPath[1], body.expected,
+        { userId: authUser.id, sessionToken: auth.readCookie(request, auth.SESSION_COOKIE) });
+      await accounts.recordAudit({ action: "admin.user.restore-access", userId: authUser.id, actorEmail: authUser.email,
+        politicianId: user.politicianId || null, detail: user.id });
+      return user;
+    });
+  }
+
   // Zugangslink erstellen (§6): Einladung erneut senden (Konto ohne Passwort,
   // 7 Tage) bzw. Reset-Link (Konto mit Passwort, 1 Stunde). Der Admin fasst nie
   // ein Passwort an — er bekommt nur den Link (Interim-Kopierweg, solange kein
@@ -2587,8 +2617,10 @@ async function handleRequest(request, response) {
     if (!pid) return sendNotFound(response);
     if (request.method === "GET") {
       return handleAsync(response, async () => {
-        const profile = await activeProfile(pid).catch(() => null);
-        const validation = validateProfile(profile || { id: pid });
+        const stored = await getProfile(tenantContext.requireTenantId(pid, "admin.profile.read"));
+        if (!stored) throw accounts.httpError(404, "Profil nicht gefunden.");
+        const profile = mergeProfileDefaults(stored);
+        const validation = validateProfile(profile);
         // Bundestags-Bereitschaft additiv mitliefern (rein lesend, deterministisch;
         // fuer Landtagsprofile meldet sie sich selbst als nicht zutreffend).
         const bereitschaft = bewerteBundestagsprofil(profile || { id: pid });
@@ -3238,6 +3270,46 @@ function testnachweisKonfiguration() {
     modell: require("./lib/helmut/ai").understandingModelName(), azure: Boolean(process.env.AZURE_OPENAI_KEY),
     testKosten: require("./lib/helmut/testkosten-budget").konfiguration()
   };
+}
+
+let originalAdministrationPackageCache = null;
+
+// Integrationskandidat: nur diese feste Route, Account-Admin und Originalassets.
+// DC benoetigt unsafe-eval; die bestehende globale App-CSP bleibt unveraendert.
+async function serveOriginalAdministration(request, response, url) {
+  if (url.pathname !== "/verwaltung" && !url.pathname.startsWith("/verwaltung/")) return false;
+  const headers = securityHeaders({
+    "Cache-Control": "no-store", "Vary": "Cookie", "Referrer-Policy": "no-referrer",
+    "Content-Security-Policy": "default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+  });
+  const end = (status, body, type = "application/json; charset=utf-8", extra = {}) => {
+    response.writeHead(status, { ...headers, "Content-Type": type, ...extra });
+    response.end(request.method === "HEAD" ? undefined : body);
+    return true;
+  };
+  if (!auth.authMode()) return end(404, '{"error":"Nicht gefunden."}');
+  let context;
+  try { context = await auth.getAuthContext(request); }
+  catch { return end(503, '{"error":"Anmeldung derzeit nicht verfuegbar."}'); }
+  if (!context?.user) return end(401, '{"error":"Bitte zuerst anmelden."}');
+  if (context.user.role !== "admin") return end(403, '{"error":"Nur fuer Administratoren."}');
+  if (!["GET", "HEAD"].includes(request.method)) return end(405, '{"error":"Methode nicht erlaubt."}', undefined, { Allow: "GET, HEAD" });
+  if (url.pathname === "/verwaltung") return end(308, "", "text/plain; charset=utf-8", { Location: "/verwaltung/" });
+  let key;
+  try { key = decodeURIComponent(url.pathname.slice("/verwaltung/".length)); }
+  catch { return end(400, '{"error":"Ungueltiger Pfad."}'); }
+  try {
+    if (!originalAdministrationPackageCache) {
+      const { originalAdministrationPackage, addVerifiedRuntimeAssets } = require("./scripts/original-verwaltung-paket");
+      originalAdministrationPackageCache = addVerifiedRuntimeAssets(originalAdministrationPackage(), path.join(root, "verwaltung/runtime"));
+    }
+    const pkg = originalAdministrationPackageCache;
+    if (!key) return end(200, pkg.html, "text/html; charset=utf-8");
+    const types = { ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".ttf": "font/ttf", ".svg": "image/svg+xml", ".png": "image/png" };
+    const type = types[path.extname(key)];
+    if (!type || !pkg.assets.has(key)) return end(404, '{"error":"Nicht gefunden."}');
+    return end(200, pkg.assets.get(key), type);
+  } catch { return end(503, '{"error":"Verwaltung derzeit nicht verfuegbar."}'); }
 }
 
 function sendAppAsset(response, url) {

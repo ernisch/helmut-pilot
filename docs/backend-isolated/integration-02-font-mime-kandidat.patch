@@ -1,0 +1,14 @@
+--- a/server.js
++++ b/server.js
+@@ -108,6 +108,11 @@
+   ".ico": "image/x-icon",
+   ".png": "image/png",
+   ".svg": "image/svg+xml",
++  ".ttf": "font/ttf",
++  ".woff": "font/woff",
++  ".woff2": "font/woff2",
++  ".jpg": "image/jpeg",
++  ".jpeg": "image/jpeg",
+   ".webmanifest": "application/manifest+json; charset=utf-8",
+   ".json": "application/json; charset=utf-8"
+ };

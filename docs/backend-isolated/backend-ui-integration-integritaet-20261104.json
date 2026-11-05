@@ -1,0 +1,36 @@
+{
+  "observedAt": "2026-11-04T13:43:40.023600+00:00",
+  "branch": "feat/claude-backend-isolated",
+  "headBeforeFinalEvidenceCommit": "6b687621856227524c1d9873e1c48572ee368064",
+  "startHead": "ae18658e5caac2b39403c0e41e3a8af5c2b3d7be",
+  "changedPreexistingFiles": [
+    "lib/helmut/accounts.js",
+    "verwaltung/README.md"
+  ],
+  "protectedFileHashes": {
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+    "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f",
+    "AGENTS.md": "d739fe1cfe3e389990f89b6bf5a6f16ef546df62a5d6ae65a3aa4e7196a594a6",
+    "CLAUDE.md": "d26b84468942de3bec4ade070992e7e66638cfa7460149f1854d2baaf4b6a393",
+    "docs/START_HERE.md": "60609675bfb3158cfef9a859d213e07268ba3ddeeb4277088a85fa14b958b030",
+    "docs/CURRENT_STATE.md": "25eb03b2998d4496aff451684a4b1845491622cdd1621cc2278faacba4d49900",
+    "docs/ROADMAP_BIS_500.md": "22953c2844c5ede7f8f5d915c9b24ceab8713474b03bc626b9d448318e2eef6c"
+  },
+  "accountsSha256": "608838b6674a17c1028bd3cda3edcb129188f6d75923fbb7b62bab04fdf6e703",
+  "originalDesignFilesVerified": 25,
+  "uiCurrentSourceAvailable": false,
+  "currentUiRuntimeTested": false,
+  "oldUiPr771Integrated": false,
+  "originalWorkspaceUnchanged": true,
+  "activeTestProcesses": [],
+  "limits": "Current source commits are local only. No Production, remote UI, DB, merged-server or 500er acceptance.",
+  "originalActionsSha256": "eb77b7218513d6d7b324e36b211f502b92043520eeaf71bbbe03888fa7c905a8",
+  "allInitialFilesCompared": 2136,
+  "candidatePatchesApplied": false
+}

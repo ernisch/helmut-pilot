@@ -1,0 +1,69 @@
+PASS  desktop: actual UI rendered
+PASS  desktop: normal bootstrap and automatic drafts complete
+PASS  desktop: real auth and CSRF path simulated
+PASS  desktop: two formats per eligible record; ignored record never generated
+PASS  desktop: record, KO and vorgang identities remain distinct
+PASS  desktop: server primary remains first despite higher scores
+PASS  desktop: legacy signal kept separate
+PASS  desktop: V3 signal uses explicit KO identity
+PASS  desktop: missing identities not guessed from id or signal
+PASS  desktop: equal-looking namespace values not swapped
+PASS  desktop: camelCase item identity and decision retained
+PASS  desktop: second record selected through real card
+PASS  desktop: Briefing after navigation ready
+PASS  desktop: Briefing opens its own record, not previous selection
+PASS  desktop: handoff itself starts no generation
+PASS  desktop: lost target does not silently select another record
+PASS  desktop: missing-target hint stays visible after refresh
+PASS  desktop: lost primary causes no automatic generation
+PASS  desktop: missing-vorgang blocks automatic generation
+PASS  desktop: missing-vorgang disables handoff with honest hint
+PASS  desktop: missing-vorgang rejects programmatic handoff without fallback
+PASS  desktop: missing-knowledge blocks automatic generation
+PASS  desktop: missing-knowledge disables handoff with honest hint
+PASS  desktop: missing-knowledge rejects programmatic handoff without fallback
+PASS  desktop: missing-record blocks automatic generation
+PASS  desktop: missing-record disables handoff with honest hint
+PASS  desktop: missing-record rejects programmatic handoff without fallback
+PASS  desktop: missing-primary blocks automatic generation
+PASS  desktop: missing-primary disables handoff with honest hint
+PASS  desktop: missing-primary rejects programmatic handoff without fallback
+PASS  desktop: missing-decision blocks automatic generation
+PASS  desktop: missing-decision disables handoff with honest hint
+PASS  desktop: missing-decision rejects programmatic handoff without fallback
+PASS  desktop: ignored blocks automatic generation
+PASS  desktop: ignored disables handoff with honest hint
+PASS  desktop: ignored rejects programmatic handoff without fallback
+PASS  desktop: conflicting-id blocks automatic generation
+PASS  desktop: conflicting-id disables handoff with honest hint
+PASS  desktop: conflicting-id rejects programmatic handoff without fallback
+PASS  desktop: duplicate blocks automatic generation
+PASS  desktop: duplicate disables handoff with honest hint
+PASS  desktop: duplicate rejects programmatic handoff without fallback
+PASS  desktop: valid mapping recovers after missing data
+PASS  desktop: simulated generation response can be delayed
+PASS  desktop: reclassified record stops subsequent generation
+PASS  desktop: outdated pending draft is not adopted
+PASS  desktop: generation recovers with a valid assignment
+PASS  desktop: read-only preview generates no drafts
+PASS  desktop: only explicitly mocked APIs requested
+PASS  mobile: actual UI rendered
+PASS  mobile: normal bootstrap and automatic drafts complete
+PASS  mobile: real auth and CSRF path simulated
+PASS  mobile: two formats per eligible record; ignored record never generated
+PASS  mobile: record, KO and vorgang identities remain distinct
+PASS  mobile: server primary remains first despite higher scores
+PASS  mobile: second record selected through real card
+PASS  mobile: Briefing after navigation ready
+PASS  mobile: Briefing opens its own record, not previous selection
+PASS  mobile: handoff itself starts no generation
+PASS  mobile: lost target does not silently select another record
+PASS  mobile: missing-target hint stays visible after refresh
+PASS  mobile: lost primary causes no automatic generation
+PASS  mobile: missing-vorgang blocks automatic generation
+PASS  mobile: missing-vorgang disables handoff with honest hint
+PASS  mobile: missing-vorgang rejects programmatic handoff without fallback
+PASS  mobile: only explicitly mocked APIs requested
+PASS  No uncaught browser errors
+PASS  No external request fulfilled
+PASS  No missing static resources

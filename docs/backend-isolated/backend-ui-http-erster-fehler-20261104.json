@@ -1,0 +1,100 @@
+{
+  "scope": "BACKEND_HTTP_ONLY_CURRENT_UI_FILES_UNAVAILABLE",
+  "ui": {
+    "branch": "codex/helmut-ui-20261031",
+    "reportedCommit": "373c373d",
+    "parent": "a41d51f194dba526c7aab6b922f6dc33eed3d618",
+    "source": "user and read-only UI-thread handoff; no current UI runtime available"
+  },
+  "checks": [
+    {
+      "name": "Anmeldung und anonyme Sitzung: echte Antworten und Cookie-Schutz",
+      "status": "PASS"
+    },
+    {
+      "name": "Sessionverlaengerung schreibt nur die eigene synthetische Sitzung",
+      "status": "PASS"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/security/csrf",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start?politicianId=integration-synthetic-alpha",
+      "status": 200
+    }
+  ],
+  "status": "FAIL_BACKEND_HTTP",
+  "error": {
+    "message": "The expression evaluated to a falsy value:\n\n  assert.ok(r.json.briefing.currentRadarState?.anzeige)\n",
+    "stack": [
+      "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:",
+      "",
+      "  assert.ok(r.json.briefing.currentRadarState?.anzeige)",
+      "",
+      "    at /workspace/helmut-claude-backend-isolated/scripts/backend-ui-http-integration-test.js:103:61"
+    ]
+  },
+  "counters": {
+    "provider": 0,
+    "mail": 0,
+    "fetch": 2,
+    "unexpectedRoutes": 0
+  },
+  "accountsSha256": "608838b6674a17c1028bd3cda3edcb129188f6d75923fbb7b62bab04fdf6e703",
+  "runtimeHashes": {
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "lib/helmut/accounts.js": "608838b6674a17c1028bd3cda3edcb129188f6d75923fbb7b62bab04fdf6e703",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145"
+  },
+  "time": "2026-11-04T13:27:17.525Z",
+  "testSha256": "560a7acfb7b101b5d712b7112edc85017c7f7a5f1819e59c376252f9e8be8bf5"
+}

@@ -1,0 +1,5 @@
+{
+  "status": "PASS",
+  "missingNetworkProof": "new contract wrapper refuses startup before Chromium spawn",
+  "exitCode": 1
+}

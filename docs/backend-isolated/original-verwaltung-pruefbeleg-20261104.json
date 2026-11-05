@@ -1,0 +1,215 @@
+{
+  "schema": 1,
+  "checks": [
+    {
+      "name": "Originalpaket: 25 bytegleiche Assets, gleiches Template/CSS, kein Beispielgenerator",
+      "passed": true
+    },
+    {
+      "name": "Keine erfundene Qualität, Kosten-/USD-Budgetgrenze oder Landesebene",
+      "passed": true
+    },
+    {
+      "name": "Alle Originalansichten lassen sich mit echten Vertragsformen ableiten",
+      "passed": true
+    },
+    {
+      "name": "Originalsuche, Seitenwechsel, Theme und Detailauswahl bleiben nutzbar",
+      "passed": true
+    },
+    {
+      "name": "401/403 löschen auch bereits gelesene private Teilantworten",
+      "passed": true
+    },
+    {
+      "name": "Verspätete alte Antworten überschreiben keinen neueren Zugriffsentzug",
+      "passed": true
+    },
+    {
+      "name": "Leerer HTTP200-Profilersatz wird nicht als erfolgreicher Detailabruf behandelt",
+      "passed": true
+    },
+    {
+      "name": "Ungültiger Hash und Prototype-Namen verursachen keine fremden Profildetails",
+      "passed": true
+    },
+    {
+      "name": "Kundenentwurf, Motoraktionen und falsche Erfolgsbestätigungen sind ausgeschlossen",
+      "passed": true
+    },
+    {
+      "name": "Kontoclient weist freie Pfade, Rollen, Passwörter und negative Preise vor IO ab",
+      "passed": true
+    },
+    {
+      "name": "Unklarer Schreibausgang wird nicht wiederholt oder als Erfolg ausgegeben",
+      "passed": true
+    },
+    {
+      "name": "Abgebaute Komponenten beginnen keine neue Anfrage",
+      "passed": true
+    },
+    {
+      "name": "Detail401/403 nach Navigation entzieht global Daten und leert Lesercache",
+      "passed": true
+    },
+    {
+      "name": "Ungeprüfte Ergebnisfilter haben keine falschen Nullzähler",
+      "passed": true
+    },
+    {
+      "name": "Fehlende Profilübersicht entfernt keine bekannte Kundenzuordnung",
+      "passed": true
+    },
+    {
+      "name": "Ausgegebenes Template behauptet weder Rechnungsanbindung noch Simulation oder Tageslauf",
+      "passed": true
+    },
+    {
+      "name": "Vorhandene serverseitige Pflichtfeldnamen werden im Originaldetail angezeigt",
+      "passed": true
+    },
+    {
+      "name": "Echter Server → vorhandener Leser → Originalkomponente: Bestand und Kosten",
+      "passed": true
+    },
+    {
+      "name": "Echter Server: Original-Profildetail verwendet sechste vorhandene Leseroute",
+      "passed": true
+    },
+    {
+      "name": "Echter CSRF/Konto-PATCH: Preis und Zahlungsstatus ohne Profiländerung",
+      "passed": true
+    },
+    {
+      "name": "Original-Kontozugang sperrt vorhandene Sitzung; keine Motoraktion",
+      "passed": true
+    }
+  ],
+  "observations": [
+    {
+      "actualServer": true,
+      "testedCommit": "ae18658e5caac2b39403c0e41e3a8af5c2b3d7be",
+      "localStore": true,
+      "providerCalls": 0,
+      "requests": [
+        {
+          "url": "/api/admin/overview",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/stats/budget-today",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/customers",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/sources-status",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/stats/process-runs?limit=20",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/profile/original-synthetic-alpha",
+          "method": "GET"
+        },
+        {
+          "url": "/api/security/csrf",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/users/user-109293e43ed6eba8ea",
+          "method": "PATCH"
+        },
+        {
+          "url": "/api/admin/overview",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/stats/budget-today",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/customers",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/sources-status",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/stats/process-runs?limit=20",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/profile/original-synthetic-alpha",
+          "method": "GET"
+        },
+        {
+          "url": "/api/security/csrf",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/users/user-109293e43ed6eba8ea",
+          "method": "PATCH"
+        },
+        {
+          "url": "/api/admin/overview",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/stats/budget-today",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/customers",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/sources-status",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/stats/process-runs?limit=20",
+          "method": "GET"
+        },
+        {
+          "url": "/api/admin/profile/original-synthetic-alpha",
+          "method": "GET"
+        }
+      ]
+    }
+  ],
+  "sourceHashes": [
+    {
+      "file": "verwaltung/original-adapter.mjs",
+      "sha256": "8854d2298848b30d142cb84a3637ef194f6192aa035379613421dfd272293351"
+    },
+    {
+      "file": "verwaltung/original-controller.mjs",
+      "sha256": "0a61f799a6cba14b62e8bc1ef204858511e047f89bacb1aaa92e7cd71f741eb6"
+    },
+    {
+      "file": "verwaltung/original-actions.mjs",
+      "sha256": "a303e6f9f6259ec5e2b6f4c11b881ecd795e638411151c08bce0840ffc4693fa"
+    },
+    {
+      "file": "scripts/original-verwaltung-paket.js",
+      "sha256": "5ab62c6cc1166f9f7f4b66b43c96a58c064740cd28e4cf6cc00149319cfd4a47"
+    },
+    {
+      "file": "scripts/original-verwaltung-test.js",
+      "sha256": "dd8bafe1e4167689b217074edf77fad49626085c4107594d4149d72c716821a2"
+    }
+  ],
+  "limits": [
+    "Keine Original-React-/Browserabnahme",
+    "Lokaler Dateispeicher, keine SQL/RLS-Abnahme",
+    "Keine neuen geteilten Serverrouten eingebunden",
+    "Keine Motor-/500er-Abnahme"
+  ]
+}

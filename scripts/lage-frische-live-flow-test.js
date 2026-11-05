@@ -151,9 +151,9 @@ function lageBriefing(latestUpdatedAt, pub) {
   t.setBriefing({ lageBriefing: lageBriefing(nowIso, OLD_ISO), currentHelmutState: { status: "fresh" } });
   const html = t.renderLage();
   check("Lage-Frische: PRIMÄRE Stand-Zeile = echte Analysezeit ('Zuletzt aktualisiert: heute …')",
-    /class="lage2-stand">Zuletzt aktualisiert: heute, \d{2}:\d{2} Uhr\.</.test(html), (html.match(/lage2-stand">[^<]*/) || [""])[0]);
+    /data-lage-stand>Zuletzt aktualisiert: heute, \d{2}:\d{2} Uhr\.</.test(html), (html.match(/data-lage-stand>[^<]*/) || [""])[0]);
   check("Lage-Frische: Quellen-Aktualität als GETRENNTE zweite Zeile ('Neueste Quelle vom 22. Juni')",
-    /class="lage2-source-recency">Neueste Quelle vom 22\. Juni\.</.test(html));
+    /data-lage-source-recency>Neueste Quelle vom 22\. Juni\.</.test(html));
   check("Lage-Frische: KEIN Widerspruch — die frische Lage behauptet NICHT 'Neueste Quelle heute' für eine wochenalte Quelle",
     !html.includes("Neueste Quelle heute"));
   check("Lage-Frische: der Kopf liest sich NICHT veraltet (primär steht die heutige Prüfzeit)",
@@ -165,9 +165,9 @@ function lageBriefing(latestUpdatedAt, pub) {
   t.setBriefing({ lageBriefing: lageBriefing(null, nowIso), currentHelmutState: { status: "fresh" } });
   const html = t.renderLage();
   check("Lage-Frische: ohne Analysezeit fällt die Stand-Zeile ehrlich auf die Quellen-Aktualität zurück",
-    /class="lage2-stand">Neueste Quelle heute, \d{2}:\d{2} Uhr\.</.test(html));
+    /data-lage-stand>Neueste Quelle heute, \d{2}:\d{2} Uhr\.</.test(html));
   check("Lage-Frische: im Fallback KEINE doppelte Quellenzeile (nur eine Frische-Zeile)",
-    !html.includes("lage2-source-recency"));
+    !html.includes("data-lage-source-recency"));
 }
 
 // Beide fehlen -> gar keine Frische-Zeile (kein Crash), aber die Lage rendert
@@ -175,7 +175,7 @@ function lageBriefing(latestUpdatedAt, pub) {
   t.setBriefing({ lageBriefing: lageBriefing(null, null), currentHelmutState: { status: "fresh" } });
   const html = t.renderLage();
   check("Lage-Frische: ganz ohne Zeitstempel rendert die Lage ohne Crash und ohne erfundene Frische",
-    html.includes("lage2") && !html.includes("lage2-stand") && !html.includes("Zuletzt aktualisiert"));
+    html.includes("ui-lage-workspace") && !html.includes("data-lage-stand") && !html.includes("Zuletzt aktualisiert"));
 }
 
 // ═══ TEIL 2 — Live-Flow: erreichbarer ↻-Refresh ═════════════════════════════

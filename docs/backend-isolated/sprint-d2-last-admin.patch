@@ -1,0 +1,26 @@
+diff --git a/lib/helmut/accounts.js b/lib/helmut/accounts.js
+--- a/lib/helmut/accounts.js
++++ b/lib/helmut/accounts.js
+@@ -242,6 +242,8 @@ async function updateUser(id, patch = {}) {
+     const user = (store.users || []).find((entry) => entry.id === id);
+     if (!user) throw httpError(404, "Nutzer nicht gefunden.");
+ 
++    const wasUsableAdmin = user.role === "admin" && user.active !== false &&
++      activeFromStatus(user.status) && Boolean(user.passwordHash && user.passwordSalt);
+     if (patch.email !== undefined) {
+       const normalizedEmail = normalizeEmail(patch.email);
+       if (!normalizedEmail) throw httpError(400, "E-Mail ist erforderlich.");
+@@ -321,6 +323,13 @@ async function updateUser(id, patch = {}) {
+       user.passwordHash = passwordHash;
+       user.passwordSalt = passwordSalt;
+     }
++    // Im wiederholbaren Auth-Schreibvorgang gegen genau den neuen Stand pruefen.
++    // Eingeladene/gesperrte Konten ersetzen keinen noch anmeldbaren Administrator.
++    if (wasUsableAdmin && !(store.users || []).some((entry) =>
++      entry.role === "admin" && entry.active !== false && activeFromStatus(entry.status) &&
++      entry.passwordHash && entry.passwordSalt)) {
++      throw httpError(409, "Der letzte anmeldbare Administrator muss erhalten bleiben.");
++    }
+     user.updatedAt = new Date().toISOString();
+     return sanitizeUser(user);
+   });

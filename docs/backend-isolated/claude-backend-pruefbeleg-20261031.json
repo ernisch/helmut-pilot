@@ -1,0 +1,652 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-10-31T19:55:24.248963+00:00",
+  "user_facing_timezone": "Europe/Istanbul",
+  "status": "partially_completed_missing_server_implementation_in_archive",
+  "branch": "feat/claude-backend-isolated",
+  "base_commit": "773f7aa545bfeac9429ef368c49e302e68772cc6",
+  "isolation": {
+    "path": "/workspace/helmut-claude-backend-isolated",
+    "separate_git_metadata": true,
+    "object_reuse": "read-only alternate to original object database",
+    "original_path": "/workspace/helmut-pilot",
+    "original_head": "6b4012cd912fd0e1f5ec79969168d0dcc010927f",
+    "original_branch": "work",
+    "original_refs": [
+      "6b4012cd912fd0e1f5ec79969168d0dcc010927f refs/heads/work",
+      "f6477d44e4abf02804d8766bd77cfd7ec298d84a refs/remotes/origin/main"
+    ],
+    "original_status": [
+      "?? supabase/.temp/"
+    ],
+    "original_worktrees": [
+      "worktree /workspace/helmut-pilot",
+      "HEAD 6b4012cd912fd0e1f5ec79969168d0dcc010927f",
+      "branch refs/heads/work"
+    ],
+    "original_tracked_diff_empty": true
+  },
+  "remote_heads_at_final_read": {
+    "main": "773f7aa545bfeac9429ef368c49e302e68772cc6",
+    "codex/ui-design-20261002": "eaf0d5d517d104beaeac53ebeecc6957d3dcadc1",
+    "codex/w15-separated-resource-metering-20261031": "1bb917bb3eaeeb154fd45dcb6f1d8d7a81af8c0c"
+  },
+  "ui_head_matches_start": true,
+  "motor_pr1004_head_matches_start": false,
+  "archive": {
+    "file_name": "Helmut Backened.zip",
+    "bytes": 602860,
+    "sha256": "402c025b2b58b581312e290f70e3503af8e4b396867be78ae3415ad448938384",
+    "member_count": 35,
+    "expanded_bytes": 1356697,
+    "crc_all_members_read_successfully": true,
+    "extracted": false,
+    "executed": false,
+    "security_checks": {
+      "unsafe_paths": [],
+      "symlinks": [],
+      "special_files": [],
+      "executable_modes": [],
+      "encrypted_entries": [],
+      "oversized_entries": [],
+      "high_compression_ratios": [],
+      "credential_pattern_hits": [],
+      "duplicate_paths": []
+    },
+    "credential_scan_scope": "private-key headers, known token formats, JWT-like strings, nonempty quoted credential assignments in text; no exhaustive secret-free claim",
+    "manifest": [
+      {
+        "path": "design_handoff_verwaltung_v3/INTEGRATIONSPLAN_v3.md",
+        "bytes": 15947,
+        "compressed_bytes": 6303,
+        "unix_mode": "0o0",
+        "sha256": "648b42875c0ee171298950204e64ab8f46627f45579274e1e0b5d1eebc7f6869"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/README.md",
+        "bytes": 14933,
+        "compressed_bytes": 7052,
+        "unix_mode": "0o0",
+        "sha256": "debffa508fe3a78006781fa036dbd536ef4fc89f4a24a81320e13a10c99dc96a"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/design/logo/README.md",
+        "bytes": 1697,
+        "compressed_bytes": 908,
+        "unix_mode": "0o0",
+        "sha256": "79b9836bd3ff107a158bbf68a239f22e60a274e5039236e9e035a4d323f4b334"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/design/logo/favicon-32.png",
+        "bytes": 6361,
+        "compressed_bytes": 6361,
+        "unix_mode": "0o0",
+        "sha256": "f2173c0277bb89ae745ac8ddebc3fd00e3fc2cdeda0d1820ff5d531d801d4af9"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/design/logo/favicon.svg",
+        "bytes": 8318,
+        "compressed_bytes": 2286,
+        "unix_mode": "0o0",
+        "sha256": "9ce6218af1ddec9aa469c1c99289626bca0953c044b1ed261f637e073c33bd95"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/design/logo/helmut-h.svg",
+        "bytes": 8284,
+        "compressed_bytes": 2264,
+        "unix_mode": "0o0",
+        "sha256": "ceb27237d05a1f44a9d267eb7ed62133c6eaa82d1f1ee2d8e7dbd4ef17ba147d"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/design/logo/helmut-zeichen-invers.svg",
+        "bytes": 8348,
+        "compressed_bytes": 2305,
+        "unix_mode": "0o0",
+        "sha256": "96c3db7dc7a847f0e1a5bcef9b458df8edc5da58d98b361ab194f837ae67d4e8"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/design/logo/helmut-zeichen.svg",
+        "bytes": 8348,
+        "compressed_bytes": 2306,
+        "unix_mode": "0o0",
+        "sha256": "9d885030b873da5e0796f361adfc183c2830b38011ee505fda8422ae138b8ab4"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/design/logo/icon-192.png",
+        "bytes": 10184,
+        "compressed_bytes": 10184,
+        "unix_mode": "0o0",
+        "sha256": "cbe90686046ef004c1ebf0235a33ff59572c3e52007a81d7c270bcb086c66193"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/design/v2_tokens.css",
+        "bytes": 2117,
+        "compressed_bytes": 842,
+        "unix_mode": "0o0",
+        "sha256": "e102a0ae35c2a8db87e2a641abf5b1f3f3611688961bc30e2571818c515e00c9"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/Helmut Verwaltung v3.dc.html",
+        "bytes": 91184,
+        "compressed_bytes": 21418,
+        "unix_mode": "0o0",
+        "sha256": "9bdcf76ae6771655351c68ada79e4301348f452d12b5cbabe15c4ef4fe275418"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/_adherence.oxlintrc.json",
+        "bytes": 11160,
+        "compressed_bytes": 2210,
+        "unix_mode": "0o0",
+        "sha256": "8197466e5bc69389417e411247be48a0879f92965c95d2e96ad823b49ad8879e"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/_ds_bundle.js",
+        "bytes": 52666,
+        "compressed_bytes": 11625,
+        "unix_mode": "0o0",
+        "sha256": "066f520fe80585116691c8276afff4a86ee757cac1686e47f1f098e6a2a3e6fe"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/_ds_manifest.json",
+        "bytes": 15678,
+        "compressed_bytes": 3041,
+        "unix_mode": "0o0",
+        "sha256": "949544ecfd827b707a2bed908352fb58708581ffb56e0cdd705785be8540f1e9"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/HankenGrotesk-var.ttf",
+        "bytes": 132892,
+        "compressed_bytes": 74202,
+        "unix_mode": "0o0",
+        "sha256": "813b3f8fa0965405669a89b38e51bbefd95eef6b8e20d1cb2d8c10cce062662f"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Medium.ttf",
+        "bytes": 136704,
+        "compressed_bytes": 61134,
+        "unix_mode": "0o0",
+        "sha256": "a9b4c49bb299e05b5f6c481e7fb5e78943d2793249a0c8874ab574a2d1ea6755"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Regular.ttf",
+        "bytes": 135580,
+        "compressed_bytes": 59510,
+        "unix_mode": "0o0",
+        "sha256": "6a3412f058c7d8dfd9170c41e85ade48e5156ecb89356110ca57a0a27734af46"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Medium.ttf",
+        "bytes": 272920,
+        "compressed_bytes": 135871,
+        "unix_mode": "0o0",
+        "sha256": "f385bc588599c879112272711d4acecc126674009d747a27284f59e93a240e83"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Regular.ttf",
+        "bytes": 261088,
+        "compressed_bytes": 119697,
+        "unix_mode": "0o0",
+        "sha256": "c89021dc20720c8d0dcf40b0b2f6e00c13665fa8041717f581396f51b8c78f5d"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/readme.md",
+        "bytes": 13429,
+        "compressed_bytes": 6624,
+        "unix_mode": "0o0",
+        "sha256": "5ede1e8dcf106083419a32f774737a9a559add935dfdae07bdb9b6ec74935c30"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+        "bytes": 382,
+        "compressed_bytes": 227,
+        "unix_mode": "0o0",
+        "sha256": "9acb03ace9f271cd59694a3ca00c3314cd1100fec7c2b18c023ca266b90d2243"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+        "bytes": 2953,
+        "compressed_bytes": 1172,
+        "unix_mode": "0o0",
+        "sha256": "031321710634f8a0a8d25c6ece3e1ac773ddb071757898f5b171e08e9688de0f"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+        "bytes": 913,
+        "compressed_bytes": 284,
+        "unix_mode": "0o0",
+        "sha256": "53d384b0f4208dae8847429975568d43c626bd598b02f9271f990af3cc05be7d"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+        "bytes": 1455,
+        "compressed_bytes": 694,
+        "unix_mode": "0o0",
+        "sha256": "6611bf3c62d1635895737068ad847848d76f12023d8422db2b853fd25ba931fd"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+        "bytes": 2018,
+        "compressed_bytes": 707,
+        "unix_mode": "0o0",
+        "sha256": "c9d05456e2efa9f4e14a1a87b14686482eb5e5b71c811ac7039c2ddd51cb9364"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/design/logo/README.md",
+        "bytes": 1697,
+        "compressed_bytes": 908,
+        "unix_mode": "0o0",
+        "sha256": "79b9836bd3ff107a158bbf68a239f22e60a274e5039236e9e035a4d323f4b334"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/design/logo/favicon-32.png",
+        "bytes": 6361,
+        "compressed_bytes": 6361,
+        "unix_mode": "0o0",
+        "sha256": "f2173c0277bb89ae745ac8ddebc3fd00e3fc2cdeda0d1820ff5d531d801d4af9"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/design/logo/favicon.svg",
+        "bytes": 8318,
+        "compressed_bytes": 2286,
+        "unix_mode": "0o0",
+        "sha256": "9ce6218af1ddec9aa469c1c99289626bca0953c044b1ed261f637e073c33bd95"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/design/logo/helmut-h.svg",
+        "bytes": 8284,
+        "compressed_bytes": 2264,
+        "unix_mode": "0o0",
+        "sha256": "ceb27237d05a1f44a9d267eb7ed62133c6eaa82d1f1ee2d8e7dbd4ef17ba147d"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/design/logo/helmut-zeichen-invers.svg",
+        "bytes": 8348,
+        "compressed_bytes": 2305,
+        "unix_mode": "0o0",
+        "sha256": "96c3db7dc7a847f0e1a5bcef9b458df8edc5da58d98b361ab194f837ae67d4e8"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/design/logo/helmut-zeichen.svg",
+        "bytes": 8348,
+        "compressed_bytes": 2306,
+        "unix_mode": "0o0",
+        "sha256": "9d885030b873da5e0796f361adfc183c2830b38011ee505fda8422ae138b8ab4"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/design/logo/icon-192.png",
+        "bytes": 10184,
+        "compressed_bytes": 10184,
+        "unix_mode": "0o0",
+        "sha256": "cbe90686046ef004c1ebf0235a33ff59572c3e52007a81d7c270bcb086c66193"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/design/v2_tokens.css",
+        "bytes": 2117,
+        "compressed_bytes": 842,
+        "unix_mode": "0o0",
+        "sha256": "e102a0ae35c2a8db87e2a641abf5b1f3f3611688961bc30e2571818c515e00c9"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/support.js",
+        "bytes": 69150,
+        "compressed_bytes": 20024,
+        "unix_mode": "0o0",
+        "sha256": "8fe7df74405f3c55f49b7249c74ea1397e65d07dea2b1bd3b4a489bec2e28cbe"
+      },
+      {
+        "path": "design_handoff_verwaltung_v3/prototyp/v3_logik.js",
+        "bytes": 18331,
+        "compressed_bytes": 6455,
+        "unix_mode": "0o0",
+        "sha256": "3bec6af65720908f67798591d0b74889959ebdabe3ebebfd4604624042dcd8a7"
+      }
+    ]
+  },
+  "protected_file_checks": [
+    {
+      "path": "server.js",
+      "baseline_sha256": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+      "isolated_sha256": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9",
+      "original_current_sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9",
+      "original_matches_head": true
+    },
+    {
+      "path": "client.js",
+      "baseline_sha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+      "isolated_sha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+      "original_current_sha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+      "original_matches_head": true
+    },
+    {
+      "path": "styles.css",
+      "baseline_sha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+      "isolated_sha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+      "original_current_sha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+      "original_matches_head": true
+    },
+    {
+      "path": "index.html",
+      "baseline_sha256": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+      "isolated_sha256": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+      "original_current_sha256": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+      "original_matches_head": true
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "baseline_sha256": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+      "isolated_sha256": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+      "original_current_sha256": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+      "original_matches_head": true
+    },
+    {
+      "path": "lib/helmut/auth.js",
+      "baseline_sha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+      "isolated_sha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+      "original_current_sha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+      "original_matches_head": true
+    },
+    {
+      "path": "lib/helmut/accounts.js",
+      "baseline_sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "isolated_sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "original_current_sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "original_matches_head": true
+    },
+    {
+      "path": "lib/helmut/scheduler.js",
+      "baseline_sha256": "e6db7e15d7b8241c3de082e1989e1003e9eba7dcb0e4d41f7ab22f67e88ee8fc",
+      "isolated_sha256": "e6db7e15d7b8241c3de082e1989e1003e9eba7dcb0e4d41f7ab22f67e88ee8fc",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "e6db7e15d7b8241c3de082e1989e1003e9eba7dcb0e4d41f7ab22f67e88ee8fc",
+      "original_current_sha256": "e6db7e15d7b8241c3de082e1989e1003e9eba7dcb0e4d41f7ab22f67e88ee8fc",
+      "original_matches_head": true
+    },
+    {
+      "path": "lib/helmut/tenant-context.js",
+      "baseline_sha256": "23aca09ee6218c178581ca7d3fc6cc4126b5336f3c6ad808b68f289ea36f38ac",
+      "isolated_sha256": "23aca09ee6218c178581ca7d3fc6cc4126b5336f3c6ad808b68f289ea36f38ac",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "23aca09ee6218c178581ca7d3fc6cc4126b5336f3c6ad808b68f289ea36f38ac",
+      "original_current_sha256": "23aca09ee6218c178581ca7d3fc6cc4126b5336f3c6ad808b68f289ea36f38ac",
+      "original_matches_head": true
+    },
+    {
+      "path": "vercel.json",
+      "baseline_sha256": "adba635b8282354a44c14d9d15570601c94d36c8fad568aa3c543f0c5955cbf9",
+      "isolated_sha256": "adba635b8282354a44c14d9d15570601c94d36c8fad568aa3c543f0c5955cbf9",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "adba635b8282354a44c14d9d15570601c94d36c8fad568aa3c543f0c5955cbf9",
+      "original_current_sha256": "adba635b8282354a44c14d9d15570601c94d36c8fad568aa3c543f0c5955cbf9",
+      "original_matches_head": true
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "baseline_sha256": "4631c1817fac0950d16a54cb7ee7aaa29713a4e36ad4cb2b8423633e784a70d3",
+      "isolated_sha256": "4631c1817fac0950d16a54cb7ee7aaa29713a4e36ad4cb2b8423633e784a70d3",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "4631c1817fac0950d16a54cb7ee7aaa29713a4e36ad4cb2b8423633e784a70d3",
+      "original_current_sha256": "4631c1817fac0950d16a54cb7ee7aaa29713a4e36ad4cb2b8423633e784a70d3",
+      "original_matches_head": true
+    },
+    {
+      "path": "docs/CURRENT_STATE.md",
+      "baseline_sha256": "25eb03b2998d4496aff451684a4b1845491622cdd1621cc2278faacba4d49900",
+      "isolated_sha256": "25eb03b2998d4496aff451684a4b1845491622cdd1621cc2278faacba4d49900",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "25eb03b2998d4496aff451684a4b1845491622cdd1621cc2278faacba4d49900",
+      "original_current_sha256": "25eb03b2998d4496aff451684a4b1845491622cdd1621cc2278faacba4d49900",
+      "original_matches_head": true
+    },
+    {
+      "path": "AGENTS.md",
+      "baseline_sha256": "d739fe1cfe3e389990f89b6bf5a6f16ef546df62a5d6ae65a3aa4e7196a594a6",
+      "isolated_sha256": "d739fe1cfe3e389990f89b6bf5a6f16ef546df62a5d6ae65a3aa4e7196a594a6",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "d739fe1cfe3e389990f89b6bf5a6f16ef546df62a5d6ae65a3aa4e7196a594a6",
+      "original_current_sha256": "d739fe1cfe3e389990f89b6bf5a6f16ef546df62a5d6ae65a3aa4e7196a594a6",
+      "original_matches_head": true
+    },
+    {
+      "path": "CLAUDE.md",
+      "baseline_sha256": "d26b84468942de3bec4ade070992e7e66638cfa7460149f1854d2baaf4b6a393",
+      "isolated_sha256": "d26b84468942de3bec4ade070992e7e66638cfa7460149f1854d2baaf4b6a393",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "d26b84468942de3bec4ade070992e7e66638cfa7460149f1854d2baaf4b6a393",
+      "original_current_sha256": "d26b84468942de3bec4ade070992e7e66638cfa7460149f1854d2baaf4b6a393",
+      "original_matches_head": true
+    },
+    {
+      "path": "docs/START_HERE.md",
+      "baseline_sha256": "60609675bfb3158cfef9a859d213e07268ba3ddeeb4277088a85fa14b958b030",
+      "isolated_sha256": "60609675bfb3158cfef9a859d213e07268ba3ddeeb4277088a85fa14b958b030",
+      "isolated_matches_baseline": true,
+      "original_head_sha256": "60609675bfb3158cfef9a859d213e07268ba3ddeeb4277088a85fa14b958b030",
+      "original_current_sha256": "60609675bfb3158cfef9a859d213e07268ba3ddeeb4277088a85fa14b958b030",
+      "original_matches_head": true
+    }
+  ],
+  "tests": {
+    "credential_environment": "allowlist; no production variables inherited",
+    "network_guard": "scripts/lokal.js + scripts/lokaler-netzschutz.js",
+    "results": [
+      {
+        "command": [
+          "node",
+          "scripts/lokal.js",
+          "scripts/tenant-guard-test.js"
+        ],
+        "exit_code": 0,
+        "duration_seconds": 0.285,
+        "pass_lines": 37,
+        "fail_lines": 0,
+        "stdout_sha256": "52a649c7dd8319be14bba2b03e5517ae710aa2c6dc44e2f2d136f66ecb53d6f5",
+        "stdout_lines": [
+          "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.",
+          "== 1) assertTenant / assertTenantRows (Einheit) ==",
+          "PASS  assertTenant(null) wirft",
+          "PASS  assertTenant(undefined) wirft",
+          "PASS  assertTenant(\"\") wirft",
+          "PASS  assertTenant(\"   \") wirft",
+          "PASS  assertTenant('mdb-a') gibt String zurück",
+          "PASS  assertTenantRows([]) ok (leer)",
+          "PASS  assertTenantRows([{id,user_id}]) ok",
+          "PASS  assertTenantRows([{id ohne user_id}]) wirft",
+          "== 2) Reads OHNE userId -> harte Ablehnung ==",
+          "PASS  listDecisions({}) -> wirft TenantContextError",
+          "PASS  listDecisions({userId:null}) -> wirft TenantContextError",
+          "PASS  listMatchingResults({}) -> wirft TenantContextError",
+          "PASS  listOfficeOutputsByUser() -> wirft TenantContextError",
+          "== 3) Cross-Tenant-Isolation: userId=A liefert NUR A ==",
+          "PASS  listDecisions(A) -> kein Fehler",
+          "PASS  listDecisions(A): nur mdb-a Zeilen",
+          "PASS  listDecisions(A): KEINE mdb-b Zeile enthalten",
+          "PASS  listDecisions(A): Endpoint trägt user_id=eq.mdb-a",
+          "PASS  listMatchingResults(A) -> kein Fehler",
+          "PASS  listMatchingResults(A): nur mdb-a",
+          "PASS  listOfficeOutputsByUser(A) -> kein Fehler",
+          "PASS  listOfficeOutputsByUser(A): nur mdb-a",
+          "PASS  listDecisions(B) -> kein Fehler",
+          "PASS  listDecisions(B): nur mdb-b",
+          "== 4) erlaubter Zugriff innerhalb desselben Tenants ==",
+          "PASS  A erhält seine 2 Decisions",
+          "PASS  A erhält seinen Match",
+          "== 5) Reads MIT userId, aber Store nicht bereit -> [] (kein Fehler) ==",
+          "PASS  listDecisions(A, store aus) -> kein Fehler",
+          "PASS  Store aus + userId -> leer, kein Leak",
+          "== 6) Schreib-Guard: tenant-lose Zeile -> Ablehnung ==",
+          "PASS  saveDecisions([{id ohne user_id}]) -> wirft TenantContextError",
+          "PASS  saveMatchingResults([{id ohne user_id}]) -> wirft TenantContextError",
+          "PASS  saveDecisions([]) (leer) ok -> kein Fehler",
+          "PASS  saveDecisions([{id,user_id}]) (store aus -> skipped) ok -> kein Fehler",
+          "== 7) Keyed Reads (getProfileEmbedding/getOfficeOutput/canSpendOfficeOutput) ==",
+          "PASS  getProfileEmbedding() -> wirft TenantContextError",
+          "PASS  getProfileEmbedding('') -> wirft TenantContextError",
+          "PASS  getOfficeOutput(undefined, vg, ch) -> wirft TenantContextError",
+          "PASS  canSpendOfficeOutput() -> wirft TenantContextError",
+          "PASS  getProfileEmbedding(A, store aus) -> null",
+          "PASS  getOfficeOutput(A, store aus) -> null",
+          "PASS  canSpendOfficeOutput(A, store aus) -> allowed, used 0",
+          "",
+          "37/37 Tenant-Guard-Assertions erfolgreich."
+        ]
+      },
+      {
+        "command": [
+          "node",
+          "scripts/lokal.js",
+          "scripts/cross-tenant-security-test.js"
+        ],
+        "exit_code": 0,
+        "duration_seconds": 0.142,
+        "pass_lines": 43,
+        "fail_lines": 0,
+        "stdout_sha256": "254ebd3ecf9e0a1c227822fac6d51ddb498d04562fe6ffd818e5ca28d8ae32c3",
+        "stdout_lines": [
+          "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.",
+          "PASS  A liest eigene Tasks",
+          "PASS  A liest eigene Notes",
+          "PASS  A liest eigenes Briefing",
+          "PASS  A liest eigenen LageCheck",
+          "PASS  A liest eigenes Push-Abo",
+          "PASS  Kein B-Leak in A-Sicht (getTasks)",
+          "PASS  Kein B-Leak in A-Sicht (getUserNotes)",
+          "PASS  Kein B-Leak in A-Sicht (getLatestBriefing)",
+          "PASS  Kein B-Leak in A-Sicht (getLatestLageCheck)",
+          "PASS  Kein B-Leak in A-Sicht (getPushSubscriptions)",
+          "PASS  B sieht nur B (Gegenprobe: task-b, nicht task-a)",
+          "PASS  getTasks(null) wirft TenantContextError",
+          "PASS  getTasks(\"\") wirft ebenfalls",
+          "PASS  getUserNotes(null) wirft TenantContextError",
+          "PASS  getUserNotes(\"\") wirft ebenfalls",
+          "PASS  getInteractions(null) wirft TenantContextError",
+          "PASS  getInteractions(\"\") wirft ebenfalls",
+          "PASS  getLageChecks(null) wirft TenantContextError",
+          "PASS  getLageChecks(\"\") wirft ebenfalls",
+          "PASS  getLatestBriefing(null) wirft TenantContextError",
+          "PASS  getLatestBriefing(\"\") wirft ebenfalls",
+          "PASS  getLatestLageCheck(null) wirft TenantContextError",
+          "PASS  getLatestLageCheck(\"\") wirft ebenfalls",
+          "PASS  getTopicMemory(null) wirft TenantContextError",
+          "PASS  getTopicMemory(\"\") wirft ebenfalls",
+          "PASS  getLatestPipelineDebugReport(null) wirft TenantContextError",
+          "PASS  getLatestPipelineDebugReport(\"\") wirft ebenfalls",
+          "PASS  getPushSubscriptions(null) wirft TenantContextError",
+          "PASS  getPushSubscriptions(\"\") wirft ebenfalls",
+          "PASS  listPushEvents(null) wirft TenantContextError",
+          "PASS  listPushEvents(\"\") wirft ebenfalls",
+          "PASS  getPushEventByDedupeKey(null) wirft TenantContextError",
+          "PASS  saveDecisions mit gemischten Mandanten -> CROSS_TENANT_WRITE",
+          "PASS  saveMatchingResults mit gemischten Mandanten -> CROSS_TENANT_WRITE",
+          "PASS  saveDecisions([B-Zeile], expected=A) -> CROSS_TENANT_WRITE",
+          "PASS  saveDecisions([A-Zeile], expected=A) -> KEIN Guard-Fehler",
+          "PASS  saveDecisions mit Zeile ohne user_id -> TenantContextError",
+          "PASS  B-Daten nach allen Angriffsversuchen unveraendert (task-b vorhanden)",
+          "PASS  Abgeordneter A fordert B an -> bekommt A (hart gebunden, requested ignoriert)",
+          "PASS  Referent mit Zuweisung nur A fordert B an -> Fallback A (nie die Fremd-ID)",
+          "PASS  Referent ohne Zuweisung -> null (kein Mandat)",
+          "PASS  getAllowedPoliticianIds: Abgeordneter nur eigenes Mandat",
+          "PASS  getAllowedPoliticianIds: unbekannte Rolle -> [] (kein Mandat)",
+          "",
+          "43/43 Cross-Tenant-Sicherheits-Assertions erfolgreich."
+        ]
+      },
+      {
+        "command": [
+          "node",
+          "scripts/lokal.js",
+          "scripts/profile-validation-test.js"
+        ],
+        "exit_code": 0,
+        "duration_seconds": 0.105,
+        "pass_lines": 36,
+        "fail_lines": 0,
+        "stdout_sha256": "29c18942e50ef362c8b02db711998b13ea00dd248f0bd7ab15606e48b9fe1e52",
+        "stdout_lines": [
+          "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.",
+          "== Vollständig ==",
+          "PASS  Zustand vollstaendig",
+          "PASS  ready=true",
+          "PASS  keine fehlenden Pflichtfelder",
+          "PASS  kann Briefing erhalten",
+          "PASS  kann Radar",
+          "PASS  kann Lage personalisieren",
+          "PASS  kann Helmut empfehlen",
+          "== Teilweise vollständig ==",
+          "PASS  Zustand teilweise",
+          "PASS  ready=false",
+          "PASS  usable=true (funktioniert eingeschränkt)",
+          "PASS  Region fehlt gemeldet",
+          "PASS  Schwerpunkt/Ausschuss fehlt gemeldet",
+          "PASS  kann Briefing (Partei-Dimension reicht)",
+          "== Nicht bereit (leer) ==",
+          "PASS  Zustand nicht_bereit",
+          "PASS  kann NICHTS",
+          "PASS  Name fehlt gemeldet",
+          "== Fehlerhaft (Budget) ==",
+          "PASS  Zustand fehlerhaft",
+          "PASS  Budget-Problem gemeldet",
+          "PASS  nicht usable trotz sonst vollständig",
+          "PASS  Monatsbudget 0 -> fehlerhaft",
+          "PASS  gültiges Budget -> vollständig",
+          "PASS  kein Budget gesetzt -> gültig (Systemdefault)",
+          "== Deaktiviert ==",
+          "PASS  Zustand deaktiviert",
+          "PASS  disabled=true",
+          "PASS  kann NICHTS wenn deaktiviert",
+          "PASS  Soft-Delete -> deaktiviert",
+          "== Landtag ==",
+          "PASS  Landtag ohne Bundesland -> teilweise",
+          "PASS  Bundesland fehlt gemeldet",
+          "PASS  Landtag mit Bundesland -> vollständig",
+          "== Landtag: profileCompleteness akzeptiert bundesland ==",
+          "PASS  Landtag mit 'bundesland' (ohne 'state') -> profileCompleteness meldet NICHT state fehlt",
+          "PASS  Landtag mit 'bundesland' (ohne 'state') -> profileCompleteness complete=true",
+          "PASS  Landtag ohne state UND ohne bundesland -> profileCompleteness meldet state fehlt",
+          "PASS  Bundestag -> profileCompleteness meldet nie state fehlt",
+          "== Fraktionslos ==",
+          "PASS  Fraktionslos gilt als Partei-Angabe",
+          "== Fixture-Profil (vollständig) ==",
+          "PASS  Fixture-Profil ist vollständig",
+          "PASS  Fixture-Profil kann alles",
+          "",
+          "36/36 Profilvalidierungs-Assertions erfolgreich."
+        ]
+      }
+    ]
+  },
+  "not_tested": [
+    "HTTP login/reset flow",
+    "browser prototype",
+    "full UI branch",
+    "production database or RLS",
+    "production package contents",
+    "proposed admin result endpoint",
+    "motor/UI integration"
+  ],
+  "side_effects": {
+    "source_checkout_mutated": false,
+    "production_api_calls": 0,
+    "production_writes": 0,
+    "model_calls": 0,
+    "ci_dispatches": 0,
+    "package_installations": 0,
+    "branch_pushes": 0,
+    "pull_requests_created": 0,
+    "deployments": 0,
+    "shared_file_changes": 0
+  }
+}

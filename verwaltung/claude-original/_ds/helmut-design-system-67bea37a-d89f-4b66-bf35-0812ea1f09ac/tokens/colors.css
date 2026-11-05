@@ -1,0 +1,77 @@
+/* ============================================================
+   HELMUT — COLOR TOKENS
+   The interface lives in the dark. One editorial blue accent
+   carries interaction; a small signal set (risk / chance /
+   watch) marks political weight. Everything else is ink on
+   deep navy, separated only by hairlines.
+   ============================================================ */
+:root{
+  color-scheme: dark;
+
+  /* --- Surfaces (deep navy, near-black) --- */
+  --bg:            #070B16;   /* app / page base */
+  --bg-1:          #0A0F1B;   /* raised section */
+  --bg-2:          #0C1322;   /* card / panel */
+  --bg-footer:     #05080F;   /* deepest, footer / chrome */
+
+  /* --- Ink / text --- */
+  --ink:           #EAEEF6;   /* primary text, headings */
+  --text:          #AEB8C9;   /* body */
+  --text-2:        #9BA6B8;   /* secondary body */
+  --muted:         #828EA0;   /* labels, meta */
+  --muted-2:       #6E7A8C;   /* faint meta, disabled */
+
+  /* --- Lines (hairlines, never heavy) --- */
+  --line:          rgba(255,255,255,.08);
+  --line-2:        rgba(255,255,255,.13);
+  --line-strong:   rgba(255,255,255,.40);
+
+  /* --- Accent (single editorial blue; derived tones follow) --- */
+  --accent:        #7FA8E0;
+  --accent-strong: #a7c3ea;   /* hover ink (accent mixed toward white) */
+  --accent-dim:    rgba(127,168,224,.15);  /* glow / wash */
+  --accent-line:   rgba(127,168,224,.34);  /* accent hairline */
+
+  /* --- Solid button (light surface on dark) --- */
+  --solid:         #E9EDF5;
+  --solid-hover:   #ffffff;
+  --on-solid:      #0A0F1C;
+
+  /* --- Signal set (political weight; use sparingly) --- */
+  --risk:          #ff5967;   /* Risiko / act now / danger */
+  --risk-dim:      rgba(255,89,103,.14);
+  --chance:        #39d18f;   /* Chance / opportunity */
+  --chance-dim:    rgba(57,209,143,.14);
+  --watch:         #d6a040;   /* Beobachten / caution / deadline */
+  --watch-dim:     rgba(214,160,64,.13);
+
+  /* --- Brand mark --- */
+  --mark-square:   #EDEFF4;   /* light rounded square behind the H */
+  --mark-ink:      #0A0F1C;   /* the H itself */
+
+  /* ==========================================================
+     SEMANTIC ALIASES — reference these in components, not the
+     raw values above.
+     ========================================================== */
+  --surface-page:      var(--bg);
+  --surface-raised:    var(--bg-1);
+  --surface-card:      var(--bg-2);
+  --surface-chrome:    var(--bg-footer);
+
+  --text-heading:      var(--ink);
+  --text-body:         var(--text);
+  --text-secondary:    var(--text-2);
+  --text-muted:        var(--muted);
+  --text-faint:        var(--muted-2);
+
+  --border-hairline:   var(--line);
+  --border-default:    var(--line-2);
+  --border-focus:      var(--accent);
+
+  --interactive:       var(--accent);
+  --interactive-hover: var(--accent-strong);
+
+  --signal-risk:       var(--risk);
+  --signal-chance:     var(--chance);
+  --signal-watch:      var(--watch);
+}

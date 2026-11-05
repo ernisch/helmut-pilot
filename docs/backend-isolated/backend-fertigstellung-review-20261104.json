@@ -1,0 +1,22 @@
+{
+  "kind": "reported_independent_static_review",
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "xhigh",
+  "source": "separate read-only Codex helper original_security_review; keine eigenen Testlaeufe",
+  "c_findings": [
+    "Detail-401/403 nach Navigation global behandeln und private Daten/Cache loeschen",
+    "Echten Kontosperr-PATCH nicht als Simulation beschriften",
+    "Keinen festen Lexware-Verbindungserfolg anzeigen",
+    "Unbekannte Filter und Profilkosten nicht als Null-/Negativbefund darstellen",
+    "Historische Laeufe nicht als heutige bezeichnen",
+    "Kundenzuordnung auch bei fehlender Profiluebersicht erhalten"
+  ],
+  "c_followup": "Alle sechs Sicherheits-/Wahrheitsbefunde geschlossen; 21/21-Beleg zum nachgeprueften Stand gelesen. Danach nur KPI-Platzhalter und neutraler Abrechnungspunkt geaendert und 21Gruppen/6Bilder erneut bestanden.",
+  "d1": "Begrenzten Konfliktfix akzeptiert; Altbestand bleibt offen.",
+  "d2_combination": "D2 und D1+D2 akzeptiert; Guard innerhalb wiederholbarer Mutation vor Schreiben. Keine verteilte DB-Abnahme.",
+  "remaining": [
+    "Bestehende widerspruechliche oder bereits verlorene Adminzugaenge nicht repariert",
+    "Gemeinsame Integration und Profilvertrag offen",
+    "Originalruntime-/React-/Bedienabnahme offen"
+  ]
+}

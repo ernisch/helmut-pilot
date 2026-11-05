@@ -1,0 +1,351 @@
+{
+  "scope": "BACKEND_HTTP_ONLY_CURRENT_UI_FILES_UNAVAILABLE",
+  "ui": {
+    "branch": "codex/helmut-ui-20261031",
+    "reportedCommit": "373c373d",
+    "parent": "a41d51f194dba526c7aab6b922f6dc33eed3d618",
+    "source": "user and read-only UI-thread handoff; no current UI runtime available"
+  },
+  "checks": [
+    {
+      "name": "Anmeldung und anonyme Sitzung: echte Antworten und Cookie-Schutz",
+      "status": "PASS"
+    },
+    {
+      "name": "Sessionverlaengerung schreibt nur die eigene synthetische Sitzung",
+      "status": "PASS"
+    },
+    {
+      "name": "Appstart liefert echte Profil-, Aufgaben-, Notiz- und Bereichsvertraege",
+      "status": "PASS"
+    },
+    {
+      "name": "Mandantentrennung fuer Mitglied und Referent; fehlende Zuweisung bleibt403",
+      "status": "PASS"
+    },
+    {
+      "name": "CSRF blockiert alle sechs schreibfaehigen GETs und beide Buero-POSTs",
+      "status": "PASS"
+    },
+    {
+      "name": "Profilpflege erzwingt die Sitzungskennung trotz fremder URL und Body-ID",
+      "status": "PASS"
+    },
+    {
+      "name": "Original-Verwaltungsadapter legt reales gesperrtes Kundenkonto ohne Mail an",
+      "status": "PASS"
+    },
+    {
+      "name": "Kommunikations-POST bleibt regelbasiert und ist kein persistierter KI-Entwurf",
+      "status": "PASS"
+    },
+    {
+      "name": "Native Office-API verlangt eigene DTO/Kanaele und prueft Flag sowie fertiges KO",
+      "status": "PASS"
+    },
+    {
+      "name": "Echte Serverfehler: Auth503 und Profil500 liefern keine fremden Daten",
+      "status": "PASS"
+    },
+    {
+      "name": "Abmeldung entwertet die echte lokale Sitzung",
+      "status": "PASS"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/security/csrf",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start?politicianId=integration-synthetic-alpha",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/briefing/latest?politicianId=integration-synthetic-alpha",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start?politicianId=integration-synthetic-beta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start?politicianId=integration-synthetic-beta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/briefing/run",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/crawl/run",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/pipeline/run",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/lage/check",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/lage/briefing",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/push/test",
+      "status": 403
+    },
+    {
+      "method": "POST",
+      "path": "/api/communication/generate",
+      "status": 403
+    },
+    {
+      "method": "POST",
+      "path": "/api/office/generate",
+      "status": 403
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/profile/current?politicianId=integration-synthetic-alpha",
+      "status": 403
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/profile/current?politicianId=integration-synthetic-beta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/security/csrf",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/users/user-626fa5bfd43849825f",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/communication/generate?politicianId=integration-synthetic-alpha",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/office/generate?politicianId=integration-synthetic-alpha",
+      "status": 400
+    },
+    {
+      "method": "POST",
+      "path": "/api/office/generate?politicianId=integration-synthetic-alpha",
+      "status": 400
+    },
+    {
+      "method": "POST",
+      "path": "/api/office/generate?politicianId=integration-synthetic-alpha",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/office/generate?politicianId=integration-synthetic-alpha",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 503
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start?politicianId=integration-synthetic-alpha",
+      "status": 500
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/app/start",
+      "status": 401
+    }
+  ],
+  "blockedFetchOrigins": [
+    [
+      "    at <isolated-backend>/lib/helmut/storage.js:5820:30",
+      "    at performSupabaseFetch (<isolated-backend>/lib/helmut/storage.js:5846:7)",
+      "    at supabaseRequest (<isolated-backend>/lib/helmut/storage.js:5864:10)",
+      "    at getLatestCompleteKnowledgeObjectAt (<isolated-backend>/lib/helmut/storage.js:7179:24)"
+    ],
+    [
+      "    at <isolated-backend>/lib/helmut/storage.js:5820:30",
+      "    at performSupabaseFetch (<isolated-backend>/lib/helmut/storage.js:5846:7)",
+      "    at supabaseRequest (<isolated-backend>/lib/helmut/storage.js:5864:10)",
+      "    at getLatestCompleteKnowledgeObjectAt (<isolated-backend>/lib/helmut/storage.js:7179:24)"
+    ],
+    [
+      "    at <isolated-backend>/lib/helmut/storage.js:5820:30",
+      "    at performSupabaseFetch (<isolated-backend>/lib/helmut/storage.js:5846:7)",
+      "    at supabaseRequest (<isolated-backend>/lib/helmut/storage.js:5864:10)",
+      "    at getLatestCompleteKnowledgeObjectAt (<isolated-backend>/lib/helmut/storage.js:7179:24)"
+    ],
+    [
+      "    at <isolated-backend>/lib/helmut/storage.js:5820:30",
+      "    at performSupabaseFetch (<isolated-backend>/lib/helmut/storage.js:5846:7)",
+      "    at supabaseRequest (<isolated-backend>/lib/helmut/storage.js:5864:10)",
+      "    at getLatestCompleteKnowledgeObjectAt (<isolated-backend>/lib/helmut/storage.js:7179:24)"
+    ],
+    [
+      "    at <isolated-backend>/lib/helmut/storage.js:5820:30",
+      "    at performSupabaseFetch (<isolated-backend>/lib/helmut/storage.js:5846:7)",
+      "    at supabaseRequest (<isolated-backend>/lib/helmut/storage.js:5864:10)",
+      "    at getLatestCompleteKnowledgeObjectAt (<isolated-backend>/lib/helmut/storage.js:7179:24)"
+    ],
+    [
+      "    at <isolated-backend>/lib/helmut/storage.js:5820:30",
+      "    at performSupabaseFetch (<isolated-backend>/lib/helmut/storage.js:5846:7)",
+      "    at supabaseRequest (<isolated-backend>/lib/helmut/storage.js:5864:10)",
+      "    at getLatestCompleteKnowledgeObjectAt (<isolated-backend>/lib/helmut/storage.js:7179:24)"
+    ],
+    [
+      "    at <isolated-backend>/lib/helmut/storage.js:5820:30",
+      "    at performSupabaseFetch (<isolated-backend>/lib/helmut/storage.js:5846:7)",
+      "    at supabaseRequest (<isolated-backend>/lib/helmut/storage.js:5864:10)",
+      "    at getLatestCompleteKnowledgeObjectAt (<isolated-backend>/lib/helmut/storage.js:7179:24)"
+    ]
+  ],
+  "startShape": {
+    "keys": [
+      "profile",
+      "briefing",
+      "tasks",
+      "notes",
+      "aiStatus",
+      "version"
+    ],
+    "lage": "v3-disabled",
+    "radar": "empty",
+    "radarAnzeigePresent": false,
+    "helmut": "stale"
+  },
+  "customerAdapterResultKeys": [
+    "user",
+    "profileReferenceOnly",
+    "priceAgreed",
+    "invitationSent"
+  ],
+  "communication": {
+    "channel": "press",
+    "fallbackReason": "kein-ki-schluessel",
+    "persistedId": false
+  },
+  "externalFetchForwarded": 0,
+  "status": "PASS_BACKEND_HTTP_ONLY",
+  "counters": {
+    "provider": 0,
+    "mail": 0,
+    "blockedFetch": 7,
+    "unexpectedRoutes": 0
+  },
+  "accountsSha256": "608838b6674a17c1028bd3cda3edcb129188f6d75923fbb7b62bab04fdf6e703",
+  "runtimeHashes": {
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "lib/helmut/accounts.js": "608838b6674a17c1028bd3cda3edcb129188f6d75923fbb7b62bab04fdf6e703",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145"
+  },
+  "time": "2026-11-04T13:29:21.627Z",
+  "testSha256": "31077c6e33c3adacc9b67b9b13231d3afbace6d747e3bc5677a309433f42586b"
+}

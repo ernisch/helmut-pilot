@@ -1,0 +1,1013 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-04T13:04:40.813455+00:00",
+  "branch": "feat/claude-backend-isolated",
+  "head": "ae18658e5caac2b39403c0e41e3a8af5c2b3d7be",
+  "main": "773f7aa545bfeac9429ef368c49e302e68772cc6",
+  "motor_pr": {
+    "number": 1038,
+    "title": "fix(w15): erste innere Prepare-Fehlerkennung sicher erhalten",
+    "state": "open",
+    "draft": true,
+    "head": "aa3c4eaf4100bd2c7cbb87a4930294ed85c35dfb",
+    "branch": "codex/w15-mock500-prepare-failure-20261104",
+    "base": "codex/w15-mock500-slot2-result-20261104",
+    "baseSha": "8bd3fd8c2db29f928e90d510b1dd6b108a56f4ee",
+    "updatedAt": "2026-11-04T12:03:26Z",
+    "url": "https://github.com/ernisch/helmut-pilot/pull/1038"
+  },
+  "head_unchanged": true,
+  "tracked_diff": " verwaltung/README.md | 31 ++++++++++++++++++++++++++++++-\n 1 file changed, 30 insertions(+), 1 deletion(-)",
+  "start_files_retained": 63,
+  "modified_owned_start_files": [
+    "verwaltung/README.md",
+    "scripts/original-verwaltung-paket.js",
+    "verwaltung/original-actions.mjs",
+    "verwaltung/original-adapter.mjs",
+    "verwaltung/original-controller.mjs"
+  ],
+  "protected_files": [
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/server.js",
+      "sha256": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/server.js",
+      "sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/client.js",
+      "sha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/client.js",
+      "sha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/styles.css",
+      "sha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/styles.css",
+      "sha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/index.html",
+      "sha256": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/index.html",
+      "sha256": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/lib/helmut/storage.js",
+      "sha256": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/lib/helmut/storage.js",
+      "sha256": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/lib/helmut/auth.js",
+      "sha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/lib/helmut/auth.js",
+      "sha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/lib/helmut/accounts.js",
+      "sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/lib/helmut/accounts.js",
+      "sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/lib/helmut/scheduler.js",
+      "sha256": "e6db7e15d7b8241c3de082e1989e1003e9eba7dcb0e4d41f7ab22f67e88ee8fc",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/lib/helmut/scheduler.js",
+      "sha256": "e6db7e15d7b8241c3de082e1989e1003e9eba7dcb0e4d41f7ab22f67e88ee8fc",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/lib/helmut/tenant-context.js",
+      "sha256": "23aca09ee6218c178581ca7d3fc6cc4126b5336f3c6ad808b68f289ea36f38ac",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/lib/helmut/tenant-context.js",
+      "sha256": "23aca09ee6218c178581ca7d3fc6cc4126b5336f3c6ad808b68f289ea36f38ac",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/vercel.json",
+      "sha256": "adba635b8282354a44c14d9d15570601c94d36c8fad568aa3c543f0c5955cbf9",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/vercel.json",
+      "sha256": "adba635b8282354a44c14d9d15570601c94d36c8fad568aa3c543f0c5955cbf9",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/.github/workflows/ci.yml",
+      "sha256": "4631c1817fac0950d16a54cb7ee7aaa29713a4e36ad4cb2b8423633e784a70d3",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/.github/workflows/ci.yml",
+      "sha256": "4631c1817fac0950d16a54cb7ee7aaa29713a4e36ad4cb2b8423633e784a70d3",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/docs/CURRENT_STATE.md",
+      "sha256": "25eb03b2998d4496aff451684a4b1845491622cdd1621cc2278faacba4d49900",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/docs/CURRENT_STATE.md",
+      "sha256": "25eb03b2998d4496aff451684a4b1845491622cdd1621cc2278faacba4d49900",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/AGENTS.md",
+      "sha256": "d739fe1cfe3e389990f89b6bf5a6f16ef546df62a5d6ae65a3aa4e7196a594a6",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/AGENTS.md",
+      "sha256": "d739fe1cfe3e389990f89b6bf5a6f16ef546df62a5d6ae65a3aa4e7196a594a6",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/CLAUDE.md",
+      "sha256": "d26b84468942de3bec4ade070992e7e66638cfa7460149f1854d2baaf4b6a393",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/CLAUDE.md",
+      "sha256": "d26b84468942de3bec4ade070992e7e66638cfa7460149f1854d2baaf4b6a393",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/docs/START_HERE.md",
+      "sha256": "60609675bfb3158cfef9a859d213e07268ba3ddeeb4277088a85fa14b958b030",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-pilot/docs/START_HERE.md",
+      "sha256": "60609675bfb3158cfef9a859d213e07268ba3ddeeb4277088a85fa14b958b030",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/lib/helmut/ai.js",
+      "sha256": "33a64efbe45989f4ee5f3f1268c0874c0a2c4924b2ac4c825977005824ccbd5a",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/lib/helmut/lage.js",
+      "sha256": "a622d2c5e3aea1aee7149a7749d77cc736a9b3891bb5b0f351c112f638694758",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/lib/helmut/office.js",
+      "sha256": "597d1344dc3c092bfa065e05bb17224880bbecb112ce4421f86b661a4226119c",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/lib/helmut/briefingContract.js",
+      "sha256": "285939d8d37432c16ed48346b26787f6ed14448cd090713b47eb4005104a7e02",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/lib/helmut/radarState.js",
+      "sha256": "aad627cc79c73b4004c6049ab73fbc0440c319f6978c1d74b93a2616988dcc06",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/lib/helmut/accounts.js",
+      "sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/lib/helmut/auth-store-cas.js",
+      "sha256": "3dccc75030aace2142288400f089d468480196bc8d6b947a67cf10778b88b544",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/verwaltung/styles.css",
+      "sha256": "26fc3a5230fd7a193e2211cd7a2db1d1c01559c609f5a0a7018435b4b357bb65",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/verwaltung/index.html",
+      "sha256": "6e7b703b10fc0193e63aef3baf0446514f8f62e60a542e22049635b8a3345d39",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/verwaltung/app.mjs",
+      "sha256": "497ed4b54c4f6733bf890d7154bd822a8eda59ef7004df4bdb81ed5038d2e025",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/verwaltung/api.mjs",
+      "sha256": "553052b47779d9ce6d5d06ef7489805e0f67dddf0b4dd0ab9aba48949359d374",
+      "unchanged": true
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-isolated/verwaltung/model.mjs",
+      "sha256": "ebdc851760c703324a718662e44160daca8528cbe7056fc5e89ea8ad89b277c3",
+      "unchanged": true
+    }
+  ],
+  "original_assets_unchanged": 25,
+  "runtime_verified": {
+    "version": "18.3.1",
+    "source": "Already declared original Claude runtime; exact original SRI verified",
+    "files": [
+      {
+        "path": "react-18.3.1.production.min.js",
+        "source": "https://unpkg.com/react@18.3.1/umd/react.production.min.js",
+        "bytes": 10751,
+        "sha384": "DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z",
+        "sha256": "d949f1c3687aedadcedac85261865f29b17cd273997e7f6b2bfc53b2f9d4c4dd",
+        "matches_original_sri": true
+      },
+      {
+        "path": "react-dom-18.3.1.production.min.js",
+        "source": "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js",
+        "bytes": 131835,
+        "sha384": "gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1",
+        "sha256": "35f4f974f4b2bcd44da73963347f8952e341f83909e4498227d4e26b98f66f0d",
+        "matches_original_sri": true
+      },
+      {
+        "path": "react-18.3.1.LICENSE.txt",
+        "source": "https://unpkg.com/react@18.3.1/LICENSE",
+        "bytes": 1086,
+        "sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85"
+      },
+      {
+        "path": "react-dom-18.3.1.LICENSE.txt",
+        "source": "https://unpkg.com/react-dom@18.3.1/LICENSE",
+        "bytes": 1086,
+        "sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85"
+      }
+    ]
+  },
+  "source_files_before_this_evidence": [
+    {
+      "status": " M",
+      "path": "verwaltung/README.md",
+      "sha256": "4c1f807a914ea5c88eaa16610af6fd49d1bf4c76bf6b3cd7d844e9718c2a8ab5",
+      "bytes": 7022
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/backend-fertigstellung-20261104.md",
+      "sha256": "9a15584f45cfda415430fc4c4dcecba6ee2cec5e9329d2bd36eeee3bb11e8748",
+      "bytes": 11917
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/backend-fertigstellung-integritaet-20261104.json",
+      "sha256": "08e503f2466c3787edb5d511529905b6e310034a47c86dcfe68ceb7d75eea5d9",
+      "bytes": 31695
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/backend-fertigstellung-review-20261104.json",
+      "sha256": "9a69c3f9b308d9c746aa69fc1b26a010c7575c6dfd26251d2aaff532a168d7fd",
+      "bytes": 1286
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/backend-parallel-abschluss-20261104.md",
+      "sha256": "79d49cd2ee94ded12f14fea788946ab4b58f3dee316520ce028ff54eb46861de",
+      "bytes": 11171
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/backend-parallel-review-20261104.json",
+      "sha256": "a46a617d31b8f091a78664b53db2dab1f1d96d62d7773001cf1be9696c67a1f8",
+      "bytes": 784
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/interaktive-abnahme-pruefbeleg-20261104.json",
+      "sha256": "327111fb3d49e9b6b012fccb32853e7443b58de6c52fd2f9de1776bf24f65c02",
+      "bytes": 7434
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/kontosicherheit-abgleich-20261104.json",
+      "sha256": "8d707e892b227aaad3329f4bd43cc3f1f625c0bbd17da1d01070b4c10f3f3b95",
+      "bytes": 9923
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/kontosicherheit-abgleich-20261104.md",
+      "sha256": "f2f2787da0f17ae6e02a86554d1d157fb0bb9062f3a897f03359b46ea0a2d026",
+      "bytes": 5936
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/kundenformular-anschluss-20261104.md",
+      "sha256": "dbe4110752079c7e741f637406975dc1365a61d8851f63802e475c5ecc051f27",
+      "bytes": 9186
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/kundenformular-nachreview-20261104.log",
+      "sha256": "918b1c2513b3fda69c7e90d8533653bd7bf21df05996284849dee058180b52bb",
+      "bytes": 2196
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/kundenformular-nachreview-20261104.md",
+      "sha256": "26dfdd199ee8cf78ad6de63d05a5887830e04b62420e93b3ee25fc36e4db1148",
+      "bytes": 4055
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/kundenformular-nachreview-pruefbeleg-20261104.json",
+      "sha256": "bc68f92f196ea985f8317b58479ab54ef435807ecabeff60d29d1f4978d4cfaf",
+      "bytes": 7329
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/kundenformular-pruefbeleg-20261104.json",
+      "sha256": "8c8ef418960d8bf1244ca00c930ef8afba2e05bb108219a43614398549d5ce93",
+      "bytes": 6753
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/original-verwaltung-bildbeleg-20261104.json",
+      "sha256": "ada0dccf899c44423a50b836cf0dc3fce2f57d2003cc002277d078a19cccf48d",
+      "bytes": 3448
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/original-verwaltung-pruefbeleg-20261104.json",
+      "sha256": "3fb03640e5d1cb1bb8712ecee96b70c6d4ce70d08768dfe5cb8c3d7a70c289b2",
+      "bytes": 5943
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/profil-lesefehler-kandidat-20261104.patch",
+      "sha256": "9fc450c2440996be32df46d7ece842b041f9e34aedce8504693fc2a05afd7484",
+      "bytes": 858
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/profil-lesefehler-pruefbeleg-20261104.json",
+      "sha256": "5494e80141d2c5ef4ba6da95f25d9dc3c2c1d8455b8a48025c1af5e1c98fd2f4",
+      "bytes": 4922
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-a-pruefbeleg-20261104.json",
+      "sha256": "be0ca449e0fe785b6c122dc64ebac5cf5c93c00b400a464fc7d0d74ed5aef2d9",
+      "bytes": 13967
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-b-pruefbeleg-20261104.json",
+      "sha256": "24b16ade187cf3e5308b9bd02aa35018e2461e37e56829635caa6fd8b054346e",
+      "bytes": 22337
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-b-schnittstellen-20261104.md",
+      "sha256": "64135dc570c2df9ba0042e03f239dc80a93090782c6c3c045733449678ac08ce",
+      "bytes": 9172
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d-kombination-20261104.json",
+      "sha256": "b61157cae36ae0fa1884a447e06636f270369ab388887f7f230139268736b3a2",
+      "bytes": 44320
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d-kontoverwaltung-20261104.md",
+      "sha256": "a07c4f88138e750efec4778e828650a67bb09befbb1531a2a3c3af7094f39c19",
+      "bytes": 11131
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d-pruefbeleg-20261104.json",
+      "sha256": "9b692ac8e650636dbbd10053dc2e5b499a1f895f9716a1f18ec3d508a1647a1c",
+      "bytes": 12473
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d-status-active.patch",
+      "sha256": "bf0c77ecc2950cfc34fee9bfd49c707d934e975500f3817cb9e232d7fe70954e",
+      "bytes": 986
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d-status-baseline-20261104.json",
+      "sha256": "08b4007e85b41b8ef09bfdb97081602ed347008283bd8eb46ae8dfc853363d35",
+      "bytes": 9356
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d-status-kandidat-20261104.json",
+      "sha256": "6e50cd86a4c283cd75bc44aee7a8ad4317060be5eaefb6c3b8fdda314f831150",
+      "bytes": 9426
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d2-baseline-20261104.json",
+      "sha256": "be8ce834b8fa60f67fdc43f4055eb1bfe64cb9a57ccda6e56b7f5bf254a0245a",
+      "bytes": 30251
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d2-kandidat-20261104.json",
+      "sha256": "430d31843011da7a6ad43e5410c92b893fc4351826ab3f664461e66b9be66861",
+      "bytes": 30901
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d2-last-admin-20261104.md",
+      "sha256": "ed7693f9b5ae6fb85ba642e5e93a776e2549e4e074f86c20c2e128ffe76b6461",
+      "bytes": 8865
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprint-d2-last-admin.patch",
+      "sha256": "e5c2f1abf7d340c671c76187bf743d55e3fbca0a5b18398aca52bd967957868a",
+      "bytes": 1381
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprints-ab-abschluss-20261104.md",
+      "sha256": "2b80cf882fcb4ea55b2960e887f99783965cfae67833ec26df9da152c2e5bd31",
+      "bytes": 10720
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprints-ab-designvergleich-20261104.json",
+      "sha256": "212cb9c8988b73855b3983c97cc7226aabbec9a0f192aeccc452325fdbd70776",
+      "bytes": 4513
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/sprints-ab-integritaet-20261104.json",
+      "sha256": "d1f23167c85262afd291dcc3f39204212a223c4264b8d398fb3ba45af54db6ac",
+      "bytes": 23548
+    },
+    {
+      "status": "??",
+      "path": "docs/backend-isolated/tagesbilanz-pruefbeleg-20261104.json",
+      "sha256": "0849f53d1b26e81b4b9157d551122b215217fd92581bc16b717d763ec1438145",
+      "bytes": 1774
+    },
+    {
+      "status": "??",
+      "path": "scripts/admin-profil-lesefehler-kandidat-test.js",
+      "sha256": "cceed14f8b22209e8eb0ae0553fba73885ea8f2c99714caee13889d7f010e6c7",
+      "bytes": 6682
+    },
+    {
+      "status": "??",
+      "path": "scripts/kontosicherheit-abgleich-20261104.py",
+      "sha256": "e089ee01bcd2959431c75a6a4d9fab211ed082251117e2fc6f07223331c6c0b1",
+      "bytes": 8646
+    },
+    {
+      "status": "??",
+      "path": "scripts/kundenformular-test.js",
+      "sha256": "c3b8c9d48fb01f374bbc6358d945e548b757733963b10c0a3467b19e2520cfdc",
+      "bytes": 28248
+    },
+    {
+      "status": "??",
+      "path": "scripts/original-tagesbilanz-test.js",
+      "sha256": "2d50d5b684c858f52182b5f37115a66c8900444cd69a2e597f5a048d42fbea5b",
+      "bytes": 6013
+    },
+    {
+      "status": "??",
+      "path": "scripts/original-verwaltung-bildtest.js",
+      "sha256": "5133cd0e726b52d2b579b867b806c1289debf01dc7acf9cd128f79e4df8c4f34",
+      "bytes": 10834
+    },
+    {
+      "status": "??",
+      "path": "scripts/original-verwaltung-interaktiv-test.js",
+      "sha256": "6487939c3bd7677226368f284feb3b23d1f3c97abbf3c39dad9141268c8aa532",
+      "bytes": 20838
+    },
+    {
+      "status": "??",
+      "path": "scripts/original-verwaltung-paket.js",
+      "sha256": "e758a7cd382647cc2717493084cc11f3a1f1600763798586febd7c4c32ae29c9",
+      "bytes": 6314
+    },
+    {
+      "status": "??",
+      "path": "scripts/original-verwaltung-test.js",
+      "sha256": "dd8bafe1e4167689b217074edf77fad49626085c4107594d4149d72c716821a2",
+      "bytes": 20016
+    },
+    {
+      "status": "??",
+      "path": "scripts/sprint-a-admin-leserouten-test.js",
+      "sha256": "b16bb1f4c10e8549f6aad22bf4a568e91c278dda4b3dd8b7bf43db20ad997526",
+      "bytes": 15330
+    },
+    {
+      "status": "??",
+      "path": "scripts/sprint-ab-designvergleich.js",
+      "sha256": "94037a5d14b80793b864e61867ad809fddbbf01552e920c8cfad0e40f0048188",
+      "bytes": 14360
+    },
+    {
+      "status": "??",
+      "path": "scripts/sprint-b-schnittstellen-test.js",
+      "sha256": "637cc90be84155971c5927f7d15eb3312d0d67d29005cd44490ee00d7d540e6e",
+      "bytes": 9369
+    },
+    {
+      "status": "??",
+      "path": "scripts/sprint-d-kombination-test.js",
+      "sha256": "520ff7a1e3fdcbad4f197a1ecc44b1b7f9a422945358cbefcb5cbb79aa42607b",
+      "bytes": 7515
+    },
+    {
+      "status": "??",
+      "path": "scripts/sprint-d-kontoverwaltung-test.js",
+      "sha256": "5eb0699c03616e0db8aec32c01197e456b853f98dbc5d137a37dedb3a04bd068",
+      "bytes": 26480
+    },
+    {
+      "status": "??",
+      "path": "scripts/sprint-d2-last-admin-test.js",
+      "sha256": "0570d4fc80432ecf66cead592e64ddea39409cee1d7a5ad4bb576fc791e51a09",
+      "bytes": 16488
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original-manifest.json",
+      "sha256": "8d33b3ba188671c77cda52634f7bf961a992e9bb3a7829b0f6f7ebd4c250b384",
+      "bytes": 4398
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/Helmut Verwaltung v3.dc.html",
+      "sha256": "9bdcf76ae6771655351c68ada79e4301348f452d12b5cbabe15c4ef4fe275418",
+      "bytes": 91184
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/_adherence.oxlintrc.json",
+      "sha256": "8197466e5bc69389417e411247be48a0879f92965c95d2e96ad823b49ad8879e",
+      "bytes": 11160
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/_ds_bundle.js",
+      "sha256": "066f520fe80585116691c8276afff4a86ee757cac1686e47f1f098e6a2a3e6fe",
+      "bytes": 52666
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/_ds_manifest.json",
+      "sha256": "949544ecfd827b707a2bed908352fb58708581ffb56e0cdd705785be8540f1e9",
+      "bytes": 15678
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/HankenGrotesk-var.ttf",
+      "sha256": "813b3f8fa0965405669a89b38e51bbefd95eef6b8e20d1cb2d8c10cce062662f",
+      "bytes": 132892
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Medium.ttf",
+      "sha256": "a9b4c49bb299e05b5f6c481e7fb5e78943d2793249a0c8874ab574a2d1ea6755",
+      "bytes": 136704
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/IBMPlexMono-Regular.ttf",
+      "sha256": "6a3412f058c7d8dfd9170c41e85ade48e5156ecb89356110ca57a0a27734af46",
+      "bytes": 135580
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Medium.ttf",
+      "sha256": "f385bc588599c879112272711d4acecc126674009d747a27284f59e93a240e83",
+      "bytes": 272920
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/assets/fonts/Spectral-Regular.ttf",
+      "sha256": "c89021dc20720c8d0dcf40b0b2f6e00c13665fa8041717f581396f51b8c78f5d",
+      "bytes": 261088
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/readme.md",
+      "sha256": "5ede1e8dcf106083419a32f774737a9a559add935dfdae07bdb9b6ec74935c30",
+      "bytes": 13429
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/styles.css",
+      "sha256": "9acb03ace9f271cd59694a3ca00c3314cd1100fec7c2b18c023ca266b90d2243",
+      "bytes": 382
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/colors.css",
+      "sha256": "031321710634f8a0a8d25c6ece3e1ac773ddb071757898f5b171e08e9688de0f",
+      "bytes": 2953
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/fonts.css",
+      "sha256": "53d384b0f4208dae8847429975568d43c626bd598b02f9271f990af3cc05be7d",
+      "bytes": 913
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/spacing.css",
+      "sha256": "6611bf3c62d1635895737068ad847848d76f12023d8422db2b853fd25ba931fd",
+      "bytes": 1455
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/_ds/helmut-design-system-67bea37a-d89f-4b66-bf35-0812ea1f09ac/tokens/typography.css",
+      "sha256": "c9d05456e2efa9f4e14a1a87b14686482eb5e5b71c811ac7039c2ddd51cb9364",
+      "bytes": 2018
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/README.md",
+      "sha256": "79b9836bd3ff107a158bbf68a239f22e60a274e5039236e9e035a4d323f4b334",
+      "bytes": 1697
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/favicon-32.png",
+      "sha256": "f2173c0277bb89ae745ac8ddebc3fd00e3fc2cdeda0d1820ff5d531d801d4af9",
+      "bytes": 6361
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/favicon.svg",
+      "sha256": "9ce6218af1ddec9aa469c1c99289626bca0953c044b1ed261f637e073c33bd95",
+      "bytes": 8318
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/helmut-h.svg",
+      "sha256": "ceb27237d05a1f44a9d267eb7ed62133c6eaa82d1f1ee2d8e7dbd4ef17ba147d",
+      "bytes": 8284
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/helmut-zeichen-invers.svg",
+      "sha256": "96c3db7dc7a847f0e1a5bcef9b458df8edc5da58d98b361ab194f837ae67d4e8",
+      "bytes": 8348
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/helmut-zeichen.svg",
+      "sha256": "9d885030b873da5e0796f361adfc183c2830b38011ee505fda8422ae138b8ab4",
+      "bytes": 8348
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/logo/icon-192.png",
+      "sha256": "cbe90686046ef004c1ebf0235a33ff59572c3e52007a81d7c270bcb086c66193",
+      "bytes": 10184
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/design/v2_tokens.css",
+      "sha256": "e102a0ae35c2a8db87e2a641abf5b1f3f3611688961bc30e2571818c515e00c9",
+      "bytes": 2117
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/support.js",
+      "sha256": "8fe7df74405f3c55f49b7249c74ea1397e65d07dea2b1bd3b4a489bec2e28cbe",
+      "bytes": 69150
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/claude-original/v3_logik.js",
+      "sha256": "3bec6af65720908f67798591d0b74889959ebdabe3ebebfd4604624042dcd8a7",
+      "bytes": 18331
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/original-actions.mjs",
+      "sha256": "eb77b7218513d6d7b324e36b211f502b92043520eeaf71bbbe03888fa7c905a8",
+      "bytes": 10829
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/original-adapter.mjs",
+      "sha256": "7b2be24726791a742b9da86866fb9516026c6b67755f5c8d3da2ee0873dd7f99",
+      "bytes": 17108
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/original-controller.mjs",
+      "sha256": "f9aeb82acd73a705b9973bd13b695ba3e373e86dad767006079d688590710323",
+      "bytes": 5455
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/original-customer-form.mjs",
+      "sha256": "8320ee4fd35b6dd19e3716c5ab92760e48533fedc7c9e097121c8dc4bbb3f1c9",
+      "bytes": 7422
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/original-daily-ledger.mjs",
+      "sha256": "20332af88adcc4e0a37993c336ccbda8c6fcac68cf1b2b44d8675f8cf752540e",
+      "bytes": 4766
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/runtime/manifest.json",
+      "sha256": "dd0eeb165055dbefe7d1c7fa388f8249871b5c21be143c1eff74ace3f2a8dde7",
+      "bytes": 1311
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/runtime/react-18.3.1.LICENSE.txt",
+      "sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85",
+      "bytes": 1086
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/runtime/react-18.3.1.production.min.js",
+      "sha256": "d949f1c3687aedadcedac85261865f29b17cd273997e7f6b2bfc53b2f9d4c4dd",
+      "bytes": 10751
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/runtime/react-dom-18.3.1.LICENSE.txt",
+      "sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85",
+      "bytes": 1086
+    },
+    {
+      "status": "??",
+      "path": "verwaltung/runtime/react-dom-18.3.1.production.min.js",
+      "sha256": "35f4f974f4b2bcd44da73963347f8952e341f83909e4498227d4e26b98f66f0d",
+      "bytes": 131835
+    }
+  ],
+  "results": {
+    "A": {
+      "passedGroups": 25,
+      "httpRequests": 21
+    },
+    "B_ledger_groups": 12,
+    "B_browser_groups": 13,
+    "B_actual_http_requests": 45,
+    "C_file_comparisons": 10,
+    "C_patch_checks": 8,
+    "C_no_functional_test_rerun": true
+  },
+  "synthetic_fixture_context": {
+    "browser_profiles": 52,
+    "active_test_flags": 1,
+    "no_motor_started": true,
+    "profile_write_counter_excludes_fixture_setup": true
+  },
+  "syntax": {
+    "javascript": [
+      {
+        "file": "verwaltung/original-actions.mjs",
+        "exit_code": 0,
+        "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+      },
+      {
+        "file": "verwaltung/original-customer-form.mjs",
+        "exit_code": 0,
+        "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+      },
+      {
+        "file": "verwaltung/original-daily-ledger.mjs",
+        "exit_code": 0,
+        "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+      },
+      {
+        "file": "verwaltung/original-controller.mjs",
+        "exit_code": 0,
+        "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+      },
+      {
+        "file": "verwaltung/original-adapter.mjs",
+        "exit_code": 0,
+        "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+      },
+      {
+        "file": "scripts/original-verwaltung-paket.js",
+        "exit_code": 0,
+        "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+      },
+      {
+        "file": "scripts/original-tagesbilanz-test.js",
+        "exit_code": 0,
+        "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+      },
+      {
+        "file": "scripts/original-verwaltung-interaktiv-test.js",
+        "exit_code": 0,
+        "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+      },
+      {
+        "file": "scripts/kundenformular-test.js",
+        "exit_code": 0,
+        "output": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\n"
+      }
+    ],
+    "python_ast": "PASS",
+    "git_diff_check": "PASS"
+  },
+  "test_artifacts": [
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-endabnahme.log",
+      "sha256": "be3880124990fabb8b6fbb8ba26d9f6bfcb90780d48fd5f204294de6090e42c4",
+      "bytes": 1382
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-erstfehler.json",
+      "sha256": "41ecdf08d7d28858818e4d337f6b1b6b49287fc2e9248f22e3b6c4e9e836013f",
+      "bytes": 711
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-erstfehler.png",
+      "sha256": "0397ca44f81395716139bc328479a410f2360bcae4a9d17acbdb77f52e03ad05",
+      "bytes": 76704
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-fehler-1793796170638.json",
+      "sha256": "2910398da3e18f823956808f40f241ca149e76d8c4e7733f7a3e05dd9e38e815",
+      "bytes": 1533
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-fehler-1793796170638.png",
+      "sha256": "72b5884be00b070494e65efbb0068cf140444c6d38477c717eab1f6a4d58e68f",
+      "bytes": 67004
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-fehler-1793796397155.json",
+      "sha256": "8952c709d9e195319eb04a6528d4f8c069cc9065736920d5e45e3e11c43fe969",
+      "bytes": 2163
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-fehler-1793796397155.png",
+      "sha256": "48792ef3bbc0b013645362ec698674685b2eeb35a9eced1782aadec65db51515",
+      "bytes": 87896
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-fehler-1793796558045.json",
+      "sha256": "3ed267747e3e04a247d67a362b990a31f3a8bf549396dbadb3144b7ce986a73a",
+      "bytes": 2990
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-fehler-1793796558045.png",
+      "sha256": "5119e61c7210161a91b704e7ce57b784b334cf6c7701f17562b10fe0bdeda1fd",
+      "bytes": 72852
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-fehler-1793796711036.json",
+      "sha256": "b78b29e01673c15f5dea92fa4d19aeb5af2f0a71578a2ea4dd62e38ee83f57ba",
+      "bytes": 5511
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-fehler-1793796711036.png",
+      "sha256": "e949e6e4186594bc6e1b29f2f232b7fe553786d8d10fc30d3715df2448f1a78c",
+      "bytes": 93897
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-finale-anzeigeklarheit.log",
+      "sha256": "be3880124990fabb8b6fbb8ba26d9f6bfcb90780d48fd5f204294de6090e42c4",
+      "bytes": 1382
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-frische-szenarien.log",
+      "sha256": "77a72dc5d6c322a9b696423d683b319093d7183f3ccf7cb68bf5ecbfdff9efca",
+      "bytes": 1884
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-lauf-1.log",
+      "sha256": "8f851b94ede5003093d3a8f8d650bc7aeca04f10d5639ec982b86470e5d4e078",
+      "bytes": 1396
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-lauf-2.log",
+      "sha256": "e85b344db0f1610679d9381871f80055f82942d13d709a816b1ca5f6b4a4c4e8",
+      "bytes": 1142
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-original-formular-fehler-1440.png",
+      "sha256": "0f7b4f70423d5e7709bbdcd2df6078ee6f3437a284ca0ff08ea0efce76e12d08",
+      "bytes": 64134
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-original-kunde-gespeichert-1440.png",
+      "sha256": "a7204a587b4ae2d1297f6def4e5b321d6f6579d6329005ebeb9f8f58fa761628",
+      "bytes": 89591
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-original-kunden-hell-390.png",
+      "sha256": "fd311448aa3bd43bfe1dae215acff2563dd752f3ef632424d138939d86208c7a",
+      "bytes": 30084
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-original-tagesbilanz-1440.png",
+      "sha256": "b1ff6c2301ab884ccea6c14c5a84d8349b9b92a77728a8bfc2d10a30ab625a74",
+      "bytes": 90126
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-original-uebersicht-dunkel-1440.png",
+      "sha256": "f7354a95aff0dc887b9bf2fdcc7f97475e84f439f414e6101cdaa168594597e4",
+      "bytes": 77128
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktiv-vertragsabgleich.log",
+      "sha256": "14657f06880a0f86a55e3a06542e6a75d042e8db457f2bb439f49bfe947025af",
+      "bytes": 1621
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/interaktive-abnahme-ergebnis.json",
+      "sha256": "327111fb3d49e9b6b012fccb32853e7443b58de6c52fd2f9de1776bf24f65c02",
+      "bytes": 7434
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/react-boot-lauf-1.log",
+      "sha256": "3bd8d07409c927ffa940ef25871d0d3f60878fb9f8a5a3d4eaa63e1148f1897f",
+      "bytes": 911
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/react-original-verifikation.json",
+      "sha256": "33952bb050034f741469d9bbe9caeff650aaee4ea284220eec1beb220feda4b5",
+      "bytes": 1130
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/start-arbeitsdateien.json",
+      "sha256": "e0b581ffcb1bacfb751dbbbc0e12d43fff769383d5cb8863a4804439b2bf09ca",
+      "bytes": 10674
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/syntax-endstand.json",
+      "sha256": "60546fdf6ecdd06bf4842cbd05623a3ef0f02f2712b79dde0e2ff44a91c696d9",
+      "bytes": 2275
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/tagesbilanz-ergebnis.json",
+      "sha256": "0849f53d1b26e81b4b9157d551122b215217fd92581bc16b717d763ec1438145",
+      "bytes": 1774
+    },
+    {
+      "path": "/workspace/helmut-claude-backend-evidence/parallel-20261104/tagesbilanz-lauf-1.log",
+      "sha256": "7aa86ce49086ff6ac4d7be5404c0e6874aa79ddfa512b1ec16dfe05db9b5a984",
+      "bytes": 1089
+    }
+  ],
+  "active_test_processes": [],
+  "no_shared_source_or_foreign_branch_changes": true,
+  "no_production_changes": true,
+  "no_migrations_merges_deployments": true,
+  "no_model_or_mail_calls": true,
+  "network_scope": "Read-only GitHub metadata/source and exact original React runtime/license URLs; browser/backend tests only own loopback",
+  "no_commit_or_push": true,
+  "remaining": [
+    "Gemeinsame Adminroute/Asset-/CSP-Integration",
+    "Gesperrte server.js/accounts.js und unapplizierte Kontopatches",
+    "Keine Live-Zustellung/Qualität-/Vollständigkeits-/SQL-/RLS-/500er-Abnahme",
+    "Automatische Profilreferenz statt echter Nichtzuordnung",
+    "Zwei getrennte Konto-/Notizschreibvorgänge mit ausdrücklich behandelten Teilanlagen"
+  ]
+}

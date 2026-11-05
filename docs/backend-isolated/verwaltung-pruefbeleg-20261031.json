@@ -1,0 +1,345 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-10-31T20:40:06.219514+00:00",
+  "status": "code_ready_isolated_tests_passed_not_integrated_or_deployed",
+  "branch": "feat/claude-backend-isolated",
+  "base_commit": "773f7aa545bfeac9429ef368c49e302e68772cc6",
+  "previous_analysis_commit": "9a4fae428979895996e118070eadb98a8720b31a",
+  "scope": "new standalone read-only administration; no changes to existing runtime or customer UI",
+  "remote_read_only_snapshot": {
+    "main": "773f7aa545bfeac9429ef368c49e302e68772cc6",
+    "codex/ui-design-20261002": "eaf0d5d517d104beaeac53ebeecc6957d3dcadc1",
+    "codex/w15-separated-resource-metering-20261031": "d56e97b37468080aaff6d4bd47b045ba072a2c6f"
+  },
+  "protected_files": [
+    {
+      "path": "server.js",
+      "isolated_sha256": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+      "isolated_unchanged": true,
+      "original_sha256": "3766e3ef1b45786bcee802251ca4f6435c08da2c281aadd68ab1f3a44881bef9",
+      "original_unchanged": true
+    },
+    {
+      "path": "client.js",
+      "isolated_sha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+      "isolated_unchanged": true,
+      "original_sha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+      "original_unchanged": true
+    },
+    {
+      "path": "styles.css",
+      "isolated_sha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+      "isolated_unchanged": true,
+      "original_sha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+      "original_unchanged": true
+    },
+    {
+      "path": "index.html",
+      "isolated_sha256": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+      "isolated_unchanged": true,
+      "original_sha256": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+      "original_unchanged": true
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "isolated_sha256": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+      "isolated_unchanged": true,
+      "original_sha256": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+      "original_unchanged": true
+    },
+    {
+      "path": "lib/helmut/auth.js",
+      "isolated_sha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+      "isolated_unchanged": true,
+      "original_sha256": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+      "original_unchanged": true
+    },
+    {
+      "path": "lib/helmut/accounts.js",
+      "isolated_sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "isolated_unchanged": true,
+      "original_sha256": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+      "original_unchanged": true
+    },
+    {
+      "path": "lib/helmut/scheduler.js",
+      "isolated_sha256": "e6db7e15d7b8241c3de082e1989e1003e9eba7dcb0e4d41f7ab22f67e88ee8fc",
+      "isolated_unchanged": true,
+      "original_sha256": "e6db7e15d7b8241c3de082e1989e1003e9eba7dcb0e4d41f7ab22f67e88ee8fc",
+      "original_unchanged": true
+    },
+    {
+      "path": "lib/helmut/tenant-context.js",
+      "isolated_sha256": "23aca09ee6218c178581ca7d3fc6cc4126b5336f3c6ad808b68f289ea36f38ac",
+      "isolated_unchanged": true,
+      "original_sha256": "23aca09ee6218c178581ca7d3fc6cc4126b5336f3c6ad808b68f289ea36f38ac",
+      "original_unchanged": true
+    },
+    {
+      "path": "vercel.json",
+      "isolated_sha256": "adba635b8282354a44c14d9d15570601c94d36c8fad568aa3c543f0c5955cbf9",
+      "isolated_unchanged": true,
+      "original_sha256": "adba635b8282354a44c14d9d15570601c94d36c8fad568aa3c543f0c5955cbf9",
+      "original_unchanged": true
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "isolated_sha256": "4631c1817fac0950d16a54cb7ee7aaa29713a4e36ad4cb2b8423633e784a70d3",
+      "isolated_unchanged": true,
+      "original_sha256": "4631c1817fac0950d16a54cb7ee7aaa29713a4e36ad4cb2b8423633e784a70d3",
+      "original_unchanged": true
+    },
+    {
+      "path": "docs/CURRENT_STATE.md",
+      "isolated_sha256": "25eb03b2998d4496aff451684a4b1845491622cdd1621cc2278faacba4d49900",
+      "isolated_unchanged": true,
+      "original_sha256": "25eb03b2998d4496aff451684a4b1845491622cdd1621cc2278faacba4d49900",
+      "original_unchanged": true
+    },
+    {
+      "path": "AGENTS.md",
+      "isolated_sha256": "d739fe1cfe3e389990f89b6bf5a6f16ef546df62a5d6ae65a3aa4e7196a594a6",
+      "isolated_unchanged": true,
+      "original_sha256": "d739fe1cfe3e389990f89b6bf5a6f16ef546df62a5d6ae65a3aa4e7196a594a6",
+      "original_unchanged": true
+    },
+    {
+      "path": "CLAUDE.md",
+      "isolated_sha256": "d26b84468942de3bec4ade070992e7e66638cfa7460149f1854d2baaf4b6a393",
+      "isolated_unchanged": true,
+      "original_sha256": "d26b84468942de3bec4ade070992e7e66638cfa7460149f1854d2baaf4b6a393",
+      "original_unchanged": true
+    },
+    {
+      "path": "docs/START_HERE.md",
+      "isolated_sha256": "60609675bfb3158cfef9a859d213e07268ba3ddeeb4277088a85fa14b958b030",
+      "isolated_unchanged": true,
+      "original_sha256": "60609675bfb3158cfef9a859d213e07268ba3ddeeb4277088a85fa14b958b030",
+      "original_unchanged": true
+    }
+  ],
+  "original_checkout": {
+    "head": "6b4012cd912fd0e1f5ec79969168d0dcc010927f",
+    "branch": "work",
+    "status": "?? supabase/.temp/",
+    "refs": [
+      "6b4012cd912fd0e1f5ec79969168d0dcc010927f refs/heads/work",
+      "f6477d44e4abf02804d8766bd77cfd7ec298d84a refs/remotes/origin/main"
+    ]
+  },
+  "new_files_before_this_evidence": [
+    {
+      "path": "docs/backend-isolated/verwaltung-vorbereitung-20261031.md",
+      "bytes": 5644,
+      "sha256": "2e97788072f1af431be27a679ee035ba077c21f3f3b2343d3fc3a8637adb7a60"
+    },
+    {
+      "path": "scripts/verwaltung-isoliert-test.js",
+      "bytes": 22719,
+      "sha256": "8af5c674c5f45789bfa2a9e2d9d8b535f64bafa4a7b7047acb96010817e48388"
+    },
+    {
+      "path": "scripts/verwaltung-vorschau.js",
+      "bytes": 3045,
+      "sha256": "a35054ba78eeb5640198cf4dfad285f8f2ede71ab63721d9e34f3e74e0f572a5"
+    },
+    {
+      "path": "verwaltung/README.md",
+      "bytes": 5254,
+      "sha256": "f972fbe93fbeff90e8cfd2e7e6c4c926b8552688442703da56aa36e5496c1fe6"
+    },
+    {
+      "path": "verwaltung/api.mjs",
+      "bytes": 2655,
+      "sha256": "553052b47779d9ce6d5d06ef7489805e0f67dddf0b4dd0ab9aba48949359d374"
+    },
+    {
+      "path": "verwaltung/app.mjs",
+      "bytes": 26335,
+      "sha256": "497ed4b54c4f6733bf890d7154bd822a8eda59ef7004df4bdb81ed5038d2e025"
+    },
+    {
+      "path": "verwaltung/beispieldaten.mjs",
+      "bytes": 4011,
+      "sha256": "beb5e04886537db3b4d88f9117ea8746a809a1fa6a7c9844ca226869a7dfef14"
+    },
+    {
+      "path": "verwaltung/index.html",
+      "bytes": 535,
+      "sha256": "6e7b703b10fc0193e63aef3baf0446514f8f62e60a542e22049635b8a3345d39"
+    },
+    {
+      "path": "verwaltung/model.mjs",
+      "bytes": 5911,
+      "sha256": "ebdc851760c703324a718662e44160daca8528cbe7056fc5e89ea8ad89b277c3"
+    },
+    {
+      "path": "verwaltung/styles.css",
+      "bytes": 17303,
+      "sha256": "26fc3a5230fd7a193e2211cd7a2db1d1c01559c609f5a0a7018435b4b357bb65"
+    },
+    {
+      "path": "verwaltung/vorschau.mjs",
+      "bytes": 221,
+      "sha256": "371a8c1ee2d8a6d03559222c56ef29bb8973e2f624b97ae7095351377f0a9eb0"
+    }
+  ],
+  "checks": {
+    "browser_and_contract_groups": 30,
+    "final_contract_groups_after_api_allowlist_hardening": 14,
+    "final_contract_groups_are_subset_not_additional_e2e": true,
+    "browser_widths": [
+      1440,
+      390,
+      360,
+      320
+    ],
+    "actual_new_api_client_against_loopback_mock": true,
+    "production_api_calls": 0,
+    "production_writes": 0,
+    "model_calls": 0,
+    "ci_dispatches": 0,
+    "package_installations": 0,
+    "pushes": 0,
+    "deployments": 0
+  },
+  "not_verified": [
+    "Production deployment or live API",
+    "actual existing server authorization implementation (unchanged)",
+    "real database/RLS",
+    "new admin asset serving from existing server",
+    "complete daily result summary or semantic quality judgments",
+    "write actions or billing service"
+  ],
+  "test_logs": [
+    {
+      "file": "testlauf-1.log",
+      "sha256": "d5312ca7235bd0b169a260677d22b6ae564f8569d7222dc0f27ce18cc9b27c7f",
+      "status": "failed_test_driver_precondition",
+      "passed_groups": 23,
+      "stdout_lines": [
+        "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.",
+        "PASS Fehlende Kosten bleiben offen; echte Null bleibt Null",
+        "PASS Fehlende Profile sind kein leerer Bestand",
+        "PASS Profilbereitschaft behauptet keine fachliche Brauchbarkeit",
+        "PASS Bundesland wird nie als Mandatsebene geraten",
+        "PASS Kontostatus pausiert ist keine Zugangssperre",
+        "PASS Fremde HTML-Inhalte werden als Text ausgegeben",
+        "PASS Suche und Aktiv-/Problemfilter bleiben getrennt",
+        "PASS Vorhandene Adminroute wird einmal gelesen, ohne Secret",
+        "PASS Schreibpfade, Datenstatus und Pfadinjektion sind nicht erreichbar",
+        "PASS 401/403 und Serverfehler werden weder versteckt noch mit Beispieldaten ersetzt",
+        "PASS Zeitueberschreitung beendet die Anfrage",
+        "PASS Aktualisieren liest frisch; beendeter Leser bleibt geschlossen",
+        "PASS Desktop: vier Bereiche, sichtbare Beispieldaten und ehrliche Ergebnisqualitaet",
+        "PASS Profile: Suche, Detail, fehlende Angaben und Landtag",
+        "PASS Aktiv- und Problemfilter bedienen die richtige Teilmenge",
+        "PASS Kunden: manuelle Preise und echter Zugangsstatus getrennt",
+        "PASS Betrieb: Ablaeufe, Quellen, Kosten ohne erfundenen Budgetbalken",
+        "PASS Mobil: 390/360/320 Pixel ohne horizontalen Seitenlauf",
+        "PASS Tastatur: Sprung zum Inhalt erhaelt die Ansicht",
+        "PASS Vorschau: keine Browserfehler und keine API-/Motoranfragen",
+        "PASS Browser → echter neuer API-Client → lokale Vertragsantwort → Ansicht",
+        "PASS Teilfehler: Kosten fehlen ehrlich, andere Bereiche bleiben nutzbar",
+        "PASS HTTP 401/403: geschuetzte Inhalte entfernt, keine internen Fehlerdetails",
+        "Error: {\"exceptionId\":1,\"text\":\"Uncaught (in promise) Error: Ansicht nicht bereit\",\"lineNumber\":1,\"columnNumber\":187,\"scriptId\":\"22\",\"stackTrace\":{\"callFrames\":[{\"functionName\":\"tick\",\"scriptId\":\"22\",\"url\":\"\",\"lineNumber\":0,\"columnNumber\":186}]},\"exception\":{\"type\":\"object\",\"subtype\":\"error\",\"className\":\"Error\",\"description\":\"Error: Ansicht nicht bereit\\n    at tick (<anonymous>:1:187)\",\"objectId\":\"-5431482939885514640.3.1\"}}",
+        "    at evaluate (/workspace/helmut-claude-backend-isolated/scripts/verwaltung-isoliert-test.js:168:42)",
+        "    at async waitFor (/workspace/helmut-claude-backend-isolated/scripts/verwaltung-isoliert-test.js:172:22)",
+        "    at async main (/workspace/helmut-claude-backend-isolated/scripts/verwaltung-isoliert-test.js:256:5)"
+      ]
+    },
+    {
+      "file": "testlauf-2.log",
+      "sha256": "1b30f3faa867418448d98dc6557ce125b1a29394b89cc42adb4bf1131b927e9b",
+      "status": "passed",
+      "passed_groups": 30,
+      "stdout_lines": [
+        "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.",
+        "PASS Fehlende Kosten bleiben offen; echte Null bleibt Null",
+        "PASS Fehlende Profile sind kein leerer Bestand",
+        "PASS Unbekannte Preise erscheinen nie als null Kosten; alte Altsummen reichen nicht",
+        "PASS Profilseiten bleiben begrenzt und verwaiste Seitennummern werden korrigiert",
+        "PASS Profilbereitschaft behauptet keine fachliche Brauchbarkeit",
+        "PASS Bundesland wird nie als Mandatsebene geraten",
+        "PASS Kontostatus pausiert ist keine Zugangssperre",
+        "PASS Fremde HTML-Inhalte werden als Text ausgegeben",
+        "PASS Suche und Aktiv-/Problemfilter bleiben getrennt",
+        "PASS Vorhandene Adminroute wird einmal gelesen, ohne Secret",
+        "PASS Schreibpfade, Datenstatus und Pfadinjektion sind nicht erreichbar",
+        "PASS 401/403 und Serverfehler werden weder versteckt noch mit Beispieldaten ersetzt",
+        "PASS Zeitueberschreitung beendet die Anfrage",
+        "PASS Aktualisieren liest frisch; beendeter Leser bleibt geschlossen",
+        "PASS Desktop: vier Bereiche, sichtbare Beispieldaten und ehrliche Ergebnisqualitaet",
+        "PASS Profile: Suche, Detail, fehlende Angaben und Landtag",
+        "PASS Aktiv- und Problemfilter bedienen die richtige Teilmenge",
+        "PASS Kunden: manuelle Preise und echter Zugangsstatus getrennt",
+        "PASS Betrieb: Ablaeufe, Quellen, Kosten ohne erfundenen Budgetbalken",
+        "PASS Mobil: 390/360/320 Pixel ohne horizontalen Seitenlauf",
+        "PASS Tastatur: Sprung zum Inhalt erhaelt die Ansicht",
+        "PASS Vorschau: keine Browserfehler und keine API-/Motoranfragen",
+        "PASS Browser → echter neuer API-Client → lokale Vertragsantwort → Ansicht",
+        "PASS Teilfehler: Kosten fehlen ehrlich, andere Bereiche bleiben nutzbar",
+        "PASS HTTP 401/403: geschuetzte Inhalte entfernt, keine internen Fehlerdetails",
+        "PASS API-Inhalte: XSS bleibt Text, leerer Bestand wird klar ausgewiesen",
+        "PASS Browser-Paging: Seitenwechsel und Suchwechsel auf letzter Seite",
+        "PASS Unbekannte Kosten sind auch im Browser offen statt 0,00 USD",
+        "PASS Alle Browseranfragen bleiben am isolierten Loopback-Testserver",
+        "PASS Einzelne Offline-HTML-Datei funktioniert ohne Module oder API",
+        "BELEGE /workspace/helmut-claude-backend-evidence/verwaltung",
+        "",
+        "30/30 gezielte Verwaltungspruefungen bestanden."
+      ]
+    },
+    {
+      "file": "abschliessende-api-vertraege.log",
+      "sha256": "4196e7bda4aa88d11e5a1d3d824ee1f3c5f78fe96d2fa45b5f7914f8e3748ee5",
+      "status": "passed",
+      "passed_groups": 14,
+      "stdout_lines": [
+        "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.",
+        "PASS Fehlende Kosten bleiben offen; echte Null bleibt Null",
+        "PASS Fehlende Profile sind kein leerer Bestand",
+        "PASS Unbekannte Preise erscheinen nie als null Kosten; alte Altsummen reichen nicht",
+        "PASS Profilseiten bleiben begrenzt und verwaiste Seitennummern werden korrigiert",
+        "PASS Profilbereitschaft behauptet keine fachliche Brauchbarkeit",
+        "PASS Bundesland wird nie als Mandatsebene geraten",
+        "PASS Kontostatus pausiert ist keine Zugangssperre",
+        "PASS Fremde HTML-Inhalte werden als Text ausgegeben",
+        "PASS Suche und Aktiv-/Problemfilter bleiben getrennt",
+        "PASS Vorhandene Adminroute wird einmal gelesen, ohne Secret",
+        "PASS Schreibpfade, Datenstatus und Pfadinjektion sind nicht erreichbar",
+        "PASS 401/403 und Serverfehler werden weder versteckt noch mit Beispieldaten ersetzt",
+        "PASS Zeitueberschreitung beendet die Anfrage",
+        "PASS Aktualisieren liest frisch; beendeter Leser bleibt geschlossen",
+        "",
+        "14/14 gezielte Anzeige-/API-Vertraege bestanden."
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "file": "verwaltung-desktop.png",
+      "path": "/workspace/helmut-claude-backend-evidence/verwaltung/verwaltung-desktop.png",
+      "bytes": 113871,
+      "sha256": "04d9d4b5d9345988060522eb8aaaee34036968c8053f967f7c7172dedf649d17"
+    },
+    {
+      "file": "verwaltung-mobil.png",
+      "path": "/workspace/helmut-claude-backend-evidence/verwaltung/verwaltung-mobil.png",
+      "bytes": 88477,
+      "sha256": "39a13bf35e049e6b9612d7dcf2b96258b1a4176db699dedca701e29438a0b812"
+    },
+    {
+      "file": "verwaltung-profildetail.png",
+      "path": "/workspace/helmut-claude-backend-evidence/verwaltung/verwaltung-profildetail.png",
+      "bytes": 75291,
+      "sha256": "1b82872403a63b20d94b57a8c676eb795d5601af3985c53fb3806db8350f2c13"
+    },
+    {
+      "file": "verwaltung-offline.html",
+      "path": "/workspace/helmut-claude-backend-evidence/verwaltung/verwaltung-offline.html",
+      "bytes": 53792,
+      "sha256": "024bfe6e6aa775ce875e4e9e5dfa9aa64ea99d9de3b226c1f15448757289e15d"
+    }
+  ]
+}

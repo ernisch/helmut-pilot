@@ -1,0 +1,41 @@
+CASE D1-status
+PASS Anonym gesperrt; echter Admin-Login und Cookie
+PASS deaktiviert: normaler Statuswechsel entzieht Sitzung und sperrt Login
+PASS deaktiviert: bewusste Statusreaktivierung bleibt moeglich
+PASS gekuendigt: normaler Statuswechsel entzieht Sitzung und sperrt Login
+PASS gekuendigt: bewusste Statusreaktivierung bleibt moeglich
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+exit_code=0
+CASE last-status
+last-status: PASS; admins 1 -> 1
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+exit_code=0
+CASE last-active
+last-active: PASS; admins 1 -> 1
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+exit_code=0
+CASE last-role
+last-role: PASS; admins 1 -> 1
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+exit_code=0
+CASE unusable-backups
+unusable-backups: PASS; admins 1 -> 1
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+exit_code=0
+CASE delete-and-handover
+delete-and-handover: PASS; admins 2 -> 1
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+exit_code=0
+CASE concurrent-status
+concurrent-status: PASS; admins 2 -> 1
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+exit_code=0
+CASE concurrent-role
+concurrent-role: PASS; admins 2 -> 1
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+exit_code=0
+CASE CAS-focused
+PASS CAS: veralteter Auth-Schreiber wird abgewiesen und ueberschreibt keinen frischen Stand
+PASS CAS: nach parallelem Peer-Entzug prueft integrierter Adminschutz den frischen Stand erneut
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+exit_code=0

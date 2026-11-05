@@ -1,0 +1,13 @@
+{
+  "originalWorktreeHead": "6b4012cd912fd0e1f5ec79969168d0dcc010927f",
+  "originalWorktreeIndexSha256": "c16506196e5ee021b06b7851c3bde70bbf151e6f567c41beb6f3cbd302b724c1",
+  "originalTrackedFilesMatchHead": true,
+  "originalUntrackedStatus": "supabase/.temp/ (pre-existing)",
+  "uiBranch": "codex/helmut-ui-20261031",
+  "uiStartingHead": "2d895cc3dfff1af5480e6a3b4c590009c3082d53",
+  "protectedTrackedPathsChanged": [],
+  "githubJobsStarted": 0,
+  "pushes": 0,
+  "merges": 0,
+  "deployments": 0
+}

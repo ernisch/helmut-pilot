@@ -1,0 +1,29 @@
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+PASS Alle Originaldateien einschliesslich Template/CSS bleiben bytegleich
+PASS Validierung markiert Name, Person, E-Mail und Tarif-/Profilfehler ohne IO
+PASS Original hasFormErr/formFields zeigen Feldfehler; kein Simulationsentwurf
+PASS DTO erlaubt keine Rollen, Passwoerter, echten Preise oder freien Routen
+PASS Fester gesperrter POST und bestehende Notiz statt Simulationspreis/CRM
+PASS Frischer admin-geschuetzter Rollenbeleg verweigert 401/403 vor POST
+PASS Bestehende E-Mail/Profilbindung verhindert Anlage vor Schreibaufruf
+PASS Busy/Doppelsubmit laesst genau eine Anlage zu und behaelt Eingaben
+PASS HTTP400/409 nach POST werden ohne falschen Erfolg behandelt
+PASS PATCH-Fehler nennt bestaetigtes Teilkonto; keine Wiederholung/Loeschung
+PASS Verlorene POST-/PATCH-Antwort und falsche 2xx-Antwort bleiben unklar
+PASS Serverseitig suffixierte Profilreferenz wird als Teilanlage offengelegt
+PASS Unklares/teilweise angelegtes Formular bleibt gesperrt statt erneutem POST
+PASS Schreib-401/403 loescht Eingaben und private Bestandsdaten
+PASS Nachreview: falsche POST2xx mit aktivem/fremdem/bekanntem Konto bestaetigen kein Teilkonto
+PASS Nachreview: falsche POST2xx nennt im Originalformular keine beliebige ID oder Sperrbehauptung
+PASS Nachreview: falsche PATCH2xx nennt frueher bestaetigte ID mit neutralem aktuellem Zustand
+PASS Nachreview: frische Kundenantwort active:true/fehlend verhindert gesperrten Erfolgstoast
+PASS Echter HTTP-POST+PATCH persistiert gesperrtes Konto und beide Namen/Tarifwunsch
+PASS Echter Server: aktive:false ohne Passwort erzeugt weder Einladung noch Passworttoken
+PASS Echter Server verweigert Anonym/Nicht-Admin vor Kundenanlage
+PASS Echte CSRF- und Duplikatsperren erzeugen kein zweites Konto
+PASS Echter Profil-ID-Wettlauf wird als bekannte Teilanlage statt falscher Zuordnung erkannt
+PASS Echte verlorene POST-Antwort bleibt unklar; vorhandenes Konto bleibt gesperrt
+PASS Echte verlorene PATCH-Antwort nennt bekannte ID und behauptet keinen Gesamterfolg
+{"status":"PASS","passedGroups":25,"httpRequests":21}
+
+exit_code=0

@@ -1,0 +1,137 @@
+{
+  "sourceHtmlSha256": "9bdcf76ae6771655351c68ada79e4301348f452d12b5cbabe15c4ef4fe275418",
+  "originalBytesUnchanged": true,
+  "method": "Statische DOM-Projektion aus unveraendertem Original-Template, renderVals, v3_logik und Originalfonts/CSS; Original-React/CDN-Laufzeit und Interaktionen nicht ausgefuehrt.",
+  "externalRequests": 0,
+  "apiRequests": 0,
+  "designMatch": false,
+  "differences": {
+    "headingFont": true,
+    "bodyFont": true,
+    "navigation": true,
+    "railWidth": true
+  },
+  "finding": "Vorbereitete helle Ersatzansicht aus ae18658e weicht in Schrift, Navigation, Struktur und Farb-/Flaechengestaltung von beiden Originalvarianten ab. Keine visuelle Freigabe. Keine UI-Datei veraendert.",
+  "views": [
+    {
+      "kind": "original-dunkel",
+      "width": 1440,
+      "metadata": {
+        "title": "Störung",
+        "headingFont": "Spectral, Georgia, serif",
+        "bodyFont": "\"Hanken Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "railWidth": 212,
+        "background": "rgba(0, 0, 0, 0)",
+        "navLabels": [
+          "HelmutVerwaltung",
+          "Übersicht",
+          "Profile4",
+          "Betrieb",
+          "Kunden",
+          "Einstellungen"
+        ],
+        "width": 1440,
+        "scrollWidth": 1440
+      },
+      "screenshot": "original-dunkel-1440.png",
+      "sha256": "778a5190a051b089a296cc91302b219b84f99199e658ba1a30d8967103a01e23"
+    },
+    {
+      "kind": "original-hell",
+      "width": 1440,
+      "metadata": {
+        "title": "Störung",
+        "headingFont": "Spectral, Georgia, serif",
+        "bodyFont": "\"Hanken Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "railWidth": 212,
+        "background": "rgba(0, 0, 0, 0)",
+        "navLabels": [
+          "HelmutVerwaltung",
+          "Übersicht",
+          "Profile4",
+          "Betrieb",
+          "Kunden",
+          "Einstellungen"
+        ],
+        "width": 1440,
+        "scrollWidth": 1440
+      },
+      "screenshot": "original-hell-1440.png",
+      "sha256": "6ece1d71f59b66634277a2465a4f8a8592e8f67f51bdf57c3df10cca6f7fd222"
+    },
+    {
+      "kind": "vorbereitet",
+      "width": 1440,
+      "metadata": {
+        "title": "Überblick",
+        "headingFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "railWidth": 228,
+        "background": "rgba(0, 0, 0, 0)",
+        "navLabels": [
+          "Überblick",
+          "Profile",
+          "Betrieb",
+          "Kunden"
+        ],
+        "width": 1440,
+        "scrollWidth": 1425
+      },
+      "screenshot": "vorbereitet-1440.png",
+      "sha256": "04d9d4b5d9345988060522eb8aaaee34036968c8053f967f7c7172dedf649d17"
+    },
+    {
+      "kind": "original-dunkel",
+      "width": 390,
+      "metadata": {
+        "title": "Störung",
+        "headingFont": "Spectral, Georgia, serif",
+        "bodyFont": "\"Hanken Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "railWidth": null,
+        "background": "rgba(0, 0, 0, 0)",
+        "navLabels": [],
+        "width": 390,
+        "scrollWidth": 390
+      },
+      "screenshot": "original-dunkel-390.png",
+      "sha256": "a41444e826fd0b97e5ffe75a26d79d806291ff7a776cef77b7b0bb1b4cbfbe85"
+    },
+    {
+      "kind": "original-hell",
+      "width": 390,
+      "metadata": {
+        "title": "Störung",
+        "headingFont": "Spectral, Georgia, serif",
+        "bodyFont": "\"Hanken Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "railWidth": null,
+        "background": "rgba(0, 0, 0, 0)",
+        "navLabels": [],
+        "width": 390,
+        "scrollWidth": 390
+      },
+      "screenshot": "original-hell-390.png",
+      "sha256": "d7637ae1944c5ac318eeca691844a387e55ffddca5f202377bf91e9982b3eb3c"
+    },
+    {
+      "kind": "vorbereitet",
+      "width": 390,
+      "metadata": {
+        "title": "Überblick",
+        "headingFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "railWidth": 390,
+        "background": "rgba(0, 0, 0, 0)",
+        "navLabels": [
+          "Überblick",
+          "Profile",
+          "Betrieb",
+          "Kunden"
+        ],
+        "width": 390,
+        "scrollWidth": 390
+      },
+      "screenshot": "vorbereitet-390.png",
+      "sha256": "39a13bf35e049e6b9612d7dcf2b96258b1a4176db699dedca701e29438a0b812"
+    }
+  ]
+}

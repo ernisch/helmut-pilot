@@ -1,0 +1,9 @@
+{
+  "status": "FAILED_TEST_EXPECTATION",
+  "passedBeforeFailure": 3,
+  "expected": "Contiguous string Helmut Verwaltung in generated original HTML",
+  "observed": "Original package HTML returned correctly, contiguous text not present",
+  "correction": "Bind the entire response to the unchanged original package SHA256 instead of an assumed heading; verify actual relative runtime resource path",
+  "productSourceChanged": false,
+  "serverPatchApplied": false
+}

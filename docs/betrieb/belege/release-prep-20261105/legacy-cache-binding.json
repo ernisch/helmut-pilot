@@ -1,0 +1,22 @@
+{
+  "source": "76b75e371c7db69d7c9381071e23443182fc3607",
+  "workerSha256": "bdb5d34af59de9907070097c8cf33d99cfbe26074fe8cafef8d1060ffbc77cc1",
+  "assets": [
+    {
+      "file": "client.js",
+      "url": "/client.js?v=20260712-presale1",
+      "destination": "script",
+      "mime": "text/javascript",
+      "oldSha256": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+      "currentSha256": "0dd6a60172d118b3ac427f5f54b8741bd279ca350c7d60441f266564ac2816e9"
+    },
+    {
+      "file": "styles.css",
+      "url": "/styles.css?v=20260712-presale1",
+      "destination": "style",
+      "mime": "text/css",
+      "oldSha256": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+      "currentSha256": "1569f470993b917bf53d51cfa9375025f1e2a6aef9bc29a7c2217e7e8dbc9737"
+    }
+  ]
+}

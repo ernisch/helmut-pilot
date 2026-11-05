@@ -1,0 +1,97 @@
+PASS  anonymous: actual UI rendered
+PASS  anonymous: push-capable fixture active
+PASS  anonymous: appropriate startup state
+PASS  anonymous: no data fetch after failed session
+PASS  anonymous: no generation, CSRF or push calls after blocked start
+PASS  anonymous: no automatic push scheduled or subscribed
+PASS  anonymous: no specialist content fabricated
+PASS  anonymous: no unknown API request
+PASS  session-503: actual UI rendered
+PASS  session-503: push-capable fixture active
+PASS  session-503: appropriate startup state
+PASS  session-503: no data fetch after failed session
+PASS  session-503: no generation, CSRF or push calls after blocked start
+PASS  session-503: no automatic push scheduled or subscribed
+PASS  session-503: no specialist content fabricated
+PASS  session-503: no unknown API request
+PASS  session-invalid: actual UI rendered
+PASS  session-invalid: push-capable fixture active
+PASS  session-invalid: appropriate startup state
+PASS  session-invalid: no data fetch after failed session
+PASS  session-invalid: no generation, CSRF or push calls after blocked start
+PASS  session-invalid: no automatic push scheduled or subscribed
+PASS  session-invalid: no specialist content fabricated
+PASS  session-invalid: no unknown API request
+PASS  no-mandate: actual UI rendered
+PASS  no-mandate: push-capable fixture active
+PASS  no-mandate: appropriate startup state
+PASS  no-mandate: single app-start fetch before access/availability state
+PASS  no-mandate: no generation, CSRF or push calls after blocked start
+PASS  no-mandate: no automatic push scheduled or subscribed
+PASS  no-mandate: no specialist content fabricated
+PASS  no-mandate: no unknown API request
+PASS  start-401: actual UI rendered
+PASS  start-401: push-capable fixture active
+PASS  start-401: appropriate startup state
+PASS  start-401: single app-start fetch before access/availability state
+PASS  start-401: no generation, CSRF or push calls after blocked start
+PASS  start-401: no automatic push scheduled or subscribed
+PASS  start-401: no specialist content fabricated
+PASS  start-401: no unknown API request
+PASS  start-503: actual UI rendered
+PASS  start-503: push-capable fixture active
+PASS  start-503: appropriate startup state
+PASS  start-503: single app-start fetch before access/availability state
+PASS  start-503: no generation, CSRF or push calls after blocked start
+PASS  start-503: no automatic push scheduled or subscribed
+PASS  start-503: no specialist content fabricated
+PASS  start-503: no unknown API request
+PASS  selection: actual UI rendered
+PASS  selection: push-capable fixture active
+PASS  selection: appropriate startup state
+PASS  selection: single app-start fetch before access/availability state
+PASS  selection: no generation, CSRF or push calls after blocked start
+PASS  selection: no automatic push scheduled or subscribed
+PASS  selection: no specialist content fabricated
+PASS  selection: no unknown API request
+PASS  empty: actual UI rendered
+PASS  empty: push-capable fixture active
+PASS  empty: appropriate startup state
+PASS  empty: single app-start fetch before access/availability state
+PASS  empty: no generation, CSRF or push calls after blocked start
+PASS  empty: no automatic push scheduled or subscribed
+PASS  empty: no specialist content fabricated
+PASS  empty: no unknown API request
+PASS  contract-desktop: actual UI rendered
+PASS  contract-desktop: push-capable fixture active
+PASS  contract-desktop: successful startup permits simulated push sync
+PASS  contract-desktop: bootstrap writes only simulated push; empty office formats produce no drafts
+PASS  contract-desktop: profile/version/tasks/notes adopted
+PASS  contract-desktop: partial Lage keeps proven cards and exposes missing current text
+PASS  contract-desktop: Lage source comes from actual name/url schema
+PASS  contract-desktop: curated Radar projection wins over raw candidates
+PASS  contract-desktop: curated freshness used and raw article feed withheld
+PASS  contract-desktop: view switches cause no extra start/Radar fetch
+PASS  contract-desktop: explicit CSRF rejection rotates token once
+PASS  contract-desktop: permission denial not replayed and body remains readable
+PASS  contract-desktop: persistent CSRF failure stops after one retry
+PASS  contract-desktop: invalid CSRF prerequisite blocks write: unavailable
+PASS  contract-desktop: invalid CSRF prerequisite blocks write: missing
+PASS  contract-desktop: both additional state-changing GETs carry CSRF
+PASS  contract-desktop: office HTTP 429 shown as failure without ready drafts
+PASS  contract-desktop: budget fallback marked as rule output, not AI
+PASS  contract-desktop: no unknown API request
+PASS  contract-mobile: actual UI rendered
+PASS  contract-mobile: push-capable fixture active
+PASS  contract-mobile: successful startup permits simulated push sync
+PASS  contract-mobile: bootstrap writes only simulated push; empty office formats produce no drafts
+PASS  contract-mobile: profile/version/tasks/notes adopted
+PASS  contract-mobile: partial Lage keeps proven cards and exposes missing current text
+PASS  contract-mobile: Lage source comes from actual name/url schema
+PASS  contract-mobile: curated Radar projection wins over raw candidates
+PASS  contract-mobile: curated freshness used and raw article feed withheld
+PASS  contract-mobile: view switches cause no extra start/Radar fetch
+PASS  contract-mobile: no unknown API request
+PASS  No uncaught browser errors
+PASS  No external request fulfilled
+PASS  No missing static resources

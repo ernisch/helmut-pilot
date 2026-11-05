@@ -1,0 +1,188 @@
+{
+  "status": "PASS_ACTIVE_SW_TARGETED_ACCEPTANCE",
+  "baseCommit": "67616286c6b002ac1cd0ea656fd8bd6e772656fe",
+  "newSwSha256": "17ff2b0434002f1aaecddee7aaffa44b29d1b79d9e586564428e17ffbba97402",
+  "previousSwSha256": "bdb5d34af59de9907070097c8cf33d99cfbe26074fe8cafef8d1060ffbc77cc1",
+  "uniquePassedGroups": 7,
+  "newGroupsInFinalExecution": 4,
+  "sourceBoundReusedGroups": 3,
+  "singleShotWholeSuite": false,
+  "checks": [
+    {
+      "name": "Old exact SW caches actual private CSS JS font despite no-store and serves stale200 after real logout",
+      "status": "PASS",
+      "sourceResult": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-network/result.json",
+      "sourceResultSha256": "5c6a958818e428a692fb4eddde83d42de6cbe1e023d5e92e4b48f687572be30d",
+      "newInFinalExecution": false,
+      "archivedCodeHashes": {
+        "run-sw-proof.py": "775db8a41c5b18584d78ca2474f520f084965239ff8376994661b14fc94201ee",
+        "sw-browser-proof.cjs": "6d86dab748baee888b930225fc1b2e6db89d94491058a931b5574565ed08a7af"
+      }
+    },
+    {
+      "name": "Real registration update compiles frozen SW and removes private Vary/query keys while preserving all unrelated sentinels",
+      "status": "PASS",
+      "sourceResult": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-activated/result.json",
+      "sourceResultSha256": "8754a30af6d7c93ae320ea425e9c3421615e88389405bb0833d5a1ad15362917",
+      "newInFinalExecution": false,
+      "archivedCodeHashes": {
+        "run-sw-proof.py": "056a9b46adc1e8e12915b9e3a68acf999035552589c7473bf463e4adef98097b",
+        "sw-browser-proof.cjs": "6e4dcc6c46336cf482ed4b9d5b96fa657958093fe5c286dd0476803a31ed64a9"
+      }
+    },
+    {
+      "name": "New active SW ignores re-seeded stale entries and writes no private entries for query encoded suffix or URL-normalized paths",
+      "status": "PASS",
+      "sourceResult": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-resume/result.json",
+      "sourceResultSha256": "90222eb5ecacae20fe04fd7c754d8c82e90e0d670e8d24e02b59506240f3dffb",
+      "newInFinalExecution": false,
+      "archivedCodeHashes": {
+        "run-sw-proof.py": "4f9d843fc46491d842c5e215282d2e0e4120f2d432cada384c4c190631123a9b",
+        "sw-browser-proof.cjs": "ba57423c59b8900bae7d649ad662523fefd78ead098d1c11b36ed527b0d43cef"
+      }
+    },
+    {
+      "name": "Cache-history browser logout anonymous member account block and session revoke reach real CSS JS font guards",
+      "status": "PASS",
+      "sourceResult": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-denial/result.json",
+      "sourceResultSha256": "a15ddd45cfd67d1cefce14d49deea7bdd17fc83e17698ab2200c3bb609a044ab",
+      "newInFinalExecution": true,
+      "archivedCodeHashes": {
+        "run-sw-proof.py": "4f9d843fc46491d842c5e215282d2e0e4120f2d432cada384c4c190631123a9b",
+        "sw-browser-proof.cjs": "4881a08c743fe59f8cb27475a36e2602e1f91595c9af5f94f2f40622ead1435c"
+      }
+    },
+    {
+      "name": "Public offline HTML stays byte-identical; stale private navigation and font never produce offline cached2xx",
+      "status": "PASS",
+      "sourceResult": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-denial/result.json",
+      "sourceResultSha256": "a15ddd45cfd67d1cefce14d49deea7bdd17fc83e17698ab2200c3bb609a044ab",
+      "newInFinalExecution": true,
+      "archivedCodeHashes": {
+        "run-sw-proof.py": "4f9d843fc46491d842c5e215282d2e0e4120f2d432cada384c4c190631123a9b",
+        "sw-browser-proof.cjs": "4881a08c743fe59f8cb27475a36e2602e1f91595c9af5f94f2f40622ead1435c"
+      }
+    },
+    {
+      "name": "Badge survives update and real clear-badge message preserves unrelated cache bytes without Push",
+      "status": "PASS",
+      "sourceResult": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-denial/result.json",
+      "sourceResultSha256": "a15ddd45cfd67d1cefce14d49deea7bdd17fc83e17698ab2200c3bb609a044ab",
+      "newInFinalExecution": true,
+      "archivedCodeHashes": {
+        "run-sw-proof.py": "4f9d843fc46491d842c5e215282d2e0e4120f2d432cada384c4c190631123a9b",
+        "sw-browser-proof.cjs": "4881a08c743fe59f8cb27475a36e2602e1f91595c9af5f94f2f40622ead1435c"
+      }
+    },
+    {
+      "name": "Active updated SW preserves Original desktop mobile design and locked-customer form smoke",
+      "status": "PASS",
+      "sourceResult": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-denial/result.json",
+      "sourceResultSha256": "a15ddd45cfd67d1cefce14d49deea7bdd17fc83e17698ab2200c3bb609a044ab",
+      "newInFinalExecution": true,
+      "archivedCodeHashes": {
+        "run-sw-proof.py": "4f9d843fc46491d842c5e215282d2e0e4120f2d432cada384c4c190631123a9b",
+        "sw-browser-proof.cjs": "4881a08c743fe59f8cb27475a36e2602e1f91595c9af5f94f2f40622ead1435c"
+      }
+    }
+  ],
+  "activationEvidence": {
+    "sourceResult": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-activated/result.json",
+    "privateEntriesBefore": 11,
+    "privateEntriesAfter": 0,
+    "allFourCacheNamesRetained": true,
+    "sameUrlVaryVariants": "Across four real caches; Chromium Cache.put replaced same-cache duplicate writes, archived honestly",
+    "publicPrecacheIconsComparedSeparately": 2,
+    "lifecycle": {
+      "events": [
+        {
+          "event": "statechange",
+          "state": "installed",
+          "at": 2821.8000000044703
+        },
+        {
+          "event": "statechange",
+          "state": "activating",
+          "at": 2824.60000000149
+        },
+        {
+          "event": "controllerchange",
+          "state": "activating",
+          "at": 2824.89999999851
+        }
+      ],
+      "candidateState": "activated",
+      "actualActiveState": "activated",
+      "activeIsExactNewCandidate": true,
+      "controllerIsNewCandidate": true,
+      "oldWorkerReplaced": true
+    }
+  },
+  "finalExecution": {
+    "sourceResult": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-denial/result.json",
+    "resultSha256": "a15ddd45cfd67d1cefce14d49deea7bdd17fc83e17698ab2200c3bb609a044ab",
+    "realProductHttp": 293,
+    "destinationChecks": 36,
+    "domDestinationTypes": [
+      "font",
+      "script",
+      "stylesheet"
+    ],
+    "statusReferenceCounts": {
+      "401": 24,
+      "403": 6,
+      "200": 6
+    },
+    "consoleDiagnostics": 48,
+    "pageErrors": 0,
+    "contextExceptions": 0,
+    "workerConsoleErrors": 0,
+    "externalRequests": 0,
+    "modelMailExternalFetch": {
+      "model": 0,
+      "mail": 0,
+      "externalFetch": 0
+    },
+    "actualWorkerResponseBodyHashVerified": true
+  },
+  "offline": {
+    "publicHtmlSha256": "4d8d5d6300f72d9dbb3bba1993edb76e4c42d121960e972cdebe2653759e08cb",
+    "unchangedFromOld": true,
+    "privateNavigationRejected": true,
+    "privateFontFailed": true,
+    "privateFontResponseStatuses": []
+  },
+  "badge": {
+    "before": 7,
+    "afterMessage": 0,
+    "pushUsed": false
+  },
+  "artifacts": {
+    "finalDesktop": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-denial/active-sw-original-desktop.png",
+    "finalMobileForm": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-denial/active-sw-original-mobile-form.png",
+    "nativeLifecycleProbe": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/native-lifecycle-v1/result.json",
+    "innerProcessCleanup": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-denial/inner-process-cleanup.json",
+    "outerProcessCleanup": "/workspace/helmut-gemeinsame-integration-20261104/cache-abnahme/pruefung/evidence/active-sw-v1-denial/outer-process-cleanup.json"
+  },
+  "cleanup": {
+    "exitCode": 0,
+    "allProductFilesUnchanged": true,
+    "trackedFiles": 2159,
+    "oldEvidenceFilesUnchanged": true,
+    "previousEvidenceFilesVerified": 155,
+    "runtimeProductBytesUnchanged": true,
+    "runtimeCopyAndLocalSyntheticStoreRemoved": true,
+    "ownedShortBrowserDirectoryRemoved": true,
+    "databaseUsed": false,
+    "externalModelMailMotorPushUsed": false
+  },
+  "limitations": [
+    "Synthetic local file Auth; no fresh DB or production acceptance",
+    "Auth setup initially uses real product HTTP with browser cookiejar; subsequent login/logout use controlled-page fetch, not UI buttons",
+    "Session revocation uses actual accounts.destroyUserSessions on own local test store, not an HTTP revoke endpoint",
+    "Negative MIME-blocked resource bodies may be inaccessible or returned empty by Chromium: browserbody null, actual status and serverbody hashes recorded; all successful200 bodies compared",
+    "Manually re-seeded private cache entries may remain inert; no new private entries from successful or denied network requests",
+    "No Push/notification or OS badge delivery proof",
+    "Normal cleanup/reaping measured; forced timeout cleanup statically hardened, not deliberately triggered"
+  ]
+}

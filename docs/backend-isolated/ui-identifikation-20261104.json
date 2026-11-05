@@ -1,0 +1,32 @@
+{
+  "schema": "helmut-current-ui-coordination/1",
+  "observedAt": "2026-11-04T13:31:49.428Z",
+  "currentUi": {
+    "thread": "01a190f1-2719-715e-9e41-89a2fbac4055",
+    "host": "durable",
+    "title": "Helmut UI isoliert vorbereiten",
+    "cwd": "/workspace",
+    "branch": "codex/helmut-ui-20261031",
+    "commit": "373c373d",
+    "parent": "a41d51f194dba526c7aab6b922f6dc33eed3d618",
+    "fullHeadShaUnavailable": true
+  },
+  "evidence": {
+    "latestCompletedTurn": "01a1a654-4729-717b-8ff3-76be661e71d3",
+    "completedAt": 1793793921,
+    "verificationOutput": [
+      "PASS clean UI branch; local commit 373c373d directly based on a41d51f1\nPASS committed source equals 97-check source; artifact checksums intact\nPASS original worktree, motor/backend/config/workflows and operational text unchanged\nPASS no external traffic; no push, merge, deployment or GitHub job\n"
+    ],
+    "finalReport": [
+      "Lokal als **`373c373d`** gesichert, direkt auf Basis von `a41d51f1`. Der UI-Worktree ist sauber.\n\nDer Vertragsabgleich führte zu diesen Korrekturen:\n\n- Fachliche 403-Antworten werden nicht erneut gesendet. Nur eindeutige CSRF-Fehler erlauben einen Wiederholungsversuch; ungültige Token verhindern Schreibaufrufe.\n- Lage zeigt Teilfehler auch bei weiterhin verfügbaren Karten.\n- Automatische Push-Synchronisierung startet nur nach erfolgreicher Datenübernahme.\n\n**97 neue Vertragsprüfungen bestanden.** Die früheren 69 und 388 Prüfungen wurden nicht wiederholt. Alle 46 HTTP-Anfragen einschließlich 11 POSTs waren simuliert. Unter nachgewiesener Netzsperre wurden **0 Bytes/Pakete übertragen**.\n\nDie verbleibenden Aufgaben sind konkret zugeordnet:\n\n| Zuständig | Aufgabe |\n|---|---|\n| Backendkoordinator/Testbetrieb | Tatsächlichen Backendcommit festlegen und unabhängige Integrationsumgebung bereitstellen |\n| Backend/Auth | Cookies, Sessionverlängerung, Mandatsrechte und CSRF serverseitig abnehmen |\n| Backend/API + UI | Datenverträge, Frischezustände und kuratierte Radar-Ausgabe anbinden |\n| Backend/Büro + UI | Entwurfspersistenz, Timeouts und Schutz vor doppelten Schreiboperationen klären |\n| Hosting + UI | MIME-Typen, CSP und Service Worker prüfen |\n| Koordination/QA | Zulässige CI auf dem endgültigen Integrationscommit ausführen |\n\n**Wichtig:** Session- und App-Start-GETs können serverseitig schreiben; ein Vorschauparameter allein verhindert das nicht.\n\n[Übergabe mit Dateien, Schnittstellen und Prüfbelegen](/workspace/helmut-ui/docs/ui-backend.md)\n\nBackend und Motor blieben unverändert. Keine echten API-/Modellaufrufe, kein Push, Merge oder Deployment."
+    ]
+  },
+  "limits": {
+    "fullCurrentSourceAvailable": false,
+    "bilateralCoordinationPerformed": false,
+    "currentUiRuntimeExecuted": false,
+    "oldPr771UsedForIntegration": false,
+    "reportedUiChecks": 554,
+    "uiChecksAreSimulated": true
+  }
+}

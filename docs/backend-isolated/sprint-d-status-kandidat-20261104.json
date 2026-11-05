@@ -1,0 +1,300 @@
+{
+  "baseline": "ae18658e5caac2b39403c0e41e3a8af5c2b3d7be",
+  "mode": "targeted-status-regression-real-http",
+  "candidatePatchSha256": "bf0c77ecc2950cfc34fee9bfd49c707d934e975500f3817cb9e232d7fe70954e",
+  "groups": [
+    {
+      "name": "Anonym gesperrt; echter Admin-Login und Cookie",
+      "status": "PASS"
+    },
+    {
+      "name": "deaktiviert: widerspruechlicher PATCH wird atomar abgewiesen",
+      "status": "PASS"
+    },
+    {
+      "name": "deaktiviert: normaler Statuswechsel entzieht Sitzung und sperrt Login",
+      "status": "PASS"
+    },
+    {
+      "name": "deaktiviert: active:true allein kann Sperrstatus nicht aufheben",
+      "status": "PASS"
+    },
+    {
+      "name": "deaktiviert: bewusste Statusreaktivierung bleibt moeglich",
+      "status": "PASS"
+    },
+    {
+      "name": "gekuendigt: widerspruechlicher PATCH wird atomar abgewiesen",
+      "status": "PASS"
+    },
+    {
+      "name": "gekuendigt: normaler Statuswechsel entzieht Sitzung und sperrt Login",
+      "status": "PASS"
+    },
+    {
+      "name": "gekuendigt: active:true allein kann Sperrstatus nicht aufheben",
+      "status": "PASS"
+    },
+    {
+      "name": "gekuendigt: bewusste Statusreaktivierung bleibt moeglich",
+      "status": "PASS"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/security/csrf",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/users/user-93684e3757402d4e84",
+      "status": 400
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/users/user-93684e3757402d4e84",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 401
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/users/user-93684e3757402d4e84",
+      "status": 400
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/users/user-93684e3757402d4e84",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/users/user-abcb374dec4d7a1472",
+      "status": 400
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/users/user-abcb374dec4d7a1472",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 401
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/users/user-abcb374dec4d7a1472",
+      "status": 400
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/users/user-abcb374dec4d7a1472",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200
+    }
+  ],
+  "findings": [
+    {
+      "id": "D-01",
+      "testedStatus": "deaktiviert",
+      "patchStatus": 400,
+      "returnedStatus": null,
+      "returnedActive": null,
+      "persistedStatus": "aktiv",
+      "persistedActive": true,
+      "loginAfterConflict": 200,
+      "blockedStatusLoginBypassReproduced": false
+    },
+    {
+      "id": "D-01-active-only",
+      "testedStatus": "deaktiviert",
+      "patchStatus": 400,
+      "returnedStatus": null,
+      "returnedActive": null
+    },
+    {
+      "id": "D-01",
+      "testedStatus": "gekuendigt",
+      "patchStatus": 400,
+      "returnedStatus": null,
+      "returnedActive": null,
+      "persistedStatus": "aktiv",
+      "persistedActive": true,
+      "loginAfterConflict": 200,
+      "blockedStatusLoginBypassReproduced": false
+    },
+    {
+      "id": "D-01-active-only",
+      "testedStatus": "gekuendigt",
+      "patchStatus": 400,
+      "returnedStatus": null,
+      "returnedActive": null
+    }
+  ],
+  "isolation": {
+    "backend": "local",
+    "profileWrites": 0,
+    "persistedProfiles": 0,
+    "externalFetchAttempts": 0,
+    "communicationBlocked": true,
+    "listenAddress": "127.0.0.1",
+    "syntheticEmailsOnly": true
+  },
+  "protectedBefore": {
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "lib/helmut/accounts.js": "c7c561e519b788ee6938b4390f2b94d80f90b5dd2e4db8abb472ecafe3b1f27c",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+    "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+    "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+  },
+  "status": "PASS_CANDIDATE_STATUS_REGRESSION",
+  "protectedAfter": {
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "lib/helmut/accounts.js": "c7c561e519b788ee6938b4390f2b94d80f90b5dd2e4db8abb472ecafe3b1f27c",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+    "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+    "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+  },
+  "protectedUnchanged": true,
+  "trackedDiffEmpty": false,
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "httpRequests": 27
+  },
+  "run": {
+    "timestamp": "2026-11-04T11:45:12.761Z",
+    "elapsedMs": 983,
+    "exitCode": 0,
+    "node": "v24.19.0",
+    "sourceRoot": "/workspace/helmut-backend-sprint-b-20261104",
+    "runtimeCloneRemovedAfterRun": true,
+    "testSha256": "5eb0699c03616e0db8aec32c01197e456b853f98dbc5d137a37dedb3a04bd068",
+    "environmentKeys": [
+      "HELMUT_AUTH_MODE",
+      "HELMUT_STORE_CACHE_MS",
+      "HELMUT_TESTLAUF_KOMMUNIKATION",
+      "LANG",
+      "LC_ALL",
+      "NODE_PATH",
+      "PATH",
+      "TMPDIR",
+      "TZ"
+    ],
+    "invocation": "env -i [explicit fixedEnv allowlist] node scripts/lokal.js scripts/sprint-d-kontoverwaltung-test.js --candidate-patch docs/backend-isolated/sprint-d-status-active.patch"
+  },
+  "sourceBefore": {
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+    "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+    "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+  },
+  "sourceAfter": {
+    "server.js": "1bdb41bc338018a2e18e704256d9159294b5330e48233ec0ad36be49f3d5919c",
+    "lib/helmut/accounts.js": "08cfa25c4753721277b39fb7ff60ad0023d6381533fd039c337755bad84fe82e",
+    "lib/helmut/auth.js": "d9c36915912b377d1a13146e616d30ade72383cdd542583924df29e1b8f06f8f",
+    "lib/helmut/storage.js": "e7978851cf7a42d6e78d97731c54e9bdb2c4ef26f2866bc96185616a672d7768",
+    "client.js": "e98483db39b06d7ec54f33aae0cb42a468406fd03309441a7a6d38503240a919",
+    "index.html": "62bb914b9c52c850313da61e6c501095e4fbe0f338af42e04dc35b9aff53b145",
+    "styles.css": "c31cf24c63b8acf1e2de9677aa169a7e3ff6e01980947b9326d84bc88c5214ee",
+    "scripts/lokal.js": "dbdd861cc14e55576c40d74e799c14e1978af79f40dd7376ba53d4574196ec5b",
+    "scripts/lokaler-netzschutz.js": "3341a39d48e5e598a5e1f02241b255a38d9533d24101dcc185066e2f3a269d7f"
+  }
+}
