@@ -122,8 +122,12 @@ const BEREICHE = {
     suiten: [/^auth/i, /^login/i, /^invite/i, /^reset-/i, /^passwort/i, /^tenant-/i, /^jwt-/i]
   },
   admin: {
-    quelle: [/(^|\/)lib\/helmut\/admin/i, /(^|\/)lib\/helmut\/monitoring-webhook/i],
-    suiten: [/^admin/i]
+    // Die separate Verwaltung (inklusive Original-Paket und Adapter) ist Admin-Code.
+    // Keine Verwechslung mit unbekanntem Kerncode: andere neue Dateien bleiben fail closed.
+    quelle: [/(^|\/)lib\/helmut\/admin/i, /(^|\/)lib\/helmut\/monitoring-webhook/i,
+      /(^|\/)verwaltung\//i, /(^|\/)scripts\/original-verwaltung-/i,
+      /(^|\/)scripts\/verwaltung-vorschau\.js$/i],
+    suiten: [/^admin/i, /^original-verwaltung-test\.js$/i]
   },
   "matching-scoring": {
     quelle: [/(^|\/)lib\/helmut\/matching/i, /(^|\/)lib\/helmut\/scoring/i,
