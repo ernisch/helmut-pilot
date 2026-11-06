@@ -12,7 +12,7 @@ PR1079 nach Betreiber-GO auf `ec70fe31` gemergt; Production-Deployment `dpl_7fx6
 Alle zehn Tabellen gegen Ausgangsstand und echte Ausführungsbelege geprüft; bestehende Quellen-/Healthwerte unverändert, keine Aktivierung oder Budget-/Cronänderung.
 Gleiche Regeln für24Fachgebiete,16Länder und10Parteien sowie Verwaltungsprüfung live. Der automatische Nachweis folgt am nächsten regulären Quellenlauf (04:00UTC); noch kein solcher Lauf nach diesem Deployment belegt.
 Pflicht-CI189/189Standard,336/336Bereich und Browser grün. Liveassets bytegleich, öffentlicher Bereitschaftstest grün, Verwaltung ohne Anmeldung401; kein angemeldeter Production-UI-Test.
-Restlücken/Rückweg: [Quellenversorgung](quellenarchitektur/47-neutrale-quellenversorgung.md). [DIP/EUR-Lex/Bundespuls](quellenarchitektur/48-dip-eurlex-bundespuls.md): DIP genutzt; zwei neue Wege pausiert, Code inPR1084 noch ohne Merge-GO.
+Restlücken/Rückweg: [Quellenversorgung](quellenarchitektur/47-neutrale-quellenversorgung.md). [DIP/EUR-Lex/Bundespuls](quellenarchitektur/48-dip-eurlex-bundespuls.md): DIP genutzt; Aktivierung der zwei neuen Wege beauftragt und vorbereitet, vorerst pausiert bis Merge/DeployPR1084 (konkretesGO offen).
 
 ## Verwaltungszahlen: Korrektur ausgerollt (06.11.2026)
 

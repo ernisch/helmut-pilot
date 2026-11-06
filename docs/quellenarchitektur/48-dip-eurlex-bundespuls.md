@@ -40,10 +40,14 @@ Einstiegswege speichern nur Titelmetadaten, Links und belegte Datums-/Urheberfel
 Feedbeschreibungen werden auch bei späteren Anbieteränderungen nicht übernommen.
 
 Bundespuls beschreibt kostenlosen Automationszugang ohne Anmeldung und regelbasierte
-Metadaten statt KI-Zusammenfassungen. Vor Aktivierung bleiben Quellenangabe
-„Deutscher Bundestag/Bundesrat – DIP“, Dokumentnummern soweit vorhanden,
-Änderungskennzeichnung, Anbieterrechte sowie Kontakt im User-Agent und Cachehinweise
-zu berücksichtigen. Redaktionelle Inhalte sind von amtlichen Daten zu unterscheiden.
+Metadaten statt KI-Zusammenfassungen. Die erneute Prüfung erlaubt den engen kommerziellen
+Titel-/Linkumfang unter den DIP-Bedingungen. Erforderlich sind Quellenangabe
+„Deutscher Bundestag/Bundesrat – DIP“, Änderungskennzeichnung und ein Link zu den
+kostenlosen DIP-Originaldaten; Dokumentart und Nummer zusätzlich bei Werkzitaten.
+Bot-Kontakt und Cacheintervall5–30Minuten sind Anbieterempfehlungen. Der Bot verweist
+auf Helmuts geprüftes öffentliches Impressum. Der bestehende gemeinsame Tagesabruf
+bleibt erhalten; kein neuer Cache. EUR-Lex liefert ausdrücklich `no-store`.
+Redaktionelle Inhalte sind von amtlichen Daten zu unterscheiden.
 Belege: [Entwicklerzugang](https://bundespuls.de/entwickler),
 [Methodik](https://bundespuls.de/methodik), [Rechte](https://bundespuls.de/impressum),
 [DIP-Nutzungsbedingungen](https://dip.bundestag.de/documents/nutzungsbedingungen_dip.pdf).
@@ -79,3 +83,51 @@ Einträge; kein Rücknahmetest in Production. Der Code bleibt bis zum konkreten
 Merge-GO für[PR1084](https://github.com/ernisch/helmut-pilot/pull/1084) auf dem
 Arbeitsbranch. Die Freigabe fürPR1079 gilt dafür nicht. Neue Quellen wurden nicht
 aktiviert; Budget, Cron und Profile bleiben unverändert.
+
+## Vollständige Aktivierung vorbereitet
+
+Der anschließende Betreiberauftrag autorisiert die Aktivierung beider Quellen.
+Das konkrete Merge-GO für den aktualisierten PR1084 steht weiterhin aus. Nach Merge
+und geprüftem Production-Deployment kann der bereits geprüfte Aktivierungsplan
+eingespielt werden; dafür ist keine erneute allgemeine Aktivierungsfrage erforderlich.
+
+| Weg | Geplante Aktivierung | Grund |
+| --- | --- | --- |
+| EUR-Lex | `needs_review / always_on` | EU-Rechtsakte global abrufen, ohne das gesamte vorbereitete EU-Paket zu aktivieren |
+| Bundespuls | `needs_review / auto` | Abruf über die bereits aktive Bundesbasis |
+
+Die echten Feedabrufe mit `HelmutBot/1.0 (+https://helmut-pilot.vercel.app/impressum)`
+lieferten beideHTTP200. Je fünf Einträge wurden mit Produktionsparser, Normalisierung
+und Speicherprojektion geprüft:EUR-Lex5mit Datum, Bundespuls0mit Publikationsdatum,
+beide5mit Herkunft und0Volltext. Der Herkunftsbeleg bleibt über beide Dedupwege,
+PostgREST-Projektionen und kompakte Antworten bis zur Quellenanzeige erhalten.
+Auch manuelle Artikelkontext-Reparaturen respektieren den engen Metadatenumfang.
+Undatierte Bundespuls-Belege zeigen „Veröffentlichungsdatum unbekannt“; Abrufzeiten
+werden nur ausdrücklich als Abruf ausgewiesen. Gezielte Tests:23Backendgruppen,
+8UI-Gruppen, Original-Chromium bei390px sowie18Quellenlesegruppen nach Integration
+von main2a5e0774 bestanden. Die Pflicht-CI wird auf dem finalen PR-Kopf abgenommen.
+
+Geladene Bundespuls-Belege erhöhen keinen unabhängigen Belegbonus in den angepassten
+Bewertungen und Radarsignalen. Die physische gespeicherte Dokumentzahl bleibt erhalten;
+eine nur lesende Bewertungsprojektion wird nie persistiert. Grenze: Vorauswahlen vor
+dem vollständigen Quellenread kennen diese Zuordnung noch nicht. Insbesondere die
+optionale Lage-Vorsortierung bleibt davon betroffen. Production meldete16:02:21UTC
+`scoring=off` und `relevanzordnung=false`; diese Schalter werden nicht geändert.
+Dies ist keine universelle Neuordnung aller historischen Korroborationszählungen.
+
+`scripts/datenquellen-aktivierungsplan.js` erzeugt nur SQL für die zwei vorhandenen
+Zeilen. Status und Modus werden nach vollständigem Ausgangsvergleich atomar geändert;
+es werden keine Gesundheitswerte, Pakete oder Profile geschrieben. Der bestehende
+Zeitstempeltrigger bleibt wirksam.8Offline- und23echte PostgreSQL-Prüfungen bestanden,
+einschließlich der vollständigen Livekopie, Gegenproben und Rücknahme. Die reale
+Quellenauswahl steigt von141auf143, ausschließlich um diese zwei Wege.
+
+Final geprüfter Plan: `aktivierung/plan-reviewed/` unter dem Arbeitsartefakt
+`/workspace/helmut-abdeckung-2026-11-06/dip-eurlex-bundespuls/`.
+Planhash:`4bae074baf34e34fcd9b2ab2048743825480ec08bbce376a3c2fa4e0b301817d`.
+Apply-SHA256:`3581039a226453cc8a2836e839e0693c5ea03263446642bc9a2226bb5f243d51`.
+Die älteren Unterordner `plan/` und `plan-final/` sind überholt. Vor Apply sind
+frischer Katalog/Schema, SourceMode und Deployment zu prüfen. Danach alle zehn
+Tabellen vergleichen und den tatsächlichen Ausführungsbeleg sichern. Der daran
+gebundene Rückweg pausiert nur diese zwei Quellen und erhält inzwischen entstandene
+echte Abruf-/Gesundheitswerte. Noch kein Apply oder Rücknahmetest in Production.
