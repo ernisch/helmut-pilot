@@ -3,6 +3,9 @@
 Status: lokal umgesetzt und geprueft; Merge und Production offen.
 Basis: `c6522a803f0b77b4c65e83354125896b813273f4`.
 Branch: `codex/app-start-performance-20261106`.
+[PR1078](https://github.com/ernisch/helmut-pilot/pull/1078).
+Die parallele Icon-Aenderung aus PR1077 (`66ca2816`) ist integriert;
+Icon-/Manifestversion bleiben erhalten, Client/CSS tragen ihre eigene neue Version.
 
 ## Ergebnis
 
@@ -13,7 +16,7 @@ vollstaendig verborgenem Splash, gemessen ab Navigation:
 | Fall | Vorher | Nachher | Ersparnis |
 | --- | ---: | ---: | ---: |
 | Erster Aufruf, leerer HTTP-Cache | 3.319 ms | 2.751 ms | 568 ms / 17,1 % |
-| Erneuter Aufruf, gefuellter HTTP-Cache | 1.157 ms | 720 ms | 437 ms / 37,7 % |
+| Erneuter Aufruf, gefuellter HTTP-Cache | 1.157 ms | 721 ms | 437 ms / 37,7 % |
 
 Spannweiten kalt: vorher 3.305–3.396 ms, nachher 2.724–2.935 ms.
 Warm: vorher 1.140–1.187 ms, nachher 693–765 ms.
@@ -73,6 +76,7 @@ und der isolierte Vergleich blieben davon unabhaengig moeglich.
   Bootfehler, Offline und unveraenderter Watchdog.
 - `scripts/browser-smoke-test.js`: 78/78, Desktop/Mobil, Navigation,
   Sitzungsausfall und Erholung, Quellenansichten und Orientierung.
+- Zentraler Schnellkern: 14/14 Suiten bestanden.
 - Fuenf Fonts mit FontTools 4.61.1/Brotli 1.2.1 konvertiert und gegen TTF geprueft:
   708/1.033/1.033/1.480/1.480 Glyphen, Zeichenabbildung, alle Konturen,
   Metriken und Layout-/Variationsdaten identisch. Die formatspezifisch entfallende

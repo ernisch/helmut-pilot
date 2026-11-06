@@ -196,12 +196,12 @@ check("server.js: favicon.ico und SVG-Logo mit ASSET_VERSION versioniert",
 // --- index.html: statisch versionierte Icon-Links (Konsistenz zum Repo) ---
 console.log("\nindex.html Icon-Referenzen");
 const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
-check("index.html: Icon-Links + Manifest-Link versioniert (?v=20261105-design2)",
-  /favicon-32\.png\?v=20261105-design2/.test(indexHtml) &&
-  /favicon-16\.png\?v=20261105-design2/.test(indexHtml) &&
-  /helmut_appletouch_180\.png\?v=20261105-design2/.test(indexHtml) &&
-  /helmut_appicon_192\.png\?v=20261105-design2/.test(indexHtml) &&
-  /site\.webmanifest\?v=20261105-design2/.test(indexHtml));
+check("index.html: Icon-Links + Manifest-Link versioniert (?v=20261106-h-klein)",
+  /favicon-32\.png\?v=20261106-h-klein/.test(indexHtml) &&
+  /favicon-16\.png\?v=20261106-h-klein/.test(indexHtml) &&
+  /helmut_appletouch_180\.png\?v=20261106-h-klein/.test(indexHtml) &&
+  /helmut_appicon_192\.png\?v=20261106-h-klein/.test(indexHtml) &&
+  /site\.webmanifest\?v=20261106-h-klein/.test(indexHtml));
 
 // --- sw.js: Cache-Namespace erhoeht + Precache-URLs versioniert ---
 console.log("\nsw.js Cache-Versionierung");
