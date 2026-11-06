@@ -4082,111 +4082,56 @@ function sendPilotUnlockPage(response, url) {
     <meta name="theme-color" content="#050914" />
     <title>Helmut Zugang</title>
     <style>
-      :root { color-scheme: light; --ink: #111111; --muted: #68645f; --line: #e7e0d4; --paper: #f7f4ed; --navy: #101827; --accent: #7d1734; }
+      @font-face { font-family: Spectral; src: url("/assets/ui/fonts/Spectral-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+      @font-face { font-family: "Hanken Grotesk"; src: url("/assets/ui/fonts/HankenGrotesk-var.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
+      @font-face { font-family: "IBM Plex Mono"; src: url("/assets/ui/fonts/IBMPlexMono-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+      :root { color-scheme: dark; --ink: #eaeef6; --text: #aeb8c9; --muted: #8c97aa; --line: rgba(255, 255, 255, .08); --line-2: rgba(255, 255, 255, .14); --accent: #7fa8e0; --risk: #d97b7b; }
       * { box-sizing: border-box; }
+      html, body { width: 100%; min-height: 100%; }
       body {
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        padding: 28px;
-        background:
-          linear-gradient(rgba(16, 24, 39, 0.035) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(16, 24, 39, 0.035) 1px, transparent 1px),
-          var(--paper);
-        background-size: 38px 38px;
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color: var(--ink);
+        margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: clamp(32px, 8dvh, 96px) 20px;
+        font-family: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); line-height: 1.55; -webkit-font-smoothing: antialiased;
+        background: radial-gradient(70% 40% at 50% 0, rgba(127, 168, 224, .07), transparent 70%), linear-gradient(180deg, #070b15 0%, #050914 72%, #03050b 100%);
       }
-      main {
-        width: min(100%, 560px);
-        padding: clamp(32px, 7vw, 56px);
-        border: 1px solid var(--line);
-        border-radius: 28px;
-        background: rgba(255, 255, 255, 0.92);
-        box-shadow: 0 28px 80px rgba(16, 24, 39, 0.08);
-      }
-      .mark {
-        width: 48px;
-        height: 48px;
-        display: grid;
-        place-items: center;
-        border-radius: 16px;
-        background: var(--navy);
-        color: white;
-        font-weight: 800;
-        letter-spacing: 0.02em;
-        margin-bottom: 42px;
-      }
-      .rule {
-        width: 88px;
-        height: 2px;
-        margin: 0 0 34px;
-        background: linear-gradient(90deg, var(--accent), var(--navy));
-      }
-      h1 {
-        margin: 0;
-        font-size: clamp(42px, 9vw, 68px);
-        line-height: 0.98;
-        letter-spacing: -0.04em;
-      }
-      p {
-        margin: 22px 0 0;
-        font-size: 18px;
-        line-height: 1.55;
-        color: var(--muted);
-      }
-      form {
-        margin-top: 34px;
-        display: grid;
-        gap: 12px;
-      }
-      input {
-        width: 100%;
-        border: 1px solid var(--line);
-        border-radius: 18px;
-        padding: 18px 18px;
-        font: inherit;
-        font-size: 18px;
-        outline: none;
-        background: #fff;
-      }
-      input:focus { border-color: rgba(16, 24, 39, 0.45); box-shadow: 0 0 0 4px rgba(16, 24, 39, 0.06); }
-      button {
-        border: 0;
-        border-radius: 18px;
-        padding: 18px 20px;
-        background: var(--navy);
-        color: #fff;
-        font: inherit;
-        font-size: 17px;
-        font-weight: 700;
-        cursor: pointer;
-      }
-      .error {
-        min-height: 24px;
-        margin-top: 4px;
-        color: #a51d2d;
-        font-size: 15px;
-      }
-      @media (max-width: 520px) {
-        body { place-items: stretch; align-items: center; padding: 18px; }
-        main { border-radius: 24px; }
-      }
+      main { width: min(100%, 460px); padding: 40px 36px 32px; border: 1px solid rgba(255, 255, 255, .07); border-radius: 14px; background: rgba(255, 255, 255, .025); box-shadow: 0 30px 70px -34px rgba(0, 0, 0, .8); }
+      .mark { display: flex; align-items: center; gap: 12px; margin: 0 0 32px; color: var(--ink); font: 400 24px/1 Spectral, Georgia, serif; }
+      .mark img { width: 32px; height: 32px; display: block; }
+      .rule, .wordmark { display: none; }
+      .eyebrow { margin: 0 0 10px; font: 400 11.5px/1.6 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+      h1 { margin: 0 0 12px; font: 400 clamp(32px, 6vw, 40px)/1.1 Spectral, Georgia, serif; letter-spacing: -.01em; color: var(--ink); }
+      p { margin: 0 0 6px; font-size: 16px; color: var(--text); }
+      a { color: var(--accent); text-decoration: none; } a:hover { color: #a7c3ea; }
+      label { display: block; margin: 18px 0 8px; font-size: 14px; color: var(--muted); }
+      form { margin-top: 20px; display: grid; gap: 12px; }
+      form label { margin-bottom: -4px; }
+      input { width: 100%; min-height: 48px; padding: 0 14px; font: inherit; font-size: 16px; color: var(--ink); background: rgba(255, 255, 255, .03); border: 1px solid var(--line-2); border-radius: 8px; outline: none; }
+      input::placeholder { color: #6e7a8c; }
+      input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(127, 168, 224, .18); }
+      button { margin-top: 8px; width: 100%; min-height: 48px; padding: 0 24px; font: inherit; font-size: 16px; font-weight: 500; color: #0a0f1c; background: #e9edf5; border: 0; border-radius: 24px; cursor: pointer; transition: background 160ms; }
+      button:hover { background: #fff; } button[disabled] { opacity: .6; cursor: wait; }
+      button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+      .error { min-height: 20px; margin: 4px 0 0; font-size: 14px; color: var(--risk); }
+      .notice { padding: 14px 0; margin: 8px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 15px; color: var(--text); }
+      footer, .legal { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+      footer a, .legal a { color: var(--muted); } footer a:hover, .legal a:hover { color: var(--ink); }
+      [hidden] { display: none !important; }
+      @media (max-width: 480px) { main { padding: 32px 22px 24px; } }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
     </style>
   </head>
   <body>
     <main>
-      <div class="mark">H</div>
+      <div class="mark"><img src="/assets/ui/logo/helmut-zeichen.svg" width="32" height="32" alt="" />Helmut</div>
       <div class="rule"></div>
+      <p class="eyebrow">Geschützter Bereich</p>
       <h1>Zugang.</h1>
       <p>Helmut ist geschützt. Gib den Zugangscode ein, um die politische Lage zu öffnen.</p>
-      <p><a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a></p>
       <form id="unlock">
         <input id="secret" name="secret" type="password" autocomplete="current-password" placeholder="Zugangscode" autofocus />
         <button type="submit">Helmut öffnen</button>
         <div class="error" id="error" role="alert"></div>
       </form>
+      <p class="legal"><a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a></p>
     </main>
     <script>
       const form = document.getElementById("unlock");
@@ -4244,15 +4189,22 @@ function sendImpressumPage(response) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Impressum · Helmut</title>
     <style>
-      :root { color-scheme: light; --ink: #111; --muted: #5f615f; --line: #d9ddd7; --paper: #f7f7f2; --accent: #7d1734; }
+      @font-face { font-family: Spectral; src: url("/assets/ui/fonts/Spectral-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+      @font-face { font-family: "Hanken Grotesk"; src: url("/assets/ui/fonts/HankenGrotesk-var.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
+      :root { color-scheme: dark; --ink: #eaeef6; --text: #aeb8c9; --muted: #8c97aa; --line: rgba(255, 255, 255, .08); --accent: #7fa8e0; }
       * { box-sizing: border-box; }
-      body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--paper); color: var(--ink); line-height: 1.6; }
-      main { width: min(100% - 32px, 880px); margin: 0 auto; padding: 56px 0 72px; }
-      a { color: var(--accent); }
-      h1 { font-size: clamp(36px, 6vw, 64px); line-height: 1; margin: 0 0 24px; letter-spacing: -0.03em; }
-      h2 { margin: 36px 0 10px; font-size: 22px; }
-      p, li { color: var(--muted); font-size: 17px; }
-      .notice { border: 1px solid var(--line); background: #fff; padding: 18px 20px; border-radius: 8px; }
+      body { margin: 0; font-family: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; background: radial-gradient(70% 320px at 50% 0, rgba(127, 168, 224, .07), transparent 100%), #070b16; min-height: 100vh; }
+      main { width: min(100% - 40px, 720px); margin: 0 auto; padding: 72px 0 88px; }
+      a { color: var(--accent); text-decoration: none; } a:hover { color: #a7c3ea; }
+      a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+      h1 { margin: 0 0 28px; font: 400 clamp(38px, 6vw, 56px)/1.05 Spectral, Georgia, serif; letter-spacing: -.01em; color: var(--ink); }
+      h2 { margin: 40px 0 10px; padding-top: 24px; border-top: 1px solid var(--line); font: 400 24px/1.25 Spectral, Georgia, serif; color: var(--ink); }
+      p, li { color: var(--text); font-size: 17px; }
+      ul { padding-left: 22px; }
+      strong { color: var(--ink); font-weight: 500; }
+      .notice { margin: 24px 0; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: transparent; border-radius: 0; color: var(--muted); font-size: 15px; }
+      code { padding: 2px 6px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255, 255, 255, .03); color: var(--ink); font-size: .92em; }
+      .notice + h2 { border-top: 0; padding-top: 0; }
     </style>
   </head>
   <body>
@@ -4298,61 +4250,46 @@ function sendSetPasswordPage(response) {
     <meta name="robots" content="noindex" />
     <title>Passwort setzen · Helmut</title>
     <style>
-      :root { color-scheme: dark; }
+      @font-face { font-family: Spectral; src: url("/assets/ui/fonts/Spectral-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+      @font-face { font-family: "Hanken Grotesk"; src: url("/assets/ui/fonts/HankenGrotesk-var.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
+      @font-face { font-family: "IBM Plex Mono"; src: url("/assets/ui/fonts/IBMPlexMono-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+      :root { color-scheme: dark; --ink: #eaeef6; --text: #aeb8c9; --muted: #8c97aa; --line: rgba(255, 255, 255, .08); --line-2: rgba(255, 255, 255, .14); --accent: #7fa8e0; --risk: #d97b7b; }
       * { box-sizing: border-box; }
       html, body { width: 100%; min-height: 100%; }
       body {
-        margin: 0; min-height: 100dvh; display: grid; place-items: center;
-        padding: clamp(32px, 8dvh, 96px) 20px;
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color: #f5f1e8; line-height: 1.6;
-        background:
-          radial-gradient(ellipse at 84% 10%, rgba(88, 46, 196, .09), transparent 38%),
-          radial-gradient(ellipse at 12% 92%, rgba(28, 66, 168, .07), transparent 34%),
-          radial-gradient(circle at 50% 40%, rgba(140, 92, 255, .11), transparent 26%),
-          linear-gradient(180deg, #070b15 0%, #050914 72%, #03050b 100%);
+        margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: clamp(32px, 8dvh, 96px) 20px;
+        font-family: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); line-height: 1.55; -webkit-font-smoothing: antialiased;
+        background: radial-gradient(70% 40% at 50% 0, rgba(127, 168, 224, .07), transparent 70%), linear-gradient(180deg, #070b15 0%, #050914 72%, #03050b 100%);
       }
-      main {
-        width: min(100%, 480px);
-        background: linear-gradient(155deg, rgba(15, 21, 38, .97), rgba(7, 10, 21, .96));
-        border: 1px solid rgba(255, 255, 255, .07);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .042), 0 36px 80px rgba(0, 0, 0, .44), 0 6px 28px rgba(0, 0, 0, .3);
-        border-radius: 24px;
-        padding: 48px 40px;
-        text-align: center;
-      }
-      .mark { display: grid; place-items: center; color: #fbf7ef; margin-bottom: 6px; }
-      .mark span { font: 720 48px/1 Inter, sans-serif; letter-spacing: -.04em; text-shadow: 0 20px 70px rgba(140, 92, 255, .34); }
-      .wordmark { margin: 0 0 14px; font-weight: 800; letter-spacing: .08em; color: #d7e0ff; opacity: .72; text-transform: uppercase; font-size: 13px; }
-      h1 { font-size: clamp(26px, 5vw, 34px); line-height: 1.15; margin: 0 0 12px; letter-spacing: -.02em; color: #f5f1e8; }
-      p { color: rgba(245, 241, 232, .68); font-size: 16px; max-width: 360px; margin: 0 auto 4px; }
-      a { color: #6f8ff7; }
-      label { display: block; margin: 16px 0 6px; font-weight: 600; font-size: 14px; text-align: left; color: rgba(245, 241, 232, .68); }
-      form { margin-top: 8px; }
-      input {
-        width: 100%; min-height: 52px; padding: 0 16px; font-size: 16px; font: inherit;
-        border: 1px solid rgba(255, 255, 255, .12); border-radius: 16px;
-        background: rgba(255, 255, 255, .06); color: #f5f1e8; outline: none;
-      }
-      input:focus { border-color: rgba(139, 92, 246, .56); box-shadow: 0 0 0 4px rgba(139, 92, 246, .16); }
-      button {
-        margin-top: 20px; width: 100%; min-height: 48px; padding: 0 22px; font-size: 16px; font-weight: 500;
-        color: #ffffff; background: linear-gradient(135deg, #102354, #1d3f8f);
-        border: 1px solid #f5f1e8; border-radius: 14px; cursor: pointer;
-        box-shadow: 0 14px 34px rgba(29, 63, 143, .16);
-      }
-      button[disabled] { opacity: .6; cursor: wait; }
-      .error { color: #ff7a8a; font-size: 14px; margin-top: 12px; min-height: 18px; }
-      .notice { border: 1px solid rgba(255, 255, 255, .1); background: rgba(255, 255, 255, .04); padding: 16px 18px; border-radius: 14px; font-size: 15px; color: rgba(245, 241, 232, .68); }
-      footer { margin-top: 32px; font-size: 13px; color: rgba(245, 241, 232, .5); }
-      footer a { color: rgba(245, 241, 232, .5); text-decoration: underline; }
+      main { width: min(100%, 460px); padding: 40px 36px 32px; border: 1px solid rgba(255, 255, 255, .07); border-radius: 14px; background: rgba(255, 255, 255, .025); box-shadow: 0 30px 70px -34px rgba(0, 0, 0, .8); }
+      .mark { display: flex; align-items: center; gap: 12px; margin: 0 0 32px; color: var(--ink); font: 400 24px/1 Spectral, Georgia, serif; }
+      .mark img { width: 32px; height: 32px; display: block; }
+      .rule, .wordmark { display: none; }
+      .eyebrow { margin: 0 0 10px; font: 400 11.5px/1.6 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+      h1 { margin: 0 0 12px; font: 400 clamp(32px, 6vw, 40px)/1.1 Spectral, Georgia, serif; letter-spacing: -.01em; color: var(--ink); }
+      p { margin: 0 0 6px; font-size: 16px; color: var(--text); }
+      a { color: var(--accent); text-decoration: none; } a:hover { color: #a7c3ea; }
+      label { display: block; margin: 18px 0 8px; font-size: 14px; color: var(--muted); }
+      form { margin-top: 20px; display: grid; gap: 12px; }
+      form label { margin-bottom: -4px; }
+      input { width: 100%; min-height: 48px; padding: 0 14px; font: inherit; font-size: 16px; color: var(--ink); background: rgba(255, 255, 255, .03); border: 1px solid var(--line-2); border-radius: 8px; outline: none; }
+      input::placeholder { color: #6e7a8c; }
+      input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(127, 168, 224, .18); }
+      button { margin-top: 8px; width: 100%; min-height: 48px; padding: 0 24px; font: inherit; font-size: 16px; font-weight: 500; color: #0a0f1c; background: #e9edf5; border: 0; border-radius: 24px; cursor: pointer; transition: background 160ms; }
+      button:hover { background: #fff; } button[disabled] { opacity: .6; cursor: wait; }
+      button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+      .error { min-height: 20px; margin: 4px 0 0; font-size: 14px; color: var(--risk); }
+      .notice { padding: 14px 0; margin: 8px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 15px; color: var(--text); }
+      footer, .legal { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+      footer a, .legal a { color: var(--muted); } footer a:hover, .legal a:hover { color: var(--ink); }
       [hidden] { display: none !important; }
-      @media (max-width: 480px) { main { border-radius: 20px; padding: 36px 24px; } }
+      @media (max-width: 480px) { main { padding: 32px 22px 24px; } }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
     </style>
   </head>
   <body>
     <main>
-      <div class="mark"><span>H</span></div>
+      <div class="mark"><img src="/assets/ui/logo/helmut-zeichen.svg" width="32" height="32" alt="" />Helmut</div>
       <p class="wordmark">Helmut</p>
       <h1>Passwort setzen</h1>
 
@@ -4469,17 +4406,22 @@ function sendPrivacyPage(response) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Datenschutz · Helmut</title>
     <style>
-      :root { color-scheme: light; --ink: #111; --muted: #5f615f; --line: #d9ddd7; --paper: #f7f7f2; --accent: #7d1734; }
+      @font-face { font-family: Spectral; src: url("/assets/ui/fonts/Spectral-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+      @font-face { font-family: "Hanken Grotesk"; src: url("/assets/ui/fonts/HankenGrotesk-var.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
+      :root { color-scheme: dark; --ink: #eaeef6; --text: #aeb8c9; --muted: #8c97aa; --line: rgba(255, 255, 255, .08); --accent: #7fa8e0; }
       * { box-sizing: border-box; }
-      body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--paper); color: var(--ink); line-height: 1.6; }
-      main { width: min(100% - 32px, 880px); margin: 0 auto; padding: 56px 0 72px; }
-      a { color: var(--accent); }
-      h1 { font-size: clamp(36px, 6vw, 64px); line-height: 1; margin: 0 0 24px; letter-spacing: -0.03em; }
-      h2 { margin: 36px 0 10px; font-size: 22px; }
-      p, li { color: var(--muted); font-size: 17px; }
+      body { margin: 0; font-family: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; background: radial-gradient(70% 320px at 50% 0, rgba(127, 168, 224, .07), transparent 100%), #070b16; min-height: 100vh; }
+      main { width: min(100% - 40px, 720px); margin: 0 auto; padding: 72px 0 88px; }
+      a { color: var(--accent); text-decoration: none; } a:hover { color: #a7c3ea; }
+      a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+      h1 { margin: 0 0 28px; font: 400 clamp(38px, 6vw, 56px)/1.05 Spectral, Georgia, serif; letter-spacing: -.01em; color: var(--ink); }
+      h2 { margin: 40px 0 10px; padding-top: 24px; border-top: 1px solid var(--line); font: 400 24px/1.25 Spectral, Georgia, serif; color: var(--ink); }
+      p, li { color: var(--text); font-size: 17px; }
       ul { padding-left: 22px; }
-      .notice { border: 1px solid var(--line); background: #fff; padding: 18px 20px; border-radius: 8px; }
-      code { background: #fff; border: 1px solid var(--line); padding: 2px 6px; border-radius: 6px; }
+      strong { color: var(--ink); font-weight: 500; }
+      .notice { margin: 24px 0; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: transparent; border-radius: 0; color: var(--muted); font-size: 15px; }
+      code { padding: 2px 6px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255, 255, 255, .03); color: var(--ink); font-size: .92em; }
+      .notice + h2 { border-top: 0; padding-top: 0; }
     </style>
   </head>
   <body>

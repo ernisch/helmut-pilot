@@ -141,7 +141,7 @@ function loadPlaywright() {
   check("sendSetPasswordPage: automatischer Redirect nach Erfolg (window.location.href)",
     /window\.location\.href = "\/";/.test(serverSrc));
   // Nur den Funktionskoerper von sendSetPasswordPage pruefen (Impressum/Datenschutz
-  // bleiben bewusst im hellen Design — nicht Teil dieser Aufgabe, nicht anfassen).
+  // haben eigene Stylesheets und werden hier nicht geprueft).
   const setPasswordPageSrc = (serverSrc.match(/function sendSetPasswordPage\(response\)[\s\S]*?\n}\n/) || [""])[0];
   check("sendSetPasswordPage-Funktion gefunden", setPasswordPageSrc.length > 100);
   check("sendSetPasswordPage: dunkles Design (color-scheme: dark), kein helles Alt-Design mehr",
@@ -266,16 +266,19 @@ function loadPlaywright() {
         await page.waitForSelector("#formView:not([hidden])", { timeout: 8000 });
         const colorScheme = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
         const bodyBg = await page.evaluate(() => getComputedStyle(document.body).backgroundImage);
-        const cardBg = await page.evaluate(() => getComputedStyle(document.querySelector("main")).backgroundImage);
+        const cardBg = await page.evaluate(() => getComputedStyle(document.querySelector("main")).backgroundColor);
         const cardRadius = await page.evaluate(() => getComputedStyle(document.querySelector("main")).borderRadius);
         const inputRadius = await page.evaluate(() => getComputedStyle(document.querySelector("#pw1")).borderRadius);
-        const logoText = await page.textContent(".mark span").catch(() => "");
+        const logoText = await page.textContent(".mark").catch(() => "");
+        const logoImg = await page.getAttribute(".mark img", "src").catch(() => "");
         check("Desktop: color-scheme ist dark", colorScheme === "dark", colorScheme);
         check("Desktop: dunkler App-Hintergrund (kein cremefarbenes #f7f7f2)", /gradient/i.test(bodyBg) && !bodyBg.includes("247, 247, 242"));
-        check("Desktop: Karte nutzt denselben Gradient wie die Login-Karte", /15, 21, 38/.test(cardBg) && /7, 10, 21/.test(cardBg), cardBg);
-        check("Desktop: Karten-Radius 24px (wie .pilot-access-card)", cardRadius === "24px", cardRadius);
-        check("Desktop: Eingabefeld-Radius 16px (App-typische Rundung)", inputRadius === "16px", inputRadius);
-        check("Desktop: Helmut-'H'-Logo sichtbar", logoText.trim() === "H", JSON.stringify(logoText));
+        // Designangleich 05.11.2026 (Claude Design): ruhiges Panel (Fläche .025, 14px),
+        // Eingabefeld 8px, Design-Zeichen + Wortmarke statt Buchstaben-„H“.
+        check("Desktop: Karte als ruhiges Design-Panel (helle Fläche .025)", /255, 255, 255, 0\.02[45]\)/.test(cardBg), cardBg);
+        check("Desktop: Karten-Radius 14px (Design-Panel)", cardRadius === "14px", cardRadius);
+        check("Desktop: Eingabefeld-Radius 8px (Design)", inputRadius === "8px", inputRadius);
+        check("Desktop: Design-Zeichen + Wortmarke „Helmut“ sichtbar", logoText.trim() === "Helmut" && /helmut-zeichen\.svg$/.test(logoImg || ""), JSON.stringify({ logoText, logoImg }));
         check("Kein Crash beim Laden der Passwort-Seite selbst", !crashed);
         await page.close();
       }
