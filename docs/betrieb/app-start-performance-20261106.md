@@ -330,3 +330,61 @@ Queries im normalen Erfolgsfall. Keine Migration, Profil-, Cron-, Budget- oder
 Konfigurationsaenderung. Rueckweg nach einem freigegebenen Rollout: diesen PR
 revertieren bzw. vorheriges READY-Deployment wiederherstellen. Nachkontrolle:
 Version und geschuetzte Start-GETs pruefen, Androidzeit separat nachmessen.
+
+
+## Rollout1085 und neuer Android-Befund (06.11.2026)
+
+Nach ausdruecklichem GO wurde PR1085 auf2a5e077466ea3cc54ea894a8cf626a4e5a938605
+gemergt. Pflicht-CI42226535423 gruen:189/189 Standard-,337/337 Bereichssuiten,
+Browser sowie native Datenbanknachweise. Vercel dpl_45AMnvEB1XmP3jh5Xa7QGRb3nSgc
+READY, Hauptdomain zugewiesen. Lesende Nachkontrolle15:46–15:48UTC:
+vorher ec70fe31 HTTP7,048/4,836/4,733s; nachher2a5e0774 5,584/4,234/3,870s.
+Alle Antworten200, Version korrekt, zehn Lagekarten und Briefing vorhanden.
+Median4,836→4,234s. Ausgelieferter Client bytegleich, anonyme Sitzung korrekt.
+Admin-Bearer-/Cloudmessung, kein normaler Kontositzungs- oder Androidzeitnachweis.
+Rollout abgeschlossen; der Betreiber meldet danach einen echten Android-Startfehler.
+
+### Beobachtung und begrenzte Diagnose
+
+Das Handybild zeigt den nativen Android-PWA-Start mit H-Symbol und Appnamen,
+keine bereits geladene Helmut-Seite. Betreiber bestaetigt: Hauptadresse funktioniert
+im normalen Brave; die ebenfalls ueber Brave installierte App bleibt haengen.
+Production meldet im abgefragten30-Minutenfenster keine Error-/Fatal-Logs.
+Das beweist keinen fehlerfreien Handy-Start und keine konkrete Android-Ursache.
+Ein Neustart ueber App-Info/Beenden erzwingen ist als Geraeteprobe angefragt.
+
+Belegt: opakes Symbol hat Hintergrund#0a0f1c, Manifest-Startfarbe war#050914.
+Das erzeugt den sichtbaren Kasten. Ebenfalls belegt: der Service Worker wartet
+bei Navigation und ungecachten Startassets bisher ohne eigene Antwortfrist auf
+fetch. Der Seiten-Watchdog kann vor HTML/Stylesheet-Ankunft noch nicht helfen.
+Ein absichtlich nicht antwortender lokaler Server reproduziert diese Fehlerklasse.
+Nicht belegt: dass genau diese Netzwartezeit den nativen Brave-Launcher auf dem
+Handy blockiert. Ein defekter/staler WebAPK-/Installationszustand bleibt moeglich.
+
+### Vorbereiteter Fix, noch nicht live
+
+Manifest-Start- und Systemfarbe entsprechen jetzt den vorhandenen Iconpixeln;
+keine neuen Bilder, kein anderes H. Service-Worker-Navigation und statische
+Startassets erhalten8s Frist bis zu den Antwortheadern. Navigation zeigt danach
+die vorhandene Verbindungs-/Wiederholungsansicht; unbekannte Assets liefern504.
+Bekannte Assets bleiben sofort aus Cache verfuegbar, Cachefehler erlauben den
+Netzabruf, Cacheaktualisierung wird mit waitUntil am Leben gehalten. Kein HTML-
+oder Privatdaten-Cache, keine Auth-/Briefing-/Verwaltungsfreigabe geaendert.
+Das Startlogo bleibt vor dem vollstaendigen Briefing. Kein pauschaler8s-Deckel
+fuer den Gesamtstart behauptet: langsame Antwortkoerper, Android-Launcher und
+noch nicht aktivierte alte Worker sind damit nicht abgedeckt.
+
+Gezielte Abnahme:7/7 Workergruppen,70/70 Iconpruefungen, echter Chromium-Worker
+mit absichtlich blockierter Navigation und erfolgreichem Wiederholen; zusaetzlich
+Browser-Smoke82/82. Der neue echte Workerfall ist in den verpflichtenden
+Browser-Smoke integriert (sonstige Appfaelle bleiben ohne Worker). Kein Ersatz
+fuer eine Android-/Brave-WebAPK-Pruefung. Syntax/Diff und Pflicht-CI separat.
+Ein erster Aufruf des Pruefplanwerkzeugs nutzte einen falschen CLI-Parameternamen;
+mit --files wurde der richtige konservative Pruefplan ermittelt, kein Produktfehler.
+
+Bestehende Android-Installationen koennen Manifest-/Iconwerte verzoegert
+uebernehmen. Wenn der native Launcher trotz Neustart haengt, muss der lokale
+Installationszustand am Geraet repariert werden, gegebenenfalls durch erneute
+Installation von https://helmut-pilot.vercel.app/ aus Brave. Kein serverseitiger
+Nachweis darf diese Geraetereparatur als bereits erledigt ausgeben. Bis dahin
+ist der vom Betreiber bestaetigte funktionierende Zugang der normale Brave-Tab.
