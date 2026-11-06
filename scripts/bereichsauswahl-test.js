@@ -109,7 +109,7 @@ function main() {
       && !bVerwaltung.konservativ && bVerwaltung.unbekannt.length === 0
       && bVerwaltung.suiten.includes("original-verwaltung-test.js")
       && bVerwaltung.suiten.some(f => /^admin/.test(f))
-      && bVerwaltung.suiten.every(f => /^admin|^original-verwaltung-test\\.js$/.test(f)),
+      && bVerwaltung.suiten.every(f => /^admin|^original-verwaltung-test\.js$/.test(f)),
     `${bVerwaltung.suiten.length} Admin-Suiten`);
   const bVerwaltungsdatei = waehle(["verwaltung/index.html", "verwaltung/styles.css"]);
   check("B8 Eigene Verwaltungsdateien sind relevant und kein unerkannter Code",
