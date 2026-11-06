@@ -12,7 +12,14 @@ const G = require("../lib/helmut/quellenarchitektur/dedup-global");
 const M = require("../lib/helmut/quellenarchitektur/model");
 const S = require("../lib/helmut/sourceSafety");
 const { buildCatalog } = require("../lib/helmut/quellenarchitektur/catalog");
-const { toCrawlerSource } = require("../lib/helmut/quellenarchitektur/source-mode");
+const { toCrawlerSource, buildRelationalCrawlPlan } = require("../lib/helmut/quellenarchitektur/source-mode");
+const H = require("../lib/helmut/parlamentsdaten-herkunft");
+const L = require("../lib/helmut/lage");
+const B = require("../lib/helmut/briefingContract");
+const R = require("../lib/helmut/radarState");
+const A = require("../lib/helmut/artikelkontext");
+const K = require("../lib/helmut/artikelkontext-beschaffung");
+const E = require("../lib/helmut/quellen-auszug");
 const { resolveProfilePackages } = require("../lib/helmut/quellenarchitektur/profile-packages");
 const { v1Sources } = require("../lib/helmut/sources");
 const { PARLAMENTSDATEN_QUELLEN: sources } = require("../lib/helmut/quellenarchitektur/seeds/parlamentsdaten-quellen");
@@ -25,10 +32,11 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
 
 // Echte Abrufkette, vollständig ersetzter Transport. Kein Netz, keine DB, kein Modell.
 async function transport(body, status, fn) {
-  const original = https.get, steering = process.env.HELMUT_ANBIETER_STEUERUNG, calls = [];
+  const original = https.get, steering = process.env.HELMUT_ANBIETER_STEUERUNG, calls = [], requests = [];
   process.env.HELMUT_ANBIETER_STEUERUNG = "off";
   https.get = (url, options, callback) => {
     calls.push(url);
+    requests.push({ url, options });
     const request = new EventEmitter();
     request.destroy = error => request.emit("error", error || new Error("mock-aborted"));
     queueMicrotask(() => {
@@ -39,7 +47,7 @@ async function transport(body, status, fn) {
     });
     return request;
   };
-  try { await fn(calls); } finally {
+  try { await fn(calls, requests); } finally {
     https.get = original;
     if (steering === undefined) delete process.env.HELMUT_ANBIETER_STEUERUNG;
     else process.env.HELMUT_ANBIETER_STEUERUNG = steering;
@@ -191,6 +199,147 @@ async function transport(body, status, fn) {
     assert.equal(child.status, 0, child.stderr);
     const ids = JSON.parse(child.stdout);
     for (const source of sources) assert(ids.includes(source.id));
+  });
+  await test("Nur explizit aktivierte relationale Zeilen starten trotz inaktiver Legacy-Seeds", async () => {
+    const entries = catalog.retrievalPaths.filter(p => sources.some(s => p.legacy_source_id === s.id));
+    const planned = entries.map(p => ({ ...p, status: "needs_review", activation_mode: "always_on" }));
+    const params = { packages: catalog.packages, packagePaths: catalog.packagePaths, legacySources: v1Sources, profiles: [], env: {} };
+    assert.equal(buildRelationalCrawlPlan({ ...params, retrievalPaths: entries }).aktiv.length, 0);
+    const plan = buildRelationalCrawlPlan({ ...params, retrievalPaths: planned });
+    assert.equal(plan.aktiv.length, 2);
+    for (const entry of plan.aktiv) {
+      assert.equal(entry.source.active, true);
+      const i = sources.findIndex(s => s.id === entry.legacy_source_id);
+      await transport(feeds[i], 200, async (calls, requests) => {
+        const items = await C.crawlSource(entry.source);
+        assert.equal(items.length, 3); assert.deepEqual(calls, [sources[i].url]);
+        assert.equal(requests[0].options.headers["user-agent"], H.BOT_USER_AGENT);
+        for (const item of items) assert.equal(H.leseParlamentsdatenHerkunft(item).evidenceRole, sources[i].evidenceRole);
+      });
+    }
+    assert(sources.every(source => source.active === false && source.preparedOnly === true));
+  });
+  await test("Bot-Kontakt gilt nur an den zwei belegten Feedadressen", async () => {
+    for (const url of ["https://example.org/feed", "https://bundespuls.de/feed/abstimmung", "https://eur-lex.europa.eu/DE/display-feed.rss?rssId=161"]) {
+      await transport("<rss><channel/></rss>", 200, async (calls, requests) => {
+        await C.fetchUrl(url);
+        assert.equal(requests[0].options.headers["user-agent"], "HelmutBot/1.0 political-briefing");
+      });
+    }
+    assert.equal(bundespuls.usagePolicy.recommendedCacheSeconds, 900);
+    for (const source of sources) {
+      assert.equal(source.rightsReviewRequired, false);
+      assert.equal(source.usagePolicy.commercialUseApproved, true);
+      assert.equal(source.usagePolicy.scope, "metadata_only");
+      assert.equal(source.usagePolicy.fullTextAllowed, false);
+    }
+  });
+  await test("Herkunft bleibt in beiden Speicherprojektionen und allen Quellen-DTOs gebunden", () => {
+    sources.forEach((source, i) => {
+      const raw = C.normalizeRawItem(C.parseRssItems(feeds[i])[0], source);
+      const variants = [D.toRawDocumentRow(raw), G.planDedupWrites([raw], []).persists[0]];
+      for (const value of variants) {
+        const doc = JSON.parse(JSON.stringify(value)); // JSONB-/Dateispeicher-Roundtrip
+        const notice = H.parlamentsdatenQuellenhinweis(doc);
+        assert(notice); assert.equal(doc.summary ?? null, null, "Kein abgeschnittener Titel als Artikelkontext");
+        assert.equal(notice.sourceId, source.id);
+        assert.equal(doc.published_at, i ? null : "2026-11-05T23:00:00.000Z");
+        for (const dto of [L.mapSource(doc), B.buildSources({}, [doc])[0], R.pickPrimarySource({}, [doc]), B.oeffnendeHelmutQuelle({}, [doc])]) {
+          assert.equal(dto.sourceNotice.text, notice.text);
+          assert.equal(dto.sourceNotice.articleUrl, dto.url);
+          assert.equal(dto.sourceNotice.originalUrl, notice.originalUrl);
+        }
+        assert(!JSON.stringify(doc.raw).includes(C.parseRssItems(feeds[i])[0].content || "__nicht_im_feed__"));
+      }
+    });
+  });
+  await test("DIP-Quellenpflicht, kostenlose Originale und Titelkürzung werden konkret gekennzeichnet", () => {
+    const entry = C.parseRssItems(feeds[1])[0];
+    const raw = C.normalizeRawItem({ ...entry, title: "Beratung zur Drucksache 21/1234 " + "weiterer Titeltext ".repeat(30) }, bundespuls);
+    const doc = D.toRawDocumentRow(raw), notice = H.parlamentsdatenQuellenhinweis(doc);
+    assert(notice.text.includes("Deutscher Bundestag/Bundesrat – DIP"));
+    assert(notice.text.includes("Aufbereitung: Bundespuls"));
+    assert(notice.text.includes("DIP-Vorgang 341273"));
+    assert(notice.text.includes("Titel nennt Drucksache 21/1234"));
+    assert.equal(notice.originalUrl, "https://dip.bundestag.de");
+    assert.equal(notice.originalLabel, "Originaldaten kostenlos bei DIP");
+    assert(notice.changes.includes("Titel gekürzt"));
+    const withoutNumber = H.parlamentsdatenQuellenhinweis(D.toRawDocumentRow(C.normalizeRawItem(entry, bundespuls)));
+    assert(!withoutNumber.text.includes("Drucksache"), "Vorgangs-ID wird keine erfundene Drucksachennummer");
+  });
+  await test("Falsche Herkunfts-IDs, Artikelziele und fremde Rohfelder werden nicht weitergegeben", () => {
+    const raw = C.normalizeRawItem(C.parseRssItems(feeds[1])[0], bundespuls);
+    for (const altered of [
+      { ...raw, sourceId: "andere-quelle" },
+      { ...raw, url: "https://bundespuls.de/vorgang/123" },
+      { ...raw, title: "Veränderter fremder Titel" },
+      { ...raw, parlamentsdatenHerkunft: { ...raw.parlamentsdatenHerkunft, fullText: "verbotener Zusatz" } },
+      { ...raw, parlamentsdatenHerkunft: null }
+    ]) {
+      assert.equal(H.parlamentsdatenQuellenhinweis(altered), null);
+      assert.throws(() => D.toRawDocumentRow(altered), /parlamentsdaten-herkunft/);
+    }
+    for (const url of ["https://example.org/vorgang/341273", "https://bundespuls.de/vorgang/341273?fremd=1", "https://bundespuls.de/impressum"])
+      assert.throws(() => C.normalizeRawItem({ ...C.parseRssItems(feeds[1])[0], url }, bundespuls), /parlamentsdaten-artikelziel/);
+    assert.deepEqual(H.quellenhinweisFelder(raw, "https://example.org/artikel"), {});
+    assert.equal(H.parlamentsdatenQuellenhinweis({ source_id: "anderer-feed", title: "Anderer Artikel", url: "https://example.org/artikel" }), null);
+  });
+  await test("Metadatenfeeds öffnen auch später keinen Artikeltext-Nachladepfad", async () => {
+    for (const [i, source] of sources.entries()) {
+      const raw = C.normalizeRawItem(C.parseRssItems(feeds[i])[0], source);
+      const doc = D.toRawDocumentRow(raw);
+      let io = 0;
+      const forbidden = () => { io++; throw new Error("Kein Abruf oder Speicherzugriff erlaubt"); };
+      assert.deepEqual(await K.beschaffeArtikelkontext(doc, { versuch: true }, {
+        fetchUrl: forbidden, speicher: { lesen: forbidden, reservieren: forbidden, abschliessen: forbidden }
+      }), { ok: false, reason: "quelle-nur-metadaten" });
+      assert.equal(io, 0);
+      assert.throws(() => A.pruefeArtikelkontext([doc], { version: 1, herkunft: "manueller-originalvergleich", dokumentId: doc.id }), /quelle-nur-metadaten/);
+      assert.deepEqual(E.fromHtml(doc, { body: "<article>Unbestellter Volltext</article>", finalUrl: doc.url }), { ok: false, reason: "quelle-nur-metadaten" });
+      assert.deepEqual(E.fromMirror(doc, [{ ...raw, content: "Unbestellter Volltext" }]), { ok: false, reason: "quelle-nur-metadaten" });
+    }
+  });
+  await test("Produktiver PostgREST-Alias und kompakte Serverantwort erhalten den Quellenhinweis", () => {
+    const row = D.toRawDocumentRow(C.normalizeRawItem(C.parseRssItems(feeds[1])[0], bundespuls));
+    const projected = { ...row, parlamentsdatenHerkunft: row.raw.parlamentsdatenHerkunft };
+    delete projected.raw;
+    const source = B.buildSources({}, [JSON.parse(JSON.stringify(projected))])[0];
+    assert(source.sourceNotice);
+    const item = { id: "hinweis-test", title: row.title, url: row.url, sourceName: row.source_name,
+      sourceNotice: source.sourceNotice, sources: [source], primarySource: source };
+    const payload = require("../server").__prepareBriefingResponse({
+      items: [item], homeSections: { topTasks: [item] }
+    }, { compact: true });
+    const wire = JSON.parse(JSON.stringify(payload));
+    for (const notice of [wire.items[0].sources[0].sourceNotice, wire.items[0].primarySource.sourceNotice,
+      wire.homeSections.topTasks[0].sourceNotice, wire.homeSections.topTasks[0].sources[0].sourceNotice])
+      assert.deepEqual(notice, source.sourceNotice);
+    assert.equal(H.leseParlamentsdatenHerkunft(projected).sourceId, bundespuls.id);
+  });
+  await test("DIP plus Bundespuls erhöht Korroboration und Dynamik nicht; Journalismus weiterhin schon", () => {
+    const scoring = require("../lib/helmut/scoring"), decisions = require("../lib/helmut/decisions");
+    const bp = D.toRawDocumentRow(C.normalizeRawItem(C.parseRssItems(feeds[1])[0], bundespuls));
+    const dip = { id: "dip-test", source_id: "dip", source_type: "official", url: "https://dip.bundestag.de/vorgang/341273",
+      title: "Parlament berät einen Gesetzentwurf", published_at: "2026-11-06T10:00:00Z" };
+    const media = { ...dip, id: "news-test", source_id: "tagesschau-politik", source_type: "media", url: "https://www.tagesschau.de/inland/bericht-100.html" };
+    const ko = { id: "ko-herkunft", vorgang_id: "vg-herkunft", status: "neu", source_document_count: 1, created_at: dip.published_at };
+    const pair = { ...ko, source_document_count: 2 };
+    const projection = H.bewertungsprojektion(pair, [dip, bp]);
+    assert.equal(projection.source_document_count, 2);
+    assert.equal(JSON.stringify(projection), JSON.stringify(pair), "Kein neuer persistierter Zähler");
+    assert.equal(scoring.globalImportance(projection).score, scoring.globalImportance(ko).score);
+    assert.equal(scoring.dynamicsScore(projection), scoring.dynamicsScore(ko));
+    assert.equal(decisions.scoreKnowledgeObject(projection), decisions.scoreKnowledgeObject(ko));
+    const independent = H.bewertungsprojektion(pair, [dip, media]);
+    assert.equal(independent, pair, "Bestehende unabhängige Quellen bleiben unverändert");
+    assert(scoring.globalImportance(independent).score > scoring.globalImportance(ko).score);
+    assert(scoring.dynamicsScore(independent) > scoring.dynamicsScore(ko));
+    assert(decisions.scoreKnowledgeObject(independent) > decisions.scoreKnowledgeObject(ko));
+    const selection = [{ knowledge_object_id: ko.id }];
+    const now = new Date("2026-11-06T16:00:00Z");
+    const radar = docs => R.buildDynamics(selection, { [ko.id]: { ...ko, source_document_count: docs.length } }, { [ko.vorgang_id]: docs }, now);
+    assert.deepEqual(radar([dip]), []); assert.deepEqual(radar([dip, bp]), []);
+    assert.equal(radar([dip, media])[0].signalType, "broadening");
   });
   console.log(`\n${passed}/${passed} Prüfgruppen bestanden; kein Netz, keine DB, kein Modell.`);
 })().catch(error => { console.error(error); process.exitCode = 1; });
