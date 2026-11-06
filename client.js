@@ -1420,34 +1420,7 @@ function statusLabel(status) {
   return (Object.fromEntries(USER_STATUS_OPTIONS))[status] || "Aktiv";
 }
 
-function paymentStatusLabel(status) {
-  return (Object.fromEntries(PAYMENT_STATUS_OPTIONS))[status] || "Nicht relevant";
-}
-
-function formatCreatedAt(isoDate) {
-  if (!isoDate) return "—";
-  const d = new Date(isoDate);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
-
 // Account-Leiste (Nutzer, Mandatsauswahl, Logout) fuer die Topbar im Account-Modus.
-function renderAccountBar() {
-  if (!isAccountMode() || !currentUser) return "";
-  const showSwitcher = allowedProfiles.length > 1;
-  const switcher = showSwitcher
-    ? `<select class="account-switch" data-profile-switch aria-label="Mandat wählen">
-        ${allowedProfiles.map((entry) => `<option value="${escapeAttribute(entry.id)}" ${entry.id === activePoliticianId ? "selected" : ""}>${escapeHtml(entry.name)}</option>`).join("")}
-      </select>`
-    : "";
-  return `
-    <div class="account-bar">
-      ${switcher}
-      <span class="account-chip" title="${escapeAttribute(currentUser.email || "")}">${escapeHtml(currentUser.name || currentUser.email || "")} · ${escapeHtml(roleLabel(currentUser.role))}</span>
-    </div>
-  `;
-}
-
 // ---------------------------------------------------------------------------
 // Tagesinput-Ansicht (Referent/Admin): bis zu N Termine/Themen pro Tag
 // ---------------------------------------------------------------------------
@@ -4358,10 +4331,6 @@ const FEEDBACK_TYPE_META = {
   unklar: { label: "Unklar", cls: "fb-unklar" }
 };
 
-function feedbackTypeLabel(type) {
-  return FEEDBACK_TYPE_META[type]?.label || type || "—";
-}
-
 // Admin: Feedback-Inbox. Zeigt alle Rueckmeldungen, Admin kann auf erledigt setzen.
 function renderAdminFeedbackSection(feedback) {
   const open = feedback.filter((item) => !item.done);
@@ -4776,10 +4745,6 @@ function isMobileNavActive(id) {
   if (id === "office") return currentView === "office" || currentView === "office-detail" || currentView === "communication" || currentView === "tasks";
   if (id === "helmut") return currentView === "helmut";
   return currentView === id;
-}
-
-function mobileNavSymbol(id) {
-  return ({ briefing: "▤", radar: "◎", helmut: "H", office: "▱" })[id] || "•";
 }
 
 // Rollenabhaengige Navigationseintraege (nur im Account-Modus).
@@ -6121,23 +6086,6 @@ function formatParliamentMeta(item) {
   return parts.join(" · ");
 }
 
-function renderParliamentSection() {
-  if (!parliamentItems.length) return "";
-  const items = parliamentItems.slice(0, 6);
-  return `
-    <section class="parliament-section">
-      <div class="parliament-head">
-        <span class="eyebrow-line">Aus deinem Ausschuss · Bundestag</span>
-        <h2>Parlamentarische Vorgänge</h2>
-        <p>Offizielle Drucksachen, die zu deinen Themen passen.</p>
-      </div>
-      <div class="parliament-list">
-        ${items.map((item) => renderParliamentItem(item)).join("")}
-      </div>
-    </section>
-  `;
-}
-
 function renderParliamentItem(item) {
   const a = parliamentAssessments[item.id];
   let assessmentBlock = "";
@@ -6187,12 +6135,6 @@ async function assessParliamentItem(id) {
 
 function activeDecisions() {
   return decisions.filter((entry) => entry.status !== "done" && entry.status !== "ignored");
-}
-
-function lageProgress() {
-  const total = decisions.length;
-  const cleared = decisions.filter((entry) => entry.status === "done" || entry.status === "ignored").length;
-  return { total, cleared };
 }
 
 function priorityChipClass(decision) {
@@ -6287,19 +6229,6 @@ function renderLageFocus() {
     </section>`;
 }
 
-function renderLageGlance() {
-  const active = activeDecisions();
-  const watch = typeof competentNoActionItems === "function" ? competentNoActionItems().length : 0;
-  const { total, cleared } = lageProgress();
-  const progress = total ? `<span class="lage-progress">${cleared} von ${total} erledigt</span>` : "<span class=\"lage-progress\">nichts Dringendes</span>";
-  return `
-    <div class="lage-glance">
-      <div class="glance-row"><span class="dot danger"></span><span>Reagieren</span><b>${active.length}</b></div>
-      <div class="glance-row"><span class="dot watch"></span><span>Beobachten</span><b>${watch}</b></div>
-      <div class="glance-row"><span class="dot chance"></span><span>Sonst ruhig</span>${progress}</div>
-    </div>`;
-}
-
 function renderSecondaryDecisions() {
   const rest = activeDecisions().slice(1, 3);
   if (!rest.length) return "";
@@ -6362,110 +6291,6 @@ function renderBriefingView() {
   `;
 }
 
-function renderMorningMoment() {
-  const firstName = (profile?.fullName || "").split(" ")[0];
-  const top = decisions[0];
-  const meeting = nextPreparedMeeting();
-  const watchItems = competentNoActionItems();
-  const watched = watchItems
-    .map((item) => item.title || item.sourceName || "")
-    .filter(Boolean)
-    .slice(0, 3);
-  const phase = helmutDayPhase();
-  const lead = top
-    ? `${momentLeadPrefix(phase.key)} zählt vor allem ${top.title}.`
-    : `${momentLeadPrefix(phase.key)} musst du nicht öffentlich reagieren.`;
-  const action = top
-    ? compactText(chiefRecommendationText(top), 128)
-    : watched.length
-      ? `Ich beobachte ${humanList(watched)} und ziehe es nur hoch, wenn daraus Handlungsdruck entsteht.`
-      : "Ich prüfe weiter Bundesregierung, Fraktion, Ausschuss und Personenlage.";
-  const meetingLine = meeting
-    ? `${meeting.terminTitel}: ${compactText(meeting.entscheidungsfrage || meeting.kurzbriefing, 118)}`
-    : "Kein Termin mit akutem Vorbereitungsdruck.";
-  const communicationLine = top
-    ? `Kommunikation: ${communicationChannelLabel(recommendedInitialChannel(top))} vorbereiten.`
-    : "Kommunikation: keine Aufmerksamkeit verbrauchen, aber sprechfähig bleiben.";
-  return `
-    <section class="morning-moment" aria-label="Persönlicher Morgenmoment">
-      <div class="moment-orb" aria-hidden="true">H</div>
-      <div class="moment-copy">
-        <span>${escapeHtml(momentLabel(phase.key))} · ${escapeHtml(formatBerlinTimeOnly())}</span>
-        <h2>${escapeHtml(lead)}</h2>
-        <p>${escapeHtml(action)}</p>
-      </div>
-      <div class="moment-grid">
-        <div>
-          <span>Termin</span>
-          <p>${escapeHtml(meetingLine)}</p>
-        </div>
-        <div>
-          <span>Kommunikation</span>
-          <p>${escapeHtml(communicationLine)}</p>
-        </div>
-      </div>
-    </section>
-  `;
-}
-
-function momentLabel(phase) {
-  if (phase === "morning") return "Morgenmoment";
-  if (phase === "midday") return "Mittagsmoment";
-  if (phase === "afternoon") return "Nachmittagsmoment";
-  if (phase === "evening") return "Abendmoment";
-  return "Vorbereitung";
-}
-
-function momentLeadPrefix(phase) {
-  if (phase === "morning") return "Heute";
-  if (phase === "midday") return "Seit dem Morgen";
-  if (phase === "afternoon") return "Jetzt";
-  if (phase === "evening") return "Für morgen";
-  return "Morgen";
-}
-
-function renderLageSnapshot() {
-  const top = decisions[0];
-  if (!top) {
-    const watchItems = competentNoActionItems();
-    return `
-      <section class="lage-card calm">
-        <span>${escapeHtml(lagePhaseLabel())}</span>
-        <h2>${escapeHtml(noDecisionHeadline())}</h2>
-        <p>${escapeHtml(noDecisionLead(watchItems))}</p>
-        ${renderNoDecisionFocusStrip(watchItems)}
-        ${renderLageCheckStatus()}
-        <p class="calm-directive">${escapeHtml(noDecisionDirective())}</p>
-        ${renderLearningSignal()}
-        <div class="lage-actions">
-          <button class="primary-button" type="button" data-view="helmut">Helmuts Einschätzung öffnen</button>
-          <button class="secondary-button" type="button" data-run-lage-check>Lage jetzt prüfen</button>
-        </div>
-      </section>
-    `;
-  }
-  return `
-    <section class="lage-card ${escapeAttribute(top.priorityType || "action")}">
-      <div class="lage-card-head">
-        <span>${escapeHtml(topPriorityLabel())}</span>
-        <small>${escapeHtml(sourceLine(top))}</small>
-      </div>
-      <h2>${escapeHtml(top.title)}</h2>
-      <p>${escapeHtml(compactText(top.summary || decisionWhyImportant(top), 190))}</p>
-      ${renderTopDecisionBrief(top)}
-      ${renderLageMovement(top)}
-      ${renderLageCheckStatus()}
-      ${renderMeetingRelevanceForDecision(top)}
-      ${renderLearningSignal(top)}
-      <div class="lage-actions">
-        <button class="primary-button" type="button" data-detail="${escapeHtml(top.id)}">Empfehlung öffnen</button>
-        <button class="secondary-button" type="button" data-quick-communication="${escapeHtml(top.id)}" data-quick-channel="${escapeHtml(recommendedInitialChannel(top))}">Text vorbereiten</button>
-      </div>
-      ${renderFeedbackActions(top)}
-    </section>
-  `;
-}
-
 function renderLearningPulse() {
   const learning = opsStatus?.learning || briefing?.learning || briefing?.learningProfile || {};
   return `<section class="learning-pulse" aria-label="Rückmeldungen"><span>Rückmeldungen</span><p>${escapeHtml(learningSummary(learning))}</p></section>`;
@@ -6485,108 +6310,6 @@ function renderFeedbackActions(decision) {
   `;
 }
 
-function renderNoDecisionFocusStrip(items = []) {
-  const names = items
-    .map((item) => item.title || item.sourceName || "")
-    .filter(Boolean)
-    .slice(0, 3);
-  const labels = names.length ? names : ["Bundesregierung", "Fraktion", "Ausschuss"];
-  return `
-    <div class="no-decision-focus" aria-label="Weiter beobachtet">
-      ${labels.map((label) => `<span>${escapeHtml(compactText(label, 46))}</span>`).join("")}
-    </div>
-  `;
-}
-
-function renderTopDecisionBrief(item) {
-  const rows = [
-    ["Warum für dich", compactText(decisionWhyImportant(item), 112)],
-    ["Jetzt tun", compactText(chiefRecommendationText(item), 112)],
-    ["Wenn du wartest", compactText(decisionRisk(item), 112)]
-  ];
-  return `
-    <div class="decision-brief-grid" aria-label="Entscheidungsgrundlage">
-      ${rows.map(([label, value]) => `
-        <div>
-          <span>${escapeHtml(label)}</span>
-          <p>${escapeHtml(value)}</p>
-        </div>
-      `).join("")}
-    </div>
-  `;
-}
-
-function renderLearningSignal(item = null) {
-  const learning = opsStatus?.learning || briefing.learning || {};
-  const reason = item?.learningReason || "";
-  const count = Number(learning.eventCount || 0);
-  if (!reason && count < 1) return "";
-  const copy = reason || `Ich berücksichtige ${count} gespeicherte Nutzungssignale aus deinen bisherigen Entscheidungen.`;
-  return `<p class="learning-signal">${escapeHtml(copy)}</p>`;
-}
-
-function renderMeetingRelevanceForDecision(item) {
-  const meeting = nextMeetingForItem(item);
-  if (!meeting) return "";
-  return `
-    <p class="meeting-relevance">
-      <span>Terminbezug</span>
-      ${escapeHtml(`${meeting.terminTitel} · ${formatMeetingDate(meeting)}. Dieses Thema kann dafür als Gesprächspunkt oder Nachfrage dienen.`)}
-    </p>
-  `;
-}
-
-function renderDailyCommunicationDecision() {
-  const top = decisions[0];
-  const candidate = top || reactionChanceItems().find(hasPreciseSource) || null;
-  const shouldPublish = Boolean(top && top.priorityType !== "watch");
-  const recommendedChannel = candidate ? recommendedInitialChannel(candidate) : "press";
-  const title = shouldPublish ? communicationDecisionTitle() : "Heute lieber Linie parken.";
-  const copy = shouldPublish
-    ? communicationDecisionCopy(top)
-    : `Noch nicht veröffentlichen. Bereite eine interne Linie vor, damit du bei Nachfragen sofort sauber antworten kannst.`;
-  return `
-    <section class="brief-mini communication-decision">
-      <div>
-        <span>Kommunikation</span>
-        <h2>${escapeHtml(title)}</h2>
-        <p>${escapeHtml(copy)}</p>
-        ${candidate ? `<small>${escapeHtml(`Empfohlen: ${communicationChannelLabel(recommendedChannel)} · ${communicationChannelHint(recommendedChannel)}`)}</small>` : ""}
-      </div>
-      ${candidate?.id ? `<div class="mini-action-stack">
-        <button class="primary-button compact-button" type="button" data-quick-communication="${escapeHtml(candidate.id)}" data-quick-channel="${escapeHtml(recommendedChannel)}">${shouldPublish ? "Text vorbereiten" : "Linie parken"}</button>
-        <button class="secondary-button compact-button" type="button" data-quick-communication="${escapeHtml(candidate.id)}" data-quick-channel="x">X kurz</button>
-      </div>` : ""}
-    </section>
-  `;
-}
-
-function renderNextMeetingMini() {
-  const meeting = nextPreparedMeeting();
-  if (!meeting) {
-    return `
-      <section class="brief-mini muted">
-        <div>
-          <span>Termine</span>
-          <h2>Kein Termin mit Vorbereitungsdruck.</h2>
-          <p>Wenn im Profil wichtige Termine stehen, bereitet Helmut Gesprächspunkte und Hintergrund vor.</p>
-        </div>
-      </section>
-    `;
-  }
-  return `
-    <section class="brief-mini meeting">
-      <div>
-        <span>Termin vorbereiten</span>
-        <h2>${escapeHtml(meeting.terminTitel)}</h2>
-        <p>${escapeHtml(compactText(meeting.kurzbriefing || "Helmut bereitet Kontext und Gesprächspunkte vor.", 150))}</p>
-        ${meeting.relevantDecision?.title ? `<small>${escapeHtml(`Aktuelle Lage dafür: ${meeting.relevantDecision.title}`)}</small>` : ""}
-      </div>
-      <button class="secondary-button compact-button" type="button" data-meeting-brief="${escapeHtml(meeting.id)}">Briefing</button>
-    </section>
-  `;
-}
-
 function renderWatchlistMini() {
   const items = competentNoActionItems().slice(0, 1);
   if (!items.length) return "";
@@ -6599,132 +6322,6 @@ function renderWatchlistMini() {
       ${summary ? `<p>${escapeHtml(summary)}</p>` : ""}
     </article>`;
   }).join("")}</div>`;
-}
-
-function lagePhaseLabel() {
-  const phase = helmutDayPhase().key;
-  if (phase === "morning") return "Morgenlage";
-  if (phase === "midday") return "Mittagslage";
-  if (phase === "afternoon") return "Nachmittagslage";
-  if (phase === "evening") return "Abendlage";
-  return "Morgen vorbereiten";
-}
-
-function topPriorityLabel() {
-  const phase = helmutDayPhase().key;
-  if (phase === "morning") return "Heute wichtig";
-  if (phase === "midday") return "Seit dem Morgen";
-  if (phase === "afternoon") return "Jetzt prüfen";
-  if (phase === "evening") return "Für morgen vorbereiten";
-  return "Nächste Priorität";
-}
-
-function noDecisionHeadline() {
-  const phase = helmutDayPhase().key;
-  if (phase === "morning") return "Heute keine Reaktion nötig.";
-  if (phase === "midday") return "Keine neue Prioritätsverschiebung.";
-  if (phase === "afternoon") return "Aktuell keinen Druck erzeugen.";
-  if (phase === "evening") return "Für heute ist die Lage stabil.";
-  return "Morgen ruhig vorbereiten.";
-}
-
-function communicationDecisionTitle() {
-  const phase = helmutDayPhase().key;
-  if (phase === "morning") return "Heute eine Linie vorbereiten?";
-  if (phase === "midday") return "Bis Nachmittag sprechfähig sein?";
-  if (phase === "afternoon") return "Vor Dienstschluss reagieren?";
-  if (phase === "evening") return "Für morgen vorbereiten?";
-  return "Für morgen vormerken?";
-}
-
-function communicationDecisionCopy(top) {
-  const phase = helmutDayPhase().key;
-  const topic = top?.title || "das Thema";
-  if (phase === "morning") return `Ja. Bereite eine kurze Linie zu ${topic} vor. Der Anlass ist belastbar genug, um früh sprechfähig zu sein.`;
-  if (phase === "midday") return `Ja. Prüfe bis zum Nachmittag, ob aus ${topic} eine Presse- oder Social-Linie werden sollte.`;
-  if (phase === "afternoon") return `Ja. Entscheide jetzt, ob zu ${topic} heute noch ein kurzer Text rausgehen soll oder ob die Linie nur intern vorbereitet wird.`;
-  if (phase === "evening") return `Ja. Lege zu ${topic} eine Linie für morgen früh bereit, statt heute ohne Not spät zu senden.`;
-  return `Ja. Halte zu ${topic} eine kurze Linie für die nächste Lage bereit.`;
-}
-
-function renderLageMovement(item) {
-  const development = item.lageDevelopment || sourceExcerpt(item) || "";
-  const reason = item.lageMovementReason || item.changeReason || item.whyNow || "";
-  const markers = [item.sourceFreshness, priorityTrendLabel(item.priorityTrend)].filter(Boolean);
-  if (!development && !reason && !markers.length) return "";
-  return `
-    <div class="lage-movement">
-      ${markers.length ? `<div class="lage-movement-markers">${markers.map((marker) => `<span>${escapeHtml(marker)}</span>`).join("")}</div>` : ""}
-      ${development ? `<p><span>Entwicklung</span>${escapeHtml(compactText(development, 170))}</p>` : ""}
-      ${reason ? `<p><span>Warum jetzt</span>${escapeHtml(compactText(reason, 190))}</p>` : ""}
-    </div>
-  `;
-}
-
-function renderLageCheckStatus() {
-  const check = briefing.latestLageCheck;
-  if (!check?.checkedAt) return "";
-  const changed = check.status === "changed";
-  const label = changed ? "Neue Bewegung" : "Priorität stabil";
-  const text = check.message || (changed ? "Helmut hat eine neue Lage erkannt." : "Helmut hat geprüft: Deine Priorität hat sich nicht verändert.");
-  return `
-    <p class="lage-check-status ${changed ? "changed" : "stable"}">
-      <span>${escapeHtml(label)} · ${escapeHtml(formatBerlinTimeOnly(new Date(check.checkedAt)))}</span>
-      ${escapeHtml(compactText(text, 150))}
-    </p>
-  `;
-}
-
-function priorityTrendLabel(value) {
-  const trend = String(value || "").toLowerCase();
-  if (!trend) return "";
-  if (trend === "neu") return "neue Priorität";
-  if (trend === "gestiegen") return "Priorität gestiegen";
-  if (trend === "gesunken") return "Druck sinkt";
-  if (trend === "neue quelle") return "neuer Beleg";
-  if (trend === "stabil") return "Priorität stabil";
-  return value;
-}
-
-function heroText(text) {
-  if (!text) return "";
-  const t = String(text).trim();
-  // Short complete first sentence — show as-is
-  const m = t.match(/^.+?[.!?](?:\s|$)/);
-  if (m && m[0].trim().length <= 55) return m[0].trim();
-  // First clause before comma if meaningful and short
-  const ci = t.indexOf(",");
-  if (ci > 6 && ci <= 50) return t.slice(0, ci).trim() + ".";
-  // Hard cap at word boundary — no ellipsis, always ends with "."
-  if (t.length <= 55) return /[.!?]$/.test(t) ? t : t + ".";
-  return t.slice(0, 50).replace(/\s\S*$/, "").trimEnd() + ".";
-}
-
-function helmutDecisionState(assessment) {
-  const s = String(assessment?.priorityStatus || "stable");
-  if (s === "risk") return "reagieren";
-  if (s === "chance" || s === "changed") return "vorbereiten";
-  return "beobachten";
-}
-
-function helmutDecisionLabel(state) {
-  return ({
-    reagieren:   "Heute reagieren — öffentliche Position einnehmen",
-    vorbereiten: "Heute vorbereiten — Position bereithalten",
-    beobachten:  "Heute beobachten, nicht öffentlich reagieren",
-    ignorieren:  "Kein Handlungsbedarf heute",
-  })[state] || "Heute beobachten, nicht öffentlich reagieren";
-}
-
-function helmutButtonConfig(state, actionId) {
-  const id = escapeHtml(actionId || "");
-  const cfg = {
-    reagieren:   { primary: "Jetzt reagieren",        pAttr: id ? `data-detail="${id}"` : "data-run-crawl",             secondary: "Antwort vorbereiten",   sAttr: id ? `data-communication="${id}"` : "data-run-crawl" },
-    vorbereiten: { primary: "Jetzt Entwurf erstellen",  pAttr: id ? `data-communication="${id}"` : `data-view="office"`,  secondary: "Quellen prüfen",        sAttr: "data-run-crawl" },
-    beobachten:  { primary: "Jetzt Entwurf erstellen",  pAttr: id ? `data-communication="${id}"` : `data-view="office"`,  secondary: "Beobachten bestätigen", sAttr: `data-view="lage"` },
-    ignorieren:  { primary: "Als erledigt markieren",  pAttr: id ? `data-lage-done="${id}"` : "data-run-crawl",          secondary: "Quellen prüfen",        sAttr: "data-run-crawl" },
-  };
-  return cfg[state] || cfg.beobachten;
 }
 
 function renderHelmutView() {
@@ -6898,13 +6495,6 @@ function hstandText(v) {
 // Zerlegt eine Empfehlung in einzelne Entscheidungssätze (Satzende + Großbuchstabe/
 // Ziffer als neuer Anfang). REIN typografisch — kein Wort wird verändert oder neu
 // erfunden. Ein einzelner (auch langer) Satz bleibt ein Element.
-function hstandSentences(text, cap = 4) {
-  const s = hstandText(text);
-  if (!s) return [];
-  const parts = s.split(/(?<=[.!?])\s+(?=[A-ZÄÖÜ0-9])/).map((p) => p.trim()).filter(Boolean);
-  return parts.slice(0, cap);
-}
-
 // Echter Zeitstempel -> ruhiges Datum/Uhrzeit (de-DE). Fehlt/ungueltig -> "" (keine Fake-Zeit).
 // FRISCHEVERTRAG Punkt 6: Zeiten IMMER in Europe/Berlin (inkl. Sommerzeit) — nicht
 // in der Zeitzone des Geraets. Ein Briefing, das in Berlin von gestern ist, darf auf
@@ -7051,29 +6641,6 @@ function renderHstandHeader(state) {
 }
 
 // Wichtigster Bereich: Mein Vorschlag (recommendation + urgency + contextChips).
-function renderHstandProposal(state) {
-  const rec = hstandText(state.recommendation);
-  const urgency = hstandUrgencyChip(state.urgency);
-  // Ruhiger Kopfbereich: höchstens 3 Chips (Priorität: Dringlichkeit, dann die
-  // wichtigsten Kontext-Labels). Weitere Chips erscheinen weiter unten am Vorgang.
-  const chips = hstandContextChips(state.contextChips, urgency ? 2 : 3);
-  const chiprow = (urgency || chips) ? `<div class="hstand-chiprow">${urgency}${chips}</div>` : "";
-  // Mehrere Entscheidungssätze -> mehrere kurze Zeilen (klare Entscheidungsvorlage).
-  // Ein einzelner Satz bleibt eine Zeile — kein Inhalt wird umgeschrieben.
-  const sentences = hstandSentences(rec);
-  const recBlock = !rec
-    ? `<p class="hstand-empty-line">Für diesen Stand liegt aktuell keine Empfehlung vor.</p>`
-    : (sentences.length > 1
-        ? `<ul class="hstand-proposal-text hstand-proposal-lines">${sentences.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>`
-        : `<p class="hstand-proposal-text">${escapeHtml(rec)}</p>`);
-  return `
-    <section class="hstand-card hstand-proposal" aria-label="Mein Vorschlag">
-      ${hstandKicker(HELMUT_ICON_BULB, "Mein Vorschlag", "accent")}
-      ${recBlock}
-      ${chiprow}
-    </section>`;
-}
-
 function renderHstandWhy(state) {
   const why = hstandText(state.whyItMatters);
   if (!why) return "";
@@ -7730,12 +7297,6 @@ function renderHelmutAssessmentView() {
   `;
 }
 
-function briefingRelevanceScore(decision) {
-  const priorityWeight = ({ risk: 4, action: 3, chance: 2, watch: 1, ignore: 0 })[decision.priorityType] || 1;
-  const score = Number(decision.finalScore || decision.totalScore || decision.relevanceScore || 0);
-  return priorityWeight * 1000 + score;
-}
-
 const CAROUSEL_FILTERS = [
   { key: "Alle",       label: "Alle" },
   { key: "risk",      label: "Risiko" },
@@ -8046,162 +7607,6 @@ function centralAgendaTopic() {
   return watch?.title || "Ruhe bewahren und die Lage weiter prüfen";
 }
 
-function currentAgendaLead() {
-  const top = decisions[0];
-  const meeting = nextPreparedMeeting();
-  if (top && meeting) return `Aktuell an: ${top.title}. Danach solltest du ${meeting.terminTitel} vorbereiten.`;
-  if (top) return `Aktuell an: ${top.title}.`;
-  if (meeting) return `Aktuell an: ${meeting.terminTitel} vorbereiten.`;
-  return "Aktuell keine Reaktion nötig. Ich beobachte die Lage weiter und halte sie für dich schlank.";
-}
-
-function renderDailyAgendaAnswer() {
-  const top = decisions[0];
-  const meeting = nextPreparedMeeting();
-  const chance = topChanceItem(top);
-  const risk = topRiskItem(top);
-  if (!top) {
-    const watchItems = competentNoActionItems();
-    return `
-      <section class="daily-answer calm">
-        <span>Was steht aktuell an?</span>
-        <h2>Heute keine Reaktion nötig.</h2>
-        <p>${escapeHtml(noDecisionLead(watchItems))}</p>
-        <p class="calm-directive">${escapeHtml(noDecisionDirective())}</p>
-        ${renderAgendaAnswerGrid(null, chance, risk, meeting)}
-      </section>
-    `;
-  }
-  return `
-    <section class="daily-answer ${escapeAttribute(top.priorityType || "action")}">
-      <span>Was steht aktuell an?</span>
-      <h2>Heute zählt vor allem: ${escapeHtml(top.title)}</h2>
-      <p>${escapeHtml(decisionWhyImportant(top))}</p>
-      ${renderAgendaAnswerGrid(top, chance, risk, meeting)}
-      <div class="daily-answer-actions">
-        <button class="primary-button" type="button" data-detail="${escapeHtml(top.id)}">Empfehlung öffnen</button>
-      </div>
-    </section>
-  `;
-}
-
-function renderPoliticalContextSections() {
-  const governmentItems = governmentPlanItems().slice(0, 1);
-  const partyItems = partyFactionItems().slice(0, 1);
-  return `
-    <section class="agenda-section political-context">
-      <div class="agenda-section-head">
-        <span>Regierung</span>
-        <h2>Vorhaben der Bundesregierung</h2>
-      </div>
-      <div class="agenda-list compact-agenda">
-        ${governmentItems.map((item) => renderPoliticalContextCard(item, "Oppositionslage", "Welche Linie kannst du setzen?")).join("") || `
-          <article class="context-card calm">
-            <span>Kein neues belastbares Vorhaben</span>
-            <h3>Ich prüfe weiter BMAS, Bundesregierung, Bundestag und Ausschuss.</h3>
-            <p>Für dich heißt das: keine vorschnelle Reaktion, aber die Regierungslage bleibt im Blick.</p>
-          </article>
-        `}
-      </div>
-    </section>
-    <section class="agenda-section political-context">
-      <div class="agenda-section-head">
-        <span>Fraktion</span>
-        <h2>Aus Fraktion und Partei</h2>
-      </div>
-      <div class="agenda-list compact-agenda">
-        ${partyItems.map((item) => renderPoliticalContextCard(item, "Linie deiner Seite", "Was ist anschlussfähig?")).join("") || `
-          <article class="context-card calm">
-            <span>Keine neue Fraktionslage</span>
-            <h3>Ich beobachte weiter, welche Linie Die Linke und die Fraktion setzen.</h3>
-            <p>Wenn daraus ein politischer Hebel für Arbeit und Soziales entsteht, hebt Helmut es in die Tageslage.</p>
-          </article>
-        `}
-      </div>
-    </section>
-  `;
-}
-
-function renderPoliticalContextCard(item, label, prompt) {
-  const href = sourceHref(item.primarySource || item);
-  return `
-    <article class="context-card ${escapeAttribute(item.contextType || item.priorityType || "watch")}">
-      <div>
-        <span>${escapeHtml(label)}</span>
-        <h3>${escapeHtml(item.title || "Politische Lage")}</h3>
-        <p>${escapeHtml(compactText(contextItemSummary(item), 180))}</p>
-        <small>${escapeHtml(prompt)} ${escapeHtml(item.sourceName ? `· ${item.sourceName}` : "")}</small>
-      </div>
-      ${href ? `<a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
-    </article>
-  `;
-}
-
-function renderAgendaAnswerGrid(top, chance, risk, meeting) {
-  const rows = [
-    {
-      label: "Reaktion",
-      value: top ? compactText(chiefRecommendationText(top), 118) : "Keine öffentliche Reaktion nötig."
-    },
-    {
-      label: "Chance",
-      value: chance ? compactText(chance.opportunity || chance.possibleUpside || chance.summary, 118) : "Keine belastbare Chance für eine Positionierung."
-    },
-    {
-      label: "Risiko",
-      value: risk ? compactText(decisionRisk(risk), 118) : "Kein akutes Risiko durch Nichtreaktion."
-    },
-    {
-      label: "Termin",
-      value: meeting ? `${formatMeetingDate(meeting)}: ${meeting.terminTitel}` : "Kein Termin im Profil, der heute Vorbereitung verlangt."
-    }
-  ];
-  return `
-    <div class="agenda-answer-grid">
-      ${rows.map((row) => `
-        <div class="agenda-answer-item">
-          <span>${escapeHtml(row.label)}</span>
-          <p>${escapeHtml(row.value)}</p>
-        </div>
-      `).join("")}
-    </div>
-  `;
-}
-
-function renderTodayImportantSection() {
-  const items = agendaPriorities().slice(0, 2);
-  return `
-    <section class="agenda-section">
-      <div class="agenda-section-head">
-        <span>A</span>
-        <h2>Heute wichtig</h2>
-      </div>
-      <div class="agenda-list">
-        ${items.map(renderAgendaPriority).join("") || `<p class="empty-state">Heute keine priorisierte Entscheidung. Helmut hält Regierung, Fraktion und Ausschuss im Blick.</p>`}
-      </div>
-    </section>
-  `;
-}
-
-function renderAgendaPriority(decision) {
-  const metrics = decisionRelevanceMetrics(decision);
-  return `
-    <article class="agenda-priority ${escapeAttribute(decision.priorityType || "action")}">
-      <div>
-        <span>${escapeHtml(decision.priorityLabel || "Relevant")}</span>
-        <h3>${escapeHtml(decision.title)}</h3>
-        <p>${escapeHtml(compactText(decisionWhyImportant(decision), 170))}</p>
-        <div class="agenda-metrics">
-          <span>Ausschuss ${escapeHtml(metrics.committee)}</span>
-          <span>Menschen ${escapeHtml(metrics.citizens)}</span>
-          <span>${escapeHtml(metrics.urgency)} dringend</span>
-        </div>
-        <p><b>Aktion:</b> ${escapeHtml(compactText(chiefRecommendationText(decision), 150))}</p>
-      </div>
-    </article>
-  `;
-}
-
 function renderMeetingPrepSection() {
   const meetings = meetingPreparations().slice(0, 1);
   if (!meetings.length) return `<p class="empty-state">Noch keine Termine im Mandatsprofil.</p>`;
@@ -8312,70 +7717,11 @@ function renderMeetingPrepCard(meeting) {
   `;
 }
 
-function renderReactionChanceSection() {
-  const items = reactionChanceItems().slice(0, 3);
-  return `
-    <section class="agenda-section">
-      <div class="agenda-section-head">
-        <span>C</span>
-        <h2>Reaktionen und Chancen</h2>
-      </div>
-      <div class="agenda-list compact-agenda">
-        ${items.map(renderReactionChanceCard).join("") || `<p class="empty-state">Aktuell keine zusätzliche Reaktion sinnvoll.</p>`}
-      </div>
-    </section>
-  `;
-}
-
-function renderReactionChanceCard(decision) {
-  return `
-    <article class="reaction-card ${escapeAttribute(decision.priorityType || "chance")}">
-      <div>
-        <span>${escapeHtml(recommendedChannelLabel(decision))}</span>
-        <h3>${escapeHtml(decision.title)}</h3>
-        <p>${escapeHtml(compactText(decision.summary || decisionWhyImportant(decision), 160))}</p>
-        <p><b>Chance:</b> ${escapeHtml(compactText(decision.opportunity || decision.possibleUpside || "Du kannst früh fachlich sichtbar werden.", 140))}</p>
-      </div>
-      <button class="secondary-button compact-button" type="button" data-communication="${escapeHtml(decision.id)}">Statement vorbereiten</button>
-    </article>
-  `;
-}
-
-function nextPreparedMeeting() {
-  return meetingPreparations()[0] || null;
-}
-
-function topChanceItem(fallback) {
-  return reactionChanceItems()[0] || (fallback?.priorityType === "chance" ? fallback : null);
-}
-
-function topRiskItem(fallback) {
-  return decisions.find((decision) => decision.priorityType === "risk" || decision.risk || decision.consequenceIfIgnored) || fallback || null;
-}
-
 function compactText(value, maxLength = 140) {
   const text = twoSentenceSummary(value || "").replace(/\s+/g, " ").trim();
   if (text.length <= maxLength) return text;
   const sliced = text.slice(0, maxLength - 1).replace(/\s+\S*$/, "");
   return `${sliced || text.slice(0, maxLength - 1)}...`;
-}
-
-function agendaPriorities() {
-  const fromSections = (briefing.homeSections?.topTasks || []).map(normalizeHomeItem).filter(Boolean);
-  const source = decisions.length ? decisions : fromSections;
-  return source
-    .filter((item) => item && item.title)
-    .sort((a, b) => Number(b.relevanceScore || b.finalScore || b.priority || 0) - Number(a.relevanceScore || a.finalScore || a.priority || 0));
-}
-
-function reactionChanceItems() {
-  const sectionChances = (briefing.homeSections?.opportunities || []).map(normalizeHomeItem).filter(Boolean);
-  const merged = [...decisions, ...sectionChances]
-    .filter((item) => item && item.title)
-    .filter(uniqueDecisionItem);
-  return merged
-    .filter((item) => (item.priorityType === "chance" || item.opportunity || Number(item.reactionChance || item.relevanceScore || 0) >= 55))
-    .slice(0, 5);
 }
 
 function governmentPlanItems() {
@@ -8422,31 +7768,6 @@ function contextItemSummary(item = {}) {
 function uniqueDecisionItem(item, index, items) {
   const key = item.signalId || item.id || item.title;
   return items.findIndex((entry) => (entry.signalId || entry.id || entry.title) === key) === index;
-}
-
-function decisionRelevanceMetrics(decision) {
-  return {
-    committee: qualitativeScore(decision.committeeScore || decision.mandateScore || 0, "direkt", "mittel", "schwach"),
-    citizens: qualitativeScore(decision.citizenImpact || decision.mandateScore || 0, "hoch", "mittel", "begrenzt"),
-    urgency: decision.urgency ? capitalize(decision.urgency) : qualitativeScore(decision.timeUrgency || decision.relevanceScore || 0, "hoch", "mittel", "niedrig")
-  };
-}
-
-function qualitativeScore(value, highLabel, mediumLabel, lowLabel) {
-  const score = Number(value || 0);
-  if (score >= 75) return highLabel;
-  if (score >= 45) return mediumLabel;
-  return lowLabel;
-}
-
-function recommendedChannelLabel(decision) {
-  const channel = String(decision.recommendedChannel || decision.actionType || "").toLowerCase();
-  if (channel.includes("social") || channel.includes("post") || channel.includes("linkedin") || channel.includes("x")) return "Social Media";
-  if (channel.includes("press") || channel.includes("presse")) return "Presse";
-  if (channel.includes("plenum")) return "Plenum";
-  if (channel.includes("ausschuss") || channel.includes("committee")) return "Ausschuss";
-  if (channel.includes("office") || channel.includes("brief_team") || channel.includes("büro")) return "Büro";
-  return "Presse";
 }
 
 function meetingPreparations() {
@@ -8512,18 +7833,6 @@ function prepareMeeting(input, index = 0) {
     optionalSocialStatement: `${topic}: Entscheidend ist, dass soziale Politik konkret wirkt - bei Arbeit, Sicherheit und Respekt im Alltag.`,
     optionalPressezitat: coreLine
   };
-}
-
-function nextMeetingForItem(item) {
-  if (!item) return null;
-  return meetingPreparations().find((meeting) => {
-    const meetingText = `${meeting.terminTitel || ""} ${meeting.thema || ""} ${meeting.notizenVomBüro || ""}`.toLowerCase();
-    const itemText = `${item.title || ""} ${item.summary || ""} ${item.whyItMatters || ""} ${item.action || ""}`.toLowerCase();
-    const sharedTopic = meetingText.split(/\W+/).filter((part) => part.length > 4).some((part) => itemText.includes(part));
-    return sharedTopic
-      || (itemText.includes("bmas") && meetingText.includes("bundesregierung"))
-      || (itemText.includes("ausschuss") && meetingText.includes("ausschuss"));
-  }) || null;
 }
 
 function meetingDraftText(meeting, type = "briefing") {
@@ -8665,11 +7974,6 @@ function nextWeekdayIso(offsetDays) {
   return date.toISOString();
 }
 
-function capitalize(value) {
-  const text = String(value || "");
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
-
 function slugify(value) {
   return String(value || "")
     .toLowerCase()
@@ -8679,208 +7983,6 @@ function slugify(value) {
     .replace(/ß/g, "ss")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-}
-
-function renderSecondaryMovements() {
-  const secondary = decisions.slice(1, 3);
-  if (!secondary.length) return "";
-  return `
-    <section class="secondary-movements" aria-label="Weitere Bewegungen">
-      <span>Danach</span>
-      ${secondary.map((item) => `
-        <button class="movement-row ${escapeAttribute(item.priorityType || "watch")}" type="button" data-detail="${escapeAttribute(item.id)}">
-          <strong>${escapeHtml(item.title)}</strong>
-          <small>${escapeHtml(item.priorityLabel || "Relevant")} · ${escapeHtml(item.estimatedTime || "10 Min.")}</small>
-        </button>
-      `).join("")}
-    </section>
-  `;
-}
-
-function renderBriefingTicker() {
-  return `
-    <section class="briefing-ticker" aria-label="Kurzüberblick">
-      <span>Jetzt</span>
-      ${agentFacts().map((fact) => `<b>${escapeHtml(fact)}</b>`).join("")}
-      <small>${escapeHtml(formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString()))}</small>
-    </section>
-  `;
-}
-
-function renderBriefingQuickList() {
-  const quickItems = decisions.slice(0, 3);
-  if (!quickItems.length) {
-    return `
-      <section class="quick-panel">
-        <span>Kurzlage</span>
-        <h2>Keine neue Entscheidung</h2>
-        <p>Helmut hält die Lage bewusst ruhig, solange kein belastbarer Handlungsdruck entsteht.</p>
-      </section>
-    `;
-  }
-  return `
-    <section class="quick-panel">
-      <span>Außerdem</span>
-      ${quickItems.map((item, index) => `
-        <button class="quick-row ${escapeAttribute(item.priorityType || "watch")}" type="button" data-detail="${escapeAttribute(item.id)}">
-          <b>${String(index + 1).padStart(2, "0")}</b>
-          <span>
-            <strong>${escapeHtml(item.title)}</strong>
-            <small>${escapeHtml(item.priorityLabel || "Relevant")} · ${escapeHtml(item.estimatedTime || "10 Min.")}</small>
-          </span>
-        </button>
-      `).join("")}
-    </section>
-  `;
-}
-
-function referentFocusSentence() {
-  const mode = briefing.dayMode;
-  if (mode?.focus) return `${mode.phase}: ${mode.focus}.`;
-  return decisionCountSentence();
-}
-
-function renderReferentHome() {
-  const sections = hasHomeSectionContent(briefing.homeSections) ? briefing.homeSections : buildFallbackHomeSections();
-  return `
-    ${renderPrioritySection("Deine wichtigsten Aufgaben", sections.topTasks, renderHomeTask)}
-    ${renderPrioritySection("Neu seit deinem letzten Besuch", sections.changedSinceLastVisit, renderChangeItem)}
-    ${renderPrioritySection("Braucht deine Aufmerksamkeit?", sections.needsAttention, renderAttentionItem)}
-    ${renderPrioritySection("Politische Chancen", sections.opportunities, renderOpportunityItem)}
-    ${renderPrioritySection("Politische Risiken", sections.risks, renderRiskItem)}
-  `;
-}
-
-function renderDecisionConsole() {
-  const top = decisions[0];
-  if (!top) {
-    const watchItems = competentNoActionItems();
-    return `
-      <section class="decision-console empty">
-        <div class="decision-ribbon">
-          <span>Chef-Empfehlung</span>
-          <b>Kein Handlungsdruck</b>
-        </div>
-        <h2>Heute keine Reaktion nötig.</h2>
-        <p>${escapeHtml(noDecisionLead(watchItems))}</p>
-        ${watchItems.length ? `
-          <div class="calm-watchlist">
-            <span>Ich beobachte für dich</span>
-            ${watchItems.map((item) => `
-              <a href="${escapeAttribute(sourceHref(item))}" target="_blank" rel="noopener noreferrer">
-                ${escapeHtml(item.title || "Politische Entwicklung")}
-              </a>
-            `).join("")}
-          </div>
-        ` : ""}
-        <button class="secondary-button" type="button" data-run-crawl>Quellen erneut prüfen</button>
-      </section>
-    `;
-  }
-  return `
-    <section class="decision-console ${escapeAttribute(top.priorityType || "action")}">
-      <div class="decision-ribbon">
-        <span>Wichtigste politische Entscheidung</span>
-        <b>${escapeHtml(top.priorityLabel || top.decision || "Relevant")}</b>
-      </div>
-      <h2>${escapeHtml(top.title)}</h2>
-      <div class="decision-brief">
-        <div>
-          <span>Warum wichtig für dich</span>
-          <p>${escapeHtml(decisionWhyImportant(top))}</p>
-        </div>
-        <div>
-          <span>Empfohlene Handlung</span>
-          <p>${escapeHtml(chiefRecommendationText(top))}</p>
-        </div>
-        <div>
-          <span>Risiko bei Untätigkeit</span>
-          <p>${escapeHtml(decisionRisk(top))}</p>
-        </div>
-      </div>
-      <div class="decision-meta">
-        <span>${escapeHtml(top.estimatedTime || "10 Min.")}</span>
-      </div>
-      <div class="decision-actions">
-        <button class="primary-button" type="button" data-detail="${escapeHtml(top.id)}">Empfehlung öffnen</button>
-      </div>
-    </section>
-  `;
-}
-
-function renderDailyFlow() {
-  const flow = dailyFlowItems();
-  if (!flow.length) return "";
-  return `
-    <section class="daily-flow" aria-label="Tagesverlauf">
-      <div class="flow-head">
-        <span>Danach</span>
-        <h2>Nur was deine Aufmerksamkeit verdient</h2>
-      </div>
-      <div class="flow-list">
-        ${flow.map(renderFlowRow).join("")}
-      </div>
-    </section>
-  `;
-}
-
-function dailyFlowItems() {
-  const sections = hasHomeSectionContent(briefing.homeSections) ? briefing.homeSections : buildFallbackHomeSections();
-  const rows = [];
-  const top = decisions[0] || normalizeHomeItem((sections.topTasks || [])[0]);
-  const changed = normalizeHomeItem((sections.changedSinceLastVisit || []).find((item) => normalizeHomeItem(item)?.id !== top?.id));
-  const attention = normalizeHomeItem((sections.needsAttention || []).find((item) => normalizeHomeItem(item)?.id !== top?.id && normalizeHomeItem(item)?.id !== changed?.id));
-  const chance = normalizeHomeItem((sections.opportunities || []).find((item) => normalizeHomeItem(item)?.id !== top?.id));
-  const risk = normalizeHomeItem((sections.risks || []).find((item) => normalizeHomeItem(item)?.id !== top?.id));
-  if (top) rows.push({ label: "Jetzt", tone: top.priorityType || "action", item: top, text: polishReferentText(top.action || top.summary), cta: "Öffnen" });
-  if (changed) rows.push({ label: "Neu", tone: "change", item: changed, text: changed.changeReason || changed.summary, cta: "Einordnung" });
-  if (attention) rows.push({ label: "Im Blick", tone: attention.priorityType || "watch", item: attention, text: polishReferentText(attention.action || attention.summary), cta: "Details" });
-  if (chance) rows.push({ label: "Chance", tone: "chance", item: chance, text: chance.opportunity || chance.summary, cta: "Antwort" });
-  if (risk) rows.push({ label: "Risiko", tone: "risk", item: risk, text: risk.inaction || risk.summary, cta: "Vorbereiten" });
-  return rows.slice(0, 4);
-}
-
-function renderFlowRow(row) {
-  const actionAttribute = row.label === "Chance" ? "data-communication" : "data-detail";
-  return `
-    <article class="flow-row ${escapeAttribute(row.tone)}">
-      <div class="flow-marker" aria-hidden="true"></div>
-      <div class="flow-copy">
-        <span>${escapeHtml(row.label)}</span>
-        <h3>${escapeHtml(row.item.title)}</h3>
-        <p>${escapeHtml(row.text || "Keine weitere Aktion nötig.")}</p>
-      </div>
-      <button class="text-button flow-action" type="button" ${actionAttribute}="${escapeHtml(row.item.id)}">${escapeHtml(row.cta)}</button>
-    </article>
-  `;
-}
-
-function hasHomeSectionContent(sections) {
-  if (!sections) return false;
-  return ["topTasks", "changedSinceLastVisit", "needsAttention", "opportunities", "risks"].some((key) => Array.isArray(sections[key]) && sections[key].length);
-}
-
-function buildFallbackHomeSections() {
-  return {
-    topTasks: decisions.slice(0, 3),
-    changedSinceLastVisit: decisions.filter((decision) => decision.statusChange && decision.statusChange !== "Unverändert").slice(0, 3),
-    needsAttention: decisions.slice(0, 3),
-    opportunities: decisions.filter((decision) => decision.priorityType === "chance").slice(0, 3),
-    risks: decisions.filter((decision) => decision.priorityType === "risk").slice(0, 3)
-  };
-}
-
-function renderPrioritySection(title, items, renderer) {
-  const normalized = (items || []).map(normalizeHomeItem).filter(Boolean).slice(0, 3);
-  if (!normalized.length) return "";
-  return `
-    <section class="referent-section">
-      <h2>${escapeHtml(title)}</h2>
-      <div class="referent-list">
-        ${normalized.map(renderer).join("")}
-      </div>
-    </section>
-  `;
 }
 
 function normalizeHomeItem(item) {
@@ -8911,149 +8013,6 @@ function displayPriority(priority) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function renderHomeTask(item) {
-  return `
-    <article class="referent-card ${item.priorityType || "action"}">
-      <span>${escapeHtml(item.priorityLabel || "Wichtig")}</span>
-      <h3>${escapeHtml(item.title)}</h3>
-      <p><strong>Warum:</strong> ${escapeHtml(item.whyItMatters || item.personalRelevanceExplanation || item.summary)}</p>
-      <p><strong>Aktion:</strong> ${escapeHtml(item.action || "Linie vorbereiten.")}</p>
-      <small>${escapeHtml(item.deadline ? `Frist ${formatDueDate(item.deadline)} · ` : "")}${escapeHtml(item.estimatedTime || "10 Min.")}</small>
-      <button class="primary-button compact-button" type="button" data-detail="${escapeHtml(item.id)}">Entscheidung öffnen</button>
-    </article>
-  `;
-}
-
-function renderChangeItem(item) {
-  return `
-    <article class="referent-card change">
-      <span>${escapeHtml(item.statusChange || "Neu")}</span>
-      <h3>${escapeHtml(item.title)}</h3>
-      <p>${escapeHtml(item.changeReason || "Neu in deiner politischen Lage.")}</p>
-      <button class="secondary-button compact-button" type="button" data-detail="${escapeHtml(item.id)}">Einordnung lesen</button>
-    </article>
-  `;
-}
-
-function renderAttentionItem(item) {
-  return `
-    <article class="referent-card ${item.priorityType || "action"}">
-      <span>${escapeHtml(item.priorityLabel || "Wichtig")}</span>
-      <h3>${escapeHtml(item.title)}</h3>
-      <p>${escapeHtml(item.action || item.summary)}</p>
-      <button class="secondary-button compact-button" type="button" data-detail="${escapeHtml(item.id)}">Öffnen</button>
-    </article>
-  `;
-}
-
-function renderOpportunityItem(item) {
-  return `
-    <article class="referent-card chance">
-      <span>Chance</span>
-      <h3>${escapeHtml(item.title)}</h3>
-      <p>${escapeHtml(item.opportunity || item.possibleUpside || item.summary)}</p>
-      <button class="secondary-button compact-button" type="button" data-communication="${escapeHtml(item.id)}">Antwort vorbereiten</button>
-    </article>
-  `;
-}
-
-function renderRiskItem(item) {
-  return `
-    <article class="referent-card risk">
-      <span>Risiko</span>
-      <h3>${escapeHtml(item.title)}</h3>
-      <p>${escapeHtml(item.inaction || item.consequenceIfIgnored || item.risk || item.summary)}</p>
-      <button class="secondary-button compact-button" type="button" data-detail="${escapeHtml(item.id)}">Vorbereitung lesen</button>
-    </article>
-  `;
-}
-
-function renderAgentBriefing() {
-  const text = agentBriefingText();
-  return `
-    <section class="agent-briefing" aria-label="Lage von Helmut">
-      <div class="agent-orb" aria-hidden="true"><span>H</span></div>
-      <div class="agent-copy">
-        <span>Lage von Helmut</span>
-        <p>${escapeHtml(text)}</p>
-        <div class="agent-facts">
-          ${agentFacts().map((fact) => `<b>${escapeHtml(fact)}</b>`).join("")}
-        </div>
-      </div>
-      <div class="agent-actions">
-        <button class="primary-button" type="button" data-detail="${escapeHtml(decisions[0]?.id || "")}">Entscheidung öffnen</button>
-      </div>
-    </section>
-  `;
-}
-
-function agentBriefingText() {
-  const firstName = (profile?.fullName || "").split(" ")[0];
-  const greeting = timeGreeting(firstName);
-  const top = decisions[0];
-  const mentionCount = freshMentionCount();
-  const riskCount = decisions.filter((decision) => decision.priorityType === "risk").length;
-  const officeCount = openOfficeTaskCount();
-  if (!top) return `${greeting} Ich habe die Lage geprüft. Für dich liegt heute noch keine klare politische Entscheidung vor.`;
-  const mentionSentence = mentionCount
-    ? `Du wurdest seit dem letzten Quellenlauf ${mentionCount} Mal erwähnt.`
-    : "Heute wurde bislang keine neue namentliche Erwähnung gefunden.";
-  const riskSentence = riskCount ? `${riskCount} Risiko solltest du im Blick behalten.` : "Aktuell sehe ich kein neues persönliches Risiko.";
-  return `${greeting} Ich habe die politische Lage geprüft. Wichtigstes Thema für dich ist heute ${top.title}. ${mentionSentence} ${riskSentence} ${officeCount ? `${officeCount} ${officeCount !== 1 ? "Entwürfe liegen" : "Entwurf liegt"} im Büro bereit.` : "Im Büro gibt es noch keine Entwürfe für heute."}`;
-}
-
-function agentFacts() {
-  const sourceStats = briefing.sourceStats || {};
-  const checked = Number(sourceStats.checkedSources || 0);
-  const successful = Number(sourceStats.successfulSources || 0);
-  return [
-    `${decisions.length} Entscheidungen`,
-    `${freshMentionCount()} neue Erwähnungen`,
-    `${openOfficeTaskCount()} Büro-Entwürfe`,
-    checked || successful ? `${successful}/${checked || successful} Quellen` : "Quellen vorbereitet"
-  ];
-}
-
-function renderChiefRecommendation() {
-  const decision = decisions[0];
-  if (!decision) return "";
-  const taskId = taskIdForDecision(decision);
-  return `
-    <section class="chief-card ${decision.priorityType}" aria-label="Chef-Empfehlung">
-      <span>Chef-Empfehlung</span>
-      <h2>Deine wichtigste Entscheidung heute: ${escapeHtml(decision.title)}</h2>
-      <p>${escapeHtml(chiefRecommendationText(decision))}</p>
-      <div class="chief-meta">
-        <span>${escapeHtml(decision.estimatedTime || "10 Min.")}</span>
-        <span>${escapeHtml(sourceLine(decision))}</span>
-      </div>
-      <div class="chief-actions">
-        <button class="primary-button" type="button" data-detail="${escapeHtml(decision.id)}">Linie lesen</button>
-        <button class="secondary-button" type="button" data-communication="${escapeHtml(decision.id)}">Statement erstellen</button>
-        ${taskId ? `<button class="secondary-button" type="button" data-task-copy="${escapeHtml(taskId)}">Teilen</button>` : ""}
-      </div>
-    </section>
-  `;
-}
-
-function renderSituationalBriefing() {
-  const items = (briefing.situationalBriefing || []).filter(hasPreciseSource).slice(0, 2);
-  return `
-    <section class="situational-card" aria-label="Politische Lage">
-      <span>Lage ohne Handlungsdruck</span>
-      <h2>${items.length ? "Ich halte diese Punkte im Blick." : "Heute keine belastbare Entscheidungslage."}</h2>
-      <p>${items.length ? "Du musst daraus gerade keine öffentliche Position machen. Es reicht, wenn du die Entwicklung kennst und Helmut sie weiter beobachtet." : escapeHtml(briefing.fallbackReason || "Die Quellen wurden geprüft. Es gibt aktuell nichts, worauf du politisch reagieren musst.")}</p>
-      ${items.length ? `
-        <div class="situational-list">
-          ${items.map(renderSituationalItem).join("")}
-        </div>
-      ` : `
-        <button class="secondary-button" type="button" data-run-crawl>Quellen erneut prüfen</button>
-      `}
-    </section>
-  `;
-}
-
 function competentNoActionItems() {
   const situational = (briefing.situationalBriefing || []).filter(hasPreciseSource);
   const mentions = profileMentions().filter(hasPreciseSource);
@@ -9062,61 +8021,6 @@ function competentNoActionItems() {
     .filter(uniqueMentionItem)
     .sort(sortNewestFirst)
     .slice(0, 3);
-}
-
-function noDecisionLead(items) {
-  const phase = helmutDayPhase().key;
-  if (briefing.fallbackReason && /bereits|früheren Lage|nicht erneut/i.test(briefing.fallbackReason)) {
-    return "Ich habe neue Quellen geprüft. Einige relevante Artikel kennst du bereits aus einer früheren Lage; ich hebe sie deshalb bewusst nicht erneut als Entscheidung hoch.";
-  }
-  if (!items.length) {
-    if (phase === "morning") return "Ich habe Regierung, Fraktion, Ausschuss und Personenlage geprüft. Heute Morgen liegt keine belastbare Lage vor, auf die du öffentlich reagieren solltest.";
-    if (phase === "midday") return "Seit dem Morgen ist keine Entwicklung stark genug geworden, um deine Priorität zu verändern. Du musst jetzt nichts senden.";
-    if (phase === "afternoon") return "Der Nachmittag bleibt ruhig. Halte dich sprechfähig, aber erzeuge keine Kommunikation ohne politischen Anlass.";
-    if (phase === "evening") return "Für heute ist nichts mehr zu eskalieren. Ich halte Regierungsvorhaben, Fraktionslinie und Ausschusslage für morgen im Blick.";
-    return "Die Lage ist stabil. Ich prüfe weiter, ob sich für morgen ein neuer Handlungsbedarf ergibt.";
-  }
-  const names = items.map((item) => item.title || item.sourceName || "eine Entwicklung").slice(0, 3);
-  if (phase === "morning") return `Ich habe die Quellen geprüft. Du musst heute Morgen nichts veröffentlichen; ich beobachte für dich ${humanList(names)} weiter.`;
-  if (phase === "midday") return `Seit dem Morgen beobachte ich weiter ${humanList(names)}. Noch entsteht daraus kein neuer Reaktionsdruck.`;
-  if (phase === "afternoon") return `Für den Nachmittag gilt: ${humanList(names)} im Blick behalten, aber keine öffentliche Reaktion ohne neue Dynamik.`;
-  if (phase === "evening") return `Für morgen vormerken: ${humanList(names)}. Heute musst du dazu nichts mehr senden.`;
-  return `Ich beobachte für dich ${humanList(names)} weiter und melde nur, wenn sich daraus eine neue Priorität ergibt.`;
-}
-
-function noDecisionDirective() {
-  const phase = helmutDayPhase().key;
-  const government = governmentPlanItems()[0];
-  const meeting = nextPreparedMeeting();
-  if (government && meeting) return `Für dich als Opposition bleibt vor allem wichtig: ${government.title}. Ich verbinde das mit ${meeting.terminTitel} und prüfe, ob daraus eine Frage an die Bundesregierung oder eine Linie für Arbeit und Soziales entsteht.`;
-  if (government) return `Für dich als Opposition bleibt vor allem wichtig: ${government.title}. ${phase === "evening" || phase === "late" ? "Für morgen prüfe ich" : "Ich prüfe"}, ob daraus eine Frage an die Bundesregierung oder eine Linie für Arbeit und Soziales entsteht.`;
-  const party = partyFactionItems()[0];
-  if (party) return `Aus Fraktion und Partei ist aktuell anschlussfähig: ${party.title}. Noch keine Reaktion nötig, aber politisch im Blick behalten.`;
-  if (meeting) return `Nächster Arbeitsfokus: ${meeting.terminTitel}. Ich halte dafür Gesprächspunkte, Regierungslage und mögliche Nachfragen bereit.`;
-  return "Ich beobachte weiter Regierung, Fraktion, Partei und deinen Ausschuss. Wenn daraus Handlungsdruck entsteht, landet es oben.";
-}
-
-function humanList(values) {
-  const clean = values.map((value) => String(value || "").trim()).filter(Boolean);
-  if (clean.length <= 1) return clean[0] || "die Lage";
-  if (clean.length === 2) return `${clean[0]} und ${clean[1]}`;
-  return `${clean.slice(0, -1).join(", ")} und ${clean.at(-1)}`;
-}
-
-function renderSituationalItem(item) {
-  const href = sourceHref(item);
-  if (!href) return "";
-  return `
-    <article class="situational-item">
-      <div>
-        <span>${escapeHtml(item.sourceName || "Quelle")}</span>
-        <h3>${escapeHtml(item.title || "Politische Entwicklung")}</h3>
-        <p>${escapeHtml(twoSentenceSummary(item.summary || item.excerpt || item.content || ""))}</p>
-        <small>${escapeHtml(item.relevanceReason || "Relevante politische Lage.")} · ${escapeHtml(formatBriefingDate(item.publishedAt || item.retrievedAt))}</small>
-      </div>
-      <a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Artikel öffnen</a>
-    </article>
-  `;
 }
 
 function chiefRecommendationText(decision) {
@@ -9133,35 +8037,6 @@ function decisionWhyImportant(decision) {
 
 function decisionRisk(decision) {
   return twoSentenceSummary(decision.inaction || decision.consequenceIfIgnored || decision.risk || "Wenn du nicht reagierst, prägen andere Akteure die Debatte zuerst.");
-}
-
-function taskIdForDecision(decision) {
-  const bySignal = tasks.find((task) => task.sourceSignalId && task.sourceSignalId === decision.signalId);
-  if (bySignal) return bySignal.id;
-  const byTemplate = tasks.find((task) => task.id === decision.taskTemplate?.id);
-  return byTemplate?.id || decision.taskTemplate?.id || "";
-}
-
-function renderPilotStatus() {
-  const sourceStats = briefing.sourceStats || {};
-  const checked = Number(sourceStats.checkedSources || 0);
-  const successful = Number(sourceStats.successfulSources || 0);
-  const sourceText = checked || successful ? `${successful}/${checked || successful} Quellen geprüft` : "Quellenbasis vorbereitet";
-  const updatedText = formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString());
-  const statusLabel = displayStatusLabel();
-  return `
-    <div class="pilot-status ${previewMode ? "preview" : ""}" aria-label="Pilotstatus">
-      ${escapeHtml(statusLabel)} · ${escapeHtml(sourceText)} · aktualisiert ${escapeHtml(updatedText)}
-      ${previewMode ? `<span>Kontrollansicht · verändert echte Daten nichts</span>` : ""}
-    </div>
-  `;
-}
-
-function decisionCountSentence() {
-  const count = decisions.length;
-  if (count === 0) return "Heute liegt keine politische Entscheidung an.";
-  if (count === 1) return "Heute ist eine politische Entscheidung relevant.";
-  return `Heute sind ${count} politische Entscheidungen relevant.`;
 }
 
 // Explizite Teilrollen mit ihren eigenen Quellen; kein Primaerlink als
@@ -9364,14 +8239,6 @@ function officeDraftSources(decision) {
 // KEINE Doppelzaehlung der Primaerquelle mehr.
 function draftSourceCount(decision) {
   return officeDraftSources(decision).length;
-}
-
-function officeBriefingTime() {
-  const ts = briefing?.generatedAt || briefing?.date;
-  if (!ts) return "";
-  const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return "";
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} Uhr`;
 }
 
 // The cache has no independent creation timestamp. Label only the actual
@@ -9746,13 +8613,6 @@ function orderedOfficeHandoffMethods(preferredMethod) {
   return [preferred, ...officeHandoffMethods.filter(([method]) => method !== preferred[0])];
 }
 
-function officeTaskRequest(task) {
-  const questions = taskBriefQuestions(task).slice(0, 2);
-  const assignee = task.assignee || recommendedTaskAssignee(task);
-  if (questions.length) return `${assignee}: Bitte bis ${formatDueDate(task.dueDate)} kurz einordnen. Kläre: ${questions.join(" ")} Ergebnis bitte als Ja/Nein-Empfehlung: reagieren, nur vorbereiten oder liegen lassen.`;
-  return shortTaskDescription(task);
-}
-
 function recommendedTaskAssignee(task) {
   const text = `${task.title || ""} ${task.description || ""}`.toLowerCase();
   if (text.includes("presse") || text.includes("statement") || text.includes("linie")) return "Pressesprecher";
@@ -9772,11 +8632,6 @@ function isActionableOfficeTask(task) {
   );
 }
 
-function shortTaskDescription(task) {
-  const text = task.description || "Bitte diese Empfehlung vorbereiten.";
-  return twoSentenceSummary(text);
-}
-
 function shortTaskTitle(task) {
   const text = `${task.title || ""} ${task.description || ""}`.toLowerCase();
   if (text.includes("arbeitszeitgesetz") || text.includes("acht-stunden")) return "Linie zum Arbeitszeitgesetz vorbereiten";
@@ -9785,10 +8640,6 @@ function shortTaskTitle(task) {
   if (text.includes("mindestlohn")) return "Mindestlohn-Statement vorbereiten";
   if (text.includes("rente")) return "Rentenlinie vorbereiten";
   return String(task.title || "Büroauftrag vorbereiten").replace(/\s+vorbereiten$/i, "").slice(0, 72);
-}
-
-function taskPriorityLabel(priority) {
-  return ({ high: "Heute", medium: "Vorbereiten", low: "Optional" })[priority] || "Vorbereiten";
 }
 
 function renderTopicsView() {
@@ -9946,26 +8797,6 @@ function renderCommunicationVariants(decision) {
         </button>
       `).join("")}
     </div>
-  `;
-}
-
-function renderNotesSection() {
-  return `
-    <section class="plain-list notes-section">
-      <h2>Merken für später</h2>
-      <form class="note-form" id="noteForm">
-        <textarea name="text" rows="3" placeholder="Frage, Risiko, Verband, Termin oder Recherchepunkt festhalten."></textarea>
-        <button class="secondary-button" type="submit">Merken</button>
-      </form>
-      <div class="note-list">
-        ${notes.slice(0, 5).map((note) => `
-          <article class="note-row">
-            <p>${escapeHtml(note.text)}</p>
-            <small>${escapeHtml(note.type || "Notiz")} · ${escapeHtml(formatBriefingDate(note.created_at || note.createdAt))}</small>
-          </article>
-        `).join("") || `<p class="empty-state">Noch keine Notizen.</p>`}
-      </div>
-    </section>
   `;
 }
 
@@ -10494,11 +9325,6 @@ function itemMentionsProfile(item, terms = profileNameTerms()) {
   return text.includes(terms.fullName.toLowerCase()) || profileLastNameRegex(terms.lastName).test(text);
 }
 
-function itemAuthoredByProfile(item, terms = profileNameTerms()) {
-  const author = `${item?.author || ""}`.toLowerCase();
-  return Boolean(author) && (author.includes(terms.fullName.toLowerCase()) || profileLastNameRegex(terms.lastName).test(author));
-}
-
 function profileLastNameRegex(lastName) {
   return new RegExp(`(^|[^a-zäöüß])${escapeRegExp(String(lastName || "").toLowerCase())}($|[^a-zäöüß])`, "i");
 }
@@ -10511,90 +9337,8 @@ function sortNewestFirst(a, b) {
   return new Date(b.retrievedAt || b.publishedAt || 0) - new Date(a.retrievedAt || a.publishedAt || 0);
 }
 
-function archivedProfileMentions(allMentions, freshMentions) {
-  const freshKeys = new Set(freshMentions.map(mentionKey));
-  return allMentions.filter((item) => !freshKeys.has(mentionKey(item)) && !isFreshUpdate(item));
-}
-
 function mentionKey(item) {
   return item?.url || item?.sourceUrl || item?.id || item?.title || "";
-}
-
-function mentionRows(items, options = {}) {
-  if (!items.length) {
-    if (options.empty === false) return "";
-    return `
-      <div class="radar-empty-hint">
-        <p><strong>Keine neue Erwähnung</strong><br>Helmut prüft die Quellen morgens und abends.</p>
-        <button class="secondary-button" type="button" data-radar-search>Quellen jetzt prüfen</button>
-      </div>
-    `;
-  }
-
-  if (options.compact) {
-    return items.map((item) => {
-      const href = sourceHref(item);
-      if (!href) return "";
-      return `
-        <article class="radar-mention-compact">
-          <div class="radar-mention-thumb">${mentionVisual(item)}</div>
-          <div class="radar-mention-content">
-            <div class="radar-mention-header">
-              <span class="radar-mention-source">${escapeHtml(item.sourceName || "Quelle")}</span>
-              <span class="radar-mention-status">Archiviert</span>
-              <span class="radar-mention-date">${escapeHtml(formatBriefingDate(item.publishedAt || item.retrievedAt || ""))}</span>
-            </div>
-            <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
-            <div class="radar-mention-actions">
-              <a class="secondary-button" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>
-            </div>
-          </div>
-        </article>
-      `;
-    }).filter(Boolean).join("");
-  }
-
-  return items.map((item) => {
-    const href = sourceHref(item);
-    if (!href) return "";
-    return `
-      <article class="list-row mention mention-row ${href ? "" : "no-link"}">
-        ${mentionVisual(item)}
-        <div class="mention-content">
-          <div>
-            <span>${escapeHtml(item.sourceName || "Quelle")}</span>
-            <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
-            <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || "Diese Person wurde in dieser Quelle erwähnt."))}</p>
-            <small class="mention-timestamp">Gefunden: ${escapeHtml(formatMentionFoundAt(item))}</small>
-          </div>
-          <a class="radar-source-link" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen →</a>
-        </div>
-        <a class="secondary-button mention-open" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Einordnen</a>
-      </article>
-    `;
-  }).join("");
-}
-
-function mentionVisual(item) {
-  if (item.imageUrl && isHttpUrl(item.imageUrl)) {
-    return `<img class="mention-image mention-image-cover" src="${escapeAttribute(item.imageUrl)}" alt="" loading="lazy" />`;
-  }
-
-  const publisherLogo = publisherImageUrl(item);
-  if (publisherLogo && isHttpUrl(publisherLogo)) {
-    return `<div class="mention-image mention-image-logo" aria-hidden="true"><img src="${escapeAttribute(publisherLogo)}" alt="" loading="lazy" /></div>`;
-  }
-
-  return `<div class="mention-avatar" aria-hidden="true">${escapeHtml(profileInitials())}</div>`;
-}
-
-function formatMentionFoundAt(item) {
-  return formatBriefingDate(item.retrievedAt || item.publishedAt || new Date().toISOString());
-}
-
-function publisherImageUrl(item) {
-  const domain = publisherDomain(item);
-  return domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128` : "";
 }
 
 function publisherDomain(item) {
@@ -10655,24 +9399,6 @@ const RADAR_V3_PALETTE = [
   "#7f8c8d", "#95a5a6"
 ];
 
-function radarV3AvatarColor(name) {
-  let h = 5381;
-  const s = String(name || "");
-  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) & 0x7fffffff;
-  return RADAR_V3_PALETTE[h % RADAR_V3_PALETTE.length];
-}
-
-function radarV3SourceIcon(item) {
-  const sourceName = item.sourceName || "Quelle";
-  const initial = escapeHtml(sourceName.charAt(0).toUpperCase());
-  const color = radarV3AvatarColor(sourceName);
-  const logoUrl = publisherImageUrl(item);
-  const img = logoUrl
-    ? `<img class="radar-v3-source-logo" src="${escapeAttribute(logoUrl)}" alt="" loading="lazy" onerror="this.style.display='none'">`
-    : "";
-  return `<span class="radar-v3-source-icon" style="background:${color}" aria-hidden="true">${initial}${img}</span>`;
-}
-
 function profileInitials() {
   return String(profile?.fullName || "Profil")
     .split(/\s+/)
@@ -10681,20 +9407,6 @@ function profileInitials() {
     .map((part) => part[0])
     .join("")
     .toUpperCase();
-}
-
-function radarRows(items, type) {
-  return items.map((item) => `
-    <article class="list-row ${type}">
-      <div>
-        <span>${type === "risk" ? "Risiko" : type === "chance" ? "Chance" : "Beobachten"}</span>
-        <h3>${escapeHtml(item.title)}</h3>
-        <p>${escapeHtml(type === "risk" ? item.risk : item.opportunity || item.summary)}</p>
-        ${sourceLink(item)}
-      </div>
-      <button class="secondary-button" type="button" data-detail="${escapeHtml(item.id)}">Empfehlung öffnen</button>
-    </article>
-  `).join("") || `<p class="empty-state">Keine Einträge.</p>`;
 }
 
 function renderSettingsView() {
@@ -10951,90 +9663,14 @@ function updateConstituencySelect(state) {
   select.innerHTML = options.map(([value, label]) => `<option value="${escapeAttribute(value)}" ${value === currentValue ? "selected" : ""}>${escapeHtml(label)}</option>`).join("");
 }
 
-function qualitySummary(quality) {
-  if (!quality) return "Der nächste Briefinglauf prüft Handlung, Mandatsbezug, Quelle, Kommunikation und Aufgabe.";
-  const base = `${quality.score || 0}% vollständig · ${quality.recommendationCount || 0} Empfehlungen geprüft.`;
-  if (quality.issues?.length) return `${base} Offen: ${quality.issues[0]}`;
-  return `${base} Alle Kernfragen sind abgedeckt.`;
-}
-
 function learningSummary(learning) {
   if (!learning || !learning.eventCount) return "Noch keine Rückmeldungen gespeichert.";
   return `${learning.eventCount} Rückmeldungen gespeichert. Die Priorisierung ändern sie derzeit nicht.`;
 }
 
-function readinessSummary(readiness) {
-  if (!readiness) return "Helmut prüft Speicher, Quellen, Briefing, Qualität und Automatik.";
-  if (readiness.issues?.length) return `${readiness.score || 0}% · Nächster Fix: ${readiness.issues[0]}`;
-  if (readiness.warnings?.length) return `${readiness.score || 0}% · Pilot möglich. Hinweis: ${readiness.warnings[0]}`;
-  return `${readiness.score || 100}% · Speicher, Quellen, Briefing und Qualität sind bereit.`;
-}
-
-function evidenceSummary(evidence) {
-  if (!evidence) return "Helmut prüft, ob sichtbare Empfehlungen belastbare Quellenlinks haben.";
-  const direct = evidence.directLinks || 0;
-  const fallback = evidence.publisherFallbacks || 0;
-  const missing = evidence.missingLinks || 0;
-  if (missing) return `${direct} Direktlinks · ${fallback + missing} Belege ohne präzisen Artikellink.`;
-  if (fallback) return `${direct} Direktlinks · ${fallback} Belege nur mit Publisher-Quelle.`;
-  return `${direct} Direktlinks. Keine technischen Links.`;
-}
-
-function pushStatusTitle(push = {}, supported = browserPushSupported()) {
-  if (!supported) return "Auf diesem Gerät nicht verfügbar";
-  if (!push.enabled) return "Noch nicht konfiguriert";
-  if (pushEnabledOnThisDevice(push)) return "Aktiviert";
-  if (pushPermissionState() === "granted") return "Berechtigung aktiv";
-  if (pushPermissionState() === "denied") return "Vom Browser blockiert";
-  return "Bereit zum Aktivieren";
-}
-
-function pushStatusCopy(push = {}, supported = browserPushSupported()) {
-  if (!supported) return "Push funktioniert nur in unterstützten Browsern und auf HTTPS. Auf iOS meist erst nach Installation als Web-App.";
-  if (!push.enabled) return "Für echte Pushs fehlen noch VAPID Keys in der Produktionsumgebung.";
-  if (pushEnabledOnThisDevice(push)) return "Helmut informiert dich auf diesem Gerät, sobald das Morgenbriefing bereitsteht.";
-  if (pushPermissionState() === "granted") return "Die Browser-Berechtigung ist aktiv. Mit einem Klick synchronisiert Helmut dieses Gerät.";
-  if (pushPermissionState() === "denied") return "Du hast Benachrichtigungen blockiert. Erlaube sie zuerst in den Website-Einstellungen deines Browsers und lade Helmut danach neu.";
-  return "Einmal aktivieren. Danach kann Helmut das Morgenbriefing direkt auf dein Smartphone melden.";
-}
-
-function pushPermissionButtonLabel(push = {}) {
-  if (!browserPushSupported()) return "Nicht verfügbar";
-  if (pushEnabledOnThisDevice(push)) return "Aktiviert";
-  if (pushPermissionState() === "granted") return "Gerät synchronisieren";
-  if (pushPermissionState() === "denied") return "Blockiert";
-  return "Aktivieren";
-}
-
-function pushTestButtonLabel(push = {}) {
-  if (!browserPushSupported()) return "Nicht verfügbar";
-  if (!push.enabled) return "Nicht konfiguriert";
-  if (pushPermissionState() === "denied") return "Erst erlauben";
-  return "Test senden";
-}
-
 function pushPermissionState() {
   if (typeof Notification === "undefined") return "unsupported";
   return Notification.permission;
-}
-
-function operationsSummary(ops) {
-  if (!ops || !ops.status) return "Status konnte noch nicht geladen werden.";
-  const crawl = ops.crawl;
-  const briefingInfo = ops.briefing;
-  const checked = crawl?.checkedSources || 0;
-  const failed = crawl?.failedSources || 0;
-  const recs = briefingInfo?.recommendationCount ?? recommendations.length;
-  if (ops.status === "Bereit") return `${checked} Quellen geprüft, ${failed} Fehler, ${recs} persönliche Empfehlungen bereit.`;
-  if (ops.status === "Prüfen") return `${checked || "Keine"} Quellen zuletzt geprüft. Bitte einmal manuell prüfen.`;
-  if (ops.storage?.backend !== "supabase") return "Supabase ist nicht aktiv. Für den Pilot muss persistenter Speicher laufen.";
-  return "Noch kein vollständiger Quellen- und Briefinglauf gefunden.";
-}
-
-function protectionSummary(protection) {
-  const interval = protection?.manualRunMinIntervalMinutes || 10;
-  const drafts = protection?.communicationDraftsPerHour || 18;
-  return `Manuelle Crawls und Briefings werden ${interval} Minuten wiederverwendet. Kommunikation: ${drafts}/h.`;
 }
 
 function browserPushSupported() {
@@ -11043,18 +9679,6 @@ function browserPushSupported() {
 
 function pushEnabledKey() {
   return `${pushEnabledStorageKey}:${activePoliticianId}:${previewMode ? "preview" : "live"}`;
-}
-
-function pushEnabledOnThisDevice(push = {}) {
-  if (!browserPushSupported() || typeof Notification === "undefined" || Notification.permission !== "granted") return false;
-  try {
-    const localEnabled = window.localStorage.getItem(pushEnabledKey()) === "1";
-    const serverCount = Number(push.subscriptionCount);
-    if (Number.isFinite(serverCount) && serverCount <= 0) return false;
-    return localEnabled;
-  } catch {
-    return false;
-  }
 }
 
 async function loadPushConfig() {
@@ -12791,33 +11415,6 @@ function helmutFlowCooldownKey() {
   return `${helmutFlowCooldownPrefix}:${activePoliticianId}:${previewMode ? "preview" : "live"}`;
 }
 
-function startHelmutTyping() {
-  const assessment = buildHelmutAssessment();
-  const fullText = assessment.typingText || assessmentTypingText(assessment);
-  helmutTypingActive = true;
-  helmutTypedText = "";
-  helmutTypingFullText = fullText;
-  if (helmutTypingTimer) window.clearInterval(helmutTypingTimer);
-  render();
-  helmutTypingTimer = window.setInterval(() => {
-    if (currentView !== "helmut") {
-      stopHelmutTyping();
-      return;
-    }
-    const nextLength = Math.min(helmutTypingFullText.length, helmutTypedText.length + 10);
-    helmutTypedText = helmutTypingFullText.slice(0, nextLength);
-    if (nextLength >= helmutTypingFullText.length) {
-      window.clearInterval(helmutTypingTimer);
-      helmutTypingTimer = null;
-      window.setTimeout(() => {
-        helmutTypingActive = false;
-        if (currentView === "helmut") render();
-      }, 450);
-    }
-    render();
-  }, 34);
-}
-
 function stopHelmutTyping() {
   helmutTypingActive = false;
   helmutTypedText = "";
@@ -13048,24 +11645,6 @@ function headlineClass(value) {
   if (length >= 24) return "fit-title fit-title-xl";
   if (length >= 18) return "fit-title fit-title-lg";
   return "fit-title";
-}
-
-function getTaskMetrics() {
-  const noon = new Date();
-  noon.setHours(12, 0, 0, 0);
-  return {
-    openCount: tasks.filter((task) => task.status === "open").length,
-    criticalCount: tasks.filter((task) => task.status !== "done" && task.priority === "high").length,
-    dueByNoonCount: tasks.filter((task) => task.status !== "done" && new Date(task.dueDate) <= noon).length
-  };
-}
-
-function freshMentionCount() {
-  return profileMentions().filter(isFreshUpdate).length;
-}
-
-function openOfficeTaskCount() {
-  return Object.keys(officeDrafts).length;
 }
 
 function actionableOfficeTaskCount() {
@@ -13689,10 +12268,6 @@ function priorityLabel(priority) {
   return ({ high: "Hoch", medium: "Mittel", low: "Niedrig" })[priority] || "Mittel";
 }
 
-function priorityClass(priority) {
-  return ({ high: "high", medium: "medium", low: "low" })[priority] || "medium";
-}
-
 function formatDueDate(dateString) {
   // Wie die Schwesterfunktionen (formatBriefingDate/-DeadlineDate): NIE ein rohes
   // "Invalid Date" ausliefern. Diese Ausgabe landet in kopierbaren Büro-Texten und
@@ -13729,36 +12304,6 @@ function formatBriefingDate(dateString) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);
-}
-
-function formatDeadlineDate(dateString) {
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return dateString || "—";
-  return new Intl.DateTimeFormat("de-DE", {
-    timeZone: "Europe/Berlin",
-    day: "2-digit",
-    month: "long",
-    year: "numeric"
-  }).format(date);
-}
-
-function helmutBriefingSourceHtml(item) {
-  if (!item) return "";
-  const sources = Array.isArray(item.sources) ? item.sources : [];
-  const prim = item.primarySource || sources[0];
-  if (!prim && !item.sourceName) return "";
-  const primName = prim?.sourceName || item.sourceName || "";
-  const dateStr = prim?.publishedAt || prim?.retrievedAt || item.publishedAt || item.retrievedAt || "";
-  const dateLabel = dateStr ? `, ${escapeHtml(sourceTimeLabel(dateStr))}` : "";
-  const href = sourceHref(prim || item);
-  const nameHtml = href
-    ? `<a href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(primName)}</a>`
-    : escapeHtml(primName);
-  if (sources.length > 1) {
-    const extra = sources.length - 1;
-    return `Quellen: ${nameHtml} + ${extra} weitere`;
-  }
-  return primName ? `Quelle: ${nameHtml}${dateLabel}` : "";
 }
 
 function formatBerlinNow() {

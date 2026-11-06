@@ -193,17 +193,20 @@ Reviews positiv. Main-CI42069590393 gruen, Kandidaten-Pflicht-CI noch offen.
 [Abnahme und konkrete Mergevoraussetzungen](betrieb/release-prep-20261105.md).
 Keine Productionfreigabe.
 
-## Designangleich an Claude Design (05.11.2026, Branch, teilweise abgeschlossen)
+## Designangleich und UI-Aufraeumen (06.11.2026, erfolgreich abgeschlossen)
 
-Branch `claude/helmut-pilot-design-cccztl`: Darstellung an das freigegebene
-Claude Design „Helmut Desktop Prototyp“ (finale Ueberarbeitung) angeglichen.
-Nur `styles.css` (Angleichblock am Dateiende), drei Darstellungsstellen in
-`client.js` (Status-Pille „Aktuell · HH:MM Uhr“, mobil nur Uhrzeit; Fusszeile
-mobil am Inhaltsende) und `index.html` (`?v=`). Kein Backend, Motor, keine
-Datenbank, Adminverwaltung, Auth oder Datenbindung geaendert. Browser-Smoke
-78/0 lokal. Bewusst offen: Profilseite behaelt ihre Listenstruktur (nur Tokens
-angeglichen), Briefing-Inhaltsbloecke folgen der echten Datenlage statt der
-Prototyp-Kulisse. Merge/Production nur mit ausdruecklicher Freigabe.
+Nach Betreiber-GO bei gruener Pflicht-CI gemergt und live:
+[PR #1055](https://github.com/ernisch/helmut-pilot/pull/1055) (Merge `8649025`,
+Design nach freigegebenem Claude Design, Desktop/Mobil, alle Vollbild-Karten,
+dunkles Favicon, Startbild mit ruhigem Puls) und
+[PR #1058](https://github.com/ernisch/helmut-pilot/pull/1058) (Merge `00ecd5f`,
+108 nie aufgerufene Client-Funktionen und 768 CSS-Regeln ohne genutzte Klassen
+entfernt, Zugangs-/Passwort-/Rechtsseiten im Design). Production-Deployment
+`dpl_5Xs3rTFGmhuEUXWR1sBGmWmiEm8A` READY; `/api/release/public` ok/ready/storage
+true; keine Laufzeitfehler seit Deployment (06.11.2026, lesend geprueft).
+Nur Darstellung; `server.js` ausschliesslich HTML-Shell und Seiten-Styles.
+Lokale Altfehler unveraendert: `kalender-ics-test.js` (Modul `ical.js` fehlt
+lokal), `admin-nutzer-loeschen-test.js` (Farbannahme `#ff5967`).
 
 ## Genau ein naechster Schritt
 
