@@ -9170,3 +9170,17 @@ body .updates-layer { background: rgba(3, 5, 11, .48); backdrop-filter: none; -w
 :root[data-theme="light"] body .updates-layer { background: rgba(15, 23, 42, .18) !important; }
 body .updates-layer .updates-panel { box-shadow: -30px 0 70px -30px rgba(0,0,0,.7); border-left: 1px solid var(--hairline); }
 @media (prefers-reduced-motion: reduce) { body .updates-layer { transition: none; } }
+
+/* Alle Vollbild-Karten (Fehler, offline, Anmeldung, Zugang, Mandat) im Design.
+   Wortmarke = der Absatz direkt nach dem Signet; übrige Absätze = Fließtext. */
+body .loading-card { max-width: 480px; margin: 0 auto; padding: 44px 36px 36px; text-align: center; background: var(--ui-panel); border: 1px solid var(--ui-panel-line); border-radius: 14px; box-shadow: 0 30px 70px -34px rgba(0,0,0,.8); color: var(--ui-text); font-family: var(--ui-sans); }
+body .loading-card .loading-logo { display: none; }
+body .loading-card p, body .pilot-access-card > p:not(.pilot-access-copy) { margin: 0 auto 6px; max-width: 38ch; font: 400 16px/1.55 var(--ui-sans); letter-spacing: 0; text-transform: none; color: var(--ui-muted); opacity: 1; }
+body .loading-card .loading-logo + p { margin: 0 0 28px; max-width: none; font: 400 40px/1.1 var(--ui-serif); letter-spacing: -.01em; color: var(--ui-text); }
+body .loading-card h1 { margin: 0 0 12px; font: 400 clamp(28px,5vw,36px)/1.15 var(--ui-serif); letter-spacing: -.01em; color: var(--ui-text); text-wrap: balance; }
+body .loading-card > .primary-button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; margin-top: 22px; padding: 0 28px; border: 0; border-radius: 24px; background: var(--ui-solid); color: var(--ui-on-solid); font: 500 16px/1 var(--ui-sans); box-shadow: none; filter: none; }
+body .loading-card > .primary-button:hover { background: var(--ui-solid-hover); transform: none; }
+:root[data-theme="light"] body .loading-card > .primary-button { background: var(--ui-solid) !important; color: var(--ui-on-solid) !important; }
+@media (max-width: 480px) { body .loading-card { padding: 36px 22px 28px; margin: 0 16px; } }
+body .shell:has(> .loading-card) { display: grid; place-items: center; min-height: 100dvh; padding: 24px 16px; box-sizing: border-box; background: radial-gradient(70% 40% at 50% 0, rgba(127,168,224,.07), transparent 70%), var(--ui-bg); }
+body .shell > .loading-card { margin: 0 auto; width: 100%; }
