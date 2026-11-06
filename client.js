@@ -10131,7 +10131,10 @@ function bindActions() {
   app.querySelectorAll("[data-ui-jump]").forEach((nav) => {
     const topics = [...(nav.closest(".hstand") || app).querySelectorAll("[data-topic-title]")];
     if (topics.length < 2) { nav.remove(); return; }
-    nav.innerHTML = `<p class="ui-jump-head"><span>Auf einen Blick</span><span>${topics.length} Themen</span></p><ol class="ui-jump-list">` + topics.map((el, i) => {
+    // Ruhiger Tag: kein eigenes Briefing, sondern laufende Lage-Themen — das
+    // steht ausdruecklich in der Ueberschrift, damit es nicht wie ein Briefing wirkt.
+    const fromLage = Boolean(nav.closest(".hstand-overview"));
+    nav.innerHTML = `<p class="ui-jump-head"><span>${fromLage ? "Laufende Themen aus der Lage" : "Auf einen Blick"}</span><span>${topics.length}</span></p><ol class="ui-jump-list">` + topics.map((el, i) => {
       el.id = `ui-topic-${i + 1}`;
       return `<li><button type="button" data-jump="${i + 1}"><span class="ui-jump-num">${String(i + 1).padStart(2, "0")}</span><span class="ui-jump-title">${escapeHtml(el.dataset.topicTitle)}</span><span class="ui-jump-go" aria-hidden="true">↓</span></button></li>`;
     }).join("") + "</ol>";

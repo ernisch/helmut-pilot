@@ -9403,3 +9403,19 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
 @media (max-width: 767px) {
   .ui-jump .ui-jump-list button .ui-jump-title { font: 400 16.5px/1.3 var(--ui-serif); letter-spacing: 0; text-transform: none; color: var(--ui-text); }
 }
+
+/* Kompakter (mobil): weniger Leerraum, Uebersicht direkt unter dem Status. */
+@media (max-width: 767px) {
+  .view-helmut .ui-page-header { min-height: 0; padding-bottom: 10px; }
+  .hstand { gap: 10px; }
+  .hstand .ui-briefing-status { gap: 6px 10px; }
+  .hstand .ui-briefing-status .hstand-frische--muted { padding: 0; font-size: 13px; line-height: 1.45; }
+  .ui-page .hstand-overview { margin-top: 4px; }
+  .ui-jump, .hstand-overview .ui-jump { margin: 6px 0 4px; padding: 10px 14px 2px; border-radius: 12px; }
+  .ui-jump-head { margin-bottom: 0; }
+  .ui-jump .ui-jump-list button { grid-template-columns: 24px minmax(0,1fr) 14px; gap: 8px; min-height: 44px; padding: 7px 0; }
+  .ui-jump .ui-jump-list button .ui-jump-num { font-size: 15px; }
+  .ui-jump .ui-jump-list button .ui-jump-title { font-size: 15px; line-height: 1.28; }
+  .ui-jump .ui-jump-list button .ui-jump-go { font-size: 13px; }
+  .ui-page .hstand-overview > h2 { margin-top: 14px; }
+}
