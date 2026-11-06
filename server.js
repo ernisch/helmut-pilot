@@ -2686,6 +2686,16 @@ async function handleRequest(request, response) {
     return handleAsync(response, () => buildAdminOverview());
   }
 
+  // Ergebnisstand je Profil und Berliner Tag: Briefing · Zustellung · Lage (Radar im Briefing).
+  // Rein lesend, keine KI. Stufe 4 (brauchbar) nur mit gebundenem Fachurteil, also derzeit nie.
+  if (url.pathname === "/api/admin/ergebnisse" && request.method === "GET") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const tag = String(url.searchParams.get("tag") || briefingFrische.berlinTagKey(new Date()));
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(tag)) { response.writeHead(400, jsonHeaders()); response.end(JSON.stringify({ error: "Ungültiger Tag." })); return undefined; }
+    return handleAsync(response, async () => require("./lib/helmut/admin-ergebnisstand").lade({
+      profiles: await listFullProfiles(), tag, seite: url.searchParams.get("seite"), proSeite: url.searchParams.get("proSeite") }));
+  }
+
   // Admin-Stats: Heute (1 Tag)
   if (url.pathname === "/api/admin/stats/daily") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;

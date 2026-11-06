@@ -113,7 +113,25 @@ Aktualisieren-Knopf ohne Gold, neutraler Statusring statt Lücke am Seitenkopf,
 einzeilige Navigation, Filterzähler „–“ statt „Nicht geprüft“, Kostenspalte ohne
 Umbruch, Leerzustände für Kunden und Läufe. „Kunde anlegen“ und alle Funktionen
 bleiben. `original-verwaltung-test.js` stoppt wie auf `main` an der bekannten alten
-Null-IO-Erwartung. Auftrag abgeschlossen. Offen bleibt als eigener Auftrag die Begriffsumstellung Briefing · Zustellung · Lage (neue Leseroute laut Übergabe).
+Null-IO-Erwartung. Auftrag abgeschlossen.
+
+## Verwaltung: Briefing · Zustellung · Lage (06.11.2026, PR offen, nicht gemergt)
+
+Branch `claude/zen-feynman-ie0vpl`. Neu: das rein lesende Modul `lib/helmut/admin-ergebnisstand.js`
+und die Route `GET /api/admin/ergebnisse?tag=&seite=&proSeite=` (nur Admin, ohne KI, ohne Schreiben).
+Sie nutzt unverändert `pruefeZeile`/`pruefeInhalt` (frisch berechnet), `gespeicherterTextGueltig`
+und die Quittungsbindung aus dem Ergebnisnachweis, aber ohne Testfenster. Gelesen wird in Stapeln
+von 25 Profilen über `listRenderedBriefingsV3ForTenants` (mit `user_id`-Filter). Die Bilanz zählt
+alle aktiven Profile. **Aktiv** ist `profileActive` aus `listFullProfiles`, also dieselbe Quelle wie
+die Profilzahlen der Verwaltung. Stufe 4 „brauchbar“ wird nie abgeleitet, weil es kein gebundenes
+Fachurteil gibt. Die Verwaltung zeigt Briefing · Zustellung · Lage, Radar nur im Profildetail
+unter „Radar im Briefing“, „Wiederholung zwischen Ansichten“ statt „Doppelt“, ohne die Spalten
+Brauchbar/Unbrauchbar. Ohne V3-Speicher bleibt alles „Nicht geprüft“.
+Production-Lesebeleg 06.11. (nur Strukturfelder): 1 Paket mit `currentRadarState.anzeige`,
+alle vier Radar-Abschnitte leer, `pruefung.fehler = [briefing-ohne-tagesanlass]`, `bestanden=false`;
+1 Erfolgsquittung mit `ausgabeBeleg`; 1 Lage mit Text. Das Briefing erscheint deshalb ehrlich als
+„Unvollständig“. Tests: 8/8 Modul, 6/6 Route (Rollen, Paging 20/500/2000), 5/5 Verwaltungsansichten.
+Nächster Schritt: Merge-GO für den PR.
 
 ## Oberstes Ziel: Mock100 PASS, dann Helmut sicher live
 

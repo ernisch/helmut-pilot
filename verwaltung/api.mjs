@@ -5,7 +5,8 @@ const ENDPOINTS = Object.freeze({
   budget: "/api/admin/stats/budget-today",
   customers: "/api/admin/customers",
   sources: "/api/admin/sources-status",
-  runs: "/api/admin/stats/process-runs?limit=20"
+  runs: "/api/admin/stats/process-runs?limit=20",
+  ergebnisse: "/api/admin/ergebnisse?proSeite=500"
 });
 
 export class AdminReadError extends Error {
@@ -26,6 +27,7 @@ export function createAdminReader({ fetcher = globalThis.fetch, timeoutMs = 1200
     read(key, id = null) {
       if (disposed) return Promise.reject(new AdminReadError());
       let url = typeof key === "string" && Object.hasOwn(ENDPOINTS, key) ? ENDPOINTS[key] : null;
+      if (key === "ergebnisse" && id !== null && /^[2-4]$/.test(String(id))) url = `${ENDPOINTS.ergebnisse}&seite=${id}`;
       if (key === "profile" && typeof id === "string" && /^[a-z0-9][a-z0-9-]{0,119}$/.test(id)) {
         url = `/api/admin/profile/${encodeURIComponent(id)}`;
       }
