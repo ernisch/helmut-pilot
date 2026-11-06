@@ -3012,6 +3012,18 @@ function renderAdmQuellen() {
         : `${admEmpty("Keine Quellenpakete in der relationalen Datenbank.")}${inventurNoten}`);
   }
 
+  const abdeckung = src && src.abdeckung;
+  const abdeckungLabels = { unbekannt: "Noch nicht verlässlich prüfbar", ohne_aktiven_bedarf: "Derzeit kein aktiver Bedarf", eingeschraenkt: "Lücken oder ungeprüfte Quellen", versorgung_belegt: "Versorgung in den geprüften Belegen bestätigt" };
+  const pruefung = src && src.letzteAutomatischeAbdeckungspruefung;
+  const abdeckungCard = admCard("Gleiche Regeln für die Quellenversorgung", "Für jedes Fachgebiet, jedes Bundesland und jede Partei gelten dieselben passenden Anforderungen.",
+    !abdeckung ? admEmpty("Die Abdeckungsprüfung liegt noch nicht vor.") : `
+      <p><strong>${escapeHtml(abdeckungLabels[abdeckung.status] || "Noch nicht verlässlich prüfbar")}</strong></p>
+      ${abdeckung.summary ? `<p>${admNum(abdeckung.summary.errors)} Lücken mit Handlungsbedarf · ${admNum(abdeckung.summary.warnings)} Warnungen · ${admNum(abdeckung.summary.missingExpectedPackages)} noch fehlende Pakete im installierten Katalog.</p>` : ""}
+      ${(abdeckung.findings || []).length ? admTableShell("qw-abdeckung", ["Bereich", "Befund", "Nächster Schritt"], abdeckung.findings.map((f) => `<tr><td>${escapeHtml(f.packageKey || f.sourceId || "Katalog")}</td><td>${escapeHtml(f.message)}</td><td>${escapeHtml(f.action)}</td></tr>`).join("")) : admEmpty("Keine einzelnen Befunde vorhanden; Prüfstatus und Grenzen beachten.")}
+      ${abdeckung.summary?.omittedFindings ? `<p class="adm-note">${admNum(abdeckung.summary.omittedFindings)} weitere Hinweise sind in dieser Übersicht nicht einzeln aufgeführt.</p>` : ""}
+      <p class="adm-note">${pruefung ? `Letzte automatische Prüfung im Quellenlauf: ${escapeHtml(admDateTime(pruefung.erhobenAm))} · ${escapeHtml(abdeckungLabels[pruefung.status] || "Unbekannt")}` : "Noch kein gespeicherter automatischer Prüflauf vorhanden."}</p>
+      ${(abdeckung.limits || []).map((note) => `<p class="adm-note">${escapeHtml(note)}</p>`).join("")}`);
+
   const publisherList = (src && Array.isArray(src.herausgeber) ? src.herausgeber : []);
   const publisherRows = publisherList.map((p) => {
     const wege = Array.isArray(p.wege) ? p.wege : [];
@@ -3038,6 +3050,7 @@ function renderAdmQuellen() {
     ${admEndpointNote("crawl", "Crawl-Statistik konnte nicht geladen werden")}
     ${src && !src.verfuegbar ? admCard("Quellen-Architektur", undefined, admEmpty(src.hinweis || "Relationale Quellen-Tabellen nicht erreichbar — keine erfundenen Kennzahlen.")) : `
     ${inventurCard}
+    ${abdeckungCard}
     ${stoerungCards}
     ${admCard("Abrufwege nach Status", "Konfigurierter Status aus den relationalen Quellen-Tabellen (retrieval_paths.status) — nicht das beobachtete Laufverhalten", statusTiles)}
     ${admCard("Quellen-Architektur", undefined, archTiles)}

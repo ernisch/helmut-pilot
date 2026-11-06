@@ -1,0 +1,735 @@
+[
+  {
+    "ausschussKey": "wahlpruefung-immunitaet-geschaeftsordnung",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/wahlpruefung.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "wahlpruefung-immunitaet-geschaeftsordnung"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:19.267898+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/dokumente/textarchiv/2026/kw45-de-einspruch-ordnungsruf-1231608",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "petitionen",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/petitionen.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "petitionen"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:19.268767+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/presse/hib/kurzmeldungen-1231072",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "auswaertiges",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/auswaertiges.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "auswaertiges"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:19.269436+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/mediathek?videoid=7667082#url=L21lZGlhdGhla292ZXJsYXk=&mod=mediathek",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "inneres-heimat",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/inneres.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "inneres-heimat"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:19.270025+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/mediathek?videoid=7667286#url=L21lZGlhdGhla292ZXJsYXk=&mod=mediathek",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "sport-ehrenamt",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/sport.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "sport-ehrenamt"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:19.270881+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://dserver.bundestag.de/btd/21/089/2108985.pdf",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "recht-verbraucherschutz",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/recht.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "recht-verbraucherschutz"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:19.276348+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/mediathek?videoid=7667343#url=L21lZGlhdGhla292ZXJsYXk=&mod=mediathek",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "finanzen",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/finanzen.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "finanzen"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:19.943458+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/mediathek?videoid=7667261#url=L21lZGlhdGhla292ZXJsYXk=&mod=mediathek",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "haushalt",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/haushalt.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "haushalt"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.068393+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/mediathek?videoid=7667277#url=L21lZGlhdGhla292ZXJsYXk=&mod=mediathek",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "wirtschaft-energie",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/wirtschaft.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "wirtschaft-energie"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.069347+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/presse/hib/kurzmeldungen-1231670",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "landwirtschaft-ernaehrung-heimat",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/landwirtschafternaehrung.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "landwirtschaft-ernaehrung-heimat"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.192897+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/mediathek?videoid=7667212#url=L21lZGlhdGhla292ZXJsYXk=&mod=mediathek",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "arbeit-soziales",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/arbeitsoziales.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "arbeit-soziales"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.193979+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/presse/hib/kurzmeldungen-1231158",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "verteidigung",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/verteidigung.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "verteidigung"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.194991+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/presse/hib/kurzmeldungen-1231600",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "bildung-familie-senioren-frauen-jugend",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/familie.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "bildung-familie-senioren-frauen-jugend"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.215526+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/mediathek?videoid=7667121#url=L21lZGlhdGhla292ZXJsYXk=&mod=mediathek",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "gesundheit",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/gesundheit.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "gesundheit"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.343392+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/presse/hib/kurzmeldungen-1231672",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "verkehr",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/verkehr.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "verkehr"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.384606+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/presse/hib/kurzmeldungen-1231596",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "umwelt-klimaschutz-naturschutz-nukleare-sicherheit",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/umwelt.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "umwelt-klimaschutz-naturschutz-nukleare-sicherheit"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.472073+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/mediathek?videoid=7667343#url=L21lZGlhdGhla292ZXJsYXk=&mod=mediathek",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "menschenrechte-humanitaere-hilfe",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/menschenrechte.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "menschenrechte-humanitaere-hilfe"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.472792+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/mediathek?videoid=7667235#url=L21lZGlhdGhla292ZXJsYXk=&mod=mediathek",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "forschung-technologie-raumfahrt",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/bildung.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "forschung-technologie-raumfahrt"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.510860+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/presse/hib/kurzmeldungen-1096546",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "wirtschaftliche-zusammenarbeit-entwicklung",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/entwicklung.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "wirtschaftliche-zusammenarbeit-entwicklung"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.511810+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/resource/blob/1231572/29_11112026.pdf",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "europaeische-union",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/eu.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "europaeische-union"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.598026+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/presse/hib/kurzmeldungen-1231318",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "digitales-staatsmodernisierung",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/digitales.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "digitales-staatsmodernisierung"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.636325+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/resource/blob/1230840/TO-38-Sitzung.pdf",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "kultur-medien",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/kultur.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "kultur-medien"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.725394+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/mediathek?videoid=7667268#url=L21lZGlhdGhla292ZXJsYXk=&mod=mediathek",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "tourismus",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/tourismus.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "tourismus"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.727262+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://dserver.bundestag.de/btd/21/089/2108985.pdf",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "ausschussKey": "wohnen-stadtentwicklung-bauwesen-kommunen",
+    "rssUrl": "https://www.bundestag.de/static/appdata/includes/rss/bauwohnenstadtentwicklungkommunen.rss",
+    "discoveredOn": "https://www.bundestag.de/services/rss/",
+    "fachgebietKeys": [
+      "wohnen-stadtentwicklung-bauwesen-kommunen"
+    ],
+    "nutzungsgrenze": "Die RSS-Übersicht belegt den technischen Abrufweg. Das Impressum beschränkt Webseiteninhalte grundsätzlich auf private Nutzung; Drucksachen und Plenarprotokolle sind gesondert amtliche Werke (§5 UrhG). Keine ausdrückliche generelle kommerzielle Freigabe für hib-/Themen-RSS-Texte gefunden. Nicht pauschal als kommerziell_ok freigeben.",
+    "checkedAt": "2026-11-06T10:23:20.727845+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 15,
+    "sampleArticleUrl": "https://www.bundestag.de/resource/blob/1231480/35-Sitzung-11-11-2026-TO.pdf",
+    "latestPublishedAt": null,
+    "freshnessStatus": "publication_date_missing",
+    "usageDocumentation": [
+      "https://www.bundestag.de/services/impressum"
+    ]
+  },
+  {
+    "id": "dlf-wirtschaft",
+    "rssUrl": "https://www.deutschlandfunk.de/wirtschaft-106.rss",
+    "discoveredOn": "https://www.deutschlandfunk.de/rss-angebot-102.html",
+    "fachgebietKeys": [
+      "wirtschaft-energie",
+      "finanzen",
+      "haushalt"
+    ],
+    "nutzungsgrenze": "Deutschlandradio erlaubt Inhalte ausdrücklich nur privat und nichtkommerziell; Speicherung, Änderung und Wiederveröffentlichung bedürfen vorheriger schriftlicher Zustimmung. RSS-Abrufangebot ist keine generelle kommerzielle oder KI-Nutzungslizenz.",
+    "checkedAt": "2026-11-06T10:29:02.974168+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 200,
+    "sampleArticleUrl": "https://www.deutschlandfunk.de/cbam-klimaschutz-klimawandel-pariser-klimaabkommen-co2-preis-100.html",
+    "latestPublishedAt": "2026-11-03T16:31:00+01:00",
+    "latestPublishedAgeDays": 2.79,
+    "usageDocumentation": [
+      "https://www.deutschlandfunkkultur.de/nutzungsbedingungen-104.html"
+    ]
+  },
+  {
+    "id": "dlf-wissen",
+    "rssUrl": "https://www.deutschlandfunk.de/wissen-106.rss",
+    "discoveredOn": "https://www.deutschlandfunk.de/rss-angebot-102.html",
+    "fachgebietKeys": [
+      "forschung-technologie-raumfahrt",
+      "bildung-familie-senioren-frauen-jugend"
+    ],
+    "nutzungsgrenze": "Deutschlandradio erlaubt Inhalte ausdrücklich nur privat und nichtkommerziell; Speicherung, Änderung und Wiederveröffentlichung bedürfen vorheriger schriftlicher Zustimmung. RSS-Abrufangebot ist keine generelle kommerzielle oder KI-Nutzungslizenz.",
+    "checkedAt": "2026-11-06T10:29:02.974684+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 200,
+    "sampleArticleUrl": "https://www.deutschlandfunk.de/06-11-1876-japans-erste-staatliche-kunstschule-wird-gegruendet-100.html",
+    "latestPublishedAt": "2026-11-06T09:05:00+01:00",
+    "latestPublishedAgeDays": 0.1,
+    "usageDocumentation": [
+      "https://www.deutschlandfunkkultur.de/nutzungsbedingungen-104.html"
+    ]
+  },
+  {
+    "id": "dlf-kultur",
+    "rssUrl": "https://www.deutschlandfunk.de/kulturportal-100.rss",
+    "discoveredOn": "https://www.deutschlandfunk.de/rss-angebot-102.html",
+    "fachgebietKeys": [
+      "kultur-medien"
+    ],
+    "nutzungsgrenze": "Deutschlandradio erlaubt Inhalte ausdrücklich nur privat und nichtkommerziell; Speicherung, Änderung und Wiederveröffentlichung bedürfen vorheriger schriftlicher Zustimmung. RSS-Abrufangebot ist keine generelle kommerzielle oder KI-Nutzungslizenz.",
+    "checkedAt": "2026-11-06T10:29:02.975074+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 42,
+    "sampleArticleUrl": "https://www.deutschlandfunk.de/06-11-1876-japans-erste-staatliche-kunstschule-wird-gegruendet-100.html",
+    "latestPublishedAt": "2026-11-06T09:05:00+01:00",
+    "latestPublishedAgeDays": 0.1,
+    "usageDocumentation": [
+      "https://www.deutschlandfunkkultur.de/nutzungsbedingungen-104.html"
+    ]
+  },
+  {
+    "id": "dlf-sport",
+    "rssUrl": "https://www.deutschlandfunk.de/sportportal-100.rss",
+    "discoveredOn": "https://www.deutschlandfunk.de/rss-angebot-102.html",
+    "fachgebietKeys": [
+      "sport-ehrenamt"
+    ],
+    "nutzungsgrenze": "Deutschlandradio erlaubt Inhalte ausdrücklich nur privat und nichtkommerziell; Speicherung, Änderung und Wiederveröffentlichung bedürfen vorheriger schriftlicher Zustimmung. RSS-Abrufangebot ist keine generelle kommerzielle oder KI-Nutzungslizenz.",
+    "checkedAt": "2026-11-06T10:29:02.975620+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 100,
+    "sampleArticleUrl": "https://www.deutschlandfunk.de/cas-urteil-russland-eishockey-wm-deutschland-olympia-100.html",
+    "latestPublishedAt": "2026-11-04T10:57:00+01:00",
+    "latestPublishedAgeDays": 2.02,
+    "usageDocumentation": [
+      "https://www.deutschlandfunkkultur.de/nutzungsbedingungen-104.html"
+    ]
+  },
+  {
+    "id": "g-ba",
+    "rssUrl": "https://www.g-ba.de/letzte-aenderungen/rss.xml",
+    "discoveredOn": "https://www.g-ba.de/",
+    "fachgebietKeys": [
+      "gesundheit"
+    ],
+    "nutzungsgrenze": "RSS-Service dokumentiert. Keine pauschale kommerzielle Volltext-/KI-Freigabe aus dem RSS-Angebot ableiten; Rechte unterscheiden sich bei Beschlüssen und übrigen Inhalten.",
+    "checkedAt": "2026-11-06T10:29:02.976876+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 10,
+    "sampleArticleUrl": "/beschluesse/8016/",
+    "latestPublishedAt": "2026-11-06T09:23:59+01:00",
+    "latestPublishedAgeDays": 0.09,
+    "usageDocumentation": [
+      "https://www.g-ba.de/service/rss/"
+    ]
+  },
+  {
+    "id": "swp",
+    "rssUrl": "https://www.swp-berlin.org/SWPPublications.xml",
+    "discoveredOn": "https://www.swp-berlin.org/service/newsfeed",
+    "fachgebietKeys": [
+      "auswaertiges",
+      "verteidigung",
+      "europaeische-union",
+      "menschenrechte-humanitaere-hilfe",
+      "wirtschaftliche-zusammenarbeit-entwicklung"
+    ],
+    "nutzungsgrenze": "Impressum verlangt für elektronische Verarbeitung, Vervielfältigung und Verbreitung grundsätzlich schriftliche Genehmigung, soweit das Urheberrecht keine Ausnahme erlaubt. Gewählter Feed enthält eigene deutschsprachige SWP-Publikationen; Lizenz je Publikation prüfen.",
+    "checkedAt": "2026-11-06T10:29:02.983362+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 100,
+    "sampleArticleUrl": "https://www.swp-berlin.org/publikation/europa-braucht-antworten-auf-russlands-sabotagekampagne",
+    "latestPublishedAt": "2026-11-02T09:12:46+01:00",
+    "latestPublishedAgeDays": 4.09,
+    "usageDocumentation": [
+      "https://www.swp-berlin.org/impressum"
+    ]
+  },
+  {
+    "id": "dji",
+    "rssUrl": "https://www.dji.de/news-rss.xml",
+    "discoveredOn": "https://www.dji.de/ueber-uns/rss-feeds.html",
+    "fachgebietKeys": [
+      "bildung-familie-senioren-frauen-jugend"
+    ],
+    "nutzungsgrenze": "RSS-Angebot dokumentiert; keine pauschale kommerzielle Weiterverwendungs-/KI-Lizenz im geprüften Impressum gefunden. Publikationsbezogene Lizenz prüfen.",
+    "checkedAt": "2026-11-06T10:29:03.748543+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 30,
+    "sampleArticleUrl": "https://www.dji.de/veroeffentlichungen/aktuelles/news/article/1841-index-macht-regionale-unterschiede-bei-inklusion-sichtbar.html",
+    "latestPublishedAt": "2026-10-27T10:29:24+01:00",
+    "latestPublishedAgeDays": 10.04,
+    "usageDocumentation": [
+      "https://www.dji.de/ueber-uns/rss-feeds.html",
+      "https://www.dji.de/footer-navigation/impressum.html"
+    ]
+  },
+  {
+    "id": "lto",
+    "rssUrl": "https://www.lto.de/nachrichten-rss/rss/feed.xml",
+    "discoveredOn": "https://www.lto.de/rss",
+    "fachgebietKeys": [
+      "recht-verbraucherschutz",
+      "wahlpruefung-immunitaet-geschaeftsordnung"
+    ],
+    "nutzungsgrenze": "RSS-Einbindung mit Überschrift und erstem Absatz plus Link wird erlaubt. Volltexte nur mit Genehmigung. Kommerzielles Text- und Data-Mining ist ausdrücklich vorbehalten; RSS-Einbettung nicht mit KI-Nutzung gleichsetzen.",
+    "checkedAt": "2026-11-06T10:29:04.265238+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 30,
+    "sampleArticleUrl": "https://www.lto.de/recht/nachrichten/n/bag-2azr19622-kuendigung-kirchenaustritt-unwirksam-caritas?r=rss",
+    "latestPublishedAt": "2026-11-05T19:42:29+01:00",
+    "latestPublishedAgeDays": 0.66,
+    "usageDocumentation": [
+      "https://www.lto.de/rechtliches/lto-auf-ihrer-webseite",
+      "https://www.lto.de/rechtliches/nutzungsvorbehalt"
+    ]
+  },
+  {
+    "id": "aerztezeitung",
+    "rssUrl": "https://www.aerztezeitung.de/Politik.rss",
+    "discoveredOn": "https://www.aerztezeitung.de/Service/Mit-RSS-Feeds-immer-top-informiert--404215.html",
+    "fachgebietKeys": [
+      "gesundheit"
+    ],
+    "nutzungsgrenze": "AGB 14.6 verbietet Verwendung zur Entwicklung, zum Training und zur Anreicherung von KI-Systemen; 14.7 behält TDM vor. Kein automatischer KI-Import ohne passende Erlaubnis. Teilweise Zugangsbeschränkungen der Artikel; kein Paywall-Bypass.",
+    "checkedAt": "2026-11-06T10:29:04.587174+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 25,
+    "sampleArticleUrl": "https://www.aerztezeitung.de/Nachrichten/AMNOG-20-statt-nur-Version-11-Warum-Nutzenbewertung-und-Versorgungspraxis-wieder-naeher-zusammenrue-464933.html",
+    "latestPublishedAt": "2026-11-06T09:30:00+01:00",
+    "latestPublishedAgeDays": 0.08,
+    "usageDocumentation": [
+      "https://www.aerztezeitung.de/Service/Allgemeine-Geschaeftsbedingungen-fuer-elektronische-Produkte-der-Springer-Medizin-Verlag-GmbH-20696.html"
+    ]
+  },
+  {
+    "id": "rki",
+    "rssUrl": "https://www.rki.de/SiteGlobals/Functions/RSS/RSS-neue-Dokumente.xml?nn=16776976",
+    "discoveredOn": "https://www.rki.de/DE/Aktuelles/Neuigkeiten-und-Presse/Newsletter-und-RSS-Feeds/RSSFeed_Verweis.html",
+    "fachgebietKeys": [
+      "gesundheit"
+    ],
+    "checkedAt": "2026-11-06T10:29:04.618362+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 96,
+    "sampleArticleUrl": "https://www.rki.de/DE/Themen/Forschung-und-Forschungsdaten/Sentinels-Surveillance-Panel/GrippeWeb/Publikationen/ARE-Saisonbericht-2025-26.html",
+    "latestPublishedAt": "2026-11-05T16:00:00+01:00",
+    "latestPublishedAgeDays": 0.81,
+    "usageDocumentation": [
+      "https://www.rki.de/DE/Service/Impressum/impressum_node.html"
+    ],
+    "nutzungsgrenze": "Zitate im Sachzusammenhang und wissenschaftliche Berichterstattung mit unveränderter Wiedergabe und Quellenangabe erlaubt. Darüber hinausgehende kommerzielle Nutzung oder Bearbeitung erfordert Zustimmung oder gesetzliche Grundlage. Keine pauschale KI-Freigabe."
+  },
+  {
+    "id": "uba",
+    "rssUrl": "https://www.umweltbundesamt.de/rss/presse",
+    "discoveredOn": "https://feeder.co/discover/7ed6bca3bf/umweltbundesamt-de-uba-info-presse-rss-newsfeed-htm",
+    "discoveryNote": "Im externen Feed-Verzeichnis gefunden, anschließend direkt auf offizieller UBA-Domain als RSS bestätigt. Keine aktuelle offizielle Übersichtsseite gefunden.",
+    "fachgebietKeys": [
+      "umwelt-klimaschutz-naturschutz-nukleare-sicherheit"
+    ],
+    "checkedAt": "2026-11-06T10:29:04.620492+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 10,
+    "sampleArticleUrl": "https://www.umweltbundesamt.de/presse/pressemitteilungen/einwegkunststofffonds-auszahlung-erfolgt-anfang",
+    "latestPublishedAt": "2026-10-02T16:00:00+02:00",
+    "latestPublishedAgeDays": 34.85,
+    "usageDocumentation": [
+      "https://www.umweltbundesamt.de/datenschutz-haftung-urheberrecht"
+    ],
+    "nutzungsgrenze": "UBA-eigene Texte grundsätzlich CC BY-NC-ND 4.0. Echte Daten/Metadaten nach §12a EGovG dagegen einschließlich kommerzieller Nutzung/Bearbeitung mit Quellenangabe freigegeben, sofern nicht anders gekennzeichnet. Pressefeed nicht als Open-Data-Lizenz behandeln.",
+    "freshnessStatus": "older_than_30_days"
+  },
+  {
+    "id": "party-cdu",
+    "partyKey": "cdu",
+    "rssUrl": "https://www.cdu.de/feed/",
+    "discoveredOn": "https://www.cdu.de/",
+    "checkedAt": "2026-11-06T10:29:04.744285+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 12,
+    "sampleArticleUrl": "https://www.cdu.de/aktuelles/aussenpolitik/merz-ukraine-bekommt-die-hilfe-die-sie-braucht/",
+    "latestPublishedAt": "2026-11-04T12:29:21+00:00",
+    "latestPublishedAgeDays": 1.92,
+    "nutzungsgrenze": "Parteigebundene Selbstdarstellung; keine unabhängige Bestätigung. Technischer Feednachweis ist keine kommerzielle Volltext-/KI-Nutzungslizenz."
+  },
+  {
+    "id": "party-csu",
+    "partyKey": "csu",
+    "rssUrl": "https://www.csu.de/rss/",
+    "discoveredOn": "https://www.csu.de/",
+    "checkedAt": "2026-11-06T10:29:05.483543+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 50,
+    "sampleArticleUrl": "https://www.csu.de/aktuell/meldungen/november-2025/soeder-hightech-ist-chance-fuer-bayern/",
+    "latestPublishedAt": "2025-11-26T11:03:29+01:00",
+    "latestPublishedAgeDays": 345.02,
+    "nutzungsgrenze": "Parteigebundene Selbstdarstellung; keine unabhängige Bestätigung. Technischer Feednachweis ist keine kommerzielle Volltext-/KI-Nutzungslizenz."
+  },
+  {
+    "id": "party-fdp",
+    "partyKey": "fdp",
+    "rssUrl": "https://www.fdp.de/rss.xml",
+    "discoveredOn": "https://www.fdp.de/",
+    "checkedAt": "2026-11-06T10:29:05.674926+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 100,
+    "sampleArticleUrl": "https://www.fdp.de/termin/linda-teuteberg-bei-der-friedrich-naumann-stiftung-fuer-die-freiheit-im-rahmen-der-berlin",
+    "latestPublishedAt": "2026-11-06T09:40:57+00:00",
+    "latestPublishedAgeDays": 0.03,
+    "nutzungsgrenze": "Parteigebundene Selbstdarstellung; keine unabhängige Bestätigung. Technischer Feednachweis ist keine kommerzielle Volltext-/KI-Nutzungslizenz."
+  },
+  {
+    "id": "party-spd",
+    "partyKey": "spd",
+    "rssUrl": "https://www.spd.de/service/pressemitteilungen/feed.rss",
+    "discoveredOn": "https://www.spd.de/service/pressemitteilungen",
+    "checkedAt": "2026-11-06T10:29:05.969921+00:00",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 123,
+    "sampleArticleUrl": "https://www.spd.de/service/pressemitteilungen/detail/news/einladung-zur-pressekonferenz/05/11/2026",
+    "latestPublishedAt": "2026-11-05T11:56:40+01:00",
+    "latestPublishedAgeDays": 0.98,
+    "nutzungsgrenze": "Parteigebundene Selbstdarstellung; keine unabhängige Bestätigung. Technischer Feednachweis ist keine kommerzielle Volltext-/KI-Nutzungslizenz."
+  }
+]

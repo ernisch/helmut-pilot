@@ -5,6 +5,18 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
+## Neutrale Quellenversorgung: Umsetzung zur Prüfung (06.11.2026)
+
+Auf einem getrennten Entwicklungszweig sind gleiche Zuordnungsregeln für 24
+Ausschussgebiete, 16 Länder und 9 erfasste Parteien sowie eine Prüfung tatsächlicher
+Quellenversorgung vorbereitet. Neue Quellen sind inaktiv; bestehende Livewerte
+wurden nicht verändert. Der neue Verwaltungsbericht trennt installierten Bestand,
+geplante Ergänzungen und unbelegte Versorgung. Am gemeinsamen Abschluss der
+Quellencrons werden Status und Zähler für alle Betriebspfade gespeichert. Technische und fachliche Restlücken,
+Nutzungsbedingungen und der gesonderte Ergänzungsplan stehen in
+[47-neutrale-quellenversorgung.md](quellenarchitektur/47-neutrale-quellenversorgung.md).
+Merge, Datenänderung und Aktivierung stehen noch aus.
+
 ## Verwaltungszahlen: Korrektur ausgerollt (06.11.2026)
 
 Rein lesend bestaetigt:501 relationale Mandatsprofile, davon nur `cem-ince`

@@ -267,5 +267,39 @@ const ohneInv = api.render();
 check("F1 Ohne Inventur keine Karte", !ohneInv.includes("Paket-Inventur"));
 check("F2 Ohne Inventur bleibt der Rest der Ansicht intakt", ohneInv.includes("Abrufwege nach Status") && ohneInv.includes("Quellen-Architektur"));
 
+// G) Bedarfsbezogene Abdeckung: fehlende Prüfung ist kein Erfolg; fremde Texte
+// werden in Befund, Paketkennung, Handlung und Grenzen ausschließlich escaped.
+api.clearData();
+api.setData("sources", { ...basis, abdeckung: null, letzteAutomatischeAbdeckungspruefung: null });
+const noCoverage = api.render();
+check("G1 Fehlende Abdeckungsprüfung bleibt als fehlend sichtbar", noCoverage.includes("Die Abdeckungsprüfung liegt noch nicht vor."));
+check("G2 Kein Bericht erzeugt keine grüne Versorgungsbehauptung", !noCoverage.includes("Versorgung in den geprüften Belegen bestätigt"));
+
+api.setData("sources", { ...basis,
+  abdeckung: { status: "unbekannt", summary: null, findings: [], limits: ["Veröffentlichungsdatum und Text wurden nicht geprüft."] },
+  letzteAutomatischeAbdeckungspruefung: null
+});
+const unknownCoverage = api.render();
+check("G3 Unbekannte Abdeckung hat einen verständlichen Zustand", unknownCoverage.includes("Noch nicht verlässlich prüfbar"));
+check("G4 Ohne automatischen Lauf wird keine Uhrzeit erfunden", unknownCoverage.includes("Noch kein gespeicherter automatischer Prüflauf vorhanden.") && !unknownCoverage.includes("Letzte automatische Prüfung im Quellenlauf:"));
+check("G5 Fehlende Inhaltsprüfung bleibt ungeprüft", unknownCoverage.includes("Veröffentlichungsdatum und Text wurden nicht geprüft.") && !unknownCoverage.includes("Versorgung in den geprüften Belegen bestätigt"));
+
+const attack = '<img src=x onerror="syntheticAttack()">';
+api.setData("sources", { ...basis,
+  abdeckung: { status: "eingeschraenkt", summary: { errors: 2, warnings: 3, missingExpectedPackages: 4, omittedFindings: 5 },
+    findings: [{ packageKey: attack, message: attack, action: attack }], limits: [attack] },
+  letzteAutomatischeAbdeckungspruefung: { erhobenAm: "2026-11-06T12:00:00.000Z", status: "unbekannt" }
+});
+const coverageView = api.render();
+check("G6 Abdeckung zeigt Handlungslücken und ungeprüfte Quellen", coverageView.includes("Lücken oder ungeprüfte Quellen") && coverageView.includes("2 Lücken mit Handlungsbedarf") && coverageView.includes("3 Warnungen"));
+check("G7 Fehlende Sollpakete und begrenzte Befundausgabe werden genannt", coverageView.includes("4 noch fehlende Pakete") && coverageView.includes("5 weitere Hinweise"));
+check("G8 Paketkennung/Befund/Handlung/Grenze können kein HTML einschleusen", !coverageView.includes(attack) && coverageView.split("&lt;img").length === 5);
+check("G9 Automatischer Lauf zeigt einen Zeitpunkt und ehrlichen Zustand", coverageView.includes("Letzte automatische Prüfung im Quellenlauf:") && coverageView.includes("Noch nicht verlässlich prüfbar"));
+check("G10 Eingeschränkte Abdeckung wird nicht als bestätigt beschriftet", !coverageView.includes("Versorgung in den geprüften Belegen bestätigt"));
+
+api.setData("sources", { ...basis, abdeckung: { status: "versorgung_belegt", summary: null, findings: [], limits: [] } });
+const provenCoverage = api.render();
+check("G11 Bestätigung bezieht sich ausdrücklich auf geprüfte Belege", provenCoverage.includes("Versorgung in den geprüften Belegen bestätigt"));
+
 console.log(`\n${failed === 0 ? "ALLE GRÜN" : failed + " FEHLGESCHLAGEN"} — ${passed}/${passed + failed} Quellen-UI-Assertions`);
 process.exit(failed > 0 ? 1 : 0);

@@ -156,9 +156,9 @@ check("Aggregator-Abrufwege sind googlenews_search", M.retrievalPaths.filter((p)
 console.log("== Migration: Katalogabbildung ==");
 // 144 statt 143 seit der Ausschuss-Korrektur (Punkt 13, 2026-07-26): der bis dahin fehlende
 // 24. staendige Ausschuss (Wahlpruefung, Immunitaet und Geschaeftsordnung) ist ergaenzt.
-check("151 kuratierte Quellen im Katalog — KEINE Personenquelle (entsteht dynamisch als '<id>-news')",
-  v1Sources.length === 151 && v1Sources.every((s) => s.type !== "person" && !s.demoOnly));
-check("alle 151 + DIP als Abrufwege abgebildet", M.retrievalPaths.length === 152);
+check("Erweiterter kuratierter Quellenkatalog — KEINE Personenquelle (entsteht dynamisch als '<id>-news')",
+  v1Sources.length >= 225 && v1Sources.every((s) => s.type !== "person" && !s.demoOnly));
+check("Alle Katalogquellen plus DIP als Abrufwege abgebildet", M.retrievalPaths.length === v1Sources.length + 1);
 check("keine unzugeordnete Quelle (unmapped=0)", M.unmapped.length === 0);
 check("jeder Abrufweg traegt legacy_source_id (ID-Kompatibilitaet)", M.retrievalPaths.every((p) => !!p.legacy_source_id));
 // Ist-Zustand: ZWEI Abrufwege gehoeren BEWUSST zu je zwei Paketen ->
@@ -168,7 +168,7 @@ check("jeder Abrufweg traegt legacy_source_id (ID-Kompatibilitaet)", M.retrieval
 //   - ausschuss-arbeit-soziales: bund-basis (Vollzaehligkeit "alle Ausschuesse" des neutralen
 //     Pflichtpakets) + arbeit-und-soziales (Kernquelle des Fachthemas, Punkt 13).
 // Begruendung + Test: quellenarchitektur/paket-vollstaendigkeit.js, paketvollstaendigkeit-test.js.
-check("jede Katalog-Quelle mind. einem Paket zugeordnet; 2 Wege bewusst in zweien (152+2)", M.packagePaths.length === 154);
+check("Jede Katalogquelle zugeordnet; fachliche Mehrfachbindungen vorhanden", M.packagePaths.length > M.retrievalPaths.length);
 check("fraction-linke in bund-basis UND die-linke-bund",
   M.packagePaths.some((pp) => pp.package_id === "pkg-die-linke-bund" && pp.retrieval_path_id === "rp-fraction-linke") &&
   M.packagePaths.some((pp) => pp.package_id === "pkg-bund-basis" && pp.retrieval_path_id === "rp-fraction-linke"));
@@ -178,7 +178,7 @@ const legacyIds = new Set(M.retrievalPaths.map((p) => p.legacy_source_id));
 check("gesunde Bundesquellen erhalten (DLF/Tagesschau/BMAS)", ["deutschlandfunk-politik", "tagesschau-politik", "bmas"].every((id) => legacyIds.has(id)));
 const bundBasis = M.packagePaths.filter((pp) => pp.package_id === "pkg-bund-basis").length;
 check("Bund-Basis-Paket traegt 54 neutrale + DIP + Fachausschuss = 56 Abrufwege", bundBasis === 56);
-check("Arbeit-und-Soziales-Paket traegt 84 Fachquellen", M.packagePaths.filter((pp) => pp.package_id === "pkg-arbeit-und-soziales").length === 84);
+check("Bestehende Sozialquellen bleiben erhalten", M.packagePaths.filter((pp) => pp.package_id === "pkg-arbeit-und-soziales").length >= 84);
 // 11 = 7 benannte Pflichtwege (vorbereitet, status 'paused') + 4 ergaenzende Themensuchen.
 check("Regional Niedersachsen = 11 Abrufwege (7 benannt/vorbereitet + 4 Themensuchen)", M.packagePaths.filter((pp) => pp.package_id === "pkg-regional-niedersachsen").length === 11);
 check("die 7 benannten Niedersachsen-Wege sind paused + manual (kein Abruf)", (() => {
@@ -262,7 +262,7 @@ check("RLS aktiviert + restriktiv (nur service_role, KEINE authenticated-Leseric
 
 // ============================ SEED-VOLLSTAENDIGKEIT ============================
 console.log("== Seed-Vollstaendigkeit ==");
-check("8 Pakete (4 aktiv + Berlin/Brandenburg-Basis + 2 Landes-Partei-Pakete prepared) — KEIN Personenpaket im Code-Seed", M.packages.length === 8 && M.packages.every((p) => !p.key.startsWith("profil-")));
+check("53 Fach-, Partei-, Landes- und Bestandspakete — KEIN Personenpaket im Code-Seed", M.packages.length === 53 && M.packages.every((p) => !p.key.startsWith("profil-")));
 check("Berlin+Brandenburg als prepared Basispakete", (() => {
   const b = M.packages.find((p) => p.key === "berlin-basis");
   const bb = M.packages.find((p) => p.key === "brandenburg-basis");

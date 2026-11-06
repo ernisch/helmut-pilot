@@ -147,7 +147,7 @@ check("1i Der zweiländrige Weg wird ohne Paketzeilen BEIDEN Ländern zugeordnet
   gleich(SM.landesmoduleOf({ id: "rp-rbb24-politik", legacy_source_id: "rbb24-politik" }, []), ["berlin", "brandenburg"]));
 check("1j Eine Bundesquelle wird durch die Kennungsliste NICHT zum Landesweg",
   SM.landesmoduleOf({ id: "rp-bundestag", legacy_source_id: "bundestag" }, ["bund-basis"]).length === 0
-  && SM.landesmoduleOf({ id: "rp-ni-landtag" }, ["regional-niedersachsen"]).length === 0);
+  && SM.landesmoduleOf({ id: "rp-nds-nachrichten" }, ["regional-niedersachsen"]).length === 0);
 check("1k Ein Berliner Weg ohne Paketzeilen bleibt gesperrt, wenn Berlin nicht wirksam ist",
   (() => {
     const p = plan({ profiles: [P_BB], env: FLAG_BB, brandenburgWegeAktiv: true, brandenburgPaketAktiv: true,

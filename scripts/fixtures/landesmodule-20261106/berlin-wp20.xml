@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Amtlicher Ausschnitt: https://www.parlament-berlin.de/opendata/pardok-wp20.xml, Abruf 2026-11-06. -->
+<Export>
+<Vorgang>
+      <VID>V-460244</VID>
+      <VNr>V-460244</VNr>
+      <ReihNr>0000</ReihNr>
+      <VTyp>Antrag</VTyp>
+      <VTypL>Antrag</VTypL>
+      <VSys>1100</VSys>
+      <VSysL>Parlament</VSysL>
+      <VIR>X</VIR>
+      <Nebeneintrag>
+        <ReihNr>1</ReihNr>
+        <Desk>Abgeordnetenhaus von Berlin</Desk>
+      </Nebeneintrag>
+      <Nebeneintrag>
+        <ReihNr>2</ReihNr>
+        <Desk>Landesparlament</Desk>
+      </Nebeneintrag>
+      <Dokument>
+        <DBID>D-460245</DBID>
+        <ReihNr>0001</ReihNr>
+        <DHerk>BLN</DHerk>
+        <DHerkL>Berlin</DHerkL>
+        <Wp>20</Wp>
+        <DokArt>Drs</DokArt>
+        <DokArtL>Drucksache</DokArtL>
+        <DokTyp>Antr</DokTyp>
+        <DokTypL>Antrag</DokTypL>
+        <Desk>Geschäftsordnung des Abgeordnetenhauses</Desk>
+        <Titel>Geschäftsordnung des Abgeordnetenhauses von Berlin der 20. Wahlperiode</Titel>
+        <DokNr>20/0001</DokNr>
+        <DokDat>26.10.2026</DokDat>
+        <Sb>1-51</Sb>
+        <Urheber>Die Linke Fraktion Berlin (Die Linke)</Urheber>
+        <Urheber>Bündnis 90/Die GRÜNEN (Grüne)</Urheber>
+        <Urheber>Sozialdemokratische Partei Deutschlands (SPD)</Urheber>
+        <LokURL>https://pardok.parlament-berlin.de/starweb/adis/citat/VT/20/DruckSachen/d20-0001.pdf</LokURL>
+      </Dokument>
+      <Dokument>
+        <DBID>D-460338</DBID>
+        <ReihNr>0002</ReihNr>
+        <DHerk>BLN</DHerk>
+        <DHerkL>Berlin</DHerkL>
+        <Wp>20</Wp>
+        <DokArt>Drs</DokArt>
+        <DokArtL>Drucksache</DokArtL>
+        <DokTyp>ÄndAntr</DokTyp>
+        <DokTypL>Änderungsantrag</DokTypL>
+        <DokNr>20/0001-1</DokNr>
+        <DokDat>28.10.2026</DokDat>
+        <Sb>1-6</Sb>
+        <Abstract>Überweisung als eigenständiger Antrag auf Drucksache 20/0004 an den künftig für Geschäftsordnung zuständigen Ausschuss</Abstract>
+        <Urheber>Bündnis 90/Die GRÜNEN (Grüne)</Urheber>
+        <LokURL>https://pardok.parlament-berlin.de/starweb/adis/citat/VT/20/DruckSachen/d20-0001-1.pdf</LokURL>
+      </Dokument>
+      <Dokument>
+        <DBID>D-460246</DBID>
+        <ReihNr>0003</ReihNr>
+        <DHerk>BLN</DHerk>
+        <DHerkL>Berlin</DHerkL>
+        <Wp>20</Wp>
+        <DokArt>PlPr</DokArt>
+        <DokArtL>Plenarprotokoll</DokArtL>
+        <DokTyp>Behandlung im Plenum</DokTyp>
+        <DokTypL>Behandlung im Plenum</DokTypL>
+        <DokNr>20/1</DokNr>
+        <DokDat>29.10.2026</DokDat>
+        <Sb>7</Sb>
+        <Abstract>Angenommen</Abstract>
+        <LokURL>https://pardok.parlament-berlin.de/starweb/adis/citat/VT/20/PlenarPr/p20-001-wp.pdf</LokURL>
+      </Dokument>
+    </Vorgang>
+</Export>

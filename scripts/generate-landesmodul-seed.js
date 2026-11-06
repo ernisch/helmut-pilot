@@ -150,7 +150,10 @@ function klassifiziere(seed) {
     else if (pub.evidence_role === "direct_interest") kategorie = "Partei-/Fraktionsquelle (Eigeninteresse)";
     else kategorie = "direkte Primärquelle";
     const eingeschraenkt = live.urteil === "geeignet mit Einschränkung";
-    return { id: p.id, method: dbMethod(p.method), publisher: pub.name, evidence: pub.evidence_role, kategorie, urteil: live.urteil, eingeschraenkt, aktivierbar: !eingeschraenkt };
+    // Ein neuer Kandidat ohne datierten Beleg ist nicht automatisch geeignet.
+    // Auch "ablehnen"/"nicht_verifizierbar" dürfen nie durch die Negation einer
+    // Einschränkung als aktivierbar erscheinen. SQL bleibt unabhängig davon manual.
+    return { id: p.id, method: dbMethod(p.method), publisher: pub.name, evidence: pub.evidence_role, kategorie, urteil: live.urteil, eingeschraenkt, aktivierbar: live.urteil === "geeignet" };
   });
 }
 

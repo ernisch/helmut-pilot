@@ -103,7 +103,9 @@ const BEREICHE = {
     suiten: [/^quellen/i, /^source/i, /^dedup/i, /^crawler/i, /^google-news/i, /^herausgeber/i,
       /^artikelkontext/i, /^bundestag-artikelstand/i, /^berlin-artikelstand/i, /^dip-/i,
       /^quellentitel/i, /^incident-crawl/i, /^globalabruf/i,
-      /^globalphase/i, /^shadow-/i, /^vorgang/i, /^seed-drift/i, /^seed-restore/i]
+      /^globalphase/i, /^shadow-/i, /^vorgang/i, /^seed-drift/i, /^seed-restore/i,
+      /^abdeckungspruefung/i, /^betriebsabdeckung/i, /^cron-abdeckung/i, /^fach-parteiquellen/i, /^landesmodule-deutschland/i,
+      /^neutrale-quellenzuordnung-plan/i]
   },
   verstehen: {
     quelle: [/(^|\/)lib\/helmut\/understanding/i, /(^|\/)lib\/helmut\/verstehen/i,

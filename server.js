@@ -1097,7 +1097,7 @@ async function handleRequest(request, response) {
       const laufId = helmutRunId("cron-crawl", t0);
       // OP-25 K1: `cronSchwererPfad` ist ohne `HELMUT_CRON_GLOBALPHASE` exakt der bisherige
       // Aufruf `runCronForTenants("crawl", (t) => runSourceCrawl(t), …)` — Default AUS.
-      const result = await withTimeout(
+      const result = await require("./lib/helmut/quellenarchitektur/cron-abdeckung").runQuellenCronMitAbdeckung(() => withTimeout(
         cronSchwererPfad("crawl", { deadlineMs: 270000, runId: laufId, startedMs: t0 }),
         280000,
         "cron-crawl"
@@ -1107,7 +1107,7 @@ async function handleRequest(request, response) {
           ok: false, bounded: true, reason: "crawl-timeout", error: error && error.message,
           lauf: { laufId, timeoutVermerkGespeichert: Boolean(vermerk && vermerk.ok) }
         };
-      });
+      }), { runId: laufId, cronName: "crawl", deadlineAt: t0 + 290000 });
       console.log(`[cron/crawl] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)} lauf=${laufId}`);
       return result;
     });
@@ -1308,7 +1308,7 @@ async function handleRequest(request, response) {
       // Mandate aus der Datenbank; hartes Gesamtbudget 280s < maxDuration 300s.
       const laufId = helmutRunId("cron-pipeline", t0);
       // OP-25 K1: siehe /api/cron/crawl — ohne `HELMUT_CRON_GLOBALPHASE` unveraendert.
-      const result = await withTimeout(
+      const result = await require("./lib/helmut/quellenarchitektur/cron-abdeckung").runQuellenCronMitAbdeckung(() => withTimeout(
         cronSchwererPfad("pipeline", { deadlineMs: 270000, runId: laufId, startedMs: t0 }),
         280000,
         "cron-pipeline"
@@ -1318,7 +1318,7 @@ async function handleRequest(request, response) {
           ok: false, bounded: true, reason: "pipeline-timeout", error: error && error.message,
           lauf: { laufId, timeoutVermerkGespeichert: Boolean(vermerk && vermerk.ok) }
         };
-      });
+      }), { runId: laufId, cronName: "pipeline", deadlineAt: t0 + 290000 });
       console.log(`[cron/pipeline] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)} lauf=${laufId}`);
       return result;
     });
@@ -6536,7 +6536,12 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
     const ar = require("./lib/helmut/quellenarchitektur/admin-report");
     const kandidaten = require("./lib/helmut/quellenarchitektur/seeds/landesmodule-kandidaten");
     const storageMod = require("./lib/helmut/storage");
-    const M = buildFullModel();
+    const expectedModel = buildFullModel();
+    const installedRows = await storageMod.listSourceArchitectureRows().catch(() => null);
+    // Der installierte Bestand ist die Datenbank. Neue Code-Seeds sind nur das Soll.
+    const M = { ...expectedModel,
+      publishers: installedRows?.publishers || [], retrievalPaths: installedRows?.retrievalPaths || [],
+      packages: installedRows?.packages || [], packagePaths: installedRows?.packagePaths || [] };
     const profiles = Array.isArray(mandateProfiles) ? mandateProfiles : [];
     const activation = computeGlobalActivation({ packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths, profiles });
     // Beide Bestandsdaten-Reads PARALLEL (nicht sequenziell), je defensiv -> [] bei Fehler.
@@ -6549,7 +6554,10 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
       catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths },
       activation, rawDocs, koSourceLinks: [], dedupDocuments: [], profiles, llmUsage, signals: {}, now
     });
-    const report = ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: quality, now, candidateReadiness: kandidaten.readinessByGeography() });
+    const report = ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: quality, now,
+      newTablesMigrated: Boolean(installedRows), candidateReadiness: kandidaten.readinessByGeography() });
+    report.datengrundlage = installedRows ? "relationale_quellentabellen" : "nicht_verfuegbar";
+    if (!installedRows) report.migration.note = "Der installierte Quellenkatalog ist nicht lesbar; keine Bestandszahlen verfügbar.";
 
     // Quellenmodus (off/shadow/on) + relationaler Plan-Vergleich. EHRLICH: ohne erreichbare
     // relationale Tabellen wird das als nicht verfügbar markiert (keine erfundenen Zahlen).
@@ -6557,7 +6565,7 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
       const sm = require("./lib/helmut/quellenarchitektur/source-mode");
       const modus = sm.sourceMode();
       const [rows, legacySources] = await Promise.all([
-        storageMod.listSourceArchitectureRows().catch(() => null),
+        Promise.resolve(installedRows),
         storageMod.getSources().catch(() => [])
       ]);
       if (rows && Array.isArray(rows.retrievalPaths) && rows.retrievalPaths.length) {
@@ -6932,7 +6940,7 @@ async function buildAdminCustomers() {
 }
 
 async function buildAdminSourcesStatus() {
-  const [rows, shadow, runs, telemetrie, mandate] = await Promise.all([
+  const [rows, shadow, runs, telemetrie, mandate, quellendokumente, abdeckungslaeufe] = await Promise.all([
     listSourceArchitectureRows().catch(() => null),
     getSourceModeShadowLastRun().catch(() => null),
     listCrawlRuns(20).catch(() => []),
@@ -6941,7 +6949,9 @@ async function buildAdminSourcesStatus() {
     listSourceCrawlTelemetry({ days: 14 }).catch(() => []),
     // Mandatswirkung nur, wenn die Profile ueberhaupt lesbar sind; sonst meldet
     // der Bericht sie ausdruecklich als nicht bestimmbar (statt zu raten).
-    listFullProfiles().catch(() => [])
+    listFullProfiles().catch(() => null),
+    require("./lib/helmut/storage").listRawDocuments({ days: 30, limit: 800 }).catch(() => null),
+    listProcessRuns({ process: "quellen-abdeckung", limit: 1 }).catch(() => [])
   ]);
 
   // Google-News-Anteil (Klumpenrisiko) aus den letzten Crawl-Laeufen. Grund:
@@ -7137,6 +7147,16 @@ async function buildAdminSourcesStatus() {
     paketInventur = null;
   }
 
+  let abdeckung;
+  try {
+    abdeckung = require("./lib/helmut/quellenarchitektur/betriebsabdeckung").buildBetriebsabdeckung({
+      catalog: rows, profiles: mandate, telemetrie, documents: quellendokumente, sampleLimit: 800
+    });
+  } catch (error) {
+    console.error("[admin] Quellenabdeckung nicht prüfbar:", error && error.message);
+    abdeckung = { status: "unbekannt", summary: null, findings: [], limits: ["Die Quellenprüfung konnte nicht abgeschlossen werden."] };
+  }
+
   return {
     generatedAt: new Date().toISOString(),
     verfuegbar: Boolean(rows && Array.isArray(rows.retrievalPaths)),
@@ -7147,6 +7167,8 @@ async function buildAdminSourcesStatus() {
     herausgeber,
     stoerungen,
     paketInventur,
+    abdeckung,
+    letzteAutomatischeAbdeckungspruefung: require("./lib/helmut/quellenarchitektur/cron-abdeckung").abdeckungAusProzesslauf(abdeckungslaeufe[0]),
     googleNews,
     letzterShadowLauf: shadow
       ? {

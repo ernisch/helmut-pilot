@@ -22,10 +22,10 @@ const unbesetzt = alle.filter((c) => c.readiness === "unbesetzt");
 
 console.log("== Klassenabdeckung (alle 15 Klassen im Modul) ==");
 check("Berlin enthält alle 15 Pflichtklassen", LANDESMODUL_PFLICHTKLASSEN.every((c) => beByKlasse[c]) && be.length === 15);
-check("Brandenburg enthält alle 15 Pflichtklassen", LANDESMODUL_PFLICHTKLASSEN.every((c) => bbByKlasse[c]) && bb.length === 15);
+check("Brandenburg enthält alle 15 Pflichtklassen", LANDESMODUL_PFLICHTKLASSEN.every((c) => bbByKlasse[c]) && new Set(bb.map((candidate) => candidate.klasse)).size === 15);
 check("keine unbekannte Klasse (nur die 15 Pflichtklassen)", alle.every((c) => LANDESMODUL_PFLICHTKLASSEN.includes(c.klasse)));
 check("Berlin: 15 Klassen mit Kandidat besetzt, 0 unbesetzt", be.filter((c) => c.readiness !== "unbesetzt").length === 15);
-check("Brandenburg: 13 besetzt + 2 unbesetzt", bb.filter((c) => c.readiness !== "unbesetzt").length === 13 && bb.filter((c) => c.readiness === "unbesetzt").length === 2);
+check("Brandenburg: 14 Kandidaten + 2 unbesetzt (MAZ/LR getrennt)", bb.filter((c) => c.readiness !== "unbesetzt").length === 14 && bb.filter((c) => c.readiness === "unbesetzt").length === 2);
 
 console.log("== Reifegrad (Kandidat != einsatzbereit) ==");
 const sum = k.candidateSummary();
@@ -36,7 +36,7 @@ check("candidateSummary: status 'prepared'", sum.status === "prepared");
 check("JEDER besetzte Kandidat ist Reifegrad 'kandidat' (nichts verifiziert/bereit/aktiv)", besetzt.every((c) => c.readiness === "kandidat"));
 check("Reifegrad-Skala geordnet: unbesetzt < kandidat < verifiziert < bereit < aktiv", k.READINESS_RANG.unbesetzt < k.READINESS_RANG.kandidat && k.READINESS_RANG.kandidat < k.READINESS_RANG.verifiziert && k.READINESS_RANG.verifiziert < k.READINESS_RANG.bereit && k.READINESS_RANG.bereit < k.READINESS_RANG.aktiv);
 check("readinessByGeography: Berlin 15 Kandidat / 0 einsatzbereit", k.readinessByGeography()["geo-land-berlin"].kandidat === 15 && k.readinessByGeography()["geo-land-berlin"].einsatzbereit === 0);
-check("readinessByGeography: Brandenburg 13 Kandidat / 2 unbesetzt / 0 einsatzbereit", (() => { const r = k.readinessByGeography()["geo-land-brandenburg"]; return r.kandidat === 13 && r.unbesetzt === 2 && r.einsatzbereit === 0; })());
+check("readinessByGeography: Brandenburg 13 Kandidatenklassen / 2 unbesetzt / 0 einsatzbereit", (() => { const r = k.readinessByGeography()["geo-land-brandenburg"]; return r.kandidat === 13 && r.besetzt === 14 && r.unbesetzt === 2 && r.einsatzbereit === 0; })());
 check("KEIN Kandidat trägt Aktiv-/Enabled-Flag", alle.every((c) => !("active" in c) && !("enabled" in c) && !("activation_mode" in c)));
 
 console.log("== Korrektur 1: KEIN Partei-/Personen-Ersatz in Brandenburg ==");
@@ -78,7 +78,7 @@ check("GVBl/BRAVORS als eigener Feed abgelehnt (kein RSS)", k.ABGELEHNTE_KANDIDA
 
 console.log("== Empfehlungslage (technisch geprüft, nur besetzte) ==");
 check("Berlin: 8 empfohlen + 7 mit_einschraenkung (technische Prüfung)", sum.berlin.empfohlen === 8 && sum.berlin.mitEinschraenkung === 7);
-check("Brandenburg: 7 empfohlen + 6 mit_einschraenkung", sum.brandenburg.empfohlen === 7 && sum.brandenburg.mitEinschraenkung === 6);
+check("Brandenburg: 7 empfohlen + 7 mit_einschraenkung", sum.brandenburg.empfohlen === 7 && sum.brandenburg.mitEinschraenkung === 7);
 check("Brandenburg Kandidatenabdeckung 13/15 (2 Pilotklassen unbesetzt)", sum.brandenburg.klassenAbgedeckt === 13 && sum.brandenburg.unbesetzt === 2);
 check("Brandenburg klassenFehlend = genau die 2 unbesetzten Pilotklassen", sum.brandenburg.klassenFehlend.length === 2 && sum.brandenburg.klassenFehlend.includes("fraktion_pilot") && sum.brandenburg.klassenFehlend.includes("person_pilot"));
 check("Berlin klassenFehlend leer (alle 15 besetzt)", sum.berlin.klassenFehlend.length === 0);
@@ -104,7 +104,7 @@ const q = require("../lib/helmut/quellenarchitektur/seeds/landesmodule-quellen")
 const seed = q.buildLandesmodulSeed();
 check("Struktur status 'prepared', 0 aktive Abrufwege", seed.summary.status === "prepared" && seed.summary.aktiveAbrufwege === 0);
 check("ALLE Abrufwege status='needs_review' + activation_mode='manual' (technisch inaktiv)", seed.retrievalPaths.every((p) => p.status === "needs_review" && p.activation_mode === "manual"));
-check("Dedup (R2): 18 Abrufwege (bb-staatskanzlei dedupt in bb-landesregierung via zentralem bbo_rss)", seed.retrievalPaths.length === 18 && seed.retrievalPaths.length < 28);
+check("Dedup: 19 Abrufwege einschließlich eigenständigem LR-Suchkandidaten", seed.retrievalPaths.length === 19 && seed.retrievalPaths.length < 28);
 check("rbb24 GLOBAL dedup: ein Abrufweg, zwei Paketreferenzen (BE+BB)", seed.summary.rbb24GlobalDedup && seed.packagePaths.filter((pp) => pp.retrieval_path_id === "rp-rbb24-politik").length === 2);
 check("Berlin PARDOK-Rohquelle deckt 4 Klassen ab (2/4/5/6)", (() => { const p = seed.retrievalPaths.find((x) => x.url.includes("pardok-wp19")); return p && p.covers.length === 4; })());
 check("Paketzuordnungen nur zu den 4 vorbereiteten Landespaketen (Basis + Partei)", seed.packagePaths.every((pp) => ["pkg-berlin-basis","pkg-brandenburg-basis","pkg-die-linke-berlin","pkg-die-linke-brandenburg"].includes(pp.package_id)));
@@ -117,7 +117,7 @@ check("Partei-/Fraktions-/Person-Pilot-Wege gehen NICHT ins Basispaket, sondern 
 })());
 check("berlin-basis/brandenburg-basis erhalten weiterhin alle NICHT-Pilot-Wege (Institutionen/Medien)", (() => {
   const basisCount = seed.packagePaths.filter((pp) => ["pkg-berlin-basis","pkg-brandenburg-basis"].includes(pp.package_id)).length;
-  return basisCount === 15; // 19 Zuordnungen gesamt - 4 Pilotklassen-Zuordnungen
+  return basisCount === 16; // 20 Zuordnungen gesamt - 4 Pilotklassen-Zuordnungen
 })());
 check("politische Ebene 'land' + Geografie je Abrufweg gesetzt", seed.pathExpectedLevels.every((l) => l.level === "land") && seed.pathExpectedGeographies.every((g) => ["geo-land-berlin","geo-land-brandenburg"].includes(g.geography_id)));
 check("neue Entitäten Landespartei/Fraktion/Person (nicht Bundes-Duplikate)", seed.entities.some((e) => e.id === "party-linke-berlin") && seed.entities.some((e) => e.id === "person-tobias-schulze") && seed.entities.some((e) => e.id === "party-linke-brandenburg"));

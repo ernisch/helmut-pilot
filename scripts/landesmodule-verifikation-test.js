@@ -32,9 +32,11 @@ check("Gesamt-Zählung: 21 geeignet / 3 mit Einschränkung / 0 / 0 (= Workflow-S
   s.zaehlungGesamt["geeignet"] === 21 && s.zaehlungGesamt["geeignet mit Einschränkung"] === 3 && s.zaehlungGesamt["ablehnen"] === 0 && s.zaehlungGesamt["nicht_verifizierbar"] === 0);
 check("KEIN ablehnen / nicht_verifizierbar mehr (Konvergenz)", s.zaehlungGesamt["ablehnen"] === 0 && s.zaehlungGesamt["nicht_verifizierbar"] === 0);
 
-// --- 4. Konsistenz gegen die tatsächlichen Seed-Wege (18) ---
+// --- 4. Historische Belege bleiben auf ihre damaligen 18 Wege begrenzt. ---
 const wege = buildLandesmodulSeed().retrievalPaths.map((p) => p.legacy_source_id);
-check("18 Seed-Wege, jeder mit Live-Urteil", wege.length === 18 && wege.every((id) => V.LIVE_URTEILE[id]));
+check("18 historische Seed-Wege mit Live-Urteil; LR wird kein Altbeleg zugeschrieben",
+  wege.filter((id) => V.LIVE_URTEILE[id]).length === 18
+  && wege.filter((id) => !V.LIVE_URTEILE[id]).join(",") === "bb-regionale-leitmedien-lr");
 check("jeder Bund-Reparaturweg hat ein Live-Urteil", BUNDESWEG_REPARATUREN.every((r) => V.BUND_LIVE[r.legacy_source_id]));
 check("keine verwaisten Live-Urteile (Land)", Object.keys(V.LIVE_URTEILE).every((id) => wege.includes(id)));
 

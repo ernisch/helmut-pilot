@@ -38,11 +38,11 @@ console.log("== View 1: Länder und Pakete ==");
 const lp = rEmpty.views.laenderPakete;
 check("16 Bundesländer gelistet", lp.laender.length === 16);
 check("welche Länder vorbereitet: Berlin/Brandenburg", ["Berlin", "Brandenburg"].every((n) => lp.laender.find((l) => l.name === n && l.status === "vorbereitet")));
-check("welches Land aktiv: Niedersachsen (regional-niedersachsen active)", !!lp.laender.find((l) => l.name === "Niedersachsen" && l.status === "aktiv"));
-check("13 Länder ohne Modul", rEmpty.counts.laenderKeinModul === 13);
+check("Niedersachsen: Landesbasis vorbereitet, Regionalpaket separat", !!lp.laender.find((l) => l.name === "Niedersachsen" && l.status === "vorbereitet"));
+check("Alle 16 Länder haben ein Modul", rEmpty.counts.laenderKeinModul === 0);
 const berlinLand = lp.laender.find((l) => l.name === "Berlin");
 check("welche Pflichtklassen fehlen: Berlin 15/15 fehlend (ehrlich, keine Quellen)", berlinLand.pflichtklassen.total === 15 && berlinLand.pflichtklassen.missing.length === 15);
-check("Länder ohne Landesmodul: keine erfundenen Pflichtklassen", lp.laender.find((l) => l.name === "Bayern").pflichtklassen.total === 0);
+check("Bayern hat dieselben zwölf Landespflichtklassen", lp.laender.find((l) => l.name === "Bayern").pflichtklassen.total === 12);
 check("Pakete: berlin/brandenburg 'vorbereitet'", ["berlin-basis", "brandenburg-basis"].every((k) => lp.pakete.find((p) => p.key === k && p.supply === "vorbereitet")));
 // Ohne candidateReadiness-Rollup: readiness EHRLICH als nicht verfügbar (keine erfundene Abdeckung).
 check("ohne Rollup: Länder readiness.available === false (nicht geraten)", lp.laender.every((l) => l.readiness && l.readiness.available === false));
@@ -61,8 +61,8 @@ check("counts: 28 Kandidat-Klassen, 0 einsatzbereit, 2 unbesetzt", rReadiness.co
 
 console.log("== View 2: Quellen und Abrufwege ==");
 const qa = rEmpty.views.quellenAbrufwege;
-check("alle 152 Abrufwege bewertet (keine Lücke)", qa.pathCount === 152);
-check("nach Herausgeber gruppiert (58 Herausgeber)", qa.herausgeber.length === 58);
+check("Alle vorhandenen Abrufwege bewertet (keine Lücke)", qa.pathCount === M.retrievalPaths.length);
+check("Nach tatsächlichen Herausgebern gruppiert", qa.herausgeber.length === M.publishers.length);
 check("welche Abrufwege gesund/defekt/unbekannt (drei Kübel)", typeof qa.healthCounts.gesund === "number" && typeof qa.healthCounts.defekt === "number" && typeof qa.healthCounts.unbekannt === "number");
 check("keine defekten Abrufwege mehr (P1-5: alle 6 vormals 'broken' markierten Bundeswege repariert)", qa.healthCounts.defekt === 0);
 check("ohne Metriken: keine 'gesund' erfunden (alle unbekannt/defekt/inaktiv)", qa.healthCounts.gesund === 0);
@@ -89,7 +89,7 @@ check("welche Messwerte noch nicht verfügbar: als Hinweise gelistet", pb.missin
 
 console.log("== View 5: Quellendetail ==");
 const detail = rEmpty.views.quellendetail.paths;
-check("Quellendetail je Abrufweg vorhanden (152) — KEINE Personenquelle im Katalog", detail.length === 152 && !detail.some((p) => /-news$/.test(String(p.legacy_source_id))));
+check("Quellendetail für jeden Abrufweg vorhanden — KEINE Personenquelle im Katalog", detail.length === M.retrievalPaths.length && !detail.some((p) => /-news$/.test(String(p.legacy_source_id))));
 const detailPath = detail.find((p) => p.legacy_source_id === "tagesschau-politik");
 check("Detail trägt Herausgeber/Methode/Pakete", detailPath.publisher && detailPath.method && Array.isArray(detailPath.packages));
 check("ohne Metriken: documentCount/koCount = null (nicht 0 erfunden)", detailPath.documentCount === null && detailPath.koCount === null);

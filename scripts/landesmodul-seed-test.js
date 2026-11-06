@@ -15,15 +15,15 @@ const cls = klassifiziere(seed);
 
 // --- 1. Zeilenzahlen (Seed) ---
 check("4 neue Entitäten", seed.entities.length === 4);
-check("14 Herausgeber", seed.publishers.length === 14);
-check("18 Abrufwege", seed.retrievalPaths.length === 18);
-check("19 Paketzuordnungen", seed.packagePaths.length === 19);
-check("18 path_expected_levels + 18 path_expected_geographies", seed.pathExpectedLevels.length === 18 && seed.pathExpectedGeographies.length === 18);
+check("15 Herausgeber (MAZ und LR getrennt)", seed.publishers.length === 15);
+check("19 Abrufwege (LR als eigener Kandidat)", seed.retrievalPaths.length === 19);
+check("20 Paketzuordnungen", seed.packagePaths.length === 20);
+check("19 Ebenen + 20 Geografien (rbb für beide Länder)", seed.pathExpectedLevels.length === 19 && seed.pathExpectedGeographies.length === 20);
 
 // --- 2. Technisch INAKTIV (hart im SQL) ---
 check("KEIN 'auto'/'always_on'/'healthy' im SQL", !/'auto'|'always_on'|'healthy'/.test(sql));
 const nManual = (sql.match(/'needs_review', 'manual'/g) || []).length;
-check("alle 18 Abrufwege needs_review + manual", nManual === 18);
+check("alle Abrufwege needs_review + manual", nManual === seed.retrievalPaths.length);
 check("Seed-Selbstprüfung: 0 aktive Wege", seed.retrievalPaths.filter((p) => p.status === "healthy" || p.activation_mode === "auto" || p.activation_mode === "always_on").length === 0);
 
 // --- 3. method-CHECK-konform (opendata_xml -> structured_download) ---
@@ -39,7 +39,7 @@ check("begin + commit + notify pgrst", /begin;/.test(sql) && /commit;/.test(sql)
 
 // --- 5. Klassifikation ---
 const byKat = cls.reduce((m, c) => { m[c.kategorie] = (m[c.kategorie] || 0) + 1; return m; }, {});
-check("11 Google-News-Ersatzwege", byKat["Google-News-Ersatzweg"] === 11);
+check("12 Google-News-Suchkandidaten", byKat["Google-News-Ersatzweg"] === 12);
 check("2 direkte Primärquellen (Open-Data)", byKat["direkte Primärquelle"] === 2);
 check("2 journalistische Quellen (Tagesspiegel/rbb24)", byKat["journalistische Quelle"] === 2);
 check("3 Partei-/Fraktionsquellen", byKat["Partei-/Fraktionsquelle (Eigeninteresse)"] === 3);
@@ -48,7 +48,10 @@ check("3 Partei-/Fraktionsquellen", byKat["Partei-/Fraktionsquelle (Eigeninteres
 const eingeschr = cls.filter((c) => c.eingeschraenkt).map((c) => c.id).sort();
 check("genau 3 eingeschränkte Wege = die Bot-429-Parteifeeds", JSON.stringify(eingeschr) === JSON.stringify(["rp-bb-partei_pilot", "rp-be-fraktion_pilot", "rp-be-partei_pilot"]));
 check("eingeschränkte Wege sind NICHT aktivierbar", cls.filter((c) => c.eingeschraenkt).every((c) => c.aktivierbar === false));
-check("alle übrigen (21) sind aktivierbar", cls.filter((c) => !c.eingeschraenkt).every((c) => c.aktivierbar === true));
+check("nur explizit geeignete Wege gelten im historischen Bericht als aktivierbar",
+  cls.every((c) => c.aktivierbar === (c.urteil === "geeignet")));
+check("neuer LR-Suchkandidat ohne Altbeleg bleibt nicht aktivierbar",
+  cls.some((c) => c.id === "rp-bb-regionale-leitmedien-lr" && !c.urteil && c.aktivierbar === false));
 
 // --- 7. Rollback vollständig + dependency-korrekt ---
 check("Rollback löscht path_expected_geographies + levels + package_paths + retrieval_paths + publishers + political_entities",
