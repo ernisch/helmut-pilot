@@ -7,19 +7,7 @@ Tests und diesem Statusdokument.
 
 ## Lageauszuege aus Suchwegartikeln (06.11.2026, vorbereitet)
 
-Gezielte Diagnose der sechs Titelhinweise abgeschlossen. Der NDR/RND
-Suchweg liefert keine Originalsummary; vorhandener NDR Metadatenextraktor
-funktioniert. Kleiner Anschluss fuer zukuenftige neue bekannte Medienartikel
-vor der atomaren Raw Neuanlage vorbereitet, am bestehenden Artikelkontext
-Schalter gebunden. Keine Altzeilenkorrektur und kein6/6 Produktivnachweis.
-Syntax,13 Anschlussgruppen, echte Dedup Herkunftsbindung und unbekannte
-Readerantwort gezielt offline bestanden; unabhaengiges Review ohne Blocker.
-Pflicht CI offen. Keine Flagaktivierung, Datenmutation oder Modellgenerierung.
-Projektumgebung hat keinen HELMUT_ARTIKELKONTEXT Eintrag; Runtimebindung
-nicht gesondert behauptet. Die sechs aktuellen Altfaelle bleiben offen.
-[Umfang, Grenzen, Tests und Betriebsentscheidung](betrieb/lage-suchwegauszuege-20261106.md).
-Naechster Schritt: Codekandidat abnehmen, dann konkrete Betriebsfreigabe
-fuer neue Quellen und begrenzte Altfallpruefung einholen.
+Gezielte Diagnose der sechs Titelhinweise abgeschlossen. Der NDR/RND Suchweg liefert keine Originalsummary; vorhandener NDR Metadatenextraktor funktioniert. Kleiner Anschluss fuer zukuenftige neue bekannte Medienartikel vor der atomaren Raw Neuanlage vorbereitet, am bestehenden Artikelkontext Schalter gebunden. Keine Altzeilenkorrektur und kein6/6 Produktivnachweis. Syntax,13 Anschlussgruppen, echte Dedup Herkunftsbindung und unbekannte Readerantwort gezielt offline bestanden; unabhaengiges Review ohne Blocker. Pflicht CI offen. Keine Flagaktivierung, Datenmutation oder Modellgenerierung. Projektumgebung hat keinen HELMUT_ARTIKELKONTEXT Eintrag; Runtimebindung nicht gesondert behauptet. Die sechs aktuellen Altfaelle bleiben offen. [Umfang, Grenzen, Tests und Betriebsentscheidung](betrieb/lage-suchwegauszuege-20261106.md). Naechster Schritt: Codekandidat abnehmen, dann konkrete Betriebsfreigabe fuer neue Quellen und begrenzte Altfallpruefung einholen.
 
 ## Quellenversorgung: zwei Zugänge aktiviert, drei repariert (06.11.2026)
 
@@ -312,36 +300,11 @@ Infrastrukturprojekte ohne konkrete Notwendigkeit.
 
 ## Private Produktintegration (05.11.2026, lokal geprueft)
 
-PR #1052 ist auf `76b75e371c7db69d7c9381071e23443182fc3607` gemergt.
-Der bestandene Mock100-Meilenstein bleibt abgeschlossen und wird nicht wiederholt.
-Der private Branch `integration/release-prep-20261105` verbindet diesen main-Stand
-mit Backend/UI `3c5765c577b35641ba107a4d6b863ab1e5ab7456`.
-Kontosicherheit, beide Designs und historische Belege bleiben erhalten.
-Die [vorige lokale Integration](betrieb/backend-ui-integration-20261105.md)
-und [UI-Abnahme](ui-backend.md) bleiben historische, quellengebundene Belege.
-Vier gezielte Gruppen mit202 echten lokalen HTTP-Antworten bestanden. Zwei
-inhaltsgebundene Assetversionen beseitigen den belegten Altcache-Erststartfehler.
-Motor, beide Designs und historische Nachweise unveraendert; drei lesende
-Reviews positiv. Main-CI42069590393 gruen, Kandidaten-Pflicht-CI noch offen.
-[Abnahme und konkrete Mergevoraussetzungen](betrieb/release-prep-20261105.md).
-Keine Productionfreigabe.
+PR #1052 ist auf `76b75e371c7db69d7c9381071e23443182fc3607` gemergt. Der bestandene Mock100-Meilenstein bleibt abgeschlossen und wird nicht wiederholt. Der private Branch `integration/release-prep-20261105` verbindet diesen main-Stand mit Backend/UI `3c5765c577b35641ba107a4d6b863ab1e5ab7456`. Kontosicherheit, beide Designs und historische Belege bleiben erhalten. Die [vorige lokale Integration](betrieb/backend-ui-integration-20261105.md) und [UI-Abnahme](ui-backend.md) bleiben historische, quellengebundene Belege. Vier gezielte Gruppen mit202 echten lokalen HTTP-Antworten bestanden. Zwei inhaltsgebundene Assetversionen beseitigen den belegten Altcache-Erststartfehler. Motor, beide Designs und historische Nachweise unveraendert; drei lesende Reviews positiv. Main-CI42069590393 gruen, Kandidaten-Pflicht-CI noch offen. [Abnahme und konkrete Mergevoraussetzungen](betrieb/release-prep-20261105.md). Keine Productionfreigabe.
 
 ## Designangleich und UI-Aufraeumen (06.11.2026, erfolgreich abgeschlossen)
 
-Nach Betreiber-GO bei gruener Pflicht-CI gemergt und live:
-[PR #1055](https://github.com/ernisch/helmut-pilot/pull/1055) (Merge `8649025`,
-Design nach freigegebenem Claude Design, Desktop/Mobil, alle Vollbild-Karten,
-dunkles Favicon, Startbild mit ruhigem Puls) und
-[PR #1058](https://github.com/ernisch/helmut-pilot/pull/1058) (Merge `00ecd5f`,
-108 nie aufgerufene Client-Funktionen und 768 CSS-Regeln ohne genutzte Klassen
-entfernt, Zugangs-/Passwort-/Rechtsseiten im Design). Production-Deployment
-`dpl_5Xs3rTFGmhuEUXWR1sBGmWmiEm8A` READY; `/api/release/public` ok/ready/storage
-true; keine Laufzeitfehler seit Deployment (06.11.2026, lesend geprueft).
-[PR #1088](https://github.com/ernisch/helmut-pilot/pull/1088) (Merge `82cb3cb`, Briefing-Aufbau
-nach Design; Betreiberentscheidung: ruhiger Tag zeigt ehrlichen Leerzustand mit Lage-Themenzahl statt
-Lage-Liste) live: `dpl_6ucJseSYamRPDN71U55GppKAKcem` READY, `/api/release/public` ok/ready/storage.
-Naechster Designschritt: Aufbau von Lage, Radar, Buero, Profil. Nur Darstellung. Lokale Altfehler:
-`kalender-ics-test.js` (`ical.js` fehlt), `admin-nutzer-loeschen-test.js` (`#ff5967`).
+Nach Betreiber-GO bei gruener Pflicht-CI gemergt und live: [PR #1055](https://github.com/ernisch/helmut-pilot/pull/1055) (Merge `8649025`, Design nach freigegebenem Claude Design, Desktop/Mobil, alle Vollbild-Karten, dunkles Favicon, Startbild mit ruhigem Puls) und [PR #1058](https://github.com/ernisch/helmut-pilot/pull/1058) (Merge `00ecd5f`, 108 nie aufgerufene Client-Funktionen und 768 CSS-Regeln ohne genutzte Klassen entfernt, Zugangs-/Passwort-/Rechtsseiten im Design). Production-Deployment `dpl_5Xs3rTFGmhuEUXWR1sBGmWmiEm8A` READY; `/api/release/public` ok/ready/storage true; keine Laufzeitfehler seit Deployment (06.11.2026, lesend geprueft). [PR #1088](https://github.com/ernisch/helmut-pilot/pull/1088) (Merge `82cb3cb`, Briefing-Aufbau nach Design; Betreiberentscheidung: ruhiger Tag zeigt ehrlichen Leerzustand mit Lage-Themenzahl statt Lage-Liste) live: `dpl_6ucJseSYamRPDN71U55GppKAKcem` READY, `/api/release/public` ok/ready/storage. Naechster Designschritt: Aufbau von Lage, Radar, Buero, Profil. Nur Darstellung. Lokale Altfehler: `kalender-ics-test.js` (`ical.js` fehlt), `admin-nutzer-loeschen-test.js` (`#ff5967`).
 
 ## Genau ein naechster Schritt
 
