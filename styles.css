@@ -9437,3 +9437,10 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
     max-height: calc(100dvh - 208px);
   }
 }
+
+
+/* Fachliche Zeitangaben sichtbar halten; die aktuelle Uhrzeit ist kein Datenstand. */
+.hstand .ui-briefing-status .hstand-meta-line {
+  position: static; width: auto; height: auto; overflow: visible;
+  clip: auto; clip-path: none; white-space: normal; flex-basis: 100%;
+}

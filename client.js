@@ -5320,10 +5320,10 @@ function lageCheckedLabel(iso) {
   const berlinDay = (x) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(x);
   const uhr = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(d);
   const dayKey = berlinDay(d);
-  if (dayKey === berlinDay(new Date())) return `Zuletzt aktualisiert: heute, ${uhr} Uhr.`;
-  if (dayKey === berlinDay(new Date(Date.now() - 24 * 3600 * 1000))) return `Zuletzt aktualisiert: gestern, ${uhr} Uhr.`;
+  if (dayKey === berlinDay(new Date())) return `Neueste Auswertung: heute, ${uhr} Uhr.`;
+  if (dayKey === berlinDay(new Date(Date.now() - 24 * 3600 * 1000))) return `Neueste Auswertung: gestern, ${uhr} Uhr.`;
   const datum = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long" }).format(d);
-  return `Zuletzt aktualisiert: ${datum}, ${uhr} Uhr.`;
+  return `Neueste Auswertung: ${datum}, ${uhr} Uhr.`;
 }
 
 // STOERUNGSWAHRHEIT (Audit-Fix 2026-07): Lage-Ausfallgründe (Server: available:false
@@ -5788,7 +5788,7 @@ function vsheetContentHtml(v) {
       <h2 id="vsheet-title" class="vsheet-title${displayTitle ? "" : " vsheet-title-fallback"}">${escapeHtml(title)}</h2>
       <div class="vsheet-metaline">
         <span class="vsheet-meta-type">Politischer Vorgang</span>
-        ${dateLabel ? `<span class="vsheet-metasep" aria-hidden="true">·</span><span>${escapeHtml(dateLabel)}</span>` : ""}
+        ${dateLabel ? `<span class="vsheet-metasep" aria-hidden="true">·</span><span>${Number.isFinite(Date.parse(v.createdAt || "")) ? "Angelegt" : "Vorgangsstand"}: ${escapeHtml(dateLabel)}</span>` : ""}
         ${firstSourceName ? `<span class="vsheet-metasep" aria-hidden="true">·</span><span>${escapeHtml(firstSourceName)}</span>` : ""}
       </div>
     </header>
@@ -6496,7 +6496,7 @@ function renderUiBriefingHero(state, details = "") {
   const v = lageVorgangZumBriefing(item);
   const sub = v ? lageField(v.displaySummary) : "";
   const count = Number(item.sourceCount) || 0;
-  const when = hstandText(item.zeitLabel) || hstandWhen(item.lastUpdated);
+  const when = hstandText(item.zeitLabel) || hstandWhen(item.meldungAt);
   const chips = `${urgency}${hstandContextChips(item.contextChips, 2)}`;
   return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang" data-topic-title="${escapeAttribute(title)}">
     <div class="ui-hero-main"><span class="ui-eyebrow"><span class="ui-priority-dot" aria-hidden="true"></span>${eyebrow}</span>
@@ -6508,7 +6508,7 @@ function renderUiBriefingHero(state, details = "") {
     <div class="ui-hero-next">
       <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Dein nächster Schritt</span><span class="ui-next-step">${escapeHtml(recommendation || "Prüfe die Einordnung und Quellen zu diesem Vorgang.")}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>
       ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfe den Vorgang und deine Büro-Formate.</p>'}
-      <p class="ui-hero-meta">${count ? `<span>${uiIcon("briefing")}${count === 1 ? "1 Quelle" : `${count} Quellen`}</span>` : ""}${when ? `<span>${HELMUT_ICON_CLOCK}Stand ${escapeHtml(when)}</span>` : ""}</p>
+      <p class="ui-hero-meta">${count ? `<span>${uiIcon("briefing")}${count === 1 ? "1 Quelle" : `${count} Quellen`}</span>` : ""}${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
     </div>
     ${details ? `<details class="ui-hero-details"><summary class="ui-hero-more"><span class="ui-more-closed">Ausführlich lesen</span><span class="ui-more-open">Weniger anzeigen</span>${uiIcon("arrow")}</summary><div class="ui-hero-details-body">${details}</div></details>` : ""}
   </section>`;
@@ -6525,25 +6525,16 @@ function renderHstandHeader(state) {
     : hstandCurrentQuiet(state)
       ? { label: "Aktuell · keine neue Tagespriorität", tone: "ok" }
       : (HSTAND_STATUS_LABEL[state.status] || HSTAND_STATUS_LABEL.empty);
-  // Das Datum im Kopf ist das ECHTE Datum des gezeigten Vorgangs: bevorzugt sein
-  // belegtes Meldungsdatum (zeitLabel, Europe/Berlin) — nicht der Zeitpunkt, zu dem
-  // Helmut die Zeile zuletzt angefasst hat (Audit 2026-08-10, Befund F2).
-  const when = (hstandCurrentQuiet(state) && hstandWhen(vertrag.lauf?.erzeugtAm))
-    || (state.primaryItem && state.primaryItem.zeitLabel)
-    || hstandWhen(state.primaryItem && state.primaryItem.meldungAt)
-    || hstandWhen(state.sourcesSummary && state.sourcesSummary.lastUpdated)
-    || hstandWhen(state.generatedAt);
-  // Bei STALE (angezeigter Datenstand nicht von heute) darf NICHT der aktuelle Slot-Name
-  // (z. B. „Mittagsbriefing") mit einem alten Datum vermischt werden — das wirkt falsch.
-  // Dann ehrlich „Letzter Stand · <Datum>" zeigen. Nur bei frischem Stand den Slot-Namen.
-  // Befund F3: das gilt AUCH, wenn der Frischevertrag den Stand zu Recht als „neu seit
-  // dem letzten Briefing" fuehrt, der Vorgang aber von gestern ist — sonst stuende
-  // „Morgenbriefing · Gestern, 22:40" da und saehe wie die heutige Lage aus.
-  const isStale = vertragOffen || state.status === "stale" || state.staleState === true
-    || state.datenstandVonHeute === false;
-  const type = isStale
-    ? "Letzter Stand"
-    : (HSTAND_TYPE_LABEL[String(state.briefingType || "").toLowerCase()] || "Briefing");
+  // Publikation, gespeicherter Morgenlauf und Abrufzeit sind verschiedene Dinge.
+  // generatedAt/sourcesSummary.lastUpdated koennen beim Lesen/KO-Schreiben entstehen.
+  // Sie ersetzen daher weder eine belegte Publikation noch den gespeicherten Lauf.
+  const when = (state.primaryItem && state.primaryItem.zeitLabel)
+    || hstandWhen(state.primaryItem && state.primaryItem.meldungAt);
+  const created = hstandWhen(vertrag?.lauf?.erzeugtAm);
+  const timeLabel = [
+    state.primaryItem ? (when ? `Quellenstand: ${when}` : "Quellenstand nicht belegt") : "",
+    created ? `Briefing erstellt: ${created}` : "Erstellungszeit des Briefings nicht belegt"
+  ].filter(Boolean).join(" · ");
   const partial = state.qualityStatus === "partial";
   return `
     ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.")}
@@ -6552,7 +6543,7 @@ function renderHstandHeader(state) {
           <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
           ${renderRefreshButton()}
         </div>
-      <p class="hstand-meta-line">${HELMUT_ICON_CLOCK}<span>${escapeHtml(type)}${when ? ` · ${escapeHtml(when)}` : ""}</span></p>
+      <p class="hstand-meta-line">${HELMUT_ICON_CLOCK}<span>${escapeHtml(timeLabel)}</span></p>
       ${partial ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>Nur teilweise vollständig – einige Angaben fehlen noch.</span></p>` : ""}
       ${renderHstandFrische(state)}
     </div>`;

@@ -236,6 +236,32 @@ function check(name, cond, detail = "") {
         // Die normale Eintrittsanzeige endet per Timer; erst danach ist die
         // Fachansicht sichtbar. Dieselbe Bedingung gilt fuer echte Nutzer.
         await page.waitForSelector(".ui-briefing-hero", { timeout: 5000 });
+        // Abrufzeit, gespeicherte Briefingerstellung und Quellenstand getrennt.
+        await page.evaluate(() => {
+          briefing.currentHelmutState.briefingType = 'evening';
+          briefing.currentHelmutState.generatedAt = '2026-11-06T20:00:00Z';
+          briefing.currentHelmutState.primaryItem.meldungAt = '2026-09-25T10:00:00Z';
+          briefing.currentHelmutState.primaryItem.zeitLabel = '';
+          briefing.currentHelmutState.frischeVertrag = { aktuell: true, lauf: { erzeugtAm: '2026-11-05T05:15:00Z' } };
+          render();
+        });
+        const timeMeta = page.locator('.hstand-meta-line');
+        check(`${label}: fachliche Zeitangaben sind sichtbar und klar getrennt`,
+          await timeMeta.isVisible() && (await timeMeta.innerText()).includes('Quellenstand:')
+            && (await timeMeta.innerText()).includes('25. Sept. 2026')
+            && (await timeMeta.innerText()).includes('Briefing erstellt: 05. Nov. 2026')
+            && !(await timeMeta.innerText()).includes('Abendlage'));
+        await page.evaluate(() => {
+          delete briefing.currentHelmutState.frischeVertrag;
+          briefing.currentHelmutState.primaryItem.meldungAt = null;
+          briefing.currentHelmutState.primaryItem.zeitLabel = '';
+          render();
+        });
+        check(`${label}: Abrufzeit ersetzt keine fehlende fachliche Zeit`,
+          (await timeMeta.innerText()).includes('Quellenstand nicht belegt')
+            && (await timeMeta.innerText()).includes('Erstellungszeit des Briefings nicht belegt')
+            && !(await timeMeta.innerText()).includes('06. Nov. 2026'));
+        await page.evaluate(fixtureData => { briefing = fixtureData; render(); }, data);
         const displayed = await page.evaluate(() => ({
           proposals: document.querySelectorAll(".ui-briefing-hero").length,
           why: document.querySelectorAll(".hstand-why").length
@@ -272,7 +298,7 @@ function check(name, cond, detail = "") {
           lageText.includes("Die belegten Fakten") && !lageText.includes("Heute nicht öffentlich zuspitzen"));
         check(`${label}: Lage trennt aktuelle Analyse und aeltere Quellenfrische sichtbar`,
           await page.locator("[data-lage-stand]").isVisible()
-            && (await page.locator("[data-lage-stand]").innerText()).includes("Zuletzt aktualisiert: heute")
+            && (await page.locator("[data-lage-stand]").innerText()).includes("Neueste Auswertung: heute")
             && await page.locator("[data-lage-source-recency]").isVisible()
             && await page.locator("[data-lage-source-recency]").innerText() === "Neueste Quelle vom 22. Juni."
             && await page.evaluate(() => {
