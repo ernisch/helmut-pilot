@@ -2949,5 +2949,121 @@
         }
       ]
     }
+  },
+  "productionRollout": {
+    "commit": "647f0420d6606cbd01a628cc2c880c06a0a9dddf",
+    "observedAt": "2026-11-06T11:48:34Z",
+    "navigation": {
+      "path": "/",
+      "status": 200,
+      "ttfbMs": 411,
+      "totalMs": 412,
+      "bytes": 6110
+    },
+    "assets": [
+      {
+        "path": "/client.js",
+        "status": 200,
+        "ttfbMs": 117,
+        "totalMs": 217,
+        "bytes": 616271,
+        "sha256": "64fb294439619a72816d7fbadb99c427d79cdc4ebd18d0a970bbc4c6f952fb85",
+        "matchesSource": true
+      },
+      {
+        "path": "/styles.css",
+        "status": 200,
+        "ttfbMs": 108,
+        "totalMs": 118,
+        "bytes": 318433,
+        "sha256": "e815e549a643e1028f5b4170cc9811e8421599c9e7d0f156ba5879de573f4a6b",
+        "matchesSource": true
+      },
+      {
+        "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+        "status": 200,
+        "ttfbMs": 125,
+        "totalMs": 126,
+        "bytes": 57268,
+        "sha256": "186ca66826fac19d1736a7ebb840516de7f142bc5aeb0ce02eb6e1c3520d487e",
+        "matchesSource": true
+      },
+      {
+        "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+        "status": 200,
+        "ttfbMs": 177,
+        "totalMs": 177,
+        "bytes": 40216,
+        "sha256": "3187905c507d452050e496d66c896eaf8f732a04055d04b117af8523fbc1a9e0",
+        "matchesSource": true
+      },
+      {
+        "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+        "status": 200,
+        "ttfbMs": 73,
+        "totalMs": 74,
+        "bytes": 39160,
+        "sha256": "1acb708e5286bd1979de2f117ce7b7eb2ab2f7325cf7ce9791329c06d9c5f222",
+        "matchesSource": true
+      },
+      {
+        "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+        "status": 200,
+        "ttfbMs": 177,
+        "totalMs": 179,
+        "bytes": 88332,
+        "sha256": "5effe60debf770566d79d9050b9a073a21e6148f3912a4d372d1ed935ed6ac52",
+        "matchesSource": true
+      },
+      {
+        "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+        "status": 200,
+        "ttfbMs": 105,
+        "totalMs": 106,
+        "bytes": 80068,
+        "sha256": "61cd5cc9b19fc3590368e03f630cc8d736653a70d7ad51f9bb588488b1327f5f",
+        "matchesSource": true
+      }
+    ],
+    "startRequests": [
+      {
+        "path": "/api/app/start",
+        "status": 200,
+        "ttfbMs": 12015,
+        "totalMs": 12323,
+        "bytes": 231599,
+        "run": 1,
+        "validStartPayload": true,
+        "version": "647f0420"
+      },
+      {
+        "path": "/api/app/start",
+        "status": 200,
+        "ttfbMs": 8688,
+        "totalMs": 8997,
+        "bytes": 231599,
+        "run": 2,
+        "validStartPayload": true,
+        "version": "647f0420"
+      },
+      {
+        "path": "/api/app/start",
+        "status": 200,
+        "ttfbMs": 9251,
+        "totalMs": 9557,
+        "bytes": 231599,
+        "run": 3,
+        "validStartPayload": true,
+        "version": "647f0420"
+      }
+    ],
+    "deploymentId": "dpl_5CHy6AchhWCkGM9r3bowRmB4bHVd",
+    "state": "READY",
+    "briefingOnlyProbe": {
+      "path": "/api/briefing/latest",
+      "status": 200,
+      "totalMs": 5312,
+      "bytes": 181060
+    }
   }
 }
