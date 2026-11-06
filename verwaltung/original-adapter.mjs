@@ -73,7 +73,8 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
   const errorText = phase === "unauthorized" ? "Bitte melde dich erneut an." : phase === "forbidden" ? "Die Verwaltung ist nur für Administratoren zugänglich."
     : Object.keys(D.errors).length ? "Ein Teil der Daten konnte nicht geladen werden. Bitte die Ansicht neu laden." : D.health.text;
   v.dateLine = D.payloads.overview?.generatedAt ? `Stand ${dateTime(D.payloads.overview.generatedAt, true)} Berlin` : "Stand nicht bekannt";
-  v.health = { label: blocked ? "Zugriff gesperrt" : phase === "error" ? "Daten nicht verfügbar" : D.health.label, text: errorText, dot: open.dot, halo: open.halo };
+  // Neutral = hohler Ring (Design v3); die Vorlage kennt am Seitenkopf nur Fläche + Halo.
+  v.health = { label: blocked ? "Zugriff gesperrt" : phase === "error" ? "Daten nicht verfügbar" : D.health.label, text: errorText, dot: open.dot, halo: `${open.halo}, inset 0 0 0 1.5px ${open.ring}` };
   v.bigNums = [
     { label: "Profile", value: originalFmt(D.counts.total), sub: "Vorhandener Bestand", ink: "var(--ink)", onClick: component.goList({}) },
     { label: "Aktiv", value: originalFmt(D.counts.aktiv), sub: "Laut Profilstatus", ink: "var(--ink)", onClick: component.goList({ drill: { status: "aktiv" } }) },
@@ -89,9 +90,10 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
   v.groupsEmpty = false; v.groupsMore = false;
   v.groups = [{ ...open, title: "Ergebnisqualität noch nicht belegt", detail: errorText, areaLabel: "Ergebnisstand", countLabel: "Offen", onClick: component.go("#/betrieb/bilanz") }];
   v.secEyebrow = v.dateLine;
-  if (v.rows) for (const row of v.rows) { row.cost = "Nicht bekannt"; row.qu = { label: "Nicht bestätigt", ink: "var(--muted)" }; }
+  // Kurzform passt in die 74px-Kostenspalte; „—“ heißt hier: nicht bekannt.
+  if (v.rows) for (const row of v.rows) { row.cost = "—"; row.costInk = "var(--muted)"; row.qu = { label: "Nicht bestätigt", ink: "var(--muted)" }; }
   if (v.zeigenOpts) v.zeigenOpts = v.zeigenOpts.map((option, index) => index === 0 ? { ...option, count: originalFmt(D.counts.total) }
-    : { ...option, count: "Nicht geprüft", onClick: () => component.say("Für diesen Filter fehlt noch die vollständige Ergebnisprüfung.") });
+    : { ...option, count: "–", onClick: () => component.say("Für diesen Filter fehlt noch die vollständige Ergebnisprüfung.") });
   if (v.pProfil && p) {
     const raw = component._detail?.id === p.id ? component._detail : null;
     const validation = raw?.validierung || p.raw.validierung;
@@ -117,6 +119,7 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
       .map((value, index) => ({ v: value === null ? "Ungeprüft" : String(value), label: headings[index], aria: `${row.label}, ${headings[index]}: ${value === null ? "ungeprüft" : value}`,
         pe: "none", ink: "var(--muted)", onClick: () => {} })) }));
     v.runs = D.runs.map(r => ({ ...r, ...open, ink: "var(--text)" }));
+    v.runsEmpty = !v.loading && v.runs.length === 0;
     v.wartung = [{ title: "Motoraktionen", text: "Recovery und neue Erzeugung werden getrennt abgestimmt.", has: false, none: true, label: "Nicht freigegeben" }];
     v.srcHead = D.payloads.sources?.stoerungen?.verfuegbar === true ? "Vorhandene Quellenhinweise" : "Quellenzustand nicht bestätigt.";
     v.srcRows = D.sources.map(s => ({ name: s.name, scope: "Vorhandene Laufbeobachtung", ...open, ink: "var(--text)", text: s.text,
@@ -143,6 +146,7 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
   if (v.pKunden) {
     v.secEyebrow = list(D.payloads.customers?.kunden) === null ? "Kundenbestand nicht verfügbar" : `${D.customers.length} Konten mit Kundendaten`;
     v.kundenHead = list(D.payloads.customers?.kunden) === null ? "Bitte die Ansicht neu laden." : "Zugang und Vertragsstatus getrennt prüfen";
+    v.custEmpty = !v.loading && list(D.payloads.customers?.kunden) !== null && !(v.custRows || []).length;
   }
   if (v.kd && component.state.route.page === "kunde") {
     const c = D.customers.find(x => x.id === component.state.route.id);

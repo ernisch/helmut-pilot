@@ -164,7 +164,7 @@ async function main() {
   await check("Ungeprüfte Ergebnisfilter haben keine falschen Nullzähler", async () => {
     const { instance: c } = component(reader(sample)); await c.refresh(); c.setState({ route: { page: "profile" } });
     const v = c.renderVals(); assert.equal(v.zeigenOpts[0].count, "1");
-    for (const option of v.zeigenOpts.slice(1)) { assert.equal(option.count, "Nicht geprüft"); option.onClick(); assert.equal(c.state.zeigen, "alle"); }
+    for (const option of v.zeigenOpts.slice(1)) { assert.equal(option.count, "–"); option.onClick(); assert.equal(c.state.zeigen, "alle"); }
     c.componentWillUnmount();
   });
   await check("Fehlende Profilübersicht entfernt keine bekannte Kundenzuordnung", async () => {

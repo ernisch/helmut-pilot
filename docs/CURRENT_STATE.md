@@ -68,6 +68,20 @@ eines Kontos; die gezielte Navigationsauswahl führt keine Schreibaktion aus.
 Dieser Auftrag ist abgeschlossen. Nächster fachlicher Schritt bei weiterer
 Verwaltungsarbeit: fehlende Funktionen nach OP-33 einzeln zuordnen.
 
+## Verwaltung: Darstellungskorrekturen gegen Design v3 (06.11.2026)
+
+Branch `claude/zen-feynman-ie0vpl`, PR offen, **nicht gemergt**. Schritt 0: die
+Übergabe-Vorlage ist bytegleich mit `verwaltung/claude-original/`. `/verwaltung/`
+liefert bereits dieses Original. `verwaltung/styles.css`/`index.html` sind nur die alte
+helle Vorschau und werden nicht ausgeliefert, deshalb sind sie unverändert.
+Korrigiert sind nur sichtbare Abweichungen im Echtbetrieb, und zwar ausschließlich über
+`original-adapter.mjs` und den Paketbauer (Original und Prüfsummen unverändert):
+Aktualisieren-Knopf ohne Gold, neutraler Statusring statt Lücke am Seitenkopf,
+einzeilige Navigation, Filterzähler „–“ statt „Nicht geprüft“, Kostenspalte ohne
+Umbruch, Leerzustände für Kunden und Läufe. „Kunde anlegen“ und alle Funktionen
+bleiben. `original-verwaltung-test.js` stoppt wie auf `main` an der bekannten alten
+Null-IO-Erwartung. Nächster Schritt: Betreiber prüft die Vorschau und gibt den Merge frei.
+
 ## Oberstes Ziel: Mock100 PASS, dann Helmut sicher live
 
 1. **Mock100 PASS**: exakt **100 gleichzeitig aktive synthetische
