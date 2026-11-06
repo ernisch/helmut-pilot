@@ -5,14 +5,15 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
-## Neutrale Quellenversorgung: live übernommen (06.11.2026)
+## Quellenversorgung: EUR-Lex und Bundespuls aktiv (06.11.2026)
 
-PR1079 nach Betreiber-GO auf `ec70fe31` gemergt; Production-Deployment `dpl_7fx63YAcsDHDbnd8NU4BRoXbTYXm` READY und Hauptdomain geprüft.
-46 vorbereitete Pakete und89 pausierte/manuelle Wege ergänzt; danach EUR-Lex und Bundespuls vorbereitet hinzugefügt: Katalog55Pakete/254Wege/293Paketlinks. Drei BB/rbb-Zuordnungen korrigiert.
-Alle zehn Tabellen gegen Ausgangsstand und echte Ausführungsbelege geprüft; bestehende Quellen-/Healthwerte unverändert, keine Aktivierung oder Budget-/Cronänderung.
-Gleiche Regeln für24Fachgebiete,16Länder und10Parteien sowie Verwaltungsprüfung live. Der automatische Nachweis folgt am nächsten regulären Quellenlauf (04:00UTC); noch kein solcher Lauf nach diesem Deployment belegt.
-Pflicht-CI189/189Standard,336/336Bereich und Browser grün. Liveassets bytegleich, öffentlicher Bereitschaftstest grün, Verwaltung ohne Anmeldung401; kein angemeldeter Production-UI-Test.
-Restlücken/Rückweg: [Quellenversorgung](quellenarchitektur/47-neutrale-quellenversorgung.md). [DIP/EUR-Lex/Bundespuls](quellenarchitektur/48-dip-eurlex-bundespuls.md): DIP genutzt; Aktivierung der zwei neuen Wege beauftragt und vorbereitet, vorerst pausiert bis Merge/DeployPR1084 (konkretesGO offen).
+PR1079 ergänzte den neutralen Katalog. PR1084 nach konkretem Betreiber-GO auf `14c558b2` gemergt; Production `dpl_GSjihZu7UMcYWn1SUVefZgBJm9AL` READY, Hauptdomain und effektive Laufzeitversion geprüft.
+EUR-Lex und Bundespuls am06.11.,21:22Istanbul aktiviert: `needs_review/always_on` bzw. `needs_review/auto`. Der erste reguläre Abruf ist noch nicht belegt; keine erfundenen Gesundheitswerte.
+Katalog55Pakete/254Wege/293Paketlinks/98Anbieter. Aktueller Quellenplan141→143, genau diese zwei Zugänge zusätzlich, keiner entfernt; DIP läuft weiterhin separat über seine API.
+Alle zehn Katalogtabellen gegen Ausgangsstand und echtes Receipt geprüft: genau zwei Status-/Modusänderungen samt Zeitstempeltrigger. Bestehende Healthwerte und sämtliche Profile unverändert; keine Budget-/Cronänderung.
+Gleiche Katalogregeln für24Fachgebiete,16Länder und10Parteien bleiben erhalten. Nächster regulärer Quellenlauf07.11.,07:00Istanbul (04:00UTC); Aktivierung ist noch kein Nachweis gelieferter Inhalte.
+Pflicht-CI189/189Standard,341/341Bereich und echter Desktop-/Mobilbrowser grün; zusätzliche Providerprüfungen bestanden. Keine neue Modellgenerierung oder angemeldete Production-UI-Abnahme.
+Belege und gebundener Rückweg: [Aktivierung](quellenarchitektur/48-dip-eurlex-bundespuls.md), [Receipt-Nachweis](quellenarchitektur/48-aktivierung-20261106.json). Restlücken des übrigen Katalogs: [Quellenversorgung](quellenarchitektur/47-neutrale-quellenversorgung.md).
 
 ## Verwaltungszahlen: Korrektur ausgerollt (06.11.2026)
 

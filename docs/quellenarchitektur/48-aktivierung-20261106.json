@@ -1,0 +1,100 @@
+{
+  "checkedAt": "2026-11-06T18:23:27.792Z",
+  "capturedAt": "2026-11-06T18:23:25.97479+00:00",
+  "status": "PASS",
+  "allTenTablesCompared": true,
+  "changedRows": 2,
+  "changedColumns": [
+    "status",
+    "activation_mode",
+    "updated_at"
+  ],
+  "existingHealthPreserved": true,
+  "profilesUnchanged": true,
+  "countsUnchanged": true,
+  "activationApplied": true,
+  "planHash": "4bae074baf34e34fcd9b2ab2048743825480ec08bbce376a3c2fa4e0b301817d",
+  "appliedAt": "2026-11-06T18:22:43.913128+00:00",
+  "targets": [
+    {
+      "id": "rp-bundespuls-vorgaenge-rss",
+      "status": "needs_review",
+      "activation_mode": "auto"
+    },
+    {
+      "id": "rp-eurlex-amtsblatt-l-rss",
+      "status": "needs_review",
+      "activation_mode": "always_on"
+    }
+  ],
+  "rollback": "rollback-bound.sql",
+  "firstScheduledCrawlProven": false,
+  "mergeCommit": "14c558b2142127750a17bc40f53cd71020e3c147",
+  "pullRequest": 1084,
+  "reviewedHead": "a5b168c836495cce7b5db0bc9df08d65f2772038",
+  "deployment": {
+    "id": "dpl_GSjihZu7UMcYWn1SUVefZgBJm9AL",
+    "target": "production",
+    "status": "READY",
+    "alias": "helmut-pilot.vercel.app"
+  },
+  "ci": {
+    "runId": 42254683902,
+    "standardPassed": 189,
+    "standardTotal": 189,
+    "areaPassed": 341,
+    "areaTotal": 341,
+    "browser": "success",
+    "pardok": "success",
+    "shadow": "success",
+    "verify": "success"
+  },
+  "runtime": {
+    "capturedAt": "2026-11-06T18:21:17.398332+00:00",
+    "url": "https://helmut-pilot.vercel.app/api/cron/testnachweis-status",
+    "method": "GET",
+    "httpStatus": 200,
+    "ok": true,
+    "reinLesend": true,
+    "production": true,
+    "commit": "14c558b2142127750a17bc40f53cd71020e3c147",
+    "sourceModeOn": true,
+    "storageSupabase": true,
+    "profileRelational": true,
+    "profileExclusive": true,
+    "quellenkontext": {
+      "version": 1,
+      "scoring": "off",
+      "relevanzordnung": false,
+      "koScan": 500,
+      "lageMax": 12,
+      "relevanzTage": 14,
+      "sourceSafetyStandard": false,
+      "atomicLock": true
+    },
+    "publicRelease": {
+      "httpStatus": 200,
+      "ok": true,
+      "ready": true,
+      "storage": true
+    }
+  },
+  "sourceSelection": {
+    "before": 141,
+    "after": 143,
+    "added": [
+      "rp-bundespuls-vorgaenge-rss",
+      "rp-eurlex-amtsblatt-l-rss"
+    ],
+    "removed": [],
+    "dipSeparate": true
+  },
+  "receipts": {
+    "before.json": "54c672adf3b6931fc50b0ea80054c550cd65cfc99cb50ac31f725d7036f70e6d",
+    "apply-receipt.json": "7743e83d0a8743ee408025c0f9c62c46f71c672fad5321006e26333d0a932d9f",
+    "after.json": "ad210086a15b4df46b5d07af43c5a78f3ec14dc860325f45731e9e38adec2ce4",
+    "postflight.json": "0ea5a6bab921616d3838ddc7b963023fb5f72fe7e1b4b42bdc43e176417294dd",
+    "selection-postflight.json": "cfea74ddf00c1ca20aba3d0b728d9b936c7d3df699ef7a573e6d81adc4301244",
+    "rollback-bound.sql": "82c072b1f35dceb5e9aa5f327a813086de718e8103a95e78fa660550435ff956"
+  }
+}
