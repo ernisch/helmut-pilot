@@ -116,7 +116,7 @@ function main() {
     A.istRelevant("verwaltung/original-adapter.mjs")
       && A.istRelevant("verwaltung/index.html")
       && !A.istRelevant("verwaltung/README.md")
-      && JSON.stringify(bVerwaltungsdatei.bereiche) === JSON.stringify(["admin"])
+      && JSON.stringify(bVerwaltungsdatei.bereiche) === JSON.stringify(["admin", "ui"])
       && !bVerwaltungsdatei.konservativ
       && bVerwaltungsdatei.suiten.includes("original-verwaltung-test.js"), "");
 
