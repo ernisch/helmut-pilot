@@ -48,7 +48,12 @@ async function check(name, fn) { await fn(); passed++; console.log(`PASS ${name}
     const rows = c.renderVals().rows, a = rows.find(r => r.href === "#/profil/synthetic-a"), b = rows.find(r => r.href === "#/profil/synthetic-b");
     assert.deepEqual([a.b.label, a.l.label, a.rd.label], ["Vollständig", "Vollständig", "Vollständig"]);
     assert.deepEqual([b.b.label, b.l.label, b.rd.label], ["Wiederholung", "Fehlt", "Vollständig"]);
-    assert.equal(b.b.hint, "Wiederholung zwischen Ansichten"); assert.equal(a.st.label, "Nicht beurteilt"); assert.equal(b.st.label, "Problem");
+    assert.equal(b.b.hint, "Wiederholung zwischen Ansichten");
+    const ruhig = component({ ...data, ergebnisse: { ...data.ergebnisse, profile: [{ ...data.ergebnisse.profile[0],
+      positionen: { ...data.ergebnisse.profile[0].positionen, briefing: { stufe: 3, ursache: null, code: null, hinweis: "ruhiger-tag" } } }] } });
+    await ruhig.refresh(); ruhig.setState({ route: { page: "profile" } });
+    const rr = ruhig.renderVals().rows.find(r => r.href === "#/profil/synthetic-a");
+    assert.deepEqual([rr.b.label, rr.b.hint, rr.st.label], ["Vollständig", "Ruhiger Tag · kein neuer Tagesanlass", "Nicht beurteilt"]); assert.equal(a.st.label, "Nicht beurteilt"); assert.equal(b.st.label, "Problem");
     for (const r of [a, b]) for (const z of [r.b, r.l, r.rd]) assert.notEqual(z.dot, "var(--chance)", "nie grün ohne Fachurteil");
   });
   await check("Betrieb › Bilanz: drei Positionen, sechs Spalten ohne Brauchbar/Unbrauchbar", async () => {
