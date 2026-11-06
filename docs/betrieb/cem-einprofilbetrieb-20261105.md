@@ -365,3 +365,60 @@ kein Ueberlauf und kein externer Browserverkehr. Sitzungsantwort simuliert;
 Production-API-Antwort nativ gelesen. Zusaetzlich171/171 synthetische
 Chromium-Assertions in14 Szenarien bestanden, einschliesslich Cache-Leerfall
 auf Desktop/Mobil. Pflicht-CI/Deployment folgen.
+
+
+## Einheitlicher Betrieb und Rueckbau toter Pfade
+
+Betreiberauftrag06.11.2026 nach Rueckfrage zur Formulierung „altes ausgeliefertes
+System“: nicht als Beleg einer zweiten Cem-App verstehen. Sechs parallele
+Astra-/GPT6.1-Sol-Audits prueften Backend, Frontend, Daten/Mandanten, Pipelines,
+Deployments und Repository-Artefakte. Kein DeepSeek.
+
+Normale Aufrufkette: api/index.js -> server.js -> latestBriefingPayload ->
+buildV3Briefing -> toBriefingContractV3. App-Start und Briefing teilen diesen
+Pfad; fehlender V3-Speicher erzeugt einen ehrlichen Leerzustand, keinen alten
+Motor. Kein Cem-Standardprofil in der Mandatsaufloesung. Der Service Worker
+liefert fuer Navigation Netzantwort oder Offlinehinweis, kein altes App-HTML.
+Exklusiv geschaltete V3-Crawlvarianten sind keine parallel laufende Cem-V1.
+Der bestehende Blob-Speicher bleibt fuer Aufgaben, Themen und Profilmigrationen
+aktiv; seine Loeschung wuerde Nutzerdaten gefaehrden.
+
+Konkret entfernter, unerreichbarer Code:58 alte Frontendfunktionen um
+renderBriefingView/renderHelmutAssessmentView (799Zeilen einschliesslich
+zugehoeriger Kommentare), saveBriefing/getLatestBriefing samt Exports sowie
+shouldRefreshLatestBriefing. Referenzgraph und Rohtextsuche erfassen auch
+Template-/Eventhandlernamen; verbleibende735 Top-Level-Statements sind per AST
+identisch. Testabhaengigkeiten wurden auf aktuelle Anzeige-/Mandantenpfade
+umgestellt. Keine gespeicherten Briefings oder Historien entfernt.
+reviewFixture verliert die alte automatische Branchaktivierung und sperrt
+VERCEL_ENV=production vor jeder expliziten Flagpruefung. Testdaten bleiben
+nur ausdruecklich lokal/inVorschau verwendbar. Gezielte Tests:135 Helmut-UI,
+20 Umbenennung,32 Radar,34 Ehrlichkeit,12 Eventbindung,27 Lagefrische,
+41 Cross-Tenant und20 Mandantentrennung bestanden; Syntax/Diff sauber.
+Astra bestaetigt keine verlorenen aktiven Aufrufer; Pipeline-Review bestaetigt
+unveraenderte Cron-/Morgenpaket-/Queue-Speicherung. Integrierter isolierter
+Chromium-Test171/171 bestanden, einschliesslich vorhandenem Narrativ und
+Cache-Leerfall auf Desktop/Mobil. Pflicht-CI folgt.
+
+Vercel-Audit: genau helmut-pilot fuer ernisch/helmut-pilot; helmut-website ist
+separates Marketing und verlinkt die regulaere App. Zwei historische October-
+Production-Deployments waren ueber ihre eindeutigen Hosts noch HTTP200 erreichbar:
+adb99tmhs (a48f75db), ek7bu1hfn (b735b197). Keine aktuelle Runtimeverlinkung
+gefunden; kein Nachweis eines Cem-V1-Motors oder dortigen Datenzugriffs.
+Projekt-Aenderung: ssoProtection.deploymentType preview ->
+all_except_custom_domains, enabled bleibt true. Das ist der kostenlose aktuelle
+Vercel-Standardschutz, kein Passwortschutz/Trusted-IP-Zusatzabo. Die Einstellung
+wirkt auch auf bereits gebaute Deployments, anders als ein neuer Redirect im Code.
+Regulaere Production-Domain bleibt ausgenommen; alte eindeutige URLs werden fuer
+nicht bei Vercel berechtigte Aufrufer gesperrt. Historische Builds/Rueckwege
+bleiben erhalten. Rueckweg: dasselbe Feld auf preview. Nachkontrolle08:37 UTC
+ohne Cookies/Authorization/Bypass: regulaere Domain HTTP200 mit aktuellen Assets;
+/api/release/public HTTP200, ok/ready/storage=true. Beide alten Hosts und deren
+client.js, aktueller eindeutiger Host sowie Projektalias HTTP302 zur
+Vercel-Anmeldung. Projektfeld erneut nativ bestaetigt. Kein Ruecksetzen erforderlich.
+
+Aktuelle Originalverwaltung, lokale Verwaltungsvorschau, Nachweisdokumente und
+aktiver Auth-/Speichermigrationscode wurden nicht pauschal geloescht. Die
+Verwaltungsvorschau ist nicht oeffentlich serviert und wird derzeit in paralleler
+Verwaltungsarbeit als Pruefwerkzeug verwendet. Keine Aenderung an Profilaktivierung,
+Budget, Cron, Providerroute oder Kommunikation.
