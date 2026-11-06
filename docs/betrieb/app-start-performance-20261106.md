@@ -388,3 +388,33 @@ Installationszustand am Geraet repariert werden, gegebenenfalls durch erneute
 Installation von https://helmut-pilot.vercel.app/ aus Brave. Kein serverseitiger
 Nachweis darf diese Geraetereparatur als bereits erledigt ausgeben. Bis dahin
 ist der vom Betreiber bestaetigte funktionierende Zugang der normale Brave-Tab.
+
+
+### Freigegebener Rollout1086 und lesende Nachkontrolle (06.11.2026,16:39UTC)
+
+Nach ausdruecklichem Betreiber-Ja wurde PR1086 auf
+`ec7240db561d95a89d43ed0273464c16b428a788` gemergt. Beide Pflichtchecks auf
+5244e166 gruen (CI42248182776):189/189 Standard-,338/338 Bereichssuiten,
+Browser und native Datenbanknachweise. Vercel-Production
+`dpl_B6GuTruWeFfG4mzr5BEZuMFNURua` READY, Hauptdomain zugewiesen.
+
+Rein lesend auf der Hauptdomain bestaetigt: Manifest und Worker bytegleich
+zur geprueften Fassung; beide `public, max-age=0, must-revalidate`.
+Manifest-Start-/Systemfarbe#0a0f1c. HTML verweist auf Version ec7240db.
+Anonyme Sitzung korrekt unauthentifiziert. Ein geschuetzter GET auf app/start
+liefert200, korrekte Version, Briefing und verfuegbare Lage mit zehn Karten.
+Keine Antwortinhalte oder Zugangsdaten gespeichert; nur
+[Rolloutmetadaten und Dateihashes](briefing-first-start-20261106.json).
+Deploymentbezogene Error-/Fatal-Logs bis16:39UTC ohne Treffer; das kurze
+Beobachtungsfenster ist kein Android-Funktionsnachweis.
+
+Status: genehmigter Code ausgerollt und Auslieferung geprueft. Gesamtproblem
+**teilweise abgeschlossen**: konkreter Brave-/Android-Start am Geraet weiter
+unbestaetigt, Antwort auf die angefragte Beenden-erzwingen-Probe steht aus.
+Naechster Schritt: Hauptadresse in Brave erneut laden, dann installierte App
+neu starten. Der native Android-Launcher kann alte Manifestwerte behalten;
+falls weiterhin derselbe Haenger auftritt, lokalen Installationszustand klaeren.
+Keine weitere Serveraenderung allein aus den erfolgreichen HTTP-Checks ableiten.
+Rueckweg bleibt dpl_45AMnvEB1XmP3jh5Xa7QGRb3nSgc/2a5e0774. Keine Daten-,
+Profil-, Cron-, Budget- oder Konfigurationsmutation. Diese Dokumentation
+veraendert keinen Anwendungscode und erfordert keinen erneuten Fachtestlauf.
