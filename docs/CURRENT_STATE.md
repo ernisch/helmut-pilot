@@ -5,6 +5,22 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
+## Lageauszuege aus Suchwegartikeln (06.11.2026, vorbereitet)
+
+Gezielte Diagnose der sechs Titelhinweise abgeschlossen. Der NDR/RND
+Suchweg liefert keine Originalsummary; vorhandener NDR Metadatenextraktor
+funktioniert. Kleiner Anschluss fuer zukuenftige neue bekannte Medienartikel
+vor der atomaren Raw Neuanlage vorbereitet, am bestehenden Artikelkontext
+Schalter gebunden. Keine Altzeilenkorrektur und kein6/6 Produktivnachweis.
+Syntax,13 Anschlussgruppen, echte Dedup Herkunftsbindung und unbekannte
+Readerantwort gezielt offline bestanden; unabhaengiges Review ohne Blocker.
+Pflicht CI offen. Keine Flagaktivierung, Datenmutation oder Modellgenerierung.
+Projektumgebung hat keinen HELMUT_ARTIKELKONTEXT Eintrag; Runtimebindung
+nicht gesondert behauptet. Die sechs aktuellen Altfaelle bleiben offen.
+[Umfang, Grenzen, Tests und Betriebsentscheidung](betrieb/lage-suchwegauszuege-20261106.md).
+Naechster Schritt: Codekandidat abnehmen, dann konkrete Betriebsfreigabe
+fuer neue Quellen und begrenzte Altfallpruefung einholen.
+
 ## Quellenversorgung: zwei Zugänge aktiviert, drei repariert (06.11.2026)
 
 PR1079 ergänzte den neutralen Katalog. PR1084 nach konkretem Betreiber-GO auf `14c558b2` gemergt; Production `dpl_GSjihZu7UMcYWn1SUVefZgBJm9AL` READY, Hauptdomain und effektive Laufzeitversion geprüft.

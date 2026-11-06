@@ -118,6 +118,69 @@ async function main() {
       await assert.rejects(pending, /Abgebrochen/); assert.equal(destroyed, 1);
     } finally { https.get = original; provider.reserviere = reserve; provider.melde = melde; }
   });
+  await test("Neue Suchwegauszuege behalten Grenzen und alten Quellenstand", pruefeSuchwegAnschluss);
+  await test("Echter Suchweg und exakter Bestandsreader bleiben quellengebunden", pruefeSuchwegPipeline);
   console.log(`${pass}/${pass} Quellenpruefgruppen bestanden`);
 }
+async function pruefeSuchwegAnschluss() {
+const url='https://www.ndr.de/nachrichten/info/synthetischer-testartikel.html';
+const title='Synthetischer Ausschuss beraet kommunale Angebote';
+const description='Der synthetische Ausschuss hoert am Dienstag Fachleute zur Finanzierung der Beratungsstellen an. Die Beratung betrifft Angebote in den Gemeinden.';
+const doc=(id='new')=>({id,url,canonical_url:url,title,source_type:'ministry',link_type:'direct',findings:[{original_url:'https://news.google.com/rss/articles/synthetic'}]});
+const body=`<link rel="canonical" href="${url}"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}">`;
+let checks=0;
+
+ const rows=[doc()], before=JSON.stringify(rows);let reads=0,fetches=0;
+ const deps={env:{HELMUT_ARTIKELKONTEXT:'on'},suchwegDokumentIds:['new'],leseVorhandene:async ids=>{reads++;assert.deepEqual(ids,['new']);return[];},fetchUrl:async(u,depth,options)=>{fetches++;assert.equal(u,url);assert.equal(depth,0);assert.equal(options.artikelkontext,true);assert.equal(options.allowedHost,'ndr.de');return{finalUrl:u,body};}};
+ let r=await E.ergaenzeNeueSuchwegAuszuege(rows,{...deps,env:{}});
+ assert.equal(r.documents,rows);assert.equal(reads,0);assert.equal(fetches,0);assert.equal(r.metadatenAuszug.readRequests,0);checks++;
+ r=await E.ergaenzeNeueSuchwegAuszuege(rows,deps);
+ assert.equal(r.metadatenAuszug.prepared,1);assert.equal(r.metadatenAuszug.readRequests,1);assert.equal(r.documents[0].summary,description);assert.equal(JSON.stringify(rows),before);assert.equal(r.documents[0].source_type,'ministry');assert.equal(r.documents[0].url,url);assert.equal(fetches,1);assert.equal(r.documents[0].raw.helmutQuellenkontext.status,'ergaenzt');assert.equal(r.documents[0].raw.helmutQuellenkontext.auszugHash,require('node:crypto').createHash('sha256').update(description).digest('hex'));checks++;
+ for(const change of [{summary:'Vorhandener Auszug.'},{link_type:'google_proxy'},{canonical_url:'https://www.ndr.de/fremder-artikel'},{url:'https://unbekannt.example/article',canonical_url:'https://unbekannt.example/article'}]){
+  const prior=fetches;r=await E.ergaenzeNeueSuchwegAuszuege([{...doc(),...change}],deps);assert.equal(fetches,prior);assert.equal(r.metadatenAuszug.prepared,0);checks++;
+ }
+ r=await E.ergaenzeNeueSuchwegAuszuege(rows,{...deps,leseVorhandene:async()=>[{id:'new',summary:'Altbestand'}]});assert.equal(r.metadatenAuszug.reason,'nur-bestandsdokumente');assert.equal(fetches,1);checks++;
+ r=await E.ergaenzeNeueSuchwegAuszuege(rows,{...deps,leseVorhandene:async()=>{throw Error('read unknown');}});assert.equal(r.metadatenAuszug.reason,'bestand-nicht-lesbar');assert.equal(fetches,1);checks++;
+ r=await E.ergaenzeNeueSuchwegAuszuege(rows,{...deps,leseVorhandene:async()=>[{id:'foreign'}]});assert.equal(r.metadatenAuszug.reason,'bestand-nicht-bestaetigt');assert.equal(fetches,1);checks++;
+ const stopped=new AbortController();stopped.abort();const beforeReads=reads;r=await E.ergaenzeNeueSuchwegAuszuege(rows,{...deps,abbruchSignal:stopped.signal});assert.equal(reads,beforeReads);assert.equal(r.metadatenAuszug.readRequests,0);checks++;
+ r=await E.ergaenzeNeueSuchwegAuszuege(rows,{...deps,suchwegDokumentIds:[]});assert.equal(r.metadatenAuszug.attempted,0);checks++;
+ let limited=0;r=await E.ergaenzeNeueSuchwegAuszuege([doc('one'),doc('two')],{...deps,suchwegDokumentIds:['one','two'],leseVorhandene:async()=>[],fetchUrl:async()=>{limited++;throw Error('fetch unknown');}});assert.equal(limited,1);assert.equal(r.metadatenAuszug.attempted,1);assert.equal(r.metadatenAuszug.prepared,0);checks++;
+ r=await E.ergaenzeNeueSuchwegAuszuege(rows,{...deps,fetchUrl:async()=>({finalUrl:url,body:body+'<meta name="robots" content="nosnippet">'})});assert.equal(r.metadatenAuszug.reason,'original-metadaten-gesperrt');checks++;
+ console.log('PASS '+checks+' Anschlusspruefungen: Default aus, Metadaten vor Neuanlage, Suchkanaltyp, unveraenderte Eingabe, bestehende Auszuege, Proxy, fremde Ziele, unbekannter Herausgeber, Bestandsfehler,1Abruf,Robotsmetadaten.');
+
+}
+
+async function pruefeSuchwegPipeline() {
+const fs=require('node:fs'),path=require('node:path'),Module=require('node:module'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..');
+const crawler={exports:require('../lib/helmut/crawler')};
+const D=require('../lib/helmut/dedup'),G=require('../lib/helmut/quellenarchitektur/dedup-global'),E=require('../lib/helmut/quellen-auszug');
+const title='Synthetischer Ausschuss beraet kommunale Angebote';
+const url='https://www.ndr.de/nachrichten/info/synthetischer-testartikel.html';
+const google='https://news.google.com/rss/articles/synthetic';
+const item=crawler.exports.normalizeRawItem({title,url,originalUrl:google,content:title,publisherName:'NDR',publisherUrl:'https://www.ndr.de',publishedAt:'2026-11-05T12:00:00Z'},
+ {id:'synthetischer-suchweg',name:'Thematische Suche',type:'ministry',url:'https://news.google.com/rss/search?q=synthetic'});
+const raw=D.toRawDocumentRow(item);assert.equal(raw.summary,null);assert.equal(raw.raw.originalUrl,google);assert.equal(raw.source_type,'ministry');
+const plan=G.planDedupWrites([raw],[]);assert.equal(plan.persists.length,1);assert.equal(plan.findings[0].original_url,url);assert.equal(plan.persists[0].source_type,'ministry');
+const storage=fs.readFileSync(path.join(root,'lib/helmut/storage.js'),'utf8');
+const binding=/suchwegDokumentIds: (items\.filter\(item => \{[\s\S]*?\}\)\.map\(item => item\.id\))/.exec(storage)?.[1];assert(binding);
+const boundIds=new Function('items','return '+binding)([raw]);assert.deepEqual(boundIds,[plan.persists[0].id]);
+const source=storage.slice(storage.indexOf('async function getRawDocumentsByIds('),storage.indexOf('// Offene Vorbedingungen zaehlen:'));
+class StorageReadError extends Error {constructor(table,error){super(table+': '+error.message);}}
+const reader=new Function('supabaseRequest','v3StoreReady','RAW_DOC_ID_CHUNK','inFilterWert','StorageReadError','require',source+';return getRawDocumentsByIds;')(
+ async()=>({unexpected:'200-not-array'}),()=>true,100,x=>x,StorageReadError,n=>{assert.equal(n,'./quellen-auszug');return E;});
+
+ assert.deepEqual(await reader(boundIds),[]); // Altvertrag unveraendert.
+ await assert.rejects(()=>reader(boundIds,{requireArray:true}),/leseantwort-ungueltig/);
+ let requests=0;
+ const rejected=await E.ergaenzeNeueSuchwegAuszuege(plan.persists,{env:{HELMUT_ARTIKELKONTEXT:'on'},suchwegDokumentIds:boundIds,leseVorhandene:ids=>reader(ids,{requireArray:true}),fetchUrl:async()=>{requests++;throw Error('must not fetch');}});
+ assert.equal(rejected.metadatenAuszug.reason,'bestand-nicht-lesbar');assert.equal(rejected.metadatenAuszug.readRequests,1);assert.equal(requests,0);
+ const description='Der synthetische Ausschuss hoert am Dienstag Fachleute zur Finanzierung der Beratungsstellen an. Die Beratung betrifft Angebote in den Gemeinden.';
+ const completed=await E.ergaenzeNeueSuchwegAuszuege(plan.persists,{env:{HELMUT_ARTIKELKONTEXT:'on'},suchwegDokumentIds:boundIds,leseVorhandene:async()=>[],fetchUrl:async()=>({finalUrl:url,body:`<link rel="canonical" href="${url}"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}">`})});
+ assert.equal(completed.metadatenAuszug.prepared,1);assert.equal(completed.documents[0].summary,description);assert.equal(plan.persists[0].summary,undefined);
+ console.log('PASS: echte Normalisierung -> echte Minimierung -> globale Dedup -> originale Google Eingabebindung -> validierter neuer Auszug.');
+ console.log('PASS: echter Bestandsreader200NichtArray wird im OptIn als UNKNOWN abgelehnt;0Artikelrequests; Altvertrag unveraendert.');
+
+}
+
 main().catch(e => { console.error(e); process.exitCode = 1; });
