@@ -42,6 +42,9 @@ const KERN = [
 // (client.js-Views, server.js-Routen, api/index.js -> server, lambda -> Warteschlange,
 // sw.js/styles.css/index.html -> UI). ──
 const SAMMEL_DATEI_BEREICHE = [
+  // Verwaltungs-HTML und CSS bedienen sowohl das Admin-Modell als auch die UI.
+  // Vorrang vor den allgemeinen index.html/styles.css-Regeln weiter unten.
+  { muster: [/(^|\/)verwaltung\/(?:index\.html|styles\.css)$/i], bereiche: ["admin", "ui"] },
   // client.js: die echten App-Ansichten (renderView-Dispatch: renderRadarView, renderLageView,
   // renderHelmutView/renderBriefingView, renderAdminView, renderProfileSettingsView,
   // renderOnboarding/Mandatswahl, renderLogin/renderPilotAccess).
