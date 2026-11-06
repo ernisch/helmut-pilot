@@ -6925,11 +6925,7 @@ function hstandCurrentQuiet(state) {
 function renderHstandQuietOverview(state) {
   if (!hstandCurrentQuiet(state)) return "";
   const data = lageData();
-  if (!data || data.available !== true || data.demo || data.pendingNarrative) return "";
-  const generated = new Date(data.generatedAt || "");
-  if (!Number.isFinite(generated.getTime())) return "";
-  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(generated);
-  if (day !== state.frischeVertrag.berlinTag) return "";
+  if (!data || data.available !== true || data.demo) return "";
   const vorgaenge = new Map(lageVisibleVorgaenge(data).map(v => [String(v.vorgangId || v.id), v]));
   const sourceHref = source => {
     try {
@@ -6938,6 +6934,40 @@ function renderHstandQuietOverview(state) {
         && !isGoogleArticleProxy(url.href) && !isLikelyPublisherHomepage(url.href) ? url.href : "";
     } catch { return ""; }
   };
+  // Ein abgelaufenes Quelldatum kann den gesamten Narrativ-Cache entwerten.
+  // Der cacheOnly-Leser liefert dann weiterhin frisch geladene Lage-Karten.
+  // Deren vorhandene Zusammenfassungen bleiben lesbar, ohne den alten Text
+  // erneut freizugeben, eine Tagespriorität zu erfinden oder KI zu starten.
+  if (data.pendingNarrative === true) {
+    if (!Array.isArray(data.paragraphs) || data.paragraphs.length) return "";
+    const placeholders = new Set(["Artikelauszug fehlt; nur Quellentitel verfügbar.",
+      "Keine nutzbaren Quellentexte für eine Zusammenfassung."]);
+    const items = [...vorgaenge].map(([id, v]) => {
+      const text = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
+      const title = lageField(v.displayTitle) || lageDisplayHeadline(v.title);
+      const sources = (Array.isArray(v.sources) ? v.sources : []).filter(sourceHref);
+      if (!id || !title || !text || !sources.length
+        || lageField(v.displayCategory) === "Quellenhinweis" || placeholders.has(text)) return "";
+      const links = sources.map(s => `<a href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.host || "Quelle")} · ${escapeHtml(hstandWhen(s.publishedAt) || "Quelldatum nicht belegt")}</a>`).join("");
+      return `<article class="hstand-overview-item" data-briefing-existing-item>
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(text)}</p>
+        <div class="hstand-overview-sources" aria-label="Quellen und Veröffentlichungsdaten">${links}</div>
+        <button class="secondary-button compact-button" type="button" data-lage-verweis data-vorgang="${escapeAttribute(id)}">Einordnung in der Lage öffnen</button>
+      </article>`;
+    }).filter(Boolean).slice(0, 4);
+    if (!items.length) return "";
+    return `<section class="hstand-card hstand-overview" data-briefing-overview aria-labelledby="hstand-overview-title">
+      <h2 id="hstand-overview-title">Dein Tagesüberblick</h2>
+      <p class="hstand-overview-meta">Vorhandener Sachstand aus der Lage. Die Quellen können älter sein; ihr Veröffentlichungsdatum steht jeweils dabei.</p>
+      ${items.join("")}
+      <button class="secondary-button compact-button" type="button" data-view="briefing">Alle Vorgänge in der Lage öffnen</button>
+    </section>`;
+  }
+  const generated = new Date(data.generatedAt || "");
+  if (!Number.isFinite(generated.getTime())) return "";
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(generated);
+  if (day !== state.frischeVertrag.berlinTag) return "";
   // Narrativquellen verwenden kanonische URLs ohne www, Vorgangskarten die
   // Original-URL. Nur diese Identitätsvarianten normalisieren; unbekannte
   // Weiterleitungen oder andere Artikel bleiben verschieden.

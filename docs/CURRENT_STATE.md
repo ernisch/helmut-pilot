@@ -49,17 +49,27 @@ kein alter Client-Cache als Ursache. Morgenlauf05:15 und Lage05:00 UTC
 haben stattgefunden. Die Auswahl belegt derzeit keine Tagesprioritaet;
 Vorgangsanlagezeit ist kein neues Quellen-Publikationsdatum.
 
-Der vorbereitete UI-Fix zeigt bei aktueller Frischequittung den vorhandenen
-Tagesueberblick auch ohne Prioritaet. Quellen bleiben an sichtbare Vorgangskarten
-gebunden; www-/kanonische URL-Varianten werden abgeglichen, Herausgeber und
-Publikationsdatum stammen aus der Originalquelle. Der Kopf nennt den wirklichen
-Morgenlauf statt der aktuellen HTTP-Lesezeit. Alte Texte, Stoerungen und fehlende
-Belege werden nicht zu einem aktuellen Ueberblick hochgestuft. Lokal97/97
-UI-Vertragspruefungen und129 Chromium-Pruefungen bestanden, einschliesslich
-ruhigem Tag auf Desktop und Mobil. Astra-Review mit den echten gelesenen Daten
-bestaetigt beide sichtbaren Absaetze. Keine neue Generierung, Kosten-, Profil-
-oder Zeitplanaenderung. Pflichtchecks und
-Production-Nachkontrolle fuer diesen Anzeigefix stehen noch aus.
+PR1063 ist nach Pflicht-CI42181867677 auf `13c4c1e5` produktiv
+(`dpl_6PcDh9jZHJt2CmBYhMRJErQaBXYp`, READY). Client und CSS bytegleich.
+Der Fix zeigt vorhandenen, quellengebundenen Text ohne erfundene Prioritaet
+und verwendet die gespeicherte Morgenlaufzeit. Die Nachkontrolle08:09 UTC
+zeigte jedoch einen weiteren echten Leerfall: Lage verfuegbar, aber
+`pendingNarrative:true`, null Absaetze und neun statt zehn Karten.
+Der erste Browser-Nachlauf schlug deshalb ehrlich fehl; kein Abschluss-PASS.
+
+Die Wien-Quelle vom23.10.,07:00 UTC liegt seit06.11.,07:00 UTC ausserhalb
+des rollenden14-Tage-Fensters. Eine solche Aenderung der Quellen-/Vorgangsmenge
+entwertet den gesamten Narrativ-Cache. Der Code und die fehlende Karte erklaeren
+diesen Verlauf; ein nativer Vergleich der gespeicherten Cachehashes liegt nicht vor.
+Der ergaenzende UI-Fix zeigt bei diesem ausdruecklichen Cache-Leerfall bis zu
+vier vorhandene Lage-Zusammenfassungen mit Originalquellen, Quelldaten und
+Verweisen. Fuenf reine Titel-Platzhalter bleiben ausgeschlossen. Keine neue
+Generierung, keine gelockerte Cache-/Quellenpruefung, keine HTTP-Lesezeit als
+Erstellungsdatum. Fehler und fehlende aktuelle Frischequittung bleiben gesperrt.
+Astra-Review mit der echten Antwort bestaetigt vier substanzielle Zusammenfassungen.
+Gezielter VM-Test129/129 und echter Antwort-Replay im isolierten Chromium
+21/21 bei1280/390/360 Pixeln bestanden. Pflicht-CI und erneute
+Production-Nachkontrolle folgen.
 [Diagnose und Abnahme](betrieb/cem-einprofilbetrieb-20261105.md#briefing-anzeige-am-06112026).
 
 ## Navigation und Verwaltung live (06.11.2026)

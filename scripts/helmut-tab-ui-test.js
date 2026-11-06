@@ -384,7 +384,7 @@ check("Fremder Vorgang bekommt keinen irrefuehrenden Briefing Verweis", !api.lag
 
 // Quiet does not mean absent: display the cached source-bound narrative when the
 // current daily receipt is verified, without fabricating a priority or new text.
-const { quietIntegrationPayload } = require("./fixtures/ui-integration-contracts");
+const { quietIntegrationPayload,pendingQuietIntegrationPayload } = require("./fixtures/ui-integration-contracts");
 function quietRender(change = () => {}) {
   const b = quietIntegrationPayload().briefing;
   change(b);
@@ -484,6 +484,90 @@ const undated=quietRender(b=>{
 }).html;
 check("Tagesüberblick Quellenbindung: fehlendes Vorgangsquelldatum wird nicht aus Absatzmetadaten erfunden",
   undated.includes("Quelldatum nicht belegt") && !undated.includes("05. Nov. 2026"));
+
+function pendingRender(change = () => {}) {
+  const b=pendingQuietIntegrationPayload().briefing;
+  change(b);
+  api.setBriefing(b);
+  return {b,html:api.render()};
+}
+const pending=pendingRender();
+const existingItems=[0,2,5,7].map(index=>pending.b.lageBriefing.vorgaenge[index]);
+const existingText=v=>v.displaySummary || v.summary.wasIstPassiert;
+check("Cache-Miss: neun vorhandene Karten ergeben vier belegte Sachstände im Tagesüberblick",
+  pending.b.lageBriefing.vorgaenge.length===9 && pending.html.includes("data-briefing-overview")
+  && (pending.html.match(/data-briefing-existing-item/g)||[]).length===4 && !pending.html.includes("data-briefing-paragraph"));
+check("Cache-Miss: vorhandene Zusammenfassungen und Überschriften bleiben vollständig in Serverreihenfolge",
+  existingItems.every(v=>pending.html.includes(api.esc(existingText(v))) && pending.html.includes(api.esc(v.displayTitle)))
+  && existingItems.every((v,index)=>index===0 || pending.html.indexOf(existingText(existingItems[index-1]))<pending.html.indexOf(existingText(v))));
+check("Cache-Miss: beide Platzhalter, Quellenhinweise und leere Zusammenfassungen entfallen",
+  !pending.html.includes("Artikelauszug fehlt;") && !pending.html.includes("Keine nutzbaren Quellentexte")
+  && !pending.html.includes(pending.b.lageBriefing.vorgaenge[4].displaySummary)
+  && !pending.html.includes(`data-vorgang="${pending.b.lageBriefing.vorgaenge[8].id}"`));
+check("Cache-Miss: jeder sichtbare Sachstand trägt seinen Quellenlink, Datum und Lageverweis",
+  existingItems.every(v=>pending.html.includes(`href="${v.sources[0].url}"`) && pending.html.includes(v.sources[0].name)
+    && pending.html.includes(`data-lage-verweis data-vorgang="${v.id}"`)) && pending.html.includes("05. Nov. 2026"));
+check("Cache-Miss: ehrlicher Hinweis auf vorhandene Lage, keine HTTP-Zeit als Zusammenstellung",
+  pending.html.includes("Vorhandener Sachstand aus der Lage") && !pending.html.includes("Zusammengestellt:")
+  && !pending.html.includes("15:37") && pending.html.includes("06:15"));
+check("Cache-Miss: kein alleiniger Leerzustand und keine erfundene Tagespriorität",
+  pending.html.includes("Aktuell · keine neue Tagespriorität") && !/hstand-state-card|ui-briefing-hero|ui-hero-next|Heute entscheidend/.test(pending.html));
+check("Cache-Miss: alle weiteren Vorgänge bleiben über die Lage erreichbar",
+  /data-view="briefing"[^>]*>Alle Vorgänge in der Lage öffnen/.test(pending.html));
+const capped=pendingRender(b=>{
+  b.lageBriefing.vorgaenge[8].displaySummary="Fünfter vorhandener Sachstand, der über die Lage erreichbar bleibt.";
+}).html;
+check("Cache-Miss: höchstens vier Sachstände im Überblick, keine still erfundene Rangfolge",
+  (capped.match(/data-briefing-existing-item/g)||[]).length===4 && !capped.includes("Fünfter vorhandener Sachstand"));
+for (const [name,change] of [
+  ["Frischequittung fehlt",b=>{delete b.currentHelmutState.frischeVertrag;}],
+  ["Lauf nicht aktuell",b=>{b.currentHelmutState.frischeVertrag.aktuell=false;}],
+  ["veralteter Zustand",b=>{b.currentHelmutState.staleState=true;}],
+  ["Datenlücke",b=>{b.currentHelmutState.emptyState.kind="gap";}],
+  ["Fehler",b=>{b.currentHelmutState.errorState=true;}],
+  ["Briefing nicht verfügbar",b=>{b.available=false;}],
+  ["Lage nicht verfügbar",b=>{b.lageBriefing.available=false;}],
+  ["Demo-Lage",b=>{b.lageBriefing.demo=true;}],
+  ["Pending-Marker fehlt",b=>{delete b.lageBriefing.pendingNarrative;}],
+  ["Pending-Marker falsch",b=>{b.lageBriefing.pendingNarrative=false;}],
+  ["Pending mit alten Absätzen",b=>{b.lageBriefing.paragraphs=quiet.b.lageBriefing.paragraphs;}],
+  ["Pending ohne Absatzarray",b=>{delete b.lageBriefing.paragraphs;}],
+  ["keine Vorgänge",b=>{b.lageBriefing.vorgaenge=[];}],
+  ["nur Platzhalter",b=>{b.lageBriefing.vorgaenge=b.lageBriefing.vorgaenge.filter((v,index)=>![0,2,5,7].includes(index));}]
+]) {
+  const result=pendingRender(change);
+  check(`Cache-Miss Schutz: ${name} zeigt keinen frischen Sachstandsüberblick`,
+    !result.html.includes("data-briefing-overview") && !result.html.includes(existingText(existingItems[0])));
+}
+for (const url of [null,"javascript:alert(1)","data:text/html,unsafe","http://example.test/beleg","https://example.test/",
+  "https://user:pass@example.test/beleg","https://www.google.com/url?q=https://example.test/beleg"]) {
+  const result=pendingRender(b=>{
+    b.lageBriefing.vorgaenge=[b.lageBriefing.vorgaenge[0]];
+    b.lageBriefing.vorgaenge[0].sources=url===null ? [] : [{url,name:"Ungültige Quelle"}];
+  });
+  check(`Cache-Miss Quellenpflicht: ${url===null ? "ohne Quelle" : url} wird nicht als Sachstand angezeigt`,
+    !result.html.includes("data-briefing-overview"));
+}
+const safeMixed=pendingRender(b=>{
+  b.lageBriefing.vorgaenge[0].sources.push({name:"Unsichere Zusatzquelle",url:"javascript:alert(1)"});
+}).html;
+check("Cache-Miss Quellenpflicht: sichere Quelle bleibt nutzbar, unsichere Zusatzquelle entfällt",
+  safeMixed.includes(existingText(existingItems[0])) && !safeMixed.includes("javascript:") && !safeMixed.includes("Unsichere Zusatzquelle"));
+const pendingEscaped=pendingRender(b=>{
+  const v=b.lageBriefing.vorgaenge[0];
+  v.displayTitle='<img src=x onerror="alert(1)">';
+  v.displaySummary='<script>alert("Sachstand")</script> & vorhandener Text';
+  v.sources[0].name='<svg onload="alert(1)">';
+}).html;
+check("Cache-Miss Sicherheit: Titel, Zusammenfassung und Quellenname werden als Text escaped",
+  pendingEscaped.includes("&lt;img") && pendingEscaped.includes("&lt;script&gt;") && pendingEscaped.includes("&lt;svg")
+  && !pendingEscaped.includes("<img src=x") && !pendingEscaped.includes('<script>alert("Sachstand")'));
+const pendingUndated=pendingRender(b=>{
+  b.lageBriefing.vorgaenge=[b.lageBriefing.vorgaenge[0]];
+  b.lageBriefing.vorgaenge[0].sources[0].publishedAt="";
+}).html;
+check("Cache-Miss Quellenpflicht: fehlendes Quelldatum wird ehrlich benannt",
+  pendingUndated.includes("Quelldatum nicht belegt") && !pendingUndated.includes("05. Nov. 2026"));
 
 console.log(`\n${passed}/${passed + failed} Helmut-Tab-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
