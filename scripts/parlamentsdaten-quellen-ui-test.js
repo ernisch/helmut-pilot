@@ -84,7 +84,7 @@ function loadClient() {
   code = code.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "");
   code += `\n;globalThis.__sourceUi = { renderSourceNotice, withSourceNotice, lageSourceRow, vsheetSourceRow,
     sourceLink, renderSourceBasis, renderOfficeDraftSources, renderTopicSourceLinks,
-    renderRadarMentionCard, renderRadarEnvRow, renderRadarDynamicCard, renderRadarArticleRow, renderHstandPrimary };`;
+    renderRadarMentionCard, renderRadarEnvRow, renderRadarDynamicCard, renderRadarArticleRow, renderHstandPrimary, renderEreignisRollen };`;
   vm.runInNewContext(code, context, { filename: "client.js" });
   return context.__sourceUi;
 }
@@ -112,7 +112,8 @@ const renderers = {
   Büro: s => api.renderOfficeDraftSources([s]), Themen: s => api.renderTopicSourceLinks({ sources: [s, other] }),
   RadarErwähnung: s => api.renderRadarMentionCard({ ...s, sourceUrl: s.url }), RadarUmfeld: s => api.renderRadarEnvRow({ ...s, sourceUrl: s.url }),
   RadarDynamik: s => api.renderRadarDynamicCard({ ...s, sourceUrl: s.url }), RadarArtikel: s => api.renderRadarArticleRow({ ...s, sourceUrl: s.url }),
-  Helmut: s => api.renderHstandPrimary({ primaryItem: { ...s, sourceUrl: s.url } })
+  Helmut: s => api.renderHstandPrimary({ primaryItem: { ...s, sourceUrl: s.url } }),
+  Ereignisrollen: s => api.renderEreignisRollen({ ereignisKontexte: [{ title: "Synthetischer Ereigniskontext", summary: "", sources: [s] }] })
 };
 
 test("Alle vorhandenen Quellenansichten zeigen DIP-Ursprung, Aufbereitung, kostenlosen Link und Änderung", () => {
