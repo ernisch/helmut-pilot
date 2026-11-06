@@ -5,16 +5,17 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
-## Verwaltungszahlen: Vorschau liest Altbestand (06.11.2026)
+## Verwaltungszahlen: Korrektur ausgerollt (06.11.2026)
 
 Rein lesend bestaetigt:501 relationale Mandatsprofile, davon nur `cem-ince`
-aktiv;500 synthetische Testprofile inaktiv. Production `00ecd5fe` nutzt
-den exklusiven relationalen Leser. Die Vorschau von PR1065 (`91903c00`)
+aktiv;500 synthetische Testprofile inaktiv. Production nutzt
+den exklusiven relationalen Leser. Die alte Vorschau von PR1065 (`91903c00`)
 erreicht dieselbe Datenbank, hat aber die nur fuer Production gesetzten
 Profilflags nicht. Sie liest deshalb25 alte Profilkopien aus `helmut_store/main`
 und zeigt25/25; diese Zahlen beschreiben nicht den aktuellen Betrieb.
 
-Korrektur auf `fix/admin-profile-counts-20261106` vorbereitet: Die Verwaltung
+Nach ausdruecklichem Betreiber-GO ist [PR1067](https://github.com/ernisch/helmut-pilot/pull/1067)
+auf `6663c7a2` gemergt und auf Production ausgerollt. Die Verwaltung
 nutzt die vorhandene Konfigurationsdiagnose und zeigt bei unbestaetigter
 Profilquelle einen Hinweis statt alter Zahlen, leerer Profilbestandsbehauptung
 oder einer daraus abgeleiteten Tagesbilanz. Bestaetigter Bestand wird unveraendert
@@ -23,7 +24,15 @@ Gezielte Storage/HTTP/Anzeige-Regression einschliesslich Originalbrowser10/10,
 Verwaltungsnavigation8/8 und isolierte Verwaltungs-/Browserpruefungen30/30
 bestanden; unabhaengiges Review ohne verbleibenden Befund. Auf `main`13c4c1e5
 einschliesslich des inzwischen gemergten Design-PR1065 integriert und geprueft.
-Merge und produktive Nachkontrolle stehen aus; keine neue Productionfreigabe.
+Beide Pflichtchecks auf PR-Kopf `5ef616a0` gruen
+([CI42186106722](https://github.com/ernisch/helmut-pilot/actions/runs/42186106722)).
+Vercel-Deployment `dpl_BgRfSUKMaW2X1KZNNS8qqTWgd8MU` READY, regulaerer Alias
+`helmut-pilot.vercel.app`. Lesende Nachkontrolle06.11.,12:11 Istanbul:
+Runtime bestaetigt Mergecommit `6663c7a2`, Production und exklusiven relationalen
+Profilzugriff; Release/Storage bereit. Datenbank exakt501 Mandate,1 aktiv
+(`cem-ince`),500 inaktiv. Verwaltung ohne Sitzung HTTP401. Kein authentifizierter
+Production-Klicktest; die Originalanzeige501/1 wurde lokal im Browser geprueft.
+Auftrag abgeschlossen; keine weitere Profil- oder Konfigurationsaenderung noetig.
 
 ## Aktueller Auftrag: taegliche Versorgung nur fuer Cem Ince
 
