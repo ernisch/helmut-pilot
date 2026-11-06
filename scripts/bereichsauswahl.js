@@ -106,7 +106,7 @@ const BEREICHE = {
       /^quellentitel/i, /^incident-crawl/i, /^globalabruf/i,
       /^globalphase/i, /^shadow-/i, /^vorgang/i, /^seed-drift/i, /^seed-restore/i,
       /^abdeckungspruefung/i, /^betriebsabdeckung/i, /^cron-abdeckung/i, /^fach-parteiquellen/i, /^landesmodule-deutschland/i,
-      /^sachsen-medienservice/i,
+      /^sachsen-medienservice/i, /^parlamentsdaten-quellen/i,
       /^neutrale-quellenzuordnung-plan/i]
   },
   verstehen: {

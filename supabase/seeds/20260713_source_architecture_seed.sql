@@ -216,6 +216,8 @@ insert into public.publishers (id, name, canonical_domain, publisher_type, evide
   ('publisher-hessen.de', 'Hessische Landesregierung — Pressemitteilungen Landesregierung', 'hessen.de', 'government', 'official_primary', 'unbekannt', 'active', null),
   ('publisher-schleswig-holstein.de', 'Landesregierung Schleswig-Holstein — Pressemitteilungen Landesregierung', 'schleswig-holstein.de', 'government', 'official_primary', 'unbekannt', 'active', null),
   ('publisher-medienservice.sachsen.de', 'Medienservice Sachsen — Medieninformationen der Pressestellen', 'medienservice.sachsen.de', 'government', 'official_primary', 'unbekannt', 'active', null),
+  ('publisher-eur-lex.europa.eu', 'Amt für Veröffentlichungen der Europäischen Union — EUR-Lex', 'eur-lex.europa.eu', 'authority', 'official_primary', 'hoch', 'active', null),
+  ('publisher-bundespuls.de', 'Bundespuls (DIP-Aggregator)', 'bundespuls.de', 'aggregator', 'aggregator', 'unbekannt', 'active', null),
   ('publisher-dip.bundestag.de', 'Deutscher Bundestag', 'dip.bundestag.de', 'parliament', 'official_primary', 'hoch', 'active', 'parliament-bundestag')
 on conflict (id) do update set name = excluded.name, evidence_role = excluded.evidence_role, trust = excluded.trust, entity_id = excluded.entity_id;
 
@@ -512,6 +514,8 @@ insert into public.retrieval_paths (id, publisher_id, legacy_source_id, name, me
   ('rp-he-regierung-landesregierung-presse', 'publisher-hessen.de', 'he-regierung-landesregierung-presse', 'Hessische Landesregierung — Pressemitteilungen Landesregierung', 'rss', 'https://hessen.de/Presse-Feed/all', null, 'rss-regex', 65, 'paused', 'manual', false, 20, null),
   ('rp-sh-regierung-regierung-presse', 'publisher-schleswig-holstein.de', 'sh-regierung-regierung-presse', 'Landesregierung Schleswig-Holstein — Pressemitteilungen Landesregierung', 'rss', 'https://www.schleswig-holstein.de/DE/landesportal/service/RSS/RSS_PI_alle/RSSNewsfeed_PI_alle.xml', null, 'rss-regex', 65, 'paused', 'manual', false, 20, null),
   ('rp-sn-regierung-medienservice', 'publisher-medienservice.sachsen.de', 'sn-regierung-medienservice', 'Medienservice Sachsen — Medieninformationen der Pressestellen', 'structured_download', 'https://www.medienservice.sachsen.de/medien/news/search.json?search%5Bfilter%5D%5B%5D=press_releases', null, 'sachsen-medienservice-json-v1', 65, 'paused', 'manual', false, 12, null),
+  ('rp-eurlex-amtsblatt-l-rss', 'publisher-eur-lex.europa.eu', 'eurlex-amtsblatt-l-rss', 'EUR-Lex — Amtsblatt L (Rechtsakte)', 'rss', 'https://eur-lex.europa.eu/DE/display-feed.rss?rssId=222', null, 'rss-regex', 80, 'paused', 'manual', false, null, null),
+  ('rp-bundespuls-vorgaenge-rss', 'publisher-bundespuls.de', 'bundespuls-vorgaenge-rss', 'Bundespuls — parlamentarische Vorgänge (DIP-Aufbereitung)', 'rss', 'https://bundespuls.de/feed/vorgang', null, 'rss-regex', 60, 'paused', 'manual', false, null, null),
   ('rp-dip', 'publisher-dip.bundestag.de', 'dip', 'DIP — Dokumentations- und Informationssystem (Bundestag)', 'api', 'https://search.dip.bundestag.de/api/v1', null, 'dip-json', 96, 'healthy', 'always_on', true, null, null)
 on conflict (id) do update set publisher_id = excluded.publisher_id, method = excluded.method, status = excluded.status, priority = excluded.priority;
 
@@ -787,6 +791,8 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-hessen-basis', 'rp-he-regierung-landesregierung-presse'),
   ('pkg-schleswig-holstein-basis', 'rp-sh-regierung-regierung-presse'),
   ('pkg-sachsen-basis', 'rp-sn-regierung-medienservice'),
+  ('pkg-fach-europaeische-union', 'rp-eurlex-amtsblatt-l-rss'),
+  ('pkg-bund-basis', 'rp-bundespuls-vorgaenge-rss'),
   ('pkg-bund-basis', 'rp-dip')
 on conflict (package_id, retrieval_path_id) do nothing;
 

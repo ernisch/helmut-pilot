@@ -1,6 +1,6 @@
 # Neutrale Quellenversorgung und laufende Prüfung
 
-Stand: 06.11.2026. Code und freigegebene Katalogergänzungen sind live übernommen; neue Quellenzugänge bleiben pausiert.
+Stand: 06.11.2026. PR1079 und dessen freigegebene Katalogergänzungen sind live übernommen; neue Quellenzugänge bleiben pausiert. Spätere Ergänzung: [DIP, EUR-Lex und Bundespuls](48-dip-eurlex-bundespuls.md).
 
 ## Gleiche Anforderungen
 

@@ -178,7 +178,7 @@ console.log("== Migration: Bundesbasis nicht verloren (Bestandsschutz) ==");
 const legacyIds = new Set(M.retrievalPaths.map((p) => p.legacy_source_id));
 check("gesunde Bundesquellen erhalten (DLF/Tagesschau/BMAS)", ["deutschlandfunk-politik", "tagesschau-politik", "bmas"].every((id) => legacyIds.has(id)));
 const bundBasis = M.packagePaths.filter((pp) => pp.package_id === "pkg-bund-basis").length;
-check("Bund-Basis-Paket traegt 54 neutrale + DIP + Fachausschuss = 56 Abrufwege", bundBasis === 56);
+check("Bund-Basis-Paket traegt 54 Bestandswege + DIP + Fachausschuss + vorbereiteten Bundespuls = 57 Abrufwege", bundBasis === 57);
 check("Bestehende Sozialquellen bleiben erhalten", M.packagePaths.filter((pp) => pp.package_id === "pkg-arbeit-und-soziales").length >= 84);
 // 11 = 7 benannte Pflichtwege (vorbereitet, status 'paused') + 4 ergaenzende Themensuchen.
 check("Regional Niedersachsen = 11 Abrufwege (7 benannt/vorbereitet + 4 Themensuchen)", M.packagePaths.filter((pp) => pp.package_id === "pkg-regional-niedersachsen").length === 11);

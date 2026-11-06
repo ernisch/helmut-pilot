@@ -1,0 +1,114 @@
+{
+  "verifiedAt": "2026-11-06T13:45:19.847Z",
+  "projectId": "ddckuvvpcytqbyfmbvie",
+  "status": "PASS",
+  "planHash": "cca1dcc0ce08eac369d414f5f9f2af338af87a6c525d551a477fea52195bb9b1",
+  "approvedApplySHA256": "272d1f313b00e3092a2224cd02a6a244d6e9e57396ebfc516ffe58c83c320266",
+  "beforeCapturedAt": "2026-11-06T13:43:20.451356+00:00",
+  "afterCapturedAt": "2026-11-06T13:44:31.385804+00:00",
+  "beforeDataHash": "8081b34d802385c99c7875a575a6a572deaf74291adb57b79cd411d6bf40b098",
+  "afterDataHash": "1e88e4ce9baea33f41af425db6ee074684290595f0c56fee3ba1f67245043cc9",
+  "applyReceiptRows": 6,
+  "allTenTablesExactlyMatchBeforePlusReceipt": true,
+  "existingRowsUpdated": 0,
+  "existingRowsRemoved": 0,
+  "counts": {
+    "publishers": 98,
+    "geographies": 50,
+    "package_paths": 293,
+    "retrieval_paths": 254,
+    "source_packages": 55,
+    "political_entities": 75,
+    "path_expected_levels": 19,
+    "path_expected_topics": 0,
+    "path_expected_entities": 0,
+    "path_expected_geographies": 20
+  },
+  "diff": {
+    "geographies": {
+      "added": 0,
+      "removed": 0,
+      "updated": 0
+    },
+    "political_entities": {
+      "added": 0,
+      "removed": 0,
+      "updated": 0
+    },
+    "publishers": {
+      "added": 2,
+      "removed": 0,
+      "updated": 0
+    },
+    "source_packages": {
+      "added": 0,
+      "removed": 0,
+      "updated": 0
+    },
+    "retrieval_paths": {
+      "added": 2,
+      "removed": 0,
+      "updated": 0
+    },
+    "package_paths": {
+      "added": 2,
+      "removed": 0,
+      "updated": 0
+    },
+    "path_expected_levels": {
+      "added": 0,
+      "removed": 0,
+      "updated": 0
+    },
+    "path_expected_geographies": {
+      "added": 0,
+      "removed": 0,
+      "updated": 0
+    },
+    "path_expected_topics": {
+      "added": 0,
+      "removed": 0,
+      "updated": 0
+    },
+    "path_expected_entities": {
+      "added": 0,
+      "removed": 0,
+      "updated": 0
+    }
+  },
+  "newSources": [
+    {
+      "id": "rp-bundespuls-vorgaenge-rss",
+      "url": "https://bundespuls.de/feed/vorgang",
+      "status": "paused",
+      "activation_mode": "manual"
+    },
+    {
+      "id": "rp-eurlex-amtsblatt-l-rss",
+      "url": "https://eur-lex.europa.eu/DE/display-feed.rss?rssId=222",
+      "status": "paused",
+      "activation_mode": "manual"
+    }
+  ],
+  "dip": {
+    "unchanged": true,
+    "sourceCount": 1,
+    "status": "healthy",
+    "activation_mode": "always_on"
+  },
+  "allExistingHealthValuesUnchanged": true,
+  "sourceActivationPerformed": false,
+  "statusUpdatePerformed": false,
+  "modelCallsPerformed": false,
+  "budgetOrCronChanged": false,
+  "rollbackExecuted": false,
+  "receiptSaved": true,
+  "rollbackFile": "rollback-bound.sql",
+  "files": {
+    "baseline-before.json": "d96daeb28d1d14e6b430cf097dd307001880ee2c8ce1754c3d115e8c514373f6",
+    "schema-before.json": "0dd9dce37ad43eeb691fe3374f7224bbfa230a4d9fbad3315483fe3e8ace8ada",
+    "baseline-after.json": "a533fcf90e9afba60f639e9770aa9e78bf4d7bf05c55ac9e85a6cd6cf7547af6",
+    "apply-receipt.json": "4067c79ba3de298161b69060dd2bf9cc3f193e291690fee2113d001246c8263a",
+    "rollback-bound.sql": "078145b99a79b6a6706329f1a96defb7632dfc9f2ad0f57ed805acee999058b3"
+  }
+}
