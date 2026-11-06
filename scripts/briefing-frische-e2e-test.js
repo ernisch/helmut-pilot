@@ -275,7 +275,9 @@ check("2k Kompakte Antwort traegt denselben Vertrag",
     frischeKontext: kontext({ fenster: ruheFenster, lauf: { ...erfolgsLauf, fensterStart: ruheFenster.start } })
   }));
   const htmlRuhe = api.render();
-  check("4l Ruhelage wird ehrlich benannt", htmlRuhe.includes("keine neue Meldung"));
+  check("4l Ruhelage benennt die fehlende Tagespriorität ohne Meldungen auszublenden",
+    htmlRuhe.includes("Keine neue Tagespriorität belegt.")
+    && !htmlRuhe.includes("Ältere Vorgänge stehen als weiterhin relevant oder Hintergrund darunter."));
   check("4m Ruhelage zeigt keine 'neu'-Gruppe", !htmlRuhe.includes('data-frische-klasse="neu"'));
 
   // ===========================================================================

@@ -315,3 +315,14 @@ Nicht-Widerrufsgrund korrigiert; der Mandatsentzugsfall bleibt getrennt getestet
 Pflichtchecks, echter Datenreplay im Browser und Deployment folgen.
 Rueckweg ist der Revert dieses UI-PRs; Budgetvertrag, Profile und Zeitplaene
 bleiben davon unberuehrt.
+
+
+Zwischenpruefung: Die parallel gemergten UI-Aufraeumarbeiten bis main5cabeffa
+wurden konfliktfrei aufgenommen. Auf e1a88e33 erneut97/97 UI- und129/129
+Chromium-Assertions erfolgreich. CI42178017342 bestand Standard-, native
+Datenbank- und Browserpruefungen;331/332 Bereichssuiten bestanden. Einziger
+Fehler: `briefing-frische-e2e-test.js` erwartete noch „keine neue Meldung“.
+Die beabsichtigte Anzeige unterscheidet jetzt fehlende Tagesprioritaet von
+vorhandenen Meldungen. Nur diese Text-Erwartung wurde auf den neuen Wortlaut
+und das Weglassen des falschen Darunter-Hinweises aktualisiert. Gezielt68/68
+Assertions und unabhaengiger Astra-Review bestanden; Produktcode unveraendert.
