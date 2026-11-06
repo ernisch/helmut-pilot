@@ -326,20 +326,17 @@ lokal), `admin-nutzer-loeschen-test.js` (Farbannahme `#ff5967`).
 
 ## Genau ein naechster Schritt
 
-**App-Startoptimierung live (06.11.2026):** PR1078 nach Betreiber-GO und
-gruenen Pflichtchecks auf`647f0420` gemergt. Vercel READY, Client/CSS/fuenf
-WOFF2-Dateien auf der Hauptdomain bytegleich. Labor kalt3,319→2,751s,
-warm1,157→0,721s; keine echten Android-Geraetezeiten. Geschuetzter Live-
-Startabruf braucht dagegen12,323/8,997/9,557s: der Server bleibt Hauptbremse.
-181/181 Standard- und336/336 Bereichssuiten plus Browsercheck gruen.
-[Messung, Rollout und Grenzen](betrieb/app-start-performance-20261106.md).
-Server-Folgefix [PR1081](https://github.com/ernisch/helmut-pilot/pull/1081)
-nach GO und gruener Pflicht-CI42216854223 live auf`c4425d7a`; Vercel
-`dpl_6mL7X1bobnCQ1wQ24CpdxBKiC2aJ` READY. Quellen gebuendelt, Startleser
-und maximal4 Lagegruppen parallel. Geschuetzte Live-GETs6,513/4,143/4,245s,
-alle HTTP200 und zehn Lagekarten; Median9,557→4,245s. Kein Androidwert.
-Lage bleibt laengste Phase3,6–5,4s. Rollout/Nachmessung abgeschlossen.
-Naechster Schritt: wahrgenommene Startzeit auf Android pruefen.
+**App-Start (06.11.2026):** PR1078 und PR1081 nach GO/Pflicht-CI live.
+Letzter belegter Runtime-Stand c4425d7a, Vercel dpl_6mL7X1bobnCQ1wQ24CpdxBKiC2aJ
+READY. Geschuetzte Start-GETs6,513/4,143/4,245s; Median zuvor9,557s.
+Kein Androidwert. [Messung und Grenzen](betrieb/app-start-performance-20261106.md).
+Betreiber sieht weiter5–6s und verlangt fertiges Briefing vor Ende des Logos.
+Vorbereitete Ladeoberflaeche PR1083 verworfen/geschlossen, nie ausgerollt.
+Neuer Folgefix auf ec70fe31: Sessionverlaengerung/Profilauswahl parallel,
+Lage-Quellenpfade mit maximal8 Reads parallel. Kein UI-/Startcache-Umbau;
+Briefing wartet weiterhin auf alle benoetigten Inhalte, inklusive Lagezusammenfassungen.
+Lesende lokale Servermessung Median5,406→4,396s; kein Android-/Rolloutnachweis.
+Naechster Schritt: neuen Folgefix gezielt abnehmen und als PR zur Freigabe vorlegen.
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
 Historische alte Anweisungen, darunter

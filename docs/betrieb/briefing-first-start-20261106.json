@@ -1,0 +1,633 @@
+{
+  "scope": "Lokale Serverfunktionen gegen echte Datenbank, ausschliesslich GET; keine Kontositzung und kein Android-Appstart",
+  "baselineCommit": "ec70fe310a8615a42bfb0cdea460471fe19bb51b",
+  "candidateFilesSha256": {
+    "server.js": "de0fee4ae7ad518f0b5a31b5404921ae3fc375f132b1033448e355fe5979d3d8",
+    "lib/helmut/storage.js": "0e9e98896041fc064474aa665e6554436a52d79d47ed2231e980f56aba2537e8"
+  },
+  "before": {
+    "observedAt": "2026-11-06T13:28:52.376Z",
+    "kind": "local server functions, live read-only database, no account session or Android timing",
+    "rounds": [
+      {
+        "totalMs": 6995,
+        "phases": {
+          "profile": 753,
+          "freshness": 625,
+          "latest": 792,
+          "notes": 2132,
+          "tasks": 2733,
+          "briefingBuild": 2413,
+          "lage": 6202
+        },
+        "readCount": 59,
+        "readBytes": 14989392,
+        "tables": {
+          "profiles": {
+            "count": 1,
+            "ms": [
+              748
+            ]
+          },
+          "briefings": {
+            "count": 2,
+            "ms": [
+              529,
+              168
+            ]
+          },
+          "knowledge_objects": {
+            "count": 9,
+            "ms": [
+              588,
+              792,
+              1504,
+              1133,
+              269,
+              291,
+              645,
+              801,
+              209
+            ]
+          },
+          "helmut_store": {
+            "count": 4,
+            "ms": [
+              1365,
+              1450,
+              595,
+              1217
+            ]
+          },
+          "matching_results": {
+            "count": 1,
+            "ms": [
+              395
+            ]
+          },
+          "ko_document_links": {
+            "count": 42,
+            "ms": [
+              309,
+              387,
+              414,
+              452,
+              250,
+              301,
+              311,
+              336,
+              264,
+              262,
+              303,
+              326,
+              298,
+              263,
+              246,
+              274,
+              236,
+              271,
+              262,
+              251,
+              213,
+              243,
+              246,
+              263,
+              308,
+              367,
+              369,
+              403,
+              199,
+              217,
+              229,
+              529,
+              232,
+              287,
+              209,
+              579,
+              626,
+              223,
+              201,
+              185,
+              187,
+              460
+            ]
+          }
+        },
+        "valid": true,
+        "lageCards": 10
+      },
+      {
+        "totalMs": 5300,
+        "phases": {
+          "profile": 188,
+          "tasks": 43,
+          "notes": 37,
+          "latest": 238,
+          "freshness": 264,
+          "briefingBuild": 1594,
+          "lage": 5110
+        },
+        "readCount": 55,
+        "readBytes": 3983656,
+        "tables": {
+          "profiles": {
+            "count": 1,
+            "ms": [
+              188
+            ]
+          },
+          "briefings": {
+            "count": 2,
+            "ms": [
+              248,
+              181
+            ]
+          },
+          "knowledge_objects": {
+            "count": 9,
+            "ms": [
+              238,
+              262,
+              1000,
+              942,
+              228,
+              251,
+              264,
+              373,
+              231
+            ]
+          },
+          "matching_results": {
+            "count": 1,
+            "ms": [
+              181
+            ]
+          },
+          "ko_document_links": {
+            "count": 42,
+            "ms": [
+              295,
+              380,
+              419,
+              259,
+              557,
+              287,
+              272,
+              313,
+              336,
+              283,
+              290,
+              282,
+              353,
+              356,
+              326,
+              254,
+              249,
+              257,
+              271,
+              283,
+              227,
+              244,
+              272,
+              287,
+              345,
+              382,
+              447,
+              453,
+              474,
+              483,
+              512,
+              291,
+              277,
+              290,
+              279,
+              257,
+              225,
+              224,
+              235,
+              227,
+              203,
+              553
+            ]
+          }
+        },
+        "valid": true,
+        "lageCards": 10
+      },
+      {
+        "totalMs": 5406,
+        "phases": {
+          "profile": 165,
+          "freshness": 205,
+          "latest": 307,
+          "notes": 929,
+          "tasks": 965,
+          "briefingBuild": 1624,
+          "lage": 5238
+        },
+        "readCount": 57,
+        "readBytes": 8078780,
+        "tables": {
+          "profiles": {
+            "count": 1,
+            "ms": [
+              165
+            ]
+          },
+          "briefings": {
+            "count": 2,
+            "ms": [
+              202,
+              174
+            ]
+          },
+          "knowledge_objects": {
+            "count": 9,
+            "ms": [
+              204,
+              307,
+              1000,
+              907,
+              222,
+              250,
+              293,
+              453,
+              180
+            ]
+          },
+          "helmut_store": {
+            "count": 2,
+            "ms": [
+              900,
+              946
+            ]
+          },
+          "matching_results": {
+            "count": 1,
+            "ms": [
+              195
+            ]
+          },
+          "ko_document_links": {
+            "count": 42,
+            "ms": [
+              332,
+              365,
+              434,
+              438,
+              276,
+              337,
+              348,
+              372,
+              249,
+              246,
+              289,
+              385,
+              356,
+              303,
+              273,
+              291,
+              258,
+              250,
+              257,
+              268,
+              280,
+              297,
+              298,
+              299,
+              361,
+              384,
+              389,
+              439,
+              443,
+              449,
+              507,
+              241,
+              228,
+              229,
+              222,
+              230,
+              215,
+              239,
+              197,
+              254,
+              500,
+              485
+            ]
+          }
+        },
+        "valid": true,
+        "lageCards": 10
+      }
+    ]
+  },
+  "after": {
+    "observedAt": "2026-11-06T13:29:33.929Z",
+    "kind": "local server functions, live read-only database, no account session or Android timing",
+    "rounds": [
+      {
+        "totalMs": 4613,
+        "phases": {
+          "profile": 238,
+          "freshness": 275,
+          "latest": 356,
+          "briefingBuild": 2094,
+          "notes": 2661,
+          "tasks": 2730,
+          "lage": 4355
+        },
+        "readCount": 59,
+        "readBytes": 14989392,
+        "tables": {
+          "profiles": {
+            "count": 1,
+            "ms": [
+              236
+            ]
+          },
+          "briefings": {
+            "count": 2,
+            "ms": [
+              199,
+              175
+            ]
+          },
+          "knowledge_objects": {
+            "count": 9,
+            "ms": [
+              258,
+              356,
+              1090,
+              909,
+              259,
+              284,
+              403,
+              420,
+              417
+            ]
+          },
+          "helmut_store": {
+            "count": 4,
+            "ms": [
+              970,
+              1052,
+              1538,
+              1610
+            ]
+          },
+          "matching_results": {
+            "count": 1,
+            "ms": [
+              281
+            ]
+          },
+          "ko_document_links": {
+            "count": 42,
+            "ms": [
+              315,
+              371,
+              563,
+              565,
+              598,
+              686,
+              732,
+              881,
+              574,
+              601,
+              419,
+              484,
+              463,
+              465,
+              409,
+              735,
+              294,
+              319,
+              382,
+              411,
+              241,
+              250,
+              259,
+              272,
+              302,
+              311,
+              311,
+              325,
+              326,
+              408,
+              415,
+              200,
+              231,
+              253,
+              253,
+              326,
+              274,
+              258,
+              260,
+              320,
+              208,
+              226
+            ]
+          }
+        },
+        "valid": true,
+        "lageCards": 10
+      },
+      {
+        "totalMs": 4396,
+        "phases": {
+          "profile": 183,
+          "tasks": 38,
+          "notes": 33,
+          "latest": 254,
+          "freshness": 270,
+          "briefingBuild": 2077,
+          "lage": 4211
+        },
+        "readCount": 55,
+        "readBytes": 3983656,
+        "tables": {
+          "profiles": {
+            "count": 1,
+            "ms": [
+              182
+            ]
+          },
+          "knowledge_objects": {
+            "count": 9,
+            "ms": [
+              253,
+              267,
+              923,
+              878,
+              364,
+              269,
+              271,
+              272,
+              654
+            ]
+          },
+          "briefings": {
+            "count": 2,
+            "ms": [
+              267,
+              181
+            ]
+          },
+          "matching_results": {
+            "count": 1,
+            "ms": [
+              207
+            ]
+          },
+          "ko_document_links": {
+            "count": 42,
+            "ms": [
+              353,
+              409,
+              518,
+              575,
+              600,
+              616,
+              741,
+              755,
+              495,
+              457,
+              441,
+              446,
+              489,
+              513,
+              423,
+              463,
+              330,
+              371,
+              383,
+              417,
+              243,
+              253,
+              301,
+              312,
+              337,
+              338,
+              338,
+              340,
+              402,
+              221,
+              233,
+              209,
+              214,
+              227,
+              228,
+              253,
+              605,
+              305,
+              247,
+              685,
+              199,
+              183
+            ]
+          }
+        },
+        "valid": true,
+        "lageCards": 10
+      },
+      {
+        "totalMs": 4120,
+        "phases": {
+          "profile": 181,
+          "tasks": 33,
+          "notes": 28,
+          "freshness": 251,
+          "latest": 249,
+          "briefingBuild": 1967,
+          "lage": 3936
+        },
+        "readCount": 55,
+        "readBytes": 3983656,
+        "tables": {
+          "profiles": {
+            "count": 1,
+            "ms": [
+              181
+            ]
+          },
+          "knowledge_objects": {
+            "count": 9,
+            "ms": [
+              237,
+              249,
+              936,
+              907,
+              363,
+              248,
+              258,
+              260,
+              662
+            ]
+          },
+          "briefings": {
+            "count": 2,
+            "ms": [
+              250,
+              181
+            ]
+          },
+          "matching_results": {
+            "count": 1,
+            "ms": [
+              172
+            ]
+          },
+          "ko_document_links": {
+            "count": 42,
+            "ms": [
+              287,
+              355,
+              406,
+              474,
+              475,
+              593,
+              635,
+              691,
+              471,
+              476,
+              467,
+              520,
+              560,
+              530,
+              528,
+              487,
+              293,
+              297,
+              391,
+              423,
+              231,
+              257,
+              276,
+              297,
+              318,
+              357,
+              362,
+              364,
+              365,
+              408,
+              423,
+              207,
+              207,
+              211,
+              239,
+              225,
+              228,
+              224,
+              267,
+              233,
+              286,
+              230
+            ]
+          }
+        },
+        "valid": true,
+        "lageCards": 10
+      }
+    ]
+  }
+}

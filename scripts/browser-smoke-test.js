@@ -137,13 +137,30 @@ function check(name, cond, detail = "") {
           ? "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
           : undefined
       });
+      // Inhalts-/Startpruefung mit bereits geschlossenem Installationshinweis:
+      // dessen zeitversetztes Safari-Banner kann sonst die mobile Dock verdecken.
+      await context.addInitScript(() => sessionStorage.setItem("helmut:install-dismissed", "1"));
       const page = await context.newPage();
       const pageErrors = [];
       const consoleErrors = [];
       page.on("pageerror", (err) => pageErrors.push(String(err && err.message || err)));
       page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
 
+      // Betreibervertrag: Startlogo bis zum vollstaendigen Briefing behalten.
+      // Echte Startantwort gezielt anhalten statt eine feste Netzwerkzeit raten.
+      let releaseStart;
+      const startGate = new Promise(resolve => { releaseStart = resolve; });
+      await context.route("**/api/app/start?*", async route => {
+        await startGate;
+        await route.continue();
+      });
+      const startRequested = page.waitForRequest(request => new URL(request.url()).pathname === "/api/app/start");
       await page.goto(baseUrl + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await startRequested;
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      check(`${label}: Startlogo bleibt waehrend ausstehender Briefingdaten sichtbar`, await page.locator("#appSplash").isVisible());
+      check(`${label}: keine vorzeitig geoeffnete App mit nachladendem Briefing`, await page.locator("#app [data-view]").count() === 0);
+      releaseStart();
       // Client geladen + Splash weg (der 8s-Watchdog in index.html würde sonst
       // die Neu-laden-Karte zeigen — genau der Fehlerfall, den wir abfangen).
       await page.waitForFunction("window.__helmutClientLoaded === true", null, { timeout: 15000 })
