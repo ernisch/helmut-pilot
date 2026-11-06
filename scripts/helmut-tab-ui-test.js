@@ -215,7 +215,9 @@ check("Mobil-Reihenfolge: Hauptvorgang mit nächstem Schritt, Kontext und Quelle
   idx("Warum ist das wichtig") < idx("Risiko bei Nichtreaktion") &&
   idx("Risiko bei Nichtreaktion") < idx("Empfohlene Kommunikation") &&
   idx("Empfohlene Kommunikation") < idx("Was du jetzt tun solltest") &&
-  idx("Was du jetzt tun solltest") < idx("18 Quellen"));
+  // Design 06.11.2026: „18 Quellen“ steht zusaetzlich in der Hero-Meta-Zeile; die
+  // Quellen-Fusszeile (letztes Vorkommen) muss weiterhin ganz am Ende stehen.
+  idx("Was du jetzt tun solltest") < html.lastIndexOf("18 Quellen"));
 
 // KEINE Kostenwerte im Markup.
 check("Voll: KEINE Kostenwerte/Token im Markup",

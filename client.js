@@ -6355,20 +6355,57 @@ function renderHelmutStandView() {
   if (!state || typeof state !== "object") return renderHstandUnavailable();
   if (state.status === "error" || state.errorState) return renderHstandStateCard(state, "error");
   if (state.status === "empty" || !state.primaryItem) return renderHstandStateCard(state, "empty");
+  // Aufbau nach Claude Design: Hero (Titel, Kurzfassung, naechster Schritt, Meta,
+  // „Ausfuehrlich lesen“) -> „Danach wichtig“ -> drei Spalten -> Quellen.
+  // Alle Inhalte bleiben dieselben, belegten Bausteine; nur Anordnung und Gewichtung.
+  const details = [
+    renderHstandWhy(state),
+    `<div class="ui-briefing-context">${renderHstandRiskChance(state)}</div>`,
+    renderHstandComms(state),
+    renderHstandActions(state),
+    `<div class="ui-source-details ui-briefing-primary"><p class="ui-eyebrow">Einordnung und Quellen zum wichtigsten Vorgang</p>${renderHstandPrimary(state)}</div>`
+  ].join("");
   return `
     <section class="hstand" aria-label="Briefing – aktueller Stabschefstand">
       ${renderHstandHeader(state)}
-      ${renderUiBriefingHero(state)}
-      <div class="ui-briefing-context">${renderHstandWhy(state)}${renderHstandRiskChance(state)}</div>
-      ${renderHstandComms(state)}
-      ${renderHstandActions(state)}
+      ${renderUiBriefingHero(state, details)}
       ${renderHstandItems(state)}
-      <details class="ui-source-details"><summary>Einordnung und Quellen zum wichtigsten Vorgang</summary>${renderHstandPrimary(state)}</details>
+      ${renderUiBriefingColumns(state)}
       ${renderHstandSources(state)}
     </section>`;
 }
 
-function renderUiBriefingHero(state) {
+// Drei ruhige Spalten unter „Danach wichtig“ (Design): Vertiefte Einordnung (Lage),
+// Radar, Fuer dein Buero. Jede Spalte erscheint nur mit echten, vorhandenen Daten.
+function renderUiBriefingColumns(state) {
+  const item = state.primaryItem;
+  const v = lageVorgangZumBriefing(item);
+  const lage = v ? `<section class="ui-col" aria-label="Vertiefte Einordnung">
+      <p class="ui-col-kicker">${uiIcon("briefing")}<span>Vertiefte Einordnung</span></p>
+      <h3>${escapeHtml(lageField(v.displayTitle) || lageDisplayHeadline(v.title) || hstandText(item.displayTitle) || hstandText(item.title))}</h3>
+      ${lageField(v.displaySummary) ? `<p>${escapeHtml(lageField(v.displaySummary))}</p>` : ""}
+      <button type="button" class="ui-col-link" data-view="briefing">Lage öffnen ${uiIcon("arrow")}</button>
+    </section>` : "";
+  const rs = briefing && briefing.currentRadarState;
+  const radarLine = rs && rs.available !== false && rs.summary ? [rs.summary.line1, rs.summary.line2].filter(Boolean).join(" ") : "";
+  const radar = radarLine ? `<section class="ui-col" aria-label="Radar">
+      <p class="ui-col-kicker">${uiIcon("radar")}<span>Radar</span></p>
+      <p>${escapeHtml(radarLine)}</p>
+      <button type="button" class="ui-col-link" data-view="radar">Im Radar öffnen ${uiIcon("arrow")}</button>
+    </section>` : "";
+  const decision = briefingOfficeDecision();
+  const formats = decision ? activeOfficeFormats() : [];
+  const buero = formats.length ? `<section class="ui-col" aria-label="Für dein Büro">
+      <p class="ui-col-kicker">${uiIcon("office")}<span>Für dein Büro</span></p>
+      <h3>${formats.length === 1 ? "1 Vorbereitung" : `${formats.length} Vorbereitungen`}</h3>
+      <ul class="ui-col-list">${formats.slice(0, 3).map((f) => `<li><strong>${escapeHtml(f.label)}</strong><span>${escapeHtml(officeCardStatus(decision, f))}</span></li>`).join("")}</ul>
+      <button type="button" class="ui-col-link" data-view="office">Büro öffnen ${uiIcon("arrow")}</button>
+    </section>` : "";
+  const cols = lage + radar + buero;
+  return cols ? `<div class="ui-briefing-cols">${cols}</div>` : "";
+}
+
+function renderUiBriefingHero(state, details = "") {
   const item = state.primaryItem;
   const title = hstandText(item.displayTitle) || hstandText(item.title);
   const recommendation = hstandText(state.recommendation);
@@ -6376,17 +6413,24 @@ function renderUiBriefingHero(state) {
   const eyebrow = stale ? "Letzter Stand" : state.status === "fresh" ? "Heute entscheidend" : "Aktueller Vorgang";
   const urgency = hstandUrgencyChip(state.urgency || item.urgency);
   const officeAvailable = Boolean(briefingOfficeDecision() && activeOfficeFormats().length);
+  const v = lageVorgangZumBriefing(item);
+  const sub = v ? lageField(v.displaySummary) : "";
+  const count = Number(item.sourceCount) || 0;
+  const when = hstandText(item.zeitLabel) || hstandWhen(item.lastUpdated);
+  const chips = `${urgency}${hstandContextChips(item.contextChips, 2)}`;
   return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang">
     <div class="ui-hero-main"><span class="ui-eyebrow"><span class="ui-priority-dot" aria-hidden="true"></span>${eyebrow}</span>
       <h2>${escapeHtml(title)}</h2>
-      <div class="hstand-chiprow">${urgency}${hstandContextChips(item.contextChips, 2)}</div>
+      ${sub ? `<p class="ui-hero-sub">${escapeHtml(sub)}</p>` : ""}
+      ${chips.trim() ? `<div class="hstand-chiprow">${chips}</div>` : ""}
       ${briefingLageVerweis(item)}
     </div>
-    <div class="ui-hero-next"><span class="ui-eyebrow">Dein nächster Schritt</span>
-      ${recommendation ? `<p>${escapeHtml(recommendation)}</p>` : '<p>Prüfe die Einordnung und Quellen zu diesem Vorgang.</p>'}
-      <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span>Im Büro öffnen</span></button>
+    <div class="ui-hero-next">
+      <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Dein nächster Schritt</span><span class="ui-next-step">${escapeHtml(recommendation || "Prüfe die Einordnung und Quellen zu diesem Vorgang.")}</span><span class="ui-next-cta">Im Büro öffnen</span></span></button>
       ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfe den Vorgang und deine Büro-Formate.</p>'}
+      <p class="ui-hero-meta">${count ? `<span>${uiIcon("briefing")}${count === 1 ? "1 Quelle" : `${count} Quellen`}</span>` : ""}${when ? `<span>${HELMUT_ICON_CLOCK}Stand ${escapeHtml(when)}</span>` : ""}</p>
     </div>
+    ${details ? `<details class="ui-hero-details"><summary class="ui-hero-more"><span class="ui-more-closed">Ausführlich lesen</span><span class="ui-more-open">Weniger anzeigen</span>${uiIcon("arrow")}</summary><div class="ui-hero-details-body">${details}</div></details>` : ""}
   </section>`;
 }
 
@@ -6631,8 +6675,8 @@ function renderHstandItems(state) {
   const klassifiziert = items.some((i) => i && i.frischeKlasse);
   if (!klassifiziert) {
     return `
-    <section class="hstand-card hstand-related" aria-label="Weitere relevante Vorgänge">
-      ${hstandKicker(HELMUT_ICON_EYE, "Weitere relevante Vorgänge", "muted")}
+    <section class="hstand-card hstand-related" aria-label="Danach wichtig">
+      <h2 class="ui-section-rule">Danach wichtig</h2>
       <ul class="hstand-rels">${items.slice(0, 3).map(zeile).join("")}</ul>
     </section>`;
   }

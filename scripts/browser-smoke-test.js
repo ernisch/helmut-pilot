@@ -250,6 +250,9 @@ function check(name, cond, detail = "") {
             && await page.locator(".vsheet-src[href]").first().getAttribute("href") === state.primaryItem.sourceUrl);
         check(`${label}: Lage Detail kopiert keine Empfehlung`, await page.locator(".vsheet-reco").count() === 0);
         await page.getByRole("button", { name: "Empfehlung im Briefing öffnen", exact: true }).click();
+        // Design 06.11.2026: Begruendung, Risiko/Chance und Schritte liegen hinter
+        // „Ausfuehrlich lesen“; fuer die Textpruefung aufklappen (Inhalt unveraendert).
+        await page.evaluate(() => { document.querySelectorAll(".ui-hero-details").forEach((d) => { d.open = true; }); });
         check(`${label}: Rueckverweis schliesst Lage Detail und zeigt Briefing`,
           await page.locator(".vsheet-title").count() === 0 && await page.locator(".ui-briefing-hero").count() === 1);
         check(`${label}: Briefing begründet die Tagespriorität statt den Sachstand zu kopieren`,
@@ -302,11 +305,13 @@ function check(name, cond, detail = "") {
         await page.evaluate(() => {
           briefing.currentHelmutState.whyItMatters = "Zusaetzlicher Entscheidungsgrund nur im Briefing.";
           currentView = "helmut"; render();
+          document.querySelectorAll(".ui-hero-details").forEach((d) => { d.open = true; });
         });
         check(`${label}: Eigenstaendige Entscheidungsbegruendung bleibt im Briefing erhalten`,
           (await page.locator(".hstand-why").innerText()).includes("Zusaetzlicher Entscheidungsgrund"));
         await page.evaluate(() => {
           briefing.lageBriefing.vorgaenge = []; render();
+          document.querySelectorAll(".ui-hero-details").forEach((d) => { d.open = true; });
         });
         check(`${label}: Ohne passenden Lagevorgang kein leerer Querverweis und kein Verlust der Begruendung`,
           await page.locator("[data-lage-verweis]").count() === 0 && await page.locator(".hstand-why").count() === 1);
