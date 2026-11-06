@@ -101,6 +101,36 @@ Gezielter VM-Test129/129 und echter Antwort-Replay im isolierten Chromium
 Production-Nachkontrolle folgen.
 [Diagnose und Abnahme](betrieb/cem-einprofilbetrieb-20261105.md#briefing-anzeige-am-06112026).
 
+## Einheitlicher Helmut: Altpfade und alte Deployment-Adressen (06.11.2026)
+
+Neuer ausdruecklicher Betreiberauftrag: alte Systemteile pruefen und entfernen,
+Helmut einheitlich betreiben; parallel nur Astra/GPT6.1 Sol, kein DeepSeek.
+Sechs getrennte Audits bestaetigen einen normalen App-Einstieg und denselben
+V3-Motor fuer App-Start/Briefing. Kein zweites Cem-V1-System und kein automatischer
+V2-Rueckfall nachgewiesen. Marketingprojekt und historische Daten bleiben erforderlich.
+
+Vorbereitet entfernt:58 unerreichbare Frontendfunktionen (darunter zwei alte
+Briefingrenderer), zwei ungenutzte Blob-Briefing-APIs und ein toter automatischer
+Refreshhelfer. Die alte branchabhaengige Testdatenaktivierung entfaellt; Production
+weist den Testdatenschalter jetzt auch bei gesetztem Flag ab. Aktuelle
+Mandantentrennung, Login, Profil-/Aufgaben-/Themenspeicher und drei Tagesjobs
+bleiben erhalten. Unabhaengiger Astra- und Pipeline-Review ohne Blocker;
+260 gezielte UI-,41 Cross-Tenant- und20 Mandantentrennungs-Assertions bestanden.
+171/171 integrierte Chromium-Assertions bestanden; Pflicht-CI und Deployment
+fuer diesen Rueckbau folgen.
+
+Alte eindeutige Production-URLs waren weiterhin direkt erreichbar, aber ohne
+Verweis aus der aktuellen App. Deshalb Vercel Authentication fuer helmut-pilot
+von `preview` auf `all_except_custom_domains` gestellt: bestehende/künftige
+Deployment-Adressen schuetzen, regulaere Produktionsdomain ausnehmen. Kostenloser
+Standard-Schutz, kein Abo/Deployment/Datenloeschen. Nativ08:37 UTC geprueft:
+Hauptdomain und Release-Status HTTP200; alte und aktuelle eindeutige URLs samt
+Alt-Clientdateien HTTP302 zur Vercel-Anmeldung. Projektfeld erneut bestaetigt.
+Rueckweg ist dasselbe Projektfeld mit `preview`. Historische Builds bleiben
+fuer berechtigte Betreiber/Rueckwege erhalten; keine vollstaendige Loeschung behauptet.
+Die alte lokale Verwaltungsvorschau ist kein produktiver Einstieg und wird wegen
+paralleler Verwaltungsarbeit inPR1067/1068 hier nicht abgebaut.
+
 ## Navigation und Verwaltung live (06.11.2026)
 
 [PR #1057](https://github.com/ernisch/helmut-pilot/pull/1057) nach ausdrücklichem

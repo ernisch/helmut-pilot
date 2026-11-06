@@ -319,7 +319,7 @@ check("Sicherheit: Motor-Text wird escaped (kein rohes <img> im Markup)",
 const reviewFixture = require("../lib/helmut/reviewFixture");
 check("Review: Flag ist per Default AUS (in Produktion inert)",
   reviewFixture.reviewFixtureEnabled() === false);
-// Sicherheit: Auto-Aktivierung NUR in der Vorschau dieses Branches, NIE in Produktion.
+// Sicherheit: keine Branch-Autoaktivierung; Production sperrt auch ein gesetztes Flag.
 {
   const save = { f: process.env.HELMUT_REVIEW_FIXTURE, e: process.env.VERCEL_ENV, r: process.env.VERCEL_GIT_COMMIT_REF };
   delete process.env.HELMUT_REVIEW_FIXTURE;
@@ -328,7 +328,16 @@ check("Review: Flag ist per Default AUS (in Produktion inert)",
   process.env.VERCEL_ENV = "preview"; process.env.VERCEL_GIT_COMMIT_REF = "main";
   check("Review: in Vorschau anderer Branches inert", reviewFixture.reviewFixtureEnabled() === false);
   process.env.VERCEL_ENV = "preview"; process.env.VERCEL_GIT_COMMIT_REF = "claude/helmut-v3-foundation-pv2uw4";
-  check("Review: in Vorschau DIESES PR-Branches aktiv", reviewFixture.reviewFixtureEnabled() === true);
+  check("Review: alter PR-Branch aktiviert keine Ersatzdaten", reviewFixture.reviewFixtureEnabled() === false);
+  process.env.HELMUT_REVIEW_FIXTURE = "1";
+  check("Review: explizite Vorschau-Abnahme bleibt möglich", reviewFixture.reviewFixtureEnabled() === true);
+  delete process.env.VERCEL_ENV;
+  check("Review: explizite lokale Abnahme bleibt möglich", reviewFixture.reviewFixtureEnabled() === true);
+  process.env.VERCEL_ENV = "production";
+  for (const flag of ["1", "true", "on", "yes"]) {
+    process.env.HELMUT_REVIEW_FIXTURE = flag;
+    check(`Review: Production sperrt explizites Flag ${flag}`, reviewFixture.reviewFixtureEnabled() === false);
+  }
   if (save.f === undefined) delete process.env.HELMUT_REVIEW_FIXTURE; else process.env.HELMUT_REVIEW_FIXTURE = save.f;
   if (save.e === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = save.e;
   if (save.r === undefined) delete process.env.VERCEL_GIT_COMMIT_REF; else process.env.VERCEL_GIT_COMMIT_REF = save.r;

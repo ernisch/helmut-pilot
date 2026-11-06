@@ -1,12 +1,12 @@
 "use strict";
 
-// Datenschutz #9 — Mandantentrennung: Nutzer A erhält NIEMALS Daten, Briefings,
+// Datenschutz #9 — Mandantentrennung: Nutzer A erhält NIEMALS Daten, Aufgaben,
 // Fehlerdetails oder Profile von Nutzer B.
 //
 // Belegt gegen den echten Storage-Layer (lokaler Dateispeicher, Snapshot/Restore):
 //  * DATEN/LAGE: getLageChecks(A) liefert nur A; ohne Mandantenkontext -> harter
 //    TenantContextError (kein Cross-Tenant-Leak).
-//  * BRIEFINGS: getLatestBriefing(A) liefert nur A's Briefing, nie B's.
+//  * AUFGABEN: getTasks(A) liefert nur A's Aufgaben, nie B's.
 //  * FEHLERDETAILS: der neue Pipeline-Fehler-Sammler (P0-3) speichert nur eine
 //    PSEUDONYME Nutzerkennung + technische Metadaten — KEINE Inhalte des anderen
 //    Mandanten; die Einträge sind global (Admin-only), nicht per-Nutzer abrufbar.
@@ -50,14 +50,14 @@ const backups = files.map((f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") 
     try { await storage.getLageChecks(null, 12); } catch (e) { threw = e && e.name === "TenantContextError"; }
     check("Lage: ohne Mandantenkontext -> harter TenantContextError", threw === true);
 
-    // ── BRIEFINGS ─────────────────────────────────────────────────────────────
-    await storage.saveBriefing({ id: "bf-a", politicianId: A, homeSections: {}, marker: "BRIEF-A" });
-    await storage.saveBriefing({ id: "bf-b", politicianId: B, homeSections: {}, marker: "BRIEF-B" });
-    const aBrief = await storage.getLatestBriefing(A);
-    const bBrief = await storage.getLatestBriefing(B);
-    check("Briefing: A erhält nur A's Briefing", aBrief && aBrief.politicianId === A && aBrief.marker === "BRIEF-A");
-    check("Briefing: B erhält nur B's Briefing", bBrief && bBrief.politicianId === B && bBrief.marker === "BRIEF-B");
-    check("Briefing: A's Briefing enthält NICHTS von B", JSON.stringify(aBrief).indexOf("BRIEF-B") === -1);
+    // ── AUFGABEN (App-Start und Aufgaben-API) ──────────────────────────────────
+    await storage.saveTask({ id: "task-a", politicianId: A, title: "TASK-A", status: "open" });
+    await storage.saveTask({ id: "task-b", politicianId: B, title: "TASK-B", status: "open" });
+    const aTasks = await storage.getTasks(A);
+    const bTasks = await storage.getTasks(B);
+    check("Aufgaben: A erhält nur A's Aufgaben", aTasks.length > 0 && aTasks.every((task) => task.politicianId === A));
+    check("Aufgaben: B erhält nur B's Aufgaben", bTasks.length > 0 && bTasks.every((task) => task.politicianId === B));
+    check("Aufgaben: A's Aufgaben enthalten NICHTS von B", JSON.stringify(aTasks).indexOf("TASK-B") === -1);
 
     // ── FEHLERDETAILS (P0-3 Pipeline-Fehler-Sammler) ──────────────────────────
     await storage.recordPipelineError({ process: "understanding-eager", userId: A, sourceId: "src-a", error: new Error("timeout") });
