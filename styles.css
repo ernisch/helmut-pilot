@@ -9419,3 +9419,9 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
   .ui-jump .ui-jump-list button .ui-jump-go { font-size: 13px; }
   .ui-page .hstand-overview > h2 { margin-top: 14px; }
 }
+@media (max-width: 767px) {
+  .ui-jump .ui-jump-list button .ui-jump-text { display: grid; gap: 2px; min-width: 0; }
+  .ui-jump .ui-jump-list button .ui-jump-flag { display: flex; align-items: center; gap: 6px; font: 500 10.5px/1.4 var(--ui-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ui-accent); }
+  .ui-jump .ui-jump-list button .ui-jump-flag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .ui-jump .ui-jump-list li.is-lead .ui-jump-num { color: var(--ui-accent); }
+}

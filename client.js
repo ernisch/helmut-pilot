@@ -10136,7 +10136,10 @@ function bindActions() {
     const fromLage = Boolean(nav.closest(".hstand-overview"));
     nav.innerHTML = `<p class="ui-jump-head"><span>${fromLage ? "Laufende Themen aus der Lage" : "Auf einen Blick"}</span><span>${topics.length}</span></p><ol class="ui-jump-list">` + topics.map((el, i) => {
       el.id = `ui-topic-${i + 1}`;
-      return `<li><button type="button" data-jump="${i + 1}"><span class="ui-jump-num">${String(i + 1).padStart(2, "0")}</span><span class="ui-jump-title">${escapeHtml(el.dataset.topicTitle)}</span><span class="ui-jump-go" aria-hidden="true">↓</span></button></li>`;
+      // Hauptvorgang mit echter Tagespriorität: in der Übersicht als „Heute entscheidend“ markiert.
+      const lead = el.classList.contains("ui-briefing-hero");
+      const flag = lead ? `<span class="ui-jump-flag">${escapeHtml(el.querySelector(".ui-eyebrow")?.textContent.trim() || "Heute entscheidend")}</span>` : "";
+      return `<li${lead ? ' class="is-lead"' : ""}><button type="button" data-jump="${i + 1}"><span class="ui-jump-num">${String(i + 1).padStart(2, "0")}</span><span class="ui-jump-text">${flag}<span class="ui-jump-title">${escapeHtml(el.dataset.topicTitle)}</span></span><span class="ui-jump-go" aria-hidden="true">↓</span></button></li>`;
     }).join("") + "</ol>";
     nav.querySelectorAll("[data-jump]").forEach((btn) => btn.addEventListener("click", () => {
       app.querySelector(`#ui-topic-${btn.dataset.jump}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
