@@ -6426,7 +6426,7 @@ function renderUiBriefingHero(state, details = "") {
       ${briefingLageVerweis(item)}
     </div>
     <div class="ui-hero-next">
-      <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Dein nächster Schritt</span><span class="ui-next-step">${escapeHtml(recommendation || "Prüfe die Einordnung und Quellen zu diesem Vorgang.")}</span><span class="ui-next-cta">Im Büro öffnen</span></span></button>
+      <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Dein nächster Schritt</span><span class="ui-next-step">${escapeHtml(recommendation || "Prüfe die Einordnung und Quellen zu diesem Vorgang.")}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>
       ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfe den Vorgang und deine Büro-Formate.</p>'}
       <p class="ui-hero-meta">${count ? `<span>${uiIcon("briefing")}${count === 1 ? "1 Quelle" : `${count} Quellen`}</span>` : ""}${when ? `<span>${HELMUT_ICON_CLOCK}Stand ${escapeHtml(when)}</span>` : ""}</p>
     </div>
@@ -6659,8 +6659,10 @@ function renderHstandItems(state) {
     const zeit = hstandText(i.zeitLabel) || hstandWhen(i.lastUpdated);
     // Quellenpflicht: auch die weiteren Vorgaenge tragen ihren oeffnenden Beleg.
     const quelle = hstandQuelleHref(i);
+    const lv = lageVorgangZumBriefing(i);
+    const tap = lv ? ` data-lage-verweis data-vorgang="${escapeAttribute(lv.vorgangId || lv.id)}" role="button" tabindex="0"` : "";
     return `
-      <li class="hstand-rel">
+      <li class="hstand-rel${lv ? " is-tappable" : ""}"${tap}>
         <div class="hstand-rel-head">
           <p class="hstand-rel-title">${escapeHtml(title)}</p>
           ${urgency}
