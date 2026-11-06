@@ -9376,3 +9376,30 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
   .hstand-overview .ui-jump { margin-top: 10px; margin-bottom: 10px; }
   .ui-jump button { max-width: 58vw; }
 }
+
+/* „Auf einen Blick“ (mobil): kleine Inhaltsübersicht wie in einer Zeitung –
+   nummerierte Themen untereinander, ein Tipp springt zum Thema. */
+@media (max-width: 767px) {
+  .ui-jump, .hstand-overview .ui-jump { display: block; margin: 18px 0 8px; padding: 14px 16px 6px; overflow: visible; background: var(--ui-panel); border: 1px solid var(--ui-panel-line); border-radius: 14px; }
+  .ui-jump-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 4px; font: 500 11px/1.6 var(--ui-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ui-label); }
+  .ui-jump-head span:last-child { color: var(--ui-accent); }
+  .ui-jump-list { margin: 0; padding: 0; list-style: none; }
+  .ui-jump-list li + li { border-top: 1px solid var(--hairline); }
+  .ui-jump .ui-jump-list button { display: grid; grid-template-columns: 30px minmax(0,1fr) 16px; align-items: center; gap: 10px; width: 100%; max-width: none; min-height: 48px; padding: 8px 0; border: 0; border-radius: 0; background: transparent; color: var(--ui-text); text-align: left; white-space: normal; overflow: visible; }
+  .ui-jump-num { font: 400 18px/1 var(--ui-serif); color: var(--ui-dim); }
+  .ui-jump-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font: 400 16px/1.3 var(--ui-serif); color: var(--ui-text); }
+  .ui-jump-go { justify-self: end; font-size: 15px; color: var(--ui-dim); }
+  .ui-jump .ui-jump-list button:active .ui-jump-title { color: var(--ui-accent); }
+  .ui-jump-label { display: none; }
+  .hstand-overview > h2 .ui-count { display: none; }
+  .ui-page .hstand-overview > h2 { margin-top: 18px; }
+}
+@media (max-width: 767px) {
+  .ui-jump .ui-jump-list button span { display: block; place-items: initial; flex: none; width: auto; height: auto; border-radius: 0; background: none; }
+  .ui-jump .ui-jump-list button .ui-jump-title { display: -webkit-box; }
+  .ui-jump .ui-jump-list button .ui-jump-num { font: 400 18px/1 var(--ui-serif); color: var(--ui-dim); }
+  .ui-jump .ui-jump-list button .ui-jump-go { font: 400 15px/1 var(--ui-sans); color: var(--ui-dim); }
+}
+@media (max-width: 767px) {
+  .ui-jump .ui-jump-list button .ui-jump-title { font: 400 16.5px/1.3 var(--ui-serif); letter-spacing: 0; text-transform: none; color: var(--ui-text); }
+}

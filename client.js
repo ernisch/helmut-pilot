@@ -6799,8 +6799,8 @@ function renderHstandQuietOverview(state) {
     }).filter(Boolean).slice(0, 4);
     if (!items.length) return "";
     return `<section class="hstand-card hstand-overview" data-briefing-overview aria-labelledby="hstand-overview-title">
-      <h2 id="hstand-overview-title">Dein Tagesüberblick<span class="ui-count">${items.length === 1 ? "1 Thema" : `${items.length} Themen`}</span></h2>
       <nav class="ui-jump" data-ui-jump aria-label="Themen heute"></nav>
+      <h2 id="hstand-overview-title">Dein Tagesüberblick<span class="ui-count">${items.length === 1 ? "1 Thema" : `${items.length} Themen`}</span></h2>
       <p class="hstand-overview-meta">Vorhandener Sachstand aus der Lage. Die Quellen können älter sein; ihr Veröffentlichungsdatum steht jeweils dabei.</p>
       ${items.join("")}
       <button class="secondary-button compact-button" type="button" data-view="briefing">Alle Vorgänge in der Lage öffnen</button>
@@ -6846,8 +6846,8 @@ function renderHstandQuietOverview(state) {
   }).filter(Boolean);
   if (!paragraphs.length) return "";
   return `<section class="hstand-card hstand-overview" data-briefing-overview aria-labelledby="hstand-overview-title">
-    <h2 id="hstand-overview-title">Dein Tagesüberblick<span class="ui-count">${paragraphs.length === 1 ? "1 Thema" : `${paragraphs.length} Themen`}</span></h2>
     <nav class="ui-jump" data-ui-jump aria-label="Themen heute"></nav>
+    <h2 id="hstand-overview-title">Dein Tagesüberblick<span class="ui-count">${paragraphs.length === 1 ? "1 Thema" : `${paragraphs.length} Themen`}</span></h2>
     <p class="hstand-overview-meta">Zusammengestellt: ${escapeHtml(hstandWhen(data.generatedAt))}. Die Quellen können älter sein; ihr Veröffentlichungsdatum steht jeweils dabei.</p>
     ${paragraphs.join("")}
   </section>`;
@@ -10131,10 +10131,10 @@ function bindActions() {
   app.querySelectorAll("[data-ui-jump]").forEach((nav) => {
     const topics = [...(nav.closest(".hstand") || app).querySelectorAll("[data-topic-title]")];
     if (topics.length < 2) { nav.remove(); return; }
-    nav.innerHTML = `<span class="ui-jump-label">Heute ${topics.length} Themen</span>` + topics.map((el, i) => {
+    nav.innerHTML = `<p class="ui-jump-head"><span>Auf einen Blick</span><span>${topics.length} Themen</span></p><ol class="ui-jump-list">` + topics.map((el, i) => {
       el.id = `ui-topic-${i + 1}`;
-      return `<button type="button" data-jump="${i + 1}"><span>${i + 1}</span>${escapeHtml(el.dataset.topicTitle)}</button>`;
-    }).join("");
+      return `<li><button type="button" data-jump="${i + 1}"><span class="ui-jump-num">${String(i + 1).padStart(2, "0")}</span><span class="ui-jump-title">${escapeHtml(el.dataset.topicTitle)}</span><span class="ui-jump-go" aria-hidden="true">↓</span></button></li>`;
+    }).join("") + "</ol>";
     nav.querySelectorAll("[data-jump]").forEach((btn) => btn.addEventListener("click", () => {
       app.querySelector(`#ui-topic-${btn.dataset.jump}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
     }));
