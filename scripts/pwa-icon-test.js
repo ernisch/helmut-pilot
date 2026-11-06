@@ -160,8 +160,9 @@ let manifest;
 try { manifest = JSON.parse(manifestRaw); check("site.webmanifest: gueltiges JSON", true); }
 catch (e) { check("site.webmanifest: gueltiges JSON", false, e.message); manifest = { icons: [] }; }
 
-check("site.webmanifest: background_color unveraendert (#050914)", manifest.background_color === "#050914");
-check("site.webmanifest: theme_color unveraendert (#050914)", manifest.theme_color === "#050914");
+check("site.webmanifest: Android-Startfarbe entspricht dem tatsaechlichen Icon-Hintergrund",
+  manifest.background_color === hex(getPixel(decodePng(path.join(assetsDir, "helmut_appicon_512.png")), 0, 0)));
+check("site.webmanifest: Android-Systemfarbe entspricht der Startfarbe", manifest.theme_color === manifest.background_color);
 check("site.webmanifest: genau 4 Icons (Struktur unveraendert)", Array.isArray(manifest.icons) && manifest.icons.length === 4);
 
 const purposeAny = (manifest.icons || []).filter((i) => i.purpose === "any");
