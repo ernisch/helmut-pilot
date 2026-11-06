@@ -39,6 +39,29 @@ hashgleich. Keine weiteren Modellversuche oder Lasttests erforderlich.
 Die nachfolgenden offenen Release1053-Aussagen sind historisch.
 [Umsetzung, Nachweise und Rueckweg](betrieb/cem-einprofilbetrieb-20261105.md).
 
+## Briefing-Anzeige nach Nutzerbefund (06.11.2026)
+
+Der erneute Handy-Befund zeigt eine Luecke im bisherigen Betriebsnachweis:
+Die heutigen Daten und der Lage-Text waren gespeichert, die Briefing-Startseite
+zeigte ohne Tagesprioritaet aber ausschliesslich eine Leerkarte. Production
+`86490251` und sein ausgeliefertes `client.js` sind bytegleich mit `main`;
+kein alter Client-Cache als Ursache. Morgenlauf05:15 und Lage05:00 UTC
+haben stattgefunden. Die Auswahl belegt derzeit keine Tagesprioritaet;
+Vorgangsanlagezeit ist kein neues Quellen-Publikationsdatum.
+
+Der vorbereitete UI-Fix zeigt bei aktueller Frischequittung den vorhandenen
+Tagesueberblick auch ohne Prioritaet. Quellen bleiben an sichtbare Vorgangskarten
+gebunden; www-/kanonische URL-Varianten werden abgeglichen, Herausgeber und
+Publikationsdatum stammen aus der Originalquelle. Der Kopf nennt den wirklichen
+Morgenlauf statt der aktuellen HTTP-Lesezeit. Alte Texte, Stoerungen und fehlende
+Belege werden nicht zu einem aktuellen Ueberblick hochgestuft. Lokal97/97
+UI-Vertragspruefungen und129 Chromium-Pruefungen bestanden, einschliesslich
+ruhigem Tag auf Desktop und Mobil. Astra-Review mit den echten gelesenen Daten
+bestaetigt beide sichtbaren Absaetze. Keine neue Generierung, Kosten-, Profil-
+oder Zeitplanaenderung. Pflichtchecks und
+Production-Nachkontrolle fuer diesen Anzeigefix stehen noch aus.
+[Diagnose und Abnahme](betrieb/cem-einprofilbetrieb-20261105.md#briefing-anzeige-am-06112026).
+
 ## Navigation und Verwaltung live (06.11.2026)
 
 [PR #1057](https://github.com/ernisch/helmut-pilot/pull/1057) nach ausdrücklichem
@@ -184,8 +207,8 @@ Prototyp-Kulisse. Merge/Production nur mit ausdruecklicher Freigabe.
 
 ## Genau ein naechster Schritt
 
-**Die Pflichtchecks der Einprofil-Aenderung abschliessen, den freigegebenen
-1/30-USD-Vertrag aktivieren und Cems aktuelle Tagesversorgung gegenlesen.**
+**Den belegten Briefing-Anzeigefehler beheben, die Pflichtchecks abschliessen
+und die mobile Ausgabe nach dem Deployment mit Cems vorhandenen Daten pruefen.**
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
 Historische alte Anweisungen, darunter

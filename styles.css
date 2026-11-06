@@ -12535,6 +12535,16 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
 .topbar .update-heart .ui-icon path { fill: none; stroke: currentColor; stroke-width: 1.5; }
 .ui-briefing-status .text-button { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; min-width: 44px; height: 44px; padding: 0; border: 1px solid var(--ui-border); border-radius: 50%; color: var(--ui-muted); background: transparent; font-size: 24px; }
 .ui-briefing-status .refresh-cooldown { font-size: 13px; }
+
+/* Der vorhandene Überblick bleibt auch ohne neue Tagespriorität lesbar. */
+.hstand-overview h2 { margin: 0 0 12px; font: 500 30px/1.2 var(--ui-serif); color: var(--ui-text); }
+.hstand-overview-meta { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ui-muted); }
+.hstand-overview-item { display: grid; gap: 12px; padding: 22px 0; border-bottom: 1px solid var(--ui-border); }
+.hstand-overview-item:last-child { padding-bottom: 0; border-bottom: 0; }
+.hstand-overview-item > p { margin: 0; max-width: 72ch; font: 400 18px/1.6 var(--ui-sans); color: var(--ui-text); }
+.hstand-overview-sources { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.hstand-overview-sources a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ui-muted); font-size: 14px; line-height: 1.5; text-decoration: underline; text-underline-offset: 3px; }
+.hstand-overview-item > button { justify-self: start; min-height: 44px; text-align: left; }
 .ui-page .buero-priority-hint { font-size: 14px; }
 .ui-page :is(.buero-priority-label,.buero-priority-value,.buero-priority-optional) { font-size: 14px; }
 .ui-page .buero-group-eyebrow { font: 500 12px/1.6 var(--ui-mono); }

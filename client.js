@@ -7014,11 +7014,14 @@ function renderHstandHeader(state) {
   const vertragOffen = Boolean(vertrag && vertrag.aktuell === false);
   const st = vertragOffen
     ? HSTAND_STATUS_LABEL.nicht_aktuell
-    : (HSTAND_STATUS_LABEL[state.status] || HSTAND_STATUS_LABEL.empty);
+    : hstandCurrentQuiet(state)
+      ? { label: "Aktuell · keine neue Tagespriorität", tone: "ok" }
+      : (HSTAND_STATUS_LABEL[state.status] || HSTAND_STATUS_LABEL.empty);
   // Das Datum im Kopf ist das ECHTE Datum des gezeigten Vorgangs: bevorzugt sein
   // belegtes Meldungsdatum (zeitLabel, Europe/Berlin) — nicht der Zeitpunkt, zu dem
   // Helmut die Zeile zuletzt angefasst hat (Audit 2026-08-10, Befund F2).
-  const when = (state.primaryItem && state.primaryItem.zeitLabel)
+  const when = (hstandCurrentQuiet(state) && hstandWhen(vertrag.lauf?.erzeugtAm))
+    || (state.primaryItem && state.primaryItem.zeitLabel)
     || hstandWhen(state.primaryItem && state.primaryItem.meldungAt)
     || hstandWhen(state.sourcesSummary && state.sourcesSummary.lastUpdated)
     || hstandWhen(state.generatedAt);
@@ -7214,7 +7217,9 @@ function renderHstandFrische(state) {
   if (v.aktuell === false) {
     zeilen.push({ ton: "warn", text: `${v.grundText || "Für heute liegt noch kein aktuelles Briefing vor."} Es wird bewusst kein Briefing vom Vortag als heutiges angezeigt.` });
   } else if (v.ruhelage) {
-    zeilen.push({ ton: "muted", text: v.hinweis || "Heute liegt keine neue Meldung vor." });
+    zeilen.push({ ton: "muted", text: hstandCurrentQuiet(state)
+      ? "Keine neue Tagespriorität belegt. Das bedeutet keine Entwarnung; der vorhandene Sachstand bleibt relevant."
+      : v.hinweis || "Heute liegt keine neue Meldung vor." });
   }
   if (v.quellen && v.quellen.hinweis) zeilen.push({ ton: "warn", text: v.quellen.hinweis });
   if (!zeilen.length) return "";
@@ -7340,6 +7345,72 @@ function briefingDisruption() {
   return null;
 }
 
+// Datenfrische und Tagespriorität sind verschiedene Aussagen. Ein belegter
+// heutiger Lauf darf ohne Tagesanlass einen vorhandenen Überblick zeigen.
+// Störung, Rückstand oder ein fehlender Lauf werden dadurch nie hochgestuft.
+function hstandCurrentQuiet(state) {
+  return Boolean(state && state.status === "empty" && !state.primaryItem
+    && !state.errorState && !state.staleState && state.datenstandVonHeute !== false
+    && state.emptyState?.kind === "quiet" && state.frischeVertrag?.aktuell === true
+    && briefing?.available !== false && !briefingDisruption());
+}
+
+function renderHstandQuietOverview(state) {
+  if (!hstandCurrentQuiet(state)) return "";
+  const data = lageData();
+  if (!data || data.available !== true || data.demo || data.pendingNarrative) return "";
+  const generated = new Date(data.generatedAt || "");
+  if (!Number.isFinite(generated.getTime())) return "";
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(generated);
+  if (day !== state.frischeVertrag.berlinTag) return "";
+  const vorgaenge = new Map(lageVisibleVorgaenge(data).map(v => [String(v.vorgangId || v.id), v]));
+  const sourceHref = source => {
+    try {
+      const url = new URL(source?.url || "");
+      return url.protocol === "https:" && !url.username && !url.password
+        && !isGoogleArticleProxy(url.href) && !isLikelyPublisherHomepage(url.href) ? url.href : "";
+    } catch { return ""; }
+  };
+  // Narrativquellen verwenden kanonische URLs ohne www, Vorgangskarten die
+  // Original-URL. Nur diese Identitätsvarianten normalisieren; unbekannte
+  // Weiterleitungen oder andere Artikel bleiben verschieden.
+  const sourceKey = source => {
+    const href = sourceHref(source);
+    if (!href) return "";
+    const url = new URL(href);
+    url.hostname = url.hostname.replace(/^www\./, "");
+    url.hash = "";
+    return url.href;
+  };
+  const paragraphs = (Array.isArray(data.paragraphs) ? data.paragraphs : []).map(p => {
+    if (!p || typeof p.text !== "string" || !p.text.trim()) return "";
+    const ids = Array.isArray(p.vorgangIds) ? [...new Set(p.vorgangIds.map(String))] : [];
+    if (!ids.length || ids.some(id => !vorgaenge.has(id))) return "";
+    const boundSources = new Map(ids.flatMap(id => vorgaenge.get(id).sources)
+      .filter(sourceHref).map(s => [sourceKey(s), s]));
+    const sources = Array.isArray(p.sources) ? p.sources : [];
+    if (!sources.length || sources.some(s => !sourceKey(s) || !boundSources.has(sourceKey(s)))) return "";
+    // Herausgeber, Link und Publikationszeit aus der gebundenen Originalquelle,
+    // nicht aus einer möglicherweise abweichenden Narrativkopie anzeigen.
+    const links = [...new Set(sources.map(s => sourceKey(s)))].map(key => {
+      const s = boundSources.get(key);
+      const when = hstandWhen(s.publishedAt);
+      return `<a href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.host || "Quelle")} · ${escapeHtml(when || "Quelldatum nicht belegt")}</a>`;
+    }).join("");
+    return `<article class="hstand-overview-item" data-briefing-paragraph>
+      <p>${escapeHtml(p.text)}</p>
+      <div class="hstand-overview-sources" aria-label="Quellen und Veröffentlichungsdaten">${links}</div>
+      ${ids.map(id => `<button class="secondary-button compact-button" type="button" data-lage-verweis data-vorgang="${escapeAttribute(id)}">Einordnung in der Lage öffnen</button>`).join("")}
+    </article>`;
+  }).filter(Boolean);
+  if (!paragraphs.length) return "";
+  return `<section class="hstand-card hstand-overview" data-briefing-overview aria-labelledby="hstand-overview-title">
+    <h2 id="hstand-overview-title">Dein Tagesüberblick</h2>
+    <p class="hstand-overview-meta">Zusammengestellt: ${escapeHtml(hstandWhen(data.generatedAt))}. Die Quellen können älter sein; ihr Veröffentlichungsdatum steht jeweils dabei.</p>
+    ${paragraphs.join("")}
+  </section>`;
+}
+
 function renderHstandStateCard(state, kind) {
   let isError = kind === "error";
   // Sprint 5 (additiv): unterscheidbarer Helmut-Leerzustand (gap/stale/quiet). Nur im
@@ -7356,14 +7427,16 @@ function renderHstandStateCard(state, kind) {
       ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
       : (es && es.detail ? es.detail : "Für dein Mandat liegen derzeit keine belastbaren Vorgänge vor.");
   const emptyKind = disruption ? disruption.kind : (es ? es.kind : "");
+  const overview = !isError && !disruption ? renderHstandQuietOverview(state) : "";
   return `
     <section class="hstand hstand--state" aria-label="Briefing">
       ${renderHstandHeader(state)}
-      <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
+      ${overview || `<div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
         <p class="hstand-state-title">${escapeHtml(title)}</p>
         <p class="hstand-state-sub">${escapeHtml(sub)}</p>
-      </div>
+        ${!isError && lageVisibleVorgaenge(lageData()).length ? '<button class="secondary-button compact-button" type="button" data-view="briefing">Vorhandene Vorgänge in der Lage öffnen</button>' : ""}
+      </div>`}
     </section>`;
 }
 
