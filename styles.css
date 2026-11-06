@@ -8340,11 +8340,13 @@ summary:focus-visible {
 /* HELMUT UI 2026 — shared desktop/mobile presentation from the supplied designs.
    Kept after the legacy rules so existing backend and rendering contracts remain
    usable. No CDN, build step, framework runtime or generated sample content. */
-@font-face { font-family: "Hanken Grotesk"; src: url("assets/ui/fonts/HankenGrotesk-var.ttf") format("truetype"); font-weight: 100 900; font-style: normal; font-display: swap; }
-@font-face { font-family: Spectral; src: url("assets/ui/fonts/Spectral-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: Spectral; src: url("assets/ui/fonts/Spectral-Medium.ttf") format("truetype"); font-weight: 500 900; font-style: normal; font-display: swap; }
-@font-face { font-family: "IBM Plex Mono"; src: url("assets/ui/fonts/IBMPlexMono-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "IBM Plex Mono"; src: url("assets/ui/fonts/IBMPlexMono-Medium.ttf") format("truetype"); font-weight: 500 900; font-style: normal; font-display: swap; }
+/* Same complete fonts and glyphs, losslessly packaged as WOFF2 for mobile startup.
+   Original TTFs and licenses stay available for the administration and tooling. */
+@font-face { font-family: "Hanken Grotesk"; src: url("assets/ui/fonts/HankenGrotesk-var.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: Spectral; src: url("assets/ui/fonts/Spectral-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: Spectral; src: url("assets/ui/fonts/Spectral-Medium.woff2") format("woff2"); font-weight: 500 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("assets/ui/fonts/IBMPlexMono-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("assets/ui/fonts/IBMPlexMono-Medium.woff2") format("woff2"); font-weight: 500 900; font-style: normal; font-display: swap; }
 
 :root {
   --ui-bg: #070b16; --ui-sidebar: #050912; --ui-surface: #0c1322;

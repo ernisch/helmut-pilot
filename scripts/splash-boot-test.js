@@ -156,6 +156,15 @@ check("client.js: hideStartupSplash in renderPilotAccess", /function renderPilot
 const hideSplash = client.match(/^function hideStartupSplash\(\) \{[\s\S]*?^\}/m)?.[0];
 const failureStart = client.indexOf("function renderStartFailure(");
 check("client.js: echter Splashabschluss und Boot-Fehlerhandler extrahierbar", Boolean(hideSplash) && failureStart >= 0);
+{
+  const env = makeEnv();
+  vm.runInNewContext(hideSplash + "\nhideStartupSplash(); hideStartupSplash();", {
+    window: env.win, document: env.document
+  });
+  check("Fertige Ansicht ist sofort sichtbar, auch bei wiederholtem Rendern",
+    !env.classes.has("is-loading") && env.classes.has("app-ready") && env.classes.has("splash-gone"));
+  check("Splashabschluss plant keine kuenstliche Wartezeit oder spaeten Timer", env.timers.length === 0);
+}
 for (const online of [true, false]) {
   const env = makeEnv();
   let invalidations = 0;

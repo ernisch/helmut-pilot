@@ -317,8 +317,15 @@ lokal), `admin-nutzer-loeschen-test.js` (Farbannahme `#ff5967`).
 
 ## Genau ein naechster Schritt
 
-**Auftrag abgeschlossen: Die regulaere App einmal neu laden, damit der
-bereinigte Client mit dem sichtbaren Tagesueberblick geladen wird.**
+**App-Startoptimierung vorbereitet (06.11.2026):** Im mobilen Laborvergleich
+je fuenf Starts: kalt3,319→2,751s, warm1,157→0,721s (Mediane).
+Kuenstliche Splashwartezeit entfernt, dieselben fuenf Schriften als WOFF2.
+35/35 Splash- und78/78 Browserpruefungen bestanden. Keine persoenliche
+Production-Startzeit gemessen; keine Aenderung live. Branch
+`codex/app-start-performance-20261106`; [PR1078](https://github.com/ernisch/helmut-pilot/pull/1078),
+Pflicht-CI offen. 14/14 Schnellkernsuiten bestanden; Icon-PR1077 integriert.
+[Messung, Grenzen und Rueckweg](betrieb/app-start-performance-20261106.md).
+Naechster Schritt: geprueften PR zur konkreten Merge-/Deploymentfreigabe vorlegen.
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
 Historische alte Anweisungen, darunter

@@ -4622,13 +4622,10 @@ function render() {
 }
 
 function hideStartupSplash() {
-  window.setTimeout(() => {
-    document.body.classList.remove("is-loading");
-    document.body.classList.add("app-ready");
-  }, 180);
-  window.setTimeout(() => {
-    document.body.classList.add("splash-gone");
-  }, 980);
+  // The requested view (or an honest login/error state) is ready. Reveal it in
+  // the same frame instead of adding a fixed wait and a second fade animation.
+  document.body.classList.remove("is-loading");
+  document.body.classList.add("app-ready", "splash-gone");
 }
 
 // Shared presentation components. These read the already loaded client state;
