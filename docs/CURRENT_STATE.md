@@ -321,9 +321,11 @@ dunkles Favicon, Startbild mit ruhigem Puls) und
 entfernt, Zugangs-/Passwort-/Rechtsseiten im Design). Production-Deployment
 `dpl_5Xs3rTFGmhuEUXWR1sBGmWmiEm8A` READY; `/api/release/public` ok/ready/storage
 true; keine Laufzeitfehler seit Deployment (06.11.2026, lesend geprueft).
-Nur Darstellung; `server.js` ausschliesslich HTML-Shell und Seiten-Styles.
-Lokale Altfehler unveraendert: `kalender-ics-test.js` (Modul `ical.js` fehlt
-lokal), `admin-nutzer-loeschen-test.js` (Farbannahme `#ff5967`).
+[PR #1088](https://github.com/ernisch/helmut-pilot/pull/1088) (Merge `82cb3cb`, Briefing-Aufbau
+nach Design; Betreiberentscheidung: ruhiger Tag zeigt ehrlichen Leerzustand mit Lage-Themenzahl statt
+Lage-Liste) live: `dpl_6ucJseSYamRPDN71U55GppKAKcem` READY, `/api/release/public` ok/ready/storage.
+Naechster Designschritt: Aufbau von Lage, Radar, Buero, Profil. Nur Darstellung. Lokale Altfehler:
+`kalender-ics-test.js` (`ical.js` fehlt), `admin-nutzer-loeschen-test.js` (`#ff5967`).
 
 ## Genau ein naechster Schritt
 
