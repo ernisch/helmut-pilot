@@ -251,3 +251,69 @@ Status: freigegebener Rollout und Nachmessung erfolgreich abgeschlossen.
 Naechster Schritt: auf dem Android-Geraet die wahrgenommene Startzeit pruefen;
 eine weitere Serveroptimierung waere gezielt an der Lagepruefung anzusetzen.
 Diese Dokumentationsnachfuehrung enthaelt ausschliesslich den belegten Abschluss.
+
+
+## Sofort sichtbare App-Oberflaeche (06.11.2026, fuer Freigabe vorbereitet)
+
+Erneuter Nutzerbefund nach PR1081: weiter5–6s bis zum Oeffnen. Gezielt geklaert:
+Waehrend dieser Zeit bleibt das Helmut-Startlogo sichtbar, die App-Oberflaeche
+erscheint erst danach. Ursache: `loadBriefing` wartet auf Sitzung und vollstaendiges
+Startpaket, bevor `render()` den Splash beendet. Private Startcaches sind bewusst
+deaktiviert und bleiben deaktiviert.
+
+Branch `codex/instant-app-shell-20261106`: Der Client zeigt vor dem ersten
+Sitzungsabruf einen oeffentlichen App-Rahmen mit den vier echten Navigationszielen.
+Die Auswahl reagiert sofort und bleibt bei Eintreffen des Startpakets erhalten.
+Inhalte sind ausdruecklich als ladend markiert; keine privaten Cache-, Profil-
+oder Kontodaten vor Autorisierung, keine Schreibaktion oder Fachabfrage durch
+fruehe Navigation. Login, gesperrte Zugriffe und Fehler ersetzen den Ladezustand.
+Das Boot-Sicherheitsnetz erkennt auch den neuen App-Rahmen. Helle/dunkle Darstellung,
+Mobilnavigation und reduzierte Bewegung sind beruecksichtigt.
+
+Zusaetzlich wartet `handleAuthSession` nach unveraenderter Sitzungspruefung parallel
+auf Sessionverlaengerung und erlaubte Profile. Cookie/Antwort warten weiter auf
+beide Ergebnisse; bisheriges Fehlerverhalten bleibt erhalten. Keine Auth-Caches,
+keine geaenderte Datenbankprojektion oder Berechtigung. Admin-Sitzungen laden
+weiterhin Vollprofile fuer den Auswahlkatalog; deren schlankere Projektion ist
+kein Bestandteil dieses Fixes. Keine reale Kontositzungs-Einsparung behauptet.
+
+### Vergleich im kontrollierten Mobilbrowser
+
+Reproduzierbarer bestehender Benchmark, drei Kalt-/Warm-Paare je Stand,
+390x844, CPU4x,100ms Netzlatenz,1,6Mbit/s, gzip, Service Worker blockiert.
+API bewusst auf500ms Sitzung plus5000ms Startdaten verzoegert, gleicher Inhalt.
+Vorheriger Client aus`77d90163`, neuer Client aus diesem Branch.
+
+| Median | Vorher | Nachher |
+| --- | ---: | ---: |
+| Oberflaeche sichtbar, kalter Browsercache | 7,974s | 2,179s |
+| Oberflaeche sichtbar, warmer Browsercache | 5,838s | 0,223s |
+| Inhalte bereit, kalter Browsercache | 7,974s | 7,848s |
+| Inhalte bereit, warmer Browsercache | 5,839s | 5,773s |
+
+**Die sofortige Navigation ist kein Nachweis sofort geladener Inhalte.** Kein
+Android-/Production-Wert. Der erste Start muss weiterhin HTML/Client/CSS laden;
+bei erneutem Oeffnen nutzt der Browser den bestehenden oeffentlichen Assetcache.
+Der Test prueft jetzt Sichtbarkeit und Datenbereitschaft getrennt. Nicht benoetigte
+Schriftgewichte muessen im oeffentlichen Rahmen nicht geladen werden: ein erster
+Nachherlauf stoppte an der alten Alle-Schriftgewichte-Annahme. Ressourcenfehler
+und benoetigte Grundschrift werden weiterhin geprueft, der finale Vergleich ist
+vollstaendig. Eine bei der Sichtpruefung gefundene umbrechende Mobilbeschriftung
+wurde vor der abschliessenden Browserpruefung korrigiert.
+
+### Abnahme
+
+- 108/108 echter Browser-Smoke, darunter30 neue Assertions mit angehaltenen
+ Auth-/Startantworten: Navigation reagiert vorher, keine alten privaten Inhalte,
+ Auswahl bleibt, Login/Authfehler/Datenfehler korrekt; hell und dunkel.
+- 35/35 Splash-Assertions;6/6 neue Session-Parallelitaetsgruppen.
+- Unabhaengiger lesender Review von Client/Fehler-/Berechtigungsgrenzen ohne Blocker.
+- `background-refresh-honesty-test.js`:5/8 sowohl auf unveraendertem77d90163 als
+ auch hier. Drei alte Stub-/Fehlervertragsannahmen scheitern identisch; kein
+ neuer Produktfehler und keine Anpassung ausserhalb des Auftrags.
+- Pflicht-CI am aktuellen PR-Kopf ist massgeblich; konkreter Merge/Livegang offen.
+
+Risiko: neuer Ladezustand und fruehe Ansichtsauswahl; Inhalte bleiben bis zum
+berechtigten Datenabruf ausstehend. Rueckweg ist Revert des neuen PR. Nach
+Freigabe Version und Startverhalten auf der Hauptdomain kontrollieren; die
+wahrgenommene Android-Oeffnung muss am Geraet bestaetigt werden.

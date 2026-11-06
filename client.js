@@ -17,7 +17,7 @@ try { window.__helmutClientLoaded = true; } catch (e) {}
     forceHideSplash();
     try {
       var app = document.getElementById("app");
-      if (app && (document.body.classList.contains("is-loading") || app.querySelector(".loading-screen") || !app.children.length)) {
+      if (app && (document.body.classList.contains("is-loading") || app.querySelector(".loading-screen, [data-startup-shell]") || !app.children.length)) {
         app.innerHTML =
           '<div style="display:grid;place-items:center;min-height:100dvh;font-family:Hanken Grotesk,system-ui,sans-serif;background:#070b16;padding:32px;text-align:center">' +
           '<div><div style="font:400 40px/1 Spectral,Georgia,serif;letter-spacing:-.01em;margin-bottom:22px;color:#eaeef6">Helmut</div>' +
@@ -84,6 +84,7 @@ let pushAutoSyncStarted = false;
 let selectedDecisionId = "";
 let selectedVorgangId = "";
 let currentView = "helmut";
+let startupViewChosen = false;
 let detailOriginView = "briefing";
 let navOpen = false;
 let updatesOpen = false;
@@ -513,6 +514,7 @@ const communicationStyles = ["Sachlich", "Lösungsorientiert", "Angriffslustig",
 async function loadBriefing() {
   if (mandateSwitchPending) return false;
   const accessGeneration = ++privateAccessGeneration;
+  if (!privateAccess) renderStartupShell();
   officeDraftsGenerating = false;
   // Block 5 (Live-Flow): Re-Entrancy-Guard + Drossel-Stempel für ALLE Aufrufer
   // (Boot, manuelles ↻, Foreground-Refresh) in einem try/finally — so stößt der
@@ -600,7 +602,9 @@ async function loadBriefing() {
     }
     applyStartPayload(startPayload, accessGeneration);
     saveCachedStartPayload(startPayload);
-    restorePersistedView();
+    if (!startupViewChosen) restorePersistedView();
+    else persistView(currentView);
+    startupViewChosen = false;
     render();
     ensureViewData(currentView);
     if (userRole() === "admin") ensureViewData("admin");
@@ -4619,6 +4623,56 @@ function render() {
   } catch (error) {
     console.warn("Helmut rendered, post-render binding failed", error);
   }
+}
+
+// Public application frame: no cached account/profile/content, no private actions.
+// Navigation can be selected while the unchanged authorization/data load runs.
+function renderStartupShell() {
+  if (privateAccess) return;
+  const items = navItems;
+  const title = items.find(([id]) => id === currentView)?.[1] || "Briefing";
+  const nav = (mobile = false) => items.map(([id, label]) => `
+    <button type="button" class="${mobile ? `nav-${id} ` : ""}${currentView === id ? "active" : ""}"
+      data-start-view="${id}" ${currentView === id ? 'aria-current="page"' : ""}>
+      ${uiIcon(id)}${mobile ? escapeHtml(label) : `<span>${escapeHtml(label)}</span>`}
+    </button>`).join("");
+  app.innerHTML = `<div class="app-frame view-${escapeAttribute(currentView)}" data-startup-shell>
+    <aside class="sidebar"><div>
+      <div class="brand"><span>Helmut</span><small>Was jetzt zählt.</small></div>
+      <nav class="nav-list" aria-label="Hauptnavigation">${nav()}</nav>
+    </div></aside>
+    <div class="content-shell">
+      <header class="topbar"><span class="topbar-brand">Helmut</span>
+        <div class="topbar-meta"><span class="ui-status">Wird geladen</span></div>
+      </header>
+      <div class="ui-page" tabindex="-1">
+        ${renderUiPageHeader(title)}
+        <section class="startup-content" aria-busy="true" aria-label="Inhalte werden geladen">
+          <p role="status">Deine Inhalte werden geladen.</p>
+          <div class="skeleton-stack" aria-hidden="true">
+            <div class="skeleton skeleton-line medium"></div>
+            <div class="skeleton skeleton-line"></div>
+            <div class="skeleton skeleton-line short"></div>
+            <div class="skeleton skeleton-card"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <nav class="mobile-dock" aria-label="Mobile Navigation">${nav(true)}</nav>
+  </div>`;
+  app.querySelectorAll("[data-start-view]").forEach(button => {
+    button.addEventListener("click", () => {
+      if (privateAccess || !app.querySelector("[data-startup-shell]")) return;
+      const view = button.dataset.startView;
+      if (!items.some(([id]) => id === view)) return;
+      const mobile = Boolean(button.closest(".mobile-dock"));
+      currentView = view;
+      startupViewChosen = true;
+      renderStartupShell();
+      app.querySelector(`${mobile ? ".mobile-dock" : ".nav-list"} [data-start-view="${view}"]`)?.focus();
+    });
+  });
+  hideStartupSplash();
 }
 
 function hideStartupSplash() {

@@ -15,6 +15,9 @@ const { payload } = require("./fixtures/ui-preview");
 const shell = require("../server").__indexHtml();
 const runs = Number(process.env.HELMUT_BENCHMARK_RUNS || 5);
 assert(Number.isInteger(runs) && runs >= 1 && runs <= 10);
+const authMs = Number(process.env.HELMUT_BENCHMARK_AUTH_MS || 120);
+const dataMs = Number(process.env.HELMUT_BENCHMARK_DATA_MS || 300);
+assert([authMs, dataMs].every(ms => Number.isFinite(ms) && ms >= 0 && ms <= 10000));
 const results = [], requests = [], files = new Map();
 const session = { mode: "accounts", authenticated: true,
   user: { id: "startup-test", name: "UI Testprofil", role: "abgeordneter", politicianId: payload.profile.id },
@@ -33,13 +36,14 @@ const server = http.createServer((req, res) => {
     const data = pathname === "/api/auth/session" ? session
       : pathname === "/api/app/start" ? payload : {};
     // Controlled service latency; actual production DB latency is NOT simulated.
-    const delay = pathname === "/api/auth/session" ? 120 : pathname === "/api/app/start" ? 300 : 0;
+    const delay = pathname === "/api/auth/session" ? authMs : pathname === "/api/app/start" ? dataMs : 0;
     setTimeout(() => send(JSON.stringify(data), "application/json"), delay);
     return;
   }
   if (!/^\/(client\.js|styles\.css|site\.webmanifest|assets\/[\w/.-]+)$/.test(pathname)
       || pathname.split("/").includes("..")) { res.writeHead(404); res.end(); return; }
-  const file = path.join(root, pathname);
+  const file = pathname === "/client.js" && process.env.HELMUT_BENCHMARK_CLIENT
+    ? process.env.HELMUT_BENCHMARK_CLIENT : path.join(root, pathname);
   if (!fs.existsSync(file)) { res.writeHead(404); res.end(); return; }
   if (!files.has(file)) files.set(file, fs.readFileSync(file));
   send(files.get(file), types[path.extname(file)] || "application/octet-stream", "public, max-age=31536000, immutable");
@@ -59,11 +63,13 @@ const server = http.createServer((req, res) => {
         window.__startup = {};
         function frame() {
           const app = document.getElementById("app"), splash = document.getElementById("appSplash");
-          if (app && app.querySelector("[data-view]") && !window.__startup.renderedMs) window.__startup.renderedMs = performance.now();
+          if (app && app.querySelector("[data-view], [data-start-view]") && !window.__startup.renderedMs) window.__startup.renderedMs = performance.now();
           if (splash && window.__startup.renderedMs && !window.__startup.visibleMs) {
             const style = getComputedStyle(splash);
             if (style.visibility === "hidden" || style.display === "none") window.__startup.visibleMs = performance.now();
           }
+          if (app && app.querySelector("[data-view]") && !app.querySelector("[data-startup-shell]") && !window.__startup.dataReadyMs)
+            window.__startup.dataReadyMs = performance.now();
           requestAnimationFrame(frame);
         }
         requestAnimationFrame(frame);
@@ -82,6 +88,7 @@ const server = http.createServer((req, res) => {
       for (const kind of ["cold", "warm"]) {
         await page.goto(origin, { waitUntil: "domcontentloaded", timeout: 30000 });
         await page.waitForFunction(() => window.__startup.visibleMs > 0, null, { timeout: 15000 });
+        await page.waitForFunction(() => window.__startup.dataReadyMs > 0, null, { timeout: 25000 });
         await page.evaluate(() => document.fonts.ready);
         const measured = await page.evaluate(() => ({
           ...window.__startup,
@@ -92,12 +99,14 @@ const server = http.createServer((req, res) => {
         assert.equal(errors.length, 0, errors.join("\n"));
         assert.equal(failedResources.length, 0, JSON.stringify(failedResources));
         assert(await page.locator('[data-view="radar"]').count() > 0, "Real navigation must render");
-        assert(await page.evaluate(() => ['400 16px "Hanken Grotesk"', '400 16px Spectral', '500 16px Spectral', '400 16px "IBM Plex Mono"', '500 16px "IBM Plex Mono"'].every(font => document.fonts.check(font))), "All UI fonts must load");
+        // Only require the body font used in every view. Other weights load on
+        // demand; a public loading frame need not request all private-view fonts.
+        await page.waitForFunction(() => document.fonts.check('400 16px "Hanken Grotesk"'));
         if (run === runs && kind === "warm" && process.env.HELMUT_BENCHMARK_SCREENSHOT) {
           await page.screenshot({ path: process.env.HELMUT_BENCHMARK_SCREENSHOT });
         }
         results.push({ run, kind, ...measured, errors });
-        console.log(JSON.stringify({ run, kind, visibleMs: Math.round(measured.visibleMs), renderedMs: Math.round(measured.renderedMs), fontsReadyMs: Math.round(measured.fontsReadyMs), transferredBytes: measured.resources.reduce((sum, r) => sum + r.transferredBytes, 0) }));
+        console.log(JSON.stringify({ run, kind, visibleMs: Math.round(measured.visibleMs), renderedMs: Math.round(measured.renderedMs), dataReadyMs: Math.round(measured.dataReadyMs), fontsReadyMs: Math.round(measured.fontsReadyMs), transferredBytes: measured.resources.reduce((sum, r) => sum + r.transferredBytes, 0) }));
       }
       await context.close();
     }
@@ -106,6 +115,6 @@ const server = http.createServer((req, res) => {
     await new Promise(resolve => server.close(resolve));
   }
   assert(requests.every(req => req.method === "GET"), "No write requests allowed");
-  const output = { measuredAt: new Date().toISOString(), browser: browser.version(), conditions: { viewport: "390x844", cpuSlowdown: 4, latencyMs: 100, downloadBytesPerSecond: 200000, authServiceMs: 120, startServiceMs: 300, serviceWorker: "blocked", synthetic: true, gzip: true }, results };
+  const output = { measuredAt: new Date().toISOString(), browser: browser.version(), conditions: { viewport: "390x844", cpuSlowdown: 4, latencyMs: 100, downloadBytesPerSecond: 200000, authServiceMs: authMs, startServiceMs: dataMs, serviceWorker: "blocked", synthetic: true, gzip: true }, results };
   if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(output, null, 2) + "\n");
 })().catch(error => { console.error(error); server.close(); process.exitCode = 1; });

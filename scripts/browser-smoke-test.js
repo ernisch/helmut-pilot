@@ -157,6 +157,7 @@ function check(name, cond, detail = "") {
 
       check(`${label}: keine unbehandelten JS-Fehler beim Boot`, pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
 
+      await page.waitForFunction(() => !document.querySelector("[data-startup-shell]"), null, { timeout: 20000 });
       const html = await page.content();
       check(`${label}: App-Shell gerendert (app-frame vorhanden)`, html.includes("app-frame") || html.includes("pilot"),
         html.slice(0, 120));
@@ -438,6 +439,63 @@ function check(name, cond, detail = "") {
           text.includes("Bitte drehe dein Gerät ins Hochformat."));
       }
 
+      await context.close();
+    }
+    // Deliberately hold both responses: a fast shell must not be confused with
+    // loaded private content. Exercise actual navigation before authorization.
+    for (const mode of ["dark", "light", "anonymous", "auth-error", "data-error"]) {
+      const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true,
+        hasTouch: true, serviceWorkers: "block" });
+      await context.addInitScript(theme => {
+        localStorage.setItem("helmut:theme", theme);
+        localStorage.setItem("helmut:lastStartPayload:v3:foreign:live", JSON.stringify({ privateText: "SECRET_OLD_ACCOUNT" }));
+      }, mode === "light" ? "light" : "dark");
+      const page = await context.newPage(), errors = [];
+      page.on("pageerror", e => errors.push(e.message));
+      let releaseAuth, releaseData, startSeen, startCalls = 0;
+      const started = new Promise(resolve => { startSeen = resolve; });
+      const authGate = new Promise(resolve => { releaseAuth = resolve; });
+      const dataGate = new Promise(resolve => { releaseData = resolve; });
+      const fixture = require("./fixtures/ui-preview").payload;
+      await page.route("**/api/auth/session", async route => {
+        await authGate;
+        await route.fulfill({ status: mode === "auth-error" ? 503 : 200, contentType: "application/json",
+          body: JSON.stringify(mode === "anonymous" ? { authenticated: false } : { authenticated: true,
+            user: { id: "shell-test", name: "PRIVATE_TEST_NAME", role: "abgeordneter", politicianId: fixture.profile.id },
+            profiles: [{ id: fixture.profile.id, name: fixture.profile.fullName }] }) });
+      });
+      await page.route("**/api/app/start?**", async route => {
+        startCalls++; startSeen(); await dataGate;
+        await route.fulfill({ status: mode === "data-error" ? 503 : 200,
+          contentType: "application/json", body: JSON.stringify(fixture) });
+      });
+      await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
+      await page.waitForSelector("[data-startup-shell]");
+      check(`${mode}: Shell sichtbar bei noch offener Anmeldung`, await page.evaluate(() =>
+        getComputedStyle(document.getElementById("appSplash")).display === "none"
+        || getComputedStyle(document.getElementById("appSplash")).visibility === "hidden"));
+      check(`${mode}: keine privaten Cache-/Kontodaten vor Anmeldung`, !(await page.locator("#app").innerText()).match(/SECRET_OLD_ACCOUNT|PRIVATE_TEST_NAME/));
+      await page.locator('.mobile-dock [data-start-view="radar"]').click();
+      check(`${mode}: Navigation reagiert vor Datenabruf`, await page.locator('.mobile-dock [data-start-view="radar"]').getAttribute("aria-current") === "page" && startCalls === 0);
+      releaseAuth();
+      if (mode === "anonymous" || mode === "auth-error") {
+        await page.waitForFunction(() => !document.querySelector("[data-startup-shell]"));
+        check(`${mode}: Login/Fehler statt endlosem Laden`, mode === "anonymous"
+          ? await page.locator("#loginForm").count() === 1
+          : (await page.locator("#app").innerText()).includes("Helmut ist gerade nicht erreichbar."));
+        check(`${mode}: keine Fachabfrage`, startCalls === 0);
+        releaseData();
+      } else {
+        await started;
+        check(`${mode}: Inhalte weiterhin ehrlich als ladend markiert`, await page.locator('[data-startup-shell] [aria-busy="true"]').count() === 1);
+        if (mode === "light") await page.screenshot({ path: "/tmp/helmut-start-shell-light.png" });
+        releaseData();
+        await page.waitForFunction(() => !document.querySelector("[data-startup-shell]"));
+        check(`${mode}: Auswahl erhalten oder ehrlicher Fehler`, mode === "data-error"
+          ? (await page.locator("#app").innerText()).includes("Briefing konnte nicht geladen werden.")
+          : await page.locator('.mobile-dock [data-view="radar"]').getAttribute("aria-current") === "page");
+      }
+      check(`${mode}: keine Laufzeitfehler`, errors.length === 0, errors.join(" | "));
       await context.close();
     }
   } finally {

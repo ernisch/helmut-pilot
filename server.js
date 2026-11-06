@@ -6442,15 +6442,25 @@ async function handleAuthSession(response, authUser, token) {
   }
   // Rollende Verlaengerung bei jedem App-Start: Session + Cookie auffrischen,
   // damit man angemeldet bleibt, bis man sich aktiv abmeldet.
-  let extraHeaders = {};
-  try {
-    const ttlSeconds = token ? await accounts.extendSession(token) : null;
-    if (ttlSeconds) extraHeaders = { "Set-Cookie": auth.sessionCookieHeader(token, ttlSeconds) };
-  } catch (error) {
-    console.error("Session-Verlängerung fehlgeschlagen", error);
-  }
-  const allowed = await auth.getAllowedPoliticianIds(authUser);
-  const profiles = await listAllowedProfiles(authUser, allowed);
+  // authUser wurde zuvor frisch geprueft. Verlaengerung und Profilauswahl sind
+  // danach unabhaengig; die Antwort wartet weiterhin auf beide Ergebnisse.
+  // Promise.all beobachtet beide Pfade sofort, auch wenn einer fehlschlaegt.
+  const [extraHeaders, { allowed, profiles }] = await Promise.all([
+    (async () => {
+      try {
+        const ttlSeconds = token ? await accounts.extendSession(token) : null;
+        return ttlSeconds ? { "Set-Cookie": auth.sessionCookieHeader(token, ttlSeconds) } : {};
+      } catch (error) {
+        console.error("Session-Verlängerung fehlgeschlagen", error);
+        return {};
+      }
+    })(),
+    (async () => {
+      const allowed = await auth.getAllowedPoliticianIds(authUser);
+      const profiles = await listAllowedProfiles(authUser, allowed);
+      return { allowed, profiles };
+    })()
+  ]);
   response.writeHead(200, jsonHeaders(extraHeaders));
   response.end(JSON.stringify({
     authenticated: true,

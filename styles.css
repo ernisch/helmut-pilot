@@ -9197,3 +9197,10 @@ body .loading-card > .primary-button:hover { background: var(--ui-solid-hover); 
 @media (max-width: 480px) { body .loading-card { padding: 36px 22px 28px; margin: 0 16px; } }
 body .shell:has(> .loading-card) { display: grid; place-items: center; min-height: 100dvh; padding: 24px 16px; box-sizing: border-box; background: radial-gradient(70% 40% at 50% 0, rgba(127,168,224,.07), transparent 70%), var(--ui-bg); }
 body .shell > .loading-card { margin: 0 auto; width: 100%; }
+
+/* Immediate public start frame; content remains explicitly loading. */
+.startup-content { max-width: 760px; padding: 24px 0; }
+.startup-content > p { color: var(--ui-muted); font-size: 16px; }
+@media (prefers-reduced-motion: reduce) {
+  .startup-content .skeleton::after { animation: none; }
+}

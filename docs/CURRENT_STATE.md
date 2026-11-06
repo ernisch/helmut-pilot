@@ -330,7 +330,13 @@ nach GO und gruener Pflicht-CI42216854223 live auf`c4425d7a`; Vercel
 und maximal4 Lagegruppen parallel. Geschuetzte Live-GETs6,513/4,143/4,245s,
 alle HTTP200 und zehn Lagekarten; Median9,557→4,245s. Kein Androidwert.
 Lage bleibt laengste Phase3,6–5,4s. Rollout/Nachmessung abgeschlossen.
-Naechster Schritt: wahrgenommene Startzeit auf Android pruefen.
+Erneuter Android-Befund:5–6s Startlogo bis zur Oberflaeche. Folgefix vorbereitet
+auf`codex/instant-app-shell-20261106`: oeffentliche Navigation vor Netzantworten,
+ehrlicher Ladezustand, private Daten erst nach Autorisierung; Sessionarbeit parallel.
+Mobil-Labor warm: Oberflaeche5,838→0,223s, Inhalte weiter5,773s; kein Androidwert.
+Browser108/108, Splash35/35, Session6/6 und lesender Review bestanden.
+Pflicht-CI am PR-Kopf pruefen; neuer Merge/Livegang noch nicht freigegeben.
+Naechster Schritt: geprueften Folgefix freigeben und Android-Oeffnung bestaetigen.
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
 Historische alte Anweisungen, darunter

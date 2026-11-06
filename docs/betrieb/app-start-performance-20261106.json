@@ -3952,5 +3952,1206 @@
       "previousLiveMedianMs": 9557,
       "liveMedianMs": 4245
     }
+  },
+  "immediateShell": {
+    "baselineCommit": "77d9016320e33e92b99d6b5abe526e2910881f52",
+    "before": {
+      "measuredAt": "2026-11-06T13:09:10.809Z",
+      "browser": "151.0.7922.173",
+      "conditions": {
+        "viewport": "390x844",
+        "cpuSlowdown": 4,
+        "latencyMs": 100,
+        "downloadBytesPerSecond": 200000,
+        "authServiceMs": 500,
+        "startServiceMs": 5000,
+        "serviceWorker": "blocked",
+        "synthetic": true,
+        "gzip": true
+      },
+      "results": [
+        {
+          "run": 1,
+          "kind": "cold",
+          "renderedMs": 7973.200000000186,
+          "visibleMs": 7974.299999999814,
+          "dataReadyMs": 7974.4000000003725,
+          "firstContentfulPaintMs": 1124,
+          "fontsReadyMs": 9500.200000000186,
+          "resources": [
+            {
+              "path": "/styles.css",
+              "startMs": 192.6000000005588,
+              "durationMs": 774.5999999996275,
+              "transferredBytes": 66393,
+              "encodedBytes": 66093
+            },
+            {
+              "path": "/client.js",
+              "startMs": 197.5,
+              "durationMs": 1797,
+              "transferredBytes": 171720,
+              "encodedBytes": 171420
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+              "startMs": 1041.2000000001863,
+              "durationMs": 1065.5999999996275,
+              "transferredBytes": 80273,
+              "encodedBytes": 79973
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+              "startMs": 1041.5,
+              "durationMs": 773.4000000003725,
+              "transferredBytes": 39493,
+              "encodedBytes": 39193
+            },
+            {
+              "path": "/api/auth/session",
+              "startMs": 2046.5,
+              "durationMs": 511.6000000005588,
+              "transferredBytes": 446,
+              "encodedBytes": 146
+            },
+            {
+              "path": "/assets/helmut_logo.svg",
+              "startMs": 2205.9000000003725,
+              "durationMs": 112,
+              "transferredBytes": 2616,
+              "encodedBytes": 2316
+            },
+            {
+              "path": "/assets/favicon.ico",
+              "startMs": 2343.100000000559,
+              "durationMs": 118,
+              "transferredBytes": 2935,
+              "encodedBytes": 2635
+            },
+            {
+              "path": "/api/app/start",
+              "startMs": 2576.2000000001863,
+              "durationMs": 5005.9000000003725,
+              "transferredBytes": 1544,
+              "encodedBytes": 1244
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+              "startMs": 7746.200000000186,
+              "durationMs": 1703.7000000001863,
+              "transferredBytes": 88158,
+              "encodedBytes": 87858
+            },
+            {
+              "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+              "startMs": 7746.299999999814,
+              "durationMs": 1403.300000000745,
+              "transferredBytes": 57606,
+              "encodedBytes": 57306
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+              "startMs": 7746.5,
+              "durationMs": 1132.7000000001863,
+              "transferredBytes": 40540,
+              "encodedBytes": 40240
+            },
+            {
+              "path": "/api/parliament",
+              "startMs": 7959.200000000186,
+              "durationMs": 111,
+              "transferredBytes": 322,
+              "encodedBytes": 22
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": 1,
+          "kind": "warm",
+          "renderedMs": 5823.799999999814,
+          "visibleMs": 5828,
+          "dataReadyMs": 5828,
+          "firstContentfulPaintMs": 284,
+          "fontsReadyMs": 5861.799999999814,
+          "resources": [
+            {
+              "path": "/styles.css",
+              "startMs": 162,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 66093
+            },
+            {
+              "path": "/client.js",
+              "startMs": 162.1000000005588,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 171420
+            },
+            {
+              "path": "/api/auth/session",
+              "startMs": 200,
+              "durationMs": 508,
+              "transferredBytes": 446,
+              "encodedBytes": 146
+            },
+            {
+              "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+              "startMs": 226.79999999981374,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 57306
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+              "startMs": 227.5,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 79973
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+              "startMs": 227.6000000005588,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 87858
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+              "startMs": 228.40000000037253,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 39193
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+              "startMs": 229.1000000005588,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 40240
+            },
+            {
+              "path": "/assets/helmut_logo.svg",
+              "startMs": 320.70000000018626,
+              "durationMs": 1.7000000001862645,
+              "transferredBytes": 0,
+              "encodedBytes": 2316
+            },
+            {
+              "path": "/assets/favicon.ico",
+              "startMs": 359.1000000005588,
+              "durationMs": 1.7999999998137355,
+              "transferredBytes": 0,
+              "encodedBytes": 2635
+            },
+            {
+              "path": "/api/app/start",
+              "startMs": 720.7000000001863,
+              "durationMs": 5004.799999999814,
+              "transferredBytes": 1544,
+              "encodedBytes": 1244
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": 2,
+          "kind": "cold",
+          "renderedMs": 7947.600000000559,
+          "visibleMs": 7955.100000000559,
+          "dataReadyMs": 7955.100000000559,
+          "firstContentfulPaintMs": 1040,
+          "fontsReadyMs": 9493,
+          "resources": [
+            {
+              "path": "/styles.css",
+              "startMs": 151.79999999981374,
+              "durationMs": 773.3000000007451,
+              "transferredBytes": 66393,
+              "encodedBytes": 66093
+            },
+            {
+              "path": "/client.js",
+              "startMs": 154.1000000005588,
+              "durationMs": 1851.0999999996275,
+              "transferredBytes": 171720,
+              "encodedBytes": 171420
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+              "startMs": 970.2999999998137,
+              "durationMs": 1102.800000000745,
+              "transferredBytes": 80273,
+              "encodedBytes": 79973
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+              "startMs": 971.2000000001863,
+              "durationMs": 748.7999999998137,
+              "transferredBytes": 39493,
+              "encodedBytes": 39193
+            },
+            {
+              "path": "/api/auth/session",
+              "startMs": 2030.4000000003725,
+              "durationMs": 507.70000000018626,
+              "transferredBytes": 446,
+              "encodedBytes": 146
+            },
+            {
+              "path": "/assets/helmut_logo.svg",
+              "startMs": 2148.9000000003725,
+              "durationMs": 112.59999999962747,
+              "transferredBytes": 2616,
+              "encodedBytes": 2316
+            },
+            {
+              "path": "/assets/favicon.ico",
+              "startMs": 2277.600000000559,
+              "durationMs": 110.8999999994412,
+              "transferredBytes": 2935,
+              "encodedBytes": 2635
+            },
+            {
+              "path": "/api/app/start",
+              "startMs": 2548.100000000559,
+              "durationMs": 5008.0999999996275,
+              "transferredBytes": 1544,
+              "encodedBytes": 1244
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+              "startMs": 7726.9000000003725,
+              "durationMs": 1703.3999999994412,
+              "transferredBytes": 88158,
+              "encodedBytes": 87858
+            },
+            {
+              "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+              "startMs": 7728,
+              "durationMs": 1402.7999999998137,
+              "transferredBytes": 57606,
+              "encodedBytes": 57306
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+              "startMs": 7728.100000000559,
+              "durationMs": 1133,
+              "transferredBytes": 40540,
+              "encodedBytes": 40240
+            },
+            {
+              "path": "/api/parliament",
+              "startMs": 7936.9000000003725,
+              "durationMs": 113.70000000018626,
+              "transferredBytes": 322,
+              "encodedBytes": 22
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": 2,
+          "kind": "warm",
+          "renderedMs": 5835.299999999814,
+          "visibleMs": 5837.799999999814,
+          "dataReadyMs": 5838.799999999814,
+          "firstContentfulPaintMs": 272,
+          "fontsReadyMs": 5878.5,
+          "resources": [
+            {
+              "path": "/styles.css",
+              "startMs": 162.79999999981374,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 66093
+            },
+            {
+              "path": "/client.js",
+              "startMs": 165.5,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 171420
+            },
+            {
+              "path": "/api/auth/session",
+              "startMs": 192.09999999962747,
+              "durationMs": 509.1000000005588,
+              "transferredBytes": 446,
+              "encodedBytes": 146
+            },
+            {
+              "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+              "startMs": 216,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 57306
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+              "startMs": 216.70000000018626,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 79973
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+              "startMs": 217.29999999981374,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 87858
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+              "startMs": 219.29999999981374,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 39193
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+              "startMs": 221,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 40240
+            },
+            {
+              "path": "/assets/helmut_logo.svg",
+              "startMs": 345.40000000037253,
+              "durationMs": 1.599999999627471,
+              "transferredBytes": 0,
+              "encodedBytes": 2316
+            },
+            {
+              "path": "/assets/favicon.ico",
+              "startMs": 371.90000000037253,
+              "durationMs": 1.3999999994412065,
+              "transferredBytes": 0,
+              "encodedBytes": 2635
+            },
+            {
+              "path": "/api/app/start",
+              "startMs": 723.5999999996275,
+              "durationMs": 5009.4000000003725,
+              "transferredBytes": 1544,
+              "encodedBytes": 1244
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": 3,
+          "kind": "cold",
+          "renderedMs": 8017.0999999996275,
+          "visibleMs": 8020.199999999255,
+          "dataReadyMs": 8021.0999999996275,
+          "firstContentfulPaintMs": 1048,
+          "fontsReadyMs": 9541.5,
+          "resources": [
+            {
+              "path": "/styles.css",
+              "startMs": 174.79999999981374,
+              "durationMs": 763.7999999998137,
+              "transferredBytes": 66393,
+              "encodedBytes": 66093
+            },
+            {
+              "path": "/client.js",
+              "startMs": 175.19999999925494,
+              "durationMs": 1828.1000000005588,
+              "transferredBytes": 171720,
+              "encodedBytes": 171420
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+              "startMs": 995.5999999996275,
+              "durationMs": 1083.5,
+              "transferredBytes": 80273,
+              "encodedBytes": 79973
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+              "startMs": 997,
+              "durationMs": 752.1999999992549,
+              "transferredBytes": 39493,
+              "encodedBytes": 39193
+            },
+            {
+              "path": "/api/auth/session",
+              "startMs": 2043,
+              "durationMs": 508.3999999994412,
+              "transferredBytes": 446,
+              "encodedBytes": 146
+            },
+            {
+              "path": "/assets/helmut_logo.svg",
+              "startMs": 2142.2999999998137,
+              "durationMs": 117.8999999994412,
+              "transferredBytes": 2616,
+              "encodedBytes": 2316
+            },
+            {
+              "path": "/assets/favicon.ico",
+              "startMs": 2278.0999999996275,
+              "durationMs": 117.59999999962747,
+              "transferredBytes": 2935,
+              "encodedBytes": 2635
+            },
+            {
+              "path": "/api/app/start",
+              "startMs": 2563.5,
+              "durationMs": 5006.0999999996275,
+              "transferredBytes": 1544,
+              "encodedBytes": 1244
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+              "startMs": 7746.0999999996275,
+              "durationMs": 1750.2999999998137,
+              "transferredBytes": 88158,
+              "encodedBytes": 87858
+            },
+            {
+              "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+              "startMs": 7746.899999999441,
+              "durationMs": 1449.1000000005588,
+              "transferredBytes": 57606,
+              "encodedBytes": 57306
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+              "startMs": 7747,
+              "durationMs": 1179.5,
+              "transferredBytes": 40540,
+              "encodedBytes": 40240
+            },
+            {
+              "path": "/api/parliament",
+              "startMs": 8004.399999999441,
+              "durationMs": 112,
+              "transferredBytes": 322,
+              "encodedBytes": 22
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": 3,
+          "kind": "warm",
+          "renderedMs": 5871.0999999996275,
+          "visibleMs": 5878.299999999814,
+          "dataReadyMs": 5878.299999999814,
+          "firstContentfulPaintMs": 272,
+          "fontsReadyMs": 5926.799999999814,
+          "resources": [
+            {
+              "path": "/styles.css",
+              "startMs": 183.70000000018626,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 66093
+            },
+            {
+              "path": "/client.js",
+              "startMs": 183.8999999994412,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 171420
+            },
+            {
+              "path": "/api/auth/session",
+              "startMs": 222.59999999962747,
+              "durationMs": 511.5,
+              "transferredBytes": 446,
+              "encodedBytes": 146
+            },
+            {
+              "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+              "startMs": 242,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 57306
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+              "startMs": 242.09999999962747,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 79973
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+              "startMs": 242.09999999962747,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 87858
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+              "startMs": 242.20000000018626,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 39193
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+              "startMs": 242.20000000018626,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 40240
+            },
+            {
+              "path": "/assets/helmut_logo.svg",
+              "startMs": 329.70000000018626,
+              "durationMs": 3,
+              "transferredBytes": 0,
+              "encodedBytes": 2316
+            },
+            {
+              "path": "/assets/favicon.ico",
+              "startMs": 357,
+              "durationMs": 1.599999999627471,
+              "transferredBytes": 0,
+              "encodedBytes": 2635
+            },
+            {
+              "path": "/api/app/start",
+              "startMs": 747.2999999998137,
+              "durationMs": 5005.5,
+              "transferredBytes": 1544,
+              "encodedBytes": 1244
+            },
+            {
+              "path": "/assets/ui/reichstag.jpg",
+              "startMs": 5801.700000000186,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 206069
+            }
+          ],
+          "errors": []
+        }
+      ]
+    },
+    "after": {
+      "measuredAt": "2026-11-06T13:12:41.155Z",
+      "browser": "151.0.7922.173",
+      "conditions": {
+        "viewport": "390x844",
+        "cpuSlowdown": 4,
+        "latencyMs": 100,
+        "downloadBytesPerSecond": 200000,
+        "authServiceMs": 500,
+        "startServiceMs": 5000,
+        "serviceWorker": "blocked",
+        "synthetic": true,
+        "gzip": true
+      },
+      "results": [
+        {
+          "run": 1,
+          "kind": "cold",
+          "renderedMs": 2176.10000000149,
+          "visibleMs": 2178.60000000149,
+          "dataReadyMs": 7849.200000001118,
+          "firstContentfulPaintMs": 1044,
+          "fontsReadyMs": 8178.60000000149,
+          "resources": [
+            {
+              "path": "/styles.css",
+              "startMs": 191.40000000037253,
+              "durationMs": 765.5999999996275,
+              "transferredBytes": 66393,
+              "encodedBytes": 66093
+            },
+            {
+              "path": "/client.js",
+              "startMs": 192.80000000074506,
+              "durationMs": 1852.4000000003725,
+              "transferredBytes": 172415,
+              "encodedBytes": 172115
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+              "startMs": 998.1000000014901,
+              "durationMs": 1099.3999999985099,
+              "transferredBytes": 80273,
+              "encodedBytes": 79973
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+              "startMs": 998.9000000003725,
+              "durationMs": 738,
+              "transferredBytes": 39493,
+              "encodedBytes": 39193
+            },
+            {
+              "path": "/api/auth/session",
+              "startMs": 2147.10000000149,
+              "durationMs": 529.8999999985099,
+              "transferredBytes": 446,
+              "encodedBytes": 146
+            },
+            {
+              "path": "/assets/ui/reichstag.jpg",
+              "startMs": 2154.5,
+              "durationMs": 1878,
+              "transferredBytes": 206369,
+              "encodedBytes": 206069
+            },
+            {
+              "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+              "startMs": 2159.2000000011176,
+              "durationMs": 988.2999999988824,
+              "transferredBytes": 57606,
+              "encodedBytes": 57306
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+              "startMs": 2159.5,
+              "durationMs": 1295.5,
+              "transferredBytes": 88158,
+              "encodedBytes": 87858
+            },
+            {
+              "path": "/api/app/start",
+              "startMs": 2685.7000000011176,
+              "durationMs": 5007.199999999255,
+              "transferredBytes": 1544,
+              "encodedBytes": 1244
+            },
+            {
+              "path": "/assets/helmut_logo.svg",
+              "startMs": 4043.4000000003725,
+              "durationMs": 117.09999999962747,
+              "transferredBytes": 2616,
+              "encodedBytes": 2316
+            },
+            {
+              "path": "/assets/favicon.ico",
+              "startMs": 4173.800000000745,
+              "durationMs": 114.40000000037253,
+              "transferredBytes": 2935,
+              "encodedBytes": 2635
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+              "startMs": 7765,
+              "durationMs": 384.5,
+              "transferredBytes": 40540,
+              "encodedBytes": 40240
+            },
+            {
+              "path": "/api/parliament",
+              "startMs": 7843.9000000003725,
+              "durationMs": 103.80000000074506,
+              "transferredBytes": 322,
+              "encodedBytes": 22
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": 1,
+          "kind": "warm",
+          "renderedMs": 224.60000000149012,
+          "visibleMs": 225.7000000011176,
+          "dataReadyMs": 5760.9000000003725,
+          "firstContentfulPaintMs": 276,
+          "fontsReadyMs": 5780.200000001118,
+          "resources": [
+            {
+              "path": "/styles.css",
+              "startMs": 148.60000000149012,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 66093
+            },
+            {
+              "path": "/client.js",
+              "startMs": 149.2000000011176,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 172115
+            },
+            {
+              "path": "/api/auth/session",
+              "startMs": 177.80000000074506,
+              "durationMs": 508.5,
+              "transferredBytes": 446,
+              "encodedBytes": 146
+            },
+            {
+              "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+              "startMs": 190.5,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 57306
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+              "startMs": 191.2000000011176,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 79973
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+              "startMs": 191.30000000074506,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 87858
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+              "startMs": 192.2000000011176,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 39193
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+              "startMs": 192.5,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 40240
+            },
+            {
+              "path": "/assets/ui/reichstag.jpg",
+              "startMs": 197.30000000074506,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 206069
+            },
+            {
+              "path": "/assets/helmut_logo.svg",
+              "startMs": 290.7000000011176,
+              "durationMs": 1.199999999254942,
+              "transferredBytes": 0,
+              "encodedBytes": 2316
+            },
+            {
+              "path": "/assets/favicon.ico",
+              "startMs": 329.2000000011176,
+              "durationMs": 1.099999999627471,
+              "transferredBytes": 0,
+              "encodedBytes": 2635
+            },
+            {
+              "path": "/api/app/start",
+              "startMs": 697.7000000011176,
+              "durationMs": 5007.299999998882,
+              "transferredBytes": 1544,
+              "encodedBytes": 1244
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": 2,
+          "kind": "cold",
+          "renderedMs": 2132.2999999988824,
+          "visibleMs": 2135.5999999996275,
+          "dataReadyMs": 7841.299999998882,
+          "firstContentfulPaintMs": 1076,
+          "fontsReadyMs": 8165.799999998882,
+          "resources": [
+            {
+              "path": "/styles.css",
+              "startMs": 179.39999999850988,
+              "durationMs": 772.9000000003725,
+              "transferredBytes": 66393,
+              "encodedBytes": 66093
+            },
+            {
+              "path": "/client.js",
+              "startMs": 180.59999999962747,
+              "durationMs": 1829,
+              "transferredBytes": 172415,
+              "encodedBytes": 172115
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+              "startMs": 991.5,
+              "durationMs": 1100.2999999988824,
+              "transferredBytes": 80273,
+              "encodedBytes": 79973
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+              "startMs": 991.8999999985099,
+              "durationMs": 777.6000000014901,
+              "transferredBytes": 39493,
+              "encodedBytes": 39193
+            },
+            {
+              "path": "/api/auth/session",
+              "startMs": 2115.5,
+              "durationMs": 532.2999999988824,
+              "transferredBytes": 446,
+              "encodedBytes": 146
+            },
+            {
+              "path": "/assets/ui/reichstag.jpg",
+              "startMs": 2127.0999999996275,
+              "durationMs": 1876.699999999255,
+              "transferredBytes": 206369,
+              "encodedBytes": 206069
+            },
+            {
+              "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+              "startMs": 2130.5,
+              "durationMs": 1018.5999999996275,
+              "transferredBytes": 57606,
+              "encodedBytes": 57306
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+              "startMs": 2130.5999999996275,
+              "durationMs": 1326.5999999996275,
+              "transferredBytes": 88158,
+              "encodedBytes": 87858
+            },
+            {
+              "path": "/api/app/start",
+              "startMs": 2662.0999999996275,
+              "durationMs": 5010.5999999996275,
+              "transferredBytes": 1544,
+              "encodedBytes": 1244
+            },
+            {
+              "path": "/assets/helmut_logo.svg",
+              "startMs": 4015.7999999988824,
+              "durationMs": 116.80000000074506,
+              "transferredBytes": 2616,
+              "encodedBytes": 2316
+            },
+            {
+              "path": "/assets/favicon.ico",
+              "startMs": 4154.5,
+              "durationMs": 113,
+              "transferredBytes": 2935,
+              "encodedBytes": 2635
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+              "startMs": 7739.0999999996275,
+              "durationMs": 405.5,
+              "transferredBytes": 40540,
+              "encodedBytes": 40240
+            },
+            {
+              "path": "/api/parliament",
+              "startMs": 7831.39999999851,
+              "durationMs": 103.90000000037253,
+              "transferredBytes": 322,
+              "encodedBytes": 22
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": 2,
+          "kind": "warm",
+          "renderedMs": 211.80000000074506,
+          "visibleMs": 212.59999999962747,
+          "dataReadyMs": 5772.9000000003725,
+          "firstContentfulPaintMs": 264,
+          "fontsReadyMs": 5795.9000000003725,
+          "resources": [
+            {
+              "path": "/styles.css",
+              "startMs": 135.19999999925494,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 66093
+            },
+            {
+              "path": "/client.js",
+              "startMs": 135.40000000037253,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 172115
+            },
+            {
+              "path": "/api/auth/session",
+              "startMs": 167.09999999962747,
+              "durationMs": 509.2000000011176,
+              "transferredBytes": 446,
+              "encodedBytes": 146
+            },
+            {
+              "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+              "startMs": 186.90000000037253,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 57306
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+              "startMs": 187,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 79973
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+              "startMs": 187.19999999925494,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 87858
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+              "startMs": 187.19999999925494,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 39193
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+              "startMs": 187.40000000037253,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 40240
+            },
+            {
+              "path": "/assets/ui/reichstag.jpg",
+              "startMs": 188.59999999962747,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 206069
+            },
+            {
+              "path": "/assets/helmut_logo.svg",
+              "startMs": 273.90000000037253,
+              "durationMs": 1.199999999254942,
+              "transferredBytes": 0,
+              "encodedBytes": 2316
+            },
+            {
+              "path": "/assets/favicon.ico",
+              "startMs": 302,
+              "durationMs": 1.599999999627471,
+              "transferredBytes": 0,
+              "encodedBytes": 2635
+            },
+            {
+              "path": "/api/app/start",
+              "startMs": 685.8000000007451,
+              "durationMs": 5009.199999999255,
+              "transferredBytes": 1544,
+              "encodedBytes": 1244
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": 3,
+          "kind": "cold",
+          "renderedMs": 2192.5999999996275,
+          "visibleMs": 2192.7999999988824,
+          "dataReadyMs": 7847.5,
+          "firstContentfulPaintMs": 1052,
+          "fontsReadyMs": 8182.4000000003725,
+          "resources": [
+            {
+              "path": "/styles.css",
+              "startMs": 183.59999999962747,
+              "durationMs": 767,
+              "transferredBytes": 66393,
+              "encodedBytes": 66093
+            },
+            {
+              "path": "/client.js",
+              "startMs": 184.19999999925494,
+              "durationMs": 1847.0999999996275,
+              "transferredBytes": 172415,
+              "encodedBytes": 172115
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+              "startMs": 1002.5999999996275,
+              "durationMs": 1087.9000000003725,
+              "transferredBytes": 80273,
+              "encodedBytes": 79973
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+              "startMs": 1003.0999999996275,
+              "durationMs": 743.1999999992549,
+              "transferredBytes": 39493,
+              "encodedBytes": 39193
+            },
+            {
+              "path": "/api/auth/session",
+              "startMs": 2152,
+              "durationMs": 532.7999999988824,
+              "transferredBytes": 446,
+              "encodedBytes": 146
+            },
+            {
+              "path": "/assets/ui/reichstag.jpg",
+              "startMs": 2157.2999999988824,
+              "durationMs": 1883.7000000011176,
+              "transferredBytes": 206369,
+              "encodedBytes": 206069
+            },
+            {
+              "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+              "startMs": 2166.0999999996275,
+              "durationMs": 1004.4000000003725,
+              "transferredBytes": 57606,
+              "encodedBytes": 57306
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+              "startMs": 2166.699999999255,
+              "durationMs": 1311.7000000011176,
+              "transferredBytes": 88158,
+              "encodedBytes": 87858
+            },
+            {
+              "path": "/api/app/start",
+              "startMs": 2694.0999999996275,
+              "durationMs": 5007.199999999255,
+              "transferredBytes": 1544,
+              "encodedBytes": 1244
+            },
+            {
+              "path": "/assets/helmut_logo.svg",
+              "startMs": 4085.5999999996275,
+              "durationMs": 113.59999999962747,
+              "transferredBytes": 2616,
+              "encodedBytes": 2316
+            },
+            {
+              "path": "/assets/favicon.ico",
+              "startMs": 4222.4000000003725,
+              "durationMs": 110.89999999850988,
+              "transferredBytes": 2935,
+              "encodedBytes": 2635
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+              "startMs": 7765.4000000003725,
+              "durationMs": 392.8999999985099,
+              "transferredBytes": 40540,
+              "encodedBytes": 40240
+            },
+            {
+              "path": "/api/parliament",
+              "startMs": 7845,
+              "durationMs": 111.40000000037253,
+              "transferredBytes": 322,
+              "encodedBytes": 22
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": 3,
+          "kind": "warm",
+          "renderedMs": 223.10000000149012,
+          "visibleMs": 223.2000000011176,
+          "dataReadyMs": 5785.5,
+          "firstContentfulPaintMs": 268,
+          "fontsReadyMs": 5806.800000000745,
+          "resources": [
+            {
+              "path": "/styles.css",
+              "startMs": 150.60000000149012,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 66093
+            },
+            {
+              "path": "/client.js",
+              "startMs": 150.7000000011176,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 172115
+            },
+            {
+              "path": "/api/auth/session",
+              "startMs": 186.80000000074506,
+              "durationMs": 507.09999999962747,
+              "transferredBytes": 446,
+              "encodedBytes": 146
+            },
+            {
+              "path": "/assets/ui/fonts/HankenGrotesk-var.woff2",
+              "startMs": 199.10000000149012,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 57306
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Regular.woff2",
+              "startMs": 199.30000000074506,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 79973
+            },
+            {
+              "path": "/assets/ui/fonts/Spectral-Medium.woff2",
+              "startMs": 200.30000000074506,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 87858
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+              "startMs": 200.40000000037253,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 39193
+            },
+            {
+              "path": "/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+              "startMs": 200.5,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 40240
+            },
+            {
+              "path": "/assets/ui/reichstag.jpg",
+              "startMs": 204.5,
+              "durationMs": 0,
+              "transferredBytes": 0,
+              "encodedBytes": 206069
+            },
+            {
+              "path": "/assets/helmut_logo.svg",
+              "startMs": 274.7000000011176,
+              "durationMs": 1.299999998882413,
+              "transferredBytes": 0,
+              "encodedBytes": 2316
+            },
+            {
+              "path": "/assets/favicon.ico",
+              "startMs": 293.6000000014901,
+              "durationMs": 1,
+              "transferredBytes": 0,
+              "encodedBytes": 2635
+            },
+            {
+              "path": "/api/app/start",
+              "startMs": 705.4000000003725,
+              "durationMs": 5006.0999999996275,
+              "transferredBytes": 1544,
+              "encodedBytes": 1244
+            }
+          ],
+          "errors": []
+        }
+      ]
+    },
+    "limits": [
+      "Synthetic service latency500ms auth and5000ms data; not measured Android launch.",
+      "Visible shell and complete content readiness are separate metrics.",
+      "Browser cache warm/cold, service worker blocked; no private content cache."
+    ]
   }
 }
