@@ -5398,7 +5398,7 @@ function renderLageView() {
           }).join("")}
         </div>
       </section>
-      <article class="ui-detail ui-lage-detail" aria-labelledby="ui-lage-detail-title">
+      <article class="ui-detail ui-lage-detail" tabindex="0" aria-labelledby="ui-lage-detail-title">
         <button class="ui-mobile-back" type="button" data-ui-lage-back>${uiIcon("back")} Zurück zur Lage</button>
         ${vsheetContentHtml(selected).replace('id="vsheet-title"', 'id="ui-lage-detail-title"')}
       </article>
@@ -9683,6 +9683,7 @@ function bindActions() {
         app.querySelector(".ui-page")?.scrollTo({ top: 0 });
         app.querySelector(".ui-mobile-back")?.focus({ preventScroll: true });
       } else {
+        app.querySelector(".ui-lage-detail")?.scrollTo({ top: 0, behavior: "instant" });
         Array.from(app.querySelectorAll("[data-ui-lage-select]")).find(el => el.dataset.uiLageSelect === uiLageSelectedId)?.focus({ preventScroll: true });
       }
     });

@@ -5,6 +5,24 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
+## Desktop Lage: sichtbares Detailpanel (06.11.2026, vorbereitet)
+
+Betreiber hat das Mockup fuer das angeheftete rechte Detail bestaetigt.
+Separate Folgeaenderung auf dem bestandenen mobilen PR1091 `1bf26216`:
+Desktopdetail bleibt unter der Kopfleiste sichtbar, ist unabhaengig scrollbar
+und startet bei Themenwechsel oben. Listenposition bleibt erhalten;
+Panel ist auch per Tastatur scrollbar. Mobile Darstellung bleibt erhalten.
+Syntax lokal bestanden. Der vorhandene Browser Smoke erhaelt gezielte Faelle
+fuer tiefe Listenauswahl, getrenntes Scrollen, Quellenzugriff, Themenwechsel,
+Tastatur, kleines Desktopfenster/helles Theme sowie mobile Nichtwirkung.
+Lokaler Chromium fehlt; Browsernachweis und Pflicht CI fuer diesen Kopf offen.
+PR1091 hat beide Pflichtchecks bestanden, ist noch nicht gemergt.
+Kein Merge und kein Production Rollout. Naechster Schritt: Pflicht CI und
+Desktopverhalten abnehmen, dann konkrete Mergefreigabe. Rueckweg:
+Desktop CSS und lokale Detailbedienung zuruecknehmen; keine Datenmutation.
+Weitere freigegebene Schritte: mobiles Browser Zurueck (3), ehrliche
+Aktualitaetsangaben (4). Buerobereich zuletzt; Quellenluecken noch nicht beauftragt.
+
 ## Mobile Lage kompakter (06.11.2026, vorbereitet)
 
 Betreiber hat das Mockup fuer kompakte Themenzeilen freigegeben. Branch

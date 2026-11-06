@@ -374,6 +374,69 @@ function check(name, cond, detail = "") {
       if (isMobile) await page.locator("[data-ui-lage-back]").click();
       check(`${label}: keine JS Fehler bei Teilrollen und Quellenwechsel`, pageErrors.length === 0);
 
+      // Desktop-Detail bei tief gescrollter Liste: echte Klicks und Wheel,
+      // bestehende synthetische Fixture; keine weiteren Backendaufrufe.
+      await page.evaluate((base) => {
+        briefing.lageBriefing = { available: true, vorgaenge: Array.from({ length: 12 }, (_, i) => ({
+          ...base, id: 'desktop-scroll-' + i, vorgangId: 'desktop-scroll-' + i,
+          displayTitle: 'Synthetischer Vorgang ' + (i + 1),
+          displaySummary: 'Vollstaendiger synthetischer Sachstand fuer die Scrollpruefung. '.repeat(25)
+        })) };
+        uiLageDetailOpen = false; currentView = 'briefing'; render();
+        document.querySelector('.ui-page').scrollTo({ top: 0, behavior: 'instant' });
+      }, memberFixture[0]);
+      const detail = page.locator('.ui-lage-detail');
+      if (!isMobile) {
+        const panelInside = () => page.evaluate(() => {
+          const p = document.querySelector('.ui-page').getBoundingClientRect();
+          const d = document.querySelector('.ui-lage-detail').getBoundingClientRect();
+          return d.top >= 72 && d.bottom <= p.bottom && d.height > 0;
+        });
+        check(`${label}: Detail passt vor dem Scrollen zwischen Kopf und Fuss`, await panelInside());
+        const ninth = page.locator('[data-ui-lage-select="desktop-scroll-8"]');
+        await ninth.scrollIntoViewIfNeeded();
+        const before = await page.locator('.ui-page').evaluate(el => el.scrollTop);
+        await ninth.click();
+        check(`${label}: Auswahl weit unten erhaelt die Listenposition`,
+          before > 500 && Math.abs(await page.locator('.ui-page').evaluate(el => el.scrollTop) - before) < 2);
+        check(`${label}: ausgewahltes Desktopdetail bleibt sichtbar`, await panelInside()
+          && (await detail.locator('.vsheet-title').innerText()) === 'Synthetischer Vorgang 9');
+        await detail.hover();
+        await page.mouse.wheel(0, 400);
+        await page.waitForFunction(() => document.querySelector('.ui-lage-detail').scrollTop > 0);
+        check(`${label}: Detail laesst sich unabhaengig von der Liste scrollen`,
+          Math.abs(await page.locator('.ui-page').evaluate(el => el.scrollTop) - before) < 2);
+        await detail.locator('.vsheet-src[href]').first().scrollIntoViewIfNeeded();
+        check(`${label}: Originalquelle im gescrollten Panel erreichbar`,
+          await detail.locator('.vsheet-src[href]').first().isVisible());
+        const tenth = page.locator('[data-ui-lage-select="desktop-scroll-9"]');
+        await tenth.scrollIntoViewIfNeeded();
+        const nextBefore = await page.locator('.ui-page').evaluate(el => el.scrollTop);
+        await tenth.click();
+        check(`${label}: neues Thema beginnt oben und erhaelt Listenposition`,
+          await detail.evaluate(el => el.scrollTop) === 0
+            && Math.abs(await page.locator('.ui-page').evaluate(el => el.scrollTop) - nextBefore) < 2
+            && (await detail.locator('.vsheet-title').innerText()) === 'Synthetischer Vorgang 10');
+        await detail.focus();
+        await page.keyboard.press('PageDown');
+        await page.waitForFunction(() => document.querySelector('.ui-lage-detail').scrollTop > 0);
+        check(`${label}: Detail per Tastatur scrollbar`, await detail.evaluate(el => el.scrollTop) > 0);
+        await page.setViewportSize({ width: 900, height: 600 });
+        await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
+        await page.locator('.ui-page').evaluate(el => el.scrollTo({ top: el.scrollHeight, behavior: 'instant' }));
+        check(`${label}: kleines Desktopfenster und helles Theme am Listenende`,
+          await panelInside() && await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      } else {
+        await page.locator('[data-ui-lage-select="desktop-scroll-8"]').click();
+        check(`${label}: mobiles Detail bleibt normaler Seiteninhalt`,
+          await detail.isVisible() && await detail.evaluate(el => getComputedStyle(el).position !== 'sticky'
+            && getComputedStyle(el).maxHeight === 'none'));
+        await page.locator('[data-ui-lage-back]').click();
+        check(`${label}: eigener mobiler Rueckweg zur Liste bleibt erhalten`,
+          await page.locator('[data-ui-lage-select="desktop-scroll-8"]').isVisible());
+      }
+      check(`${label}: keine JS Fehler nach Desktopdetailpruefung`, pageErrors.length === 0);
+
       if (isMobile) {
         const dock = await page.evaluate(`Boolean(document.querySelector(".mobile-dock"))`).catch(() => false);
         check(`${label}: mobile Dock-Navigation vorhanden`, dock);
@@ -471,3 +534,4 @@ function check(name, cond, detail = "") {
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);
 })().catch((e) => { console.error("TESTFEHLER", e); process.exit(1); });
+
