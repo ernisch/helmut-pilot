@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "fix/cem-lage-profile-schema-20261106": false,
       "fix/cem-budget-jsonb-20261106": false,
       "fix/cem-single-profile-20261106": false,
       "fix/verwaltung-favicon-production-20261105": false,
