@@ -324,12 +324,13 @@ warm1,157→0,721s; keine echten Android-Geraetezeiten. Geschuetzter Live-
 Startabruf braucht dagegen12,323/8,997/9,557s: der Server bleibt Hauptbremse.
 181/181 Standard- und336/336 Bereichssuiten plus Browsercheck gruen.
 [Messung, Rollout und Grenzen](betrieb/app-start-performance-20261106.md).
-Server-Folgefix lokal fertig auf `codex/server-start-performance-20261106`:
-Briefingquellen gebuendelt, unabhaengige Startleser und maximal4 Lagegruppen
-parallel. Reiner Datenbau mit echten GETs lokal Median15,041→5,746s;
-kein Production-/Androidwert. Quellen-/Mandats-/Fehlerpruefungen gruen,
-lesendes Review ohne Blocker. Pflicht-CI/konkreter Merge noch offen.
-Naechster Schritt: geprueften Server-PR freigeben, ausrollen und live nachmessen.
+Server-Folgefix [PR1081](https://github.com/ernisch/helmut-pilot/pull/1081)
+nach GO und gruener Pflicht-CI42216854223 live auf`c4425d7a`; Vercel
+`dpl_6mL7X1bobnCQ1wQ24CpdxBKiC2aJ` READY. Quellen gebuendelt, Startleser
+und maximal4 Lagegruppen parallel. Geschuetzte Live-GETs6,513/4,143/4,245s,
+alle HTTP200 und zehn Lagekarten; Median9,557→4,245s. Kein Androidwert.
+Lage bleibt laengste Phase3,6–5,4s. Rollout/Nachmessung abgeschlossen.
+Naechster Schritt: wahrgenommene Startzeit auf Android pruefen.
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
 Historische alte Anweisungen, darunter

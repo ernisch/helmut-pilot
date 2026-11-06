@@ -3883,6 +3883,74 @@
       "Route body and actual builders used; session resolution excluded, profile read directly.",
       "Lage timeout bypassed only in diagnostic harness to measure all completed work; production remains 8 seconds.",
       "Existing short-lived store cache active; second optimized round used it. No new cache introduced."
-    ]
+    ],
+    "productionRollout": {
+      "observedAt": "2026-11-06T12:56:40Z",
+      "commit": "c4425d7aa69c394475527f91c28f4b0ca6c29bda",
+      "kind": "production GET with admin bearer; excludes actual account session and Android launch",
+      "requests": [
+        {
+          "run": 1,
+          "status": 200,
+          "ttfbMs": 6312,
+          "totalMs": 6513,
+          "bytes": 231599,
+          "phasesMs": {
+            "profile": 530,
+            "freshness": 421,
+            "tasks": 1206,
+            "notes": 1289,
+            "briefing": 4164,
+            "lage": 5366,
+            "start": 5943
+          },
+          "validPayload": true,
+          "lageAvailable": true,
+          "lageCards": 10
+        },
+        {
+          "run": 2,
+          "status": 200,
+          "ttfbMs": 3945,
+          "totalMs": 4143,
+          "bytes": 231599,
+          "phasesMs": {
+            "profile": 47,
+            "tasks": 69,
+            "notes": 59,
+            "freshness": 107,
+            "briefing": 2546,
+            "lage": 3594,
+            "start": 3642
+          },
+          "validPayload": true,
+          "lageAvailable": true,
+          "lageCards": 10
+        },
+        {
+          "run": 3,
+          "status": 200,
+          "ttfbMs": 4047,
+          "totalMs": 4245,
+          "bytes": 231599,
+          "phasesMs": {
+            "profile": 44,
+            "tasks": 71,
+            "notes": 58,
+            "freshness": 107,
+            "briefing": 2427,
+            "lage": 3718,
+            "start": 3764
+          },
+          "validPayload": true,
+          "lageAvailable": true,
+          "lageCards": 10
+        }
+      ],
+      "deploymentId": "dpl_6mL7X1bobnCQ1wQ24CpdxBKiC2aJ",
+      "deploymentState": "READY",
+      "previousLiveMedianMs": 9557,
+      "liveMedianMs": 4245
+    }
   }
 }
