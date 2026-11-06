@@ -50,8 +50,12 @@ check("4c Kein Zustands-Abschnitt traegt mehr exakt aria-label=\"Helmut\"",
 
 // --- 5) Marke/Persona Helmut bleibt (KEINE globale Ersetzung) ---------------------------
 check("5 Login-Button 'Helmut öffnen' (Marke: die App oeffnen) bleibt", clientSrc.includes(">Helmut öffnen</button>"));
-check("5b Persona-Onboarding 'So funktioniert Helmut' bleibt", clientSrc.includes("So funktioniert Helmut"));
-check("5c Persona 'Helmuts Einschätzung' bleibt", clientSrc.includes("Helmuts Einschätzung"));
+check("5b Persönliche Ansprache im aktuellen Briefing bleibt",
+  clientSrc.includes("Dein Briefing. Was jetzt deine Aufmerksamkeit braucht."));
+const helmutView = clientSrc.match(/function renderHelmutView\(\) \{[\s\S]*?\n\}\n/);
+check("5c Briefing nutzt den gemeinsamen V3-Einstieg",
+  Boolean(helmutView) && helmutView[0].includes("renderHelmutStandView()")
+  && !helmutView[0].includes("renderHelmutAssessmentView"));
 check("5d PWA-Manifest: App-Name bleibt Helmut", /"name":\s*"Helmut"/.test(manifest) && /"short_name":\s*"Helmut"/.test(manifest));
 
 // --- 6) Keine Verwechslung mit gespeicherten (Morgen-)Briefings --------------------------

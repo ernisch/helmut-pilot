@@ -698,12 +698,8 @@ function applyStartPayload(startPayload, accessGeneration = privateAccessGenerat
     .sort(decisionComparator)
     .map(toDecision);
 
-  // "Deine wichtigsten Entscheidungen" = die obersten ECHTEN Handeln/Beobachten-
-  // Vorgänge aus DEMSELBEN Set wie Zähler und "Weitere Briefings" (helmutBriefings),
-  // damit Zahl, Einleitungstext und Karten übereinstimmen — auch wenn ein Vorgang
-  // (z. B. eine "Sammlung") keine direkte Einzelquelle hat (sonst leeres Deck trotz
-  // "2 Beobachten"). Ignorieren bleibt außen vor; renderFurtherBriefings blendet die
-  // Deck-IDs aus, sodass keine Doppelung entsteht.
+  // Das Deck bleibt die Teilmenge echter Handeln-/Beobachten-Vorgänge aus
+  // helmutBriefings. Ignorierte Vorgänge bleiben außerhalb dieser Teilmenge.
   helmutDeck = helmutBriefings
     .filter((d) => helmutStatusBucket(d.priorityType || "watch") !== "ignorieren")
     .slice(0, HELMUT_DECK_SIZE);
@@ -6079,41 +6075,6 @@ async function loadParliament() {
   }
 }
 
-function formatParliamentMeta(item) {
-  const parts = [];
-  if (item.date) parts.push(formatBriefingDate(item.date));
-  if ((item.urheber || []).length) parts.push(item.urheber[0]);
-  return parts.join(" · ");
-}
-
-function renderParliamentItem(item) {
-  const a = parliamentAssessments[item.id];
-  let assessmentBlock = "";
-  if (a && a.loading) {
-    assessmentBlock = `
-      <div class="skeleton-stack" aria-busy="true" aria-label="Helmut ordnet ein">
-        <div class="skeleton skeleton-line medium"></div>
-        <div class="skeleton skeleton-line short"></div>
-      </div>`;
-  } else if (a) {
-    assessmentBlock = `
-      <div class="parliament-assessment">
-        <p><b>Warum relevant:</b> ${escapeHtml(a.whyRelevant || "")}</p>
-        <p><b>Empfohlene Handlung:</b> ${escapeHtml(a.recommendedAction || "")}</p>
-      </div>`;
-  } else {
-    assessmentBlock = `<button class="secondary-button compact-button" type="button" data-assess-id="${escapeAttribute(item.id)}">Einordnen</button>`;
-  }
-  return `
-    <article class="parliament-item">
-      <span class="parliament-type">${escapeHtml(item.type || "Drucksache")}</span>
-      <a class="parliament-title" href="${escapeAttribute(isHttpUrl(item.url) ? item.url : "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a>
-      <small>${escapeHtml(formatParliamentMeta(item))}</small>
-      ${assessmentBlock}
-    </article>
-  `;
-}
-
 async function assessParliamentItem(id) {
   const context = privateAccessContext();
   if (!privateAccessIsCurrent(context)) return;
@@ -6133,169 +6094,6 @@ async function assessParliamentItem(id) {
   if (privateAccessIsCurrent(context)) render();
 }
 
-function activeDecisions() {
-  return decisions.filter((entry) => entry.status !== "done" && entry.status !== "ignored");
-}
-
-function priorityChipClass(decision) {
-  const t = decision.priorityType || "";
-  if (t === "action" || t === "high") return "danger";
-  if (t === "chance") return "chance";
-  return "watch";
-}
-
-function lageFocusChipText(decision) {
-  const t = decision.priorityType || "";
-  if (t === "action" || t === "high" || t === "risk") return "Heute reagieren";
-  if (t === "chance") return "Chance nutzen";
-  return "Im Blick";
-}
-
-function lageCardReco(decision) {
-  const text = String(decision.action || decision.summary || "").trim();
-  const m = text.match(/^.+?[.!?](?=\s|$)/);
-  const first = m ? m[0].trim() : text;
-  if (first.length <= 68) return first;
-  const t = decision.priorityType || "";
-  if (t === "action" || t === "high") return "Heute öffentlich reagieren.";
-  if (t === "chance") return "Linie vorbereiten.";
-  if (t === "risk") return "Sofort positionieren.";
-  return "Beobachten. Nicht öffentlich reagieren.";
-}
-
-function generateWarumBullets(decision) {
-  const raw = {
-    committee: Number(decision.committeeScore || 0),
-    media: Number(decision.mediaPressure || 0),
-    time: Number(decision.timeUrgency || 0),
-    risk: Number(decision.riskIfIgnoredScore || 0),
-    reaction: Number(decision.reactionChance || 0),
-    citizen: Number(decision.citizenImpact || 0),
-  };
-  const maxVal = Math.max(...Object.values(raw));
-  const scale = maxVal > 10 ? 1 : 10;
-  const s = Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v * scale]));
-
-  const bullets = [];
-  if (s.committee >= 50) bullets.push("Betrifft deinen Ausschuss");
-  if (s.media >= 52) bullets.push("Hohe mediale Aufmerksamkeit");
-  if ((s.time >= 52 || s.risk >= 58) && bullets.length < 3) bullets.push("Presseanfragen wahrscheinlich");
-  if (s.reaction >= 55 && bullets.length < 3) bullets.push("Gute Positionierungschance");
-  if (s.citizen >= 55 && bullets.length < 3) bullets.push("Bürger stark betroffen");
-
-  return bullets.slice(0, 3);
-}
-
-function renderDecisionActions(decision, primary) {
-  return `
-    <div class="lage-actions">
-      <button class="lage-icon-btn lage-done-btn" type="button" data-lage-done="${escapeAttribute(decision.id)}" aria-label="Als erledigt markieren" title="Erledigt">✓</button>
-      <button class="secondary-button compact-button lage-details-btn" type="button" data-detail="${escapeAttribute(decision.id)}">Einordnen</button>
-      <button class="lage-icon-btn lage-ignore-btn" type="button" data-lage-ignore="${escapeAttribute(decision.id)}" aria-label="Ignorieren" title="Ignorieren">✕</button>
-    </div>`;
-}
-
-function renderLageFocus() {
-  const active = activeDecisions();
-  if (!active.length) {
-    return `
-      <section class="lage-focus calm">
-        <span class="lage-focus-chip chance">Alles im Griff</span>
-        <h2 class="lage-focus-title">Heute musst du nicht öffentlich reagieren.</h2>
-        <p class="lage-focus-why">Helmut beobachtet weiter Bundesregierung, Fraktion und Ausschuss und zieht nur hoch, was wirklich zählt.</p>
-      </section>`;
-  }
-  const top = active[0];
-  const warumBullets = generateWarumBullets(top);
-  const readyFormats = activeOfficeFormats().filter((f) => isValidDraft(officeDraftText(officeDrafts[officeDraftKey(top, f)])));
-  const bueroLine = readyFormats.length
-    ? `<button class="lage-buero-ready" type="button" data-view="office">Helmut hat ${escapeHtml(readyFormats.map((f) => f.label).join(" · "))} vorbereitet</button>`
-    : "";
-  const actionLine = lageCardReco(top);
-  return `
-    <section class="lage-focus">
-      <span class="lage-focus-chip ${priorityChipClass(top)}">${escapeHtml(lageFocusChipText(top))}</span>
-      <h2 class="lage-focus-title">${escapeHtml(draftTitle(top))}</h2>
-      ${actionLine ? `<p class="lage-focus-action">${escapeHtml(actionLine)}</p>` : ""}
-      ${warumBullets.length ? `
-      <div class="lage-warum">
-        <span class="lage-warum-label">Warum du</span>
-        <ul class="lage-warum-list">
-          ${warumBullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}
-        </ul>
-      </div>` : ""}
-      ${renderDecisionActions(top, true)}
-      ${bueroLine}
-    </section>`;
-}
-
-function renderSecondaryDecisions() {
-  const rest = activeDecisions().slice(1, 3);
-  if (!rest.length) return "";
-  return `
-    <p class="lage-section-label">Danach</p>
-    <div class="lage-secondary">
-      ${rest.map((decision) => {
-        const reco = lageCardReco(decision);
-        return `
-        <article class="lage-sec-item">
-          <span class="lage-sec-chip ${priorityChipClass(decision)}">${escapeHtml(decision.priorityLabel || "Punkt")}</span>
-          <strong>${escapeHtml(draftTitle(decision))}</strong>
-          ${reco ? `<p>${escapeHtml(reco)}</p>` : ""}
-          <button class="secondary-button compact-button lage-details-btn" type="button" data-detail="${escapeAttribute(decision.id)}">Einordnen</button>
-        </article>`;
-      }).join("")}
-    </div>`;
-}
-
-function renderParliamentListHtml() {
-  if (!parliamentItems.length) return "";
-  return `<div class="parliament-list">${parliamentItems.slice(0, 6).map((item) => renderParliamentItem(item)).join("")}</div>`;
-}
-
-function renderCollapsible(id, title, count, content) {
-  if (!content || !String(content).trim()) return "";
-  const open = expandedSections.has(id);
-  return `
-    <div class="lage-collapsible ${open ? "open" : ""}">
-      <button class="lage-collapse-head" type="button" data-collapse="${escapeAttribute(id)}" aria-expanded="${open}">
-        <span class="lage-collapse-title">${escapeHtml(title)}</span>
-        ${count != null ? `<span class="lage-collapse-count">${escapeHtml(String(count))}</span>` : ""}
-        <span class="lage-collapse-chev">▾</span>
-      </button>
-      ${open ? `<div class="lage-collapse-body">${content}</div>` : ""}
-    </div>`;
-}
-
-function renderBriefingView() {
-  const firstName = (profile?.fullName || "").split(" ")[0];
-  const watchHtml = renderWatchlistMini();
-  return `
-    <section class="page-intro lage-head">
-      <div class="lage-head-row">
-        <span class="lage-greeting">${escapeHtml(timeGreeting(firstName).replace(".", ""))}</span>
-        <span class="lage-date">${escapeHtml(formatBerlinFullDateTime())}</span>
-      </div>
-    </section>
-
-    <p class="lage-today-label">Heute zählt</p>
-    ${renderLageFocus()}
-    ${renderSecondaryDecisions()}
-    ${watchHtml ? `<p class="lage-section-label">Vorbereiten</p>${watchHtml}` : ""}
-
-    <p class="lage-more-label">Mehr, wenn du willst</p>
-    ${renderCollapsible("parlament", "Parlamentarische Vorgänge", parliamentItems.length || null, renderParliamentListHtml())}
-    ${renderCollapsible("termine", "Termine & Vorbereitung", null, renderMeetingPrepSection())}
-    ${renderCollapsible("ausblick", "Wochenausblick & Kontext", null, renderWeeklyOutlook())}
-    ${renderCollapsible("lernen", "Lernpuls", null, renderLearningPulse())}
-  `;
-}
-
-function renderLearningPulse() {
-  const learning = opsStatus?.learning || briefing?.learning || briefing?.learningProfile || {};
-  return `<section class="learning-pulse" aria-label="Rückmeldungen"><span>Rückmeldungen</span><p>${escapeHtml(learningSummary(learning))}</p></section>`;
-}
-
 
 function renderFeedbackActions(decision) {
   if (!decision?.id) return "";
@@ -6308,20 +6106,6 @@ function renderFeedbackActions(decision) {
       <button class="${feedbackState === "ignored" ? "is-active" : ""}" type="button" data-feedback="ignored" data-feedback-id="${escapeHtml(decision.id)}">Nicht relevant</button>
     </div>
   `;
-}
-
-function renderWatchlistMini() {
-  const items = competentNoActionItems().slice(0, 1);
-  if (!items.length) return "";
-  return `<div class="lage-watch-grid">${items.map((item) => {
-    const summary = compactText(item.summary || item.relevanceReason || "", 90);
-    return `
-    <article class="lage-watch-item">
-      <span class="lage-watch-chip">Beobachten</span>
-      <strong>${escapeHtml(compactText(item.title || item.sourceName || "Entwicklung", 70))}</strong>
-      ${summary ? `<p>${escapeHtml(summary)}</p>` : ""}
-    </article>`;
-  }).join("")}</div>`;
 }
 
 function renderHelmutView() {
@@ -7076,114 +6860,6 @@ function helmutNowHHMM() {
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
-// Kopf: State A (Morgen, noch keine Entscheidung) vs. State C (Referent-Bestätigung).
-function renderHelmutHeader() {
-  const firstName = (profile?.fullName || "").split(" ")[0] || "";
-  const total = helmutBriefings.length;
-  const deckN = helmutDeck.length;
-  if (helmutDecisionsMade > 0) {
-    const remaining = Math.max(0, deckN - helmutDecisionsMade);
-    const madeText = helmutDecisionsMade === 1 ? "1 Entscheidung getroffen" : `${helmutDecisionsMade} Entscheidungen getroffen`;
-    const remainText = remaining === 0
-      ? "Für heute bist du durch — um den Rest kümmere ich mich."
-      : remaining === 1 ? "Noch 1 wichtiges Thema für heute."
-        : `Noch ${remaining} wichtige Themen für heute.`;
-    const stark = `Stark, ${firstName}`;
-    return `
-      <header class="helmut-referent-head">
-        <h1 class="${headlineClass(stark)}">Stark, ${escapeHtml(firstName)}! 💪</h1>
-        <p>Du hast ${escapeHtml(madeText)}. ${escapeHtml(remainText)}</p>
-      </header>`;
-  }
-  const greeting = timeGreeting(firstName); // enthält bereits den Punkt, z. B. "Guten Morgen, <Vorname>."
-  // Einleitung an die TATSÄCHLICHEN Zahlen koppeln (keine falsche Dringlichkeit):
-  // nur bei echten Handeln-Vorgängen "kümmern"; sonst "beobachten, aktives Handeln nicht nötig".
-  const introCounts = { handeln: 0, beobachten: 0, ignorieren: 0 };
-  helmutBriefings.forEach((d) => { introCounts[helmutStatusBucket(d.priorityType || "watch")] += 1; });
-  const actN = introCounts.handeln;
-  const watchN = introCounts.beobachten;
-  // Ehrlich: keine "heute"-Behauptung über potenziell ältere Vorgänge.
-  const totalLine = `Es ${total === 1 ? "liegt" : "liegen"} ${total} ${total === 1 ? "relevanter Vorgang" : "relevante Vorgänge"} vor.`;
-  let actionLine;
-  if (actN > 0) {
-    actionLine = `Davon solltest du dich heute um ${actN} ${actN === 1 ? "Vorgang" : "Vorgänge"} kümmern${watchN ? ` und ${watchN} beobachten` : ""}.`;
-  } else if (watchN > 0) {
-    actionLine = `${watchN} ${watchN === 1 ? "Vorgang" : "Vorgänge"} solltest du heute beobachten. Aktives Handeln ist nicht nötig.`;
-  } else {
-    actionLine = "Aktives Handeln ist heute nicht nötig.";
-  }
-  return `
-    <header class="helmut-referent-head">
-      <h1 class="${headlineClass(greeting)}">${escapeHtml(greeting)}</h1>
-      <p>${escapeHtml(totalLine)}<br>${escapeHtml(actionLine)}</p>
-    </header>`;
-}
-
-// Drei Status-Cards. Zahlen aus den TATSÄCHLICH ausgelieferten Briefings (nicht aus
-// decisionMetrics), damit Kopfzahl X = Summe der Cards = sichtbare Liste bleibt.
-function renderHelmutStatusCards() {
-  if (!helmutBriefings.length) return "";
-  const counts = { handeln: 0, beobachten: 0, ignorieren: 0 };
-  helmutBriefings.forEach((d) => { counts[helmutStatusBucket(d.priorityType || "watch")] += 1; });
-  const cards = [
-    { key: "handeln", label: "Handeln", icon: HELMUT_ICON_BOLT, n: counts.handeln },
-    { key: "beobachten", label: "Beobachten", icon: HELMUT_ICON_EYE, n: counts.beobachten },
-    { key: "ignorieren", label: "Ignorieren", icon: HELMUT_ICON_IGNORE, n: counts.ignorieren }
-  ];
-  return `
-    <div class="helmut-status-cards" role="list" aria-label="So habe ich deine Themen sortiert">
-      ${cards.map((c) => {
-        // Handeln/Beobachten springen zum ersten passenden Thema. Ignorieren ist
-        // reine Statistik und bleibt nicht interaktiv.
-        const jumpable = c.key !== "ignorieren" && c.n > 0;
-        const inner = `
-          <div class="helmut-status-top">
-            <span class="helmut-status-num">${c.n}</span>
-            <span class="helmut-status-icon" aria-hidden="true">${c.icon}</span>
-          </div>
-          <span class="helmut-status-label">${c.label}</span>`;
-        return jumpable
-          ? `<button type="button" class="helmut-status-card ${c.key} is-jumpable" role="listitem" data-helmut-jump="${c.key}" aria-label="Zu ${c.label} springen">${inner}</button>`
-          : `<div class="helmut-status-card ${c.key}" role="listitem">${inner}</div>`;
-      }).join("")}
-    </div>`;
-}
-
-// State C: „Deine letzte Entscheidung" mit ruhiger Success-Bestätigung.
-function renderLastDecisionCard() {
-  if (!helmutLastDecision) return "";
-  return `
-    <section class="helmut-last-wrap" aria-label="Deine letzte Entscheidung">
-      <div class="helmut-section-head"><h2>Deine letzte Entscheidung</h2></div>
-      <div class="helmut-last-decision">
-        <span class="helmut-last-check" aria-hidden="true">${HELMUT_ICON_CHECK}</span>
-        <span class="helmut-last-title">${escapeHtml(helmutLastDecision.title || "")}</span>
-        <span class="helmut-last-meta">Entscheidung: <b>${escapeHtml(helmutLastDecision.actionLabel || "")}</b></span>
-        <span class="helmut-last-time">${escapeHtml(helmutLastDecision.time || "")} Uhr</span>
-      </div>
-    </section>`;
-}
-
-// Deck-Sektion: kuratierte Top-N (helmutDeck). Titel wechselt in State C.
-function renderHelmutDeckSection() {
-  if (!helmutDeck.length) {
-    return `
-      <section class="helmut-deck-section" aria-label="Deine wichtigsten Entscheidungen">
-        <p class="helmut-deck-empty">Heute ist wenig Dringendes dabei.</p>
-      </section>`;
-  }
-  const remaining = Math.max(0, helmutDeck.length - helmutDecisionsMade);
-  const title = helmutDecisionsMade > 0 ? "Nächstes wichtiges Thema" : "Deine wichtigsten Entscheidungen";
-  return `
-    <section class="helmut-deck-section" aria-label="Deine wichtigsten Entscheidungen">
-      <div class="helmut-section-head">
-        <h2>${title}</h2>
-        ${remaining ? `<span class="helmut-section-count">${remaining}</span>` : ""}
-      </div>
-      ${renderHelmutBriefingList()}
-    </section>`;
-}
-
 // Drei große runde Action-Buttons. Entscheidung NUR hierüber (nie per Swipe).
 function renderDeckActions(card) {
   const id = escapeAttribute(card.id);
@@ -7239,94 +6915,6 @@ function helmutJumpToBucket(bucket) {
   if (row) helmutScrollHighlight(row);
 }
 
-function renderFurtherBriefings() {
-  const deckIds = new Set(helmutDeck.map((d) => d.id));
-  const rest = helmutBriefings.filter((d) => !deckIds.has(d.id));
-  if (!rest.length) return "";
-  return `
-    <section class="helmut-further" aria-label="Weitere Briefings">
-      <div class="helmut-section-head">
-        <h2>Weitere Briefings</h2>
-        <span class="helmut-section-count">${rest.length}</span>
-      </div>
-      <p class="helmut-further-lead">Den Rest habe ich für dich eingeordnet — falls du reinschauen willst.</p>
-      <ul class="helmut-list">
-        ${rest.map((d) => renderFurtherRow(d)).join("")}
-      </ul>
-    </section>`;
-}
-
-function renderFurtherRow(d) {
-  const bucket = helmutStatusBucket(d.priorityType || "watch");
-  // Nur eine sehr kurze Empfehlung — schnell scannbar, keine Textwand. Warum/Risiko/
-  // Quellen erscheinen erst im Detail (data-detail).
-  const short = compactText(polishReferentText(d.action) || d.summary || helmutDeckWhy(d) || "", 58);
-  const time = helmutDeckTime(d);
-  const srcN = Number(d.sourceCount || (Array.isArray(d.sources) ? d.sources.length : 0)) || 0;
-  const srcHint = srcN >= 2 ? `${srcN} Quellen` : srcN === 1 ? "Quelle anzeigen" : "";
-  return `
-    <li>
-      <button class="helmut-list-row ${escapeAttribute(bucket)}" type="button" data-detail="${escapeAttribute(d.id)}">
-        <span class="helmut-list-main">
-          <span class="helmut-list-badge ${escapeAttribute(bucket)}">${escapeHtml(HELMUT_BUCKET_LABEL[bucket])}</span>
-          <span class="helmut-list-title">${escapeHtml(d.title || "Thema")}</span>
-          ${short ? `<span class="helmut-list-desc">${escapeHtml(short)}</span>` : ""}
-        </span>
-        <span class="helmut-list-side">
-          ${time ? `<span class="helmut-list-time">${escapeHtml(time)}</span>` : ""}
-          ${srcHint ? `<span class="helmut-list-src">${escapeHtml(srcHint)}</span>` : ""}
-        </span>
-        <span class="helmut-list-chevron" aria-hidden="true">${HELMUT_ICON_CHEVRON}</span>
-      </button>
-    </li>`;
-}
-
-// „So funktioniert Helmut" — einmaliges Onboarding, danach über den Fuß-Link erneut.
-function renderHelmutHowTo() {
-  let seen = false;
-  try { seen = localStorage.getItem("helmut:howtoSeen") === "1"; } catch { seen = false; }
-  if (seen && !helmutHowtoForceOpen) return "";
-  const cols = [
-    { t: "Überblick in 3 Sekunden", d: "Helmut zeigt dir, wie viele Themen heute wichtig sind – und wie du sie priorisieren solltest." },
-    { t: "Wichtigste Entscheidungen zuerst", d: "Du bekommst nacheinander die 1–3 wichtigsten Themen. Wische nach links, triff deine Entscheidung und bleib im Flow." },
-    { t: "Entscheiden statt informieren", d: "Jedes Thema kommt mit einer klaren Empfehlung. Helmut erklärt dir kurz das Warum, Risiko und deinen Aufwand." },
-    { t: "Alle weiteren Themen im Blick", d: "Nach deinen Top-Entscheidungen siehst du alle weiteren Vorgänge – kompakt, sortiert und filterbar." }
-  ];
-  return `
-    <section class="helmut-howto" aria-label="So funktioniert Helmut">
-      <div class="helmut-section-head"><h2>So funktioniert Helmut</h2></div>
-      <div class="helmut-howto-grid">
-        ${cols.map((c, i) => `
-          <div class="helmut-howto-col">
-            <span class="helmut-howto-step">${i + 1}</span>
-            <span class="helmut-howto-title">${escapeHtml(c.t)}</span>
-            <span class="helmut-howto-desc">${escapeHtml(c.d)}</span>
-          </div>`).join("")}
-      </div>
-      <button class="secondary-button compact-button" type="button" data-helmut-howto-dismiss>Verstanden</button>
-    </section>`;
-}
-
-function renderHelmutAssessmentView() {
-  const assessment = buildHelmutAssessment();
-  if (helmutTypingActive) return renderHelmutTypingResult(assessment);
-  return `
-    <section class="helmut-referent" aria-label="Helmut – dein Referent">
-      ${renderHelmutHeader()}
-      ${renderHelmutStatusCards()}
-      ${renderLastDecisionCard()}
-      ${renderHelmutDeckSection()}
-      ${renderFurtherBriefings()}
-      ${renderHelmutHowTo()}
-      <div class="helmut-assessment-foot">
-        <small>Aktualisiert: ${escapeHtml(formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString()))}</small>
-        <button class="helmut-howto-link" type="button" data-helmut-howto-show>So funktioniert Helmut</button>
-        ${renderRefreshButton()}
-      </div>
-    </section>
-  `;
-}
-
 const CAROUSEL_FILTERS = [
   { key: "Alle",       label: "Alle" },
   { key: "risk",      label: "Risiko" },
@@ -7339,14 +6927,6 @@ const CAROUSEL_FILTERS = [
 // Carousel-Ansicht entfällt bewusst — die Zielvision hat keine Filter-Chips.
 function filteredCarouselItems() {
   return helmutDeck;
-}
-
-function renderHelmutBriefingList() {
-  if (!helmutDeck.length) return "";
-  return `
-    <section class="helmut-carousel-wrap helmut-deck-wrap" aria-label="Deine wichtigsten Entscheidungen" id="helmutCarousel">
-      ${renderCarouselInner()}
-    </section>`;
 }
 
 // Eine große Entscheidungs-Card im Fokus. Swipe/Pfeile blättern nur; entschieden
@@ -7516,288 +7096,11 @@ function bindCarousel(root) {
   }
 }
 
-function renderHelmutTypingResult(assessment) {
-  return `
-    <section class="helmut-assessment helmut-assessment-typing" aria-label="Helmuts Einschätzung">
-      <div class="helmut-assessment-head">
-        <span>Helmut</span>
-        <small>${escapeHtml(assessment.time)} Uhr</small>
-        <h1>Was ich dir empfehle</h1>
-      </div>
-      <article class="helmut-note helmut-typewriter" aria-live="polite">
-        <b class="priority-status ${escapeAttribute(assessment.priorityStatus || "stable")}">${escapeHtml(priorityStatusText(assessment.priorityStatus))}</b>
-        <p>${escapeHtml(helmutTypedText)}<span class="typing-cursor" aria-hidden="true"></span></p>
-      </article>
-    </section>
-  `;
-}
-
-function buildHelmutAssessment() {
-  const stored = briefing?.helmutAssessment;
-  if (stored && typeof stored === "object") {
-    const normalized = {
-      greeting: timeGreeting((profile?.fullName || "").split(" ")[0]),
-      time: String(stored.time || formatBerlinTimeOnly()).trim(),
-      assessment: String(stored.assessment || "").trim(),
-      recommendation: String(stored.recommendation || "").trim(),
-      whyImportant: String(stored.whyImportant || "").trim(),
-      risk: String(stored.risk || "").trim(),
-      priorityStatus: String(stored.priorityStatus || "stable").trim(),
-      typingText: String(stored.typingText || "").trim(),
-      heroWhy: String(stored.heroWhy || "").trim(),
-      heroRisk: String(stored.heroRisk || "").trim(),
-      heroNextStep: String(stored.heroNextStep || "").trim()
-    };
-    if (normalized.assessment || normalized.recommendation || normalized.typingText) {
-      if (!normalized.typingText) normalized.typingText = assessmentTypingText(normalized);
-      return normalized;
-    }
-  }
-  const firstName = (profile?.fullName || "").split(" ")[0];
-  const top = decisions[0];
-  const watch = competentNoActionItems()[0];
-  const topic = top?.title || watch?.title || centralAgendaTopic();
-  const phase = helmutDayPhase();
-  const prioritySentence = helmutPrioritySentence(top, topic);
-  const phaseSentence = helmutPhaseSentence(phase, top, topic);
-  const recommendation = top
-    ? `${phase.recommendationPrefix} ${compactText(chiefRecommendationText(top), 155)}`
-    : `${phase.recommendationPrefix} Halte ${topic} im Blick, aber starte keine öffentliche Reaktion ohne neuen Anlass.`;
-  const fallback = {
-    greeting: timeGreeting(firstName),
-    time: formatBerlinTimeOnly(),
-    assessment: compactText(`${prioritySentence} ${phaseSentence}`, 235),
-    recommendation: compactText(recommendation, 210),
-    whyImportant: top
-      ? compactText(decisionWhyImportant(top), 190)
-      : compactText(`Das ist wichtig, weil ${topic} an dein Mandatsprofil anschließt und sich daraus kurzfristig eine politische Anschlussfrage ergeben kann.`, 190),
-    risk: top
-      ? compactText(decisionRisk(top), 180)
-      : `Wenn du jetzt reagierst, ohne dass sich die Lage verändert hat, verbrauchst du Aufmerksamkeit. Besser: vorbereitet bleiben und erst bei neuer Dynamik handeln.`
-    ,
-    priorityStatus: top ? (top.priorityType === "risk" ? "risk" : top.priorityType === "chance" ? "chance" : top.priorityTrend === "gestiegen" ? "changed" : "stable") : "stable",
-    heroWhy: "",
-    heroRisk: "",
-    heroNextStep: ""
-  };
-  fallback.typingText = assessmentTypingText(fallback);
-  return fallback;
-}
-
-function priorityStatusText(value) {
-  return ({
-    stable: "Priorität stabil",
-    changed: "Priorität verändert",
-    risk: "Risiko gestiegen",
-    chance: "Chance erkannt"
-  })[String(value || "stable").toLowerCase()] || "Priorität geprüft";
-}
-
-function assessmentTypingText(assessment) {
-  return [
-    assessment.greeting,
-    assessment.assessment,
-    `Mein Vorschlag: ${assessment.recommendation}`,
-    `Warum wichtig: ${assessment.whyImportant}`,
-    `Risiko bei Nichtreaktion: ${assessment.risk}`
-  ].filter(Boolean).join("\n\n");
-}
-
-function helmutPrioritySentence(top, topic) {
-  if (!top) return `Deine Prioritäten haben sich aktuell nicht verändert. Fokus bleibt auf ${topic}.`;
-  if (top.statusChange && top.statusChange !== "Unverändert") return `${topic} hat sich verändert: ${top.changeReason || top.statusChange}.`;
-  if (top.changeReason && /gestiegen|neue|risiko|chance|dynamik/i.test(top.changeReason)) return `${topic} ist wichtiger geworden. ${top.changeReason}`;
-  if (top.priorityType === "risk") return `${topic} ist aktuell dein größtes Risiko.`;
-  if (top.priorityType === "chance") return `${topic} eröffnet gerade politischen Handlungsspielraum.`;
-  return `${topic} bleibt deine wichtigste Priorität.`;
-}
-
-function helmutPhaseSentence(phase, top, topic) {
-  const mandate = profile?.committee || profile?.committees?.[0] || "dein Ausschuss";
-  if (phase.key === "morning") return top ? `Heute zählt, ob du dazu früh sprechfähig bist, weil ${mandate} berührt ist.` : `Heute reicht Beobachtung; ich prüfe Regierung, Fraktion und Ausschuss weiter.`;
-  if (phase.key === "midday") return top ? `Seit dem Morgen ist entscheidend, ob daraus Reaktionsdruck entsteht.` : `Seit dem Morgen gibt es keine neue Prioritätsverschiebung.`;
-  if (phase.key === "afternoon") return top ? `Jetzt solltest du klären, ob eine Linie vor Dienstschluss vorbereitet werden muss.` : `Der Nachmittag bleibt stabil; keine unnötige Kommunikation.`;
-  if (phase.key === "evening") return top ? `Heute solltest du abschließen, was morgen früh vorbereitet sein muss.` : `Für heute besteht kein akuter Kommunikationsbedarf.`;
-  return top ? `Für morgen solltest du die Linie zu ${topic} vorbereiten.` : `Für morgen bleibt ${topic} der Beobachtungspunkt.`;
-}
-
-function helmutDayPhase() {
-  const hour = berlinHour();
-  if (hour >= 5 && hour < 11) return { key: "morning", recommendationPrefix: "Bereite heute" };
-  if (hour >= 11 && hour < 14) return { key: "midday", recommendationPrefix: "Prüfe bis zum Nachmittag" };
-  if (hour >= 14 && hour < 18) return { key: "afternoon", recommendationPrefix: "Bereite jetzt" };
-  if (hour >= 18 && hour < 22) return { key: "evening", recommendationPrefix: "Bereite bis morgen 09:00 Uhr" };
-  return { key: "late", recommendationPrefix: "Lege für morgen früh" };
-}
-
-function centralAgendaTopic() {
-  const top = decisions[0];
-  if (top?.title) return top.title;
-  const watch = competentNoActionItems()[0];
-  return watch?.title || "Ruhe bewahren und die Lage weiter prüfen";
-}
-
-function renderMeetingPrepSection() {
-  const meetings = meetingPreparations().slice(0, 1);
-  if (!meetings.length) return `<p class="empty-state">Noch keine Termine im Mandatsprofil.</p>`;
-  return `<div class="agenda-list">${meetings.map(renderMeetingPrepCard).join("")}</div>`;
-}
-
-function renderWeeklyOutlook() {
-  const items = weeklyOutlookItems().slice(0, 4);
-  if (!items.length) return `<p class="lage-focus-why">Keine harte Wochenpriorität. Ich melde, wenn sich das ändert.</p>`;
-  return `<div class="weekly-outlook-list">${items.map(renderWeeklyOutlookItem).join("")}</div>`;
-}
-
-function weeklyOutlookItems() {
-  const meeting = meetingPreparations()[0];
-  const government = governmentPlanItems()[0];
-  const committee = [...decisions, ...competentNoActionItems()].find((item) => {
-    const text = `${item.title || ""} ${item.summary || ""} ${item.whyItMatters || ""} ${item.personal_relevance_explanation || ""}`.toLowerCase();
-    return text.includes("ausschuss") || text.includes("bmas") || text.includes("arbeit und soziales");
-  });
-  const items = [];
-  if (meeting) {
-    items.push({
-      type: "Termin",
-      title: meeting.terminTitel,
-      body: "",
-      action: formatMeetingDate(meeting),
-      href: ""
-    });
-  }
-  if (government) {
-    items.push({
-      type: "Bundesregierung",
-      title: draftTitle(government),
-      body: compactText(contextItemSummary(government), 132),
-      action: "Linie prüfen",
-      href: sourceHref(government.primarySource || government)
-    });
-  }
-  if (committee && committee.id !== government?.id) {
-    items.push({
-      type: "Ausschuss",
-      title: draftTitle(committee),
-      body: compactText(decisionWhyImportant(committee), 132),
-      action: "Für Ausschuss vormerken",
-      href: sourceHref(committee.primarySource || committee)
-    });
-  }
-  if (items.length < 3) {
-    const party = partyFactionItems().find((item) => !items.some((existing) => existing.title === item.title));
-    if (party) {
-      items.push({
-        type: "Fraktion",
-        title: draftTitle(party),
-        body: compactText(contextItemSummary(party), 132),
-        action: "Anschlussfähigkeit prüfen",
-        href: sourceHref(party.primarySource || party)
-      });
-    }
-  }
-  if (items.length < 3) {
-    const focusTopic = topProfileTopicsForView()[0] || "Arbeit und Soziales";
-    items.push({
-      type: "Beobachtung",
-      title: `${focusTopic}: Regierungslage im Blick behalten`,
-      body: `Ich prüfe weiter, ob Bundesregierung oder Ausschuss dazu in dieser Woche ein Vorhaben auslösen.`,
-      action: "Nur hochziehen, wenn daraus Handlungsdruck entsteht.",
-      href: ""
-    });
-  }
-  return items;
-}
-
-function renderWeeklyOutlookItem(item) {
-  return `
-    <article class="weekly-outlook-item weekly-outlook-compact">
-      <span>${escapeHtml(item.type)}</span>
-      <strong>${escapeHtml(compactText(item.title, 60))}</strong>
-      <small>${escapeHtml(item.action)}${item.href ? ` <a class="outlook-source-link" href="${escapeAttribute(item.href)}" target="_blank" rel="noopener noreferrer">↗</a>` : ""}</small>
-    </article>
-  `;
-}
-
-function renderMeetingPrepCard(meeting) {
-  const source = meeting.relevantDecision ? sourceLine(meeting.relevantDecision) : "Mandatsprofil · Termin";
-  const hint = compactText(meeting.entscheidungsfrage || meeting.kurzbriefing, 100);
-  return `
-    <article class="meeting-card meeting-prep-card">
-      <div class="meeting-prep-main">
-        <span>${escapeHtml(formatMeetingDate(meeting))}</span>
-        <h3>${escapeHtml(meeting.terminTitel)}</h3>
-        ${hint ? `<p>${escapeHtml(hint)}</p>` : ""}
-        <details class="meeting-detail">
-          <summary>Vorbereitung öffnen</summary>
-          ${meeting.kernlinie ? `<div class="meeting-line-box"><small>Kernlinie</small><strong>${escapeHtml(meeting.kernlinie)}</strong></div>` : ""}
-          ${(meeting.kritischeFragen || []).length ? `
-          <div class="meeting-prep-grid">
-            <div><small>Im Termin klären</small><ul>${meeting.kritischeFragen.slice(0, 3).map((q) => `<li>${escapeHtml(q)}</li>`).join("")}</ul></div>
-            ${(meeting.risiken || []).length ? `<div><small>Risiko</small><ul>${meeting.risiken.slice(0, 2).map((r) => `<li>${escapeHtml(r)}</li>`).join("")}</ul></div>` : ""}
-          </div>` : ""}
-          <p class="meeting-source-note">Basis: ${escapeHtml(source)}</p>
-        </details>
-      </div>
-      <div class="meeting-actions">
-        <button class="secondary-button compact-button" type="button" data-meeting-brief="${escapeHtml(meeting.id)}">Kurzbriefing</button>
-        <button class="secondary-button compact-button" type="button" data-meeting-line="${escapeHtml(meeting.id)}">Linie kopieren</button>
-      </div>
-    </article>
-  `;
-}
-
 function compactText(value, maxLength = 140) {
   const text = twoSentenceSummary(value || "").replace(/\s+/g, " ").trim();
   if (text.length <= maxLength) return text;
   const sliced = text.slice(0, maxLength - 1).replace(/\s+\S*$/, "");
   return `${sliced || text.slice(0, maxLength - 1)}...`;
-}
-
-function governmentPlanItems() {
-  const home = (briefing.homeSections?.governmentPlans || []).map(normalizeHomeItem).filter(Boolean);
-  const situational = (briefing.situationalBriefing || []).filter((item) => contextTypeForItem(item) === "government");
-  const fromDecisions = decisions.filter((item) => contextTypeForItem(item) === "government");
-  return [...home, ...fromDecisions, ...situational]
-    .filter((item) => item && item.title && hasPreciseSource(item))
-    .filter(uniqueDecisionItem)
-    .sort(sortContextPriority)
-    .slice(0, 3);
-}
-
-function partyFactionItems() {
-  const home = (briefing.homeSections?.partyFaction || []).map(normalizeHomeItem).filter(Boolean);
-  const situational = (briefing.situationalBriefing || []).filter((item) => contextTypeForItem(item) === "party");
-  const fromDecisions = decisions.filter((item) => contextTypeForItem(item) === "party");
-  return [...home, ...fromDecisions, ...situational]
-    .filter((item) => item && item.title && hasPreciseSource(item))
-    .filter(uniqueDecisionItem)
-    .sort(sortContextPriority)
-    .slice(0, 3);
-}
-
-function sortContextPriority(a, b) {
-  return Number(b.relevanceScore || b.finalScore || b.priority || 0) - Number(a.relevanceScore || a.finalScore || a.priority || 0)
-    || new Date(b.publishedAt || b.updatedAt || 0) - new Date(a.publishedAt || a.updatedAt || 0);
-}
-
-function contextTypeForItem(item = {}) {
-  // Kontext-Klassifikation kommt AUSSCHLIESSLICH aus dem Server-Vertrag (item.contextType).
-  // KEINE Client-seitige politische Ableitung per Textsuche mehr — keine hartkodierte
-  // Partei/Fraktion, kein politischer Frontend-Fallback (SaaS-fest fuer jedes Profil).
-  return item && item.contextType ? item.contextType : "";
-}
-
-function contextItemSummary(item = {}) {
-  if (item.action) return item.action;
-  if (item.summary) return item.summary;
-  if (item.relevanceReason) return item.relevanceReason;
-  return item.excerpt || item.content || "Helmut hält diese politische Lage für dich im Blick.";
-}
-
-function uniqueDecisionItem(item, index, items) {
-  const key = item.signalId || item.id || item.title;
-  return items.findIndex((entry) => (entry.signalId || entry.id || entry.title) === key) === index;
 }
 
 function meetingPreparations() {
@@ -7993,11 +7296,6 @@ function opponentInterestForMeeting(input) {
   return "Verlässliche Aufmerksamkeit, klare nächste Schritte und politische Anschlussfähigkeit.";
 }
 
-function formatMeetingDate(meeting) {
-  const date = meeting.datum ? formatBriefingDate(meeting.datum) : "Diese Woche";
-  return `${date}${meeting.uhrzeit ? ` · ${meeting.uhrzeit}` : ""}`;
-}
-
 function nextWeekdayIso(offsetDays) {
   const date = new Date();
   date.setDate(date.getDate() + Number(offsetDays || 1));
@@ -8015,58 +7313,12 @@ function slugify(value) {
     .replace(/^-|-$/g, "");
 }
 
-function normalizeHomeItem(item) {
-  if (!item) return null;
-  if (item.relevance_score || item.recommended_action) return {
-    id: item.id,
-    signalId: item.signal_id || item.signalId,
-    title: item.title,
-    priorityLabel: displayPriority(item.current_priority || item.priority),
-    priorityType: item.risiko_fuer_nutzer > item.chance_fuer_nutzer ? "risk" : item.chance_fuer_nutzer >= 55 ? "chance" : "action",
-    summary: item.summary,
-    action: polishReferentText(item.recommended_action),
-    whyItMatters: item.personal_relevance_explanation,
-    inaction: polishReferentText(item.consequence_if_ignored),
-    opportunity: item.possible_upside,
-    estimatedTime: `${item.estimated_effort_minutes || 5} Min.`,
-    deadline: item.deadline,
-    statusChange: item.status_change,
-    changeReason: item.change_reason,
-    relevanceScore: item.relevance_score,
-    taskTemplate: item.taskTemplate
-  };
-  return item;
-}
-
-function displayPriority(priority) {
-  const value = String(priority || "Relevant");
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function competentNoActionItems() {
-  const situational = (briefing.situationalBriefing || []).filter(hasPreciseSource);
-  const mentions = profileMentions().filter(hasPreciseSource);
-  const raw = (briefing.rawItems || []).filter(hasPreciseSource);
-  return [...situational, ...mentions, ...raw]
-    .filter(uniqueMentionItem)
-    .sort(sortNewestFirst)
-    .slice(0, 3);
-}
-
 function chiefRecommendationText(decision) {
   const action = polishReferentText(decision.action || decision.summary || "");
   if (decision.priorityType === "watch") {
     return `${action} Du musst nicht sofort groß veröffentlichen, aber du solltest heute sprechfähig sein.`;
   }
   return action;
-}
-
-function decisionWhyImportant(decision) {
-  return twoSentenceSummary(decision.personalRelevanceExplanation || decision.whyItMatters || decision.summary || "Das Thema berührt dein Mandatsprofil und verdient heute deine Aufmerksamkeit.");
-}
-
-function decisionRisk(decision) {
-  return twoSentenceSummary(decision.inaction || decision.consequenceIfIgnored || decision.risk || "Wenn du nicht reagierst, prägen andere Akteure die Debatte zuerst.");
 }
 
 // Explizite Teilrollen mit ihren eigenen Quellen; kein Primaerlink als
@@ -9334,42 +8586,6 @@ const RADAR_FILTERS = [
 ];
 
 const RADAR_RELATION_LABELS = { mention: "Über dich", party: "Partei", constituency: "Wahlkreis", committee: "Ausschuss", media: "Medien", official: "Offiziell" };
-
-function profileMentions() {
-  const profileTerms = profileNameTerms();
-  return [...(briefing.personMentions || []), ...(briefing.rawItems || [])]
-    .filter((item) => itemMentionsProfile(item, profileTerms))
-    .filter(hasPreciseSource)
-    .filter(uniqueMentionItem)
-    .sort(sortNewestFirst);
-}
-
-function profileNameTerms() {
-  const fullName = profile?.fullName || "Profil";
-  const lastName = fullName.split(/\s+/).filter(Boolean).at(-1) || fullName;
-  return { fullName, lastName };
-}
-
-function itemMentionsProfile(item, terms = profileNameTerms()) {
-  const text = `${item?.title || ""} ${item?.content || ""} ${item?.excerpt || ""}`.toLowerCase();
-  return text.includes(terms.fullName.toLowerCase()) || profileLastNameRegex(terms.lastName).test(text);
-}
-
-function profileLastNameRegex(lastName) {
-  return new RegExp(`(^|[^a-zäöüß])${escapeRegExp(String(lastName || "").toLowerCase())}($|[^a-zäöüß])`, "i");
-}
-
-function uniqueMentionItem(item, index, items) {
-  return items.findIndex((entry) => mentionKey(entry) === mentionKey(item)) === index;
-}
-
-function sortNewestFirst(a, b) {
-  return new Date(b.retrievedAt || b.publishedAt || 0) - new Date(a.retrievedAt || a.publishedAt || 0);
-}
-
-function mentionKey(item) {
-  return item?.url || item?.sourceUrl || item?.id || item?.title || "";
-}
 
 function publisherDomain(item) {
   const text = `${item.sourceName || ""} ${item.title || ""}`.toLowerCase();
@@ -12350,17 +11566,6 @@ function renderBerlinClockLabel(statusLabel) {
   return `<span class="ui-status-label">${escapeHtml(statusLabel)} · </span><span class="ui-status-time">${escapeHtml(formatBerlinNow())}</span><span class="ui-status-unit"> Uhr</span>`;
 }
 
-function formatBerlinFullDateTime(date = new Date()) {
-  return new Intl.DateTimeFormat("de-DE", {
-    timeZone: "Europe/Berlin",
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(date);
-}
-
 function formatBerlinTimeOnly(date = new Date()) {
   return new Intl.DateTimeFormat("de-DE", {
     timeZone: "Europe/Berlin",
@@ -12544,10 +11749,6 @@ function escapeAttribute(value) {
 // HTML-Escaping allein verhindert kein "javascript:"/"data:"-URI in einem Attribut.
 function isHttpUrl(value) {
   return /^https?:\/\//i.test(String(value || ""));
-}
-
-function escapeRegExp(value) {
-  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 // Service Worker bei jedem Laden registrieren (unabhaengig von Push). Ohne

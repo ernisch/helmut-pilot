@@ -4745,18 +4745,6 @@ function sendPreviewReadOnly(response) {
   });
 }
 
-function shouldRefreshLatestBriefing(briefing, url) {
-  if (url.searchParams.get("refresh") === "0") return false;
-  if (process.env.AUTO_REFRESH_ON_READ === "false") return false;
-  if (!briefing || briefing.status === "Demo") return true;
-  const generatedAt = new Date(briefing.generatedAt || briefing.date || 0);
-  const ageMs = Date.now() - generatedAt.getTime();
-  const hasContent = Number(briefing.items?.length || 0) > 0 || Number(briefing.situationalBriefing?.length || 0) > 0 || Number(briefing.personMentions?.length || 0) > 0;
-  if (!hasContent) return true;
-  if (Number.isNaN(generatedAt.getTime())) return true;
-  return isBriefingStaleForBerlin(briefing) || ageMs > 4 * 60 * 60 * 1000;
-}
-
 function decorateBriefingFreshness(briefing, frischeKontext = null) {
   if (!briefing || briefing.status === "Demo") return briefing;
   // EINE Wahrheit fuer die Aktualitaet: der Kopf-Status folgt der Frische der
