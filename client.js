@@ -6376,17 +6376,9 @@ function renderHelmutStandView() {
     </section>`;
 }
 
-// Drei ruhige Spalten unter „Danach wichtig“ (Design): Vertiefte Einordnung (Lage),
-// Radar, Fuer dein Buero. Jede Spalte erscheint nur mit echten, vorhandenen Daten.
+// Ruhige Spalten unter „Danach wichtig“: Radar und Fuer dein Buero. Die Lage hat
+// ihren eigenen Bereich (Verweis im Hauptvorgang). Nur mit echten, vorhandenen Daten.
 function renderUiBriefingColumns(state) {
-  const item = state.primaryItem;
-  const v = lageVorgangZumBriefing(item);
-  const lage = v ? `<section class="ui-col" aria-label="Vertiefte Einordnung">
-      <p class="ui-col-kicker">${uiIcon("briefing")}<span>Vertiefte Einordnung</span></p>
-      <h3>${escapeHtml(lageField(v.displayTitle) || lageDisplayHeadline(v.title) || hstandText(item.displayTitle) || hstandText(item.title))}</h3>
-      ${lageField(v.displaySummary) ? `<p>${escapeHtml(lageField(v.displaySummary))}</p>` : ""}
-      <button type="button" class="ui-col-link" data-view="briefing">Lage öffnen ${uiIcon("arrow")}</button>
-    </section>` : "";
   const rs = briefing && briefing.currentRadarState;
   const radarLine = rs && rs.available !== false && rs.summary ? [rs.summary.line1, rs.summary.line2].filter(Boolean).join(" ") : "";
   const radar = radarLine ? `<section class="ui-col" aria-label="Radar">
@@ -6402,7 +6394,7 @@ function renderUiBriefingColumns(state) {
       <ul class="ui-col-list">${formats.slice(0, 3).map((f) => `<li><strong>${escapeHtml(f.label)}</strong><span>${escapeHtml(officeCardStatus(decision, f))}</span></li>`).join("")}</ul>
       <button type="button" class="ui-col-link" data-view="office">Büro öffnen ${uiIcon("arrow")}</button>
     </section>` : "";
-  const cols = lage + radar + buero;
+  const cols = radar + buero;
   return cols ? `<div class="ui-briefing-cols">${cols}</div>` : "";
 }
 
@@ -6763,96 +6755,6 @@ function hstandCurrentQuiet(state) {
     && briefing?.available !== false && !briefingDisruption());
 }
 
-function renderHstandQuietOverview(state) {
-  if (!hstandCurrentQuiet(state)) return "";
-  const data = lageData();
-  if (!data || data.available !== true || data.demo) return "";
-  const vorgaenge = new Map(lageVisibleVorgaenge(data).map(v => [String(v.vorgangId || v.id), v]));
-  const sourceHref = source => {
-    try {
-      const url = new URL(source?.url || "");
-      return url.protocol === "https:" && !url.username && !url.password
-        && !isGoogleArticleProxy(url.href) && !isLikelyPublisherHomepage(url.href) ? url.href : "";
-    } catch { return ""; }
-  };
-  // Ein abgelaufenes Quelldatum kann den gesamten Narrativ-Cache entwerten.
-  // Der cacheOnly-Leser liefert dann weiterhin frisch geladene Lage-Karten.
-  // Deren vorhandene Zusammenfassungen bleiben lesbar, ohne den alten Text
-  // erneut freizugeben, eine Tagespriorität zu erfinden oder KI zu starten.
-  if (data.pendingNarrative === true) {
-    if (!Array.isArray(data.paragraphs) || data.paragraphs.length) return "";
-    const placeholders = new Set(["Artikelauszug fehlt; nur Quellentitel verfügbar.",
-      "Keine nutzbaren Quellentexte für eine Zusammenfassung."]);
-    const items = [...vorgaenge].map(([id, v]) => {
-      const text = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
-      const title = lageField(v.displayTitle) || lageDisplayHeadline(v.title);
-      const sources = (Array.isArray(v.sources) ? v.sources : []).filter(sourceHref);
-      if (!id || !title || !text || !sources.length
-        || lageField(v.displayCategory) === "Quellenhinweis" || placeholders.has(text)) return "";
-      const links = sources.map(s => `<a href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.host || "Quelle")} · ${escapeHtml(hstandWhen(s.publishedAt) || "Quelldatum nicht belegt")}</a>`).join("");
-      return `<article class="hstand-overview-item is-tappable" data-briefing-existing-item data-lage-verweis data-vorgang="${escapeAttribute(id)}" role="button" tabindex="0" data-topic-title="${escapeAttribute(title)}">
-        <h3>${escapeHtml(title)}</h3>
-        <p>${escapeHtml(text)}</p>
-        <div class="hstand-overview-sources" aria-label="Quellen und Veröffentlichungsdaten">${links}</div>
-        <button class="secondary-button compact-button" type="button" data-lage-verweis data-vorgang="${escapeAttribute(id)}">Einordnung in der Lage öffnen</button>
-      </article>`;
-    }).filter(Boolean).slice(0, 4);
-    if (!items.length) return "";
-    return `<section class="hstand-card hstand-overview" data-briefing-overview aria-labelledby="hstand-overview-title">
-      <nav class="ui-jump" data-ui-jump aria-label="Themen heute"></nav>
-      <h2 id="hstand-overview-title">Dein Tagesüberblick<span class="ui-count">${items.length === 1 ? "1 Thema" : `${items.length} Themen`}</span></h2>
-      <p class="hstand-overview-meta">Vorhandener Sachstand aus der Lage. Die Quellen können älter sein; ihr Veröffentlichungsdatum steht jeweils dabei.</p>
-      ${items.join("")}
-      <button class="secondary-button compact-button" type="button" data-view="briefing">Alle Vorgänge in der Lage öffnen</button>
-    </section>`;
-  }
-  const generated = new Date(data.generatedAt || "");
-  if (!Number.isFinite(generated.getTime())) return "";
-  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(generated);
-  if (day !== state.frischeVertrag.berlinTag) return "";
-  // Narrativquellen verwenden kanonische URLs ohne www, Vorgangskarten die
-  // Original-URL. Nur diese Identitätsvarianten normalisieren; unbekannte
-  // Weiterleitungen oder andere Artikel bleiben verschieden.
-  const sourceKey = source => {
-    const href = sourceHref(source);
-    if (!href) return "";
-    const url = new URL(href);
-    url.hostname = url.hostname.replace(/^www\./, "");
-    url.hash = "";
-    return url.href;
-  };
-  const paragraphs = (Array.isArray(data.paragraphs) ? data.paragraphs : []).map(p => {
-    if (!p || typeof p.text !== "string" || !p.text.trim()) return "";
-    const ids = Array.isArray(p.vorgangIds) ? [...new Set(p.vorgangIds.map(String))] : [];
-    if (!ids.length || ids.some(id => !vorgaenge.has(id))) return "";
-    const boundSources = new Map(ids.flatMap(id => vorgaenge.get(id).sources)
-      .filter(sourceHref).map(s => [sourceKey(s), s]));
-    const sources = Array.isArray(p.sources) ? p.sources : [];
-    if (!sources.length || sources.some(s => !sourceKey(s) || !boundSources.has(sourceKey(s)))) return "";
-    // Herausgeber, Link und Publikationszeit aus der gebundenen Originalquelle,
-    // nicht aus einer möglicherweise abweichenden Narrativkopie anzeigen.
-    const links = [...new Set(sources.map(s => sourceKey(s)))].map(key => {
-      const s = boundSources.get(key);
-      const when = hstandWhen(s.publishedAt);
-      return `<a href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.host || "Quelle")} · ${escapeHtml(when || "Quelldatum nicht belegt")}</a>`;
-    }).join("");
-    const tap = ids.length === 1 ? ` data-lage-verweis data-vorgang="${escapeAttribute(ids[0])}" role="button" tabindex="0"` : "";
-    const topic = lageField(vorgaenge.get(ids[0])?.displayTitle) || lageDisplayHeadline(vorgaenge.get(ids[0])?.title) || "";
-    return `<article class="hstand-overview-item${ids.length === 1 ? " is-tappable" : ""}" data-briefing-paragraph${tap}${topic ? ` data-topic-title="${escapeAttribute(topic)}"` : ""}>
-      <p>${escapeHtml(p.text)}</p>
-      <div class="hstand-overview-sources" aria-label="Quellen und Veröffentlichungsdaten">${links}</div>
-      ${ids.map(id => `<button class="secondary-button compact-button" type="button" data-lage-verweis data-vorgang="${escapeAttribute(id)}">Einordnung in der Lage öffnen</button>`).join("")}
-    </article>`;
-  }).filter(Boolean);
-  if (!paragraphs.length) return "";
-  return `<section class="hstand-card hstand-overview" data-briefing-overview aria-labelledby="hstand-overview-title">
-    <nav class="ui-jump" data-ui-jump aria-label="Themen heute"></nav>
-    <h2 id="hstand-overview-title">Dein Tagesüberblick<span class="ui-count">${paragraphs.length === 1 ? "1 Thema" : `${paragraphs.length} Themen`}</span></h2>
-    <p class="hstand-overview-meta">Zusammengestellt: ${escapeHtml(hstandWhen(data.generatedAt))}. Die Quellen können älter sein; ihr Veröffentlichungsdatum steht jeweils dabei.</p>
-    ${paragraphs.join("")}
-  </section>`;
-}
-
 function renderHstandStateCard(state, kind) {
   let isError = kind === "error";
   // Sprint 5 (additiv): unterscheidbarer Helmut-Leerzustand (gap/stale/quiet). Nur im
@@ -6869,16 +6771,23 @@ function renderHstandStateCard(state, kind) {
       ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
       : (es && es.detail ? es.detail : "Für dein Mandat liegen derzeit keine belastbaren Vorgänge vor.");
   const emptyKind = disruption ? disruption.kind : (es ? es.kind : "");
-  const overview = !isError && !disruption ? renderHstandQuietOverview(state) : "";
+  // Ruhiger Tag: das Briefing bleibt ehrlich leer. Laufende Themen gehoeren in die
+  // Lage; hier steht nur, wie viele es dort gibt, und ein Weg dorthin.
+  const quiet = !isError && !disruption && hstandCurrentQuiet(state);
+  const lageCount = !isError ? lageVisibleVorgaenge(lageData()).length : 0;
+  const lageLine = quiet && lageCount
+    ? `<p class="hstand-state-lage">${lageCount === 1 ? "In der Lage läuft 1 Thema weiter." : `In der Lage laufen ${lageCount} Themen weiter.`}</p>` : "";
+  const lageButton = lageCount
+    ? `<button class="secondary-button compact-button" type="button" data-view="briefing">${quiet ? "Zur Lage" : "Vorhandene Vorgänge in der Lage öffnen"}</button>` : "";
   return `
     <section class="hstand hstand--state" aria-label="Briefing">
       ${renderHstandHeader(state)}
-      ${overview || `<div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
+      <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}${quiet ? " hstand-state-card--quiet" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
-        <p class="hstand-state-title">${escapeHtml(title)}</p>
+        <p class="hstand-state-title">${escapeHtml(quiet ? "Heute kein neuer Tagesanlass" : title)}</p>
         <p class="hstand-state-sub">${escapeHtml(sub)}</p>
-        ${!isError && lageVisibleVorgaenge(lageData()).length ? '<button class="secondary-button compact-button" type="button" data-view="briefing">Vorhandene Vorgänge in der Lage öffnen</button>' : ""}
-      </div>`}
+        ${lageLine}${lageButton}
+      </div>
     </section>`;
 }
 
@@ -10131,10 +10040,7 @@ function bindActions() {
   app.querySelectorAll("[data-ui-jump]").forEach((nav) => {
     const topics = [...(nav.closest(".hstand") || app).querySelectorAll("[data-topic-title]")];
     if (topics.length < 2) { nav.remove(); return; }
-    // Ruhiger Tag: kein eigenes Briefing, sondern laufende Lage-Themen — das
-    // steht ausdruecklich in der Ueberschrift, damit es nicht wie ein Briefing wirkt.
-    const fromLage = Boolean(nav.closest(".hstand-overview"));
-    nav.innerHTML = `<p class="ui-jump-head"><span>${fromLage ? "Laufende Themen aus der Lage" : "Auf einen Blick"}</span><span>${topics.length}</span></p><ol class="ui-jump-list">` + topics.map((el, i) => {
+    nav.innerHTML = `<p class="ui-jump-head"><span>Auf einen Blick</span><span>${topics.length}</span></p><ol class="ui-jump-list">` + topics.map((el, i) => {
       el.id = `ui-topic-${i + 1}`;
       // Hauptvorgang mit echter Tagespriorität: in der Übersicht als „Heute entscheidend“ markiert.
       const lead = el.classList.contains("ui-briefing-hero");

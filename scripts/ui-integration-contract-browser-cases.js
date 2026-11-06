@@ -120,64 +120,42 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
     verify("no specialist content fabricated",await evaluate("!document.querySelector('.ui-briefing-hero,.ui-vorgang-row,.radar2-card,.buero-draft-card')"));
     if(["no-mandate","session-503"].includes(label)) await screenshot("startup-state");
   } else if(label.startsWith("quiet-")) {
+    // Ruhiger Tag: ehrlicher Leerzustand im Briefing; Lage-Themen nur gezählt und über die Lage erreichbar.
     const pending=label.includes("-pending-");
-    const shown=pending ? [0,2,5,7].map(index=>payload.briefing.lageBriefing.vorgaenge[index])
-      : payload.briefing.lageBriefing.vorgaenge.slice(0,2);
-    const expected=shown.map((v,index)=>({id:v.vorgangId,title:v.displayTitle,source:v.sources[0],
-      text:pending ? v.displaySummary || v.summary.wasIstPassiert : payload.briefing.lageBriefing.paragraphs[index].text}));
+    const lageTexts=[...(payload.briefing.lageBriefing.paragraphs||[]).map(p=>p.text),
+      ...payload.briefing.lageBriefing.vorgaenge.map(v=>v.displaySummary).filter(Boolean)];
     verify("quiet bootstrap completes with simulated push only",await waitFor("pushConfig?.subscriptionCount===1")
       && calls.filter(c=>c.method!=="GET").every(c=>c.path==="/api/push/subscribe"));
     await nav("helmut");
-    verify("quiet Briefing exposes cached daily overview",await waitFor("!!document.querySelector('section[data-briefing-overview]')"));
-    verify(pending ? "pending cache exposes four existing summaries in server order" : "quiet overview uses original paragraphs and heading",await evaluate(`(()=>{
-      const overview=document.querySelector('[data-briefing-overview]');
-      const articles=[...overview.querySelectorAll(${JSON.stringify(pending ? '[data-briefing-existing-item]' : '[data-briefing-paragraph]')})];
-      return overview.textContent.includes('Dein Tagesüberblick') && articles.length===${expected.length} &&
-        ${JSON.stringify(expected)}.every((item,index)=>articles[index].textContent.includes(item.text));
-    })()`));
-    if(pending) verify("pending cache hides placeholders and avoids narrative creation claim",await evaluate(`(()=>{
-      const overview=document.querySelector('[data-briefing-overview]');
-      return overview.textContent.includes('Vorhandener Sachstand aus der Lage') &&
-        !/Artikelauszug fehlt;|Keine nutzbaren Quellentexte|Dieser synthetische Quellenhinweis|Zusammengestellt:/.test(overview.textContent)
-        && !overview.querySelector('[data-briefing-paragraph]') && !document.querySelector('.hstand-state-card');
+    verify("quiet Briefing shows honest empty state",await waitFor("!!document.querySelector('.hstand-state-card--quiet')"));
+    verify("quiet Briefing shows no Lage texts, only count and way to Lage",await evaluate(`(()=>{
+      const card=document.querySelector('.hstand-state-card--quiet'),app=document.querySelector('#app').textContent;
+      return card.textContent.includes('Heute kein neuer Tagesanlass') && /In der Lage laufen \\d+ Themen weiter\\./.test(card.textContent)
+        && !document.querySelector('[data-briefing-overview],[data-ui-jump]') && ${JSON.stringify(lageTexts)}.every(t=>!app.includes(t));
     })()`));
     verify("quiet receipt status and time are honest",await evaluate(`(()=>{
       const status=document.querySelector('.hstand-status').textContent,meta=document.querySelector('.hstand-meta-line').textContent;
       return status.includes('Aktuell') && status.includes('keine neue Tagespriorität') && meta.includes('06:15') && !meta.includes('15:37') &&
         !document.querySelector('.ui-briefing-hero') && !document.querySelector('#app').textContent.includes('Ältere Vorgänge stehen unten');
     })()`));
-    verify("quiet paragraph sources show dates and safe URLs",await evaluate(`(()=>{
-      const articles=[...document.querySelectorAll(${JSON.stringify(pending ? '[data-briefing-existing-item]' : '[data-briefing-paragraph]')})];
-      const expected=${JSON.stringify(expected)};
-      return articles.every((article,index)=>article.textContent.includes('05. Nov. 2026') &&
-        article.textContent.includes(expected[index].source.name) &&
-        [...article.querySelectorAll('a')].some(a=>a.href===expected[index].source.url));
-    })()`));
     const layout=()=>evaluate(`(()=>{
-      const page=document.querySelector('#uiPage'),overview=document.querySelector('[data-briefing-overview]');
+      const page=document.querySelector('#uiPage');
       return document.documentElement.scrollWidth<=innerWidth+1 && document.body.scrollWidth<=innerWidth+1 &&
-        (!page || page.scrollWidth<=page.clientWidth+1) && (!overview || overview.scrollWidth<=overview.clientWidth+1);
+        (!page || page.scrollWidth<=page.clientWidth+1);
     })()`);
-    verify("quiet overview has no horizontal overflow",await layout());
+    verify("quiet empty state has no horizontal overflow",await layout());
     await screenshot("quiet-briefing");
-    for(const item of expected) {
-      const id=item.id,source=item.source.url;
-      const button=`[data-briefing-overview] [data-lage-verweis][data-vorgang="${id}"]`;
-      verify("quiet paragraph navigates to bound Lage: "+id,await evaluate(`(()=>{
-        const button=document.querySelector(${JSON.stringify(button)});if(!button)return false;button.click();
-        return currentView==='briefing' && uiLageDetailOpen && uiLageSelectedId===${JSON.stringify(id)} &&
-          !!document.querySelector('.ui-lage-detail a[href="'+${JSON.stringify(source)}+'"]');
-      })()`));
-      verify("quiet Lage detail has no horizontal overflow",await layout());
-      await nav("helmut");
-    }
-    await nav("briefing");
-    verify("quiet Lage retains all supplied cards",await evaluate(`document.querySelectorAll('.ui-vorgang-row').length===${pending ? 9 : 10}`));
+    verify("quiet empty state leads to Lage",await evaluate(`(()=>{
+      const button=document.querySelector('.hstand-state-card--quiet [data-view="briefing"]');if(!button)return false;button.click();
+      return currentView==='briefing';
+    })()`));
+    verify("quiet Lage retains all supplied cards",await waitFor(`document.querySelectorAll('.ui-vorgang-row').length===${pending ? 9 : 10}`));
+    verify("quiet Lage has no horizontal overflow",await layout());
     await nav("radar");
     await nav("helmut");
     verify("quiet read and navigation never trigger generation or extra bootstrap",calls.filter(c=>c.path==="/api/app/start").length===1
       && calls.every(c=>["/api/auth/session","/api/app/start","/api/parliament","/api/push/public-key","/api/security/csrf","/api/push/subscribe"].includes(c.path)),calls);
-    verify("quiet overview survives navigation",await evaluate("!!document.querySelector('[data-briefing-overview]')"));
+    verify("quiet empty state survives navigation",await evaluate("!!document.querySelector('.hstand-state-card--quiet')"));
   } else {
     verify("successful startup permits simulated push sync",await waitFor("pushConfig?.subscriptionCount===1") && await evaluate("__uiPush.scheduled===1 && __uiPush.subscribed===1"));
     verify("bootstrap writes only simulated push; empty office formats produce no drafts",calls.filter(c=>c.method!=="GET").length===1 && calls.some(c=>c.path==="/api/push/subscribe") && !calls.some(c=>c.path==="/api/communication/generate"));
