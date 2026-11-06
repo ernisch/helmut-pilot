@@ -34,6 +34,7 @@ const zelle = (component, e) => {
   if (!e) return component.st("Nicht geprüft", "neutral", { low: "nicht geprüft", hint: "Kein Ergebnis gelesen" });
   const u = e.ursache ? ERGEBNIS_URSACHEN[e.ursache] : null;
   if (u) return component.st(u.label, u.tone, { low: u.label.toLowerCase(), hint: u.title });
+  if (e.stufe >= 3 && e.hinweis === "ruhiger-tag") return component.st("Vollständig", "neutral", { low: "vollständig", hint: "Ruhiger Tag · kein neuer Tagesanlass" });
   return e.stufe >= 3 ? component.st("Vollständig", "neutral", { low: "vollständig", hint: "Vollständig · nicht beurteilt" })
     : component.st("Nicht geprüft", "neutral", { low: "nicht geprüft", hint: "Nicht geprüft" });
 };
@@ -75,7 +76,7 @@ export function applyErgebnisse(component, v, D, p) {
         segs: STUFEN.map((tt, i) => ({ t: k === "zustellung" && [1, 3].includes(i) ? `${tt} · –` : tt,
           bg: stufen.includes(i) && i < stufe ? t.bar : "var(--line-2)" })),
         stageText: !e ? "Kein Ergebnis gelesen" : stufe === 0 ? "Lauf nicht erfolgt" : `Erreicht: ${STUFEN[stufe - 1]}`,
-        text: u ? `${u.title}. ${u.detail}` : e?.stufe >= 3 ? "Inhalt vollständig. Die Qualitätsprüfung hat noch kein Urteil." : "Kein Ergebnis für diesen Tag gelesen." };
+        text: u ? `${u.title}. ${u.detail}` : e?.hinweis === "ruhiger-tag" ? "Ruhiger Tag: kein neuer belegter Tagesanlass. Das Briefing ist vollständig; Sachstand und Einordnung stehen in der Lage." : e?.stufe >= 3 ? "Inhalt vollständig. Die Qualitätsprüfung hat noch kein Urteil." : "Kein Ergebnis für diesen Tag gelesen." };
     });
     if (r) {
       const ton = problemTon(r);

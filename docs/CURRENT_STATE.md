@@ -195,8 +195,7 @@ unter „Radar im Briefing“, „Wiederholung zwischen Ansichten“ statt „Do
 Brauchbar/Unbrauchbar. Ohne V3-Speicher bleibt alles „Nicht geprüft“.
 Production-Lesebeleg 06.11. (nur Strukturfelder): 1 Paket mit `currentRadarState.anzeige`,
 alle vier Radar-Abschnitte leer, `pruefung.fehler = [briefing-ohne-tagesanlass]`, `bestanden=false`;
-1 Erfolgsquittung mit `ausgabeBeleg`; 1 Lage mit Text. Das Briefing erscheint deshalb ehrlich als
-„Unvollständig“. Tests: 8/8 Modul, 6/6 Route (Rollen, Paging 20/500/2000), 5/5 Verwaltungsansichten.
+1 Erfolgsquittung mit `ausgabeBeleg`; 1 Lage mit Text. Seit PR „ruhiger Tag“ gilt: Ist ein ruhiger Tag ausdrücklich markiert (`currentHelmutState.emptyState.kind = "quiet"`) und der fehlende Tagesanlass der einzige Befund, zeigt die Verwaltung „Vollständig · Ruhiger Tag“. Die gemeinsame Prüfung `pruefeInhalt` bleibt unverändert. Tests: 8/8 Modul, 6/6 Route (Rollen, Paging 20/500/2000), 5/5 Verwaltungsansichten.
 Auftrag abgeschlossen. Nächster Schritt: Betreiber sieht sich die Verwaltung mit eigenem Login an.
 
 ## Oberstes Ziel: Mock100 PASS, dann Helmut sicher live

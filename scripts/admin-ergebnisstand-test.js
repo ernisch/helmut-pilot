@@ -83,6 +83,22 @@ test("Veraltetes gespeichertes Strukturgrün wird frisch geprüft", () => {
   assert.equal(p.pruefung.strukturellVollstaendig, true);
   assert.equal(run(rows).positionen.briefing.ursache, "unvollstaendig");
 });
+test("Ruhiger Tag: ausdrücklich ohne Tagesanlass ist vollständig, andere Lücken bleiben sichtbar", () => {
+  let f = fixture(); f.briefing = structuredClone(f.briefing);
+  f.briefing.currentHelmutState = { status: "empty", emptyState: { kind: "quiet", headline: "Kein belegter Tagesanlass für ein Briefing" } };
+  let r = run(f.neu());
+  assert.deepEqual(r.positionen.briefing, { stufe: 3, ursache: null, code: null, hinweis: "ruhiger-tag" });
+  assert.equal(r.positionen.zustellung.stufe, 3);
+  assert.equal(S.zaehle(S.leereBilanz(), r.positionen).briefing.nichtBeurteilt, 1);
+  // Ohne Ruhe-Kennzeichen bleibt fehlender Tagesanlass unvollständig.
+  f = fixture(); f.briefing = structuredClone(f.briefing); delete f.briefing.currentHelmutState.tagesAnlass;
+  assert.equal(run(f.neu()).positionen.briefing.code, "briefing-ohne-tagesanlass");
+  // Ruhiger Tag plus weiterer Befund (Lage fehlt im Paket) bleibt unvollständig.
+  f = fixture(); f.briefing = structuredClone(f.briefing); f.lage = null;
+  f.briefing.currentHelmutState = { status: "empty", emptyState: { kind: "quiet" } };
+  const rows = f.neu().filter(x => x.slot !== "lage");
+  assert.equal(run(rows).positionen.briefing.ursache, "unvollstaendig");
+});
 test("Zustellung: abweichende Quittung und fehlende Inhaltsbindung sind Nicht zugestellt", () => {
   let rows = fixture().neu(); rows[2].payload.status = L.STATUS_FEHLER;
   assert.deepEqual(run(rows).positionen.zustellung, { stufe: 0, ursache: "nicht-zugestellt", code: "morgen-quittung-abweichend" });
@@ -108,4 +124,4 @@ test("Mandantentrennung: fremde Zeilen zählen nie, ungültiger Tag wird abgeleh
   assert.throws(() => S.bewerte({ userId: "synthetic-ergebnis", tag: "heute", rows: [] }), /ergebnis-tag-ungueltig/);
   assert.throws(() => S.bewerte({ userId: "", tag, rows: [] }));
 });
-console.log(`${passed}/8 Ergebnisstand-Prüfungen bestanden.`);
+console.log(`${passed}/9 Ergebnisstand-Prüfungen bestanden.`);
