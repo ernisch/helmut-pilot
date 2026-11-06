@@ -9353,3 +9353,26 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
   .ui-page .hstand-overview-item > p { font-size: 15px; }
   .ui-page .hstand-overview-item[data-briefing-paragraph] > p { font-size: 16px; }
 }
+
+/* Orientierung: Anzahl je Abschnitt, laufende Nummern, Themen-Sprungliste (mobil). */
+.ui-count { order: 2; flex: 0 0 auto; padding: 2px 10px; border: 1px solid var(--ui-border); border-radius: 999px; font: 500 12px/1.6 var(--ui-mono); letter-spacing: .06em; color: var(--ui-muted); }
+.ui-section-rule::after, .ui-page .hstand-overview > h2::after { order: 3; }
+.ui-page .hstand-overview { counter-reset: topic; }
+.ui-page .hstand-overview-item { counter-increment: topic; padding-left: 52px; }
+.ui-page .hstand-overview-item::before { content: counter(topic, decimal-leading-zero); position: absolute; left: 0; top: 18px; font: 400 26px/1.15 var(--ui-serif); color: var(--ui-dim); }
+[data-topic-title] { scroll-margin-top: 88px; }
+.ui-jump { display: none; }
+@media (max-width: 767px) {
+  .ui-jump { display: flex; gap: 8px; margin: 14px -20px 4px; padding: 0 20px 4px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .ui-jump::-webkit-scrollbar { display: none; }
+  .ui-jump-label { flex: 0 0 auto; align-self: center; padding-right: 2px; font: 500 11px/1.6 var(--ui-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ui-label); }
+  .ui-jump button { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; max-width: 70vw; min-height: 36px; padding: 0 14px 0 6px; border: 1px solid var(--ui-border); border-radius: 999px; background: var(--ui-panel); color: var(--ui-text); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ui-jump button span { display: grid; place-items: center; flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; background: var(--ui-hover); color: var(--ui-muted); font: 500 12px/1 var(--ui-mono); }
+  .ui-page .hstand-overview-item { padding-left: 40px; }
+  .ui-page .hstand-overview-item::before { font-size: 22px; }
+}
+@media (max-width: 767px) {
+  .hstand-overview .ui-jump-label { display: none; }
+  .hstand-overview .ui-jump { margin-top: 10px; margin-bottom: 10px; }
+  .ui-jump button { max-width: 58vw; }
+}

@@ -6368,6 +6368,7 @@ function renderHelmutStandView() {
   return `
     <section class="hstand" aria-label="Briefing – aktueller Stabschefstand">
       ${renderHstandHeader(state)}
+      <nav class="ui-jump" data-ui-jump aria-label="Themen heute"></nav>
       ${renderUiBriefingHero(state, details)}
       ${renderHstandItems(state)}
       ${renderUiBriefingColumns(state)}
@@ -6418,7 +6419,7 @@ function renderUiBriefingHero(state, details = "") {
   const count = Number(item.sourceCount) || 0;
   const when = hstandText(item.zeitLabel) || hstandWhen(item.lastUpdated);
   const chips = `${urgency}${hstandContextChips(item.contextChips, 2)}`;
-  return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang">
+  return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang" data-topic-title="${escapeAttribute(title)}">
     <div class="ui-hero-main"><span class="ui-eyebrow"><span class="ui-priority-dot" aria-hidden="true"></span>${eyebrow}</span>
       <h2>${escapeHtml(title)}</h2>
       ${sub ? `<p class="ui-hero-sub">${escapeHtml(sub)}</p>` : ""}
@@ -6662,7 +6663,7 @@ function renderHstandItems(state) {
     const lv = lageVorgangZumBriefing(i);
     const tap = lv ? ` data-lage-verweis data-vorgang="${escapeAttribute(lv.vorgangId || lv.id)}" role="button" tabindex="0"` : "";
     return `
-      <li class="hstand-rel${lv ? " is-tappable" : ""}"${tap}>
+      <li class="hstand-rel${lv ? " is-tappable" : ""}"${tap} data-topic-title="${escapeAttribute(title)}">
         <div class="hstand-rel-head">
           <p class="hstand-rel-title">${escapeHtml(title)}</p>
           ${urgency}
@@ -6678,7 +6679,7 @@ function renderHstandItems(state) {
   if (!klassifiziert) {
     return `
     <section class="hstand-card hstand-related" aria-label="Danach wichtig">
-      <h2 class="ui-section-rule">Danach wichtig</h2>
+      <h2 class="ui-section-rule">Danach wichtig<span class="ui-count">${Math.min(items.length, 3)}</span></h2>
       <ul class="hstand-rels">${items.slice(0, 3).map(zeile).join("")}</ul>
     </section>`;
   }
@@ -6690,7 +6691,7 @@ function renderHstandItems(state) {
   if (!gruppen.length) return "";
   return gruppen.map((g) => `
     <section class="hstand-card hstand-related" data-frische-klasse="${escapeAttribute(g.klasse)}" aria-label="${escapeAttribute(g.label)}">
-      ${hstandKicker(HELMUT_ICON_EYE, g.label, g.tone)}
+      <h2 class="ui-section-rule">${escapeHtml(g.label)}<span class="ui-count">${g.liste.length}</span></h2>
       <ul class="hstand-rels">${g.liste.map(zeile).join("")}</ul>
     </section>`).join("");
 }
@@ -6789,7 +6790,7 @@ function renderHstandQuietOverview(state) {
       if (!id || !title || !text || !sources.length
         || lageField(v.displayCategory) === "Quellenhinweis" || placeholders.has(text)) return "";
       const links = sources.map(s => `<a href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.host || "Quelle")} · ${escapeHtml(hstandWhen(s.publishedAt) || "Quelldatum nicht belegt")}</a>`).join("");
-      return `<article class="hstand-overview-item is-tappable" data-briefing-existing-item data-lage-verweis data-vorgang="${escapeAttribute(id)}" role="button" tabindex="0">
+      return `<article class="hstand-overview-item is-tappable" data-briefing-existing-item data-lage-verweis data-vorgang="${escapeAttribute(id)}" role="button" tabindex="0" data-topic-title="${escapeAttribute(title)}">
         <h3>${escapeHtml(title)}</h3>
         <p>${escapeHtml(text)}</p>
         <div class="hstand-overview-sources" aria-label="Quellen und Veröffentlichungsdaten">${links}</div>
@@ -6798,7 +6799,8 @@ function renderHstandQuietOverview(state) {
     }).filter(Boolean).slice(0, 4);
     if (!items.length) return "";
     return `<section class="hstand-card hstand-overview" data-briefing-overview aria-labelledby="hstand-overview-title">
-      <h2 id="hstand-overview-title">Dein Tagesüberblick</h2>
+      <h2 id="hstand-overview-title">Dein Tagesüberblick<span class="ui-count">${items.length === 1 ? "1 Thema" : `${items.length} Themen`}</span></h2>
+      <nav class="ui-jump" data-ui-jump aria-label="Themen heute"></nav>
       <p class="hstand-overview-meta">Vorhandener Sachstand aus der Lage. Die Quellen können älter sein; ihr Veröffentlichungsdatum steht jeweils dabei.</p>
       ${items.join("")}
       <button class="secondary-button compact-button" type="button" data-view="briefing">Alle Vorgänge in der Lage öffnen</button>
@@ -6835,7 +6837,8 @@ function renderHstandQuietOverview(state) {
       return `<a href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.host || "Quelle")} · ${escapeHtml(when || "Quelldatum nicht belegt")}</a>`;
     }).join("");
     const tap = ids.length === 1 ? ` data-lage-verweis data-vorgang="${escapeAttribute(ids[0])}" role="button" tabindex="0"` : "";
-    return `<article class="hstand-overview-item${ids.length === 1 ? " is-tappable" : ""}" data-briefing-paragraph${tap}>
+    const topic = lageField(vorgaenge.get(ids[0])?.displayTitle) || lageDisplayHeadline(vorgaenge.get(ids[0])?.title) || "";
+    return `<article class="hstand-overview-item${ids.length === 1 ? " is-tappable" : ""}" data-briefing-paragraph${tap}${topic ? ` data-topic-title="${escapeAttribute(topic)}"` : ""}>
       <p>${escapeHtml(p.text)}</p>
       <div class="hstand-overview-sources" aria-label="Quellen und Veröffentlichungsdaten">${links}</div>
       ${ids.map(id => `<button class="secondary-button compact-button" type="button" data-lage-verweis data-vorgang="${escapeAttribute(id)}">Einordnung in der Lage öffnen</button>`).join("")}
@@ -6843,7 +6846,8 @@ function renderHstandQuietOverview(state) {
   }).filter(Boolean);
   if (!paragraphs.length) return "";
   return `<section class="hstand-card hstand-overview" data-briefing-overview aria-labelledby="hstand-overview-title">
-    <h2 id="hstand-overview-title">Dein Tagesüberblick</h2>
+    <h2 id="hstand-overview-title">Dein Tagesüberblick<span class="ui-count">${paragraphs.length === 1 ? "1 Thema" : `${paragraphs.length} Themen`}</span></h2>
+    <nav class="ui-jump" data-ui-jump aria-label="Themen heute"></nav>
     <p class="hstand-overview-meta">Zusammengestellt: ${escapeHtml(hstandWhen(data.generatedAt))}. Die Quellen können älter sein; ihr Veröffentlichungsdatum steht jeweils dabei.</p>
     ${paragraphs.join("")}
   </section>`;
@@ -10122,6 +10126,19 @@ function bindActions() {
 
   bindDetailOpen(app);
 
+  // Themen-Sprungliste (mobil): aus den tatsaechlich gerenderten Eintraegen in
+  // ihrer Reihenfolge; ohne mindestens zwei Themen bleibt sie leer und unsichtbar.
+  app.querySelectorAll("[data-ui-jump]").forEach((nav) => {
+    const topics = [...(nav.closest(".hstand") || app).querySelectorAll("[data-topic-title]")];
+    if (topics.length < 2) { nav.remove(); return; }
+    nav.innerHTML = `<span class="ui-jump-label">Heute ${topics.length} Themen</span>` + topics.map((el, i) => {
+      el.id = `ui-topic-${i + 1}`;
+      return `<button type="button" data-jump="${i + 1}"><span>${i + 1}</span>${escapeHtml(el.dataset.topicTitle)}</button>`;
+    }).join("");
+    nav.querySelectorAll("[data-jump]").forEach((btn) => btn.addEventListener("click", () => {
+      app.querySelector(`#ui-topic-${btn.dataset.jump}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }));
+  });
   app.querySelectorAll("[data-vorgang]").forEach((button) => {
     // Ganze Eintraege (role=button) sind antippbar; Links/Knoepfe darin behalten
     // ihre eigene Aktion (Quelle oeffnet im neuen Tab, kein zusaetzlicher Sprung).
