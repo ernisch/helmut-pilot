@@ -5348,6 +5348,23 @@ function renderProsaEinordnung(data) {
     <p class="prosa-hinweis">Entwurf zur Prüfung. Die fachliche Abnahme steht aus.</p>${blocks}</section>`;
 }
 
+// Kompakte Liste: dieselbe neueste Quelle wie im Detail, nie Abrufzeit als Publikation.
+function lageListSourceHtml(v) {
+  const source = vsheetSourcesSorted(v.sources)[0];
+  if (!source) return "";
+  const name = lageField(source.name) || lageField(source.sourceName) || lageField(source.host) || "Quelle";
+  let date = "";
+  if (!bundespulsPublicationUnknown(source, source.url)) {
+    const published = source.publishedAt || source.published_at;
+    if (published && Number.isFinite(Date.parse(published))) {
+      date = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(published));
+    } else {
+      date = lageField(source.dateLabel);
+    }
+  }
+  return `<span class="ui-row-source"><span class="ui-row-source-name" title="${escapeAttribute(name)}">${escapeHtml(name)}</span><span>${escapeHtml(date || "Datum unbekannt")}</span>${lageStatusChip(v) ? `<span>${escapeHtml(lageStatusChip(v))}</span>` : ""}</span>`;
+}
+
 function renderLageView() {
   const data = lageData();
   if (data?.prosaVorschau === true) return renderProsaEinordnung(data.prosaEinordnung);
@@ -5375,7 +5392,7 @@ function renderLageView() {
             const summary = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
             return `<button class="ui-vorgang-row ${id === selectedId ? "is-selected" : ""}" type="button" data-ui-lage-select="${escapeAttribute(id)}" aria-pressed="${id === selectedId}">
               <span class="ui-row-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
-              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(summary)}</span>` : ""}${lageStatusChip(v) ? `<span class="ui-row-meta">${escapeHtml(lageStatusChip(v))}</span>` : ""}</span>
+              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(summary)}</span>` : ""}${lageStatusChip(v) ? `<span class="ui-row-meta">${escapeHtml(lageStatusChip(v))}</span>` : ""}${lageListSourceHtml(v)}</span>
               <span class="ui-row-chevron" aria-hidden="true">›</span>
             </button>`;
           }).join("")}
