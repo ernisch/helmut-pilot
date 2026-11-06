@@ -19,10 +19,14 @@ aktiv, die500 anderen bleiben unveraendert inaktiv. Quellenaktualisierung
 aber wegen alter verstandener Inhalte weiterhin **partial/nicht aktuell**.
 Die nachfolgenden Aussagen zum noch ausstehenden Release1053 sind historisch.
 
-Vorbereitet: separater atomarer Betriebskostendeckel, Eingrenzung der KI-Arbeit
-auf relevante Quellen dieses Profil-Crawls, drei geordnete Tagesjobs.
-Noch kein Nachweis eines aktuellen vollstaendigen KI-Briefings und noch keine
-Aktivierung der neuen Produktionskonfiguration.
+PR1056 ist mit vollstaendig gruener Pflicht-CI42126935604 als0cda70f1
+produktiv aktiviert; drei geordnete Tagesjobs sind nativ registriert.
+Der erste Live-Crawl147/147 fuehrte vier erfolgreiche Azure-Antworten aus,
+verwarf sie aber beim Kostenabschluss: JSONB-Feldreihenfolge veraendert
+den bisherigen Vertragshash-Vergleich.0,848 USD bleiben vorsorglich
+reserviert, keine Budgetfreigabe oder Ruecksetzung. Eine gezielte
+Normalisierung mit Regression wird korrigiert. Aktuelles vollstaendiges
+KI-Briefing weiterhin NICHT belegt.
 [Umsetzung, Nachweise und Rueckweg](betrieb/cem-einprofilbetrieb-20261105.md).
 
 ## Navigation und Verwaltung live (06.11.2026)

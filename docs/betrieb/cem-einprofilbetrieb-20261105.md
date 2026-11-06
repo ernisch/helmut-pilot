@@ -12,7 +12,7 @@ Mandat und keine heutigen Briefingquittungen. Die alten Kostentickets waren
 an ein abgelaufenes Testfenster gebunden. Die Login-Aktivitaet von Cem hatte
 sein fehlendes relationales Mandatsprofil nicht ersetzt.
 
-## Bereits ausgefuehrt und nativ gegengelesen
+## Vorbereitung vor Aktivierung (historischer Zwischenstand)
 
 - Bestehendes Cem-Profil ueber die vorhandene Profil-API wiederhergestellt;
   amtliche Zuordnung am05.11.2026 gegen
@@ -30,7 +30,7 @@ sein fehlendes relationales Mandatsprofil nicht ersetzt.
 - Keine laufenden Jobs/Leases: alle vorhandenen Queuejobs erledigt.
   Kommunikationsriegel `gesperrt` bestaetigt, Push wurde blockiert.
 
-## Implementierter Betriebsweg, noch nicht produktiv aktiviert
+## Aktivierter Betriebsweg und erster Livebefund
 
 `HELMUT_BETRIEBSKOSTENVERTRAG_JSON` ist ein expliziter Vertrag:
 
@@ -38,7 +38,7 @@ sein fehlendes relationales Mandatsprofil nicht ersetzt.
 {
   "version": 1,
   "profileId": "cem-ince",
-  "startsAt": "<unveraenderlicher UTC-Start in ISO8601>",
+  "startsAt": "2026-11-05T23:00:10.000Z",
   "dailyLimitUsd": 1,
   "totalLimitUsd": 30,
   "route": {
@@ -70,7 +70,7 @@ Testrequests koennen den Betriebsvertrag nicht als Ausweichpfad nutzen.
 
 Vercel-Zeitplan UTC:04:00 Quellen/Crawl,05:00 Lage,05:15 Morgenpaket.
 Damit liegt der Abschluss im Winter um06:15 und im Sommer um07:15 Berlin.
-Erforderliche Produktionskonfiguration: `HELMUT_SCALABLE_PIPELINE=off`,
+Aktive Produktionskonfiguration: `HELMUT_SCALABLE_PIPELINE=off`,
 `HELMUT_CRON_GLOBALPHASE=off`, `HELMUT_CRON_GLOBALABRUF=off`,
 `HELMUT_NARRATIV_QUEUE=off`, `HELMUT_LLM_BUDGET_FAIL_CLOSED=on`.
 Kommunikation bleibt `gesperrt`, Dispatch bleibt `shadow`.
@@ -90,18 +90,18 @@ Alle lokalen Tests ueber `scripts/lokal.js`, ohne Netz/Productionzugang:
 - Unabhaengiger Astra-Review meldet keine offenen Blocker an der Kostennaht.
   Ein im Review entdeckter Filterfehler wurde vor Aktivierung korrigiert.
 
-Pflicht-CI42121896987 auf52d37479 vollstaendig PASS:180/180 Standardsuiten,
+Historischer CI-Zwischenstand: Pflicht-CI42121896987 auf52d37479 vollstaendig PASS:180/180 Standardsuiten,
 Bereichsregression und native PostgreSQL/PostgREST-Nachweise. Der Browserjob
 ist erfolgreich; seine eigentlichen Browserschritte wurden nach Backend-Scope
 planmaessig uebersprungen. Nach parallelen Navigationsmerges wurde main25476a4a
 uebernommen; nur der Statusdokument-Konflikt wurde unter Erhalt beider Eintraege
-geloest. Pflichtchecks auf dem zusammengefuehrten Kopf, Deployment und aktuelle
-fachliche Briefingausgabe sind vor dem Abschluss noch nachzuweisen.
+geloest. Die damals noch offenen Pflichtchecks und das Deployment sind im Liveabschnitt
+unten nachgewiesen. Die fachliche Briefingausgabe ist weiter offen.
 
 Die Produktionsvariablen sind vorbereitet: Vertragsstart
 `2026-11-05T23:00:10.000Z`,1/30 USD; SCALABLE_PIPELINE, GLOBALABRUF,
 GLOBALPHASE und NARRATIV_QUEUE jeweils off. Kommunikation gesperrt und
-Dispatch shadow gegengelesen. Sie werden mit dem neuen Deployment wirksam.
+Dispatch shadow gegengelesen. Sie sind seit Deployment0cda70f1 wirksam.
 
 Erster Pflichtlauf42118060914:179/180 Standardsuiten PASS. Zwei Erwartungen
 in `testkohorte-vorwaerts-cli-test.js` setzten noch eine produktive leere
@@ -129,5 +129,47 @@ Notstopp: Cem ueber dieselbe Profil-API deaktivieren und die drei Zeitplaene
 zurueck auf leer stellen. Der neue Kostenstand bleibt erhalten. Entfernen
 der Betriebsvariable faellt auf die weiterhin gesperrte historische
 Admission zurueck; es gibt dadurch keine kostenfreie Umgehung. Keine
-Loeschung alter oder neuer Kostenbelege. Vorheriges Productiondeployment:
-`dpl_Dujd3QXVwj4hjLU8sPef7yA9eF7w` auf14501c59.
+Loeschung alter oder neuer Kostenbelege. Historischer Productionstand zu Arbeitsbeginn:
+`dpl_Dujd3QXVwj4hjLU8sPef7yA9eF7w` auf14501c59. Unmittelbarer
+Rueckweg vor Aktivierung nach paralleler Navigation: siehe Liveabschnitt.
+
+
+## Liveaktivierung und gezielte Nachkorrektur
+
+PR1056 ist nach beiden Pflichtchecks auf `ac10d1f5` gemergt;
+CI42126935604:180/180 Standard-,332/332 Bereichssuiten und native
+Datenbanknachweise PASS. Die Browserpflichtentscheidung ist erfolgreich;
+die eigentlichen Browserschritte waren fuer den Backend-Scope uebersprungen.
+Production `dpl_4cRoz1WcgQDyrfQEPjyinpqcWEAU`, Commit
+`0cda70f1bb9d460dfb3f221cf7631d6b8b51d362`, ist READY und traegt den Livealias.
+Vercel bestaetigt nativ genau die drei aktiven Zeitplaene04:00/05:00/05:15UTC.
+Unmittelbar vorher aktive Profile genau `[cem-ince]`, keine laufenden Leases,
+keine Aufrufe seit Vertragsstart. Voriger Rollbackkandidat nach paralleler
+Navigation: `dpl_CJoBeMTV6V7MHeH86MuhM3iA1Qbj` auf7d115a41.
+
+Erster Betriebs-Crawl `crawl-20261105234008-kgljx` am05.11.2026:
+147/147 Quellen erfolgreich,43 neue relationale Rohdokumente,1 Mandat.
+Die oberflaechlichen15 verarbeiteten Cluster sind KEIN Erfolgsnachweis:
+vier Azure-Antworten kamen erfolgreich zurueck, ihre native Usage liegt
+im auth-Store; aber der Abschluss scheiterte an
+`betriebskosten-abschluss-unbestaetigt`. Kein neuer vollstaendiger KO.
+Die separate relationale Usage-Ablage ist ausgeschaltet; ihre0 Zeilen
+bedeuteten somit NICHT0 bezahlte Aufrufe.
+
+Konkrete Ursache: PostgreSQL JSONB ordnet die Vertragsfelder um.
+`pruefeBuch` hasht beim Abschluss den zurueckgelesenen Vertrag in dieser
+Speicherreihenfolge statt derselben kanonischen Reihenfolge wie beim Start.
+Vier Reserven bleiben deswegen konservativ voll gebunden:0,848 USD;
+kein Reset und keine Freigabe. Der erste Tag hat damit nicht genug freie
+Reserve fuer einen weiteren Modellaufruf. Die gezielte Korrektur muss
+denselben bestehenden Vertragshash unter beliebiger JSONB-Feldreihenfolge
+erhalten; geaenderte Inhalte muessen weiter gesperrt bleiben.
+Liveversorgung ist bis zum erfolgreichen Nachlauf weiterhin NICHT belegt.
+
+Gezielte Korrektur lokal bestaetigt:11/11 Kostengruppen PASS ueber
+`lokal.js`. Vor der Korrektur reproduziert dieselbe JSONB-CAS-Fixture den
+echten Abschlussfehler. Nachher sind nativer Abschluss, erneut gelesene
+Vertraege und Neustarts erfolgreich; zusaetzliche Felder, manipulierte
+Limits/Route/Hash und unbekannte Usage bleiben gesperrt. Unabhaengiger
+Astra-Review ohne offene Befunde. Keine Migration, Nachabrechnung oder
+Freigabe bestehender Reserven. Pflicht-CI und Live-Nachlauf folgen.

@@ -9,9 +9,17 @@ const META = { politicianId: CONTRACT.profileId, callType: "lageBriefing", runId
 const ARGS = { meta: META, model: CONTRACT.route.model, maxOutputTokens: 3000,
   actualRequestHash: "a".repeat(64), runtimeRouteSnapshot: { ...CONTRACT.route, authMode: "api-key" } };
 const USAGE = { input_tokens: 100, output_tokens: 20, total_tokens: 120 };
-function fixture(contract = CONTRACT) {
-  let auth = { users: [{ id: "historisch" }], llmUsage: [], synthetik500KostenAdmission: { expired: true },
-    testKostenTage: { alt: { reserved: 123456 } } }, queue = Promise.resolve(), now = new Date("2026-11-05T12:00:00.000Z");
+// PostgreSQL JSONB erhaelt Objekt-Schluesselreihenfolgen nicht. Jede bestaetigte
+// Fixture-Mutation durchlaeuft dieselbe Laengen-/Byteordnung, auch verschachtelt.
+function jsonbRoundtrip(value) {
+  if (Array.isArray(value)) return value.map(jsonbRoundtrip);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(Object.keys(value).sort((a, b) => Buffer.byteLength(a) - Buffer.byteLength(b)
+    || Buffer.compare(Buffer.from(a), Buffer.from(b))).map(key => [key, jsonbRoundtrip(value[key])]));
+}
+function fixture(contract = CONTRACT, persisted = null) {
+  let auth = jsonbRoundtrip(persisted || { users: [{ id: "historisch" }], llmUsage: [], synthetik500KostenAdmission: { expired: true },
+    testKostenTage: { alt: { reserved: 123456 } } }), queue = Promise.resolve(), now = new Date("2026-11-05T12:00:00.000Z");
   const f = { fail: false, profiles: [{ id: contract.profileId }], read: () => structuredClone(auth),
     advance: ms => { now = new Date(+now + ms); }, storage: {
       listFullProfiles: async () => f.profiles,
@@ -19,7 +27,7 @@ function fixture(contract = CONTRACT) {
         const p = queue.then(async () => {
           const copy = structuredClone(auth), result = await change(copy);
           if (f.fail) throw new Error("CAS unknown");
-          auth = copy; return result;
+          auth = jsonbRoundtrip(copy); return result;
         });
         queue = p.catch(() => {}); return p;
       }
@@ -47,6 +55,41 @@ async function test(name, fn) { await fn(); count++; console.log(`PASS ${name}`)
     await assert.rejects(B.reserviere(ARGS, { ...f.deps,
       env: { [B.ENV]: JSON.stringify({ ...CONTRACT, totalLimitUsd: 29 }) } }));
     assert.equal(Object.keys(f.read()[B.KEY].calls).length, 1);
+  });
+  await test("JSONB-Schluesselordnung erhaelt Vertragshash, native Abrechnung und Reserven nach Neustart", async () => {
+    const legacyHash = value => require("node:crypto").createHash("sha256").update(JSON.stringify(value)).digest("hex");
+    const f = fixture(), contract = B.vertrag(f.deps.env);
+    assert.equal(contract.contractHash, legacyHash(CONTRACT), "Bestehendes Hashformat bleibt unveraendert");
+    assert.equal(B.vertrag({ [B.ENV]: JSON.stringify(jsonbRoundtrip(CONTRACT)) }).contractHash, contract.contractHash);
+    const args = { ...ARGS, meta: { callType: "understanding", pipelineStep: "understanding", politicianId: null,
+      runId: "cron-offline", betriebskostenProfileId: CONTRACT.profileId } };
+    const ticket = await B.reserviere(args, f.deps), receipt = await f.receipt(ticket);
+    const { contractHash, ...storedContract } = f.read()[B.KEY].contract;
+    assert.notEqual(legacyHash(storedContract), contractHash, "Fixture reproduziert den bisherigen JSONB-Hashfehler");
+    await B.abschliessen(ticket, receipt, f.deps);
+    await B.abschliessen(ticket, receipt, f.deps);
+    assert.equal(f.read()[B.KEY].calls[ticket.id].cost, 130);
+    const pending = await B.reserviere(args, f.deps), missing = await f.receipt(pending);
+    await assert.rejects(B.abschliessen(pending, missing, { ...f.deps,
+      providerUsage: { input_tokens: null, output_tokens: 20 } }), { code: "BETRIEBSKOSTEN_UNKNOWN" });
+    const restarted = fixture(CONTRACT, f.read());
+    assert.equal(B.pruefeBuch(restarted.read()[B.KEY], restarted.read()[B.KEY].contract).total, 212130);
+    const next = await B.reserviere(args, restarted.deps);
+    await B.abschliessen(next, await restarted.receipt(next), restarted.deps);
+    assert.equal(restarted.read()[B.KEY].calls[pending.id].status, "ungeklaert");
+    assert.equal(B.pruefeBuch(restarted.read()[B.KEY], restarted.read()[B.KEY].contract).total, 212260);
+  });
+  await test("Gespeicherte Vertragsinhalte und exakte Felder bleiben bei Reserve und Abschluss gebunden", async () => {
+    for (const change of [c => { c.totalLimitUsd = 29; }, c => { c.additional = true; },
+      c => { c.route.additional = true; }, c => { c.route.model = "gpt-5-mini-eu"; },
+      c => { delete c.startsAt; }, c => { c.contractHash = "f".repeat(64); }]) {
+      const f = fixture(), ticket = await B.reserviere(ARGS, f.deps), receipt = await f.receipt(ticket);
+      await f.storage.mutateAuthStore(a => { change(a[B.KEY].contract); });
+      const before = f.read();
+      await assert.rejects(B.reserviere(ARGS, f.deps));
+      await assert.rejects(B.abschliessen(ticket, receipt, f.deps), { code: "BETRIEBSKOSTEN_UNKNOWN" });
+      assert.deepEqual(f.read(), before, "Manipulierte Vertraege erzeugen weder Reserve noch Geldfreigabe");
+    }
   });
   await test("Jede Reserve bindet Profilbestand, Aufgabe und exakten Route/Request", async () => {
     const f = fixture();
@@ -129,6 +172,7 @@ async function test(name, fn) { await fn(); count++; console.log(`PASS ${name}`)
       control: control.steuerungAktiv };
     const f = fixture({ ...CONTRACT, startsAt: new Date(Date.now() - 60000).toISOString() });
     let requests = 0, native = USAGE, transportError = false;
+    const sentTickets = [];
     try {
       Object.assign(process.env, f.deps.env, { AZURE_OPENAI_KEY: "offline", AZURE_OPENAI_ENDPOINT: "https://offline.openai.azure.com",
         AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini", AZURE_OPENAI_UNDERSTANDING_DEPLOYMENT: "gpt-5-mini" });
@@ -141,7 +185,8 @@ async function test(name, fn) { await fn(); count++; console.log(`PASS ${name}`)
       };
       https.request = (_url, _options, callback) => {
         requests++;
-        assert(Object.values(f.read()[B.KEY].calls).some(t => t.status === "reserviert"));
+        const pending = Object.values(f.read()[B.KEY].calls).filter(t => t.status === "reserviert");
+        assert.equal(pending.length, 1); sentTickets.push(pending[0].id);
         const req = new EventEmitter(); req.write = () => {}; req.destroy = () => {};
         req.end = () => setImmediate(() => {
           if (transportError) { req.emit("error", Object.assign(new Error("offline"), { code: "ETIMEDOUT" })); return; }
@@ -162,7 +207,7 @@ async function test(name, fn) { await fn(); count++; console.log(`PASS ${name}`)
       transportError = false;
       assert.deepEqual(await ai.requestStructuredJson("expliziter neuer Versuch", {}, META), { ok: true });
       assert.equal(requests, 4, "Jeder tatsaechliche Versuch hat eine eigene Vollreserve, kein Auto-Retry");
-      const calls = Object.values(f.read()[B.KEY].calls);
+      const calls = sentTickets.map(id => f.read()[B.KEY].calls[id]);
       assert.equal(calls[0].cost, 130); assert.equal(calls[1].status, "ungeklaert");
       assert.equal(calls[2].status, "ungeklaert"); assert.equal(calls[3].cost, 130);
     } finally {
