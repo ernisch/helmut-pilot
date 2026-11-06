@@ -181,9 +181,9 @@ Umbruch, Leerzustände für Kunden und Läufe. „Kunde anlegen“ und alle Funk
 bleiben. `original-verwaltung-test.js` stoppt wie auf `main` an der bekannten alten
 Null-IO-Erwartung. Auftrag abgeschlossen.
 
-## Verwaltung: Briefing · Zustellung · Lage (06.11.2026, PR offen, nicht gemergt)
+## Verwaltung: Briefing · Zustellung · Lage (06.11.2026, live)
 
-Branch `claude/zen-feynman-ie0vpl`. Neu: das rein lesende Modul `lib/helmut/admin-ergebnisstand.js`
+[PR #1073](https://github.com/ernisch/helmut-pilot/pull/1073) nach ausdrücklichem GO gemergt (`68af1f1f`); Pflichtchecks grün (CI-Lauf 42193764133); Production-Deployment `dpl_6oNUBTr2i7hsWHmtUPTK5Y6fTbF4` READY, Alias `helmut-pilot.vercel.app`. Kein authentifizierter Production-Klicktest (Umgebung erreicht die Seite nicht); Sichtprüfung lokal. Ohne bestätigten Profilbestand (Schutz aus PR #1070) zeigt die Verwaltung auch keine Ergebniszahlen. Neu: das rein lesende Modul `lib/helmut/admin-ergebnisstand.js`
 und die Route `GET /api/admin/ergebnisse?tag=&seite=&proSeite=` (nur Admin, ohne KI, ohne Schreiben).
 Sie nutzt unverändert `pruefeZeile`/`pruefeInhalt` (frisch berechnet), `gespeicherterTextGueltig`
 und die Quittungsbindung aus dem Ergebnisnachweis, aber ohne Testfenster. Gelesen wird in Stapeln
@@ -197,7 +197,7 @@ Production-Lesebeleg 06.11. (nur Strukturfelder): 1 Paket mit `currentRadarState
 alle vier Radar-Abschnitte leer, `pruefung.fehler = [briefing-ohne-tagesanlass]`, `bestanden=false`;
 1 Erfolgsquittung mit `ausgabeBeleg`; 1 Lage mit Text. Das Briefing erscheint deshalb ehrlich als
 „Unvollständig“. Tests: 8/8 Modul, 6/6 Route (Rollen, Paging 20/500/2000), 5/5 Verwaltungsansichten.
-Nächster Schritt: Merge-GO für den PR.
+Auftrag abgeschlossen. Nächster Schritt: Betreiber sieht sich die Verwaltung mit eigenem Login an.
 
 ## Oberstes Ziel: Mock100 PASS, dann Helmut sicher live
 
