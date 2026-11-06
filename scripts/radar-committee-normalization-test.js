@@ -44,7 +44,7 @@ const KOBASE = { status: "neu", understanding_status: "complete" };
 const docArbeitSoziales = { title: "Der Ausschuss für Arbeit und Soziales hat getagt", url: "https://dip.bundestag.de/vorgang/arbeit-soziales" };
 const docGesundheit = { title: "Der Ausschuss für Gesundheit beriet die GKV-Novelle", url: "https://dip.bundestag.de/vorgang/gesundheit" };
 const docMenschenrechte = { title: "Der Ausschuss für Menschenrechte und humanitäre Hilfe tagt", url: "https://dip.bundestag.de/vorgang/menschenrechte" };
-const docRecht = { title: "Der Ausschuss für Recht hat getagt", url: "https://dip.bundestag.de/vorgang/recht" };
+const docRecht = { title: "Der Ausschuss für Recht und Verbraucherschutz hat getagt", url: "https://dip.bundestag.de/vorgang/recht" };
 const docSalzgitter = { title: "Investitionen in Salzgitter-Wolfenbüttel", url: "https://www.sz-online.de/nachrichten/salzgitter-wolfenbuettel" };
 
 // Fuehrt die ECHTE Kette aus: profileFeatures + knowledgeObjectFeatures -> matchedFeatures
@@ -146,6 +146,12 @@ check("5 Fremder Ausschuss: Gesundheit-Profil am reinen Arbeit-und-Soziales-KO -
   !runCommittee({ profileFields: { committee: "Gesundheit" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"] }).granted);
 check("5b Aehnlicher Klang, anderer Ausschuss: 'Recht' + 'Ausschuss für Recht und Verbraucherschutz' im Inhalt greift korrekt",
   runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Ausschuss für Recht und Verbraucherschutz"], title: "Sitzung im Ausschuss für Recht und Verbraucherschutz", docs: [docRecht] }).granted);
+// Der amtliche Name der 21. Wahlperiode gilt fuer BEIDE Belegflaechen. Ein alter/
+// verkuerzter Name wird nicht allein durch denselben Normalisierungsschluessel zum Beleg.
+check("5b-1 Verkuerzter Rechtsausschussname im Ursprungsdokument reicht trotz vollem KO-Namen NICHT",
+  !runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Ausschuss für Recht und Verbraucherschutz"], title: "Sitzung im Ausschuss für Recht und Verbraucherschutz", docs: [{ ...docRecht, title: "Der Ausschuss für Recht hat getagt" }] }).granted);
+check("5b-1a Verkuerzter Rechtsausschussname im KO reicht trotz vollem Ursprungsbeleg NICHT",
+  !runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Ausschuss für Recht und Verbraucherschutz"], title: "Sitzung im Ausschuss für Recht", docs: [docRecht] }).granted);
 check("5b-2 'Rechtsausschuss' (bloße Kurzform, kein Beleg) allein genuegt NICHT mehr (siehe radar-committee-evidence-test.js)",
   !runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Rechtsausschuss"] }).granted);
 

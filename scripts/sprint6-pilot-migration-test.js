@@ -8,6 +8,7 @@
 
 const { buildCatalog, EXPLICIT_ORPHAN_CLASSIFICATION, classifyOrphanId, classifyOrphans } = require("../lib/helmut/quellenarchitektur/catalog");
 const { buildFullModel } = require("../lib/helmut/quellenarchitektur");
+const { v1Sources } = require("../lib/helmut/sources");
 const pp = require("../lib/helmut/quellenarchitektur/profile-packages");
 const mm = require("../lib/helmut/quellenarchitektur/migration-mapper");
 const cs = require("../lib/helmut/quellenarchitektur/supply-shadow-compare");
@@ -32,7 +33,28 @@ check("classifyOrphans ohne Datenkontext: nur dip", (() => { const rows = classi
 
 console.log("== Migrations-Mapper: Coverage (strukturell) ==");
 const vStruct = mm.validateMigration({ catalog: cat });
-check("152 Abrufwege (151 v1Sources + dip)", vStruct.counts.legacyIds === 152);
+// Der Quellenausbau darf die Sollmenge vergroessern. Entscheidend ist die
+// identische Zuordnung aller Eingabe-IDs plus DIP, nicht eine historische Zahl:
+// Ein fehlender und ein zusaetzlicher Weg wuerden denselben Zaehler ergeben.
+const inputSourceIds = v1Sources.map((s) => s.id);
+const expectedLegacyIds = new Set([...inputSourceIds, "dip"]);
+const mappedLegacyIds = cat.retrievalPaths.map((p) => p.legacy_source_id);
+check("Eingabequellen haben eindeutige Kennungen; DIP ist der separate API-Weg",
+  inputSourceIds.every((id) => typeof id === "string" && id.trim().length > 0)
+  && new Set(inputSourceIds).size === inputSourceIds.length && !inputSourceIds.includes("dip"));
+check("jede v1Sources-Quelle plus DIP ist genau einmal als Abrufweg abgebildet",
+  mappedLegacyIds.length === expectedLegacyIds.size
+  && new Set(mappedLegacyIds).size === mappedLegacyIds.length
+  && mappedLegacyIds.every((id) => expectedLegacyIds.has(id)));
+check("Migrations-Mapper zaehlt die vollstaendige erwartete Quellenmenge",
+  vStruct.counts.legacyIds === expectedLegacyIds.size);
+const catalogPackageIds = new Set(cat.packages.map((p) => p.id));
+const assignedPathIds = new Set(cat.packagePaths
+  .filter((link) => catalogPackageIds.has(link.package_id))
+  .map((link) => link.retrieval_path_id));
+check("jeder eindeutige Abrufweg hat eine Bindung an ein vorhandenes Paket",
+  new Set(cat.retrievalPaths.map((p) => p.id)).size === cat.retrievalPaths.length
+  && cat.retrievalPaths.every((p) => assignedPathIds.has(p.id)));
 check("keine Quelle ohne Paketzuordnung (unmapped leer)", vStruct.counts.unmappedPackages === 0 && cat.unmapped.length === 0);
 check("ohne raw_documents: availability.observedSources=false (ehrlich, nichts erfunden)", vStruct.availability.observedSources === false);
 check("strukturell verdict=ok", vStruct.verdict === "ok");

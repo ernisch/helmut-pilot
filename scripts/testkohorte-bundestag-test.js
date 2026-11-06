@@ -42,11 +42,30 @@ test("Alle495 bestehen regulaere Bundestagsreife, kein synthetischer Sonderpfad"
     A.equal(r.zulaessig, true, JSON.stringify({ id: m.user_id, fehler: r.fehler }));
   }
 });
-test("61 fehlende Landespflichtpakete fallen durch echte Ebenenumstellung weg", () => {
+test("61 vorbereitete Landespflichtpakete entfallen nur durch echte Ebenenumstellung", () => {
   const s = F.snapshot();
-  A.equal(s.mandate.filter(m => P.resolveProfilePackages(m).requiredMissing.length).length, 61);
+  // Alle 16 Länder haben inzwischen Paketdefinitionen: requiredMissing ist
+  // deshalb leer. Die historischen 61 Landesmandate benötigen ihre weiterhin
+  // vorbereiteten Landespflichtpakete trotzdem; Existenz ist keine Versorgung.
+  const landesmandate = s.mandate.filter(m => P.resolveProfilePackages(m).required.some(key => key !== "bund-basis"));
+  A.equal(landesmandate.length, 61);
+  A.deepEqual(landesmandate.map(m => m.user_id).sort(), [...B.UMSTELL_IDS].sort());
+  const landespaket = {
+    "Mecklenburg-Vorpommern": "mecklenburg-vorpommern-basis",
+    "Thüringen": "thueringen-basis"
+  };
+  for (const m of landesmandate) {
+    const key = landespaket[m.bundesland]; A(key, m.bundesland);
+    const resolved = P.resolveProfilePackages(m), supply = P.profileSupplyStatus(m);
+    A.deepEqual(resolved.required, ["bund-basis", key]);
+    A.deepEqual(resolved.requiredMissing, []);
+    A(supply.missingBasePackages.some(p => p.key === key && p.reason === "paket-status-prepared"));
+    A.equal(supply.fullyActivated, false);
+  }
   umstellen(s);
+  A.equal(s.mandate.filter(m => P.resolveProfilePackages(m).required.some(key => key !== "bund-basis")).length, 0);
   A.equal(s.mandate.filter(m => P.resolveProfilePackages(m).requiredMissing.length).length, 0);
+  for (const m of landesmandate) A.deepEqual(P.resolveProfilePackages(m).required, ["bund-basis"]);
 });
 test("Alte und vollstaendige neue Kohorte werden exakt gebunden, inklusive500er Plan", () => {
   for (const bereinigt of [false, true]) {

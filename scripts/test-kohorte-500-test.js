@@ -306,15 +306,15 @@ abschnitt(`§11 Reife je politischer Ebene (§34.7 Variante A) — Sollmenge WP 
       paketZaehler.set(k, (paketZaehler.get(k) || 0) + 1);
     }
   }
-  check("§11.14 Die echten Ausschüsse ziehen GENAU EIN zusätzliches Sachpaket, kein weiteres",
-    paketZaehler.size === 1 && paketZaehler.has("arbeit-und-soziales"),
+  check("§11.14 Alle 24 Ausschussgebiete ziehen Fachpakete nach derselben Regel",
+    paketZaehler.size === 24 && paketZaehler.has("arbeit-und-soziales") && [...paketZaehler.keys()].every((k) => k === "arbeit-und-soziales" || k.startsWith("fach-")),
     `gezogen: ${[...paketZaehler].map(([k, n]) => `${k}=${n}`).join(", ") || "keines"}`);
   check("§11.15 Es trifft 42 der 495 Profile — genau die mit dem Ausschuss für Arbeit und Soziales",
     paketZaehler.get("arbeit-und-soziales") === 42
       && specs.filter((s) => s.committees.includes("Ausschuss für Arbeit und Soziales")).length === 42);
-  check("§11.16 Jedes Profil bleibt bei höchstens EINEM Sachpaket (keine Mehrfachzuordnung)",
+  check("§11.16 Jeder echte Bundesausschuss erhält sein Fachpaket; synthetische Landesnamen erfinden keines",
     specs.every((s) => resolveProfilePackages(alsInhalt(s)).optional
-      .filter((k) => !k.startsWith("profil-")).length <= 1));
+      .filter((k) => !k.startsWith("profil-")).length === (s.parliamentType === "Bundestag" ? s.committees.length : 0)));
 }
 
 console.log(`\nERGEBNIS: ${pass} PASS / ${fail} FAIL`);

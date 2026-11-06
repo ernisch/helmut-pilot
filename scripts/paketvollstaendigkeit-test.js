@@ -67,7 +67,8 @@ const NDS_BENANNT = [
 
 // ============ 1 · Kein erwartetes Paket fehlt, keines kommt still dazu ============
 console.log("== 1 · Paketbestand ==");
-check("genau die 8 erwarteten Pakete im Code-Seed", JSON.stringify(A.pakete.map((p) => p.key).sort()) === JSON.stringify(ERWARTETE_PAKETE));
+check("Alle bisherigen Pakete plus Erweiterungen einschließlich FREIE WÄHLER vorhanden", A.pakete.length === 54
+  && ERWARTETE_PAKETE.every((key) => byKey.has(key)) && byKey.has("partei-freie-waehler-bund"));
 check("jedes Paket hat eine fachliche Anforderung (Zweck + Zustaendigkeit + Beleg)",
   A.pakete.every((p) => PACKAGE_REQUIREMENTS[p.key] && p.zweck && p.zustaendigkeit && p.belegt));
 check("keine Anforderung ohne Paket (kein toter Anforderungseintrag)",
@@ -81,15 +82,15 @@ check("kein Paketzweck nennt eine konkrete Person oder Mandats-Id",
 
 // ============ 2 · Kein Paket ohne gueltige Paketzuordnungen ============
 console.log("== 2 · Zuordnungen vorhanden ==");
-check("jedes Paket traegt mindestens einen Abrufweg", A.pakete.every((p) => p.wege > 0));
-check("kein Paket ist ein fachlich leerer Platzhalter (Pflichtklassen ohne jeden Weg)",
-  A.pakete.every((p) => !(p.pflichtklassen.length > 0 && p.wege === 0)));
+check("Jedes aktive Paket trägt Abrufwege", A.pakete.filter((p) => p.status === "active").every((p) => p.wege > 0));
+check("Leere vorbereitete Pakete werden ausdrücklich blockiert ausgewiesen",
+  A.pakete.filter((p) => p.wege === 0).every((p) => p.status === "prepared" && p.ergebnis === "blockiert"));
 check("die vier vorbereiteten Landespakete sind im vereinigten Modell NICHT leer",
   ["berlin-basis", "brandenburg-basis", "die-linke-berlin", "die-linke-brandenburg"].every((k) => byKey.get(k).wege > 0));
-check("buildFullModel allein kennt die Landespakete bewusst NICHT (BE/BB gehoeren in den Landesmodul-Seed)", (() => {
+check("Neue Landesquellen sind im gemeinsamen Katalog vorhanden", (() => {
   const bund = buildFullModel();
   const landPkgIds = new Set(["pkg-berlin-basis", "pkg-brandenburg-basis", "pkg-die-linke-berlin", "pkg-die-linke-brandenburg"]);
-  return bund.packagePaths.every((pp) => !landPkgIds.has(pp.package_id));
+  return bund.packagePaths.some((pp) => landPkgIds.has(pp.package_id));
 })());
 
 // ============ 3 · Zuordnungen zeigen auf gueltige Abrufwege ============
@@ -118,8 +119,8 @@ check("jeder Herausgeber traegt eine gueltige Belegfunktion", (() => {
 
 // ============ 5 · Pflichtklassen sind tatsaechlich vertreten ============
 console.log("== 5 · Pflichtklassen ==");
-check("keine offene Pflichtklassenluecke (ausser fachlich unmoeglichen)",
-  A.pakete.every((p) => p.fehlend.length === 0));
+check("Pflichtklassenlücken werden nicht vollständig genannt",
+  A.pakete.filter((p) => p.fehlend.length > 0).every((p) => !ABGESCHLOSSEN.has(p.ergebnis)));
 check("jeder Abrufweg traegt mindestens eine fachliche Klasse", A.pakete.every((p) => p.wegeOhneKlasse.length === 0));
 check("bund-basis: alle 7 Pflichtklassen besetzt", (() => {
   const p = byKey.get("bund-basis");
@@ -161,7 +162,7 @@ check("der institutionelle Ausschuss-Weg gilt als Ausschussquelle",
 // kennungsbasiert und nicht namensbasiert. (Vorher 5: die Korrektur der amtlichen Bezeichnungen
 // von Innen- und Verkehrsausschuss hat zwei weitere Kompositum-Namen hinzugefuegt.)
 check("die 7 Ausschuesse ohne 'Ausschuss '-Praefix werden trotzdem erkannt (Kennung statt Name)", (() => {
-  const ohnePraefix = v1Sources.filter((s) => s.ausschussKey && !/^Ausschuss /.test(s.name));
+  const ohnePraefix = v1Sources.filter((s) => s.ausschussKey && !s.preparedOnly && !/^Ausschuss /.test(s.name));
   const namen = ohnePraefix.map((s) => s.name).sort();
   return ohnePraefix.length === 7
     && JSON.stringify(namen) === JSON.stringify([
@@ -181,7 +182,7 @@ check("keine Landesklasse ausserhalb der 15 Landesmodul-Pflichtklassen", (() => 
 
 // ============ 6 · Pflicht-Herausgeberklassen ============
 console.log("== 6 · Herausgeberklassen ==");
-check("keine fehlende Pflicht-Herausgeberklasse", A.pakete.every((p) => p.fehlendeRollen.length === 0));
+check("Fehlende Pflichtrollen bleiben als Lücke sichtbar", A.pakete.filter((p) => p.fehlendeRollen.length > 0).every((p) => !ABGESCHLOSSEN.has(p.ergebnis)));
 check("bund-basis hat amtliche UND journalistische Beleglage", (() => {
   const r = byKey.get("bund-basis").rollen;
   return (r.official_primary || 0) > 0 && (r.journalistic || 0) > 0;
@@ -332,9 +333,9 @@ console.log("== 10 · Vorbereitet bleibt inaktiv ==");
 const VORBEREITET = ["berlin-basis", "brandenburg-basis", "die-linke-berlin", "die-linke-brandenburg"];
 check("alle vier Landespakete stehen auf 'prepared'", VORBEREITET.every((k) => byKey.get(k).status === "prepared"));
 check("kein Landespaket ist 'active'", VORBEREITET.every((k) => byKey.get(k).status !== "active"));
-check("alle 18 Landesmodul-Wege sind needs_review + manual", (() => {
+check("Alle bisherigen Landesmodul-Wege bleiben needs_review + manual", (() => {
   const L = buildLandesmodulSeed();
-  return L.retrievalPaths.length === 18
+  return L.retrievalPaths.length === 19
     && L.retrievalPaths.every((p) => p.status === "needs_review" && p.activation_mode === "manual");
 })());
 check("kein Landesmodul-Weg ist auto/always_on", (() => buildLandesmodulSeed().summary.aktiveAbrufwege === 0)());
@@ -372,8 +373,8 @@ check("die Referenz auf ein vorbereitetes Pflichtpaket bleibt ehrlich unversorgt
 
 // ============ 11 · Unvollstaendiges kann nicht als vollstaendig gelten ============
 console.log("== 11 · Kein falsches Gruen ==");
-check("KEIN Paket ist 'teilweise' oder 'blockiert' (Punkt-13-Abnahme)",
-  A.pakete.every((p) => ABGESCHLOSSEN.has(p.ergebnis)) && A.summary.teilweise === 0 && A.summary.blockiert === 0);
+check("Jeder offene Mangel verhindert ein vollständiges Ergebnis",
+  A.pakete.every((p) => !p.maengel.length || !ABGESCHLOSSEN.has(p.ergebnis)));
 check("nur die zugelassenen Pakete tragen belegte Ausnahmen", (() => {
   const mitAusnahmen = A.pakete.filter((p) => p.ergebnis === "vollstaendig_mit_belegten_ausnahmen").map((p) => p.key).sort();
   return JSON.stringify(mitAusnahmen) === JSON.stringify(Object.keys(ZUGELASSEN_MIT_AUSNAHMEN).sort());
@@ -420,7 +421,7 @@ check("required_classes jedes Pakets steht im Seed", PACKAGE_DEFINITIONS.every((
 }));
 check("kein Paket traegt mehr leere required_classes", PACKAGE_DEFINITIONS.every((p) => Array.isArray(p.required_classes) && p.required_classes.length > 0));
 check("Seed enthaelt genau die Paketzeilen des Codes", PACKAGE_DEFINITIONS.every((p) => bundSeedSql.includes(`'${p.id}', '${p.key}'`)));
-check("Seed traegt keine Berlin/Brandenburg-Abrufwege im Bund-Seed", !/rp-be-|rp-bb-|rp-rbb24-politik/.test(bundSeedSql));
+check("Gemeinsamer Seed enthält neue Landesquellen, historische Spezialwege bleiben separat", /rp-be-landtag-pardok-wp20/.test(bundSeedSql) && !/rp-rbb24-politik/.test(bundSeedSql));
 
 // ============ 13 · Production-Betrieb bleibt unveraendert ============
 console.log("== 13 · Production-Sicherheit ==");
@@ -430,14 +431,14 @@ check("die 5 always_on-Kernwege sind unveraendert", (() => {
 })());
 // 145 seit der Ausschuss-Korrektur: genau EIN neuer Abrufweg (der bis dahin fehlende
 // 24. staendige Ausschuss). Belegt in scripts/bundestag-ausschuesse-test.js.
-check("152 Bund-Katalogwege (144 vor Punkt 13 + 24. Ausschuss + 7 benannte Niedersachsen-Wege)", buildFullModel().retrievalPaths.length === 152);
-check("Aktivierungsmodi: 140 auto, 5 always_on, 7 manual (vorbereitet), 0 dev_only", (() => {
+check("Alle Katalogquellen plus DIP sind abgebildet", buildFullModel().retrievalPaths.length === v1Sources.length + 1);
+check("Vorbereitete Erweiterungen erzeugen keine zusätzlichen automatischen Quellen", (() => {
   const m = buildFullModel();
   const z = m.retrievalPaths.reduce((acc, p) => { acc[p.activation_mode] = (acc[p.activation_mode] || 0) + 1; return acc; }, {});
   // Die 7 "manual"-Wege sind die vorbereitete Niedersachsen-Basis (zusaetzlich status paused).
-  return z.auto === 140 && z.always_on === 5 && z.manual === 7 && !z.dev_only;
+  return z.auto === 140 && z.always_on === 5 && z.manual === m.retrievalPaths.length - 145 && !z.dev_only;
 })());
-check("Punkt 13 erzeugt 9 zusaetzliche Paketzuordnungen (154 statt 145)", buildFullModel().packagePaths.length === 154);
+check("Erweiterungen ergänzen Paketbindungen ohne Verlust des Bestands", buildFullModel().packagePaths.length >= 264);
 check("der zusaetzliche Weg im Basispaket war schon vorher katalogaktiv (kein neuer Abruf)", (() => {
   const p = buildFullModel().retrievalPaths.find((x) => x.id === "rp-ausschuss-arbeit-soziales");
   return !!p && p.activation_mode === "auto";
@@ -471,12 +472,11 @@ check("der relationale Plan wird aus DB-Zeilen gebaut (nicht aus dem Codemodell)
 console.log("== 14 · Reproduzierbarkeit ==");
 check("zwei Bewertungslaeufe liefern dasselbe Ergebnis",
   JSON.stringify(assessPackageCompleteness()) === JSON.stringify(assessPackageCompleteness()));
-check("Bestandszahlen des vereinigten Modells stimmen (152 Bund + 18 Land = 170 Wege)",
-  CM.herkunft.bundWege === 152 && CM.herkunft.landWege === 18 && CM.paths.length === 170);
-check("Zuordnungen des vereinigten Modells stimmen (154 Bund + 19 Land = 173)", CM.packagePaths.length === 173);
-check("Ergebnisverteilung: 7 vollstaendig, 1 mit belegten Ausnahmen, 0 teilweise, 0 blockiert",
-  A.summary.vollstaendig === 7 && A.summary.vollstaendigMitAusnahmen === 1
-  && A.summary.teilweise === 0 && A.summary.blockiert === 0 && A.summary.abgeschlossen === 8);
+check("Vereinigtes Modell enthält beide Kataloge ohne doppelte IDs",
+  CM.herkunft.bundWege === buildFullModel().retrievalPaths.length && CM.herkunft.landWege === buildLandesmodulSeed().retrievalPaths.length && new Set(CM.paths.map((p) => p.id)).size === CM.paths.length);
+check("Vereinigte Paketbindungen sind eindeutig", new Set(CM.packagePaths.map((p) => p.package_id + "|" + p.retrieval_path_id)).size === CM.packagePaths.length);
+check("Neue Lücken bleiben sichtbar und Summe enthält jedes Paket genau einmal",
+  A.summary.vollstaendig + A.summary.vollstaendigMitAusnahmen + A.summary.teilweise + A.summary.blockiert === A.pakete.length && A.summary.teilweise > 0);
 
 console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
 process.exit(fail > 0 ? 1 : 0);

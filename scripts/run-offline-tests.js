@@ -371,7 +371,15 @@ const STANDARD = new Set([
   "understanding-gate-integration-test.js", // Gate ist im Pfad verdrahtet
   "dedup-findings-test.js",                 // Dedup-Kennungswahrheit
   "berlin-rbmskzl-current-test.js",          // heutiger amtlicher H4-Artikel; Fremdmodule weiter gesperrt
-  "source-dedupe-test.js"                   // Quellen-Deduplizierung
+  "source-dedupe-test.js",                  // Quellen-Deduplizierung
+  "abdeckungspruefung-test.js",             // Quellenrollen, Inhalte und Aktualität
+  "betriebsabdeckung-test.js",              // Tatsächlicher Katalog statt Seed als Betriebsbeleg
+  "cron-abdeckung-test.js",                 // Gemeinsamer Abschluss aller Quellencron-Pfade
+  "fach-parteiquellen-test.js",             // Gleiche Zuordnung für Fachgebiete und Parteien
+  "landesmodule-deutschland-test.js",        // Gleiches Landesmodell und echte Parserbelege
+  "sachsen-medienservice-test.js",           // Begrenzter amtlicher JSON-Abruf und ehrliche Belegmetadaten
+  "quellen-ergaenzungsplan-test.js",         // Ergänzungen ohne Überschreiben des Bestands
+  "neutrale-quellenzuordnung-plan-test.js"   // Genau begrenzte Neutralitätskorrektur mit Rückweg
 ]);
 
 // Schneller universeller Kern fuer normale Codeaenderungen. Diese Suiten sind

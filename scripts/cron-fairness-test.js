@@ -1905,7 +1905,10 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
         /`cron-\$\{cronName\}-timeoutvermerk`/.test(serverSrc)
         && /saveCronFairnessState\(cronFairness\.laufTimeoutPatch\([\s\S]{0,300}\),\s*\n\s*5000,/.test(serverSrc));
       check("Die Laufkennung kommt aus der Route, damit der Vermerk denselben Lauf trifft",
-        (serverSrc.match(/runId: laufId/g) || []).length === 3
+        // Der Quellen-Audit uebernimmt dieselbe Kennung zusaetzlich. Entscheidend
+        // sind die drei Verarbeitungspfade, nicht die globale Anzahl des Texts.
+        (serverSrc.match(/cronSchwererPfad\("(crawl|pipeline)", \{[^}]*runId: laufId/g) || []).length === 2
+        && /runCronForTenants\("lage-check",[\s\S]*?\}, \{\s*deadlineMs: 240000,\s*runId: laufId,/.test(serverSrc)
         && (serverSrc.match(/const laufId = helmutRunId\("cron-(crawl|pipeline|lage-check)"/g) || []).length === 3);
       check("Die Protokollzeile verbindet Log und Ablage (Laufkennung + Laufzustand)",
         /lauf=\$\{fairness\.laufId \|\| "-"\}/.test(serverSrc)

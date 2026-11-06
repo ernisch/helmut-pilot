@@ -4,12 +4,12 @@
 // Isolierter End-to-End-Test: Pre-Seed-Backup -> Seed 1 -> Seed 2 -> Restore.
 // ============================================================================
 // Beweist offline und ohne jede Datenbank, dass ein gezielter Restore die Wirkung
-// der beiden Quellen-Seeds vollstaendig zurueckdreht.
+// der beiden HISTORISCHEN Quellen-Seeds vollstaendig zurueckdreht.
 //
 // METHODE: ein minimaler SQL-Ausfuehrer fuer GENAU die Statement-Formen, die in
 // den beiden Seeds und im erzeugten Restore vorkommen (insert/on conflict,
 // delete ... not in, update ... where id). Damit laeuft der Nachweis am ECHTEN
-// SQL der Repo-Dateien statt an einer Nachbildung.
+// SQL der gesicherten Repo-Staende statt an einer Nachbildung.
 //
 // AUSGANGSZUSTAND: die vor PR #118 committeten Seeds — das ist der erwartete
 // Production-Stand laut Freigabedoku. Es werden KEINE echten Production-Daten
@@ -25,6 +25,14 @@
 // gegen `git show 54fe370:...` geprueft — aber nur, wenn der Commit lokal
 // vorhanden ist. Fehlt er (CI), sagt der Lauf das ausdruecklich; der inhaltliche
 // Nachweis laeuft trotzdem vollstaendig.
+//
+// ZIELSTAND: c6522a80, letzter Stand vor dem neutralen Katalogausbau. Der alte
+// Restore kennt genau zwei neue Pakete und acht neue Abrufwege. Er darf NICHT
+// still zum Rueckweg fuer spaetere, umfangreichere Seeds erklaert werden.
+// Deshalb ist auch der historische Zielstand als bytegetreue Fixture mit
+// Manifest/Pruefsummen gesichert. Aktuelle Erweiterungen werden separat in
+// quellen-ergaenzungsplan-test.js und neutrale-quellenzuordnung-plan-test.js
+// gegen ihren eigenen Apply-/Receipt-/Rollback-Vertrag geprueft.
 
 const fs = require("fs");
 const path = require("path");
@@ -292,30 +300,38 @@ function snapshot(db, tables) {
 }
 
 const FIXTURE_DIR = path.join(__dirname, "fixtures", "seeds-vor-pr118");
+const RESTORE_SEED_DIR = path.join(__dirname, "fixtures", "seeds-restore-vertrag-c6522a80");
+const RESTORE_SEED_MANIFEST = JSON.parse(fs.readFileSync(path.join(RESTORE_SEED_DIR, "manifest.json"), "utf8"));
 
 function loadSeed(file) {
   return fs.readFileSync(path.join(FIXTURE_DIR, file), "utf8");
 }
 
-// Aktueller Sollstand: die Seeds im Arbeitsbaum. Bewusst NICHT `git show HEAD:...` —
-// geprueft wird der Stand, den CI auscheckt und den das Drift-Gate absichert.
-function loadAktuell(file) {
-  return fs.readFileSync(path.join(ROOT, "supabase", "seeds", file), "utf8");
+// Nur der gesicherte Zielstand dieses Restore-Vertrags, nie der aktuelle Seed.
+// Pruefsummen werden auch im flachen CI-Klon bei jedem Laden verifiziert.
+function loadRestoreSeed(file) {
+  const raw = fs.readFileSync(path.join(RESTORE_SEED_DIR, file));
+  const expected = RESTORE_SEED_MANIFEST.files[file];
+  const hash = crypto.createHash("sha256").update(raw).digest("hex");
+  if (!expected || raw.length !== expected.bytes || hash !== expected.sha256) {
+    throw new Error(`Historische Restore-Fixture veraendert: ${file}`);
+  }
+  return raw.toString("utf8");
 }
 
 // Herkunftsnachweis: stimmt die Fixture noch mit dem Stand vor PR #118 ueberein?
 // Nur moeglich, wenn der Commit im lokalen Klon liegt — in CI (flacher Klon) nicht.
 // Rueckgabe: true = geprueft und gleich, false = geprueft und ABWEICHEND,
 // null = nicht pruefbar (Commit fehlt).
-function fixtureEntsprichtHistorie(file) {
+function fixtureEntsprichtHistorie(file, commit = VORHER_COMMIT, load = loadSeed) {
   let ausHistorie;
   try {
-    ausHistorie = execFileSync("git", ["show", `${VORHER_COMMIT}:supabase/seeds/${file}`],
+    ausHistorie = execFileSync("git", ["show", `${commit}:supabase/seeds/${file}`],
       { cwd: ROOT, encoding: "utf8", maxBuffer: 20 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
   } catch (_) {
     return null;
   }
-  return ausHistorie === loadSeed(file);
+  return ausHistorie === load(file);
 }
 
 // ------------------------------------------------------------------ Ablauf --
@@ -323,6 +339,15 @@ const TAB = ["geographies", "political_entities", "publishers", "retrieval_paths
 
 console.log("== 0) Herkunft der Fixture ==");
 for (const f of ["20260713_source_architecture_seed.sql", "20260717_landesmodul_be_bb_seed.sql"]) {
+  // Immer Pruefsumme pruefen; der optionale Git-Vergleich belegt die Herkunft.
+  loadRestoreSeed(f);
+  check(`0 · ${f}: historischer Restore-Zielstand pruefsummengebunden`, true);
+  const zielGleich = fixtureEntsprichtHistorie(f, RESTORE_SEED_MANIFEST.sourceCommit, loadRestoreSeed);
+  if (zielGleich === null) {
+    console.log(`INFO  0 · ${f}: historischer Zielcommit fehlt im Klon; Manifestpruefsumme geprueft.`);
+  } else {
+    check(`0 · ${f}: Restore-Fixture entspricht ${RESTORE_SEED_MANIFEST.sourceCommit}`, zielGleich);
+  }
   const gleich = fixtureEntsprichtHistorie(f);
   if (gleich === null) {
     console.log(`INFO  0 · ${f}: Herkunft nicht pruefbar — Commit ${VORHER_COMMIT} fehlt im Klon (flacher CI-Klon). Inhaltlicher Nachweis laeuft trotzdem.`);
@@ -340,7 +365,7 @@ const n0 = Object.fromEntries(TAB.map((t) => [t, (db[t] || new Map()).size]));
 console.log("   " + JSON.stringify(n0));
 check("1 · Ausgangszustand aufgebaut (162 Abrufwege, 6 Pakete, 163 Zuordnungen)",
   n0.retrieval_paths === 162 && n0.source_packages === 6 && n0.package_paths === 163);
-check("1 · Die 6 Bundeswege stehen auf 'broken' (heutiger Production-Stand)",
+check("1 · Die 6 Bundeswege stehen auf 'broken' (historischer Fixture-Stand)",
   ["rp-bundestag", "rp-bundesregierung", "rp-die-linke", "rp-linksfraktion", "rp-ausschuss-arbeit-soziales", "rp-dgb"]
     .every((id) => db.retrieval_paths.get(id).status === "broken"));
 check("1 · Partei-/Personenwege haengen am PFLICHT-Basispaket",
@@ -368,7 +393,7 @@ check("2 · Backup enthaelt die 3 veraenderten Tabellen + publishers (nur lesend
   manifest.art === "pre-seed" && Object.keys(manifest.pruefsummen).length === 4 && !!manifest.pruefsummeGesamt);
 
 console.log("\n== 3) Seed 1 (Bund, nach #118) ==");
-const s1 = execSql(db, loadAktuell("20260713_source_architecture_seed.sql"));
+const s1 = execSql(db, loadRestoreSeed("20260713_source_architecture_seed.sql"));
 const n1 = Object.fromEntries(TAB.map((t) => [t, (db[t] || new Map()).size]));
 console.log(`   +${s1.stats.ins} eingefuegt, ${s1.stats.upd} aktualisiert, ${s1.stats.del} geloescht`);
 // Punkt 13: Seed 1 fuegt jetzt ZWEI Paketzuordnungen ein — die bisherige
@@ -390,7 +415,7 @@ check("3 · Seed 1: required_classes der Landes-Basispakete auf 12 reduziert",
   && db.source_packages.get("pkg-brandenburg-basis").required_classes.length === 12);
 
 console.log("\n== 4/5) Seed 2 (Landesmodul, nach #118) ==");
-const s2 = execSql(db, loadAktuell("20260717_landesmodul_be_bb_seed.sql"));
+const s2 = execSql(db, loadRestoreSeed("20260717_landesmodul_be_bb_seed.sql"));
 const n2 = Object.fromEntries(TAB.map((t) => [t, (db[t] || new Map()).size]));
 console.log(`   +${s2.stats.ins} eingefuegt, ${s2.stats.upd} aktualisiert, ${s2.stats.del} geloescht`);
 check("5 · Seed 2: genau 4 alte Zuordnungen entfernt, 4 neue eingefuegt", s2.stats.del === 4 && s2.stats.ins === 4);
@@ -404,8 +429,8 @@ check("5 · Gesamtzahl Zuordnungen unveraendert (4 raus, 4 rein)", n2.package_pa
 
 console.log("\n== 6) Idempotenz der Seeds ==");
 const vorWdh = snapshot(db, TAB);
-const r1 = execSql(db, loadAktuell("20260713_source_architecture_seed.sql"));
-const r2 = execSql(db, loadAktuell("20260717_landesmodul_be_bb_seed.sql"));
+const r1 = execSql(db, loadRestoreSeed("20260713_source_architecture_seed.sql"));
+const r2 = execSql(db, loadRestoreSeed("20260717_landesmodul_be_bb_seed.sql"));
 check("6 · Zweiter Lauf beider Seeds aendert 0 Zeilen",
   r1.stats.ins + r1.stats.upd + r1.stats.del + r2.stats.ins + r2.stats.upd + r2.stats.del === 0,
   `ins=${r1.stats.ins + r2.stats.ins} upd=${r1.stats.upd + r2.stats.upd} del=${r1.stats.del + r2.stats.del}`);
@@ -456,7 +481,7 @@ if (ENDE !== AUSGANG) {
       if (JSON.stringify(a[t][i]) !== JSON.stringify(e[t][i])) {
         const av = a[t][i][1] || {}, ev = (e[t][i] || [])[1] || {};
         for (const k of new Set([...Object.keys(av), ...Object.keys(ev)])) {
-          if (JSON.stringify(av[k]) !== JSON.stringify(ev[k])) console.log(`        ${a[t][i][0]} · ${k}: ${JSON.stringify(av[k]).slice(0,70)} -> ${JSON.stringify(ev[k]).slice(0,70)}`);
+          if (JSON.stringify(av[k]) !== JSON.stringify(ev[k])) console.log(`        ${a[t][i][0]} · ${k}: ${String(JSON.stringify(av[k])).slice(0,70)} -> ${String(JSON.stringify(ev[k])).slice(0,70)}`);
         }
       }
     }
@@ -514,7 +539,7 @@ const dbT = {};
 execSql(dbT, loadSeed("20260713_source_architecture_seed.sql"));
 execSql(dbT, loadSeed("20260717_landesmodul_be_bb_seed.sql"));
 const AUSGANG_T = snapshot(dbT, TAB);
-execSql(dbT, loadAktuell("20260713_source_architecture_seed.sql")); // nur Seed 1
+execSql(dbT, loadRestoreSeed("20260713_source_architecture_seed.sql")); // nur Seed 1
 check("11 · Teilzustand nach nur Seed 1: 8 Pakete, Landeswege noch am Pflichtpaket",
   dbT.source_packages.size === 8 && dbT.package_paths.has("pkg-berlin-basis|rp-be-partei_pilot"));
 execSql(dbT, build(dir));
@@ -528,7 +553,7 @@ execSql(dbA, loadSeed("20260713_source_architecture_seed.sql"));
 execSql(dbA, loadSeed("20260717_landesmodul_be_bb_seed.sql"));
 const vorAbbruch = snapshot(dbA, TAB);
 const kopie = {}; for (const t of TAB) kopie[t] = new Map([...dbA[t]].map(([k, v]) => [k, { ...v }]));
-execSql(kopie, loadAktuell("20260713_source_architecture_seed.sql"));
+execSql(kopie, loadRestoreSeed("20260713_source_architecture_seed.sql"));
 check("13 · Verworfene Transaktion laesst den Ausgangszustand unberuehrt", snapshot(dbA, TAB) === vorAbbruch);
 
 console.log("\n== 14) Kein Restdiff ==");
@@ -575,8 +600,8 @@ const roh = (t) => [...basis[t].values()].map((r) => ({ ...r }));
   const nachSeed = {};
   execSql(nachSeed, loadSeed("20260713_source_architecture_seed.sql"));
   execSql(nachSeed, loadSeed("20260717_landesmodul_be_bb_seed.sql"));
-  execSql(nachSeed, loadAktuell("20260713_source_architecture_seed.sql"));
-  execSql(nachSeed, loadAktuell("20260717_landesmodul_be_bb_seed.sql"));
+  execSql(nachSeed, loadRestoreSeed("20260713_source_architecture_seed.sql"));
+  execSql(nachSeed, loadRestoreSeed("20260717_landesmodul_be_bb_seed.sql"));
   const d = schreibeBackup({
     retrieval_paths: [...nachSeed.retrieval_paths.values()],
     source_packages: [...nachSeed.source_packages.values()],
@@ -643,8 +668,8 @@ console.log("\n== 16) Regression: Wirkbereich des Restores ==");
   const dbM = {};
   execSql(dbM, loadSeed("20260713_source_architecture_seed.sql"));
   execSql(dbM, loadSeed("20260717_landesmodul_be_bb_seed.sql"));
-  execSql(dbM, loadAktuell("20260713_source_architecture_seed.sql"));
-  execSql(dbM, loadAktuell("20260717_landesmodul_be_bb_seed.sql"));
+  execSql(dbM, loadRestoreSeed("20260713_source_architecture_seed.sql"));
+  execSql(dbM, loadRestoreSeed("20260717_landesmodul_be_bb_seed.sql"));
   // Provisionierung NACH dem Backup:
   dbM.source_packages.set("pkg-profil-neu", { id: "pkg-profil-neu", key: "profil-neu", name: "Profil neu",
     purpose: null, status: "active", is_base: false, political_level: "bund", geography_id: null, required_classes: [] });

@@ -27,7 +27,8 @@ insert into public.publishers (id, name, canonical_domain, publisher_type, evide
   ('publisher-landesregierung-brandenburg.de', 'Landesregierung Brandenburg', 'landesregierung-brandenburg.de', 'government', 'official_primary', 'unbekannt', 'active', 'government-brandenburg'),
   ('publisher-stk.brandenburg.de', 'Staatskanzlei Brandenburg', 'stk.brandenburg.de', 'government', 'official_primary', 'unbekannt', 'active', 'government-brandenburg'),
   ('publisher-brandenburg.de', 'Ministerien Brandenburg', 'brandenburg.de', 'ministry', 'official_primary', 'unbekannt', 'active', null),
-  ('publisher-maz-online.de', 'Märkische Allgemeine / Lausitzer Rundschau', 'maz-online.de', 'media', 'journalistic', 'unbekannt', 'active', null),
+  ('publisher-maz-online.de', 'Märkische Allgemeine (MAZ)', 'maz-online.de', 'media', 'journalistic', 'unbekannt', 'active', null),
+  ('publisher-lr-online.de', 'Lausitzer Rundschau', 'lr-online.de', 'media', 'journalistic', 'unbekannt', 'active', null),
   ('publisher-dielinke-brandenburg.de', 'Die Linke Brandenburg', 'dielinke-brandenburg.de', 'party', 'direct_interest', 'unbekannt', 'active', 'party-linke-brandenburg')
 on conflict (id) do nothing;
 
@@ -50,14 +51,15 @@ insert into public.retrieval_paths (id, publisher_id, legacy_source_id, name, me
   ('rp-bb-landesregierung', 'publisher-landesregierung-brandenburg.de', 'bb-landesregierung', 'Landesregierung Brandenburg — landesregierung', 'googlenews_search', 'https://news.google.com/rss/search?q=Landesregierung%20Brandenburg&hl=de&gl=DE&ceid=DE:de', 'https://news.google.com/rss/search?q=Landesregierung%20Brandenburg&hl=de&gl=DE&ceid=DE:de', 'googlenews-batchexecute', 60, 'needs_review', 'manual', true, 16),
   ('rp-bb-ministerien', 'publisher-brandenburg.de', 'bb-ministerien', 'Ministerien Brandenburg (MIL/MWFK/MIK/…) — ministerien', 'googlenews_search', 'https://news.google.com/rss/search?q=Ministerium%20Brandenburg&hl=de&gl=DE&ceid=DE:de', 'https://news.google.com/rss/search?q=Ministerium%20Brandenburg&hl=de&gl=DE&ceid=DE:de', 'googlenews-batchexecute', 60, 'needs_review', 'manual', true, 16),
   ('rp-bb-landesfraktionen', 'publisher-landtag.brandenburg.de', 'bb-landesfraktionen', 'Landtagsfraktionen (SPD/AfD/CDU/BSW) — landesfraktionen', 'googlenews_search', 'https://news.google.com/rss/search?q=Landtag%20Brandenburg%20Fraktion&hl=de&gl=DE&ceid=DE:de', 'https://news.google.com/rss/search?q=Landtag%20Brandenburg%20Fraktion&hl=de&gl=DE&ceid=DE:de', 'googlenews-batchexecute', 60, 'needs_review', 'manual', false, 16),
-  ('rp-bb-regionale_leitmedien', 'publisher-maz-online.de', 'bb-regionale_leitmedien', 'Märkische Allgemeine (MAZ) / Lausitzer Rundschau — regionale_leitmedien', 'googlenews_search', 'https://news.google.com/rss/search?q=site:maz-online.de', 'https://news.google.com/rss/search?q=site:maz-online.de', 'googlenews-batchexecute', 60, 'needs_review', 'manual', false, 16),
+  ('rp-bb-regionale_leitmedien', 'publisher-maz-online.de', 'bb-regionale_leitmedien', 'Märkische Allgemeine (MAZ) — regionale_leitmedien', 'googlenews_search', 'https://news.google.com/rss/search?q=site:maz-online.de', 'https://news.google.com/rss/search?q=site:maz-online.de', 'googlenews-batchexecute', 60, 'needs_review', 'manual', false, 16),
+  ('rp-bb-regionale-leitmedien-lr', 'publisher-lr-online.de', 'bb-regionale-leitmedien-lr', 'Lausitzer Rundschau — regionale_leitmedien', 'googlenews_search', 'https://news.google.com/rss/search?q=site:lr-online.de&hl=de&gl=DE&ceid=DE:de', 'https://news.google.com/rss/search?q=site:lr-online.de&hl=de&gl=DE&ceid=DE:de', 'googlenews-batchexecute', 60, 'needs_review', 'manual', false, 16),
   ('rp-bb-partei_pilot', 'publisher-dielinke-brandenburg.de', 'bb-partei_pilot', 'Die Linke Brandenburg — partei_pilot', 'rss', 'https://www.dielinke-brandenburg.de/nc/politik/aktuell/feed.rss', null, 'rss-regex', 60, 'needs_review', 'manual', false, 16)
 on conflict (id) do nothing;
 
 
 -- 4) Paket <-> Abrufweg (Landespakete berlin-basis/brandenburg-basis + Partei-Pakete die-linke-berlin/die-linke-brandenburg)
 delete from public.package_paths
- where retrieval_path_id in ('rp-be-landesparlament', 'rp-be-plenum', 'rp-be-landesregierung', 'rp-be-staatskanzlei', 'rp-be-landesfraktionen', 'rp-be-regionale_leitmedien', 'rp-rbb24-politik', 'rp-be-partei_pilot', 'rp-be-fraktion_pilot', 'rp-be-person_pilot', 'rp-bb-landesparlament', 'rp-bb-plenum', 'rp-bb-ausschuesse', 'rp-bb-landesregierung', 'rp-bb-ministerien', 'rp-bb-landesfraktionen', 'rp-bb-regionale_leitmedien', 'rp-bb-partei_pilot')
+ where retrieval_path_id in ('rp-be-landesparlament', 'rp-be-plenum', 'rp-be-landesregierung', 'rp-be-staatskanzlei', 'rp-be-landesfraktionen', 'rp-be-regionale_leitmedien', 'rp-rbb24-politik', 'rp-be-partei_pilot', 'rp-be-fraktion_pilot', 'rp-be-person_pilot', 'rp-bb-landesparlament', 'rp-bb-plenum', 'rp-bb-ausschuesse', 'rp-bb-landesregierung', 'rp-bb-ministerien', 'rp-bb-landesfraktionen', 'rp-bb-regionale_leitmedien', 'rp-bb-regionale-leitmedien-lr', 'rp-bb-partei_pilot')
    and (package_id, retrieval_path_id) not in (
     ('pkg-berlin-basis', 'rp-be-landesparlament'),
     ('pkg-berlin-basis', 'rp-be-plenum'),
@@ -76,6 +78,7 @@ delete from public.package_paths
     ('pkg-brandenburg-basis', 'rp-bb-ministerien'),
     ('pkg-brandenburg-basis', 'rp-bb-landesfraktionen'),
     ('pkg-brandenburg-basis', 'rp-bb-regionale_leitmedien'),
+    ('pkg-brandenburg-basis', 'rp-bb-regionale-leitmedien-lr'),
     ('pkg-brandenburg-basis', 'rp-rbb24-politik'),
     ('pkg-die-linke-brandenburg', 'rp-bb-partei_pilot')
    );
@@ -98,6 +101,7 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-brandenburg-basis', 'rp-bb-ministerien'),
   ('pkg-brandenburg-basis', 'rp-bb-landesfraktionen'),
   ('pkg-brandenburg-basis', 'rp-bb-regionale_leitmedien'),
+  ('pkg-brandenburg-basis', 'rp-bb-regionale-leitmedien-lr'),
   ('pkg-brandenburg-basis', 'rp-rbb24-politik'),
   ('pkg-die-linke-brandenburg', 'rp-bb-partei_pilot')
 on conflict (package_id, retrieval_path_id) do nothing;
@@ -122,6 +126,7 @@ insert into public.path_expected_levels (retrieval_path_id, level) values
   ('rp-bb-ministerien', 'land'),
   ('rp-bb-landesfraktionen', 'land'),
   ('rp-bb-regionale_leitmedien', 'land'),
+  ('rp-bb-regionale-leitmedien-lr', 'land'),
   ('rp-bb-partei_pilot', 'land')
 on conflict (retrieval_path_id, level) do nothing;
 
@@ -145,6 +150,8 @@ insert into public.path_expected_geographies (retrieval_path_id, geography_id) v
   ('rp-bb-ministerien', 'geo-land-brandenburg'),
   ('rp-bb-landesfraktionen', 'geo-land-brandenburg'),
   ('rp-bb-regionale_leitmedien', 'geo-land-brandenburg'),
+  ('rp-bb-regionale-leitmedien-lr', 'geo-land-brandenburg'),
+  ('rp-rbb24-politik', 'geo-land-brandenburg'),
   ('rp-bb-partei_pilot', 'geo-land-brandenburg')
 on conflict (retrieval_path_id, geography_id) do nothing;
 
@@ -152,7 +159,7 @@ on conflict (retrieval_path_id, geography_id) do nothing;
 -- Integritaets-Selbstpruefung: 0 aktive BE/BB-Wege nach der Eintragung.
 -- (erwartet: 0 Zeilen)
 -- select id, status, activation_mode from public.retrieval_paths
---   where id in ('rp-be-landesparlament', 'rp-be-plenum', 'rp-be-landesregierung', 'rp-be-staatskanzlei', 'rp-be-landesfraktionen', 'rp-be-regionale_leitmedien', 'rp-rbb24-politik', 'rp-be-partei_pilot', 'rp-be-fraktion_pilot', 'rp-be-person_pilot', 'rp-bb-landesparlament', 'rp-bb-plenum', 'rp-bb-ausschuesse', 'rp-bb-landesregierung', 'rp-bb-ministerien', 'rp-bb-landesfraktionen', 'rp-bb-regionale_leitmedien', 'rp-bb-partei_pilot')
+--   where id in ('rp-be-landesparlament', 'rp-be-plenum', 'rp-be-landesregierung', 'rp-be-staatskanzlei', 'rp-be-landesfraktionen', 'rp-be-regionale_leitmedien', 'rp-rbb24-politik', 'rp-be-partei_pilot', 'rp-be-fraktion_pilot', 'rp-be-person_pilot', 'rp-bb-landesparlament', 'rp-bb-plenum', 'rp-bb-ausschuesse', 'rp-bb-landesregierung', 'rp-bb-ministerien', 'rp-bb-landesfraktionen', 'rp-bb-regionale_leitmedien', 'rp-bb-regionale-leitmedien-lr', 'rp-bb-partei_pilot')
 --   and (status <> 'needs_review' or activation_mode <> 'manual');
 
 commit;

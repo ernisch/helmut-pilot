@@ -109,7 +109,7 @@ const grundVon = (p, id) => (p.ausgeschlossen.find((a) => a.id === id) || {}).gr
 check("1a Default: kein Landesmodul freigegeben (leeres env)", SM.freigegebeneLandesmodule({}).size === 0);
 check("1b Freigabe 'berlin' wirkt nur für Berlin",
   gleich([...SM.freigegebeneLandesmodule({ HELMUT_LANDESMODULE: "berlin" })], ["berlin"]));
-check("1c Unbekannter Wert wirkt nicht (fail-closed)", SM.freigegebeneLandesmodule({ HELMUT_LANDESMODULE: "bayern" }).size === 0);
+check("1c Unbekannter Wert wirkt nicht (fail-closed)", SM.freigegebeneLandesmodule({ HELMUT_LANDESMODULE: "unbekanntes-land" }).size === 0);
 check("1d Es gibt KEIN Sammel-Schlüsselwort ('alle'/'*' sind wirkungslos)",
   SM.freigegebeneLandesmodule({ HELMUT_LANDESMODULE: "alle" }).size === 0
   && SM.freigegebeneLandesmodule({ HELMUT_LANDESMODULE: "*" }).size === 0);
@@ -234,11 +234,13 @@ check("4d Der Plan weist den mehrländrigen Weg ausdrücklich aus (keine stille 
   pAktiv.landesmodule.mehrlaendrig.length === 1
   && pAktiv.landesmodule.mehrlaendrig[0].id === "rp-rbb24-politik"
   && gleich(pAktiv.landesmodule.mehrlaendrig[0].fremdlaender, ["brandenburg"]));
-check("4e Plan-Kennzahlen: freigegeben=[berlin], gesperrt=[brandenburg]",
-  gleich(pAktiv.landesmodule.freigegeben, ["berlin"]) && gleich(pAktiv.landesmodule.gesperrt, ["brandenburg"]));
-check("4f Kein anderes Bundesland hat ein Landesmodul (Niedersachsen ist kein Landesmodul)",
-  gleich(SM.LANDESMODUL_LAENDER, ["berlin", "brandenburg"])
-  && SM.landesmoduleOf({ id: "rp-ni-landtag" }, ["regional-niedersachsen"]).length === 0);
+check("4e Nur Berlin freigegeben; die übrigen 15 Länder bleiben gesperrt",
+  gleich(pAktiv.landesmodule.freigegeben, ["berlin"])
+  && gleich(pAktiv.landesmodule.gesperrt, SM.LANDESMODUL_LAENDER.filter((land) => land !== "berlin")));
+check("4f Alle16 Länder besitzen getrennte Gates; NI-Landtag ist kein Regional-Suchweg",
+  SM.LANDESMODUL_LAENDER.length === 16
+  && gleich(SM.landesmoduleOf({ id: "rp-ni-landtag" }, ["regional-niedersachsen"]), ["niedersachsen"])
+  && SM.landesmoduleOf({ id: "rp-nds-nachrichten" }, ["regional-niedersachsen"]).length === 0);
 
 // ══ 5) Bund bleibt vollständig erhalten ══════════════════════════════════════════════════════
 const bundIdsHeute = aktivIds(pHeuteOhne).filter((id) => id.startsWith("rp-kern") || id.startsWith("rp-bund"));
@@ -260,8 +262,8 @@ check("5d Ohne aktives Profil laufen weiterhin nur die always_on-Kernwege",
 // auf einem zweiten Weg hereinlassen.
 (async () => {
   const legacyBerlinLandesebene = v1Sources.filter((s) => /^be-|^rp-be-|^rbb24/.test(String(s.id || "")));
-  check("5e Der alte Katalog enthält KEINE Berliner Landesmodul-Quelle (Fallback kann Berlin nicht crawlen)",
-    legacyBerlinLandesebene.length === 0, legacyBerlinLandesebene.map((s) => s.id).join(","));
+  check("5e Neue Berliner Landesquellen im Katalog bleiben vorbereitet und inaktiv",
+    legacyBerlinLandesebene.every((source) => source.preparedOnly === true && source.active === false), legacyBerlinLandesebene.map((s) => s.id).join(","));
   // Fallback-Auswahl mit dem ECHTEN Filter des Schedulers (HELMUT_SOURCE_MODE bleibt hier
   // per Test-Env aus -> es läuft garantiert der Fallback-Pfad, kein DB-Zugriff).
   const fuerBerlinProfil = await scheduler.getSourcesForProfile({ id: "t-be-cdu", fullName: "Testprofil Berlin", party: "CDU", state: "Berlin" });
