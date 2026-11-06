@@ -12,20 +12,30 @@ Deaktivierung aller anderen Profile beauftragt. Zusaetzlich ausdruecklich
 freigegeben: **1 USD je Tag, maximal 30 USD insgesamt** fuer diesen neuen Betrieb.
 Entwicklung und Review nur mit GPT-6.1 Sol/Astra, kein DeepSeek.
 
-Production6507b11e ist nach PR1060 und vollstaendig gruener Pflicht-CI
-42131866123 live. Nur Cem ist aktiv,500 andere bleiben inaktiv. Drei
-Tagesjobs sind registriert:04:00 Quellen,05:00 Lage,05:15 Morgenpaket UTC.
-Der JSONB-Fehler im Kostenabschluss ist behoben; die vier alten Reserven
-von insgesamt0,848 USD bleiben unveraendert erhalten.
+**Betrieb aktiv und live gegengelesen (06.11.2026, 01:00 UTC).**
+Production `8b01e1ff` nach PR1061 und Pflicht-CI42136772045:
+181/181 Standardsuiten,332/332 Bereichssuiten und native Datenbanknachweise
+gruen. Nur `cem-ince` aktiv;500 andere Mandatsprofile unveraendert inaktiv.
+Vercel bestaetigt drei Tagesjobs:04:00 Quellen,05:00 Lage,05:15 Morgenpaket
+UTC (Abschluss06:15 Berlin im Winter,07:15 im Sommer).
 
-Live-Crawl am06.11.2026:147/147 Quellen,8 korrekt abgerechnete neue
-Modellaufrufe (0,053672 USD),6 neue vollstaendige Wissensobjekte.
-Das Morgenbriefing ist fuer den06.11. gespeichert und als **aktuell**
-gelesen; derzeit ehrliche Ruhelage ohne neue Tagesprioritaet.
-Das vollstaendige Paket bleibt partial, weil zwei Lage-Entwuerfe wegen
-`ai-text-profile-reference` verworfen wurden. Eine gezielte Bindung des
-Generator-Antwortschemas an vorhandene Profilwerte wird umgesetzt;
-Quellen- und Textpruefung bleiben unveraendert. Kein dritter Blindversuch.
+Quellenlauf147/147 erfolgreich,6 neue vollstaendige Wissensobjekte.
+Die Lage wurde erfolgreich erzeugt und der normale App-Start liefert
+sie aus dem Cache:2 quellengebundene Absaetze und5 Vorgangskarten.
+Heutiges Morgenpaket und Frischequittung gespeichert/verifiziert;
+Frische aktuell, ehrliche Ruhelage ohne neue Tagesprioritaet.
+Der einzige verbleibende Paketpruefhinweis lautet
+`briefing-ohne-tagesanlass`; keine fehlende Lage oder Speicherstoerung.
+Der strenge Vollstaendigkeitsmarker bleibt deshalb partial.
+`fachlichGeprueft:false` ist im normalen Morgenlauf fest vorgegeben
+und wird nicht als menschliche Vollabnahme umgedeutet.
+
+Kosten nativ:12 heutige Aufrufe abgerechnet mit0,080449 USD.
+Vier Reserven aus dem behobenen JSONB-Abschlussfehler bleiben mit0,848 USD
+konservativ gebunden; insgesamt0,928449 USD gegen den30-USD-Deckel.
+Keine neue offene Reserve, keine eingefrorene Buchung. Kommunikation
+bleibt gesperrt. Fremde Profile und historische Kostenvertraege
+hashgleich. Keine weiteren Modellversuche oder Lasttests erforderlich.
 Die nachfolgenden offenen Release1053-Aussagen sind historisch.
 [Umsetzung, Nachweise und Rueckweg](betrieb/cem-einprofilbetrieb-20261105.md).
 

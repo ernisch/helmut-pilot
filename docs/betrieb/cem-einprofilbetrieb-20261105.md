@@ -1,5 +1,14 @@
 # Cem Ince: begrenzter Tagesbetrieb
 
+## Abschlussstand am 06.11.2026, 01:00 UTC
+
+Der beauftragte Tagesbetrieb ist produktiv aktiv, ausschliesslich fuer
+Cem Ince. Aktuelle Lage und heutiges Morgenpaket wurden nativ gespeichert
+und ueber den normalen App-Start gelesen. Die Ausgabe ist aktuell und
+meldet ehrlich keine neue Tagesprioritaet. Die folgenden Abschnitte
+dokumentieren Umsetzung und Zwischenbefunde; massgeblich ist der
+abschliessende Live-Nachweis am Dokumentende.
+
 ## Auftrag und Ursache
 
 Betreiberauftrag im Chat: Briefing wiederherstellen, bisher nur Cem Ince;
@@ -215,3 +224,51 @@ ungueltige Anbieterantworten und unveraenderte Quellen-/Reviewerablehnung.
 Historische Azure-/OpenAI-Payloads ohne Betrieb bytegleich. Bestehende
 Lagequittierung30 PASS, Kosten11/11 PASS; unabhaengiger Astra-Review ohne
 offene Befunde. Neue Suite ist im Standard-Pflichtlauf registriert.
+
+
+## Abschliessender Live-Nachweis
+
+- PR1061: gepruefter Kopf `1a4038a9`, beide Pflichtchecks PASS in
+  [CI42136772045](https://github.com/ernisch/helmut-pilot/actions/runs/42136772045).
+  181/181 Standardsuiten,332/332 Bereichssuiten und native PostgreSQL-/
+  PostgREST-Nachweise bestanden. Browserjob erfolgreich; konkrete
+  Browserschritte nach Backend-Scope planmaessig uebersprungen.
+- Production `dpl_HhYpMMaPUdzXgt1kb4od5N29AhWN`, Commit
+  `8b01e1ffe74d27ddcd037fb1afc733739edd73ab`, READY mit Livealias
+  `helmut-pilot.vercel.app`, Regionfra1. App-Start meldet Version8b01e1ff.
+- Vercel-Projekt bestaetigt auf genau diesem Deployment die drei aktiven
+  Crondefinitionen04:00/05:00/05:15UTC; keine anderen Zeitplaene.
+- Lage-Lauf `briefing-lage-20261106005917-rqemf`:1/1 erfolgreich,
+  `prewarmed=1`, `vollstaendig=true`, keine Fehler. Gespeichert als
+  `bf-cem-ince-lage-2026-11-06` um00:59:49.052UTC.
+- Normaler GET `/api/app/start?politicianId=cem-ince`: HTTP200,
+  Profil aktiv/vollstaendig; Lage `available=true`, `fromCache=true`,
+  kein Fehlergrund,2 quellengebundene Absaetze und5 Vorgangskarten.
+  Dieser Lesepfad startet keine neuen Modelle.
+- Morgenlauf `cron-morning-briefing-20261106005956-wgcdg`: heutiges
+  Mandatsbriefing um01:00:01.613UTC gespeichert/verifiziert; Frischequittung
+  um01:00:02.919UTC. App-Frische `aktuell`, `quiet`, nicht stale.
+- Natives gespeichertes Paket: einziger Pruefhinweis
+  `briefing-ohne-tagesanlass`. Lage, Quellenbindung und Speicherung sind
+  vorhanden. Ein legitimer ruhiger Morgen hat kein `tagesAnlass` und
+  bleibt nach dem bestehenden strengeren Paketvertrag `partial`.
+  `fachlichGeprueft:false` ist im normalen Morgenlauf fest vorgegeben;
+  kein menschlicher oder historischer500-Fakten-PASS wird behauptet.
+- Genau `cem-ince` aktiv,500 andere inaktiv. Vollstaendige fremde
+  Mandatszeilen weiterhin Hash`d024d08864a9f2330cd0b114122f60ff`,
+  fremde Profilzeilen weiterhin`2a649c4643ad656df9df8eb713903450`.
+- Kostenbuch: am06.11.12 Aufrufe **abgerechnet**,0,080449 USD.
+  Keine neue offene/ungeklaerte Reserve, `frozen=null`. Die vier
+  Reserven vom05.11. bleiben **reserviert**,0,848 USD. Gesamtbindung
+  0,928449 USD; Tagesgrenzen1 USD und Gesamtgrenze30 USD gewahrt.
+- Historische Kosten-Hashes unveraendert: Admission
+  `959be694154fd1118dbba8c87b7ec4a5`, Auftrag
+  `06e2c2248a400b1df8b41e863644b899`, Tage
+  `791a0c99c36e98331585722b12284e19`. Keine Reservefreigabe/Nullsetzung.
+- Push im Morgenlauf blockiert: `testfenster-sperrt-alle-aussenkanaele`.
+  Der Kommunikationsriegel bleibt bestehen.
+
+Naechster regulaerer Schritt ist der vorhandene Tagesplan; keine weitere
+kostenpflichtige Nachpruefung, keine Kohorte und kein Backlog-Lauf erforderlich.
+Bei Stoerung Cem ueber die bestehende Profil-API deaktivieren; Kostenbelege
+und Reserven erhalten. Vollstaendige Zeitplanabschaltung wie oben dokumentiert.
