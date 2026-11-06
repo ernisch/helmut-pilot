@@ -4576,10 +4576,10 @@ const SPLASH_WATCHDOG_SCRIPT = `(function () {
           var app = document.getElementById("app");
           if (!app) return;
           app.innerHTML =
-            '<div style="display:grid;place-items:center;min-height:100dvh;font-family:Inter,ui-sans-serif,system-ui,sans-serif;padding:32px;text-align:center">' +
+            '<div style="display:grid;place-items:center;min-height:100dvh;font-family:Hanken Grotesk,system-ui,sans-serif;background:#070b16;padding:32px;text-align:center">' +
             '<div><div style="font:400 40px/1 Spectral,Georgia,serif;letter-spacing:-.01em;margin-bottom:22px;color:#eaeef6">Helmut</div>' +
-            '<p style="color:rgba(245,241,232,.62);max-width:300px;margin:0 auto 22px;font-size:15px;line-height:1.55">' + message + '</p>' +
-            '<button type="button" onclick="window.location.reload()" style="appearance:none;border:0;cursor:pointer;padding:14px 22px;border-radius:14px;font:600 16px Inter,sans-serif;color:#0b0f1a;background:#f5f1e8">Neu laden</button>' +
+            '<p style="color:#aeb8c9;max-width:300px;margin:0 auto 22px;font-size:15px;line-height:1.55">' + message + '</p>' +
+            '<button type="button" onclick="window.location.reload()" style="appearance:none;border:0;cursor:pointer;padding:14px 22px;border-radius:24px;font:500 16px Hanken Grotesk,system-ui,sans-serif;color:#0a0f1c;background:#e9edf5">Neu laden</button>' +
             '</div></div>';
         }
         window.setTimeout(function () {
