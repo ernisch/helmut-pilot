@@ -207,7 +207,7 @@ const NICHT_RELEVANT = [
 ];
 const RELEVANT = [
   /(^|\/)lib\//i, /(^|\/)scripts\//i, /(^|\/)api\//i, /(^|\/)lambda\//i, /(^|\/)supabase\//i,
-  /(^|\/)assets\//i, /(^|\/)server\.js$/i, /(^|\/)client\.js$/i, /(^|\/)sw\.js$/i,
+  /(^|\/)assets\//i, /(^|\/)verwaltung\//i, /(^|\/)server\.js$/i, /(^|\/)client\.js$/i, /(^|\/)sw\.js$/i,
   /(^|\/)styles\.css$/i, /(^|\/)index\.html$/i
 ];
 
