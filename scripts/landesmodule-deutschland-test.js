@@ -80,6 +80,10 @@ for (const source of LANDESQUELLEN) {
     assert.equal(source.sourceVerification.dateVerified, false);
     assert.equal(source.dateSemantics, "unavailable");
     assert.ok(source.limitations.includes("KEIN Artikeldatum"));
+  } else if (source.sourceVerification.status === "parsed_missing_timezone") {
+    assert.equal(source.sourceVerification.sampleDatedItems, 0);
+    assert.equal(source.sourceVerification.dateVerified, false);
+    assert.equal(source.dateSemantics, "local_date_without_timezone");
   } else assert.ok(source.sourceVerification.sampleDatedItems > 0);
   assert.equal(source.publicationCadence.status, "unknown", "Keine erfundene tägliche Publikation");
   assert.ok(source.covers.every((klass) => land.required_classes.includes(klass)));

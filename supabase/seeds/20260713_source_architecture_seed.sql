@@ -69,6 +69,7 @@ insert into public.political_entities (id, entity_type, name, canonical_key, lev
   ('party-linke', 'party', 'Die Linke', 'linke', null, null, array['Die Linke','Linke','DIE LINKE']::text[]),
   ('party-bsw', 'party', 'BSW', 'bsw', null, null, array['BSW','Bündnis Sahra Wagenknecht']::text[]),
   ('party-ssw', 'party', 'SSW', 'ssw', null, null, array['SSW','Südschleswigscher Wählerverband']::text[]),
+  ('party-freie-waehler', 'party', 'FREIE WÄHLER', 'freie-waehler', null, null, array['FREIE WÄHLER','Freie Waehler','FREIE WÄHLER Bundesvereinigung','Bundesvereinigung FREIE WÄHLER']::text[]),
   ('group-bt-cdu-csu', 'parliamentary_group', 'CDU/CSU-Bundestagsfraktion', 'union', 'bund', 'geo-bund', array['Fraktion CDU/CSU','CDU/CSU-Bundestagsfraktion']::text[]),
   ('group-bt-afd', 'parliamentary_group', 'AfD-Bundestagsfraktion', 'afd', 'bund', 'geo-bund', array['Fraktion AfD','AfD-Bundestagsfraktion']::text[]),
   ('group-bt-spd', 'parliamentary_group', 'SPD-Bundestagsfraktion', 'spd', 'bund', 'geo-bund', array['Fraktion SPD','SPD-Bundestagsfraktion']::text[]),
@@ -204,6 +205,7 @@ insert into public.publishers (id, name, canonical_domain, publisher_type, evide
   ('publisher-afd.de', 'AfD', 'afd.de', 'party', 'direct_interest', 'mittel', 'active', 'party-afd'),
   ('publisher-bsw-vg.de', 'BSW', 'bsw-vg.de', 'party', 'direct_interest', 'mittel', 'active', 'party-bsw'),
   ('publisher-ssw.de', 'SSW Bund — Originalpositionen (Suchweg)', 'ssw.de', 'party', 'direct_interest', 'mittel', 'active', null),
+  ('publisher-freiewaehler.eu', 'FREIE WÄHLER Bund — Originalpositionen (Suchweg)', 'freiewaehler.eu', 'party', 'direct_interest', 'mittel', 'active', null),
   ('publisher-landtag-bw.de', 'Landtag Baden-Württemberg — Neue Drucksachen', 'landtag-bw.de', 'parliament', 'official_primary', 'hoch', 'active', null),
   ('publisher-bayern.landtag.de', 'Bayerischer Landtag — Gesetzentwürfe', 'bayern.landtag.de', 'parliament', 'official_primary', 'hoch', 'active', null),
   ('publisher-parlament-berlin.de', 'Abgeordnetenhaus Berlin / PARDOK — Pressemitteilungen', 'parlament-berlin.de', 'parliament', 'official_primary', 'hoch', 'active', null),
@@ -213,6 +215,7 @@ insert into public.publishers (id, name, canonical_domain, publisher_type, evide
   ('publisher-staatskanzlei.hessen.de', 'Hessische Staatskanzlei — Pressemitteilungen Staatskanzlei', 'staatskanzlei.hessen.de', 'government', 'official_primary', 'unbekannt', 'active', null),
   ('publisher-hessen.de', 'Hessische Landesregierung — Pressemitteilungen Landesregierung', 'hessen.de', 'government', 'official_primary', 'unbekannt', 'active', null),
   ('publisher-schleswig-holstein.de', 'Landesregierung Schleswig-Holstein — Pressemitteilungen Landesregierung', 'schleswig-holstein.de', 'government', 'official_primary', 'unbekannt', 'active', null),
+  ('publisher-medienservice.sachsen.de', 'Medienservice Sachsen — Medieninformationen der Pressestellen', 'medienservice.sachsen.de', 'government', 'official_primary', 'unbekannt', 'active', null),
   ('publisher-dip.bundestag.de', 'Deutscher Bundestag', 'dip.bundestag.de', 'parliament', 'official_primary', 'hoch', 'active', 'parliament-bundestag')
 on conflict (id) do update set name = excluded.name, evidence_role = excluded.evidence_role, trust = excluded.trust, entity_id = excluded.entity_id;
 
@@ -258,6 +261,7 @@ insert into public.source_packages (id, key, name, purpose, status, is_base, pol
   ('pkg-partei-fdp-bund', 'partei-fdp-bund', 'FDP Bund', 'Direkte Positionen FDP, getrennt von unabhängigen Belegen. Beobachtung als Quelle, keine Kundenzulassung.', 'prepared', false, 'bund', 'geo-bund', array['parteiquellen_bund']::text[]),
   ('pkg-partei-bsw-bund', 'partei-bsw-bund', 'BSW Bund', 'Direkte Positionen BSW, getrennt von unabhängigen Belegen. Beobachtung als Quelle, keine Kundenzulassung.', 'prepared', false, 'bund', 'geo-bund', array['parteiquellen_bund']::text[]),
   ('pkg-partei-ssw-bund', 'partei-ssw-bund', 'SSW Bund', 'Direkte Positionen SSW, getrennt von unabhängigen Belegen. Beobachtung als Quelle, keine Kundenzulassung.', 'prepared', false, 'bund', 'geo-bund', array['parteiquellen_bund']::text[]),
+  ('pkg-partei-freie-waehler-bund', 'partei-freie-waehler-bund', 'FREIE WÄHLER Bund', 'Direkte Positionen FREIE WÄHLER, getrennt von unabhängigen Belegen. Beobachtung als Quelle, keine Kundenzulassung.', 'prepared', false, 'bund', 'geo-bund', array['parteiquellen_bund']::text[]),
   ('pkg-baden-wuerttemberg-basis', 'baden-wuerttemberg-basis', 'Baden-Württemberg Basis', 'Neutrale Landesversorgung Baden-Württemberg: Parlament, Regierung und unabhängige Landesmedien. Fehlende Quellenklassen bleiben sichtbar.', 'prepared', true, 'land', 'geo-land-baden-wuerttemberg', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung']::text[]),
   ('pkg-bayern-basis', 'bayern-basis', 'Bayern Basis', 'Neutrale Landesversorgung Bayern: Parlament, Regierung und unabhängige Landesmedien. Fehlende Quellenklassen bleiben sichtbar.', 'prepared', true, 'land', 'geo-land-bayern', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung']::text[]),
   ('pkg-bremen-basis', 'bremen-basis', 'Bremen Basis', 'Neutrale Landesversorgung Bremen: Parlament, Regierung und unabhängige Landesmedien. Fehlende Quellenklassen bleiben sichtbar.', 'prepared', true, 'land', 'geo-land-bremen', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung']::text[]),
@@ -476,6 +480,7 @@ insert into public.retrieval_paths (id, publisher_id, legacy_source_id, name, me
   ('rp-partei-fdp-originalsuche', 'publisher-fdp.de', 'partei-fdp-originalsuche', 'FDP Bund — Originalpositionen (Suchweg)', 'googlenews_search', 'https://news.google.com/rss/search?q=site%3Afdp.de&hl=de&gl=DE&ceid=DE:de', 'site:fdp.de', 'googlenews-batchexecute', 80, 'paused', 'manual', false, null, null),
   ('rp-partei-bsw-originalsuche', 'publisher-bsw-vg.de', 'partei-bsw-originalsuche', 'BSW Bund — Originalpositionen (Suchweg)', 'googlenews_search', 'https://news.google.com/rss/search?q=site%3Absw-vg.de&hl=de&gl=DE&ceid=DE:de', 'site:bsw-vg.de', 'googlenews-batchexecute', 80, 'paused', 'manual', false, null, null),
   ('rp-partei-ssw-originalsuche', 'publisher-ssw.de', 'partei-ssw-originalsuche', 'SSW Bund — Originalpositionen (Suchweg)', 'googlenews_search', 'https://news.google.com/rss/search?q=site%3Assw.de&hl=de&gl=DE&ceid=DE:de', 'site:ssw.de', 'googlenews-batchexecute', 80, 'paused', 'manual', false, null, null),
+  ('rp-partei-freie-waehler-originalsuche', 'publisher-freiewaehler.eu', 'partei-freie-waehler-originalsuche', 'FREIE WÄHLER Bund — Originalpositionen (Suchweg)', 'googlenews_search', 'https://news.google.com/rss/search?q=site%3Afreiewaehler.eu&hl=de&gl=DE&ceid=DE:de', 'site:freiewaehler.eu', 'googlenews-batchexecute', 80, 'paused', 'manual', false, null, null),
   ('rp-bw-landtag-509930', 'publisher-landtag-bw.de', 'bw-landtag-509930', 'Landtag Baden-Württemberg — Neue Drucksachen', 'rss', 'https://www.landtag-bw.de/blueprint/servlet/service/rss/de/509930/feed.rss', null, 'rss-regex', 65, 'paused', 'manual', false, 20, null),
   ('rp-bw-landtag-509986', 'publisher-landtag-bw.de', 'bw-landtag-509986', 'Landtag Baden-Württemberg — Plenarprotokolle', 'rss', 'https://www.landtag-bw.de/blueprint/servlet/service/rss/de/509986/feed.rss', null, 'rss-regex', 65, 'paused', 'manual', false, 20, null),
   ('rp-bw-landtag-509988', 'publisher-landtag-bw.de', 'bw-landtag-509988', 'Landtag Baden-Württemberg — Pressemitteilungen', 'rss', 'https://www.landtag-bw.de/blueprint/servlet/service/rss/de/509988/feed.rss', null, 'rss-regex', 65, 'paused', 'manual', false, 20, null),
@@ -506,6 +511,7 @@ insert into public.retrieval_paths (id, publisher_id, legacy_source_id, name, me
   ('rp-he-regierung-staatskanzlei-presse', 'publisher-staatskanzlei.hessen.de', 'he-regierung-staatskanzlei-presse', 'Hessische Staatskanzlei — Pressemitteilungen Staatskanzlei', 'rss', 'https://staatskanzlei.hessen.de/Presse-Feed/all', null, 'rss-regex', 65, 'paused', 'manual', false, 20, null),
   ('rp-he-regierung-landesregierung-presse', 'publisher-hessen.de', 'he-regierung-landesregierung-presse', 'Hessische Landesregierung — Pressemitteilungen Landesregierung', 'rss', 'https://hessen.de/Presse-Feed/all', null, 'rss-regex', 65, 'paused', 'manual', false, 20, null),
   ('rp-sh-regierung-regierung-presse', 'publisher-schleswig-holstein.de', 'sh-regierung-regierung-presse', 'Landesregierung Schleswig-Holstein — Pressemitteilungen Landesregierung', 'rss', 'https://www.schleswig-holstein.de/DE/landesportal/service/RSS/RSS_PI_alle/RSSNewsfeed_PI_alle.xml', null, 'rss-regex', 65, 'paused', 'manual', false, 20, null),
+  ('rp-sn-regierung-medienservice', 'publisher-medienservice.sachsen.de', 'sn-regierung-medienservice', 'Medienservice Sachsen — Medieninformationen der Pressestellen', 'structured_download', 'https://www.medienservice.sachsen.de/medien/news/search.json?search%5Bfilter%5D%5B%5D=press_releases', null, 'sachsen-medienservice-json-v1', 65, 'paused', 'manual', false, 12, null),
   ('rp-dip', 'publisher-dip.bundestag.de', 'dip', 'DIP — Dokumentations- und Informationssystem (Bundestag)', 'api', 'https://search.dip.bundestag.de/api/v1', null, 'dip-json', 96, 'healthy', 'always_on', true, null, null)
 on conflict (id) do update set publisher_id = excluded.publisher_id, method = excluded.method, status = excluded.status, priority = excluded.priority;
 
@@ -749,6 +755,7 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-partei-fdp-bund', 'rp-partei-fdp-originalsuche'),
   ('pkg-partei-bsw-bund', 'rp-partei-bsw-originalsuche'),
   ('pkg-partei-ssw-bund', 'rp-partei-ssw-originalsuche'),
+  ('pkg-partei-freie-waehler-bund', 'rp-partei-freie-waehler-originalsuche'),
   ('pkg-baden-wuerttemberg-basis', 'rp-bw-landtag-509930'),
   ('pkg-baden-wuerttemberg-basis', 'rp-bw-landtag-509986'),
   ('pkg-baden-wuerttemberg-basis', 'rp-bw-landtag-509988'),
@@ -779,6 +786,7 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-hessen-basis', 'rp-he-regierung-staatskanzlei-presse'),
   ('pkg-hessen-basis', 'rp-he-regierung-landesregierung-presse'),
   ('pkg-schleswig-holstein-basis', 'rp-sh-regierung-regierung-presse'),
+  ('pkg-sachsen-basis', 'rp-sn-regierung-medienservice'),
   ('pkg-bund-basis', 'rp-dip')
 on conflict (package_id, retrieval_path_id) do nothing;
 

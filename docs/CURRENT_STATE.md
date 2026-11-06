@@ -8,7 +8,7 @@ Tests und diesem Statusdokument.
 ## Neutrale Quellenversorgung: Umsetzung zur Prüfung (06.11.2026)
 
 Auf einem getrennten Entwicklungszweig sind gleiche Zuordnungsregeln für 24
-Ausschussgebiete, 16 Länder und 9 erfasste Parteien sowie eine Prüfung tatsächlicher
+Ausschussgebiete, 16 Länder und 10 erfasste Parteien sowie eine Prüfung tatsächlicher
 Quellenversorgung vorbereitet. Neue Quellen sind inaktiv; bestehende Livewerte
 wurden nicht verändert. Der neue Verwaltungsbericht trennt installierten Bestand,
 geplante Ergänzungen und unbelegte Versorgung. Am gemeinsamen Abschluss der

@@ -5,7 +5,7 @@ Stand: 06.11.2026. Implementierung zur Prüfung, noch nicht produktiv aktiviert.
 ## Gleiche Anforderungen
 
 Alle 24 Bundestagsausschüsse erhalten Fachpakete, alle 16 Länder ein Landesmodell
-und die neun erfassten Parteien eigene Pakete nach derselben Zuordnungsregel.
+und die zehn erfassten Parteien eigene Pakete nach derselben Zuordnungsregel.
 Unbekannte Parteien werden als fehlende Zuordnung gemeldet. Fraktionslosigkeit
 erzeugt keine erfundene Parteizugehörigkeit. Die bestehende Kundenzulassung bleibt
 von der politischen Quellenbeobachtung getrennt.
@@ -18,13 +18,22 @@ Historische Fraktionen sind keine aktuellen Bundestagsfraktionen.
 ## Ergänzungen und Grenzen
 
 Vorbereitet sind 24 amtliche Ausschuss-RSS, elf Fachfeeds, vier geprüfte Partei-RSS,
-neun gleichartig definierte Partei-Suchwege und 30 amtliche Landeszugänge. Die
+zehn gleichartig definierte Partei-Suchwege und 31 amtliche Landeszugänge. Die
 technischen Prüfbelege stehen in `seeds/fachfeeds-verifiziert.json` und
 `seeds/landesmodule-pruefbelege.js`. Fehlende Datumsfelder, veraltete Feeds und offene
 Nutzungsbedingungen sind ausdrücklich vermerkt. Ein technischer RSS-Erfolg ist
 keine Freigabe für kommerzielle Textnutzung.
 
-Für Bremen, Hamburg, Mecklenburg-Vorpommern, Rheinland-Pfalz, Saarland, Sachsen,
+Sachsen ergänzt einen öffentlich geprüften JSON-/HTML-Zugang des Medienservice:
+höchstens zwei Seiten, zwölf Treffer und 15 Sekunden je Abruf. Er liefert amtliche
+Überschriften, Originaladressen und Herausgeberorganisationen, keine Volltexte.
+Der lokale Publikationstag und Uhrzeittext bleiben als geprüfte Metadaten erhalten;
+ohne belegte Zeitzone bleibt `published_at` leer. Der Weg ist vorbereitet und inaktiv,
+Nutzungsrechte sind ungeprüft. Das schließt keine vollständige Ressortabdeckung,
+Landtagsversorgung oder journalistische Einordnung ein. Die bestehenden
+Briefingleser werten die neuen lokalen Datumsmetadaten noch nicht gesondert aus.
+
+Für Bremen, Hamburg, Mecklenburg-Vorpommern, Rheinland-Pfalz, Saarland,
 Sachsen-Anhalt und Thüringen liegen geeignete Angebotskandidaten vor, aber kein
 zusätzlicher technisch bestätigter Direktfeed. Auch Regierung, Fachjournalismus,
 Kommunalebene und Fraktionsabdeckung sind noch nicht überall vollständig belegt.
@@ -84,6 +93,11 @@ Er prüft den Ausgangsstand und inaktive Zustände, schreibt keine Quelleninhalt
 liefert einen eigenen Ausführungsbeleg mit abgesichertem Rückweg. Beide Pläne wurden
 gemeinsam gegen eine isolierte PostgreSQL-17-Kopie geprüft und vollständig
 zurückgenommen; alle zehn Quellentabellen entsprachen danach exakt dem Ausgangsstand.
+
+Der historische Seed-Restore bleibt an seinen ursprünglichen Zielstand gebunden;
+prüfsummengesicherte SQL-Fixtures erhalten diesen Rücknahmebeleg. Der aktuelle
+Katalogausbau verwendet ausschließlich den gesonderten Ergänzungsplan und dessen
+eigene Rücknahmeprüfung.
 
 Validierung: 25 Offline- und 25 PostgreSQL-Prüfungen des Ergänzungsplans sowie
 9 Offline- und 29 PostgreSQL-Prüfungen der begrenzten Korrektur. Hinzu kommen die

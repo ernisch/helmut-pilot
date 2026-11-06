@@ -1,0 +1,15 @@
+{
+  "contract": "Historischer Quellen-Seed-Restore: 2 neue Pakete, 8 neue Abrufwege; keine Freigabe fuer spaetere Seeds",
+  "sourceCommit": "c6522a803f0b77b4c65e83354125896b813273f4",
+  "sourceDirectory": "supabase/seeds",
+  "files": {
+    "20260713_source_architecture_seed.sql": {
+      "sha256": "70b96224387856846ca52399688c22f31c049fb30725c38b41fe1dea4e62eddc",
+      "bytes": 106641
+    },
+    "20260717_landesmodul_be_bb_seed.sql": {
+      "sha256": "25bf048fe0c435541dc056685fd30effd4acca0dacaa3b2c5e0c019de010d873",
+      "bytes": 15504
+    }
+  }
+}

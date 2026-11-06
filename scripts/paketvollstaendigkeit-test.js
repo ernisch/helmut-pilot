@@ -67,7 +67,8 @@ const NDS_BENANNT = [
 
 // ============ 1 · Kein erwartetes Paket fehlt, keines kommt still dazu ============
 console.log("== 1 · Paketbestand ==");
-check("Alle bisherigen Pakete plus Erweiterungen vorhanden", A.pakete.length === 53 && ERWARTETE_PAKETE.every((key) => byKey.has(key)));
+check("Alle bisherigen Pakete plus Erweiterungen einschließlich FREIE WÄHLER vorhanden", A.pakete.length === 54
+  && ERWARTETE_PAKETE.every((key) => byKey.has(key)) && byKey.has("partei-freie-waehler-bund"));
 check("jedes Paket hat eine fachliche Anforderung (Zweck + Zustaendigkeit + Beleg)",
   A.pakete.every((p) => PACKAGE_REQUIREMENTS[p.key] && p.zweck && p.zustaendigkeit && p.belegt));
 check("keine Anforderung ohne Paket (kein toter Anforderungseintrag)",

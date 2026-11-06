@@ -91,6 +91,7 @@ const BEREICHE = {
   quellen: {
     quelle: [/(^|\/)lib\/helmut\/quellenarchitektur\//i, /(^|\/)lib\/helmut\/scheduler\.js$/i,
       /(^|\/)lib\/helmut\/dedup\.js$/i, /(^|\/)lib\/helmut\/crawler\.js$/i,
+      /(^|\/)lib\/helmut\/sachsen-medienservice\.js$/i,
       /(^|\/)lib\/helmut\/google-news-hardening/i, /(^|\/)lib\/helmut\/sources\.js$/i,
       /(^|\/)lib\/helmut\/source-/i, /(^|\/)lib\/helmut\/sourceSafety/i,
       /(^|\/)lib\/helmut\/artikelkontext/i, /(^|\/)lib\/helmut\/herausgeber/i,
@@ -105,6 +106,7 @@ const BEREICHE = {
       /^quellentitel/i, /^incident-crawl/i, /^globalabruf/i,
       /^globalphase/i, /^shadow-/i, /^vorgang/i, /^seed-drift/i, /^seed-restore/i,
       /^abdeckungspruefung/i, /^betriebsabdeckung/i, /^cron-abdeckung/i, /^fach-parteiquellen/i, /^landesmodule-deutschland/i,
+      /^sachsen-medienservice/i,
       /^neutrale-quellenzuordnung-plan/i]
   },
   verstehen: {

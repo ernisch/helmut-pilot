@@ -111,7 +111,8 @@ check("Niedersachsen-Bezug (Regionalpaket) vorhanden", M.geographies.some((g) =>
 
 console.log("== Politische Entitaeten (typisiert) ==");
 check("alle entity_type im Enum", M.entities.every((e) => model.ENTITY_TYPES.includes(e.entity_type)));
-check("9 Parteien", M.entities.filter((e) => e.entity_type === "party").length === 9);
+check("10 Parteien einschließlich FREIE WÄHLER", M.entities.filter((e) => e.entity_type === "party").length === 10
+  && M.entities.some((e) => e.id === "party-freie-waehler" && e.entity_type === "party"));
 check("22+ Ausschuesse", M.entities.filter((e) => e.entity_type === "committee").length >= 22);
 check("Landesmodul-Parlamente Berlin+Brandenburg", M.entities.some((e) => e.id === "parliament-berlin-agh") && M.entities.some((e) => e.id === "parliament-brandenburg-landtag"));
 check("Entitaet-Geografie-FK gueltig", M.entities.every((e) => !e.geography_id || geoIds.has(e.geography_id)));
@@ -262,7 +263,7 @@ check("RLS aktiviert + restriktiv (nur service_role, KEINE authenticated-Leseric
 
 // ============================ SEED-VOLLSTAENDIGKEIT ============================
 console.log("== Seed-Vollstaendigkeit ==");
-check("53 Fach-, Partei-, Landes- und Bestandspakete — KEIN Personenpaket im Code-Seed", M.packages.length === 53 && M.packages.every((p) => !p.key.startsWith("profil-")));
+check("54 Fach-, Partei-, Landes- und Bestandspakete — KEIN Personenpaket im Code-Seed", M.packages.length === 54 && M.packages.every((p) => !p.key.startsWith("profil-")));
 check("Berlin+Brandenburg als prepared Basispakete", (() => {
   const b = M.packages.find((p) => p.key === "berlin-basis");
   const bb = M.packages.find((p) => p.key === "brandenburg-basis");

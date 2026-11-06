@@ -491,11 +491,15 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
     radarState.radarRelationBeleg("constituency", "Niedersachsen", { mentioned_locations: ["Niedersachsen"] }, terms) === false);
   check("radarRelationBeleg: committee verlangt strukturelle ko.ausschuesse-Involvierung UND (nachgeschaerft) den vollen amtlichen Ausschussnamen WÖRTLICH im Inhalt — ko.ausschuesse allein (auch in voller Form) genuegt NICHT mehr (gilt fuer JEDEN Ausschuss, keine Sonderregel)",
     // Strukturell involviert + voller Ausschussname im Inhalt -> belegt.
-    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: ["Ausschuss für Auswärtiges"], was_ist_passiert: "Der Ausschuss für Auswärtiges hat getagt." }, terms) === true &&
+    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: ["Auswärtiger Ausschuss"], was_ist_passiert: "Auswärtiger Ausschuss hat getagt." }, terms) === true &&
     // Keine strukturelle Involvierung -> nicht belegt.
-    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: [], was_ist_passiert: "Der Ausschuss für Auswärtiges hat getagt." }, terms) === false &&
+    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: [], was_ist_passiert: "Auswärtiger Ausschuss hat getagt." }, terms) === false &&
     // Voller Name in ko.ausschuesse, aber NICHT im Inhalt (nur aus dem Politikfeld abgeschrieben) -> NICHT belegt.
-    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: ["Ausschuss für Auswärtiges"], was_ist_passiert: "Bericht zur Aussenpolitik ohne Gremiennennung." }, terms) === false);
+    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: ["Auswärtiger Ausschuss"], was_ist_passiert: "Bericht zur Aussenpolitik ohne Gremiennennung." }, terms) === false);
+  check("radarRelationBeleg: nichtamtliche Umformulierung ist trotz gleichem Ausschussschluessel KEIN Inhaltsbeleg",
+    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: ["Auswärtiger Ausschuss"], was_ist_passiert: "Der Ausschuss für Auswärtiges hat getagt." }, terms) === false);
+  check("radarRelationBeleg: strukturierter Ausschussalias bleibt mit amtlichem Inhaltsbeleg zulaessig",
+    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: ["Ausschuss für Auswärtiges"], was_ist_passiert: "Auswärtiger Ausschuss hat getagt." }, terms) === true);
 }
 
 // --- 16) Radar Relation Truth — Partei nur mit Akteurs-/Quellenbeleg ---------

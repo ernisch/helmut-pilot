@@ -56,6 +56,32 @@ assert.deepEqual(S.resolveParteipakete({fraktion:"CDU/CSU"}), ["partei-cdu-bund"
 assert.deepEqual(S.resolveParteipakete({fraktion:"Fraktion Bündnis 90/Die Grünen"}), ["partei-gruene-bund"]);
 assert.deepEqual(R.resolveProfilePackages({partei:"Volt"}).optionalMissing, ["partei:volt"]);
 assert.deepEqual(R.resolveProfilePackages({partei:"Bündnis Deutschland"}).diagnostics.unresolvedPartyLabels, ["Bündnis Deutschland"]);
+// Die Bundespartei FREIE WÄHLER wird auch für Landtagsmandate beobachtet.
+// Ähnlich benannte kommunale Gruppen und die mehrdeutige Kurzform FW bleiben getrennt.
+const fwKey = "partei-freie-waehler-bund";
+for (const alias of ["FREIE WÄHLER", "Freie Wähler", "Freie Waehler", "freie-waehler", "FREIE WÄHLER Bundesvereinigung", "Bundesvereinigung FREIE WÄHLER"]) {
+  const resolved = R.resolveProfilePackages({ politische_ebene: "landtag", bundesland: "Bayern", partei: alias, ausschuesse: ["Gesundheit"] });
+  assert(resolved.required.includes("bayern-basis"));
+  assert(resolved.optional.includes("fach-gesundheit"));
+  assert.deepEqual(resolved.optional.filter((key) => S.PARTEIPAKETE.some((p) => p.key === key)), [fwKey]);
+  assert.deepEqual(resolved.optionalMissing, []);
+}
+for (const alias of ["FW", "Freie Wählergemeinschaft", "Freie Wählergemeinschaft Musterstadt", "Bürger für Musterstadt"]) {
+  assert.deepEqual(S.resolveParteipakete({ party: alias }), [], `Keine erfundene Parteimitgliedschaft: ${alias}`);
+}
+assert.deepEqual(S.resolveParteipakete({ party: "parteilos", faction: "FREIE WÄHLER" }), []);
+assert.deepEqual(S.resolveParteipakete({ faction: "Fraktion FREIE WÄHLER" }), [fwKey]);
+const fwPackage = P.PACKAGE_DEFINITIONS.find((p) => p.key === fwKey);
+assert.equal(fwPackage.status, "prepared");
+assert.equal(fwPackage.is_base, false);
+assert.deepEqual(fwPackage.required_evidence_roles, ["direct_interest"]);
+const fwSource = S.ZUSAETZLICHE_QUELLEN.find((s) => s.id === "partei-freie-waehler-originalsuche");
+assert.equal(new URL(fwSource.url).searchParams.get("q"), "site:freiewaehler.eu");
+assert.equal(fwSource.verification.feedParsed, false);
+assert.equal(fwSource.verification.status, "search_fallback_unverified");
+assert.equal(fwSource.verification.issuerVerification.url, "https://www.freiewaehler.eu/impressum/");
+assert.equal(fwSource.verification.issuerVerification.httpStatus, 200);
+assert(!E.FRACTIONS.some((f) => f.id.includes("freie-waehler")), "Keine erfundene Bundestagsfraktion");
 for (const party of E.PARTIES) {
   for (const alias of party.aliases) {
     assert.deepEqual(S.resolveParteipakete({ party: alias }), S.resolveParteipakete({ party: party.name }), `Parteialias ${alias}`);
@@ -91,4 +117,4 @@ for (const [state, key] of [["Bayern", "bayern"], ["Nordrhein-Westfalen", "nordr
   assert(!r.required.includes(`${key}-basis`), "Landesmandatsgate nicht durch Regionalbedarf umgehen");
 }
 assert(R.resolveProfilePackages({ parliamentType: "Bundestag", state: "NI" }).optional.includes("regional-niedersachsen"));
-console.log("PASS Fach-/Parteiversorgung: aktuelle24Ausschüsse, symmetrische9Parteizuordnungen,16Länder, Fraktionslosigkeit, Rechte-/Aktivierungsschranken");
+console.log("PASS Fach-/Parteiversorgung: aktuelle24Ausschüsse, symmetrische10Parteizuordnungen,16Länder, Fraktionslosigkeit, Rechte-/Aktivierungsschranken");

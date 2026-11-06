@@ -377,6 +377,7 @@ const STANDARD = new Set([
   "cron-abdeckung-test.js",                 // Gemeinsamer Abschluss aller Quellencron-Pfade
   "fach-parteiquellen-test.js",             // Gleiche Zuordnung für Fachgebiete und Parteien
   "landesmodule-deutschland-test.js",        // Gleiches Landesmodell und echte Parserbelege
+  "sachsen-medienservice-test.js",           // Begrenzter amtlicher JSON-Abruf und ehrliche Belegmetadaten
   "quellen-ergaenzungsplan-test.js",         // Ergänzungen ohne Überschreiben des Bestands
   "neutrale-quellenzuordnung-plan-test.js"   // Genau begrenzte Neutralitätskorrektur mit Rückweg
 ]);
