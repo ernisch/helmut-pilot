@@ -1,6 +1,7 @@
 # App-Start: Messung und Optimierung vom 06.11.2026
 
-Status: lokal umgesetzt und geprueft; Merge und Production offen.
+Status: nach ausdruecklichem Betreiber-GO gemergt und auf Production verifiziert.
+Das Gesamtziel eines sehr schnellen Starts bleibt wegen der gemessenen Serverlatenz offen.
 Basis: `c6522a803f0b77b4c65e83354125896b813273f4`.
 Branch: `codex/app-start-performance-20261106`.
 [PR1078](https://github.com/ernisch/helmut-pilot/pull/1078).
@@ -109,3 +110,42 @@ sind vorhanden. Fuer Merge und regulaeres Deployment ist nach geltender
 `AGENTS.md` eine konkrete Betreiberfreigabe erforderlich. Danach dieselben
 ausgelieferten Assets gegen den Merge pruefen und einen angemeldeten Start
 am echten Geraet messen. Kein Lasttest oder bezahlter Modelllauf erforderlich.
+
+## Freigegebener Rollout und echte Servermessung
+
+PR1078 nach beiden erfolgreichen Pflichtchecks auf Kopf `04c97f9a` gemergt:
+`647f0420d6606cbd01a628cc2c880c06a0a9dddf`, 06.11.2026 11:47:48 UTC.
+CI42207899107:181/181 Standard- und336/336 Bereichssuiten sowie Browsercheck
+und native Datenbankpruefungen erfolgreich. Productiondeployment
+`dpl_5CHy6AchhWCkGM9r3bowRmB4bHVd` READY, Hauptdomain liefert diese Version.
+Client, CSS und alle fuenf WOFF2-Dateien bytegleich mit dem geprueften Git-Stand.
+
+Nach dem ausdruecklichen GO wurden drei geschuetzte GET-Startabrufe gemessen:
+12.323,8.997 und9.557 ms (Median9.557 ms), jeweils HTTP200 und gueltiger
+Startvertrag,231.599 Antwortbytes. Das ist nur der Serverabruf ueber den
+Cloud-Proxy mit Administratorschluessel, keine komplette Android-Startzeit
+und keine Messung der vorgeschalteten Nutzersitzung. Eine vierte rein lesende
+Strukturdiagnose brauchte11.385 ms: Briefing und Lage verfuegbar, kein
+Lage-Fehler/Timeout-Sentinel,10 Karten, Narrativ ausdruecklich ausstehend.
+Keine persoenlichen Antwortinhalte gespeichert oder veroeffentlicht.
+
+Die neuen Productionwerte zeigen einen wesentlich groesseren Restengpass
+als die UI-Verzoegerung. Die Laborverbesserung darf deshalb nicht als
+Startzeit der installierten Android-App ausgegeben werden. Im Servercode
+folgen Briefingaufbereitung, Lageaufbereitung und Nebenabfragen nacheinander.
+Welcher konkrete Datenbankzugriff dominiert, ist noch nicht phasenweise
+belegt; keine ungemessene Ursache als erwiesen darstellen.
+Naechster fachlicher Schritt: den geschuetzten Startpfad phasenweise messen
+und die belegten seriellen/doppelten Lesezugriffe gezielt reduzieren.
+Keine Cache-, Frische- oder Zugriffssperre dafuer lockern.
+
+Zusaetzlich fuer den Android-Anwendungsfall: zwei lokale Chromium-Paare mit
+echtem Service Worker. Bei jedem warmen Aufruf kommen Client/CSS durch den
+Worker, alle fuenf WOFF2-Fonts liegen im Cache, keine API-/Navigationsantwort
+wird gespeichert, keine JS-Fehler. Funktionaler Cachebeleg, keine Android-
+Geraetemessung; Worker-Netzwerk wird von CDP nicht gleichwertig gedrosselt,
+daher keine Vermischung dieser Zeiten mit dem Laborvergleich.
+
+Rueckweg: vorheriges Productiondeployment
+`dpl_F32oCR4qDFyKUFMzrBFfozms8Js5` auf`66ca2816`.
+Die Nachkontrolle aktualisiert nur diese Dokumentation, nicht die Runtime.
