@@ -5,6 +5,26 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
+## Verwaltungszahlen: Vorschau liest Altbestand (06.11.2026)
+
+Rein lesend bestaetigt:501 relationale Mandatsprofile, davon nur `cem-ince`
+aktiv;500 synthetische Testprofile inaktiv. Production `00ecd5fe` nutzt
+den exklusiven relationalen Leser. Die Vorschau von PR1065 (`91903c00`)
+erreicht dieselbe Datenbank, hat aber die nur fuer Production gesetzten
+Profilflags nicht. Sie liest deshalb25 alte Profilkopien aus `helmut_store/main`
+und zeigt25/25; diese Zahlen beschreiben nicht den aktuellen Betrieb.
+
+Korrektur auf `fix/admin-profile-counts-20261106` vorbereitet: Die Verwaltung
+nutzt die vorhandene Konfigurationsdiagnose und zeigt bei unbestaetigter
+Profilquelle einen Hinweis statt alter Zahlen, leerer Profilbestandsbehauptung
+oder einer daraus abgeleiteten Tagesbilanz. Bestaetigter Bestand wird unveraendert
+gezaehlt. Kein Profil-, Konfigurations-, Motor- oder Budgeteingriff.
+Gezielte Storage/HTTP/Anzeige-Regression einschliesslich Originalbrowser10/10,
+Verwaltungsnavigation8/8 und isolierte Verwaltungs-/Browserpruefungen30/30
+bestanden; unabhaengiges Review ohne verbleibenden Befund. Auf `main`13c4c1e5
+einschliesslich des inzwischen gemergten Design-PR1065 integriert und geprueft.
+Merge und produktive Nachkontrolle stehen aus; keine neue Productionfreigabe.
+
 ## Aktueller Auftrag: taegliche Versorgung nur fuer Cem Ince
 
 Der Betreiber hat die Wiederaufnahme ausschliesslich fuer Cem Ince und die

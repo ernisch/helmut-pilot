@@ -1,4 +1,4 @@
-import { number, list, todayCost, dateTime, parliamentLabel, processLabel, runState } from "./model.mjs";
+import { number, list, todayCost, dateTime, parliamentLabel, processLabel, runState, profileInventoryNotice } from "./model.mjs";
 import { emptyDailyLedger } from "./original-daily-ledger.mjs";
 
 // Projektion vorhandener Antworten auf das UNVERÄNDERTE Claude-Komponentenmodell.
@@ -26,7 +26,8 @@ export const originalHelpers = Object.freeze({
 
 export function originalSnapshot(payloads = {}, errors = {}) {
   const overview = payloads.overview;
-  const rawProfiles = list(overview?.mandates);
+  const inventoryNotice = profileInventoryNotice(overview);
+  const rawProfiles = inventoryNotice ? null : list(overview?.mandates);
   const profiles = (rawProfiles || []).filter(p => p && typeof p.id === "string" && /^[a-z0-9][a-z0-9-]{0,119}$/i.test(p.id)).map((p, i) => {
     const level = parliamentLabel(p);
     const parl = level === "Bundestag" ? "bundestag" : level === "Abgeordnetenhaus Berlin" ? "berlin" : level === "Landtag Brandenburg" ? "brandenburg" : "unbekannt";
@@ -61,8 +62,8 @@ export function originalSnapshot(payloads = {}, errors = {}) {
     profiles, byId: Object.assign(Object.create(null), Object.fromEntries(profiles.map(p => [p.id, p]))), act, counts, sources, customers, invoices: [], runs, groups: [], failedRuns: null,
     bilanz: originalAreas.map(([area, label]) => ({ area, label, cells: Object.fromEntries(originalBuckets.map(([key]) => [key, null])) })),
     costs: { today, month: number(budget?.monat?.estimatedCostUsd), profileCost: null, shared: null, avg: null, median: null, expensive: [], dayLimit: null, monthLimit: null, dayShare: null, monthShare: null },
-    health: { label: "Ergebnisstand offen", tone: "neutral", text: "Die Verwaltung zeigt vorhandene Daten. Eine vollständige Qualitätsbilanz liegt nicht vor." },
-    payloads, errors, cost
+    health: { label: inventoryNotice ? "Profilbestand nicht bestätigt" : "Ergebnisstand offen", tone: "neutral", text: inventoryNotice || "Die Verwaltung zeigt vorhandene Daten. Eine vollständige Qualitätsbilanz liegt nicht vor." },
+    payloads, errors, cost, inventoryNotice
   };
 }
 
@@ -70,8 +71,9 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
   const v = values, D = snapshot, p = D.byId[component.state.route.id];
   const open = component.tone("neutral");
   const blocked = phase === "unauthorized" || phase === "forbidden";
+  const readError = Object.keys(D.errors).length ? "Ein Teil der Daten konnte nicht geladen werden. Bitte die Ansicht neu laden." : "";
   const errorText = phase === "unauthorized" ? "Bitte melde dich erneut an." : phase === "forbidden" ? "Die Verwaltung ist nur für Administratoren zugänglich."
-    : Object.keys(D.errors).length ? "Ein Teil der Daten konnte nicht geladen werden. Bitte die Ansicht neu laden." : D.health.text;
+    : [D.inventoryNotice, readError].filter(Boolean).join(" ") || D.health.text;
   v.dateLine = D.payloads.overview?.generatedAt ? `Stand ${dateTime(D.payloads.overview.generatedAt, true)} Berlin` : "Stand nicht bekannt";
   // Neutral = hohler Ring (Design v3); die Vorlage kennt am Seitenkopf nur Fläche + Halo.
   v.health = { label: blocked ? "Zugriff gesperrt" : phase === "error" ? "Daten nicht verfügbar" : D.health.label, text: errorText, dot: open.dot, halo: `${open.halo}, inset 0 0 0 1.5px ${open.ring}` };
@@ -86,6 +88,9 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
     { label: "KI Kosten heute", value: D.cost.value === "—" ? "Nicht bekannt" : D.cost.value, sub: ` · ${D.cost.note}`, ...open, href: "#/betrieb/kosten", onClick: component.go("#/betrieb/kosten") }
   ];
   v.listEyebrow = `${originalFmt(D.counts.total)} Profile · ${v.dateLine}`;
+  if (D.inventoryNotice) {
+    v.listCount = D.inventoryNotice; v.listEmpty = false; v.pageInfo = "";
+  }
   v.attSub = "Fachliche Ergebnisprüfung offen";
   v.groupsEmpty = false; v.groupsMore = false;
   v.groups = [{ ...open, title: "Ergebnisqualität noch nicht belegt", detail: errorText, areaLabel: "Ergebnisstand", countLabel: "Offen", onClick: component.go("#/betrieb/bilanz") }];
@@ -110,9 +115,9 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
     if (component._detailError) v.pd.answers.unshift({ k: "Profildetails", v: "Lesen nicht bestätigt. Bitte neu laden.", ink: "var(--warn-ink)" });
   }
   if (v.hasTabs && component.state.route.page === "betrieb") {
-    const ledger = D.dailyLedger || emptyDailyLedger();
+    const ledger = D.inventoryNotice ? emptyDailyLedger() : D.dailyLedger || emptyDailyLedger();
     v.bilanzHead = ledger.available ? `Tagesübersicht · ${ledger.day}` : "Tagesübersicht noch ungeprüft";
-    v.bilanzSub = ledger.note;
+    v.bilanzSub = D.inventoryNotice || ledger.note;
     const headings = ["Gemeldet", "Läufe gelesen", "Mit Fehler", "Vollständigkeit", "Qualität", "Empfang"];
     v.bucketHeads = headings.map(label => ({ label }));
     v.bilanzRows = ledger.rows.map(row => ({ label: row.label, cells: [row.reportedStored, row.readRuns, row.failedRuns, row.completeness, row.quality, row.received]
