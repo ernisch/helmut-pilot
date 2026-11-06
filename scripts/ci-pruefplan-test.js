@@ -80,7 +80,8 @@ check("Verwaltungsdateien bleiben relevant, Gestaltung erhaelt Browserpruefung",
   assert.equal(markup.standard, false);
   assert.equal(markup.database, false);
   assert.equal(markup.browser, true);
-  assert.deepEqual(markup.bereiche, ["admin"]);
+  // Die vorhandene UI-Zuordnung erkennt Stylesheet und index.html ebenfalls.
+  assert.deepEqual(markup.bereiche, ["admin", "ui"]);
 });
 
 check("Unbekannte Skripte behalten die konservative Vollpruefung", () => {
