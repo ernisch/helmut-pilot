@@ -251,3 +251,82 @@ Status: freigegebener Rollout und Nachmessung erfolgreich abgeschlossen.
 Naechster Schritt: auf dem Android-Geraet die wahrgenommene Startzeit pruefen;
 eine weitere Serveroptimierung waere gezielt an der Lagepruefung anzusetzen.
 Diese Dokumentationsnachfuehrung enthaelt ausschliesslich den belegten Abschluss.
+
+
+## Betreiberkorrektur: fertiges Briefing vor Ende des Startlogos (06.11.2026)
+
+**Code vorbereitet, nicht live.** Der Betreiber sieht weiterhin5–6s das Startlogo
+und lehnt eine frueh sichtbare App mit nachladendem Briefing ausdruecklich ab.
+Die versuchsweise vorbereitete Ladeoberflaeche aus
+[PR1083](https://github.com/ernisch/helmut-pilot/pull/1083) wurde nicht gemergt;
+PR geschlossen und CI42223994847 abgebrochen. Sie wird nicht ausgeliefert.
+
+Vertrag: Das Startlogo bleibt bis zum vollstaendigen Briefing. Lage/Radar duerften
+nachladen, soweit das Briefing dabei bereits vollstaendig ist. Im aktuellen Code
+stammen gerade an ruhigen Tagen die Briefing-Zusammenfassungen aus lageBriefing;
+ein pauschales Abtrennen der Lage wuerde den Betreibervertrag verletzen. Daher
+bleibt der vollstaendige Startpayload Voraussetzung der Ansicht. Keine neue
+Ladeoberflaeche, kein persoenlicher Startcache und kein veralteter Ersatzinhalt.
+
+Auf Basis ec70fe31 (einschliesslich Quellen-PR1079) sind zwei kleine Aenderungen
+vorbereitet: Nach frischer Authentifizierung laufen Sitzungsverlaengerung und
+berechtigte Profilauswahl parallel; Antwort/Cookie warten weiterhin auf beide.
+Die vier unabhaengigen ersten Quellenseiten je Lagegruppe werden vorab parallel
+abgerufen. Eine gemeinsame Grenze erlaubt maximal8 laufende Reads pro Aufruf,
+auch fuer Folgeseiten. Die Verarbeitung bleibt in ihrer bisherigen Reihenfolge;
+Filter, Duplikatpruefung, Vollstaendigkeitsgrenze und Fehlerverhalten bleiben
+bestehen. Vorabfehler werden sofort beobachtet. Bei fruehem Fehler koennen bis
+zu3 weitere erste Geschwisterseiten pro Gruppe bereits gestartet sein.
+
+### Vergleich und Grenzen
+
+Je3 lesende Aufrufe derselben aktuellen Serverfunktionen gegen die echte
+Datenbank. Vorher wird das unveraenderte Storage-Modul aus ec70fe31 geladen,
+nachher die Arbeitsfassung; der Startdatenhandler ist funktional derselbe.
+Die Messung fuehrt nur erlaubte GETs aus, ohne Modell- oder Schreibaufrufe.
+Lokales Netzwerk/Proxy, vorhandene kurze Storecaches und veraenderliche Daten
+beeinflussen die Zeiten. Die normale Kontositzung ist nicht Teil dieser Messung;
+fuer die Authparallelisierung wird keine gemessene Ersparnis behauptet.
+[Metadaten und Quellhashes](briefing-first-start-20261106.json), keine Antwortinhalte.
+
+| Lokaler Server-Datenbau | Vorher | Nachher |
+| --- | ---: | ---: |
+| Lauf1 | 6,995s | 4,613s |
+| Lauf2 | 5,300s | 4,396s |
+| Lauf3 | 5,406s | 4,120s |
+| Median | 5,406s | 4,396s |
+
+Rund1s kuerzer in dieser Stichprobe, weiterhin kein Sofortstart. Lagephase im
+Median5,238→4,211s; Briefingbau1,624→2,077s (Parallelitaet konkurriert auch um
+Netzkapazitaet). Erfolgreiche Quellenabrufe bleiben42 je Start; alle sechs
+Antworten enthalten gueltiges Briefing und10Lagekarten. Gleiche Kartenanzahl
+beweist keine bytegleichen Inhalte. Kein Production-Rollout und kein neuer
+Android-Zeitnachweis aus diesen Messungen ableiten.
+
+### Gezielte Pruefungen
+
+- Quellenfenster18/18: Parallelstart, maximal8 Reads auch mit Folgeseiten,
+  stabile Ausgabeordnung, unveraenderte Grenzen und beobachtete Fehler.
+- Sessionparallelisierung6/6: Autorisierung vor Profilabruf, Antwort erst nach
+  beiden Pfaden, anonymer Fall, fehlender Token, Fehler und Cookievertrag.
+- Session-/Profil-HTTP17/17: Admin-Bulkleser, echte lokale Anmeldung,
+  eingeschraenkte Mandatsauswahl fuer Abgeordnete/Referenten.
+- Splash-Boot35/35 und Syntaxpruefung bestanden.
+- Browser-Smoke82/82: zusaetzlich Desktop/Mobil mit gezielt angehaltener echter
+  Startantwort; Logo bleibt sichtbar, vor den Daten erscheint keine Navigation.
+  Der erste Lauf stoppte spaeter an einem Safari-Installationsbanner ueber der
+  Dock. Die Inhaltspruefung verwendet jetzt einen bereits geschlossenen Hinweis;
+  der erneute vollstaendige Browserlauf besteht. Keine Produktdatei dafuer geaendert.
+- Der alte backend-ui-http-integration-Test stoppt bereits an seiner speziellen
+  Umgebungs-Vorbedingung und ist an einen anderen historischen Checkout gebunden;
+  kein Produktfehlerbeleg. Statt ihn umzubauen wurde der aktuelle gezielte
+  Session-/Profil-HTTP-Test erfolgreich ausgefuehrt.
+- Der erste Versuch, die lesende Live-Diagnose ueber den Offline-Teststarter
+  auszufuehren, wurde erwartungsgemaess am Netzwerk blockiert; keine Messdaten.
+  Die Diagnose lief danach separat mit eigenem GET-/Zielhost-Guard.
+
+Risiko: mehr gleichzeitige Datenbankleser pro Start, begrenzt auf8; keine neuen
+Queries im normalen Erfolgsfall. Keine Migration, Profil-, Cron-, Budget- oder
+Konfigurationsaenderung. Rueckweg nach einem freigegebenen Rollout: diesen PR
+revertieren bzw. vorheriges READY-Deployment wiederherstellen. Nachkontrolle:
+Version und geschuetzte Start-GETs pruefen, Androidzeit separat nachmessen.

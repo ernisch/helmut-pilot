@@ -189,10 +189,10 @@ function brandenburgStandQuelle(tag, nummer) {
     assert.equal(p.get("knowledge_object_id"),'in.("eins")');
     assert.deepEqual(p.getAll("raw_documents.published_at"),["gte.2026-08-30T07:18:08.000Z","lte.2026-09-13T07:18:08.000Z"]);
     assert.equal(p.get("order"),"knowledge_object_id.asc,raw_document_id.asc");
-    assert(new URL("https://example.org"+requests[1]).searchParams.get("offset")==="1000");
+    assert(new URL("https://example.org"+requests[4]).searchParams.get("offset")==="1000");
     // Zweiter, ebenso begrenzter Lesepfad: ausschliesslich Artikelstaende
     // (published_at absichtlich NULL) mit gezielter Projektion.
-    const s = new URL("https://example.org"+requests[2]).searchParams;
+    const s = new URL("https://example.org"+requests[1]).searchParams;
     assert.equal(s.get("select"),"knowledge_object_id,raw_documents!inner(id,title,url,canonical_url,published_at,summary,"
       + "bundestag_artikelstand:raw->helmutBundestagArtikelstand,bundestag_abgerufen_at:retrieved_at)");
     assert.equal(s.get("knowledge_object_id"),'in.("eins")');
@@ -201,7 +201,7 @@ function brandenburgStandQuelle(tag, nummer) {
     assert.equal(s.get("offset"),"0");
     // Dritter, ebenso begrenzter Lesepfad: ausschliesslich Berliner Artikelstaende
     // (published_at absichtlich NULL) mit eigener, geschlossener Projektion.
-    const b = new URL("https://example.org"+requests[3]).searchParams;
+    const b = new URL("https://example.org"+requests[2]).searchParams;
     assert.equal(b.get("select"),"knowledge_object_id,raw_documents!inner(id,title,url,canonical_url,published_at,summary,"
       + "berlin_artikelstand:raw->helmutBerlinArtikelstand,berlin_abgerufen_at:retrieved_at)");
     assert.equal(b.get("knowledge_object_id"),'in.("eins")');
@@ -211,7 +211,7 @@ function brandenburgStandQuelle(tag, nummer) {
     assert.equal(b.get("offset"),"0");
     // Vierter, ebenso begrenzter Lesepfad: ausschliesslich Brandenburger
     // Landtags-Presseartikelstaende (published_at NULL) mit eigener, geschlossener Projektion.
-    const bb = new URL("https://example.org"+requests[4]).searchParams;
+    const bb = new URL("https://example.org"+requests[3]).searchParams;
     assert.equal(bb.get("select"),"knowledge_object_id,raw_documents!inner(id,title,url,canonical_url,published_at,summary,"
       + "brandenburg_artikelstand:raw->helmutBrandenburgLandtagPresseArtikelstand,brandenburg_abgerufen_at:retrieved_at)");
     assert.equal(bb.get("knowledge_object_id"),'in.("eins")');
@@ -244,15 +244,18 @@ function brandenburgStandQuelle(tag, nummer) {
         calls++; return Array.from({ length: 1000 }, (_, i) => ({ knowledge_object_id: "eins", raw_documents: { id: "d-" + i } }));
       }
     }));
-    assert.equal(calls, 2);
+    assert.equal(calls, 5);
     calls = 0;
     await assert.rejects(() => storage.listAktuelleLageQuellen(["eins"], now, {
-      ready: () => true, request: async () => {
-        const start = calls++ * 1000;
+      ready: () => true, request: async endpoint => {
+        calls++;
+        const p = new URL("https://example.org" + endpoint).searchParams;
+        if (p.get("raw_documents.published_at") === "is.null") return [];
+        const start = Number(p.get("offset"));
         return Array.from({ length: 1000 }, (_, i) => ({ knowledge_object_id: "eins", raw_documents: { id: "d-" + (start + i) } }));
       }
     }), /lage-quellen-lesegrenze/);
-    assert.equal(calls, 5);
+    assert.equal(calls, 8);
   });
   await test("Grosse Kennungsmengen bleiben in Stapeln ohne zusaetzlichen globalen Scan", async () => {
     const ids = Array.from({ length: 201 }, (_, i) => "ko-" + i), sizes = [];
@@ -264,7 +267,7 @@ function brandenburgStandQuelle(tag, nummer) {
     // Artikelstandspfade (Bundestag, Berlin, Brandenburg — je eigener Namespace).
     assert.deepEqual(sizes.sort((a, b) => a - b), [1, 1, 1, 1, 100, 100, 100, 100, 100, 100, 100, 100]);
   });
-  await test("Parallellesen bleibt auf vier begrenzt, geordnet und bei Fehlern vollstaendig gesperrt", async () => {
+  await test("Parallellesen bleibt auf acht begrenzt, geordnet und bei Fehlern vollstaendig gesperrt", async () => {
     const ids = Array.from({ length: 501 }, (_, i) => `ko-${String(i).padStart(3, "0")}`);
     let active = 0, peak = 0;
     const request = async endpoint => {
@@ -279,7 +282,7 @@ function brandenburgStandQuelle(tag, nummer) {
       } finally { active--; }
     };
     const result = await storage.listAktuelleLageQuellen(ids, now, { ready: () => true, request });
-    assert.equal(peak, 4); assert.equal(active, 0);
+    assert.equal(peak, 8); assert.equal(active, 0);
     assert.deepEqual(result.map(r => r.knowledge_object_id), ids);
     await assert.rejects(storage.listAktuelleLageQuellen(ids, now, { ready: () => true,
       request: async endpoint => {
@@ -290,6 +293,77 @@ function brandenburgStandQuelle(tag, nummer) {
     // Bereits gestartete Gruppen beenden; kein Folgestapel nach dem Fehler.
     await new Promise(resolve => setTimeout(resolve, 50));
     assert.equal(active, 0);
+  });
+  await test("Vier erste Quellenpfade starten gemeinsam und behalten trotz Antwortreihenfolge ihre Ausgabeordnung", async () => {
+    const zeilen = [
+      { ko: "eins", doc: source("normal") },
+      { ko: "eins", doc: standQuelle("2026-09-12", "9101") },
+      { ko: "eins", doc: brandenburgStandQuelle("2026-09-12", "9102") }
+    ];
+    const transport = standTransport(zeilen), gestartet = [];
+    let normalFreigeben;
+    const normalWarten = new Promise(resolve => { normalFreigeben = resolve; });
+    const lesen = storage.listAktuelleLageQuellen(["eins"], now, { ready: () => true,
+      request: async endpoint => {
+        gestartet.push(endpoint);
+        if (endpoint.includes("published_at=gte.")) await normalWarten;
+        return transport.request(endpoint);
+      }
+    });
+    assert.equal(gestartet.length, 4, "Alle vier ersten Seiten beginnen vor Abschluss des ersten Pfades");
+    normalFreigeben();
+    assert.deepEqual((await lesen).map(r => r.raw_documents.id), zeilen.map(z => z.doc.id));
+    assert.equal(gestartet.length, 4, "Keine zusaetzlichen Seiten bei kurzen Antworten");
+  });
+  await test("Auch Folgeseiten teilen die Acht-Abruf-Grenze und bleiben vollstaendig geordnet", async () => {
+    const ids = Array.from({ length: 201 }, (_, i) => `ko-${String(i).padStart(3, "0")}`);
+    let aktiv = 0, spitze = 0, aufrufe = 0;
+    const gelesen = await storage.listAktuelleLageQuellen(ids, now, { ready: () => true,
+      request: async endpoint => {
+        const p = new URL("https://example.org" + endpoint).searchParams;
+        const gruppe = JSON.parse("[" + p.get("knowledge_object_id").slice(4, -1) + "]");
+        aktiv++; aufrufe++; spitze = Math.max(spitze, aktiv);
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1));
+          if (Number(p.get("offset"))) return [];
+          const pfad = p.get("select");
+          return Array.from({ length: 1000 }, (_, i) => ({ knowledge_object_id: gruppe[0],
+            raw_documents: { id: `${pfad}-${i}` } }));
+        } finally { aktiv--; }
+      }
+    });
+    assert.equal(spitze, 8); assert.equal(aktiv, 0); assert.equal(aufrufe, 24);
+    assert.deepEqual(gelesen.map(r => r.knowledge_object_id),
+      [ids[0], ids[100], ids[200]].flatMap(id => Array(1000).fill(id)));
+  });
+  await test("Fruehe und spaete Vorabfehler bleiben beobachtet und folgen der bisherigen Pruefreihenfolge", async () => {
+    const unbeobachtet = [], erfasse = error => unbeobachtet.push(error);
+    process.on("unhandledRejection", erfasse);
+    try {
+      for (const ersterPfadKaputt of [true, false]) {
+        let normalFreigeben;
+        const normalWarten = new Promise(resolve => { normalFreigeben = resolve; });
+        const lesen = storage.listAktuelleLageQuellen(["eins"], now, { ready: () => true,
+          request: async endpoint => {
+            if (endpoint.includes("published_at=gte.")) {
+              await normalWarten;
+              return ersterPfadKaputt ? {} : [];
+            }
+            if (endpoint.includes("raw->helmutBundestagArtikelstand=not.is.null"))
+              throw new Error("synthetischer-vorabfehler");
+            await new Promise(resolve => setTimeout(resolve, 10));
+            throw new Error("synthetischer-spaeter-fehler");
+          }
+        });
+        const abgelehnt = assert.rejects(lesen, ersterPfadKaputt
+          ? /ungueltige-quellenantwort/ : /synthetischer-vorabfehler/);
+        await new Promise(resolve => setImmediate(resolve));
+        normalFreigeben();
+        await abgelehnt;
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+      assert.deepEqual(unbeobachtet, []);
+    } finally { process.off("unhandledRejection", erfasse); }
   });
   await test("Brandenburger Landtagsstand: tagesgenau, fenstergebunden und fail-closed", async () => {
     const alt = process.env.HELMUT_BRIEFING_RELEVANZ_TAGE;
@@ -391,7 +465,7 @@ function brandenburgStandQuelle(tag, nummer) {
     await assert.rejects(() => storage.listAktuelleLageQuellen(["ko-voll"], now, {
       ready: () => true, request: async endpoint => {
         const p = new URL("https://example.org" + endpoint).searchParams;
-        if (p.getAll("raw_documents.published_at")[0] !== "is.null") return [];
+        if (p.get("raw_documents.raw->helmutBundestagArtikelstand") !== "not.is.null") return [];
         const start = standSeiten++ * 1000;
         return Array.from({ length: 1000 }, (_, i) => ({ knowledge_object_id: "ko-voll",
           raw_documents: { id: "d-" + (start + i) } }));
@@ -411,7 +485,7 @@ function brandenburgStandQuelle(tag, nummer) {
           knowledge_object_id: "eins", raw_documents: { id: "normal-" + (offset + i) } }));
       }
     }), /lage-quellen-lesegrenze/);
-    assert.equal(standAufrufe, 1);
+    assert.equal(standAufrufe, 3);
   });
   console.log(passed+"/"+passed+" Testgruppen bestanden.");
 })().catch(e=>{console.error(e);process.exitCode=1;});
