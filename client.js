@@ -288,20 +288,28 @@ function fmtCost(n) {
 }
 
 // --- View-Persistenz ---
+// Vorübergehend pausiert; Wiederaufnahme: docs/datenmotor-restliste.md, OP-32.
+const DAILY_INPUT_ENABLED = false;
 const VIEW_PERSIST_KEY = "helmut:view";
 const VIEW_PERSIST_SAFE = new Set(["briefing", "radar", "helmut", "office", "tasks", "topics", "settings", "profile-settings", "admin", "daily-input"]);
 
 function persistView(view) {
+  if (view === "daily-input" && !DAILY_INPUT_ENABLED) return;
   if (!VIEW_PERSIST_SAFE.has(view)) return;
   try { localStorage.setItem(VIEW_PERSIST_KEY, view); } catch {}
 }
 
 function restorePersistedView() {
   try {
+    // Fester Übergangsweg aus der Verwaltung; Berechtigungen bleiben unverändert.
+    if (new URLSearchParams(location.search).get("admin-tools") === "1" && isAccountMode() && userRole() === "admin") {
+      currentView = "admin";
+      return;
+    }
     const saved = localStorage.getItem(VIEW_PERSIST_KEY);
     if (!saved || !VIEW_PERSIST_SAFE.has(saved)) return;
     if (saved === "admin" && userRole() !== "admin") return;
-    if (saved === "daily-input" && !["admin", "referent"].includes(userRole())) return;
+    if (saved === "daily-input" && (!DAILY_INPUT_ENABLED || !["admin", "referent"].includes(userRole()))) return;
     currentView = saved;
   } catch {}
 }
@@ -918,7 +926,7 @@ async function ensureViewData(view) {
     await ensureAdminSection(admSection);
     if (!privateAccessIsCurrent(context)) return;
   }
-  if (view === "daily-input" && !dailyInputsLoaded) {
+  if (view === "daily-input" && DAILY_INPUT_ENABLED && !dailyInputsLoaded) {
     dailyInputsLoaded = true;
     try {
       const response = await fetchWithTimeout(`/api/daily-inputs?${apiScopeQuery()}`);
@@ -1418,6 +1426,7 @@ function statusLabel(status) {
 // ---------------------------------------------------------------------------
 
 function renderDailyInputView() {
+  if (!DAILY_INPUT_ENABLED) return renderUiEmpty("Tagesinput pausiert", "Die Eingabe von Terminen und Themen ist vorübergehend nicht verfügbar.");
   const max = 3;
   const mandateName = allowedProfiles.find((entry) => entry.id === activePoliticianId)?.name || profile?.fullName || activePoliticianId;
   const remaining = Math.max(0, max - dailyInputs.length);
@@ -3112,7 +3121,8 @@ function renderAdminView() {
         <div class="adm-header-top">
           <div>
             <span class="eyebrow-line">Betrieb</span>
-            <h1 class="adm-title">Helmut Admin</h1>
+            <a href="/verwaltung/">← Zur Verwaltung</a>
+            <h1 class="adm-title">Erweiterte Werkzeuge</h1>
             <p class="adm-subtitle">Betriebsinstrument — Zustand, Handlungsbedarf, Kosten und Sicherheit auf einen Blick.${version ? ` <span class="admin-version-tag" title="Laufende Deploy-Version${sys.deploy.environment ? ` · ${escapeAttribute(adminEnvLabel(sys.deploy.environment))}` : ""}">Version ${escapeHtml(version)}</span>` : ""}</p>
           </div>
           ${admSectionMeta(admSection)}
@@ -4670,11 +4680,13 @@ function renderUiFooter(variant = "") {
 
 function renderUiAccountTools() {
   const roles = roleNavItems();
+  const showAdministration = isAccountMode() && userRole() === "admin";
   const showSwitcher = isAccountMode() && currentUser && allowedProfiles.length > 1;
-  if (!roles.length && !showSwitcher) return "";
+  if (!roles.length && !showSwitcher && !showAdministration) return "";
   return `<section class="ui-account-tools" aria-label="Weitere Arbeitsbereiche">
     ${showSwitcher ? `<label>Mandat wählen<select class="account-switch" data-profile-switch>${allowedProfiles.map(entry => `<option value="${escapeAttribute(entry.id)}" ${entry.id === activePoliticianId ? "selected" : ""}>${escapeHtml(entry.name)}</option>`).join("")}</select></label>` : ""}
     ${roles.map(([id, label]) => `<button class="secondary-button" type="button" data-view="${escapeAttribute(id)}">${escapeHtml(label)}</button>`).join("")}
+    ${showAdministration ? '<a class="secondary-button" href="/verwaltung/">Verwaltung öffnen</a>' : ""}
   </section>`;
 }
 
@@ -4740,8 +4752,7 @@ function roleNavItems() {
   if (!isAccountMode()) return [];
   const items = [];
   const role = userRole();
-  if (role === "referent" || role === "admin") items.push(["daily-input", "Tagesinput"]);
-  if (role === "admin") items.push(["admin", "Admin"]);
+  if (DAILY_INPUT_ENABLED && (role === "referent" || role === "admin")) items.push(["daily-input", "Tagesinput"]);
   return items;
 }
 

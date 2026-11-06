@@ -1,9 +1,72 @@
 # CURRENT STATE — Helmut
 
-**Stand: 05.11.2026.** Aktuelle Projektsteuerung nach ausdruecklicher
+**Stand: 06.11.2026.** Aktuelle Projektsteuerung nach ausdruecklicher
 Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
+
+## Aktueller Auftrag: taegliche Versorgung nur fuer Cem Ince
+
+Der Betreiber hat die Wiederaufnahme ausschliesslich fuer Cem Ince und die
+Deaktivierung aller anderen Profile beauftragt. Zusaetzlich ausdruecklich
+freigegeben: **1 USD je Tag, maximal 30 USD insgesamt** fuer diesen neuen Betrieb.
+Entwicklung und Review nur mit GPT-6.1 Sol/Astra, kein DeepSeek.
+
+**Betrieb aktiv und live gegengelesen (06.11.2026, 01:00 UTC).**
+Production `8b01e1ff` nach PR1061 und Pflicht-CI42136772045:
+181/181 Standardsuiten,332/332 Bereichssuiten und native Datenbanknachweise
+gruen. Nur `cem-ince` aktiv;500 andere Mandatsprofile unveraendert inaktiv.
+Vercel bestaetigt drei Tagesjobs:04:00 Quellen,05:00 Lage,05:15 Morgenpaket
+UTC (Abschluss06:15 Berlin im Winter,07:15 im Sommer).
+
+Quellenlauf147/147 erfolgreich,6 neue vollstaendige Wissensobjekte.
+Die Lage wurde erfolgreich erzeugt und der normale App-Start liefert
+sie aus dem Cache:2 quellengebundene Absaetze und5 Vorgangskarten.
+Heutiges Morgenpaket und Frischequittung gespeichert/verifiziert;
+Frische aktuell, ehrliche Ruhelage ohne neue Tagesprioritaet.
+Der einzige verbleibende Paketpruefhinweis lautet
+`briefing-ohne-tagesanlass`; keine fehlende Lage oder Speicherstoerung.
+Der strenge Vollstaendigkeitsmarker bleibt deshalb partial.
+`fachlichGeprueft:false` ist im normalen Morgenlauf fest vorgegeben
+und wird nicht als menschliche Vollabnahme umgedeutet.
+
+Kosten nativ:12 heutige Aufrufe abgerechnet mit0,080449 USD.
+Vier Reserven aus dem behobenen JSONB-Abschlussfehler bleiben mit0,848 USD
+konservativ gebunden; insgesamt0,928449 USD gegen den30-USD-Deckel.
+Keine neue offene Reserve, keine eingefrorene Buchung. Kommunikation
+bleibt gesperrt. Fremde Profile und historische Kostenvertraege
+hashgleich. Keine weiteren Modellversuche oder Lasttests erforderlich.
+Die nachfolgenden offenen Release1053-Aussagen sind historisch.
+[Umsetzung, Nachweise und Rueckweg](betrieb/cem-einprofilbetrieb-20261105.md).
+
+## Navigation und Verwaltung live (06.11.2026)
+
+[PR #1057](https://github.com/ernisch/helmut-pilot/pull/1057) nach ausdrücklichem
+„merge wenn grün“ auf `7d115a41fb84598fcc3849ed556ad0ede31d65b5` gemergt.
+Tagesinput ist in der UI pausiert, einschließlich gespeicherter Ansicht und Formular.
+Der doppelte Admin-Eintrag entfällt; Profil & Einstellungen führt für Admins zur
+Verwaltung, dort erhält **Erweiterte Werkzeuge** alle bisherigen Admin-Bereiche
+mit Rücklink. Funktionen und Daten bleiben erhalten.
+Die verbindliche Wiedervorlage und schrittweise Zielzuordnung stehen in
+[OP-32 und OP-33](datenmotor-restliste.md#op-32--tagesinput-bewusst-pausiert-06112026-p3).
+Gezielt geprüft: Syntax, Schnellkern 14/14, Verwaltungsnavigation 8/8,
+Browser-Smoke 78/78. Übergangsweg im echten Browser bei 1280 und 390 Pixeln
+bestanden, alle sieben Werkzeugbereiche erhalten; Referenten und Abgeordnete
+erhalten keinen Verwaltungszugang (HTTP403, kein Link/URL-Einstieg).
+Beide Pflichtchecks auf Kopf `abeecebb` erfolgreich:
+[CI 42119327817](https://github.com/ernisch/helmut-pilot/actions/runs/42119327817),
+176/176 Standard- und 332/332 Bereichssuiten, Browsercheck und isolierte
+Datenbankprüfungen grün. Production-Deployment
+`dpl_CJoBeMTV6V7MHeH86MuhM3iA1Qbj` READY auf Merge `7d115a41`, Alias
+`helmut-pilot.vercel.app`. Lesende Nachkontrolle: Startseite HTTP200,
+`client.js?v=7d115a41` bytegleich zur geprüften Datei, Tagesinput aus,
+Verwaltung ohne Sitzung HTTP401. Kein authentifizierter Production-Klicktest;
+dieser Übergangsweg wurde lokal mit echten Sessions geprüft.
+Der umfassendere historische Verwaltungstest
+stoppt im unveränderten Kontoclient an einer alten Null-IO-Erwartung beim Freigeben
+eines Kontos; die gezielte Navigationsauswahl führt keine Schreibaktion aus.
+Dieser Auftrag ist abgeschlossen. Nächster fachlicher Schritt bei weiterer
+Verwaltungsarbeit: fehlende Funktionen nach OP-33 einzeln zuordnen.
 
 ## Oberstes Ziel: Mock100 PASS, dann Helmut sicher live
 
@@ -123,13 +186,9 @@ vorher/nachher pixelgleich, Browser-Smoke 78/0. Lokale Altfehler unveraendert:
 
 ## Genau ein naechster Schritt
 
-**Die beiden Pflichtchecks der Release-PR auf genau deren aktuellem Kopf abschliessen
-und danach auf konkrete Mergefreigabe warten.** Die Uebernahme ist freigegeben;
-der neue Branch `release/helmut-product-20261105` ist gegen automatische
-Vercel-Git-Deployments gesperrt. Keine weiteren
-synthetischen Vollversuche und keine bezahlten Lasttests. Ein spaeterer
-Merge/Production-Deploy benoetigt konkrete Releasefreigabe,
-Rueckweg und nachgewiesene Betriebsreife.
+**Die Pflichtchecks der Einprofil-Aenderung abschliessen, den freigegebenen
+1/30-USD-Vertrag aktivieren und Cems aktuelle Tagesversorgung gegenlesen.**
+Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
 Historische alte Anweisungen, darunter
 [`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind

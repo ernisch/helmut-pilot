@@ -176,7 +176,8 @@ function jsonAusAusgabe(stdout) {
   try { return JSON.parse(bloecke[0]); } catch { return "unparsebar"; }
 }
 
-// Synthetic historical scheduling only for the two extra child-process regressions.
+// Historical schedules remain isolated fixtures; live daily supply is checked
+// by pre500-cron-pause-test.js. These overrides affect only the child process.
 const LEGACY_SCHEDULE_PRELOAD = path.join(SPION_DIR, "historische-cron-fixture.js");
 fs.writeFileSync(LEGACY_SCHEDULE_PRELOAD, `"use strict";
 const target = ${JSON.stringify(path.join(ROOT, "vercel.json"))};
@@ -184,11 +185,18 @@ const original = require(target);
 require.cache[require.resolve(target)].exports = { ...original,
   crons: require(${JSON.stringify(path.join(ROOT, "scripts/fixtures/scheduled-crons-before-pre500-pause.json"))}) };
 `);
+const PAUSED_SCHEDULE_PRELOAD = path.join(SPION_DIR, "historische-cron-pause.js");
+fs.writeFileSync(PAUSED_SCHEDULE_PRELOAD, `"use strict";
+const target = ${JSON.stringify(path.join(ROOT, "vercel.json"))};
+const original = require(target);
+require.cache[require.resolve(target)].exports = { ...original, crons: [] };
+`);
 const ALLE = [];
 function cli(args, extraEnv = {}, historicalSchedule = false) {
   spionZuruecksetzen();
   const vorher = speicherSchnappschuss();
-  const r = spawnSync(process.execPath, ["--require", NETZ_GUARD, "--require", SPION_PRELOAD, ...(historicalSchedule ? ["--require", LEGACY_SCHEDULE_PRELOAD] : []), CLI, ...args], {
+  const schedulePreload = historicalSchedule === "paused" ? PAUSED_SCHEDULE_PRELOAD : LEGACY_SCHEDULE_PRELOAD;
+  const r = spawnSync(process.execPath, ["--require", NETZ_GUARD, "--require", SPION_PRELOAD, ...(historicalSchedule ? ["--require", schedulePreload] : []), CLI, ...args], {
     cwd: ROOT, env: kindUmgebung(extraEnv), encoding: "utf8", timeout: 90000
   });
   const nachher = speicherSchnappschuss();
@@ -317,13 +325,13 @@ function main() {
 
   // ── E · Die Fensterlogik (Prüfuhr NUR im Trockenlauf) ─────────────────────
   console.log("\nE · Fenster und Uhr: die Prüfuhr gilt nur im Trockenlauf, im scharfen Lauf zählt die Systemuhr");
-  const uhrDrin = cli(["provisionierung", "--stufe=a", ...FENSTER, JETZT_DRIN]);
-  check("E1 Echte Cron-Pause lehnt auch IM Fenster geschlossen ab; Trockenlauf bleibt ohne Schreiben",
+  const uhrDrin = cli(["provisionierung", "--stufe=a", ...FENSTER, JETZT_DRIN], {}, "paused");
+  check("E1 Historische isolierte Cron-Pause lehnt auch IM Fenster geschlossen ab; Trockenlauf bleibt ohne Schreiben",
     uhrDrin.status === 0 && uhrDrin.json && uhrDrin.json.modus === "trockenlauf"
       && uhrDrin.json.startfenster.frei === false && uhrDrin.json.startfenster.grund === "startfenster-ohne-cronliste"
       && uhrDrin.json.uhr === "pruefuhr-trockenlauf" && uhrDrin.speicherUnveraendert);
-  const uhrDraussen = cli(["provisionierung", "--stufe=a", ...FENSTER, JETZT_DRAUSSEN]);
-  check("E2 Echte Cron-Pause bleibt auch AUSSERHALB wegen fehlender Cronliste geschlossen",
+  const uhrDraussen = cli(["provisionierung", "--stufe=a", ...FENSTER, JETZT_DRAUSSEN], {}, "paused");
+  check("E2 Historische isolierte Cron-Pause bleibt auch AUSSERHALB wegen fehlender Cronliste geschlossen",
     uhrDraussen.status === 0 && uhrDraussen.json && uhrDraussen.json.startfenster.frei === false
       && uhrDraussen.json.startfenster.grund === "startfenster-ohne-cronliste" && uhrDraussen.speicherUnveraendert);
   const historicalInside = cli(["provisionierung", "--stufe=a", ...FENSTER, JETZT_DRIN], {}, true);

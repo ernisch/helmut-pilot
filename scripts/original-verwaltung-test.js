@@ -74,7 +74,10 @@ async function main() {
       { page: "betrieb", tab: "bilanz" }, { page: "betrieb", tab: "quellen" }, { page: "betrieb", tab: "kosten" },
       { page: "kunden", tab: "kunden" }, { page: "kunden", tab: "abrechnung" }, { page: "kunde", id: "synthetic-account" },
       { page: "kunde-neu" }, { page: "einstellungen", tab: "allgemein" }, { page: "einstellungen", tab: "integrationen" }]) {
-      c.setState({ route }); const v = c.renderVals(); assert.ok(v.navItems.length === 5, JSON.stringify(route));
+      c.setState({ route }); const v = c.renderVals(); assert.ok(v.navItems.length === 6, JSON.stringify(route));
+      const tools = v.navItems.find(item => item.label === "Erweiterte Werkzeuge");
+      assert.equal(tools.href, "/?admin-tools=1");
+      assert.equal(tools.onClick, undefined); // Echter Seitenwechsel statt internem Hashrouting.
       assert.doesNotMatch(JSON.stringify(v), /Helmut läuft gesund|BEISPIEL100|Verbunden|Alle drei Ergebnisse brauchbar|Samstag, 3\. Oktober/);
       if (route.page === "betrieb" && route.tab === "kosten") assert.equal(v.costNums[0].value, "Offen");
       if (route.page === "profil") assert.equal(v.pd.areas[0].st.label, "Nicht geprüft");
@@ -96,6 +99,7 @@ async function main() {
       const r = reader(sample); r.read = async key => { if (key === "budget") throw { status }; return sample[key]; };
       const { instance: c } = component(r); await c.refresh();
       assert.equal(c.data().profiles.length, 0); assert.equal(c.renderVals().health.label, "Zugriff gesperrt");
+      assert.ok(!c.renderVals().navItems.some(item => item.href === "/?admin-tools=1"));
       assert.doesNotMatch(JSON.stringify(c.renderVals()), /Fiktives Büro|synthetic@/); c.componentWillUnmount();
     }
   });
@@ -117,6 +121,10 @@ async function main() {
     assert.equal(c.state.route.page, "uebersicht"); c.setState({ route: { page: "profil", id: "constructor" } });
     assert.equal(c.renderVals().pdMissing, true); c.componentWillUnmount();
   });
+  if (process.argv.includes("--navigation-only")) {
+    console.log(`${checks.length} Verwaltungs-Navigationsgruppen PASS; Schreibaktionen und historischer Backend-Klon nicht gestartet.`);
+    return;
+  }
   await check("Kundenentwurf, Motoraktionen und falsche Erfolgsbestätigungen sind ausgeschlossen", async () => {
     const { instance: c } = component(reader(sample)); await c.refresh();
     c.setState({ route: { page: "kunde-neu" }, form: { name: "Fiktiv", person: "Fiktiv", mail: "fiktiv@invalid.invalid", tarif: "Basis", profil: "" } });

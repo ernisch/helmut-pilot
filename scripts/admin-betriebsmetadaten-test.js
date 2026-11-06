@@ -5,8 +5,8 @@
 // Production nicht lesbar/nicht gebundelt ist — Rueckgabe null bzw. { verfuegbar:false },
 // niemals ein Absturz und niemals erfundene Werte. KEIN Netz, KEINE KI.
 //
-// Belegter Ist-Stand: die reale vercel.json enthaelt `crons: []`. Der Leser liefert
-// deshalb eine VERFUEGBARE, LEERE Liste — kein null und keine erfundenen Zeiten.
+// Der Leser liefert den aktuellen Tagesplan aus vercel.json ohne erfundene
+// Zeiten. Eine explizit leere Liste bleibt davon getrennt verfuegbar und leer.
 // .github/workflows/briefing-watchdog.yml hat KEINEN schedule und bleibt manuell
 // dispatchbar; health-watch.yml hat den Zeitplan auskommentiert. Beide werden
 // ehrlich als verfuegbar + inaktiv mit zeitplanUtc:null gelesen.
@@ -36,10 +36,12 @@ function check(name, cond, detail = "") {
 check("Test-Hooks exportiert", typeof handler.__readVercelCronSchedule === "function" && typeof handler.__readWorkflowWatchdog === "function");
 
 // --- 1) Cron-Zeitplan: Normalfall (vercel.json via require gebundelt) ---------
-// Reale Datei: crons ist eine leere Liste -> verfuegbar, ehrlich leer, nicht null.
+// Reale Datei: aktuellen Zeitplan vollstaendig und unverfaelscht ausgeben.
 const crons = handler.__readVercelCronSchedule();
-check("Cron: reale vercel.json gelesen -> verfuegbare LEERE Cronliste (Array, length 0, nie null)",
-  Array.isArray(crons) && crons.length === 0, `crons=${JSON.stringify(crons)}`);
+check("Cron: reale vercel.json gelesen -> vollstaendiger aktueller Zeitplan",
+  Array.isArray(crons) && JSON.stringify(crons) === JSON.stringify(require("../vercel.json").crons), `crons=${JSON.stringify(crons)}`);
+check("Cron: explizite Pause bleibt eine verfuegbare leere Liste, nie null",
+  JSON.stringify(handler.__readVercelCronSchedule({ crons: [] })) === "[]");
 check("Cron: Felder gekappt/sauber (path<=80, schedule<=40)",
   crons.every((c) => typeof c.path === "string" && c.path.length <= 80 && typeof c.schedule === "string" && c.schedule.length <= 40));
 

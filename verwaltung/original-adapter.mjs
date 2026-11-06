@@ -194,5 +194,13 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
   }
   v.protoGroups = []; v.protoOpen = false; v.toggleProto = () => component.refresh(); v.showLoading = () => component.refresh();
   v.resetLocal = () => component.refresh();
+  // Übergang bis die fehlenden Funktionen einzeln in die Verwaltung übernommen sind.
+  // Vorhandenes Navigationsmarkup gilt für Desktop und Mobil gleichermaßen.
+  if (!blocked && !v.loading && phase !== "loading" && Array.isArray(v.navItems)) v.navItems.push({
+    label: "Erweiterte Werkzeuge", href: "/?admin-tools=1", onClick: undefined,
+    title: "Weitere Verwaltungs- und Diagnosefunktionen", current: undefined,
+    color: "var(--rail-muted)", bg: "transparent", weight: 400,
+    badge: "", badgeColor: "var(--rail-muted)", dot: "transparent"
+  });
   return v;
 }

@@ -2405,6 +2405,44 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 ---
 
+#### OP-32 · Tagesinput bewusst pausiert (06.11.2026; P3)
+
+- **Status: offen / zurückgestellt auf Betreiberwunsch.** Seit
+  [PR #1057](https://github.com/ernisch/helmut-pilot/pull/1057) ist der Tagesinput
+  in Production ausgeblendet. `DAILY_INPUT_ENABLED`
+  in `client.js` verhindert auch Wiederherstellung, Laden und Formulare der
+  pausierten Ansicht. Das ist eine UI-Pause; bestehende Daten und die geschützten
+  API-Funktionen bleiben erhalten. Rollout-Beleg in `CURRENT_STATE.md`.
+- **Wiedervorlage:** Bei der nächsten Arbeit am Bereich Büro ausdrücklich prüfen,
+  wie Termine/Themen tatsächlich in Vorbereitung und Briefing einfließen sollen.
+  Tagesinput ist eine Büro-/Referentenfunktion, keine Betreiberverwaltung.
+- **Vor Reaktivierung:** Nutzen und Platz unter Büro festlegen, bestehende
+  Rechte-/Mandatsgrenzen und Eingabe → sichtbares Ergebnis prüfen; danach bewusst
+  wieder aktivieren. Nicht still aus dieser Restliste entfernen.
+
+#### OP-33 · Admin-Funktionen schrittweise in Verwaltung einordnen (06.11.2026; P2)
+
+- **Status: offen, Übergangsweg seit PR #1057 live.** Die Hauptnavigation enthält
+  keinen doppelten Admin-Eintrag mehr. Administratoren erreichen `/verwaltung/` über
+  Profil & Einstellungen. Dort führt **Erweiterte Werkzeuge** vorerst zur
+  bestehenden Admin-Ansicht (`/?admin-tools=1`); diese bietet einen Rücklink.
+  Bestehende Funktionen, Backendrouten und Berechtigungen werden nicht entfernt.
+- **Zielzuordnung nach Abgleich des Codes auf main `14501c59`:**
+
+  | Funktionen | Ziel / Vorgehen |
+  | --- | --- |
+  | Nutzer, Kunden, Zugang, Einladungen, Zuweisungen | Kunden; vorhandene Kontofunktionen nutzen, fehlende einzeln ergänzen |
+  | Mandatsprofile und Datenstatus | Profile; vorhandene Anzeigen nutzen, Bearbeitung gezielt ergänzen |
+  | Quellen, Kosten, Läufe | Betrieb; bestehende Übersichten nutzen, fehlende Details bedarfsgerecht ergänzen |
+  | Systemdiagnose, Audit, Recovery, Backfills, Testbriefings | Erweiterte Werkzeuge; bewusste Einzelaktionen und bestehende Schutzabfragen erhalten |
+  | Datenschutzexport/-löschung | Passender Kunden-/Profilkontext; keine pauschale Übernahme als globale Schnellaktion |
+  | Tagesinput | Pausiert; spätere Büro-Einordnung unter OP-32 |
+
+- **Abschlusskriterium:** Jede benötigte Funktion hat einen geprüften Zielzugang;
+  erst danach die Übergangsansicht abbauen. Doppelte Anzeigen müssen nicht in die
+  neue Verwaltung kopiert werden. Dieser Schritt überführt den Zugang, noch nicht
+  sämtliche Funktionen in neue Verwaltungsansichten.
+
 ## 7 · Historisch markierte Dokumente
 
 Folgende Dokumente sind als **historisch** gekennzeichnet und verweisen auf diese

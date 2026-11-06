@@ -282,6 +282,11 @@ const STANDARD = new Set([
   "tenant-llm-cap-test.js",                 // Mandanten-Deckel (bleibt fuer 500 aus)
   "profile-budget-constraint-test.js",      // ungueltiges Budget kein Serverfehler/Datenverlust
   "testkosten-budget-test.js",              // atomare Testkosten-Wahrheit
+  "lage-betriebsprofil-schema-test.js",       // exakte Profilpaare im Betriebs-Lagegenerator
+  "betriebskosten-budget-test.js",         // atomarer Einprofil-Tages-/Gesamtdeckel
+  "betriebsquellen-test.js",                // echte Clusterform und Profilrelevanz
+  "bb-proof-no-paid-model-test.js",         // Einprofilbindung und weiterhin 0 KI im No-Paid-Pfad
+  "pre500-cron-pause-test.js",              // aktuelle Tageskette, historische Zeitplaene unveraendert
   "verstehen-restzeit-test.js",             // Restzeitwache vor bezahltem Modellaufruf
   // — aktueller 500er-Schutzvertrag —
   "verstehen-169-neuversuch-test.js",       // 169er Neuversuchsvertrag (PR524, Production)

@@ -5,6 +5,10 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "fix/cem-lage-profile-schema-20261106": false,
+      "fix/cem-budget-jsonb-20261106": false,
+      "fix/cem-single-profile-20261106": false,
+      "fix/verwaltung-favicon-production-20261105": false,
       "release/helmut-product-20261105": false,
       "codex/helmut-ui-20261031": false,
       "codex/hetzner-native-automation-20261026": false,
@@ -80,7 +84,7 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 300,
-      "includeFiles": ".github/workflows/{briefing-watchdog,health-watch}.yml"
+      "includeFiles": "{.github/workflows/briefing-watchdog.yml,.github/workflows/health-watch.yml,verwaltung/**,scripts/original-verwaltung-paket.js}"
     }
   },
   "routes": [
@@ -133,6 +137,10 @@
       "dest": "/api/index.js"
     }
   ],
-  "crons": [],
+  "crons": [
+    { "path": "/api/cron/crawl", "schedule": "0 4 * * *" },
+    { "path": "/api/cron/lage-briefing", "schedule": "0 5 * * *" },
+    { "path": "/api/cron/morning-briefing", "schedule": "15 5 * * *" }
+  ],
   "ignoreCommand": "node scripts/vercel-ignore-build.js"
 }

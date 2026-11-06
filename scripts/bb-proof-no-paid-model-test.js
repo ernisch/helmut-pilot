@@ -83,6 +83,12 @@ console.log("\nAbschnitt 2: Laufzeit-Spike (sichere Fakes, echter runSourceCrawl
 
 // Spione + Fake-Module MUESSEN vor dem Laden von scheduler.js im require-Cache stehen.
 const spy = { lazy: 0, eager: 0, crawl: 0, saveRaw: 0, matching: 0, decisions: 0 };
+let operatingContract = null;
+let eagerInput = null;
+let eagerOptions = null;
+let lazyProfiles = null;
+let rawAlreadySaved = false;
+let rawItems = [{ id: "raw-1", url: "https://example.invalid/a", title: "Test", sourceId: "s1" }];
 
 function stub(relPath, exports) {
   const abs = require.resolve(path.join(LIB, relPath));
@@ -94,7 +100,7 @@ stub("crawler", {
     spy.crawl += 1;
     return {
       results: [],
-      rawItems: [{ id: "raw-1", url: "https://example.invalid/a", title: "Test", sourceId: "s1" }],
+      rawItems,
       newCandidateItems: 0,
       checkedSources: 0, successfulSources: 0, failedSources: 0,
       skippedSources: 0, circuitOpenSources: 0, sharedSkippedSources: 0, retriesTotal: 0,
@@ -107,13 +113,13 @@ stub("crawler", {
 });
 
 stub("storage", {
-  getProfile: async () => null,
+  getProfile: async (id) => operatingContract ? { id, fullName: "Fiktives Mandat", party: "Fiktive Partei", focusTopics: ["Pflege"] } : null,
   getRawItemsSince: async () => [],
   getSources: async () => [],
   getTopicMemory: async () => null,
   saveCrawlRun: async (run) => ({ ok: true, ...run }),
   saveLageCheck: async () => ({}),
-  saveRawItems: async (items) => { spy.saveRaw += 1; return items; },
+  saveRawItems: async (items) => { spy.saveRaw += 1; return rawAlreadySaved ? [] : items; },
   acquirePipelineLock: async () => true,
   releasePipelineLock: async () => {},
   saveRawDocument: async () => ({ saved: true }),
@@ -152,13 +158,19 @@ stub("quellenarchitektur/source-mode", {
 });
 stub("quellenarchitektur/dedup-global", { planDedupWrites: (items) => items });
 stub("dedup", { toRawDocumentRow: (x) => ({ id: x.id }), dedupeRawDocuments: (rows) => rows });
+stub("betriebskosten-budget", { aktiv: () => operatingContract !== null, vertrag: () => operatingContract });
 stub("understanding", {
-  clusterRawDocuments: (rows) => rows.map((r) => ({ id: `cluster-${r.id}` })),
+  clusterRawDocuments: (rows) => rows.map((r) => ({ id: `cluster-${r.id}`, documents: [r] })),
   deriveVorgangId: (cluster) => `vorgang-${cluster.id}`,
   buildOutcomeTelemetry: () => ({})
 });
-stub("artikelkontext-lauf", { runUnderstandingShadow: async () => { spy.eager += 1; return { processed: 1, deferred: 0 }; } });
-stub("lazyUnderstanding", { runLazyUnderstandingShadow: async () => { spy.lazy += 1; return { ok: true }; } });
+stub("artikelkontext-lauf", { runUnderstandingShadow: async (items, options) => {
+  spy.eager += 1; eagerInput = items; eagerOptions = options; return { processed: 1, deferred: 0 };
+} });
+stub("lazyUnderstanding", {
+  runLazyUnderstandingShadow: async ({ profiles }) => { spy.lazy += 1; lazyProfiles = profiles; return { ok: true }; },
+  interestedProfiles: (cluster, profiles) => cluster.documents.some(doc => doc.id === "raw-1") ? profiles : []
+});
 stub("matching", { runMatchingShadow: async () => { spy.matching += 1; return { ok: true }; } });
 stub("decisions", { runDecisionShadow: async () => { spy.decisions += 1; return { ok: true }; } });
 
@@ -204,6 +216,54 @@ function resetSpy() { for (const k of Object.keys(spy)) spy[k] = 0; }
     check(`2.9 noPaidModel=${JSON.stringify(wert)} ist NICHT strikt true -> Normalpfad (Eager laeuft)`,
       spy.eager === 1 && spy.lazy === 1 && r.noPaidModel === undefined);
   }
+
+  // Der bezahlte Einprofilpfad bindet ausschliesslich relevante neue Eingaben.
+  operatingContract = { profileId: TENANT };
+  rawItems = [{ ...rawItems[0], title: "Pflege: Bundesregierung plant Reform", content: "Ein Gesetzentwurf zur Pflege.", sourceName: "Testquelle" },
+    { id: "raw-unrelated", url: "https://example.invalid/other", title: "Fremdes Thema", sourceId: "s2" }];
+  resetSpy();
+  await scheduler.runSourceCrawl(TENANT);
+  check("3.1 Einprofilbetrieb versteht nur relevante Eingaben dieses Crawls",
+    eagerInput.length === 1 && eagerInput[0].id === "raw-1" && spy.lazy === 1);
+  check("3.2 Kostenbindung wird explizit an Eager weitergegeben",
+    eagerOptions.betriebskostenProfileId === TENANT);
+  check("3.3 Lazy bekommt ausschliesslich das freigegebene Profil",
+    lazyProfiles.length === 1 && lazyProfiles[0].id === TENANT);
+  resetSpy();
+  await scheduler.runSourceCrawl(TENANT, { noPaidModel: true });
+  check("3.4 No-Paid bleibt auch im Einprofilbetrieb wirksam", spy.eager === 0 && spy.lazy === 0 && spy.crawl === 1);
+  resetSpy();
+  let denied = false;
+  try { await scheduler.runSourceCrawl("mdb-not-authorized"); } catch (error) {
+    denied = error.message === "betriebskosten-profil-nicht-freigegeben";
+  }
+  check("3.5 Fremdes Profil scheitert vor Quellenabruf und Modellarbeit",
+    denied && spy.crawl === 0 && spy.eager === 0 && spy.lazy === 0);
+
+  // Ein No-Paid-Vorlauf hat die Rohartikel bereits gespeichert. Der erneute
+  // Crawl beobachtet sie weiterhin; die Roh-Dedup darf Verstehen nicht sperren.
+  rawAlreadySaved = true;
+  resetSpy();
+  const repeated = await scheduler.runSourceCrawl(TENANT);
+  check("4.1 Bereits gespeicherter aktueller Artikel erreicht gebundenes Understanding",
+    repeated.savedItemsList.length === 0 && spy.saveRaw === 1 && spy.eager === 1
+    && eagerInput.length === 1 && eagerInput[0].id === "raw-1"
+    && eagerOptions.betriebskostenProfileId === TENANT);
+  check("4.2 Wiederbeobachtung erhaelt URL und Quellenbezug ohne fremde Eingaben",
+    eagerInput[0].url === rawItems[0].url && eagerInput[0].sourceId === rawItems[0].sourceId
+    && eagerInput[0].title === rawItems[0].title && spy.lazy === 1
+    && lazyProfiles.length === 1 && lazyProfiles[0].id === TENANT);
+  resetSpy();
+  const repeatedNoPaid = await scheduler.runSourceCrawl(TENANT, { noPaidModel: true });
+  check("4.3 Wiederbeobachtung mit No-Paid startet weiterhin keine Modellphase",
+    spy.lazy === 0 && spy.eager === 0 && spy.crawl === 1
+    && repeatedNoPaid.savedItemsList.length === 0 && repeatedNoPaid.paidModelCalls === 0);
+  operatingContract = null;
+  resetSpy();
+  await scheduler.runSourceCrawl(TENANT);
+  check("4.4 Ohne Betriebsvertrag bleibt Understanding auf neue Rohartikel begrenzt",
+    spy.eager === 1 && eagerInput.length === 0 && spy.lazy === 0
+    && eagerOptions.betriebskostenProfileId === undefined);
 
   console.log(`\nErgebnis: ${pass} PASS, ${fail} FAIL`);
   process.exit(fail === 0 ? 0 : 1);
