@@ -56,6 +56,42 @@ check("Assets zaehlen als UI und nicht als unbekannter Volltest", () => {
   assert(p.bereiche.includes("ui"));
 });
 
+check("Verwaltungsintegration bekommt Admin-Pruefung statt unnoetiger Vollsuite", () => {
+  // Reale Dateiliste der vorherigen langsamen Verwaltungs-PR.
+  const p = P.plan(["docs/CURRENT_STATE.md", "scripts/original-verwaltung-paket.js",
+    "scripts/original-verwaltung-test.js", "verwaltung/original-adapter.mjs"]);
+  assert.equal(p.mode, "targeted");
+  assert.equal(p.standard, false);
+  assert.equal(p.database, false);
+  assert.equal(p.core, true);
+  assert.equal(p.area, true);
+  assert.equal(p.browser, false);
+  assert.deepEqual(p.bereiche, ["admin"]);
+  assert.deepEqual(p.unbekannt, []);
+});
+
+check("Verwaltungsdateien bleiben relevant, Gestaltung erhaelt Browserpruefung", () => {
+  const adapter = P.plan(["verwaltung/original-adapter.mjs"]);
+  assert.equal(adapter.mode, "targeted");
+  assert.equal(adapter.core, true);
+  assert.equal(adapter.area, true);
+  assert.equal(adapter.database, false);
+  const markup = P.plan(["verwaltung/index.html", "verwaltung/styles.css"]);
+  assert.equal(markup.standard, false);
+  assert.equal(markup.database, false);
+  assert.equal(markup.browser, true);
+  // Die vorhandene UI-Zuordnung erkennt Stylesheet und index.html ebenfalls.
+  assert.deepEqual(markup.bereiche, ["admin", "ui"]);
+});
+
+check("Unbekannte Skripte behalten die konservative Vollpruefung", () => {
+  const p = P.plan(["scripts/unbekannte-verwaltungsschnittstelle.js"]);
+  assert.equal(p.mode, "full");
+  assert.equal(p.standard, true);
+  assert.equal(p.database, true);
+  assert.deepEqual(p.unbekannt, ["scripts/unbekannte-verwaltungsschnittstelle.js"]);
+});
+
 check("500er Schutzbereich bleibt voll abgesichert", () => {
   const p = P.plan(["lib/helmut/testnachweis.js"]);
   assert.equal(p.mode, "full");

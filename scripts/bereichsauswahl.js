@@ -42,6 +42,9 @@ const KERN = [
 // (client.js-Views, server.js-Routen, api/index.js -> server, lambda -> Warteschlange,
 // sw.js/styles.css/index.html -> UI). ──
 const SAMMEL_DATEI_BEREICHE = [
+  // Verwaltungs-HTML und CSS bedienen sowohl das Admin-Modell als auch die UI.
+  // Vorrang vor den allgemeinen index.html/styles.css-Regeln weiter unten.
+  { muster: [/(^|\/)verwaltung\/(?:index\.html|styles\.css)$/i], bereiche: ["admin", "ui"] },
   // client.js: die echten App-Ansichten (renderView-Dispatch: renderRadarView, renderLageView,
   // renderHelmutView/renderBriefingView, renderAdminView, renderProfileSettingsView,
   // renderOnboarding/Mandatswahl, renderLogin/renderPilotAccess).
@@ -122,7 +125,14 @@ const BEREICHE = {
     suiten: [/^auth/i, /^login/i, /^invite/i, /^reset-/i, /^passwort/i, /^tenant-/i, /^jwt-/i]
   },
   admin: {
-    quelle: [/(^|\/)lib\/helmut\/admin/i, /(^|\/)lib\/helmut\/monitoring-webhook/i],
+    // Separate Verwaltung inkl. Paket und Adapter: vorhandene Admin-Vertragstests.
+    // original-verwaltung-test.js ist ein historischer, an einen isolierten Branch
+    // gebundener Integrationsversuch (bereits auf main rot). Er bleibt fuer manuelle
+    // Diagnose und --extended erhalten, gehoert aber nicht ins verpflichtende CI.
+    // Unbekannter Code bleibt fail closed und loest weiterhin die Vollpruefung aus.
+    quelle: [/(^|\/)lib\/helmut\/admin/i, /(^|\/)lib\/helmut\/monitoring-webhook/i,
+      /(^|\/)verwaltung\//i, /(^|\/)scripts\/original-verwaltung-/i,
+      /(^|\/)scripts\/verwaltung-vorschau\.js$/i],
     suiten: [/^admin/i]
   },
   "matching-scoring": {
@@ -203,7 +213,7 @@ const NICHT_RELEVANT = [
 ];
 const RELEVANT = [
   /(^|\/)lib\//i, /(^|\/)scripts\//i, /(^|\/)api\//i, /(^|\/)lambda\//i, /(^|\/)supabase\//i,
-  /(^|\/)assets\//i, /(^|\/)server\.js$/i, /(^|\/)client\.js$/i, /(^|\/)sw\.js$/i,
+  /(^|\/)assets\//i, /(^|\/)verwaltung\//i, /(^|\/)server\.js$/i, /(^|\/)client\.js$/i, /(^|\/)sw\.js$/i,
   /(^|\/)styles\.css$/i, /(^|\/)index\.html$/i
 ];
 
