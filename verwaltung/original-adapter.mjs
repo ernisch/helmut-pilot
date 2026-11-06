@@ -1,5 +1,6 @@
 import { number, list, todayCost, dateTime, parliamentLabel, processLabel, runState, profileInventoryNotice } from "./model.mjs";
 import { emptyDailyLedger } from "./original-daily-ledger.mjs";
+import { ergebnisStand, applyErgebnisse } from "./original-ergebnisse.mjs";
 
 // Projektion vorhandener Antworten auf das UNVERÄNDERTE Claude-Komponentenmodell.
 // Keine Erzeugung, Datenhaltung, Qualitätsentscheidung oder Quellenabfrage.
@@ -63,6 +64,8 @@ export function originalSnapshot(payloads = {}, errors = {}) {
     bilanz: originalAreas.map(([area, label]) => ({ area, label, cells: Object.fromEntries(originalBuckets.map(([key]) => [key, null])) })),
     costs: { today, month: number(budget?.monat?.estimatedCostUsd), profileCost: null, shared: null, avg: null, median: null, expensive: [], dayLimit: null, monthLimit: null, dayShare: null, monthShare: null },
     health: { label: inventoryNotice ? "Profilbestand nicht bestätigt" : "Ergebnisstand offen", tone: "neutral", text: inventoryNotice || "Die Verwaltung zeigt vorhandene Daten. Eine vollständige Qualitätsbilanz liegt nicht vor." },
+    // Ohne bestätigten Profilbestand keine Ergebnisbehauptung (gleiche Grenze wie die Profilzahlen).
+    ergebnisse: inventoryNotice ? null : ergebnisStand(payloads.ergebnisse),
     payloads, errors, cost, inventoryNotice
   };
 }
@@ -211,5 +214,6 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
     color: "var(--rail-muted)", bg: "transparent", weight: 400,
     badge: "", badgeColor: "var(--rail-muted)", dot: "transparent"
   });
+  applyErgebnisse(component, v, D, p);
   return v;
 }

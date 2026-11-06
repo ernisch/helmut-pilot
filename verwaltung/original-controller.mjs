@@ -45,7 +45,7 @@ export function attachOriginalBackend(Original, { readerFactory = createAdminRea
       const epoch = ++this._epoch;
       this._reader.clear(); this._detail = null; this._detailError = false;
       this._phase = "loading"; this._snapshot = originalSnapshot(); this.setState({ loading: true, dlg: null, toast: null });
-      const keys = ["overview", "budget", "customers", "sources", "runs"];
+      const keys = ["overview", "budget", "customers", "sources", "runs", "ergebnisse"];
       const results = await Promise.allSettled(keys.map(key => this._reader.read(key)));
       if (this._closed || epoch !== this._epoch) return;
       const denied = results.find(r => r.status === "rejected" && [401, 403].includes(r.reason?.status));
@@ -58,6 +58,12 @@ export function attachOriginalBackend(Original, { readerFactory = createAdminRea
         if (result.status === "fulfilled") payloads[keys[index]] = result.value;
         else errors[keys[index]] = result.reason?.status || 0;
       });
+      // Weitere Ergebnisseiten (je 500 Profile, höchstens 2000). Ein Lesefehler macht den Stand unvollständig.
+      if (payloads.ergebnisse?.verfuegbar === true && payloads.ergebnisse.seiten > 1) {
+        const mehr = await Promise.allSettled([2, 3, 4].filter(n => n <= payloads.ergebnisse.seiten).map(n => this._reader.read("ergebnisse", n)));
+        if (this._closed || epoch !== this._epoch) return;
+        payloads.ergebnisse = [payloads.ergebnisse, ...mehr.filter(r => r.status === "fulfilled").map(r => r.value)];
+      }
       const snapshot = originalSnapshot(payloads, errors);
       snapshot.dailyLedger = await buildDailyLedger({ overview: payloads.overview, runs: payloads.runs }).catch(() => null);
       if (this._closed || epoch !== this._epoch) return;

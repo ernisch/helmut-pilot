@@ -25,7 +25,7 @@ function originalAdministrationPackage() {
   }
   const read = name => fs.readFileSync(path.join(root, name), "utf8");
   const withoutImports = source => source.replace(/^import\s[^;]+;\s*/gm, "");
-  const bundle = ["model.mjs", "api.mjs", "original-actions.mjs", "original-daily-ledger.mjs", "original-adapter.mjs", "original-controller.mjs", "original-customer-form.mjs"]
+  const bundle = ["model.mjs", "api.mjs", "original-actions.mjs", "original-daily-ledger.mjs", "original-ergebnisse.mjs", "original-adapter.mjs", "original-controller.mjs", "original-customer-form.mjs"]
     .map(name => withoutImports(read(name))).join("\n").replace(/^export\s+(?=(?:const|(?:async\s+)?function|class)\b)/gm, "");
   const remap = Object.fromEntries(runtimeAssets.map(asset => [asset.original, `./${asset.path}`]));
   // Original-Runtime erlaubt bereits explizite lokale Ressourcen. Keine CDN-Fallbacks.
@@ -41,6 +41,10 @@ function originalAdministrationPackage() {
     ['<span>{{ n.label }}</span>', '<span style="white-space:nowrap">{{ n.label }}</span>', 2],
     // Mobile Profilkarte: Kostenwert ist ohne Spaltenkopf nur mit Bezeichnung verständlich.
     ['<span>{{ r.cost }}</span>', '<span>Kosten {{ r.cost }}</span>', 1],
+    // Drei Positionen je Profil: Briefing · Zustellung · Lage. Radar nur im Profildetail.
+    ['<span role="columnheader">Briefing</span><span role="columnheader">Lage</span><span role="columnheader">Radar</span>', '<span role="columnheader">Briefing</span><span role="columnheader">Zustellung</span><span role="columnheader">Lage</span>', 1],
+    ['Lage {{ r.l.low }}', 'Zustellung {{ r.l.low }}', 1],
+    ['Radar {{ r.rd.low }}', 'Lage {{ r.rd.low }}', 1],
     // Leerzustände statt leerer Flächen.
     ['{{ c.last }}</span></a></sc-for></div>', '{{ c.last }}</span></a></sc-for><sc-if value="{{ custEmpty }}" hint-placeholder-val="{{ false }}"><p style="padding:22px 0;border-top:1px solid var(--line);font-size:15px;color:var(--text)">Noch keine Kunden angelegt.</p></sc-if></div>', 1],
     ['{{ r.tech }}</span></div></sc-for></div>', '{{ r.tech }}</span></div></sc-for><sc-if value="{{ runsEmpty }}" hint-placeholder-val="{{ false }}"><p style="padding:18px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)">Keine Laufbelege gelesen.</p></sc-if></div>', 1]
