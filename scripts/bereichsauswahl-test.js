@@ -107,9 +107,10 @@ function main() {
   check("B7 Verwaltungsintegration loest nur Admin-Regression aus",
     JSON.stringify(bVerwaltung.bereiche) === JSON.stringify(["admin"])
       && !bVerwaltung.konservativ && bVerwaltung.unbekannt.length === 0
-      && bVerwaltung.suiten.includes("original-verwaltung-test.js")
-      && bVerwaltung.suiten.some(f => /^admin/.test(f))
-      && bVerwaltung.suiten.every(f => /^admin|^original-verwaltung-test\.js$/.test(f)),
+      && bVerwaltung.suiten.includes("admin-bypass-account-mode-test.js")
+      && bVerwaltung.suiten.includes("admin-neue-routen-test.js")
+      && !bVerwaltung.suiten.includes("original-verwaltung-test.js")
+      && bVerwaltung.suiten.every(f => /^admin/.test(f)),
     `${bVerwaltung.suiten.length} Admin-Suiten`);
   const bVerwaltungsdatei = waehle(["verwaltung/index.html", "verwaltung/styles.css"]);
   check("B8 Eigene Verwaltungsdateien sind relevant und kein unerkannter Code",
@@ -118,7 +119,9 @@ function main() {
       && !A.istRelevant("verwaltung/README.md")
       && JSON.stringify(bVerwaltungsdatei.bereiche) === JSON.stringify(["admin", "ui"])
       && !bVerwaltungsdatei.konservativ
-      && bVerwaltungsdatei.suiten.includes("original-verwaltung-test.js"), "");
+      && bVerwaltungsdatei.suiten.includes("admin-bypass-account-mode-test.js")
+      && bVerwaltungsdatei.suiten.some(f => /^admin/.test(f))
+      && !bVerwaltungsdatei.suiten.includes("original-verwaltung-test.js"), "");
 
   // ── C · Mehrere Bereiche = Vereinigung, keine Doppel ─────────────────────────
   console.log("\n== C · Mehrere Bereiche und Doppelvermeidung ==");
