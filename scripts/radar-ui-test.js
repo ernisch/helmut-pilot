@@ -126,7 +126,7 @@ dateApi.setBriefing({ engine: "v3", currentRadarState: { ...state,
   mentions: [{ ...state.mentions[0], publishedAt: "2026-09-25T00:00:00Z" }] } });
 const dateHtml = dateApi.render();
 check("Ganzer Radar zeigt Datum und heutigem Quellenstand ohne02:00",
-  dateHtml.includes(dateLabel) && dateHtml.includes("Aktualisiert heute")
+  dateHtml.includes(dateLabel) && dateHtml.includes("Neueste angezeigte Quelle: " + dateLabel)
     && !dateHtml.includes("02:00") && dateHtml.includes("https://t.de/m1"));
 
 // 2) Über dich zeigt die echte Erwähnung.
@@ -225,18 +225,18 @@ check("Keine Daten: keine-vorgaenge -> 'Noch keine Datengrundlage' (Datenlücke,
 
 api.setBriefing({ engine: "v3", currentRadarState: emptyStateWith("keine-treffer") });
 const htmlQuiet = api.render();
-check("Ruhig: keine-treffer bleibt der beruhigende Leertext (echter ruhiger Tag, keine Störung)",
-  htmlQuiet.includes("keine neuen relevanten Signale")
-  && !htmlQuiet.includes("Störung") && !/data-empty-kind/.test(htmlQuiet));
+check("Leere Trefferliste ohne geladene Quellen bleibt unbekannt statt ruhiger Tag",
+  htmlQuiet.includes("Radarprüfung nicht belegt") && htmlQuiet.includes('data-empty-kind="unknown"')
+  && !htmlQuiet.includes("keine neuen relevanten Signale"));
 
-// Sprint-5-emptyState (Scoring-Flag) behaelt Vorrang vor der Störungslogik (additiv).
+// Auch ein Scoring Leerzustand darf einen bestaetigten technischen Fehler nicht verdecken.
 const esState = emptyStateWith("store-error");
 esState.emptyState = { kind: "gap", headline: "Scoring-Headline", detail: "Scoring-Detail" };
 api.setBriefing({ engine: "v3", currentRadarState: esState });
 const htmlEs = api.render();
-check("emptyState (Flag an) hat Vorrang vor der Störungslogik (unverändertes Sprint-5-Verhalten)",
-  htmlEs.includes("Scoring-Headline") && htmlEs.includes('data-empty-kind="gap"')
-  && !htmlEs.includes("Radar derzeit nicht ladbar"));
+check("Technischer Fehler hat Vorrang vor Scoring Leertext",
+  htmlEs.includes("Radar derzeit nicht ladbar") && htmlEs.includes('data-empty-kind="stoerung"')
+  && !htmlEs.includes("Scoring-Headline"));
 
 // 12) Fehlgeschlagener Refresh: ruhige Hinweiszeile mit letztem gutem Stand (kein Alarm).
 api.setBriefing({ engine: "v3", currentRadarState: state });
@@ -244,10 +244,50 @@ api.setRefreshFailed(Date.parse("2026-07-11T10:00:00Z"));
 const htmlFail = api.render();
 check("Refresh-Fehlschlag -> sichtbare, ruhige Hinweiszeile (Anzeige bleibt letzter Stand)",
   htmlFail.includes("radar2-refresh-note") && htmlFail.includes("Aktualisierung fehlgeschlagen"));
-check("Refresh-Hinweis nennt den Zeitstempel des letzten erfolgreichen Stands",
-  /Anzeige zeigt den letzten Stand \([^)]+\)\./.test(htmlFail));
+check("Refresh-Hinweis benennt das Quelldatum statt einer erfolgreichen Pruefung",
+  htmlFail.includes("vorhandene Inhalte bleiben sichtbar") && htmlFail.includes("Neueste angezeigte Quelle:"));
 api.setRefreshFailed(0);
-check("Ohne Fehlschlag erscheint KEINE Hinweiszeile", !api.render().includes("radar2-refresh-note"));
+check("Ohne Fehlschlag erscheint kein Refresh Fehlerhinweis", !api.render().includes("Aktualisierung fehlgeschlagen"));
+
+// Technische Metadaten duerfen durch die serverseitige Anzeigeauswahl nicht
+// verloren gehen; Readerzeit ist kein Quellenpruefbeleg.
+const blankDisplay = { status: "empty", lastUpdated: null, mentions: [], dynamics: [], articles: [],
+  environment: { party: [], constituency: [], committees: [] },
+  summary: { line1: "In dieser Radaransicht werden derzeit keine zugeordneten Signale angezeigt." } };
+api.setBriefing({ currentRadarState: { ...state, anzeige: blankDisplay } });
+const displayEmpty = api.render();
+check("Anzeige ohne Signale behaelt vorhandene Quellengrundlage",
+  displayEmpty.includes('data-empty-kind="quiet"') && displayEmpty.includes("Keine zugeordneten Signale in dieser Ansicht")
+  && !displayEmpty.includes("Radarprüfung nicht belegt"));
+check("Leeransicht behauptet keine vollstaendige Pruefung oder Abwesenheit von Erwaehnungen",
+  displayEmpty.includes("Das ist keine Bestätigung, dass es keine Erwähnungen gibt.")
+  && displayEmpty.includes("Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen."));
+check("Ansicht nennt Erstellungszeit getrennt vom Datum angezeigter Quellen",
+  displayEmpty.includes("Ansicht erstellt:") && displayEmpty.includes("11. Juli 2026")
+  && displayEmpty.includes("Kein Quellendatum für diese Ansicht")
+  && !displayEmpty.includes("Neueste angezeigte Quelle:"));
+api.setBriefing({ currentRadarState: { ...state, available: false,
+  anzeige: { ...blankDisplay, status: "fresh", lastUpdated: state.lastUpdated, mentions: state.mentions } } });
+const failedDisplay = api.render();
+check("Technischer Ausfall bleibt auch bei gefuellter Anzeige sichtbar",
+  failedDisplay.includes("data-radar-read-error") && failedDisplay.includes("Radar derzeit nicht ladbar")
+  && failedDisplay.includes("Mustermann fordert Reform") && !failedDisplay.includes("radar2-status--fresh"));
+api.setBriefing({ currentRadarState: { ...emptyStateWith(null), anzeige: blankDisplay } });
+check("Unbestaetigte Quellen bleiben trotz generierter Anzeige unbekannt",
+  api.render().includes('data-empty-kind="unknown"') && api.render().includes("keine geladene Quellengrundlage bestätigt"));
+api.setBriefing({ currentRadarState: null });
+check("Fehlender Radarvertrag ist keine Entwarnung",
+  api.render().includes("Radarprüfung nicht belegt") && !api.render().includes("Heute gibt es keine neuen relevanten Signale"));
+api.setBriefing({ currentRadarState: { ...emptyStateWith(null), generatedAt: "kein-datum" } });
+check("Ungueltige Erstellungszeit wird nicht angezeigt",
+  !api.render().includes("Ansicht erstellt:") && !api.render().includes("Invalid Date"));
+const confirmedEmpty = emptyStateWith("keine-treffer");
+confirmedEmpty.quality.sourcesLoaded = true;
+api.setBriefing({ currentRadarState: confirmedEmpty });
+check("Bestaetigte leere Datengrundlage hat eigenen Zustand ohne globale Entwarnung",
+  api.render().includes('data-empty-kind="quiet"') && api.render().includes("Keine zugeordneten Signale in dieser Ansicht")
+  && !api.render().includes("Heute gibt es keine neuen relevanten Signale"));
 
 console.log(`\n${passed}/${passed + failed} Radar-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
+

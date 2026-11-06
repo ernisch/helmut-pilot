@@ -5,6 +5,26 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
+## UX Folgeschritte 3, 4 und 6 (06.11.2026, vorbereitet)
+
+Auf `codex/ux-navigation-dates-radar-20261106`, getrennte Commits nach
+Desktop PR1092: mobiles Browser Zurueck/Vorwaerts samt Listenposition,
+Ursprungsbriefing und privatem Mandatskontext; getrennte sichtbare Quellenzeit,
+gespeicherte Briefingerstellung und Vorgangsanlage; Radar behaelt technische
+Herkunft aus dem aeusseren Vertrag trotz gefilterter Anzeige.
+Ohne belegte Quellengrundlage keine Entwarnung. Ansichtserstellung ist keine
+Quellenpruefung; ein nicht gelieferter Pruefzeitraum wird nicht erfunden.
+Lokale Syntax, gezielte History VM, Datums VM und40 Radar Assertions bestanden.
+Unabhaengiges lesendes Review ohne verbleibenden Blocker. Echte Back/Forward,
+Querverweis, Kontextverlust und Zeitlabels im vorhandenen Browser Smoke ergaenzt;
+integrierte Pflicht CI noch offen. Kein Merge/Production Rollout.
+Naechster Schritt: Pflicht CI des integrierten Kopfes abnehmen.
+Schritt5 (Quellenauszuege) separat: NDR Rohdokument hat summary=null;
+Suchweg ministry ist kein Artikeltext. Vorhandener Extraktor funktioniert
+gegen Originalmetadaten; Anschluss neuer leerer Suchwegartikel ist in Arbeit.
+Keine Alt-KO durch Datenfuellen freischalten, keine Flagaktivierung/Modellcalls.
+Buerobereich bleibt zuletzt und ist nicht Bestandteil dieses Auftrags.
+
 ## Desktop Lage: sichtbares Detailpanel (06.11.2026, vorbereitet)
 
 Betreiber hat das Mockup fuer das angeheftete rechte Detail bestaetigt.

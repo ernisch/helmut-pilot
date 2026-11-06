@@ -8144,7 +8144,15 @@ function renderRadarView() {
 }
 
 function renderRadarInner(state) {
-  state = state && state.anzeige ? state.anzeige : state;
+  // Anzeige filtert die Inhalte, nicht die technische Herkunft des Lesevertrags.
+  // Sonst gingen Quellenladefehler und die Erstellungszeit hier verloren.
+  state = state && state.anzeige ? { ...state, ...state.anzeige,
+    generatedAt: state.generatedAt,
+    available: state.available ?? state.anzeige.available,
+    status: state.status === "error" ? state.status : state.anzeige.status,
+    quality: state.quality || state.anzeige.quality,
+    emptyState: state.emptyState || state.anzeige.emptyState
+  } : state;
   const body = (!state || !radarStateHasContent(state))
     ? renderRadarEmpty(state)
     : `
@@ -8168,20 +8176,24 @@ function radarStateHasContent(state) {
 
 // --- Kopf -------------------------------------------------------------------
 function renderRadarHeader(state) {
-  const status = (state && state.status) || "empty";
-  const fresh = status === "fresh";
   const updated = state && state.lastUpdated;
-  // Quellenpflicht-Sprint: lastUpdated ist nur noch das juengste BELEGTE
-  // Veroeffentlichungsdatum der angezeigten Quellen. Gibt es Inhalte, aber kein
-  // belegtes Datum, sagt der Kopf das ehrlich — nicht "Noch keine Radar-Daten".
-  const label = !updated
-    ? (previewMode ? "Vorschau" : (radarStateHasContent(state) ? "Ohne belegtes Quellendatum" : "Noch keine Radar-Daten"))
-    : (fresh ? `Aktualisiert ${radarUpdatedLabel(updated)}` : `Letzter Stand: ${radarUpdatedLabel(updated)}`);
+  const sourceDate = radarTime(updated);
+  const disruption = radarDisruption(state);
+  const fresh = Boolean(sourceDate && radarIsToday(new Date(updated)) && !disruption);
+  // lastUpdated belegt das Publikationsdatum einer angezeigten Quelle,
+  // generatedAt nur die Erstellung dieser Ansicht, keine Quellenpruefung.
+  const label = sourceDate ? `Neueste angezeigte Quelle: ${sourceDate}`
+    : (previewMode ? "Vorschau" : (radarStateHasContent(state) ? "Ohne belegtes Quellendatum" : "Kein Quellendatum für diese Ansicht"));
+  const created = state && state.generatedAt && Number.isFinite(Date.parse(state.generatedAt))
+    ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(state.generatedAt)) : "";
+  const provenance = `${created ? `Ansicht erstellt: ${created}. ` : ""}Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen.`;
+  const disruptionNote = disruption && radarStateHasContent(state)
+    ? `<p class="radar2-refresh-note" data-radar-read-error>${escapeHtml(disruption.title)}. ${escapeHtml(disruption.sub)} Vorhandene Inhalte bleiben sichtbar.</p>` : "";
   // Stoerungswahrheit: ein fehlgeschlagener Refresh bleibt nicht mehr stumm —
   // ruhige Hinweiszeile mit dem Zeitstempel des letzten erfolgreichen Stands
   // (kein Alarm-Design, die Anzeige selbst bleibt der letzte gute Stand).
   const failNote = radarRefreshFailedAt && !radarRefreshing
-    ? `<p class="radar2-refresh-note">Aktualisierung fehlgeschlagen — Anzeige zeigt den letzten Stand${updated ? ` (${escapeHtml(radarUpdatedLabel(updated))})` : ""}.</p>`
+    ? `<p class="radar2-refresh-note">Aktualisierung fehlgeschlagen — vorhandene Inhalte bleiben sichtbar${sourceDate ? `. Neueste angezeigte Quelle: ${escapeHtml(sourceDate)}` : ""}.</p>`
     : "";
   return `
     <header class="radar2-header">
@@ -8192,6 +8204,8 @@ function renderRadarHeader(state) {
         </button>
       </div>
       ${failNote}
+      ${disruptionNote}
+      <p class="radar2-refresh-note" data-radar-provenance>${escapeHtml(provenance)}</p>
       <div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
         <span class="radar2-status-dot" aria-hidden="true"></span>
         <span>${escapeHtml(label)}</span>
@@ -8414,7 +8428,7 @@ function radarAdditionalContext(item) {
 // echte ruhige Tag.
 function radarDisruption(state) {
   const reason = String((state && state.quality && state.quality.reason) || "");
-  if (reason === "store-error" || reason === "v3-store-disabled") {
+  if (reason === "store-error" || reason === "v3-store-disabled" || (reason !== "budget" && (state?.available === false || state?.status === "error" || state?.quality?.status === "error"))) {
     return {
       kind: "stoerung",
       title: "Radar derzeit nicht ladbar",
@@ -8435,32 +8449,32 @@ function radarDisruption(state) {
     return {
       kind: "datenluecke",
       title: "Noch keine Datengrundlage",
-      sub: "Die Datenbasis liefert gerade keine ausgewerteten Vorgänge — vermutlich eine Datenlücke, kein ruhiger Nachrichtentag."
+      sub: "Die Datenbasis liefert keine ausgewerteten Vorgänge. Daraus folgt nicht, dass es keine Erwähnungen gibt."
     };
   }
   return null;
 }
 
 function renderRadarEmpty(state) {
-  // Sprint 5 (additiv): unterscheidbarer Radar-Leerzustand (gap/stale/quiet). Der
-  // quiet-Fall (kein-umfeldsignal) beruhigt, gap/stale warnen vor Datenausfall/Frische.
   const es = state && state.emptyState && state.emptyState.kind ? state.emptyState : null;
-  // Stoerungswahrheit: expliziter Ausfall-Grund schlaegt den beruhigenden Leertext
-  // (ohne emptyState — Scoring-Flag in Produktion aus — war das bisher unsichtbar).
-  const disruption = es ? null : radarDisruption(state);
-  const note = es && es.detail ? es.detail
-    : disruption ? disruption.sub
-    : (previewMode
-      ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
-      : "Hier erscheinen neue persönliche Erwähnungen und belegte Veränderungen der Berichterstattung. Ein bloßer Themenbezug reicht nicht; der Sachstand steht in der Lage.");
-  const summaryState = es && es.headline
-    ? { summary: { line1: es.headline, line2: "" } }
-    : disruption ? { summary: { line1: disruption.title, line2: "" } }
-    : (state && state.summary ? state : { summary: { line1: "Heute gibt es keine neuen relevanten Signale in deinem politischen Umfeld.", line2: "" } });
-  const emptyKind = es ? es.kind : (disruption ? disruption.kind : "");
+  // Technischer Fehler hat Vorrang vor einer leeren, ggf. alten Anzeige.
+  const disruption = radarDisruption(state);
+  const sourcesConfirmed = state?.quality?.sourcesLoaded === true;
+  const explicitGap = es && (es.kind === "gap" || es.kind === "stale");
+  const title = disruption ? disruption.title
+    : explicitGap ? (es.headline || "Radarstand nicht aktuell")
+    : sourcesConfirmed ? "Keine zugeordneten Signale in dieser Ansicht"
+    : "Radarprüfung nicht belegt";
+  const note = disruption ? disruption.sub
+    : explicitGap ? (es.detail || "Eine aktuelle Datengrundlage ist nicht bestätigt.")
+    : sourcesConfirmed
+      ? "Die vorhandenen Quellendaten liefern für diese Ansicht keine belegten Signale. Das ist keine Bestätigung, dass es keine Erwähnungen gibt."
+      : previewMode ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
+      : "Für diese Ansicht ist keine geladene Quellengrundlage bestätigt. Die leere Anzeige belegt nicht, dass es keine Erwähnungen gibt.";
+  const emptyKind = disruption ? disruption.kind : explicitGap ? es.kind : sourcesConfirmed ? "quiet" : "unknown";
   return `
-    ${renderRadarSummary(summaryState)}
-    <section class="radar2-section"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
+    ${renderRadarSummary({ summary: { line1: title } })}
+    <section class="radar2-section" data-empty-kind="${escapeAttribute(emptyKind)}">
       <div class="radar2-empty">${escapeHtml(note)}</div>
     </section>
   `;
