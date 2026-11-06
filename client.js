@@ -6789,7 +6789,7 @@ function renderHstandQuietOverview(state) {
       if (!id || !title || !text || !sources.length
         || lageField(v.displayCategory) === "Quellenhinweis" || placeholders.has(text)) return "";
       const links = sources.map(s => `<a href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.host || "Quelle")} · ${escapeHtml(hstandWhen(s.publishedAt) || "Quelldatum nicht belegt")}</a>`).join("");
-      return `<article class="hstand-overview-item" data-briefing-existing-item>
+      return `<article class="hstand-overview-item is-tappable" data-briefing-existing-item data-lage-verweis data-vorgang="${escapeAttribute(id)}" role="button" tabindex="0">
         <h3>${escapeHtml(title)}</h3>
         <p>${escapeHtml(text)}</p>
         <div class="hstand-overview-sources" aria-label="Quellen und Veröffentlichungsdaten">${links}</div>
@@ -6834,7 +6834,8 @@ function renderHstandQuietOverview(state) {
       const when = hstandWhen(s.publishedAt);
       return `<a href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.host || "Quelle")} · ${escapeHtml(when || "Quelldatum nicht belegt")}</a>`;
     }).join("");
-    return `<article class="hstand-overview-item" data-briefing-paragraph>
+    const tap = ids.length === 1 ? ` data-lage-verweis data-vorgang="${escapeAttribute(ids[0])}" role="button" tabindex="0"` : "";
+    return `<article class="hstand-overview-item${ids.length === 1 ? " is-tappable" : ""}" data-briefing-paragraph${tap}>
       <p>${escapeHtml(p.text)}</p>
       <div class="hstand-overview-sources" aria-label="Quellen und Veröffentlichungsdaten">${links}</div>
       ${ids.map(id => `<button class="secondary-button compact-button" type="button" data-lage-verweis data-vorgang="${escapeAttribute(id)}">Einordnung in der Lage öffnen</button>`).join("")}
@@ -10122,7 +10123,16 @@ function bindActions() {
   bindDetailOpen(app);
 
   app.querySelectorAll("[data-vorgang]").forEach((button) => {
-    button.addEventListener("click", () => {
+    // Ganze Eintraege (role=button) sind antippbar; Links/Knoepfe darin behalten
+    // ihre eigene Aktion (Quelle oeffnet im neuen Tab, kein zusaetzlicher Sprung).
+    if (button.tagName !== "BUTTON") {
+      button.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); button.click(); }
+      });
+    }
+    button.addEventListener("click", (event) => {
+      const inner = event && event.target && event.target.closest ? event.target.closest("a, button") : null;
+      if (button.tagName !== "BUTTON" && inner && inner !== button) return;
       if (button.hasAttribute("data-lage-verweis")) {
         uiLageSelectedId = button.dataset.vorgang;
         uiLageDetailOpen = true;
