@@ -170,19 +170,20 @@ Reviews positiv. Main-CI42069590393 gruen, Kandidaten-Pflicht-CI noch offen.
 [Abnahme und konkrete Mergevoraussetzungen](betrieb/release-prep-20261105.md).
 Keine Productionfreigabe.
 
-## Designangleich und UI-Aufraeumen (05.11.2026)
+## Designangleich und UI-Aufraeumen (06.11.2026, erfolgreich abgeschlossen)
 
-PR #1055 (`claude/helmut-pilot-design-cccztl`): Darstellung nach freigegebenem
-Claude Design (Desktop/Mobil), Status-Pille, keine Goldtoene, Buero-Panels,
-dunkles Favicon wie Website, Startbild Wortmarke mit ruhigem Puls, Anmeldung im
-Design, Mitteilungen ueber sichtbarer Seite. Nur Darstellung; in `server.js`
-ausschliesslich Shell-Markup (Startbild, Favicon-Versionierung).
-Aufraeum-PR (`claude/helmut-pilot-cleanup-cccztl`): 108 nie aufgerufene
-Client-Funktionen, 768 CSS-Regeln ohne verwendete Klassen, `assets/helmut-mark.svg`
-entfernt; Zugangs-/Passwortseite im Design. Beleg: 134 Regressions-Screenshots
-vorher/nachher pixelgleich, Browser-Smoke 78/0. Lokale Altfehler unveraendert:
-`kalender-ics-test.js` (Modul `ical.js` fehlt lokal), `admin-nutzer-loeschen-test.js`
-(Farbannahme). Merge nach Betreiber-GO vom 05.11.2026 nur bei gruener Pflicht-CI.
+Nach Betreiber-GO bei gruener Pflicht-CI gemergt und live:
+[PR #1055](https://github.com/ernisch/helmut-pilot/pull/1055) (Merge `8649025`,
+Design nach freigegebenem Claude Design, Desktop/Mobil, alle Vollbild-Karten,
+dunkles Favicon, Startbild mit ruhigem Puls) und
+[PR #1058](https://github.com/ernisch/helmut-pilot/pull/1058) (Merge `00ecd5f`,
+108 nie aufgerufene Client-Funktionen und 768 CSS-Regeln ohne genutzte Klassen
+entfernt, Zugangs-/Passwort-/Rechtsseiten im Design). Production-Deployment
+`dpl_5Xs3rTFGmhuEUXWR1sBGmWmiEm8A` READY; `/api/release/public` ok/ready/storage
+true; keine Laufzeitfehler seit Deployment (06.11.2026, lesend geprueft).
+Nur Darstellung; `server.js` ausschliesslich HTML-Shell und Seiten-Styles.
+Lokale Altfehler unveraendert: `kalender-ics-test.js` (Modul `ical.js` fehlt
+lokal), `admin-nutzer-loeschen-test.js` (Farbannahme `#ff5967`).
 
 ## Genau ein naechster Schritt
 
