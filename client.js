@@ -9675,6 +9675,7 @@ function bindActions() {
   // Master/detail selection is purely local; both viewport sizes use the same data.
   app.querySelectorAll("[data-ui-lage-select]").forEach(button => {
     button.addEventListener("click", () => {
+      const listScroll = app.querySelector(".ui-page")?.scrollTop || 0;
       uiLageSelectedId = button.dataset.uiLageSelect;
       uiLageDetailOpen = true;
       render();
@@ -9683,6 +9684,8 @@ function bindActions() {
         app.querySelector(".ui-page")?.scrollTo({ top: 0 });
         app.querySelector(".ui-mobile-back")?.focus({ preventScroll: true });
       } else {
+        // Kein animierter Ruecklauf vom Seitenanfang beim DOM-Neuaufbau.
+        app.querySelector(".ui-page")?.scrollTo({ top: listScroll, behavior: "instant" });
         app.querySelector(".ui-lage-detail")?.scrollTo({ top: 0, behavior: "instant" });
         Array.from(app.querySelectorAll("[data-ui-lage-select]")).find(el => el.dataset.uiLageSelect === uiLageSelectedId)?.focus({ preventScroll: true });
       }

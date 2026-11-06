@@ -15,13 +15,19 @@ Panel ist auch per Tastatur scrollbar. Mobile Darstellung bleibt erhalten.
 Syntax lokal bestanden. Der vorhandene Browser Smoke erhaelt gezielte Faelle
 fuer tiefe Listenauswahl, getrenntes Scrollen, Quellenzugriff, Themenwechsel,
 Tastatur, kleines Desktopfenster/helles Theme sowie mobile Nichtwirkung.
-Lokaler Chromium fehlt; Browsernachweis und Pflicht CI fuer diesen Kopf offen.
+Erste Browserprobe auf87842f2:91 PASS,3 FAIL bei Listenscrollposition.
+Panel-Sichtbarkeit, eigenes Scrollen, Tastatur und mobiles Layout bestanden.
+Korrektur: Listenposition nach DOM-Neuaufbau ohne CSS Smooth Scroll setzen;
+Klickprobe nutzt den sichtbaren Kartenbereich statt automatischer Zentrierung
+einer hoeher als der Bildschirm gerenderten Testkarte. Syntax bestanden.
+Lokaler Chromium fehlt; neuer Browsernachweis und Pflicht CI offen.
 PR1091 hat beide Pflichtchecks bestanden, ist noch nicht gemergt.
 Kein Merge und kein Production Rollout. Naechster Schritt: Pflicht CI und
 Desktopverhalten abnehmen, dann konkrete Mergefreigabe. Rueckweg:
 Desktop CSS und lokale Detailbedienung zuruecknehmen; keine Datenmutation.
 Weitere freigegebene Schritte: mobiles Browser Zurueck (3), ehrliche
-Aktualitaetsangaben (4). Buerobereich zuletzt; Quellenluecken noch nicht beauftragt.
+Aktualitaetsangaben (4), Quellenluecken (5), belegter Radarstatus (6).
+Buerobereich zuletzt, noch nicht beauftragt.
 
 ## Mobile Lage kompakter (06.11.2026, vorbereitet)
 

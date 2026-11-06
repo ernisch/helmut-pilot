@@ -394,9 +394,12 @@ function check(name, cond, detail = "") {
         });
         check(`${label}: Detail passt vor dem Scrollen zwischen Kopf und Fuss`, await panelInside());
         const ninth = page.locator('[data-ui-lage-select="desktop-scroll-8"]');
-        await ninth.scrollIntoViewIfNeeded();
+        await ninth.evaluate(el => {
+          const page = document.querySelector('.ui-page');
+          page.scrollTo({ top: page.scrollTop + el.getBoundingClientRect().top - page.getBoundingClientRect().top - 100, behavior: 'instant' });
+        });
         const before = await page.locator('.ui-page').evaluate(el => el.scrollTop);
-        await ninth.click();
+        await ninth.click({ position: { x: 20, y: 24 } });
         check(`${label}: Auswahl weit unten erhaelt die Listenposition`,
           before > 500 && Math.abs(await page.locator('.ui-page').evaluate(el => el.scrollTop) - before) < 2);
         check(`${label}: ausgewahltes Desktopdetail bleibt sichtbar`, await panelInside()
@@ -410,9 +413,12 @@ function check(name, cond, detail = "") {
         check(`${label}: Originalquelle im gescrollten Panel erreichbar`,
           await detail.locator('.vsheet-src[href]').first().isVisible());
         const tenth = page.locator('[data-ui-lage-select="desktop-scroll-9"]');
-        await tenth.scrollIntoViewIfNeeded();
+        await tenth.evaluate(el => {
+          const page = document.querySelector('.ui-page');
+          page.scrollTo({ top: page.scrollTop + el.getBoundingClientRect().top - page.getBoundingClientRect().top - 100, behavior: 'instant' });
+        });
         const nextBefore = await page.locator('.ui-page').evaluate(el => el.scrollTop);
-        await tenth.click();
+        await tenth.click({ position: { x: 20, y: 24 } });
         check(`${label}: neues Thema beginnt oben und erhaelt Listenposition`,
           await detail.evaluate(el => el.scrollTop) === 0
             && Math.abs(await page.locator('.ui-page').evaluate(el => el.scrollTop) - nextBefore) < 2
