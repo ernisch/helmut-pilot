@@ -8767,15 +8767,6 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
 .ui-briefing-status .refresh-cooldown { font-size: 13px; }
 
 /* Der vorhandene Überblick bleibt auch ohne neue Tagespriorität lesbar. */
-.hstand-overview h2 { margin: 0 0 12px; font: 500 30px/1.2 var(--ui-serif); color: var(--ui-text); }
-.hstand-overview-meta { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ui-muted); }
-.hstand-overview-item { display: grid; gap: 12px; padding: 22px 0; border-bottom: 1px solid var(--ui-border); }
-.hstand-overview-item:last-child { padding-bottom: 0; border-bottom: 0; }
-.hstand-overview-item > h3 { margin: 0; font: 500 22px/1.3 var(--ui-serif); color: var(--ui-text); }
-.hstand-overview-item > p { margin: 0; max-width: 72ch; font: 400 18px/1.6 var(--ui-sans); color: var(--ui-text); }
-.hstand-overview-sources { display: flex; flex-wrap: wrap; gap: 4px 16px; }
-.hstand-overview-sources a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ui-muted); font-size: 14px; line-height: 1.5; text-decoration: underline; text-underline-offset: 3px; }
-.hstand-overview-item > button { justify-self: start; min-height: 44px; text-align: left; }
 .ui-page .buero-priority-hint { font-size: 14px; }
 .ui-page :is(.buero-priority-label,.buero-priority-value,.buero-priority-optional) { font-size: 14px; }
 .ui-page .buero-group-eyebrow { font: 500 12px/1.6 var(--ui-mono); }
@@ -9209,3 +9200,206 @@ body .loading-card > .primary-button:hover { background: var(--ui-solid-hover); 
 @media (max-width: 480px) { body .loading-card { padding: 36px 22px 28px; margin: 0 16px; } }
 body .shell:has(> .loading-card) { display: grid; place-items: center; min-height: 100dvh; padding: 24px 16px; box-sizing: border-box; background: radial-gradient(70% 40% at 50% 0, rgba(127,168,224,.07), transparent 70%), var(--ui-bg); }
 body .shell > .loading-card { margin: 0 auto; width: 100%; }
+
+/* Briefing-Aufbau nach Claude Design (06.11.2026): Hero mit Kurzfassung,
+   naechstem Schritt, Meta und „Ausfuehrlich lesen“; „Danach wichtig“ als
+   nummerierte Liste; drei ruhige Spalten. Nur Anordnung, gleiche Inhalte. */
+.hstand .ui-briefing-status { gap: 10px 16px; padding: 0 0 4px; }
+.hstand .ui-briefing-status .hstand-status { min-height: 28px; padding: 2px 10px; font-size: 12.5px; }
+.hstand .ui-briefing-status .text-button { flex-basis: 36px; width: 36px; min-width: 36px; height: 36px; min-height: 36px; font-size: 18px; }
+.ui-briefing-hero { grid-template-columns: minmax(0,1.2fr) minmax(300px,.8fr); align-items: stretch; }
+.ui-hero-main h2 { margin-top: 14px; }
+.ui-hero-sub { margin: 16px 0 0; max-width: 44ch; font-size: 19px; line-height: 1.45; color: var(--ui-muted); text-wrap: pretty; }
+.ui-hero-main .hstand-chiprow { margin-top: 16px; }
+.ui-hero-next { justify-content: space-between; gap: 24px; }
+.ui-hero-next .ui-arrow-action { align-items: flex-start; gap: 20px; margin: 0; min-height: 0; text-align: left; }
+.ui-hero-next .ui-arrow-action:disabled { opacity: 1; }
+.ui-hero-next .ui-arrow-action:disabled .ui-arrow-circle, .ui-hero-next .ui-arrow-action:disabled .ui-next-cta { opacity: .45; }
+.ui-next-text { display: grid; gap: 4px; min-width: 0; }
+.ui-next-label { font-size: 15px; color: var(--ui-accent); }
+.ui-next-step { font: 400 22px/1.3 var(--ui-serif); color: var(--ui-text); text-wrap: pretty; }
+.ui-next-cta { margin-top: 6px; font-size: 14px; color: var(--ui-accent); }
+.ui-hero-meta { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 0; font-size: 14px; color: var(--ui-dim); }
+.ui-hero-meta:empty { display: none; }
+.ui-hero-meta > span { display: inline-flex; align-items: center; gap: 8px; }
+.ui-hero-meta svg { width: 16px; height: 16px; flex: 0 0 16px; color: var(--ui-accent); }
+.ui-hero-details { grid-column: 1 / -1; margin-top: 4px; }
+.ui-hero-more { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 24px; border-radius: 24px; background: var(--ui-solid); color: var(--ui-on-solid); font-size: 16px; font-weight: 500; cursor: pointer; list-style: none; }
+.ui-hero-more::-webkit-details-marker { display: none; }
+.ui-hero-more::marker { content: ""; }
+.ui-hero-more:hover { background: var(--ui-solid-hover); }
+.ui-hero-more .ui-icon { width: 18px; height: 18px; flex-basis: 18px; transition: transform 200ms cubic-bezier(.22,1,.36,1); }
+.ui-hero-details[open] .ui-hero-more .ui-icon { transform: rotate(-90deg); }
+.ui-more-open, .ui-hero-details[open] .ui-more-closed { display: none; }
+.ui-hero-details[open] .ui-more-open { display: inline; }
+.ui-hero-details-body { display: grid; gap: 28px; margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--hairline); }
+.ui-hero-details-body .ui-briefing-context:empty { display: none; }
+.ui-hero-details-body .ui-briefing-context { margin: 0; grid-template-columns: repeat(2, minmax(0,1fr)); }
+.ui-hero-details-body .hstand-card { padding-top: 20px; }
+.ui-briefing-primary { padding: 0; border: 0; border-radius: 0; }
+.ui-briefing-primary > .ui-eyebrow { display: block; margin: 0 0 12px; color: var(--ui-label); }
+.ui-briefing-primary .hstand-primary { border: 0; padding: 0; background: transparent; }
+/* Danach wichtig */
+.hstand .hstand-related { margin-top: 40px; padding: 0; border: 0; background: transparent; }
+.ui-section-rule { display: flex; align-items: center; gap: 20px; margin: 0 0 4px; font: 400 26px/1.2 var(--ui-serif); color: var(--ui-text); }
+.ui-section-rule::after { content: ""; flex: 1; height: 1px; background: var(--hairline); }
+.hstand .hstand-rels { counter-reset: rel 1; display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.hstand .hstand-rel { counter-increment: rel; position: relative; display: grid; grid-template-columns: 56px minmax(0,1fr); column-gap: 24px; padding: 18px 8px 18px 4px; border-bottom: 1px solid var(--hairline); background: transparent; border-radius: 0; }
+.hstand .hstand-rel::before { content: counter(rel, decimal-leading-zero); grid-row: 1 / span 4; padding-right: 20px; border-right: 1px solid var(--hairline); font: 400 30px/1.1 var(--ui-serif); color: var(--ui-dim); }
+.hstand .hstand-rel > * { grid-column: 2; }
+.hstand .hstand-rel-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.hstand .hstand-rel-title { margin: 0; font: 400 24px/1.25 var(--ui-serif); color: var(--ui-text); }
+.hstand .hstand-rel-when, .hstand .hstand-rel-why { margin: 4px 0 0; font-size: 15px; color: var(--ui-muted); }
+.hstand .hstand-rel .compact-button, .hstand .hstand-rel-quelle { justify-self: start; margin-top: 6px; padding: 0; min-height: 36px; border: 0; background: transparent; color: var(--ui-accent); font-size: 14px; }
+/* Drei Spalten */
+.ui-briefing-cols { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 0 40px; margin-top: 48px; }
+.ui-col { display: flex; flex-direction: column; gap: 10px; padding-top: 24px; border-top: 1px solid var(--hairline); min-width: 0; }
+.ui-col-kicker { display: flex; align-items: center; gap: 12px; margin: 0 0 4px; font: 500 11.5px/1.6 var(--ui-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ui-label); }
+.ui-col-kicker .ui-icon { width: 20px; height: 20px; flex-basis: 20px; color: var(--ui-label); }
+.ui-col h3 { margin: 0; font: 400 24px/1.25 var(--ui-serif); color: var(--ui-text); text-wrap: pretty; }
+.ui-col p { margin: 0; font-size: 16px; line-height: 1.5; color: var(--ui-muted); }
+.ui-col-list { display: grid; gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
+.ui-col-list li { display: grid; gap: 2px; font-size: 15px; }
+.ui-col-list strong { font-weight: 400; color: var(--ui-text); }
+.ui-col-list span { font-size: 13.5px; color: var(--ui-dim); }
+.ui-col .ui-col-link, .ui-col .compact-button { align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; margin-top: auto; padding: 8px 0 0; border: 0; background: transparent; color: var(--ui-accent); font-size: 16px; text-align: left; white-space: normal; }
+.ui-col .ui-col-link .ui-icon { width: 16px; height: 16px; flex-basis: 16px; }
+.hstand .hstand-foot { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--hairline); }
+@media (max-width: 1100px) { .ui-briefing-cols { grid-template-columns: minmax(0,1fr); gap: 28px; } }
+@media (max-width: 767px) {
+  .ui-briefing-hero { grid-template-columns: minmax(0,1fr); }
+  .ui-hero-sub { font-size: 17px; }
+  .ui-hero-next .ui-arrow-action { gap: 16px; }
+  .ui-next-step { font-size: 20px; }
+  .ui-hero-more { width: 100%; justify-content: center; }
+  .ui-hero-details-body .ui-briefing-context { grid-template-columns: minmax(0,1fr); }
+  .hstand .hstand-rel { grid-template-columns: 36px minmax(0,1fr); column-gap: 14px; padding: 18px 0; }
+  .hstand .hstand-rel::before { padding-right: 0; border-right: 0; font-size: 24px; }
+  .hstand .hstand-rel-title { font-size: 20px; }
+  .ui-section-rule { font-size: 24px; }
+  .ui-briefing-cols { margin-top: 36px; }
+  .ui-col h3 { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { .ui-hero-more .ui-icon { transition: none; } }
+.ui-hero-next > p.ui-hero-meta { font: 400 14px/1.5 var(--ui-sans); color: var(--ui-dim); }
+.ui-hero-next > p.ui-row-meta { font: 400 13px/1.5 var(--ui-sans); color: var(--ui-dim); }
+.hstand .ui-briefing-status .hstand-meta-line { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+@media (min-width: 1101px) {
+  /* Knopf unter dem naechsten Schritt (rechte Spalte); aufgeklappter Inhalt volle Breite. */
+  .ui-hero-details > summary { margin-left: calc((100% - 40px) * .6 + 81px); }
+}
+.ui-hero-details-body > :first-child, .ui-hero-details-body > :first-child .hstand-card { border-top: 0; padding-top: 0; }
+@media (min-width: 1101px) {
+  .hstand .hstand-rel { grid-template-columns: 56px minmax(0,1fr) minmax(0,1fr); }
+  .hstand .hstand-rel > .hstand-rel-head { grid-column: 2; grid-row: 1 / span 3; align-self: center; }
+  .hstand .hstand-rel > :not(.hstand-rel-head) { grid-column: 3; }
+  .hstand .hstand-rel-when, .hstand .hstand-rel-why { margin: 0; }
+}
+.ui-col p.ui-col-kicker { font: 500 11.5px/1.6 var(--ui-mono); letter-spacing: .12em; color: var(--ui-label); }
+
+/* Briefing mobil kompakt (Probe 06.11.2026): Aktion zuerst, ein Stand,
+   antippbare „Danach wichtig“-Zeilen, Spalten nur auf Desktop. */
+.hstand .hstand-rel.is-tappable { cursor: pointer; }
+.hstand .hstand-rel.is-tappable:hover .hstand-rel-title { color: var(--ui-accent); }
+.hstand .hstand-rel.is-tappable:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+@media (max-width: 767px) {
+  .app-frame.view-helmut { --hh: 150px; --ui-h1: 30px; }
+  .view-helmut .ui-page-header { padding-bottom: 14px; }
+  .view-helmut .ui-page-header .ui-page-subtitle { display: none; }
+  .view-helmut .topbar .ui-status { display: none; }
+  .hstand .ui-briefing-status { padding: 0 0 2px; }
+  .ui-briefing-hero { gap: 18px 0; padding: 22px 18px; }
+  .ui-hero-main h2 { font-size: 27px; margin-top: 10px; }
+  .ui-hero-sub { margin-top: 10px; font-size: 16px; }
+  .ui-hero-next { padding-top: 18px; gap: 16px; }
+  .ui-hero-next .ui-arrow-action { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; }
+  .ui-hero-next .ui-arrow-circle { display: none; }
+  .ui-next-step { font-size: 21px; }
+  .ui-next-cta { display: flex; align-items: center; justify-content: center; min-height: 46px; margin-top: 6px; border: 1px solid color-mix(in srgb, var(--ui-accent) 55%, transparent); border-radius: 24px; font-size: 15px; font-weight: 500; }
+  .ui-hero-meta { gap: 6px 18px; font-size: 13px; }
+  .ui-hero-more { min-height: 44px; background: transparent; color: var(--ui-muted); border: 1px solid var(--ui-border); }
+  .ui-hero-more:hover { background: transparent; color: var(--ui-text); }
+  .hstand .hstand-related { margin-top: 28px; }
+  .hstand .hstand-rel.is-tappable { grid-template-columns: 36px minmax(0,1fr) 16px; }
+  .hstand .hstand-rel.is-tappable::after { content: "›"; grid-column: 3; grid-row: 1; align-self: center; font-size: 22px; color: var(--ui-dim); }
+  .hstand .hstand-rel.is-tappable .compact-button { display: none; }
+  .ui-briefing-cols { display: none; }
+  .hstand .hstand-foot { display: none; }
+}
+
+/* Ruhiger Tag („Aktuell · keine neue Tagesprioritaet“): kurzer Hinweis im Kopf. */
+.hstand .ui-briefing-status .hstand-frische--muted { padding: 4px 0 0; border: 0; font-size: 14px; line-height: 1.5; color: var(--ui-dim); }
+.hstand .ui-briefing-status .hstand-frische--muted svg { width: 15px; height: 15px; flex: 0 0 15px; }
+
+/* Orientierung: Anzahl je Abschnitt, laufende Nummern, Themen-Sprungliste (mobil). */
+.ui-count { order: 2; flex: 0 0 auto; padding: 2px 10px; border: 1px solid var(--ui-border); border-radius: 999px; font: 500 12px/1.6 var(--ui-mono); letter-spacing: .06em; color: var(--ui-muted); }
+.ui-section-rule::after { order: 3; }
+[data-topic-title] { scroll-margin-top: 88px; }
+.ui-jump { display: none; }
+@media (max-width: 767px) {
+  .ui-jump { display: flex; gap: 8px; margin: 14px -20px 4px; padding: 0 20px 4px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .ui-jump::-webkit-scrollbar { display: none; }
+  .ui-jump-label { flex: 0 0 auto; align-self: center; padding-right: 2px; font: 500 11px/1.6 var(--ui-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ui-label); }
+  .ui-jump button { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; max-width: 70vw; min-height: 36px; padding: 0 14px 0 6px; border: 1px solid var(--ui-border); border-radius: 999px; background: var(--ui-panel); color: var(--ui-text); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ui-jump button span { display: grid; place-items: center; flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; background: var(--ui-hover); color: var(--ui-muted); font: 500 12px/1 var(--ui-mono); }
+}
+@media (max-width: 767px) {
+  .ui-jump button { max-width: 58vw; }
+}
+
+/* „Auf einen Blick“ (mobil): kleine Inhaltsübersicht wie in einer Zeitung –
+   nummerierte Themen untereinander, ein Tipp springt zum Thema. */
+@media (max-width: 767px) {
+  .ui-jump { display: block; margin: 18px 0 8px; padding: 14px 16px 6px; overflow: visible; background: var(--ui-panel); border: 1px solid var(--ui-panel-line); border-radius: 14px; }
+  .ui-jump-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 4px; font: 500 11px/1.6 var(--ui-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ui-label); }
+  .ui-jump-head span:last-child { color: var(--ui-accent); }
+  .ui-jump-list { margin: 0; padding: 0; list-style: none; }
+  .ui-jump-list li + li { border-top: 1px solid var(--hairline); }
+  .ui-jump .ui-jump-list button { display: grid; grid-template-columns: 30px minmax(0,1fr) 16px; align-items: center; gap: 10px; width: 100%; max-width: none; min-height: 48px; padding: 8px 0; border: 0; border-radius: 0; background: transparent; color: var(--ui-text); text-align: left; white-space: normal; overflow: visible; }
+  .ui-jump-num { font: 400 18px/1 var(--ui-serif); color: var(--ui-dim); }
+  .ui-jump-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font: 400 16px/1.3 var(--ui-serif); color: var(--ui-text); }
+  .ui-jump-go { justify-self: end; font-size: 15px; color: var(--ui-dim); }
+  .ui-jump .ui-jump-list button:active .ui-jump-title { color: var(--ui-accent); }
+  .ui-jump-label { display: none; }
+}
+@media (max-width: 767px) {
+  .ui-jump .ui-jump-list button span { display: block; place-items: initial; flex: none; width: auto; height: auto; border-radius: 0; background: none; }
+  .ui-jump .ui-jump-list button .ui-jump-title { display: -webkit-box; }
+  .ui-jump .ui-jump-list button .ui-jump-num { font: 400 18px/1 var(--ui-serif); color: var(--ui-dim); }
+  .ui-jump .ui-jump-list button .ui-jump-go { font: 400 15px/1 var(--ui-sans); color: var(--ui-dim); }
+}
+@media (max-width: 767px) {
+  .ui-jump .ui-jump-list button .ui-jump-title { font: 400 16.5px/1.3 var(--ui-serif); letter-spacing: 0; text-transform: none; color: var(--ui-text); }
+}
+
+/* Kompakter (mobil): weniger Leerraum, Uebersicht direkt unter dem Status. */
+@media (max-width: 767px) {
+  .view-helmut .ui-page-header { min-height: 0; padding-bottom: 10px; }
+  .hstand { gap: 10px; }
+  .hstand .ui-briefing-status { gap: 6px 10px; }
+  .hstand .ui-briefing-status .hstand-frische--muted { padding: 0; font-size: 13px; line-height: 1.45; }
+  .ui-jump { margin: 6px 0 4px; padding: 10px 14px 2px; border-radius: 12px; }
+  .ui-jump-head { margin-bottom: 0; }
+  .ui-jump .ui-jump-list button { grid-template-columns: 24px minmax(0,1fr) 14px; gap: 8px; min-height: 44px; padding: 7px 0; }
+  .ui-jump .ui-jump-list button .ui-jump-num { font-size: 15px; }
+  .ui-jump .ui-jump-list button .ui-jump-title { font-size: 15px; line-height: 1.28; }
+  .ui-jump .ui-jump-list button .ui-jump-go { font-size: 13px; }
+}
+@media (max-width: 767px) {
+  .ui-jump .ui-jump-list button .ui-jump-text { display: grid; gap: 2px; min-width: 0; }
+  .ui-jump .ui-jump-list button .ui-jump-flag { display: flex; align-items: center; gap: 6px; font: 500 10.5px/1.4 var(--ui-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ui-accent); }
+  .ui-jump .ui-jump-list button .ui-jump-flag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .ui-jump .ui-jump-list li.is-lead .ui-jump-num { color: var(--ui-accent); }
+}
+
+/* Ruhiger Tag (06.11.2026): ehrlicher Leerzustand im Briefing, Lage nur als Zahl + Weg. */
+.ui-page .hstand-state-card--quiet { gap: 10px; }
+.ui-page .hstand-state-card--quiet .hstand-state-title { font: 400 28px/1.2 var(--ui-serif); color: var(--ui-text); }
+.ui-page .hstand-state-card--quiet .hstand-state-sub { max-width: 60ch; font-size: 16px; line-height: 1.55; color: var(--ui-muted); }
+.ui-page .hstand-state-lage { margin: 6px 0 0; padding-top: 14px; border-top: 1px solid var(--hairline); font-size: 15px; color: var(--ui-text); }
+.ui-page .hstand-state-card--quiet > .compact-button { margin-top: 2px; }
+@media (max-width: 767px) {
+  .ui-page .hstand-state-card--quiet { padding: 24px 18px; }
+  .ui-page .hstand-state-card--quiet .hstand-state-title { font-size: 24px; }
+  .ui-page .hstand-state-card--quiet .hstand-state-sub { font-size: 15px; }
+}

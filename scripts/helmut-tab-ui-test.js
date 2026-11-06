@@ -215,7 +215,9 @@ check("Mobil-Reihenfolge: Hauptvorgang mit nächstem Schritt, Kontext und Quelle
   idx("Warum ist das wichtig") < idx("Risiko bei Nichtreaktion") &&
   idx("Risiko bei Nichtreaktion") < idx("Empfohlene Kommunikation") &&
   idx("Empfohlene Kommunikation") < idx("Was du jetzt tun solltest") &&
-  idx("Was du jetzt tun solltest") < idx("18 Quellen"));
+  // Design 06.11.2026: „18 Quellen“ steht zusaetzlich in der Hero-Meta-Zeile; die
+  // Quellen-Fusszeile (letztes Vorkommen) muss weiterhin ganz am Ende stehen.
+  idx("Was du jetzt tun solltest") < html.lastIndexOf("18 Quellen"));
 
 // KEINE Kostenwerte im Markup.
 check("Voll: KEINE Kostenwerte/Token im Markup",
@@ -391,38 +393,34 @@ check("Ohne zugehoerige Lage bleibt Einordnung im Briefing erhalten", api.render
 check("Fremder Vorgang bekommt keinen irrefuehrenden Briefing Verweis", !api.lageSheet({ ...geteilterVorgang,
   id: "vg-fremd", vorgangId: "vg-fremd" }).includes('data-view="helmut"'));
 
-// Quiet does not mean absent: display the cached source-bound narrative when the
-// current daily receipt is verified, without fabricating a priority or new text.
+// Ruhiger Tag (06.11.2026): ohne belegten Tagesanlass bleibt das Briefing ehrlich
+// leer. Laufende Lage-Themen werden NICHT als Briefing-Liste gezeigt, sondern nur
+// gezählt und über die Lage erreichbar gemacht.
 const { quietIntegrationPayload,pendingQuietIntegrationPayload } = require("./fixtures/ui-integration-contracts");
-function quietRender(change = () => {}) {
-  const b = quietIntegrationPayload().briefing;
+function quietRender(change = () => {}, payload = quietIntegrationPayload) {
+  const b = payload().briefing;
   change(b);
   api.setBriefing(b);
   return { b, html: api.render() };
 }
-const quiet = quietRender();
-check("Ruhelage: gespeicherter Tagesüberblick ersetzt den alleinigen Leerzustand",
-  /<section\b[^>]*data-briefing-overview/.test(quiet.html) && quiet.html.includes("Dein Tagesüberblick"));
-check("Ruhelage: beide belegten Lageabsätze bleiben wortgetreu sichtbar",
-  quiet.b.lageBriefing.paragraphs.every(p => quiet.html.includes(api.esc(p.text)))
-  && (quiet.html.match(/data-briefing-paragraph/g) || []).length === 2);
-check("Ruhelage: Quellen und tatsächliches Quelldatum sind sichtbar",
-  quiet.b.lageBriefing.vorgaenge.slice(0,2).every(v => v.sources.every(q => quiet.html.includes(`href="${q.url}"`) && quiet.html.includes(q.name)))
-  && quiet.html.includes("05. Nov. 2026"));
-check("Ruhelage: www-Variante und gleicher ISO-Zeitpunkt erhalten den belegten Absatz",
-  quiet.b.lageBriefing.paragraphs[0].sources[0].url !== quiet.b.lageBriefing.vorgaenge[0].sources[0].url
-  && quiet.html.includes(quiet.b.lageBriefing.paragraphs[0].text));
-check("Ruhelage: jeder Absatz verlinkt seinen vorhandenen Lagevorgang",
-  quiet.b.lageBriefing.paragraphs.every(p => p.vorgangIds.every(id =>
-    new RegExp(`<button\\b[^>]*data-lage-verweis[^>]*data-vorgang="${id}"`).test(quiet.html))));
-check("Ruhelage: aktueller Kopf benennt die fehlende neue Tagespriorität",
-  quiet.html.includes("Aktuell · keine neue Tagespriorität") && !quiet.html.includes(">Kein aktueller Stand<"));
-check("Ruhelage: gespeicherte Laufzeit statt HTTP-Projektionszeit im Kopf",
-  quiet.html.includes("06:15") && !quiet.html.includes("15:37"));
-check("Ruhelage: keine erfundene Priorität oder Empfehlung",
-  !/ui-briefing-hero|ui-hero-next|Heute entscheidend|Was du jetzt tun solltest/.test(quiet.html));
-check("Ruhelage: Hinweis verspricht keine nicht gerenderten älteren Vorgänge darunter",
-  !/Ältere Vorgänge stehen unten|unten als weiterhin relevant|unten.*Hintergrund/i.test(quiet.html));
+for (const [label, payload] of [["Ruhelage", quietIntegrationPayload], ["Cache-Miss", pendingQuietIntegrationPayload]]) {
+  const quiet = quietRender(() => {}, payload);
+  check(`${label}: ehrlicher Leerzustand statt Lage-Liste`,
+    quiet.html.includes("hstand-state-card--quiet") && quiet.html.includes("Heute kein neuer Tagesanlass")
+    && !quiet.html.includes("data-briefing-overview") && !quiet.html.includes("data-briefing-paragraph")
+    && !quiet.html.includes("data-briefing-existing-item"));
+  check(`${label}: keine Lage-Texte im Briefing`,
+    (quiet.b.lageBriefing.paragraphs || []).every(p => !quiet.html.includes(api.esc(p.text)))
+    && quiet.b.lageBriefing.vorgaenge.every(v => !v.displaySummary || !quiet.html.includes(api.esc(v.displaySummary))));
+  check(`${label}: Anzahl laufender Lage-Themen und Weg zur Lage`,
+    /In der Lage laufen \d+ Themen weiter\./.test(quiet.html) && /data-view="briefing"[^>]*>Zur Lage</.test(quiet.html));
+  check(`${label}: aktueller Kopf benennt die fehlende neue Tagespriorität`,
+    quiet.html.includes("Aktuell · keine neue Tagespriorität") && !quiet.html.includes(">Kein aktueller Stand<"));
+  check(`${label}: gespeicherte Laufzeit statt HTTP-Projektionszeit im Kopf`,
+    quiet.html.includes("06:15") && !quiet.html.includes("15:37"));
+  check(`${label}: keine erfundene Priorität oder Empfehlung`,
+    !/ui-briefing-hero|ui-hero-next|Heute entscheidend|Was du jetzt tun solltest|data-ui-jump/.test(quiet.html));
+}
 
 for (const [name, change] of [
   ["Frischevertrag fehlt", b => { delete b.currentHelmutState.frischeVertrag; }],
@@ -431,152 +429,17 @@ for (const [name, change] of [
   ["Datenstand nicht von heute", b => { b.currentHelmutState.datenstandVonHeute=false; }],
   ["Datenlücke", b => { b.currentHelmutState.emptyState={kind:"gap"}; }],
   ["Fehler", b => { b.currentHelmutState.status="error"; b.currentHelmutState.errorState=true; }],
-  ["Lage nicht verfügbar", b => { b.lageBriefing.available=false; }],
-  ["Demo-Lage", b => { b.lageBriefing.demo=true; }],
-  ["Narrativ noch ausstehend", b => { b.lageBriefing.pendingNarrative=true; }],
-  ["Lage vom Vortag", b => { b.lageBriefing.generatedAt="2026-11-05T05:00:00Z"; }],
-  ["Lagedatum ungültig", b => { b.lageBriefing.generatedAt="kein-datum"; }],
-  ["Lage fehlt", b => { delete b.lageBriefing; }],
-  ["Lage ohne Absätze", b => { b.lageBriefing.paragraphs=[]; }],
 ]) {
   const result=quietRender(change);
-  check(`Ruhelage Schutz: ${name} ergibt keinen frischen Tagesüberblick`,
-    !result.html.includes("data-briefing-overview") && !result.html.includes(quiet.b.lageBriefing.paragraphs[0].text));
+  check(`Ruhelage Schutz: ${name} wird nicht als ruhiger aktueller Tag gezeigt`,
+    !result.html.includes("hstand-state-card--quiet") && !result.html.includes("Heute kein neuer Tagesanlass"));
   if (name === "Frischevertrag nicht aktuell") check("Ruhelage Schutz: fehlender Lauf bleibt als Warnung sichtbar",
     result.html.includes("Synthetischer heutiger Lauf fehlt.") && result.html.includes("Briefing noch nicht aktuell"));
   if (name === "Fehler") check("Ruhelage Schutz: Fehler bleibt sichtbar",result.html.includes("hstand-state-card--error"));
 }
 const quietNoLage=quietRender(b=>{delete b.lageBriefing;}).html;
-check("Ruhelage ohne Lage: aktueller Lauf mit ehrlichem Fallback, ohne Hinweis auf Inhalte unten",
-  quietNoLage.includes("Aktuell · keine neue Tagespriorität") && !/Ältere Vorgänge stehen unten|ui-briefing-hero/.test(quietNoLage));
-
-for (const [name, change] of [
-  ["ohne Quellen", p => { p.sources=[]; }],
-  ["ohne Vorgangsbindung", p => { p.vorgangIds=[]; }],
-  ["unbekannter Vorgang", p => { p.vorgangIds=["quiet-vorgang-unbekannt"]; }],
-  ["Quelle nur an anderem sichtbaren Vorgang", p => { p.sources=quiet.b.lageBriefing.vorgaenge[1].sources; }],
-  ...["javascript:alert(1)","data:text/html,<script>alert(1)</script>","http://example.test/beleg","https://example.test/",
-    "https://user:pass@example.test/beleg","https://www.google.com/url?q=https://example.test/beleg"].map(url=>
-    [`unsichere Quelle ${url.split(":")[0]} ${url.includes("pass") ? "credentials" : ""}`,p=>{p.sources=[{name:"Ungültige Quelle",url}];}])
-]) {
-  const result=quietRender(b=>{
-    b.lageBriefing.paragraphs=[b.lageBriefing.paragraphs[0]];
-    change(b.lageBriefing.paragraphs[0]);
-  });
-  check(`Tagesüberblick Quellenpflicht: ${name} verbirgt den unbelegten Absatz`,
-    !result.html.includes(quiet.b.lageBriefing.paragraphs[0].text) && !result.html.includes("data-briefing-overview"));
-}
-const mixed=quietRender(b=>{b.lageBriefing.paragraphs[1].sources=[];}).html;
-check("Tagesüberblick Quellenpflicht: belegter Absatz bleibt bei ungültigem Nachbarabsatz sichtbar",
-  mixed.includes(quiet.b.lageBriefing.paragraphs[0].text) && !mixed.includes(quiet.b.lageBriefing.paragraphs[1].text));
-const escaped=quietRender(b=>{
-  b.lageBriefing.paragraphs[0].text='<img src=x onerror="alert(1)"> & synthetischer Text';
-  b.lageBriefing.paragraphs[0].sources[0].name='<script>alert("Quelle")</script>';
-}).html;
-check("Tagesüberblick Sicherheit: Absatz und Quellenname werden als Text escaped",
-  escaped.includes("&lt;img") && !escaped.includes("<img src=x") && !escaped.includes('<script>alert("Quelle")'));
-const forgedSource=quietRender(b=>{
-  b.lageBriefing.paragraphs[0].sources[0].publishedAt="2099-12-31T23:59:00Z";
-  b.lageBriefing.paragraphs[0].sources[0].name="Gefälschte Quellenmetadaten";
-}).html;
-check("Tagesüberblick Quellenbindung: Quelldatum und Name stammen vom belegten Vorgang",
-  forgedSource.includes(quiet.b.lageBriefing.paragraphs[0].text) && forgedSource.includes("Synthetische Quelle 1")
-  && !forgedSource.includes("2099") && !forgedSource.includes("Gefälschte Quellenmetadaten"));
-const escapedSource=quietRender(b=>{
-  b.lageBriefing.vorgaenge[0].sources[0].name='<script>alert("Quelle")</script>';
-}).html;
-check("Tagesüberblick Sicherheit: gebundener Quellenname wird escaped",
-  escapedSource.includes("&lt;script&gt;") && !escapedSource.includes('<script>alert("Quelle")'));
-const undated=quietRender(b=>{
-  b.lageBriefing.paragraphs=[b.lageBriefing.paragraphs[0]];
-  b.lageBriefing.vorgaenge[0].sources[0].publishedAt="";
-}).html;
-check("Tagesüberblick Quellenbindung: fehlendes Vorgangsquelldatum wird nicht aus Absatzmetadaten erfunden",
-  undated.includes("Quelldatum nicht belegt") && !undated.includes("05. Nov. 2026"));
-
-function pendingRender(change = () => {}) {
-  const b=pendingQuietIntegrationPayload().briefing;
-  change(b);
-  api.setBriefing(b);
-  return {b,html:api.render()};
-}
-const pending=pendingRender();
-const existingItems=[0,2,5,7].map(index=>pending.b.lageBriefing.vorgaenge[index]);
-const existingText=v=>v.displaySummary || v.summary.wasIstPassiert;
-check("Cache-Miss: neun vorhandene Karten ergeben vier belegte Sachstände im Tagesüberblick",
-  pending.b.lageBriefing.vorgaenge.length===9 && pending.html.includes("data-briefing-overview")
-  && (pending.html.match(/data-briefing-existing-item/g)||[]).length===4 && !pending.html.includes("data-briefing-paragraph"));
-check("Cache-Miss: vorhandene Zusammenfassungen und Überschriften bleiben vollständig in Serverreihenfolge",
-  existingItems.every(v=>pending.html.includes(api.esc(existingText(v))) && pending.html.includes(api.esc(v.displayTitle)))
-  && existingItems.every((v,index)=>index===0 || pending.html.indexOf(existingText(existingItems[index-1]))<pending.html.indexOf(existingText(v))));
-check("Cache-Miss: beide Platzhalter, Quellenhinweise und leere Zusammenfassungen entfallen",
-  !pending.html.includes("Artikelauszug fehlt;") && !pending.html.includes("Keine nutzbaren Quellentexte")
-  && !pending.html.includes(pending.b.lageBriefing.vorgaenge[4].displaySummary)
-  && !pending.html.includes(`data-vorgang="${pending.b.lageBriefing.vorgaenge[8].id}"`));
-check("Cache-Miss: jeder sichtbare Sachstand trägt seinen Quellenlink, Datum und Lageverweis",
-  existingItems.every(v=>pending.html.includes(`href="${v.sources[0].url}"`) && pending.html.includes(v.sources[0].name)
-    && pending.html.includes(`data-lage-verweis data-vorgang="${v.id}"`)) && pending.html.includes("05. Nov. 2026"));
-check("Cache-Miss: ehrlicher Hinweis auf vorhandene Lage, keine HTTP-Zeit als Zusammenstellung",
-  pending.html.includes("Vorhandener Sachstand aus der Lage") && !pending.html.includes("Zusammengestellt:")
-  && !pending.html.includes("15:37") && pending.html.includes("06:15"));
-check("Cache-Miss: kein alleiniger Leerzustand und keine erfundene Tagespriorität",
-  pending.html.includes("Aktuell · keine neue Tagespriorität") && !/hstand-state-card|ui-briefing-hero|ui-hero-next|Heute entscheidend/.test(pending.html));
-check("Cache-Miss: alle weiteren Vorgänge bleiben über die Lage erreichbar",
-  /data-view="briefing"[^>]*>Alle Vorgänge in der Lage öffnen/.test(pending.html));
-const capped=pendingRender(b=>{
-  b.lageBriefing.vorgaenge[8].displaySummary="Fünfter vorhandener Sachstand, der über die Lage erreichbar bleibt.";
-}).html;
-check("Cache-Miss: höchstens vier Sachstände im Überblick, keine still erfundene Rangfolge",
-  (capped.match(/data-briefing-existing-item/g)||[]).length===4 && !capped.includes("Fünfter vorhandener Sachstand"));
-for (const [name,change] of [
-  ["Frischequittung fehlt",b=>{delete b.currentHelmutState.frischeVertrag;}],
-  ["Lauf nicht aktuell",b=>{b.currentHelmutState.frischeVertrag.aktuell=false;}],
-  ["veralteter Zustand",b=>{b.currentHelmutState.staleState=true;}],
-  ["Datenlücke",b=>{b.currentHelmutState.emptyState.kind="gap";}],
-  ["Fehler",b=>{b.currentHelmutState.errorState=true;}],
-  ["Briefing nicht verfügbar",b=>{b.available=false;}],
-  ["Lage nicht verfügbar",b=>{b.lageBriefing.available=false;}],
-  ["Demo-Lage",b=>{b.lageBriefing.demo=true;}],
-  ["Pending-Marker fehlt",b=>{delete b.lageBriefing.pendingNarrative;}],
-  ["Pending-Marker falsch",b=>{b.lageBriefing.pendingNarrative=false;}],
-  ["Pending mit alten Absätzen",b=>{b.lageBriefing.paragraphs=quiet.b.lageBriefing.paragraphs;}],
-  ["Pending ohne Absatzarray",b=>{delete b.lageBriefing.paragraphs;}],
-  ["keine Vorgänge",b=>{b.lageBriefing.vorgaenge=[];}],
-  ["nur Platzhalter",b=>{b.lageBriefing.vorgaenge=b.lageBriefing.vorgaenge.filter((v,index)=>![0,2,5,7].includes(index));}]
-]) {
-  const result=pendingRender(change);
-  check(`Cache-Miss Schutz: ${name} zeigt keinen frischen Sachstandsüberblick`,
-    !result.html.includes("data-briefing-overview") && !result.html.includes(existingText(existingItems[0])));
-}
-for (const url of [null,"javascript:alert(1)","data:text/html,unsafe","http://example.test/beleg","https://example.test/",
-  "https://user:pass@example.test/beleg","https://www.google.com/url?q=https://example.test/beleg"]) {
-  const result=pendingRender(b=>{
-    b.lageBriefing.vorgaenge=[b.lageBriefing.vorgaenge[0]];
-    b.lageBriefing.vorgaenge[0].sources=url===null ? [] : [{url,name:"Ungültige Quelle"}];
-  });
-  check(`Cache-Miss Quellenpflicht: ${url===null ? "ohne Quelle" : url} wird nicht als Sachstand angezeigt`,
-    !result.html.includes("data-briefing-overview"));
-}
-const safeMixed=pendingRender(b=>{
-  b.lageBriefing.vorgaenge[0].sources.push({name:"Unsichere Zusatzquelle",url:"javascript:alert(1)"});
-}).html;
-check("Cache-Miss Quellenpflicht: sichere Quelle bleibt nutzbar, unsichere Zusatzquelle entfällt",
-  safeMixed.includes(existingText(existingItems[0])) && !safeMixed.includes("javascript:") && !safeMixed.includes("Unsichere Zusatzquelle"));
-const pendingEscaped=pendingRender(b=>{
-  const v=b.lageBriefing.vorgaenge[0];
-  v.displayTitle='<img src=x onerror="alert(1)">';
-  v.displaySummary='<script>alert("Sachstand")</script> & vorhandener Text';
-  v.sources[0].name='<svg onload="alert(1)">';
-}).html;
-check("Cache-Miss Sicherheit: Titel, Zusammenfassung und Quellenname werden als Text escaped",
-  pendingEscaped.includes("&lt;img") && pendingEscaped.includes("&lt;script&gt;") && pendingEscaped.includes("&lt;svg")
-  && !pendingEscaped.includes("<img src=x") && !pendingEscaped.includes('<script>alert("Sachstand")'));
-const pendingUndated=pendingRender(b=>{
-  b.lageBriefing.vorgaenge=[b.lageBriefing.vorgaenge[0]];
-  b.lageBriefing.vorgaenge[0].sources[0].publishedAt="";
-}).html;
-check("Cache-Miss Quellenpflicht: fehlendes Quelldatum wird ehrlich benannt",
-  pendingUndated.includes("Quelldatum nicht belegt") && !pendingUndated.includes("05. Nov. 2026"));
+check("Ruhelage ohne Lage: ehrlicher Leerzustand ohne erfundene Themenzahl",
+  quietNoLage.includes("Aktuell · keine neue Tagespriorität") && !/In der Lage laufen|Zur Lage<|ui-briefing-hero/.test(quietNoLage));
 
 console.log(`\n${passed}/${passed + failed} Helmut-Tab-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }

@@ -6358,20 +6358,50 @@ function renderHelmutStandView() {
   if (!state || typeof state !== "object") return renderHstandUnavailable();
   if (state.status === "error" || state.errorState) return renderHstandStateCard(state, "error");
   if (state.status === "empty" || !state.primaryItem) return renderHstandStateCard(state, "empty");
+  // Aufbau nach Claude Design: Hero (Titel, Kurzfassung, naechster Schritt, Meta,
+  // „Ausfuehrlich lesen“) -> „Danach wichtig“ -> drei Spalten -> Quellen.
+  // Alle Inhalte bleiben dieselben, belegten Bausteine; nur Anordnung und Gewichtung.
+  const details = [
+    renderHstandWhy(state),
+    `<div class="ui-briefing-context">${renderHstandRiskChance(state)}</div>`,
+    renderHstandComms(state),
+    renderHstandActions(state),
+    `<div class="ui-source-details ui-briefing-primary"><p class="ui-eyebrow">Einordnung und Quellen zum wichtigsten Vorgang</p>${renderHstandPrimary(state)}</div>`
+  ].join("");
   return `
     <section class="hstand" aria-label="Briefing – aktueller Stabschefstand">
       ${renderHstandHeader(state)}
-      ${renderUiBriefingHero(state)}
-      <div class="ui-briefing-context">${renderHstandWhy(state)}${renderHstandRiskChance(state)}</div>
-      ${renderHstandComms(state)}
-      ${renderHstandActions(state)}
+      <nav class="ui-jump" data-ui-jump aria-label="Themen heute"></nav>
+      ${renderUiBriefingHero(state, details)}
       ${renderHstandItems(state)}
-      <details class="ui-source-details"><summary>Einordnung und Quellen zum wichtigsten Vorgang</summary>${renderHstandPrimary(state)}</details>
+      ${renderUiBriefingColumns(state)}
       ${renderHstandSources(state)}
     </section>`;
 }
 
-function renderUiBriefingHero(state) {
+// Ruhige Spalten unter „Danach wichtig“: Radar und Fuer dein Buero. Die Lage hat
+// ihren eigenen Bereich (Verweis im Hauptvorgang). Nur mit echten, vorhandenen Daten.
+function renderUiBriefingColumns(state) {
+  const rs = briefing && briefing.currentRadarState;
+  const radarLine = rs && rs.available !== false && rs.summary ? [rs.summary.line1, rs.summary.line2].filter(Boolean).join(" ") : "";
+  const radar = radarLine ? `<section class="ui-col" aria-label="Radar">
+      <p class="ui-col-kicker">${uiIcon("radar")}<span>Radar</span></p>
+      <p>${escapeHtml(radarLine)}</p>
+      <button type="button" class="ui-col-link" data-view="radar">Im Radar öffnen ${uiIcon("arrow")}</button>
+    </section>` : "";
+  const decision = briefingOfficeDecision();
+  const formats = decision ? activeOfficeFormats() : [];
+  const buero = formats.length ? `<section class="ui-col" aria-label="Für dein Büro">
+      <p class="ui-col-kicker">${uiIcon("office")}<span>Für dein Büro</span></p>
+      <h3>${formats.length === 1 ? "1 Vorbereitung" : `${formats.length} Vorbereitungen`}</h3>
+      <ul class="ui-col-list">${formats.slice(0, 3).map((f) => `<li><strong>${escapeHtml(f.label)}</strong><span>${escapeHtml(officeCardStatus(decision, f))}</span></li>`).join("")}</ul>
+      <button type="button" class="ui-col-link" data-view="office">Büro öffnen ${uiIcon("arrow")}</button>
+    </section>` : "";
+  const cols = radar + buero;
+  return cols ? `<div class="ui-briefing-cols">${cols}</div>` : "";
+}
+
+function renderUiBriefingHero(state, details = "") {
   const item = state.primaryItem;
   const title = hstandText(item.displayTitle) || hstandText(item.title);
   const recommendation = hstandText(state.recommendation);
@@ -6379,17 +6409,24 @@ function renderUiBriefingHero(state) {
   const eyebrow = stale ? "Letzter Stand" : state.status === "fresh" ? "Heute entscheidend" : "Aktueller Vorgang";
   const urgency = hstandUrgencyChip(state.urgency || item.urgency);
   const officeAvailable = Boolean(briefingOfficeDecision() && activeOfficeFormats().length);
-  return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang">
+  const v = lageVorgangZumBriefing(item);
+  const sub = v ? lageField(v.displaySummary) : "";
+  const count = Number(item.sourceCount) || 0;
+  const when = hstandText(item.zeitLabel) || hstandWhen(item.lastUpdated);
+  const chips = `${urgency}${hstandContextChips(item.contextChips, 2)}`;
+  return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang" data-topic-title="${escapeAttribute(title)}">
     <div class="ui-hero-main"><span class="ui-eyebrow"><span class="ui-priority-dot" aria-hidden="true"></span>${eyebrow}</span>
       <h2>${escapeHtml(title)}</h2>
-      <div class="hstand-chiprow">${urgency}${hstandContextChips(item.contextChips, 2)}</div>
+      ${sub ? `<p class="ui-hero-sub">${escapeHtml(sub)}</p>` : ""}
+      ${chips.trim() ? `<div class="hstand-chiprow">${chips}</div>` : ""}
       ${briefingLageVerweis(item)}
     </div>
-    <div class="ui-hero-next"><span class="ui-eyebrow">Dein nächster Schritt</span>
-      ${recommendation ? `<p>${escapeHtml(recommendation)}</p>` : '<p>Prüfe die Einordnung und Quellen zu diesem Vorgang.</p>'}
-      <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span>Im Büro öffnen</span></button>
+    <div class="ui-hero-next">
+      <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Dein nächster Schritt</span><span class="ui-next-step">${escapeHtml(recommendation || "Prüfe die Einordnung und Quellen zu diesem Vorgang.")}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>
       ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfe den Vorgang und deine Büro-Formate.</p>'}
+      <p class="ui-hero-meta">${count ? `<span>${uiIcon("briefing")}${count === 1 ? "1 Quelle" : `${count} Quellen`}</span>` : ""}${when ? `<span>${HELMUT_ICON_CLOCK}Stand ${escapeHtml(when)}</span>` : ""}</p>
     </div>
+    ${details ? `<details class="ui-hero-details"><summary class="ui-hero-more"><span class="ui-more-closed">Ausführlich lesen</span><span class="ui-more-open">Weniger anzeigen</span>${uiIcon("arrow")}</summary><div class="ui-hero-details-body">${details}</div></details>` : ""}
   </section>`;
 }
 
@@ -6619,8 +6656,10 @@ function renderHstandItems(state) {
     const zeit = hstandText(i.zeitLabel) || hstandWhen(i.lastUpdated);
     // Quellenpflicht: auch die weiteren Vorgaenge tragen ihren oeffnenden Beleg.
     const quelle = hstandQuelleHref(i);
+    const lv = lageVorgangZumBriefing(i);
+    const tap = lv ? ` data-lage-verweis data-vorgang="${escapeAttribute(lv.vorgangId || lv.id)}" role="button" tabindex="0"` : "";
     return `
-      <li class="hstand-rel">
+      <li class="hstand-rel${lv ? " is-tappable" : ""}"${tap} data-topic-title="${escapeAttribute(title)}">
         <div class="hstand-rel-head">
           <p class="hstand-rel-title">${escapeHtml(title)}</p>
           ${urgency}
@@ -6635,8 +6674,8 @@ function renderHstandItems(state) {
   const klassifiziert = items.some((i) => i && i.frischeKlasse);
   if (!klassifiziert) {
     return `
-    <section class="hstand-card hstand-related" aria-label="Weitere relevante Vorgänge">
-      ${hstandKicker(HELMUT_ICON_EYE, "Weitere relevante Vorgänge", "muted")}
+    <section class="hstand-card hstand-related" aria-label="Danach wichtig">
+      <h2 class="ui-section-rule">Danach wichtig<span class="ui-count">${Math.min(items.length, 3)}</span></h2>
       <ul class="hstand-rels">${items.slice(0, 3).map(zeile).join("")}</ul>
     </section>`;
   }
@@ -6648,7 +6687,7 @@ function renderHstandItems(state) {
   if (!gruppen.length) return "";
   return gruppen.map((g) => `
     <section class="hstand-card hstand-related" data-frische-klasse="${escapeAttribute(g.klasse)}" aria-label="${escapeAttribute(g.label)}">
-      ${hstandKicker(HELMUT_ICON_EYE, g.label, g.tone)}
+      <h2 class="ui-section-rule">${escapeHtml(g.label)}<span class="ui-count">${g.liste.length}</span></h2>
       <ul class="hstand-rels">${g.liste.map(zeile).join("")}</ul>
     </section>`).join("");
 }
@@ -6720,92 +6759,6 @@ function hstandCurrentQuiet(state) {
     && briefing?.available !== false && !briefingDisruption());
 }
 
-function renderHstandQuietOverview(state) {
-  if (!hstandCurrentQuiet(state)) return "";
-  const data = lageData();
-  if (!data || data.available !== true || data.demo) return "";
-  const vorgaenge = new Map(lageVisibleVorgaenge(data).map(v => [String(v.vorgangId || v.id), v]));
-  const sourceHref = source => {
-    try {
-      const url = new URL(source?.url || "");
-      return url.protocol === "https:" && !url.username && !url.password
-        && !isGoogleArticleProxy(url.href) && !isLikelyPublisherHomepage(url.href) ? url.href : "";
-    } catch { return ""; }
-  };
-  // Ein abgelaufenes Quelldatum kann den gesamten Narrativ-Cache entwerten.
-  // Der cacheOnly-Leser liefert dann weiterhin frisch geladene Lage-Karten.
-  // Deren vorhandene Zusammenfassungen bleiben lesbar, ohne den alten Text
-  // erneut freizugeben, eine Tagespriorität zu erfinden oder KI zu starten.
-  if (data.pendingNarrative === true) {
-    if (!Array.isArray(data.paragraphs) || data.paragraphs.length) return "";
-    const placeholders = new Set(["Artikelauszug fehlt; nur Quellentitel verfügbar.",
-      "Keine nutzbaren Quellentexte für eine Zusammenfassung."]);
-    const items = [...vorgaenge].map(([id, v]) => {
-      const text = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
-      const title = lageField(v.displayTitle) || lageDisplayHeadline(v.title);
-      const sources = (Array.isArray(v.sources) ? v.sources : []).filter(sourceHref);
-      if (!id || !title || !text || !sources.length
-        || lageField(v.displayCategory) === "Quellenhinweis" || placeholders.has(text)) return "";
-      const links = sources.map(s => `<a href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.host || "Quelle")} · ${escapeHtml(hstandWhen(s.publishedAt) || "Quelldatum nicht belegt")}</a>`).join("");
-      return `<article class="hstand-overview-item" data-briefing-existing-item>
-        <h3>${escapeHtml(title)}</h3>
-        <p>${escapeHtml(text)}</p>
-        <div class="hstand-overview-sources" aria-label="Quellen und Veröffentlichungsdaten">${links}</div>
-        <button class="secondary-button compact-button" type="button" data-lage-verweis data-vorgang="${escapeAttribute(id)}">Einordnung in der Lage öffnen</button>
-      </article>`;
-    }).filter(Boolean).slice(0, 4);
-    if (!items.length) return "";
-    return `<section class="hstand-card hstand-overview" data-briefing-overview aria-labelledby="hstand-overview-title">
-      <h2 id="hstand-overview-title">Dein Tagesüberblick</h2>
-      <p class="hstand-overview-meta">Vorhandener Sachstand aus der Lage. Die Quellen können älter sein; ihr Veröffentlichungsdatum steht jeweils dabei.</p>
-      ${items.join("")}
-      <button class="secondary-button compact-button" type="button" data-view="briefing">Alle Vorgänge in der Lage öffnen</button>
-    </section>`;
-  }
-  const generated = new Date(data.generatedAt || "");
-  if (!Number.isFinite(generated.getTime())) return "";
-  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(generated);
-  if (day !== state.frischeVertrag.berlinTag) return "";
-  // Narrativquellen verwenden kanonische URLs ohne www, Vorgangskarten die
-  // Original-URL. Nur diese Identitätsvarianten normalisieren; unbekannte
-  // Weiterleitungen oder andere Artikel bleiben verschieden.
-  const sourceKey = source => {
-    const href = sourceHref(source);
-    if (!href) return "";
-    const url = new URL(href);
-    url.hostname = url.hostname.replace(/^www\./, "");
-    url.hash = "";
-    return url.href;
-  };
-  const paragraphs = (Array.isArray(data.paragraphs) ? data.paragraphs : []).map(p => {
-    if (!p || typeof p.text !== "string" || !p.text.trim()) return "";
-    const ids = Array.isArray(p.vorgangIds) ? [...new Set(p.vorgangIds.map(String))] : [];
-    if (!ids.length || ids.some(id => !vorgaenge.has(id))) return "";
-    const boundSources = new Map(ids.flatMap(id => vorgaenge.get(id).sources)
-      .filter(sourceHref).map(s => [sourceKey(s), s]));
-    const sources = Array.isArray(p.sources) ? p.sources : [];
-    if (!sources.length || sources.some(s => !sourceKey(s) || !boundSources.has(sourceKey(s)))) return "";
-    // Herausgeber, Link und Publikationszeit aus der gebundenen Originalquelle,
-    // nicht aus einer möglicherweise abweichenden Narrativkopie anzeigen.
-    const links = [...new Set(sources.map(s => sourceKey(s)))].map(key => {
-      const s = boundSources.get(key);
-      const when = hstandWhen(s.publishedAt);
-      return `<a href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.host || "Quelle")} · ${escapeHtml(when || "Quelldatum nicht belegt")}</a>`;
-    }).join("");
-    return `<article class="hstand-overview-item" data-briefing-paragraph>
-      <p>${escapeHtml(p.text)}</p>
-      <div class="hstand-overview-sources" aria-label="Quellen und Veröffentlichungsdaten">${links}</div>
-      ${ids.map(id => `<button class="secondary-button compact-button" type="button" data-lage-verweis data-vorgang="${escapeAttribute(id)}">Einordnung in der Lage öffnen</button>`).join("")}
-    </article>`;
-  }).filter(Boolean);
-  if (!paragraphs.length) return "";
-  return `<section class="hstand-card hstand-overview" data-briefing-overview aria-labelledby="hstand-overview-title">
-    <h2 id="hstand-overview-title">Dein Tagesüberblick</h2>
-    <p class="hstand-overview-meta">Zusammengestellt: ${escapeHtml(hstandWhen(data.generatedAt))}. Die Quellen können älter sein; ihr Veröffentlichungsdatum steht jeweils dabei.</p>
-    ${paragraphs.join("")}
-  </section>`;
-}
-
 function renderHstandStateCard(state, kind) {
   let isError = kind === "error";
   // Sprint 5 (additiv): unterscheidbarer Helmut-Leerzustand (gap/stale/quiet). Nur im
@@ -6822,16 +6775,23 @@ function renderHstandStateCard(state, kind) {
       ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
       : (es && es.detail ? es.detail : "Für dein Mandat liegen derzeit keine belastbaren Vorgänge vor.");
   const emptyKind = disruption ? disruption.kind : (es ? es.kind : "");
-  const overview = !isError && !disruption ? renderHstandQuietOverview(state) : "";
+  // Ruhiger Tag: das Briefing bleibt ehrlich leer. Laufende Themen gehoeren in die
+  // Lage; hier steht nur, wie viele es dort gibt, und ein Weg dorthin.
+  const quiet = !isError && !disruption && hstandCurrentQuiet(state);
+  const lageCount = !isError ? lageVisibleVorgaenge(lageData()).length : 0;
+  const lageLine = quiet && lageCount
+    ? `<p class="hstand-state-lage">${lageCount === 1 ? "In der Lage läuft 1 Thema weiter." : `In der Lage laufen ${lageCount} Themen weiter.`}</p>` : "";
+  const lageButton = lageCount
+    ? `<button class="secondary-button compact-button" type="button" data-view="briefing">${quiet ? "Zur Lage" : "Vorhandene Vorgänge in der Lage öffnen"}</button>` : "";
   return `
     <section class="hstand hstand--state" aria-label="Briefing">
       ${renderHstandHeader(state)}
-      ${overview || `<div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
+      <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}${quiet ? " hstand-state-card--quiet" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
-        <p class="hstand-state-title">${escapeHtml(title)}</p>
+        <p class="hstand-state-title">${escapeHtml(quiet ? "Heute kein neuer Tagesanlass" : title)}</p>
         <p class="hstand-state-sub">${escapeHtml(sub)}</p>
-        ${!isError && lageVisibleVorgaenge(lageData()).length ? '<button class="secondary-button compact-button" type="button" data-view="briefing">Vorhandene Vorgänge in der Lage öffnen</button>' : ""}
-      </div>`}
+        ${lageLine}${lageButton}
+      </div>
     </section>`;
 }
 
@@ -10080,8 +10040,33 @@ function bindActions() {
 
   bindDetailOpen(app);
 
+  // Themen-Sprungliste (mobil): aus den tatsaechlich gerenderten Eintraegen in
+  // ihrer Reihenfolge; ohne mindestens zwei Themen bleibt sie leer und unsichtbar.
+  app.querySelectorAll("[data-ui-jump]").forEach((nav) => {
+    const topics = [...(nav.closest(".hstand") || app).querySelectorAll("[data-topic-title]")];
+    if (topics.length < 2) { nav.remove(); return; }
+    nav.innerHTML = `<p class="ui-jump-head"><span>Auf einen Blick</span><span>${topics.length}</span></p><ol class="ui-jump-list">` + topics.map((el, i) => {
+      el.id = `ui-topic-${i + 1}`;
+      // Hauptvorgang mit echter Tagespriorität: in der Übersicht als „Heute entscheidend“ markiert.
+      const lead = el.classList.contains("ui-briefing-hero");
+      const flag = lead ? `<span class="ui-jump-flag">${escapeHtml(el.querySelector(".ui-eyebrow")?.textContent.trim() || "Heute entscheidend")}</span>` : "";
+      return `<li${lead ? ' class="is-lead"' : ""}><button type="button" data-jump="${i + 1}"><span class="ui-jump-num">${String(i + 1).padStart(2, "0")}</span><span class="ui-jump-text">${flag}<span class="ui-jump-title">${escapeHtml(el.dataset.topicTitle)}</span></span><span class="ui-jump-go" aria-hidden="true">↓</span></button></li>`;
+    }).join("") + "</ol>";
+    nav.querySelectorAll("[data-jump]").forEach((btn) => btn.addEventListener("click", () => {
+      app.querySelector(`#ui-topic-${btn.dataset.jump}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }));
+  });
   app.querySelectorAll("[data-vorgang]").forEach((button) => {
-    button.addEventListener("click", () => {
+    // Ganze Eintraege (role=button) sind antippbar; Links/Knoepfe darin behalten
+    // ihre eigene Aktion (Quelle oeffnet im neuen Tab, kein zusaetzlicher Sprung).
+    if (button.tagName !== "BUTTON") {
+      button.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); button.click(); }
+      });
+    }
+    button.addEventListener("click", (event) => {
+      const inner = event && event.target && event.target.closest ? event.target.closest("a, button") : null;
+      if (button.tagName !== "BUTTON" && inner && inner !== button) return;
       if (button.hasAttribute("data-lage-verweis")) {
         uiLageSelectedId = button.dataset.vorgang;
         uiLageDetailOpen = true;
