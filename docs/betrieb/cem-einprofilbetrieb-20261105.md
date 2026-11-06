@@ -422,3 +422,47 @@ aktiver Auth-/Speichermigrationscode wurden nicht pauschal geloescht. Die
 Verwaltungsvorschau ist nicht oeffentlich serviert und wird derzeit in paralleler
 Verwaltungsarbeit als Pruefwerkzeug verwendet. Keine Aenderung an Profilaktivierung,
 Budget, Cron, Providerroute oder Kommunikation.
+
+
+### Gemeinsamer Abschluss: sichtbares Briefing und einheitliche Laufzeit
+
+PR1069 (Kopf`ee3531c70a6c7aed00f3c73dab02dea21ecf7581`, Pflicht-CI42186838886) ist als
+`5a01c3112599195baeb836d7786a3d71be25d789` gemergt. PR1070 (Kopf`6377e473e99fa714eb252c6aafec98e622ef2a69`,
+Pflicht-CI42189099678) ist als`4e53576ef968ba1ed6da42c6d98e9c3df4ed5030` gemergt. Beide vorgeschriebenen
+Checks jeweils erfolgreich; keine pauschale Neudeutung alter FAIL/UNKNOWN.
+Letztes Runtime-Deployment`dpl_2SPTqnpJW5wCCWBevL91WKEpwipp` auf Version`4e53576e` READY
+und ueber helmut-pilot.vercel.app erreichbar. Client und CSS nativ bytegleich
+zum geprueften Repository-Stand.
+
+Der aktuelle App-Start meldet weiterhin aktuelle Morgenquittung, quiet und
+Lage mit null Narrativabsaetzen/10 Vorgangskarten. Genau dieser reale
+Cache-Leerfall zeigt jetzt vier vorhandene substanzielle Zusammenfassungen
+statt der alleinigen Leerkarte. Quellen/Publikationsdaten und Lage-Verweise
+funktionieren. Abschliessender isolierter Chromium-Replay:21/21 Kontrollen
+bei1280/390/360 Pixeln, keine JS-Fehler und kein horizontaler Ueberlauf.
+Der Browser verwendet exakt nativ gelesene Client-/CSS-Bytes und die echte
+App-Start-Antwort; nur Authentifizierung ist simuliert. Keine externen
+Browseranfragen, Generierung oder Produktionsschreibzugriffe im Replay.
+Kein behaupteter Login auf dem Endgeraet und keine menschliche Faktenvollabnahme.
+
+Die regulaere App-Domain bleibt erreichbar. Alte eindeutige Deployment-URLs
+und deren Assets sind ohne Vercel-Berechtigung gesperrt; historischer Build-
+und Rollbackbestand wurde nicht geloescht. Das Projektfeld wurde nativ
+gegengelesen. Budget1USD/UTC-Tag und30USD insgesamt, Cem-Einprofilbetrieb,
+Zeitplaene und Kommunikationssperre bleiben unveraendert. Abschliessender
+rein lesender nativer Profilzaehler:501 Profile, ausschliesslich cem-ince aktiv,
+500 andere inaktiv. Keine neuen Modellaufrufe durch diesen Auftrag. Kein DeepSeek.
+
+
+Der separate BetriebsnachweisPR1071 wurde nach beiden Dokumentationschecks
+(CI42193046344) als9f722f3a gemergt; Runtime-Tests planmaessig uebersprungen.
+Vercel hat den Dokumentationsbuild nachweislich uebersprungen:
+Deploymentdpl_39yoFMFsnxTqptQsatQ8KVZRm1R6 CANCELED. Damit wurde nur der
+Betriebsstand abgeglichen; der gepruefte Runtime-Kopf6377e473 blieb unveraendert.
+Die parallel gemergte Verwaltungsanzeige ausPR1067 blieb vollstaendig erhalten.
+
+Vercel-Vertrag: [Standard Protection](https://vercel.com/docs/deployment-protection#standard-protection)
+und [Nutzung/Preise](https://vercel.com/docs/deployment-protection/usage-and-pricing).
+Die Sperre ist keine irreversible Loeschung: berechtigte Vercel-Betreiber und
+zugelassene Bypaesse behalten Zugriff auf historische Builds; die normale App
+verwendet ausschliesslich ihre regulaere Produktionsdomain.

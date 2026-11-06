@@ -92,13 +92,16 @@ entwertet den gesamten Narrativ-Cache. Der Code und die fehlende Karte erklaeren
 diesen Verlauf; ein nativer Vergleich der gespeicherten Cachehashes liegt nicht vor.
 Der ergaenzende UI-Fix zeigt bei diesem ausdruecklichen Cache-Leerfall bis zu
 vier vorhandene Lage-Zusammenfassungen mit Originalquellen, Quelldaten und
-Verweisen. Fuenf reine Titel-Platzhalter bleiben ausgeschlossen. Keine neue
+Verweisen. Reine Titel-Platzhalter bleiben ausgeschlossen. Keine neue
 Generierung, keine gelockerte Cache-/Quellenpruefung, keine HTTP-Lesezeit als
 Erstellungsdatum. Fehler und fehlende aktuelle Frischequittung bleiben gesperrt.
 Astra-Review mit der echten Antwort bestaetigt vier substanzielle Zusammenfassungen.
-Gezielter VM-Test129/129 und echter Antwort-Replay im isolierten Chromium
-21/21 bei1280/390/360 Pixeln bestanden. Pflicht-CI und erneute
-Production-Nachkontrolle folgen.
+Cache-Leerfall ausPR1069 nach Pflicht-CI42186838886 gemergt
+(`5a01c311`). Abschliessend auf Production `4e53576e` mit
+bereinigtem Client erneut nativ und im isolierten Browser geprueft:21/21 bei
+1280/390/360 Pixeln. Vier vorhandene Zusammenfassungen samt Originalquellen,
+Quelldaten und Lage-Verweisen sichtbar; keine reine Leerkarte, kein Ueberlauf,
+keine JS-Fehler oder Generierungsaufrufe. Alte Cachetexte bleiben ausgeschlossen.
 [Diagnose und Abnahme](betrieb/cem-einprofilbetrieb-20261105.md#briefing-anzeige-am-06112026).
 
 ## Einheitlicher Helmut: Altpfade und alte Deployment-Adressen (06.11.2026)
@@ -109,15 +112,19 @@ Sechs getrennte Audits bestaetigen einen normalen App-Einstieg und denselben
 V3-Motor fuer App-Start/Briefing. Kein zweites Cem-V1-System und kein automatischer
 V2-Rueckfall nachgewiesen. Marketingprojekt und historische Daten bleiben erforderlich.
 
-Vorbereitet entfernt:58 unerreichbare Frontendfunktionen (darunter zwei alte
+Produktiv entfernt:58 unerreichbare Frontendfunktionen (darunter zwei alte
 Briefingrenderer), zwei ungenutzte Blob-Briefing-APIs und ein toter automatischer
 Refreshhelfer. Die alte branchabhaengige Testdatenaktivierung entfaellt; Production
 weist den Testdatenschalter jetzt auch bei gesetztem Flag ab. Aktuelle
 Mandantentrennung, Login, Profil-/Aufgaben-/Themenspeicher und drei Tagesjobs
 bleiben erhalten. Unabhaengiger Astra- und Pipeline-Review ohne Blocker;
 260 gezielte UI-,41 Cross-Tenant- und20 Mandantentrennungs-Assertions bestanden.
-171/171 integrierte Chromium-Assertions bestanden; Pflicht-CI und Deployment
-fuer diesen Rueckbau folgen.
+171/171 integrierte Chromium-Assertions bestanden. PR1070 nach beiden
+Pflichtchecks auf `6377e473` (CI42189099678) gemergt. Production
+`4e53576e` / `dpl_2SPTqnpJW5wCCWBevL91WKEpwipp` READY; ausgelieferte Client-/CSS-Bytes
+identisch zum geprueften Stand. Abschliessender Replay mit echten gelesenen
+Daten und diesen Bytes:21/21 auf Desktop/Mobil. Testdatenschalter in Production
+gesperrt, aktueller Einstieg unveraendert; keine Daten-/Profil-/Budgetaenderung.
 
 Alte eindeutige Production-URLs waren weiterhin direkt erreichbar, aber ohne
 Verweis aus der aktuellen App. Deshalb Vercel Authentication fuer helmut-pilot
@@ -293,8 +300,8 @@ lokal), `admin-nutzer-loeschen-test.js` (Farbannahme `#ff5967`).
 
 ## Genau ein naechster Schritt
 
-**Den belegten Briefing-Anzeigefehler beheben, die Pflichtchecks abschliessen
-und die mobile Ausgabe nach dem Deployment mit Cems vorhandenen Daten pruefen.**
+**Auftrag abgeschlossen: Die regulaere App einmal neu laden, damit der
+bereinigte Client mit dem sichtbaren Tagesueberblick geladen wird.**
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
 Historische alte Anweisungen, darunter
