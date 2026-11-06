@@ -102,6 +102,24 @@ function main() {
   check("B6 Eine geaenderte Fach-Testdatei gehoert ueber ihren Namen zu ihrem Bereich",
     bTestdatei.bereiche.includes("lage") && !bTestdatei.konservativ, JSON.stringify(bTestdatei.bereiche));
 
+  const bVerwaltung = waehle(["docs/CURRENT_STATE.md", "scripts/original-verwaltung-paket.js",
+    "scripts/original-verwaltung-test.js", "verwaltung/original-adapter.mjs"]);
+  check("B7 Verwaltungsintegration loest nur Admin-Regression aus",
+    JSON.stringify(bVerwaltung.bereiche) === JSON.stringify(["admin"])
+      && !bVerwaltung.konservativ && bVerwaltung.unbekannt.length === 0
+      && bVerwaltung.suiten.includes("original-verwaltung-test.js")
+      && bVerwaltung.suiten.some(f => /^admin/.test(f))
+      && bVerwaltung.suiten.every(f => /^admin|^original-verwaltung-test\\.js$/.test(f)),
+    `${bVerwaltung.suiten.length} Admin-Suiten`);
+  const bVerwaltungsdatei = waehle(["verwaltung/index.html", "verwaltung/styles.css"]);
+  check("B8 Eigene Verwaltungsdateien sind relevant und kein unerkannter Code",
+    A.istRelevant("verwaltung/original-adapter.mjs")
+      && A.istRelevant("verwaltung/index.html")
+      && !A.istRelevant("verwaltung/README.md")
+      && JSON.stringify(bVerwaltungsdatei.bereiche) === JSON.stringify(["admin"])
+      && !bVerwaltungsdatei.konservativ
+      && bVerwaltungsdatei.suiten.includes("original-verwaltung-test.js"), "");
+
   // ── C · Mehrere Bereiche = Vereinigung, keine Doppel ─────────────────────────
   console.log("\n== C · Mehrere Bereiche und Doppelvermeidung ==");
   const bMehr = waehle(["lib/helmut/briefing-lauf.js", "lib/helmut/lage.js"]);
