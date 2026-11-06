@@ -190,7 +190,7 @@ async function ausfuehren({ bestand, config, env, db, fetchFn, now, pruefeBetrie
       // unveraendert; nur Quellen ohne bisherigen Versuch kommen weiter.
       if(before.raw?.helmutQuellenkontext){report.bereitsGeprueft++;continue;}
       let result=E.fromMirror(before,bestand.main.rawItems||[]);
-      if(!result.ok){
+      if(!result.ok && result.reason!=="quelle-nur-metadaten"){
         const url=Q.artikelUrl(before.canonical_url)||Q.artikelUrl(before.url), host=publisherHost(url);
         if(!host) result={ok:false,reason:"artikelziel-nicht-freigegeben"};
         else {

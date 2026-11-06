@@ -72,8 +72,11 @@ test("Public-/Client-/Lage-Rollen bleiben sichtbar und Quellen bleiben einzeln",
   const c=E.lageKarte({vorgangId:item.vorgangId,summary:{},sources:[]},item);
   same(c.ereignisKontexte,item.ereignisKontexte);assert.equal(c.displaySummary,item.summary);
   const src=fs.readFileSync(require.resolve("../client.js"),"utf8"),renderer=src.slice(src.indexOf("function renderEreignisRollen"),src.indexOf("function renderDecisionBlock"));
-  const scope={sourceHref:s=>s.url,escapeHtml:s=>String(s).replace(/</g,"&lt;"),escapeAttribute:s=>String(s).replace(/"/g,"&quot;")};
-  vm.createContext(scope);vm.runInContext(renderer+";globalThis.render=renderEreignisRollen",scope);
+  // Echte Herkunfts-/Linkbindung mitladen; keinen Schutz durch einen Stub ersetzen.
+  const noticeStart=src.indexOf("function sourceNoticeHref"),noticeEnd=src.indexOf("function renderSourceBasis",noticeStart);
+  assert.ok(noticeStart>=0&&noticeEnd>noticeStart);
+  const scope={URL,sourceHref:s=>s.url,escapeHtml:s=>String(s).replace(/</g,"&lt;"),escapeAttribute:s=>String(s).replace(/"/g,"&quot;")};
+  vm.createContext(scope);vm.runInContext(src.slice(noticeStart,noticeEnd)+renderer+";globalThis.render=renderEreignisRollen",scope);
   const html=scope.render(c);for(const row of item.ereignisKontexte) {assert.ok(html.includes(row.title));assert.ok(html.includes(row.summary));for(const s of row.sources)assert.ok(html.includes(s.url));}
   assert.ok(scope.render({ereignisKontexte:[{title:"<script>",summary:"<bad>",sources:[]}]}).includes("&lt;script>"));
 });

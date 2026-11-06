@@ -1,6 +1,6 @@
 # Neutrale Quellenversorgung und laufende Prüfung
 
-Stand: 06.11.2026. Implementierung zur Prüfung, noch nicht produktiv aktiviert.
+Stand: 06.11.2026. PR1079 und dessen freigegebene Katalogergänzungen sind live übernommen; neue Quellenzugänge bleiben pausiert. Spätere Ergänzung: [DIP, EUR-Lex und Bundespuls](48-dip-eurlex-bundespuls.md).
 
 ## Gleiche Anforderungen
 
@@ -104,5 +104,41 @@ Validierung: 25 Offline- und 25 PostgreSQL-Prüfungen des Ergänzungsplans sowie
 Fach-/Parteizuordnung, Landesparser, Betriebsabdeckung, echte Cron-Abschlusswege
 und Verwaltungsanzeige einschließlich fehlender Daten und HTML-Escaping.
 
-Merge/Deployment, Einspielen des Ergänzungsplans und Freigabe neuer Abrufwege sind
-noch offen. Der Code allein ändert den relationalen Quellenbestand nicht.
+## Produktionsübernahme am 06.11.2026
+
+Nach ausdrücklichem GO wurde [PR1079](https://github.com/ernisch/helmut-pilot/pull/1079)
+auf `ec70fe310a8615a42bfb0cdea460471fe19bb51b` gemergt. Vercel bestätigt
+`dpl_7fx63YAcsDHDbnd8NU4BRoXbTYXm` als READY/Production. Die Hauptdomain liefert
+Version `ec70fe31` und bytegleiche Clientdateien. `/api/release/public` bestätigt
+Bereitschaft und persistenten Speicher; die Quellenverwaltung antwortet ohne
+Anmeldung mit401. Die kurze deploymentbezogene Fehlerlog-Abfrage fand keine
+error/fatal-Einträge. Dies ist kein angemeldeter Production-UI-Test.
+Pflicht-CI42214268113:189/189Standard-,336/336Bereichssuiten und Browser bestanden;
+auch PARDOK, Shadow-Pilot und Abrufwegeprüfung grün. Der separat lokal gefundene
+alte Farbtest im Nutzerlöschdialog bleibt dokumentiert; keine Quellenregression.
+
+Der frische Katalog vom13:14:41UTC entsprach exakt der freigegebenen Baseline.
+Beide geprüften Pläne wurden unverändert und jeweils atomar eingespielt:
+46Pakete prepared,89Wege paused/manual,32Herausgeber,2Entitäten und126Paketlinks
+sowie je eine Ebenen-/Geografiezuordnung. Anschließend wurden genau die drei
+beschriebenen BB/rbb-Beziehungen korrigiert. Die Kontrolle vom13:19:50UTC
+bestätigt alle zehn Tabellen exakt als Ausgangsstand plus genehmigte Receipts.
+Endstand:55Pakete,252Wege,291Paketlinks. Keine bestehenden Zeilen aktualisiert;
+ausschließlich die vorgesehene alte Parteibasis-Verknüpfung entfernt.
+Neue Zugänge bleiben pausiert, ihre Healthwerte unverändert leer. Keine zusätzlichen
+Profil-, Budget-, Cron- oder Modellaktionen. Der automatische Prozessbeleg wird
+erst beim nächsten regulären Quellenlauf erwartet (04:00UTC); dessen Durchführung
+ist durch diesen Rollout noch nicht nachgewiesen.
+
+[Maschinenlesbarer Nachweis](47-rollout-20261106.json) enthält Prüfsummen und
+Zähler, keine Rohbestände oder Authentifizierungsdaten. Echte Receipts und daran
+gebundene Rücknahme-SQL liegen im Arbeitsartefakt
+`/workspace/helmut-abdeckung-2026-11-06/production-20261106/`.
+Rücknahme nur bei passendem unverändertem/nicht inzwischen genutztem Bestand:
+zuerst Zuordnungskorrektur, danach Ergänzungen. Kein Rücknahmetest in Production.
+Für den Code ist das vorherige READY-Deployment
+`dpl_6mL7X1bobnCQ1wQ24CpdxBKiC2aJ` (`c4425d7a`) der belegte Rückweg.
+
+Technische Übernahme und Datenkontrolle sind abgeschlossen. Nächster fachlicher
+Schritt: Nutzungsrechte und fehlende Inhalte/Anbindungen klären und geeignete
+Quellen gesondert aktivieren; vorbereitete Zugänge bleiben keine belegte Versorgung.

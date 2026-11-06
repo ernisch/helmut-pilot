@@ -5126,17 +5126,19 @@ function lageIsShortViewport() {
 }
 
 function lageSourceRow(source) {
-  const meta = [source.type, source.dateLabel || source.publishedAt, source.host].filter(Boolean).join(" · ");
   const href = source.url || (source.host ? `https://${source.host}` : "");
+  const date = bundespulsPublicationUnknown(source, href) ? "" : source.dateLabel || source.publishedAt;
+  const meta = [source.type, date, source.host].filter(Boolean).join(" · ");
   const inner = `
     <span class="lage2-src-main">
       <span class="lage2-src-name">${escapeHtml(source.name || "Quelle")}</span>
       <span class="lage2-src-meta">${escapeHtml(meta)}</span>
     </span>
     <span class="lage2-src-open">${escapeHtml(source.documentType === "PDF" ? "PDF öffnen ↗" : "Öffnen ↗")}</span>`;
-  return href
+  const row = href
     ? `<a class="lage2-src-row" href="${escapeAttribute(href)}" target="_blank" rel="noopener">${inner}</a>`
     : `<div class="lage2-src-row">${inner}</div>`;
+  return withSourceNotice(row, source, href);
 }
 
 function lageDocRow(doc) {
@@ -5592,10 +5594,10 @@ function vsheetBetroffeneHtml(v) {
 // ausschließlich vorhandene Quellenfelder (kein neuer Datenzugriff).
 function vsheetSourceRow(source) {
   const name = lageField(source.name) || "Quelle";
-  const time = lageField(source.dateLabel || source.publishedAt || source.published_at);
   const host = lageField(source.host);
-  const meta = [time, host].filter(Boolean).join(" · ");
   const href = source.url && isHttpUrl(source.url) ? source.url : (host ? `https://${host}` : "");
+  const time = bundespulsPublicationUnknown(source, href) ? "" : lageField(source.dateLabel || source.publishedAt || source.published_at);
+  const meta = [time, host].filter(Boolean).join(" · ");
   const ext = `<svg class="vsheet-src-ext" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const inner = `
     <span class="vsheet-src-main">
@@ -5603,9 +5605,10 @@ function vsheetSourceRow(source) {
       ${meta ? `<span class="vsheet-src-meta">${escapeHtml(meta)}</span>` : ""}
     </span>
     ${href ? ext : ""}`;
-  return href
+  const row = href
     ? `<a class="vsheet-src" href="${escapeAttribute(href)}" target="_blank" rel="noopener">${inner}</a>`
     : `<div class="vsheet-src">${inner}</div>`;
+  return withSourceNotice(row, source, href);
 }
 
 // Status DIESES Vorgangs — rein aus dem bereits vorhandenen Feld v.status
@@ -6562,6 +6565,7 @@ function renderHstandPrimary(state) {
         <div class="hstand-metric"><dt>Qualität</dt><dd>${hstandQuality(p.qualityStatus)}</dd></div>
       </dl>
       ${quelle ? `<a class="hstand-quelle-link" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen${p.sourceName ? ` · ${escapeHtml(p.sourceName)}` : ""}</a>` : ""}
+      ${quelle ? renderSourceNotice(p, quelle) : ""}
       ${briefingLageVerweis(p)}
     </section>`;
 }
@@ -7338,7 +7342,7 @@ function renderEreignisRollen(item) {
   if (!rows.length) return "";
   return `<section class="source-basis">${rows.map(r => `<article>
     <h3>${escapeHtml(r.title)}</h3><p>${escapeHtml(r.summary)}</p>
-    ${(r.sources || []).filter(s => sourceHref(s)).map(s => `<a class="source-pill" href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.sourceName || "Quelle")} · ${escapeHtml(s.title || "Artikel öffnen")}</a>`).join("")}
+    ${(r.sources || []).filter(s => sourceHref(s)).map(s => withSourceNotice(`<a class="source-pill" href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.sourceName || "Quelle")} · ${escapeHtml(s.title || "Artikel öffnen")}</a>`, s, sourceHref(s))).join("")}
   </article>`).join("")}</section>`;
 }
 
@@ -7789,6 +7793,7 @@ function renderOfficeDraftSources(sourceList) {
           ${s.title ? `<span class="buero-source-title">${escapeHtml(compactText(s.title, 90))}</span>` : ""}
           <span class="buero-source-meta">${dateLabel ? `${escapeHtml(dateLabel)} · ` : ""}Artikel öffnen</span>
         </a>
+        ${renderSourceNotice(s, s.href)}
       </li>`;
   }).join("");
   return `
@@ -8009,7 +8014,7 @@ function renderTopicSourceLinks(topic) {
       ${sources.map((source) => {
         const href = sourceHref(source);
         const label = `${source.sourceName || "Quelle"} · ${sourceLinkLabel(source)}`;
-        return `<a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+        return withSourceNotice(`<a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`, source, href);
       }).join("")}
     </div>
   `;
@@ -8215,7 +8220,7 @@ function renderRadarMentionCard(m) {
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
   `;
-  return radarCardWrap(href, inner, "mention");
+  return withSourceNotice(radarCardWrap(href, inner, "mention"), m, href);
 }
 
 // --- Dein Umfeld (Partei / Wahlkreis / Ausschüsse) --------------------------
@@ -8260,7 +8265,7 @@ function renderRadarEnvRow(e) {
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
   `;
-  return radarRowWrap(href, inner);
+  return withSourceNotice(radarRowWrap(href, inner), e, href);
 }
 
 // --- Neue Dynamiken ---------------------------------------------------------
@@ -8293,7 +8298,7 @@ function renderRadarDynamicCard(d) {
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
   `;
-  return radarCardWrap(href, inner, "dynamic");
+  return withSourceNotice(radarCardWrap(href, inner, "dynamic"), d, href);
 }
 
 // --- Alle relevanten Artikel + Filter ---------------------------------------
@@ -8346,7 +8351,7 @@ function renderRadarArticleRow(a) {
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
   `;
-  return radarRowWrap(href, inner);
+  return withSourceNotice(radarRowWrap(href, inner), a, href);
 }
 
 function radarPrimaryRelationLabel(types) {
@@ -11423,7 +11428,55 @@ function sourceLink(item) {
   const source = primarySource(item);
   const url = sourceHref(source || item);
   if (!url) return "";
-  return `<a class="source-pill" href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceLinkLabel(source || item))}</a>`;
+  return withSourceNotice(`<a class="source-pill" href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceLinkLabel(source || item))}</a>`, source || item, url);
+}
+
+// Der Server liefert beleggebundene Herkunftsangaben. Keine Ableitung aus Namen,
+// keine neue Quellenbewertung. Originaldaten sind ein separater Link neben dem
+// Artikel: niemals einen zweiten Anker in einen bestehenden Artikelanker setzen.
+function sourceNoticeHref(value) {
+  try {
+    const url = new URL(String(value || ""));
+    if (url.protocol !== "https:" || url.username || url.password || url.port) return "";
+    return ["dip.bundestag.de", "bundespuls.de", "eur-lex.europa.eu", "creativecommons.org"].includes(url.hostname)
+      ? url.href : "";
+  } catch (_) { return ""; }
+}
+
+function boundSourceNotice(source, articleHref) {
+  const notice = source && source.sourceNotice;
+  if (!notice || typeof notice !== "object" || typeof notice.text !== "string" || !notice.text.trim()) return null;
+  const host = { "bundespuls-vorgaenge-rss": "bundespuls.de", "eurlex-amtsblatt-l-rss": "eur-lex.europa.eu" }[notice.sourceId];
+  // Die Quellenangabe gehört nur zum angezeigten Artikel; ein kopierter Hinweis
+  // darf weder eine andere Quelle noch einen bloßen Feedlink umetikettieren.
+  try {
+    const article = new URL(notice.articleUrl);
+    const shown = new URL(articleHref);
+    if (!host || article.hostname !== host || !sourceNoticeHref(article.href)
+      || shown.href !== article.href || (source.sourceId && source.sourceId !== notice.sourceId)) return null;
+  } catch (_) { return null; }
+  return notice;
+}
+
+function bundespulsPublicationUnknown(source, articleHref) {
+  return !source?.publishedAt && !source?.published_at
+    && boundSourceNotice(source, articleHref)?.sourceId === "bundespuls-vorgaenge-rss";
+}
+
+function renderSourceNotice(source, articleHref = source && (source.itemUrl || source.url || source.sourceUrl || source.href)) {
+  const notice = boundSourceNotice(source, articleHref);
+  if (!notice) return "";
+  const original = sourceNoticeHref(notice.originalUrl);
+  const license = sourceNoticeHref(notice.licenseUrl);
+  const changes = typeof notice.changes === "string" ? notice.changes.trim() : "";
+  const originalLabel = typeof notice.originalLabel === "string" && notice.originalLabel.trim() ? notice.originalLabel : "Originalquelle";
+  const date = bundespulsPublicationUnknown(source, articleHref) ? " Veröffentlichungsdatum unbekannt." : "";
+  return `<p class="source-notice">${escapeHtml(notice.text)}${original ? ` <a href="${escapeAttribute(original)}" target="_blank" rel="noopener noreferrer">${escapeHtml(originalLabel)}</a>.` : ""}${changes ? ` <span>${escapeHtml(changes)}</span>` : ""}${date}${license ? ` <a href="${escapeAttribute(license)}" target="_blank" rel="noopener noreferrer">Nutzungshinweis</a>.` : ""}</p>`;
+}
+
+function withSourceNotice(markup, source, articleHref) {
+  const notice = renderSourceNotice(source, articleHref);
+  return notice ? `<div class="source-with-notice">${markup}${notice}</div>` : markup;
 }
 
 function renderSourceBasis(item) {
@@ -11434,16 +11487,19 @@ function renderSourceBasis(item) {
       <h2>Quellenbasis</h2>
       ${sources.slice(0, 12).map((source) => {
         const href = sourceHref(source);
-        return `
+        const date = bundespulsPublicationUnknown(source, href)
+          ? (source.retrievedAt ? `Abgerufen ${sourceTimeLabel(source.retrievedAt)}` : "Veröffentlichungsdatum unbekannt")
+          : sourceTimeLabel(source.publishedAt || source.retrievedAt);
+        return withSourceNotice(`
         <a class="source-row" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">
           <div>
             <span>${escapeHtml(source.sourceName || "Quelle")}</span>
             <p>${escapeHtml(source.excerpt || source.relevanceReason || "Quelle wurde für diese Empfehlung herangezogen.")}</p>
-            <small>${escapeHtml(sourceTimeLabel(source.publishedAt || source.retrievedAt))} · Direkter Artikellink.</small>
+            <small>${escapeHtml(date)} · Direkter Artikellink.</small>
           </div>
           <small>${escapeHtml(confidenceAdjective(source.confidence))} Sicherheit</small>
         </a>
-      `;
+      `, source, href);
       }).join("")}
     </section>
   `;
@@ -11454,8 +11510,11 @@ function primarySource(item) {
   if (item.sourceName || item.url || item.sourceUrl) {
     return {
       sourceName: item.sourceName,
+      sourceId: item.sourceId,
       itemUrl: item.url,
       sourceUrl: item.sourceUrl,
+      sourceNotice: item.sourceNotice,
+      publishedAt: item.publishedAt || item.published_at,
       confidence: item.confidence
     };
   }

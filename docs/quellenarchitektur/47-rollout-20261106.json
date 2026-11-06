@@ -1,0 +1,193 @@
+{
+  "mergeCommit": "ec70fe310a8615a42bfb0cdea460471fe19bb51b",
+  "pullRequest": 1079,
+  "deploymentId": "dpl_7fx63YAcsDHDbnd8NU4BRoXbTYXm",
+  "productionState": "READY",
+  "ciRun": 42214268113,
+  "ciStandard": {
+    "passed": 189,
+    "total": 189
+  },
+  "ciArea": {
+    "passed": 336,
+    "total": 336
+  },
+  "browserCi": "PASS",
+  "publicVerification": {
+    "checkedAt": "2026-11-06T13:16:02.065088+00:00",
+    "homeStatus": 200,
+    "finalUrl": "https://helmut-pilot.vercel.app/",
+    "assetVersion": "ec70fe31",
+    "clientStatus": 200,
+    "clientMatchesMerge": true,
+    "clientSha256": "c9bea1c766cdfd3e900a6811eb7d0a788f408db0bf4bd31a412e1dcdaabc623f",
+    "/api/release/public": {
+      "status": 200,
+      "result": {
+        "ok": true,
+        "ready": true,
+        "storage": true
+      }
+    },
+    "/api/admin/sources-status": {
+      "status": 401
+    }
+  },
+  "dataVerification": {
+    "verifiedAt": "2026-11-06T13:20:37.892Z",
+    "projectId": "ddckuvvpcytqbyfmbvie",
+    "status": "PASS",
+    "beforeCapturedAt": "2026-11-06T13:14:41.919327+00:00",
+    "afterCapturedAt": "2026-11-06T13:19:50.328079+00:00",
+    "beforeDataHash": "4e469681f7c0a447edf267c8a7506f731060a5c183171782879bf9a6c1856b40",
+    "afterDataHash": "8081b34d802385c99c7875a575a6a572deaf74291adb57b79cd411d6bf40b098",
+    "approvedPlanHashes": [
+      "8333c94efa07d55e217c799ed6b4d7acacb58bd659d640aecafa20158bc257e6",
+      "c0a2b0a78c1b08363d41cd584d165904308418bfeaf87b32a33ebfe1fa906205"
+    ],
+    "receiptsSaved": true,
+    "additionReceiptRows": 297,
+    "correctionReceiptRows": 3,
+    "allTenTablesExactlyMatchBeforePlusApprovedReceipts": true,
+    "existingRowsUpdated": 0,
+    "onlyDeletedExistingRow": {
+      "package_id": "pkg-brandenburg-basis",
+      "retrieval_path_id": "rp-bb-partei_pilot"
+    },
+    "counts": {
+      "publishers": 96,
+      "geographies": 50,
+      "package_paths": 291,
+      "retrieval_paths": 252,
+      "source_packages": 55,
+      "political_entities": 75,
+      "path_expected_levels": 19,
+      "path_expected_topics": 0,
+      "path_expected_entities": 0,
+      "path_expected_geographies": 20
+    },
+    "diff": {
+      "geographies": {
+        "added": 0,
+        "removed": 0,
+        "updated": 0
+      },
+      "political_entities": {
+        "added": 2,
+        "removed": 0,
+        "updated": 0
+      },
+      "publishers": {
+        "added": 32,
+        "removed": 0,
+        "updated": 0
+      },
+      "source_packages": {
+        "added": 46,
+        "removed": 0,
+        "updated": 0
+      },
+      "retrieval_paths": {
+        "added": 89,
+        "removed": 0,
+        "updated": 0
+      },
+      "package_paths": {
+        "added": 127,
+        "removed": 1,
+        "updated": 0
+      },
+      "path_expected_levels": {
+        "added": 1,
+        "removed": 0,
+        "updated": 0
+      },
+      "path_expected_geographies": {
+        "added": 2,
+        "removed": 0,
+        "updated": 0
+      },
+      "path_expected_topics": {
+        "added": 0,
+        "removed": 0,
+        "updated": 0
+      },
+      "path_expected_entities": {
+        "added": 0,
+        "removed": 0,
+        "updated": 0
+      }
+    },
+    "newPaths": {
+      "count": 89,
+      "allPaused": true,
+      "allManual": true,
+      "healthUntouched": true
+    },
+    "newPackages": {
+      "count": 46,
+      "allPrepared": true
+    },
+    "neutralityCorrections": [
+      {
+        "action": "delete",
+        "table_name": "package_paths",
+        "pk": {
+          "package_id": "pkg-brandenburg-basis",
+          "retrieval_path_id": "rp-bb-partei_pilot"
+        }
+      },
+      {
+        "action": "insert",
+        "table_name": "package_paths",
+        "pk": {
+          "package_id": "pkg-die-linke-brandenburg",
+          "retrieval_path_id": "rp-bb-partei_pilot"
+        }
+      },
+      {
+        "action": "insert",
+        "table_name": "path_expected_geographies",
+        "pk": {
+          "geography_id": "geo-land-brandenburg",
+          "retrieval_path_id": "rp-rbb24-politik"
+        }
+      }
+    ],
+    "brandenburgNeutralityAudit": {
+      "activeSyntheticDemandInMemoryOnly": true,
+      "profilePersisted": false,
+      "partySourceInNeutralBaseFindings": 0
+    },
+    "noOtherDataMutations": true,
+    "sourceActivationPerformed": false,
+    "statusUpdatePerformed": false,
+    "modelCallsPerformed": false,
+    "budgetOrCronChanged": false,
+    "rollbackExecuted": false,
+    "rollbackFiles": [
+      "correction-rollback-bound.sql",
+      "additions-rollback-bound.sql"
+    ],
+    "rollbackOrder": "correction first, additions second; guarded against changed or subsequently used rows",
+    "files": {
+      "baseline-before.json": "27f5e84f4aa5a6de668dcf9b8e8d453a0f4e04f7eef55bad9a3ff22f4a00751d",
+      "baseline-after.json": "bcb33530d5ba7e708c3332855eefe367658cec07a60da0daa85148f70c4f7b8f",
+      "additions-apply-receipt.json": "34a6df733456b88d238245e059863e0cdd05f7938e5ea9c62249ed5141250951",
+      "correction-apply-receipt.json": "340ebac6210e6b4b5687b78b5b8909446cc77814900d55b3c0e479fa089809bb",
+      "additions-rollback-bound.sql": "7e43db12ac64ab89e1429905671c2cce18c7a60bb9e070331756a8a5661213b5",
+      "correction-rollback-bound.sql": "e312f36908c37ccb3d3ed73cfb2c9837bb861ad0b82429a90ade5b0cbabf8585"
+    }
+  },
+  "authenticatedProductionUiVerified": false,
+  "firstScheduledAuditAfterDeployVerified": false,
+  "runtimeErrorScan": {
+    "deploymentScoped": true,
+    "window": "15m",
+    "levels": [
+      "error",
+      "fatal"
+    ],
+    "returnedGroups": 0
+  }
+}

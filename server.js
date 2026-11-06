@@ -3744,7 +3744,18 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   });
   // Source Safety Guard (regelbasiert, 0 KI): kritische, unbestaetigte Claims aus
   // unbekannten/schwachen Quellen NICHT ins Helmut-Briefing. Quarantaene wird verworfen.
-  const safeDecisions = candidateDecisions.filter((d) => {
+  const bewerteteDecisions = candidateDecisions.map(d => {
+    if (korrekturDaten?.priorisierung) return d;
+    const ko = kosById[d.knowledge_object_id];
+    if (!ko) return d;
+    const projection = require("./lib/helmut/parlamentsdaten-herkunft").bewertungsprojektion(ko, sourcesByVorgang[ko.vorgang_id] || []);
+    if (projection === ko) return d;
+    // Nur den falschen Zusatzbeleg-Bonus berichtigen. Kandidaten, Reihenfolge,
+    // gespeicherte Entscheidungen und manuelle Priorisierung bleiben erhalten.
+    const corrected = decisionsEngine.decideForUser(profile, [projection], { userId, limit: 1 })[0];
+    return corrected ? { ...d, score: corrected.score, decision: corrected.decision, priority_type: corrected.priority_type } : d;
+  });
+  const safeDecisions = bewerteteDecisions.filter((d) => {
     const ko = kosById[d.knowledge_object_id];
     if (!ko) return false;
     if (!require("./lib/helmut/briefing-quellenqualitaet").quellengebunden(ko, sourcesByVorgang[ko.vorgang_id] || [])) return false;
@@ -3921,6 +3932,7 @@ function compactHomeItem(item) {
     contextType: item.contextType,
     sourceName: item.sourceName,
     sourceType: item.sourceType,
+    ...(item.sourceNotice ? { sourceNotice: item.sourceNotice } : {}),
     url: item.url,
     itemUrl: item.itemUrl,
     sourceUrl: item.sourceUrl,
@@ -3982,6 +3994,7 @@ function compactSource(source) {
   return {
     sourceName: source.sourceName || source.name,
     sourceType: source.sourceType || source.type,
+    ...(source.sourceNotice ? { sourceNotice: source.sourceNotice } : {}),
     sourceUrl: source.sourceUrl,
     url: source.url,
     itemUrl: source.itemUrl || source.url,

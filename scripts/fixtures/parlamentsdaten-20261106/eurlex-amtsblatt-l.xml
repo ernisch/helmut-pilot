@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="./../screen-rss.xsl"?>
+<rss version="2.0">
+<channel xmlns:dc="http://purl.org/dc/elements/1.1/">
+   <title>5 - Acts of the Official Journal L</title>
+   <pubDate>Fri, 06 Nov 2026 14:30:41 +0100</pubDate>
+   <description>This feed retrieves individual acts published in the latest editions of the L series (Legislation) of the &lt;em&gt;Official Journal of the European Union&lt;/em&gt;.</description>
+   <language>de</language>
+   <link>https://eur-lex.europa.eu/homepage.html</link>
+   <image>
+      <title>5 - Acts of the Official Journal L</title>
+      <url>https://eur-lex.europa.eu/images/eurlex_logo.png</url>
+      <link>https://eur-lex.europa.eu/homepage.html</link>
+   </image>
+   <item>
+      <title>CELEX:32026R2409: Durchführungsverordnung (EU) 2026/2409 der Kommission vom 5. November 2026 zur zollamtlichen Erfassung der Einfuhren bestimmter Polyetherpolyole mit Ursprung in der Volksrepublik China, um die Erhebung von Antidumpingzöllen auf die zollamtlich erfassten Einfuhren zu ermöglichen</title>
+      <description/>
+      <link>https://eur-lex.europa.eu/./legal-content/AUTO/?uri=CELEX:32026R2409</link>
+      <guid>https://eur-lex.europa.eu/./legal-content/AUTO/?uri=CELLAR:4ad43434-d983-11f1-8501-01aa75ed71a1</guid>
+      <category>Lex Alerts</category>
+      <pubDate>Fri, 06 Nov 2026 00:00:00 +0100</pubDate>
+      <dc:creator>Generaldirektion Handel und wirtschaftliche Sicherheit, Europäische Kommission</dc:creator>
+   </item><item>
+      <title>CELEX:32026R2467: Durchführungsverordnung (EU) 2026/2467 der Kommission vom 5. November 2026 über den finanziellen Ausgleich für Endverbraucher von Brennstoffen und über Zertifikate, die für nicht unter Kapitel IVa der Richtlinie 2003/87/EG des Europäischen Parlaments und des Rates fallende Emissionen abgegeben werden</title>
+      <description/>
+      <link>https://eur-lex.europa.eu/./legal-content/AUTO/?uri=CELEX:32026R2467</link>
+      <guid>https://eur-lex.europa.eu/./legal-content/AUTO/?uri=CELLAR:fec4015b-d982-11f1-8501-01aa75ed71a1</guid>
+      <category>Lex Alerts</category>
+      <pubDate>Fri, 06 Nov 2026 00:00:00 +0100</pubDate>
+      <dc:creator>Europäische Kommission, Generaldirektion Klimapolitik</dc:creator>
+   </item><item>
+      <title>CELEX:32026H2394: Empfehlung (EU) 2026/2394 der Kommission vom 29. Oktober 2026 über unverbindliche Mustervertragsklauseln für den Datenzugang und die Datennutzung sowie unverbindliche Standardvertragsklauseln für Cloud-Computing-Verträge</title>
+      <description/>
+      <link>https://eur-lex.europa.eu/./legal-content/AUTO/?uri=CELEX:32026H2394</link>
+      <guid>https://eur-lex.europa.eu/./legal-content/AUTO/?uri=CELLAR:fea1d35a-d982-11f1-8501-01aa75ed71a1</guid>
+      <category>Lex Alerts</category>
+      <pubDate>Fri, 06 Nov 2026 00:00:00 +0100</pubDate>
+      <dc:creator>Europäische Kommission, Generaldirektion Justiz und Verbraucher</dc:creator>
+   </item></channel></rss>

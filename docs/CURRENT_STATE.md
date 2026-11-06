@@ -5,17 +5,14 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
-## Neutrale Quellenversorgung: Umsetzung zur Prüfung (06.11.2026)
+## Neutrale Quellenversorgung: live übernommen (06.11.2026)
 
-Auf einem getrennten Entwicklungszweig sind gleiche Zuordnungsregeln für 24
-Ausschussgebiete, 16 Länder und 10 erfasste Parteien sowie eine Prüfung tatsächlicher
-Quellenversorgung vorbereitet. Neue Quellen sind inaktiv; bestehende Livewerte
-wurden nicht verändert. Der neue Verwaltungsbericht trennt installierten Bestand,
-geplante Ergänzungen und unbelegte Versorgung. Am gemeinsamen Abschluss der
-Quellencrons werden Status und Zähler für alle Betriebspfade gespeichert. Technische und fachliche Restlücken,
-Nutzungsbedingungen und der gesonderte Ergänzungsplan stehen in
-[47-neutrale-quellenversorgung.md](quellenarchitektur/47-neutrale-quellenversorgung.md).
-Merge, Datenänderung und Aktivierung stehen noch aus.
+PR1079 nach Betreiber-GO auf `ec70fe31` gemergt; Production-Deployment `dpl_7fx63YAcsDHDbnd8NU4BRoXbTYXm` READY und Hauptdomain geprüft.
+46 vorbereitete Pakete und89 pausierte/manuelle Wege ergänzt; danach EUR-Lex und Bundespuls vorbereitet hinzugefügt: Katalog55Pakete/254Wege/293Paketlinks. Drei BB/rbb-Zuordnungen korrigiert.
+Alle zehn Tabellen gegen Ausgangsstand und echte Ausführungsbelege geprüft; bestehende Quellen-/Healthwerte unverändert, keine Aktivierung oder Budget-/Cronänderung.
+Gleiche Regeln für24Fachgebiete,16Länder und10Parteien sowie Verwaltungsprüfung live. Der automatische Nachweis folgt am nächsten regulären Quellenlauf (04:00UTC); noch kein solcher Lauf nach diesem Deployment belegt.
+Pflicht-CI189/189Standard,336/336Bereich und Browser grün. Liveassets bytegleich, öffentlicher Bereitschaftstest grün, Verwaltung ohne Anmeldung401; kein angemeldeter Production-UI-Test.
+Restlücken/Rückweg: [Quellenversorgung](quellenarchitektur/47-neutrale-quellenversorgung.md). [DIP/EUR-Lex/Bundespuls](quellenarchitektur/48-dip-eurlex-bundespuls.md): DIP genutzt; Aktivierung der zwei neuen Wege beauftragt und vorbereitet, vorerst pausiert bis Merge/DeployPR1084 (konkretesGO offen).
 
 ## Verwaltungszahlen: Korrektur ausgerollt (06.11.2026)
 
