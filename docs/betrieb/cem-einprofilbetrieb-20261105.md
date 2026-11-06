@@ -272,3 +272,57 @@ Naechster regulaerer Schritt ist der vorhandene Tagesplan; keine weitere
 kostenpflichtige Nachpruefung, keine Kohorte und kein Backlog-Lauf erforderlich.
 Bei Stoerung Cem ueber die bestehende Profil-API deaktivieren; Kostenbelege
 und Reserven erhalten. Vollstaendige Zeitplanabschaltung wie oben dokumentiert.
+
+
+## Briefing-Anzeige am 06.11.2026
+
+Der Betreiber meldete nach dem bisherigen technischen Betriebsnachweis weiterhin
+nur eine Leerkarte im mobilen Briefing. Lesende Production-Diagnose06:26 UTC:
+Version86490251, HTTP200/no-store/BYPASS. Die ausgelieferten Client-Bytes sind
+identisch mit diesem main-Stand. Kein alter Client-/Service-Worker-Pfad als
+Ursache nachgewiesen. Die Tagesjobs haben funktioniert: Lage05:00:57 UTC,
+Morgenquittung05:15:37 UTC, letzter analysierter Datenstand04:01:45 UTC.
+
+Die API liefert `currentHelmutState.status=empty`, `emptyState.kind=quiet`,
+`frischeVertrag.aktuell=true` sowie verfuegbare gespeicherte Lage mit zwei
+Absaetzen und zehn quellenbelegten Vorgangskarten. Die Startseite kehrt jedoch
+bei fehlendem `primaryItem` sofort zur Leerkarte zurueck; sie rendert den
+vorhandenen Lage-Text nicht. Der statische empty-Status sagt irrefuehrend
+„Kein aktueller Stand“, das Metadatum verwendet die Lesezeit, und der Ruhehinweis
+verspricht aeltere Vorgaenge darunter, obwohl dort keine gerendert werden.
+Der bisherige Nachweis der Datenversorgung war deshalb keine vollstaendige
+Abnahme des vom Betreiber erwarteten sichtbaren Briefings.
+
+Die Auswahl der Tagesprioritaet wird nicht gelockert: 51 Entscheidungen,
+nur zwei Beobachten mit Septemberquellen. Alle Quellen der zehn Lagekarten
+liegen vor dem laufgebundenen Fensterstart05.11.,21:53:15 UTC. Die Diagnose
+„fresh rejected“ nutzt teilweise Anlagezeit und belegt keine neue Publikation.
+Keine vollstaendige Quellenabdeckung oder politische Entwarnung daraus ableiten.
+
+Kleinster Fix: aktueller ruhiger Tag zeigt den vorhandenen Tagesueberblick
+mit Originaltext, gebundenen Quellen, Publikationsdatum und funktionierendem
+Verweis zur Einordnung. Keine neue Empfehlung oder Prioritaet erfunden.
+Keine neue Modellgenerierung und keine Backend-/Daten-/Budgetaenderung.
+Fehlende, alte, unbelegte oder fehlerhafte Lage bleibt ehrlich ausgeschlossen.
+Nachkontrolle: echte gelesene Production-Antwort in isoliertem Chromium bei
+1280,390 und360 Pixeln; dazu synthetische Negativfaelle fuer Stoerungen,
+Rueckstand, Quellenbindung und fehlende Inhalte. Lokal97/97 UI-Assertions und
+129 Chromium-Assertions bestanden. Der unabhaengige Astra-Review reproduzierte
+den echten Datensatz in der VM: zwei sichtbare Absaetze, gebundene Quelldaten;
+Fehler/veraltet/nichtaktueller Vertrag bleiben ausgeschlossen. Die bestehenden
+Browserfixtures wurden bei einer gewoehnlichen403-Antwort auf den passenden
+Nicht-Widerrufsgrund korrigiert; der Mandatsentzugsfall bleibt getrennt getestet.
+Pflichtchecks, echter Datenreplay im Browser und Deployment folgen.
+Rueckweg ist der Revert dieses UI-PRs; Budgetvertrag, Profile und Zeitplaene
+bleiben davon unberuehrt.
+
+
+Zwischenpruefung: Die parallel gemergten UI-Aufraeumarbeiten bis main5cabeffa
+wurden konfliktfrei aufgenommen. Auf e1a88e33 erneut97/97 UI- und129/129
+Chromium-Assertions erfolgreich. CI42178017342 bestand Standard-, native
+Datenbank- und Browserpruefungen;331/332 Bereichssuiten bestanden. Einziger
+Fehler: `briefing-frische-e2e-test.js` erwartete noch „keine neue Meldung“.
+Die beabsichtigte Anzeige unterscheidet jetzt fehlende Tagesprioritaet von
+vorhandenen Meldungen. Nur diese Text-Erwartung wurde auf den neuen Wortlaut
+und das Weglassen des falschen Darunter-Hinweises aktualisiert. Gezielt68/68
+Assertions und unabhaengiger Astra-Review bestanden; Produktcode unveraendert.

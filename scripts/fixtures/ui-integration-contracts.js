@@ -32,4 +32,34 @@ function integrationPayload() {
     quality:{status:"fresh",reason:null,sourcesLoaded:true,lastUpdated:now}};
   return payload;
 }
-module.exports={integrationPayload};
+function quietIntegrationPayload() {
+  const payload=integrationPayload();
+  const receiptAt="2026-11-06T05:15:00.000Z", sourceAt="2026-11-05T09:20:00.000Z";
+  const vorgaenge=Array.from({length:10},(_,index)=>({
+    id:`quiet-vorgang-${index+1}`,vorgangId:`quiet-vorgang-${index+1}`,
+    title:`Synthetischer belegter Sachstand ${index+1}`,displayTitle:`Synthetischer belegter Sachstand ${index+1}`,
+    displayCategory:"Synthetische amtliche Quelle",status:"beobachtung",updatedLabel:"05. Nov. 2026",
+    displaySummary:`Vorhandener synthetischer Sachstand ${index+1} aus dem gespeicherten Lagebericht.`,
+    summary:{wasIstPassiert:`Vorhandener synthetischer Sachstand ${index+1}.`,warumWichtig:"Synthetischer Mandatsbezug.",werIstBetroffen:"Synthetische Betroffene."},
+    sources:[{name:`Synthetische Quelle ${index+1}`,url:`https://${index===0 ? "www." : ""}example.test/ui/quiet/beleg-${index+1}`,
+      publishedAt:sourceAt,dateLabel:"05. Nov. 2026",type:"Amtliche Quelle",host:"example.test"}],
+    chronologie:[],documents:[]
+  }));
+  payload.briefing.generatedAt="2026-11-06T14:37:00.000Z"; // HTTP projection time is not the stored run time.
+  payload.briefing.items=[];
+  payload.briefing.personalizedRecommendations=[];
+  payload.briefing.themeOfDay=null;
+  payload.briefing.currentHelmutState={profileId:payload.profile.id,status:"empty",available:false,
+    generatedAt:payload.briefing.generatedAt,briefingType:"morning",primaryItem:null,primaryVorgangId:null,
+    recommendation:"",items:[],emptyState:{kind:"quiet"},qualityStatus:"partial",staleState:false,
+    frischeVertrag:{aktuell:true,ruhelage:true,berlinTag:"2026-11-06",lauf:{erzeugtAm:receiptAt},
+      hinweis:"Heute liegt keine neue Meldung vor. Ältere Vorgänge stehen unten als weiterhin relevant oder Hintergrund."}};
+  payload.briefing.lageBriefing={available:true,demo:false,fromCache:true,generatedAt:"2026-11-06T05:00:00.000Z",
+    paragraphs:vorgaenge.slice(0,2).map((v,index)=>({
+      text:index===0 ? "Der synthetische Lagebericht enthält den belegten Sachstand zur Ausschussberatung. Eine zusätzliche Tagespriorität ist darin nicht ausgewiesen."
+        : "Der zweite synthetische Absatz dokumentiert die vorhandene Beratung zum Förderprogramm. Eine neue Entscheidung oder Frist ist nicht belegt.",
+      vorgangIds:[v.vorgangId],sources:v.sources.map(q=>({...q,url:q.url.replace("//www.","//"),publishedAt:"2026-11-05T09:20:00+00:00"}))
+    })),vorgaenge};
+  return payload;
+}
+module.exports={integrationPayload,quietIntegrationPayload};

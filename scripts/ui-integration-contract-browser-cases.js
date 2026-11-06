@@ -1,12 +1,13 @@
 "use strict";
 const assert=require("assert/strict");
-const { integrationPayload }=require("./fixtures/ui-integration-contracts");
+const { integrationPayload,quietIntegrationPayload }=require("./fixtures/ui-integration-contracts");
 const runs=[];
 let scenario,payload,calls,unexpected,phase,tokenMode,officeMode,csrfSerial,officeAttempt;
 const denied=["anonymous","session-503","session-invalid","no-mandate","start-401","start-503","selection","empty"];
-const viewports=[...denied.map(name=>[name,1440,900,false]),["contract-desktop",1440,900,false],["contract-mobile",390,844,true]];
+const viewports=[...denied.map(name=>[name,1440,900,false]),["contract-desktop",1440,900,false],["contract-mobile",390,844,true],
+  ["quiet-desktop",1440,900,false],["quiet-mobile",390,844,true]];
 function reset(label) {
-  scenario=label;payload=integrationPayload();calls=[];unexpected=[];phase="bootstrap";
+  scenario=label;payload=label.startsWith("quiet-") ? quietIntegrationPayload() : integrationPayload();calls=[];unexpected=[];phase="bootstrap";
   tokenMode="valid";officeMode="rule";csrfSerial=0;officeAttempt=0;
 }
 reset("contract-desktop");
@@ -78,7 +79,7 @@ function apiResponse(request) {
     officeAttempt++;
     assert.equal(token,`synthetic-csrf-${csrfSerial}`);
     assert.ok(body.decision.vorgang_id && body.decision.knowledge_object_id);
-    if(officeMode==="forbidden") return reply({error:"Kein Mandat zugewiesen.",reason:"no-mandate"},403);
+    if(officeMode==="forbidden") return reply({error:"Synthetische Kommunikationsberechtigung fehlt.",reason:"communication-forbidden"},403);
     if(officeMode==="csrf-always" || (officeMode==="csrf-once" && officeAttempt===1)) return reply({error:"CSRF token missing or invalid"},403);
     if(officeMode==="rate-limit") return reply({error:"Zu viele Kommunikationsentwürfe in kurzer Zeit."},429);
     return reply({aiEnabled:false,degraded:true,fallbackReason:"budget-erschoepft",channelLabel:"Presse",
@@ -116,6 +117,53 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
     verify("no automatic push scheduled or subscribed",await evaluate("__uiPush.scheduled===0 && __uiPush.subscribed===0"));
     verify("no specialist content fabricated",await evaluate("!document.querySelector('.ui-briefing-hero,.ui-vorgang-row,.radar2-card,.buero-draft-card')"));
     if(["no-mandate","session-503"].includes(label)) await screenshot("startup-state");
+  } else if(label.startsWith("quiet-")) {
+    verify("quiet bootstrap completes with simulated push only",await waitFor("pushConfig?.subscriptionCount===1")
+      && calls.filter(c=>c.method!=="GET").every(c=>c.path==="/api/push/subscribe"));
+    await nav("helmut");
+    verify("quiet Briefing exposes cached daily overview",await waitFor("!!document.querySelector('section[data-briefing-overview]')"));
+    verify("quiet overview uses original paragraphs and heading",await evaluate(`(()=>{
+      const overview=document.querySelector('[data-briefing-overview]');
+      return overview.textContent.includes('Dein Tagesüberblick') &&
+        ${JSON.stringify(payload.briefing.lageBriefing.paragraphs.map(p=>p.text))}.every(text=>overview.textContent.includes(text)) &&
+        overview.querySelectorAll('[data-briefing-paragraph]').length===2;
+    })()`));
+    verify("quiet receipt status and time are honest",await evaluate(`(()=>{
+      const status=document.querySelector('.hstand-status').textContent,meta=document.querySelector('.hstand-meta-line').textContent;
+      return status.includes('Aktuell') && status.includes('keine neue Tagespriorität') && meta.includes('06:15') && !meta.includes('15:37') &&
+        !document.querySelector('.ui-briefing-hero') && !document.querySelector('#app').textContent.includes('Ältere Vorgänge stehen unten');
+    })()`));
+    verify("quiet paragraph sources show dates and safe URLs",await evaluate(`(()=>{
+      const articles=[...document.querySelectorAll('[data-briefing-paragraph]')];
+      return articles.every((article,index)=>article.textContent.includes('05. Nov. 2026') &&
+        article.textContent.includes('Synthetische Quelle '+(index+1)) &&
+        article.querySelector('a[href="https://'+(index===0 ? 'www.' : '')+'example.test/ui/quiet/beleg-'+(index+1)+'"]'));
+    })()`));
+    const layout=()=>evaluate(`(()=>{
+      const page=document.querySelector('#uiPage'),overview=document.querySelector('[data-briefing-overview]');
+      return document.documentElement.scrollWidth<=innerWidth+1 && document.body.scrollWidth<=innerWidth+1 &&
+        (!page || page.scrollWidth<=page.clientWidth+1) && (!overview || overview.scrollWidth<=overview.clientWidth+1);
+    })()`);
+    verify("quiet overview has no horizontal overflow",await layout());
+    await screenshot("quiet-briefing");
+    for(const paragraph of payload.briefing.lageBriefing.paragraphs) {
+      const id=paragraph.vorgangIds[0],source=payload.briefing.lageBriefing.vorgaenge.find(v=>v.vorgangId===id).sources[0].url;
+      const button=`[data-briefing-overview] [data-lage-verweis][data-vorgang="${id}"]`;
+      verify("quiet paragraph navigates to bound Lage: "+id,await evaluate(`(()=>{
+        const button=document.querySelector(${JSON.stringify(button)});if(!button)return false;button.click();
+        return currentView==='briefing' && uiLageDetailOpen && uiLageSelectedId===${JSON.stringify(id)} &&
+          !!document.querySelector('.ui-lage-detail a[href="'+${JSON.stringify(source)}+'"]');
+      })()`));
+      verify("quiet Lage detail has no horizontal overflow",await layout());
+      await nav("helmut");
+    }
+    await nav("briefing");
+    verify("quiet Lage retains all ten real cards",await evaluate("document.querySelectorAll('.ui-vorgang-row').length===10"));
+    await nav("radar");
+    await nav("helmut");
+    verify("quiet read and navigation never trigger generation or extra bootstrap",calls.filter(c=>c.path==="/api/app/start").length===1
+      && calls.every(c=>["/api/auth/session","/api/app/start","/api/parliament","/api/push/public-key","/api/security/csrf","/api/push/subscribe"].includes(c.path)),calls);
+    verify("quiet overview survives navigation",await evaluate("!!document.querySelector('[data-briefing-overview]')"));
   } else {
     verify("successful startup permits simulated push sync",await waitFor("pushConfig?.subscriptionCount===1") && await evaluate("__uiPush.scheduled===1 && __uiPush.subscribed===1"));
     verify("bootstrap writes only simulated push; empty office formats produce no drafts",calls.filter(c=>c.method!=="GET").length===1 && calls.some(c=>c.path==="/api/push/subscribe") && !calls.some(c=>c.path==="/api/communication/generate"));
@@ -138,7 +186,7 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
       verify("explicit CSRF rejection rotates token once",result.status===200 && count('/api/security/csrf')===2 && count('/api/communication/generate')===2,result);
       await configure("business-denial","forbidden");
       result=await send();
-      verify("permission denial not replayed and body remains readable",result.status===403 && result.body.reason==='no-mandate' && count('/api/communication/generate')===1 && count('/api/security/csrf')===1,result);
+      verify("ordinary permission denial not replayed and body remains readable",result.status===403 && result.body.reason==='communication-forbidden' && count('/api/communication/generate')===1 && count('/api/security/csrf')===1,result);
       await configure("csrf-persistent","csrf-always");
       result=await send();
       verify("persistent CSRF failure stops after one retry",result.status===403 && count('/api/communication/generate')===2 && count('/api/security/csrf')===2);
