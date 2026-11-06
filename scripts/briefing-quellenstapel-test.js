@@ -53,6 +53,30 @@ const { once } = require("node:events"), S = require("../lib/helmut/storage");
     const vorher=reads;
     for(const bad of [[kos[0],kos[0]],[{vorgang_id:'fremd")'}],Array(501).fill(kos[0])])await A.rejects(S.getPruefSourcesByVorgaenge(bad));
     A.equal(reads,vorher);A.equal(writes,0);
+    // Echter Server-Ladehelfer: Batchfehler duerfen keine Quellen verlieren.
+    const fs = require("node:fs"), vm = require("node:vm");
+    const serverSource = fs.readFileSync(require.resolve("../server"), "utf8");
+    const start = serverSource.indexOf("async function loadSourcesByVorgang(kos)");
+    const end = serverSource.indexOf("\nasync function loadPruefSourcesByVorgang", start);
+    A(start > 0 && end > start);
+    let batchCalls = 0, singleCalls = 0;
+    const load = vm.runInNewContext(serverSource.slice(start, end) + "; loadSourcesByVorgang", {
+      storageModul: { getPruefSourcesByVorgaenge: async input => {
+        batchCalls++; return S.getPruefSourcesByVorgaenge(input);
+      } },
+      getSourcesForVorgang: async id => { singleCalls++; return S.getSourcesForVorgang(id); }
+    });
+    const input = kos.slice(1, 3);
+    const expected = await S.getPruefSourcesByVorgaenge(input);
+    A.deepEqual(JSON.parse(JSON.stringify(await load(input))), expected);
+    A.equal(batchCalls, 1); A.equal(singleCalls, 0);
+    mode = "missing";
+    A.deepEqual(JSON.parse(JSON.stringify(await load(input))), expected);
+    A.equal(batchCalls, 2); A.equal(singleCalls, 2);
+    mode = "ok";
+    A.deepEqual(JSON.parse(JSON.stringify(await load([]))), {});
+    A.equal(batchCalls, 2); A.equal(writes, 0);
+    console.log("PASS: Server verwendet Sammelleser; unvollstaendiger Stapel faellt verlustfrei auf Einzelquellen zurueck; leere Menge ohne IO.");
     console.log("PASS: 225 Eingaben vollstaendig identisch; 9 statt225 Reads; maximal8 parallel;40 je Vorgang; frische Aenderung sichtbar; fehlende/fremde/doppelte/fehlerhafte Daten gesperrt;0 Writes/Modelle.");
   } finally {
     for(const n of names)if(before[n]===undefined)delete process.env[n];else process.env[n]=before[n];

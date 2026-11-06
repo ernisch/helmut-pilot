@@ -324,7 +324,12 @@ warm1,157→0,721s; keine echten Android-Geraetezeiten. Geschuetzter Live-
 Startabruf braucht dagegen12,323/8,997/9,557s: der Server bleibt Hauptbremse.
 181/181 Standard- und336/336 Bereichssuiten plus Browsercheck gruen.
 [Messung, Rollout und Grenzen](betrieb/app-start-performance-20261106.md).
-Naechster Schritt: Server-Startpfad phasenweise messen und gezielt beschleunigen.
+Server-Folgefix lokal fertig auf `codex/server-start-performance-20261106`:
+Briefingquellen gebuendelt, unabhaengige Startleser und maximal4 Lagegruppen
+parallel. Reiner Datenbau mit echten GETs lokal Median15,041→5,746s;
+kein Production-/Androidwert. Quellen-/Mandats-/Fehlerpruefungen gruen,
+lesendes Review ohne Blocker. Pflicht-CI/konkreter Merge noch offen.
+Naechster Schritt: geprueften Server-PR freigeben, ausrollen und live nachmessen.
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
 Historische alte Anweisungen, darunter

@@ -20,7 +20,7 @@ let passed = 0;
       vorgaenge: [{ id: "vg-lokal", displaySummary: "Belegte Fakten." }] };
     const sandbox = {
       url: { pathname: "/api/app/start" }, accountAuth: false, authUser: null,
-      politicianId: "local-start-test", previewMode: false, response: {},
+      politicianId: "local-start-test", previewMode: false, response: { setHeader() {} },
       handleAsync: (_res, work) => work(),
       activeProfile: async id => ({ id }),
       latestBriefingPayload: async () => ({ available: true }),
@@ -51,6 +51,41 @@ let passed = 0;
       A.equal(out.briefing.lageBriefing.pendingNarrative, state === "miss");
     }
     console.log(`PASS Appstart ${state}: null Modellstarts, ehrliche Lageanzeige`); passed++;
+  }
+  // Keine Wandzeit-Schwelle: kontrollierte Promises belegen echte Parallelitaet
+  // und dass vor dem Profil keine mandatsbezogenen Folgeabfragen starten.
+  for (const failTasks of [false, true]) {
+    const gates = {}, calls = [], headers = {};
+    const hold = (name, value) => { calls.push(name); return new Promise((resolve, reject) => {
+      gates[name] = () => failTasks && name === "tasks" ? reject(new Error("tasks-unavailable")) : resolve(value);
+    }); };
+    const sandbox = {
+      url: { pathname: "/api/app/start" }, accountAuth: false, authUser: null,
+      politicianId: "isolated-tenant", previewMode: false,
+      response: { setHeader: (name, value) => { headers[name] = value; } },
+      handleAsync: (_res, work) => work(), activeProfile: () => hold("profile", { id: "isolated-tenant" }),
+      latestBriefingPayload: ({ politicianId }) => { A.equal(politicianId, "isolated-tenant"); return hold("briefing", { available: true }); },
+      buildLageBriefing: (_profile, opts) => { A.equal(opts.cacheOnly, true); return hold("lage", { available: true }); },
+      withTimeout: promise => promise,
+      getTasks: id => { A.equal(id, "isolated-tenant"); return hold("tasks", [{ id: "task" }]); },
+      getUserNotes: id => { A.equal(id, "isolated-tenant"); return hold("notes", [{ id: "note" }]); },
+      getLatestCompleteKnowledgeObjectAt: () => hold("freshness", "2026-11-06T05:00:00Z"),
+      validateProfile: () => ({}), isAiEnabled: () => false, activeModelName: () => "", ASSET_VERSION: "test", Date, console
+    };
+    const result = vm.runInNewContext(code, sandbox);
+    A.deepEqual(calls, ["profile"]); gates.profile();
+    await new Promise(resolve => setImmediate(resolve));
+    A.deepEqual(calls, ["profile", "briefing", "lage", "tasks", "notes", "freshness"]);
+    const observed = failTasks ? A.rejects(result, /tasks-unavailable/) : result;
+    for (const name of ["notes", "tasks", "freshness", "lage", "briefing"]) gates[name]();
+    const out = await observed;
+    if (!failTasks) {
+      A.equal(out.tasks[0].id, "task"); A.equal(out.notes[0].id, "note");
+      A.equal(out.briefing.lageBriefing.latestUpdatedAt, "2026-11-06T05:00:00Z");
+      A.match(headers["Server-Timing"], /start;dur=\d+/);
+      A(headers["Server-Timing"].split(", ").every(v => /^(profile|briefing|lage|tasks|notes|freshness|start);dur=\d+$/.test(v)));
+    } else A.equal(headers["Server-Timing"], undefined);
+    console.log(`PASS paralleler Start: Profilgrenze, Mandat und ${failTasks ? "Fehler" : "vollstaendige Antwort und sichere Zeitmessung"}`); passed++;
   }
   console.log(`${passed} PASS, 0 FAIL`);
 })().catch(error => { console.error(error); process.exitCode = 1; });
