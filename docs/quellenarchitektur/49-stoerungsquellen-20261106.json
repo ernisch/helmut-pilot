@@ -1,0 +1,321 @@
+{
+  "status": "PASS",
+  "scope": "Three existing retrieval path configurations; no runtime change",
+  "appliedAt": "2026-11-06T19:28:12.033653+00:00",
+  "checkedAt": "2026-11-06T19:28:34.107134+00:00",
+  "planHash": "2a77c91522d716c6e851953ebd24f8a7d14952d369653aae16daa50d16a6e2b6",
+  "postflight": {
+    "checkedAt": "2026-11-06T19:28:34.107134+00:00",
+    "appliedAt": "2026-11-06T19:28:12.033653+00:00",
+    "planHash": "2a77c91522d716c6e851953ebd24f8a7d14952d369653aae16daa50d16a6e2b6",
+    "allTenTablesExact": true,
+    "profileFingerprintsUnchanged": true,
+    "countsUnchanged": true,
+    "healthUnchanged": true,
+    "changedPaths": [
+      {
+        "id": "rp-ausschuss-arbeit-soziales",
+        "fields": [
+          "url",
+          "query",
+          "parser",
+          "status",
+          "max_items",
+          "updated_at"
+        ]
+      },
+      {
+        "id": "rp-dgb",
+        "fields": [
+          "url",
+          "query",
+          "parser",
+          "status",
+          "max_items",
+          "updated_at"
+        ]
+      },
+      {
+        "id": "rp-die-linke",
+        "fields": [
+          "url",
+          "query",
+          "parser",
+          "status",
+          "updated_at"
+        ]
+      }
+    ],
+    "changedRows": 3
+  },
+  "selection": {
+    "capturedAt": "2026-11-06T19:28:34.107134+00:00",
+    "productionData": true,
+    "before": {
+      "wegeGesamt": 254,
+      "aktiv": 143,
+      "defekt": 3,
+      "ausgeschlossen": 108,
+      "landesmodulAktiv": 0
+    },
+    "after": {
+      "wegeGesamt": 254,
+      "aktiv": 146,
+      "defekt": 0,
+      "ausgeschlossen": 108,
+      "landesmodulAktiv": 0
+    },
+    "added": [
+      "rp-ausschuss-arbeit-soziales",
+      "rp-dgb",
+      "rp-die-linke"
+    ],
+    "removed": [],
+    "actualProfileSelection": true,
+    "firstRegularCrawlProven": false
+  },
+  "publicProbes": {
+    "checkedAt": "2026-11-06T19:18:46.402Z",
+    "results": [
+      {
+        "key": "ausschuss-arbeit-soziales-legacy",
+        "sourceId": "ausschuss-arbeit-soziales",
+        "httpStatus": 200,
+        "itemCount": 64,
+        "publisherHosts": [
+          "www.bundestag.de",
+          "dserver.bundestag.de"
+        ],
+        "articleHosts": [
+          "news.google.com"
+        ],
+        "withPublicationDate": 64,
+        "oldestPublication": "2020-09-25T06:56:51.000Z",
+        "newestPublication": "2026-11-06T12:13:31.000Z",
+        "first16NewestPublication": "2026-11-06T12:13:31.000Z",
+        "parser": "lib/helmut/crawler.parseRssItems",
+        "feedItemsPresent": 64,
+        "first16ItemCount": 16
+      },
+      {
+        "key": "dgb-legacy",
+        "sourceId": "dgb",
+        "httpStatus": 200,
+        "itemCount": 89,
+        "publisherHosts": [
+          "niedersachsen-bremen-sachsenanhalt.dgb.de",
+          "nrw.dgb.de",
+          "sachsen.dgb.de",
+          "www.dgb.de",
+          "frauen.dgb.de",
+          "nord.dgb.de",
+          "bayern.dgb.de",
+          "rheinland-pfalz-saarland.dgb.de",
+          "jugend.dgb.de",
+          "hessen-thueringen.dgb.de",
+          "index-gute-arbeit.dgb.de",
+          "bw.dgb.de"
+        ],
+        "articleHosts": [
+          "news.google.com"
+        ],
+        "withPublicationDate": 89,
+        "oldestPublication": "2010-06-17T22:49:56.000Z",
+        "newestPublication": "2026-11-06T10:10:29.000Z",
+        "first16NewestPublication": "2026-11-06T09:38:17.000Z",
+        "parser": "lib/helmut/crawler.parseRssItems",
+        "feedItemsPresent": 89,
+        "first16ItemCount": 16
+      },
+      {
+        "key": "die-linke-legacy",
+        "sourceId": "die-linke",
+        "httpStatus": 200,
+        "itemCount": 64,
+        "publisherHosts": [
+          "www.die-linke.de",
+          "digital.die-linke.de",
+          "die-linke.de"
+        ],
+        "articleHosts": [
+          "news.google.com"
+        ],
+        "withPublicationDate": 64,
+        "oldestPublication": "2007-06-16T07:00:00.000Z",
+        "newestPublication": "2026-11-05T16:04:50.000Z",
+        "first16NewestPublication": "2026-11-05T16:04:50.000Z",
+        "parser": "lib/helmut/crawler.parseRssItems",
+        "feedItemsPresent": 64,
+        "first16ItemCount": 16
+      }
+    ],
+    "productionCrawl": false
+  },
+  "isolatedPostgresTests": {
+    "status": "PASS",
+    "count": 25,
+    "testedAt": "2026-11-06T19:26:42.560Z"
+  },
+  "productionReceipt": {
+    "rows": [
+      {
+        "id": "rp-ausschuss-arbeit-soziales",
+        "after_data": {
+          "id": "rp-ausschuss-arbeit-soziales",
+          "url": "https://news.google.com/rss/search?q=site:bundestag.de%20%22Ausschuss%20f%C3%BCr%20Arbeit%20und%20Soziales%22&hl=de&gl=DE&ceid=DE:de",
+          "name": "Ausschuss Arbeit und Soziales",
+          "query": "site:bundestag.de \"Ausschuss für Arbeit und Soziales\"",
+          "method": "googlenews_search",
+          "parser": "googlenews-batchexecute",
+          "status": "needs_review",
+          "priority": 95,
+          "max_items": 16,
+          "created_at": "2026-07-13T18:59:51.442086+00:00",
+          "last_error": null,
+          "updated_at": "2026-11-06T19:28:12.033653+00:00",
+          "is_critical": false,
+          "error_streak": 0,
+          "publisher_id": "publisher-bundestag.de",
+          "activation_mode": "auto",
+          "last_success_at": null,
+          "represents_type": null,
+          "legacy_source_id": "ausschuss-arbeit-soziales",
+          "expected_frequency": null
+        },
+        "before_data": {
+          "id": "rp-ausschuss-arbeit-soziales",
+          "url": "https://www.bundestag.de/ausschuesse/a11_arbeit_soziales",
+          "name": "Ausschuss Arbeit und Soziales",
+          "query": null,
+          "method": "googlenews_search",
+          "parser": "html-scrape",
+          "status": "broken",
+          "priority": 95,
+          "max_items": 1,
+          "created_at": "2026-07-13T18:59:51.442086+00:00",
+          "last_error": null,
+          "updated_at": "2026-07-26T11:13:10.446319+00:00",
+          "is_critical": false,
+          "error_streak": 0,
+          "publisher_id": "publisher-bundestag.de",
+          "activation_mode": "auto",
+          "last_success_at": null,
+          "represents_type": null,
+          "legacy_source_id": "ausschuss-arbeit-soziales",
+          "expected_frequency": null
+        }
+      },
+      {
+        "id": "rp-dgb",
+        "after_data": {
+          "id": "rp-dgb",
+          "url": "https://news.google.com/rss/search?q=site:dgb.de&hl=de&gl=DE&ceid=DE:de",
+          "name": "DGB",
+          "query": "site:dgb.de",
+          "method": "googlenews_search",
+          "parser": "googlenews-batchexecute",
+          "status": "needs_review",
+          "priority": 75,
+          "max_items": 16,
+          "created_at": "2026-07-13T18:59:51.442086+00:00",
+          "last_error": null,
+          "updated_at": "2026-11-06T19:28:12.033653+00:00",
+          "is_critical": false,
+          "error_streak": 0,
+          "publisher_id": "publisher-dgb.de",
+          "activation_mode": "auto",
+          "last_success_at": null,
+          "represents_type": null,
+          "legacy_source_id": "dgb",
+          "expected_frequency": null
+        },
+        "before_data": {
+          "id": "rp-dgb",
+          "url": "https://www.dgb.de",
+          "name": "DGB",
+          "query": null,
+          "method": "googlenews_search",
+          "parser": "html-scrape",
+          "status": "broken",
+          "priority": 75,
+          "max_items": 1,
+          "created_at": "2026-07-13T18:59:51.442086+00:00",
+          "last_error": null,
+          "updated_at": "2026-07-26T11:13:10.446319+00:00",
+          "is_critical": false,
+          "error_streak": 0,
+          "publisher_id": "publisher-dgb.de",
+          "activation_mode": "auto",
+          "last_success_at": null,
+          "represents_type": null,
+          "legacy_source_id": "dgb",
+          "expected_frequency": null
+        }
+      },
+      {
+        "id": "rp-die-linke",
+        "after_data": {
+          "id": "rp-die-linke",
+          "url": "https://news.google.com/rss/search?q=site:die-linke.de&hl=de&gl=DE&ceid=DE:de",
+          "name": "Die Linke",
+          "query": "site:die-linke.de",
+          "method": "googlenews_search",
+          "parser": "googlenews-batchexecute",
+          "status": "needs_review",
+          "priority": 90,
+          "max_items": 16,
+          "created_at": "2026-07-13T18:59:51.442086+00:00",
+          "last_error": null,
+          "updated_at": "2026-11-06T19:28:12.033653+00:00",
+          "is_critical": true,
+          "error_streak": 0,
+          "publisher_id": "publisher-die-linke.de",
+          "activation_mode": "auto",
+          "last_success_at": null,
+          "represents_type": null,
+          "legacy_source_id": "die-linke",
+          "expected_frequency": null
+        },
+        "before_data": {
+          "id": "rp-die-linke",
+          "url": "https://www.die-linke.de/start/presse/rss.xml",
+          "name": "Die Linke",
+          "query": null,
+          "method": "googlenews_search",
+          "parser": "rss-regex",
+          "status": "broken",
+          "priority": 90,
+          "max_items": 16,
+          "created_at": "2026-07-13T18:59:51.442086+00:00",
+          "last_error": null,
+          "updated_at": "2026-07-26T11:13:10.446319+00:00",
+          "is_critical": true,
+          "error_streak": 0,
+          "publisher_id": "publisher-die-linke.de",
+          "activation_mode": "auto",
+          "last_success_at": null,
+          "represents_type": null,
+          "legacy_source_id": "die-linke",
+          "expected_frequency": null
+        }
+      }
+    ],
+    "version": "helmut-stoerungsquellen-repair-20261106-v1",
+    "planHash": "2a77c91522d716c6e851953ebd24f8a7d14952d369653aae16daa50d16a6e2b6",
+    "appliedAt": "2026-11-06T19:28:12.033653+00:00",
+    "operation": "apply"
+  },
+  "firstRegularCrawlProven": false,
+  "pausedPathsUnchanged": 89,
+  "rollbackExecutedInProduction": false,
+  "receipts": {
+    "before.json": "1d17f7b45a25e54b4b2ee38b8e39901bbdc97de722fc7df32b09eaacdd250207",
+    "apply.sql": "cb9115a1cba704042b845650e0a484826b9071e424de40717f389add8c9536ad",
+    "apply-receipt.json": "5511842f5f6047416b96d5b0d98a00a13cd2b6e36f7def9a390b10c975c6e3f2",
+    "after.json": "23f7b022904e186e3813dceccc4a7c559d016f2a62a79a416c2642efb2106bc3",
+    "postflight.json": "f3cd4c4d657e823c22c77013418fd206ed95b25ac04277990b827ffd9e2f407b",
+    "selection-postflight.json": "1381c052e9550a83e303315f3baf3d978e040100781897860f571ab48deb8452",
+    "rollback-bound.sql": "174e9a9fb049234face2bf445cbf4819db56e13d95da144c999e51599380fca3",
+    "verification.json": "c00921bdaeef8746ff577ee94fdab1f5b047d2da806c3d05a81a8676bbdb6e5c"
+  }
+}

@@ -5,15 +5,15 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
-## Quellenversorgung: EUR-Lex und Bundespuls aktiv (06.11.2026)
+## Quellenversorgung: zwei Zugänge aktiviert, drei repariert (06.11.2026)
 
 PR1079 ergänzte den neutralen Katalog. PR1084 nach konkretem Betreiber-GO auf `14c558b2` gemergt; Production `dpl_GSjihZu7UMcYWn1SUVefZgBJm9AL` READY, Hauptdomain und effektive Laufzeitversion geprüft.
 EUR-Lex und Bundespuls am06.11.,21:22Istanbul aktiviert: `needs_review/always_on` bzw. `needs_review/auto`. Der erste reguläre Abruf ist noch nicht belegt; keine erfundenen Gesundheitswerte.
-Katalog55Pakete/254Wege/293Paketlinks/98Anbieter. Aktueller Quellenplan141→143, genau diese zwei Zugänge zusätzlich, keiner entfernt; DIP läuft weiterhin separat über seine API.
-Alle zehn Katalogtabellen gegen Ausgangsstand und echtes Receipt geprüft: genau zwei Status-/Modusänderungen samt Zeitstempeltrigger. Bestehende Healthwerte und sämtliche Profile unverändert; keine Budget-/Cronänderung.
+Katalog55Pakete/254Wege/293Paketlinks/98Anbieter. Zunächst Quellenplan141→143; nach Reparatur22:28Istanbul143→146: Ausschuss Arbeit/Soziales, DGB und Die Linke zusätzlich. DIP bleibt separat.89Zugänge pausiert: Vorbereitung vorhanden, Betriebsprüfung/Freischaltung offen.
+Die drei seit Juli als defekt markierten Zeilen waren unvollständig umgestellt. URL, Query, Parser und Limit entsprechen jetzt den bereits produktiven Ersatzwegen; Status `needs_review/auto`.25isolierte PostgreSQL-Prüfungen und vollständige Live-Nachkontrolle grün: exakt drei Zeilen, Health/Profile unverändert. Kein neuer Code, Cron oder Budgeteingriff.
 Gleiche Katalogregeln für24Fachgebiete,16Länder und10Parteien bleiben erhalten. Nächster regulärer Quellenlauf07.11.,07:00Istanbul (04:00UTC); Aktivierung ist noch kein Nachweis gelieferter Inhalte.
 Pflicht-CI189/189Standard,341/341Bereich und echter Desktop-/Mobilbrowser grün; zusätzliche Providerprüfungen bestanden. Keine neue Modellgenerierung oder angemeldete Production-UI-Abnahme.
-Belege und gebundener Rückweg: [Aktivierung](quellenarchitektur/48-dip-eurlex-bundespuls.md), [Receipt-Nachweis](quellenarchitektur/48-aktivierung-20261106.json). Restlücken des übrigen Katalogs: [Quellenversorgung](quellenarchitektur/47-neutrale-quellenversorgung.md).
+Belege und gebundener Rückweg: [Aktivierung](quellenarchitektur/48-dip-eurlex-bundespuls.md), [Drei Reparaturen](quellenarchitektur/49-stoerungsquellen-20261106.md). Erster regulärer Abruf der fünf Zugänge noch offen;0defekt markiert ist kein Gesundheitsnachweis für alle Quellen. Dokumentations-PR1089 wartet auf eigenes Merge-GO; übrige Lücken: [Quellenversorgung](quellenarchitektur/47-neutrale-quellenversorgung.md).
 
 ## Verwaltungszahlen: Korrektur ausgerollt (06.11.2026)
 
