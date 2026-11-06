@@ -149,3 +149,70 @@ daher keine Vermischung dieser Zeiten mit dem Laborvergleich.
 Rueckweg: vorheriges Productiondeployment
 `dpl_F32oCR4qDFyKUFMzrBFfozms8Js5` auf`66ca2816`.
 Die Nachkontrolle aktualisiert nur diese Dokumentation, nicht die Runtime.
+
+
+## Server-Optimierung, 06.11.2026 (lokal fertig, noch nicht live)
+
+Nutzerauftrag nach unveraendert langsamem Android-Start: den Serverabruf
+beschleunigen. Branch `codex/server-start-performance-20261106`, Basis
+`0e0b48b6`. Keine Migration, Konfiguration, Datenmutation oder Modellaufrufe.
+
+Drei kleine Aenderungen:
+
+- Nach unveraenderter Autorisierung und Profilaufloesung Briefing, Lage,
+  Aufgaben, Notizen und Datenstand parallel lesen. Lage weiterhin `cacheOnly`,
+  8-Sekunden-Sicherheitsfrist und ehrlicher Fehlersentinel erhalten.
+- Briefingquellen mit dem bestehenden geprueften Sammelleser laden (25 Vorgange
+  je Abfrage, gleiche maximal40 Kanten pro Vorgang, Projektion und Sortierung).
+  Bei Batchfehlern bleibt der bisherige Einzelpfad als Rueckfall erhalten.
+- Lage-Quellenmetadaten in hoechstens vier disjunkten Kennungsgruppen parallel
+  lesen. Seiten, Zeitfenster, Standvalidierung und Mengenlimits unveraendert.
+  Ausgabe bleibt geordnet; kein Teilergebnis bei einer gescheiterten Gruppe.
+
+`Server-Timing` liefert feste Phasennamen und Millisekunden fuer die spaetere
+Live-Nachkontrolle. Keine IDs, privaten Inhalte oder Secrets. `start` beginnt
+am Profilabruf, nach der Sitzungs-/Mandatsaufloesung; kein kompletter Handywert.
+
+### Gemessener Serverablauf mit echten Nurlesezugriffen
+
+Lokaler Node24-Prozess, echte Serverfunktionen und Supabase-GETs ueber den
+Umgebungsproxy; Transport hat alle Schreibmethoden und andere Ziele gesperrt.
+Keine Antworttexte/Profile gespeichert oder ausgegeben, nur Metadaten.
+Drei Durchlaeufe vorher und nachher, jeweils zehn Lagekarten im Ergebnis.
+
+| Messung | Vorher | Nachher |
+| --- | ---: | ---: |
+| Gesamter Datenbau, Median | 15,041 s | 5,746 s |
+| Einzelwerte | 16,291 / 15,041 / 14,854 s | 5,746 / 6,331 / 5,501 s |
+| Briefingbau, Median | 4,033 s | 1,873 s |
+| Lage, Median | 8,288 s | 5,467 s |
+| Datenbankabrufe | 114 je Lauf | 59 / 55 / 59 |
+
+Das sind **keine Produktions-HTTP- oder Android-Zeiten**. Der Diagnoseaufbau
+misst den vollstaendigen Datenbau ohne Lage-Abbruchfrist, liest das Profil direkt
+und laesst die Sitzung aus. In Production bleibt die8s-Frist unveraendert.
+Der vorhandene kurze Storecache traf im zweiten Nachher-Lauf; kein neuer Cache
+wurde eingefuehrt. Netzstandort und Parallelitaet beeinflussen Einzelzeiten.
+Die Datenbank ist veraenderlich; gleiche Kartenanzahl ist kein bytegleicher
+Inhaltsnachweis. Die Quellenvertraege sind separat mit synthetischen Daten geprueft.
+Der vorherige Live-Befund9–12s bleibt bis zur Nachkontrolle des neuen Deployments
+massgeblich. Verbleibende Kosten: Lage-Quellen-/Cachepruefung und grosse Store-Reads.
+
+### Abnahme und Freigabegrenze
+
+Lokal bestanden: Appstart5/5 Gruppen (Parallelstart erst nach Profil, Fehler,
+Mandat, Cachehit/-miss, null Modellstarts, sichere Zeitheader), Quellenfenster15/15
+(inklusive501 IDs, vertauschter Antwortfolge, maximal4 parallelen Reads und
+Gruppenausfall), Quellenstapel225 identische Eingaben plus Server-Batch/Rueckfall,
+Startausfaelle26/26, Lage-cacheOnly9/9, Cross-Tenant41/41; Syntax sauber.
+Unabhaengiger lesender Code-Review ohne Blocker. Eine alte Quellenfenster-Testannahme
+zur seriellen Anfragereihenfolge schlug zuerst fehl; sie prueft jetzt denselben
+Umfang ohne diese absichtlich geaenderte Reihenfolge, Ergebnisordnung separat geprueft.
+Ein erster lokaler HTTP-Test wurde von der Sandbox am Listen gehindert und
+mit erlaubtem Netzwerkzugriff erfolgreich ausgefuehrt.
+
+Pflicht-CI wird am PR-Kopf geprueft. Der konkrete neue Merge/Production-Rollout
+ist noch nicht freigegeben. Nach gruenen Checks: genau diesen PR freigeben,
+regulaer ausrollen und drei geschuetzte GET-Startabrufe samt Server-Timing messen.
+Risiko: kurzfristig mehr gleichzeitige Reads, begrenzt; kein zusaetzlicher Daten-
+oder Modellpfad. Rueckweg: PR revertieren oder vorheriges READY-Deployment nutzen.

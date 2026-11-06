@@ -681,47 +681,36 @@ async function handleRequest(request, response) {
         const mandates = await activeMandateList();
         return { needsMandateSelection: mandates.length > 1, empty: mandates.length === 0, mandates };
       }
-      const profile = await activeProfile(politicianId);
-      const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true });
-      // Lage = das politische Morgen-Briefing des Referenten (keine Empfehlung/Bewertung).
-      // P1-7 (app-start-performance.md §1C, lage.md §4): NUR die deterministischen
-      // Karten (+ ggf. gecachtes Narrativ) im Start-Kritikpfad laden — KEIN Live-LLM-
-      // Call. So können die Karten NIE durch ein LLM-Timeout verschwinden. Der Timeout
-      // bleibt als reines Sicherheitsnetz (cacheOnly macht nur DB-Reads, hängt nicht).
-      try { briefing.lageBriefing = await withTimeout(buildLageBriefing(profile, { politicianId, cacheOnly: true }), 8000, "lage-briefing-cards"); }
-      catch (error) {
-        console.error("Lage-Karten fehlgeschlagen", error && error.message);
-        // STOERUNGSWAHRHEIT (Review-Fix): Ohne diesen Sentinel bliebe
-        // briefing.lageBriefing undefined und der Client zeigte den GENERISCHEN
-        // ruhigen Leerzustand ("keine relevanten Vorgänge") — ein Timeout/Fehler
-        // sah damit aus wie ein ruhiger Tag. Form exakt wie lage.js unavailable():
-        // reason "error" mappt der Client (lageDisruption) auf den ehrlichen
-        // Störungszustand.
-        briefing.lageBriefing = {
-          available: false,
-          demo: false,
-          reason: "error",
-          generatedAt: new Date().toISOString(),
-          paragraphs: [],
-          vorgaenge: []
-        };
-      }
-      // Ein Appabruf darf keinen unbeaufsichtigten bezahlten Lage-Lauf starten.
-      // Karten und vorhandener Text bleiben lesbar; fehlender Text wird nur im
-      // regulaeren Cron oder ausdruecklich gestarteten Fachlauf erzeugt. Ein
-      // fire-and-forget nach HTTP-Ende kann in Production die Kostenabrechnung
-      // verlieren und beim naechsten Oeffnen erneut Modelle starten.
-      // P1-8 (Teil): tasks + notes sind unabhängig — parallel statt seriell laden.
-      // Block 5 (Lage-Frische): zusätzlich die ECHTE Ausgabe-Frische mitladen.
-      // getLatestCompleteKnowledgeObjectAt = created_at des jüngsten verstandenen
-      // Vorgangs — dieselbe OUTPUT-Frische, die Health/Readiness bereits als Wahrheit
-      // nutzen (server.js:617). Read-only SELECT, parallel (keine Zusatzlatenz),
-      // fail-safe null. So bekommt die Lage einen EHRLICHEN "Zuletzt aktualisiert"-
-      // Zeitstempel (Analysezeit) — NICHT das build-zeit-blinde generatedAt und NICHT
-      // das Artikel-Publikationsdatum (das kann Wochen zurückliegen).
-      const [tasks, notes, latestUpdatedAt] = await Promise.all([
-        getTasks(profile.id), getUserNotes(profile.id), getLatestCompleteKnowledgeObjectAt()
+      const startAt = Date.now();
+      const timings = [];
+      const timed = async (name, read) => {
+        const since = Date.now();
+        try { return await read(); }
+        finally { timings.push(`${name};dur=${Date.now() - since}`); }
+      };
+      const profile = await timed("profile", () => activeProfile(politicianId));
+      // Nach der unveraenderten Autorisierung und Profilaufloesung sind diese
+      // Leser unabhaengig. Alle Promises sofort beobachten, auch bei Teilfehlern.
+      const [briefing, lageBriefing, tasks, notes, latestUpdatedAt] = await Promise.all([
+        timed("briefing", () => latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true })),
+        timed("lage", async () => {
+          // Nur Karten und bestaetigter Cachetext, niemals ein Modellstart.
+          try { return await withTimeout(buildLageBriefing(profile, { politicianId, cacheOnly: true }), 8000, "lage-briefing-cards"); }
+          catch (error) {
+            console.error("Lage-Karten fehlgeschlagen", error && error.message);
+            return { available: false, demo: false, reason: "error",
+              generatedAt: new Date().toISOString(), paragraphs: [], vorgaenge: [] };
+          }
+        }),
+        timed("tasks", () => getTasks(profile.id)),
+        timed("notes", () => getUserNotes(profile.id)),
+        timed("freshness", () => getLatestCompleteKnowledgeObjectAt())
       ]);
+      briefing.lageBriefing = lageBriefing;
+      // Ausschliesslich feste Phasennamen und Millisekunden, keine Inhalte/IDs.
+      // Gesamtzeit ab Profilabruf; Sitzungspruefung und Netztransfer liegen davor/danach.
+      timings.push(`start;dur=${Date.now() - startAt}`);
+      response.setHeader("Server-Timing", timings.join(", "));
       if (briefing.lageBriefing && typeof briefing.lageBriefing === "object") {
         briefing.lageBriefing.latestUpdatedAt = latestUpdatedAt || null;
       }
@@ -3829,6 +3818,13 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
 // Fachaufnahme verhindert einen ungebremsten Abrufschwall je Mandat.
 // Der bestehende Quellen-/Fallbackvertrag des Adapters bleibt unveraendert.
 async function loadSourcesByVorgang(kos) {
+  // Derselbe gepruefte Quellenvertrag: maximal40 Kanten JE Vorgang, gleiche
+  // Projektion und Sortierung. 25 Vorgange je HTTP-Abruf statt einzelner Reads.
+  // Kein Cache: Aenderungen an Quellen werden bei jedem Appabruf neu gelesen.
+  if (kos && kos.length) {
+    try { return await storageModul.getPruefSourcesByVorgaenge(kos); }
+    catch (_) { /* Kompatibler Einzelpfad bei fehlenden Zeilen/Transportfehlern. */ }
+  }
   const sources = {};
   for (let i = 0; i < (kos || []).length; i += 8) {
     const entries = await Promise.all(kos.slice(i, i + 8).map(async (ko) => {

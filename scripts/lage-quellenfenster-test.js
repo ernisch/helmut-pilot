@@ -262,7 +262,34 @@ function brandenburgStandQuelle(tag, nummer) {
     } });
     // Je Stapel ein gewoehnlicher Zeitstempelpfad und drei ebenso begrenzte
     // Artikelstandspfade (Bundestag, Berlin, Brandenburg — je eigener Namespace).
-    assert.deepEqual(sizes, [100, 100, 100, 100, 100, 100, 100, 100, 1, 1, 1, 1]);
+    assert.deepEqual(sizes.sort((a, b) => a - b), [1, 1, 1, 1, 100, 100, 100, 100, 100, 100, 100, 100]);
+  });
+  await test("Parallellesen bleibt auf vier begrenzt, geordnet und bei Fehlern vollstaendig gesperrt", async () => {
+    const ids = Array.from({ length: 501 }, (_, i) => `ko-${String(i).padStart(3, "0")}`);
+    let active = 0, peak = 0;
+    const request = async endpoint => {
+      const p = new URL("https://example.org" + endpoint).searchParams;
+      const group = JSON.parse("[" + p.get("knowledge_object_id").slice(4, -1) + "]");
+      active++; peak = Math.max(peak, active);
+      try {
+        // Antworten kommen absichtlich in anderer Reihenfolge an.
+        await new Promise(resolve => setTimeout(resolve, group[0] === ids[0] ? 8 : 1));
+        return p.get("raw_documents.published_at").startsWith("gte.")
+          ? group.map(id => ({ knowledge_object_id: id, raw_documents: { id: "doc-" + id } })) : [];
+      } finally { active--; }
+    };
+    const result = await storage.listAktuelleLageQuellen(ids, now, { ready: () => true, request });
+    assert.equal(peak, 4); assert.equal(active, 0);
+    assert.deepEqual(result.map(r => r.knowledge_object_id), ids);
+    await assert.rejects(storage.listAktuelleLageQuellen(ids, now, { ready: () => true,
+      request: async endpoint => {
+        if (endpoint.includes(encodeURIComponent(ids[100]))) throw new Error("synthetischer Lesefehler");
+        return request(endpoint);
+      }
+    }), { name: "StorageReadError" });
+    // Bereits gestartete Gruppen beenden; kein Folgestapel nach dem Fehler.
+    await new Promise(resolve => setTimeout(resolve, 50));
+    assert.equal(active, 0);
   });
   await test("Brandenburger Landtagsstand: tagesgenau, fenstergebunden und fail-closed", async () => {
     const alt = process.env.HELMUT_BRIEFING_RELEVANZ_TAGE;
