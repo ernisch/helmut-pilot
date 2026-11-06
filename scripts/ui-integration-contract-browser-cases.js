@@ -1,13 +1,15 @@
 "use strict";
 const assert=require("assert/strict");
-const { integrationPayload,quietIntegrationPayload }=require("./fixtures/ui-integration-contracts");
+const { integrationPayload,quietIntegrationPayload,pendingQuietIntegrationPayload }=require("./fixtures/ui-integration-contracts");
 const runs=[];
 let scenario,payload,calls,unexpected,phase,tokenMode,officeMode,csrfSerial,officeAttempt;
 const denied=["anonymous","session-503","session-invalid","no-mandate","start-401","start-503","selection","empty"];
 const viewports=[...denied.map(name=>[name,1440,900,false]),["contract-desktop",1440,900,false],["contract-mobile",390,844,true],
-  ["quiet-desktop",1440,900,false],["quiet-mobile",390,844,true]];
+  ["quiet-desktop",1440,900,false],["quiet-mobile",390,844,true],
+  ["quiet-pending-desktop",1440,900,false],["quiet-pending-mobile",390,844,true]];
 function reset(label) {
-  scenario=label;payload=label.startsWith("quiet-") ? quietIntegrationPayload() : integrationPayload();calls=[];unexpected=[];phase="bootstrap";
+  scenario=label;payload=label.includes("-pending-") ? pendingQuietIntegrationPayload()
+    : label.startsWith("quiet-") ? quietIntegrationPayload() : integrationPayload();calls=[];unexpected=[];phase="bootstrap";
   tokenMode="valid";officeMode="rule";csrfSerial=0;officeAttempt=0;
 }
 reset("contract-desktop");
@@ -118,15 +120,26 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
     verify("no specialist content fabricated",await evaluate("!document.querySelector('.ui-briefing-hero,.ui-vorgang-row,.radar2-card,.buero-draft-card')"));
     if(["no-mandate","session-503"].includes(label)) await screenshot("startup-state");
   } else if(label.startsWith("quiet-")) {
+    const pending=label.includes("-pending-");
+    const shown=pending ? [0,2,5,7].map(index=>payload.briefing.lageBriefing.vorgaenge[index])
+      : payload.briefing.lageBriefing.vorgaenge.slice(0,2);
+    const expected=shown.map((v,index)=>({id:v.vorgangId,title:v.displayTitle,source:v.sources[0],
+      text:pending ? v.displaySummary || v.summary.wasIstPassiert : payload.briefing.lageBriefing.paragraphs[index].text}));
     verify("quiet bootstrap completes with simulated push only",await waitFor("pushConfig?.subscriptionCount===1")
       && calls.filter(c=>c.method!=="GET").every(c=>c.path==="/api/push/subscribe"));
     await nav("helmut");
     verify("quiet Briefing exposes cached daily overview",await waitFor("!!document.querySelector('section[data-briefing-overview]')"));
-    verify("quiet overview uses original paragraphs and heading",await evaluate(`(()=>{
+    verify(pending ? "pending cache exposes four existing summaries in server order" : "quiet overview uses original paragraphs and heading",await evaluate(`(()=>{
       const overview=document.querySelector('[data-briefing-overview]');
-      return overview.textContent.includes('Dein Tagesüberblick') &&
-        ${JSON.stringify(payload.briefing.lageBriefing.paragraphs.map(p=>p.text))}.every(text=>overview.textContent.includes(text)) &&
-        overview.querySelectorAll('[data-briefing-paragraph]').length===2;
+      const articles=[...overview.querySelectorAll(${JSON.stringify(pending ? '[data-briefing-existing-item]' : '[data-briefing-paragraph]')})];
+      return overview.textContent.includes('Dein Tagesüberblick') && articles.length===${expected.length} &&
+        ${JSON.stringify(expected)}.every((item,index)=>articles[index].textContent.includes(item.text));
+    })()`));
+    if(pending) verify("pending cache hides placeholders and avoids narrative creation claim",await evaluate(`(()=>{
+      const overview=document.querySelector('[data-briefing-overview]');
+      return overview.textContent.includes('Vorhandener Sachstand aus der Lage') &&
+        !/Artikelauszug fehlt;|Keine nutzbaren Quellentexte|Dieser synthetische Quellenhinweis|Zusammengestellt:/.test(overview.textContent)
+        && !overview.querySelector('[data-briefing-paragraph]') && !document.querySelector('.hstand-state-card');
     })()`));
     verify("quiet receipt status and time are honest",await evaluate(`(()=>{
       const status=document.querySelector('.hstand-status').textContent,meta=document.querySelector('.hstand-meta-line').textContent;
@@ -134,10 +147,11 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
         !document.querySelector('.ui-briefing-hero') && !document.querySelector('#app').textContent.includes('Ältere Vorgänge stehen unten');
     })()`));
     verify("quiet paragraph sources show dates and safe URLs",await evaluate(`(()=>{
-      const articles=[...document.querySelectorAll('[data-briefing-paragraph]')];
+      const articles=[...document.querySelectorAll(${JSON.stringify(pending ? '[data-briefing-existing-item]' : '[data-briefing-paragraph]')})];
+      const expected=${JSON.stringify(expected)};
       return articles.every((article,index)=>article.textContent.includes('05. Nov. 2026') &&
-        article.textContent.includes('Synthetische Quelle '+(index+1)) &&
-        article.querySelector('a[href="https://'+(index===0 ? 'www.' : '')+'example.test/ui/quiet/beleg-'+(index+1)+'"]'));
+        article.textContent.includes(expected[index].source.name) &&
+        [...article.querySelectorAll('a')].some(a=>a.href===expected[index].source.url));
     })()`));
     const layout=()=>evaluate(`(()=>{
       const page=document.querySelector('#uiPage'),overview=document.querySelector('[data-briefing-overview]');
@@ -146,8 +160,8 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
     })()`);
     verify("quiet overview has no horizontal overflow",await layout());
     await screenshot("quiet-briefing");
-    for(const paragraph of payload.briefing.lageBriefing.paragraphs) {
-      const id=paragraph.vorgangIds[0],source=payload.briefing.lageBriefing.vorgaenge.find(v=>v.vorgangId===id).sources[0].url;
+    for(const item of expected) {
+      const id=item.id,source=item.source.url;
       const button=`[data-briefing-overview] [data-lage-verweis][data-vorgang="${id}"]`;
       verify("quiet paragraph navigates to bound Lage: "+id,await evaluate(`(()=>{
         const button=document.querySelector(${JSON.stringify(button)});if(!button)return false;button.click();
@@ -158,7 +172,7 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
       await nav("helmut");
     }
     await nav("briefing");
-    verify("quiet Lage retains all ten real cards",await evaluate("document.querySelectorAll('.ui-vorgang-row').length===10"));
+    verify("quiet Lage retains all supplied cards",await evaluate(`document.querySelectorAll('.ui-vorgang-row').length===${pending ? 9 : 10}`));
     await nav("radar");
     await nav("helmut");
     verify("quiet read and navigation never trigger generation or extra bootstrap",calls.filter(c=>c.path==="/api/app/start").length===1

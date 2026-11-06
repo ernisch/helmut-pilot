@@ -326,3 +326,42 @@ Die beabsichtigte Anzeige unterscheidet jetzt fehlende Tagesprioritaet von
 vorhandenen Meldungen. Nur diese Text-Erwartung wurde auf den neuen Wortlaut
 und das Weglassen des falschen Darunter-Hinweises aktualisiert. Gezielt68/68
 Assertions und unabhaengiger Astra-Review bestanden; Produktcode unveraendert.
+
+
+### Zweiter Befund in der Production-Nachkontrolle
+
+PR1063 wurde nach gruener Pflicht-CI42181867677 (181/181 Standard-,332/332
+Bereichssuiten, native Datenbank- und Browserchecks) als13c4c1e5 gemergt.
+Deploymentdpl_6PcDh9jZHJt2CmBYhMRJErQaBXYp READY; Client/CSS bytegleich.
+Der native App-Start08:09 UTC lieferte jedoch einen veraenderten Datensatz:
+aktuelle Frischequittung, quiet, Lage verfuegbar, pendingNarrative=true,
+null Absaetze und neun Karten. Der Browser-Replay schlug vor der ersten
+Inhaltskontrolle fehl. Dieser FAIL bleibt erhalten; das erste Deployment
+ist kein Nachweis eines nun sichtbaren Briefings.
+
+Die zuvor vorhandene Wien-Quelle war am23.10.2026,07:00 UTC publiziert.
+Sie faellt am06.11.,07:00 aus dem rollenden14-Tage-Fenster. Die Lage-Auswahl
+filtert sie dann heraus, wodurch sich Vorgangs- und Quellenhash aendern und
+der gesamte Narrativ-Cache ungueltig wird. Das entspricht dem beobachteten
+Wechsel10zu9 Karten zwischen06:26 und08:09. Kein nativer gespeicherter
+Hashvergleich wurde vorgenommen; kein geloeschter Cache oder altes Deployment
+behauptet. App-Oeffnen erzeugt absichtlich keinen neuen kostenpflichtigen Text.
+
+Kleinste Ergaenzung: nur bei aktuellem ruhigem Zustand, verfuegbarer echter
+Lage und ausdruecklich pendingNarrative mit leerer Absatzliste erscheinen
+bis zu vier bereits vorhandene substanzielle Karten-Zusammenfassungen in
+Serverreihenfolge. Originaltext und Quellen bleiben unveraendert; Label
+„Vorhandener Sachstand aus der Lage“, keine Prioritaet, Empfehlung oder
+Erstellungszeit aus dem HTTP-Abruf. Quellenhinweis-Karten und die beiden
+bekannten Platzhaltertexte werden ausgeschlossen. Bei weiterhin gueltigem
+Narrativ bleiben dessen Absaetze bevorzugt; bei Stoerung, Rueckstand oder
+fehlender Quittung wird kein aktueller Ueberblick erzeugt. Backend-Vertrag,
+Kosten, Profile, Cron und Kommunikation unveraendert. Astra hat den Delta
+und die echte Antwort in der VM geprueft: vier sichtbare Zusammenfassungen,
+keine Platzhalter und gueltige Negativfaelle. Gezielt129/129 VM-Assertions
+bestanden. Isolierter echter Antwort-Replay mit korrigiertem Client:21/21 bei
+1280/390/360 Pixeln; vier Zusammenfassungen, Quellen und Navigation sichtbar,
+kein Ueberlauf und kein externer Browserverkehr. Sitzungsantwort simuliert;
+Production-API-Antwort nativ gelesen. Zusaetzlich171/171 synthetische
+Chromium-Assertions in14 Szenarien bestanden, einschliesslich Cache-Leerfall
+auf Desktop/Mobil. Pflicht-CI/Deployment folgen.

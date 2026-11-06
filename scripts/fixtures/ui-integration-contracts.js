@@ -62,4 +62,27 @@ function quietIntegrationPayload() {
     })),vorgaenge};
   return payload;
 }
-module.exports={integrationPayload,quietIntegrationPayload};
+function pendingQuietIntegrationPayload() {
+  const payload=quietIntegrationPayload();
+  const lage=payload.briefing.lageBriefing;
+  lage.fromCache=false;
+  lage.pendingNarrative=true;
+  lage.generatedAt=payload.briefing.generatedAt; // cacheOnly response time is not narrative creation time.
+  lage.paragraphs=[];
+  lage.vorgaenge=lage.vorgaenge.slice(0,9);
+  for (const index of [1,3,4,6,8]) {
+    const v=lage.vorgaenge[index];
+    v.displaySummary=index===3 ? "Keine nutzbaren Quellentexte für eine Zusammenfassung."
+      : "Artikelauszug fehlt; nur Quellentitel verfügbar.";
+    v.summary.wasIstPassiert=v.displaySummary;
+  }
+  lage.vorgaenge[4].displayCategory="Quellenhinweis";
+  lage.vorgaenge[4].displaySummary="Dieser synthetische Quellenhinweis ist kein belastbarer Sachstand.";
+  lage.vorgaenge[8].displaySummary="";
+  lage.vorgaenge[8].summary.wasIstPassiert="";
+  // One valid item uses the existing structured summary instead of displaySummary.
+  lage.vorgaenge[5].displaySummary="";
+  lage.vorgaenge[5].summary.wasIstPassiert="Der gespeicherte synthetische Sachstand sechs bleibt aus der strukturierten Zusammenfassung lesbar.";
+  return payload;
+}
+module.exports={integrationPayload,quietIntegrationPayload,pendingQuietIntegrationPayload};
