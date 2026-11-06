@@ -151,7 +151,7 @@ Rueckweg: vorheriges Productiondeployment
 Die Nachkontrolle aktualisiert nur diese Dokumentation, nicht die Runtime.
 
 
-## Server-Optimierung, 06.11.2026 (lokal fertig, noch nicht live)
+## Server-Optimierung, 06.11.2026 (ausgerollt und live gemessen)
 
 Nutzerauftrag nach unveraendert langsamem Android-Start: den Serverabruf
 beschleunigen. Branch `codex/server-start-performance-20261106`, Basis
@@ -211,8 +211,43 @@ Umfang ohne diese absichtlich geaenderte Reihenfolge, Ergebnisordnung separat ge
 Ein erster lokaler HTTP-Test wurde von der Sandbox am Listen gehindert und
 mit erlaubtem Netzwerkzugriff erfolgreich ausgefuehrt.
 
-Pflicht-CI wird am PR-Kopf geprueft. Der konkrete neue Merge/Production-Rollout
-ist noch nicht freigegeben. Nach gruenen Checks: genau diesen PR freigeben,
-regulaer ausrollen und drei geschuetzte GET-Startabrufe samt Server-Timing messen.
+Pflicht-CI42216854223 auf Kopf`a1bc8d6d` bestanden:181/181 Standard-,336/336
+Bereichssuiten, Browser und isolierte Datenbanknachweise. Nach ausdruecklichem
+Betreiber-GO wurde PR1081 auf`c4425d7a` gemergt; Live-Nachkontrolle siehe unten.
 Risiko: kurzfristig mehr gleichzeitige Reads, begrenzt; kein zusaetzlicher Daten-
 oder Modellpfad. Rueckweg: PR revertieren oder vorheriges READY-Deployment nutzen.
+
+
+### Production-Rollout und Nachmessung (06.11.2026,12:56 UTC)
+
+[PR1081](https://github.com/ernisch/helmut-pilot/pull/1081) nach GO auf
+`c4425d7aa69c394475527f91c28f4b0ca6c29bda` gemergt. Vercel-Deployment
+`dpl_6mL7X1bobnCQ1wQ24CpdxBKiC2aJ` READY, Production-Hauptdomain
+`https://helmut-pilot.vercel.app/` liefert diesen Stand. Keine Migration,
+Profil-/Daten-/Budget-/Cron-/Konfigurationsaenderung.
+
+Drei geschuetzte GET-Abrufe nach dem Deployment, alle HTTP200 mit bestaetigter
+Version, gueltigem Startpayload, verfuegbarer Lage und zehn Lagekarten:
+
+| Abruf | Gesamter HTTP-Abruf | Server-Datenbau | Briefing | Lage |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 6,513 s | 5,943 s | 4,164 s | 5,366 s |
+| 2 | 4,143 s | 3,642 s | 2,546 s | 3,594 s |
+| 3 | 4,245 s | 3,764 s | 2,427 s | 3,718 s |
+
+Median vorher9,557s, jetzt4,245s (etwa56% kuerzer in diesen Stichproben).
+Der erste Nach-Deployment-Abruf ist ausgewiesen, aber kein nachgewiesener
+Cold-Start. Netzwerk und bestehende Caches koennen die Stichproben beeinflussen.
+Die Antwortgroesse blieb231599Bytes; Form/Kartenanzahl belegen keinen
+bytegleichen Inhalt. Keine privaten Antwortinhalte oder Secrets gespeichert.
+
+Diese Zeit misst den echten Produktionsabruf aus der Arbeitsumgebung mit
+Admin-Bearer, keine normale Kontositzung und keinen Android-Appstart.
+Der Server-Timing-Gesamtwert beginnt am Profilabruf; Authentifizierung und
+Netztransfer sind darin nicht enthalten. Die Lage bleibt mit3,6–5,4s die
+laengste Phase, Briefing2,4–4,2s. Kein Sofortstart oder Instagram-Niveau behauptet.
+
+Status: freigegebener Rollout und Nachmessung erfolgreich abgeschlossen.
+Naechster Schritt: auf dem Android-Geraet die wahrgenommene Startzeit pruefen;
+eine weitere Serveroptimierung waere gezielt an der Lagepruefung anzusetzen.
+Diese Dokumentationsnachfuehrung enthaelt ausschliesslich den belegten Abschluss.
