@@ -31,7 +31,24 @@ function originalAdministrationPackage() {
   // Original-Runtime erlaubt bereits explizite lokale Ressourcen. Keine CDN-Fallbacks.
   remap["https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"] = "./runtime/babel-unbenutzt.js";
   const bootstrap = `window.__resources=${JSON.stringify(remap)};\n${bundle}\nwindow.HelmutOriginalBackend={attachOriginalBackend,createAdminActions,attachCustomerForm};`;
-  const contentUpdates = source => source.replace('title="Prototyp: Ansicht und Simulation"', 'title="Daten neu laden"')
+  // Darstellungskorrekturen gegen Design v3 (06.11.2026). Jede Stelle muss genau so oft
+  // vorkommen wie erwartet, sonst bricht der Paketbau ab statt still nichts zu ändern.
+  const designUpdates = source => [
+    // Kein Gold als Akzent: der Aktualisieren-Knopf wird ein ruhiger Hairline-Knopf.
+    ['border:1px solid var(--watch);background:transparent;color:var(--warn-ink)', 'border:1px solid var(--line-2);background:transparent;color:var(--text)', 1],
+    ['border:1px solid var(--watch);background:transparent;color:var(--watch)', 'border:1px solid var(--line-2);background:transparent;color:var(--text)', 1],
+    // Navigationspunkte bleiben einzeilig (z. B. „Erweiterte Werkzeuge“).
+    ['<span>{{ n.label }}</span>', '<span style="white-space:nowrap">{{ n.label }}</span>', 2],
+    // Mobile Profilkarte: Kostenwert ist ohne Spaltenkopf nur mit Bezeichnung verständlich.
+    ['<span>{{ r.cost }}</span>', '<span>Kosten {{ r.cost }}</span>', 1],
+    // Leerzustände statt leerer Flächen.
+    ['{{ c.last }}</span></a></sc-for></div>', '{{ c.last }}</span></a></sc-for><sc-if value="{{ custEmpty }}" hint-placeholder-val="{{ false }}"><p style="padding:22px 0;border-top:1px solid var(--line);font-size:15px;color:var(--text)">Noch keine Kunden angelegt.</p></sc-if></div>', 1],
+    ['{{ r.tech }}</span></div></sc-for></div>', '{{ r.tech }}</span></div></sc-for><sc-if value="{{ runsEmpty }}" hint-placeholder-val="{{ false }}"><p style="padding:18px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)">Keine Laufbelege gelesen.</p></sc-if></div>', 1]
+  ].reduce((text, [from, to, count]) => {
+    assert.equal(text.split(from).length - 1, count, `Designstelle fehlt: ${from.slice(0, 60)}`);
+    return text.split(from).join(to);
+  }, source);
+  const contentUpdates = source => designUpdates(source).replace('title="Prototyp: Ansicht und Simulation"', 'title="Daten neu laden"')
     .replace('>Entwurf · Beispieldaten</button>', '>Aktualisieren</button>')
     .replace('>Beispieldaten</button>', '>Aktualisieren</button>')
     .replace('Läufe heute', 'Letzte Läufe')
@@ -55,7 +72,7 @@ function originalAdministrationPackage() {
   html = html.replace('<script src="./support.js"></script>', `<script>${bootstrap.replace(/<\/script/gi, "<\\/script")}</script>\n<script src="./support.js"></script>`);
   html = html.replace('<script src="v3_logik.js"></script>', "");
   html = html.replace(/(class Component extends DCLogic[\s\S]*?)(<\/script>)/, "$1\nComponent = window.HelmutOriginalBackend.attachCustomerForm(window.HelmutOriginalBackend.attachOriginalBackend(Component, {actionsFactory: window.HelmutOriginalBackend.createAdminActions}));\n$2");
-  // Kein neues Markup, keine neue Typografie, keine neuen Styles.
+  // Nur die oben benannten Darstellungskorrekturen; sonst kein neues Markup und keine neue Typografie.
   const template = source => source.match(/<x-dc\b[^>]*>([\s\S]*?)<\/x-dc>/i)[1].replace('<script src="v3_logik.js"></script>', "");
   assert.equal(template(html), template(contentUpdates(read(`claude-original/${entryName}`))));
   return { html, assets, runtimeAssets };
