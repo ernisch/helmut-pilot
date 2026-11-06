@@ -82,6 +82,8 @@ async function check(name, fn) { await fn(); passed++; console.log(`PASS ${name}
     const v = c.renderVals(); const a = v.rows.find(r => r.href === "#/profil/synthetic-a");
     assert.deepEqual([a.b.label, a.l.label, a.rd.label], ["Nicht geprüft", "Nicht geprüft", "Nicht geprüft"]);
     c.setState({ route: { page: "uebersicht" } }); assert.equal(c.renderVals().bigNums[2].value, "—");
+    const ungeprueft = component({ ...data, overview: { ...data.overview, system: { deploy: { environment: "production" } } } }); await ungeprueft.refresh();
+    assert.equal(ungeprueft.renderVals().bigNums[2].value, "—", "unbestätigter Profilbestand: keine Ergebniszahlen");
   });
   console.log(`${passed}/5 Verwaltungsprüfungen bestanden.`);
 })().catch(error => { console.error(error); process.exit(1); });

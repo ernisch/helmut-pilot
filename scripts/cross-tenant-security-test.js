@@ -44,8 +44,6 @@ async function throwsTenant(fn) {
     // ── Seed: beide Mandanten mit Daten in allen per-Mandant-Blob-Stores ───────
     await storage.saveLageCheck({ politicianId: A, mode: "lage-check", status: "changed", message: "A-LAGE" });
     await storage.saveLageCheck({ politicianId: B, mode: "lage-check", status: "changed", message: "B-LAGE" });
-    await storage.saveBriefing({ id: "bf-a", politicianId: A, homeSections: {}, marker: "A-BRIEF" });
-    await storage.saveBriefing({ id: "bf-b", politicianId: B, homeSections: {}, marker: "B-BRIEF" });
     await storage.saveTask({ id: "task-a", title: "A", politicianId: A, status: "open" });
     await storage.saveTask({ id: "task-b", title: "B", politicianId: B, status: "open" });
     await storage.saveUserNote({ id: "note-a", text: "A-NOTE", user_id: A });
@@ -58,18 +56,18 @@ async function throwsTenant(fn) {
     // ── 1) POSITIV: A liest seine eigenen Daten ────────────────────────────────
     const aTasks = await storage.getTasks(A);
     const aNotes = await storage.getUserNotes(A);
-    const aBrief = await storage.getLatestBriefing(A);
+    const aInteractions = await storage.getInteractions(A);
     const aLage = await storage.getLatestLageCheck(A);
     const aPush = await storage.getPushSubscriptions(A);
     check("A liest eigene Tasks", aTasks.some((t) => t.id === "task-a"));
     check("A liest eigene Notes", aNotes.some((n) => n.id === "note-a"));
-    check("A liest eigenes Briefing", aBrief && aBrief.marker === "A-BRIEF");
+    check("A liest eigene Interaktionen", aInteractions.some((entry) => entry.id === "int-a"));
     check("A liest eigenen LageCheck", aLage && aLage.message === "A-LAGE");
     check("A liest eigenes Push-Abo", aPush.some((p) => p.endpoint === "https://push/a"));
 
     // ── 2) NEGATIV (Lese-Sweep): A darf NICHTS von B sehen ─────────────────────
     const leakChecks = [
-      ["getTasks", aTasks], ["getUserNotes", aNotes], ["getLatestBriefing", aBrief],
+      ["getTasks", aTasks], ["getUserNotes", aNotes], ["getInteractions", aInteractions],
       ["getLatestLageCheck", aLage], ["getPushSubscriptions", aPush]
     ];
     for (const [label, data] of leakChecks) {
@@ -83,7 +81,7 @@ async function throwsTenant(fn) {
     // ── 3) NEGATIV (Kontext-Guard): fehlender Mandant -> harter Fehler ─────────
     const guardedReaders = [
       "getTasks", "getUserNotes", "getInteractions", "getLageChecks",       // 2026-07 gehaertet
-      "getLatestBriefing", "getLatestLageCheck", "getTopicMemory",           // Sprint-1 gehaertet
+      "getLatestLageCheck", "getTopicMemory",                              // Sprint-1 gehaertet
       "getLatestPipelineDebugReport", "getPushSubscriptions", "listPushEvents"
     ];
     for (const fn of guardedReaders) {

@@ -5,6 +5,35 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
+## Verwaltungszahlen: Korrektur ausgerollt (06.11.2026)
+
+Rein lesend bestaetigt:501 relationale Mandatsprofile, davon nur `cem-ince`
+aktiv;500 synthetische Testprofile inaktiv. Production nutzt
+den exklusiven relationalen Leser. Die alte Vorschau von PR1065 (`91903c00`)
+erreicht dieselbe Datenbank, hat aber die nur fuer Production gesetzten
+Profilflags nicht. Sie liest deshalb25 alte Profilkopien aus `helmut_store/main`
+und zeigt25/25; diese Zahlen beschreiben nicht den aktuellen Betrieb.
+
+Nach ausdruecklichem Betreiber-GO ist [PR1067](https://github.com/ernisch/helmut-pilot/pull/1067)
+auf `6663c7a2` gemergt und auf Production ausgerollt. Die Verwaltung
+nutzt die vorhandene Konfigurationsdiagnose und zeigt bei unbestaetigter
+Profilquelle einen Hinweis statt alter Zahlen, leerer Profilbestandsbehauptung
+oder einer daraus abgeleiteten Tagesbilanz. Bestaetigter Bestand wird unveraendert
+gezaehlt. Kein Profil-, Konfigurations-, Motor- oder Budgeteingriff.
+Gezielte Storage/HTTP/Anzeige-Regression einschliesslich Originalbrowser10/10,
+Verwaltungsnavigation8/8 und isolierte Verwaltungs-/Browserpruefungen30/30
+bestanden; unabhaengiges Review ohne verbleibenden Befund. Auf `main`13c4c1e5
+einschliesslich des inzwischen gemergten Design-PR1065 integriert und geprueft.
+Beide Pflichtchecks auf PR-Kopf `5ef616a0` gruen
+([CI42186106722](https://github.com/ernisch/helmut-pilot/actions/runs/42186106722)).
+Vercel-Deployment `dpl_BgRfSUKMaW2X1KZNNS8qqTWgd8MU` READY, regulaerer Alias
+`helmut-pilot.vercel.app`. Lesende Nachkontrolle06.11.,12:11 Istanbul:
+Runtime bestaetigt Mergecommit `6663c7a2`, Production und exklusiven relationalen
+Profilzugriff; Release/Storage bereit. Datenbank exakt501 Mandate,1 aktiv
+(`cem-ince`),500 inaktiv. Verwaltung ohne Sitzung HTTP401. Kein authentifizierter
+Production-Klicktest; die Originalanzeige501/1 wurde lokal im Browser geprueft.
+Auftrag abgeschlossen; keine weitere Profil- oder Konfigurationsaenderung noetig.
+
 ## Aktueller Auftrag: taegliche Versorgung nur fuer Cem Ince
 
 Der Betreiber hat die Wiederaufnahme ausschliesslich fuer Cem Ince und die
@@ -71,6 +100,36 @@ Gezielter VM-Test129/129 und echter Antwort-Replay im isolierten Chromium
 21/21 bei1280/390/360 Pixeln bestanden. Pflicht-CI und erneute
 Production-Nachkontrolle folgen.
 [Diagnose und Abnahme](betrieb/cem-einprofilbetrieb-20261105.md#briefing-anzeige-am-06112026).
+
+## Einheitlicher Helmut: Altpfade und alte Deployment-Adressen (06.11.2026)
+
+Neuer ausdruecklicher Betreiberauftrag: alte Systemteile pruefen und entfernen,
+Helmut einheitlich betreiben; parallel nur Astra/GPT6.1 Sol, kein DeepSeek.
+Sechs getrennte Audits bestaetigen einen normalen App-Einstieg und denselben
+V3-Motor fuer App-Start/Briefing. Kein zweites Cem-V1-System und kein automatischer
+V2-Rueckfall nachgewiesen. Marketingprojekt und historische Daten bleiben erforderlich.
+
+Vorbereitet entfernt:58 unerreichbare Frontendfunktionen (darunter zwei alte
+Briefingrenderer), zwei ungenutzte Blob-Briefing-APIs und ein toter automatischer
+Refreshhelfer. Die alte branchabhaengige Testdatenaktivierung entfaellt; Production
+weist den Testdatenschalter jetzt auch bei gesetztem Flag ab. Aktuelle
+Mandantentrennung, Login, Profil-/Aufgaben-/Themenspeicher und drei Tagesjobs
+bleiben erhalten. Unabhaengiger Astra- und Pipeline-Review ohne Blocker;
+260 gezielte UI-,41 Cross-Tenant- und20 Mandantentrennungs-Assertions bestanden.
+171/171 integrierte Chromium-Assertions bestanden; Pflicht-CI und Deployment
+fuer diesen Rueckbau folgen.
+
+Alte eindeutige Production-URLs waren weiterhin direkt erreichbar, aber ohne
+Verweis aus der aktuellen App. Deshalb Vercel Authentication fuer helmut-pilot
+von `preview` auf `all_except_custom_domains` gestellt: bestehende/künftige
+Deployment-Adressen schuetzen, regulaere Produktionsdomain ausnehmen. Kostenloser
+Standard-Schutz, kein Abo/Deployment/Datenloeschen. Nativ08:37 UTC geprueft:
+Hauptdomain und Release-Status HTTP200; alte und aktuelle eindeutige URLs samt
+Alt-Clientdateien HTTP302 zur Vercel-Anmeldung. Projektfeld erneut bestaetigt.
+Rueckweg ist dasselbe Projektfeld mit `preview`. Historische Builds bleiben
+fuer berechtigte Betreiber/Rueckwege erhalten; keine vollstaendige Loeschung behauptet.
+Die alte lokale Verwaltungsvorschau ist kein produktiver Einstieg und wird wegen
+paralleler Verwaltungsarbeit inPR1067/1068 hier nicht abgebaut.
 
 ## Navigation und Verwaltung live (06.11.2026)
 

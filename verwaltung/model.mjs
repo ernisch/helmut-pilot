@@ -45,7 +45,25 @@ export function profileState(profile) {
   return { label: "Noch nicht geprüft", tone: "neutral" };
 }
 
+// Hosted previews can reach the old main-store without the production profile
+// flags. Those copies are not evidence of the current inventory or activation.
+// Use the existing server diagnostics; never enable a runtime/write flag here.
+export function profileInventoryNotice(overview) {
+  const environment = overview?.system?.deploy?.environment;
+  if (!["preview", "production"].includes(environment)) return "";
+  const config = list(overview?.system?.helmutConfig) || [];
+  const enabled = name => ["1", "true", "on", "yes"].includes(
+    String(config.find(entry => entry?.name === name)?.wirksam ?? "").trim().toLowerCase());
+  const confirmed = overview?.system?.storage?.supabaseConfigured === true
+    && ["HELMUT_V3_STORE", "HELMUT_PROFILE_DB_MODE", "HELMUT_PROFILE_DB_EXCLUSIVE"].every(enabled);
+  if (confirmed) return "";
+  return environment === "preview"
+    ? "In dieser Vorschau ist der aktuelle Profilbestand nicht verfügbar. Bitte prüfe die Profilzahlen in der veröffentlichten Verwaltung."
+    : "Der aktuelle Profilbestand ist nicht bestätigt. Bitte prüfe die Profilanbindung, bevor du diese Übersicht verwendest.";
+}
+
 export function profilesOf(overview) {
+  if (profileInventoryNotice(overview)) return null;
   return list(overview?.mandates)?.filter(p => p && typeof p.id === "string") ?? null;
 }
 
