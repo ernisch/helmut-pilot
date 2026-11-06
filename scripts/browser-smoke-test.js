@@ -361,7 +361,10 @@ function check(name, cond, detail = "") {
           && greenTexts[1].includes(memberFixture[0].ereignisKontexte[1].summary)
           && greenLinks.includes("https://publisher.test/articles/context-a")
           && greenLinks.includes("https://publisher.test/articles/context-b"));
-      if (isMobile) await page.locator("[data-ui-lage-back]").click();
+      if (isMobile) {
+        await page.locator("[data-ui-lage-back]").click();
+        await page.waitForFunction(() => !uiLageDetailOpen);
+      }
       await page.locator('[data-ui-lage-select="vg-browser-br-rest"]').click();
       await page.waitForSelector(".ui-lage-detail", { timeout: 5000 });
       const brRoles = page.locator(".ui-lage-detail .source-basis article");
@@ -371,7 +374,10 @@ function check(name, cond, detail = "") {
           && brLinks[0] === "https://publisher.test/articles/draft"
           && brLinks[1] === "https://publisher.test/articles/bt"
           && !(await page.locator(".ui-lage-detail").innerText()).includes("Bundesrat billigt Reform"));
-      if (isMobile) await page.locator("[data-ui-lage-back]").click();
+      if (isMobile) {
+        await page.locator("[data-ui-lage-back]").click();
+        await page.waitForFunction(() => !uiLageDetailOpen);
+      }
       check(`${label}: keine JS Fehler bei Teilrollen und Quellenwechsel`, pageErrors.length === 0);
 
       // Desktop-Detail bei tief gescrollter Liste: echte Klicks und Wheel,
@@ -438,15 +444,106 @@ function check(name, cond, detail = "") {
           await detail.isVisible() && await detail.evaluate(el => getComputedStyle(el).position !== 'sticky'
             && getComputedStyle(el).maxHeight === 'none'));
         await page.locator('[data-ui-lage-back]').click();
+        await page.waitForFunction(() => !uiLageDetailOpen);
         check(`${label}: eigener mobiler Rueckweg zur Liste bleibt erhalten`,
           await page.locator('[data-ui-lage-select="desktop-scroll-8"]').isVisible());
       }
       check(`${label}: keine JS Fehler nach Desktopdetailpruefung`, pageErrors.length === 0);
-
       if (isMobile) {
         const dock = await page.evaluate(`Boolean(document.querySelector(".mobile-dock"))`).catch(() => false);
         check(`${label}: mobile Dock-Navigation vorhanden`, dock);
       }
+      if (isMobile) {
+        // Browsernavigation im selben Dokument, keine Backendanfrage/Generierung.
+        const entryUrl = page.url();
+        const row = page.locator('[data-ui-lage-select="desktop-scroll-8"]');
+        await row.scrollIntoViewIfNeeded();
+        const listScroll = await page.locator('.ui-page').evaluate(el => el.scrollTop);
+        await row.click();
+        const detailState = await page.evaluate(() => history.state);
+        check(`${label}: mobiles Detail hat eigenen lokalen Historyeintrag`,
+          await page.evaluate(() => history.state.helmutLage.kind === 'detail') && page.url() === entryUrl);
+        await page.goBack();
+        await page.waitForFunction(() => !uiLageDetailOpen && currentView === 'briefing');
+        check(`${label}: Browser Zurueck bleibt in Lage und erhaelt Listenposition`,
+          page.url() === entryUrl && Math.abs(await page.locator('.ui-page').evaluate(el => el.scrollTop) - listScroll) < 2);
+        await page.goForward();
+        await page.waitForFunction(() => uiLageDetailOpen);
+        check(`${label}: Browser Vorwaerts oeffnet dasselbe Thema von oben`,
+          (await detail.locator('.vsheet-title').innerText()) === 'Synthetischer Vorgang 9'
+            && await page.locator('.ui-page').evaluate(el => el.scrollTop) === 0);
+        const historyLength = await page.evaluate(() => history.length);
+        for (let repeat = 0; repeat < 2; repeat++) {
+          await page.locator('[data-ui-lage-back]').click();
+          await page.waitForFunction(() => !uiLageDetailOpen);
+          await row.click();
+        }
+        check(`${label}: eigener Rueckweg erzeugt keine zusaetzlichen Historyeintraege`,
+          await page.evaluate(() => history.length) === historyLength);
+        await page.evaluate(() => setMandateSwitchPending(true));
+        await page.goBack();
+        await page.waitForFunction(() => uiLageHistoryPending);
+        check(`${label}: History aendert keinen unbestaetigten Mandatswechsel`,
+          await page.evaluate(() => uiLageDetailOpen && mandateSwitchPending));
+        await page.evaluate(() => setMandateSwitchPending(false));
+        await page.waitForFunction(() => !uiLageDetailOpen);
+        check(`${label}: History nach ausgebliebenem Mandatswechsel synchronisiert`,
+          await page.evaluate(() => currentView === 'briefing' && !uiLageHistoryPending));
+        await page.goForward();
+        await page.waitForFunction(() => uiLageDetailOpen);
+        await page.locator('.mobile-dock [data-view="radar"]').click();
+        await page.goBack();
+        await page.waitForFunction(() => currentView === 'briefing' && !uiLageDetailOpen);
+        await page.goForward();
+        await page.waitForFunction(() => currentView === 'radar');
+        check(`${label}: Tabwechsel nach Detail bleibt bei Zurueck und Vorwaerts konsistent`,
+          await page.evaluate(() => !uiLageDetailOpen));
+        await page.evaluate(() => {
+          briefing.currentHelmutState.primaryItem.id = 'desktop-scroll-8';
+          currentView = 'helmut'; uiLageDetailOpen = false;
+          writeLageHistory({ kind: 'view', view: 'helmut', scrollTop: 0 }); render();
+        });
+        await page.waitForSelector('.ui-briefing-hero');
+        const crossLink = page.locator('[data-lage-verweis][data-vorgang="desktop-scroll-8"]').first();
+        await crossLink.scrollIntoViewIfNeeded();
+        const briefingScroll = await page.locator('.ui-page').evaluate(el => el.scrollTop);
+        await crossLink.click();
+        check(`${label}: Querverweis zeigt einen passenden allgemeinen Rueckknopf`,
+          (await page.locator('[data-ui-lage-back]').innerText()).trim() === 'Zurück');
+        await page.goBack();
+        await page.waitForFunction(() => currentView === 'helmut');
+        check(`${label}: Browser Zurueck aus Querverweis erhaelt Ursprungsbriefing und Position`,
+          !await detail.isVisible() && Math.abs(await page.locator('.ui-page').evaluate(el => el.scrollTop) - briefingScroll) < 2);
+        await page.goForward();
+        await page.waitForFunction(() => currentView === 'briefing' && uiLageDetailOpen);
+        await page.locator('[data-ui-lage-back]').click();
+        await page.waitForFunction(() => currentView === 'helmut');
+        check(`${label}: eigener Rueckknopf aus Querverweis entspricht Browser Zurueck`,
+          !await detail.isVisible());
+        check(`${label}: fremdes Mandat aus History wird verworfen`,
+          await page.evaluate((saved) => {
+            const oldView = currentView;
+            const foreign = { ...saved, helmutLage: { ...saved.helmutLage, mandateId: 'nicht-freigegeben' } };
+            return restoreLageHistory(foreign) === false && currentView === oldView;
+          }, detailState));
+        check(`${label}: entfernter Vorgang oeffnet keinen anderen Detailtext`,
+          await page.evaluate((saved) => {
+            const unknown = { ...saved, helmutLage: { ...saved.helmutLage, id: 'entfernter-vorgang' } };
+            return restoreLageHistory(unknown) && currentView === 'briefing' && !uiLageDetailOpen;
+          }, detailState));
+        check(`${label}: alter Privatkontext wird auch beim gleichen Mandat nicht reaktiviert`,
+          await page.evaluate((saved) => {
+            clearLageHistory();
+            return restoreLageHistory(saved) === false && !uiLageDetailOpen;
+          }, detailState));
+        check(`${label}: abgemeldeter Zugriff kann per History nicht wiederkehren`,
+          await page.evaluate((saved) => {
+            invalidatePrivateAccess();
+            return restoreLageHistory(saved) === false && !privateAccess && !document.querySelector('.ui-lage-detail');
+          }, detailState));
+      }
+
+      check(`${label}: keine JS Fehler nach lokaler Browsernavigation`, pageErrors.length === 0);
       await context.close();
     }
 

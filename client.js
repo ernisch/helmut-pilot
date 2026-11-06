@@ -154,6 +154,7 @@ function privateAccessChanged() {
   return error;
 }
 function clearPrivateMandateState() {
+  clearLageHistory();
   profile = null; briefing = null; aiStatus = { enabled: false, model: "" };
   tasks = []; notes = []; recommendations = []; decisions = [];
   helmutBriefings = []; helmutDeck = []; helmutDecidedIds = new Set();
@@ -1337,6 +1338,9 @@ function setMandateSwitchPending(pending) {
     mandateSwitchControls.clear();
     app.querySelectorAll("[data-profile-switch]").forEach(select => { select.value = activePoliticianId; });
     bindPrivateFormScopes();
+    if (uiLageHistoryPending) {
+      uiLageHistoryPending = false; restoreLageHistory(window.history?.state);
+    }
   }
 }
 async function switchPolitician(id) {
@@ -4646,6 +4650,67 @@ function hideStartupSplash() {
 let uiLageSelectedId = "";
 let uiLageDetailOpen = false;
 
+// Nur lokale Lage-Navigation: History ist keine Daten- oder Zugriffsquelle.
+// Pro Seitenlauf/Privatkontext gebunden; alte Mandats- und Login-Eintraege bleiben inert.
+const uiLageHistoryPage = `${Date.now()}:${Math.random()}`;
+let uiLageHistoryEpoch = 0;
+let uiLageHistoryPending = false;
+function lageHistoryEntry(state = window.history?.state) {
+  const entry = state && state.helmutLage;
+  return privateAccess && !mandateSwitchPending && profile?.id === activePoliticianId
+    && entry?.scope === `${uiLageHistoryPage}:${uiLageHistoryEpoch}`
+    && entry.mandateId === activePoliticianId ? entry : null;
+}
+function writeLageHistory(entry, push = false) {
+  try {
+    const previous = window.history.state;
+    const state = previous && typeof previous === "object" ? { ...previous } : {};
+    if (entry) state.helmutLage = { ...entry, scope: `${uiLageHistoryPage}:${uiLageHistoryEpoch}`, mandateId: activePoliticianId };
+    else delete state.helmutLage;
+    window.history[push ? "pushState" : "replaceState"](state, "");
+    return true;
+  } catch (_) { return false; } // Die normale Detailbedienung bleibt bei gesperrter History nutzbar.
+}
+function clearLageHistory() {
+  ++uiLageHistoryEpoch; uiLageHistoryPending = false; uiLageSelectedId = ""; uiLageDetailOpen = false;
+  writeLageHistory(null);
+}
+function rememberLageHistory(id) {
+  if (!window.matchMedia?.("(max-width: 767px)").matches || !privateAccess
+    || mandateSwitchPending || profile?.id !== activePoliticianId) return;
+  const current = lageHistoryEntry();
+  const origin = current?.kind === "detail" ? current.origin : currentView;
+  const scrollTop = current?.kind === "detail" ? current.scrollTop || 0 : app.querySelector(".ui-page")?.scrollTop || 0;
+  if (current?.kind !== "detail") {
+    const back = currentView === "briefing" ? { kind: "list", id, scrollTop } : { kind: "view", view: currentView, scrollTop };
+    if (!writeLageHistory(back)) return;
+    writeLageHistory({ kind: "detail", id, origin, scrollTop }, true);
+  } else writeLageHistory({ kind: "detail", id, origin, scrollTop });
+}
+function restoreLageHistory(state) {
+  const entry = lageHistoryEntry(state);
+  if (!entry) return false;
+  const scrollTop = Number.isFinite(entry.scrollTop) ? Math.max(0, entry.scrollTop) : 0;
+  if (entry.kind === "view") {
+    if (!VIEW_PERSIST_SAFE.has(entry.view) || (entry.view === "admin" && userRole() !== "admin")) return false;
+    currentView = entry.view; uiLageDetailOpen = false;
+  } else if (entry.kind === "list" || entry.kind === "detail") {
+    const found = lageVisibleVorgaenge(lageData()).some(v => String(v.vorgangId || v.id || "") === entry.id);
+    currentView = "briefing"; uiLageDetailOpen = entry.kind === "detail" && found;
+    uiLageSelectedId = found ? entry.id : "";
+    if (entry.kind === "detail" && !found) writeLageHistory({ kind: "list", scrollTop });
+  } else return false;
+  navOpen = false; updatesOpen = false; persistView(currentView); render();
+  app.querySelector(".ui-page")?.scrollTo({ top: uiLageDetailOpen ? 0 : scrollTop, behavior: "instant" });
+  if (uiLageDetailOpen) app.querySelector(".ui-mobile-back")?.focus({ preventScroll: true });
+  else Array.from(app.querySelectorAll("[data-ui-lage-select]")).find(el => el.dataset.uiLageSelect === entry.id)?.focus({ preventScroll: true });
+  return true;
+}
+window.addEventListener("popstate", event => {
+  if (mandateSwitchPending) { uiLageHistoryPending = true; return; }
+  restoreLageHistory(event.state);
+});
+
 function uiIcon(name) {
   const paths = {
     helmut: '<path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/>',
@@ -5375,6 +5440,8 @@ function renderLageView() {
   }
   const selected = items.find(v => String(v.vorgangId || v.id) === uiLageSelectedId) || items[0];
   const selectedId = String(selected.vorgangId || selected.id || "");
+  const historyEntry = lageHistoryEntry();
+  const backLabel = historyEntry?.kind === "detail" && historyEntry.origin !== "briefing" ? "Zurück" : "Zurück zur Lage";
   const checked = lageCheckedLabel(data && data.latestUpdatedAt);
   const freshness = lageFreshnessLabel(items);
   const stand = checked || freshness;
@@ -5399,7 +5466,7 @@ function renderLageView() {
         </div>
       </section>
       <article class="ui-detail ui-lage-detail" tabindex="0" aria-labelledby="ui-lage-detail-title">
-        <button class="ui-mobile-back" type="button" data-ui-lage-back>${uiIcon("back")} Zurück zur Lage</button>
+        <button class="ui-mobile-back" type="button" data-ui-lage-back>${uiIcon("back")} ${backLabel}</button>
         ${vsheetContentHtml(selected).replace('id="vsheet-title"', 'id="ui-lage-detail-title"')}
       </article>
     </div>`;
@@ -9676,6 +9743,7 @@ function bindActions() {
   app.querySelectorAll("[data-ui-lage-select]").forEach(button => {
     button.addEventListener("click", () => {
       const listScroll = app.querySelector(".ui-page")?.scrollTop || 0;
+      rememberLageHistory(button.dataset.uiLageSelect);
       uiLageSelectedId = button.dataset.uiLageSelect;
       uiLageDetailOpen = true;
       render();
@@ -9693,6 +9761,7 @@ function bindActions() {
   });
   app.querySelectorAll("[data-ui-lage-back]").forEach(button => {
     button.addEventListener("click", () => {
+      if (lageHistoryEntry()?.kind === "detail") { window.history.back(); return; }
       uiLageDetailOpen = false;
       render();
       Array.from(app.querySelectorAll("[data-ui-lage-select]")).find(el => el.dataset.uiLageSelect === uiLageSelectedId)?.focus({ preventScroll: true });
@@ -9797,6 +9866,7 @@ function bindActions() {
     button.addEventListener("click", () => {
       if (button.dataset.view === "office") { officeBriefingTarget = null; selectedOfficeDraft = null; }
       if (vsheetEl) closeVorgangSheet(true); // Detail-Sheet bei Navigation schließen
+      if (lageHistoryEntry()) writeLageHistory({ kind: "view", view: button.dataset.view, scrollTop: 0 });
       currentView = button.dataset.view;
       uiLageDetailOpen = false;
       persistView(currentView);
@@ -10089,6 +10159,7 @@ function bindActions() {
       const inner = event && event.target && event.target.closest ? event.target.closest("a, button") : null;
       if (button.tagName !== "BUTTON" && inner && inner !== button) return;
       if (button.hasAttribute("data-lage-verweis")) {
+        rememberLageHistory(button.dataset.vorgang);
         uiLageSelectedId = button.dataset.vorgang;
         uiLageDetailOpen = true;
         currentView = "briefing";
@@ -12025,3 +12096,4 @@ loadBriefing()
   .then((loaded) => { if (loaded) schedulePushAutoSync(); })
   .then(() => clearAppIconBadge())
   .catch(renderStartFailure);
+
