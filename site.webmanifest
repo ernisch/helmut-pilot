@@ -8,8 +8,8 @@
   "display": "standalone",
   "orientation": "any",
   "categories": ["news", "politics", "productivity"],
-  "background_color": "#050914",
-  "theme_color": "#050914",
+  "background_color": "#0a0f1c",
+  "theme_color": "#0a0f1c",
   "icons": [
     {
       "src": "assets/helmut_appicon_192.png?v=20261106-h-klein",

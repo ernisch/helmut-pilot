@@ -86,6 +86,31 @@ async function pruneOldVersions(cache, req) {
 //  - Statische Assets (css/js/bilder/fonts): stale-while-revalidate -> schneller Start
 //    auch bei schlechtem Netz, im Hintergrund aktualisiert.
 //  - Alles andere (API, POST): unveraendert direkt ans Netz.
+// Vor dem HTML kann der Seiten-Watchdog noch nicht laufen. Ein haengender
+// Navigations-/Assetabruf darf deshalb nicht unbegrenzt den PWA-Start blockieren.
+// Das ist kein Zeitlimit fuer die privaten Briefingdaten; deren Vertrag bleibt.
+const START_RESPONSE_TIMEOUT_MS = 8000;
+async function fetchStartResponse(request) {
+  const controller = new AbortController();
+  let timer;
+  const abort = () => controller.abort();
+  if (request.signal?.aborted) abort();
+  else request.signal?.addEventListener("abort", abort, { once: true });
+  try {
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        reject(new Error("start-response-timeout"));
+        controller.abort();
+      }, START_RESPONSE_TIMEOUT_MS);
+    });
+    // Auch bei einem Transport, der Abort nicht beachtet, endet die Antwortwartezeit.
+    return await Promise.race([fetch(request, { signal: controller.signal }), timeout]);
+  } finally {
+    clearTimeout(timer);
+    request.signal?.removeEventListener("abort", abort);
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
@@ -103,7 +128,7 @@ self.addEventListener("fetch", (event) => {
   if (req.mode === "navigate") {
     event.respondWith((async () => {
       try {
-        return await fetch(req);
+        return await fetchStartResponse(req);
       } catch {
         return new Response(OFFLINE_HTML, {
           status: 200,
@@ -116,19 +141,18 @@ self.addEventListener("fetch", (event) => {
 
   if (["style", "script", "image", "font"].includes(req.destination)) {
     event.respondWith((async () => {
-      const cache = await caches.open(ASSET_CACHE);
-      const cached = await cache.match(req);
-      const network = fetch(req)
-        .then((res) => {
-          if (res && res.ok) {
-            cache.put(req, res.clone())
-              // Nach erfolgreichem put: alte ?v-Staende desselben Pfads entsorgen.
-              .then(() => pruneOldVersions(cache, req))
-              .catch(() => {});
-          }
-          return res;
-        })
-        .catch(() => null);
+      // Gesperrter/defekter Cache darf oeffentliche Startdateien nicht sperren.
+      const cache = await caches.open(ASSET_CACHE).catch(() => null);
+      const cached = cache ? await cache.match(req).catch(() => null) : null;
+      const network = fetchStartResponse(req).catch(() => null);
+      event.waitUntil(network.then((res) => {
+        if (cache && res && res.ok) {
+          return cache.put(req, res.clone())
+            // Nach erfolgreichem put: alte ?v-Staende desselben Pfads entsorgen.
+            .then(() => pruneOldVersions(cache, req))
+            .catch(() => {});
+        }
+      }));
       return cached || (await network) || new Response("", { status: 504 });
     })());
   }

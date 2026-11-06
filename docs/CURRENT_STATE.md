@@ -329,17 +329,17 @@ lokal), `admin-nutzer-loeschen-test.js` (Farbannahme `#ff5967`).
 
 ## Genau ein naechster Schritt
 
-**App-Start (06.11.2026):** PR1078 und PR1081 nach GO/Pflicht-CI live.
-Letzter belegter Runtime-Stand c4425d7a, Vercel dpl_6mL7X1bobnCQ1wQ24CpdxBKiC2aJ
-READY. Geschuetzte Start-GETs6,513/4,143/4,245s; Median zuvor9,557s.
-Kein Androidwert. [Messung und Grenzen](betrieb/app-start-performance-20261106.md).
-Betreiber sieht weiter5–6s und verlangt fertiges Briefing vor Ende des Logos.
-Vorbereitete Ladeoberflaeche PR1083 verworfen/geschlossen, nie ausgerollt.
-Neuer Folgefix auf ec70fe31: Sessionverlaengerung/Profilauswahl parallel,
-Lage-Quellenpfade mit maximal8 Reads parallel. Kein UI-/Startcache-Umbau;
-Briefing wartet weiterhin auf alle benoetigten Inhalte, inklusive Lagezusammenfassungen.
-Lesende lokale Servermessung Median5,406→4,396s; kein Android-/Rolloutnachweis.
-Naechster Schritt: neuen Folgefix gezielt abnehmen und als PR zur Freigabe vorlegen.
+**App-Start (06.11.2026):** PR1078/1081/1085 nach GO/Pflicht-CI live.
+PR1085 auf2a5e0774, Vercel dpl_45AMnvEB1XmP3jh5Xa7QGRb3nSgc READY.
+HTTP-Median4,836→4,234s; Antworten200, Briefing und zehn Lagekarten. Kein Androidwert.
+[Messungen, Rollout und neuer Befund](betrieb/app-start-performance-20261106.md).
+Betreiber meldet danach: installierte Brave-App haengt im nativen Android-Bild;
+dieselbe Hauptadresse funktioniert in Brave. Geraeteursache noch nicht bewiesen.
+Vorbereiteter Folgefix: Manifestfarbe an Iconpixel angeglichen (Kasten entfernt),
+8s Antwortfrist im Worker, damit blockierte Navigation eine Wiederholungsansicht
+bekommt; Briefing weiterhin vollstaendig vor App-Oeffnung. Keine private Cacheansicht.
+Worker7/7, Icons70/70, echter Worker-Wiederholungsfall und Browser82/82 bestanden.
+Naechster Schritt: Folgefix abnehmen; Android-Installationszustand bleibt offen.
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
 Historische alte Anweisungen, darunter

@@ -115,6 +115,7 @@ function check(name, cond, detail = "") {
     args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
   });
   try {
+    await require("./pwa-icon-start-test").verifyInBrowser(browser);
     for (const [label, viewport, isMobile] of [
       ["Desktop 1280x800", { width: 1280, height: 800 }, false],
       ["Mobil 390x844", { width: 390, height: 844 }, true]
