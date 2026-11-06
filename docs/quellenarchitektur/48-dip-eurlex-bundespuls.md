@@ -10,8 +10,9 @@ Betreiber genannten Angebote prüfen und fehlende Zugänge ergänzen.
 | EUR-Lex | Kein Eintrag | [Amtsblatt L RSS](https://eur-lex.europa.eu/DE/display-feed.rss?rssId=222), amtliche EU-Rechtsakte im bestehenden EU-Fachpaket |
 | Bundespuls | Kein Eintrag | [Vorgangs-RSS](https://bundespuls.de/feed/vorgang), privater DIP-Aggregator im bestehenden Bundesbasispaket |
 
-Beide neuen Wege sind vorbereitet und inaktiv (`paused/manual`). Sie zählen
-nicht als laufende Versorgung. Die Prüfung löst keinen regulären Quellenlauf,
+Bei der ursprünglichen Ergänzung waren beide neuen Wege inaktiv (`paused/manual`).
+Seit06.11.,21:22Istanbul sind sie aktiviert; der produktive Abschluss steht unten.
+Die Prüfung löst keinen regulären Quellenlauf,
 Modellaufruf oder kostenpflichtigen Dienst aus. Für DIP liegt in der abgefragten
 Quellentelemetrie kein separater aktueller Abrufbeleg vor; die vorhandenen
 Dokumente belegen seine Nutzung.
@@ -84,12 +85,12 @@ Merge-GO für[PR1084](https://github.com/ernisch/helmut-pilot/pull/1084) auf dem
 Arbeitsbranch. Die Freigabe fürPR1079 gilt dafür nicht. Neue Quellen wurden nicht
 aktiviert; Budget, Cron und Profile bleiben unverändert.
 
-## Vollständige Aktivierung vorbereitet
+## Vorbereitung der vollständigen Aktivierung
 
-Der anschließende Betreiberauftrag autorisiert die Aktivierung beider Quellen.
-Das konkrete Merge-GO für den aktualisierten PR1084 steht weiterhin aus. Nach Merge
-und geprüftem Production-Deployment kann der bereits geprüfte Aktivierungsplan
-eingespielt werden; dafür ist keine erneute allgemeine Aktivierungsfrage erforderlich.
+Der anschließende Betreiberauftrag autorisierte die Aktivierung beider Quellen.
+Bis zum später erteilten konkreten Merge-GO für PR1084 blieb der Plan unappliziert.
+Die folgenden Vorbereitungsbelege werden unverändert erhalten; die tatsächliche
+Ausführung und Nachkontrolle stehen im Abschlussabschnitt.
 
 | Weg | Geplante Aktivierung | Grund |
 | --- | --- | --- |
@@ -131,3 +132,38 @@ frischer Katalog/Schema, SourceMode und Deployment zu prüfen. Danach alle zehn
 Tabellen vergleichen und den tatsächlichen Ausführungsbeleg sichern. Der daran
 gebundene Rückweg pausiert nur diese zwei Quellen und erhält inzwischen entstandene
 echte Abruf-/Gesundheitswerte. Noch kein Apply oder Rücknahmetest in Production.
+
+## Produktiver Abschluss am06.11.2026
+
+Nach ausdrücklichem GO wurde PR1084 auf `14c558b2142127750a17bc40f53cd71020e3c147`
+gemergt. Der geprüfte PR-Kopf `a5b168c8` bestand189/189Standard- und341/341Bereichssuiten
+sowie die echte Desktop-/Mobilprüfung. PARDOK, Shadow und Abrufwegeprüfung bestanden ebenfalls.
+Vercel `dpl_GSjihZu7UMcYWn1SUVefZgBJm9AL` ist READY auf Production und der Hauptdomain.
+Der rein lesende Laufzeitaufruf bestätigt denselben Mergecommit, Quellenmodus an,
+Supabase und exklusiven relationalen Profilzugriff. Der öffentliche Bereitschaftstest
+ist grün. Scoring-/Relevanzschalter bleiben wie vor der Veröffentlichung.
+
+Der frische vollständige Katalog und das Pfadschema waren unverändert gegenüber der
+geprüften Ausgangslage; Apply und Rückweg waren bytegleich mit den geprüften Hashes.
+Ausführung um21:22:43Istanbul (18:22:43UTC): genau EUR-Lex auf `needs_review/always_on`
+und Bundespuls auf `needs_review/auto`. Die anschließende vollständige Nachkontrolle
+aller zehn Tabellen bestätigt ausschließlich diese zwei Status-/Modusänderungen
+einschließlich des vorhandenen Zeitstempeltriggers. Alle Gesundheitswerte,
+anderen Katalogzeilen und sämtliche Profilzeilen sind unverändert.
+
+Der Produktionsplan, mit frischen aktiven Profileingaben rein lokal ausgewertet,
+wählt143statt141Abrufwege: genau die beiden neuen Wege zusätzlich, kein Weg entfernt.
+DIP bleibt im eigenen API-Pfad. Beide neuen Wege warten auf den ersten regulären
+Quellenlauf; `needs_review` behauptet keinen bereits erfolgreichen Abruf. Nächster
+planmäßiger Lauf07.11.,07:00Istanbul. Keine manuelle Modellgenerierung und kein
+Rücknahmetest in Production. Die früheren Vorbereitungs-Aussagen „noch kein Apply“
+beschreiben ausschließlich ihren damaligen Belegstand.
+
+[Maschinenlesbarer Abschluss](48-aktivierung-20261106.json).
+Originale `before.json`, `apply-receipt.json`, `after.json`, `postflight.json`,
+`selection-postflight.json` und der an das tatsächliche Receipt gebundene
+`rollback-bound.sql` liegen unter
+`/workspace/helmut-abdeckung-2026-11-06/dip-eurlex-bundespuls/aktivierung/production-20261106/`.
+Der Rückweg pausiert nur diese zwei Quellen und erhält echte spätere Abrufwerte.
+Die operative Aktivierung ist abgeschlossen; dieser reine Dokumentationsnachtrag
+benötigt gemäß Betreiberregel sein eigenes konkretes Merge-GO.
