@@ -173,3 +173,45 @@ Vertraege und Neustarts erfolgreich; zusaetzliche Felder, manipulierte
 Limits/Route/Hash und unbekannte Usage bleiben gesperrt. Unabhaengiger
 Astra-Review ohne offene Befunde. Keine Migration, Nachabrechnung oder
 Freigabe bestehender Reserven. Pflicht-CI und Live-Nachlauf folgen.
+
+
+## JSONB-Korrektur produktiv bestaetigt; Lage-Schema folgt
+
+PR1060 auf `b080bcc3` bestand CI42131866123 mit180/180 Standard-,
+332/332 Bereichssuiten und nativen Datenbanknachweisen. Production
+`dpl_AmiNjw92qVNG8PYokia69dU6bHKC` ist READY auf
+`6507b11e59b58f762e33fc5dfe7a6213f233b642`, Livealias bestaetigt.
+Cem war waehrend der Korrektur voruebergehend pausiert, um keine weiteren
+fehlerhaften Abschluesse zu bezahlen; nach Deployment wieder aktiviert und
+nativ als einziges aktives Profil bestaetigt. Im neuen UTC-Tag vor dem
+Nachlauf0 bezahlte Aufrufe, alte4 Reserven unveraendert0,848 USD.
+
+Nachlauf `crawl-20261106001605-ksxrl`:147/147 Quellen,15 neue relationale
+Rohdokumente,8 neue Calls korrekt abgerechnet (0,053672 USD),6 neue
+vollstaendige Wissensobjekte. Keine neue ungeklaerte Kostenreserve.
+
+Morgenlauf `cron-morning-briefing-20261106001917-c9qbl`: Paket und
+Frischequittung fuer06.11.2026 gespeichert/verifiziert. GET latest:
+`frischeVertrag.status=aktuell`, Datenstand00:18:16UTC, `staleState=false`,
+ehrliche Ruhelage ohne neue Tagesprioritaet. Kommunikation weiter gesperrt.
+Paket weiterhin partial/fachliche Abnahme offen, weil Lage fehlt.
+
+Lage-Lauf `briefing-lage-20261106001833-jl8i4` und ein einziger bewusst
+begrenzter Folgeversuch `briefing-lage-20261106002026-oe8rs` verwarfen den
+Entwurf mit `ai-text-profile-reference`. Beide Anbieterergebnisse sind
+bekannt und abgerechnet; es war kein Retry eines ungeklaerten Aufrufs.
+Das bisherige Antwortschema laesst frei erfundene Profilwerte zu.
+Die gezielte Schema-Bindung gilt ausschliesslich im neuen Betriebsmodus:
+vorhandene Feld-/Wertpaare aus `mandatsbezugAuswahl`, keine erfundenen Werte
+oder technischen Platzhalter. Historische Anfragen bleiben unveraendert;
+Quellenbindung, unabhaengige Textpruefung und Kostenreserve bleiben Pflicht.
+Keine automatische Wiederholung und keine Rohtextprotokollierung.
+
+Schema-Korrektur lokal:6/6 neue Gruppen ueber den echten Generator-/
+Structured-JSON-/HTTPS-Stub-Pfad mit Betriebs-CAS und Kostenabschluss PASS.
+Geprueft sind alle sechs Mandatsfelder, Stellvertretung, Normalisierung,
+Platzhalter, Profiltrennung A/B/A, leere Auswahl ohne Reserve, erzwungene
+ungueltige Anbieterantworten und unveraenderte Quellen-/Reviewerablehnung.
+Historische Azure-/OpenAI-Payloads ohne Betrieb bytegleich. Bestehende
+Lagequittierung30 PASS, Kosten11/11 PASS; unabhaengiger Astra-Review ohne
+offene Befunde. Neue Suite ist im Standard-Pflichtlauf registriert.

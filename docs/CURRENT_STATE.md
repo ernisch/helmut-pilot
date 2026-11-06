@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 05.11.2026.** Aktuelle Projektsteuerung nach ausdruecklicher
+**Stand: 06.11.2026.** Aktuelle Projektsteuerung nach ausdruecklicher
 Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
@@ -12,21 +12,21 @@ Deaktivierung aller anderen Profile beauftragt. Zusaetzlich ausdruecklich
 freigegeben: **1 USD je Tag, maximal 30 USD insgesamt** fuer diesen neuen Betrieb.
 Entwicklung und Review nur mit GPT-6.1 Sol/Astra, kein DeepSeek.
 
-Production am05.11.2026 gegen21:54UTC: `main`14501c59 ist ausgerollt;
-Cems aus dem Bestand wiederhergestelltes relationales Profil ist als einziges
-aktiv, die500 anderen bleiben unveraendert inaktiv. Quellenaktualisierung
-147/147 erfolgreich, keine Modellaufrufe. Ein Morgenpaket ist gespeichert,
-aber wegen alter verstandener Inhalte weiterhin **partial/nicht aktuell**.
-Die nachfolgenden Aussagen zum noch ausstehenden Release1053 sind historisch.
+Production6507b11e ist nach PR1060 und vollstaendig gruener Pflicht-CI
+42131866123 live. Nur Cem ist aktiv,500 andere bleiben inaktiv. Drei
+Tagesjobs sind registriert:04:00 Quellen,05:00 Lage,05:15 Morgenpaket UTC.
+Der JSONB-Fehler im Kostenabschluss ist behoben; die vier alten Reserven
+von insgesamt0,848 USD bleiben unveraendert erhalten.
 
-PR1056 ist mit vollstaendig gruener Pflicht-CI42126935604 als0cda70f1
-produktiv aktiviert; drei geordnete Tagesjobs sind nativ registriert.
-Der erste Live-Crawl147/147 fuehrte vier erfolgreiche Azure-Antworten aus,
-verwarf sie aber beim Kostenabschluss: JSONB-Feldreihenfolge veraendert
-den bisherigen Vertragshash-Vergleich.0,848 USD bleiben vorsorglich
-reserviert, keine Budgetfreigabe oder Ruecksetzung. Eine gezielte
-Normalisierung mit Regression wird korrigiert. Aktuelles vollstaendiges
-KI-Briefing weiterhin NICHT belegt.
+Live-Crawl am06.11.2026:147/147 Quellen,8 korrekt abgerechnete neue
+Modellaufrufe (0,053672 USD),6 neue vollstaendige Wissensobjekte.
+Das Morgenbriefing ist fuer den06.11. gespeichert und als **aktuell**
+gelesen; derzeit ehrliche Ruhelage ohne neue Tagesprioritaet.
+Das vollstaendige Paket bleibt partial, weil zwei Lage-Entwuerfe wegen
+`ai-text-profile-reference` verworfen wurden. Eine gezielte Bindung des
+Generator-Antwortschemas an vorhandene Profilwerte wird umgesetzt;
+Quellen- und Textpruefung bleiben unveraendert. Kein dritter Blindversuch.
+Die nachfolgenden offenen Release1053-Aussagen sind historisch.
 [Umsetzung, Nachweise und Rueckweg](betrieb/cem-einprofilbetrieb-20261105.md).
 
 ## Navigation und Verwaltung live (06.11.2026)
