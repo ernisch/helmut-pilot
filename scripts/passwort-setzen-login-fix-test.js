@@ -141,7 +141,7 @@ function loadPlaywright() {
   check("sendSetPasswordPage: automatischer Redirect nach Erfolg (window.location.href)",
     /window\.location\.href = "\/";/.test(serverSrc));
   // Nur den Funktionskoerper von sendSetPasswordPage pruefen (Impressum/Datenschutz
-  // bleiben bewusst im hellen Design — nicht Teil dieser Aufgabe, nicht anfassen).
+  // haben eigene Stylesheets und werden hier nicht geprueft).
   const setPasswordPageSrc = (serverSrc.match(/function sendSetPasswordPage\(response\)[\s\S]*?\n}\n/) || [""])[0];
   check("sendSetPasswordPage-Funktion gefunden", setPasswordPageSrc.length > 100);
   check("sendSetPasswordPage: dunkles Design (color-scheme: dark), kein helles Alt-Design mehr",

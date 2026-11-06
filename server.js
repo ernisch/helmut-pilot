@@ -4186,15 +4186,22 @@ function sendImpressumPage(response) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Impressum · Helmut</title>
     <style>
-      :root { color-scheme: light; --ink: #111; --muted: #5f615f; --line: #d9ddd7; --paper: #f7f7f2; --accent: #7d1734; }
+      @font-face { font-family: Spectral; src: url("/assets/ui/fonts/Spectral-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+      @font-face { font-family: "Hanken Grotesk"; src: url("/assets/ui/fonts/HankenGrotesk-var.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
+      :root { color-scheme: dark; --ink: #eaeef6; --text: #aeb8c9; --muted: #8c97aa; --line: rgba(255, 255, 255, .08); --accent: #7fa8e0; }
       * { box-sizing: border-box; }
-      body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--paper); color: var(--ink); line-height: 1.6; }
-      main { width: min(100% - 32px, 880px); margin: 0 auto; padding: 56px 0 72px; }
-      a { color: var(--accent); }
-      h1 { font-size: clamp(36px, 6vw, 64px); line-height: 1; margin: 0 0 24px; letter-spacing: -0.03em; }
-      h2 { margin: 36px 0 10px; font-size: 22px; }
-      p, li { color: var(--muted); font-size: 17px; }
-      .notice { border: 1px solid var(--line); background: #fff; padding: 18px 20px; border-radius: 8px; }
+      body { margin: 0; font-family: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; background: radial-gradient(70% 320px at 50% 0, rgba(127, 168, 224, .07), transparent 100%), #070b16; min-height: 100vh; }
+      main { width: min(100% - 40px, 720px); margin: 0 auto; padding: 72px 0 88px; }
+      a { color: var(--accent); text-decoration: none; } a:hover { color: #a7c3ea; }
+      a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+      h1 { margin: 0 0 28px; font: 400 clamp(38px, 6vw, 56px)/1.05 Spectral, Georgia, serif; letter-spacing: -.01em; color: var(--ink); }
+      h2 { margin: 40px 0 10px; padding-top: 24px; border-top: 1px solid var(--line); font: 400 24px/1.25 Spectral, Georgia, serif; color: var(--ink); }
+      p, li { color: var(--text); font-size: 17px; }
+      ul { padding-left: 22px; }
+      strong { color: var(--ink); font-weight: 500; }
+      .notice { margin: 24px 0; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: transparent; border-radius: 0; color: var(--muted); font-size: 15px; }
+      code { padding: 2px 6px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255, 255, 255, .03); color: var(--ink); font-size: .92em; }
+      .notice + h2 { border-top: 0; padding-top: 0; }
     </style>
   </head>
   <body>
@@ -4396,17 +4403,22 @@ function sendPrivacyPage(response) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Datenschutz · Helmut</title>
     <style>
-      :root { color-scheme: light; --ink: #111; --muted: #5f615f; --line: #d9ddd7; --paper: #f7f7f2; --accent: #7d1734; }
+      @font-face { font-family: Spectral; src: url("/assets/ui/fonts/Spectral-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+      @font-face { font-family: "Hanken Grotesk"; src: url("/assets/ui/fonts/HankenGrotesk-var.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
+      :root { color-scheme: dark; --ink: #eaeef6; --text: #aeb8c9; --muted: #8c97aa; --line: rgba(255, 255, 255, .08); --accent: #7fa8e0; }
       * { box-sizing: border-box; }
-      body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--paper); color: var(--ink); line-height: 1.6; }
-      main { width: min(100% - 32px, 880px); margin: 0 auto; padding: 56px 0 72px; }
-      a { color: var(--accent); }
-      h1 { font-size: clamp(36px, 6vw, 64px); line-height: 1; margin: 0 0 24px; letter-spacing: -0.03em; }
-      h2 { margin: 36px 0 10px; font-size: 22px; }
-      p, li { color: var(--muted); font-size: 17px; }
+      body { margin: 0; font-family: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; background: radial-gradient(70% 320px at 50% 0, rgba(127, 168, 224, .07), transparent 100%), #070b16; min-height: 100vh; }
+      main { width: min(100% - 40px, 720px); margin: 0 auto; padding: 72px 0 88px; }
+      a { color: var(--accent); text-decoration: none; } a:hover { color: #a7c3ea; }
+      a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+      h1 { margin: 0 0 28px; font: 400 clamp(38px, 6vw, 56px)/1.05 Spectral, Georgia, serif; letter-spacing: -.01em; color: var(--ink); }
+      h2 { margin: 40px 0 10px; padding-top: 24px; border-top: 1px solid var(--line); font: 400 24px/1.25 Spectral, Georgia, serif; color: var(--ink); }
+      p, li { color: var(--text); font-size: 17px; }
       ul { padding-left: 22px; }
-      .notice { border: 1px solid var(--line); background: #fff; padding: 18px 20px; border-radius: 8px; }
-      code { background: #fff; border: 1px solid var(--line); padding: 2px 6px; border-radius: 6px; }
+      strong { color: var(--ink); font-weight: 500; }
+      .notice { margin: 24px 0; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: transparent; border-radius: 0; color: var(--muted); font-size: 15px; }
+      code { padding: 2px 6px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255, 255, 255, .03); color: var(--ink); font-size: .92em; }
+      .notice + h2 { border-top: 0; padding-top: 0; }
     </style>
   </head>
   <body>
