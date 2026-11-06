@@ -19,10 +19,10 @@ try { window.__helmutClientLoaded = true; } catch (e) {}
       var app = document.getElementById("app");
       if (app && (document.body.classList.contains("is-loading") || app.querySelector(".loading-screen") || !app.children.length)) {
         app.innerHTML =
-          '<div style="display:grid;place-items:center;min-height:100dvh;font-family:Inter,ui-sans-serif,system-ui,sans-serif;padding:32px;text-align:center">' +
-          '<div><div style="font:700 52px/1 Inter,sans-serif;letter-spacing:-.04em;margin-bottom:22px;color:#fbf7ef">H</div>' +
-          '<p style="color:rgba(245,241,232,.62);max-width:300px;margin:0 auto 22px;font-size:15px;line-height:1.55">Beim Start ist etwas schiefgelaufen.<br>Bitte lade die Seite neu.</p>' +
-          '<button type="button" onclick="window.location.reload()" style="appearance:none;border:0;cursor:pointer;padding:14px 22px;border-radius:14px;font:600 16px Inter,sans-serif;color:#0b0f1a;background:#f5f1e8">Neu laden</button>' +
+          '<div style="display:grid;place-items:center;min-height:100dvh;font-family:Hanken Grotesk,system-ui,sans-serif;background:#070b16;padding:32px;text-align:center">' +
+          '<div><div style="font:400 40px/1 Spectral,Georgia,serif;letter-spacing:-.01em;margin-bottom:22px;color:#eaeef6">Helmut</div>' +
+          '<p style="color:#aeb8c9;max-width:300px;margin:0 auto 22px;font-size:15px;line-height:1.55">Beim Start ist etwas schiefgelaufen.<br>Bitte lade die Seite neu.</p>' +
+          '<button type="button" onclick="window.location.reload()" style="appearance:none;border:0;cursor:pointer;padding:14px 22px;border-radius:24px;font:500 16px Hanken Grotesk,system-ui,sans-serif;color:#0a0f1c;background:#e9edf5">Neu laden</button>' +
           '</div></div>';
       }
     } catch (e) {}
@@ -4628,7 +4628,7 @@ function render() {
       ${renderSidebar()}
       <div class="content-shell" ${onboardingActive ? "inert" : ""}>
         ${renderTopbar()}
-        <div class="ui-page" id="uiPage" tabindex="-1">${renderView()}</div>
+        <div class="ui-page" id="uiPage" tabindex="-1">${renderView()}${renderUiFooter("ui-footer--inline")}</div>
         ${renderUiFooter()}
       </div>
       ${renderMobileDock()}
@@ -4700,11 +4700,13 @@ function renderUiEmpty(title, detail) {
   return `<div class="ui-empty" role="status"><span class="ui-priority-dot" aria-hidden="true"></span><h2>${escapeHtml(title)}</h2><p>${escapeHtml(detail)}</p></div>`;
 }
 
-function renderUiFooter() {
+function renderUiFooter(variant = "") {
   const label = currentView === "settings" || currentView === "profile-settings"
     ? "Dein Mandatsprofil steuert die persönliche Einordnung."
     : "Quellen und Stand findest du direkt bei den angezeigten Inhalten.";
-  return `<footer class="ui-footer">${uiIcon("source")}<span>${escapeHtml(label)}</span>${previewMode ? '<span class="ui-preview-label">Vorschau · Beispieldaten</span>' : ""}</footer>`;
+  // Zwei Platzierungen derselben Zeile: Desktop am Fensterrand, mobil am
+  // Inhaltsende (Design). Per CSS ist je Breite genau eine sichtbar.
+  return `<footer class="ui-footer ${variant}">${uiIcon("source")}<span>${escapeHtml(label)}</span>${previewMode ? '<span class="ui-preview-label">Vorschau · Beispieldaten</span>' : ""}</footer>`;
 }
 
 function renderUiAccountTools() {
@@ -4803,7 +4805,7 @@ function renderTopbar() {
       </button>
       <span class="topbar-brand">Helmut</span>
       <div class="topbar-meta">
-        <span class="ui-status ui-status--${tone}"><i aria-hidden="true"></i><span data-berlin-clock>${escapeHtml(statusLabel)} · ${formatBerlinNow()}</span></span>
+        <span class="ui-status ui-status--${tone}"><i aria-hidden="true"></i><span data-berlin-clock>${renderBerlinClockLabel(statusLabel)}</span></span>
         <button class="update-heart ${hasUpdates ? "has-updates" : ""}" type="button" data-updates aria-expanded="${updatesOpen ? "true" : "false"}" title="${hasUpdates ? "Mitteilungen anzeigen" : "Keine neuen Mitteilungen"}" aria-label="${hasUpdates ? "Mitteilungen anzeigen" : "Keine neuen Mitteilungen"}">
           ${uiIcon("bell")}
           <i></i>
@@ -13689,11 +13691,15 @@ function helmutBriefingSourceHtml(item) {
 function formatBerlinNow() {
   return new Intl.DateTimeFormat("de-DE", {
     timeZone: "Europe/Berlin",
-    day: "2-digit",
-    month: "long",
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date());
+}
+
+// Status-Pille nach Design: „Aktuell · 07:12 Uhr“; mobil nur die Uhrzeit
+// (Status und „Uhr“ bleiben für Screenreader lesbar, nur visuell verborgen).
+function renderBerlinClockLabel(statusLabel) {
+  return `<span class="ui-status-label">${escapeHtml(statusLabel)} · </span><span class="ui-status-time">${escapeHtml(formatBerlinNow())}</span><span class="ui-status-unit"> Uhr</span>`;
 }
 
 function formatBerlinFullDateTime(date = new Date()) {
@@ -13735,7 +13741,7 @@ function timeGreeting(firstName = "") {
 
 function updateBerlinClock() {
   document.querySelectorAll("[data-berlin-clock]").forEach((element) => {
-    element.textContent = `${displayStatusLabel()} · ${formatBerlinNow()}`;
+    element.innerHTML = renderBerlinClockLabel(displayStatusLabel());
   });
   // Live-Flow (Block 5): Rollt der Berliner Kalendertag um, während die App
   // durchgehend sichtbar bleibt (kein visibilitychange), würde die relative

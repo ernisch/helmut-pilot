@@ -12538,3 +12538,433 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
 .ui-page .buero-priority-hint { font-size: 14px; }
 .ui-page :is(.buero-priority-label,.buero-priority-value,.buero-priority-optional) { font-size: 14px; }
 .ui-page .buero-group-eyebrow { font: 500 12px/1.6 var(--ui-mono); }
+
+/* ============================================================================
+   Designangleich an das freigegebene Claude Design „Helmut Desktop Prototyp“
+   (finale Überarbeitung 05.11.2026). Reine Darstellung: weniger Kästen,
+   Haarlinien, Panels 12 px / Fläche .025, Mono-Labels 11,5 px / .12em,
+   Abschnittslabels grau, Primärknöpfe als Pille, Reichstag rechts groß bzw.
+   mobil als gedämpfter Kopfhintergrund, Fußzeile mobil am Inhaltsende,
+   Tab-Leiste ohne Kasten. Keine Logik, keine Datenbindung.
+   ============================================================================ */
+:root {
+  --hh: 300px; --ui-h1: 56px; --ui-sub: 20px; --ui-px: 40px;
+  --ui-label: #8c97aa; --ui-head-ink: #f4f6fa; --ui-sub-ink: #c9d1de;
+  --ui-panel: rgba(255,255,255,.025); --ui-panel-line: rgba(255,255,255,.07);
+  --ui-hover: #0f1727; --ui-nav-active: rgba(255,255,255,.06);
+  --ui-solid: #e9edf5; --ui-solid-hover: #fff; --ui-on-solid: #0a0f1c;
+  --ui-chrome: #05080f;
+}
+:root[data-theme="light"] {
+  --ui-label: #5d6b80; --ui-head-ink: var(--ui-text); --ui-sub-ink: var(--ui-muted);
+  --ui-panel: #fff; --ui-panel-line: rgba(19,35,57,.1);
+  --ui-hover: #e9eef5; --ui-nav-active: rgba(19,35,57,.06);
+  --ui-solid: #182538; --ui-solid-hover: #0d1626; --ui-on-solid: #fff;
+  --ui-chrome: var(--ui-sidebar);
+}
+@media (max-height: 960px) { :root { --hh: 250px; --ui-h1: 48px; --ui-sub: 18px; } }
+
+/* Sidebar ------------------------------------------------------------------ */
+.app-frame .sidebar { background: var(--ui-chrome); border-right-color: var(--hairline); }
+.sidebar .brand { margin-bottom: 56px; }
+.sidebar .nav-list { gap: 4px; padding: 0 14px; }
+.sidebar .nav-list button { gap: 18px; min-height: 52px; height: 52px; padding: 0 20px 0 22px; border: 0; border-radius: 6px; font-size: 17px; color: var(--ui-sub-ink); }
+.sidebar .nav-list button .ui-icon { width: 24px; height: 24px; flex-basis: 24px; color: var(--ui-label); }
+.sidebar .nav-list button:hover { background: var(--ui-hover); border: 0; }
+.sidebar .nav-list button.active { background: var(--ui-nav-active); color: var(--ui-text); border: 0; box-shadow: none; }
+.sidebar .nav-list button.active::before, .sidebar .nav-list button.active::after { content: none; display: none; }
+.sidebar .nav-list button.active .ui-icon { color: var(--ui-accent); }
+.sidebar-foot { gap: 4px; padding: 12px 8px 16px; border-top-color: var(--hairline); }
+.sidebar-foot .sidebar-user-card { padding: 10px 12px; border-radius: 6px; }
+.sidebar-foot .sidebar-user-card:hover { background: var(--ui-hover); }
+.sidebar-user-card .sidebar-user-avatar { width: 44px; height: 44px; background: var(--ui-hover); border-color: rgba(255,255,255,.14); }
+.sidebar-user-info span { font-size: 12px; margin-top: 2px; }
+
+/* Kopfleiste und Status-Pille ---------------------------------------------- */
+.app-frame .topbar { top: 0; left: var(--ui-px); right: var(--ui-px); height: 72px; min-height: 72px; align-items: center; }
+.app-frame .ui-is-scrolled .topbar { top: 0; left: 0; right: 0; height: 72px; padding: 0 var(--ui-px); background: color-mix(in srgb, var(--ui-bg) 84%, transparent); border-bottom: 1px solid var(--hairline); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.topbar .topbar-meta { align-items: center; gap: 20px; flex-wrap: nowrap; }
+.topbar .ui-status { gap: 8px; min-height: 36px; height: 36px; padding: 0 14px; border-color: var(--ui-border); background: color-mix(in srgb, var(--ui-bg) 55%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: var(--ui-muted); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.topbar .ui-status [data-berlin-clock] { white-space: nowrap; }
+.topbar .ui-status [data-berlin-clock] > span { display: inline; white-space: pre; }
+.topbar .update-heart { border-radius: 50%; }
+.topbar .update-heart:hover { background: var(--ui-hover); color: var(--ui-text); }
+.topbar .update-heart svg, .topbar .update-heart .ui-icon { width: 24px; height: 24px; }
+.topbar .update-heart.has-updates > i { top: 7px; right: 7px; width: 8px; height: 8px; border: 2px solid var(--ui-bg); box-sizing: content-box; }
+
+/* Seitenkopf mit Reichstag --------------------------------------------------- */
+.app-frame .ui-page { position: relative; isolation: isolate; padding: 0 var(--ui-px) 48px; }
+.ui-page-header::before { content: none; display: none; }
+.app-frame:is(.view-helmut,.view-briefing,.view-radar,.view-office,.view-office-detail,.view-settings,.view-profile-settings) .ui-page::before {
+  content: ""; position: absolute; z-index: -1; top: 0; right: 0; height: var(--hh);
+  width: min(62%, calc(var(--hh) * 2.75)); pointer-events: none;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ui-bg) 70%, transparent) 0, transparent 120px),
+    linear-gradient(180deg, transparent 70%, color-mix(in srgb, var(--ui-bg) 70%, transparent) 92%, var(--ui-bg) 100%),
+    url("assets/ui/reichstag.jpg") 100% 33% / auto 192% no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.55) 18%, #000 42%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.55) 18%, #000 42%);
+}
+:root[data-theme="light"] .app-frame .ui-page::before { opacity: .5; }
+.ui-page-header { min-height: var(--hh); padding: 72px 0 36px; justify-content: flex-end; }
+.ui-page-header > * { max-width: calc(100% - var(--hh) * 1.6); }
+.ui-date { margin: 0; color: var(--ui-muted); font-size: 15px; letter-spacing: .01em; }
+.ui-page-header h1 { margin-top: 6px; font-size: var(--ui-h1); line-height: 1.05; letter-spacing: -.01em; color: var(--ui-head-ink); }
+.ui-page-subtitle { max-width: 52ch; margin-top: 12px; font-size: var(--ui-sub); line-height: 1.45; color: var(--ui-sub-ink); }
+.radar2 .radar2-header { margin-bottom: 8px; }
+.radar2-header-row .radar2-refresh { margin-bottom: 36px; }
+.hstand > .ui-page-header { margin-bottom: 0; }
+
+/* Typografische Kennzeichnungen ---------------------------------------------- */
+.ui-eyebrow, .ui-section-heading > span:first-child, .hstand-card .hstand-kicker, .buero-draft-card .buero-card-type,
+.ui-page .buero-group-eyebrow, .ui-onboarding-mandate dt, .onboarding-card .onboarding-progress {
+  font-size: 11.5px; letter-spacing: .12em; font-weight: 500;
+}
+.ui-section-heading > span:first-child, .hstand-card .hstand-kicker,
+.hstand-risk .hstand-kicker, .hstand-chance .hstand-kicker { color: var(--ui-label); }
+.ui-lage-detail .vsheet-h { margin: 0 0 12px; font: 500 11.5px/1.6 var(--ui-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ui-label); }
+
+/* Panels: einheitlich 12 px, ruhige Fläche, Haarlinie ------------------------ */
+.ui-briefing-hero { grid-template-columns: minmax(0,1.2fr) minmax(300px,.8fr); gap: 0 40px; padding: 36px 40px 32px; background: var(--ui-panel); border: 1px solid var(--ui-panel-line); border-radius: 14px; }
+.ui-hero-main > .ui-eyebrow { color: var(--ui-accent); }
+.ui-hero-main h2 { margin: 14px 0 0; font-size: 42px; line-height: 1.1; }
+.ui-hero-main > p { margin: 16px 0 0; max-width: 44ch; font-size: 19px; line-height: 1.45; color: var(--ui-muted); }
+.ui-hero-next { gap: 20px; padding-left: 40px; border-left-color: var(--hairline); }
+.ui-hero-next > p { font-size: 22px; line-height: 1.3; }
+.ui-arrow-action { gap: 20px; font-size: 15px; }
+.ui-arrow-circle { width: 44px; height: 44px; flex-basis: 44px; border-color: color-mix(in srgb, var(--ui-accent) 60%, transparent); }
+.ui-detail, .ui-page .lage2-empty, .ui-empty, .hstand-state-card, .ui-page .hstand-state-card, .ui-page .helmut-refresh,
+.stg-group, .ui-office-detail {
+  background: var(--ui-panel); border: 1px solid var(--ui-panel-line); border-radius: 12px;
+}
+.ui-detail { padding: 32px 32px 28px; }
+.ui-source-details { border-color: var(--ui-panel-line); border-radius: 12px; }
+
+/* Briefing: Spalten und „Danach wichtig“ ohne Rahmen, nur Haarlinien --------- */
+.ui-briefing-context { gap: 0 40px; margin-top: 32px; }
+.ui-page .hstand-card { padding: 24px 0 0; background: transparent; border: 0; border-top: 1px solid var(--hairline); border-radius: 0; }
+.hstand-card .hstand-body { font-size: 17px; line-height: 1.55; }
+.hstand-actions .hstand-step { grid-template-columns: 56px minmax(0,1fr); padding: 18px 8px 18px 4px; border-top-color: var(--hairline); }
+.hstand-actions .hstand-step:last-child { border-bottom: 1px solid var(--hairline); }
+.hstand-step .hstand-step-num { font-size: 30px; color: var(--ui-dim); }
+.ui-briefing-status .text-button { border-color: var(--hairline); }
+
+/* Lage-Liste ----------------------------------------------------------------- */
+.ui-vorgang-list { gap: 0; }
+.ui-vorgang-row { grid-template-columns: 64px minmax(0,1fr) 20px; padding: 24px 20px; border: 0; border-bottom: 1px solid var(--hairline); border-radius: 0; }
+.ui-vorgang-row.is-selected, .ui-vorgang-row:hover { border-color: transparent; border-bottom-color: var(--hairline); background: var(--ui-panel); border-radius: 10px 10px 0 0; }
+:root:not([data-theme="light"]) .ui-vorgang-row.is-selected { background: rgba(255,255,255,.035); }
+.ui-row-number { font-size: 30px; color: var(--ui-dim); }
+.ui-row-title { font-size: 26px; }
+.ui-row-chevron { color: var(--ui-dim); }
+.ui-vorgang-row.is-selected .ui-row-chevron { color: var(--ui-accent); }
+
+/* Radar: Hinweis ohne Rahmen, Beiträge als Haarlinien-Liste ------------------ */
+.radar2 .radar2-summary { display: flex; align-items: baseline; gap: 14px; margin: 0 0 32px; padding: 18px 0 20px; background: transparent; border: 0; border-bottom: 1px solid var(--hairline); border-radius: 0; }
+.radar2 .radar2-summary::before { content: ""; flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--ui-accent); transform: translateY(-2px); }
+.radar2-summary .radar2-summary-text { font-size: 17px; }
+.radar2 .radar2-card { padding: 20px 0; background: transparent; border: 0; border-top: 1px solid var(--hairline); border-radius: 0; }
+.radar2 .radar2-card:hover { background: transparent; }
+.radar2 .radar2-h2 { font-size: 32px; }
+
+/* Büro: Hinweis ohne Rahmen, Entwürfe als ruhige Liste, Detail als Panel ----- */
+.ui-page .buero-priority-hint { padding: 0 0 18px; background: transparent; border: 0; border-bottom: 1px solid var(--hairline); border-radius: 0; }
+.ui-page .buero-draft-card { margin: 0; padding: 20px 24px; background: transparent; border: 0; border-bottom: 1px solid var(--hairline); border-radius: 0; }
+.ui-page .buero-draft-card:hover, .ui-page .buero-draft-card.is-selected { background: var(--ui-panel); border-color: transparent; border-bottom-color: var(--hairline); }
+:root:not([data-theme="light"]) .ui-page .buero-draft-card.is-selected { background: rgba(255,255,255,.035); }
+.buero-card-body .buero-card-title { font-size: 24px; }
+.ui-page .buero-status-pill { padding: 0; background: transparent; border: 0; color: var(--ui-accent); }
+.ui-page .buero-status-pill.is-ready { color: var(--ui-accent); }
+.ui-office-detail { padding: 32px; }
+.ui-office-detail .buero-detail-body p { font: 400 21px/1.5 var(--ui-serif); color: var(--ui-text); }
+
+/* Knöpfe: Primär als Pille, sekundär als ruhige Kontur ------------------------ */
+.ui-page .primary-button, .onboarding-actions .primary-button {
+  min-height: 48px; padding: 0 24px; border-radius: 24px; border: 0;
+  background: var(--ui-solid); color: var(--ui-on-solid); font-size: 16px; font-weight: 500; box-shadow: none;
+}
+.ui-page .primary-button:hover:not(:disabled), .onboarding-actions .primary-button:hover:not(:disabled) { background: var(--ui-solid-hover); }
+.ui-page .secondary-button { min-height: 44px; padding: 0 18px; border-radius: 24px; border-color: rgba(255,255,255,.14); color: var(--ui-muted); }
+.ui-page .secondary-button:hover:not(:disabled) { border-color: rgba(255,255,255,.4); color: var(--ui-text); }
+:root[data-theme="light"] .ui-page .secondary-button { border-color: var(--ui-border); }
+
+/* Fußzeile: Desktop am Fensterrand, mobil am Inhaltsende ---------------------- */
+.ui-footer { min-height: 48px; padding: 0 var(--ui-px); border-top-color: var(--hairline); color: var(--ui-dim); }
+.ui-footer .ui-icon { color: var(--ui-dim); }
+.ui-footer--inline { display: none; }
+
+/* Ersteinrichtung --------------------------------------------------------------- */
+.onboarding-layer { padding: 0; align-items: stretch; justify-content: stretch; }
+.onboarding-layer .onboarding-card { display: flex; flex-direction: column; width: 100%; max-width: none; height: 100dvh; max-height: 100dvh; margin: 0; padding: 0 0 48px; background: radial-gradient(70% 220px at 50% 0, rgba(127,168,224,.07), transparent 100%), var(--ui-bg); }
+.ui-onboarding-header { flex: 0 0 auto; min-height: 72px; margin: 0; padding: 0 48px; gap: 28px; }
+.ui-onboarding-brand { gap: 12px; }
+.ui-onboarding-brand img { width: 32px; height: 32px; }
+.ui-onboarding-header .onboarding-progress { color: var(--ui-muted); }
+.ui-onboarding-header .text-button { border: 0; background: transparent; font-size: 15px; }
+.ui-onboarding-header .text-button:hover { color: var(--ui-text); }
+.ui-onboarding-progress { flex: 0 0 auto; width: calc(100% - 96px); margin: 0 48px; }
+.ui-onboarding-fields { width: min(640px, calc(100% - 40px)); margin: 0 auto; padding-top: 56px; }
+.onboarding-card .onboarding-body h2 { margin: 0 0 16px; font-size: 56px; line-height: 1.05; letter-spacing: -.01em; }
+.onboarding-card .onboarding-lead { margin: 0; font: 400 22px/1.45 var(--ui-serif); color: var(--ui-sub-ink); }
+.ui-onboarding-mandate { justify-content: flex-start; gap: 0; margin: 32px 0 0; padding: 16px 0; border-block-color: var(--hairline); }
+.ui-onboarding-mandate dt { flex: 0 0 184px; align-self: center; }
+.onboarding-card .onboarding-note { font-size: 15px; line-height: 1.6; }
+.onboarding-card .onboarding-chip { border-color: rgba(255,255,255,.14); border-radius: 6px; }
+.onboarding-card .onboarding-actions { justify-content: flex-end; padding-top: 20px; border-top-color: var(--hairline); }
+.onboarding-actions .secondary-button { margin-right: auto; padding: 0 4px; border: 0; background: transparent; color: var(--ui-muted); }
+.onboarding-actions .secondary-button:hover { color: var(--ui-text); }
+.onboarding-actions :is([data-onboard-next],[data-onboard-finish])::after { content: "→"; margin-left: 12px; }
+:root[data-theme="light"] .onboarding-card .onboarding-chip { border-color: var(--ui-border); }
+
+@media (min-width: 768px) and (max-width: 1100px) {
+  :root { --ui-px: 28px; }
+  .ui-briefing-hero { grid-template-columns: minmax(0,1fr); gap: 24px; padding: 28px; }
+  .ui-hero-next { padding: 24px 0 0; }
+}
+
+/* Smartphone (< 768 px) -------------------------------------------------------- */
+@media (max-width: 767px) {
+  :root { --hh: 196px; --ui-h1: 34px; --ui-sub: 16px; --ui-px: 20px; }
+  .app-frame .topbar, .app-frame .ui-is-scrolled .topbar { left: 0; right: 0; height: auto; min-height: 72px; padding: max(14px, env(safe-area-inset-top)) var(--ui-px) 14px; }
+  .app-frame .topbar { background: transparent; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .topbar .topbar-meta { gap: 4px; justify-content: flex-end; }
+  .topbar .ui-status { max-width: none; padding: 0 12px; }
+  .topbar .ui-status-label, .topbar .ui-status-unit { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .topbar .profile-avatar { width: 44px; height: 44px; border: 0; background: transparent; }
+  .topbar .profile-avatar::before { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--ui-hover); border: 1px solid rgba(255,255,255,.14); z-index: -1; }
+  .topbar .profile-avatar { isolation: isolate; color: var(--ui-text); font-weight: 500; }
+  .app-frame .ui-page { padding: 0 var(--ui-px) 0; }
+  .app-frame:is(.view-helmut,.view-briefing,.view-radar,.view-office,.view-office-detail,.view-settings,.view-profile-settings) .ui-page::before {
+    width: 100%; opacity: .6; background-position: 0 0, 0 0, 78% 30%; background-size: auto, auto, auto 150%;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.85) 45%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.85) 45%, transparent 100%);
+  }
+  .ui-page-header { min-height: var(--hh); padding: calc(96px + env(safe-area-inset-top, 0px)) 0 24px; }
+  .ui-page-header > * { max-width: none; }
+  .ui-page-header h1 { font-size: var(--ui-h1); line-height: 1.08; }
+  .ui-page-subtitle { margin-top: 10px; font-size: var(--ui-sub); }
+  .ui-footer { display: none; }
+  .ui-footer.ui-footer--inline { display: flex; min-height: 0; margin: 40px 0 0; padding: 16px 0 28px; background: transparent; border-top: 1px solid var(--hairline); }
+  .ui-footer--inline .ui-icon { display: none; }
+  .app-frame .mobile-dock { min-height: 58px; padding: 0 8px env(safe-area-inset-bottom, 0px); background: color-mix(in srgb, var(--ui-chrome) 92%, transparent); border-top-color: var(--hairline); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+  .mobile-dock button { gap: 3px; height: 58px; border: 0; border-radius: 0; color: var(--ui-label); font-size: 12px; }
+  .mobile-dock button .ui-icon { width: 24px; height: 24px; flex-basis: 24px; }
+  .mobile-dock button.active { background: transparent; border: 0; color: var(--ui-text); }
+  :root[data-theme="light"] .mobile-dock button.active span { background: transparent !important; border-color: transparent !important; }
+  .ui-briefing-hero { grid-template-columns: minmax(0,1fr); padding: 24px 20px; gap: 24px 0; border-radius: 14px; }
+  .ui-hero-main h2 { font-size: 30px; }
+  .ui-hero-main > p { font-size: 17px; }
+  .ui-hero-next { padding: 24px 0 0; border-top-color: var(--hairline); }
+  .ui-hero-next > p { font-size: 20px; }
+  .ui-briefing-context { gap: 28px; margin-top: 24px; }
+  .ui-page .hstand-card { padding: 20px 0 4px; }
+  .ui-vorgang-row { grid-template-columns: 36px minmax(0,1fr) 20px; gap: 0 14px; padding: 20px 0; }
+  .ui-vorgang-row.is-selected, .ui-vorgang-row:hover { padding-inline: 0; border-radius: 0; }
+  .ui-row-number { font-size: 24px; }
+  .ui-row-title { font-size: 22px; }
+  /* Mobile Panels randlos */
+  .ui-detail, .ui-office-detail, .stg-group { padding: 0; background: transparent; border: 0; border-radius: 0; }
+  .stg-group { border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
+  .ui-page .buero-draft-card { padding: 18px 0; }
+  .ui-page .buero-draft-card:hover, .ui-page .buero-draft-card.is-selected { background: transparent; }
+  .ui-office-detail .buero-detail-body p { font-size: 19px; }
+  .radar2 .radar2-h2 { font-size: 28px; }
+  .radar2 .radar2-summary { padding-inline: 0; }
+  .ui-onboarding-header { min-height: 64px; padding: max(10px, env(safe-area-inset-top)) 20px 0; gap: 12px; }
+  .ui-onboarding-progress { width: calc(100% - 40px); margin: 0 20px; }
+  .ui-onboarding-fields { width: calc(100% - 40px); padding-top: 40px; }
+  .onboarding-layer .onboarding-card { padding: 0 0 24px; overflow-y: auto; }
+  .onboarding-card .onboarding-body h2 { font-size: 30px; line-height: 1.12; }
+  .onboarding-card .onboarding-lead { font: 400 17px/1.5 var(--ui-sans); }
+  .ui-onboarding-mandate dt { flex-basis: 120px; }
+  .onboarding-actions .primary-button { min-width: 136px; }
+}
+/* Lage-Detail: Kategorie als blaue Mono-Kennzeichnung statt Chip (Design). */
+.ui-lage-detail .lage2-vtag { display: inline-block; padding: 0; background: transparent; border: 0; border-radius: 0; color: var(--ui-accent); font: 500 11.5px/1.6 var(--ui-mono); letter-spacing: .12em; text-transform: uppercase; }
+.ui-lage-detail .vsheet-title { margin: 8px 0 14px; font-size: 34px; line-height: 1.12; }
+.radar2-header-row .radar2-refresh { background: color-mix(in srgb, var(--ui-bg) 60%, transparent); border-color: var(--ui-border); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+@media (max-width: 767px) { .ui-lage-detail .vsheet-title { font-size: 28px; } }
+@media (max-width: 767px) {
+  .app-frame .topbar { justify-content: space-between; }
+  .topbar .ui-compact-title { display: block; flex: 1 1 auto; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 12px; font-size: 22px; }
+  .topbar .topbar-meta { width: auto; flex: 0 0 auto; }
+}
+/* Keine Goldschrift: Warn-/Veraltet-Zustände in neutraler Schrift, das Signal
+   trägt allein der kleine gelbe Punkt (Designregel „gelber Punkt = veraltet“). */
+.ui-page .hstand-status--warn { display: inline-flex; align-items: center; gap: 8px; color: var(--ui-text); background: transparent; border-color: var(--ui-border); }
+.ui-page .hstand-status--warn::before { content: ""; flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--ui-yellow); }
+.ui-page :is(.hstand-frische--warn, .hstand-partial) { color: var(--ui-muted); }
+.ui-page :is(.hstand-frische--warn, .hstand-partial) svg { color: var(--ui-dim); }
+.ui-preview-label { color: var(--ui-muted); }
+/* Kein Goldton im Produkt (Betreiberentscheid 05.11.2026): Warn-/Veraltet-/
+   Beobachten-Farbe zentral auf neutrales Grau. Zustände bleiben über Text,
+   Punkt und Position erkennbar, nie nur über Farbe. */
+:root, :root:not([data-theme="light"]) { --ui-yellow: #8c97aa; --watch: #8c97aa; --gold: #8c97aa; }
+:root[data-theme="light"] { --ui-yellow: #5d6b80; --watch: #5d6b80; --gold: #5d6b80; }
+.ui-page .helmut-refresh-fill { background: var(--ui-accent); }
+.helmut-deck-bullets .helmut-bullet-ico, .helmut-list-row.beobachten .helmut-list-badge, .helmut-action-btn.watch .helmut-action-ico { color: var(--watch); border-color: var(--hairline); }
+/* Lage „nur teilweise verfügbar“: Hinweis ohne Kasten, wie der Radar-Hinweis
+   (Punkt, Titel, Text, Haarlinie) und mit klarem Abstand zur Arbeitsfläche. */
+.ui-page [data-ui-lage-partial] { margin: 0 0 32px; }
+.ui-page [data-ui-lage-partial] .ui-empty { display: grid; grid-template-columns: 8px minmax(0,1fr); column-gap: 14px; align-items: baseline; padding: 0 0 20px; background: transparent; border: 0; border-bottom: 1px solid var(--hairline); border-radius: 0; }
+.ui-page [data-ui-lage-partial] .ui-priority-dot { width: 8px; height: 8px; flex-basis: 8px; margin: 0; background: var(--ui-label); transform: translateY(-3px); }
+.ui-page [data-ui-lage-partial] h2 { grid-column: 2; margin: 0 0 6px; font: 400 17px/1.5 var(--ui-sans); color: var(--ui-text); }
+.ui-page [data-ui-lage-partial] p { grid-column: 2; max-width: 75ch; font-size: 15px; line-height: 1.55; color: var(--ui-muted); }
+/* Abschnittskopf der Liste: Stand rechtsbündig, Detailpanel bündig zur Liste. */
+.ui-lage-workspace .ui-section-heading > span:last-child { text-align: right; line-height: 1.5; }
+.ui-lage-workspace > .ui-detail { margin-top: 0; }
+/* Titel nicht mitten im Wort trennen. */
+.ui-page :is(.ui-row-title, .ui-lage-detail .vsheet-title, .ui-hero-main h2, .buero-detail-title, .radar2-card-title) { hyphens: manual; -webkit-hyphens: manual; }
+@media (max-width: 767px) {
+  .ui-lage-workspace .ui-section-heading > span:last-child { text-align: left; }
+}
+/* Restliche Bernstein-/Goldtöne in Nutzeransichten neutralisieren (Admin unberührt). */
+.vsheet-status-dot.is-amber { background: var(--ui-accent); }
+.vsheet-status-dot.is-green { background: var(--ui-green); }
+.ui-page .buero-status--nachfrage { background: transparent; color: var(--ui-muted); }
+/* Büro: linke Spalte als gleichwertiges Panel neben dem Detail. Gleiche
+   Oberkante, gleicher Radius, einheitliche Innenabstände (32 px), Einträge
+   als ruhige Liste ohne verschachtelte Polster. */
+.ui-office-workspace { align-items: start; }
+.ui-page .ui-office-workspace > .buero-draft-list { overflow: hidden; background: var(--ui-panel); border: 1px solid var(--ui-panel-line); border-radius: 12px; }
+.ui-office-workspace .buero-group { margin: 0; }
+.ui-office-workspace .buero-group + .buero-group { border-top: 1px solid var(--hairline); }
+.ui-office-workspace .buero-group-title { display: grid; gap: 6px; margin: 0; padding: 28px 32px 20px; border-bottom: 1px solid var(--hairline); font: 400 22px/1.3 var(--ui-serif); color: var(--ui-text); }
+.ui-page .ui-office-workspace .buero-group-eyebrow { color: var(--ui-label); }
+.ui-page .ui-office-workspace .buero-draft-card { padding: 24px 32px; border: 0; border-bottom: 1px solid var(--hairline); border-radius: 0; box-shadow: none; transform: none; overflow: visible; }
+.ui-page .ui-office-workspace .buero-group .buero-draft-card:last-child { border-bottom: 0; }
+.ui-page .ui-office-workspace .buero-draft-card:hover { transform: none; box-shadow: none; }
+.ui-page .ui-office-workspace .buero-draft-card.is-selected { background: rgba(255,255,255,.035); }
+:root[data-theme="light"] .ui-page .ui-office-workspace .buero-draft-card.is-selected { background: var(--ui-nav-active); }
+.ui-office-workspace .buero-draft-card :is(.buero-card-top, .buero-card-body, .buero-card-footer) { padding: 0; }
+.ui-office-workspace .buero-card-top { margin-bottom: 10px; }
+.ui-office-workspace .buero-card-main { padding: 0; }
+.ui-office-workspace .buero-card-body .buero-card-title { margin: 0 0 6px; }
+.ui-office-workspace .buero-card-footer { margin-top: 14px; border-top: 0; }
+.ui-office-workspace .buero-review-btn { padding: 0; }
+.ui-office-workspace .buero-card-provenance { margin: 6px 0 0; padding: 0; opacity: 1; color: var(--ui-dim); font-size: 13px; }
+.ui-office-workspace > .ui-office-detail { padding: 28px 32px 32px; }
+@media (max-width: 767px) {
+  .ui-page .ui-office-workspace > .buero-draft-list { background: transparent; border: 0; border-radius: 0; }
+  .ui-office-workspace .buero-group-title { padding: 0 0 16px; }
+  .ui-page .ui-office-workspace .buero-draft-card { padding: 20px 0; }
+  .ui-page .ui-office-workspace .buero-draft-card.is-selected { background: transparent; }
+  .ui-office-workspace > .ui-office-detail { padding: 0; }
+}
+.ui-office-workspace .buero-group { display: block; gap: 0; }
+.ui-page .ui-office-workspace .buero-draft-card { margin: 0; }
+@media (max-width: 767px) {
+  :root .ui-page .ui-office-workspace .buero-draft-card.is-selected, :root:not([data-theme="light"]) .ui-page .ui-office-workspace .buero-draft-card.is-selected { background: transparent; }
+}
+/* Seitenleiste: Mandatswähler über volle Breite, Pfeil sauber eingerückt,
+   bündig mit Profilkarte und „Abmelden“. */
+.sidebar-foot .account-switch {
+  display: block; width: 100%; max-width: none; min-height: 48px; margin: 0 0 4px; padding: 0 44px 0 14px;
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+  border: 1px solid var(--ui-border); border-radius: 8px; color: var(--ui-text); font: 400 15px/1.2 var(--ui-sans);
+  background: var(--ui-hover) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23AEB8C9' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 16px center / 16px 16px;
+}
+.sidebar-foot .account-switch:hover { border-color: rgba(255,255,255,.24); }
+:root[data-theme="light"] .sidebar-foot .account-switch { background-color: var(--ui-surface); }
+.sidebar-foot .sidebar-logout { justify-content: flex-start; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: var(--ui-muted); font-size: 15px; text-align: left; }
+.sidebar-foot .sidebar-logout:hover { background: var(--ui-hover); color: var(--ui-text); }
+
+/* Startbildschirm (Variante 2, Betreiberwahl 05.11.2026): Wortmarke „Helmut“
+   in Spectral, darunter eine Haarlinie, über die im Herzschlag-Takt (2,4 s)
+   ein kurzer blauer Ausschlag läuft. Bewegung reduziert -> ruhiges Standbild. */
+.app-splash, body.is-loading { background: radial-gradient(70% 40% at 50% 42%, rgba(127,168,224,.07), transparent 70%), var(--ui-bg); }
+.app-splash .splash-mark, .loading-screen .loading-mark { width: auto; height: auto; display: grid; justify-items: center; gap: 22px; background: none; animation: none; text-align: center; }
+.app-splash .splash-mark span, .loading-mark .splash-word { visibility: visible; }
+.splash-word { font: 400 52px/1 var(--ui-serif) !important; letter-spacing: -.01em !important; color: var(--ui-text) !important; text-shadow: none !important; opacity: 0; animation: ui-splash-fade 900ms cubic-bezier(.22,1,.36,1) forwards; }
+.splash-pulse { width: 200px; height: 40px; overflow: visible; }
+.splash-pulse-base { fill: none; stroke: var(--hairline); stroke-width: 1; }
+.splash-pulse-trace { fill: none; stroke: var(--ui-accent); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 60 400; stroke-dashoffset: 60; animation: ui-splash-trace 2.4s cubic-bezier(.22,1,.36,1) infinite; }
+.splash-tag { font: 400 10.5px/1 var(--ui-mono); letter-spacing: .24em; text-transform: uppercase; color: var(--ui-label); opacity: 0; animation: ui-splash-fade 900ms 350ms cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes ui-splash-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes ui-splash-trace { 0% { stroke-dashoffset: 60; opacity: 0; } 8% { opacity: 1; } 70% { stroke-dashoffset: -260; opacity: 1; } 85%, 100% { stroke-dashoffset: -260; opacity: 0; } }
+@media (max-width: 767px) { .splash-word { font-size: 44px !important; } .splash-pulse { width: 180px; } }
+@media (prefers-reduced-motion: reduce) {
+  .splash-word, .splash-tag { animation: none; opacity: 1; }
+  .splash-pulse-trace { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; opacity: .9; }
+}
+/* Startbild-Puls minimalistisch (statt EKG-Zacke): Ein blaues Linienstück
+   leuchtet aus der Mitte im Doppelschlag auf und klingt wieder ab. */
+.splash-pulse-trace { stroke-dasharray: none; stroke-dashoffset: 0; transform-box: fill-box; transform-origin: 50% 50%; transform: scaleX(.08); opacity: .35; animation: ui-splash-pulse 2.4s ease-in-out infinite; }
+@keyframes ui-splash-pulse {
+  0%, 60%, 100% { transform: scaleX(.08); opacity: .35; }
+  12% { transform: scaleX(.55); opacity: 1; }
+  22% { transform: scaleX(.22); opacity: .6; }
+  34% { transform: scaleX(.42); opacity: .9; }
+}
+@media (prefers-reduced-motion: reduce) { .splash-pulse-trace { animation: none; transform: scaleX(.3); opacity: .8; } }
+
+/* Kein altes „H“-Signet in der App (Betreiberhinweis 05.11.2026).
+   Zustandskarten: Designpunkt statt Buchstabe. Hohler Ring = nichts zu tun,
+   gefüllter Punkt = Störung. Der Text bleibt für Screenreader ohnehin verborgen. */
+.ui-page .hstand-state-mark { width: 10px; height: 10px; min-height: 0; padding: 0; border: 1.5px solid var(--ui-label); border-radius: 50%; background: transparent; color: transparent; font-size: 0; line-height: 0; overflow: hidden; }
+.ui-page .hstand-state-card--error .hstand-state-mark { border: 0; background: var(--ui-red); }
+/* Lade- und Aktualisieren-Ansichten: derselbe ruhige Puls wie im Startbild. */
+.loading-logo, .helmut-refresh-mark { position: relative; display: block; width: 160px; height: 1px; padding: 0; margin: 0 auto; border: 0; border-radius: 0; background: var(--hairline); box-shadow: none; color: transparent; font-size: 0; line-height: 0; overflow: visible; }
+.loading-logo span { display: none; }
+.loading-logo::after, .helmut-refresh-mark::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1.5px; margin: 0 auto; border-radius: 2px; background: var(--ui-accent); transform: scaleX(.08); opacity: .3; animation: ui-splash-pulse 3.6s cubic-bezier(.45,0,.25,1) infinite; }
+.helmut-refresh-core .helmut-refresh-ring { display: none; }
+.ui-page .helmut-refresh-core { width: auto; height: 40px; }
+/* Ruhigerer Puls: langsamer (3,6 s), kleinere Ausdehnung, sanfter Nachhall. */
+.splash-pulse-trace { animation: ui-splash-pulse 3.6s cubic-bezier(.45,0,.25,1) infinite; }
+@keyframes ui-splash-pulse {
+  0%, 100% { transform: scaleX(.08); opacity: .3; }
+  22% { transform: scaleX(.36); opacity: .85; }
+  34% { transform: scaleX(.22); opacity: .55; }
+  46% { transform: scaleX(.28); opacity: .65; }
+  78% { transform: scaleX(.08); opacity: .3; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-logo::after, .helmut-refresh-mark::after { animation: none; transform: scaleX(.25); opacity: .7; }
+}
+/* Install-Banner: Design-Zeichen statt altem Buchstaben-„H“. */
+.install-banner__mark, :root[data-theme="light"] .install-banner__mark { color: transparent; font-size: 0; background: url("assets/ui/logo/helmut-zeichen.svg") center / contain no-repeat; border: 0; box-shadow: none; }
+/* Zustandskarten ohne Signet: die Überschrift trägt die Aussage allein. */
+.ui-page .hstand-state-mark { display: none; }
+
+/* Anmeldung / Zugang / Mandat wählen im Design: Wortmarke „Helmut“ weiß in
+   Spectral (wie Seitenleiste), Spectral-Überschrift, ruhiges Panel, blauer
+   Fokus, Pillen-Knopf. Nur Darstellung, Formulare unverändert. */
+body .login-screen { background: radial-gradient(70% 40% at 50% 0, rgba(127,168,224,.07), transparent 70%), var(--ui-bg); }
+body .pilot-access-card { max-width: 440px; padding: 44px 36px 36px; background: var(--ui-panel); border: 1px solid var(--ui-panel-line); border-radius: 14px; box-shadow: 0 30px 70px -34px rgba(0,0,0,.8); color: var(--ui-text); font-family: var(--ui-sans); }
+body .pilot-access-card .loading-logo { display: none; }
+body .pilot-access-card > p:not(.pilot-access-copy) { margin: 0 0 28px; font: 400 40px/1.1 var(--ui-serif); letter-spacing: -.01em; text-transform: none; color: var(--ui-text); opacity: 1; filter: none; }
+body .pilot-access-card h1 { margin: 0 0 12px; font: 400 clamp(30px,5vw,38px)/1.1 var(--ui-serif); letter-spacing: -.01em; color: var(--ui-text); }
+body .pilot-access-card .pilot-access-copy { margin: 0 auto 4px; max-width: 34ch; font-size: 16px; line-height: 1.55; color: var(--ui-muted); }
+body .pilot-access-form { gap: 12px; margin-top: 24px; }
+body .pilot-access-form input, body .pilot-access-form .password-field input { min-height: 50px; padding: 0 14px; border: 1px solid var(--ui-border); border-radius: 8px; background: rgba(255,255,255,.03); color: var(--ui-text); font: 400 16px/1.2 var(--ui-sans); box-shadow: none; }
+body .pilot-access-form .password-field input { padding-right: 48px; }
+body .pilot-access-form input::placeholder { color: var(--ui-dim); }
+body .pilot-access-form input:focus, body .pilot-access-form input:focus-visible { outline: none; border-color: var(--ui-accent); box-shadow: 0 0 0 3px rgba(127,168,224,.18); }
+body .pilot-access-form .primary-button { min-height: 48px; border: 0; border-radius: 24px; background: var(--ui-solid); color: var(--ui-on-solid); font: 500 16px/1 var(--ui-sans); box-shadow: none; }
+body .pilot-access-form .primary-button:not(:disabled):hover { background: var(--ui-solid-hover); transform: none; }
+body .pilot-access-form .primary-button:disabled { background: rgba(255,255,255,.06); color: var(--ui-dim); opacity: 1; }
+:root[data-theme="light"] body .pilot-access-form .primary-button:disabled { background: rgba(19,35,57,.06) !important; color: var(--ui-dim) !important; }
+:root[data-theme="light"] body .pilot-access-form input { background: #fff; }
+body .pilot-access-form small { color: var(--ui-red); font-size: 14px; }
+body .password-toggle--icon { color: var(--ui-dim); }
+body .password-toggle--icon:hover { color: var(--ui-text); background: transparent; }
+@media (max-width: 480px) { body .pilot-access-card { padding: 36px 22px 28px; } }
+/* Mitteilungen: Seite bleibt hinter dem Panel sichtbar, nur leicht gedämpft. */
+body .updates-layer { background: rgba(3, 5, 11, .48); backdrop-filter: none; -webkit-backdrop-filter: none; transition: opacity 240ms cubic-bezier(.22,1,.36,1); }
+:root[data-theme="light"] body .updates-layer { background: rgba(15, 23, 42, .18) !important; }
+body .updates-layer .updates-panel { box-shadow: -30px 0 70px -30px rgba(0,0,0,.7); border-left: 1px solid var(--hairline); }
+@media (prefers-reduced-motion: reduce) { body .updates-layer { transition: none; } }
+
+/* Alle Vollbild-Karten (Fehler, offline, Anmeldung, Zugang, Mandat) im Design.
+   Wortmarke = der Absatz direkt nach dem Signet; übrige Absätze = Fließtext. */
+body .loading-card { max-width: 480px; margin: 0 auto; padding: 44px 36px 36px; text-align: center; background: var(--ui-panel); border: 1px solid var(--ui-panel-line); border-radius: 14px; box-shadow: 0 30px 70px -34px rgba(0,0,0,.8); color: var(--ui-text); font-family: var(--ui-sans); }
+body .loading-card .loading-logo { display: none; }
+body .loading-card p, body .pilot-access-card > p:not(.pilot-access-copy) { margin: 0 auto 6px; max-width: 38ch; font: 400 16px/1.55 var(--ui-sans); letter-spacing: 0; text-transform: none; color: var(--ui-muted); opacity: 1; }
+body .loading-card .loading-logo + p { margin: 0 0 28px; max-width: none; font: 400 40px/1.1 var(--ui-serif); letter-spacing: -.01em; color: var(--ui-text); }
+body .loading-card h1 { margin: 0 0 12px; font: 400 clamp(28px,5vw,36px)/1.15 var(--ui-serif); letter-spacing: -.01em; color: var(--ui-text); text-wrap: balance; }
+body .loading-card > .primary-button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; margin-top: 22px; padding: 0 28px; border: 0; border-radius: 24px; background: var(--ui-solid); color: var(--ui-on-solid); font: 500 16px/1 var(--ui-sans); box-shadow: none; filter: none; }
+body .loading-card > .primary-button:hover { background: var(--ui-solid-hover); transform: none; }
+:root[data-theme="light"] body .loading-card > .primary-button { background: var(--ui-solid) !important; color: var(--ui-on-solid) !important; }
+@media (max-width: 480px) { body .loading-card { padding: 36px 22px 28px; margin: 0 16px; } }
+body .shell:has(> .loading-card) { display: grid; place-items: center; min-height: 100dvh; padding: 24px 16px; box-sizing: border-box; background: radial-gradient(70% 40% at 50% 0, rgba(127,168,224,.07), transparent 70%), var(--ui-bg); }
+body .shell > .loading-card { margin: 0 auto; width: 100%; }
