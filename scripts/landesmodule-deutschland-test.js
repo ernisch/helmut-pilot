@@ -17,6 +17,15 @@ const { parsePardokDocumentsFromString } = require("../lib/helmut/quellenarchite
 assert.equal(LANDESMODULE.length, 16);
 assert.equal(new Set(LANDESMODULE.map((land) => land.key)).size, 16);
 assert.equal(SM.LANDESMODUL_LAENDER.length, 16);
+const catalog = require("../lib/helmut/quellenarchitektur/catalog").buildCatalog({ sources: LANDESQUELLEN });
+const safety = require("../lib/helmut/sourceSafety");
+for (const source of LANDESQUELLEN) {
+  const path = catalog.retrievalPaths.find((p) => p.legacy_source_id === source.id);
+  const publisher = catalog.publishers.find((p) => p.id === path.publisher_id);
+  assert.equal(publisher.publisher_type, source.type, `${source.id}: amtliche Herausgeberart erhalten`);
+  assert.equal(publisher.evidence_role, "official_primary", `${source.id}: Regierungsquelle nicht als Journalismus ausgeben`);
+  assert.equal(safety.categorizeSource(source), "offiziell");
+}
 assert.equal(landesmodulByKey("Thüringen").code, "TH");
 assert.equal(landesmodulByKey("unbekannt"), null);
 assert.equal(SM.freigegebeneLandesmodule({ HELMUT_LANDESMODULE: "*,alle,unbekannt" }).size, 0);
