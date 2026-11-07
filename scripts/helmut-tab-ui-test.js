@@ -181,8 +181,8 @@ check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Formate')",
 }
 check("Feinschliff: Output-Chips ruhig (keine Accent-Button-Klasse mehr am Chip-Style)",
   html.includes('hstand-chip hstand-chip--out'));
-check("Feinschliff: Mobil-Kurzlabel 'Stand' vorhanden (neben 'Letzte Aktualisierung')",
-  html.includes("hstand-mk-short") && html.includes(">Stand<") && html.includes(">Letzte Aktualisierung<"));
+check("Feinschliff: Quellenstand ist auch mobil als Quelle beschriftet",
+  html.includes("hstand-mk-short") && html.includes(">Quelle<") && html.includes(">Quellenstand<"));
 check("Voll: Mein Vorschlag zeigt die recommendation",
   html.includes("Dein nächster Schritt") && html.includes("Intern abstimmen"));
 check("Voll: Tagesanlass sichtbar, Lage-Einordnung nicht kopiert",
@@ -239,8 +239,8 @@ check("Stale: Inhalt bleibt sichtbar (Vorschlag rendert weiter)",
 const freshMidday = contract.buildCurrentHelmutState({ profile, decisions, kosById, sourcesByVorgang: sources, now: NOW, briefingType: "midday" });
 api.setBriefing(briefingWith(freshMidday));
 const htmlFreshMidday = api.render();
-check("Kopf: frischer Stand zeigt den Slot-Namen (Mittagsbriefing)",
-  freshMidday.status === "fresh" && htmlFreshMidday.includes("Mittagsbriefing") && !htmlFreshMidday.includes("Letzter Stand"));
+check("Kopf: Quellenstand statt eines aus der Abrufzeit abgeleiteten Slot-Namens",
+  freshMidday.status === "fresh" && htmlFreshMidday.includes("Quellenstand:") && !htmlFreshMidday.includes("Mittagsbriefing"));
 
 const staleMidday = contract.buildCurrentHelmutState({
   profile, kosById: { "ko-vg-1": { ...koPrimary, updated_at: "2026-01-01T00:00:00Z", deadline:"2026-07-07T00:00:00Z" } },
@@ -248,8 +248,8 @@ const staleMidday = contract.buildCurrentHelmutState({
 });
 api.setBriefing(briefingWith(staleMidday));
 const htmlStaleMidday = api.render();
-check("Kopf: stale Stand zeigt 'Letzter Stand' statt Slot-Name (keine Vermischung)",
-  staleMidday.status === "stale" && htmlStaleMidday.includes("Letzter Stand") && !htmlStaleMidday.includes("Mittagsbriefing"));
+check("Kopf: alter Quellenstand bleibt als Quellenstand erkennbar",
+  staleMidday.status === "stale" && htmlStaleMidday.includes("Quellenstand:") && !htmlStaleMidday.includes("Mittagsbriefing"));
 check("Kopf: stale Stand mischt KEINEN aktuellen Slot-Namen mit altem Datum",
   !/Mittagsbriefing|Morgenbriefing|Abendlage|Tagesbriefing/.test(htmlStaleMidday));
 
@@ -443,3 +443,4 @@ check("Ruhelage ohne Lage: ehrlicher Leerzustand ohne erfundene Themenzahl",
 
 console.log(`\n${passed}/${passed + failed} Helmut-Tab-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
+
