@@ -9421,3 +9421,19 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
   .ui-row-source > span + span::before { content: "·"; margin-right: 6px; }
   .ui-lage-workspace .ui-row-chevron { font-size: 20px; }
 }
+
+/* Desktop Lage: Detail bleibt beim Lesen der Liste sichtbar und selbst scrollbar.
+   Platz fuer Kopf, Fuss und den unteren Seitenabstand auch am Listenende lassen. */
+@media (min-width: 768px) {
+  .ui-lage-workspace > .ui-lage-detail {
+    position: sticky;
+    top: 88px;
+    max-height: calc(100dvh - var(--hh) - 120px);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+  }
+  .ui-is-scrolled .ui-lage-workspace > .ui-lage-detail {
+    max-height: calc(100dvh - 208px);
+  }
+}
