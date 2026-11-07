@@ -1,7 +1,7 @@
 # Profilbezogene Lageauswahl — 07.11.2026
 
 Entwicklungsstand auf `codex/profilbezogene-lageauswahl-20261107`, Basis
-`4c361260`, Codecommit `95b1e986`, [PR #1100](https://github.com/ernisch/helmut-pilot/pull/1100). Geprüfte Entwicklung; kein Merge, Deployment, Profilwechsel,
+`4c361260`, Erstimplementierung `95b1e986`, Endkopf im PR, [PR #1100](https://github.com/ernisch/helmut-pilot/pull/1100). Geprüfte Entwicklung; kein Merge, Deployment, Profilwechsel,
 Production-Schreiben, Modelltest oder Belastungstest. Der zugehörige PR enthält
 Commitbindung und Pflicht-CI. Nächster Schritt nach grüner CI: konkrete
 Merge-/Production-Freigabe für diesen PR.
@@ -75,7 +75,7 @@ Salzgitter-Wolfenbüttel/Niedersachsen. Hash des vom Gate verwendeten Kontextes:
 `75812b5ae52b15406b413f3fffae908bbfd69648c0e9c2554b2be3b6d00d4b3b`.
 Kein Profil geändert oder aktiviert; Originalprojektion bleibt privat.
 
-Lokaler Vergleich 16:11:23 UTC: unverändertes `buildLageBriefing` aus main
+Lokaler Vergleich 16:11:23 UTC, nach letzter Korrektur um 17:20:05 UTC mit identischer Bilanz bestätigt: unverändertes `buildLageBriefing` aus main
 gegen den korrigierten Einstieg, jeweils `cacheOnly:true`, derselbe aktuelle
 Profilkontext und **synthetische Artikel**. Speichergrenze ersetzt,
 Modell-/Schreibgrenzen gesperrt. Kein Vergleich heutiger Production-Karten.
@@ -102,7 +102,7 @@ Auswahl; die Liste wird nicht mehr mit unpassenden Vorgängen auf zwölf gefüll
 
 Alle Testläufe über `scripts/lokal.js`, keine Production-Kennung im Kindprozess.
 
-- Neue `scripts/lage-profilbezug-test.js`: **20/20 Gruppen**. Darunter
+- Neue `scripts/lage-profilbezug-test.js`: **21/21 Gruppen**. Darunter
   echte `cacheOnly`-/`countOnly`-Ausgabe, Kandidat hinter zwölf Fehlkandidaten,
   Teilmatcher-Verlust, echtes altes Matchschema mit anderer KO-Version,
   Profil-/KO-Cachewechsel, Mandantentrennung, einzelner falscher Quellenbeleg,
@@ -110,7 +110,7 @@ Alle Testläufe über `scripts/lokal.js`, keine Production-Kennung im Kindprozes
 - Gezielte Lage-Regression `--extended --only lage-`: **35/35 Suiten**.
   Neun alte Testprofile/-sachverhalte fachlich präzisiert statt Quellen-,
   Frische-, Cache- oder Schreibprüfungen abzuschwächen.
-- Nach zusätzlicher KO-Versionsbindung: neue 20/20 Gruppen und vorhandene
+- Nach zusätzlicher KO-Versionsbindung: neue 21/21 Gruppen und vorhandene
   **141/141 Lage-Assertions** erneut gezielt bestanden.
 - Erweiterte Vertragsanpassung: sechs weitere Matching-/Scoring-/Scan-/Tenant-
   Suiten **245/245 Prüfungen**. Die alten Anforderungen an leere Profile,
@@ -134,6 +134,14 @@ Alle Testläufe über `scripts/lokal.js`, keine Production-Kennung im Kindprozes
   diese Fixture fachlich konsistent ergänzt; alle bestehenden Budget-, CAS-,
   Konkurrenz-, Frische- und Schreibschutzassertions unverändert. Gezielte
   Wiederprüfung: **13/13 Controllergruppen**, Produktionsquellenpfad unverändert.
+- Zusätzliche Gegenprofile Finanzen/Verteidigung: technische Steuerung und
+  akademische Dissertationsverteidigung dürfen keine Zuständigkeit vortäuschen.
+  Fachanker dafür eingegrenzt; Einkommensteuerreform, höhere Steuern und
+  Wehrdienst/Verteidigungspolitik bleiben erhalten. Explizit gespeicherte
+  mehrteilige Aufgaben zu Dissertationen oder Parkpflege bleiben trotzdem
+  zulässig: der Profilinhalt entscheidet über den Fachkontext, kein globales
+  Entfernen dieser Quellthemen. 21/21 neue Gruppen und unabhängiger Delta-Review
+  ohne konkrete offene Fehler. Singular-/Pluralbindung bleibt erhalten.
 - CI-Versuch `42390396632` vor den langen Folgeschritten bewusst beendet,
   nachdem die lesende Prüfung diese weiteren alten Testannahmen belegt hatte;
   kein grüner Pflichtbeleg. Der finale Pflichtlauf gehört zum aktuellen PR-Kopf.

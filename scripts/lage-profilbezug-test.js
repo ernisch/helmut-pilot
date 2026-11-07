@@ -156,6 +156,29 @@ function setup(profile, pool, { matches = null, docs = null } = {}) {
       A.deepEqual((await L.buildLageBriefing(profile, { cacheOnly: true })).vorgaenge, []);
       A.equal(forbidden, 0);
     });
+    await test("Finanz- und Verteidigungsprofile unterscheiden Fachaufgaben von technischen und akademischen Worttreffern", async () => {
+      for (const [profile, fremd, passend] of [
+        [{ id: "lokal-finanzen", committees: ["Finanzausschuss"] },
+          "Ein Institut entwickelt die Steuerung einer Fertigungsanlage", "Bundestag berät eine Einkommensteuerreform und höhere Steuern"],
+        [{ id: "lokal-verteidigung", committees: ["Verteidigungsausschuss"], focusTopics: ["Verteidigung"] },
+          "Eine Universität regelt die Verteidigung einer Dissertation", "Bundeswehr: Neue Regeln zum Wehrdienst vorgelegt"]
+      ]) {
+        const pool = [F.ko("wortfremd", fremd), F.ko("fachlich", passend)]; setup(profile, pool);
+        A.equal(P.bewerte(pool[0], profile).passt, false, fremd);
+        const weiteres = profile.id === "lokal-finanzen" ? "Bundesregierung erhöht die Steuern"
+          : "Die Bundesregierung stärkt die Verteidigung";
+        A.equal(P.bewerte(F.ko("weiterer-solltreffer", weiteres), profile).passt, true, weiteres);
+        const out = await L.buildLageBriefing(profile, { cacheOnly: true });
+        A.deepEqual(out.vorgaenge.map(k => k.vorgangId), [pool[1].vorgang_id]);
+        A.equal(forbidden, 0);
+      }
+      for (const [thema, titel] of [["Verteidigung von Dissertationen", "Eine Universität regelt die Verteidigung einer Dissertation"],
+        ["Pflege von Parkanlagen", "Pflege der Parkanlagen wird künftig neu organisiert"]]) {
+        const profile = { id: "lokal-konkrete-fachaufgabe", reportingTopics: [thema] }, ko = F.ko("konkrete-aufgabe", titel);
+        setup(profile, [ko]);
+        A.equal((await L.buildLageBriefing(profile, { cacheOnly: true })).vorgaenge.length, 1, thema);
+      }
+    });
     await test("Profilhash bindet Hauptfach, Stellvertretung, Fachthema, Aufgabe und Region", () => {
       const hash = P.hashProfil(F.profile);
       for (const key of ["committees", "deputyCommittees", "focusTopics", "reportingTopics", "constituency", "state"]) {

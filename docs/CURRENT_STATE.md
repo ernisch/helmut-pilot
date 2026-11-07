@@ -12,9 +12,9 @@ Ergebnislimit, getrennte Profilgründe, Quellenbestätigung und Profil-/KO-Cache
 umgesetzt. Keine fachfremde Auffüllung oder pauschale Schalteraktivierung.
 Lokal mit aktuellem Cem-Profil/synthetischen Artikeln:12→6 Karten,0/6Verluste;
 drei Gegenprofile je3→1/0Verluste.
-20/20 neue Fachgruppen,35/35 Lage-Suiten und141/141 bestehende Lage-Assertions
+21/21 neue Fachgruppen,35/35 Lage-Suiten und141/141 bestehende Lage-Assertions
 bestanden; weitere245Matching-/Integrationsprüfungen undBT/BE/BB-Endwege grün. Pflicht-CI
-auf [PR1100](https://github.com/ernisch/helmut-pilot/pull/1100), Code95b1e986. Kein Production-Nachweis/Merge/Deployment;
+auf [PR1100](https://github.com/ernisch/helmut-pilot/pull/1100), Erstcode95b1e986, Endkopf im PR. Kein Production-Nachweis/Merge/Deployment;
 Branchdeployments gesperrt. Danach: konkrete Merge-/Production-Freigabe für den PR.
 [Ursache, Tests, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md).
 
