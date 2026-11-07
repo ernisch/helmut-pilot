@@ -335,3 +335,5 @@ keine aktuellen Testauftraege. Alle alten Laufbelege,
 STOPs, UNKNOWNs, Grants und Journale bleiben erhalten.
 Vor konkreten Production Aktionen Wirkung, Risiko,
 Kosten, Nachkontrolle und Rueckweg benennen.
+
+07.11.: Alte Radar/Datums-Erwartungen nachgezogen; Detail, weitere Vorgaenge und Fusszeile nutzen Meldungszeit statt Schreibstand. Gezielte UI/Frischepruefungen bestanden (40/27/24/84/15/40); neue Pflicht CI offen. Kein Merge/Production.

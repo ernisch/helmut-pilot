@@ -6664,7 +6664,7 @@ function renderHstandPrimary(state) {
   // Beleg-Karte, kein Hauptscreen: nur die 2–3 wichtigsten Kontext-Chips.
   const chips = hstandContextChips(p.contextChips, 3);
   const count = Number(p.sourceCount);
-  const when = hstandWhen(p.lastUpdated);
+  const when = hstandText(p.zeitLabel) || hstandWhen(p.meldungAt);
   const quelle = hstandQuelleHref(p);
   return `
     <section class="hstand-card hstand-primary" aria-label="Aktueller Vorgang">
@@ -6673,7 +6673,7 @@ function renderHstandPrimary(state) {
       ${(urgency || chips) ? `<div class="hstand-chiprow">${urgency}${chips}</div>` : ""}
       <dl class="hstand-metrics">
         <div class="hstand-metric"><dt>Quellen</dt><dd>${Number.isFinite(count) && count > 0 ? count : "—"}</dd></div>
-        <div class="hstand-metric"><dt><span class="hstand-mk-full">Letzte Aktualisierung</span><span class="hstand-mk-short">Stand</span></dt><dd>${when ? escapeHtml(when) : "—"}</dd></div>
+        <div class="hstand-metric"><dt><span class="hstand-mk-full">Quellenstand</span><span class="hstand-mk-short">Quelle</span></dt><dd>${when ? escapeHtml(when) : "Nicht belegt"}</dd></div>
         <div class="hstand-metric"><dt>Qualität</dt><dd>${hstandQuality(p.qualityStatus)}</dd></div>
       </dl>
       ${quelle ? `<a class="hstand-quelle-link" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen${p.sourceName ? ` · ${escapeHtml(p.sourceName)}` : ""}</a>` : ""}
@@ -6728,7 +6728,7 @@ function renderHstandItems(state) {
     const urgency = hstandUrgencyChip(i.urgency);
     // Das Datum bleibt IMMER das tatsaechliche Datum der Meldung (Vertragspunkt 3):
     // eine Meldung vom spaeten Vorabend steht als "Gestern, 22:40" im heutigen Briefing.
-    const zeit = hstandText(i.zeitLabel) || hstandWhen(i.lastUpdated);
+    const zeit = hstandText(i.zeitLabel) || hstandWhen(i.meldungAt);
     // Quellenpflicht: auch die weiteren Vorgaenge tragen ihren oeffnenden Beleg.
     const quelle = hstandQuelleHref(i);
     const lv = lageVorgangZumBriefing(i);
@@ -6770,12 +6770,15 @@ function renderHstandItems(state) {
 function renderHstandSources(state) {
   const s = (state.sourcesSummary && typeof state.sourcesSummary === "object") ? state.sourcesSummary : {};
   const count = Number(s.sourceCount);
-  const when = hstandWhen(s.lastUpdated);
+  // Der zusammengefasste Schreibstand belegt keine neue Publikation.
+  const sourceTimes = [state.primaryItem, ...(Array.isArray(state.items) ? state.items : [])]
+    .map(item => item && Date.parse(item.meldungAt)).filter(Number.isFinite);
+  const when = sourceTimes.length ? hstandWhen(new Date(Math.max(...sourceTimes)).toISOString()) : "";
   const countLabel = Number.isFinite(count) && count > 0 ? `${count} ${count === 1 ? "Quelle" : "Quellen"}` : "Keine Quellen";
   return `
     <footer class="hstand-foot" aria-label="Quellen und Qualität">
       <span class="hstand-foot-cell">${escapeHtml(countLabel)}</span>
-      ${when ? `<span class="hstand-foot-cell">Stand: ${escapeHtml(when)}</span>` : ""}
+      ${when ? `<span class="hstand-foot-cell">Neueste Quelle: ${escapeHtml(when)}</span>` : ""}
       <span class="hstand-foot-cell">${hstandQuality(s.qualityStatus)}</span>
     </footer>`;
 }

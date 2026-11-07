@@ -181,8 +181,8 @@ check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Formate')",
 }
 check("Feinschliff: Output-Chips ruhig (keine Accent-Button-Klasse mehr am Chip-Style)",
   html.includes('hstand-chip hstand-chip--out'));
-check("Feinschliff: Mobil-Kurzlabel 'Stand' vorhanden (neben 'Letzte Aktualisierung')",
-  html.includes("hstand-mk-short") && html.includes(">Stand<") && html.includes(">Letzte Aktualisierung<"));
+check("Feinschliff: Quellenstand ist auch mobil als Quelle beschriftet",
+  html.includes("hstand-mk-short") && html.includes(">Quelle<") && html.includes(">Quellenstand<"));
 check("Voll: Mein Vorschlag zeigt die recommendation",
   html.includes("Dein nächster Schritt") && html.includes("Intern abstimmen"));
 check("Voll: Tagesanlass sichtbar, Lage-Einordnung nicht kopiert",

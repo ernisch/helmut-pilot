@@ -126,11 +126,11 @@ const OLD_ISO = "2025-06-22T07:00:00Z";
 // 1a) lageCheckedLabel: heute / alt / ungültig
 {
   const today = t.lageChecked(nowIso);
-  check("Lage-Frische: heutige Analysezeit -> 'Zuletzt aktualisiert: heute, HH:MM Uhr.'",
-    /^Zuletzt aktualisiert: heute, \d{2}:\d{2} Uhr\.$/.test(today), today);
+  check("Lage-Frische: heutige Analysezeit -> 'Neueste Auswertung: heute, HH:MM Uhr.'",
+    /^Neueste Auswertung: heute, \d{2}:\d{2} Uhr\.$/.test(today), today);
   const old = t.lageChecked(OLD_ISO);
   check("Lage-Frische: alte Analysezeit -> datierte Zeile (NICHT 'heute')",
-    /^Zuletzt aktualisiert: \d+\. \w+, \d{2}:\d{2} Uhr\.$/.test(old) && !old.includes("heute"), old);
+    /^Neueste Auswertung: \d+\. \w+, \d{2}:\d{2} Uhr\.$/.test(old) && !old.includes("heute"), old);
   const yest = t.lageChecked(new Date(Date.now() - 26 * 3600 * 1000).toISOString());
   check("Lage-Frische: ~gestern -> honest label, niemals 'heute'", Boolean(yest) && !yest.includes("heute"), yest);
   check("Lage-Frische: fehlende/ungültige Analysezeit -> '' (kein Crash, kein Fake)",
@@ -150,14 +150,14 @@ function lageBriefing(latestUpdatedAt, pub) {
 {
   t.setBriefing({ lageBriefing: lageBriefing(nowIso, OLD_ISO), currentHelmutState: { status: "fresh" } });
   const html = t.renderLage();
-  check("Lage-Frische: PRIMÄRE Stand-Zeile = echte Analysezeit ('Zuletzt aktualisiert: heute …')",
-    /data-lage-stand>Zuletzt aktualisiert: heute, \d{2}:\d{2} Uhr\.</.test(html), (html.match(/data-lage-stand>[^<]*/) || [""])[0]);
+  check("Lage-Frische: PRIMÄRE Stand-Zeile = echte Analysezeit ('Neueste Auswertung: heute …')",
+    /data-lage-stand>Neueste Auswertung: heute, \d{2}:\d{2} Uhr\.</.test(html), (html.match(/data-lage-stand>[^<]*/) || [""])[0]);
   check("Lage-Frische: Quellen-Aktualität als GETRENNTE zweite Zeile ('Neueste Quelle vom 22. Juni')",
     /data-lage-source-recency>Neueste Quelle vom 22\. Juni\.</.test(html));
   check("Lage-Frische: KEIN Widerspruch — die frische Lage behauptet NICHT 'Neueste Quelle heute' für eine wochenalte Quelle",
     !html.includes("Neueste Quelle heute"));
-  check("Lage-Frische: der Kopf liest sich NICHT veraltet (primär steht die heutige Prüfzeit)",
-    html.includes("Zuletzt aktualisiert: heute"));
+  check("Lage-Frische: die Analysezeit bleibt von der alten Quellenzeit getrennt",
+    html.includes("Neueste Auswertung: heute"));
 }
 
 // Fallback: keine Analysezeit -> Quellen-Aktualität tritt an ihre Stelle (kein stilles Verschwinden)
@@ -175,7 +175,7 @@ function lageBriefing(latestUpdatedAt, pub) {
   t.setBriefing({ lageBriefing: lageBriefing(null, null), currentHelmutState: { status: "fresh" } });
   const html = t.renderLage();
   check("Lage-Frische: ganz ohne Zeitstempel rendert die Lage ohne Crash und ohne erfundene Frische",
-    html.includes("ui-lage-workspace") && !html.includes("data-lage-stand") && !html.includes("Zuletzt aktualisiert"));
+    html.includes("ui-lage-workspace") && !html.includes("data-lage-stand") && !html.includes("Neueste Auswertung"));
 }
 
 // ═══ TEIL 2 — Live-Flow: erreichbarer ↻-Refresh ═════════════════════════════

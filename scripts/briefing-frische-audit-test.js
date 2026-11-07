@@ -17,8 +17,8 @@
 //       (Backfill/Reklassifizierung bumpt `updated_at`). -> Klasse und Datum folgen dem
 //       BELEGTEN Meldungszeitpunkt (`meldungAt`), nie `updated_at`.
 //   F3  Ein Vorgang von GESTERN stand mit belegtem heutigem Lauf unter der Ueberschrift
-//       „Morgenbriefing" — optisch die heutige Lage. -> `datenstandVonHeute` zwingt den
-//       Kopf auf „Letzter Stand".
+//       „Morgenbriefing" — optisch die heutige Lage. Der Kopf zeigt jetzt getrennt
+//       den belegten Quellenstand und die gespeicherte Briefingerstellung.
 //   F5  Bei gezogenem Not-Aus meldete der Morgen-Cron dauerhaft „Frischevertrag
 //       unvollstaendig". -> ohne Vertrag kein Beleg und keine Abdeckungsbehauptung.
 //   INT Der Morgen-Cron wurde nirgends ueber seine ECHTE Route gepruft; alle Aussagen
@@ -278,12 +278,15 @@ function zeilenSpeicher() {
   const api = ladeClient();
   api.setBriefing(antwortGestern);
   const htmlGestern = api.render();
-  check("F3b Kopf zeigt 'Letzter Stand' statt des heutigen Slot-Namens",
-    htmlGestern.includes("Letzter Stand") && !/Morgenbriefing|Mittagsbriefing|Abendlage|Tagesbriefing/.test(htmlGestern));
-  check("F3c Der Kopf behauptet kein 'Heute' fuer einen Vorgang von gestern",
-    !/Heute, \d{2}:\d{2}/.test(htmlGestern) && /Gestern, \d{2}:\d{2}/.test(htmlGestern));
+  check("F3b Kopf benennt Quellenstand und Briefingerstellung statt des heutigen Slot-Namens",
+    htmlGestern.includes("Quellenstand:") && htmlGestern.includes("Briefing erstellt:")
+      && !/Morgenbriefing|Mittagsbriefing|Abendlage|Tagesbriefing/.test(htmlGestern));
+  check("F3c Heutige Briefingerstellung macht die gestrige Quelle nicht zu einer heutigen Quelle",
+    /Quellenstand: Gestern, \d{2}:\d{2}/.test(htmlGestern)
+      && /Briefing erstellt: 15\. Juli 2026, 06:00/.test(htmlGestern)
+      && !/Quellenstand: Heute, \d{2}:\d{2}/.test(htmlGestern));
 
-  // Gegenprobe: ein Vorgang von HEUTE traegt den Slot-Namen weiterhin.
+  // Gegenprobe: eine heutige Quelle ist explizit heute, unabhaengig vom Slot-Namen.
   const heutigesBriefing = contract.toBriefingContractV3({
     profile: { id: MANDAT }, decisions: [{ knowledge_object_id: "h", score: 90, decision: "Sofort reagieren" }],
     kosById: { h: { ...basisKo, id: "h", vorgang_id: "vg-h", display_title: "Heute frueh",
@@ -291,12 +294,40 @@ function zeilenSpeicher() {
     sourcesByVorgang: { "vg-h": [{ id: "d5", url: "https://beispiel.de/politik/d5", published_at: "2026-07-15T03:10:00Z" }] },
     now: JETZT, briefingType: "morning", frischeFenster: FENSTER
   });
-  api.setBriefing(server.__prepareBriefingResponse(heutigesBriefing, {
+  const antwortHeute = server.__prepareBriefingResponse(heutigesBriefing, {
     frischeKontext: { jetzt: JETZT, berlinTag: HEUTE, lauf: heutigerBeleg, fenster: FENSTER, datenstand: "2026-07-15T03:10:00Z", speicherFehler: null }
-  }));
+  });
+  api.setBriefing(antwortHeute);
   const htmlHeute = api.render();
-  check("F3d Gegenprobe: heutiger Vorgang traegt weiterhin den Slot-Namen",
-    htmlHeute.includes("Morgenbriefing") && !htmlHeute.includes("Letzter Stand"));
+  check("F3d Gegenprobe: heutige Quelle und Briefingerstellung werden getrennt belegt",
+    /Quellenstand: Heute, \d{2}:\d{2}/.test(htmlHeute)
+      && /Briefing erstellt: 15\. Juli 2026, 06:00/.test(htmlHeute)
+      && !/Morgenbriefing|Mittagsbriefing|Abendlage|Tagesbriefing/.test(htmlHeute));
+
+  // Abruf und KO-Schreibstand duerfen auch im Detail und Footer keine Quelle verjuengen.
+  const technischeZeiten = JSON.parse(JSON.stringify(antwortHeute));
+  const zeitState = technischeZeiten.currentHelmutState;
+  zeitState.generatedAt = "2035-01-01T12:00:00Z";
+  zeitState.sourcesSummary = { ...zeitState.sourcesSummary, lastUpdated: "2034-01-01T12:00:00Z" };
+  zeitState.primaryItem.lastUpdated = "2033-01-01T12:00:00Z";
+  for (const item of zeitState.items || []) item.lastUpdated = "2032-01-01T12:00:00Z";
+  api.setBriefing(technischeZeiten);
+  const htmlTechnisch = api.render();
+  check("F3e Abrufzeit und technische Schreibzeiten ersetzen in keiner sichtbaren Briefingzeile den Quellenstand",
+    /Quellenstand: Heute, \d{2}:\d{2}/.test(htmlTechnisch)
+      && /Briefing erstellt: 15\. Juli 2026, 06:00/.test(htmlTechnisch)
+      && !/2032|2033|2034|2035/.test(htmlTechnisch));
+
+  delete zeitState.primaryItem.meldungAt;
+  delete zeitState.primaryItem.zeitLabel;
+  delete zeitState.frischeVertrag.lauf;
+  zeitState.items = [];
+  api.setBriefing(technischeZeiten);
+  const htmlUnbelegt = api.render();
+  check("F3f Fehlende Quellen- und Laufzeit bleiben explizit unbelegt trotz technischer Zeitstempel",
+    htmlUnbelegt.includes("Quellenstand nicht belegt")
+      && htmlUnbelegt.includes("Erstellungszeit des Briefings nicht belegt")
+      && !/2032|2033|2034|2035/.test(htmlUnbelegt));
 
   // =============================================================================
   // W — Wiederholung und ueberlappende Laeufe

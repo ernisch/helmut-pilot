@@ -1,8 +1,9 @@
 "use strict";
 
 // UI-Test (Sprint 5): die DREI Client-Leerzustands-Renderer zeigen den unterscheidbaren
-// Leerzustand (gap/stale/quiet) an, wenn der Server ihn liefert — und bleiben ohne ihn
-// unveraendert (Flag aus). Laedt die ECHTEN Render-Funktionen aus client.js im vm-Kontext.
+// Leerzustand (gap/stale/quiet) an, wenn der Server ihn liefert. Radar darf ohne
+// bestaetigte Quellengrundlage keine Ruhe behaupten und zeigt dann unknown.
+// Laedt die ECHTEN Render-Funktionen aus client.js im vm-Kontext.
 
 const fs = require("fs");
 const path = require("path");
@@ -20,7 +21,7 @@ function loadClient() {
   code = code.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "");
   code += `\n;globalThis.__scoringUi = {
     lageEmpty: (es) => renderLageEmpty("Guten Morgen.", "13. Juli 2026", es),
-    radarEmpty: (es) => renderRadarEmpty({ status: "empty", emptyState: es, summary: { line1: "x", line2: "" } }),
+    radarEmpty: (es, state = {}) => renderRadarEmpty({ status: "empty", ...state, emptyState: es, summary: { line1: "x", line2: "" } }),
     helmutEmpty: (es) => renderHstandStateCard({ status: "empty", emptyState: es, generatedAt: "2026-07-13T12:00:00Z", briefingType: "daily", profileId: null }, "empty")
   };`;
   const noop = () => {};
@@ -83,9 +84,31 @@ check("Lage ohne emptyState: Alt-Text unveraendert", lNone.includes("keine quell
 
 console.log("== RADAR-Leerzustand ==");
 const rq = ui.radarEmpty(quietRadar);
-check("Radar quiet: zeigt Umfeld-Text + kind", rq.includes("ruhig um dich herum") && /data-empty-kind="quiet"/.test(rq));
+check("Radar quiet ohne Quellenbeleg: unknown statt behaupteter Ruhe",
+  rq.includes("Radarprüfung nicht belegt") && /data-empty-kind="unknown"/.test(rq)
+    && !rq.includes("ruhig um dich herum"));
 const rNone = ui.radarEmpty(null);
-check("Radar ohne emptyState: Alt-Verhalten (kein data-empty-kind)", !/data-empty-kind/.test(rNone));
+check("Radar ohne emptyState: fehlender Quellenbeleg bleibt unknown",
+  rNone.includes("Radarprüfung nicht belegt") && /data-empty-kind="unknown"/.test(rNone));
+const rUnconfirmed = ui.radarEmpty(quietRadar, { quality: { sourcesLoaded: false } });
+check("Radar mit explizit fehlender Quellengrundlage behauptet keine Ruhe",
+  /data-empty-kind="unknown"/.test(rUnconfirmed) && !rUnconfirmed.includes("ruhig um dich herum"));
+const rConfirmed = ui.radarEmpty(quietRadar, { quality: { sourcesLoaded: true } });
+check("Radar mit Quellenbeleg: keine sichtbaren Signale beweisen keine fehlenden Erwaehnungen",
+  rConfirmed.includes("Keine zugeordneten Signale in dieser Ansicht")
+    && /data-empty-kind="quiet"/.test(rConfirmed)
+    && rConfirmed.includes("keine Bestätigung, dass es keine Erwähnungen gibt")
+    && !rConfirmed.includes("ruhig um dich herum"));
+for (const kind of ["gap", "stale"]) {
+  const rGap = ui.radarEmpty({ ...gap, tab: "radar", kind });
+  check(`Radar ${kind}: ausdrueckliche Datenluecke bleibt sichtbar`,
+    rGap.includes(gap.headline) && rGap.includes(gap.detail)
+      && rGap.includes(`data-empty-kind="${kind}"`));
+}
+const rError = ui.radarEmpty(quietRadar, { status: "error", quality: { sourcesLoaded: true } });
+check("Radar Fehler: Stoerung hat Vorrang vor quiet und geladenen Quellen",
+  rError.includes("Radar derzeit nicht ladbar") && /data-empty-kind="stoerung"/.test(rError)
+    && !rError.includes("ruhig um dich herum"));
 
 console.log("== HELMUT-Leerzustand ==");
 const hq = ui.helmutEmpty(quietHelmut);
