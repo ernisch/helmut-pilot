@@ -1,0 +1,79 @@
+{
+  "observedAtUTC": "2026-11-07T22:55:49.254154+00:00",
+  "origin": "https://helmut-pilot.vercel.app",
+  "commit": "9b00ebce9f4e2e2e437a3d1f9476615a8708c005",
+  "requests": [
+    {
+      "path": "/",
+      "status": 200,
+      "bytes": 6110
+    },
+    {
+      "path": "/api/release/public",
+      "status": 200,
+      "bytes": 52
+    },
+    {
+      "path": "/client.js?v=9b00ebce",
+      "status": 200,
+      "bytes": 617072
+    },
+    {
+      "path": "/styles.css?v=9b00ebce",
+      "status": 200,
+      "bytes": 336657
+    }
+  ],
+  "assetVersions": {
+    "styles.css": "9b00ebce",
+    "client.js": "9b00ebce"
+  },
+  "release": {
+    "ok": true,
+    "ready": true,
+    "storage": true
+  },
+  "assets": {
+    "client.js": {
+      "sha256": "fc954b8b208e3834d1e9f7014e2b95f68ade5499059a7db23c6ba220028cd1bc",
+      "matchesReviewedCommit": true
+    },
+    "styles.css": {
+      "sha256": "42ee881a79a55cd3d907dc807f5e9e188d51ee561c6485d0374281f6afa3c975",
+      "matchesReviewedCommit": true
+    }
+  },
+  "manualRefreshRemoved": true,
+  "authenticatedProductionClickTest": false,
+  "sourceOrModelRunsStarted": false,
+  "pullRequest": "https://github.com/ernisch/helmut-pilot/pull/1102",
+  "reviewedHead": "e253bb5af56d4ba0aa6aee84e0252c9718cb89e3",
+  "deployment": {
+    "id": "dpl_4kg3SDXfWtVYupcR2UyTwsNchKWa",
+    "target": "production",
+    "state": "READY",
+    "alias": "helmut-pilot.vercel.app",
+    "gitCommit": "9b00ebce9f4e2e2e437a3d1f9476615a8708c005"
+  },
+  "preflight": {
+    "observedAtUTC": "2026-11-07T22:54:21.215180Z",
+    "runningProcesses": 0,
+    "activePipelineLocks": 0,
+    "readOnly": true
+  },
+  "errorScan": {
+    "sinceUTC": "2026-11-07T22:54:53.508Z",
+    "observedAtUTC": "2026-11-07T22:56:15Z",
+    "filter": [
+      "error",
+      "fatal"
+    ],
+    "groupBy": "level",
+    "returnedGroups": [],
+    "meaning": "No error/fatal entries returned in this bounded deployment window"
+  },
+  "rollback": {
+    "deploymentId": "dpl_FiKvxLgEwZ1prPeg3Nfc6NUFYkuS",
+    "gitCommit": "d96518613190f8d294f2f4279218cb18022c86f8"
+  }
+}

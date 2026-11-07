@@ -4,7 +4,7 @@
 Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub, Tests und diesem Statusdokument.
 
-**Briefing (07.11., nur Branch/PR):** Knopf samt Kundenlauf entfernt, automatisches Laden/Zeiten erhalten. [Belege](ui/briefing-ohne-refresh-20261107/browser-result.json). Kein Merge/Rollout; PR pruefen.
+**Briefing (07.11., live):** PR1102 auf `9b00ebce` gemergt, Production READY. Knopf samt Kundenlauf entfernt; automatisches Laden/Zeiten erhalten. [Nachkontrolle](ui/briefing-ohne-refresh-20261107/rollout.md). Kein neuer Verarbeitungslauf.
 
 ## Profilbezogene Lageauswahl (07.11.2026, gemergt und ausgerollt)
 
