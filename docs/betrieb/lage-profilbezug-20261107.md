@@ -1,7 +1,7 @@
 # Profilbezogene Lageauswahl — 07.11.2026
 
 Entwicklungsstand auf `codex/profilbezogene-lageauswahl-20261107`, Basis
-`4c361260`. Geprüfte Entwicklung; kein Merge, Deployment, Profilwechsel,
+`4c361260`, Codecommit `95b1e986`, [PR #1100](https://github.com/ernisch/helmut-pilot/pull/1100). Geprüfte Entwicklung; kein Merge, Deployment, Profilwechsel,
 Production-Schreiben, Modelltest oder Belastungstest. Der zugehörige PR enthält
 Commitbindung und Pflicht-CI. Nächster Schritt nach grüner CI: konkrete
 Merge-/Production-Freigabe für diesen PR.
