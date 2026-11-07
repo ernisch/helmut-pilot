@@ -1,10 +1,44 @@
 # Profilbezogene Lageauswahl — 07.11.2026
 
-Entwicklungsstand auf `codex/profilbezogene-lageauswahl-20261107`, Basis
-`4c361260`, Erstimplementierung `95b1e986`, Endkopf im PR, [PR #1100](https://github.com/ernisch/helmut-pilot/pull/1100). Geprüfte Entwicklung; kein Merge, Deployment, Profilwechsel,
-Production-Schreiben, Modelltest oder Belastungstest. Der zugehörige PR enthält
-Commitbindung und Pflicht-CI. PR bleibt auf ausdrücklichen Auftrag ungemergt;
-nächster Schritt: unabhängige Gegenprüfung des ergänzten Originalfalls.
+**Status: gemergt, auf Production READY und Auslieferung lesend nachkontrolliert.**
+[PR #1100](https://github.com/ernisch/helmut-pilot/pull/1100) nach ausdrücklicher
+Betreiberfreigabe auf `d96518613190f8d294f2f4279218cb18022c86f8` gemergt.
+Geprüfter Kopf `c4caf031`; beide Pflichtchecks im
+[CI-Lauf42409807375](https://github.com/ernisch/helmut-pilot/actions/runs/42409807375)
+erfolgreich. Deployment `dpl_FiKvxLgEwZ1prPeg3Nfc6NUFYkuS` ist READY,
+Target Production, auf demselben Merge. Keine Livefachabnahme daraus ableiten.
+Entwicklungsbasis `4c361260`, Erstimplementierung `95b1e986`; die folgenden
+Entwicklungs-/Zwischenbelege bleiben als zeitlich abgegrenzte Nachweise erhalten.
+
+## Mergeabschluss und lesende Nachkontrolle
+
+Vor dem Merge wurde am07.11.2026,20:52:17UTC nativ gelesen:
+0 laufende `process_runs`,0 aktive `pipeline_locks`. Der geprüfte Runtimekopf
+`c4caf031` ist zum Merge bytegleich; keine zusätzliche Runtimekorrektur beim Merge.
+Das READY-Deployment ist unter
+`helmut-pilot-qlv0843jw-nohut.vercel.app` identifiziert; Vercel bestätigt den
+regulären Alias `helmut-pilot.vercel.app` auf diesem Deployment und Mergecommit.
+Lesende Nachkontrolle am07.11.2026:
+
+- Hauptdomain um20:53:51UTC: GET HTTP200; HTML referenziert
+  `client.js?v=d9651861` und `styles.css?v=d9651861`.
+- `/api/release/public` um20:53:44UTC: GET HTTP200 mit
+  `ok:true`, `ready:true`, `storage:true`.
+- Deploymentgebundene Runtime-Logzählung von20:52:34UTC bis zur Abfrage
+  um20:53:56UTC: keine `error`-/`fatal`-Einträge. Das ist ein begrenztes
+  Beobachtungsfenster und kein umfassender Funktionsnachweis.
+
+Kein authentifizierter Production-Klicktest und keine erneute Livefach- oder
+Frischeabnahme. Kein zusätzlicher Modellaufruf; Daten, Flags, Cron und Budgets
+wurden durch diesen Rolloutauftrag nicht geändert. Der nächste fachliche Schritt
+ist die rein lesende Abnahme der Lage nach dem nächsten regulären autorisierten
+Lauf; dafür keinen zusätzlichen Lauf starten.
+
+Konkreter Rückweg bei einer gesondert freigegebenen Rücknahme: vorheriges
+READY-Deployment `dpl_Axr6qtkWQLnJjDjEWiWE7U9MDmnn` auf `778c289b`
+oder gezielter Code-Revert. Keine Datenrücknahme erforderlich. Der Mergeauftrag
+enthält keine neue Production-Datenmutation, Profilaktivierung, Migration,
+Schalteraktivierung, Budgetänderung oder bezahlten Modelltest.
 
 ## Ursache und aktueller Abgleich
 
@@ -60,8 +94,8 @@ Nur zwei Runtime-Dateien: neue persönliche Aufnahmeprüfung in
 Globale Wissensobjekte, Artikelanalysen, Quellenverarbeitung, Aktualitätsfenster,
 Mandantenspeicher und Flags werden nicht verändert. Persönliche Daten entstehen
 nur in Antwortkopien. `vercel.json` sperrt automatische Deployments dieses
-Arbeitsbranches. Rückweg nach einem gesondert erlaubten Rollout: gezielter
-Revert der beiden Runtime-Dateien oder vorheriges freigegebenes Deployment;
+Arbeitsbranches. Rückweg nach dem erlaubten Rollout: gezielter
+Revert der beiden Runtime-Dateien oder das oben benannte vorherige Deployment;
 keine Datenrücknahme nötig. Ein neuer Regelstand leert bestehende Narrativcaches
 bis zum nächsten regulär autorisierten Lauf; der lesende App-Start erzeugt keine KI.
 
@@ -150,8 +184,9 @@ verstreuter Wörter, fremder Quelle und fremden Ausschusses; kein konkreter
 neuer Blocker. Aliasgrenze: gespeichertes „Wirtschaftsausschuss“ wird nicht
 automatisch in „Ausschuss für Wirtschaft und Energie“ umgedeutet. Diese
 allgemeine Namensauflösung bleibt außerhalb der kleinsten Korrektur.
-Pflicht-CI ist am ergänzten PR-Kopf auszuweisen; der bisher grüne Lauf
-`42395965284` gehört ausschließlich zu `ba244d42`.
+Pflicht-CI auf dem ergänzten Kopf `c4caf031` ist im Lauf `42409807375`
+erfolgreich. Der frühere grüne Lauf `42395965284` gehört ausschließlich zu
+`ba244d42` und ersetzt diesen Endkopfbeleg nicht.
 
 ### Frühere Prüfbelege
 
@@ -224,4 +259,6 @@ Aussage des KO; vorhandene zusätzliche Aussagen-/Narrativprüfung bleibt nötig
 Aktuelle Production-Auswahl und angemeldete Browseransicht wurden nicht erneut
 fachlich abgenommen. Keine neuen aktiven Mandate, keine bezahlten Modelltests,
 keine Lasttests, neue Infrastruktur, Migration, Schalteraktivierung oder
-Production-Datenänderung. Merge und Deployment benötigen konkrete Freigabe.
+Production-Datenänderung durch diesen Auftrag. Merge und reguläres Deployment
+sind nach konkreter Freigabe erfolgt; weitere geschützte Aktionen bleiben
+separat freizugeben.
