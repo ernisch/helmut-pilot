@@ -133,8 +133,14 @@ const body=`<link rel="canonical" href="${url}"><meta property="og:title" conten
 let checks=0;
 
  const rows=[doc()], before=JSON.stringify(rows);let reads=0,fetches=0;
- const deps={env:{HELMUT_SUCHWEGAUSZUEGE:'on'},suchwegDokumentIds:['new'],leseVorhandene:async ids=>{reads++;assert.deepEqual(ids,['new']);return[];},fetchUrl:async(u,depth,options)=>{fetches++;assert.equal(u,url);assert.equal(depth,0);assert.equal(options.artikelkontext,true);assert.equal(options.allowedHost,'ndr.de');return{finalUrl:u,body};}};
+ const deps={env:{HELMUT_SUCHWEGAUSZUEGE:'on',HELMUT_SUCHWEGAUSZUEGE_HOSTS:'www.ndr.de'},suchwegDokumentIds:['new'],leseVorhandene:async ids=>{reads++;assert.deepEqual(ids,['new']);return[];},fetchUrl:async(u,depth,options)=>{fetches++;assert.equal(u,url);assert.equal(depth,0);assert.equal(options.artikelkontext,true);assert.equal(options.allowedHost,'ndr.de');return{finalUrl:u,body};}};
  let r;
+ for(const hosts of [undefined,'','*.ndr.de','www.ndr.de,127.0.0.1','https://www.ndr.de','www.ndr.de/fremd','name:pass@www.ndr.de']) {
+  r=await E.ergaenzeNeueSuchwegAuszuege(rows,{...deps,env:{HELMUT_SUCHWEGAUSZUEGE:'on',HELMUT_SUCHWEGAUSZUEGE_HOSTS:hosts}});
+  assert.equal(r.metadatenAuszug.reason,'herausgeber-nicht-freigegeben');
+ }
+ r=await E.ergaenzeNeueSuchwegAuszuege(rows,{...deps,env:{...deps.env,HELMUT_SUCHWEGAUSZUEGE_HOSTS:'www.rnd.de'}});
+ assert.equal(r.metadatenAuszug.attempted,0);assert.equal(reads,0);assert.equal(fetches,0);
  for (const value of [undefined, 'off', 'true', 'ON']) {
   r=await E.ergaenzeNeueSuchwegAuszuege(rows,{...deps,env:{HELMUT_SUCHWEGAUSZUEGE:value,HELMUT_ARTIKELKONTEXT:'on'}});
   assert.equal(r.metadatenAuszug.reason,'ausgeschaltet');
@@ -189,10 +195,10 @@ const reader=new Function('supabaseRequest','v3StoreReady','RAW_DOC_ID_CHUNK','i
  assert.deepEqual(await reader(boundIds),[]); // Altvertrag unveraendert.
  await assert.rejects(()=>reader(boundIds,{requireArray:true}),/leseantwort-ungueltig/);
  let requests=0;
- const rejected=await E.ergaenzeNeueSuchwegAuszuege(plan.persists,{env:{HELMUT_SUCHWEGAUSZUEGE:'on'},suchwegDokumentIds:boundIds,leseVorhandene:ids=>reader(ids,{requireArray:true}),fetchUrl:async()=>{requests++;throw Error('must not fetch');}});
+ const rejected=await E.ergaenzeNeueSuchwegAuszuege(plan.persists,{env:{HELMUT_SUCHWEGAUSZUEGE:'on',HELMUT_SUCHWEGAUSZUEGE_HOSTS:'www.ndr.de'},suchwegDokumentIds:boundIds,leseVorhandene:ids=>reader(ids,{requireArray:true}),fetchUrl:async()=>{requests++;throw Error('must not fetch');}});
  assert.equal(rejected.metadatenAuszug.reason,'bestand-nicht-lesbar');assert.equal(rejected.metadatenAuszug.readRequests,1);assert.equal(requests,0);
  const description='Der synthetische Ausschuss hoert am Dienstag Fachleute zur Finanzierung der Beratungsstellen an. Die Beratung betrifft Angebote in den Gemeinden.';
- const completed=await E.ergaenzeNeueSuchwegAuszuege(plan.persists,{env:{HELMUT_SUCHWEGAUSZUEGE:'on'},suchwegDokumentIds:boundIds,leseVorhandene:async()=>[],fetchUrl:async()=>({finalUrl:url,body:`<link rel="canonical" href="${url}"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}">`})});
+ const completed=await E.ergaenzeNeueSuchwegAuszuege(plan.persists,{env:{HELMUT_SUCHWEGAUSZUEGE:'on',HELMUT_SUCHWEGAUSZUEGE_HOSTS:'www.ndr.de'},suchwegDokumentIds:boundIds,leseVorhandene:async()=>[],fetchUrl:async()=>({finalUrl:url,body:`<link rel="canonical" href="${url}"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}">`})});
  assert.equal(completed.metadatenAuszug.prepared,1);assert.equal(completed.documents[0].summary,description);assert.equal(plan.persists[0].summary,undefined);
  console.log('PASS: echte Normalisierung -> echte Minimierung -> globale Dedup -> originale Google Eingabebindung -> validierter neuer Auszug.');
  console.log('PASS: echter Bestandsreader200NichtArray wird im OptIn als UNKNOWN abgelehnt;0Artikelrequests; Altvertrag unveraendert.');
@@ -238,8 +244,10 @@ async function pruefeSuchwegVerdrahtung() {
     () => true, D.dedupeRawDocuments, D.toRawDocumentRow, () => "on", persist,
     async () => { throw Error("unerwarteter Einzelrueckfall"); }, async () => {}, fetchUrl);
   const beforeFlag = process.env.HELMUT_SUCHWEGAUSZUEGE;
+  const beforeHosts = process.env.HELMUT_SUCHWEGAUSZUEGE_HOSTS;
   try {
     process.env.HELMUT_SUCHWEGAUSZUEGE = "on";
+    process.env.HELMUT_SUCHWEGAUSZUEGE_HOSTS = "www.ndr.de";
     const result = await shadow([item], { abbruchSignal: stop.signal });
     assert.equal(result.persisted, 1); assert.equal(result.metadatenAuszug.prepared, 1);
     assert.equal(result.schreibAnfragen, 4); assert.equal(reads, 1); assert.equal(fetches, 1);
@@ -253,6 +261,8 @@ async function pruefeSuchwegVerdrahtung() {
   } finally {
     if (beforeFlag === undefined) delete process.env.HELMUT_SUCHWEGAUSZUEGE;
     else process.env.HELMUT_SUCHWEGAUSZUEGE = beforeFlag;
+    if (beforeHosts === undefined) delete process.env.HELMUT_SUCHWEGAUSZUEGE_HOSTS;
+    else process.env.HELMUT_SUCHWEGAUSZUEGE_HOSTS = beforeHosts;
   }
 }
 
@@ -308,7 +318,7 @@ async function pruefeSuchwegKarte() {
   server.listen(0, "127.0.0.1"); await once(server, "listening");
   const env = { SUPABASE_URL: "http://127.0.0.1:" + server.address().port,
     SUPABASE_SERVICE_ROLE_KEY: "rein-lokaler-testwert", HELMUT_V3_STORE: "1",
-    HELMUT_SUCHWEGAUSZUEGE: "on", HELMUT_ARTIKELKONTEXT: "off" };
+    HELMUT_SUCHWEGAUSZUEGE: "on", HELMUT_SUCHWEGAUSZUEGE_HOSTS: "www.ndr.de", HELMUT_ARTIKELKONTEXT: "off" };
   const prior = Object.fromEntries(Object.keys(env).map(k => [k, process.env[k]]));
   Object.assign(process.env, env);
   try {

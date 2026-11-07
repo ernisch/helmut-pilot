@@ -181,8 +181,31 @@ async function main() {
   check("4.2 Der Abruf hat stattgefunden", netzAufrufe === 1 && ok.statusCode === 200);
   check("4.3 Danach wird ERFOLG gemeldet", gemeldet.length === 1 && gemeldet[0].ok === true,
     JSON.stringify(gemeldet[0]));
+  check("4.3b Meldung und Reservierung binden denselben Schutzschalter", gemeldet[0].schluessel === reserviert[0].schluessel,
+    JSON.stringify({ reserviert: reserviert[0].schluessel, gemeldet: gemeldet[0].schluessel }));
   check("4.4 Der Abruf bekommt ein echtes Abbruchsignal",
     letztesSignal && typeof letztesSignal.aborted === "boolean");
+
+  // Derselbe exakte Schluessel wie im nativen SQL: Fehler unter einem
+  // anderen Schluessel duerfen nicht bloss eine unbenutzte Sperre erzeugen.
+  const schalter = new Map(); let versuche = 0;
+  const circuitDeps = abrufDeps({
+    reserviere: async o => ({ verfuegbar: true, erlaubt: (schalter.get(o.schluessel) || 0) < 5,
+      grund: "schutzschalter-offen", fruehesteMs: 60000 }),
+    melde: async o => { schalter.set(o.schluessel, o.ok ? 0 : (schalter.get(o.schluessel) || 0) + 1); return { verfuegbar: true }; },
+    netz: async () => { versuche++; return { statusCode: 503, body: "isolierter Anbieterfehler", headers: {} }; }
+  });
+  for (let i = 0; i < 5; i++) await crawler.fetchUrl("https://example.org/feed", 0, circuitDeps);
+  let circuitFehler = null;
+  await crawler.fetchUrl("https://example.org/feed", 0, circuitDeps).catch(e => { circuitFehler = e; });
+  check("4.4b Fuenf Fehler sperren den sechsten echten Transportaufruf", versuche === 5 &&
+    /schutzschalter-offen/.test(circuitFehler?.anbieterVertagung?.grund || ""),
+  JSON.stringify({ versuche, grund: circuitFehler?.anbieterVertagung?.grund }));
+  let gemeldeterBereich;
+  await steuerung.melde({ anbieter: "azure-openai", modell: "synthetisch", klasse: "ki", mandat: "synthetisch",
+    ok: false, env: ENV_AN, deps: { melde: async o => { gemeldeterBereich = o.schluessel; return { verfuegbar: true }; } } });
+  check("4.4c Auch KI und Mandatsdimension bleiben im Meldeschluessel gebunden",
+    gemeldeterBereich === steuerung.grenzSchluessel({ anbieter: "azure-openai", modell: "synthetisch", klasse: "ki", mandat: "synthetisch" }));
 
   // ERSCHOEPFTE GRENZE: der Auftrag wird VERTAGT, nicht als Fehler verbucht.
   netzAufrufe = 0;
