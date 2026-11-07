@@ -235,7 +235,7 @@ const deps = { ready: () => true, request: fakePostgrest(bestandA) };
     vorgang_id: id,
     status: "ready",
     understanding_status: "complete",
-    was_ist_passiert: `Sachstand ${id}`,
+    was_ist_passiert: id === "ko-alt-0" ? "Museum eröffnet Ausstellung" : `Beratung zur Tarifbindung ${id}`,
     warum_wichtig: `Einordnung ${id}`
   }));
 
@@ -257,12 +257,12 @@ const deps = { ready: () => true, request: fakePostgrest(bestandA) };
     }
   };
 
-  const rangliste = await lage.loadRankedVorgaenge(lageStorage, null, {}, "mdb-a");
+  const rangliste = await lage.loadRankedVorgaenge(lageStorage, null, { committees: ["Arbeit und Soziales"] }, "mdb-a");
   check("D1 Lage fordert die Historie nicht an (includeAbgeloest ungesetzt)",
     lageAufruf !== null && !lageAufruf.includeAbgeloest);
   check("D2 Lage uebergibt den Mandanten",
     lageAufruf.userId === "mdb-a");
-  check("D3 abgeloester Vorgang erscheint NICHT in der Lage",
+  check("D3 fachfremder Altvorgang erscheint trotz vorhandenem KO NICHT in der Lage",
     !rangliste.some((k) => k.id === "ko-alt-0"));
   check("D4 aktueller Vorgang erscheint in der Lage",
     rangliste.some((k) => k.id === "ko-neu-0"));
@@ -282,7 +282,7 @@ const deps = { ready: () => true, request: fakePostgrest(bestandA) };
     ai[name] = (...a) => { kiAufrufe.push(name); return kiOriginal[name](...a); };
   }
   await storage.listMatchingResults({ userId: "mdb-a", limit: 12 }, deps);
-  await lage.loadRankedVorgaenge(lageStorage, null, {}, "mdb-a");
+  await lage.loadRankedVorgaenge(lageStorage, null, { committees: ["Arbeit und Soziales"] }, "mdb-a");
   for (const name of Object.keys(kiOriginal)) ai[name] = kiOriginal[name];
   check("C5 kein KI-Aufruf im gesamten korrigierten Lesepfad",
     kiAufrufe.length === 0);

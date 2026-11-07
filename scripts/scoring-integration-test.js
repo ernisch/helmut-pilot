@@ -31,15 +31,16 @@ const H = 3600000, D = 24 * H;
 
 // ============================ LAGE ============================
 console.log("== LAGE: Wichtigkeit statt persoenlicher Filterblase (flag-gesichert) ==");
-// KO 'a' = kommunale Randnotiz (persoenlich zuerst gematcht), KO 'b' = Bundesgesetz (global wichtig).
-const koA = { id: "a", vorgang_id: "a", status: "neu", understanding_status: "complete", was_ist_passiert: "Randnotiz", decision_level: "kommune", event_type: "sonstiges", source_document_count: 1, updated_at: iso(3 * H) };
-const koB = { id: "b", vorgang_id: "b", status: "neu", understanding_status: "complete", was_ist_passiert: "Bundesgesetz", decision_level: "bund", event_type: "gesetzentwurf", source_document_count: 6, risk_level: "high", zeitdruck: "hoch", ministerien: ["BMAS"], parteien: ["SPD"], updated_at: iso(3 * H) };
+// Beide Kandidaten passen fachlich; innerhalb gleicher Fachprioritaet darf
+// das bestehende Scoring globale Bedeutung und Handlungsbedarf unterscheiden.
+const koA = { id: "a", vorgang_id: "a", status: "neu", understanding_status: "complete", was_ist_passiert: "Kommunale Beratung zur Rentenversorgung", decision_level: "kommune", event_type: "sonstiges", source_document_count: 1, updated_at: iso(3 * H) };
+const koB = { id: "b", vorgang_id: "b", status: "neu", understanding_status: "complete", was_ist_passiert: "Bundesgesetz zur Rentenversorgung", decision_level: "bund", event_type: "gesetzentwurf", source_document_count: 6, risk_level: "high", zeitdruck: "hoch", ministerien: ["BMAS"], parteien: ["SPD"], updated_at: iso(3 * H) };
 const stubStorage = {
   listKnowledgeObjects: async () => [koA, koB],
   // gespeicherte personalisierte Matches: 'a' zuerst (persoenlich naeher)
   listMatchingResults: async () => [{ knowledge_object_id: "a" }, { knowledge_object_id: "b" }]
 };
-const profile = { id: "u1", fullName: "Test MdB", party: "SPD" };
+const profile = { id: "u1", fullName: "Test MdB", party: "SPD", committees: ["Arbeit und Soziales"] };
 
 // Env muss ueber das await hinweg gesetzt bleiben (scoringActive() wird NACH dem
 // listKnowledgeObjects-await geprueft) -> Env innerhalb des await halten.
@@ -79,7 +80,7 @@ async function rankWith(mode, { relevanzordnung = "on" } = {}) {
   // geprueft: mit Flag ordnet die GLOBALE Wichtigkeit vor, ohne Flag die MANDATSRELEVANZ.
   check("Lage Flag AUS: der handlungsbeduerftige Vorgang steht vorn, nicht der zuerst gespeicherte",
     off[0].id === "b", off.map((k) => k.id).join(","));
-  check("Lage Flag AUS: die kommunale Randnotiz ohne Profilbezug steht hinten",
+  check("Lage Flag AUS: der kommunale Fachvorgang ohne Handlungsbedarf steht hinten",
     off[off.length - 1].id === "a", off.map((k) => k.id).join(","));
   check("Lage Flag AUS: die Reihenfolge ist deterministisch (zweiter Lauf identisch)",
     (await rankWith(undefined)).map((k) => k.id).join(",") === off.map((k) => k.id).join(","));
@@ -169,7 +170,7 @@ async function rankWith(mode, { relevanzordnung = "on" } = {}) {
     } };
     if (quarantine) sourceSafety.guardKnowledgeObject = () => ({ status: "quarantine" });
     if (mode == null) delete process.env.HELMUT_SCORING_MODE; else process.env.HELMUT_SCORING_MODE = mode;
-    try { return await lage.buildLageBriefing({ id: "u-lage", fullName: "L Age", party: "SPD" }, {}); }
+    try { return await lage.buildLageBriefing({ id: "u-lage", fullName: "L Age", party: "SPD", committees: ["Arbeit und Soziales"] }, {}); }
     finally {
       if (prevCache) require.cache[storagePath] = prevCache; else delete require.cache[storagePath];
       sourceSafety.guardKnowledgeObject = prevGuard;
@@ -181,7 +182,7 @@ async function rankWith(mode, { relevanzordnung = "on" } = {}) {
   // (sonst kippt der quiet-Fall zeitbombenartig auf stale, sobald der Testlauf >~1 Tag
   // nach dem NOW-Datum liegt; real passiert am 2026-07-15).
   const isoReal = (agoMs) => new Date(Date.now() - agoMs).toISOString();
-  const understood1 = [{ id: "lf", vorgang_id: "lf", status: "neu", understanding_status: "complete", was_ist_passiert: "x", decision_level: "kommune", updated_at: isoReal(1 * H) }];
+  const understood1 = [{ id: "lf", vorgang_id: "lf", status: "neu", understanding_status: "complete", was_ist_passiert: "Beratung zur Rentenversorgung", decision_level: "kommune", updated_at: isoReal(1 * H) }];
   const lageGap = await buildLageEmpty("on", { kos: [] });
   check("Lage E2E Flag AN, keine verstandenen KOs: emptyState.kind=gap", lageGap.emptyState && lageGap.emptyState.kind === "gap");
   const lageQuietE2E = await buildLageEmpty("on", { kos: understood1, sourcesByVg: { lf: [{ published_at: isoReal(2 * H) }] }, quarantine: true });

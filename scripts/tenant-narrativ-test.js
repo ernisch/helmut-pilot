@@ -516,7 +516,8 @@ async function main() {
         freshnessWindow: "2026-08-08T00Z", createdAt: new Date().toISOString()
       };
       const deps = {
-        env: BEIDE, getActiveProfile: async (id) => profil(id), istDeaktiviert: () => false,
+        env: BEIDE, getActiveProfile: async (id) => profil(id, {
+          committee: "Arbeit und Soziales", focusTopics: ["Rente"] }), istDeaktiviert: () => false,
         lageNarrativ: (p, meta) => lage.buildLageBriefing(p, meta)
       };
 

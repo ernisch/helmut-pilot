@@ -817,10 +817,10 @@ function neuerStore() {
   // ═══ I · Politische Ausgabe: Lage-Auswahl (der produktive Lesepfad) ═══
   abschnitt("I · Lage-Auswahl (produktiver Lesepfad, gespeicherte Ergebnisse)");
   const ranked = await lage.loadRankedVorgaenge(store.api, matching.matchProfileToKnowledgeObjects, PROFIL_A, PROFIL_A.id);
-  check("I1 Auswahl kommt aus den GESPEICHERTEN Matching-Ergebnissen und enthaelt den relevanten Vorgang",
+  check("I1 aktuelle fachliche Auswahl enthaelt den relevanten Vorgang",
     ranked.some((k) => k.id === koRelevant.id), JSON.stringify(ranked.map((k) => k.id)));
   const rankedRelevant = ranked.find((k) => k.id === koRelevant.id);
-  check("I2 die sichtbare Relevanz-Erklaerung haengt am Vorgang (aus der gespeicherten Zeile)",
+  check("I2 die sichtbare Relevanz-Erklaerung haengt am aktuell bewerteten Vorgang",
     rankedRelevant && rankedRelevant.relevanz_erklaerung
       && /Arbeit und Soziales/.test(JSON.stringify(rankedRelevant.relevanz_erklaerung)));
   const karten = ranked.map((k) => lage.koToVorgangCard(k, store.api.getSourcesForVorgang(k.vorgang_id)));
@@ -833,10 +833,11 @@ function neuerStore() {
       && Boolean(karteRelevant.displayCategory) && Boolean(karteRelevant.empfehlung));
   check("I5 Herkunft bleibt bis zur Ausgabe sichtbar: die DIP-Adresse als Quelle",
     karteRelevant && (karteRelevant.sources || []).some((s) => /bund\.example/.test(String(s.url || ""))));
-  check("I6 persoenliche Relevanz auf der Karte entspricht den gespeicherten Gruenden",
+  check("I6 persoenliche Relevanz auf der Karte belegt die aktuelle Hauptzustaendigkeit",
     karteRelevant && karteRelevant.relevanz
-      && karteRelevant.relevanz.satz === String(rowRelevant.begruendung)
-      && karteRelevant.relevanz.belege.some((b) => b.art === "ausschuss" && /Arbeit und Soziales/.test(b.text)));
+      && karteRelevant.relevanz.satz !== String(rowRelevant.begruendung)
+      && /Fachaufgabe|Hauptzuständigkeit/.test(karteRelevant.relevanz.satz)
+      && karteRelevant.relevanz.belege.some((b) => b.art === "haupt" && /Arbeit und Soziales/.test(b.text)));
   check("I7 sichtbare Karten der Fremdfaelle behaupten KEINE Ausschussmitgliedschaft",
     [koLand, koKommune].every((ko) => {
       const karte = auswahl.find((c) => c.id === ko.vorgang_id);

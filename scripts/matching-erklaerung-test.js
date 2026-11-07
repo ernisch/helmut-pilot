@@ -206,47 +206,40 @@ const deps = { ready: () => true, request: fakeRequest };
   // ── C · Serverpfad ────────────────────────────────────────────────────────
   console.log("\n== C · Serverpfad (lage.js) ==");
 
+  // Die Lage leitet Aufnahme und sichtbaren Grund frisch aus Fachprofil und
+  // Sachverhalt ab. Gespeicherte Partei-/Rangsignale sind kein Aufnahmebeleg.
+  const profileA = { id: "mdb-a", committees: ["Verkehr"] };
+  const profileB = { id: "mdb-b", committees: ["Gesundheit"] };
   const kos = [
-    { id: "ko-1", vorgang_id: "v-1", status: "neu", understanding_status: "complete", was_ist_passiert: "A", warum_wichtig: "W", headline: "H1" },
-    { id: "ko-2", vorgang_id: "v-2", status: "neu", understanding_status: "complete", was_ist_passiert: "B", warum_wichtig: "W", headline: "H2" },
-    { id: "ko-3", vorgang_id: "v-3", status: "neu", understanding_status: "complete", was_ist_passiert: "C", warum_wichtig: "W", headline: "H3" }
+    { id: "ko-1", vorgang_id: "v-1", status: "neu", understanding_status: "complete", was_ist_passiert: "Beratung zum Schienenverkehr", headline: "Schienenverkehr" },
+    { id: "ko-2", vorgang_id: "v-2", status: "neu", understanding_status: "complete", was_ist_passiert: "Beratung zur Pflegeversicherung", headline: "Gesundheit" },
+    { id: "ko-3", vorgang_id: "v-3", status: "neu", understanding_status: "complete", was_ist_passiert: "Finanzierung einer Bahnverbindung", headline: "Bahnverkehr" }
   ];
-  // NACHTRAG 2026-08-08 (Korrektursprint): die Zusagen dieses Abschnitts wurden fuer die
-  // Relevanzordnung geschrieben (C8/C8b/C8c/C9/C11/C11b pruefen ihre Determiniertheit ueber
-  // den stabilen Schluessel). Seit diesem Sprint ist `HELMUT_RELEVANZORDNUNG` **default AUS**.
-  // Die Ordnung wird deshalb hier ausdruecklich eingeschaltet — die Abhaengigkeit steht damit
-  // im Test statt in einem Standard, der sich aendern kann. Am Ende des Abschnitts wird der
-  // vorherige Zustand wiederhergestellt.
+  const vorher = JSON.stringify(kos);
   const relVorher = process.env.HELMUT_RELEVANZORDNUNG;
   process.env.HELMUT_RELEVANZORDNUNG = "on";
-
-  const mkStorage = (rows) => ({
+  const mkStorage = rows => ({
     listKnowledgeObjects: async () => kos,
-    listMatchingResults: async (args) => {
-      // Der produktive Aufrufer darf NIE abgeloeste Zeilen anfordern.
+    listMatchingResults: async args => {
       if (args && args.includeAbgeloest) throw new Error("Nutzerpfad darf keine abgeloesten Zeilen anfordern");
-      return rows.filter((r) => r.aktuell !== false);
+      return rows.filter(r => r.aktuell !== false);
     }
   });
-
   const rowsGemischt = [
-    { knowledge_object_id: "ko-1", aktuell: true, run_id: "r1", signale: { ausschuss: ["Verkehr"] }, begruendung: "Betrifft deinen Ausschuss Verkehr." },
-    { knowledge_object_id: "ko-2", aktuell: false, abgeloest_am: "2026-07-29T08:00:00Z", run_id: "r0", signale: { thema: ["Alt"] }, begruendung: "Betrifft deinen Schwerpunkt Alt." },
+    { knowledge_object_id: "ko-1", aktuell: true, run_id: "r1", signale: { ausschuss: ["Verkehr"] }, begruendung: "ALTER GESPEICHERTER GRUND" },
+    { knowledge_object_id: "ko-2", aktuell: false, run_id: "r0", signale: { thema: ["Alt"] }, begruendung: "ALTER FACHFREMDER GRUND" },
     { knowledge_object_id: "ko-3", aktuell: true, run_id: null, matched_features: [] }
   ];
-  const ranked = await lage.loadRankedVorgaenge(mkStorage(rowsGemischt), null, {}, "mdb-a");
-  check("C1 abgeloester Vorgang erscheint NICHT im Nutzerpfad",
-    ranked.length === 2 && !ranked.some((k) => k.id === "ko-2"));
-  check("C2 aktueller Vorgang traegt die Erklaerung",
-    ranked[0].id === "ko-1" && ranked[0].relevanz_erklaerung
-    && ranked[0].relevanz_erklaerung.satz === "Betrifft deinen Ausschuss Verkehr.");
-  check("C3 unbelegter Vorgang bleibt unveraendert (keine erfundene Erklaerung)",
-    ranked[1].id === "ko-3" && !("relevanz_erklaerung" in ranked[1]));
-  check("C4 Reihenfolge entspricht exakt der gespeicherten Reihenfolge",
-    ranked.map((k) => k.id).join(",") === "ko-1,ko-3");
-
-  // Der positive Kartenpfad braucht neben dem gespeicherten Matching einen
-  // Artikelauszug. Quellenlose KOs duerfen keine persoenliche Bedeutung zeigen.
+  const ranked = await lage.loadRankedVorgaenge(mkStorage(rowsGemischt), null, profileA, profileA.id);
+  check("C1 fachfremder Vorgang erscheint trotz vorhandenem Altmatch NICHT",
+    ranked.length === 2 && !ranked.some(k => k.id === "ko-2"));
+  check("C2 aktueller Vorgang traegt frisch berechneten Fachgrund statt gespeichertem Text",
+    ranked[0].id === "ko-1" && ranked[0].relevanz_erklaerung.satz.includes("Verkehr")
+    && !ranked[0].relevanz_erklaerung.satz.includes("GESPEICHERT"));
+  check("C3 passender Vorgang ohne alte Matchsignale bekommt heutigen Fachgrund",
+    ranked[1].id === "ko-3" && ranked[1].relevanz_erklaerung.satz.includes("Verkehr"));
+  check("C4 fachlich gleiche Kandidaten bleiben deterministisch geordnet",
+    ranked.map(k => k.id).join(",") === "ko-1,ko-3");
   const karte = lage.koToVorgangCard(ranked[0], [{
     title: "Beratung zum Verkehr", summary: "Der Ausschuss berät die Verkehrsvorlage.",
     url: "https://example.org/verkehr"
@@ -254,89 +247,56 @@ const deps = { ready: () => true, request: fakeRequest };
   check("C5 koToVorgangCard reicht relevanz als { satz, belege } durch",
     karte.relevanz && karte.relevanz.satz && Array.isArray(karte.relevanz.belege));
   check("C6 Karte enthaelt keine technischen Auditfelder",
-    ["run_id", "similarity", "rank", "fingerabdruck", "eingabe_hash"].every(
-      (v) => JSON.stringify(karte).toLowerCase().indexOf(v) < 0));
+    ["run_id", "similarity", "rank", "fingerabdruck", "eingabe_hash"].every(v => !JSON.stringify(karte).toLowerCase().includes(v)));
   check("C6b Matching allein heilt keinen fehlenden Quellenauszug",
     lage.koToVorgangCard(ranked[0], []).relevanz === null);
-  const karteOhne = lage.koToVorgangCard(ranked[1], []);
-  check("C7 Karte ohne Erklaerung liefert relevanz=null (Alt-Pfad unveraendert)",
-    karteOhne.relevanz === null);
+  check("C7 Auch passender Fachgrund heilt keinen fehlenden Quellenauszug",
+    lage.koToVorgangCard(ranked[1], []).relevanz === null);
 
-  // Bestandspfad ohne jede Auditdaten (heutiger Production-Stand).
   const rowsLegacy = [
     { knowledge_object_id: "ko-2", matched_features: [{ type: "partei", value: "SPD" }] },
     { knowledge_object_id: "ko-1", matched_features: [] }
   ];
-  const rankedLegacy = await lage.loadRankedVorgaenge(mkStorage(rowsLegacy), null, {}, "mdb-a");
-  // GEAENDERTE ERWARTUNG (2026-08-08, mit Begruendung — keine Abschwaechung).
-  // Bis hierher pruefte C8 die ZEILENREIHENFOLGE der Ablage ("ko-2,ko-1"). Genau die ist
-  // seit der Gruendervorgabe "Relevanz vor Aktualitaet" nicht mehr massgeblich — und sie war
-  // vorher auch nicht verlaesslich: `listMatchingResults` ordnet nach `created_at desc`, und
-  // weil `now()` in einer Postgres-Transaktion konstant ist, tragen alle Zeilen eines Laufs
-  // denselben Zeitstempel. Die Reihenfolge war damit UNDEFINIERT (nachgewiesen: J8-Wackler
-  // in berlin-e2e-vertrag-test.js, 1 von 25 Laeufen unter Last).
-  // Neu geprueft wird deshalb, was jetzt zugesichert ist und STAERKER ist als vorher:
-  //   (a) beide Vorgaenge sind weiterhin da — der Bestandspfad funktioniert unveraendert,
-  //   (b) die Reihenfolge ist DETERMINISTISCH (hier: leeres Profil -> kein Relevanzsignal
-  //       -> stabiler technischer Schluessel entscheidet),
-  //   (c) die Erklaerung reist weiterhin am Vorgang mit, egal an welcher Position er steht.
-  check("C8 Bestand ohne Auditspalten funktioniert unveraendert weiter (beide Vorgaenge vorhanden)",
-    rankedLegacy.length === 2 && new Set(rankedLegacy.map((k) => k.id)).size === 2
-    && rankedLegacy.every((k) => ["ko-1", "ko-2"].includes(k.id)),
-    rankedLegacy.map((k) => k.id).join(","));
-  check("C8b Die Reihenfolge ist deterministisch (stabiler Schluessel bei Gleichstand)",
-    rankedLegacy.map((k) => k.id).join(",") === "ko-1,ko-2",
-    rankedLegacy.map((k) => k.id).join(","));
+  const rankedLegacy = await lage.loadRankedVorgaenge(mkStorage(rowsLegacy), null, profileA, profileA.id);
+  check("C8 Legacy-Parteitreffer ersetzt keine fachliche Aufnahme; beide passenden Kandidaten bleiben",
+    rankedLegacy.length === 2 && rankedLegacy.every(k => ["ko-1", "ko-3"].includes(k.id)));
+  check("C8b Die Reihenfolge ist deterministisch bei gleicher fachlicher Prioritaet",
+    rankedLegacy.map(k => k.id).join(",") === "ko-1,ko-3");
   check("C8c Zwei Laeufe liefern dieselbe Reihenfolge",
-    (await lage.loadRankedVorgaenge(mkStorage(rowsLegacy), null, {}, "mdb-a")).map((k) => k.id).join(",")
-    === rankedLegacy.map((k) => k.id).join(","));
-  const legacyMitErklaerung = rankedLegacy.find((k) => k.id === "ko-2");
-  check("C9 Legacy-Zeile mit Merkmalstreffer bekommt eine Erklaerung (unabhaengig von der Position)",
-    legacyMitErklaerung && legacyMitErklaerung.relevanz_erklaerung
-    && legacyMitErklaerung.relevanz_erklaerung.satz === "Betrifft deine Partei SPD.");
+    (await lage.loadRankedVorgaenge(mkStorage(rowsLegacy), null, profileA, profileA.id)).map(k => k.id).join(",")
+      === rankedLegacy.map(k => k.id).join(","));
+  check("C9 Jeder Legacykandidat hat einen heutigen Fachgrund, keine alte Parteierklaerung",
+    rankedLegacy.every(k => k.relevanz_erklaerung.satz.includes("Verkehr") && !k.relevanz_erklaerung.satz.includes("SPD")));
 
-  // Fallbackpfade ohne gespeichertes Matching.
   const leerStorage = { listKnowledgeObjects: async () => kos, listMatchingResults: async () => [] };
-  const rankedFallback = await lage.loadRankedVorgaenge(leerStorage, null, {}, "mdb-a");
-  check("C10 Recency-Fallback liefert Vorgaenge OHNE Erklaerung",
-    rankedFallback.length === 3 && rankedFallback.every((k) => !("relevanz_erklaerung" in k)));
-  const rankedOffline = await lage.loadRankedVorgaenge(
-    leerStorage,
-    () => [{ knowledge_object_id: "ko-3" }, { knowledge_object_id: "ko-1" }],
-    {}, "mdb-a"
-  );
-  // Gleiche Begruendung wie bei C8: geprueft wird die MENGE und die Determiniertheit,
-  // nicht mehr die Reihenfolge, in der der Offline-Matcher die Zeilen zurueckgibt.
-  check("C11 Offline-Matching-Fallback liefert dieselbe MENGE und keine Erklaerung",
-    rankedOffline.length === 2
-    && new Set(rankedOffline.map((k) => k.id)).size === 2
-    && rankedOffline.every((k) => ["ko-1", "ko-3"].includes(k.id))
-    && rankedOffline.every((k) => !("relevanz_erklaerung" in k)),
-    rankedOffline.map((k) => k.id).join(","));
+  const rankedFallback = await lage.loadRankedVorgaenge(leerStorage, null, profileA, profileA.id);
+  check("C10 Ohne gespeichertes Matching bleiben nur fachlich begruendete Kandidaten",
+    rankedFallback.length === 2 && rankedFallback.every(k => k.relevanz_erklaerung.satz.includes("Verkehr")));
+  const rankedOffline = await lage.loadRankedVorgaenge(leerStorage,
+    () => [{ knowledge_object_id: "ko-3" }, { knowledge_object_id: "ko-1" }], profileA, profileA.id);
+  check("C11 Offline-Matching behaelt die fachlich passende Menge und heutige Gruende",
+    rankedOffline.length === 2 && new Set(rankedOffline.map(k => k.id)).size === 2
+    && rankedOffline.every(k => ["ko-1", "ko-3"].includes(k.id) && k.relevanz_erklaerung.satz.includes("Verkehr")));
   check("C11b Auch dieser Pfad ist deterministisch geordnet",
-    rankedOffline.map((k) => k.id).join(",") === "ko-1,ko-3",
-    rankedOffline.map((k) => k.id).join(","));
-
-  // Ordnung wieder auf den Ausgangszustand — kein Test darf die Umgebung veraendert
-  // zuruecklassen (die Mandantentrennung unten haengt nicht an der Reihenfolge).
+    rankedOffline.map(k => k.id).join(",") === "ko-1,ko-3");
   if (relVorher == null) delete process.env.HELMUT_RELEVANZORDNUNG;
   else process.env.HELMUT_RELEVANZORDNUNG = relVorher;
 
-  // Mandantentrennung: Erklaerung entsteht ausschliesslich aus den Zeilen, die
-  // der mandantengefilterte Lesepfad geliefert hat.
   const tenantStorage = {
     listKnowledgeObjects: async () => kos,
-    // Bewusst zwei klar unterscheidbare Werte ohne gemeinsames Teilwort.
-    listMatchingResults: async ({ userId }) => (userId === "mdb-a"
-      ? [{ knowledge_object_id: "ko-1", aktuell: true, signale: { ausschuss: ["Verkehr"] }, begruendung: "Betrifft deinen Ausschuss Verkehr." }]
-      : [{ knowledge_object_id: "ko-2", aktuell: true, signale: { ausschuss: ["Gesundheit"] }, begruendung: "Betrifft deinen Ausschuss Gesundheit." }])
+    // Absichtlich vertauschte alte Signale: sie duerfen weder die heutige
+    // Fachaufnahme noch die persoenliche Erklaerung des anderen Profils steuern.
+    listMatchingResults: async ({ userId }) => userId === profileA.id
+      ? [{ user_id: userId, knowledge_object_id: "ko-2", signale: { ausschuss: ["Gesundheit"] }, begruendung: "ALTER FREMDGRUND" }]
+      : [{ user_id: userId, knowledge_object_id: "ko-1", signale: { ausschuss: ["Verkehr"] }, begruendung: "ALTER FREMDGRUND" }]
   };
-  const jsonA = JSON.stringify(await lage.loadRankedVorgaenge(tenantStorage, null, {}, "mdb-a"));
-  const jsonB = JSON.stringify(await lage.loadRankedVorgaenge(tenantStorage, null, {}, "mdb-b"));
-  check("C12 Mandant A sieht ausschliesslich die eigene Erklaerung",
-    jsonA.includes("Verkehr") && !jsonA.includes("Gesundheit"));
-  check("C13 Mandant B sieht ausschliesslich die eigene Erklaerung",
-    jsonB.includes("Gesundheit") && !jsonB.includes("Verkehr"));
+  const jsonA = JSON.stringify(await lage.loadRankedVorgaenge(tenantStorage, null, profileA, profileA.id));
+  const jsonB = JSON.stringify(await lage.loadRankedVorgaenge(tenantStorage, null, profileB, profileB.id));
+  check("C12 Mandant A sieht ausschliesslich die heutige eigene Facherklaerung",
+    jsonA.includes("Verkehr") && !jsonA.includes("Gesundheit") && !jsonA.includes("FREMDGRUND"));
+  check("C13 Mandant B sieht ausschliesslich die heutige eigene Facherklaerung",
+    jsonB.includes("Gesundheit") && !jsonB.includes("Verkehr") && !jsonB.includes("FREMDGRUND"));
+  check("C14 Gemeinsame Wissensobjekte bleiben bei persoenlicher Zuordnung unveraendert", JSON.stringify(kos) === vorher);
 
   // ── D · Oberflaeche ───────────────────────────────────────────────────────
   console.log("\n== D · Oberflaeche (client.js) ==");
@@ -430,8 +390,12 @@ const deps = { ready: () => true, request: fakeRequest };
   check("E3 keine Embedding-Nutzung im neuen Pfad",
     !/embedding/i.test(modul));
   const lageSrc = fs.readFileSync(path.join(root, "lib/helmut/lage.js"), "utf8");
-  check("E4 lage.js ruft im Rankingpfad keine zusaetzliche KI/DB auf",
-    (lageSrc.match(/matchingErklaerung\.erklaerungAusErgebnis/g) || []).length === 1);
+  const fachSrc = fs.readFileSync(path.join(root, "lib/helmut/lage-profilbezug.js"), "utf8");
+  check("E4 neue Facherklaerung nutzt keine gespeicherte Erklaerung und keine eigene KI/DB/Netzschnittstelle",
+    !/matchingErklaerung\.erklaerungAusErgebnis/.test(lageSrc)
+    && /profilbezug\.auswahl\(/.test(lageSrc)
+    && !/require\(["'](?:\.\/ai|\.\/storage|https?|node-fetch)/.test(fachSrc)
+    && !/\bfetch\s*\(|generate[A-Z]|supabaseRequest\s*\(/.test(fachSrc));
   check("E5 Scores/Raenge/matched_features bleiben unberuehrt",
     !/similarity\s*=|rank\s*=|matched_features\s*=/.test(modul));
   const migrations = fs.readdirSync(path.join(root, "supabase/migrations"));

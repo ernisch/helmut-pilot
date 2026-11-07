@@ -112,6 +112,16 @@ Alle Testläufe über `scripts/lokal.js`, keine Production-Kennung im Kindprozes
   Frische-, Cache- oder Schreibprüfungen abzuschwächen.
 - Nach zusätzlicher KO-Versionsbindung: neue 20/20 Gruppen und vorhandene
   **141/141 Lage-Assertions** erneut gezielt bestanden.
+- Erweiterte Vertragsanpassung: sechs weitere Matching-/Scoring-/Scan-/Tenant-
+  Suiten **245/245 Prüfungen**. Die alten Anforderungen an leere Profile,
+  unveränderte Altmatchtexte und fachfremde Füllkarten wurden durch heutige
+  fachliche Aufnahme ersetzt; Schreibpfad- und Sicherheitsverträge bleiben.
+  Vorhandene Endwege: Bundestag **97/97**, Berlin **79/79**, Brandenburg
+  **105/105**, Veröffentlichungssperren **12/12**. Fachliche Hauptaufgabe und
+  institutionelle Mitgliedschaft bleiben bei länderübergreifenden Themen getrennt.
+- CI-Versuch `42390396632` vor den langen Folgeschritten bewusst beendet,
+  nachdem die lesende Prüfung diese weiteren alten Testannahmen belegt hatte;
+  kein grüner Pflichtbeleg. Der finale Pflichtlauf gehört zum aktuellen PR-Kopf.
 - Zwei getrennte OpenAI-Helfer prüften Ursachen/Fachfälle und anschließend
   unabhängig die Runtimeänderung. Gefundene Verluste und Falschpositive
   korrigiert; letzter Delta-Review ohne konkrete offene Blocker.
