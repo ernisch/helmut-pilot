@@ -5,17 +5,17 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
-## UX Folgeschritte 3, 4 und 6 (06.11.2026, vorbereitet)
+## UX Korrekturen (07.11.2026)
 
-Auf `codex/ux-navigation-dates-radar-20261106`, getrennte Commits nach Desktop PR1092: mobiles Browser Zurueck/Vorwaerts samt Listenposition, Ursprungsbriefing und privatem Mandatskontext; getrennte sichtbare Quellenzeit, gespeicherte Briefingerstellung und Vorgangsanlage; Radar behaelt technische Herkunft aus dem aeusseren Vertrag trotz gefilterter Anzeige. Ohne belegte Quellengrundlage keine Entwarnung. Ansichtserstellung ist keine Quellenpruefung; ein nicht gelieferter Pruefzeitraum wird nicht erfunden. Lokale Syntax, gezielte History VM, Datums VM und40 Radar Assertions bestanden. Unabhaengiges lesendes Review ohne verbleibenden Blocker. Echte Back/Forward, Querverweis, Kontextverlust und Zeitlabels im vorhandenen Browser Smoke ergaenzt; integrierter Browser auf697bd3fa:114 PASS,0 FAIL. Offline CI42294080839 scheiterte; gleichzeitige Eltern CI nennt current-state-groesse-test.js. Statusdarstellung ohne Inhaltsverlust verdichtet, erneute Pflicht CI offen. Kein Merge/Production Rollout. Naechster Schritt: Pflicht CI des integrierten Kopfes abnehmen. Schritt5 (Quellenauszuege) separat: NDR Rohdokument hat summary=null; Suchweg ministry ist kein Artikeltext. Vorhandener Extraktor funktioniert gegen Originalmetadaten; Anschluss neuer leerer Suchwegartikel ist in Arbeit. Keine Alt-KO durch Datenfuellen freischalten, keine Flagaktivierung/Modellcalls. Buerobereich bleibt zuletzt und ist nicht Bestandteil dieses Auftrags.
+Betreiber GO: die vier vorbereiteten PRs nacheinander bei gruener Pflicht CI mergen.
+Mobil PR1091 (`c3f5f2a0`), Desktop PR1092 (`eec7d804`), Navigation/Zeiten/Radar PR1093 (`2f9ff56d`) gemergt; beide Pflichtchecks jeweils bestanden. Production `dpl_GBXnux9UmhiE6eAPhk8LHZGnqR1E` READY auf2f9ff56d; Releaseantwort HTTP200 mit ok/ready/storage true. Authentifizierte gemeinsame Production Bedienabnahme steht aus.
+Vollstaendiger voriger Status unveraendert im [Archiv](archive/project_state/2026_11_07_CURRENT_STATE_vor_ux_abnahme.md); alte Testfehler bleiben historische Belege. UI Rueckweg: vorheriges Deployment oder gezielter Revert, keine Datenmutation.
 
-## Desktop Lage: sichtbares Detailpanel (06.11.2026, vorbereitet)
+## Quellenkorrektur (07.11.2026, Code vorbereitet)
 
-Betreiber hat das Mockup fuer das angeheftete rechte Detail bestaetigt. Separate Folgeaenderung auf dem bestandenen mobilen PR1091 `1bf26216`: Desktopdetail bleibt unter der Kopfleiste sichtbar, ist unabhaengig scrollbar und startet bei Themenwechsel oben. Listenposition bleibt erhalten; Panel ist auch per Tastatur scrollbar. Mobile Darstellung bleibt erhalten. Syntax lokal bestanden. Der vorhandene Browser Smoke erhaelt gezielte Faelle fuer tiefe Listenauswahl, getrenntes Scrollen, Quellenzugriff, Themenwechsel, Tastatur, kleines Desktopfenster/helles Theme sowie mobile Nichtwirkung. Erste Browserprobe auf87842f2:91 PASS,3 FAIL bei Listenscrollposition. Panel-Sichtbarkeit, eigenes Scrollen, Tastatur und mobiles Layout bestanden. Korrektur: Listenposition nach DOM-Neuaufbau ohne CSS Smooth Scroll setzen; Klickprobe nutzt den sichtbaren Kartenbereich statt automatischer Zentrierung einer hoeher als der Bildschirm gerenderten Testkarte. Syntax bestanden. Browser auf38c5251:94 PASS,0 FAIL; Offline CI scheiterte an Statusgroesse. Darstellung ohne Inhaltsverlust verdichtet, Pflicht CI offen. PR1091 hat beide Pflichtchecks bestanden, ist noch nicht gemergt. Kein Merge und kein Production Rollout. Naechster Schritt: Pflicht CI und Desktopverhalten abnehmen, dann konkrete Mergefreigabe. Rueckweg: Desktop CSS und lokale Detailbedienung zuruecknehmen; keine Datenmutation. Weitere freigegebene Schritte: mobiles Browser Zurueck (3), ehrliche Aktualitaetsangaben (4), Quellenluecken (5), belegter Radarstatus (6). Buerobereich zuletzt, noch nicht beauftragt.
-
-## Mobile Lage kompakter (06.11.2026, vorbereitet)
-
-Betreiber hat das Mockup fuer kompakte Themenzeilen freigegeben. Branch `codex/mobile-lage-kompakt-20261106`, Basis `38281243`. Mobil: Titel maximal drei Zeilen, Vorschau maximal zwei; kleinere Abstaende, Quellenname und Publikationsdatum direkt am Eintrag. Volltext, Quellen, Status und Auswahl bleiben erhalten. Fehlendes Publikationsdatum wird als unbekannt benannt, niemals durch Abrufzeit ersetzt. Desktopdarstellung unveraendert. Syntax und gezielte lokale Renderpruefung (Quellenwahl, Datum/Berlin, Escaping, unbekanntes Datum, Volltext und Detailbedienung) bestanden. Beide Pflichtchecks auf1bf26216 bestanden (Run42289492538). Kein Merge oder Production Rollout. Naechster Schritt: Pflicht CI und mobile Darstellung vor konkretem Merge GO abnehmen. Rueckweg: diese Client/CSS Aenderung zuruecknehmen; keine Datenmutation.
+PR1094 schliesst passende neue Medienauszuege vor atomarer Neuanlage an; bestehender HELMUT_ARTIKELKONTEXT bleibt standardmaessig aus. Vercel Projektmetadaten vor Merge erneut gelesen: kein solcher Eintrag, keine Env Aenderung. Sechs alte Titelhinweise sind weiterhin nicht repariert; keine Aktivierung oder Modellanfrage.
+Storage importiert keine Ingestion mehr; nur schreibender Scheduler uebergibt fetchUrl und Abbruchsignal. PARDOK13/13, Quellen13/13, Dedup10/10 bestanden; Pflichtchecks auf5dd5ceec gruen. Nach Aufloesung des reinen Statuskonflikts Pflicht CI auf integriertem Kopf neu abnehmen, dann autorisiert mergen. [Umfang, Grenzen und Belege](betrieb/lage-suchwegauszuege-20261106.md).
+Buero bleibt wie beauftragt zuletzt und unveraendert. Naechster Schritt: integrierte Pflicht CI von PR1094 abnehmen.
 
 ## Quellenversorgung: zwei Zugänge aktiviert, drei repariert (06.11.2026)
 
@@ -335,5 +335,3 @@ keine aktuellen Testauftraege. Alle alten Laufbelege,
 STOPs, UNKNOWNs, Grants und Journale bleiben erhalten.
 Vor konkreten Production Aktionen Wirkung, Risiko,
 Kosten, Nachkontrolle und Rueckweg benennen.
-
-07.11.: Alte Radar/Datums-Erwartungen nachgezogen; Detail, weitere Vorgaenge und Fusszeile nutzen Meldungszeit statt Schreibstand. Gezielte UI/Frischepruefungen bestanden (40/27/24/84/15/40); neue Pflicht CI offen. Kein Merge/Production.
