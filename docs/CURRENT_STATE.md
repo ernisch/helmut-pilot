@@ -1,21 +1,21 @@
 # CURRENT STATE — Helmut
 
-**Stand: 06.11.2026.** Aktuelle Projektsteuerung nach ausdruecklicher
+**Stand: 07.11.2026.** Aktuelle Projektsteuerung nach ausdruecklicher
 Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
-## UX Korrekturen (07.11.2026)
+## UX Mergeabschluss (07.11.2026)
 
-Betreiber GO: die vier vorbereiteten PRs nacheinander bei gruener Pflicht CI mergen.
-Mobil PR1091 (`c3f5f2a0`), Desktop PR1092 (`eec7d804`), Navigation/Zeiten/Radar PR1093 (`2f9ff56d`) gemergt; beide Pflichtchecks jeweils bestanden. Production `dpl_GBXnux9UmhiE6eAPhk8LHZGnqR1E` READY auf2f9ff56d; Releaseantwort HTTP200 mit ok/ready/storage true. Authentifizierte gemeinsame Production Bedienabnahme steht aus.
-Vollstaendiger voriger Status unveraendert im [Archiv](archive/project_state/2026_11_07_CURRENT_STATE_vor_ux_abnahme.md); alte Testfehler bleiben historische Belege. UI Rueckweg: vorheriges Deployment oder gezielter Revert, keine Datenmutation.
+Nach Betreiber GO nacheinander bei jeweils beiden gruenen Pflichtchecks gemergt: Mobil PR1091 (`c3f5f2a0`), Desktop PR1092 (`eec7d804`), Navigation/Zeiten/Radar PR1093 (`2f9ff56d`), inaktive Quellenvorbereitung PR1094 (`1057d000`). Integrierte Quellen CI42352831258 aufefb26134 bestanden; Laufbelege bleiben in den PRs erhalten.
+Production `dpl_LzrnS2fnHtPYkq71B1SD4EhHU9rF` READY auf1057d000; Hauptseite und Releasecheck HTTP200 mit ok/ready/storage true. Client/CSS bytegleich zum geprueften Git Stand, Version1057d000. Keine error/fatal Eintraege im abgefragten Deploymentfenster. Authentifizierte gemeinsame Production Bedienabnahme noch offen; die Browserabnahme ist ein CI Beleg.
+Voriger Status unveraendert im [Archiv](archive/project_state/2026_11_07_CURRENT_STATE_vor_ux_abnahme.md). Rueckweg: vorheriges Deployment oder gezielter Revert, keine Datenmutation. Buero bleibt wie beauftragt zuletzt und unveraendert.
 
-## Quellenkorrektur (07.11.2026, Code vorbereitet)
+## Quellenkorrektur (07.11.2026, gemergt und inaktiv)
 
-PR1094 schliesst passende neue Medienauszuege vor atomarer Neuanlage an; bestehender HELMUT_ARTIKELKONTEXT bleibt standardmaessig aus. Vercel Projektmetadaten vor Merge erneut gelesen: kein solcher Eintrag, keine Env Aenderung. Sechs alte Titelhinweise sind weiterhin nicht repariert; keine Aktivierung oder Modellanfrage.
-Storage importiert keine Ingestion mehr; nur schreibender Scheduler uebergibt fetchUrl und Abbruchsignal. PARDOK13/13, Quellen13/13, Dedup10/10 bestanden; Pflichtchecks auf5dd5ceec gruen. Nach Aufloesung des reinen Statuskonflikts Pflicht CI auf integriertem Kopf neu abnehmen, dann autorisiert mergen. [Umfang, Grenzen und Belege](betrieb/lage-suchwegauszuege-20261106.md).
-Buero bleibt wie beauftragt zuletzt und unveraendert. Naechster Schritt: integrierte Pflicht CI von PR1094 abnehmen.
+Der Code fuer passende neue Medienauszuege vor atomarer Neuanlage ist gemergt; bestehender HELMUT_ARTIKELKONTEXT bleibt standardmaessig aus. Vercel Projektmetadaten vor Merge erneut gelesen: kein solcher Eintrag, keine Env Aenderung. Keine Aktivierung, Altzeilenkorrektur oder Modellanfrage.
+Die sechs untersuchten alten Titelhinweise aus dem Audit06.11. bleiben offen; kein6/6 Produktivnachweis. Storage importiert keine Ingestion; nur der schreibende Scheduler uebergibt fetchUrl und Abbruchsignal. [Umfang, Grenzen und Belege](betrieb/lage-suchwegauszuege-20261106.md).
+Naechster fachlicher Schritt: die sechs Altfaelle gezielt abschliessen; fuer konkrete Production Datenkorrektur oder Aktivierung bleibt eine gesonderte Betriebsfreigabe erforderlich.
 
 ## Quellenversorgung: zwei Zugänge aktiviert, drei repariert (06.11.2026)
 
