@@ -5,18 +5,17 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
-## Profilbezogene Lageauswahl (07.11.2026, nur Entwicklungsbranch)
+## Profilbezogene Lageauswahl (07.11.2026, gemergt und ausgerollt)
 
-Auf `codex/profilbezogene-lageauswahl-20261107` fachliche Aufnahme vor
-Ergebnislimit, getrennte Profilgründe, Quellenbestätigung und Profil-/KO-Cachebindung
-umgesetzt. Keine fachfremde Auffüllung oder pauschale Schalteraktivierung.
-Synthetischer Cem-Korpus:12→6 Karten,0/6Verluste; drei Gegenprofile je3→1.
-Gegenprüfung fand dennoch realen Windenergie-Sollverlust aufba244d42: behoben
-durch additive, quellenbestätigte Ausschusserkennung. Originalfall jetzt1Karte;
-24/24 Fachgruppen samt bisherigen Negativfällen grün; frühere Pflicht-CI aufba244d42
-grün, erneute Pflicht-CI am ergänzten Kopf erforderlich. [PR1100](https://github.com/ernisch/helmut-pilot/pull/1100)
-bleibt ausdrücklich ungemergt. Kein Deployment/Production-Nachweis; Branchdeployments gesperrt. Danach: unabhängige Gegenprüfung des ergänzten Originalfalls.
-[Ursache, Tests, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md).
+[PR1100](https://github.com/ernisch/helmut-pilot/pull/1100) nach Betreiber-GO auf `d9651861` gemergt; Kopf `c4caf031`, beide Pflichtchecks [CI42409807375](https://github.com/ernisch/helmut-pilot/actions/runs/42409807375) grün.
+Production `dpl_FiKvxLgEwZ1prPeg3Nfc6NUFYkuS` READY auf demselben Merge; Runtime bytegleich zum geprüften Kopf.
+Fachliche Aufnahme vor Limit, getrennte Profilgründe, Quellenbestätigung und Profil-/KO-Cachebindung im Code.
+Lokal synthetischer Cem-Korpus12→6/0Sollverluste; drei Gegenprofile je3→1.
+Original-Windenergieverlust behoben:1 quellenbestätigte Karte;24/24 Fachgruppen,35/35 Lage-Suiten grün.
+Vorprüfung20:52:17UTC:0 laufende Prozesse/0 aktive Sperren. Nachkontrolle20:53UTC: Hauptdomain/Release200,ok/ready/storage,Assetversiond9651861;0 error/fatal im Deploymentfenster.
+Kein authentifizierter Production-Klicktest oder neue Livefach-/Frischeabnahme. Nächster Schritt: nächste reguläre Lage rein lesend fachlich prüfen.
+Keine Datenmutation, Modelltests oder Schalteraktivierung aus dem Rollout ableiten.
+[Belege, Grenzen und konkreter Rückweg](betrieb/lage-profilbezug-20261107.md).
 
 ## UX Mergeabschluss (07.11.2026)
 
