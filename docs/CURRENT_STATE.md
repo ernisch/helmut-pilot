@@ -2,8 +2,9 @@
 
 **Stand: 07.11.2026.** Aktuelle Projektsteuerung nach ausdruecklicher
 Betreiberentscheidung. Historische Berichte sind keine aktuellen
-Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
-Tests und diesem Statusdokument.
+Production Nachweise. Frische Produktionsbelege gehen vor GitHub, Tests und diesem Statusdokument.
+
+**Briefing (07.11., nur Branch/PR):** Knopf samt Kundenlauf entfernt, automatisches Laden/Zeiten erhalten. [Belege](ui/briefing-ohne-refresh-20261107/browser-result.json). Kein Merge/Rollout; PR pruefen.
 
 ## Profilbezogene Lageauswahl (07.11.2026, gemergt und ausgerollt)
 

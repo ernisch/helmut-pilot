@@ -41,7 +41,7 @@ const fixtureBootstrap = `
     decisions = [JSON.parse(JSON.stringify(__baseCard))];
     officeDrafts = {}; officeDraftErrors = {}; selectedOfficeDraft = null;
     for (const f of activeOfficeFormats()) officeDrafts[officeDraftKey(decisions[0], f)] = {text:'Synthetischer UI Testentwurf ohne fachliche Aussage. '.repeat(12),source:'regel'};
-    onboardingActive = false; helmutThinking = false; pipelineRunning = false; pipelinePhase = null;
+    onboardingActive = false; helmutThinking = false;
     uiLageDetailOpen = false; radarFilter = 'all'; radarSegment = 'party';
     radarMentionsExpanded = radarEnvExpanded = radarDynamicsExpanded = radarArticlesExpanded = false;
     document.querySelector('#toast')?.classList.remove('visible');
@@ -209,7 +209,7 @@ async function main() {
         }
       };
       check(label+': bell is a thin outline icon',await cdp.evaluate(s,"(()=>{const style=getComputedStyle(document.querySelector('.update-heart path'));return style.fill==='none' && parseFloat(style.strokeWidth)===1.5;})()"));
-      check(label+': Briefing refresh has a 44px target',await cdp.evaluate(s,"(()=>{const b=document.querySelector('[data-refresh-helmut]').getBoundingClientRect();return b.width>=44 && b.height>=44;})()"));
+      check(label+': Briefing has no manual refresh or replacement button',await cdp.evaluate(s,"!document.querySelector('[data-refresh-helmut],.ui-briefing-status button')"));
       const screenshot=async name=>{const r=await cdp.send("Page.captureScreenshot",{format:"png",captureBeyondViewport:false},s);fs.writeFileSync(path.join(output,label+"-"+name+".png"),Buffer.from(r.data,"base64"));};
       const layout=async name=>{
         const info=await cdp.evaluate(s,"({width:innerWidth,doc:document.documentElement.scrollWidth,page:document.querySelector('.ui-page').scrollWidth,client:document.querySelector('.ui-page').clientWidth})");

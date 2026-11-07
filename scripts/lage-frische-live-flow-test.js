@@ -11,12 +11,9 @@
 //   getLatestCompleteKnowledgeObjectAt -> lageBriefing.latestUpdatedAt). Die
 //   Quellen-Aktualität bleibt eine ZWEITE, klar getrennt beschriftete Zeile.
 //
-// BEFUND 2 (Live-Flow): (a) Der manuelle ↻-Refresh war toter Code (renderRefreshButton
-//   nur im nie aufgerufenen renderHelmutAssessmentView) -> in KEINER Ansicht sichtbar.
-//   FIX: ↻ zurück in den erreichbaren renderHstandHeader. (b) Kein Foreground-Refresh:
-//   die zurückkehrende App fror auf dem Boot-Stand ein. FIX: gedrosselter
-//   visibilitychange-Refresh (Guards: previewMode/pipeline/in-flight, min. Abstand)
-//   + Tageswechsel-Rerender (updateBerlinClock), damit "heute" nicht falsch wird.
+// Live-Flow: gespeicherte Ergebnisse bei App-Rueckkehr gedrosselt nachladen.
+// Der manuelle Quellen-/Verarbeitungslauf wurde auf Betreiberwunsch entfernt.
+// Tageswechsel-Rerender (updateBerlinClock) haelt relative Zeitlabels ehrlich.
 //
 // Reiner vm-Test (keine echte KI, kein Netz — fetch/Timer gestubbt).
 
@@ -34,8 +31,8 @@ function check(name, cond, detail = "") {
 const clientSource = fs.readFileSync(path.join(root, "client.js"), "utf8");
 
 // ── Struktur-Guards (billig, fangen Regressionen im Quelltext) ───────────────
-check("Quelle: ↻-Refresh ist in den ERREICHBAREN Kopf verdrahtet (renderHstandHeader enthält renderRefreshButton)",
-  /function renderHstandHeader[\s\S]*?renderRefreshButton\(\)[\s\S]*?<\/header>/.test(clientSource));
+check("Quelle: kein manueller Refresh-Renderer, Handler oder Pipeline-Start im Client",
+  !/renderRefreshButton|data-refresh-helmut|startPipelineRun/.test(clientSource));
 check("Quelle: Foreground-Refresh-Handler vorhanden (visibilitychange -> loadBriefing, gedrosselt)",
   clientSource.includes("foregroundRefreshMinMs") &&
   /visibilityState !== "visible"[\s\S]*?loadBriefing\(\)\.catch/.test(clientSource));
@@ -64,7 +61,6 @@ function loadClient() {
     setRefreshing: (b) => { briefingRefreshing = b; },
     getRefreshing: () => briefingRefreshing,
     setLastLoad: (t) => { lastBriefingLoadAt = t; },
-    setPipelineRunning: (b) => { pipelineRunning = b; },
     setPreview: (b) => { previewMode = b; },
     setRender: (fn) => { render = fn; },
     setRenderedDay: (d) => { lastRenderedBerlinDay = d; },
@@ -178,7 +174,7 @@ function lageBriefing(latestUpdatedAt, pub) {
     html.includes("ui-lage-workspace") && !html.includes("data-lage-stand") && !html.includes("Neueste Auswertung"));
 }
 
-// ═══ TEIL 2 — Live-Flow: erreichbarer ↻-Refresh ═════════════════════════════
+// ═══ TEIL 2 — Briefing ohne manuellen Refresh ═════════════════════════════
 const freshState = {
   status: "fresh", staleState: false, qualityStatus: "valid", briefingType: "daily",
   primaryItem: { title: "Vorgang", sourceCount: 3 }, recommendation: "Beobachten.", whyItMatters: "Wichtig.",
@@ -186,16 +182,16 @@ const freshState = {
 };
 {
   const header = t.hstandHeader(freshState);
-  check("Live-Flow: der ↻-Refresh rendert JETZT im erreichbaren Kopf (data-refresh-helmut)",
-    header.includes("data-refresh-helmut") && header.includes("Einschätzung neu prüfen"));
+  check("Briefing-Kopf zeigt keinen Aktualisierungsknopf oder Ersatzknopf",
+    !header.includes("<button") && !header.includes("data-refresh-helmut"));
   const stand = t.standView();
-  check("Live-Flow: die erreichbare Stand-Ansicht (renderHelmutStandView) enthält den ↻-Refresh",
-    stand.includes("data-refresh-helmut"));
+  check("Briefing-Ansicht enthaelt keinen manuellen Refresh",
+    !stand.includes("data-refresh-helmut") && !stand.includes("Einschätzung neu prüfen"));
 }
 
 // ═══ TEIL 3 — Live-Flow: gedrosselter Foreground-Refresh ════════════════════
 t.stubLoad(); // loadBriefing zählt nur noch Aufrufe (kein echtes Netz)
-t.setPreview(false); t.setPipelineRunning(false); t.setRefreshing(false);
+t.setPreview(false); t.setRefreshing(false);
 
 function fireAndCount(setup) {
   const before = t.loadCalls();
@@ -211,9 +207,6 @@ function fireAndCount(setup) {
   check("Live-Flow: KEIN Refresh, während bereits ein Ladevorgang läuft (Re-Entrancy-Guard)",
     fireAndCount(() => { t.setLastLoad(0); t.setRefreshing(true); }) === 0);
   t.setRefreshing(false);
-  check("Live-Flow: KEIN Refresh während einer laufenden Pipeline",
-    fireAndCount(() => { t.setLastLoad(0); t.setPipelineRunning(true); }) === 0);
-  t.setPipelineRunning(false);
   check("Live-Flow: KEIN Refresh im Vorschau-Modus",
     fireAndCount(() => { t.setLastLoad(0); t.setPreview(true); }) === 0);
   t.setPreview(false);
@@ -225,7 +218,7 @@ function fireAndCount(setup) {
 {
   let renders = 0;
   t.setRender(() => { renders += 1; });
-  t.setPipelineRunning(false); t.setRefreshing(false);
+  t.setRefreshing(false);
 
   t.setRenderedDay(null);
   t.updateClock();

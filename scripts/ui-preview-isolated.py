@@ -72,9 +72,12 @@ with tempfile.TemporaryDirectory(prefix="ui-browser-", dir=out) as home:
         selected = sys.argv[sys.argv.index("--only") + 1]
         assert selected in [*scripts, "ui-office-binding-browser-test.js", "ui-integration-contract-browser-test.js"], "Unsupported test selection"
         scripts = [selected]
+    extra_args = ["--briefing-read-only"] if "--briefing-read-only" in sys.argv else []
+    if extra_args:
+        assert scripts == ["ui-integration-contract-browser-test.js"], "Briefing read selection requires integration contract runner"
     for script in scripts:
         print("UI CHECK", script, flush=True)
-        process = subprocess.Popen([node, "scripts/lokal.js", "--", node, "scripts/" + script],
+        process = subprocess.Popen([node, "scripts/lokal.js", "--", node, "scripts/" + script, *extra_args],
                                    cwd=ROOT, env=clean, start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         try:
             log, _ = process.communicate(timeout=180)
