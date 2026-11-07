@@ -28,6 +28,11 @@ const path = require("path");
 const crypto = require("crypto");
 const cp = require("child_process");
 
+// Betreiberentscheidung 07.11.2026: keine DeepSeek Nutzung bis einschliesslich
+// 31.12.2026; danach nur nach ausdruecklicher erneuter Freigabe reaktivieren.
+// Den Routercode erhalten, nicht loeschen.
+const DEEPSEEK_ROUTER_PAUSED = true;
+
 const API_URL = "https://api.deepseek.com/responses";
 const MODELS = Object.freeze({
   flash: "deepseek-flash",
@@ -735,6 +740,11 @@ function privateResponsePath(file, cwd) {
 }
 
 function main() {
+  if (DEEPSEEK_ROUTER_PAUSED) {
+    process.stderr.write("[deepseek-router] paused-by-operator: no DeepSeek use through 2026-12-31; reactivation requires explicit approval.\n");
+    process.exitCode = 1;
+    return;
+  }
   try {
     const result = run();
     process.stdout.write(JSON.stringify(result) + "\n");

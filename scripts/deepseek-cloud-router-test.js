@@ -5,6 +5,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
+const cp = require("child_process");
 const router = require("./deepseek-cloud-router");
 const connectivity = require("./deepseek-cloud-connectivity");
 
@@ -90,6 +91,16 @@ function summary(overrides = {}) {
     ...overrides,
   };
 }
+
+check("Router CLI ist ohne DeepSeek Aufruf pausiert", () => {
+  const res = cp.spawnSync(process.execPath, [
+    path.join(__dirname, "deepseek-cloud-router.js"),
+    "flash", "high", "read", "--task-file", "/does-not-exist",
+  ], { encoding: "utf8", env: { PATH: process.env.PATH || "" } });
+  assert.equal(res.status, 1);
+  assert.match(res.stderr, /paused-by-operator/);
+  assert(!res.stderr.includes("task-file"), "Stop vor Dateien, API und Ausfuehrung");
+});
 
 check("Modellnamen und Routen sind explizit", () => {
   assert.equal(router.MODELS.flash, "deepseek-flash");

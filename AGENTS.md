@@ -1,5 +1,22 @@
 # HELMUT AGENT CONTRACT
 
+## Verbindliche Betreiberentscheidung vom 07.11.2026: DeepSeek bis Jahresende pausiert
+
+**Ab sofort bis einschliesslich 31.12.2026 kein DeepSeek Einsatz.**
+Keine DeepSeek Modelle, Agenten, Helfer, Reviews, Delegationen oder API Aufrufe
+starten, weder automatisch noch manuell und auch nicht ueber den bestehenden
+`scripts/deepseek-cloud-router.js`. Entwicklungsaufgaben in Codex ausschliesslich
+mit dort verfuegbaren OpenAI Modellen erledigen, um das vorhandene OpenAI
+Kontingent zu nutzen. Das ist keine Freigabe fuer zusaetzliche kostenpflichtige
+OpenAI API Aufrufe oder Production Aktionen.
+
+Der DeepSeek Router, vorhandener Code, Tests, Dokumentation und Zugangsdaten
+bleiben erhalten. Die normale CLI Ausfuehrung des Routers ist technisch pausiert.
+Am 01.01.2027 keine automatische Wiederaktivierung: Nur nach erneuter
+ausdruecklicher Betreiberentscheidung die Pause entfernen. Diese aktuelle Regel
+hat Vorrang vor allen aelteren DeepSeek Standardrollen, Delegationsregeln und
+historischen Aktivierungsangaben in diesem Repository.
+
 ## Aktueller Betreiberbeschluss vom 05.11.2026: Mock100, dann sicher live gehen
 
 **Aktuelle oberste Prioritaet:** Helmut mit **Mock100**, exakt 100 gleichzeitig aktiven **synthetischen** Mandatsprofilen, nachvollziehbar pruefen. Danach die bereits vorbereitete Anwendung sicher und verkaufbar auf Production bringen. **Ein gesonderter Production100- oder Production500-Belastungstest ist ausdruecklich abbestellt.** Der bisherige verpflichtende Mock500/Production500-Meilenstein und alle widersprechenden alten 500er Arbeitsanweisungen in diesem Repository sind insoweit **historisch und nicht mehr handlungsleitend**. Aeltere Testbelege, Claims, STOPs und UNKNOWNs bleiben unveraendert.
