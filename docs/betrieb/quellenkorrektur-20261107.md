@@ -2,8 +2,8 @@
 
 ## Stand
 
-Vorbereitet und gezielt offline geprüft. **Keine Production Daten geändert.**
-Basis: `c8637001415d8803ba4e1cf01a168c33a3a01534`. Die Freigabe für die unten begrenzten bestehenden Daten und eine neue amtliche Quelle steht aus.
+**Am 7. November 2026 nach Betreiberfreigabe ausgeführt und anhand nativer Daten geprüft.**
+Basis: `c8637001415d8803ba4e1cf01a168c33a3a01534`. Die Freigabe für den unten begrenzten Umfang wurde im selben Thread ausdrücklich erteilt.
 
 ## Konkretes Ergebnis der Prüfung
 
@@ -42,7 +42,7 @@ Bestehende Briefings und historische Nachweise werden nicht umgeschrieben. `HELM
 ```json
 {
   "version": 1,
-  "status": "prepared_not_executed",
+  "status": "executed_and_native_read_back",
   "project_id": "ddckuvvpcytqbyfmbvie",
   "baseCommit": "c8637001415d8803ba4e1cf01a168c33a3a01534",
   "changes": {
@@ -144,8 +144,7 @@ Bestehende Briefings und historische Nachweise werden nicht umgeschrieben. `HELM
       "risk_of_no_action",
       "opportunity_summary",
       "recommended_communication",
-      "stage",
-      "deadline"
+      "stage"
     ],
     "arrayFieldsEmpty": [
       "risiken",
@@ -170,6 +169,9 @@ Bestehende Briefings und historische Nachweise werden nicht umgeschrieben. `HELM
       "best_source_url aus candidate.url",
       "source_document_count aus tatsächlichen Links",
       "ko_version erwarteter Altwert plus 1; verstehen_fencing bleibt unverändert; updated_at tatsächlicher Ausführungszeitpunkt"
+    ],
+    "typedNullFields": [
+      "deadline"
     ]
   },
   "rawRules": [
@@ -202,4 +204,14 @@ Vor dem Schreiben wurde die Vorlage an der nativen Datenbank geprüft. Der beste
 
 Sechs Zielreservierungen stehen auf `fertig`; die Reservierung zur Pflegereform hat bereits zuvor den historischen Ausgang `unbekannt` bei Fencing 3 und Ergebnisfencing 2. Dieser Ausgang bleibt vollständig erhalten. Die redaktionelle Quellenkorrektur löst keinen Modellaufruf aus und klärt diesen historischen Verarbeitungsausgang nicht nachträglich.
 
-Die dauerhaft gesicherten Vorherwerte stehen in `quellenkorrektur-20261107-vorher.md`. Die Ausführung steht weiterhin aus.
+Die dauerhaft gesicherten Vorherwerte stehen in `quellenkorrektur-20261107-vorher.md`. Die Ausführung und native Rücklesung sind abgeschlossen; der Nachherbeleg steht in `quellenkorrektur-20261107-nachher.md`.
+
+## Ausführungsergebnis
+
+Erfolgreiche Transaktion nach Betreiber GO, native Rücklesung am 07.11.2026 um 13:28 Uhr Istanbul, 11:28 Uhr Berlin, 10:28 UTC. Vier bestehende Rohzeilen erhielten begrenzte Originalauszüge mit manuellem Herkunftsbeleg. Eine neue amtliche Bundestagsquelle wurde angelegt und beim CO₂ Vorgang anstelle der überholten aktuellen PresseBox Verknüpfung gebunden. Die historische PresseBox Rohzeile blieb bytegleich. Fünf Kurzfassungen wurden anhand der verifizierten Originale korrigiert; nicht belegte Einordnungen und Handlungstexte entfernt. Zwei geteilte, vermischte Altvorgänge sind mit bestehenden Statuswerten zurückgehalten. Alle sieben technischen Reservierungen und ihre Fencing Werte blieben unverändert. RP blieb einschließlich seines KO Hashes unverändert offen. Kein 6 von 6 Erfolg.
+
+Gezielte Nachkontrolle mit den tatsächlich rückgelesenen Zeilen: `geleseneQuelle`, `koToVorgangCard`, `themenrein`, `quellengebunden` und `sourceSafety.guardKnowledgeObject`; fünf korrigierte Karten passieren die bestehenden Prüfungen und zeigen die geprüften Kurzfassungen. Beide vermischten Altfälle sind nicht auslieferungsberechtigt. Alle 36 geladenen Helmut Module sind per Git Blob SHA an main c8637001 gebunden. Ausschließlich erwartete Felder änderten sich. Unbetroffene Rohquellen, der RP Vorgang und alle Reservierungen stimmen mit ihren vorherigen nativen Hashes überein. Start über `scripts/lokal.js` unter Netzschutz, keine Production API zum Test ausgelöst und keine Provideraufrufe durch diesen Korrekturlauf.
+
+Der erste Ausführungsversuch scheiterte mit SQLSTATE 22007, weil das vorhandene Feld `deadline` den Typ timestamptz hat und als leerer Text vorgesehen war. Die gesamte Transaktion wurde zurückgerollt; native Rücklesung bestätigte alle sieben unveränderten KO Hashes, alle vier unveränderten Rohhashes, 22 unveränderte Ziel Links und keine neue Quelle. Danach wurde ausschließlich das Datumsfeld auf SQL NULL korrigiert. Ein weiterer Aufruf wurde vor einer Toolrückmeldung unterbrochen; die anschließende Rücklesung bestätigte erneut den unveränderten Vorherstand. Erst der danach erfolgreiche Aufruf zählt als Ausführung. Der unabhängige Prüfer hatte zuvor den unveränderten Fencing Vertrag und die begrenzte Transaktion geprüft. Der Erstfehler wird hier ausdrücklich erhalten.
+
+Ausgeführte SQL SHA256: `fbadae1b22385dbe63665f9aa1d1c8c086d2ffea92103316829d3696ee6e6691`. Gesicherte Vorherwerte: `quellenkorrektur-20261107-vorher.md`, ursprüngliche Sicherung vor Ausführung auf e7bfe168. Nachherhashes, Kanten und bedingter Rückweg: `quellenkorrektur-20261107-nachher.md`. Keine Trigger, Umgebungsvariablen, Profile, Budgets, Embeddings oder historischen Briefings geändert. Die automatische Ergänzung neuer Artikel bleibt inaktiv und ist kein Teil dieses Erfolgsnachweises.
