@@ -119,6 +119,14 @@ Alle Testläufe über `scripts/lokal.js`, keine Production-Kennung im Kindprozes
   Vorhandene Endwege: Bundestag **97/97**, Berlin **79/79**, Brandenburg
   **105/105**, Veröffentlichungssperren **12/12**. Fachliche Hauptaufgabe und
   institutionelle Mitgliedschaft bleiben bei länderübergreifenden Themen getrennt.
+- Pflicht-CI `42390865223` scheiterte zuerst in der unveränderten synthetischen
+  Kandidatenprüfung: sie verlangte nur Berliner Quellen. Der neue fachliche
+  Auswahlvertrag erhält auch passende überregionale Themen. Nur diese
+  Kandidatenerwartung angepasst: eigene regionale Belege müssen erhalten sein,
+  sämtliche Kandidaten müssen Profilthemen tragen. Unverändert geprüft bleiben
+  die tatsächlichen beiden Entwurfs-/Reviewabsätze gegen Region/Bundesebene
+  und die explizite negative Fremdlandprobe. Danach **42/42 synthetische
+  Vertragsgruppen** grün; kein nativer oder vollständiger Mock100-Lauf.
 - CI-Versuch `42390396632` vor den langen Folgeschritten bewusst beendet,
   nachdem die lesende Prüfung diese weiteren alten Testannahmen belegt hatte;
   kein grüner Pflichtbeleg. Der finale Pflichtlauf gehört zum aktuellen PR-Kopf.
