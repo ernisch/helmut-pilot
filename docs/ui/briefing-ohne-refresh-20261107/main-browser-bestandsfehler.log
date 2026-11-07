@@ -1,0 +1,90 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+PASS network namespace verified BEFORE app start
+UI CHECK ui-integration-contract-browser-test.js
+PASS  anonymous: actual UI rendered
+PASS  anonymous: push-capable fixture active
+PASS  anonymous: appropriate startup state
+PASS  anonymous: no data fetch after failed session
+PASS  anonymous: no generation, CSRF or push calls after blocked start
+PASS  anonymous: no automatic push scheduled or subscribed
+PASS  anonymous: no specialist content fabricated
+PASS  anonymous: no unknown API request
+PASS  session-503: actual UI rendered
+PASS  session-503: push-capable fixture active
+PASS  session-503: appropriate startup state
+PASS  session-503: no data fetch after failed session
+PASS  session-503: no generation, CSRF or push calls after blocked start
+PASS  session-503: no automatic push scheduled or subscribed
+PASS  session-503: no specialist content fabricated
+PASS  session-503: no unknown API request
+PASS  session-invalid: actual UI rendered
+PASS  session-invalid: push-capable fixture active
+PASS  session-invalid: appropriate startup state
+PASS  session-invalid: no data fetch after failed session
+PASS  session-invalid: no generation, CSRF or push calls after blocked start
+PASS  session-invalid: no automatic push scheduled or subscribed
+PASS  session-invalid: no specialist content fabricated
+PASS  session-invalid: no unknown API request
+PASS  no-mandate: actual UI rendered
+PASS  no-mandate: push-capable fixture active
+PASS  no-mandate: appropriate startup state
+PASS  no-mandate: single app-start fetch before access/availability state
+PASS  no-mandate: no generation, CSRF or push calls after blocked start
+PASS  no-mandate: no automatic push scheduled or subscribed
+PASS  no-mandate: no specialist content fabricated
+PASS  no-mandate: no unknown API request
+PASS  start-401: actual UI rendered
+PASS  start-401: push-capable fixture active
+PASS  start-401: appropriate startup state
+PASS  start-401: single app-start fetch before access/availability state
+PASS  start-401: no generation, CSRF or push calls after blocked start
+PASS  start-401: no automatic push scheduled or subscribed
+PASS  start-401: no specialist content fabricated
+PASS  start-401: no unknown API request
+PASS  start-503: actual UI rendered
+PASS  start-503: push-capable fixture active
+PASS  start-503: appropriate startup state
+PASS  start-503: single app-start fetch before access/availability state
+PASS  start-503: no generation, CSRF or push calls after blocked start
+PASS  start-503: no automatic push scheduled or subscribed
+PASS  start-503: no specialist content fabricated
+PASS  start-503: no unknown API request
+PASS  selection: actual UI rendered
+PASS  selection: push-capable fixture active
+PASS  selection: appropriate startup state
+PASS  selection: single app-start fetch before access/availability state
+PASS  selection: no generation, CSRF or push calls after blocked start
+PASS  selection: no automatic push scheduled or subscribed
+PASS  selection: no specialist content fabricated
+PASS  selection: no unknown API request
+PASS  empty: actual UI rendered
+PASS  empty: push-capable fixture active
+PASS  empty: appropriate startup state
+PASS  empty: single app-start fetch before access/availability state
+PASS  empty: no generation, CSRF or push calls after blocked start
+PASS  empty: no automatic push scheduled or subscribed
+PASS  empty: no specialist content fabricated
+PASS  empty: no unknown API request
+PASS  contract-desktop: actual UI rendered
+PASS  contract-desktop: push-capable fixture active
+PASS  contract-desktop: successful startup permits simulated push sync
+PASS  contract-desktop: bootstrap writes only simulated push; empty office formats produce no drafts
+PASS  contract-desktop: profile/version/tasks/notes adopted
+PASS  contract-desktop: partial Lage keeps proven cards and exposes missing current text
+PASS  contract-desktop: Lage source comes from actual name/url schema
+PASS  contract-desktop: curated Radar projection wins over raw candidates
+AssertionError [ERR_ASSERTION]: contract-desktop: curated freshness used and raw article feed withheld
+    at check (/tmp/helmut-briefing-main-baseline/scripts/ui-preview-browser-check.js:22:10)
+    at verify (/tmp/helmut-briefing-main-baseline/scripts/ui-integration-contract-browser-cases.js:100:37)
+    at Object.run (/tmp/helmut-briefing-main-baseline/scripts/ui-integration-contract-browser-cases.js:169:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async main (/tmp/helmut-briefing-main-baseline/scripts/ui-preview-browser-check.js:191:9) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+

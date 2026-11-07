@@ -89,18 +89,13 @@ let navOpen = false;
 let updatesOpen = false;
 let helmutThinking = false;
 let helmutThinkingTimer = null;
-let pipelineRunning = false;
 // Live-Flow (Pilot-Readiness Block 5): Re-Entrancy-Guard + Drossel für den
 // Foreground-Refresh, und Tageswechsel-Erkennung für die relativen Frische-Labels.
 let briefingRefreshing = false;
 let lastBriefingLoadAt = 0;
 let lastRenderedBerlinDay = null;
-let pipelineRunStep = 0;
-let pipelinePhase = null;          // null | "running" | "skipped" | "done" (ehrlicher Abschluss)
-let pipelineCompletionTimer = null;
 let lastAnimatedView = null;       // Karten-Eintritts-Animation nur bei echtem (Wieder-)Eintritt
 let animateNextRender = false;     // Einmal-Schuss: nächstes render() darf Eintritt animieren
-let pipelineStepTimer = null;
 let helmutTypingActive = false;
 let helmutTypedText = "";
 let helmutTypingFullText = "";
@@ -169,11 +164,9 @@ function clearPrivateMandateState() {
   admResetState(); admLastInvite = null; adminRecovery = null; adminRecoveryResult = null;
   if (adminRecoveryPollTimer) window.clearInterval(adminRecoveryPollTimer);
   adminRecoveryPollTimer = null;
-  pipelineRunning = false; pipelinePhase = null; helmutThinking = false;
-  if (pipelineStepTimer) window.clearTimeout(pipelineStepTimer);
-  if (pipelineCompletionTimer) window.clearTimeout(pipelineCompletionTimer);
+  helmutThinking = false;
   if (helmutThinkingTimer) window.clearTimeout(helmutThinkingTimer);
-  pipelineStepTimer = null; pipelineCompletionTimer = null; helmutThinkingTimer = null;
+  helmutThinkingTimer = null;
   stopHelmutTyping(); navOpen = false; updatesOpen = false; lastAnimatedView = null;
 }
 function invalidatePrivateAccess() {
@@ -361,8 +354,6 @@ const appStartCachePrefix = "helmut:lastStartPayload:v3";
 const appStartCacheMaxAgeMs = 0;
 const helmutFlowCooldownPrefix = "helmut:lastAssessmentFlow:v1";
 const helmutFlowCooldownMs = 4 * 60 * 60 * 1000;
-const pipelineCooldownKey = "helmut:lastPipelineRun:v1";
-const pipelineCooldownMs = 10 * 60 * 1000;
 // Live-Flow (Block 5): Mindestabstand zwischen zwei Foreground-Auffrischungen —
 // verhindert Refresh-Stürme, wenn visibilitychange bei Tab-/OS-Wechseln rasch feuert.
 const foregroundRefreshMinMs = 60 * 1000;
@@ -6207,70 +6198,12 @@ function renderFeedbackActions(decision) {
 
 function renderHelmutView() {
   if (briefing?.prosaVorschau === true) return renderProsaEinordnung(briefing.prosaEinordnung);
-  // Refresh-/Abschluss-Zustand hat Vorrang und ist UNABHÄNGIG von helmutThinking
-  // (der Intro-Denkanimation). So bleibt der Refresh-Screen beim Tabwechsel erhalten:
-  // kommt der Nutzer während einer laufenden Aktualisierung zurück, sieht er wieder
-  // "Aktualisierung läuft" bzw. "Stand ist aktuell" / "Aktueller Stand geladen".
-  const refreshActive = pipelineRunning || Boolean(pipelinePhase);
-  // V3-Stabschefstand: der Inhalt kommt AUSSCHLIESSLICH aus briefing.currentHelmutState
-  // (deterministisch, serverseitig gebaut). Der Refresh-/Intro-Ring bleibt als reiner
-  // TECHNISCHER Ladezustand erhalten; danach rendert der ruhige Stand. Die alte
-  // Assessment-/Typing-Ansicht (mit berechneten Ersatztexten) wird nicht mehr genutzt.
-  return (refreshActive || helmutThinking)
+  return helmutThinking
     ? renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.") + renderHelmutThinkingView()
     : renderHelmutStandView();
 }
 
-function renderRefreshButton() {
-  const remaining = pipelineCooldownRemaining();
-  if (remaining > 0) {
-    const mins = Math.ceil(remaining / 60000);
-    return `<button class="text-button refresh-cooldown" type="button" disabled title="Wieder in ${mins} Min verfügbar">${mins}m</button>`;
-  }
-  return `<button class="text-button" type="button" data-refresh-helmut aria-label="Einschätzung neu prüfen">↻</button>`;
-}
-
 function renderHelmutThinkingView() {
-  // Ruhiger, hochwertiger Refresh-Screen (eine Statuszeile + dezenter Fortschritt),
-  // keine laute Checklisten-/Debug-Optik.
-  if (pipelineRunning) {
-    const stepLabel = PIPELINE_STEPS[pipelineRunStep] || PIPELINE_STEPS[PIPELINE_STEPS.length - 1];
-    const pct = Math.round(((pipelineRunStep + 1) / PIPELINE_STEPS.length) * 100);
-    return `
-      <section class="helmut-refresh" aria-live="polite" aria-label="Helmut prüft den aktuellen Stand">
-        <div class="helmut-refresh-core"><span class="helmut-refresh-ring" aria-hidden="true"></span><span class="helmut-refresh-mark" aria-hidden="true">H</span></div>
-        <p class="helmut-refresh-title">Helmut prüft den aktuellen Stand</p>
-        <p class="helmut-refresh-step">${escapeHtml(stepLabel)}</p>
-        <div class="helmut-refresh-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><div class="helmut-refresh-fill" style="width:${pct}%"></div></div>
-      </section>
-    `;
-  }
-  // Ehrlicher Fehlerabschluss: der Lauf ist fehlgeschlagen (HTTP-/Netz-/Parse-Fehler
-  // oder {ok:false}). KEINE Erfolgsmeldung, kein technischer Fehlertext — nur eine
-  // ruhige Meldung, dass der zuletzt bekannte Stand sichtbar bleibt, plus Retry-Hinweis
-  // (Refresh-Button ↻ im Kopf). Statisches "H" ohne rotierenden Ring -> kein
-  // vorgetaeuschter weiterlaufender Ladezustand.
-  if (pipelinePhase === "error") {
-    return `
-      <section class="helmut-refresh helmut-refresh--error" aria-live="polite">
-        <div class="helmut-refresh-core" aria-hidden="true"><span class="helmut-refresh-mark">H</span></div>
-        <p class="helmut-refresh-title">Aktualisierung gerade nicht möglich</p>
-        <p class="helmut-refresh-sub">Helmut konnte den Stand gerade nicht neu prüfen. Der zuletzt bekannte Stand bleibt sichtbar. Ein neuer Versuch ist in einigen Minuten möglich.</p>
-      </section>
-    `;
-  }
-  // Ehrlicher Abschluss: "done" = echter Lauf, "skipped" = Server hat den Lauf
-  // uebersprungen (Throttle/Lock) -> KEIN "gecrawlt/analysiert" vortaeuschen.
-  if (pipelinePhase === "skipped" || pipelinePhase === "done") {
-    const done = pipelinePhase === "done";
-    return `
-      <section class="helmut-refresh helmut-refresh--done" aria-live="polite">
-        <div class="helmut-refresh-core helmut-refresh-core--done" aria-hidden="true">${HELMUT_ICON_CHECK}</div>
-        <p class="helmut-refresh-title">${done ? "Aktueller Stand geladen" : "Stand ist aktuell"}</p>
-        <p class="helmut-refresh-sub">${done ? "Helmut hat die Lage für dein Mandat neu geprüft." : "Gerade erst aktualisiert – kein neuer Lauf nötig."}</p>
-      </section>
-    `;
-  }
   // App-Start / ruhiger Ladezustand: hier werden nur VORHANDENE Daten geladen —
   // KEIN Crawl, KEINE KI-Analyse. Deshalb kein "analysiert"-Text und keine
   // Prozess-Checkliste mehr (das war der alte dunkle Such-/Denk-Screen, der ein
@@ -6541,7 +6474,6 @@ function renderHstandHeader(state) {
     <div class="hstand-head ui-briefing-status">
         <div class="hstand-head-actions">
           <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
-          ${renderRefreshButton()}
         </div>
       <p class="hstand-meta-line">${HELMUT_ICON_CLOCK}<span>${escapeHtml(timeLabel)}</span></p>
       ${partial ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>Nur teilweise vollständig – einige Angaben fehlen noch.</span></p>` : ""}
@@ -10075,13 +10007,6 @@ function bindActions() {
     button.addEventListener("click", openOfficeForBriefing);
   });
 
-  app.querySelectorAll("[data-refresh-helmut]").forEach((button) => {
-    button.addEventListener("click", () => {
-      currentView = "helmut";
-      startPipelineRun();
-    });
-  });
-
   app.querySelectorAll("[data-menu]").forEach((button) => {
     button.addEventListener("click", () => {
       navOpen = !navOpen;
@@ -10593,11 +10518,6 @@ function bindActions() {
 }
 
 function startHelmutThinking() {
-  // Läuft gerade ein Refresh (oder dessen Abschluss)? Dann NICHT die Intro-Denk-
-  // animation starten — sonst würde ihr 1,4-s-Timer helmutThinking abschalten und
-  // den sichtbaren Refresh-Screen beim Zurückwechseln überschreiben. Kein zweiter
-  // Pipeline-Lauf, nur der bestehende Zustand bleibt erhalten.
-  if (pipelineRunning || pipelinePhase) return;
   if (!shouldStartHelmutFlow()) {
     helmutThinking = false;
     stopHelmutTyping();
@@ -10615,129 +10535,6 @@ function startHelmutThinking() {
     // mit berechneten Ersatztexten mehr — der Stand kommt rein aus currentHelmutState).
     if (currentView === "helmut") render();
   }, 1400);
-}
-
-// V3-korrekte Schritte: der Refresh startet runSourceCrawl (Crawl -> Understanding ->
-// Matching -> Decision). KEINE V2-Aussagen ("Briefing wird generiert" / "Einschätzung
-// wird verfasst") — in V3 wird das Briefing/die Einschätzung deterministisch beim
-// Read zusammengebaut, nicht serverseitig neu verfasst.
-const PIPELINE_STEPS = [
-  "Quellen werden geprüft",
-  "Neue Vorgänge werden erkannt",
-  "Relevanz für dein Mandat wird bewertet",
-  "Lage und Empfehlungen werden aktualisiert",
-  "Aktueller Stand wird geladen",
-];
-const PIPELINE_STEP_MS = 18000;
-
-function pipelineCooldownRemaining() {
-  try {
-    const last = Number(window.localStorage.getItem(pipelineCooldownKey) || 0);
-    return last ? Math.max(0, pipelineCooldownMs - (Date.now() - last)) : 0;
-  } catch { return 0; }
-}
-
-function markPipelineRun() {
-  try { window.localStorage.setItem(pipelineCooldownKey, String(Date.now())); } catch {}
-}
-
-function startPipelineRun() {
-  if (pipelineRunning || pipelineCooldownRemaining() > 0) return;
-  if (pipelineCompletionTimer) { window.clearTimeout(pipelineCompletionTimer); pipelineCompletionTimer = null; }
-  pipelineRunning = true;
-  pipelinePhase = "running";
-  pipelineRunStep = 0;
-  helmutThinking = true;
-  markPipelineRun();
-  stopHelmutTyping();
-  animateNextRender = true; // Refresh-Screen einmal sanft einblenden
-  render();
-  schedulePipelineStep();
-  executePipelineRun();
-}
-
-function schedulePipelineStep() {
-  if (pipelineStepTimer) window.clearTimeout(pipelineStepTimer);
-  pipelineStepTimer = window.setTimeout(() => {
-    if (!pipelineRunning) return;
-    pipelineRunStep = Math.min(pipelineRunStep + 1, PIPELINE_STEPS.length - 1);
-    updatePipelineProgress();
-    if (pipelineRunStep < PIPELINE_STEPS.length - 1) schedulePipelineStep();
-  }, PIPELINE_STEP_MS);
-}
-
-// Fortschritt IN PLACE aktualisieren (nur Statuszeile + Balken) statt render() —
-// so wird der Refresh-Screen nicht bei jedem Schritt neu gemountet und blendet
-// nicht wiederholt ein. Fallback auf render(), falls der Screen (noch) nicht da ist.
-function updatePipelineProgress() {
-  // Im Hintergrund (anderer Tab) nur den Schritt-State fortschreiben, NICHT rendern —
-  // beim Zurückwechseln zeigt render() den Refresh-Screen am aktuellen Schritt.
-  if (currentView !== "helmut") return;
-  const stepEl = app && app.querySelector(".helmut-refresh-step");
-  const fillEl = app && app.querySelector(".helmut-refresh-fill");
-  if (!stepEl || !fillEl) { render(); return; }
-  stepEl.textContent = PIPELINE_STEPS[pipelineRunStep] || PIPELINE_STEPS[PIPELINE_STEPS.length - 1];
-  const pct = Math.round(((pipelineRunStep + 1) / PIPELINE_STEPS.length) * 100);
-  fillEl.style.width = pct + "%";
-  const track = app.querySelector(".helmut-refresh-track");
-  if (track) track.setAttribute("aria-valuenow", String(pct));
-}
-
-async function executePipelineRun() {
-  try {
-    const response = await fetchWithTimeout(`/api/pipeline/run?${apiScopeQuery()}`, {}, 90000);
-    // Erfolg NUR bei echtem, erfolgreichem Serverergebnis. HTTP-Fehler (response.ok
-    // false), nicht parsebare Antwort oder ein explizites {ok:false} duerfen NIE als
-    // Erfolg ("done") gemeldet werden — sonst sieht der Nutzer "Aktueller Stand
-    // geladen", obwohl der Lauf fehlschlug. Der Erfolgsbody traegt kein ok:true (rohes
-    // Crawl-Ergebnis bzw. {..., skippedReason}); daher ist `result.ok === false` nur
-    // ein defensiver Fehler-Guard, der echten Erfolg NICHT blockiert.
-    let result = null;
-    if (response.ok) { try { result = await response.json(); } catch (_) { result = null; } }
-    if (!response.ok || !result || result.ok === false) {
-      await finishPipelineRun("error");
-      return;
-    }
-    // Ehrlich: hat der Server den Lauf übersprungen (Throttle/Lock), NICHT so tun,
-    // als wären Quellen gecrawlt und KI-Analyse gelaufen -> ruhige "Stand ist aktuell"-Meldung.
-    await finishPipelineRun(result.skippedReason ? "skipped" : "done");
-  } catch {
-    // Netzwerkfehler/Timeout/Abbruch: ehrlicher Fehlerabschluss (kein Erfolg). Der
-    // zuletzt bekannte Stand bleibt sichtbar; der Serverlauf kann nachlaufen -> spaeter
-    // ruhig frisch nachladen (reload).
-    await finishPipelineRun("error", { reload: true });
-  }
-}
-
-async function finishPipelineRun(phase, opts = {}) {
-  pipelineRunning = false;
-  pipelineRunStep = 0;
-  if (pipelineStepTimer) { window.clearTimeout(pipelineStepTimer); pipelineStepTimer = null; }
-  // Drei ehrliche Endzustaende: "skipped" (Server hat den Lauf uebersprungen),
-  // "error" (Lauf fehlgeschlagen — HTTP-/Netz-/Parse-Fehler oder {ok:false}) und
-  // "done" (echter Erfolg). Nur "done" darf eine Erfolgsmeldung zeigen.
-  pipelinePhase = phase === "skipped" ? "skipped" : phase === "error" ? "error" : "done";
-  // Nach einem Fehler den Refresh-Cooldown zuruecksetzen (er wurde beim Start gesetzt),
-  // damit "erneut versuchen" sofort moeglich ist — der Lauf hat ja nichts geliefert.
-  if (pipelinePhase === "error") { try { window.localStorage.removeItem(pipelineCooldownKey); } catch (_) {} }
-  animateNextRender = true;   // Abschlusskarte EINMAL sanft einblenden
-  render(); // ruhige Abschlussmeldung anzeigen (kein Toast, keine Debug-Liste)
-  // loadBriefing kann mehrfach rendern (Cache + Netz) — während der Abschluss sichtbar
-  // ist, bleiben diese Renders bewusst ruhig (kein erneutes Aufpoppen der Abschlusskarte).
-  try { await loadBriefing(); } catch (_) { /* Anzeige bleibt beim letzten Stand */ }
-  // Bei Netzfehler kann der Serverlauf noch nachlaufen -> spät nochmal frisch rendern (ruhig).
-  if (opts.reload) window.setTimeout(async () => { try { await loadBriefing(); } catch (_) {} if (currentView === "helmut") render(); }, 20000);
-  if (pipelineCompletionTimer) window.clearTimeout(pipelineCompletionTimer);
-  // "error" haelt etwas laenger, damit die ruhige Fehlermeldung lesbar bleibt, bevor
-  // wieder der (ehrlich als "Nicht aktuell" gekennzeichnete) letzte Stand erscheint.
-  const holdMs = pipelinePhase === "skipped" ? 1400 : pipelinePhase === "error" ? 2600 : 1700;
-  pipelineCompletionTimer = window.setTimeout(() => {
-    pipelinePhase = null;
-    helmutThinking = false;
-    pipelineCompletionTimer = null;
-    animateNextRender = true; // Helmut-Inhalt genau EINMAL weich einblenden, danach ruhig
-    if (currentView === "helmut") render();
-  }, holdMs);
 }
 
 function shouldStartHelmutFlow() {
@@ -11757,7 +11554,7 @@ function updateBerlinClock() {
   // die Zeitstempel bleiben unangetastet, nur ihr relatives Label wird neu berechnet.
   const berlinDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   if (lastRenderedBerlinDay === null) { lastRenderedBerlinDay = berlinDay; return; }
-  if (berlinDay !== lastRenderedBerlinDay && !pipelineRunning && !briefingRefreshing) {
+  if (berlinDay !== lastRenderedBerlinDay && !briefingRefreshing) {
     lastRenderedBerlinDay = berlinDay; // VOR render() setzen -> render() ruft updateBerlinClock erneut, kein Loop
     render();
   }
@@ -12056,13 +11853,13 @@ if (typeof document !== "undefined") {
 // boot-alten Stand hängen und die Frische-Zeile fror am Boot ein (behauptete nach
 // Mitternacht fälschlich "heute"). /api/app/start ist der günstige Read-Pfad
 // (P1-7 cacheOnly: DB-Reads, kein Live-LLM, keine Writes). Guards gegen Refresh-
-// Stürme: nichts während previewMode / laufender Pipeline / laufendem Refresh, und
+// Stürme: nichts während previewMode / laufendem Refresh, und
 // höchstens ein Auffrischen pro foregroundRefreshMinMs. Ein Fehlschlag bleibt still
 // (der zuletzt geladene Stand bleibt sichtbar) — kein Boot-Fehlerdialog.
 if (typeof document !== "undefined") {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;
-    if (previewMode || pipelineRunning || briefingRefreshing) return;
+    if (previewMode || briefingRefreshing) return;
     if (Date.now() - lastBriefingLoadAt < foregroundRefreshMinMs) return;
     // void: hält die Zeile davon ab, mit "loadBriefing()" zu beginnen (die Test-Boot-
     // Erkennung strippt sonst hier statt am echten Boot-Aufruf) — und macht das

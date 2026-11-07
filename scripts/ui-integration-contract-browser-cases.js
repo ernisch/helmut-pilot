@@ -4,12 +4,17 @@ const { integrationPayload,quietIntegrationPayload,pendingQuietIntegrationPayloa
 const runs=[];
 let scenario,payload,calls,unexpected,phase,tokenMode,officeMode,csrfSerial,officeAttempt;
 const denied=["anonymous","session-503","session-invalid","no-mandate","start-401","start-503","selection","empty"];
-const viewports=[...denied.map(name=>[name,1440,900,false]),["contract-desktop",1440,900,false],["contract-mobile",390,844,true],
+const briefingReadOnly=process.argv.includes("--briefing-read-only");
+const viewports=briefingReadOnly ? [["contract-desktop",1440,900,false],["contract-mobile",390,844,true]] : [...denied.map(name=>[name,1440,900,false]),["contract-desktop",1440,900,false],["contract-mobile",390,844,true],
   ["quiet-desktop",1440,900,false],["quiet-mobile",390,844,true],
   ["quiet-pending-desktop",1440,900,false],["quiet-pending-mobile",390,844,true]];
 function reset(label) {
   scenario=label;payload=label.includes("-pending-") ? pendingQuietIntegrationPayload()
     : label.startsWith("quiet-") ? quietIntegrationPayload() : integrationPayload();calls=[];unexpected=[];phase="bootstrap";
+  if(label.startsWith("contract-")) {
+    payload.briefing.currentHelmutState.primaryItem.meldungAt="2026-11-05T09:20:00.000Z";
+    payload.briefing.currentHelmutState.frischeVertrag.lauf={erzeugtAm:"2026-11-06T05:15:00.000Z"};
+  }
   tokenMode="valid";officeMode="rule";csrfSerial=0;officeAttempt=0;
 }
 reset("contract-desktop");
@@ -105,7 +110,37 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
   // make this a non-vacuous check even on an otherwise push-incapable origin.
   await new Promise(resolve=>setTimeout(resolve,1400));
   verify("push-capable fixture active",await evaluate("browserPushSupported() && Notification.permission==='granted'"));
-  if(denied.includes(label)) {
+  async function verifyBriefingRead() {
+    if(briefingReadOnly) verify("bootstrap reads one saved payload without source/model requests",count("/api/app/start")===1
+      && calls.every(c=>["/api/auth/session","/api/app/start","/api/parliament","/api/push/public-key","/api/security/csrf","/api/push/subscribe"].includes(c.path)),calls);
+    phase="briefing-foreground";
+    await evaluate("profile.officeFormats=[]");
+    await nav("helmut");
+    verify("Briefing still displays saved content",await waitFor("!!document.querySelector('.ui-briefing-hero')"));
+    verify("no manual refresh or replacement button next to status",await evaluate("!document.querySelector('[data-refresh-helmut],.ui-briefing-status button')"));
+    const savedMeta=await evaluate("document.querySelector('.hstand-meta-line').textContent");
+    verify("source and stored creation times remain visible",savedMeta.includes("Quellenstand:") && savedMeta.includes("10:20")
+      && savedMeta.includes("Briefing erstellt:") && savedMeta.includes("06:15"),savedMeta);
+    await screenshot("briefing-without-refresh");
+    const savedTitle="Neu gespeicherter synthetischer Vorgang";
+    Object.assign(payload.briefing.currentHelmutState.primaryItem,{title:savedTitle,displayTitle:savedTitle});
+    await evaluate(`lastBriefingLoadAt=Date.now()-foregroundRefreshMinMs-1;
+      Object.defineProperty(document,'visibilityState',{configurable:true,get:()=> 'visible'});
+      document.dispatchEvent(new Event('visibilitychange'))`);
+    verify("return to app reloads exactly one saved start payload",await waitFor(`!briefingRefreshing && briefing.currentHelmutState.primaryItem.title===${JSON.stringify(savedTitle)}`)
+      && count("/api/app/start")===1);
+    verify("reloaded content appears with unchanged source/creation times",await evaluate(`document.querySelector('.ui-briefing-hero').textContent.includes(${JSON.stringify(savedTitle)})
+      && document.querySelector('.hstand-meta-line').textContent===${JSON.stringify(savedMeta)}`));
+    await evaluate("document.dispatchEvent(new Event('visibilitychange')); document.dispatchEvent(new Event('visibilitychange'))");
+    await new Promise(resolve=>setTimeout(resolve,100));
+    verify("rapid foreground events remain throttled",count("/api/app/start")===1);
+    verify("foreground only reads saved data, with no pipeline/source/model request",calls.filter(c=>c.phase===phase).every(c=>c.method==="GET"
+      && ["/api/auth/session","/api/app/start","/api/parliament","/api/push/public-key"].includes(c.path)),calls.filter(c=>c.phase===phase));
+    verify("no manual refresh appears after reload",await evaluate("!document.querySelector('[data-refresh-helmut],.ui-briefing-status button')"));
+  }
+  if(briefingReadOnly) {
+    await verifyBriefingRead();
+  } else if(denied.includes(label)) {
     const expected={anonymous:"Anmeldung", "session-503":"Helmut ist gerade nicht erreichbar", "session-invalid":"Helmut ist gerade nicht erreichbar",
       "no-mandate":"Noch kein Mandat zugewiesen", "start-401":"Anmeldung", "start-503":"Briefing konnte nicht geladen werden",
       selection:"Mandat wählen",empty:"Kein aktives Mandat"}[label];
@@ -198,6 +233,7 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
       verify("budget fallback marked as rule output, not AI",await evaluate("Object.values(officeDrafts).length===2 && Object.values(officeDrafts).every(d=>d.source==='regel') && document.querySelector('.ui-page').innerText.includes('Regelbasierter Entwurf') && !document.querySelector('.ui-page').innerText.includes('KI-Entwurf · vor Veröffentlichung prüfen')"));
     }
   }
+  if(!briefingReadOnly && label.startsWith("contract-")) await verifyBriefingRead();
   verify("no unknown API request",unexpected.length===0,unexpected);
   runs.push({label,calls:JSON.parse(JSON.stringify(calls)),unexpected:[...unexpected],push:await evaluate("__uiPush")});
 }

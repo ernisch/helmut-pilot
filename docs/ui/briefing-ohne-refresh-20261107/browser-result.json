@@ -1,0 +1,231 @@
+{
+  "status": "PASS",
+  "passes": [
+    "contract-desktop: actual UI rendered",
+    "contract-desktop: push-capable fixture active",
+    "contract-desktop: bootstrap reads one saved payload without source/model requests",
+    "contract-desktop: Briefing still displays saved content",
+    "contract-desktop: no manual refresh or replacement button next to status",
+    "contract-desktop: source and stored creation times remain visible",
+    "contract-desktop: return to app reloads exactly one saved start payload",
+    "contract-desktop: reloaded content appears with unchanged source/creation times",
+    "contract-desktop: rapid foreground events remain throttled",
+    "contract-desktop: foreground only reads saved data, with no pipeline/source/model request",
+    "contract-desktop: no manual refresh appears after reload",
+    "contract-desktop: no unknown API request",
+    "contract-mobile: actual UI rendered",
+    "contract-mobile: push-capable fixture active",
+    "contract-mobile: bootstrap reads one saved payload without source/model requests",
+    "contract-mobile: Briefing still displays saved content",
+    "contract-mobile: no manual refresh or replacement button next to status",
+    "contract-mobile: source and stored creation times remain visible",
+    "contract-mobile: return to app reloads exactly one saved start payload",
+    "contract-mobile: reloaded content appears with unchanged source/creation times",
+    "contract-mobile: rapid foreground events remain throttled",
+    "contract-mobile: foreground only reads saved data, with no pipeline/source/model request",
+    "contract-mobile: no manual refresh appears after reload",
+    "contract-mobile: no unknown API request",
+    "No uncaught browser errors",
+    "No external request fulfilled",
+    "No missing static resources"
+  ],
+  "errors": [],
+  "externalRequestsFulfilled": 0,
+  "negativeControlsBlocked": 0,
+  "bootstrap": "unmodified full client including normal loadBriefing/auth/CSRF; every API mocked in memory",
+  "apiEvidence": [
+    {
+      "label": "contract-desktop",
+      "calls": [
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/app/start",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/parliament",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/push/public-key",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "POST",
+          "path": "/api/push/subscribe",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true
+        },
+        {
+          "phase": "briefing-foreground",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "briefing-foreground",
+          "method": "GET",
+          "path": "/api/app/start",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        }
+      ],
+      "unexpected": [],
+      "push": {
+        "scheduled": 1,
+        "subscribed": 1
+      }
+    },
+    {
+      "label": "contract-mobile",
+      "calls": [
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/app/start",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/parliament",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/push/public-key",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "GET",
+          "path": "/api/security/csrf",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": false,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "bootstrap",
+          "method": "POST",
+          "path": "/api/push/subscribe",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": true
+        },
+        {
+          "phase": "briefing-foreground",
+          "method": "GET",
+          "path": "/api/auth/session",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        },
+        {
+          "phase": "briefing-foreground",
+          "method": "GET",
+          "path": "/api/app/start",
+          "status": 200,
+          "simulated": true,
+          "writeCapable": true,
+          "csrfHeaderPresent": false
+        }
+      ],
+      "unexpected": [],
+      "push": {
+        "scheduled": 1,
+        "subscribed": 1
+      }
+    }
+  ],
+  "chromium": "/usr/bin/chromium",
+  "browserVersion": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/151.0.7922.173",
+    "revision": "@a96602f30358e9b5d256a0464e7e4d4bec223004",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+    "jsVersion": "15.1.206.23"
+  },
+  "testedFiles": {
+    "assets/favicon.ico": "2226ad7caec775e6a01196af34bbd8cbf5c497ce5ae6e06c5c1ba563cf517caf",
+    "assets/helmut_logo.svg": "16d6d5ab1df18fab90c2588affc2ed13540fc466259d2752e805cf25d5aaea6e",
+    "assets/ui/fonts/HankenGrotesk-var.woff2": "186ca66826fac19d1736a7ebb840516de7f142bc5aeb0ce02eb6e1c3520d487e",
+    "assets/ui/fonts/IBMPlexMono-Medium.woff2": "3187905c507d452050e496d66c896eaf8f732a04055d04b117af8523fbc1a9e0",
+    "assets/ui/fonts/IBMPlexMono-Regular.woff2": "1acb708e5286bd1979de2f117ce7b7eb2ab2f7325cf7ce9791329c06d9c5f222",
+    "assets/ui/fonts/Spectral-Medium.woff2": "5effe60debf770566d79d9050b9a073a21e6148f3912a4d372d1ed935ed6ac52",
+    "assets/ui/fonts/Spectral-Regular.woff2": "61cd5cc9b19fc3590368e03f630cc8d736653a70d7ad51f9bb588488b1327f5f",
+    "assets/ui/reichstag.jpg": "06d4dc796dbb47631f4ed2c7b9b5137bc0c9f43d7080fddb707c512fbecbe5c7",
+    "client.js": "fc954b8b208e3834d1e9f7014e2b95f68ade5499059a7db23c6ba220028cd1bc",
+    "index.html": "44bd39523405d5651bd1f0328b921a41a595895dd0ed80caee9bf5b89211a21b",
+    "scripts/fixtures/ui-integration-contracts.js": "fe1cea812e75eb951fde3f989c53548b1a4460d68a5484eafb1ec5e78b633964",
+    "scripts/fixtures/ui-office-binding.js": "986572ef7a7a0402d228e9853f4079b5fb2d99e2972639913dd78500cce922f6",
+    "scripts/fixtures/ui-preview.js": "3a54b4d27ad7bd213033253015e21eb642ce6883c61a038b41ad0537df6429e0",
+    "scripts/ui-integration-contract-browser-cases.js": "0ceaf5b391467d46282568723107760aac2d4bdafb8939bced4c22f9f20edecc",
+    "scripts/ui-integration-contract-browser-test.js": "e474ae090bf7dda9021fc6999845fc1d21ec29c772ecc1246bca005429efb041",
+    "scripts/ui-preview-browser-check.js": "3685207af03c73f9fb934602ed6fd2cc49b36131ca52c0a2cac5355088383299",
+    "scripts/ui-preview-isolated.py": "62179c8a81b7e23215adc0833bc106f79bb10ae9e556687a1baccb003045cbeb",
+    "styles.css": "42ee881a79a55cd3d907dc807f5e9e188d51ee561c6485d0374281f6afa3c975"
+  },
+  "servedClientSha256": "fc954b8b208e3834d1e9f7014e2b95f68ade5499059a7db23c6ba220028cd1bc"
+}
