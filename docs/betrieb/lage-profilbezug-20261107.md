@@ -127,6 +127,13 @@ Alle Testläufe über `scripts/lokal.js`, keine Production-Kennung im Kindprozes
   die tatsächlichen beiden Entwurfs-/Reviewabsätze gegen Region/Bundesebene
   und die explizite negative Fremdlandprobe. Danach **42/42 synthetische
   Vertragsgruppen** grün; kein nativer oder vollständiger Mock100-Lauf.
+- Pflicht-CI `42391362660`: alle vorgelagerten isolierten Datenbanknachweise
+  bestanden, danach **188/189 Standardsuiten** grün. Einziger Fehler:
+  `github-quellenkontext-500-test.js` verwendete Profile ohne Fachmerkmale und
+  einen nur in `title` (statt `headline`) benannten Pflegevorgang. Ausschließlich
+  diese Fixture fachlich konsistent ergänzt; alle bestehenden Budget-, CAS-,
+  Konkurrenz-, Frische- und Schreibschutzassertions unverändert. Gezielte
+  Wiederprüfung: **13/13 Controllergruppen**, Produktionsquellenpfad unverändert.
 - CI-Versuch `42390396632` vor den langen Folgeschritten bewusst beendet,
   nachdem die lesende Prüfung diese weiteren alten Testannahmen belegt hatte;
   kein grüner Pflichtbeleg. Der finale Pflichtlauf gehört zum aktuellen PR-Kopf.

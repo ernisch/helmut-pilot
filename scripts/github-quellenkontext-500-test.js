@@ -12,13 +12,14 @@ const title = "Parlament beraet kommunale Pflegeangebote";
 const summary = "Der Ausschuss hoert am Dienstag Fachleute zur Finanzierung der Beratungsstellen an. Die Beratung betrifft Angebote in den Gemeinden.";
 function fixture(count = 2) {
   const ids = [...Array.from({ length: 5 }, (_, i) => "dummy-" + i), ...D.ALLE_KENNUNGEN];
-  const bestand = { mandate: ids.map((id, i) => ({ user_id: id, aktiv: i < 5 })),
+  const bestand = { mandate: ids.map((id, i) => ({ user_id: id, aktiv: i < 5,
+    fachpolitische_schwerpunkte: ["Pflege"] })),
     identitaeten: ids.map(id => ({ id })), auth: { users: [], llmUsage: [] }, main: { rawItems: [] } };
   const documents = Array.from({ length: count }, (_, i) => ({ id: `rd-fixture-${String(i).padStart(3, "0")}`, title,
     url: `https://example.org/artikel/pflege-${i}`, canonical_url: `https://example.org/artikel/pflege-${i}`,
     summary: null, raw: { erhalten: "Altmetadaten" }, published_at: "2026-09-10T21:00:00Z", content_hash: `hash-${i}`, source_type: "official" }));
   const kos = Array.from({ length: Math.ceil(count / 6) }, (_, i) => ({ id: `ko-vg-fixture-${i}`, vorgang_id: `vg-fixture-${i}`,
-    title, status: "active", understanding_status: "complete", was_ist_passiert: "Eine oeffentliche Anhoerung ist geplant." }));
+    headline: title, status: "active", understanding_status: "complete", was_ist_passiert: "Eine oeffentliche Anhoerung zu Pflegeangeboten ist geplant." }));
   const f = { bestand, documents, acquired: 0, released: 0, locked: false, writes: 0, fetches: 0, counter: 0, fail: null };
   f.args = { bestand, config: { quellenkontext: { version: 1, scoring: "off", relevanzordnung: false,
     koScan: 500, lageMax: 12, relevanzTage: 14, sourceSafetyStandard: true, atomicLock: true } },
@@ -80,7 +81,7 @@ async function main() {
   await test("500 Profile teilen genau eine Nachlese fuer einen Treffer ausserhalb des Fensters", async () => {
     const f=fixture(), db=f.args.db; let reads=0;
     const wanted={id:"ko-vg-fixture-0",vorgang_id:"vg-fixture-0",status:"active",
-      understanding_status:"complete",was_ist_passiert:"Eine oeffentliche Anhoerung ist geplant."};
+      understanding_status:"complete",headline:title,was_ist_passiert:"Eine oeffentliche Anhoerung zu Pflegeangeboten ist geplant."};
     f.args.deps.storage.listKnowledgeObjects=async()=>[];
     f.args.deps.storage.listKnowledgeObjectsByIds=async ids=>{
       reads++; assert.deepEqual(ids,[wanted.id]); return [wanted];
