@@ -335,3 +335,51 @@ tragen; historische Zähler/Schalter nicht zurücksetzen. Für eine echte Bereit
 würde der normale reguläre Lauf schreiben; diese Probe wurde hier nicht vorweggenommen.
 RND und ungeprüfte andere Hosts bleiben aus. **Kein Merge, kein Production-Rollout, kein Flagwrite,
 keine Produktionsdatenänderung und kein kostenpflichtiger Modellaufruf durch diese Arbeit.**
+
+
+## Inaktiver Merge und Rollout nach Betreiber-Go 07.11.2026
+
+Der Betreiber hat den konkret angebotenen Merge von PR1098 mit ausgeschalteter
+Funktion freigegeben. PR1098 ist als `778c289b431edc79850e34bb0ea207e962c47830`
+gemergt; getesteter PR-Kopf `73fa3b552d68738bca6fc64a87012136cc91e877`.
+[Pflicht-CI42368109003](https://github.com/ernisch/helmut-pilot/actions/runs/42368109003)
+vollständig SUCCESS: beide Pflichtchecks, Standard-/Bereichsregression und isolierte
+Datenbankverträge einschließlich Z22. Browserlauf nach bestehendem Prüfplan bewusst
+übersprungen; kein neuer Browserbeleg und kein voller Mock100-/Production-Lastlauf.
+Alle fünf Runtime-/Testblobs des geprüften PR-Endkopfes sind bytegleich im Merge enthalten.
+
+Frische Vorprüfung um 15:33 Istanbul: `main`352982ff enthält nur die zusätzliche
+DeepSeek-Pause, keine Überschneidung mit den Artikelauszügen. Git-Mergeprüfung
+konfliktfrei; relevante offene PRs geprüft. Native Productiondaten: 0 laufende
+Prozesse, 0 aktive Pipeline-Sperren, unverändert 1 aktives Profil. Die App-Chatliste
+antwortete nicht; Parallelität wurde über Git/PRs, lokale Prozesse und native
+Productionzustände abgeglichen. Kein zusätzlicher Helfer oder DeepSeek eingesetzt.
+
+Reguläres Git-Deployment `dpl_Axr6qtkWQLnJjDjEWiWE7U9MDmnn` ist READY,
+Production, gebunden an778c289b. Der Hauptalias `helmut-pilot.vercel.app` zeigt
+auf genau dieses Deployment. Lesende Nachkontrolle bis 15:35 Istanbul:
+
+- Hauptseite HTTP200, Client-/CSS-Version exakt778c289b.
+- Ausgelieferter Client und CSS bytegleich zu Git; SHA256
+  `fb3b45ff2a413cdcec3ce68fef0f1428560e9470c10ccf707e8d59e789d7903d`
+  beziehungsweise `42ee881a79a55cd3d907dc807f5e9e188d51ee561c6485d0374281f6afa3c975`.
+- `/api/release/public` HTTP200 mit `ok=true`, `ready=true`, `storage=true`;
+  dieser globale Leser startet kein Modell und erzeugt kein Briefing.
+- Projektkonfiguration vor und nach Rollout:71 Einträge,0 verdeckte Productionwerte;
+  keine Einträge für `HELMUT_SUCHWEGAUSZUEGE`, `HELMUT_SUCHWEGAUSZUEGE_HOSTS`,
+  `HELMUT_ARTIKELKONTEXT` oder `HELMUT_ANBIETER_STEUERUNG`. Datei-Flags bytegleich;
+  Default AUS bleibt wirksam. Keine Env-/Cron-/Profil-/Budgetänderung.
+- Keine error/fatal-Zeile im abgefragten Deploymentfenster (gruppierte letzte10Minuten).
+  Das ist ein begrenzter Logbeleg, keine authentifizierte Bedien- oder Vollabnahme.
+
+Kein Artikelabruf, kein bezahlter Modelltest und keine weitere Quellenkorrektur durch
+diesen Mergeauftrag. Bestehende Daten aus PR1096 bleiben erhalten. Die automatische
+Ergänzung neuer Artikel ist **weiterhin nicht aktiviert**; NDR-Pilot, Anbietergrenzen
+und konkrete Laufbindung bleiben gesondert abzunehmen. RP bleibt separat offen.
+Gesicherter Rückweg ist das vor dem Merge gelesene READY-Deployment
+`dpl_5wP2LBNcYRN5bBa1LQmWxJnhmueT` auf352982ff, alternativ gezielter Code-Revert;
+keine Datenrücknahme oder pauschale Bereinigung.
+
+Dieser abschließende Dokumentationsschritt verändert ausschließlich Status und
+Betriebsbericht. Sein eigener Merge-/Skipzustand wird über Git/CI/Vercel belegt;
+kein weiterer Dokumentations-PR nur für den eigenen Abschluss.
