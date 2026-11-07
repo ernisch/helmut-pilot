@@ -5,6 +5,21 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
+## Mobile Lage kompakter (06.11.2026, vorbereitet)
+
+Betreiber hat das Mockup fuer kompakte Themenzeilen freigegeben. Branch
+`codex/mobile-lage-kompakt-20261106`, Basis `38281243`.
+Mobil: Titel maximal drei Zeilen, Vorschau maximal zwei; kleinere Abstaende,
+Quellenname und Publikationsdatum direkt am Eintrag. Volltext, Quellen,
+Status und Auswahl bleiben erhalten. Fehlendes Publikationsdatum wird als
+unbekannt benannt, niemals durch Abrufzeit ersetzt. Desktopdarstellung unveraendert.
+Syntax und gezielte lokale Renderpruefung (Quellenwahl, Datum/Berlin,
+Escaping, unbekanntes Datum, Volltext und Detailbedienung) bestanden.
+Lokaler Chromium fehlt; Pflicht CI einschliesslich Browser Smoke steht aus.
+Kein Merge oder Production Rollout. Naechster Schritt: Pflicht CI und
+mobile Darstellung vor konkretem Merge GO abnehmen. Rueckweg: diese
+Client/CSS Aenderung zuruecknehmen; keine Datenmutation.
+
 ## Quellenversorgung: zwei Zugänge aktiviert, drei repariert (06.11.2026)
 
 PR1079 ergänzte den neutralen Katalog. PR1084 nach konkretem Betreiber-GO auf `14c558b2` gemergt; Production `dpl_GSjihZu7UMcYWn1SUVefZgBJm9AL` READY, Hauptdomain und effektive Laufzeitversion geprüft.
