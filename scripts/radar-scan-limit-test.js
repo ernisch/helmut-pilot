@@ -23,7 +23,7 @@ const KOS = Array.from({ length: 250 }, (_, i) => ({
   best_source_url: "https://example.org/x", updated_at: "2026-07-12T06:00:00Z"
 }));
 const TARGET_INDEX = 220;
-KOS[TARGET_INDEX].headline = "Zielvorgang mit Beleg";
+KOS[TARGET_INDEX].headline = "Zielvorgang: Rentenpaket mit Beleg";
 
 const orig = {
   v3StoreReady: storage.v3StoreReady, listKnowledgeObjects: storage.listKnowledgeObjects,
@@ -38,16 +38,19 @@ storage.listKnowledgeObjects = async (o) => { requestedLimit = o && o.limit; ret
 storage.listMatchingResults = async () => [];
 const quellenzeit = new Date(Date.now() - 3600000).toISOString();
 storage.getSourcesForVorgang = async () => [{ url: "https://example.org/x", source_name: "Quelle",
-  title: "Aktueller Beleg zum Vorgang", published_at: quellenzeit }];
+  title: "Aktueller Beleg zum Rentenpaket", published_at: quellenzeit }];
 storage.listAktuelleLageQuellen = require("./fixtures/lage-quellenmetadaten")(KOS, vg => storage.getSourcesForVorgang(vg));
 storage.getRenderedBriefingV3 = async () => null;
 sourceSafety.guardKnowledgeObject = () => ({ status: "ok" });
 
 (async () => {
-  const res = await lage.buildLageBriefing({ id: "test-politician-one", fullName: "Test Politician One" }, { politicianId: "test-politician-one", cacheOnly: true });
+  const res = await lage.buildLageBriefing({ id: "test-politician-one", fullName: "Test Politician One",
+    committees: ["Arbeit und Soziales"] }, { politicianId: "test-politician-one", cacheOnly: true });
   check("Scan-Fenster >= 500 angefragt (deckt Bestand ab)", Number(requestedLimit) >= 500, `limit=${requestedLimit}`);
   check("KO auf Position 220 liegt im Scan-Fenster (vorher unsichtbar)", KOS.length <= Number(requestedLimit), `${KOS.length} <= ${requestedLimit}`);
   check("Lage liefert Karten aus dem erweiterten Fenster", res.available === true && Array.isArray(res.vorgaenge) && res.vorgaenge.length > 0);
+  check("Genau der passende Zielvorgang220 erscheint; generische Fuellkandidaten bleiben ausgeschlossen",
+    res.vorgaenge.length === 1 && res.vorgaenge[0].vorgangId === KOS[TARGET_INDEX].vorgang_id);
 
   Object.assign(storage, orig); sourceSafety.guardKnowledgeObject = orig.guardKnowledgeObject; ai.generateLageBriefing = orig.generateLageBriefing;
   console.log(`\n${passed}/${passed + failed} Radar-Scan-Limit-Assertions erfolgreich.`);

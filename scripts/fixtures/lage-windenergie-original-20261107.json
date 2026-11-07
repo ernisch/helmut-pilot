@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "kind": "bestand_originalauszug",
+  "case": "Windenergieanhoerung mit ausdruecklicher Ausschusszustaendigkeit",
+  "provenance": {
+    "preparedAgainstCommit": "ba244d424621dec97f45ceaa4b04874f909ad819",
+    "origin": "Vorhandene lokale Bestandsbelege der ausgefuehrten Quellenkorrektur vom 07.11.2026; kein neuer Liveabruf und keine synthetischen Sachverhaltstexte.",
+    "knowledgeObjectProjection": "Die fachlichen Nachherfelder folgen den candidate-/reviewedSet-Werten der ausgefuehrten Korrektur; Version, Status, Zeit und Quellenkante folgen dem nativen Nachherbeleg. Kein vollstaendiger Datenbankdump.",
+    "nativeReadBackAt": "2026-11-07T10:28:14.755153+00:00",
+    "documents": [
+      {
+        "path": "docs/betrieb/quellenkorrektur-20261107.md",
+        "sha256": "277529143fc5922f9e7ef60339aeb84bc4c65203454e8e7ea9cf667730677e28"
+      },
+      {
+        "path": "docs/betrieb/quellenkorrektur-20261107-vorher.md",
+        "sha256": "43b147b1001412d3b59ee3654f8f2d8e904518c29883fbccbc6122aaf06bcb2d"
+      },
+      {
+        "path": "docs/betrieb/quellenkorrektur-20261107-nachher.md",
+        "sha256": "7950f8061412e8cfa91e67631cba7c060cf251fdd8208dfa136a92807872b14c"
+      }
+    ],
+    "knowledgeObjectRowSha256AfterCorrection": "2c0656ce9905bc4c044d757343ded47339a8c9eccde1863bda8a34af2173a5f1",
+    "rawDocumentRowSha256AfterCorrection": "9814e50e7ce7b93894526a545f8ae8a33746205d19b6fa34e2814b558e6b9bc6",
+    "profile": {
+      "origin": "Minimale fachliche Projektion aus dem bereits lokal gespeicherten, ausschliesslich lesend ueber storage.getProfileFromDb gelesenen Profilstand; keine neue Profillesung.",
+      "capturedAt": "2026-11-07T15:59:45Z",
+      "projectionFields": ["committees", "deputyCommittees"],
+      "projectionJsonSha256": "2b5143e0b4df43e82980779147fafa6351e842edc01f7f3b05c5e4217b1373fc",
+      "projectionHashEncoding": "SHA256 UTF-8 JSON.stringify({committees,deputyCommittees}), ohne Whitespace",
+      "scope": "Nur gespeicherte Ausschussfelder; kein Name, Mandantenkennzeichen, Kontakt, privater Volltext oder Kostenfeld. Kein vollstaendiges Profil."
+    }
+  },
+  "profile": {
+    "committees": [
+      "Arbeit und Soziales"
+    ],
+    "deputyCommittees": [
+      "Ausschuss für Wirtschaft und Energie",
+      "Ausschuss für Digitales und Staatsmodernisierung"
+    ]
+  },
+  "knowledgeObject": {
+    "id": "ko-vg-infrastrukturbeschleunig-20261028-7081d4",
+    "vorgang_id": "vg-infrastrukturbeschleunig-20261028-7081d4",
+    "headline": "Anhörungsplan für die Sitzungswoche 2. bis 6. November 2026",
+    "display_title": "Anhörungsplan für die Sitzungswoche 2. bis 6. November 2026",
+    "was_ist_passiert": "Der veröffentlichte Plan kündigte für Montag, 2. November 2026, um 12.30 Uhr eine Anhörung im Ausschuss für Wirtschaft und Energie zum Ausbau der Windenergie auf See an.",
+    "display_summary": "Der veröffentlichte Plan kündigte für Montag, 2. November 2026, um 12.30 Uhr eine Anhörung im Ausschuss für Wirtschaft und Energie zum Ausbau der Windenergie auf See an.",
+    "wer_ist_betroffen": "",
+    "best_source_url": "https://www.bundestag.de/presse/pressemitteilungen/2026/pm-261027-oea-kw45-1229788",
+    "best_link_type": "direct",
+    "ko_version": 2,
+    "status": "neu",
+    "understanding_status": "complete",
+    "source_document_count": 1,
+    "updated_at": "2026-11-07T10:27:28.698649+00:00"
+  },
+  "sources": [
+    {
+      "id": "rd-abe2c9a6e146b7dd37785c5a06ce7f6e8a46f8d6bfaf0f5333220a7130110ce8",
+      "url": "https://www.bundestag.de/presse/pressemitteilungen/2026/pm-261027-oea-kw45-1229788",
+      "summary": "Montag, 2. November 2026 12.30 Uhr: Ausschuss für Wirtschaft und Energie - Ausbau der Windenergie auf See (Paul-Löbe-Haus, Sitzungssaal 4 600)",
+      "excerptOrigin": "Begrenzter amtlicher Originaltermin, in der ausgefuehrten Korrektur als sourceExcerpt dokumentiert und nach rawRules unveraendert als Rohquellen-summary gespeichert.",
+      "excerptUtf8Sha256": "a5d3de8e0e4ebbdc9bc8c6fe6e4e0ea8464c06b4d659e4f75e37482ffeaf6896",
+      "sourceDates": "Publikations-/Abrufzeit der Rohzeile ist in dieser lokalen Minimalprojektion nicht vorhanden; nicht aus dem Termin oder URL-Datum ableiten."
+    }
+  ],
+  "sourceLinks": [
+    {
+      "knowledge_object_id": "ko-vg-infrastrukturbeschleunig-20261028-7081d4",
+      "raw_document_id": "rd-abe2c9a6e146b7dd37785c5a06ce7f6e8a46f8d6bfaf0f5333220a7130110ce8",
+      "created_at": "2026-11-06T04:01:58.38933+00:00"
+    }
+  ],
+  "historicalBeforeCorrection": {
+    "capturedAt": "2026-11-07T10:06:53.682778+00:00",
+    "knowledgeObjectExpectedHash": "1c71fc1c30f8b15421a73d3757ea08b0408a0f8abe8d4d0b65170baca7848028",
+    "ko_version": 1,
+    "headline": "Ausschuss-Sitzungen und öffentliche Anhörungen in Sitzungswoche 2.–6. November",
+    "was_ist_passiert": "Der Bundestag veröffentlichte den Zeitplan für öffentliche Anhörungen und Ausschusssitzungen in der Sitzungswoche 2. bis 6. November; konkret genannt sind u. a. am 2. November eine Sitzung des Ausschusses für Wirtschaft und Energie zum Thema Ausbau der Windenergie auf See (12:30 Uhr) sowie eine Sitzung des Verteidigungsausschusses zum Bundeswehr-Infrastrukturbeschleunigungsgesetz (13:30 Uhr).",
+    "usage": "Historischer Originalbestand fuer den Vorhervergleich. Der korrigierte Nachherfall steht in knowledgeObject; keine alte Verteidigungsaussage unter dem gekuerzten Windenergieauszug ausliefern."
+  },
+  "expected": {
+    "passt": true,
+    "profilGrundArt": "stellvertretung",
+    "profilGrundWert": "Ausschuss für Wirtschaft und Energie",
+    "exactCommitteeMentionInKnowledgeObject": "Ausschuss für Wirtschaft und Energie",
+    "exactCommitteeMentionInOriginalExcerpt": "Ausschuss für Wirtschaft und Energie",
+    "reason": "Sachverhalt und verknuepfter Originalauszug benennen denselben Ausschuss wie das gespeicherte Stellvertretungsfeld ausdruecklich; der Nachweis braucht weder Industriebetroffenheit noch Partei oder alte Relevanzprosa.",
+    "limits": "Erwartung betrifft fachliche Aufnahme und Quellenbestaetigung. Fuer einen Ausgabepfadtest fehlende technische/Pubdatumsfelder transparent lokal injizieren; die unbekannten Originalwerte nicht erfinden. Quellenmix-, Aktualitaets- und Tenant-Schutz gelten unveraendert."
+  }
+}

@@ -124,8 +124,8 @@ async function main() {
     check("A.1 Zu JEDEM Ordnungsaufruf gehoert ein Riegel",
       riegel.length === ordnungsaufrufe.length && riegel.length > 0,
       `${riegel.length} Riegel / ${ordnungsaufrufe.length} Aufrufe`);
-    check("A.2 Es gibt keinen Ordnungsaufruf ausserhalb der zwei Helfer",
-      ordnungsaufrufe.length === 2, `${ordnungsaufrufe.length}`);
+    check("A.2 Der einzige Ordnungsaufruf liegt im gemeinsamen flaggeschuetzten Helfer",
+      ordnungsaufrufe.length === 1, `${ordnungsaufrufe.length}`);
     // Und die Ordnung ist NIRGENDS sonst in lib/ verdrahtet.
     const andere = [];
     for (const f of fs.readdirSync(path.join(ROOT, "lib/helmut"))) {
@@ -165,9 +165,11 @@ async function main() {
 
     check("B.2 Die Ordnung wurde bei Flag AUS NICHT aufgerufen — im echten Lage-Pfad",
       aufgerufen === 0, `${aufgerufen} Aufrufe`);
-    check("B.3 Der Vorgangssatz bleibt vollstaendig",
-      Array.isArray(ergebnis) && ergebnis.length === vorgaenge().length,
-      `${ergebnis.length}/${vorgaenge().length}`);
+    check("B.3 Beide Fach-/Regionstreffer bleiben erhalten; Randthemen werden vor der Ordnung ausgeschlossen",
+      Array.isArray(ergebnis) && ergebnis.length === 2
+      && ergebnis.some(k => k.id === "v-alt-mandat") && ergebnis.some(k => k.id === "v-mittel-region")
+      && !ergebnis.some(k => ["v-neu-rand", "v-neu-allgemein"].includes(k.id)),
+      `${ergebnis.length}/2 fachlich passend`);
     // GEGENPROBE: mit `on` MUSS derselbe Weg die Ordnung aufrufen — sonst waere B.2 wieder
     // nur eine Tautologie, diesmal eine gut versteckte.
     process.env.HELMUT_RELEVANZORDNUNG = "on";

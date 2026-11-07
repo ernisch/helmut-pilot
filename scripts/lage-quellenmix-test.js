@@ -7,7 +7,7 @@ const T = require("../lib/helmut/briefing-quellenqualitaet");
 const storage = require("../lib/helmut/storage");
 const ai = require("../lib/helmut/ai");
 const fresh = new Date(Date.now() - 3600000).toISOString();
-const profile = { id: "synthetisch-quellenmix" };
+const profile = { id: "synthetisch-quellenmix", focusTopics: ["Pflegeversicherung"] };
 const ko = id => ({ id: "ko-" + id, vorgang_id: id, understanding_status: "complete", status: "neu",
   headline: "Beratung zur Pflegeversicherung", was_ist_passiert: "Beratung zur Pflegeversicherung",
   best_source_url: "https://example.org/" + id, updated_at: fresh });

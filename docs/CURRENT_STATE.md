@@ -5,6 +5,19 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
+## Profilbezogene Lageauswahl (07.11.2026, nur Entwicklungsbranch)
+
+Auf `codex/profilbezogene-lageauswahl-20261107` fachliche Aufnahme vor
+Ergebnislimit, getrennte Profilgründe, Quellenbestätigung und Profil-/KO-Cachebindung
+umgesetzt. Keine fachfremde Auffüllung oder pauschale Schalteraktivierung.
+Synthetischer Cem-Korpus:12→6 Karten,0/6Verluste; drei Gegenprofile je3→1.
+Gegenprüfung fand dennoch realen Windenergie-Sollverlust aufba244d42: behoben
+durch additive, quellenbestätigte Ausschusserkennung. Originalfall jetzt1Karte;
+24/24 Fachgruppen samt bisherigen Negativfällen grün; frühere Pflicht-CI aufba244d42
+grün, erneute Pflicht-CI am ergänzten Kopf erforderlich. [PR1100](https://github.com/ernisch/helmut-pilot/pull/1100)
+bleibt ausdrücklich ungemergt. Kein Deployment/Production-Nachweis; Branchdeployments gesperrt. Danach: unabhängige Gegenprüfung des ergänzten Originalfalls.
+[Ursache, Tests, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md).
+
 ## UX Mergeabschluss (07.11.2026)
 
 Nach Betreiber GO nacheinander bei jeweils beiden gruenen Pflichtchecks gemergt: Mobil PR1091 (`c3f5f2a0`), Desktop PR1092 (`eec7d804`), Navigation/Zeiten/Radar PR1093 (`2f9ff56d`), inaktive Quellenvorbereitung PR1094 (`1057d000`). Integrierte Quellen CI42352831258 aufefb26134 bestanden; Laufbelege bleiben in den PRs erhalten.

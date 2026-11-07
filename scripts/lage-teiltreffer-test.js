@@ -5,7 +5,7 @@ const Q = require("../lib/helmut/lage-textqualitaet");
 let passed = 0;
 async function test(name, fn) { await fn(); passed++; console.log("PASS " + name); }
 const ko = id => ({ id, vorgang_id: "vg-" + id, understanding_status: "complete", status: "neu",
-  was_ist_passiert: "Belegter Vorgang", best_source_url: "https://example.org/" + id });
+  was_ist_passiert: "Beratung zum Tariftreuegesetz", best_source_url: "https://example.org/" + id });
 (async () => {
   await test("Ein alter Resttreffer verdraengt nicht den aktuellen mandatsbezogenen Bestand", async () => {
     const current = Array.from({ length: 15 }, (_, i) => ko("aktuell-" + i));
@@ -23,11 +23,12 @@ const ko = id => ({ id, vorgang_id: "vg-" + id, understanding_status: "complete"
     assert(rows.some(k => k.id.startsWith("aktuell-")));
     assert.equal(new Set(rows.map(k => k.id)).size, rows.length);
   });
-  await test("Vollstaendige gespeicherte Auswahl wird nicht ungefragt neu gematcht", async () => {
+  await test("Vollstaendige fachlich passende Auswahl bleibt bei gestoerter Neuordnung erhalten", async () => {
     const current = Array.from({ length: 12 }, (_, i) => ko("bestand-" + i));
     const store = { listKnowledgeObjects: async () => current,
       listMatchingResults: async () => current.map(k => ({ knowledge_object_id: k.id })) };
-    const rows = await L.loadRankedVorgaenge(store, () => { throw new Error("Kein neuer Match erwartet"); }, {}, "mandat-test");
+    const rows = await L.loadRankedVorgaenge(store, () => { throw new Error("Matching voruebergehend gestoert"); },
+      { committees: ["Arbeit und Soziales"] }, "mandat-test");
     assert.equal(rows.length, 12);
   });
   await test("Fachliche Ablehnungsgruende sind genau und enthalten keine Modelltexte", () => {

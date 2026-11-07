@@ -773,10 +773,10 @@ function neuerStore() {
   // ═══ J · Politische Ausgabe: Lage-Auswahl (der produktive Lesepfad) ═══
   abschnitt("J · Lage-Auswahl (produktiver Lesepfad, gespeicherte Ergebnisse)");
   const ranked = await lage.loadRankedVorgaenge(store.api, matching.matchProfileToKnowledgeObjects, PROFIL_A, PROFIL_A.id);
-  check("J1 Auswahl kommt aus den GESPEICHERTEN Matching-Ergebnissen und enthaelt den relevanten Vorgang",
+  check("J1 aktuelle fachliche Auswahl enthaelt den relevanten Vorgang",
     ranked.some((k) => k.id === koRelevant.id), JSON.stringify(ranked.map((k) => k.id)));
   const rankedRelevant = ranked.find((k) => k.id === koRelevant.id);
-  check("J2 die sichtbare Relevanz-Erklaerung haengt am Vorgang (aus der gespeicherten Zeile)",
+  check("J2 die sichtbare Relevanz-Erklaerung haengt am aktuell bewerteten Vorgang",
     rankedRelevant && rankedRelevant.relevanz_erklaerung && /Inneres und Kommunales/.test(JSON.stringify(rankedRelevant.relevanz_erklaerung)));
   const karten = ranked.map((k) => lage.koToVorgangCard(k, store.api.getSourcesForVorgang(k.vorgang_id)));
   const auswahl = lage.selectLageVorgaenge(karten);
@@ -788,7 +788,7 @@ function neuerStore() {
       && Boolean(karteRelevant.displayCategory) && Boolean(karteRelevant.empfehlung));
   check("J5 Herkunft bleibt bis zur Ausgabe sichtbar: Original-PDF des Landtags Brandenburg als Quelle",
     karteRelevant && (karteRelevant.sources || []).some((s) => /parlamentsdokumentation\.brandenburg\.de/.test(String(s.url || ""))));
-  check("J6 persoenliche Relevanz auf der Karte entspricht den gespeicherten Gruenden",
+  check("J6 persoenliche Relevanz auf der Karte belegt den aktuellen Profilbezug",
     karteRelevant && karteRelevant.relevanz && karteRelevant.relevanz.belege.some((b) => /Inneres und Kommunales/.test(b.text)));
   check("J7 Berliner und Bundes-Kontrollvorgaenge erscheinen NICHT als Brandenburger Landesvorgang",
     (() => {
@@ -805,7 +805,9 @@ function neuerStore() {
       const karte = auswahl.find((c) => c.id === koBEPyro.vorgang_id);
       if (!karte) return true;                       // erscheint gar nicht -> ebenfalls kein falscher Beleg
       const belege = (karte.relevanz && karte.relevanz.belege) || [];
-      return !belege.some((b) => b.art === "ausschuss") && !/Inneres und Kommunales/.test(JSON.stringify(karte.relevanz || {}));
+      return !belege.some((b) => b.art === "ausschuss")
+        && !/Mitglied|hat.*beraten|hat.*beschlossen/.test(karte.relevanz.satz)
+        && belege.some((b) => b.art === "haupt" && /Hauptzuständigkeit/.test(b.text));
     })(),
     JSON.stringify((auswahl.find((c) => c.id === koBEPyro.vorgang_id) || {}).relevanz));
   check("J8 Rangfolge: der relevante Brandenburger Vorgang steht vor Kontroll- und Fremdfaellen",

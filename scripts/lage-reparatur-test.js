@@ -45,7 +45,7 @@ const copy = structuredClone;
   let row, calls, gates, saves, sourceInputs;
   storage.v3StoreReady = () => true;
   storage.listKnowledgeObjects = async () => [{ id: "ko-beleg", vorgang_id: "vg-beleg", understanding_status: "complete",
-    status: "neu", headline: "Beleg", was_ist_passiert: "Quellenbericht", updated_at: before.generated_at,
+    status: "neu", headline: "Beratung zum Bundeshaushalt", was_ist_passiert: "Quellenbericht zur Beratung des Bundeshaushalts", updated_at: before.generated_at,
     best_source_url: "https://example.org/haushalt" }];
   storage.listMatchingResults = async () => [{ knowledge_object_id: "ko-beleg" }];
   // Der echte Reparaturpfad braucht zwei Belege desselben Ereignisses.
@@ -72,7 +72,7 @@ const copy = structuredClone;
       quellen_ids: [q.quelle_id], belegstellen: [{ quelle_id: q.quelle_id, text: q.titel }] })),
       qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } };
   };
-  const run = () => lage.buildLageBriefing({ id }, { missingOnly: true, repairIncomplete: true,
+  const run = () => lage.buildLageBriefing({ id, committees: ["Haushalt"] }, { missingOnly: true, repairIncomplete: true,
     beforeGenerate: async owner => { assert.equal(owner, id); gates++; } });
   try {
     await test("Echter Lagepfad repariert ungeprueften Bestand bedingt und behaelt volle Historie", async () => {

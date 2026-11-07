@@ -447,11 +447,16 @@ async function completeFixtureContextCases(){
         ||profile.parliamentType==="Bundestag"&&item.politicalLevel==="bund");}
     return{draft,reviewInput};
   }
-  await test("failed35th profile accepts its actual Berlin source context from the96-case app ranking",async()=>{
+  await test("failed35th profile retains Berlin sources and only its declared topics from the96-case app ranking",async()=>{
     assert.equal(specimens[34].id,"test-kohorte-synthetik-bt-001");
     const profile=P.buildProfile(specimens[34],{aktiv:false}),input=await context(profile);
-    assert(input.length>0);assert(input.every(v=>v.quellenbelege.every(q=>{
-      const item=documentByURL.get(q.url);return item.politicalLevel==="land"&&item.geography.name==="Berlin";})));
+    assert(input.length>0);
+    // Fachlich passende überregionale Kandidaten sind kein erfundener
+    // Regionsbezug. Der echte Entwurf wählt weiterhin nur passende lokale/
+    // Bundesbelege; die negative Fremdlandprobe darunter bleibt unverändert.
+    assert(input.some(v=>v.quellenbelege.some(q=>{
+      const item=documentByURL.get(q.url);return item.politicalLevel==="land"&&item.geography.name===profile.state;})));
+    assert(input.every(v=>v.quellenbelege.every(q=>profile.focusTopics.includes(documentByURL.get(q.url).topic))));
     draftAndReview(profile,input);
   });
   await test("all100 pure profile contexts pass actual96-case ranking, draft fixture and real source-review rules without running a workload",async()=>{
