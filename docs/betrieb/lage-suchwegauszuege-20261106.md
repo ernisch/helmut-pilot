@@ -98,3 +98,11 @@ belegter Abnahme darf ein sichtbarer Produktiverfolg behauptet werden.
 Pflicht CI42297703417 meldete pardok-dispatch-smoke-test.js. Die neue Storage zu Crawler Importkante wurde am exakten Kopf reproduziert: sieben statische Nutzerpfade waren betroffen. Storage importiert die Ingestion jetzt nicht mehr; allein der schon schreibende Scheduler uebergibt den bestehenden fetchUrl und das Abbruchsignal. Ohne Callback bleibt der bisherige direkte Storagevertrag erhalten, ohne Artikelabruf oder Zusatzlesung. Der PARDOK Schutztest bleibt unveraendert.
 
 Gezielte Offlinebelege: PARDOK13/13, Quellen13/13 Gruppen einschliesslich echter Scheduler/Storage/Dedup/Auszug Verdrahtung und direktem Storageaufruf ohne Callback, Dedup10/10 sowie Syntax bestanden. Einziger produktiver direkter Aufrufer ist scheduler.persistRawDocumentsShadow; sechs bestehende Testdateien mit16 Aufrufstellen bleiben kompatibel. Neue Pflicht CI offen. Kein Merge, keine Aktivierung, keine Altzeilenkorrektur oder Modellanfrage; sechs aktuelle Altfaelle weiter offen.
+
+## Mergeabschluss 07.11.2026
+
+Betreiber GO fuer die vorbereitete Mergefolge lag vor. PR1094 nach beiden gruenen Pflichtchecks auf integriertem Kopf efb2613485361d0986403e54163438e1d9fe0f8d (CI42352831258) gemergt:1057d0003067d64f0098d1718c8c2607bcc1dbb5. Der Statuskonflikt wurde ohne Runtimeaenderung geloest; UI Blobs blieben bytegleich zum bereits ausgerollten Stand, die vier Quellen Runtime/Test Blobs bytegleich zum zuvor bestandenen5dd5ceec. Voriger Status ist unveraendert archiviert.
+
+Production dpl_LzrnS2fnHtPYkq71B1SD4EhHU9rF READY auf1057d000. Hauptseite, Releasecheck und ausgelieferte Client/CSS Bytes gegen Git verifiziert; HTTP200 und ok/ready/storage true. Kein error/fatal Eintrag im abgefragten Deploymentfenster. Kein authentifizierter Production Klicktest behauptet. Rollbackkandidat bleibt das vorherige READY UI Deployment dpl_GBXnux9UmhiE6eAPhk8LHZGnqR1E auf2f9ff56d.
+
+Artikelkontext bleibt inaktiv. Projektmetadaten erneut gelesen: kein HELMUT_ARTIKELKONTEXT Eintrag; keine Flag oder Env Aenderung. Sechs Altfaelle weiterhin offen, keine Datenkorrektur oder Modellanfrage. Codeausrollung abgeschlossen, fachliche Quellenlueckenschliessung nur teilweise abgeschlossen.
