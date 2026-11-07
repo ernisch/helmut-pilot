@@ -14,8 +14,8 @@ Voriger Status unveraendert im [Archiv](archive/project_state/2026_11_07_CURRENT
 ## Quellenkorrektur (07.11.2026, gemergt und inaktiv)
 
 Der Code fuer passende neue Medienauszuege vor atomarer Neuanlage ist gemergt; bestehender HELMUT_ARTIKELKONTEXT bleibt standardmaessig aus. Vercel Projektmetadaten vor Merge erneut gelesen: kein solcher Eintrag, keine Env Aenderung. Keine Aktivierung, Altzeilenkorrektur oder Modellanfrage.
-Die sechs untersuchten alten Titelhinweise aus dem Audit06.11. bleiben offen; kein6/6 Produktivnachweis. Storage importiert keine Ingestion; nur der schreibende Scheduler uebergibt fetchUrl und Abbruchsignal. [Umfang, Grenzen und Belege](betrieb/lage-suchwegauszuege-20261106.md).
-Naechster fachlicher Schritt: die sechs Altfaelle gezielt abschliessen; fuer konkrete Production Datenkorrektur oder Aktivierung bleibt eine gesonderte Betriebsfreigabe erforderlich.
+Quellenkorrektur07.11. nach konkretem Betreiber GO ausgefuehrt und nativ rueckgelesen:4 bestehende Originalauszuege,1 amtliche Bundestagsquelle,5 korrigierte Kurzfassungen;2 vermischte Altfälle geparkt. RP Online bleibt mangels abrufbarem Original offen; kein6/6 Nachweis. Fencing, Reservierungen, Profile und historische Briefings unveraendert;0 Provideraufrufe. [Vorherwerte, Nachherhashes und Rueckweg](betrieb/quellenkorrektur-20261107.md).
+Naechster fachlicher Schritt: fuer den offenen RP Schulbesuche Beitrag eine abrufbare, identitaetsstabile Originalquelle belegen. Automatische Artikelkontext Ergaenzung bleibt aus; diese Datenkorrektur aktiviert kein Flag.
 
 ## Quellenversorgung: zwei Zugänge aktiviert, drei repariert (06.11.2026)
 
