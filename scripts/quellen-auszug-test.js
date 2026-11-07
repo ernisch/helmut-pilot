@@ -120,6 +120,7 @@ async function main() {
   });
   await test("Neue Suchwegauszuege behalten Grenzen und alten Quellenstand", pruefeSuchwegAnschluss);
   await test("Echter Suchweg und exakter Bestandsreader bleiben quellengebunden", pruefeSuchwegPipeline);
+  await test("Schreibender Scheduler liefert den Abruf ohne Storage Ingestion Import", pruefeSuchwegVerdrahtung);
   console.log(`${pass}/${pass} Quellenpruefgruppen bestanden`);
 }
 async function pruefeSuchwegAnschluss() {
@@ -181,6 +182,63 @@ const reader=new Function('supabaseRequest','v3StoreReady','RAW_DOC_ID_CHUNK','i
  console.log('PASS: echte Normalisierung -> echte Minimierung -> globale Dedup -> originale Google Eingabebindung -> validierter neuer Auszug.');
  console.log('PASS: echter Bestandsreader200NichtArray wird im OptIn als UNKNOWN abgelehnt;0Artikelrequests; Altvertrag unveraendert.');
 
+}
+
+async function pruefeSuchwegVerdrahtung() {
+  const fs = require("node:fs"), path = require("node:path");
+  const root = path.resolve(__dirname, "..");
+  const storage = fs.readFileSync(path.join(root, "lib/helmut/storage.js"), "utf8");
+  const scheduler = fs.readFileSync(path.join(root, "lib/helmut/scheduler.js"), "utf8");
+  assert.match(scheduler.split("\n")[0], /\bfetchUrl\b.*require\("\.\/crawler"\)/);
+  const storageFn = storage.slice(storage.indexOf("async function persistRawDocumentsDeduped("),
+    storage.indexOf("// Groesse eines Bulk-Blocks."));
+  const schedulerFn = scheduler.slice(scheduler.indexOf("async function persistRawDocumentsShadow("),
+    scheduler.indexOf("function betriebsClusterMitText("));
+  let inserted = [], reads = 0, fetches = 0;
+  const stop = new AbortController();
+  const url = "https://www.ndr.de/nachrichten/info/synthetischer-testartikel.html";
+  const title = "Synthetischer Ausschuss beraet kommunale Angebote";
+  const description = "Der synthetische Ausschuss hoert am Dienstag Fachleute zur Finanzierung der Beratungsstellen an. Die Beratung betrifft Angebote in den Gemeinden.";
+  const item = require("../lib/helmut/crawler").normalizeRawItem({ title, url,
+    originalUrl: "https://news.google.com/rss/articles/synthetic", content: title,
+    publisherName: "NDR", publisherUrl: "https://www.ndr.de", publishedAt: "2026-11-05T12:00:00Z" },
+  { id: "synthetischer-suchweg", name: "Thematische Suche", type: "ministry", url: "https://news.google.com/rss/search?q=synthetic" });
+  const localRequire = require("node:module").createRequire(path.join(root, "lib/helmut/storage.js"));
+  const persist = new Function("require", "v3StoreReady", "v3SkipReason", "ladeDedupBestandsfenster",
+    "getRawDocumentsByIds", "saveRawDocumentsGebuendelt", "supabaseRequest", "erhoeheFindingCounts",
+    storageFn + "; return persistRawDocumentsDeduped;")(
+    name => { assert.notEqual(name, "./crawler"); return localRequire(name); }, () => true, () => "unbenutzt",
+    async () => ({ bestand: [], seiten: 1, gedeckelt: false }),
+    async (ids, opts) => { reads++; assert.equal(opts.requireArray, true); return []; },
+    async rows => { inserted = rows; return { persisted: rows.length, anfragen: 1, einzeln: 0 }; },
+    async () => [], async () => ({ anfragen: 0, aktualisiert: 0, verfehlt: [] }));
+  const fetchUrl = async (target, depth, opts) => {
+    fetches++; assert.equal(target, url); assert.equal(depth, 0);
+    assert.equal(opts.abbruchSignal, stop.signal); assert.equal(opts.artikelkontext, true);
+    return { finalUrl: target, body: `<link rel="canonical" href="${url}"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}">` };
+  };
+  const shadow = new Function("v3StoreEnabled", "dedupeRawDocuments", "toRawDocumentRow", "sourceMode",
+    "persistRawDocumentsDeduped", "saveRawDocument", "recordPipelineError", "fetchUrl",
+    schedulerFn + "; return persistRawDocumentsShadow;")(
+    () => true, D.dedupeRawDocuments, D.toRawDocumentRow, () => "on", persist,
+    async () => { throw Error("unerwarteter Einzelrueckfall"); }, async () => {}, fetchUrl);
+  const beforeFlag = process.env.HELMUT_ARTIKELKONTEXT;
+  try {
+    process.env.HELMUT_ARTIKELKONTEXT = "on";
+    const result = await shadow([item], { abbruchSignal: stop.signal });
+    assert.equal(result.persisted, 1); assert.equal(result.metadatenAuszug.prepared, 1);
+    assert.equal(result.schreibAnfragen, 4); assert.equal(reads, 1); assert.equal(fetches, 1);
+    assert.equal(inserted[0].summary, description); assert.equal(inserted[0].source_type, "ministry");
+    // Andere direkte Storage Aufrufer behalten den bisherigen Schreibvertrag.
+    // Ohne expliziten Abruf gibt es weder Netz noch Zusatzlesung.
+    const plainResult = await persist([D.toRawDocumentRow(item)]);
+    assert.equal(plainResult.persisted, 1); assert.equal(plainResult.metadatenAuszug.prepared, 0);
+    assert.equal(plainResult.metadatenAuszug.reason, "anschluss-unvollstaendig");
+    assert.equal(reads, 1); assert.equal(fetches, 1); assert.equal(inserted[0].summary, undefined);
+  } finally {
+    if (beforeFlag === undefined) delete process.env.HELMUT_ARTIKELKONTEXT;
+    else process.env.HELMUT_ARTIKELKONTEXT = beforeFlag;
+  }
 }
 
 main().catch(e => { console.error(e); process.exitCode = 1; });

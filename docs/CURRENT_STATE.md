@@ -327,3 +327,5 @@ keine aktuellen Testauftraege. Alle alten Laufbelege,
 STOPs, UNKNOWNs, Grants und Journale bleiben erhalten.
 Vor konkreten Production Aktionen Wirkung, Risiko,
 Kosten, Nachkontrolle und Rueckweg benennen.
+
+07.11.: Verbotene Storage/Crawler Importkante entfernt; allein schreibender Scheduler uebergibt Artikeltransport. Unveraenderter PARDOK Smoke13/13, Quellen13/13, Dedup10/10 bestanden; neue Pflicht CI offen. Keine Aktivierung oder Altfallkorrektur.

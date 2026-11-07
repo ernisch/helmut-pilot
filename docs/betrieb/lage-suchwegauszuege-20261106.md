@@ -92,3 +92,9 @@ Naechster Schritt: Codekandidat samt Pflicht CI abnehmen. Danach die
 konkrete Betriebsentscheidung fuer neue Artikel und eine getrennte,
 quellengebundene Pruefung der sechs Altfaelle vorlegen. Erst nach deren
 belegter Abnahme darf ein sichtbarer Produktiverfolg behauptet werden.
+
+## Nacharbeit 07.11.2026
+
+Pflicht CI42297703417 meldete pardok-dispatch-smoke-test.js. Die neue Storage zu Crawler Importkante wurde am exakten Kopf reproduziert: sieben statische Nutzerpfade waren betroffen. Storage importiert die Ingestion jetzt nicht mehr; allein der schon schreibende Scheduler uebergibt den bestehenden fetchUrl und das Abbruchsignal. Ohne Callback bleibt der bisherige direkte Storagevertrag erhalten, ohne Artikelabruf oder Zusatzlesung. Der PARDOK Schutztest bleibt unveraendert.
+
+Gezielte Offlinebelege: PARDOK13/13, Quellen13/13 Gruppen einschliesslich echter Scheduler/Storage/Dedup/Auszug Verdrahtung und direktem Storageaufruf ohne Callback, Dedup10/10 sowie Syntax bestanden. Einziger produktiver direkter Aufrufer ist scheduler.persistRawDocumentsShadow; sechs bestehende Testdateien mit16 Aufrufstellen bleiben kompatibel. Neue Pflicht CI offen. Kein Merge, keine Aktivierung, keine Altzeilenkorrektur oder Modellanfrage; sechs aktuelle Altfaelle weiter offen.
