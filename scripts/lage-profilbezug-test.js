@@ -60,6 +60,7 @@ const different = [
 return { profile, ko, positive, negative, profiles, different };
 })();
 const metadata = require("./fixtures/lage-quellenmetadaten");
+const wind = require("./fixtures/lage-windenergie-original-20261107.json");
 const original = JSON.stringify(F);
 let passed = 0;
 async function test(name, fn) { await fn(); passed++; console.log("PASS " + name); }
@@ -98,6 +99,64 @@ function setup(profile, pool, { matches = null, docs = null } = {}) {
 
 (async () => {
   try {
+    await test("Originale Windenergieanhoerung behaelt den quellenbelegten Stellvertretungsbezug", async () => {
+      const profile = { ...wind.profile, id: "lokal-original-wind", parliamentType: "Bundestag" };
+      const ko = wind.knowledgeObject;
+      A.equal(P.bewerte(ko, profile).passt, true);
+      const linked = { [ko.vorgang_id]: wind.sources };
+      const confirmed = P.mitQuellenbezug([ko], profile, linked);
+      A.equal(confirmed.length, 1);
+      A.deepEqual(confirmed[0].relevanz_erklaerung.belege.map(b => b.art), ["stellvertretung"]);
+      // Nur die fehlende Quellenzeit wird fuer die isolierte Aktualitaetspruefung
+      // lokal gesetzt. Sachverhalt, Originalauszug und Quellenkante bleiben original.
+      const docs = { [ko.vorgang_id]: wind.sources.map(d => ({ ...d, published_at: fresh })) };
+      setup(profile, [ko], { docs });
+      const out = await L.buildLageBriefing(profile, { cacheOnly: true });
+      A.deepEqual(out.vorgaenge.map(k => k.vorgangId), [ko.vorgang_id]);
+      A.equal(forbidden, 0);
+    });
+    await test("Direkter Ausschussbezug traegt weitere Energiethemen und andere gespeicherte Ausschuesse", async () => {
+      const name = wind.expected.profilGrundWert;
+      const profile = { id: "lokal-energie", deputyCommittees: [name], parliamentType: "Bundestag" };
+      const pool = ["Windenergie auf See", "Photovoltaik auf Daechern", "Batteriespeicher"]
+        .map((thema, i) => F.ko("energie-ausschuss-" + i, "Anhörung im Ausschuss für Wirtschaft und Energie zu " + thema));
+      // Keine dieser Sachhandlungen braucht eine Erweiterung der Fachwortliste.
+      for (const ko of pool) {
+        const deputy = P.bewerte(ko, profile), primary = P.bewerte(ko, { committees: [name] });
+        A.equal(deputy.gewicht, 50); A.equal(primary.gewicht, 80);
+      }
+      setup(profile, pool);
+      A.deepEqual(new Set((await L.buildLageBriefing(profile, { cacheOnly: true })).vorgaenge.map(c => c.vorgangId)),
+        new Set(pool.map(k => k.vorgang_id)));
+      for (const [committee, text] of [
+        ["Wirtschaft und Energie", "Anhörung des Ausschusses für Wirtschaft und Energie zu Windkraft"],
+        ["Finanzausschuss", "Der Finanzausschuss berät den Jahresbericht"],
+        ["Ausschuss für Gesundheit", "Der Ausschuss für Gesundheit berät den Jahresbericht"],
+        ["Ausschuss für Meeresfragen", "Der Ausschuss für Meeresfragen berät den Jahresbericht"]
+      ]) A.equal(P.bewerte(F.ko("ausschuss-allgemein", text), { committees: [committee] }).passt, true, committee);
+      A.equal(forbidden, 0);
+    });
+    await test("Ausschussnachweis bleibt sachlich und quellengebunden; gemeinsame Woerter genuegen nicht", async () => {
+      const profile = { id: "lokal-energie-negativ", ...wind.profile, parliamentType: "Bundestag" };
+      for (const text of ["Ein Verein diskutiert über Wirtschaft und Energie", "Im Ausschuss für Kultur geht es um Windenergie",
+        "Ausschuss für Wirtschaft und Energiekunde berät den Jahresbericht", "Beim Sportfest weht Wind auf der Tribüne"]) {
+        A.equal(P.bewerte(F.ko("ohne-ausschuss", text), profile).passt, false, text);
+      }
+      for (const committee of ["Haushalt", "Haushaltsausschuss", "Ausschuss für Haushalt"]) {
+        A.equal(P.bewerte(F.ko("privathaushalt", "Private Haushalte kaufen neue Möbel"), { committees: [committee] }).passt, false);
+      }
+      const ko = wind.knowledgeObject;
+      const wrong = { [ko.vorgang_id]: [doc(ko, "", "Ein Verein diskutiert über Wirtschaft und Energie")] };
+      A.deepEqual(P.mitQuellenbezug([ko], profile, wrong), []);
+      setup(profile, [ko], { docs: wrong });
+      A.deepEqual((await L.buildLageBriefing(profile, { cacheOnly: true })).vorgaenge, []);
+      const proseOnly = F.ko("ausschuss-nur-prosa", "Anhörung zur Windenergie auf See", {
+        warum_wichtig: ko.was_ist_passiert, why_relevant: ko.was_ist_passiert, policy_field: ["Wirtschaft"] });
+      A.equal(P.bewerte(proseOnly, profile).passt, false);
+      A.equal(P.bewerte(ko, { committees: ["Verteidigungsausschuss"] }).passt, false,
+        "Historischer Verteidigungsteil wird nicht unter dem korrigierten Windenergieauszug wiederbelebt");
+      A.equal(forbidden, 0);
+    });
     await test("Hauptfach, konkrete Aufgabe, Stellvertretung, Region und indirekte Industriewirkung bleiben erhalten", () => {
       for (const ko of F.positive) {
         const result = P.bewerte(ko, F.profile);

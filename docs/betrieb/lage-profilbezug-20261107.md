@@ -3,8 +3,8 @@
 Entwicklungsstand auf `codex/profilbezogene-lageauswahl-20261107`, Basis
 `4c361260`, Erstimplementierung `95b1e986`, Endkopf im PR, [PR #1100](https://github.com/ernisch/helmut-pilot/pull/1100). Geprüfte Entwicklung; kein Merge, Deployment, Profilwechsel,
 Production-Schreiben, Modelltest oder Belastungstest. Der zugehörige PR enthält
-Commitbindung und Pflicht-CI. Nächster Schritt nach grüner CI: konkrete
-Merge-/Production-Freigabe für diesen PR.
+Commitbindung und Pflicht-CI. PR bleibt auf ausdrücklichen Auftrag ungemergt;
+nächster Schritt: unabhängige Gegenprüfung des ergänzten Originalfalls.
 
 ## Ursache und aktueller Abgleich
 
@@ -99,6 +99,61 @@ Der fachlich passende Digitalvorgang auf Vektorrang 14 erreicht weiterhin die
 Auswahl; die Liste wird nicht mehr mit unpassenden Vorgängen auf zwölf gefüllt.
 
 ## Prüfungen und Gegenprüfung
+
+### Nachprüfung: verlorene Windenergieanhörung auf `ba244d42`
+
+Die unabhängige Gegenprüfung meldete einen echten Sollverlust:
+`vg-infrastrukturbeschleunig-20261028-7081d4` wurde trotz ausdrücklich genannter
+Stellvertretung abgelehnt. Der neue Originalfall scheitert auf `ba244d42`
+reproduzierbar mit `passt:false`. Ursache: Bei bekannter Fachwortliste lief die
+zusätzliche direkte Ausschusserkennung nur, wenn diese Liste **nicht** existierte.
+„Windenergie auf See“ ist kein Eintrag der begrenzten Wirtschaftsliste.
+Die bisherige Nullverlust-Bilanz gilt ausschließlich für den bezeichneten
+synthetischen Korpus und hat diesen Bestandsverlust nicht ausgeschlossen.
+
+Die Korrektur ergänzt die ausdrücklich gespeicherte Ausschussbezeichnung als
+additiven Nachweis, unabhängig vom Vorhandensein einer Fachwortliste. Der Name
+muss zusammenhängend im fachlichen Sachtext stehen, einschließlich
+institutionellem „Ausschuss“; Kurzbezeichnungen und Genitiv „Ausschusses“ werden
+unterstützt. Gemeinsame Wörter wie „Wirtschaft und Energie“ ohne Ausschuss
+oder private „Haushalte“ genügen nicht. Die identische Prüfung läuft erneut
+an der verknüpften Originalquelle. Hauptzuständigkeit bleibt 80,
+Stellvertretung 50. Regelversion 2 invalidiert persönliche Narrativcaches.
+Keine Erweiterung der Energiewortliste oder Änderung der Quellenpipeline.
+
+Die neue Fixture `scripts/fixtures/lage-windenergie-original-20261107.json`
+enthält eine minimale Nachherprojektion aus den bereits vorhandenen, ausgeführten
+Quellenkorrekturbelegen samt nativem Rücklesezeitpunkt, Quellenkante, Dokument-/
+Zeilenhashes und Originalauszug. Kein neuer Datenbankabruf. Beide fachlichen
+Texte benennen „Ausschuss für Wirtschaft und Energie“. Die Profilprojektion
+enthält nur die vorher gelesenen Ausschussfelder. Der fehlende originale
+Quellenzeitstempel bleibt unbekannt; ausschließlich im isolierten Ausgabetest
+wird `published_at` lokal frisch gesetzt. Sachtext und Auszug bleiben original.
+Das belegt die fachliche Aufnahme im Ausgabepfad, keine heutige Live-Frische.
+
+| Fall | Auf `ba244d42` | Mit Korrektur |
+| --- | --- | --- |
+| Originale Windenergieanhörung | fachlich abgelehnt | zugelassen; Originalauszug bestätigt Stellvertretung; 1 Karte im echten `buildLageBriefing(cacheOnly)` |
+| Lokale Anhörungen zu Windenergie, Photovoltaik, Batteriespeichern mit ausdrücklichem Ausschuss | kein Fachwortanker | 3/3 Karten; Stellvertretung 50, Hauptzuständigkeit 80 |
+| Wirtschaft/Energie ohne Ausschuss, fremder Ausschuss, verlängertes anderes Ausschusswort, Sport-Wind | kein tragfähiger Grund | weiterhin 0/4 fachliche Aufnahmen |
+| Passendes KO mit fachfremdem Auszug | kein belegbarer Grund | 0 Karten |
+| Historischer Verteidigungsteil unter korrigiertem Windenergieauszug | kein aktueller Nachweis | weiterhin kein Verteidigungsbezug |
+
+Ergänzte Prüfung: **24/24 Fachgruppen** bestanden, einschließlich sämtlicher
+bisheriger Negativfälle und indirekter Industrieenergiefolgen. Die sechs
+bisherigen wichtigen synthetischen Treffer bleiben 6/6 erhalten; der ergänzte
+Original-Solltreffer wechselt von verloren zu erhalten. Das ist keine vollständige
+Recallmessung des realen Bestands. Erneute gezielte Lage-Regression:
+**35/35 Suiten** grün. Unabhängiger OpenAI-Delta-Review mit acht lokalen Probes
+bestätigt Originalfall, Kurzform, Genitiv, getrennte Hauptrolle sowie Ablehnung
+verstreuter Wörter, fremder Quelle und fremden Ausschusses; kein konkreter
+neuer Blocker. Aliasgrenze: gespeichertes „Wirtschaftsausschuss“ wird nicht
+automatisch in „Ausschuss für Wirtschaft und Energie“ umgedeutet. Diese
+allgemeine Namensauflösung bleibt außerhalb der kleinsten Korrektur.
+Pflicht-CI ist am ergänzten PR-Kopf auszuweisen; der bisher grüne Lauf
+`42395965284` gehört ausschließlich zu `ba244d42`.
+
+### Frühere Prüfbelege
 
 Alle Testläufe über `scripts/lokal.js`, keine Production-Kennung im Kindprozess.
 

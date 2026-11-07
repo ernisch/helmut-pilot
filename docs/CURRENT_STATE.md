@@ -10,12 +10,12 @@ Tests und diesem Statusdokument.
 Auf `codex/profilbezogene-lageauswahl-20261107` fachliche Aufnahme vor
 Ergebnislimit, getrennte Profilgründe, Quellenbestätigung und Profil-/KO-Cachebindung
 umgesetzt. Keine fachfremde Auffüllung oder pauschale Schalteraktivierung.
-Lokal mit aktuellem Cem-Profil/synthetischen Artikeln:12→6 Karten,0/6Verluste;
-drei Gegenprofile je3→1/0Verluste.
-21/21 neue Fachgruppen,35/35 Lage-Suiten und141/141 bestehende Lage-Assertions
-bestanden; weitere245Matching-/Integrationsprüfungen undBT/BE/BB-Endwege grün. Pflicht-CI
-auf [PR1100](https://github.com/ernisch/helmut-pilot/pull/1100), Erstcode95b1e986, Endkopf im PR. Kein Production-Nachweis/Merge/Deployment;
-Branchdeployments gesperrt. Danach: konkrete Merge-/Production-Freigabe für den PR.
+Synthetischer Cem-Korpus:12→6 Karten,0/6Verluste; drei Gegenprofile je3→1.
+Gegenprüfung fand dennoch realen Windenergie-Sollverlust aufba244d42: behoben
+durch additive, quellenbestätigte Ausschusserkennung. Originalfall jetzt1Karte;
+24/24 Fachgruppen samt bisherigen Negativfällen grün; frühere Pflicht-CI aufba244d42
+grün, erneute Pflicht-CI am ergänzten Kopf erforderlich. [PR1100](https://github.com/ernisch/helmut-pilot/pull/1100)
+bleibt ausdrücklich ungemergt. Kein Deployment/Production-Nachweis; Branchdeployments gesperrt. Danach: unabhängige Gegenprüfung des ergänzten Originalfalls.
 [Ursache, Tests, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md).
 
 ## UX Mergeabschluss (07.11.2026)
