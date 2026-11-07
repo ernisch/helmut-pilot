@@ -629,5 +629,29 @@
         "lageCards": 10
       }
     ]
+  },
+  "androidStartupRollout": {
+    "observedAt": "2026-11-06T16:38:51Z",
+    "commit": "ec7240db561d95a89d43ed0273464c16b428a788",
+    "deployment": "dpl_B6GuTruWeFfG4mzr5BEZuMFNURua",
+    "site.webmanifest": {
+      "matchesReviewedSource": true,
+      "sha256": "a09ca1eb86f648106c7007f1c9bdb2d597e6b4f1619c1a77ca6180614a1b0575",
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    "startColor": "#0a0f1c",
+    "sw.js": {
+      "matchesReviewedSource": true,
+      "sha256": "4ab7e6c1350f5bf52f187e4d5abbbe9e001b1ce8edff2ae08d95e2d18954f9cd",
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    "htmlVersionCorrect": true,
+    "anonymousSessionCorrect": true,
+    "startPayload": {
+      "versionCorrect": true,
+      "briefingPresent": true,
+      "lageAvailable": true,
+      "lageCards": 10
+    }
   }
 }
