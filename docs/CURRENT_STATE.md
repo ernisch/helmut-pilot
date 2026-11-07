@@ -5,9 +5,17 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
-## Lageauszuege aus Suchwegartikeln (06.11.2026, vorbereitet)
+## UX Korrekturen (07.11.2026)
 
-Gezielte Diagnose der sechs Titelhinweise abgeschlossen. Der NDR/RND Suchweg liefert keine Originalsummary; vorhandener NDR Metadatenextraktor funktioniert. Kleiner Anschluss fuer zukuenftige neue bekannte Medienartikel vor der atomaren Raw Neuanlage vorbereitet, am bestehenden Artikelkontext Schalter gebunden. Keine Altzeilenkorrektur und kein6/6 Produktivnachweis. Syntax,13 Anschlussgruppen, echte Dedup Herkunftsbindung und unbekannte Readerantwort gezielt offline bestanden; unabhaengiges Review ohne Blocker. Pflicht CI offen. Keine Flagaktivierung, Datenmutation oder Modellgenerierung. Projektumgebung hat keinen HELMUT_ARTIKELKONTEXT Eintrag; Runtimebindung nicht gesondert behauptet. Die sechs aktuellen Altfaelle bleiben offen. [Umfang, Grenzen, Tests und Betriebsentscheidung](betrieb/lage-suchwegauszuege-20261106.md). Naechster Schritt: Codekandidat abnehmen, dann konkrete Betriebsfreigabe fuer neue Quellen und begrenzte Altfallpruefung einholen.
+Betreiber GO: die vier vorbereiteten PRs nacheinander bei gruener Pflicht CI mergen.
+Mobil PR1091 (`c3f5f2a0`), Desktop PR1092 (`eec7d804`), Navigation/Zeiten/Radar PR1093 (`2f9ff56d`) gemergt; beide Pflichtchecks jeweils bestanden. Production `dpl_GBXnux9UmhiE6eAPhk8LHZGnqR1E` READY auf2f9ff56d; Releaseantwort HTTP200 mit ok/ready/storage true. Authentifizierte gemeinsame Production Bedienabnahme steht aus.
+Vollstaendiger voriger Status unveraendert im [Archiv](archive/project_state/2026_11_07_CURRENT_STATE_vor_ux_abnahme.md); alte Testfehler bleiben historische Belege. UI Rueckweg: vorheriges Deployment oder gezielter Revert, keine Datenmutation.
+
+## Quellenkorrektur (07.11.2026, Code vorbereitet)
+
+PR1094 schliesst passende neue Medienauszuege vor atomarer Neuanlage an; bestehender HELMUT_ARTIKELKONTEXT bleibt standardmaessig aus. Vercel Projektmetadaten vor Merge erneut gelesen: kein solcher Eintrag, keine Env Aenderung. Sechs alte Titelhinweise sind weiterhin nicht repariert; keine Aktivierung oder Modellanfrage.
+Storage importiert keine Ingestion mehr; nur schreibender Scheduler uebergibt fetchUrl und Abbruchsignal. PARDOK13/13, Quellen13/13, Dedup10/10 bestanden; Pflichtchecks auf5dd5ceec gruen. Nach Aufloesung des reinen Statuskonflikts Pflicht CI auf integriertem Kopf neu abnehmen, dann autorisiert mergen. [Umfang, Grenzen und Belege](betrieb/lage-suchwegauszuege-20261106.md).
+Buero bleibt wie beauftragt zuletzt und unveraendert. Naechster Schritt: integrierte Pflicht CI von PR1094 abnehmen.
 
 ## Quellenversorgung: zwei Zugänge aktiviert, drei repariert (06.11.2026)
 
@@ -327,5 +335,3 @@ keine aktuellen Testauftraege. Alle alten Laufbelege,
 STOPs, UNKNOWNs, Grants und Journale bleiben erhalten.
 Vor konkreten Production Aktionen Wirkung, Risiko,
 Kosten, Nachkontrolle und Rueckweg benennen.
-
-07.11.: Verbotene Storage/Crawler Importkante entfernt; allein schreibender Scheduler uebergibt Artikeltransport. Unveraenderter PARDOK Smoke13/13, Quellen13/13, Dedup10/10 bestanden; neue Pflicht CI offen. Keine Aktivierung oder Altfallkorrektur.

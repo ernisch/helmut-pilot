@@ -154,6 +154,7 @@ function privateAccessChanged() {
   return error;
 }
 function clearPrivateMandateState() {
+  clearLageHistory();
   profile = null; briefing = null; aiStatus = { enabled: false, model: "" };
   tasks = []; notes = []; recommendations = []; decisions = [];
   helmutBriefings = []; helmutDeck = []; helmutDecidedIds = new Set();
@@ -1337,6 +1338,9 @@ function setMandateSwitchPending(pending) {
     mandateSwitchControls.clear();
     app.querySelectorAll("[data-profile-switch]").forEach(select => { select.value = activePoliticianId; });
     bindPrivateFormScopes();
+    if (uiLageHistoryPending) {
+      uiLageHistoryPending = false; restoreLageHistory(window.history?.state);
+    }
   }
 }
 async function switchPolitician(id) {
@@ -4646,6 +4650,67 @@ function hideStartupSplash() {
 let uiLageSelectedId = "";
 let uiLageDetailOpen = false;
 
+// Nur lokale Lage-Navigation: History ist keine Daten- oder Zugriffsquelle.
+// Pro Seitenlauf/Privatkontext gebunden; alte Mandats- und Login-Eintraege bleiben inert.
+const uiLageHistoryPage = `${Date.now()}:${Math.random()}`;
+let uiLageHistoryEpoch = 0;
+let uiLageHistoryPending = false;
+function lageHistoryEntry(state = window.history?.state) {
+  const entry = state && state.helmutLage;
+  return privateAccess && !mandateSwitchPending && profile?.id === activePoliticianId
+    && entry?.scope === `${uiLageHistoryPage}:${uiLageHistoryEpoch}`
+    && entry.mandateId === activePoliticianId ? entry : null;
+}
+function writeLageHistory(entry, push = false) {
+  try {
+    const previous = window.history.state;
+    const state = previous && typeof previous === "object" ? { ...previous } : {};
+    if (entry) state.helmutLage = { ...entry, scope: `${uiLageHistoryPage}:${uiLageHistoryEpoch}`, mandateId: activePoliticianId };
+    else delete state.helmutLage;
+    window.history[push ? "pushState" : "replaceState"](state, "");
+    return true;
+  } catch (_) { return false; } // Die normale Detailbedienung bleibt bei gesperrter History nutzbar.
+}
+function clearLageHistory() {
+  ++uiLageHistoryEpoch; uiLageHistoryPending = false; uiLageSelectedId = ""; uiLageDetailOpen = false;
+  writeLageHistory(null);
+}
+function rememberLageHistory(id) {
+  if (!window.matchMedia?.("(max-width: 767px)").matches || !privateAccess
+    || mandateSwitchPending || profile?.id !== activePoliticianId) return;
+  const current = lageHistoryEntry();
+  const origin = current?.kind === "detail" ? current.origin : currentView;
+  const scrollTop = current?.kind === "detail" ? current.scrollTop || 0 : app.querySelector(".ui-page")?.scrollTop || 0;
+  if (current?.kind !== "detail") {
+    const back = currentView === "briefing" ? { kind: "list", id, scrollTop } : { kind: "view", view: currentView, scrollTop };
+    if (!writeLageHistory(back)) return;
+    writeLageHistory({ kind: "detail", id, origin, scrollTop }, true);
+  } else writeLageHistory({ kind: "detail", id, origin, scrollTop });
+}
+function restoreLageHistory(state) {
+  const entry = lageHistoryEntry(state);
+  if (!entry) return false;
+  const scrollTop = Number.isFinite(entry.scrollTop) ? Math.max(0, entry.scrollTop) : 0;
+  if (entry.kind === "view") {
+    if (!VIEW_PERSIST_SAFE.has(entry.view) || (entry.view === "admin" && userRole() !== "admin")) return false;
+    currentView = entry.view; uiLageDetailOpen = false;
+  } else if (entry.kind === "list" || entry.kind === "detail") {
+    const found = lageVisibleVorgaenge(lageData()).some(v => String(v.vorgangId || v.id || "") === entry.id);
+    currentView = "briefing"; uiLageDetailOpen = entry.kind === "detail" && found;
+    uiLageSelectedId = found ? entry.id : "";
+    if (entry.kind === "detail" && !found) writeLageHistory({ kind: "list", scrollTop });
+  } else return false;
+  navOpen = false; updatesOpen = false; persistView(currentView); render();
+  app.querySelector(".ui-page")?.scrollTo({ top: uiLageDetailOpen ? 0 : scrollTop, behavior: "instant" });
+  if (uiLageDetailOpen) app.querySelector(".ui-mobile-back")?.focus({ preventScroll: true });
+  else Array.from(app.querySelectorAll("[data-ui-lage-select]")).find(el => el.dataset.uiLageSelect === entry.id)?.focus({ preventScroll: true });
+  return true;
+}
+window.addEventListener("popstate", event => {
+  if (mandateSwitchPending) { uiLageHistoryPending = true; return; }
+  restoreLageHistory(event.state);
+});
+
 function uiIcon(name) {
   const paths = {
     helmut: '<path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/>',
@@ -5255,10 +5320,10 @@ function lageCheckedLabel(iso) {
   const berlinDay = (x) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(x);
   const uhr = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(d);
   const dayKey = berlinDay(d);
-  if (dayKey === berlinDay(new Date())) return `Zuletzt aktualisiert: heute, ${uhr} Uhr.`;
-  if (dayKey === berlinDay(new Date(Date.now() - 24 * 3600 * 1000))) return `Zuletzt aktualisiert: gestern, ${uhr} Uhr.`;
+  if (dayKey === berlinDay(new Date())) return `Neueste Auswertung: heute, ${uhr} Uhr.`;
+  if (dayKey === berlinDay(new Date(Date.now() - 24 * 3600 * 1000))) return `Neueste Auswertung: gestern, ${uhr} Uhr.`;
   const datum = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long" }).format(d);
-  return `Zuletzt aktualisiert: ${datum}, ${uhr} Uhr.`;
+  return `Neueste Auswertung: ${datum}, ${uhr} Uhr.`;
 }
 
 // STOERUNGSWAHRHEIT (Audit-Fix 2026-07): Lage-Ausfallgründe (Server: available:false
@@ -5348,6 +5413,23 @@ function renderProsaEinordnung(data) {
     <p class="prosa-hinweis">Entwurf zur Prüfung. Die fachliche Abnahme steht aus.</p>${blocks}</section>`;
 }
 
+// Kompakte Liste: dieselbe neueste Quelle wie im Detail, nie Abrufzeit als Publikation.
+function lageListSourceHtml(v) {
+  const source = vsheetSourcesSorted(v.sources)[0];
+  if (!source) return "";
+  const name = lageField(source.name) || lageField(source.sourceName) || lageField(source.host) || "Quelle";
+  let date = "";
+  if (!bundespulsPublicationUnknown(source, source.url)) {
+    const published = source.publishedAt || source.published_at;
+    if (published && Number.isFinite(Date.parse(published))) {
+      date = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(published));
+    } else {
+      date = lageField(source.dateLabel);
+    }
+  }
+  return `<span class="ui-row-source"><span class="ui-row-source-name" title="${escapeAttribute(name)}">${escapeHtml(name)}</span><span>${escapeHtml(date || "Datum unbekannt")}</span>${lageStatusChip(v) ? `<span>${escapeHtml(lageStatusChip(v))}</span>` : ""}</span>`;
+}
+
 function renderLageView() {
   const data = lageData();
   if (data?.prosaVorschau === true) return renderProsaEinordnung(data.prosaEinordnung);
@@ -5358,6 +5440,8 @@ function renderLageView() {
   }
   const selected = items.find(v => String(v.vorgangId || v.id) === uiLageSelectedId) || items[0];
   const selectedId = String(selected.vorgangId || selected.id || "");
+  const historyEntry = lageHistoryEntry();
+  const backLabel = historyEntry?.kind === "detail" && historyEntry.origin !== "briefing" ? "Zurück" : "Zurück zur Lage";
   const checked = lageCheckedLabel(data && data.latestUpdatedAt);
   const freshness = lageFreshnessLabel(items);
   const stand = checked || freshness;
@@ -5375,14 +5459,14 @@ function renderLageView() {
             const summary = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
             return `<button class="ui-vorgang-row ${id === selectedId ? "is-selected" : ""}" type="button" data-ui-lage-select="${escapeAttribute(id)}" aria-pressed="${id === selectedId}">
               <span class="ui-row-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
-              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(summary)}</span>` : ""}${lageStatusChip(v) ? `<span class="ui-row-meta">${escapeHtml(lageStatusChip(v))}</span>` : ""}</span>
+              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(summary)}</span>` : ""}${lageStatusChip(v) ? `<span class="ui-row-meta">${escapeHtml(lageStatusChip(v))}</span>` : ""}${lageListSourceHtml(v)}</span>
               <span class="ui-row-chevron" aria-hidden="true">›</span>
             </button>`;
           }).join("")}
         </div>
       </section>
-      <article class="ui-detail ui-lage-detail" aria-labelledby="ui-lage-detail-title">
-        <button class="ui-mobile-back" type="button" data-ui-lage-back>${uiIcon("back")} Zurück zur Lage</button>
+      <article class="ui-detail ui-lage-detail" tabindex="0" aria-labelledby="ui-lage-detail-title">
+        <button class="ui-mobile-back" type="button" data-ui-lage-back>${uiIcon("back")} ${backLabel}</button>
         ${vsheetContentHtml(selected).replace('id="vsheet-title"', 'id="ui-lage-detail-title"')}
       </article>
     </div>`;
@@ -5704,7 +5788,7 @@ function vsheetContentHtml(v) {
       <h2 id="vsheet-title" class="vsheet-title${displayTitle ? "" : " vsheet-title-fallback"}">${escapeHtml(title)}</h2>
       <div class="vsheet-metaline">
         <span class="vsheet-meta-type">Politischer Vorgang</span>
-        ${dateLabel ? `<span class="vsheet-metasep" aria-hidden="true">·</span><span>${escapeHtml(dateLabel)}</span>` : ""}
+        ${dateLabel ? `<span class="vsheet-metasep" aria-hidden="true">·</span><span>${Number.isFinite(Date.parse(v.createdAt || "")) ? "Angelegt" : "Vorgangsstand"}: ${escapeHtml(dateLabel)}</span>` : ""}
         ${firstSourceName ? `<span class="vsheet-metasep" aria-hidden="true">·</span><span>${escapeHtml(firstSourceName)}</span>` : ""}
       </div>
     </header>
@@ -6412,7 +6496,7 @@ function renderUiBriefingHero(state, details = "") {
   const v = lageVorgangZumBriefing(item);
   const sub = v ? lageField(v.displaySummary) : "";
   const count = Number(item.sourceCount) || 0;
-  const when = hstandText(item.zeitLabel) || hstandWhen(item.lastUpdated);
+  const when = hstandText(item.zeitLabel) || hstandWhen(item.meldungAt);
   const chips = `${urgency}${hstandContextChips(item.contextChips, 2)}`;
   return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang" data-topic-title="${escapeAttribute(title)}">
     <div class="ui-hero-main"><span class="ui-eyebrow"><span class="ui-priority-dot" aria-hidden="true"></span>${eyebrow}</span>
@@ -6424,7 +6508,7 @@ function renderUiBriefingHero(state, details = "") {
     <div class="ui-hero-next">
       <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Dein nächster Schritt</span><span class="ui-next-step">${escapeHtml(recommendation || "Prüfe die Einordnung und Quellen zu diesem Vorgang.")}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>
       ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfe den Vorgang und deine Büro-Formate.</p>'}
-      <p class="ui-hero-meta">${count ? `<span>${uiIcon("briefing")}${count === 1 ? "1 Quelle" : `${count} Quellen`}</span>` : ""}${when ? `<span>${HELMUT_ICON_CLOCK}Stand ${escapeHtml(when)}</span>` : ""}</p>
+      <p class="ui-hero-meta">${count ? `<span>${uiIcon("briefing")}${count === 1 ? "1 Quelle" : `${count} Quellen`}</span>` : ""}${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
     </div>
     ${details ? `<details class="ui-hero-details"><summary class="ui-hero-more"><span class="ui-more-closed">Ausführlich lesen</span><span class="ui-more-open">Weniger anzeigen</span>${uiIcon("arrow")}</summary><div class="ui-hero-details-body">${details}</div></details>` : ""}
   </section>`;
@@ -6441,25 +6525,16 @@ function renderHstandHeader(state) {
     : hstandCurrentQuiet(state)
       ? { label: "Aktuell · keine neue Tagespriorität", tone: "ok" }
       : (HSTAND_STATUS_LABEL[state.status] || HSTAND_STATUS_LABEL.empty);
-  // Das Datum im Kopf ist das ECHTE Datum des gezeigten Vorgangs: bevorzugt sein
-  // belegtes Meldungsdatum (zeitLabel, Europe/Berlin) — nicht der Zeitpunkt, zu dem
-  // Helmut die Zeile zuletzt angefasst hat (Audit 2026-08-10, Befund F2).
-  const when = (hstandCurrentQuiet(state) && hstandWhen(vertrag.lauf?.erzeugtAm))
-    || (state.primaryItem && state.primaryItem.zeitLabel)
-    || hstandWhen(state.primaryItem && state.primaryItem.meldungAt)
-    || hstandWhen(state.sourcesSummary && state.sourcesSummary.lastUpdated)
-    || hstandWhen(state.generatedAt);
-  // Bei STALE (angezeigter Datenstand nicht von heute) darf NICHT der aktuelle Slot-Name
-  // (z. B. „Mittagsbriefing") mit einem alten Datum vermischt werden — das wirkt falsch.
-  // Dann ehrlich „Letzter Stand · <Datum>" zeigen. Nur bei frischem Stand den Slot-Namen.
-  // Befund F3: das gilt AUCH, wenn der Frischevertrag den Stand zu Recht als „neu seit
-  // dem letzten Briefing" fuehrt, der Vorgang aber von gestern ist — sonst stuende
-  // „Morgenbriefing · Gestern, 22:40" da und saehe wie die heutige Lage aus.
-  const isStale = vertragOffen || state.status === "stale" || state.staleState === true
-    || state.datenstandVonHeute === false;
-  const type = isStale
-    ? "Letzter Stand"
-    : (HSTAND_TYPE_LABEL[String(state.briefingType || "").toLowerCase()] || "Briefing");
+  // Publikation, gespeicherter Morgenlauf und Abrufzeit sind verschiedene Dinge.
+  // generatedAt/sourcesSummary.lastUpdated koennen beim Lesen/KO-Schreiben entstehen.
+  // Sie ersetzen daher weder eine belegte Publikation noch den gespeicherten Lauf.
+  const when = (state.primaryItem && state.primaryItem.zeitLabel)
+    || hstandWhen(state.primaryItem && state.primaryItem.meldungAt);
+  const created = hstandWhen(vertrag?.lauf?.erzeugtAm);
+  const timeLabel = [
+    state.primaryItem ? (when ? `Quellenstand: ${when}` : "Quellenstand nicht belegt") : "",
+    created ? `Briefing erstellt: ${created}` : "Erstellungszeit des Briefings nicht belegt"
+  ].filter(Boolean).join(" · ");
   const partial = state.qualityStatus === "partial";
   return `
     ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.")}
@@ -6468,7 +6543,7 @@ function renderHstandHeader(state) {
           <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
           ${renderRefreshButton()}
         </div>
-      <p class="hstand-meta-line">${HELMUT_ICON_CLOCK}<span>${escapeHtml(type)}${when ? ` · ${escapeHtml(when)}` : ""}</span></p>
+      <p class="hstand-meta-line">${HELMUT_ICON_CLOCK}<span>${escapeHtml(timeLabel)}</span></p>
       ${partial ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>Nur teilweise vollständig – einige Angaben fehlen noch.</span></p>` : ""}
       ${renderHstandFrische(state)}
     </div>`;
@@ -6589,7 +6664,7 @@ function renderHstandPrimary(state) {
   // Beleg-Karte, kein Hauptscreen: nur die 2–3 wichtigsten Kontext-Chips.
   const chips = hstandContextChips(p.contextChips, 3);
   const count = Number(p.sourceCount);
-  const when = hstandWhen(p.lastUpdated);
+  const when = hstandText(p.zeitLabel) || hstandWhen(p.meldungAt);
   const quelle = hstandQuelleHref(p);
   return `
     <section class="hstand-card hstand-primary" aria-label="Aktueller Vorgang">
@@ -6598,7 +6673,7 @@ function renderHstandPrimary(state) {
       ${(urgency || chips) ? `<div class="hstand-chiprow">${urgency}${chips}</div>` : ""}
       <dl class="hstand-metrics">
         <div class="hstand-metric"><dt>Quellen</dt><dd>${Number.isFinite(count) && count > 0 ? count : "—"}</dd></div>
-        <div class="hstand-metric"><dt><span class="hstand-mk-full">Letzte Aktualisierung</span><span class="hstand-mk-short">Stand</span></dt><dd>${when ? escapeHtml(when) : "—"}</dd></div>
+        <div class="hstand-metric"><dt><span class="hstand-mk-full">Quellenstand</span><span class="hstand-mk-short">Quelle</span></dt><dd>${when ? escapeHtml(when) : "Nicht belegt"}</dd></div>
         <div class="hstand-metric"><dt>Qualität</dt><dd>${hstandQuality(p.qualityStatus)}</dd></div>
       </dl>
       ${quelle ? `<a class="hstand-quelle-link" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen${p.sourceName ? ` · ${escapeHtml(p.sourceName)}` : ""}</a>` : ""}
@@ -6653,7 +6728,7 @@ function renderHstandItems(state) {
     const urgency = hstandUrgencyChip(i.urgency);
     // Das Datum bleibt IMMER das tatsaechliche Datum der Meldung (Vertragspunkt 3):
     // eine Meldung vom spaeten Vorabend steht als "Gestern, 22:40" im heutigen Briefing.
-    const zeit = hstandText(i.zeitLabel) || hstandWhen(i.lastUpdated);
+    const zeit = hstandText(i.zeitLabel) || hstandWhen(i.meldungAt);
     // Quellenpflicht: auch die weiteren Vorgaenge tragen ihren oeffnenden Beleg.
     const quelle = hstandQuelleHref(i);
     const lv = lageVorgangZumBriefing(i);
@@ -6695,12 +6770,15 @@ function renderHstandItems(state) {
 function renderHstandSources(state) {
   const s = (state.sourcesSummary && typeof state.sourcesSummary === "object") ? state.sourcesSummary : {};
   const count = Number(s.sourceCount);
-  const when = hstandWhen(s.lastUpdated);
+  // Der zusammengefasste Schreibstand belegt keine neue Publikation.
+  const sourceTimes = [state.primaryItem, ...(Array.isArray(state.items) ? state.items : [])]
+    .map(item => item && Date.parse(item.meldungAt)).filter(Number.isFinite);
+  const when = sourceTimes.length ? hstandWhen(new Date(Math.max(...sourceTimes)).toISOString()) : "";
   const countLabel = Number.isFinite(count) && count > 0 ? `${count} ${count === 1 ? "Quelle" : "Quellen"}` : "Keine Quellen";
   return `
     <footer class="hstand-foot" aria-label="Quellen und Qualität">
       <span class="hstand-foot-cell">${escapeHtml(countLabel)}</span>
-      ${when ? `<span class="hstand-foot-cell">Stand: ${escapeHtml(when)}</span>` : ""}
+      ${when ? `<span class="hstand-foot-cell">Neueste Quelle: ${escapeHtml(when)}</span>` : ""}
       <span class="hstand-foot-cell">${hstandQuality(s.qualityStatus)}</span>
     </footer>`;
 }
@@ -8069,7 +8147,15 @@ function renderRadarView() {
 }
 
 function renderRadarInner(state) {
-  state = state && state.anzeige ? state.anzeige : state;
+  // Anzeige filtert die Inhalte, nicht die technische Herkunft des Lesevertrags.
+  // Sonst gingen Quellenladefehler und die Erstellungszeit hier verloren.
+  state = state && state.anzeige ? { ...state, ...state.anzeige,
+    generatedAt: state.generatedAt,
+    available: state.available ?? state.anzeige.available,
+    status: state.status === "error" ? state.status : state.anzeige.status,
+    quality: state.quality || state.anzeige.quality,
+    emptyState: state.emptyState || state.anzeige.emptyState
+  } : state;
   const body = (!state || !radarStateHasContent(state))
     ? renderRadarEmpty(state)
     : `
@@ -8093,20 +8179,24 @@ function radarStateHasContent(state) {
 
 // --- Kopf -------------------------------------------------------------------
 function renderRadarHeader(state) {
-  const status = (state && state.status) || "empty";
-  const fresh = status === "fresh";
   const updated = state && state.lastUpdated;
-  // Quellenpflicht-Sprint: lastUpdated ist nur noch das juengste BELEGTE
-  // Veroeffentlichungsdatum der angezeigten Quellen. Gibt es Inhalte, aber kein
-  // belegtes Datum, sagt der Kopf das ehrlich — nicht "Noch keine Radar-Daten".
-  const label = !updated
-    ? (previewMode ? "Vorschau" : (radarStateHasContent(state) ? "Ohne belegtes Quellendatum" : "Noch keine Radar-Daten"))
-    : (fresh ? `Aktualisiert ${radarUpdatedLabel(updated)}` : `Letzter Stand: ${radarUpdatedLabel(updated)}`);
+  const sourceDate = radarTime(updated);
+  const disruption = radarDisruption(state);
+  const fresh = Boolean(sourceDate && radarIsToday(new Date(updated)) && !disruption);
+  // lastUpdated belegt das Publikationsdatum einer angezeigten Quelle,
+  // generatedAt nur die Erstellung dieser Ansicht, keine Quellenpruefung.
+  const label = sourceDate ? `Neueste angezeigte Quelle: ${sourceDate}`
+    : (previewMode ? "Vorschau" : (radarStateHasContent(state) ? "Ohne belegtes Quellendatum" : "Kein Quellendatum für diese Ansicht"));
+  const created = state && state.generatedAt && Number.isFinite(Date.parse(state.generatedAt))
+    ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(state.generatedAt)) : "";
+  const provenance = `${created ? `Ansicht erstellt: ${created}. ` : ""}Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen.`;
+  const disruptionNote = disruption && radarStateHasContent(state)
+    ? `<p class="radar2-refresh-note" data-radar-read-error>${escapeHtml(disruption.title)}. ${escapeHtml(disruption.sub)} Vorhandene Inhalte bleiben sichtbar.</p>` : "";
   // Stoerungswahrheit: ein fehlgeschlagener Refresh bleibt nicht mehr stumm —
   // ruhige Hinweiszeile mit dem Zeitstempel des letzten erfolgreichen Stands
   // (kein Alarm-Design, die Anzeige selbst bleibt der letzte gute Stand).
   const failNote = radarRefreshFailedAt && !radarRefreshing
-    ? `<p class="radar2-refresh-note">Aktualisierung fehlgeschlagen — Anzeige zeigt den letzten Stand${updated ? ` (${escapeHtml(radarUpdatedLabel(updated))})` : ""}.</p>`
+    ? `<p class="radar2-refresh-note">Aktualisierung fehlgeschlagen — vorhandene Inhalte bleiben sichtbar${sourceDate ? `. Neueste angezeigte Quelle: ${escapeHtml(sourceDate)}` : ""}.</p>`
     : "";
   return `
     <header class="radar2-header">
@@ -8117,6 +8207,8 @@ function renderRadarHeader(state) {
         </button>
       </div>
       ${failNote}
+      ${disruptionNote}
+      <p class="radar2-refresh-note" data-radar-provenance>${escapeHtml(provenance)}</p>
       <div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
         <span class="radar2-status-dot" aria-hidden="true"></span>
         <span>${escapeHtml(label)}</span>
@@ -8339,7 +8431,7 @@ function radarAdditionalContext(item) {
 // echte ruhige Tag.
 function radarDisruption(state) {
   const reason = String((state && state.quality && state.quality.reason) || "");
-  if (reason === "store-error" || reason === "v3-store-disabled") {
+  if (reason === "store-error" || reason === "v3-store-disabled" || (reason !== "budget" && (state?.available === false || state?.status === "error" || state?.quality?.status === "error"))) {
     return {
       kind: "stoerung",
       title: "Radar derzeit nicht ladbar",
@@ -8360,32 +8452,32 @@ function radarDisruption(state) {
     return {
       kind: "datenluecke",
       title: "Noch keine Datengrundlage",
-      sub: "Die Datenbasis liefert gerade keine ausgewerteten Vorgänge — vermutlich eine Datenlücke, kein ruhiger Nachrichtentag."
+      sub: "Die Datenbasis liefert keine ausgewerteten Vorgänge. Daraus folgt nicht, dass es keine Erwähnungen gibt."
     };
   }
   return null;
 }
 
 function renderRadarEmpty(state) {
-  // Sprint 5 (additiv): unterscheidbarer Radar-Leerzustand (gap/stale/quiet). Der
-  // quiet-Fall (kein-umfeldsignal) beruhigt, gap/stale warnen vor Datenausfall/Frische.
   const es = state && state.emptyState && state.emptyState.kind ? state.emptyState : null;
-  // Stoerungswahrheit: expliziter Ausfall-Grund schlaegt den beruhigenden Leertext
-  // (ohne emptyState — Scoring-Flag in Produktion aus — war das bisher unsichtbar).
-  const disruption = es ? null : radarDisruption(state);
-  const note = es && es.detail ? es.detail
-    : disruption ? disruption.sub
-    : (previewMode
-      ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
-      : "Hier erscheinen neue persönliche Erwähnungen und belegte Veränderungen der Berichterstattung. Ein bloßer Themenbezug reicht nicht; der Sachstand steht in der Lage.");
-  const summaryState = es && es.headline
-    ? { summary: { line1: es.headline, line2: "" } }
-    : disruption ? { summary: { line1: disruption.title, line2: "" } }
-    : (state && state.summary ? state : { summary: { line1: "Heute gibt es keine neuen relevanten Signale in deinem politischen Umfeld.", line2: "" } });
-  const emptyKind = es ? es.kind : (disruption ? disruption.kind : "");
+  // Technischer Fehler hat Vorrang vor einer leeren, ggf. alten Anzeige.
+  const disruption = radarDisruption(state);
+  const sourcesConfirmed = state?.quality?.sourcesLoaded === true;
+  const explicitGap = es && (es.kind === "gap" || es.kind === "stale");
+  const title = disruption ? disruption.title
+    : explicitGap ? (es.headline || "Radarstand nicht aktuell")
+    : sourcesConfirmed ? "Keine zugeordneten Signale in dieser Ansicht"
+    : "Radarprüfung nicht belegt";
+  const note = disruption ? disruption.sub
+    : explicitGap ? (es.detail || "Eine aktuelle Datengrundlage ist nicht bestätigt.")
+    : sourcesConfirmed
+      ? "Die vorhandenen Quellendaten liefern für diese Ansicht keine belegten Signale. Das ist keine Bestätigung, dass es keine Erwähnungen gibt."
+      : previewMode ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
+      : "Für diese Ansicht ist keine geladene Quellengrundlage bestätigt. Die leere Anzeige belegt nicht, dass es keine Erwähnungen gibt.";
+  const emptyKind = disruption ? disruption.kind : explicitGap ? es.kind : sourcesConfirmed ? "quiet" : "unknown";
   return `
-    ${renderRadarSummary(summaryState)}
-    <section class="radar2-section"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
+    ${renderRadarSummary({ summary: { line1: title } })}
+    <section class="radar2-section" data-empty-kind="${escapeAttribute(emptyKind)}">
       <div class="radar2-empty">${escapeHtml(note)}</div>
     </section>
   `;
@@ -9658,6 +9750,8 @@ function bindActions() {
   // Master/detail selection is purely local; both viewport sizes use the same data.
   app.querySelectorAll("[data-ui-lage-select]").forEach(button => {
     button.addEventListener("click", () => {
+      const listScroll = app.querySelector(".ui-page")?.scrollTop || 0;
+      rememberLageHistory(button.dataset.uiLageSelect);
       uiLageSelectedId = button.dataset.uiLageSelect;
       uiLageDetailOpen = true;
       render();
@@ -9666,12 +9760,16 @@ function bindActions() {
         app.querySelector(".ui-page")?.scrollTo({ top: 0 });
         app.querySelector(".ui-mobile-back")?.focus({ preventScroll: true });
       } else {
+        // Kein animierter Ruecklauf vom Seitenanfang beim DOM-Neuaufbau.
+        app.querySelector(".ui-page")?.scrollTo({ top: listScroll, behavior: "instant" });
+        app.querySelector(".ui-lage-detail")?.scrollTo({ top: 0, behavior: "instant" });
         Array.from(app.querySelectorAll("[data-ui-lage-select]")).find(el => el.dataset.uiLageSelect === uiLageSelectedId)?.focus({ preventScroll: true });
       }
     });
   });
   app.querySelectorAll("[data-ui-lage-back]").forEach(button => {
     button.addEventListener("click", () => {
+      if (lageHistoryEntry()?.kind === "detail") { window.history.back(); return; }
       uiLageDetailOpen = false;
       render();
       Array.from(app.querySelectorAll("[data-ui-lage-select]")).find(el => el.dataset.uiLageSelect === uiLageSelectedId)?.focus({ preventScroll: true });
@@ -9776,6 +9874,7 @@ function bindActions() {
     button.addEventListener("click", () => {
       if (button.dataset.view === "office") { officeBriefingTarget = null; selectedOfficeDraft = null; }
       if (vsheetEl) closeVorgangSheet(true); // Detail-Sheet bei Navigation schließen
+      if (lageHistoryEntry()) writeLageHistory({ kind: "view", view: button.dataset.view, scrollTop: 0 });
       currentView = button.dataset.view;
       uiLageDetailOpen = false;
       persistView(currentView);
@@ -10068,6 +10167,7 @@ function bindActions() {
       const inner = event && event.target && event.target.closest ? event.target.closest("a, button") : null;
       if (button.tagName !== "BUTTON" && inner && inner !== button) return;
       if (button.hasAttribute("data-lage-verweis")) {
+        rememberLageHistory(button.dataset.vorgang);
         uiLageSelectedId = button.dataset.vorgang;
         uiLageDetailOpen = true;
         currentView = "briefing";
@@ -12004,3 +12104,4 @@ loadBriefing()
   .then((loaded) => { if (loaded) schedulePushAutoSync(); })
   .then(() => clearAppIconBadge())
   .catch(renderStartFailure);
+

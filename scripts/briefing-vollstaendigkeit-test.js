@@ -207,7 +207,8 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     const shown = { dynamics: [] };
     const b = { available: true, items: [{ title: "Beratung" }],
       currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"], text: "Synthetischer Tagesanlass nur für den Speichertest." }, summary: text },
-      currentRadarState: { dynamics: [{ title: text }], anzeige: shown } };
+      currentRadarState: { dynamics: [{ title: text }], anzeige: shown,
+        generatedAt: "2026-09-09T10:00:00Z", quality: { sourcesLoaded: true } } };
     const lage = { paragraphs, qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } }, before = clone(b);
     // Den echten Clientselektor ausfuehren; nur die HTML-Unterrenderer sind Doubles.
     const client = require("node:fs").readFileSync(require("node:path").join(__dirname, "../client.js"), "utf8");
@@ -217,7 +218,11 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
       radarStateHasContent: () => false, renderRadarEmpty: () => "",
       renderRadarHeader: state => { rendered = state; return ""; }
     });
-    render(b.currentRadarState); assert.equal(rendered, shown);
+    render(b.currentRadarState);
+    assert.deepEqual(clone(rendered.dynamics), shown.dynamics);
+    assert.equal(rendered.generatedAt, b.currentRadarState.generatedAt);
+    assert.deepEqual(clone(rendered.quality), b.currentRadarState.quality);
+    assert(!JSON.stringify(rendered.dynamics).includes(text), "Ausgeblendete Rohdynamik wird nicht als Anzeige verwendet");
     const r = B.pruefeInhalt(b, lage);
     assert.equal(r.strukturellVollstaendig, true);
     assert.equal(r.bestanden, false); assert.equal(r.vollstaendigeFaktenpruefung, false);

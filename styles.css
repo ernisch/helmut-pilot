@@ -9403,3 +9403,44 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
   .ui-page .hstand-state-card--quiet .hstand-state-title { font-size: 24px; }
   .ui-page .hstand-state-card--quiet .hstand-state-sub { font-size: 15px; }
 }
+
+/* Mobile Lage: kurze Vorschau; vollstaendiger Inhalt bleibt im Detail. */
+.ui-row-source { display: none; }
+@media (max-width: 767px) {
+  .ui-lage-workspace .ui-vorgang-list { gap: 0; }
+  .ui-lage-workspace .ui-vorgang-row { grid-template-columns: 24px minmax(0,1fr) 14px; gap: 0 10px; padding: 14px 0; }
+  .ui-lage-workspace .ui-row-number { font-size: 20px; line-height: 1.3; }
+  .ui-lage-workspace .ui-row-content { gap: 5px; }
+  .ui-lage-workspace .ui-row-content > .ui-eyebrow { font-size: 10px; line-height: 1.4; }
+  .ui-lage-workspace .ui-row-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; font-size: 18px; line-height: 1.22; }
+  .ui-lage-workspace .ui-row-summary { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 13px; line-height: 1.4; }
+  .ui-lage-workspace .ui-row-meta { display: none; }
+  .ui-lage-workspace .ui-row-source { display: flex; align-items: baseline; gap: 6px; min-width: 0; color: var(--ui-muted); font-size: 11px; line-height: 1.5; }
+  .ui-row-source > span { flex-shrink: 0; }
+  .ui-row-source .ui-row-source-name { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .ui-row-source > span + span::before { content: "·"; margin-right: 6px; }
+  .ui-lage-workspace .ui-row-chevron { font-size: 20px; }
+}
+
+/* Desktop Lage: Detail bleibt beim Lesen der Liste sichtbar und selbst scrollbar.
+   Platz fuer Kopf, Fuss und den unteren Seitenabstand auch am Listenende lassen. */
+@media (min-width: 768px) {
+  .ui-lage-workspace > .ui-lage-detail {
+    position: sticky;
+    top: 88px;
+    max-height: calc(100dvh - var(--hh) - 120px);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+  }
+  .ui-is-scrolled .ui-lage-workspace > .ui-lage-detail {
+    max-height: calc(100dvh - 208px);
+  }
+}
+
+
+/* Fachliche Zeitangaben sichtbar halten; die aktuelle Uhrzeit ist kein Datenstand. */
+.hstand .ui-briefing-status .hstand-meta-line {
+  position: static; width: auto; height: auto; overflow: visible;
+  clip: auto; clip-path: none; white-space: normal; flex-basis: 100%;
+}
