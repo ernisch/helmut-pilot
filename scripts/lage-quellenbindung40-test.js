@@ -18,7 +18,7 @@ let rows = [], requests = [], corrupt = null, lastInput = null;
 const now = new Date(), fresh = new Date(now - 3600000).toISOString();
 const ko = { id: "ko-vg-forty", vorgang_id: "vg-forty", status: "neu", understanding_status: "complete",
   headline: "Beratung zur Pflege", was_ist_passiert: "Beratung zur Pflege", best_source_url: "https://example.org/pflege", updated_at: fresh };
-const profile = { id: "synthetisch-vierzig" };
+const profile = { id: "synthetisch-vierzig", focusTopics: ["Pflege"] };
 // Historische Quellen ausserhalb des 14-Tage-Fensters, aber desselben
 // Sachverhalts. Mehrere Bezugsjahre waeren ein Quellenmix (separat getestet).
 function doc(n, current = false) { return { id: "d-" + n, title: "Beratung zur Pflege " + n,

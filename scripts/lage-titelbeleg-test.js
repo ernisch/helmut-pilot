@@ -7,7 +7,7 @@ const ai = require("../lib/helmut/ai");
 const now = new Date(), fresh = new Date(now - 3600000).toISOString();
 const ko = {
   id: "ko-titel", vorgang_id: "vg-titel", understanding_status: "complete",
-  headline: "ERFUNDENER TITEL", display_title: "ERFUNDENER ANZEIGETITEL",
+  headline: "ERFUNDENER TITEL zur Pflege", display_title: "ERFUNDENER ANZEIGETITEL",
   was_ist_passiert: "ERFUNDENE RECHTSFOLGE", display_summary: "ERFUNDENER ANSPRUCH",
   warum_wichtig: "ERFUNDENE FOLGE", why_relevant: "ERFUNDENE EINORDNUNG",
   wer_ist_betroffen: "ERFUNDENE BETROFFENE", stage: "ERFUNDENER BESCHLUSS",
@@ -95,7 +95,7 @@ async function test(name, fn) { await fn(); n++; console.log("PASS " + name); }
     ai.generateLageBriefing = deny;
     try {
       for (const opts of [{ cacheOnly: true }, { countOnly: true }]) {
-        const r = await lage.buildLageBriefing({ id: "synthetisch-titelbeleg" }, opts);
+        const r = await lage.buildLageBriefing({ id: "synthetisch-titelbeleg", committees: ["Gesundheit"] }, opts);
         A.equal(r.vorgaenge.length, 1); A.equal(r.vorgaenge[0].displaySummary, hinweis);
         A(!html(r.vorgaenge[0]).includes("ERFUNDEN"));
       }

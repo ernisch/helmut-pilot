@@ -64,7 +64,8 @@ function installMocks({ cachedNarrative = null } = {}) {
 }
 function restore() { Object.assign(storage, { v3StoreReady: orig.v3StoreReady, listKnowledgeObjects: orig.listKnowledgeObjects, listMatchingResults: orig.listMatchingResults, getSourcesForVorgang: orig.getSourcesForVorgang, listAktuelleLageQuellen: orig.listAktuelleLageQuellen, getRenderedBriefingV3: orig.getRenderedBriefingV3, saveRenderedBriefingV3: orig.saveRenderedBriefingV3, acquirePipelineLock: orig.acquirePipelineLock, releasePipelineLock: orig.releasePipelineLock, canSpendLlm: orig.canSpendLlm }); sourceSafety.guardKnowledgeObject = orig.guardKnowledgeObject; ai.generateLageBriefing = orig.generateLageBriefing; }
 
-const profile = { id: "test-politician-one", fullName: "Test Politician One" };
+const profile = { id: "test-politician-one", fullName: "Test Politician One",
+  committees: ["Arbeit und Soziales"], focusTopics: ["Rente"] };
 
 (async () => {
   // ── 1) cacheOnly + Cache-Miss: Karten sofort, KEIN LLM-Call ──

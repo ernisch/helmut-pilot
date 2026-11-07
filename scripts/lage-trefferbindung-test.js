@@ -5,16 +5,16 @@ const Q = require("../lib/helmut/lage-quellenbeleg");
 let passed = 0, failed = 0;
 async function test(name, fn) { try { await fn(); passed++; console.log("PASS " + name); }
   catch (e) { failed++; console.log("FAIL " + name + ": " + e.message); } }
-const ko = (id, title = "Ein belegter Sachverhalt") => ({ id, vorgang_id: "vg-" + id,
+const ko = (id, title = "Beratung zum Bundeshaushalt") => ({ id, vorgang_id: "vg-" + id,
   status: "neu", understanding_status: "complete", headline: title, was_ist_passiert: title });
 const profile = { id: "mandat-fixture", committees: ["Haushaltsausschuss"] };
 function store(pool, matches, read) { return { listKnowledgeObjects: async () => pool,
   listMatchingResults: async ({ userId, limit }) => {
-    assert.equal(userId, profile.id); assert.equal(limit, 12); return matches.map(id => ({ knowledge_object_id: id }));
+    assert.equal(userId, profile.id); assert.equal(limit, 500); return matches.map(id => ({ knowledge_object_id: id }));
   }, listKnowledgeObjectsByIds: read }; }
 (async () => {
   await test("Passender Treffer ausserhalb des Aenderungsfensters erreicht den echten Quellenvertrag", async () => {
-    const pool = Array.from({ length: 500 }, (_, i) => ko("neu-" + i));
+    const pool = Array.from({ length: 500 }, (_, i) => ko("neu-" + i, "Museum eröffnet Ausstellung"));
     const wanted = ko("haushalt", "Bundestag beraet den Haushalt"), before = JSON.stringify(pool);
     let reads = 0;
     const rows = await L.loadRankedVorgaenge(store(pool, [wanted.id], async ids => {

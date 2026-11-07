@@ -5,6 +5,19 @@ Betreiberentscheidung. Historische Berichte sind keine aktuellen
 Production Nachweise. Frische Produktionsbelege gehen vor GitHub,
 Tests und diesem Statusdokument.
 
+## Profilbezogene Lageauswahl (07.11.2026, nur Entwicklungsbranch)
+
+Auf `codex/profilbezogene-lageauswahl-20261107` fachliche Aufnahme vor
+Ergebnislimit, getrennte Profilgründe, Quellenbestätigung und Profil-/KO-Cachebindung
+umgesetzt. Keine fachfremde Auffüllung oder pauschale Schalteraktivierung.
+Lokal mit aktuellem Cem-Profil/synthetischen Artikeln:12→6 Karten,0/6Verluste;
+drei Gegenprofile je3→1/0Verluste.
+20/20 neue Fachgruppen,35/35 Lage-Suiten und141/141 bestehende Lage-Assertions
+bestanden; unabhängige Gegenprüfung ohne konkrete offene Blocker. Pflicht-CI
+und Commitbindung im zugehörigen PR. Kein Production-Nachweis/Merge/Deployment;
+Branchdeployments gesperrt. Danach: konkrete Merge-/Production-Freigabe für den PR.
+[Ursache, Tests, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md).
+
 ## UX Mergeabschluss (07.11.2026)
 
 Nach Betreiber GO nacheinander bei jeweils beiden gruenen Pflichtchecks gemergt: Mobil PR1091 (`c3f5f2a0`), Desktop PR1092 (`eec7d804`), Navigation/Zeiten/Radar PR1093 (`2f9ff56d`), inaktive Quellenvorbereitung PR1094 (`1057d000`). Integrierte Quellen CI42352831258 aufefb26134 bestanden; Laufbelege bleiben in den PRs erhalten.

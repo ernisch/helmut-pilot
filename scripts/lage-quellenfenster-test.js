@@ -8,7 +8,7 @@ const Q = require("../lib/helmut/lage-quellenbeleg");
 const storage = require("../lib/helmut/storage");
 const now = new Date("2026-09-13T07:18:08Z");
 const sha256 = value => crypto.createHash("sha256").update(value).digest("hex");
-const profile = { id: "mandat-fixture", committees: ["Arbeit und Soziales"] };
+const profile = { id: "mandat-fixture", committees: ["Arbeit und Soziales"], focusTopics: ["Pflege"] };
 const ko = id => ({ id, vorgang_id: "vg-" + id, status: "neu", understanding_status: "complete",
   headline: "Neue Beratung zur Pflege", was_ist_passiert: "Neue Beratung zur Pflege",
   best_source_url: "https://example.org/" + id, updated_at: now.toISOString() });
