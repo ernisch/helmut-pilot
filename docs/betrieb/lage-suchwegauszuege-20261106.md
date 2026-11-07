@@ -346,7 +346,7 @@ gemergt; getesteter PR-Kopf `73fa3b552d68738bca6fc64a87012136cc91e877`.
 vollständig SUCCESS: beide Pflichtchecks, Standard-/Bereichsregression und isolierte
 Datenbankverträge einschließlich Z22. Browserlauf nach bestehendem Prüfplan bewusst
 übersprungen; kein neuer Browserbeleg und kein voller Mock100-/Production-Lastlauf.
-Alle fünf Runtime-/Testblobs des ersten PR-Kopfes sind bytegleich im Merge enthalten.
+Alle fünf Runtime-/Testblobs des geprüften PR-Endkopfes sind bytegleich im Merge enthalten.
 
 Frische Vorprüfung um 15:33 Istanbul: `main`352982ff enthält nur die zusätzliche
 DeepSeek-Pause, keine Überschneidung mit den Artikelauszügen. Git-Mergeprüfung
