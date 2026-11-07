@@ -1,6 +1,6 @@
 # Vorherwerte der freigegebenen Quellenkorrektur
 
-Sicherung ausschließlich betroffener öffentlicher Quelldaten und Felder. Keine Profile, Schlüssel, Volltexte oder Embeddings. Rückweg prüft die nach der Ausführung aufgenommenen Zeilenhashes vor jeder Wiederherstellung. Alte CO₂ Rohquelle bleibt erhalten.
+Sicherung ausschließlich betroffener öffentlicher Quelldaten und Felder. Keine Profile, Schlüssel, Volltexte oder Embeddings. Rückweg prüft die nach der Ausführung aufgenommenen Zeilenhashes vor jeder Wiederherstellung. Alte CO₂ Rohquelle bleibt erhalten. Technisches Fencing und bestehende Reservierungen werden ausschließlich geprüft und unverändert gelassen.
 
 ```json
 {
@@ -54,7 +54,6 @@ Sicherung ausschließlich betroffener öffentlicher Quelldaten und Felder. Keine
         "best_source_url": "https://www.ndr.de/nachrichten/info/neues-pflegegesetz-reines-sparpaket-oder-gezieltere-foerderung,pflege-694.html",
         "best_link_type": "direct",
         "ko_version": 1,
-        "verstehen_fencing": 2,
         "risk_level": "medium",
         "opportunity_level": "medium",
         "zeitdruck": "mittel",
@@ -98,7 +97,6 @@ Sicherung ausschließlich betroffener öffentlicher Quelldaten und Felder. Keine
         "best_source_url": "https://www.deutschlandfunk.de/bundestag-debattiert-ueber-erste-pflegereform-linnemann-kuendigt-nachbesserungen-an-gesetzentwurf-an-100.html",
         "best_link_type": "direct",
         "ko_version": 1,
-        "verstehen_fencing": 2,
         "risk_level": "medium",
         "opportunity_level": "medium",
         "zeitdruck": "hoch",
@@ -142,7 +140,6 @@ Sicherung ausschließlich betroffener öffentlicher Quelldaten und Felder. Keine
         "best_source_url": "https://www.bundestag.de/presse/hib/kurzmeldungen-1231210",
         "best_link_type": "direct",
         "ko_version": 1,
-        "verstehen_fencing": 1,
         "risk_level": "unknown",
         "opportunity_level": "unknown",
         "zeitdruck": "niedrig",
@@ -185,7 +182,6 @@ Sicherung ausschließlich betroffener öffentlicher Quelldaten und Felder. Keine
         "best_source_url": "https://www.bundestag.de/presse/pressemitteilungen/2026/pm-261027-oea-kw45-1229788",
         "best_link_type": "direct",
         "ko_version": 1,
-        "verstehen_fencing": 1,
         "risk_level": "unknown",
         "opportunity_level": "unknown",
         "zeitdruck": "niedrig",
@@ -230,7 +226,6 @@ Sicherung ausschließlich betroffener öffentlicher Quelldaten und Felder. Keine
         "best_source_url": "https://www.pressebox.de/pressemitteilung/provimedia-gmbh/co2-preis-2027-bundesregierung-will-den-korridor-von-55-bis-65-euro-je-tonne-verlngern-ende-september-noch-ohne-beschluss-des-bundestages/boxid/1314609",
         "best_link_type": "direct",
         "ko_version": 1,
-        "verstehen_fencing": 2,
         "risk_level": "medium",
         "opportunity_level": "medium",
         "zeitdruck": "mittel",
@@ -293,7 +288,6 @@ Sicherung ausschließlich betroffener öffentlicher Quelldaten und Felder. Keine
         "status": "neu",
         "understanding_status": "complete",
         "ko_version": 1,
-        "verstehen_fencing": 1,
         "updated_at": "2026-11-06T08:33:32.723+00:00"
       }
     },
@@ -304,7 +298,6 @@ Sicherung ausschließlich betroffener öffentlicher Quelldaten und Felder. Keine
         "status": "neu",
         "understanding_status": "complete",
         "ko_version": 1,
-        "verstehen_fencing": 1,
         "updated_at": "2026-11-07T04:01:52.502+00:00"
       }
     }
@@ -422,6 +415,72 @@ Sicherung ausschließlich betroffener öffentlicher Quelldaten und Felder. Keine
     }
   ],
   "newSourceDidNotExist": true,
-  "newSourceId": "rd-26bf0f7a1aa2ca3addc62e8c7385daf005a2b392cfc5c462c1b1fcead843b653"
+  "newSourceId": "rd-26bf0f7a1aa2ca3addc62e8c7385daf005a2b392cfc5c462c1b1fcead843b653",
+  "reservationsBefore": [
+    {
+      "vorgang_id": "vg-bundestages-20261105-c4c8fe",
+      "fencing": 2,
+      "lease_bis": null,
+      "zustand": "fertig",
+      "ergebnis_fencing": 2,
+      "updated_at": "2026-11-06 04:02:25.803536+00",
+      "row_sha256": "1206a8f651616c600d916fb6484396ab0dd33cc4d1f78d3c0684c2e86213e036"
+    },
+    {
+      "vorgang_id": "vg-infrastrukturbeschleunig-20261028-7081d4",
+      "fencing": 1,
+      "lease_bis": null,
+      "zustand": "fertig",
+      "ergebnis_fencing": 1,
+      "updated_at": "2026-11-06 04:01:58.201209+00",
+      "row_sha256": "e121c0b365b1a620a93749226a5131c1c351b0738c8e72ec30da8b3fc6ca1b3e"
+    },
+    {
+      "vorgang_id": "vg-öffentliche-20260529-0b6720",
+      "fencing": 1,
+      "lease_bis": null,
+      "zustand": "fertig",
+      "ergebnis_fencing": 1,
+      "updated_at": "2026-11-06 08:33:32.936553+00",
+      "row_sha256": "0c65f998b58da57ef63bf192e7a18959db6dd2fcbda661eaefa11a60e4a2f845"
+    },
+    {
+      "vorgang_id": "vg-öffentliche-20260529-0b6720-2",
+      "fencing": 1,
+      "lease_bis": null,
+      "zustand": "fertig",
+      "ergebnis_fencing": 1,
+      "updated_at": "2026-11-07 04:01:52.633704+00",
+      "row_sha256": "8caba3f289384a1aec70461b6404b20babcc24317aeb3b04bb129f88b4867fab"
+    },
+    {
+      "vorgang_id": "vg-pflegebetrug-20261104-becc2d",
+      "fencing": 1,
+      "lease_bis": null,
+      "zustand": "fertig",
+      "ergebnis_fencing": 1,
+      "updated_at": "2026-11-06 08:33:51.144761+00",
+      "row_sha256": "f7b6e2a7da93623d036cde37f93dca79d471a5065dfb9443f9f40a89bbcd714f"
+    },
+    {
+      "vorgang_id": "vg-pflegegesetz-20261105-ede54f",
+      "fencing": 2,
+      "lease_bis": null,
+      "zustand": "fertig",
+      "ergebnis_fencing": 2,
+      "updated_at": "2026-11-06 00:18:16.181986+00",
+      "row_sha256": "0379cfb57f8ba3443aa5c45d2e002d2b991410b52fda459fdbee8ae660d4c537"
+    },
+    {
+      "vorgang_id": "vg-pflegereform-20261105-b189ff",
+      "fencing": 3,
+      "lease_bis": null,
+      "zustand": "unbekannt",
+      "ergebnis_fencing": 2,
+      "updated_at": "2026-11-06 04:02:11.637326+00",
+      "row_sha256": "00b69f6993cb5eb7fcc2555dd5076fe6e13e2218d48378bf0eee1864e6e783d6"
+    }
+  ],
+  "fencingRule": "verstehen_fencing unverändert; native Trigger und Reservierungen werden weder abgeschaltet noch umgangen. Alle7 Reservierungen unter Zeilensperre exakt an nativen Hash gebunden. Historischer unbekannt Ausgang bleibt unverändert."
 }
 ```

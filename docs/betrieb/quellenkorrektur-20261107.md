@@ -169,7 +169,7 @@ Bestehende Briefings und historische Nachweise werden nicht umgeschrieben. `HELM
       "was_ist_passiert und display_summary aus candidate.summary",
       "best_source_url aus candidate.url",
       "source_document_count aus tatsächlichen Links",
-      "ko_version und verstehen_fencing jeweils erwarteter Altwert plus 1; updated_at tatsächlicher Ausführungszeitpunkt"
+      "ko_version erwarteter Altwert plus 1; verstehen_fencing bleibt unverändert; updated_at tatsächlicher Ausführungszeitpunkt"
     ]
   },
   "rawRules": [
@@ -193,3 +193,13 @@ Bestehende Briefings und historische Nachweise werden nicht umgeschrieben. `HELM
   "note": "Freigabe gilt ausschließlich für diesen begrenzten Datenumfang, keine Aktivierung HELMUT_ARTIKELKONTEXT, keine Profiländerung und keine Neuberechnung von Briefings."
 }
 ```
+
+## Betreiberfreigabe und technische Ausführungsvoraussetzung
+
+Der Betreiber hat am 7. November 2026 im selben Thread mit „Ja go. Merge.“ den beschriebenen Datenumfang und den anschließenden Merge freigegeben.
+
+Vor dem Schreiben wurde die Vorlage an der nativen Datenbank geprüft. Der bestehende Trigger erlaubt Änderungen von `verstehen_fencing` ausschließlich über den Understanding Speicherweg. Diese Spalte wird deshalb entgegen der ersten technischen Vorlage vollständig aus den Schreiboperationen entfernt und unverändert gelassen. Kein Trigger wird deaktiviert und kein Freigabeschalter gesetzt. Stattdessen werden alle sieben bestehenden Reservierungszeilen vor den Datenänderungen gesperrt und mit ihren vollständigen nativen Hashes verglichen. Fehlende Zeilen, jede Veränderung oder ein nicht leerer Lease führen zum vollständigen Abbruch. `ko_version` wird wie vorgesehen erhöht.
+
+Sechs Zielreservierungen stehen auf `fertig`; die Reservierung zur Pflegereform hat bereits zuvor den historischen Ausgang `unbekannt` bei Fencing 3 und Ergebnisfencing 2. Dieser Ausgang bleibt vollständig erhalten. Die redaktionelle Quellenkorrektur löst keinen Modellaufruf aus und klärt diesen historischen Verarbeitungsausgang nicht nachträglich.
+
+Die dauerhaft gesicherten Vorherwerte stehen in `quellenkorrektur-20261107-vorher.md`. Die Ausführung steht weiterhin aus.
