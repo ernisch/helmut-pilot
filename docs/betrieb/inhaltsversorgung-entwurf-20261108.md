@@ -41,10 +41,13 @@ PR-Beschreibung aktualisiert, zu PR1104 kein neuer Push/Run/Merge.
 
 `Fundstelle → vorläufiger Bezug → Original → bestätigter Beleg → fachliche Aufnahme → bestehendes Understanding`
 
-`quellen-inhaltsversorgung.js` ist eine **inaktive Ausführungsschicht** ohne
-Import aus Scheduler, Server, Cron oder App. Ein Exemplar ist für genau einen
-bestehenden globalen Quellenlauf vorgesehen, nach der kanonischen Speicherung,
-vor dem bisherigen endgültigen Titelfilter. Keine neue Infrastruktur.
+`quellen-inhaltsversorgung-anschluss.js` verbindet die Versorgung **inaktiv**
+mit `scheduler.runGlobaleErfassung`, nach dessen kanonischer Speicherung und
+unter dessen bestehender globaler Sperre, vor Lazy-/Eager-Understanding.
+Ausschließlich ein expliziter interner `inhaltsversorgung.vorbereitet === true`-
+Auftrag erreicht diesen Zweig; kein bestehender Server-/Cron-/App-Aufrufer
+setzt ihn. Ohne Auftrag keine zusätzlichen Leser oder Beschaffer. Keine neue
+Infrastruktur und kein neuer Umgebungs- oder App-Schalter.
 
 - Vorläufiger Bezug verwendet `lage-profilbezug.bewerte`, ohne ein zwingendes
   Handlungssignal im Titel. Eine knappe Überschrift bleibt über den vorhandenen
@@ -74,10 +77,24 @@ vor dem bisherigen endgültigen Titelfilter. Keine neue Infrastruktur.
 - Keine Quelle wird bei App-Öffnung abgerufen. Fehlender, gesperrter, veralteter
   oder nicht gebundener Inhalt bleibt `luecke`; kein Fülltext und kein Ersatzartikel.
 
-Die spätere Integration muss dieses Exemplar **einmal unter der vorhandenen
-globalen Lauf-/Sperrbindung** erzeugen. Je Mandat eine neue Instanz zu erzeugen
-wäre falsch. Der Scheduler-Aufrufer ist in diesem Auftrag bewusst noch nicht
-verdrahtet; eine Flag-Aktivierung allein reicht nicht zum Betrieb.
+Der Anschluss erzeugt **ein Exemplar je globalem Lauf**, nicht je Mandat oder
+Kontextstapel. Auch wiederbeobachtete bestehende Rohdokumente werden berücksichtigt,
+wenn der Rohspiegel nichts Neues liefert. Höchstens 200 priorisierte Kennungen
+werden kanonisch rückgelesen; Mehrbestand bleibt ausdrücklich vertagt. Titel,
+URL, Herausgeber und Publikationsstand müssen mit der Beobachtung übereinstimmen;
+die gespeicherte Abrufzeit bleibt für den Belegschlüssel maßgeblich. Die aktuelle
+Quellensichtbarkeit darf durch die historische Primärquelle nicht wachsen.
+Gebundene Fundstellen werden in höchstens zwei begrenzten Lesechunks abgefragt;
+am API-Deckel von 1.000 Zeilen wird keine Vollständigkeit behauptet.
+
+Vorhandener kanonischer Originaltext bleibt im bisherigen Textweg. Bereits
+bestätigte generische/spezialisierte Kontextbelege werden zuerst ausschließlich
+aus dem Bestand gelesen; ihre bisherigen begrenzten Absatzverträge gelten weiter.
+Erst ein fehlender nutzbarer Bestandsbeleg führt zum neuen Einstiegsvertrag.
+Der belegte Text erreicht die vorläufige Fachauswahl und den vorhandenen
+Understanding-Prompt ohne Änderung der Rohzeile. Der Promptanschluss liest nur
+gebundene Belege und verhindert weitere Abrufe je Stapel. Speicher-/Netzfristen,
+Modell-CAS, Budget, Promptauswahl und Abschlussreserven bleiben wirksam.
 
 ## 3. Zusammenhängender Originalkontext
 
@@ -202,9 +219,10 @@ CI-Ergebnis stehen im PR; die vorherigen 504-Fehler bleiben dort nachvollziehbar
 ## 6. Spätere Aktivierungsvorlage – nicht ausgeführt
 
 1. Voraussetzungen: PR1104 fachlich abnehmen; Endkopf-Checks ehrlich klären.
-   Folgeentwurf separat reviewen/qualifizieren. Den beschriebenen Aufrufer im
-   vorhandenen globalen Quellenlauf verbinden; Server-/App-Lesepfade bleiben
-   ohne Beschaffer. Kein neuer Job und kein neuer aktiver Schalter aus diesem PR.
+   Folgeentwurf samt inaktivem Scheduleranschluss separat reviewen/qualifizieren.
+   Für einen späteren regulären Lauf den expliziten internen Auftrag erst nach
+   konkreter Freigabe im bestehenden globalen Aufrufer setzen. Server-/App-
+   Lesepfade bleiben ohne Beschaffer. Kein neuer Job oder aktiver Schalter.
 2. Erster konkret begrenzter Auftrag: **einmal nur diese Beschaffungsstufe**
    unter der vorhandenen globalen Lauf-/Sperrbindung, auf bereits gespeicherten
    kanonischen Kandidaten. Kein vollständiger Quellen-/Verarbeitungslauf und
@@ -218,8 +236,11 @@ CI-Ergebnis stehen im PR; die vorherigen 504-Fehler bleiben dort nachvollziehbar
    Fixture-ID als Produktionsbeleg ausgeben.
 3. Wirkung: nur neue globale Belegzeilen im vorhandenen `helmut_store`-
    Namensraum, keine Änderung von Originalzeilen, Wissensobjekten oder Profilen.
-   Bei 20 Kandidaten maximal 28 REST-Belegzugriffe bei regulärem Verlauf,
-   maximal zwei Original-HTTPS-Anfragen. Der vorhandene Artikelkontexttransport
+   Im regulären Anschluss maximal 57 zusätzliche REST-Zugriffe für Dokumente,
+   Katalog, Fundstellen und Belege: 2 + 5 + 2 Lesungen, bis 40 Bestandslesungen
+   und bis 8 weitere Beleg-CAS-Schritte. Zusätzlich gelten die vorhandenen
+   Kontrollzugriffe der Anbietersteuerung; 57 ist kein Gesamt-HTTP-Limit.
+   Maximal zwei Original-HTTPS-Anfragen. Der vorhandene Artikelkontexttransport
    lehnt jeden Nicht-200-Status vor der allgemeinen Redirectbehandlung ab:
    keine Weiterleitung und keine verdeckte Retry-Schleife. Die Ein-MiB-/20-s-/
    DNS-/SSRF-/TLS-/Anbieterriegel bleiben wirksam.
@@ -237,7 +258,7 @@ CI-Ergebnis stehen im PR; die vorherigen 504-Fehler bleiben dort nachvollziehbar
    Cache-Wiederverwendung über mindestens zwei Mandate ohne weiteren Abruf
    belegen. Kontextübergabe erneut isoliert am echten Modell-Callback prüfen.
    Ein gefülltes Feld, ein langer Text oder ein erfolgreicher GET genügt nicht.
-6. Rückweg: neuen Aufrufer deaktivieren/zurücknehmen; alten Kontextpfad weiter
+6. Rückweg: expliziten internen Auftrag entfernen; alten Kontextpfad weiter
    unverändert verwenden. Neue Belegzeilen bleiben getrennt und unbenutzt.
    Falls deren Rücknahme nötig wird: nur Manifest-Zielzeilen unter exaktem
    Nachherhash bedingt zurücknehmen; keine fremden späteren Änderungen löschen.
@@ -258,8 +279,11 @@ die tatsächlich im Originalfeed vorhandene vollständige Herausgeberbezeichnung
 Keine automatische Wiederholung einer gespeicherten Lücke; erneuter Versuch
 bei gleichem Stand braucht einen separat kontrollierten Auftrag. Der bestehende
 Understanding-Vertrag erlaubt weiterhin nur einen Zusatzbeleg pro Cluster und
-erzwingt dessen Aufnahme in die begrenzte Promptauswahl. Allgemeine Laufzeit-
-integration und produktive Wirkung sind noch nicht belegt.
+erzwingt dessen Aufnahme in die begrenzte Promptauswahl. Mehrere Zusatzbelege
+oder ein Beleg außerhalb der zwölf ausgewählten Quellen werden ehrlich vertagt.
+Pending-/Nachholarbeiter sind nicht neu angeschlossen. Der inaktive globale
+Anschluss ist isoliert belegt; produktive Wirkung und reguläre Laufqualifikation
+bleiben offen. Bestandsabsatzbelege sind kein Nachweis vollständigen Artikelkontexts.
 
 Vor Push: geänderte Pfade gegen alle Live-Workflowtrigger abgleichen.
 `vercel.json` sperrt exakt diesen Entwurfsbranch für Git-Deployments. Entwurfspush
@@ -274,5 +298,29 @@ würde dessen Crawler-/Dedup-Pfade erneut in den PR-Diff aufnehmen und könnte
 Live-Trigger auslösen. Nach einer späteren getrennt freigegebenen Integration
 von PR1104 den gesamten Basis-/Kopf-Diff erneut gegen die Trigger prüfen.
 
-**Genau nächster Schritt nach bestandener Endkopf-CI:** Den geprüften Baustein
-inaktiv an den vorhandenen globalen Quellenlauf anschließen.
+## 8. Inaktiver Anschluss nach Betreiber-Go
+
+17/17 neue Anschlussgruppen führen den echten globalen Controller mit isolierten
+REST-, Quellen-, Speicher- und Modellattrappen aus. DGB/Radio aus den unveränderten
+Originalproben erreichen den abgefangenen tatsächlichen Understanding-Prompt:
+Angebot, Forderung, Friedenspflicht und die bedingte Aussage ab 2027 bleiben darin.
+Zwei passende synthetische Mandate teilen einen DGB-Beleg; der Radio-Weg bleibt
+auf die tatsächlich sichtbare Mandatsmenge begrenzt. Kein Beleg speichert Profil-IDs.
+
+Belegt sind außerdem: gespeicherter Originaltext, bereits bekannter Rohspiegel,
+knapper Titel mit Fundstellenbindung, fachfremder Text, 403/Metadaten ohne Artikel,
+fehlende/abweichende kanonische Quelle, Leseausfall, Sperr-/Fristverweigerung,
+200er-Lesepool, globale Abrufgrenze, deaktivierte/ausgeschlossene Gegenprofile,
+Bestandsbeleg ohne Neuabruf, mehrere Zusatzbelege und die Zwölfer-Promptgrenze.
+CAS-/Budgetverweigerung führt zu null Modellaufrufen und nicht zu einem vorgetäuscht
+abgeschlossenen Datenstand; nur belegte Speicherergebnisse zählen als verstanden.
+
+Erneut gezielt bestanden: Versorgungsbaustein 18/18, globale Controllerregression
+194/194, Kontextbündelung 56/56, bisheriger Artikelkontextanschluss 20/20 und
+Eingabebindung 10/10. Keine lokale Vollwiederholung. Die erfolgreiche CI42467307203
+gehört ausschließlich zum vorherigen Kopf `84f7e8b1`; der neue Kopf braucht seine
+eigenen Pflichtchecks. Ergebnis und nativer Laufbezug werden im PR nachgetragen.
+Kein neuer Originalabruf, produktiver Lauf, Merge, Deployment oder Modellaufruf.
+
+**Genau nächster Schritt nach bestandener Endkopf-CI:** Den begrenzten
+Beschaffungsauftrag anhand dieser Vorlage konkret zur Freigabe vorlegen.
