@@ -8485,7 +8485,7 @@ function renderRadarEmpty(state) {
     : sourcesConfirmed ? "Keine zugeordneten Signale in dieser Ansicht"
     : "Radarprüfung nicht belegt";
   const note = disruption ? disruption.sub
-    : stale ? "Eine aktuelle Quellenprüfung ist nicht bestätigt. Die leere Ansicht belegt keine Trefferlosigkeit."
+    : stale ? [lageField(es?.detail), "Eine aktuelle Quellenprüfung ist nicht bestätigt. Die leere Ansicht belegt keine Trefferlosigkeit."].filter(Boolean).join(" ")
     : explicitGap ? (es.detail || "Eine aktuelle Datengrundlage ist nicht bestätigt.")
     : sourcesConfirmed
       ? "Die vorhandenen Quellendaten liefern für diese Ansicht keine belegten Signale. Das ist keine Bestätigung, dass es keine Erwähnungen gibt."
