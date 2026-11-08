@@ -18,13 +18,13 @@
     "status": 200
   },
   {
-    "url": "http://helmut-ui.test/site.webmanifest?v=20261106-h-klein",
+    "url": "http://helmut-ui.test/client.js?v=20261106-start1",
     "method": "GET",
     "action": "fulfilled-in-memory",
     "status": 200
   },
   {
-    "url": "http://helmut-ui.test/client.js?v=20261106-start1",
+    "url": "http://helmut-ui.test/site.webmanifest?v=20261106-h-klein",
     "method": "GET",
     "action": "fulfilled-in-memory",
     "status": 200
@@ -101,12 +101,6 @@
     "status": 200
   },
   {
-    "url": "http://helmut-ui.test/site.webmanifest?v=20261106-h-klein",
-    "method": "GET",
-    "action": "fulfilled-in-memory",
-    "status": 200
-  },
-  {
     "url": "http://helmut-ui.test/styles.css?v=20261106-start1",
     "method": "GET",
     "action": "fulfilled-in-memory",
@@ -114,6 +108,12 @@
   },
   {
     "url": "http://helmut-ui.test/client.js?v=20261106-start1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/site.webmanifest?v=20261106-h-klein",
     "method": "GET",
     "action": "fulfilled-in-memory",
     "status": 200
@@ -184,12 +184,6 @@
     "status": 200
   },
   {
-    "url": "http://helmut-ui.test/site.webmanifest?v=20261106-h-klein",
-    "method": "GET",
-    "action": "fulfilled-in-memory",
-    "status": 200
-  },
-  {
     "url": "http://helmut-ui.test/styles.css?v=20261106-start1",
     "method": "GET",
     "action": "fulfilled-in-memory",
@@ -202,7 +196,7 @@
     "status": 200
   },
   {
-    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+    "url": "http://helmut-ui.test/site.webmanifest?v=20261106-h-klein",
     "method": "GET",
     "action": "fulfilled-in-memory",
     "status": 200
@@ -215,6 +209,12 @@
   },
   {
     "url": "http://helmut-ui.test/assets/ui/fonts/HankenGrotesk-var.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Regular.woff2",
     "method": "GET",
     "action": "fulfilled-in-memory",
     "status": 200

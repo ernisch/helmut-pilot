@@ -1,0 +1,23 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+== LAGE-Leerzustand ==
+PASS  Lage gap: zeigt Ueberschrift 'Datenlücke'
+PASS  Lage gap: zeigt data-empty-kind=gap
+PASS  Lage gap: warnt vor Ausfall (nicht 'ruhig')
+PASS  Lage quiet: zeigt 'Ruhige Lage'
+PASS  Lage ohne emptyState: Alt-Text unveraendert
+== RADAR-Leerzustand ==
+PASS  Radar quiet ohne Quellenbeleg: unknown statt behaupteter Ruhe
+PASS  Radar ohne emptyState: fehlender Quellenbeleg bleibt unknown
+PASS  Radar mit explizit fehlender Quellengrundlage behauptet keine Ruhe
+PASS  Radar mit Quellenbeleg: keine sichtbaren Signale beweisen keine fehlenden Erwaehnungen
+PASS  Radar gap: ausdrueckliche Datenluecke bleibt sichtbar
+PASS  Radar stale: ausdrueckliche Datenluecke bleibt sichtbar
+PASS  Radar Fehler: Stoerung hat Vorrang vor quiet und geladenen Quellen
+== HELMUT-Leerzustand ==
+PASS  Helmut quiet: zeigt Handlungsbedarf-Text + kind
+PASS  Helmut ohne emptyState: keine erfundene Entwarnung
+== Drei Tabs UI-seitig unterscheidbar ==
+PASS  drei quiet-Ueberschriften unterschiedlich gerendert
+
+== Ergebnis: 15 PASS, 0 FAIL ==

@@ -93,6 +93,10 @@ PASS  desktop: dark unconfirmed Radar has no false current topbar
 PASS  desktop: dark stale helmut no horizontal overflow
 PASS  desktop: dark stale briefing no horizontal overflow
 PASS  desktop: dark stale radar no horizontal overflow
+PASS  desktop: dark stale-empty helmut no horizontal overflow
+PASS  desktop: dark stale-empty briefing no horizontal overflow
+PASS  desktop: dark stale-empty radar no horizontal overflow
+PASS  desktop: dark stale empty Radar retains supplied caveat
 PASS  desktop: dark error helmut no horizontal overflow
 PASS  desktop: dark error briefing no horizontal overflow
 PASS  desktop: dark error radar no horizontal overflow
@@ -132,6 +136,10 @@ PASS  desktop: light unconfirmed Radar has no false current topbar
 PASS  desktop: light stale helmut no horizontal overflow
 PASS  desktop: light stale briefing no horizontal overflow
 PASS  desktop: light stale radar no horizontal overflow
+PASS  desktop: light stale-empty helmut no horizontal overflow
+PASS  desktop: light stale-empty briefing no horizontal overflow
+PASS  desktop: light stale-empty radar no horizontal overflow
+PASS  desktop: light stale empty Radar retains supplied caveat
 PASS  desktop: light error helmut no horizontal overflow
 PASS  desktop: light error briefing no horizontal overflow
 PASS  desktop: light error radar no horizontal overflow
@@ -266,6 +274,10 @@ PASS  mobile: dark unconfirmed Radar has no false current topbar
 PASS  mobile: dark stale helmut no horizontal overflow
 PASS  mobile: dark stale briefing no horizontal overflow
 PASS  mobile: dark stale radar no horizontal overflow
+PASS  mobile: dark stale-empty helmut no horizontal overflow
+PASS  mobile: dark stale-empty briefing no horizontal overflow
+PASS  mobile: dark stale-empty radar no horizontal overflow
+PASS  mobile: dark stale empty Radar retains supplied caveat
 PASS  mobile: dark error helmut no horizontal overflow
 PASS  mobile: dark error briefing no horizontal overflow
 PASS  mobile: dark error radar no horizontal overflow
@@ -318,6 +330,10 @@ PASS  mobile: light unconfirmed Radar has no false current topbar
 PASS  mobile: light stale helmut no horizontal overflow
 PASS  mobile: light stale briefing no horizontal overflow
 PASS  mobile: light stale radar no horizontal overflow
+PASS  mobile: light stale-empty helmut no horizontal overflow
+PASS  mobile: light stale-empty briefing no horizontal overflow
+PASS  mobile: light stale-empty radar no horizontal overflow
+PASS  mobile: light stale empty Radar retains supplied caveat
 PASS  mobile: light error helmut no horizontal overflow
 PASS  mobile: light error briefing no horizontal overflow
 PASS  mobile: light error radar no horizontal overflow
@@ -459,6 +475,10 @@ PASS  mobile-360: dark unconfirmed Radar has no false current topbar
 PASS  mobile-360: dark stale helmut no horizontal overflow
 PASS  mobile-360: dark stale briefing no horizontal overflow
 PASS  mobile-360: dark stale radar no horizontal overflow
+PASS  mobile-360: dark stale-empty helmut no horizontal overflow
+PASS  mobile-360: dark stale-empty briefing no horizontal overflow
+PASS  mobile-360: dark stale-empty radar no horizontal overflow
+PASS  mobile-360: dark stale empty Radar retains supplied caveat
 PASS  mobile-360: dark error helmut no horizontal overflow
 PASS  mobile-360: dark error briefing no horizontal overflow
 PASS  mobile-360: dark error radar no horizontal overflow
@@ -511,6 +531,10 @@ PASS  mobile-360: light unconfirmed Radar has no false current topbar
 PASS  mobile-360: light stale helmut no horizontal overflow
 PASS  mobile-360: light stale briefing no horizontal overflow
 PASS  mobile-360: light stale radar no horizontal overflow
+PASS  mobile-360: light stale-empty helmut no horizontal overflow
+PASS  mobile-360: light stale-empty briefing no horizontal overflow
+PASS  mobile-360: light stale-empty radar no horizontal overflow
+PASS  mobile-360: light stale empty Radar retains supplied caveat
 PASS  mobile-360: light error helmut no horizontal overflow
 PASS  mobile-360: light error briefing no horizontal overflow
 PASS  mobile-360: light error radar no horizontal overflow

@@ -59,11 +59,12 @@ const fixtureBootstrap = `
     reset() { __resetUi(); currentView='helmut'; render(); },
     state(kind) {
       __resetUi();
-      if (kind === 'empty' || kind === 'unconfirmed') {
+      if (kind === 'empty' || kind === 'unconfirmed' || kind === 'stale-empty') {
         briefing.currentHelmutState.status='empty'; briefing.currentHelmutState.primaryItem=null;
         briefing.lageBriefing.vorgaenge=[]; briefing.currentRadarState.mentions=[]; briefing.currentRadarState.articles=[];
         briefing.currentRadarState.environment={party:[],constituency:[],committees:[]}; briefing.currentRadarState.dynamics=[]; decisions=[];
         if(kind==='unconfirmed') briefing.currentRadarState.quality.sourcesLoaded=false;
+        if(kind==='stale-empty') {briefing.currentRadarState.status='stale';briefing.currentRadarState.emptyState={kind:'stale',detail:'Synthetische Einschränkung: Der vorhandene Quellenstand ist älter.'};}
       } else if (kind === 'error') {
         briefing.available=false; briefing.reason='store-error';
         briefing.currentHelmutState.status='error'; briefing.currentRadarState.available=false;
@@ -352,13 +353,14 @@ async function main() {
           for(let i=0;i<30 && await cdp.evaluate(s,"uiLageDetailOpen");i++) await new Promise(r=>setTimeout(r,20));
           check(label+': '+theme+' back button restores list',await cdp.evaluate(s,"!uiLageDetailOpen"));
         }
-        for (const kind of ['empty','unconfirmed','stale','error','long']) {
+        for (const kind of ['empty','unconfirmed','stale','stale-empty','error','long']) {
           await cdp.evaluate(s,`__uiPreview.state('${kind}')`);
           for (const view of ['helmut','briefing','radar']) {
             await cdp.evaluate(s,`__uiPreview.view('${view}')`); await layout(theme+' '+kind+' '+view);
             if(label==='mobile') await screenshot(theme+'-'+kind+'-'+view);
           }
           if(kind==='unconfirmed') check(label+': '+theme+' unconfirmed Radar has no false current topbar',await cdp.evaluate(s,"!document.querySelector('.topbar .ui-status--fresh') && document.querySelector('.topbar').textContent.includes('Quellenprüfung offen')"));
+          if(kind==='stale-empty') check(label+': '+theme+' stale empty Radar retains supplied caveat',await cdp.evaluate(s,"document.querySelector('#radar2-root').textContent.includes('Synthetische Einschränkung: Der vorhandene Quellenstand ist älter.') && document.querySelector('[data-empty-kind=stale]')!==null"));
           if(kind==='long') {
             await cdp.evaluate(s,"__uiPreview.view('briefing')"); await click('[data-ui-lage-select]');
             check(label+': '+theme+' long detail full title',await cdp.evaluate(s,"document.querySelector('#ui-lage-detail-title').textContent===lageField(briefing.lageBriefing.vorgaenge[0].displayTitle) && getComputedStyle(document.querySelector('#ui-lage-detail-title')).webkitLineClamp==='none'"));

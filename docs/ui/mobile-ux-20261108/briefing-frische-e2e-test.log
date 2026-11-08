@@ -1,0 +1,72 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+PASS  1a Contract liefert einen Stand
+PASS  1b Heutiger Vorgang ist 'neu'
+PASS  1c Spaeter Vorabend ist 'neu' (Punkt 3)
+PASS  1d Fuenf Tage alter Vorgang ohne Tagesanlass entfällt im Briefing
+PASS  1e Sehr alter Hintergrund ohne Tagesanlass entfällt im Briefing
+PASS  1f Kein Datum wurde veraendert
+PASS  1g Vorabendmeldung traegt ihr echtes Datum als Label
+PASS  1h Kennzahlen im Stand
+PASS  1i Ohne Fenster keine Frischeklassen (Altverhalten)
+PASS  1j Mit Fenster: Vorabendmeldung ist im Morgenbriefing frisch
+PASS  1k Ohne Fenster: derselbe Vorgang war 'stale' (Altverhalten belegt)
+PASS  2a Belegter heutiger Lauf + frische Daten -> 'Aktuell'
+PASS  2b Vertrag liegt maschinenlesbar in der Antwort
+PASS  2c Kopfzustand bleibt unveraendert
+PASS  2d kein Lauf -> "Briefing noch nicht aktuell"
+PASS  2e kein Lauf -> Grund lauf-fehlt
+PASS  2f kein Lauf -> Kopfzustand herabgestuft (kein Rueckfall auf gestern)
+PASS  2g kein Lauf -> isStale in der Antwort
+PASS  2d gestriger Lauf -> "Briefing noch nicht aktuell"
+PASS  2e gestriger Lauf -> Grund lauf-veraltet
+PASS  2f gestriger Lauf -> Kopfzustand herabgestuft (kein Rueckfall auf gestern)
+PASS  2g gestriger Lauf -> isStale in der Antwort
+PASS  2d fehlgeschlagener Lauf -> "Briefing noch nicht aktuell"
+PASS  2e fehlgeschlagener Lauf -> Grund lauf-fehlgeschlagen
+PASS  2f fehlgeschlagener Lauf -> Kopfzustand herabgestuft (kein Rueckfall auf gestern)
+PASS  2g fehlgeschlagener Lauf -> isStale in der Antwort
+PASS  2d zu alte Daten -> "Briefing noch nicht aktuell"
+PASS  2e zu alte Daten -> Grund daten-veraltet
+PASS  2f zu alte Daten -> Kopfzustand herabgestuft (kein Rueckfall auf gestern)
+PASS  2g zu alte Daten -> isStale in der Antwort
+PASS  2d Datenstand unbekannt -> "Briefing noch nicht aktuell"
+PASS  2e Datenstand unbekannt -> Grund datenstand-unbekannt
+PASS  2f Datenstand unbekannt -> Kopfzustand herabgestuft (kein Rueckfall auf gestern)
+PASS  2g Datenstand unbekannt -> isStale in der Antwort
+PASS  2h Leerer Stand wird durch den Vertrag NICHT zu 'Aktuell'
+PASS  2i Ohne Frischekontext unveraendertes Altverhalten
+PASS  2j Teilausfall bleibt aktuell und wird benannt
+PASS  2k Kompakte Antwort traegt denselben Vertrag
+PASS  3a Ohne Beleg: kein Lauf im Lesekontext
+PASS  3b Ohne Beleg: Vorabend-Standardfenster
+PASS  3c Fenster beginnt beim gestrigen Erfolg
+PASS  3d Ein gestriger Erfolg ist KEIN heutiger Beleg
+PASS  3e Heutiger Beleg wird gelesen
+PASS  3f Fenster stammt aus der Quittung (stabil ueber den Tag)
+PASS  3g Beleg eines fremden Mandats zaehlt nicht
+PASS  3h Fehlversuch erscheint als fehlgeschlagener Lauf
+PASS  3i Fehlgeschlagener Lauf -> ehrliche Ansage
+PASS  4a client.js laedt im vm
+PASS  4b Aktueller Stand: kein Warnhinweis im Kopf
+PASS  4c Gruppe 'Neu seit dem letzten Briefing' wird gezeigt
+PASS  4d Alte Vorgaenge ohne Tagesanlass bilden keine zweite Briefingliste
+PASS  4e Vorabendmeldung traegt ihr echtes Datum ('Gestern')
+PASS  4f Gruppen sind maschinenlesbar ausgezeichnet
+PASS  4g Ohne heutigen Lauf steht die ehrliche Ansage im Kopf
+PASS  4h Der Grund wird genannt
+PASS  4i Es wird ausdruecklich kein Vortagsbriefing behauptet
+PASS  4j Kopf zeigt nicht 'Morgenbriefing' als heutigen Stand
+PASS  4k Kein 'Aktuell'-Chip bei fehlendem Lauf
+PASS  4l Ruhelage benennt die fehlende Tagespriorität ohne Meldungen auszublenden
+PASS  4m Ruhelage zeigt keine 'neu'-Gruppe
+PASS  5a Frischevertrag ohne Netz/KI
+PASS  5b Lauf-Quittung ohne Netz/KI
+PASS  5c Lauf-Quittung schreibt nur ueber den mandantengefilterten Speicherweg
+PASS  5d Der Lesepfad erzeugt KEINE Quittung (kein stiller Selbstbeleg)
+PASS  5e Briefing-Antworten sind unspeicherbar (no-store)
+PASS  5f Der Narrativ-Cache nutzt denselben Berliner Tagesbegriff
+PASS  5g Der Client rechnet Zeiten in Europe/Berlin
+PASS  5h Der Client hat keinen eigenen Frischebegriff neben dem Vertrag
+
+68 bestanden, 0 fehlgeschlagen

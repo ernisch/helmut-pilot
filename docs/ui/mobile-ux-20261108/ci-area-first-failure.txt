@@ -1,0 +1,12 @@
+CI42479808754, Kopf98f94d74029b709913b93b19443ef49411165323, Job128729083160
+https://github.com/ernisch/helmut-pilot/actions/runs/42479808754/job/128729083160
+Offline189/189 bestanden; Bereich338/342 bestanden, danachZ22 nicht ausgeführt.
+Syntax + Offline-Suiten	Bereichs-Regression (nur geänderte Fachbereiche)	2026-11-08T12:49:09.6963745Z FAIL  briefing-frische-e2e-test.js (295ms, exit=1)
+Syntax + Offline-Suiten	Bereichs-Regression (nur geänderte Fachbereiche)	2026-11-08T12:50:09.2185799Z FAIL  lage-frische-live-flow-test.js (73ms, exit=1)
+Syntax + Offline-Suiten	Bereichs-Regression (nur geänderte Fachbereiche)	2026-11-08T12:50:42.2574616Z FAIL  parlamentsdaten-quellen-test.js (274ms, exit=1)
+Syntax + Offline-Suiten	Bereichs-Regression (nur geänderte Fachbereiche)	2026-11-08T12:50:42.2586119Z         actual: 0.8565424530285495,
+Syntax + Offline-Suiten	Bereichs-Regression (nur geänderte Fachbereiche)	2026-11-08T12:50:42.2587809Z         expected: 0.8565424526909722,
+Syntax + Offline-Suiten	Bereichs-Regression (nur geänderte Fachbereiche)	2026-11-08T12:51:45.5318457Z FAIL  scoring-ui-test.js (68ms, exit=1)
+Syntax + Offline-Suiten	Bereichs-Regression (nur geänderte Fachbereiche)	2026-11-08T12:52:55.8973276Z 338/342 Suiten grün in 304s (Bereich = automatische Fachregression)
+Syntax + Offline-Suiten	Bereichs-Regression (nur geänderte Fachbereiche)	2026-11-08T12:52:55.8974100Z Fehlgeschlagen: briefing-frische-e2e-test.js, lage-frische-live-flow-test.js, parlamentsdaten-quellen-test.js, scoring-ui-test.js
+Gezielte Korrektur: drei bestehende UI-Erwartungen/Signaturguards angepasst; Radar erhält vorhandene stale-Einschränkung wieder; parlamentsdaten-Test nutzt für beide Dynamics-Werte denselben bestehenden fachlichen Zeitpunkt, strikte Gleichheit unverändert. Keine Quellenpipelineänderung.
