@@ -4735,12 +4735,37 @@ function uiSieText(value) {
     .replace(/\bLies\b/g, "Lesen Sie");
 }
 
+// Profilkontext der vorhandenen Mandatsebene. Keine neue Profilklassifikation.
+function renderUiMandateContext() {
+  const parliament = profileParliamentType();
+  const state = lageField(profile?.state || profile?.bundesland);
+  const label = parliament === "Landtag" && state === "Berlin" ? "Abgeordnetenhaus Berlin"
+    : parliament === "Landtag" && state === "Brandenburg" ? "Landtag Brandenburg"
+    : parliament ? [parliament, parliament === "Landtag" ? state : ""].filter(Boolean).join(" · ")
+    : "Mandatsebene nicht hinterlegt";
+  const values = value => (Array.isArray(value) ? value : [value])
+    .filter(v => typeof v === "string" && v.trim()).map(lageField).join(" · ") || "Nicht hinterlegt";
+  const rows = [
+    ["Fachzuständigkeit", values(profile?.reportingTopics || profile?.berichterstatter_themen)],
+    ["Schwerpunkte", values(profile?.focusTopics || profile?.fachpolitische_schwerpunkte || profile?.topics)],
+    ["Ausschussmitgliedschaft", values(profile?.committees || profile?.ausschuesse || profile?.committee)],
+    ["Stellvertretung im Ausschuss", values(profile?.deputyCommittees || profile?.stellvertretende_ausschuesse)],
+    ["Wahlkreis", values(profile?.constituency || profile?.wahlkreis)],
+    ["Bundesland", state || "Nicht hinterlegt"]
+  ];
+  return `<details class="ui-mandate-context ui-source-evidence"><summary>Mandat: ${escapeHtml(label)}</summary>
+    <dl>${rows.map(([key, value]) => `<div><dt>${key}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>
+    <p class="ui-evidence-note">Profilangaben sind keine Belege für einen einzelnen Vorgang. Dessen Mandatsbezug wird nur angezeigt, wenn er mitgeliefert wird.</p>
+  </details>`;
+}
+
 function renderUiPageHeader(title, subtitle = "", extra = "") {
   const dateLabel = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
   return `<header class="ui-page-header">
     <p class="ui-date">${escapeHtml(dateLabel)}${["helmut", "briefing", "radar"].includes(currentView) ? " · Berliner Zeit" : ""}</p>
     <h1>${escapeHtml(title)}</h1>
     ${subtitle ? `<p class="ui-page-subtitle">${escapeHtml(subtitle)}</p>` : ""}
+    ${["helmut", "briefing", "radar"].includes(currentView) ? renderUiMandateContext() : ""}
     ${extra}
   </header>`;
 }
@@ -5470,7 +5495,7 @@ function renderLageView() {
             const summary = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
             return `<button class="ui-vorgang-row ${id === selectedId ? "is-selected" : ""}" type="button" data-ui-lage-select="${escapeAttribute(id)}" aria-pressed="${id === selectedId}">
               <span class="ui-row-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
-              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(summary)}</span>` : ""}${lageField(v.relevanz?.satz) ? `<span class="ui-row-relevance"><strong>Mandatsbezug:</strong> ${escapeHtml(uiSieText(lageField(v.relevanz.satz)))}</span>` : ""}${lageListSourceHtml(v)}</span>
+              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(uiSieText(summary))}</span>` : ""}${lageField(v.relevanz?.satz) ? `<span class="ui-row-relevance"><strong>Mandatsbezug:</strong> ${escapeHtml(uiSieText(lageField(v.relevanz.satz)))}</span>` : ""}${lageListSourceHtml(v)}</span>
               <span class="ui-row-chevron" aria-hidden="true">›</span>
             </button>`;
           }).join("")}
@@ -5819,7 +5844,7 @@ function vsheetContentHtml(v) {
 
     ${kurz ? `
     <section class="vsheet-sec">
-      <p class="vsheet-lede">${escapeHtml(kurz)}</p>
+      <p class="vsheet-lede">${escapeHtml(uiSieText(kurz))}</p>
       ${vsheetStatusHtml(v)}
     </section>` : vsheetStatusHtml(v) ? `<section class="vsheet-sec">${vsheetStatusHtml(v)}</section>` : ""}
 
@@ -5837,7 +5862,7 @@ function vsheetContentHtml(v) {
       <h3 class="vsheet-h">Zusätzliche Einordnung</h3>
       <p class="ui-evidence-note">KI-Einordnung · kann Fehler enthalten. Vor Verwendung prüfen.</p>
       <ul class="vsheet-why">
-        ${warumPoints.map((p) => `<li>${escapeHtml(p)}</li>`).join("")}
+        ${warumPoints.map((p) => `<li>${escapeHtml(uiSieText(p))}</li>`).join("")}
       </ul>
     </section>` : ""}
 
