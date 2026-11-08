@@ -51,7 +51,7 @@ check("4c Kein Zustands-Abschnitt traegt mehr exakt aria-label=\"Helmut\"",
 // --- 5) Marke/Persona Helmut bleibt (KEINE globale Ersetzung) ---------------------------
 check("5 Login-Button 'Helmut öffnen' (Marke: die App oeffnen) bleibt", clientSrc.includes(">Helmut öffnen</button>"));
 check("5b Persönliche Ansprache im aktuellen Briefing bleibt",
-  clientSrc.includes("Dein Briefing. Was jetzt deine Aufmerksamkeit braucht."));
+  clientSrc.includes("Ihr Briefing. Was jetzt Ihre Aufmerksamkeit braucht."));
 const helmutView = clientSrc.match(/function renderHelmutView\(\) \{[\s\S]*?\n\}\n/);
 check("5c Briefing nutzt den gemeinsamen V3-Einstieg",
   Boolean(helmutView) && helmutView[0].includes("renderHelmutStandView()")

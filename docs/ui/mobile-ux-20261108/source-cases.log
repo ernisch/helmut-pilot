@@ -1,0 +1,38 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+— Server: Erwaehnungen und Primaerquellen —
+PASS  Über dich: Erwaehnung mit NUR Startseiten-URL erscheint nicht (keine erfundene Artikelquelle)
+PASS  pickPrimarySource: Startseiten-Dokument uebersprungen, Artikel-URL gewaehlt
+PASS  pickPrimarySource-Fallback: publishedAt bleibt leer (nie updated_at/created_at)
+PASS  Dynamik ohne Quellendatum bleibt sichtbar (Frische-Gate via Ersterfassung)
+PASS  Dynamik-Anzeigezeit bleibt leer (created_at ist keine Veroeffentlichung)
+PASS  Radar-Kopf ohne belegtes Quellendatum: lastUpdated leer + Status 'stale' (kein 'Aktualisiert heute')
+PASS  client.js laedt im vm (Faelle-Hook gesetzt)
+— Fall 1+2+5: Radar-Leerzustaende —
+PASS  Radar: KEINE der quellenlosen Karten erscheint
+PASS  Radar: stattdessen der ehrliche Gesamt-Leerzustand
+PASS  Radar: keine nolink-Karten als Ersatz
+PASS  Radar: Bereich mit oeffnbarem Artikel rendert die Karte
+PASS  Radar: Bereich 'Über dich' ohne oeffnbare Items zeigt seinen ehrlichen Leerhinweis
+PASS  Radar: Bereich 'Neue Dynamiken' ohne oeffnbare Items zeigt seinen ehrlichen Leerhinweis
+— Fall 4: fehlende Veroeffentlichungsdaten bleiben leer —
+PASS  radarTime(null) ist leer (kein 1.1.1970)
+PASS  officeSourceDateLabel(null/ungueltig) ist leer (kein 'Heute'-Fallback)
+PASS  Radar: Karte ohne Veroeffentlichungsdatum erscheint MIT Quelle, aber OHNE Zeitangabe
+PASS  Radar-Kopf: Inhalt ohne belegtes Datum -> 'Ohne belegtes Quellendatum' (nicht 'Noch keine Radar-Daten')
+— Fall 3: doppelte Buero-Quellen —
+PASS  Buero: Primaerquelle + Slash-/Case-Dubletten -> genau EINE Quelle in der Liste
+PASS  Buero: Zaehler folgt der deduplizierten Liste (1)
+PASS  Buero-Detail: Singular 'Basiert auf 1 Quelle' (kein Plural, keine Doppelzaehlung)
+PASS  Buero-Detail: Quellenliste zeigt 'Quellen (1)'
+— Fall 3b: Zaehler folgt auch groesseren Quellenmengen —
+PASS  Buero: drei unterschiedliche oeffnende Quellen -> Liste 3, Zaehler 3
+PASS  Server: compactItem kappt sources auf 5 (nicht mehr 2)
+PASS  Server: compactSource reicht den Artikeltitel durch (Buero-Quellenliste)
+— Fall 5: ehrlicher Buero-Leerzustand —
+PASS  Buero: Quellen ohne oeffnende URL ergeben eine leere Liste
+PASS  Buero-Detail: ehrlicher Hinweis statt leerer Behauptung
+PASS  Buero-Detail: KEINE 'Basiert auf N Quellen'-Zeile ohne oeffnende Quellen
+PASS  Buero-Detail: Quellenblock zeigt ehrlich 'Quellen (0)'
+
+28/28 Quellenpflicht-Fall-Assertions erfolgreich.
