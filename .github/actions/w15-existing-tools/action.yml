@@ -21,7 +21,11 @@ runs:
         # Official v12.2.3 linux-static-x64 release asset; same archive pin.
         # The browser download route returned HTTP504; the asset API serves
         # the identical bytes without credentials or a new mirror.
-        curl -fsSL --max-time 90 -H 'Accept: application/octet-stream' \
+        # One bounded retry for transient HTTP failures; corrupt bytes still fail
+        # the unchanged archive check before extraction. No whole-job retry loop.
+        curl -fsSL --connect-timeout 15 --max-time 45 \
+          --retry 1 --retry-delay 2 --retry-max-time 95 \
+          -H 'Accept: application/octet-stream' \
           -o "$RUNNER_TEMP/w15-mock-postgrest.tar.xz" \
           https://api.github.com/repos/PostgREST/postgrest/releases/assets/183261684
         echo "9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c  $RUNNER_TEMP/w15-mock-postgrest.tar.xz" | sha256sum -c -

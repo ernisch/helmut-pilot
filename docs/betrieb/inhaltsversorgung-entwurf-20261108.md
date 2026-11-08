@@ -216,6 +216,34 @@ Main ist inzwischen `b4863123`: seit `ec223b77` nur Diagnose-/Rolloutdokumente,
 keine überschneidende CI-Korrektur gefunden. Neuer endgültiger Kopf und dessen
 CI-Ergebnis stehen im PR; die vorherigen 504-Fehler bleiben dort nachvollziehbar.
 
+### Begrenzter Downloadretry nach CI42474857864
+
+Auf Anschlusskopf `412d64c5` scheiterte die Werkzeugbereitstellung zuerst mit
+HTTP503 ([Job128713790899](https://github.com/ernisch/helmut-pilot/actions/runs/42474857864/job/128713790899)),
+im einmaligen gezielten Jobretry mit HTTP504
+([Job128714677862](https://github.com/ernisch/helmut-pilot/actions/runs/42474857864/job/128714677862)).
+Fehlende Quittung/Artefakt sind Folgefehler. Offline-/Bereichs-/Datenbanksuiten
+wurden nicht erreicht; tatsächlicher Browsercheck bestanden. Ein anschließender
+lokaler Verfügbarkeitscheck hatte dieselben Bytes mit richtigem Archivhash
+geliefert. Die entfernte Ursache der 5xx-Antworten ist damit nicht geklärt.
+
+Die vorhandene Action erlaubt jetzt höchstens **einen Curl-Retry** bei den von
+Curl als temporär behandelten Fehlern, darunter 503/504. Je Versuch 45s Gesamt-
+und 15s Verbindungsfrist, 2s Wiederholungsabstand, 95s Retry-Zeitfenster. Kein
+neuer Spiegel, Token, Cache, Werkzeug oder pauschaler Jobretry. Archiv-/Binärpin,
+Hashprüfung vor Entpacken, Prüfschritte und Bedingungen bleiben unverändert.
+Sind beide Versuche erfolglos oder stimmen die Bytes nicht, scheitert der Job.
+
+`scripts/ci-postgrest-download-test.js` führt die tatsächlichen Download-/Hashzeilen
+mit echtem Curl ausschließlich gegen Loopback und einen deklarierten Synthetikpin
+aus: 503→200, 504→200, dauerhafte 503/504 nach exakt zwei Anfragen, 404 ohne Retry
+und HTTP200 mit falschen Bytes ohne Hashfreigabe. **6/6 Gruppen bestanden.**
+Die erste lokale Ausführung war durch `listen EPERM` der Sandbox blockiert;
+die isolierte Ausführung mit erlaubtem Loopback-Server bestand. YAML-/Bash-/JS-
+Syntax und Diffprüfung bestanden. Fachcode und Fachtests bytegleich zu `412d64c5`;
+deren erfolgreiche gezielte Nachweise werden weiterverwendet. Neue Pflicht-CI
+bleibt bis zu ihrem tatsächlichen Abschluss offen und wird im PR zugeordnet.
+
 ## 6. Spätere Aktivierungsvorlage – nicht ausgeführt
 
 1. Voraussetzungen: PR1104 fachlich abnehmen; Endkopf-Checks ehrlich klären.
