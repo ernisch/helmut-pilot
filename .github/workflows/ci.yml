@@ -207,20 +207,14 @@ jobs:
         # die Reihenfolgezusage nicht still abschaltet (PGRST202-Rückfall). Dieser Beweis
         # braucht ein echtes PostgREST. Version und Prüfsumme sind gepinnt, damit weder
         # ein neues Release noch ein manipulierter Download das Merge-Gate unbemerkt
-        # verändern kann (gleiche Begründung wie der Playwright-Pin unten). Der Download
-        # wird bis zu dreimal versucht; ein dauerhaft unerreichbares GitHub-Release ist
-        # ein sichtbarer FEHLSCHLAG, kein stiller Skip.
+        # verändern kann (gleiche Begründung wie der Playwright-Pin unten).
+        # Derselbe Job hat das Archiv und diese Binaerdatei bereits in
+        # w15-existing-tools geprueft. Wiederverwenden statt erneut herunterladen;
+        # fehlende/geaenderte Bytes bleiben ein sichtbarer Fehler.
         run: |
-          set -e
-          for i in 1 2 3; do
-            curl -sSL --fail -o /tmp/postgrest.tar.xz \
-              https://github.com/PostgREST/postgrest/releases/download/v12.2.3/postgrest-v12.2.3-linux-static-x64.tar.xz \
-              && break
-            echo "Download-Versuch $i fehlgeschlagen"; sleep 5
-            [ "$i" = "3" ] && exit 1
-          done
-          echo "9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c  /tmp/postgrest.tar.xz" | sha256sum -c -
-          tar -xJf /tmp/postgrest.tar.xz -C /tmp
+          set -euo pipefail
+          cp -- "$W15_POSTGREST_SOURCE" /tmp/postgrest
+          echo "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617  /tmp/postgrest" | sha256sum -c -
           /tmp/postgrest --version
 
       # Der echte Registrierungsnachweis kommt vor den laengeren Suiten, damit

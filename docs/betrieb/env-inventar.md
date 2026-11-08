@@ -1,5 +1,7 @@
 # Environment-Inventar — vollständige Referenz
 
+**Nachtrag08.11.2026:** Geerbte Proxyvariablen des unverbundenen Artikeltransport-Entwurfs in §4 aufgenommen. Kein Runtime-Aufrufer, keine Variable gesetzt oder Aktivierung daraus ableiten. [Vertrag und offene Proxygarantie](artikeltransport-proxy-20261108.md).
+
 **Nachtrag 17.09.2026:** `HELMUT_ARTIKELKONTEXT` als ausschliesslich vorbereiteter Codepfad aufgenommen. Default AUS, keine Umgebung und kein Datei Flag gesetzt. [Vertrag und Grenzen](gipfel-quellenluecke-2026-09-17.md#regulaerer-anschluss-mit-begrenztem-abruf).
 
 **Historischer Gesamtstand: 2026-09-03** (§3a nachgezogen: `HELMUT_TESTKOHORTE_QUELLEN` trägt jetzt die gemessene Quellenlast mit und ohne Schalter — inklusive der Betriebsaussage, dass er für den 500er-Funktionstest AUS bleibt — Beleg [`500-funktionstest-sicherheitsrahmen-2026-09-01.md`](500-funktionstest-sicherheitsrahmen-2026-09-01.md) §34.13.4). Zuvor 2026-09-02 (§3a neu: die vorbereiteten, NICHT gesetzten Werte des 500er-Funktionstests). Zuvor 2026-08-24 (Härtungssprint Selbstweck: §7a neu — fünf statt drei Werte für die Umschaltung; Production-Zustand von `HELMUT_SCALABLE_PIPELINE`/`HELMUT_JOB_DISPATCH_MODE` und die Anwendung der OP-30-Migrationen berichtigt). Erstfassung 2026-07-15, Folgebranch.
@@ -131,6 +133,9 @@ und mit Herkunft: `node scripts/funktionstest-500-ablauf.js werte`. Vollbeleg:
 
 | Variable | P/O | Zweck / Default | Merkmale |
 |---|---|---|---|
+| `HTTPS_PROXY` / `https_proxy` | O, bei Zugangsdaten S | Geerbte HTTP(S)-Proxyadresse des **unverbundenen** `artikelkontext-proxy-entwurf.js`; Kleinbuchstaben gehen vor. Ohne Wert Direktpfad im Entwurf. Kein automatischer Crawler-Aufrufer und kein Ersatz durch `HTTP_PROXY`. | Nur vorbereiteter Agent; keine neue Projektvariable setzen. URL/Zugangsdaten nie loggen; Hostfreigabe und IP-Bindung vor Anschluss belegen. |
+| `NO_PROXY` / `no_proxy` | O | Geerbte Host-/Port-/Domainausnahmen des unverbundenen Entwurfs; Kleinbuchstaben gehen vor. Leer = keine Ausnahme. Unbekannte Schreibweisen bleiben Fehler statt stiller Direktfreigabe. | Keine Umgebung überschrieben; Ziel-/DNS-/TLS-Schutz unabhängig von der Ausnahme erhalten. |
+| `ALL_PROXY` / `all_proxy` | O | Im unverbundenen Entwurf **kein unterstützter Ersatz** für HTTPS_PROXY. Ist nur dieser Wert vorhanden, ausdrücklicher Verfahrensfehler, kein geratenes SOCKS-/Direktverfahren. | Nur gelesen, keine Aktivierung. Kein allgemeiner Proxy- oder Quellenschalter. |
 | `HELMUT_SOURCE_MODE` | P | off/shadow/**on** (Cutover aktiv). Via helmut-flags.json/Env (dynamisch gelesen über `flagValue`). | flags.js/source-mode.js · Prod=on · Default off (kein Crawl-Cutover!) · — |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | O | Gate/Dispatch off/shadow/on. Beide shadow. Dynamisch über `flagValue`/helmut-flags.json. | flags.js · alle · Default off · — |
 | `HELMUT_LANDESMODULE` | O | **Freigabe der Landesmodule je Land, FREIGABEPFLICHTIG, Default LEER = alle gesperrt.** Kommagetrennte Länderliste (heute nur `berlin`/`brandenburg`), z. B. `berlin`. Nur ausdrücklich genannte Länder laufen; unbekannte Werte wirken nicht und es gibt bewusst KEIN Sammel-Schlüsselwort (`alle`/`*` sind wirkungslos, fail-closed). Öffnet ausschließlich das Crawl-Gate — Paketstatus (`prepared`), Wegstatus (`manual`) und die Profil-Referenzzählung bleiben eigenständige Riegel. Leeren = sofortiger Rollback ohne DB-Zugriff. Runbook: `betrieb/berlin-aktivierung.md`. | flags.js/source-mode.js · Prod nach Freigabe · Default leer (alle Landesmodule gesperrt) · — |
