@@ -1,0 +1,73 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+PASS network namespace verified BEFORE app start
+UI CHECK ui-preview-browser-check.js
+PASS  desktop: actual UI rendered
+PASS  desktop: all three design font families loaded
+PASS  desktop: bell is a thin outline icon
+PASS  desktop: Briefing has no manual refresh or replacement button
+PASS  desktop: dark supplied daily reason without recommendation visible
+PASS  desktop: dark no invented recommendation or office CTA
+PASS  desktop: dark reason without recommendation no horizontal overflow
+PASS  desktop: dark no empty reason placeholder
+PASS  desktop: dark actual recommendation retains adjacent reason
+PASS  desktop: dark filled Radar without manual update UI
+PASS  desktop: dark filled coverage caveat remains
+PASS  desktop: dark source date remains
+PASS  desktop: dark filled Radar no horizontal overflow
+PASS  desktop: dark empty Radar without manual update UI
+PASS  desktop: dark empty coverage caveat remains
+PASS  desktop: dark empty Radar no horizontal overflow
+PASS  desktop: dark unconfirmed Radar without manual update UI
+PASS  desktop: dark unconfirmed coverage caveat remains
+PASS  desktop: dark unconfirmed Radar no horizontal overflow
+PASS  desktop: dark stale Radar without manual update UI
+PASS  desktop: dark stale coverage caveat remains
+PASS  desktop: dark stale Radar no horizontal overflow
+PASS  desktop: dark stale-empty Radar without manual update UI
+PASS  desktop: dark stale-empty coverage caveat remains
+PASS  desktop: dark stale caveat remains
+PASS  desktop: dark stale-empty Radar no horizontal overflow
+PASS  desktop: dark error Radar without manual update UI
+PASS  desktop: dark error coverage caveat remains
+PASS  desktop: dark technical error remains
+PASS  desktop: dark error Radar no horizontal overflow
+PASS  desktop: light supplied daily reason without recommendation visible
+PASS  desktop: light no invented recommendation or office CTA
+PASS  desktop: light reason without recommendation no horizontal overflow
+PASS  desktop: light no empty reason placeholder
+PASS  desktop: light actual recommendation retains adjacent reason
+PASS  desktop: light filled Radar without manual update UI
+PASS  desktop: light filled coverage caveat remains
+PASS  desktop: light source date remains
+PASS  desktop: light filled Radar no horizontal overflow
+PASS  desktop: light empty Radar without manual update UI
+PASS  desktop: light empty coverage caveat remains
+PASS  desktop: light empty Radar no horizontal overflow
+PASS  desktop: light unconfirmed Radar without manual update UI
+PASS  desktop: light unconfirmed coverage caveat remains
+PASS  desktop: light unconfirmed Radar no horizontal overflow
+PASS  desktop: light stale Radar without manual update UI
+PASS  desktop: light stale coverage caveat remains
+PASS  desktop: light stale Radar no horizontal overflow
+PASS  desktop: light stale-empty Radar without manual update UI
+PASS  desktop: light stale-empty coverage caveat remains
+PASS  desktop: light stale caveat remains
+PASS  desktop: light stale-empty Radar no horizontal overflow
+PASS  desktop: light error Radar without manual update UI
+PASS  desktop: light error coverage caveat remains
+PASS  desktop: light technical error remains
+PASS  desktop: light error Radar no horizontal overflow
+PASS  desktop: automatic foreground load completes
+AssertionError [ERR_ASSERTION]: desktop: cached automatic load failure stays visible
+    at check (/workspace/helmut-pilot/scripts/ui-preview-browser-check.js:32:10)
+    at main (/workspace/helmut-pilot/scripts/ui-preview-browser-check.js:419:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+

@@ -1,0 +1,20 @@
+{
+  "source": "pruefung: vorhandene Toolausgaben, keine erneute Testausführung zum Erzeugen eines Logs",
+  "tests": [
+    {
+      "command": "node scripts/lokal.js -- node scripts/helmut-tab-ui-test.js",
+      "pass": 120,
+      "fail": 0
+    },
+    {
+      "command": "node scripts/lokal.js -- node scripts/radar-ui-test.js",
+      "pass": 48,
+      "fail": 0
+    }
+  ],
+  "files": {
+    "client.js": "4f642acf3417bb2175c1e79c2c43dee9de8ccddc91327dccc218420b8e61d60b",
+    "scripts/helmut-tab-ui-test.js": "431b038f59af5c1f6953a80a2dea6139095ecd2c9f59ad73186a3e5989d59c4e",
+    "scripts/radar-ui-test.js": "b94c99c1d691c4ae749aa4205d1ed37e8c46140cb9becaf10cb4b43c9d231a4b"
+  }
+}
