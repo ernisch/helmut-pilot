@@ -502,7 +502,7 @@ const priorityTopics = [
 
 const communicationStyles = ["Sachlich", "Lösungsorientiert", "Angriffslustig", "Vermittelnd", "Aktivistisch"];
 
-async function loadBriefing() {
+async function loadBriefing({ readOnly = false } = {}) {
   if (mandateSwitchPending) return false;
   const accessGeneration = ++privateAccessGeneration;
   officeDraftsGenerating = false;
@@ -539,7 +539,7 @@ async function loadBriefing() {
       applyStartPayload(cachedStart, accessGeneration);
       renderedFromCache = true;
       render();
-      generateOfficeDraftsInBackground();
+      if (!readOnly) generateOfficeDraftsInBackground();
     } catch (error) {
       console.warn("Cached Helmut start payload ignored", error);
     }
@@ -596,8 +596,8 @@ async function loadBriefing() {
     render();
     ensureViewData(currentView);
     if (userRole() === "admin") ensureViewData("admin");
-    loadParliament();
-    generateOfficeDraftsInBackground();
+    if (!readOnly) loadParliament();
+    if (!readOnly) generateOfficeDraftsInBackground();
     return Boolean(profile.id);
   } catch (error) {
     if (accessGeneration !== privateAccessGeneration) return;
@@ -8086,7 +8086,7 @@ function renderRadarInner(state) {
   state = state && state.anzeige ? { ...state, ...state.anzeige,
     generatedAt: state.generatedAt,
     available: state.available ?? state.anzeige.available,
-    status: state.status === "error" ? state.status : state.anzeige.status,
+    status: ["error", "stale"].includes(state.status) ? state.status : state.anzeige.status,
     quality: state.quality || state.anzeige.quality,
     emptyState: state.emptyState || state.anzeige.emptyState
   } : state;
@@ -8116,10 +8116,11 @@ function renderRadarHeader(state) {
   const updated = state && state.lastUpdated;
   const sourceDate = radarTime(updated);
   const disruption = radarDisruption(state);
-  const fresh = Boolean(sourceDate && radarIsToday(new Date(updated)) && !disruption);
+  const stale = state?.status === "stale" || state?.emptyState?.kind === "stale";
+  const fresh = Boolean(sourceDate && radarIsToday(new Date(updated)) && !disruption && !stale);
   // lastUpdated belegt das Publikationsdatum einer angezeigten Quelle,
   // generatedAt nur die Erstellung dieser Ansicht, keine Quellenpruefung.
-  const label = sourceDate ? `Neueste angezeigte Quelle: ${sourceDate}`
+  const label = sourceDate ? `${stale ? "Veralteter Radarstand · " : ""}Neueste angezeigte Quelle: ${sourceDate}`
     : (previewMode ? "Vorschau" : (radarStateHasContent(state) ? "Ohne belegtes Quellendatum" : "Kein Quellendatum für diese Ansicht"));
   const created = state && state.generatedAt && Number.isFinite(Date.parse(state.generatedAt))
     ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(state.generatedAt)) : "";
@@ -8135,13 +8136,15 @@ function renderRadarHeader(state) {
   return `
     <header class="radar2-header">
       <div class="radar2-header-row">
-        ${renderUiPageHeader("Radar", "Was sich abzeichnet. Was du im Blick behalten solltest.")}
-        <button class="radar2-refresh ${radarRefreshing ? "is-loading" : ""}" type="button" data-radar-refresh aria-label="Radar aktualisieren" ${radarRefreshing ? "aria-busy=\"true\"" : ""}>
-          ${radarIcon("refresh")}
+        ${renderUiPageHeader("Radar", "Belegte Hinweise aus Ihrem politischen Umfeld.")}
+        <button class="radar2-refresh ${radarRefreshing ? "is-loading" : ""}" type="button" data-radar-refresh aria-label="Radarstand neu laden" aria-describedby="radar-refresh-purpose" ${radarRefreshing ? "aria-busy=\"true\"" : ""}>
+          ${radarIcon("refresh")}<span>Stand neu laden</span>
         </button>
       </div>
+      <p class="radar2-refresh-note" id="radar-refresh-purpose" data-radar-refresh-purpose>Lädt den gespeicherten Stand neu. Startet keine Quellenrecherche oder neue Auswertung.</p>
       ${failNote}
       ${disruptionNote}
+      ${stale && radarStateHasContent(state) ? '<p class="radar2-refresh-note">Veralteter Radarstand: Eine aktuelle Quellenprüfung ist nicht bestätigt.</p>' : ""}
       <p class="radar2-refresh-note" data-radar-provenance>${escapeHtml(provenance)}</p>
       <div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
         <span class="radar2-status-dot" aria-hidden="true"></span>
@@ -8177,7 +8180,7 @@ function renderRadarAboutYou(state) {
   const shown = expanded ? all : all.slice(0, 3);
   const body = all.length
     ? shown.map(renderRadarMentionCard).join("")
-    : radarEmptyHint("Heute wurden keine direkten Erwähnungen gefunden.");
+    : radarEmptyHint(radarSectionEmptyText(state, "direkten Erwähnungen"));
   return `
     <section class="radar2-section">
       ${radarSectionHead("person", "Über dich", "mentions", expanded, all.length > 3)}
@@ -8223,7 +8226,7 @@ function renderRadarEnvironment(state) {
   // ECHTE erweiterte Liste (Daten liegen vor) hinter einem segmentspezifischen Button.
   const RADAR_ENV_PREVIEW = 3;
   const shown = radarEnvExpanded ? items : items.slice(0, RADAR_ENV_PREVIEW);
-  const list = shown.length ? shown.map(renderRadarEnvRow).join("") : radarEmptyHint(seg.empty);
+  const list = shown.length ? shown.map(renderRadarEnvRow).join("") : radarEmptyHint(radarSectionEmptyText(state, active === "party" ? "Partei- oder Fraktionssignale" : active === "constituency" ? "Wahlkreishinweise" : "Ausschusshinweise"));
   const more = items.length > RADAR_ENV_PREVIEW
     ? `<button class="radar2-more-link radar2-more-link--block" type="button" data-radar-expand="environment">${radarEnvExpanded ? "Weniger anzeigen" : `${escapeHtml(seg.more)} (${items.length})`} <span aria-hidden="true">›</span></button>`
     : "";
@@ -8261,7 +8264,7 @@ function renderRadarDynamics(state) {
   const shown = expanded ? all : all.slice(0, 3);
   const body = all.length
     ? shown.map(renderRadarDynamicCard).join("")
-    : radarEmptyHint("In dieser Ansicht werden keine belegten Dynamikhinweise angezeigt.");
+    : radarEmptyHint(radarSectionEmptyText(state, "Dynamikhinweise"));
   return `
     <section class="radar2-section">
       ${radarSectionHead("activity", "Neue Dynamiken", "dynamics", expanded, all.length > 3)}
@@ -8392,23 +8395,35 @@ function radarDisruption(state) {
   return null;
 }
 
+// Ein leerer Abschnitt ist kein Nachweis einer vollständigen Quellenprüfung.
+function radarSectionEmptyText(state, subject) {
+  const limitation = radarDisruption(state) ? "Die Datenbasis ist derzeit eingeschränkt."
+    : state?.status === "stale" || state?.emptyState?.kind === "stale" ? "Der Radarstand ist veraltet."
+    : state?.quality?.sourcesLoaded === true ? "Die Aussage gilt nur für die vorhandenen Daten."
+    : "Eine geladene Quellengrundlage ist nicht bestätigt.";
+  return `In dieser Ansicht werden keine belegten ${subject} angezeigt. ${limitation}`;
+}
+
 function renderRadarEmpty(state) {
   const es = state && state.emptyState && state.emptyState.kind ? state.emptyState : null;
   // Technischer Fehler hat Vorrang vor einer leeren, ggf. alten Anzeige.
   const disruption = radarDisruption(state);
   const sourcesConfirmed = state?.quality?.sourcesLoaded === true;
   const explicitGap = es && (es.kind === "gap" || es.kind === "stale");
+  const stale = state?.status === "stale" || es?.kind === "stale";
   const title = disruption ? disruption.title
+    : stale ? "Radarstand veraltet"
     : explicitGap ? (es.headline || "Radarstand nicht aktuell")
     : sourcesConfirmed ? "Keine zugeordneten Signale in dieser Ansicht"
     : "Radarprüfung nicht belegt";
   const note = disruption ? disruption.sub
+    : stale ? "Eine aktuelle Quellenprüfung ist nicht bestätigt. Die leere Ansicht belegt keine Trefferlosigkeit."
     : explicitGap ? (es.detail || "Eine aktuelle Datengrundlage ist nicht bestätigt.")
     : sourcesConfirmed
       ? "Die vorhandenen Quellendaten liefern für diese Ansicht keine belegten Signale. Das ist keine Bestätigung, dass es keine Erwähnungen gibt."
       : previewMode ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
       : "Für diese Ansicht ist keine geladene Quellengrundlage bestätigt. Die leere Anzeige belegt nicht, dass es keine Erwähnungen gibt.";
-  const emptyKind = disruption ? disruption.kind : explicitGap ? es.kind : sourcesConfirmed ? "quiet" : "unknown";
+  const emptyKind = disruption ? disruption.kind : stale ? "stale" : explicitGap ? es.kind : sourcesConfirmed ? "quiet" : "unknown";
   return `
     ${renderRadarSummary({ summary: { line1: title } })}
     <section class="radar2-section" data-empty-kind="${escapeAttribute(emptyKind)}">
@@ -8519,8 +8534,8 @@ async function refreshRadar() {
   // Anzeige bleibt beim letzten Stand, aber die Kopfzeile sagt das ehrlich
   // (radarRefreshFailedAt -> ruhige Hinweiszeile in renderRadarHeader).
   try {
-    await loadBriefing();
-    radarRefreshFailedAt = 0;
+    const loaded = await loadBriefing({ readOnly: true });
+    radarRefreshFailedAt = loaded === true ? 0 : Date.now();
   } catch (_) {
     radarRefreshFailedAt = Date.now();
   }
