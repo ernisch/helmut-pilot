@@ -3,6 +3,9 @@
 Stand: 08.11.2026 UTC. **Teilweise abgeschlossen: Code und gezielte lokale
 Prüfungen bereit; PR-Review/CI und produktive Wirkung getrennt. Kein Merge.**
 Branch: `codex/quelleninhalt-20261107`, Basis Main `915d15b6`.
+Codecommit `618d6f9d`; [PR #1104](https://github.com/ernisch/helmut-pilot/pull/1104)
+ist DRAFT und ungemergt. Pflicht-CI wird am aktuellen PR-Kopf geprüft;
+ihre laufende/finale Bilanz steht im PR, nicht als vorweggenommener PASS hier.
 
 ## Ausgangslage und Grenzen
 
