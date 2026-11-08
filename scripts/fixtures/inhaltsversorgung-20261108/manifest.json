@@ -1,0 +1,18 @@
+[
+  {
+    "file": "dgb-artikel.html",
+    "source_sha256": "8bacc8ad3f0d704c9649d53c5a7308928b00f530080698b31070ccd798e94426",
+    "fixture_sha256": "1c955c3aef404d2eca0fe8adc2dbbbc2ffa77a586e32a5efa5d13b689ca7379b",
+    "scope": "Original head and closed article container; unrelated shell omitted; LF and trailing line whitespace normalized",
+    "original_path": "/tmp/helmut-quellenbelege/dgb-artikel.html",
+    "observed": "2026-11-08 UTC, prior task; no new fetch"
+  },
+  {
+    "file": "radio-hannover.html",
+    "source_sha256": "95a1bc4bffd737f011c9cd16e94a74ad4819ba4350f5bce6acad71b84e7b6547",
+    "fixture_sha256": "a59eeb62e1ba988f7180dcd1262a366f818240aad50051807d21a722dd408910",
+    "scope": "Original head and closed article container; unrelated shell omitted; LF and trailing line whitespace normalized",
+    "original_path": "/tmp/helmut-quellenbelege/radio-hannover.html",
+    "observed": "2026-11-08 UTC, prior task; no new fetch"
+  }
+]

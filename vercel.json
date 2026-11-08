@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/quelleninhalt-20261107": false,
       "codex/profilbezogene-lageauswahl-20261107": false,
       "fix/cem-lage-profile-schema-20261106": false,
       "fix/cem-budget-jsonb-20261106": false,

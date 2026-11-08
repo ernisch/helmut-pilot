@@ -1,5 +1,9 @@
 # Quelleninhalt: Diagnose und kleiner Korrekturvorschlag
 
+**Historische Erstaufnahme.** Aktueller zusammenhaengender Abschluss und
+Endkopf-Nachweise: [PR1104-Abnahmepaket](quellenabschluss-20261108.md).
+Die nachfolgenden frueheren Grenzen/CI-Staende bleiben als Historie erhalten.
+
 Stand: 08.11.2026 UTC. **Teilweise abgeschlossen: Code und gezielte lokale
 Prüfungen bereit; PR-Review/CI und produktive Wirkung getrennt. Kein Merge.**
 Branch: `codex/quelleninhalt-20261107`, Basis Main `915d15b6`.

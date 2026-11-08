@@ -54,17 +54,23 @@ async function main() {
   await test("Echter Rohspiegel: Anzeigeabschnitt verliert seinen Vorrang vor ganzen Saetzen", () => {
     const examples = JSON.parse(read("rohspiegel.json")).examples;
     const dlf = examples[0];
-    const expected = "Der Bundestag will das Strafmaß für den Einsatz von K.o.-Tropfen erhöhen. Täter, die die Substanzen für eine Vergewaltigung oder einen Raub nutzen, sollen in Zukunft eine Haftstrafe von mindestens fünf Jahren erhalten.";
+    const expected = dlf.content;
     assert.equal(D.sourceExcerpt(dlf), expected);
     assert(dlf.content.startsWith(expected));
     assert.notEqual(expected, dlf.excerpt);
     const mauerfall = examples[1];
-    assert.equal(D.sourceExcerpt({ ...mauerfall, summary: undefined }), E.satzpraefix(mauerfall.content));
-    // Der einzige Originalsatz passt nicht. Keine gekuerzte neue Behauptung.
-    assert.equal(D.sourceExcerpt({ ...examples[2], summary: undefined }), null);
+    assert.equal(D.sourceExcerpt(mauerfall), E.satzpraefix(mauerfall.content, D.SUMMARY_MAX));
+    // Der vollstaendige255-Zeichen-Originalsatz darf nicht wegen der alten
+    // Anzeigegrenze verschwinden. Kein Umformulieren und kein neuer Abruf.
+    const original = examples[2].content;
+    const row = D.toRawDocumentRow(examples[2]);
+    assert.equal(row.summary, original); assert.equal(D.toRawDocumentRow(row).summary, original);
+    assert(U.buildUnderstandingPrompt({ documents: [row] }).includes(JSON.stringify(original)));
   });
   await test("Synthetisch: vorhandene summary bleibt, unbrauchbarer Kandidat blockiert Alternative nicht", () => {
     assert.equal(D.sourceExcerpt({ title, summary: full, content: "Andere Aussage." }), full);
+    const kurz = "Der Ausschuss berät über zusätzliche Finanzierung für kommunale Beratungsstellen";
+    assert.equal(D.sourceExcerpt({ title, summary: kurz, content: full + " Zusätzlicher vollständiger Originalsatz." }), kurz);
     assert.equal(D.sourceExcerpt({ title, summary: "Offener Text ".repeat(40), content: full }), full);
     assert.equal(D.sourceExcerpt({ title, excerpt: "Ohne Satzende ".repeat(30).slice(0, 240) }), null);
     assert.equal(D.sourceExcerpt({ title, content: title }), null);
@@ -149,6 +155,26 @@ async function main() {
         if (value === undefined) delete process.env[key]; else process.env[key] = value;
     }
   });
-  console.log(`${passed}/10 Pruefgruppen bestanden; 0 echte Modell-/REST-Aufrufe.`);
+  await test("Vorhandener255-Zeichen-Originalsatz erreicht den tatsaechlich abgefangenen Modellaufrufer", async () => {
+    const input = JSON.parse(read("rohspiegel.json")).examples[2];
+    const row = D.toRawDocumentRow(D.toRawDocumentRow(input)); let calls = 0;
+    assert.equal(row.summary, input.content);
+    const result = await U.runUnderstandingShadow([row], {
+      enabled: () => true, aiEnabled: () => true, acquireLock: async () => ({ granted: true }), releaseLock: async () => {},
+      getExisting: async () => null, findVorgangCandidates: async () => [], verstehenVertrag: () => null,
+      clusterWache: null, gateMode: () => "off", priorityEnabled: () => false,
+      canSpend: async () => ({ allowed: true }), modelName: () => "offline-originalsatz-attrappe", logSkip: () => {},
+      requestUnderstanding: async prompt => {
+        calls++; assert(prompt.includes(JSON.stringify(input.content))); assert(prompt.includes(row.id)); assert(prompt.includes(row.url));
+        return { headline: row.title, was_ist_passiert: input.content, warum_wichtig: "Synthetische Kontrollantwort", wer_ist_betroffen: "Synthetische Kontrollantwort",
+          parteien: [], ausschuesse: [], ministerien: [], risiken: [], chancen: [], zeitdruck: "mittel", handlungsempfehlung: "Synthetische Kontrollantwort", confidence_score: 70,
+          display_title: "Isolierte Originaltextpruefung", display_summary: "Synthetische Kontrollantwort" };
+      },
+      save: async () => ({ saved: true }), saveSources: async () => {},
+      savePending: async () => { throw Error("unerwartete Vormerkung"); }, markFailed: async () => { throw Error("unerwarteter Fehler"); }
+    });
+    assert.equal(calls, 1); assert.equal(result.counts.saved, 1, JSON.stringify(result));
+  });
+  console.log(`${passed}/${passed} Pruefgruppen bestanden; 0 echte Modell-/REST-Aufrufe.`);
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
