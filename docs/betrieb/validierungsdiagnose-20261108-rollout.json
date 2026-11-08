@@ -1,0 +1,98 @@
+{
+  "pr": 1105,
+  "reviewedHead": "77ae3e6b12d81d15a0a224ba18514dfcb418e3a1",
+  "mergeCommit": "ec223b77c56a7f0683304ad72c1e69910fb14bca",
+  "mergedAtUTC": "2026-11-08T08:42:24Z",
+  "ci": {
+    "runId": 42430319921,
+    "requiredChecks": "success",
+    "browserExecuted": false
+  },
+  "preflight": {
+    "observedAtUTC": "2026-11-08T08:42:11.900280Z",
+    "runningProcesses": 0,
+    "activeRelationalLocks": 0,
+    "activeOrUnknownAuthLocks": 0,
+    "authRows": 1
+  },
+  "mergeTreeMatchesReviewedTree": true,
+  "deployment": {
+    "id": "dpl_9rTzEnjjdkro8wCyQ3U7pKKWJpZU",
+    "target": "production",
+    "state": "READY",
+    "projectId": "prj_xbZ6QzTkr7YoxQI71lW59FT03IR3",
+    "teamId": "team_bTAfzDHwD3mT03r1z7rh1TC3",
+    "commit": "ec223b77c56a7f0683304ad72c1e69910fb14bca",
+    "alias": "helmut-pilot.vercel.app"
+  },
+  "liveCheck": {
+    "observedAtUTC": "2026-11-08T08:43:29.178854+00:00",
+    "origin": "https://helmut-pilot.vercel.app",
+    "commit": "ec223b77c56a7f0683304ad72c1e69910fb14bca",
+    "requests": [
+      {
+        "path": "/",
+        "status": 200,
+        "bytes": 6110
+      },
+      {
+        "path": "/api/release/public",
+        "status": 200,
+        "bytes": 52
+      },
+      {
+        "path": "/client.js?v=ec223b77",
+        "status": 200,
+        "bytes": 617072
+      },
+      {
+        "path": "/styles.css?v=ec223b77",
+        "status": 200,
+        "bytes": 336657
+      }
+    ],
+    "release": {
+      "ok": true,
+      "ready": true,
+      "storage": true
+    },
+    "assetVersions": {
+      "client.js": "ec223b77",
+      "styles.css": "ec223b77"
+    },
+    "assetHashes": {
+      "client.js": "fc954b8b208e3834d1e9f7014e2b95f68ade5499059a7db23c6ba220028cd1bc",
+      "styles.css": "42ee881a79a55cd3d907dc807f5e9e188d51ee561c6485d0374281f6afa3c975"
+    }
+  },
+  "logCheck": {
+    "sinceUTC": "2026-11-08T08:42:27.544Z",
+    "untilUTC": "2026-11-08T08:44:53Z",
+    "levels": [
+      "error",
+      "fatal"
+    ],
+    "groupBy": "level",
+    "returnedGroups": 0,
+    "limitation": "Begrenztes Beobachtungsfenster; kein umfassender Funktionsnachweis."
+  },
+  "parallelPr1104": {
+    "head": "947add8df88fbe9eafdd8137d768d846ab274332",
+    "merged": false
+  },
+  "rollbackDeployment": "dpl_4kg3SDXfWtVYupcR2UyTwsNchKWa",
+  "scope": {
+    "reprocessing": false,
+    "additionalModelCalls": false,
+    "productionDataMutations": false,
+    "migrations": false,
+    "budgetChanges": false,
+    "flagChanges": false,
+    "scheduleChanges": false
+  },
+  "limits": [
+    "Historischer Feldfehler bleibt unbekannt.",
+    "Keine automatische Wiederherstellung von Radarinhalten.",
+    "Kein Live-Modelltest oder absichtlich provozierter Validierungsfehler."
+  ]
+}
