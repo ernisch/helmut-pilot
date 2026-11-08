@@ -1,3 +1,5 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
 PASS  client.js laedt im vm (Boot ohne echten Browser)
 PASS  Voll: rendert den Stand (.hstand), nicht den Leerzustand
 PASS  Neuer Kopf: persönliches Briefing
@@ -109,5 +111,6 @@ PASS  Ruhelage Schutz: Datenlücke wird nicht als ruhiger aktueller Tag gezeigt
 PASS  Ruhelage Schutz: Fehler wird nicht als ruhiger aktueller Tag gezeigt
 PASS  Ruhelage Schutz: Fehler bleibt sichtbar
 PASS  Ruhelage ohne Lage: ehrlicher Leerzustand ohne erfundene Themenzahl
+PASS  Auch gelieferte Leerzustandstexte verwenden Sie-Ansprache
 
-111/111 Helmut-Tab-UI-Assertions erfolgreich.
+112/112 Helmut-Tab-UI-Assertions erfolgreich.

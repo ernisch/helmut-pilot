@@ -566,7 +566,7 @@
     "assets/ui/fonts/Spectral-Medium.woff2": "5effe60debf770566d79d9050b9a073a21e6148f3912a4d372d1ed935ed6ac52",
     "assets/ui/fonts/Spectral-Regular.woff2": "61cd5cc9b19fc3590368e03f630cc8d736653a70d7ad51f9bb588488b1327f5f",
     "assets/ui/reichstag.jpg": "06d4dc796dbb47631f4ed2c7b9b5137bc0c9f43d7080fddb707c512fbecbe5c7",
-    "client.js": "1e923939b648794895448cdd10233a9be9b047709fa77da1fc2b06662fda0b9d",
+    "client.js": "2a0fda4eec8facf70816577af1490218a4316596310a356dec42e492de963a6a",
     "index.html": "44bd39523405d5651bd1f0328b921a41a595895dd0ed80caee9bf5b89211a21b",
     "scripts/fixtures/ui-preview.js": "3a54b4d27ad7bd213033253015e21eb642ce6883c61a038b41ad0537df6429e0",
     "scripts/ui-preview-browser-check.js": "380c78eb298537a9c1ae20a92dee987fce356f50c6ab70b197c9c1c248c2ee8a",
@@ -574,5 +574,5 @@
     "site.webmanifest": "a09ca1eb86f648106c7007f1c9bdb2d597e6b4f1619c1a77ca6180614a1b0575",
     "styles.css": "35a67a6305501c71b4acff8964b4fdc72ff7cc48bc246c646f7a674067e15134"
   },
-  "servedClientSha256": "1ddf2ac2e0cdfbc90c1a6bb7bc9eadf0b10d0b310a3559a6f9eaf04fe2b4e7ed"
+  "servedClientSha256": "b32e8073faff526509c99c976aba9a7ee952c58f5490c45053a0c19d48722782"
 }
