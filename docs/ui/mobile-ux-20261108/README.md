@@ -2,7 +2,7 @@
 
 Stand: 08.11.2026. **Für Review vorbereitet; gezielte Prüfungen bestanden. Keine produktive Wirkung.**
 Branch `codex/mobile-briefing-lage-radar-20261108`, Basis frisch bestätigt `b4863123741f303b580569c80165233fd4696d1f`.
-Runtime-Endstand `a5167545`, Prüfdateien `962104b8`. Pflicht-CI wird am tatsächlichen PR-Kopf geprüft; lokale Belege ersetzen sie nicht. ChatGPT koordiniert die fachliche Abnahme. Kein Merge, kein Production-Deployment.
+Runtime-Endstand `a5167545`, Prüfdateien `962104b8` plus gezielter Smoke-Selektorenangleich im PR. Pflicht-CI wird am tatsächlichen PR-Kopf geprüft; lokale Belege ersetzen sie nicht. ChatGPT koordiniert die fachliche Abnahme. Kein Merge, kein Production-Deployment.
 
 ## Zuständigkeiten und Grenzen
 
@@ -39,11 +39,14 @@ Alle Tests über `scripts/lokal.js`. Browser im bestehenden `ui-preview-isolated
 | [Endstand Chromium](after/BROWSER_RESULT.json) | **542/542 PASS**, 1440×900, 390×844, 360×780, beide Themes; gefüllt, leer, unbestätigt, veraltet, gestört, lange Titel, Quellen-Taps, echte Historie/Listenposition und Mandatskontexte |
 | [Vorher Chromium](before/BROWSER_RESULT.json) | **271/271 PASS** auf exakt `b4863123`; beide Themes, tatsächlich geöffnete Details |
 | [Netzwerkprotokoll Endstand](after/BROWSER_REQUESTS.json) | Keine extern erfüllte Anfrage. Echte Radar-Neuladeklicks erzeugen pro Viewport genau zwei GETs auf `/api/app/start`: Erfolg und simuliertes503, keine weiteren API-Aufrufe. Quellen-Taps im synthetischen Browser verhindern die externe Navigation. |
+| [Bestehender CI-Browser-Smoke lokal](browser-smoke.log) | **114 PASS / 0 FAIL**, echte lokale HTTP-Shell, Desktop/Mobil, vorhandener Playwright mit bereits installiertem Chromium; nur Browserpfad im Startaufruf auf `/usr/bin/chromium` gesetzt |
 | Syntax / `git diff --check` | bestanden |
 
 Der erste erweiterte Browserlauf stoppte an einem Vergleich mit abschließendem Fixture-Leerraum; der zweite an einer erneut deklarierten Prüfvariable. Beide Ursachen lagen im ergänzten Harness, wurden dort korrigiert; kein PASS für diese Fehlversuche. Der ursprüngliche Browsernachweis hatte eine versteckte Detailquelle als unzureichenden Sichtbarkeitsbeleg akzeptiert. Der Nachweis verlangt jetzt tatsächliches Öffnen durch Tap und sichtbare Detailansicht.
 
 Der bestehende Hintergrundlesertest scheiterte zuerst5/8. Dieselben drei Fehler sind gegen unverändertes main reproduziert ([Altbeleg](background-refresh-main-before-fixture-fix.log)): sein `applyStartPayload`-Stub etablierte kein gültiges privates Profil. Die bestehende Testfixture setzt jetzt diese Voraussetzung korrekt; Produktlogik wurde dafür nicht angepasst. Zwei zusätzliche Prüfungen sichern den neu begrenzten Radar-Lesepfad.
+
+Der erste tatsächliche PR-CI-Browserjob [42478378153](https://github.com/ernisch/helmut-pilot/actions/runs/42478378153/job/128724701191) scheiterte an der noch unveränderten Smoke-Erwartung `.hstand-why` ([Erstfehler](ci-browser-first-failure.txt)). Der bestehende Test prüft jetzt den beauftragten sichtbaren Begründungsort `.ui-recommendation-why` und die Radar-Sie-Ansprache; alle bisherigen fachlichen Kontrollen bleiben erhalten, Sichtbarkeit wurde zusätzlich abgesichert. Lokaler echter Smoke danach114/0; Runtime und die542 Bild-/Navigationsprüfungen bleiben bytegleich. Der fehlerhafte erste CI-Kopf wird nicht als grün umgedeutet. Die neue CI muss am neuen PR-Kopf bestehen.
 
 Der unabhängige lesende Gesamtreview meldete drei P2-Anzeigeprobleme (globale Radarfrische, Sie-Formen, erfundene Uhrzeit aus ISO-Datum). Alle drei im Endstand lesend bestätigt behoben. Keine P1-/Sicherheitsblocker festgestellt; keine pauschale unabhängige Production-Abnahme behauptet.
 

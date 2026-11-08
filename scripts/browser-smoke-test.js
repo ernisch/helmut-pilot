@@ -264,10 +264,11 @@ function check(name, cond, detail = "") {
         await page.evaluate(fixtureData => { briefing = fixtureData; render(); }, data);
         const displayed = await page.evaluate(() => ({
           proposals: document.querySelectorAll(".ui-briefing-hero").length,
-          why: document.querySelectorAll(".hstand-why").length
+          why: document.querySelectorAll(".ui-recommendation-why").length
         }));
         check(`${label}: Briefing zeigt Empfehlung und eigenen Tagesanlass`,
-          displayed.proposals === 1 && displayed.why === 1, JSON.stringify(displayed));
+          displayed.proposals === 1 && displayed.why === 1
+            && await page.locator(".ui-recommendation-why").isVisible(), JSON.stringify(displayed));
         await page.locator(".hstand [data-vorgang]").first().click();
         await page.waitForSelector(".vsheet-title", { timeout: 5000 });
         const sheetText = await page.locator(".vsheet-lede").innerText();
@@ -276,14 +277,14 @@ function check(name, cond, detail = "") {
             && await page.locator(".vsheet-src[href]").first().getAttribute("href") === state.primaryItem.sourceUrl);
         check(`${label}: Lage Detail kopiert keine Empfehlung`, await page.locator(".vsheet-reco").count() === 0);
         await page.getByRole("button", { name: "Empfehlung im Briefing öffnen", exact: true }).click();
-        // Design 06.11.2026: Begruendung, Risiko/Chance und Schritte liegen hinter
-        // „Ausfuehrlich lesen“; fuer die Textpruefung aufklappen (Inhalt unveraendert).
+        // Die Begruendung steht sichtbar bei der Empfehlung. Zusaetzlicher
+        // Kontext bleibt hinter „Ausfuehrlich lesen“ erreichbar.
         await page.evaluate(() => { document.querySelectorAll(".ui-hero-details").forEach((d) => { d.open = true; }); });
         check(`${label}: Rueckverweis schliesst Lage Detail und zeigt Briefing`,
           await page.locator(".vsheet-title").count() === 0 && await page.locator(".ui-briefing-hero").count() === 1);
         check(`${label}: Briefing begründet die Tagespriorität statt den Sachstand zu kopieren`,
-          (await page.locator(".hstand-why").innerText()).includes("heutigen Arbeitstag")
-            && !(await page.locator(".hstand-why").innerText()).includes("Arbeitsgebiet des Mandats"));
+          (await page.locator(".ui-recommendation-why").innerText()).includes("heutigen Arbeitstag")
+            && !(await page.locator(".ui-recommendation-why").innerText()).includes("Arbeitsgebiet des Mandats"));
         const primaryTitle = state.primaryItem.displayTitle || state.primaryItem.title;
         check(`${label}: Briefing wiederholt den Hauptvorgang nicht in weiteren Vorgaengen`,
           !(await page.locator(".hstand-rel-title").allTextContents()).includes(primaryTitle));
@@ -322,7 +323,7 @@ function check(name, cond, detail = "") {
           !radarText.includes("Heute nicht öffentlich zuspitzen")
             && !radarText.includes("Die belegten Fakten gehoeren in die Lage."));
         check(`${label}: Radar hat einen Beobachtungsgrund und keine zweite Artikelliste`,
-          radarText.includes("nennt deinen Namen")
+          radarText.includes("nennt Ihren Namen")
             && radarText.includes("Eine Bewertung des Tons oder der Resonanz liegt nicht vor.")
             && !radarText.includes("Alle relevanten Artikel"));
 
@@ -334,13 +335,13 @@ function check(name, cond, detail = "") {
           document.querySelectorAll(".ui-hero-details").forEach((d) => { d.open = true; });
         });
         check(`${label}: Eigenstaendige Entscheidungsbegruendung bleibt im Briefing erhalten`,
-          (await page.locator(".hstand-why").innerText()).includes("Zusaetzlicher Entscheidungsgrund"));
+          (await page.locator(".ui-recommendation-why").innerText()).includes("Zusaetzlicher Entscheidungsgrund"));
         await page.evaluate(() => {
           briefing.lageBriefing.vorgaenge = []; render();
           document.querySelectorAll(".ui-hero-details").forEach((d) => { d.open = true; });
         });
         check(`${label}: Ohne passenden Lagevorgang kein leerer Querverweis und kein Verlust der Begruendung`,
-          await page.locator("[data-lage-verweis]").count() === 0 && await page.locator(".hstand-why").count() === 1);
+          await page.locator("[data-lage-verweis]").count() === 0 && await page.locator(".ui-recommendation-why").count() === 1);
         check(`${label}: keine JS Fehler beim Wechsel zwischen allen drei Fachbereichen`, pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
       }
 

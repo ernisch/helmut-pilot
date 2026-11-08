@@ -1,0 +1,119 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+PASS Echter Service Worker: haengende Navigation endet nach 8s; erneuter Start funktioniert.
+PASS  Desktop 1280x800: Startlogo bleibt waehrend ausstehender Briefingdaten sichtbar
+PASS  Desktop 1280x800: keine vorzeitig geoeffnete App mit nachladendem Briefing
+PASS  Desktop 1280x800: client.js bootet (__helmutClientLoaded)
+PASS  Desktop 1280x800: Splash verschwindet (kein Boot-Hänger)
+PASS  Desktop 1280x800: keine unbehandelten JS-Fehler beim Boot
+PASS  Desktop 1280x800: App-Shell gerendert (app-frame vorhanden)
+PASS  Desktop 1280x800: Navigation zu den vier Bereichen vorhanden
+PASS  Desktop 1280x800: Bereich 'radar' rendert (Nav aktiv, andere inaktiv)
+PASS  Desktop 1280x800: Bereich 'helmut' rendert (Nav aktiv, andere inaktiv)
+PASS  Desktop 1280x800: Bereich 'office' rendert (Nav aktiv, andere inaktiv)
+PASS  Desktop 1280x800: Bereich 'briefing' rendert (Nav aktiv, andere inaktiv)
+PASS  Desktop 1280x800: keine neuen JS-Fehler bei Tab-Wechseln
+PASS  Desktop 1280x800: fachliche Zeitangaben sind sichtbar und klar getrennt
+PASS  Desktop 1280x800: Abrufzeit ersetzt keine fehlende fachliche Zeit
+PASS  Desktop 1280x800: Briefing zeigt Empfehlung und eigenen Tagesanlass
+PASS  Desktop 1280x800: Briefing Link oeffnet genau den vorhandenen Lage Text mit Quelle
+PASS  Desktop 1280x800: Lage Detail kopiert keine Empfehlung
+PASS  Desktop 1280x800: Rueckverweis schliesst Lage Detail und zeigt Briefing
+PASS  Desktop 1280x800: Briefing begründet die Tagespriorität statt den Sachstand zu kopieren
+PASS  Desktop 1280x800: Briefing wiederholt den Hauptvorgang nicht in weiteren Vorgaengen
+PASS  Desktop 1280x800: Lage Karte zeigt Fakten und keine Briefing Handlungsanweisung
+PASS  Desktop 1280x800: Lage trennt aktuelle Analyse und aeltere Quellenfrische sichtbar
+PASS  Desktop 1280x800: Ohne Analysezeit bleibt nur die belegte Quellenfrische sichtbar
+PASS  Desktop 1280x800: Radar zeigt belegte Erwaehnung mit Quelle genau einmal trotz Ausschussbezug
+PASS  Desktop 1280x800: Radar kopiert weder Vorschlag noch Lage Langtext
+PASS  Desktop 1280x800: Radar hat einen Beobachtungsgrund und keine zweite Artikelliste
+PASS  Desktop 1280x800: Eigenstaendige Entscheidungsbegruendung bleibt im Briefing erhalten
+PASS  Desktop 1280x800: Ohne passenden Lagevorgang kein leerer Querverweis und kein Verlust der Begruendung
+PASS  Desktop 1280x800: keine JS Fehler beim Wechsel zwischen allen drei Fachbereichen
+PASS  Desktop 1280x800: Teilmitgliedskarten erhalten einen Remagen- und zwei BR-Stufenpunkte
+PASS  Desktop 1280x800: Remagen Detail zeigt beide unveraenderten Kontexte mit eigenen Quellen
+PASS  Desktop 1280x800: BR Restdetail bindet Vorentwurf und Bundestagsstand an getrennte Originale
+PASS  Desktop 1280x800: keine JS Fehler bei Teilrollen und Quellenwechsel
+PASS  Desktop 1280x800: Detail passt vor dem Scrollen zwischen Kopf und Fuss
+PASS  Desktop 1280x800: Auswahl weit unten erhaelt die Listenposition
+PASS  Desktop 1280x800: ausgewahltes Desktopdetail bleibt sichtbar
+PASS  Desktop 1280x800: Detail laesst sich unabhaengig von der Liste scrollen
+PASS  Desktop 1280x800: Originalquelle im gescrollten Panel erreichbar
+PASS  Desktop 1280x800: neues Thema beginnt oben und erhaelt Listenposition
+PASS  Desktop 1280x800: Detail per Tastatur scrollbar
+PASS  Desktop 1280x800: kleines Desktopfenster und helles Theme am Listenende
+PASS  Desktop 1280x800: keine JS Fehler nach Desktopdetailpruefung
+PASS  Desktop 1280x800: keine JS Fehler nach lokaler Browsernavigation
+PASS  Mobil 390x844: Startlogo bleibt waehrend ausstehender Briefingdaten sichtbar
+PASS  Mobil 390x844: keine vorzeitig geoeffnete App mit nachladendem Briefing
+PASS  Mobil 390x844: client.js bootet (__helmutClientLoaded)
+PASS  Mobil 390x844: Splash verschwindet (kein Boot-Hänger)
+PASS  Mobil 390x844: keine unbehandelten JS-Fehler beim Boot
+PASS  Mobil 390x844: App-Shell gerendert (app-frame vorhanden)
+PASS  Mobil 390x844: Navigation zu den vier Bereichen vorhanden
+PASS  Mobil 390x844: Bereich 'radar' rendert (Nav aktiv, andere inaktiv)
+PASS  Mobil 390x844: Bereich 'helmut' rendert (Nav aktiv, andere inaktiv)
+PASS  Mobil 390x844: Bereich 'office' rendert (Nav aktiv, andere inaktiv)
+PASS  Mobil 390x844: Bereich 'briefing' rendert (Nav aktiv, andere inaktiv)
+PASS  Mobil 390x844: keine neuen JS-Fehler bei Tab-Wechseln
+PASS  Mobil 390x844: fachliche Zeitangaben sind sichtbar und klar getrennt
+PASS  Mobil 390x844: Abrufzeit ersetzt keine fehlende fachliche Zeit
+PASS  Mobil 390x844: Briefing zeigt Empfehlung und eigenen Tagesanlass
+PASS  Mobil 390x844: Briefing Link oeffnet genau den vorhandenen Lage Text mit Quelle
+PASS  Mobil 390x844: Lage Detail kopiert keine Empfehlung
+PASS  Mobil 390x844: Rueckverweis schliesst Lage Detail und zeigt Briefing
+PASS  Mobil 390x844: Briefing begründet die Tagespriorität statt den Sachstand zu kopieren
+PASS  Mobil 390x844: Briefing wiederholt den Hauptvorgang nicht in weiteren Vorgaengen
+PASS  Mobil 390x844: Lage Karte zeigt Fakten und keine Briefing Handlungsanweisung
+PASS  Mobil 390x844: Lage trennt aktuelle Analyse und aeltere Quellenfrische sichtbar
+PASS  Mobil 390x844: Ohne Analysezeit bleibt nur die belegte Quellenfrische sichtbar
+PASS  Mobil 390x844: Radar zeigt belegte Erwaehnung mit Quelle genau einmal trotz Ausschussbezug
+PASS  Mobil 390x844: Radar kopiert weder Vorschlag noch Lage Langtext
+PASS  Mobil 390x844: Radar hat einen Beobachtungsgrund und keine zweite Artikelliste
+PASS  Mobil 390x844: Eigenstaendige Entscheidungsbegruendung bleibt im Briefing erhalten
+PASS  Mobil 390x844: Ohne passenden Lagevorgang kein leerer Querverweis und kein Verlust der Begruendung
+PASS  Mobil 390x844: keine JS Fehler beim Wechsel zwischen allen drei Fachbereichen
+PASS  Mobil 390x844: Teilmitgliedskarten erhalten einen Remagen- und zwei BR-Stufenpunkte
+PASS  Mobil 390x844: Remagen Detail zeigt beide unveraenderten Kontexte mit eigenen Quellen
+PASS  Mobil 390x844: BR Restdetail bindet Vorentwurf und Bundestagsstand an getrennte Originale
+PASS  Mobil 390x844: keine JS Fehler bei Teilrollen und Quellenwechsel
+PASS  Mobil 390x844: mobiles Detail bleibt normaler Seiteninhalt
+PASS  Mobil 390x844: eigener mobiler Rueckweg zur Liste bleibt erhalten
+PASS  Mobil 390x844: keine JS Fehler nach Desktopdetailpruefung
+PASS  Mobil 390x844: mobile Dock-Navigation vorhanden
+PASS  Mobil 390x844: mobiles Detail hat eigenen lokalen Historyeintrag
+PASS  Mobil 390x844: Browser Zurueck bleibt in Lage und erhaelt Listenposition
+PASS  Mobil 390x844: Browser Vorwaerts oeffnet dasselbe Thema von oben
+PASS  Mobil 390x844: eigener Rueckweg erzeugt keine zusaetzlichen Historyeintraege
+PASS  Mobil 390x844: History aendert keinen unbestaetigten Mandatswechsel
+PASS  Mobil 390x844: History nach ausgebliebenem Mandatswechsel synchronisiert
+PASS  Mobil 390x844: Tabwechsel nach Detail bleibt bei Zurueck und Vorwaerts konsistent
+PASS  Mobil 390x844: Querverweis zeigt einen passenden allgemeinen Rueckknopf
+PASS  Mobil 390x844: Browser Zurueck aus Querverweis erhaelt Ursprungsbriefing und Position
+PASS  Mobil 390x844: eigener Rueckknopf aus Querverweis entspricht Browser Zurueck
+PASS  Mobil 390x844: fremdes Mandat aus History wird verworfen
+PASS  Mobil 390x844: entfernter Vorgang oeffnet keinen anderen Detailtext
+PASS  Mobil 390x844: alter Privatkontext wird auch beim gleichen Mandat nicht reaktiviert
+PASS  Mobil 390x844: abgemeldeter Zugriff kann per History nicht wiederkehren
+PASS  Mobil 390x844: keine JS Fehler nach lokaler Browsernavigation
+PASS  Desktop Ausfall: klare Stoerung mit erneutem Ladeversuch
+PASS  Desktop Ausfall: Splash endet und kein falscher Login erscheint
+PASS  Desktop Ausfall: keine Fachabfrage mit unbekannter Identitaet
+PASS  Desktop Ausfall: nach Erholung wieder normaler Start
+PASS  Mobil Ausfall: klare Stoerung mit erneutem Ladeversuch
+PASS  Mobil Ausfall: Splash endet und kein falscher Login erscheint
+PASS  Mobil Ausfall: keine Fachabfrage mit unbekannter Identitaet
+PASS  Mobil Ausfall: nach Erholung wieder normaler Start
+PASS  Smartphone Hochformat 390x844: Sperr-Overlay verborgen (display=none)
+PASS  Smartphone Hochformat 390x844: Bildschirmmitte erreicht die App (nicht blockiert)
+PASS  Smartphone Querformat 844x390: Sperr-Overlay sichtbar (display=grid)
+PASS  Smartphone Querformat 844x390: Bildschirmmitte von der Sperre eingenommen (App nicht bedienbar)
+PASS  Smartphone Querformat 844x390: Sperrtext enthaelt die geforderte Aufforderung
+PASS  Tablet Hochformat 768x1024: Sperr-Overlay verborgen (display=none)
+PASS  Tablet Hochformat 768x1024: Bildschirmmitte erreicht die App (nicht blockiert)
+PASS  Tablet Querformat 1024x768: Sperr-Overlay verborgen (display=none)
+PASS  Tablet Querformat 1024x768: Bildschirmmitte erreicht die App (nicht blockiert)
+PASS  Desktop schmal/kurz 400x480 (Maus): Sperr-Overlay verborgen (display=none)
+PASS  Desktop schmal/kurz 400x480 (Maus): Bildschirmmitte erreicht die App (nicht blockiert)
+
+114 PASS, 0 FAIL
