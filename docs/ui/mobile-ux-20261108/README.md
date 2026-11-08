@@ -2,7 +2,7 @@
 
 Stand: 08.11.2026. **Für Review vorbereitet; gezielte Prüfungen bestanden. Keine produktive Wirkung.**
 Branch `codex/mobile-briefing-lage-radar-20261108`, Basis frisch bestätigt `b4863123741f303b580569c80165233fd4696d1f`.
-Runtime-Endstand `111408f1`, Prüfdateien `962104b8` plus gezielter Smoke-Selektorenangleich im PR. Pflicht-CI wird am tatsächlichen PR-Kopf geprüft; lokale Belege ersetzen sie nicht. ChatGPT koordiniert die fachliche Abnahme. Kein Merge, kein Production-Deployment.
+Runtime-Endstand `3104f5ac`, Prüfdateien `962104b8` plus gezielter Smoke-Selektorenangleich im PR. Pflicht-CI wird am tatsächlichen PR-Kopf geprüft; lokale Belege ersetzen sie nicht. ChatGPT koordiniert die fachliche Abnahme. Kein Merge, kein Production-Deployment.
 
 ## Zuständigkeiten und Grenzen
 
@@ -17,7 +17,7 @@ PR1104 und PR1106 bleiben getrennt. Keine ihrer Änderungen integriert, verände
 | Punkt | Tatsächliches Ergebnis | Commit / Prüfbeleg |
 | --- | --- | --- |
 | 1 Mobile Detailansicht | Allgemeiner Lagekopf mobil verborgen, Motiv kompakter. Zurück → Titel → Zusammenfassung → vorhandener persönlicher Bezug → Originalquellen → zusätzliche Einordnung. Vollständige Inhalte erreichbar. Browser-Zurück/-Vorwärts und nicht-null Listenposition erhalten. | `4fea764a`, Layout `e6b1f49b`; Browserbericht |
-| 2 Briefing | Ruhelage einmal erklärt; Kopf nur „Aktuell“. Keine Entwarnung oder Priorität erfunden. Vorhandene Einschränkung aufklappbar, Quellen-/Frischewarnungen bleiben sichtbar. Lage-Themenzahl/Verweis erhalten. Tatsächliche Empfehlung zeigt vorhandenes `whyItMatters` direkt daneben. | `77e75335`; 112 UI-Assertions |
+| 2 Briefing | Ruhelage einmal erklärt; Kopf nur „Aktuell“. Keine Entwarnung oder Priorität erfunden. Vorhandene Einschränkung aufklappbar, Quellen-/Frischewarnungen bleiben sichtbar. Lage-Themenzahl/Verweis erhalten. Tatsächliche Empfehlung zeigt vorhandenes `whyItMatters` direkt daneben. | `77e75335`, `3104f5ac`; 112 UI-Assertions |
 | 3 Lageübersicht | Kompakter mobiler Kopf; vorhandenes `relevanz.satz` direkt am Eintrag. Sachkategorie erzeugt keinen persönlichen Bezug. | `cd742389`, `e6b1f49b`; Bund-/Berlin-/Brandenburg-Gegenproben |
 | 4 Titel | Exakter Abbruch reproduziert und Ursache belegt: 74 Zeichen langer vorhandener `title`, leeres `displayTitle`, Legacybudget72 entfernt das letzte Wort. Aktive Liste nutzt den vollständigen gelieferten Titel. | `8497f630`; [öffentliche Titelfelder](title-evidence.json), echter Legacyhelper im UI-Test |
 | 5 Radar | Geladene Daten ohne zugeordnete Signale, unbestätigte Grundlage, veralteter Stand und technischer Fehler getrennt. Leere Teilabschnitte behaupten keine heutige Vollprüfung. Globale Leiste verwendet Radarzustand. „Stand neu laden“ erklärt gespeicherte Daten; echter Loader startet keine Verarbeitung. Cache-Lesefehler bleiben sichtbar. | `f8c1e855`, `902394ba`; Radar53/53, Loader10/10, echte Browser-GET-Probe |
@@ -47,11 +47,15 @@ Der erste erweiterte Browserlauf stoppte an einem Vergleich mit abschließendem 
 
 Der bestehende Hintergrundlesertest scheiterte zuerst5/8. Dieselben drei Fehler sind gegen unverändertes main reproduziert ([Altbeleg](background-refresh-main-before-fixture-fix.log)): sein `applyStartPayload`-Stub etablierte kein gültiges privates Profil. Die bestehende Testfixture setzt jetzt diese Voraussetzung korrekt; Produktlogik wurde dafür nicht angepasst. Zwei zusätzliche Prüfungen sichern den neu begrenzten Radar-Lesepfad.
 
+Die letzte sichtbare Doppelung der Ruhelage wurde anschließend entfernt (`3104f5ac`): Die fehlende Tagespriorität steht nur noch in der Überschrift; der Erklärungssatz lautet „Das ist keine Entwarnung.“ Einschränkung, Themenzahl und Lageweg bleiben erhalten.112/112 und der vorhandene542er Browsernachweis am aktualisierten Stand bestanden.
+
 Der erste tatsächliche PR-CI-Browserjob [42478378153](https://github.com/ernisch/helmut-pilot/actions/runs/42478378153/job/128724701191) scheiterte an der noch unveränderten Smoke-Erwartung `.hstand-why` ([Erstfehler](ci-browser-first-failure.txt)). Der bestehende Test prüft jetzt den beauftragten sichtbaren Begründungsort `.ui-recommendation-why` und die Radar-Sie-Ansprache; alle bisherigen fachlichen Kontrollen bleiben erhalten, Sichtbarkeit wurde zusätzlich abgesichert. Lokaler echter Smoke danach114/0; Der damalige Runtime-Stand blieb bei diesem Testfix unverändert. Der fehlerhafte erste CI-Kopf wird nicht als grün umgedeutet. Ein gezielter Abgleich weiterer bestehender Clienttests fand dieselben alten Du-/Abschnittstexterwartungen in Reiter-, Quellenleerfall- und Bezugserklärungstests. Diese UI-Erwartungen sind angepasst und lokal20/20,28/28,69/69 bestanden. Keine Testauswahl oder fachliche Kontrolle entfällt. Die neue CI muss am neuen PR-Kopf bestehen.
 
 Nachfolgend wurden noch vom Server gelieferte Leerhinweise mit bestehenden Du-Formen gefunden (`scoring.js` liefert etwa „für dein Mandat“). Ausschließlich ihre Anzeige in den drei beauftragten Ansichten wird formalisiert (`111408f1`); Originaltitel bleiben unverändert. Gezielte UI-Prüfung112/112+53/53 und vollständiger vorhandener542er Bild-/Navigationsnachweis danach am aktualisierten Runtime-Endstand bestanden.
 
 Der unabhängige lesende Gesamtreview meldete drei P2-Anzeigeprobleme (globale Radarfrische, Sie-Formen, erfundene Uhrzeit aus ISO-Datum). Alle drei im Endstand lesend bestätigt behoben. Keine P1-/Sicherheitsblocker festgestellt; keine pauschale unabhängige Production-Abnahme behauptet.
+
+Der Kopf `470b4923` hatte einen tatsächlich erfolgreichen GitHub-Browserjob128727256723, aber [Gesamt-CI42479191096](https://github.com/ernisch/helmut-pilot/actions/runs/42479191096) **FAILURE**: [Erstfehler](ci-tool-first-failure.txt) beim unveränderten PostgREST12.2.3-Download (90s/0Bytes), vor Offline-/Datenbankabnahme. Quittungs-/Artefaktfehler sind Folgefehler. Begrenzter Verfügbarkeitscheck danach erfolgreich; identischer Archivhash `9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c`. Ein weiterer regulärer Endkopfversuch ist dadurch begründet; keine neue Downloadroute, keine gelockerte Prüfung und keine Endlosschleife.
 
 ## Vergleichsbilder
 

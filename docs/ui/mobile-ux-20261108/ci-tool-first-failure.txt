@@ -1,0 +1,13 @@
+CI42479191096, Kopf470b492363d4b37c88e2cf38d3b892270007f1a7, Job128727256812
+https://github.com/ernisch/helmut-pilot/actions/runs/42479191096/job/128727256812
+2026-11-08T12:15:29.7948414Z [36;1mcurl -fsSL --max-time 90 -o "$RUNNER_TEMP/w15-mock-postgrest.tar.xz" https://github.com/PostgREST/postgrest/releases/download/v12.2.3/postgrest-v12.2.3-linux-static-x64.tar.xz[0m
+2026-11-08T12:15:29.7949439Z [36;1mecho "9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c  $RUNNER_TEMP/w15-mock-postgrest.tar.xz" | sha256sum -c -[0m
+2026-11-08T12:15:29.7953171Z [36;1m  curl -fsSL --max-time 90 -o "$RUNNER_TEMP/w15-mock-image/pgvector.deb" https://apt.postgresql.org/pub/repos/apt/pool/main/p/pgvector/postgresql-17-pgvector_0.8.7-1.pgdg12+1_amd64.deb[0m
+2026-11-08T12:16:59.8540303Z curl: (28) Operation timed out after 90002 milliseconds with 0 bytes received
+2026-11-08T12:16:59.9247313Z ##[error]SAFE_RESOURCE_RECEIPT_PUBLICATION_UNKNOWN receipt-read CLOSED_PROJECTION_OR_IO_UNKNOWN
+2026-11-08T12:17:00.1080597Z ##[error]No files were found with the provided path: /home/runner/work/_temp/mock100.PUBLIC.json. No artifacts will be uploaded.
+Erstfehler: gepinntes PostgREST12.2.3-Artefakt nach90002ms/0Bytes nicht geladen.
+Quittungs-/Artefaktfehler sind Folgefehler. Die Offline-/Datenbankprüfungen wurden noch nicht ausgeführt.
+Browserjob128727256723 am selben Kopf tatsächlich SUCCESS; Gesamt-CI FAILURE.
+Begrenzte Verfügbarkeitsprüfung danach: unveränderte Originaladresse erfolgreich, Archiv-SHA256 9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c identisch.
+Kein veränderter Downloadweg, keine abgeschwächte Integrität. Ein weiterer regulärer Endkopfversuch ist damit begründet; keine Endlosschleife.
