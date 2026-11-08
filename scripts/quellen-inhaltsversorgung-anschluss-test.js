@@ -107,7 +107,12 @@ async function main() {
     assert(!w.logs.includes("kanonisch") && !w.logs.includes("fundstellen")); assert.equal(w.prompts.length, 0);
   });
   await test("Echter globaler Ablauf: kanonisch rücklesen, einmal beschaffen, Original bis zum Modell", async () => {
-    const w = welt(); const r = await w.run();
+    const w = welt(), quellen = w.deps.quellenFuerProfil;
+    // Beide hier geteilten Quellen bilden EINEN echten Sichtbarkeitskontext.
+    // Zwei 45s-Teilscheiben reichen nicht fuer die bestehende 55s-Modellreserve.
+    w.deps.quellenFuerProfil = async p => [...await quellen(p), ...(p.id === 'test-b'
+      ? [{ id: 'radio', name: 'radio', type: 'media', active: true, url: 'https://feeds.invalid/radio' }] : [])];
+    const r = await w.run();
     assert.equal(r.inhaltsversorgung.belegt, 2, JSON.stringify(r.inhaltsversorgung)); assert.equal(w.fetches.length, 2); assert.equal(w.prompts.length, 2);
     assert(w.logs.indexOf("sperre") < w.logs.indexOf("persistenz")); assert(w.logs.indexOf("persistenz") < w.logs.indexOf("kanonisch"));
     assert(w.logs.indexOf("original") < w.logs.indexOf("lazy")); assert.equal(w.logs.at(-1), "freigabe");
@@ -117,12 +122,17 @@ async function main() {
     assert(d.artikelkontext.text.endsWith("Die Friedenspflicht endet am 31. Dezember dieses Jahres."));
     assert(radioSource.artikelkontext.text.includes("Ab 2027 könnten die Leistungen deutlich gekürzt werden."));
     for (const source of sources) assert.equal(source.abgerufenAm, "2026-11-07T09:00:00+00:00");
-    assert.deepEqual(w.lazy.find(x => x.cluster.documents.some(d => d.url === radioUrl)).profiles.map(p => p.id), ['test-a']);
+    assert.deepEqual(w.lazy.find(x => x.cluster.documents.some(d => d.url === radioUrl)).profiles.map(p => p.id), ['test-a','test-b']);
     assert.deepEqual(w.lazy.find(x => x.cluster.documents.some(d => d.url === dgbUrl)).profiles.map(p => p.id), ['test-a','test-b']);
     assert(w.lazy.every(x => x.cluster.summary.length > 600));
     assert(!JSON.stringify([...w.rows.values()]).includes('test-a'));
     assert([...w.canonical.values()].every(d => d.summary === null));
     const again = await w.run({ noPaidModel: true }); assert.equal(again.inhaltsversorgung.belegt, 2); assert.equal(w.fetches.length, 2);
+  });
+  await test("Mandatseigener Radio-Weg erweitert seine Sichtbarkeit nicht durch geteilte Fachthemen", async () => {
+    const w = welt([radio]), r = await w.run(); assert.equal(r.inhaltsversorgung.belegt, 1);
+    assert.equal(w.prompts.length, 1); assert.deepEqual(w.lazy[0].profiles.map(p => p.id), ['test-a']);
+    assert(w.prompts[0].includes('Ab 2027 könnten die Leistungen deutlich gekürzt werden.'));
   });
   await test("Gespeicherter Originaltext wird ohne Artikelabruf tatsächlich verarbeitet", async () => {
     const item = raw("gespeichert"), w = welt([item]); const row = [...w.canonical.values()][0]; row.summary = body;
@@ -137,6 +147,49 @@ async function main() {
   await test("Knapper Titel erreicht über echte Fundstellen-/Paketbindung die Originalprüfung", async () => {
     const w = welt([raw('knapp', 'Mitteilung')]); const r = await w.run();
     assert.equal(r.inhaltsversorgung.grenzen.unklare, 1); assert.equal(w.prompts.length, 1); assert(w.prompts[0].includes(body));
+  });
+  await test("Aktives Gate beurteilt gebundenen Originaltext vor Parkung eines knappen Titels", async () => {
+    const w = welt([raw('gate-knapp', 'Mitteilung')]); let parkungen = 0;
+    Object.assign(w.modelDeps, { gateMode: () => 'on', recordGateShadow: () => {}, recordGateShadowRows: async () => {},
+      recordGateParkung: async () => ({ ok: true }), markGateGeparkt: async () => { parkungen++; return { ok: true }; },
+      saveSources: async (_id, docs) => ({ saved: docs.length }) });
+    const r = await w.run(); assert.equal(r.inhaltsversorgung.belegt, 1); assert.equal(parkungen, 0);
+    assert.equal(w.prompts.length, 1); assert(w.prompts[0].includes(body));
+    assert([...w.canonical.values()].every(d => d.summary === null));
+  });
+  await test("Vorzeitige Belegprüfung bleibt auf reine Bestandsleser begrenzt und prüft Quellenbindung", async () => {
+    const w = welt([raw('gate-legacy', 'Mitteilung')]); await w.deps.acquireLock(S.GLOBALPHASE_LOCK);
+    const doc = [...w.canonical.values()][0]; let callback = 0;
+    const deps = { ...w.modelDeps, gateMode: () => 'on', recordGateParkung: async () => ({ ok: true }),
+      markGateGeparkt: async () => ({ ok: true }), saveSources: async (_id, docs) => ({ saved: docs.length }),
+      artikelkontextVersorgung: async () => { callback++; throw Error('Netzbeschaffer darf vor Gate nicht laufen'); } };
+    const r = await U.understandOneCluster({ documents: [doc] }, deps,
+      { vorgangId: 'vg-gate-legacy', existing: null, deadlineMs: w.now() + 300000 });
+    assert.equal(r.status, 'skipped-gate-geparkt'); assert.equal(callback, 0); assert.equal(w.prompts.length, 0);
+    deps.artikelkontextVersorgung.nurBestand = true;
+    const falsch = await U.understandOneCluster({ documents: [doc] }, deps,
+      { vorgangId: 'vg-gate-ungueltig', existing: null, deadlineMs: w.now() + 300000,
+        artikelkontextVersuch: { dokumentId: 'fremd', text: body } });
+    assert.equal(falsch.status, 'skipped-artikelkontext'); assert.equal(w.prompts.length, 0);
+    await w.deps.releaseLock();
+  });
+  await test("Globale Bestandsversorgung wahrt engere Teilfrist auch ohne altes Artikelkontextflag", async () => {
+    const callback = async () => ({ angefordert: false });
+    for (const flag of ['on', 'off']) {
+      const start = Date.now(), r = L.mitArtikelkontext({ artikelkontextVersorgung: callback,
+        budgetMs: 1000, deadlineMs: start + 300000 }, { HELMUT_ARTIKELKONTEXT: flag });
+      assert.equal(r.artikelkontextVersorgung, callback);
+      assert(r.deadlineMs >= start + 1000 && r.deadlineMs <= Date.now() + 1000);
+    }
+    const w = welt([dgb]), eager = w.deps.eagerUnderstanding;
+    w.deps.eagerUnderstanding = (docs, overrides) => eager(docs, { ...overrides, budgetMs: 1000 });
+    const r = await w.run(); assert.equal(r.inhaltsversorgung.belegt, 1); assert.equal(w.prompts.length, 0);
+    assert.equal(r.datenstand.verstanden, 0); assert.notEqual(r.datenstand.status, 'abgeschlossen');
+    // Keine Budgeterhoehung fuer den Positivnachweis: bei ZWEI Kontexten wird
+    // die erste zu enge Scheibe ehrlich vertagt, obwohl ihr Beleg vorhanden ist.
+    const eng = welt(), teil = await eng.run(); assert.equal(eng.prompts.length, 1);
+    assert.equal(teil.inhaltsversorgung.belegt, 2); assert.equal(teil.datenstand.verstanden, 1);
+    assert.notEqual(teil.datenstand.status, 'abgeschlossen');
   });
   await test("Unpassender Originaltext erreicht keinen Modellaufruf", async () => {
     const item = raw('unpassend'), w = welt([item]); w.answers.set(item.url, html(item, 'Die Vogelbeobachtung im Nationalpark beginnt mit einer Ausstellung im kommenden Frühjahr.'));
@@ -233,6 +286,6 @@ async function main() {
     assert.equal(r.status,'skipped-artikelkontext'); assert.equal(r.reason,'artikelquelle-nicht-im-prompt'); assert.equal(w.prompts.length,0);
     await w.deps.releaseLock();
   });
-  console.log(`${passed}/17 Anschlussgruppen bestanden; 0 echte Original-, Datenbank- oder Modellaufrufe.`);
+  console.log(`${passed}/21 Anschlussgruppen bestanden; 0 echte Original-, Datenbank- oder Modellaufrufe.`);
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

@@ -352,3 +352,47 @@ Kein neuer Originalabruf, produktiver Lauf, Merge, Deployment oder Modellaufruf.
 
 **Genau nächster Schritt nach bestandener Endkopf-CI:** Den begrenzten
 Beschaffungsauftrag anhand dieser Vorlage konkret zur Freigabe vorlegen.
+
+## 9. Fachliche Anschlussabnahme nach Betreiber-Go
+
+Kopf `90e76003` hatte beide Pflichtchecks in CI42477080535 bestanden. Der
+anschließende Fachreview fand zwei durch diese Tests nicht abgesicherte Fehler:
+
+- Ein über Fundstellen ausgewählter kurzer Titel mit bereits bestätigtem
+  Original wurde vom aktiven Understanding-Gate noch ohne diesen Text geprüft.
+  Isolierte Gegenprobe: ein Beleg, eine Parkung, null Modelleingaben; der Lauf
+  meldete die Parkung als abgeschlossen. Der ursprüngliche Positivtest hatte
+  das Gate ausdrücklich ausgeschaltet und war dafür kein Nachweis.
+- Der neue Bestands-Callback verließ `mitArtikelkontext` vor der bisherigen
+  Fristverengung. Eine Sekunde Teilbudget behielt fünf Minuten Modellfrist.
+  Der Callback blieb zwar erhalten, die Teilbudgetgrenze wurde nicht erhalten.
+
+Korrektur: Nur der ausdrücklich als rein lokal/ohne I/O markierte Bestands-
+Callback darf seinen quellgebundenen Beleg vor der Gateentscheidung liefern.
+Die vorhandene Gatelogik bewertet eine temporäre Sicht mit diesem Originaltext;
+kein Bypass und keine Änderung von Rohzeile, Quellenhash oder Gate-Regeln.
+Der frühere Netzbeschaffer bleibt hinter dem Gate. Auch explizit gelieferte
+Belege werden vor ihrer Gateverwendung erneut auf Quellenbindung geprüft.
+Die Modellfrist ist unabhängig vom alten Artikelkontextflag wieder das Minimum
+aus Teilbudget und äußerer Deadline; der Bestands-Callback bleibt erhalten.
+
+21/21 Anschlussgruppen bestanden, darunter aktives Gate mit kurzem Fachtreffer,
+kein vorgezogener Netzbeschaffer, falscher Beleg und zu kurze Teilfrist ohne
+Modellstart. Artikelkontextanschluss20/20, Eingabebindung10/10 und Gate-Arm48
+Assertions gezielt erneut bestanden; Extraktor- und andere unveränderte Nachweise
+werden weiterverwendet. Keine lokale Vollprüfung und keine Originalabrufe.
+
+Die strengere Frist macht eine bestehende Aktivierungsgrenze sichtbar: Bei zwei
+Kontexten erhalten die ersten Teilfenster aus90s Eager-Gesamtbudget45s. Die
+bestehende Vor-Modellstartreserve beträgt standardmäßig55s. In der isolierten
+Gegenprobe wurden deshalb von zwei belegten Kontexten nur einer verarbeitet und
+der andere ehrlich vertagt. Kein Budget erhöht. Der positive Zwei-Artikel-Test
+nutzt nun einen tatsächlich gemeinsamen Sichtbarkeitskontext; Radio mit nur einem
+sichtbaren Mandat wird separat positiv geprüft. Der alte Zwei-Kontext-Positivfall
+war kein Nachweis korrekter Fristeinhaltung. Keine uneingeschränkte reguläre
+Laufqualifikation aus diesem Entwurf ableiten; die erste spätere Vorlage bleibt
+auf die Beschaffungsstufe ohne Modellphase begrenzt.
+
+Der neue Endkopf benötigt eigene Pflichtchecks; native Zuordnung und Ergebnis
+stehen im PR. Review durch denselben ausführenden Codex-Lauf, kein unabhängiges
+GitHub-Approval. Inaktiver Entwurf, kein Merge, Deployment oder Produktionswrite.
