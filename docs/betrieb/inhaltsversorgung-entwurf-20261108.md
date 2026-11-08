@@ -356,7 +356,7 @@ Beschaffungsauftrag anhand dieser Vorlage konkret zur Freigabe vorlegen.
 ## 9. Fachliche Anschlussabnahme nach Betreiber-Go
 
 Kopf `90e76003` hatte beide Pflichtchecks in CI42477080535 bestanden. Der
-anschließende Fachreview fand zwei durch diese Tests nicht abgesicherte Fehler:
+anschließende Fachreview fand zunächst zwei durch diese Tests nicht abgesicherte Fehler:
 
 - Ein über Fundstellen ausgewählter kurzer Titel mit bereits bestätigtem
   Original wurde vom aktiven Understanding-Gate noch ohne diesen Text geprüft.
@@ -367,6 +367,23 @@ anschließende Fachreview fand zwei durch diese Tests nicht abgesicherte Fehler:
   Fristverengung. Eine Sekunde Teilbudget behielt fünf Minuten Modellfrist.
   Der Callback blieb zwar erhalten, die Teilbudgetgrenze wurde nicht erhalten.
 
+Eine weitere Gegenprobe auf `9542988d` fand einen dritten Fehler: Der unveränderte
+Google-DGB-Feed ohne aufgelösten Artikellink wurde wegen seines Linktyps am
+Inhaltsbedarf vorbeigeleitet. Ergebnis: null Artikelbelege, eine Modelleingabe,
+keine gezählte Inhaltslücke. Der eigene bereits gestartete CI42483018192 wurde
+deshalb gezielt abgebrochen (CANCELLED, kein grüner Gesamtbeleg), bevor ein neuer
+Kopf vorbereitet wurde. Der Browserjob war dort bereits erfolgreich; nicht als
+Nachweis für den nächsten Kopf übertragen.
+
+Korrektur dieses Durchlasses: Inhaltsbedarf richtet sich auch bei Publisher-/
+Google-Verweisen nach nutzbarem Inhalt. Vorhandenen kanonischen Originaltext
+behalten; sonst ohne Artikelziel als `artikelziel-nicht-bestaetigt` ausweisen
+und nicht anhand des Titels analysieren. Keine neue URL-Auflösung und kein Abruf
+der Publisherstartseite. Validierte DIP-Dokumentangaben bleiben über den
+bestehenden DIP-Leser ausdrücklich als strukturierte Metadaten nutzbar, ohne
+sie zu Artikelprosa umzudeklarieren. Dasselbe gilt weiterhin für die schon
+ausgenommenen validierten Artikelstände und erlaubten Titel-/Linkfeeds.
+
 Korrektur: Nur der ausdrücklich als rein lokal/ohne I/O markierte Bestands-
 Callback darf seinen quellgebundenen Beleg vor der Gateentscheidung liefern.
 Die vorhandene Gatelogik bewertet eine temporäre Sicht mit diesem Originaltext;
@@ -376,9 +393,11 @@ Belege werden vor ihrer Gateverwendung erneut auf Quellenbindung geprüft.
 Die Modellfrist ist unabhängig vom alten Artikelkontextflag wieder das Minimum
 aus Teilbudget und äußerer Deadline; der Bestands-Callback bleibt erhalten.
 
-21/21 Anschlussgruppen bestanden, darunter aktives Gate mit kurzem Fachtreffer,
+24/24 Anschlussgruppen bestanden, darunter aktives Gate mit kurzem Fachtreffer,
 kein vorgezogener Netzbeschaffer, falscher Beleg und zu kurze Teilfrist ohne
-Modellstart. Artikelkontextanschluss20/20, Eingabebindung10/10 und Gate-Arm48
+Modellstart, unveränderter unaufgelöster Google-Feed, vorhandener Text trotz
+unaufgelöstem Verweis und validierte DIP-Felder mit/ohne Primärquellenoption.
+Artikelkontextanschluss20/20, Eingabebindung10/10 und Gate-Arm48
 Assertions gezielt erneut bestanden; Extraktor- und andere unveränderte Nachweise
 werden weiterverwendet. Keine lokale Vollprüfung und keine Originalabrufe.
 

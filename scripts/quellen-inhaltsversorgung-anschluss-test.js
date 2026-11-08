@@ -139,6 +139,38 @@ async function main() {
     const r = await w.run(); assert.equal(r.inhaltsversorgung.zustaende.vorhanden, 1); assert.equal(w.fetches.length, 0);
     assert.equal(w.prompts.length, 1); assert(w.prompts[0].includes(JSON.stringify(body))); assert(!w.logs.includes("fundstellen"));
   });
+  await test("Unveränderter Google-Feed ohne Artikelziel bleibt Inhaltslücke statt Titelanalyse", async () => {
+    const item = C.normalizeRawItem(feed, { id: 'dgb', name: 'DGB', type: 'association',
+      url: 'https://news.google.com/rss/search?q=site:dgb.de' });
+    assert.notEqual(item.linkType, 'direct'); assert.equal(item.url, '');
+    const w = welt([item]), r = await w.run(); assert.equal(r.inhaltsversorgung.zustaende.luecke, 1);
+    assert(r.inhaltsversorgung.befund.some(b => b.reason === 'artikelziel-nicht-bestaetigt'));
+    assert.equal(w.fetches.length, 0); assert.equal(w.prompts.length, 0);
+    assert.notEqual(r.datenstand.status, 'abgeschlossen');
+  });
+  await test("Nicht aufgelöster Artikelverweis behält vorhandenen kanonischen Originaltext", async () => {
+    const item = C.normalizeRawItem(feed, { id: 'dgb', name: 'DGB', type: 'association',
+      url: 'https://news.google.com/rss/search?q=site:dgb.de' });
+    const w = welt([item]); [...w.canonical.values()][0].summary = body;
+    const r = await w.run(); assert.equal(r.inhaltsversorgung.zustaende.vorhanden, 1);
+    assert.equal(w.fetches.length, 0); assert.equal(w.prompts.length, 1);
+    assert(w.prompts[0].includes(JSON.stringify(body))); assert(!w.logs.includes('fundstellen'));
+  });
+  await test("Validierte DIP-Dokumentangaben bleiben ohne Artikelprosa im bestehenden Verstehensweg", async () => {
+    const original = { id: 990001, titel: 'Pruefung kommunaler Beratungsangebote',
+      drucksachetyp: 'Antwort', dokumentart: 'Drucksache', datum: '2026-09-19', wahlperiode: 21,
+      urheber: [{ titel: 'Bundesregierung' }], ressort: [{ titel: 'Bundesministerium fuer Bildung' }],
+      fundstelle: { pdf_url: 'https://dserver.bundestag.de/btd/21/099/2109900.pdf' } };
+    for (const primary of [false, true]) {
+      const item = S.dipDocToRawItem(require('../lib/helmut/dip').normalizeDrucksache(original), { primary });
+      const expected = require('../lib/helmut/dip-quellfelder').quellenangaben(D.toRawDocumentRow(item));
+      assert(expected); const w = welt([]); w.deps.dipAktiv = () => true;
+      w.deps.fetchDipItems = async p => p.id === 'test-a' ? [item] : [];
+      const r = await w.run(); assert.equal(r.inhaltsversorgung.belegt, 0); assert.equal(w.fetches.length, 0);
+      assert(!w.logs.includes('kanonisch')); assert.equal(w.prompts.length, 1);
+      assert(w.prompts[0].includes(JSON.stringify(expected)));
+    }
+  });
   await test("Bereits beobachteter Rohspiegel-Treffer bleibt ergänzbar, obwohl saveRawItems nichts Neues liefert", async () => {
     const w = welt([dgb]); w.deps.saveRawItems = async () => { w.logs.push('roh'); return []; };
     w.deps.persistRawDocuments = async () => { w.logs.push('persistenz'); return { skipped: true, persisted: 0 }; };
@@ -286,6 +318,6 @@ async function main() {
     assert.equal(r.status,'skipped-artikelkontext'); assert.equal(r.reason,'artikelquelle-nicht-im-prompt'); assert.equal(w.prompts.length,0);
     await w.deps.releaseLock();
   });
-  console.log(`${passed}/21 Anschlussgruppen bestanden; 0 echte Original-, Datenbank- oder Modellaufrufe.`);
+  console.log(`${passed}/24 Anschlussgruppen bestanden; 0 echte Original-, Datenbank- oder Modellaufrufe.`);
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
