@@ -5719,9 +5719,8 @@ function vsheetSourceRow(source) {
   const href = source.url && isHttpUrl(source.url) ? source.url : (host ? `https://${host}` : "");
   const published = source.publishedAt || source.published_at;
   const parsed = published && Date.parse(published);
-  const dayOnly = /^\d{4}-\d{2}-\d{2}$/.test(published || "");
   const time = bundespulsPublicationUnknown(source, href) ? "" : lageField(source.dateLabel)
-    || (Number.isFinite(parsed) ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric", ...(dayOnly ? {} : { hour: "2-digit", minute: "2-digit" }) }).format(new Date(parsed)) + (dayOnly ? "" : " · Berliner Zeit") : "");
+    || (Number.isFinite(parsed) ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric" }).format(new Date(parsed)) : "");
   const meta = [time, host].filter(Boolean).join(" · ");
   const ext = `<svg class="vsheet-src-ext" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const inner = `
