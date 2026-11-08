@@ -8307,7 +8307,7 @@ function renderRadarEnvironment(state) {
 function renderRadarEnvRow(e) {
   const href = radarItemHref(e);
   const time = radarTime(e.publishedAt);
-  const rel = e.relationLabel ? `<span class="radar2-tag radar2-tag--neutral radar2-tag--sm">${escapeHtml(e.relationLabel)}</span>` : "";
+  const rel = e.relationLabel ? `<span class="radar2-tag radar2-tag--neutral radar2-tag--sm">${escapeHtml(uiSieText(e.relationLabel))}</span>` : "";
   const inner = `
     ${radarSourceBadge(e, { small: true })}
     <div class="radar2-row-body">
