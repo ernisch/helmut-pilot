@@ -4724,6 +4724,7 @@ function uiSieText(value) {
     .replace(/\b[Dd]u kannst\b/g, "Sie können")
     .replace(/\b[Dd]u musst\b/g, "Sie müssen")
     .replace(/\b[Dd]u wurdest\b/g, "Sie wurden")
+    .replace(/\bwurdest du\b/g, "wurden Sie")
     .replace(/\b[Dd]u wirst\b/g, "Sie werden")
     .replace(/\b[Dd]u hast\b/g, "Sie haben")
     .replace(/\b[Dd]u bist\b/g, "Sie sind")
@@ -8272,7 +8273,7 @@ function renderRadarMentionCard(m) {
       </div>
       <h3 class="radar2-card-title">${escapeHtml(m.title || "Erwähnung")}</h3>
       ${tag ? `<div class="radar2-card-foot">${tag}</div>` : ""}
-      ${m.evidence ? `<p class="radar2-card-sub radar2-card-sub--block"><strong>Beleg zur Zuordnung:</strong> ${escapeHtml(m.evidence)}</p>` : ""}
+      ${m.evidence ? `<p class="radar2-card-sub radar2-card-sub--block"><strong>Beleg zur Zuordnung:</strong> ${escapeHtml(uiSieText(m.evidence))}</p>` : ""}
       ${radarAdditionalContext(m)}
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
@@ -8317,7 +8318,7 @@ function renderRadarEnvRow(e) {
     <div class="radar2-row-body">
       <h3 class="radar2-row-title">${escapeHtml(e.title || "Vorgang")}</h3>
       <div class="radar2-row-meta">${rel}<span class="radar2-row-sub">${escapeHtml(e.sourceName || "Quelle")}${time ? " · " + escapeHtml(time) : ""}</span></div>
-      ${e.beobachtungsBeleg && e.evidence ? `<p class="radar2-card-sub radar2-card-sub--block"><strong>Beleg zur Zuordnung:</strong> ${escapeHtml(e.evidence)}</p>` : ""}
+      ${e.beobachtungsBeleg && e.evidence ? `<p class="radar2-card-sub radar2-card-sub--block"><strong>Beleg zur Zuordnung:</strong> ${escapeHtml(uiSieText(e.evidence))}</p>` : ""}
       ${radarAdditionalContext(e)}
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
@@ -8349,7 +8350,7 @@ function renderRadarDynamicCard(d) {
     <div class="radar2-dyn-icon" aria-hidden="true">${radarIcon("trend")}</div>
     <div class="radar2-card-body">
       <h3 class="radar2-card-title">${escapeHtml(d.title || "Entwicklung")}</h3>
-      ${d.evidence ? `<p class="radar2-dyn-evidence"><strong>Beleg zum Signal:</strong> ${escapeHtml(d.evidence)}</p>` : ""}
+      ${d.evidence ? `<p class="radar2-dyn-evidence"><strong>Beleg zum Signal:</strong> ${escapeHtml(uiSieText(d.evidence))}</p>` : ""}
       ${radarAdditionalContext(d)}
       <div class="radar2-card-foot">${tag}${time ? `<span class="radar2-card-sub">${escapeHtml(time)}</span>` : ""}</div>
     </div>
@@ -11762,6 +11763,13 @@ function apiScopeQuery(extra = {}) {
 }
 
 function displayStatusLabel() {
+  if (currentView === "radar" && !previewMode) {
+    const state = briefing?.currentRadarState;
+    const disruption = radarDisruption(state);
+    if (disruption) return disruption.kind === "stoerung" ? "Radar-Ladefehler" : disruption.title;
+    if (state?.status === "stale" || state?.anzeige?.status === "stale" || state?.emptyState?.kind === "stale") return "Radarstand veraltet";
+    return state?.quality?.sourcesLoaded === true ? "Gespeicherter Radarstand" : "Quellenprüfung offen";
+  }
   // Ohne geladenes Briefing NIE "Aktuell" behaupten (das war ein latenter unehrlicher
   // Default). Der Kopf-Status kommt sonst aus briefing.status, das serverseitig aus der
   // echten Frische (currentHelmutState) abgeleitet wird — siehe decorateBriefingFreshness.
