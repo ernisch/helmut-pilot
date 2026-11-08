@@ -22,7 +22,9 @@ gezielt beschaffbarer Originalinhalt → bestaetigte Quelle → Modelleingabe.
   vorhandenen255-Zeichen-Satz leer zurueck. Der begrenzte Raw-Kontext verwendet
   nun Default1280, passend zum neuen Artikel-Einstieg. Explizite
   `HELMUT_RAWDOC_SUMMARY_MAX`-Werte bleiben wirksam; der Anzeigeauszug bleibt240.
-  An der Grenze nur ganze Satzpraefixe, keine Wortkuerzung/Umformulierung.
+  Lange Felder ab der bekannten240-Grenze bleiben ganze Satzpraefixe unter
+  dem1280-Deckel; kurze punktlose RSS-Texte behalten ihren Vertrag.
+  Keine Wortkuerzung/Umformulierung oder Anerkennung offener Langtexte.
   Kein HTML-/Rohpayload-/unbegrenzter Volltextspeicher, keine Migration.
 - **Herkunft:** Google-Fundadresse, Artikelziel und tatsaechliche Abrufwegkennung
   bleiben getrennt. `document_findings` und alternative vorhandene Textfelder
@@ -83,6 +85,7 @@ kein unveraenderlicher Laufzeit-Snapshot.
 | `quellen-inhaltsversorgung-quellenlauf-test.js` |7/7, echter aktuell genutzter Legacy-Aufrufer, nativer DGB-Kanonikstand, zwei passende Mandate ohne Zweitabruf, ungeeignete Ziele, fehlende Originale, Budget0 und spaeteres Pending-Verstehen desselben Belegs. |
 | `artikelkontext-pending-bestand-test.js` |12/12, echter regulaerer Pending-Aufrufer bis Modelladapter, alte/neue Belege, Titelgate, fehlender/vergifteter Bestand, CAS/Budget/Frist und gemischte Cluster. |
 | Bestehender `artikelkontext-anschluss-test.js` |20/20; bisheriger Eager-/manueller Vertrag bleibt erhalten. |
+| Gezielter Satzschutz nach CI-Befund | Unveraenderter P1-Sicherheitscheck347/347, bestehender Auszugsweg14/14, Inhaltsweg11/11 einschliesslich ganzer255-Zeichen-Modelleingabe erneut bestanden. |
 
 Alle Laeufe ueber `scripts/lokal.js`: Produktionszugangsdaten entfernt,
 externe Netzzugriffe gesperrt; REST/Original/Modelle nur isolierte Attrappen.
@@ -116,6 +119,21 @@ Das war **kein freigegebener Abruf** und kein Radio-/Produktionsnachweis.
 Die Endpushpruefung muss erfolgreich beendet und separat gelesen sein;
 Shellabbruch bei Fehlern ist nun verbindlich. PARDOKs Offline-Parser bleibt
 in der normalen Pflicht-Bereichspruefung, seine Livephase ist nur manuell.
+
+**Erster Endkopfcheck bleibt FAILURE:**
+[CI42530915454](https://github.com/ernisch/helmut-pilot/actions/runs/42530915454)
+auf `d9ff26e1` endete mit188/189 Standard-Suiten; Bereichsregression und Z22
+danach SKIP. C6 meldete zu Recht einen langen offenen Wortrest, der unter dem
+neuen1280-Limit verblieb. Minimale Runtimekorrektur: vorhandener Satzschutz
+gilt weiter ab240, sein maximaler ganzer Kontext darf1280 erreichen. Die
+C6-Assertion blieb unveraendert. Daneben fehlten dem vorhandenen Browser-VM-
+Harness Timer auf `window`; Client und P1-Suite waren bis dahin bytegleich
+zum aktuellen main. Nur dieselben schon global vorhandenen inerten Timer-
+Attrappen auf `window` gespiegelt; keine UI-/Produkt-/Assertionaenderung.
+Zwei unabhaengige Codex-Helfer prueften diese getrennten Bereiche. Gezielte
+Ergebnisse stehen oben; der Auszugstest benoetigte wegen Sandbox-EPERM den
+aeusseren Loopbackkontext mit demselben Credential-/Netzschutz. Neue Endkopf-
+Pflicht-CI erforderlich; der fehlgeschlagene Lauf wird nicht als PASS gewertet.
 
 ## Betriebsgrenzen und konkret benoetigte Freigabe
 
