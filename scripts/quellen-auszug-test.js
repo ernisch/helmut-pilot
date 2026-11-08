@@ -183,7 +183,7 @@ const google='https://news.google.com/rss/articles/synthetic';
 const item=crawler.exports.normalizeRawItem({title,url,originalUrl:google,content:title,publisherName:'NDR',publisherUrl:'https://www.ndr.de',publishedAt:'2026-11-05T12:00:00Z'},
  {id:'synthetischer-suchweg',name:'Thematische Suche',type:'ministry',url:'https://news.google.com/rss/search?q=synthetic'});
 const raw=D.toRawDocumentRow(item);assert.equal(raw.summary,null);assert.equal(raw.raw.originalUrl,google);assert.equal(raw.source_type,'ministry');
-const plan=G.planDedupWrites([raw],[]);assert.equal(plan.persists.length,1);assert.equal(plan.findings[0].original_url,url);assert.equal(plan.persists[0].source_type,'ministry');
+const plan=G.planDedupWrites([raw],[]);assert.equal(plan.persists.length,1);assert.equal(plan.findings[0].original_url,google);assert.equal(plan.persists[0].canonical_url,D.canonicalizeUrl(url));assert.equal(plan.persists[0].source_type,'ministry');
 const storage=fs.readFileSync(path.join(root,'lib/helmut/storage.js'),'utf8');
 const binding=/suchwegDokumentIds: (items\.filter\(item => \{[\s\S]*?\}\)\.map\(item => item\.id\))/.exec(storage)?.[1];assert(binding);
 const boundIds=new Function('items','return '+binding)([raw]);assert.deepEqual(boundIds,[plan.persists[0].id]);

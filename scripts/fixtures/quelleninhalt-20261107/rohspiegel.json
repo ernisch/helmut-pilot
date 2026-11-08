@@ -1,0 +1,36 @@
+{
+  "provenance": "Read-only helmut_store/main and raw_documents snapshot, 2026-11-08 UTC; public source fields only. No model output.",
+  "examples": [
+    {
+      "id": "raw-a5bdf1fcdf00fe5c",
+      "url": "https://www.deutschlandfunk.de/bundestag-will-heute-haertere-strafen-fuer-einsatz-von-k-o-tropfen-beschliessen-100.html",
+      "title": "Raub- und Sexualdelikte - Bundestag will heute härtere Strafen für Einsatz von K.o.-Tropfen beschließen",
+      "content": "Der Bundestag will das Strafmaß für den Einsatz von K.o.-Tropfen erhöhen. Täter, die die Substanzen für eine Vergewaltigung oder einen Raub nutzen, sollen in Zukunft eine Haftstrafe von mindestens fünf Jahren erhalten. Dazu sollen K.o.-Tropfen im Strafgesetzbuch künftig wie derzeit schon Waffen und bestimmte Werkzeuge als sogenannte \"gefährliche Mittel\" aufgeführt werden.",
+      "excerpt": "Der Bundestag will das Strafmaß für den Einsatz von K.o.-Tropfen erhöhen. Täter, die die Substanzen für eine Vergewaltigung oder einen Raub nutzen, sollen in Zukunft eine Haftstrafe von mindestens fünf Jahren erhalten. Dazu sollen K.o.-Trop",
+      "sourceId": "deutschlandfunk-politik",
+      "originalUrl": ""
+    },
+    {
+      "id": "rd-6acc2825bf721c0c46b38cc21fe9b67f5412b377ca1c82224e61d5457e5c6a1d",
+      "source_id": "bundesregierung",
+      "title": "37 Jahre Mauerfall - Staatsminister Weimer: „Ein kritisches, wissenschaftlich fundiertes Geschichtsbewusstsein ist heute wichtiger denn je“",
+      "summary": "Zum 37. Jahrestag des Mauerfalls warnt Staatsminister für Kultur und Medien, Wolfram Weimer, vor Geschichtsrevisionismus und einer Verklärung der SED-Diktatur. Wer heute die DDR verkläre, erliege populistischen Vereinfachungen und verhöhne",
+      "content": "Zum 37. Jahrestag des Mauerfalls warnt Staatsminister für Kultur und Medien, Wolfram Weimer, vor Geschichtsrevisionismus und einer Verklärung der SED-Diktatur. Wer heute die DDR verkläre, erliege populistischen Vereinfachungen und verhöhne die Opfer. Staatsminister Weimer: „Fast drei Jahrzehnte lang war die Berliner Mauer das sichtbarste Symbol der brutalen Grenze mitten durch Deutschland und der Unfreiheit in der DDR. Ihre friedliche Überwindung hatte welthistorische Bedeutung und ermöglichte die Wiedervereinigung Deutschlands am 3. Oktober 1990. Die Schreckensszenarien des Kalten Krieges gehörten wenige Jahre später der Vergangenheit an.“ Staatsminister Weimer weiter: „Wir verdanken den Mauerfall den mutigen Menschen, die während der Friedlichen Revolution im Herbst 1989 in zahlreichen Städten der DDR für Freiheit, Demokratie und Menschenrechte auf die Straße gingen. In einer Zeit, in der autoritäre Ideen und politische Verlockungen wieder an Einfluss gewinnen, dürfen wir nicht ...",
+      "excerpt": "Zum 37. Jahrestag des Mauerfalls warnt Staatsminister für Kultur und Medien, Wolfram Weimer, vor Geschichtsrevisionismus und einer Verklärung der SED-Diktatur. Wer heute die DDR verkläre, erliege populistischen Vereinfachungen und verhöhne ",
+      "original_url": "",
+      "url": "https://www.bundesregierung.de/breg-de/aktuelles/37-jahre-mauerfall-staatsminister-weimer-ein-kritisches-wissenschaftlich-fundiertes-geschichtsbewusstsein-ist-heute-wichtiger-denn-je--2460176",
+      "published_at": "2026-11-06 09:25:00+00"
+    },
+    {
+      "id": "rd-e16cddc0d37d941be676bc8b844b9a1122d99ad702588a7ba3fcdb20f56ee2ad",
+      "source_id": "bundesregierung",
+      "title": "Schärferes Recht gegen heimliche Betäubung",
+      "summary": "Die Bundesregierung hat mit den nun vom Bundestag beschlossenen Änderungen des Strafgesetzbuches ein wichtiges Vorhaben beim Kampf gegen sexualisierte Gewalt und Gewalt gegen Frauen auf den Weg gebracht: Der Einsatz von K.-o.-Tropfen wird h",
+      "content": "Die Bundesregierung hat mit den nun vom Bundestag beschlossenen Änderungen des Strafgesetzbuches ein wichtiges Vorhaben beim Kampf gegen sexualisierte Gewalt und Gewalt gegen Frauen auf den Weg gebracht: Der Einsatz von K.-o.-Tropfen wird härter bestraft.",
+      "excerpt": "Die Bundesregierung hat mit den nun vom Bundestag beschlossenen Änderungen des Strafgesetzbuches ein wichtiges Vorhaben beim Kampf gegen sexualisierte Gewalt und Gewalt gegen Frauen auf den Weg gebracht: Der Einsatz von K.-o.-Tropfen wird h",
+      "original_url": "",
+      "url": "https://www.bundesregierung.de/breg-de/aktuelles/strafe-k-o-tropfen-2429950",
+      "published_at": "2026-11-06 10:00:00+00"
+    }
+  ]
+}
