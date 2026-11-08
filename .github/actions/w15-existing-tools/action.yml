@@ -18,7 +18,12 @@ runs:
         set -euo pipefail
         mkdir "$RUNNER_TEMP/w15-mock-image"
         cp "$(command -v node)" "$RUNNER_TEMP/w15-mock-image/node"
-        curl -fsSL --max-time 90 -o "$RUNNER_TEMP/w15-mock-postgrest.tar.xz" https://github.com/PostgREST/postgrest/releases/download/v12.2.3/postgrest-v12.2.3-linux-static-x64.tar.xz
+        # Official v12.2.3 linux-static-x64 release asset; same archive pin.
+        # The browser download route returned HTTP504; the asset API serves
+        # the identical bytes without credentials or a new mirror.
+        curl -fsSL --max-time 90 -H 'Accept: application/octet-stream' \
+          -o "$RUNNER_TEMP/w15-mock-postgrest.tar.xz" \
+          https://api.github.com/repos/PostgREST/postgrest/releases/assets/183261684
         echo "9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c  $RUNNER_TEMP/w15-mock-postgrest.tar.xz" | sha256sum -c -
         tar -xJf "$RUNNER_TEMP/w15-mock-postgrest.tar.xz" -C "$RUNNER_TEMP/w15-mock-image"
         echo "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12  $RUNNER_TEMP/w15-mock-image/node" | sha256sum -c -

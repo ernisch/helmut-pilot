@@ -169,6 +169,36 @@ Artikelidentitäten und widersprechende Erstellungsdaten. Ganze DGB- und
 Radio-Originalproben bleiben positiv; ihre Quellbytes wurden nicht verändert.
 Review durch denselben ausführenden Codex-Lauf, kein unabhängiges Approval.
 
+## CI-Werkzeugbereitstellung nach dem Review
+
+CI42465774925 auf `d0e47259` scheiterte in zwei Versuchen am unveränderten
+PostgREST-Browserdownload (HTTP504). Im ersten Versuch war derselbe Download
+zuvor bereits gelungen; im zweiten scheiterte er vor der Anschlussprobe.
+Fehlende Quittung/Artefakt im zweiten Versuch sind Folgefehler. Keine nicht
+abgeschlossenen Offline-/Bereichs-/Datenbankprüfungen als bestanden gewertet.
+
+Der gezielte Verfügbarkeitscheck lieferte erneut HTTP504. Der offizielle
+GitHub-Release-Assetzugang für **v12.2.3 linux-static-x64, Asset183261684**
+lieferte dagegen 3.772.512 Bytes mit exakt dem vorhandenen Archiv-SHA256
+`9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c`.
+Auch der bestehende Binär-Pin
+`870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617`
+ist unverändert. Keine neue Version, Berechtigung oder Infrastruktur.
+
+Die vorhandene Action nutzt diesen offiziellen Zugang mit
+`Accept: application/octet-stream`. Der spätere CI-Schritt verwendet dieselbe
+bereits geprüfte Binärdatei aus dem bestehenden W15-Schritt und prüft ihren
+Hash nochmals. Kein zweiter Download desselben Werkzeugs im Job.
+Isoliert am echten Shellschritt geprüft: korrekte Datei liefert Version12.2.3,
+beschädigte oder fehlende Datei scheitert vor Ausführung. YAML-/Bash-Syntax
+bestanden; Jobs, Schritte und Bedingungen im geparsten Workflow unverändert.
+Der bestehende Prüfplan fordert wegen der CI-Dateiänderung konservativ auch
+den Browserlauf. Keine lokale Wiederholung der unveränderten Fachsuiten.
+
+Main ist inzwischen `b4863123`: seit `ec223b77` nur Diagnose-/Rolloutdokumente,
+keine überschneidende CI-Korrektur gefunden. Neuer endgültiger Kopf und dessen
+CI-Ergebnis stehen im PR; die vorherigen 504-Fehler bleiben dort nachvollziehbar.
+
 ## 6. Spätere Aktivierungsvorlage – nicht ausgeführt
 
 1. Voraussetzungen: PR1104 fachlich abnehmen; Endkopf-Checks ehrlich klären.
@@ -244,5 +274,5 @@ würde dessen Crawler-/Dedup-Pfade erneut in den PR-Diff aufnehmen und könnte
 Live-Trigger auslösen. Nach einer späteren getrennt freigegebenen Integration
 von PR1104 den gesamten Basis-/Kopf-Diff erneut gegen die Trigger prüfen.
 
-**Genau nächster Schritt:** Den getrennten Folgeentwurf samt verbleibender
-Endkopf-/Integrationsgrenzen fachlich reviewen; keine Aktivierung.
+**Genau nächster Schritt nach bestandener Endkopf-CI:** Den geprüften Baustein
+inaktiv an den vorhandenen globalen Quellenlauf anschließen.
