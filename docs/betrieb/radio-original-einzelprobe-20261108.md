@@ -41,7 +41,7 @@ Andere Nonces behalten den alten, abgelaufenen Autorisierungsvertrag.
 | Globale Aufgabenkennung | `9bb8e647-b0cf-4774-9828-8f236eeeb59c` |
 | Autorisierung endet | `2026-11-10T00:00:00.000Z`; keine automatische Verlaengerung |
 | Umfang | hoechstens ein HTTPS-GET, null Redirects, null Wiederholungen |
-| Dauer | 20.000ms Aufruffenster, einschliesslich CAS/Anbieterpruefung und DNS/TLS/Antwort; danach Abbruch |
+| Dauer | 20.000ms Aufruffenster, einschliesslich Einmalmarke/Anbieterpruefung und DNS/TLS/Antwort; danach Abbruch |
 | Antwortgrenze | maximal 1.048.576 akzeptierte Originalbytes; sofortiger Streamabbruch bei Ueberschreitung |
 
 Der Betreiberaufruf kommt aus Codex ueber den vorhandenen Umgebungsproxy und
@@ -65,7 +65,7 @@ gepruefte IP, TLS-Peer, SNI, TLS-Protokoll und HTTP-Status auf. Sie lockert
 keinen Guard. Ohne Beobachter bleibt der bisherige Lookup-Aufrufer erhalten.
 
 Konfigurierte Proxyvariablen, `--use-env-proxy` oder abgeschaltete
-TLS-Pruefung in der **Function** stoppen vor CAS/Netz. Es wird kein Proxy
+TLS-Pruefung in der **Function** stoppen vor Einmalmarke/Netz. Es wird kein Proxy
 hinzugeschaltet und kein unbekannter Proxyvertrag vorausgesetzt. Der Codex-
 Proxyvertrag fuer Originalhostfreigabe plus IP-Bindung bleibt unbelegt.
 Default-TLS und der bestehende Proxy gelten dagegen fuer den getrennten
@@ -106,8 +106,8 @@ Operatorbeleg. Kein App-Oeffnen kann die Nonce/Autorisierung erzeugen.
    Anfrage aus Codex, kein Redirect, kein Retry, 20s Clientfrist. Ohne
    `--execute` wird ausschliesslich die lokale Vorlage angezeigt.
 6. Privaten Antwortbeleg plus vorhandenen Vercel-Requestlog lesen und an
-   Commit, Deployment, `x-vercel-id`, beobachtete Region/Zeit binden. Nonce
-   im bestehenden CAS-Einmalbuch sowie Anbieterwirkung gezielt ruecklesen.
+   Commit, Deployment, `x-vercel-id`, beobachtete Region/Zeit binden. Einmalmarke
+   in der unten gebundenen technischen Zeile sowie Anbieterwirkung gezielt ruecklesen.
    Anschliessend rein lokal mit dem vorhandenen Extraktor aus PR1106 pruefen:
    `node /workspace/helmut-inhaltsversorgung/scripts/lokal.js /workspace/helmut-radio-freigabeauftrag-20261108/inhalt-pruefen.js /workspace/helmut-radio-freigabeauftrag-20261108/ergebnis.json /workspace/helmut-inhaltsversorgung`.
 
@@ -137,15 +137,20 @@ die allgemeine Inhaltsversorgung oder eine Canonical-Lockerung auszurollen.
 Ein Scheitern der Strukturpruefung bleibt eine offene Artikelbindung; die
 Vorlage erfindet daraus weder fehlenden noch vorhandenen Artikeltext.
 
-Bei Deadline, fehlender Antwort, unklarem CAS oder unterbrochener
+Bei Deadline, fehlender Antwort, unklarem INSERT oder unterbrochener
 Operatorantwort bleibt das Ergebnis UNKNOWN/Luecke, ohne zweite Zustellung.
 Nonce nie loeschen/zuruecksetzen. Vorhandene Radio-Cachezeile bleibt unveraendert.
 
 ## Wirkung, Kosten und Rueckweg
 
-Spaeter erlaubte technische Writes: **eine monotone Einmalmarke** unter dem
-bereits vorhandenen Auth-CAS-Schluessel `helmutPreparatoryProviderProbeV1`
-und normale Anbieterreserve/-meldung fuer genau diesen Abruf. Der
+Spaeter erlaubte technische Writes: **eine neue technische Einmalmarke**
+in der vorhandenen Tabelle `helmut_store`, ID
+`main-operator-radio-original-9bb8e647-b0cf-4774-9828-8f236eeeb59c`,
+und normale Anbieterreserve/-meldung fuer genau diesen Abruf. Atomarer
+INSERT mit `on_conflict=id`, `resolution=ignore-duplicates` und exakt
+bestaetigter Rueckgabe; bei Duplikat oder unklarer Antwort kein Abruf.
+Keine neue Tabelle/Migration. Der Auth-Schreibweg wird bewusst nicht genutzt,
+weil dessen Normalisierung bestehende Listen kuerzen kann. Der
 Anbieterschutz wird nur im lokalen Aufrufargument angefordert; keine
 `process.env`-, Vercel- oder Feature-Flag-Aenderung, kein Ersatzzaehler.
 Raw Documents, Findings, Artikelkontextcache, Profile, KOs und Briefings
@@ -163,7 +168,7 @@ ist kein produktiver Rueckweg erforderlich: der Entwurf ist inaktiv.
 
 ## Pruefstand und offene Luecken
 
-Isoliert bestanden:8Radio-Auftragsgruppen;13Abrufschutzgruppen einschliesslich
+Isoliert bestanden:8Radio-Auftragsgruppen mit atomarer technischer INSERT-Marke;13Abrufschutzgruppen einschliesslich
 Beobachterfehler/Redirect;10bestehende Einzelprobenfaelle plus echte
 Speicher-CAS-Konflikt-/Unbekannt-Gegenproben. Der erste CAS-Test wurde im
 Codex-Sandbox-Netz durch Loopback-`EPERM` gestoppt; ausserhalb der Sandbox mit

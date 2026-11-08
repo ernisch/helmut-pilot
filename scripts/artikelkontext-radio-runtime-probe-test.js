@@ -13,10 +13,16 @@ function fixture() {
     "x-helmut-production-commit": env.VERCEL_GIT_COMMIT_SHA, "x-helmut-deployment-id": env.VERCEL_DEPLOYMENT_ID,
     "x-helmut-deployment-host": env.VERCEL_URL, "x-helmut-root-admitted-at": new Date(clock).toISOString(),
     "x-helmut-root-deadline-at": new Date(clock + P.MAX_MS).toISOString() };
-  const authStore = { unrelated: { preserved: true } };
+  const authStore = { unrelated: { preserved: true } }, rows = new Map();
   const deps = { env, now: () => clock, operationAuth: auth,
-    storage: { getStorageStatus: () => ({ backend: "supabase", supabaseConfigured: true }),
-      mutateAuthStore: async change => { claims++; return change(authStore); } },
+    storage: { getStorageStatus: () => ({ backend: "supabase", supabaseConfigured: true, storeId: "main" }),
+      mutateAuthStore: () => { throw new Error("AUTH NORMALIZATION REACHED"); },
+      supabaseRequest: async (endpoint, options) => {
+        claims++; A.equal(endpoint, "/rest/v1/helmut_store?on_conflict=id&select=id,data");
+        A.equal(options.method, "POST"); A.equal(options.headers.Prefer, "resolution=ignore-duplicates,return=representation");
+        const row = JSON.parse(options.body); A.equal(row.id, P.CLAIM_ID);
+        if (rows.has(row.id)) return []; rows.set(row.id, row); return [structuredClone(row)];
+      } },
     requestText: () => { throw new Error("MODEL PATH REACHED"); },
     readRuntimeConfiguration: () => { throw new Error("MODEL CONFIG REACHED"); },
     fetchUrl: async (url, redirects, options) => {
@@ -54,7 +60,7 @@ test("wiederholte und konkurrierende Zustellung startet global nur einen Abruf",
   A.deepEqual(results.map(r => r.status).sort(), [200, 409]);
   A.equal((await f.invoke()).body.reason, "radio-probe-already-consumed"); A.equal(f.counts().sends, 1);
 });
-test("falsches Token, Commit, Deployment, Body und Fenster bleiben vor CAS und Netz", async () => {
+test("falsches Token, Commit, Deployment, Body und Fenster bleiben vor INSERT und Netz", async () => {
   for (const change of [f => { f.headers.authorization = "Bearer " + "x".repeat(64); },
     f => { f.headers["x-helmut-production-commit"] = "b".repeat(40); },
     f => { f.headers["x-helmut-deployment-id"] = "dpl_other"; },
@@ -72,15 +78,18 @@ test("Proxy oder abgeschaltete TLS-Pruefung wird abgewiesen, nicht umkonfigurier
     A.deepEqual(f.counts(), { claims: 0, sends: 0 });
   }
 });
-test("unbestaetigter oder verlorener CAS-Ausgang startet keinen Abruf", async () => {
-  for (const mutate of [async () => ({}), async change => { change({}); throw new Error("lost ack"); }]) {
-    const f = fixture(); f.deps.storage.mutateAuthStore = mutate;
-    const r = await f.invoke(); A.equal(r.status, 409); A.equal(r.body.consumed, null); A.equal(f.counts().sends, 0);
-  }
+test("unbestaetigter oder verlorener INSERT-Ausgang startet keinen Abruf", async () => {
+  const f = fixture(); f.deps.storage.supabaseRequest = async () => ({});
+  const r = await f.invoke(); A.equal(r.status, 409); A.equal(r.body.consumed, null); A.equal(f.counts().sends, 0);
+  const g = fixture(), insert = g.deps.storage.supabaseRequest;
+  g.deps.storage.supabaseRequest = async (...args) => { await insert(...args); throw new Error("lost ack"); };
+  A.equal((await g.invoke()).body.consumed, null); A.equal(g.counts().sends, 0);
+  g.deps.storage.supabaseRequest = insert;
+  A.equal((await g.invoke()).body.reason, "radio-probe-already-consumed"); A.equal(g.counts().sends, 0);
 });
 test("nach aufgebrauchtem Zeitfenster startet auch mit bestaetigtem Claim kein Abruf", async () => {
-  const f = fixture(), mutate = f.deps.storage.mutateAuthStore;
-  f.deps.storage.mutateAuthStore = async change => { const r = await mutate(change); f.advance(P.MAX_MS); return r; };
+  const f = fixture(), insert = f.deps.storage.supabaseRequest;
+  f.deps.storage.supabaseRequest = async (...args) => { const r = await insert(...args); f.advance(P.MAX_MS); return r; };
   A.equal((await f.invoke()).body.reason, "radio-probe-deadline"); A.equal(f.counts().sends, 0);
 });
 test("Verbindungsfehler und Redirect bleiben Luecken; keine Wiederholung", async () => {
