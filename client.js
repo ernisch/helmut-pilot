@@ -5446,7 +5446,7 @@ function renderLageView() {
         <div class="ui-vorgang-list">
           ${items.map((v, index) => {
             const id = String(v.vorgangId || v.id || "");
-            const title = lageField(v.displayTitle) || lageDisplayHeadline(v.title);
+            const title = lageField(v.displayTitle) || lageField(v.title) || "Vorgang";
             const summary = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
             return `<button class="ui-vorgang-row ${id === selectedId ? "is-selected" : ""}" type="button" data-ui-lage-select="${escapeAttribute(id)}" aria-pressed="${id === selectedId}">
               <span class="ui-row-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
