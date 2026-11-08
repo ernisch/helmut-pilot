@@ -5716,7 +5716,11 @@ function vsheetSourceRow(source) {
   const name = lageField(source.name) || lageField(source.sourceName) || "Quelle";
   const host = lageField(source.host);
   const href = source.url && isHttpUrl(source.url) ? source.url : (host ? `https://${host}` : "");
-  const time = bundespulsPublicationUnknown(source, href) ? "" : lageField(source.dateLabel || source.publishedAt || source.published_at);
+  const published = source.publishedAt || source.published_at;
+  const parsed = published && Date.parse(published);
+  const dayOnly = /^\d{4}-\d{2}-\d{2}$/.test(published || "");
+  const time = bundespulsPublicationUnknown(source, href) ? "" : lageField(source.dateLabel)
+    || (Number.isFinite(parsed) ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric", ...(dayOnly ? {} : { hour: "2-digit", minute: "2-digit" }) }).format(new Date(parsed)) + (dayOnly ? "" : " · Berliner Zeit") : "");
   const meta = [time, host].filter(Boolean).join(" · ");
   const ext = `<svg class="vsheet-src-ext" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const inner = `
@@ -11595,7 +11599,7 @@ function formatBerlinNow() {
 // Status-Pille nach Design: „Aktuell · 07:12 Uhr“; mobil nur die Uhrzeit
 // (Status und „Uhr“ bleiben für Screenreader lesbar, nur visuell verborgen).
 function renderBerlinClockLabel(statusLabel) {
-  return `<span class="ui-status-label">${escapeHtml(statusLabel)} · </span><span class="ui-status-time">${escapeHtml(formatBerlinNow())}${["helmut", "briefing", "radar"].includes(currentView) ? " · Berlin" : ""}</span><span class="ui-status-unit"> Uhr</span>`;
+  return `<span class="ui-status-label">${escapeHtml(statusLabel)} · </span><span class="ui-status-time">${escapeHtml(formatBerlinNow())}</span><span class="ui-status-unit"> Uhr</span>${["helmut", "briefing", "radar"].includes(currentView) ? '<span> · Berlin</span>' : ""}`;
 }
 
 function formatBerlinTimeOnly(date = new Date()) {
