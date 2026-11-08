@@ -5421,8 +5421,8 @@ function renderLageEmpty(greeting, dateLabel, emptyState, data) {
         <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
       </header>
       <div class="lage2-empty">
-        <p class="lage2-empty-title">${escapeHtml(title)}</p>
-        <p class="lage2-empty-sub">${escapeHtml(sub)}</p>
+        <p class="lage2-empty-title">${escapeHtml(uiSieText(title))}</p>
+        <p class="lage2-empty-sub">${escapeHtml(uiSieText(sub))}</p>
       </div>
     </section>`;
 }
@@ -6867,8 +6867,8 @@ function renderHstandStateCard(state, kind) {
       ${renderHstandHeader(state)}
       <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}${quiet ? " hstand-state-card--quiet" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
-        <p class="hstand-state-title">${escapeHtml(quiet ? "Keine neue Tagespriorität" : title)}</p>
-        <p class="hstand-state-sub">${escapeHtml(quiet ? "Der vorhandene Stand begründet heute keine neue Tagespriorität. Das ist keine Entwarnung; laufende Themen bleiben relevant." : sub)}</p>
+        <p class="hstand-state-title">${escapeHtml(uiSieText(quiet ? "Keine neue Tagespriorität" : title))}</p>
+        <p class="hstand-state-sub">${escapeHtml(uiSieText(quiet ? "Der vorhandene Stand begründet heute keine neue Tagespriorität. Das ist keine Entwarnung; laufende Themen bleiben relevant." : sub))}</p>
         ${quiet && sub ? `<details class="ui-source-evidence"><summary>Hinweis zum vorhandenen Stand</summary><p>${escapeHtml(uiSieText(sub))}</p></details>` : ""}
         ${lageLine}${lageButton}
       </div>
@@ -8495,7 +8495,7 @@ function renderRadarEmpty(state) {
   return `
     ${renderRadarSummary({ summary: { line1: title } })}
     <section class="radar2-section" data-empty-kind="${escapeAttribute(emptyKind)}">
-      <div class="radar2-empty">${escapeHtml(note)}</div>
+      <div class="radar2-empty">${escapeHtml(uiSieText(note))}</div>
     </section>
   `;
 }

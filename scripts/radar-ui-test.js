@@ -320,6 +320,12 @@ check("Radar benennt das erneute Laden des gespeicherten Stands",
 check("Ein heutiges Quelldatum wird nicht als heute durchgefuehrte Pruefung ausgegeben",
   !/heute (?:geprüft|recherchiert)|Quellen heute geprüft/i.test(reloadHtml));
 
+api.setBriefing({ currentRadarState: { ...state, mentions: [], articles: [], dynamics: [],
+  environment: { party: [], constituency: [], committees: [] },
+  emptyState: { kind: "gap", detail: "Für dein Mandat fehlen Quellen." } } });
+check("Auch gelieferter Radar-Leerhinweis verwendet Sie-Ansprache", api.render().includes("Für Ihr Mandat fehlen Quellen."));
+api.setBriefing({ currentRadarState: state });
+
 async function pruefeReload() {
   let optionen;
   await api.refresh(async opts => { optionen = opts; return true; });

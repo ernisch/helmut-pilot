@@ -540,6 +540,12 @@ const quietNoLage=quietRender(b=>{delete b.lageBriefing;}).html;
 check("Ruhelage ohne Lage: ehrlicher Leerzustand ohne erfundene Themenzahl",
   />Aktuell<\/span>/.test(quietNoLage) && !/In der Lage laufen|Zur Lage<|ui-briefing-hero/.test(quietNoLage));
 
+api.setBriefing({ currentHelmutState: { status: "empty", primaryItem: null,
+  emptyState: { kind: "gap", headline: "Dein Briefing", detail: "Für dein Mandat fehlen Quellen." } },
+  lageBriefing: { vorgaenge: [], emptyState: { kind: "gap", detail: "Für dein Mandat fehlen Quellen." } } });
+check("Auch gelieferte Leerzustandstexte verwenden Sie-Ansprache", api.render().includes("Für Ihr Mandat fehlen Quellen.")
+  && api.lageView().includes("Für Ihr Mandat fehlen Quellen."));
+
 console.log(`\n${passed}/${passed + failed} Helmut-Tab-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
 
