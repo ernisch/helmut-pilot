@@ -36,7 +36,12 @@ function loadClient() {
     render: () => renderHelmutStandView(),
     lageCard: (v) => renderVorgangCard(v),
     lageSheet: (v) => vsheetContentHtml(v),
+    lageView: () => renderLageView(),
+    legacyHeadline: (s) => lageDisplayHeadline(s),
+    mandateContext: () => renderUiMandateContext(),
+    setProfile: (p) => { profile = p; },
     setBriefing: (b) => { briefing = b; },
+    sie: (s) => uiSieText(s),
     esc: (s) => escapeHtml(s)
   };`;
 
@@ -158,13 +163,13 @@ const html = api.render();
 check("Voll: rendert den Stand (.hstand), nicht den Leerzustand",
   /class="hstand"/.test(html) && !/hstand--state/.test(html));
 check("Neuer Kopf: persönliches Briefing",
-  html.includes("Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.") && !html.includes("Dein aktueller Stabschefstand"));
-check("Feinschliff: 'Warum ist das wichtig?' mit Fragezeichen",
-  html.includes("Warum ist das wichtig?"));
+  html.includes("Ihr Briefing. Was jetzt Ihre Aufmerksamkeit braucht.") && !html.includes("Dein aktueller Stabschefstand"));
+check("Briefing: Begruendung steht sichtbar neben dem naechsten Schritt",
+  html.includes("Begründung:"));
 check("Zielbild: Risiko/Chance-Level als gefülltes Badge in der jeweiligen Karte",
   /hstand-risk[\s\S]*?hstand-level--risk/.test(html) && /hstand-chance[\s\S]*?hstand-level--chance/.test(html));
 check("Zielbild: farbige Sektions-Icon-Badges (hstand-kico) je Überschrift",
-  (html.match(/hstand-kico/g) || []).length >= 6);
+  (html.match(/hstand-kico/g) || []).length >= 5);
 check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Formate')",
   html.includes("hstand-comms-formats-label\">Formate<") && html.includes("hstand-comms-formats"));
 {
@@ -184,9 +189,9 @@ check("Feinschliff: Output-Chips ruhig (keine Accent-Button-Klasse mehr am Chip-
 check("Feinschliff: Quellenstand ist auch mobil als Quelle beschriftet",
   html.includes("hstand-mk-short") && html.includes(">Quelle<") && html.includes(">Quellenstand<"));
 check("Voll: Mein Vorschlag zeigt die recommendation",
-  html.includes("Dein nächster Schritt") && html.includes("Intern abstimmen"));
+  html.includes("Ihr nächster Schritt") && html.includes("Intern abstimmen"));
 check("Voll: Tagesanlass sichtbar, Lage-Einordnung nicht kopiert",
-  html.includes("Warum ist das wichtig") && html.includes("heutigen Arbeitstag") && !html.includes("Die Debatte gewinnt an Dynamik"));
+  html.includes("Begründung:") && html.includes("heutigen Arbeitstag") && !html.includes("Die Debatte gewinnt an Dynamik"));
 check("Voll: Risiko bei Nichtreaktion + Risikostufe 'Hoch'",
   html.includes("Risiko bei Nichtreaktion") && /hstand-risk[\s\S]*?Hoch/.test(html));
 check("Voll: Chance + Chancenstufe 'Hoch'",
@@ -195,7 +200,7 @@ check("Voll: recommendedCommunication strukturiert (Format + Kanal + Outputs)",
   html.includes("Empfohlene Kommunikation") && html.includes("Pressemitteilung") && html.includes("Presse") &&
   html.includes("Q&amp;A") /* suggestedOutput qa -> Q&A escaped */);
 check("Voll: actionItems strukturiert (Schritte mit Titel + dueHint)",
-  html.includes("Was du jetzt tun solltest") && html.includes("Bis 14:00 Linie intern abstimmen") && html.includes("bis 14:00"));
+  html.includes("Was Sie jetzt tun sollten") && html.includes("Bis 14:00 Linie intern abstimmen") && html.includes("bis 14:00"));
 const stepCount = (html.match(/class="hstand-step"/g) || []).length;
 check("Voll: wenige Schritte (1..4)", stepCount >= 1 && stepCount <= 4, `n=${stepCount}`);
 check("Voll: Aktueller Vorgang mit Titel + Quellenzahl 18 + Qualitaet",
@@ -210,14 +215,14 @@ check("Voll: Kopf-Status 'Aktuell' (fresh)", html.includes(">Aktuell<"));
 // Warum -> Risiko/Chance -> ... -> Quellen.
 const idx = (s) => html.indexOf(s);
 check("Mobil-Reihenfolge: Hauptvorgang mit nächstem Schritt, Kontext und Quellen",
-  idx("ui-briefing-hero") < idx("Dein nächster Schritt") &&
-  idx("Dein nächster Schritt") < idx("Warum ist das wichtig") &&
-  idx("Warum ist das wichtig") < idx("Risiko bei Nichtreaktion") &&
+  idx("ui-briefing-hero") < idx("Ihr nächster Schritt") &&
+  idx("Ihr nächster Schritt") < idx("Begründung:") &&
+  idx("Begründung:") < idx("Risiko bei Nichtreaktion") &&
   idx("Risiko bei Nichtreaktion") < idx("Empfohlene Kommunikation") &&
-  idx("Empfohlene Kommunikation") < idx("Was du jetzt tun solltest") &&
+  idx("Empfohlene Kommunikation") < idx("Was Sie jetzt tun sollten") &&
   // Design 06.11.2026: „18 Quellen“ steht zusaetzlich in der Hero-Meta-Zeile; die
   // Quellen-Fusszeile (letztes Vorkommen) muss weiterhin ganz am Ende stehen.
-  idx("Was du jetzt tun solltest") < html.lastIndexOf("18 Quellen"));
+  idx("Was Sie jetzt tun sollten") < html.lastIndexOf("18 Quellen"));
 
 // KEINE Kostenwerte im Markup.
 check("Voll: KEINE Kostenwerte/Token im Markup",
@@ -230,7 +235,7 @@ const htmlStale = api.render();
 check("Stale: Kopf-Status 'Nicht aktuell' (professionell, klar)",
   htmlStale.includes("Nicht aktuell") && !htmlStale.includes("Nicht mehr ganz frisch"));
 check("Stale: Inhalt bleibt sichtbar (Vorschlag rendert weiter)",
-  htmlStale.includes("Dein nächster Schritt"));
+  htmlStale.includes("Ihr nächster Schritt"));
 
 // === 2a) Kopf-Chip: Slot-Name NUR bei frischem Stand, sonst 'Letzter Stand' ===
 // Der Slot-NAME (z. B. „Mittagsbriefing") kommt aus der aktuellen Uhrzeit. Bei einem
@@ -293,7 +298,7 @@ check("Prod-Repro: leere Stabschef-Sektionen entfallen sauber (kein Risiko/Chanc
 api.setBriefing(briefingWith(emptyState));
 const htmlEmpty = api.render();
 check("Leer: neutraler Leerzustand (.hstand--state), kein Crash",
-  /hstand--state/.test(htmlEmpty) && htmlEmpty.includes("Heute kein Handlungsbedarf"));
+  /hstand--state/.test(htmlEmpty) && htmlEmpty.includes("Keine Tagespriorität belegt"));
 check("Leer: kein Vorschlags-Fließtext (keine erfundenen Motor-Inhalte)",
   !htmlEmpty.includes("ui-hero-next"));
 check("Leer: KEINE hartkodierte Partei / keine Personen-Logik",
@@ -380,18 +385,108 @@ const geteilterVorgang = {
 api.setBriefing({ ...fxBriefing, lageBriefing: { available: true, vorgaenge: [geteilterVorgang] } });
 const getrennt = api.render();
 const lageCard = api.lageCard(geteilterVorgang), lageSheet = api.lageSheet(geteilterVorgang);
-check("Geteiltes Thema: Empfehlung bleibt im Briefing", getrennt.includes("ui-briefing-hero") && getrennt.includes("Dein nächster Schritt"));
+check("Geteiltes Thema: Empfehlung bleibt im Briefing", getrennt.includes("ui-briefing-hero") && getrennt.includes("Ihr nächster Schritt"));
 check("Lage Karte und Detail wiederholen keine Empfehlung", !lageCard.includes("Empfehlung")
   && !lageSheet.includes('class="vsheet-reco"') && !lageSheet.includes(fxState.recommendation));
 check("Briefing verweist auf genau den vorhandenen Lage Vorgang", getrennt.includes(`data-vorgang="${geteilterVorgang.id}"`));
-check("Identische Einordnung erscheint einmal in der Lage", !getrennt.includes('class="hstand-card hstand-why"')
-  && lageSheet.includes("Warum wichtig?"));
+check("Briefing behaelt die Einordnung neben der Empfehlung auch bei Lagebezug",
+  getrennt.includes('class="ui-recommendation-why"') && getrennt.includes(api.esc(api.sie(fxState.whyItMatters)))
+  && lageSheet.includes("Zusätzliche Einordnung"));
 check("Lage Detail verlinkt die Empfehlung statt sie zu kopieren", lageSheet.includes('data-view="helmut"')
   && lageSheet.includes("Empfehlung im Briefing öffnen"));
 api.setBriefing(fxBriefing);
-check("Ohne zugehoerige Lage bleibt Einordnung im Briefing erhalten", api.render().includes('class="hstand-card hstand-why"'));
+check("Ohne zugehoerige Lage bleibt Einordnung im Briefing erhalten", api.render().includes('class="ui-recommendation-why"'));
 check("Fremder Vorgang bekommt keinen irrefuehrenden Briefing Verweis", !api.lageSheet({ ...geteilterVorgang,
   id: "vg-fremd", vorgangId: "vg-fremd" }).includes('data-view="helmut"'));
+
+// Exakter, nativ belegter Titelabriss: fehlendes displayTitle aktivierte bisher
+// die 72-Zeichen-Kuerzung. Der Quellentitel ist ein eigener, anderer Text.
+const pflegeTitel = "Bundesregierung betont Rolle niedrigschwelliger Hilfe bei Pflegeversorgung";
+check("Alter 72-Zeichen-Fallback reproduziert den exakten Abbruch", api.legacyHeadline(pflegeTitel)
+  === "Bundesregierung betont Rolle niedrigschwelliger Hilfe bei");
+const pflegeQuelle = "Niedrigschwellige Hilfe für Personen mit Pflegebedarf";
+const pflegeVorgang = { id: "vg-titel-mobil", vorgangId: "vg-titel-mobil", title: pflegeTitel,
+  displayTitle: "", status: "neu", displaySummary: "Vorhandene Pflege-Zusammenfassung.",
+  sources: [{ name: "Testquelle", title: pflegeQuelle, url: "https://example.org/pflegeversorgung" }] };
+api.setBriefing({ lageBriefing: { available: true, vorgaenge: [pflegeVorgang] } });
+const pflegeListe = api.lageView();
+const pflegeZeile = (pflegeListe.match(/class="ui-row-title"[^>]*>([\s\S]*?)<\/span>/) || [])[1];
+check("Exakter mobiler Titelbefund: Liste behaelt Pflegeversorgung statt Abbruch nach bei",
+  pflegeZeile === pflegeTitel);
+check("Lage zeigt vorhandenen Vorgangsstatus ohne Behauptung neuer Quellen",
+  pflegeListe.includes("Vorgangsstatus: Neu") && !pflegeListe.includes("Neu seit dem letzten Besuch"));
+const pflegeDetail = api.lageSheet(pflegeVorgang);
+const quellenZeit = api.lageSheet({ ...pflegeVorgang, sources: [{ ...pflegeVorgang.sources[0], publishedAt: "2026-11-08T10:30:00Z" }] });
+check("Quellenzeit ohne Praezisionsbeleg wird als Kalendertag statt als rohe ISO ausgegeben", quellenZeit.includes("8. November 2026")
+  && !quellenZeit.includes("11:30") && !quellenZeit.includes("2026-11-08T10:30:00Z"));
+const quellenTag = api.lageSheet({ ...pflegeVorgang, sources: [{ ...pflegeVorgang.sources[0], publishedAt: "2026-11-08" }] });
+check("Datumsgenaue Quelle bekommt keine erfundene Uhrzeit", !quellenTag.includes("01:00") && !quellenTag.includes("00:00"));
+const normalisierterTag = api.lageSheet({ ...pflegeVorgang, sources: [{ ...pflegeVorgang.sources[0], publishedAt: "2026-09-25T00:00:00Z" }] });
+check("Auch ISO-normalisierter Publikationstag erfindet keine Berliner 02 Uhr", !normalisierterTag.includes("02:00") && normalisierterTag.includes("25. September 2026"));
+
+check("Lage Detail erhaelt beide vorhandenen Titel ohne erfundene Vervollstaendigung",
+  pflegeDetail.includes(pflegeTitel) && pflegeDetail.includes(pflegeQuelle));
+check("Lage Detail erklaert die zeitliche Grenze des Status",
+  /(?:Zeitpunkt|seit wann)[\s\S]{0,100}(?:nicht belegt|nicht ausgewiesen)|(?:nicht belegt|nicht ausgewiesen)[\s\S]{0,100}(?:Zeitpunkt|seit wann)/i.test(pflegeDetail));
+
+const profilbezug = require("../lib/helmut/lage-profilbezug");
+for (const [ebene, mandat, sachverhalt, grund] of [
+  ["Bund", { parliamentType: "Bundestag", committees: ["Ausschuss für Arbeit und Soziales"] },
+    "Der Bundestag berät das Rentengesetz.", "Deine Hauptzuständigkeit"],
+  ["Berlin", { parliamentType: "Landtag", state: "Berlin", reportingTopics: ["Pflege"] },
+    "Berlin stärkt die Pflegeversorgung.", "Deine konkrete Fachaufgabe"],
+  ["Brandenburg", { parliamentType: "Landtag", state: "Brandenburg", constituency: "Potsdam" },
+    "Potsdam eröffnet eine Beratungsstelle.", "Dein Wahlkreis"]
+]) {
+  const persoenlich = profilbezug.bewerte({ headline: sachverhalt }, mandat).erklaerung;
+  const v = { ...pflegeVorgang, id: `vg-synthetisch-${ebene}`, vorgangId: `vg-synthetisch-${ebene}`,
+    title: sachverhalt, relevanz: persoenlich };
+  api.setBriefing({ lageBriefing: { available: true, vorgaenge: [v] } });
+  check(`Synthetik ${ebene}: Liste zeigt den konkreten persoenlichen Bezug`,
+    Boolean(persoenlich) && api.lageView().includes('class="ui-row-relevance"')
+    && api.lageView().includes(api.esc(api.sie(persoenlich.satz))) && persoenlich.satz.startsWith(grund));
+}
+const ohnePersoenlich = { ...pflegeVorgang, policyField: "Gesundheitsausschuss", relevanz: null };
+api.setBriefing({ lageBriefing: { available: true, vorgaenge: [ohnePersoenlich] } });
+check("Sachkategorie ersetzt keinen fehlenden persoenlichen Mandatsbezug",
+  !api.lageView().includes('class="ui-row-relevance"'));
+
+for (const [mandat, parlament] of [
+  [{ parliamentType: "Bundestag", state: "Berlin" }, "Bundestag"],
+  [{ parliamentType: "Landtag", state: "Berlin" }, "Abgeordnetenhaus Berlin"],
+  [{ politicalLevel: "Land", bundesland: "Brandenburg" }, "Landtag Brandenburg"],
+  [{ state: "Berlin" }, "Mandatsebene nicht hinterlegt"]
+]) {
+  api.setProfile(mandat);
+  check(`Mandatskontext: ${parlament} aus vorhandenen Feldern`,
+    api.mandateContext().includes(`Mandat: ${parlament}</summary>`));
+}
+api.setProfile({ parliamentType: "Bundestag", reportingTopics: ["Pflegeberichterstattung"],
+  focusTopics: ["Gesundheitsversorgung"], committees: ["Gesundheitsausschuss"],
+  deputyCommittees: ["Haushaltsausschuss"], constituency: "Synthetischer Wahlkreis" });
+const mandatHtml = api.mandateContext();
+for (const [label, wert] of [["Fachzuständigkeit", "Pflegeberichterstattung"],
+  ["Schwerpunkte", "Gesundheitsversorgung"], ["Ausschussmitgliedschaft", "Gesundheitsausschuss"],
+  ["Stellvertretung im Ausschuss", "Haushaltsausschuss"], ["Wahlkreis", "Synthetischer Wahlkreis"]]) {
+  check(`Mandatskontext trennt ${label}`, mandatHtml.includes(`<dt>${label}</dt><dd>${wert}</dd>`));
+}
+api.setProfile({});
+check("Mandatskontext kennzeichnet fehlende Fachzustaendigkeit ausdruecklich",
+  api.mandateContext().includes('<dt>Fachzuständigkeit</dt><dd>Nicht hinterlegt</dd>'));
+api.setProfile(profile);
+
+api.setBriefing({ lageBriefing: { available: true, vorgaenge: [pflegeVorgang], paragraphs: [
+  { text: "Zugeordneter gespeicherter Lageabsatz.", vorgangIds: [pflegeVorgang.id], sources: pflegeVorgang.sources },
+  { text: "FREMDER_ABSATZ", vorgangIds: ["vg-fremd"], sources: [] }
+] } });
+const quellenDetail = api.lageSheet({ ...pflegeVorgang, whyRelevant: "Zusaetzliche politische Bedeutung." });
+check("Originalquellen stehen vor zusaetzlicher Einordnung", quellenDetail.indexOf("Originalquellen")
+  < quellenDetail.indexOf("Zusätzliche Einordnung"));
+check("Lageabsatz bleibt als Einordnung erkennbar und ist vorgangsgebunden",
+  quellenDetail.includes("Zugeordneter gespeicherter Lageabsatz.") && quellenDetail.includes("kein Originalauszug")
+  && !quellenDetail.includes("FREMDER_ABSATZ"));
+check("Kartenquellen werden nicht als Aussageauszuege ausgegeben",
+  quellenDetail.includes("keine aussagebezogenen Originalauszüge") && quellenDetail.includes(pflegeQuelle));
 
 // Ruhiger Tag (06.11.2026): ohne belegten Tagesanlass bleibt das Briefing ehrlich
 // leer. Laufende Lage-Themen werden NICHT als Briefing-Liste gezeigt, sondern nur
@@ -406,7 +501,7 @@ function quietRender(change = () => {}, payload = quietIntegrationPayload) {
 for (const [label, payload] of [["Ruhelage", quietIntegrationPayload], ["Cache-Miss", pendingQuietIntegrationPayload]]) {
   const quiet = quietRender(() => {}, payload);
   check(`${label}: ehrlicher Leerzustand statt Lage-Liste`,
-    quiet.html.includes("hstand-state-card--quiet") && quiet.html.includes("Heute kein neuer Tagesanlass")
+    quiet.html.includes("hstand-state-card--quiet") && quiet.html.includes("Keine neue Tagespriorität")
     && !quiet.html.includes("data-briefing-overview") && !quiet.html.includes("data-briefing-paragraph")
     && !quiet.html.includes("data-briefing-existing-item"));
   check(`${label}: keine Lage-Texte im Briefing`,
@@ -414,8 +509,12 @@ for (const [label, payload] of [["Ruhelage", quietIntegrationPayload], ["Cache-M
     && quiet.b.lageBriefing.vorgaenge.every(v => !v.displaySummary || !quiet.html.includes(api.esc(v.displaySummary))));
   check(`${label}: Anzahl laufender Lage-Themen und Weg zur Lage`,
     /In der Lage laufen \d+ Themen weiter\./.test(quiet.html) && /data-view="briefing"[^>]*>Zur Lage</.test(quiet.html));
-  check(`${label}: aktueller Kopf benennt die fehlende neue Tagespriorität`,
-    quiet.html.includes("Aktuell · keine neue Tagespriorität") && !quiet.html.includes(">Kein aktueller Stand<"));
+  check(`${label}: aktueller Kopf bleibt kurz, Erklaerung steht in der Leerkarte`,
+    />Aktuell<\/span>/.test(quiet.html) && !quiet.html.includes("Aktuell · keine neue Tagespriorität")
+    && !quiet.html.includes(">Kein aktueller Stand<"));
+  check(`${label}: fehlender Tagesanlass wird einmal erklaert`,
+    (quiet.html.match(/class="hstand-state-title">Keine neue Tagespriorität/g) || []).length === 1
+    && !quiet.html.includes("Keine neue Tagespriorität belegt."));
   check(`${label}: gespeicherte Laufzeit statt HTTP-Projektionszeit im Kopf`,
     quiet.html.includes("06:15") && !quiet.html.includes("15:37"));
   check(`${label}: keine erfundene Priorität oder Empfehlung`,
@@ -432,14 +531,14 @@ for (const [name, change] of [
 ]) {
   const result=quietRender(change);
   check(`Ruhelage Schutz: ${name} wird nicht als ruhiger aktueller Tag gezeigt`,
-    !result.html.includes("hstand-state-card--quiet") && !result.html.includes("Heute kein neuer Tagesanlass"));
+    !result.html.includes("hstand-state-card--quiet") && !result.html.includes("Keine neue Tagespriorität"));
   if (name === "Frischevertrag nicht aktuell") check("Ruhelage Schutz: fehlender Lauf bleibt als Warnung sichtbar",
     result.html.includes("Synthetischer heutiger Lauf fehlt.") && result.html.includes("Briefing noch nicht aktuell"));
   if (name === "Fehler") check("Ruhelage Schutz: Fehler bleibt sichtbar",result.html.includes("hstand-state-card--error"));
 }
 const quietNoLage=quietRender(b=>{delete b.lageBriefing;}).html;
 check("Ruhelage ohne Lage: ehrlicher Leerzustand ohne erfundene Themenzahl",
-  quietNoLage.includes("Aktuell · keine neue Tagespriorität") && !/In der Lage laufen|Zur Lage<|ui-briefing-hero/.test(quietNoLage));
+  />Aktuell<\/span>/.test(quietNoLage) && !/In der Lage laufen|Zur Lage<|ui-briefing-hero/.test(quietNoLage));
 
 console.log(`\n${passed}/${passed + failed} Helmut-Tab-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
