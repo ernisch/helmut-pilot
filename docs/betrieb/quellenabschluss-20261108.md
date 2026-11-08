@@ -4,8 +4,9 @@
 [PR1104](https://github.com/ernisch/helmut-pilot/pull/1104) integriert den frisch
 gelesenen `main`-Stand `4f8ee6722237c84a36fd9811acb2b9d46f7a72cb`.
 Finaler Kopf und seine beiden Pflichtchecks werden direkt im PR belegt.
-Keine kostenpflichtigen Modelle, Originalabrufe, Produktivwrites,
-Schalteraktivierungen, Merges nach main oder Deployments dieses Auftrags.
+Keine kostenpflichtigen Modelle, Produktivwrites, Schalteraktivierungen,
+Merges nach main oder Deployments dieses Auftrags. Ein unbeabsichtigt
+automatisch gestarteter XML-Liveworkflow ist unten ausdruecklich ausgewiesen.
 
 ## Was tatsaechlich korrigiert ist
 
@@ -95,10 +96,26 @@ Fruehere erfolgreiche Nachweise bleiben zugeordnet: PR1104-Code-CI42428840532
 auf5bef1ff4 und PR1106-CI42513128150 auff7ade1ef. Sie ersetzen **keine**
 Pflichtchecks am jetzigen Endcommit. Die regulaere Pflicht-CI wird auf dem
 endgueltigen PR1104-Kopf abgenommen, kein nachtraeglicher skip-ci-Dokukopf.
-Die beiden echten Liveabrufworkflows sind vor Push ausschliesslich manuell;
+Die drei echten Liveabrufworkflows sind vor dem Endpush ausschliesslich manuell;
 Pruefplan/Pflichtchecks werden nicht gelockert. Vercel-Gitdeployment des
 PR1104-Branches ist explizit gesperrt. Keine Proxy-/PR1109-Aenderungen und
 keine fremden CI-/Werkzeugaenderungen aus PR1106 uebernommen.
+
+**Abweichung beim vorigen Push:** Auf `66e37d63` meldete die Triggerpruefung
+den dritten Liveworkflow `pardok-parser.yml`, ihre fehlerhafte Befehlsfolge
+stoppte Commit/Push jedoch nicht. Run
+[42530310635](https://github.com/ernisch/helmut-pilot/actions/runs/42530310635)
+wurde am08.11.22:28UTC abgebrochen. Job128882835796 belegt auf GitHub Actions
+`ubuntu-latest` ueber die bestehenden HTTPS-Sonden: vier Kontrollabrufe
+(`example.com`/`www.google.com`, je zweimal HTTP200), Berlin-XML HTTP200 mit
+50331363Bytes (Byte-Cap) und Brandenburg-XML HTTP200 mit14171250Bytes, beide
+ohne Redirect. Eine weitere Berliner XML-Anfrage war gestartet; ihr Ergebnis
+ist durch Abbruch unbekannt. Der Shadow-Test blieb uebersprungen. Keine
+Modelle, Datenbank, Vercel-Laufzeit oder Fachinhaltwrites in diesem Workflow.
+Das war **kein freigegebener Abruf** und kein Radio-/Produktionsnachweis.
+Die Endpushpruefung muss erfolgreich beendet und separat gelesen sein;
+Shellabbruch bei Fehlern ist nun verbindlich. PARDOKs Offline-Parser bleibt
+in der normalen Pflicht-Bereichspruefung, seine Livephase ist nur manuell.
 
 ## Betriebsgrenzen und konkret benoetigte Freigabe
 

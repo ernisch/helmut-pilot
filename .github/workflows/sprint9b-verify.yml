@@ -66,10 +66,10 @@ jobs:
       # Exit 0 auch bei 'ablehnen'/'nicht_verifizierbar' (gueltige Ergebnisse, kein CI-Fehler).
       - name: Abrufwege verifizieren (echter Abruf)
         env:
-          # Bei pull_request-Läufen existiert kein inputs-Kontext -> explizite Defaults.
+          # Manuelle Eingaben mit expliziten Defaults.
           S9B_FRESH_DAYS: ${{ inputs.fresh_days || '45' }}
           S9B_TIMEOUT_MS: ${{ inputs.timeout_ms || '12000' }}
-          # Leer bei pull_request-Laeufen -> voller Umfang wie bisher.
+          # Ohne manuelle Einschraenkung: voller Umfang.
           S9B_ONLY: ${{ inputs.only || '' }}
         run: node scripts/sprint9b-verify-abrufwege.js --out sprint9b-report.json
 

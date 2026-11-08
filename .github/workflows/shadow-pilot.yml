@@ -3,9 +3,8 @@ name: Shadow-Pilot · BE/BB (isolierter Beobachtungslauf)
 # =============================================================================
 # ENG BEGRENZTER, ISOLIERTER Shadow-Pilot für 6 stabile Berlin/Brandenburg-Abrufwege.
 # =============================================================================
-# Diese Action laeuft NICHT auf jedem PR: workflow_dispatch (manuell) plus ein eng
-# PFADGEFILTERTER pull_request-Trigger (nur bei Aenderungen an den unten gelisteten
-# Shadow-Pilot-Dateien, Begruendung siehe Kommentar am Trigger). KEIN Cron, KEIN Zeitplan.
+# Diese Action laeuft ausschliesslich per workflow_dispatch (manuell).
+# KEIN automatischer PR-Trigger, KEIN Cron, KEIN Zeitplan.
 # Darum darf der Check "shadow-pilot" NIE als Required Check gesetzt werden
 # (docs/betrieb/branch-protection.md).
 #

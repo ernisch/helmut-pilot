@@ -3,7 +3,8 @@ name: PARDOK-Parser · BE/BB (Struktur + Shadow-Test, DB-frei)
 # =============================================================================
 # Abgegrenzter PARDOK/parldok-Parser-Sprint fuer be-plenum (Berlin) + bb-plenum (Brandenburg).
 # =============================================================================
-# NIE automatisch ausser bei pull_request auf die PARDOK-Dateien; zusaetzlich manuell.
+# Echte XML-Abrufe ausschliesslich per gesondertem workflow_dispatch.
+# Offline-Parser-Tests bleiben Teil der regulaeren Bereichs-/Pflicht-CI.
 # GRENZEN (hart): KEINE Secrets, KEINE Supabase-Verbindung, KEIN LLM, KEIN Deployment,
 # permissions: contents: read. Speicherung ausschliesslich als Workflow-Artefakt.
 # Der Parser wird NICHT in den Production-Crawl verdrahtet. Nur lesende XML-Abrufe.
@@ -23,17 +24,6 @@ on:
         description: "Record-Element der Struktur-Sonde erzwingen (leer = automatisch das haeufigste). 'Vorgang' belegt die Berliner Vorgangsstruktur (Roadmap-Punkt 24)."
         required: false
         default: ""
-  pull_request:
-    paths:
-      - ".github/workflows/pardok-parser.yml"
-      - "scripts/pardok-structure-probe.js"
-      - "scripts/pardok-vorgangs-analyse.js"
-      - "scripts/pardok-parser-test.js"
-      - "scripts/pardok-shadow-test.js"
-      - "lib/helmut/quellenarchitektur/pardok-parser.js"
-      - "lib/helmut/quellenarchitektur/dedup-global.js"
-      - "scripts/sprint9b-verify-abrufwege.js"
-      - "test/fixtures/pardok/**"
 
 permissions:
   contents: read
@@ -84,7 +74,7 @@ jobs:
       # Berliner <Vorgang>-Analyse (Roadmap-Punkt 24 Abschluss): beantwortet die Kardinalitaets-
       # und Kennungsstabilitaetsfragen, die das Feld-Inventar nicht beantworten kann — vor allem,
       # ob DASSELBE Dokument unter MEHREREN Vorgaengen auftaucht. Nur lesende Abrufe, keine DB,
-      # kein LLM, keine Secrets. Laeuft auf PRs automatisch (Beleg am PR) und per Dispatch.
+      # kein LLM, keine Secrets. Nur nach gesondertem manuellen Dispatch.
       - name: Berliner Vorgangs-Analyse (Kardinalitaet + Kennungsstabilitaet)
         if: hashFiles('scripts/pardok-vorgangs-analyse.js') != ''
         env:
