@@ -1,0 +1,113 @@
+PASS  client.js laedt im vm (Boot ohne echten Browser)
+PASS  Voll: rendert den Stand (.hstand), nicht den Leerzustand
+PASS  Neuer Kopf: persönliches Briefing
+PASS  Briefing: Begruendung steht sichtbar neben dem naechsten Schritt
+PASS  Zielbild: Risiko/Chance-Level als gefülltes Badge in der jeweiligen Karte
+PASS  Zielbild: farbige Sektions-Icon-Badges (hstand-kico) je Überschrift
+PASS  Feinschliff: Kommunikation labelt Format-Vorschläge ('Formate')
+PASS  Feinschliff: Kommunikation zeigt hervorgehobene Empfehlung (Label + Format · Kanal)
+PASS  Feinschliff: Mein Vorschlag zeigt höchstens 3 Chips (ruhiger Kopf)
+PASS  Feinschliff: Output-Chips ruhig (keine Accent-Button-Klasse mehr am Chip-Style)
+PASS  Feinschliff: Quellenstand ist auch mobil als Quelle beschriftet
+PASS  Voll: Mein Vorschlag zeigt die recommendation
+PASS  Voll: Tagesanlass sichtbar, Lage-Einordnung nicht kopiert
+PASS  Voll: Risiko bei Nichtreaktion + Risikostufe 'Hoch'
+PASS  Voll: Chance + Chancenstufe 'Hoch'
+PASS  Voll: recommendedCommunication strukturiert (Format + Kanal + Outputs)
+PASS  Voll: actionItems strukturiert (Schritte mit Titel + dueHint)
+PASS  Voll: wenige Schritte (1..4)
+PASS  Voll: Aktueller Vorgang mit Titel + Quellenzahl 18 + Qualitaet
+PASS  Voll: weitere relevante Vorgaenge (1..3)
+PASS  Voll: Quellen-Fußzeile zeigt '18 Quellen'
+PASS  Voll: Kopf-Status 'Aktuell' (fresh)
+PASS  Mobil-Reihenfolge: Hauptvorgang mit nächstem Schritt, Kontext und Quellen
+PASS  Voll: KEINE Kostenwerte/Token im Markup
+PASS  Stale: Kopf-Status 'Nicht aktuell' (professionell, klar)
+PASS  Stale: Inhalt bleibt sichtbar (Vorschlag rendert weiter)
+PASS  Kopf: Quellenstand statt eines aus der Abrufzeit abgeleiteten Slot-Namens
+PASS  Kopf: alter Quellenstand bleibt als Quellenstand erkennbar
+PASS  Kopf: stale Stand mischt KEINEN aktuellen Slot-Namen mit altem Datum
+PASS  Prod-Repro: aelteres KO (nur V3-Kern) -> qualityStatus partial, status fresh (nicht empty)
+PASS  Prod-Repro: recommendation aus handlungsempfehlung durchgereicht (echter Motor-Inhalt)
+PASS  Prod-Repro: rendert den vollen Stand (.hstand), NICHT den Leerzustand
+PASS  Prod-Repro: Vorschlag sichtbar (ui-hero-next mit Motor-Empfehlung)
+PASS  Prod-Repro: ehrlicher 'teilweise vollständig'-Hinweis im Kopf (keine erfundenen Inhalte)
+PASS  Prod-Repro: leere Stabschef-Sektionen entfallen sauber (kein Risiko/Chance/Kommunikation erfunden)
+PASS  Leer: neutraler Leerzustand (.hstand--state), kein Crash
+PASS  Leer: kein Vorschlags-Fließtext (keine erfundenen Motor-Inhalte)
+PASS  Leer: KEINE hartkodierte Partei / keine Personen-Logik
+PASS  Fehlt: neutraler technischer Leerzustand ohne Crash
+PASS  Error: ehrlicher Fehlerzustand
+PASS  Sicherheit: Motor-Text wird escaped (kein rohes <img> im Markup)
+PASS  Review: Flag ist per Default AUS (in Produktion inert)
+PASS  Review: in PRODUKTION immer inert (auch mit PR-Branch-Ref)
+PASS  Review: in Vorschau anderer Branches inert
+PASS  Review: alter PR-Branch aktiviert keine Ersatzdaten
+PASS  Review: explizite Vorschau-Abnahme bleibt möglich
+PASS  Review: explizite lokale Abnahme bleibt möglich
+PASS  Review: Production sperrt explizites Flag 1
+PASS  Review: Production sperrt explizites Flag true
+PASS  Review: Production sperrt explizites Flag on
+PASS  Review: Production sperrt explizites Flag yes
+PASS  Review: liefert einen VOLLEN currentHelmutState (status fresh, qualityStatus valid)
+PASS  Review: alle Abnahme-Felder befüllt
+PASS  Review: rendert den vollen Stand (kein Leerzustand)
+PASS  Review: KEINE Kostenwerte im gerenderten Review-Stand
+PASS  Review: keine hartkodierte Partei / keine Personen-Logik im Fixture
+PASS  Geteiltes Thema: Empfehlung bleibt im Briefing
+PASS  Lage Karte und Detail wiederholen keine Empfehlung
+PASS  Briefing verweist auf genau den vorhandenen Lage Vorgang
+PASS  Briefing behaelt die Einordnung neben der Empfehlung auch bei Lagebezug
+PASS  Lage Detail verlinkt die Empfehlung statt sie zu kopieren
+PASS  Ohne zugehoerige Lage bleibt Einordnung im Briefing erhalten
+PASS  Fremder Vorgang bekommt keinen irrefuehrenden Briefing Verweis
+PASS  Alter 72-Zeichen-Fallback reproduziert den exakten Abbruch
+PASS  Exakter mobiler Titelbefund: Liste behaelt Pflegeversorgung statt Abbruch nach bei
+PASS  Lage zeigt vorhandenen Vorgangsstatus ohne Behauptung neuer Quellen
+PASS  Quellenzeit ohne Praezisionsbeleg wird als Kalendertag statt als rohe ISO ausgegeben
+PASS  Datumsgenaue Quelle bekommt keine erfundene Uhrzeit
+PASS  Auch ISO-normalisierter Publikationstag erfindet keine Berliner 02 Uhr
+PASS  Lage Detail erhaelt beide vorhandenen Titel ohne erfundene Vervollstaendigung
+PASS  Lage Detail erklaert die zeitliche Grenze des Status
+PASS  Synthetik Bund: Liste zeigt den konkreten persoenlichen Bezug
+PASS  Synthetik Berlin: Liste zeigt den konkreten persoenlichen Bezug
+PASS  Synthetik Brandenburg: Liste zeigt den konkreten persoenlichen Bezug
+PASS  Sachkategorie ersetzt keinen fehlenden persoenlichen Mandatsbezug
+PASS  Mandatskontext: Bundestag aus vorhandenen Feldern
+PASS  Mandatskontext: Abgeordnetenhaus Berlin aus vorhandenen Feldern
+PASS  Mandatskontext: Landtag Brandenburg aus vorhandenen Feldern
+PASS  Mandatskontext: Mandatsebene nicht hinterlegt aus vorhandenen Feldern
+PASS  Mandatskontext trennt Fachzuständigkeit
+PASS  Mandatskontext trennt Schwerpunkte
+PASS  Mandatskontext trennt Ausschussmitgliedschaft
+PASS  Mandatskontext trennt Stellvertretung im Ausschuss
+PASS  Mandatskontext trennt Wahlkreis
+PASS  Mandatskontext kennzeichnet fehlende Fachzustaendigkeit ausdruecklich
+PASS  Originalquellen stehen vor zusaetzlicher Einordnung
+PASS  Lageabsatz bleibt als Einordnung erkennbar und ist vorgangsgebunden
+PASS  Kartenquellen werden nicht als Aussageauszuege ausgegeben
+PASS  Ruhelage: ehrlicher Leerzustand statt Lage-Liste
+PASS  Ruhelage: keine Lage-Texte im Briefing
+PASS  Ruhelage: Anzahl laufender Lage-Themen und Weg zur Lage
+PASS  Ruhelage: aktueller Kopf bleibt kurz, Erklaerung steht in der Leerkarte
+PASS  Ruhelage: fehlender Tagesanlass wird einmal erklaert
+PASS  Ruhelage: gespeicherte Laufzeit statt HTTP-Projektionszeit im Kopf
+PASS  Ruhelage: keine erfundene Priorität oder Empfehlung
+PASS  Cache-Miss: ehrlicher Leerzustand statt Lage-Liste
+PASS  Cache-Miss: keine Lage-Texte im Briefing
+PASS  Cache-Miss: Anzahl laufender Lage-Themen und Weg zur Lage
+PASS  Cache-Miss: aktueller Kopf bleibt kurz, Erklaerung steht in der Leerkarte
+PASS  Cache-Miss: fehlender Tagesanlass wird einmal erklaert
+PASS  Cache-Miss: gespeicherte Laufzeit statt HTTP-Projektionszeit im Kopf
+PASS  Cache-Miss: keine erfundene Priorität oder Empfehlung
+PASS  Ruhelage Schutz: Frischevertrag fehlt wird nicht als ruhiger aktueller Tag gezeigt
+PASS  Ruhelage Schutz: Frischevertrag nicht aktuell wird nicht als ruhiger aktueller Tag gezeigt
+PASS  Ruhelage Schutz: fehlender Lauf bleibt als Warnung sichtbar
+PASS  Ruhelage Schutz: veralteter Zustand wird nicht als ruhiger aktueller Tag gezeigt
+PASS  Ruhelage Schutz: Datenstand nicht von heute wird nicht als ruhiger aktueller Tag gezeigt
+PASS  Ruhelage Schutz: Datenlücke wird nicht als ruhiger aktueller Tag gezeigt
+PASS  Ruhelage Schutz: Fehler wird nicht als ruhiger aktueller Tag gezeigt
+PASS  Ruhelage Schutz: Fehler bleibt sichtbar
+PASS  Ruhelage ohne Lage: ehrlicher Leerzustand ohne erfundene Themenzahl
+
+111/111 Helmut-Tab-UI-Assertions erfolgreich.

@@ -1,0 +1,257 @@
+[
+  {
+    "url": "http://helmut-ui.test/",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Regular.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/site.webmanifest?v=20261106-h-klein",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/styles.css?v=20261106-start1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/client.js?v=20261106-start1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/reichstag.jpg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/HankenGrotesk-var.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Medium.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/helmut_logo.svg?v=20261106-h-klein",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/favicon.ico?v=20261106-h-klein",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 503
+  },
+  {
+    "url": "https://example.invalid/network-negative-control",
+    "action": "blocked",
+    "type": "XHR"
+  },
+  {
+    "url": "http://helmut-ui.test/",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Regular.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/styles.css?v=20261106-start1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/client.js?v=20261106-start1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/site.webmanifest?v=20261106-h-klein",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/reichstag.jpg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/HankenGrotesk-var.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Medium.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/helmut_logo.svg?v=20261106-h-klein",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 503
+  },
+  {
+    "url": "https://example.invalid/network-negative-control",
+    "action": "blocked",
+    "type": "XHR"
+  },
+  {
+    "url": "http://helmut-ui.test/",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Regular.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/site.webmanifest?v=20261106-h-klein",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/styles.css?v=20261106-start1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/client.js?v=20261106-start1",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Regular.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/reichstag.jpg",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/HankenGrotesk-var.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/Spectral-Medium.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/ui/fonts/IBMPlexMono-Medium.woff2",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/assets/helmut_logo.svg?v=20261106-h-klein",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 200
+  },
+  {
+    "url": "http://helmut-ui.test/api/app/start?",
+    "method": "GET",
+    "action": "fulfilled-in-memory",
+    "status": 503
+  },
+  {
+    "url": "https://example.invalid/network-negative-control",
+    "action": "blocked",
+    "type": "XHR"
+  }
+]
