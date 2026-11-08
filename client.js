@@ -6380,7 +6380,6 @@ function renderHelmutStandView() {
   // „Ausfuehrlich lesen“) -> „Danach wichtig“ -> drei Spalten -> Quellen.
   // Alle Inhalte bleiben dieselben, belegten Bausteine; nur Anordnung und Gewichtung.
   const details = [
-    renderHstandWhy(state),
     `<div class="ui-briefing-context">${renderHstandRiskChance(state)}</div>`,
     renderHstandComms(state),
     renderHstandActions(state),
@@ -6441,6 +6440,7 @@ function renderUiBriefingHero(state, details = "") {
     </div>
     <div class="ui-hero-next">
       <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Dein nächster Schritt</span><span class="ui-next-step">${escapeHtml(recommendation || "Prüfe die Einordnung und Quellen zu diesem Vorgang.")}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>
+      ${recommendation && hstandText(state.whyItMatters) ? `<p class="ui-recommendation-why"><strong>Begründung:</strong> ${escapeHtml(hstandText(state.whyItMatters))}</p>` : ""}
       ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfe den Vorgang und deine Büro-Formate.</p>'}
       <p class="ui-hero-meta">${count ? `<span>${uiIcon("briefing")}${count === 1 ? "1 Quelle" : `${count} Quellen`}</span>` : ""}${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
     </div>
@@ -6457,7 +6457,7 @@ function renderHstandHeader(state) {
   const st = vertragOffen
     ? HSTAND_STATUS_LABEL.nicht_aktuell
     : hstandCurrentQuiet(state)
-      ? { label: "Aktuell · keine neue Tagespriorität", tone: "ok" }
+      ? { label: "Aktuell", tone: "ok" }
       : (HSTAND_STATUS_LABEL[state.status] || HSTAND_STATUS_LABEL.empty);
   // Publikation, gespeicherter Morgenlauf und Abrufzeit sind verschiedene Dinge.
   // generatedAt/sourcesSummary.lastUpdated koennen beim Lesen/KO-Schreiben entstehen.
@@ -6626,7 +6626,7 @@ function renderHstandFrische(state) {
   const zeilen = [];
   if (v.aktuell === false) {
     zeilen.push({ ton: "warn", text: `${v.grundText || "Für heute liegt noch kein aktuelles Briefing vor."} Es wird bewusst kein Briefing vom Vortag als heutiges angezeigt.` });
-  } else if (v.ruhelage) {
+  } else if (v.ruhelage && !hstandCurrentQuiet(state)) {
     zeilen.push({ ton: "muted", text: hstandCurrentQuiet(state)
       ? "Keine neue Tagespriorität belegt. Das bedeutet keine Entwarnung; der vorhandene Sachstand bleibt relevant."
       : v.hinweis || "Heute liegt keine neue Meldung vor." });
@@ -6780,7 +6780,7 @@ function renderHstandStateCard(state, kind) {
   if (disruption && disruption.error) isError = true;
   const title = disruption ? disruption.title
     : isError ? "Stand konnte nicht geladen werden"
-    : (es && es.headline ? es.headline : "Heute kein Handlungsbedarf");
+    : (es && es.headline ? es.headline : "Keine Tagespriorität belegt");
   const sub = disruption ? disruption.sub
     : isError
       ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
@@ -6799,8 +6799,9 @@ function renderHstandStateCard(state, kind) {
       ${renderHstandHeader(state)}
       <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}${quiet ? " hstand-state-card--quiet" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
-        <p class="hstand-state-title">${escapeHtml(quiet ? "Heute kein neuer Tagesanlass" : title)}</p>
-        <p class="hstand-state-sub">${escapeHtml(sub)}</p>
+        <p class="hstand-state-title">${escapeHtml(quiet ? "Keine neue Tagespriorität" : title)}</p>
+        <p class="hstand-state-sub">${escapeHtml(quiet ? "Der vorhandene Stand begründet heute keine neue Tagespriorität. Das ist keine Entwarnung; laufende Themen bleiben relevant." : sub)}</p>
+        ${quiet && sub ? `<details class="ui-source-evidence"><summary>Hinweis zum vorhandenen Stand</summary><p>${escapeHtml(sub)}</p></details>` : ""}
         ${lageLine}${lageButton}
       </div>
     </section>`;
