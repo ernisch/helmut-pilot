@@ -4597,7 +4597,7 @@ function render() {
   const pageScroll = currentView === lastAnimatedView ? (app.querySelector(".ui-page")?.scrollTop || 0) : 0;
   if (app) app.classList.toggle("anim-enter", enterAnim);
   app.innerHTML = `
-    <div class="app-frame view-${escapeAttribute(currentView || "")}">
+    <div class="app-frame view-${escapeAttribute(currentView || "")}${currentView === "briefing" && uiLageDetailOpen ? " ui-lage-detail-open" : ""}">
       ${renderSidebar()}
       <div class="content-shell" ${onboardingActive ? "inert" : ""}>
         ${renderTopbar()}
@@ -5425,7 +5425,7 @@ function renderLageView() {
   const data = lageData();
   if (data?.prosaVorschau === true) return renderProsaEinordnung(data.prosaEinordnung);
   const items = lageVisibleVorgaenge(data);
-  const header = renderUiPageHeader("Politische Lage", "Relevante Vorgänge, aktueller Sachstand und belastbare Quellen.");
+  const header = `<div class="ui-lage-page-heading">${renderUiPageHeader("Politische Lage", "Relevante Vorgänge, aktueller Sachstand und belastbare Quellen.")}</div>`;
   if (!items.length) {
     return header + renderLageEmpty("Politische Lage", lageDateLabel(), data && data.emptyState, data);
   }
@@ -5792,6 +5792,12 @@ function vsheetContentHtml(v) {
 
     ${relevanz}
 
+    ${sourcesSorted.length ? `
+    <section class="vsheet-sec ui-source-access">
+      <h3 class="vsheet-h">Originalquellen</h3>
+      <div class="vsheet-sources">${sourcesSorted.map(vsheetSourceRow).join("")}</div>
+    </section>` : ""}
+
     ${warumPoints.length ? `
     <section class="vsheet-sec">
       <h3 class="vsheet-h">Warum wichtig?</h3>
@@ -5809,11 +5815,6 @@ function vsheetContentHtml(v) {
 
     ${betroffene}
 
-    ${sourcesSorted.length ? `
-    <section class="vsheet-sec">
-      <h3 class="vsheet-h">Originalquellen</h3>
-      <div class="vsheet-sources">${sourcesSorted.map(vsheetSourceRow).join("")}</div>
-    </section>` : ""}
 
     ${chrono.length ? `
     <section class="vsheet-sec">
