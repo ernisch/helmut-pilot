@@ -249,6 +249,31 @@ async function main() {
     check("5.4 kein Rohtext der Meldung im Code", !codes.some((c) => c.includes("leer/zu kurz")));
   }
 
+  abschnitt("6 · Speicherdiagnose akzeptiert ausschliesslich feste Codes und Schemafeldpfade");
+  {
+    const { sichereValidierungsfehler } = require("../lib/helmut/understanding-diagnose");
+    const erlaubt = ["schema-objekt", "schema-pflichtfeld:status", "schema-leer:was_ist_passiert",
+      "schema-zu-lang:display_summary", "schema-enum:zeitdruck", "schema-null:affected_geographies.geography_id",
+      "schema-typ:action_items_struct.priority", "schema-fehler:recommended_communication_struct.communicationLine",
+      "dsgvo-emailmuster:ko.was_ist_passiert", "dsgvo-emailmuster:ko.action_items_struct.dueHint",
+      "dsgvo-pii-feld", "dsgvo-eintrag-zu-lang:mentioned_people", "quellenbeleg-ausschuesse",
+      "decision_level-antwortkonflikt", "ki-antwort-nicht-verwertbar"];
+    for (const code of erlaubt) check(`6.a erhaelt ${code}`, sichereValidierungsfehler([code])[0] === code);
+    for (const value of ["schema-leer:geheimer_name", "schema-geheim:was_ist_passiert",
+      "schema-leer:action_items_struct.fremdfeld", "schema-typ:action_items_struct[0].priority",
+      "dsgvo-emailmuster:ko.kontakt.name", "dsgvo-eintrag-zu-lang:freier_name",
+      "quellenbeleg-fremdfeld", "schema-leer:was_ist_passiert:GEHEIMWERT",
+      "schema-leer:was_ist_passiert\nGEHEIMWERT", "zeitdruck: 'GEHEIMWERT' nicht in {hoch}",
+      "schema-leer:" + "x".repeat(1000), { code: "schema-objekt" }, null]) {
+      check("6.b unbekannte Codes/Pfade, Rohwerte und falsche Typen ausgeschlossen",
+        sichereValidierungsfehler([value]).length === 0);
+    }
+    check("6.c fester Fuenferdeckel", sichereValidierungsfehler(erlaubt).length === 5);
+    check("6.d Duplikate stabil entfernt", JSON.stringify(sichereValidierungsfehler([
+      "schema-objekt", "schema-objekt", "quellenbeleg-ausschuesse"]))
+      === JSON.stringify(["schema-objekt", "quellenbeleg-ausschuesse"]));
+  }
+
   console.log(`\n${pass} Pruefungen erfolgreich.`);
 }
 

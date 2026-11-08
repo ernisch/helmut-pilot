@@ -85,6 +85,86 @@ function tabellenAttrappe() {
 }
 
 async function main() {
+  // Diagnoseverlust 08.11.2026: echte Auth-Datei + vorhandener relationaler
+  // Writer/Reader mit injizierter Tabelle. Ausschliesslich synthetischer Bestand.
+  const fs = require("node:fs");
+  const { createHash } = require("node:crypto");
+  const U = require("../lib/helmut/understanding");
+  const authFile = path.join(ROOT, ".helmut-data/auth.json");
+  const vorher = fs.existsSync(authFile) ? fs.readFileSync(authFile) : null;
+  try {
+    const alt = { process: "understanding-test", runId: "diagnose-alt", status: "ok",
+      auffaelligkeitenGesamt: 7, createdAt: "2026-07-20T00:00:00.000Z" };
+    await storage.writeAuthStore({ processRuns: [alt] });
+    const codes = ["schema-leer:was_ist_passiert", "schema-typ:action_items_struct.priority",
+      "dsgvo-emailmuster:ko.warum_wichtig", "quellenbeleg-ausschuesse", "decision_level-antwortkonflikt"];
+    const results = Array.from({ length: 31 }, (_, i) => ({ status: "skipped-invalid", documents: 2,
+      vorgangId: `vg-synthetischer-name-${i}`, reason: "validierung-fehlgeschlagen", errors: codes }));
+    results.push({ status: "saved", documents: 3, vorgangId: "vg-erfolg" });
+    const telemetrie = U.buildOutcomeTelemetry({ results, deferred: 2 });
+    const ohneDetails = U.buildOutcomeTelemetry({ results: results.map(({ errors, ...r }) => r), deferred: 2 });
+    check("(D1) Fehlerdetails veraendern keine vorhandenen Telemetriezaehler",
+      Object.keys(telemetrie).filter(k => k !== "auffaelligkeiten")
+        .every(k => JSON.stringify(telemetrie[k]) === JSON.stringify(ohneDetails[k])));
+    check("(D2) echte Anzahl 31, gespeicherte Stichprobe 25", telemetrie.auffaelligkeitenGesamt === 31
+      && telemetrie.auffaelligkeiten.length === 25);
+    const table = tabellenAttrappe();
+    const entry = { process: "understanding-test", runId: "diagnose-neu", status: "partial",
+      processed: 32, fehlgeschlagen: 31, gespeichert: 1, deferred: 2, telemetrie };
+    const result = await recordProcessRun(entry, { relationalAktiv: true, insertRelational: table.insert });
+    check("(D3) Diagnose dual gespeichert", result.ok && result.gespeichert.blob && result.gespeichert.relational);
+    const disk = JSON.parse(fs.readFileSync(authFile, "utf8"));
+    const fromAuth = (await listProcessRuns({ process: entry.process }, { relationalAktiv: false }))[0];
+    const fromRel = (await listProcessRuns({ process: entry.process }, {
+      relationalAktiv: true, listRelational: table.list }))[0];
+    const hash = createHash("sha256").update(results[0].vorgangId).digest("hex");
+    for (const r of [disk.processRuns[0], fromAuth, fromRel]) {
+      check("(D4) nach Schreiben/Ruecklesen genau fuenf sichere Codes erhalten",
+        JSON.stringify(r.auffaelligkeiten[0].validierungsfehler) === JSON.stringify(codes));
+      check("(D5) begrenzte Vorgangszuordnung ohne Namen/Kennungstext",
+        r.auffaelligkeiten[0].vorgangHash === hash && !JSON.stringify(r).includes("synthetischer-name"));
+      check("(D6) Ergebnis-, Dokument- und Gesamtzaehler bleiben unveraendert",
+        r.processed === 32 && r.fehlgeschlagen === 31 && r.gespeichert === 1 && r.deferred === 2
+        && r.cluster === 32 && r.dokumente === 65 && r.auffaelligkeitenGesamt === 31
+        && r.gruppen.fehlgeschlagen === 31 && r.gruppen.verarbeitet === 1 && r.gruppen.erneut === 2);
+    }
+    check("(D7) relationale Quelle gewinnt beim Dual-Read", fromRel.quelle === "relational");
+    check("(D8) historischer Eintrag unveraendert gespeichert", JSON.stringify(disk.processRuns[1]) === JSON.stringify(alt));
+    const altGelesen = (await listProcessRuns({}, { relationalAktiv: false })).find(r => r.runId === alt.runId);
+    check("(D9) Altbestand erhaelt keine erfundenen Fehlerdetails", !Object.hasOwn(altGelesen, "auffaelligkeiten"));
+
+    const dirty = { vorgangId: "vg-synthetischer-name", status: "GEHEIM-STATUS", grund: "GEHEIM-GRUND",
+      validierungsfehler: ["schema-leer:GEHEIMNAME", "schema-typ:was_ist_passiert", "GEHEIM-ANTWORT"],
+      prompt: "GEHEIM-PROMPT", response: "GEHEIM-ANTWORT", source: "GEHEIM-QUELLE", name: "GEHEIMNAME",
+      credentials: "GEHEIM-ZUGANG", message: "GEHEIM-MELDUNG" };
+    const dirtyEntry = { process: "understanding-test", runId: "diagnose-unsicher", status: "failed",
+      telemetrie: { auffaelligkeiten: [dirty, { ...dirty, vorgangId: "https://example.invalid/GEHEIM" },
+        { ...dirty, vorgangHash: "GEHEIMHASH", vorgangId: "vg-" + "x".repeat(121) }], auffaelligkeitenGesamt: 3 } };
+    const d = await recordProcessRun(dirtyEntry, { relationalAktiv: true, insertRelational: table.insert });
+    const dAuth = (await listProcessRuns({}, { relationalAktiv: false })).find(r => r.runId === dirtyEntry.runId);
+    const dRel = (await table.list()).find(r => r.runId === dirtyEntry.runId);
+    for (const r of [d.eintrag, dAuth, dRel]) {
+      check("(D10) unsichere Werte auf beiden Speicherwegen ausgeschlossen", !/GEHEIM|synthetischer-name|example.invalid/.test(JSON.stringify(r)));
+      check("(D11) erlaubter Code bleibt trotz unsicherer Nachbarwerte erhalten",
+        r.auffaelligkeiten[0].validierungsfehler.join() === "schema-typ:was_ist_passiert"
+        && r.auffaelligkeiten[0].grund === null && r.auffaelligkeiten[0].status === "unbekannt"
+        && r.auffaelligkeiten[1].vorgangHash === null && r.auffaelligkeiten[2].vorgangHash === null);
+    }
+    // Auch direkte Projektion/Rueckprojektion duerfen den Filter nicht umgehen.
+    const raw = { auffaelligkeiten: Array(30).fill(dirty), auffaelligkeitenGesamt: 30 };
+    const projected = processRunToRelationalRow(raw);
+    const readDirty = relationalRowToProcessRun({ telemetrie: raw });
+    check("(D12) direkte relationale Schreib-/Lesegrenzen filtern und begrenzen",
+      projected.telemetrie.auffaelligkeiten.length === 25 && readDirty.auffaelligkeiten.length === 25
+      && !/GEHEIM|synthetischer-name/.test(JSON.stringify([projected, readDirty]))
+      && readDirty.auffaelligkeitenGesamt === 30);
+    check("(D13) erneute Sanitisierung ist fuer Diagnosen idempotent",
+      JSON.stringify(storage.sanitizeProcessRun(d.eintrag).auffaelligkeiten) === JSON.stringify(d.eintrag.auffaelligkeiten));
+  } finally {
+    if (vorher) fs.writeFileSync(authFile, vorher);
+    else fs.rmSync(authFile, { force: true });
+  }
+
   // ── (1) Ein normaler Lauf wird gespeichert (Blob-Pfad, Uebergangsphase 1) ──
   const b1 = blobAttrappe();
   const e1 = await recordProcessRun(
