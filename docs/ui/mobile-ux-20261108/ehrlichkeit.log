@@ -1,0 +1,38 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+PASS  Feedback HTTP Fehler: kein Erfolg und keine lokale Statusänderung
+PASS  Feedback Netzfehler: kein Erfolg und keine lokale Statusänderung
+PASS  Feedback fehlende Speicherbestätigung: kein Erfolg und keine lokale Statusänderung
+PASS  Feedback ungültiges JSON: kein Erfolg und keine lokale Statusänderung
+PASS  Feedback ignored: bestätigter Erfolg
+PASS  Feedback later: bestätigter Erfolg
+PASS  Feedback done: bestätigter Erfolg
+PASS  Feedback relevant: bestätigter Erfolg
+PASS  Feedback bleibt bis zur Serverbestätigung unverändert
+PASS  Fehlender Vorgang und Vorschau bestätigen keine Speicherung
+PASS  lageDone: fehlgeschlagene Rückmeldung lässt Vorgang unverändert
+PASS  lageIgnore: fehlgeschlagene Rückmeldung lässt Vorgang unverändert
+PASS  Onboarding HTTP Fehler: keine Erfolgsmeldung
+PASS  Onboarding Netzfehler: keine Erfolgsmeldung
+PASS  Onboarding leere Antwort: keine Erfolgsmeldung
+PASS  Onboarding Fertig: Serverbestätigung
+PASS  Onboarding Später: Serverbestätigung
+PASS  Delegieren HTTP Fehler: keine Task und kein Erfolgslog
+PASS  Delegieren Netzfehler: keine Task und kein Erfolgslog
+PASS  Delegieren fehlende ID: keine Task und kein Erfolgslog
+PASS  Delegieren: gespeicherte Task bestätigt Erfolg
+PASS  Quellenlauf Timeout: ehrlicher Abschluss
+PASS  Quellenlauf übersprungen: ehrlicher Abschluss
+PASS  Quellenlauf Erfolg: ehrlicher Abschluss
+PASS  Quellenlauf HTTP Fehler: Button wieder benutzbar
+PASS  Quellenlauf Netzfehler: Button wieder benutzbar
+PASS  Radar Timeout: Quellenprüfung korrekt benannt
+PASS  Radar übersprungen: Quellenprüfung korrekt benannt
+PASS  Radar Erfolg: Quellenprüfung korrekt benannt
+PASS  Radar HTTP Fehler: Quellenprüfung korrekt benannt
+PASS  Radar Netzfehler: Quellenprüfung korrekt benannt
+PASS  Lage Check HTTP Fehler meldet keine stabile Priorität
+PASS  Rückmeldungsbeschreibung übernimmt keine Priorisierungsbehauptung
+PASS  Onboardingtexte erklären Profil und angebotene Büroentwürfe
+
+34/34 UI Ehrlichkeitsfälle erfolgreich.

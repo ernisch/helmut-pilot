@@ -37,7 +37,7 @@ check("Quelle: Foreground-Refresh-Handler vorhanden (visibilitychange -> loadBri
   clientSource.includes("foregroundRefreshMinMs") &&
   /visibilityState !== "visible"[\s\S]*?loadBriefing\(\)\.catch/.test(clientSource));
 check("Quelle: loadBriefing hat Re-Entrancy-Guard + Drossel-Stempel (try/finally)",
-  /async function loadBriefing\(\)\s*\{[\s\S]*?briefingRefreshing = true;[\s\S]*?finally\s*\{[\s\S]*?briefingRefreshing = false;[\s\S]*?lastBriefingLoadAt = Date\.now\(\);/.test(clientSource));
+  /async function loadBriefing\([^)]*\)\s*\{[\s\S]*?briefingRefreshing = true;[\s\S]*?finally\s*\{[\s\S]*?briefingRefreshing = false;[\s\S]*?lastBriefingLoadAt = Date\.now\(\);/.test(clientSource));
 check("Quelle: Tageswechsel-Rerender in updateBerlinClock (relative Frische bleibt ehrlich)",
   /function updateBerlinClock[\s\S]*?lastRenderedBerlinDay[\s\S]*?render\(\);/.test(clientSource));
 

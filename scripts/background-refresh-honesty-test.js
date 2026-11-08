@@ -35,9 +35,11 @@ check("Quelle: ehrliche Fehl-/Stand-Meldung ist vorhanden", clientSource.include
 function loadClient() {
   let code = clientSource.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "");
   code += `
-    var __bgToasts = [];
+    var __bgToasts = [], __bgPreparations = 0, __bgParliamentReads = 0;
     globalThis.__bg = {
-      run: () => loadBriefing(),
+      run: (opts) => loadBriefing(opts),
+      preparations: () => __bgPreparations,
+      parliamentReads: () => __bgParliamentReads,
       toasts: () => __bgToasts.slice(),
       clear: () => { __bgToasts.length = 0; },
       setFetch: (fn) => { fetchWithTimeout = fn; },
@@ -45,13 +47,14 @@ function loadClient() {
       stub: () => {
         showToast = (m) => { __bgToasts.push(String(m)); };
         fetchAuthState = async () => null;
-        applyStartPayload = () => {};
+        // Existing success contract establishes a valid private profile.
+        applyStartPayload = (payload) => { profile = payload.profile; activePoliticianId = profile.id; privateAccess = true; };
         saveCachedStartPayload = () => {};
         restorePersistedView = () => {};
         render = () => {};
         ensureViewData = async () => {};
-        loadParliament = async () => {};
-        generateOfficeDraftsInBackground = async () => {};
+        loadParliament = async () => { __bgParliamentReads++; };
+        generateOfficeDraftsInBackground = async () => { __bgPreparations++; };
       }
     };`;
 
@@ -136,6 +139,13 @@ const okResponse = (payload) => ({ ok: true, status: 200, json: () => Promise.re
   try { await bg.run(); } catch (_) { threw = true; }
   check("Ohne Cache + Fehler -> loadBriefing re-throwt (Boot-Handler), kein irreführender Toast",
     threw && bg.toasts().length === 0);
+
+  // Radar reads the existing start contract without adding background work.
+  bg.clear(); bg.setCache(CACHE); bg.setFetch(async () => okResponse(CACHE()));
+  const priorPreparations = bg.preparations(), priorParliamentReads = bg.parliamentReads();
+  check("Read-only-Start bestaetigt seinen geladenen Stand", await bg.run({ readOnly: true }) === true);
+  check("Read-only-Start startet weder Buerovorbereitung noch Parlamentsnachladen",
+    bg.preparations() === priorPreparations && bg.parliamentReads() === priorParliamentReads);
 
   console.log(`\n${passed}/${passed + failed} Hintergrund-Refresh-Ehrlichkeit-Assertions erfolgreich.`);
   if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }

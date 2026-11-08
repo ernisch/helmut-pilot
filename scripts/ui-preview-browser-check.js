@@ -6,18 +6,28 @@ const fs = require("fs");
 const path = require("path");
 const assert = require("assert/strict");
 const { createHash } = require("crypto");
-const { spawn } = require("child_process");
+const { spawn, execFileSync } = require("child_process");
 const { payload, item } = require("./fixtures/ui-preview");
 const contractCases = process.argv.includes("--integration-contracts") ? require("./ui-integration-contract-browser-cases") : null;
 const bindingCases = contractCases || (process.argv.includes("--office-binding") ? require("./ui-office-binding-browser-cases") : null);
 const root = path.resolve(__dirname, "..");
-const output = path.join(root, contractCases ? "tmp/ui-integration-contract-artifacts" : bindingCases ? "tmp/ui-office-binding-artifacts" : "tmp/ui-preview-artifacts");
+const baselineIndex = process.argv.indexOf("--baseline-ref");
+const baselineRef = baselineIndex < 0 ? "" : process.argv[baselineIndex + 1];
+const readingFollowup = process.argv.includes("--reading-followup");
+assert(!readingFollowup || (!baselineRef && !bindingCases), "Follow-up uses current fixture UI only");
+assert(!baselineRef || /^[a-f0-9]{40}$/.test(baselineRef), "Baseline must be an exact local commit");
+assert(!baselineRef || !bindingCases, "Baseline applies only to the fixture UI runner");
+const readAppFile = file => baselineRef && ["client.js", "styles.css", "index.html"].includes(file)
+  ? execFileSync("git", ["show", `${baselineRef}:${file}`], { cwd: root })
+  : fs.readFileSync(path.join(root, file));
+const output = path.join(root, baselineRef ? "tmp/ui-reading-baseline-artifacts" : contractCases ? "tmp/ui-integration-contract-artifacts" : bindingCases ? "tmp/ui-office-binding-artifacts" : "tmp/ui-preview-artifacts");
 assert(process.env.UI_NETWORK_PROOF, "Use ui-preview-isolated.py; app start prohibited without proof");
 const proof = JSON.parse(fs.readFileSync(process.env.UI_NETWORK_PROOF));
 assert(proof.verifiedBeforeAppStart && proof.parentNetNS !== proof.testNetNS);
 assert.equal(proof.testNetNS, fs.readlinkSync("/proc/self/ns/net"));
 const origin = "http://helmut-ui.test";
 const requests = [], errors = [], passes = [];
+let failStartRead = false;
 const check = (name, condition, detail) => {
   assert.ok(condition, name + (detail ? ": " + JSON.stringify(detail) : ""));
   passes.push(name); console.log("PASS ", name);
@@ -30,7 +40,7 @@ payload.briefing.currentRadarState.articles = [
   { ...item, id: "article-party", title: "Synthetischer Parteibericht", relation: "party", type: "party", relationTypes: ["party"] },
   { ...item, id: "article-official", title: "Synthetische amtliche Quelle", relation: "official", type: "official", relationTypes: ["official"] },
 ];
-const source = fs.readFileSync(path.join(root, "client.js"), "utf8");
+const source = readAppFile("client.js").toString("utf8");
 assert(/^\s*loadBriefing\(\)/m.test(source), "Expected bootstrap marker missing; stop rather than run real bootstrap");
 const fixtureBootstrap = `
   const __basePayload = ${JSON.stringify(payload)}, __baseCard = ${JSON.stringify(card)};
@@ -51,10 +61,12 @@ const fixtureBootstrap = `
     reset() { __resetUi(); currentView='helmut'; render(); },
     state(kind) {
       __resetUi();
-      if (kind === 'empty') {
+      if (kind === 'empty' || kind === 'unconfirmed' || kind === 'stale-empty') {
         briefing.currentHelmutState.status='empty'; briefing.currentHelmutState.primaryItem=null;
         briefing.lageBriefing.vorgaenge=[]; briefing.currentRadarState.mentions=[]; briefing.currentRadarState.articles=[];
         briefing.currentRadarState.environment={party:[],constituency:[],committees:[]}; briefing.currentRadarState.dynamics=[]; decisions=[];
+        if(kind==='unconfirmed') briefing.currentRadarState.quality.sourcesLoaded=false;
+        if(kind==='stale-empty') {briefing.currentRadarState.status='stale';briefing.currentRadarState.emptyState={kind:'stale',detail:'Synthetische Einschränkung: Der vorhandene Quellenstand ist älter.'};}
       } else if (kind === 'error') {
         briefing.available=false; briefing.reason='store-error';
         briefing.currentHelmutState.status='error'; briefing.currentRadarState.available=false;
@@ -149,12 +161,13 @@ async function main() {
         code=value.status ?? 200; mime=value.contentType || mime;
         body=value.rawBody ?? JSON.stringify(value.body);
       } else body=JSON.stringify(value);
+      if (failStartRead && url.pathname === "/api/app/start") { code=503; body="{}"; }
     } else {
       const relative = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
       const file = path.resolve(root, relative);
       const allowed = ["index.html","styles.css","site.webmanifest"].includes(relative) || relative.startsWith("assets/");
       if (allowed && file.startsWith(root + path.sep) && fs.existsSync(file) && fs.statSync(file).isFile()) {
-        body=fs.readFileSync(file);
+        body=readAppFile(relative);
         mime=({".html":"text/html",".css":"text/css",".ttf":"font/ttf",".woff2":"font/woff2",".svg":"image/svg+xml",".png":"image/png",".jpg":"image/jpeg",".ico":"image/x-icon",".webmanifest":"application/manifest+json"})[path.extname(file)] || "application/octet-stream";
       } else { code=404; body="Blocked/unavailable fixture resource"; mime="text/plain"; }
     }
@@ -215,6 +228,27 @@ async function main() {
         const info=await cdp.evaluate(s,"({width:innerWidth,doc:document.documentElement.scrollWidth,page:document.querySelector('.ui-page').scrollWidth,client:document.querySelector('.ui-page').clientWidth})");
         check(label+": "+name+" no horizontal overflow",info.doc<=info.width && info.page<=info.client,info);
       };
+      if (readingFollowup) {
+        for (const theme of ['dark','light']) {
+          await cdp.evaluate(s,`__uiPreview.reset();document.documentElement.dataset.theme='${theme}';briefing.currentHelmutState.recommendation='';__uiPreview.view('helmut');`);
+          check(label+': '+theme+' supplied daily reason without recommendation visible',await cdp.evaluate(s,"document.querySelector('.ui-recommendation-why').textContent.includes('Warum heute relevant:') && document.querySelector('.ui-recommendation-why').textContent.includes(briefing.currentHelmutState.whyItMatters)"));
+          check(label+': '+theme+' no invented recommendation or office CTA',await cdp.evaluate(s,"!document.querySelector('.ui-briefing-hero [data-briefing-office]') && !document.querySelector('.ui-briefing-hero').textContent.includes('KI-Empfehlung')"));
+          await layout(theme+' reason without recommendation');await screenshot(theme+'-reason-without-recommendation');
+          await cdp.evaluate(s,"briefing.currentHelmutState.whyItMatters='';render()");
+          check(label+': '+theme+' no empty reason placeholder',await cdp.evaluate(s,"!document.querySelector('.ui-recommendation-why')"));
+          await cdp.evaluate(s,"__uiPreview.reset();__uiPreview.view('helmut')");
+          check(label+': '+theme+' actual recommendation retains adjacent reason',await cdp.evaluate(s,"!!document.querySelector('[data-briefing-office]') && document.querySelector('.ui-recommendation-why').textContent.includes('Begründung:')"));
+          for (const kind of ['filled','empty','unconfirmed','stale','stale-empty','error']) {
+            await cdp.evaluate(s,`__uiPreview.${kind==='filled' ? 'reset()' : `state('${kind}')`};__uiPreview.view('radar')`);
+            check(label+': '+theme+' '+kind+' Radar without manual update UI',await cdp.evaluate(s,"!document.querySelector('[data-radar-refresh],.radar2-refresh,[data-radar-refresh-purpose],#radar-refresh-purpose') && !document.querySelector('#radar2-root').textContent.includes('Stand neu laden') && !document.querySelector('#radar2-root').textContent.includes('Lädt den gespeicherten Stand neu')"));
+            check(label+': '+theme+' '+kind+' coverage caveat remains',await cdp.evaluate(s,"document.querySelector('[data-radar-provenance]').textContent.includes('Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen')"));
+            if(kind==='filled') check(label+': '+theme+' source date remains',await cdp.evaluate(s,"document.querySelector('.radar2-status').textContent.includes('Neueste angezeigte Quelle:')"));
+            if(kind==='stale-empty') check(label+': '+theme+' stale caveat remains',await cdp.evaluate(s,"!!document.querySelector('[data-empty-kind=stale]') && document.querySelector('#radar2-root').textContent.includes('Synthetische Einschränkung: Der vorhandene Quellenstand ist älter.')"));
+            if(kind==='error') check(label+': '+theme+' technical error remains',await cdp.evaluate(s,"document.querySelector('#radar2-root').textContent.includes('Radar derzeit nicht ladbar') && !document.querySelector('.topbar .ui-status--fresh')"));
+            await layout(theme+' '+kind+' Radar');await screenshot(theme+'-'+kind+'-radar');
+          }
+        }
+      } else {
       const screenshotBottom=async name=>{
         const moved=await cdp.evaluate(s,"(()=>{const p=document.querySelector('#uiPage');p.scrollTop=p.scrollHeight;return p.scrollTop>0;})()");
         if(moved) await screenshot(name+'-bottom');
@@ -235,12 +269,12 @@ async function main() {
         }
         await layout(view); await screenshot(view); await screenshotBottom(view);
         if(view==="briefing") {
-          await cdp.evaluate(s,"document.querySelector('[data-ui-lage-select]').focus()");
-          await cdp.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13},s);
-          await cdp.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13},s);
+          await click('[data-ui-lage-select]');
+          check(label+": Lage detail actually opened",await cdp.evaluate(s,"uiLageDetailOpen && (!matchMedia('(max-width:767px)').matches || getComputedStyle(document.querySelector('.ui-lage-detail')).display!=='none')"));
           check(label+": Lage detail source preserved",await cdp.evaluate(s,"!!document.querySelector('.ui-lage-detail .vsheet-src[href]')"));
           await screenshot("lage-detail");
           await cdp.evaluate(s,"document.querySelector('[data-ui-lage-back]').click()");
+          for(let i=0;i<30 && await cdp.evaluate(s,"uiLageDetailOpen");i++) await new Promise(r=>setTimeout(r,20));
           check(label+": Lage back",await cdp.evaluate(s,"!uiLageDetailOpen"));
         }
         if(view==="radar") {
@@ -288,6 +322,107 @@ async function main() {
       check(label+": loading state",await cdp.evaluate(s,"!!document.querySelector('.helmut-refresh')"));
       await cdp.evaluate(s,"__uiPreview.reset(); document.documentElement.dataset.theme='light'");
       await layout("light theme"); await screenshot("light");
+      if (baselineRef) {
+        for(const theme of ['dark','light']) {
+          await cdp.evaluate(s,`__uiPreview.reset(); document.documentElement.dataset.theme='${theme}'`);
+          for(const view of ['helmut','briefing','radar']) {
+            await cdp.evaluate(s,`__uiPreview.view('${view}')`); await layout(theme+' baseline '+view); await screenshot(theme+'-'+view);
+          }
+          await cdp.evaluate(s,"__uiPreview.view('briefing')"); await click('[data-ui-lage-select]');
+          check(label+': '+theme+' baseline actual detail visible',await cdp.evaluate(s,"uiLageDetailOpen"));
+          await screenshot(theme+'-detail');
+        }
+      } else {
+      // Same real Chromium harness, focused reading acceptance for the three requested views.
+      for (const theme of ['dark','light']) {
+        await cdp.evaluate(s,`__uiPreview.reset(); document.documentElement.dataset.theme='${theme}';
+          profile.parliamentType='Bundestag'; profile.constituency='Synthetischer Wahlkreis';
+          briefing.lageBriefing.vorgaenge[0].relevanz={satz:'Betrifft Ihren Ausschuss: Testausschuss.',belege:[{art:'ausschuss',text:'Ihr Ausschuss: Testausschuss'}]};`);
+        for (const view of ['helmut','briefing','radar']) {
+          await cdp.evaluate(s,`__uiPreview.view('${view}')`);
+          await layout(theme+' '+view); await screenshot(theme+'-'+view);
+          check(label+': '+theme+' '+view+' Berlin time named',await cdp.evaluate(s,"document.querySelector('.ui-date').textContent.includes('Berliner Zeit')"));
+          check(label+': '+theme+' '+view+' formal UI address',await cdp.evaluate(s,"!/[Dd]ein(?:e[nmrs]?)?\\b|\\bdich\\b|\\bdu\\b/.test(document.querySelector('#uiPage').innerText)"));
+        }
+        await cdp.evaluate(s,`__uiPreview.view('helmut')`);
+        check(label+': '+theme+' reason visible beside recommendation',await cdp.evaluate(s,"(()=>{const e=document.querySelector('.ui-recommendation-why');return e && e.getBoundingClientRect().height>0 && !e.closest('details');})()"));
+        check(label+': '+theme+' direct briefing source',await cdp.evaluate(s,"document.querySelector('.ui-source-direct').href==='https://example.test/ui'"));
+        await cdp.evaluate(s,"window.__sourceClickSeen=false;document.querySelector('.ui-source-direct').addEventListener('click',e=>{e.preventDefault();window.__sourceClickSeen=true;},{once:true})");
+        await click('.ui-source-direct');
+        check(label+': '+theme+' direct original source can be tapped',await cdp.evaluate(s,"window.__sourceClickSeen"));
+        // Many copies use existing synthetic UI content solely to make list scroll restoration observable.
+        await cdp.evaluate(s,`__uiPreview.view('briefing');
+          { const original=briefing.lageBriefing.vorgaenge[0];
+          briefing.lageBriefing.vorgaenge=Array.from({length:8},(_,i)=>({...original,id:'reading-'+i,vorgangId:'reading-'+i}));
+          render(); }`);
+        await click('[data-ui-lage-select="reading-3"]');
+        check(label+': '+theme+' detail selected ID retained',await cdp.evaluate(s,"uiLageDetailOpen && uiLageSelectedId==='reading-3'"));
+        if(mobile) {
+          check(label+': '+theme+' general detail header hidden',await cdp.evaluate(s,"getComputedStyle(document.querySelector('.ui-lage-page-heading')).display==='none'"));
+          check(label+': '+theme+' back appears within first 150px',await cdp.evaluate(s,"document.querySelector('[data-ui-lage-back]').getBoundingClientRect().top<150"));
+        }
+        check(label+': '+theme+' detail source before additional interpretation',await cdp.evaluate(s,"!!(document.querySelector('.ui-source-access').compareDocumentPosition([...document.querySelectorAll('.vsheet-h')].find(e=>e.textContent==='Zusätzliche Einordnung').parentElement)&Node.DOCUMENT_POSITION_FOLLOWING)"));
+        await screenshot(theme+'-detail');
+        if(mobile) {
+          const remembered=await cdp.evaluate(s,"history.state.helmutLage.scrollTop");
+          check(label+': '+theme+' real nonzero list position saved',remembered>0,remembered);
+          await cdp.evaluate(s,"history.back()");
+          for(let i=0;i<30 && await cdp.evaluate(s,"uiLageDetailOpen");i++) await new Promise(r=>setTimeout(r,20));
+          check(label+': '+theme+' browser back restores list position',await cdp.evaluate(s,`!uiLageDetailOpen && Math.abs(document.querySelector('#uiPage').scrollTop-${remembered})<2`));
+          await cdp.evaluate(s,"history.forward()");
+          for(let i=0;i<30 && !await cdp.evaluate(s,"uiLageDetailOpen");i++) await new Promise(r=>setTimeout(r,20));
+          check(label+': '+theme+' browser forward restores detail',await cdp.evaluate(s,"uiLageDetailOpen && uiLageSelectedId==='reading-3'"));
+          await click('[data-ui-lage-back]');
+          for(let i=0;i<30 && await cdp.evaluate(s,"uiLageDetailOpen");i++) await new Promise(r=>setTimeout(r,20));
+          check(label+': '+theme+' back button restores list',await cdp.evaluate(s,"!uiLageDetailOpen"));
+        }
+        for (const kind of ['empty','unconfirmed','stale','stale-empty','error','long']) {
+          await cdp.evaluate(s,`__uiPreview.state('${kind}')`);
+          for (const view of ['helmut','briefing','radar']) {
+            await cdp.evaluate(s,`__uiPreview.view('${view}')`); await layout(theme+' '+kind+' '+view);
+            if(label==='mobile') await screenshot(theme+'-'+kind+'-'+view);
+          }
+          if(kind==='unconfirmed') check(label+': '+theme+' unconfirmed Radar has no false current topbar',await cdp.evaluate(s,"!document.querySelector('.topbar .ui-status--fresh') && document.querySelector('.topbar').textContent.includes('Quellenprüfung offen')"));
+          if(kind==='stale-empty') check(label+': '+theme+' stale empty Radar retains supplied caveat',await cdp.evaluate(s,"document.querySelector('#radar2-root').textContent.includes('Synthetische Einschränkung: Der vorhandene Quellenstand ist älter.') && document.querySelector('[data-empty-kind=stale]')!==null"));
+          if(kind==='long') {
+            await cdp.evaluate(s,"__uiPreview.view('briefing')"); await click('[data-ui-lage-select]');
+            check(label+': '+theme+' long detail full title',await cdp.evaluate(s,"document.querySelector('#ui-lage-detail-title').textContent===lageField(briefing.lageBriefing.vorgaenge[0].displayTitle) && getComputedStyle(document.querySelector('#ui-lage-detail-title')).webkitLineClamp==='none'"));
+            await layout(theme+' long detail'); if(mobile) await screenshot(theme+'-long-detail');
+          }
+        }
+        await cdp.evaluate(s,`__uiPreview.reset(); { const st=briefing.currentHelmutState;
+          st.status='empty';st.primaryItem=null;st.emptyState={kind:'quiet',detail:'Synthetische Einschränkung bleibt erreichbar.'};
+          st.frischeVertrag={aktuell:true,ruhelage:true};__uiPreview.view('helmut'); }`);
+        check(label+': '+theme+' quiet explanation and Lage count',await cdp.evaluate(s,"document.querySelector('.hstand-state-card--quiet').textContent.includes('keine Entwarnung') && document.querySelector('.hstand-state-lage').textContent.includes('2 Themen')"));
+        await screenshot(theme+'-quiet-briefing');
+        for(const [parliament,state,expected,committees,focusTopics] of [['Bundestag','Niedersachsen','Bundestag',['Ausschuss für Gesundheit'],['Pflegeversicherung']],['Abgeordnetenhaus','Berlin','Abgeordnetenhaus Berlin',['Ausschuss für Stadtentwicklung, Bauen und Wohnen'],['Mietrecht']],['Landtag','Brandenburg','Landtag Brandenburg',['Ausschuss für Landwirtschaft'],['Landwirtschaft']]]) {
+          await cdp.evaluate(s,`profile.parliamentType='${parliament}';profile.politicalLevel='${parliament === 'Bundestag' ? 'Bund' : 'Land'}';profile.state='${state}';profile.committees=${JSON.stringify(committees)};profile.focusTopics=${JSON.stringify(focusTopics)};render()`);
+          check(label+': '+theme+' mandate '+expected,await cdp.evaluate(s,`document.querySelector('.ui-mandate-context summary').textContent.includes('${expected}')`));
+          await click('.ui-mandate-context summary'); await layout(theme+' mandate '+expected);
+          if(label==='mobile' && theme==='light') await screenshot('mandate-'+state+'-'+parliament);
+        }
+      }
+      }
+      }
+      if (!baselineRef) {
+      // Exercise the existing automatic foreground loader; mock only outer boundaries.
+      await cdp.evaluate(s,`__uiPreview.reset();__uiPreview.view('radar');persistView('radar');
+        fetchAuthState=async()=>({mode:'accounts',authenticated:true,user:currentUser,profiles:[{id:profile.id,name:profile.fullName}]});
+        generateOfficeDraftsInBackground=()=>{};loadParliament=()=>{};`);
+      const readRequestStart=requests.length;
+      await cdp.evaluate(s,"previewMode=false;lastBriefingLoadAt=0;document.dispatchEvent(new Event('visibilitychange'))");
+      for(let i=0;i<100 && await cdp.evaluate(s,'briefingRefreshing');i++) await new Promise(r=>setTimeout(r,20));
+      check(label+': automatic foreground load completes',await cdp.evaluate(s,"!briefingRefreshing && lastBriefingLoadAt>0 && currentView==='radar'"));
+      await cdp.evaluate(s,`window.__radarBeforeFailure={source:document.querySelector('.radar2-status').textContent,provenance:document.querySelector('[data-radar-provenance]').textContent};
+        window.__foregroundFailure=''; {const warn=console.warn;console.warn=(...args)=>{if(args[0]==='Foreground-Refresh fehlgeschlagen')window.__foregroundFailure=String(args[1]);warn(...args);};}`);
+      failStartRead=true;
+      await cdp.evaluate(s,"lastBriefingLoadAt=0;document.dispatchEvent(new Event('visibilitychange'))");
+      for(let i=0;i<100 && await cdp.evaluate(s,'briefingRefreshing');i++) await new Promise(r=>setTimeout(r,20));
+      check(label+': automatic foreground failure preserves prior content without success claim',await cdp.evaluate(s,"!briefingRefreshing && window.__foregroundFailure.includes('503') && !!document.querySelector('.radar2-card--mention') && document.querySelector('.radar2-status').textContent===window.__radarBeforeFailure.source && document.querySelector('[data-radar-provenance]').textContent===window.__radarBeforeFailure.provenance && !document.querySelector('#radar2-root').textContent.includes('erfolgreich aktualisiert')"));
+      failStartRead=false;
+      const readRequests=requests.slice(readRequestStart).filter(r=>new URL(r.url).pathname.startsWith('/api/'));
+      check(label+': automatic Radar load issued only existing GET start reads',readRequests.length===2 && readRequests.every(r=>r.method==='GET' && new URL(r.url).pathname==='/api/app/start'),readRequests);
+      }
       // Negative control: intentionally attempted external fetch must fail at interception.
       check(label+": external fetch denied",await cdp.evaluate(s,"fetch('https://example.invalid/network-negative-control').then(()=>false,()=>true)"));
       if(mobile) {
@@ -313,8 +448,8 @@ async function main() {
       if (!pathname.startsWith("/api/")) files.add(pathname === "/" ? "index.html" : pathname.slice(1));
     }
     const sha256 = value => createHash("sha256").update(value).digest("hex");
-    const testedFiles = Object.fromEntries([...files].sort().map(file => [file, sha256(fs.readFileSync(path.join(root, file)))]));
-    fs.writeFileSync(path.join(output,"BROWSER_RESULT.json"),JSON.stringify({status:completed?"PASS":"FAIL",passes,errors,externalRequestsFulfilled:requests.filter(r=>new URL(r.url).origin!==origin && r.action!=="blocked").length,negativeControlsBlocked:requests.filter(r=>r.action==="blocked").length,bootstrap:bindingCases ? "unmodified full client including normal loadBriefing/auth/CSRF; every API mocked in memory" : "actual client with fixture initialization; real backend bootstrap removed",...(bindingCases ? {apiEvidence:bindingCases.evidence()} : {}),chromium:"/usr/bin/chromium",browserVersion,testedFiles,servedClientSha256:sha256(client)},null,2)+"\n");
+    const testedFiles = Object.fromEntries([...files].sort().map(file => [file, sha256(readAppFile(file))]));
+    fs.writeFileSync(path.join(output,"BROWSER_RESULT.json"),JSON.stringify({status:completed?"PASS":"FAIL",baselineRef:baselineRef || null,passes,errors,externalRequestsFulfilled:requests.filter(r=>new URL(r.url).origin!==origin && r.action!=="blocked").length,negativeControlsBlocked:requests.filter(r=>r.action==="blocked").length,bootstrap:bindingCases ? "unmodified full client including normal loadBriefing/auth/CSRF; every API mocked in memory" : "actual client with fixture initialization; real backend bootstrap removed",...(bindingCases ? {apiEvidence:bindingCases.evidence()} : {}),chromium:"/usr/bin/chromium",browserVersion,testedFiles,servedClientSha256:sha256(client)},null,2)+"\n");
     try { await cdp.send("Browser.close"); } catch {}
     if(chrome.exitCode===null) chrome.kill();
   }

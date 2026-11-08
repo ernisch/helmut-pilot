@@ -102,7 +102,7 @@ check("Radar mit Quellenbeleg: keine sichtbaren Signale beweisen keine fehlenden
 for (const kind of ["gap", "stale"]) {
   const rGap = ui.radarEmpty({ ...gap, tab: "radar", kind });
   check(`Radar ${kind}: ausdrueckliche Datenluecke bleibt sichtbar`,
-    rGap.includes(gap.headline) && rGap.includes(gap.detail)
+    rGap.includes(kind === "stale" ? "Radarstand veraltet" : gap.headline) && rGap.includes(gap.detail)
       && rGap.includes(`data-empty-kind="${kind}"`));
 }
 const rError = ui.radarEmpty(quietRadar, { status: "error", quality: { sourcesLoaded: true } });
@@ -114,7 +114,7 @@ console.log("== HELMUT-Leerzustand ==");
 const hq = ui.helmutEmpty(quietHelmut);
 check("Helmut quiet: zeigt Handlungsbedarf-Text + kind", hq.includes("nichts zu tun") && /data-empty-kind="quiet"/.test(hq));
 const hNone = ui.helmutEmpty(null);
-check("Helmut ohne emptyState: Alt-Text 'Heute kein Handlungsbedarf'", hNone.includes("Heute kein Handlungsbedarf") && !/data-empty-kind/.test(hNone));
+check("Helmut ohne emptyState: keine erfundene Entwarnung", hNone.includes("Keine Tagespriorität belegt") && !/data-empty-kind/.test(hNone));
 
 console.log("== Drei Tabs UI-seitig unterscheidbar ==");
 check("drei quiet-Ueberschriften unterschiedlich gerendert",

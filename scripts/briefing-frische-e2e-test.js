@@ -276,7 +276,7 @@ check("2k Kompakte Antwort traegt denselben Vertrag",
   }));
   const htmlRuhe = api.render();
   check("4l Ruhelage benennt die fehlende Tagespriorität ohne Meldungen auszublenden",
-    htmlRuhe.includes("Keine neue Tagespriorität belegt.")
+    htmlRuhe.includes("Keine neue Tagespriorität")
     && !htmlRuhe.includes("Ältere Vorgänge stehen als weiterhin relevant oder Hintergrund darunter."));
   check("4m Ruhelage zeigt keine 'neu'-Gruppe", !htmlRuhe.includes('data-frische-klasse="neu"'));
 

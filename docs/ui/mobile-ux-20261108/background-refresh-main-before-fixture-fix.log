@@ -1,0 +1,41 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+PASS  Quelle: unehrliche Meldung 'Helmut aktualisiert im Hintergrund' ist entfernt
+PASS  Quelle: ehrliche Fehl-/Stand-Meldung ist vorhanden
+Live update after cached start failed Error: network down
+    at /workspace/helmut-pilot/scripts/background-refresh-honesty-test.js:102:67
+    at loadBriefing (client.js:549:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+PASS  Netzfehler nach Cache-Render -> ehrliche Meldung (kein 'im Hintergrund')
+Live update after cached start failed Error: Helmut konnte nicht gestartet werden (500)
+    at loadBriefing (client.js:585:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /workspace/helmut-pilot/scripts/background-refresh-honesty-test.js:109:3
+PASS  HTTP 500 nach Cache-Render -> ehrliche Meldung (kein 'im Hintergrund')
+Live update after cached start failed Error [AbortError]: aborted
+    at /workspace/helmut-pilot/scripts/background-refresh-honesty-test.js:114:71
+    at loadBriefing (client.js:549:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+PASS  Timeout/Abbruch nach Cache-Render -> ehrliche Meldung
+Live update after cached start failed TypeError: Cannot read properties of null (reading 'id')
+    at loadBriefing (client.js:601:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /workspace/helmut-pilot/scripts/background-refresh-honesty-test.js:120:3
+FAIL  Erfolgreiche Aktualisierung -> KEIN Fehler-/Hintergrund-Toast  — ["Aktualisierung fehlgeschlagen – letzter Stand bleibt sichtbar"]
+Live update after cached start failed Error: net
+    at /workspace/helmut-pilot/scripts/background-refresh-honesty-test.js:125:67
+    at loadBriefing (client.js:549:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+Live update after cached start failed TypeError: Cannot read properties of null (reading 'id')
+    at loadBriefing (client.js:601:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /workspace/helmut-pilot/scripts/background-refresh-honesty-test.js:129:3
+FAIL  Erneuter Versuch: nach Fehler folgt bei Erfolg kein Fehler-Toast mehr
+Error: net
+    at /workspace/helmut-pilot/scripts/background-refresh-honesty-test.js:134:72
+    at loadBriefing (client.js:549:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+FAIL  Ohne Cache + Fehler -> loadBriefing re-throwt (Boot-Handler), kein irreführender Toast
+
+5/8 Hintergrund-Refresh-Ehrlichkeit-Assertions erfolgreich.
+FEHLGESCHLAGEN: 3

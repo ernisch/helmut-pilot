@@ -1,0 +1,30 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+PASS  Quelle: unehrliche Meldung 'Helmut aktualisiert im Hintergrund' ist entfernt
+PASS  Quelle: ehrliche Fehl-/Stand-Meldung ist vorhanden
+Live update after cached start failed Error: network down
+    at /workspace/helmut-pilot/scripts/background-refresh-honesty-test.js:105:67
+    at loadBriefing (client.js:549:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+PASS  Netzfehler nach Cache-Render -> ehrliche Meldung (kein 'im Hintergrund')
+Live update after cached start failed Error: Helmut konnte nicht gestartet werden (500)
+    at loadBriefing (client.js:585:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /workspace/helmut-pilot/scripts/background-refresh-honesty-test.js:112:3
+PASS  HTTP 500 nach Cache-Render -> ehrliche Meldung (kein 'im Hintergrund')
+Live update after cached start failed Error [AbortError]: aborted
+    at /workspace/helmut-pilot/scripts/background-refresh-honesty-test.js:117:71
+    at loadBriefing (client.js:549:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+PASS  Timeout/Abbruch nach Cache-Render -> ehrliche Meldung
+PASS  Erfolgreiche Aktualisierung -> KEIN Fehler-/Hintergrund-Toast
+Live update after cached start failed Error: net
+    at /workspace/helmut-pilot/scripts/background-refresh-honesty-test.js:128:67
+    at loadBriefing (client.js:549:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+PASS  Erneuter Versuch: nach Fehler folgt bei Erfolg kein Fehler-Toast mehr
+PASS  Ohne Cache + Fehler -> loadBriefing re-throwt (Boot-Handler), kein irreführender Toast
+PASS  Read-only-Start bestaetigt seinen geladenen Stand
+PASS  Read-only-Start startet weder Buerovorbereitung noch Parlamentsnachladen
+
+10/10 Hintergrund-Refresh-Ehrlichkeit-Assertions erfolgreich.

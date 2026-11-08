@@ -1,0 +1,82 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+== A · Erklaerungsmodul ==
+PASS  A1 Fall 1: gespeicherte Begruendung wird 1:1 uebernommen
+PASS  A2 Fall 1: Belege aus signale, in Prioritaetsreihenfolge
+PASS  A3 Fall 2: nur signale -> Satz abgeleitet
+PASS  A4 Fall 2: Ableitung ist deterministisch (zweimal identisch)
+PASS  A5 Fall 3: Satz ohne Beleg wird NICHT angezeigt
+PASS  A6 Fall 4: Legacy (run_id=NULL) erklaert aus matched_features
+PASS  A7 Fall 5: Legacy ohne jeden Beleg -> null (kein Ersatztext)
+PASS  A8 Fall 5: leeres/rein numerisches signale -> null
+PASS  A9 Fall 6: aktuell=false wird nie erklaert
+PASS  A10 Fall 7: null/Array/String/Zahl -> null statt Fehler
+PASS  A11 Fall 7: kaputtes signale-JSON faellt still auf matched_features zurueck
+PASS  A12 Fall 7: signale als JSON-STRING wird akzeptiert
+PASS  A13 ueberlanger Signalwert wird auf 80 Zeichen begrenzt
+PASS  A14 ueberlanger Satz wird auf MAX_SATZ begrenzt
+PASS  A15 Nicht-Zeichenketten in signale werden verworfen
+PASS  A16 Zeilenumbrueche/Steuerzeichen werden normalisiert
+PASS  A17 nie mehr als MAX_BELEGE Belege
+PASS  A18 Breite vor Tiefe: je Signalart zuerst EIN Beleg
+PASS  A19 doppelte Werte erscheinen nur einmal
+PASS  A20 kein einziges technisches Auditfeld in der Ausgabe
+PASS  A21 Ausgabe enthaelt ausschliesslich satz + belege
+PASS  A22 keine Ziffer in der sichtbaren Ausgabe
+PASS  A23 leere Zeile erzeugt keine Erklaerung
+PASS  A24 Belegtexte enthalten nur Werte, die auch in den Signalen stehen
+
+== B · Vorbedingung im Lesepfad (listMatchingResults) ==
+PASS  B1 Vorbedingung: Default filtert auf aktuell=true (Fix aus PR #172)
+PASS  B2 Mandantenfilter bleibt Pflicht
+PASS  B3 aktuelle Projektion sortiert rank-primaer (rank.asc.nullslast,id.asc)
+PASS  B4 Historienzugang bleibt erhalten (includeAbgeloest=true ohne Filter)
+PASS  B5 ohne Mandant -> harter Fehler (kein stiller Alle-Mandanten-Lesezugriff)
+
+== C · Serverpfad (lage.js) ==
+PASS  C1 fachfremder Vorgang erscheint trotz vorhandenem Altmatch NICHT
+PASS  C2 aktueller Vorgang traegt frisch berechneten Fachgrund statt gespeichertem Text
+PASS  C3 passender Vorgang ohne alte Matchsignale bekommt heutigen Fachgrund
+PASS  C4 fachlich gleiche Kandidaten bleiben deterministisch geordnet
+PASS  C5 koToVorgangCard reicht relevanz als { satz, belege } durch
+PASS  C6 Karte enthaelt keine technischen Auditfelder
+PASS  C6b Matching allein heilt keinen fehlenden Quellenauszug
+PASS  C7 Auch passender Fachgrund heilt keinen fehlenden Quellenauszug
+PASS  C8 Legacy-Parteitreffer ersetzt keine fachliche Aufnahme; beide passenden Kandidaten bleiben
+PASS  C8b Die Reihenfolge ist deterministisch bei gleicher fachlicher Prioritaet
+PASS  C8c Zwei Laeufe liefern dieselbe Reihenfolge
+PASS  C9 Jeder Legacykandidat hat einen heutigen Fachgrund, keine alte Parteierklaerung
+PASS  C10 Ohne gespeichertes Matching bleiben nur fachlich begruendete Kandidaten
+PASS  C11 Offline-Matching behaelt die fachlich passende Menge und heutige Gruende
+PASS  C11b Auch dieser Pfad ist deterministisch geordnet
+PASS  C12 Mandant A sieht ausschliesslich die heutige eigene Facherklaerung
+PASS  C13 Mandant B sieht ausschliesslich die heutige eigene Facherklaerung
+PASS  C14 Gemeinsame Wissensobjekte bleiben bei persoenlicher Zuordnung unveraendert
+
+== D · Oberflaeche (client.js) ==
+PASS  D1 Abschnitt traegt die Ueberschrift 'Warum für Sie relevant?'
+PASS  D2 Hauptsatz ist sichtbar (Ebene 1)
+PASS  D3 Belege liegen in einer aufklappbaren zweiten Ebene
+PASS  D4 beide Belege werden als Listeneintraege gerendert
+PASS  D5 ohne Erklaerung entfaellt der Abschnitt ERSATZLOS
+PASS  D6 Satz ohne Belege rendert den Satz, aber kein leeres Aufklappen
+PASS  D7 defekte Belege werden verworfen statt gerendert
+PASS  D8 Client begrenzt zusaetzlich auf vier Belege
+PASS  D9 HTML aus den Daten wird escaped (kein Markup-Durchgriff)
+PASS  D10 technische Auditfelder erscheinen nicht im gerenderten HTML
+PASS  D11 persoenliche Relevanz steht VOR 'Zusätzliche Einordnung'
+PASS  D12 Alt-Vorgang ohne Erklaerung: Sheet unveraendert, kein leerer Abschnitt
+PASS  D13 mobil: Belege sind zugeklappt, Hauptsatz ohne Interaktion sichtbar
+PASS  D14 mobil: Aufklapper hat eine daumengerechte Trefferflaeche
+PASS  D15 Stile nutzen bestehende Design-Tokens (keine neue Farbwelt)
+PASS  D16 Tastaturbedienung sichtbar fokussierbar
+
+== E · Nichtregression ==
+PASS  E1 Erklaerungsmodul enthaelt keinen KI-/Netz-/DB-Aufruf
+PASS  E2 Erklaerungsmodul ist frei von Zufall und Zeit
+PASS  E3 keine Embedding-Nutzung im neuen Pfad
+PASS  E4 neue Facherklaerung nutzt keine gespeicherte Erklaerung und keine eigene KI/DB/Netzschnittstelle
+PASS  E5 Scores/Raenge/matched_features bleiben unberuehrt
+PASS  E6 keine neue Migration in diesem Sprint
+
+== Ergebnis: 69 PASS, 0 FAIL ==

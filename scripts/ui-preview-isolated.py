@@ -75,6 +75,15 @@ with tempfile.TemporaryDirectory(prefix="ui-browser-", dir=out) as home:
     extra_args = ["--briefing-read-only"] if "--briefing-read-only" in sys.argv else []
     if extra_args:
         assert scripts == ["ui-integration-contract-browser-test.js"], "Briefing read selection requires integration contract runner"
+    if "--reading-followup" in sys.argv:
+        assert scripts == ["ui-preview-browser-check.js"], "Reading follow-up requires fixture UI runner"
+        extra_args += ["--reading-followup"]
+    if "--baseline-ref" in sys.argv:
+        import re
+        baseline_ref = sys.argv[sys.argv.index("--baseline-ref") + 1]
+        assert re.fullmatch(r"[a-f0-9]{40}", baseline_ref), "Baseline requires exact local commit"
+        assert scripts == ["ui-preview-browser-check.js"], "Baseline requires fixture UI runner"
+        extra_args += ["--baseline-ref", baseline_ref]
     for script in scripts:
         print("UI CHECK", script, flush=True)
         process = subprocess.Popen([node, "scripts/lokal.js", "--", node, "scripts/" + script, *extra_args],

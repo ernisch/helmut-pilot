@@ -1,0 +1,30 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+PASS  Quelle: kein manueller Refresh-Renderer, Handler oder Pipeline-Start im Client
+PASS  Quelle: Foreground-Refresh-Handler vorhanden (visibilitychange -> loadBriefing, gedrosselt)
+PASS  Quelle: loadBriefing hat Re-Entrancy-Guard + Drossel-Stempel (try/finally)
+PASS  Quelle: Tageswechsel-Rerender in updateBerlinClock (relative Frische bleibt ehrlich)
+PASS  client.js lädt im vm (Boot ohne echten Browser)
+PASS  Lage-Frische: heutige Analysezeit -> 'Neueste Auswertung: heute, HH:MM Uhr.'
+PASS  Lage-Frische: alte Analysezeit -> datierte Zeile (NICHT 'heute')
+PASS  Lage-Frische: ~gestern -> honest label, niemals 'heute'
+PASS  Lage-Frische: fehlende/ungültige Analysezeit -> '' (kein Crash, kein Fake)
+PASS  Lage-Frische: PRIMÄRE Stand-Zeile = echte Analysezeit ('Neueste Auswertung: heute …')
+PASS  Lage-Frische: Quellen-Aktualität als GETRENNTE zweite Zeile ('Neueste Quelle vom 22. Juni')
+PASS  Lage-Frische: KEIN Widerspruch — die frische Lage behauptet NICHT 'Neueste Quelle heute' für eine wochenalte Quelle
+PASS  Lage-Frische: die Analysezeit bleibt von der alten Quellenzeit getrennt
+PASS  Lage-Frische: ohne Analysezeit fällt die Stand-Zeile ehrlich auf die Quellen-Aktualität zurück
+PASS  Lage-Frische: im Fallback KEINE doppelte Quellenzeile (nur eine Frische-Zeile)
+PASS  Lage-Frische: ganz ohne Zeitstempel rendert die Lage ohne Crash und ohne erfundene Frische
+PASS  Briefing-Kopf zeigt keinen Aktualisierungsknopf oder Ersatzknopf
+PASS  Briefing-Ansicht enthaelt keinen manuellen Refresh
+PASS  Live-Flow: Rückkehr (visible) nach Ablauf der Drossel -> genau EIN Refresh
+PASS  Live-Flow: erneutes Sichtbarwerden INNERHALB der Drossel -> KEIN weiterer Refresh
+PASS  Live-Flow: KEIN Refresh, während bereits ein Ladevorgang läuft (Re-Entrancy-Guard)
+PASS  Live-Flow: KEIN Refresh im Vorschau-Modus
+PASS  Live-Flow: KEIN Refresh, wenn die App in den Hintergrund geht (hidden)
+PASS  Tageswechsel: erste Messung initialisiert nur den Tag (kein Rerender)
+PASS  Tageswechsel: geänderter Berliner Kalendertag -> genau EIN Rerender
+PASS  Tageswechsel: gleicher Tag -> kein weiterer Rerender (keine Endlosschleife)
+
+26/26 Block-5 (Lage-Frische & Live-Flow)-Assertions erfolgreich.
