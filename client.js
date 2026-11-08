@@ -67,17 +67,13 @@ let radarArchive = [];
 let radarBuckets = null;
 let radarArchiveLoaded = false;
 // Radar-UI-Zustand (rein clientseitig, keine Daten): aktives Umfeld-Segment,
-// aktiver Artikelfilter, Aufklapp-Zustände, Refresh-Ladeanzeige.
+// aktiver Artikelfilter und Aufklapp-Zustände.
 let radarSegment = "party";
 let radarFilter = "all";
 let radarMentionsExpanded = false;
 let radarDynamicsExpanded = false;
 let radarArticlesExpanded = false;
 let radarEnvExpanded = false;
-let radarRefreshing = false;
-// Stoerungswahrheit: Zeitstempel des letzten FEHLGESCHLAGENEN Radar-Refreshs (0 = ok).
-// Ein stiller Fehlschlag sah bisher exakt wie ein erfolgreicher Refresh aus.
-let radarRefreshFailedAt = 0;
 let opsStatusLoaded = false;
 let pushConfig = null;
 let pushAutoSyncStarted = false;
@@ -606,7 +602,6 @@ async function loadBriefing({ readOnly = false } = {}) {
       // Reject/Timeout/Abbruch, HTTP-Fehler oder JSON-Parse-Fehler). Es laeuft/plant
       // nichts mehr im Hintergrund — daher KEIN "aktualisiert im Hintergrund" (unwahr),
       // sondern eine ehrliche Meldung: der zuletzt bekannte Stand bleibt sichtbar.
-      // Retry-Moeglichkeit besteht ueber den Refresh-Button (↻) im Helmut-Kopf.
       console.warn("Live update after cached start failed", error);
       showToast("Aktualisierung fehlgeschlagen – letzter Stand bleibt sichtbar");
       return;
@@ -6488,6 +6483,7 @@ function renderUiBriefingHero(state, details = "") {
   const item = state.primaryItem;
   const title = hstandText(item.displayTitle) || hstandText(item.title);
   const recommendation = hstandText(state.recommendation);
+  const why = hstandText(state.whyItMatters);
   const stale = state.status === "stale" || state.staleState === true || state.datenstandVonHeute === false || state.frischeVertrag?.aktuell === false;
   const eyebrow = stale ? "Letzter Stand" : state.status === "fresh" ? "Heute entscheidend" : "Aktueller Vorgang";
   const urgency = hstandUrgencyChip(state.urgency || item.urgency);
@@ -6506,10 +6502,10 @@ function renderUiBriefingHero(state, details = "") {
       ${briefingLageVerweis(item)}
     </div>
     <div class="ui-hero-next">
-      <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation || "Prüfen Sie die Einordnung und Quellen zu diesem Vorgang."))}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>
-      ${recommendation && hstandText(state.whyItMatters) ? `<p class="ui-recommendation-why"><strong>Begründung:</strong> ${escapeHtml(uiSieText(hstandText(state.whyItMatters)))}</p>` : ""}
-      ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und Ihre Büro-Formate.</p>'}
-      <p class="ui-evidence-note">KI-Empfehlung und Begründung · vor Verwendung prüfen. Aussagebezogene Originalauszüge werden hier nicht mitgeliefert.</p>
+      ${recommendation ? `<button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>` : ""}
+      ${why ? `<p class="ui-recommendation-why"><strong>${recommendation ? "Begründung:" : "Warum heute relevant:"}</strong> ${escapeHtml(uiSieText(why))}</p>` : ""}
+      ${recommendation && !officeAvailable ? '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und Ihre Büro-Formate.</p>' : ""}
+      <p class="ui-evidence-note">${recommendation ? "KI-Empfehlung und Begründung" : "KI-Einordnung"} · vor Verwendung prüfen. Aussagebezogene Originalauszüge werden hier nicht mitgeliefert.</p>
       <p class="ui-hero-meta">${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
     </div>
     ${details ? `<details class="ui-hero-details"><summary class="ui-hero-more"><span class="ui-more-closed">Ausführlich lesen</span><span class="ui-more-open">Weniger anzeigen</span>${uiIcon("arrow")}</summary><div class="ui-hero-details-body">${details}</div></details>` : ""}
@@ -8195,22 +8191,11 @@ function renderRadarHeader(state) {
   const provenance = `${created ? `Ansicht erstellt: ${created}. ` : ""}Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen.`;
   const disruptionNote = disruption && radarStateHasContent(state)
     ? `<p class="radar2-refresh-note" data-radar-read-error>${escapeHtml(disruption.title)}. ${escapeHtml(disruption.sub)} Vorhandene Inhalte bleiben sichtbar.</p>` : "";
-  // Stoerungswahrheit: ein fehlgeschlagener Refresh bleibt nicht mehr stumm —
-  // ruhige Hinweiszeile mit dem Zeitstempel des letzten erfolgreichen Stands
-  // (kein Alarm-Design, die Anzeige selbst bleibt der letzte gute Stand).
-  const failNote = radarRefreshFailedAt && !radarRefreshing
-    ? `<p class="radar2-refresh-note">Aktualisierung fehlgeschlagen — vorhandene Inhalte bleiben sichtbar${sourceDate ? `. Neueste angezeigte Quelle: ${escapeHtml(sourceDate)}` : ""}.</p>`
-    : "";
   return `
     <header class="radar2-header">
       <div class="radar2-header-row">
         ${renderUiPageHeader("Radar", "Belegte Hinweise aus Ihrem politischen Umfeld.")}
-        <button class="radar2-refresh ${radarRefreshing ? "is-loading" : ""}" type="button" data-radar-refresh aria-label="Radarstand neu laden" aria-describedby="radar-refresh-purpose" ${radarRefreshing ? "aria-busy=\"true\"" : ""}>
-          ${radarIcon("refresh")}<span>Stand neu laden</span>
-        </button>
       </div>
-      <p class="radar2-refresh-note" id="radar-refresh-purpose" data-radar-refresh-purpose>Lädt den gespeicherten Stand neu. Startet keine Quellenrecherche oder neue Auswertung.</p>
-      ${failNote}
       ${disruptionNote}
       ${stale && radarStateHasContent(state) ? '<p class="radar2-refresh-note">Veralteter Radarstand: Eine aktuelle Quellenprüfung ist nicht bestätigt.</p>' : ""}
       <p class="radar2-refresh-note" data-radar-provenance>${escapeHtml(provenance)}</p>
@@ -8594,23 +8579,6 @@ function rerenderRadar() {
   bindRadarActions();
 }
 
-async function refreshRadar() {
-  if (radarRefreshing) return;
-  radarRefreshing = true;
-  rerenderRadar();
-  // Stoerungswahrheit: der Fehlschlag wird nicht mehr still geschluckt — die
-  // Anzeige bleibt beim letzten Stand, aber die Kopfzeile sagt das ehrlich
-  // (radarRefreshFailedAt -> ruhige Hinweiszeile in renderRadarHeader).
-  try {
-    const loaded = await loadBriefing({ readOnly: true });
-    radarRefreshFailedAt = loaded === true ? 0 : Date.now();
-  } catch (_) {
-    radarRefreshFailedAt = Date.now();
-  }
-  radarRefreshing = false;
-  if (currentView === "radar") rerenderRadar();
-}
-
 function bindRadarActions() {
   const root = document.getElementById("radar2-root");
   if (!root) return;
@@ -8632,9 +8600,6 @@ function bindRadarActions() {
       rerenderRadar();
     });
   });
-  root.querySelectorAll("[data-radar-refresh]").forEach((btn) => {
-    btn.addEventListener("click", () => refreshRadar());
-  });
 }
 
 // Kompakte, konturlose Line-Icons (kein Emoji) — currentColor, an die Typo angelehnt.
@@ -8647,7 +8612,6 @@ function radarIcon(name) {
     activity: `<svg ${A}><path d="M3 12h3.5l2.5-6 4 12 2.5-6H21"/></svg>`,
     trend: `<svg ${A}><path d="M4 15l5-5 3.5 3.5L20 6"/><path d="M15 6h5v5"/></svg>`,
     doc: `<svg ${A}><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M8.5 12.5h7"/><path d="M8.5 16h5"/></svg>`,
-    refresh: `<svg ${A}><path d="M20 11a8 8 0 1 0-.6 4"/><path d="M20 5v6h-6"/></svg>`,
     chevron: `<svg ${A} width="18" height="18"><path d="M9 6l6 6-6 6"/></svg>`
   };
   return ICONS[name] || "";

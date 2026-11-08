@@ -22,8 +22,6 @@ function loadClient(now) {
     setFilter: (v) => { radarFilter = v; },
     setSegment: (v) => { radarSegment = v; },
     setEnvExpanded: (v) => { radarEnvExpanded = v; },
-    setRefreshFailed: (v) => { radarRefreshFailedAt = v; },
-    refresh: (loader) => { loadBriefing = loader; currentView = "radar"; return refreshRadar(); },
     sourceDate: (v) => radarTime(v),
     updatedLabel: (v) => radarUpdatedLabel(v),
     esc: (s) => escapeHtml(s)
@@ -253,16 +251,16 @@ check("Technischer Fehler hat Vorrang vor Scoring Leertext",
   htmlEs.includes("Radar derzeit nicht ladbar") && htmlEs.includes('data-empty-kind="stoerung"')
   && !htmlEs.includes("Scoring-Headline"));
 
-// 12) Fehlgeschlagener Refresh: ruhige Hinweiszeile mit letztem gutem Stand (kein Alarm).
+// Der Radar liest den vorhandenen Startvertrag; er bietet keinen manuellen
+// Aktualisierungsauftrag und keine zugehoerige Rechercheerklaerung mehr an.
 api.setBriefing({ engine: "v3", currentRadarState: state });
-api.setRefreshFailed(Date.parse("2026-07-11T10:00:00Z"));
-const htmlFail = api.render();
-check("Refresh-Fehlschlag -> sichtbare, ruhige Hinweiszeile (Anzeige bleibt letzter Stand)",
-  htmlFail.includes("radar2-refresh-note") && htmlFail.includes("Aktualisierung fehlgeschlagen"));
-check("Refresh-Hinweis benennt das Quelldatum statt einer erfolgreichen Pruefung",
-  htmlFail.includes("vorhandene Inhalte bleiben sichtbar") && htmlFail.includes("Neueste angezeigte Quelle:"));
-api.setRefreshFailed(0);
-check("Ohne Fehlschlag erscheint kein Refresh Fehlerhinweis", !api.render().includes("Aktualisierung fehlgeschlagen"));
+const ohneRefresh = api.render();
+check("Radar hat keinen manuellen Refreshknopf oder dessen Hinweis",
+  !/data-radar-refresh|radar2-refresh(?:[\s"])|radar-refresh-purpose|Stand neu laden|Radarstand neu laden/.test(ohneRefresh)
+  && !ohneRefresh.includes("Startet keine Quellenrecherche oder neue Auswertung."));
+check("Quellenstand und Grenzen der Abdeckung bleiben ohne Refreshknopf sichtbar",
+  ohneRefresh.includes("Neueste angezeigte Quelle:")
+  && ohneRefresh.includes("Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen."));
 
 // Technische Metadaten duerfen durch die serverseitige Anzeigeauswahl nicht
 // verloren gehen; Readerzeit ist kein Quellenpruefbeleg.
@@ -314,9 +312,6 @@ check("Technischer Fehler hat auch gegenueber veraltetem Leerstand Vorrang",
   api.render().includes('data-empty-kind="stoerung"') && !api.render().includes('data-empty-kind="stale"'));
 api.setBriefing({ currentRadarState: state });
 const reloadHtml = api.render();
-check("Radar benennt das erneute Laden des gespeicherten Stands",
-  reloadHtml.includes("Stand neu laden") && /gespeichert/.test(reloadHtml)
-  && /keine (?:neue )?Quellenrecherche/.test(reloadHtml));
 check("Ein heutiges Quelldatum wird nicht als heute durchgefuehrte Pruefung ausgegeben",
   !/heute (?:geprüft|recherchiert)|Quellen heute geprüft/i.test(reloadHtml));
 
@@ -326,19 +321,5 @@ api.setBriefing({ currentRadarState: { ...state, mentions: [], articles: [], dyn
 check("Auch gelieferter Radar-Leerhinweis verwendet Sie-Ansprache", api.render().includes("Für Ihr Mandat fehlen Quellen."));
 api.setBriefing({ currentRadarState: state });
 
-async function pruefeReload() {
-  let optionen;
-  await api.refresh(async opts => { optionen = opts; return true; });
-  check("Radar-Reload verwendet den reinen Lesepfad und bestaetigt geladenen Stand",
-    optionen?.readOnly === true && !api.render().includes("Aktualisierung fehlgeschlagen"));
-  await api.refresh(async () => undefined);
-  check("Unbestaetigter Reload wird nicht als Erfolg ausgegeben",
-    api.render().includes("Aktualisierung fehlgeschlagen") && api.render().includes("Mustermann fordert Reform"));
-  await api.refresh(async () => { throw new Error("synthetischer Ladefehler"); });
-  check("Fehlgeschlagener Reload erhaelt Inhalte mit sichtbarem Fehler",
-    api.render().includes("Aktualisierung fehlgeschlagen") && api.render().includes("Mustermann fordert Reform"));
-  console.log(`\n${passed}/${passed + failed} Radar-UI-Assertions erfolgreich.`);
-  if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exitCode = 1; }
-}
-pruefeReload().catch(error => { console.error(error); process.exitCode = 1; });
-
+console.log(`\n${passed}/${passed + failed} Radar-UI-Assertions erfolgreich.`);
+if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exitCode = 1; }

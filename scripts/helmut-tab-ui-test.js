@@ -34,6 +34,7 @@ function loadClient() {
   // Test-Hook im SELBEN Scope anhaengen (Zugriff auf `briefing`-let + Render-Funktion).
   code += `\n;globalThis.__helmutTest = {
     render: () => renderHelmutStandView(),
+    hero: (state) => renderUiBriefingHero(state),
     lageCard: (v) => renderVorgangCard(v),
     lageSheet: (v) => vsheetContentHtml(v),
     lageView: () => renderLageView(),
@@ -209,6 +210,32 @@ const relCount = (html.match(/class="hstand-rel"/g) || []).length;
 check("Voll: weitere relevante Vorgaenge (1..3)", relCount >= 1 && relCount <= 3, `n=${relCount}`);
 check("Voll: Quellen-Fußzeile zeigt '18 Quellen'", html.includes("18 Quellen"));
 check("Voll: Kopf-Status 'Aktuell' (fresh)", html.includes(">Aktuell<"));
+
+// Ein belegter Tagesanlass braucht keine gespeicherte Handlungsempfehlung.
+// Beide echten Adapterpfade muessen den Anlass bis zur sichtbaren UI erhalten.
+const ohneEmpfehlungInput = { profile, decisions: [decisions[0]],
+  kosById: { "ko-vg-1": { ...koPrimary, recommendation: "", handlungsempfehlung: "" } },
+  sourcesByVorgang: sources, now: NOW };
+for (const [name, state] of [
+  ["buildCurrentHelmutState", contract.buildCurrentHelmutState(ohneEmpfehlungInput)],
+  ["toBriefingContractV3", contract.toBriefingContractV3(ohneEmpfehlungInput).currentHelmutState]
+]) {
+  check(`${name}: echter Tagesanlass und Primaervorgang trotz leerer Empfehlung`,
+    Boolean(state.primaryItem && state.whyItMatters) && state.recommendation === "");
+  api.setBriefing(briefingWith(state));
+  const ohneEmpfehlungHtml = api.render();
+  const hero = api.hero(state);
+  check(`${name}: gespeicherter Anlass wird als Warum heute relevant angezeigt`,
+    ohneEmpfehlungHtml.includes("Warum heute relevant:")
+    && hero.includes(api.esc(api.sie(state.whyItMatters))));
+  check(`${name}: keine erfundene Handlungs- oder Bueroaufforderung ohne Empfehlung`,
+    !/data-briefing-office|Ihr nächster Schritt|Entwurf im Büro öffnen|Begründung:|KI-Empfehlung/.test(hero)
+    && !hero.includes("Prüfen Sie die Einordnung und Quellen zu diesem Vorgang."));
+  const ohneWarum = api.hero({ ...state, whyItMatters: "" });
+  check(`${name}: leeres Warum erzeugt keinen Relevanzplatzhalter`,
+    !/Warum heute relevant:|Begründung:|ui-recommendation-why/.test(ohneWarum));
+}
+api.setBriefing(briefingWith(fullState));
 
 // Mobil-Reihenfolge = DOM-Reihenfolge (Flex-Column): Aktueller Vorgang zuerst
 // (der aktuelle Vorgang/Thema muss ganz oben stehen), danach Vorschlag ->

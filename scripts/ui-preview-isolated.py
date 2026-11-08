@@ -75,6 +75,9 @@ with tempfile.TemporaryDirectory(prefix="ui-browser-", dir=out) as home:
     extra_args = ["--briefing-read-only"] if "--briefing-read-only" in sys.argv else []
     if extra_args:
         assert scripts == ["ui-integration-contract-browser-test.js"], "Briefing read selection requires integration contract runner"
+    if "--reading-followup" in sys.argv:
+        assert scripts == ["ui-preview-browser-check.js"], "Reading follow-up requires fixture UI runner"
+        extra_args += ["--reading-followup"]
     if "--baseline-ref" in sys.argv:
         import re
         baseline_ref = sys.argv[sys.argv.index("--baseline-ref") + 1]

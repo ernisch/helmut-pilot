@@ -13,6 +13,8 @@ const bindingCases = contractCases || (process.argv.includes("--office-binding")
 const root = path.resolve(__dirname, "..");
 const baselineIndex = process.argv.indexOf("--baseline-ref");
 const baselineRef = baselineIndex < 0 ? "" : process.argv[baselineIndex + 1];
+const readingFollowup = process.argv.includes("--reading-followup");
+assert(!readingFollowup || (!baselineRef && !bindingCases), "Follow-up uses current fixture UI only");
 assert(!baselineRef || /^[a-f0-9]{40}$/.test(baselineRef), "Baseline must be an exact local commit");
 assert(!baselineRef || !bindingCases, "Baseline applies only to the fixture UI runner");
 const readAppFile = file => baselineRef && ["client.js", "styles.css", "index.html"].includes(file)
@@ -226,6 +228,27 @@ async function main() {
         const info=await cdp.evaluate(s,"({width:innerWidth,doc:document.documentElement.scrollWidth,page:document.querySelector('.ui-page').scrollWidth,client:document.querySelector('.ui-page').clientWidth})");
         check(label+": "+name+" no horizontal overflow",info.doc<=info.width && info.page<=info.client,info);
       };
+      if (readingFollowup) {
+        for (const theme of ['dark','light']) {
+          await cdp.evaluate(s,`__uiPreview.reset();document.documentElement.dataset.theme='${theme}';briefing.currentHelmutState.recommendation='';__uiPreview.view('helmut');`);
+          check(label+': '+theme+' supplied daily reason without recommendation visible',await cdp.evaluate(s,"document.querySelector('.ui-recommendation-why').textContent.includes('Warum heute relevant:') && document.querySelector('.ui-recommendation-why').textContent.includes(briefing.currentHelmutState.whyItMatters)"));
+          check(label+': '+theme+' no invented recommendation or office CTA',await cdp.evaluate(s,"!document.querySelector('.ui-briefing-hero [data-briefing-office]') && !document.querySelector('.ui-briefing-hero').textContent.includes('KI-Empfehlung')"));
+          await layout(theme+' reason without recommendation');await screenshot(theme+'-reason-without-recommendation');
+          await cdp.evaluate(s,"briefing.currentHelmutState.whyItMatters='';render()");
+          check(label+': '+theme+' no empty reason placeholder',await cdp.evaluate(s,"!document.querySelector('.ui-recommendation-why')"));
+          await cdp.evaluate(s,"__uiPreview.reset();__uiPreview.view('helmut')");
+          check(label+': '+theme+' actual recommendation retains adjacent reason',await cdp.evaluate(s,"!!document.querySelector('[data-briefing-office]') && document.querySelector('.ui-recommendation-why').textContent.includes('Begründung:')"));
+          for (const kind of ['filled','empty','unconfirmed','stale','stale-empty','error']) {
+            await cdp.evaluate(s,`__uiPreview.${kind==='filled' ? 'reset()' : `state('${kind}')`};__uiPreview.view('radar')`);
+            check(label+': '+theme+' '+kind+' Radar without manual update UI',await cdp.evaluate(s,"!document.querySelector('[data-radar-refresh],.radar2-refresh,[data-radar-refresh-purpose],#radar-refresh-purpose') && !document.querySelector('#radar2-root').textContent.includes('Stand neu laden') && !document.querySelector('#radar2-root').textContent.includes('Lädt den gespeicherten Stand neu')"));
+            check(label+': '+theme+' '+kind+' coverage caveat remains',await cdp.evaluate(s,"document.querySelector('[data-radar-provenance]').textContent.includes('Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen')"));
+            if(kind==='filled') check(label+': '+theme+' source date remains',await cdp.evaluate(s,"document.querySelector('.radar2-status').textContent.includes('Neueste angezeigte Quelle:')"));
+            if(kind==='stale-empty') check(label+': '+theme+' stale caveat remains',await cdp.evaluate(s,"!!document.querySelector('[data-empty-kind=stale]') && document.querySelector('#radar2-root').textContent.includes('Synthetische Einschränkung: Der vorhandene Quellenstand ist älter.')"));
+            if(kind==='error') check(label+': '+theme+' technical error remains',await cdp.evaluate(s,"document.querySelector('#radar2-root').textContent.includes('Radar derzeit nicht ladbar') && !document.querySelector('.topbar .ui-status--fresh')"));
+            await layout(theme+' '+kind+' Radar');await screenshot(theme+'-'+kind+'-radar');
+          }
+        }
+      } else {
       const screenshotBottom=async name=>{
         const moved=await cdp.evaluate(s,"(()=>{const p=document.querySelector('#uiPage');p.scrollTop=p.scrollHeight;return p.scrollTop>0;})()");
         if(moved) await screenshot(name+'-bottom');
@@ -379,20 +402,26 @@ async function main() {
           if(label==='mobile' && theme==='light') await screenshot('mandate-'+state+'-'+parliament);
         }
       }
-      // Exercise the actual loader behind the Radar button; mock only auth and HTTP boundaries.
+      }
+      }
+      if (!baselineRef) {
+      // Exercise the existing automatic foreground loader; mock only outer boundaries.
       await cdp.evaluate(s,`__uiPreview.reset();__uiPreview.view('radar');persistView('radar');
-        fetchAuthState=async()=>({mode:'accounts',authenticated:true,user:currentUser,profiles:[{id:profile.id,name:profile.fullName}]});`);
+        fetchAuthState=async()=>({mode:'accounts',authenticated:true,user:currentUser,profiles:[{id:profile.id,name:profile.fullName}]});
+        generateOfficeDraftsInBackground=()=>{};loadParliament=()=>{};`);
       const readRequestStart=requests.length;
-      await click('[data-radar-refresh]');
-      for(let i=0;i<100 && await cdp.evaluate(s,'radarRefreshing');i++) await new Promise(r=>setTimeout(r,20));
-      check(label+': actual Radar reload confirmed',await cdp.evaluate(s,"!radarRefreshing && radarRefreshFailedAt===0 && currentView==='radar'"));
+      await cdp.evaluate(s,"previewMode=false;lastBriefingLoadAt=0;document.dispatchEvent(new Event('visibilitychange'))");
+      for(let i=0;i<100 && await cdp.evaluate(s,'briefingRefreshing');i++) await new Promise(r=>setTimeout(r,20));
+      check(label+': automatic foreground load completes',await cdp.evaluate(s,"!briefingRefreshing && lastBriefingLoadAt>0 && currentView==='radar'"));
+      await cdp.evaluate(s,`window.__radarBeforeFailure={source:document.querySelector('.radar2-status').textContent,provenance:document.querySelector('[data-radar-provenance]').textContent};
+        window.__foregroundFailure=''; {const warn=console.warn;console.warn=(...args)=>{if(args[0]==='Foreground-Refresh fehlgeschlagen')window.__foregroundFailure=String(args[1]);warn(...args);};}`);
       failStartRead=true;
-      await click('[data-radar-refresh]');
-      for(let i=0;i<100 && await cdp.evaluate(s,'radarRefreshing');i++) await new Promise(r=>setTimeout(r,20));
-      check(label+': cached Radar reload failure stays visible',await cdp.evaluate(s,"!radarRefreshing && radarRefreshFailedAt>0 && document.querySelector('#radar2-root').textContent.includes('Aktualisierung fehlgeschlagen') && !!document.querySelector('.radar2-card--mention')"));
+      await cdp.evaluate(s,"lastBriefingLoadAt=0;document.dispatchEvent(new Event('visibilitychange'))");
+      for(let i=0;i<100 && await cdp.evaluate(s,'briefingRefreshing');i++) await new Promise(r=>setTimeout(r,20));
+      check(label+': automatic foreground failure preserves prior content without success claim',await cdp.evaluate(s,"!briefingRefreshing && window.__foregroundFailure.includes('503') && !!document.querySelector('.radar2-card--mention') && document.querySelector('.radar2-status').textContent===window.__radarBeforeFailure.source && document.querySelector('[data-radar-provenance]').textContent===window.__radarBeforeFailure.provenance && !document.querySelector('#radar2-root').textContent.includes('erfolgreich aktualisiert')"));
       failStartRead=false;
       const readRequests=requests.slice(readRequestStart).filter(r=>new URL(r.url).pathname.startsWith('/api/'));
-      check(label+': Radar reload issued only existing GET start reads',readRequests.length===2 && readRequests.every(r=>r.method==='GET' && new URL(r.url).pathname==='/api/app/start'),readRequests);
+      check(label+': automatic Radar load issued only existing GET start reads',readRequests.length===2 && readRequests.every(r=>r.method==='GET' && new URL(r.url).pathname==='/api/app/start'),readRequests);
       }
       // Negative control: intentionally attempted external fetch must fail at interception.
       check(label+": external fetch denied",await cdp.evaluate(s,"fetch('https://example.invalid/network-negative-control').then(()=>false,()=>true)"));
