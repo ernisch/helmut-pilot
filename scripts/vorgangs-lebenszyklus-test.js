@@ -230,8 +230,10 @@ check("6 · Dokumente ohne Endzustand werden je Lauf ausgewiesen",
 check("6 · Aufloesungen werden gezaehlt (neu / bestand / technischer Konflikt)",
   t.aufloesungen.neu === 2 && t.aufloesungen.bestand === 1 && t.aufloesungen["konflikt-neue-kennung"] === 1, JSON.stringify(t.aufloesungen));
 check("6 · Anteile je Gruppe werden ausgewiesen", t.anteile.verarbeitet === 25, JSON.stringify(t.anteile));
-check("6 · Auffaelligkeiten nennen Konflikte und Fehlschlaege namentlich",
-  t.auffaelligkeitenGesamt === 1 && t.auffaelligkeiten[0].vorgangId === "vg-4", JSON.stringify(t.auffaelligkeiten));
+check("6 · Auffaelligkeiten ordnen Konflikte und Fehlschlaege ohne Kennungstext zu",
+  t.auffaelligkeitenGesamt === 1 && t.auffaelligkeiten[0].vorgangHash === require("node:crypto")
+    .createHash("sha256").update("vg-4").digest("hex") && !JSON.stringify(t.auffaelligkeiten).includes("vg-4"),
+  JSON.stringify(t.auffaelligkeiten));
 check("6 · zurueckgestellte Cluster zaehlen als 'erneut einplanen', nicht als erledigt",
   buildOutcomeTelemetry({ clusters, results, deferred: 12 }).gruppen.erneut === 13);
 check("6 · eine sehr lange Auffaelligkeitsliste wird gekappt, die Gesamtzahl bleibt ehrlich",

@@ -1291,6 +1291,12 @@ async function abschnittInvalidDiagnose() {
     A.ok(!r.errors.includes("quellenbeleg-ministerien"));
     A.ok(!r.errors.includes("quellenbeleg-mentioned_ministries"));
     A.ok(r.errors.every((e) => typeof e === "string"));
+    const telemetry = understanding.buildOutcomeTelemetry({ results: [r] });
+    const stored = require("../lib/helmut/storage").sanitizeProcessRun({ telemetrie: telemetry });
+    const rel = require("../lib/helmut/blob-relational");
+    const readBack = rel.relationalRowToProcessRun(rel.processRunToRelationalRow(stored));
+    A.deepEqual(readBack.auffaelligkeiten[0].validierungsfehler, r.errors,
+      "echter Motorfehler bleibt durch Telemetrie, Speicherfilter und relationale Projektion erhalten");
   });
   await pruefeAsync("§23.1b unbelegte STRINGS in den reduzierbaren Listen (ministerien/mentioned_*) sperren nicht mehr", async () => {
     const R = baueInvalidWelt({ unbelegte: ["ministerien", "mentioned_ministries"] });
