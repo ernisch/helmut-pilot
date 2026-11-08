@@ -6868,7 +6868,7 @@ function renderHstandStateCard(state, kind) {
       <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}${quiet ? " hstand-state-card--quiet" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
         <p class="hstand-state-title">${escapeHtml(uiSieText(quiet ? "Keine neue Tagespriorität" : title))}</p>
-        <p class="hstand-state-sub">${escapeHtml(uiSieText(quiet ? "Der vorhandene Stand begründet heute keine neue Tagespriorität. Das ist keine Entwarnung; laufende Themen bleiben relevant." : sub))}</p>
+        <p class="hstand-state-sub">${escapeHtml(uiSieText(quiet ? "Das ist keine Entwarnung." : sub))}</p>
         ${quiet && sub ? `<details class="ui-source-evidence"><summary>Hinweis zum vorhandenen Stand</summary><p>${escapeHtml(uiSieText(sub))}</p></details>` : ""}
         ${lageLine}${lageButton}
       </div>

@@ -514,7 +514,8 @@ for (const [label, payload] of [["Ruhelage", quietIntegrationPayload], ["Cache-M
     && !quiet.html.includes(">Kein aktueller Stand<"));
   check(`${label}: fehlender Tagesanlass wird einmal erklaert`,
     (quiet.html.match(/class="hstand-state-title">Keine neue Tagespriorität/g) || []).length === 1
-    && !quiet.html.includes("Keine neue Tagespriorität belegt."));
+    && !quiet.html.includes("Keine neue Tagespriorität belegt.")
+    && !/class="hstand-state-sub">[^<]*Tagespriorität/.test(quiet.html));
   check(`${label}: gespeicherte Laufzeit statt HTTP-Projektionszeit im Kopf`,
     quiet.html.includes("06:15") && !quiet.html.includes("15:37"));
   check(`${label}: keine erfundene Priorität oder Empfehlung`,
