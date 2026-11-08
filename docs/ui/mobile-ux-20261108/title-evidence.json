@@ -1,0 +1,14 @@
+{
+  "readAtUtc": "2026-11-08T11:43:36.188552+00:00",
+  "path": "GET /api/app/start",
+  "title": "Bundesregierung betont Rolle niedrigschwelliger Hilfe bei Pflegeversorgung",
+  "displayTitle": "",
+  "sourceTitles": [
+    "Niedrigschwellige Hilfe für Personen mit Pflegebedarf"
+  ],
+  "originalTitleLength": 74,
+  "legacyTitleBudget": 72,
+  "legacyResult": "Bundesregierung betont Rolle niedrigschwelliger Hilfe bei",
+  "cause": "Leeres displayTitle aktiviert lageDisplayHeadline(v.title); Wortgrenze vor Zeichen72 verwirft Pflegeversorgung. Keine CSS-Kappung als Ursache dieses Textabbruchs.",
+  "privatePayloadCommitted": false
+}

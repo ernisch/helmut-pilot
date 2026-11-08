@@ -328,15 +328,16 @@ async function transport(body, status, fn) {
     assert.equal(projection.source_document_count, 2);
     assert.equal(JSON.stringify(projection), JSON.stringify(pair), "Kein neuer persistierter Zähler");
     assert.equal(scoring.globalImportance(projection).score, scoring.globalImportance(ko).score);
-    assert.equal(scoring.dynamicsScore(projection), scoring.dynamicsScore(ko));
+    // Identischer fachlicher Zeitpunkt fuer beide Seiten; keine Millisekundenrennen.
+    const now = new Date("2026-11-06T16:00:00Z");
+    assert.equal(scoring.dynamicsScore(projection, now.getTime()), scoring.dynamicsScore(ko, now.getTime()));
     assert.equal(decisions.scoreKnowledgeObject(projection), decisions.scoreKnowledgeObject(ko));
     const independent = H.bewertungsprojektion(pair, [dip, media]);
     assert.equal(independent, pair, "Bestehende unabhängige Quellen bleiben unverändert");
     assert(scoring.globalImportance(independent).score > scoring.globalImportance(ko).score);
-    assert(scoring.dynamicsScore(independent) > scoring.dynamicsScore(ko));
+    assert(scoring.dynamicsScore(independent, now.getTime()) > scoring.dynamicsScore(ko, now.getTime()));
     assert(decisions.scoreKnowledgeObject(independent) > decisions.scoreKnowledgeObject(ko));
     const selection = [{ knowledge_object_id: ko.id }];
-    const now = new Date("2026-11-06T16:00:00Z");
     const radar = docs => R.buildDynamics(selection, { [ko.id]: { ...ko, source_document_count: docs.length } }, { [ko.vorgang_id]: docs }, now);
     assert.deepEqual(radar([dip]), []); assert.deepEqual(radar([dip, bp]), []);
     assert.equal(radar([dip, media])[0].signalType, "broadening");

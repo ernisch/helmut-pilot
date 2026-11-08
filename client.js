@@ -67,17 +67,13 @@ let radarArchive = [];
 let radarBuckets = null;
 let radarArchiveLoaded = false;
 // Radar-UI-Zustand (rein clientseitig, keine Daten): aktives Umfeld-Segment,
-// aktiver Artikelfilter, Aufklapp-Zustände, Refresh-Ladeanzeige.
+// aktiver Artikelfilter und Aufklapp-Zustände.
 let radarSegment = "party";
 let radarFilter = "all";
 let radarMentionsExpanded = false;
 let radarDynamicsExpanded = false;
 let radarArticlesExpanded = false;
 let radarEnvExpanded = false;
-let radarRefreshing = false;
-// Stoerungswahrheit: Zeitstempel des letzten FEHLGESCHLAGENEN Radar-Refreshs (0 = ok).
-// Ein stiller Fehlschlag sah bisher exakt wie ein erfolgreicher Refresh aus.
-let radarRefreshFailedAt = 0;
 let opsStatusLoaded = false;
 let pushConfig = null;
 let pushAutoSyncStarted = false;
@@ -502,7 +498,7 @@ const priorityTopics = [
 
 const communicationStyles = ["Sachlich", "Lösungsorientiert", "Angriffslustig", "Vermittelnd", "Aktivistisch"];
 
-async function loadBriefing() {
+async function loadBriefing({ readOnly = false } = {}) {
   if (mandateSwitchPending) return false;
   const accessGeneration = ++privateAccessGeneration;
   officeDraftsGenerating = false;
@@ -539,7 +535,7 @@ async function loadBriefing() {
       applyStartPayload(cachedStart, accessGeneration);
       renderedFromCache = true;
       render();
-      generateOfficeDraftsInBackground();
+      if (!readOnly) generateOfficeDraftsInBackground();
     } catch (error) {
       console.warn("Cached Helmut start payload ignored", error);
     }
@@ -596,8 +592,8 @@ async function loadBriefing() {
     render();
     ensureViewData(currentView);
     if (userRole() === "admin") ensureViewData("admin");
-    loadParliament();
-    generateOfficeDraftsInBackground();
+    if (!readOnly) loadParliament();
+    if (!readOnly) generateOfficeDraftsInBackground();
     return Boolean(profile.id);
   } catch (error) {
     if (accessGeneration !== privateAccessGeneration) return;
@@ -606,7 +602,6 @@ async function loadBriefing() {
       // Reject/Timeout/Abbruch, HTTP-Fehler oder JSON-Parse-Fehler). Es laeuft/plant
       // nichts mehr im Hintergrund — daher KEIN "aktualisiert im Hintergrund" (unwahr),
       // sondern eine ehrliche Meldung: der zuletzt bekannte Stand bleibt sichtbar.
-      // Retry-Moeglichkeit besteht ueber den Refresh-Button (↻) im Helmut-Kopf.
       console.warn("Live update after cached start failed", error);
       showToast("Aktualisierung fehlgeschlagen – letzter Stand bleibt sichtbar");
       return;
@@ -4597,7 +4592,7 @@ function render() {
   const pageScroll = currentView === lastAnimatedView ? (app.querySelector(".ui-page")?.scrollTop || 0) : 0;
   if (app) app.classList.toggle("anim-enter", enterAnim);
   app.innerHTML = `
-    <div class="app-frame view-${escapeAttribute(currentView || "")}">
+    <div class="app-frame view-${escapeAttribute(currentView || "")}${currentView === "briefing" && uiLageDetailOpen ? " ui-lage-detail-open" : ""}">
       ${renderSidebar()}
       <div class="content-shell" ${onboardingActive ? "inert" : ""}>
         ${renderTopbar()}
@@ -4717,12 +4712,56 @@ function uiIcon(name) {
   return `<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths[name] || paths.briefing}</svg>`;
 }
 
+// Nur persönliche Ansprache in vorhandener UI/Einordnung, keine Änderung an Originaltiteln.
+function uiSieText(value) {
+  return String(value == null ? "" : value)
+    .replace(/\b[Dd]u solltest\b/g, "Sie sollten")
+    .replace(/\b[Dd]u kannst\b/g, "Sie können")
+    .replace(/\b[Dd]u musst\b/g, "Sie müssen")
+    .replace(/\b[Dd]u wurdest\b/g, "Sie wurden")
+    .replace(/\bwurdest du\b/g, "wurden Sie")
+    .replace(/\b[Dd]u wirst\b/g, "Sie werden")
+    .replace(/\b[Dd]u hast\b/g, "Sie haben")
+    .replace(/\b[Dd]u bist\b/g, "Sie sind")
+    .replace(/\b[Dd]einen\b/g, "Ihren").replace(/\b[Dd]einem\b/g, "Ihrem")
+    .replace(/\b[Dd]einer\b/g, "Ihrer").replace(/\b[Dd]eines\b/g, "Ihres")
+    .replace(/\b[Dd]eine\b/g, "Ihre").replace(/\b[Dd]ein\b/g, "Ihr")
+    .replace(/\b[Dd]ich\b/g, "Sie").replace(/\b[Dd]ir\b/g, "Ihnen")
+    .replace(/\bPrüfe\b/g, "Prüfen Sie").replace(/\bBereite\b/g, "Bereiten Sie")
+    .replace(/\bLies\b/g, "Lesen Sie");
+}
+
+// Profilkontext der vorhandenen Mandatsebene. Keine neue Profilklassifikation.
+function renderUiMandateContext() {
+  const parliament = profileParliamentType();
+  const state = lageField(profile?.state || profile?.bundesland);
+  const label = parliament === "Landtag" && state === "Berlin" ? "Abgeordnetenhaus Berlin"
+    : parliament === "Landtag" && state === "Brandenburg" ? "Landtag Brandenburg"
+    : parliament ? [parliament, parliament === "Landtag" ? state : ""].filter(Boolean).join(" · ")
+    : "Mandatsebene nicht hinterlegt";
+  const values = value => (Array.isArray(value) ? value : [value])
+    .filter(v => typeof v === "string" && v.trim()).map(lageField).join(" · ") || "Nicht hinterlegt";
+  const rows = [
+    ["Fachzuständigkeit", values(profile?.reportingTopics || profile?.berichterstatter_themen)],
+    ["Schwerpunkte", values(profile?.focusTopics || profile?.fachpolitische_schwerpunkte || profile?.topics)],
+    ["Ausschussmitgliedschaft", values(profile?.committees || profile?.ausschuesse || profile?.committee)],
+    ["Stellvertretung im Ausschuss", values(profile?.deputyCommittees || profile?.stellvertretende_ausschuesse)],
+    ["Wahlkreis", values(profile?.constituency || profile?.wahlkreis)],
+    ["Bundesland", state || "Nicht hinterlegt"]
+  ];
+  return `<details class="ui-mandate-context ui-source-evidence"><summary>Mandat: ${escapeHtml(label)}</summary>
+    <dl>${rows.map(([key, value]) => `<div><dt>${key}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>
+    <p class="ui-evidence-note">Profilangaben sind keine Belege für einen einzelnen Vorgang. Dessen Mandatsbezug wird nur angezeigt, wenn er mitgeliefert wird.</p>
+  </details>`;
+}
+
 function renderUiPageHeader(title, subtitle = "", extra = "") {
   const dateLabel = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
   return `<header class="ui-page-header">
-    <p class="ui-date">${escapeHtml(dateLabel)}</p>
+    <p class="ui-date">${escapeHtml(dateLabel)}${["helmut", "briefing", "radar"].includes(currentView) ? " · Berliner Zeit" : ""}</p>
     <h1>${escapeHtml(title)}</h1>
     ${subtitle ? `<p class="ui-page-subtitle">${escapeHtml(subtitle)}</p>` : ""}
+    ${["helmut", "briefing", "radar"].includes(currentView) ? renderUiMandateContext() : ""}
     ${extra}
   </header>`;
 }
@@ -4734,7 +4773,9 @@ function renderUiEmpty(title, detail) {
 function renderUiFooter(variant = "") {
   const label = currentView === "settings" || currentView === "profile-settings"
     ? "Dein Mandatsprofil steuert die persönliche Einordnung."
-    : "Quellen und Stand findest du direkt bei den angezeigten Inhalten.";
+    : ["helmut", "briefing", "radar"].includes(currentView)
+      ? "Quellen und Stand finden Sie direkt bei den angezeigten Inhalten."
+      : "Quellen und Stand findest du direkt bei den angezeigten Inhalten.";
   // Zwei Platzierungen derselben Zeile: Desktop am Fensterrand, mobil am
   // Inhaltsende (Design). Per CSS ist je Breite genau eine sichtbar.
   return `<footer class="ui-footer ${variant}">${uiIcon("source")}<span>${escapeHtml(label)}</span>${previewMode ? '<span class="ui-preview-label">Vorschau · Beispieldaten</span>' : ""}</footer>`;
@@ -5366,7 +5407,7 @@ function renderLageEmpty(greeting, dateLabel, emptyState, data) {
     : "Heute liegen noch keine quellengestützten Vorgänge vor.";
   const sub = es && es.detail ? es.detail
     : disruption ? disruption.sub
-    : "Sobald neue geprüfte Quellen verfügbar sind, erscheint hier deine Lage.";
+    : "Sobald neue geprüfte Quellen verfügbar sind, erscheint hier Ihre Lage.";
   const emptyKind = es ? es.kind : (disruption ? disruption.kind : "");
   return `
     <section class="lage2 lage2-empty-wrap"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
@@ -5375,8 +5416,8 @@ function renderLageEmpty(greeting, dateLabel, emptyState, data) {
         <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
       </header>
       <div class="lage2-empty">
-        <p class="lage2-empty-title">${escapeHtml(title)}</p>
-        <p class="lage2-empty-sub">${escapeHtml(sub)}</p>
+        <p class="lage2-empty-title">${escapeHtml(uiSieText(title))}</p>
+        <p class="lage2-empty-sub">${escapeHtml(uiSieText(sub))}</p>
       </div>
     </section>`;
 }
@@ -5418,14 +5459,14 @@ function lageListSourceHtml(v) {
       date = lageField(source.dateLabel);
     }
   }
-  return `<span class="ui-row-source"><span class="ui-row-source-name" title="${escapeAttribute(name)}">${escapeHtml(name)}</span><span>${escapeHtml(date || "Datum unbekannt")}</span>${lageStatusChip(v) ? `<span>${escapeHtml(lageStatusChip(v))}</span>` : ""}</span>`;
+  return `<span class="ui-row-source"><span class="ui-row-source-name" title="${escapeAttribute(name)}">${escapeHtml(name)}</span><span>${escapeHtml(date || "Datum unbekannt")}</span>${lageStatusChip(v) ? `<span>Vorgangsstatus: ${escapeHtml(lageStatusChip(v))}</span>` : ""}</span>`;
 }
 
 function renderLageView() {
   const data = lageData();
   if (data?.prosaVorschau === true) return renderProsaEinordnung(data.prosaEinordnung);
   const items = lageVisibleVorgaenge(data);
-  const header = renderUiPageHeader("Politische Lage", "Relevante Vorgänge, aktueller Sachstand und belastbare Quellen.");
+  const header = `<div class="ui-lage-page-heading">${renderUiPageHeader("Politische Lage", "Relevante Vorgänge, aktueller Sachstand und belastbare Quellen.")}</div>`;
   if (!items.length) {
     return header + renderLageEmpty("Politische Lage", lageDateLabel(), data && data.emptyState, data);
   }
@@ -5446,11 +5487,11 @@ function renderLageView() {
         <div class="ui-vorgang-list">
           ${items.map((v, index) => {
             const id = String(v.vorgangId || v.id || "");
-            const title = lageField(v.displayTitle) || lageDisplayHeadline(v.title);
+            const title = lageField(v.displayTitle) || lageField(v.title) || "Vorgang";
             const summary = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
             return `<button class="ui-vorgang-row ${id === selectedId ? "is-selected" : ""}" type="button" data-ui-lage-select="${escapeAttribute(id)}" aria-pressed="${id === selectedId}">
               <span class="ui-row-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
-              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(summary)}</span>` : ""}${lageStatusChip(v) ? `<span class="ui-row-meta">${escapeHtml(lageStatusChip(v))}</span>` : ""}${lageListSourceHtml(v)}</span>
+              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(uiSieText(summary))}</span>` : ""}${lageField(v.relevanz?.satz) ? `<span class="ui-row-relevance"><strong>Mandatsbezug:</strong> ${escapeHtml(uiSieText(lageField(v.relevanz.satz)))}</span>` : ""}${lageListSourceHtml(v)}</span>
               <span class="ui-row-chevron" aria-hidden="true">›</span>
             </button>`;
           }).join("")}
@@ -5668,15 +5709,19 @@ function vsheetBetroffeneHtml(v) {
 // Zeit · Quelle (sekundär), rechts ein dezentes Externer-Link-Symbol. Nutzt
 // ausschließlich vorhandene Quellenfelder (kein neuer Datenzugriff).
 function vsheetSourceRow(source) {
-  const name = lageField(source.name) || "Quelle";
+  const name = lageField(source.name) || lageField(source.sourceName) || "Quelle";
   const host = lageField(source.host);
   const href = source.url && isHttpUrl(source.url) ? source.url : (host ? `https://${host}` : "");
-  const time = bundespulsPublicationUnknown(source, href) ? "" : lageField(source.dateLabel || source.publishedAt || source.published_at);
+  const published = source.publishedAt || source.published_at;
+  const parsed = published && Date.parse(published);
+  const time = bundespulsPublicationUnknown(source, href) ? "" : lageField(source.dateLabel)
+    || (Number.isFinite(parsed) ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric" }).format(new Date(parsed)) : "");
   const meta = [time, host].filter(Boolean).join(" · ");
   const ext = `<svg class="vsheet-src-ext" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const inner = `
     <span class="vsheet-src-main">
-      <span class="vsheet-src-name">${escapeHtml(name)}</span>
+      <span class="vsheet-src-name">${escapeHtml(name)} · Original öffnen ↗</span>
+      ${lageField(source.title) ? `<span class="vsheet-src-meta">Quellentitel: ${escapeHtml(lageField(source.title))}</span>` : ""}
       ${meta ? `<span class="vsheet-src-meta">${escapeHtml(meta)}</span>` : ""}
     </span>
     ${href ? ext : ""}`;
@@ -5698,7 +5743,7 @@ function vsheetStatusHtml(v) {
   const label = LAGE_STATUS_LABEL[v && v.status];
   if (!label) return "";
   const dot = VSHEET_STATUS_DOT[v.status] || "is-neutral";
-  return `<div class="vsheet-status"><span class="vsheet-status-dot ${dot}" aria-hidden="true"></span><span>${escapeHtml(label)}</span></div>`;
+  return `<div class="vsheet-status"><span class="vsheet-status-dot ${dot}" aria-hidden="true"></span><span>Vorgangsstatus: ${escapeHtml(label)}</span></div>${v.status === "neu" ? '<p class="ui-evidence-note">„Neu“ ist der gespeicherte Vorgangsstatus. Seit wann er gilt, ist nicht belegt; er sagt nichts über Quellenfrische oder Ihren letzten Besuch aus.</p>' : ""}`;
 }
 
 // „Warum für dich relevant?" (Sprint 23C) — die persönliche Relevanz.
@@ -5730,13 +5775,13 @@ function vsheetRelevanzHtml(v) {
     .slice(0, 4);
   return `
     <section class="vsheet-sec">
-      <h3 class="vsheet-h">Warum für dich relevant?</h3>
-      <p class="vsheet-relevanz">${escapeHtml(satz)}</p>
+      <h3 class="vsheet-h">Warum für Sie relevant?</h3>
+      <p class="vsheet-relevanz">${escapeHtml(uiSieText(satz))}</p>
       ${belege.length ? `
       <details class="vsheet-belege">
         <summary>Belege ansehen</summary>
         <ul>
-          ${belege.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}
+          ${belege.map((t) => `<li>${escapeHtml(uiSieText(t))}</li>`).join("")}
         </ul>
       </details>` : ""}
     </section>`;
@@ -5744,6 +5789,18 @@ function vsheetRelevanzHtml(v) {
 
 // Rendert den kompletten Sheet-Inhalt (8 Abschnitte, leere ausgeblendet) aus den
 // bereits vorhandenen Kartendaten — keinerlei Neuberechnung/Fetch/KI.
+// Bereits geladene, vorgangsgebundene Absätze sind Einordnung, keine Originalzitate.
+function lageParagraphContextHtml(v) {
+  const id = String(v.vorgangId || v.id || "");
+  const paragraphs = (Array.isArray(lageData()?.paragraphs) ? lageData().paragraphs : [])
+    .filter(p => Array.isArray(p.vorgangIds) && p.vorgangIds.includes(id) && lageField(p.text));
+  if (!paragraphs.length) return "";
+  return `<details class="vsheet-sec ui-source-evidence"><summary>Zugeordnete Lageeinordnung lesen</summary>
+    <p class="ui-evidence-note">Zusätzliche KI-Einordnung · kein Originalauszug. Kann mehrere Vorgänge betreffen und Fehler enthalten.</p>
+    ${paragraphs.map(p => `<p>${escapeHtml(p.text)}</p><div class="vsheet-sources">${(Array.isArray(p.sources) ? p.sources : []).map(vsheetSourceRow).join("")}</div>`).join("")}
+  </details>`;
+}
+
 function vsheetContentHtml(v) {
   const displayTitle = lageField(v.displayTitle);
   const title = displayTitle || lageField(v.title) || "Vorgang";
@@ -5786,17 +5843,25 @@ function vsheetContentHtml(v) {
 
     ${kurz ? `
     <section class="vsheet-sec">
-      <p class="vsheet-lede">${escapeHtml(kurz)}</p>
+      <p class="vsheet-lede">${escapeHtml(uiSieText(kurz))}</p>
       ${vsheetStatusHtml(v)}
     </section>` : vsheetStatusHtml(v) ? `<section class="vsheet-sec">${vsheetStatusHtml(v)}</section>` : ""}
 
     ${relevanz}
 
+    ${sourcesSorted.length ? `
+    <section class="vsheet-sec ui-source-access">
+      <h3 class="vsheet-h">Originalquellen</h3>
+      <div class="vsheet-sources">${sourcesSorted.map(vsheetSourceRow).join("")}</div>
+      <p class="ui-evidence-note">Für diese Vorgangskarte werden keine aussagebezogenen Originalauszüge mitgeliefert. Die Quellenliste ersetzt keine Zuordnung jeder einzelnen Aussage.</p>
+    </section>` : ""}
+
     ${warumPoints.length ? `
     <section class="vsheet-sec">
-      <h3 class="vsheet-h">Warum wichtig?</h3>
+      <h3 class="vsheet-h">Zusätzliche Einordnung</h3>
+      <p class="ui-evidence-note">KI-Einordnung · kann Fehler enthalten. Vor Verwendung prüfen.</p>
       <ul class="vsheet-why">
-        ${warumPoints.map((p) => `<li>${escapeHtml(p)}</li>`).join("")}
+        ${warumPoints.map((p) => `<li>${escapeHtml(uiSieText(p))}</li>`).join("")}
       </ul>
     </section>` : ""}
 
@@ -5805,15 +5870,12 @@ function vsheetContentHtml(v) {
       ${briefingLink}
     </section>` : ""}
 
+    ${lageParagraphContextHtml(v)}
+
     ${renderEreignisRollen(v)}
 
     ${betroffene}
 
-    ${sourcesSorted.length ? `
-    <section class="vsheet-sec">
-      <h3 class="vsheet-h">Originalquellen</h3>
-      <div class="vsheet-sources">${sourcesSorted.map(vsheetSourceRow).join("")}</div>
-    </section>` : ""}
 
     ${chrono.length ? `
     <section class="vsheet-sec">
@@ -6199,7 +6261,7 @@ function renderFeedbackActions(decision) {
 function renderHelmutView() {
   if (briefing?.prosaVorschau === true) return renderProsaEinordnung(briefing.prosaEinordnung);
   return helmutThinking
-    ? renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.") + renderHelmutThinkingView()
+    ? renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Ihr Briefing. Was jetzt Ihre Aufmerksamkeit braucht.") + renderHelmutThinkingView()
     : renderHelmutStandView();
 }
 
@@ -6379,7 +6441,6 @@ function renderHelmutStandView() {
   // „Ausfuehrlich lesen“) -> „Danach wichtig“ -> drei Spalten -> Quellen.
   // Alle Inhalte bleiben dieselben, belegten Bausteine; nur Anordnung und Gewichtung.
   const details = [
-    renderHstandWhy(state),
     `<div class="ui-briefing-context">${renderHstandRiskChance(state)}</div>`,
     renderHstandComms(state),
     renderHstandActions(state),
@@ -6403,13 +6464,13 @@ function renderUiBriefingColumns(state) {
   const radarLine = rs && rs.available !== false && rs.summary ? [rs.summary.line1, rs.summary.line2].filter(Boolean).join(" ") : "";
   const radar = radarLine ? `<section class="ui-col" aria-label="Radar">
       <p class="ui-col-kicker">${uiIcon("radar")}<span>Radar</span></p>
-      <p>${escapeHtml(radarLine)}</p>
+      <p>${escapeHtml(uiSieText(radarLine))}</p>
       <button type="button" class="ui-col-link" data-view="radar">Im Radar öffnen ${uiIcon("arrow")}</button>
     </section>` : "";
   const decision = briefingOfficeDecision();
   const formats = decision ? activeOfficeFormats() : [];
-  const buero = formats.length ? `<section class="ui-col" aria-label="Für dein Büro">
-      <p class="ui-col-kicker">${uiIcon("office")}<span>Für dein Büro</span></p>
+  const buero = formats.length ? `<section class="ui-col" aria-label="Für Ihr Büro">
+      <p class="ui-col-kicker">${uiIcon("office")}<span>Für Ihr Büro</span></p>
       <h3>${formats.length === 1 ? "1 Vorbereitung" : `${formats.length} Vorbereitungen`}</h3>
       <ul class="ui-col-list">${formats.slice(0, 3).map((f) => `<li><strong>${escapeHtml(f.label)}</strong><span>${escapeHtml(officeCardStatus(decision, f))}</span></li>`).join("")}</ul>
       <button type="button" class="ui-col-link" data-view="office">Büro öffnen ${uiIcon("arrow")}</button>
@@ -6422,6 +6483,7 @@ function renderUiBriefingHero(state, details = "") {
   const item = state.primaryItem;
   const title = hstandText(item.displayTitle) || hstandText(item.title);
   const recommendation = hstandText(state.recommendation);
+  const why = hstandText(state.whyItMatters);
   const stale = state.status === "stale" || state.staleState === true || state.datenstandVonHeute === false || state.frischeVertrag?.aktuell === false;
   const eyebrow = stale ? "Letzter Stand" : state.status === "fresh" ? "Heute entscheidend" : "Aktueller Vorgang";
   const urgency = hstandUrgencyChip(state.urgency || item.urgency);
@@ -6434,14 +6496,17 @@ function renderUiBriefingHero(state, details = "") {
   return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang" data-topic-title="${escapeAttribute(title)}">
     <div class="ui-hero-main"><span class="ui-eyebrow"><span class="ui-priority-dot" aria-hidden="true"></span>${eyebrow}</span>
       <h2>${escapeHtml(title)}</h2>
-      ${sub ? `<p class="ui-hero-sub">${escapeHtml(sub)}</p>` : ""}
+      ${sub ? `<p class="ui-hero-sub">${escapeHtml(uiSieText(sub))}</p>` : ""}
       ${chips.trim() ? `<div class="hstand-chiprow">${chips}</div>` : ""}
+      ${hstandQuelleHref(item) ? `<a class="ui-source-direct" href="${escapeAttribute(hstandQuelleHref(item))}" target="_blank" rel="noopener noreferrer">Originalquelle öffnen${item.sourceName ? ` · ${escapeHtml(item.sourceName)}` : ""} ↗</a>${renderSourceNotice(item, hstandQuelleHref(item))}` : ""}
       ${briefingLageVerweis(item)}
     </div>
     <div class="ui-hero-next">
-      <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Dein nächster Schritt</span><span class="ui-next-step">${escapeHtml(recommendation || "Prüfe die Einordnung und Quellen zu diesem Vorgang.")}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>
-      ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfe den Vorgang und deine Büro-Formate.</p>'}
-      <p class="ui-hero-meta">${count ? `<span>${uiIcon("briefing")}${count === 1 ? "1 Quelle" : `${count} Quellen`}</span>` : ""}${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
+      ${recommendation ? `<button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>` : ""}
+      ${why ? `<p class="ui-recommendation-why"><strong>${recommendation ? "Begründung:" : "Warum heute relevant:"}</strong> ${escapeHtml(uiSieText(why))}</p>` : ""}
+      ${recommendation && !officeAvailable ? '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und Ihre Büro-Formate.</p>' : ""}
+      <p class="ui-evidence-note">${recommendation ? "KI-Empfehlung und Begründung" : "KI-Einordnung"} · vor Verwendung prüfen. Aussagebezogene Originalauszüge werden hier nicht mitgeliefert.</p>
+      <p class="ui-hero-meta">${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
     </div>
     ${details ? `<details class="ui-hero-details"><summary class="ui-hero-more"><span class="ui-more-closed">Ausführlich lesen</span><span class="ui-more-open">Weniger anzeigen</span>${uiIcon("arrow")}</summary><div class="ui-hero-details-body">${details}</div></details>` : ""}
   </section>`;
@@ -6456,7 +6521,7 @@ function renderHstandHeader(state) {
   const st = vertragOffen
     ? HSTAND_STATUS_LABEL.nicht_aktuell
     : hstandCurrentQuiet(state)
-      ? { label: "Aktuell · keine neue Tagespriorität", tone: "ok" }
+      ? { label: "Aktuell", tone: "ok" }
       : (HSTAND_STATUS_LABEL[state.status] || HSTAND_STATUS_LABEL.empty);
   // Publikation, gespeicherter Morgenlauf und Abrufzeit sind verschiedene Dinge.
   // generatedAt/sourcesSummary.lastUpdated koennen beim Lesen/KO-Schreiben entstehen.
@@ -6470,7 +6535,7 @@ function renderHstandHeader(state) {
   ].filter(Boolean).join(" · ");
   const partial = state.qualityStatus === "partial";
   return `
-    ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.")}
+    ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Ihr Briefing. Was jetzt Ihre Aufmerksamkeit braucht.")}
     <div class="hstand-head ui-briefing-status">
         <div class="hstand-head-actions">
           <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
@@ -6491,7 +6556,7 @@ function renderHstandWhy(state) {
   return `
     <section class="hstand-card hstand-why" aria-label="Warum ist das wichtig">
       ${hstandKicker(HELMUT_ICON_EYE, "Warum ist das wichtig?", "accent")}
-      <p class="hstand-body">${escapeHtml(why)}</p>
+      <p class="hstand-body">${escapeHtml(uiSieText(why))}</p>
     </section>`;
 }
 
@@ -6503,13 +6568,13 @@ function renderHstandRiskChance(state) {
   const riskCard = (risk || riskLevel) ? `
     <section class="hstand-card hstand-split hstand-risk" aria-label="Risiko bei Nichtreaktion">
       ${hstandKicker(HELMUT_ICON_WARN, "Risiko bei Nichtreaktion", "risk")}
-      ${risk ? `<p class="hstand-body hstand-body--tight">${escapeHtml(risk)}</p>` : ""}
+      ${risk ? `<p class="hstand-body hstand-body--tight">${escapeHtml(uiSieText(risk))}</p>` : ""}
       ${riskLevel}
     </section>` : "";
   const chanceCard = (chance || chanceLevel) ? `
     <section class="hstand-card hstand-split hstand-chance" aria-label="Chance">
       ${hstandKicker(HELMUT_ICON_TREND, "Chance", "chance")}
-      ${chance ? `<p class="hstand-body hstand-body--tight">${escapeHtml(chance)}</p>` : ""}
+      ${chance ? `<p class="hstand-body hstand-body--tight">${escapeHtml(uiSieText(chance))}</p>` : ""}
       ${chanceLevel}
     </section>` : "";
   if (!riskCard && !chanceCard) return "";
@@ -6539,7 +6604,7 @@ function renderHstandComms(state) {
   return `
     <section class="hstand-card hstand-comms" aria-label="Empfohlene Kommunikation">
       ${hstandKicker(HELMUT_ICON_CHAT, "Empfohlene Kommunikation", "comms")}
-      ${line ? `<p class="hstand-body">${escapeHtml(line)}</p>` : ""}
+      ${line ? `<p class="hstand-body">${escapeHtml(uiSieText(line))}</p>` : ""}
       ${recLine}
       ${chips ? `<div class="hstand-comms-formats"><span class="hstand-comms-formats-label">Formate</span><div class="hstand-chiprow hstand-chiprow--sm">${chips}</div></div>` : ""}
     </section>`;
@@ -6555,23 +6620,23 @@ function renderHstandActions(state) {
     const desc = hstandText(a.description);
     const due = hstandText(a.dueHint);
     const prio = hstandPriorityChip(a.priority);
-    const metaRow = (due || prio) ? `<div class="hstand-step-meta">${due ? `<span class="hstand-step-due">${HELMUT_ICON_CLOCK}${escapeHtml(due)}</span>` : ""}${prio}</div>` : "";
+    const metaRow = (due || prio) ? `<div class="hstand-step-meta">${due ? `<span class="hstand-step-due">${HELMUT_ICON_CLOCK}${escapeHtml(uiSieText(due))}</span>` : ""}${prio}</div>` : "";
     const detail = desc
-      ? `<details class="hstand-step-more"><summary>Details</summary><p class="hstand-step-desc">${escapeHtml(desc)}</p></details>`
+      ? `<details class="hstand-step-more"><summary>Details</summary><p class="hstand-step-desc">${escapeHtml(uiSieText(desc))}</p></details>`
       : "";
     return `
       <li class="hstand-step">
         <span class="hstand-step-num">${i + 1}</span>
         <div class="hstand-step-body">
-          <p class="hstand-step-title">${escapeHtml(hstandText(a.title))}</p>
+          <p class="hstand-step-title">${escapeHtml(uiSieText(hstandText(a.title)))}</p>
           ${metaRow}
           ${detail}
         </div>
       </li>`;
   }).join("");
   return `
-    <section class="hstand-card hstand-actions" aria-label="Was du jetzt tun solltest">
-      ${hstandKicker(HELMUT_ICON_LIST, "Was du jetzt tun solltest", "actions")}
+    <section class="hstand-card hstand-actions" aria-label="Was Sie jetzt tun sollten">
+      ${hstandKicker(HELMUT_ICON_LIST, "Was Sie jetzt tun sollten", "actions")}
       <ol class="hstand-steps">${rows}</ol>
     </section>`;
 }
@@ -6625,14 +6690,14 @@ function renderHstandFrische(state) {
   const zeilen = [];
   if (v.aktuell === false) {
     zeilen.push({ ton: "warn", text: `${v.grundText || "Für heute liegt noch kein aktuelles Briefing vor."} Es wird bewusst kein Briefing vom Vortag als heutiges angezeigt.` });
-  } else if (v.ruhelage) {
+  } else if (v.ruhelage && !hstandCurrentQuiet(state)) {
     zeilen.push({ ton: "muted", text: hstandCurrentQuiet(state)
       ? "Keine neue Tagespriorität belegt. Das bedeutet keine Entwarnung; der vorhandene Sachstand bleibt relevant."
       : v.hinweis || "Heute liegt keine neue Meldung vor." });
   }
   if (v.quellen && v.quellen.hinweis) zeilen.push({ ton: "warn", text: v.quellen.hinweis });
   if (!zeilen.length) return "";
-  return zeilen.map((z) => `<p class="hstand-frische hstand-frische--${z.ton}">${HELMUT_ICON_CLOCK}<span>${escapeHtml(z.text)}</span></p>`).join("");
+  return zeilen.map((z) => `<p class="hstand-frische hstand-frische--${z.ton}">${HELMUT_ICON_CLOCK}<span>${escapeHtml(uiSieText(z.text))}</span></p>`).join("");
 }
 
 const HSTAND_FRISCHE_GRUPPEN = [
@@ -6672,7 +6737,7 @@ function renderHstandItems(state) {
           ${urgency}
         </div>
         ${zeit ? `<p class="hstand-rel-when">${escapeHtml(zeit)}</p>` : ""}
-        ${why ? `<p class="hstand-rel-why">${escapeHtml(why)}</p>` : ""}
+        ${why ? `<p class="hstand-rel-why">${escapeHtml(uiSieText(why))}</p>` : ""}
         ${lageLink}
         ${quelle ? `<a class="hstand-rel-quelle" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
       </li>`;
@@ -6719,11 +6784,11 @@ function renderHstandSources(state) {
 function renderHstandUnavailable() {
   return `
     <section class="hstand hstand--state" aria-label="Briefing">
-      ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.")}
+      ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Ihr Briefing. Was jetzt Ihre Aufmerksamkeit braucht.")}
       <div class="hstand-state-card">
         <span class="hstand-state-mark" aria-hidden="true">H</span>
         <p class="hstand-state-title">Kein aktueller Stand verfügbar</p>
-        <p class="hstand-state-sub">Sobald belastbare Vorgänge für dein Mandat vorliegen, erscheint hier dein Stabschefstand.</p>
+        <p class="hstand-state-sub">Sobald belastbare Vorgänge für Ihr Mandat vorliegen, erscheint hier Ihr Stabschefstand.</p>
       </div>
     </section>`;
 }
@@ -6779,7 +6844,7 @@ function renderHstandStateCard(state, kind) {
   if (disruption && disruption.error) isError = true;
   const title = disruption ? disruption.title
     : isError ? "Stand konnte nicht geladen werden"
-    : (es && es.headline ? es.headline : "Heute kein Handlungsbedarf");
+    : (es && es.headline ? es.headline : "Keine Tagespriorität belegt");
   const sub = disruption ? disruption.sub
     : isError
       ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
@@ -6798,8 +6863,9 @@ function renderHstandStateCard(state, kind) {
       ${renderHstandHeader(state)}
       <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}${quiet ? " hstand-state-card--quiet" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
-        <p class="hstand-state-title">${escapeHtml(quiet ? "Heute kein neuer Tagesanlass" : title)}</p>
-        <p class="hstand-state-sub">${escapeHtml(sub)}</p>
+        <p class="hstand-state-title">${escapeHtml(uiSieText(quiet ? "Keine neue Tagespriorität" : title))}</p>
+        <p class="hstand-state-sub">${escapeHtml(uiSieText(quiet ? "Das ist keine Entwarnung." : sub))}</p>
+        ${quiet && sub ? `<details class="ui-source-evidence"><summary>Hinweis zum vorhandenen Stand</summary><p>${escapeHtml(uiSieText(sub))}</p></details>` : ""}
         ${lageLine}${lageButton}
       </div>
     </section>`;
@@ -8084,7 +8150,7 @@ function renderRadarInner(state) {
   state = state && state.anzeige ? { ...state, ...state.anzeige,
     generatedAt: state.generatedAt,
     available: state.available ?? state.anzeige.available,
-    status: state.status === "error" ? state.status : state.anzeige.status,
+    status: ["error", "stale"].includes(state.status) ? state.status : state.anzeige.status,
     quality: state.quality || state.anzeige.quality,
     emptyState: state.emptyState || state.anzeige.emptyState
   } : state;
@@ -8114,32 +8180,24 @@ function renderRadarHeader(state) {
   const updated = state && state.lastUpdated;
   const sourceDate = radarTime(updated);
   const disruption = radarDisruption(state);
-  const fresh = Boolean(sourceDate && radarIsToday(new Date(updated)) && !disruption);
+  const stale = state?.status === "stale" || state?.emptyState?.kind === "stale";
+  const fresh = Boolean(sourceDate && radarIsToday(new Date(updated)) && !disruption && !stale);
   // lastUpdated belegt das Publikationsdatum einer angezeigten Quelle,
   // generatedAt nur die Erstellung dieser Ansicht, keine Quellenpruefung.
-  const label = sourceDate ? `Neueste angezeigte Quelle: ${sourceDate}`
+  const label = sourceDate ? `${stale ? "Veralteter Radarstand · " : ""}Neueste angezeigte Quelle: ${sourceDate}`
     : (previewMode ? "Vorschau" : (radarStateHasContent(state) ? "Ohne belegtes Quellendatum" : "Kein Quellendatum für diese Ansicht"));
   const created = state && state.generatedAt && Number.isFinite(Date.parse(state.generatedAt))
     ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(state.generatedAt)) : "";
   const provenance = `${created ? `Ansicht erstellt: ${created}. ` : ""}Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen.`;
   const disruptionNote = disruption && radarStateHasContent(state)
     ? `<p class="radar2-refresh-note" data-radar-read-error>${escapeHtml(disruption.title)}. ${escapeHtml(disruption.sub)} Vorhandene Inhalte bleiben sichtbar.</p>` : "";
-  // Stoerungswahrheit: ein fehlgeschlagener Refresh bleibt nicht mehr stumm —
-  // ruhige Hinweiszeile mit dem Zeitstempel des letzten erfolgreichen Stands
-  // (kein Alarm-Design, die Anzeige selbst bleibt der letzte gute Stand).
-  const failNote = radarRefreshFailedAt && !radarRefreshing
-    ? `<p class="radar2-refresh-note">Aktualisierung fehlgeschlagen — vorhandene Inhalte bleiben sichtbar${sourceDate ? `. Neueste angezeigte Quelle: ${escapeHtml(sourceDate)}` : ""}.</p>`
-    : "";
   return `
     <header class="radar2-header">
       <div class="radar2-header-row">
-        ${renderUiPageHeader("Radar", "Was sich abzeichnet. Was du im Blick behalten solltest.")}
-        <button class="radar2-refresh ${radarRefreshing ? "is-loading" : ""}" type="button" data-radar-refresh aria-label="Radar aktualisieren" ${radarRefreshing ? "aria-busy=\"true\"" : ""}>
-          ${radarIcon("refresh")}
-        </button>
+        ${renderUiPageHeader("Radar", "Belegte Hinweise aus Ihrem politischen Umfeld.")}
       </div>
-      ${failNote}
       ${disruptionNote}
+      ${stale && radarStateHasContent(state) ? '<p class="radar2-refresh-note">Veralteter Radarstand: Eine aktuelle Quellenprüfung ist nicht bestätigt.</p>' : ""}
       <p class="radar2-refresh-note" data-radar-provenance>${escapeHtml(provenance)}</p>
       <div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
         <span class="radar2-status-dot" aria-hidden="true"></span>
@@ -8154,7 +8212,7 @@ function renderRadarSummary(state) {
   const s = state.summary || {};
   const lines = [s.line1, s.line2].filter(Boolean);
   if (!lines.length) return "";
-  const html = lines.map((ln) => `<span class="radar2-summary-line">${radarHighlight(ln)}</span>`).join("");
+  const html = lines.map((ln) => `<span class="radar2-summary-line">${radarHighlight(uiSieText(ln))}</span>`).join("");
   return `
     <section class="radar2-summary" aria-label="Zusammenfassung">
       <div class="radar2-summary-icon" aria-hidden="true">${radarIcon("radar")}</div>
@@ -8175,10 +8233,10 @@ function renderRadarAboutYou(state) {
   const shown = expanded ? all : all.slice(0, 3);
   const body = all.length
     ? shown.map(renderRadarMentionCard).join("")
-    : radarEmptyHint("Heute wurden keine direkten Erwähnungen gefunden.");
+    : radarEmptyHint(radarSectionEmptyText(state, "direkten Erwähnungen"));
   return `
     <section class="radar2-section">
-      ${radarSectionHead("person", "Über dich", "mentions", expanded, all.length > 3)}
+      ${radarSectionHead("person", "Über Sie", "mentions", expanded, all.length > 3)}
       <div class="radar2-cards">${body}</div>
     </section>
   `;
@@ -8199,7 +8257,7 @@ function renderRadarMentionCard(m) {
       </div>
       <h3 class="radar2-card-title">${escapeHtml(m.title || "Erwähnung")}</h3>
       ${tag ? `<div class="radar2-card-foot">${tag}</div>` : ""}
-      ${m.evidence ? `<p class="radar2-card-sub radar2-card-sub--block">${escapeHtml(m.evidence)}</p>` : ""}
+      ${m.evidence ? `<p class="radar2-card-sub radar2-card-sub--block"><strong>Beleg zur Zuordnung:</strong> ${escapeHtml(uiSieText(m.evidence))}</p>` : ""}
       ${radarAdditionalContext(m)}
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
@@ -8221,13 +8279,13 @@ function renderRadarEnvironment(state) {
   // ECHTE erweiterte Liste (Daten liegen vor) hinter einem segmentspezifischen Button.
   const RADAR_ENV_PREVIEW = 3;
   const shown = radarEnvExpanded ? items : items.slice(0, RADAR_ENV_PREVIEW);
-  const list = shown.length ? shown.map(renderRadarEnvRow).join("") : radarEmptyHint(seg.empty);
+  const list = shown.length ? shown.map(renderRadarEnvRow).join("") : radarEmptyHint(radarSectionEmptyText(state, active === "party" ? "Partei- oder Fraktionssignale" : active === "constituency" ? "Wahlkreishinweise" : "Ausschusshinweise"));
   const more = items.length > RADAR_ENV_PREVIEW
     ? `<button class="radar2-more-link radar2-more-link--block" type="button" data-radar-expand="environment">${radarEnvExpanded ? "Weniger anzeigen" : `${escapeHtml(seg.more)} (${items.length})`} <span aria-hidden="true">›</span></button>`
     : "";
   return `
     <section class="radar2-section">
-      <h2 class="radar2-h2">${radarIcon("people")}<span>Dein Umfeld</span></h2>
+      <h2 class="radar2-h2">${radarIcon("people")}<span>Ihr Umfeld</span></h2>
       <div class="radar2-segments" role="tablist" aria-label="Umfeld-Bereich">${tabs}</div>
       <div class="radar2-list">${list}</div>
       ${more}
@@ -8238,13 +8296,13 @@ function renderRadarEnvironment(state) {
 function renderRadarEnvRow(e) {
   const href = radarItemHref(e);
   const time = radarTime(e.publishedAt);
-  const rel = e.relationLabel ? `<span class="radar2-tag radar2-tag--neutral radar2-tag--sm">${escapeHtml(e.relationLabel)}</span>` : "";
+  const rel = e.relationLabel ? `<span class="radar2-tag radar2-tag--neutral radar2-tag--sm">${escapeHtml(uiSieText(e.relationLabel))}</span>` : "";
   const inner = `
     ${radarSourceBadge(e, { small: true })}
     <div class="radar2-row-body">
       <h3 class="radar2-row-title">${escapeHtml(e.title || "Vorgang")}</h3>
       <div class="radar2-row-meta">${rel}<span class="radar2-row-sub">${escapeHtml(e.sourceName || "Quelle")}${time ? " · " + escapeHtml(time) : ""}</span></div>
-      ${e.beobachtungsBeleg && e.evidence ? `<p class="radar2-card-sub radar2-card-sub--block">${escapeHtml(e.evidence)}</p>` : ""}
+      ${e.beobachtungsBeleg && e.evidence ? `<p class="radar2-card-sub radar2-card-sub--block"><strong>Beleg zur Zuordnung:</strong> ${escapeHtml(uiSieText(e.evidence))}</p>` : ""}
       ${radarAdditionalContext(e)}
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
@@ -8259,7 +8317,7 @@ function renderRadarDynamics(state) {
   const shown = expanded ? all : all.slice(0, 3);
   const body = all.length
     ? shown.map(renderRadarDynamicCard).join("")
-    : radarEmptyHint("In dieser Ansicht werden keine belegten Dynamikhinweise angezeigt.");
+    : radarEmptyHint(radarSectionEmptyText(state, "Dynamikhinweise"));
   return `
     <section class="radar2-section">
       ${radarSectionHead("activity", "Neue Dynamiken", "dynamics", expanded, all.length > 3)}
@@ -8276,7 +8334,7 @@ function renderRadarDynamicCard(d) {
     <div class="radar2-dyn-icon" aria-hidden="true">${radarIcon("trend")}</div>
     <div class="radar2-card-body">
       <h3 class="radar2-card-title">${escapeHtml(d.title || "Entwicklung")}</h3>
-      ${d.evidence ? `<p class="radar2-dyn-evidence">${escapeHtml(d.evidence)}</p>` : ""}
+      ${d.evidence ? `<p class="radar2-dyn-evidence"><strong>Beleg zum Signal:</strong> ${escapeHtml(uiSieText(d.evidence))}</p>` : ""}
       ${radarAdditionalContext(d)}
       <div class="radar2-card-foot">${tag}${time ? `<span class="radar2-card-sub">${escapeHtml(time)}</span>` : ""}</div>
     </div>
@@ -8390,27 +8448,39 @@ function radarDisruption(state) {
   return null;
 }
 
+// Ein leerer Abschnitt ist kein Nachweis einer vollständigen Quellenprüfung.
+function radarSectionEmptyText(state, subject) {
+  const limitation = radarDisruption(state) ? "Die Datenbasis ist derzeit eingeschränkt."
+    : state?.status === "stale" || state?.emptyState?.kind === "stale" ? "Der Radarstand ist veraltet."
+    : state?.quality?.sourcesLoaded === true ? "Die Aussage gilt nur für die vorhandenen Daten."
+    : "Eine geladene Quellengrundlage ist nicht bestätigt.";
+  return `In dieser Ansicht werden keine belegten ${subject} angezeigt. ${limitation}`;
+}
+
 function renderRadarEmpty(state) {
   const es = state && state.emptyState && state.emptyState.kind ? state.emptyState : null;
   // Technischer Fehler hat Vorrang vor einer leeren, ggf. alten Anzeige.
   const disruption = radarDisruption(state);
   const sourcesConfirmed = state?.quality?.sourcesLoaded === true;
   const explicitGap = es && (es.kind === "gap" || es.kind === "stale");
+  const stale = state?.status === "stale" || es?.kind === "stale";
   const title = disruption ? disruption.title
+    : stale ? "Radarstand veraltet"
     : explicitGap ? (es.headline || "Radarstand nicht aktuell")
     : sourcesConfirmed ? "Keine zugeordneten Signale in dieser Ansicht"
     : "Radarprüfung nicht belegt";
   const note = disruption ? disruption.sub
+    : stale ? [lageField(es?.detail), "Eine aktuelle Quellenprüfung ist nicht bestätigt. Die leere Ansicht belegt keine Trefferlosigkeit."].filter(Boolean).join(" ")
     : explicitGap ? (es.detail || "Eine aktuelle Datengrundlage ist nicht bestätigt.")
     : sourcesConfirmed
       ? "Die vorhandenen Quellendaten liefern für diese Ansicht keine belegten Signale. Das ist keine Bestätigung, dass es keine Erwähnungen gibt."
       : previewMode ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
       : "Für diese Ansicht ist keine geladene Quellengrundlage bestätigt. Die leere Anzeige belegt nicht, dass es keine Erwähnungen gibt.";
-  const emptyKind = disruption ? disruption.kind : explicitGap ? es.kind : sourcesConfirmed ? "quiet" : "unknown";
+  const emptyKind = disruption ? disruption.kind : stale ? "stale" : explicitGap ? es.kind : sourcesConfirmed ? "quiet" : "unknown";
   return `
     ${renderRadarSummary({ summary: { line1: title } })}
     <section class="radar2-section" data-empty-kind="${escapeAttribute(emptyKind)}">
-      <div class="radar2-empty">${escapeHtml(note)}</div>
+      <div class="radar2-empty">${escapeHtml(uiSieText(note))}</div>
     </section>
   `;
 }
@@ -8509,23 +8579,6 @@ function rerenderRadar() {
   bindRadarActions();
 }
 
-async function refreshRadar() {
-  if (radarRefreshing) return;
-  radarRefreshing = true;
-  rerenderRadar();
-  // Stoerungswahrheit: der Fehlschlag wird nicht mehr still geschluckt — die
-  // Anzeige bleibt beim letzten Stand, aber die Kopfzeile sagt das ehrlich
-  // (radarRefreshFailedAt -> ruhige Hinweiszeile in renderRadarHeader).
-  try {
-    await loadBriefing();
-    radarRefreshFailedAt = 0;
-  } catch (_) {
-    radarRefreshFailedAt = Date.now();
-  }
-  radarRefreshing = false;
-  if (currentView === "radar") rerenderRadar();
-}
-
 function bindRadarActions() {
   const root = document.getElementById("radar2-root");
   if (!root) return;
@@ -8547,9 +8600,6 @@ function bindRadarActions() {
       rerenderRadar();
     });
   });
-  root.querySelectorAll("[data-radar-refresh]").forEach((btn) => {
-    btn.addEventListener("click", () => refreshRadar());
-  });
 }
 
 // Kompakte, konturlose Line-Icons (kein Emoji) — currentColor, an die Typo angelehnt.
@@ -8562,7 +8612,6 @@ function radarIcon(name) {
     activity: `<svg ${A}><path d="M3 12h3.5l2.5-6 4 12 2.5-6H21"/></svg>`,
     trend: `<svg ${A}><path d="M4 15l5-5 3.5 3.5L20 6"/><path d="M15 6h5v5"/></svg>`,
     doc: `<svg ${A}><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M8.5 12.5h7"/><path d="M8.5 16h5"/></svg>`,
-    refresh: `<svg ${A}><path d="M20 11a8 8 0 1 0-.6 4"/><path d="M20 5v6h-6"/></svg>`,
     chevron: `<svg ${A} width="18" height="18"><path d="M9 6l6 6-6 6"/></svg>`
   };
   return ICONS[name] || "";
@@ -8576,7 +8625,7 @@ const RADAR_SEGMENTS = [
 
 const RADAR_FILTERS = [
   { key: "all", label: "Alle" },
-  { key: "mention", label: "Über dich" },
+  { key: "mention", label: "Über Sie" },
   { key: "party", label: "Partei" },
   { key: "constituency", label: "Wahlkreis" },
   { key: "committee", label: "Ausschüsse" },
@@ -8584,7 +8633,7 @@ const RADAR_FILTERS = [
   { key: "official", label: "Offizielle Quellen" }
 ];
 
-const RADAR_RELATION_LABELS = { mention: "Über dich", party: "Partei", constituency: "Wahlkreis", committee: "Ausschuss", media: "Medien", official: "Offiziell" };
+const RADAR_RELATION_LABELS = { mention: "Über Sie", party: "Partei", constituency: "Wahlkreis", committee: "Ausschuss", media: "Medien", official: "Offiziell" };
 
 function publisherDomain(item) {
   const text = `${item.sourceName || ""} ${item.title || ""}`.toLowerCase();
@@ -11514,7 +11563,7 @@ function formatBerlinNow() {
 // Status-Pille nach Design: „Aktuell · 07:12 Uhr“; mobil nur die Uhrzeit
 // (Status und „Uhr“ bleiben für Screenreader lesbar, nur visuell verborgen).
 function renderBerlinClockLabel(statusLabel) {
-  return `<span class="ui-status-label">${escapeHtml(statusLabel)} · </span><span class="ui-status-time">${escapeHtml(formatBerlinNow())}</span><span class="ui-status-unit"> Uhr</span>`;
+  return `<span class="ui-status-label">${escapeHtml(statusLabel)} · </span><span class="ui-status-time">${escapeHtml(formatBerlinNow())}</span><span class="ui-status-unit"> Uhr</span>${["helmut", "briefing", "radar"].includes(currentView) ? '<span> · Berlin</span>' : ""}`;
 }
 
 function formatBerlinTimeOnly(date = new Date()) {
@@ -11677,6 +11726,13 @@ function apiScopeQuery(extra = {}) {
 }
 
 function displayStatusLabel() {
+  if (currentView === "radar" && !previewMode) {
+    const state = briefing?.currentRadarState;
+    const disruption = radarDisruption(state);
+    if (disruption) return disruption.kind === "stoerung" ? "Radar-Ladefehler" : disruption.title;
+    if (state?.status === "stale" || state?.anzeige?.status === "stale" || state?.emptyState?.kind === "stale") return "Radarstand veraltet";
+    return state?.quality?.sourcesLoaded === true ? "Gespeicherter Radarstand" : "Quellenprüfung offen";
+  }
   // Ohne geladenes Briefing NIE "Aktuell" behaupten (das war ein latenter unehrlicher
   // Default). Der Kopf-Status kommt sonst aus briefing.status, das serverseitig aus der
   // echten Frische (currentHelmutState) abgeleitet wird — siehe decorateBriefingFreshness.

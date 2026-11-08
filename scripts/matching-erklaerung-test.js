@@ -308,15 +308,15 @@ const deps = { ready: () => true, request: fakeRequest };
       belege: [{ art: "ausschuss", text: "Dein Ausschuss: Arbeit und Soziales" }, { art: "thema", text: "Dein Schwerpunkt: Rente" }]
     }
   });
-  check("D1 Abschnitt traegt die Ueberschrift 'Warum für dich relevant?'",
-    html.includes("Warum für dich relevant?"));
+  check("D1 Abschnitt traegt die Ueberschrift 'Warum für Sie relevant?'",
+    html.includes("Warum für Sie relevant?"));
   check("D2 Hauptsatz ist sichtbar (Ebene 1)",
-    html.includes("Betrifft deinen Ausschuss Arbeit und Soziales"));
+    html.includes("Betrifft Ihren Ausschuss Arbeit und Soziales"));
   check("D3 Belege liegen in einer aufklappbaren zweiten Ebene",
     /<details class="vsheet-belege">/.test(html) && html.includes("<summary>Belege ansehen</summary>")
     && !/<details[^>]*\sopen/.test(html));
   check("D4 beide Belege werden als Listeneintraege gerendert",
-    (html.match(/<li>/g) || []).length === 2 && html.includes("Dein Schwerpunkt: Rente"));
+    (html.match(/<li>/g) || []).length === 2 && html.includes("Ihr Schwerpunkt: Rente"));
 
   check("D5 ohne Erklaerung entfaellt der Abschnitt ERSATZLOS",
     ui.relevanz({ relevanz: null }) === "" && ui.relevanz({}) === ""
@@ -330,7 +330,7 @@ const deps = { ready: () => true, request: fakeRequest };
   check("D7 defekte Belege werden verworfen statt gerendert",
     (() => {
       const h = ui.relevanz({ relevanz: { satz: "S.", belege: [null, { art: "x" }, "roh", { text: "Dein Wahlkreis: Mitte" }] } });
-      return (h.match(/<li>/g) || []).length === 1 && h.includes("Dein Wahlkreis: Mitte");
+      return (h.match(/<li>/g) || []).length === 1 && h.includes("Ihr Wahlkreis: Mitte");
     })());
   check("D8 Client begrenzt zusaetzlich auf vier Belege",
     (() => {
@@ -357,14 +357,14 @@ const deps = { ready: () => true, request: fakeRequest };
     vorgangId: "v-1", title: "T", summary: { wasIstPassiert: "Kurz.", warumWichtig: "Allgemein wichtig." },
     relevanz: { satz: "Betrifft deinen Ausschuss Verkehr.", belege: [{ text: "Dein Ausschuss: Verkehr" }] }
   });
-  check("D11 persoenliche Relevanz steht VOR 'Warum wichtig?'",
-    sheetMit.indexOf("Warum für dich relevant?") > 0
-    && sheetMit.indexOf("Warum für dich relevant?") < sheetMit.indexOf("Warum wichtig?"));
+  check("D11 persoenliche Relevanz steht VOR 'Zusätzliche Einordnung'",
+    sheetMit.indexOf("Warum für Sie relevant?") > 0
+    && sheetMit.indexOf("Warum für Sie relevant?") < sheetMit.indexOf("Zusätzliche Einordnung"));
   const sheetOhne = ui.sheet({
     vorgangId: "v-1", title: "T", summary: { wasIstPassiert: "Kurz.", warumWichtig: "Allgemein wichtig." }, relevanz: null
   });
   check("D12 Alt-Vorgang ohne Erklaerung: Sheet unveraendert, kein leerer Abschnitt",
-    !sheetOhne.includes("Warum für dich relevant?") && sheetOhne.includes("Warum wichtig?")
+    !sheetOhne.includes("Warum für Sie relevant?") && sheetOhne.includes("Zusätzliche Einordnung")
     && !sheetOhne.includes("vsheet-relevanz"));
 
   // Mobil: die zweite Ebene ist zugeklappt und per <summary> mit einem Daumen

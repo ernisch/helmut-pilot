@@ -1,0 +1,24 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+PASS  1 navItems vorhanden
+PASS  1b Hauptnavigation: ID 'helmut' traegt Label 'Briefing'
+PASS  1c mobile Navigation: ID 'helmut' traegt Label 'Briefing'
+PASS  1d KEIN Nav-Eintrag traegt mehr das Label 'Helmut'
+PASS  2 Lage bleibt Lage (ID 'briefing' -> Label 'Lage', historische ID unveraendert)
+PASS  2b Radar bleibt Radar
+PASS  2c Büro bleibt Büro
+PASS  3 data-view="helmut" (interner Router-Zustand) existiert weiterhin
+PASS  3b hasNewHelmutAssessment (interner Zustandsname) unveraendert
+PASS  3c currentHelmutState (API-Vertrag) wird weiter gelesen
+PASS  3d helmutAssessment (API-Vertrag) wird weiter gelesen
+PASS  4 Sprungbutton benennt die Empfehlung im Briefing (statt 'In Helmut öffnen')
+PASS  4b Bereichs-ARIA: 'Briefing – aktueller Stabschefstand'
+PASS  4c Kein Zustands-Abschnitt traegt mehr exakt aria-label="Helmut"
+PASS  5 Login-Button 'Helmut öffnen' (Marke: die App oeffnen) bleibt
+PASS  5b Persönliche Ansprache im aktuellen Briefing bleibt
+PASS  5c Briefing nutzt den gemeinsamen V3-Einstieg
+PASS  5d PWA-Manifest: App-Name bleibt Helmut
+PASS  6 Kein API-Pfad wurde umbenannt (z. B. /api/app/start bleibt)
+PASS  6b Morgenbriefing-Texte unveraendert vorhanden
+
+ALLE GRÜN — 20/20 Briefing-Reiter-Umbenennungs-Assertions

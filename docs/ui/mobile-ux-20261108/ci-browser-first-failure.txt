@@ -1,0 +1,8 @@
+GitHub CI42478378153, Kopf ce7d408bd86c7dd9dc69f4ed62ff78f27a202232
+Job128724701191: Browser-/Mobile-Smoke (Chromium)
+https://github.com/ernisch/helmut-pilot/actions/runs/42478378153/job/128724701191
+2026-11-08T12:03:12Z FAIL Briefing zeigt Empfehlung und eigenen Tagesanlass — {"proposals":1,"why":0}
+2026-11-08T12:03:42Z locator.innerText: Timeout30000ms; waiting for locator('.hstand-why')
+Ursache: vorhandener Smoke-Test erwartete die Begründung am alten Ort.
+Korrektur ausschließlich im bestehenden Test: .ui-recommendation-why und Sichtbarkeit prüfen; Radar-Sie-Form erwarten.
+Lokaler echter Smoke danach114PASS/0FAIL; Produktdateien unverändert.

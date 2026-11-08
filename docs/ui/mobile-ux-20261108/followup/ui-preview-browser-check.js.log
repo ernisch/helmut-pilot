@@ -1,0 +1,185 @@
+PASS  desktop: actual UI rendered
+PASS  desktop: all three design font families loaded
+PASS  desktop: bell is a thin outline icon
+PASS  desktop: Briefing has no manual refresh or replacement button
+PASS  desktop: dark supplied daily reason without recommendation visible
+PASS  desktop: dark no invented recommendation or office CTA
+PASS  desktop: dark reason without recommendation no horizontal overflow
+PASS  desktop: dark no empty reason placeholder
+PASS  desktop: dark actual recommendation retains adjacent reason
+PASS  desktop: dark filled Radar without manual update UI
+PASS  desktop: dark filled coverage caveat remains
+PASS  desktop: dark source date remains
+PASS  desktop: dark filled Radar no horizontal overflow
+PASS  desktop: dark empty Radar without manual update UI
+PASS  desktop: dark empty coverage caveat remains
+PASS  desktop: dark empty Radar no horizontal overflow
+PASS  desktop: dark unconfirmed Radar without manual update UI
+PASS  desktop: dark unconfirmed coverage caveat remains
+PASS  desktop: dark unconfirmed Radar no horizontal overflow
+PASS  desktop: dark stale Radar without manual update UI
+PASS  desktop: dark stale coverage caveat remains
+PASS  desktop: dark stale Radar no horizontal overflow
+PASS  desktop: dark stale-empty Radar without manual update UI
+PASS  desktop: dark stale-empty coverage caveat remains
+PASS  desktop: dark stale caveat remains
+PASS  desktop: dark stale-empty Radar no horizontal overflow
+PASS  desktop: dark error Radar without manual update UI
+PASS  desktop: dark error coverage caveat remains
+PASS  desktop: dark technical error remains
+PASS  desktop: dark error Radar no horizontal overflow
+PASS  desktop: light supplied daily reason without recommendation visible
+PASS  desktop: light no invented recommendation or office CTA
+PASS  desktop: light reason without recommendation no horizontal overflow
+PASS  desktop: light no empty reason placeholder
+PASS  desktop: light actual recommendation retains adjacent reason
+PASS  desktop: light filled Radar without manual update UI
+PASS  desktop: light filled coverage caveat remains
+PASS  desktop: light source date remains
+PASS  desktop: light filled Radar no horizontal overflow
+PASS  desktop: light empty Radar without manual update UI
+PASS  desktop: light empty coverage caveat remains
+PASS  desktop: light empty Radar no horizontal overflow
+PASS  desktop: light unconfirmed Radar without manual update UI
+PASS  desktop: light unconfirmed coverage caveat remains
+PASS  desktop: light unconfirmed Radar no horizontal overflow
+PASS  desktop: light stale Radar without manual update UI
+PASS  desktop: light stale coverage caveat remains
+PASS  desktop: light stale Radar no horizontal overflow
+PASS  desktop: light stale-empty Radar without manual update UI
+PASS  desktop: light stale-empty coverage caveat remains
+PASS  desktop: light stale caveat remains
+PASS  desktop: light stale-empty Radar no horizontal overflow
+PASS  desktop: light error Radar without manual update UI
+PASS  desktop: light error coverage caveat remains
+PASS  desktop: light technical error remains
+PASS  desktop: light error Radar no horizontal overflow
+PASS  desktop: automatic foreground load completes
+PASS  desktop: automatic foreground failure preserves prior content without success claim
+PASS  desktop: automatic Radar load issued only existing GET start reads
+PASS  desktop: external fetch denied
+PASS  mobile: actual UI rendered
+PASS  mobile: all three design font families loaded
+PASS  mobile: bell is a thin outline icon
+PASS  mobile: Briefing has no manual refresh or replacement button
+PASS  mobile: dark supplied daily reason without recommendation visible
+PASS  mobile: dark no invented recommendation or office CTA
+PASS  mobile: dark reason without recommendation no horizontal overflow
+PASS  mobile: dark no empty reason placeholder
+PASS  mobile: dark actual recommendation retains adjacent reason
+PASS  mobile: dark filled Radar without manual update UI
+PASS  mobile: dark filled coverage caveat remains
+PASS  mobile: dark source date remains
+PASS  mobile: dark filled Radar no horizontal overflow
+PASS  mobile: dark empty Radar without manual update UI
+PASS  mobile: dark empty coverage caveat remains
+PASS  mobile: dark empty Radar no horizontal overflow
+PASS  mobile: dark unconfirmed Radar without manual update UI
+PASS  mobile: dark unconfirmed coverage caveat remains
+PASS  mobile: dark unconfirmed Radar no horizontal overflow
+PASS  mobile: dark stale Radar without manual update UI
+PASS  mobile: dark stale coverage caveat remains
+PASS  mobile: dark stale Radar no horizontal overflow
+PASS  mobile: dark stale-empty Radar without manual update UI
+PASS  mobile: dark stale-empty coverage caveat remains
+PASS  mobile: dark stale caveat remains
+PASS  mobile: dark stale-empty Radar no horizontal overflow
+PASS  mobile: dark error Radar without manual update UI
+PASS  mobile: dark error coverage caveat remains
+PASS  mobile: dark technical error remains
+PASS  mobile: dark error Radar no horizontal overflow
+PASS  mobile: light supplied daily reason without recommendation visible
+PASS  mobile: light no invented recommendation or office CTA
+PASS  mobile: light reason without recommendation no horizontal overflow
+PASS  mobile: light no empty reason placeholder
+PASS  mobile: light actual recommendation retains adjacent reason
+PASS  mobile: light filled Radar without manual update UI
+PASS  mobile: light filled coverage caveat remains
+PASS  mobile: light source date remains
+PASS  mobile: light filled Radar no horizontal overflow
+PASS  mobile: light empty Radar without manual update UI
+PASS  mobile: light empty coverage caveat remains
+PASS  mobile: light empty Radar no horizontal overflow
+PASS  mobile: light unconfirmed Radar without manual update UI
+PASS  mobile: light unconfirmed coverage caveat remains
+PASS  mobile: light unconfirmed Radar no horizontal overflow
+PASS  mobile: light stale Radar without manual update UI
+PASS  mobile: light stale coverage caveat remains
+PASS  mobile: light stale Radar no horizontal overflow
+PASS  mobile: light stale-empty Radar without manual update UI
+PASS  mobile: light stale-empty coverage caveat remains
+PASS  mobile: light stale caveat remains
+PASS  mobile: light stale-empty Radar no horizontal overflow
+PASS  mobile: light error Radar without manual update UI
+PASS  mobile: light error coverage caveat remains
+PASS  mobile: light technical error remains
+PASS  mobile: light error Radar no horizontal overflow
+PASS  mobile: automatic foreground load completes
+PASS  mobile: automatic foreground failure preserves prior content without success claim
+PASS  mobile: automatic Radar load issued only existing GET start reads
+PASS  mobile: external fetch denied
+PASS  mobile: smartphone landscape locked
+PASS  mobile-360: actual UI rendered
+PASS  mobile-360: all three design font families loaded
+PASS  mobile-360: bell is a thin outline icon
+PASS  mobile-360: Briefing has no manual refresh or replacement button
+PASS  mobile-360: dark supplied daily reason without recommendation visible
+PASS  mobile-360: dark no invented recommendation or office CTA
+PASS  mobile-360: dark reason without recommendation no horizontal overflow
+PASS  mobile-360: dark no empty reason placeholder
+PASS  mobile-360: dark actual recommendation retains adjacent reason
+PASS  mobile-360: dark filled Radar without manual update UI
+PASS  mobile-360: dark filled coverage caveat remains
+PASS  mobile-360: dark source date remains
+PASS  mobile-360: dark filled Radar no horizontal overflow
+PASS  mobile-360: dark empty Radar without manual update UI
+PASS  mobile-360: dark empty coverage caveat remains
+PASS  mobile-360: dark empty Radar no horizontal overflow
+PASS  mobile-360: dark unconfirmed Radar without manual update UI
+PASS  mobile-360: dark unconfirmed coverage caveat remains
+PASS  mobile-360: dark unconfirmed Radar no horizontal overflow
+PASS  mobile-360: dark stale Radar without manual update UI
+PASS  mobile-360: dark stale coverage caveat remains
+PASS  mobile-360: dark stale Radar no horizontal overflow
+PASS  mobile-360: dark stale-empty Radar without manual update UI
+PASS  mobile-360: dark stale-empty coverage caveat remains
+PASS  mobile-360: dark stale caveat remains
+PASS  mobile-360: dark stale-empty Radar no horizontal overflow
+PASS  mobile-360: dark error Radar without manual update UI
+PASS  mobile-360: dark error coverage caveat remains
+PASS  mobile-360: dark technical error remains
+PASS  mobile-360: dark error Radar no horizontal overflow
+PASS  mobile-360: light supplied daily reason without recommendation visible
+PASS  mobile-360: light no invented recommendation or office CTA
+PASS  mobile-360: light reason without recommendation no horizontal overflow
+PASS  mobile-360: light no empty reason placeholder
+PASS  mobile-360: light actual recommendation retains adjacent reason
+PASS  mobile-360: light filled Radar without manual update UI
+PASS  mobile-360: light filled coverage caveat remains
+PASS  mobile-360: light source date remains
+PASS  mobile-360: light filled Radar no horizontal overflow
+PASS  mobile-360: light empty Radar without manual update UI
+PASS  mobile-360: light empty coverage caveat remains
+PASS  mobile-360: light empty Radar no horizontal overflow
+PASS  mobile-360: light unconfirmed Radar without manual update UI
+PASS  mobile-360: light unconfirmed coverage caveat remains
+PASS  mobile-360: light unconfirmed Radar no horizontal overflow
+PASS  mobile-360: light stale Radar without manual update UI
+PASS  mobile-360: light stale coverage caveat remains
+PASS  mobile-360: light stale Radar no horizontal overflow
+PASS  mobile-360: light stale-empty Radar without manual update UI
+PASS  mobile-360: light stale-empty coverage caveat remains
+PASS  mobile-360: light stale caveat remains
+PASS  mobile-360: light stale-empty Radar no horizontal overflow
+PASS  mobile-360: light error Radar without manual update UI
+PASS  mobile-360: light error coverage caveat remains
+PASS  mobile-360: light technical error remains
+PASS  mobile-360: light error Radar no horizontal overflow
+PASS  mobile-360: automatic foreground load completes
+PASS  mobile-360: automatic foreground failure preserves prior content without success claim
+PASS  mobile-360: automatic Radar load issued only existing GET start reads
+PASS  mobile-360: external fetch denied
+PASS  mobile-360: smartphone landscape locked
+PASS  No uncaught browser errors
+PASS  No external request fulfilled
+PASS  No missing static resources

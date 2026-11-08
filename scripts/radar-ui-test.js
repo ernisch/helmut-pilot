@@ -16,12 +16,12 @@ function loadClient(now) {
   code = code.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "");
   code += `\n;globalThis.__radarTest = {
     render: () => renderRadarView(),
+    topbar: () => { currentView = "radar"; return renderTopbar(); },
     setBriefing: (b) => { briefing = b; },
     setArticlesExpanded: (v) => { radarArticlesExpanded = v; },
     setFilter: (v) => { radarFilter = v; },
     setSegment: (v) => { radarSegment = v; },
     setEnvExpanded: (v) => { radarEnvExpanded = v; },
-    setRefreshFailed: (v) => { radarRefreshFailedAt = v; },
     sourceDate: (v) => radarTime(v),
     updatedLabel: (v) => radarUpdatedLabel(v),
     esc: (s) => escapeHtml(s)
@@ -106,6 +106,19 @@ api.setBriefing({ engine: "v3", currentRadarState: state });
 // 1) Radar rendert (nicht Leerzustand).
 const html = api.render();
 check("Radar rendert den Stand (.radar2, nicht leer)", html.includes("radar2") && html.includes("Radar"));
+check("Bestehende Radar-Zusammenfassung verwendet Sie-Form", html.includes("wurden Sie") && !html.includes("wurdest du"));
+for (const [label, patch, expected] of [
+  ["Fehler", { status: "error", available: false }, "Radar-Ladefehler"],
+  ["Veraltet", { status: "stale" }, "Radarstand veraltet"],
+  ["Unbestaetigt", { quality: { sourcesLoaded: false } }, "Quellenprüfung offen"]
+]) {
+  api.setBriefing({ status: "Aktuell", currentRadarState: { ...state, ...patch } });
+  const header = api.topbar();
+  check(`Radar-Topbar ${label} erbt kein falsches Briefing-Aktuell`, header.includes(expected) && !header.includes("ui-status--fresh"));
+}
+api.setBriefing({ currentRadarState: { ...state, mentions: [{ ...state.mentions[0], beobachtungsBeleg: { art: "eigenerwaehnung" }, evidence: "Die Quelle nennt deinen Namen." }] } });
+check("Generierter Radar-Zuordnungshinweis wird zur Sie-Form", api.render().includes("Die Quelle nennt Ihren Namen."));
+api.setBriefing({ engine: "v3", currentRadarState: state });
 
 // Eine datumsgenaue Quelle darf nicht durchUTC-Normalisierung zu einer
 // behaupteten Veroeffentlichung um02:00 werden. Echter Renderer, kein Regex-Patch.
@@ -151,7 +164,7 @@ check("Dynamik leer -> ehrlicher Leerzustand statt erfundener Aktualität",
   api.render().includes("In dieser Ansicht werden keine belegten Dynamikhinweise angezeigt"));
 
 // 6) Umfeld-Label dimensionsgenau.
-check("Umfeld zeigt dimensionsgenaues Label 'Betrifft deine Partei'", api.render().includes("Betrifft deine Partei"));
+check("Umfeld zeigt dimensionsgenaues Label 'Betrifft deine Partei'", api.render().includes("Betrifft Ihre Partei"));
 
 // 7) Sicherheit: keine Kosten/Token/LLM/Demo im Markup, kein Client-Fetch im Render.
 const blob = api.render();
@@ -193,7 +206,7 @@ api.setBriefing({ engine: "v3", currentRadarState: emptyPartyState });
 api.setSegment("party");
 const emptyPartyHtml = api.render();
 check("Leeres Partei-Segment -> ehrlicher Leerzustand statt kaputt/leer",
-  /In dieser Ansicht werden keine belegten Partei- oder Fraktionssignale angezeigt/.test(emptyPartyHtml) && emptyPartyHtml.includes("Dein Umfeld"));
+  /In dieser Ansicht werden keine belegten Partei- oder Fraktionssignale angezeigt/.test(emptyPartyHtml) && emptyPartyHtml.includes("Ihr Umfeld"));
 
 // 11) Stoerungswahrheit im Radar-Leerzustand (Audit-Folgebranch): store-error/
 //     keine-vorgaenge duerfen NICHT wie ein ruhiger Tag aussehen; "keine-treffer"
@@ -238,16 +251,16 @@ check("Technischer Fehler hat Vorrang vor Scoring Leertext",
   htmlEs.includes("Radar derzeit nicht ladbar") && htmlEs.includes('data-empty-kind="stoerung"')
   && !htmlEs.includes("Scoring-Headline"));
 
-// 12) Fehlgeschlagener Refresh: ruhige Hinweiszeile mit letztem gutem Stand (kein Alarm).
+// Der Radar liest den vorhandenen Startvertrag; er bietet keinen manuellen
+// Aktualisierungsauftrag und keine zugehoerige Rechercheerklaerung mehr an.
 api.setBriefing({ engine: "v3", currentRadarState: state });
-api.setRefreshFailed(Date.parse("2026-07-11T10:00:00Z"));
-const htmlFail = api.render();
-check("Refresh-Fehlschlag -> sichtbare, ruhige Hinweiszeile (Anzeige bleibt letzter Stand)",
-  htmlFail.includes("radar2-refresh-note") && htmlFail.includes("Aktualisierung fehlgeschlagen"));
-check("Refresh-Hinweis benennt das Quelldatum statt einer erfolgreichen Pruefung",
-  htmlFail.includes("vorhandene Inhalte bleiben sichtbar") && htmlFail.includes("Neueste angezeigte Quelle:"));
-api.setRefreshFailed(0);
-check("Ohne Fehlschlag erscheint kein Refresh Fehlerhinweis", !api.render().includes("Aktualisierung fehlgeschlagen"));
+const ohneRefresh = api.render();
+check("Radar hat keinen manuellen Refreshknopf oder dessen Hinweis",
+  !/data-radar-refresh|radar2-refresh(?:[\s"])|radar-refresh-purpose|Stand neu laden|Radarstand neu laden/.test(ohneRefresh)
+  && !ohneRefresh.includes("Startet keine Quellenrecherche oder neue Auswertung."));
+check("Quellenstand und Grenzen der Abdeckung bleiben ohne Refreshknopf sichtbar",
+  ohneRefresh.includes("Neueste angezeigte Quelle:")
+  && ohneRefresh.includes("Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen."));
 
 // Technische Metadaten duerfen durch die serverseitige Anzeigeauswahl nicht
 // verloren gehen; Readerzeit ist kein Quellenpruefbeleg.
@@ -288,6 +301,25 @@ check("Bestaetigte leere Datengrundlage hat eigenen Zustand ohne globale Entwarn
   api.render().includes('data-empty-kind="quiet"') && api.render().includes("Keine zugeordneten Signale in dieser Ansicht")
   && !api.render().includes("Heute gibt es keine neuen relevanten Signale"));
 
-console.log(`\n${passed}/${passed + failed} Radar-UI-Assertions erfolgreich.`);
-if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
+const staleEmpty = { ...confirmedEmpty, emptyState: { kind: "stale" } };
+api.setBriefing({ currentRadarState: staleEmpty });
+const staleEmptyHtml = api.render();
+check("Veralteter Leerstand bleibt trotz geladener Quellen von bestaetigter Leere unterscheidbar",
+  staleEmptyHtml.includes('data-empty-kind="stale"') && staleEmptyHtml.includes("Radarstand veraltet")
+  && !staleEmptyHtml.includes("Keine zugeordneten Signale in dieser Ansicht"));
+api.setBriefing({ currentRadarState: { ...staleEmpty, available: false, status: "error" } });
+check("Technischer Fehler hat auch gegenueber veraltetem Leerstand Vorrang",
+  api.render().includes('data-empty-kind="stoerung"') && !api.render().includes('data-empty-kind="stale"'));
+api.setBriefing({ currentRadarState: state });
+const reloadHtml = api.render();
+check("Ein heutiges Quelldatum wird nicht als heute durchgefuehrte Pruefung ausgegeben",
+  !/heute (?:geprüft|recherchiert)|Quellen heute geprüft/i.test(reloadHtml));
 
+api.setBriefing({ currentRadarState: { ...state, mentions: [], articles: [], dynamics: [],
+  environment: { party: [], constituency: [], committees: [] },
+  emptyState: { kind: "gap", detail: "Für dein Mandat fehlen Quellen." } } });
+check("Auch gelieferter Radar-Leerhinweis verwendet Sie-Ansprache", api.render().includes("Für Ihr Mandat fehlen Quellen."));
+api.setBriefing({ currentRadarState: state });
+
+console.log(`\n${passed}/${passed + failed} Radar-UI-Assertions erfolgreich.`);
+if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exitCode = 1; }

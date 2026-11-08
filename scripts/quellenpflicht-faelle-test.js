@@ -188,7 +188,8 @@ console.log("— Fall 1+2+5: Radar-Leerzustaende —");
   const html2 = api.renderRadar();
   check("Radar: Bereich mit oeffnbarem Artikel rendert die Karte", html2.includes("Sichtbarer-Artikel"));
   check("Radar: Bereich 'Über dich' ohne oeffnbare Items zeigt seinen ehrlichen Leerhinweis",
-    html2.includes("Heute wurden keine direkten Erwähnungen gefunden"));
+    html2.includes("In dieser Ansicht werden keine belegten direkten Erwähnungen angezeigt.")
+      && !html2.includes("Heute wurden keine direkten Erwähnungen gefunden"));
   check("Radar: Bereich 'Neue Dynamiken' ohne oeffnbare Items zeigt seinen ehrlichen Leerhinweis",
     html2.includes("In dieser Ansicht werden keine belegten Dynamikhinweise angezeigt."));
 }

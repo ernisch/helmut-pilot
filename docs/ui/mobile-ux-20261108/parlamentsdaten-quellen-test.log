@@ -1,0 +1,28 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+PASS Zwei quellengebundene Originalproben vom 06.11.2026, jeweils drei RSS-Items
+PASS EUR-Lex behält Feed-Publikationsdatum, CELEX-Link und Urheber
+PASS Bundespuls-DIP-Aktualisierung wird vor Speicherung keine Publikation
+PASS Aktualisierte DIP-Zeit erzeugt keine neue Dokumentidentität oder Abrufdatum als Publikation
+PASS Datumssonderregel benötigt bekannte Quellen-ID UND alle exakten Feedadressen
+PASS Relationaler Crawler-Adapter erhält Datum und Herausgebertyp mit und ohne Legacy-Objekt
+PASS Beide RSS laufen durch die echte Abrufkette ohne zusätzliche Artikelabrufe
+PASS Leere oder fehlerhafte Metadatenfeeds wechseln nicht still auf HTML-Volltext
+PASS HTTP200 mit HTML oder abgeschnittenem RSS ist kein erfolgreicher Leerabruf
+PASS Neue lange Feedbeschreibungen erweitern die Titelmetadatenübernahme nicht
+[crawler] Google-News URL-Auflösung: 0/0 aufgelöst, 0 ungelöst
+PASS Nur zwei vorbereitete Wege, trotz passendem Profil und Basisbindung inaktiv
+PASS EUR-Lex gehört zur EU-Vertiefung, Bundespuls zur Bundesbasis
+PASS Herausgeberrollen trennen amtliches EUR-Lex vom privaten DIP-Aggregator
+PASS Bundespuls ist weder amtlicher noch unabhängiger journalistischer Faktenbeleg
+PASS Kurationslimit schneidet vorbereitete Ergänzungen nicht ab
+PASS Nur explizit aktivierte relationale Zeilen starten trotz inaktiver Legacy-Seeds
+PASS Bot-Kontakt gilt nur an den zwei belegten Feedadressen
+PASS Herkunft bleibt in beiden Speicherprojektionen und allen Quellen-DTOs gebunden
+PASS DIP-Quellenpflicht, kostenlose Originale und Titelkürzung werden konkret gekennzeichnet
+PASS Falsche Herkunfts-IDs, Artikelziele und fremde Rohfelder werden nicht weitergegeben
+PASS Metadatenfeeds öffnen auch später keinen Artikeltext-Nachladepfad
+PASS Produktiver PostgREST-Alias und kompakte Serverantwort erhalten den Quellenhinweis
+PASS DIP plus Bundespuls erhöht Korroboration und Dynamik nicht; Journalismus weiterhin schon
+
+23/23 Prüfgruppen bestanden; kein Netz, keine DB, kein Modell.
