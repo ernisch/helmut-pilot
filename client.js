@@ -4717,10 +4717,28 @@ function uiIcon(name) {
   return `<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths[name] || paths.briefing}</svg>`;
 }
 
+// Nur persönliche Ansprache in vorhandener UI/Einordnung, keine Änderung an Originaltiteln.
+function uiSieText(value) {
+  return String(value == null ? "" : value)
+    .replace(/\b[Dd]u solltest\b/g, "Sie sollten")
+    .replace(/\b[Dd]u kannst\b/g, "Sie können")
+    .replace(/\b[Dd]u musst\b/g, "Sie müssen")
+    .replace(/\b[Dd]u wurdest\b/g, "Sie wurden")
+    .replace(/\b[Dd]u wirst\b/g, "Sie werden")
+    .replace(/\b[Dd]u hast\b/g, "Sie haben")
+    .replace(/\b[Dd]u bist\b/g, "Sie sind")
+    .replace(/\b[Dd]einen\b/g, "Ihren").replace(/\b[Dd]einem\b/g, "Ihrem")
+    .replace(/\b[Dd]einer\b/g, "Ihrer").replace(/\b[Dd]eines\b/g, "Ihres")
+    .replace(/\b[Dd]eine\b/g, "Ihre").replace(/\b[Dd]ein\b/g, "Ihr")
+    .replace(/\b[Dd]ich\b/g, "Sie").replace(/\b[Dd]ir\b/g, "Ihnen")
+    .replace(/\bPrüfe\b/g, "Prüfen Sie").replace(/\bBereite\b/g, "Bereiten Sie")
+    .replace(/\bLies\b/g, "Lesen Sie");
+}
+
 function renderUiPageHeader(title, subtitle = "", extra = "") {
   const dateLabel = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
   return `<header class="ui-page-header">
-    <p class="ui-date">${escapeHtml(dateLabel)}</p>
+    <p class="ui-date">${escapeHtml(dateLabel)}${["helmut", "briefing", "radar"].includes(currentView) ? " · Berliner Zeit" : ""}</p>
     <h1>${escapeHtml(title)}</h1>
     ${subtitle ? `<p class="ui-page-subtitle">${escapeHtml(subtitle)}</p>` : ""}
     ${extra}
@@ -4734,7 +4752,9 @@ function renderUiEmpty(title, detail) {
 function renderUiFooter(variant = "") {
   const label = currentView === "settings" || currentView === "profile-settings"
     ? "Dein Mandatsprofil steuert die persönliche Einordnung."
-    : "Quellen und Stand findest du direkt bei den angezeigten Inhalten.";
+    : ["helmut", "briefing", "radar"].includes(currentView)
+      ? "Quellen und Stand finden Sie direkt bei den angezeigten Inhalten."
+      : "Quellen und Stand findest du direkt bei den angezeigten Inhalten.";
   // Zwei Platzierungen derselben Zeile: Desktop am Fensterrand, mobil am
   // Inhaltsende (Design). Per CSS ist je Breite genau eine sichtbar.
   return `<footer class="ui-footer ${variant}">${uiIcon("source")}<span>${escapeHtml(label)}</span>${previewMode ? '<span class="ui-preview-label">Vorschau · Beispieldaten</span>' : ""}</footer>`;
@@ -5366,7 +5386,7 @@ function renderLageEmpty(greeting, dateLabel, emptyState, data) {
     : "Heute liegen noch keine quellengestützten Vorgänge vor.";
   const sub = es && es.detail ? es.detail
     : disruption ? disruption.sub
-    : "Sobald neue geprüfte Quellen verfügbar sind, erscheint hier deine Lage.";
+    : "Sobald neue geprüfte Quellen verfügbar sind, erscheint hier Ihre Lage.";
   const emptyKind = es ? es.kind : (disruption ? disruption.kind : "");
   return `
     <section class="lage2 lage2-empty-wrap"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
@@ -5418,7 +5438,7 @@ function lageListSourceHtml(v) {
       date = lageField(source.dateLabel);
     }
   }
-  return `<span class="ui-row-source"><span class="ui-row-source-name" title="${escapeAttribute(name)}">${escapeHtml(name)}</span><span>${escapeHtml(date || "Datum unbekannt")}</span>${lageStatusChip(v) ? `<span>${escapeHtml(lageStatusChip(v))}</span>` : ""}</span>`;
+  return `<span class="ui-row-source"><span class="ui-row-source-name" title="${escapeAttribute(name)}">${escapeHtml(name)}</span><span>${escapeHtml(date || "Datum unbekannt")}</span>${lageStatusChip(v) ? `<span>Vorgangsstatus: ${escapeHtml(lageStatusChip(v))}</span>` : ""}</span>`;
 }
 
 function renderLageView() {
@@ -5450,7 +5470,7 @@ function renderLageView() {
             const summary = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
             return `<button class="ui-vorgang-row ${id === selectedId ? "is-selected" : ""}" type="button" data-ui-lage-select="${escapeAttribute(id)}" aria-pressed="${id === selectedId}">
               <span class="ui-row-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
-              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(summary)}</span>` : ""}${lageField(v.relevanz?.satz) ? `<span class="ui-row-relevance"><strong>Mandatsbezug:</strong> ${escapeHtml(lageField(v.relevanz.satz))}</span>` : ""}${lageListSourceHtml(v)}</span>
+              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(summary)}</span>` : ""}${lageField(v.relevanz?.satz) ? `<span class="ui-row-relevance"><strong>Mandatsbezug:</strong> ${escapeHtml(uiSieText(lageField(v.relevanz.satz)))}</span>` : ""}${lageListSourceHtml(v)}</span>
               <span class="ui-row-chevron" aria-hidden="true">›</span>
             </button>`;
           }).join("")}
@@ -5699,7 +5719,7 @@ function vsheetStatusHtml(v) {
   const label = LAGE_STATUS_LABEL[v && v.status];
   if (!label) return "";
   const dot = VSHEET_STATUS_DOT[v.status] || "is-neutral";
-  return `<div class="vsheet-status"><span class="vsheet-status-dot ${dot}" aria-hidden="true"></span><span>${escapeHtml(label)}</span></div>`;
+  return `<div class="vsheet-status"><span class="vsheet-status-dot ${dot}" aria-hidden="true"></span><span>Vorgangsstatus: ${escapeHtml(label)}</span></div>${v.status === "neu" ? '<p class="ui-evidence-note">„Neu“ ist der gespeicherte Vorgangsstatus. Seit wann er gilt, ist nicht belegt; er sagt nichts über Quellenfrische oder Ihren letzten Besuch aus.</p>' : ""}`;
 }
 
 // „Warum für dich relevant?" (Sprint 23C) — die persönliche Relevanz.
@@ -5731,13 +5751,13 @@ function vsheetRelevanzHtml(v) {
     .slice(0, 4);
   return `
     <section class="vsheet-sec">
-      <h3 class="vsheet-h">Warum für dich relevant?</h3>
-      <p class="vsheet-relevanz">${escapeHtml(satz)}</p>
+      <h3 class="vsheet-h">Warum für Sie relevant?</h3>
+      <p class="vsheet-relevanz">${escapeHtml(uiSieText(satz))}</p>
       ${belege.length ? `
       <details class="vsheet-belege">
         <summary>Belege ansehen</summary>
         <ul>
-          ${belege.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}
+          ${belege.map((t) => `<li>${escapeHtml(uiSieText(t))}</li>`).join("")}
         </ul>
       </details>` : ""}
     </section>`;
@@ -6217,7 +6237,7 @@ function renderFeedbackActions(decision) {
 function renderHelmutView() {
   if (briefing?.prosaVorschau === true) return renderProsaEinordnung(briefing.prosaEinordnung);
   return helmutThinking
-    ? renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.") + renderHelmutThinkingView()
+    ? renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Ihr Briefing. Was jetzt Ihre Aufmerksamkeit braucht.") + renderHelmutThinkingView()
     : renderHelmutStandView();
 }
 
@@ -6420,13 +6440,13 @@ function renderUiBriefingColumns(state) {
   const radarLine = rs && rs.available !== false && rs.summary ? [rs.summary.line1, rs.summary.line2].filter(Boolean).join(" ") : "";
   const radar = radarLine ? `<section class="ui-col" aria-label="Radar">
       <p class="ui-col-kicker">${uiIcon("radar")}<span>Radar</span></p>
-      <p>${escapeHtml(radarLine)}</p>
+      <p>${escapeHtml(uiSieText(radarLine))}</p>
       <button type="button" class="ui-col-link" data-view="radar">Im Radar öffnen ${uiIcon("arrow")}</button>
     </section>` : "";
   const decision = briefingOfficeDecision();
   const formats = decision ? activeOfficeFormats() : [];
-  const buero = formats.length ? `<section class="ui-col" aria-label="Für dein Büro">
-      <p class="ui-col-kicker">${uiIcon("office")}<span>Für dein Büro</span></p>
+  const buero = formats.length ? `<section class="ui-col" aria-label="Für Ihr Büro">
+      <p class="ui-col-kicker">${uiIcon("office")}<span>Für Ihr Büro</span></p>
       <h3>${formats.length === 1 ? "1 Vorbereitung" : `${formats.length} Vorbereitungen`}</h3>
       <ul class="ui-col-list">${formats.slice(0, 3).map((f) => `<li><strong>${escapeHtml(f.label)}</strong><span>${escapeHtml(officeCardStatus(decision, f))}</span></li>`).join("")}</ul>
       <button type="button" class="ui-col-link" data-view="office">Büro öffnen ${uiIcon("arrow")}</button>
@@ -6451,15 +6471,15 @@ function renderUiBriefingHero(state, details = "") {
   return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang" data-topic-title="${escapeAttribute(title)}">
     <div class="ui-hero-main"><span class="ui-eyebrow"><span class="ui-priority-dot" aria-hidden="true"></span>${eyebrow}</span>
       <h2>${escapeHtml(title)}</h2>
-      ${sub ? `<p class="ui-hero-sub">${escapeHtml(sub)}</p>` : ""}
+      ${sub ? `<p class="ui-hero-sub">${escapeHtml(uiSieText(sub))}</p>` : ""}
       ${chips.trim() ? `<div class="hstand-chiprow">${chips}</div>` : ""}
       ${hstandQuelleHref(item) ? `<a class="ui-source-direct" href="${escapeAttribute(hstandQuelleHref(item))}" target="_blank" rel="noopener noreferrer">Originalquelle öffnen${item.sourceName ? ` · ${escapeHtml(item.sourceName)}` : ""} ↗</a>${renderSourceNotice(item, hstandQuelleHref(item))}` : ""}
       ${briefingLageVerweis(item)}
     </div>
     <div class="ui-hero-next">
-      <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Dein nächster Schritt</span><span class="ui-next-step">${escapeHtml(recommendation || "Prüfe die Einordnung und Quellen zu diesem Vorgang.")}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>
-      ${recommendation && hstandText(state.whyItMatters) ? `<p class="ui-recommendation-why"><strong>Begründung:</strong> ${escapeHtml(hstandText(state.whyItMatters))}</p>` : ""}
-      ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfe den Vorgang und deine Büro-Formate.</p>'}
+      <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation || "Prüfen Sie die Einordnung und Quellen zu diesem Vorgang."))}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>
+      ${recommendation && hstandText(state.whyItMatters) ? `<p class="ui-recommendation-why"><strong>Begründung:</strong> ${escapeHtml(uiSieText(hstandText(state.whyItMatters)))}</p>` : ""}
+      ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und Ihre Büro-Formate.</p>'}
       <p class="ui-evidence-note">KI-Empfehlung und Begründung · vor Verwendung prüfen. Aussagebezogene Originalauszüge werden hier nicht mitgeliefert.</p>
       <p class="ui-hero-meta">${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
     </div>
@@ -6490,7 +6510,7 @@ function renderHstandHeader(state) {
   ].filter(Boolean).join(" · ");
   const partial = state.qualityStatus === "partial";
   return `
-    ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.")}
+    ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Ihr Briefing. Was jetzt Ihre Aufmerksamkeit braucht.")}
     <div class="hstand-head ui-briefing-status">
         <div class="hstand-head-actions">
           <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
@@ -6511,7 +6531,7 @@ function renderHstandWhy(state) {
   return `
     <section class="hstand-card hstand-why" aria-label="Warum ist das wichtig">
       ${hstandKicker(HELMUT_ICON_EYE, "Warum ist das wichtig?", "accent")}
-      <p class="hstand-body">${escapeHtml(why)}</p>
+      <p class="hstand-body">${escapeHtml(uiSieText(why))}</p>
     </section>`;
 }
 
@@ -6523,13 +6543,13 @@ function renderHstandRiskChance(state) {
   const riskCard = (risk || riskLevel) ? `
     <section class="hstand-card hstand-split hstand-risk" aria-label="Risiko bei Nichtreaktion">
       ${hstandKicker(HELMUT_ICON_WARN, "Risiko bei Nichtreaktion", "risk")}
-      ${risk ? `<p class="hstand-body hstand-body--tight">${escapeHtml(risk)}</p>` : ""}
+      ${risk ? `<p class="hstand-body hstand-body--tight">${escapeHtml(uiSieText(risk))}</p>` : ""}
       ${riskLevel}
     </section>` : "";
   const chanceCard = (chance || chanceLevel) ? `
     <section class="hstand-card hstand-split hstand-chance" aria-label="Chance">
       ${hstandKicker(HELMUT_ICON_TREND, "Chance", "chance")}
-      ${chance ? `<p class="hstand-body hstand-body--tight">${escapeHtml(chance)}</p>` : ""}
+      ${chance ? `<p class="hstand-body hstand-body--tight">${escapeHtml(uiSieText(chance))}</p>` : ""}
       ${chanceLevel}
     </section>` : "";
   if (!riskCard && !chanceCard) return "";
@@ -6559,7 +6579,7 @@ function renderHstandComms(state) {
   return `
     <section class="hstand-card hstand-comms" aria-label="Empfohlene Kommunikation">
       ${hstandKicker(HELMUT_ICON_CHAT, "Empfohlene Kommunikation", "comms")}
-      ${line ? `<p class="hstand-body">${escapeHtml(line)}</p>` : ""}
+      ${line ? `<p class="hstand-body">${escapeHtml(uiSieText(line))}</p>` : ""}
       ${recLine}
       ${chips ? `<div class="hstand-comms-formats"><span class="hstand-comms-formats-label">Formate</span><div class="hstand-chiprow hstand-chiprow--sm">${chips}</div></div>` : ""}
     </section>`;
@@ -6575,23 +6595,23 @@ function renderHstandActions(state) {
     const desc = hstandText(a.description);
     const due = hstandText(a.dueHint);
     const prio = hstandPriorityChip(a.priority);
-    const metaRow = (due || prio) ? `<div class="hstand-step-meta">${due ? `<span class="hstand-step-due">${HELMUT_ICON_CLOCK}${escapeHtml(due)}</span>` : ""}${prio}</div>` : "";
+    const metaRow = (due || prio) ? `<div class="hstand-step-meta">${due ? `<span class="hstand-step-due">${HELMUT_ICON_CLOCK}${escapeHtml(uiSieText(due))}</span>` : ""}${prio}</div>` : "";
     const detail = desc
-      ? `<details class="hstand-step-more"><summary>Details</summary><p class="hstand-step-desc">${escapeHtml(desc)}</p></details>`
+      ? `<details class="hstand-step-more"><summary>Details</summary><p class="hstand-step-desc">${escapeHtml(uiSieText(desc))}</p></details>`
       : "";
     return `
       <li class="hstand-step">
         <span class="hstand-step-num">${i + 1}</span>
         <div class="hstand-step-body">
-          <p class="hstand-step-title">${escapeHtml(hstandText(a.title))}</p>
+          <p class="hstand-step-title">${escapeHtml(uiSieText(hstandText(a.title)))}</p>
           ${metaRow}
           ${detail}
         </div>
       </li>`;
   }).join("");
   return `
-    <section class="hstand-card hstand-actions" aria-label="Was du jetzt tun solltest">
-      ${hstandKicker(HELMUT_ICON_LIST, "Was du jetzt tun solltest", "actions")}
+    <section class="hstand-card hstand-actions" aria-label="Was Sie jetzt tun sollten">
+      ${hstandKicker(HELMUT_ICON_LIST, "Was Sie jetzt tun sollten", "actions")}
       <ol class="hstand-steps">${rows}</ol>
     </section>`;
 }
@@ -6652,7 +6672,7 @@ function renderHstandFrische(state) {
   }
   if (v.quellen && v.quellen.hinweis) zeilen.push({ ton: "warn", text: v.quellen.hinweis });
   if (!zeilen.length) return "";
-  return zeilen.map((z) => `<p class="hstand-frische hstand-frische--${z.ton}">${HELMUT_ICON_CLOCK}<span>${escapeHtml(z.text)}</span></p>`).join("");
+  return zeilen.map((z) => `<p class="hstand-frische hstand-frische--${z.ton}">${HELMUT_ICON_CLOCK}<span>${escapeHtml(uiSieText(z.text))}</span></p>`).join("");
 }
 
 const HSTAND_FRISCHE_GRUPPEN = [
@@ -6692,7 +6712,7 @@ function renderHstandItems(state) {
           ${urgency}
         </div>
         ${zeit ? `<p class="hstand-rel-when">${escapeHtml(zeit)}</p>` : ""}
-        ${why ? `<p class="hstand-rel-why">${escapeHtml(why)}</p>` : ""}
+        ${why ? `<p class="hstand-rel-why">${escapeHtml(uiSieText(why))}</p>` : ""}
         ${lageLink}
         ${quelle ? `<a class="hstand-rel-quelle" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
       </li>`;
@@ -6739,11 +6759,11 @@ function renderHstandSources(state) {
 function renderHstandUnavailable() {
   return `
     <section class="hstand hstand--state" aria-label="Briefing">
-      ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Dein Briefing. Was jetzt deine Aufmerksamkeit braucht.")}
+      ${renderUiPageHeader(timeGreeting((profile?.fullName || "").split(/\s+/)[0]), "Ihr Briefing. Was jetzt Ihre Aufmerksamkeit braucht.")}
       <div class="hstand-state-card">
         <span class="hstand-state-mark" aria-hidden="true">H</span>
         <p class="hstand-state-title">Kein aktueller Stand verfügbar</p>
-        <p class="hstand-state-sub">Sobald belastbare Vorgänge für dein Mandat vorliegen, erscheint hier dein Stabschefstand.</p>
+        <p class="hstand-state-sub">Sobald belastbare Vorgänge für Ihr Mandat vorliegen, erscheint hier Ihr Stabschefstand.</p>
       </div>
     </section>`;
 }
@@ -6820,7 +6840,7 @@ function renderHstandStateCard(state, kind) {
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
         <p class="hstand-state-title">${escapeHtml(quiet ? "Keine neue Tagespriorität" : title)}</p>
         <p class="hstand-state-sub">${escapeHtml(quiet ? "Der vorhandene Stand begründet heute keine neue Tagespriorität. Das ist keine Entwarnung; laufende Themen bleiben relevant." : sub)}</p>
-        ${quiet && sub ? `<details class="ui-source-evidence"><summary>Hinweis zum vorhandenen Stand</summary><p>${escapeHtml(sub)}</p></details>` : ""}
+        ${quiet && sub ? `<details class="ui-source-evidence"><summary>Hinweis zum vorhandenen Stand</summary><p>${escapeHtml(uiSieText(sub))}</p></details>` : ""}
         ${lageLine}${lageButton}
       </div>
     </section>`;
@@ -8178,7 +8198,7 @@ function renderRadarSummary(state) {
   const s = state.summary || {};
   const lines = [s.line1, s.line2].filter(Boolean);
   if (!lines.length) return "";
-  const html = lines.map((ln) => `<span class="radar2-summary-line">${radarHighlight(ln)}</span>`).join("");
+  const html = lines.map((ln) => `<span class="radar2-summary-line">${radarHighlight(uiSieText(ln))}</span>`).join("");
   return `
     <section class="radar2-summary" aria-label="Zusammenfassung">
       <div class="radar2-summary-icon" aria-hidden="true">${radarIcon("radar")}</div>
@@ -8202,7 +8222,7 @@ function renderRadarAboutYou(state) {
     : radarEmptyHint(radarSectionEmptyText(state, "direkten Erwähnungen"));
   return `
     <section class="radar2-section">
-      ${radarSectionHead("person", "Über dich", "mentions", expanded, all.length > 3)}
+      ${radarSectionHead("person", "Über Sie", "mentions", expanded, all.length > 3)}
       <div class="radar2-cards">${body}</div>
     </section>
   `;
@@ -8251,7 +8271,7 @@ function renderRadarEnvironment(state) {
     : "";
   return `
     <section class="radar2-section">
-      <h2 class="radar2-h2">${radarIcon("people")}<span>Dein Umfeld</span></h2>
+      <h2 class="radar2-h2">${radarIcon("people")}<span>Ihr Umfeld</span></h2>
       <div class="radar2-segments" role="tablist" aria-label="Umfeld-Bereich">${tabs}</div>
       <div class="radar2-list">${list}</div>
       ${more}
@@ -8612,7 +8632,7 @@ const RADAR_SEGMENTS = [
 
 const RADAR_FILTERS = [
   { key: "all", label: "Alle" },
-  { key: "mention", label: "Über dich" },
+  { key: "mention", label: "Über Sie" },
   { key: "party", label: "Partei" },
   { key: "constituency", label: "Wahlkreis" },
   { key: "committee", label: "Ausschüsse" },
@@ -8620,7 +8640,7 @@ const RADAR_FILTERS = [
   { key: "official", label: "Offizielle Quellen" }
 ];
 
-const RADAR_RELATION_LABELS = { mention: "Über dich", party: "Partei", constituency: "Wahlkreis", committee: "Ausschuss", media: "Medien", official: "Offiziell" };
+const RADAR_RELATION_LABELS = { mention: "Über Sie", party: "Partei", constituency: "Wahlkreis", committee: "Ausschuss", media: "Medien", official: "Offiziell" };
 
 function publisherDomain(item) {
   const text = `${item.sourceName || ""} ${item.title || ""}`.toLowerCase();
@@ -11550,7 +11570,7 @@ function formatBerlinNow() {
 // Status-Pille nach Design: „Aktuell · 07:12 Uhr“; mobil nur die Uhrzeit
 // (Status und „Uhr“ bleiben für Screenreader lesbar, nur visuell verborgen).
 function renderBerlinClockLabel(statusLabel) {
-  return `<span class="ui-status-label">${escapeHtml(statusLabel)} · </span><span class="ui-status-time">${escapeHtml(formatBerlinNow())}</span><span class="ui-status-unit"> Uhr</span>`;
+  return `<span class="ui-status-label">${escapeHtml(statusLabel)} · </span><span class="ui-status-time">${escapeHtml(formatBerlinNow())}${["helmut", "briefing", "radar"].includes(currentView) ? " · Berlin" : ""}</span><span class="ui-status-unit"> Uhr</span>`;
 }
 
 function formatBerlinTimeOnly(date = new Date()) {
