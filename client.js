@@ -5668,7 +5668,7 @@ function vsheetBetroffeneHtml(v) {
 // Zeit · Quelle (sekundär), rechts ein dezentes Externer-Link-Symbol. Nutzt
 // ausschließlich vorhandene Quellenfelder (kein neuer Datenzugriff).
 function vsheetSourceRow(source) {
-  const name = lageField(source.name) || "Quelle";
+  const name = lageField(source.name) || lageField(source.sourceName) || "Quelle";
   const host = lageField(source.host);
   const href = source.url && isHttpUrl(source.url) ? source.url : (host ? `https://${host}` : "");
   const time = bundespulsPublicationUnknown(source, href) ? "" : lageField(source.dateLabel || source.publishedAt || source.published_at);
@@ -5676,7 +5676,8 @@ function vsheetSourceRow(source) {
   const ext = `<svg class="vsheet-src-ext" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const inner = `
     <span class="vsheet-src-main">
-      <span class="vsheet-src-name">${escapeHtml(name)}</span>
+      <span class="vsheet-src-name">${escapeHtml(name)} · Original öffnen ↗</span>
+      ${lageField(source.title) ? `<span class="vsheet-src-meta">Quellentitel: ${escapeHtml(lageField(source.title))}</span>` : ""}
       ${meta ? `<span class="vsheet-src-meta">${escapeHtml(meta)}</span>` : ""}
     </span>
     ${href ? ext : ""}`;
@@ -5744,6 +5745,18 @@ function vsheetRelevanzHtml(v) {
 
 // Rendert den kompletten Sheet-Inhalt (8 Abschnitte, leere ausgeblendet) aus den
 // bereits vorhandenen Kartendaten — keinerlei Neuberechnung/Fetch/KI.
+// Bereits geladene, vorgangsgebundene Absätze sind Einordnung, keine Originalzitate.
+function lageParagraphContextHtml(v) {
+  const id = String(v.vorgangId || v.id || "");
+  const paragraphs = (Array.isArray(lageData()?.paragraphs) ? lageData().paragraphs : [])
+    .filter(p => Array.isArray(p.vorgangIds) && p.vorgangIds.includes(id) && lageField(p.text));
+  if (!paragraphs.length) return "";
+  return `<details class="vsheet-sec ui-source-evidence"><summary>Zugeordnete Lageeinordnung lesen</summary>
+    <p class="ui-evidence-note">Zusätzliche KI-Einordnung · kein Originalauszug. Kann mehrere Vorgänge betreffen und Fehler enthalten.</p>
+    ${paragraphs.map(p => `<p>${escapeHtml(p.text)}</p><div class="vsheet-sources">${(Array.isArray(p.sources) ? p.sources : []).map(vsheetSourceRow).join("")}</div>`).join("")}
+  </details>`;
+}
+
 function vsheetContentHtml(v) {
   const displayTitle = lageField(v.displayTitle);
   const title = displayTitle || lageField(v.title) || "Vorgang";
@@ -5796,11 +5809,13 @@ function vsheetContentHtml(v) {
     <section class="vsheet-sec ui-source-access">
       <h3 class="vsheet-h">Originalquellen</h3>
       <div class="vsheet-sources">${sourcesSorted.map(vsheetSourceRow).join("")}</div>
+      <p class="ui-evidence-note">Für diese Vorgangskarte werden keine aussagebezogenen Originalauszüge mitgeliefert. Die Quellenliste ersetzt keine Zuordnung jeder einzelnen Aussage.</p>
     </section>` : ""}
 
     ${warumPoints.length ? `
     <section class="vsheet-sec">
-      <h3 class="vsheet-h">Warum wichtig?</h3>
+      <h3 class="vsheet-h">Zusätzliche Einordnung</h3>
+      <p class="ui-evidence-note">KI-Einordnung · kann Fehler enthalten. Vor Verwendung prüfen.</p>
       <ul class="vsheet-why">
         ${warumPoints.map((p) => `<li>${escapeHtml(p)}</li>`).join("")}
       </ul>
@@ -5810,6 +5825,8 @@ function vsheetContentHtml(v) {
     <section class="vsheet-sec">
       ${briefingLink}
     </section>` : ""}
+
+    ${lageParagraphContextHtml(v)}
 
     ${renderEreignisRollen(v)}
 
@@ -6436,13 +6453,15 @@ function renderUiBriefingHero(state, details = "") {
       <h2>${escapeHtml(title)}</h2>
       ${sub ? `<p class="ui-hero-sub">${escapeHtml(sub)}</p>` : ""}
       ${chips.trim() ? `<div class="hstand-chiprow">${chips}</div>` : ""}
+      ${hstandQuelleHref(item) ? `<a class="ui-source-direct" href="${escapeAttribute(hstandQuelleHref(item))}" target="_blank" rel="noopener noreferrer">Originalquelle öffnen${item.sourceName ? ` · ${escapeHtml(item.sourceName)}` : ""} ↗</a>${renderSourceNotice(item, hstandQuelleHref(item))}` : ""}
       ${briefingLageVerweis(item)}
     </div>
     <div class="ui-hero-next">
       <button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Dein nächster Schritt</span><span class="ui-next-step">${escapeHtml(recommendation || "Prüfe die Einordnung und Quellen zu diesem Vorgang.")}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>
       ${recommendation && hstandText(state.whyItMatters) ? `<p class="ui-recommendation-why"><strong>Begründung:</strong> ${escapeHtml(hstandText(state.whyItMatters))}</p>` : ""}
       ${officeAvailable ? "" : '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfe den Vorgang und deine Büro-Formate.</p>'}
-      <p class="ui-hero-meta">${count ? `<span>${uiIcon("briefing")}${count === 1 ? "1 Quelle" : `${count} Quellen`}</span>` : ""}${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
+      <p class="ui-evidence-note">KI-Empfehlung und Begründung · vor Verwendung prüfen. Aussagebezogene Originalauszüge werden hier nicht mitgeliefert.</p>
+      <p class="ui-hero-meta">${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
     </div>
     ${details ? `<details class="ui-hero-details"><summary class="ui-hero-more"><span class="ui-more-closed">Ausführlich lesen</span><span class="ui-more-open">Weniger anzeigen</span>${uiIcon("arrow")}</summary><div class="ui-hero-details-body">${details}</div></details>` : ""}
   </section>`;
@@ -8204,7 +8223,7 @@ function renderRadarMentionCard(m) {
       </div>
       <h3 class="radar2-card-title">${escapeHtml(m.title || "Erwähnung")}</h3>
       ${tag ? `<div class="radar2-card-foot">${tag}</div>` : ""}
-      ${m.evidence ? `<p class="radar2-card-sub radar2-card-sub--block">${escapeHtml(m.evidence)}</p>` : ""}
+      ${m.evidence ? `<p class="radar2-card-sub radar2-card-sub--block"><strong>Beleg zur Zuordnung:</strong> ${escapeHtml(m.evidence)}</p>` : ""}
       ${radarAdditionalContext(m)}
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
@@ -8249,7 +8268,7 @@ function renderRadarEnvRow(e) {
     <div class="radar2-row-body">
       <h3 class="radar2-row-title">${escapeHtml(e.title || "Vorgang")}</h3>
       <div class="radar2-row-meta">${rel}<span class="radar2-row-sub">${escapeHtml(e.sourceName || "Quelle")}${time ? " · " + escapeHtml(time) : ""}</span></div>
-      ${e.beobachtungsBeleg && e.evidence ? `<p class="radar2-card-sub radar2-card-sub--block">${escapeHtml(e.evidence)}</p>` : ""}
+      ${e.beobachtungsBeleg && e.evidence ? `<p class="radar2-card-sub radar2-card-sub--block"><strong>Beleg zur Zuordnung:</strong> ${escapeHtml(e.evidence)}</p>` : ""}
       ${radarAdditionalContext(e)}
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
@@ -8281,7 +8300,7 @@ function renderRadarDynamicCard(d) {
     <div class="radar2-dyn-icon" aria-hidden="true">${radarIcon("trend")}</div>
     <div class="radar2-card-body">
       <h3 class="radar2-card-title">${escapeHtml(d.title || "Entwicklung")}</h3>
-      ${d.evidence ? `<p class="radar2-dyn-evidence">${escapeHtml(d.evidence)}</p>` : ""}
+      ${d.evidence ? `<p class="radar2-dyn-evidence"><strong>Beleg zum Signal:</strong> ${escapeHtml(d.evidence)}</p>` : ""}
       ${radarAdditionalContext(d)}
       <div class="radar2-card-foot">${tag}${time ? `<span class="radar2-card-sub">${escapeHtml(time)}</span>` : ""}</div>
     </div>
