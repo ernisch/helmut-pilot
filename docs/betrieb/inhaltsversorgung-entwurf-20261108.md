@@ -7,7 +7,9 @@ und ersetzt weder dessen Abnahme noch den produktiven Quellenlauf.
 
 ## 1. Abnahmevorlage zu PR1104
 
-Main ist unverändert `915d15b6`, PR-Kopf `947add8d`, DRAFT/ungemergt.
+Bei Erstellung der Abnahmevorlage: Main `915d15b6`, PR-Kopf `947add8d`, DRAFT/ungemergt.
+Der Review fand inzwischen Main `ec223b77` mit dem separaten Diagnosefix #1105
+vor; Regeln unverändert, keine Übernahme in diesen abhängigen Entwurf.
 Fachlicher Diff-Review im Hauptlauf: keine zusätzliche Korrektur für den dort
 begrenzten Auftrag erforderlich. Titel-/Texttrennung, ganze Satzpräfixe,
 RSS-Alternativen, Metadaten-Minimierung und Fundstellenherkunft nachvollzogen.
@@ -86,15 +88,20 @@ Microdata-Artikelüberschrift/-datum/-body. Widersprüchliche zusätzliche
 Metadaten, versteckte Absätze und gesperrte Metadaten scheitern.
 
 Es werden die ersten bis zu **vier aufeinanderfolgenden ganzen Absätze**
-übernommen, ohne Umformulieren oder Auswahl eines späteren bequemeren Absatzes.
-Nur dieser neue Vertrag erlaubt **maximal 1.200 Zeichen**. Die alte generische
+einschließlich des sichtbaren Zwischenkontexts übernommen, ohne Umformulieren
+oder Auswahl eines späteren bequemeren Absatzes. Der überprüfbare v2-Beleg
+enthält Absatzliste und `zwischenTexte`; beides ergibt exakt den Kontexttext.
+Nur dieser neue Vertrag erlaubt **maximal 1.280 Zeichen**. Die alte generische
 600-Zeichen-Grenze, der bisherige Bundestagsvertrag und `summary` mit 240 Zeichen
 bleiben unverändert. Zu langer erster Absatz bleibt eine Lücke. Absatzliste und
 Gesamtabsatzanzahl zeigen, ob der Artikel weitergeht; kein Vollständigkeitsclaim.
 
 Die minimale neue Grenze wird an den Originalen begründet, nicht als Qualität
-gewertet: DGB benötigt vier Absätze/1.166 Zeichen, um Arbeitgeberangebot,
-IG-BAU-Forderung und Ende der Friedenspflicht gemeinsam zu erhalten. Radio
+gewertet: DGB benötigt vier Absätze/1.166 Zeichen zuzüglich 90 Zeichen
+Original-Zwischenkontext, insgesamt **1.256 Zeichen**, um Arbeitgeberangebot,
+IG-BAU-Forderung und Ende der Friedenspflicht gemeinsam zu erhalten. Die alte
+Entwurfsgrenze 1.200 hätte nach Erhalt dieses Kontexts den vierten Absatz
+ausgeschlossen. Deshalb nur für diesen Vertrag 80 zusätzliche Zeichen. Radio
 Hannovers eigener Absatz hat 727 Zeichen und enthält zusätzlich die
 Konjunktive/Bedingungen sowie die Wohngeldforderung. Alte Grenzen verlieren
 hier nachweislich relevante Aussagen. Es gibt keine selbst formulierte Kurzfassung.
@@ -123,7 +130,7 @@ liegen im Repo. Die vorhandenen vollen Antworten wurden lokal bytegeprüft und
 liefern exakt dieselben Kontexttexte; fehlen sie später, wird dieser Vergleich
 ausdrücklich SKIP, nicht still behauptet.
 
-- Neue Suite **14/14**: DGB/Radio mit belegt relevanten Aussagen, knapper Titel
+- Neue Suite nach Reviewkorrektur **18/18**: DGB/Radio mit belegt relevanten Aussagen, knapper Titel
   über Paketweg, falsche Fundbindung, unpassendes Original, ausgeschlossener
   Gegenprofilbezug, 403 ohne Wiederholungsabruf, Kontingente über Batches,
   Deadline/Host-/Anbietergrenze, CAS-Konkurrenz, Publikationsdrift und HTTPS-
@@ -132,10 +139,35 @@ ausdrücklich SKIP, nicht still behauptet.
   isolierten Speicher-/Modellattrappen: Originaltext und Canonicalherkunft werden
   in der tatsächlich an den Modell-Callback übergebenen Quelle exakt geprüft.
   Modellantwort ausdrücklich Attrappe, kein fachliches KI-Ergebnis behauptet.
-- Betroffene bestehende Suiten: Artikelkontext **10**, Gewinnung **11**,
-  Beschaffung **12**, Eingabebindung **10**, Anschluss **20** Gruppen bestanden.
-  Kleiner Kernschutz **14/14** Suiten, Syntax und Diffprüfung bestanden.
-  Erfolgreiche Parent-Suiten/CI wurden nicht pauschal wiederholt.
+- Artikelkontext **10**, Gewinnung **11** und Beschaffung **12** Gruppen nach
+  Änderung der gemeinsamen Verträge gezielt erneut bestanden. Eingabebindung
+  **10**, Anschluss **20** und Kernschutz **14/14** vom bisherigen Codekopf
+  `b5648e23` werden als passende Vorbelege weiterverwendet; keine lokale
+  Vollwiederholung. Endkopf/Ergebnis der neuen Pflicht-CI werden im PR nativ
+  zugeordnet. Die erfolgreiche CI42458862751 gehört zum alten Kopf `b5648e23`.
+
+## Fachlicher Review nach dem ersten Entwurf
+
+Drei reine synthetische Gegenproben am Kopf `b5648e23` wurden fälschlich
+angenommen: ein Rückzugshinweis als Vorspann, ein Warnsatz zwischen Absätzen
+und eine zweite widersprechende Artikeladresse. Der damalige positive
+14er-Nachweis deckte diese Fälle nicht ab.
+
+Korrektur nur im neuen Kontextweg: sichtbarer Zwischenkontext wird unverändert
+mitgenommen und gegen die vollständige Absatzfolge im JSON-LD geprüft. Vor
+Beginn darf ausschließlich ein ausdrücklich gebundenes Datumsmetadatum oder
+die exakt gebundene Artikelüberschrift liegen. Anderer Vorspann bleibt eine
+Lücke. Alle gelieferten `url`-/`mainEntityOfPage`-Angaben müssen passen; eine
+zusätzliche `dateCreated`-Angabe darf Microdata desselben Felds nicht widersprechen.
+Eigener v2-Verfahrens-/Speichernamensraum vermeidet die Wiederverwendung eines
+älteren Belegs mit fehlendem Zwischenkontext. Keine produktiven v1-Belege aus
+diesem inaktiven Auftrag angelegt oder migriert.
+
+Vier zusätzliche Prüfgruppen belegen Erhalt des Rückzugshinweises bis in den
+echten Understanding-Callback, abweichende Vorspänne/Datumsabsätze, mehrere
+Artikelidentitäten und widersprechende Erstellungsdaten. Ganze DGB- und
+Radio-Originalproben bleiben positiv; ihre Quellbytes wurden nicht verändert.
+Review durch denselben ausführenden Codex-Lauf, kein unabhängiges Approval.
 
 ## 6. Spätere Aktivierungsvorlage – nicht ausgeführt
 
@@ -143,12 +175,17 @@ ausdrücklich SKIP, nicht still behauptet.
    Folgeentwurf separat reviewen/qualifizieren. Den beschriebenen Aufrufer im
    vorhandenen globalen Quellenlauf verbinden; Server-/App-Lesepfade bleiben
    ohne Beschaffer. Kein neuer Job und kein neuer aktiver Schalter aus diesem PR.
-2. Erster konkret begrenzter Auftrag: **ein bestehender globaler Quellenlauf**,
-   einmaliges Dienstexemplar, maximal 20 Kandidaten/3 unklare/2 neue
+2. Erster konkret begrenzter Auftrag: **einmal nur diese Beschaffungsstufe**
+   unter der vorhandenen globalen Lauf-/Sperrbindung, auf bereits gespeicherten
+   kanonischen Kandidaten. Kein vollständiger Quellen-/Verarbeitungslauf und
+   keine Übergabe an nachfolgende Modellphasen. Einmaliges Dienstexemplar,
+   maximal 20 Kandidaten/3 unklare/2 neue
    Artikelversuche; exakte Hostfreigabe zunächst `www.dgb.de` und
    `www.radio-hannover.de`. Dieselben Regeln für alle tatsächlich aktiven
    geeigneten Profile, keine Cem-/Artikel-Sonderregel. Unpassende oder nicht
-   gebundene Eingaben liefern nur Befunde. Lauf-ID/Deadline vorab festlegen.
+   gebundene Eingaben liefern nur Befunde. Vorher die höchstens 20 kanonischen
+   Dokument-IDs/Quellenhashes, Lauf-ID und Deadline konkret vorlegen; keine
+   Fixture-ID als Produktionsbeleg ausgeben.
 3. Wirkung: nur neue globale Belegzeilen im vorhandenen `helmut_store`-
    Namensraum, keine Änderung von Originalzeilen, Wissensobjekten oder Profilen.
    Bei 20 Kandidaten maximal 28 REST-Belegzugriffe bei regulärem Verlauf,
@@ -158,8 +195,11 @@ ausdrücklich SKIP, nicht still behauptet.
    DNS-/SSRF-/TLS-/Anbieterriegel bleiben wirksam.
 4. Kosten: erste Beschaffungsabnahme **0 Modellaufrufe**, keine neue Ressource.
    Zusätzlicher Speicher-/Laufzeitverbrauch im Bestand. Eine spätere normale
-   Analyse kann bis 600 zusätzliche Kontextzeichen gegenüber dem bisherigen
-   generischen Absatzvertrag erhalten; tatsächliche Tokens/Kosten modellabhängig.
+   Analyse kann im reinen Textfeld bis 680 zusätzliche Zeichen gegenüber dem
+   bisherigen generischen Absatzvertrag erhalten. Zusätzlich werden die
+   Absatz-/Zwischenkontextlisten und Belegmetadaten serialisiert; die 680
+   Zeichen sind **keine** Grenze des gesamten Promptzuwachses. Vor Aktivierung
+   am tatsächlich serialisierten Prompt messen; Tokens/Kosten modellabhängig.
    Kein höheres Aufrufkontingent oder Budget daraus ableiten. Aktuelle
    Anbieterfreigaben und globale Wirkung der Anbietersteuerung vorab prüfen.
 5. Nachkontrolle: Versuchszähler, tatsächliche HTTP-/REST-Anfragen und Lückengründe

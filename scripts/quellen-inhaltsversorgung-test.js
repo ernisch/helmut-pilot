@@ -97,7 +97,8 @@ async function main() {
   });
   await test("DGB: vier ganze Absätze erhalten Angebot, Forderung und Friedenspflicht", () => {
     const r = G.gewinneArtikelEinstieg(dgb, { body: read("dgb-artikel.html"), finalUrl: dgbUrl, gelesenAm: date });
-    assert.equal(r.ok, true, r.reason); assert.equal(r.beleg.text.length, 1166); assert.equal(r.beleg.gewinnung.absaetze.length, 4);
+    assert.equal(r.ok, true, r.reason); assert.equal(r.beleg.text.length, 1256); assert.equal(r.beleg.gewinnung.absaetze.length, 4);
+    assert.deepEqual(r.beleg.gewinnung.zwischenTexte, ['Arbeitgeber bieten kaum Plus', 'IG BAU fordert zwei Euro mehr', 'Beschäftigte sind streikbereit']);
     assert(r.beleg.text.includes("von 15 auf 15,30 Euro")); assert(r.beleg.text.includes("von derzeit 15 auf 17 Euro"));
     assert(r.beleg.text.endsWith("Die Friedenspflicht endet am 31. Dezember dieses Jahres."));
     assert.equal(dgb.summary, null);
@@ -176,6 +177,62 @@ async function main() {
     const e = environment(); await Promise.all([e.factory().versorge([dgb], profiles), e.factory().versorge([dgb], profiles)]);
     assert.equal(e.requests.length, 1);
   });
+  await test("Zwischenkontext bleibt samt Rückzugshinweis bis zur Modelleingabe erhalten", async () => {
+    const d = doc('zwischenkontext', 'Mindestlohn: Stand der Verhandlungen');
+    const first = 'Die Gewerkschaft verlangt einen höheren Mindestlohn für alle Beschäftigten.';
+    const last = 'Die Verhandlungen werden am Donnerstag fortgesetzt.';
+    const warning = 'Diese Forderung wurde inzwischen zurückgezogen.';
+    const full = first + ' ' + warning + ' ' + last;
+    for (const tag of ['h3', 'div']) {
+      const visible = `<p>${first}</p><${tag}>${warning}</${tag}><p>${last}</p>`;
+      const original = html(d, full).replace(`<p>${full}</p>`, visible);
+      const result = G.gewinneArtikelEinstieg(d, { body: original, finalUrl: d.url, gelesenAm: date });
+      assert.equal(result.ok, true, result.reason); assert.equal(result.beleg.text, full);
+      assert.deepEqual(result.beleg.gewinnung.absaetze, [first, last]);
+      assert.deepEqual(result.beleg.gewinnung.zwischenTexte, [warning]);
+      assert.throws(() => A.pruefeArtikelkontext([d], { ...result.beleg,
+        gewinnung: { ...result.beleg.gewinnung, zwischenTexte: [''] } }), /einstieg-ungueltig/);
+      const e = environment(new Map([[d.url, original]]));
+      const supplied = await e.factory().versorge([d], profiles);
+      assert.equal(supplied.bereit.length, 1); await modelCheck(supplied.bereit[0]);
+      for (const mismatch of [original.replace(visible, `<p>${first}</p><p>${last}</p>`),
+        original.replace(JSON.stringify(full), JSON.stringify(first + ' ' + last)),
+        original.replace(`<${tag}>`, `<${tag} hidden>`)]) {
+        assert.equal(G.gewinneArtikelEinstieg(d, { body: mismatch, finalUrl: d.url, gelesenAm: date }).ok, false);
+      }
+    }
+  });
+  await test("Einleitender Sachtext wird nicht als Metadatum oder späterer Artikelanfang übersprungen", () => {
+    const d = doc('vorspann', 'Mindestlohn: Stand der Verhandlungen');
+    const base = html(d), warning = 'Die folgende Meldung ist überholt und wurde zurückgezogen.';
+    for (const before of [`<p>${warning}</p>`, `<div>${warning}</div>`,
+      `<p>Datum <time datetime="2026-11-07">07. November 2026</time></p>`,
+      `<p>Datum <time datetime="2026-11-06">${warning}</time></p>`]) {
+      const result = G.gewinneArtikelEinstieg(d, { body: base.replace('<article>', '<article>' + before), finalUrl: d.url, gelesenAm: date });
+      assert.equal(result.ok, false, before);
+    }
+    assert.equal(G.gewinneArtikelEinstieg(d, { body: base.replace('<article>', `<article><h1>${d.title}</h1>`), finalUrl: d.url, gelesenAm: date }).ok, true);
+  });
+  await test("Alle gelieferten Artikelidentitäten müssen zusammenpassen", () => {
+    const d = doc('identitaet', 'Mindestlohn: Stand der Verhandlungen');
+    const base = html(d);
+    for (const mainEntityOfPage of ['https://www.dgb.de/fremd', { '@id': 'https://www.dgb.de/fremd' }]) {
+      const changed = base.replace('"@type":"NewsArticle"', '"@type":"NewsArticle","mainEntityOfPage":' + JSON.stringify(mainEntityOfPage));
+      assert.equal(G.gewinneArtikelEinstieg(d, { body: changed, finalUrl: d.url, gelesenAm: date }).ok, false);
+    }
+    const matching = base.replace('"@type":"NewsArticle"', '"@type":"NewsArticle","mainEntityOfPage":' + JSON.stringify({ '@id': d.url }));
+    assert.equal(G.gewinneArtikelEinstieg(d, { body: matching, finalUrl: d.url, gelesenAm: date }).ok, true);
+  });
+  await test("Microdata übernimmt keinen widersprechenden JSON-LD-Erstellungsstand", () => {
+    const original = read('radio-hannover.html');
+    const text = G.gewinneArtikelEinstieg(radio, { body: original, finalUrl: radio.url, gelesenAm: date }).beleg.text;
+    const data = { '@type': 'NewsArticle', headline: 'Sozialverband warnt vor Altersarmut in Niedersachsen',
+      url: radio.url, mainEntityOfPage: { '@id': radio.url }, datePublished: radio.published_at,
+      dateCreated: radio.published_at, articleBody: text };
+    const add = value => original.replace('</head>', `<script type="application/ld+json">${JSON.stringify(value)}</script></head>`);
+    assert.equal(G.gewinneArtikelEinstieg(radio, { body: add(data), finalUrl: radio.url, gelesenAm: date }).ok, true);
+    assert.equal(G.gewinneArtikelEinstieg(radio, { body: add({ ...data, dateCreated: '2026-11-07T11:11:24Z' }), finalUrl: radio.url, gelesenAm: date }).ok, false);
+  });
   await test("Zu langer erster Absatz, Publikationsdrift und Quellenstanddrift bleiben gesperrt", () => {
     const d = doc("lang", "Mindestlohn: Fachmeldung");
     const long = "Die Gewerkschaft fordert mehr Mindestlohn und bessere Arbeitsbedingungen ".repeat(30) + ".";
@@ -213,6 +270,6 @@ async function main() {
     }
     assert.equal(JSON.parse(fs.readFileSync(path.join(__dirname, '../vercel.json'))).git.deploymentEnabled['codex/inhaltsversorgung-entwurf-20261108'], false);
   });
-  console.log(`${passed}/14 Prüfgruppen bestanden; ausschließlich isolierte Original-Replays/Attrappen.`);
+  console.log(`${passed}/18 Prüfgruppen bestanden; ausschließlich isolierte Original-Replays/Attrappen.`);
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
