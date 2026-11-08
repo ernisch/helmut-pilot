@@ -136,6 +136,15 @@ test("Verlorene Klassen Lease beendet den Artikelabruf und bleibt benannt", asyn
   await assert.rejects(result, e => e.anbieterVertagung?.grund === "klassen-lease-verloren");
   assert(n.calls[0].req.destroyed); assert(stopped);
 });
+test("Beobachtung erhaelt Status und Originalbytes, Beobachterfehler lockern keinen Schutz", async () => {
+  const n = netz(), events = [];
+  n.deps.artikelTransportBeleg = (event, value) => { events.push([event, value]); };
+  assert.deepEqual(await n.fetch(target, 0, n.deps), { body: "<html>vollstaendig</html>", finalUrl: target });
+  assert.equal(events.filter(([event]) => event === "request").length, 1);
+  assert.equal(events.find(([event]) => event === "response")[1].status, 200);
+  const blocked = netz({ status: 302 }); blocked.deps.artikelTransportBeleg = () => { throw new Error("observer"); };
+  await assert.rejects(blocked.fetch(target, 0, blocked.deps)); assert.equal(blocked.calls.length, 1);
+});
 test("Gewoehnlicher Crawleraufruf behaelt seinen bisherigen Antwortvertrag", async () => {
   const n = netz({ chunks: ["alter Inhalt"], headers: { "content-type": "application/xml" } });
   const result = await n.fetch(target, 0, { env: {} });
