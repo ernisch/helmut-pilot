@@ -1,8 +1,11 @@
 # Sichere Validierungsdiagnose erhalten · 08.11.2026
 
-Code und gezielte lokale Tests abgeschlossen, eigener Branch
-`codex/sichere-validierungsdiagnose-20261108`; PR zur Review, kein Merge oder
-Rollout. Aktuelle Kopf-/CI-Belege stehen am zugehörigen GitHub-PR.
+[PR #1105](https://github.com/ernisch/helmut-pilot/pull/1105) nach ausdrücklicher
+Freigabe des geprüften Kopfes `77ae3e6b12d81d15a0a224ba18514dfcb418e3a1`
+am 08.11.2026, 08:42:24 UTC, auf `ec223b77c56a7f0683304ad72c1e69910fb14bca`
+gemergt und regulär auf Production ausgerollt. Der ursprüngliche Auftrag bis
+zum ungemergten PR bleibt historisch; die spätere konkrete Mergefreigabe
+ersetzt ausschließlich diese Grenze für PR1105.
 
 ## Befund und Ursache
 
@@ -77,17 +80,55 @@ Die vollständige gezielte Suite bestand außerhalb der Sandbox, weiterhin mit
 dem Schutzstarter ohne Produktionskennungen. Ein nicht unterstützter
 `--help`-Aufruf startete versehentlich einen breiten Offline-Lauf; dieser wurde
 beendet und gilt nicht als PASS. Darin trat ebenfalls `listen EPERM` auf.
-Die konservative vollständige Pflichtprüfung bleibt der bestehenden PR-CI
-überlassen; der Prüfplan wird nicht verändert.
+Die konservative vollständige Pflichtprüfung erfolgte durch die bestehende
+[CI 42430319921](https://github.com/ernisch/helmut-pilot/actions/runs/42430319921):
+beide Pflichtchecks SUCCESS am geprüften Kopf, Standard-/Bereichssuiten und
+erforderliche isolierte Datenbanknachweise einschließlich Z22 erfolgreich.
+Browserlauf planmäßig übersprungen; kein ausgeführter Browsernachweis.
+Der zusätzliche vollständige Mock100-Job war SKIPPED. Prüfplan unverändert.
+
+Die anschließende Nachprüfung fand keine blockierenden Befunde. Fünf weitere
+reine Offline-Gegenproben bestanden: Steuerzeichen an Hash/Kennung, freie
+Codepräfixe/Zusatzpfade, ungültige Einträge an den Stichprobengrenzen und
+stabile Zuordnung nach erneuter Filterung. Das war eine Nachprüfung durch
+den ausführenden Lauf, kein unabhängiges GitHub-Approval.
+
+## Freigegebener Merge und rein lesende Nachkontrolle
+
+[Maschinenlesbarer Beleg](validierungsdiagnose-20261108-rollout.json).
+Frische Vorprüfung 08:42:11.900280 UTC: 0 laufende Prozesse, 0 aktive
+relationale Sperren und 0 aktive oder unklare Auth-Sperren, genau eine
+Auth-Store-Zeile. Main `915d15b6`, grüner Kopf und paralleler PR1104
+unverändert. Normaler Merge mit exakter Kopfbindung; keine Schutzumgehung.
+Der Merge-Tree ist bytegleich zum geprüften PR-Tree.
+
+- Vercel `dpl_9rTzEnjjdkro8wCyQ3U7pKKWJpZU`: READY, Target Production,
+  Commit exakt `ec223b77`; Hauptalias `helmut-pilot.vercel.app` bestätigt.
+- Hauptseite und `/api/release/public`: HTTP200; `ok`, `ready`, `storage` true.
+- Hauptseite referenziert Client/CSS mit Version `ec223b77`; beide Dateien
+  bytegleich zum Merge-Stand. Hashes im Beleg, keine privaten Inhalte.
+- Deploymentgebundene Logabfrage 08:42:27.544 bis 08:44:53 UTC lieferte keine
+  `error`-/`fatal`-Gruppen. Das ist ein begrenztes Beobachtungsfenster.
+
+Kein authentifizierter Klicktest oder absichtlich ausgelöster Modell-/Fehlerfall.
+Keine Wiederverarbeitung, zusätzlichen Modellaufrufe, produktiven
+Datenmutationen, Migrationen, Budget-, Schalter- oder Zeitplanänderungen.
+PR1104 blieb auf `947add8d` offen und ungemergt. Sicherer Rückweg bei
+freigegebener Rücknahme: vorheriges READY-Deployment
+`dpl_4kg3SDXfWtVYupcR2UyTwsNchKWa` auf `9b00ebce` oder gezielter Revert;
+keine Datenrücknahme erforderlich.
 
 ## Grenzen und nächster Schritt
 
-Der Fix verbessert künftige Diagnosen nach einem späteren Rollout. Er stellt
+Der Fix für künftige Diagnosen ist ausgerollt. Er stellt
 weder den historischen Feldfehler noch Radarinhalte automatisch wieder her.
 Mehr als fünf Fehler je Fall bzw. Details jenseits der ersten 25 Auffälligkeiten
 bleiben bewusst außerhalb der Stichprobe. Kein Live-Modell- oder
 Produktionsdatenbanktest. Rückweg: die kleinen Runtimeänderungen zurücknehmen;
 keine Daten- oder Schemaänderung zurückzusetzen.
 
-Genau nächster Schritt: den getesteten PR fachlich und auf Datensparsamkeit
-reviewen; kein Merge in diesem Auftrag.
+Der ursprüngliche nächste Schritt war das Review bei gesperrtem Merge.
+Review und der anschließend ausdrücklich freigegebene Merge/Rollout sind
+abgeschlossen. Offen ist nur die Übernahme dieses reinen Dokumentationsnachtrags;
+er ändert weder Runtime noch Konfiguration oder Daten und ist kein neuer
+Funktionstest. Genau nächster Schritt: den Dokumentationsnachtrag abnehmen.

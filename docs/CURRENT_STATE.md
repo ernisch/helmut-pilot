@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 08.11.2026.** Betreibersteuerung gilt. Historie ist kein aktueller Production-Nachweis; frische Produktionsbelege gehen vor GitHub, Tests und Status. [Diagnosefix: PR, ungemergt](betrieb/validierungsdiagnose-20261108.md).
+**Stand: 08.11.2026.** Betreibersteuerung gilt. Historie ist kein aktueller Production-Nachweis; frische Produktionsbelege gehen vor GitHub, Tests und Status. [Diagnosefix PR1105: live](betrieb/validierungsdiagnose-20261108.md).
 
 **Briefing (07.11., live):** PR1102 auf `9b00ebce` gemergt, Production READY. Knopf samt Kundenlauf entfernt; automatisches Laden/Zeiten erhalten. [Nachkontrolle](ui/briefing-ohne-refresh-20261107/rollout.md). Kein neuer Verarbeitungslauf.
 
