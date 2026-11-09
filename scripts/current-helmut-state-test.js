@@ -495,13 +495,9 @@ check("D5-7: keine hartkodierte Partei/Personen-Logik durch die Auswahl",
   check("Niedrige ignorierte Scores werden nicht als Beobachten bezeichnet",
     low.items.every(i => i.priority === "Ignorieren")
     && low.personalizedRecommendations.every(i => i.current_priority === "Ignorieren"));
-  const fs = require("node:fs"), vm = require("node:vm");
-  const client = fs.readFileSync(require("node:path").join(__dirname, "../client.js"), "utf8");
-  const render = client.slice(client.indexOf("function renderHstandStateCard("), client.indexOf("const HELMUT_BUCKET_LABEL ="));
-  const ctx = vm.createContext({ escapeHtml: String, escapeAttribute: String,
-    briefingDisruption: () => null, renderHstandHeader: () => "" });
-  vm.runInContext(render, ctx);
-  const html = ctx.renderHstandStateCard(low.currentHelmutState, "empty");
+  // Ganzer vorhandener Renderer statt eines veralteten Funktionsausschnitts,
+  // dem seit der Ruhetag-Anzeige hstandCurrentQuiet und weitere Helfer fehlen.
+  const html = require("./lib/briefing-ansichten")(low, NOW.toISOString()).html.briefing;
   check("Tatsaechlicher Client zeigt bei Ignorieren keine pauschale Entwarnung",
     html.includes("Kein belegter Tagesanlass für ein Briefing")
     && html.includes("keine Entwarnung") && !html.includes("Heute kein Handlungsbedarf"));

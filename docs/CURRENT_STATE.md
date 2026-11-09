@@ -1,9 +1,10 @@
 # CURRENT STATE — Helmut
 
-**Stand: 09.11.2026.** Betreibersteuerung gilt. Historie ist kein aktueller Production-Nachweis; frische Produktionsbelege gehen vor GitHub, Tests und Status. [Diagnosefix PR1105: live](betrieb/validierungsdiagnose-20261108.md).
+**Stand: 09.11.2026.** Betreibersteuerung und frische Productionbelege gelten. [PR1105 live](betrieb/validierungsdiagnose-20261108.md).
 
 **UX (08.11.):** [PR1108: Tagesgrund, Radar ohne Knopf](ui/mobile-ux-20261108/README.md); kein Merge/Deploy, ChatGPT-Abnahme offen. [Briefing PR1102 live](ui/briefing-ohne-refresh-20261107/rollout.md).
 
+**Briefing/PR1115:** [Befund](betrieb/briefing-tagesorientierung-20261109.md); kein Rollout.
 
 ## Büro: gemergt und Production READY (09.11.2026)
 

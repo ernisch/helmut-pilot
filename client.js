@@ -6478,12 +6478,13 @@ function renderUiBriefingHero(state, details = "") {
   const title = hstandText(item.displayTitle) || hstandText(item.title);
   const recommendation = hstandText(state.recommendation);
   const why = hstandText(state.whyItMatters);
+  const orientierung = state.tagesAnlass?.recommendation && state.tagesAnlass?.beleg;
   const stale = state.status === "stale" || state.staleState === true || state.datenstandVonHeute === false || state.frischeVertrag?.aktuell === false;
-  const eyebrow = stale ? "Letzter Stand" : state.status === "fresh" ? "Heute entscheidend" : "Aktueller Vorgang";
+  const eyebrow = orientierung ? "Für Ihre Vorbereitung" : stale ? "Letzter Stand" : state.status === "fresh" ? "Heute entscheidend" : "Aktueller Vorgang";
   const urgency = hstandUrgencyChip(state.urgency || item.urgency);
   const officeAvailable = Boolean(briefingOfficeDecision() && activeOfficeFormats().length);
   const v = lageVorgangZumBriefing(item);
-  const sub = v ? lageField(v.displaySummary) : "";
+  const sub = !orientierung && v ? lageField(v.displaySummary) : "";
   const count = Number(item.sourceCount) || 0;
   const when = hstandText(item.zeitLabel) || hstandWhen(item.meldungAt);
   const chips = `${urgency}${hstandContextChips(item.contextChips, 2)}`;
@@ -6496,10 +6497,12 @@ function renderUiBriefingHero(state, details = "") {
       ${briefingLageVerweis(item)}
     </div>
     <div class="ui-hero-next">
-      ${recommendation ? `<button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>` : ""}
+      ${orientierung ? `<div class="ui-arrow-action"><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span></span></div>`
+        : recommendation ? `<button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>` : ""}
       ${why ? `<p class="ui-recommendation-why"><strong>${recommendation ? "Begründung:" : "Warum heute relevant:"}</strong> ${escapeHtml(uiSieText(why))}</p>` : ""}
-      ${recommendation && !officeAvailable ? '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und seine Quellen.</p>' : ""}
-      <p class="ui-evidence-note">${recommendation ? "KI-Empfehlung und Begründung" : "KI-Einordnung"} · vor Verwendung prüfen. Aussagebezogene Originalauszüge werden hier nicht mitgeliefert.</p>
+      ${recommendation && !orientierung && !officeAvailable ? '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und seine Quellen.</p>' : ""}
+      ${orientierung ? `<details class="ui-evidence-note"><summary>Beleg für die Vorbereitung</summary><blockquote>${escapeHtml(orientierung.text)}</blockquote><p>Gespeicherter Originalauszug; der Prüfauftrag ist eine Empfehlung.</p></details>`
+        : `<p class="ui-evidence-note">${recommendation ? "KI-Empfehlung und Begründung" : "KI-Einordnung"} · vor Verwendung prüfen. Aussagebezogene Originalauszüge werden hier nicht mitgeliefert.</p>`}
       <p class="ui-hero-meta">${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
     </div>
     ${details ? `<details class="ui-hero-details"><summary class="ui-hero-more"><span class="ui-more-closed">Ausführlich lesen</span><span class="ui-more-open">Weniger anzeigen</span>${uiIcon("arrow")}</summary><div class="ui-hero-details-body">${details}</div></details>` : ""}
@@ -6715,7 +6718,9 @@ function renderHstandItems(state) {
   const zeile = (i) => {
     const title = hstandText(i.displayTitle) || hstandText(i.title);
     const lageLink = briefingLageVerweis(i);
-    const why = lageLink ? "" : hstandText(i.whyRelevant);
+    const why = i.tagesAnlass?.recommendation
+      ? [hstandText(i.recommendation), hstandText(i.whyRelevant)].filter(Boolean).join(" ")
+      : lageLink ? "" : hstandText(i.whyRelevant);
     const urgency = hstandUrgencyChip(i.urgency);
     // Das Datum bleibt IMMER das tatsaechliche Datum der Meldung (Vertragspunkt 3):
     // eine Meldung vom spaeten Vorabend steht als "Gestern, 22:40" im heutigen Briefing.
