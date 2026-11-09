@@ -132,7 +132,7 @@ begin
   job_count := jsonb_array_length(expected->'auftraege');
   current_cursor := (expected->>'cursor')::integer;
   if current_cursor > job_count or p_next_cursor <> current_cursor+1 or p_next_cursor > job_count
-    or expected->>'zustand' is distinct from case when current_cursor=job_count then 'fertig' else 'offen' end
+    or expected->>'zustand' is distinct from (case when current_cursor=job_count then 'fertig' else 'offen' end)
   then raise exception using errcode='22023', message='quellenplan-cas: cursor-sprung'; end if;
 
   -- Das Manifest ist absichtlich kein Updateparameter. Selbst bei parallelen

@@ -672,7 +672,11 @@ Harness prüft zehn Gruppen über den tatsächlichen HTTP-Transport mit einem g�
 Adressgrenze des alten Wegs, Fortschritt, konkurrierende Änderungen, Wiederaufnahme
 und verlorene Schreibantwort. Kein reiner Adapter gilt als Transportnachweis.
 Die tatsächlichen nativen Ergebnisse und vollständig grüne Endkopf-CI werden im PR
-gebunden; der frühere grüne Lauf ersetzt diese Nachweise nicht.
+gebunden; der frühere grüne Lauf ersetzt diese Nachweise nicht. Erster Cursorlauf
+42706791416 auf `e8d766638261e5c78be3502f4b805ee03ec63295`: FAILURE beim initialen
+PostgreSQL17-Migrationssetup wegen ungeklammertem CASE im PL/pgSQL-IF. Der CASE-Ausdruck
+ist jetzt geklammert. In diesem fehlgeschlagenen Lauf wurden weder Raw8 noch Cursor10
+ausgeführt; kein nativer PASS wird daraus abgeleitet. Browser war SUCCESS.
 
 Die Aktivierungsvorlage bleibt bei einer vorbereiteten Migration, jetzt mit zwei
 service-only RPCs, und unverändert16Env/18Hosts/8Fenstern/2400Sekunden/16Originalversuchen.
