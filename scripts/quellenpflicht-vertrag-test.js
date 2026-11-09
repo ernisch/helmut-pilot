@@ -416,7 +416,7 @@ check("client.js laedt im vm (Quellenpflicht-Hook gesetzt)", Boolean(api && api.
     html.includes("https://www.beispielmedien.de/politik/artikel-7") && html.includes("https://www.bundestag.de/presse/mitteilung-55"));
   check("Buero-Detail: Links oeffnen extern (target=_blank + rel noopener)",
     /buero-source-link[^>]*href="https:\/\/www\.beispielmedien\.de\/politik\/artikel-7"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/.test(html.replace(/\n\s*/g, " ")));
-  check("Buero-Detail: Zaehler-Zeile stimmt exakt ('Basiert auf 2 Quellen')", html.includes("Basiert auf 2 Quellen"));
+  check("Buero-Detail: Quellenzähler nennt exakt die zwei sichtbaren Originalquellen", /Quellen \(2\)/.test(html) && !/Quellen \(3\)/.test(html));
 }
 
 console.log(`\n${passed}/${passed + failed} Quellenpflicht-Vertrags-Assertions erfolgreich.`);

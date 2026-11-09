@@ -62,6 +62,7 @@ function client() {
       bind: bindActions, finish: finishOnboarding,
       log: (decision = uiDecision) => logDecisionInteraction("marked_relevant", decision),
       learning: learningSummary,
+      onboardingSteps: ONBOARDING_STEPS,
       onboarding: (step) => { onboardingActive = true; onboardingStep = step; return renderOnboarding(); },
       state: () => ({ decision: uiDecision, tasks, profile, loads: uiLoads, renders: uiRenders }),
       preview: () => { previewMode = true; },
@@ -207,10 +208,29 @@ async function test(name, fn) { await fn(); passed++; console.log(`PASS  ${name}
     assert.match(text, /7 Rückmeldungen gespeichert/); assert.match(text, /Priorisierung ändern sie derzeit nicht/);
     assert.ok(!text.includes("höher priorisiert"));
   });
-  await test("Onboardingtexte erklären Profil und angebotene Büroentwürfe", () => {
-    const ui = client(); assert.match(ui.onboarding(0), /Das dauert etwa zwei Minuten/);
-    assert.match(ui.onboarding(5), /Welche Entwürfe soll Helmut dir im Büro anbieten/);
-    assert.match(ui.onboarding(6), /wird dein Profil gespeichert/);
+  await test("Sechs Onboardingschritte erklären Profil und abschließendes Speichern", () => {
+    const ui = client();
+    assert.equal(ui.onboardingSteps, 6);
+    const start = ui.onboarding(0);
+    assert.match(start, /Das dauert etwa zwei Minuten/);
+    assert.match(start, /Schritt 1 von 6/);
+    assert.match(start, /data-onboard-next/);
+    assert.ok(!start.includes("data-onboard-finish"));
+    for (let step = 0; step < ui.onboardingSteps; step++) {
+      const html = ui.onboarding(step);
+      assert.ok(!html.includes("Welche Entwürfe soll Helmut dir im Büro anbieten"));
+      assert.ok(!/name="officeFormat"/.test(html));
+      if (step < ui.onboardingSteps - 1) assert.ok(!html.includes("data-onboard-finish"));
+    }
+    const last = ui.onboarding(ui.onboardingSteps - 1);
+    assert.match(last, /Schritt 6 von 6/);
+    assert.match(last, /Risiken & Chancen/);
+    assert.match(last, /name="riskTopics"/);
+    assert.match(last, /name="opportunityTopics"/);
+    assert.match(last, /wird dein Profil gespeichert/);
+    assert.match(last, /data-onboard-finish/);
+    assert.match(last, /Fertig & speichern/);
+    assert.ok(!last.includes("data-onboard-next"));
   });
   console.log(`\n${passed}/${passed} UI Ehrlichkeitsfälle erfolgreich.`);
 })().catch((error) => { console.error(error); process.exitCode = 1; });

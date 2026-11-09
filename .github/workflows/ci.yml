@@ -207,21 +207,18 @@ jobs:
         # die Reihenfolgezusage nicht still abschaltet (PGRST202-Rückfall). Dieser Beweis
         # braucht ein echtes PostgREST. Version und Prüfsumme sind gepinnt, damit weder
         # ein neues Release noch ein manipulierter Download das Merge-Gate unbemerkt
-        # verändern kann (gleiche Begründung wie der Playwright-Pin unten). Der Download
-        # wird bis zu dreimal versucht; ein dauerhaft unerreichbares GitHub-Release ist
-        # ein sichtbarer FEHLSCHLAG, kein stiller Skip.
+        # verändern kann (gleiche Begründung wie der Playwright-Pin unten). Das bereits
+        # im selben Job durch w15-existing-tools geladene Archiv wird erneut geprüft.
+        # Fehlendes Archiv, falsche Prüfsumme oder Version bleiben ein FEHLSCHLAG.
         run: |
           set -e
-          for i in 1 2 3; do
-            curl -sSL --fail -o /tmp/postgrest.tar.xz \
-              https://github.com/PostgREST/postgrest/releases/download/v12.2.3/postgrest-v12.2.3-linux-static-x64.tar.xz \
-              && break
-            echo "Download-Versuch $i fehlgeschlagen"; sleep 5
-            [ "$i" = "3" ] && exit 1
-          done
-          echo "9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c  /tmp/postgrest.tar.xz" | sha256sum -c -
-          tar -xJf /tmp/postgrest.tar.xz -C /tmp
-          /tmp/postgrest --version
+          POSTGREST_ARCHIVE="$RUNNER_TEMP/w15-mock-postgrest.tar.xz"
+          test -f "$POSTGREST_ARCHIVE"
+          echo "9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c  $POSTGREST_ARCHIVE" | sha256sum -c -
+          tar -xJf "$POSTGREST_ARCHIVE" -C /tmp
+          POSTGREST_VERSION="$(/tmp/postgrest --version)"
+          echo "$POSTGREST_VERSION"
+          test "$POSTGREST_VERSION" = "PostgREST 12.2.3"
 
       # Der echte Registrierungsnachweis kommt vor den laengeren Suiten, damit
       # Fehler im neuen Datenbankpfad sofort sichtbar sind. Alle bisherigen

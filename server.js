@@ -1053,15 +1053,37 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/communication/generate" && request.method === "POST") {
+    if (previewMode) return sendPreviewReadOnly(response);
     if (!allowRate(request, "communication", 18, 60 * 60 * 1000)) return sendTooManyRequests(response, "Zu viele Kommunikationsentwürfe in kurzer Zeit.");
     return handleJson(request, response, async (body) => {
       const [commProfile, interactions] = await Promise.all([activeProfile(politicianId), getInteractions(politicianId)]);
+      let decision = body.decision;
+      if (body.office === true) {
+        // Reuse the existing read-only, tenant-scoped briefing and its source
+        // filters. Never send client-supplied political facts to the model.
+        const current = await buildV3Briefing(commProfile, politicianId);
+        const requested = body.decision || {};
+        const identity = (value, camel, snake) => {
+          const a = String(value?.[camel] || "").trim(), b = String(value?.[snake] || "").trim();
+          return a && b && a !== b ? "" : a || b;
+        };
+        const vorgangId = identity(requested, "vorgangId", "vorgang_id");
+        const koId = identity(requested, "knowledgeObjectId", "knowledge_object_id");
+        const matches = vorgangId && koId ? (current.items || []).filter(item =>
+          item.vorgangId === vorgangId && item.knowledgeObjectId === koId
+          && ["Sofort reagieren", "Beobachten"].includes(item.decision)) : [];
+        if (matches.length !== 1) return { aiEnabled: false, degraded: true,
+          fallbackReason: "anlass-nicht-verfuegbar", text: "",
+          sourceNote: "Der Anlass ist nicht mehr eindeutig mit Ihrer aktuellen Lage verbunden." };
+        decision = matches[0];
+      }
       return generateCommunicationDraft({
         prompt: String(body.prompt || "").slice(0, 1200),
         channel: body.channel,
-        decision: body.decision,
+        decision,
         profile: commProfile,
-        learningProfile: buildLearningProfile(interactions)
+        learningProfile: buildLearningProfile(interactions),
+        office: body.office === true
       });
     });
   }

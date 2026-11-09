@@ -107,6 +107,8 @@ let officeDrafts = {};
 // unterscheidet "Erstellung fehlgeschlagen" vom bloßen "Noch kein Entwurf".
 let officeDraftErrors = {};
 let officeDraftsGenerating = false;
+let officeDraftGeneratingKey = "";
+let officeShareFallbackKey = "";
 let selectedOfficeDraft = null;
 let officeBriefingTarget = null;
 let selectedCommunicationChannel = "press";
@@ -151,7 +153,7 @@ function clearPrivateMandateState() {
   helmutBriefings = []; helmutDeck = []; helmutDecidedIds = new Set();
   selectedDecisionId = ""; selectedVorgangId = ""; selectedTaskHandoffId = "";
   generatedStatement = ""; generatedStatementSource = ""; communicationContextTitle = "";
-  officeDrafts = {}; officeDraftErrors = {}; officeDraftsGenerating = false;
+  officeDrafts = {}; officeDraftErrors = {}; officeDraftsGenerating = false; officeDraftGeneratingKey = ""; officeShareFallbackKey = "";
   selectedOfficeDraft = null; officeBriefingTarget = null;
   parliamentItems = []; parliamentAssessments = {}; parliamentLoaded = false;
   dailyInputs = []; dailyInputsLoaded = false; radarArchive = []; radarBuckets = null;
@@ -392,14 +394,14 @@ const officeHandoffMethods = [
 ];
 
 const OFFICE_FORMATS = [
-  { id: "presse",       label: "Pressemitteilung",        icon: "ti-news",             channel: "press" },
+  { id: "presse",       label: "Statement",        icon: "ti-news",             channel: "press" },
   { id: "linkedin",     label: "LinkedIn",                icon: "ti-brand-linkedin",   channel: "linkedin" },
   { id: "x",           label: "X / Twitter",             icon: "ti-brand-x",          channel: "x" },
   { id: "instagram",   label: "Instagram",               icon: "ti-brand-instagram",  channel: "instagram" },
-  { id: "anfrage",     label: "Parlamentarische Anfrage", icon: "ti-file-text",        channel: "committee_question" },
-  { id: "rede",        label: "Rede",                    icon: "ti-microphone",       channel: "internal_line" },
+  { id: "anfrage",     label: "Fragen für den Ausschuss", icon: "ti-file-text",        channel: "committee_question" },
+  { id: "rede",        label: "Redestichpunkte",                    icon: "ti-microphone",       channel: "internal_line" },
   { id: "buergerbrief", label: "Bürgerbrief",            icon: "ti-mail",             channel: "citizen_dialogue" },
-  { id: "intern",      label: "Interne Linie",           icon: "ti-lock",             channel: "internal_line" },
+  { id: "intern",      label: "Büroauftrag",           icon: "ti-lock",             channel: "internal_line" },
 ];
 
 const mandateFunctions = [
@@ -535,7 +537,6 @@ async function loadBriefing({ readOnly = false } = {}) {
       applyStartPayload(cachedStart, accessGeneration);
       renderedFromCache = true;
       render();
-      if (!readOnly) generateOfficeDraftsInBackground();
     } catch (error) {
       console.warn("Cached Helmut start payload ignored", error);
     }
@@ -593,7 +594,6 @@ async function loadBriefing({ readOnly = false } = {}) {
     ensureViewData(currentView);
     if (userRole() === "admin") ensureViewData("admin");
     if (!readOnly) loadParliament();
-    if (!readOnly) generateOfficeDraftsInBackground();
     return Boolean(profile.id);
   } catch (error) {
     if (accessGeneration !== privateAccessGeneration) return;
@@ -704,7 +704,7 @@ function applyStartPayload(startPayload, accessGeneration = privateAccessGenerat
   privateAccess = true;
 }
 
-const ONBOARDING_STEPS = 7;
+const ONBOARDING_STEPS = 6;
 
 function renderOnboarding() {
   if (!onboardingActive) return "";
@@ -746,14 +746,6 @@ function renderOnboarding() {
       <label>Kommunikationsstil
         <select name="communicationStyle">${communicationStyles.map((s) => `<option value="${escapeAttribute(s)}" ${d.communicationStyle === s ? "selected" : ""}>${escapeHtml(s)}</option>`).join("")}</select>
       </label>`;
-  } else if (onboardingStep === 5) {
-    const selectedFormats = new Set(d.officeFormats || ["presse", "linkedin"]);
-    body = `
-      <h2>Büro-Formate</h2>
-      <p class="onboarding-note">Welche Entwürfe soll Helmut dir im Büro anbieten? Du kannst das jederzeit in den Einstellungen ändern.</p>
-      <div class="onboarding-chips">
-        ${OFFICE_FORMATS.map((f) => `<label class="onboarding-chip"><input type="checkbox" name="officeFormat" value="${escapeAttribute(f.id)}" ${selectedFormats.has(f.id) ? "checked" : ""}/> ${escapeHtml(f.label)}</label>`).join("")}
-      </div>`;
   } else {
     body = `
       <h2>Risiken & Chancen (optional)</h2>
@@ -794,9 +786,6 @@ function captureOnboardingStep() {
     const extra = free ? String(free.value || "").split(",").map((s) => s.trim()).filter(Boolean) : [];
     onboardingDraft.focusTopics = Array.from(new Set([...checked, ...extra]));
   }
-  if (root.querySelector("input[name='officeFormat']")) {
-    onboardingDraft.officeFormats = Array.from(root.querySelectorAll("input[name='officeFormat']:checked")).map((c) => c.value);
-  }
 }
 
 async function finishOnboarding(skip) {
@@ -818,8 +807,7 @@ async function finishOnboarding(skip) {
         state: onboardingDraft.state,
         communicationStyle: onboardingDraft.communicationStyle,
         riskTopics: String(onboardingDraft.riskTopics || "").split(",").map((s) => s.trim()).filter(Boolean),
-        opportunityTopics: String(onboardingDraft.opportunityTopics || "").split(",").map((s) => s.trim()).filter(Boolean),
-        officeFormats: Array.isArray(onboardingDraft.officeFormats) ? onboardingDraft.officeFormats : ["presse", "linkedin"]
+        opportunityTopics: String(onboardingDraft.opportunityTopics || "").split(",").map((s) => s.trim()).filter(Boolean)
       };
   render();
   try {
@@ -904,6 +892,7 @@ function appStartCacheKey() {
 async function ensureViewData(view) {
   const context = privateAccessContext();
   if (!privateAccessIsCurrent(context)) return;
+  if (view === "office" || view === "office-detail" || view === "tasks") await generateSelectedOfficeDraft();
   // Radar verwendet weiterhin den vorhandenen gemeinsamen Startvertrag.
   if (view === "admin") {
     await ensureAdminSection(admSection);
@@ -4472,6 +4461,8 @@ function toDecision(item) {
     consequenceIfIgnored: item.consequence_if_ignored || item.inactionConsequence,
     possibleUpside: item.possible_upside || item.opportunityNote,
     actionType: item.action_type || item.actionType,
+    recommendedCommunication: item.recommendedCommunication,
+    recommendedChannel: item.recommendedChannel,
     deadline: item.deadline || item.taskTemplate?.dueDate,
     urgency: item.urgency,
     statusChange: item.status_change,
@@ -4525,6 +4516,8 @@ function recommendationToDecisionItem(recommendation) {
     decision: recommendation.decision,
     classification: recommendation.priorityType === "risk" ? "risk" : "opportunity",
     action_type: recommendation.action_type,
+    recommendedCommunication: recommendation.recommendedCommunication,
+    recommendedChannel: recommendation.recommendedChannel,
     deadline: recommendation.deadline,
     urgency: recommendation.urgency,
     status_change: recommendation.status_change,
@@ -4706,6 +4699,7 @@ function uiIcon(name) {
     bell: '<path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5zM10 21h4"/>',
     arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
     back: '<path d="m15 5-7 7 7 7"/>',
+    share: '<path d="M12 16V3m-5 5 5-5 5 5M5 12v9h14v-9"/>',
     copy: '<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V3H3v13h5"/>',
     source: '<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v14c0 4 14 4 14 0V5M5 12c0 4 14 4 14 0"/>'
   };
@@ -4773,7 +4767,7 @@ function renderUiEmpty(title, detail) {
 function renderUiFooter(variant = "") {
   const label = currentView === "settings" || currentView === "profile-settings"
     ? "Dein Mandatsprofil steuert die persönliche Einordnung."
-    : ["helmut", "briefing", "radar"].includes(currentView)
+    : ["helmut", "briefing", "radar", "office", "office-detail", "tasks"].includes(currentView)
       ? "Quellen und Stand finden Sie direkt bei den angezeigten Inhalten."
       : "Quellen und Stand findest du direkt bei den angezeigten Inhalten.";
   // Zwei Platzierungen derselben Zeile: Desktop am Fensterrand, mobil am
@@ -6468,7 +6462,7 @@ function renderUiBriefingColumns(state) {
       <button type="button" class="ui-col-link" data-view="radar">Im Radar öffnen ${uiIcon("arrow")}</button>
     </section>` : "";
   const decision = briefingOfficeDecision();
-  const formats = decision ? activeOfficeFormats() : [];
+  const formats = decision ? [recommendedOfficeFormat(decision).format] : [];
   const buero = formats.length ? `<section class="ui-col" aria-label="Für Ihr Büro">
       <p class="ui-col-kicker">${uiIcon("office")}<span>Für Ihr Büro</span></p>
       <h3>${formats.length === 1 ? "1 Vorbereitung" : `${formats.length} Vorbereitungen`}</h3>
@@ -6506,7 +6500,7 @@ function renderUiBriefingHero(state, details = "") {
       ${orientierung ? `<div class="ui-arrow-action"><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span></span></div>`
         : recommendation ? `<button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>` : ""}
       ${why ? `<p class="ui-recommendation-why"><strong>${recommendation ? "Begründung:" : "Warum heute relevant:"}</strong> ${escapeHtml(uiSieText(why))}</p>` : ""}
-      ${recommendation && !orientierung && !officeAvailable ? '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und Ihre Büro-Formate.</p>' : ""}
+      ${recommendation && !orientierung && !officeAvailable ? '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und seine Quellen.</p>' : ""}
       ${orientierung ? `<details class="ui-evidence-note"><summary>Beleg für die Vorbereitung</summary><blockquote>${escapeHtml(orientierung.text)}</blockquote><p>Gespeicherter Originalauszug; der Prüfauftrag ist eine Empfehlung.</p></details>`
         : `<p class="ui-evidence-note">${recommendation ? "KI-Empfehlung und Begründung" : "KI-Einordnung"} · vor Verwendung prüfen. Aussagebezogene Originalauszüge werden hier nicht mitgeliefert.</p>`}
       <p class="ui-hero-meta">${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
@@ -7486,7 +7480,7 @@ function renderMemorySection(decision) {
 
 const OFFICE_FORMAT_META = {
   presse: {
-    formatLabel: "Pressemitteilung", typeLabel: "PRESSEMITTEILUNG", einordnung: "Offizielle Linie für Medien.",
+    formatLabel: "Statement", typeLabel: "STATEMENT", einordnung: "Offizielle Linie für Medien.",
     defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Vor Veröffentlichung prüfen. Sachlicher Ton empfohlen.",
     qualityTone: "Sachlich, klar, politisch anschlussfähig", qualityUsage: "Presse und Medien",
     fallbackDraft: "",
@@ -7514,14 +7508,14 @@ const OFFICE_FORMAT_META = {
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   anfrage: {
-    formatLabel: "Parlamentarische Anfrage", typeLabel: "PARLAMENTARISCHE ANFRAGE", einordnung: "Für Ausschuss und parlamentarische Kontrolle.",
+    formatLabel: "Fragen für den Ausschuss", typeLabel: "PARLAMENTARISCHE FRAGE", einordnung: "Für Ausschuss und parlamentarische Kontrolle.",
     defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Vor Einreichung prüfen. Formale Sprache erforderlich.",
     qualityTone: "Formal, sachlich, präzise", qualityUsage: "Parlamentarische Arbeit",
     fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   rede: {
-    formatLabel: "Redebaustein", typeLabel: "REDEBAUSTEIN", einordnung: "Für Termine, Interviews und kurze Statements.",
+    formatLabel: "Redestichpunkte", typeLabel: "REDESTICHPUNKTE", einordnung: "Für Termine, Interviews und kurze Statements.",
     defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Vor Verwendung prüfen. Kernbotschaft klar halten.",
     qualityTone: "Klar, überzeugend, politisch", qualityUsage: "Termine und Interviews",
     fallbackDraft: "",
@@ -7535,7 +7529,7 @@ const OFFICE_FORMAT_META = {
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   intern: {
-    formatLabel: "Interne Linie", typeLabel: "INTERNE LINIE", einordnung: "Für Büro und Team.",
+    formatLabel: "Büroauftrag", typeLabel: "BÜROAUFTRAG", einordnung: "Für Büro und Team.",
     defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Nur für internen Gebrauch.",
     qualityTone: "Sachlich, intern, klar", qualityUsage: "Interner Gebrauch",
     fallbackDraft: "",
@@ -7594,16 +7588,10 @@ function draftStatus(format) {
 // gültiger (KI-/regelbasierter) Entwurf vorliegt. Sonst "Wird vorbereitet" bzw.
 // die redaktionelle Vorgabe des Formats — nie "bereit" über einem Platzhalter.
 function officeCardStatus(decision, format) {
-  const editorial = draftStatus(format);
   const key = officeDraftKey(decision, format);
-  const hasValid = isValidDraft(officeDraftText(officeDrafts[key]));
-  if (editorial === "Entwurf bereit" && !hasValid) {
-    if (officeDraftsGenerating) return "Wird vorbereitet";
-    // Ehrlicher Fehlerzustand statt "Noch kein Entwurf": die Erzeugung ist
-    // real fehlgeschlagen (Timeout/Limit/KI-Fehler), nicht bloß ausstehend.
-    return officeDraftErrors[key] ? "Erstellung fehlgeschlagen" : "Noch kein Entwurf";
-  }
-  return editorial;
+  if (officeDraftEntry(decision, format)) return "Entwurf bereit";
+  if (officeDraftsGenerating && officeDraftGeneratingKey === key) return "Wird vorbereitet";
+  return officeDraftErrors[key] ? "Erstellung fehlgeschlagen" : "Noch kein Entwurf";
 }
 
 function draftStatusClass(status) {
@@ -7633,7 +7621,8 @@ function officeDecisions() {
     && ["Sofort reagieren", "Beobachten"].includes(d.decision)
     && decisionEntityId(d, "knowledgeObjectId", "knowledge_object_id")
     && decisionEntityId(d, "vorgangId", "vorgang_id")
-    && hasPreciseSource(d));
+    && officeDraftSources(d).length > 0
+    && typeof d.summary === "string" && d.summary.trim().length >= 30);
   const counts = new Map();
   for (const d of eligible) {
     const id = decisionEntityId(d, "vorgangId", "vorgang_id");
@@ -7653,7 +7642,7 @@ function briefingOfficeDecision() {
 
 function openOfficeForBriefing() {
   const decision = briefingOfficeDecision();
-  const format = activeOfficeFormats()[0];
+  const format = decision && recommendedOfficeFormat(decision).format;
   if (!decision || !format) {
     selectedOfficeDraft = null;
     officeBriefingTarget = null;
@@ -7669,49 +7658,46 @@ function openOfficeForBriefing() {
   navOpen = updatesOpen = false;
   render();
   app.querySelector(".ui-page")?.scrollTo({ top: 0 });
+  generateSelectedOfficeDraft();
   return true;
 }
 
-function renderOfficeView() {
-  const detailOpen = currentView === "office-detail" || Boolean(officeBriefingTarget);
+function recommendedOfficeFormat(decision) {
+  // Structured KO recommendations are already available in the read contract.
+  // Only use the current primary recommendation when its explicit identities agree.
+  const state = briefing?.currentHelmutState;
+  const primaryMatches = state?.primaryVorgangId
+    && state.primaryVorgangId === decisionEntityId(decision, "vorgangId", "vorgang_id")
+    && state.primaryItem?.id === state.primaryVorgangId
+    && (!state.profileId || state.profileId === profile?.id);
+  const recommendation = decision?.recommendedCommunication || (primaryMatches ? state.recommendedCommunication : null);
+  const structured = recommendation && typeof recommendation === "object" ? recommendation : {};
+  const hint = [structured.recommendedChannel, structured.recommendedFormat, decision?.recommendedChannel,
+    decision?.actionType, decision?.action_type].filter(Boolean).join(" ").toLowerCase();
   const formats = activeOfficeFormats();
+  let id = "presse";
+  let reason = "Ein kurzes Statement macht den belegten Anlass verständlich und lässt sich vielseitig verwenden.";
+  if (/ausschuss|committee|parliamentary/.test(hint) && formats.some((f) => f.id === "anfrage")) {
+    id = "anfrage";
+    reason = "Die vorhandene Empfehlung zielt auf parlamentarische Klärung. Fragen für den Ausschuss bereiten diese vor.";
+  } else if (/intern|büro|buero|office|monitoringnote|briefing/.test(hint)) {
+    id = "intern";
+    reason = "Die vorhandene Empfehlung betrifft die Vorbereitung im Team. Ein Büroauftrag bündelt die nächsten Prüfschritte.";
+  } else if (/linkedin|instagram|twitter|social|(?:^|\s)x(?:$|\s)/.test(hint)) {
+    id = /instagram/.test(hint) ? "instagram" : /twitter|(?:^|\s)x(?:$|\s)/.test(hint) ? "x" : "linkedin";
+    reason = "Die vorhandene Empfehlung sieht eine öffentliche Reaktion in sozialen Medien vor. Ein kurzer Beitrag passt dazu.";
+  } else if (decision?.decision === "Beobachten" && !/press|statement/.test(hint)) {
+    id = "intern";
+    reason = "Der Vorgang ist noch zu beobachten. Ein Büroauftrag hilft, offene Punkte vor einer öffentlichen Reaktion zu prüfen.";
+  }
+  return { format: formats.find((f) => f.id === id) || formats[0], reason };
+}
+
+function renderOfficeView() {
+  loadOfficeDraftCache();
+  const detailOpen = currentView === "office-detail" || Boolean(officeBriefingTarget);
   const topDecisions = officeDecisions();
-  const allCards = topDecisions.flatMap((d) => formats.map((f) => ({ decision: d, format: f })));
-  const totalCount = allCards.length;
-  const hasBriefing = topDecisions.length > 0;
-  const generating = officeDraftsGenerating;
-
-  // "Bereit" zaehlt AUSSCHLIESSLICH echte, nutzbare Entwuerfe: officeCardStatus prueft
-  // isValidDraft und liefert "Entwurf bereit" nur bei tatsaechlich vorliegendem Entwurf —
-  // NICHT die rein editorische Format-Vorgabe (draftStatus). So werden "Wird vorbereitet",
-  // "Erstellung fehlgeschlagen" und "Noch kein Entwurf" nie als bereit gezaehlt. holdCount
-  // zaehlt nur die echten Bereithalten-Formate, damit laufende/fehlgeschlagene Karten
-  // weder als bereit noch als "zum Bereithalten" verbucht werden (kein Umdeuten).
-  const readyCount = allCards.filter(({ decision, format }) => officeCardStatus(decision, format) === "Entwurf bereit").length;
-  const holdCount = allCards.filter(({ format }) => draftStatus(format) !== "Entwurf bereit").length;
-
-  const summaryText = hasBriefing
-    ? (readyCount ? `${readyCount} ${readyCount !== 1 ? "Entwürfe" : "Entwurf"} bereit` : "")
-      + (holdCount ? `${readyCount ? `<span class="buero-summary-sep">·</span>` : ""}${holdCount} zum Bereithalten` : "")
-      + `<span class="buero-summary-sep">·</span>Briefingstand: ${escapeHtml(officeBriefingStandLabel())}`
-    : generating
-      ? "Entwürfe werden vorbereitet&hellip;"
-      : "Deine Entwürfe erscheinen hier automatisch, sobald deine Lage geladen ist.";
-
-  // Konsistent zur ehrlichen Zaehlung: ein Format gilt nur als "bereit", wenn fuer
-  // mindestens einen der Top-Vorgaenge ein echter Entwurf vorliegt (officeCardStatus) —
-  // nie "Zuerst pruefen" ueber einem fehlgeschlagenen/laufenden Entwurf. Sonst
-  // Bereithalten/Optional. Verhindert den Widerspruch Summary ("0 bereit") ↔ Priority-Hinweis.
-  const readyFormats = formats.filter((f) => allCards.some(({ decision, format }) => format.id === f.id && officeCardStatus(decision, format) === "Entwurf bereit"));
-  const holdFormats = formats.filter((f) => !readyFormats.some((rf) => rf.id === f.id));
-  const priorityHint = hasBriefing && readyFormats.length ? `
-    <div class="buero-priority-hint">
-      ${readyFormats.slice(0, 1).map((f) => `<span class="buero-priority-label">Zuerst prüfen:</span><span class="buero-priority-value">${escapeHtml(OFFICE_FORMAT_META[f.id]?.formatLabel || f.label)}</span>`).join("")}
-      ${readyFormats.slice(1, 2).map((f) => `<span class="buero-priority-sep">·</span><span class="buero-priority-label">Danach:</span><span class="buero-priority-value">${escapeHtml(OFFICE_FORMAT_META[f.id]?.formatLabel || f.label)}</span>`).join("")}
-      ${holdFormats.length ? `<span class="buero-priority-sep">·</span><span class="buero-priority-optional">Optional: ${escapeHtml(holdFormats.map((f) => OFFICE_FORMAT_META[f.id]?.formatLabel || f.label).join(", "))}</span>` : ""}
-    </div>
-  ` : "";
-
+  const allCards = topDecisions.flatMap((decision) => activeOfficeFormats().map((format) => ({ decision, format })));
   if (officeBriefingTarget) {
     const target = officeBriefingTarget;
     const match = profile.id === target.profileId && allCards.find(({decision, format}) =>
@@ -7720,96 +7706,48 @@ function renderOfficeView() {
       && (!selectedOfficeDraft || format.id === selectedOfficeDraft.format.id));
     selectedOfficeDraft = match ? uiOfficeSelection(match.decision, match.format) : null;
   }
-  if (selectedOfficeDraft && !allCards.some(({decision, format}) => officeDraftKey(decision, format) === officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format))) selectedOfficeDraft = null;
   const selectedCard = selectedOfficeDraft && allCards.find(({decision, format}) => officeDraftKey(decision, format) === officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format));
   if (selectedCard) selectedOfficeDraft = uiOfficeSelection(selectedCard.decision, selectedCard.format);
-  else if (!officeBriefingTarget && currentView !== "office-detail" && allCards.length) selectedOfficeDraft = uiOfficeSelection(allCards[0].decision, allCards[0].format);
+  else if (!officeBriefingTarget && currentView !== "office-detail" && topDecisions.length) {
+    const decision = topDecisions[0];
+    selectedOfficeDraft = uiOfficeSelection(decision, recommendedOfficeFormat(decision).format);
+  } else selectedOfficeDraft = null;
   return `
     <div class="buero-view">
-      ${renderUiPageHeader("Büro", "Entwürfe für deine politische Arbeit. Prüfe Inhalt und Quellen vor der Verwendung.")}
-      <p class="buero-summary">${summaryText || "Noch kein Entwurf bereit"}</p>
-      ${priorityHint}
+      ${renderUiPageHeader("Büro", "Helmut bereitet vor. Sie entscheiden.")}
       <div class="ui-master-detail ui-office-workspace ${detailOpen ? "is-detail" : ""}">
-      <div class="buero-draft-list ui-master">
-        ${topDecisions.map((decision, di) => `
-          <div class="buero-group">
-            <h2 class="buero-group-title">
-              <span class="buero-group-eyebrow">Anlass</span>
-              ${escapeHtml(draftTitle(decision))}
-            </h2>
-            ${formats.map((format, fi) => renderOfficeDraftCard(decision, format, di * formats.length + fi)).join("")}
-          </div>
-        `).join("")}
-        ${!hasBriefing ? renderUiEmpty("Noch keine Entwürfe", "Sobald belastbare Vorgänge vorliegen, kannst du hier passende Entwürfe prüfen.") : !formats.length ? renderUiEmpty("Keine Büro-Formate ausgewählt", "Wähle die gewünschten Formate in deinem Profil.") : ""}
+        <div class="buero-draft-list ui-master">
+          ${topDecisions.map((decision, index) => renderOfficeDraftCard(decision, recommendedOfficeFormat(decision).format, index)).join("")}
+          ${!topDecisions.length ? renderUiEmpty("Noch kein belastbarer Anlass", "Sobald ein geeigneter Vorgang mit ausreichender Quellenbasis vorliegt, empfiehlt Helmut hier einen passenden Entwurf.") : ""}
+        </div>
+        <aside class="ui-detail ui-office-detail" aria-label="Entwurf im Detail">${selectedOfficeDraft ? renderOfficeDraftDetail() : `${detailOpen ? `<button type="button" class="buero-back-btn" data-office-back>${uiIcon("back")} Büro</button>` : ""}${topDecisions.length ? renderUiEmpty("Entwurf nicht eindeutig zugeordnet", "Öffnen Sie einen vorhandenen Anlass, um den Text und seine Quellen zu prüfen.") : ""}`}</aside>
       </div>
-      <aside class="ui-detail ui-office-detail" aria-label="Entwurf im Detail">${selectedOfficeDraft ? renderOfficeDraftDetail() : `${detailOpen ? `<button type="button" class="buero-back-btn" data-office-back>${uiIcon("back")} Büro</button>` : ""}${renderUiEmpty(officeBriefingTarget ? "Entwurf nicht eindeutig zugeordnet" : "Dein Arbeitsbereich", "Wähle einen vorhandenen Entwurf, um den vollständigen Text und seine Quellen zu prüfen.")}`}</aside>
-      </div>
-    </div>
-  `;
+    </div>`;
 }
 
 function uiOfficeSelection(decision, format) {
-  const cached = officeDrafts[officeDraftKey(decision, format)];
-  const cachedText = officeDraftText(cached);
-  const valid = isValidDraft(cachedText);
-  return { decision, format,
-    text: (valid ? cachedText : null) || channelFallbackStatement(decision, format.channel || "press"),
-    provenance: draftProvenanceLabel(officeDraftProvenance(cached), valid)
-  };
+  const cached = officeDraftEntry(decision, format);
+  return { decision, format, text: cached?.text || "", provenance: draftProvenanceLabel(cached?.source || "", Boolean(cached)) };
 }
 
-function renderOfficeDraftCard(decision, format, index = 0) {
+function renderOfficeDraftCard(decision, format) {
   const key = officeDraftKey(decision, format);
-  const draftValue = officeDrafts[key];
-  const aiText = officeDraftText(draftValue);
-  const isLoading = officeDraftsGenerating && !aiText;
-  const meta = OFFICE_FORMAT_META[format.id] || { typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", iconBg: "#F0F0F0", iconColor: "#555" };
-  // Kein erfundener Muster-Entwurf mehr: entweder gültiger (KI-/regelbasierter)
-  // Text oder ein aus DIESER Entscheidung abgeleiteter Vorschlag. Fehlt beides,
-  // liefert channelFallbackStatement die klare Meldung "kein belastbarer
-  // Kommunikationsvorschlag vor" (siehe isValidDraft/renderOfficeDraftCard).
-  const hasValid = isValidDraft(aiText);
-  const text = (hasValid ? aiText : null) || channelFallbackStatement(decision, format.channel || "press");
-  const readTime = draftReadingTime(text);
-  const status = officeCardStatus(decision, format);
-  const statusClass = draftStatusClass(status);
-  const source = draftSource(format);
-  const title = draftTitle(decision);
-  const delay = `${index * 60}ms`;
-
-  const formatLabel = meta.formatLabel || title;
-
+  const recommendation = recommendedOfficeFormat(decision);
   return `
-    <article class="buero-draft-card${isLoading ? " is-loading" : ""}${selectedOfficeDraft && officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format) === key ? " is-selected" : ""}" style="animation-delay:${delay}"
+    <article class="buero-draft-card${selectedOfficeDraft && officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format) === key ? " is-selected" : ""}"
       data-office-open="${escapeAttribute(key)}"
       data-office-decision="${escapeAttribute(JSON.stringify({ id: decision.id, knowledgeObjectId: decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id"), vorgangId: decisionEntityId(decision, "vorgangId", "vorgang_id") }))}"
       data-office-format="${escapeAttribute(format.id)}"
-      role="button" tabindex="0" aria-label="${escapeAttribute(meta.typeLabel + ": " + title)}">
-      <div class="buero-card-top">
-        <span class="buero-card-type">${escapeHtml(meta.typeLabel)}</span>
-        <span class="buero-status-pill ${statusClass}">${escapeHtml(status)}</span>
+      role="button" tabindex="0" aria-label="${escapeAttribute(decision.title + ": " + format.label)}">
+      <div class="buero-card-body">
+        <span class="buero-group-eyebrow">Anlass</span>
+        <h2 class="buero-card-title">${escapeHtml(decision.title)}</h2>
+        <p class="buero-card-type">${escapeHtml(format.label)} · empfohlen</p>
+        <p class="buero-card-einordnung">${escapeHtml(recommendation.reason)}</p>
+        <p class="buero-card-provenance">${escapeHtml(officeCardStatus(decision, format))}</p>
       </div>
-      <div class="buero-card-main">
-        <div class="buero-card-body">
-          <h2 class="buero-card-title">${escapeHtml(formatLabel)}</h2>
-          <p class="buero-card-einordnung">${escapeHtml(meta.einordnung)}</p>
-          <p class="buero-card-anlass">Anlass: ${escapeHtml(title)}</p>
-        </div>
-        <i class="ti ti-chevron-right buero-card-chev" aria-hidden="true"></i>
-      </div>
-      <div class="buero-card-footer">
-        <span class="buero-card-meta-row">
-          <span>${escapeHtml(source)}</span>
-          <span class="buero-meta-sep">·</span>
-          <span>${escapeHtml(readTime)}</span>
-        </span>
-        <button class="buero-review-btn" type="button" ${isLoading ? "disabled" : ""}>
-          Entwurf prüfen
-        </button>
-      </div>
-      ${isLoading ? "" : `<p class="buero-card-provenance">${escapeHtml(draftProvenanceLabel(officeDraftProvenance(draftValue), hasValid))}</p>`}
-    </article>
-  `;
+      <span class="buero-review-btn">Entwurf öffnen ${uiIcon("arrow")}</span>
+    </article>`;
 }
 
 // Ehrliches Quellen-Datum: ohne belegtes Veroeffentlichungsdatum bleibt der Wert leer
@@ -7825,6 +7763,9 @@ function officeSourceDateLabel(iso) {
 // dedupliziert, nur oeffnende Artikel-URLs; ohne oeffnende Quelle ein ehrlicher
 // Hinweis statt einer leeren Behauptung.
 function renderOfficeDraftSources(sourceList) {
+  const sourceLabel = sourceList.length
+    ? `Quellen dieses Entwurfs. Basiert auf ${sourceList.length} ${sourceList.length === 1 ? "Quelle" : "Quellen"}.`
+    : "Quellen dieses Entwurfs";
   const rows = sourceList.map((s) => {
     const dateLabel = officeSourceDateLabel(s.publishedAt);
     return `
@@ -7838,75 +7779,70 @@ function renderOfficeDraftSources(sourceList) {
       </li>`;
   }).join("");
   return `
-    <section class="buero-detail-sources" aria-label="Quellen dieses Entwurfs">
+    <section class="buero-detail-sources" aria-label="${escapeAttribute(sourceLabel)}">
       <h2 class="buero-sources-title">Quellen (${sourceList.length})</h2>
       ${sourceList.length
         ? `<ul class="buero-sources-list">${rows}</ul>`
-        : `<p class="buero-sources-empty">Für diesen Entwurf liegt keine öffnbare Originalquelle vor. Prüfe die Aussagen vor einer Veröffentlichung selbst.</p>`}
+        : `<p class="buero-sources-empty">Für diesen Entwurf liegt keine öffnbare Originalquelle vor. Prüfen Sie die Aussagen vor einer Veröffentlichung selbst.</p>`}
     </section>`;
 }
 
-function renderOfficeDraftDetail() {
-  if (!selectedOfficeDraft) { currentView = "office"; return renderOfficeView(); }
-  const { decision, format, text } = selectedOfficeDraft;
-  const meta = OFFICE_FORMAT_META[format.id] || { formatLabel: format.label, typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", qualityTone: "Sachlich, klar, politisch anschlussfähig", qualityUsage: "Presse und Medien", iconBg: "#F0F0F0", iconColor: "#555" };
-  const sourceList = officeDraftSources(decision);
-  const sources = sourceList.length;
-  const status = officeCardStatus(decision, format);
-  const statusClass = draftStatusClass(status);
-  const paragraphs = String(text).split(/\n{1,}/).map((p) => p.trim()).filter(Boolean);
+// Only fixed product messages reach the UI; provider/server error prose stays private.
+function officeDraftFailure(reason) {
+  const messages = {
+    "quellenbasis-fehlt": "Für diesen Anlass liegt noch keine ausreichende Originaltextbasis vor. Helmut zeigt deshalb keinen Entwurf.",
+    "anlass-nicht-verfuegbar": "Dieser Anlass ist derzeit nicht mehr belastbar verfügbar. Helmut zeigt deshalb keinen Entwurf.",
+    "zustaendigkeit-offen": "Für Ausschussfragen fehlt eine gesicherte parlamentarische Zuständigkeit im Mandatsprofil.",
+    "budget-erschoepft": "Die aktuelle KI-Kostengrenze ist erreicht. Derzeit kann kein neuer Entwurf vorbereitet werden.",
+    "format-unbekannt": "Dieses Textformat ist derzeit nicht verfügbar."
+  };
+  return { message: messages[reason] || "Der Entwurf konnte nicht belastbar erstellt werden. Sie können es erneut versuchen.",
+    retry: !Object.prototype.hasOwnProperty.call(messages, reason) };
+}
 
+function renderOfficeDraftDetail() {
+  if (!selectedOfficeDraft) return "";
+  const { decision, format, text } = selectedOfficeDraft;
+  const recommendation = recommendedOfficeFormat(decision);
+  const sources = officeDraftSources(decision);
+  const key = officeDraftKey(decision, format);
+  const loading = officeDraftsGenerating && officeDraftGeneratingKey === key;
+  const failed = Boolean(officeDraftErrors[key]);
+  const failure = officeDraftFailure(officeDraftErrors[key]);
+  const options = activeOfficeFormats();
+  const categories = [
+    ["Statement", ["presse"]], ["Social Media", ["linkedin", "x", "instagram"]],
+    ["Parlamentarische Frage", ["anfrage"]], ["Büroauftrag", ["intern"]],
+    ["Weitere Formate", ["buergerbrief"]]
+  ];
   return `
     <div class="buero-detail-view">
-      <nav class="buero-detail-nav">
-        <button class="buero-back-btn" type="button" data-office-back>
-          ${uiIcon("back")} Büro
-        </button>
-      </nav>
+      <nav class="buero-detail-nav"><button class="buero-back-btn" type="button" data-office-back>${uiIcon("back")} Büro</button></nav>
       <header class="buero-detail-header">
-        <div class="buero-detail-type-row">
-          <span class="buero-card-type">${escapeHtml(meta.typeLabel)}</span>
-          <span class="buero-status-pill ${statusClass}">${escapeHtml(status)}</span>
-        </div>
-        <h2 class="buero-detail-title">${escapeHtml(meta.formatLabel || draftTitle(decision))}</h2>
-        <p class="buero-detail-anlass">Anlass: ${escapeHtml(draftTitle(decision))}</p>
-        <p class="buero-detail-meta">
-          Briefingstand: ${escapeHtml(officeBriefingStandLabel())}
-          ${sources > 0 ? `&nbsp;·&nbsp; Basiert auf ${sources} ${sources !== 1 ? "Quellen" : "Quelle"}` : ""}
-        </p>
-        <p class="buero-detail-linecheck">${escapeHtml(selectedOfficeDraft.provenance || draftProvenanceLabel("", isValidDraft(officeDraftText(officeDrafts[officeDraftKey(decision, format)]))))}${meta.lineCheck ? escapeHtml(" · " + meta.lineCheck) : ""}</p>
+        <span class="buero-group-eyebrow">Anlass</span>
+        <h2 class="buero-detail-title">${escapeHtml(decision.title)}</h2>
+        <p class="buero-detail-anlass">${escapeHtml(format.label)}${format.id === recommendation.format.id ? " · von Helmut empfohlen" : ""}</p>
+        ${format.id === "anfrage" ? '<p class="buero-detail-linecheck">Arbeitsentwurf für den Ausschuss · keine formgerechte parlamentarische Anfrage.</p>' : ""}
+        <p class="buero-recommendation">${format.id !== recommendation.format.id ? `Helmut empfiehlt ${escapeHtml(recommendation.format.label)}. ` : ""}${escapeHtml(recommendation.reason)}</p>
+        <details class="buero-format-choice">
+          <summary>Anderes Format wählen</summary>
+          <label for="office-format-select">Textformat</label>
+          <select id="office-format-select" class="buero-format-select" data-office-format-select>
+            ${categories.map(([category, ids]) => {
+              const group = options.filter((f) => ids.includes(f.id));
+              return group.length ? `<optgroup label="${escapeAttribute(category)}">${group.map((f) => `<option value="${escapeAttribute(f.id)}" ${f.id === format.id ? "selected" : ""}>${escapeHtml(f.label)}</option>`).join("")}</optgroup>` : "";
+            }).join("")}
+          </select>
+        </details>
       </header>
-      <div class="buero-detail-body">
-        ${paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join("")}
-      </div>
-      ${renderOfficeDraftSources(sourceList)}
-      <div class="buero-quality-check">
-        <div class="buero-quality-row">
-          <span class="buero-quality-label">Ton</span>
-          <span class="buero-quality-value">${escapeHtml(meta.qualityTone || "Sachlich, klar, politisch anschlussfähig")}</span>
-        </div>
-        <div class="buero-quality-row">
-          <span class="buero-quality-label">Nutzung</span>
-          <span class="buero-quality-value">${escapeHtml(meta.qualityUsage || "Presse und Medien")}</span>
-        </div>
-        <div class="buero-quality-row">
-          <span class="buero-quality-label">Risiko</span>
-          <span class="buero-quality-value">Keine unbelegte Behauptung veröffentlichen</span>
-        </div>
-        <div class="buero-quality-row">
-          <span class="buero-quality-label">Basis</span>
-          <span class="buero-quality-value">${escapeHtml(officeBriefingStandLabel())}</span>
-        </div>
-      </div>
-      <footer class="buero-detail-footer">
-        <button class="buero-copy-btn buero-copy-btn--full" type="button"
-          data-office-copy-inline="detail"
-          data-office-text="${escapeAttribute(text)}">
-          ${uiIcon("copy")} Kopieren
-        </button>
-      </footer>
-    </div>
-  `;
+      ${text ? `<div class="buero-detail-body">${String(text).split(/\n+/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${escapeHtml(p)}</p>`).join("")}</div>
+        <p class="buero-detail-linecheck">KI-Entwurf · Prüfen Sie Aussagen und politische Positionen vor der Verwendung.</p>`
+        : `<div class="buero-draft-state" role="status"><p>${loading ? "Ihr Entwurf wird vorbereitet …" : failed ? escapeHtml(failure.message) : "Für dieses Format liegt noch kein Entwurf vor."}</p>
+        ${!loading && (!failed || failure.retry) ? `<button class="secondary-button" type="button" data-office-generate>${failed ? "Erneut versuchen" : "Entwurf vorbereiten"}</button>` : ""}</div>`}
+      ${renderOfficeDraftSources(sources)}
+      ${text ? `<footer class="buero-detail-footer"><button class="buero-copy-btn buero-copy-btn--full" type="button" data-office-share>${uiIcon("share")} Teilen</button>
+        ${typeof navigator.share !== "function" ? '<p class="buero-share-note">Der Text wird in die Zwischenablage übernommen.</p>' : officeShareFallbackKey === key ? '<p class="buero-share-note">Die native Teilenfunktion ist hier nicht verfügbar.</p><button class="secondary-button" type="button" data-office-copy-fallback>Text übernehmen</button>' : ""}</footer>` : ""}
+    </div>`;
 }
 
 function renderTaskHandoffPanel() {
@@ -8761,24 +8697,6 @@ function renderSettingsView() {
     </div>
 
     <div class="stg-section">
-      <span class="stg-label">Büro</span>
-      <div class="stg-group">
-        ${OFFICE_FORMATS.map((f) => {
-          const active = activeOfficeFormats().some((a) => a.id === f.id);
-          return `
-          <label class="stg-row stg-row--tappable">
-            <span class="stg-row-label">${escapeHtml(f.label)}</span>
-            <input type="checkbox" name="settingsOfficeFormat" value="${escapeAttribute(f.id)}" ${active ? "checked" : ""} data-office-format-toggle style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0"/>
-          </label>`;
-        }).join("")}
-        <div class="stg-row">
-          <span class="stg-row-label">Rückmeldungen</span>
-          <span class="stg-row-value">${escapeHtml(learnLabel)}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="stg-section">
       <span class="stg-label">Darstellung</span>
       <div class="stg-group">
         <div class="stg-row stg-row--stack">
@@ -9214,11 +9132,6 @@ function renderProfileSettingsView() {
         ${profileArea("riskTopics", "Risiko-Themen", profile.riskTopics)}
         ${profileArea("opportunityTopics", "Chancen-Themen", profile.opportunityTopics)}
         ${profileArea("opponents", "Zu beobachtende Akteure", profile.opponents)}
-        <div class="profile-subsection">
-          <span>Büro-Übergabe</span>
-          <p>Welcher Weg soll beim Button „Ans Büro geben” zuerst angeboten werden?</p>
-          ${radioValueGroup("officeHandoffMethod", preferredOfficeHandoffMethod(), officeHandoffMethods)}
-        </div>
         ${profileArea("upcomingAppointments", "Nächste Termine", profile.upcomingAppointments)}
         ${profileArea("noGoTopics", "No-Go-Themen", profile.noGoTopics)}
       </section>
@@ -9908,21 +9821,6 @@ function bindActions() {
     });
   });
 
-  app.querySelectorAll("[data-office-format-toggle]").forEach((checkbox) => {
-    checkbox.addEventListener("change", async () => {
-      const checked = Array.from(app.querySelectorAll("[data-office-format-toggle]:checked")).map((c) => c.value);
-      const formats = checked.length ? checked : ["presse"];
-      try {
-        const res = await apiSend("PATCH", `/api/profile/current?${apiScopeQuery()}`, { id: activePoliticianId, officeFormats: formats });
-        if (res.ok && res.json) profile = res.json;
-        render();
-        showToast("Büro-Formate gespeichert.");
-      } catch (e) {
-        showToast("Speichern fehlgeschlagen.");
-      }
-    });
-  });
-
   app.querySelectorAll("[data-assess-id]").forEach((button) => {
     button.addEventListener("click", () => assessParliamentItem(button.dataset.assessId));
   });
@@ -10016,11 +9914,23 @@ function bindActions() {
     });
   });
 
-  app.querySelectorAll("[data-office-copy-inline]").forEach((button) => {
-    button.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      const text = button.dataset.officeText || "";
-      await copyText(text, "Kopieren nicht möglich – bitte manuell markieren.");
+  app.querySelectorAll("[data-office-copy-fallback]").forEach((button) => {
+    button.addEventListener("click", () => shareOfficeDraft(true));
+  });
+  app.querySelectorAll("[data-office-share]").forEach((button) => {
+    button.addEventListener("click", () => shareOfficeDraft());
+  });
+  app.querySelectorAll("[data-office-generate]").forEach((button) => {
+    button.addEventListener("click", () => generateSelectedOfficeDraft());
+  });
+  app.querySelectorAll("[data-office-format-select]").forEach((select) => {
+    select.addEventListener("change", () => {
+      if (!selectedOfficeDraft) return;
+      const format = activeOfficeFormats().find((f) => f.id === select.value);
+      if (!format) return;
+      selectedOfficeDraft = uiOfficeSelection(selectedOfficeDraft.decision, format);
+      render();
+      generateSelectedOfficeDraft();
     });
   });
 
@@ -10042,6 +9952,7 @@ function bindActions() {
       currentView = "office-detail";
       render();
       app.querySelector(".ui-page")?.scrollTo({ top: 0 });
+      generateSelectedOfficeDraft();
     };
     card.addEventListener("click", open);
     card.addEventListener("keydown", (e) => { if (e.target === card && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); open(); } });
@@ -10665,7 +10576,7 @@ async function saveProfileFromForm(form) {
     // preferredChannels wird NICHT mehr gesendet — der Server leitet die Kanäle aus
     // den aktiven Büro-Formaten ab (Umsetzungsnotiz §8, Dublette entfernt).
     opponents: lines(data.get("opponents")),
-    officeHandoffMethod: normalizeOfficeHandoffMethod(data.get("officeHandoffMethod")),
+    officeHandoffMethod: preferredOfficeHandoffMethod(),
     upcomingAppointments: lines(data.get("upcomingAppointments")),
     noGoTopics: lines(data.get("noGoTopics"))
   };
@@ -10737,7 +10648,7 @@ function isValidDraft(text) {
   return Boolean(text) && !String(text).includes("kein belastbarer Kommunikationsvorschlag");
 }
 
-async function generateStatementWithBackend(input, decision, channel = selectedCommunicationChannel) {
+async function generateStatementWithBackend(input, decision, channel = selectedCommunicationChannel, options = {}) {
   const context = privateAccessContext();
   if (!privateAccessIsCurrent(context)) throw privateAccessChanged();
   const response = await fetchWithTimeout(`/api/communication/generate?${apiScopeQuery()}`, {
@@ -10746,6 +10657,7 @@ async function generateStatementWithBackend(input, decision, channel = selectedC
     body: JSON.stringify({
       prompt: input,
       channel,
+      office: options.office === true,
       decision
     })
   });
@@ -10753,9 +10665,10 @@ async function generateStatementWithBackend(input, decision, channel = selectedC
   const result = await response.json();
   if (!privateAccessIsCurrent(context)) throw privateAccessChanged();
   return {
+    ...result,
     aiEnabled: Boolean(result.aiEnabled),
     channelLabel: result.channelLabel,
-    text: result.text || generateStatement(input, decision, channel)
+    text: options.office === true ? String(result.text || "") : result.text || generateStatement(input, decision, channel)
   };
 }
 
@@ -11053,108 +10966,134 @@ function taskShareText(task) {
 }
 
 function activeOfficeFormats() {
-  const saved = Array.isArray(profile?.officeFormats) ? profile.officeFormats : ["presse", "linkedin"];
-  return OFFICE_FORMATS.filter((f) => saved.includes(f.id));
+  // Existing formats remain available on demand; preferences never fan out model calls.
+  // Legacy politicalLevel may be blankProfile's "Bund" default. It cannot
+  // establish a parliamentary jurisdiction for a Büro question.
+  const levels = new Set([profile?.parliamentType, profile?.politische_ebene]
+    .filter(v => typeof v === "string").map(v => v.trim().toLowerCase())
+    .filter(v => ["bundestag", "landtag"].includes(v)));
+  const parliamentType = levels.size === 1 ? (levels.has("landtag") ? "Landtag" : "Bundestag") : "";
+  return OFFICE_FORMATS.filter((f) => f.id !== "rede" && (f.id !== "anfrage" || Boolean(parliamentType
+    && (parliamentType !== "Landtag" || String(profile?.state || profile?.bundesland || "").trim())
+    && [profile?.committee, ...(Array.isArray(profile?.committees) ? profile.committees : [])].some((value) => typeof value === "string" && value.trim()))));
 }
 
 function officeDraftCacheKey() {
-  const date = (briefing?.generatedAt || briefing?.date || "").slice(0, 10);
-  return `helmut:officeDrafts:${activePoliticianId}:${date}`;
+  return `helmut:officeDrafts:v2:${activePoliticianId}`;
 }
 
 function officeDraftKey(decision, format) {
-  return `${decision.id || decision.signalId || "0"}-${format.id}`;
+  return `${decisionEntityId(decision, "vorgangId", "vorgang_id") || decision.id || "0"}:${decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id")}:${format.id}`;
 }
 
-// Entwürfe tragen ihre Herkunft (Audit-Fix 2026-07, Produktwahrheit): "ki" =
-// echter KI-Entwurf, "regel" = regelbasierter Fallback (KI nicht verfügbar/
-// unbrauchbar). Ältere Tagescaches enthalten nackte Strings ohne Herkunft —
-// beide Formen werden gelesen, geschrieben wird nur noch das Objektformat.
+function officeDraftBinding(decision, format) {
+  const day = (value) => {
+    const date = new Date(value);
+    return Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit"
+    }).format(date) : "";
+  };
+  return JSON.stringify({ version: 2, profile,
+    briefingDay: day(briefing?.generatedAt || briefing?.date || ""), useDay: day(Date.now()),
+    decision, format: format.id });
+}
+
+function officeDraftEntry(decision, format) {
+  const entry = officeDrafts[officeDraftKey(decision, format)];
+  const age = Date.now() - Number(entry?.createdAt);
+  return entry && entry.binding === officeDraftBinding(decision, format) && entry.source === "ki"
+    && Number.isFinite(age) && age >= 0 && age < 24 * 60 * 60 * 1000
+    && isValidDraft(entry.text) && String(entry.text).trim() ? entry : null;
+}
+
+function loadOfficeDraftCache() {
+  if (!privateAccess || !profile?.id || profile.id !== activePoliticianId) return;
+  try {
+    const cached = JSON.parse(localStorage.getItem(officeDraftCacheKey()) || "null");
+    if (cached && typeof cached === "object" && !Array.isArray(cached)) officeDrafts = { ...cached, ...officeDrafts };
+  } catch (_) { /* A missing or invalid cache never supplies a finished draft. */ }
+}
+
 function officeDraftText(value) {
   if (typeof value === "string") return value;
   return String((value && value.text) || "");
 }
 function officeDraftProvenance(value) {
   if (value && typeof value === "object" && (value.source === "ki" || value.source === "regel")) return value.source;
-  return ""; // Legacy-Cache oder unbekannt: nichts behaupten
+  return "";
 }
-// Einheitliche, ehrliche Herkunftszeile für Karten, Detail und Kommunikations-View.
 function draftProvenanceLabel(source, hasValidDraft) {
-  if (!hasValidDraft) return "Regelbasierter Vorschlag · kein KI-Entwurf";
+  if (!hasValidDraft) return "Noch kein KI-Entwurf";
   if (source === "ki") return "KI-Entwurf · vor Veröffentlichung prüfen";
   if (source === "regel") return "Regelbasierter Entwurf · KI war nicht verfügbar";
   return "Entwurf · vor Veröffentlichung prüfen";
 }
 
-async function generateOfficeDraftsInBackground() {
+async function generateSelectedOfficeDraft() {
   const context = privateAccessContext();
-  if (!privateAccessIsCurrent(context) || previewMode || officeDraftsGenerating || !briefingOfficeDecision()) return;
-  const formats = activeOfficeFormats();
-  const topDecisions = officeDecisions();
-  if (!formats.length || !topDecisions.length) return;
-
+  if (!privateAccessIsCurrent(context) || previewMode || !selectedOfficeDraft) return;
+  const { decision, format } = selectedOfficeDraft;
+  if (!officeDecisions().some((d) => officeDraftBinding(d, format) === officeDraftBinding(decision, format))
+    || !activeOfficeFormats().some((f) => f.id === format.id)) return;
+  loadOfficeDraftCache();
+  if (officeDraftEntry(decision, format)) return;
+  const key = officeDraftKey(decision, format);
+  if (officeDraftsGenerating) return;
+  const binding = officeDraftBinding(decision, format);
   const cacheKey = officeDraftCacheKey();
-  try {
-    const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
-    // Cache übernehmen, aber NICHT früh zurückkehren (Audit-Fix 2026-07):
-    // Ein Teilerfolg (einzelne Calls fehlgeschlagen) fror früher den ganzen Tag
-    // ein — fehlende Entwürfe wurden bis zum nächsten Tag NIE nachgeneriert.
-    // Jetzt werden nur die noch fehlenden Keys erzeugt (unten: continue bei
-    // vorhandenem gültigem Entwurf) — auch neu aktivierte Formate erscheinen so.
-    if (cached && typeof cached === "object") officeDrafts = { ...cached, ...officeDrafts };
-  } catch (_) { /* ignore parse error */ }
-
-  const missing = [];
-  for (const decision of topDecisions) {
-    for (const format of formats) {
-      const key = officeDraftKey(decision, format);
-      if (isValidDraft(officeDraftText(officeDrafts[key]))) continue;
-      missing.push({ decision, format, key });
-    }
-  }
-  if (!missing.length) { render(); return; }
-
-  // KOSTENSCHUTZ (Audit-Fix 2026-07): harte Obergrenze pro App-Start. Früher
-  // konnten 2 Anlässe × 8 Formate = 16 LLM-Calls pro Gerät und Öffnen anfallen.
-  // Jetzt maximal 6 pro Lauf — der Rest wird beim nächsten App-Start nachgeholt
-  // (serverseitig deckelt zusätzlich das Tages-/Mandanten-Budget in ai.js).
-  const OFFICE_DRAFTS_MAX_CALLS_PER_RUN = 6;
-  const batch = missing.slice(0, OFFICE_DRAFTS_MAX_CALLS_PER_RUN);
-
+  const stillAssigned = () => privateAccessIsCurrent(context) && cacheKey === officeDraftCacheKey()
+    && officeDecisions().some((current) => officeDraftBinding(current, format) === binding);
   officeDraftsGenerating = true;
+  officeDraftGeneratingKey = key;
+  delete officeDraftErrors[key];
   render();
-
-  const stillAssigned = (decision) => privateAccessIsCurrent(context) && cacheKey === officeDraftCacheKey() && briefingOfficeDecision()
-    && officeDecisions().some((current) => current.id === decision.id && current.decision === decision.decision
-      && decisionEntityId(current, "vorgangId", "vorgang_id") === decisionEntityId(decision, "vorgangId", "vorgang_id")
-      && decisionEntityId(current, "knowledgeObjectId", "knowledge_object_id") === decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id"));
-  for (const { decision, format, key } of batch) {
-    if (!stillAssigned(decision)) break;
-    try {
-      const result = await generateStatementWithBackend(
-        `Bereite einen ${format.label}-Entwurf vor zum Thema: ${decision.title}`,
-        decision,
-        format.channel || "press"
-      );
-      if (!stillAssigned(decision)) continue;
-      // Herkunft speichern: der Server kennzeichnet regelbasierte Fallbacks
-      // ehrlich (aiEnabled=false) — das darf im UI nie als KI-Entwurf erscheinen.
-      officeDrafts[key] = { text: result.text, source: result.aiEnabled ? "ki" : "regel" };
-      delete officeDraftErrors[key];
+  try {
+    const result = await generateStatementWithBackend(`Bereiten Sie das Format ${format.label} zum belegten Anlass vor.`, decision, format.channel || "press", { office: true });
+    if (!stillAssigned()) return;
+    if (!result.aiEnabled || result.degraded || !isValidDraft(result.text) || !String(result.text || "").trim()) {
+      const safeReasons = new Set(["quellenbasis-fehlt", "anlass-nicht-verfuegbar", "zustaendigkeit-offen", "budget-erschoepft", "format-unbekannt"]);
+      officeDraftErrors[key] = safeReasons.has(result.fallbackReason) ? result.fallbackReason : "ki-fehler";
+      return;
+    }
+    officeDrafts[key] = { text: result.text, source: "ki", binding, createdAt: Date.now() };
+    delete officeDraftErrors[key];
+    try { localStorage.setItem(cacheKey, JSON.stringify(officeDrafts)); } catch (_) {}
+  } catch (_) {
+    if (stillAssigned()) officeDraftErrors[key] = "ki-fehler";
+  } finally {
+    if (privateAccessIsCurrent(context)) {
+      officeDraftsGenerating = false;
+      officeDraftGeneratingKey = "";
       render();
-    } catch (_) {
-      // Ehrlicher Fehlerzustand statt stillem Fallback (Status "Erstellung
-      // fehlgeschlagen"); beim nächsten App-Start wird erneut versucht.
-      if (stillAssigned(decision)) officeDraftErrors[key] = true;
+      // A format explicitly selected while a request was in flight is handled next.
+      if (selectedOfficeDraft && officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format) !== key
+        && ["office", "office-detail", "tasks"].includes(currentView)) generateSelectedOfficeDraft();
     }
   }
+}
 
-  if (!privateAccessIsCurrent(context)) return;
-  officeDraftsGenerating = false;
-  render();
-  // Nur erfolgreiche Entwürfe cachen — fehlende Keys bleiben offen und werden
-  // beim nächsten Lauf nachgeneriert (kein eingefrorener Teilerfolg mehr).
-  try { if (privateAccessIsCurrent(context) && cacheKey === officeDraftCacheKey()) localStorage.setItem(cacheKey, JSON.stringify(officeDrafts)); } catch (_) {}
+async function shareOfficeDraft(clipboardOnly = false) {
+  const context = privateAccessContext();
+  if (!privateAccessIsCurrent(context) || !selectedOfficeDraft) return;
+  const { decision, format } = selectedOfficeDraft;
+  if (!officeDecisions().some((d) => officeDraftBinding(d, format) === officeDraftBinding(decision, format))) return;
+  const entry = officeDraftEntry(decision, format);
+  if (!entry) return;
+  const text = entry.text;
+  if (!clipboardOnly && typeof navigator.share === "function") {
+    try {
+      await navigator.share({ title: decision.title, text });
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      if (!privateAccessIsCurrent(context)) return;
+      showToast("Teilen ist hier nicht möglich. Übernehmen Sie den Text in die Zwischenablage.");
+      officeShareFallbackKey = officeDraftKey(decision, format);
+      render();
+      return;
+    }
+  }
+  await copyText(text, "Kopieren nicht möglich – markieren Sie den Text bitte manuell.");
 }
 
 function preferredOfficeHandoffMethod() {

@@ -1,0 +1,27 @@
+{
+  "parentNetNS": "net:[4026531833]",
+  "testNetNS": "net:[4026532219]",
+  "interfaces": [
+    "lo"
+  ],
+  "ipv4Routes": 0,
+  "ipv6Routes": 0,
+  "reservedAddressProbeErrno": 101,
+  "ipv6ProbeErrno": 99,
+  "ipv6RejectSentinels": 2,
+  "verifiedBeforeAppStart": true,
+  "verifiedAtUtc": "2026-11-09T07:52:56.721204+00:00",
+  "networkDevicesBefore": "Inter-|   Receive                                                |  Transmit\n face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed\n    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0\n",
+  "completedScripts": [
+    {
+      "script": "ui-office-binding-browser-test.js",
+      "exitCode": 0
+    }
+  ],
+  "networkDevicesAfter": "Inter-|   Receive                                                |  Transmit\n face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed\n    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0\n",
+  "ipv4RoutesAfter": "",
+  "ipv6RoutesAfter": "00000000000000000000000000000000 00 00000000000000000000000000000000 00 00000000000000000000000000000000 ffffffff 00000001 00000000 00200200       lo\n00000000000000000000000000000000 00 00000000000000000000000000000000 00 00000000000000000000000000000000 ffffffff 00000001 00000000 00200200       lo\n",
+  "interfacesAfter": [
+    "lo"
+  ]
+}

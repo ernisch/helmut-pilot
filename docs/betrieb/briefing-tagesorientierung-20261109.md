@@ -36,6 +36,19 @@ Quellenformate oder spätere gemeinsame Runtimeänderungen erst konkret abstimme
 Diese Vorlage ist keine behauptete Zustimmung des parallelen Bearbeiters.
 Merge und Rollout bleiben getrennte Entscheidungen; keine Productionfreigabe.
 
+## Inzwischen integrierter Büro-PR1111
+
+Während der PR-Eröffnung erreichte main `fe38a371` mit PR1111. Konkrete
+Schnittstelle vor Übernahme in diesen Branch: `renderUiBriefingHero` behält für
+bestehende Büroanlässe den neuen Hinweis „Vorgang und seine Quellen“. Nur der
+belegte Vorbereitungsauftrag dieses Fixes zeigt seinen statischen Prüfschritt
+und Originalbeleg. `recommendedOfficeFormat`, die nutzungsabhängige
+Entwurfserzeugung und serverseitige Mandats-/Vorgangsbindung bleiben vollständig
+bei PR1111. Kein Aufruf der Erzeugungsroute im Replay oder Browsernachweis.
+Die Ergänzung in `buildV3Briefing` bleibt von der Kommunikationsroute getrennt.
+Alle drei eigenen Deployment-Sperren bleiben erhalten. Das Übernehmen von main
+in den Arbeitsbranch ist kein Merge dieses Fixes nach main und kein Rollout.
+
 ## Nachgewiesener Ausgangszustand
 
 Nativ gelesen: Mandatsbriefing vom09.11.2026,05:15:36.307UTC,

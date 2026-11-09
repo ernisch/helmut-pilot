@@ -2,17 +2,19 @@
 
 // Synthetic shapes from briefingContract.toItem/toRecommendation and app/start.
 // All identities deliberately differ; no backend imports or real profile data.
+const fixtureTime = new Date().toISOString();
 function payloadFor(scenario = "valid") {
-  const now = new Date().toISOString();
+  const now = fixtureTime;
   const source = { name: "Synthetische UI Quelle", sourceName: "Synthetische UI Quelle",
-    url: "https://example.test/ui/beleg", linkType: "direct", publishedAt: now };
+    url: "https://example.test/ui/beleg", linkType: "direct", publishedAt: now,
+    excerpt: "Ein fiktiver parlamentarischer Bericht dokumentiert eine öffentliche Beratung. Alle Angaben sind synthetische UI-Testdaten." };
   const records = [
     { key: "a", score: 40, decision: "Beobachten" },
     { key: "b", score: 75, decision: "Sofort reagieren" },
     { key: "ignored", score: 10, decision: "Ignorieren" }
   ].map(({ key, score, decision }) => ({
     id: `rec-${key}`, knowledge_object_id: `ko-${key}`, vorgang_id: `vorgang-${key}`,
-    title: `Synthetischer Vorgang ${key.toUpperCase()}`, summary: "Synthetischer Sachstand.",
+    title: `Synthetischer Vorgang ${key.toUpperCase()}`, summary: "Ein fiktiver Bericht dokumentiert eine öffentliche Beratung. Ausschließlich synthetische Testdaten.",
     relevance_score: score, decision, priorityType: decision === "Ignorieren" ? "ignore" : decision === "Sofort reagieren" ? "action" : "watch",
     current_priority: decision, recommended_action: "Den synthetischen Vorgang prüfen.",
     personal_relevance_explanation: "Synthetischer Profilbezug.", action_type: "observe",
@@ -29,6 +31,14 @@ function payloadFor(scenario = "valid") {
   if (scenario === "conflicting-id") a.vorgangId = "vorgang-other";
   if (scenario === "duplicate") recommendations.push({ ...a, id: "rec-duplicate", knowledge_object_id: "ko-duplicate" });
   if (scenario === "target-gone") recommendations = [records[1]];
+  if (scenario === "missing-source") {
+    delete source.url;
+    source.linkType = "missing";
+  }
+  if (scenario === "thin-source") {
+    a.summary = "";
+    source.excerpt = "";
+  }
   const items = recommendations.map(r => ({ id: r.id ? `item-${r.id}` : undefined,
     signalId: r.knowledge_object_id, knowledgeObjectId: r.knowledge_object_id,
     vorgangId: r.vorgangId ?? r.vorgang_id, vorgang_id: r.vorgang_id,
@@ -37,6 +47,10 @@ function payloadFor(scenario = "valid") {
   return {
     profile: { id: "ui-binding-profile", fullName: "Synthetisches UI Profil", active: true,
       onboardedAt: now, party: "Testpartei", faction: "Testfraktion", constituency: "Testwahlkreis",
+      parliamentType: scenario === "unknown-mandate" ? "" : scenario === "land-mandate" ? "landtag" : "bundestag",
+      parliament: scenario === "unknown-mandate" ? "" : scenario === "land-mandate" ? "Abgeordnetenhaus von Berlin" : "Deutscher Bundestag",
+      state: scenario === "land-mandate" ? "Berlin" : "",
+      ...(scenario === "unknown-mandate" ? { politicalLevel: "Bund", function: "Bundestagsabgeordnete:r" } : {}),
       committee: "Testausschuss", communicationStyle: "Sachlich", officeFormats: ["presse", "linkedin"], focusTopics: [] },
     briefing: { engine: "v3", available: true, generatedAt: now, status: "Aktuell",
       items, personalizedRecommendations: recommendations, situationalBriefing: [], tasks: [],
