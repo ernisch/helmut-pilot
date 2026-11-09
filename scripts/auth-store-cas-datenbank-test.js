@@ -165,6 +165,7 @@ async function main() {
     await require("./fixtures/testkosten-datenbank").pruefeKosten({ psql, base, token });
     await require("./fixtures/quellenkontext-datenbank").pruefe({ base, token });
     await require("./fixtures/raw-document-cas-datenbank").pruefe({ psql, base, token });
+    await require("./fixtures/quellenplan-cursor-cas-datenbank").pruefe({ psql, base, token });
     const importPruefungen = require("./fixtures/quellenimport-datenbank").pruefe({ psql })
       + require("./fixtures/quellenimport-datenbank").pruefe({ psql, anzahl: 30,
         sqlTemplate: fs.readFileSync(path.join(__dirname, "fixtures/quellenfrische-30-vorbereitung.sql"), "utf8"),

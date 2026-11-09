@@ -10,6 +10,22 @@ function fixture() {
     writes: 0, rows };
   f.request = async (path, options = {}) => {
     const u = new URL(path, "http://isoliert.invalid"), method = options.method || "GET";
+    if (u.pathname === "/rest/v1/rpc/helmut_quellenplan_cursor_cas" && method === "POST") {
+      f.writes++;
+      A(path.length < 100, "Manifestvorwert darf nicht in der Adresse stehen");
+      if (f.failPatch) throw Error("cursor-abgelehnt");
+      const { p_id, p_expected, p_next_cursor } = JSON.parse(options.body);
+      const old = rows.get(p_id);
+      A.equal(typeof p_expected, "string");
+      const match = old && isDeepStrictEqual(old.data, JSON.parse(p_expected));
+      if (match) {
+        A.equal(p_next_cursor, old.data.cursor + 1);
+        rows.set(p_id, { id: p_id, data: { ...old.data, cursor: p_next_cursor,
+          zustand: p_next_cursor === old.data.auftraege.length ? "fertig" : "offen" } });
+      }
+      if (f.unknownPatch) throw Error("cursor-antwort-verloren");
+      return [{ id: p_id, uebernommen: Boolean(match) }];
+    }
     if (method === "POST") {
       f.writes++;
       const row = JSON.parse(options.body);
@@ -19,14 +35,7 @@ function fixture() {
       return [{ id: row.id }];
     }
     const id = (u.searchParams.getAll("id").find(x => x.startsWith("eq.")) || "").slice(3);
-    if (method === "PATCH") {
-      f.writes++;
-      if (f.failPatch) throw Error("patch-abgelehnt");
-      const old = rows.get(id), expected = JSON.parse(u.searchParams.get("data").slice(3));
-      if (old && isDeepStrictEqual(old.data, expected)) rows.set(id, { id, data: JSON.parse(options.body).data });
-      if (f.unknownPatch) throw Error("patch-antwort-verloren");
-      return [];
-    }
+    if (method === "PATCH") throw Error("URL-CAS darf nicht verwendet werden");
     if (id) return rows.has(id) ? [structuredClone(rows.get(id))] : [];
     return [...rows.values()].filter(r => r.data.zustand === "offen")
       .sort((a, b) => a.id.localeCompare(b.id)).slice(0, Number(u.searchParams.get("limit"))).map(r => structuredClone(r));
@@ -96,6 +105,25 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(pending.plaene[0].tag, "2026-11-01");
     const first = pending.plaene[0]; await f.journal.bewegeCursor(first.tag, first, 1);
     A.equal((await f.journal.offene({ bisTag: tag })).plaene[0].tag, "2026-11-02");
+  });
+  await test("Grosser zulaessiger Vorwert bleibt vollstaendig im RPC-Body; Konkurrenz und Neustart bleiben monoton", async () => {
+    const f = fixture(), plan = jobs(3); plan[0].payload.text = "Belegter synthetischer Plan. ".repeat(6000);
+    const old = await f.journal.sichereManifest(tag, { auftraege: plan });
+    A(Buffer.byteLength(JSON.stringify(old)) > 128 * 1024);
+    const [a, b] = await Promise.all([f.journal.bewegeCursor(tag, old, 1), f.journal.bewegeCursor(tag, old, 1)]);
+    A.equal(a.cursor, 1); A.equal(b.cursor, 1);
+    const restarted = J.erzeugePlanungsrest({ request: f.request, storeId: "isolierter-store" });
+    const read = await restarted.lesen(tag);
+    A.deepEqual(read.auftraege, plan);
+    A.equal((await restarted.bewegeCursor(tag, read, 2)).cursor, 2);
+    const foreign = structuredClone(read); foreign.tagesplan = { neu: true };
+    // Selbst ein intern valider fremder Plan muss am gespeicherten exakten Vorwert scheitern.
+    const crypto = require("node:crypto");
+    const sorted = v => Array.isArray(v) ? v.map(sorted) : v && typeof v === "object"
+      ? Object.fromEntries(Object.keys(v).sort().map(k => [k, sorted(v[k])])) : v;
+    foreign.manifestHash = crypto.createHash("sha256").update(JSON.stringify(sorted([tag, foreign.auftraege, foreign.tagesplan]))).digest("hex");
+    await A.rejects(restarted.bewegeCursor(tag, foreign, 2), /fortschritt-unbestaetigt/);
+    A.equal((await restarted.lesen(tag)).cursor, 2);
   });
   await test("Zu grosse oder widerspruechliche Manifeste werden niemals gekuerzt gespeichert", async () => {
     const f = fixture(), oversized = jobs(2); oversized[0].payload.text = "x".repeat(J.MAX_BYTES);

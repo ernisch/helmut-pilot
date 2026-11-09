@@ -640,6 +640,46 @@ globalePhase194/194, Pipelinezeitbudget22/22, Tenantnarrativ92/92PASS. Keine Pfl
 oder künstlich grün gesetzt. Korrigierter Endkopf, Review, gezielte Prüfergebnisse und
 abschließende Pflicht-CI werden ohne weiteren Nummerncommit im PR gebunden.
 
+### Korrektur des Manifest-Cursortransports vor Freigabe
+
+Der frühere Kopf `397945332d413d175bb92edcf407864ddd0c3a52` bestand CI42675463570
+(Standard189/189, Bereich361/361, RawCAS8/8, Z22 48/48, Browser114/114 und Prosa19/19).
+Dieser Erfolg deckte den hiernach festgestellten Transportblocker nicht ab: Das
+vollständige bisherige Tagesmanifest stand im `data=eq`-URLfilter. Bei großen
+zulässigen Manifesten konnte die HTTP-Adressgrenze jeden weiteren Cursor blockieren.
+Dieser Kopf ist deshalb nicht mehr die Freigabevorlage.
+
+Die bestehende, noch nicht angewendete Migration20261109173143 enthält jetzt zusätzlich
+`helmut_quellenplan_cursor_cas(text,text,integer)`. Die feste kurze RPC-Adresse erhält
+Kennung, vollständigen Vorwert als kompakten JSON-Text und nächsten Cursor im POST-Body.
+Die Größenprüfung vor JSONB-Konvertierung erhält exakt das bisherige1MiB-Manifestlimit;
+PostgreSQLs zusätzliche JSONB-Formatierung ist keine neue Größenbeschränkung.
+Der service-only SECURITY-INVOKER-RPC vergleicht den vollständigen JSONB-Vorwert atomar
+und schreibt ausschließlich `cursor` genau+1 sowie den daraus bestimmten `zustand`.
+Aufträge, Tagesplan, Hash und Identität bleiben unverändert. Browserrollen dürfen den
+RPC nicht ausführen. Weder neue Tabelle noch neue Infrastruktur oder Konfiguration.
+Pro Cursor bleiben ein Schreibaufruf und eine Nachlesung erforderlich; große
+Manifeste erzeugen entsprechenden Body-/Readback-Datenverkehr. Keine neue Dollargrenze
+oder Zusicherung geringer Plattformkosten wird daraus abgeleitet.
+
+Unbekannte Schreibausgänge werden weiterhin nur durch Nachlesen bestätigt. Ein anderer
+Manifesthash, manipulierter Inhalt oder fehlender Fortschritt stoppt; ein bereits
+weiterer bestätigter Cursor desselben unveränderten Manifests erlaubt Fortsetzung.
+Gezielt lokal: Journal8/8 (einschließlich großem Body, Konkurrenz und Neustart),
+Queue22/22. Der neue native Prüfbaustein im vorhandenen PG17-/PostgREST-Kontoschutz-
+Harness prüft zehn Gruppen über den tatsächlichen HTTP-Transport mit einem gültigen
+1.048.448-Byte-Manifest (128 Plankennungen, keine Enqueue-/Workerverarbeitung),
+Adressgrenze des alten Wegs, Fortschritt, konkurrierende Änderungen, Wiederaufnahme
+und verlorene Schreibantwort. Kein reiner Adapter gilt als Transportnachweis.
+Die tatsächlichen nativen Ergebnisse und vollständig grüne Endkopf-CI werden im PR
+gebunden; der frühere grüne Lauf ersetzt diese Nachweise nicht.
+
+Die Aktivierungsvorlage bleibt bei einer vorbereiteten Migration, jetzt mit zwei
+service-only RPCs, und unverändert16Env/18Hosts/8Fenstern/2400Sekunden/16Originalversuchen.
+Vor Aktivierung beide Signaturen und Rechte lesend prüfen. Der zugehörige Rollback
+entfernt beide Funktionen nach Runtime-Rückweg und Ende neuer Worker; Manifeste,
+Cursor, Originale und Queue bleiben erhalten. Keine Bestandsreparatur oder Aktivierung.
+
 ### Einzige Konfigurationsvorlage
 
 Vorwerte aus den vorhandenen Betriebsbelegen unmittelbar vor freigegebener Ausführung
@@ -676,8 +716,8 @@ Arbeit, aktive Prozesse/Leases/Queue und Budgetbuch sowie DB-TimeZone prüfen.
 Globale Tagesreservierungen setzen UTC in der vorhandenen Datenbank voraus;
 Die native Prüfung am 09.11.2026 um 17:11:10 UTC bestätigte `UTC`;
 eine spätere Abweichung bleibt ein Ausführungsblocker. Erst nach konkretem GO genau
-den oben genannten, nativ geprüften RPC aus dem abgenommenen Commit bereitstellen
-und Signatur/Service-only-Rechte lesend bestätigen; keine Fachinhalte dabei ändern.
+die oben genannte, nativ geprüfte Migration mit beiden RPCs aus dem abgenommenen Commit bereitstellen
+und beide Signaturen/Service-only-Rechte lesend bestätigen; keine Fachinhalte dabei ändern.
 Anschließend exakt den geprüften PR samt Konfiguration regulär ausrollen. Bei Mergeblock Envvorwerte wiederherstellen.
 
 Nach READY: Alias und tatsächliche Version, vollständige wirksame Konfiguration,
@@ -697,13 +737,13 @@ vorherige geprüfte Productionruntime `f13a430a` mit Deployment
 Ohne Fensterflag stoppen neue Querytermine vor IO, alter 04:00-Cron bleibt erhalten.
 Laufende Leases beobachten, keine reservierten Zähler, Versionen, Jobs, Fachinhalte
 oder Buchstände löschen. Den RPC-Rollback erst nach Ende laufender neuer Worker
-und nach dem Runtime-Rückweg ausführen; er entfernt nur die Funktion, keine Texte.
+und nach dem Runtime-Rückweg ausführen; er entfernt nur beide Funktionen, keine Texte, Manifeste oder Cursor.
 Keine Budgets erhöhen oder alte Profile aktivieren.
 
 
 ## Wiederaufnahme des zusammenhängenden Sprints
 
-Stand 09.11.2026: lokaler Implementierungs-/Reviewabschluss, Production unverändert.
+Stand 09.11.2026: gezielte Cursortransportkorrektur nach zusätzlichem Blocker auf39794533; Production unverändert.
 Repository `ernisch/helmut-pilot`, Branch `codex/globale-inhalte-20261109`, PR1115.
 `main`/Production `f13a430a18e415ea4e874d128fd72eb144c30dc9`, Vercel
 `dpl_J8aLVXje3s2Qx33gke2tK1x8iCvh` READY; PR1117, Büro und Kundenoberfläche erhalten.
@@ -716,9 +756,9 @@ immutablePlanrest, Rohversionen/großePOST-CAS, Abschnittsverarbeitung, Morgenfe
 globaleTageslimits sowie Versorgungsstatus bis gespeichertem persönlichem Briefing.
 Astra, Quellenfortsetzung, Vertragsbindung und SQL-Helfer sind nach ihren gezielten
 Prüfungen eingefroren. Unabhängiger Review hat die konkreten Befunde geprüft;
-Der erste native Raw-CAS-Nachweis ist8/8PASS; der erste Gesamt-CI-Lauf scheiterte
-an einem Readerimport und vier statischen Testverträgen. Korrektur und Endcommit-CI
-bleiben gesondert verbindlich und werden mit ihrem tatsächlichen Ergebnis im PR gebunden.
+Der Lauf42675463570 auf39794533 war vollständig grün, zeigte aber noch keinen großen
+Manifest-Cursor über echten HTTP-Transport. Dieser nun behobene Blocker benötigt
+zusätzlichen nativen Nachweis und vollständige Endcommit-CI; Ergebnisbindung im PR.
 
 Nächste Arbeit im selben Auftrag: finalen Push nach Triggeraudit, reguläre Pflicht-CI
 abwarten, tatsächliche Fehler gezielt beheben, Head/main/Checkzuordnung/Produktionsstand
