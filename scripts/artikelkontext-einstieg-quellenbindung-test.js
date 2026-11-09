@@ -151,4 +151,165 @@ test("Native Originale behalten Robots- und Max-Snippet-Sperren", () => {
   }
 });
 
+// Additiver Volltextvertrag: die v2-Gegenproben oben bleiben unveraendert.
+const sha256 = value => require("node:crypto").createHash("sha256").update(value).digest("hex");
+const full = (doc, body) => G.gewinneArtikeltext(doc, { body, finalUrl: doc.url, gelesenAm });
+function synthetischerArtikel(absaetze, headings = absaetze.slice(1).map(() => "")) {
+  const doc = D.toRawDocumentRow({ title: "Kommunaler Beschluss zu Arbeitsbedingungen",
+    sourceName: "Synthetische Quelle", url: "https://quelle.invalid/politik/beschluss",
+    linkType: "direct", publishedAt: "2026-11-06T09:00:00Z" });
+  const text = absaetze.map((p, i) => [i ? headings[i - 1] : "", p].filter(Boolean).join(" ")).join(" ");
+  const data = { "@type": "NewsArticle", headline: doc.title, url: doc.url,
+    datePublished: doc.published_at, articleBody: text };
+  const html = `<head><link rel="canonical" href="${doc.url}"><meta property="og:title" content="${doc.title}">`
+    + `<script type="application/ld+json">${JSON.stringify(data)}</script></head><body><article>`
+    + absaetze.map((p, i) => `${i && headings[i - 1] ? `<h2>${headings[i - 1]}</h2>` : ""}<p>${p}</p>`).join("")
+    + "</article></body>";
+  return { doc, html, text };
+}
+
+test("v3 bindet den ganzen vorhandenen DGB-Artikel einschliesslich fuenftem Absatz und Radio unverkuerzt", () => {
+  const before = structuredClone([dgb, radio]);
+  const jsonld = JSON.parse(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i.exec(dgbHtml)[1]);
+  const original = jsonld["@graph"].find(n => n["@type"] === "NewsArticle").articleBody;
+  const d = full(dgb, dgbHtml), r = full(radio, radioHtml);
+  assert.equal(d.ok, true, d.reason); assert.equal(r.ok, true, r.reason);
+  assert.equal(d.beleg.text, original);
+  assert.equal(d.beleg.gewinnung.absaetze.length, 5);
+  assert.equal(d.beleg.gewinnung.artikelAbsatzZahl, 5);
+  assert(d.beleg.text.endsWith(d.beleg.gewinnung.absaetze[4]));
+  assert(!extract(dgb, dgbHtml).beleg.text.includes(d.beleg.gewinnung.absaetze[4]));
+  assert.deepEqual(d.beleg.gewinnung.zwischenTexte.slice(0, 3),
+    ["Arbeitgeber bieten kaum Plus", "IG BAU fordert zwei Euro mehr", "Beschäftigte sind streikbereit"]);
+  assert.equal(r.beleg.text, extract(radio, radioHtml).beleg.text);
+  assert.equal(r.beleg.text.length, 727); assert.equal(r.beleg.gewinnung.struktur, "microdata");
+  assert.equal(d.beleg.gewinnung.struktur, "jsonld");
+  for (const [doc, html, result] of [[dgb, dgbHtml, d], [radio, radioHtml, r]]) {
+    assert.equal(result.beleg.gewinnung.verfahren, "artikeltext-v3");
+    assert.equal(result.beleg.gewinnung.antwortHash, sha256(html));
+    assert.equal(result.beleg.gewinnung.artikelTextHash, sha256(result.beleg.text));
+    assert.equal(result.beleg.textHash, sha256(result.beleg.text));
+    assert.equal(result.beleg.quellenHash, A.quellenstandHash(doc));
+    assert.equal(Date.parse(result.beleg.gewinnung.originalDatum), Date.parse(doc.published_at));
+    assert.deepEqual(A.pruefeArtikelkontext([doc], result.beleg), result.beleg);
+  }
+  assert.deepEqual([dgb, radio], before);
+});
+
+test("v3 hat kein Vier- oder Fuenfabsatzlimit und erhaelt alle Zwischenueberschriften", () => {
+  const absaetze = Array.from({ length: 9 }, (_, i) => `Absatz ${i + 1} beschreibt einen eigenen Bestandteil des kommunalen Beschlusses.`);
+  const headings = absaetze.slice(1).map((_, i) => `Teil ${i + 2}`);
+  const f = synthetischerArtikel(absaetze, headings), result = full(f.doc, f.html);
+  assert.equal(result.ok, true, result.reason); assert.equal(result.beleg.text, f.text);
+  assert.deepEqual(result.beleg.gewinnung.absaetze, absaetze);
+  assert.deepEqual(result.beleg.gewinnung.zwischenTexte, headings);
+  assert.equal(result.beleg.gewinnung.artikelAbsatzZahl, 9);
+});
+
+test("v3 Zeichen- und UTF8-Deckel erhalten nutzbaren v2-Teilkontext ohne Volltextbehauptung", () => {
+  for (const [text, ok] of [["a".repeat(7999) + ".", true], ["a".repeat(8000) + ".", false],
+    ["界".repeat(3999) + "ab.", true], ["界".repeat(4000) + ".", false]]) {
+    const f = synthetischerArtikel([text]), result = full(f.doc, f.html);
+    assert.equal(result.ok, ok, `${text.length} Zeichen/${Buffer.byteLength(text)} Bytes: ${result.reason}`);
+    if (ok) {
+      assert.equal(result.beleg.text, text);
+      assert.equal(result.beleg.gewinnung.verfahren, "artikeltext-v3");
+    } else {
+      // Ein bereits zu langer ERSTER Absatz war auch im Altvertrag unbrauchbar.
+      assert.deepEqual(result, extract(f.doc, f.html));
+      assert.equal(result.reason, "einstieg-zu-lang"); assert.equal(result.beleg, undefined);
+    }
+  }
+  for (const absaetze of [
+    ["Ein kurzer Anfang zum kommunalen Beschluss.", "a".repeat(8000) + "."],
+    Array.from({ length: 20 }, (_, i) => `Absatz ${i + 1}: ${"a".repeat(420)}.`),
+    Array.from({ length: 12 }, (_, i) => `Absatz ${i + 1}: ${"界".repeat(350)}.`)
+  ]) {
+    const f = synthetischerArtikel(absaetze), result = full(f.doc, f.html);
+    assert(f.text.length > 8000 || Buffer.byteLength(f.text, "utf8") > 12000);
+    assert.equal(result.ok, true, result.reason);
+    assert.deepEqual(result, extract(f.doc, f.html), "Nutzbarer Altbeleg derselben Antwort bleibt bytegleich");
+    assert.equal(result.beleg.gewinnung.verfahren, "artikel-einstieg-v2");
+    assert.equal(result.beleg.gewinnung.artikelAbsatzZahl, absaetze.length);
+    assert(result.beleg.gewinnung.absaetze.length < absaetze.length);
+    assert(f.text.startsWith(result.beleg.text)); assert.notEqual(result.beleg.text, f.text);
+    assert.equal(result.beleg.gewinnung.antwortHash, sha256(f.html));
+    assert.equal(result.beleg.gewinnung.artikelTextHash, sha256(f.text));
+    assert.notEqual(result.beleg.textHash, result.beleg.gewinnung.artikelTextHash);
+  }
+});
+
+test("v3 behaelt QuellenDatum Titel Canonical Publisher und alternative Article-Bindung", () => {
+  for (const [doc, original, changed] of [
+    [dgb, dgbHtml, dgbHtml.replace('"datePublished":"2026-11-06T10:26:29+01:00"', '"datePublished":"2026-11-07T10:26:29+01:00"')],
+    [dgb, dgbHtml, dgbHtml.replace('property="og:title" content="Dritte', 'property="og:title" content="Fremde')],
+    [dgb, dgbHtml, dgbHtml.replace('rel="canonical" href="' + dgbUrl, 'rel="canonical" href="https://www.dgb.de/fremd')],
+    [dgb, dgbHtml, dgbHtml.replace('<meta property="og:site_name" content="Deutscher Gewerkschaftsbund">', "")],
+    [radio, radioHtml, radioHtml.replace('datetime="2026-11-06T12:11:24+01:00"', 'datetime="2026-11-06T12:11:25+01:00"')],
+    [radio, radioHtml, radioHtml.replace('itemprop="articleBody"', 'hidden itemprop="articleBody"')],
+    [radio, radioHtml, radioHtml.replace('</head>', '<script type="application/ld+json">{"@type":"NewsArticle","headline":"Fremde Meldung"}</script></head>')]
+  ]) {
+    assert.notEqual(changed, original); assert.equal(full(doc, changed).ok, false);
+  }
+  const d = full(dgb, dgbHtml).beleg;
+  assert.throws(() => A.pruefeArtikelkontext([{ ...dgb, published_at: "2026-11-07T09:26:29Z" }], d), /quellenstand-abweichend/);
+  assert.throws(() => A.pruefeArtikelkontext([dgb], { ...d,
+    gewinnung: { ...d.gewinnung, originalDatum: "2026-11-07T09:26:29Z" } }), /einstieg-ungueltig/);
+  const r = full(radio, radioHtml).beleg;
+  assert.throws(() => A.pruefeArtikelkontext([radio], { ...r,
+    gewinnung: { ...r.gewinnung, kanonischDeklariert: r.gewinnung.kanonischDeklariert + "?fremd=1" } }), /artikelziel-abweichend/);
+});
+
+test("v3 erfindet bei widersprechendem RSS-Auszug keine bereinigte Quelle", () => {
+  const doc = { ...dgb, summary: "Die Tarifrunde wurde nach Angaben des RSS-Auszuges mit einer Einigung abgeschlossen." };
+  const before = structuredClone(doc), result = full(doc, dgbHtml);
+  assert.equal(result.ok, true, result.reason);
+  assert.equal(result.beleg.text, full(dgb, dgbHtml).beleg.text);
+  assert.equal(result.beleg.quellenHash, A.quellenstandHash(doc));
+  assert.notEqual(result.beleg.quellenHash, A.quellenstandHash(dgb));
+  assert.deepEqual(doc, before);
+  assert.throws(() => A.pruefeArtikelkontext([dgb], result.beleg), /quellenstand-abweichend/);
+});
+
+test("v3 verweigert fehlende oder uebersprungene Absaetze und Ueberschriften sowie Text-Hashdrift", () => {
+  const f = synthetischerArtikel(["Erster Absatz mit dem Beschluss.", "Zweiter Absatz mit einer Einschraenkung.",
+    "Dritter Absatz zur Finanzierung.", "Vierter Absatz zur Umsetzung.", "Fuenfter Absatz mit dem Vorbehalt.",
+    "Sechster Absatz mit dem Schluss."], ["Bedingung", "Mittel", "Verfahren", "Vorbehalt", "Abschluss"]);
+  const result = full(f.doc, f.html); assert.equal(result.ok, true, result.reason);
+  for (const changed of [f.html.replace('<p>Zweiter Absatz mit einer Einschraenkung.</p>', ""),
+    f.html.replace('<p>Sechster Absatz mit dem Schluss.</p>', ""), f.html.replace('<h2>Vorbehalt</h2>', "")]) {
+    assert.notEqual(changed, f.html); assert.equal(full(f.doc, changed).ok, false);
+  }
+  for (const mutate of [b => { b.gewinnung.absaetze.splice(1, 1); },
+    b => { b.gewinnung.zwischenTexte[3] = ""; },
+    b => { b.gewinnung.artikelAbsatzZahl++; },
+    b => { b.gewinnung.artikelTextHash = "0".repeat(64); },
+    b => { b.gewinnung.antwortHash = "kein-hash"; },
+    b => { b.gewinnung.absaetze.pop(); b.gewinnung.zwischenTexte.pop();
+      b.text = A.einstiegText(b.gewinnung.absaetze, b.gewinnung.zwischenTexte); b.textHash = sha256(b.text); }]) {
+    const b = structuredClone(result.beleg); mutate(b);
+    assert.throws(() => A.pruefeArtikelkontext([f.doc], b), /artikelkontext-/);
+  }
+});
+
+test("v3 behaelt native Robots- und Max-Snippet-Sperren", () => {
+  for (const [doc, original] of [[dgb, dgbHtml], [radio, radioHtml]]) {
+    for (const name of ["robots", "helmutbot"]) for (const content of ["noai", "noindex", "nosnippet", "max-snippet:0"]) {
+      const result = full(doc, original.replace('</head>', `<meta name="${name}" content="${content}"></head>`));
+      assert.equal(result.ok, false); assert.equal(result.beleg, undefined);
+    }
+  }
+});
+
+test("v4 erhaelt einen langen belegten Artikel in lueckenlosen ganzen Abschnitten", () => {
+  const f = synthetischerArtikel(Array.from({ length: 50 }, (_, i) => `Absatz ${i}: ` + "Der kommunale Beschluss betrifft konkrete Arbeitsbedingungen und finanzielle Leistungen. ".repeat(5).trim()));
+  const r = G.gewinneArtikeltext(f.doc, { body: f.html, finalUrl: f.doc.url, gelesenAm }, { abschnittsweise: true });
+  assert.equal(r.ok, true, r.reason); assert.equal(r.beleg.gewinnung.verfahren, "artikelabschnitte-v4");
+  assert.equal(r.beleg.text, f.text); assert(r.beleg.gewinnung.abschnitte.count > 1);
+  assert.equal(r.beleg.gewinnung.abschnitte.abschnitte.map(p => p.text).join(""), f.text);
+  assert.deepEqual(A.pruefeArtikelkontext([f.doc], r.beleg), r.beleg);
+  const broken = structuredClone(r.beleg); broken.gewinnung.abschnitte.abschnitte.at(-1).text += " Erfundene Ergaenzung.";
+  assert.throws(() => A.pruefeArtikelkontext([f.doc], broken), /artikel-abschnitte-/);
+});
+
 console.log(`${passed}/${passed} Artikel-Einstieg-Quellenbindungsgruppen bestanden`);

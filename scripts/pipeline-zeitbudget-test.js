@@ -137,10 +137,20 @@ const items = themen.map((titel, i) => ({ title: titel, url: `https://example.or
       /vormerkDeadlineMs\s*=\s*runStartedMs\s*\+\s*runBudgetMs/.test(schedulerSrc));
 
     // Der Kern des Befunds: /api/cron/crawl war der einzige Cron ohne Zeitgrenze.
+    // Der fruehe authgepruefte Fensterdispatcher enthaelt denselben Pfadnamen.
+    // Hier gezielt die vollstaendige regulaere Alt-Route pruefen, nicht ihren
+    // ersten Namenstreffer oder eine von Kommentarlaengen abhaengige Zeichenmenge.
     const crawlBlock = serverSrc.slice(
-      serverSrc.indexOf('url.pathname === "/api/cron/crawl"'),
-      serverSrc.indexOf('url.pathname === "/api/cron/crawl"') + 1400
+      serverSrc.indexOf('if (url.pathname === "/api/cron/crawl") {'),
+      serverSrc.indexOf('if (url.pathname === "/api/cron/morning-briefing") {')
     );
+    const fensterBlock = serverSrc.slice(serverSrc.indexOf("async function runQuellenArbeitsfenster("),
+      serverSrc.indexOf("async function runCronUeberWarteschlange("));
+    check("Quellenfenster: reservierter Einlass,270s Arbeit, absolute280s Antwortgrenze",
+      /quellenArbeitsfenster\.fuehreAus/.test(fensterBlock)
+      && /withTimeout\(runCronUeberWarteschlange\(cronName/.test(fensterBlock)
+      && /deadlineMs: 270000, runId, startedMs: startMs, arbeitsfenster: freigabe/.test(fensterBlock)
+      && /Math\.max\(1, startMs \+ 280000 - Date\.now\(\)\)/.test(fensterBlock));
     check("server.js: /api/cron/crawl hat ein aeusseres Zeitlimit",
       /withTimeout\(/.test(crawlBlock), "kein withTimeout im Block");
     check("server.js: /api/cron/crawl reicht eine deadlineMs an runCronForTenants durch",

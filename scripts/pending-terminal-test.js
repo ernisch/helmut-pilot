@@ -140,8 +140,13 @@ check("Modellname bleibt als Praefix erhalten", terminal.terminalModelValue("gpt
 
   // ── 8 · Verdrahtung (Quelltext-Zusicherungen) ──────────────────────────────
   const storageSrc = fs.readFileSync(path.join(__dirname, "..", "lib", "helmut", "storage.js"), "utf8");
+  const pendingReader = storageSrc.match(/async function listPendingKnowledgeObjects\([^]*?\n\}/)?.[0] || "";
   check("storage: Pending-Filter schliesst Terminal-Status aus",
-    /listPendingKnowledgeObjects[\s\S]{0,400}isTerminalUnderstandingStatus/.test(storageSrc));
+    /nurVerarbeitbar: true/.test(pendingReader)
+      && /\.filter\(\(ko\) => ko[^]*?&& !isTerminalUnderstandingStatus\(ko\.understanding_status\)\)/.test(pendingReader)
+      && /ko\.understanding_status !== "failed"/.test(pendingReader)
+      && /ko\.understanding_status !== "gate-geparkt"/.test(pendingReader)
+      && /if \(rows\?\.__storeError\) throw new Error/.test(pendingReader));
   check("storage: markPendingUnderstandingTerminal exportiert",
     /markPendingUnderstandingTerminal/.test(storageSrc) && /understanding_status=eq\.\$\{prev\}/.test(storageSrc));
   const scriptSrc = fs.readFileSync(path.join(__dirname, "pending-terminal-aussortieren.js"), "utf8");

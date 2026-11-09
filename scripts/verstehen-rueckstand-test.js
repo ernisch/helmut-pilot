@@ -245,8 +245,17 @@ async function main() {
     // (geparkte Vorgaenge serverseitig raus, sonst verdraengen sie das Fenster) —
     // die Reihenfolge-Durchreiche selbst ist unveraendert Vertragsinhalt.
     check("§4.2 listPendingKnowledgeObjects reicht die Reihenfolge durch",
-      /listPendingKnowledgeObjects\(\{ limit = 50, reihenfolge = "neueste" \} = \{\}\)/.test(storageSrc)
-      && /listKnowledgeObjects\(\{ status: "pending", limit, reihenfolge, ohneGateGeparkt: true \}\)/.test(storageSrc));
+      /listPendingKnowledgeObjects\(\{ limit = 50, reihenfolge = "neueste", offset = 0, _signalError = false \} = \{\}\)/.test(storageSrc)
+      && /listKnowledgeObjects\(\{ status: "pending", limit, reihenfolge, offset, _signalError, ohneGateGeparkt: true, nurVerarbeitbar: true \}\)/.test(storageSrc));
+    const pendingBody = storageSrc.slice(storageSrc.indexOf("async function listPendingKnowledgeObjects("),
+      storageSrc.indexOf("// --- W-1", storageSrc.indexOf("async function listPendingKnowledgeObjects(")));
+    check("§4.2a Pendinglesefehler bleiben Fehler; failed, terminal und geparkt bleiben ausgeschlossen",
+      pendingBody.includes('if (rows?.__storeError) throw new Error("pending-bestand-nicht-lesbar")')
+      && pendingBody.includes('ko.understanding_status !== "failed"')
+      && pendingBody.includes('ko.understanding_status !== "gate-geparkt"')
+      && pendingBody.includes('!isTerminalUnderstandingStatus(ko.understanding_status)'));
+    check("§4.2b SQL schliesst unverarbeitbare Pendingobjekte vor Seitenlimit aus",
+      storageSrc.includes('if (nurVerarbeitbar) endpoint += "&or=(understanding_status.is.null,understanding_status.not.in.(failed,failed-final,gate-geparkt))"'));
     check("§4.3 ein unbekannter Reihenfolgewert fällt geschlossen auf das Bestandsverhalten zurück",
       /KO_REIHENFOLGEN\[reihenfolge\] \|\| KO_REIHENFOLGEN\.neueste/.test(storageSrc));
   }

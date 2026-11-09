@@ -299,6 +299,21 @@ async function main() {
     "eigene Kennung zuerst, dann synthetische Zuweisung — nie lockerer als vorher");
   check("H5 Auch dabei entstand kein Netzaufruf", netzaufrufe === vorherH, `Zähler ${netzaufrufe}`);
 
+  const selbstEnv = { ...SCHARF, HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue",
+    HELMUT_JOB_TRANSPORT: "selbstweck", HELMUT_SELBSTWECK_ERLAUBT: "on", VERCEL_PROJECT_PRODUCTION_URL: "eigener-test.vercel.app",
+    HELMUT_WORKER_WAKE_URL: "https://eigener-test.vercel.app/api/cron/worker-weck" };
+  check("I1 Ausnahme braucht expliziten Aufruferkontext und alle Freigaben",
+    R.pruefe({ kanal: "job-transport" }, selbstEnv).erlaubt === false
+      && R.pruefe({ kanal: "job-transport" }, selbstEnv, { eigenerSelbstweck: true }).erlaubt === true);
+  check("I2 Selbstweckkontext oeffnet keinen anderen Kanal",
+    R.KANAELE.filter(kanal => kanal !== "job-transport").every(kanal => !R.pruefe({ kanal,
+      kennung: "reales-mandat", empfaenger: "referat@bundestag.de", ziel: "https://example.org" }, selbstEnv,
+    { eigenerSelbstweck: true }).erlaubt));
+  check("I3 SQS/VercelQueues/Lambda und fremder Host erhalten keine Ausnahme",
+    ["sqs", "vercel-queues", "lambda"].every(transport => !R.pruefe({ kanal: "job-transport" },
+      { ...selbstEnv, HELMUT_JOB_TRANSPORT: transport }, { eigenerSelbstweck: true }).erlaubt)
+    && !R.pruefe({ kanal: "job-transport" }, { ...selbstEnv, HELMUT_WORKER_WAKE_URL: "https://fremd.example.org/api/cron/worker-weck" },
+      { eigenerSelbstweck: true }).erlaubt);
   check("G9 Am Ende steht der Netzzähler auf null", netzaufrufe === 0, `Zähler ${netzaufrufe}`);
 
   console.log(`\nPASS ${pass}  FAIL ${fail}`);

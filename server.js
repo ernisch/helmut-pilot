@@ -43,6 +43,7 @@ const workerBetrieb = require("./lib/helmut/worker-betrieb");
 // transaktionale Outbox. DEFAULT AUS — ohne HELMUT_JOB_DISPATCH_MODE (off ist der
 // fail-closed-Rueckfall jedes ungueltigen Werts) wird von hier nichts betreten.
 const jobDispatch = require("./lib/helmut/job-dispatch");
+const quellenArbeitsfenster = require("./lib/helmut/quellen-arbeitsfenster");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
 // (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
@@ -349,6 +350,19 @@ async function handleRequest(request, response) {
     }));
     response.end();
     return;
+  }
+
+  // Quellenfenster sind wie die bestehenden Cronrouten selbst autorisiert.
+  // Vor Session-/Mandatsaufloesung: ausgeschaltete Zusatztermine sowie abgewiesene
+  // Fenster duerfen nicht bereits Profile aus der Datenbank lesen.
+  if (["/api/cron/crawl", "/api/cron/pipeline"].includes(url.pathname)
+      && (quellenArbeitsfenster.aktiv()
+        || url.pathname === "/api/cron/crawl" && url.searchParams.get("arbeitsfenster") === "1")) {
+    if (!authorizeCron(request, url, response)) return;
+    if (!quellenArbeitsfenster.aktiv()) {
+      return handleAsync(response, async () => ({ ok: true, uebersprungen: true, grund: "arbeitsfenster-aus" }));
+    }
+    return handleAsync(response, () => runQuellenArbeitsfenster(url.pathname.endsWith("pipeline") ? "pipeline" : "crawl"));
   }
 
   if (await serveOriginalAdministration(request, response, url)) return;
@@ -1978,14 +1992,17 @@ async function handleRequest(request, response) {
           const profile = await activeProfile(tenantId);
           if (validateProfile(profile).disabled)
             return { userId: tenantId, available: false, reason: "profil-deaktiviert", ok: false };
-          const res = await buildLageBriefing(profile, { politicianId: tenantId })
+          const versorgung = await require("./lib/helmut/quellen-versorgungsstand").lese({ mandat: tenantId });
+          const rueckstand = versorgung && versorgung.zustand !== "kein-bekannter-rueckstand";
+          const res = await buildLageBriefing(profile, { politicianId: tenantId, ...(versorgung ? { versorgung } : {}) })
             .catch(e => ({ available: false, reason: "error", diagnose: lageDiagnose.sichereDiagnose(e?.diagnose) }));
           const diagnose = lageDiagnose.sichereDiagnose(res.diagnose);
           const ergebnis = lageDiagnose.mandatsErgebnis(tenantId, res);
           mandatsErgebnisse.push(ergebnis);
           return { userId: tenantId, available: ergebnis.lageGespeichert, fromCache: res.fromCache,
-            reason: res.reason || null, vorgaenge: (res.vorgaenge || []).length,
-            ...(diagnose ? { diagnose } : {}), ...(ergebnis.lageGespeichert ? {} : { ok: false }) };
+            reason: rueckstand ? "quellenversorgung-" + versorgung.zustand : res.reason || null,
+            vorgaenge: (res.vorgaenge || []).length, ...(versorgung ? { versorgung } : {}),
+            ...(diagnose ? { diagnose } : {}), ...(ergebnis.lageGespeichert && !rueckstand ? {} : { ok: false }) };
         } catch (error) {
           const diagnose = lageDiagnose.sichereDiagnose(error?.diagnose);
           const res = { available: false, reason: "profil-fehler", ...(diagnose ? { diagnose } : {}) };
@@ -3659,7 +3676,9 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     ? briefingLanguage.normalizeBriefingType(opts.slot)
     : briefingLanguage.deriveBriefingTypeFromDate(now, "Europe/Berlin");
   const frischeFenster = (opts && opts.frischeFenster) || null;
-  const empty = (reason) => ausgabe(briefingContract.toBriefingContractV3({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason, briefingType, frischeFenster, now }));
+  const versorgung = opts.versorgung || await require("./lib/helmut/quellen-versorgungsstand").lese({
+    mandat: userId, jetztMs: now.getTime() });
+  const empty = (reason) => ausgabe(briefingContract.toBriefingContractV3({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason, briefingType, frischeFenster, versorgung, now }));
 
   // REVIEW-FIXTURE (nur PR-/Preview-/Lokal-Abnahme): streng hinter HELMUT_REVIEW_FIXTURE
   // (Default AUS). In main/Produktion nicht gesetzt -> dieser Zweig ist inert und der
@@ -3669,7 +3688,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   if (reviewFixture.reviewFixtureEnabled()) {
     console.warn("[helmut] REVIEW-FIXTURE aktiv (HELMUT_REVIEW_FIXTURE=1) — nur fuer Abnahme, NICHT fuer Produktion.");
     const fx = reviewFixture.buildReviewFixture(new Date());
-    return briefingContract.toBriefingContractV3({ profile: fx.profile, decisions: fx.decisions, kosById: fx.kosById, sourcesByVorgang: fx.sourcesByVorgang, now: new Date(), reason: "review-fixture", briefingType });
+    return briefingContract.toBriefingContractV3({ profile: fx.profile, decisions: fx.decisions, kosById: fx.kosById, sourcesByVorgang: fx.sourcesByVorgang, now: new Date(), reason: "review-fixture", briefingType, versorgung });
   }
 
   // Fail-safe, KEIN V2-Fallback: kein Store -> expliziter Leerzustand.
@@ -3711,7 +3730,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     return ausgabe(briefingContract.toBriefingContractV3({
       profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType,
       knowledgeObjects: kandidaten.filter(ko => require("./lib/helmut/briefing-quellenqualitaet").quellengebunden(ko, mentionSources[ko.vorgang_id] || []))
-        .map(ko => require("./lib/helmut/briefing-quellenqualitaet").mitBelegtenHandlungsfristen(ko, mentionSources[ko.vorgang_id] || [], now)), now, frischeFenster
+        .map(ko => require("./lib/helmut/briefing-quellenqualitaet").mitBelegtenHandlungsfristen(ko, mentionSources[ko.vorgang_id] || [], now)), now, frischeFenster, versorgung
     }), mentionSources);
   };
 
@@ -3814,7 +3833,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     .map(ko => Q.mitBelegtenHandlungsfristen(ko, sourcesByVorgang[ko.vorgang_id] || [], now));
   for (const ko of themenreineKos) kosById[ko.id] = ko;
   if (!safeDecisions.length) return emptyKeepMentions("keine-treffer", themenreineKos);
-  const briefing = briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, now, briefingType, knowledgeObjects: themenreineKos, frischeFenster });
+  const briefing = briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, now, briefingType, knowledgeObjects: themenreineKos, frischeFenster, versorgung });
   // Read-only Auswahl-Diagnose (nur bei ?debugPrimary=1 -> opts.debug). Aus dem ECHTEN
   // Read-Pfad, additiv, ohne die normale Antwort zu veraendern. Fehlerrobust (nie Crash).
   if (opts && opts.debug) {
@@ -4729,12 +4748,13 @@ function sendJson(response, payload) {
 // gesamten Request blockiert. Die urspruengliche Promise laeuft im Hintergrund weiter
 // (Node kennt kein echtes Cancel), aber der Aufrufer bekommt garantiert eine Antwort.
 function withTimeout(promise, maxMs, label = "operation") {
+  let timer;
   return Promise.race([
     promise,
     new Promise((_, reject) => {
-      setTimeout(() => reject(new Error(`Timeout nach ${maxMs}ms: ${label}`)), maxMs);
+      timer = setTimeout(() => reject(new Error(`Timeout nach ${maxMs}ms: ${label}`)), maxMs);
     })
-  ]);
+  ]).finally(() => clearTimeout(timer));
 }
 
 // CSP-Hinweis: script-src/style-src brauchen noch 'unsafe-inline' fuer die wenigen
@@ -8484,7 +8504,30 @@ async function narrativSlotLauf({ slot = "morgen", startMs = Date.now(), runId =
   };
 }
 
-async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId = null, startedMs = null } = {}) {
+async function runQuellenArbeitsfenster(cronName) {
+  const result = await quellenArbeitsfenster.fuehreAus({ arbeit: async ({ freigabe, startMs }) => {
+    const runId = helmutRunId(`cron-${cronName}`, startMs);
+    return require("./lib/helmut/quellenarchitektur/cron-abdeckung").runQuellenCronMitAbdeckung(
+      () => withTimeout(runCronUeberWarteschlange(cronName, {
+        deadlineMs: 270000, runId, startedMs: startMs, arbeitsfenster: freigabe
+      }), Math.max(1, startMs + 280000 - Date.now()), `quellenfenster-${cronName}`)
+        .catch(async (error) => {
+          if (!/^Timeout nach \d+ms: quellenfenster-/.test(String(error?.message || ""))) throw error;
+          const vermerk = await markiereAeusseresCronTimeout(cronName, runId, startMs);
+          return { ok: false, bounded: true, reason: "quellenfenster-timeout",
+            lauf: { laufId: runId, timeoutVermerkGespeichert: Boolean(vermerk && vermerk.ok) } };
+        }),
+      { runId, cronName, deadlineAt: startMs + 290000 }
+    );
+  } });
+  console.log(`[cron/${cronName}/arbeitsfenster] ok=${result.ok === true}`
+    + ` slot=${result.arbeitsfenster?.slot || "keiner"}`
+    + ` grund=${result.grund || result.reason || "zugelassen"}`
+    + ` limit=${result.limit || "keines"}`);
+  return result;
+}
+
+async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId = null, startedMs = null, arbeitsfenster = null } = {}) {
   const start = Number(startedMs) || Date.now();
   const laufkennung = runId || helmutRunId(`cron-${cronName}`, start);
   const verbleibend = () => Math.max(0, deadlineMs - (Date.now() - start));
@@ -8514,9 +8557,14 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
   // Teilstand EHRLICH gemeldet und trotzdem gearbeitet — die Warteschlange traegt ja
   // bereits Auftraege aus frueheren Laeufen.
   const planBudgetMs = Math.min(60000, Math.floor(deadlineMs * 0.25));
-  const plan = await scalablePipeline.planeArbeit({
+  // Der Fenstermodus nimmt zuerst den gespeicherten Tagesplanrest auf. Nur wenn
+  // noch kein Tagesjournal existiert, darf er einmalig einen neuen Plan erstellen.
+  // Folgetermine berechnen keinen neuen Quellenbedarf und erzeugen keine neuen Abruffenster.
+  const plane = arbeitsfenster ? scalablePipeline.setzePlanungFort : scalablePipeline.planeArbeit;
+  const plan = await plane({
     jetztMs: start,
-    planungsDeadlineMs: Date.now() + planBudgetMs
+    planungsDeadlineMs: Math.min(start + deadlineMs - 10000, Date.now() + planBudgetMs),
+    ...(arbeitsfenster ? { darfNeuPlanen: true } : {})
   }).catch((error) => ({
     ok: false,
     grund: "planung-fehler",
@@ -8532,7 +8580,9 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
   // werden deshalb BEGRENZT oft wieder vorgelegt — vor dem Arbeiten, damit sie noch in
   // diesem Slot drankommen. Fehlt die Migration 20260809, meldet der Aufruf das ehrlich
   // und aendert nichts.
-  const wieder = await scalablePipeline.wiedervorlage({ trockenlauf: false })
+  const wieder = arbeitsfenster && !plan.neuGeplant
+    ? { uebersprungen: true, grund: "fortsetzung-ohne-wiedervorlage" }
+    : await scalablePipeline.wiedervorlage({ trockenlauf: false })
     .catch((error) => ({ verfuegbar: false, grund: String((error && error.message) || "fehler").slice(0, 200) }));
 
   // ZIELARCHITEKTUR (2026-08-13): OUTBOX-ABGLEICH + VERSAND, beide bei Dispatch off ein
@@ -8558,6 +8608,11 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
   // durch dieselbe Klemmung wie Umgebungswerte.
   const durchlauf = await workerBetrieb.durchlauf({
     kennung: laufkennung,
+    arbeitsfenster,
+    // Solange auch nur Planrest fehlt, ist die Menge der Vorbedingungen noch
+    // unbekannt. Keine Projektion/Materialisierung auf einer unvollstaendigen Basis.
+    typen: arbeitsfenster && !(plan?.ok === true && plan.ausstehend === 0)
+      ? ["source_fetch", "document_understanding"] : null,
     grenzen: {
       // Abschlussreserve wie in der globalen Phase (K8): der letzte Auftrag darf nicht mitten
       // im Abschlussschreiben in das aeussere Zeitlimit laufen.
@@ -8566,7 +8621,8 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
       stapel: Math.max(1, Number(process.env.HELMUT_WORKER_BATCH) || 10)
     },
     // OP-30/O1: der Tagesplan liefert die Bereichsdeckel (`scopeMax`) der Budgetschicht.
-    tagesplan: (plan && plan.tagesplan) || null,
+    tagesplan: (plan && plan.tagesplan) || (arbeitsfenster
+      ? await scalablePipeline.tagesplanFuerLauf({ jetztMs: start }).catch(() => null) : null),
     // BELEGTER FEHLER (Abschlussreview 2026-08-08): der Worker holte `buildV3Briefing` aus
     // `lib/helmut/briefingContract.js`, wo dieser Name nicht existiert — die Funktion steht
     // hier in `server.js`. Jeder Briefingauftrag scheiterte deshalb mit

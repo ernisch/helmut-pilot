@@ -303,6 +303,24 @@ async function main() {
       JSON.stringify(r2.auftraege.map((x) => x.dueAt)) === JSON.stringify(r.auftraege.map((x) => x.dueAt)));
   }
 
+  abschnitt("10 · Begrenztes Morgenfenster aendert keine Tagesidentitaet");
+  {
+    const profile = [profil({ id: "morgen-a" }), profil({ id: "morgen-b" })];
+    const env = { HELMUT_QUELLEN_ARBEITSFENSTER: "on" };
+    const morgens = T0 + 3 * 3600000;
+    const plan = await SD.kompiliereQuellenbedarf({ profile, jetztMs: morgens, env, quellenFuerProfil: eigeneQuellen });
+    const folgen = SD.planeMandatsarbeit({ profile, jetztMs: morgens, env });
+    check("10.1 Alle geplanten Quellen sind zwischen03:00und03:30UTC faellig", plan.auftraege.every(j => Date.parse(j.dueAt) >= morgens && Date.parse(j.dueAt) < morgens + 1800000));
+    check("10.2 Alle Projektionen passen vor das Morgenbriefing", folgen.auftraege.filter(j => j.jobType === "mandate_projection").every(j => Date.parse(j.dueAt) >= T0 + 4.25 * 3600000 && Date.parse(j.dueAt) < T0 + 4.25 * 3600000 + 1000));
+    check("10.3 Materialisierung folgt um04:30 statt erst am Abend", folgen.auftraege.filter(j => j.jobType === "briefing_materialization").every(j => Date.parse(j.dueAt) >= T0 + 4.5 * 3600000 && Date.parse(j.dueAt) < T0 + 4.5 * 3600000 + 1000));
+    const alt = await SD.kompiliereQuellenbedarf({ profile, jetztMs: morgens, quellenFuerProfil: eigeneQuellen });
+    check("10.4 Das Morgenfenster erzeugt keine zweite Abrufidentitaet", JSON.stringify(plan.auftraege.map(j => j.idempotencyKey).sort()) === JSON.stringify(alt.auftraege.map(j => j.idempotencyKey).sort()));
+    const varianten = await SD.kompiliereQuellenbedarf({ profile, jetztMs: morgens, env: { HELMUT_QUELLEN_ARBEITSFENSTER: " ON " }, quellenFuerProfil: eigeneQuellen });
+    check("10.5 Der Flagparser entspricht dem globalen Arbeitsfenstervertrag", JSON.stringify(varianten.auftraege.map(j => j.dueAt)) === JSON.stringify(plan.auftraege.map(j => j.dueAt)));
+    const narrativ = SD.planeMandatsarbeit({ profile, jetztMs: morgens, env, narrativAktiv: true }).auftraege.filter(j => j.jobType === "tenant_narrative");
+    check("10.6 Auch ausdruecklich aktiviertes Narrativ passt ins letzte Morgenfenster", narrativ.length === profile.length && narrativ.every(j => Date.parse(j.dueAt) >= T0 + 4.5 * 3600000 && Date.parse(j.dueAt) < T0 + 4.5 * 3600000 + 1000));
+  }
+
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
   process.exit(fail === 0 ? 0 : 1);
 }

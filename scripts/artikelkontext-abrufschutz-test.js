@@ -85,7 +85,7 @@ test("Genau eine Anbieterreservierung und ein vorhandener HTTPS Netzpfad", async
 test("Ohne Anbieterfreigabe kein Netz und keine Umgehung durch Redirect Tiefe", async () => {
   for (const off of [true, false]) {
     const n = netz({ gesperrt: !off }); if (off) n.deps.env = {};
-    await assert.rejects(n.fetch(target, 0, n.deps)); assert.equal(n.calls.length, 0);
+    await assert.rejects(n.fetch(target, 0, n.deps), error => off || error.anbieterVertagung?.vorAbruf === true); assert.equal(n.calls.length, 0);
   }
   const n = netz(); await assert.rejects(n.fetch(target, 1, n.deps)); assert.equal(n.reservations.length, 0);
 });

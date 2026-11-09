@@ -1614,7 +1614,11 @@ function sechsProfile() {
       && (schedSrc.match(/HELMUT_CRAWL_LAZY_BUDGET_MS \|\| 60000/g) || []).length === 2
       && /HELMUT_CRAWL_GESAMTBUDGET_MS \|\| 240000/.test(serverSrc)
       // Die beiden schweren Cronrouten behalten inneres (270 s) und aeusseres (280 s) Limit.
-      && (serverSrc.match(/deadlineMs: 270000/g) || []).length === 2
+      && (serverSrc.match(/cronSchwererPfad\("(?:crawl|pipeline)", \{ deadlineMs: 270000/g) || []).length === 2
+      // Der neue ausschliessliche Fensterpfad teilt dieselbe270/280s-Grenze.
+      && (serverSrc.match(/deadlineMs: 270000/g) || []).length === 3
+      && /deadlineMs: 270000, runId, startedMs: startMs, arbeitsfenster: freigabe/.test(serverSrc)
+      && /Math\.max\(1, startMs \+ 280000 - Date\.now\(\)\)/.test(serverSrc)
       && /280000,\s*\n\s*"cron-crawl"/.test(serverSrc)
       && /280000,\s*\n\s*"cron-pipeline"/.test(serverSrc)
       // Und: die globale Phase erhoeht kein Budget, sie TEILT (Untergrenze 50 %).

@@ -120,7 +120,7 @@ test("Alter v1-Beleg bleibt lesbar ohne Wechsel der Eingabe oder neuen Abruf", a
 });
 test("Fehlender Originalbestand bleibt ehrliche Luecke vor Gate, CAS und Modell", async () => {
   const s = umgebung(dgb), result = await s.run();
-  assert.equal(result.counts["skipped-artikelkontext"], 1); assert.equal(result.results[0].reason, "nur-bestand");
+  assert.equal(result.counts["skipped-artikelkontext"], 1); assert.equal(result.results[0].reason, "beleg-fehlt");
   assert.equal(s.p.rest.length, 2); assert.equal(s.p.rows.size, 0); ohneModell(s.p);
 });
 test("Zwei nackte Promptquellen mit nur einem vorhandenen Beleg bleiben ohne Modell und Verknuepfung offen", async () => {
@@ -129,9 +129,70 @@ test("Zwei nackte Promptquellen mit nur einem vorhandenen Beleg bleiben ohne Mod
   assert.equal(quellen(U.buildUnderstandingPrompt({ documents: docs })).length, 2);
   const result = await s.run({ listVorgangDocuments: async () => docs });
   assert.equal(result.counts["skipped-artikelkontext"], 1);
-  assert.equal(result.results[0].reason, "mehrere-artikelkontexte");
-  assert.equal(s.p.rest.length, 0); assert.equal(s.p.links.length, 0); assert.equal(s.p.gespeichert, 0);
+  assert.equal(result.results[0].reason, "beleg-fehlt");
+  assert(s.p.rest.length >= 2 && s.p.rest.length <= 4); assert.equal(s.p.links.length, 0); assert.equal(s.p.gespeichert, 0);
   ohneModell(s.p); assert.deepEqual(docs, before);
+});
+test("Zwei vorhandene Originale erreichen Gate und echten Pendingprompt getrennt samt gemeinsamer CAS-Bindung", async () => {
+  const s = umgebung(dgb), belege = [s.seed(dgb), s.seed(radio)], docs = [dgb, radio];
+  const before = structuredClone(docs), original = Gate.assessCluster;
+  Gate.assessCluster = (dokumente, opts) => {
+    for (const d of dokumente) {
+      assert(d.summary.includes(belege.find(b => b.dokumentId === d.id).text));
+      assert(!d.summary.includes(belege.find(b => b.dokumentId !== d.id).text));
+    }
+    return original(dokumente, opts);
+  };
+  let result;
+  try { result = await s.run({ listVorgangDocuments: async () => docs }); }
+  finally { Gate.assessCluster = original; }
+  assert.equal(result.counts.saved, 1, JSON.stringify(result));
+  assert.equal(s.p.original, 0); assert.equal(s.p.rest.length, 4); assert(s.p.rest.every(r => r.method === "GET"));
+  const byId = new Map(quellen(s.p.prompts[0]).map(q => [q.quelle_id, q]));
+  for (const b of belege) {
+    assert.equal(byId.get(b.dokumentId).artikelkontext.text, b.text);
+    assert.equal(byId.get(b.dokumentId).artikelkontext.quellenHash, b.quellenHash);
+    assert.equal(byId.get(b.dokumentId).url, b.artikelUrl);
+  }
+  assert.equal(s.p.hashes[0], require("../lib/helmut/verstehen-artikelkontext-hash").eingabeHash(
+    { vorgangId: "vg-pending-bestand", dokumente: docs, modus: "erst" }, s.p.prompts[0]));
+  assert.equal(s.p.links[0].docs.length, 2); assert.deepEqual(docs, before);
+});
+test("Jeder Mehrbeleg bleibt einzeln an Quellenstand und SourceSafety gebunden", async () => {
+  for (const mode of ["quellenhash", "text", "url", "publikation", "gesperrt"]) {
+    const s = umgebung(dgb); s.seed(dgb); s.seed(radio);
+    const docs = [dgb, structuredClone(radio)];
+    const radioStand = [...s.p.rows.values()].find(row => row.beleg.dokumentId === radio.id);
+    if (mode === "quellenhash") radioStand.beleg.quellenHash = "0".repeat(64);
+    if (mode === "text") radioStand.beleg.text += " Fremder Text.";
+    if (mode === "url") docs[1].url += "/anders";
+    if (mode === "publikation") docs[1].published_at = "2026-11-07T11:11:24Z";
+    const old = process.env.HELMUT_SOURCE_BLOCKLIST;
+    if (mode === "gesperrt") process.env.HELMUT_SOURCE_BLOCKLIST = "radio-hannover.de";
+    let result;
+    try { result = await s.run({ listVorgangDocuments: async () => docs }); }
+    finally { if (old === undefined) delete process.env.HELMUT_SOURCE_BLOCKLIST; else process.env.HELMUT_SOURCE_BLOCKLIST = old; }
+    assert.equal(result.counts["skipped-artikelkontext"], 1, mode); ohneModell(s.p);
+  }
+});
+test("Die zwoelf ausgewaehlten Quellen verlangen keinen Beleg fuer zusaetzliche Clusterquellen", async () => {
+  const docs = Array.from({ length: 13 }, (_, i) => D.toRawDocumentRow({ title: `Bahnkonferenz plant Strecken ${i}`,
+    url: `https://example.org/konferenz/${i}`, sourceName: "Synthetisches Testmedium", sourceType: "media",
+    linkType: "direct", publishedAt: "2026-11-06T11:11:24Z" }));
+  const selectedIds = new Set(quellen(U.buildUnderstandingPrompt({ documents: docs })).map(q => q.quelle_id));
+  assert.equal(selectedIds.size, 12);
+  const s = umgebung(docs[0]);
+  for (const d of docs.filter(d => selectedIds.has(d.id))) {
+    const text = `Die Bahnkonferenz plant Strecken ${docs.indexOf(d)} und fordert die Bundesregierung auf, weitere Mittel im Haushalt bereitzustellen.`;
+    const data = { "@type": "NewsArticle", headline: d.title, mainEntityOfPage: d.url, articleBody: text };
+    s.seed(d, false, `<head><link rel="canonical" href="${d.url}"><meta property="og:title" content="${d.title}">`
+      + `<script type="application/ld+json">${JSON.stringify(data)}</script></head><body><article><p>${text}</p></article></body>`);
+  }
+  const result = await s.run({ listVorgangDocuments: async () => docs });
+  assert.equal(result.counts.saved, 1, JSON.stringify(result));
+  assert.equal(s.p.rest.length, 12); assert.equal(quellen(s.p.prompts[0]).length, 12);
+  assert(quellen(s.p.prompts[0]).every(q => q.artikelkontext?.dokumentId === q.quelle_id));
+  assert.equal(s.p.original, 0); assert(s.p.rest.every(r => r.method === "GET"));
 });
 test("Ein gueltiger Beleg und eine vollstaendige RSS-Quelle duerfen gemeinsam verstanden werden", async () => {
   const s = umgebung(dgb), beleg = s.seed();
@@ -146,6 +207,40 @@ test("Ein gueltiger Beleg und eine vollstaendige RSS-Quelle duerfen gemeinsam ve
   assert.equal(byId.size, 2); assert.equal(byId.get(dgb.id).artikelkontext.text, beleg.text);
   assert.equal(byId.get(rss.id).artikelkontext, undefined); assert(byId.get(rss.id).auszug);
   assert.equal(s.p.links.length, 1); assert.equal(s.p.links[0].docs.length, 2); assert.deepEqual(docs, before);
+});
+test("Der gelieferte Callback darf weder Belege doppelt setzen noch uneindeutige Vertragsfelder mischen", async () => {
+  for (const mode of ["leer", "doppelt", "beide-felder", "beide-inaktiv", "fremd", "gesperrt"]) {
+    const s = umgebung(dgb), belege = [s.seed(dgb), s.seed(radio)], docs = [dgb, radio];
+    const callback = Object.assign(async selected => {
+      assert.equal(selected.length, 2);
+      return { angefordert: mode !== "beide-inaktiv", ok: true,
+        belege: mode === "leer" ? [] : mode === "doppelt" ? [belege[0], belege[0]]
+          : mode === "fremd" ? [belege[0], { ...belege[1], dokumentId: "rd-fremd" }] : belege,
+        ...(["beide-felder", "beide-inaktiv"].includes(mode) ? { beleg: belege[0] } : {}) };
+    }, { nurBestand: true });
+    const old = process.env.HELMUT_SOURCE_BLOCKLIST;
+    if (mode === "gesperrt") process.env.HELMUT_SOURCE_BLOCKLIST = "radio-hannover.de";
+    let result;
+    try { result = await s.run({ listVorgangDocuments: async () => docs, artikelkontextVersorgung: callback }); }
+    finally { if (old === undefined) delete process.env.HELMUT_SOURCE_BLOCKLIST; else process.env.HELMUT_SOURCE_BLOCKLIST = old; }
+    assert.equal(result.counts["skipped-artikelkontext"], 1, mode); ohneModell(s.p);
+  }
+});
+test("Mehrbelege umgehen weder Budget, CAS-Ausgang noch Restzeit zwischen Bestandslesungen", async () => {
+  for (const mode of ["budget", "ausgang", "restzeit"]) {
+    const s = umgebung(dgb); s.seed(dgb); s.seed(radio);
+    const oldNow = Date.now;
+    if (mode === "ausgang") s.vertrag.reserviere = async () => ({ erlaubt: false, grund: "ausgang-unbekannt" });
+    if (mode === "restzeit") Date.now = () => jetzt + (s.p.rest.length >= 3 ? 240000 : 0);
+    let result;
+    try { result = await s.run({ listVorgangDocuments: async () => [dgb, radio],
+      ...(mode === "budget" ? { canSpend: async () => ({ allowed: false }) } : {}) }); }
+    finally { Date.now = oldNow; }
+    assert.equal(result.results[0].status, mode === "budget" ? "skipped-budget"
+      : mode === "ausgang" ? "skipped-ausgang-unbekannt" : "skipped-artikelkontext", mode);
+    assert.equal(s.p.prompts.length, 0); assert.equal(s.p.starts, 0); assert.equal(s.p.original, 0);
+    assert(s.p.rest.every(r => r.method === "GET"));
+  }
 });
 test("Abweichender Quellenstand und manipulierter Beleg erlauben keinen Titel-Fallback", async () => {
   for (const mode of ["quelle", "beleg"]) {

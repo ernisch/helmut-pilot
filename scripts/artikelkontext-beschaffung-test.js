@@ -28,6 +28,13 @@ function umgebung(options = {}) {
       const id = q.get("id").slice(3), data = rows.get(id);
       return data ? [{ id, data: structuredClone(data) }] : [];
     }
+    if (method === "DELETE") {
+      const id = q.get("id").slice(3), expected = JSON.parse(q.get("data").slice(3));
+      const same = JSON.stringify(rows.get(id)) === JSON.stringify(expected);
+      if (same && !options.rueckgabeVerloren) rows.delete(id);
+      if (options.rueckgabeAntwortVerloren || options.rueckgabeVerloren) throw Error("Antwort verloren");
+      return same ? [{ id }] : [];
+    }
     const value = JSON.parse(init.body);
     assert(!endpoint.includes("on_conflict")); assert(!init.headers.Prefer.includes("merge"));
     if (method === "POST") {
@@ -131,6 +138,30 @@ test("Abbruch und fehlender Artikeltext bleiben dauerhafte benannte Luecken", as
     assert.deepEqual(await run(u), first); assert.equal(u.network.length, 1);
   }
 });
+test("Nur nachweislich vor HTTP verweigerte Anbieterreservierung bleibt spaeter fortsetzbar", async () => {
+  for (const rueckgabeAntwortVerloren of [false, true]) {
+    let block = true, httpStarts = 0;
+    const u = umgebung({ rueckgabeAntwortVerloren, fetch: async () => {
+      if (block) throw Object.assign(new Error("Anbieterpause"), { anbieterVertagung: { vorAbruf: true } });
+      httpStarts++; return antwort();
+    } });
+    assert.equal((await run(u)).reason, "anbietergrenze"); assert.equal(u.rows.size, 0); assert.equal(httpStarts, 0);
+    block = false; assert.equal((await run(u)).ok, true); assert.equal(httpStarts, 1);
+    assert.equal((await run(u)).ok, true); assert.equal(httpStarts, 1);
+  }
+  const verloren = umgebung({ rueckgabeVerloren: true, fetch: async () => {
+    throw Object.assign(new Error("Pause"), { anbieterVertagung: { vorAbruf: true } });
+  } });
+  assert.equal((await run(verloren)).reason, "rueckgabe-nicht-bestaetigt");
+  assert.equal((await run(verloren)).reason, "abruf-ausgang-offen"); assert.equal(verloren.network.length, 1);
+});
+test("Anbieterfehler nach HTTP-Start gibt die Reservierung niemals zurueck", async () => {
+  const u = umgebung({ fetch: async () => {
+    throw Object.assign(new Error("Lease verloren nach Start"), { anbieterVertagung: { grund: "klassen-lease-verloren" } });
+  } });
+  assert.equal((await run(u)).reason, "anbietergrenze"); assert.equal((await run(u)).reason, "anbietergrenze");
+  assert.equal(u.network.length, 1); assert(!u.calls.some(c => c.method === "DELETE"));
+});
 test("Unpassende Quelle und fehlende Anbietersteuerung werden vor Schreiben abgewiesen", async () => {
   for (const d of [{ ...doc, canonical_url: "https://example.org/fremd" }, { ...doc, url: "https://127.0.0.1/a" },
     { ...doc, url: "http://example.org/a" }, { ...doc, id: "" }]) {
@@ -178,6 +209,21 @@ test("Kein direkter Beschaffer im Fachkern oder Server und keine Aktivierung in 
     assert(!fs.readFileSync(path.join(root, file), "utf8").includes("beschaffeArtikelkontext"));
   }
   assert.equal(require("../vercel.json").git.deploymentEnabled["codex/artikelkontext-belegablage-20260917"], false);
+});
+
+test("Globales Originaltageskontingent gilt vor HTTP und belastet Cachewiederverwendung nicht", async () => {
+  for (const erlaubt of [true, false]) {
+    const u = umgebung(); let reserviert = 0;
+    Object.assign(u.deps.env, { HELMUT_QUELLEN_ARBEITSFENSTER: "on", HELMUT_QUELLEN_FENSTER_TAG: "8",
+      HELMUT_QUELLEN_SEKUNDEN_TAG: "2400", HELMUT_ORIGINALABRUFE_TAG: "16" });
+    u.deps.originalReservierung = { reserviere: async o => {
+      reserviert++; assert.equal(o.schluessel, "quellenarbeit|originalabrufe");
+      assert.equal(o.menge, 1); assert.equal(o.grenzeTag, 16); return { verfuegbar: true, erlaubt };
+    } };
+    const r = await run(u); assert.equal(reserviert, 1);
+    if (erlaubt) { assert.equal(r.ok, true, r.reason); await run(u); assert.equal(u.network.length, 1); assert.equal(reserviert, 1); }
+    else { assert.equal(r.reason, "original-tagesgrenze"); assert.equal(u.network.length, 0); assert.equal(u.rows.size, 0); }
+  }
 });
 
 (async () => { for (const [name, fn] of tests) { await fn(); console.log("PASS " + name); }
