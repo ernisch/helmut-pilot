@@ -32,21 +32,8 @@ on:
         description: "Pruefumfang eingrenzen: Gruppen (BE, BB, BE+BB, BUND) und/oder legacy_source_ids, kommagetrennt. Leer = alle Wege."
         required: false
         default: ""
-  # Zusaetzlich bei einem Pull Request, der die 9B-Dateien betrifft: GitHub fuehrt dann die
-  # YAML AUS DEM PR-HEAD aus (kein main-Merge noetig) — auf einem Runner mit offenem Egress,
-  # sodass die echten oeffentlichen Adressen tatsaechlich geprueft werden. KEIN Deployment,
-  # KEINE Secrets, KEINE Production-Aenderung (permissions: contents: read).
-  pull_request:
-    paths:
-      - ".github/workflows/sprint9b-verify.yml"
-      - "scripts/sprint9b-verify-abrufwege.js"
-      - "scripts/sprint9b-summary.js"
-      - "scripts/sprint9b-verify-test.js"
-      - "lib/helmut/crawler.js"
-      - "lib/helmut/quellenarchitektur/seeds/landesmodule-quellen.js"
-      - "lib/helmut/quellenarchitektur/seeds/landesmodule-kandidaten.js"
-      - "lib/helmut/quellenarchitektur/seeds/packages.js"
-      - "lib/helmut/quellenarchitektur/seeds/bundeswege-reparaturen.js"
+  # Echte Quellenabrufe nur mit gesondertem workflow_dispatch. Ein Crawler-PR
+  # ist keine Abruffreigabe. Offline- und Pflicht-CI bleiben unveraendert.
 
 # Minimalrechte: nur lesen. Kein Repo-Write, kein Package-Write, nichts.
 permissions:
@@ -79,10 +66,10 @@ jobs:
       # Exit 0 auch bei 'ablehnen'/'nicht_verifizierbar' (gueltige Ergebnisse, kein CI-Fehler).
       - name: Abrufwege verifizieren (echter Abruf)
         env:
-          # Bei pull_request-Läufen existiert kein inputs-Kontext -> explizite Defaults.
+          # Manuelle Eingaben mit expliziten Defaults.
           S9B_FRESH_DAYS: ${{ inputs.fresh_days || '45' }}
           S9B_TIMEOUT_MS: ${{ inputs.timeout_ms || '12000' }}
-          # Leer bei pull_request-Laeufen -> voller Umfang wie bisher.
+          # Ohne manuelle Einschraenkung: voller Umfang.
           S9B_ONLY: ${{ inputs.only || '' }}
         run: node scripts/sprint9b-verify-abrufwege.js --out sprint9b-report.json
 

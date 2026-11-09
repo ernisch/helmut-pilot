@@ -1,0 +1,22 @@
+{
+  "profile_sha256": "c791baf034ac571c99619d6fbad6450bd6790a7ff2b8317d62a31872ed2b124f",
+  "replay": "Current relational reader + mergeProfileDefaults + relevanteBetriebsDokumente; original title metadata only",
+  "result": [
+    {
+      "title": "Sozialverband warnt vor Altersarmut in Niedersachsen - Radio Hannover",
+      "accepted": true
+    },
+    {
+      "title": "Dritte Tarifrunde im Gebäudereiniger-Handwerk endet ohne Ergebnis - Deutscher Gewerkschaftsbund | DGB",
+      "accepted": false
+    },
+    {
+      "title": "Vorschläge zur Prävention und zur Erwerbsminderungsrente - Deutscher Bundestag",
+      "accepted": false
+    },
+    {
+      "title": "Ich möchte meine Kontodaten ändern - Die Linke",
+      "accepted": false
+    }
+  ]
+}

@@ -888,6 +888,10 @@ function recoveryRenderChecks() {
   const fakeEl = new Proxy({}, { get: (t, p) => (p === "classList" ? { add: noop, remove: noop, toggle: noop, contains: () => false } : (p === "querySelectorAll" ? () => [] : noop)), set: () => true });
   const win = { addEventListener: noop, removeEventListener: noop, matchMedia: () => ({ matches: false, addEventListener: noop, addListener: noop }), location: { href: "", search: "", pathname: "/" }, navigator: { serviceWorker: null, userAgent: "t" } };
   const ctx = { window: win, document: { querySelector: () => fakeEl, querySelectorAll: () => [], getElementById: () => fakeEl, createElement: () => fakeEl, addEventListener: noop, body: fakeEl, documentElement: fakeEl, cookie: "", visibilityState: "visible" }, navigator: win.navigator, localStorage: { getItem: () => null, setItem: noop, removeItem: noop }, sessionStorage: { getItem: () => null, setItem: noop, removeItem: noop }, console, fetch: () => new Promise(() => {}), location: win.location, setTimeout: noop, clearTimeout: noop, setInterval: () => 0, clearInterval: noop, requestAnimationFrame: noop, URLSearchParams, Date, Math, JSON, Intl };
+  // Im Browser sind globale Timer auch auf window vorhanden. Dieselben
+  // inerten Stubs erhalten den synchronen Rendervertrag ohne Boot-/Netzarbeit.
+  Object.assign(win, { setTimeout: ctx.setTimeout, clearTimeout: ctx.clearTimeout,
+    setInterval: ctx.setInterval, clearInterval: ctx.clearInterval });
   // Browser API fuer den Client-Boot; fetch bleibt eine lokale, offene Promise.
   ctx.AbortController = AbortController;
   ctx.globalThis = ctx;

@@ -1,0 +1,30 @@
+[
+  {
+    "file": "dgb-google.xml",
+    "capture": "2026-11-08 UTC",
+    "scope": "Exact single public item in RSS envelope; remaining feed items omitted",
+    "original_feed_sha256": "2dab94883bc2566f21e2980f391bed1b83b2dfa6d7bd94a05bca0f5a644ffacc",
+    "fixture_sha256": "0a0ab39c789054bb3a12817b731ca8600bbc9eddd0fa5986678b9f8472ee7745"
+  },
+  {
+    "file": "hib.xml",
+    "capture": "2026-11-08 UTC",
+    "scope": "Exact single public item in RSS envelope; remaining items omitted; CRLF normalized to LF",
+    "original_feed_sha256": "1eb55346a0229f22289d837edd870d4b3594a8283a7566a5ba755617118cb69a",
+    "fixture_sha256": "85b889978c584a4741da9263dbb1f38d48e24b44d33b9fcdbab73246fbfa804d"
+  },
+  {
+    "file": "dgb-metadaten.html",
+    "capture": "2026-11-08 UTC",
+    "scope": "Exact canonical/og:title/og:description tags only; no full article copy",
+    "original_html_sha256": "8bacc8ad3f0d704c9649d53c5a7308928b00f530080698b31070ccd798e94426",
+    "fixture_sha256": "f1524aee0c60b32c6a34944aaa562316d0d3e4e5211f5e04dff3fdd1cb2183df"
+  },
+  {
+    "file": "radio-hannover-metadaten.html",
+    "capture": "2026-11-08 UTC",
+    "scope": "Exact canonical/title tags only; HTTP canonical mismatch remains rejected",
+    "original_html_sha256": "95a1bc4bffd737f011c9cd16e94a74ad4819ba4350f5bce6acad71b84e7b6547",
+    "fixture_sha256": "5cd9a2ab2d5c8236e00900a2c89bb268f2891ef11203db5ba0643ef425561525"
+  }
+]
