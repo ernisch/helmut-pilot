@@ -1,5 +1,5 @@
 {
-  "status": "VORBEREITET_NICHT_AUSFUEHREN",
+  "status": "EINMAL_ANGEWENDET_UND_NACHGELESEN_NICHT_ERNEUT_AUSFUEHREN",
   "scope": "Nur unbelegte Negation aus einer gespeicherten Kurzfassung entfernen; kein vollstaendiger Artikelersatz",
   "id": "ko-vg-niedrigschwellige-20261106-431ce2",
   "field": "display_summary",
@@ -13,6 +13,16 @@
   "rawDocumentChanges": 0,
   "profileChanges": 0,
   "activation": false,
-  "requires": "Separate konkrete Schreibfreigabe; vorhandenen Redaktionsweg fuer Version/Cache pruefen; Vorwert atomar vergleichen; bei Abweichung abbrechen",
+  "requires": "Betreiberfreigabe erteilt und einmal ausgefuehrt; historischer Vorwert bleibt fuer Audit erhalten, keine erneute Ausfuehrung",
+  "execution": {
+    "dateUTC": "2026-11-09",
+    "windowUTC": "04:27:36–04:27:43",
+    "changedRows": 1,
+    "changedFields": ["display_summary"],
+    "otherFieldsAndReservationUnchanged": true,
+    "persistedReadbackAfterDeployment": true,
+    "oldSentenceInCheckedDependentStores": 0,
+    "confidentialBackupAndConditionalRollback": "Gesichert ausserhalb Git; siehe Abschlussbericht daneben"
+  },
   "remainingGap": "Kein gesicherter Originalabsatz fuer Pflegeneuordnungsgesetz und konkrete Massnahmen in den hier geprueften Belegen"
 }
