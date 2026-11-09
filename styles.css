@@ -9088,6 +9088,69 @@ body.is-loading, .app-splash, .loading-screen { background: var(--ui-bg); }
 @media (max-width: 767px) {
   :root .ui-page .ui-office-workspace .buero-draft-card.is-selected, :root:not([data-theme="light"]) .ui-page .ui-office-workspace .buero-draft-card.is-selected { background: transparent; }
 }
+
+/* Büro: eine Empfehlung je Anlass, der Entwurf bleibt die Hauptfläche. */
+.ui-page .buero-view { padding-bottom: 24px; }
+.ui-office-workspace :is(.buero-draft-list, .ui-office-detail, .buero-detail-header) { min-width: 0; }
+.ui-office-workspace .buero-draft-list { gap: 0; }
+.ui-page .ui-office-workspace .buero-draft-card { animation: none; transition: background var(--dur-fast); }
+.ui-office-workspace .buero-draft-card .buero-group-eyebrow { opacity: 1; margin-bottom: 8px; }
+.ui-office-workspace .buero-draft-card .buero-card-type { margin: 10px 0 8px; white-space: normal; }
+.ui-office-workspace .buero-draft-card .buero-review-btn { margin-top: 12px; }
+.ui-office-workspace .buero-recommendation {
+  margin: 8px 0 0; color: var(--ui-muted); font: 400 15px/1.5 var(--ui-sans);
+}
+.ui-office-workspace .buero-format-choice { margin: 20px 0 0; }
+.ui-office-workspace .buero-format-choice > summary {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+  color: var(--ui-accent); font: 400 15px/1.4 var(--ui-sans); cursor: pointer; list-style: none;
+}
+.ui-office-workspace .buero-format-choice > summary::-webkit-details-marker { display: none; }
+.ui-office-workspace .buero-format-choice > summary::after { content: "+"; font-size: 18px; }
+.ui-office-workspace .buero-format-choice[open] > summary::after { content: "−"; }
+.ui-office-workspace .buero-format-choice label {
+  display: grid; gap: 8px; margin: 4px 0 0; color: var(--ui-muted); font-size: 14px;
+}
+.ui-office-workspace .buero-format-select {
+  display: block; width: 100%; max-width: 100%; min-width: 0; min-height: 48px;
+  margin-top: 8px; padding: 10px 36px 10px 12px; border: 1px solid var(--ui-border); border-radius: 8px;
+  color: var(--ui-text); background-color: var(--ui-surface); font: 400 16px/1.4 var(--ui-sans);
+}
+.ui-office-workspace .buero-draft-state {
+  margin: 28px 0; color: var(--ui-muted); font: 400 17px/1.55 var(--ui-sans);
+}
+.ui-office-workspace .buero-share-note { margin: 10px 0 0; color: var(--ui-dim); font-size: 14px; line-height: 1.5; }
+.ui-office-workspace .buero-detail-linecheck { opacity: 1; font-style: normal; font-size: 13px; }
+.ui-office-workspace .buero-detail-title { font-size: 34px; line-height: 1.2; }
+.ui-office-workspace .buero-detail-anlass { opacity: 1; }
+.ui-office-workspace .buero-detail-body { margin-block: 28px 32px; }
+.ui-office-workspace .buero-detail-body p { font: 400 20px/1.6 var(--ui-serif); }
+.ui-office-workspace .buero-detail-footer .buero-copy-btn {
+  min-height: 48px; border: 0; border-radius: 24px; background: var(--ui-solid); color: var(--ui-on-solid);
+}
+.ui-office-workspace .buero-detail-footer .buero-copy-btn:hover:not(:disabled) { background: var(--ui-solid-hover); }
+.ui-office-workspace .buero-source-link { padding: 12px 0; border: 0; border-radius: 0; }
+.ui-office-workspace .buero-source-row + .buero-source-row { border-top: 1px solid var(--hairline); }
+.ui-office-workspace .buero-source-link:hover .buero-source-name { color: var(--ui-accent); }
+@media (min-width: 1101px) {
+  .ui-office-workspace { grid-template-columns: minmax(0,.85fr) minmax(0,1.5fr); }
+}
+@media (max-width: 767px) {
+  .app-frame:is(.view-office, .view-office-detail) { --hh: 160px; }
+  .app-frame:is(.view-office, .view-office-detail) .ui-page-header {
+    min-height: 0; padding: calc(84px + env(safe-area-inset-top, 0px)) 0 24px;
+  }
+  .app-frame:is(.view-office, .view-office-detail) .ui-page-header h1 { font-size: 32px; }
+  .app-frame:is(.view-office, .view-office-detail) .ui-page-subtitle { margin-top: 8px; font-size: 16px; line-height: 1.45; }
+  .view-office-detail .buero-view > .ui-page-header { display: none; }
+  .view-office-detail .ui-office-workspace { padding-top: calc(76px + env(safe-area-inset-top, 0px)); }
+  .ui-office-workspace .buero-detail-header { margin-bottom: 24px; }
+  .ui-office-workspace .buero-detail-title { font-size: 28px; line-height: 1.2; }
+  .ui-office-workspace .buero-detail-body p { font-size: 19px; line-height: 1.6; }
+  .ui-office-workspace .buero-format-choice { margin-top: 12px; }
+  .ui-office-workspace .buero-card-top { flex-wrap: wrap; }
+  .ui-office-workspace .buero-card-type { white-space: normal; overflow: visible; text-overflow: clip; }
+}
 /* Seitenleiste: Mandatswähler über volle Breite, Pfeil sauber eingerückt,
    bündig mit Profilkarte und „Abmelden“. */
 .sidebar-foot .account-switch {
