@@ -171,7 +171,7 @@ Auftraege/Fortsetzungen koennen somit mehr Originale versorgen. Keine Aussage
 Mehrere gebundene Originalbelege erreichen gemeinsam den vorhandenen
 Understanding-Prompt, weiterhin hoechstens zwoelf Quellen. Fehlende Originale
 blockieren im Queuepfad nicht die bereits belegten Artikel desselben Vorgangs.
-Tatsaechlich gesendete und erfolgreich gespeicherte Promptquellen tragen
+Tatsaechlich an das Modell gesendete Quellen bei bestaetigter Speicherung tragen
 innerhalb der vorhandenen KO-JSONB-Herkunftsablage einen integritaets- und
 quellenstandgebundenen Lektuerebeleg. Dieser wird atomar mit dem KO gespeichert,
 gilt global ueber verschiedene Queueauftraege und ersetzt keine historischen
@@ -207,6 +207,15 @@ Kommunikationsriegel 48 und bestehender Selbstweck-Endweg 31 sind gruen.
 Die endgueltigen Pflichtchecks werden im PR auf dessen exakten Kopf gebunden.
 Erfolgreiche bestehende Queue-Vertraege wurden wiederverwendet, keine lokale
 Gesamtsuite und kein 500er-Lasttest gestartet.
+
+Erster Pflichtlauf `42593800994` auf `daca156e118b7498cafb3060a4b3f9d48c9e7cbb`:
+**FAILURE** im Standardlauf. Die neue Budgetvariable fehlte im kanonischen
+Env-Inventar; zwei praezise Strukturwaechter erwarteten noch die alte
+Pending-Signatur beziehungsweise das Bilanzarray ohne Pendingaufnahme.
+Inventar und diese Waechter wurden gezielt nachgezogen; keine Runtimeaenderung.
+Native Vorstufen und Browserpflichtcheck waren gruen, Browserausfuehrung wurde
+bei diesem Backenddiff regulaer uebersprungen. Endkopf-Pflichtchecks folgen
+regulaer neu; dieser Fehllauf wird nicht als Erfolg ausgegeben.
 
 Der unabhaengige Review hat insbesondere globalen Lektuerebeleg,
 13/12-Fortsetzung, Quellen-/RSS-Konflikte, Betreiberpausen und die enge
@@ -283,6 +292,12 @@ faellige Aufgaben uebrig, kann die Kette enden. Der naechste sichere Neustart
 ist der regulaere 04-Uhr-Cron. Die bestehende maximale Budgetwartezeit von
 48 Stunden und begrenzte Wiedervorlage bleiben erhalten; fehlgeschlagene
 Auftraege sind keine verstandenen Dokumente.
+
+Je neuem Artikelstand im vorbereiteten Einstiegspfad hoechstens ein
+Original-GET mit maximal 20 Sekunden und 1 MiB Antwort. Bei beispielhaft 500
+neuen, jeweils genau einmal gebundenen Artikelstaenden waeren das hoechstens
+500 tatsaechliche Original-GETs und 500 MiB Antwortlimit; keine 500er-Messung.
+Das ist keine Geldobergrenze fuer die gesamte Verarbeitung.
 
 **Kostenwirkung:** Der bestehende 1 USD/UTC-Tag-/30 USD-Gesamtvertrag deckelt
 Modellkosten, nicht Vercel-Rechenzeit, HTTP-Weckrufe oder Datenbankzugriffe.
