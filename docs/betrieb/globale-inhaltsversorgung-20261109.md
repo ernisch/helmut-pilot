@@ -24,7 +24,9 @@ eine NDR-Probe gesondert genehmigt und ausgefuehrt; keine Fachdatenmutation.
 
 - `main` beim Sprintstart: `e8a4b08bf14609a02831a0f6e5b6c9c5caa28824`.
   Parallel wurde Buero-PR1111 am 09.11.2026 um 11:55:54 UTC gemergt;
-  aktueller `main`: `fe38a3710caa18f0a020825747c04c7d4f2c198a`.
+  Runtime-Merge: `fe38a3710caa18f0a020825747c04c7d4f2c198a`.
+  Aktueller `main`: `279b00fc5630ffa867dfafe8977349a7b8179049`,
+  anschliessende reine Buero-Abschlussdokumentation ohne Runtimeaenderung.
 - Production am 09.11.2026 um 12:07 UTC lesend bestaetigt:
   `fe38a3710caa18f0a020825747c04c7d4f2c198a`,
   Vercel `dpl_2t9f7tXNuNePv4Ng5GjTStFWo8Vd`, READY und Productionalias.
@@ -380,11 +382,24 @@ Der integrierte Endkopf benoetigt erneut die regulaeren Pflichtchecks;
 die beiden bestandenen Vorgaengerlaeufe bleiben gueltige historische
 Pruefbelege, ersetzen aber keine CI des integrierten Kopfes.
 
+Der Probeabschluss auf `feadca2829b6b54c010c2fcfef16d208ab6e0c05`
+bestand danach `42618196389`: beide Pflichtchecks **SUCCESS**,
+Standard 189/189, Bereich 350/350 und Z22 48/48; konkrete Browserstufen
+regulaer uebersprungen. Anschliessend wurde die neue reine
+`main`-Abschlussdokumentation `279b00fc` konfliktfrei uebernommen.
+Die gemeinsame Statusdatei haette dadurch 31.018 Zeichen/353 Zeilen erreicht.
+Deshalb wurden ausschliesslich die bereits belegten Quellenhistorien auf ihre
+Berichte verdichtet; die neue Buero-Abschlussdokumentation bleibt unveraendert.
+Runtime und Rueckwegbasis bleiben `fe38a371`. Die notwendige Integration und
+Statuskorrektur erhalten regulaere Pflichtchecks auf dem neuen Endkopf;
+Ergebnis und Kennung werden ohne weiteren Dokumentationscommit im PR gebunden.
+
 Der unabhaengige Review hat insbesondere globalen Lektuerebeleg,
 13/12-Fortsetzung, Quellen-/RSS-Konflikte, Betreiberpausen und die enge
 Selbstweckausnahme geprueft; keine offenen P1-Befunde. Pflichtchecks sind `Syntax + Offline-Suiten` und
 `Browser-/Mobile-Smoke (Chromium)`. PR1115 ist offen und ungemergt;
-Aktuelle Basis ist der oben bezeichnete parallele Buero-Rollout. Die erforderliche
+Aktuelle Gitbasis ist die oben bezeichnete Buero-Abschlussdokumentation;
+Production bleibt beim parallelen Buero-Rollout. Die erforderliche
 Anbietererweiterung bleibt nach dem gescheiterten Codex-Direkttransport
 unvollstaendig; keine Empfehlung einer allgemeinen Anbieterfreigabe.
 Das nachfolgende begrenzte DGB-/Radio-Paket ist davon getrennt entscheidbar.
