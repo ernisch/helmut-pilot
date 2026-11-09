@@ -1,6 +1,7 @@
 # Kundenfehler: fehlende Tagesorientierung, 09.11.2026
 
-Status: Entwicklung und isolierte Ausgabeprüfung; kein Merge, Rollout oder Produktionslauf.
+Status: Fehler reproduziert, Korrektur und isolierte Kundenausgabe geprüft;
+kein Merge nach main, Rollout oder Produktionslauf.
 Eigener Branch `codex/briefing-tagesorientierung-20261109`, Basis `e8a4b08b`.
 
 ## Schnittstellenvereinbarung zur Abstimmung mit PR1115
@@ -103,7 +104,51 @@ Keine Behauptung einer neuen Meldung am09.11. oder sofortigen Handlungsdringlich
 
 ## Prüfung und Freigabe
 
-Gezielte Nachweise und die lokale Integration werden vor Abschluss hier ergänzt.
+- Unveränderter Builder:49/47/2, weiterhin quiet. Korrigierter Builder:52/50/2,
+  ein sichtbarer, originalgebundener Prüfauftrag. Keiner der49 bisherigen Vorgänge
+  geht verloren. Die drei zusätzlich geprüften Kandidaten erhöhen keinen Score;
+  die Bilanz allein bleibt ausdrücklich kein Qualitätsnachweis.
+- Neue Orientierungsprüfung:27/27 Gruppen im zusammengeführten Codebestand.
+  Belegte Schritte/Fristen, andere Fachprofile/Landtag, fremdes Profil, fehlender
+  oder abgeschnittener Inhalt, Gegenbelege/Absage, widersprüchliche Quellenzeiten,
+  vergangene/mehrdeutige Termine, Uhrzeiten ohne Zone, redaktioneller Ausschluss,
+  unveränderte Eingaben und echter Server-/Rendereranschluss.
+- Angrenzende gezielte Nachweise: Bereichsvertrag22/22, Quellenpflicht29/29,
+  Kandidatenzeit36/36, Helmut-UI120/120, Current-State91/91. Der letzte Test hatte
+  einen veralteten VM-Ausschnitt ohne `hstandCurrentQuiet`; auf den vorhandenen
+  vollständigen Client-Testloader umgestellt, Zusicherungen unverändert.
+- Chromium zeigt denselben Kundenauftrag bei1280,390 und360px, mit ausklappbarem
+  Originalsatz und exakt gebundener Artikel-URL, ohne Leerkarte/Überlauf oder
+  vorgetäuschten Büroentwurf. Erster Browserstart scheiterte am Sandbox-Socket;
+  der lokale Browsernachweis gelang anschließend mit erlaubtem Prozessstart.
+  Keine externe Navigation. Isolierter Builder/Renderer, kein eingeloggter
+  Productionnachweis; deshalb kein gespeicherter Erstellungsbeleg für diese neue
+  Ausgabe. Der ältere Quellenstand bleibt sichtbar als „Nicht aktuell“.
+- Lokale Integration von Runtime `c2f84ba0` mit PR1115 `f82fc561`:
+  Baum `f4e5c4d89113cff198e7ac4bc3e7c1597525e652`. Einziger Konflikt waren die
+  beiden `deploymentEnabled`-Einträge; beide `false` erhalten. Quellenstatus
+  unverändert erhalten; zusammengeführte CURRENT_STATE350 Zeilen/29.948 Zeichen.
+  Keine gemeinsamen Runtime-Dateien. Kein Integrationsbranch gepusht.
+- Im integrierten Replay läuft zusätzlich der unveränderte native
+  `getPruefSourcesByVorgaenge`-Funktionskörper mit gespeicherten PostgREST-Antworten
+  statt Transport. Projektion/Artikelkontextleser, Quellenprüfung, Builder und
+  Renderer bleiben echt. Kundenzustand und Bilanz sind identisch zum Einzelbranch.
+  Keine Wiederholung erfolgreicher Quellensprint-Suiten.
+- Private HTML-Ausgabe, Desktop-/Mobilbilder, Eingabe-/Ausgabe-Hashes und Logs:
+  `/workspace/briefing-evidence-20261109/`. Keine Originalkopien oder Profile in Git.
+- Pushaudit: eigener Branch löst keinen Live-/Originalworkflow aus; beim PR nur
+  reguläre CI. Preview explizit deaktiviert. Reguläre Pflicht-CI wird nach Push
+  im PR belegt; kein manueller Zusatzlauf, kein Modelltest.
+
+Konkrete Freigabevorlage: erst beide erforderlichen Checks auf dem abschließenden
+PR-Kopf abnehmen, dann den Briefing-PR separat zum Merge vorlegen. Bei verändertem
+Kopf von PR1115 die tatsächlich abweichende Schnittstelle erneut gezielt prüfen;
+beim späteren Zusammenführen beide Deployment-Sperren bewahren. Der lokale
+Integrationsbefund ist keine Zustimmung des parallelen Bearbeiters.
+Der Briefingfix ist unabhängig vom blockierten NDR-Abruf und braucht keine
+Quellenflags, Migration oder Envänderung. Ein Productionrollout ist ein eigener
+Auftrag auf den dann geprüften Mergecommit; er übernimmt keine Aktivierung aus
+PR1115 und startet keine manuelle Verarbeitung.
 Production ist unverändert. Ein späterer Rollout wirkt erst im regulären
 Morgenlauf auf das neu gespeicherte Briefing; bestehende Briefings werden nicht
 manuell ersetzt. Abschließend sind die gespeicherte Ausgabe, ihr Originalbezug
