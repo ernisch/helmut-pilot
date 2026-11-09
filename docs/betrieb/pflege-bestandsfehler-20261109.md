@@ -101,3 +101,23 @@ Diese Neutralisierung behebt die falsche Negation, ist aber noch keine
 vollstaendige Darstellung von Gesetz und Massnahmen. Dafuer ist zuerst ein
 zugeordnet belegter Originalabsatz erforderlich. Kein weiterer Abruf ist zur
 hier vorbereiteten Neutralisierung noetig.
+
+## Freigegebene Bereitstellung: notwendige historische Testbindung
+
+Der spaetere Betreiberauftrag erlaubt PR, Merge/Rollout und exakt die
+vorbereitete Einzelkorrektur. CI42558354952 auf2f9eaacc bleibt FAILURE:
+Standard189/189 bestanden, Bereich346/348, Z22 danach nicht ausgefuehrt.
+Die zwei alten Prosa-Einzelversuche binden synthetische Prompts an feste
+historische Hashs, bauten diese aber aus dem heutigen Generator. Die zwei
+neuen Regeln veraendern erwartungsgemaess die Bytes: PROSA_PROMPT sperrt korrekt.
+
+Nur ihre Offline-Tests verwenden nun die alten synthetischen Prompts als
+hashgebundene Fixture. Sie wurden mit dem Generator vor dieser Aenderung
+(main954358fe) rekonstruiert und gegen saemtliche unveraenderten bestehenden
+PROMPTS-Hashes geprueft; identische Cluster werden ebenfalls verlangt.
+Der echte alte Aufrufer und seine Hash-/Schema-/Kosten-/Ausfuehrungssperren
+bleiben unveraendert. Neue Gegenprobe: der heutige Generator muss am echten
+Aufrufer weiterhin mit PROSA_PROMPT scheitern. Kein Umschreiben der alten Hashs.
+Gezielt13/13 und14/14 Schutzgruppen bestanden, ausschliesslich Attrappen.
+Das sind historische synthetische Prosa-Testprompts, keine nachgewiesene
+historische Modelleingabe des Pflegefalls. Neuer Endcommit braucht eigene CI.
