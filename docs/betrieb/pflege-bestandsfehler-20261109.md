@@ -1,8 +1,9 @@
-# Pflegefall hib1231768: Befund und vorbereitete Korrektur
+# Pflegefall hib1231768: Befund, Korrektur und Abschluss
 
-09.11.2026 UTC, Basis main954358fe nach PR1104. Ausschliesslich dieser Fall;
-alle Datenbankabfragen in expliziten READ-ONLY-Transaktionen. Keine Modelle,
-Originalabrufe, Verarbeitung, Aktivierungen, Produktivwrites, Merges oder Deployments.
+09.11.2026 UTC, Ausgangsbefund auf main954358fe nach PR1104. Die folgenden
+Vorbereitungsabschnitte sind historisch; der spaeter ausdruecklich freigegebene
+Merge, Rollout und einzelne Bestandswrite sind im Abschluss unten belegt.
+Keine Modelle, Originalabrufe, manuelle Verarbeitung oder Aktivierungen.
 
 ## Belegte gespeicherte Zustaende
 
@@ -121,3 +122,65 @@ Aufrufer weiterhin mit PROSA_PROMPT scheitern. Kein Umschreiben der alten Hashs.
 Gezielt13/13 und14/14 Schutzgruppen bestanden, ausschliesslich Attrappen.
 Das sind historische synthetische Prosa-Testprompts, keine nachgewiesene
 historische Modelleingabe des Pflegefalls. Neuer Endcommit braucht eigene CI.
+
+## Tatsaechlicher Abschluss am09.11.2026 UTC
+
+**Der begrenzte Pflegeauftrag ist abgeschlossen.** Die allgemeine Quellenluecke
+ist damit nicht geschlossen. Der Betreiber hat PR, Merge, regulaeren Rollout
+und exakt die vorbereitete einzelne Satzentfernung ausdruecklich freigegeben.
+
+- [PR1110](https://github.com/ernisch/helmut-pilot/pull/1110) mit geprueftem
+  Endkopf `d4296a5dc3c85138c9e59167ede70997fc8fa2d0` auf frischem main954358fe
+  konfliktfrei gemergt: `7d005279eb5cad89ac37c61f13c81a42290e0c28`.
+  Runtime-Diff gegen den urspruenglichen lokalen Fix bbed30e6 ist leer.
+  Zusaetzlich nur notwendige historische Offline-Testbindung und die Sperre
+  fuer unbestellte Preview-Deployments des eigenen Branches.
+- Native Endcommit-CI [42561818313](https://github.com/ernisch/helmut-pilot/actions/runs/42561818313):
+  beide Pflichtchecks SUCCESS, Standard189/189, Bereich348/348,
+  Z22 gegen isoliertes PostgreSQL/PostgREST48/48. Browserlauf und gesonderter
+  Mock100-Lauf nach unveraendertem Pruefplan SKIP, keine Browserabnahme behauptet.
+  Quellenvertrag12/12, historische Prosa-Schutzgruppen13/13 und14/14 gezielt
+  lokal bestanden. Der erste CI-Fehllauf oben bleibt als solcher erhalten.
+- Vercel Production `dpl_3y8Am7iXcYnzbReKxmSiHGrREqTP` READY, Git-SHA exakt7d005279,
+  regulaere drei main-Aliase zugewiesen, aliasError null. Rein lesendes
+  `/api/release/public`: ok/ready/storage true; Homepage liefert
+  client.js und styles.css mit Version7d005279. 71 Env-Eintraege einschliesslich
+  Metadaten/verschleierter Werte exakt gegen frischen Vorherstand gleich;
+  keine Nachladeaktivierung, Budget- oder Profilaenderung.
+- Die Einzelvorlage wurde einmal atomar im Zeitfenster04:27:36–04:27:43UTC
+  angewendet: ausschliesslich `knowledge_objects.display_summary` der gebundenen
+  KO-Zeile. Exakter Vorwert, komplette Zeilenpruefsumme, URL, Version/Zeitstempel
+  und freie fertige Reservierung wurden unter Zeilensperren geprueft. Eine Zeile,
+  ein Feld; native Vorher/Nachher-JSONs ohne dieses Feld identisch.
+  Version1, updated_at, Fencing und Reservierung blieben unveraendert.
+  Keine Gesetzes-/Massnahmendetails hinzugefuegt. Kein anderer Datensatz geschrieben.
+- Vertrauliche Sicherung und bedingtes Rueckweg-SQL ausserhalb Git im
+  geschuetzten Arbeitsbereich `helmut-pflegeabschluss-20261109` (Verzeichnis0700,
+  Dateien0600). SHA256 Vorher:
+  `0ca00e25229c8f7f8ca71271329353296c66c8082a958bf21e0ef48fe3d55aed`;
+  Nachher: `72256ced4b186c6653cf169953a88c49259562a17cb609eb143e287c8341bd2f`;
+  Rueckweg: `43049800ae99962efd134e840a93684ecf3cabc8245157663444eab3b1b415d2`.
+  Rueckweg nicht ausgefuehrt; er verlangt weiterhin exakt den eigenen Nachwert
+  und unveraenderten Zielzustand. Code-Rueckweg: vorheriges READY954358fe
+  (`dpl_6JBuyondmCVcs5TKs58jLLQKZACu`) nach dann gueltiger Betriebsfreigabe.
+- Nach Rollout separat READ ONLY nachgelesen: korrigierter KO-MD5
+  `484f4b5da7bad475e7cad30a8945e868`, Reservierungs-MD5 unveraendert
+  `e413991eba2928e1bb93866996a26aff`. Null alte Saetze in gespeicherten Briefings
+  und den drei relevanten Legacy-Anzeigefeldern. Vier zuvor gebundene Briefings
+  enthielten die Negation bereits vor dem Eingriff nicht; keine Cachemutation.
+  Bestehende reine Lage-/Detailkarten- und Radar-Projektionen mit tatsaechlich
+  nachgelesenem KO und Rohdokument uebernehmen die korrigierte Kurzfassung.
+  Keine authentifizierte Live-Browserabnahme behauptet; generierende Endpunkte
+  wurden nicht aufgerufen.
+
+Offen bleiben der fehlende gebundene Originalabsatz zu Gesetz/Massnahmen,
+der nicht gesicherte historische Prompt und die Modellbefolgung der neuen
+Anweisung. Offline-Pruefungen beweisen Regeln/Eingabebindung, keine echte
+Modellantwort. Die Bestandskorrektur entfernt nur die falsche Negation.
+Naechster fachlicher Schritt waere die gesonderte Pruefung eines gebundenen
+Originalabsatzes; in diesem Auftrag kein weiterer Originalabruf.
+
+Der anschliessende reine Dokumentationsabschluss aktualisiert nur diesen Bericht,
+CURRENT_STATE und den Ausfuehrungsstatus der Einzelvorlage. Sein eigener Merge-
+und Deploymentstatus wird gemaess CLAUDE.md aus Git/Vercel-Historie belegt,
+ohne rekursiven Dokumentations-PR.
