@@ -1419,8 +1419,14 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
     check("Funktionslimit unveraendert (maxDuration 300)", vercel.functions["api/index.js"].maxDuration === 300);
 
     const serverSrc = lies("server.js");
-    check("Zeitbudget der Crawl-/Pipeline-Crons unveraendert (270 000 ms)",
-      (serverSrc.match(/deadlineMs: 270000/g) || []).length === 2);
+    const fensterWrapper = serverSrc.slice(serverSrc.indexOf("async function runQuellenArbeitsfenster("),
+      serverSrc.indexOf("async function runCronUeberWarteschlange("));
+    check("Alt-Crawl/Pipeline und ausschliesslicher Quellenfensterpfad bleiben bei270s",
+      (serverSrc.match(/deadlineMs: 270000/g) || []).length === 3
+      && (serverSrc.match(/cronSchwererPfad\("(?:crawl|pipeline)", \{ deadlineMs: 270000/g) || []).length === 2
+      && /quellenArbeitsfenster\.fuehreAus/.test(fensterWrapper)
+      && /deadlineMs: 270000, runId, startedMs: startMs, arbeitsfenster: freigabe/.test(fensterWrapper)
+      && /Math\.max\(1, startMs \+ 280000 - Date\.now\(\)\)/.test(fensterWrapper));
     check("Zeitbudget der Briefing-/Lage-Crons unveraendert (240 000 ms)",
       (serverSrc.match(/deadlineMs: 240000/g) || []).length === 3);
     check("Aeussere Zeitgrenzen unveraendert (280 000 ms)", (serverSrc.match(/280000/g) || []).length >= 3);
@@ -1515,7 +1521,8 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       const fairnessSrc = fs.readFileSync(path.join(ROOT, "lib", "helmut", "cron-fairness.js"), "utf8");
       // (a) `withTimeout` ist ein Promise.race — es BEENDET die urspruengliche Promise nicht.
       check("Ursache 1: withTimeout ist ein Promise.race und beendet die Promise nicht",
-        /function withTimeout\(promise, maxMs, label = "operation"\) \{\s*\n\s*return Promise\.race\(\[/.test(serverSrc));
+        /function withTimeout\(promise, maxMs, label = "operation"\) \{\s*let timer;\s*return Promise\.race\(\[/.test(serverSrc)
+        && /\]\)\.finally\(\(\) => clearTimeout\(timer\)\);/.test(serverSrc));
       // (b) Die innere Deadline ist ein START-Gatter, kein STOPP-Gatter — deshalb reichen
       //     10 s Differenz nicht. Belegt am Verhalten, nicht an einer Behauptung:
       const uhr = makeUhr();
@@ -1923,12 +1930,17 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       // Kapazitaetssprint 2026-08-31: EIN drittes Deadline-Vorkommen an derselben
       // 280-s-Grenze (`rueckstandStartMs + 280000` in /api/cron/understanding-rueckstand)
       // — bewusst identisch zum Frischlauf, keine neue und keine erhoehte Grenze.
-      check("Kein neues/erhoehtes Zeitlimit: vier 280 000-ms-Grenzen + drei Deadline-Bezuege",
-        (serverSrc.match(/280000/g) || []).length === 7
-        && (serverSrc.match(/\+ 280000/g) || []).length === 3,
+      // Der ausschliessliche Quellenfensterwrapper verwendet dieselbe absolute
+      // 280-s-Grenze; die vier Altgrenzen und drei Altbezugspunkte bleiben.
+      check("Vier Altgrenzen plus vier absolute280s-Bezuege einschliesslich Quellenfenster",
+        (serverSrc.match(/280000/g) || []).length === 8
+        && (serverSrc.match(/\+ 280000/g) || []).length === 4
+        && /Math\.max\(1, startMs \+ 280000 - Date\.now\(\)\)/.test(serverSrc),
         String((serverSrc.match(/280000/g) || []).length));
       check("Kein neues Zeitbudget: 270 000 / 240 000 ms bleiben unveraendert",
-        (serverSrc.match(/deadlineMs: 270000/g) || []).length === 2
+        (serverSrc.match(/deadlineMs: 270000/g) || []).length === 3
+        && (serverSrc.match(/cronSchwererPfad\("(?:crawl|pipeline)", \{ deadlineMs: 270000/g) || []).length === 2
+        && /deadlineMs: 270000, runId, startedMs: startMs, arbeitsfenster: freigabe/.test(serverSrc)
         && (serverSrc.match(/deadlineMs: 240000/g) || []).length === 3);
       // Die Schemaversion MUSS erhoeht sein, sonst loescht ein alter Codestand den Bereich.
       check("Version 3 schuetzt die 500er Laufplanung vor aelteren Schreibern",

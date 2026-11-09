@@ -598,8 +598,9 @@ Die positive Teststrecke ist strukturell vollständig; `qualitaetBestanden=false
 und Modellantworten belegen Verträge, nicht echte Modellbefolgung, politische Richtigkeit
 oder 30Artikel-Kapazität unter1USD. Keine Mock100/Mock500- oder Lasttestwiederholung.
 Unabhängiger Review behob JSONB-Hash-, Default-aus-IO-, Altfenster- und Teilpaketbefunde;
-kein bekannter offener P1/P2 im lokalen Stand. Endcommit-Pflichtchecks und nativer
-SQL-Nachweis werden ausschließlich nach dem wirklichen CI-Ergebnis im PR gebunden.
+kein bekannter offener P1/P2 im damaligen lokalen Stand. Der anschließende breite
+CI-Erstlauf deckte den unten genannten Importgraphfehler auf. Endcommit-Pflichtchecks
+werden ausschließlich nach dem wirklichen CI-Ergebnis im PR gebunden.
 
 ### Enger Datenbankanschluss für lange Texte
 
@@ -615,9 +616,29 @@ keine Browserrollenfreigabe, kein neuer Dienst und keine neue Tabelle.
 Der echte SQL-/PostgREST-Nachweis ist in den bestehenden Kontoschutz-Pflichtnachweis
 eingebunden (gleiche isolierte PG17-/PostgREST-Instanz, keine neue Testinfrastruktur).
 Er prüft acht Gruppen einschließlich großer Vorwerte, konkurrierender Writer,
-Rollenrechten und datenbewahrendem Rollback. Lokal ist dieser native Nachweis wegen
-fehlendem PostgreSQL noch nicht ausgeführt; vor Freigabe ist seine reguläre CI
-abzuwarten. Nur Organisation/Syntax sind bisher bestätigt, kein SQL-PASS erfunden.
+Rollenrechten und datenbewahrendem Rollback. Lokal fehlt PostgreSQL; der tatsächliche
+native Nachweis bestand im regulären CI-Erstlauf42669728152 auf a6729cf1 mit8/8PASS.
+Das ersetzt keinen grünen Endcommit: Derselbe Lauf scheiterte später in der
+Bereichsregression; Z22 wurde deshalb nicht ausgeführt. Vor Freigabe muss die reguläre
+Pflicht-CI des korrigierten Endkopfs vollständig bestehen.
+
+### CI-Erstbefunde und gezielte Korrektur
+
+Pflichtlauf42669728152 auf `a6729cf1a9453c811d2ad0766c93cf82595753da`:
+BrowserSUCCESS, Standard189/189, Raw-document-CAS8/8 im vorhandenen PostgreSQL17-/
+PostgREST-Harness. Bereich356/361, LaufFAILURE; Z22 danachübersprungen, keinPASS.
+Eine echte Architekturverletzung waren lesende Importe auf schreibende Orchestrierung:
+`storage → quellen-inhaltsversorgung-anschluss → scheduler → crawler → pardok-dispatch`
+und `storage → quellen-arbeitsfenster → scalable-pipeline → scheduler → crawler`.
+Standvergleich und reines Fensterflag sind ohne Änderung des Schutztests in reine
+Hilfen ausgegliedert; Leser erreichen keine Abrufparser mehr (Schutztest13/13PASS). Vier weitere betroffene Testdateien zählen
+alte Quelltextvorkommen oder erwarten alte Optionsformen (`cron-fairness`,
+`cron-globalphase`, `pipeline-zeitbudget`, `tenant-narrativ`). Ihre Invarianten zu
+270/280Sekunden, Phasentrennung und Mandatsbindung bleiben bestehen; der zusätzliche
+Fensterpfad wird ausdrücklich mitgeprüft. Gezielte Nachprüfung: Cronfairness288/288,
+globalePhase194/194, Pipelinezeitbudget22/22, Tenantnarrativ92/92PASS. Keine Pflichtprüfung wird übersprungen
+oder künstlich grün gesetzt. Korrigierter Endkopf, Review, gezielte Prüfergebnisse und
+abschließende Pflicht-CI werden ohne weiteren Nummerncommit im PR gebunden.
 
 ### Einzige Konfigurationsvorlage
 
@@ -695,7 +716,9 @@ immutablePlanrest, Rohversionen/großePOST-CAS, Abschnittsverarbeitung, Morgenfe
 globaleTageslimits sowie Versorgungsstatus bis gespeichertem persönlichem Briefing.
 Astra, Quellenfortsetzung, Vertragsbindung und SQL-Helfer sind nach ihren gezielten
 Prüfungen eingefroren. Unabhängiger Review hat die konkreten Befunde geprüft;
-Endcommit-CI/nativeSQL bleiben gesonderte verpflichtende Nachweise.
+Der erste native Raw-CAS-Nachweis ist8/8PASS; der erste Gesamt-CI-Lauf scheiterte
+an einem Readerimport und vier statischen Testverträgen. Korrektur und Endcommit-CI
+bleiben gesondert verbindlich und werden mit ihrem tatsächlichen Ergebnis im PR gebunden.
 
 Nächste Arbeit im selben Auftrag: finalen Push nach Triggeraudit, reguläre Pflicht-CI
 abwarten, tatsächliche Fehler gezielt beheben, Head/main/Checkzuordnung/Produktionsstand
