@@ -1,6 +1,6 @@
 {
   "parentNetNS": "net:[4026531833]",
-  "testNetNS": "net:[4026532218]",
+  "testNetNS": "net:[4026532219]",
   "interfaces": [
     "lo"
   ],
@@ -10,7 +10,7 @@
   "ipv6ProbeErrno": 99,
   "ipv6RejectSentinels": 2,
   "verifiedBeforeAppStart": true,
-  "verifiedAtUtc": "2026-11-09T05:24:37.400731+00:00",
+  "verifiedAtUtc": "2026-11-09T07:52:56.721204+00:00",
   "networkDevicesBefore": "Inter-|   Receive                                                |  Transmit\n face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed\n    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0\n",
   "completedScripts": [
     {

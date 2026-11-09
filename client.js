@@ -7758,6 +7758,9 @@ function officeSourceDateLabel(iso) {
 // dedupliziert, nur oeffnende Artikel-URLs; ohne oeffnende Quelle ein ehrlicher
 // Hinweis statt einer leeren Behauptung.
 function renderOfficeDraftSources(sourceList) {
+  const sourceLabel = sourceList.length
+    ? `Quellen dieses Entwurfs. Basiert auf ${sourceList.length} ${sourceList.length === 1 ? "Quelle" : "Quellen"}.`
+    : "Quellen dieses Entwurfs";
   const rows = sourceList.map((s) => {
     const dateLabel = officeSourceDateLabel(s.publishedAt);
     return `
@@ -7771,7 +7774,7 @@ function renderOfficeDraftSources(sourceList) {
       </li>`;
   }).join("");
   return `
-    <section class="buero-detail-sources" aria-label="Quellen dieses Entwurfs">
+    <section class="buero-detail-sources" aria-label="${escapeAttribute(sourceLabel)}">
       <h2 class="buero-sources-title">Quellen (${sourceList.length})</h2>
       ${sourceList.length
         ? `<ul class="buero-sources-list">${rows}</ul>`

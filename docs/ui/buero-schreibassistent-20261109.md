@@ -99,3 +99,27 @@ Drei-Profil-Anschlussprüfung ist kein erneuter Mock100-Lauf.
 Offen bleibt die fachliche Qualität realer generierter Texte im späteren Betrieb;
 gemockte Antworten belegen keine Modellbefolgung. Merge, Production-Deployment,
 Produktionsdaten- und Flagänderungen sind in diesem Auftrag nicht freigegeben.
+
+
+## CI-Integration mit aktuellem main (09.11.2026)
+
+Merge `013c5fb99cb3febf5b7fe7bb36670384739f4deb` integriert main
+`03d1fc28b6bc2fabd185dc83a3ce63d93821f209` ohne Konflikte und ohne
+Historienumschreibung. Die Quellenkorrekturen aus PR #1110/#1112 sind bytegleich
+erhalten; die weitere Quellenarbeit PR1113 blieb zum Integrationszeitpunkt offen.
+Bürointegration 53/53 und der neue reguläre Versuch1 sind bestätigt.
+
+CI 42579177776 besteht Werkzeugdownload, kleine Anschlussprobe, Browsercheck
+und vorgeschaltete Datenbanknachweise. Die Standardsuite endet mit 188/189:
+Der Quellenfalltest erwartet die ausgeschriebene Anzahl „Basiert auf 1 Quelle“.
+Die Quellenregion erhält diese korrekte, deduplizierte Zahl in ihrer vorhandenen
+barrierefreien Beschriftung (Singular/Plural); ohne Quelle wird keine Basis behauptet.
+Die sichtbare Oberfläche bleibt gleich. Keine Testassertion, Pflichtprüfung,
+Workflowauswahl oder Mock100-Schutzbindung wurde dafür geändert.
+
+Danach gezielt 28/28 Quellenfälle und 58/58 Quellenpflichtvertragsprüfungen
+bestanden. Der isolierte Büro-Browsernachweis ist auf dem geänderten Client
+mit 191/191 erneut erstellt und per SHA256 gebunden; ältere Screenshots
+illustrieren weiterhin die unveränderte sichtbare Darstellung. Der abschließende
+reguläre PR-Lauf wird auf dem folgenden tatsächlichen Fehlerfix ausgewertet,
+kein alter Job wiederholt.
