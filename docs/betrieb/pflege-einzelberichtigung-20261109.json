@@ -1,0 +1,18 @@
+{
+  "status": "VORBEREITET_NICHT_AUSFUEHREN",
+  "scope": "Nur unbelegte Negation aus einer gespeicherten Kurzfassung entfernen; kein vollstaendiger Artikelersatz",
+  "id": "ko-vg-niedrigschwellige-20261106-431ce2",
+  "field": "display_summary",
+  "expectedVersion": 1,
+  "expectedUpdatedAt": "2026-11-07T04:02:51.331+00:00",
+  "expectedValue": "In der Bundestagsantwort hebt die Bundesregierung hervor, dass Nachbarn, Ehrenamtliche und familiäre Netzwerke einen wichtigen Beitrag zur Sicherung pflegerischer Versorgung leisten. Es wird keine konkrete Gesetzesinitiative oder Maßnahme genannt.",
+  "candidate": "In der Bundestagsantwort hebt die Bundesregierung hervor, dass Nachbarn, Ehrenamtliche und familiäre Netzwerke einen wichtigen Beitrag zur Sicherung pflegerischer Versorgung leisten.",
+  "reservation": {"state": "fertig", "fencing": 1, "resultFencing": 1, "lease": null},
+  "modelCalls": 0,
+  "originalFetches": 0,
+  "rawDocumentChanges": 0,
+  "profileChanges": 0,
+  "activation": false,
+  "requires": "Separate konkrete Schreibfreigabe; vorhandenen Redaktionsweg fuer Version/Cache pruefen; Vorwert atomar vergleichen; bei Abweichung abbrechen",
+  "remainingGap": "Kein gesicherter Originalabsatz fuer Pflegeneuordnungsgesetz und konkrete Massnahmen in den hier geprueften Belegen"
+}
