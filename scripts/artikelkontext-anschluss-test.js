@@ -7,7 +7,8 @@ const U = require("../lib/helmut/understanding");
 const L = require("../lib/helmut/artikelkontext-lauf");
 const V = require("../lib/helmut/verstehen-vertrag");
 const { laufBilanz } = require("../lib/helmut/lauf-bilanz");
-const env = { HELMUT_ARTIKELKONTEXT: "on", HELMUT_ANBIETER_STEUERUNG: "on" };
+const env = { HELMUT_ARTIKELKONTEXT: "on", HELMUT_ANBIETER_STEUERUNG: "on",
+  HELMUT_SUCHWEGAUSZUEGE_HOSTS: "example.org" };
 const doc = { id: "rd-synthetisch", title: "Bahnkonferenz: Neue Strecken nach Neustadt",
   summary: "Die Bahnkonferenz sollte neue Verbindungen ermoeglichen.",
   url: "https://example.org/politik/bahnkonferenz", canonical_url: "https://example.org/politik/bahnkonferenz",
@@ -21,6 +22,20 @@ function antwort(d) {
   const data = { "@type": "NewsArticle", headline: d.title, mainEntityOfPage: d.url, articleBody: d.summary + " " + text };
   return { finalUrl: d.url, body: `<html><head><link rel="canonical" href="${d.url}"><meta property="og:title" content="${d.title}">`
     + `<script type="application/ld+json">${JSON.stringify(data)}</script></head><body><article><p>${d.summary}</p><p>${text}</p></article></body></html>` };
+}
+function gespeicherterEinstieg(d = doc) {
+  const gelesenAm = "2026-09-17T20:00:00.000Z";
+  const data = { "@type": "NewsArticle", headline: d.title, url: d.url,
+    datePublished: d.published_at, articleBody: text };
+  const body = `<head><link rel="canonical" href="${d.url}"><meta property="og:title" content="${d.title}">`
+    + `<script type="application/ld+json">${JSON.stringify(data)}</script></head><body><article><p>${text}</p></article></body>`;
+  const result = require("../lib/helmut/artikelkontext-gewinnung").gewinneArtikelEinstieg(d,
+    { finalUrl: d.url, body, gelesenAm });
+  assert.equal(result.ok, true, result.reason);
+  const key = crypto.createHash("sha256").update(JSON.stringify(["artikelkontext-einstieg-v2", d.id,
+    require("../lib/helmut/artikelkontext").quellenstandHash(d)])).digest("hex");
+  return [key, { version: 1, schluessel: key, versuchId: crypto.randomUUID(),
+    reserviertAm: gelesenAm, abgeschlossenAm: gelesenAm, zustand: "belegt", beleg: result.beleg }];
 }
 function stand(dokumente = [doc]) {
   const p = { rows: new Map(), abrufe: [], reads: 0, writes: 0, prompts: [], hashes: [], budget: 0, marker: [], pending: [], links: [], kos: [] };
@@ -98,8 +113,76 @@ test("Wiederaufnahme liest denselben Beleg; Uhrwechsel erzeugt weder neuen Abruf
   const s = stand(); await run(s);
   s.beschaffung.now = () => new Date("2027-01-01T00:00:00.000Z");
   await run(s);
-  assert.equal(s.p.abrufe.length, 1); assert.equal(s.p.writes, 2); assert.equal(s.p.reads, 4);
+  assert.equal(s.p.abrufe.length, 1); assert.equal(s.p.writes, 2); assert.equal(s.p.reads, 5);
   assert.equal(s.p.prompts[0], s.p.prompts[1]); assert.equal(s.p.hashes[0], s.p.hashes[1]);
+});
+test("Eagereinstieg sperrt neue Abrufe ohne exakte gueltige Hostfreigabe", async () => {
+  for (const hosts of [undefined, "", "other.example.org", "www.example.org", "*.example.org",
+    "https://example.org", "example.org,*.example.org"]) {
+    const s = stand();
+    const result = await U.runUnderstandingShadow([doc], s.lauf({}, { ...env, HELMUT_SUCHWEGAUSZUEGE_HOSTS: hosts }));
+    assert.equal(result.counts["skipped-artikelkontext"], 1, String(hosts));
+    assert.equal(s.p.abrufe.length, 0, String(hosts)); assert.equal(s.p.writes, 0, String(hosts));
+    assert.equal(s.p.prompts.length, 0, String(hosts)); assert.equal(s.p.budget, 0, String(hosts));
+    assert.equal(s.p.rows.size, 0, String(hosts));
+  }
+});
+test("Aufrufermutation waehrend Cachelesen kann keinen fremden Abrufhost freigeben", async () => {
+  const fremd = { ...doc, url: "https://other.example.org/politik/bahnkonferenz",
+    canonical_url: "https://other.example.org/politik/bahnkonferenz" };
+  const s = stand([fremd]);
+  s.beschaffung.speicher.lesen = async () => {
+    s.p.reads++; fremd.url = doc.url; fremd.canonical_url = doc.canonical_url; return null;
+  };
+  const result = await s.lauf().artikelkontextVersorgung([fremd], { cas: true });
+  assert.equal(s.p.reads, 2); assert.equal(result.reason, "herausgeber-nicht-freigegeben");
+  assert.equal(s.p.abrufe.length, 0); assert.equal(s.p.writes, 0); assert.equal(s.p.rows.size, 0);
+});
+test("Bestaetigter Beleg bleibt nach Ruecknahme der Hostfreigabe rein lesend nutzbar", async () => {
+  const s = stand(); await run(s);
+  const before = { abrufe: s.p.abrufe.length, writes: s.p.writes, rows: structuredClone(s.p.rows) };
+  const result = await U.understandOneCluster({ documents: [doc] },
+    s.lauf({}, { HELMUT_ARTIKELKONTEXT: "on" }), { vorgangId: "vg-test", existing: null });
+  assert.equal(result.status, "saved");
+  assert.equal(s.p.abrufe.length, before.abrufe); assert.equal(s.p.writes, before.writes);
+  assert.deepEqual(s.p.rows, before.rows); assert.equal(s.p.prompts[0], s.p.prompts[1]);
+});
+test("Gespeicherter v2-Einstieg erreicht echten Eagerprompt ohne erneuten Abruf", async () => {
+  const d = require("../lib/helmut/dedup").toRawDocumentRow(doc);
+  const s = stand([d]), [key, belegstand] = gespeicherterEinstieg(d);
+  s.p.rows.set(key, belegstand);
+  const result = await U.runUnderstandingShadow([d], s.lauf());
+  assert.equal(result.counts.saved, 1, JSON.stringify(result));
+  assert.equal(rows(s.p.prompts[0])[0].artikelkontext.gewinnung.verfahren, "artikel-einstieg-v2");
+  assert.equal(rows(s.p.prompts[0])[0].artikelkontext.text, text);
+  assert.equal(s.p.abrufe.length, 0); assert.equal(s.p.writes, 0); assert.equal(s.p.rows.size, 1);
+});
+test("Offener, fehlgeschlagener oder kaputter v2-Stand wird nicht ueber v1 erneut abgerufen", async () => {
+  for (const zustand of ["reserviert", "luecke", "kaputt"]) {
+    const d = require("../lib/helmut/dedup").toRawDocumentRow(doc);
+    const s = stand([d]), [key, belegt] = gespeicherterEinstieg(d);
+    const { beleg, abgeschlossenAm, ...reservation } = belegt;
+    const gespeichert = zustand === "reserviert" ? { ...reservation, zustand }
+      : zustand === "luecke" ? { ...reservation, zustand, abgeschlossenAm, reason: "http-status" }
+        : { ...belegt, beleg: { ...beleg, text: "Manipuliert" } };
+    s.p.rows.set(key, gespeichert);
+    const result = await U.runUnderstandingShadow([d], s.lauf());
+    assert.equal(result.counts["skipped-artikelkontext"], 1, zustand);
+    assert.equal(s.p.abrufe.length, 0, zustand); assert.equal(s.p.writes, 0, zustand);
+    assert.equal(s.p.prompts.length, 0, zustand); assert.equal(s.p.rows.size, 1, zustand);
+  }
+});
+test("Fertiger v1-Beleg behaelt Vorrang; alte v1-Luecke bleibt bei fehlendem v2 gesperrt", async () => {
+  const s = stand(); await run(s);
+  const [key, belegstand] = gespeicherterEinstieg(); s.p.rows.set(key, belegstand);
+  const reads = s.p.reads;
+  await run(s);
+  assert.equal(s.p.reads, reads + 1, "Fertiger v1-Beleg benoetigt keinen v2-Lesezugriff");
+  assert.equal(rows(s.p.prompts[1])[0].artikelkontext.gewinnung.verfahren, "artikel-absatz-titel-v1");
+  const offen = stand();
+  offen.beschaffung.fetchUrl = async () => { offen.p.abrufe.push(doc.url); throw Error("isolierter Fehler"); };
+  await run(offen); await run(offen);
+  assert.equal(offen.p.abrufe.length, 1); assert.equal(offen.p.writes, 2); assert.equal(offen.p.prompts.length, 0);
 });
 test("Ein neuer Abruf je Lauf auch parallel; bestaetigter Bestand verbraucht keinen Platz", async () => {
   const other = { ...doc, id: "rd-zweit", url: doc.url + "-zwei", canonical_url: doc.url + "-zwei" };
@@ -266,7 +349,7 @@ test("60 Sekunden erweitern sich nicht; Teilerfolg und noch nicht besuchte Clust
   assert.equal((await s.lauf().artikelkontextVersorgung([doc], { cas: true })).ok, true);
   const short = await U.runUnderstandingShadow([doc], s.lauf({ budgetMs: 60000 }));
   assert.equal(short.counts["skipped-artikelkontext"], 1); assert.equal(s.p.prompts.length, 0);
-  assert.equal(s.p.reads, 3, "Kurzer Lauf beginnt keine zusaetzliche Beleglesung");
+  assert.equal(s.p.reads, 4, "Kurzer Lauf beginnt keine zusaetzliche Beleglesung");
   const job = { id: "isoliert", payload: { dokumente: [doc] }, createdAt: new Date().toISOString() };
   for (const result of [
     { processed: 2, counts: { saved: 1, "skipped-zeitbudget": 1 }, artikelkontextZeitVertagt: 1 },
