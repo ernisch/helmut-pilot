@@ -223,9 +223,9 @@ async function main() {
     assert.equal(teil.inhaltsversorgung.belegt, 2); assert.equal(teil.datenstand.verstanden, 1);
     assert.notEqual(teil.datenstand.status, 'abgeschlossen');
   });
-  await test("Unpassender Originaltext erreicht keinen Modellaufruf", async () => {
+  await test("Begrenzter Artikelanfang bleibt zur fachlichen Modellbewertung offen", async () => {
     const item = raw('unpassend'), w = welt([item]); w.answers.set(item.url, html(item, 'Die Vogelbeobachtung im Nationalpark beginnt mit einer Ausstellung im kommenden Frühjahr.'));
-    const r = await w.run(); assert.equal(r.inhaltsversorgung.zustaende.unpassend, 1); assert.equal(w.prompts.length, 0);
+    const r = await w.run(); assert.equal(r.inhaltsversorgung.belegt, 1); assert.equal(w.prompts.length, 1);
   });
   await test("403 und Metadaten-HTML bleiben Lücken; erneuter Lauf wiederholt den Originalabruf nicht", async () => {
     for (const unavailable of [Object.assign(new Error('HTTP403'), { statusCode: 403 }), fs.readFileSync(path.join(__dirname,'fixtures/quelleninhalt-20261107/dgb-metadaten.html'),'utf8')]) {
@@ -254,10 +254,10 @@ async function main() {
     const r=await w.run({noPaidModel:true}); assert.equal(w.fetches.length,2); assert.equal(r.inhaltsversorgung.grenzen.neueAbrufe,2);
     assert(r.inhaltsversorgung.befund.some(b=>b.reason==='laufgrenze')); assert.equal(w.prompts.length,0);
   });
-  await test("Mehrere Belege in einem Cluster werden vor dem Modell ehrlich zurückgestellt", async () => {
+  await test("Mehrere Belege desselben Clusters erreichen gemeinsam die Modelleingabe", async () => {
     const w=welt([raw('mehrere-a'),raw('mehrere-b')]); const r=await w.run();
-    assert.equal(r.inhaltsversorgung.belegt,2); assert.equal(w.prompts.length,0); assert.equal(r.inhaltsversorgung.artikelkontextZurueckgestellt,1);
-    assert(r.datenstand.fehler.some(f=>f.schritt==='quelleninhalt'));
+    assert.equal(r.inhaltsversorgung.belegt,2); assert.equal(w.prompts.length,1);
+    assert.equal(r.datenstand.verstanden,1);
   });
   await test("Bestehender spezialisierter/generischer Beleg wird ohne weiteren Originalabruf benutzt", async () => {
     const item=raw('bestand','Mindestlohn Verhandlungen für Beschäftigte'),w=welt([item]);
@@ -283,7 +283,8 @@ async function main() {
     const original=w.inhaltsversorgungDeps.leseDokumente;
     w.inhaltsversorgungDeps.leseDokumente=async ids=>{assert.equal(ids.length,200);return original(ids);};
     const r=await w.run({noPaidModel:true}); assert.equal(r.inhaltsversorgung.pool,200);
-    assert.equal(r.inhaltsversorgung.zustaende.vertagt,181); assert.equal(w.fetches.length,2);
+    assert.equal(r.inhaltsversorgung.zustaende.vertagt,1);
+    assert.equal(r.inhaltsversorgung.eingaben,201); assert.equal(w.fetches.length,2);
     assert(r.inhaltsversorgung.befund.some(b=>b.reason==='lesepoolgrenze'));
   });
   await test("Deaktivierte und ausgeschlossene Profile erweitern die Quellensichtbarkeit nicht", async () => {
@@ -315,7 +316,7 @@ async function main() {
     assert(!U.buildUnderstandingPrompt({documents:docs}).includes(actual.id));
     const r=await U.understandOneCluster({documents:docs},{...w.modelDeps,artikelkontextVersorgung:vorbereitet.artikelkontextVersorgung},
       {vorgangId:'vg-promptgrenze',existing:null,vertrag:w.modelDeps.verstehenVertrag(),deadlineMs:w.now()+300000});
-    assert.equal(r.status,'skipped-artikelkontext'); assert.equal(r.reason,'artikelquelle-nicht-im-prompt'); assert.equal(w.prompts.length,0);
+    assert.equal(r.status,'skipped-artikelkontext'); assert.equal(r.reason,'originalinhalt-fehlt'); assert.equal(w.prompts.length,0);
     await w.deps.releaseLock();
   });
   await test("Operator-Quellensperre hat Vorrang vor Hostfreigabe und bereits vorhandenem Originalbeleg", async () => {
@@ -353,6 +354,23 @@ async function main() {
       assert.deepEqual(r.kontextPlan.kontexte[0].mandate, ["test-a", "test-c"]);
       assert.equal(D.toRawDocumentRow(r.kontextPlan.kontexte[0].dokumente[0]).summary, lang);
     }
+  });
+  await test("Gespeicherte Queue-Eingaenge binden heutige gemeinsame und persoenliche Quellen; Tageswiederholung nutzt Cache", async () => {
+    const w = welt([dgb, radio]);
+    await w.deps.acquireLock(S.GLOBALPHASE_LOCK); await w.deps.persistRawDocuments([dgb, radio]);
+    const docs = [...w.canonical.values()];
+    const deps = { ...w.inhaltsversorgungDeps, quellenFuerProfil: w.deps.quellenFuerProfil,
+      request: async endpoint => (await w.inhaltsversorgungDeps.request(endpoint)).map(f => ({ ...f, retrieval_path_id: null })) };
+    const input = { auftrag: { vorbereitet: true, hosts: ["www.dgb.de", "www.radio-hannover.de"] },
+      dokumente: docs, profile: profiles, laufId: "queue-gespeichert", deadlineMs: w.now() + 300000, now: w.now };
+    const first = await Anschluss.vorbereiteGespeicherteInhalte(input, deps);
+    assert.equal(first.bilanz.belegt, 2); assert.equal(w.fetches.length, 2);
+    assert.deepEqual(first.herkunftJeDokument[D.toRawDocumentRow(radio).id], ["test-a"]);
+    const again = await Anschluss.vorbereiteGespeicherteInhalte({ ...input, laufId: "queue-fortsetzung" }, deps);
+    assert.equal(again.bilanz.belegt, 2); assert.equal(w.fetches.length, 2);
+    const closed = await Anschluss.vorbereiteGespeicherteInhalte(input, { ...deps, quellenFuerProfil: async () => [] });
+    assert.equal(closed.dokumente.length, 0); assert.equal(w.fetches.length, 2);
+    await w.deps.releaseLock();
   });
   await test("Widersprechende RSS-Textstaende werden unabhaengig von Reihenfolge und kurzem Zwischenstand gesperrt", async () => {
     const anfang = "Synthetischer RSS-Kontrollsatz: Die Tarifparteien beraten heute gemeinsam über die nächsten Schritte der Verhandlungen.";

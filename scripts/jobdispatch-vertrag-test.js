@@ -849,6 +849,43 @@ async function main() {
     assert.match(String(v.transport.grund), /attrappe-zu/);
   });
 
+  abschnitt("16 · Kommunikationssperre: ausschliesslich expliziter eigener Selbstweck");
+  const SELBST_ENV = { ...BEREIT_ENV, VERCEL_ENV: "production", HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt" };
+  await check("16.1 Vollstaendige explizite Freigabe sendet nur an das gepruefte eigene HTTPS-Ziel", async () => {
+    const w = wachsameDeps();
+    w.deps.fetch = async (url, opts) => {
+      assert.strictEqual(url, WECK_OK); assert.strictEqual(opts.method, "POST");
+      assert.strictEqual(opts.redirect, "error", "Keine Weiterleitung vom geprueften Weckziel");
+      assert.strictEqual(opts.headers.Authorization, `Bearer ${SELBST_ENV.CRON_SECRET}`);
+      assert.deepStrictEqual(JSON.parse(opts.body), { jobId: UUID, schemaVersion: 1 });
+      w.zaehler.netz++; return { ok: true, status: 200 };
+    };
+    const r = await dispatch.versendeAbsichten({ env: SELBST_ENV, deps: w.deps });
+    assert.strictEqual(r.versendet, 1); assert.strictEqual(w.zaehler.netz, 1);
+  });
+  for (const key of ["HELMUT_SCALABLE_PIPELINE", "HELMUT_JOB_DISPATCH_MODE", "HELMUT_JOB_TRANSPORT", "HELMUT_SELBSTWECK_ERLAUBT"]) {
+    await check(`16.2 Fehlendes ${key} laesst die Sperre unveraendert`, async () => {
+      const env = { ...SELBST_ENV, [key]: "" }, w = wachsameDeps();
+      await dispatch.versendeAbsichten({ env, deps: w.deps });
+      assert.strictEqual(w.zaehler.naechste, 0); assert.strictEqual(w.zaehler.netz, 0);
+      assert.strictEqual(dispatch.erstelleTransport(env).verfuegbar, false);
+    });
+  }
+  for (const url of ["https://fremd.example.org/api/cron/worker-weck", WECK_OK.replace("https:", "http:"),
+    WECK_OK + "?ziel=fremd", WECK_OK.replace("worker-weck", "morning-briefing")]) {
+    await check("16.3 Fremdhost/HTTP/Query/falscher Pfad bleibt vor Vergabe gesperrt", async () => {
+      const w = wachsameDeps();
+      await dispatch.versendeAbsichten({ env: { ...SELBST_ENV, HELMUT_WORKER_WAKE_URL: url }, deps: w.deps });
+      assert.strictEqual(w.zaehler.naechste, 0); assert.strictEqual(w.zaehler.netz, 0);
+    });
+  }
+  await check("16.4 Eingereichter fremder Transport umgeht die Selbstweckausnahme nicht", async () => {
+    const w = wachsameDeps();
+    const r = await dispatch.versendeAbsichten({ env: SELBST_ENV, deps: { ...w.deps,
+      transport: { name: "sqs", verfuegbar: true, sende: async () => { throw Error("verboten"); } } } });
+    assert.strictEqual(r.grund, "testfenster-sperrt-alle-aussenkanaele"); assert.strictEqual(w.zaehler.naechste, 0);
+  });
+
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
   process.exit(fail > 0 ? 1 : 0);
 }

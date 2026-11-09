@@ -27,6 +27,14 @@ function fixture() {
     text: "Die Konferenz endete am Montag mit einer gemeinsamen Erklaerung."
   } };
 }
+function mehrere() {
+  const f = fixture(), d = D.toRawDocumentRow({ ...f.cluster.documents[0],
+    title: "Zweite Quelle berichtet ueber die Verkehrskonferenz", url: "https://example.org/politik/zweite-quelle" });
+  f.cluster.documents.push(d);
+  f.belege = [f.beleg, { ...f.beleg, dokumentId: d.id, artikelUrl: d.url, artikelTitel: d.title,
+    quellenHash: A.quellenstandHash(d), text: "Die zweite Quelle berichtet von einer Erklaerung zur Verkehrspolitik." }];
+  return f;
+}
 function pruefstand(overrides = {}) {
   const p = { schritte: [], hashes: [], prompts: [], kos: [], unbekannt: 0 };
   const vertrag = {
@@ -43,6 +51,7 @@ function pruefstand(overrides = {}) {
   const deps = {
     canSpend: async () => { p.schritte.push("budget"); return { allowed: true }; },
     requestUnderstanding: async prompt => { p.schritte.push("modellattrappe"); p.prompts.push(prompt); return { ...ANALYSE }; },
+    getExistingStreng: async id => [...p.kos].reverse().find(ko => ko.vorgang_id === id) || null,
     save: async () => { throw new Error("Unbedingter Speicherweg unerlaubt"); },
     saveSources: async () => {}, markFailed: async () => {}, modelName: () => "isolierte-attrappe", logSkip: () => {},
     findVorgangCandidates: async () => [], listVorgangDocuments: async () => [], ...overrides
@@ -62,6 +71,191 @@ let pass = 0;
 async function test(name, fn) { await fn(); pass++; console.log("PASS " + name); }
 
 async function main() {
+  await test("13 Quellen behalten den ungelesenen Rest und aktualisieren complete mit hoechstens 12 Promptquellen", async () => {
+    const f = fixture();
+    f.cluster.documents = Array.from({ length: 13 }, (_, i) => D.toRawDocumentRow({
+      ...f.cluster.documents[0], url: `https://example.org/konferenz/quelle-${i}`,
+      title: `${ANALYSE.display_title} Quelle ${i}` }));
+    const ids = f.cluster.documents.map(d => d.id), links = [];
+    const s = pruefstand({ runId: "queue-13-quellen", listVorgangDocuments: async () => f.cluster.documents,
+      saveSources: async (_ko, docs) => links.push(...docs.map(d => d.id)) });
+    let reservierterHash, gespeicherterHash;
+    const reserviere = s.vertrag.reserviere, speichere = s.vertrag.speichere;
+    s.vertrag.reserviere = async args => {
+      reservierterHash = args.eingabeHash;
+      if (reservierterHash === gespeicherterHash) return { erlaubt: false, grund: "bereits-fertig" };
+      return reserviere(args);
+    };
+    s.vertrag.speichere = async args => { const result = await speichere(args); gespeicherterHash = reservierterHash; return result; };
+    s.deps.listWiederaufnahmen = async () => { throw new Error("Keine Betreiberfreigabe fuer Queue-Rest"); };
+    const extra = { artikelkontextVersuch: undefined, quellenRestDokumentIds: ids };
+    const first = await run(f, s, extra);
+    assert.equal(first.status, "saved");
+    assert.equal(first.promptDokumentIds.length, 12);
+    assert.deepEqual(first.promptDokumentIds, sources(s.p.prompts[0]).map(q => q.quelle_id));
+    assert.equal(new Set(links).size, 13, "Herkunftsverknuepfung darf nicht als Lektuere aller Quellen gelten");
+    const rest = ids.filter(id => !first.promptDokumentIds.includes(id));
+    assert.equal(rest.length, 1);
+    const existing = { ...s.p.kos[0], status: "active", understanding_status: "complete", ko_version: 1 };
+    const replay = await run(f, s, { ...extra, existing });
+    assert.equal(replay.status, "duplicate"); assert.equal(replay.begruendung, "eingabe-bereits-verstanden");
+    assert.equal(replay.promptBereitsGespeichert, true);
+    assert.deepEqual(replay.promptDokumentIds, first.promptDokumentIds);
+    assert.equal(s.p.prompts.length, 1, "Crash nach KO-Speichern fuehrt nicht zum zweiten Modellaufruf");
+    const next = await run(f, s, { ...extra, existing, quellenRestDokumentIds: rest });
+    assert.equal(next.status, "updated"); assert.equal(next.koVersion, 2);
+    assert.equal(next.promptDokumentIds.length, 12); assert(next.promptDokumentIds.includes(rest[0]));
+    assert.deepEqual(next.promptDokumentIds, sources(s.p.prompts[1]).map(q => q.quelle_id));
+    assert.equal(new Set([...first.promptDokumentIds, ...next.promptDokumentIds]).size, 13);
+    assert.notEqual(s.p.hashes[0], s.p.hashes[1]);
+    const replayNext = await run(f, s, { ...extra, existing: s.p.kos[1], quellenRestDokumentIds: rest });
+    assert.equal(replayNext.promptBereitsGespeichert, true); assert.equal(s.p.prompts.length, 2);
+    // Ein anderer Auftrag mit einer ueberlappenden TEILMENGE hat weder denselben
+    // Job noch dieselbe Resteingabe. Nur der dauerhaft gespeicherte Quellenbeleg traegt.
+    s.deps.runId = "queue-zweiter-auftrag";
+    const teil = { cluster: { documents: f.cluster.documents.slice(2, 6) } };
+    const andererJob = await run(teil, s, { artikelkontextVersuch: undefined, existing: s.p.kos[1],
+      quellenRestDokumentIds: teil.cluster.documents.map(d => d.id) });
+    assert.equal(andererJob.status, "duplicate"); assert.equal(andererJob.promptBereitsGespeichert, true);
+    assert(teil.cluster.documents.every(d => andererJob.promptDokumentIds.includes(d.id)));
+    assert.equal(s.p.prompts.length, 2, "Anderer Queuejob modelliert bestaetigte Quellen nicht erneut");
+    assert.equal(s.p.kos[1].classification_confidence.helmut_quellen_lektuere.quellen.length, 13);
+    assert.equal(f.cluster.quellenRest, undefined, "Queue-Prioritaet mutiert den Eingabecluster nicht");
+  });
+  await test("Queue-Rest ist an aktuelle Dokumente und Auftrag gebunden und behaelt CAS Budget Deadline Endzustand", async () => {
+    const f = fixture(), ids = f.cluster.documents.map(d => d.id);
+    for (const rest of [["rd-fremd"], [...ids, ...ids], "falsch"]) {
+      const s = pruefstand({ runId: "queue-negativ" });
+      await assert.rejects(run(f, s, { quellenRestDokumentIds: rest }), /quellen-restbindung-ungueltig/);
+      assert.deepEqual(s.p.schritte, []);
+    }
+    await assert.rejects(run(f, pruefstand(), { quellenRestDokumentIds: ids }), /quellen-restbindung-ungueltig/);
+    for (const mode of ["cas", "budget", "deadline", "terminal", "unbekannt", "versuchsdeckel", "vormerkung-lesefehler"]) {
+      const s = pruefstand({ runId: "queue-negativ", listVorgangDocuments: async () => f.cluster.documents });
+      const extra = { artikelkontextVersuch: undefined, quellenRestDokumentIds: ids,
+        existing: { id: "ko-" + vorgangId, status: "active", ko_version: 1, understanding_status: "complete" } };
+      s.deps.getExistingStreng = async () => extra.existing;
+      if (mode === "cas") extra.vertrag = null;
+      if (mode === "budget") s.deps.canSpend = async () => ({ allowed: false });
+      if (mode === "deadline") extra.deadlineMs = Date.now() - 1;
+      if (mode === "terminal") extra.existing.understanding_status = "failed-final";
+      if (mode === "unbekannt") s.vertrag.reserviere = async () => ({ erlaubt: false, grund: "ausgang-unbekannt" });
+      if (mode === "versuchsdeckel") s.vertrag.vormerkungLese = async () => ({ verfuegbar: true, vorhanden: true, fehlversuche: 999 });
+      if (mode === "vormerkung-lesefehler") s.vertrag.vormerkungLese = async () => ({ verfuegbar: false });
+      const r = await run(f, s, extra);
+      assert(r.status.startsWith("skipped-"), mode); assert.equal(r.promptDokumentIds, undefined, mode);
+      assert.equal(r.promptBereitsGespeichert, undefined, mode); assert.equal(s.p.prompts.length, 0, mode);
+    }
+  });
+  await test("Globaler Lektuerebeleg bindet separaten Textstand und weist Manipulation sowie konkurrierenden Bestand ab", async () => {
+    const f = fixture(), ids = f.cluster.documents.map(d => d.id);
+    const s = pruefstand({ runId: "auftrag-original", listVorgangDocuments: async () => f.cluster.documents });
+    await run(f, s, { quellenRestDokumentIds: ids });
+    const existing = s.p.kos[0], old = structuredClone(existing);
+    s.deps.runId = "auftrag-anders";
+    assert.equal((await run(f, s, { existing, quellenRestDokumentIds: ids })).status, "duplicate");
+    assert.equal(s.p.prompts.length, 1);
+    const kaputt = structuredClone(existing);
+    kaputt.classification_confidence.helmut_quellen_lektuere.quellen[0].textstandHash = "0".repeat(64);
+    const invalid = await run(f, s, { existing: kaputt, quellenRestDokumentIds: ids });
+    assert.equal(invalid.status, "skipped-bestandslesefehler"); assert.equal(invalid.promptDokumentIds, undefined);
+    assert.equal(s.p.prompts.length, 1);
+    const beleg = { ...f.beleg, text: "Ein anderer gebundener Absatz beschreibt den aktualisierten Konferenzbeschluss." };
+    const changed = await run(f, s, { existing, artikelkontextVersuch: beleg, quellenRestDokumentIds: ids });
+    assert.equal(changed.status, "updated"); assert.equal(s.p.prompts.length, 2);
+    assert.notEqual(s.p.kos[1].classification_confidence.helmut_quellen_lektuere.quellen[0].textstandHash,
+      old.classification_confidence.helmut_quellen_lektuere.quellen[0].textstandHash);
+    const t = pruefstand({ runId: "auftrag-konkurrierend", listVorgangDocuments: async () => f.cluster.documents });
+    const snapshot = { id: "ko-" + vorgangId, vorgang_id: vorgangId, status: "active", ko_version: 1,
+      understanding_status: "complete", source_document_count: 1 };
+    let aktuell = snapshot;
+    t.deps.getExistingStreng = async () => aktuell;
+    const reserve = t.vertrag.reserviere;
+    t.vertrag.reserviere = async args => { aktuell = { ...snapshot, ko_version: 2 }; return reserve(args); };
+    const raced = await run(f, t, { existing: snapshot, quellenRestDokumentIds: ids });
+    assert.equal(raced.status, "skipped-veraltet"); assert.equal(raced.promptDokumentIds, undefined);
+    assert.equal(t.p.prompts.length, 0); assert(t.p.schritte.includes("freigabe"));
+  });
+  await test("Schattenlauf reicht Queue-Rest bis zum echten Updateprompt und ueberspringt bereits gelesene Cluster", async () => {
+    const f = fixture(), docs = Array.from({ length: 13 }, (_, i) => D.toRawDocumentRow({
+      ...f.cluster.documents[0], url: `https://example.org/schatten/quelle-${i}` }));
+    const fremd = D.toRawDocumentRow({ title: "Windenergiegesetz regelt Offshoreparks in Nordsee",
+      summary: "Das Windenergiegesetz foerdert Offshoreanlagen an der Nordsee.",
+      url: "https://example.org/offshore", publishedAt: "2026-09-14T16:00:00Z" });
+    const s = pruefstand({ enabled: () => true, aiEnabled: () => true,
+      acquireLock: async () => ({ granted: true }), releaseLock: async () => {},
+      getExistingStreng: async id => s.p.kos.find(ko => ko.vorgang_id === id) || null,
+      listVorgangDocuments: async () => docs, gateMode: () => "off", priorityEnabled: () => false });
+    const deps = { ...s.deps, runId: "queue-schatten", verstehenVertrag: () => s.vertrag };
+    const first = await U.runUnderstandingShadow([...docs, fremd], {
+      ...deps, quellenRestDokumentIds: docs.map(d => d.id) });
+    assert.equal(first.clusters, 1); assert.equal(first.results[0].status, "saved");
+    const read = first.results[0].promptDokumentIds;
+    assert.equal(read.length, 12); assert(!read.includes(fremd.id));
+    const rest = docs.filter(d => !read.includes(d.id)).map(d => d.id);
+    assert.equal(rest.length, 1);
+    const next = await U.runUnderstandingShadow([...docs, fremd], { ...deps, quellenRestDokumentIds: rest });
+    assert.equal(next.clusters, 1); assert.equal(next.results[0].status, "updated");
+    assert(next.results[0].promptDokumentIds.includes(rest[0]));
+    assert.equal(s.p.prompts.length, 2); assert.equal(sources(s.p.prompts[1]).length, 12);
+  });
+  await test("Singlepromptbytes aus main e8a4b08b bleiben auch mit einteiligem Belegarray exakt erhalten", async () => {
+    const f = fixture(), sha = s => crypto.createHash("sha256").update(s).digest("hex");
+    assert.equal(sha(U.buildUnderstandingPrompt(f.cluster)), "f0eb1dae2543d9e3a8dfda9f65e20015a20dd4aac264c5e72b2eebf69d834304");
+    const single = U.buildUnderstandingPrompt(f.cluster, { artikelkontextVersuch: f.beleg });
+    assert.equal(sha(single), "d844632ab3f18e2b2a7b2e38751ae7a229ff65ba94fada3fd4607c55039d80f1");
+    assert.equal(U.buildUnderstandingPrompt(f.cluster, { artikelkontextBelege: [f.beleg] }), single);
+    const s = pruefstand();
+    await run(f, s);
+    await run(f, s, { artikelkontextVersuch: undefined, artikelkontextBelege: [f.beleg] });
+    assert.equal(s.p.hashes[0], s.p.hashes[1]); assert.equal(s.p.prompts[0], s.p.prompts[1]);
+  });
+  await test("Mehrere Texte bleiben getrennt und vollstaendig in Prompt und Reservierungskennung", async () => {
+    const f = mehrere(), s = pruefstand(), before = structuredClone(f);
+    const extra = { artikelkontextVersuch: undefined, artikelkontextBelege: f.belege };
+    assert.equal((await run(f, s, extra)).status, "saved");
+    assert.equal(s.p.hashes[0], promptHash(basisHash(f), s.p.prompts[0]));
+    for (const b of f.belege) {
+      const q = sources(s.p.prompts[0]).find(q => q.quelle_id === b.dokumentId);
+      assert.equal(q.artikelkontext.text, b.text); assert.equal(q.url, b.artikelUrl);
+    }
+    await run(f, s, { ...extra, artikelkontextBelege: [...f.belege].reverse() });
+    assert.equal(s.p.hashes[0], s.p.hashes[1]); assert.equal(s.p.prompts[0], s.p.prompts[1]);
+    await run(f, s, { ...extra, artikelkontextBelege: [f.belege[0], { ...f.belege[1], text: "Zweiter gebundener Originalabsatz." }] });
+    assert.notEqual(s.p.hashes[0], s.p.hashes[2]); assert.deepEqual(f, before);
+  });
+  await test("Leere, doppelte, fremde oder widerspruechliche Mehrbelege stoppen vor Wirkungen", async () => {
+    const f = mehrere();
+    for (const belege of [[], [f.belege[0], f.belege[0]],
+      [f.belege[0], { ...f.belege[1], quellenHash: "0".repeat(64) }],
+      [f.belege[0], { ...f.belege[1], dokumentId: "rd-fremd" }], Array(13).fill(f.belege[0])]) {
+      assert.throws(() => U.buildUnderstandingPrompt(f.cluster, { artikelkontextBelege: belege }), /artikelkontext-/);
+      const s = pruefstand();
+      const result = await run(f, s, { artikelkontextVersuch: undefined, artikelkontextBelege: belege });
+      assert.equal(result.status, "skipped-artikelkontext"); assert.deepEqual(s.p.schritte, []);
+    }
+    assert.throws(() => U.buildUnderstandingPrompt(f.cluster,
+      { artikelkontextVersuch: f.beleg, artikelkontextBelege: f.belege }), /doppelte-option/);
+    const s = pruefstand();
+    assert.equal((await run(f, s, { artikelkontextBelege: f.belege })).status, "skipped-artikelkontext");
+    assert.deepEqual(s.p.schritte, []);
+  });
+  await test("Mehrbelege bleiben auch bei Aktualisierung und nachtraeglicher Mutation an reservierte Eingabe gebunden", async () => {
+    const f = mehrere(), s = pruefstand(), expected = U.buildUnderstandingPrompt(f.cluster, { artikelkontextBelege: f.belege });
+    const reserve = s.vertrag.reserviere, original = structuredClone(f);
+    s.vertrag.reserviere = async args => {
+      const result = await reserve(args);
+      f.belege[1].text = "Nachtraegliche Aenderung";
+      f.cluster.documents[1].summary = "Nachtraegliche Quellenmutation";
+      return result;
+    };
+    const result = await U.understandUpdate(f.cluster, s.deps, { vorgangId,
+      existing: { id: "ko-" + vorgangId, ko_version: 4 }, neueDocs: [], neueAnker: [], spur: {},
+      alleDocs: f.cluster.documents, vertrag: s.vertrag, artikelkontextBelege: f.belege });
+    assert.equal(result.status, "updated"); assert.equal(result.koVersion, 5);
+    assert.equal(s.p.prompts[0], expected);
+    assert.equal(s.p.hashes[0], promptHash(basisHash(original, "update", 5), expected));
+  });
   await test("Erstverstehen reicht den geprueften Beleg weiter und reserviert genau diesen Prompt", async () => {
     const f = fixture(), before = structuredClone(f), s = pruefstand();
     const r = await run(f, s);

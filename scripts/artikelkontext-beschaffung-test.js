@@ -28,6 +28,13 @@ function umgebung(options = {}) {
       const id = q.get("id").slice(3), data = rows.get(id);
       return data ? [{ id, data: structuredClone(data) }] : [];
     }
+    if (method === "DELETE") {
+      const id = q.get("id").slice(3), expected = JSON.parse(q.get("data").slice(3));
+      const same = JSON.stringify(rows.get(id)) === JSON.stringify(expected);
+      if (same && !options.rueckgabeVerloren) rows.delete(id);
+      if (options.rueckgabeAntwortVerloren || options.rueckgabeVerloren) throw Error("Antwort verloren");
+      return same ? [{ id }] : [];
+    }
     const value = JSON.parse(init.body);
     assert(!endpoint.includes("on_conflict")); assert(!init.headers.Prefer.includes("merge"));
     if (method === "POST") {
@@ -130,6 +137,30 @@ test("Abbruch und fehlender Artikeltext bleiben dauerhafte benannte Luecken", as
     assert.equal(first.ok, false); assert.equal([...u.rows.values()][0].zustand, "luecke");
     assert.deepEqual(await run(u), first); assert.equal(u.network.length, 1);
   }
+});
+test("Nur nachweislich vor HTTP verweigerte Anbieterreservierung bleibt spaeter fortsetzbar", async () => {
+  for (const rueckgabeAntwortVerloren of [false, true]) {
+    let block = true, httpStarts = 0;
+    const u = umgebung({ rueckgabeAntwortVerloren, fetch: async () => {
+      if (block) throw Object.assign(new Error("Anbieterpause"), { anbieterVertagung: { vorAbruf: true } });
+      httpStarts++; return antwort();
+    } });
+    assert.equal((await run(u)).reason, "anbietergrenze"); assert.equal(u.rows.size, 0); assert.equal(httpStarts, 0);
+    block = false; assert.equal((await run(u)).ok, true); assert.equal(httpStarts, 1);
+    assert.equal((await run(u)).ok, true); assert.equal(httpStarts, 1);
+  }
+  const verloren = umgebung({ rueckgabeVerloren: true, fetch: async () => {
+    throw Object.assign(new Error("Pause"), { anbieterVertagung: { vorAbruf: true } });
+  } });
+  assert.equal((await run(verloren)).reason, "rueckgabe-nicht-bestaetigt");
+  assert.equal((await run(verloren)).reason, "abruf-ausgang-offen"); assert.equal(verloren.network.length, 1);
+});
+test("Anbieterfehler nach HTTP-Start gibt die Reservierung niemals zurueck", async () => {
+  const u = umgebung({ fetch: async () => {
+    throw Object.assign(new Error("Lease verloren nach Start"), { anbieterVertagung: { grund: "klassen-lease-verloren" } });
+  } });
+  assert.equal((await run(u)).reason, "anbietergrenze"); assert.equal((await run(u)).reason, "anbietergrenze");
+  assert.equal(u.network.length, 1); assert(!u.calls.some(c => c.method === "DELETE"));
 });
 test("Unpassende Quelle und fehlende Anbietersteuerung werden vor Schreiben abgewiesen", async () => {
   for (const d of [{ ...doc, canonical_url: "https://example.org/fremd" }, { ...doc, url: "https://127.0.0.1/a" },

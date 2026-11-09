@@ -56,6 +56,7 @@ function abschnitt(t) { console.log(`\n== ${t} ==`); }
 // ── Die PostgREST-Attrappe ──────────────────────────────────────────────────────────────────
 function erzeugeAttrappe() {
   const zustand = {
+    document_findings: new Map(),
     raw_documents: new Map(),   // id -> Zeile (ignore-duplicates: Bestand gewinnt)
     process_runs: new Map(),    // `${run_id}|${process}` -> Zeile (merge-duplicates)
     helmut_store: new Map(),    // id -> data (merge-duplicates)
@@ -95,6 +96,27 @@ function erzeugeAttrappe() {
             return antworte(201, eingefuegt.map((z) => (select === "id" ? { id: z.id } : z)));
           }
           return antworte(201, null);
+        }
+        if (url.pathname === "/rest/v1/document_findings" && req.method === "POST") {
+          for (const finding of JSON.parse(body)) {
+            const key = JSON.stringify([finding.raw_document_id, finding.source_id, finding.original_url]);
+            if (!zustand.document_findings.has(key)) zustand.document_findings.set(key, finding);
+          }
+          return antworte(201, null);
+        }
+        if (url.pathname === "/rest/v1/raw_documents" && req.method === "GET") {
+          const ids = url.searchParams.get("id").slice(4, -1).split(",");
+          return antworte(200, ids.map(id => zustand.raw_documents.get(id)).filter(Boolean));
+        }
+        if (url.pathname === "/rest/v1/raw_documents" && req.method === "PATCH") {
+          const id = url.searchParams.get("id").slice(3), alt = zustand.raw_documents.get(id);
+          const matches = alt && [...url.searchParams].every(([k, v]) => {
+            if (k === "select") return true;
+            if (v === "is.null") return alt[k] == null;
+            return v === "eq." + (k === "raw" ? JSON.stringify(alt[k]) : alt[k]);
+          });
+          if (matches) zustand.raw_documents.set(id, { ...alt, ...JSON.parse(body) });
+          return antworte(200, matches ? [{ id }] : []);
         }
         if (url.pathname === "/rest/v1/process_runs" && req.method === "POST") {
           zustand.zugriffe.process_runs += 1;
@@ -216,6 +238,7 @@ async function main() {
     zustand.zugriffe.helmut_store = 0;
     zustand.zugriffe.raw_documents = 0;
     const eingereiht = [];
+    let enqueueVersuche = 0;
     const deps = SP.workerDeps({
       hardeningConfig: () => ({ enabled: false, sharedPathDedup: false, sharedPathWindowMs: 0 }),
       createGate: () => null, sharedLedger: () => null,
@@ -223,7 +246,12 @@ async function main() {
         results: [{ ok: true, sourceId: "q1" }],
         rawItems: [rohitem(1), rohitem(2), rohitem(3)]
       }),
-      enqueue: async (a) => { eingereiht.push(a); return { verfuegbar: true, neu: true }; }
+      enqueue: async (a) => {
+        enqueueVersuche++;
+        const neu = !eingereiht.some(v => v.idempotencyKey === a.idempotencyKey);
+        if (neu) eingereiht.push(a);
+        return { verfuegbar: true, neu };
+      }
     });
     const ergebnis = await SP.HANDLER.source_fetch(
       { id: "j-b1", payload: { quelle: { id: "q1", rssUrl: "https://beispiel.invalid/feed" } }, freshnessWindow: "F1" },
@@ -248,13 +276,14 @@ async function main() {
       [...zustand.raw_documents.values()].every((z) =>
         !("politicianId" in z) && !("user_id" in z) && !("tenant_id" in z) && !("excerpt" in z)));
 
-    // Wiederholung: dieselben Items sind jetzt BESTAND -> 0 neu, 0 Verstehensauftraege.
+    // Wiederholung bestaetigt denselben idempotenten Auftrag. So heilt sie einen
+    // frueheren Enqueuefehler, erzeugt aber keinen zweiten Verstehensauftrag.
     const zweite = await SP.HANDLER.source_fetch(
       { id: "j-b2", payload: { quelle: { id: "q1", rssUrl: "https://beispiel.invalid/feed" } }, freshnessWindow: "F1" },
       deps);
     check("2.7 Ein zweiter Abruf derselben Items erzeugt 0 neue Zeilen und 0 neue Verstehensauftraege",
       zweite.ok === true && zweite.gespeichert === 0 && zweite.bereitsVorhanden === 3
-      && eingereiht.length === 1,
+      && eingereiht.length === 1 && enqueueVersuche === 2 && zweite.verstehenNeu === 0,
       JSON.stringify({ gespeichert: zweite.gespeichert, vorhanden: zweite.bereitsVorhanden }));
     check("2.8 WÄCHTER bleibt bei 0 Blob-Zugriffen auch im Wiederholungsfall",
       zustand.zugriffe.helmut_store === 0);
@@ -289,6 +318,27 @@ async function main() {
           .then((r) => r.ok === true && r.neuIds.length === 0
             && JSON.stringify(zustand.raw_documents.get(id)) === vorher);
       })());
+    const nachlieferung = rohitem(10);
+    const bestandId = dedup.toRawDocumentRow(nachlieferung).id;
+    const vorher = structuredClone(zustand.raw_documents.get(bestandId));
+    const text = "Die Abgeordneten beraten heute gemeinsam neue Regeln fuer den Arbeitsschutz und die faire Bezahlung aller Beschaeftigten.";
+    const geliefert = await storage.persistiereRohdokumenteWarteschlange([{ ...nachlieferung, summary: text, retrievedAt: "2026-11-09T08:00:00Z" }]);
+    check("3.3a Nachgelieferter RSS-Text ergaenzt nur leere gleiche Quelle; Abrufstand und Metadaten bleiben stabil",
+      geliefert.ok && geliefert.bestaetigteIds.includes(bestandId)
+      && JSON.stringify(zustand.raw_documents.get(bestandId)) === JSON.stringify({ ...vorher, summary: text }));
+    await storage.persistiereRohdokumenteWarteschlange([{ ...nachlieferung, summary: text.replace("heute", "morgen") }]);
+    check("3.3b Widersprechender zweiter RSS-Text ueberschreibt den bestaetigten Text nicht",
+      zustand.raw_documents.get(bestandId).summary === text);
+    check("3.3c Wiederholte Fundstelle bleibt einmal erhalten, keine geratene rp-Kennung",
+      [...zustand.document_findings.values()].filter(f => f.raw_document_id === bestandId).length === 1
+      && [...zustand.document_findings.values()].find(f => f.raw_document_id === bestandId).retrieval_path_id === null);
+    for (const vollZuerst of [false, true]) {
+      const item = rohitem(vollZuerst ? 25 : 26), mitText = { ...item, summary: text };
+      const batch = vollZuerst ? [mitText, item] : [item, mitText];
+      const r = await storage.persistiereRohdokumenteWarteschlange(batch);
+      check(`3.3d Batch mit leerem und vollem Feedtext bleibt in beiden Reihenfolgen voll (${vollZuerst})`,
+        r.ok && zustand.raw_documents.get(dedup.toRawDocumentRow(item).id).summary === text);
+    }
     // In-Batch-Dedup: zwei Wege zur selben Story -> EINE Zeile (dedup.dedupeRawDocuments).
     const dedupiert = await storage.persistiereRohdokumenteWarteschlange(
       [rohitem(20), { ...rohitem(20) }], { runId: "t3" });

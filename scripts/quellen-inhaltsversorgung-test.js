@@ -129,7 +129,7 @@ async function main() {
     const e = environment(), service = e.factory();
     const r = await service.versorge([dgb, radio, dgb], profiles);
     assert.equal(r.bereit.length, 2); assert.equal(e.requests.length, 2);
-    for (const entry of r.bereit) { assert.deepEqual(entry.mandatIds, ["test-a", "test-b"]); await modelCheck(entry); }
+    for (const entry of r.bereit) { assert.deepEqual(entry.mandatIds, ["test-a", "test-b", "test-c"]); await modelCheck(entry); }
     assert(!JSON.stringify([...e.rows.values()]).includes('test-a'));
     assert(!JSON.stringify([...e.rows.values()]).includes('test-b'));
     const repeat = await e.factory().versorge([dgb, radio], profiles);
@@ -142,7 +142,7 @@ async function main() {
       packagePaths: [{ package_id: "pkg-arbeit", retrieval_path_id: "rp-fachprobe" }] };
     const r = await e.factory().versorge([d], profiles, katalog);
     assert.equal(r.bereit.length, 1, JSON.stringify(r)); assert.equal(r.grenzen.unklare, 1);
-    assert.deepEqual(r.bereit[0].mandatIds, ["test-a", "test-b"]);
+    assert.deepEqual(r.bereit[0].mandatIds, ["test-a", "test-b", "test-c"]);
     const forged = { ...d, findings: [{ raw_document_id: 'fremd', retrieval_path_id: 'rp-fachprobe' }] };
     const noBinding = await e.factory().versorge([forged], profiles, katalog);
     assert.equal(noBinding.bereit.length, 0); assert.equal(noBinding.befund[0].status, 'nicht-ausgewaehlt');
@@ -150,13 +150,29 @@ async function main() {
     const legacyResult = await e.factory().versorge([legacy], profiles, { ...katalog, retrievalPaths: [{ id: 'rp-fachprobe', legacy_source_id: 'fachprobe' }] });
     assert.equal(legacyResult.bereit.length, 1);
   });
-  await test("Unpassendes Original wird nach vorläufigem Titelbezug ausgeschlossen; keine Modellvorlage", async () => {
+  await test("Begrenzter Einstieg beweist keinen fehlenden Fachbezug des Vollartikels", async () => {
     const d = doc("unpassend", "Mindestlohn: Neue Meldung");
     const e = environment(new Map([[d.url, html(d, "Die Vogelbeobachtung im Nationalpark beginnt im nächsten Frühjahr mit einer Ausstellung.")]]));
-    const r = await e.factory().versorge([d], profiles); assert.equal(r.bereit.length, 0);
-    assert.equal(r.befund[0].reason, "original-ohne-fachbezug");
+    const r = await e.factory().versorge([d], profiles); assert.equal(r.bereit.length, 1);
+    assert.equal(r.befund[0].status, "belegt");
+    assert(!r.befund.some(b => b.status === "unpassend"));
     const unrelated = await e.factory().versorge([doc("sport", "Fußball: Mannschaft gewinnt Pokal")], profiles);
     assert.equal(unrelated.bereit.length, 0); assert.equal(e.requests.length, 1);
+  });
+  await test("Fachbezug erst nach dem vierten Absatz ist kein endgueltiger Ausschluss", async () => {
+    const d = doc("spaeter-fachbezug", "Mindestlohn: Neue Meldung");
+    const anfang = ["Die Ausstellung im alten Gebaeude beginnt am kommenden Montag und zeigt Bilder aus der Region.",
+      "Besucherinnen und Besucher erhalten dort einen Einblick in die Entwicklung der Landschaft und ihrer Orte.",
+      "Das Haus oeffnet seine Tueren am Vormittag und bietet anschliessend einen gemeinsamen Rundgang an.",
+      "Weitere Termine und die Einzelheiten des Programms werden bei einer Veranstaltung vor Ort vorgestellt."];
+    const ende = "Die anschliessenden Tarifverhandlungen betreffen den Mindestlohn und den Arbeitsschutz fuer zweihundert Beschaeftigte.";
+    const body = [...anfang, ende].join(" ");
+    const page = html(d, body).replace(`<p>${body}</p>`, [...anfang, ende].map(t => `<p>${t}</p>`).join(""));
+    const e = environment(new Map([[d.url, page]]));
+    const r = await e.factory().versorge([d], profiles);
+    assert.equal(r.bereit.length, 1, JSON.stringify(r));
+    assert(!r.bereit[0].beleg.text.includes("Tarifverhandlungen"));
+    assert(!r.befund.some(b => b.status === "unpassend"));
   });
   await test("Unklare und neue Abrufe bleiben über mehrere Batches begrenzt; Vertagung ist kein irrelevanter Treffer", async () => {
     const ds = Array.from({ length: 5 }, (_, n) => withFinding(doc("unklar-" + n)));
@@ -174,6 +190,17 @@ async function main() {
       const r = await e.factory().versorge([d], profiles); assert.equal(r.bereit.length, 0); assert.equal(r.befund[0].reason, "http-status");
     }
     assert.equal(e.requests.length, 1);
+  });
+  await test("Gespeicherte negative Belege verbrauchen keine Kandidatenplaetze der naechsten Fortsetzung", async () => {
+    const ds = Array.from({ length: 4 }, (_, i) => doc("cachefortsetzung-" + i, "Mindestlohn: Fachmeldung"));
+    const e = environment(new Map(ds.map(d => [d.url, Object.assign(new Error("gesperrt"), { statusCode: 403 })])));
+    const erste = await e.factory().versorge(ds, profiles);
+    assert.equal(erste.grenzen.neueAbrufe, 2); assert.equal(e.requests.length, 2);
+    const zweite = await e.factory().versorge(ds, profiles);
+    assert.equal(zweite.grenzen.neueAbrufe, 2); assert.equal(e.requests.length, 4);
+    const dritte = await e.factory().versorge(ds, profiles);
+    assert.equal(dritte.grenzen.kandidaten, 0); assert.equal(dritte.grenzen.neueAbrufe, 0);
+    assert.equal(new Set(e.requests).size, 4);
   });
   await test("CAS-Konkurrenz führt zu höchstens einem globalen Originalabruf", async () => {
     const e = environment(); await Promise.all([e.factory().versorge([dgb], profiles), e.factory().versorge([dgb], profiles)]);
@@ -271,6 +298,6 @@ async function main() {
     }
     assert.equal(JSON.parse(fs.readFileSync(path.join(__dirname, '../vercel.json'))).git.deploymentEnabled['codex/quelleninhalt-20261107'], false);
   });
-  console.log(`${passed}/18 Prüfgruppen bestanden; ausschließlich isolierte Original-Replays/Attrappen.`);
+  console.log(`${passed}/${passed} Prüfgruppen bestanden; ausschließlich isolierte Original-Replays/Attrappen.`);
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

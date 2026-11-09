@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/globale-inhalte-20261109": false,
       "codex/quellenabschluss-20261109": false,
       "codex/pflege-bestandsfehler-20261109": false,
       "codex/quelleninhalt-20261107": false,
