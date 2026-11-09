@@ -1,6 +1,6 @@
 # Globale Inhaltsversorgung — 09.11.2026
 
-Status: **Technischer Anschluss und begrenzte Produktionsvorlage vorbereitet; Endkopf-CI und erforderliche Anbietererweiterung offen, keine Aktivierungsempfehlung**. Dieser Bericht betrifft
+Status: **Teilweise abgeschlossen: technischer Anschluss geprueft, begrenzte Produktionsvorlage vorbereitet; genehmigte NDR-Einzelprobe vor Ausfuehrung blockiert, Anbietererweiterung offen**. Dieser Bericht betrifft
 den allgemeinen Anschluss nach PR1104, PR1110 und PR1113. Die abgeschlossene
 erste Aktivierung und ihr eigener regulaerer Wirkungsnachweis stehen in
 [quellenabschluss-20261109.md](quellenabschluss-20261109.md). Sie werden hier
@@ -122,7 +122,7 @@ Damit ist aktuell kein offener Altbestand zu neutralisieren. Vor der
 tatsaechlichen Aktivierung erneut lesend pruefen; dieser Snapshot ist keine
 Freigabe zur Veraenderung oder Neuverarbeitung alter Auftraege.
 
-## Anbietererweiterung: ausstehende Einzelprobe
+## Anbietererweiterung: genehmigte Einzelprobe vor Ausfuehrung blockiert
 
 Im untersuchten Bestand liegen zehn NDR-Dokumente. Ein plausibler
 Arbeits-/Regionaltreffer mit knappem Titel wird durch das vorlaeufige
@@ -133,12 +133,83 @@ Praedikat nicht positiv erkannt:
 Gespeicherte Kennung:
 `rd-6b0bc6cca3ac139f38bd2dc83e1f8ee843500c27dca95b3e23fcc00d32dda38b`.
 Kein vorhandenes Original-HTML fuer diese Parserpruefung gefunden.
-Die genaue Freigabe fuer **einen** HTTPS-GET aus Codex wurde angefragt:
+Der Betreiber hat **einen** HTTPS-GET aus Codex ausdruecklich genehmigt:
 maximal 20 Sekunden und 1 MiB, bestehender DNS-/IP-/TLS-Schutz,
 keine Weiterleitung, kein Proxy, keine Wiederholung, kein Modell und keine
-Production-Schreibwirkung. Zum Berichtsstand ist kein Abruf erfolgt.
-Transport, erhaltener Artikeltext und korrekte Artikelbindung waeren getrennt
-zu belegen. Die Anfrage aktiviert keinen Anbieter in Production.
+Production-Schreibwirkung. Die bestehende Anbieter- und Quellenpruefung muss
+wirksam bleiben. Die GET-Freigabe ist vorhanden und wird nicht erneut
+angefragt. Die bisherige Einzelvorlage war bezueglich der notwendigen
+Produktionsmetadaten-Schreibwirkung unvollstaendig.
+
+Die Codevorpruefung zeigt einen Konflikt innerhalb dieser Grenzen:
+`crawler.fetchUrl(..., { artikelkontext: true })` verlangt aktive
+Anbietersteuerung. `anbieterUmschlossen` reserviert vor HTTP ueber
+`storage.anbieterReserviere` atomar in Production und meldet anschliessend den
+Ausgang ueber `storage.anbieterMelde`. Diese Produktionsmetadaten-Schreibvorgaenge
+sind durch den ausdruecklich schreibfreien Probeauftrag nicht gedeckt.
+Ein gelesener Anbieterstand ersetzt keine atomare Reservierung gegen
+gleichzeitige Abrufe. Eine lokal behauptete Freigabe oder ausgeschaltete
+Anbietersteuerung wuerde den geforderten Schutz umgehen.
+
+Deshalb wurde **vor jeder Anbieter-RPC und vor HTTP gestoppt: null Original-GETs,
+null Production-Schreibvorgaenge, keine Modellaufrufe**. Kein Transportversuch
+ist erfolgt; es gibt insbesondere keinen beobachteten NDR-, DNS-, TLS- oder
+Proxyfehler. Erreichbarkeit, Originaltext, Extraktion und Artikelbindung bleiben
+unbekannt. Die eng begrenzte noch fehlende Ausnahme betrifft die atomare
+Anbieterreservierung und anschliessende Ergebnisrueckmeldung fuer genau diese
+Einzelprobe; keine Freigabe fuer fachliche Daten, Artikelcache oder Queuearbeit.
+
+### Exakte fehlende Ausnahme fuer die bereits genehmigte Probe
+
+Native rein lesende Pruefung am 09.11.2026 um 11:27:40.411248 UTC:
+Beide Funktionsdefinitionen entsprechen der Mutationslogik im Repository.
+Fuer `quelle|www.ndr.de|quellenabruf` gab es keinen Schutzschaltereintrag und
+kein heutiges Zaehlerfenster. Keine RPC wurde ausgefuehrt. Dieser Snapshot
+ist keine Reservierung und ersetzt keine erneute Pruefung unmittelbar davor.
+Privater Beleg ausserhalb Git:
+`/workspace/helmut-globalanalyse-20261109/ndr-vorpruefung-20261109.json`,
+SHA256 `4598526bead7fe72d9781a6b1ad4200fe09acdb02c5e05a8fa4c13a21bc81d3a`.
+
+Die noch nicht erteilte Ausnahme umfasst ausschliesslich:
+
+1. Vorwerte privat sichern und die aktuellen Anbieterlimit-Overrides lesen.
+   Bei unveraenderten bestehenden Grenzen hoechstens einmal
+   `helmut_anbieter_reserviere` fuer
+   `p_schluessel=quelle|www.ndr.de|quellenabruf`, `p_menge=1`,
+   `p_grenze_minute=60`, `p_grenze_tag=0`. Bei abweichenden Overrides nicht
+   still auf die genannten Werte umschalten. Bei Ablehnung oder unbekanntem
+   RPC-Ausgang stoppen, kein Wiederholungsversuch.
+2. Nur bei bestaetigt erlaubter Reservierung den bereits genehmigten einen
+   Original-GET im unveraenderten geschuetzten Abrufpfad ausfuehren.
+   Keine Weiterleitung, kein Proxy und kein zweiter Abruf.
+3. Nach dem tatsaechlichen Versuch hoechstens einmal
+   `helmut_anbieter_melde` fuer denselben Schluessel:
+   `p_ok` nach der bestehenden beobachteten Fehlerklassifikation,
+   `p_schwelle=5`, `p_offen_ms=60000`, `p_erholung=2`,
+   `p_grund` mit dem technischen Ausgang. Ein unbekannter Meldeausgang
+   erlaubt keine erneute Meldung oder Wiederholung des Originalabrufs.
+   Nachwerte ausschliesslich lesend kontrollieren und privat sichern.
+
+Betroffen sind nur die aktuelle Minutenzeile in `helmut_anbieter_fenster`
+und der genannte Schluessel in `helmut_anbieter_schutzschalter`.
+Bei `p_grenze_tag=0` wird kein Tagesfenster angelegt. Auch eine verweigerte
+Reservierung kann eine Fensterzeile anlegen oder `updated_at` veraendern;
+sie bleibt trotzdem ein STOP vor HTTP. Ein verbrauchter Zaehler und der
+ehrlich gemeldete Ausgang werden nicht zurueckgesetzt oder geloescht.
+Zeitfenster und Schutzschalter erholen sich nach ihren bestehenden Regeln;
+bei unklarem Ergebnis keine weiteren Mutationen. Artikelcache, Rohdokumente,
+Fundstellen, KOs, Profile und Modellkostenbuch werden durch diese Ausnahme
+nicht beschrieben oder freigegeben. Sie aktiviert auch keinen NDR-Host in
+Production und erlaubt keinen Merge, kein Deployment und keine Flags.
+
+Ohne Originalantwort gibt es keinen belegten neuen Parserfehler und keinen
+sachlichen Anlass fuer einen weiteren Runtimefix. Der gepruefte allgemeine
+Anschluss bleibt weiterverwendbar. Nach einer zulaessigen Probe waeren Transport,
+erhaltener Artikeltext und korrekte Artikelbindung getrennt nachzuweisen.
+Ein einzelner gelesener Artikel waere keine Gesamtabnahme der Versorgung.
+NDRs vorhandene Vertrauensklassifikation ist keine Originalabruf-Hostfreigabe;
+eine spaetere Hostaufnahme brauchte eine ausdruecklich benannte Aenderung der
+Hostliste mit Vorwert und Rueckweg. Sie ist nicht Teil der folgenden 15 Werte.
 
 ## Umgesetzter Anschluss
 
@@ -238,7 +309,7 @@ PARDOK-Importschutz 13 und Terminalschutz 63 gruen. DGBs gesamter Text ist im
 abgefangenen Modellprompt sowie Lage-/Briefingvertrag nachgewiesen; zwoelf
 grosse synthetische Artikel gehen unter dem serialisierten Bytebudget ueber
 mehrere Fortsetzungen ohne Dokumentverlust. Keine echte Modellbefolgung behauptet.
-Die endgueltigen Pflichtchecks werden im PR auf dessen exakten Kopf gebunden.
+Die Pflichtchecks werden im PR auf dessen exakten Kopf gebunden.
 Erfolgreiche bestehende Queue-Vertraege wurden wiederverwendet, keine lokale
 Gesamtsuite und kein 500er-Lasttest gestartet.
 
@@ -261,24 +332,42 @@ Parkungs- und Fehlerfilter nachgezogen. Keine Schutzpruefung abgeschwaecht.
 Der notwendige Kontextfix wird zusammen mit diesen gezielten Korrekturen
 regulaer auf dem neuen Endkopf geprueft; keine lokale Gesamtsuite.
 
+Der regulaere Endkopflauf `42602097234` auf
+`1b5be6f8a14bf8a48d01ccf67944c7f120885aba` ist **SUCCESS**:
+Standard 189/189, Bereich 350/350 und nativer Z22-Nachweis 48/48.
+Beide Pflichtchecks sind erfolgreich. Die konkreten Browserstufen wurden
+fuer diesen Backenddiff regulaer uebersprungen; kein ausgefuehrter Browsertest
+wird behauptet. Dieser Runtime-Pruefstand bleibt durch die anschliessende
+reine Dokumentationskorrektur erhalten. Der neue Dokumentationskopf erhaelt
+seine regulaeren Pflichtchecks anhand des gesamten PR-Diffs einschliesslich
+Runtimeaenderungen; kein verkuerzter Pruefumfang wird zugesagt.
+Keine erneute lokale Gesamtsuite.
+
 Der unabhaengige Review hat insbesondere globalen Lektuerebeleg,
 13/12-Fortsetzung, Quellen-/RSS-Konflikte, Betreiberpausen und die enge
 Selbstweckausnahme geprueft; keine offenen P1-Befunde. Pflichtchecks sind `Syntax + Offline-Suiten` und
-`Browser-/Mobile-Smoke (Chromium)`. Der PR bleibt bis zum belegten gruenen
-Endkopf technisch nicht abgenommen. Auch danach bleibt die erforderliche
-Anbietererweiterung bis zur freigegebenen NDR-Einzelprobe unvollstaendig;
-keine Empfehlung, die allgemeine Versorgung als fertig zu aktivieren. Commit, PR und native CI-Run-ID werden
+`Browser-/Mobile-Smoke (Chromium)`. PR1115 ist offen und ungemergt;
+`main` blieb bei der frischen GitHub-Pruefung auf
+`e8a4b08bf14609a02831a0f6e5b6c9c5caa28824`. Die erforderliche
+Anbietererweiterung bleibt wegen der vor Ausfuehrung blockierten Einzelprobe
+unvollstaendig; keine Empfehlung, die allgemeine Versorgung als fertig zu
+aktivieren. Commit, PR und native CI-Run-ID werden
 im PR-Abschluss festgehalten, ohne nachtraeglichen Runtime-Commit nur fuer
 CI-Nummern. Die Preview dieses Entwicklungszweigs ist explizit abgeschaltet.
 
 ## Begrenzte spaetere Produktionsvorlage
 
-Eine spaetere Productionentscheidung ist erst nach Klaerung der offenen
-Anbieterprobe anzufordern. Vorbereiteter Gegenstand ist ausschliesslich der im PR bezeichnete, durch beide
+Dieses vollstaendig beschriebene Paket ist eine begrenzte Vorbereitung fuer
+Queuebetrieb und Selbstweck, kein Nachweis allgemeiner Anbieterreife und keine
+aktuelle Aktivierungsempfehlung. Eine spaetere Productionentscheidung ist erst
+nach Klaerung der blockierten Anbieterprobe anzufordern. Vorbereiteter
+Gegenstand ist ausschliesslich der im PR bezeichnete, durch beide
 Pflichtchecks bestaetigte Endcommit und die folgende Productionkonfiguration.
 Keine Variablen wurden in diesem Sprint gesetzt. Bestehende Artikelkontext-,
-DGB-/Radio-Host- und Anbieterflags bleiben gesetzt; NDR ist ohne abgeschlossene
-Einzelprobe nicht Teil der Hostfreigabe. Es gibt keine pauschale Hostliste,
+DGB-/Radio-Host- und Anbieterflags bleiben gesetzt;
+`HELMUT_SUCHWEGAUSZUEGE_HOSTS=www.dgb.de,www.radio-hannover.de` bleibt unveraendert.
+NDR ist nicht Teil dieses Pakets, auch eine positive Einzelprobe erweitert es
+nicht automatisch. Es gibt keine pauschale Hostliste,
 keine neue Profilfreigabe und keine Erhoehung des 1/30-USD-Modellvertrags.
 
 | Variable | Vorwert in Production | Geplanter Wert |
