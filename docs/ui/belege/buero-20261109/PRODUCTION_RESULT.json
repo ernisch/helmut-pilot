@@ -1,0 +1,37 @@
+{
+  "checked_at": "2026-11-09T11:56:27.323585+00:00",
+  "expected_commit": "fe38a3710caa18f0a020825747c04c7d4f2c198a",
+  "requests": {
+    "/": {
+      "http": 200,
+      "bytes": 6110,
+      "sha256": "7736783e8d807ffc85c398c65c1efdf64f7cc791490f6d2762d9e167b9d0d9c0",
+      "asset_versions": [
+        "fe38a371",
+        "fe38a371"
+      ]
+    },
+    "/api/release/public": {
+      "http": 200,
+      "bytes": 52,
+      "sha256": "c9a887873b07000ffdf2971fdc076355d4a0ca805898b7c7d18fa7f393da7cb8",
+      "release": {
+        "ok": true,
+        "ready": true,
+        "storage": true
+      }
+    },
+    "/client.js?v=fe38a371": {
+      "http": 200,
+      "bytes": 621298,
+      "sha256": "31cef886a1e61a8b39617d4122a26378750fa5c8f4ea46c0523423470fd43932",
+      "matches_git_file": true
+    },
+    "/styles.css?v=fe38a371": {
+      "http": 200,
+      "bytes": 349276,
+      "sha256": "3fdadec92114b68f6376e5b4ff8e8e0c7c5a1f340f15d630c9baa04654218cb3",
+      "matches_git_file": true
+    }
+  }
+}
