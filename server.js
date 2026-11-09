@@ -3723,7 +3723,9 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   const decisions = korrekturDaten?.priorisierung
     ? understood.map(ko => decisionsEngine.buildDecision(userId, ko))
     : decisionsEngine.decideForUser(profile, understood, { userId, limit: 50 });
-  if (!decisions.length) return emptyKeepMentions("keine-treffer");
+  const orientierungsKos = korrekturDaten?.priorisierung ? []
+    : require("./lib/helmut/briefing-orientierung").vorwahl(understood, profile);
+  if (!decisions.length && !orientierungsKos.length) return emptyKeepMentions("keine-treffer");
   // Fresh-aware Kandidaten-Vervollstaendigung (on-read, 0 KI, deterministisch):
   // Der Top-Relevanz-Cut oben (limit 50, Ranking nach PROFIL-AEHNLICHKEIT) kann einen
   // FRISCHEN, hoch relevanten Vorgang von heute abschneiden — er liegt dann nicht wegen
@@ -3740,6 +3742,13 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     (kos) => decisionsEngine.decideForUser(profile, kos, { userId, limit: kos.length }),
     now
   );
+  // Belegte Verfahrensvorbereitung darf nicht vor der Quellenpruefung am
+  // Top-50- oder Heute-Cut verschwinden. Nur bereits verstandene KOs aus dem
+  // bestehenden Scan; Quellenleser, Sperren und Speicherung unveraendert.
+  const orientierungsIds = new Set(orientierungsKos.map(k => k.id));
+  const vorhanden = new Set(provisionalCandidateDecisions.map(d => d.knowledge_object_id));
+  for (const ko of orientierungsKos) if (!vorhanden.has(ko.id))
+    provisionalCandidateDecisions.push(decisionsEngine.buildDecision(userId, ko));
   const kosById = {};
   for (const ko of understood) if (ko && ko.id) kosById[ko.id] = ko;
   const selected = provisionalCandidateDecisions.map((d) => kosById[d.knowledge_object_id]).filter(Boolean);
@@ -3761,7 +3770,8 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // Erst mit den bereits geladenen Quellen die zusaetzlichen Kandidaten
   // binden; regulaere Top-50 und heutige Erstaufnahmen bleiben erhalten.
   const candidateDecisions = require("./lib/helmut/briefing-kandidatenzeit").begrenzeErgaenzungen({
-    vorher: decisions, vorlaeufig: provisionalCandidateDecisions,
+    vorher: [...decisions, ...provisionalCandidateDecisions.filter(d => orientierungsIds.has(d.knowledge_object_id)
+      && !decisions.some(b => b.knowledge_object_id === d.knowledge_object_id))], vorlaeufig: provisionalCandidateDecisions,
     kosById, sourcesByVorgang, now
   });
   // Source Safety Guard (regelbasiert, 0 KI): kritische, unbestaetigte Claims aus
@@ -3812,6 +3822,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
       briefing.debugPrimary = {
         ...(opts.debugMeta || {}),
         ...briefingContract.buildPrimarySelectionDebug({
+          profile,
           knowledgeObjectsLoaded: (kos || []).length,
           understood,
           decisionsBefore: decisions,
