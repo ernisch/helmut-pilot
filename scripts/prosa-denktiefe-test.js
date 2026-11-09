@@ -1,7 +1,9 @@
 "use strict";
 const A = require("node:assert/strict"), C = require("node:crypto"), Z = require("node:zlib");
 const F = require("node:fs"), { EventEmitter } = require("node:events");
-const G = require("./prosa-denktiefe"), T = require("./privater-nachweis-transport");
+const realG = require("./prosa-denktiefe"), T = require("./privater-nachweis-transport");
+A.throws(() => realG.paket(), e => e.code === "PROSA_PROMPT", "Heutiger Prompt darf alte Hashbindung nicht passieren");
+const G = require("./fixtures/prosa-historischer-testhelfer").ladeHistorisch("prosa-denktiefe");
 const pair = C.generateKeyPairSync("rsa", { modulusLength: 3072 });
 const publicKey = pair.publicKey.export({ format: "der", type: "spki" }).toString("base64");
 const privateKey = pair.privateKey.export({ format: "pem", type: "pkcs8" });
