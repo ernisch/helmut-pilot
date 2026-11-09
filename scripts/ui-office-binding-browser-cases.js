@@ -169,7 +169,7 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
     verify(kind+" refresh remains free of model calls",writes.length===before);
     verify(kind+" committee alternatives follow known mandate",await evaluate(kind==='land-mandate'
       ? "profileParliamentType()==='Landtag' && activeOfficeFormats().some(f=>f.id==='anfrage')"
-      : "profileParliamentType()==='' && !activeOfficeFormats().some(f=>f.id==='anfrage')"));
+      : "!profile.parliamentType && !profile.politische_ebene && profile.politicalLevel==='Bund' && !activeOfficeFormats().some(f=>f.id==='anfrage')"));
   }
   if (!mobile) {
     scenario="valid";

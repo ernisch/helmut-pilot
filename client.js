@@ -10959,8 +10959,14 @@ function taskShareText(task) {
 
 function activeOfficeFormats() {
   // Existing formats remain available on demand; preferences never fan out model calls.
-  return OFFICE_FORMATS.filter((f) => f.id !== "rede" && (f.id !== "anfrage" || Boolean(profileParliamentType()
-    && (profileParliamentType() !== "Landtag" || String(profile?.state || profile?.bundesland || "").trim())
+  // Legacy politicalLevel may be blankProfile's "Bund" default. It cannot
+  // establish a parliamentary jurisdiction for a Büro question.
+  const levels = new Set([profile?.parliamentType, profile?.politische_ebene]
+    .filter(v => typeof v === "string").map(v => v.trim().toLowerCase())
+    .filter(v => ["bundestag", "landtag"].includes(v)));
+  const parliamentType = levels.size === 1 ? (levels.has("landtag") ? "Landtag" : "Bundestag") : "";
+  return OFFICE_FORMATS.filter((f) => f.id !== "rede" && (f.id !== "anfrage" || Boolean(parliamentType
+    && (parliamentType !== "Landtag" || String(profile?.state || profile?.bundesland || "").trim())
     && [profile?.committee, ...(Array.isArray(profile?.committees) ? profile.committees : [])].some((value) => typeof value === "string" && value.trim()))));
 }
 

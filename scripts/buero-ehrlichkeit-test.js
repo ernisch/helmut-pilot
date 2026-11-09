@@ -78,6 +78,8 @@ function check(name, cond, detail = "") {
   check("Quellen werden dedupliziert", basis(sourced, {}, "press").evidence.length === 1);
   check("Unbekanntes Format wird nicht als Statement erzeugt", basis(sourced, {}, "erfunden").reason === "format-unbekannt");
   check("Ausschussfragen erfordern gesichertes Mandat", basis(sourced, {committee:"Testausschuss"}, "committee_question").reason === "zustaendigkeit-offen");
+  check("Alter Bund-Profilstandard ist keine gesicherte Zuständigkeit", basis(sourced, {politicalLevel:"Bund",function:"Bundestagsabgeordnete:r",committee:"Testausschuss"}, "committee_question").reason === "zustaendigkeit-offen");
+  check("Widersprüchliche explizite Mandatsebenen werden nicht geraten", basis(sourced, {parliamentType:"Bundestag",politische_ebene:"landtag",committee:"Testausschuss",state:"Berlin"}, "committee_question").reason === "zustaendigkeit-offen");
   check("Landtag ohne Land gesperrt", basis(sourced, {parliamentType:"Landtag",committee:"Testausschuss"}, "committee_question").reason === "zustaendigkeit-offen");
   check("Ausschusszuständigkeit wird nicht geraten", basis(sourced, {parliamentType:"Bundestag"}, "committee_question").reason === "zustaendigkeit-offen");
   const lt = basis(sourced, {politische_ebene:"landtag",bundesland:"Berlin",committee:"Testausschuss"}, "committee_question");
@@ -96,12 +98,14 @@ function check(name, cond, detail = "") {
   vm.createContext(aiSandbox);
   vm.runInContext(aiSource + '\n isAiEnabled=()=>true; requestJson=async prompt=>capture(prompt);', aiSandbox);
   const officeResult = await aiSandbox.module.exports.generateCommunicationDraft({office:true,decision:sourced,
-    profile:{id:"tenant-a",parliamentType:"Landtag",state:"Berlin",committee:"Testausschuss",governmentRole:"opposition"},
+    profile:{id:"tenant-a",parliamentType:"Landtag",state:"Berlin",committee:"Testausschuss",governmentRole:"opposition",function:"LEGACY_UNVERIFIED_FUNCTION",relevantMinistries:["LEGACY_UNVERIFIED_MINISTRY"]},
     channel:"committee_question",prompt:"REQUEST_INSTRUCTION_MUST_NOT_REACH_MODEL"});
   check("Büro erzeugt genau das benötigte Format mit gemocktem Modell", officeResult.aiEnabled === true && mockedModelCalls === 1);
   check("Modell erhält Landtagszuordnung und echten Quellentext", capturedPrompt.includes('"parliamentType": "Landtag"') && capturedPrompt.includes(source.summary));
   check("Freier Requestprompt und pauschale Bundesregierungsvorgabe entfallen",
     !capturedPrompt.includes("REQUEST_INSTRUCTION_MUST_NOT_REACH_MODEL") && !capturedPrompt.includes("Bundesregierung konkret messen"));
+  check("Ungesicherte alte Rollen- und Ministeriumsstandards erreichen Büro-Modell nicht",
+    !capturedPrompt.includes("LEGACY_UNVERIFIED_FUNCTION") && !capturedPrompt.includes("LEGACY_UNVERIFIED_MINISTRY"));
   check("Fakten, KI-Einordnung, Auszüge und formelle Anfragen bleiben getrennt",
     capturedPrompt.includes("keine zusätzlichen Tatsachenbelege") && capturedPrompt.includes("keine formgerechte Kleine Anfrage")
     && capturedPrompt.includes("Keine eigene Position") && capturedPrompt.includes("Aus Auszügen niemals"));

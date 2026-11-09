@@ -22,7 +22,11 @@ ungebundene oder regelbasierte Cachetexte gelten nicht als fertige Büroentwürf
 Statement, Social Media und Büroauftrag verwenden vorhandene Kanäle.
 Der vorhandene parlamentarische Kanal heißt konkret „Fragen für den Ausschuss“
 und wird als Arbeitsentwurf bezeichnet, nicht als formgerechte Anfrage.
-Er setzt bekannte Mandatsebene, Ausschuss und bei Landtag ein Bundesland voraus.
+Er setzt ausdrücklich hinterlegte Mandatsebene (`parliamentType` oder
+`politische_ebene`), Ausschuss und bei Landtag ein Bundesland voraus. Der alte
+Profilstandard `politicalLevel: Bund` ist dafür kein Beleg; widersprüchliche
+explizite Ebenen bleiben unbekannt. Ungesicherte Rollen- und Ministeriumsdefaults
+erreichen den Büro-Prompt nicht.
 Das bisher als Rede bezeichnete interne Stichpunktformat wird nicht angeboten.
 
 „Teilen“ öffnet nach Nutzeraktion die native Auswahl. Ein Abbruch kopiert nichts.
@@ -58,7 +62,7 @@ Alle lokalen Nodeprüfungen liefen über `scripts/lokal.js`, ohne Productionzuga
 
 | Prüfung | Ergebnis |
 | --- | --- |
-| Büro-Ehrlichkeit, Quellen/Mandate, echter Routeblock mit injizierten Reads, Generator mit gemocktem Modell | 50/50 |
+| Büro-Ehrlichkeit, Quellen/Mandate, echter Routeblock mit injizierten Reads, Generator mit gemocktem Modell | 53/53 |
 | Quellenpflicht-Vertrag | 58/58 |
 | Kostenlimits einschließlich einzelnem Büroaufruf/Cache | 20/20 |
 | Budget-Rollout mit Fake-Transport, einschließlich atomarem Parallelgrenzfall | 20/20 |

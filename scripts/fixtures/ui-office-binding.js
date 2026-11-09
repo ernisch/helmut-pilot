@@ -50,6 +50,7 @@ function payloadFor(scenario = "valid") {
       parliamentType: scenario === "unknown-mandate" ? "" : scenario === "land-mandate" ? "landtag" : "bundestag",
       parliament: scenario === "unknown-mandate" ? "" : scenario === "land-mandate" ? "Abgeordnetenhaus von Berlin" : "Deutscher Bundestag",
       state: scenario === "land-mandate" ? "Berlin" : "",
+      ...(scenario === "unknown-mandate" ? { politicalLevel: "Bund", function: "Bundestagsabgeordnete:r" } : {}),
       committee: "Testausschuss", communicationStyle: "Sachlich", officeFormats: ["presse", "linkedin"], focusTopics: [] },
     briefing: { engine: "v3", available: true, generatedAt: now, status: "Aktuell",
       items, personalizedRecommendations: recommendations, situationalBriefing: [], tasks: [],

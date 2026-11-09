@@ -21,6 +21,8 @@ PASS  Nicht-HTTPS-Quelle genügt nicht
 PASS  Quellen werden dedupliziert
 PASS  Unbekanntes Format wird nicht als Statement erzeugt
 PASS  Ausschussfragen erfordern gesichertes Mandat
+PASS  Alter Bund-Profilstandard ist keine gesicherte Zuständigkeit
+PASS  Widersprüchliche explizite Mandatsebenen werden nicht geraten
 PASS  Landtag ohne Land gesperrt
 PASS  Ausschusszuständigkeit wird nicht geraten
 PASS  Landtag und Bundestag getrennt aus vorhandenen Profilfeldern
@@ -28,6 +30,7 @@ PASS  Fehlende Quellen stoppen vor KI und liefern keinen Fertigtext
 PASS  Büro erzeugt genau das benötigte Format mit gemocktem Modell
 PASS  Modell erhält Landtagszuordnung und echten Quellentext
 PASS  Freier Requestprompt und pauschale Bundesregierungsvorgabe entfallen
+PASS  Ungesicherte alte Rollen- und Ministeriumsstandards erreichen Büro-Modell nicht
 PASS  Fakten, KI-Einordnung, Auszüge und formelle Anfragen bleiben getrennt
 PASS  Büro-Route ersetzt Request-Fakten durch kanonischen Mandantenanlass
 PASS  Büro-Lesezugriffe behalten ausschließlich den aktiven Mandanten
@@ -49,4 +52,4 @@ PASS  fehlgeschlagen: officeDraftErrors -> 'Erstellung fehlgeschlagen' (nicht be
 PASS  leer: kein Entwurf -> 'Noch kein Entwurf' (nicht bereit)
 PASS  gemischt: kein unfertiger Zustand ist 'Entwurf bereit'
 
-50 PASS, 0 FAIL
+53 PASS, 0 FAIL
