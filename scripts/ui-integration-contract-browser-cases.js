@@ -193,7 +193,7 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
     verify("quiet empty state survives navigation",await evaluate("!!document.querySelector('.hstand-state-card--quiet')"));
   } else {
     verify("successful startup permits simulated push sync",await waitFor("pushConfig?.subscriptionCount===1") && await evaluate("__uiPush.scheduled===1 && __uiPush.subscribed===1"));
-    verify("bootstrap writes only simulated push; empty office formats produce no drafts",calls.filter(c=>c.method!=="GET").length===1 && calls.some(c=>c.path==="/api/push/subscribe") && !calls.some(c=>c.path==="/api/communication/generate"));
+    verify("bootstrap writes only simulated push; office generation waits for use",calls.filter(c=>c.method!=="GET").length===1 && calls.some(c=>c.path==="/api/push/subscribe") && !calls.some(c=>c.path==="/api/communication/generate"));
     verify("profile/version/tasks/notes adopted",await evaluate("profile.id==='ui-binding-profile' && appBuildVersion==='ui-contract-fixture' && tasks.some(t=>t.id==='task-contract') && notes[0].id==='note-contract'"));
     await nav("briefing");
     verify("partial Lage keeps proven cards and exposes missing current text",await evaluate("document.querySelector('[data-ui-lage-partial]').innerText.includes('aktuelle, datierte Quellen') && document.querySelectorAll('.ui-vorgang-row').length===1"));
@@ -201,7 +201,7 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
     await screenshot("partial-lage");
     await nav("radar");
     verify("curated Radar projection wins over raw candidates",await evaluate("document.querySelector('#radar2-root').innerText.includes('Kuratierter Radarhinweis') && !document.querySelector('#radar2-root').innerText.includes('ROH') && !!document.querySelector('.radar2-card--mention[href=\"https://example.test/ui/curated\"]')"));
-    verify("curated freshness used and raw article feed withheld",await evaluate("document.querySelector('.radar2-status').innerText.includes('Letzter Stand') && !document.querySelector('.radar2-section--articles')"));
+    verify("curated freshness used and raw article feed withheld",await evaluate("document.querySelector('.radar2-status').innerText.includes('Veralteter Radarstand · Neueste angezeigte Quelle:') && !document.querySelector('.radar2-section--articles')"));
     verify("view switches cause no extra start/Radar fetch",calls.filter(c=>c.path==="/api/app/start").length===1 && !calls.some(c=>c.path.startsWith('/api/radar')));
     await screenshot("curated-radar");
 
@@ -226,11 +226,12 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
       await evaluate("Promise.all(['/api/lage/briefing','/api/push/test'].map(path=>fetchWithTimeout(path+'?'+apiScopeQuery()).then(r=>r.json()))).then(()=>true)");
       verify("both additional state-changing GETs carry CSRF",calls.filter(c=>c.phase===phase && ['/api/lage/briefing','/api/push/test'].includes(c.path)).length===2 && calls.filter(c=>c.phase===phase && ['/api/lage/briefing','/api/push/test'].includes(c.path)).every(c=>c.csrfHeaderPresent));
       await configure("office-rate-limit","rate-limit");
-      await evaluate("profile.officeFormats=['presse'];currentView='office';generateOfficeDraftsInBackground().then(()=>true)");
-      verify("office HTTP 429 shown as failure without ready drafts",await evaluate("Object.keys(officeDrafts).length===0 && Object.keys(officeDraftErrors).length===2 && document.querySelector('.ui-page').innerText.includes('Erstellung fehlgeschlagen')") && count('/api/communication/generate')===2);
+      await evaluate("officeDrafts={};officeDraftErrors={};currentView='office';render();generateSelectedOfficeDraft().then(()=>true)");
+      verify("office HTTP 429 fails selected draft without alternative calls",await evaluate("Object.keys(officeDrafts).length===0 && Object.keys(officeDraftErrors).length===1 && document.querySelector('.ui-page').innerText.includes('nicht belastbar erstellt')") && count('/api/communication/generate')===1);
       await configure("office-budget-fallback");
-      await evaluate("generateOfficeDraftsInBackground().then(()=>true)");
-      verify("budget fallback marked as rule output, not AI",await evaluate("Object.values(officeDrafts).length===2 && Object.values(officeDrafts).every(d=>d.source==='regel') && document.querySelector('.ui-page').innerText.includes('Regelbasierter Entwurf') && !document.querySelector('.ui-page').innerText.includes('KI-Entwurf · vor Veröffentlichung prüfen')"));
+      await evaluate("generateSelectedOfficeDraft().then(()=>true)");
+      verify("budget fallback is no apparently finished draft",await evaluate("Object.values(officeDrafts).length===0 && Object.keys(officeDraftErrors).length===1 && document.querySelector('.ui-page').innerText.includes('KI-Kostengrenze') && !document.querySelector('[data-office-share]') && !document.querySelector('[data-office-generate]')") && count('/api/communication/generate')===1);
+
     }
   }
   if(!briefingReadOnly && label.startsWith("contract-")) await verifyBriefingRead();

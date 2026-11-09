@@ -50,7 +50,7 @@ const fixtureBootstrap = `
     opsStatusLoaded = true; opsStatus = {learning:{eventCount:7}};
     decisions = [JSON.parse(JSON.stringify(__baseCard))];
     officeDrafts = {}; officeDraftErrors = {}; selectedOfficeDraft = null;
-    for (const f of activeOfficeFormats()) officeDrafts[officeDraftKey(decisions[0], f)] = {text:'Synthetischer UI Testentwurf ohne fachliche Aussage. '.repeat(12),source:'regel'};
+    for (const f of activeOfficeFormats()) officeDrafts[officeDraftKey(decisions[0], f)] = {text:'Synthetischer UI Testentwurf ohne fachliche Aussage. '.repeat(12),source:'ki',binding:officeDraftBinding(decisions[0],f),createdAt:Date.now()};
     onboardingActive = false; helmutThinking = false;
     uiLageDetailOpen = false; radarFilter = 'all'; radarSegment = 'party';
     radarMentionsExpanded = radarEnvExpanded = radarDynamicsExpanded = radarArticlesExpanded = false;
@@ -89,6 +89,7 @@ const fixtureBootstrap = `
       render();
     },
     clipboard(fail) {
+      Object.defineProperty(navigator,'share',{configurable:true,value:undefined});
       Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{if(fail)throw Error('simulated clipboard denial');}}});
       document.execCommand=()=>!fail;
     },
@@ -177,7 +178,7 @@ async function main() {
   let completed = false, browserVersion;
   try {
     browserVersion = await cdp.send("Browser.getVersion");
-    const viewports = contractCases ? contractCases.viewports : bindingCases ? [["desktop",1440,900,false],["mobile",390,844,true]] : [["desktop",1440,900,false],["mobile",390,844,true],["mobile-360",360,780,true]];
+    const viewports = contractCases ? contractCases.viewports : bindingCases ? (bindingCases.viewports || [["desktop",1440,900,false],["mobile",390,844,true]]) : [["desktop",1440,900,false],["mobile",390,844,true],["mobile-360",360,780,true]];
     for (const [label,width,height,mobile] of viewports) {
       if (bindingCases) bindingCases.reset(label);
       // Fresh storage per binding viewport: a desktop draft cache must not mask
@@ -295,7 +296,7 @@ async function main() {
           check(label+": office detail",await cdp.evaluate(s,"currentView==='office-detail' && document.querySelector('.ui-office-detail').textContent.includes('Synthetischer UI Testentwurf')"));
           await screenshot("office-detail");
           for(const fail of [true,false]) {
-            await cdp.evaluate(s,`__uiPreview.clipboard(${fail}); document.querySelector('[data-office-copy-inline]').click()`);
+            await cdp.evaluate(s,`__uiPreview.clipboard(${fail}); document.querySelector('[data-office-share]').click()`);
             await new Promise(r=>setTimeout(r,30));
             const toast=await cdp.evaluate(s,"document.querySelector('#toast').textContent");
             check(label+": clipboard "+(fail?"failure":"success"),fail ? /nicht möglich/.test(toast) && !/Text kopiert/.test(toast) : toast==="Kopiert",toast);
@@ -312,12 +313,12 @@ async function main() {
           check(label+": "+kind+" "+view+" visible content",text.trim().length>20);
           if(kind==='empty') check(label+': empty '+view+' has no invented items',await cdp.evaluate(s,"!document.querySelector('.ui-briefing-hero,.ui-vorgang-row,.radar2-card,.buero-draft-card')"));
           if(kind==='error') check(label+': error '+view+' is explicit', /nicht verfügbar|nicht geladen|fehlgeschlagen|Störung|Datenbasis|Daten derzeit/i.test(text),text);
-          if(kind==='stale' && view==='office') check(label+': stale draft not labelled today',text.includes('2020') && !text.includes('Heute erstellt'),text);
+          if(kind==='stale' && view==='office') check(label+': stale cache supplies no finished draft',!text.includes('Synthetischer UI Testentwurf') && !text.includes('Heute erstellt'),text);
           if(kind==="long" || (kind==="error" && view==="helmut")) { await screenshot(kind+"-"+view); if(kind==='long') await screenshotBottom(kind+'-'+view); }
         }
       }
       await cdp.evaluate(s,"__uiPreview.reset(); briefing.generatedAt=null; briefing.date=null; __uiPreview.view('office')");
-      check(label+': undated office source labelled honestly',await cdp.evaluate(s,"document.querySelector('#uiPage').innerText.includes('Briefingdatum nicht belegt')"));
+      check(label+': undated office cache is not represented as a current finished draft',await cdp.evaluate(s,"!document.querySelector('#uiPage').innerText.includes('Synthetischer UI Testentwurf') && !document.querySelector('[data-office-share]')"));
       await cdp.evaluate(s,"__uiPreview.reset(); __uiPreview.loading()");
       check(label+": loading state",await cdp.evaluate(s,"!!document.querySelector('.helmut-refresh')"));
       await cdp.evaluate(s,"__uiPreview.reset(); document.documentElement.dataset.theme='light'");

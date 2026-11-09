@@ -93,15 +93,16 @@ function check(name, cond, detail = "") {
   const callIdx = aiSource.indexOf('requestJson(aiPrompt, { callType: "communicationDraft"');
   check("Gate steht im Quelltext VOR dem requestJson-Call", gateIdx > 0 && callIdx > gateIdx);
 
-  // ── 3) Client: Obergrenze pro App-Start ───────────────────────────────────
+  // ── 3) Client: keine Massengenerierung, ein gewählter Entwurf ─────────────
   const clientSource = fs.readFileSync(path.join(root, "client.js"), "utf8");
-  check("Buero-Loop hat harte Obergrenze pro Lauf (OFFICE_DRAFTS_MAX_CALLS_PER_RUN)",
-    /OFFICE_DRAFTS_MAX_CALLS_PER_RUN = \d+/.test(clientSource) &&
-    clientSource.includes("missing.slice(0, OFFICE_DRAFTS_MAX_CALLS_PER_RUN)"));
-  check("Buero-Loop iteriert ueber das gedeckelte Batch, nicht ueber alle fehlenden",
-    /for \(const \{ decision, format, key \} of batch\)/.test(clientSource));
-  const capMatch = clientSource.match(/OFFICE_DRAFTS_MAX_CALLS_PER_RUN = (\d+)/);
-  check("Obergrenze ist konservativ (<= 8)", capMatch && Number(capMatch[1]) <= 8, capMatch && capMatch[1]);
+  const selected = clientSource.slice(clientSource.indexOf("async function generateSelectedOfficeDraft()"), clientSource.indexOf("async function shareOfficeDraft("));
+  check("Appstart enthält keine automatische Büro-Massenerzeugung",
+    !clientSource.includes("generateOfficeDraftsInBackground") && !clientSource.includes("OFFICE_DRAFTS_MAX_CALLS_PER_RUN"));
+  check("Ein ausgewählter Entwurf statt Formatbatch",
+    selected.includes("const { decision, format } = selectedOfficeDraft") &&
+    (selected.match(/await generateStatementWithBackend\(/g) || []).length === 1);
+  check("Laufende Anfrage und gültiger Cache verhindern weitere Aufrufe",
+    selected.includes("if (officeDraftsGenerating) return") && selected.includes("if (officeDraftEntry(decision, format)) return"));
 
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);
