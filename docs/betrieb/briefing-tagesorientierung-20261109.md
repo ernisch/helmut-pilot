@@ -46,7 +46,14 @@ und Originalbeleg. `recommendedOfficeFormat`, die nutzungsabhängige
 Entwurfserzeugung und serverseitige Mandats-/Vorgangsbindung bleiben vollständig
 bei PR1111. Kein Aufruf der Erzeugungsroute im Replay oder Browsernachweis.
 Die Ergänzung in `buildV3Briefing` bleibt von der Kommunikationsroute getrennt.
-Alle drei eigenen Deployment-Sperren bleiben erhalten. Das Übernehmen von main
+Die Deployment-Sperren aller drei Arbeitsbranches bleiben erhalten.
+Gezielter Nachweis nach Konfliktauflösung:27/27 Orientierungsgruppen, danach
+kombinierter Quellen-/Briefingstand mit PR1115 erneut über den nativen
+Quellenleser geprüft. Kundenzustand und Bilanz unverändert identisch.
+Geprüfter neuer Runtimekopf `7b2909c7`, integrierter Baum
+`964282422034bbd4efcf084138da7739f8dc2e07`; Chromium1280/390/360px erneut nur
+wegen geänderter gemeinsamer Client-/CSS-Schnittstelle geprüft. Der alte
+PR-Kopf hatte wegen des Mergekonflikts noch keinen CI-Lauf. Das Übernehmen von main
 in den Arbeitsbranch ist kein Merge dieses Fixes nach main und kein Rollout.
 
 ## Nachgewiesener Ausgangszustand
