@@ -1,6 +1,6 @@
 # Globale Inhaltsversorgung — 09.11.2026
 
-Status: **Code und Freigabepaket vorbereitet, Pflicht-CI ausstehend; nicht produktiv freigegeben**. Dieser Bericht betrifft
+Status: **Technischer Anschluss und begrenzte Produktionsvorlage vorbereitet; Endkopf-CI und erforderliche Anbietererweiterung offen, keine Aktivierungsempfehlung**. Dieser Bericht betrifft
 den allgemeinen Anschluss nach PR1104, PR1110 und PR1113. Die abgeschlossene
 erste Aktivierung und ihr eigener regulaerer Wirkungsnachweis stehen in
 [quellenabschluss-20261109.md](quellenabschluss-20261109.md). Sie werden hier
@@ -181,12 +181,41 @@ unveraenderten Zwoelfergrenze lesen. Der Job bestaetigt seinen Rest im bestehend
 Payload unter Besitzer-, Lease-, Status- und Vorwert-CAS, bevor er vertagt oder
 abgeschlossen wird. Ein unbekannter Schreibausgang ist kein Erfolg.
 
-Die Extraktion bleibt auf den vorhandenen Einstieg begrenzt: maximal vier
-ganze Absaetze und 1.280 Zeichen. Sie behauptet keine Vollartikellektuere.
-Ein synthetischer Gegenfall mit Fachbezug erst im fuenften Absatz wird deshalb
-nicht mehr als endgueltig fachfremd verworfen. Spaetere Artikelpassagen bleiben
-inhaltlich unbewertet. Bestehende RSS-/amtliche Extraktoren, Quellenpruefungen
-und Lage-/Briefingleser bleiben der gemeinsame Ausgabeweg.
+Ein konkreter Originalbefund erfordert mehr als den bisherigen Einstieg: Im
+vorhandenen DGB-Artikel fehlte der fuenfte Absatz mit 700.000 Beschaeftigten,
+500.000 Mindestlohnbeziehenden und Branchenumsatz. Der neue allgemeine Vertrag
+`artikeltext-v3` uebernimmt deshalb den gesamten eindeutig gebundenen
+strukturierten Artikel einschliesslich aller Absaetze und Zwischenueberschriften,
+sofern er hoechstens 8.000 Zeichen und 12.000 UTF-8-Bytes umfasst. Absatzanzahl,
+gesamter Artikeltexthash, Antwort-, Quellen-, Titel-, URL- und Datumsbindung
+werden geprueft. Es gibt keine Artikel- oder Profilsonderregel.
+
+Dieser Artikeldeckel beansprucht hoechstens die Haelfte des unveraenderten
+16.000-Zeichen-Lagekontexts. Nur ein strikt validierter v3-Beleg darf dort das
+generische 1.400-Zeichen-Limit ueberschreiten; Gesamtbudget und sechs Belege
+bleiben unveraendert. Briefing uebernimmt denselben Text samt Herkunft.
+Understanding misst zusaetzlich die tatsaechlich JSON-serialisierte Eingabe
+inklusive Schema, Escaping und 4.096 Bytes Senderreserve: hoechstens 128.000
+UTF-8-Bytes, konservativ unter den vorhandenen Eingabevertraegen. Bei Ueberlauf
+werden ganze Quellen zurueckgestellt, niemals Saetze abgeschnitten. Restquellen
+haben vor schon bestaetigten Ergaenzungen Vorrang; nur die wirklich gesendeten
+Prompt-IDs bestaetigen Jobfortschritt. Es werden keine Token-/Ausgabelimits oder
+Kostenreservierungen erhoeht. Das ist keine gemessene Tokenzahl.
+Laengere Eingaben koennen je Modellaufruf mehr kosten und bei unveraendertem
+1-USD-Tages-/30-USD-Gesamtvertrag weniger taegliche Vorgaenge ermoeglichen.
+Budgetteilung kann weitere regulaere Fortsetzungen erfordern; kein hoeherer
+Durchsatz oder unveraenderter Preis je Vorgang wird behauptet.
+
+Bei groesseren Artikeln bleibt der bisherige nutzbare v2-Ausschnitt aus derselben
+Antwort erhalten: maximal vier ganze Absaetze/1.280 Zeichen, mit Verfahren und
+Verhaeltnis gelieferter/gesamter Absaetze erkennbar partiell. Ein zu langer erster
+Absatz bleibt wie zuvor offen. Auch positive alte v2-Cachezeilen bleiben
+unveraendert Teilkontext: derselbe Reservierungsschluessel verhindert einen
+zweiten Original-GET. Eine gespeicherte vollstaendige Originalantwort fuer
+nachtraegliche Erweiterung liegt dort nicht vor. Dies ist keine Bestandsreparatur
+und kein Nachweis ausreichender Abdeckung beliebig langer Artikel. Fachbezug
+erst hinter einem Ausschnitt darf weiterhin keinen endgueltigen Ausschluss
+begruenden. Bestehende RSS-/amtliche Extraktoren bleiben erhalten.
 
 Eine vor jedem HTTP-Start verweigerte Anbieterreservierung darf ausschliesslich
 ihre eigene unveraenderte Cache-Reservierung atomar zurueckgeben. Erst eine
@@ -202,8 +231,13 @@ oder deklarierter Synthetik und injizierten Adaptern. Keine neuen Originale,
 Datenbank-Productionwrites, Modelle oder manuellen Verarbeitungsläufe.
 Bestaetigte Gruppen: Inhaltsdienst 20, globaler Anschluss 29, Quellenlauf 7,
 Blob-/Persistenzvertrag 47, Dedup 10, DIP 16, Bundestag 33, Berlin 46,
-Beschaffung 14, Abrufschutz 12. Queue 19, Eingabebindung 18, Pendingbestand 17, Dispatch 111,
+Beschaffung 14, Abrufschutz 12. Queue 19, Eingabebindung 20, Pendingbestand 17, Dispatch 111,
 Kommunikationsriegel 48 und bestehender Selbstweck-Endweg 31 sind gruen.
+Zusaetzlich sind Extraktions-/Quellenbindung 16, Lage-/Briefingquellen 13,
+PARDOK-Importschutz 13 und Terminalschutz 63 gruen. DGBs gesamter Text ist im
+abgefangenen Modellprompt sowie Lage-/Briefingvertrag nachgewiesen; zwoelf
+grosse synthetische Artikel gehen unter dem serialisierten Bytebudget ueber
+mehrere Fortsetzungen ohne Dokumentverlust. Keine echte Modellbefolgung behauptet.
 Die endgueltigen Pflichtchecks werden im PR auf dessen exakten Kopf gebunden.
 Erfolgreiche bestehende Queue-Vertraege wurden wiederverwendet, keine lokale
 Gesamtsuite und kein 500er-Lasttest gestartet.
@@ -217,17 +251,30 @@ Native Vorstufen und Browserpflichtcheck waren gruen, Browserausfuehrung wurde
 bei diesem Backenddiff regulaer uebersprungen. Endkopf-Pflichtchecks folgen
 regulaer neu; dieser Fehllauf wird nicht als Erfolg ausgegeben.
 
+Zweiter Pflichtlauf `42597166600` auf `a78273fc3ce23cb5ff614dc416a31d8d5fa7f005`:
+**FAILURE**, Standard 189/189 gruen, Bereich 348/350 gruen. Der reine
+Weckzielpruefer importierte Dispatch und machte PARDOK wieder im Readergraph
+erreichbar; unveraendert in den bestehenden reinen Kommunikationsriegel
+verschoben, alte Exports erhalten. Ein weiterer positionsabhaengiger
+Pending-Terminalwaechter wurde auf den exakten Funktionskoerper mit Terminal-,
+Parkungs- und Fehlerfilter nachgezogen. Keine Schutzpruefung abgeschwaecht.
+Der notwendige Kontextfix wird zusammen mit diesen gezielten Korrekturen
+regulaer auf dem neuen Endkopf geprueft; keine lokale Gesamtsuite.
+
 Der unabhaengige Review hat insbesondere globalen Lektuerebeleg,
 13/12-Fortsetzung, Quellen-/RSS-Konflikte, Betreiberpausen und die enge
 Selbstweckausnahme geprueft; keine offenen P1-Befunde. Pflichtchecks sind `Syntax + Offline-Suiten` und
 `Browser-/Mobile-Smoke (Chromium)`. Der PR bleibt bis zum belegten gruenen
-Endkopf nicht aktivierungsbereit. Commit, PR und native CI-Run-ID werden
+Endkopf technisch nicht abgenommen. Auch danach bleibt die erforderliche
+Anbietererweiterung bis zur freigegebenen NDR-Einzelprobe unvollstaendig;
+keine Empfehlung, die allgemeine Versorgung als fertig zu aktivieren. Commit, PR und native CI-Run-ID werden
 im PR-Abschluss festgehalten, ohne nachtraeglichen Runtime-Commit nur fuer
 CI-Nummern. Die Preview dieses Entwicklungszweigs ist explizit abgeschaltet.
 
-## Ein konkretes spaeteres Freigabepaket
+## Begrenzte spaetere Produktionsvorlage
 
-Freigabegegenstand ist ausschliesslich der im PR bezeichnete, durch beide
+Eine spaetere Productionentscheidung ist erst nach Klaerung der offenen
+Anbieterprobe anzufordern. Vorbereiteter Gegenstand ist ausschliesslich der im PR bezeichnete, durch beide
 Pflichtchecks bestaetigte Endcommit und die folgende Productionkonfiguration.
 Keine Variablen wurden in diesem Sprint gesetzt. Bestehende Artikelkontext-,
 DGB-/Radio-Host- und Anbieterflags bleiben gesetzt; NDR ist ohne abgeschlossene

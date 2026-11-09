@@ -60,6 +60,30 @@ async function transport(target, options = {}) {
   return new Response(JSON.stringify(ids ? projection.filter(r => JSON.parse("[" + ids.slice(4, -1) + "]").includes(r.raw_document_id)) : projection));
 }
 (async () => {
+  await test("Vollstaendiger DGB-Artikel erreicht Lage und Briefing samt fuenftem Absatz; Altcache bleibt ohne Neuabruf", async () => {
+    const old = rows.get(key(dgb));
+    const verboten = () => { throw new Error("Kein neuer Originalversuch fuer Altcache"); };
+    const bestand = await B.beschaffeArtikelkontext(dgb, { versuch: true, kontext: "einstieg" },
+      { speicher: { ...speicher, reservieren: verboten, abschliessen: verboten }, fetchUrl: verboten });
+    assert.equal(bestand.ok, true); assert.equal(bestand.beleg.gewinnung.verfahren, "artikel-einstieg-v2");
+    assert.equal(bestand.beleg.gewinnung.absaetze.length, 4);
+    assert.equal(bestand.beleg.gewinnung.artikelAbsatzZahl, 5, "Altcache bleibt erkennbar begrenzt");
+    const full = G.gewinneArtikeltext(dgb, { body: fs.readFileSync(path.join(root, "dgb-artikel.html"), "utf8"), finalUrl: dgb.url, gelesenAm: date });
+    assert.equal(full.ok, true, full.reason); assert(full.beleg.text.length > 1400);
+    rows.set(key(dgb), { ...old, beleg: full.beleg });
+    const projected = (await enrich([dgb]))[0];
+    const lage = Q.baueEingabe([ko], { [vorgang]: [projected] }, new Date(date));
+    const briefing = F.quellenVertrag({ [vorgang]: [projected] });
+    assert.equal(lage[0].quellenbelege[0].auszug, full.beleg.text);
+    assert.equal(briefing[0].auszug, full.beleg.text);
+    assert(briefing[0].auszug.includes("700.000 Menschen"));
+    assert(briefing[0].auszug.includes("500.000 von ihnen"));
+    assert.equal(lage[0].quellenbelege[0].artikelkontext.textHash, full.beleg.textHash);
+    assert.notEqual(Q.hashEingabe(lage), Q.hashEingabe(Q.baueEingabe([ko], { [vorgang]: [{ ...projected,
+      summary: old.beleg.text, artikelkontext: { beleg: old.beleg, auszugVorher: null } }] }, new Date(date))));
+    assert.throws(() => Q.baueEingabe([ko], { [vorgang]: [{ ...projected, summary: old.beleg.text }] }, new Date(date)), /leseprojektion/);
+    assert.equal(Q.MAX_EINGABE_ZEICHEN, 16000); assert.equal(Q.MAX_BELEGE, 6);
+  });
   await test("Originalfixtures behalten ihre vorhandenen SHA256", () => {
     for (const entry of JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8")))
       assert.equal(crypto.createHash("sha256").update(fs.readFileSync(path.join(root, entry.file))).digest("hex"), entry.fixture_sha256);

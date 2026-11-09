@@ -119,7 +119,9 @@ async function main() {
     const sources = w.prompts.flatMap(prompt => prompt.split("\n").filter(l => l.startsWith('{"quelle_id":')).map(JSON.parse));
     const d = sources.find(s => s.url === dgbUrl), radioSource = sources.find(s => s.url === radioUrl);
     assert(d.artikelkontext.text.includes("von 15 auf 15,30 Euro")); assert(d.artikelkontext.text.includes("von derzeit 15 auf 17 Euro"));
-    assert(d.artikelkontext.text.endsWith("Die Friedenspflicht endet am 31. Dezember dieses Jahres."));
+    assert(d.artikelkontext.text.includes("Die Friedenspflicht endet am 31. Dezember dieses Jahres."));
+    assert(d.artikelkontext.text.endsWith("Etwa 500.000 von ihnen erhalten lediglich den Branchenmindestlohn."));
+    assert.equal(d.artikelkontext.gewinnung.verfahren, "artikeltext-v3");
     assert(radioSource.artikelkontext.text.includes("Ab 2027 könnten die Leistungen deutlich gekürzt werden."));
     for (const source of sources) assert.equal(source.abgerufenAm, "2026-11-07T09:00:00+00:00");
     assert.deepEqual(w.lazy.find(x => x.cluster.documents.some(d => d.url === radioUrl)).profiles.map(p => p.id), ['test-a','test-b']);

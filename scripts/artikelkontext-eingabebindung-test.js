@@ -71,6 +71,57 @@ let pass = 0;
 async function test(name, fn) { await fn(); pass++; console.log("PASS " + name); }
 
 async function main() {
+  await test("Vollstaendiger vorhandener DGB-Artikel erreicht abgefangenen Modellprompt inklusive Branchenkontext", async () => {
+    const fs = require("node:fs"), path = require("node:path");
+    const C = require("../lib/helmut/crawler"), G = require("../lib/helmut/artikelkontext-gewinnung");
+    const feed = C.parseRssItems(fs.readFileSync(path.join(__dirname, "fixtures/quelleninhalt-20261107/dgb-google.xml"), "utf8"))[0];
+    const url = "https://www.dgb.de/service/weiterer-service/tarifmeldungen/tarifmeldung/dritte-tarifrunde-im-gebaeudereiniger-handwerk-endet-ohne-ergebnis/";
+    const doc = D.toRawDocumentRow(C.normalizeRawItem({ ...feed, url, originalUrl: feed.url },
+      { id: "dgb", name: "DGB", type: "association", url: "https://news.google.com/rss/search?q=site:dgb.de" }));
+    const result = G.gewinneArtikeltext(doc, { body: fs.readFileSync(path.join(__dirname, "fixtures/inhaltsversorgung-20261108/dgb-artikel.html"), "utf8"),
+      finalUrl: url, gelesenAm: "2026-11-08T08:00:00.000Z" });
+    assert.equal(result.ok, true, result.reason);
+    const s = pruefstand(), f = { cluster: { documents: [doc] }, beleg: result.beleg };
+    const saved = await run(f, s); assert.equal(saved.status, "saved");
+    const sent = sources(s.p.prompts[0])[0].artikelkontext;
+    assert.equal(sent.text, result.beleg.text); assert(sent.text.includes("700.000 Menschen"));
+    assert(sent.text.includes("500.000 von ihnen")); assert.equal(sent.gewinnung.verfahren, "artikeltext-v3");
+    assert.deepEqual(saved.promptDokumentIds, [doc.id]);
+  });
+  await test("Volltextbudget zaehlt serialisierte Eingabe und setzt ganze nichtgesendete Quellen fort", async () => {
+    const f = fixture(), hash = value => crypto.createHash("sha256").update(value).digest("hex");
+    // Deklarierte synthetische Grosskontexte mit JSON-Escaping, kein Lasttest.
+    const text = ('Die Konferenz diskutiert "Bahnstrecken" und \\Finanzierung\\. ').repeat(110);
+    f.cluster.documents = Array.from({ length: 12 }, (_, i) => D.toRawDocumentRow({ ...f.cluster.documents[0],
+      url: `https://example.org/konferenz/volltext-${i}`, title: `${ANALYSE.display_title} Quelle ${i}` }));
+    const belege = f.cluster.documents.map(d => A.pruefeArtikelkontext([d], { version: 2,
+      dokumentId: d.id, quellenHash: A.quellenstandHash(d), artikelUrl: d.url, artikelTitel: d.title,
+      herkunft: "strukturierter-originalartikel", gelesenAm: "2026-09-17T12:30:00Z", absatzPosition: 1, text: text.trim(),
+      gewinnung: { verfahren: "artikeltext-v3", positionsbasis: "html-article-p", antwortHash: hash("synthetische HTML-Antwort"),
+        artikelTextHash: hash(text.trim()), artikelTextPosition: 0, titelTreffer: 0, kandidatZahl: 1,
+        artikelAbsatzZahl: 1, absaetze: [text.trim()], zwischenTexte: [], struktur: "jsonld",
+        datumsFeld: "datePublished", originalDatum: d.published_at, kanonischDeklariert: d.url } }));
+    const ids = f.cluster.documents.map(d => d.id), s = pruefstand({ runId: "queue-volltextbudget",
+      listVorgangDocuments: async () => f.cluster.documents });
+    s.deps.artikelkontextVersorgung = async selected => ({ angefordert: true, ok: true,
+      belege: belege.filter(b => selected.some(d => d.id === b.dokumentId)) });
+    s.deps.artikelkontextVersorgung.nurBestand = true;
+    let rest = ids, existing = null;
+    for (let i = 0; rest.length && i < 4; i++) {
+      const result = await run(f, s, { artikelkontextVersuch: undefined, existing, quellenRestDokumentIds: rest });
+      assert(["saved", "updated"].includes(result.status), JSON.stringify(result));
+      const sent = sources(s.p.prompts.at(-1));
+      assert(sent.length > 0 && sent.length < 12); assert.deepEqual(result.promptDokumentIds, sent.map(q => q.quelle_id));
+      assert(sent.every(q => q.artikelkontext.text === text.trim()), "Keine kuerzeren Saetze zur Budgetanpassung");
+      const schema = require("../lib/helmut/understanding-schema").KNOWLEDGE_OBJECT_SCHEMA;
+      assert(Buffer.byteLength(JSON.stringify({ input: s.p.prompts.at(-1), schema }), "utf8") + 4096 <= 128000);
+      const next = rest.filter(id => !result.promptDokumentIds.includes(id));
+      assert(next.length < rest.length, "Rest muss trotz stabiler globaler Sortierung fortschreiten");
+      rest = next; existing = { ...s.p.kos.at(-1), status: "active", understanding_status: "complete" };
+    }
+    assert.equal(rest.length, 0); assert(s.p.prompts.length > 1);
+    assert.equal(existing.classification_confidence.helmut_quellen_lektuere.quellen.length, 12);
+  });
   await test("13 Quellen behalten den ungelesenen Rest und aktualisieren complete mit hoechstens 12 Promptquellen", async () => {
     const f = fixture();
     f.cluster.documents = Array.from({ length: 13 }, (_, i) => D.toRawDocumentRow({

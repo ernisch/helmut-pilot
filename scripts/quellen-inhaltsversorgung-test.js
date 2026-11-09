@@ -159,7 +159,7 @@ async function main() {
     const unrelated = await e.factory().versorge([doc("sport", "Fußball: Mannschaft gewinnt Pokal")], profiles);
     assert.equal(unrelated.bereit.length, 0); assert.equal(e.requests.length, 1);
   });
-  await test("Fachbezug erst nach dem vierten Absatz ist kein endgueltiger Ausschluss", async () => {
+  await test("Fachbezug erst nach dem vierten Absatz erreicht den vollstaendigen Artikelkontext", async () => {
     const d = doc("spaeter-fachbezug", "Mindestlohn: Neue Meldung");
     const anfang = ["Die Ausstellung im alten Gebaeude beginnt am kommenden Montag und zeigt Bilder aus der Region.",
       "Besucherinnen und Besucher erhalten dort einen Einblick in die Entwicklung der Landschaft und ihrer Orte.",
@@ -171,7 +171,9 @@ async function main() {
     const e = environment(new Map([[d.url, page]]));
     const r = await e.factory().versorge([d], profiles);
     assert.equal(r.bereit.length, 1, JSON.stringify(r));
-    assert(!r.bereit[0].beleg.text.includes("Tarifverhandlungen"));
+    assert(r.bereit[0].beleg.text.includes("Tarifverhandlungen"));
+    assert.equal(r.bereit[0].beleg.text, body);
+    assert.equal(r.bereit[0].beleg.gewinnung.verfahren, "artikeltext-v3");
     assert(!r.befund.some(b => b.status === "unpassend"));
   });
   await test("Unklare und neue Abrufe bleiben über mehrere Batches begrenzt; Vertagung ist kein irrelevanter Treffer", async () => {
