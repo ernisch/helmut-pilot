@@ -1,0 +1,6 @@
+{
+  "origin": "Existing /tmp/helmut-quellenbelege/hib.xml from previous task; no new fetch",
+  "source_sha256": "1eb55346a0229f22289d837edd870d4b3594a8283a7566a5ba755617118cb69a",
+  "fixture_sha256": "a0ea14de25caadb89eb61b9cdd2d0fd07e9901df3f291f927d350d0812c2140a",
+  "scope": "Single original RSS item, wrapping channel and CRLF to LF normalization only; not original article HTML"
+}

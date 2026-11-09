@@ -107,4 +107,40 @@ test("Geaenderte Zeitmetadaten aendern den Quellenhash, gespeicherte Altvertraeg
   assert.equal(L.cacheGueltig(payload, "k", L.hashEingabe(a), a), false);
 });
 
+test("Quellenumfang begrenzt Abwesenheitsbehauptungen in allen drei bestehenden Promptverbrauchern", () => {
+  for (const p of [U.buildUnderstandingPrompt(cluster), AI.buildLageBriefingPrompt(lage(doc), {},
+    { briefingDatum: "2026-01-05" }), R.prompt([], lage(doc), {})]) {
+    assert(p.includes("AUSZUGSGRENZE:"));
+    assert(p.includes("nicht den vollstaendigen Originalartikel"));
+    assert(p.includes("nicht behaupten, die Quelle nenne keine"));
+    assert(p.includes("ausdrueckliche Verneinung im Quellentext"));
+  }
+});
+
+test("Vorhandene Pflege-Feedprobe bleibt ein Auszug ohne erfundene Artikelergaenzung", () => {
+  const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto");
+  const dir = path.join(__dirname, "fixtures/pflege-quellenumfang-20261109");
+  const bytes = fs.readFileSync(path.join(dir, "hib.xml"));
+  const manifest = JSON.parse(fs.readFileSync(path.join(dir, "manifest.json")));
+  assert.equal(crypto.createHash("sha256").update(bytes).digest("hex"), manifest.fixture_sha256);
+  const C = require("../lib/helmut/crawler"), D = require("../lib/helmut/dedup");
+  const source = D.toRawDocumentRow(C.normalizeRawItem(C.parseRssItems(bytes.toString())[0],
+    { id: "bundestag", name: "Bundestag", type: "bundestag" }));
+  assert.equal(source.summary, "Gesundheit/Antwort Die Unterstützung durch Nachbarn, Ehrenamtliche oder familiäre Netzwerke ist nach Einschätzung der Bundesregierung ein wichtiger Beitrag zur Sicherung der pflegerischen Versorgung.");
+  const before = structuredClone(source), p = U.buildUnderstandingPrompt({ documents: [source] });
+  assert.equal(rows(p)[0].auszug, source.summary);
+  assert.equal(rows(p)[0].url, "https://www.bundestag.de/presse/hib/kurzmeldungen-1231768");
+  assert(!p.includes("Pflegeneuordnungsgesetz"));
+  assert.deepEqual(source, before);
+});
+
+test("Benannte Vorhaben und ausdrueckliche Verneinungen bleiben wortgetreue Quelldaten", () => {
+  for (const summary of ["Der Entwurf des Schulbaugesetzes sieht zusaetzliche Foerdermittel vor. Ein Beschluss steht aus.",
+    "Die Landesregierung plant ausdruecklich keine neue Gesetzesinitiative zur Schulfinanzierung."]) {
+    const source = { ...doc, summary }, p = U.buildUnderstandingPrompt({ documents: [source] });
+    assert.equal(rows(p)[0].auszug, summary);
+    assert(p.includes("konkret genannte Gesetze, Vorhaben und Massnahmen erhalten"));
+  }
+});
+
 console.log(`PASS ${bestanden} Gruppen zum Quellenzeitvertrag`);
