@@ -62,6 +62,7 @@ function erzeugeAttrappe() {
     helmut_store: new Map(),    // id -> data (merge-duplicates)
     zugriffe: { raw_documents: 0, process_runs: 0, helmut_store: 0, sonstige: 0 },
     stoerungHelmutStore: false, // 500 fuer JEDEN helmut_store-Zugriff (Blob-Ausfall)
+    vorbedingungStatus: { offen: 0, wartend: 0, laufend: 0, fehlgeschlagen: 2 },
     stoerungRawDocuments: false
   };
   const server = http.createServer((req, res) => {
@@ -105,8 +106,17 @@ function erzeugeAttrappe() {
           return antworte(201, null);
         }
         if (url.pathname === "/rest/v1/raw_documents" && req.method === "GET") {
-          const ids = url.searchParams.get("id").slice(4, -1).split(",");
+          const ids = url.searchParams.get("id").slice(4, -1).split(",").map(id => id.replace(/^"|"$/g, ""));
           return antworte(200, ids.map(id => zustand.raw_documents.get(id)).filter(Boolean));
+        }
+        if (url.pathname === "/rest/v1/rpc/helmut_jobs_offen" && req.method === "POST")
+          return antworte(200, [zustand.vorbedingungStatus]);
+        if (url.pathname === "/rest/v1/rpc/helmut_raw_document_cas" && req.method === "POST") {
+          const args = JSON.parse(body), alt = zustand.raw_documents.get(args.p_id);
+          const match = alt && Object.entries(args.p_expected).every(([k, value]) =>
+            JSON.stringify(alt[k] ?? null) === JSON.stringify(value));
+          if (match) zustand.raw_documents.set(args.p_id, { ...alt, ...args.p_next });
+          return antworte(200, [{ id: args.p_id, uebernommen: Boolean(match) }]);
         }
         if (url.pathname === "/rest/v1/raw_documents" && req.method === "PATCH") {
           const id = url.searchParams.get("id").slice(3), alt = zustand.raw_documents.get(id);
@@ -131,10 +141,12 @@ function erzeugeAttrappe() {
           if (req.method === "GET") {
             const idFilter = String(url.searchParams.get("id") || "").replace(/^eq\./, "");
             const data = zustand.helmut_store.get(idFilter);
-            return antworte(200, data === undefined ? [] : [{ data }]);
+            return antworte(200, data === undefined ? [] : [{ id: idFilter, data }]);
           }
           if (req.method === "POST") {
             const zeile = JSON.parse(body || "{}");
+            if (zeile.id.includes("-rohstand-") && zustand.helmut_store.has(zeile.id))
+              return antworte(409, { message: "duplicate" });
             zustand.helmut_store.set(zeile.id, zeile.data);
             return antworte(201, null);
           }
@@ -514,6 +526,67 @@ async function main() {
       laufLeer.erledigt === 1 && leer.spiegelAufrufe.length === 0
       && laufLeer.blobSpiegel.gesammelt === 0,
       JSON.stringify({ erledigt: laufLeer.erledigt, writes: leer.spiegelAufrufe.length }));
+  }
+
+  abschnitt("6 · Unveraenderliche Artikelversionen im begrenzten Morgenweg");
+  {
+    process.env.HELMUT_QUELLEN_ARBEITSFENSTER = "on";
+    zustand.stoerungHelmutStore = false; zustand.stoerungRawDocuments = false;
+    const satz = "Die Tarifparteien beraten konkrete Verbesserungen der Arbeitsbedingungen und legen einen gemeinsamen Vorschlag zur weiteren Verhandlung vor.";
+    const item = { ...rohitem(80001), summary: satz, retrievedAt: "2026-11-09T03:00:00Z" };
+    const erster = await storage.persistiereRohdokumenteWarteschlange([item]);
+    const id = dedup.toRawDocumentRow(item).id, hash1 = erster.quellenstaende?.[id];
+    check("6.1 Erster bestaetigter Artikelstand hat eigene globale Archivkennung", erster.ok && /^[a-f0-9]{64}$/.test(hash1));
+    const zweiter = await storage.persistiereRohdokumenteWarteschlange([{ ...item,
+      summary: satz + " Die Verhandlungen werden am Donnerstag fortgesetzt.", retrievedAt: "2026-11-09T03:30:00Z" }]);
+    const hash2 = zweiter.quellenstaende?.[id];
+    check("6.2 Geaenderter Originaltext derselben URL erzeugt einen neuen Stand", zweiter.ok && hash2 && hash1 !== hash2);
+    const alt = await storage.ladeRohdokumentStaende([id], { [id]: hash1 });
+    const neu = await storage.ladeRohdokumentStaende([id], { [id]: hash2 });
+    check("6.3 Alte und neue Artikelversion sind beide unveraendert lesbar", alt[0].summary === satz && neu[0].summary.endsWith("fortgesetzt."));
+    check("6.4 Kanonische Fassung traegt den bestaetigten neuen Text und Abrufstand", zustand.raw_documents.get(id).summary === neu[0].summary
+      && zustand.raw_documents.get(id).retrieved_at === "2026-11-09T03:30:00Z");
+    const V = require("../lib/helmut/roh-quellenstaende");
+    check("6.5 JSONB-Schluesselreihenfolge erzeugt keine neue Artikelversion",
+      V.standHash({ ...neu[0], raw: { a: { c: 1, b: 2 }, z: 3 } }) === V.standHash({ ...neu[0], raw: { z: 3, a: { b: 2, c: 1 } } }));
+    let falsch = false;
+    try { await V.erzeuge({ storeId: "main", request: async () => [{ id: "fremde-zeile", data: { version: 1, quellenHash: hash2, dokument: neu[0] } }] }).lesen(id, hash2); }
+    catch { falsch = true; }
+    check("6.6 Fremde Archivzeile ist trotz passendem Inhalt kein Herkunftsbeleg", falsch);
+    const lang = Array.from({ length: 150 }, (_, n) => `Die Tarifparteien beraten Verhandlungsteil ${n} und legen konkrete Vorschlaege zur sozialen Absicherung vor.`).join(" ");
+    const voll = await storage.persistiereRohdokumenteWarteschlange([{ ...item, summary: lang, retrievedAt: "2026-11-09T04:00:00Z" }]);
+    const hash3 = voll.quellenstaende[id], original = (await storage.ladeRohdokumentStaende([id], { [id]: hash3 }))[0];
+    check("6.7 Original-RSS jenseits1280Zeichen bleibt im gebundenen Vollstand erhalten", voll.ok && original.summary === lang
+      && zustand.raw_documents.get(id).summary === lang
+      && V.normiereGebunden(original, { [id]: hash3 }).summary === lang);
+    const ergaenzt = lang + " Ein neuer Gesetzentwurf erweitert den vereinbarten Massnahmenkatalog.";
+    const neuLang = await storage.persistiereRohdokumenteWarteschlange([{ ...item, summary: ergaenzt, retrievedAt: "2026-11-09T04:30:00Z" }]);
+    check("6.8 Neue Fakten hinter dem Anzeigeauszug erzeugen eine eigene unverkuerzte Version", neuLang.ok && neuLang.quellenstaende[id] !== hash3
+      && (await storage.ladeRohdokumentStaende([id], { [id]: neuLang.quellenstaende[id] }))[0].summary === ergaenzt);
+    const andererTitel = { ...item, title: item.title + ": neuer Sachstand", summary: satz, retrievedAt: "2026-11-09T04:45:00Z" };
+    const metadaten = await storage.persistiereRohdokumenteWarteschlange([andererTitel]);
+    let metaGesperrt = false;
+    try { await storage.ladeRohdokumentStaende([id], metadaten.quellenstaende); }
+    catch (e) { metaGesperrt = e.message === "quellenstand-metadatenabweichung"; }
+    check("6.9 Unbestaetigter Titelwechsel bleibt archiviert aber vor Verarbeitung sichtbar gesperrt", metadaten.ok && metaGesperrt
+      && zustand.raw_documents.get(id).title === item.title);
+    const gleichzeitig = await storage.persistiereRohdokumenteWarteschlange([
+      { ...item, summary: satz, retrievedAt: "2026-11-09T04:50:00Z" },
+      { ...item, summary: satz + " Die Beteiligten benennen einen neuen verbindlichen Termin.", retrievedAt: "2026-11-09T04:51:00Z" }
+    ]);
+    check("6.10 Zwei Textversionen derselben URI in einem Batch behalten zwei Queuebindungen", gleichzeitig.ok
+      && gleichzeitig.bestaetigteIds.length === 1 && gleichzeitig.quellenversionen.length === 2
+      && gleichzeitig.quellenversionen[0].stand !== gleichzeitig.quellenversionen[1].stand);
+    check("6.11 Semantisch gleiche SQL-Zeitstempel erzeugen keine neue Artikelversion",
+      V.standHash({ ...neu[0], published_at: "2026-11-09T03:00:00Z" }) === V.standHash({ ...neu[0], published_at: "2026-11-09T03:00:00+00:00" }));
+    const status = await storage.jobQueueOffeneVorbedingungen({ fenster: ["2026-11-09T00Z"], typen: ["source_fetch"] });
+    check("6.12 Vorbedingungsadapter erhaelt echte fehlgeschlagene Auftraege", status.verfuegbar && status.fehlgeschlagen === 2);
+    for (const wert of [undefined, "", -1, "0"]) {
+      zustand.vorbedingungStatus = { offen: 0, wartend: 0, laufend: 0, fehlgeschlagen: wert };
+      const fehlt = await storage.jobQueueOffeneVorbedingungen({ fenster: ["2026-11-09T00Z"] });
+      check("6.13 Fehlender/ungueltiger Fehlerzaehler ist unbekannt stattNull (" + String(wert) + ")", fehlt.fehlgeschlagen === null);
+    }
+    delete process.env.HELMUT_QUELLEN_ARBEITSFENSTER;
   }
 
   await new Promise((r) => server.close(r));

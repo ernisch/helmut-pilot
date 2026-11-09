@@ -445,6 +445,56 @@ async function main() {
     assert.equal((await run(f, t, { deadlineMs: Date.now() - 1 })).status, "skipped-zeitbudget");
     assert.deepEqual(t.p.schritte, []);
   });
+  await test("Langer RSS-Originalstand erreicht das Modell Abschnitt fuer Abschnitt ohne falschen Volllektuerestatus", async () => {
+    const f = fixture(), doc = f.cluster.documents[0];
+    doc.summary = Array.from({ length: 240 }, (_, i) => `Die Konferenz behandelt Bahnstrecken und Finanzierung im Abschnitt ${i} zur konkreten Planung.`).join(" ");
+    const B = require("../lib/helmut/artikel-abschnitte"), bundle = B.segmentiere(doc.summary);
+    assert(bundle.count > 1);
+    const s = pruefstand({ runId: "queue-abschnitte", listVorgangDocuments: async () => [doc] });
+    let existing = null;
+    const gesendet = [];
+    for (let index = 0; index < bundle.count; index++) {
+      const extra = { artikelkontextVersuch: undefined, existing, quellenRestDokumentIds: [doc.id], quellenAbschnitte: { [doc.id]: index } };
+      const result = await run(f, s, extra);
+      assert(["saved", "updated"].includes(result.status), JSON.stringify(result));
+      const q = sources(s.p.prompts.at(-1))[0];
+      assert.equal(q.auszug, bundle.abschnitte[index].text); assert.equal(q.quellenabschnitt.index, index);
+      assert.equal(q.quellenabschnitt.abschnitte, undefined, "Andere Originalabschnitte gehoeren nicht in dieselbe Modelleingabe");
+      assert.equal(result.promptAbschnitte[doc.id].index, index); gesendet.push(q.auszug);
+      existing = { ...s.p.kos.at(-1), status: "active", understanding_status: "complete" };
+      assert.equal(existing.classification_confidence.helmut_quellen_lektuere.quellen[0].geleseneAbschnitte.length, index + 1);
+      const vorher = s.p.prompts.length;
+      const replay = await run(f, s, { ...extra, existing });
+      assert.equal(replay.status, "duplicate"); assert.equal(replay.promptBereitsGespeichert, true);
+      assert.equal(s.p.prompts.length, vorher, "Speichern vor Cursorwrite darf keinen zweiten Modellaufruf ausloesen");
+    }
+    assert.equal(gesendet.join(""), doc.summary);
+    assert.equal(existing.classification_confidence.helmut_quellen_lektuere.quellen[0].geleseneAbschnitte.length, bundle.count);
+    const p = pruefstand({ runId: "queue-falscher-abschnitt" });
+    await assert.rejects(() => run(f, p, { artikelkontextVersuch: undefined, quellenRestDokumentIds: [doc.id], quellenAbschnitte: { [doc.id]: 1 } }), /abschnittsreihenfolge/);
+    assert.equal(p.p.prompts.length, 0);
+  });
+  await test("Kanonische Quellenquittung ueberlebt JSONB-Reihenfolge; historischer v1-Beleg bleibt explizit und wiederverwendbar", async () => {
+    const f = fixture(), doc = f.cluster.documents[0], s = pruefstand({ runId: "receipt-jsonb", listVorgangDocuments: async () => f.cluster.documents });
+    const extra = { quellenRestDokumentIds: [doc.id] };
+    const result = await run(f, s, extra); assert.equal(result.status, "saved");
+    const ko = { ...s.p.kos.at(-1), status: "active", understanding_status: "complete" };
+    const reorder = value => Array.isArray(value) ? value.map(reorder) : value && typeof value === "object"
+      ? Object.fromEntries(Object.keys(value).sort().reverse().map(k => [k, reorder(value[k])])) : value;
+    const L = require("../lib/helmut/quellen-lektuerebeleg");
+    assert.deepEqual(L.leseQuellenLektuere(reorder(ko)), L.leseQuellenLektuere(ko));
+    const before = s.p.prompts.length;
+    assert.equal((await run(f, s, { ...extra, existing: reorder(ko) })).promptBereitsGespeichert, true);
+    assert.equal(s.p.prompts.length, before);
+    const legacy = structuredClone(ko), oldq = L.quellenLektuereBeleg(sources(s.p.prompts[0])[0], 1);
+    delete oldq.hashVersion;
+    const b = { version: 1, vorgangId: legacy.vorgang_id, koVersion: legacy.ko_version, quellen: [oldq] };
+    b.belegHash = crypto.createHash("sha256").update(JSON.stringify([b.version, b.vorgangId, b.koVersion, b.quellen])).digest("hex");
+    legacy.classification_confidence.helmut_quellen_lektuere = b;
+    assert.equal(L.leseQuellenLektuere(reorder(legacy))[0].hashVersion, 1);
+    const replay = await run(f, s, { ...extra, existing: reorder(legacy) });
+    assert.equal(replay.promptBereitsGespeichert, true); assert.equal(s.p.prompts.length, before);
+  });
   console.log(`${pass}/${pass} Pruefgruppen erfolgreich; ausschliesslich isolierte Attrappen.`);
 }
 main().catch(e => { console.error(e); process.exitCode = 1; });

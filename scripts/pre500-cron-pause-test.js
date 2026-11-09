@@ -7,9 +7,11 @@ const hash = x => crypto.createHash("sha256").update(x).digest("hex");
 const config = JSON.parse(fs.readFileSync(path.join(root, "vercel.json"), "utf8"));
 assert.deepEqual(config.crons, [
   { path: "/api/cron/crawl", schedule: "0 4 * * *" },
+  { path: "/api/cron/crawl?arbeitsfenster=1", schedule: "0,15,30,45 3 * * *" },
+  { path: "/api/cron/crawl?arbeitsfenster=1", schedule: "15,30,45 4 * * *" },
   { path: "/api/cron/lage-briefing", schedule: "0 5 * * *" },
   { path: "/api/cron/morning-briefing", schedule: "15 5 * * *" }
-], "Only the ordered daily supply chain may run; no old backlog or 500-profile schedule");
+], "Only ordered daily supply plus gated source continuations; no old 500-profile schedule");
 const others = structuredClone(config); delete others.crons;
 assert.equal(config.git.deploymentEnabled["fix/cem-single-profile-20261106"], false);
 const historicalPath = path.join(__dirname, "fixtures/scheduled-crons-before-pre500-pause.json");
@@ -32,5 +34,5 @@ assert.ok(paused.konflikte.some(x => x.art === "cronliste-fehlt"));
 assert.equal(F.pruefeStartfenster({ startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: [{path:"/api/x",schedule:"invalid"}] }).startErlaubt, false);
 assert.equal(F.pruefeStartfenster({ startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: historical, minimalCronAktiv: false }).startErlaubt, true);
 assert.equal(require("./vercel-ignore-build").shouldSkip(["vercel.json", ".github/workflows/briefing-watchdog.yml"]), false);
-console.log(JSON.stringify({ status: "PASS_SINGLE_PROFILE_SCHEDULE_AND_HISTORICAL_RESTORE", liveCronCount: 3, restoreCronCount: 13,
+console.log(JSON.stringify({ status: "PASS_BOUNDED_SOURCE_SCHEDULE_AND_HISTORICAL_RESTORE", preparedCronDefinitions: 5, restoreCronCount: 13,
   remainingWorkflowBytesUnchanged: true, historicalEmptyScheduleFailsClosed: true, productionCalls: 0 }));

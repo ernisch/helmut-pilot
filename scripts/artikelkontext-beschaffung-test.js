@@ -211,6 +211,21 @@ test("Kein direkter Beschaffer im Fachkern oder Server und keine Aktivierung in 
   assert.equal(require("../vercel.json").git.deploymentEnabled["codex/artikelkontext-belegablage-20260917"], false);
 });
 
+test("Globales Originaltageskontingent gilt vor HTTP und belastet Cachewiederverwendung nicht", async () => {
+  for (const erlaubt of [true, false]) {
+    const u = umgebung(); let reserviert = 0;
+    Object.assign(u.deps.env, { HELMUT_QUELLEN_ARBEITSFENSTER: "on", HELMUT_QUELLEN_FENSTER_TAG: "8",
+      HELMUT_QUELLEN_SEKUNDEN_TAG: "2400", HELMUT_ORIGINALABRUFE_TAG: "16" });
+    u.deps.originalReservierung = { reserviere: async o => {
+      reserviert++; assert.equal(o.schluessel, "quellenarbeit|originalabrufe");
+      assert.equal(o.menge, 1); assert.equal(o.grenzeTag, 16); return { verfuegbar: true, erlaubt };
+    } };
+    const r = await run(u); assert.equal(reserviert, 1);
+    if (erlaubt) { assert.equal(r.ok, true, r.reason); await run(u); assert.equal(u.network.length, 1); assert.equal(reserviert, 1); }
+    else { assert.equal(r.reason, "original-tagesgrenze"); assert.equal(u.network.length, 0); assert.equal(u.rows.size, 0); }
+  }
+});
+
 (async () => { for (const [name, fn] of tests) { await fn(); console.log("PASS " + name); }
   console.log(`PASS ${tests.length} Gruppen zur bestaetigten Artikelkontextbeschaffung`);
 })().catch(e => { console.error(e); process.exitCode = 1; });

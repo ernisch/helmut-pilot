@@ -294,5 +294,61 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     }), { auftragsDeadlineMs: start + 120000 });
     assert.equal(r.ok, true); assert.deepEqual(r.fortschrittPayload, { dokumentIds: [ready.id], quellenRestDokumentIds: [] });
   });
+  await test("36 geladene Artikel bleiben in mehreren versionsgebundenen Portionen erhalten", async () => {
+    const items = Array.from({ length: 36 }, (_, n) => ({ ...docs[0], id: "rd-" + (n + 1).toString(16).padStart(64, "0") }));
+    const hashes = Object.fromEntries(items.map((d, n) => [d.id, String(n % 10).repeat(64)]));
+    const jobs = [];
+    const d = { hardeningConfig: () => ({ enabled: false }),
+      crawlAllSources: async () => ({ rawItems: items.slice(0, 25), results: [{ ok: true, items }] }),
+      persistRohdokumente: async () => ({ ok: true, neuIds: [], bestaetigteIds: items.map(x => x.id), quellenstaende: hashes }),
+      enqueue: async j => { jobs.push(j); return { verfuegbar: true, neu: true }; } };
+    await P.HANDLER.source_fetch({ id: "version-batches", payload: { quelle: { id: "q" } } }, d);
+    assert.deepEqual(jobs.map(j => j.payload.dokumentIds.length), [25, 11]);
+    assert.equal(new Set(jobs.flatMap(j => j.payload.dokumentIds)).size, 36);
+    assert(jobs.every(j => j.payload.dokumentIds.every(id => j.payload.quellenstaende[id] === hashes[id])));
+    const vorher = jobs.map(j => j.idempotencyKey); jobs.length = 0;
+    hashes[items[0].id] = "a".repeat(64);
+    await P.HANDLER.source_fetch({ id: "changed-version", payload: { quelle: { id: "q" } } }, d);
+    assert.notEqual(jobs[0].idempotencyKey, vorher[0]); assert.equal(jobs[1].idempotencyKey, vorher[1]);
+  });
+  await test("Unterbrochene Tagesplanung setzt bestaetigten Rest fort ohne erneute Quellenplanung", async () => {
+    let plan = null, clock = 0, kompiliert = 0;
+    const seen = new Set();
+    const journal = { lesen: async () => plan,
+      offene: async () => ({ plaene: plan?.zustand === "offen" ? [plan] : [], weitereVorhanden: false }),
+      sichereManifest: async (tag, data) => (plan = { ...data, tag, cursor: 0, zustand: "offen" }),
+      bewegeCursor: async (tag, vor, next) => (plan = { ...plan, cursor: next,
+        zustand: next === plan.auftraege.length ? "fertig" : "offen" }) };
+    const jobs = Array.from({ length: 36 }, (_, n) => ({ jobType: "source_fetch", idempotencyKey: "resume-" + n, payload: { quelle: { id: "q" + n } } }));
+    const dep = { planungsrest: journal, now: () => clock, listFullProfiles: async () => [],
+      sourceDemand: { kompiliereQuellenbedarf: async () => { kompiliert++; return { auftraege: jobs, statistik: {} }; },
+        planeMandatsarbeit: () => ({ auftraege: [], fenster: "2026-11-09T00Z" }) },
+      enqueue: async j => { const neu = !seen.has(j.idempotencyKey); seen.add(j.idempotencyKey); clock++; return { verfuegbar: true, neu }; } };
+    const e = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_QUELLEN_ARBEITSFENSTER: "on", HELMUT_JOB_DISPATCH_MODE: "off" };
+    const first = await P.setzePlanungFort({ env: e, deps: dep, jetztMs: start, darfNeuPlanen: true, planungsDeadlineMs: 13 });
+    assert.equal(first.ausstehend, 23); assert.equal(seen.size, 13);
+    const next = await P.setzePlanungFort({ env: e, deps: dep, jetztMs: start + 900000, darfNeuPlanen: true, planungsDeadlineMs: 100 });
+    assert.equal(next.ok, true); assert.equal(plan.cursor, 36); assert.equal(seen.size, 36); assert.equal(kompiliert, 1);
+    await P.setzePlanungFort({ env: e, deps: dep, jetztMs: start + 1800000, darfNeuPlanen: true, planungsDeadlineMs: 150 });
+    assert.equal(kompiliert, 1); assert.equal(seen.size, 36);
+  });
+  await test("Abschnittsrest ist kurze fortsetzbare Arbeit und bestaetigt das Dokument erst nach dem letzten Teil", async () => {
+    const doc = { ...docs[0], summary: Array.from({ length: 200 }, (_, n) => `Die Tarifparteien beraten Thema ${n} und vereinbaren konkrete Schritte zur weiteren sozialen Absicherung.`).join(" ") };
+    const B = require("../lib/helmut/artikel-abschnitte"), bundle = B.segmentiere(doc.summary);
+    let payload = { dokumentIds: [doc.id] };
+    for (let index = 0; index < bundle.count; index++) {
+      const r = await understanding({ ...job, payload }, deps({ env: { ...env, HELMUT_QUELLEN_ARBEITSFENSTER: "on" },
+        ladeRohdokumente: async () => [doc], vorbereiteGespeicherteInhalte: async () => result([doc]),
+        eagerUnderstanding: async (_rows, opts) => {
+          assert.equal(opts.quellenAbschnitte[doc.id] || 0, index);
+          return { processed: 1, results: [{ status: "updated", promptDokumentIds: [doc.id], promptAbschnitte: { [doc.id]: B.waehle(bundle, index) } }] };
+        }
+      }), { auftragsDeadlineMs: start + 120000 });
+      payload = r.fortschrittPayload;
+      if (index + 1 < bundle.count) { assert.equal(r.zurueckgestellt, true); assert.equal(r.langeWarten, false);
+        assert.equal(payload.quellenAbschnitte[doc.id], index + 1); assert.deepEqual(payload.quellenRestDokumentIds, [doc.id]); }
+      else { assert.equal(r.ok, true); assert.deepEqual(payload.quellenRestDokumentIds, []); }
+    }
+  });
   console.log(`${count}/${count} Queue-Inhaltsversorgung PASS`);
 })().catch(error => { console.error(error); process.exitCode = 1; });

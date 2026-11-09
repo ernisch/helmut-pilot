@@ -1,6 +1,6 @@
 # Globale Inhaltsversorgung — 09.11.2026
 
-Status: **In Umsetzung; frühere Aktivierungsvorlagen ersetzt. Historischer Teilstand: technischer Anschluss geprueft, begrenzte Produktionsvorlage vorbereitet; genehmigte NDR-Einzelprobe am Codex-Direkttransport gescheitert, Original und Anbietererweiterung offen**. Dieser Bericht betrifft
+Status: **Code und gezielte Integration vorbereitet; frühere Aktivierungsvorlagen ersetzt. Historischer Teilstand: technischer Anschluss geprueft, begrenzte Produktionsvorlage vorbereitet; genehmigte NDR-Einzelprobe am Codex-Direkttransport gescheitert, Original und Anbietererweiterung offen**. Dieser Bericht betrifft
 den allgemeinen Anschluss nach PR1104, PR1110 und PR1113. Die abgeschlossene
 erste Aktivierung und ihr eigener regulaerer Wirkungsnachweis stehen in
 [quellenabschluss-20261109.md](quellenabschluss-20261109.md). Sie werden hier
@@ -20,7 +20,7 @@ Deployments in diesem Entwicklungssprint. Keine neue Infrastruktur. Die Zahl
 Die nachfolgend dokumentierten zwei Anbieter-Metadaten-RPCs wurden fuer die
 eine NDR-Probe gesondert genehmigt und ausgefuehrt; keine Fachdatenmutation.
 
-## Ausgangsbelege und aktueller Rolloutstand
+## Historische Ausgangsbelege vor der zusammenhängenden Wiederaufnahme
 
 - `main` beim Sprintstart: `e8a4b08bf14609a02831a0f6e5b6c9c5caa28824`.
   Parallel wurde Buero-PR1111 am 09.11.2026 um 11:55:54 UTC gemergt;
@@ -131,7 +131,7 @@ Die lesende Aggregatabfrage am 09.11.2026 ergab ausschliesslich `erledigt`:
 13.641 `source_fetch`, 2.758 `document_understanding`, 3.155
 `mandate_projection`, 3.155 `briefing_materialization`. Neueste Auftraege:
 16.09.2026. Keine offenen oder reservierten Auftraege, keine aktiven Leases.
-Damit ist aktuell kein offener Altbestand zu neutralisieren. Vor der
+Zu diesem damaligen Lesestand war kein offener Altbestand zu neutralisieren. Vor der
 tatsaechlichen Aktivierung erneut lesend pruefen; dieser Snapshot ist keine
 Freigabe zur Veraenderung oder Neuverarbeitung alter Auftraege.
 
@@ -221,7 +221,8 @@ Nachweis muesste Transport, erhaltenen Originaltext und korrekte Artikelbindung
 getrennt belegen; ein einzelner Artikel waere keine Gesamtabnahme.
 Die bisherige direkte Probe erlaubt keinen weiteren Originalabruf.
 NDRs Vertrauensklassifikation ist keine Originalabruf-Hostfreigabe.
-NDR bleibt ausserhalb des folgenden begrenzten Produktionspakets.
+NDR war außerhalb der damaligen DGB-/Radio-Vorlage. Die einzige aktuelle
+Vorlage weiter unten nennt NDR als ungeprüften Beschaffungskandidaten.
 
 ### Verbleibender Nachweis mit dem vorhandenen Betrieb
 
@@ -234,7 +235,7 @@ ungemergt und ausdruecklich zurueckgestellt; sie wird nicht reaktiviert.
 Eine Versorgung von NDR ueber den regulaeren vorhandenen Motor braeuchte eine
 gesondert benannte Hostaufnahme und einen danach tatsaechlich beobachteten
 regulaeren Originalabruf. Beides ist durch diese verbrauchte Codex-Einzelprobe
-nicht freigegeben und nicht Teil der 15-Env-Vorlage. Keine neue Route,
+nicht freigegeben; die damalige 15-Env-Vorlage ist historisch und ersetzt. Keine neue Route,
 Proxytechnik, Infrastruktur oder manuelle Verarbeitung wird vorbereitet.
 
 ## Historischer Anschluss bis zum vorigen geprüften Kopf 1e096ca1
@@ -321,7 +322,7 @@ HTTP, Transportfehler oder unbekanntem Ausgang bleibt die bestehende Sperre
 erhalten; kein automatischer zweiter Originalabruf desselben Standes.
 Reine Leser beschaffen weiterhin nichts, auch beim App-Oeffnen nicht.
 
-## Gezielte Abnahme
+## Historische gezielte Abnahme vor der zusammenhängenden Wiederaufnahme
 
 Alle lokalen Pruefungen ueber `scripts/lokal.js`, mit vorhandenen Originalfixtures
 oder deklarierter Synthetik und injizierten Adaptern. Keine neuen Originale,
@@ -390,7 +391,8 @@ regulaer uebersprungen. Anschliessend wurde die neue reine
 Die gemeinsame Statusdatei haette dadurch 31.018 Zeichen/353 Zeilen erreicht.
 Deshalb wurden ausschliesslich die bereits belegten Quellenhistorien auf ihre
 Berichte verdichtet; die neue Buero-Abschlussdokumentation bleibt unveraendert.
-Productionruntime und Rueckwegbasis bleiben `fe38a371`. Die notwendige Integration und
+Die damalige Productionruntime und Rückwegbasis war `fe38a371`;
+seit PR1117 ist die aktuelle Rückwegbasis `f13a430a`. Die notwendige Integration und
 Statuskorrektur erhalten regulaere Pflichtchecks auf dem neuen Endkopf;
 Ergebnis und Kennung werden ohne weiteren Dokumentationscommit im PR gebunden.
 
@@ -412,7 +414,8 @@ CI-Nummern. Die Preview dieses Entwicklungszweigs ist explizit abgeschaltet.
 Diese Vorlage ersetzt sowohl die frühere 15-Env-Selbstweckvorlage als auch den
 zwischenzeitlichen 10-Env-Tagescronentwurf im PR-Text. Keine dieser Vorlagen wurde
 aktiviert. Maßgeblich ist der endgültige, im PR mit grünen Pflichtchecks gebundene
-Commit; derzeit läuft die isolierte Integration. Kein Merge-/Rollout-Go liegt vor.
+Commit; die isolierte Integration ist geprüft. Der erforderliche native SQL-/Endcommit-
+Nachweis wird im PR gebunden. Kein Merge-/Rollout-Go liegt vor.
 
 ### Ausgangsstand und Trennung der Verträge
 
@@ -433,7 +436,12 @@ Der Geldvertrag, sein Hash und alle alten reservierten/abgerechneten/ungeklärte
 Einträge bleiben unverändert. Ein separater Zulassungsvertrag bindet die explizit
 freigegebenen tatsächlich aktiven zulässigen Profilkennungen an diesen Geldhash.
 Es entsteht kein Budget pro Mandat und keine neue Kostenbuchbaseline.
-Profilkennungen und fertige Zulassungs-JSON bleiben im vertraulichen Freigabebeleg.
+Profilkennungen und fertige Zulassungs-JSON bleiben im vertraulichen Freigabebeleg
+`/workspace/helmut-globalanalyse-20261109/betriebszulassung-vorlage.PRIVATE.json`
+(0600, SHA256 `b88dd3d7f4fc4bf4f0904909e11e6e24c72725345aa239dae01ef786d95b1998`).
+Der lokale strenge Zulassungsparser bestätigte genau ein zulässiges aktives Profil,
+Zulassungshash `45ff8fca7560a6570988785af72ee633cb9aeeb92f6b56a01a7da141ffeb36b8`.
+Vor späterer Ausführung erneut gegen den aktiven Bestand prüfen.
 Ohne neue Zulassung gilt weiterhin die alte Einprofilprüfung; widersprüchliche,
 unlesbare, unzulässige oder nicht freigegebene Profile erhalten keine Freigabe.
 
@@ -492,6 +500,9 @@ reservierte Funktionssekunden und 16 zusätzliche Artikelkontext-HTTPversuche**.
 Ein Tages-/Slotschlüssel verhindert erneute Arbeit bei doppelter Zustellung;
 die vorhandene verteilte Drainlease verhindert Überlappung. Jedes Fenster reserviert
 volle 300 Sekunden entsprechend Vercels maxDuration, nicht bloß die kürzere Nutzzeit.
+Die zwei bisherigen Briefinginvocations kommen separat hinzu: bei genau zehn
+planmäßigen Zustellungen maximal 3000 konfigurierte Funktionssekunden insgesamt,
+keine gemessene CPU-Zeit oder Grenze zusätzlicher fremder/abgewiesener Requests.
 Teilreservierungen/unklare Ausgänge werden nicht zurückgesetzt. Bestehende Jobclaims,
 Modellreservierungen und begrenzte Wiederholungen bleiben erhalten.
 
@@ -521,6 +532,92 @@ Vercel Spend Management pausiert gegebenenfalls verzögert/teamweit und beendet
 nicht alle Speicherkosten; tatsächliche Aktivierung unbekannt. Supabase Pro ist
 bestätigt, sein tatsächlicher Spend-Cap-Schalter nicht; Compute/IOPS/PITR und weitere
 Optionen sind ausgenommen. Es wird kein zusätzlicher Plattformvertrag abgeschlossen.
+
+### Gemeinsamer Inhalts- und Ausgabeweg: gezielte Integrationsbelege
+
+Der tatsächlich verwendete Queuepfad verarbeitet alle bestätigten geladenen Treffer
+in 25er-Portionen; die Portion ist keine Gesamtgrenze. Der aktivierte neue Weg erhält
+auch bisher auf1280Zeichen gekappte RSS-Texte in canonical und unveränderlichem
+Versionsarchiv. Die Queue trägt Quellenstandhashes und dokumentweisen Rest. Ein
+abgeschlossener Vorgang oder eine Herkunftsverknüpfung ersetzt keine Lektüre.
+
+Lange validierte Originale werden lückenlos in gebundene Abschnitte bis8000Zeichen/
+12000Bytes zerlegt (1MiB Original, höchstens256Abschnitte). Pro Prompt wird nur der
+aktuelle Abschnitt übergeben; bestätigte Stücke bleiben nach Neustart/Replay bekannt.
+Das Dokument gilt erst nach seinem letzten Teil als übergeben. JSONB-sichere kanonische
+Lektürebelege version2 binden den tatsächlichen Input und bestätigte KO-Speicherung;
+version1 wird nur nach der bekannten alten Formel streng geprüft, nicht umgedeutet.
+Lage und Briefing wählen aus tatsächlich verfügbaren, bestätigt übergebenen Abschnitten
+KO-bezogenen Originalkontext innerhalb ihrer unveränderten Eingabebudgets. Auswahl
+nach Wortübereinstimmung ist kein Fachurteil und kein Beweis echter Modellbefolgung.
+
+Ein Titel-/Publikationswechsel derselben URL ohne bestätigte Originalmetadaten bleibt
+archiviert, aber sichtbar vor Verarbeitung gesperrt. Unteilbare überlange Einzelsätze
+bleiben blockiert, nicht still abgeschnitten. Alte positive Teilcachebelege werden nicht
+massenhaft nachgeladen. Weitere Anbieter/Formatfähigkeiten und realer Abfluss bleiben offen.
+
+Der gemeinsame Versorgungsstand unterscheidet offen/unbekannt/kein-bekannter-rueckstand.
+Dazu gehören alte noch offene Budgetreste, auch wenn das neue Tagesmanifest bereits
+fertig ist. Historische Endfehler blockieren nicht pauschal für immer. Positive Inhalte
+bleiben nutzbar; eine leere Auswahl bei technischem Rückstand wird als gap statt quiet
+gespeichert/angezeigt. Neue positive Teilpakete bleiben über den bestehenden strengen
+Partial-CAS nach späterem Fortschritt ergänzbar; historische Komplettpakete erhalten
+kein breiteres Schreibrecht. Der Status gilt nicht als Beweis aller fachlich relevanten
+Inhalte. Ein erfolgreicher Rollout beweist keinen gespeicherten Kundenbriefingstand.
+
+Gezielte isolierte Nachweise (alle via lokal.js, keine Original-/Modell-/Productionaufrufe):
+
+| Funktion | Bestätigte lokale Gruppen |
+| --- | ---: |
+| Globaler Geldvertrag und getrennte Zulassung | 15/15 |
+| Unveränderlicher Plan und Enqueuecursor | 7/7, einschließlich36Wege13/23Neustart |
+| Abschnittsvertrag/Originalintegrität | 15/15 |
+| Versionierte Rohspeicherung und große CAS-POSTs | 63/63 |
+| Queue-Reste/Abschnittsfortsetzung | 22/22 |
+| Quellen-/Projektions-/Materialisierungsfälligkeit | 65/65 |
+| Tatsächliche abgefangene Promptquellen/Replay/JSONB | 22/22 |
+| HTML-Volltext-/Abschnittsextraktion | 17/17 |
+| Beschaffung/globale Originalreservierung | 15/15 |
+| Globale Fenster/Reservierungen | 17/17 |
+| Lokale echte HTTP-Routen einschließlich Default-aus-Spy | 8/8 |
+| Abschnittsbelege bis Lage/Briefing | 12/12 |
+| Versorgung über Tageswechsel und Partial-CAS/Renderer | 10/10 |
+| Briefing-/Lage-Versorgungsdurchleitung | 7/7 und5/5 |
+| Native Datumsdarstellung und JSONB-Reihenfolge als Funktionsattrappe | 3/3 |
+
+Die kleine Gesamtabnahme zählt30deklarierte synthetische Artikel, alle30gespeichert,
+30eindeutige abgefangene Promptquellen, zwei25er-Jobs und fünf Verstehensportionen
+mit Budgetpause, Doppelzustellung und Neustart. Zwei ausdrücklich fiktive Fachprofile
+erhalten über echte Matching-/Entscheidungs-/PR1117-Verträge, Materialisierung, Readback
+und Clientrenderer getrennte persönliche Ausgaben; ein Artikel wird gemeinsam gelesen.
+Zusätzlich bleibt ein gespeicherter technischer Unterversorgungsfall ohne Fachinhalt
+sichtbar. Originaltexttests für DGB/Radio bleiben separat echte überlieferte Proben.
+
+Die positive Teststrecke ist strukturell vollständig; `qualitaetBestanden=false` und
+`vollstaendigeFaktenpruefung=false` bleiben ausdrücklich erhalten. Injizierte Urteile
+und Modellantworten belegen Verträge, nicht echte Modellbefolgung, politische Richtigkeit
+oder 30Artikel-Kapazität unter1USD. Keine Mock100/Mock500- oder Lasttestwiederholung.
+Unabhängiger Review behob JSONB-Hash-, Default-aus-IO-, Altfenster- und Teilpaketbefunde;
+kein bekannter offener P1/P2 im lokalen Stand. Endcommit-Pflichtchecks und nativer
+SQL-Nachweis werden ausschließlich nach dem wirklichen CI-Ergebnis im PR gebunden.
+
+### Enger Datenbankanschluss für lange Texte
+
+Zusätzlich vorbereitet ist ausschließlich
+`supabase/migrations/20261109173143_raw_document_cas.sql` mit
+`rollback_20261109173143_raw_document_cas.sql`. Der neue service-only RPC
+`helmut_raw_document_cas(text,jsonb,jsonb)` vergleicht neun exakte Vorwertfelder
+atomar und ändert nur `summary` plus optional monotone `retrieved_at`.
+Große Originaltexte gehören in den POST-Body: der vorherige URL-CAS scheiterte
+belegt mit HTTP431 bei langen RSS-Vorwerten. Keine Identitäts-/Publikationsänderung,
+keine Browserrollenfreigabe, kein neuer Dienst und keine neue Tabelle.
+
+Der echte SQL-/PostgREST-Nachweis ist in den bestehenden Kontoschutz-Pflichtnachweis
+eingebunden (gleiche isolierte PG17-/PostgREST-Instanz, keine neue Testinfrastruktur).
+Er prüft acht Gruppen einschließlich großer Vorwerte, konkurrierender Writer,
+Rollenrechten und datenbewahrendem Rollback. Lokal ist dieser native Nachweis wegen
+fehlendem PostgreSQL noch nicht ausgeführt; vor Freigabe ist seine reguläre CI
+abzuwarten. Nur Organisation/Syntax sind bisher bestätigt, kein SQL-PASS erfunden.
 
 ### Einzige Konfigurationsvorlage
 
@@ -556,9 +653,11 @@ Der geänderte Cronplan ist ausschließlich Teil des noch nicht freigegebenen Ro
 Vor Ausführung: frischen main/Head, Diff, Pflichtchecks, Konfliktfreiheit, parallele
 Arbeit, aktive Prozesse/Leases/Queue und Budgetbuch sowie DB-TimeZone prüfen.
 Globale Tagesreservierungen setzen UTC in der vorhandenen Datenbank voraus;
-abweichende Zeitzone bleibt ein Ausführungsblocker. Keine Migration oder Datenreparatur
-aus dieser Vorlage ableiten. Dann nur nach konkretem GO exakt den geprüften PR samt
-Konfiguration regulär ausrollen. Bei Mergeblock Envvorwerte wiederherstellen.
+Die native Prüfung am 09.11.2026 um 17:11:10 UTC bestätigte `UTC`;
+eine spätere Abweichung bleibt ein Ausführungsblocker. Erst nach konkretem GO genau
+den oben genannten, nativ geprüften RPC aus dem abgenommenen Commit bereitstellen
+und Signatur/Service-only-Rechte lesend bestätigen; keine Fachinhalte dabei ändern.
+Anschließend exakt den geprüften PR samt Konfiguration regulär ausrollen. Bei Mergeblock Envvorwerte wiederherstellen.
 
 Nach READY: Alias und tatsächliche Version, vollständige wirksame Konfiguration,
 gesperrten Selbstweck und fehlende zusätzliche Anbieter-/Profilaktivierungen prüfen.
@@ -576,29 +675,40 @@ vorherige geprüfte Productionruntime `f13a430a` mit Deployment
 `dpl_J8aLVXje3s2Qx33gke2tK1x8iCvh` erhalten/zurückrollen; Büro und PR1117 erhalten.
 Ohne Fensterflag stoppen neue Querytermine vor IO, alter 04:00-Cron bleibt erhalten.
 Laufende Leases beobachten, keine reservierten Zähler, Versionen, Jobs, Fachinhalte
-oder Buchstände löschen. Keine Budgets erhöhen oder alte Profile aktivieren.
+oder Buchstände löschen. Den RPC-Rollback erst nach Ende laufender neuer Worker
+und nach dem Runtime-Rückweg ausführen; er entfernt nur die Funktion, keine Texte.
+Keine Budgets erhöhen oder alte Profile aktivieren.
 
 
 ## Wiederaufnahme des zusammenhängenden Sprints
 
-09.11.2026: Auftrag wird auf Branch `codex/globale-inhalte-20261109` zusammenhängend
-fortgesetzt. `main` `f13a430a18e415ea4e874d128fd72eb144c30dc9` enthält die ausgelieferte
-Briefingkorrektur PR1117; Production nativ READY auf
-`dpl_J8aLVXje3s2Qx33gke2tK1x8iCvh`. Konfliktfrei in lokalen, noch nicht gepushten
-Integrationskopf `a6a0a001` übernommen; Büro, Oberfläche und beide Branchsperren erhalten.
+Stand 09.11.2026: lokaler Implementierungs-/Reviewabschluss, Production unverändert.
+Repository `ernisch/helmut-pilot`, Branch `codex/globale-inhalte-20261109`, PR1115.
+`main`/Production `f13a430a18e415ea4e874d128fd72eb144c30dc9`, Vercel
+`dpl_J8aLVXje3s2Qx33gke2tK1x8iCvh` READY; PR1117, Büro und Kundenoberfläche erhalten.
+Main lokal auf `a6a0a001` integriert; geprüfte Bausteine auf Zwischenstand `46f1a5cc`
+gesichert. Der finale Codekopf und reguläre CI-Run werden ohne weitere reine
+Nummerncommits im PR gebunden. Vor Wiederaufnahme Branch/Head/Arbeitsbaum frisch prüfen.
 
-Drei getrennte Schreibbereiche: Astra bearbeitet Workerfenster, Server/Dispatch und
-globale Arbeitslimits; Quellenfortsetzung bearbeitet gemeinsame Inhaltsversorgung,
-Understanding und Pipelinefortschritt; Vertragsbindung trennt Profilzulassung vom
-unveränderten globalen Geldvertrag und ergänzt das atomare Planungsrestjournal.
-Root integriert, prüft Anbieterbedarf und bereitet die isolierte Endabnahme mit mehr
-als 25 Dokumenten sowie mehreren fiktiven Profilen und den unabhängigen Review vor.
-Der vorherige Codekopf `1e096ca1` bleibt historisch grün geprüft; er ersetzt keine
-Endcommitprüfungen der neuen Integration. Offene Arbeiten: konkrete regelmäßige
-Fortsetzung, dauerhafte Plan-/Dokumentreste, lange Artikel, mehrere zulässige Profile,
-kleine gesamte Ausgabeabnahme bis Speicher/Anzeige, konsistentes Freigabepaket.
+Implementierung über getrennte Bereiche integriert: globale Geld-/Profilbindung,
+immutablePlanrest, Rohversionen/großePOST-CAS, Abschnittsverarbeitung, Morgenfenster,
+globaleTageslimits sowie Versorgungsstatus bis gespeichertem persönlichem Briefing.
+Astra, Quellenfortsetzung, Vertragsbindung und SQL-Helfer sind nach ihren gezielten
+Prüfungen eingefroren. Unabhängiger Review hat die konkreten Befunde geprüft;
+Endcommit-CI/nativeSQL bleiben gesonderte verpflichtende Nachweise.
 
-Die bisherigen 15- und 10-Env-Vorlagen sind historische Zwischenstände und werden
-durch genau eine zusammenhängende Vorlage ersetzt. Noch keine Productionfreigabe,
-kein neuer Originalabruf und keine erneute Verwendung verbrauchter Einzelgenehmigungen;
-keine Modelle, Verarbeitung, Productionänderung, Merge oder Deployment ausgelöst.
+Nächste Arbeit im selben Auftrag: finalen Push nach Triggeraudit, reguläre Pflicht-CI
+abwarten, tatsächliche Fehler gezielt beheben, Head/main/Checkzuordnung/Produktionsstand
+rein lesend bestätigen und genau dieses einzige Paket zur Entscheidung vorlegen.
+Nach ausdrücklichem GO nur dessen konkrete Migration/16Env/Cronplan/Merge/Production-
+Rollout ausführen und anschließend reguläre Läufe auswerten. Kein manueller Quellenlauf,
+kein neuer Originalvorababruf, kein Modelltest, keine Profil- oder Budgetänderung.
+Ein gespeichertes/dargestelltes Kundenbriefing ist erst am echten regulären Lauf belegt.
+
+Die früheren 15-/10-Env-Vorlagen und frühere fe38-Rückwegbasis sind ersetzt. Die
+verbrauchte NDR-Einzelfreigabe bleibt verbraucht. Private Belege/zulässigeProfilkennung
+liegen außerhalb Git unter `/workspace/helmut-globalanalyse-20261109`; Geldbuch,
+Originale und aktive Profile wurden nicht verändert. Offene relevante Grenzen:
+zusätzlicheHost-/Formatfähigkeit, konservativgesperrteTitel-/Publikationswechsel,
+unteilbareLangsätze, tatsächlicherAbfluss/Rückstandsalter/Plattformmehrkosten sowie
+fachlicheModellbefolgung. Keine weitere Übergabeschleife oder neuer Thread nötig.

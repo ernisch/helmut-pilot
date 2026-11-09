@@ -301,4 +301,15 @@ test("v3 behaelt native Robots- und Max-Snippet-Sperren", () => {
   }
 });
 
+test("v4 erhaelt einen langen belegten Artikel in lueckenlosen ganzen Abschnitten", () => {
+  const f = synthetischerArtikel(Array.from({ length: 50 }, (_, i) => `Absatz ${i}: ` + "Der kommunale Beschluss betrifft konkrete Arbeitsbedingungen und finanzielle Leistungen. ".repeat(5).trim()));
+  const r = G.gewinneArtikeltext(f.doc, { body: f.html, finalUrl: f.doc.url, gelesenAm }, { abschnittsweise: true });
+  assert.equal(r.ok, true, r.reason); assert.equal(r.beleg.gewinnung.verfahren, "artikelabschnitte-v4");
+  assert.equal(r.beleg.text, f.text); assert(r.beleg.gewinnung.abschnitte.count > 1);
+  assert.equal(r.beleg.gewinnung.abschnitte.abschnitte.map(p => p.text).join(""), f.text);
+  assert.deepEqual(A.pruefeArtikelkontext([f.doc], r.beleg), r.beleg);
+  const broken = structuredClone(r.beleg); broken.gewinnung.abschnitte.abschnitte.at(-1).text += " Erfundene Ergaenzung.";
+  assert.throws(() => A.pruefeArtikelkontext([f.doc], broken), /artikel-abschnitte-/);
+});
+
 console.log(`${passed}/${passed} Artikel-Einstieg-Quellenbindungsgruppen bestanden`);
