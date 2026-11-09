@@ -1,6 +1,6 @@
 # Globale Inhaltsversorgung — 09.11.2026
 
-Status: **Teilweise abgeschlossen: technischer Anschluss geprueft, begrenzte Produktionsvorlage vorbereitet; genehmigte NDR-Einzelprobe am Codex-Direkttransport gescheitert, Original und Anbietererweiterung offen**. Dieser Bericht betrifft
+Status: **In Umsetzung; frühere Aktivierungsvorlagen ersetzt. Historischer Teilstand: technischer Anschluss geprueft, begrenzte Produktionsvorlage vorbereitet; genehmigte NDR-Einzelprobe am Codex-Direkttransport gescheitert, Original und Anbietererweiterung offen**. Dieser Bericht betrifft
 den allgemeinen Anschluss nach PR1104, PR1110 und PR1113. Die abgeschlossene
 erste Aktivierung und ihr eigener regulaerer Wirkungsnachweis stehen in
 [quellenabschluss-20261109.md](quellenabschluss-20261109.md). Sie werden hier
@@ -237,7 +237,7 @@ regulaeren Originalabruf. Beides ist durch diese verbrauchte Codex-Einzelprobe
 nicht freigegeben und nicht Teil der 15-Env-Vorlage. Keine neue Route,
 Proxytechnik, Infrastruktur oder manuelle Verarbeitung wird vorbereitet.
 
-## Umgesetzter Anschluss
+## Historischer Anschluss bis zum vorigen geprüften Kopf 1e096ca1
 
 Die bestehenden Quellenauftraege bewahren alle bereits geladenen Fundstellen,
 auch ausserhalb der unmittelbaren Kandidatenauswahl. Rohzeilen und Fundstellen
@@ -407,157 +407,198 @@ Commit, PR und native CI-Run-ID werden
 im PR-Abschluss festgehalten, ohne nachtraeglichen Runtime-Commit nur fuer
 CI-Nummern. Die Preview dieses Entwicklungszweigs ist explizit abgeschaltet.
 
-## Begrenzte spaetere Produktionsvorlage
+## Einzige aktuelle Produktionsvorlage: begrenzte Morgenfenster
 
-Dieses vollstaendig beschriebene Paket betrifft ausschliesslich Queuebetrieb
-und Selbstweck fuer den geprueften gemeinsamen Weg mit der unveraenderten
-DGB-/Radio-Hostliste. Es ist getrennt vom offenen NDR-Nachweis entscheidbar;
-dieser ist keine Voraussetzung fuer die begrenzte Freigabe. Das Paket ist
-keine Gesamtabnahme und keine Empfehlung einer allgemeinen Anbieterfreigabe.
-Fuer genau diesen begrenzten Umfang liegt kein konkreter offener Codeblocker
-vor. Erforderlich bleiben die erfolgreiche regulaere CI des aktuellen
-integrierten Endkopfes und die unten benannten frischen Betriebsvorpruefungen.
-Gegenstand einer konkreten Freigabe ist ausschliesslich der im PR bezeichnete, durch beide
-Pflichtchecks bestaetigte Endcommit und die folgende Productionkonfiguration.
-Keine Variablen wurden in diesem Sprint gesetzt. Bestehende Artikelkontext-,
-DGB-/Radio-Host- und Anbieterflags bleiben gesetzt;
-`HELMUT_SUCHWEGAUSZUEGE_HOSTS=www.dgb.de,www.radio-hannover.de` bleibt unveraendert.
-NDR ist nicht Teil dieses Pakets, auch eine positive Einzelprobe erweitert es
-nicht automatisch. Es gibt keine pauschale Hostliste,
-keine neue Profilfreigabe und keine Erhoehung des 1/30-USD-Modellvertrags.
+Diese Vorlage ersetzt sowohl die frühere 15-Env-Selbstweckvorlage als auch den
+zwischenzeitlichen 10-Env-Tagescronentwurf im PR-Text. Keine dieser Vorlagen wurde
+aktiviert. Maßgeblich ist der endgültige, im PR mit grünen Pflichtchecks gebundene
+Commit; derzeit läuft die isolierte Integration. Kein Merge-/Rollout-Go liegt vor.
 
-| Variable | Vorwert in Production | Geplanter Wert |
+### Ausgangsstand und Trennung der Verträge
+
+`main` und Production enthalten PR1117 auf `f13a430a18e415ea4e874d128fd72eb144c30dc9`,
+Deployment `dpl_J8aLVXje3s2Qx33gke2tK1x8iCvh` READY. Dieser Stand einschließlich
+Büro und Kundenoberfläche wurde lokal auf `a6a0a001` integriert. Die Previewzweige
+bleiben gesperrt; PR1117 wird weder erneut entwickelt noch zurückgerollt.
+
+Native Profilprüfung am 09.11., 16:58 UTC: genau ein aktives, nicht gelöschtes Profil.
+Bedarf: Bundestag, Arbeit/Soziales/Gesundheit/Pflege, Niedersachsen und regionale
+Beschäftigung. Die gemeinsame Logik bleibt unabhängig von dessen Namen; mehrere
+ausdrücklich fiktive gültige Profile werden isoliert geprüft, keine aktiviert.
+
+Native Kostenbuchprüfung 17:00:53 UTC: Vertragshash
+`8c98b2e18ee5dc21c73561bbf5bad2d8cb6c76f8ccd533b3153270bbd7d9a348`,
+1.172642 USD gebunden, 54 Einträge, 1 USD/UTC-Tag, 30 USD insgesamt.
+Der Geldvertrag, sein Hash und alle alten reservierten/abgerechneten/ungeklärten
+Einträge bleiben unverändert. Ein separater Zulassungsvertrag bindet die explizit
+freigegebenen tatsächlich aktiven zulässigen Profilkennungen an diesen Geldhash.
+Es entsteht kein Budget pro Mandat und keine neue Kostenbuchbaseline.
+Profilkennungen und fertige Zulassungs-JSON bleiben im vertraulichen Freigabebeleg.
+Ohne neue Zulassung gilt weiterhin die alte Einprofilprüfung; widersprüchliche,
+unlesbare, unzulässige oder nicht freigegebene Profile erhalten keine Freigabe.
+
+### Gebündelter Anbieterumfang
+
+Bestehende zusätzliche Artikelkontextfreigaben: `www.dgb.de,www.radio-hannover.de`.
+Vorbereitet sind zusätzlich exakt folgende 16 Hosts, ohne Wildcards:
+
+```text
+www.bundestag.de,www.bundesrat.de,www.bundesregierung.de,www.bmas.de,www.bundesgesundheitsministerium.de,www.deutschlandfunk.de,www.tagesschau.de,www.zdfheute.de,www.ndr.de,www.verdi.de,www.vdk.de,www.cducsu.de,www.spdfraktion.de,www.gruene-bundestag.de,www.die-linke.de,www.dielinkebt.de
+```
+
+Zusammen 18 Hosts in HELMUT_SUCHWEGAUSZUEGE_HOSTS. Die übrigen bisherigen Quellenwege
+bleiben davon unberührt. Der historische Bestand zeigt für die 16 zusätzlichen Hosts
+282 gespeicherte Artikel, davon 94 vorläufig möglicherweise passende Treffer ohne
+nutzbaren Inhalt. Das ist eine Bedarfsauswahl, kein endgültiges Relevanzurteil und
+kein Nachweis erreichbarer oder extrahierbarer Originale. Echte vollständige HTML-
+Proben liegen nur für DGB/Radio vor; HIB-RSS und amtliche Schnittstellen werden
+über vorhandene Leser genutzt. Weitere HTML-/Transportfähigkeiten bleiben ungeprüft.
+Die NDR-Einzelgenehmigungen sind verbraucht; es erfolgt kein neuer Vorababruf.
+Katalogstatus ersetzt keine Hostfreigabe. DNS/IP/TLS, Robots/Zugriffsschutz,
+Publisher-, Artikel-, Datum- und Quellenstandbindung bleiben erforderlich.
+
+### Zeitplan, Planung und Wiederaufnahme
+
+Kein neuer Endpunkt oder Dienst: bestehender `/api/cron/crawl`, zusätzliche
+Querymarkierung `?arbeitsfenster=1` für reine Fensterauslösung. Der bisherige
+04:00-Termin bleibt erhalten; zusätzliche Querytermine stoppen ohne neues Flag vor IO.
+Vorbereitet sind acht UTC-Slots: **03:00, 03:15, 03:30, 03:45, 04:00, 04:15,
+04:30, 04:45**. Vorhandene Briefingtermine **05:00 und 05:15 UTC** bleiben bestehen.
+Das ergibt fünf Crondefinitionen und zehn planmäßige Tagesinvocations, keine
+rekursive Selbstweckkette. Eine begrenzte Zustellkulanz wird im Slotvertrag geprüft.
+
+Der erste zugelassene Termin sichert ein unveränderliches Tagesmanifest vor dem
+ersten Enqueue. Folgefenster lesen bestätigte Planreste und drainieren vorhandene
+Arbeit, statt sämtliche Quellen erneut zu planen oder abzurufen. Ein verlorener
+Schreibausgang wird neu gelesen; Fortschritt wird nur nach bestätigtem CAS quittiert.
+Offene frühere Tagesmanifeste bleiben auffindbar. Quellen sind innerhalb der frühen
+Morgenfenster fällig; Projektion und Materialisierung werden vor die vorhandenen
+Briefingtermine gezogen. Verspätete und nicht fertig bearbeitete Arbeit bleibt als
+Rest beziehungsweise sichtbarer Fehler erhalten. Kein künstliches Nachholen per Hand.
+
+Planfähigkeit: die native Vercel-Billingfähigkeitsprüfung für Rolling Releases liefert
+`availableSlots=1, reason=available_slots`; laut offizieller Dokumentation wird diese
+Fähigkeit nur auf Pro/Enterprise angeboten. Beide Plansegmente unterstützen Cron
+mindestens minütlich und 100 Definitionen. Das begründet die vorbereitete Frequenz;
+der genaue Tarifpreis und aktive Geldsperren sind damit nicht belegt. Fähigkeit vor
+Rollout nochmals lesen; bei Planabweichung nicht upgraden oder Schutzregeln umgehen.
+Das offizielle Schema lässt Querystrings im mit `/` beginnenden Cronpfad zu.
+
+### Globale Arbeits- und Kostengrenzen
+
+Alle Worker teilen dieselbe vorhandene atomare Anbieterreservierung, keine neue
+Queue oder Zählerplattform. Tagesgrenzen: **8 zugelassene Fenster, 2400 vorab
+reservierte Funktionssekunden und 16 zusätzliche Artikelkontext-HTTPversuche**.
+Ein Tages-/Slotschlüssel verhindert erneute Arbeit bei doppelter Zustellung;
+die vorhandene verteilte Drainlease verhindert Überlappung. Jedes Fenster reserviert
+volle 300 Sekunden entsprechend Vercels maxDuration, nicht bloß die kürzere Nutzzeit.
+Teilreservierungen/unklare Ausgänge werden nicht zurückgesetzt. Bestehende Jobclaims,
+Modellreservierungen und begrenzte Wiederholungen bleiben erhalten.
+
+Die 16 Artikelversuche gelten global über Profile/Hosts/Fenster, je höchstens
+20 Sekunden und 1 MiB: maximal 16 MiB begrenzte Artikelantworten beziehungsweise
+320 Sekunden aus diesen Einzelgrenzen, innerhalb der Fensterzeit. Das ist kein
+Limit aller bisherigen RSS-/Schnittstellenabrufe; diese laufen im begrenzten Worker.
+Zwei neue Versuche je Verstehensauftrag bleiben die zusätzliche lokale Grenze.
+Globale Wiederverwendung verhindert erneutes Beschaffen desselben gebundenen Standes.
+
+Acht Fenster sind ein begrenzter Startumfang, kein Kapazitätsnachweis. Der erhaltene
+Lauf hatte 740 zuordenbare Dokumente/103 neue Rohzeilen und 152 Abrufwege; die
+vorliegenden Laufzeiten belegen keinen vollständigen Abfluss dieser Menge unter
+neuen Originalabrufen. 16 neue Originale pro Tag können den Bedarf deutlich
+unterschreiten. Fehlendes Budget/Text bedeutet Vertagung/Lücke, keine Irrelevanz.
+Bei Rückstand können Arbeit und Ausgaben über mehrere Tage warten oder bestehende
+Fristen/Wiedervorlagen erreichen. Kein automatisches Anheben der Grenzen.
+
+Vercel-CPU, provisionierter Speicher, Invocations, Datenverkehr und gegebenenfalls
+Observability sowie Supabase-Compute, Egress, Disk/Optionen liegen außerhalb des
+1/30-USD-Modellvertrags. Die Arbeitslimits sind keine Dollarobergrenze und keine
+Grenze sämtlicher fremder Requests, Basisgebühren oder abgewiesener Zustellungen.
+Ein lesbarer Vercel-Tagesexport weist tatsächlich Fluid-/Request-/Observabilitykosten
+aus, aber keinen Preis für diese neue Last; dessen begrenzte Stichprobe ist keine
+vollständige Projekt-/Tarifaufteilung. Neue Plattformmehrkosten bleiben unbekannt.
+Vercel Spend Management pausiert gegebenenfalls verzögert/teamweit und beendet
+nicht alle Speicherkosten; tatsächliche Aktivierung unbekannt. Supabase Pro ist
+bestätigt, sein tatsächlicher Spend-Cap-Schalter nicht; Compute/IOPS/PITR und weitere
+Optionen sind ausgenommen. Es wird kein zusätzlicher Plattformvertrag abgeschlossen.
+
+### Einzige Konfigurationsvorlage
+
+Vorwerte aus den vorhandenen Betriebsbelegen unmittelbar vor freigegebener Ausführung
+erneut lesen und vertraulich sichern. Keine Abweichung still überschreiben.
+
+| Variable | Vorwert | Geplanter Wert |
 | --- | --- | --- |
 | HELMUT_SCALABLE_PIPELINE | off | on |
-| HELMUT_JOB_DISPATCH_MODE | shadow | queue |
-| HELMUT_JOB_TRANSPORT | nicht gesetzt | selbstweck |
-| HELMUT_SELBSTWECK_ERLAUBT | nicht gesetzt | on |
-| HELMUT_WORKER_WAKE_URL | nicht gesetzt | https://helmut-pilot.vercel.app/api/cron/worker-weck |
 | HELMUT_KLASSEN_GRENZEN | nicht gesetzt | on |
 | HELMUT_KLASSE_QUELLENABRUF_MAX | nicht gesetzt | 1 |
 | HELMUT_WORKER_PARALLEL | 4 | 1 |
 | HELMUT_WORKER_BATCH | 25 | 1 |
 | HELMUT_WORKER_STAPEL | 25 | 1 |
-| HELMUT_DRAIN_BUDGET_MS | nicht gesetzt | 240000 |
-| HELMUT_JOB_TIMEOUT_MS | nicht gesetzt; Code 120000 | 150000 |
-| HELMUT_UNDERSTANDING_JOB_BUDGET_MS | nicht gesetzt; neuer Code 60000 | 150000 |
-| HELMUT_VORBEDINGUNG_WARTE_MS | nicht gesetzt; Code 120000 | 10000 |
-| HELMUT_WORKER_LEERLAUF_MS | nicht gesetzt; Code 0 | 10000 |
+| HELMUT_JOB_TIMEOUT_MS | nicht gesetzt | 150000 |
+| HELMUT_UNDERSTANDING_JOB_BUDGET_MS | nicht gesetzt | 150000 |
+| HELMUT_VORBEDINGUNG_WARTE_MS | nicht gesetzt | 10000 |
+| HELMUT_WORKER_LEERLAUF_MS | nicht gesetzt | 10000 |
+| HELMUT_QUELLEN_ARBEITSFENSTER | nicht gesetzt | on |
+| HELMUT_QUELLEN_FENSTER_TAG | nicht gesetzt | 8 |
+| HELMUT_QUELLEN_SEKUNDEN_TAG | nicht gesetzt | 2400 |
+| HELMUT_ORIGINALABRUFE_TAG | nicht gesetzt | 16 |
+| HELMUT_BETRIEBSZULASSUNG_JSON | nicht gesetzt | version1, vorhandener Geldhash, exakt privat gebundene aktive Profilkennungen |
+| HELMUT_SUCHWEGAUSZUEGE_HOSTS | www.dgb.de,www.radio-hannover.de | exakt die oben genannten 18 Hosts |
 
-Die Eintraege fuer Klassen/Drain/Zeit sind ausdruecklich Teil dieses Pakets;
-sie waren zum lesenden Envstand nicht konfiguriert. Den Weckhost unmittelbar
-vor Aktivierung gegen die von Vercel gesetzten Vertrauensanker pruefen;
-blosser Aliasbesitz genuegt dem vorhandenen Zielvertrag nicht. Nicht automatisch
-auf einen anderen Host ausweichen. `HELMUT_SCALABLE_PIPELINE_SEIT` ist nur eine
-Betriebsanzeige, keine Filterung historischer Auftraege.
+Dispatch bleibt `shadow`; HELMUT_JOB_TRANSPORT, HELMUT_SELBSTWECK_ERLAUBT,
+HELMUT_WORKER_WAKE_URL und HELMUT_DRAIN_BUDGET_MS bleiben ungesetzt. Artikelkontext,
+Anbietersteuerung, bisheriger Geldvertrag, Modell und Profile bleiben unverändert.
+Der geänderte Cronplan ist ausschließlich Teil des noch nicht freigegebenen Rollouts.
 
-Der bestehende Kommunikationsriegel bleibt gesperrt. Nur der ausdruecklich
-angeforderte Selbstweck darf mit allen vier passenden Flags und geprueftem
-eigenen HTTPS-Ziel den vorhandenen Jobtransport benutzen. Weiterleitungen
-werden abgewiesen. Mail, Einladung, Push, WhatsApp, Webhooks, Lambda und fremde
-Transporte erhalten dadurch keine Freigabe. Es entsteht kein neuer Cron,
-Workerprozess, Proxy, Anbieter oder externer Queue-Dienst.
+### Reguläre Nachkontrolle und Rückweg
 
-### Zeit, Kosten und Grenzen des Antriebs
+Vor Ausführung: frischen main/Head, Diff, Pflichtchecks, Konfliktfreiheit, parallele
+Arbeit, aktive Prozesse/Leases/Queue und Budgetbuch sowie DB-TimeZone prüfen.
+Globale Tagesreservierungen setzen UTC in der vorhandenen Datenbank voraus;
+abweichende Zeitzone bleibt ein Ausführungsblocker. Keine Migration oder Datenreparatur
+aus dieser Vorlage ableiten. Dann nur nach konkretem GO exakt den geprüften PR samt
+Konfiguration regulär ausrollen. Bei Mergeblock Envvorwerte wiederherstellen.
 
-Der regulaere Quellencron um 04:00 UTC plant und startet die vorhandene Queue.
-Der vorhandene Selbstweck kann danach faellige Arbeit in weiteren begrenzten
-Drains fortsetzen. Je Drain maximal 240 Sekunden; nach Freigabe des verteilten
-Drain-Slots ein Abgleich von hoechstens 50 und ein Versand von hoechstens
-20 Absichten, gebuendelt in hoechstens einen HTTP-Weckruf. Initial verwendet
-der Quellencron die vorhandenen Grenzen 200/100. Keine neue Cronzeit.
+Nach READY: Alias und tatsächliche Version, vollständige wirksame Konfiguration,
+gesperrten Selbstweck und fehlende zusätzliche Anbieter-/Profilaktivierungen prüfen.
+Nur reguläre Läufe liefern den Produktivnachweis. Eindeutige Dokumente in klaren
+Zeitfenstern bilanzieren: gefunden, gespeichert, Text vollständig/teilweise verfügbar,
+tatsächlich als Abschnitt im Prompt, global wiederverwendet, vertagt, blockiert,
+fehlgeschlagen. Queuealter/Restcursor, Budgets, reservierte/echte Laufzeit sowie echte
+gespeicherte und dargestellte persönliche Ausgabe getrennt kontrollieren.
+Weder complete-KO noch erfolgreiches Deployment beweisen alle Artikel gelesen oder
+ein Kundenbriefing gespeichert. Ein ruhiger Tag darf technische Unterversorgung nicht
+verdecken. Isolierte Modellantworten sind kein Nachweis echter Modellbefolgung.
 
-Beide Serveraufrufer verwenden unveraendert eine 300-Sekunden-Joblease; die
-bestehende Halb-Lease-Regel begrenzt jeden Auftrag auf 150 Sekunden.
-Vorbereitungslesungen, Originalabruf und Modellstart teilen diese absolute
-Frist. Die Abrufreserve lautet 25 Sekunden plus sechs Speicherfristen,
-die Modellreserve KI-Frist plus drei Speicherfristen plus fuenf Sekunden.
-Eine langsame Beschaffung kann deshalb erst im naechsten, rein aus Cache
-versorgten Auftrag verstanden werden. Die Konfiguration ist keine Zusage,
-dass jedes Original samt Modell in einen Auftrag passt.
+Rückweg: gesicherte Envvorwerte einschließlich alter Hostliste wiederherstellen und
+vorherige geprüfte Productionruntime `f13a430a` mit Deployment
+`dpl_J8aLVXje3s2Qx33gke2tK1x8iCvh` erhalten/zurückrollen; Büro und PR1117 erhalten.
+Ohne Fensterflag stoppen neue Querytermine vor IO, alter 04:00-Cron bleibt erhalten.
+Laufende Leases beobachten, keine reservierten Zähler, Versionen, Jobs, Fachinhalte
+oder Buchstände löschen. Keine Budgets erhöhen oder alte Profile aktivieren.
 
-Kurze fortsetzbare Arbeit wartet zehn Sekunden; reine lange Budget-/bekannte
-Cachepausen verwenden die bestehende Stunde und verursachen keinen schnellen
-Leerlaufpoll. Anbietergrenzen blockieren weiterhin jeden vorzeitigen Abruf.
-Der Selbstweck besitzt keinen spaeteren Timer: Sind ausschliesslich kuenftig
-faellige Aufgaben uebrig, kann die Kette enden. Der naechste sichere Neustart
-ist der regulaere 04-Uhr-Cron. Die bestehende maximale Budgetwartezeit von
-48 Stunden und begrenzte Wiedervorlage bleiben erhalten; fehlgeschlagene
-Auftraege sind keine verstandenen Dokumente.
 
-Je neuem Artikelstand im vorbereiteten Einstiegspfad hoechstens ein
-Original-GET mit maximal 20 Sekunden und 1 MiB Antwort. Bei beispielhaft 500
-neuen, jeweils genau einmal gebundenen Artikelstaenden waeren das hoechstens
-500 tatsaechliche Original-GETs und 500 MiB Antwortlimit; keine 500er-Messung.
-Das ist keine Geldobergrenze fuer die gesamte Verarbeitung.
+## Wiederaufnahme des zusammenhängenden Sprints
 
-**Kostenwirkung:** Der bestehende 1 USD/UTC-Tag-/30 USD-Gesamtvertrag deckelt
-Modellkosten, nicht Vercel-Rechenzeit, HTTP-Weckrufe oder Datenbankzugriffe.
-Mehr Originalversuche je Gesamtlauf und mehr kleine Queueauftraege sind die
-beabsichtigte Wirkung. Es gibt keinen globalen Tagesdeckel fuer Selbstweck-
-Aufrufe. Jeder Drain und jeder Versand ist endlich; zehn Versandversuche und
-Backoff bis 30 Minuten gelten je Absicht, der Abgleich kann alte Absichten
-spaeter erneut oeffnen. Daraus laesst sich keine endliche globale Tageszahl
-oder belastbarer Geldbetrag ohne gemessene Laufzeit/Plattformtarif ableiten.
+09.11.2026: Auftrag wird auf Branch `codex/globale-inhalte-20261109` zusammenhängend
+fortgesetzt. `main` `f13a430a18e415ea4e874d128fd72eb144c30dc9` enthält die ausgelieferte
+Briefingkorrektur PR1117; Production nativ READY auf
+`dpl_J8aLVXje3s2Qx33gke2tK1x8iCvh`. Konfliktfrei in lokalen, noch nicht gepushten
+Integrationskopf `a6a0a001` übernommen; Büro, Oberfläche und beide Branchsperren erhalten.
 
-Lesemehrarbeit bleibt begrenzt: hoechstens 200 Dokumente je Inhaltsauftrag,
-zugehoerige Fundstellen in 100er-Chunks mit erkanntem 1.000er-Antwortdeckel,
-bis zwei Cachelesungen je Kandidat. Pendingaufnahme: maximal fuenf
-KO-Quellenlesungen plus Zaehler/Seite. Vor Rest-Modellstart kommt eine
-frische KO-Lesung nach CAS-Reservierung hinzu. RSS-Nachlieferung liest nur texttragende
-Dubletten gebuendelt und schreibt nur identische bisher leere Zeilen bedingt.
-Der Artikelbelegspeicher verwendet eigene kleine globale Zeilen, keinen
-vollstaendigen Auth-/Hauptblob je Cachekey.
+Drei getrennte Schreibbereiche: Astra bearbeitet Workerfenster, Server/Dispatch und
+globale Arbeitslimits; Quellenfortsetzung bearbeitet gemeinsame Inhaltsversorgung,
+Understanding und Pipelinefortschritt; Vertragsbindung trennt Profilzulassung vom
+unveränderten globalen Geldvertrag und ergänzt das atomare Planungsrestjournal.
+Root integriert, prüft Anbieterbedarf und bereitet die isolierte Endabnahme mit mehr
+als 25 Dokumenten sowie mehreren fiktiven Profilen und den unabhängigen Review vor.
+Der vorherige Codekopf `1e096ca1` bleibt historisch grün geprüft; er ersetzt keine
+Endcommitprüfungen der neuen Integration. Offene Arbeiten: konkrete regelmäßige
+Fortsetzung, dauerhafte Plan-/Dokumentreste, lange Artikel, mehrere zulässige Profile,
+kleine gesamte Ausgabeabnahme bis Speicher/Anzeige, konsistentes Freigabepaket.
 
-Diese Vorbereitung beweist keine Versorgung von beispielhaft 500 neuen
-Artikeln innerhalb eines Tages. Verfuegbare Hosts, begrenzter Artikelkontext,
-Anbieterpausen, Modellbudget und tatsaechlicher Ein-/Abfluss bestimmen den
-Durchsatz. Ein positiver Produktionsnachweis muss diese Mengen unterscheiden.
-
-### Ausfuehrung erst nach dem einen konkreten GO
-
-1. Frischen main-/PR-/CI-Kopf, laufende Prozesse, Queuezustand, aktive Leases,
-   historische Fehler/Wiedervorlagen und Outbox lesen. Keine automatische
-   Neutralisierung historischer Jobs. Aktive Profilbindung, Vertragshash,
-   Tages-/Gesamtverbrauch und nicht eingefrorenen Kostenstand bestaetigen.
-   Vorwerte aller 15 Konfigurationseintraege sichern.
-2. Native Voraussetzungen sind zum 09.11. lesend bestaetigt: alle 21
-   referenzierten Queue-/Outbox-/Klassen-RPCs vorhanden, `service_role EXECUTE`
-   jeweils wahr; `CRON_SECRET` vorhanden, Wert nicht gelesen. Keine RPC wurde
-   fuer diesen Nachweis ausgefuehrt. Auch SELECT/INSERT/UPDATE/DELETE auf
-   helmut_store, helmut_jobs, raw_documents, document_findings und
-   knowledge_objects sind fuer service_role lesend bestaetigt; kein neuer
-   Berechtigungsbedarf. Vor Aktivierung Wiederpruefung.
-3. Exakt diese Productionwerte setzen und unmittelbar den geprueften PR ueber
-   den regulaeren Gitrollout bereitstellen. Envwerte wirken erst im neuen
-   Deployment. Bei Mergeblock vorherige Envwerte wiederherstellen. Kein
-   zusaetzlicher manuell erzeugter Deployment- oder Verarbeitungsstart.
-4. READY, Aliasbindung, effektive Runtimeversion, Konfigurationsbereitschaft des
-   Ereignisantriebs und erhaltene Kommunikationssperren lesen. Bereitschaft ist
-   kein Zustell-/Durchsatznachweis. Den regulaeren Quellenlauf abwarten.
-
-### Regulaere Nachkontrolle und Rueckweg
-
-Nach dem ersten regulaeren Quellenlauf die vorhandenen `process_runs`,
-Queue-/Outbox-/Klassenbilanz, gebundenen Belegcache, tatsaechlichen
-KO-Lektuerebelege und Jobreste lesen. Ein-/Ausgang unterscheiden: beobachtet,
-persistiert, Original versucht/geliefert, tatsaechlich im Prompt gespeichert,
-offen/vertagt/fehlgeschlagen und in Lage/Briefing nach aktueller Quellenpruefung
-sichtbar. Keine historische Modellbefolgung aus einer neuen KO-Kante ableiten.
-Modellverbrauch und HTTP-/Drainlaufzahlen samt Laufzeiten kontrollieren.
-
-Die schon beauftragte einmalige lesende Nachkontrolle am 10.11.2026 um
-05:45 UTC / 06:45 Berlin bleibt bestehen. Sie gilt fuer den tatsaechlich
-bereitgestellten Stand; ohne Aktivierung dieses PR kann sie dessen Wirkung
-nicht belegen. Kein manueller Zusatzlauf oder Originalprobe als Ersatz.
-
-Rueckweg: die 15 gesicherten Envvorwerte wiederherstellen (zuvor fehlende
-Eintraege entfernen) und auf den unmittelbar vorher geprueften Runtime-Stand
-zurueckrollen, zum aktuellen Lesestand
-`fe38a3710caa18f0a020825747c04c7d4f2c198a` /
-`dpl_2t9f7tXNuNePv4Ng5GjTStFWo8Vd`. Den parallelen Buero-Rollout erhalten;
-nicht auf den historischen PR1113-Stand `4d11ad63` zurueckgehen.
-Bereits laufende Leases/Drains erst beobachten, keine Jobs/Belege loeschen oder
-historische Daten zurueckschreiben. SCALABLE=off und DISPATCH=shadow verhindern
-weitere Queuefortsetzung im neuen Deployment. Die bisherigen Artikelkontext-
-und Anbieterflags sowie die 1/30-USD-Grenze bleiben auf ihren Vorwerten.
+Die bisherigen 15- und 10-Env-Vorlagen sind historische Zwischenstände und werden
+durch genau eine zusammenhängende Vorlage ersetzt. Noch keine Productionfreigabe,
+kein neuer Originalabruf und keine erneute Verwendung verbrauchter Einzelgenehmigungen;
+keine Modelle, Verarbeitung, Productionänderung, Merge oder Deployment ausgelöst.

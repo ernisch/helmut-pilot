@@ -47,6 +47,8 @@ async function test(name, fn) { await fn(); count++; console.log(`PASS ${name}`)
 (async () => {
   await test("Vertrag ist explizit, endlich, Azure-only; Aenderung setzt Buch nicht zurueck", async () => {
     assert.equal(B.aktiv({}), false); assert.equal(B.aktiv({ [B.ENV]: "" }), true);
+    assert.equal(B.aktiv({ [B.ZULASSUNG_ENV]: "{}" }), true);
+    await assert.rejects(B.reserviere(ARGS, { env: { [B.ZULASSUNG_ENV]: "{}" } }), { reason: "betriebskosten-vertrag-ungueltig" });
     for (const c of [{ ...CONTRACT, dailyLimitUsd: 1.01 }, { ...CONTRACT, totalLimitUsd: 31 },
       { ...CONTRACT, startsAt: "ungueltig" }, { ...CONTRACT, route: { ...CONTRACT.route, model: "gpt-4.1" } },
       { ...CONTRACT, route: { ...CONTRACT.route, provider: "openai" } }])
@@ -163,6 +165,86 @@ async function test(name, fn) { await fn(); count++; console.log(`PASS ${name}`)
     f.advance(86400000);
     await assert.rejects(B.reserviere(ARGS, f.deps), { reason: "betriebskosten-grenze-erreicht" });
     const book = f.read()[B.KEY]; assert.equal(B.pruefeBuch(book, book.contract).total, 29892000);
+  });
+  const syntheticProfile = id => ({ id, fullName: `Isoliertes Profil ${id}`, party: "SPD", faction: "SPD",
+    parliamentType: "Bundestag", state: "Berlin", constituency: "Synthetischer Wahlkreis",
+    committees: ["Ausschuss fuer Arbeit"], profileActive: true });
+  function admit(f, ids = [CONTRACT.profileId, "synthetisch-zwei"]) {
+    const c = B.vertrag(f.deps.env);
+    f.deps.env[B.ZULASSUNG_ENV] = JSON.stringify({ version: 1, budgetContractHash: c.contractHash, profileIds: ids });
+    f.profiles = ids.map(syntheticProfile);
+    return B.zulassung(c, f.deps.env);
+  }
+  await test("Getrennte Zulassung behaelt Geldvertrag, Altbelege, offene Reserven und UTC-Verbrauch", async () => {
+    const f = fixture(), settled = await B.reserviere(ARGS, f.deps);
+    await B.abschliessen(settled, await f.receipt(settled), f.deps);
+    const unknown = await B.reserviere(ARGS, f.deps);
+    await assert.rejects(B.abschliessen(unknown, null, f.deps));
+    const before = f.read()[B.KEY], c = B.vertrag(f.deps.env);
+    const a = admit(f);
+    assert.equal(B.vertrag(f.deps.env).contractHash, before.contractHash);
+    assert.equal(B.pruefeBuch(f.read()[B.KEY], c).total, before.bound);
+    const next = await B.reserviere({ ...ARGS, meta: { ...META, politicianId: "synthetisch-zwei" } }, f.deps);
+    const after = f.read()[B.KEY];
+    assert.deepEqual(after.calls[settled.id], before.calls[settled.id]);
+    assert.deepEqual(after.calls[unknown.id], before.calls[unknown.id]);
+    assert.deepEqual(after.contract, before.contract);
+    assert.equal(next.zulassungHash, a.contractHash);
+    assert.equal(after.bound, before.bound + next.reserved);
+    await B.abschliessen(next, await f.receipt(next), f.deps);
+    assert.equal(f.read()[B.KEY].bound, before.bound + 130);
+  });
+  await test("Mehrere Profile und globale Lektuere teilen atomar EIN unveraendertes Tagesbudget", async () => {
+    const f = fixture(); admit(f);
+    const global = { ...ARGS, meta: { politicianId: null, callType: "understanding", pipelineStep: "understanding",
+      betriebskostenProfileId: CONTRACT.profileId, runId: "cron-offline" } };
+    const attempts = Array.from({ length: 12 }, (_, i) => B.reserviere(i % 3 === 0 ? global
+      : { ...ARGS, meta: { ...META, politicianId: i % 2 ? CONTRACT.profileId : "synthetisch-zwei" } }, f.deps));
+    const outcomes = await Promise.allSettled(attempts);
+    assert.equal(outcomes.filter(x => x.status === "fulfilled").length, 4);
+    assert.equal(f.read()[B.KEY].bound, 848000);
+    assert.equal(Object.keys(f.read()[B.KEY].calls).length, 4);
+    assert.equal(Object.keys(f.read()).filter(k => k === B.KEY).length, 1);
+  });
+  await test("Zulassung verlangt echten aktiven nutzbaren Bestand und lehnt fremde oder ausgeschlossene Profile ab", async () => {
+    const f = fixture(); admit(f);
+    const baseline = f.read();
+    for (const profiles of [f.profiles.slice(0, 1), [...f.profiles, syntheticProfile("nicht-freigegeben")],
+      f.profiles.map((p, i) => i ? { ...p, profileActive: false } : p),
+      f.profiles.map((p, i) => i ? { ...p, party: "AfD", faction: "AfD" } : p),
+      f.profiles.map((p, i) => i ? { id: p.id, profileActive: true } : p), null]) {
+      f.profiles = profiles;
+      await assert.rejects(B.reserviere(ARGS, f.deps), { kiNichtGesendet: true });
+      assert.deepEqual(f.read(), baseline, "Abgelehnte Zulassung schreibt keine Reserve");
+    }
+    f.profiles = [syntheticProfile(CONTRACT.profileId), syntheticProfile("synthetisch-zwei")];
+    await assert.rejects(B.reserviere({ ...ARGS, meta: { ...META, politicianId: "nicht-freigegeben" } }, f.deps));
+    await assert.rejects(B.reserviere({ ...ARGS, meta: { ...META, tenantId: "synthetisch-zwei" } }, f.deps));
+    const globalMeta = { politicianId: null, callType: "understanding", pipelineStep: "understanding",
+      betriebskostenProfileId: CONTRACT.profileId, profileId: CONTRACT.profileId };
+    await assert.rejects(B.reserviere({ ...ARGS, meta: globalMeta }, f.deps), { reason: "betriebskosten-profilbezug-abweichend" });
+  });
+  await test("Zulassungswechsel braucht keinen neuen Geldvertrag und bindet Sender an denselben Freigabestand", async () => {
+    const f = fixture(), c = B.vertrag(f.deps.env); admit(f);
+    const ticket = await B.reserviere(ARGS, f.deps);
+    B.pruefeSendung(ticket, ARGS, f.deps);
+    assert.throws(() => B.pruefeSendung(ticket,
+      { ...ARGS, meta: { ...META, politicianId: "synthetisch-zwei" } }, f.deps), { reason: "betriebskosten-sender-abweichend" });
+    admit(f, [CONTRACT.profileId]);
+    assert.equal(B.vertrag(f.deps.env).contractHash, c.contractHash);
+    assert.throws(() => B.pruefeSendung(ticket, ARGS, f.deps), { reason: "betriebskosten-sender-abweichend" });
+    // Ein alter bereits gestarteter Versuch bleibt auch nach neuem Zulassungsstand abrechenbar.
+    await B.abschliessen(ticket, await f.receipt(ticket), f.deps);
+    assert.equal(f.read()[B.KEY].bound, 130);
+    const before = f.read();
+    for (const a of [{ version: 1, budgetContractHash: "f".repeat(64), profileIds: [CONTRACT.profileId] },
+      { version: 1, budgetContractHash: c.contractHash, profileIds: [] },
+      { version: 1, budgetContractHash: c.contractHash, profileIds: [CONTRACT.profileId, CONTRACT.profileId] },
+      { version: 1, budgetContractHash: c.contractHash, profileIds: [CONTRACT.profileId], dailyLimitUsd: 2 }]) {
+      f.deps.env[B.ZULASSUNG_ENV] = JSON.stringify(a);
+      await assert.rejects(B.reserviere(ARGS, f.deps));
+      assert.deepEqual(f.read(), before);
+    }
   });
   await test("Echter AI-Einstieg reserviert vor HTTPS und verarbeitet native Usage fail closed", async () => {
     const https = require("node:https"), storage = require("../lib/helmut/storage");

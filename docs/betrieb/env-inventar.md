@@ -2,6 +2,14 @@
 
 **Nachtrag 17.09.2026:** `HELMUT_ARTIKELKONTEXT` als ausschliesslich vorbereiteter Codepfad aufgenommen. Default AUS, keine Umgebung und kein Datei Flag gesetzt. [Vertrag und Grenzen](gipfel-quellenluecke-2026-09-17.md#regulaerer-anschluss-mit-begrenztem-abruf).
 
+**Quellensprint 09.11.2026 (nur vorbereitet):** `HELMUT_QUELLEN_ARBEITSFENSTER` (Default aus),
+`HELMUT_QUELLEN_FENSTER_TAG`, `HELMUT_QUELLEN_SEKUNDEN_TAG`, `HELMUT_ORIGINALABRUFE_TAG`
+(positive globale Tageslimits, ungültig/fehlend sperrt aktivierten Fenstermodus),
+`HELMUT_BETRIEBSZULASSUNG_JSON` (optional, exakt an bestehenden Geldhash und aktive
+zulässige Profilkennungen gebunden; kein neues Budget oder Profilaktivierung).
+Die einzige aktuelle Konfiguration samt Zeitplan/Rückweg steht im
+[Freigabepaket](globale-inhaltsversorgung-20261109.md#einzige-aktuelle-produktionsvorlage-begrenzte-morgenfenster).
+
 **Historischer Gesamtstand: 2026-09-03** (§3a nachgezogen: `HELMUT_TESTKOHORTE_QUELLEN` trägt jetzt die gemessene Quellenlast mit und ohne Schalter — inklusive der Betriebsaussage, dass er für den 500er-Funktionstest AUS bleibt — Beleg [`500-funktionstest-sicherheitsrahmen-2026-09-01.md`](500-funktionstest-sicherheitsrahmen-2026-09-01.md) §34.13.4). Zuvor 2026-09-02 (§3a neu: die vorbereiteten, NICHT gesetzten Werte des 500er-Funktionstests). Zuvor 2026-08-24 (Härtungssprint Selbstweck: §7a neu — fünf statt drei Werte für die Umschaltung; Production-Zustand von `HELMUT_SCALABLE_PIPELINE`/`HELMUT_JOB_DISPATCH_MODE` und die Anwendung der OP-30-Migrationen berichtigt). Erstfassung 2026-07-15, Folgebranch.
 
 **Zweck (Audit-Blocker):** Der Betrieb hing an einem Bus-Faktor 1 auch auf

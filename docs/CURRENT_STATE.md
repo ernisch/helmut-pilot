@@ -4,7 +4,7 @@
 
 **UX (08.11.):** [PR1108: Tagesgrund, Radar ohne Knopf](ui/mobile-ux-20261108/README.md); kein Merge/Deploy, ChatGPT-Abnahme offen. [Briefing PR1102 live](ui/briefing-ohne-refresh-20261107/rollout.md).
 
-**Briefing/PR1115:** [Befund](betrieb/briefing-tagesorientierung-20261109.md); kein Rollout.
+**Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 lokal integriert, noch kein Rollout.
 
 ## Büro: gemergt und Production READY (09.11.2026)
 
@@ -30,7 +30,7 @@ Voriger Status unveraendert im [Archiv](archive/project_state/2026_11_07_CURRENT
 
 ## Quellen: aktueller Stand und fruehere Belege
 
-**09.11., PR1115 teilweise abgeschlossen:** [Analyse und entscheidbares 15-Env-Paket](betrieb/globale-inhaltsversorgung-20261109.md). Gepruefter Kopf `feadca28`, CI42618196389 gruen (189/189 Standard, 350/350 Bereich, Z22 48/48); anschliessend neue main-Abschlussdoku integriert und diese Quellenhistorie gekuerzt. Aktuelle Endkopf-CI in PR1115. NDR-Probe genehmigt/ausgefuehrt: ein direkter Codex-GET-Versuch mit ECONNREFUSED vor TLS/HTTP; zwei genehmigte Anbieterwrites, keine Fachdaten. Original/Bindung offen, Production-Ausfall unbelegt. Begrenztes Queuepaket DGB/Radio entscheidbar; keine allgemeine Anbieterfreigabe. Production/Rueckweg `fe38a371` (Buero) READY. PR1113 aktivierte DGB/Radio und Anbietersteuerung bei 1 USD/Tag, 30 USD gesamt; regulaere Wirkungskontrolle am 10.11. offen. PR1104/PR1110 live; Proxy/PR1109 geparkt. [Pflegeabschluss](betrieb/pflege-bestandsfehler-20261109.md): Negation berichtigt, historischer Prompt/Originalabsatz offen. Keine Modelle/manuellen Laeufe.
+**09.11., PR1115 weiter in Umsetzung:** main/Production PR1117 `f13a430a` lokal integriert (`a6a0a001`), Büro/Oberfläche erhalten. [Aktuelle Vorlage und Wiederaufnahme](betrieb/globale-inhaltsversorgung-20261109.md): alte10/15Env-Vorlagen ersetzt; acht vorbereitete Morgenfenster, globale8/2400s/16Artikelversuche-Tageslimits, getrennte Profilzulassung bei unverändertem1/30USD-Geldvertrag. Noch offen: komplette Integration/gezielte>25Dokumente-Mehrprofilabnahme/Review/Endkopf-CI. Keine Aktivierung, Modelle oder neuen Originalabrufe. NDR-Original/Bindung und allgemeine Anbieterwirkung weiter unbekannt. PR1104/1110/1113 live; Proxy1109 geparkt; [Pflegeabschluss](betrieb/pflege-bestandsfehler-20261109.md) mit historischen Beleglücken bleibt erhalten.
 
 **Historie 07.11.:** [PR1098](https://github.com/ernisch/helmut-pilot/pull/1098) wurde nach GO und gruener CI inaktiv auf `778c289b` ausgerollt. Separat freigegebene Quellenkorrektur: vier Originalauszuege, eine Bundestagsquelle, fuenf Kurzfassungen; zwei Altfaelle geparkt, RP Online ohne Original offen. Kein 6/6-Nachweis und keine Provideraufrufe. [Quellenkorrektur mit Vor-/Nachwerten und Rueckweg](betrieb/quellenkorrektur-20261107.md). [Unveraenderter damaliger Detailstand](https://github.com/ernisch/helmut-pilot/blob/feadca2829b6b54c010c2fcfef16d208ab6e0c05/docs/CURRENT_STATE.md#quellenkorrektur-07112026-gemergt-und-inaktiv).
 
