@@ -5,6 +5,10 @@
 **UX (08.11.):** [PR1108: Tagesgrund, Radar ohne Knopf](ui/mobile-ux-20261108/README.md); kein Merge/Deploy, ChatGPT-Abnahme offen. [Briefing PR1102 live](ui/briefing-ohne-refresh-20261107/rollout.md).
 
 
+## Büro: gemergt und Production READY (09.11.2026)
+
+[PR1111](https://github.com/ernisch/helmut-pilot/pull/1111) nach ausdruecklicher Merge-/Rolloutfreigabe auf `fe38a371` gemergt. Neuester main `e8a4b08b` zuvor konfliktfrei integriert; gepruefter Kopf `e95d81e7`, [Pflicht-CI42608455569](https://github.com/ernisch/helmut-pilot/actions/runs/42608455569) gruen:189/189 Standard,349/349 Bereich, Browser/Mobil sowie Z22 48/48. Production `dpl_2t9f7tXNuNePv4Ng5GjTStFWo8Vd` READY, Hauptdomain bestaetigt Versionfe38a371, Client/CSS bytegleich, Release HTTP200 mit ok/ready/storage=true. Kein error/fatal im abgefragten Deploymentfenster bis11:56:42UTC; kein dauerhafter Fehlerfreiheitsnachweis. Vor-/Nachkontrolle0laufende Prozesse/0aktive Sperren. Keine Modelle, Daten-, Budget-, Flag- oder Zeitplanaenderungen durch diesen Rolloutauftrag. Angemeldete Production-Bedienabnahme mit echtem Teilen bleibt offen; keine Live-Entwurfserzeugung ausgefuehrt. [Nachkontrolle und konkreter Rueckweg](ui/buero-rollout-20261109.md).
+
 ## Profilbezogene Lageauswahl (07.11.2026, gemergt und ausgerollt)
 
 [PR1100](https://github.com/ernisch/helmut-pilot/pull/1100) nach Betreiber-GO auf `d9651861` gemergt; Kopf `c4caf031`, beide Pflichtchecks [CI42409807375](https://github.com/ernisch/helmut-pilot/actions/runs/42409807375) grün.
