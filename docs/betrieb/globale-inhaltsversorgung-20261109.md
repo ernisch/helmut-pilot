@@ -14,16 +14,25 @@ Weg. Kurze Titel und begrenzte Artikeleinstiege beweisen keine Unpassendheit.
 Nicht gelesene Dokumente bleiben von verstandenen Inhalten unterscheidbar.
 
 Keine neuen Modellaufrufe, Originalabrufe ohne Einzelfreigabe, manuelle
-Verarbeitung, Backfills, Produktivdatenaenderungen, Aktivierungen, Merges oder
+Verarbeitung, Backfills, Produktivdatenaenderungen, Aktivierungen, Merges nach `main` oder
 Deployments in diesem Entwicklungssprint. Keine neue Infrastruktur. Die Zahl
 500 bezeichnet eine beispielhafte Artikelmenge, keinen Lasttestauftrag.
 
-## Frisch bestaetigter Ausgangspunkt
+## Ausgangsbelege und aktueller Rolloutstand
 
-- `main`: `e8a4b08bf14609a02831a0f6e5b6c9c5caa28824`.
-- Production-Code: `4d11ad63e2ae856110bcd579b5540f58557b5a26`, PR1113;
-  Vercel `dpl_ExYN3YCQc8omWzfXWsgqxCVd6vVo`, READY.
-- Production: `HELMUT_ARTIKELKONTEXT=on`,
+- `main` beim Sprintstart: `e8a4b08bf14609a02831a0f6e5b6c9c5caa28824`.
+  Parallel wurde Buero-PR1111 am 09.11.2026 um 11:55:54 UTC gemergt;
+  aktueller `main`: `fe38a3710caa18f0a020825747c04c7d4f2c198a`.
+- Production am 09.11.2026 um 12:07 UTC lesend bestaetigt:
+  `fe38a3710caa18f0a020825747c04c7d4f2c198a`,
+  Vercel `dpl_2t9f7tXNuNePv4Ng5GjTStFWo8Vd`, READY und Productionalias.
+  Dieser Buero-Stand ist die neue Rueckwegbasis vor einem spaeteren PR1115-Rollout.
+  Die zuvor aktive PR1113-Runtime
+  `4d11ad63e2ae856110bcd579b5540f58557b5a26` mit
+  `dpl_ExYN3YCQc8omWzfXWsgqxCVd6vVo` bleibt historischer Ausgangsbeleg.
+  Der parallele Rollout war keine Productionaktion dieses Sprints.
+- Bestaetigter Production-Envlesestand vor dem parallelen Rollout:
+  `HELMUT_ARTIKELKONTEXT=on`,
   `HELMUT_SUCHWEGAUSZUEGE_HOSTS=www.dgb.de,www.radio-hannover.de`,
   `HELMUT_ANBIETER_STEUERUNG=on`. Der alte Schalter
   `HELMUT_SUCHWEGAUSZUEGE` fehlt. Keine Anbieterlimit-Overrides.
@@ -343,12 +352,24 @@ seine regulaeren Pflichtchecks anhand des gesamten PR-Diffs einschliesslich
 Runtimeaenderungen; kein verkuerzter Pruefumfang wird zugesagt.
 Keine erneute lokale Gesamtsuite.
 
+Auch der anschliessende Dokumentationskopf
+`f82fc5616948cadd5bb4be6215c4e826a13fb875` hat beide Pflichtchecks bestanden:
+`42609654720` **SUCCESS**, Standard 189/189, Bereich 350/350,
+Z22 48/48; konkrete Browserstufen regulaer uebersprungen.
+Waehrend dieses Laufs wurde PR1111 parallel auf `main` gemergt. Der neue
+Stand `fe38a3710caa18f0a020825747c04c7d4f2c198a` ist deshalb konfliktfrei
+in den PR1115-Entwicklungszweig uebernommen, ohne Merge nach `main`.
+Buero, UI, `ai.js`, `server.js` und die gepinnte CI-Archivwiederverwendung
+bleiben unveraendert erhalten. Beide Vercel-Branchsperren bleiben `false`.
+Der integrierte Endkopf benoetigt erneut die regulaeren Pflichtchecks;
+die beiden bestandenen Vorgaengerlaeufe bleiben gueltige historische
+Pruefbelege, ersetzen aber keine CI des integrierten Kopfes.
+
 Der unabhaengige Review hat insbesondere globalen Lektuerebeleg,
 13/12-Fortsetzung, Quellen-/RSS-Konflikte, Betreiberpausen und die enge
 Selbstweckausnahme geprueft; keine offenen P1-Befunde. Pflichtchecks sind `Syntax + Offline-Suiten` und
 `Browser-/Mobile-Smoke (Chromium)`. PR1115 ist offen und ungemergt;
-`main` blieb bei der frischen GitHub-Pruefung auf
-`e8a4b08bf14609a02831a0f6e5b6c9c5caa28824`. Die erforderliche
+Aktuelle Basis ist der oben bezeichnete parallele Buero-Rollout. Die erforderliche
 Anbietererweiterung bleibt wegen der vor Ausfuehrung blockierten Einzelprobe
 unvollstaendig; keine Empfehlung, die allgemeine Versorgung als fertig zu
 aktivieren. Commit, PR und native CI-Run-ID werden
@@ -496,7 +517,11 @@ bereitgestellten Stand; ohne Aktivierung dieses PR kann sie dessen Wirkung
 nicht belegen. Kein manueller Zusatzlauf oder Originalprobe als Ersatz.
 
 Rueckweg: die 15 gesicherten Envvorwerte wiederherstellen (zuvor fehlende
-Eintraege entfernen) und auf den geprueften vorigen Runtime-Stand zurueckrollen.
+Eintraege entfernen) und auf den unmittelbar vorher geprueften Runtime-Stand
+zurueckrollen, zum aktuellen Lesestand
+`fe38a3710caa18f0a020825747c04c7d4f2c198a` /
+`dpl_2t9f7tXNuNePv4Ng5GjTStFWo8Vd`. Den parallelen Buero-Rollout erhalten;
+nicht auf den historischen PR1113-Stand `4d11ad63` zurueckgehen.
 Bereits laufende Leases/Drains erst beobachten, keine Jobs/Belege loeschen oder
 historische Daten zurueckschreiben. SCALABLE=off und DISPATCH=shadow verhindern
 weitere Queuefortsetzung im neuen Deployment. Die bisherigen Artikelkontext-

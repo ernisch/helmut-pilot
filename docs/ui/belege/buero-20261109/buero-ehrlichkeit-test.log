@@ -1,0 +1,55 @@
+PASS  Ohne KI-Schlüssel: aiEnabled=false + degraded + fallbackReason
+PASS  Ohne KI-Schlüssel: regelbasierter Text vorhanden
+PASS  Ohne KI-Schlüssel: sourceNote erklärt die Herkunft
+PASS  KI-Fehler-Pfad existiert (fallbackReason 'ki-fehler', aiEnabled:false)
+PASS  Leere KI-Antwort wird als Regel-Fallback gekennzeichnet ('ki-antwort-leer')
+PASS  Erfolgs-Pfad behauptet KI nur bei echtem KI-Text (kein result.text||fallback-Mix mehr)
+PASS  Keine unwahre Prüf-Behauptung 'Linie geprüft' mehr
+PASS  Keine unwahre Behauptung 'Zitierfähig nach kurzem Check'
+PASS  Kein falscher Erfolgs-Toast im Fehlerpfad (catch setzt Quelle 'fehler' + ehrlichen Toast)
+PASS  Regel-Fallback wird im Erfolgspfad nie als KI gemeldet
+PASS  Büro speichert ausschließlich gebundene KI-Entwürfe
+PASS  Fehlgeschlagene Erzeugung wird sichtbar gemacht
+PASS  Keine Format-Massenerzeugung beim Appstart
+PASS  Karten tragen eine Herkunftszeile
+PASS  KI-Herkunft klar gekennzeichnet
+PASS  Keine irreführende Bereitschaftszählung oder Prioritätenliste
+PASS  URL ohne Quellentext genügt nicht
+PASS  Bloßer Quellenrest genügt nicht
+PASS  Herausgeber-Startseite genügt nicht
+PASS  Nicht-HTTPS-Quelle genügt nicht
+PASS  Quellen werden dedupliziert
+PASS  Unbekanntes Format wird nicht als Statement erzeugt
+PASS  Ausschussfragen erfordern gesichertes Mandat
+PASS  Alter Bund-Profilstandard ist keine gesicherte Zuständigkeit
+PASS  Widersprüchliche explizite Mandatsebenen werden nicht geraten
+PASS  Landtag ohne Land gesperrt
+PASS  Ausschusszuständigkeit wird nicht geraten
+PASS  Landtag und Bundestag getrennt aus vorhandenen Profilfeldern
+PASS  Fehlende Quellen stoppen vor KI und liefern keinen Fertigtext
+PASS  Büro erzeugt genau das benötigte Format mit gemocktem Modell
+PASS  Modell erhält Landtagszuordnung und echten Quellentext
+PASS  Freier Requestprompt und pauschale Bundesregierungsvorgabe entfallen
+PASS  Ungesicherte alte Rollen- und Ministeriumsstandards erreichen Büro-Modell nicht
+PASS  Fakten, KI-Einordnung, Auszüge und formelle Anfragen bleiben getrennt
+PASS  Büro-Route ersetzt Request-Fakten durch kanonischen Mandantenanlass
+PASS  Büro-Lesezugriffe behalten ausschließlich den aktiven Mandanten
+PASS  Fehlende/fremde/widersprüchliche Kennungen stoppen vor Generator
+PASS  Fehlende/fremde/widersprüchliche Kennungen stoppen vor Generator
+PASS  Fehlende/fremde/widersprüchliche Kennungen stoppen vor Generator
+PASS  Fehlende/fremde/widersprüchliche Kennungen stoppen vor Generator
+PASS  Ignorierter Anlass erzeugt keinen Entwurf
+PASS  Mehrdeutiger Anlass erzeugt keinen Entwurf
+PASS  Abgewiesene Anlässe erreichen den Generator nie
+PASS  Read-only Vorschau erzeugt keinen Entwurf
+PASS  officeDraftText liest Legacy-Strings UND neue Objekte
+PASS  officeDraftProvenance behauptet bei Legacy/Unbekannt nichts
+PASS  draftProvenanceLabel: KI klar, Regel klar, ungültig ehrlich
+PASS  Fixture: ein Format mit editorischer Vorgabe 'Entwurf bereit' existiert
+PASS  bereit: gültiger Entwurf -> officeCardStatus 'Entwurf bereit'
+PASS  wird vorbereitet: kein Entwurf + generating -> 'Wird vorbereitet' (nicht bereit)
+PASS  fehlgeschlagen: officeDraftErrors -> 'Erstellung fehlgeschlagen' (nicht bereit)
+PASS  leer: kein Entwurf -> 'Noch kein Entwurf' (nicht bereit)
+PASS  gemischt: kein unfertiger Zustand ist 'Entwurf bereit'
+
+53 PASS, 0 FAIL
