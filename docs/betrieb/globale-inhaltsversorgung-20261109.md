@@ -390,7 +390,7 @@ regulaer uebersprungen. Anschliessend wurde die neue reine
 Die gemeinsame Statusdatei haette dadurch 31.018 Zeichen/353 Zeilen erreicht.
 Deshalb wurden ausschliesslich die bereits belegten Quellenhistorien auf ihre
 Berichte verdichtet; die neue Buero-Abschlussdokumentation bleibt unveraendert.
-Runtime und Rueckwegbasis bleiben `fe38a371`. Die notwendige Integration und
+Productionruntime und Rueckwegbasis bleiben `fe38a371`. Die notwendige Integration und
 Statuskorrektur erhalten regulaere Pflichtchecks auf dem neuen Endkopf;
 Ergebnis und Kennung werden ohne weiteren Dokumentationscommit im PR gebunden.
 
