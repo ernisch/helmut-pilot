@@ -26,8 +26,10 @@ Amtliche Artikelstaende und parlamentarische Metadaten behalten ihre eigenen
 Vertraege. Die fruehere240-Zeichen-Leseprojektion geschieht vor dem Cachehash;
 ein ganzer nachgeladener Absatz wird danach nicht erneut gekuerzt.
 
-Der vorhandene Beschaffer bekommt einen technisch rein lesenden Bestandsmodus:
-nur `lesen`, weder Reservierung noch Anbieterzugriff noch Netz. Quellenstand,
+Der vorhandene Belegspeicher traegt den technisch rein lesenden Bestandsmodus:
+nur `lesen`, weder Reservierung noch Anbieterzugriff noch Netz. Beschaffung
+und Leser verwenden dieselben Quellen-/Standpruefungen; die Leser importieren
+keinen Beschaffer, Crawler oder PARDOK-Dispatcher. Quellenstand,
 ID, Ziel, Titel, Publikations-/Abrufzeit, Verfahren, Text-/Antworthash und
 aktuelle SourceSafety bleiben gebunden. Fehlende, offene oder ungueltige
 Belege bleiben Luecken. Die exakte Hostliste gilt auch fuer die neue
@@ -71,6 +73,18 @@ werden mit ihrem tatsaechlichen Selectvertrag ausgefuehrt.
 - Pflicht-CI am exakten PR-Endkopf erforderlich. Wegen gemeinsamer Storage-
   und Deploymentdatei entscheidet der unveraenderte Pruefplan konservativ.
   Kein lokaler zweiter Gesamtlauf und kein neuer Mock100/500.
+
+**Erster Endkopfcheck bleibt FAILURE:** CI42575610947 auf470751ee:
+189/189 Standardsuiten und348/349 Bereichssuiten bestanden; Z22 danach SKIP.
+Der unveraenderte `pardok-dispatch-smoke-test.js` fand die unzulaessige
+statische Verbindung des Lesepfads ueber Beschaffungsimporte zum Crawler.
+Kein Liveabruf. Kleinste Korrektur: dieselben reinen Quellen-/Standpruefungen
+in den vorhandenen Belegspeicher und drei reine Auswahlhelfer in das vorhandene
+Auszugsmodul verschoben; kein neues Modul und kein abgeschwaechter Test.
+Danach PARDOK-Isolation13/13, Original-/REST-Anschluss12/12 und Eager26/26
+gezielt gruen. Unabhaengiges Delta-Review ohne weiteren Befund. Der neue
+Endkopf benoetigt seine eigene Pflicht-CI; erfolgreiche Teilnachweise des
+ersten Laufs bleiben ihm zugeordnet, kein lokaler zweiter Gesamtlauf.
 
 Vor jedem Push werden alle Workflowtrigger gegen Branch UND gesamten PR-Diff
 geprueft. Shadow/Sprint9B/PARDOK bleiben manuell. Der Profil-Liveworkflow trifft
