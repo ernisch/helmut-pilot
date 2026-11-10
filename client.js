@@ -6455,7 +6455,9 @@ function renderHelmutStandView() {
 // ihren eigenen Bereich (Verweis im Hauptvorgang). Nur mit echten, vorhandenen Daten.
 function renderUiBriefingColumns(state) {
   const rs = briefing && briefing.currentRadarState;
-  const radarLine = rs && rs.available !== false && rs.summary ? [rs.summary.line1, rs.summary.line2].filter(Boolean).join(" ") : "";
+  // Dieselbe geprüfte Anzeige wie im Radartab, keine historischen Rohzuordnungen.
+  const radarSummary = (rs?.anzeige || rs)?.summary;
+  const radarLine = rs && rs.available !== false && radarSummary ? [radarSummary.line1, radarSummary.line2].filter(Boolean).join(" ") : "";
   const radar = radarLine ? `<section class="ui-col" aria-label="Radar">
       <p class="ui-col-kicker">${uiIcon("radar")}<span>Radar</span></p>
       <p>${escapeHtml(uiSieText(radarLine))}</p>
