@@ -574,6 +574,46 @@ api.setBriefing({ currentHelmutState: { status: "empty", primaryItem: null,
 check("Auch gelieferte Leerzustandstexte verwenden Sie-Ansprache", api.render().includes("Für Ihr Mandat fehlen Quellen.")
   && api.lageView().includes("Für Ihr Mandat fehlen Quellen."));
 
+// Die Radarspalte muss dieselbe geprüfte Anzeige zusammenfassen wie der Radartab.
+// Rohzuordnungen können historische oder mangels Beleg zurückgehaltene Treffer sein.
+const rawRadarSummary = { line1: "ROH_ERWAEHNUNG", line2: "ROH_SIGNAL" };
+const projectedRadarSummary = { line1: "In dieser Radaransicht werden derzeit keine zugeordneten Signale angezeigt.", line2: "" };
+const radarColumnBriefing = {
+  ...briefingWith({ ...fullState, status: "stale", staleState: true,
+    frischeVertrag: { aktuell: false, grundText: "Die zugrunde liegenden Daten sind nicht ausreichend aktuell." } }),
+  currentRadarState: { status: "stale", summary: rawRadarSummary,
+    anzeige: { status: "empty", summary: projectedRadarSummary } }
+};
+api.setBriefing(radarColumnBriefing);
+const projectedColumn = api.render();
+check("Briefing-Radarspalte zeigt den geprüften Leerstand statt historischer Rohsignale",
+  projectedColumn.includes(projectedRadarSummary.line1)
+  && !projectedColumn.includes("ROH_ERWAEHNUNG") && !projectedColumn.includes("ROH_SIGNAL"));
+check("Veralteter Stand behält belegten Auftrag und die Frischesperre",
+  projectedColumn.includes(fullState.primaryItem.displayTitle)
+  && projectedColumn.includes(fullState.recommendation)
+  && projectedColumn.includes("Briefing noch nicht aktuell") && !/>Aktuell<\/span>/.test(projectedColumn));
+api.setBriefing({ ...radarColumnBriefing, currentRadarState: {
+  ...radarColumnBriefing.currentRadarState,
+  anzeige: { status: "stale", summary: { line1: "ANZEIGE_QUELLENSTAND", line2: "ANZEIGE_BEOBACHTUNG" } }
+} });
+const visibleColumn = api.render();
+check("Briefing-Radarspalte übernimmt beide Zeilen der sichtbaren Signale",
+  visibleColumn.includes("ANZEIGE_QUELLENSTAND") && visibleColumn.includes("ANZEIGE_BEOBACHTUNG")
+  && !visibleColumn.includes("ROH_ERWAEHNUNG") && !visibleColumn.includes("ROH_SIGNAL"));
+api.setBriefing({ ...radarColumnBriefing, currentRadarState: {
+  ...radarColumnBriefing.currentRadarState, anzeige: { status: "empty" }
+} });
+check("Vorhandene Projektion ohne Zusammenfassung fällt nicht auf Rohsignale zurück",
+  !api.render().includes("ROH_ERWAEHNUNG"));
+api.setBriefing({ ...radarColumnBriefing, currentRadarState: { summary: rawRadarSummary } });
+check("Altvertrag ohne Radarprojektion bleibt lesbar", api.render().includes("ROH_ERWAEHNUNG"));
+api.setBriefing({ ...radarColumnBriefing, currentRadarState: {
+  ...radarColumnBriefing.currentRadarState, available: false
+} });
+check("Technische Nichtverfügbarkeit unterdrückt auch eine vorhandene Radarprojektion",
+  !api.render().includes(projectedRadarSummary.line1));
+
 console.log(`\n${passed}/${passed + failed} Helmut-Tab-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
 
