@@ -92,6 +92,11 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
   const make = versorgung => C.toBriefingContractV3({ profile, decisions: [{ knowledge_object_id: ko.id,
     vorgang_id: ko.vorgang_id, decision: "Ignorieren", priority_type: "normal", score: 10, matched_features: [] }],
     kosById: { [ko.id]: ko }, sourcesByVorgang: { [ko.vorgang_id]: [doc] }, now, versorgung });
+  // server.js bindet diese Funktionen beim ersten require; vor der neuen
+  // Decoratorregression injizieren, damit auch der bestehende Leerpfad echt liest.
+  const S = require("../lib/helmut/storage"); let koLesungen = 0;
+  S.v3StoreReady = () => true;
+  S.listKnowledgeObjects = async () => { koLesungen++; return []; };
   const frischeKontext = { jetzt: now, lauf: { vertragVersion: 1, berlinTag: tag,
     status: "erfolg", erzeugtAm: now.toISOString() }, datenstand: now.toISOString(),
     fenster: { start: "2026-11-08T05:15:00Z" } };
@@ -158,12 +163,12 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     A.equal(JSON.stringify(input), inputBefore);
   });
   await test("Echter Server-Leerpfad liest heutigen Versorgungsstand und zeigt keine Ruhe", async () => {
-    const S = require("../lib/helmut/storage"); S.v3StoreReady = () => true; S.listKnowledgeObjects = async () => [];
     const original = V.lese; let args;
     V.lese = async x => { args = x; return signal("unbekannt"); };
     try {
       const result = await require("../server").__buildV3Briefing(profile, profile.id, { now });
       A.equal(args.mandat, profile.id); A.equal(args.jetztMs, now.getTime());
+      A.equal(koLesungen, 1, "Kein versehentlicher Store-disabled- statt Datenleerpfad");
       A.equal(result.currentHelmutState.emptyState.kind, "gap");
       A.deepEqual(result.currentHelmutState.versorgung, signal("unbekannt"));
     } finally { V.lese = original; }
