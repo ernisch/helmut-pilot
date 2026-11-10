@@ -246,7 +246,7 @@ async function main() {
     // die Reihenfolge-Durchreiche selbst ist unveraendert Vertragsinhalt.
     check("§4.2 listPendingKnowledgeObjects reicht die Reihenfolge durch",
       /listPendingKnowledgeObjects\(\{ limit = 50, reihenfolge = "neueste", offset = 0, _signalError = false \} = \{\}\)/.test(storageSrc)
-      && /listKnowledgeObjects\(\{ status: "pending", limit, reihenfolge, offset, _signalError, ohneGateGeparkt: true, nurVerarbeitbar: true \}\)/.test(storageSrc));
+      && /listPendingKnowledgeObjectRows\(\{ limit, reihenfolge, offset, _signalError, nurVerarbeitbar: true \}\)/.test(storageSrc));
     const pendingBody = storageSrc.slice(storageSrc.indexOf("async function listPendingKnowledgeObjects("),
       storageSrc.indexOf("// --- W-1", storageSrc.indexOf("async function listPendingKnowledgeObjects(")));
     check("§4.2a Pendinglesefehler bleiben Fehler; failed, terminal und geparkt bleiben ausgeschlossen",
