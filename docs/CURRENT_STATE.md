@@ -2,6 +2,8 @@
 
 **Stand: 09.11.2026.** Betreibersteuerung und frische Productionbelege gelten. [PR1105 live](betrieb/validierungsdiagnose-20261108.md).
 
+**10.11., Briefing-Frische in Vorbereitung:** Der Antwortvertrag zählt den Hauptvorgang bisher nicht mit und kann deshalb trotz neuer Hauptmeldung einen Ruhehinweis liefern. Gezielter Zählfix mit synthetischer Rendererregression vorbereitet; Frische-/Qualitätssperren bleiben erhalten. Keine Productionänderung; endgültiger Kopf und Pflicht-CI im Reparatur-PR maßgeblich. PR1118/1119 zuvor regulär ausgerollt, aktueller main `34e37241`.
+
 **UX (08.11.):** [PR1108: Tagesgrund, Radar ohne Knopf](ui/mobile-ux-20261108/README.md); kein Merge/Deploy, ChatGPT-Abnahme offen. [Briefing PR1102 live](ui/briefing-ohne-refresh-20261107/rollout.md).
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.

@@ -122,5 +122,48 @@ check("Vorbedingung: leerer Stand -> currentHelmutState.status 'empty'", emptySt
 // === 7) Demo-/Vorschau-Sonderfall bleibt unangetastet ========================
 check("Demo-Status bleibt unverändert (kein Eingriff)", decorate({ status: "Demo" }).status === "Demo");
 
+// === 8) Frischevertrag zählt dieselben sichtbaren Meldungen wie die Karte ===
+// currentHelmutState.items enthält nur die weiteren Prioritäten. Der getrennte
+// Hauptvorgang muss ebenfalls zählen, sonst wird eine neue Einzelmeldung zur Ruhe.
+const frischeKontext = {
+  jetzt: NOW,
+  lauf: { vertragVersion: 1, berlinTag: "2026-07-15", status: "erfolg", erzeugtAm: "2026-07-15T05:15:00Z" },
+  datenstand: "2026-07-15T07:00:00Z",
+  fenster: { start: "2026-07-14T05:15:00Z" }
+};
+const einzel = briefingWith(freshState);
+const unveraendert = JSON.stringify(einzel);
+const einzelAusgabe = decorate(einzel, frischeKontext);
+const einzelVertrag = einzelAusgabe.currentHelmutState.frischeVertrag;
+check("Hauptvorgang allein zählt als eine neue Meldung",
+  einzelVertrag.kennzahlen.gesamt === 1 && einzelVertrag.kennzahlen.neu === 1);
+check("Neue Einzelmeldung wird nicht als Ruhelage bezeichnet", einzelVertrag.ruhelage === false);
+const einzelHtml = require("./lib/briefing-ansichten")(einzelAusgabe, NOW.toISOString()).html.briefing;
+check("Echter Renderer zeigt Hauptvorgang ohne falsche Meldung über einen ruhigen Tag",
+  einzelHtml.includes(freshState.primaryItem.displayTitle)
+  && !einzelHtml.includes("Heute liegt keine neue Meldung vor."));
+check("Frischezählung verändert keine Eingangsmeldungen", JSON.stringify(einzel) === unveraendert);
+
+const mitWeiterem = decorate(briefingWith({ ...freshState, items: [
+  { ...freshState.primaryItem, id: "vg-weiter", meldungAt: "2026-07-13T07:00:00Z" }
+] }), frischeKontext).currentHelmutState.frischeVertrag;
+check("Hauptvorgang und weitere Priorität zählen jeweils einmal in ihrer echten Frischeklasse",
+  mitWeiterem.kennzahlen.gesamt === 2 && mitWeiterem.kennzahlen.neu === 1
+  && mitWeiterem.kennzahlen.weiterhinRelevant === 1);
+const ohneHauptvorgang = decorate(briefingWith(emptyState, { items: [] }), frischeKontext).currentHelmutState.frischeVertrag;
+check("Echter Leerstand bleibt ohne erfundene Meldung",
+  ohneHauptvorgang.kennzahlen.gesamt === 0 && ohneHauptvorgang.ruhelage === true);
+
+const alterHauptvorgang = decorate(briefingWith({ ...freshState, status: "stale", staleState: true,
+  primaryItem: { ...freshState.primaryItem, meldungAt: "2026-07-13T07:00:00Z" }
+}), { ...frischeKontext, datenstand: "2026-07-13T07:00:00Z" });
+check("Gezählter Altinhalt wird niemals durch den Zählfix aktuell",
+  alterHauptvorgang.status !== "Aktuell" && alterHauptvorgang.currentHelmutState.status === "stale"
+  && alterHauptvorgang.currentHelmutState.frischeVertrag.aktuell === false
+  && alterHauptvorgang.currentHelmutState.frischeVertrag.kennzahlen.neu === 0);
+const ohneLauf = decorate(einzel, { ...frischeKontext, lauf: null });
+check("Gezählte neue Quelle ersetzt keinen fehlenden Morgenlauf",
+  ohneLauf.currentHelmutState.frischeVertrag.aktuell === false && ohneLauf.status !== "Aktuell");
+
 console.log(`\n${passed}/${passed + failed} Briefing-Frische-Kopf-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
