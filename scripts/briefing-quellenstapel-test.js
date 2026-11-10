@@ -17,6 +17,10 @@ const { once } = require("node:events"), S = require("../lib/helmut/storage");
   const server=http.createServer((req,res)=>{
     reads++;if(req.method!=="GET")writes++;active++;peak=Math.max(peak,active);
     const u=new URL(req.url,"http://127.0.0.1");let rows;
+    if(mode==="all-errors" || (mode==="partial-error" && u.pathname.endsWith("/ko_document_links")
+      && u.searchParams.get("knowledge_object_id")==="eq.ko-vg-2")) {
+      active--;res.writeHead(500);return res.end("{}");
+    }
     if(u.pathname.endsWith("/ko_document_links")) {
       A.equal(u.searchParams.get("order"),"raw_document_id.asc");
       rows=daten[u.searchParams.get("knowledge_object_id").slice(3)].slice(0,Number(u.searchParams.get("limit")));
@@ -30,7 +34,7 @@ const { once } = require("node:events"), S = require("../lib/helmut/storage");
       if(mode==="missing")rows.pop();
       if(mode==="foreign")rows[0].ko_document_links[0].raw_documents.id="fremd";
       if(mode==="duplicate")rows[0].ko_document_links.push(rows[0].ko_document_links[0]);
-      if(mode==="transport"){active--;res.writeHead(500);return res.end("{}");}
+      if(mode==="transport" || mode==="partial-error"){active--;res.writeHead(500);return res.end("{}");}
     }
     setTimeout(()=>{active--;res.writeHead(200,{"Content-Type":"application/json"});res.end(JSON.stringify(rows));},5);
   });
@@ -64,7 +68,7 @@ const { once } = require("node:events"), S = require("../lib/helmut/storage");
       storageModul: { getPruefSourcesByVorgaenge: async input => {
         batchCalls++; return S.getPruefSourcesByVorgaenge(input);
       } },
-      getSourcesForVorgang: async id => { singleCalls++; return S.getSourcesForVorgang(id); }
+      getSourcesForVorgang: async (...args) => { singleCalls++; return S.getSourcesForVorgang(...args); }
     });
     const input = kos.slice(1, 3);
     const expected = await S.getPruefSourcesByVorgaenge(input);
@@ -76,6 +80,30 @@ const { once } = require("node:events"), S = require("../lib/helmut/storage");
     mode = "ok";
     A.deepEqual(JSON.parse(JSON.stringify(await load([]))), {});
     A.equal(batchCalls, 2); A.equal(writes, 0);
+    mode="all-errors";
+    A.deepEqual(await S.getSourcesForVorgang("vg-1"), [], "Altaufrufer bleiben kompatibel");
+    await A.rejects(S.getSourcesForVorgang("vg-1", {strict:true}), S.StorageReadError);
+    await A.rejects(load(input), S.StorageReadError);
+    mode="partial-error";
+    await A.rejects(load(input), S.StorageReadError, "Ein fehlgeschlagener Teil ist keine bestaetigte Quellenleere");
+    mode="missing";
+    A.deepEqual(JSON.parse(JSON.stringify(await load([kos[224]]))), {"vg-224":[]});
+    mode="all-errors";
+    const ko={id:"ko-vg-1",vorgang_id:"vg-1",status:"neu",understanding_status:"complete",decision_level:"bund",
+      headline:"Alex Muster berichtet zur Pflege",was_ist_passiert:"Alex Muster berichtet zur Finanzierung der Pflegeberatung.",
+      recommendation:"Die vorliegenden Quellen prüfen.",ausschuesse:["Gesundheit"],parteien:["SPD"],tags:["Pflege"],confidence_score:90,
+      created_at:"2026-11-09T03:00:00Z",updated_at:"2026-11-09T03:00:00Z"};
+    S.listKnowledgeObjects=async()=>[ko];
+    const build=require("../server").__buildV3Briefing;
+    const profile={id:"test-quellenfehler",fullName:"Alex Muster",parliamentType:"Bundestag",committee:"Gesundheit",party:"SPD",focusTopics:["Pflege"]};
+    await A.rejects(build(profile,profile.id,{now:new Date("2026-11-09T06:00:00Z")}),S.StorageReadError);
+    const D=require("../lib/helmut/decisions"),decide=D.decideForUser;
+    D.decideForUser=()=>[];
+    try { await A.rejects(build(profile,profile.id,{now:new Date("2026-11-09T06:00:00Z")}),S.StorageReadError,
+      "Auch der Erwaehnungs-Leerpfad reicht technische Lesefehler weiter"); }
+    finally { D.decideForUser=decide; }
+    A.equal(writes,0);
+    mode="ok";
     console.log("PASS: Server verwendet Sammelleser; unvollstaendiger Stapel faellt verlustfrei auf Einzelquellen zurueck; leere Menge ohne IO.");
     console.log("PASS: 225 Eingaben vollstaendig identisch; 9 statt225 Reads; maximal8 parallel;40 je Vorgang; frische Aenderung sichtbar; fehlende/fremde/doppelte/fehlerhafte Daten gesperrt;0 Writes/Modelle.");
   } finally {

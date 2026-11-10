@@ -51,6 +51,30 @@ async function main() {
     const atom = `<feed><entry><title>${title}</title><link href="https://example.org/beratung"/><summary>${title}</summary><content type="html">${full}</content></entry></feed>`;
     assert.equal(rowFromXml(atom).summary, full);
   });
+  await test("Gelieferte eindeutige RSS-/Atom-Fortsetzung erreicht Rohprojektion und Prompt ganz", () => {
+    const fortsetzung = full + " Die Fachleute widersprechen der bisherigen Einschätzung und verlangen zusätzliche Mittel für die Beratung.";
+    for (const tags of [["description", "content:encoded"], ["summary", "content"]]) {
+      const body=`<${tags[0]}>${full}</${tags[0]}><${tags[1]}><![CDATA[<p>${full}</p><p>${fortsetzung.slice(full.length).trim()}</p>]]></${tags[1]}>`;
+      const xml=tags[0]==="summary" ? `<feed><entry><title>${title}</title><link href="https://example.org/beratung"/>${body}</entry></feed>` : rss(body);
+      const row = rowFromXml(xml);
+      assert.equal(row.summary, fortsetzung);
+      assert(U.buildUnderstandingPrompt({ documents: [row] }).includes(JSON.stringify(fortsetzung)));
+    }
+    const anders = full + " Ein anderer vollständiger Folgeabsatz bleibt eine abweichende Fassung.";
+    assert.equal(rowFromXml(rss(`<description>${full}</description><content>${fortsetzung}</content><content:encoded>${anders}</content:encoded>`)).summary, full);
+  });
+  await test("RSS-HTML uebernimmt keine Script-/Style-Prosa als Artikelinhalt", () => {
+    const row = rowFromXml(rss(`<description><![CDATA[<script>Erfundene politische Entscheidung wurde beschlossen.</script><style>Weitere erfundene Aussage.</style><p>${full}</p>]]></description>`));
+    assert.equal(row.summary, full);
+  });
+  await test("Ein ueberlanger gewoehnlicher Titel wird nicht als abgeschnittene Behauptung uebernommen", () => {
+    const invalid = title + " Weitere Angaben zur Beratung".repeat(14) + " wurden nicht beschlossen.";
+    assert(invalid.length > 300);
+    assert.equal(C.normalizeRawItem({title:invalid,url:"https://example.org/zu-lang",content:invalid},source),null);
+    const exact = "G".repeat(300);
+    assert.equal(C.normalizeRawItem({title:exact,url:"https://example.org/ganz",content:full},source).title,exact);
+    assert.equal(rowFromXml(rss(`<description>${full}</description>`)).summary,full);
+  });
   await test("Echter Rohspiegel: Anzeigeabschnitt verliert seinen Vorrang vor ganzen Saetzen", () => {
     const examples = JSON.parse(read("rohspiegel.json")).examples;
     const dlf = examples[0];

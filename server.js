@@ -3572,8 +3572,8 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
 // rein additiv in das uebergebene sourcesByVorgang-Objekt). Gemeinsamer Helfer
 // fuer den Hauptpfad UND die keine-treffer-Leerpfade von buildV3Briefing
 // (Review-Fix: die Leerpfade uebergaben hart {} — belegte Eigenerwaehnungen ohne
-// best_source_url verschwanden dort weiterhin still). Fail-safe: Fehler loggen,
-// nie werfen.
+// best_source_url verschwanden dort weiterhin still). Technische Quellenlesefehler
+// bleiben Fehler; sie duerfen auch hier keine bestaetigte Quellenleere werden.
 async function loadMentionSourcesInto(profile, understood, sourcesByVorgang) {
   try {
     const radarStateMod = require("./lib/helmut/radarState");
@@ -3599,6 +3599,7 @@ async function loadMentionSourcesInto(profile, understood, sourcesByVorgang) {
       }
     }
   } catch (error) {
+    if (error instanceof storageModul.StorageReadError) throw error;
     console.error("[v3-briefing] Mention-Quellen-Nachladen fehlgeschlagen (nicht kritisch):", error && error.message);
   }
 }
@@ -3756,11 +3757,11 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // heutiger Quellenanlass: die Zeitbeleg-Schranke folgt nach denselben Reads.
   // Kein neuer Motor, keine neue Datenarchitektur, kein LLM-Call; danach gelten
   // weiterhin die bisherigen Quellen-, Sicherheits- und Anzeigeschranken.
-  const provisionalCandidateDecisions = briefingContract.augmentFreshCandidates(
+  const provisionalCandidateDecisions = [...briefingContract.augmentFreshCandidates(
     understood, decisions,
     (kos) => decisionsEngine.decideForUser(profile, kos, { userId, limit: kos.length }),
     now
-  );
+  )];
   // Belegte Verfahrensvorbereitung darf nicht vor der Quellenpruefung am
   // Top-50- oder Heute-Cut verschwinden. Nur bereits verstandene KOs aus dem
   // bestehenden Scan; Quellenleser, Sperren und Speicherung unveraendert.
@@ -3891,8 +3892,7 @@ async function loadSourcesByVorgang(kos) {
   const sources = {};
   for (let i = 0; i < (kos || []).length; i += 8) {
     const entries = await Promise.all(kos.slice(i, i + 8).map(async (ko) => {
-      let docs = [];
-      try { docs = await getSourcesForVorgang(ko.vorgang_id); } catch (_) { docs = []; }
+      const docs = await getSourcesForVorgang(ko.vorgang_id, { strict: true });
       return [ko.vorgang_id, docs || []];
     }));
     Object.assign(sources, Object.fromEntries(entries));

@@ -74,7 +74,7 @@ async function modelCheck(entry) {
         parteien: [], ausschuesse: [], ministerien: [], risiken: [], chancen: [], zeitdruck: "mittel", handlungsempfehlung: "Isolierter Test", confidence_score: 70,
         display_title: "Isolierter Test", display_summary: "Isolierter Test", why_relevant: "", recommendation: "", display_category: "" };
     },
-    save: async () => { throw Error("Unbedingter Speicherweg verboten"); }, saveSources: async () => {}, markFailed: async () => {},
+    save: async () => { throw Error("Unbedingter Speicherweg verboten"); }, saveSources: async (_id, docs) => ({ saved: docs.length }), markFailed: async () => {},
     findVorgangCandidates: async () => [], listVorgangDocuments: async () => []
   }, { vorgangId: "vg-isoliert-" + entry.document.id.slice(-8), existing: null, vertrag, deadlineMs: Date.now() + 300000 });
   assert.equal(result.status, "saved", JSON.stringify(result)); assert.equal(prompts.length, 1);

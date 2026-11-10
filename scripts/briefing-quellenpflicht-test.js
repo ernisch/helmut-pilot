@@ -33,6 +33,45 @@ const doc = { id: "d-quellenpflicht", title: ko.display_title,
       assert.equal(Q.quellengebunden(behauptet, [{ ...doc, summary: behauptet.display_summary }]), true));
   }
   const old = [{ ...doc, published_at: "2020-03-20T08:00:00Z" }], now = new Date("2026-09-11T08:00:00Z");
+  const minister = {...ko,display_summary:"Bundesministerin Alex Beispiel ordnet die Beratung ein."};
+  for(const role of ["Bundesminister","Bundesministerin","Bundesministerinnen","Bundesministers","Bundesministern","Bundesbildungsministerin","Bundesarbeitsminister","Bundesarbeitsministerinnen","Bundesarbeitsministers","Bundesarbeitsministern"]) {
+    await test(`Explizite Bundesressortrolle belegt das Gattungsamt: ${role}`,()=>
+      assert.equal(Q.quellengebunden(minister,[{...doc,summary:`Die Stellungnahme ${role} Alex Beispiel liegt vor.`}]),true));
+  }
+  for(const role of ["Landesbildungsministerin","Bildungsministerin","Bundesministerium","Bundesbildungsministerium","Bundesbildungsministerkonferenz"]) {
+    await test(`Kein Bundesamtsbeleg aus Land/Institution/Ableitung: ${role}`,()=>
+      assert.equal(Q.quellengebunden(minister,[{...doc,summary:`Die Stellungnahme ${role} Alex Beispiel liegt vor.`}]),false));
+  }
+  await test("Explizites Bundesressort im Quelltitel genügt weiterhin",()=>
+    assert.equal(Q.quellengebunden(minister,[{...doc,title:"Bundesbildungsministerin Alex Beispiel",summary:null}]),true));
+  await test("Belegte Aussage des Bundesministeriums bleibt eine Institution statt einer Amtsbehauptung",()=>
+    assert.equal(Q.quellengebunden({...ko,display_summary:"Das Bundesministerium ordnet die Beratung ein."},
+      [{...doc,summary:"Das Bundesministerium ordnet die Beratung ein."}]),true));
+  await test("Bestehende Belegschranke fuer eine unbelegte Bundesinstitution bleibt erhalten",()=>
+    assert.equal(Q.quellengebunden({...ko,display_summary:"Das Bundesministerium ordnet die Beratung ein."},[doc]),false));
+  await test("Ein belegtes Ressortamt befreit keine zusaetzliche unbelegte Institution",()=>{
+    const gemischt = {...ko,display_summary:"Bundesministerin Alex Beispiel und das Bundesministerium ordnen die Beratung ein."};
+    const rolle = "Bundesbildungsministerin Alex Beispiel ordnet die Beratung ein.";
+    assert.equal(Q.quellengebunden(gemischt,[{...doc,summary:rolle}]),false);
+    assert.equal(Q.quellengebunden(gemischt,[{...doc,summary:rolle+" Das Bundesministerium ordnet die Beratung ein."}]),true);
+  });
+  await test("Bisher erkanntes Rollenkompositum bleibt belegt und unbelegt geprueft",()=>{
+    for(const rolle of ["Altbundesministerin","Alt-Bundesministerin","Alt‑Bundesministerin","Alt\u00adBundesministerin","Alt\u200dBundesministerin","Alt\u203fBundesministerin","Bundesministerin-im-Ruhestand"]) {
+      const alt = {...ko,display_summary:`${rolle} Alex Beispiel ordnet die Beratung ein.`};
+      const ressort = "Bundesbildungsministerin Alex Beispiel ordnet die Beratung ein.";
+      assert.equal(Q.quellengebunden(alt,[doc]),false);
+      assert.equal(Q.quellengebunden(alt,[{...doc,summary:alt.display_summary}]),true);
+      assert.equal(Q.quellengebunden(alt,[{...doc,summary:ressort}]),false);
+      const gemischt = {...alt,display_summary:alt.display_summary+" Bundesministerin Alex Beispiel nimmt teil."};
+      assert.equal(Q.quellengebunden(gemischt,[{...doc,summary:ressort}]),false);
+      assert.equal(Q.quellengebunden(gemischt,[{...doc,summary:ressort+" "+alt.display_summary}]),true);
+    }
+    for(const rolle of ["Altbundesbildungsministerin","Alt-Bundesbildungsministerin","Alt‑Bundesbildungsministerin","Alt\u00adBundesbildungsministerin","Alt\u200dBundesbildungsministerin","Alt\u203fBundesbildungsministerin","Bundesbildungsministerin-im-Ruhestand"])
+      assert.equal(Q.quellengebunden(minister,[{...doc,summary:`${rolle} Alex Beispiel ordnet die Beratung ein.`}]),false);
+  });
+  await test("Belegtes anderes Bundesressort ersetzt keine spezifische Amtsbehauptung",()=>
+    assert.equal(Q.quellengebunden({...ko,display_summary:"Bundesarbeitsministerin Alex Beispiel berichtet."},
+      [{...doc,summary:"Bundesbildungsministerin Alex Beispiel berichtet."}]),false));
   for (const text of ["Bis Monatsende entscheiden.", "In einer Woche abstimmen.", "Innerhalb von zwei Wochen pruefen.", "Bis Ende des Monats vorlegen.", "Bis Mitte nächster Woche abstimmen.", "Bis Ende kommender Woche vorlegen."])
     await test("Alte Quelle traegt keine Frist: " + text, () => assert.equal(Q.relativeFristZulaessig({ recommendation: text }, old, now), false));
   await test("Aktuelle Quelle behaelt die bestehende Alterspruefung", () => assert.equal(Q.relativeFristZulaessig({ recommendation: "Bis Monatsende entscheiden." }, [doc], new Date()), true));

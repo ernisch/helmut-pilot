@@ -142,12 +142,12 @@ function wegToItems(weg, probe) {
 
   if (weg.method === "rss" || weg.method === "googlenews_search") {
     const parsed = parseRssItems(body, weg.maxItems);
-    const items = parsed.map((d) => normalizeRawItem(d, source));
+    const items = parsed.map((d) => normalizeRawItem(d, source)).filter(Boolean);
     return { status, items, befund: items.length ? "items" : "leer", note: `${items.length} Items (Parser: rss-regex${weg.method === "googlenews_search" ? "/googlenews" : ""})` };
   }
   if (weg.method === "opendata_xml" || weg.method === "api_xml") {
     const { tag, records } = extractPardokRecordsShadow(body, weg.maxItems);
-    const items = records.map((r) => normalizeRawItem({ title: r.title, content: r.title, url: r.url, publishedAt: r.publishedAt }, source));
+    const items = records.map((r) => normalizeRawItem({ title: r.title, content: r.title, url: r.url, publishedAt: r.publishedAt }, source)).filter(Boolean);
     return { status, items, befund: items.length ? "items" : "leer", note: `${items.length} Datensätze <${tag || "?"}> (SHADOW-Extraktor, KEIN Produktions-Ingest)` };
   }
   return { status, items: [], befund: "unbekannte_methode", note: `Methode ${weg.method}` };

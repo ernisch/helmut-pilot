@@ -50,7 +50,7 @@ function stand() {
   };
   const deps = { canSpend: async () => ({ allowed: true }),
     requestUnderstanding: async prompt => { neutral(prompt); p.prompts.push(prompt); return structuredClone(antwort); },
-    save: async ko => { p.ko.push(ko); return true; }, saveSources: async () => {},
+    save: async ko => { p.ko.push(ko); return true; }, saveSources: async (_id, docs) => ({ saved: docs.length }),
     markFailed: async () => { throw new Error("Unerwartete Fehlerablage"); }, logSkip: () => {}, modelName: () => "attrappe",
     findVorgangCandidates: async () => [], listVorgangDocuments: async () => [] };
   return { p, vertrag, deps };

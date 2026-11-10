@@ -65,6 +65,7 @@ function bewerte(xml, source, now) {
       : now.getTime() - published > MAX_AGE_MS ? "quelle-zu-alt" : null;
     if (grund) { rejected.push({ index, grund }); continue; }
     const normalized = normalizeRawItem(item, source);
+    if (!normalized) { rejected.push({index, grund:"quellentitel-ungueltig"}); continue; }
     normalized.retrievedAt = now.toISOString();
     const row = E.geleseneQuelle({ ...D.toRawDocumentRow(normalized), quellenauszug_beleg: null });
     if (row.link_type !== "direct" || !Q.artikelUrl(row.url)) grund = "artikeladresse-fehlt";
