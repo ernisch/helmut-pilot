@@ -4851,7 +4851,9 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
       lauf: frischeKontext.lauf,
       datenstandIso: frischeKontext.datenstand,
       quellen: frischeKontext.lauf ? frischeKontext.lauf.quellen : null,
-      items: hasState && Array.isArray(state.items) ? state.items : [],
+      // Weitere Prioritäten liegen getrennt vom Hauptvorgang. Beide gehören
+      // zur sichtbaren Meldungsmenge; sonst wird eine Einzelmeldung zur Ruhe.
+      items: hasState ? [state.primaryItem, ...(Array.isArray(state.items) ? state.items : [])].filter(Boolean) : [],
       fenster: frischeKontext.fenster
     });
     if (frischeKontext.speicherFehler) vertrag.speicherFehler = frischeKontext.speicherFehler;
