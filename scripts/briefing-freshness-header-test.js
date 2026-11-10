@@ -90,6 +90,21 @@ check("Vorbedingung: understanding failed -> currentHelmutState.status 'error'/e
   errorState.status === "error" && errorState.errorState === true, errorState.status);
 check("FEHLLAUF: Kopf zeigt NIEMALS 'Aktuell' (ruhig 'Veraltet')",
   decorate(briefingWith(errorState)).status === "Veraltet");
+{
+  // Derselbe echte Fehlerstate, aber separat bestaetigter globaler Stand.
+  // Seine Meldung liegt vor dem letzten Erfolg; das belegt keine Ruhelage.
+  const b = briefingWith(errorState), before = JSON.stringify(b);
+  const dec = decorate(b, { jetzt: NOW, datenstand: NOW.toISOString(),
+    lauf: { vertragVersion: 1, berlinTag: "2026-07-15", status: "erfolg", erzeugtAm: NOW.toISOString() },
+    fenster: { start: "2026-07-15T08:00:00Z" } });
+  check("FEHLLAUF mit frischem Kontext bestaetigt keine Ruhe",
+    dec.freshness.vertrag.aktuell === true && dec.freshness.vertrag.ruhelage === false);
+  check("FEHLLAUF wird als Auswertungsfehler statt 18h-Alter erklaert",
+    /Auswertung ist derzeit nicht belastbar/.test(dec.freshness.reason) && !/18 Stunden/.test(dec.freshness.reason));
+  check("FEHLLAUF: Status, Primary und Items bleiben unveraendert",
+    dec.status === "Veraltet" && JSON.stringify(dec.currentHelmutState.primaryItem) === JSON.stringify(errorState.primaryItem)
+      && JSON.stringify(dec.items) === JSON.stringify(b.items) && JSON.stringify(b) === before);
+}
 
 // === 4) KEIN BRIEFING / leerer Stand -> keine positive 'Aktuell'-Meldung ======
 const emptyState = contract.buildCurrentHelmutState({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, now: NOW });
