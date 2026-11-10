@@ -33,6 +33,20 @@ const doc = { id: "d-quellenpflicht", title: ko.display_title,
       assert.equal(Q.quellengebunden(behauptet, [{ ...doc, summary: behauptet.display_summary }]), true));
   }
   const old = [{ ...doc, published_at: "2020-03-20T08:00:00Z" }], now = new Date("2026-09-11T08:00:00Z");
+  const minister = {...ko,display_summary:"Bundesministerin Alex Beispiel ordnet die Beratung ein."};
+  for(const role of ["Bundesbildungsministerin","Bundesarbeitsminister","Bundesarbeitsministerinnen","Bundesarbeitsministers"]) {
+    await test(`Explizite Bundesressortrolle belegt das Gattungsamt: ${role}`,()=>
+      assert.equal(Q.quellengebunden(minister,[{...doc,summary:`Die Stellungnahme ${role} Alex Beispiel liegt vor.`}]),true));
+  }
+  for(const role of ["Landesbildungsministerin","Bildungsministerin","Bundesbildungsministerium","Bundesbildungsministerkonferenz"]) {
+    await test(`Kein Bundesamtsbeleg aus Land/Institution/Ableitung: ${role}`,()=>
+      assert.equal(Q.quellengebunden(minister,[{...doc,summary:`Die Stellungnahme ${role} Alex Beispiel liegt vor.`}]),false));
+  }
+  await test("Explizites Bundesressort im Quelltitel genügt weiterhin",()=>
+    assert.equal(Q.quellengebunden(minister,[{...doc,title:"Bundesbildungsministerin Alex Beispiel",summary:null}]),true));
+  await test("Belegtes anderes Bundesressort ersetzt keine spezifische Amtsbehauptung",()=>
+    assert.equal(Q.quellengebunden({...ko,display_summary:"Bundesarbeitsministerin Alex Beispiel berichtet."},
+      [{...doc,summary:"Bundesbildungsministerin Alex Beispiel berichtet."}]),false));
   for (const text of ["Bis Monatsende entscheiden.", "In einer Woche abstimmen.", "Innerhalb von zwei Wochen pruefen.", "Bis Ende des Monats vorlegen.", "Bis Mitte nächster Woche abstimmen.", "Bis Ende kommender Woche vorlegen."])
     await test("Alte Quelle traegt keine Frist: " + text, () => assert.equal(Q.relativeFristZulaessig({ recommendation: text }, old, now), false));
   await test("Aktuelle Quelle behaelt die bestehende Alterspruefung", () => assert.equal(Q.relativeFristZulaessig({ recommendation: "Bis Monatsende entscheiden." }, [doc], new Date()), true));

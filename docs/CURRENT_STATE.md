@@ -2,13 +2,13 @@
 
 **Stand: 09.11.2026.** Betreibersteuerung und frische Productionbelege gelten. [PR1105 live](betrieb/validierungsdiagnose-20261108.md).
 
-**10.11., Briefing:** PR1120 auf `d8cfceaf` regulär ausgerollt; Hauptvorgang wird im Frischevertrag mitgezählt. Weitere eng begrenzte Korrektur in Vorbereitung: geprüfte amtliche Artikelstandtage beim Tagesanlass berücksichtigen, ausschließlich nach bestehender Volltag-/Quellenbindung. Keine erfundene Uhrzeit, keine Änderung an Radar-/Frist-/Sicherheitsregeln; kein weiterer Merge oder Rollout. Endkopf und Pflicht-CI im Reparatur-PR maßgeblich.
+**10.11., Production:** PR1118–1122 live; main/Production `a5052f98`. Vollständige Versorgung im regulären Lauf und echte Kundensitzung bleiben zu belegen.
 
 **UX (08.11.):** [PR1108: Tagesgrund, Radar ohne Knopf](ui/mobile-ux-20261108/README.md); kein Merge/Deploy, ChatGPT-Abnahme offen. [Briefing PR1102 live](ui/briefing-ohne-refresh-20261107/rollout.md).
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
-**10.11., Ausgabeprüfung:** Versorgungs-/Datenlücken sind keine Ruhe; alte undatierte Vorbereitung verdrängt keine zulässige aktuelle Hauptmeldung. Offline geprüft, unabhängiger Review. PR1121 separat; Endkopf/CI im neuen PR. Kein Merge/Deployment oder produktiver Endnachweis.
+**10.11., weitere Übergangsprüfung:** Belegte Quellen-/Inhalts-/Persistenzfehler werden auf aktuellem main minimal korrigiert und gezielt geprüft. Kein weiterer Merge/Deployment. Endkopf und Pflicht-CI im Reparatur-PR maßgeblich.
 
 ## Büro: gemergt und Production READY (09.11.2026)
 

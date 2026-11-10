@@ -53,7 +53,7 @@ function pruefstand(overrides = {}) {
     requestUnderstanding: async prompt => { p.schritte.push("modellattrappe"); p.prompts.push(prompt); return { ...ANALYSE }; },
     getExistingStreng: async id => [...p.kos].reverse().find(ko => ko.vorgang_id === id) || null,
     save: async () => { throw new Error("Unbedingter Speicherweg unerlaubt"); },
-    saveSources: async () => {}, markFailed: async () => {}, modelName: () => "isolierte-attrappe", logSkip: () => {},
+    saveSources: async (_id, docs) => ({ saved: docs.length }), markFailed: async () => {}, modelName: () => "isolierte-attrappe", logSkip: () => {},
     findVorgangCandidates: async () => [], listVorgangDocuments: async () => [], ...overrides
   };
   return { p, vertrag, deps };
@@ -129,7 +129,7 @@ async function main() {
       title: `${ANALYSE.display_title} Quelle ${i}` }));
     const ids = f.cluster.documents.map(d => d.id), links = [];
     const s = pruefstand({ runId: "queue-13-quellen", listVorgangDocuments: async () => f.cluster.documents,
-      saveSources: async (_ko, docs) => links.push(...docs.map(d => d.id)) });
+      saveSources: async (_ko, docs) => { links.push(...docs.map(d => d.id)); return { saved: docs.length }; } });
     let reservierterHash, gespeicherterHash;
     const reserviere = s.vertrag.reserviere, speichere = s.vertrag.speichere;
     s.vertrag.reserviere = async args => {

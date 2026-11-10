@@ -65,7 +65,7 @@ function stand(dokumente = [doc]) {
     canSpend: async () => { p.budget++; return { allowed: true }; },
     requestUnderstanding: async prompt => { p.prompts.push(prompt); return { ...analyse }; },
     save: async () => { throw Error("Unbedingtes Schreiben verboten"); },
-    saveSources: async (id, docs) => { p.links.push({ id, docs }); },
+    saveSources: async (id, docs) => { p.links.push({ id, docs }); return { saved: docs.length }; },
     savePending: async id => { p.pending.push(id); return { saved: true, id: "ko-" + id }; },
     markFailed: async () => {}, modelName: () => "isolierte-attrappe", logSkip: () => {},
     deadlineMs: Date.now() + 300000, budgetMs: 240000 };

@@ -136,6 +136,8 @@ test("Quelldaten, Entscheidung und Profil bleiben unverändert",()=>{
   D.decideForUser=()=>[{...dec,knowledge_object_id:other.id,vorgang_id:other.vorgang_id}];
   const b=await require("../server").__buildV3Briefing(p,p.id,{now,debug:true});
   test("Echter Ausgabeweg reicht fachlich belegten älteren Kandidaten nach",()=>{
+    A.equal(b.debugPrimary.candidateStats.decisionCountBeforeAugment,1);
+    A.equal(b.debugPrimary.candidateStats.decisionCountAfterAugment,2);
     A.equal(b.currentHelmutState.primaryVorgangId,ko.vorgang_id);
     A.equal(b.debugPrimary.candidates.find(c=>c.vorgang_id===ko.vorgang_id).reasonIfRejected,null);
     A.equal(render(b,now.toISOString()).fachinhalt.briefing,true);

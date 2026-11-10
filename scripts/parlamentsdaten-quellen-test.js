@@ -55,6 +55,16 @@ async function transport(body, status, fn) {
 }
 
 (async () => {
+  await test("Ein ueberlanger gewoehnlicher Titel verliert nicht den gueltigen Nachbarn desselben Feeds", async () => {
+    const s={id:"test-titelgrenze",name:"Synthetische Quelle",type:"media",crawlMethod:"rss",url:"https://example.org/feed",rssUrl:"https://example.org/feed"};
+    const text="Der Ausschuss berät die Finanzierung der kommunalen Pflegeberatung mit den beteiligten Verbänden.";
+    const xml=`<rss><channel><item><title>${"X".repeat(301)}</title><link>https://example.org/zu-lang</link><description>${text}</description></item><item><title>Beratung zur Pflegefinanzierung</title><link>https://example.org/pflegeberatung</link><description>${text}</description></item></channel></rss>`;
+    await transport(xml,200,async calls=>{
+      const items=await C.crawlSource(s);
+      assert.equal(items.length,1);assert.equal(items[0].title,"Beratung zur Pflegefinanzierung");
+      assert.equal(items[0].content,text);assert.deepEqual(calls,[s.rssUrl]);
+    });
+  });
   await test("Zwei quellengebundene Originalproben vom 06.11.2026, jeweils drei RSS-Items", () => {
     const hashes = ["467680627d9d060d2afef4637a3a6e06a5ff525bf869f3ce9bc35d8ebb0f76b3", "75775dd246a1604e044136e1109e214593af4a7e3fbaef7aeff710be9e64e625"];
     feeds.forEach((xml, i) => {

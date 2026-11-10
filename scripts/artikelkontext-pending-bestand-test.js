@@ -63,7 +63,7 @@ function umgebung(doc) {
         parteien: [], ausschuesse: [], ministerien: [], risiken: [], chancen: [], zeitdruck: "mittel", handlungsempfehlung: "Test", confidence_score: 70,
         display_title: "Isolierter Pending-Test", display_summary: "Deklarierte Modellattrappe", why_relevant: "", recommendation: "", display_category: "" };
     },
-    save: async () => { throw Error("Unbedingtes Schreiben verboten"); }, saveSources: async (id, docs) => { p.links.push({ id, docs }); },
+    save: async () => { throw Error("Unbedingtes Schreiben verboten"); }, saveSources: async (id, docs) => { p.links.push({ id, docs }); return { saved: docs.length }; },
     markFailed: async () => {}, modelName: () => "isolierte-pending-attrappe", logSkip: () => {},
     deadlineMs: jetzt + 300000, budgetMs: 240000 };
   const run = async (aenderungen = {}) => {

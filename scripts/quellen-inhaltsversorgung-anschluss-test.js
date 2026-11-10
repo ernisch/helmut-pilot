@@ -73,7 +73,7 @@ function welt(items = [dgb, radio]) {
     verstehenVertrag: () => vertrag, gateMode: () => "off", priorityEnabled: () => false, verstehenParallelitaet: 1,
     canSpend: async () => ({ allowed: true }), modelName: () => "isolierte-attrappe", logSkip: () => {},
     requestUnderstanding: async prompt => { assert(locked); logs.push("modell"); prompts.push(prompt); return { ...analyse }; },
-    save: async () => { throw Error("Unbedingtes Schreiben verboten"); }, saveSources: async () => {}, markFailed: async () => {},
+    save: async () => { throw Error("Unbedingtes Schreiben verboten"); }, saveSources: async (_id, docs) => ({ saved: docs.length }), markFailed: async () => {},
     savePending: async () => ({ saved: true }) };
   const deps = { now: () => clock, listFullProfiles: async () => profiles,
     quellenFuerProfil: async profile => (sourceIds[profile.id] || []).map(id => ({ id, name: id, type: "media", active: true, url: "https://feeds.invalid/" + id })),
