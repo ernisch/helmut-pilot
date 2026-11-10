@@ -181,4 +181,131 @@ test("Production-Zeitstempel und Berliner Tagesgrenze tragen denselben Fristvert
     assert.equal(B.tagesAnlass(ds, now, null, { deadline }), null);
   }
 });
+// Synthetische, hashgebundene amtliche Artikelstände. Eine fehlende Uhrzeit
+// bleibt fehlend; nur der vorhandene Vertrag für einen ganzen Berliner Tag gilt.
+const tageJetzt = new Date("2026-11-10T09:00:00Z");
+const tageFenster = { start: "2026-11-08T00:00:00Z" };
+const standArten = ["bundestag", "berlin", "brandenburg"];
+function tagQuelle(art, tag = "2026-11-09", nummer = "10001") {
+  const sha = s => require("node:crypto").createHash("sha256").update(s).digest("hex");
+  const config = {
+    bundestag: ["bundestag-artikelstand", `https://bundestag.de/dokumente/textarchiv/2026/kw46-de-synthetisch-${nummer}`, "helmutBundestagArtikelstand", "bundestag_artikelstand"],
+    berlin: ["berlin-artikelstand", `https://berlin.de/sen/uvk/presse/pressemitteilungen/2026/pressemitteilung.${nummer}.php`, "helmutBerlinArtikelstand", "berlin_artikelstand"],
+    brandenburg: ["brandenburg-landtag-presseartikelstand", `https://landtag.brandenburg.de/de/meldungen/synthetisch/${nummer}`, "helmutBrandenburgLandtagPresseArtikelstand", "brandenburg_artikelstand"]
+  }[art];
+  const [modul, url, rawFeld, alias] = config;
+  const S = require("../lib/helmut/" + modul);
+  const summary = "Der synthetische amtliche Artikel beschreibt einen neuen Vorschlag zum Verkehr und enthält ausschließlich erfundene Sachverhalte für die lokale Prüfung des bestehenden Quellenvertrags.";
+  const stand = { version: S.VERSION, herkunft: art === "berlin" ? S.HERKUNFT_SONDER : S.HERKUNFT,
+    url, titel: "Synthetische amtliche Verkehrsmeldung", publikationstag: tag, absatzHash: sha(summary),
+    ...(art !== "bundestag" ? { volltextHash: sha(summary + "\n") } : {}),
+    ...(art === "brandenburg" ? { publikationszeitpunktUtc: tag + "T12:00:00.000Z" } : {}) };
+  stand.standHash = S.standHashFuer(stand);
+  const d = { id: "rd-" + stand.standHash, content_hash: stand.standHash, url, canonical_url: url,
+    title: stand.titel, summary, published_at: null, raw: { [rawFeld]: stand } };
+  return { d, stand, alias };
+}
+for (const art of standArten) {
+  test(`${art}: ganzer gebundener Artikelstandtag erreicht Tagesanlass und Briefing`, () => {
+    const { d, stand, alias } = tagQuelle(art);
+    // Derselbe geschlossene Stand kommt aus raw oder dem bestehenden REST-Alias.
+    for (const quelle of [d, { ...d, raw: undefined, [alias]: stand }]) {
+      const before = JSON.stringify(quelle), k = { ...ko(),
+        created_at: tageJetzt.toISOString(), updated_at: tageJetzt.toISOString() };
+      const args = { ...input([k], { "vg-a": [quelle] }), now: tageJetzt, frischeFenster: tageFenster };
+      const anlass = B.tagesAnlass([quelle], tageJetzt, tageFenster);
+      assert.ok(anlass); assert.deepEqual(anlass.documentIds, [d.id]);
+      assert.match(anlass.text, /Quellenstand: 2026-11-09/);
+      const state = C.toBriefingContractV3(args).currentHelmutState;
+      assert.equal(state.primaryVorgangId, "vg-a");
+      assert.equal(state.primaryItem.meldungAt, null);
+      assert.equal(state.primaryItem.lastUpdated, null);
+      assert.equal(state.primaryItem.zeitLabel, null);
+      assert.notEqual(state.status, "fresh");
+      assert.equal(state.datenstandTag, null);
+      assert.equal(state.datenstandVonHeute, false);
+      assert.equal(C.toBriefingContractV3(args).items[0].primarySource.publishedAt, null);
+      assert.equal(require("../lib/helmut/lage-quellenbeleg").baueEingabe([k], args.sourcesByVorgang, tageJetzt).length, 1);
+      assert.equal(JSON.stringify(quelle), before); assert.equal(quelle.published_at, null);
+    }
+  });
+  test(`${art}: ungültiger Stand, Textdrift und erfundene Uhrzeit werden nicht gerettet`, () => {
+    for (const change of [q => { Object.values(q.raw)[0].standHash = "a".repeat(64); },
+      q => { q.summary += " Ungebunden."; }, q => { delete q.summary; },
+      q => { q.published_at = "2026-11-09T12:00:00Z"; }, q => { q.publishedAt = "2026-11-09T12:00:00Z"; }]) {
+      const { d } = tagQuelle(art); change(d);
+      assert.equal(B.tagesAnlass([d], tageJetzt, tageFenster), null);
+    }
+  });
+  test(`${art}: Alias ohne Stand oder mit anderer Fassung sperrt reihenfolgeunabhängig`, () => {
+    const { d } = tagQuelle(art), ohne = { ...d, raw: {} };
+    const andereFassung = tagQuelle(art, "2026-11-08").d;
+    for (const alias of [ohne, { ...ohne, published_at: "2026-11-09T12:00:00Z" }, andereFassung])
+      for (const rows of [[d, alias], [alias, d]]) assert.equal(B.tagesAnlass(rows, tageJetzt, tageFenster), null);
+  });
+  test(`${art}: laufender, zukünftiger und angeschnittener Tag bleiben ausgeschlossen`, () => {
+    const { d } = tagQuelle(art);
+    for (const tag of ["2026-11-10", "2026-11-11"])
+      assert.equal(B.tagesAnlass([tagQuelle(art, tag).d], tageJetzt, tageFenster), null);
+    assert.equal(B.tagesAnlass([d], tageJetzt, { start: "2026-11-09T05:15:00Z" }), null);
+    const start = "2026-11-08T23:00:00.000Z", ende = new Date("2026-11-09T23:00:00.000Z");
+    assert.ok(B.tagesAnlass([d], ende, { start }));
+    assert.equal(B.tagesAnlass([d], ende, { start: "2026-11-08T23:00:00.001Z" }), null);
+    assert.equal(B.tagesAnlass([d], new Date(ende.getTime() - 1), { start }), null);
+  });
+  test(`${art}: Tagesanlass erweitert weder Radar noch Personen- oder Fristbelege`, () => {
+    const { d } = tagQuelle(art);
+    assert.deepEqual(B.quellen([d], tageJetzt), []);
+    assert.equal(B.beobachtung([d], tageJetzt), null);
+    assert.deepEqual(B.personenQuellen([d], tageJetzt, profile), []);
+    assert.equal(B.fristTag({ deadline: "2026-11-11" }, [d], tageJetzt), null);
+  });
+}
+test("Tagesanlass: transitive Aliasdrift, ungültiges Fenster und gewöhnlich undatiert bleiben gesperrt", () => {
+  const { d } = tagQuelle("berlin"), alias = tagQuelle("berlin", "2026-11-09", "10002").d;
+  const bruecke = { ...d, url: alias.url, canonical_url: alias.url, raw: {} };
+  for (const rows of [[d, bruecke, alias], [alias, bruecke, d]])
+    assert.equal(B.tagesAnlass(rows, tageJetzt, tageFenster), null);
+  for (const start of ["ungültig", "2026-11-11T00:00:00Z"])
+    assert.equal(B.tagesAnlass([d], tageJetzt, { start }), null);
+  assert.equal(B.tagesAnlass([{ ...doc("undatiert", "2026-11-09"), published_at: null }], tageJetzt, tageFenster), null);
+});
+test("Tagesanlass: gültige Duplikate zählen einmal, Zeitstempel behalten ihre Regeln", () => {
+  const { d } = tagQuelle("berlin");
+  const normal = doc("mit-zeit", "2026-11-09");
+  const anlass = B.tagesAnlass([d, structuredClone(d), normal], tageJetzt, tageFenster);
+  assert.deepEqual(anlass.documentIds, [normal.id, d.id]);
+  assert.match(anlass.text, /Quellenstand: 2026-11-09/);
+  assert.ok(B.tagesAnlass([normal], tageJetzt, { start: "2026-11-09T08:00:00Z" }));
+  assert.equal(B.tagesAnlass([normal], tageJetzt, { start: "2026-11-09T08:00:00.001Z" }), null);
+  // Ein zusätzlich geladener echter Zeitstempel bleibt ein Zeitstempelbeleg;
+  // nur die interne KO-Zeit darf keinen solchen Beleg ersetzen.
+  const k = { ...ko(), created_at: tageJetzt.toISOString(), updated_at: tageJetzt.toISOString() };
+  const args = { ...input([k], { "vg-a": [d, normal] }), now: tageJetzt, frischeFenster: tageFenster };
+  assert.equal(C.toBriefingContractV3(args).currentHelmutState.primaryItem.meldungAt, normal.published_at);
+});
+test("Ganze Artikelstandtage folgen unverändert den bestehenden Berliner Sommer-/Winterzeitgrenzen", () => {
+  for (const [tag, start, ende] of [["2026-03-29", "2026-03-28T23:00:00Z", "2026-03-29T22:00:00Z"],
+    ["2026-10-25", "2026-10-24T22:00:00Z", "2026-10-25T23:00:00Z"]]) {
+    const { d } = tagQuelle("berlin", tag);
+    assert.ok(B.tagesAnlass([d], new Date(ende), { start }));
+    assert.equal(B.tagesAnlass([d], new Date(Date.parse(ende) - 1), { start }), null);
+  }
+});
+test("Kaputter optionaler Stand wirft nicht den ganzen Briefingvertrag und erlaubt keinen Zeitfallback", () => {
+  const normal = doc("zeitbeleg", "2026-11-09");
+  const kaputt = { ...doc("kaputter-stand", "2026-11-09"), raw: { helmutBundestagArtikelstand: { version: "ungültig" } } };
+  const { d } = tagQuelle("berlin");
+  const k = { ...ko(), created_at: tageJetzt.toISOString(), updated_at: tageJetzt.toISOString() };
+  for (const quellen of [[kaputt, normal], [normal, kaputt], [d, kaputt, normal], [normal, d, kaputt]]) {
+    const args = { ...input([k], { "vg-a": quellen }), now: tageJetzt, frischeFenster: tageFenster };
+    const before = JSON.stringify(args), state = C.toBriefingContractV3(args).currentHelmutState;
+    assert.equal(state.primaryVorgangId, "vg-a");
+    assert.ok(!state.tagesAnlass.documentIds.includes(kaputt.id));
+    assert.equal(state.primaryItem.meldungAt, null);
+    assert.equal(state.primaryItem.lastUpdated, null);
+    assert.notEqual(state.status, "fresh");
+    assert.equal(JSON.stringify(args), before);
+  }
+});
 console.log(`${count}/${count} Bereichsvertragsfälle bestanden; offline, ohne Modellaufruf.`);

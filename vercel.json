@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/artikelpfad-tagesanlass-20261110": false,
       "codex/briefingversorgung-ursachen-20261110": false,
       "codex/kundenanzeige-briefing-radar-20261110": false,
       "codex/pending-rotation-20261110": false,
