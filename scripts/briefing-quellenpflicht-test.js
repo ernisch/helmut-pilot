@@ -34,16 +34,24 @@ const doc = { id: "d-quellenpflicht", title: ko.display_title,
   }
   const old = [{ ...doc, published_at: "2020-03-20T08:00:00Z" }], now = new Date("2026-09-11T08:00:00Z");
   const minister = {...ko,display_summary:"Bundesministerin Alex Beispiel ordnet die Beratung ein."};
-  for(const role of ["Bundesbildungsministerin","Bundesarbeitsminister","Bundesarbeitsministerinnen","Bundesarbeitsministers"]) {
+  for(const role of ["Bundesminister","Bundesministerin","Bundesministerinnen","Bundesministers","Bundesministern","Bundesbildungsministerin","Bundesarbeitsminister","Bundesarbeitsministerinnen","Bundesarbeitsministers","Bundesarbeitsministern"]) {
     await test(`Explizite Bundesressortrolle belegt das Gattungsamt: ${role}`,()=>
       assert.equal(Q.quellengebunden(minister,[{...doc,summary:`Die Stellungnahme ${role} Alex Beispiel liegt vor.`}]),true));
   }
-  for(const role of ["Landesbildungsministerin","Bildungsministerin","Bundesbildungsministerium","Bundesbildungsministerkonferenz"]) {
+  for(const role of ["Landesbildungsministerin","Bildungsministerin","Bundesministerium","Bundesbildungsministerium","Bundesbildungsministerkonferenz"]) {
     await test(`Kein Bundesamtsbeleg aus Land/Institution/Ableitung: ${role}`,()=>
       assert.equal(Q.quellengebunden(minister,[{...doc,summary:`Die Stellungnahme ${role} Alex Beispiel liegt vor.`}]),false));
   }
   await test("Explizites Bundesressort im Quelltitel genügt weiterhin",()=>
     assert.equal(Q.quellengebunden(minister,[{...doc,title:"Bundesbildungsministerin Alex Beispiel",summary:null}]),true));
+  await test("Belegte Aussage des Bundesministeriums bleibt eine Institution statt einer Amtsbehauptung",()=>
+    assert.equal(Q.quellengebunden({...ko,display_summary:"Das Bundesministerium ordnet die Beratung ein."},
+      [{...doc,summary:"Das Bundesministerium ordnet die Beratung ein."}]),true));
+  await test("Bisher erkanntes Rollenkompositum bleibt belegt und unbelegt geprueft",()=>{
+    const alt = {...ko,display_summary:"Altbundesministerin Alex Beispiel ordnet die Beratung ein."};
+    assert.equal(Q.quellengebunden(alt,[doc]),false);
+    assert.equal(Q.quellengebunden(alt,[{...doc,summary:alt.display_summary}]),true);
+  });
   await test("Belegtes anderes Bundesressort ersetzt keine spezifische Amtsbehauptung",()=>
     assert.equal(Q.quellengebunden({...ko,display_summary:"Bundesarbeitsministerin Alex Beispiel berichtet."},
       [{...doc,summary:"Bundesbildungsministerin Alex Beispiel berichtet."}]),false));
