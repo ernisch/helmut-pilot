@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/pending-rotation-20261110": false,
       "codex/globale-inhalte-20261109": false,
       "codex/briefing-tagesorientierung-20261109": false,
       "codex/quellenabschluss-20261109": false,

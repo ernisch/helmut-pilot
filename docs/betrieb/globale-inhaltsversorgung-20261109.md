@@ -779,3 +779,11 @@ Originale und aktive Profile wurden nicht verändert. Offene relevante Grenzen:
 zusätzlicheHost-/Formatfähigkeit, konservativgesperrteTitel-/Publikationswechsel,
 unteilbareLangsätze, tatsächlicherAbfluss/Rückstandsalter/Plattformmehrkosten sowie
 fachlicheModellbefolgung. Keine weitere Übergabeschleife oder neuer Thread nötig.
+
+## Anschluss10.11.: nachgewiesene Pending-Rotationssperre
+
+PR1115 ist nach GO aufc37d85f8 live; reguläreWirkung ist nicht bestätigt.
+12254verarbeitbarePendingeinträge→Tagesoffset5795 trifft auf Publikationsleser5000.
+AchtFensterfehlgeschlagen,0neueRohdokumente. GezielteReparatur/Regression und
+Nachholgrenzen im [aktuellen Abschluss](pending-rotation-20261110.md).
+Keine heutige Nachholung innerhalb ausgeschöpfter8/2400Grenzen; keinReset/Budgetplus.

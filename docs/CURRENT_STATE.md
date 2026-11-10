@@ -4,7 +4,7 @@
 
 **UX (08.11.):** [PR1108: Tagesgrund, Radar ohne Knopf](ui/mobile-ux-20261108/README.md); kein Merge/Deploy, ChatGPT-Abnahme offen. [Briefing PR1102 live](ui/briefing-ohne-refresh-20261107/rollout.md).
 
-**Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 lokal integriert, noch kein Rollout.
+**Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
 ## Büro: gemergt und Production READY (09.11.2026)
 
@@ -30,7 +30,7 @@ Voriger Status unveraendert im [Archiv](archive/project_state/2026_11_07_CURRENT
 
 ## Quellen: aktueller Stand und fruehere Belege
 
-**09.11., PR1115 weiter in Umsetzung:** main/Production PR1117 `f13a430a` lokal integriert (`a6a0a001`), Büro/Oberfläche erhalten. [Aktuelle Vorlage und Wiederaufnahme](betrieb/globale-inhaltsversorgung-20261109.md): alte10/15Env-Vorlagen ersetzt; acht vorbereitete Morgenfenster, globale8/2400s/16Artikelversuche-Tageslimits, getrennte Profilzulassung bei unverändertem1/30USD-Geldvertrag. Lokal gezielt geprüft:30Dokumente/2Profile bisSpeicher/Anzeige, Versions-/Abschnittsfortsetzung und unabhängigerReview. CI42675463570 auf39794533 grün; danach Cursor-URLblocker bei großen Manifesten belegt. RPC-Bodykorrektur und nativer Transportnachweis vorbereitet; finale Pflicht-CI imPR maßgeblich, Freigabe offen. Keine Aktivierung, Modelle oder neuen Originalabrufe. NDR-Original/Bindung und allgemeine Anbieterwirkung weiter unbekannt. PR1104/1110/1113 live; Proxy1109 geparkt; [Pflegeabschluss](betrieb/pflege-bestandsfehler-20261109.md) mit historischen Beleglücken bleibt erhalten.
+**10.11., Pendingreparatur in Vorbereitung:** PR1115 live aufmain/Productionc37d85f8 (READY), PR1117/Büro erhalten. Alle8Quellenfenster03:00–04:45 scheitertenmitpending-bestand-nicht-lesbar vorEinreihung;0neueRohdokumente. Ursache:12254verarbeitbareKOs→Tagesoffset5795, aberPublikationsleser begrenztOffset5000. [Gezielte Reparatur und Freigabepaket](betrieb/pending-rotation-20261110.md): eigenerPendingleser, unveränderterVeröffentlichungsschutz, Storageadapterregression/Folgeplanung/Briefingsperre. KeineProductionänderung. Heute8Fenster/2400sreserviertverbraucht; keineFreigabefähigeNachholunginnerhalbaktuellerArbeitsgrenzen. Originalversuche0/16; Modellbuch1185307microUSDgesamt/12665heute,1USD/Tag30USDgesamt unverändert,1aktivesProfil. GespeicherteLage15Belege/8ohneAuszug; persönlichesBriefingunvollständig. Endcommit/CI/ReviewimPRmaßgeblich; Freigabeoffen.
 
 **Historie 07.11.:** [PR1098](https://github.com/ernisch/helmut-pilot/pull/1098) wurde nach GO und gruener CI inaktiv auf `778c289b` ausgerollt. Separat freigegebene Quellenkorrektur: vier Originalauszuege, eine Bundestagsquelle, fuenf Kurzfassungen; zwei Altfaelle geparkt, RP Online ohne Original offen. Kein 6/6-Nachweis und keine Provideraufrufe. [Quellenkorrektur mit Vor-/Nachwerten und Rueckweg](betrieb/quellenkorrektur-20261107.md). [Unveraenderter damaliger Detailstand](https://github.com/ernisch/helmut-pilot/blob/feadca2829b6b54c010c2fcfef16d208ab6e0c05/docs/CURRENT_STATE.md#quellenkorrektur-07112026-gemergt-und-inaktiv).
 
