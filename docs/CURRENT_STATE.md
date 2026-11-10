@@ -8,7 +8,7 @@
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
-**10.11., abschließende Ausgabeprüfung:** Zwei weitere belegte Lesepfadfehler minimal korrigiert: offene/unbestätigte Quellenversorgung oder eine getrennt fehlschlagende Datenlesung ergibt keinen Ruhehinweis; eine alte undatierte Ankündigung verdrängt keine bereits zulässige aktuelle Hauptmeldung. Datierte Fristen und Vorbereitung, Quellenbindung, Frischefilter, Mandantentrennung, Kostenlimits und reguläre Läufe unverändert. Gezielte synthetische Offlineprüfungen grün; PR1121 bleibt separat. Kein neuer produktiver Vollartikel-Endnachweis und keine echte Kundensitzungsabnahme. Kein Merge/Deployment aus diesem Prüfauftrag; exakter Kopf und Pflicht-CI im neuen Reparatur-PR maßgeblich.
+**10.11., Ausgabeprüfung:** Versorgungs-/Datenlücken sind keine Ruhe; alte undatierte Vorbereitung verdrängt keine zulässige aktuelle Hauptmeldung. Offline geprüft, unabhängiger Review. PR1121 separat; Endkopf/CI im neuen PR. Kein Merge/Deployment oder produktiver Endnachweis.
 
 ## Büro: gemergt und Production READY (09.11.2026)
 
