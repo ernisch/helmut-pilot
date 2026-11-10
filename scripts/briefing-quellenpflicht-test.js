@@ -47,6 +47,14 @@ const doc = { id: "d-quellenpflicht", title: ko.display_title,
   await test("Belegte Aussage des Bundesministeriums bleibt eine Institution statt einer Amtsbehauptung",()=>
     assert.equal(Q.quellengebunden({...ko,display_summary:"Das Bundesministerium ordnet die Beratung ein."},
       [{...doc,summary:"Das Bundesministerium ordnet die Beratung ein."}]),true));
+  await test("Bestehende Belegschranke fuer eine unbelegte Bundesinstitution bleibt erhalten",()=>
+    assert.equal(Q.quellengebunden({...ko,display_summary:"Das Bundesministerium ordnet die Beratung ein."},[doc]),false));
+  await test("Ein belegtes Ressortamt befreit keine zusaetzliche unbelegte Institution",()=>{
+    const gemischt = {...ko,display_summary:"Bundesministerin Alex Beispiel und das Bundesministerium ordnen die Beratung ein."};
+    const rolle = "Bundesbildungsministerin Alex Beispiel ordnet die Beratung ein.";
+    assert.equal(Q.quellengebunden(gemischt,[{...doc,summary:rolle}]),false);
+    assert.equal(Q.quellengebunden(gemischt,[{...doc,summary:rolle+" Das Bundesministerium ordnet die Beratung ein."}]),true);
+  });
   await test("Bisher erkanntes Rollenkompositum bleibt belegt und unbelegt geprueft",()=>{
     const alt = {...ko,display_summary:"Altbundesministerin Alex Beispiel ordnet die Beratung ein."};
     assert.equal(Q.quellengebunden(alt,[doc]),false);
