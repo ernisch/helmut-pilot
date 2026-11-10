@@ -10,14 +10,16 @@ A(start > 0 && end > start);
 const code = source.slice(start, end);
 (async () => {
   for (const functionName of ["loadSourcesByVorgang", "loadPruefSourcesByVorgang"]) {
-    let active = 0, peak = 0;
+    let active = 0, peak = 0, fail = false;
+    const error = new Error("synthetischer Lesefehler");
     const seen = [];
     const read = vm.runInNewContext(code + `; ${functionName}`, {
-      getSourcesForVorgang: async id => {
+      getSourcesForVorgang: async (id, opts) => {
+        A.equal(opts.strict, true);
         active++; peak = Math.max(peak, active); seen.push(id);
         try {
           await new Promise(resolve => setImmediate(resolve));
-          if (id === "vg-9") throw new Error("synthetischer Lesefehler");
+          if (id === "vg-9") { if (fail) throw error; return []; }
           return [{ id: `quelle-${id}` }];
         } finally { active--; }
       }
@@ -29,7 +31,10 @@ const code = source.slice(start, end);
     A.equal(Object.keys(out).length, 57);
     A.equal(out["vg-9"].length, 0);
     A.equal(out["vg-56"][0].id, "quelle-vg-56");
-    A.equal(Object.keys(await read([])).length, 0);
-    console.log(`PASS ${functionName}: alle 57 Quellenpakete, maximal 8 parallel, Fehler isoliert`);
+    A.equal(Object.keys(await read([])).length, 0); A.equal(seen.length, 57);
+    fail = true;
+    await A.rejects(() => read([{ vorgang_id: "vg-9" }]), cause => cause === error);
+    A.equal(active, 0); A.equal(peak, 8);
+    console.log(`PASS ${functionName}: alle 57 Quellenpakete, maximal 8 parallel; echte Leere und Lesefehler getrennt`);
   }
 })().catch(error => { console.error(error); process.exitCode = 1; });

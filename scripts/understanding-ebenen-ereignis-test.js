@@ -87,7 +87,7 @@ async function main() {
       };
       const deps = { canSpend: async () => ({ allowed: true }),
         requestUnderstanding: async prompt => { vertrag(prompt); p.prompts.push(prompt); return antwort(f); },
-        save: async ko => { p.gespeichert.push(ko); return true; }, saveSources: async () => {},
+        save: async ko => { p.gespeichert.push(ko); return true; }, saveSources: async (_id, docs) => ({ saved: docs.length }),
         markFailed: async () => { throw Error("Unerwartete Fehlerablage"); }, logSkip: () => {}, modelName: () => "attrappe",
         findVorgangCandidates: async () => [], listVorgangDocuments: async () => [] };
       const option = zusatz ? { artikelkontextVersuch: kontext(d, f) } : {};
