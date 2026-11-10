@@ -4834,6 +4834,13 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
     : isBriefingStaleForBerlin(briefing);
   const hasDecisionItems = Number(briefing.items?.filter((item) => item.decision !== "Ignorieren").length || 0) > 0;
   const hasSituationalItems = Number(briefing.situationalBriefing?.length || 0) > 0;
+  const versorgungsHinweis = hasState && state.versorgung?.version === 1
+    ? state.versorgung.zustand === "offen"
+      ? "Die Quellenverarbeitung ist noch nicht abgeschlossen. Ein ruhiger Nachrichtentag ist damit nicht belegt."
+      : state.versorgung.zustand === "unbekannt"
+        ? "Der Stand der Quellenverarbeitung ist derzeit nicht bestätigt. Ein ruhiger Nachrichtentag ist damit nicht belegt."
+        : null
+    : null;
   // "Aktuell" nur bei WIRKLICH frischem Stand — ein leerer/unvollstaendiger State
   // (empty) darf nie "Aktuell" ergeben (sonst Widerspruch zur Karte "Kein aktueller Stand").
   const fresh = hasState ? state.status === "fresh" : (hasDecisionItems || hasSituationalItems);
@@ -4856,6 +4863,11 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
       items: hasState ? [state.primaryItem, ...(Array.isArray(state.items) ? state.items : [])].filter(Boolean) : [],
       fenster: frischeKontext.fenster
     });
+    // Frische globale Daten belegen keine abgeschlossene Mandatsversorgung.
+    // Die Frische bleibt erhalten; ein bekannter Versorgungsrest ist keine Ruhe.
+    if (vertrag.ruhelage && versorgungsHinweis) {
+      vertrag = { ...vertrag, ruhelage: false, hinweis: versorgungsHinweis };
+    }
     if (frischeKontext.speicherFehler) vertrag.speicherFehler = frischeKontext.speicherFehler;
   }
   const vertragBlockiert = Boolean(vertrag && vertrag.aktuell === false);
@@ -4892,9 +4904,11 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
           ? "Das Briefing stammt nicht aus dem aktuellen Berliner Tag oder ist älter als 18 Stunden."
           : hasDecisionItems
             ? "Das Briefing enthält aktuelle politische Entscheidungen."
-            : hasSituationalItems
-              ? "Die Quellen wurden geprüft; es gibt beobachtbare Entwicklungen, aber keinen akuten Handlungsdruck."
-              : "Die Quellen wurden geprüft; es gibt aktuell keine belastbare neue Entscheidung."
+            : versorgungsHinweis
+              ? versorgungsHinweis
+              : hasSituationalItems
+                ? "Die Quellen wurden geprüft; es gibt beobachtbare Entwicklungen, aber keinen akuten Handlungsdruck."
+                : "Die Quellen wurden geprüft; es gibt aktuell keine belastbare neue Entscheidung."
     }
   };
 }

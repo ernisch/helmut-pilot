@@ -77,8 +77,61 @@ test("Quelldaten, Entscheidung und Profil bleiben unverändert",()=>{
 // heutige KO-Zeit erreicht dieselben Quellen-/Sicherheitsfilter und den Renderer.
 (async()=>{
   const S=require("../lib/helmut/storage"), D=require("../lib/helmut/decisions");
+  // Deklarierte Fachfixtures: echte deterministische Bewertung, keine Scorevorgaben.
+  const profile={id:"test-fachprioritaet",parliamentType:"Bundestag",party:"SPD",
+    committee:"Arbeit und Soziales",focusTopics:["Pflege","Gesundheit","Tarifbindung"]};
+  const alt={...ko,id:"ko-alt",vorgang_id:"vg-alt",decision_level:"bund",ausschuesse:["Arbeit und Soziales"],
+    parteien:["SPD"],tags:["Pflege"],policy_field:["Gesundheit"],confidence_score:90,zeitdruck:"keiner"};
+  const text="Der Ausschuss für Arbeit und Soziales hat einen neuen Bericht über die Tarifbindung veröffentlicht. Der Bericht beschreibt den Umfang tariflicher Arbeitsbedingungen.";
+  const neu={...ko,id:"ko-neu",vorgang_id:"vg-neu",decision_level:"bund",headline:"Ausschuss veröffentlicht Bericht über Tarifbindung",
+    display_title:"Ausschuss veröffentlicht Bericht über Tarifbindung",was_ist_passiert:text,
+    warum_wichtig:"Der neue Bericht betrifft die parlamentarische Fachzuständigkeit.",
+    ausschuesse:["Arbeit und Soziales"],tags:["Tarifbindung"],policy_field:["Arbeit und Soziales"],
+    confidence_score:90,zeitdruck:"keiner",created_at:"2026-11-09T03:00:00Z",updated_at:"2026-11-09T03:00:00Z"};
+  const documents={ [alt.vorgang_id]:[{...doc}], [neu.vorgang_id]:[{...doc,id:"rd-neu",
+    title:neu.headline,summary:text,url:"https://example.org/politik/tarifbindung",published_at:neu.created_at}] };
+  let active=[alt,neu];
+  S.v3StoreReady=()=>true; S.listKnowledgeObjects=async()=>active;
+  S.getPruefSourcesByVorgaenge=async kos=>Object.fromEntries(kos.map(k=>[k.vorgang_id,documents[k.vorgang_id]]));
+  const build=()=>require("../server").__buildV3Briefing(profile,profile.id,{now,debug:true});
+  const before=JSON.stringify({profile,alt,neu,documents});
+  const bewertet=D.decideForUser(profile,active,{userId:profile.id});
+  const aktuell=await build();
+  test("Aktuelle zulässige Ausschussmeldung ersetzt alte undatierte Ankündigung als Hauptvorgang",()=>{
+    A(bewertet.find(d=>d.knowledge_object_id===alt.id).score>bewertet.find(d=>d.knowledge_object_id===neu.id).score);
+    A.notEqual(bewertet.find(d=>d.knowledge_object_id===neu.id).decision,"Ignorieren");
+    A.equal(aktuell.debugPrimary.candidateStats.freshEligibleCount,1);
+    A.equal(aktuell.currentHelmutState.primaryVorgangId,neu.vorgang_id);
+    A.equal(aktuell.currentHelmutState.status,"fresh");
+    A.equal(aktuell.currentHelmutState.primaryItem.meldungAt,neu.created_at);
+    A(aktuell.currentHelmutState.items.some(i=>i.id===alt.vorgang_id));
+    A(render(aktuell,now.toISOString()).html.briefing.includes(doc.url));
+    A.equal(JSON.stringify({profile,alt,neu,documents}),before);
+  });
+  active=[alt]; const ohneNeu=await build();
+  test("Ohne frischen zulässigen Ersatz bleibt alte Vorbereitung mit ehrlichem Datum",()=>{
+    A.equal(ohneNeu.currentHelmutState.primaryVorgangId,alt.vorgang_id);
+    A.equal(ohneNeu.currentHelmutState.status,"stale");
+    A.equal(ohneNeu.currentHelmutState.tagesAnlass.art,"angekuendigter-schritt");
+  });
+  active=[alt,{...neu,understanding_status:"failed"}]; const ohneVerstehen=await build();
+  test("Fehlgeschlagene aktuelle Verarbeitung ersetzt keine belegte Vorbereitung",()=>{
+    A.equal(ohneVerstehen.currentHelmutState.primaryVorgangId,alt.vorgang_id);
+  });
+  for(const [art,summary,deadline] of [
+    ["heutige-frist","Die Einreichungsfrist für Stellungnahmen zur Pflegereform endet am 2026-11-09. Die Verbände können ihre Stellungnahmen einreichen.","2026-11-09"],
+    ["kommende-frist","Die Einreichungsfrist für Stellungnahmen zur Pflegereform endet am 2026-11-12. Die Verbände können ihre Stellungnahmen einreichen.","2026-11-12"],
+    ["bevorstehender-schritt","Die öffentliche Beratung zur Pflegereform findet am 2026-11-11 mit den beteiligten Verbänden im Parlament statt.",null]
+  ]) {
+    active=[{...alt,deadline},neu]; documents[alt.vorgang_id]=[{...doc,summary}];
+    const termin=await build();
+    test(`Belegter datierter Anlass ${art} behält seine Priorität`,()=>{
+      A.equal(termin.currentHelmutState.primaryVorgangId,alt.vorgang_id);
+      A.equal(termin.currentHelmutState.tagesAnlass.art,art);
+    });
+  }
   const other={...ko,id:"ko-other",vorgang_id:"vg-other",headline:"Alte Sachmeldung",display_title:"Alte Sachmeldung",was_ist_passiert:"Ein Bericht."};
-  S.v3StoreReady=()=>true; S.listKnowledgeObjects=async()=>[other,ko];
+  active=[other,ko];
   S.getPruefSourcesByVorgaenge=async kos=>Object.fromEntries(kos.map(k=>[k.vorgang_id,k.id===ko.id?[doc]:[{...doc,id:"rd-other",title:"Alte Sachmeldung",summary:"Ein alter Bericht zur allgemeinen politischen Lage wurde veröffentlicht.",url:"https://example.org/politik/bericht"}]]));
   D.decideForUser=()=>[{...dec,knowledge_object_id:other.id,vorgang_id:other.vorgang_id}];
   const b=await require("../server").__buildV3Briefing(p,p.id,{now,debug:true});
