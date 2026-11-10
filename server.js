@@ -4841,6 +4841,12 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
         ? "Der Stand der Quellenverarbeitung ist derzeit nicht bestätigt. Ein ruhiger Nachrichtentag ist damit nicht belegt."
         : null
     : null;
+  const auswertungsFehler = hasState && (state.errorState === true || state.status === "error" || briefing.reason === "store-error");
+  const lueckenHinweis = auswertungsFehler
+    ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
+    : versorgungsHinweis || (hasState && state.emptyState?.kind === "gap"
+      ? state.emptyState.detail || "Die Datenbasis ist noch nicht ausreichend ausgewertet. Ein ruhiger Nachrichtentag ist damit nicht belegt."
+      : null);
   // "Aktuell" nur bei WIRKLICH frischem Stand — ein leerer/unvollstaendiger State
   // (empty) darf nie "Aktuell" ergeben (sonst Widerspruch zur Karte "Kein aktueller Stand").
   const fresh = hasState ? state.status === "fresh" : (hasDecisionItems || hasSituationalItems);
@@ -4864,9 +4870,9 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
       fenster: frischeKontext.fenster
     });
     // Frische globale Daten belegen keine abgeschlossene Mandatsversorgung.
-    // Die Frische bleibt erhalten; ein bekannter Versorgungsrest ist keine Ruhe.
-    if (vertrag.ruhelage && versorgungsHinweis) {
-      vertrag = { ...vertrag, ruhelage: false, hinweis: versorgungsHinweis };
+    // Die Frische bleibt erhalten; Versorgungsreste und Datenfehler sind keine Ruhe.
+    if (vertrag.ruhelage && lueckenHinweis) {
+      vertrag = { ...vertrag, ruhelage: false, hinweis: lueckenHinweis };
     }
     if (frischeKontext.speicherFehler) vertrag.speicherFehler = frischeKontext.speicherFehler;
   }
@@ -4900,15 +4906,17 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
       vertrag,
       reason: vertragBlockiert
         ? vertrag.grundText
-        : stale
-          ? "Das Briefing stammt nicht aus dem aktuellen Berliner Tag oder ist älter als 18 Stunden."
-          : hasDecisionItems
-            ? "Das Briefing enthält aktuelle politische Entscheidungen."
-            : versorgungsHinweis
-              ? versorgungsHinweis
-              : hasSituationalItems
-                ? "Die Quellen wurden geprüft; es gibt beobachtbare Entwicklungen, aber keinen akuten Handlungsdruck."
-                : "Die Quellen wurden geprüft; es gibt aktuell keine belastbare neue Entscheidung."
+        : auswertungsFehler
+          ? lueckenHinweis
+          : stale
+            ? "Das Briefing stammt nicht aus dem aktuellen Berliner Tag oder ist älter als 18 Stunden."
+            : hasDecisionItems
+              ? "Das Briefing enthält aktuelle politische Entscheidungen."
+              : lueckenHinweis
+                ? lueckenHinweis
+                : hasSituationalItems
+                  ? "Die Quellen wurden geprüft; es gibt beobachtbare Entwicklungen, aber keinen akuten Handlungsdruck."
+                  : "Die Quellen wurden geprüft; es gibt aktuell keine belastbare neue Entscheidung."
     }
   };
 }

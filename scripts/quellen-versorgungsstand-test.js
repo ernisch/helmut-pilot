@@ -94,9 +94,9 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     kosById: { [ko.id]: ko }, sourcesByVorgang: { [ko.vorgang_id]: [doc] }, now, versorgung });
   // server.js bindet diese Funktionen beim ersten require; vor der neuen
   // Decoratorregression injizieren, damit auch der bestehende Leerpfad echt liest.
-  const S = require("../lib/helmut/storage"); let koLesungen = 0;
+  const S = require("../lib/helmut/storage"); let koLesungen = 0, koAntwort = [];
   S.v3StoreReady = () => true;
-  S.listKnowledgeObjects = async () => { koLesungen++; return []; };
+  S.listKnowledgeObjects = async () => { koLesungen++; return koAntwort; };
   const frischeKontext = { jetzt: now, lauf: { vertragVersion: 1, berlinTag: tag,
     status: "erfolg", erzeugtAm: now.toISOString() }, datenstand: now.toISOString(),
     fenster: { start: "2026-11-08T05:15:00Z" } };
@@ -172,6 +172,21 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
       A.equal(result.currentHelmutState.emptyState.kind, "gap");
       A.deepEqual(result.currentHelmutState.versorgung, signal("unbekannt"));
     } finally { V.lese = original; }
+  });
+  await test("Getrennt fehlschlagende KO-Lesung wird trotz frischem Kontext nicht zur Ruhelage", async () => {
+    const original = V.lese; koAntwort = { __storeError: true };
+    V.lese = async () => signal("kein-bekannter-rueckstand");
+    try {
+      const b = await require("../server").__buildV3Briefing(profile, profile.id, { now });
+      A.equal(b.reason, "store-error");
+      const result = require("../server").__prepareBriefingResponse(b, { frischeKontext });
+      A.equal(result.currentHelmutState.frischeVertrag.aktuell, true);
+      A.equal(result.currentHelmutState.frischeVertrag.ruhelage, false);
+      A(!/Quellen wurden geprüft/.test(result.freshness.reason));
+      const html = require("./lib/briefing-ansichten")(result, now.toISOString()).html.briefing;
+      A(html.includes("hstand-state-card--error"));
+      A(!html.includes("Heute liegt keine neue Meldung vor."));
+    } finally { V.lese = original; koAntwort = []; }
   });
   await test("Neues positives Teilpaket wird nach Restabschluss mit neuen Fakten per Partial-CAS ergaenzt", async () => {
     const Q = require("../lib/helmut/lage-textqualitaet"), L = require("../lib/helmut/lage-quellenbeleg");
