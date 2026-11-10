@@ -56,9 +56,18 @@ const doc = { id: "d-quellenpflicht", title: ko.display_title,
     assert.equal(Q.quellengebunden(gemischt,[{...doc,summary:rolle+" Das Bundesministerium ordnet die Beratung ein."}]),true);
   });
   await test("Bisher erkanntes Rollenkompositum bleibt belegt und unbelegt geprueft",()=>{
-    const alt = {...ko,display_summary:"Altbundesministerin Alex Beispiel ordnet die Beratung ein."};
-    assert.equal(Q.quellengebunden(alt,[doc]),false);
-    assert.equal(Q.quellengebunden(alt,[{...doc,summary:alt.display_summary}]),true);
+    for(const rolle of ["Altbundesministerin","Alt-Bundesministerin","Alt‑Bundesministerin","Alt\u00adBundesministerin","Alt\u200dBundesministerin","Alt\u203fBundesministerin","Bundesministerin-im-Ruhestand"]) {
+      const alt = {...ko,display_summary:`${rolle} Alex Beispiel ordnet die Beratung ein.`};
+      const ressort = "Bundesbildungsministerin Alex Beispiel ordnet die Beratung ein.";
+      assert.equal(Q.quellengebunden(alt,[doc]),false);
+      assert.equal(Q.quellengebunden(alt,[{...doc,summary:alt.display_summary}]),true);
+      assert.equal(Q.quellengebunden(alt,[{...doc,summary:ressort}]),false);
+      const gemischt = {...alt,display_summary:alt.display_summary+" Bundesministerin Alex Beispiel nimmt teil."};
+      assert.equal(Q.quellengebunden(gemischt,[{...doc,summary:ressort}]),false);
+      assert.equal(Q.quellengebunden(gemischt,[{...doc,summary:ressort+" "+alt.display_summary}]),true);
+    }
+    for(const rolle of ["Altbundesbildungsministerin","Alt-Bundesbildungsministerin","Alt‑Bundesbildungsministerin","Alt\u00adBundesbildungsministerin","Alt\u200dBundesbildungsministerin","Alt\u203fBundesbildungsministerin","Bundesbildungsministerin-im-Ruhestand"])
+      assert.equal(Q.quellengebunden(minister,[{...doc,summary:`${rolle} Alex Beispiel ordnet die Beratung ein.`}]),false);
   });
   await test("Belegtes anderes Bundesressort ersetzt keine spezifische Amtsbehauptung",()=>
     assert.equal(Q.quellengebunden({...ko,display_summary:"Bundesarbeitsministerin Alex Beispiel berichtet."},
