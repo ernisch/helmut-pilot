@@ -92,6 +92,35 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
   const make = versorgung => C.toBriefingContractV3({ profile, decisions: [{ knowledge_object_id: ko.id,
     vorgang_id: ko.vorgang_id, decision: "Ignorieren", priority_type: "normal", score: 10, matched_features: [] }],
     kosById: { [ko.id]: ko }, sourcesByVorgang: { [ko.vorgang_id]: [doc] }, now, versorgung });
+  // server.js bindet diese Funktionen beim ersten require; vor der neuen
+  // Decoratorregression injizieren, damit auch der bestehende Leerpfad echt liest.
+  const S = require("../lib/helmut/storage"); let koLesungen = 0, koAntwort = [];
+  S.v3StoreReady = () => true;
+  S.listKnowledgeObjects = async () => { koLesungen++; return koAntwort; };
+  const frischeKontext = { jetzt: now, lauf: { vertragVersion: 1, berlinTag: tag,
+    status: "erfolg", erzeugtAm: now.toISOString() }, datenstand: now.toISOString(),
+    fenster: { start: "2026-11-08T05:15:00Z" } };
+  for (const zustand of ["offen", "unbekannt"]) {
+    await test(`Frische globale Daten machen Versorgung ${zustand} nicht zur Ruhelage`, async () => {
+      const b = make(signal(zustand)), before = JSON.stringify(b);
+      const result = require("../server").__prepareBriefingResponse(b, { frischeKontext });
+      const state = result.currentHelmutState;
+      A.equal(state.emptyState.kind, "gap");
+      A.equal(state.frischeVertrag.aktuell, true, "Datenfrische wird nicht umgedeutet");
+      A.equal(state.frischeVertrag.ruhelage, false);
+      A(!/Quellen wurden geprüft/.test(result.freshness.reason));
+      const html = require("./lib/briefing-ansichten")(result, now.toISOString()).html.briefing;
+      A(!html.includes("Heute liegt keine neue Meldung vor."));
+      A(!html.includes("hstand-state-card--quiet"));
+      A.equal(JSON.stringify(b), before);
+    });
+  }
+  await test("Bestaetigte Versorgung mit frischen Daten behaelt echte Ruhelage", async () => {
+    const result = require("../server").__prepareBriefingResponse(make(signal("kein-bekannter-rueckstand")), { frischeKontext });
+    A.equal(result.currentHelmutState.frischeVertrag.aktuell, true);
+    A.equal(result.currentHelmutState.frischeVertrag.ruhelage, true);
+    A.equal(result.currentHelmutState.emptyState.kind, "quiet");
+  });
   await test("Echtes Quiet wird per bestehendem Partial-CAS durch gespeichertes Gap ersetzt", async () => {
     const quiet = make(null); A.equal(quiet.currentHelmutState.emptyState.kind, "quiet");
     await B.materialisiere({ profile, userId: profile.id, briefing: quiet, storage, now });
@@ -124,17 +153,40 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
       briefing: { ...positive, currentHelmutState: { ...positive.currentHelmutState, versorgung: signal("offen") } }, storage, now, tag });
     A.deepEqual(rows.get(id), before); A.deepEqual(result.briefing, positive);
     A.equal(result.beleg.vollstaendig, false); A.equal(updates, 1);
+    const input = { ...positive, currentHelmutState: { ...positive.currentHelmutState, versorgung: signal("offen") } };
+    const inputBefore = JSON.stringify(input);
+    const response = require("../server").__prepareBriefingResponse(input, { frischeKontext });
+    A.equal(response.currentHelmutState.status, positive.currentHelmutState.status);
+    A.equal(response.currentHelmutState.frischeVertrag.aktuell, true);
+    A.equal(response.currentHelmutState.frischeVertrag.ruhelage, false);
+    A.deepEqual(response.currentHelmutState.primaryItem, positive.currentHelmutState.primaryItem);
+    A.equal(JSON.stringify(input), inputBefore);
   });
   await test("Echter Server-Leerpfad liest heutigen Versorgungsstand und zeigt keine Ruhe", async () => {
-    const S = require("../lib/helmut/storage"); S.v3StoreReady = () => true; S.listKnowledgeObjects = async () => [];
     const original = V.lese; let args;
     V.lese = async x => { args = x; return signal("unbekannt"); };
     try {
       const result = await require("../server").__buildV3Briefing(profile, profile.id, { now });
       A.equal(args.mandat, profile.id); A.equal(args.jetztMs, now.getTime());
+      A.equal(koLesungen, 1, "Kein versehentlicher Store-disabled- statt Datenleerpfad");
       A.equal(result.currentHelmutState.emptyState.kind, "gap");
       A.deepEqual(result.currentHelmutState.versorgung, signal("unbekannt"));
     } finally { V.lese = original; }
+  });
+  await test("Getrennt fehlschlagende KO-Lesung wird trotz frischem Kontext nicht zur Ruhelage", async () => {
+    const original = V.lese; koAntwort = { __storeError: true };
+    V.lese = async () => signal("kein-bekannter-rueckstand");
+    try {
+      const b = await require("../server").__buildV3Briefing(profile, profile.id, { now });
+      A.equal(b.reason, "store-error");
+      const result = require("../server").__prepareBriefingResponse(b, { frischeKontext });
+      A.equal(result.currentHelmutState.frischeVertrag.aktuell, true);
+      A.equal(result.currentHelmutState.frischeVertrag.ruhelage, false);
+      A(!/Quellen wurden geprüft/.test(result.freshness.reason));
+      const html = require("./lib/briefing-ansichten")(result, now.toISOString()).html.briefing;
+      A(html.includes("hstand-state-card--error"));
+      A(!html.includes("Heute liegt keine neue Meldung vor."));
+    } finally { V.lese = original; koAntwort = []; }
   });
   await test("Neues positives Teilpaket wird nach Restabschluss mit neuen Fakten per Partial-CAS ergaenzt", async () => {
     const Q = require("../lib/helmut/lage-textqualitaet"), L = require("../lib/helmut/lage-quellenbeleg");
