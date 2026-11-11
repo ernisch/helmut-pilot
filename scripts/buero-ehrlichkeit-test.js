@@ -89,18 +89,20 @@ function check(name, cond, detail = "") {
   const refused = await ai.generateCommunicationDraft({office:true,decision,profile:{id:"t"},channel:"press"});
   check("Fehlende Quellen stoppen vor KI und liefern keinen Fertigtext", refused.fallbackReason === "quellenbasis-fehlt" && refused.text === "" && refused.aiEnabled === false);
 
-  let capturedPrompt = "", mockedModelCalls = 0;
+  let capturedPrompt = "", capturedMeta = null, mockedModelCalls = 0, modelError = null, preBudget = {allowed:true};
   const aiSandbox = { require: name => name === "./storage"
-    ? {canSpendLlmForTenant: async () => ({allowed:true})}
+    ? {canSpendLlmForTenant: async () => preBudget, recordLlmUsage: async () => ({})}
     : require(require("module").createRequire(path.join(root,"lib/helmut/ai.js")).resolve(name)),
     process, console, URL, Buffer, module:{exports:{}},
-    capture: value => {capturedPrompt=value;mockedModelCalls++;return {text:"Synthetischer Testentwurf.",rationale:"Nur Test"};} };
+    capture: (value,meta) => {capturedPrompt=value;capturedMeta=meta;mockedModelCalls++;
+      if(modelError) throw modelError;return {text:"Synthetischer Testentwurf.",rationale:"Nur Test"};} };
   vm.createContext(aiSandbox);
-  vm.runInContext(aiSource + '\n isAiEnabled=()=>true; requestJson=async prompt=>capture(prompt);', aiSandbox);
+  vm.runInContext(aiSource + '\n isAiEnabled=()=>true; requestJson=async (prompt,meta)=>capture(prompt,meta);', aiSandbox);
   const officeResult = await aiSandbox.module.exports.generateCommunicationDraft({office:true,decision:sourced,
     profile:{id:"tenant-a",parliamentType:"Landtag",state:"Berlin",committee:"Testausschuss",governmentRole:"opposition",function:"LEGACY_UNVERIFIED_FUNCTION",relevantMinistries:["LEGACY_UNVERIFIED_MINISTRY"]},
     channel:"committee_question",prompt:"REQUEST_INSTRUCTION_MUST_NOT_REACH_MODEL"});
   check("Büro erzeugt genau das benötigte Format mit gemocktem Modell", officeResult.aiEnabled === true && mockedModelCalls === 1);
+  check("Nur der quellengeprüfte Büroaufruf trägt die interne Kostenfreigabe", capturedMeta.office === true && capturedMeta.callType === "communicationDraft");
   check("Modell erhält Landtagszuordnung und echten Quellentext", capturedPrompt.includes('"parliamentType": "Landtag"') && capturedPrompt.includes(source.summary));
   check("Freier Requestprompt und pauschale Bundesregierungsvorgabe entfallen",
     !capturedPrompt.includes("REQUEST_INSTRUCTION_MUST_NOT_REACH_MODEL") && !capturedPrompt.includes("Bundesregierung konkret messen"));
@@ -109,6 +111,25 @@ function check(name, cond, detail = "") {
   check("Fakten, KI-Einordnung, Auszüge und formelle Anfragen bleiben getrennt",
     capturedPrompt.includes("keine zusätzlichen Tatsachenbelege") && capturedPrompt.includes("keine formgerechte Kleine Anfrage")
     && capturedPrompt.includes("Keine eigene Position") && capturedPrompt.includes("Aus Auszügen niemals"));
+  const draftInput = {office:true, decision:sourced, profile:{id:"tenant-a"}, channel:"internal_line"};
+  for(const [reason,expected] of [["betriebskosten-grenze-erreicht","budget-erschoepft"],
+    ["daily-llm-budget-reached","budget-erschoepft"], ["tenant-monthly-budget-reached","budget-erschoepft"],
+    ["betriebskosten-profil-oder-aufgabe-gesperrt","entwurf-nicht-freigegeben"],
+    ["betriebskosten-reservierung-unbestaetigt","kostenpruefung-fehlgeschlagen"],
+    ["betriebskosten-vertrag-ungueltig","kostenpruefung-fehlgeschlagen"],
+    ["budget-check-failed-closed","kostenpruefung-fehlgeschlagen"], [null,"kostenpruefung-fehlgeschlagen"]]) {
+    modelError={code:"LLM_BUDGET_EXHAUSTED",reason};
+    const result=await aiSandbox.module.exports.generateCommunicationDraft(draftInput);
+    check(`Kostenfehler ${reason} bleibt unterscheidbar`,result.aiEnabled===false && result.degraded===true
+      && result.fallbackReason===expected && result.budgetReason===reason);
+  }
+  modelError=null; preBudget={allowed:false,reason:"tenant-budget-status-unknown-fail-closed"};
+  const beforeBudget=mockedModelCalls;
+  const unknown=await aiSandbox.module.exports.generateCommunicationDraft(draftInput);
+  check("Unbekannte Kostenprüfung stoppt vor Modell und behauptet keinen Verbrauch",unknown.fallbackReason==="kostenpruefung-fehlgeschlagen" && mockedModelCalls===beforeBudget);
+  preBudget={allowed:true};
+  await aiSandbox.module.exports.generateCommunicationDraft({...draftInput,office:false});
+  check("Freier Kommunikationsprompt erhält keine Bürofreigabe",!Object.hasOwn(capturedMeta,"office"));
 
   // Exercise the actual route body with isolated reads and a recording generator.
   // No server, database, model transport or source fetch is started by this test.

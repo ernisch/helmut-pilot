@@ -190,12 +190,13 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
     await evaluate("previewMode=false;selectedOfficeDraft=null");
   }
   if (!mobile) {
-    for (const [reason,fragment] of [["quellenbasis-fehlt","Originaltextbasis"],["zustaendigkeit-offen","parlamentarische Zuständigkeit"],["budget-erschoepft","KI-Kostengrenze"]]) {
+    for (const [reason,fragment] of [["quellenbasis-fehlt","Originaltextbasis"],["zustaendigkeit-offen","parlamentarische Zuständigkeit"],["budget-erschoepft","KI-Kontingent"],["entwurf-nicht-freigegeben","nicht freigegeben"],["kostenpruefung-fehlgeschlagen","nicht bestätigt"]]) {
       failureReason=reason;
       const before=writes.length;
       await evaluate("officeDrafts={};officeDraftErrors={};localStorage.removeItem(officeDraftCacheKey());selectedOfficeDraft=uiOfficeSelection(officeDecisions()[0],recommendedOfficeFormat(officeDecisions()[0]).format);currentView='office-detail';render();generateSelectedOfficeDraft().then(()=>true)");
       await waitFor("!officeDraftsGenerating");
-      verify(reason+" shows an honest empty state without retry or share",await evaluate(`document.querySelector('.ui-office-detail').textContent.includes(${JSON.stringify(fragment)}) && !document.querySelector('[data-office-share],[data-office-generate]') && !document.querySelector('.ui-office-detail').textContent.includes('Untrusted provider detail')`) && writes.length===before+1,{writes:writes.length-before,state:await evaluate("({errors:officeDraftErrors,body:document.querySelector('.ui-office-detail').textContent,share:!!document.querySelector('[data-office-share]'),retry:!!document.querySelector('[data-office-generate]')})")});
+      const retry=reason==="kostenpruefung-fehlgeschlagen";
+      verify(reason+" shows the matching message and retry",await evaluate(`document.querySelector('.ui-office-detail').textContent.includes(${JSON.stringify(fragment)}) && !document.querySelector('[data-office-share]') && !!document.querySelector('[data-office-generate]') === ${retry} && !document.querySelector('.ui-office-detail').textContent.includes('Untrusted provider detail')`) && writes.length===before+1,{writes:writes.length-before,state:await evaluate("({errors:officeDraftErrors,body:document.querySelector('.ui-office-detail').textContent,share:!!document.querySelector('[data-office-share]'),retry:!!document.querySelector('[data-office-generate]')})")});
     }
     failureReason=null;
   }
