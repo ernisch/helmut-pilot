@@ -111,6 +111,7 @@ let officeDraftGeneratingKey = "";
 let officeShareFallbackKey = "";
 let selectedOfficeDraft = null;
 let officeBriefingTarget = null;
+let officeFormatTarget = null;
 let selectedCommunicationChannel = "press";
 let berlinClockTimer = null;
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
@@ -154,7 +155,7 @@ function clearPrivateMandateState() {
   selectedDecisionId = ""; selectedVorgangId = ""; selectedTaskHandoffId = "";
   generatedStatement = ""; generatedStatementSource = ""; communicationContextTitle = "";
   officeDrafts = {}; officeDraftErrors = {}; officeDraftsGenerating = false; officeDraftGeneratingKey = ""; officeShareFallbackKey = "";
-  selectedOfficeDraft = null; officeBriefingTarget = null;
+  selectedOfficeDraft = null; officeBriefingTarget = null; officeFormatTarget = null;
   parliamentItems = []; parliamentAssessments = {}; parliamentLoaded = false;
   dailyInputs = []; dailyInputsLoaded = false; radarArchive = []; radarBuckets = null;
   radarArchiveLoaded = false; opsStatus = null; opsStatusLoaded = false; pushConfig = null;
@@ -892,7 +893,8 @@ function appStartCacheKey() {
 async function ensureViewData(view) {
   const context = privateAccessContext();
   if (!privateAccessIsCurrent(context)) return;
-  if (view === "office" || view === "office-detail" || view === "tasks") await generateSelectedOfficeDraft();
+  // Navigation is read-only. Office drafts start exclusively through an
+  // explicit format/create action, never through opening or refreshing a view.
   // Radar verwendet weiterhin den vorhandenen gemeinsamen Startvertrag.
   if (view === "admin") {
     await ensureAdminSection(admSection);
@@ -4595,6 +4597,7 @@ function render() {
       ${renderMobileDock()}
       ${renderUpdatesPanel()}
       ${renderTaskHandoffPanel()}
+      ${renderOfficeFormatSheet()}
       ${renderOnboarding()}
     </div>
   `;
@@ -4610,6 +4613,8 @@ function render() {
   hideStartupSplash();
   try {
     bindActions();
+    const officeSheet = app.querySelector("[data-office-format-sheet]");
+    if (officeSheet && !officeSheet.open) officeSheet.showModal();
     updateBerlinClock();
     startBerlinClock();
   } catch (error) {
@@ -4698,6 +4703,7 @@ function uiIcon(name) {
     office: '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M3 12h18"/>',
     bell: '<path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5zM10 21h4"/>',
     arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
+    chevron: '<path d="m9 5 7 7-7 7"/>',
     back: '<path d="m15 5-7 7 7 7"/>',
     share: '<path d="M12 16V3m-5 5 5-5 5 5M5 12v9h14v-9"/>',
     copy: '<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V3H3v13h5"/>',
@@ -6500,7 +6506,7 @@ function renderUiBriefingHero(state, details = "") {
     </div>
     <div class="ui-hero-next">
       ${orientierung ? `<div class="ui-arrow-action"><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span></span></div>`
-        : recommendation ? `<button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span><span class="ui-next-cta">Entwurf im Büro öffnen</span></span></button>` : ""}
+        : recommendation ? `<button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span><span class="ui-next-cta">Im Büro öffnen</span></span></button>` : ""}
       ${why ? `<p class="ui-recommendation-why"><strong>${recommendation ? "Begründung:" : "Warum heute relevant:"}</strong> ${escapeHtml(uiSieText(why))}</p>` : ""}
       ${recommendation && !orientierung && !officeAvailable ? '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und seine Quellen.</p>' : ""}
       ${orientierung ? `<details class="ui-evidence-note"><summary>Beleg für die Vorbereitung</summary><blockquote>${escapeHtml(orientierung.text)}</blockquote><p>Gespeicherter Originalauszug; der Prüfauftrag ist eine Empfehlung.</p></details>`
@@ -7643,9 +7649,9 @@ function briefingOfficeDecision() {
 }
 
 function openOfficeForBriefing() {
+  loadOfficeDraftCache();
   const decision = briefingOfficeDecision();
-  const format = decision && recommendedOfficeFormat(decision).format;
-  if (!decision || !format) {
+  if (!decision || !activeOfficeFormats().length) {
     selectedOfficeDraft = null;
     officeBriefingTarget = null;
     showToast("Kein eindeutig zugeordneter Büroentwurf verfügbar.");
@@ -7654,14 +7660,74 @@ function openOfficeForBriefing() {
   officeBriefingTarget = { profileId: profile.id,
     vorgangId: decisionEntityId(decision, "vorgangId", "vorgang_id"),
     knowledgeObjectId: decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id") };
-  selectedOfficeDraft = uiOfficeSelection(decision, format);
-  currentView = "office-detail";
+  const existing = officeExistingDrafts(decision)[0];
+  selectedOfficeDraft = existing ? uiOfficeSelection(decision, existing.format) : null;
+  currentView = existing ? "office-detail" : "office";
   persistView("office");
   navOpen = updatesOpen = false;
   render();
   app.querySelector(".ui-page")?.scrollTo({ top: 0 });
-  generateSelectedOfficeDraft();
+  if (!existing) openOfficeFormatChoice(decision);
   return true;
+}
+
+function officeExistingDrafts(decision) {
+  return activeOfficeFormats().map((format) => ({ format, entry: officeDraftEntry(decision, format) }))
+    .filter(({ entry }) => entry).sort((a, b) => b.entry.createdAt - a.entry.createdAt);
+}
+
+function officeFormatDecision() {
+  const target = officeFormatTarget;
+  if (!target || target.profileId !== profile?.id || target.profileId !== activePoliticianId) return null;
+  return officeDecisions().find((d) => d.id === target.id
+    && decisionEntityId(d, "knowledgeObjectId", "knowledge_object_id") === target.knowledgeObjectId
+    && decisionEntityId(d, "vorgangId", "vorgang_id") === target.vorgangId) || null;
+}
+
+function openOfficeFormatChoice(decision) {
+  officeFormatTarget = { profileId: profile.id, id: decision.id,
+    knowledgeObjectId: decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id"),
+    vorgangId: decisionEntityId(decision, "vorgangId", "vorgang_id") };
+  render();
+}
+
+function closeOfficeFormatChoice() {
+  const target = officeFormatTarget;
+  officeFormatTarget = null;
+  render();
+  const opener = currentView === "office-detail" ? app.querySelector("[data-office-choose]")
+    : Array.from(app.querySelectorAll("[data-office-open]")).find((card) => {
+      try { return JSON.parse(card.dataset.officeDecision).id === target?.id; } catch (_) { return false; }
+    });
+  (opener || app.querySelector(".ui-page"))?.focus({ preventScroll: true });
+}
+
+function renderOfficeFormatSheet() {
+  const decision = officeFormatDecision();
+  if (!decision || !["office", "office-detail"].includes(currentView)) {
+    officeFormatTarget = null;
+    return "";
+  }
+  const formats = activeOfficeFormats();
+  const primary = ["presse", "x", "intern"].map((id) => formats.find((f) => f.id === id)).filter(Boolean);
+  const more = formats.filter((f) => !primary.includes(f));
+  const row = (format) => {
+    const cached = officeDraftEntry(decision, format);
+    const label = format.id === "x" ? "X-Post" : format.label;
+    return `<button type="button" class="buero-format-action" data-office-create="${escapeAttribute(format.id)}" ${officeDraftsGenerating || (previewMode && !cached) ? "disabled" : ""}>
+      <span>${escapeHtml(label)} ${cached ? "öffnen" : "erstellen"}</span>${uiIcon("chevron")}</button>`;
+  };
+  return `<dialog class="buero-format-sheet" data-office-format-sheet aria-labelledby="office-format-title" aria-describedby="office-format-topic">
+    <div class="buero-sheet-grabber" aria-hidden="true"></div>
+    <header class="buero-sheet-header"><h2 id="office-format-title">Format wählen</h2>
+      <button type="button" class="buero-sheet-close" data-office-format-close aria-label="Formatwahl schließen" autofocus>×</button>
+      <p id="office-format-topic">${escapeHtml(decision.title)}</p></header>
+    <div class="buero-format-actions">${primary.map(row).join("")}
+      ${more.length ? `<details class="buero-more-formats"><summary>Weitere Formate ${uiIcon("chevron")}</summary>${more.map(row).join("")}</details>` : ""}
+    </div>
+    ${officeDraftsGenerating ? '<p class="buero-sheet-note" role="status">Ein Entwurf wird bereits erstellt.</p>' : ""}
+    ${previewMode ? '<p class="buero-sheet-note">Die Vorschau erstellt keine neuen Entwürfe.</p>' : ""}
+  </dialog>`;
 }
 
 function recommendedOfficeFormat(decision) {
@@ -7697,7 +7763,7 @@ function recommendedOfficeFormat(decision) {
 
 function renderOfficeView() {
   loadOfficeDraftCache();
-  const detailOpen = currentView === "office-detail" || Boolean(officeBriefingTarget);
+  let detailOpen = currentView === "office-detail";
   const topDecisions = officeDecisions();
   const allCards = topDecisions.flatMap((decision) => activeOfficeFormats().map((format) => ({ decision, format })));
   if (officeBriefingTarget) {
@@ -7706,23 +7772,20 @@ function renderOfficeView() {
       decisionEntityId(decision, "vorgangId", "vorgang_id") === target.vorgangId
       && decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id") === target.knowledgeObjectId
       && (!selectedOfficeDraft || format.id === selectedOfficeDraft.format.id));
-    selectedOfficeDraft = match ? uiOfficeSelection(match.decision, match.format) : null;
+    if (!match) { selectedOfficeDraft = null; detailOpen = true; }
   }
   const selectedCard = selectedOfficeDraft && allCards.find(({decision, format}) => officeDraftKey(decision, format) === officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format));
   if (selectedCard) selectedOfficeDraft = uiOfficeSelection(selectedCard.decision, selectedCard.format);
-  else if (!officeBriefingTarget && currentView !== "office-detail" && topDecisions.length) {
-    const decision = topDecisions[0];
-    selectedOfficeDraft = uiOfficeSelection(decision, recommendedOfficeFormat(decision).format);
-  } else selectedOfficeDraft = null;
+  else selectedOfficeDraft = null;
+  const draftCount = topDecisions.reduce((count, decision) => count + officeExistingDrafts(decision).length, 0);
   return `
     <div class="buero-view">
-      ${renderUiPageHeader("Büro", "Helmut bereitet vor. Sie entscheiden.")}
+      ${!detailOpen ? `<header class="ui-page-header buero-overview-header"><h1>Büro</h1><p class="ui-page-subtitle" data-office-count>${topDecisions.length} ${topDecisions.length === 1 ? "Thema" : "Themen"} · ${draftCount} ${draftCount === 1 ? "Entwurf" : "Entwürfe"}</p></header>` : ""}
       <div class="ui-master-detail ui-office-workspace ${detailOpen ? "is-detail" : ""}">
-        <div class="buero-draft-list ui-master">
-          ${topDecisions.map((decision, index) => renderOfficeDraftCard(decision, recommendedOfficeFormat(decision).format, index)).join("")}
-          ${!topDecisions.length ? renderUiEmpty("Noch kein belastbarer Anlass", "Sobald ein geeigneter Vorgang mit ausreichender Quellenbasis vorliegt, empfiehlt Helmut hier einen passenden Entwurf.") : ""}
-        </div>
-        <aside class="ui-detail ui-office-detail" aria-label="Entwurf im Detail">${selectedOfficeDraft ? renderOfficeDraftDetail() : `${detailOpen ? `<button type="button" class="buero-back-btn" data-office-back>${uiIcon("back")} Büro</button>` : ""}${topDecisions.length ? renderUiEmpty("Entwurf nicht eindeutig zugeordnet", "Öffnen Sie einen vorhandenen Anlass, um den Text und seine Quellen zu prüfen.") : ""}`}</aside>
+        ${!detailOpen ? `<div class="buero-draft-list ui-master" aria-label="Themen im Büro">
+          ${topDecisions.map((decision) => renderOfficeDraftCard(decision)).join("")}
+          ${!topDecisions.length ? renderUiEmpty("Noch kein belastbarer Anlass", "Sobald ein belegtes Thema vorliegt, können Sie hier ein Format wählen und einen Entwurf erstellen.") : ""}
+        </div>` : `<aside class="ui-detail ui-office-detail" aria-label="Entwurf im Detail">${selectedOfficeDraft ? renderOfficeDraftDetail() : `<button type="button" class="buero-back-btn" data-office-back>${uiIcon("back")} Büro</button>${renderUiEmpty("Entwurf nicht eindeutig zugeordnet", "Öffnen Sie einen vorhandenen Anlass, um den Text und seine Quellen zu prüfen.")}`}</aside>`}
       </div>
     </div>`;
 }
@@ -7732,23 +7795,23 @@ function uiOfficeSelection(decision, format) {
   return { decision, format, text: cached?.text || "", provenance: draftProvenanceLabel(cached?.source || "", Boolean(cached)) };
 }
 
-function renderOfficeDraftCard(decision, format) {
-  const key = officeDraftKey(decision, format);
-  const recommendation = recommendedOfficeFormat(decision);
+function renderOfficeDraftCard(decision) {
+  const existing = officeExistingDrafts(decision);
+  const format = existing[0]?.format;
+  const key = `${decisionEntityId(decision, "vorgangId", "vorgang_id")}:${decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id")}`;
+  const generating = activeOfficeFormats().some((f) => officeDraftGeneratingKey === officeDraftKey(decision, f));
+  const status = existing.length ? `Entwurf bereit · ${format.label}${existing.length > 1 ? ` +${existing.length - 1}` : ""}`
+    : generating ? "Entwurf wird erstellt …" : "Format wählen";
   return `
-    <article class="buero-draft-card${selectedOfficeDraft && officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format) === key ? " is-selected" : ""}"
+    <article class="buero-draft-card buero-topic-row"
       data-office-open="${escapeAttribute(key)}"
       data-office-decision="${escapeAttribute(JSON.stringify({ id: decision.id, knowledgeObjectId: decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id"), vorgangId: decisionEntityId(decision, "vorgangId", "vorgang_id") }))}"
-      data-office-format="${escapeAttribute(format.id)}"
-      role="button" tabindex="0" aria-label="${escapeAttribute(decision.title + ": " + format.label)}">
+      role="button" tabindex="0" aria-haspopup="${existing.length ? "false" : "dialog"}" aria-label="${escapeAttribute(decision.title + ": " + status)}">
       <div class="buero-card-body">
-        <span class="buero-group-eyebrow">Anlass</span>
         <h2 class="buero-card-title">${escapeHtml(decision.title)}</h2>
-        <p class="buero-card-type">${escapeHtml(format.label)} · empfohlen</p>
-        <p class="buero-card-einordnung">${escapeHtml(recommendation.reason)}</p>
-        <p class="buero-card-provenance">${escapeHtml(officeCardStatus(decision, format))}</p>
+        <p class="buero-card-provenance${existing.length ? " is-ready" : " is-action"}">${escapeHtml(status)}</p>
       </div>
-      <span class="buero-review-btn">Entwurf öffnen ${uiIcon("arrow")}</span>
+      <span class="buero-topic-chevron" aria-hidden="true">${uiIcon("chevron")}</span>
     </article>`;
 }
 
@@ -7797,6 +7860,7 @@ function officeDraftFailure(reason) {
     "zustaendigkeit-offen": "Für Ausschussfragen fehlt eine gesicherte parlamentarische Zuständigkeit im Mandatsprofil.",
     "budget-erschoepft": "Das verfügbare KI-Kontingent reicht derzeit nicht für einen weiteren Entwurf aus.",
     "entwurf-nicht-freigegeben": "Die Entwurfserstellung ist für dieses Profil oder diese Aufgabe derzeit nicht freigegeben.",
+    "entwurf-nicht-beauftragt": "Wählen Sie ein Format und beauftragen Sie die Erstellung ausdrücklich.",
     "kostenpruefung-fehlgeschlagen": "Die KI-Kostenfreigabe konnte derzeit nicht bestätigt werden. Bitte versuchen Sie es erneut.",
     "format-unbekannt": "Dieses Textformat ist derzeit nicht verfügbar."
   };
@@ -7807,42 +7871,25 @@ function officeDraftFailure(reason) {
 function renderOfficeDraftDetail() {
   if (!selectedOfficeDraft) return "";
   const { decision, format, text } = selectedOfficeDraft;
-  const recommendation = recommendedOfficeFormat(decision);
   const sources = officeDraftSources(decision);
   const key = officeDraftKey(decision, format);
   const loading = officeDraftsGenerating && officeDraftGeneratingKey === key;
   const failed = Boolean(officeDraftErrors[key]);
   const failure = officeDraftFailure(officeDraftErrors[key]);
-  const options = activeOfficeFormats();
-  const categories = [
-    ["Statement", ["presse"]], ["Social Media", ["linkedin", "x", "instagram"]],
-    ["Parlamentarische Frage", ["anfrage"]], ["Büroauftrag", ["intern"]],
-    ["Weitere Formate", ["buergerbrief"]]
-  ];
   return `
     <div class="buero-detail-view">
       <nav class="buero-detail-nav"><button class="buero-back-btn" type="button" data-office-back>${uiIcon("back")} Büro</button></nav>
       <header class="buero-detail-header">
         <span class="buero-group-eyebrow">Anlass</span>
         <h2 class="buero-detail-title">${escapeHtml(decision.title)}</h2>
-        <p class="buero-detail-anlass">${escapeHtml(format.label)}${format.id === recommendation.format.id ? " · von Helmut empfohlen" : ""}</p>
+        <p class="buero-detail-anlass">${escapeHtml(format.label)}</p>
         ${format.id === "anfrage" ? '<p class="buero-detail-linecheck">Arbeitsentwurf für den Ausschuss · keine formgerechte parlamentarische Anfrage.</p>' : ""}
-        <p class="buero-recommendation">${format.id !== recommendation.format.id ? `Helmut empfiehlt ${escapeHtml(recommendation.format.label)}. ` : ""}${escapeHtml(recommendation.reason)}</p>
-        <details class="buero-format-choice">
-          <summary>Anderes Format wählen</summary>
-          <label for="office-format-select">Textformat</label>
-          <select id="office-format-select" class="buero-format-select" data-office-format-select>
-            ${categories.map(([category, ids]) => {
-              const group = options.filter((f) => ids.includes(f.id));
-              return group.length ? `<optgroup label="${escapeAttribute(category)}">${group.map((f) => `<option value="${escapeAttribute(f.id)}" ${f.id === format.id ? "selected" : ""}>${escapeHtml(f.label)}</option>`).join("")}</optgroup>` : "";
-            }).join("")}
-          </select>
-        </details>
+        <button type="button" class="buero-choose-format" data-office-choose>Anderes Format wählen</button>
       </header>
       ${text ? `<div class="buero-detail-body">${String(text).split(/\n+/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${escapeHtml(p)}</p>`).join("")}</div>
         <p class="buero-detail-linecheck">KI-Entwurf · Prüfen Sie Aussagen und politische Positionen vor der Verwendung.</p>`
         : `<div class="buero-draft-state" role="status"><p>${loading ? "Ihr Entwurf wird vorbereitet …" : failed ? escapeHtml(failure.message) : "Für dieses Format liegt noch kein Entwurf vor."}</p>
-        ${!loading && (!failed || failure.retry) ? `<button class="secondary-button" type="button" data-office-generate>${failed ? "Erneut versuchen" : "Entwurf vorbereiten"}</button>` : ""}</div>`}
+        ${!loading && (!failed || failure.retry) ? `<button class="secondary-button" type="button" data-office-generate>${failed ? "Erneut versuchen" : `${escapeHtml(format.label)} erstellen`}</button>` : ""}</div>`}
       ${renderOfficeDraftSources(sources)}
       ${text ? `<footer class="buero-detail-footer"><button class="buero-copy-btn buero-copy-btn--full" type="button" data-office-share>${uiIcon("share")} Teilen</button>
         ${typeof navigator.share !== "function" ? '<p class="buero-share-note">Der Text wird in die Zwischenablage übernommen.</p>' : officeShareFallbackKey === key ? '<p class="buero-share-note">Die native Teilenfunktion ist hier nicht verfügbar.</p><button class="secondary-button" type="button" data-office-copy-fallback>Text übernehmen</button>' : ""}</footer>` : ""}
@@ -9775,6 +9822,7 @@ function bindActions() {
   }
   app.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
+      officeFormatTarget = null;
       if (button.dataset.view === "office") { officeBriefingTarget = null; selectedOfficeDraft = null; }
       if (vsheetEl) closeVorgangSheet(true); // Detail-Sheet bei Navigation schließen
       if (lageHistoryEntry()) writeLageHistory({ kind: "view", view: button.dataset.view, scrollTop: 0 });
@@ -9925,38 +9973,57 @@ function bindActions() {
     button.addEventListener("click", () => shareOfficeDraft());
   });
   app.querySelectorAll("[data-office-generate]").forEach((button) => {
-    button.addEventListener("click", () => generateSelectedOfficeDraft());
+    button.addEventListener("click", () => generateSelectedOfficeDraft({ userInitiated: true }));
   });
-  app.querySelectorAll("[data-office-format-select]").forEach((select) => {
-    select.addEventListener("change", () => {
-      if (!selectedOfficeDraft) return;
-      const format = activeOfficeFormats().find((f) => f.id === select.value);
-      if (!format) return;
-      selectedOfficeDraft = uiOfficeSelection(selectedOfficeDraft.decision, format);
+  app.querySelectorAll("[data-office-choose]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (selectedOfficeDraft) openOfficeFormatChoice(selectedOfficeDraft.decision);
+    });
+  });
+  app.querySelectorAll("[data-office-format-close]").forEach((button) => {
+    button.addEventListener("click", closeOfficeFormatChoice);
+  });
+  app.querySelectorAll("[data-office-format-sheet]").forEach((sheet) => {
+    sheet.addEventListener("cancel", (event) => { event.preventDefault(); closeOfficeFormatChoice(); });
+    sheet.addEventListener("click", (event) => {
+      if (event.target !== sheet) return;
+      const rect = sheet.getBoundingClientRect();
+      if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeOfficeFormatChoice();
+    });
+  });
+  app.querySelectorAll("[data-office-create]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const decision = officeFormatDecision();
+      const format = activeOfficeFormats().find((f) => f.id === button.dataset.officeCreate);
+      if (!decision || !format || officeDraftsGenerating) return;
+      selectedOfficeDraft = uiOfficeSelection(decision, format);
+      officeFormatTarget = null;
+      currentView = "office-detail";
+      persistView("office");
       render();
-      generateSelectedOfficeDraft();
+      app.querySelector(".ui-page")?.scrollTo({ top: 0 });
+      generateSelectedOfficeDraft({ userInitiated: true });
     });
   });
 
   app.querySelectorAll("[data-office-open]").forEach((card) => {
     const open = () => {
-      const formatId = card.dataset.officeFormat;
-      const format = OFFICE_FORMATS.find((f) => f.id === formatId);
       let cardDecision;
       try { cardDecision = JSON.parse(card.dataset.officeDecision || "{}"); } catch (_) { cardDecision = {}; }
       const decision = officeDecisions().find((d) => d.id === cardDecision.id
         && decisionEntityId(d, "knowledgeObjectId", "knowledge_object_id") === cardDecision.knowledgeObjectId
         && decisionEntityId(d, "vorgangId", "vorgang_id") === cardDecision.vorgangId);
-      if (!decision || !format || !activeOfficeFormats().some((f) => f.id === format.id)) {
+      if (!decision) {
         showToast("Dieser Entwurf ist nicht mehr eindeutig zugeordnet.");
         return;
       }
       officeBriefingTarget = null;
-      selectedOfficeDraft = uiOfficeSelection(decision, format);
+      const existing = officeExistingDrafts(decision)[0];
+      if (!existing) { openOfficeFormatChoice(decision); return; }
+      selectedOfficeDraft = uiOfficeSelection(decision, existing.format);
       currentView = "office-detail";
       render();
       app.querySelector(".ui-page")?.scrollTo({ top: 0 });
-      generateSelectedOfficeDraft();
     };
     card.addEventListener("click", open);
     card.addEventListener("keydown", (e) => { if (e.target === card && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); open(); } });
@@ -9965,6 +10032,7 @@ function bindActions() {
   app.querySelectorAll("[data-office-back]").forEach((btn) => {
     btn.addEventListener("click", () => {
       officeBriefingTarget = null;
+      officeFormatTarget = null;
       selectedOfficeDraft = null;
       currentView = "office";
       render();
@@ -10662,6 +10730,7 @@ async function generateStatementWithBackend(input, decision, channel = selectedC
       prompt: input,
       channel,
       office: options.office === true,
+      ...(options.office === true ? { userInitiated: options.userInitiated === true } : {}),
       decision
     })
   // Quellenaufloesung, Modellaufruf und Kostenabschluss gehoeren zu EINEM
@@ -10765,7 +10834,7 @@ function headlineClass(value) {
 }
 
 function actionableOfficeTaskCount() {
-  const draftCount = Object.keys(officeDrafts).length;
+  const draftCount = officeDecisions().reduce((count, decision) => count + officeExistingDrafts(decision).length, 0);
   if (!draftCount) return 0;
   const seenAt = getSeenOfficeTimestamp();
   const briefingTs = new Date(briefing?.generatedAt || briefing?.date || 0).getTime();
@@ -11036,7 +11105,10 @@ function draftProvenanceLabel(source, hasValidDraft) {
   return "Entwurf · vor Veröffentlichung prüfen";
 }
 
-async function generateSelectedOfficeDraft() {
+async function generateSelectedOfficeDraft({ userInitiated = false } = {}) {
+  // A selected topic, a cache miss or a render is never consent to spend.
+  // Every paid draft requires a separate explicit create/retry action.
+  if (userInitiated !== true) return;
   const context = privateAccessContext();
   if (!privateAccessIsCurrent(context) || previewMode || !selectedOfficeDraft) return;
   const { decision, format } = selectedOfficeDraft;
@@ -11055,10 +11127,10 @@ async function generateSelectedOfficeDraft() {
   delete officeDraftErrors[key];
   render();
   try {
-    const result = await generateStatementWithBackend(`Bereiten Sie das Format ${format.label} zum belegten Anlass vor.`, decision, format.channel || "press", { office: true });
+    const result = await generateStatementWithBackend(`Bereiten Sie das Format ${format.label} zum belegten Anlass vor.`, decision, format.channel || "press", { office: true, userInitiated: true });
     if (!stillAssigned()) return;
     if (!result.aiEnabled || result.degraded || !isValidDraft(result.text) || !String(result.text || "").trim()) {
-      const safeReasons = new Set(["quellenbasis-fehlt", "anlass-nicht-verfuegbar", "zustaendigkeit-offen", "budget-erschoepft", "entwurf-nicht-freigegeben", "kostenpruefung-fehlgeschlagen", "format-unbekannt"]);
+      const safeReasons = new Set(["quellenbasis-fehlt", "anlass-nicht-verfuegbar", "zustaendigkeit-offen", "budget-erschoepft", "entwurf-nicht-freigegeben", "entwurf-nicht-beauftragt", "kostenpruefung-fehlgeschlagen", "format-unbekannt"]);
       officeDraftErrors[key] = safeReasons.has(result.fallbackReason) ? result.fallbackReason : "ki-fehler";
       return;
     }
@@ -11072,9 +11144,7 @@ async function generateSelectedOfficeDraft() {
       officeDraftsGenerating = false;
       officeDraftGeneratingKey = "";
       render();
-      // A format explicitly selected while a request was in flight is handled next.
-      if (selectedOfficeDraft && officeDraftKey(selectedOfficeDraft.decision, selectedOfficeDraft.format) !== key
-        && ["office", "office-detail", "tasks"].includes(currentView)) generateSelectedOfficeDraft();
+      // Never queue another draft after a response, even if selection changed.
     }
   }
 }

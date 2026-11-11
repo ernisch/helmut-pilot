@@ -12,6 +12,8 @@
 
 ## Büro: Kosten-/Antwortzeitfix live, echte Einzelprobe erfolgreich (11.11.2026)
 
+**Neuer Büro-Auftrag 11.11., lokal vorbereitet:** kompakte Themenliste mit echter Entwurfszahl; jeder neue Text erst nach ausdrücklicher Format-/Erstellaktion. Navigation, Briefing-Verweis und Neuladen erstellen nichts. Server weist alte automatische Büro-Anfragen vor Kosten/Modell ab. Lokal13/13 Antwortzeitgruppen,68/68 Ehrlichkeitsprüfungen,14/14 Schnellkern und246/246 isolierte Chromium-Prüfungen;0externeAnfragen. Branch`codex/buero-formatwahl-20261111`; Pflicht-CI, konkretes Merge-GO und Production noch offen. [Umsetzung, Belege und Rückweg](ui/buero-formatwahl-20261111/README.md).
+
 [PR1129](https://github.com/ernisch/helmut-pilot/pull/1129) auf `ca9a3fc6` live/READY; Buero wartet60s statt12s, kein Auto-Retry. Pflicht-CI43001755133 gruen:14/14 Schnellkern,135/135 Bereich und Browser/Mobil. Nach Nutzer-„Ja“ genau1echte Probe11:40UTC: HTTP200 nach15,023s,844Zeichen,kein Fallback,1bestaetigte Buchung0,002823USD. Die alte12s-Frist haette diese erfolgreiche Antwort verworfen. Unveraenderter Client zeigt die Originalantwort im isolierten Desktop-/Mobilreplay nach13s bytegleich,37/37Pruefungen,Cache/Teilenaktion bestaetigt,0externeAnfragen. Native Bilanz11:43UTC:64Buchungen,heute0,029144USD/1USD,gesamt1,214451USD/30USD;Vertrag/Altreserven erhalten. Erfolgreich fuer diese Einzelprobe; normale Kundensitzung/natives Teilen nicht geprueft. [Beleg, Grenzen und Rueckweg](betrieb/buero-kostensperre-20261111.md).
 
 ## Profilbezogene Lageauswahl (07.11.2026, gemergt und ausgerollt)
@@ -342,9 +344,7 @@ Worker7/7, Icons70/70, echter Worker-Wiederholungsfall und Browser82/82 bestande
 Naechster Schritt: Folgefix abnehmen; Android-Installationszustand bleibt offen.
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
-Historische alte Anweisungen, darunter
-[`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind
-keine aktuellen Testauftraege. Alle alten Laufbelege,
+Historische alte Anweisungen, darunter [`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind keine aktuellen Testauftraege. Alle alten Laufbelege,
 STOPs, UNKNOWNs, Grants und Journale bleiben erhalten.
 Vor konkreten Production Aktionen Wirkung, Risiko,
 Kosten, Nachkontrolle und Rueckweg benennen.
