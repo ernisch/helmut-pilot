@@ -1,0 +1,50 @@
+{
+  "codeHead": "68abc505",
+  "layout": {
+    "viewportHeight": 844,
+    "formHeight": 5938,
+    "ranges": 17,
+    "textareas": 9,
+    "initialSaveVisible": false,
+    "initialCommittees": [
+      "Arbeit und Soziales",
+      "Gesundheit"
+    ],
+    "initialRole": "Bundestagsabgeordneter"
+  },
+  "live": {
+    "displayed": "5",
+    "patches": 0,
+    "stored": 2
+  },
+  "firstSave": {
+    "requestCommittees": [
+      "Arbeit und Soziales",
+      "Gesundheit"
+    ],
+    "responseCommittees": [
+      "Arbeit und Soziales"
+    ],
+    "storedCommittees": [
+      "Arbeit und Soziales"
+    ],
+    "priority": 5,
+    "lostCustomTopic": false,
+    "requestAppointments": [],
+    "storedAppointments": [
+      "Testtermin | 2099-06-26T11:00:00+02:00 | 11:00"
+    ]
+  },
+  "clearCommittees": [
+    "Arbeit und Soziales"
+  ],
+  "unsavedLost": true,
+  "stateChange": {
+    "state": "Bayern",
+    "constituency": "Testkreis Nord",
+    "location": "Teststadt"
+  },
+  "patches": 2,
+  "errors": [],
+  "blockedExternal": 0
+}

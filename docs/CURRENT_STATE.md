@@ -16,17 +16,11 @@
 
 [PR1129](https://github.com/ernisch/helmut-pilot/pull/1129) auf `ca9a3fc6` live/READY; Buero wartet60s statt12s, kein Auto-Retry. Pflicht-CI43001755133 gruen:14/14 Schnellkern,135/135 Bereich und Browser/Mobil. Nach Nutzer-„Ja“ genau1echte Probe11:40UTC: HTTP200 nach15,023s,844Zeichen,kein Fallback,1bestaetigte Buchung0,002823USD. Die alte12s-Frist haette diese erfolgreiche Antwort verworfen. Unveraenderter Client zeigt die Originalantwort im isolierten Desktop-/Mobilreplay nach13s bytegleich,37/37Pruefungen,Cache/Teilenaktion bestaetigt,0externeAnfragen. Native Bilanz11:43UTC:64Buchungen,heute0,029144USD/1USD,gesamt1,214451USD/30USD;Vertrag/Altreserven erhalten. Erfolgreich fuer diese Einzelprobe; normale Kundensitzung/natives Teilen nicht geprueft. [Beleg, Grenzen und Rueckweg](betrieb/buero-kostensperre-20261111.md).
 
-## Profilbezogene Lageauswahl (07.11.2026, gemergt und ausgerollt)
+## Profilwirkung geprüft (11.11.2026)
 
-[PR1100](https://github.com/ernisch/helmut-pilot/pull/1100) nach Betreiber-GO auf `d9651861` gemergt; Kopf `c4caf031`, beide Pflichtchecks [CI42409807375](https://github.com/ernisch/helmut-pilot/actions/runs/42409807375) grün.
-Production `dpl_FiKvxLgEwZ1prPeg3Nfc6NUFYkuS` READY auf demselben Merge; Runtime bytegleich zum geprüften Kopf.
-Fachliche Aufnahme vor Limit, getrennte Profilgründe, Quellenbestätigung und Profil-/KO-Cachebindung im Code.
-Lokal synthetischer Cem-Korpus12→6/0Sollverluste; drei Gegenprofile je3→1.
-Original-Windenergieverlust behoben:1 quellenbestätigte Karte;24/24 Fachgruppen,35/35 Lage-Suiten grün.
-Vorprüfung20:52:17UTC:0 laufende Prozesse/0 aktive Sperren. Nachkontrolle20:53UTC: Hauptdomain/Release200,ok/ready/storage,Assetversiond9651861;0 error/fatal im Deploymentfenster.
-Kein authentifizierter Production-Klicktest oder neue Livefach-/Frischeabnahme. Nächster Schritt: nächste reguläre Lage rein lesend fachlich prüfen.
-Keine Datenmutation, Modelltests oder Schalteraktivierung aus dem Rollout ableiten.
-[Belege, Grenzen und konkreter Rückweg](betrieb/lage-profilbezug-20261107.md).
+[Wirkungsmatrix, Fehler und UX-Bewertung](ui/profil-wirkungscheck-20261111/README.md): Prüfung abgeschlossen auf `68abc505`, Runtime `57b342d6` bestätigt; Produkt nur teilweise vollständig. Lokale mobile PATCH-Probe belegt Ausschussverlust und nicht löschbare Termine; Kernbewertung 1=2/3=4=5, Kampagnen/Akteure/Termine ohne aktiven Inhaltsverbraucher. Keine Productionmutation/KI-Aufrufe. Nächster Schritt: begrenzter Speicher-/Wirkungsfix, danach kompaktere Bedienung. Dropdown-PR1134 weiter offen/nicht live.
+
+**Historie 07.11.:** Lageauswahl PR1100 auf `d9651861` live/READY, Pflicht-CI42409807375 grün. Fachliche Aufnahme vor Limit, Quellen-/Profilbindung; synthetische Gegenproben und Windenergiefall bestanden. Authentifizierte Production-Bedienabnahme offen. [Vollständige Belege, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md); keine neue Daten-/Modellfreigabe.
 
 ## UX Mergeabschluss (07.11.2026)
 
