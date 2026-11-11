@@ -10,9 +10,9 @@
 
 **11.11., Kontingentvorflug vorbereitet:** Branch `codex/quellenkontingent-startfehler-20261111` auf aktuellem main. Vorhandene Worker-Bereitschaft und Zeit-/Slotprüfung vor Quotenreservierung; keine Erstattung, keine Zähler-/Limitänderung. Gezielte Offlineprüfung bestanden; Endkopf/Review/Pflicht-CI im PR maßgeblich. Kein Merge/Deployment.
 
-## Büro: Kosten- und Antwortzeitfix live, echte Einzelprobe offen (11.11.2026)
+## Büro: Kosten-/Antwortzeitfix live, echte Einzelprobe erfolgreich (11.11.2026)
 
-[PR1129](https://github.com/ernisch/helmut-pilot/pull/1129) auf `ca9a3fc6` live, Deployment `dpl_D1FUJYGfyqbQLGuegcihdjaq9Usr` READY. Reproduzierter Clientdefekt nach KostenfixPR1127:12s-Wartefenster verwirft spaetere Erfolge. Nur Buero wartet jetzt60s, kein Auto-Retry. Pflicht-CI43001755133 gruen:14/14 Schnellkern,135/135 Bereich und Browser/Mobil; lokal11/11 Antwortzeit- und193 Chromiumpruefungen. Hauptdomain10:18:55UTC Client bytegleich;10:19UTC Kostenvertrag und63Buchungen/1,211628USD Bindung unveraendert,0laufende Prozesse/aktive Sperren. Status teilweise abgeschlossen: konkrete alte HTTP-Dauer und neue echte Bedienung nicht belegt. Einmalprobe maximal0,21USD innerhalb1USD/UTC-Tag und30USD insgesamt vorbereitet; Freigabe angefragt, nicht ausgefuehrt. [Nachweis und Rueckweg](betrieb/buero-kostensperre-20261111.md).
+[PR1129](https://github.com/ernisch/helmut-pilot/pull/1129) auf `ca9a3fc6` live/READY; Buero wartet60s statt12s, kein Auto-Retry. Pflicht-CI43001755133 gruen:14/14 Schnellkern,135/135 Bereich und Browser/Mobil. Nach Nutzer-„Ja“ genau1echte Probe11:40UTC: HTTP200 nach15,023s,844Zeichen,kein Fallback,1bestaetigte Buchung0,002823USD. Die alte12s-Frist haette diese erfolgreiche Antwort verworfen. Unveraenderter Client zeigt die Originalantwort im isolierten Desktop-/Mobilreplay nach13s bytegleich,37/37Pruefungen,Cache/Teilenaktion bestaetigt,0externeAnfragen. Native Bilanz11:43UTC:64Buchungen,heute0,029144USD/1USD,gesamt1,214451USD/30USD;Vertrag/Altreserven erhalten. Erfolgreich fuer diese Einzelprobe; normale Kundensitzung/natives Teilen nicht geprueft. [Beleg, Grenzen und Rueckweg](betrieb/buero-kostensperre-20261111.md).
 
 ## Profilbezogene Lageauswahl (07.11.2026, gemergt und ausgerollt)
 
