@@ -602,6 +602,8 @@ function check(name, cond, detail = "") {
       await context.close();
     }
 
+    await require("./profil-kompakt-browser").verify({ browser, baseUrl, storage: smokeStorage, fixture: testPoliticianOne, check });
+
     // ── Querformat-Sperre (Smartphone-only) ─────────────────────────────────
     // Reale Viewport-/Touch-Emulation statt Annahmen: prueft, dass die Sperre
     // NUR bei Smartphone+Querformat sichtbar UND blockierend ist, waehrend
