@@ -94,15 +94,17 @@ keine erfuellten externen Anfragen; drei absichtliche Netz-Negativkontrollen
 blockiert. Chromium `151.0.7922.173`. Gepruefte Dateien (SHA256):
 Client `67d321fd9731e345743ca44999294f96bd7abfd1671190610b4fa9d837164916`,
 CSS `944ebad002b7a75bcc00529894a1868905d20b0a6ffb2c3d0bcee27b4bc353fe`.
-**Status: lokal fertig und geprueft; Veroeffentlichung offen.** Der erste Push
+**Status: lokal fertig und geprueft; Veroeffentlichung freigegeben.** Der erste Push
 samt PR-Erstellung wurde vor Ausfuehrung durch die automatische Freigabepruefung
 abgelehnt: Der neue Code wuerde ohne eine dafuer ausdruecklich bestaetigte
 Freigabe auf GitHub veroeffentlicht. Eine anschliessende rein lesende Pruefung
 bestaetigt `ernisch/helmut-pilot` als oeffentliches Repository. Die allgemeine
 Projekt-Dauerfreigabe wurde vom Reviewer dafuer nicht als ausreichend anerkannt.
-Die konkrete Betreiberbestaetigung fuer Push, PR und spaeteren Merge wurde
-angefragt. Kein Push, kein PR, keine PR-CI, kein Merge und kein Deployment dieses
-Bereinigungsstands. Nach Bestaetigung: Push/PR, gruene Pflicht-CI am tatsaechlichen
+Der Betreiber hat auf die konkrete Frage nach Push ins oeffentliche Repository,
+PR, Merge nach gruener CI und regulaerem Vercel-Deployment am 11.11.2026
+ausdruecklich mit "Ja" geantwortet. Die zwischenzeitlichen reinen Buero-
+Rolloutbelege aus `68abc505` sind integriert; Client/CSS bleiben bytegleich zum
+oben geprueften Stand. Jetzt folgen Push/PR, gruene Pflicht-CI am tatsaechlichen
 Kopf, aktueller Main-/Parallelitaetsabgleich, gebundener Merge und rein lesende
 Deployment-/Dateikontrolle. Kein unbekannter Zustand wird als PASS ausgegeben.
 
