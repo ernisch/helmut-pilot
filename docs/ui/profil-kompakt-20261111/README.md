@@ -10,6 +10,15 @@ Die früheren Befunde bleiben im [Profilaudit](../profil-wirkungscheck-20261111/
 
 ## Folgeauftrag: „Bitte vermeiden“ entfernen (11.11.2026)
 
+**Blockiert, noch nicht live:** GitHub meldet zum 11.11., 20:59 UTC offiziell
+„Actions: major_outage“. Auch andere PRs dieses Repositorys warten seit längerer Zeit.
+Der frische integrierte Pflichtlauf `43099166752` auf `f61a7831` ist queued.
+[Primärbeleg und Prüfstand](ohne-vermeiden-ci-blocker.json). Der abschließende
+Dokumentationsstand ändert keine Runtime. Nächster Schritt nach Störungsende:
+beide Pflichtchecks des tatsächlichen aktuellen PR-Kopfs abwarten, regulär mergen
+und Deployment/Auslieferung lesend bestätigen. Kein weiterer Wiederlauf oder
+PR-Wechsel zur Umgehung der globalen Warteschlange.
+
 Auf Nutzerwunsch entfällt das Eingabefeld aus der Profiloberfläche: Die bisherige
 weiche Modellanweisung ist keine garantierte Sperre und soll diese Erwartung nicht
 wecken. Das Feld entfällt auch aus Initialwerten und Formulareinlesen; ein Stil-PATCH
