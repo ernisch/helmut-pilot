@@ -23,6 +23,13 @@ ohne `noGoTopics`, unverändertem „Fertig“, 503/Wiederholung und Folgeantwor
 Syntax und Diffprüfung grün. Pflicht-CI und regulärer Rollout dieses Folgeauftrags
 stehen noch aus. Rückweg: gezielter Revert des kleinen UI-/Formularcommits.
 
+Erster Pflichtlauf `43088060572` auf `3e74df78`: Browser und 189/189 Standardsuiten
+bestanden, Fachregression 366/367. Der verbleibende Fehler war eine alte
+Onboarding-HTML-Erwartung, die ausdrücklich `noGoTopics` verlangte. Sie wurde an
+den Nutzerauftrag angepasst: entfernte Felder fehlen, die vier übrigen optionalen
+Hinweise bleiben vorhanden. Kein Produktfehler oder abgeschwächtes CI-Gate;
+der neue Kopf benötigt erneut beide grünen Pflichtchecks.
+
 ## Bedienung
 
 Unter Profil & Einstellungen führen drei kompakte Zeilen auf eigene Seiten:
