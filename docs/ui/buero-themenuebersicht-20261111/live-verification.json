@@ -1,0 +1,57 @@
+{
+  "checkedAtUtc": "2026-11-11T17:55:21.709573+00:00",
+  "url": "https://helmut-pilot.vercel.app",
+  "commit": "3d19f4264cb72f2145e17516f0a90c66815ab855",
+  "files": [
+    {
+      "file": "client.js",
+      "route": "client.js?v=3d19f426",
+      "sha256": "2a412ff990122101089108ae8b1a1549efc8478dd3324370fa014f3f6dfc3462",
+      "expectedSha256": "2a412ff990122101089108ae8b1a1549efc8478dd3324370fa014f3f6dfc3462",
+      "matches": true
+    },
+    {
+      "file": "styles.css",
+      "route": "styles.css?v=3d19f426",
+      "sha256": "be97f86f4ed1ab3dc0c95f0004af0b6b8c1709928b5ae0ac2cd4f0442b727d85",
+      "expectedSha256": "be97f86f4ed1ab3dc0c95f0004af0b6b8c1709928b5ae0ac2cd4f0442b727d85",
+      "matches": true
+    }
+  ],
+  "release": {
+    "ok": true,
+    "ready": false,
+    "storage": true
+  },
+  "paidModelCalls": 0,
+  "productionDataChanges": 0,
+  "scope": "Public HTML/assets and public release endpoint only; no authenticated user session or generated draft.",
+  "status": "LIVE_VERIFIED_FOR_OFFICE_UI",
+  "deploymentId": "dpl_Cf5FP5sBHfg5tC58E4ooASk21B26",
+  "deploymentState": "READY",
+  "target": "production",
+  "mergedAtUtc": "2026-11-11T17:54:23Z",
+  "previousDeploymentId": "dpl_5qWtxBzaVuKeDZcUuSSkXoMwYiJk",
+  "ci": {
+    "run": 43067288401,
+    "head": "ca5172e2adf2c44c9f843aa6e9293fc791860ee2",
+    "standardSuites": 189,
+    "standardPassed": 189,
+    "areaSuites": 366,
+    "areaPassed": 366,
+    "browserCheck": "SUCCESS",
+    "isolatedDatabaseCheck": "SUCCESS"
+  },
+  "runtimeErrorScan": {
+    "deploymentId": "dpl_Cf5FP5sBHfg5tC58E4ooASk21B26",
+    "sinceUtc": "2026-11-11T17:54:23Z",
+    "checkedAroundUtc": "2026-11-11T17:55:20Z",
+    "levels": [
+      "error",
+      "fatal"
+    ],
+    "groupedBy": "level",
+    "observedGroups": [],
+    "limitation": "Short deployment-specific observation window, not a full customer flow or general readiness proof."
+  }
+}
