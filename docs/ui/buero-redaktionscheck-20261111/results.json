@@ -1,0 +1,291 @@
+{
+  "scope": "Fictional BT/LT inputs with supplied ranking; actual applyStartPayload, officeDecisions and officeCommunicationBasis. Not a measurement of scoring quality or current news.",
+  "clientSha256": "7a27dd456a6ea2707ce5f6c0150a11db0f345ed19e6fe3ada4ba37e8256b881c",
+  "backendSha256": "4aae6692d51e2281e3860d96649429257f947365d9ea5e00ae0c2b9716ef9df9",
+  "rows": [
+    {
+      "id": "Bund-single",
+      "level": "Bundestag",
+      "description": "Ein belegter parlamentarischer Arbeitsanlass",
+      "inputCount": 1,
+      "pool": [
+        "vg-a"
+      ],
+      "visible": [
+        "vg-a"
+      ],
+      "expectedForEditorialUse": [
+        "vg-a"
+      ],
+      "basis": [
+        {
+          "id": "vg-a",
+          "reason": null
+        }
+      ],
+      "draftsCreated": 0
+    },
+    {
+      "id": "Bund-third",
+      "level": "Bundestag",
+      "description": "Drei geeignete Themen; dritter Vorgang betrifft eine belegte kurzfristige Ausschussvorbereitung",
+      "inputCount": 3,
+      "pool": [
+        "vg-a",
+        "vg-b",
+        "vg-c"
+      ],
+      "visible": [
+        "vg-a",
+        "vg-b"
+      ],
+      "expectedForEditorialUse": [
+        "vg-a",
+        "vg-b",
+        "vg-c"
+      ],
+      "basis": [
+        {
+          "id": "vg-a",
+          "reason": null
+        },
+        {
+          "id": "vg-b",
+          "reason": null
+        }
+      ],
+      "draftsCreated": 0
+    },
+    {
+      "id": "Bund-fourth-after-thin",
+      "level": "Bundestag",
+      "description": "Erste drei Empfehlungen zu kurz; vierter Vorgang hat ausreichenden Sachstand",
+      "inputCount": 4,
+      "pool": [
+        "vg-a",
+        "vg-b",
+        "vg-c"
+      ],
+      "visible": [],
+      "expectedForEditorialUse": [
+        "vg-d"
+      ],
+      "basis": [],
+      "draftsCreated": 0
+    },
+    {
+      "id": "Bund-url-only",
+      "level": "Bundestag",
+      "description": "Zusammenfassung vorhanden, Quelle nur als Link ohne Originalauszug",
+      "inputCount": 1,
+      "pool": [
+        "vg-a"
+      ],
+      "visible": [
+        "vg-a"
+      ],
+      "expectedForEditorialUse": [],
+      "basis": [
+        {
+          "id": "vg-a",
+          "reason": "quellenbasis-fehlt"
+        }
+      ],
+      "draftsCreated": 0
+    },
+    {
+      "id": "Bund-ignore",
+      "level": "Bundestag",
+      "description": "Explizit ignorierter Vorgang wird nicht empfohlen",
+      "inputCount": 1,
+      "pool": [],
+      "visible": [],
+      "expectedForEditorialUse": [],
+      "basis": [],
+      "draftsCreated": 0
+    },
+    {
+      "id": "Bund-primary",
+      "level": "Bundestag",
+      "description": "Briefing-Hauptthema bleibt vor höher bewerteten anderen Vorgängen",
+      "inputCount": 3,
+      "pool": [
+        "vg-a",
+        "vg-b",
+        "vg-c"
+      ],
+      "visible": [
+        "vg-a",
+        "vg-b"
+      ],
+      "expectedForEditorialUse": [
+        "vg-a",
+        "vg-b"
+      ],
+      "basis": [
+        {
+          "id": "vg-a",
+          "reason": null
+        },
+        {
+          "id": "vg-b",
+          "reason": null
+        }
+      ],
+      "draftsCreated": 0
+    },
+    {
+      "id": "Land-single",
+      "level": "Landtag",
+      "description": "Ein belegter parlamentarischer Arbeitsanlass",
+      "inputCount": 1,
+      "pool": [
+        "vg-a"
+      ],
+      "visible": [
+        "vg-a"
+      ],
+      "expectedForEditorialUse": [
+        "vg-a"
+      ],
+      "basis": [
+        {
+          "id": "vg-a",
+          "reason": null
+        }
+      ],
+      "draftsCreated": 0
+    },
+    {
+      "id": "Land-third",
+      "level": "Landtag",
+      "description": "Drei geeignete Themen; dritter Vorgang betrifft eine belegte kurzfristige Ausschussvorbereitung",
+      "inputCount": 3,
+      "pool": [
+        "vg-a",
+        "vg-b",
+        "vg-c"
+      ],
+      "visible": [
+        "vg-a",
+        "vg-b"
+      ],
+      "expectedForEditorialUse": [
+        "vg-a",
+        "vg-b",
+        "vg-c"
+      ],
+      "basis": [
+        {
+          "id": "vg-a",
+          "reason": null
+        },
+        {
+          "id": "vg-b",
+          "reason": null
+        }
+      ],
+      "draftsCreated": 0
+    },
+    {
+      "id": "Land-fourth-after-thin",
+      "level": "Landtag",
+      "description": "Erste drei Empfehlungen zu kurz; vierter Vorgang hat ausreichenden Sachstand",
+      "inputCount": 4,
+      "pool": [
+        "vg-a",
+        "vg-b",
+        "vg-c"
+      ],
+      "visible": [],
+      "expectedForEditorialUse": [
+        "vg-d"
+      ],
+      "basis": [],
+      "draftsCreated": 0
+    },
+    {
+      "id": "Land-url-only",
+      "level": "Landtag",
+      "description": "Zusammenfassung vorhanden, Quelle nur als Link ohne Originalauszug",
+      "inputCount": 1,
+      "pool": [
+        "vg-a"
+      ],
+      "visible": [
+        "vg-a"
+      ],
+      "expectedForEditorialUse": [],
+      "basis": [
+        {
+          "id": "vg-a",
+          "reason": "quellenbasis-fehlt"
+        }
+      ],
+      "draftsCreated": 0
+    },
+    {
+      "id": "Land-ignore",
+      "level": "Landtag",
+      "description": "Explizit ignorierter Vorgang wird nicht empfohlen",
+      "inputCount": 1,
+      "pool": [],
+      "visible": [],
+      "expectedForEditorialUse": [],
+      "basis": [],
+      "draftsCreated": 0
+    },
+    {
+      "id": "Land-primary",
+      "level": "Landtag",
+      "description": "Briefing-Hauptthema bleibt vor höher bewerteten anderen Vorgängen",
+      "inputCount": 3,
+      "pool": [
+        "vg-a",
+        "vg-b",
+        "vg-c"
+      ],
+      "visible": [
+        "vg-a",
+        "vg-b"
+      ],
+      "expectedForEditorialUse": [
+        "vg-a",
+        "vg-b"
+      ],
+      "basis": [
+        {
+          "id": "vg-a",
+          "reason": null
+        },
+        {
+          "id": "vg-b",
+          "reason": null
+        }
+      ],
+      "draftsCreated": 0
+    }
+  ],
+  "jurisdiction": [
+    {
+      "name": "Bundestag mit Ausschuss",
+      "reason": null
+    },
+    {
+      "name": "Landtag mit Land und Ausschuss",
+      "reason": null
+    },
+    {
+      "name": "Landtag ohne Land",
+      "reason": "zustaendigkeit-offen"
+    },
+    {
+      "name": "Bundestag ohne Ausschuss",
+      "reason": "zustaendigkeit-offen"
+    }
+  ],
+  "scenarios": 12,
+  "jurisdictionChecks": 4,
+  "paidModelCalls": 0,
+  "productionChanges": 0
+}
