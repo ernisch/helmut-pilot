@@ -336,7 +336,7 @@ function staticChecks() {
 
   const client = fs.readFileSync(path.join(root, "client.js"), "utf8");
   check("Fake-Termine entfernt (kein 'Treffen mit Gewerkschaft')", !client.includes("Treffen mit Gewerkschaft"));
-  check("fallbackMeetings liefert keine erfundenen Termine", !client.includes("Ausschusssitzung Arbeit und Soziales\","));
+  check("Client enthaelt keine erfundenen Ausschusstermine", !client.includes("Ausschusssitzung Arbeit und Soziales\","));
   check("Keine Live-Referenz auf meta.fallbackDraft", !client.includes("|| meta.fallbackDraft"));
   check("Keine Live-Referenz auf resolvedMeta.fallbackDraft", !client.includes("resolvedMeta.fallbackDraft"));
   check("Erfundene Radar-Signale entfernt (keine 'Steuerdebatte …')", !client.includes("Steuerdebatte kann in Arbeit und Soziales wandern"));

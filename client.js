@@ -6545,20 +6545,6 @@ function renderHstandHeader(state) {
     </div>`;
 }
 
-// Wichtigster Bereich: Mein Vorschlag (recommendation + urgency + contextChips).
-function renderHstandWhy(state) {
-  const why = hstandText(state.whyItMatters);
-  if (!why) return "";
-  const v = lageVorgangZumBriefing(state.primaryItem);
-  const vergleich = s => String(s || "").replace(/\s+/g, " ").trim();
-  if (v && [v.whyRelevant, v.summary?.warumWichtig].some(s => vergleich(s) === vergleich(why))) return "";
-  return `
-    <section class="hstand-card hstand-why" aria-label="Warum ist das wichtig">
-      ${hstandKicker(HELMUT_ICON_EYE, "Warum ist das wichtig?", "accent")}
-      <p class="hstand-body">${escapeHtml(uiSieText(why))}</p>
-    </section>`;
-}
-
 function renderHstandRiskChance(state) {
   const risk = hstandText(state.riskOfNoAction);
   const riskLevel = hstandLevelChip(state.riskLevel, "risk");
@@ -7186,12 +7172,6 @@ function parseAppointmentText(value, index = 0) {
   };
 }
 
-// Bewusst leer: Es werden KEINE erfundenen Termine mehr erzeugt. Echte Termine
-// kommen ausschließlich aus profile.upcomingAppointments (siehe meetingPreparations).
-function fallbackMeetings() {
-  return [];
-}
-
 function prepareMeeting(input, index = 0) {
   const topic = input.thema || input.terminTitel || "den Termin";
   const sourceDecision = decisions.find((decision) => textHasTopic(decision, topic)) || decisions[0] || {};
@@ -7381,21 +7361,6 @@ function renderEreignisRollen(item) {
     <h3>${escapeHtml(r.title)}</h3><p>${escapeHtml(r.summary)}</p>
     ${(r.sources || []).filter(s => sourceHref(s)).map(s => withSourceNotice(`<a class="source-pill" href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.sourceName || "Quelle")} · ${escapeHtml(s.title || "Artikel öffnen")}</a>`, s, sourceHref(s))).join("")}
   </article>`).join("")}</section>`;
-}
-
-function renderDecisionBlock(decision) {
-  return `
-    <article class="briefing-block ${decision.priorityType}">
-      <div>
-        <span>${escapeHtml(decision.priorityLabel)}</span>
-        <h2>${escapeHtml(decision.title)}</h2>
-        <p>${escapeHtml(decision.summary)}</p>
-        ${renderEreignisRollen(decision)}
-        ${sourceLink(decision)}
-      </div>
-      <button class="secondary-button" type="button" data-detail="${escapeHtml(decision.id)}">${decision.priorityType === "watch" ? "Details ansehen" : "Empfehlung lesen"}</button>
-    </article>
-  `;
 }
 
 function renderDetailView() {
@@ -8580,57 +8545,6 @@ const RADAR_FILTERS = [
 
 const RADAR_RELATION_LABELS = { mention: "Über Sie", party: "Partei", constituency: "Wahlkreis", committee: "Ausschuss", media: "Medien", official: "Offiziell" };
 
-function publisherDomain(item) {
-  const text = `${item.sourceName || ""} ${item.title || ""}`.toLowerCase();
-  const known = [
-    ["taz", "taz.de"],
-    ["freitag", "freitag.de"],
-    ["junge welt", "jungewelt.de"],
-    ["morgenpost", "morgenpost.de"],
-    ["tagesspiegel", "tagesspiegel.de"],
-    ["welt am sonntag", "welt.de"],
-    ["welt", "welt.de"],
-    ["nd-aktuell", "nd-aktuell.de"],
-    ["zdf", "zdf.de"],
-    ["zeit", "zeit.de"],
-    ["frankfurter rundschau", "fr.de"],
-    ["süddeutsche", "sueddeutsche.de"],
-    ["sz.de", "sueddeutsche.de"],
-    ["spiegel", "spiegel.de"],
-    ["saarbrücker zeitung", "saarbruecker-zeitung.de"],
-    ["phoenix", "phoenix.de"],
-    ["bild am sonntag", "bild.de"],
-    ["bild", "bild.de"],
-    ["frankfurter allgemeine", "faz.net"],
-    ["faz", "faz.net"],
-    ["handelsblatt", "handelsblatt.com"],
-    ["rheinische post", "rp-online.de"],
-    ["rp-online", "rp-online.de"],
-    ["focus", "focus.de"],
-    ["stern", "stern.de"],
-    ["ard", "ard.de"],
-    ["ndr", "ndr.de"],
-    ["wdr", "wdr.de"],
-    ["mdr", "mdr.de"],
-    ["bayerischer rundfunk", "br.de"],
-    ["n-tv", "n-tv.de"],
-    ["t-online", "t-online.de"],
-    ["berliner zeitung", "berliner-zeitung.de"],
-    ["hamburger abendblatt", "abendblatt.de"],
-    ["augsburger allgemeine", "augsburger-allgemeine.de"],
-    ["rhein-zeitung", "rhein-zeitung.de"],
-    ["volksfreund", "volksfreund.de"],
-    ["watson", "watson.de"],
-    ["business insider", "businessinsider.de"],
-    ["heise", "heise.de"],
-    ["deutsche welle", "dw.com"],
-    ["bundestag", "bundestag.de"],
-    ["bundesrat", "bundesrat.de"]
-  ];
-  const match = known.find(([name]) => text.includes(name));
-  return match ? match[1] : "";
-}
-
 const RADAR_V3_PALETTE = [
   "#c0392b", "#d35400", "#8e44ad", "#2980b9",
   "#27ae60", "#16a085", "#2c3e50", "#e74c3c",
@@ -9236,19 +9150,6 @@ function radioGroup(name, value, options) {
         <label class="choice-pill">
           <input type="radio" name="${escapeAttribute(name)}" value="${escapeAttribute(option)}" ${option === value ? "checked" : ""} />
           <span>${escapeHtml(option)}</span>
-        </label>
-      `).join("")}
-    </div>
-  `;
-}
-
-function radioValueGroup(name, value, options) {
-  return `
-    <div class="choice-grid compact">
-      ${options.map(([optionValue, optionLabel]) => `
-        <label class="choice-pill">
-          <input type="radio" name="${escapeAttribute(name)}" value="${escapeAttribute(optionValue)}" ${optionValue === value ? "checked" : ""} />
-          <span>${escapeHtml(optionLabel)}</span>
         </label>
       `).join("")}
     </div>
@@ -11299,11 +11200,6 @@ function sourceTimeLabel(dateString) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);
-}
-
-function sourceExcerpt(item) {
-  const source = primarySource(item) || item.primarySource || item.sources?.[0] || {};
-  return source.excerpt || item.excerpt || item.summary || "";
 }
 
 function sourceLink(item) {

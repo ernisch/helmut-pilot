@@ -71,7 +71,10 @@ test("Public-/Client-/Lage-Rollen bleiben sichtbar und Quellen bleiben einzeln",
   assert.equal(pub.ereignisUrspruenge,undefined);
   const c=E.lageKarte({vorgangId:item.vorgangId,summary:{},sources:[]},item);
   same(c.ereignisKontexte,item.ereignisKontexte);assert.equal(c.displaySummary,item.summary);
-  const src=fs.readFileSync(require.resolve("../client.js"),"utf8"),renderer=src.slice(src.indexOf("function renderEreignisRollen"),src.indexOf("function renderDecisionBlock"));
+  const src=fs.readFileSync(require.resolve("../client.js"),"utf8");
+  const rendererStart=src.indexOf("function renderEreignisRollen"),rendererEnd=src.indexOf("function renderDetailView",rendererStart);
+  assert.ok(rendererStart>=0&&rendererEnd>rendererStart);
+  const renderer=src.slice(rendererStart,rendererEnd);
   // Echte Herkunfts-/Linkbindung mitladen; keinen Schutz durch einen Stub ersetzen.
   const noticeStart=src.indexOf("function sourceNoticeHref"),noticeEnd=src.indexOf("function renderSourceBasis",noticeStart);
   assert.ok(noticeStart>=0&&noticeEnd>noticeStart);
