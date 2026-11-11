@@ -156,6 +156,35 @@ function check(name, cond, detail = "") {
   check("Einstellungs-Formular enthält Mandatsebene-Auswahl (Bundestag/Landtag)",
     settingsHtml.includes('name="parliamentType"') && settingsHtml.includes(">Landtag<"));
 
+  // Native Auswahl verhindert neue Tippfehler, ohne vorhandene Angaben zu ersetzen.
+  for (const name of ["party", "faction", "location"]) {
+    check(`${name}: Dropdown statt Freitext`,
+      settingsHtml.includes(`<select name="${name}"`) && !settingsHtml.includes(`<input name="${name}"`));
+    const select = settingsHtml.match(new RegExp(`<select name="${name}"[^>]*>([\\s\\S]*?)</select>`))[1];
+    check(`${name}: leere Angaben werden nicht still vorbelegt`, select.includes('<option value="" selected>'));
+  }
+  ot.setProfile({ fullName: "T", party: 'Bestand " & <Partei>', faction: "Eigene Fraktionsbezeichnung", location: "Teststadt", state: "Berlin" });
+  const legacyHtml = ot.renderSettings();
+  check("Bestehende Partei/Fraktion/Ort bleiben ausgewählt und HTML-escaped",
+    legacyHtml.includes('value="Bestand &quot; &amp; &lt;Partei&gt;" selected')
+    && legacyHtml.includes('value="Eigene Fraktionsbezeichnung" selected')
+    && legacyHtml.includes('value="Teststadt" selected'));
+  check("Partei und Fraktion haben getrennte Auswahlwerte",
+    settingsHtml.includes('value="parteilos"') && settingsHtml.includes('value="fraktionslos"')
+    && settingsHtml.includes('value="CDU/CSU"'));
+  const places = JSON.parse(fs.readFileSync(path.join(root, "assets/profil-orte-20260930.json"), "utf8"));
+  check("Amtliche Ortsliste: alle 16 Länder, über 10.000 Ortsnamen, Quellenstand vorhanden",
+    Object.keys(places.locationsByState).length === 16
+    && Object.values(places.locationsByState).every(values => values.length && values.every(value => typeof value === "string" && value.trim()))
+    && Object.values(places.locationsByState).reduce((n, values) => n + values.length, 0) > 10000
+    && places.sourceDate === "2026-09-30" && places.sourceUrl.startsWith("https://www.destatis.de/"));
+  check("Ortsliste trennt Bundesländer und enthält auch kleine Gemeinden",
+    places.locationsByState.Niedersachsen.includes("Salzgitter")
+    && places.locationsByState.Niedersachsen.includes("Wolfenbüttel")
+    && places.locationsByState.Brandenburg.includes("Zossen")
+    && JSON.stringify(places.locationsByState.Berlin) === '["Berlin"]'
+    && !places.locationsByState.Berlin.includes("Salzgitter"));
+
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);
 })().catch((e) => { console.error("TESTFEHLER", e); process.exit(1); });

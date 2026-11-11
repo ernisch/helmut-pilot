@@ -413,6 +413,20 @@ const mandateFunctions = [
   "Referent"
 ];
 
+// Partei und Fraktion sind getrennte Angaben (z. B. CDU und CDU/CSU).
+// Bestehende abweichende Bezeichnungen bleiben beim Öffnen erhalten.
+const profilePartyOptions = [
+  "CDU", "CSU", "SPD", "Bündnis 90/Die Grünen", "FDP", "Die Linke", "BSW",
+  "FREIE WÄHLER", "SSW", "BVB / FREIE WÄHLER", "Bündnis Deutschland",
+  "Die PARTEI", "ÖDP", "Piratenpartei", "Volt", "parteilos"
+];
+const profileFactionOptions = [
+  "CDU/CSU", "CDU", "CSU", "SPD", "Bündnis 90/Die Grünen", "FDP", "Die Linke",
+  "BSW", "FREIE WÄHLER", "SSW", "BVB / FREIE WÄHLER", "Bündnis Deutschland", "fraktionslos"
+];
+let profileLocationsByState = null;
+let profileLocationsRequest = null;
+
 const committeeOptions = [
   "Arbeit und Soziales",
   "Wirtschaft",
@@ -720,8 +734,8 @@ function renderOnboarding() {
   } else if (onboardingStep === 1) {
     body = `
       <h2>Partei & Fraktion</h2>
-      <label>Partei<input name="party" type="text" value="${escapeAttribute(d.party || "")}" placeholder="z. B. SPD" /></label>
-      <label>Fraktion<input name="faction" type="text" value="${escapeAttribute(d.faction || "")}" placeholder="z. B. SPD-Bundestagsfraktion" /></label>`;
+      ${profileChoiceSelect("party", "Partei", d.party, profilePartyOptions)}
+      ${profileChoiceSelect("faction", "Fraktion", d.faction, profileFactionOptions)}`;
   } else if (onboardingStep === 2) {
     body = `
       <h2>Ausschuss</h2>
@@ -8884,6 +8898,38 @@ function updateConstituencySelect(state) {
   select.innerHTML = options.map(([value, label]) => `<option value="${escapeAttribute(value)}" ${value === currentValue ? "selected" : ""}>${escapeHtml(label)}</option>`).join("");
 }
 
+function locationOptionsForState(state) {
+  return profileLocationsByState?.[state] || [];
+}
+
+async function loadProfileLocations() {
+  if (profileLocationsByState) return profileLocationsByState;
+  if (!profileLocationsRequest) {
+    profileLocationsRequest = (async () => {
+      const response = await fetchWithTimeout("/assets/profil-orte-20260930.json");
+      if (!response.ok) throw new Error("Ortsliste nicht verfügbar");
+      const data = await response.json();
+      const states = data.locationsByState;
+      if (!states || !federalStateOptions.every(state => Array.isArray(states[state])
+          && states[state].length && states[state].every(place => typeof place === "string" && place.trim()))) {
+        throw new Error("Ortsliste unvollständig");
+      }
+      profileLocationsByState = states;
+      return states;
+    })().finally(() => { profileLocationsRequest = null; });
+  }
+  return profileLocationsRequest;
+}
+
+function updateLocationSelect(state, preserveCurrent = false) {
+  const select = app.querySelector("[data-location-select]");
+  if (!select) return;
+  const options = locationOptionsForState(state);
+  const value = preserveCurrent || options.includes(select.value) ? select.value : "";
+  select.innerHTML = profileChoiceOptions(value, options,
+    state ? "Bitte wählen" : "Bitte zuerst Bundesland wählen");
+}
+
 function learningSummary(learning) {
   if (!learning || !learning.eventCount) return "Noch keine Rückmeldungen gespeichert.";
   return `${learning.eventCount} Rückmeldungen gespeichert. Die Priorisierung ändern sie derzeit nicht.`;
@@ -9083,8 +9129,8 @@ function renderProfileSettingsView() {
         </div>
         <div class="profile-grid">
           ${profileField("fullName", "Name", profile.fullName)}
-          ${profileField("party", "Partei", profile.party)}
-          ${profileField("faction", "Fraktion", profile.faction)}
+          ${profileChoiceSelect("party", "Partei", profile.party, profilePartyOptions)}
+          ${profileChoiceSelect("faction", "Fraktion", profile.faction, profileFactionOptions)}
           ${profileSelect("function", "Funktion", profile.function || "Bundestagsabgeordneter", mandateFunctions)}
           ${profileValueSelect("parliamentType", "Mandatsebene", profileParliamentType(),
             profileParliamentType()
@@ -9119,8 +9165,9 @@ function renderProfileSettingsView() {
         <div class="profile-grid">
           ${profileSelectWithAttrs("state", "Bundesland", profile.state, federalStateOptions, 'data-state-select')}
           ${profileValueSelectWithAttrs("constituency", "Wahlkreis", profile.constituency, constituencyOptionsForState(profile.state, profile.constituency), 'data-constituency-select')}
-          ${profileField("location", "Ort", profile.location)}
+          ${profileChoiceSelect("location", "Ort", profile.location, locationOptionsForState(profile.state), 'data-location-select')}
         </div>
+        <p class="onboarding-note">Ortsliste: Statistisches Bundesamt (Destatis), Stand 30.09.2026.</p>
       </section>
 
       <section class="profile-section">
@@ -9146,6 +9193,20 @@ function renderProfileSettingsView() {
       </div>
     </form>
   `;
+}
+
+function profileChoiceOptions(value, options, placeholder = "Bitte wählen") {
+  const currentValue = String(value || "");
+  const values = [...new Set([currentValue, ...options].filter(Boolean))];
+  return `<option value="" ${currentValue ? "" : "selected"}>${escapeHtml(placeholder)}</option>`
+    + values.map(option => `<option value="${escapeAttribute(option)}" ${option === currentValue ? "selected" : ""}>${escapeHtml(option)}</option>`).join("");
+}
+
+function profileChoiceSelect(name, label, value, options, attrs = "") {
+  return `<label class="profile-field">
+    <span>${escapeHtml(label)}</span>
+    <select name="${escapeAttribute(name)}" ${attrs}>${profileChoiceOptions(value, options)}</select>
+  </label>`;
 }
 
 function profileSelect(name, label, value, options) {
@@ -10012,7 +10073,22 @@ function bindActions() {
 
   const stateSelect = app.querySelector("[data-state-select]");
   if (stateSelect) {
-    stateSelect.addEventListener("change", () => updateConstituencySelect(stateSelect.value));
+    stateSelect.addEventListener("change", () => {
+      updateConstituencySelect(stateSelect.value);
+      updateLocationSelect(stateSelect.value);
+    });
+    const locationSelect = app.querySelector("[data-location-select]");
+    if (locationSelect) {
+      loadProfileLocations().then(() => {
+        if (app.querySelector("[data-location-select]") === locationSelect) {
+          updateLocationSelect(stateSelect.value, true);
+        }
+      }).catch(() => {
+        if (app.querySelector("[data-location-select]") === locationSelect) {
+          showToast("Ortsliste konnte nicht geladen werden. Bitte das Profil erneut öffnen.");
+        }
+      });
+    }
   }
 
   app.querySelectorAll("[data-close-handoff]").forEach((button) => {

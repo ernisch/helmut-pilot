@@ -191,6 +191,48 @@ function check(name, cond, detail = "") {
       check(`${label}: Navigation zu den vier Bereichen vorhanden`, navCount === 4, `gefunden=${navCount}/4`);
 
       if (navCount === 4) {
+        // Echte Profilmaske, Original-Asset und PATCH nur gegen das lokale
+        // synthetische Mandat. Beide Mandatsebenen und beide Bildschirmgrößen.
+        await page.evaluate(() => document.querySelector('[data-view="settings"]').click());
+        await page.locator('[data-view="profile-settings"]').click();
+        const profileForm = page.locator("#profileForm");
+        await profileForm.waitFor();
+        check(`${label}: Partei, Fraktion und Ort sind native Dropdowns`,
+          await profileForm.locator('select[name="party"], select[name="faction"], select[name="location"]').count() === 3
+          && await profileForm.locator('input[name="party"], input[name="faction"], input[name="location"]').count() === 0);
+        // Der erste Durchlauf hat unbekannte synthetische Bestandswerte.
+        const storedBefore = await smokeStorage.getProfile(testPoliticianOne.id);
+        check(`${label}: bestehende Profilwerte bleiben erhalten`,
+          await profileForm.locator('[name="party"]').inputValue() === storedBefore.party
+          && await profileForm.locator('[name="faction"]').inputValue() === storedBefore.faction
+          && await profileForm.locator('[name="location"]').inputValue() === storedBefore.location);
+        await profileForm.locator('[name="state"]').selectOption("Niedersachsen");
+        await page.waitForFunction(() => [...document.querySelector('[name="location"]').options].some(option => option.value === "Salzgitter"));
+        check(`${label}: Ortsauswahl enthält amtliche Orte des Bundeslands`,
+          await profileForm.locator('[name="location"] option[value="Wolfenbüttel"]').count() === 1);
+        await profileForm.locator('[name="location"]').selectOption("Salzgitter");
+        await profileForm.locator('[name="state"]').selectOption("Berlin");
+        check(`${label}: Bundeslandwechsel entfernt fremde Orte ohne automatische Ortswahl`,
+          await profileForm.locator('[name="location"] option[value="Salzgitter"]').count() === 0
+          && await profileForm.locator('[name="location"]').inputValue() === ""
+          && await profileForm.locator('[name="location"] option[value="Berlin"]').count() === 1);
+        await profileForm.locator('[name="party"]').selectOption("CDU");
+        await profileForm.locator('[name="faction"]').selectOption("fraktionslos");
+        await profileForm.locator('[name="location"]').selectOption("Berlin");
+        await profileForm.locator('[name="parliamentType"]').selectOption(isMobile ? "Landtag" : "Bundestag");
+        const savedResponse = page.waitForResponse(response => new URL(response.url()).pathname === "/api/profile/current" && response.request().method() === "PATCH");
+        await profileForm.locator('[type="submit"]').click();
+        const saved = await savedResponse;
+        const storedAfter = await smokeStorage.getProfile(testPoliticianOne.id);
+        check(`${label}: Dropdownwerte getrennt im eigenen Profil gespeichert`,
+          saved.ok() && storedAfter.party === "CDU" && storedAfter.faction === "fraktionslos"
+          && storedAfter.location === "Berlin" && storedAfter.parliamentType === (isMobile ? "Landtag" : "Bundestag"));
+        await page.locator('[data-view="profile-settings"]').click();
+        check(`${label}: erneutes Öffnen zeigt die gespeicherte Auswahl`,
+          await page.locator('#profileForm [name="party"]').inputValue() === "CDU"
+          && await page.locator('#profileForm [name="faction"]').inputValue() === "fraktionslos"
+          && await page.locator('#profileForm [name="location"]').inputValue() === "Berlin");
+
         // NICHT-tautologisch (Review-Fix): Die frueheren Marker-Regexe (radar,
         // hstand|helmut, ...) liefen gegen das KOMPLETTE page.content() — die
         // Begriffe stehen aber immer in der Navigation selbst, die Assertion
