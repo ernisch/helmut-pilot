@@ -1,0 +1,10 @@
+{
+  "status": "succeeded",
+  "url": "https://helmut-verwaltung-vorschau-20261111.lueynohut.chatgpt.site",
+  "project_id": "appgprj_6af4de61bffc81918bc8bd16ff6259f7",
+  "deployment_id": "appgdep_6af4e8a37c9881918ce6fadf16e0e2e0",
+  "version_id": "appgprj_6af4de61bffc81918bc8bd16ff6259f7~appgver_9ff54835e3fc8191a7765e57289caec5",
+  "source_commit": "16dc75774d60514013f3a94d2af2957d6d431ac7",
+  "audience": "owner_private",
+  "scope": "Private Vorschau mit fiktivem Adapter; keine Veroeffentlichung der Helmut-App"
+}

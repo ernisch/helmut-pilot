@@ -16,7 +16,7 @@ const check=(name,condition)=>{assert.ok(condition,name);checks++;console.log('P
  page.on('pageerror',e=>errors.push(e.message));
  page.on('request',req=>{if(/^https?:/.test(req.url()))outbound.push(req.url());});
  try{
-  await page.setContent(fs.readFileSync(path.join(folder,'vorschau.html'),'utf8'));
+  await page.setContent(fs.readFileSync(path.join(folder,'vorschau-v1.html'),'utf8'));
   await page.getByRole('heading',{name:'Was braucht dich heute?'}).waitFor();
   check('Drei Hauptbereiche',await page.locator('.nav button').count()===3);
   check('Entwurf und fiktive Daten sichtbar',await page.locator('.demo').isVisible());
@@ -80,7 +80,7 @@ const check=(name,condition)=>{assert.ok(condition,name);checks++;console.log('P
   await page.setViewportSize({width:1440,height:1050});
   await page.setContent('<!doctype html><title>Entwurf neu laden</title>');
   await page.goto('about:blank');
-  await page.setContent(fs.readFileSync(path.join(folder,'vorschau.html'),'utf8'));
+  await page.setContent(fs.readFileSync(path.join(folder,'vorschau-v1.html'),'utf8'));
   check('Neu laden verwirft flüchtigen Entwurf',await page.locator('.customer').count()===4);
   for(const width of [1440,390,360,320]){
    await page.setViewportSize({width,height:900});

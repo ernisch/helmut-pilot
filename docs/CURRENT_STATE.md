@@ -197,7 +197,7 @@ dieser Übergangsweg wurde lokal mit echten Sessions geprüft.
 Der umfassendere historische Verwaltungstest
 stoppt im unveränderten Kontoclient an einer alten Null-IO-Erwartung beim Freigeben
 eines Kontos; die gezielte Navigationsauswahl führt keine Schreibaktion aus.
-**11.11.:** [Kundenablauf/Vorschau](ui/verwaltung-einfach-20261111/README.md) lokal 49/49; PR1155 Draft, kein Merge. Nächster Schritt: Betreiber-Durchsicht.
+**11.11.:** [Kundenverwaltung](ui/verwaltung-einfach-20261111/README.md): API-Kandidat lokal geprüft; private Vorschau. PR1155 Draft, kein Merge; Betreiber-Durchsicht.
 
 ## Verwaltung: Darstellungskorrekturen gegen Design v3 (06.11.2026)
 

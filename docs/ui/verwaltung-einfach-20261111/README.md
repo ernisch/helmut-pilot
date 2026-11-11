@@ -1,207 +1,123 @@
-# Eine einfache Verwaltung: Kundenablauf und Zuordnung
+# Kundenverwaltung: einfache Bedienung mit vorhandenen App-Routen
 
-Stand: 11.11.2026. Beauftragter **Entwurf**, keine Umstellung der laufenden Verwaltung.
-Codegrundlage: `main` d6914b62. Alle Daten und Zeitangaben der
-[klickbaren Vorschau](vorschau.html) sind fiktiv. Die Datei funktioniert offline;
-sie hat keine API-Verbindung, keine dauerhafte Ablage und keine echten Aktionen.
-Die unveränderte Originalverwaltung unter `verwaltung/claude-original/` bleibt die
-bisherige Produktvorlage. Dieser Entwurf ist ein Vorschlag für ihre Vereinfachung.
+Stand: 11.11.2026. **App-Kandidat lokal geprüft, private Vorschau bereitgestellt;
+PR1155 bleibt auf Betreiberwunsch Draft ohne Merge. Kein Liveumbau von Helmut.**
 
-**Aktuell 11.11.:** Auf Betreiberwunsch bleibt
-[PR1155](https://github.com/ernisch/helmut-pilot/pull/1155) als **Draft ohne Merge**
-offen, damit zuerst die gesamte vorhandene Vorschau durchgeklickt werden kann.
-Die [private Onlinevorschau](https://helmut-verwaltung-vorschau-20261111.lueynohut.chatgpt.site)
-ist veröffentlicht; sie enthält dieselbe bytegleich geprüfte HTML-Datei, nur
-fiktive Daten und keinerlei App-Verbindung. Die Site wurde getrennt vom
-Helmut-Repository bereitgestellt, ohne Merge oder Liveänderung an Helmut.
+[Private Vorschau öffnen](https://helmut-verwaltung-vorschau-20261111.lueynohut.chatgpt.site)
+· [Offlinevorschau](vorschau.html)
+· [Kundenanlage auf dem Handy](vorschau-v2-anlegen-mobil.png)
 
-| In der Vorschau | Tatsächlicher Stand |
+## Was sich für den Betreiber ändert
+
+- **Kunde anlegen:** nur Name und E-Mail. Kein zweiter Ansprechpartner, kein
+  Tarifwunsch und kein Passwort. Der Kunde ist die Person des Mandats.
+- **Eine Kundenseite:** Mandat ergänzen, Versorgung ausdrücklich aktivieren,
+  heutigen Briefingstand prüfen und bei Bedarf einen Zugangslink erstellen.
+- **Drei Einstiege:** Übersicht, Kunden, Einstellungen. Die Übersicht zeigt
+  Kunden mit Handlungsbedarf. Fehlende Nachweise bleiben offen.
+- **Weitere Funktionen:** Kosten, Quellen und letzte Abläufe verwenden vorhandene
+  Leserouten. Profilbestand, Zuweisungen, Datenschutz und Diagnose bleiben in
+  den bisherigen Werkzeugen erreichbar. Keine bestehenden Funktionen oder Daten
+  wurden gelöscht; die Originalverwaltung bleibt unverändert erreichbar.
+
+Der Kandidat liegt bewusst unter **`/verwaltung/einfach/`**. `/verwaltung/` und
+`/?admin-tools=1` werden noch nicht ersetzt. Die Übernahme als Haupteinstieg folgt
+erst nach der gewünschten Durchsicht und vollständigen Pflicht-CI.
+
+## Zwei unterschiedliche Nachweise
+
+| Fassung | Verbindung / Aussage |
 | --- | --- |
-| Übersicht, Kundenliste, Suche, Kundendetails | Durchklickbar, sämtliche Zustände fiktiv |
-| Kundenanlage, Rückweg, Prüfung der Eingaben | Durchklickbarer Ablauf, nur flüchtiger Entwurf; keine Konto-/Profilanlage |
-| Profilvollständigkeit, Versorgung, Bereitstellung | Gestaltungsbeispiele, keine echten Nachweise aus der App |
-| Einstellungen, Kosten, Quellen, erweiterte Werkzeuge | Bisher erklärende Abschnitte und Aufklapptexte; keine angeschlossenen Bedienseiten |
-| Einladungen, Aktivierung, Zahlung, Datenschutzaktionen | Nicht als echte Aktionen angebunden |
+| Private Site und Offline-HTML | Dieselbe UI-Komponente mit ausdrücklich fiktivem Beispieladapter. Keine App-Verbindung, kein Speichern echter Kunden, keine echten Einladungen. Änderungen verschwinden beim Neuladen. |
+| App-Kandidat auf diesem Branch | Verwendet die bestehenden Helmut-Konten-, Profil-, Ergebnis- und Statistikrouten im selben Ursprung mit vorhandener Anmeldung, Adminprüfung und CSRF. Lokal mit echten HTTP-Antworten und isoliertem Dateispeicher geprüft. |
+| Laufende Helmut-App | Keine Umstellung durch diesen Auftrag. Keine echten Kunden angelegt, Profile aktiviert oder Nachrichten versendet; keine bezahlten Modellaufrufe. |
 
-Die 49 lokalen Prüfungen belegen die Bedienung des Entwurfs und dessen
-Fehler-/Mobilfälle, **keine vollständige Appintegration**. Vor einer späteren
-Liveumsetzung müssen die einzelnen Funktionsanschlüsse separat belegt werden.
-Die vereinfachte Gestaltung ist ein Vorschlag; die Beurteilung als durchgängig
-selbsterklärend bleibt nach der Durchsicht offen.
+Die private Vorschau enthält nicht bloß eine zweite unabhängig gezeichnete UI:
+`scripts/verwaltung-einfach-export.js` exportiert die tatsächliche
+`verwaltung/einfach/app.mjs` mit dem getrennten Beispieladapter. Die
+Backendmodule und Zugangsdaten sind nicht Teil dieser Offlineausführung.
+Die Kopie unter Sites erhält ihren bestehenden privaten Zugriff.
 
-**Historischer CI-Wartebefund vor der Betreiber-Durchsicht:**
-Branch `codex/verwaltung-kundenablauf-20261111`. Der ursprüngliche geprüfte Kopf
-`96c5f7144ebabe790c435431caa28127dd0f317a` hat seit 20:35:48 UTC einen
-[wartenden CI-Lauf](https://github.com/ernisch/helmut-pilot/actions/runs/43096978463)
-ohne Jobs. Auch zwei ältere Läufe melden trotz erfolgreichem „Complete job“
-weiterhin `in_progress`; der datierte [Wartebefund](ci-wartebefund.json) erhält
-diese Beobachtung, ohne eine GitHub-Ursache zu behaupten. Diese abschließende
-Statusdokumentation ändert keine Vorschau-/Prüfeingaben. Für den finalen Kopf
-bleiben beide Pflichtchecks erforderlich; keine Umgehung und kein Merge.
-Die neue Betreiberanweisung zur Durchsicht hat Vorrang: auch bei später grüner
-CI noch nicht mergen. Nächster Schritt ist die Durchsicht der privaten Vorschau;
-die spätere erste Implementierung bleibt das unten abgegrenzte lesende Kundendetail.
+## Welche Funktion tatsächlich angeschlossen ist
 
-## Entscheidung
+| Funktion im App-Kandidaten | Vorhandener Anschluss / Ergebnis |
+| --- | --- |
+| Kundenbestand und Profilzuordnung | `GET /api/admin/customers`, `GET /api/admin/overview`; bestätigte IDs statt Namensraten; neue Personen erhalten eine neue Zuordnung, auch bei gleichnamigem Bestandsprofil. Unklare Profilquellen oder Mehrfachzuordnungen erlauben keinen erfolgreichen Versorgungsstatus. |
+| Kunde anlegen | Vorhandene `createAdminActions` um eine persönliche Zweifeldanlage ergänzt: frischer Kontobestand, CSRF, gesperrter POST auf `/api/admin/users`, bestehende Kundenfelder per PATCH. Kein neuer CRM-Speicher und keine automatische Einladung. Unterschiedliche Namen/Tarife bleiben für das alte Formular weiter unterstützt. |
+| Mandat laden und speichern | `GET/PATCH /api/admin/profile/:id`; vorhandene Mandatsprüfung und Zulassung bleiben serverseitig wirksam. Neue Profile bleiben ausdrücklich inaktiv. Bestehende Zusatzfelder werden erhalten; gespeicherte Werte werden wieder gelesen. |
+| Versorgung aktivieren | Bewusste Einzelaktion mit Bestätigung; vorherige Profilprüfung, ausschließlich PATCH `{profileActive:true}`, anschließende Leseprüfung. Aktivierung erzeugt keinen Briefing-Erfolgsnachweis und startet keinen zusätzlichen Crawl oder Modellaufruf. |
+| Briefing heute | Vorhandene `GET /api/admin/ergebnisse` mit Seitennachladen. Prüft aktuellen Berliner Tag und zusammenpassende Antwortseiten; fehlende/abweichende Antworten erzeugen keinen Erfolg. Briefing, Lage und Bereitstellungsquittung bleiben einzelne Aussagen. |
+| Zugangslink | Vorhandene servergeprüfte Zugangsfreigabe und `POST /api/admin/users/:id/invite`. Einmalbindung, Gültigkeit und echter `mail.sent`-Status bleiben erhalten. Keine Passworteingabe durch den Betreiber. Der Link lebt nur in der aktuellen Ansicht und lässt sich ausblenden. |
+| Kosten, Quellen, Abläufe | Bestehende Budget-/Quellen-/Prozessrouten. Unbekannte Beträge und fehlende Quelldaten werden erklärt; der vollständige Quellenbericht bleibt verlinkt. |
+| Seltene Funktionen | Tatsächliche Verweise zur bestehenden Profilansicht und zu den erweiterten Werkzeugen. In der privaten Vorschau werden diese Verweise als noch in der bisherigen Verwaltung liegend erklärt. |
 
-Eine gemeinsame Verwaltung mit drei Einstiegen: **Übersicht, Kunden, Einstellungen**.
-Jeder Kunde erhält eine gemeinsame Seite für Kontakt, Mandat, Zugang und Versorgung.
-Die benötigten vorhandenen Funktionen werden schrittweise dort eingeordnet.
-Der Übergang über „Erweiterte Werkzeuge“ bleibt bis zur geprüften Übernahme erhalten.
-Keine zweite Kontodatenbank, kein neues Backend und keine pauschale Datenfusion.
+Ein vollständiger technischer Nachweis heißt **„Heute bereit“**, mit gesondertem
+Hinweis auf die offene inhaltliche Beurteilung. Eine Bereitstellungsquittung belegt
+keine gelesene Nachricht oder zugestellte E-Mail. Die Oberfläche kann fehlenden
+Nachschub sichtbar machen; dieser Auftrag repariert nicht den zugrunde liegenden
+Quellen-/Briefingmotor und behauptet keinen Nachweis der täglichen Liveversorgung.
 
-Das setzt [OP-33](../../datenmotor-restliste.md#op-33--admin-funktionen-schrittweise-in-verwaltung-einordnen-06112026-p2)
-konkret fort. Die dortige Zuordnung bleibt die kanonische Funktionsrestliste;
-dieses Dokument beschreibt den vorgeschlagenen Bedienablauf, keinen neuen Betriebsstand.
+## Einfachheit und Fehlerfälle
 
-## Was bereits vorhanden ist
+Die Gestaltung folgt Apples Empfehlungen für [wenige notwendige Eingaben](https://developer.apple.com/design/human-interface-guidelines/entering-data)
+und [klare, kurze Beschriftungen](https://developer.apple.com/design/human-interface-guidelines/writing):
+eine Hauptaufgabe je Seite, vertraute Wörter, klar benannte Aktionen und Details
+erst bei Bedarf. Technische Prüfkennungen stehen nicht im normalen Bedienablauf.
 
-Der gemeinsame Einstieg existiert bereits: `/verwaltung/` führt über „Erweiterte
-Werkzeuge“ nach `/?admin-tools=1`, mit Rücklink. Es gibt zwei Oberflächen auf
-vorhandenen Backendrouten. Die lokale Ausgangsvorlage vom 27.10. war älter;
-diese Analyse verwendet den am 11.11. frisch geladenen Hauptstand.
-
-| Aufgabe | Beleg im aktuellen Code | Konsequenz für den Entwurf |
-| --- | --- | --- |
-| Kundenkonto anlegen | `verwaltung/original-customer-form.mjs`, `original-actions.mjs`: gesperrtes Konto, Kundenname/Ansprechpartner/Tarifwunsch in interner Notiz; kein neues Profil, keine Einladung | Kontakt anlegen ist nur der erste Schritt. Erfolg der Kontoanlage darf keine funktionierende Versorgung behaupten. |
-| Konto und Mandat verbinden | `original-adapter.mjs`: `userId`/`politicianId`, Kundendetail verlinkt Profil; Profilreferenz kann ohne tatsächliches Profil existieren | Gemeinsame Kundenseite verbindet bestehende IDs. Fehlende, abweichende oder mehrfach belegte Zuordnung offen zeigen; niemals per Namensähnlichkeit verbinden. |
-| Profil prüfen | `GET /api/admin/profile/:id`, `lib/helmut/profile-validation.js` | Fehlende Pflichtangaben und ihre Auswirkung direkt beim Kunden erklären. Aktivierung ist eine eigene Entscheidung. |
-| Aktuelle Ergebnisse prüfen | `GET /api/admin/ergebnisse`, `lib/helmut/admin-ergebnisstand.js`, `verwaltung/original-ergebnisse.mjs` | Vorhandene Bilanz für Briefing, Bereitstellungsquittung und Lage wiederverwenden. Radar bleibt Teil des Briefings. |
-| Ergebnisumfang erkennen | `verwaltung/api.mjs`, `original-ergebnisse.mjs`: Seiten und Vollständigkeit; Ergebnisbilanz bezieht sich auf aktive Profile | Ein nicht erfasstes oder inaktives Profil ist „Nicht geprüft“ bzw. „Pausiert“, kein Versorgungserfolg. Profilbestand muss bestätigt sein. |
-| Kontozugang ändern | `verwaltung/original-actions.mjs`: eigene servergeprüfte Zugangsaktionen; Kontostatus und `active` getrennt | „Zugang freigegeben“ und „Profil wird versorgt“ bleiben verschiedene Aussagen. |
-| Einladung | Alte Adminansicht in `client.js`, vorhandene Kontorouten | Erst im bewussten Schritt „Zugang bereitstellen“ anschließen. Bestehende Einmal-/Zeitbindungen und Zustellwahrheit erhalten. |
-| Technische Diagnose | Alte sieben Adminbereiche, neue Quellen-/Kosten-/Laufansichten | Aus dem konkreten Kundenproblem in passende Details führen. Die gesamte Werkzeugansicht bleibt vorerst erreichbar. |
-
-Die älteren Integrationshinweise in `verwaltung/README.md` und den Dokumenten vom
-04.11. sind keine aktuellen Productionbelege. Maßgeblich für den datierten
-Rolloutstand ist [CURRENT_STATE](../../CURRENT_STATE.md#navigation-und-verwaltung-live-06112026).
-Dieser Auftrag hat keine frische Production-Kundensitzung geprüft.
-
-## Der tägliche Ablauf
-
-1. **Übersicht öffnen:** zuerst konkreter Handlungsbedarf mit betroffenem Kunden
-   und einem nächsten Schritt. Wenige Zahlen zum bestätigten Bestand, keine
-   Übersicht sämtlicher Technikwerte. Testprofile und inaktive Profile zählen
-   nicht still als zahlende oder versorgte Kunden.
-2. **Kunden öffnen:** eine Liste mit Suche, einem verständlichen Hauptzustand
-   und „Kunde anlegen“. Mandatsprofile sind dort über ihren Kunden erreichbar;
-   Profile ohne zugeordnetes Kundenkonto bleiben über einen Inventarzugang unter
-   Einstellungen sichtbar und werden nicht verborgen oder automatisch umgewandelt.
-3. **Kundenseite lesen:** Hauptzustand, Grund, letzter belegter Stand und genau
-   eine passende Hauptaktion. Darunter Versorgung sowie Einrichtung/Kontakt.
-   Fachliche Beurteilung bleibt eigenständig sichtbar. Technische Details lassen
-   sich aufklappen. Kein Wechsel zwischen getrennten Kunden- und Profillisten nötig.
-
-## Einen Kunden einrichten
-
-| Schritt | Oberfläche | Gesicherte Aussage / Grenze |
-| --- | --- | --- |
-| 1. Kontakt | Kundenname, Ansprechpartner, E-Mail; „Konto anlegen“ | Bestehenden gesperrten Kontopfad nutzen. Tarif/Preis optional später; die heutige Pflicht zum Tarifwunsch im Formular ist für die spätere Umsetzung gesondert anzupassen. Kein automatischer Versand. |
-| 2. Mandat | Bestehendes freies Profil auswählen oder dessen vollständige Einrichtung gezielt fortsetzen | Bundestag/Landtag, bei Landtag Bundesland, Region/Wahlkreis, Partei **und** Fraktion, Themen/Ausschüsse und Zulassung anhand bestehender Regeln prüfen. Keine Identität, Zugehörigkeit oder vollständige Profilanlage erfinden. Die Vorschau verkürzt diesen Schritt und kennzeichnet die offenen Prüfungen. |
-| 3. Versorgung | Vorhandene aktuelle Nachweise für das zugeordnete Mandat lesen | Kein Modellaufruf und kein Recovery durch das Öffnen. Inaktive neue Profile haben noch keinen Live-Versorgungsnachweis. Vorbereitung, gesonderte zulässige Aktivierung und anschließender wirklicher Nachweis bleiben getrennt. |
-| 4. Zugang | Ergebnis zusammenfassen, Zugang bewusst bereitstellen | Konto-/Profilstatus und heutige Versorgung getrennt zeigen. Einladungslink erstellen/versenden ausschließlich durch ausdrückliche Aktion, nie nebenbei durch Speichern oder Prüfen. |
-
-Die drei Vorschauseiten **Kontakt → Mandat → Prüfen** illustrieren die Eingabe
-und Zusammenfassung. Die betrieblichen Schritte 3 und 4 werden dort ausschließlich
-als „Nicht geprüft“ und „Gesperrt“ gezeigt. Keine simulierte Aktivierung oder
-vorgebliche erfolgreich abgeschlossene Versorgung.
-
-## Zustände, die man ohne Fachwissen versteht
-
-| Hauptzustand | Wann er zulässig ist | Nächster Schritt |
-| --- | --- | --- |
-| Einrichtung offen | Kontakt vorhanden, aber Zuordnung, Pflichtangaben oder notwendige Prüfung fehlen | Einrichtung an der konkret offenen Stelle fortsetzen |
-| Pausiert | Gespeicherter Profilstatus bestätigt, Versorgung bewusst inaktiv | Grund und letzten bekannten Stand ansehen; keine automatische Aktivierung |
-| Geplant / In Bearbeitung | Der erwartete Bereitstellungszeitpunkt liegt noch bevor bzw. ein aktueller laufender Prozess ist tatsächlich belegt | Zeitpunkt oder belegten Fortschritt anzeigen; vor der vereinbarten Frist keinen fehlenden Tagesstand als Ausfall melden |
-| Noch nicht geprüft | Daten nicht gelesen, Quelle unbestätigt, Zuordnung unklar, Ergebnisumfang unvollständig oder aktueller Nachweis fehlt | Vorhandene Nachweise lesen; Lesefehler ausdrücklich anzeigen |
-| Briefing fehlt / Stand veraltet | Für den geprüften Berliner Tag und tatsächlich erwartete Versorgung fehlt ein Paket oder der Nachweis ist zu alt | Versorgung und letzte bestätigte Verarbeitung ansehen; Ursache nur nennen, wenn belegt |
-| Technisch aktuell | Bestätigter Profilbestand, eindeutige Zuordnung, aktuelle vollständige Ergebnisnachweise und passende Bereitstellungsquittung | Vorhandene Ausgabe ansehen; fachliches Urteil separat offen halten |
-
-Einrichtung und bewusste Pause werden vor Versorgungsfehlern bewertet. Ein frisch
-angelegter, noch inaktiver Kunde ist nicht als Produktionsausfall zu zählen.
-Fehler in einem Teilbereich bleiben sichtbar, auch wenn ein anderer Teilbereich
-aktuell ist. Nachweise nennen Datenstand, geprüften Tag und Abfragezeitpunkt.
-Die exakte Statusableitung ist vor der Liveumsetzung als kleiner gemeinsamer
-Vertrag zu prüfen, statt verschiedene Ansichten unabhängig rechnen zu lassen.
-
-Ein ruhiger Tag mit ausdrücklichem gültigem Nachweis ist zulässig; daraus folgt
-keine Störung. Umgekehrt beweisen gefundene Karten oder ein erfolgreicher Prozess
-keine vollständige aktuelle Versorgung. Die heutige Ergebnisroute unterscheidet
-strukturelle Vollständigkeit und Fachurteil bereits. „In App bereitgestellt“
-benennt hier die technische Ausgabequittung; tatsächlicher Empfang, Login oder
-E-Mail-Zustellung wird daraus nicht abgeleitet. Keine pauschale Aussage „Alles läuft“.
-
-## Was wohin wandert
-
-| Heute vorhanden | Vorgeschlagener Zugang | Reihenfolge |
-| --- | --- | --- |
-| Übersicht und Ergebnisbilanz | Übersicht mit Handlungsbedarf; Kundenseite mit Versorgung | Zuerst lesend verbinden |
-| Nutzer & Kunden, Profile, Einladungs-/Zugangsaktionen | Gemeinsame Kundenseite und geführte Einrichtung | Nach bestätigter Zuordnung einzeln anschließen |
-| Kundenpreise, Zahlungsstand, Notizen | Beim jeweiligen Kunden unter Vereinbarung | Bestehende Felder nutzen; keine Rechnungsanbindung behaupten |
-| Quellen, Pipeline, KI-Kosten, Laufzeiten | Einstellungen → Quellen und Abläufe / Kosten; direkte problembezogene Verweise | Vorhandene Detailansichten zunächst verlinken |
-| System & Sicherheit, Audit, Recovery, Backfills, Testbriefing | Einstellungen → Erweiterte Werkzeuge | Vorhandene Schutzabfragen erhalten |
-| Unzugeordnete und synthetische Mandatsprofile, Zuweisungen | Einstellungen → Profilbestand; zugeordnete Profile zusätzlich beim Kunden | Bestand und Zuweisungen vollständig erhalten |
-| Datenschutzexport und Löschung | Bewusste Einzelaktionen im Kundenkontext | Berechtigungen, Rückfragen und vorhandene Löschverträge erhalten |
-
-## Umsetzung in kleinen Schritten
-
-1. **Dieser Auftrag:** Bestand abgleichen, Entwurf und Vorschau erstellen und
-   gezielt prüfen. Keine ausgelieferte Oberfläche oder laufende Versorgung ändern.
-2. **Erste Liveetappe:** Kundendetail ausschließlich lesend aus bestehenden Konto-,
-   Profil- und Ergebnisrouten zusammenführen. Kein neues Schema. Ergebnisdaten nur
-   für den bestätigten Tag/Umfang verwenden; Fehlzuordnungen und Ladefehler sichtbar.
-   Wenn der vorhandene Ergebnisvertrag einen nötigen Nachweis nicht liefert, bleibt
-   der Teilzustand offen; eng begrenzte Ergänzung erst mit fachlichem Bedarf.
-3. **Versorgung zuerst nachweisen:** Aktuellen dokumentierten Nachschubfehler separat
-   behandeln und den nächsten regulären Lauf lesend prüfen. Kein Reset, zusätzlicher
-   Lauf oder neues Budget aus diesem Entwurf ableiten. Datierte Diagnose:
-   [Radar-Ausschluss und Nachschub](../../betrieb/radar-ausschlussdiagnose-20261111.md).
-4. **Einrichtung schrittweise anschließen:** Bestehende gesperrte Kontoanlage,
-   Zuordnung/Profilpflege und bewusste Einladung einzeln übernehmen. Eingaben bei
-   Fehlern erhalten; unbekannten Schreibausgang zuerst lesend auflösen, keinen
-   automatischen zweiten POST oder automatische Löschung zum Aufräumen.
-5. **Navigation reduzieren:** Erst nach geprüftem Ersatz der jeweiligen Zugänge
-   die drei Hauptbereiche ausliefern. Die Originaldateien und historischen Belege
-   bleiben erhalten. Die Übergangsansicht erst nach vollständiger Funktionszuordnung
-   und nachgewiesenem Rückweg ablösen.
-
-Nächste Umsetzungsaufgabe ist ausschließlich Schritt 2: **eine gemeinsame lesende
-Kundenseite**. Der vollständige Verwaltungsumbau wird nicht zusammen mit der
-Briefingreparatur in einen einzigen Sprint gepackt.
-
-## Abnahme des Entwurfs
-
-- Drei Hauptbereiche, Kundenliste mit Suche und gemeinsame Kundenseite.
-- Fiktive Fälle für fehlendes Briefing, technisch aktuellen Stand mit offenem
-  Fachurteil, offene Einrichtung und unbekannte Prüfdaten.
-- Geführte Erfassung mit Pflichtfeldern, Rückweg und erhaltenen Eingaben.
-- Kein API-Aufruf, keine dauerhafte Speicherung, keine echten Änderungen oder
-  Nachrichten. CSP sperrt Netzwerkverbindungen und Formularversand zusätzlich.
-- Desktop, schmale Mobilansicht, Tastatur/Fokus, Sonderzeichen und Fehlerzustände
-  gezielt in Chromium prüfen; keine Wiederholung fachfremder Motor-/Lasttests.
+Lade-, Leer- und Fehlerzustände bieten einen nächsten Schritt. Eine fehlende
+Profilquelle ist kein leeres Kundeninventar. Ein inaktives neues Profil gilt nicht
+als versorgt. Unklare Schreibausgänge sperren weiteres Speichern und verweisen auf
+Lesekontrolle; keine automatische Wiederholung oder Löschung. HTTP401/403 entfernt
+Kundendaten und Formularwerte aus der Oberfläche. In direkten Vercel-Prüfvorschauen
+sperrt die neue Oberfläche ihre Schreibaktionen gegen echte Kunden. Der reguläre Servereinstieg importiert
+niemals den fiktiven Beispieladapter.
 
 ## Tatsächliche Prüfung
 
-Die gezielte lokale Chromiumabnahme ist in [pruefung.cjs](pruefung.cjs)
-reproduzierbar. Sie benötigt vorhandenes Playwright und `/usr/bin/chromium`:
+- **24 Gruppen mit Browser und echtem isoliertem Backend:**
+  [Prüfbeleg](app-pruefung.json), [Desktop](app-uebersicht.png),
+  [Kundenseite Mobil](app-kunde-mobil.png). Von der UI ausgelöste Kontoanlage,
+  Profil-PATCH, explizite Aktivierung und Einmallink sind im lokalen Speicher
+  nachgewiesen. Ergebnisstatus zusätzlich gegen synthetische bestehende
+  Antwortverträge geprüft; die lokale Umgebung besitzt keinen produktiven V3-Speicher.
+- **12 Gruppen für den Offlineexport:** [Prüfbeleg](vorschau-v2-pruefung.json),
+  1440/390/360/320 Pixel, Zweifeldanlage, Beispielzustände, keine JavaScriptfehler
+  und keine App-/Netzwerkverbindung.
+- Bestehende Adminansicht: **104/104 Renderprüfungen** und **5/5 bestehende
+  Verwaltungs-Ergebnisprüfungen** grün. Kein fachfremder Last- oder Modelltest.
+- Ein zusätzlicher Negativfall erzeugte erwartungsgemäß eine HTTP401-Konsolenmeldung.
+  Die erste Testfassung wertete auch diese erwartete Meldung als Fehler; die
+  Korrektur unterscheidet ausschließlich den bewusst erzwungenen 401 von unerwarteten
+  Browserfehlern. Die Entfernung der privaten Daten blieb ausdrücklich geprüft.
+
+Reproduzierbar, jeweils ohne Productionkennungen:
 
 ```sh
-node scripts/lokal.js docs/ui/verwaltung-einfach-20261111/pruefung.cjs
+node scripts/lokal.js scripts/admin-einfach-test.js
+node scripts/lokal.js scripts/verwaltung-einfach-browser.js
+node scripts/lokal.js scripts/verwaltung-einfach-export.js /tmp/helmut-verwaltung.html
+node scripts/lokal.js scripts/verwaltung-einfach-vorschau-browser.js
 ```
 
-Der lokale Schutzstarter entfernt Productionkennungen. Chromium läuft ohne
-Netzzugang; die eigenständige HTML-Datei wird direkt in einen frischen Kontext
-geladen. Der erste Versuch über eine `file:`-Navigation wurde von der vorhandenen
-Chromiumrichtlinie mit `ERR_BLOCKED_BY_ADMINISTRATOR` abgewiesen. Die erfolgreiche
-Prüfung lädt deshalb ausschließlich den HTML-Inhalt in den netzlosen Kontext;
-kein zusätzlicher Server oder Productionzugriff.
+Die Browserprüfung verwendet einen wegwerfbaren lokalen Klon mit synthetischen
+Daten, keine gemeinsame Testdatenablage und keine echten Nachrichten.
+Native App-Routen bleiben serverseitig auf Administratoren beschränkt; jede neue
+Assetdatei hat denselben Zugriffsschutz und eine feste Allowlist.
 
-Der maschinenlesbare [Prüfbeleg](pruefung.json) enthält den tatsächlichen Endlauf.
-**Lokale Abnahme erfolgreich: 49 Prüfungen**, Chromium 151.0.7922.173,
-1440/390/360/320 Pixel, keine JavaScriptfehler und keine externen Anfragen.
-Der kanonische CI-Prüfplan klassifiziert den Diff als reine Dokumentation;
-Motor-, Datenbank- und Produkt-Browsersuiten sind dafür bewusst nicht erforderlich.
-Bildbelege: [Übersicht Desktop](uebersicht-desktop.png),
-[Kundenseite Desktop](kunde-desktop.png), [Kundenseite Mobil](kunde-mobil.png),
-[Kundenanlage Mobil](anlegen-mobil.png). Das sind Entwurfsbelege, kein Nachweis
-der Livefunktion oder behobener Briefingversorgung.
+## Stand, Grenze und nächster Schritt
+
+Branch `codex/verwaltung-kundenablauf-20261111`, [Draft-PR1155](https://github.com/ernisch/helmut-pilot/pull/1155).
+Keine Freigabe zum Merge aus der Vorschau ableiten. Pflicht-CI auf dem jeweiligen
+Codekopf bleibt vor einem späteren Merge erforderlich; sie wird durch lokale
+Prüfungen oder den privaten Sites-Upload nicht ersetzt. Keine echte Konto- oder
+Profiländerung ist Teil dieses Entwicklungsnachweises.
+
+Nächster Schritt: Betreiber prüft den vereinfachten Ablauf unter der privaten
+Vorschauadresse. Vor späterem Livegang bleiben aktuelle Profilanbindung,
+Nachschub und wirklich gespeicherte Tagesbriefings separat nachzuweisen.
+Rückweg: Kandidatenzugang nicht zum Haupteinstieg machen bzw. die zugehörigen
+Änderungen zurücknehmen; vorhandene Oberflächen und Daten bleiben erhalten.
+
+Historie: [erste Klickskizze](vorschau-v1.html), [49 damalige Entwurfsprüfungen](pruefung.json)
+und [damaliger CI-Wartebefund](ci-wartebefund.json) bleiben erhalten. Diese 49
+Prüfungen sind kein Beleg für die jetzige APIintegration.
