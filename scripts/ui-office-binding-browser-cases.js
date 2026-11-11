@@ -110,10 +110,10 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
   }
   await evaluate(`document.documentElement.dataset.theme=${JSON.stringify(initialTheme)}`);
   const longTitle = "Synthetischer langer parlamentarischer Vorgang mit vollständigem Originaltitel und einer sehr ausführlichen Beschreibung zur Prüfung der kompakten Übersicht";
-  const oldTitle = await evaluate("decisions[1].title");
-  await evaluate(`decisions[1].title=${JSON.stringify(longTitle)};render()`);
+  const oldTitle = await evaluate("officeTopicPool[1].title");
+  await evaluate(`officeTopicPool[1].title=${JSON.stringify(longTitle)};render()`);
   verify("long original title remains accessible and uses at most two visible lines",await evaluate(`(()=>{const e=document.querySelectorAll('.buero-card-title')[1],s=getComputedStyle(e);return e.textContent===${JSON.stringify(longTitle)} && e.getBoundingClientRect().height<=parseFloat(s.lineHeight)*2+1 && e.closest('[data-office-open]').getAttribute('aria-label').includes(e.textContent);})()`));
-  await evaluate(`decisions[1].title=${JSON.stringify(oldTitle)};render()`);
+  await evaluate(`officeTopicPool[1].title=${JSON.stringify(oldTitle)};render()`);
   const bSelector = await evaluate("'[data-office-open=\"'+document.querySelectorAll('[data-office-open]')[1].dataset.officeOpen+'\"]'");
   await click(bSelector);
   verify("topic opens a modal format choice without spending",await evaluate("document.querySelector('[data-office-format-sheet]').matches(':modal') && selectedOfficeDraft===null") && writes.length===0);
@@ -262,6 +262,54 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
     }
     failureReason=null;
   }
+  // Complete Büro intake and progressive disclosure, through the real UI.
+  const beforeMore = writes.length;
+  scenario="many";
+  await evaluate("previewMode=false;officeDrafts={};officeDraftErrors={};localStorage.removeItem(officeDraftCacheKey());officeBriefingTarget=null;officeFormatTarget=null;selectedOfficeDraft=null;officeTopicsExpanded=false;persistView('office');currentView='office';loadBriefing().then(()=>true)");
+  verify("Büro includes all six available topics while Briefing stays at three",await evaluate("officeDecisions().length===6 && decisions.length===3 && document.querySelector('[data-office-count]').textContent==='6 Themen · 0 Entwürfe'"));
+  verify("only two topics are initially visible",await evaluate("Array.from(document.querySelectorAll('[data-office-open]')).filter(e=>e.checkVisibility()).length===2 && !document.querySelector('[data-office-more]').open"));
+  verify("overview has no repeated briefing or mandate explanation",await evaluate("!document.querySelector('.buero-view').textContent.includes('Synthetischer Profilbezug') && !document.querySelector('.buero-view').textContent.includes('fiktiver Bericht')"));
+  await evaluate("document.querySelector('#toast').classList.remove('visible');document.getSelection()?.removeAllRanges()");
+  await screenshot("office-topic-count");
+  if (mobile) await click("[data-office-more] > summary");
+  else {
+    await evaluate("document.querySelector('[data-office-more] > summary').focus()");
+    await cdp.send("Input.dispatchKeyEvent",{type:"keyDown",key:"Enter",code:"Enter",windowsVirtualKeyCode:13,text:"\r"},s);
+    await cdp.send("Input.dispatchKeyEvent",{type:"keyUp",key:"Enter",code:"Enter",windowsVirtualKeyCode:13},s);
+  }
+  verify("additional topics expand by touch or keyboard without generation",await waitFor("document.querySelector('[data-office-more]').open && officeTopicsExpanded") && writes.length===beforeMore,await evaluate("({open:document.querySelector('[data-office-more]').open,expanded:officeTopicsExpanded,active:document.activeElement.outerHTML})"));
+  verify("all six topics are now visible",await evaluate("Array.from(document.querySelectorAll('[data-office-open]')).filter(e=>e.checkVisibility()).length===6"));
+  await layout("expanded topic list"); await screenshot("office-more-topics");
+  await click("[data-office-more] [data-office-open]");
+  verify("a third topic offers format choice without generating",await evaluate("officeFormatDecision().vorgangId==='vorgang-c' && document.querySelector('[data-office-format-sheet]').matches(':modal')") && writes.length===beforeMore);
+  await click("[data-office-format-close]");
+  verify("closing format choice preserves the expanded list and focus",await evaluate("document.querySelector('[data-office-more]').open && document.activeElement.dataset.officeOpen==='vorgang-c:ko-c'"));
+  await screenshot("office-more-return");
+  await click(nav("briefing"));
+  if (mobile) await click('[data-ui-lage-select="vorgang-f"]');
+  await click('[data-lage-office="vorgang-f"]');
+  verify("Lage opens its exact sixth topic without spending",await evaluate("officeFormatDecision().vorgangId==='vorgang-f' && officeFormatDecision().knowledgeObjectId==='ko-f' && document.querySelector('[data-office-format-sheet]').matches(':modal')") && writes.length===beforeMore);
+  await click('[data-office-create="intern"]');
+  verify("only explicit creation sends one request for that topic",await waitFor("!officeDraftsGenerating && !!document.querySelector('[data-office-share]')") && writes.length===beforeMore+1 && writes.at(-1).body.decision.vorgang_id==='vorgang-f');
+  await click("[data-office-back]");
+  verify("total counts include drafts under additional topics",await evaluate("document.querySelector('[data-office-count]').textContent==='6 Themen · 1 Entwurf' && document.querySelector('[data-office-more]').open"));
+  await screenshot("office-complete-count");
+  verify("a conflicting KO beyond the initial two is rejected",await evaluate("(()=>{const d=officeTopicPool.find(d=>d.vorgangId==='vorgang-f');officeTopicPool.push({...d,id:'rec-conflict',knowledgeObjectId:'ko-conflict',knowledge_object_id:'ko-conflict'});return !officeDecisions().some(d=>d.vorgangId==='vorgang-f');})()"));
+
+  scenario="after-thin";
+  await evaluate("officeBriefingTarget=null;selectedOfficeDraft=null;officeTopicsExpanded=false;persistView('office');currentView='office';loadBriefing().then(()=>true)");
+  verify("eligibility runs before the display limit and recovers topic four",await evaluate("officeDecisions().length===1 && officeDecisions()[0].vorgangId==='vorgang-d' && document.querySelector('[data-office-count]').textContent==='1 Thema · 0 Entwürfe'"));
+  scenario="url-only";
+  const beforeMissingSource=writes.length;
+  await evaluate("loadBriefing().then(()=>true)");
+  verify("missing original text is signalled in the overview",await evaluate("document.querySelector('[data-office-open]').textContent.includes('Quellentext fehlt')"));
+  await click("[data-office-open]");
+  verify("missing original text disables creation before any API request",await evaluate("document.querySelector('[data-office-format-sheet]').textContent.includes('Originalquellentext') && Array.from(document.querySelectorAll('[data-office-create]')).every(button=>button.disabled)") && writes.length===beforeMissingSource);
+  await screenshot("office-source-pending");
+  await evaluate("selectedOfficeDraft=uiOfficeSelection(officeDecisions()[0],activeOfficeFormats()[0]);generateSelectedOfficeDraft({userInitiated:true}).then(()=>true)");
+  verify("generator also blocks direct attempts without source text",writes.length===beforeMissingSource && await evaluate("Object.values(officeDraftErrors).includes('quellenbasis-fehlt')"));
+  verify("a source alias with original text is sufficient even when the primary link has none",await evaluate("(()=>{const d=officeDecisions()[0];return officeCreationReady({...d,sources:[{...d.sources[0],excerpt:'Synthetischer Originaltext mit ausreichend belegtem Sachstand.'}]});})()"));
+  verify("mandate reset clears the complete topic pool and expansion",await evaluate("clearPrivateMandateState();officeTopicPool.length===0 && !officeTopicsExpanded"));
   verify("only explicitly mocked APIs requested",unexpected.length===0,unexpected);
   runs.push({label,writes:JSON.parse(JSON.stringify(writes)),reads:[...reads],unexpected:[...unexpected]});
 }

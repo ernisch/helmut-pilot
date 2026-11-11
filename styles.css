@@ -9677,6 +9677,14 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
 .buero-topic-chevron { flex: 0 0 20px; color: var(--ui-muted); }
 .buero-topic-chevron .ui-icon { width: 20px; height: 20px; }
 .buero-topic-row:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 4px; }
+.buero-more-topics > summary {
+  display: flex; align-items: center; gap: 8px; min-height: 52px;
+  color: var(--ui-accent); font: 500 15px/1.4 var(--ui-sans); cursor: pointer; list-style: none;
+}
+.buero-more-topics > summary::-webkit-details-marker { display: none; }
+.buero-more-topics > summary .ui-icon { width: 18px; height: 18px; margin-left: auto; }
+.buero-more-topics[open] > summary .ui-icon { transform: rotate(90deg); }
+.buero-more-topics > summary:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
 .ui-page .ui-office-workspace.is-detail { padding-top: 88px; }
 .ui-page .ui-office-workspace > .ui-office-detail { display: block; padding: 0; background: transparent; border: 0; }
 .ui-office-workspace .buero-detail-nav { display: block; margin: 0 0 16px; }
