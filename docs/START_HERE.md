@@ -76,7 +76,7 @@ Neue Funktionen sind nachrangig gegenueber diesem Ziel.
 | **Lage** | Mandatsrelevanter Sachstand, Einordnung, Unsicherheit und Quellen |
 | **Radar** | Belegte Vorzeichen, kommende Fristen und neue Resonanz; kein allgemeiner Themenfeed |
 | **Büro** | kompakte Übersicht mit vollständiger Themen-/Entwurfszahl: zwei Themen, weitere aufklappbar; keine erneute Mandatsbegründung; neue Texte erst nach ausdrücklicher Format-/Erstellaktion bei ausreichendem Quellentext; Originalquellen und Text prüfen, dann teilen |
-| **Profil** | Mandatsprofil, Ausschüsse, Themen, Termine — steuert die Personalisierung |
+| **Profil** | Drei kompakte Seiten: Mandat mit Auswahllisten und Ausschüssen, Schwerpunkte mit wirksamer Priorität sowie Schreibstil mit optionalen Hinweisen; sichere getrennte Speicherung |
 | **Admin** | Betreibersicht: Nutzer, Quellen, Kosten, Datenstand, Betriebsmetadaten |
 
 Der verbindliche [Bereichsvertrag](betrieb/lage-radar-briefing-abnahme-20260924.md)
