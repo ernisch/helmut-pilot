@@ -24,6 +24,7 @@ function apiResponse(request) {
   if (method === "POST" && url.pathname === "/api/communication/generate") {
     const body = JSON.parse(request.postData);
     assert.equal(body.office, true, "Büro must use the verified existing communication route mode");
+    assert.equal(body.userInitiated, true, "Only an explicit create action may reach the office API");
     assert.equal(Object.entries(request.headers).find(([name]) => name.toLowerCase() === "x-csrf-token")?.[1], "synthetic-csrf-token");
     assert.ok(["Sofort reagieren", "Beobachten"].includes(body.decision.decision));
     assert.ok(body.decision.vorgang_id && body.decision.knowledge_object_id && body.decision.id);
@@ -85,14 +86,56 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
   }
 
   await click(nav("office"));
-  verify("one recommended format per eligible occasion",await evaluate("document.querySelectorAll('[data-office-open]').length===2"));
+  verify("one compact row per eligible occasion",await evaluate("document.querySelectorAll('[data-office-open]').length===2"));
+  verify("new overview honestly counts zero drafts",await evaluate("document.querySelector('[data-office-count]').textContent==='2 Themen · 0 Entwürfe' && selectedOfficeDraft===null") && writes.length===0);
+  await evaluate("Promise.all([ensureViewData('office'),ensureViewData('office-detail'),ensureViewData('tasks')]).then(()=>true)");
+  verify("opening and reloading views creates nothing",writes.length===0);
+  const previousStarts = reads.filter(path=>path==='/api/app/start').length;
+  await cdp.send("Page.reload",{},s);
+  let restored=false;
+  for (let i=0;i<150 && !restored;i++) {
+    try {
+      restored=reads.filter(path=>path==='/api/app/start').length>previousStarts
+        && await evaluate("typeof briefingRefreshing!=='undefined' && !briefingRefreshing && currentView==='office' && document.querySelector('[data-office-count]')?.textContent==='2 Themen · 0 Entwürfe'");
+    } catch (_) { /* A real reload destroys the old execution context. */ }
+    if (!restored) await new Promise(resolve=>setTimeout(resolve,40));
+  }
+  verify("real page reload restores Büro with zero generated drafts",restored && writes.length===0);
   verify("no editor, prompt or direct mail action",await evaluate("!document.querySelector('.buero-view input,.buero-view textarea,.buero-view [contenteditable=true],.buero-view a[href^=\"mailto:\"]')"));
   await layout("occasion list"); await screenshot("office-recommendations");
+  const initialTheme = await evaluate("document.documentElement.dataset.theme || 'dark'");
+  for (const theme of ["dark", "light"]) {
+    await evaluate(`document.documentElement.dataset.theme='${theme}'`);
+    await layout(theme+" compact overview"); await screenshot(theme+"-office-overview");
+  }
+  await evaluate(`document.documentElement.dataset.theme=${JSON.stringify(initialTheme)}`);
+  const longTitle = "Synthetischer langer parlamentarischer Vorgang mit vollständigem Originaltitel und einer sehr ausführlichen Beschreibung zur Prüfung der kompakten Übersicht";
+  const oldTitle = await evaluate("decisions[1].title");
+  await evaluate(`decisions[1].title=${JSON.stringify(longTitle)};render()`);
+  verify("long original title remains accessible and uses at most two visible lines",await evaluate(`(()=>{const e=document.querySelectorAll('.buero-card-title')[1],s=getComputedStyle(e);return e.textContent===${JSON.stringify(longTitle)} && e.getBoundingClientRect().height<=parseFloat(s.lineHeight)*2+1 && e.closest('[data-office-open]').getAttribute('aria-label').includes(e.textContent);})()`));
+  await evaluate(`decisions[1].title=${JSON.stringify(oldTitle)};render()`);
   const bSelector = await evaluate("'[data-office-open=\"'+document.querySelectorAll('[data-office-open]')[1].dataset.officeOpen+'\"]'");
   await click(bSelector);
+  verify("topic opens a modal format choice without spending",await evaluate("document.querySelector('[data-office-format-sheet]').matches(':modal') && selectedOfficeDraft===null") && writes.length===0);
+  verify("no format is preselected or recommended by default",await evaluate("!document.querySelector('[data-office-format-sheet] [selected], [data-office-format-sheet] [aria-checked=true]') && !document.querySelector('[data-office-format-sheet]').textContent.includes('Empfohlen')"));
+  await screenshot("office-format-choice");
+  for (const theme of ["dark", "light"]) {
+    await evaluate(`document.documentElement.dataset.theme='${theme}'`);
+    verify(theme+" sheet stays inside the viewport",await evaluate("(()=>{const e=document.querySelector('[data-office-format-sheet]'),b=e.getBoundingClientRect();return b.left>=0 && b.right<=innerWidth+1 && b.top>=0 && b.bottom<=innerHeight+1 && e.scrollWidth<=e.clientWidth;})()"));
+    await screenshot(theme+"-office-format-choice");
+  }
+  await evaluate(`document.documentElement.dataset.theme=${JSON.stringify(initialTheme)}`);
+  await click("[data-office-format-close]");
+  verify("cancel restores the topic focus and creates nothing",await evaluate("!document.querySelector('[data-office-format-sheet]') && document.activeElement.matches('[data-office-open]')") && writes.length===0);
+  await click(bSelector);
+  await cdp.send("Input.dispatchKeyEvent",{type:"keyDown",key:"Escape",code:"Escape",windowsVirtualKeyCode:27},s);
+  await cdp.send("Input.dispatchKeyEvent",{type:"keyUp",key:"Escape",code:"Escape",windowsVirtualKeyCode:27},s);
+  verify("Escape dismisses the sheet without spending",await waitFor("!document.querySelector('[data-office-format-sheet]')") && writes.length===0);
+  await click(bSelector);
+  await click('[data-office-create="intern"]');
   verify("selected draft generated only when needed",await waitFor("!officeDraftsGenerating && document.querySelector('.ui-office-detail').textContent.includes('Entwurf für vorgang-b')"));
   verify("second occasion selected with explicit KO and record",await evaluate("selectedOfficeDraft.decision.vorgangId==='vorgang-b' && selectedOfficeDraft.decision.knowledgeObjectId==='ko-b'"));
-  verify("no more than one format per visited occasion generated",writes.length<=2 && writes.filter(r=>r.body.decision.vorgang_id==='vorgang-b').length===1,writes);
+  verify("exactly the explicitly requested draft is generated",writes.length===1 && writes[0].body.decision.vorgang_id==='vorgang-b' && writes[0].body.channel==='internal_line',writes);
   verify("CSRF verified for the on-demand request",reads.includes("/api/security/csrf") && writes.every(r=>r.csrfVerified));
   verify("sources open original article securely",await evaluate("!!document.querySelector('.ui-office-detail a[href=\"https://example.test/ui/beleg\"][target=_blank][rel=\"noopener noreferrer\"]')"));
   await layout("draft detail"); await screenshot("office-detail");
@@ -100,20 +143,31 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
   await click(nav("helmut"));
   verify("Briefing after navigation ready",await waitFor("!!document.querySelector('[data-briefing-office]')"));
   await click("[data-briefing-office]");
+  verify("Briefing handoff also requires format choice",await evaluate("document.querySelector('[data-office-format-sheet]').matches(':modal') && selectedOfficeDraft===null") && writes.length===1);
+  await click('[data-office-create="intern"]');
   verify("Briefing opens its own occasion, not previous selection",await waitFor("!officeDraftsGenerating && currentView==='office-detail' && selectedOfficeDraft.decision.vorgangId==='vorgang-a' && selectedOfficeDraft.decision.knowledgeObjectId==='ko-a' && document.querySelector('.ui-office-detail').textContent.includes('Entwurf für vorgang-a')"));
   let afterOpen=writes.length;
   await click(nav("helmut")); await click("[data-briefing-office]");
   verify("valid draft cache reused without another call",await waitFor("!officeDraftsGenerating") && writes.length===afterOpen);
   await screenshot("briefing-office-bound");
 
-  verify("alternative formats initially hidden",await evaluate("!document.querySelector('.buero-format-choice').open && !document.querySelector('[data-office-format-select]').checkVisibility()"));
-  await click(".buero-format-choice summary");
+  verify("alternative formats initially hidden",await evaluate("!document.querySelector('[data-office-format-sheet]')"));
+  await click("[data-office-choose]");
   verify("opening alternatives alone generates nothing",writes.length===afterOpen);
-  await evaluate("(()=>{const e=document.querySelector('[data-office-format-select]');e.value='linkedin';e.dispatchEvent(new Event('change',{bubbles:true}));})()");
+  await click(".buero-more-formats > summary");
+  verify("expanding more formats generates nothing",writes.length===afterOpen);
+  await click('[data-office-create="linkedin"]');
   verify("explicit alternative generates exactly one new draft",await waitFor("!officeDraftsGenerating && selectedOfficeDraft.format.id==='linkedin' && !!document.querySelector('[data-office-share]')") && writes.length===afterOpen+1 && writes.at(-1).body.channel==='linkedin');
-  await click(".buero-format-choice summary");
-  await evaluate("(()=>{const e=document.querySelector('[data-office-format-select]');e.value='intern';e.dispatchEvent(new Event('change',{bubbles:true}));})()");
-  verify("return to recommended format reuses its cache",await waitFor("!officeDraftsGenerating && selectedOfficeDraft.format.id==='intern'") && writes.length===afterOpen+1);
+  await click("[data-office-choose]");
+  verify("saved format is clearly offered to open",await evaluate("document.querySelector('[data-office-create=intern]').textContent.includes('öffnen')"));
+  await click('[data-office-create="intern"]');
+  verify("return to existing format reuses its cache",await waitFor("!officeDraftsGenerating && selectedOfficeDraft.format.id==='intern'") && writes.length===afterOpen+1);
+  await click("[data-office-back]");
+  verify("overview counts actual drafts rather than topics",await evaluate("document.querySelector('[data-office-count]').textContent==='2 Themen · 3 Entwürfe'") && writes.length===afterOpen+1);
+  await click("[data-office-open]");
+  verify("opening a prepared topic never creates another draft",writes.length===afterOpen+1);
+  await click("[data-office-choose]");
+  await click('[data-office-create="intern"]');
   afterOpen=writes.length;
 
   verify("same-day briefing read timestamp preserves valid cache",await evaluate("(()=>{const old=briefing.generatedAt;const d=new Date(old);d.setUTCSeconds((d.getUTCSeconds()+1)%60);briefing.generatedAt=d.toISOString();const valid=!!officeDraftEntry(selectedOfficeDraft.decision,selectedOfficeDraft.format);briefing.generatedAt=old;return valid;})()"));
@@ -146,6 +200,7 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
   verify("clipboard failure reported without false success",await waitFor("/nicht möglich|nicht geteilt|nicht kopiert|fehlgeschlagen/i.test(document.querySelector('#toast').textContent)"));
 
   // Refresh must not redirect a now-missing explicit Briefing target.
+  await click(nav("helmut")); await click("[data-briefing-office]");
   scenario="target-gone";
   await evaluate("loadBriefing().then(()=>true)");
   verify("lost target does not silently select another occasion",await evaluate("selectedOfficeDraft===null && !!officeBriefingTarget && document.querySelector('.ui-office-detail').textContent.includes('nicht eindeutig zugeordnet')"));
@@ -176,6 +231,7 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
     await evaluate("officeDrafts={};officeDraftErrors={};officeBriefingTarget=null;selectedOfficeDraft=null;persistView('helmut');currentView='helmut';loadBriefing().then(()=>true)");
     holdNext=true;
     await click("[data-briefing-office]");
+    await click('[data-office-create="intern"]');
     for (let i=0;i<100 && !releaseResponse;i++) await new Promise(resolve=>setTimeout(resolve,20));
     verify("a pending draft response can be held",typeof releaseResponse==='function');
     scenario="ignored";
@@ -185,15 +241,21 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
     scenario="valid";
     await evaluate("officeDrafts={};officeDraftErrors={};officeBriefingTarget=null;selectedOfficeDraft=null;persistView('helmut');currentView='helmut';loadBriefing().then(()=>true)");
     const before=writes.length;
-    await evaluate("previewMode=true;selectedOfficeDraft=uiOfficeSelection(officeDecisions()[0],recommendedOfficeFormat(officeDecisions()[0]).format);generateSelectedOfficeDraft().then(()=>true)");
+    await evaluate("previewMode=true;selectedOfficeDraft=uiOfficeSelection(officeDecisions()[0],recommendedOfficeFormat(officeDecisions()[0]).format);generateSelectedOfficeDraft({userInitiated:true}).then(()=>true)");
     verify("read-only preview never generates",writes.length===before);
+    await evaluate("selectedOfficeDraft=null;currentView='office';render()");
+    await click("[data-office-open]");
+    verify("preview visibly disables creating drafts",await evaluate("Array.from(document.querySelectorAll('[data-office-create]')).every(button=>button.disabled) && document.querySelector('[data-office-format-sheet]').textContent.includes('Vorschau erstellt keine neuen Entwürfe')") && writes.length===before);
+    await click("[data-office-format-close]");
+    verify("preview label remains visible in the compact overview",await evaluate("Array.from(document.querySelectorAll('.ui-preview-label')).some(label=>label.checkVisibility())"));
     await evaluate("previewMode=false;selectedOfficeDraft=null");
   }
   if (!mobile) {
     for (const [reason,fragment] of [["quellenbasis-fehlt","Originaltextbasis"],["zustaendigkeit-offen","parlamentarische Zuständigkeit"],["budget-erschoepft","KI-Kontingent"],["entwurf-nicht-freigegeben","nicht freigegeben"],["kostenpruefung-fehlgeschlagen","nicht bestätigt"]]) {
       failureReason=reason;
       const before=writes.length;
-      await evaluate("officeDrafts={};officeDraftErrors={};localStorage.removeItem(officeDraftCacheKey());selectedOfficeDraft=uiOfficeSelection(officeDecisions()[0],recommendedOfficeFormat(officeDecisions()[0]).format);currentView='office-detail';render();generateSelectedOfficeDraft().then(()=>true)");
+      await evaluate("officeDrafts={};officeDraftErrors={};localStorage.removeItem(officeDraftCacheKey());selectedOfficeDraft=uiOfficeSelection(officeDecisions()[0],recommendedOfficeFormat(officeDecisions()[0]).format);currentView='office-detail';render()");
+      await click('[data-office-generate]');
       await waitFor("!officeDraftsGenerating");
       const retry=reason==="kostenpruefung-fehlgeschlagen";
       verify(reason+" shows the matching message and retry",await evaluate(`document.querySelector('.ui-office-detail').textContent.includes(${JSON.stringify(fragment)}) && !document.querySelector('[data-office-share]') && !!document.querySelector('[data-office-generate]') === ${retry} && !document.querySelector('.ui-office-detail').textContent.includes('Untrusted provider detail')`) && writes.length===before+1,{writes:writes.length-before,state:await evaluate("({errors:officeDraftErrors,body:document.querySelector('.ui-office-detail').textContent,share:!!document.querySelector('[data-office-share]'),retry:!!document.querySelector('[data-office-generate]')})")});

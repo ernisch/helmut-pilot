@@ -8,9 +8,11 @@
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
-**11.11., Adminstart live:** [PR1126](https://github.com/ernisch/helmut-pilot/pull/1126) auf `3cf5379e`, Production READY, Runtime/Hauptdomain bestätigt. Adminstart mit unveränderten Schutzregeln; Kostenbuch/64 Buchungen unverändert, keine aktiven Prozesse/Sperren. Kein manueller Quellenlauf; Frische `ready=false` bleibt offen. [Rollout und Rückweg](betrieb/admin-quellenstart-rollout-20261111.md). **Automatikfix vorbereitet:** Restbedarf-/Fehlerstopp, Limits erhalten. [Prüfstand](betrieb/quellenautomatik-bedarf-20261111.md); kein Rollout.
+**11.11., Quellen/Radar14:31UTC:** [Adminstart PR1126](betrieb/admin-quellenstart-rollout-20261111.md) live; AutomatikPR1133 auf `88c876f1` READY. [Radar-Ausschlussdiagnose](betrieb/radar-ausschlussdiagnose-20261111.md):acht alte Signale, vier neuere Fachartikel ohne Umfeldbezug, keine belegte kommende Frist. Replay bestätigt0sichtbare Signale. Nachschub seit09.11. ausgeblieben; heute8/8Fenster und2400/2400Sekunden reserviert,0Prozesse/Sperren. Kein Reset oder neuer Lauf. Nächster regulärer Start12.11.,03:00UTC; Erfolg danach prüfen.
 
 ## Büro: Kosten-/Antwortzeitfix live, echte Einzelprobe erfolgreich (11.11.2026)
+
+**11.11., Büro vorbereitet:** Formatwahl vor Erstellung. [PR1135, Belege, Rückweg](ui/buero-formatwahl-20261111/README.md).
 
 [PR1129](https://github.com/ernisch/helmut-pilot/pull/1129) auf `ca9a3fc6` live/READY; Buero wartet60s statt12s, kein Auto-Retry. Pflicht-CI43001755133 gruen:14/14 Schnellkern,135/135 Bereich und Browser/Mobil. Nach Nutzer-„Ja“ genau1echte Probe11:40UTC: HTTP200 nach15,023s,844Zeichen,kein Fallback,1bestaetigte Buchung0,002823USD. Die alte12s-Frist haette diese erfolgreiche Antwort verworfen. Unveraenderter Client zeigt die Originalantwort im isolierten Desktop-/Mobilreplay nach13s bytegleich,37/37Pruefungen,Cache/Teilenaktion bestaetigt,0externeAnfragen. Native Bilanz11:43UTC:64Buchungen,heute0,029144USD/1USD,gesamt1,214451USD/30USD;Vertrag/Altreserven erhalten. Erfolgreich fuer diese Einzelprobe; normale Kundensitzung/natives Teilen nicht geprueft. [Beleg, Grenzen und Rueckweg](betrieb/buero-kostensperre-20261111.md).
 
@@ -326,22 +328,13 @@ Nach Betreiber-GO bei gruener Pflicht-CI gemergt und live: [PR #1055](https://gi
 
 ## Genau ein naechster Schritt
 
-**App-Start (06.11.2026):** PR1078/1081/1085 nach GO/Pflicht-CI live.
-PR1085 auf2a5e0774, Vercel dpl_45AMnvEB1XmP3jh5Xa7QGRb3nSgc READY.
-HTTP-Median4,836→4,234s; Antworten200, Briefing und zehn Lagekarten. Kein Androidwert.
-[Messungen, Rollout und neuer Befund](betrieb/app-start-performance-20261106.md).
-Betreiber meldet danach: installierte Brave-App haengt im nativen Android-Bild;
-dieselbe Hauptadresse funktioniert in Brave. Geraeteursache noch nicht bewiesen.
-Vorbereiteter Folgefix: Manifestfarbe an Iconpixel angeglichen (Kasten entfernt),
-8s Antwortfrist im Worker, damit blockierte Navigation eine Wiederholungsansicht
-bekommt; Briefing weiterhin vollstaendig vor App-Oeffnung. Keine private Cacheansicht.
-Worker7/7, Icons70/70, echter Worker-Wiederholungsfall und Browser82/82 bestanden.
+**App-Start (06.11.2026):** PR1078/1081/1085 nach GO/Pflicht-CI live; PR1085`2a5e0774`, Vercel`dpl_45AMnvEB1XmP3jh5Xa7QGRb3nSgc`READY. HTTP-Median4,836→4,234s; HTTP200, Briefing/10Lagekarten, kein Androidwert.
+Installierte Brave-App haengt im nativen Android-Bild, Hauptadresse funktioniert; Geraeteursache offen. Folgefix vorbereitet: Icon-/Manifestfarbe angleichen,8s Workerfrist mit Wiederholungsansicht. Briefing vor App-Oeffnung, keine private Cacheansicht.
+Worker7/7, Icons70/70, echter Worker-Wiederholungsfall und Browser82/82 bestanden. [Vollstaendige Messungen, Rollout und Befunde](betrieb/app-start-performance-20261106.md).
 Naechster Schritt: Folgefix abnehmen; Android-Installationszustand bleibt offen.
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
-Historische alte Anweisungen, darunter
-[`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind
-keine aktuellen Testauftraege. Alle alten Laufbelege,
+Historische alte Anweisungen, darunter [`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind keine aktuellen Testauftraege. Alle alten Laufbelege,
 STOPs, UNKNOWNs, Grants und Journale bleiben erhalten.
 Vor konkreten Production Aktionen Wirkung, Risiko,
 Kosten, Nachkontrolle und Rueckweg benennen.

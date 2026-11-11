@@ -4,7 +4,7 @@
 Historie. Für den aktuellen Stand → [`CURRENT_STATE.md`](CURRENT_STATE.md), für die
 Systemkarte → [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-**Letzte Aktualisierung:** 2026-11-05 (aktuelle Prioritaet: Mock100 und sicherer Livegang; laufender Betriebszustand nur in `CURRENT_STATE.md`)
+**Letzte Aktualisierung:** 2026-11-11 (Büro: ausdrückliche Formatwahl vor jeder neuen Entwurfserstellung; laufender Betriebszustand nur in `CURRENT_STATE.md`)
 
 ---
 
@@ -75,7 +75,7 @@ Neue Funktionen sind nachrangig gegenueber diesem Ziel.
 | **Heute / Briefing** | Tagespriorität und nächster Schritt mit belegtem Tagesanlass; kein zweiter Lagebericht |
 | **Lage** | Mandatsrelevanter Sachstand, Einordnung, Unsicherheit und Quellen |
 | **Radar** | Belegte Vorzeichen, kommende Fristen und neue Resonanz; kein allgemeiner Themenfeed |
-| **Büro** | ein empfohlenes Textformat je belegtem Anlass; Entwurf und Originalquellen prüfen, dann teilen; andere Formate auf Wunsch |
+| **Büro** | kompakte Übersicht belegter Themen und vorhandener Entwürfe; neue Texte erst nach ausdrücklicher Format-/Erstellaktion; Originalquellen und Text prüfen, dann teilen |
 | **Profil** | Mandatsprofil, Ausschüsse, Themen, Termine — steuert die Personalisierung |
 | **Admin** | Betreibersicht: Nutzer, Quellen, Kosten, Datenstand, Betriebsmetadaten |
 
