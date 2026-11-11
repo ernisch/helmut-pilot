@@ -309,10 +309,17 @@ async function main() {
         await cdp.evaluate(s,`__uiPreview.state('${kind}')`);
         for(const view of ["helmut","briefing","radar","office"]) {
           await cdp.evaluate(s,`__uiPreview.view('${view}')`); await layout(kind+" "+view);
+          if(kind==='error' && view==='office') {
+            // Failed drafts belong to the chosen format's detail after PR1135.
+            // Keep the original error assertion on that reachable view.
+            await cdp.evaluate(s,"selectedOfficeDraft=uiOfficeSelection(decisions[0],activeOfficeFormats()[0]); currentView='office-detail'; render();");
+            await layout("error office detail");
+          }
           const text=await cdp.evaluate(s,"document.querySelector('#uiPage').innerText");
           check(label+": "+kind+" "+view+" visible content",text.trim().length>20);
           if(kind==='empty') check(label+': empty '+view+' has no invented items',await cdp.evaluate(s,"!document.querySelector('.ui-briefing-hero,.ui-vorgang-row,.radar2-card,.buero-draft-card')"));
-          if(kind==='error') check(label+': error '+view+' is explicit', /nicht verfügbar|nicht geladen|fehlgeschlagen|Störung|Datenbasis|Daten derzeit/i.test(text),text);
+          if(kind==='error') check(label+': error '+view+' is explicit', /nicht verfügbar|nicht geladen|fehlgeschlagen|Störung|Datenbasis|Daten derzeit|konnte nicht belastbar erstellt werden/i.test(text),text);
+          if(kind==='error' && view==='office') check(label+': failed draft cannot be shared',await cdp.evaluate(s,"!!document.querySelector('.buero-draft-state') && !document.querySelector('[data-office-share]')"));
           if(kind==='stale' && view==='office') check(label+': stale cache supplies no finished draft',!text.includes('Synthetischer UI Testentwurf') && !text.includes('Heute erstellt'),text);
           if(kind==="long" || (kind==="error" && view==="helmut")) { await screenshot(kind+"-"+view); if(kind==='long') await screenshotBottom(kind+'-'+view); }
         }

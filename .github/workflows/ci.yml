@@ -508,6 +508,9 @@ jobs:
     if: inputs.mode != 'mock100'
     name: Browser-/Mobile-Smoke (Chromium)
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      options: --user 1001
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -531,33 +534,22 @@ jobs:
       - name: Abhängigkeiten installieren (aus package-lock.json)
         if: steps.plan.outputs.browser == 'true'
         run: npm ci
-      - name: Playwright + Chromium installieren
+      - name: Gepinntes Playwright-Paket und vorhandenen Browser pruefen
         if: steps.plan.outputs.browser == 'true'
         run: |
-          # Version gepinnt (Review-Fix): ohne Pin zöge jeder CI-Lauf die neueste
-          # Playwright/Chromium-Version — ein Release könnte das Merge-Gate ohne
-          # Codeänderung rot/fälschlich grün machen. Bei Playwright-Update hier
-          # bewusst anheben.
+          # Browser und Systempakete sind im offiziellen, versionsgleichen
+          # Playwright-Image enthalten. Kein APT-Download im Testlauf.
           npm i --no-save playwright@1.56.1
-          # Playwright liefert seinen eigenen gepinnten Chromium. Eine fremde
-          # Google-Chrome-APT-Liste lieferte am 09.09. falsche Hashes und
-          # blockierte bereits apt update. Nur diese unbenoetigte Liste wird
-          # im kurzlebigen Testrechner reversibel aus der APT-Auswahl genommen.
-          # Pruefsummen, Ubuntu-Abhaengigkeiten und Browserpflicht bleiben aktiv.
-          sudo python3 - <<'PY'
-          from pathlib import Path
-          import re
-          for source in Path('/etc/apt/sources.list.d').iterdir():
-              if source.suffix not in ('.list', '.sources'):
-                  continue
-              lines = [line.strip() for line in source.read_text().splitlines()
-                       if line.strip() and not line.lstrip().startswith('#')]
-              urls = re.findall(r'https?://[^\s\]]+', '\n'.join(lines))
-              if urls and all(re.fullmatch(r'https?://dl\.google\.com/linux/chrome(?:-stable)?/deb/?', url) for url in urls):
-                  source.rename(source.with_name(source.name + '.helmut-ci-disabled'))
-                  print('Unbenoetigte Chrome Paketliste isoliert:', source.name)
-          PY
-          npx playwright install --with-deps chromium
+          node - <<'NODE'
+          const fs = require("fs");
+          const { chromium } = require("playwright");
+          if (require("playwright/package.json").version !== "1.56.1") {
+            throw new Error("Unerwartete Playwright-Version");
+          }
+          const executable = chromium.executablePath();
+          if (!fs.existsSync(executable)) throw new Error("Gepinnter Chromium fehlt");
+          console.log("PASS gepinnter Chromium vorhanden:", executable);
+          NODE
       - name: Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)
         if: steps.plan.outputs.browser == 'true'
         # Fail-closed (Audit-Folgebranch): GitHub setzt CI=true automatisch,
