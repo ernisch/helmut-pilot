@@ -10664,7 +10664,10 @@ async function generateStatementWithBackend(input, decision, channel = selectedC
       office: options.office === true,
       decision
     })
-  });
+  // Quellenaufloesung, Modellaufruf und Kostenabschluss gehoeren zu EINEM
+  // Entwurf. Der allgemeine Lesetimeout von 12s kann vor dessen Antwort enden.
+  // Keine automatische Wiederholung: der erste Aufruf kann bereits Geld kosten.
+  }, options.office === true ? 60000 : 12000);
   if (!response.ok) throw new Error(`Communication API failed: ${response.status}`);
   const result = await response.json();
   if (!privateAccessIsCurrent(context)) throw privateAccessChanged();
