@@ -28,7 +28,7 @@ async function main() {
     }); req.on("error", reject);
   });
   let zeit = Date.parse("2026-11-09T03:15:00Z"), leaseBis = 0, reservations = 0, workers = 0, initial = 0, resume = 0, retry = 0;
-  const counts = new Map(); let planVorhanden = false;
+  const counts = new Map(); let planVorhanden = false, queueReady = true;
   try {
     ersetze(tenantContext, "resolveActiveTenant", async () => assert.fail("kein Mandatsread vor Fensterzulassung"));
     ersetze(Date, "now", () => zeit);
@@ -54,7 +54,7 @@ async function main() {
     ersetze(pipeline, "arbeite", async o => {
       workers++; assert.equal(o.stapel, 1); return { erledigt: 12, reserviert: 12, verfuegbar: true };
     });
-    ersetze(pipeline, "betriebsstatus", async () => ({ verfuegbar: true, zustand: "bereit" }));
+    ersetze(pipeline, "betriebsstatus", async () => ({ verfuegbar: queueReady, zustand: "bereit" }));
 
     await check("Fortsetzung Default AUS beendet vor jedem Speicherzugriff", async () => {
       const r = await request("/api/cron/crawl?arbeitsfenster=1");
@@ -67,6 +67,13 @@ async function main() {
       HELMUT_QUELLEN_ARBEITSFENSTER: "on", HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "off",
       HELMUT_QUELLEN_FENSTER_TAG: "8", HELMUT_QUELLEN_SEKUNDEN_TAG: "2400", HELMUT_ORIGINALABRUFE_TAG: "16",
       HELMUT_KLASSEN_GRENZEN: "on", HELMUT_WORKER_PARALLEL: "4", HELMUT_WORKER_BATCH: "25"
+    });
+    await check("Queue-Lesefehler stoppt echte Route vor Quote, Planung und Worker", async () => {
+      queueReady = false;
+      const r = await request("/api/cron/crawl?arbeitsfenster=1");
+      assert.equal(r.status, 200); assert.equal(r.json.grund, "arbeitsfenster-vorflug-nicht-bereit");
+      assert.equal(reservations, 0); assert.equal(workers, 0); assert.equal(resume, 0); assert.equal(retry, 0);
+      queueReady = true;
     });
     await check("verpasster03:00-Termin:03:15 startet gesicherten Planweg und Worker", async () => {
       const r = await request("/api/cron/crawl?arbeitsfenster=1");

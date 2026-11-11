@@ -22,6 +22,7 @@ function welt() {
   const konten = new Map(), rpcs = [];
   const deps = {
     now: () => zeit,
+    bereitschaft: async () => ({ bereit: true }),
     reserviere: async (o) => {
       rpcs.push(o);
       const key = `${new Date(zeit).toISOString().slice(0, 10)}|${o.schluessel}`;
@@ -78,6 +79,52 @@ async function main() {
     for (let i = 0; i < 8; i++) { assert.equal((await lauf(w, async () => { n++; return { ok: true }; })).ok, true); w.weiter(15 * 60000); }
     assert.equal(n, 8); assert.equal(w.stand(fenster.SCHLUESSEL.fenster), 8); assert.equal(w.stand(fenster.SCHLUESSEL.sekunden), 2400);
     assert.equal(w.frei(), 0);
+  });
+  await check("fehlender Bereitschaftsbeleg stoppt vor jeder Quote und erlaubt spaetere bestaetigte Zustellung", async () => {
+    for (const befund of [null, {}, { bereit: false }, { bereit: "true" }, new Error("Lesefehler")]) {
+      const w = welt();
+      w.deps.bereitschaft = async () => { if (befund instanceof Error) throw befund; return befund; };
+      const r = await lauf(w, async () => assert.fail("kein Arbeitsbeginn ohne Vorflug"));
+      assert.equal(r.grund, "arbeitsfenster-vorflug-nicht-bereit");
+      assert.equal(r.verarbeitet, false); assert.equal(w.rpcs.length, 0); assert.equal(w.frei(), 1);
+      w.deps.bereitschaft = async () => ({ bereit: true });
+      assert.equal((await lauf(w)).ok, true); assert.equal(w.stand(fenster.SCHLUESSEL.fenster), 1);
+      assert.equal(w.stand(fenster.SCHLUESSEL.sekunden), 300);
+    }
+  });
+  await check("echte Workerbereitschaft liest erst unter Lease; kritischer Rueckstand bleibt bearbeitbar", async () => {
+    const w = welt(), original = pipeline.betriebsstatus; let erlaubt = false, reads = 0;
+    delete w.deps.bereitschaft;
+    pipeline.betriebsstatus = async o => {
+      reads++; assert.equal(o.env, ENV); assert.equal(w.rpcs.length, 0); assert.equal(w.frei(), 0);
+      return erlaubt ? { verfuegbar: true, zustand: "kritisch" } : { verfuegbar: false, grund: "migration-fehlt" };
+    };
+    try {
+      assert.equal((await lauf(w)).grund, "arbeitsfenster-vorflug-nicht-bereit");
+      assert.equal(reads, 1); assert.equal(w.rpcs.length, 0);
+      erlaubt = true;
+      pipeline.betriebsstatus = async o => { assert.equal(o.env, ENV); reads++; return { verfuegbar: true, zustand: "kritisch" }; };
+      assert.equal((await lauf(w)).ok, true); assert.equal(reads, 2); assert.equal(w.rpcs.length, 3);
+    } finally { pipeline.betriebsstatus = original; }
+  });
+  await check("zu langer Lease-/Vorflugstart oder abgelaufene Zustellkulanz verbraucht keine Quote", async () => {
+    for (const phase of ["lease", "vorflug", "kulanz"]) {
+      const w = welt();
+      if (phase === "kulanz") w.setze("2026-11-09T03:04:30Z");
+      if (phase === "lease") {
+        const belege = w.deps.klassen.belege;
+        w.deps.klassen.belege = async (...args) => { const r = await belege(...args); w.weiter(60000); return r; };
+      } else w.deps.bereitschaft = async () => { w.weiter(phase === "kulanz" ? 31000 : 60000); return { bereit: true }; };
+      assert.equal((await lauf(w, async () => assert.fail("kein spaeter Arbeitsbeginn"))).grund, "arbeitsfenster-vorbereitung-zu-lang");
+      assert.equal(w.rpcs.length, 0); assert.equal(w.frei(), 1);
+    }
+  });
+  await check("erst nach Reservierung bemerkte Verzoegerung behaelt alle Kontingente", async () => {
+    const w = welt(), reserviere = w.deps.reserviere;
+    w.deps.reserviere = async o => { const r = await reserviere(o); if (o.schluessel === fenster.SCHLUESSEL.sekunden) w.weiter(60000); return r; };
+    assert.equal((await lauf(w, async () => assert.fail("keine Arbeit nach Zeitgrenze"))).grund, "arbeitsfenster-vorbereitung-zu-lang");
+    assert.equal(w.stand(fenster.SCHLUESSEL.fenster), 1); assert.equal(w.stand(fenster.SCHLUESSEL.sekunden), 300);
+    assert.equal(w.frei(), 1);
   });
   await check("globale Fenstergrenze stoppt weiteren Slot", async () => {
     const w = welt(), env = { ...ENV, HELMUT_QUELLEN_FENSTER_TAG: "1" };
