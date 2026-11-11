@@ -8,6 +8,21 @@ Basis `7898fd5d`, Bürostand `626c4f29` und Handystartfix bis `74679756` integri
 Der Auftrag umfasst ausdrücklich Oberfläche **und** tatsächlich angeschlossene Wirkung.
 Die früheren Befunde bleiben im [Profilaudit](../profil-wirkungscheck-20261111/README.md).
 
+## Folgeauftrag: „Bitte vermeiden“ entfernen (11.11.2026)
+
+Auf Nutzerwunsch entfällt das Eingabefeld aus der Profiloberfläche: Die bisherige
+weiche Modellanweisung ist keine garantierte Sperre und soll diese Erwartung nicht
+wecken. Das Feld entfällt auch aus Initialwerten und Formulareinlesen; ein Stil-PATCH
+sendet deshalb keinen versteckten leeren `noGoTopics`-Wert. Vorhandene Bestandswerte
+werden nicht gelöscht; der bestehende serverseitige Modell-/Cachevertrag bleibt erhalten.
+Keine Datenmigration, Production-Profilspeicherung oder bezahlte KI-Probe.
+
+Gezielte Prüfung gegen echten lokalen Server: 60/60 Profilbrowserchecks auf Handy
+und Desktop, einschließlich entferntem Feld, erhaltenen Altwerten und Stil-PATCH
+ohne `noGoTopics`, unverändertem „Fertig“, 503/Wiederholung und Folgeantworten bestanden.
+Syntax und Diffprüfung grün. Pflicht-CI und regulärer Rollout dieses Folgeauftrags
+stehen noch aus. Rückweg: gezielter Revert des kleinen UI-/Formularcommits.
+
 ## Bedienung
 
 Unter Profil & Einstellungen führen drei kompakte Zeilen auf eigene Seiten:
@@ -19,8 +34,8 @@ Unter Profil & Einstellungen führen drei kompakte Zeilen auf eigene Seiten:
   Fachthemen bleiben bearbeitbar. Eine vorhandene `focusTopics`-Liste ist maßgeblich;
   alte hohe Gewichtsschlüssel aktivieren keine abgewählten Themen.
 - **Schreibstil:** Ton sowie aufklappbare optionale Positionen, Zielgruppen und
-  weitere Hinweise. „Bitte vermeiden“ bezeichnet Formulierungswünsche und verspricht
-  keine automatische inhaltliche Sperre. Eine ausdrückliche Modellanweisung ist ergänzt.
+  weitere Hinweise. „Bitte vermeiden“ entfällt mit dem oben dokumentierten Folgeauftrag;
+  die frühere Modellanweisung bleibt im historischen Prüf-/Rolloutnachweis nachvollziehbar.
 
 „Profil“ und „Fertig“ stehen oben; „Fertig“ bleibt auch beim Scrollen erreichbar.
 Während des Speicherns sind Eingaben gesperrt. Ein Fehler erhält den Draft und bietet

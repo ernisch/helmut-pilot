@@ -9,7 +9,7 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
   try {
     for (const mobile of [true, false]) {
       const label = mobile ? "Profil mobil" : "Profil Desktop";
-      const seed = { ...fixture, communicationStyle: "Sachlich",
+      const seed = { ...fixture, communicationStyle: "Sachlich", noGoTopics: ["Synthetischer Althinweis"],
         committee: "Gesundheit", committees: ["Gesundheit", "Arbeit und Soziales"],
         focusTopics: ["Arbeit", "Pflege", "Tarifbindung"], topicPriorities: { Arbeit: 1, Pflege: 3, Tarifbindung: 5, Finanzen: 5 },
         currentCampaigns: ["Synthetische Alt-Kampagne"], opponents: ["Synthetischer Alt-Akteur"],
@@ -128,7 +128,9 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
           && !topics.focusTopics.includes("Pflege") && !Object.hasOwn(topics.topicPriorities,"Pflege") && topics.focusTopics.includes("Tarifbindung"));
         check(`${label}: Themen-PATCH verändert kein Mandat`, topics.location === "Salzgitter" && !Object.hasOwn(patches[2],"state"));
         await open("profile-style");
-        check(`${label}: optionale Textfelder anfangs geschlossen`, await page.locator('.profile-editor textarea:visible').count() === 0);
+        check(`${label}: optionale Textfelder geschlossen, Bitte vermeiden entfernt`, await page.locator('.profile-editor textarea:visible').count() === 0
+          && await page.locator('#profileForm [name="noGoTopics"]').count() === 0
+          && !(await page.locator('#profileForm').innerText()).includes("Bitte vermeiden"));
         await page.locator('[name="communicationStyle"][value="Vermittelnd"]').check();
         await page.locator('summary').filter({hasText:"Eigene Positionen"}).click();
         await page.locator('[name="publicPositions"]').fill("Synthetische verbindliche Position");
@@ -140,7 +142,8 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
         const style = await save();
         const model = require("../lib/helmut/ai").publicProfile(style);
         check(`${label}: Stil und Position erreichen aktives Modellprofil`, model.communicationStyle === "Vermittelnd" && model.publicPositions[0] === "Synthetische verbindliche Position");
-        check(`${label}: optionale Leitfrage wirklich leer, Themen unverändert`, style.mainQuestion === "" && style.topicPriorities.Arbeit === 5 && style.focusTopics.includes("Tarifbindung"));
+        check(`${label}: Leitfrage leer, Themen und entfernte Altangaben unverändert`, style.mainQuestion === "" && style.topicPriorities.Arbeit === 5 && style.focusTopics.includes("Tarifbindung")
+          && JSON.stringify(style.noGoTopics) === JSON.stringify(seed.noGoTopics) && !Object.hasOwn(patches.at(-1), "noGoTopics"));
         await open("profile-style");
         check(`${label}: Fertig ist auf der Schreibstilseite direkt erreichbar`, await toolbarReachable());
         await screenshot("schreibstil.png");
