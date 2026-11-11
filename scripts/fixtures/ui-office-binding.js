@@ -23,6 +23,20 @@ function payloadFor(scenario = "valid") {
   let recommendations = records;
   if (scenario !== "valid" && scenario !== "missing-primary") recommendations = [records[0]];
   const a = records[0];
+  if (["many", "after-thin"].includes(scenario)) {
+    recommendations = [a, records[1], ...["c", "d", "e"].map((key, index) => ({
+      ...a, id: `rec-${key}`, knowledge_object_id: `ko-${key}`, vorgang_id: `vorgang-${key}`,
+      title: `Synthetischer Vorgang ${key.toUpperCase()}`, relevance_score: 70 - index * 5
+    }))];
+    if (scenario === "after-thin") {
+      recommendations = recommendations.slice(0, 4);
+      recommendations.slice(0, 3).forEach(r => { r.summary = "Kurz."; });
+    }
+  }
+  if (scenario === "url-only") {
+    const link = { ...source }; delete link.excerpt;
+    a.sources = [link]; a.primarySource = link;
+  }
   if (scenario === "missing-vorgang") delete a.vorgang_id;
   if (scenario === "missing-knowledge") delete a.knowledge_object_id;
   if (scenario === "missing-record") delete a.id;
@@ -42,8 +56,10 @@ function payloadFor(scenario = "valid") {
   const items = recommendations.map(r => ({ id: r.id ? `item-${r.id}` : undefined,
     signalId: r.knowledge_object_id, knowledgeObjectId: r.knowledge_object_id,
     vorgangId: r.vorgangId ?? r.vorgang_id, vorgang_id: r.vorgang_id,
-    title: r.title, decision: r.decision, finalScore: r.relevance_score,
-    recommendedAction: r.recommended_action, primarySource: source, sources: [source], sourceCount: 1 }));
+    title: r.title, summary: r.summary, decision: r.decision, finalScore: r.relevance_score,
+    recommendedAction: r.recommended_action, primarySource: r.primarySource, sources: r.sources, sourceCount: 1 }));
+  if (scenario === "many") items.push({ ...items[0], id: "item-f", signalId: "ko-f", knowledgeObjectId: "ko-f",
+    vorgangId: "vorgang-f", vorgang_id: "vorgang-f", title: "Synthetischer Vorgang F", finalScore: 55 });
   return {
     profile: { id: "ui-binding-profile", fullName: "Synthetisches UI Profil", active: true,
       onboardedAt: now, party: "Testpartei", faction: "Testfraktion", constituency: "Testwahlkreis",
@@ -61,7 +77,11 @@ function payloadFor(scenario = "valid") {
         recommendation: a.recommended_action, urgency: "medium", briefingType: "daily", items: [],
         sourcesSummary: { sourceCount: 1, qualityStatus: "valid", lastUpdated: now },
         frischeVertrag: { aktuell: true } },
-      lageBriefing: { available: true, generatedAt: now, vorgaenge: [] },
+      lageBriefing: { available: true, generatedAt: now, vorgaenge: scenario === "many" ? [{
+        id: "vorgang-f", vorgangId: "vorgang-f", knowledgeObjectId: "ko-f", title: "Synthetischer Vorgang F",
+        displayTitle: "Synthetischer Vorgang F", displaySummary: "Synthetischer, belegter Sachstand für den Übergang ins Büro.",
+        sources: [source], summary: { wasIstPassiert: "Synthetischer Sachstand für den UI-Test." }
+      }] : [] },
       currentRadarState: { status: "empty", anzeige: { status: "empty", mentions: [],
         environment: { party: [], constituency: [], committees: [] }, dynamics: [], articles: [] } }
     }, tasks: [], notes: [], aiStatus: { enabled: false, model: "" }, version: "ui-binding-fixture"

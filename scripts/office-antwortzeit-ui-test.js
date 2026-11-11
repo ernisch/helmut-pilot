@@ -20,7 +20,7 @@ const functions = ["privateAccessContext", "privateAccessIsCurrent", "privateAcc
   "decisionEntityId", "isValidDraft", "generateStatementWithBackend", "officeDraftCacheKey",
   "officeDraftKey", "officeDraftBinding", "officeDraftEntry", "loadOfficeDraftCache",
   "uiOfficeSelection", "draftProvenanceLabel", "officeCardStatus", "officeDraftFailure", "renderOfficeDraftDetail",
-  "generateSelectedOfficeDraft", "shareOfficeDraft"];
+  "officeCreationReady", "generateSelectedOfficeDraft", "shareOfficeDraft"];
 const currentCode = functions.map(clientFunction).join("\n");
 const officeTimeout = /},\s*options\.office\s*===\s*true\s*\?\s*60000\s*:\s*12000\s*\);/;
 assert(officeTimeout.test(clientFunction("generateStatementWithBackend")), "Buero erwartet ausdruecklich 60s, andere Kommunikation weiterhin 12s");
@@ -64,6 +64,7 @@ function fixture(latencyMs, baseline = false) {
     officeDecisions: () => s.decisions, activeOfficeFormats: () => [format],
     recommendedOfficeFormat: () => ({ format, reason: "Synthetischer Pruefauftrag" }),
     officeDraftSources: d => d.sources || [], renderOfficeDraftSources: () => "",
+    sourceHref: source => source.url,
     uiIcon: () => "", escapeHtml: value => String(value), escapeAttribute: value => String(value),
     fetch: (url, options = {}) => {
       const pathname = new URL(url, s.window.location.href).pathname;

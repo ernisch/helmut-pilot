@@ -112,6 +112,8 @@ let officeShareFallbackKey = "";
 let selectedOfficeDraft = null;
 let officeBriefingTarget = null;
 let officeFormatTarget = null;
+let officeTopicPool = [];
+let officeTopicsExpanded = false;
 let selectedCommunicationChannel = "press";
 let berlinClockTimer = null;
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
@@ -156,6 +158,7 @@ function clearPrivateMandateState() {
   generatedStatement = ""; generatedStatementSource = ""; communicationContextTitle = "";
   officeDrafts = {}; officeDraftErrors = {}; officeDraftsGenerating = false; officeDraftGeneratingKey = ""; officeShareFallbackKey = "";
   selectedOfficeDraft = null; officeBriefingTarget = null; officeFormatTarget = null;
+  officeTopicPool = []; officeTopicsExpanded = false;
   parliamentItems = []; parliamentAssessments = {}; parliamentLoaded = false;
   dailyInputs = []; dailyInputsLoaded = false; radarArchive = []; radarBuckets = null;
   radarArchiveLoaded = false; opsStatus = null; opsStatusLoaded = false; pushConfig = null;
@@ -669,6 +672,19 @@ function applyStartPayload(startPayload, accessGeneration = privateAccessGenerat
   // entkoppelte Fokus-Deck — bei HELMUT_DECK_SIZE=3 identisch, aber unabhängig
   // skalierbar auf 5–10, ohne andere Views zu berühren.
   decisions = sortedDecisions.slice(0, 3);
+
+  // Büro keeps the complete available work pool. Alternative representations
+  // of the same KO/vorgang are aliases; conflicting KOs remain for rejection.
+  const officeItems = [];
+  const officeIdentity = item => JSON.stringify([
+    decisionEntityId(item, "vorgangId", "vorgang_id"),
+    decisionEntityId(item, "knowledgeObjectId", "knowledge_object_id")]);
+  for (const pool of [prominentPool, activeItems, situationalItems]) {
+    const prior = new Set(officeItems.map(officeIdentity));
+    officeItems.push(...pool.filter(item => !prior.has(officeIdentity(item))));
+  }
+  officeTopicPool = officeItems.filter(hasPreciseSource)
+    .filter(item => item.decision !== "Ignorieren").sort(decisionComparator).map(toDecision);
 
   const allHelmutRaw = [
     ...recommendations.map(recommendationToDecisionItem),
@@ -5500,6 +5516,7 @@ function renderLageView() {
       <article class="ui-detail ui-lage-detail" tabindex="0" aria-labelledby="ui-lage-detail-title">
         <button class="ui-mobile-back" type="button" data-ui-lage-back>${uiIcon("back")} ${backLabel}</button>
         ${vsheetContentHtml(selected).replace('id="vsheet-title"', 'id="ui-lage-detail-title"')}
+        ${lageOfficeDecision(selected) ? `<button class="secondary-button" type="button" data-lage-office="${escapeAttribute(selectedId)}">Im Büro öffnen ${uiIcon("arrow")}</button>` : ""}
       </article>
     </div>`;
 }
@@ -7624,7 +7641,7 @@ function draftTitle(decision) {
 }
 
 function officeDecisions() {
-  const eligible = (decisions || []).filter((d) =>
+  const eligible = officeTopicPool.filter((d) =>
     typeof d.id === "string" && d.id.trim() && typeof d.title === "string" && d.title.trim()
     && ["Sofort reagieren", "Beobachten"].includes(d.decision)
     && decisionEntityId(d, "knowledgeObjectId", "knowledge_object_id")
@@ -7636,7 +7653,19 @@ function officeDecisions() {
     const id = decisionEntityId(d, "vorgangId", "vorgang_id");
     counts.set(id, (counts.get(id) || 0) + 1);
   }
-  return eligible.filter((d) => counts.get(decisionEntityId(d, "vorgangId", "vorgang_id")) === 1).slice(0, 2);
+  return eligible.filter((d) => counts.get(decisionEntityId(d, "vorgangId", "vorgang_id")) === 1);
+}
+
+function officeCreationReady(decision) {
+  return [decision?.primarySource, ...(decision?.sources || [])].filter(Boolean).some(source =>
+    sourceHref(source) && String(source.excerpt || source.summary || source.content || "").slice(0, 1600).trim().length >= 30);
+}
+
+function lageOfficeDecision(vorgang) {
+  const id = String(vorgang?.vorgangId || vorgang?.id || "");
+  const koId = decisionEntityId(vorgang, "knowledgeObjectId", "knowledge_object_id");
+  return officeDecisions().find(d => decisionEntityId(d, "vorgangId", "vorgang_id") === id
+    && (!koId || decisionEntityId(d, "knowledgeObjectId", "knowledge_object_id") === koId)) || null;
 }
 
 function briefingOfficeDecision() {
@@ -7649,8 +7678,12 @@ function briefingOfficeDecision() {
 }
 
 function openOfficeForBriefing() {
-  loadOfficeDraftCache();
   const decision = briefingOfficeDecision();
+  return openOfficeForDecision(decision);
+}
+
+function openOfficeForDecision(decision) {
+  loadOfficeDraftCache();
   if (!decision || !activeOfficeFormats().length) {
     selectedOfficeDraft = null;
     officeBriefingTarget = null;
@@ -7660,6 +7693,7 @@ function openOfficeForBriefing() {
   officeBriefingTarget = { profileId: profile.id,
     vorgangId: decisionEntityId(decision, "vorgangId", "vorgang_id"),
     knowledgeObjectId: decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id") };
+  if (officeDecisions().indexOf(decision) >= 2) officeTopicsExpanded = true;
   const existing = officeExistingDrafts(decision)[0];
   selectedOfficeDraft = existing ? uiOfficeSelection(decision, existing.format) : null;
   currentView = existing ? "office-detail" : "office";
@@ -7711,10 +7745,11 @@ function renderOfficeFormatSheet() {
   const formats = activeOfficeFormats();
   const primary = ["presse", "x", "intern"].map((id) => formats.find((f) => f.id === id)).filter(Boolean);
   const more = formats.filter((f) => !primary.includes(f));
+  const ready = officeCreationReady(decision);
   const row = (format) => {
     const cached = officeDraftEntry(decision, format);
     const label = format.id === "x" ? "X-Post" : format.label;
-    return `<button type="button" class="buero-format-action" data-office-create="${escapeAttribute(format.id)}" ${officeDraftsGenerating || (previewMode && !cached) ? "disabled" : ""}>
+    return `<button type="button" class="buero-format-action" data-office-create="${escapeAttribute(format.id)}" ${officeDraftsGenerating || (!cached && (previewMode || !ready)) ? "disabled" : ""}>
       <span>${escapeHtml(label)} ${cached ? "öffnen" : "erstellen"}</span>${uiIcon("chevron")}</button>`;
   };
   return `<dialog class="buero-format-sheet" data-office-format-sheet aria-labelledby="office-format-title" aria-describedby="office-format-topic">
@@ -7722,6 +7757,7 @@ function renderOfficeFormatSheet() {
     <header class="buero-sheet-header"><h2 id="office-format-title">Format wählen</h2>
       <button type="button" class="buero-sheet-close" data-office-format-close aria-label="Formatwahl schließen" autofocus>×</button>
       <p id="office-format-topic">${escapeHtml(decision.title)}</p></header>
+    ${!ready ? '<p class="buero-sheet-note" role="status">Für dieses Thema fehlt noch ausreichender Originalquellentext. Neue Entwürfe können erst danach erstellt werden.</p>' : ""}
     <div class="buero-format-actions">${primary.map(row).join("")}
       ${more.length ? `<details class="buero-more-formats"><summary>Weitere Formate ${uiIcon("chevron")}</summary>${more.map(row).join("")}</details>` : ""}
     </div>
@@ -7783,7 +7819,8 @@ function renderOfficeView() {
       ${!detailOpen ? `<header class="ui-page-header buero-overview-header"><h1>Büro</h1><p class="ui-page-subtitle" data-office-count>${topDecisions.length} ${topDecisions.length === 1 ? "Thema" : "Themen"} · ${draftCount} ${draftCount === 1 ? "Entwurf" : "Entwürfe"}</p></header>` : ""}
       <div class="ui-master-detail ui-office-workspace ${detailOpen ? "is-detail" : ""}">
         ${!detailOpen ? `<div class="buero-draft-list ui-master" aria-label="Themen im Büro">
-          ${topDecisions.map((decision) => renderOfficeDraftCard(decision)).join("")}
+          ${topDecisions.slice(0, 2).map((decision) => renderOfficeDraftCard(decision)).join("")}
+          ${topDecisions.length > 2 ? `<details class="buero-more-topics" data-office-more ${officeTopicsExpanded ? "open" : ""}><summary>Weitere Themen <span>(${topDecisions.length - 2})</span>${uiIcon("chevron")}</summary>${topDecisions.slice(2).map(decision => renderOfficeDraftCard(decision)).join("")}</details>` : ""}
           ${!topDecisions.length ? renderUiEmpty("Noch kein belastbarer Anlass", "Sobald ein belegtes Thema vorliegt, können Sie hier ein Format wählen und einen Entwurf erstellen.") : ""}
         </div>` : `<aside class="ui-detail ui-office-detail" aria-label="Entwurf im Detail">${selectedOfficeDraft ? renderOfficeDraftDetail() : `<button type="button" class="buero-back-btn" data-office-back>${uiIcon("back")} Büro</button>${renderUiEmpty("Entwurf nicht eindeutig zugeordnet", "Öffnen Sie einen vorhandenen Anlass, um den Text und seine Quellen zu prüfen.")}`}</aside>`}
       </div>
@@ -7801,7 +7838,7 @@ function renderOfficeDraftCard(decision) {
   const key = `${decisionEntityId(decision, "vorgangId", "vorgang_id")}:${decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id")}`;
   const generating = activeOfficeFormats().some((f) => officeDraftGeneratingKey === officeDraftKey(decision, f));
   const status = existing.length ? `Entwurf bereit · ${format.label}${existing.length > 1 ? ` +${existing.length - 1}` : ""}`
-    : generating ? "Entwurf wird erstellt …" : "Format wählen";
+    : generating ? "Entwurf wird erstellt …" : officeCreationReady(decision) ? "Format wählen" : "Quellentext fehlt";
   return `
     <article class="buero-draft-card buero-topic-row"
       data-office-open="${escapeAttribute(key)}"
@@ -10043,6 +10080,15 @@ function bindActions() {
   app.querySelectorAll("[data-briefing-office]").forEach((button) => {
     button.addEventListener("click", openOfficeForBriefing);
   });
+  app.querySelectorAll("[data-lage-office]").forEach(button => {
+    button.addEventListener("click", () => {
+      const vorgang = lageVisibleVorgaenge(lageData()).find(v => String(v.vorgangId || v.id) === button.dataset.lageOffice);
+      openOfficeForDecision(lageOfficeDecision(vorgang));
+    });
+  });
+  app.querySelectorAll("[data-office-more]").forEach(details => {
+    details.addEventListener("toggle", () => { officeTopicsExpanded = details.open; });
+  });
 
   app.querySelectorAll("[data-menu]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -11117,6 +11163,11 @@ async function generateSelectedOfficeDraft({ userInitiated = false } = {}) {
   loadOfficeDraftCache();
   if (officeDraftEntry(decision, format)) return;
   const key = officeDraftKey(decision, format);
+  if (!officeCreationReady(decision)) {
+    officeDraftErrors[key] = "quellenbasis-fehlt";
+    render();
+    return;
+  }
   if (officeDraftsGenerating) return;
   const binding = officeDraftBinding(decision, format);
   const cacheKey = officeDraftCacheKey();

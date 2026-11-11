@@ -49,6 +49,7 @@ const fixtureBootstrap = `
     authState = {mode: 'accounts'}; currentUser = {id:'ui-user',name:'UI Testprofil',role:'abgeordneter',notificationSettings:{}};
     opsStatusLoaded = true; opsStatus = {learning:{eventCount:7}};
     decisions = [JSON.parse(JSON.stringify(__baseCard))];
+    officeTopicPool = decisions;
     officeDrafts = {}; officeDraftErrors = {}; selectedOfficeDraft = null;
     for (const f of activeOfficeFormats()) officeDrafts[officeDraftKey(decisions[0], f)] = {text:'Synthetischer UI Testentwurf ohne fachliche Aussage. '.repeat(12),source:'ki',binding:officeDraftBinding(decisions[0],f),createdAt:Date.now()};
     onboardingActive = false; helmutThinking = false;
@@ -64,7 +65,7 @@ const fixtureBootstrap = `
       if (kind === 'empty' || kind === 'unconfirmed' || kind === 'stale-empty') {
         briefing.currentHelmutState.status='empty'; briefing.currentHelmutState.primaryItem=null;
         briefing.lageBriefing.vorgaenge=[]; briefing.currentRadarState.mentions=[]; briefing.currentRadarState.articles=[];
-        briefing.currentRadarState.environment={party:[],constituency:[],committees:[]}; briefing.currentRadarState.dynamics=[]; decisions=[];
+        briefing.currentRadarState.environment={party:[],constituency:[],committees:[]}; briefing.currentRadarState.dynamics=[]; decisions=[]; officeTopicPool=[];
         if(kind==='unconfirmed') briefing.currentRadarState.quality.sourcesLoaded=false;
         if(kind==='stale-empty') {briefing.currentRadarState.status='stale';briefing.currentRadarState.emptyState={kind:'stale',detail:'Synthetische Einschränkung: Der vorhandene Quellenstand ist älter.'};}
       } else if (kind === 'error') {
