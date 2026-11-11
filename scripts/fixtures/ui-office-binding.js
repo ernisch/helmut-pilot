@@ -6,7 +6,7 @@ const fixtureTime = new Date().toISOString();
 function payloadFor(scenario = "valid") {
   const now = fixtureTime;
   const source = { name: "Synthetische UI Quelle", sourceName: "Synthetische UI Quelle",
-    url: "https://example.test/ui/beleg", linkType: "direct", publishedAt: now,
+    url: "https://example.test/ui/beleg", linkType: "direct", publishedAt: scenario === "old-source" ? "2026-09-25T09:00:00Z" : now,
     excerpt: "Ein fiktiver parlamentarischer Bericht dokumentiert eine öffentliche Beratung. Alle Angaben sind synthetische UI-Testdaten." };
   const records = [
     { key: "a", score: 40, decision: "Beobachten" },

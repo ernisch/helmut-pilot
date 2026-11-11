@@ -89,13 +89,15 @@ function check(name, cond, detail = "") {
   const refused = await ai.generateCommunicationDraft({office:true,decision,profile:{id:"t"},channel:"press"});
   check("Fehlende Quellen stoppen vor KI und liefern keinen Fertigtext", refused.fallbackReason === "quellenbasis-fehlt" && refused.text === "" && refused.aiEnabled === false);
 
-  let capturedPrompt = "", capturedMeta = null, mockedModelCalls = 0, modelError = null, preBudget = {allowed:true};
+  let capturedPrompt = "", capturedMeta = null, mockedModelCalls = 0, modelError = null, preBudget = {allowed:true}, modelTextOverride = null;
   const aiSandbox = { require: name => name === "./storage"
     ? {canSpendLlmForTenant: async () => preBudget, recordLlmUsage: async () => ({})}
     : require(require("module").createRequire(path.join(root,"lib/helmut/ai.js")).resolve(name)),
     process, console, URL, Buffer, module:{exports:{}},
     capture: (value,meta) => {capturedPrompt=value;capturedMeta=meta;mockedModelCalls++;
-      if(modelError) throw modelError;return {text:"Synthetischer Testentwurf.",rationale:"Nur Test"};} };
+      if(modelError) throw modelError;
+      const marker = "\nKontext:\n", context = JSON.parse(value.slice(value.lastIndexOf(marker) + marker.length));
+      return {text:modelTextOverride ?? require("./fixtures/office-format-beispiele").texts[context.channel.id],rationale:"Nur Test"};} };
   vm.createContext(aiSandbox);
   vm.runInContext(aiSource + '\n isAiEnabled=()=>true; requestJson=async (prompt,meta)=>capture(prompt,meta);', aiSandbox);
   const officeResult = await aiSandbox.module.exports.generateCommunicationDraft({office:true,decision:sourced,
@@ -111,6 +113,19 @@ function check(name, cond, detail = "") {
   check("Fakten, KI-Einordnung, Auszüge und formelle Anfragen bleiben getrennt",
     capturedPrompt.includes("keine zusätzlichen Tatsachenbelege") && capturedPrompt.includes("keine formgerechte Kleine Anfrage")
     && capturedPrompt.includes("Keine eigene Position") && capturedPrompt.includes("Aus Auszügen niemals"));
+  for (const level of ["Bundestag", "Landtag"]) for (const channel of Object.keys(ai.communicationChannels)) {
+    const before = mockedModelCalls;
+    const result = await aiSandbox.module.exports.generateCommunicationDraft({office:true,decision:sourced,
+      profile:{id:"format-test",parliamentType:level,state:level==="Landtag"?"Berlin":"",committee:"Testausschuss"},channel});
+    check(`${level}/${channel}: genau ein Auftrag und bestandene Formprüfung`,result.aiEnabled===true && result.formatCheck?.valid===true && mockedModelCalls===before+1);
+  }
+  modelTextOverride="Zu kurz.";
+  const beforeInvalid=mockedModelCalls;
+  const invalidFormat=await aiSandbox.module.exports.generateCommunicationDraft({office:true,decision:sourced,profile:{id:"format-test"},channel:"press"});
+  check("Fehlerhaftes Format wird nicht als fertiger Text ausgegeben oder automatisch wiederholt",invalidFormat.degraded===true && invalidFormat.fallbackReason==="formatpruefung-fehlgeschlagen" && invalidFormat.text==="" && mockedModelCalls===beforeInvalid+1);
+  modelTextOverride=null;
+  await aiSandbox.module.exports.generateCommunicationDraft({office:true,decision:{...sourced,sources:[{...source,publishedAt:"2026-09-25T09:00:00Z"}],primarySource:null},profile:{id:"format-test"},channel:"x"});
+  check("Alter Quellenstand bleibt im Prompt erhalten und wird nicht zum Erstellungsdatum",capturedPrompt.includes("2026-09-25T09:00:00Z") && capturedPrompt.includes("draftingDate") && capturedPrompt.includes("Alte Quellen belegen keinen heutigen Sachstand"));
   const draftInput = {office:true, decision:sourced, profile:{id:"tenant-a"}, channel:"internal_line"};
   for(const [reason,expected] of [["betriebskosten-grenze-erreicht","budget-erschoepft"],
     ["daily-llm-budget-reached","budget-erschoepft"], ["tenant-monthly-budget-reached","budget-erschoepft"],

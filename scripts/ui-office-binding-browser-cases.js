@@ -2,6 +2,8 @@
 
 const assert = require("assert/strict");
 const { payloadFor } = require("./fixtures/ui-office-binding");
+const { texts: formatExamples } = require("./fixtures/office-format-beispiele");
+const { check: checkFormat } = require("../lib/helmut/office-formatpruefung");
 let scenario, writes, reads, unexpected, holdNext, releaseResponse, failureReason;
 const runs = [];
 function reset() { scenario = "valid"; writes = []; reads = []; unexpected = []; holdNext = false; releaseResponse = null; failureReason = null; }
@@ -31,8 +33,13 @@ function apiResponse(request) {
     writes.push({ method, path: url.pathname, scenario, body, csrfVerified: true, simulated: true });
     if (failureReason) return { aiEnabled:false, degraded:true, fallbackReason:failureReason, text:"",
       sourceNote:"Untrusted provider detail must never be displayed" };
-    const response = { aiEnabled: true, channel: body.channel, channelLabel: body.channel,
-      text: `Synthetischer Entwurf für ${body.decision.vorgang_id}. Nur UI-Testdaten. `.repeat(4) };
+    const prefix = `Entwurf für ${body.decision.vorgang_id}. `;
+    const example = formatExamples[body.channel];
+    const text = body.channel === "internal_line" ? example.replace(/^- /, "- " + prefix)
+      : body.channel === "committee_question" ? example.replace(/^1\. /, "1. " + prefix) : prefix + example;
+    const formatCheck = checkFormat(text, body.channel);
+    assert(formatCheck.valid, JSON.stringify(formatCheck));
+    const response = { aiEnabled: true, channel: body.channel, channelLabel: body.channel, text, formatCheck };
     if (holdNext) { holdNext = false; return new Promise(resolve=>{releaseResponse=()=>resolve(response);}); }
     return response;
   }
@@ -132,8 +139,14 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
   await cdp.send("Input.dispatchKeyEvent",{type:"keyUp",key:"Escape",code:"Escape",windowsVirtualKeyCode:27},s);
   verify("Escape dismisses the sheet without spending",await waitFor("!document.querySelector('[data-office-format-sheet]')") && writes.length===0);
   await click(bSelector);
+  releaseResponse=null; holdNext=true;
   await click('[data-office-create="intern"]');
+  for (let i=0;i<100 && !releaseResponse;i++) await new Promise(resolve=>setTimeout(resolve,20));
+  verify("visible indeterminate progress while exactly one draft is pending",typeof releaseResponse==='function' && writes.length===1 && await evaluate("!!document.querySelector('progress.buero-generation-progress:not([value])') && document.querySelector('.buero-draft-state').getAttribute('aria-busy')==='true' && !document.querySelector('[data-office-share]')"));
+  await screenshot("office-generating");
+  releaseResponse();
   verify("selected draft generated only when needed",await waitFor("!officeDraftsGenerating && document.querySelector('.ui-office-detail').textContent.includes('Entwurf für vorgang-b')"));
+  verify("progress disappears and checked format is retained",await evaluate("!document.querySelector('progress.buero-generation-progress') && selectedOfficeDraft.formatCheck?.valid && document.querySelector('.ui-office-detail').textContent.includes('Länge und Aufbau geprüft')"));
   verify("second occasion selected with explicit KO and record",await evaluate("selectedOfficeDraft.decision.vorgangId==='vorgang-b' && selectedOfficeDraft.decision.knowledgeObjectId==='ko-b'"));
   verify("exactly the explicitly requested draft is generated",writes.length===1 && writes[0].body.decision.vorgang_id==='vorgang-b' && writes[0].body.channel==='internal_line',writes);
   verify("CSRF verified for the on-demand request",reads.includes("/api/security/csrf") && writes.every(r=>r.csrfVerified));
@@ -229,7 +242,7 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
   if (!mobile) {
     scenario="valid";
     await evaluate("officeDrafts={};officeDraftErrors={};officeBriefingTarget=null;selectedOfficeDraft=null;persistView('helmut');currentView='helmut';loadBriefing().then(()=>true)");
-    holdNext=true;
+    releaseResponse=null; holdNext=true;
     await click("[data-briefing-office]");
     await click('[data-office-create="intern"]');
     for (let i=0;i<100 && !releaseResponse;i++) await new Promise(resolve=>setTimeout(resolve,20));
@@ -251,13 +264,13 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
     await evaluate("previewMode=false;selectedOfficeDraft=null");
   }
   if (!mobile) {
-    for (const [reason,fragment] of [["quellenbasis-fehlt","Originaltextbasis"],["zustaendigkeit-offen","parlamentarische Zuständigkeit"],["budget-erschoepft","KI-Kontingent"],["entwurf-nicht-freigegeben","nicht freigegeben"],["kostenpruefung-fehlgeschlagen","nicht bestätigt"]]) {
+    for (const [reason,fragment] of [["quellenbasis-fehlt","Originaltextbasis"],["zustaendigkeit-offen","parlamentarische Zuständigkeit"],["budget-erschoepft","KI-Kontingent"],["entwurf-nicht-freigegeben","nicht freigegeben"],["kostenpruefung-fehlgeschlagen","nicht bestätigt"],["formatpruefung-fehlgeschlagen","Vorgaben des gewählten Formats"]]) {
       failureReason=reason;
       const before=writes.length;
       await evaluate("officeDrafts={};officeDraftErrors={};localStorage.removeItem(officeDraftCacheKey());selectedOfficeDraft=uiOfficeSelection(officeDecisions()[0],recommendedOfficeFormat(officeDecisions()[0]).format);currentView='office-detail';render()");
       await click('[data-office-generate]');
       await waitFor("!officeDraftsGenerating");
-      const retry=reason==="kostenpruefung-fehlgeschlagen";
+      const retry=["kostenpruefung-fehlgeschlagen","formatpruefung-fehlgeschlagen"].includes(reason);
       verify(reason+" shows the matching message and retry",await evaluate(`document.querySelector('.ui-office-detail').textContent.includes(${JSON.stringify(fragment)}) && !document.querySelector('[data-office-share]') && !!document.querySelector('[data-office-generate]') === ${retry} && !document.querySelector('.ui-office-detail').textContent.includes('Untrusted provider detail')`) && writes.length===before+1,{writes:writes.length-before,state:await evaluate("({errors:officeDraftErrors,body:document.querySelector('.ui-office-detail').textContent,share:!!document.querySelector('[data-office-share]'),retry:!!document.querySelector('[data-office-generate]')})")});
     }
     failureReason=null;
@@ -290,7 +303,7 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
   await click('[data-lage-office="vorgang-f"]');
   verify("Lage opens its exact sixth topic without spending",await evaluate("officeFormatDecision().vorgangId==='vorgang-f' && officeFormatDecision().knowledgeObjectId==='ko-f' && document.querySelector('[data-office-format-sheet]').matches(':modal')") && writes.length===beforeMore);
   await click('[data-office-create="intern"]');
-  verify("only explicit creation sends one request for that topic",await waitFor("!officeDraftsGenerating && !!document.querySelector('[data-office-share]')") && writes.length===beforeMore+1 && writes.at(-1).body.decision.vorgang_id==='vorgang-f');
+  verify("only explicit creation sends one request for that topic",await waitFor("!officeDraftsGenerating && !!document.querySelector('[data-office-share]')") && writes.length===beforeMore+1 && writes.at(-1).body.decision.vorgang_id==='vorgang-f', {writes:writes.length-beforeMore,last:writes.at(-1)?.body.decision.vorgang_id,state:await evaluate("({generating:officeDraftsGenerating,errors:officeDraftErrors,selection:selectedOfficeDraft,view:currentView})")});
   await click("[data-office-back]");
   verify("total counts include drafts under additional topics",await evaluate("document.querySelector('[data-office-count]').textContent==='6 Themen · 1 Entwurf' && document.querySelector('[data-office-more]').open"));
   await screenshot("office-complete-count");
@@ -299,6 +312,13 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
   scenario="after-thin";
   await evaluate("officeBriefingTarget=null;selectedOfficeDraft=null;officeTopicsExpanded=false;persistView('office');currentView='office';loadBriefing().then(()=>true)");
   verify("eligibility runs before the display limit and recovers topic four",await evaluate("officeDecisions().length===1 && officeDecisions()[0].vorgangId==='vorgang-d' && document.querySelector('[data-office-count]').textContent==='1 Thema · 0 Entwürfe'"));
+  scenario="old-source";
+  const beforeOld=writes.length;
+  await evaluate("loadBriefing().then(()=>true)");
+  await click("[data-office-open]");
+  verify("September source date and year are visible before creation",await evaluate("document.querySelector('[data-office-format-sheet]').textContent.includes('Quellenstand: 25. September 2026') && officeFormatDecision().sources[0].publishedAt==='2026-09-25T09:00:00Z'") && writes.length===beforeOld);
+  await screenshot("office-old-source");
+  await click("[data-office-format-close]");
   scenario="url-only";
   const beforeMissingSource=writes.length;
   await evaluate("loadBriefing().then(()=>true)");
