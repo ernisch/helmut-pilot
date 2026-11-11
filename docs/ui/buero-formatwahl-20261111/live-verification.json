@@ -1,0 +1,76 @@
+{
+  "checkedAt": "2026-11-11T14:39:33.782012+00:00",
+  "domain": "https://helmut-pilot.vercel.app",
+  "mergeCommit": "57b342d60a77845dcfd5d0bff0c4cd32156554b6",
+  "htmlStatus": 200,
+  "assetVersion": "57b342d6",
+  "assets": {
+    "client.js": {
+      "status": 200,
+      "sha256": "7a27dd456a6ea2707ce5f6c0150a11db0f345ed19e6fe3ada4ba37e8256b881c",
+      "matchesTested": true,
+      "version": "57b342d6"
+    },
+    "styles.css": {
+      "status": 200,
+      "sha256": "8c649366798777ec9024c3df3e944163fcfccab81b1f5409fe63fbeb1ac0d0de",
+      "matchesTested": true,
+      "version": "57b342d6"
+    }
+  },
+  "releaseStatus": 200,
+  "release": {
+    "ok": true,
+    "ready": false,
+    "storage": true
+  },
+  "paidModelCalls": 0,
+  "method": "Unauthenticated read-only GETs; no customer session or generation request",
+  "status": "LIVE_VERIFIED_FOR_OFFICE_CHANGE",
+  "deploymentId": "dpl_5qWtxBzaVuKeDZcUuSSkXoMwYiJk",
+  "deploymentState": "READY",
+  "target": "production",
+  "ci": {
+    "run": 43031998331,
+    "head": "b2a99bfc56f080bd5d44a9ddc299420d599aa451",
+    "standardSuites": 189,
+    "areaSuites": 364,
+    "browserCheck": "SUCCESS"
+  },
+  "mergeProof": {
+    "base": "d3a27394e73ab9924468336741f2d33464a31e98",
+    "head": "b2a99bfc56f080bd5d44a9ddc299420d599aa451",
+    "mergeTree": "b9ecbdd7b29d0819ffa6788ca3f25585ebeb6156",
+    "clientSha256": "7a27dd456a6ea2707ce5f6c0150a11db0f345ed19e6fe3ada4ba37e8256b881c",
+    "serverSha256": "ae91bdf2e9f1409fb34e100641dca2de7d4b2c9cfd599bab32bb92732af0e51f",
+    "statusCharacters": 29923,
+    "statusLines": 340,
+    "mergeCommit": "57b342d60a77845dcfd5d0bff0c4cd32156554b6",
+    "mergedAt": "2026-11-11T14:35:58Z",
+    "actualMergeTree": "b9ecbdd7b29d0819ffa6788ca3f25585ebeb6156",
+    "merged": true
+  },
+  "preflight": {
+    "checkedAt": "2026-11-11T14:35:21.375621Z",
+    "processes": 0,
+    "pipelineLocks": 0,
+    "classLeases": 0
+  },
+  "postflight": {
+    "checkedAt": "2026-11-11T14:39:48.902657Z",
+    "processes": 0,
+    "pipelineLocks": 0,
+    "classLeases": 0
+  },
+  "runtimeErrors": {
+    "deploymentId": "dpl_5qWtxBzaVuKeDZcUuSSkXoMwYiJk",
+    "since": "2026-11-11T14:35:58.000Z",
+    "until": "2026-11-11T14:42:44.677Z",
+    "levels": [
+      "error",
+      "fatal"
+    ],
+    "found": 0
+  },
+  "scopeLimit": "Public release ready=false is preserved as an open overall readiness result; no authenticated customer click or paid model test is claimed."
+}
