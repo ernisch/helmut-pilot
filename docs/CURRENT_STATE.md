@@ -16,9 +16,9 @@
 
 [PR1129](https://github.com/ernisch/helmut-pilot/pull/1129) auf `ca9a3fc6` live/READY; Buero wartet60s statt12s, kein Auto-Retry. Pflicht-CI43001755133 gruen:14/14 Schnellkern,135/135 Bereich und Browser/Mobil. Nach Nutzer-„Ja“ genau1echte Probe11:40UTC: HTTP200 nach15,023s,844Zeichen,kein Fallback,1bestaetigte Buchung0,002823USD. Die alte12s-Frist haette diese erfolgreiche Antwort verworfen. Unveraenderter Client zeigt die Originalantwort im isolierten Desktop-/Mobilreplay nach13s bytegleich,37/37Pruefungen,Cache/Teilenaktion bestaetigt,0externeAnfragen. Native Bilanz11:43UTC:64Buchungen,heute0,029144USD/1USD,gesamt1,214451USD/30USD;Vertrag/Altreserven erhalten. Erfolgreich fuer diese Einzelprobe; normale Kundensitzung/natives Teilen nicht geprueft. [Beleg, Grenzen und Rueckweg](betrieb/buero-kostensperre-20261111.md).
 
-## Profilwirkung geprüft (11.11.2026)
+## Kompaktes Profil (11.11.2026, Integration offen)
 
-[Wirkungsmatrix, Fehler und UX-Bewertung](ui/profil-wirkungscheck-20261111/README.md): Prüfung abgeschlossen auf `68abc505`, Runtime `57b342d6` bestätigt; Produkt nur teilweise vollständig. Lokale mobile PATCH-Probe belegt Ausschussverlust und nicht löschbare Termine; Kernbewertung 1=2/3=4=5, Kampagnen/Akteure/Termine ohne aktiven Inhaltsverbraucher. Keine Productionmutation/KI-Aufrufe. Nächster Schritt: begrenzter Speicher-/Wirkungsfix, danach kompaktere Bedienung. Dropdown-PR1134 weiter offen/nicht live.
+[Umsetzung/Prüfungen](ui/profil-kompakt-20261111/README.md): drei Mock-Seiten, echte1/3/5Gewichtung, Teil-Speichern/Mehrfachausschüsse und Bürocache korrigiert. Lokal54Browser-,31Onboarding-,43KI-Feldchecks grün; verzögerte Antworten abgesichert. Keine Productionmutation/KI-Aufrufe. Pflicht-CI/Rollout offen; DropdownPR1134 wird ersetzt. [Vorheriger Audit](ui/profil-wirkungscheck-20261111/README.md). Nächster Schritt: exakte grüne Integration und lesender Rolloutnachweis.
 
 **Historie 07.11.:** Lageauswahl PR1100 auf `d9651861` live/READY, Pflicht-CI42409807375 grün. Fachliche Aufnahme vor Limit, Quellen-/Profilbindung; synthetische Gegenproben und Windenergiefall bestanden. Authentifizierte Production-Bedienabnahme offen. [Vollständige Belege, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md); keine neue Daten-/Modellfreigabe.
 

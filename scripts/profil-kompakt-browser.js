@@ -11,7 +11,7 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
       const label = mobile ? "Profil mobil" : "Profil Desktop";
       const seed = { ...fixture, communicationStyle: "Sachlich",
         committees: ["Arbeit und Soziales", "Gesundheit"],
-        focusTopics: ["Arbeit", "Pflege", "Tarifbindung"], topicPriorities: { Arbeit: 1, Pflege: 3, Tarifbindung: 5 },
+        focusTopics: ["Arbeit", "Pflege", "Tarifbindung"], topicPriorities: { Arbeit: 1, Pflege: 3, Tarifbindung: 5, Finanzen: 5 },
         currentCampaigns: ["Synthetische Alt-Kampagne"], opponents: ["Synthetischer Alt-Akteur"],
         upcomingAppointments: ["Synthetischer Alt-Termin | 2099-06-26T11:00:00+02:00"] };
       await storage.saveProfile(seed);
@@ -40,7 +40,7 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
         }
         async function screenshot(name) {
           if (!mobile || !process.env.HELMUT_PROFILE_SCREENSHOT_DIR) return;
-          await page.waitForFunction(() => !document.querySelector("#toast")?.classList.contains("show"));
+          await page.waitForFunction(() => !document.querySelector("#toast")?.classList.contains("visible"));
           await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
           await page.screenshot({path:path.join(process.env.HELMUT_PROFILE_SCREENSHOT_DIR,name)});
         }
@@ -65,7 +65,19 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
         }
         await page.locator('.profile-editor-disclosure > summary').click();
         await page.locator('[name="committees"][value="Wirtschaft"]').check();
-        const first = await save();
+        let releasePatch;
+        const patchGate = new Promise(resolve => { releasePatch = resolve; });
+        const holdPatch = async route => {
+          if (route.request().method() === "PATCH") { await patchGate; return route.continue(); }
+          return route.continue();
+        };
+        await page.route("**/api/profile/current?*", holdPatch);
+        const firstSave = save();
+        await page.waitForFunction(() => document.querySelector('#profileForm [name="fullName"]')?.disabled);
+        check(`${label}: Speichern sperrt Eingaben bis zur bestätigten Antwort`, await page.locator('[name="fullName"]').isDisabled() && await page.locator('[name="party"]').isDisabled());
+        releasePatch();
+        const first = await firstSave;
+        await page.unroute("**/api/profile/current?*", holdPatch);
         check(`${label}: Mehrfachausschüsse über echten PATCH erhalten`, first.committees.includes("Gesundheit") && first.committees.includes("Arbeit und Soziales") && first.committees.includes("Wirtschaft"));
         check(`${label}: Mandat-PATCH erhält Themen und ausgeblendeten Altbestand`, JSON.stringify(first.focusTopics) === JSON.stringify(seed.focusTopics)
           && first.currentCampaigns[0] === seed.currentCampaigns[0] && first.opponents[0] === seed.opponents[0] && first.upcomingAppointments[0] === seed.upcomingAppointments[0]
@@ -93,6 +105,7 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
         check(`${label}: Ort erreicht gespeicherte regionale Interessen`, cleared.location === "Salzgitter" && cleared.regionalInterests.includes("Salzgitter"));
         await open("profile-topics");
         check(`${label}: eigene Fachthemen bleiben bearbeitbar`, await page.locator('[name="topicPriority:Tarifbindung"]').count() === 1);
+        check(`${label}: verwaiste hohe Gewichte aktivieren keine abgewählten Themen`, await page.locator('[name="topicPriority:Finanzen"]').count() === 0);
         await page.locator('[name="topicPriority:Arbeit"]').selectOption("5");
         await page.locator('.profile-topic-picker > summary').click();
         await page.locator('[data-profile-add-topic="Wirtschaft"]').click();
@@ -131,6 +144,33 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
         check(`${label}: Speicherfehler bewahrt Eingaben und erlaubt Wiederholung`, await page.locator('[name="communicationStyle"][value="Sachlich"]').isChecked() && await page.locator('.profile-editor-done').isEnabled());
         await save();
         check(`${label}: Wiederholung speichert über echten Server`, (await storage.getProfile(seed.id)).communicationStyle === "Sachlich");
+        // Zwei bestätigte Saves, aber die erste Appstart-Antwort kommt zuletzt.
+        let releaseOldStart, capturedOldStart;
+        const oldGate = new Promise(resolve => { releaseOldStart = resolve; });
+        const oldCaptured = new Promise(resolve => { capturedOldStart = resolve; });
+        let holdFirstStart = true;
+        const holdStart = async route => {
+          if (!holdFirstStart) return route.continue();
+          holdFirstStart = false;
+          const response = await route.fetch(), body = await response.body();
+          capturedOldStart(); await oldGate;
+          return route.fulfill({response,body});
+        };
+        await page.route("**/api/app/start?*", holdStart);
+        await open("profile-style");
+        await page.locator('[name="communicationStyle"][value="Vermittelnd"]').check();
+        const firstPatch = page.waitForResponse(r => r.request().method() === "PATCH" && new URL(r.url()).pathname === "/api/profile/current");
+        await page.locator('.profile-editor-done').click(); await firstPatch;
+        await page.locator("#profileForm").waitFor({state:"detached"}); await oldCaptured;
+        await open("profile-style");
+        await page.locator('[name="communicationStyle"][value="Sachlich"]').check();
+        await save();
+        const oldArrived = page.waitForResponse(r => new URL(r.url()).pathname === "/api/app/start");
+        releaseOldStart(); await oldArrived;
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const latest = await page.evaluate(() => ({style:profile.communicationStyle, cached:localStorage.getItem(appStartCacheKey())}));
+        check(`${label}: verspäteter älterer Abruf überschreibt keinen neueren Save`, latest.style === "Sachlich" && latest.cached === null);
+        await page.unroute("**/api/app/start?*", holdStart);
         const cache = await page.evaluate(() => {
           const decision = {id:"synthetic-profile-cache",vorgangId:"synthetic-vg",knowledgeObjectId:"synthetic-ko"}, format={id:"presse"};
           const text="Dies ist ein künstlicher Büroentwurf für die lokale Prüfung. Er beschreibt keine reale politische Position und dient ausschließlich der Cacheprüfung.";

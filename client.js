@@ -149,7 +149,7 @@ function privateAccessChanged() {
 }
 function clearPrivateMandateState() {
   clearLageHistory();
-  profileEditorDraft = null; profileEditorSaving = false;
+  profileEditorDraft = null; profileEditorSaving = false; ++profileSaveRevision;
   profile = null; briefing = null; aiStatus = { enabled: false, model: "" };
   tasks = []; notes = []; recommendations = []; decisions = [];
   helmutBriefings = []; helmutDeck = []; helmutDecidedIds = new Set();
@@ -286,6 +286,7 @@ function fmtCost(n) {
 const DAILY_INPUT_ENABLED = false;
 let profileEditorDraft = null;
 let profileEditorSaving = false;
+let profileSaveRevision = 0;
 window.addEventListener("beforeunload", event => {
   if (profileEditorHasChanges()) { event.preventDefault(); event.returnValue = ""; }
 });
@@ -9142,7 +9143,8 @@ function profileEditorSection() {
 }
 function profileEditorTopics(p = profile) {
   const priorities = p?.topicPriorities || {};
-  return uniqueViewList([...(p?.focusTopics || []), ...Object.keys(priorities).filter(t => Number(priorities[t]) >= 3)]);
+  return uniqueViewList(Array.isArray(p?.focusTopics) ? p.focusTopics
+    : Object.keys(priorities).filter(t => Number(priorities[t]) >= 3));
 }
 function profileEditorInitial(section) {
   const list = value => Array.isArray(value) ? [...value] : value ? [value] : [];
@@ -9304,10 +9306,14 @@ function syncProfileRegionLists(form, reset = false) {
     // Ein bewusster Ebenen-/Landwechsel verlangt eine neue passende Auswahl.
     const value = reset ? "" : select.value;
     select.innerHTML = profileChoiceOptions(value, options, state ? "Auswählen" : "Zuerst Bundesland wählen");
-    select.disabled = !state || (name === "constituency" && !level);
+    select.disabled = profileEditorSaving || !state || (name === "constituency" && !level);
   }
 }
+function lockProfileEditor(form) {
+  form.querySelectorAll("input, select, textarea, button").forEach(control => { control.disabled = true; });
+}
 function bindProfileEditor(form) {
+  if (profileEditorSaving) lockProfileEditor(form);
   form.addEventListener("input", () => profileEditorReadForm(form));
   form.addEventListener("change", event => {
     if (event.target.matches("[data-state-select], [data-profile-level]")) syncProfileRegionLists(form, true);
@@ -10761,11 +10767,12 @@ async function saveProfileFromForm(form) {
     profileEditorDraft = null; currentView = "settings"; persistView(currentView); render(); return;
   }
   const context = privateAccessContext(), targetId = profile.id, section = profileEditorDraft.section;
+  const revision = ++profileSaveRevision;
   const payload = { ...profileEditorDraft.values };
   if (section === "mandate") payload.regionalInterests = [payload.state, payload.constituency, payload.location].filter(Boolean);
   profileEditorSaving = true;
   const done = form.querySelector('[type="submit"]');
-  done.disabled = true; done.textContent = "Speichern…";
+  lockProfileEditor(form); done.textContent = "Speichern…";
   form.querySelector("[data-profile-save-error]").textContent = "";
   try {
     const response = await fetchWithTimeout(`/api/profile/current?${apiScopeQuery({ politicianId: targetId })}`, {
@@ -10786,29 +10793,31 @@ async function saveProfileFromForm(form) {
     render();
     // Vorhandenes Wissen neu einordnen, ohne Quellenlauf oder Büro-KI zu starten.
     // Ein fehlgeschlagener Folgeabruf macht einen bestätigten Save nicht rückgängig.
-    refreshAfterProfileSave(context, targetId);
+    refreshAfterProfileSave(context, targetId, revision);
   } catch (error) {
     console.error(error);
     if (!privateAccessIsCurrent(context)) return;
     profileEditorSaving = false;
-    if (app.contains(form)) {
-      done.disabled = false; done.textContent = "Erneut speichern";
-      form.querySelector("[data-profile-save-error]").textContent = "Profil konnte nicht gespeichert werden. Deine Änderungen bleiben erhalten.";
+    render();
+    const retry = app.querySelector("#profileForm");
+    if (retry) {
+      retry.querySelector('[type="submit"]').textContent = "Erneut speichern";
+      retry.querySelector("[data-profile-save-error]").textContent = "Profil konnte nicht gespeichert werden. Deine Änderungen bleiben erhalten.";
     }
     showToast("Profil konnte nicht gespeichert werden");
   }
 }
-async function refreshAfterProfileSave(context, targetId) {
+async function refreshAfterProfileSave(context, targetId, revision) {
   try {
     const response = await fetchWithTimeout(`/api/app/start?${apiScopeQuery({ politicianId: targetId })}`);
     if (!response.ok) throw new Error("Neue Einordnung nicht geladen");
     const next = await response.json();
-    if (!privateAccessIsCurrent(context) || profileEditorHasChanges() || profileEditorSaving) return;
+    if (!privateAccessIsCurrent(context) || revision !== profileSaveRevision || profileEditorHasChanges() || profileEditorSaving) return;
     if (next.profile?.id !== targetId) throw new Error("Profilantwort passt nicht zum Mandat");
     profileEditorDraft = null;
     applyStartPayload(next, context.generation); saveCachedStartPayload(next); render();
   } catch (error) {
-    if (privateAccessIsCurrent(context)) showToast("Profil gespeichert. Neue Einordnung konnte noch nicht geladen werden.");
+    if (privateAccessIsCurrent(context) && revision === profileSaveRevision) showToast("Profil gespeichert. Neue Einordnung konnte noch nicht geladen werden.");
   }
 }
 
