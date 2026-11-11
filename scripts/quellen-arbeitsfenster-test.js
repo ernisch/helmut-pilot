@@ -23,6 +23,7 @@ function welt() {
   const deps = {
     now: () => zeit,
     bereitschaft: async () => ({ bereit: true }),
+    automatik: async () => ({ erlaubt: true }),
     reserviere: async (o) => {
       rpcs.push(o);
       const key = `${new Date(zeit).toISOString().slice(0, 10)}|${o.schluessel}`;

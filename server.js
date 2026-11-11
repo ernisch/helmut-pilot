@@ -3306,7 +3306,8 @@ async function handleRequest(request, response) {
   // relationalen Quellen-Tabellen + Google-News-Anteil aus crawlRuns.
   if (url.pathname === "/api/admin/sources-status" && request.method === "GET") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
-    return handleAsync(response, () => buildAdminSourcesStatus());
+    return handleAsync(response, async () => ({ ...await buildAdminSourcesStatus(),
+      automatik: await require("./lib/helmut/quellen-automatik").pruefe() }));
   }
 
   return sendAppAsset(response, url);
@@ -8700,7 +8701,16 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
   const planFehlgeschlagen = !(plan && plan.ok !== false);
   const spiegelD = durchlauf.blobSpiegel || {};
   const spiegelVerworfen = Math.max(0, Number(spiegelD.verworfen) || 0);
-  const quittungsStatus = planFehlgeschlagen || bilanz.verfuegbar === false
+  // Nur diese enge, bestaetigte Teilbilanz darf ein automatisches Folgefenster
+  // zulassen. Ein Zeitlimit darf andere Worker-/Speicherfehler nicht verdecken.
+  const planFortsetzbar = Boolean(arbeitsfenster && plan?.grund === "planung-zeitbudget" && plan.ausstehend > 0
+    && bilanz.verfuegbar === true && durchlauf.bilanzen.every(b => b?.verfuegbar === true)
+    && bilanz.endgueltigFehlgeschlagen === 0 && bilanz.leaseVerloren === 0
+    && durchlauf.bilanzen.every(b => ["nichtUebernommen", "zurueckstellungNichtVerfuegbar", "stapelrestNichtZurueckgegeben"]
+      .every(k => b[k] === 0))
+    && spiegelD.geschrieben !== false && spiegelVerworfen === 0
+    && ((plan.neu || 0) + (plan.vorhanden || 0) > 0 || bilanz.erledigt > 0));
+  const quittungsStatus = planFortsetzbar ? "partial" : planFehlgeschlagen || bilanz.verfuegbar === false
     ? "failed"
     : ((bilanz.endgueltigFehlgeschlagen || 0) > 0 || ((bilanz.reserviert || 0) > 0 && (bilanz.erledigt || 0) === 0)
       ? "partial" : "success");
@@ -8729,7 +8739,7 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     spiegelGesammelt: spiegelD.gesammelt ?? 0,
     spiegelGeschrieben: spiegelD.geschrieben === true ? (spiegelD.neuImBlob ?? 0) : null,
     fehlerklasse: quittungsFehlerklasse,
-    reason: planFehlgeschlagen
+    reason: planFortsetzbar ? "planung-zeitbudget-fortsetzbar" : planFehlgeschlagen
       ? String((plan && plan.grund) || "planung-fehlgeschlagen").slice(0, 120)
       : (spiegelD.geschrieben === false
         ? "blob-spiegel-fehlgeschlagen"

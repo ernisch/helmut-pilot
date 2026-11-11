@@ -32,7 +32,8 @@ exports.browserCheck = async ({ base, check, reset, setHold, advance, plans }) =
       }
       if (url.pathname.startsWith("/api/admin/") && url.pathname !== "/api/admin/quellenlauf") {
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(url.pathname.endsWith("overview")
-          ? { generatedAt: "2026-11-11T14:20:00Z", mandates: [], users: [] } : {}) });
+          ? { generatedAt: "2026-11-11T14:20:00Z", mandates: [], users: [] }
+          : url.pathname.endsWith("sources-status") ? { automatik: require("../lib/helmut/quellen-automatik").entscheidung("automatik-startfehler") } : {}) });
       }
       return route.continue();
     });
@@ -42,6 +43,7 @@ exports.browserCheck = async ({ base, check, reset, setHold, advance, plans }) =
     const button = page.getByRole("button", { name: "Quellenlauf jetzt starten", exact: true });
     await check("Originalverwaltung Desktop/Mobil: neuer Knopf sichtbar, bedienbar und ohne Ueberlauf", async () => {
       await button.waitFor({ state: "visible" }); await page.waitForFunction(() => ![...document.querySelectorAll("button")].find(b => b.textContent === "Quellenlauf jetzt starten")?.disabled);
+      await page.getByText(/Die Automatik hat nach einem Lauf- oder Startfehler angehalten/).waitFor();
       for (const width of [1280, 390, 320]) {
         await page.setViewportSize({ width, height: 844 }); await button.scrollIntoViewIfNeeded();
         assert.ok((await button.boundingBox()).height >= 44);
