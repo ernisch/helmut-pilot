@@ -9183,7 +9183,11 @@ function profileEditorReadForm(form) {
   const draft = profileEditorState(), data = new FormData(form), value = key => String(data.get(key) || "").trim();
   if (draft.section === "mandate") {
     for (const key of ["fullName", "party", "faction", "parliamentType", "state", "constituency", "location"]) draft.values[key] = value(key);
-    draft.values.committees = data.getAll("committees").map(String);
+    const selected = data.getAll("committees").map(String);
+    // Die sichtbare alphabetische Liste darf den bisherigen Primaerausschuss
+    // nicht nebenbei aendern. Neue Auswahlen kommen hinter den erhaltenen Bestand.
+    draft.values.committees = [...draft.values.committees.filter(value => selected.includes(value)),
+      ...selected.filter(value => !draft.values.committees.includes(value))];
   } else if (draft.section === "style") {
     draft.values.communicationStyle = value("communicationStyle");
     draft.values.mainQuestion = value("mainQuestion");

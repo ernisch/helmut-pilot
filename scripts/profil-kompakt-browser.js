@@ -10,7 +10,7 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
     for (const mobile of [true, false]) {
       const label = mobile ? "Profil mobil" : "Profil Desktop";
       const seed = { ...fixture, communicationStyle: "Sachlich",
-        committees: ["Arbeit und Soziales", "Gesundheit"],
+        committee: "Gesundheit", committees: ["Gesundheit", "Arbeit und Soziales"],
         focusTopics: ["Arbeit", "Pflege", "Tarifbindung"], topicPriorities: { Arbeit: 1, Pflege: 3, Tarifbindung: 5, Finanzen: 5 },
         currentCampaigns: ["Synthetische Alt-Kampagne"], opponents: ["Synthetischer Alt-Akteur"],
         upcomingAppointments: ["Synthetischer Alt-Termin | 2099-06-26T11:00:00+02:00"] };
@@ -78,7 +78,7 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
         releasePatch();
         const first = await firstSave;
         await page.unroute("**/api/profile/current?*", holdPatch);
-        check(`${label}: Mehrfachausschüsse über echten PATCH erhalten`, first.committees.includes("Gesundheit") && first.committees.includes("Arbeit und Soziales") && first.committees.includes("Wirtschaft"));
+        check(`${label}: Mehrfachausschüsse über echten PATCH erhalten`, first.committees.includes("Gesundheit") && first.committees.includes("Arbeit und Soziales") && first.committees.includes("Wirtschaft") && first.committee === "Gesundheit");
         check(`${label}: Mandat-PATCH erhält Themen und ausgeblendeten Altbestand`, JSON.stringify(first.focusTopics) === JSON.stringify(seed.focusTopics)
           && first.currentCampaigns[0] === seed.currentCampaigns[0] && first.opponents[0] === seed.opponents[0] && first.upcomingAppointments[0] === seed.upcomingAppointments[0]
           && !Object.hasOwn(patches[0],"topicPriorities") && !Object.hasOwn(patches[0],"upcomingAppointments"));
@@ -171,6 +171,16 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
         const latest = await page.evaluate(() => ({style:profile.communicationStyle, cached:localStorage.getItem(appStartCacheKey())}));
         check(`${label}: verspäteter älterer Abruf überschreibt keinen neueren Save`, latest.style === "Sachlich" && latest.cached === null);
         await page.unroute("**/api/app/start?*", holdStart);
+        await open("profile-settings");
+        await page.locator('[name="party"]').selectOption("");
+        await page.locator('[name="faction"]').selectOption("");
+        const affiliationsCleared = await save();
+        check(`${label}: zurückgesetzte Parteiauswahl wird nicht durch alte Werte ersetzt`, affiliationsCleared.party === "" && affiliationsCleared.faction === "" && affiliationsCleared.profilValidierung.state !== "vollstaendig");
+        await open("profile-settings");
+        await page.locator('[name="party"]').selectOption("SPD");
+        await page.locator('[name="faction"]').selectOption("SPD");
+        const affiliationsSelected = await save();
+        check(`${label}: Partei und Fraktion aus Auswahlliste echt gespeichert`, affiliationsSelected.party === "SPD" && affiliationsSelected.faction === "SPD");
         const cache = await page.evaluate(() => {
           const decision = {id:"synthetic-profile-cache",vorgangId:"synthetic-vg",knowledgeObjectId:"synthetic-ko"}, format={id:"presse"};
           const text="Dies ist ein künstlicher Büroentwurf für die lokale Prüfung. Er beschreibt keine reale politische Position und dient ausschließlich der Cacheprüfung.";

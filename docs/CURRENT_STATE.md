@@ -20,7 +20,7 @@
 
 ## Kompaktes Profil (11.11.2026, Integration offen)
 
-[Umsetzung/Prüfungen](ui/profil-kompakt-20261111/README.md): drei Mock-Seiten, echte1/3/5Gewichtung, Teil-Speichern/Mehrfachausschüsse und Bürocache korrigiert. Lokal54Browser-,31Onboarding-,43KI-Feldchecks grün; verzögerte Antworten abgesichert. Keine Productionmutation/KI-Aufrufe. Pflicht-CI/Rollout offen; DropdownPR1134 wird ersetzt. [Vorheriger Audit](ui/profil-wirkungscheck-20261111/README.md). Nächster Schritt: exakte grüne Integration und lesender Rolloutnachweis.
+[Umsetzung/Prüfungen](ui/profil-kompakt-20261111/README.md): drei Mock-Seiten, echte1/3/5Gewichtung, Teil-Speichern/Mehrfachausschüsse und Bürocache korrigiert. Lokal58Browser-,31Onboarding-,43KI-Feldchecks grün; verzögerte Antworten abgesichert. Keine Productionmutation/KI-Aufrufe. Pflicht-CI/Rollout offen; DropdownPR1134 wird ersetzt. [Vorheriger Audit](ui/profil-wirkungscheck-20261111/README.md). Nächster Schritt: exakte grüne Integration und lesender Rolloutnachweis.
 
 **Historie 07.11.:** Lageauswahl PR1100 auf `d9651861` live/READY, Pflicht-CI42409807375 grün. Fachliche Aufnahme vor Limit, Quellen-/Profilbindung; synthetische Gegenproben und Windenergiefall bestanden. Authentifizierte Production-Bedienabnahme offen. [Vollständige Belege, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md); keine neue Daten-/Modellfreigabe.
 
