@@ -8,7 +8,7 @@
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
-**11.11., Adminstart vorbereitet:** Branch `codex/admin-quellenstart-20261111`, Basis `d76a72e5`/PR1125. Knopf Betrieb → Quellen; Adminsession/CSRF, tagesgebundener Auftrag, gleicher Queuepfad/Lease/Vorflug/Kontingente. Fortschritt/Abschluss/Sperrgrund, unbekannter Ausgang ohne Neustart. Offline-/Browserprüfung bestanden; Endkopf/Review/Pflicht-CI im PR maßgeblich. Kein Merge, Deployment oder Productionlauf.
+**11.11., Adminstart live:** [PR1126](https://github.com/ernisch/helmut-pilot/pull/1126) auf `3cf5379e`, Production READY, Runtime/Hauptdomain bestätigt. Adminstart mit unveränderten Schutzregeln; Kostenbuch/64 Buchungen unverändert, keine aktiven Prozesse/Sperren. Kein manueller Quellenlauf; Frische `ready=false` bleibt offen. [Rollout und Rückweg](betrieb/admin-quellenstart-rollout-20261111.md).
 
 ## Büro: Kosten- und Antwortzeitfix live, echte Einzelprobe offen (11.11.2026)
 
