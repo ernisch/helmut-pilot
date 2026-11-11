@@ -8,7 +8,7 @@
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
-**11.11., Kontingentvorflug vorbereitet:** Branch `codex/quellenkontingent-startfehler-20261111` auf aktuellem main. Vorhandene Worker-Bereitschaft und Zeit-/Slotprüfung vor Quotenreservierung; keine Erstattung, keine Zähler-/Limitänderung. Gezielte Offlineprüfung bestanden; Endkopf/Review/Pflicht-CI im PR maßgeblich. Kein Merge/Deployment.
+**11.11., Adminstart live:** [PR1126](https://github.com/ernisch/helmut-pilot/pull/1126) auf `3cf5379e`, Production READY, Runtime/Hauptdomain bestätigt. Adminstart mit unveränderten Schutzregeln; Kostenbuch/64 Buchungen unverändert, keine aktiven Prozesse/Sperren. Kein manueller Quellenlauf; Frische `ready=false` bleibt offen. [Rollout und Rückweg](betrieb/admin-quellenstart-rollout-20261111.md).
 
 ## Büro: Kosten-/Antwortzeitfix live, echte Einzelprobe erfolgreich (11.11.2026)
 
