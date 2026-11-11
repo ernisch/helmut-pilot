@@ -1,5 +1,32 @@
 # Mobiler App-Start bei unvollstaendiger Uebertragung (11.11.2026)
 
+## Nachmeldung vom Nutzer: Handyfehler weiter offen (19:18 UTC)
+
+Der Nutzer meldet nach PR1147 weiterhin einen Haenger. Sein Screenshot zeigt
+den nativen Android-Start mit H-Symbol und Appnamen, keine geladene
+Helmut-Ladeansicht. Auf Nachfrage bleibt auch der direkte Aufruf der
+Hauptadresse in Brave laut Nutzer schwarz. Damit ist der konkrete
+Handyfehler nicht behoben; PR1147 behebt nur die zuvor reproduzierte
+unvollstaendige Netzuebertragung. Eine defekte Installation oder ein Cachefehler
+sind weiterhin Hypothesen, keine bestaetigten Ursachen.
+
+Frische lesende Gegenprobe mit der ausgelieferten Version `22bad44c`:
+oeffentliche Startseite und Manifest HTTP200 ohne Weiterleitung, Manifest
+weiterhin `start_url:/`, `scope:/`, `display:standalone`. Mobiler Chromium
+oeffnet die echte Productionseite bis zur sichtbaren Anmeldung; Splash
+beendet, CSS/Client und anonyme Sitzungspruefung HTTP200, keine unbehandelten
+JavaScriptfehler. Keine Anmeldung, Fachabfrage, Datenmutation oder Modellaufrufe.
+Diese Cloudprobe reproduziert den konkreten Handyfehler nicht.
+
+Die Runtime-Logabfrage fuer19:12:44–19:22:44UTC liefert keine Error-/Fatal-
+Eintraege; auch die Pfadzaehlung ist leer. Daraus laesst sich weder ein
+fehlerfreier Nutzerstart noch das Eintreffen seines Abrufs ableiten.
+ADB, Android-Emulator und Zugriff auf den realen Brave-Prozess sind hier
+nicht verfuegbar. Als naechste notwendige Geraeteprobe ist der direkte Aufruf
+in einem neuen privaten Brave-Tab angefragt; Antwort noch offen. Dieser
+Vergleich aendert oder loescht keine gespeicherten Daten. Keine weitere
+Runtimeaenderung ohne engeren Fehlerbeleg.
+
 ## Befund und Korrektur
 
 Die oeffentlichen Production-Dateien `client.js` und `sw.js` waren beim
