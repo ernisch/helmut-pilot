@@ -3,7 +3,7 @@
 ## Stand
 
 Lokal umgesetzt und gezielt geprüft; Pflicht-CI und Production-Rollout stehen vor
-Integration noch aus. Basis `7898fd5d`, Branch `codex/profil-kompakt-20261111`.
+Integration noch aus. Basis `7898fd5d`, neuer Bürostand `626c4f29` integriert, Branch `codex/profil-kompakt-20261111`.
 Der Auftrag umfasst ausdrücklich Oberfläche **und** tatsächlich angeschlossene Wirkung.
 Die früheren Befunde bleiben im [Profilaudit](../profil-wirkungscheck-20261111/README.md).
 
@@ -106,7 +106,7 @@ Wahlkreis wird nicht behauptet; ein Wohn-/Büroort muss auch nicht im Wahlkreis 
 Alle Läufe über `scripts/lokal.js`, synthetische Profile, keine Production-Datenmutation,
 keine Migration, keine Secrets-/Cron-/Budgetänderung und keine bezahlten Modellaufrufe.
 
-- Echte lokale mobile/Desktop-Chromiumprobe 58 Prüfungen: native Auswahl, Teil-PATCHs,
+- Echte lokale mobile/Desktop-Chromiumprobe 60 Prüfungen: native Auswahl, Teil-PATCHs,
   Mehrfachausschüsse/Leeren, Regionenwechsel, Themenspeichern/Hinzufügen/Entfernen,
   verwaiste Gewichte, Modellprofil, optionale Angaben, Verlustschutz, 503 mit Wiederholung,
   gesperrte Eingaben während verzögerter Antwort, vertauschte Folgeantworten,
@@ -121,7 +121,7 @@ keine Migration, keine Secrets-/Cron-/Budgetänderung und keine bezahlten Modell
 
 Review von `74e8f093` fand drei Integrationsfehler: aktive Eingaben beim Save,
 vertauschbare Folgeantworten und die UI-Aktivierung verwaister Gewichte. Alle drei
-wurden anschließend korrigiert und durch die 58 Browserprüfungen reproduzierbar abgesichert.
+wurden anschließend korrigiert und durch die 60 Browserprüfungen reproduzierbar abgesichert.
 Die beiden Fachteilaufträge nutzten eigene Worktrees und Commits, unveränderte geerbte
 Modell-/Denkstufeneinstellung; Root integriert. Keine gleichzeitig veränderten Prüfeingaben.
 
@@ -132,7 +132,18 @@ namentlich ergänzt; zusätzlich sichern zwei neue Prüfungen ab, dass er keine
 Abhängigkeiten oder I/O-/Umgebungs-/dynamischen Ausführungspfade besitzt. Die
 bestehenden HTTP-/Tabellen-/RPC-/Storage-Schreibsperren bleiben erhalten.
 Gezielter korrigierter Schreibschutznachweis:56/56bestanden. Keine Runtimeänderung
-nach den58Browserprüfungen; neuer Pflichtkopf erforderlich, kein Umdeuten des Fehlers.
+nach den58Browserprüfungen auf e747645c; neuer Pflichtkopf erforderlich, kein Umdeuten des Fehlers.
+
+Anschließend bestanden auf `b871a8f4` alle189Standardsuiten; die Fachregression
+bestand365/367Suiten. Die beiden Fehler lagen in alten Testaufbauten: ein wörtlicher
+Partei-Input-Quelltextcheck trotz nativem Select und ein VM-Auszug ohne neuen
+`officeDraftProfileContext`-Helfer. Beide wurden korrigiert. Die Parteiauswahl im
+Onboarding wird zusätzlich im echten Browser ausgeführt und übernommen.
+Der parallel veröffentlichte Bürostand `626c4f29` wurde sauber integriert und separat
+lesend auf Pool-/Privat-/Cacheverträglichkeit geprüft. Gemeinsamer lokaler Browserlauf:
+174/174plus17/17Adminchecks, darin60Profilprüfungen; Einladung34/34 und
+Büro-Antwortzeit13/13mit echtem Clientcode und virtueller Zeit. Erneute Pflicht-CI
+am integrierten Kopf bleibt erforderlich. Keine Test-/Schutzabschwächung.
 
 ## Integration und Rückweg
 

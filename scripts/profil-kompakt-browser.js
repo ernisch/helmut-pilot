@@ -28,6 +28,17 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
       try {
         await page.goto(baseUrl, { waitUntil:"domcontentloaded" });
         await page.waitForFunction(() => window.__helmutClientLoaded && !document.body.classList.contains("is-loading"));
+        await page.evaluate(() => {
+          onboardingActive=true; onboardingStep=1;
+          onboardingDraft={party:profile.party,faction:profile.faction}; render();
+        });
+        await page.locator('.onboarding-layer select[name="party"]').selectOption("SPD");
+        await page.locator('.onboarding-layer select[name="faction"]').selectOption("SPD");
+        const onboardingSelection = await page.evaluate(() => {
+          captureOnboardingStep(); const values={...onboardingDraft};
+          onboardingActive=false; onboardingDraft=null; render(); return values;
+        });
+        check(`${label}: Onboarding übernimmt Partei und Fraktion aus nativen Auswahlen`, onboardingSelection.party === "SPD" && onboardingSelection.faction === "SPD");
         async function open(view) {
           await page.locator('[data-view="settings"]:visible').first().click();
           await page.locator(`[data-view="${view}"]:visible`).click();
