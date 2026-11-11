@@ -7,6 +7,20 @@ sie hat keine API-Verbindung, keine dauerhafte Ablage und keine echten Aktionen.
 Die unveränderte Originalverwaltung unter `verwaltung/claude-original/` bleibt die
 bisherige Produktvorlage. Dieser Entwurf ist ein Vorschlag für ihre Vereinfachung.
 
+**Abschluss:** Entwurf und lokale Abnahme fertig; Übernahme nach `main` durch
+ausstehende Pflicht-CI blockiert. [PR1155](https://github.com/ernisch/helmut-pilot/pull/1155),
+Branch `codex/verwaltung-kundenablauf-20261111`. Der ursprüngliche geprüfte Kopf
+`96c5f7144ebabe790c435431caa28127dd0f317a` hat seit 20:35:48 UTC einen
+[wartenden CI-Lauf](https://github.com/ernisch/helmut-pilot/actions/runs/43096978463)
+ohne Jobs. Auch zwei ältere Läufe melden trotz erfolgreichem „Complete job“
+weiterhin `in_progress`; der datierte [Wartebefund](ci-wartebefund.json) erhält
+diese Beobachtung, ohne eine GitHub-Ursache zu behaupten. Diese abschließende
+Statusdokumentation ändert keine Vorschau-/Prüfeingaben. Für den finalen Kopf
+bleiben beide Pflichtchecks erforderlich; keine Umgehung und kein Merge.
+Nächster technischer Schritt: reguläre CI-Abschlussrückmeldung prüfen und erst
+bei grünen Pflichtchecks den Dokumentations-PR übernehmen. Der nächste fachliche
+Schritt danach bleibt das unten abgegrenzte lesende Kundendetail.
+
 ## Entscheidung
 
 Eine gemeinsame Verwaltung mit drei Einstiegen: **Übersicht, Kunden, Einstellungen**.
