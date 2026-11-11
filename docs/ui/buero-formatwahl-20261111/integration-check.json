@@ -1,0 +1,17 @@
+{
+  "status": "PARTIAL",
+  "officeChecksPassed": [
+    "contract-desktop: office format choice alone creates no request",
+    "contract-desktop: office HTTP 429 fails selected draft without alternative calls",
+    "contract-desktop: budget fallback is no apparently finished draft"
+  ],
+  "fullRunStatus": "FAIL",
+  "passedAssertionsBeforeUnrelatedFailure": 115,
+  "unresolvedHistoricalAssertion": "quiet-desktop: quiet Briefing shows no Lage texts, only count and way to Lage",
+  "browserErrors": [],
+  "externalRequestsFulfilled": 0,
+  "servedClientSha256": "7a27dd456a6ea2707ce5f6c0150a11db0f345ed19e6fe3ada4ba37e8256b881c",
+  "quietRendererByteIdenticalToOriginMain": true,
+  "quietRendererSha256": "09e6b44e14839e68889e71c2cde69aa50e59dabb1c28350696ad1d28b1184edb",
+  "note": "No claim of a passing full integration suite; quiet-renderer source comparison only, no baseline runtime replay."
+}

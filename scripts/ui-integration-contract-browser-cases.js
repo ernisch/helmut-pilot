@@ -226,11 +226,13 @@ async function run({cdp,session:s,label,mobile,check,screenshot}) {
       await evaluate("Promise.all(['/api/lage/briefing','/api/push/test'].map(path=>fetchWithTimeout(path+'?'+apiScopeQuery()).then(r=>r.json()))).then(()=>true)");
       verify("both additional state-changing GETs carry CSRF",calls.filter(c=>c.phase===phase && ['/api/lage/briefing','/api/push/test'].includes(c.path)).length===2 && calls.filter(c=>c.phase===phase && ['/api/lage/briefing','/api/push/test'].includes(c.path)).every(c=>c.csrfHeaderPresent));
       await configure("office-rate-limit","rate-limit");
-      await evaluate("officeDrafts={};officeDraftErrors={};currentView='office';render();generateSelectedOfficeDraft().then(()=>true)");
-      verify("office HTTP 429 fails selected draft without alternative calls",await evaluate("Object.keys(officeDrafts).length===0 && Object.keys(officeDraftErrors).length===1 && document.querySelector('.ui-page').innerText.includes('nicht belastbar erstellt')") && count('/api/communication/generate')===1);
+      await evaluate("officeDrafts={};officeDraftErrors={};selectedOfficeDraft=null;officeBriefingTarget=null;localStorage.removeItem(officeDraftCacheKey());currentView='office';render();document.querySelector('[data-office-open]').click()");
+      verify("office format choice alone creates no request",await evaluate("selectedOfficeDraft===null && document.querySelector('[data-office-format-sheet]').matches(':modal')") && count('/api/communication/generate')===0);
+      await evaluate("document.querySelector('[data-office-create=presse]').click()");
+      verify("office HTTP 429 fails selected draft without alternative calls",await waitFor("!officeDraftsGenerating && Object.keys(officeDrafts).length===0 && Object.keys(officeDraftErrors).length===1 && document.querySelector('.ui-page').innerText.includes('nicht belastbar erstellt')") && count('/api/communication/generate')===1);
       await configure("office-budget-fallback");
-      await evaluate("generateSelectedOfficeDraft().then(()=>true)");
-      verify("budget fallback is no apparently finished draft",await evaluate("Object.values(officeDrafts).length===0 && Object.keys(officeDraftErrors).length===1 && document.querySelector('.ui-page').innerText.includes('KI-Kostengrenze') && !document.querySelector('[data-office-share]') && !document.querySelector('[data-office-generate]')") && count('/api/communication/generate')===1);
+      await evaluate("document.querySelector('[data-office-generate]').click()");
+      verify("budget fallback is no apparently finished draft",await waitFor("!officeDraftsGenerating && Object.values(officeDrafts).length===0 && Object.keys(officeDraftErrors).length===1 && document.querySelector('.ui-page').innerText.includes('KI-Kontingent') && !document.querySelector('[data-office-share]') && !document.querySelector('[data-office-generate]')") && count('/api/communication/generate')===1);
 
     }
   }

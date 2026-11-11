@@ -76,6 +76,15 @@ parameterlose Generatorsignatur und fand deshalb keinen Funktionsrumpf. Die
 Auslesung akzeptiert nun Parameter und scheitert weiterhin bei fehlender
 Funktion. Die Schutzbehauptungen wurden beibehalten; lokal20/20 bestanden.
 
+Die zwei bestehenden Büro-HTTP-Fälle im historischen Integrationsrunner wurden
+ebenfalls auf sichtbare Format-/Erstellaktionen umgestellt. Formatliste ohne
+Request, HTTP429 ohne Alternative und Budgetfehler ohne Fertigtext bestehen.
+Der vollständige historische Lauf stoppt danach nach115 bestandenen Prüfungen
+an `quiet-desktop: quiet Briefing shows no Lage texts, only count and way to
+Lage`. Das ist keine grüne Gesamtsuite. Der betroffene Ruhelage-Renderer ist
+bytegleich zur Basis`origin/main`; diese Büro-Änderung korrigiert den alten
+Ruhelage-Test nicht. Kein Baseline-Lauf behauptet. [Teilnachweis](integration-check.json).
+
 Keine bezahlten Helmut-Modellaufrufe, Production-Datenänderungen,
 Budgeterhöhungen oder Änderungen an bestehenden Reservierungen.
 Pflicht-CI und anschließende Production-Abnahme sind getrennte Nachweise.
