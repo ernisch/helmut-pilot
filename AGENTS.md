@@ -1,5 +1,46 @@
 # HELMUT AGENT CONTRACT
 
+## Verbindliche Dauerfreigabe vom 11.11.2026: Push und Merge automatisch bei Gruen
+
+Fuer jeden klar beauftragten Entwicklungsauftrag sind Commit, Push auf den
+eigenen Arbeitsbranch, Pull Request und Merge nach `main` dauerhaft ausdruecklich
+freigegeben. Codex fuehrt diese Schritte vollautomatisch ohne erneute Rueckfrage
+oder einzelnes GO aus, sobald die jeweils erforderlichen Pruefungen gruen sind.
+Das durch den Merge regulaer ausgeloeste Vercel Production Deployment und die
+anschliessende rein lesende Nachkontrolle sind eingeschlossen. Diese Freigabe
+gilt auch fuer die vorliegende Regelaenderung.
+
+Vor dem Push muessen die erforderlichen lokalen Pruefungen bestanden und der
+Diff auf den Auftrag begrenzt sein. Die PR-CI folgt nach dem Push. Vor dem Merge
+bedeutet **alles gruen**:
+
+1. Der tatsaechliche aktuelle PR Kopf und sein vollstaendiger Diff sind geprueft;
+   die Abnahmekriterien und erforderlichen Sicherheitspruefungen sind erfuellt.
+2. Beide Pflichtchecks `Syntax + Offline-Suiten` und
+   `Browser-/Mobile-Smoke (Chromium)` sowie weitere fuer die Aenderung erforderliche
+   Pruefungen sind fuer genau diesen PR Kopf erfolgreich abgeschlossen.
+   Bewusst ausgelassene, nicht betroffene Testarten innerhalb eines erfolgreichen
+   Pflichtchecks sind gemaess dem bestehenden Pruefplan zulaessig.
+3. Der aktuelle `main` Stand und parallele Arbeit sind geprueft; der PR ist
+   konfliktfrei und beeintraechtigt keine laufende Originalserie oder Pruefung.
+   Nach einer Aenderung des PR Kopfes muessen die Nachweise zum neuen Kopf passen.
+4. Keine erforderliche Pruefung ist fehlgeschlagen, ausstehend, abgebrochen oder
+   UNKNOWN; es gibt keinen offenen abnahmeverhindernden Befund. Merge an den
+   geprueften Commit binden. Kein Force Push, keine Admin Umgehung und keine
+   Abschwaechung von Schutzregeln.
+
+Behebbare auftragsbezogene Fehler selbst korrigieren und gezielt erneut pruefen;
+bei laufender CI warten, bis die benoetigten Ergebnisse vorliegen. Erst bei
+erfuellten Bedingungen mergen. Nach dem Merge Wirkung und regulaeres Deployment
+rein lesend kontrollieren; bei reinen Doku- oder Agentenregeln einen bewusst
+uebersprungenen Build als solchen bestaetigen.
+
+Diese aktuelle Freigabe ersetzt widersprechende aeltere Forderungen nach einem
+separaten Push-, Merge- oder regulaeren Deployment-GO, auch in `CLAUDE.md` und
+historischen Dokumenten. Eine spaetere ausdrueckliche Einschraenkung des Nutzers
+hat Vorrang. Fremde oder unabhaengige PRs sind nicht eingeschlossen. Fuer sonstige
+geschuetzte Production Aktionen gilt weiterhin der Abschnitt `Production Schutz`.
+
 ## Verbindliche Betreiberentscheidung vom 07.11.2026: DeepSeek bis Jahresende pausiert
 
 **Ab sofort bis einschliesslich 31.12.2026 kein DeepSeek Einsatz.**
@@ -25,7 +66,7 @@ historischen Aktivierungsangaben in diesem Repository.
 2. **Keine Blindtests:** Die erste tatsaechliche Controllerfehlerursache, der letzte bestaetigte Profilfortschritt und native Abschlussdaten muessen im vorhandenen sicheren Fehlerkanal sichtbar bleiben. Fehlende Belege bleiben UNKNOWN; keine erfundenen Ergebnisse oder Datenlecks.
 3. **Mock100 als einziger synthetischer Kapazitaetsnachweis:** Exakt 100 gleichzeitig aktive fiktive Profile, nachweisbare vollstaendige Verarbeitung, Nutzertrennung, Ergebnisvollstaendigkeit und bestehende relevante Sicherheitsgrenzen. Der alte Code mit fest verdrahteten 500 ist **noch nicht** automatisch auf 100 umgestellt. Den kleinsten kompatiblen Mock100-Vertrag samt Code zielgerichtet implementieren und pruefen, ohne alte Belege umzuwerten. Ein PASS muss aus einem neuen echten 100er Lauf stammen.
 4. **Produkt fertigstellen:** Vor dem Livegang muessen die bestehenden erforderlichen Produktfunktionen, Authentifizierung, Mandantentrennung, Datenschutz, Kostenkontrolle und Betriebsbereitschaft fuer einen kleinen Kundenkreis ausreichend geprueft sein. Kein weiterer grossskaliger Production-Lasttest. Mock100 PASS allein beweist keinen sicheren Produktivbetrieb.
-5. **Livegang nach Mock100:** Der Betreiber will nach Mock100 PASS die geeignete Produktintegration auf `main` mergen und regulaer auf Vercel Production ausrollen. Das ist eine **bedingte Zielentscheidung**, noch keine Freigabe fuer einen unbekannten konkreten PR/Commit, Datenmutation, Migration oder kostenpflichtigen Modelltest. Vor dem tatsaechlichen Merge/Deploy gelten die konkreten Sicherheits- und Freigaberegeln, Risiko/Kosten/Nachkontrolle/Rueckweg.
+5. **Livegang nach Mock100:** Der Betreiber will nach Mock100 PASS die geeignete Produktintegration auf `main` mergen und regulaer auf Vercel Production ausrollen. Fuer auftragsbezogene gruene PRs gilt die Dauerfreigabe vom 11.11.2026 ohne einzelnes Merge-/Deployment-GO. Sicherheitspruefungen, Risiko/Kosten/Nachkontrolle/Rueckweg bleiben Pflicht; Datenmutationen, Migrationen und kostenpflichtige Modelltests sind dadurch nicht freigegeben.
 6. **Arbeitsregel:** Nur nachgewiesene aktuelle Blocker bearbeiten, notwendige Arbeiten parallelisieren ohne gemeinsame Schreibkonflikte, vorhandene Pruefungen nicht grundlos wiederholen und jeweils genau einen naechsten Schritt benennen. Keine neuen Schutzwachen oder Freigabestufen erfinden.
 
 Bei Widerspruch haben dieser neue Betreiberbeschluss, frische explizite Freigaben und die bestehenden zwingenden Sicherheitsregeln Vorrang vor alten 500er Plaenen. Fuer den tatsaechlichen Stand gilt `docs/CURRENT_STATE.md`.
@@ -34,12 +75,12 @@ Bei Widerspruch haben dieser neue Betreiberbeschluss, frische explizite Freigabe
 
 Codex darf die konkret beauftragte Entwicklungsarbeit innerhalb bestehender
 Freigaben selbststaendig fortsetzen. Historische Dauerfreigaben erweitern
-keinen neuen Auftrag. Eine kritische Production Aktion benoetigt die dafuer
-geltende ausdrueckliche Freigabe. Merge und Deployment duerfen nur erfolgen,
-wenn der konkrete Auftrag sie deckt, erforderliche Pruefungen gruen sind
-und keine laufende Originalserie beeintraechtigt wird. Kein separater
-Test, keine Profilaktivierung oder Budgeterhoehung daraus ableiten.
-Bei FAIL/UNKNOWN Erstfehler erhalten, rein lesend klaeren und stoppen.
+keinen neuen Auftrag. Fuer Push, Merge und regulaeres Deployment gilt die
+aktuelle ausdrueckliche Dauerfreigabe vom 11.11.2026. Sonstige kritische
+Production Aktionen benoetigen die dafuer geltende ausdrueckliche Freigabe.
+Kein separater Test, keine Profilaktivierung oder Budgeterhoehung daraus ableiten.
+Bei FAIL/UNKNOWN Erstfehler erhalten und betroffenen Merge oder Rollout stoppen;
+auftragsbezogene Fehler gemaess der aktuellen Dauerfreigabe beheben.
 Private Schluessel nicht uebertragen.
 
 ## Verbindliche Zielgruppe: AfD ausgeschlossen
@@ -244,15 +285,9 @@ Pruefungen uebernehmen. Gezielte Aenderung,
 Test, Commit, Push und PR innerhalb
 des auftragsbezogenen Umfangs sind erlaubt.
 
-**Push und PR erlauben keinen Merge.**
-Merge und regulaeres Vercel Production Deployment
-nur bei einschlaegiger, ausdruecklich wirksamer
-Nutzerfreigabe fuer den konkreten Auftrag,
-aktuellem PR Kopf, gruenen Pflichtchecks,
-frischem `main` Vergleich und ohne
-Konflikt mit paralleler Arbeit. Bestehende
-Freigaben nur im tatsaechlich erteilten
-Umfang nutzen; keine neuen GO herleiten.
+**Push und Merge erfolgen vollautomatisch gemaess der Dauerfreigabe vom 11.11.2026.**
+Kein zusaetzliches GO fuer auftragsbezogene PRs einholen, wenn alle dort
+genannten Bedingungen erfuellt sind.
 Ein Merge kann automatisch Production
 anstoßen. Bei reiner Doku kann Vercel
 den Build ueberspringen, was nachher
@@ -297,9 +332,9 @@ selbststaendig den kleinsten Fix entwickeln,
 gezielt pruefen, committen, pushen und
 PR erstellen. Bei Bedarf auftragsbezogene
 Fehler ohne neuen Umweg beheben.
-Kein selbststaendiger Merge aus einer
-historischen allgemeinen Erlaubnis
-fuer einen anderen Scope.
+Bei gruenen Pruefungen gemaess der aktuellen Dauerfreigabe vom 11.11.2026
+selbststaendig mergen und die Nachkontrolle abschliessen. Kein Zwischenstopp
+nur fuer eine erneute Push-, Merge- oder regulaere Deployment-Freigabe.
 
 Vor autorisiertem Merge Diff, Branch,
 aktuelle Pflicht CI, `main` und
@@ -382,11 +417,15 @@ Keine Endlosschleifen.
 
 ## Production Schutz
 
+Auftragsbezogene gruene Merges und die dadurch regulaer ausgeloesten Vercel
+Production Deployments sind gemaess der Dauerfreigabe vom 11.11.2026 bereits
+ausdruecklich autorisiert und benoetigen kein weiteres GO.
+
 Kritische Production Aktionen benoetigen
 ausdrueckliche Freigabe fuer die
 konkrete Aktion, Umgebung und Umfang:
-Merge, Production Deployment oder
-Umschaltung; Migration; Production
+sonstige Production Deployments oder
+Umschaltungen; Migration; Production
 Daten oder Profile erstellen, bearbeiten,
 aktivieren, deaktivieren oder loeschen;
 Cron; Umgebungsvariable; Azure;
@@ -438,6 +477,8 @@ Wie wird anschließend rein lesend kontrolliert?
 Was ist der Rückweg?
 
 Dann stoppen, sofern das ausdrückliche GO für genau diese Aktion noch fehlt.
+Fuer auftragsbezogene gruene Merges und regulaere Deployments liegt dieses GO
+mit der Dauerfreigabe vom 11.11.2026 bereits vor.
 Nur im konkret freigegebenen Umfang handeln.
 
 ## Kostenpflichtige Modell- und API-Aufrufe
