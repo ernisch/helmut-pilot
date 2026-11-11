@@ -608,6 +608,30 @@ async function handleRequest(request, response) {
     }
   }
 
+  // Globaler Adminauftrag: keine Mandatsaufloesung und kein Secret-Bypass.
+  if (url.pathname === "/api/admin/quellenlauf") {
+    if (!requireRoleOr403(response, authUser, "admin")) return;
+    const adminstart = require("./lib/helmut/quellen-adminstart");
+    if (request.method === "GET") {
+      return handleAsync(response, () => adminstart.leseStatus({
+        auftragId: url.searchParams.get("auftragId"), tag: url.searchParams.get("tag")
+      }));
+    }
+    if (request.method !== "POST") {
+      response.writeHead(405, jsonHeaders({ Allow: "GET, POST" }));
+      response.end(JSON.stringify({ error: "Methode nicht erlaubt." })); return;
+    }
+    if (previewMode) return sendPreviewReadOnly(response);
+    if (!hasValidCsrf(request)) return sendCsrfForbidden(response);
+    return handleJson(request, response, async body => {
+      if (!adminstart.auftragGueltig(body)) throw accounts.httpError(400, "Ungueltiger Quellenauftrag.");
+      // Unerwartete Fehler behalten den bestehenden respondError/recordSystemError-
+      // Kanal. Der Client behandelt die unbestaetigte Mutation als unbekannt.
+      const result = await runQuellenArbeitsfenster("crawl", body);
+      return adminstart.ergebnis(body, result);
+    });
+  }
+
   // Mandant-Aufloesung. SICHERHEITSKERN: Im Account-Modus wird politicianId
   // serverseitig aus Session + Assignments bestimmt; das URL-Param dient nur als
   // Auswahl innerhalb erlaubter Mandate, niemals als Berechtigung. Der
@@ -8528,9 +8552,9 @@ async function narrativSlotLauf({ slot = "morgen", startMs = Date.now(), runId =
   };
 }
 
-async function runQuellenArbeitsfenster(cronName) {
-  const result = await quellenArbeitsfenster.fuehreAus({ arbeit: async ({ freigabe, startMs }) => {
-    const runId = helmutRunId(`cron-${cronName}`, startMs);
+async function runQuellenArbeitsfenster(cronName, adminAuftrag = null) {
+  const result = await quellenArbeitsfenster.fuehreAus({ adminAuftrag, arbeit: async ({ freigabe, startMs }) => {
+    const runId = adminAuftrag ? require("./lib/helmut/quellen-adminstart").laufId(adminAuftrag) : helmutRunId(`cron-${cronName}`, startMs);
     return require("./lib/helmut/quellenarchitektur/cron-abdeckung").runQuellenCronMitAbdeckung(
       () => withTimeout(runCronUeberWarteschlange(cronName, {
         deadlineMs: 270000, runId, startedMs: startMs, arbeitsfenster: freigabe

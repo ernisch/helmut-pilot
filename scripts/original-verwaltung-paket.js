@@ -25,12 +25,12 @@ function originalAdministrationPackage() {
   }
   const read = name => fs.readFileSync(path.join(root, name), "utf8");
   const withoutImports = source => source.replace(/^import\s[^;]+;\s*/gm, "");
-  const bundle = ["model.mjs", "api.mjs", "original-actions.mjs", "original-daily-ledger.mjs", "original-ergebnisse.mjs", "original-adapter.mjs", "original-controller.mjs", "original-customer-form.mjs"]
+  const bundle = ["model.mjs", "api.mjs", "original-actions.mjs", "original-daily-ledger.mjs", "original-ergebnisse.mjs", "original-adapter.mjs", "original-controller.mjs", "original-customer-form.mjs", "original-quellenlauf.mjs"]
     .map(name => withoutImports(read(name))).join("\n").replace(/^export\s+(?=(?:const|(?:async\s+)?function|class)\b)/gm, "");
   const remap = Object.fromEntries(runtimeAssets.map(asset => [asset.original, `./${asset.path}`]));
   // Original-Runtime erlaubt bereits explizite lokale Ressourcen. Keine CDN-Fallbacks.
   remap["https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"] = "./runtime/babel-unbenutzt.js";
-  const bootstrap = `window.__resources=${JSON.stringify(remap)};\n${bundle}\nwindow.HelmutOriginalBackend={attachOriginalBackend,createAdminActions,attachCustomerForm};`;
+  const bootstrap = `window.__resources=${JSON.stringify(remap)};\n${bundle}\nwindow.HelmutOriginalBackend={attachOriginalBackend,createAdminActions,attachCustomerForm,attachQuellenlauf};`;
   // Darstellungskorrekturen gegen Design v3 (06.11.2026). Jede Stelle muss genau so oft
   // vorkommen wie erwartet, sonst bricht der Paketbau ab statt still nichts zu ändern.
   const designUpdates = source => [
@@ -72,13 +72,22 @@ function originalAdministrationPackage() {
     .replace('value="{{ form.profil }}" onChange="{{ setProfil }}"', 'value="{{ form.profil }}" onChange="{{ setProfil }}" disabled="{{ customerFormBusy || customerFormLocked }}"')
     .replace('type="submit" style=', 'type="submit" disabled="{{ customerSubmitDisabled }}" style=')
     .replace('>Als Entwurf speichern</button>', '>{{ customerSubmitLabel }}</button>');
-  let html = contentUpdates(read(`claude-original/${entryName}`));
+  const quellenStart = source => {
+    const marker = '<p style="margin-top:30px;font-family:\'Spectral\',Georgia,serif;font-size:clamp(22px,2.4vw,28px);line-height:1.3;color:var(--ink);max-width:44ch;text-wrap:pretty">{{ srcHead }}</p>';
+    assert.equal(source.split(marker).length - 1, 1, "Quellenstart-Einbaupunkt");
+    return source.replace(marker, marker + `<section aria-label="Quellenlauf" style="margin-top:20px;max-width:72ch">
+<button type="button" onClick="{{ quellenlaufStart }}" disabled="{{ quellenlaufBusy }}" style="min-height:44px;padding:8px 14px;border-radius:8px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font-size:14px">Quellenlauf jetzt starten</button>
+<p role="status" aria-live="polite" style="margin-top:12px;font-size:14px;overflow-wrap:anywhere">{{ quellenlaufText }}</p>
+<sc-if value="{{ quellenlaufStatus }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ quellenlaufPruefen }}" style="min-height:44px;background:transparent;color:var(--ink);border:1px solid var(--line-2);border-radius:8px;padding:8px 14px">Status prüfen</button></sc-if>
+</section>`);
+  };
+  let html = quellenStart(contentUpdates(read(`claude-original/${entryName}`)));
   html = html.replace('<script src="./support.js"></script>', `<script>${bootstrap.replace(/<\/script/gi, "<\\/script")}</script>\n<script src="./support.js"></script>`);
   html = html.replace('<script src="v3_logik.js"></script>', "");
-  html = html.replace(/(class Component extends DCLogic[\s\S]*?)(<\/script>)/, "$1\nComponent = window.HelmutOriginalBackend.attachCustomerForm(window.HelmutOriginalBackend.attachOriginalBackend(Component, {actionsFactory: window.HelmutOriginalBackend.createAdminActions}));\n$2");
+  html = html.replace(/(class Component extends DCLogic[\s\S]*?)(<\/script>)/, "$1\nComponent = window.HelmutOriginalBackend.attachQuellenlauf(window.HelmutOriginalBackend.attachCustomerForm(window.HelmutOriginalBackend.attachOriginalBackend(Component, {actionsFactory: window.HelmutOriginalBackend.createAdminActions})));\n$2");
   // Nur die oben benannten Darstellungskorrekturen; sonst kein neues Markup und keine neue Typografie.
   const template = source => source.match(/<x-dc\b[^>]*>([\s\S]*?)<\/x-dc>/i)[1].replace('<script src="v3_logik.js"></script>', "");
-  assert.equal(template(html), template(contentUpdates(read(`claude-original/${entryName}`))));
+  assert.equal(template(html), template(quellenStart(contentUpdates(read(`claude-original/${entryName}`)))));
   return { html, assets, runtimeAssets };
 }
 

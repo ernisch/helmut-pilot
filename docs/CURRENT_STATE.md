@@ -8,7 +8,7 @@
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
-**11.11., Kontingentvorflug vorbereitet:** Branch `codex/quellenkontingent-startfehler-20261111` auf aktuellem main. Vorhandene Worker-Bereitschaft und Zeit-/Slotprüfung vor Quotenreservierung; keine Erstattung, keine Zähler-/Limitänderung. Gezielte Offlineprüfung bestanden; Endkopf/Review/Pflicht-CI im PR maßgeblich. Kein Merge/Deployment.
+**11.11., Adminstart vorbereitet:** Branch `codex/admin-quellenstart-20261111`, Basis `d76a72e5`/PR1125. Knopf Betrieb → Quellen; Adminsession/CSRF, tagesgebundener Auftrag, gleicher Queuepfad/Lease/Vorflug/Kontingente. Fortschritt/Abschluss/Sperrgrund, unbekannter Ausgang ohne Neustart. Offline-/Browserprüfung bestanden; Endkopf/Review/Pflicht-CI im PR maßgeblich. Kein Merge, Deployment oder Productionlauf.
 
 ## Büro: gemergt und Production READY (09.11.2026)
 

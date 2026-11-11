@@ -661,6 +661,11 @@ function check(name, cond, detail = "") {
     await new Promise((r) => server.close(r));
   }
 
+  // Kleiner isolierter Adminnachweis: Originalverwaltung -> CSRF/POST -> Queuegate,
+  // inklusive verlorener Antwort und Reload. Keine echte Quelle/DB/KI.
+  require("node:child_process").execFileSync(process.execPath,
+    [path.join(__dirname, "quellen-adminstart-test.js"), "--browser"], { stdio: "inherit", env: process.env });
+
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);
 })().catch((e) => { console.error("TESTFEHLER", e); process.exit(1); });
