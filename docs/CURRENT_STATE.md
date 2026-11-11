@@ -326,16 +326,9 @@ Nach Betreiber-GO bei gruener Pflicht-CI gemergt und live: [PR #1055](https://gi
 
 ## Genau ein naechster Schritt
 
-**App-Start (06.11.2026):** PR1078/1081/1085 nach GO/Pflicht-CI live.
-PR1085 auf2a5e0774, Vercel dpl_45AMnvEB1XmP3jh5Xa7QGRb3nSgc READY.
-HTTP-Median4,836→4,234s; Antworten200, Briefing und zehn Lagekarten. Kein Androidwert.
-[Messungen, Rollout und neuer Befund](betrieb/app-start-performance-20261106.md).
-Betreiber meldet danach: installierte Brave-App haengt im nativen Android-Bild;
-dieselbe Hauptadresse funktioniert in Brave. Geraeteursache noch nicht bewiesen.
-Vorbereiteter Folgefix: Manifestfarbe an Iconpixel angeglichen (Kasten entfernt),
-8s Antwortfrist im Worker, damit blockierte Navigation eine Wiederholungsansicht
-bekommt; Briefing weiterhin vollstaendig vor App-Oeffnung. Keine private Cacheansicht.
-Worker7/7, Icons70/70, echter Worker-Wiederholungsfall und Browser82/82 bestanden.
+**App-Start (06.11.2026):** PR1078/1081/1085 nach GO/Pflicht-CI live; PR1085`2a5e0774`, Vercel`dpl_45AMnvEB1XmP3jh5Xa7QGRb3nSgc`READY. HTTP-Median4,836→4,234s; HTTP200, Briefing/10Lagekarten, kein Androidwert.
+Installierte Brave-App haengt im nativen Android-Bild, Hauptadresse funktioniert; Geraeteursache offen. Folgefix vorbereitet: Icon-/Manifestfarbe angleichen,8s Workerfrist mit Wiederholungsansicht. Briefing vor App-Oeffnung, keine private Cacheansicht.
+Worker7/7, Icons70/70, echter Worker-Wiederholungsfall und Browser82/82 bestanden. [Vollstaendige Messungen, Rollout und Befunde](betrieb/app-start-performance-20261106.md).
 Naechster Schritt: Folgefix abnehmen; Android-Installationszustand bleibt offen.
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
