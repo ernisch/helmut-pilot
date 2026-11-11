@@ -3,8 +3,9 @@
 Stand: 11.11.2026. Entwicklungszweig `codex/buero-formatwahl-20261111`,
 Basis `3a012b0b`, Implementierung `d4ec99fd` in
 [PR1135](https://github.com/ernisch/helmut-pilot/pull/1135).
-Lokal umgesetzt und geprüft; Pflicht-CI am aktuellen PR-Kopf siehe PR1135.
-Merge und Production noch offen.
+Erfolgreich für die Büro-Änderung abgeschlossen: PR1135 am11.11.2026,14:35:58UTC
+auf`57b342d6` gemergt. Production`dpl_5qWtxBzaVuKeDZcUuSSkXoMwYiJk` READY,
+Hauptdomain`helmut-pilot.vercel.app` bestätigt. [Live-Nachweis](live-verification.json).
 
 Beim Öffnen von Büro wurde bisher das empfohlene Format des ersten Themas
 ausgewählt und gegebenenfalls kostenpflichtig erstellt. Auch ein Themenwechsel
@@ -50,6 +51,9 @@ Hintergrundauftrag, Zeitplan oder Generator eingeführt.
 ## Prüfung
 
 - Syntax von Client/Server und `git diff --check`: bestanden.
+- Beide Pflichtchecks auf Kopf`b2a99bfc` erfolgreich:
+  [CI43031998331](https://github.com/ernisch/helmut-pilot/actions/runs/43031998331),
+  189/189 Standardsuiten,364/364 Bereichssuiten sowie Browser/Mobil.
 - Schnellkern: 14/14 Suiten; lokaler Erstlauf durch gesperrte Loopback-Ports
   blockiert, freigegebener isolierter lokaler Wiederholungslauf bestanden.
 - `office-antwortzeit-ui-test.js`: 13/13 Gruppen mit virtueller Zeit,
@@ -82,12 +86,41 @@ Request, HTTP429 ohne Alternative und Budgetfehler ohne Fertigtext bestehen.
 Der vollständige historische Lauf stoppt danach nach115 bestandenen Prüfungen
 an `quiet-desktop: quiet Briefing shows no Lage texts, only count and way to
 Lage`. Das ist keine grüne Gesamtsuite. Der betroffene Ruhelage-Renderer ist
-bytegleich zur Basis`origin/main`; diese Büro-Änderung korrigiert den alten
-Ruhelage-Test nicht. Kein Baseline-Lauf behauptet. [Teilnachweis](integration-check.json).
+bytegleich zur Basis`origin/main`. Ein separater anschließender Lauf mit
+unverändertem main-Client/CSS`3a012b0b` und nur ausgewähltem`quiet-desktop`
+reproduziert denselben Fehler. Keine neue Büro-Regression; der historische
+Gesamtlauf bleibt ausdrücklich nicht grün. [Teilnachweis](integration-check.json).
 
 Keine bezahlten Helmut-Modellaufrufe, Production-Datenänderungen,
 Budgeterhöhungen oder Änderungen an bestehenden Reservierungen.
 Pflicht-CI und anschließende Production-Abnahme sind getrennte Nachweise.
+
+## Livegang und Grenzen
+
+Aktuelle Dauerfreigabe in main-`AGENTS.md` vom11.11.2026 (PR1136/1137):
+auftragsbezogene grüne Merges und reguläre Git-Deployments ohne neues Einzel-GO.
+Der aktuelle main-Stand wurde vor dem Merge geprüft; fremde Source-Automatik-
+Änderungen liegen in getrennten Serverfunktionen und bleiben erhalten.
+
+Der kombinierte Status wäre86Zeichen über seiner Grenze gewesen. Reiner
+Doku-Vorlauf [PR1138](https://github.com/ernisch/helmut-pilot/pull/1138) nach
+beiden grünen Checks auf`d3a27394` gemergt; Vercel-Dokubuild
+`dpl_8anEobSYJChJkB1kZxgaNWtS1Ct2` bewusst übersprungen/CANCELED.
+Keine Runtimeänderung aus diesem Vorlauf. Vorab berechneter Mergebaum
+`b9ecbdd7b29d0819ffa6788ca3f25585ebeb6156` ist exakt der tatsächliche
+Feature-Mergebaum; kombinierter Server syntaktisch gültig, beide Änderungen
+enthalten, Client und CSS unverändert zu den lokalen Browserprüfungen.
+
+Native Vorprüfung14:35UTC und Nachprüfung14:39UTC jeweils0laufende jüngere
+Prozesse,0aktive Pipeline-Sperren und0aktive Klassenleases. Keine Migration,
+Profil-, Cron-, Secret-, Budget- oder Reservierungsänderung durch diesen Auftrag.
+
+Lesende Nachkontrolle14:39UTC: Hauptseite/Client/CSS/öffentlicher Release-Leser
+HTTP200; beide Assets bytegleich zum geprüften Stand, Version`57b342d6`.
+Release`ok=true`, `storage=true`, `ready=false`. Dieser offene übergreifende
+Bereitschaftsstatus wird nicht zur vollständigen Produktfreigabe umgedeutet.
+Error-/Fatal-Abfrage des neuen Deployments14:35:58–14:42:44UTC ohne Einträge.
+Kein authentifizierter Endkundentest oder weiterer bezahlter Modellaufruf.
 
 ## Veröffentlichung und Rückweg
 

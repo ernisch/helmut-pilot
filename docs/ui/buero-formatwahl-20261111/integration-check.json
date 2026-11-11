@@ -13,5 +13,15 @@
   "servedClientSha256": "7a27dd456a6ea2707ce5f6c0150a11db0f345ed19e6fe3ada4ba37e8256b881c",
   "quietRendererByteIdenticalToOriginMain": true,
   "quietRendererSha256": "09e6b44e14839e68889e71c2cde69aa50e59dabb1c28350696ad1d28b1184edb",
-  "note": "No claim of a passing full integration suite; quiet-renderer source comparison only, no baseline runtime replay."
+  "note": "Full historical integration is not green; the same unrelated quiet assertion is reproduced separately with unchanged main client/CSS, only quiet-desktop selected.",
+  "baselineReplay": {
+    "status": "BASELINE_FAIL_REPRODUCED",
+    "baselineCommit": "3a012b0bf5b72ba84fd6aa4a6de0a20842fc1027",
+    "assertion": "quiet-desktop: quiet Briefing shows no Lage texts, only count and way to Lage",
+    "servedClientSha256": "37873ea49464ebf8e90a9b145f3ce068962b394249e9d4a8bc56c25688131b0a",
+    "testedStylesSha256": "3fdadec92114b68f6376e5b4ff8e8e0c7c5a1f340f15d630c9baa04654218cb3",
+    "browserErrors": [],
+    "externalRequestsFulfilled": 0,
+    "selection": "Only quiet-desktop; baseline wrapper filtered viewports; client/CSS/fixtures unchanged"
+  }
 }
