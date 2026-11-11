@@ -14,7 +14,7 @@
 
 **11.11., Büro live:** [PR1135, Nachweise und Rückweg](ui/buero-formatwahl-20261111/README.md).
 
-**Büro-Themen live (11.11.):** [PR1145/Abnahme](ui/buero-themenuebersicht-20261111/README.md), `3d19f426` READY; vollständige Zahl, zwei Einträge + „Weitere Themen“, keine zweite Mandatsbegründung. Client/CSS live bytegleich; CI189/189+366/366 und Browser grün. Keine bezahlte KI-Probe.
+**Büro (11.11.):** [Übersicht PR1145](ui/buero-themenuebersicht-20261111/README.md); [Quellentextfix PR1153](ui/buero-quellentext-20261111/README.md) auf `1b031b58` live/READY. Appstart erhält Quellenkurztexte. CI189/189+367/367+Browser grün, keine KI-Probe.
 
 [PR1129](https://github.com/ernisch/helmut-pilot/pull/1129) auf `ca9a3fc6` live/READY; Buero wartet60s statt12s, kein Auto-Retry. Pflicht-CI43001755133 gruen:14/14 Schnellkern,135/135 Bereich und Browser/Mobil. Nach Nutzer-„Ja“ genau1echte Probe11:40UTC: HTTP200 nach15,023s,844Zeichen,kein Fallback,1bestaetigte Buchung0,002823USD. Die alte12s-Frist haette diese erfolgreiche Antwort verworfen. Unveraenderter Client zeigt die Originalantwort im isolierten Desktop-/Mobilreplay nach13s bytegleich,37/37Pruefungen,Cache/Teilenaktion bestaetigt,0externeAnfragen. Native Bilanz11:43UTC:64Buchungen,heute0,029144USD/1USD,gesamt1,214451USD/30USD;Vertrag/Altreserven erhalten. Erfolgreich fuer diese Einzelprobe; normale Kundensitzung/natives Teilen nicht geprueft. [Beleg, Grenzen und Rueckweg](betrieb/buero-kostensperre-20261111.md).
 
@@ -327,7 +327,7 @@ Nach Betreiber-GO bei gruener Pflicht-CI gemergt und live: [PR #1055](https://gi
 **App-Start (06.11.2026):** PR1078/1081/1085 nach GO/Pflicht-CI live; PR1085`2a5e0774`, Vercel`dpl_45AMnvEB1XmP3jh5Xa7QGRb3nSgc`READY. HTTP-Median4,836→4,234s; HTTP200, Briefing/10Lagekarten, kein Androidwert.
 Installierte Brave-App haengt im nativen Android-Bild, Hauptadresse funktioniert; Geraeteursache offen. Folgefix vorbereitet: Icon-/Manifestfarbe angleichen,8s Workerfrist mit Wiederholungsansicht. Briefing vor App-Oeffnung, keine private Cacheansicht.
 Worker7/7, Icons70/70, echter Worker-Wiederholungsfall und Browser82/82 bestanden. [Vollstaendige Messungen, Rollout und Befunde](betrieb/app-start-performance-20261106.md).
-**Mobiler Start (11.11.):** [Befund](betrieb/mobiler-start-20261111.md): App/Brave beim Nutzer weiter schwarz; Privattabprobe offen.
+**Mobiler Start (11.11.):** [Befund](betrieb/mobiler-start-20261111.md): Brave schwarz, anderer Browser geht; Neuinstallation offen.
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
 Historische alte Anweisungen, darunter [`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind keine aktuellen Testauftraege. Alle alten Laufbelege,
