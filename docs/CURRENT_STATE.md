@@ -18,9 +18,9 @@
 
 [PR1129](https://github.com/ernisch/helmut-pilot/pull/1129) auf `ca9a3fc6` live/READY; Buero wartet60s statt12s, kein Auto-Retry. Pflicht-CI43001755133 gruen:14/14 Schnellkern,135/135 Bereich und Browser/Mobil. Nach Nutzer-„Ja“ genau1echte Probe11:40UTC: HTTP200 nach15,023s,844Zeichen,kein Fallback,1bestaetigte Buchung0,002823USD. Die alte12s-Frist haette diese erfolgreiche Antwort verworfen. Unveraenderter Client zeigt die Originalantwort im isolierten Desktop-/Mobilreplay nach13s bytegleich,37/37Pruefungen,Cache/Teilenaktion bestaetigt,0externeAnfragen. Native Bilanz11:43UTC:64Buchungen,heute0,029144USD/1USD,gesamt1,214451USD/30USD;Vertrag/Altreserven erhalten. Erfolgreich fuer diese Einzelprobe; normale Kundensitzung/natives Teilen nicht geprueft. [Beleg, Grenzen und Rueckweg](betrieb/buero-kostensperre-20261111.md).
 
-## Kompaktes Profil (11.11.2026, Pflicht-CI offen)
+## Kompaktes Profil live (11.11.2026)
 
-[Umsetzung/Prüfungen](ui/profil-kompakt-20261111/README.md): drei Mock-Seiten, echte Prioritäten, sichere Teil-PATCHs; unverbundene Felder entfernt. Büro626c4f29 integriert. Lokal174Browser+17Admin, darin60Profilchecks; Einladung34/34, Antwortzeit13/13grün. VorigeCI189/189Standard,365/367Bereich: zwei Testaufbauten korrigiert. Keine Productionmutation/KI. Nächster Schritt: grüner Kopf und lesender Rolloutnachweis. DropdownPR1134 wird ersetzt. [Audit](ui/profil-wirkungscheck-20261111/README.md).
+[PR1144/Belege](ui/profil-kompakt-20261111/README.md): drei Mock-Seiten, echte Prioritäten, sichere Teil-PATCHs; Termine/ungenutzte Felder entfallen. Production22bad44c READY; Hauptdomain samt fünf Assets bytegleich. CI43076685841:189/189Standard,367/367Bereich und Browser grün; lokal174+17Admin, darin60Profilchecks. Parallelstand samt Startfix integriert/geprüft. DropdownPR1134 ersetzt. Keine echten Profiländerungen/KI-Probe. Nächster Schritt: Profil am eigenen Gerät öffnen. [Audit](ui/profil-wirkungscheck-20261111/README.md).
 
 **Historie 07.11.:** Lageauswahl PR1100 auf `d9651861` live/READY, Pflicht-CI42409807375 grün. Fachliche Aufnahme vor Limit, Quellen-/Profilbindung; synthetische Gegenproben und Windenergiefall bestanden. Authentifizierte Production-Bedienabnahme offen. [Vollständige Belege, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md); keine neue Daten-/Modellfreigabe.
 
