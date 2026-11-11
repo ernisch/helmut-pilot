@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "date": "2026-11-11T20:34:03.929Z",
+  "scope": "Lokaler Offline-Entwurf mit fiktiven Daten; keine Productionpruefung",
+  "checks": 49,
+  "browser": "151.0.7922.173",
+  "widths": [
+    1440,
+    390,
+    360,
+    320
+  ],
+  "externalRequests": 0,
+  "pageErrors": [],
+  "screenshots": [
+    "uebersicht-desktop.png",
+    "kunde-desktop.png",
+    "kunde-mobil.png",
+    "anlegen-mobil.png"
+  ]
+}

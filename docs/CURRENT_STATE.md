@@ -197,8 +197,7 @@ dieser Übergangsweg wurde lokal mit echten Sessions geprüft.
 Der umfassendere historische Verwaltungstest
 stoppt im unveränderten Kontoclient an einer alten Null-IO-Erwartung beim Freigeben
 eines Kontos; die gezielte Navigationsauswahl führt keine Schreibaktion aus.
-Dieser Auftrag ist abgeschlossen. Nächster fachlicher Schritt bei weiterer
-Verwaltungsarbeit: fehlende Funktionen nach OP-33 einzeln zuordnen.
+**11.11.:** [Kundenablauf](ui/verwaltung-einfach-20261111/README.md) lokal geprüft (49); nur Entwurf. Nächster Schritt: Kundendetail lesend verbinden.
 
 ## Verwaltung: Darstellungskorrekturen gegen Design v3 (06.11.2026)
 
