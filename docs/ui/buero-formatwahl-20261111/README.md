@@ -3,7 +3,8 @@
 Stand: 11.11.2026. Entwicklungszweig `codex/buero-formatwahl-20261111`,
 Basis `3a012b0b`, Implementierung `d4ec99fd` in
 [PR1135](https://github.com/ernisch/helmut-pilot/pull/1135).
-Lokal umgesetzt und geprüft; Pflicht-CI, Merge und Production noch offen.
+Lokal umgesetzt und geprüft; Pflicht-CI am aktuellen PR-Kopf siehe PR1135.
+Merge und Production noch offen.
 
 Beim Öffnen von Büro wurde bisher das empfohlene Format des ersten Themas
 ausgewählt und gegebenenfalls kostenpflichtig erstellt. Auch ein Themenwechsel
