@@ -71,6 +71,7 @@ function fixture(latencyMs, baseline = false) {
       if (pathname === "/api/security/csrf" && method === "GET") return Promise.resolve(response({ token: "offline-csrf" }));
       assert.equal(pathname, "/api/communication/generate", "Kein ungemockter Netzwerkweg");
       assert.equal(method, "POST");
+      if (JSON.parse(options.body).office) assert.equal(JSON.parse(options.body).userInitiated, true);
       assert.equal(options.headers.get("X-CSRF-Token"), "offline-csrf");
       return new Promise(resolve => schedule(() => { ++completed;
         resolve(response({ aiEnabled: true, degraded: false, text: TEXT, channel: format.channel }));
@@ -87,7 +88,7 @@ function fixture(latencyMs, baseline = false) {
   return { s, decision, format, requests, saved, shared, copied, views,
     postCount: () => requests.filter(r => r.method === "POST").length,
     completed: () => completed,
-    async start() { const pending = s.generateSelectedOfficeDraft(); await flush(); return { pending }; },
+    async start() { const pending = s.generateSelectedOfficeDraft({ userInitiated: true }); await flush(); return { pending }; },
     async advance(to) {
       assert(to >= elapsed, "Virtuelle Zeit laeuft nur vorwaerts");
       await flush();
@@ -108,6 +109,14 @@ function noPublishedDraft(f) {
 let passed = 0;
 async function test(name, body) { await body(); ++passed; console.log(`PASS ${name}`); }
 (async () => {
+  await test("Auswahl, Rendern und ein impliziter Aufruf starten keinen kostenpflichtigen Entwurf", async () => {
+    const f = fixture(3000);
+    f.s.render();
+    await f.s.generateSelectedOfficeDraft();
+    await f.s.generateSelectedOfficeDraft({ userInitiated: false });
+    await f.advance(10000);
+    assert.equal(f.postCount(), 0); noPublishedDraft(f);
+  });
   await test("Negativkontrolle: Alter 12s-Client verwirft die erfolgreiche 15s-Antwort", async () => {
     const f = fixture(15000, true), { pending } = await f.start();
     await f.advance(12001); await pending;
@@ -120,7 +129,7 @@ async function test(name, body) { await body(); ++passed; console.log(`PASS ${na
     const during = Math.min(12001, latency - 1); await f.advance(during);
     assert.equal(f.postCount(), 1); assert.equal(f.s.officeDraftsGenerating, true);
     assert.equal(f.s.officeCardStatus(f.decision, f.format), "Wird vorbereitet");
-    await f.s.generateSelectedOfficeDraft(); await f.s.generateSelectedOfficeDraft();
+    await f.s.generateSelectedOfficeDraft({ userInitiated: true }); await f.s.generateSelectedOfficeDraft({ userInitiated: true });
     assert.equal(f.postCount(), 1, "Weitere Klicks starten waehrend der Wartezeit keinen zweiten kostenpflichtigen Auftrag");
     await f.advance(latency + 1); await pending;
     assert.equal(f.completed(), 1); assert.equal(f.postCount(), 1);
@@ -128,6 +137,17 @@ async function test(name, body) { await body(); ++passed; console.log(`PASS ${na
     assert.equal(f.s.officeCardStatus(f.decision, f.format), "Entwurf bereit");
     assert(f.views.at(-1).includes("data-office-share"));
     await f.s.shareOfficeDraft(); assert.equal(f.shared.length, 1); assert.equal(f.shared[0].text, TEXT);
+    await f.s.generateSelectedOfficeDraft({ userInitiated: true });
+    assert.equal(f.postCount(), 1, "Vorhandenen Entwurf erneut oeffnen kostet keinen weiteren Auftrag");
+  });
+  await test("Ein Auswahlwechsel waehrend der Antwort reiht keinen zweiten Entwurf ein", async () => {
+    const f = fixture(15000), { pending } = await f.start();
+    const other = { ...f.format, id: "presse", label: "Statement", channel: "press" };
+    f.s.activeOfficeFormats = () => [f.format, other];
+    f.s.selectedOfficeDraft = { decision: f.decision, format: other, text: "" };
+    await f.advance(15001); await pending; await f.advance(100000);
+    assert.equal(f.postCount(), 1); assert.equal(f.completed(), 1);
+    assert.equal(f.s.officeDraftEntry(f.decision, other), null);
   });
   await test("Nach 60s ehrlicher Fehler; spaeterer Erfolg erzeugt weder Fertigmeldung noch automatischen Retry", async () => {
     const f = fixture(61000), { pending } = await f.start();

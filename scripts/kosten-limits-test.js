@@ -10,8 +10,8 @@
 //   2. generateCommunicationDraft respektiert das Budget-Gate: bei erschoepftem
 //      Budget KEIN LLM-Call, ehrlicher Regel-Fallback (fallbackReason
 //      'budget-erschoepft'), Skip als Info-Eintrag protokolliert.
-//   3. Client: harte Obergrenze pro App-Start im Buero-Loop (frueher bis 16
-//      LLM-Calls pro Geraet und Oeffnen).
+//   3. Client: ein ausdruecklich beauftragter Entwurf; laufende Anfrage und
+//      gueltiger Cache verhindern weitere Aufrufe (kein Formatbatch).
 
 const fs = require("fs");
 const path = require("path");
@@ -95,7 +95,11 @@ function check(name, cond, detail = "") {
 
   // ── 3) Client: keine Massengenerierung, ein gewählter Entwurf ─────────────
   const clientSource = fs.readFileSync(path.join(root, "client.js"), "utf8");
-  const selected = clientSource.slice(clientSource.indexOf("async function generateSelectedOfficeDraft()"), clientSource.indexOf("async function shareOfficeDraft("));
+  // Die Beauftragung ist jetzt ein Parameter. Nicht nur die historische
+  // parameterlose Signatur suchen; bei fehlender Funktion weiter fehlschlagen.
+  const start = clientSource.indexOf("async function generateSelectedOfficeDraft(");
+  const end = clientSource.indexOf("async function shareOfficeDraft(", start);
+  const selected = start >= 0 && end > start ? clientSource.slice(start, end) : "";
   check("Appstart enthält keine automatische Büro-Massenerzeugung",
     !clientSource.includes("generateOfficeDraftsInBackground") && !clientSource.includes("OFFICE_DRAFTS_MAX_CALLS_PER_RUN"));
   check("Ein ausgewählter Entwurf statt Formatbatch",

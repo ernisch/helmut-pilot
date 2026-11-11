@@ -1,0 +1,64 @@
+{
+  "status": "PASS",
+  "verifiedAt": "2026-11-11T13:01:52.975302+00:00",
+  "scope": "Synthetic local verification; no production/model transport",
+  "browserAssertions": 246,
+  "browserErrors": [],
+  "externalRequestsFulfilled": 0,
+  "bootstrap": "unmodified full client including normal loadBriefing/auth/CSRF; every API mocked in memory",
+  "testedFiles": {
+    "assets/favicon.ico": "2226ad7caec775e6a01196af34bbd8cbf5c497ce5ae6e06c5c1ba563cf517caf",
+    "assets/helmut_logo.svg": "16d6d5ab1df18fab90c2588affc2ed13540fc466259d2752e805cf25d5aaea6e",
+    "assets/ui/fonts/HankenGrotesk-var.woff2": "186ca66826fac19d1736a7ebb840516de7f142bc5aeb0ce02eb6e1c3520d487e",
+    "assets/ui/fonts/IBMPlexMono-Medium.woff2": "3187905c507d452050e496d66c896eaf8f732a04055d04b117af8523fbc1a9e0",
+    "assets/ui/fonts/IBMPlexMono-Regular.woff2": "1acb708e5286bd1979de2f117ce7b7eb2ab2f7325cf7ce9791329c06d9c5f222",
+    "assets/ui/fonts/Spectral-Medium.woff2": "5effe60debf770566d79d9050b9a073a21e6148f3912a4d372d1ed935ed6ac52",
+    "assets/ui/fonts/Spectral-Regular.woff2": "61cd5cc9b19fc3590368e03f630cc8d736653a70d7ad51f9bb588488b1327f5f",
+    "assets/ui/reichstag.jpg": "06d4dc796dbb47631f4ed2c7b9b5137bc0c9f43d7080fddb707c512fbecbe5c7",
+    "client.js": "7a27dd456a6ea2707ce5f6c0150a11db0f345ed19e6fe3ada4ba37e8256b881c",
+    "index.html": "44bd39523405d5651bd1f0328b921a41a595895dd0ed80caee9bf5b89211a21b",
+    "scripts/fixtures/ui-office-binding.js": "60efee3a3f4c95e6e763781e385c33f2e0e0d422cbfcd2161746d85017bbd0fe",
+    "scripts/fixtures/ui-preview.js": "3a54b4d27ad7bd213033253015e21eb642ce6883c61a038b41ad0537df6429e0",
+    "scripts/ui-office-binding-browser-cases.js": "6b25c4cdc0b4a418fa812f91b72f46b8114c3f0f904a20d074852314fde35a7f",
+    "scripts/ui-office-binding-browser-test.js": "4c92c80e6b31b06135d3c5155b55772f74a5ccff01ec500dff1d6f560d4a9384",
+    "scripts/ui-preview-browser-check.js": "5c5f14443b564560cd1a0dc15b97cc4d1f2fbfe54955ea119b5e293f47882fce",
+    "scripts/ui-preview-isolated.py": "8d0ff6335c383ad0ebf2f6b6e36a041f036e2ccc2c8c9c92a2c42d0edca65d5c",
+    "styles.css": "8c649366798777ec9024c3df3e944163fcfccab81b1f5409fe63fbeb1ac0d0de"
+  },
+  "currentFileSha256": {
+    "client.js": "7a27dd456a6ea2707ce5f6c0150a11db0f345ed19e6fe3ada4ba37e8256b881c",
+    "styles.css": "8c649366798777ec9024c3df3e944163fcfccab81b1f5409fe63fbeb1ac0d0de",
+    "server.js": "d431ea8ad3de5f163153d178fb549728759004ab25e2ab2a5c8124a195bb35c5",
+    "scripts/ui-office-binding-browser-cases.js": "6b25c4cdc0b4a418fa812f91b72f46b8114c3f0f904a20d074852314fde35a7f",
+    "scripts/ui-preview-browser-check.js": "5c5f14443b564560cd1a0dc15b97cc4d1f2fbfe54955ea119b5e293f47882fce",
+    "scripts/office-antwortzeit-ui-test.js": "346d6de59f1395a2dc784249e0c88f5592b04198d742d9cbf8357f4041f6f7e4",
+    "scripts/buero-ehrlichkeit-test.js": "dc620984be726f0f35248cbe6fbe0b1aa740eb0ce8213f3104cf24d829435788"
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 390,
+      "height": 844
+    },
+    {
+      "width": 360,
+      "height": 780
+    }
+  ],
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "officeAnswerTimeGroups": 13,
+  "officeHonestyAssertions": 68,
+  "fastCoreSuites": 14,
+  "paidHelmutModelCalls": 0,
+  "productionChanges": 0,
+  "screenshots": {
+    "mobile-format-choice.png": "a6186c41729539ff29036e748efdb0c4bdafb3d6009ee2c6dfc058505beae224",
+    "mobile-overview.png": "07a836d669eb0d7144aaaf5c35b2104fff53bea2f240b1f96fa738eeb5687051"
+  }
+}

@@ -1094,6 +1094,12 @@ async function handleRequest(request, response) {
     if (previewMode) return sendPreviewReadOnly(response);
     if (!allowRate(request, "communication", 18, 60 * 60 * 1000)) return sendTooManyRequests(response, "Zu viele Kommunikationsentwürfe in kurzer Zeit.");
     return handleJson(request, response, async (body) => {
+      // Old clients used this mutation automatically on office navigation.
+      // Reject those requests before profile reads, budget reservation or AI.
+      if (body.office === true && body.userInitiated !== true) return {
+        aiEnabled: false, degraded: true, fallbackReason: "entwurf-nicht-beauftragt", text: "",
+        sourceNote: "Wählen Sie ein Format und beauftragen Sie die Erstellung ausdrücklich."
+      };
       const [commProfile, interactions] = await Promise.all([activeProfile(politicianId), getInteractions(politicianId)]);
       let decision = body.decision;
       if (body.office === true) {
