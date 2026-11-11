@@ -1,0 +1,45 @@
+"use strict";
+// Offline editorial audit: actual client selection and actual backend basis.
+// Inputs are explicitly fictional, already ranked recommendations. No scorer,
+// provider, production data, browser or network is executed.
+const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const root=path.resolve(process.argv[2]||process.cwd()),out=__dirname;
+const source=fs.readFileSync(path.join(root,'client.js'),'utf8');
+const ai=fs.readFileSync(path.join(root,'lib/helmut/ai.js'),'utf8');
+const test=fs.readFileSync(path.join(root,'scripts/buero-ehrlichkeit-test.js'),'utf8');
+const {payloadFor}=require(path.join(root,'scripts/fixtures/ui-office-binding.js'));
+const scaffold=test.slice(test.indexOf('  const noop = () => {};'),test.indexOf('  const bt = sandbox.__bt;'));
+assert(scaffold.includes('vm.runInContext(code, sandbox'));
+let code=source.replace(/^\s*loadBriefing\(\)[\s\S]*$/m,'');
+code+='\n;globalThis.__audit={apply:applyStartPayload,selected:()=>officeDecisions(),pool:()=>decisions,formats:()=>activeOfficeFormats(),drafts:()=>Object.keys(officeDrafts).length};';
+const client=new Function('vm','code','Buffer',scaffold+'\nreturn sandbox;')(vm,code,Buffer);
+const a=client.__audit;
+function fn(s,name){const begin=s.search(new RegExp('^function '+name+'\\(','m'));assert(begin>=0,name);return s.slice(begin,s.indexOf('\n}',begin)+2);}
+const channelsStart=ai.indexOf('const communicationChannels = {');
+const backend={URL,Set,String,Array,Object};vm.createContext(backend);
+vm.runInContext(ai.slice(channelsStart,ai.indexOf('\n};',channelsStart)+3)+'\n'+['capText','directSourceUrl','officeCommunicationBasis'].map(n=>fn(ai,n)).join('\n')+'\nglobalThis.basis=officeCommunicationBasis;',backend);
+const rows=[];
+const originalText='Fiktiver Originalauszug für eine parlamentarische Fallprüfung. Keine Aussage über ein tatsächliches aktuelles Ereignis.';
+function record(id,title,score=80,extra={}){return {id:'rec-'+id,vorgang_id:'vg-'+id,knowledge_object_id:'ko-'+id,title,summary:'Fiktiver Sachstand mit ausreichend ausführlicher Zusammenfassung für die redaktionelle Prüfung.',relevance_score:score,decision:'Beobachten',recommended_action:'Sachstand prüfen.',sources:[{url:'https://example.test/audit/'+id,excerpt:originalText,sourceName:'Synthetische Prüfquelle'}],...extra};}
+function apply(records,level,primary){
+ const p=payloadFor('valid');p.profile.parliamentType=level;p.profile.state=level==='Landtag'?'Berlin':'';p.profile.committees=[level==='Landtag'?'Bildung':'Arbeit und Soziales'];
+ p.briefing.personalizedRecommendations=records;p.briefing.items=[];p.briefing.situationalBriefing=[];
+ p.briefing.themeOfDay=null;p.briefing.currentHelmutState.primaryVorgangId=primary?'vg-'+primary:null;
+ assert.notEqual(a.apply(p),false);return {profile:p.profile,pool:Array.from(a.pool()),office:Array.from(a.selected())};
+}
+function add(id,level,description,records,primary,expected){const r=apply(records,level,primary);const visible=r.office.map(d=>d.vorgangId);const row={id,level,description,inputCount:records.length,pool:r.pool.map(d=>d.vorgangId),visible,expectedForEditorialUse:expected,basis:r.office.map(d=>({id:d.vorgangId,reason:backend.basis(d,r.profile,'press').reason||null})),draftsCreated:a.drafts()};rows.push(row);assert.equal(row.draftsCreated,0);return row;}
+for(const level of ['Bundestag','Landtag']){
+ const prefix=level==='Bundestag'?'Bund':'Land';
+ let r=add(prefix+'-single',level,'Ein belegter parlamentarischer Arbeitsanlass',[record('a',prefix+': Ausschussberatung zur Pflege')],null,['vg-a']);assert.deepEqual(r.visible,['vg-a']);
+ r=add(prefix+'-third',level,'Drei geeignete Themen; dritter Vorgang betrifft eine belegte kurzfristige Ausschussvorbereitung',[record('a',prefix+': Allgemeine Debatte',95),record('b',prefix+': Laufender Bericht',90),record('c',prefix+': Ausschussvorbereitung morgen',85,{zeitlicheDringlichkeit:100,deadline:'2026-11-12T08:00:00Z',sources:[{url:'https://example.test/audit/c',excerpt:'Fiktiver Beleg: Die Ausschusssitzung ist am 12. November 2026 um 9 Uhr. Eine vorbereitende Rückmeldung wird bis 8 Uhr benötigt. Ausschließlich synthetische Testdaten.'}]})],null,['vg-a','vg-b','vg-c']);assert.deepEqual(r.visible,['vg-a','vg-b']);
+ r=add(prefix+'-fourth-after-thin',level,'Erste drei Empfehlungen zu kurz; vierter Vorgang hat ausreichenden Sachstand',[record('a','Kurzhinweis A',95,{summary:'Kurz.'}),record('b','Kurzhinweis B',90,{summary:'Kurz.'}),record('c','Kurzhinweis C',85,{summary:'Kurz.'}),record('d',prefix+': Ausführlicher Ausschussbericht',80)],null,['vg-d']);assert.deepEqual(r.visible,[]);
+ r=add(prefix+'-url-only',level,'Zusammenfassung vorhanden, Quelle nur als Link ohne Originalauszug',[record('a',prefix+': Beratung mit noch fehlendem Originaltext',80,{sources:[{url:'https://example.test/audit/a'}]})],null,[]);assert.deepEqual(r.visible,['vg-a']);assert.equal(r.basis[0].reason,'quellenbasis-fehlt');
+ r=add(prefix+'-ignore',level,'Explizit ignorierter Vorgang wird nicht empfohlen',[record('a','Ignorierter Vorgang',80,{decision:'Ignorieren'})],null,[]);assert.deepEqual(r.visible,[]);
+ r=add(prefix+'-primary',level,'Briefing-Hauptthema bleibt vor höher bewerteten anderen Vorgängen',[record('a','Hauptthema',50),record('b','Anderer Vorgang',99),record('c','Weiterer Vorgang',95)],'a',['vg-a','vg-b']);assert.deepEqual(r.visible,['vg-a','vg-b']);
+}
+const jurisdiction=[];
+const decision=record('mandate','Fiktive Ausschussvorbereitung');
+for(const [name,profile,expected] of [['Bundestag mit Ausschuss',{parliamentType:'Bundestag',committees:['Arbeit und Soziales']},null],['Landtag mit Land und Ausschuss',{parliamentType:'Landtag',state:'Berlin',committees:['Bildung']},null],['Landtag ohne Land',{parliamentType:'Landtag',committees:['Bildung']},'zustaendigkeit-offen'],['Bundestag ohne Ausschuss',{parliamentType:'Bundestag'},'zustaendigkeit-offen']]){const reason=backend.basis(decision,profile,'committee_question').reason||null;assert.equal(reason,expected);jurisdiction.push({name,reason});}
+const result={scope:'Fictional BT/LT inputs with supplied ranking; actual applyStartPayload, officeDecisions and officeCommunicationBasis. Not a measurement of scoring quality or current news.',clientSha256:crypto.createHash('sha256').update(source).digest('hex'),backendSha256:crypto.createHash('sha256').update(ai).digest('hex'),rows,jurisdiction,scenarios:rows.length,jurisdictionChecks:jurisdiction.length,paidModelCalls:0,productionChanges:0};
+fs.writeFileSync(path.join(out,'results.json'),JSON.stringify(result,null,2)+'\n');
+console.log(JSON.stringify({scenarios:rows.length,jurisdictionChecks:jurisdiction.length,reproducedGaps:['Third eligible topic is hidden','Three short summaries mask an eligible fourth topic','URL-only source is offered but backend refuses'],paidModelCalls:0,productionChanges:0}));
