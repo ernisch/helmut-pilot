@@ -30,6 +30,22 @@ den Nutzerauftrag angepasst: entfernte Felder fehlen, die vier übrigen optional
 Hinweise bleiben vorhanden. Kein Produktfehler oder abgeschwächtes CI-Gate;
 der neue Kopf benötigt erneut beide grünen Pflichtchecks.
 
+Der folgende Lauf `43093338107` auf `a0adbf8a` meldete alle Schritte einschließlich
+Standard-/Fachregression, Z22 und „Complete job“ erfolgreich (letzter Schritt
+20:27:53 UTC). Sein Gesamtcheck blieb jedoch über das 45-Minuten-Fenster hinaus
+`in_progress`. GitHub lieferte dabei widersprüchliche Zustände: normaler und
+vorgesehener Notabbruch jeweils HTTP409 „not in progress“, Wiederholung des Jobs
+und des Laufs jeweils HTTP403 „already running“. Kein Abbruch und kein Wiederlauf
+wurde dadurch ausgelöst; zwischendurch scheiterte nur die lokale Statusabfrage an
+HTTP503. Der alte Lauf ist deshalb kein formal grüner Pflichtnachweis.
+
+Der anschließend frisch integrierte Stand enthält den unabhängigen Büro-Quellentextfix
+bis `d6914b62`. Seine Runtime ist bytegleich zum getrennt geprüften gemeinsamen Baum
+`4f8d8a5ce69da29642f1cb5e311417fda5a11e52`: 60/60 Profilbrowserchecks und
+76/76 Büro-Ehrlichkeitsprüfungen bestanden, keine echten Daten-/Modellaufrufe.
+Ein neuer Kopf dokumentiert diese CI-Blockade und erhält regulär beide Pflichtchecks.
+Keine Workflowänderung, manuelle Erfolgsmarkierung, Schutzumgehung oder Datenmutation.
+
 ## Bedienung
 
 Unter Profil & Einstellungen führen drei kompakte Zeilen auf eigene Seiten:

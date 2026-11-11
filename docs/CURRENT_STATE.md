@@ -20,7 +20,7 @@
 
 ## Kompaktes Profil live (11.11.2026)
 
-[PR1144/Belege und Folgeauftrag](ui/profil-kompakt-20261111/README.md): drei kompakte Seiten mit echter Wirkung auf22bad44c live, CI43076685841 grün. „Bitte vermeiden“ wird auf Nutzerwunsch aus UI/Formular entfernt, Altwerte bleiben erhalten. Lokal60/60Profilbrowserchecks bestanden; Pflicht-CI/Rollout der Folgeänderung offen. Nächster Schritt: grünen Kopf regulär ausrollen. [Audit](ui/profil-wirkungscheck-20261111/README.md).
+[Profil/Belege](ui/profil-kompakt-20261111/README.md): PR1144 live. FolgePR1151 entfernt „Bitte vermeiden“ aus UI/Formular, Altwerte bleiben erhalten. Bürostandd6914b62 integriert; gemeinsam60/60Profil- und76/76Bürochecks grün. CI43093338107: alle Schritte erfolgreich, Gesamtstatus hängt; Abbruch/Wiederholung widersprüchlich abgewiesen. Frischer Pflichtlauf/Rollout offen. Nächster Schritt: eindeutiges Grün und lesenden Rolloutnachweis abwarten. [Audit](ui/profil-wirkungscheck-20261111/README.md).
 
 **Historie 07.11.:** Lageauswahl PR1100 auf `d9651861` live/READY, Pflicht-CI42409807375 grün. Fachliche Aufnahme vor Limit, Quellen-/Profilbindung; synthetische Gegenproben und Windenergiefall bestanden. Authentifizierte Production-Bedienabnahme offen. [Vollständige Belege, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md); keine neue Daten-/Modellfreigabe.
 
