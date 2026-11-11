@@ -1,14 +1,14 @@
 # CURRENT STATE — Helmut
 
-**Stand: 09.11.2026.** Betreibersteuerung und frische Productionbelege gelten. [PR1105 live](betrieb/validierungsdiagnose-20261108.md).
+**Stand: 11.11.2026.** Betreibersteuerung und frische Productionbelege gelten. [PR1105 live](betrieb/validierungsdiagnose-20261108.md).
 
-**10.11., Production:** PR1118–1122 live; main/Production `a5052f98`. Vollständige Versorgung im regulären Lauf und echte Kundensitzung bleiben zu belegen.
+**11.11., Production:** PR1118–1123 live; main/Production `f6222398`, READY. Quellenversorgung weiterhin gestört; vollständige reguläre Verarbeitung und echte Kundensitzung bleiben zu belegen.
 
 **UX (08.11.):** [PR1108: Tagesgrund, Radar ohne Knopf](ui/mobile-ux-20261108/README.md); kein Merge/Deploy, ChatGPT-Abnahme offen. [Briefing PR1102 live](ui/briefing-ohne-refresh-20261107/rollout.md).
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
-**10.11., weitere Übergangsprüfung:** Belegte Quellen-/Inhalts-/Persistenzfehler werden auf aktuellem main minimal korrigiert und gezielt geprüft. Kein weiterer Merge/Deployment. Endkopf und Pflicht-CI im Reparatur-PR maßgeblich.
+**11.11., Reparatur vorbereitet:** Branch `codex/quellen-einreihung-20261111` auf aktuellem main; fehlendes Pending-Planfenster und unbestätigte RPC-Quittungen minimal korrigiert. Offline geprüft, unabhängiges Review ohne Blocker; Endkopf/Pflicht-CI im PR maßgeblich. Kein Merge/Deployment.
 
 ## Büro: gemergt und Production READY (09.11.2026)
 
@@ -34,7 +34,7 @@ Voriger Status unveraendert im [Archiv](archive/project_state/2026_11_07_CURRENT
 
 ## Quellen: aktueller Stand und fruehere Belege
 
-**10.11., Pendingreparatur in Vorbereitung:** PR1115 live aufmain/Productionc37d85f8 (READY), PR1117/Büro erhalten. Alle8Quellenfenster03:00–04:45 scheitertenmitpending-bestand-nicht-lesbar vorEinreihung;0neueRohdokumente. Ursache:12254verarbeitbareKOs→Tagesoffset5795, aberPublikationsleser begrenztOffset5000. [Gezielte Reparatur und Freigabepaket](betrieb/pending-rotation-20261110.md): eigenerPendingleser, unveränderterVeröffentlichungsschutz, Storageadapterregression/Folgeplanung/Briefingsperre. KeineProductionänderung. Heute8Fenster/2400sreserviertverbraucht; keineFreigabefähigeNachholunginnerhalbaktuellerArbeitsgrenzen. Originalversuche0/16; Modellbuch1185307microUSDgesamt/12665heute,1USD/Tag30USDgesamt unverändert,1aktivesProfil. GespeicherteLage15Belege/8ohneAuszug; persönlichesBriefingunvollständig. Endcommit/CI/ReviewimPRmaßgeblich; Freigabeoffen.
+**11.11., Einreihungsreparatur vorbereitet:** Neuer Pendingauftrag erhält das Tagesplanfenster; gespeicherte Altmanifeste erhalten nur in der RPC-Kopie ihr ursprüngliches Planfenster. Manifest, Hash, Artikeldatum und Inhaltsschlüssel bleiben unverändert. Beide Enqueueadapter bestätigen nur genau eine gültige UUID mit booleschem `neu`; verlorene Quittung hält den Cursor offen. Gezielte Offlinegruppen: Pending/RPC10, Journal8, Inhaltsqueue28 bestanden; unabhängiges Sicherheitsreview ohne Befund. Vorherige [Pendingrotation](betrieb/pending-rotation-20261110.md) bleibt erhalten. Schutzregeln, Limits und reguläre Zeitfenster unverändert; kein manueller Nachlauf. Produktionsdiagnosen bleiben im privaten Nachweis, der nächste reguläre Lauf ist noch kein belegter Versorgungserfolg. Nächster Schritt nach grüner Pflicht-CI: konkrete Merge-/Rolloutfreigabe für den Reparaturkopf.
 
 **Historie 07.11.:** [PR1098](https://github.com/ernisch/helmut-pilot/pull/1098) wurde nach GO und gruener CI inaktiv auf `778c289b` ausgerollt. Separat freigegebene Quellenkorrektur: vier Originalauszuege, eine Bundestagsquelle, fuenf Kurzfassungen; zwei Altfaelle geparkt, RP Online ohne Original offen. Kein 6/6-Nachweis und keine Provideraufrufe. [Quellenkorrektur mit Vor-/Nachwerten und Rueckweg](betrieb/quellenkorrektur-20261107.md). [Unveraenderter damaliger Detailstand](https://github.com/ernisch/helmut-pilot/blob/feadca2829b6b54c010c2fcfef16d208ab6e0c05/docs/CURRENT_STATE.md#quellenkorrektur-07112026-gemergt-und-inaktiv).
 

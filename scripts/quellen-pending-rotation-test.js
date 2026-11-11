@@ -11,7 +11,8 @@ const profile = { id: "isolierte-pending-rotation", fullName: "Fiktives Fachprof
 const pending = Array.from({ length: 5 }, (_, i) => ({ id: `ko-pending-${5795 + i}`, status: "pending",
   understanding_status: i === 0 ? null : "pending", created_at: "2026-11-01T03:00:00Z" }));
 let mode = "normal", groups = 0, jobs = [], planned = 0;
-const requests = [], rows = new Map();
+const requests = [], rows = new Map(), queueRows = new Map(), rpcBodies = [];
+let receipt = "normal", sequence = 0;
 const env = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_ARTIKELKONTEXT: "on",
   HELMUT_SUCHWEGAUSZUEGE_HOSTS: "www.dgb.de,www.radio-hannover.de", HELMUT_QUELLEN_ARBEITSFENSTER: "on",
   HELMUT_SUPABASE_STORE_ID: "isolierter-rotationsstore", HELMUT_SUPABASE_TIMEOUT_MS: "1000" };
@@ -51,6 +52,31 @@ async function test(name, fn) { await fn(); groups++; console.log("PASS " + name
           if (match) { A.equal(p.p_next_cursor, old.cursor + 1); row.data = { ...old, cursor: p.p_next_cursor,
             zustand: p.p_next_cursor === old.auftraege.length ? "fertig" : "offen" }; }
           return send(200, [{ id: p.p_id, uebernommen: Boolean(match) }]);
+        }
+        if (["/rest/v1/rpc/helmut_enqueue_job", "/rest/v1/rpc/helmut_enqueue_job_mit_outbox"].includes(u.pathname)) {
+          // Spiegel der installierten RPC-Signatur/NOT-NULL-Spalte, kein SQL-Nachweis.
+          A.equal(req.method, "POST"); const p = JSON.parse(body); rpcBodies.push({ path: u.pathname, params: p });
+          if (!Object.hasOwn(p, "p_freshness_window")) return send(404, { code: "PGRST202", message: "Pflichtparameter fehlt" });
+          if (p.p_freshness_window === null) return send(400, { code: "23502", message: "freshness_window NOT NULL" });
+          A.equal(typeof p.p_freshness_window, "string");
+          let row = queueRows.get(p.p_idempotency_key); const neu = !row;
+          if (!row) { row = { id: "00000000-0000-4000-8000-" + (++sequence).toString(16).padStart(12, "0"),
+            params: structuredClone(p), status: "wartend" }; queueRows.set(p.p_idempotency_key, row); }
+          const ack = { id: row.id, neu, ...(u.pathname.endsWith("_mit_outbox") ? { versandabsicht: neu ? "neu" : "unveraendert" } : {}) };
+          if (receipt === "empty") return send(200, []);
+          if (receipt === "null-id") return send(200, [{ ...ack, id: null }]);
+          if (receipt === "invalid-id") return send(200, [{ ...ack, id: "kein-job" }]);
+          if (receipt === "invalid-neu") return send(200, [{ ...ack, neu: "false" }]);
+          if (receipt === "multiple") return send(200, [ack, ack]);
+          return send(200, [ack]);
+        }
+        if (u.pathname === "/rest/v1/rpc/helmut_jobs_offen") {
+          const p = JSON.parse(body), relevant = [...queueRows.values()].filter(r =>
+            (!p.p_fenster || p.p_fenster.includes(r.params.p_freshness_window))
+            && (!p.p_typen || p.p_typen.includes(r.params.p_job_type))
+            && (!p.p_mandat || !r.params.p_tenant_id || p.p_mandat === r.params.p_tenant_id));
+          return send(200, [{ offen: relevant.filter(r => ["wartend", "laeuft"].includes(r.status)).length,
+            fehlgeschlagen: relevant.filter(r => r.status === "fehlgeschlagen").length }]);
         }
         return send(404, { message: "unbekannter Testweg" });
       } catch (e) { console.error(e); send(500, { message: e.message }); }
@@ -95,7 +121,7 @@ async function test(name, fn) { await fn(); groups++; console.log("PASS " + name
       listKoDocuments: async id => [{ id: "rd-" + Number(id.slice(id.lastIndexOf("-") + 1)).toString(16).padStart(64, "0") }],
       enqueue: async job => { jobs.push(job); return { verfuegbar: true, neu: true }; },
       sourceDemand: {
-        kompiliereQuellenbedarf: async () => { planned++; return { auftraege: [{ jobType: "source_fetch", idempotencyKey: "quelle-folgt-pending", payload: {} }], statistik: {}, fehlerhafteProfile: [] }; },
+        kompiliereQuellenbedarf: async () => { planned++; return { auftraege: [{ jobType: "source_fetch", idempotencyKey: "quelle-folgt-pending", freshnessWindow: "2026-11-10T00Z", payload: {} }], statistik: {}, fehlerhafteProfile: [] }; },
         planeMandatsarbeit: () => ({ auftraege: [], fenster: "2026-11-10T00Z" }) } };
     const supply = extra => V.lese({ mandat: profile.id, jetztMs: jetzt, env, deps: { request: S.supabaseRequest, ...extra } });
     await test("Lesefehler erzeugt kein Manifest oder scheinbar behobene Briefingsperre", async () => {
@@ -126,6 +152,59 @@ async function test(name, fn) { await fn(); groups++; console.log("PASS " + name
       }
       const ready = await supply({ offeneVorbedingungen: async () => ({ verfuegbar: true, offen: 0, fehlgeschlagen: 0 }) });
       A.equal(ready.zustand, "kein-bekannter-rueckstand");
+    });
+    await test("Echter Planer und beide Standard-RPC-Adapter bestaetigen Pending vor Quellen ohne neue Idempotenz", async () => {
+      for (const dispatch of ["off", "shadow"]) {
+        rows.clear(); queueRows.clear(); rpcBodies.length = 0; receipt = "normal";
+        const actual = { ...dep, enqueue: undefined }, wirksam = { ...env, HELMUT_JOB_DISPATCH_MODE: dispatch };
+        const r = await P.setzePlanungFort({ jetztMs: jetzt, env: wirksam, deps: actual, darfNeuPlanen: true });
+        A.equal(r.ok, true, JSON.stringify(r)); A.equal(r.planungsrest.cursor, 2);
+        A.equal(rpcBodies.length, 2); A.equal(queueRows.size, 2);
+        A.equal(rpcBodies[0].params.p_job_type, "document_understanding");
+        A.equal(rpcBodies[0].params.p_freshness_window, "2026-11-10T00Z");
+        A.equal(rpcBodies[0].params.p_tenant_id, null); A.equal(rpcBodies[0].params.p_payload.dokumentIds.length, 5);
+        A(rpcBodies.every(b => b.path.endsWith(dispatch === "shadow" ? "helmut_enqueue_job_mit_outbox" : "helmut_enqueue_job")));
+        const key = rpcBodies[0].params.p_idempotency_key;
+        A(/^document_understanding\|[a-f0-9]+$/.test(key), "Schluessel bleibt inhaltsgebunden statt tagesgebunden");
+        const replay = await P.setzePlanungFort({ jetztMs: jetzt + 900000, env: wirksam, deps: actual, darfNeuPlanen: true });
+        A.equal(replay.ok, true); A.equal(rpcBodies.length, 2); A.equal(queueRows.size, 2);
+        for (const row of queueRows.values()) row.status = row.params.p_job_type === "document_understanding" ? "fehlgeschlagen" : "erledigt";
+        A.equal((await supply()).zustand, "offen", "Heutiger Terminalfehler darf nicht als fehlender Rueckstand verschwinden");
+      }
+    });
+    await test("Unveraenderlicher Altplan heilt am Folgetag nur die RPC-Kopie; verlorene Quittung bestaetigt keinen Cursor", async () => {
+      for (const dispatch of ["off", "shadow"]) {
+        rows.clear(); queueRows.clear(); rpcBodies.length = 0;
+        const journal = require("../lib/helmut/quellen-planungsrest").erzeugePlanungsrest({ request: S.supabaseRequest, storeId: env.HELMUT_SUPABASE_STORE_ID });
+        const tag = "2026-11-09", key = "document_understanding|" + "a".repeat(64);
+        const old = await journal.sichereManifest(tag, { auftraege: [{ jobType: "document_understanding", idempotencyKey: key,
+          payload: { dokumentIds: ["rd-" + "b".repeat(64)] }, tenantId: null, maxAttempts: 3, priority: 80 }] });
+        const before = structuredClone(old);
+        const actual = { ...dep, enqueue: undefined, quellenFuerProfil: () => { throw Error("Keine Neuplanung"); } };
+        const wirksam = { ...env, HELMUT_JOB_DISPATCH_MODE: dispatch };
+        receipt = "empty";
+        const unknown = await P.setzePlanungFort({ jetztMs: jetzt - 86400000, env: wirksam, deps: actual });
+        A.equal(unknown.ok, false); A.equal((await journal.lesen(tag)).cursor, 0);
+        A.equal(queueRows.size, 1, "Nur RPC-Antwort verloren; der Auftrag ist in der isolierten Ablage vorhanden");
+        receipt = "normal";
+        const recovered = await P.setzePlanungFort({ jetztMs: jetzt, env: wirksam, deps: actual });
+        A.equal(recovered.grund, "planung-fehlt", "Der alte Plan ist fertig, fuer den Folgetag wurde kein neuer erfunden");
+        const after = await journal.lesen(tag);
+        A.equal(after.cursor, 1); A.equal(after.zustand, "fertig");
+        A.deepEqual(after.auftraege, before.auftraege); A.equal(after.manifestHash, before.manifestHash);
+        A(!Object.hasOwn(after.auftraege[0], "freshnessWindow"), "Historisches Manifest bleibt unveraendert");
+        A.equal(rpcBodies.length, 2); A.equal(queueRows.size, 1);
+        A(rpcBodies.every(b => b.params.p_freshness_window === tag + "T00Z" && b.params.p_idempotency_key === key));
+      }
+    });
+    await test("Leere oder widerspruechliche RPC-Quittungen bleiben in beiden Adaptern unbestaetigt", async () => {
+      const job = { jobType: "source_fetch", idempotencyKey: "quittungsgrenze", freshnessWindow: "2026-11-10T00Z", payload: {} };
+      for (const fn of [S.jobQueueEnqueue, S.jobQueueEnqueueMitOutbox]) {
+        for (receipt of ["empty", "null-id", "invalid-id", "invalid-neu", "multiple"]) {
+          const r = await fn(job); A.equal(r.verfuegbar, false, receipt + ": " + JSON.stringify(r));
+        }
+        receipt = "normal"; const r = await fn(job); A.equal(r.verfuegbar, true); A.equal(r.neu, false); A(r.id);
+      }
     });
     console.log(`${groups}/${groups} Pending-Rotationsgruppen PASS; fuenf Zeilen, Loopback-HTTP, keine Originale/Modelle/Production.`);
   } finally { server.closeAllConnections?.(); await new Promise(resolve => server.close(resolve)); }
