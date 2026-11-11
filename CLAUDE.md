@@ -1,94 +1,21 @@
 # CLAUDE.md — dauerhafte technische Repository-Regeln
 
-Diese Datei enthält **ausschließlich dauerhafte technische Repository-Regeln**
-(Sicherheit, Datenhaltung, Migrationen, CI). Sie wird **nur** geändert, wenn eine neue
-dauerhaft verbindliche technische Projektregel entsteht.
-
-**Zuständigkeit der vier zentralen Dateien (verbindlich, keine Überlappung):**
-
-- **`AGENTS.md` ist die eindeutige Agent-Regeldatei.** Dort stehen Arbeitsweise,
-  Freigaben, Production-Schutz, Testumfang, Agent-Verhalten und die Pflichtlektüre samt
-  Reihenfolge. Bei Überschneidung oder Widerspruch gilt `AGENTS.md`.
-- **Diese Datei (`CLAUDE.md`)** führt die dauerhaften **technischen**
-  Repository-Regeln.
-- [`docs/START_HERE.md`](docs/START_HERE.md) ist die **stabile Produktorientierung**
-  (Produkt, Zielgruppe, Prinzipien).
-- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) ist der **aktuelle operative Stand**
-  und die **einzige** Quelle für laufende Betriebszustände (aktive Profile, offene
-  Migrationen, Blocker).
-
-**Stand:** 2026-11-11 (automatischer Push und Merge bei Gruen;
-AGENTS.md fuehrt die aktuelle Dauerfreigabe und Arbeitsordnung)
-
----
-
-## 1 · Was Helmut ist
-
-Helmut ist ein **politischer KI-Stabschef** für Mandatsträger — kein
-Medienmonitoring-Tool, kein News-Reader, kein Dashboard. Helmut reduziert die
-politische Morgenlage auf **Entscheidungen, Kommunikation und Aufgaben**.
-
-**Aktuelles oberstes Projektziel seit 05.11.2026:** Der
-**synthetische Mock100 Nachweis mit exakt 100 gleichzeitig aktiven
-Mandatsprofilen** und anschliessend eine sichere, nutzbare und
-verkaufbare Production Anwendung. Der alte verpflichtende
-Mock500/Production500 Zielpfad ist aufgehoben und historisch.
-Es ist **kein separater Production100 oder Production500 Lasttest**
-geplant oder freigegeben. Bestehende Anforderungen an Authentifizierung,
-Mandantentrennung, Datenschutz, Kostenkontrolle, sicherheitsrelevante
-Aenderungen und reale Betriebsfreigaben gelten unveraendert.
-Der Mock100 PASS allein beweist nicht, dass die Anwendung
-bereits live und verkaufsbereit ist. Aktueller Belegstand:
-[`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md).
-Die bisherige 500er Historie und ihre Fehlschlaege bleiben erhalten.
-
-## 2 · Pflichtlektüre bei jedem neuen Thread
-
-Der Sprintstart ist verbindlich in [`AGENTS.md`](AGENTS.md) definiert:
-
-1. geltende `AGENTS.md`
-2. [`docs/START_HERE.md`](docs/START_HERE.md)
-3. [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)
-4. nur die für den konkreten Sprint benötigten Dateien
-
-Diese Datei nur vollständig lesen, wenn eine enthaltene Regel relevant ist oder
-`AGENTS.md` es ausdrücklich verlangt. Keine pauschale Vollhistorie lesen.
-
-Daraus ergibt sich der nächste Schritt. **Erst danach** aufgabenabhängig weiterlesen.
+Stand: 11.11.2026. Arbeitsweise, Leseumfang, Agentenzusammenarbeit und Freigaben
+stehen ausschliesslich in [AGENTS.md](AGENTS.md); bei Ueberschneidung gilt `AGENTS.md`.
+Produktprinzipien: [START_HERE.md](docs/START_HERE.md). Aktueller Betrieb und Belege:
+[CURRENT_STATE.md](docs/CURRENT_STATE.md). Historie ist kein aktueller Auftrag.
 
 ## 3 · Aufgabenabhängige Zusatzlektüre
 
-Nur den Block lesen, der zur Aufgabe gehört.
+Nur passende Abschnitte lesen; keine pauschale Volllektüre oder Repository-Inventur.
 
-**Architektur / Backend**
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- betroffene Datenmodelle: `supabase/migrations/` (nur relevante Dateien) + `lib/helmut/storage.js` (nur der konkrete Zugriff)
-- nur die betroffenen Backend-Dateien in `lib/helmut/` und die betroffene Route in `server.js`
-
-**Quellen**
-- [`docs/quellenarchitektur/02-zielarchitektur.md`](docs/quellenarchitektur/02-zielarchitektur.md) (kanonisches Quellenmodell)
-- [`docs/quellenarchitektur/00-master-status.md`](docs/quellenarchitektur/00-master-status.md) (Quellenstatus)
-- [`docs/quellenarchitektur/07-paketaktivierung-profil-resolver.md`](docs/quellenarchitektur/07-paketaktivierung-profil-resolver.md) (Paketlogik)
-- nur betroffene `lib/helmut/quellenarchitektur/seeds/*.js`, Mapper und `scripts/source-architecture-test.js`
-
-**UI**
-- Designregeln: Token-Block `:root` und Light-Mode-Overrides `:root[data-theme="light"]` in `styles.css`; Admin-Designentscheidungen in [`docs/admin-neuaufbau-2026-07.md`](docs/admin-neuaufbau-2026-07.md)
-- nur die betroffene `render…View()`-Funktion in `client.js`
-- nur die betroffenen Style-Abschnitte
-- `scripts/*-ui-test.js` und `scripts/browser-smoke-test.js`
-
-**Production / Security**
-- [`docs/quellenarchitektur/05-sicherheitsmodell-rls.md`](docs/quellenarchitektur/05-sicherheitsmodell-rls.md) — **verbindlich** für Mandantentrennung, RLS, JWT
-- [`docs/betrieb/deploy-rollback.md`](docs/betrieb/deploy-rollback.md), [`docs/betrieb/branch-protection.md`](docs/betrieb/branch-protection.md), [`docs/betrieb/env-inventar.md`](docs/betrieb/env-inventar.md), [`docs/betrieb/secret-rotation.md`](docs/betrieb/secret-rotation.md)
-- [`docs/sprint1-sicherheit/01-zugriffsmatrix.md`](docs/sprint1-sicherheit/01-zugriffsmatrix.md)
-
-**Offene Punkte, egal welche Aufgabe:** [`docs/datenmotor-restliste.md`](docs/datenmotor-restliste.md)
-ist die **einzige verbindliche Liste** (OP-01…OP-23). Ältere Restlisten
-(`freigabepunkte.md`, `readiness-verdict-2026-07.md`, `AUDIT_DATENMOTOR_2026-07.md`,
-`audit/*`) sind historisch und dürfen nicht als aktueller Stand zitiert werden.
-
-**Andere große Dokumentbereiche nicht lesen**, solange kein konkreter Bedarf
-festgestellt wurde.
+| Aufgabe | Relevante Quellen |
+| --- | --- |
+| Architektur/Backend | `docs/ARCHITECTURE.md`, betroffene Route/Module; bei Datenzugriff die betroffenen Migrationen und `lib/helmut/storage.js` |
+| Quellen | `docs/quellenarchitektur/02-zielarchitektur.md`, `00-master-status.md`, `07-paketaktivierung-profil-resolver.md`; betroffene Seeds/Mapper und Tests |
+| UI | betroffene `render…View()`, CSS-Tokens/Light-Overrides und Tests; `docs/admin-neuaufbau-2026-07.md` |
+| Production/Security | verbindlich `docs/quellenarchitektur/05-sicherheitsmodell-rls.md` und `docs/sprint1-sicherheit/01-zugriffsmatrix.md`; passende Abschnitte in `docs/betrieb/deploy-rollback.md`, `branch-protection.md`, `env-inventar.md`, `secret-rotation.md` |
+| OP-Punkte | `docs/datenmotor-restliste.md` ist die verbindliche OP-Liste; alte Audits/Restlisten sind historisch |
 
 ## 4 · Verbindliche Sicherheits- und Produktregeln
 
@@ -158,23 +85,15 @@ reversibel und eindeutig sinnvoll ist.
 
 ## 6 · Branches, Tests, Pull Requests, Review
 
-- **Vor jedem größeren Sprint erst auf bestehende Arbeit zum selben Thema prüfen:**
-  offene Branches und Pull Requests sowie `docs/CURRENT_STATE.md` (teilweise
-  abgeschlossene/blockierte Punkte) gezielt durchsehen, bevor eine neue
-  Implementierung beginnt. Passende, sichere, aktuelle Arbeit fortsetzen statt
-  unbegründet parallel neu bauen; bei konkurrierenden Lösungen erst die
-  Unterschiede bewerten. Nur bei einer kritischen Produkt-/Architektur-/
-  Sicherheitsentscheidung unterbrechen. Veraltete/ungeeignete Arbeit darf
-  verworfen werden, dann aber kurz in `docs/CURRENT_STATE.md` dokumentieren.
-- **Nie direkt auf `main`.** Feature-Branch, dann PR. `main` deployt automatisch.
-- **Testumfang:** richtet sich nach [`AGENTS.md`](AGENTS.md) — gezielte, zweckgebundene
-  Tests des betroffenen Bereichs; **keine** vollständige Suite und **keine** Browser-Suite
-  aus Vorsicht. Wenn ein Offline-Lauf nötig ist, ist der kanonische Befehl
-  `node scripts/lokal.js -- node scripts/run-offline-tests.js` (führt die explizite
-  Standardkernmenge aus, erzwingt Offline technisch); die vollständige Regression läuft
-  bewusst über `--extended` bzw. `npm run test:offline:extended`; bei UI-Änderungen gezielt
-  `node scripts/lokal.js -- node scripts/browser-smoke-test.js`. Die Pflicht-CI läuft
-  zusätzlich (siehe CI-Gate unten).
+Eigener Branch und PR, nie direkt auf `main`. Vollautomatischer Push/Merge und
+Nachkontrolle richten sich ausschliesslich nach der Dauerfreigabe in `AGENTS.md`.
+PR-Text nennt Problem/Aenderung, echte Pruefergebnisse, Risiko, Rueckweg und Umfang.
+Nur auftragsrelevante Tests; keine pauschalen lokalen Doppelpruefungen der Pflicht-CI.
+Gezielte lokale Befehle jeweils mit dem folgenden Schutzstarter verwenden:
+`node scripts/lokal.js -- node scripts/run-offline-tests.js` (Standard),
+`--bereich <name>`/`--aendert` (Bereich) oder
+`node scripts/lokal.js -- node scripts/browser-smoke-test.js` (UI).
+
 - **Jeder Testlauf geht über `scripts/lokal.js`, auch der einzelne.** Liegen
   Production-Kennungen in der Umgebung (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
   `VERCEL_TOKEN` — in Cloud-Sitzungen der Normalfall), kann ein **Handlauf einer einzelnen
@@ -203,12 +122,6 @@ reversibel und eindeutig sinnvoll ist.
   die klassische Branch-Protection mit dem verfügbaren GitHub-Zugang nicht lesend belegt
   werden kann. Durch den risikobasierten Prüfplan wiederholt er aber keine pauschale
   Vollsuite mehr bei eindeutig kleinen Änderungen.
-- **PR-Beschreibung:** was geändert wurde, echte Testergebnisse (Zahlen, keine
-  Behauptungen), Risiko, Rollback, und was bewusst **nicht** enthalten ist.
-- **Push und Merge automatisch bei Gruen gemaess [`AGENTS.md`](AGENTS.md).**
-  Die Dauerfreigabe vom 11.11.2026 erlaubt auftragsbezogene Pushes, PRs, gruene
-  Merges und regulaere Deployments ohne erneutes einzelnes GO. Alle dort
-  genannten Pruefbedingungen einhalten und danach selbststaendig nachkontrollieren.
 - **Vier Testebenen:**
   - **Schnellkern (automatisch bei normalem Code):** kleine universelle Menge
     `FAST_CORE` in `scripts/run-offline-tests.js`; zentrale Mandanten-, Sicherheits-
@@ -226,91 +139,45 @@ reversibel und eindeutig sinnvoll ist.
   trägt sie bewusst in `FAST_CORE` bzw. `STANDARD` ein. Bereiche gezielt:
   `--bereich <name>` oder `--extended --only <substring>`; Übersicht: `--bereiche`.
 
-## 7 · Token- und Kostenregeln
+## 7 · Kontext und Dokumentation
 
-1. Keine vollständige Repository-Inventur zu Sprintbeginn, keine rekursive Analyse
-   aller Dateien.
-2. Erst Dateinamen und gezielte Suchtreffer prüfen (`Glob`/`Grep`), dann einzelne
-   Dateien öffnen.
-3. Große Dateien (`server.js`, `client.js`, `styles.css`, `storage.js`) **nur
-   abschnittsweise** lesen.
-4. Bestehende Zusammenfassungen vor Rohdateien lesen.
-5. Nur bei Widerspruch oder fehlendem Kontext tiefer suchen.
-6. Bereits dokumentierte Projektgeschichte nicht erneut zusammenfassen; bestehende
-   Doku nicht vollständig in Antworten kopieren — verlinken statt zitieren.
-7. Keine zweite Zusammenfassung derselben Information an einer zweiten Stelle.
-   Neue Doku nur an **einer** kanonischen Stelle pflegen.
-8. Testdateien nicht vollständig lesen, wenn ein Suchtreffer oder ein einzelner Test
-   reicht.
-9. Keine langen internen Analyseprotokolle ausgeben.
-10. Keine Subagenten für einfache Aufgaben.
-11. Veraltete Informationen deutlich kennzeichnen statt still stehen lassen.
-12. Nach einem Sprint nur die **tatsächlich veränderten** Statuszeilen aktualisieren.
-13. Erkenntnisse, verifizierte Ursachen und getestete Sackgassen werden dokumentiert —
-    ein gescheiterter Sprint darf im nächsten Thread keine vollständige Neuanalyse
-    auslösen.
+Gezielte Suche vor Dateilektuere, grosse Dateien nur abschnittsweise. Bestehende
+Zusammenfassungen/Belege nutzen und nur bei Luecken oder Widerspruch tiefer lesen.
+Historie verlinken statt nacherzaehlen, keine zweite kanonische Zusammenfassung.
+Veraltetes klar kennzeichnen; nur geaenderte Statuszeilen pflegen. Verifizierte
+Ursachen und gescheiterte Wege fuer die Fortsetzung erhalten. Agenteneinsatz und
+Kommunikation richten sich nach `AGENTS.md`.
 
 ## 8 · Sprintzustände (verbindlich)
 
-Jeder Sprint endet in **genau einem** Zustand:
+| Zustand | Voraussetzung |
+| --- | --- |
+| Erfolgreich abgeschlossen | Kriterien erfuellt, erforderliche Pruefungen gruen, keine kritischen offenen Befunde, Status belegt |
+| Teilweise abgeschlossen | Teil fertig, Abnahme/Review/Integration oder Wirkungsnachweis offen |
+| Blockiert | Erforderliche Freigabe, Zugang, Entscheidung oder Abhaengigkeit fehlt |
+| Gescheitert oder abgebrochen | Technisch erfolglos, verworfen oder nicht sicher abschliessbar |
 
-| Zustand | Wann |
-|---|---|
-| **Erfolgreich abgeschlossen** | Abnahmekriterien erfüllt · relevante Tests grün · keine bekannten kritischen Fehler offen · Status belegt |
-| **Teilweise abgeschlossen** | relevante Arbeit fertig, aber Abnahme unvollständig — Production-Beweis, Review, Merge oder Entscheidung stehen aus |
-| **Blockiert** | Freigabe fehlt · externer Dienst/Zugriff fehlt · Produktentscheidung nötig · anderer PR/Migration muss zuerst |
-| **Gescheitert oder abgebrochen** | Lösung funktioniert technisch nicht · Änderung muss verworfen werden · sicherer Abschluss nicht möglich · Abbruch wegen erheblicher Risiken |
-
-Ein Punkt gilt **nur dann** als erfolgreich abgeschlossen, wenn die Abnahme
-tatsächlich erfüllt ist. Ein blockierter oder gescheiterter Sprint verschwindet
-**nie** aus der Dokumentation.
-
-Bei nicht erfolgreichem Ausgang zusätzlich dokumentieren: was versucht wurde · was
-erledigt wurde · was nicht · warum kein Abschluss möglich war · welche Tests liefen ·
-welche Änderungen auf welchem Branch liegen · ob ein PR existiert · ob die Änderungen
-sicher weiterverwendbar sind · welche Entscheidung als Nächstes nötig ist.
+Kein falscher Abschluss; blockierte/gescheiterte Arbeit bleibt dokumentiert mit
+Versuch, Ergebnis/Luecken, Ursache, Pruefungen, Branch/Commit/PR, Wiederverwendbarkeit
+und naechster erforderlicher Entscheidung.
 
 ## 9 · Definition of Done
 
-Ein Sprint ist erst beendet, wenn:
+Status, echte Pruefergebnisse, offene Blocker, naechsten Schritt und Branch-/Commit-/
+PR-Stand dokumentieren. `docs/CURRENT_STATE.md` nur um den geaenderten relevanten Stand
+nachziehen, auch bei Analyse/Blockade; keine Aktivitaetsberichte oder Vollhistorie.
+Maximal **30.000 Zeichen / 350 Zeilen**, Datum je Aktualisierung; grosse Protokolle
+in vorhandene Beleg-/Archivbereiche. Historische Primaerbelege nicht ersetzen.
 
-1. der Sprintzustand festgelegt ist,
-2. Tests und Ergebnisse dokumentiert sind,
-3. [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) aktualisiert ist,
-4. offene Blocker dokumentiert sind,
-5. der nächste sinnvolle Schritt dokumentiert ist,
-6. Branch-, Commit- und PR-Status dokumentiert sind,
-7. keine unerledigte Arbeit als erledigt markiert ist.
+Nach fachlich wirksamem Merge/Deployment Wirkung rein lesend pruefen und den belegten
+Endstand nachtragen, spaetestens vor der naechsten fachlichen Phase und am Kettenende.
+Ein alter Vor-Merge-Status reicht nicht. Ist die Korrektur blockiert, Status teilweise
+oder blockiert nennen. Ein abschliessender reiner Dokumentations-PR ohne Code-,
+Konfigurations- oder Datenaenderung erzeugt **keinen rekursiven Folge-PR**; sein Merge
+und Deployment/Skip werden aus der Git-/Deployment-Historie belegt.
 
-**Nach-Merge-Abschluss ist Pflicht:** Ein autorisierter fachlich wirksamer Merge oder ein
-Production-Deployment verändert den tatsächlichen Projektstand erst nach dem Schreiben
-des PR-Texts. Deshalb muss danach die Wirkung rein lesend geprüft und
-`docs/CURRENT_STATE.md` auf den belegten Endzustand nachgezogen werden. Ein im PR vor dem
-Merge geschriebener Satz wie „lokal fertig" oder „Merge offen" erfüllt diese Pflicht nach
-dem Merge nicht mehr.
-
-Bei einer freigegebenen Kette aus mehreren PRs gilt diese Pflicht spätestens vor dem
-Beginn der nächsten fachlichen Phase und zwingend am Ende der Kette. Kann die
-Dokumentationskorrektur wegen einer Sicherheitssperre oder fehlender Merge-Freigabe nicht
-vollzogen werden, lautet der Sprintzustand **teilweise abgeschlossen** oder **blockiert**.
-Die fehlende Aktualisierung wird ausdrücklich als Blocker genannt; der Sprint darf nicht
-als vollständig abgeschlossen bezeichnet werden.
-
-Ein abschließender PR, der ausschließlich diese Dokumentationspflicht erfüllt und weder
-Code, Konfiguration noch Daten verändert, löst **keinen rekursiven Folge-PR** aus. Sein
-eigener Merge-Commit und Deployment-Status werden aus der Git- und Deployment-Historie
-belegt. Diese Ausnahme darf niemals eine fachliche oder betriebliche Änderung verdecken.
-
-Das gilt **auch**, wenn kein Code geändert wurde, kein PR entstand, der Sprint
-blockiert oder gescheitert ist, eine Nutzerentscheidung aussteht oder nur eine
-Analyse stattfand.
-
-**Was wann aktualisiert wird:**
-
-| Datei | Wann |
-|---|---|
-| [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) | nach jedem größeren Sprint, **nur kompakt**: ausschließlich der aktuelle, entscheidungsrelevante Zustand (Grenze 30.000 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`) · vollständige Sprintberichte, große Prüfprotokolle und historische Nachweise gehören in Beleg- bzw. Archivdateien ([`docs/archive/README.md`](docs/archive/README.md)) und werden **nie** kumulativ an den Status angehängt · historische Dateien werden nur aufgabenbezogen gelesen · jede Aktualisierung trägt ein Datum · der aktuelle Stand hat Vorrang vor älteren Statusdokumenten |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | nur bei tatsächlicher Architekturänderung |
-| [`docs/START_HERE.md`](docs/START_HERE.md) | nur bei Änderung von Produktziel, Zielgruppe oder Prinzipien |
-| `CLAUDE.md` | nur bei einer neuen dauerhaft verbindlichen Projektregel |
-| [`docs/datenmotor-restliste.md`](docs/datenmotor-restliste.md) | wenn ein OP-Punkt belegt geschlossen, ergänzt oder geschärft wird |
+Architektur nur bei Architektur-, `START_HERE.md` nur bei Produkt-/Prinzipaenderung,
+`CLAUDE.md` nur bei dauerhaften Regeln, OP-Liste nur bei belegter OP-Aenderung pflegen.
+Fruehere Fassung mit allen historischen Verweisen bleibt
+[im Git-Stand 8293a307](https://github.com/ernisch/helmut-pilot/blob/8293a307334d5eec5ccbbea5c07d5be5c68d9da7/CLAUDE.md)
+erhalten; keine alten Nachweise oder Dokumente loeschen.
