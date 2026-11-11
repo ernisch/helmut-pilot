@@ -20,7 +20,7 @@
 
 ## Kompaktes Profil live (11.11.2026)
 
-[Profil/Belege](ui/profil-kompakt-20261111/README.md): PR1144 live. FolgePR1151 entfernt „Bitte vermeiden“ aus UI/Formular, Altwerte bleiben. Bürostandd6914b62 integriert; lokal60/60Profil- und76/76Bürochecks grün. **Rollout blockiert:** GitHub bestätigt20:59UTC „Actions: major_outage“, Pflichtlaufqueued; zuvor alle Schritte erfolgreich, Gesamtstatus festhängend. Nächster Schritt nach Störungsende: aktuelle Pflichtchecks und lesenden Rolloutnachweis abschließen. [Audit](ui/profil-wirkungscheck-20261111/README.md).
+[Profil/Belege](ui/profil-kompakt-20261111/README.md): PR1144 und FolgePR1151 live. „Bitte vermeiden“ aus UI/Formular entfernt, Altwerte erhalten. Production953c1dfe READY; Hauptdomain bestätigt, Client/CSS bytegleich. CI43099987478:189/189Standard,367/367Fach,48/48Z22 und Browser grün; gemeinsam60Profil-/76Bürochecks bestanden. GitHub-Ausfall/Fehlversuche historisch belegt. Keine echten Profiländerungen/KI-Kosten. Nächster Schritt: Profil neu öffnen. [Audit](ui/profil-wirkungscheck-20261111/README.md).
 
 **Historie 07.11.:** Lageauswahl PR1100 auf `d9651861` live/READY, Pflicht-CI42409807375 grün. Fachliche Aufnahme vor Limit, Quellen-/Profilbindung; synthetische Gegenproben und Windenergiefall bestanden. Authentifizierte Production-Bedienabnahme offen. [Vollständige Belege, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md); keine neue Daten-/Modellfreigabe.
 
