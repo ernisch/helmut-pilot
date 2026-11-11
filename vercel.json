@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/quellenautomatik-bedarf-20261111": false,
       "codex/admin-quellenstart-20261111": false,
       "codex/quellenkontingent-startfehler-20261111": false,
       "codex/quellen-einreihung-20261111": false,

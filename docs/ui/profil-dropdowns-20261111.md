@@ -5,7 +5,10 @@ Status: lokal umgesetzt und geprüft; [PR1134](https://github.com/ernisch/helmut
 Codecommit `21484e9b`. CI43024856182: Browser und Standardprüfung erfolgreich,
 363/364 Fachbereichssuiten erfolgreich. Ein alter Test verlangte noch das ersetzte
 Partei-Textfeld; diese Erwartung ist jetzt auf das Dropdown korrigiert.
-Neue Pflicht-CI und konkretes Merge-/Deployment-GO offen.
+Aktuelle Pflicht-CI und Kopf siehe PR. Die Dauerfreigabe in `AGENTS.md`
+vom11.11.2026 erlaubt den auftragsbezogenen Merge und regulaeren Rollout nach Gruen.
+Der parallel gemergte Hauptstand `8293a307` ist integriert; die kompakte
+Statusdokumentation bleibt gemeinsam unter ihrer verbindlichen Groessengrenze.
 
 Partei und Fraktion sind im eigenen Mandatsprofil und in der Ersteinrichtung
 getrennte native Auswahllisten. Parteiunabhängigkeit (`parteilos`) und
@@ -57,4 +60,5 @@ die Profilmaske nennt Destatis und den Gebietsstand.
 Keine Production-Datenänderung, kein Modellaufruf. Rückweg nach einem
 freigegebenen Rollout: den zugehörigen UI-Commit regulär zurücknehmen;
 es gibt keine Migration oder Datenumformung. Nächster Schritt:
-PR/Pflicht-CI abschließen, dann den konkreten Rollout freigeben lassen.
+aktuelle Pflicht-CI abschließen, dann automatisch mergen, regulaeren Rollout
+und ausgelieferte Profilfelder rein lesend kontrollieren.

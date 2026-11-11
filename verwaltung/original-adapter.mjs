@@ -130,6 +130,7 @@ export function applyOriginalTruth(component, values, snapshot, phase = "ready")
     v.runsEmpty = !v.loading && v.runs.length === 0;
     v.wartung = [{ title: "Motoraktionen", text: "Recovery und neue Erzeugung werden getrennt abgestimmt.", has: false, none: true, label: "Nicht freigegeben" }];
     v.srcHead = D.payloads.sources?.stoerungen?.verfuegbar === true ? "Vorhandene Quellenhinweise" : "Quellenzustand nicht bestätigt.";
+    if (typeof D.payloads.sources?.automatik?.text === "string") v.srcHead += " " + D.payloads.sources.automatik.text;
     v.srcRows = D.sources.map(s => ({ name: s.name, scope: "Vorhandene Laufbeobachtung", ...open, ink: "var(--text)", text: s.text,
       last: s.last, affected: "Mandatswirkung siehe bestehenden Quellenbericht", onClick: () => component.say("Eine vollständige Zuordnung je Profil liegt hier nicht vor."), hasTech: false, tech: "" }));
     v.costNums = [{ label: "Heute", value: D.cost.value === "—" ? "Nicht bekannt" : D.cost.value, sub: D.cost.note, ink: "var(--ink)" },

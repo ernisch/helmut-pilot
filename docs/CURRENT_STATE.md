@@ -4,11 +4,11 @@
 
 **11.11., Production:** PR1118–1124 live; main/Production `4dee3255`, READY, Hauptdomain/Runtime bestätigt. Release-Frische `ready=false`; vollständige reguläre Verarbeitung und echte Kundensitzung bleiben zu belegen.
 
-**UX (08.11.):** [PR1108: Tagesgrund, Radar ohne Knopf](ui/mobile-ux-20261108/README.md); kein Merge/Deploy, ChatGPT-Abnahme offen. [Briefing PR1102 live](ui/briefing-ohne-refresh-20261107/rollout.md). [Profil-Dropdowns vorbereitet (11.11.)](ui/profil-dropdowns-20261111.md); Merge/Deployment offen.
+**UX:** [1108](ui/mobile-ux-20261108/README.md) Abnahme/Merge/Deploy offen; [1102 live](ui/briefing-ohne-refresh-20261107/rollout.md). [Profil-Dropdowns](ui/profil-dropdowns-20261111.md) vorbereitet.
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
-**11.11., Adminstart live:** [PR1126](https://github.com/ernisch/helmut-pilot/pull/1126) auf `3cf5379e`, Production READY, Runtime/Hauptdomain bestätigt. Adminstart mit unveränderten Schutzregeln; Kostenbuch/64 Buchungen unverändert, keine aktiven Prozesse/Sperren. Kein manueller Quellenlauf; Frische `ready=false` bleibt offen. [Rollout und Rückweg](betrieb/admin-quellenstart-rollout-20261111.md).
+**11.11., Adminstart live:** [PR1126](https://github.com/ernisch/helmut-pilot/pull/1126) auf `3cf5379e`, Production READY, Runtime/Hauptdomain bestätigt. Adminstart mit unveränderten Schutzregeln; Kostenbuch/64 Buchungen unverändert, keine aktiven Prozesse/Sperren. Kein manueller Quellenlauf; Frische `ready=false` bleibt offen. [Rollout und Rückweg](betrieb/admin-quellenstart-rollout-20261111.md). **Automatikfix vorbereitet:** Restbedarf-/Fehlerstopp, Limits erhalten. [Prüfstand](betrieb/quellenautomatik-bedarf-20261111.md); kein Rollout.
 
 ## Büro: Kosten-/Antwortzeitfix live, echte Einzelprobe erfolgreich (11.11.2026)
 
@@ -321,7 +321,7 @@ Infrastrukturprojekte ohne konkrete Notwendigkeit.
 
 ## Private Produktintegration (05.11.2026, lokal geprueft)
 
-PR #1052 ist auf `76b75e371c7db69d7c9381071e23443182fc3607` gemergt. Der bestandene Mock100-Meilenstein bleibt abgeschlossen und wird nicht wiederholt. Der private Branch `integration/release-prep-20261105` verbindet diesen main-Stand mit Backend/UI `3c5765c577b35641ba107a4d6b863ab1e5ab7456`. Kontosicherheit, beide Designs und historische Belege bleiben erhalten. Die [vorige lokale Integration](betrieb/backend-ui-integration-20261105.md) und [UI-Abnahme](ui-backend.md) bleiben historische, quellengebundene Belege. Vier gezielte Gruppen mit202 echten lokalen HTTP-Antworten bestanden. Zwei inhaltsgebundene Assetversionen beseitigen den belegten Altcache-Erststartfehler. Motor, beide Designs und historische Nachweise unveraendert; drei lesende Reviews positiv. Main-CI42069590393 gruen, Kandidaten-Pflicht-CI noch offen. [Abnahme und konkrete Mergevoraussetzungen](betrieb/release-prep-20261105.md). Keine Productionfreigabe.
+Historie05.11.: PR1052 auf `76b75e371c7db69d7c9381071e23443182fc3607` gemergt; `integration/release-prep-20261105` verbindet diesen Stand mit Backend/UI `3c5765c577b35641ba107a4d6b863ab1e5ab7456`. Historische Belege: [Integration](betrieb/backend-ui-integration-20261105.md), [UI-Abnahme](ui-backend.md). Vier Gruppen mit202 echten lokalen HTTP-Antworten bestanden; zwei inhaltsgebundene Assetversionen beheben den Altcache-Erststartfehler. Motor, Kontosicherheit, beide Designs und Nachweise erhalten; drei lesende Reviews positiv. Main-CI42069590393 gruen, Kandidaten-CI damals offen, keine damalige Productionfreigabe. [Abnahme und Mergevoraussetzungen](betrieb/release-prep-20261105.md). Mock100 bleibt bestanden und wird nicht wiederholt.
 
 ## Designangleich und UI-Aufraeumen (06.11.2026, erfolgreich abgeschlossen)
 

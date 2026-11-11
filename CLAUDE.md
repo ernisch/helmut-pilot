@@ -17,8 +17,8 @@ dauerhaft verbindliche technische Projektregel entsteht.
   und die **einzige** Quelle für laufende Betriebszustände (aktive Profile, offene
   Migrationen, Blocker).
 
-**Stand:** 2026-11-05 (Betreiberziel Mock100 statt Mock500/Production500;
-AGENTS.md führt die aktuelle Arbeitsordnung)
+**Stand:** 2026-11-11 (automatischer Push und Merge bei Gruen;
+AGENTS.md fuehrt die aktuelle Dauerfreigabe und Arbeitsordnung)
 
 ---
 
@@ -134,8 +134,9 @@ festgestellt wurde.
 
 ## 5 · Ohne ausdrückliche Freigabe verboten
 
-- Merge nach `main` (Merge = **Production-Deployment**) ohne konkretes GO für genau
-  diesen PR sowie jedes andere Deployment ohne passende ausdrückliche Freigabe
+- Merge nach `main` und regulaeres Production-Deployment ausserhalb der
+  Dauerfreigabe vom 11.11.2026 in [`AGENTS.md`](AGENTS.md) sowie sonstige
+  Deployments ohne passende ausdrueckliche Freigabe
 - Anwenden einer Migration auf Production. **Welche Migrationen offen sind, führt
   ausschließlich [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)**; die Liste wird hier
   bewusst nicht dupliziert, damit sie nicht auseinanderläuft. Jede Anwendung bleibt
@@ -204,9 +205,10 @@ reversibel und eindeutig sinnvoll ist.
   Vollsuite mehr bei eindeutig kleinen Änderungen.
 - **PR-Beschreibung:** was geändert wurde, echte Testergebnisse (Zahlen, keine
   Behauptungen), Risiko, Rollback, und was bewusst **nicht** enthalten ist.
-- **Merge nur mit konkretem GO für genau diesen PR nach `AGENTS.md`.** Die frühere
-  Dauerfreigabe ist widerrufen. Grüne CI allein ist keine Merge-Freigabe.
-  Nach einem autorisierten Merge selbstständig nachprüfen und im Auftrag weiterarbeiten.
+- **Push und Merge automatisch bei Gruen gemaess [`AGENTS.md`](AGENTS.md).**
+  Die Dauerfreigabe vom 11.11.2026 erlaubt auftragsbezogene Pushes, PRs, gruene
+  Merges und regulaere Deployments ohne erneutes einzelnes GO. Alle dort
+  genannten Pruefbedingungen einhalten und danach selbststaendig nachkontrollieren.
 - **Vier Testebenen:**
   - **Schnellkern (automatisch bei normalem Code):** kleine universelle Menge
     `FAST_CORE` in `scripts/run-offline-tests.js`; zentrale Mandanten-, Sicherheits-

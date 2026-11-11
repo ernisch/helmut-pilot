@@ -32,6 +32,7 @@ async function main() {
   try {
     ersetze(tenantContext, "resolveActiveTenant", async () => assert.fail("kein Mandatsread vor Fensterzulassung"));
     ersetze(Date, "now", () => zeit);
+    ersetze(require("../lib/helmut/quellen-automatik"), "pruefe", async () => ({ erlaubt: true }));
     ersetze(storage, "anbieterReserviere", async o => {
       reservations++; const n = counts.get(o.schluessel) || 0;
       if (n + o.menge > o.grenzeTag) return { verfuegbar: true, erlaubt: false, grund: "tagesgrenze" };
