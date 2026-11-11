@@ -3,21 +3,28 @@
 ## Stand
 
 Umgesetzt und live: [PR1144](https://github.com/ernisch/helmut-pilot/pull/1144),
-Production `22bad44c` READY; [lesender Rolloutnachweis](rollout.json).
+ursprünglich auf `22bad44c` READY; [damaliger Rolloutnachweis](rollout.json).
+Folgeauftrag „Bitte vermeiden“: [PR1151](https://github.com/ernisch/helmut-pilot/pull/1151)
+auf `953c1dfe` READY; [aktueller lesender Rolloutnachweis](ohne-vermeiden-rollout.json).
 Basis `7898fd5d`, Bürostand `626c4f29` und Handystartfix bis `74679756` integriert.
 Der Auftrag umfasst ausdrücklich Oberfläche **und** tatsächlich angeschlossene Wirkung.
 Die früheren Befunde bleiben im [Profilaudit](../profil-wirkungscheck-20261111/README.md).
 
 ## Folgeauftrag: „Bitte vermeiden“ entfernen (11.11.2026)
 
-**Blockiert, noch nicht live:** GitHub meldet zum 11.11., 20:59 UTC offiziell
-„Actions: major_outage“. Auch andere PRs dieses Repositorys warten seit längerer Zeit.
-Der frische integrierte Pflichtlauf `43099166752` auf `f61a7831` ist queued.
-[Primärbeleg und Prüfstand](ohne-vermeiden-ci-blocker.json). Der abschließende
-Dokumentationsstand ändert keine Runtime. Nächster Schritt nach Störungsende:
-beide Pflichtchecks des tatsächlichen aktuellen PR-Kopfs abwarten, regulär mergen
-und Deployment/Auslieferung lesend bestätigen. Kein weiterer Wiederlauf oder
-PR-Wechsel zur Umgehung der globalen Warteschlange.
+**Live und geprüft:** PR1151 nach beiden grünen Pflichtchecks auf `a93843f4`
+regulär gemergt, `953c1dfe` vom 11.11., 21:28:31 UTC. CI43099987478:
+189/189 Standardsuiten, 367/367 Fachsuiten, 48/48 Z22 und Browser/Mobil erfolgreich.
+Aktueller main/Parallelität geprüft, keine Konflikte; der Mergebaum ist exakt der
+geprüfte Kopfbaum `fac3b6b848ca4e9ec79919422a9a0177e84ee401`.
+Production `dpl_4EEymRutzUa22MEq32GFJDFP719v` READY, Hauptdomain auf diesem Stand.
+Startseite HTTP200 mit Version `953c1dfe`, Client/CSS HTTP200 und bytegleich zum
+geprüften Stand. Entferntes Eingabefeld/Label auch im ausgelieferten Client abwesend.
+[Livebeleg](ohne-vermeiden-rollout.json). Nächster Schritt: Profil am eigenen Gerät neu öffnen.
+
+Historische Blockade: GitHub meldete am 11.11., 20:59 UTC offiziell
+„Actions: major_outage“; auch andere PRs warteten. [Primärbeleg](ohne-vermeiden-ci-blocker.json).
+Die Warteschlange verarbeitete danach den unveränderten Pflichtlauf regulär.
 
 Auf Nutzerwunsch entfällt das Eingabefeld aus der Profiloberfläche: Die bisherige
 weiche Modellanweisung ist keine garantierte Sperre und soll diese Erwartung nicht
@@ -29,8 +36,8 @@ Keine Datenmigration, Production-Profilspeicherung oder bezahlte KI-Probe.
 Gezielte Prüfung gegen echten lokalen Server: 60/60 Profilbrowserchecks auf Handy
 und Desktop, einschließlich entferntem Feld, erhaltenen Altwerten und Stil-PATCH
 ohne `noGoTopics`, unverändertem „Fertig“, 503/Wiederholung und Folgeantworten bestanden.
-Syntax und Diffprüfung grün. Pflicht-CI und regulärer Rollout dieses Folgeauftrags
-stehen noch aus. Rückweg: gezielter Revert des kleinen UI-/Formularcommits.
+Syntax und Diffprüfung grün. Pflicht-CI und regulärer Rollout sind oben belegt.
+Rückweg: gezielter UI-/Formular- und Erwartungsrevert, keine Datenrücknahme erforderlich.
 
 Erster Pflichtlauf `43088060572` auf `3e74df78`: Browser und 189/189 Standardsuiten
 bestanden, Fachregression 366/367. Der verbleibende Fehler war eine alte
@@ -46,13 +53,14 @@ Standard-/Fachregression, Z22 und „Complete job“ erfolgreich (letzter Schrit
 vorgesehener Notabbruch jeweils HTTP409 „not in progress“, Wiederholung des Jobs
 und des Laufs jeweils HTTP403 „already running“. Kein Abbruch und kein Wiederlauf
 wurde dadurch ausgelöst; zwischendurch scheiterte nur die lokale Statusabfrage an
-HTTP503. Der alte Lauf ist deshalb kein formal grüner Pflichtnachweis.
+HTTP503. Dieser Beobachtungsstand reichte nicht als formales Grün. Später bestätigte
+GitHub denselben alten Lauf erfolgreich; keine Abbruch-/Wiederholungsanforderung war erfolgreich.
 
 Der anschließend frisch integrierte Stand enthält den unabhängigen Büro-Quellentextfix
 bis `d6914b62`. Seine Runtime ist bytegleich zum getrennt geprüften gemeinsamen Baum
 `4f8d8a5ce69da29642f1cb5e311417fda5a11e52`: 60/60 Profilbrowserchecks und
 76/76 Büro-Ehrlichkeitsprüfungen bestanden, keine echten Daten-/Modellaufrufe.
-Ein neuer Kopf dokumentiert diese CI-Blockade und erhält regulär beide Pflichtchecks.
+Der neue Kopf dokumentierte diese CI-Blockade und erhielt regulär beide grünen Pflichtchecks.
 Keine Workflowänderung, manuelle Erfolgsmarkierung, Schutzumgehung oder Datenmutation.
 
 ## Bedienung
