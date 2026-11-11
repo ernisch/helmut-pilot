@@ -4,7 +4,7 @@
 
 **11.11., Production:** PR1118–1124 live; main/Production `4dee3255`, READY, Hauptdomain/Runtime bestätigt. Release-Frische `ready=false`; vollständige reguläre Verarbeitung und echte Kundensitzung bleiben zu belegen.
 
-**UX:** [1108](ui/mobile-ux-20261108/README.md) Abnahme/Merge/Deploy offen; [1102 live](ui/briefing-ohne-refresh-20261107/rollout.md). [Profil-Dropdowns](ui/profil-dropdowns-20261111.md) vorbereitet.
+**UX:** [1108](ui/mobile-ux-20261108/README.md) Abnahme/Merge/Deploy offen; [1102 live](ui/briefing-ohne-refresh-20261107/rollout.md). [Profil-Dropdowns](ui/profil-dropdowns-20261111.md) fertig; Rollout durch CI-DNS blockiert.
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
