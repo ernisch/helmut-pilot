@@ -103,8 +103,17 @@ async function fetchStartResponse(request) {
         controller.abort();
       }, START_RESPONSE_TIMEOUT_MS);
     });
-    // Auch bei einem Transport, der Abort nicht beachtet, endet die Antwortwartezeit.
-    return await Promise.race([fetch(request, { signal: controller.signal }), timeout]);
+    // fetch() endet schon mit den Headern. Ein danach haengender HTML-Body
+    // laesst die installierte App noch vor ihrem Seiten-Watchdog stecken;
+    // ein unvollstaendiges CSS/Script blockiert ebenfalls den Start.
+    // Erst den vollstaendigen Body abwarten. Die Kopie laesst die originale
+    // Antwort samt URL, Headern und lesbarem Body fuer Browser/Cache erhalten.
+    const completeResponse = fetch(request, { signal: controller.signal }).then(async (response) => {
+      await response.clone().arrayBuffer();
+      return response;
+    });
+    // Auch bei einem Transport, der Abort nicht beachtet, endet die Wartezeit.
+    return await Promise.race([completeResponse, timeout]);
   } finally {
     clearTimeout(timer);
     request.signal?.removeEventListener("abort", abort);
