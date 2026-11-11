@@ -75,7 +75,7 @@ Neue Funktionen sind nachrangig gegenueber diesem Ziel.
 | **Heute / Briefing** | Tagespriorität und nächster Schritt mit belegtem Tagesanlass; kein zweiter Lagebericht |
 | **Lage** | Mandatsrelevanter Sachstand, Einordnung, Unsicherheit und Quellen |
 | **Radar** | Belegte Vorzeichen, kommende Fristen und neue Resonanz; kein allgemeiner Themenfeed |
-| **Büro** | kompakte Übersicht belegter Themen und vorhandener Entwürfe; neue Texte erst nach ausdrücklicher Format-/Erstellaktion; Originalquellen und Text prüfen, dann teilen |
+| **Büro** | kompakte Übersicht mit vollständiger Themen-/Entwurfszahl: zwei Themen, weitere aufklappbar; keine erneute Mandatsbegründung; neue Texte erst nach ausdrücklicher Format-/Erstellaktion bei ausreichendem Quellentext; Originalquellen und Text prüfen, dann teilen |
 | **Profil** | Mandatsprofil, Ausschüsse, Themen, Termine — steuert die Personalisierung |
 | **Admin** | Betreibersicht: Nutzer, Quellen, Kosten, Datenstand, Betriebsmetadaten |
 
