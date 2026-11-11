@@ -75,10 +75,36 @@ bereinigter Stand 562 Pruefungen, jeweils keine Browserfehler oder erfuellten
 externen Anfragen. Unterschiedlicher Umfang durch den vorhandenen Baseline-Modus;
 kein behaupteter pixelgleicher Bildvergleich.
 
-Integration, Pflicht-CI, regulaeres Deployment und abschliessende Nachkontrolle
-werden nach Abschluss hier belegt. Ein fehlendes Playwright-Headless-Shell-Binary
-im lokalen Standard-Smoke wird als Umgebungsfehler erhalten; der vorhandene
-System-Chromium dient fuer den lokalen Smoke.
+Integration mit `bf4a43427fb8cf6acf04b988e97a635aac103b46` konfliktfrei;
+der Strukturvergleich gegen diesen neuen Hauptstand besteht ebenfalls.
+Schnellkern 14/14, lokaler Standard-Smoke im vorhandenen System-Chromium
+114 PASS/0 FAIL, Quellenrollen 9/9 und Statusgroesse 4/4 bestanden.
+Das fehlende Playwright-Headless-Shell-Binary beim ersten lokalen Start bleibt
+als Umgebungsfehler erhalten; keine Aenderung an Produkt oder Testassertionen
+war fuer den System-Chromium-Start erforderlich.
+
+Der zusaetzliche isolierte Bildpruefer erwartete die Buero-Fehleranzeige noch
+in der Uebersicht. Derselbe Fehler ist auf unveraendertem `bf4a4342` reproduziert:
+PR1135 zeigt einen fehlgeschlagenen Entwurf erst beim gewaehlten Format.
+Der bestehende Prueffall waehlt deshalb die Formatdetailansicht, akzeptiert
+deren expliziten Fehlertext und prueft zusaetzlich, dass kein Teilenknopf erscheint.
+Keine Produktanpassung und keine abgeschwaechte Fehler-/Quellenpruefung.
+Abschliessender integrierter Bildprueflauf: 568 Pruefungen, keine Browserfehler,
+keine erfuellten externen Anfragen; drei absichtliche Netz-Negativkontrollen
+blockiert. Chromium `151.0.7922.173`. Gepruefte Dateien (SHA256):
+Client `67d321fd9731e345743ca44999294f96bd7abfd1671190610b4fa9d837164916`,
+CSS `944ebad002b7a75bcc00529894a1868905d20b0a6ffb2c3d0bcee27b4bc353fe`.
+**Status: lokal fertig und geprueft; Veroeffentlichung offen.** Der erste Push
+samt PR-Erstellung wurde vor Ausfuehrung durch die automatische Freigabepruefung
+abgelehnt: Der neue Code wuerde ohne eine dafuer ausdruecklich bestaetigte
+Freigabe auf GitHub veroeffentlicht. Eine anschliessende rein lesende Pruefung
+bestaetigt `ernisch/helmut-pilot` als oeffentliches Repository. Die allgemeine
+Projekt-Dauerfreigabe wurde vom Reviewer dafuer nicht als ausreichend anerkannt.
+Die konkrete Betreiberbestaetigung fuer Push, PR und spaeteren Merge wurde
+angefragt. Kein Push, kein PR, keine PR-CI, kein Merge und kein Deployment dieses
+Bereinigungsstands. Nach Bestaetigung: Push/PR, gruene Pflicht-CI am tatsaechlichen
+Kopf, aktueller Main-/Parallelitaetsabgleich, gebundener Merge und rein lesende
+Deployment-/Dateikontrolle. Kein unbekannter Zustand wird als PASS ausgegeben.
 
 Risiko: falsch eingeschaetzte dynamische Klassenverwendung. Dagegen stehen
 konservative Verweissuche, Strukturvergleich und echte Browserpruefungen.
