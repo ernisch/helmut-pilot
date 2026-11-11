@@ -8,7 +8,7 @@
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
-**11.11., Adminstart live:** [PR1126](https://github.com/ernisch/helmut-pilot/pull/1126) auf `3cf5379e`, Production READY, Runtime/Hauptdomain bestätigt. Adminstart mit unveränderten Schutzregeln; Kostenbuch/64 Buchungen unverändert, keine aktiven Prozesse/Sperren. Kein manueller Quellenlauf; Frische `ready=false` bleibt offen. [Rollout und Rückweg](betrieb/admin-quellenstart-rollout-20261111.md).
+**11.11., Adminstart live:** [PR1126](https://github.com/ernisch/helmut-pilot/pull/1126) auf `3cf5379e`, Production READY, Runtime/Hauptdomain bestätigt. Adminstart mit unveränderten Schutzregeln; Kostenbuch/64 Buchungen unverändert, keine aktiven Prozesse/Sperren. Kein manueller Quellenlauf; Frische `ready=false` bleibt offen. [Rollout und Rückweg](betrieb/admin-quellenstart-rollout-20261111.md). **Automatikfix vorbereitet:** Restbedarf-/Fehlerstopp, Limits erhalten. [Prüfstand](betrieb/quellenautomatik-bedarf-20261111.md); kein Rollout.
 
 ## Büro: Kosten-/Antwortzeitfix live, echte Einzelprobe erfolgreich (11.11.2026)
 
