@@ -547,6 +547,16 @@ jobs:
           sudo python3 - <<'PY'
           from pathlib import Path
           import re
+          # Der GitHub-Runner nutzt diese Mirrorliste; der Azure-Alias kann
+          # bei DNS-Ausfall alle Browser-Abhaengigkeiten blockieren.
+          # Nur diesen Alias durch den offiziellen HTTPS-Spiegel ersetzen.
+          mirrors = Path('/etc/apt/apt-mirrors.txt')
+          if mirrors.exists():
+              original = mirrors.read_text()
+              fixed = original.replace('http://azure.archive.ubuntu.com/ubuntu', 'https://archive.ubuntu.com/ubuntu').replace('https://azure.archive.ubuntu.com/ubuntu', 'https://archive.ubuntu.com/ubuntu')
+              if fixed != original:
+                  mirrors.write_text(fixed)
+                  print('Ubuntu-Paketspiegel auf archive.ubuntu.com umgestellt')
           for source in Path('/etc/apt/sources.list.d').iterdir():
               if source.suffix not in ('.list', '.sources'):
                   continue
