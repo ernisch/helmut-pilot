@@ -176,6 +176,7 @@ function check(name, cond, detail = "") {
   code += `\n;globalThis.__bt = { text: officeDraftText, prov: officeDraftProvenance, label: draftProvenanceLabel,
     cardStatus: (d, f) => officeCardStatus(d, f), draftStatus: (f) => draftStatus(f), formats: () => activeOfficeFormats(),
     keyFor: (d, f) => officeDraftKey(d, f),
+    project: payload => { applyStartPayload(payload); const d = officeDecisions()[0]; return {decision:d,ready:officeCreationReady(d),html:renderOfficeDraftCard(d)}; },
     setDrafts: (o) => { officeDrafts = o; }, setErrors: (o) => { officeDraftErrors = o; }, setGenerating: (b, key) => { officeDraftsGenerating = b; officeDraftGeneratingKey = key || ""; }, binding: (d,f) => officeDraftBinding(d,f) };`;
   const noop = () => {};
   const fakeNode = () => ({ classList: { toggle: noop, add: noop, remove: noop, contains: () => false }, style: {}, dataset: {},
@@ -207,6 +208,36 @@ function check(name, cond, detail = "") {
   vm.createContext(sandbox);
   vm.runInContext(code, sandbox, { filename: "client.js" });
   const bt = sandbox.__bt;
+  // Real read path: stored document -> V3 adapter -> compact app/start response
+  // -> actual client mapping/readiness/card. No pre-shaped excerpt fixture.
+  const compactStart = serverSource.indexOf("function compactBriefingPayload(");
+  const compactEnd = serverSource.indexOf("function isPilotAccessConfigured(", compactStart);
+  const compactApi = vm.runInNewContext(serverSource.slice(compactStart, compactEnd)
+    + "\n({compactBriefingPayload,compactSource})");
+  const contract = require("../lib/helmut/briefingContract");
+  const sourceProfile = {id:"office-source-projection",party:"SPD",committee:"Gesundheit",focusTopics:["Pflege"]};
+  const now = new Date();
+  const doc = {id:"doc-source-projection",url:"https://example.test/pflege/beratung",link_type:"direct",
+    source_name:"Synthetische Prüfquelle",title:"Synthetische Pflegeberatung",published_at:now.toISOString(),
+    summary:"Ein synthetischer Quellentext dokumentiert eine parlamentarische Beratung zur Pflege. Ausschließlich Testdaten."};
+  const ko = {id:"ko-source-projection",vorgang_id:"vg-source-projection",status:"neu",understanding_status:"complete",
+    headline:doc.title,display_title:doc.title,display_summary:doc.summary,was_ist_passiert:doc.summary,
+    why_relevant:"Der synthetische Vorgang betrifft den Ausschuss Gesundheit.",recommendation:"Den belegten Sachstand prüfen.",
+    parteien:["SPD"],ausschuesse:["Gesundheit"],tags:["Pflege"],source_document_count:1,confidence_score:80,
+    best_source_url:doc.url,updated_at:now.toISOString()};
+  const rawBriefing = contract.buildContractFromKnowledgeObjects(sourceProfile,[ko],{[ko.vorgang_id]:[doc]},{now});
+  check("V3-Adapter liefert den gespeicherten Originalkurztext als source.summary",rawBriefing.items[0]?.sources[0]?.summary === doc.summary);
+  check("Backend akzeptiert diese kanonische Quellenbasis bereits vor App-Komprimierung",!basis(rawBriefing.items[0],sourceProfile,"press").reason);
+  const compacted = compactApi.compactBriefingPayload(rawBriefing);
+  const projected = bt.project({profile:sourceProfile,briefing:compacted,tasks:[],notes:[]});
+  check("Kompakter Appstart erhält den tatsächlichen Quellentext",compacted.items[0]?.sources[0]?.excerpt === doc.summary);
+  check("Kompakte Empfehlung erhält dieselbe Quellenbasis",compacted.personalizedRecommendations[0]?.sources[0]?.excerpt === doc.summary);
+  check("Büro erkennt den über den echten Datenweg geladenen Quellentext",projected.ready);
+  check("Büro bietet Formatwahl statt falscher Fehlmeldung",projected.html.includes("Format wählen") && !projected.html.includes("Quellentext fehlt"));
+  const longExcerpt = compactApi.compactSource({...doc,summary:doc.summary.repeat(5)}).excerpt;
+  check("Quellenvorschau bleibt auf 160 Zeichen begrenzt",typeof longExcerpt === "string" && longExcerpt.length <= 160);
+  const missingText = compactApi.compactSource({url:doc.url,relevanceReason:"Eine redaktionelle Mandatsbegründung ist kein Originalquellentext und darf keinen Entwurf freigeben."});
+  check("Mandatsbegründung wird nicht als Originalauszug ausgegeben",!missingText.excerpt && basis({title:doc.title,sources:[missingText]},sourceProfile,"press").reason === "quellenbasis-fehlt");
   check("officeDraftText liest Legacy-Strings UND neue Objekte",
     bt.text("alt") === "alt" && bt.text({ text: "neu", source: "ki" }) === "neu" && bt.text(null) === "");
   check("officeDraftProvenance behauptet bei Legacy/Unbekannt nichts",

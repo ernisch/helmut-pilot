@@ -4086,7 +4086,9 @@ function compactSource(source) {
     retrievedAt: source.retrievedAt,
     // Artikeltitel fuer die sichtbare Buero-Quellenliste (Quellenpflicht-Sprint).
     title: truncateText(source.title, 120),
-    excerpt: truncateText(source.excerpt || source.content || source.relevanceReason, 160),
+    // V3 document texts arrive as summary. Preserve them in the compact read
+    // response; editorial relevance is not original source evidence.
+    excerpt: truncateText(source.excerpt || source.summary || source.content, 160),
     confidence: source.confidence
   };
 }

@@ -1,0 +1,18 @@
+{
+  "scope": "Synthetic stored documents -> actual V3 contract -> actual compact app/start projection -> actual client readiness and card HTML; no model or production data call.",
+  "base": "d3694682",
+  "baseline": {
+    "pass": 70,
+    "fail": 6,
+    "exitCode": 1
+  },
+  "fixed": {
+    "pass": 76,
+    "fail": 0,
+    "exitCode": 0
+  },
+  "paidModelCalls": 0,
+  "productionDataChanges": 0,
+  "serverSha256": "669bcd86524a2d680270759422a9b9d320fc7a41fa104854a7980f139689be99",
+  "clientSha256": "b676320eee7f9a29396c8d39fcba024872ff0df70b87a9e74a3521ffe401b0e7"
+}
