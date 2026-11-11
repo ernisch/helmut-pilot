@@ -329,18 +329,18 @@ Nach Betreiber-GO bei gruener Pflicht-CI gemergt und live: [PR #1055](https://gi
 
 ## Genau ein naechster Schritt
 
-**App-Start (06.11.2026):** PR1078/1081/1085 nach GO/Pflicht-CI live.
-PR1085 auf2a5e0774, Vercel dpl_45AMnvEB1XmP3jh5Xa7QGRb3nSgc READY.
-HTTP-Median4,836→4,234s; Antworten200, Briefing und zehn Lagekarten. Kein Androidwert.
-[Messungen, Rollout und neuer Befund](betrieb/app-start-performance-20261106.md).
-Betreiber meldet danach: installierte Brave-App haengt im nativen Android-Bild;
-dieselbe Hauptadresse funktioniert in Brave. Geraeteursache noch nicht bewiesen.
-Vorbereiteter Folgefix: Manifestfarbe an Iconpixel angeglichen (Kasten entfernt),
-8s Antwortfrist im Worker, damit blockierte Navigation eine Wiederholungsansicht
-bekommt; Briefing weiterhin vollstaendig vor App-Oeffnung. Keine private Cacheansicht.
-Worker7/7, Icons70/70, echter Worker-Wiederholungsfall und Browser82/82 bestanden.
-Naechster Schritt: Folgefix abnehmen; Android-Installationszustand bleibt offen.
-Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
+**Android-Startfix live (06.11.2026,16:39UTC), Geraeteabnahme offen:**
+PR1086 nach Betreiber-Ja/Pflicht-CI auf ec7240db gemergt; Vercel
+ dpl_B6GuTruWeFfG4mzr5BEZuMFNURua READY, Hauptdomain zugewiesen.
+Manifest/Worker bytegleich geprueft; Startfarbe#0a0f1c,8s Antwortfrist im Worker.
+HTML-Version korrekt; Start-GET200 mit Briefing und zehn Lagekarten.
+Anonyme Sitzung korrekt; im kurzen Deployment-Logfenster keine Error/Fatal-Treffer.
+CI189/189 Standard-,338/338 Bereichssuiten plus Browser/Datenbank gruen.
+Kein Android-Erfolgsnachweis: Betreiber meldete Haenger der installierten
+Brave-App, waehrend dieselbe Hauptadresse im normalen Brave funktioniert.
+Antwort auf Beenden-erzwingen-Probe fehlt. Gesamtauftrag teilweise abgeschlossen.
+Naechster Schritt: Hauptadresse in Brave neu laden, installierte App erneut starten.
+[Diagnose, Rollout und Grenzen](betrieb/app-start-performance-20261106.md).
 
 Historische alte Anweisungen, darunter
 [`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind
