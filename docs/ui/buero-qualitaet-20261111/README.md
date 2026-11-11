@@ -1,6 +1,6 @@
 # Büro: Quellenstand, sichtbare Erstellung und Formatprüfung
 
-Stand: 11.11.2026. Basis `d6914b62`. Lokal umgesetzt/geprüft; Pflicht-CI und Rollout offen.
+Stand: 11.11.2026. Basis `d6914b62`. **Lokal abgeschlossen; Pflicht-CI und Rollout extern blockiert.**
 Vorige Liveänderungen: [Themenübersicht](../buero-themenuebersicht-20261111/README.md), [Quellentextübergabe](../buero-quellentext-20261111/README.md).
 
 ## Warum die Quelle aus September stammt
@@ -53,3 +53,12 @@ node scripts/lokal.js -- python3 scripts/ui-preview-isolated.py --only ui-office
 ```
 
 Der neue Formtest ist über den vorhandenen Briefing-Bereich in der CI-Auswahl enthalten, ohne Schutzregeln zu ändern. Keine kostenpflichtige Prüfung gegen echte Modelle, keine Aussage über eine empirische Erfolgsquote aller real generierten Texte. Inhaltliche Quellenprüfung und politische Entscheidung bleiben erforderlich. Rückweg: gezielter Revert dieser UI-/Prüfänderung und regulärer Git-Rollout; keine Datenrücknahme und kein Cache-Reset.
+
+
+## Blockierter Livegang
+
+[PR1156](https://github.com/ernisch/helmut-pilot/pull/1156) enthält die konkret geprüfte Umsetzung. Runtime-/Testkopf `40ee7a6c`; diese anschließende Statusdokumentation ändert den geprüften Runtimeinhalt nicht. Der Pflichtlauf 43097898505 wartete am 11.11., 20:54:15 UTC mit null gestarteten Jobs. GitHub meldet Actions als `major_outage` und eine aktive Untersuchung. [Offizieller Status](https://www.githubstatus.com/), [gesicherter öffentlicher Befund](ci-blocker.json).
+
+Die lokale Abnahme ist erfolgreich, eine erfolgreiche Pflicht-CI wird nicht behauptet. Kein Merge, kein neues Deployment und keine Umgehung der Schutzregeln. Letzter bestätigter Live-Code vor diesem Auftrag bleibt `1b031b58`. Der überholte ursprüngliche PR-Lauf 43097733805 war bei der angefragten Bereinigung bereits abgeschlossen; nur der neue Kopf zählt für die Abnahme. Fremde laufende Prüfungen wurden nicht verändert.
+
+**Ein nächster Schritt:** Nach Wiederherstellung von GitHub Actions beide Pflichtchecks am tatsächlichen aktuellen PR-Kopf abnehmen; erst bei Grün den autorisierten regulären Merge/Rollout mit rein lesender Nachkontrolle abschließen. Keine neue kostenpflichtige Modellprobe dafür vorgesehen.

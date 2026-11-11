@@ -39,5 +39,9 @@
   "costBudgetGroups": {
     "pass": 16,
     "fail": 0
-  }
+  },
+  "releaseStatus": "LOCAL_PASS_CI_AND_DEPLOYMENT_BLOCKED_BY_GITHUB_ACTIONS_OUTAGE",
+  "runtimeTestHead": "40ee7a6c501f5dfaa8ee96962a452c4adc854030",
+  "pr": 1156,
+  "ciRunBeforeStatusCommit": 43097898505
 }

@@ -1,0 +1,23 @@
+{
+  "checkedAtUtc": "2026-11-11T20:54:15.941980+00:00",
+  "url": "https://www.githubstatus.com/",
+  "status": {
+    "indicator": "major",
+    "description": "Partial System Outage"
+  },
+  "actions": [
+    {
+      "name": "Actions",
+      "status": "major_outage",
+      "updated_at": "2026-11-11T20:48:25.534Z"
+    }
+  ],
+  "incidents": [
+    {
+      "name": "Incident with Webhooks",
+      "status": "investigating",
+      "updated_at": "2026-11-11T20:48:46.735Z",
+      "shortlink": "https://stspg.io/jdjlq5zjyl48"
+    }
+  ]
+}
