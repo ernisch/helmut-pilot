@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/quellenkontingent-startfehler-20261111": false,
       "codex/quellen-einreihung-20261111": false,
       "codex/artikelpfad-tagesanlass-20261110": false,
       "codex/briefingversorgung-ursachen-20261110": false,

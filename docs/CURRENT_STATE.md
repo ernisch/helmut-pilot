@@ -2,13 +2,13 @@
 
 **Stand: 11.11.2026.** Betreibersteuerung und frische Productionbelege gelten. [PR1105 live](betrieb/validierungsdiagnose-20261108.md).
 
-**11.11., Production:** PR1118–1123 live; main/Production `f6222398`, READY. Quellenversorgung weiterhin gestört; vollständige reguläre Verarbeitung und echte Kundensitzung bleiben zu belegen.
+**11.11., Production:** PR1118–1124 live; main/Production `4dee3255`, READY, Hauptdomain/Runtime bestätigt. Release-Frische `ready=false`; vollständige reguläre Verarbeitung und echte Kundensitzung bleiben zu belegen.
 
 **UX (08.11.):** [PR1108: Tagesgrund, Radar ohne Knopf](ui/mobile-ux-20261108/README.md); kein Merge/Deploy, ChatGPT-Abnahme offen. [Briefing PR1102 live](ui/briefing-ohne-refresh-20261107/rollout.md).
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
-**11.11., Reparatur vorbereitet:** Branch `codex/quellen-einreihung-20261111` auf aktuellem main; fehlendes Pending-Planfenster und unbestätigte RPC-Quittungen minimal korrigiert. Offline geprüft, unabhängiges Review ohne Blocker; Endkopf/Pflicht-CI im PR maßgeblich. Kein Merge/Deployment.
+**11.11., Kontingentvorflug vorbereitet:** Branch `codex/quellenkontingent-startfehler-20261111` auf aktuellem main. Vorhandene Worker-Bereitschaft und Zeit-/Slotprüfung vor Quotenreservierung; keine Erstattung, keine Zähler-/Limitänderung. Gezielte Offlineprüfung bestanden; Endkopf/Review/Pflicht-CI im PR maßgeblich. Kein Merge/Deployment.
 
 ## Büro: gemergt und Production READY (09.11.2026)
 
@@ -34,7 +34,7 @@ Voriger Status unveraendert im [Archiv](archive/project_state/2026_11_07_CURRENT
 
 ## Quellen: aktueller Stand und fruehere Belege
 
-**11.11., Einreihungsreparatur vorbereitet:** Neuer Pendingauftrag erhält das Tagesplanfenster; gespeicherte Altmanifeste erhalten nur in der RPC-Kopie ihr ursprüngliches Planfenster. Manifest, Hash, Artikeldatum und Inhaltsschlüssel bleiben unverändert. Beide Enqueueadapter bestätigen nur genau eine gültige UUID mit booleschem `neu`; verlorene Quittung hält den Cursor offen. Gezielte Offlinegruppen: Pending/RPC10, Journal8, Inhaltsqueue28 bestanden; unabhängiges Sicherheitsreview ohne Befund. Vorherige [Pendingrotation](betrieb/pending-rotation-20261110.md) bleibt erhalten. Schutzregeln, Limits und reguläre Zeitfenster unverändert; kein manueller Nachlauf. Produktionsdiagnosen bleiben im privaten Nachweis, der nächste reguläre Lauf ist noch kein belegter Versorgungserfolg. Nächster Schritt nach grüner Pflicht-CI: konkrete Merge-/Rolloutfreigabe für den Reparaturkopf.
+**11.11., Einreihung live / Kontingentvorflug vorbereitet:** PR1124 erhält Planmanifest/Hash/Inhaltsschlüssel/Artikeldatum; Runtime bestätigt `4dee3255`. Historische Manifeste und Schutzkonfiguration beim Rollout unverändert, keine aktive Verarbeitung oder Sperre. Der neue enge Vorflug prüft nach exklusiver Lease die vorhandene Workerbereitschaft und dieselbe 60s-/Slotgrenze vor der ersten Quotenreservierung. Planung/Enqueue/Claim bleiben dahinter. Teilreservierung, unbekannte Schreibantwort und Abbruch bleiben konservativ verbraucht; kein historischer Reset. Gezielte Gruppen: Arbeitsfenster21, echte lokale Route9 bestanden. Lesebereitschaft garantiert keine späteren RPC-Schreibaufrufe; der separate Pflichtfeldfehler wurde durch PR1124 behoben. Keine neuen Termine, Limits, Migration oder Productionänderung. Diagnosebelege bleiben privat. Nächster Schritt nach grüner Pflicht-CI: konkrete Merge-/Rolloutfreigabe für den neuen Reparaturkopf.
 
 **Historie 07.11.:** [PR1098](https://github.com/ernisch/helmut-pilot/pull/1098) wurde nach GO und gruener CI inaktiv auf `778c289b` ausgerollt. Separat freigegebene Quellenkorrektur: vier Originalauszuege, eine Bundestagsquelle, fuenf Kurzfassungen; zwei Altfaelle geparkt, RP Online ohne Original offen. Kein 6/6-Nachweis und keine Provideraufrufe. [Quellenkorrektur mit Vor-/Nachwerten und Rueckweg](betrieb/quellenkorrektur-20261107.md). [Unveraenderter damaliger Detailstand](https://github.com/ernisch/helmut-pilot/blob/feadca2829b6b54c010c2fcfef16d208ab6e0c05/docs/CURRENT_STATE.md#quellenkorrektur-07112026-gemergt-und-inaktiv).
 
