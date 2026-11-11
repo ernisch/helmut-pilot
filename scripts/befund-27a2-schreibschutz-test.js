@@ -131,8 +131,14 @@ console.log("\nC · holen(): Ablehnung vor jedem Netzzugriff");
     neuGeladen.filter((k) => /storage/.test(k)).join(", ") || "(keins)");
   check("D2 geladen wurden nur die reinen Matching-/Entscheidungsmodule",
     neuGeladen.filter((k) => k.replace(/\\/g, "/").includes("/lib/helmut/"))
-      .every((k) => /matching\.js|matching-begruendung\.js|matching-relevanz\.js|decisions\.js|quellenarchitektur/.test(k)),
+      .every((k) => /matching\.js|matching-begruendung\.js|matching-relevanz\.js|decisions\.js|themenprioritaeten\.js|quellenarchitektur/.test(k)),
     neuGeladen.filter((k) => k.includes("/lib/helmut/")).map((k) => path.basename(k)).join(", "));
+  const themenPfad = require.resolve("../lib/helmut/themenprioritaeten");
+  const themenQuelle = fs.readFileSync(themenPfad, "utf8");
+  check("D2a der neue Themenhelper laedt keinerlei weitere Module",
+    require.cache[themenPfad] && require.cache[themenPfad].children.length === 0);
+  check("D2b der Themenhelper hat keine I/O-, Umgebungs- oder dynamischen Ausfuehrungspfade",
+    !/\brequire\s*\(|\bimport\b|\bfetch\b|XMLHttpRequest|\bprocess\b|globalThis|\beval\b|\bFunction\b|setTimeout|setInterval|\bWorker\b/.test(themenQuelle));
   check("D3 das Modul exportiert keine Funktion mit Schreibbedeutung",
     Object.keys(w).every((k) => !/speicher|save|write|schreib|insert|update|delete|upsert/i.test(k)),
     Object.keys(w).join(", "));

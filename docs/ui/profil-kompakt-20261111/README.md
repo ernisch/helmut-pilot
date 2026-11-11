@@ -125,6 +125,15 @@ wurden anschließend korrigiert und durch die 58 Browserprüfungen reproduzierba
 Die beiden Fachteilaufträge nutzten eigene Worktrees und Commits, unveränderte geerbte
 Modell-/Denkstufeneinstellung; Root integriert. Keine gleichzeitig veränderten Prüfeingaben.
 
+Der erste vollständige Lauf auf `e747645c` bestand188/189Standardsuiten und die
+Browser-/DB-Vorprüfungen. Einzig die bestehende D2-Modulliste im Schreibschutztest
+kannte den neu geladenen reinen Themenhelper nicht. Dieser wird ausdrücklich
+namentlich ergänzt; zusätzlich sichern zwei neue Prüfungen ab, dass er keine
+Abhängigkeiten oder I/O-/Umgebungs-/dynamischen Ausführungspfade besitzt. Die
+bestehenden HTTP-/Tabellen-/RPC-/Storage-Schreibsperren bleiben erhalten.
+Gezielter korrigierter Schreibschutznachweis:56/56bestanden. Keine Runtimeänderung
+nach den58Browserprüfungen; neuer Pflichtkopf erforderlich, kein Umdeuten des Fehlers.
+
 ## Integration und Rückweg
 
 Diese Umsetzung übernimmt die relevante Dropdownarbeit aus dem noch offenen PR1134
