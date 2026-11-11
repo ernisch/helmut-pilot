@@ -1,7 +1,8 @@
 # Profil: Partei, Fraktion und Ort als Dropdowns
 
 Stand 11.11.2026. Branch `codex/profil-dropdowns-20261111`, Basis `3a012b0b`.
-Status: lokal umgesetzt und geprüft; PR/Pflicht-CI und konkretes Merge-/Deployment-GO offen.
+Status: lokal umgesetzt und geprüft; [PR1134](https://github.com/ernisch/helmut-pilot/pull/1134),
+Codecommit `21484e9b`. Pflicht-CI und konkretes Merge-/Deployment-GO offen.
 
 Partei und Fraktion sind im eigenen Mandatsprofil und in der Ersteinrichtung
 getrennte native Auswahllisten. Parteiunabhängigkeit (`parteilos`) und
