@@ -71,6 +71,7 @@ exports.browserCheck = async ({ base, check, reset, setHold, advance, plans }) =
       assert.equal(await button.isDisabled(), true); const before = posts;
       await page.reload();
       await page.getByRole("status").filter({ hasText: "Verarbeitet: 3" }).waitFor(); assert.equal(posts, before);
+      await page.getByRole("button", { name: "Status prüfen", exact: true }).waitFor({ state: "hidden" });
     });
     const out = process.env.HELMUT_ADMINSTART_BELEGE;
     if (out) { fs.mkdirSync(out, { recursive: true }); await page.screenshot({ path: path.join(out, "quellenstart-mobil.png"), fullPage: true }); }

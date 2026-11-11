@@ -154,13 +154,14 @@ async function main() {
       const firstPost = client.start(); while (!release) await Promise.resolve();
       await client.start(); assert.equal(calls.filter(c => c[1] === "POST").length, 1);
       release(); await firstPost; assert.equal(client.state().zustand, "unbekannt"); client.dispose();
-      const restored = createQuellenlauf({ host, fetcher: async (url, o) => {
+      const rendered = []; let restored;
+      restored = createQuellenlauf({ host, changed: () => rendered.push(restored.state()), fetcher: async (url, o) => {
         assert.equal(o.method, undefined); assert.match(url, /^\/api\/admin\/quellenlauf\?/);
         const a = JSON.parse([...memo.values()][0]); return { ok: true, json: async () => ({ laufId: admin.laufId(a), zustand: "abgeschlossen", verarbeitet: 3 }) };
       } });
       restored.restore(); await restored.status(); assert.equal(restored.state().zustand, "abgeschlossen");
       assert.match(quellenlaufText({ zustand: "gesperrt", grund: "arbeitslimit-tagesgrenze" }), /Keine Sonderfreigabe/);
-      assert.equal(memo.size, 0); restored.dispose();
+      assert.equal(memo.size, 0); assert.equal(rendered.at(-1).offen, false); restored.dispose();
     });
     await check("spaeter Statusfehler ueberschreibt keinen bestaetigten POST-Abschluss", async () => {
       const { createQuellenlauf } = await import("../verwaltung/original-quellenlauf.mjs");

@@ -28,8 +28,8 @@ export function createQuellenlauf({ fetcher = globalThis.fetch, host = globalThi
       // Solange der POST antworten kann, darf ein fehlender Startbeleg die Anzeige
       // nicht als Abbruch ausgeben. Die gesendete Mutation wird dadurch nicht beendet.
       if (busy && r.zustand === "unbekannt") return;
-      update(r);
       if (!busy && ["abgeschlossen", "teilweise"].includes(r.zustand)) forget();
+      update(r);
     } catch (e) { if (!closed && auftrag === current && !busy) update({ zustand: "unbekannt", grund: "laufbeleg-nicht-lesbar" }); }
   }
   async function start() {
