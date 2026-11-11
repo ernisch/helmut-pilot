@@ -10,6 +10,9 @@ async function check(name,fn){await fn();passed++;console.log('PASS '+name);}
 function isolatedBackend(){
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'helmut-admin-einfach-')),clone=path.join(temp,'backend');
  execFileSync('git',['clone','--quiet','--shared','--no-hardlinks','--single-branch',root,clone],{stdio:'pipe'});
+ // CI installiert Laufzeitpakete im Ausgangscheckout. Nur diese vorhandenen
+ // Pakete teilen; Daten und Zugangsdaten bleiben im wegwerfbaren Klon isoliert.
+ if(fs.existsSync(path.join(root,'node_modules')))fs.symlinkSync(path.join(root,'node_modules'),path.join(clone,'node_modules'),'dir');
  for(const file of ['server.js','verwaltung/original-actions.mjs','scripts/einfache-verwaltung-paket.js'])fs.copyFileSync(path.join(root,file),path.join(clone,file));
  fs.cpSync(path.join(root,'verwaltung/einfach'),path.join(clone,'verwaltung/einfach'),{recursive:true});
  assert.equal(fs.existsSync(path.join(clone,'.helmut-data')),false);
@@ -101,6 +104,18 @@ async function run({browser=false,evidenceDir=null}={}){
   });
   await check('401 entfernt statt erfolgreichem Leerbestand den gesamten Zugriff',async()=>{
    const denied=createSimpleApi({fetcher:async()=>({ok:false,status:401,json:async()=>({})})});await assert.rejects(denied.load(),e=>e.status===401);denied.dispose();
+  });
+  await check('Kanonische HTTPS-Zugangslinks werden angezeigt, aber niemals aufgerufen',async()=>{
+   const calls=[],url='https://kanonisches-beispiel.invalid/passwort-setzen?token=synthetisch';
+   const p=createSimpleApi({fetcher:async(route,options={})=>{
+    calls.push(route);let value={verfuegbar:false};
+    if(route.includes('customers'))value={kunden:[]};
+    else if(route.includes('overview'))value={mandates:[],system:{deploy:{environment:'local'}}};
+    else if(route==='/api/admin/users')value=[{id:'synthetic-invite',role:'abgeordneter',status:'eingeladen',active:true}];
+    else if(route==='/api/security/csrf')value={token:'f'.repeat(32)};
+    else if(route.endsWith('/invite'))value={inviteUrl:url,mail:{sent:false}};
+    return {ok:true,status:200,json:async()=>value};
+   }});await p.load();assert.equal((await p.invite('synthetic-invite')).inviteUrl,url);assert.ok(calls.every(x=>x.startsWith('/api/')));p.dispose();
   });
   if(browser){
    const {chromium}=require('playwright');

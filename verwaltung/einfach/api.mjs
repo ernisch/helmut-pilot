@@ -88,7 +88,10 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
    if(user.active===false)await actions.setAccess(id,true);
    const result=await request(`/api/admin/users/${encodeURIComponent(id)}/invite`,{method:'POST',body:{}});
    const url=new URL(result.inviteUrl,globalThis.location?.origin||'http://localhost');
-   if(url.origin!==(globalThis.location?.origin||'http://localhost')||url.pathname!=='/passwort-setzen'||!url.searchParams.get('token'))throw new AdminMutationError(0,true);
+   // Der bestehende Server darf HELMUT_PUBLIC_URL bzw. die kanonische Domain
+   // verwenden. Das ist ein auszugebender Link, niemals ein Fetch-Ziel.
+   const sameOrigin=url.origin===(globalThis.location?.origin||'http://localhost');
+   if((url.protocol!=='https:'&&!(sameOrigin&&url.protocol==='http:'))||url.username||url.password||url.pathname!=='/passwort-setzen'||!url.searchParams.get('token'))throw new AdminMutationError(0,true);
    return result;
   });},
   async settings(key){if(!['budget','sources','runs'].includes(key))throw new AdminMutationError(400);return reader.read(key);},

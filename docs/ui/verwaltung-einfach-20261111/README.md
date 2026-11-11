@@ -74,7 +74,7 @@ niemals den fiktiven Beispieladapter.
 
 ## Tatsächliche Prüfung
 
-- **24 Gruppen mit Browser und echtem isoliertem Backend:**
+- **25 Gruppen mit Browser und echtem isoliertem Backend:**
   [Prüfbeleg](app-pruefung.json), [Desktop](app-uebersicht.png),
   [Kundenseite Mobil](app-kunde-mobil.png). Von der UI ausgelöste Kontoanlage,
   Profil-PATCH, explizite Aktivierung und Einmallink sind im lokalen Speicher
