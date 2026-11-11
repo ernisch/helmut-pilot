@@ -10,6 +10,18 @@ vom11.11.2026 erlaubt den auftragsbezogenen Merge und regulaeren Rollout nach Gr
 Der parallel gemergte Hauptstand `8293a307` ist integriert; die kompakte
 Statusdokumentation bleibt gemeinsam unter ihrer verbindlichen Groessengrenze.
 
+CI43035811742 auf dem integrierten Kopf `4b8bf6f2` bestand die Syntax-,
+Offline-, Fachbereichs- und Datenbankpruefung. Beide Browser-Installationsversuche
+scheiterten vor Teststart an `Temporary failure resolving azure.archive.ubuntu.com`
+(Originalarchive der Versuche1/2 gelesen). Der Browserjob entfernt deshalb den
+bekannt defekten Mirror-Eintrag nur auf seinem kurzlebigen Testrechner, sofern
+vorhandene offizielle HTTPS-Ubuntu-Fallbacks erhalten bleiben. Originaldatei wird
+gesichert; fehlender offizieller Fallback stoppt. Playwright1.56.1, Chromium,
+APT-Signaturen, Paket-Hashes und Pflichtpruefungen bleiben unveraendert.
+Der unveraenderte eingebettete Python-Helfer wurde lokal aus dem Workflow
+extrahiert: YAML/Python-Syntax und acht Positiv-/Negativfaelle bestanden,
+einschliesslich Idempotenz und Abbruch ohne offiziellen HTTPS-Fallback.
+
 Partei und Fraktion sind im eigenen Mandatsprofil und in der Ersteinrichtung
 getrennte native Auswahllisten. Parteiunabhängigkeit (`parteilos`) und
 Fraktionsunabhängigkeit (`fraktionslos`) sind getrennt auswählbar.

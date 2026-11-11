@@ -547,6 +547,27 @@ jobs:
           sudo python3 - <<'PY'
           from pathlib import Path
           import re
+          # CI43035811742: Azure-Mirror-DNS in zwei Versuchen ausgefallen.
+          # Nur den bekannten defekten Eintrag entfernen, vorhandene offizielle
+          # HTTPS-Fallbacks und alle APT-Signatur-/Hashpruefungen beibehalten.
+          def healthy_ubuntu_mirrors(text):
+              lines = text.splitlines()
+              broken = re.compile(r'^\s*https?://azure\.archive\.ubuntu\.com/ubuntu/?(?:\s|$)')
+              kept = [line for line in lines if not broken.match(line)]
+              if len(kept) == len(lines):
+                  return None
+              official = re.compile(r'^\s*https://(?:archive|security)\.ubuntu\.com/ubuntu/?(?:\s|$)')
+              if not any(official.match(line) for line in kept):
+                  raise RuntimeError('Kein vorhandener offizieller HTTPS-Ubuntu-Fallback')
+              return '\n'.join(kept) + '\n'
+          mirrors = Path('/etc/apt/apt-mirrors.txt')
+          if mirrors.is_file():
+              original = mirrors.read_text()
+              healthy = healthy_ubuntu_mirrors(original)
+              if healthy is not None:
+                  mirrors.with_name(mirrors.name + '.helmut-ci-original').write_text(original)
+                  mirrors.write_text(healthy)
+                  print('Defekten Azure-Mirror isoliert; vorhandene offizielle HTTPS-Fallbacks bleiben aktiv.')
           for source in Path('/etc/apt/sources.list.d').iterdir():
               if source.suffix not in ('.list', '.sources'):
                   continue
