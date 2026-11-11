@@ -327,7 +327,7 @@ Nach Betreiber-GO bei gruener Pflicht-CI gemergt und live: [PR #1055](https://gi
 **App-Start (06.11.2026):** PR1078/1081/1085 nach GO/Pflicht-CI live; PR1085`2a5e0774`, Vercel`dpl_45AMnvEB1XmP3jh5Xa7QGRb3nSgc`READY. HTTP-Median4,836→4,234s; HTTP200, Briefing/10Lagekarten, kein Androidwert.
 Installierte Brave-App haengt im nativen Android-Bild, Hauptadresse funktioniert; Geraeteursache offen. Folgefix vorbereitet: Icon-/Manifestfarbe angleichen,8s Workerfrist mit Wiederholungsansicht. Briefing vor App-Oeffnung, keine private Cacheansicht.
 Worker7/7, Icons70/70, echter Worker-Wiederholungsfall und Browser82/82 bestanden. [Vollstaendige Messungen, Rollout und Befunde](betrieb/app-start-performance-20261106.md).
-Naechster Schritt: Folgefix abnehmen; Android-Installationszustand bleibt offen.
+**Mobiler Start (11.11.):** [PR1147 live](betrieb/mobiler-start-20261111.md), `e574a4cc` READY/bytegleich; CI gruen. Geraetest offen.
 Keine weiteren synthetischen Vollversuche oder bezahlten Lasttests.
 
 Historische alte Anweisungen, darunter [`ROADMAP_BIS_500.md`](ROADMAP_BIS_500.md), sind keine aktuellen Testauftraege. Alle alten Laufbelege,
