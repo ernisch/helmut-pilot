@@ -7795,11 +7795,13 @@ function officeDraftFailure(reason) {
     "quellenbasis-fehlt": "Für diesen Anlass liegt noch keine ausreichende Originaltextbasis vor. Helmut zeigt deshalb keinen Entwurf.",
     "anlass-nicht-verfuegbar": "Dieser Anlass ist derzeit nicht mehr belastbar verfügbar. Helmut zeigt deshalb keinen Entwurf.",
     "zustaendigkeit-offen": "Für Ausschussfragen fehlt eine gesicherte parlamentarische Zuständigkeit im Mandatsprofil.",
-    "budget-erschoepft": "Die aktuelle KI-Kostengrenze ist erreicht. Derzeit kann kein neuer Entwurf vorbereitet werden.",
+    "budget-erschoepft": "Das verfügbare KI-Kontingent reicht derzeit nicht für einen weiteren Entwurf aus.",
+    "entwurf-nicht-freigegeben": "Die Entwurfserstellung ist für dieses Profil oder diese Aufgabe derzeit nicht freigegeben.",
+    "kostenpruefung-fehlgeschlagen": "Die KI-Kostenfreigabe konnte derzeit nicht bestätigt werden. Bitte versuchen Sie es erneut.",
     "format-unbekannt": "Dieses Textformat ist derzeit nicht verfügbar."
   };
   return { message: messages[reason] || "Der Entwurf konnte nicht belastbar erstellt werden. Sie können es erneut versuchen.",
-    retry: !Object.prototype.hasOwnProperty.call(messages, reason) };
+    retry: reason === "kostenpruefung-fehlgeschlagen" || !Object.prototype.hasOwnProperty.call(messages, reason) };
 }
 
 function renderOfficeDraftDetail() {
@@ -11053,7 +11055,7 @@ async function generateSelectedOfficeDraft() {
     const result = await generateStatementWithBackend(`Bereiten Sie das Format ${format.label} zum belegten Anlass vor.`, decision, format.channel || "press", { office: true });
     if (!stillAssigned()) return;
     if (!result.aiEnabled || result.degraded || !isValidDraft(result.text) || !String(result.text || "").trim()) {
-      const safeReasons = new Set(["quellenbasis-fehlt", "anlass-nicht-verfuegbar", "zustaendigkeit-offen", "budget-erschoepft", "format-unbekannt"]);
+      const safeReasons = new Set(["quellenbasis-fehlt", "anlass-nicht-verfuegbar", "zustaendigkeit-offen", "budget-erschoepft", "entwurf-nicht-freigegeben", "kostenpruefung-fehlgeschlagen", "format-unbekannt"]);
       officeDraftErrors[key] = safeReasons.has(result.fallbackReason) ? result.fallbackReason : "ki-fehler";
       return;
     }
