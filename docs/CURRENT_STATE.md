@@ -20,7 +20,7 @@
 
 ## Kompaktes Profil live (11.11.2026)
 
-[PR1144/Belege](ui/profil-kompakt-20261111/README.md): drei Mock-Seiten, echte Prioritäten, sichere Teil-PATCHs; Termine/ungenutzte Felder entfallen. Production22bad44c READY; Hauptdomain samt fünf Assets bytegleich. CI43076685841:189/189Standard,367/367Bereich und Browser grün; lokal174+17Admin, darin60Profilchecks. Parallelstand samt Startfix integriert/geprüft. DropdownPR1134 ersetzt. Keine echten Profiländerungen/KI-Probe. Nächster Schritt: Profil am eigenen Gerät öffnen. [Audit](ui/profil-wirkungscheck-20261111/README.md).
+[Profil/Belege](ui/profil-kompakt-20261111/README.md): PR1144 und FolgePR1151 live. „Bitte vermeiden“ aus UI/Formular entfernt, Altwerte erhalten. Production953c1dfe READY; Hauptdomain bestätigt, Client/CSS bytegleich. CI43099987478:189/189Standard,367/367Fach,48/48Z22 und Browser grün; gemeinsam60Profil-/76Bürochecks bestanden. GitHub-Ausfall/Fehlversuche historisch belegt. Keine echten Profiländerungen/KI-Kosten. Nächster Schritt: Profil neu öffnen. [Audit](ui/profil-wirkungscheck-20261111/README.md).
 
 **Historie 07.11.:** Lageauswahl PR1100 auf `d9651861` live/READY, Pflicht-CI42409807375 grün. Fachliche Aufnahme vor Limit, Quellen-/Profilbindung; synthetische Gegenproben und Windenergiefall bestanden. Authentifizierte Production-Bedienabnahme offen. [Vollständige Belege, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md); keine neue Daten-/Modellfreigabe.
 

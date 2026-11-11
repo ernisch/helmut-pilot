@@ -1,0 +1,87 @@
+{
+  "schema": "helmut-profile-no-avoid-rollout/1",
+  "checkedAt": "2026-11-11T21:29:39.270Z",
+  "canonicalUrl": "https://helmut-pilot.vercel.app",
+  "deploymentId": "dpl_4EEymRutzUa22MEq32GFJDFP719v",
+  "gitSha": "953c1dfe7e4ba25e49ac2d729be36a6885089283",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "success": true,
+      "sha256": "b55d3ef9eb56669105614b8cac97138f6426348a45ad13211be514318b4f6714",
+      "runtimeVersionPresent": true
+    },
+    {
+      "path": "client.js",
+      "status": 200,
+      "success": true,
+      "sha256": "e3712e499e05611726fdbda995ca498e94de27262733025564afaadab82ce39d",
+      "expectedSha256": "e3712e499e05611726fdbda995ca498e94de27262733025564afaadab82ce39d",
+      "matches": true,
+      "removedInputAbsent": true,
+      "removedLabelAbsent": true
+    },
+    {
+      "path": "styles.css",
+      "status": 200,
+      "success": true,
+      "sha256": "6fba28ad7565ef2139bca22b2d48f3770e61381961b3c0c59c9abc740c6a2b57",
+      "expectedSha256": "6fba28ad7565ef2139bca22b2d48f3770e61381961b3c0c59c9abc740c6a2b57",
+      "matches": true
+    }
+  ],
+  "pr": {
+    "number": 1151,
+    "head": "a93843f4e0845a32c379ad1cbebb8e71b6b6fcc9",
+    "merge": "953c1dfe7e4ba25e49ac2d729be36a6885089283",
+    "mergedAt": "2026-11-11T21:28:31Z",
+    "testedAndMergedTree": "fac3b6b848ca4e9ec79919422a9a0177e84ee401",
+    "treesEqual": true
+  },
+  "ci": {
+    "run": 43099987478,
+    "requiredChecks": {
+      "Syntax + Offline-Suiten": "success",
+      "Browser-/Mobile-Smoke (Chromium)": "success"
+    },
+    "standardSuites": {
+      "passed": 189,
+      "total": 189
+    },
+    "areaSuites": {
+      "passed": 367,
+      "total": 367
+    },
+    "z22": {
+      "passed": 48,
+      "failed": 0
+    }
+  },
+  "localVerification": {
+    "profileBrowserPassed": 60,
+    "officeHonestyPassed": 76,
+    "onboardingPassed": 31,
+    "modelProfileFieldsPassed": 43,
+    "javascriptErrors": 0,
+    "automaticOfficeGenerationCalls": 0
+  },
+  "production": {
+    "readyState": "READY",
+    "canonicalAliasConfirmed": true,
+    "profileDataMutated": false,
+    "paidModelCalls": 0,
+    "migrations": 0
+  },
+  "scope": "Remove self-service noGoTopics input, initial editor values, form reading and PATCH field; retain existing stored data and model/cache compatibility.",
+  "platformHistory": {
+    "officialOutageEvidence": "ohne-vermeiden-ci-blocker.json",
+    "firstFailure": "43088060572: obsolete onboarding input presence assertion; corrected and locally verified31/31.",
+    "delayedRun": "43093338107: all steps succeeded, formal result delayed during Actions major_outage; later success without any successful cancellation/rerun.",
+    "freshIntegratedCurrentHead": "Both required checks successful on a93843f4; no workflow or protection changes."
+  },
+  "limitations": [
+    "Public production delivery verified read-only; no real customer profile save or paid model generation invoked.",
+    "Historical noGoTopics values were preserved; this change removes the self-service input, not stored data."
+  ]
+}
