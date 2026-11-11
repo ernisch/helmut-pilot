@@ -1,0 +1,61 @@
+{
+  "checkedAtUtc": "2026-11-11T20:12:56.480770+00:00",
+  "url": "https://helmut-pilot.vercel.app",
+  "commit": "1b031b58342b5ee9b00c215b5857c603d1141bb3",
+  "files": [
+    {
+      "file": "client.js",
+      "route": "client.js?v=1b031b58",
+      "sha256": "b676320eee7f9a29396c8d39fcba024872ff0df70b87a9e74a3521ffe401b0e7",
+      "expectedSha256": "b676320eee7f9a29396c8d39fcba024872ff0df70b87a9e74a3521ffe401b0e7",
+      "matches": true
+    },
+    {
+      "file": "styles.css",
+      "route": "styles.css?v=1b031b58",
+      "sha256": "6fba28ad7565ef2139bca22b2d48f3770e61381961b3c0c59c9abc740c6a2b57",
+      "expectedSha256": "6fba28ad7565ef2139bca22b2d48f3770e61381961b3c0c59c9abc740c6a2b57",
+      "matches": true
+    }
+  ],
+  "release": {
+    "ok": true,
+    "ready": false,
+    "storage": true
+  },
+  "paidModelCalls": 0,
+  "productionDataChanges": 0,
+  "scope": "Public HTML/assets and public release endpoint plus deployment commit provenance; no authenticated user session or generated draft.",
+  "expectedServerSha256": "669bcd86524a2d680270759422a9b9d320fc7a41fa104854a7980f139689be99",
+  "status": "LIVE_DEPLOYMENT_VERIFIED_WITH_OFFLINE_SOURCE_FLOW",
+  "deploymentId": "dpl_A6BqXSPARJhfZ9ys3wf4CCCF3kA2",
+  "deploymentState": "READY",
+  "target": "production",
+  "mergedAtUtc": "2026-11-11T20:11:59Z",
+  "previousDeploymentId": "dpl_3ZDJdFeykzbxeRNECcYsszhdWCYc",
+  "ci": {
+    "run": 43090784967,
+    "head": "de8dfbcd00c21adb9ab5e2dc2d03ae564dd89376",
+    "standardSuites": 189,
+    "standardPassed": 189,
+    "areaSuites": 367,
+    "areaPassed": 367,
+    "browserCheck": "SUCCESS",
+    "isolatedDatabaseCheck": "SUCCESS"
+  },
+  "runtimeErrorScan": {
+    "sinceUtc": "2026-11-11T20:11:59Z",
+    "checkedAtUtc": "2026-11-11T20:12:56Z",
+    "levels": [
+      "error",
+      "fatal"
+    ],
+    "observedGroups": [],
+    "limitation": "Short deployment-specific window only."
+  },
+  "limitations": [
+    "No authenticated production app/start payload was read.",
+    "No production model draft was generated.",
+    "Source forwarding is verified through actual functions using synthetic stored documents; deployed server provenance is tied to the tested commit."
+  ]
+}
