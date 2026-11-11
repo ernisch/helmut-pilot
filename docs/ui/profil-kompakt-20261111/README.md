@@ -2,8 +2,9 @@
 
 ## Stand
 
-Lokal umgesetzt und gezielt geprüft; Pflicht-CI und Production-Rollout stehen vor
-Integration noch aus. Basis `7898fd5d`, neuer Bürostand `626c4f29` integriert, Branch `codex/profil-kompakt-20261111`.
+Umgesetzt und live: [PR1144](https://github.com/ernisch/helmut-pilot/pull/1144),
+Production `22bad44c` READY; [lesender Rolloutnachweis](rollout.json).
+Basis `7898fd5d`, Bürostand `626c4f29` und Handystartfix bis `74679756` integriert.
 Der Auftrag umfasst ausdrücklich Oberfläche **und** tatsächlich angeschlossene Wirkung.
 Die früheren Befunde bleiben im [Profilaudit](../profil-wirkungscheck-20261111/README.md).
 
@@ -142,17 +143,44 @@ Onboarding wird zusätzlich im echten Browser ausgeführt und übernommen.
 Der parallel veröffentlichte Bürostand `626c4f29` wurde sauber integriert und separat
 lesend auf Pool-/Privat-/Cacheverträglichkeit geprüft. Gemeinsamer lokaler Browserlauf:
 174/174plus17/17Adminchecks, darin60Profilprüfungen; Einladung34/34 und
-Büro-Antwortzeit13/13mit echtem Clientcode und virtueller Zeit. Erneute Pflicht-CI
-am integrierten Kopf bleibt erforderlich. Keine Test-/Schutzabschwächung.
+Büro-Antwortzeit13/13mit echtem Clientcode und virtueller Zeit. Der nachfolgende
+integrierte Pflichtlauf ist unten belegt. Keine Test-/Schutzabschwächung.
+
+## Liveabschluss
+
+Beide Pflichtchecks auf dem tatsächlichen PR-Kopf `731408c5` erfolgreich:
+[CI43076685841](https://github.com/ernisch/helmut-pilot/actions/runs/43076685841),
+189/189 Standardsuiten, 367/367 Fachsuiten, 48/48 Z22-Datenbankprüfungen und
+Browser-/Mobile-Smoke. Der gesonderte vollständige Mock100-Lauf wurde nach bestehendem
+Prüfplan bewusst ausgelassen; die native isolierte Drei-Profil-Anschlussprobe lief.
+Das ist kein Productionlasttest. Die früheren fehlgeschlagenen Köpfe bleiben oben dokumentiert.
+
+Der währenddessen unabhängig veröffentlichte Handystartfix wurde in einem eigenen
+unveränderlichen Integrationsstand mit dem grünen Profilkopf zusammengeführt:
+10/10 Service-Worker-Startgruppen sowie zwei echte mobile Browserfälle für hängende
+Header/Antwortkörper bestanden. Der lokal geprüfte gemeinsame Baum
+`62e98ccd07d1b394c669e8dafb81cb9654236c22` ist exakt der Baum des regulären
+GitHub-Merge `22bad44c` vom 11.11., 18:56:09 UTC. Aktueller main, Parallelität,
+vollständiger Diff und konfliktfreie Zusammenführung wurden vor Merge geprüft.
+
+Vercel Production `dpl_3ZDJdFeykzbxeRNECcYsszhdWCYc` READY, Hauptdomain
+`helmut-pilot.vercel.app` auf diesem Stand. Startseite HTTP200 mit Version `22bad44c`;
+Client, CSS, Ortsliste, Wahlkreisliste und Service Worker jeweils HTTP200 und SHA256
+gleich dem geprüften Mergebaum. Zeitpunkt und Einzelhashes stehen im [Beleg](rollout.json).
+Keine manuelle Veröffentlichung, Migration, echte Profilmutation oder bezahlte KI-Probe.
+
+Die öffentliche Auslieferungsprüfung ersetzt keine authentifizierte Kundensitzung
+und keinen Test der Qualität eines echten Modelltexts. Die fachliche Save-/Wirkungskette
+wurde lokal gegen den echten Server mit synthetischen Profilen geprüft. Die bestehende
+Quellenfrische ist nicht Gegenstand dieses Rollouts und wird hier nicht als behoben bewertet.
+Nächster Schritt: Profil am eigenen Gerät öffnen.
 
 ## Integration und Rückweg
 
-Diese Umsetzung übernimmt die relevante Dropdownarbeit aus dem noch offenen PR1134
+Diese Umsetzung übernimmt die relevante Dropdownarbeit aus PR1134
 und ersetzt dessen separate Integration. Sein historischer GitHub-DNS-Fehler wird
 nicht als Produktfehler oder erfolgreiche CI umgedeutet. Keine CI-/Schutzregeländerung.
 
-Vor Merge: vollständigen aktuellen Diff, grünen Pflichtkopf, aktuellen main und
-konfliktfreie Parallelität prüfen. Nach Merge: Deployment/öffentliche Assets rein lesend
-an den freigegebenen Stand binden. Keine Production-Profilspeicherung oder kostenpflichtige
-KI-Probe daraus ableiten. Rückweg: die auftragsbezogenen Runtimecommits zurücknehmen
+Keine Production-Profilspeicherung oder kostenpflichtige KI-Probe aus dem Rollout ableiten.
+Rückweg: die auftragsbezogenen Runtimecommits zurücknehmen
 bzw. vorheriges Deployment; neue Profilfelder oder Datenmigration sind nicht erforderlich.

@@ -1,0 +1,115 @@
+{
+  "schema": "helmut-profile-compact-rollout/1",
+  "checkedAt": "2026-11-11T18:57:34.957Z",
+  "canonicalUrl": "https://helmut-pilot.vercel.app",
+  "deploymentId": "dpl_3ZDJdFeykzbxeRNECcYsszhdWCYc",
+  "gitSha": "22bad44cff3782e2ce9e70fd2fb215c5700a3153",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "success": true,
+      "sha256": "25464c427185c4185f352680ed2072e5e0ec152661b1615b957cb91d6705ad7e",
+      "runtimeVersionPresent": true,
+      "title": "Helmut"
+    },
+    {
+      "path": "client.js",
+      "status": 200,
+      "success": true,
+      "sha256": "b676320eee7f9a29396c8d39fcba024872ff0df70b87a9e74a3521ffe401b0e7",
+      "expectedSha256": "b676320eee7f9a29396c8d39fcba024872ff0df70b87a9e74a3521ffe401b0e7",
+      "matches": true
+    },
+    {
+      "path": "styles.css",
+      "status": 200,
+      "success": true,
+      "sha256": "6fba28ad7565ef2139bca22b2d48f3770e61381961b3c0c59c9abc740c6a2b57",
+      "expectedSha256": "6fba28ad7565ef2139bca22b2d48f3770e61381961b3c0c59c9abc740c6a2b57",
+      "matches": true
+    },
+    {
+      "path": "assets/profil-orte-20260930.json",
+      "status": 200,
+      "success": true,
+      "sha256": "fa8dc1359095102be62e1b97ec6ee48ed285ca607a9614da60847ba2c2f7e682",
+      "expectedSha256": "fa8dc1359095102be62e1b97ec6ee48ed285ca607a9614da60847ba2c2f7e682",
+      "matches": true
+    },
+    {
+      "path": "assets/profil-wahlkreise.json",
+      "status": 200,
+      "success": true,
+      "sha256": "5a51999b9f4a57952d107fd69c2ad88a7f6f074ef2adb3418a4044311711df05",
+      "expectedSha256": "5a51999b9f4a57952d107fd69c2ad88a7f6f074ef2adb3418a4044311711df05",
+      "matches": true
+    },
+    {
+      "path": "sw.js",
+      "status": 200,
+      "success": true,
+      "sha256": "9af5ca27b9b0a6e4d61d3d057c392ee3203e69dfd33757472db86f6445a8aa28",
+      "expectedSha256": "9af5ca27b9b0a6e4d61d3d057c392ee3203e69dfd33757472db86f6445a8aa28",
+      "matches": true
+    }
+  ],
+  "pr": {
+    "number": 1144,
+    "url": "https://github.com/ernisch/helmut-pilot/pull/1144",
+    "head": "731408c560f8767a01d8a061c08aa97b9a1fe605",
+    "merge": "22bad44cff3782e2ce9e70fd2fb215c5700a3153",
+    "mergedAt": "2026-11-11T18:56:09Z"
+  },
+  "ci": {
+    "run": 43076685841,
+    "url": "https://github.com/ernisch/helmut-pilot/actions/runs/43076685841",
+    "requiredChecks": {
+      "Syntax + Offline-Suiten": "success",
+      "Browser-/Mobile-Smoke (Chromium)": "success"
+    },
+    "standardSuites": {
+      "passed": 189,
+      "total": 189
+    },
+    "areaSuites": {
+      "passed": 367,
+      "total": 367
+    },
+    "z22": {
+      "passed": 48,
+      "failed": 0
+    },
+    "mock100FullRun": "intentionally skipped; existing isolated native three-profile connection qualification passed"
+  },
+  "integration": {
+    "baseMain": "746797569484b873e6a8dc83bb79daed6c07536d",
+    "localCombinedCommit": "dd60e192de9a87fe0216551f669233797fa05b1f",
+    "testedAndMergedTree": "62e98ccd07d1b394c669e8dafb81cb9654236c22",
+    "treesEqual": true,
+    "mobileStartupUnitGroups": 10,
+    "mobileStartupBrowserHangCases": 2
+  },
+  "localBrowser": {
+    "passed": 174,
+    "failed": 0,
+    "adminPassed": 17,
+    "profileChecksIncluded": 60,
+    "javascriptErrors": 0,
+    "automaticOfficeGenerationCalls": 0
+  },
+  "production": {
+    "readyState": "READY",
+    "canonicalAliasConfirmed": true,
+    "profileDataMutated": false,
+    "paidModelCalls": 0,
+    "migrationApplied": false
+  },
+  "limitations": [
+    "Live verification is read-only public delivery, not an authenticated customer profile save.",
+    "No paid model quality test was invoked; model profile/context and invalidation were verified locally.",
+    "Topic changes alter ranking of evidenced matching content; new sources arrive through regular scheduled ingestion.",
+    "Source pipeline freshness is outside this profile change; no news readiness claim.",
+    "Landtag catalog completeness is tied to abgeordnetenwatch API totals; no independent official audit of every state."
+  ]
+}
