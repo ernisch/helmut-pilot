@@ -8,7 +8,7 @@
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
-**11.11., Adminstart live:** [PR1126](https://github.com/ernisch/helmut-pilot/pull/1126) auf `3cf5379e`, Production READY, Runtime/Hauptdomain bestätigt. Adminstart mit unveränderten Schutzregeln; Kostenbuch/64 Buchungen unverändert, keine aktiven Prozesse/Sperren. Kein manueller Quellenlauf; Frische `ready=false` bleibt offen. [Rollout und Rückweg](betrieb/admin-quellenstart-rollout-20261111.md). **Automatikfix vorbereitet:** Restbedarf-/Fehlerstopp, Limits erhalten. [Prüfstand](betrieb/quellenautomatik-bedarf-20261111.md); kein Rollout.
+**11.11., Quellen/Radar14:31UTC:** [Adminstart PR1126](betrieb/admin-quellenstart-rollout-20261111.md) live; AutomatikPR1133 auf `88c876f1` READY. [Radar-Ausschlussdiagnose](betrieb/radar-ausschlussdiagnose-20261111.md):acht alte Signale, vier neuere Fachartikel ohne Umfeldbezug, keine belegte kommende Frist. Replay bestätigt0sichtbare Signale. Nachschub seit09.11. ausgeblieben; heute8/8Fenster und2400/2400Sekunden reserviert,0Prozesse/Sperren. Kein Reset oder neuer Lauf. Nächster regulärer Start12.11.,03:00UTC; Erfolg danach prüfen.
 
 ## Büro: Kosten-/Antwortzeitfix live, echte Einzelprobe erfolgreich (11.11.2026)
 
