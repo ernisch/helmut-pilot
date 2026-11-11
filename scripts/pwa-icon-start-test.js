@@ -45,6 +45,31 @@ async function unit() {
     assert.equal(f.calls[0].opts.signal.aborted, true); assert.equal(f.timers.size, 0);
     assert.deepEqual(f.writes, []);
   });
+  await test("Header allein beenden die Startfrist nicht; haengender HTML-Body fuehrt zur Wiederholungsansicht", async () => {
+    let body;
+    const f = fixture({ fetch: async (_req, opts) => new Response(new ReadableStream({
+      start(controller) {
+        body = controller;
+        controller.enqueue(new TextEncoder().encode("<!doctype html><head>"));
+        opts.signal.addEventListener("abort", () => controller.error(Error("body-aborted")), { once: true });
+      }
+    })) });
+    const r = f.request();
+    await tick();
+    assert(body); assert.equal(f.timers.size, 1);
+    f.timeout();
+    assert.match(await (await r.response).text(), /Nochmal versuchen/);
+    assert.equal(f.calls[0].opts.signal.aborted, true);
+    assert.equal(f.timers.size, 0); assert.deepEqual(f.writes, []);
+  });
+  await test("Vollstaendige Antwort behaelt Status, Header und lesbaren Body", async () => {
+    const f = fixture({ fetch: async () => new Response("complete-body", {
+      status: 201, headers: { "Content-Type": "text/plain", "X-Start-Test": "preserved" }
+    }) });
+    const res = await f.request().response;
+    assert.equal(res.status, 201); assert.equal(res.headers.get("X-Start-Test"), "preserved");
+    assert.equal(await res.text(), "complete-body"); assert.equal(f.timers.size, 0);
+  });
   await test("Netzfehler liefert Offlineansicht; spaeter Fehler nach Timeout bleibt beobachtet", async () => {
     const f = fixture({ fetch: async () => { throw Error("offline"); } });
     assert.match(await (await f.request().response).text(), /keine Verbindung/);
@@ -64,6 +89,21 @@ async function unit() {
     const f = fixture({ fetch: () => new Promise(() => {}) });
     const r = f.request("/styles.css?v=two", "cors", "style");
     await tick(); f.timeout(); assert.equal((await r.response).status, 504); await Promise.all(r.work);
+  });
+  await test("Unvollstaendige Startdatei wird nicht gecacht; bekannter Cache bleibt sofort nutzbar", async () => {
+    for (const cached of [null, new Response("known-complete-script")]) {
+      const f = fixture({ cached, fetch: async (_req, opts) => new Response(new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode("incomplete-script"));
+          opts.signal.addEventListener("abort", () => controller.error(Error("body-aborted")), { once: true });
+        }
+      })) });
+      const r = f.request("/client.js?v=partial", "cors", "script");
+      if (cached) assert.equal(await (await r.response).text(), "known-complete-script");
+      await tick(); assert.equal(f.timers.size, 1); f.timeout();
+      if (!cached) assert.equal((await r.response).status, 504);
+      await Promise.all(r.work); assert.deepEqual(f.writes, []); assert.equal(f.timers.size, 0);
+    }
   });
   await test("Cacheausfall verhindert Netzdatei nicht; frische Assets werden gespeichert", async () => {
     for (const cacheError of [true, false]) {
@@ -91,34 +131,45 @@ async function unit() {
 // Das reproduziert die Netzhaengerklasse, keinen Android-/Brave-WebAPK-Start.
 async function verifyInBrowser(browser) {
   const http = require("node:http");
-  let hang = false;
+  let hang = "";
   const held = new Set();
   const server = http.createServer((req, res) => {
     const pathname = new URL(req.url, "http://localhost").pathname;
     if (pathname === "/sw.js") { res.writeHead(200, { "Content-Type": "text/javascript", "Cache-Control": "no-store" }); return res.end(source); }
     if (pathname.startsWith("/assets/")) { res.writeHead(200, { "Content-Type": "image/png" }); return res.end("synthetic-precache"); }
-    if (hang && pathname === "/") { held.add(res); res.on("close", () => held.delete(res)); return; }
+    if (hang && pathname === "/") {
+      // Body-Fall: Header und erster HTML-Teil sind bereits angekommen,
+      // aber noch keine bedienbare Seite und kein Seiten-Watchdog.
+      if (hang === "body") {
+        res.writeHead(200, { "Content-Type": "text/html", "Cache-Control": "no-store" });
+        res.write('<!doctype html><html><head><title>Unvollstaendiger Start</title>');
+      }
+      held.add(res); res.on("close", () => held.delete(res)); return;
+    }
     res.writeHead(200, { "Content-Type": "text/html", "Cache-Control": "no-store" });
     res.end('<!doctype html><meta charset="utf-8"><title>SW Fixture</title><main>Startantwort bereit</main>');
   });
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
-  const context = await browser.newContext({ serviceWorkers: "allow", viewport: { width: 390, height: 844 } });
+  const context = await browser.newContext({ serviceWorkers: "allow", isMobile: true, hasTouch: true,
+    viewport: { width: 390, height: 844 } });
   try {
     const page = await context.newPage(), errors = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
     await page.evaluate(async () => { await navigator.serviceWorker.register("/sw.js"); await navigator.serviceWorker.ready; });
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    hang = true;
-    const started = Date.now();
-    const res = await page.reload({ waitUntil: "domcontentloaded", timeout: 13000 });
-    assert(res.fromServiceWorker()); assert(Date.now() - started >= 7500 && Date.now() - started < 13000);
-    assert.match(await page.locator("body").innerText(), /Nochmal versuchen/);
-    hang = false;
-    await Promise.all([page.waitForNavigation({ waitUntil: "domcontentloaded" }), page.getByRole("button", { name: "Nochmal versuchen" }).click()]);
-    assert.equal(await page.locator("main").innerText(), "Startantwort bereit");
+    for (const phase of ["headers", "body"]) {
+      hang = phase;
+      const started = Date.now();
+      const res = await page.reload({ waitUntil: "domcontentloaded", timeout: 13000 });
+      assert(res.fromServiceWorker()); assert(Date.now() - started >= 7500 && Date.now() - started < 13000);
+      assert.match(await page.locator("body").innerText(), /Nochmal versuchen/);
+      hang = "";
+      await Promise.all([page.waitForNavigation({ waitUntil: "domcontentloaded" }), page.getByRole("button", { name: "Nochmal versuchen" }).click()]);
+      assert.equal(await page.locator("main").innerText(), "Startantwort bereit");
+      console.log(`PASS Echter Service Worker: haengende Navigation (${phase}) endet nach 8s; erneuter Start funktioniert.`);
+    }
     assert.deepEqual(errors, []);
-    console.log("PASS Echter Service Worker: haengende Navigation endet nach 8s; erneuter Start funktioniert.");
   } finally {
     await context.close();
     for (const res of held) res.destroy();
