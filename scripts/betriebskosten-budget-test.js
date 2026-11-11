@@ -116,6 +116,30 @@ async function test(name, fn) { await fn(); count++; console.log(`PASS ${name}`)
     for (const k of ["users", "synthetik500KostenAdmission", "testKostenTage"]) assert.deepEqual(after[k], before[k]);
     assert.equal(B.pruefeBuch(after[B.KEY], after[B.KEY].contract).total, 848000);
   });
+  await test("Quellengebundene Bueroentwuerfe nutzen denselben Tages- und Gesamtdeckel", async () => {
+    const f = fixture(), before = f.read();
+    const args = { ...ARGS, meta: { callType: "communicationDraft", politicianId: CONTRACT.profileId, office: true } };
+    for (const meta of [{ ...args.meta, office: false }, { ...args.meta, office: "true" },
+      { ...args.meta, politicianId: "fremd" }, { ...args.meta, callType: "unbekannt" }])
+      await assert.rejects(B.reserviere({ ...args, meta }, f.deps), { reason: "betriebskosten-profil-oder-aufgabe-gesperrt" });
+    assert.deepEqual(f.read(), before, "Abgelehnte Aufgaben buchen und veraendern nichts");
+    const ticket = await B.reserviere(args, f.deps);
+    B.pruefeSendung(ticket, args, f.deps);
+    await B.abschliessen(ticket, await f.receipt(ticket), f.deps);
+    assert.equal(f.read()[B.KEY].calls[ticket.id].cost, 130);
+    assert.equal(f.read()[B.KEY].contractHash, B.vertrag(f.deps.env).contractHash);
+    const results = await Promise.allSettled(Array.from({ length: 8 }, () => B.reserviere(args, f.deps)));
+    assert.equal(results.filter(x => x.status === "fulfilled").length, 4);
+    assert(results.filter(x => x.status === "rejected").every(x => x.reason.reason === "betriebskosten-grenze-erreicht"));
+    assert.equal(B.pruefeBuch(f.read()[B.KEY], f.read()[B.KEY].contract).total, 848130);
+    for (const k of ["users", "synthetik500KostenAdmission", "testKostenTage"]) assert.deepEqual(f.read()[k], before[k]);
+    const limited = fixture({ ...CONTRACT, totalLimitUsd: 1 });
+    for (let i = 0; i < 4; i++) await B.reserviere(args, limited.deps);
+    limited.advance(24 * 60 * 60 * 1000);
+    const full = limited.read();
+    await assert.rejects(B.reserviere(args, limited.deps), { reason: "betriebskosten-grenze-erreicht" });
+    assert.deepEqual(limited.read(), full, "Ein Tageswechsel setzt das Gesamtbudget nicht zurueck");
+  });
   await test("Bekannte native Tokens werden einmal abgerechnet, doppelte Quittung gesperrt", async () => {
     const f = fixture(), t = await B.reserviere(ARGS, f.deps), r = await f.receipt(t);
     await B.abschliessen(t, r, f.deps); await B.abschliessen(t, r, f.deps);
@@ -251,15 +275,16 @@ async function test(name, fn) { await fn(); count++; console.log(`PASS ${name}`)
     const control = require("../lib/helmut/anbieter-steuerung"), ai = require("../lib/helmut/ai");
     const oldEnv = { ...process.env }, old = { request: https.request, mutate: storage.mutateAuthStore,
       profiles: storage.listFullProfiles, reserve: storage.reserveLlmCall, record: storage.recordLlmUsage,
-      control: control.steuerungAktiv };
+      control: control.steuerungAktiv, canSpend: storage.canSpendLlmForTenant };
     const f = fixture({ ...CONTRACT, startsAt: new Date(Date.now() - 60000).toISOString() });
-    let requests = 0, native = USAGE, transportError = false;
+    let requests = 0, native = USAGE, transportError = false, modelResponse = '{"ok":true}';
     const sentTickets = [];
     try {
       Object.assign(process.env, f.deps.env, { AZURE_OPENAI_KEY: "offline", AZURE_OPENAI_ENDPOINT: "https://offline.openai.azure.com",
         AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini", AZURE_OPENAI_UNDERSTANDING_DEPLOYMENT: "gpt-5-mini" });
       storage.mutateAuthStore = f.storage.mutateAuthStore; storage.listFullProfiles = f.storage.listFullProfiles;
       storage.reserveLlmCall = async () => ({ allowed: true }); control.steuerungAktiv = () => false;
+      storage.canSpendLlmForTenant = async () => ({ allowed: true });
       storage.recordLlmUsage = async info => {
         const r = storage.buildLlmUsageRecord(info);
         await f.storage.mutateAuthStore(a => { a.llmUsage.push(r); });
@@ -274,7 +299,7 @@ async function test(name, fn) { await fn(); count++; console.log(`PASS ${name}`)
           if (transportError) { req.emit("error", Object.assign(new Error("offline"), { code: "ETIMEDOUT" })); return; }
           const res = new EventEmitter(); res.statusCode = 200; res.setEncoding = () => {};
           callback(res); res.emit("data", JSON.stringify({ status: "completed", usage: native,
-            output: [{ content: [{ type: "output_text", text: '{"ok":true}' }] }] })); res.emit("end");
+            output: [{ content: [{ type: "output_text", text: modelResponse }] }] })); res.emit("end");
         }); return req;
       };
       assert.deepEqual(await ai.requestStructuredJson("offline", {}, META), { ok: true });
@@ -292,9 +317,25 @@ async function test(name, fn) { await fn(); count++; console.log(`PASS ${name}`)
       const calls = sentTickets.map(id => f.read()[B.KEY].calls[id]);
       assert.equal(calls[0].cost, 130); assert.equal(calls[1].status, "ungeklaert");
       assert.equal(calls[2].status, "ungeklaert"); assert.equal(calls[3].cost, 130);
+      modelResponse = '{"text":"Synthetischer quellengebundener Bueroauftrag.","rationale":"Offlinepruefung"}';
+      const decision = { title: "Synthetischer Anlass", sources: [{ url: "https://example.test/original",
+        summary: "Synthetischer Originalauszug als Grundlage fuer diesen Bueroauftrag." }] };
+      const input = { office: true, decision, profile: { id: CONTRACT.profileId }, channel: "internal_line" };
+      const draft = await ai.generateCommunicationDraft(input);
+      assert.equal(draft.aiEnabled, true); assert.match(draft.text, /Synthetischer quellengebundener/);
+      assert.equal(requests, 5);
+      const officeCall = f.read()[B.KEY].calls[sentTickets[4]];
+      assert.equal(officeCall.callType, "communicationDraft");
+      assert.equal(officeCall.politicianId, CONTRACT.profileId); assert.equal(officeCall.cost, 130);
+      const blocked = await ai.generateCommunicationDraft({ ...input, office: false });
+      assert.equal(blocked.fallbackReason, "entwurf-nicht-freigegeben");
+      const sourceless = await ai.generateCommunicationDraft({ ...input, decision: { title: decision.title } });
+      assert.equal(sourceless.fallbackReason, "quellenbasis-fehlt");
+      assert.equal(requests, 5, "Freier Prompt und unbelegter Anlass erreichen keinen Anbieter");
     } finally {
       https.request = old.request; storage.mutateAuthStore = old.mutate; storage.listFullProfiles = old.profiles;
       storage.reserveLlmCall = old.reserve; storage.recordLlmUsage = old.record; control.steuerungAktiv = old.control;
+      storage.canSpendLlmForTenant = old.canSpend;
       for (const k of Object.keys(process.env)) if (!(k in oldEnv)) delete process.env[k]; Object.assign(process.env, oldEnv);
     }
   });
