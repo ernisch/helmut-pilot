@@ -151,6 +151,7 @@ function privateAccessChanged() {
 }
 function clearPrivateMandateState() {
   clearLageHistory();
+  profileEditorDraft = null; profileEditorSaving = false; ++profileSaveRevision;
   profile = null; briefing = null; aiStatus = { enabled: false, model: "" };
   tasks = []; notes = []; recommendations = []; decisions = [];
   helmutBriefings = []; helmutDeck = []; helmutDecidedIds = new Set();
@@ -286,8 +287,14 @@ function fmtCost(n) {
 // --- View-Persistenz ---
 // Vorübergehend pausiert; Wiederaufnahme: docs/datenmotor-restliste.md, OP-32.
 const DAILY_INPUT_ENABLED = false;
+let profileEditorDraft = null;
+let profileEditorSaving = false;
+let profileSaveRevision = 0;
+window.addEventListener("beforeunload", event => {
+  if (profileEditorHasChanges()) { event.preventDefault(); event.returnValue = ""; }
+});
 const VIEW_PERSIST_KEY = "helmut:view";
-const VIEW_PERSIST_SAFE = new Set(["briefing", "radar", "helmut", "office", "tasks", "topics", "settings", "profile-settings", "admin", "daily-input"]);
+const VIEW_PERSIST_SAFE = new Set(["briefing", "radar", "helmut", "office", "tasks", "topics", "settings", "profile-settings", "profile-topics", "profile-style", "admin", "daily-input"]);
 
 function persistView(view) {
   if (view === "daily-input" && !DAILY_INPUT_ENABLED) return;
@@ -417,7 +424,25 @@ const mandateFunctions = [
   "Referent"
 ];
 
+// Partei und Fraktion sind getrennte Angaben (z. B. CDU und CDU/CSU).
+// Bestehende abweichende Bezeichnungen bleiben beim Öffnen erhalten.
+const profilePartyOptions = [
+  "CDU", "CSU", "SPD", "Bündnis 90/Die Grünen", "FDP", "Die Linke", "BSW",
+  "FREIE WÄHLER", "SSW", "BVB / FREIE WÄHLER", "Bündnis Deutschland",
+  "Die PARTEI", "ÖDP", "Piratenpartei", "Volt", "parteilos"
+];
+const profileFactionOptions = [
+  "CDU/CSU", "CDU", "CSU", "SPD", "Bündnis 90/Die Grünen", "FDP", "Die Linke",
+  "BSW", "FREIE WÄHLER", "SSW", "BVB / FREIE WÄHLER", "Bündnis Deutschland", "fraktionslos"
+];
+let profileLocationsByState = null;
+let profileConstituencies = null;
+let profileCatalogRequest = null;
+
 const committeeOptions = [
+  "Finanzen", "Haushalt", "Recht", "Petitionen", "Auswärtiges", "Landwirtschaft",
+  "Forschung", "Kultur", "Sport", "Tourismus", "Menschenrechte", "Entwicklungszusammenarbeit",
+  "Familie", "Bauen und Wohnen", "Kommunales", "Wissenschaft",
   "Arbeit und Soziales",
   "Wirtschaft",
   "Digitales",
@@ -483,6 +508,7 @@ const constituencyOptionsByState = {
 };
 
 const priorityTopics = [
+  "Wirtschaft", "Finanzen", "Steuern", "Tarifbindung", "Arbeitsmarkt", "Landwirtschaft", "Justiz", "Inneres", "Verkehr", "Kultur", "Sport", "Entwicklungspolitik", "Forschung",
   "Arbeit",
   "Soziales",
   "Bürgergeld",
@@ -505,7 +531,7 @@ const priorityTopics = [
 const communicationStyles = ["Sachlich", "Lösungsorientiert", "Angriffslustig", "Vermittelnd", "Aktivistisch"];
 
 async function loadBriefing({ readOnly = false } = {}) {
-  if (mandateSwitchPending) return false;
+  if (mandateSwitchPending || profileEditorSaving || profileEditorHasChanges()) return false;
   const accessGeneration = ++privateAccessGeneration;
   officeDraftsGenerating = false;
   // Block 5 (Live-Flow): Re-Entrancy-Guard + Drossel-Stempel für ALLE Aufrufer
@@ -737,8 +763,8 @@ function renderOnboarding() {
   } else if (onboardingStep === 1) {
     body = `
       <h2>Partei & Fraktion</h2>
-      <label>Partei<input name="party" type="text" value="${escapeAttribute(d.party || "")}" placeholder="z. B. SPD" /></label>
-      <label>Fraktion<input name="faction" type="text" value="${escapeAttribute(d.faction || "")}" placeholder="z. B. SPD-Bundestagsfraktion" /></label>`;
+      ${profileChoiceSelect("party", "Partei", d.party, profilePartyOptions)}
+      ${profileChoiceSelect("faction", "Fraktion", d.faction, profileFactionOptions)}`;
   } else if (onboardingStep === 2) {
     body = `
       <h2>Ausschuss</h2>
@@ -930,7 +956,7 @@ async function ensureViewData(view) {
     }
     if (privateAccessIsCurrent(context)) render();
   }
-  if ((view === "settings" || view === "profile-settings") && !opsStatusLoaded) {
+  if ((view === "settings" || isProfileEditorView(view)) && !opsStatusLoaded) {
     opsStatusLoaded = true;
     try {
       const [response, pushResponse] = await Promise.all([
@@ -1264,6 +1290,7 @@ function renderLogin(message = "") {
 }
 
 async function logout() {
+  if (!allowProfileEditorLeave()) return;
   invalidatePrivateAccess();
   try {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -1341,6 +1368,9 @@ async function switchPolitician(id) {
   if (!privateAccess || !next || (next === activePoliticianId && !mandateSwitchPending)) return;
   if (authState && authState.allowedPoliticians !== "all" && !allowedProfiles.some(entry => entry.id === next)) {
     showToast("Dieses Mandat ist nicht freigegeben."); return;
+  }
+  if (!allowProfileEditorLeave()) {
+    app.querySelectorAll("[data-profile-switch]").forEach(select => { select.value = activePoliticianId; }); return;
   }
   const accessGeneration = ++privateAccessGeneration;
   setMandateSwitchPending(true);
@@ -4787,7 +4817,7 @@ function renderUiEmpty(title, detail) {
 }
 
 function renderUiFooter(variant = "") {
-  const label = currentView === "settings" || currentView === "profile-settings"
+  const label = currentView === "settings" || isProfileEditorView()
     ? "Dein Mandatsprofil steuert die persönliche Einordnung."
     : ["helmut", "briefing", "radar", "office", "office-detail", "tasks"].includes(currentView)
       ? "Quellen und Stand finden Sie direkt bei den angezeigten Inhalten."
@@ -4830,7 +4860,7 @@ function renderSidebar() {
       </div>
       <div class="sidebar-foot">
         ${profileSwitcher}
-        <button class="sidebar-user-card" type="button" data-view="settings" aria-label="Profil und Einstellungen öffnen" ${currentView === "settings" || currentView === "profile-settings" ? 'aria-current="page"' : ""}>
+        <button class="sidebar-user-card" type="button" data-view="settings" aria-label="Profil und Einstellungen öffnen" ${currentView === "settings" || isProfileEditorView() ? 'aria-current="page"' : ""}>
           <div class="sidebar-user-avatar">${escapeHtml(initials)}</div>
           <div class="sidebar-user-info">
             <strong>${escapeHtml(displayName)}</strong>
@@ -4878,7 +4908,7 @@ function roleNavItems() {
 function renderTopbar() {
   const hasUpdates = hasUnreadUpdates();
   const statusLabel = displayStatusLabel();
-  const title = ({ helmut: "Briefing", briefing: "Politische Lage", radar: "Radar", office: "Büro", "office-detail": "Büro", settings: "Profil & Einstellungen", "profile-settings": "Mandatsprofil", admin: "Admin", "daily-input": "Tagesinput" })[currentView] || "Helmut";
+  const title = ({ helmut: "Briefing", briefing: "Politische Lage", radar: "Radar", office: "Büro", "office-detail": "Büro", settings: "Profil & Einstellungen", "profile-settings": "Mandat", "profile-topics": "Schwerpunkte", "profile-style": "Schreibstil", admin: "Admin", "daily-input": "Tagesinput" })[currentView] || "Helmut";
   const tone = /fehler|störung|fehlgeschlagen/i.test(statusLabel) ? "error"
     : /^aktuell$/i.test(statusLabel) ? "fresh" : "stale";
   return `
@@ -4956,7 +4986,7 @@ function renderView() {
   if (currentView === "topics") return renderTopicsView();
   if (currentView === "radar") return renderRadarView();
   if (currentView === "helmut") return renderHelmutView();
-  if (currentView === "profile-settings") return renderProfileSettingsView();
+  if (isProfileEditorView()) return renderProfileSettingsView();
   if (currentView === "settings") return renderSettingsView();
   if (currentView === "admin") return renderAdminView();
   if (currentView === "daily-input") return renderDailyInputView();
@@ -8761,27 +8791,14 @@ function renderSettingsView() {
     ${renderUiPageHeader("Profil & Einstellungen", "Dein Mandatsprofil und wie Helmut für dich formuliert.")}
     ${renderUiAccountTools()}
 
-    <div class="stg-section">
+    <div class="stg-section profile-settings-overview">
       <span class="stg-label">Profil</span>
       <div class="stg-group">
-        <div class="stg-profile-row" data-view="profile-settings" role="button" tabindex="0">
-          <div class="stg-avatar">${escapeHtml(initials)}</div>
-          <div class="stg-profile-info">
-            <p class="stg-profile-name">${escapeHtml(profile.fullName || "Profil")}</p>
-            <p class="stg-profile-sub">${escapeHtml([profile.function, profile.party].filter(Boolean).join(" · ") || "MdB")}</p>
-          </div>
-          <span class="stg-row-chevron">›</span>
-        </div>
-        ${committee ? `
-        <div class="stg-row">
-          <span class="stg-row-label">Ausschuss</span>
-          <span class="stg-row-value">${escapeHtml(committee)}</span>
-        </div>` : ""}
-        <div class="stg-row">
-          <span class="stg-row-label">Themen</span>
-          <span class="stg-row-value">${escapeHtml(topTopics.slice(0, 3).join(" · ") || "Noch nicht gesetzt")}</span>
-        </div>
+        <button class="profile-overview-row" type="button" data-view="profile-settings"><span>Mandat<small>${escapeHtml([profileParliamentType(), profile.state].filter(Boolean).join(" · ") || "Mandat einrichten")}</small></span><span aria-hidden="true">›</span></button>
+        <button class="profile-overview-row" type="button" data-view="profile-topics"><span>Schwerpunkte<small>${escapeHtml(profileEditorTopics().slice(0, 3).join(" · ") || "Themen auswählen")}</small></span><span aria-hidden="true">›</span></button>
+        <button class="profile-overview-row" type="button" data-view="profile-style"><span>Schreibstil<small>${escapeHtml(profile.communicationStyle || "Sachlich")} · Für neue Bürotexte</small></span><span aria-hidden="true">›</span></button>
       </div>
+      ${profile.profilValidierung?.state !== "vollstaendig" ? renderProfileReleaseStatus() : ""}
     </div>
 
     <div class="stg-section">
@@ -9153,83 +9170,233 @@ function renderProfileReleaseStatus() {
     </section>`;
 }
 
+// Die drei Profilseiten speichern nur ihren eigenen Bereich. Ungespeicherte
+// Angaben bleiben bei einem Rebuild erhalten, aber niemals beim Mandatswechsel.
+function isProfileEditorView(view = currentView) {
+  return ["profile-settings", "profile-topics", "profile-style"].includes(view);
+}
+function profileEditorSection() {
+  return currentView === "profile-topics" ? "topics" : currentView === "profile-style" ? "style" : "mandate";
+}
+function profileEditorTopics(p = profile) {
+  const priorities = p?.topicPriorities || {};
+  return uniqueViewList(Array.isArray(p?.focusTopics) ? p.focusTopics
+    : Object.keys(priorities).filter(t => Number(priorities[t]) >= 3));
+}
+function profileEditorInitial(section) {
+  const list = value => Array.isArray(value) ? [...value] : value ? [value] : [];
+  if (section === "topics") {
+    const topics = profileEditorTopics();
+    return { focusTopics: topics, topicPriorities: Object.fromEntries(topics.map(topic => [topic, Number(profile.topicPriorities?.[topic]) || 1])) };
+  }
+  if (section === "style") return { communicationStyle: profile.communicationStyle || "Sachlich",
+    mainQuestion: profile.mainQuestion || "", publicPositions: list(profile.publicPositions),
+    keyAudiences: list(profile.keyAudiences), riskTopics: list(profile.riskTopics),
+    opportunityTopics: list(profile.opportunityTopics), noGoTopics: list(profile.noGoTopics) };
+  return { fullName: profile.fullName || "", party: profile.party || "", faction: profile.faction || "",
+    parliamentType: profileParliamentType(), state: profile.state || "", constituency: profile.constituency || "",
+    location: profile.location || "", committees: uniqueViewList(list(profile.committees).concat(profile.committee || [])) };
+}
+function profileEditorState() {
+  const section = profileEditorSection();
+  if (!profileEditorDraft || profileEditorDraft.id !== profile.id || profileEditorDraft.section !== section) {
+    const values = profileEditorInitial(section);
+    profileEditorDraft = { id: profile.id, section, values, baseline: JSON.stringify(values) };
+  }
+  return profileEditorDraft;
+}
+function profileEditorHasChanges() {
+  return Boolean(profileEditorDraft && profileEditorDraft.id === profile?.id
+    && JSON.stringify(profileEditorDraft.values) !== profileEditorDraft.baseline);
+}
+function allowProfileEditorLeave() {
+  if (profileEditorSaving) { showToast("Dein Profil wird gerade gespeichert."); return false; }
+  if (profileEditorHasChanges() && !window.confirm("Ungespeicherte Änderungen verwerfen?")) return false;
+  profileEditorDraft = null;
+  return true;
+}
+function profileEditorReadForm(form) {
+  if (!privateFormIsCurrent(form)) return;
+  const draft = profileEditorState(), data = new FormData(form), value = key => String(data.get(key) || "").trim();
+  if (draft.section === "mandate") {
+    for (const key of ["fullName", "party", "faction", "parliamentType", "state", "constituency", "location"]) draft.values[key] = value(key);
+    const selected = data.getAll("committees").map(String);
+    // Die sichtbare alphabetische Liste darf den bisherigen Primaerausschuss
+    // nicht nebenbei aendern. Neue Auswahlen kommen hinter den erhaltenen Bestand.
+    draft.values.committees = [...draft.values.committees.filter(value => selected.includes(value)),
+      ...selected.filter(value => !draft.values.committees.includes(value))];
+  } else if (draft.section === "style") {
+    draft.values.communicationStyle = value("communicationStyle");
+    draft.values.mainQuestion = value("mainQuestion");
+    for (const key of ["publicPositions", "keyAudiences", "riskTopics", "opportunityTopics", "noGoTopics"]) draft.values[key] = lines(value(key));
+  } else {
+    const priorities = {};
+    for (const [key, val] of data) if (key.startsWith("topicPriority:")) priorities[key.slice(14)] = Number(val);
+    draft.values = { focusTopics: Object.keys(priorities), topicPriorities: priorities };
+  }
+  const state = form.querySelector("[data-profile-change-status]");
+  if (state) state.textContent = profileEditorHasChanges() ? "Ungespeicherte Änderungen" : "";
+  const count = form.querySelector("[data-committee-count]");
+  if (count) count.textContent = draft.values.committees?.length ? `${draft.values.committees.length} ausgewählt` : "Auswählen";
+}
+function profileEditorRow(name, label, value, options, attrs = "") {
+  const control = options
+    ? `<select name="${escapeAttribute(name)}" ${attrs}>${profileChoiceOptions(value, options, "Auswählen")}</select>`
+    : `<input name="${escapeAttribute(name)}" value="${escapeAttribute(value)}" autocomplete="name" ${attrs}>`;
+  return `<label class="profile-editor-row"><span>${escapeHtml(label)}</span>${control}</label>`;
+}
+function profileEditorGroup(label, content) {
+  return `<section class="profile-editor-section"><h2>${escapeHtml(label)}</h2><div class="profile-editor-group">${content}</div></section>`;
+}
+function profileEditorArea(name, label, value, hint = "Ein Eintrag pro Zeile.") {
+  return `<label class="profile-editor-area"><span>${escapeHtml(label)}</span><textarea name="${escapeAttribute(name)}" rows="3">${escapeHtml(Array.isArray(value) ? value.join("\n") : value || "")}</textarea><small>${escapeHtml(hint)}</small></label>`;
+}
+function profileEditorDisclosure(label, content, summary = "", attrs = "") {
+  return `<details class="profile-editor-disclosure" ${attrs}><summary><span>${escapeHtml(label)}</span><span class="profile-editor-summary">${summary}<i aria-hidden="true">›</i></span></summary><div class="profile-editor-disclosed">${content}</div></details>`;
+}
+function profileCommitteeOptions(values) {
+  return uniqueViewList([...(values || []), ...committeeOptions]).sort((a,b) => a.localeCompare(b, "de"));
+}
+function renderProfileMandateEditor(d) {
+  const personal = profileEditorRow("fullName", "Name", d.fullName, null, 'required maxlength="160"')
+    + profileEditorRow("party", "Partei", d.party, profilePartyOptions)
+    + profileEditorRow("faction", "Fraktion", d.faction, profileFactionOptions)
+    + profileEditorRow("parliamentType", "Mandat", d.parliamentType, ["Bundestag", "Landtag"], 'data-profile-level required');
+  const region = profileEditorRow("state", "Bundesland", d.state, federalStateOptions, 'data-state-select')
+    + profileEditorRow("constituency", "Wahlkreis", d.constituency, profileConstituencyOptions(d.parliamentType, d.state, d.constituency), 'data-constituency-select')
+    + profileEditorRow("location", "Ort", d.location, locationOptionsForState(d.state), 'data-location-select');
+  const committees = profileCommitteeOptions(d.committees).map(value => `<label class="profile-editor-check"><input type="checkbox" name="committees" value="${escapeAttribute(value)}" ${d.committees.includes(value) ? "checked" : ""}><span>${escapeHtml(value)}</span></label>`).join("");
+  return profileEditorGroup("Über dich", personal) + profileEditorGroup("Region", region)
+    + profileEditorGroup("Fachliche Arbeit", profileEditorDisclosure("Ausschüsse", committees,
+      `<span data-committee-count>${d.committees.length ? `${d.committees.length} ausgewählt` : "Auswählen"}</span>`))
+    + '<p class="profile-editor-help" data-profile-catalog-status role="status"></p>';
+}
+function profilePriorityLabel(value) {
+  return Number(value) >= 4 ? "Sehr wichtig" : Number(value) >= 3 ? "Wichtig" : "Normal";
+}
+function renderProfileTopicsEditor(d) {
+  const rows = d.focusTopics.map(topic => {
+    const n = Number(d.topicPriorities[topic]) || 1;
+    // Altwerte2/4 bleiben unangetastet, bis eine bewusste Auswahl erfolgt.
+    const options = [[n === 2 ? 2 : 1,"Normal"],[3,"Wichtig"],[n === 4 ? 4 : 5,"Sehr wichtig"]];
+    return `<label class="profile-editor-row profile-editor-topic"><span>${escapeHtml(topic)}</span><select name="topicPriority:${escapeAttribute(topic)}" aria-label="Priorität für ${escapeAttribute(topic)}" data-profile-topic-priority>${options.map(([v,label]) => `<option value="${v}" ${n === v ? "selected" : ""}>${label}</option>`).join("")}<option value="0">Thema entfernen</option></select></label>`;
+  }).join("");
+  const available = uniqueViewList([...priorityTopics, ...Object.keys(profile.topicPriorities || {}), ...(profile.focusTopics || []), ...(profile.reportingTopics || [])]).filter(topic => !d.focusTopics.includes(topic));
+  const picker = available.map(topic => `<button type="button" data-profile-add-topic="${escapeAttribute(topic)}">${escapeHtml(topic)}<span aria-hidden="true">＋</span></button>`).join("");
+  return `<div class="profile-editor-lead"><h2>Was ist dir wichtig?</h2><p>Wähle deine wichtigsten Themen.</p></div>
+    ${rows ? `<div class="profile-editor-group">${rows}</div>` : '<p class="profile-editor-empty">Noch keine Schwerpunkte ausgewählt.</p>'}
+    ${available.length ? `<details class="profile-topic-picker"><summary>＋ Thema hinzufügen</summary><div>${picker}</div></details>` : ""}
+    <p class="profile-editor-note">Für Themenauswahl und Briefings.</p>
+    <p class="profile-editor-help">Je wichtiger ein passendes Thema, desto höher seine Gewichtung. Neue Quellen fließen im nächsten regulären Lauf ein.</p>`;
+}
+function renderProfileStyleEditor(d) {
+  const styles = uniqueViewList(["Sachlich", "Lösungsorientiert", "Vermittelnd", d.communicationStyle]);
+  const tone = styles.map(style => `<label class="profile-editor-check profile-editor-tone"><span>${escapeHtml(style)}</span><input type="radio" name="communicationStyle" value="${escapeAttribute(style)}" ${style === d.communicationStyle ? "checked" : ""}></label>`).join("");
+  const other = profileEditorArea("mainQuestion", "Leitfrage", d.mainQuestion, "Welche Frage soll Helmut bei neuen Texten berücksichtigen?")
+    + profileEditorArea("riskTopics", "Sensible Themen", d.riskTopics)
+    + profileEditorArea("opportunityTopics", "Chancen", d.opportunityTopics)
+    + profileEditorArea("noGoTopics", "Bitte vermeiden", d.noGoTopics, "Formulierungswünsche für neue Bürotexte.");
+  return '<p class="profile-editor-subtitle">Für neue Bürotexte.</p>' + profileEditorGroup("Ton", tone)
+    + profileEditorGroup("Optional",
+      profileEditorDisclosure("Eigene Positionen", profileEditorArea("publicPositions", "Eigene Positionen", d.publicPositions), d.publicPositions.length ? "Hinterlegt" : "")
+      + profileEditorDisclosure("Zielgruppen", profileEditorArea("keyAudiences", "Zielgruppen", d.keyAudiences), d.keyAudiences.length ? "Hinterlegt" : "")
+      + profileEditorDisclosure("Weitere Hinweise", other))
+    + '<p class="profile-editor-help">Nur ergänzen, was Helmut wissen soll.</p>';
+}
 function renderProfileSettingsView() {
-  return `
-    ${renderUiPageHeader("Dein Mandatsprofil", "Diese Angaben steuern die persönliche Einordnung deiner Themen.")}
+  const draft = profileEditorState(), d = draft.values;
+  const title = { mandate:"Mandat", topics:"Schwerpunkte", style:"Schreibstil" }[draft.section];
+  return `<form id="profileForm" class="profile-editor" data-profile-section="${draft.section}" aria-label="${title} bearbeiten">
+    <div class="profile-editor-toolbar"><button type="button" data-view="settings" class="profile-editor-back">${uiIcon("back")}Profil</button><button type="submit" class="profile-editor-done" ${profileEditorSaving ? "disabled" : ""}>${profileEditorSaving ? "Speichern…" : "Fertig"}</button></div>
+    <h1>${title}</h1>
+    ${draft.section === "mandate" ? renderProfileMandateEditor(d) : draft.section === "topics" ? renderProfileTopicsEditor(d) : renderProfileStyleEditor(d)}
+    <p class="profile-editor-change-status" data-profile-change-status aria-live="polite">${profileEditorHasChanges() ? "Ungespeicherte Änderungen" : ""}</p>
+    <p class="profile-editor-error" data-profile-save-error role="alert"></p>
+  </form>`;
+}
+function profileChoiceOptions(value, options, placeholder = "Auswählen") {
+  const current = String(value || "");
+  const entries = uniqueViewList([current, ...(options || [])]).filter(Boolean);
+  return `<option value="" ${current ? "" : "selected"}>${escapeHtml(placeholder)}</option>`
+    + entries.map(option => `<option value="${escapeAttribute(option)}" ${option === current ? "selected" : ""}>${escapeHtml(option)}</option>`).join("");
+}
+function locationOptionsForState(state) { return profileLocationsByState?.[state] || []; }
+function profileConstituencyOptions(level, state, current = "") {
+  const choices = profileConstituencies?.[level]?.[state] || [];
+  return uniqueViewList([current, ...choices, "Kein Wahlkreis (Landesliste)"]);
+}
+async function loadProfileCatalogs() {
+  if (profileLocationsByState && profileConstituencies) return;
+  if (!profileCatalogRequest) profileCatalogRequest = (async () => {
+    const [places, districts] = await Promise.all([
+      fetchWithTimeout("/assets/profil-orte-20260930.json"), fetchWithTimeout("/assets/profil-wahlkreise.json")]);
+    if (!places.ok || !districts.ok) throw new Error("Auswahllisten konnten nicht geladen werden.");
+    const [placeData, districtData] = await Promise.all([places.json(), districts.json()]);
+    if (!federalStateOptions.every(s => Array.isArray(placeData.locationsByState?.[s]) && placeData.locationsByState[s].length
+      && Array.isArray(districtData.constituencies?.Bundestag?.[s]) && districtData.constituencies.Bundestag[s].length
+      && Array.isArray(districtData.constituencies?.Landtag?.[s]) && districtData.constituencies.Landtag[s].length)) throw new Error("Auswahllisten sind unvollständig.");
+    profileLocationsByState = placeData.locationsByState;
+    profileConstituencies = districtData.constituencies;
+  })().finally(() => { profileCatalogRequest = null; });
+  return profileCatalogRequest;
+}
+function syncProfileRegionLists(form, reset = false) {
+  const state = form.elements.state.value, level = form.elements.parliamentType.value;
+  for (const [name, options] of [["constituency", profileConstituencyOptions(level, state)], ["location", locationOptionsForState(state)]]) {
+    const select = form.elements[name];
+    // Ein bewusster Ebenen-/Landwechsel verlangt eine neue passende Auswahl.
+    const value = reset ? "" : select.value;
+    select.innerHTML = profileChoiceOptions(value, options, state ? "Auswählen" : "Zuerst Bundesland wählen");
+    select.disabled = profileEditorSaving || !state || (name === "constituency" && !level);
+  }
+}
+function lockProfileEditor(form) {
+  form.querySelectorAll("input, select, textarea, button").forEach(control => { control.disabled = true; });
+}
+function bindProfileEditor(form) {
+  if (profileEditorSaving) lockProfileEditor(form);
+  form.addEventListener("input", () => profileEditorReadForm(form));
+  form.addEventListener("change", event => {
+    if (event.target.matches("[data-state-select], [data-profile-level]")) syncProfileRegionLists(form, true);
+    profileEditorReadForm(form);
+    if (event.target.matches("[data-profile-topic-priority]") && event.target.value === "0") {
+      const topic = event.target.name.slice(14);
+      delete profileEditorDraft.values.topicPriorities[topic];
+      profileEditorDraft.values.focusTopics = profileEditorDraft.values.focusTopics.filter(t => t !== topic);
+      render();
+    }
+  });
+  form.querySelectorAll("[data-profile-add-topic]").forEach(button => button.addEventListener("click", () => {
+    if (!privateFormIsCurrent(form)) return;
+    profileEditorReadForm(form);
+    const topic = button.dataset.profileAddTopic;
+    profileEditorDraft.values.focusTopics.push(topic);
+    profileEditorDraft.values.topicPriorities[topic] = 3;
+    render();
+    const select = [...app.querySelectorAll("[data-profile-topic-priority]")].find(el => el.name === `topicPriority:${topic}`);
+    select?.focus();
+  }));
+  form.addEventListener("submit", event => { event.preventDefault(); saveProfileFromForm(form); });
+  if (form.dataset.profileSection === "mandate") {
+    syncProfileRegionLists(form);
+    const context = privateAccessContext();
+    loadProfileCatalogs().then(() => {
+      if (privateAccessIsCurrent(context) && app.contains(form)) syncProfileRegionLists(form);
+    }).catch(() => {
+      if (!privateAccessIsCurrent(context) || !app.contains(form)) return;
+      form.querySelector("[data-profile-catalog-status]").innerHTML = 'Auswahllisten gerade nicht erreichbar. <button type="button" data-profile-retry-catalog>Erneut versuchen</button>';
+      form.querySelector("[data-profile-retry-catalog]").addEventListener("click", () => {
+        loadProfileCatalogs().then(() => {
+          if (!privateAccessIsCurrent(context) || !app.contains(form)) return;
+          syncProfileRegionLists(form); form.querySelector("[data-profile-catalog-status]").textContent = "";
+        }).catch(() => showToast("Auswahllisten konnten nicht geladen werden."));
+      });
+    });
+  }
+}
 
-    ${renderProfileReleaseStatus()}
-
-    <form class="profile-form" id="profileForm">
-      <section class="profile-section">
-        <div>
-          <span>Grunddaten</span>
-          <h2>Wer bist du politisch?</h2>
-        </div>
-        <div class="profile-grid">
-          ${profileField("fullName", "Name", profile.fullName)}
-          ${profileField("party", "Partei", profile.party)}
-          ${profileField("faction", "Fraktion", profile.faction)}
-          ${profileSelect("function", "Funktion", profile.function || "Bundestagsabgeordneter", mandateFunctions)}
-          ${profileValueSelect("parliamentType", "Mandatsebene", profileParliamentType(),
-            profileParliamentType()
-              ? [["Bundestag", "Bundestag"], ["Landtag", "Landtag"]]
-              : [["", "Bitte wählen"], ["Bundestag", "Bundestag"], ["Landtag", "Landtag"]])}
-        </div>
-      </section>
-
-      <section class="profile-section">
-        <div>
-          <span>Ausschüsse</span>
-          <h2>Wo entsteht fachlicher Handlungsdruck?</h2>
-        </div>
-        ${checkboxGroup("committees", profile.committees || [profile.committee], committeeOptions)}
-      </section>
-
-      <section class="profile-section">
-        <div>
-          <span>Politische Schwerpunkte</span>
-          <h2>Was soll Helmut höher gewichten?</h2>
-        </div>
-        <div class="priority-list">
-          ${priorityTopics.map((topic) => priorityControl(topic, profile.topicPriorities?.[topic] || inferTopicPriority(topic))).join("")}
-        </div>
-      </section>
-
-      <section class="profile-section">
-        <div>
-          <span>Wahlkreis</span>
-          <h2>Was zählt für deinen Wahlkreis?</h2>
-        </div>
-        <div class="profile-grid">
-          ${profileSelectWithAttrs("state", "Bundesland", profile.state, federalStateOptions, 'data-state-select')}
-          ${profileValueSelectWithAttrs("constituency", "Wahlkreis", profile.constituency, constituencyOptionsForState(profile.state, profile.constituency), 'data-constituency-select')}
-          ${profileField("location", "Ort", profile.location)}
-        </div>
-      </section>
-
-      <section class="profile-section">
-        <div>
-          <span>Kommunikationsstil</span>
-          <h2>Wie soll Helmut formulieren?</h2>
-        </div>
-        ${radioGroup("communicationStyle", profile.communicationStyle || "Lösungsorientiert", communicationStyles)}
-        ${profileArea("mainQuestion", "Leitfrage", profile.mainQuestion)}
-        ${profileArea("currentCampaigns", "Aktuelle Kampagnen", profile.currentCampaigns)}
-        ${profileArea("publicPositions", "Öffentliche Positionen", profile.publicPositions)}
-        ${profileArea("keyAudiences", "Wichtige Zielgruppen", profile.keyAudiences)}
-        ${profileArea("riskTopics", "Risiko-Themen", profile.riskTopics)}
-        ${profileArea("opportunityTopics", "Chancen-Themen", profile.opportunityTopics)}
-        ${profileArea("opponents", "Zu beobachtende Akteure", profile.opponents)}
-        ${profileArea("upcomingAppointments", "Nächste Termine", profile.upcomingAppointments)}
-        ${profileArea("noGoTopics", "No-Go-Themen", profile.noGoTopics)}
-      </section>
-
-      <div class="profile-actions">
-        <button class="secondary-button" type="button" data-view="settings">Zurück zum Profil</button>
-        <button class="primary-button" type="submit">Profil speichern</button>
-      </div>
-    </form>
-  `;
+function profileChoiceSelect(name, label, value, options, attrs = "") {
+  return `<label class="profile-field"><span>${escapeHtml(label)}</span><select name="${escapeAttribute(name)}" ${attrs}>${profileChoiceOptions(value, options)}</select></label>`;
 }
 
 function profileSelect(name, label, value, options) {
@@ -9859,6 +10026,7 @@ function bindActions() {
   }
   app.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.dataset.view !== currentView && !allowProfileEditorLeave()) return;
       officeFormatTarget = null;
       if (button.dataset.view === "office") { officeBriefingTarget = null; selectedOfficeDraft = null; }
       if (vsheetEl) closeVorgangSheet(true); // Detail-Sheet bei Navigation schließen
@@ -10125,7 +10293,7 @@ function bindActions() {
   });
 
   const stateSelect = app.querySelector("[data-state-select]");
-  if (stateSelect) {
+  if (stateSelect && !stateSelect.closest(".profile-editor")) {
     stateSelect.addEventListener("change", () => updateConstituencySelect(stateSelect.value));
   }
 
@@ -10553,18 +10721,7 @@ function bindActions() {
   });
 
   const profileForm = app.querySelector("#profileForm");
-  if (profileForm) {
-    profileForm.querySelectorAll(".priority-row input").forEach((input) => {
-      input.addEventListener("input", () => {
-        const value = input.closest(".priority-row")?.querySelector("b");
-        if (value) value.textContent = input.value;
-      });
-    });
-    profileForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      await saveProfileFromForm(profileForm);
-    });
-  }
+  if (profileForm) bindProfileEditor(profileForm);
 
   const noteForm = app.querySelector("#noteForm");
   if (noteForm) {
@@ -10653,78 +10810,64 @@ function stopHelmutTyping() {
 
 async function saveProfileFromForm(form) {
   if (!privateFormIsCurrent(form)) { showToast("Bitte den Mandatswechsel abwarten oder die Ansicht neu laden."); return; }
-  const context = privateAccessContext();
-  const targetId = profile.id;
-  if (previewMode) {
-    showToast("Vorschau: Profil nicht gespeichert");
-    return;
+  if (profileEditorSaving) return;
+  if (previewMode) { showToast("Vorschau: Profil nicht gespeichert"); return; }
+  profileEditorReadForm(form);
+  if (!profileEditorHasChanges()) {
+    profileEditorDraft = null; currentView = "settings"; persistView(currentView); render(); return;
   }
-  const data = new FormData(form);
-  const topicPriorities = {};
-  data.forEach((value, key) => {
-    if (!key.startsWith("topicPriority:")) return;
-    const topic = key.replace("topicPriority:", "");
-    topicPriorities[topic] = Math.max(1, Math.min(5, Number(value) || 1));
-  });
-  const selectedCommittees = data.getAll("committees").map((entry) => String(entry).trim()).filter(Boolean);
-  const payload = {
-    fullName: data.get("fullName"),
-    party: data.get("party"),
-    faction: data.get("faction"),
-    function: data.get("function"),
-    parliamentType: data.get("parliamentType"),
-    committee: selectedCommittees[0] || profile.committee,
-    committees: selectedCommittees.length ? selectedCommittees : profile.committees,
-    constituency: data.get("constituency"),
-    state: data.get("state"),
-    location: data.get("location"),
-    mainQuestion: data.get("mainQuestion"),
-    communicationStyle: data.get("communicationStyle"),
-    focusTopics: Object.entries(topicPriorities).filter(([, priority]) => priority >= 3).map(([topic]) => topic),
-    topicPriorities,
-    monitoringTargets: profile.monitoringTargets,
-    relevantMinistries: profile.relevantMinistries,
-    regionalInterests: [data.get("state"), data.get("constituency"), data.get("location")].filter(Boolean),
-    currentCampaigns: lines(data.get("currentCampaigns")),
-    publicPositions: lines(data.get("publicPositions")),
-    keyAudiences: lines(data.get("keyAudiences")),
-    riskTopics: lines(data.get("riskTopics")),
-    opportunityTopics: lines(data.get("opportunityTopics")),
-    // "Zu beobachtende Akteure" speist die Radar-Erwähnungserkennung (inferEntities).
-    // preferredChannels wird NICHT mehr gesendet — der Server leitet die Kanäle aus
-    // den aktiven Büro-Formaten ab (Umsetzungsnotiz §8, Dublette entfernt).
-    opponents: lines(data.get("opponents")),
-    officeHandoffMethod: preferredOfficeHandoffMethod(),
-    upcomingAppointments: lines(data.get("upcomingAppointments")),
-    noGoTopics: lines(data.get("noGoTopics"))
-  };
-
+  const context = privateAccessContext(), targetId = profile.id, section = profileEditorDraft.section;
+  const revision = ++profileSaveRevision;
+  const payload = { ...profileEditorDraft.values };
+  if (section === "mandate") payload.regionalInterests = [payload.state, payload.constituency, payload.location].filter(Boolean);
+  profileEditorSaving = true;
+  const done = form.querySelector('[type="submit"]');
+  lockProfileEditor(form); done.textContent = "Speichern…";
+  form.querySelector("[data-profile-save-error]").textContent = "";
   try {
     const response = await fetchWithTimeout(`/api/profile/current?${apiScopeQuery({ politicianId: targetId })}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, id: targetId })
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, id: targetId })
     });
     if (!response.ok) throw new Error("Profile save failed");
     const savedProfile = await response.json();
     if (!privateAccessIsCurrent(context)) return;
     if (savedProfile?.id !== targetId) throw new Error("Profilantwort passt nicht zum Formular");
     profile = savedProfile;
-    currentView = "settings";
-    // Onboarding-Freigabe (Audit-Fix 2026-07): fehlende Pflichtangaben werden
-    // beim Speichern MITGETEILT statt still ignoriert.
-    const val = profile && profile.profilValidierung;
-    if (val && val.state === "vollstaendig") {
-      showToast("Profil gespeichert — vollständig und einsatzbereit");
-    } else if (val && Array.isArray(val.missingRequiredLabels) && val.missingRequiredLabels.length) {
-      showToast(`Gespeichert — noch offen: ${val.missingRequiredLabels.slice(0, 3).join(", ")}`);
-    } else {
-      showToast("Profil gespeichert");
-    }
+    profileEditorDraft = null; profileEditorSaving = false;
+    clearCachedStartPayload();
+    currentView = "settings"; persistView(currentView);
+    const val = profile.profilValidierung;
+    if (val?.state === "vollstaendig") showToast("Profil gespeichert — vollständig und einsatzbereit");
+    else if (val?.missingRequiredLabels?.length) showToast(`Gespeichert — noch offen: ${val.missingRequiredLabels.slice(0, 3).join(", ")}`);
+    else showToast("Profil gespeichert");
     render();
+    // Vorhandenes Wissen neu einordnen, ohne Quellenlauf oder Büro-KI zu starten.
+    // Ein fehlgeschlagener Folgeabruf macht einen bestätigten Save nicht rückgängig.
+    refreshAfterProfileSave(context, targetId, revision);
   } catch (error) {
     console.error(error);
-    if (privateAccessIsCurrent(context)) showToast("Profil konnte nicht gespeichert werden");
+    if (!privateAccessIsCurrent(context)) return;
+    profileEditorSaving = false;
+    render();
+    const retry = app.querySelector("#profileForm");
+    if (retry) {
+      retry.querySelector('[type="submit"]').textContent = "Erneut speichern";
+      retry.querySelector("[data-profile-save-error]").textContent = "Profil konnte nicht gespeichert werden. Deine Änderungen bleiben erhalten.";
+    }
+    showToast("Profil konnte nicht gespeichert werden");
+  }
+}
+async function refreshAfterProfileSave(context, targetId, revision) {
+  try {
+    const response = await fetchWithTimeout(`/api/app/start?${apiScopeQuery({ politicianId: targetId })}`);
+    if (!response.ok) throw new Error("Neue Einordnung nicht geladen");
+    const next = await response.json();
+    if (!privateAccessIsCurrent(context) || revision !== profileSaveRevision || profileEditorHasChanges() || profileEditorSaving) return;
+    if (next.profile?.id !== targetId) throw new Error("Profilantwort passt nicht zum Mandat");
+    profileEditorDraft = null;
+    applyStartPayload(next, context.generation); saveCachedStartPayload(next); render();
+  } catch (error) {
+    if (privateAccessIsCurrent(context) && revision === profileSaveRevision) showToast("Profil gespeichert. Neue Einordnung konnte noch nicht geladen werden.");
   }
 }
 
@@ -11108,6 +11251,14 @@ function officeDraftKey(decision, format) {
   return `${decisionEntityId(decision, "vorgangId", "vorgang_id") || decision.id || "0"}:${decisionEntityId(decision, "knowledgeObjectId", "knowledge_object_id")}:${format.id}`;
 }
 
+function officeDraftProfileContext(p = profile) {
+  const keys = ["fullName", "party", "faction", "committee", "committees", "committeeUnknown",
+    "constituency", "state", "bundesland", "location", "focusTopics", "topicPriorities",
+    "communicationStyle", "noGoTopics", "mainQuestion", "governmentRole", "regierungsrolle",
+    "publicPositions", "keyAudiences", "riskTopics", "opportunityTopics", "parliamentType", "politische_ebene"];
+  return Object.fromEntries(keys.filter(key => p?.[key] !== undefined).map(key => [key, p[key]]));
+}
+
 function officeDraftBinding(decision, format) {
   const day = (value) => {
     const date = new Date(value);
@@ -11115,15 +11266,26 @@ function officeDraftBinding(decision, format) {
       timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit"
     }).format(date) : "";
   };
-  return JSON.stringify({ version: 2, profile,
+  return JSON.stringify({ version: 3, profile: officeDraftProfileContext(),
     briefingDay: day(briefing?.generatedAt || briefing?.date || ""), useDay: day(Date.now()),
     decision, format: format.id });
 }
 
 function officeDraftEntry(decision, format) {
   const entry = officeDrafts[officeDraftKey(decision, format)];
+  const binding = officeDraftBinding(decision, format);
+  let compatible = entry?.binding === binding;
+  if (entry && !compatible) {
+    try {
+      const old = JSON.parse(entry.binding);
+      if (old.version === 2 && old.profile?.id === profile.id) {
+        compatible = JSON.stringify({ version: 3, profile: officeDraftProfileContext(old.profile),
+          briefingDay: old.briefingDay, useDay: old.useDay, decision: old.decision, format: old.format }) === binding;
+      }
+    } catch (_) { /* Ein unbekannter oder beschädigter Vertrag gilt nicht. */ }
+  }
   const age = Date.now() - Number(entry?.createdAt);
-  return entry && entry.binding === officeDraftBinding(decision, format) && entry.source === "ki"
+  return entry && compatible && entry.source === "ki"
     && Number.isFinite(age) && age >= 0 && age < 24 * 60 * 60 * 1000
     && isValidDraft(entry.text) && String(entry.text).trim() ? entry : null;
 }

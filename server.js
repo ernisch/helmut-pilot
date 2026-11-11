@@ -7929,10 +7929,10 @@ function mergeProfileDefaults(profile) {
     ...base,
     ...profile,
     function: stringValue(profile.function, base.function),
-    constituency: stringValue(profile.constituency, base.constituency),
-    state: stringValue(profile.state, base.state),
-    location: stringValue(profile.location, base.location),
-    mainQuestion: stringValue(profile.mainQuestion, base.mainQuestion),
+    constituency: optionalProfileText(profile.constituency, base.constituency),
+    state: optionalProfileText(profile.state, base.state),
+    location: optionalProfileText(profile.location, base.location),
+    mainQuestion: optionalProfileText(profile.mainQuestion, base.mainQuestion),
     communicationStyle: stringValue(profile.communicationStyle, base.communicationStyle),
     committees: mergeArrayValue(profile.committees, base.committees),
     focusTopics: mergeArrayValue(profile.focusTopics, base.focusTopics),
@@ -7952,7 +7952,7 @@ function mergeProfileDefaults(profile) {
     keyAudiences: mergeArrayValue(profile.keyAudiences, base.keyAudiences),
     riskTopics: mergeArrayValue(profile.riskTopics, base.riskTopics),
     opportunityTopics: mergeArrayValue(profile.opportunityTopics, base.opportunityTopics),
-    preferredChannels: mergeArrayValue(profile.preferredChannels, base.preferredChannels),
+    preferredChannels: arrayValue(profile.preferredChannels, base.preferredChannels),
     officeHandoffMethod: officeHandoffMethodValue(profile.officeHandoffMethod, base.officeHandoffMethod),
     upcomingAppointments: appointmentValue(profile.upcomingAppointments, base.upcomingAppointments)
   };
@@ -7975,12 +7975,12 @@ async function normalizeProfile(profile, politicianId) {
     ...profile,
     id: base.id,
     fullName: stringValue(profile.fullName, base.fullName),
-    party: stringValue(profile.party, base.party),
-    faction: stringValue(profile.faction, base.faction),
-    function: stringValue(profile.function, base.function || "Bundestagsabgeordneter"),
-    constituency: stringValue(profile.constituency, base.constituency),
-    state: stringValue(profile.state, base.state),
-    location: stringValue(profile.location, base.location || "Noch offen"),
+    party: optionalProfileText(profile.party, base.party),
+    faction: optionalProfileText(profile.faction, base.faction),
+    function: stringValue(profile.function, base.function),
+    constituency: optionalProfileText(profile.constituency, base.constituency),
+    state: optionalProfileText(profile.state, base.state),
+    location: optionalProfileText(profile.location, base.location),
     committee: stringValue(profile.committee, base.committee),
     committees: arrayValue(profile.committees, profile.committee ? [profile.committee] : base.committees),
     focusTopics: arrayValue(profile.focusTopics, base.focusTopics),
@@ -7993,14 +7993,39 @@ async function normalizeProfile(profile, politicianId) {
     localMedia: arrayValue(profile.localMedia, base.localMedia),
     communicationStyle: stringValue(profile.communicationStyle, base.communicationStyle),
     noGoTopics: arrayValue(profile.noGoTopics, base.noGoTopics),
-    mainQuestion: stringValue(profile.mainQuestion, base.mainQuestion)
+    mainQuestion: optionalProfileText(profile.mainQuestion, base.mainQuestion)
   };
-  next.role = stringValue(profile.role, next.function);
+  next.role = stringValue(profile.role, base.role || next.function);
   // Kontotyp + politische Ebene (Bundestag/Landtag) persistieren — Grundlage fuer
   // profilbasierte Ingestion und Admin-Vollstaendigkeitspruefung.
   next.accountType = stringValue(profile.accountType, base.accountType || "abgeordneter");
   next.parliamentType = stringValue(profile.parliamentType, base.parliamentType || "");
   next.politicalLevel = stringValue(profile.politicalLevel, base.politicalLevel || "Bund");
+  synchronizeMandateLevel(next, profile, base);
+  // Ein explizites Array ist die vollstaendige Auswahl, auch wenn es leer ist.
+  // Das alte Einzelfeld bleibt als Primaerausschuss kompatibel, darf die Liste
+  // aber weder auf einen Eintrag kuerzen noch eine geloeschte Auswahl beleben.
+  if (Object.hasOwn(profile, "committees")) {
+    next.committees = uniqueTextValues(arrayValue(profile.committees, base.committees));
+    next.committee = next.committees[0] || "";
+  } else if (Object.hasOwn(profile, "committee")) {
+    next.committee = optionalProfileText(profile.committee, base.committee);
+    next.committees = next.committee ? [next.committee] : [];
+  }
+  if ((Object.hasOwn(profile, "committees") || Object.hasOwn(profile, "committee"))
+      && !Object.hasOwn(profile, "committeeUnknown")) {
+    next.committeeUnknown = !next.committees.length;
+  }
+  // Themen und Gewichte beschreiben dieselbe aktive Auswahl. Ein reiner
+  // Mandats-/Stil-PATCH laesst beides unveraendert; eine explizite Themenliste
+  // oder Gewichtsmap ersetzt die Auswahl statt Alt-Themen anzusammeln.
+  const topicsSent = Object.hasOwn(profile, "focusTopics");
+  const prioritiesSent = profile.topicPriorities && typeof profile.topicPriorities === "object"
+    && !Array.isArray(profile.topicPriorities);
+  if (topicsSent || prioritiesSent) {
+    next.focusTopics = uniqueTextValues(topicsSent ? next.focusTopics : Object.keys(next.topicPriorities));
+    next.topicPriorities = Object.fromEntries(next.focusTopics.map(topic => [topic, next.topicPriorities[topic] || 1]));
+  }
   next.reportingTopics = arrayValue(profile.reportingTopics, base.reportingTopics);
   next.currentCampaigns = arrayValue(profile.currentCampaigns, base.currentCampaigns);
   next.publicPositions = arrayValue(profile.publicPositions, base.publicPositions);
@@ -8015,19 +8040,15 @@ async function normalizeProfile(profile, politicianId) {
   // muss die Kanaele ehrlich leeren, nicht den alten Stand einfrieren); ohne das
   // Feld im Body zaehlt der gespeicherte Bestand.
   const officeFormatsSent = Array.isArray(profile.officeFormats);
-  const officeFormatsValue = officeFormatsSent
-    ? profile.officeFormats
-    : (Array.isArray(base.officeFormats) ? base.officeFormats : null);
-  if (Array.isArray(profile.preferredChannels) && profile.preferredChannels.length) {
+  if (Object.hasOwn(profile, "preferredChannels")) {
     next.preferredChannels = arrayValue(profile.preferredChannels, base.preferredChannels);
-  } else if (officeFormatsValue) {
-    next.preferredChannels = deriveChannelsFromOfficeFormats(officeFormatsValue);
+  } else if (officeFormatsSent) {
+    next.preferredChannels = deriveChannelsFromOfficeFormats(profile.officeFormats);
   } else {
-    next.preferredChannels = arrayValue(profile.preferredChannels, base.preferredChannels);
+    next.preferredChannels = base.preferredChannels;
   }
   next.officeHandoffMethod = officeHandoffMethodValue(profile.officeHandoffMethod, base.officeHandoffMethod);
   next.upcomingAppointments = appointmentValue(profile.upcomingAppointments, base.upcomingAppointments);
-  next.committees = next.committee ? [next.committee] : next.committees;
   // Mehrmandantenfaehigkeit Phase 2/4: neue strukturierte Profilfelder. Nur
   // uebernehmen, wenn explizit im Body -> sonst Basiswert behalten (Bearbeiten
   // darf nie ungewollt Felder loeschen). profileActive/onboardingStatus tragen
@@ -8122,6 +8143,38 @@ function stringValue(value, fallback) {
   return text && !isPlaceholderValue(text) ? text : fallback;
 }
 
+function optionalProfileText(value, fallback) {
+  return value === undefined ? fallback : String(value == null ? "" : value).trim();
+}
+
+function synchronizeMandateLevel(next, profile, base) {
+  const levels = [];
+  for (const key of ["parliamentType", "politische_ebene", "politicalLevel"]) {
+    if (!Object.hasOwn(profile, key)) continue;
+    const value = String(profile[key] || "").trim().toLowerCase();
+    if (!value) continue;
+    const level = value === "bundestag" || key === "politicalLevel" && value === "bund" ? "Bundestag"
+      : value === "landtag" || key === "politicalLevel" && value === "land" ? "Landtag" : null;
+    if (!level) throw accounts.httpError(400, "Bitte Bundestag oder Landtag als Mandatsebene wählen.");
+    levels.push(level);
+  }
+  if (new Set(levels).size > 1) throw accounts.httpError(400, "Die Angaben zur Mandatsebene widersprechen sich.");
+  const level = levels[0];
+  if (!level) return;
+  next.parliamentType = level;
+  next.politicalLevel = level === "Landtag" ? "Land" : "Bund";
+  if (Object.hasOwn(next, "politische_ebene")) next.politische_ebene = level.toLowerCase();
+  const mandateFunction = /^(Bundestags|Landtags)abgeordnete/i;
+  if (Object.hasOwn(profile, "function") && mandateFunction.test(next.function)
+      && !next.function.toLowerCase().startsWith(level.toLowerCase())) {
+    throw accounts.httpError(400, "Funktion und Mandatsebene widersprechen sich.");
+  }
+  if (!Object.hasOwn(profile, "function") && mandateFunction.test(next.function)) {
+    next.function = next.function.replace(/^(Bundestags|Landtags)/i, `${level}s`);
+  }
+  if (!Object.hasOwn(profile, "role") && (!base.role || base.role === base.function)) next.role = next.function;
+}
+
 function isPlaceholderValue(value) {
   return /^(noch offen|unbekannt|keine angabe|n\/a|none|null|-|—)$/i.test(String(value || "").trim());
 }
@@ -8160,17 +8213,7 @@ function uniqueTextValues(values) {
 }
 
 function appointmentValue(value, fallback) {
-  const appointments = arrayValue(value, []);
-  const upcoming = appointments.filter((entry) => !isPastAppointment(entry));
-  return upcoming.length ? upcoming : fallback || [];
-}
-
-function isPastAppointment(entry) {
-  const parts = String(entry || "").split(/\s*[|;]\s*/).filter(Boolean);
-  const dateText = parts[1] || "";
-  const date = new Date(dateText);
-  if (Number.isNaN(date.getTime())) return false;
-  return date.getTime() < Date.now() - 12 * 60 * 60 * 1000;
+  return arrayValue(value, fallback);
 }
 
 function topicPriorityValue(value, fallback) {
@@ -8182,7 +8225,7 @@ function topicPriorityValue(value, fallback) {
       if (cleanTopic) priorities[cleanTopic] = cleanPriority;
     });
   }
-  return Object.keys(priorities).length ? { ...(fallback || {}), ...priorities } : fallback || {};
+  return value && typeof value === "object" && !Array.isArray(value) ? priorities : fallback || {};
 }
 
 // Aktive Mandate (id + Anzeigename) fuer die Mandatsauswahl im Legacy-Zugang.

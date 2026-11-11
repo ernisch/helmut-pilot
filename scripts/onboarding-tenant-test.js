@@ -98,14 +98,15 @@ function check(name, cond, detail = "") {
 
   // ── 4) Client: Formularfeld + Banner + ehrliches Feedback (vm) ──────────────
   const clientSource = fs.readFileSync(path.join(root, "client.js"), "utf8");
-  check("Formular sendet parliamentType", clientSource.includes('parliamentType: data.get("parliamentType")'));
+  check("Formular sendet parliamentType", clientSource.includes('"parliamentType", "state", "constituency", "location"') && clientSource.includes("...profileEditorDraft.values"));
   check("Speicher-Feedback nennt fehlende Pflichtangaben",
     clientSource.includes("noch offen: ") && clientSource.includes("vollständig und einsatzbereit"));
 
   let codeVm = clientSource.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "");
   codeVm += `\n;globalThis.__ot = {
-    setProfile: (p) => { profile = p; },
+    setProfile: (p) => { profile = p; profileEditorDraft = null; },
     renderSettings: () => renderProfileSettingsView(),
+    renderSection: view => { currentView = view; profileEditorDraft = null; return renderProfileSettingsView(); },
     level: () => profileParliamentType(),
     banner: () => renderProfileReleaseStatus()
   };`;
@@ -155,6 +156,20 @@ function check(name, cond, detail = "") {
   const settingsHtml = ot.renderSettings();
   check("Einstellungs-Formular enthält Mandatsebene-Auswahl (Bundestag/Landtag)",
     settingsHtml.includes('name="parliamentType"') && settingsHtml.includes(">Landtag<"));
+
+  const districts = JSON.parse(fs.readFileSync(path.join(root, "assets/profil-wahlkreise.json"), "utf8"));
+  const places = JSON.parse(fs.readFileSync(path.join(root, "assets/profil-orte-20260930.json"), "utf8"));
+  const states = Object.keys(districts.constituencies.Bundestag);
+  check("Wahlkreisauswahl enthält alle16Länder für Bund und Land", states.length === 16 && states.every(state => districts.constituencies.Landtag[state]?.length > 0));
+  check("Quellenstand mit299Bundestags- und843Landtagswahlkreisen vollständig", Object.values(districts.constituencies.Bundestag).flat().length === 299 && Object.values(districts.constituencies.Landtag).flat().length === 843);
+  check("Ortsauswahl deckt alle Länder mit10578Ortsnamen ab", states.every(state => places.locationsByState[state]?.length > 0) && Object.values(places.locationsByState).flat().length === 10578);
+  ot.setProfile({ id: "test-editor-catalog", fullName: "Fiktive Person", party: "Erhaltene Testbezeichnung", parliamentType: "Bundestag", state: "Niedersachsen", focusTopics: ["Finanzen"], topicPriorities: { Finanzen: 5 } });
+  const mandateHtml = ot.renderSection("profile-settings");
+  check("Partei/Fraktion/Ort sind Auswahlen und Altwerte bleiben erhalten", ["party", "faction", "location"].every(name => mandateHtml.includes(`<select name="${name}"`)) && mandateHtml.includes("Erhaltene Testbezeichnung"));
+  const topicsHtml = ot.renderSection("profile-topics");
+  check("Eigene Themen bleiben im kompakten Editor, keine Slider", topicsHtml.includes('name="topicPriority:Finanzen"') && !topicsHtml.includes('type="range"'));
+  const styleHtml = ot.renderSection("profile-style");
+  check("Wirkungslose Felder fehlen; angeschlossene Hinweise sind optional", !/name="(?:upcomingAppointments|opponents|currentCampaigns)"/.test(mandateHtml + topicsHtml + styleHtml) && styleHtml.includes('name="publicPositions"') && styleHtml.includes('name="noGoTopics"') && styleHtml.includes("<details"));
 
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);

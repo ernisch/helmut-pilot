@@ -83,6 +83,8 @@ function check(name, cond, detail = "") {
   check("Zielgruppen -> Ton ausrichten", /Ton/.test(guards));
   check("leeres Profil -> keine toten Regeln", ai.profileGuardrailLines({}) === "");
 
+  check("Formulierungswünsche erhalten eine ausdrückliche Modellanweisung", ai.profileGuardrailLines({ noGoTopics: ["synthetische Formulierung"] }).includes("Formulierungswünsche"));
+
   console.log("== §8 Kanal-Ableitung aus officeFormats (normalizeProfile) ==");
   const abgeleitet = await normalizeProfile({
     fullName: "Kanal Test",
@@ -132,7 +134,7 @@ function check(name, cond, detail = "") {
   check("Admin-Formular ohne Passwortfeld", !clientSrc.includes("createUserPassword"));
   check("Einladung erneut senden vorhanden", clientSrc.includes("data-admin-user-invite"));
   check("Passwort aendern (Self-Service) vorhanden", clientSrc.includes("data-password-change"));
-  check("Akteure-Feld an opponents gebunden", clientSrc.includes('profileArea("opponents"'));
+  check("Wirkungslose Akteure-Eingabe aus Profil entfernt", !clientSrc.includes('profileArea("opponents"'));
   check("totes Feld 'Bevorzugte Kanaele' entfernt", !clientSrc.includes('profileArea("preferredChannels"'));
   check("Version-Footer nutzt echte Build-Version (§9)", clientSrc.includes("appBuildVersion") && !clientSrc.includes("Helmut · Version 1.0"));
   check("Server: oeffentliche Seite /passwort-setzen registriert", serverSrc.includes('url.pathname === "/passwort-setzen"'));

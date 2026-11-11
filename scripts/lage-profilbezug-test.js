@@ -327,9 +327,12 @@ function setup(profile, pool, { matches = null, docs = null } = {}) {
           quellen_ids: [input[0].quellenbelege[0].quelle_id] }] };
       storage.getRenderedBriefingV3 = async () => ({ payload });
       A.equal((await L.buildLageBriefing(F.profile, { cacheOnly: true })).fromCache, true);
-      const changed = { ...F.profile, reportingTopics: ["Arbeitszeit"] };
-      const out = await L.buildLageBriefing(changed, { cacheOnly: true });
-      A.equal(out.vorgaenge.length, 1); A.equal(out.fromCache, false); A.deepEqual(out.paragraphs, []);
+      for (const change of [{ reportingTopics: ["Arbeitszeit"] }, { party: "Szenariopartei B" },
+        { faction: "Szenariofraktion B" }, { governmentRole: "regierung" }, { location: "Szenario-Ort" },
+        { regionalInterests: ["Szenario-Region"] }]) {
+        const out = await L.buildLageBriefing({ ...F.profile, ...change }, { cacheOnly: true });
+        A.equal(out.vorgaenge.length, 1); A.equal(out.fromCache, false, Object.keys(change)[0]); A.deepEqual(out.paragraphs, []);
+      }
       A.equal(forbidden, 0);
     });
     await test("Fachlich passender KO mit vermischten Quellen bleibt vor Karten und Text gesperrt", async () => {

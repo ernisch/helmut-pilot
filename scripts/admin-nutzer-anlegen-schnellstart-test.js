@@ -127,7 +127,7 @@ async function login(port, email, password) {
   check("Handler baut weiterhin fullName aus firstName+lastName", /fd\.get\("firstName"\)/.test(handlerSrc) && /fd\.get\("lastName"\)/.test(handlerSrc));
 
   console.log("== Bestehende Profilfelder bleiben an ihren eigentlichen Stellen ==");
-  check("Onboarding-Formular hat weiterhin Partei", /<label>Partei<input name="party"/.test(clientSrc));
+  check("Onboarding-Formular hat Partei als native Auswahl", /profileChoiceSelect\("party",\s*"Partei",\s*d\.party,\s*profilePartyOptions\)/.test(clientSrc));
   check("Onboarding-Formular hat weiterhin Ausschuss", /name="committee" type="text" list="onboardingCommittees"/.test(clientSrc));
   check("Onboarding-Formular hat weiterhin Wahlkreis", /<label>Wahlkreis<input name="constituency"/.test(clientSrc));
   check("Onboarding-Formular hat weiterhin Bundesland", /<label>Bundesland<input name="state"/.test(clientSrc));

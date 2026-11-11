@@ -18,7 +18,7 @@ const functions = ["privateAccessContext", "privateAccessIsCurrent", "privateAcc
   "isPrivateApi", "assertPrivateMutationAllowed", "bindPrivateResponseBody", "guardPrivateResponse",
   "fetchWithTimeout", "prepareRequestOptions", "needsCsrfToken", "getCsrfToken",
   "decisionEntityId", "isValidDraft", "generateStatementWithBackend", "officeDraftCacheKey",
-  "officeDraftKey", "officeDraftBinding", "officeDraftEntry", "loadOfficeDraftCache",
+  "officeDraftKey", "officeDraftProfileContext", "officeDraftBinding", "officeDraftEntry", "loadOfficeDraftCache",
   "uiOfficeSelection", "draftProvenanceLabel", "officeCardStatus", "officeDraftFailure", "renderOfficeDraftDetail",
   "officeCreationReady", "generateSelectedOfficeDraft", "shareOfficeDraft"];
 const currentCode = functions.map(clientFunction).join("\n");
