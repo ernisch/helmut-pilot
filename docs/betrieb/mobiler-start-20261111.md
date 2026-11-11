@@ -1,5 +1,28 @@
 # Mobiler App-Start bei unvollstaendiger Uebertragung (11.11.2026)
 
+## Folgeprobe: Brave eingegrenzt, Neuinstallation offen (11.11.2026)
+
+Der Nutzer bestaetigt auch im privaten Brave-Tab einen schwarzen Bildschirm.
+Auf demselben Handy erscheint in einem zweiten Browser laut Auswahlantwort
+die Anmeldung oder App (angefragt waren Chrome oder Samsung Internet; der
+konkret verwendete Browser wurde nicht benannt). Damit funktioniert ein
+mobiler Zugang, der Brave-Startweg bleibt fehlerhaft. Die genaue Brave-Ursache
+ist nicht belegt; insbesondere keinen Cache-, Skriptblocker- oder Netzfehler
+als bewiesen ausgeben.
+
+Ein weiterer angefragter Test mit `robots.txt` war nicht sauber vorbereitet:
+Die Datei fehlt, die echte Antwort ist HTTP404 mit `Not found` statt der
+angekuendigten `User-agent`-Zeilen. Der ebenfalls gemeldete schwarze Bildschirm
+bei diesem Test beweist keine Netzsperre. Der Fehler des Diagnosewegs wurde
+gegenueber dem Nutzer korrigiert. Die Vercel-Domain ist verifiziert, ohne
+Weiterleitung; die aktive Firewallkonfiguration ist ueber das API nicht lesbar
+(`404 Seawall Config not found`), daher keine Sperre ausgeschlossen oder geaendert.
+
+Konkreter Reparaturschritt am Geraet: alte Helmut-Installation entfernen,
+Hauptadresse im nachweislich funktionierenden Browser oeffnen und dort erneut
+installieren. Der neue Start ueber das Symbol ist beim Nutzer angefragt und
+noch nicht bestaetigt. Keine neue Runtime-, Daten- oder Konfigurationsaenderung.
+
 ## Nachmeldung vom Nutzer: Handyfehler weiter offen (19:18 UTC)
 
 Der Nutzer meldet nach PR1147 weiterhin einen Haenger. Sein Screenshot zeigt
