@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 11.11.2026.** Betreibersteuerung und frische Productionbelege gelten. [PR1105 live](betrieb/validierungsdiagnose-20261108.md).
+**Stand: 11.11.2026.** Betreibersteuerung und frische Productionbelege gelten. [PR1105 live](betrieb/validierungsdiagnose-20261108.md). [Agentenregeln vereinfacht](../AGENTS.md): bis drei Agenten, Schutz/CI/Kosten erhalten.
 
 **11.11., Production:** PR1118–1124 live; main/Production `4dee3255`, READY, Hauptdomain/Runtime bestätigt. Release-Frische `ready=false`; vollständige reguläre Verarbeitung und echte Kundensitzung bleiben zu belegen.
 
@@ -249,11 +249,8 @@ Auftrag abgeschlossen. Nächster Schritt: Betreiber sieht sich die Verwaltung mi
    ausdruecklich verworfen. Kein Mock500 mehr und keine
    neuen mehrstuendigen Blindtests.
 
-Die Absicht fuer den spaeteren Livegang ist noch **keine**
-Freigabe fuer einen nicht festgelegten Production Commit,
-ein konkretes Deployment, eine Datenmutation oder einen
-zahlungswirksamen Aufruf. Bestehende Sicherheitsregeln und
-konkrete Freigaben bleiben gueltig.
+Push/Merge/regulaeres Deployment: [Dauerfreigabe11.11.](../AGENTS.md).
+Datenmutation/bezahlter Aufruf: separates GO.
 
 ## Nachweisstand
 
@@ -263,7 +260,7 @@ konkrete Freigaben bleiben gueltig.
 | Mock500, historisch | **ABGEBROCHEN ALS PROJEKTZIEL, KEIN PASS**. [Run 41939166457](https://github.com/ernisch/helmut-pilot/actions/runs/41939166457) cancelled/UNKNOWN; [Run 41996804804](https://github.com/ernisch/helmut-pilot/actions/runs/41996804804) nach 176min02s FAIL im Controller. Innere Ursache und Profilfortschritt UNKNOWN, nicht null. Acht aeussere Bereinigungen PASS, native Datenbanknullaktivitaet nicht belegt. [Beleg PR1049](https://github.com/ernisch/helmut-pilot/pull/1049). |
 | Mock100, neues Ziel | **PASS**: [Run 42053461090](https://github.com/ernisch/helmut-pilot/actions/runs/42053461090), exakt Commit `be0c6d1630f5987e755eb4030cc23a4f7d7247d7` nach [Pflicht-CI 42047654519](https://github.com/ernisch/helmut-pilot/actions/runs/42047654519). 100/100 Profile und 300/300 Ergebnisse nativ geprueft, 400 Tenant-/Quellenschutzkontrollen, alle fuenf Fehlerkategorien null; 296 simulierte Modellaufrufe, keine bezahlten Anbieteraufrufe. Nach 242,633 s einschliesslich Abschluss null aktive Profile, Bereinigung PASS. [Quittung und Fortschritt in PR #1052](https://github.com/ernisch/helmut-pilot/pull/1052) und [vollstaendiger Laufbericht](betrieb/mock100-20261105.md). Historischer erster [FAIL 42042488458](https://github.com/ernisch/helmut-pilot/actions/runs/42042488458) bleibt unveraendert. |
 | Production100 / Production500 | **ABBESTELLT.** Keine neue Vollastpruefung mit echten KI Aufrufen, keine Kostenfreigabe. |
-| Produktintegration und Livegang | **RELEASE-PR #1053 IN PFLICHT-CI.** Privater Kandidat814c8b63 einschliesslich UI, Backend und main76b75e37 uebernommen; Vercel-Git-Sperre fuer den Releasebranch ergaenzt. Alte Browser-Testselektoren und verlorene Lage-Quellenfrische/Fallback korrigiert; Assetversion erneuert. Browser78+19 und Standard-Offlinesuite auf9feb9969 PASS; Bereich330/332. Zwei alte Profil-/Splash-Testannahmen gezielt korrigiert (5/5 HTTP,33/33 VM), ohne weiteren Produktfix. Pflicht-CI wird auf dem neuesten PR-Kopf abgenommen; main-Merge und Production bleiben gesperrt. [Uebernahme](betrieb/release-ci-20261105.md), [lokale Abnahme](betrieb/release-prep-20261105.md). |
+| Produktintegration und Livegang, historisch05.11. | **DAMALS RELEASE-PR #1053 IN PFLICHT-CI.** Privater Kandidat814c8b63 einschliesslich UI, Backend und main76b75e37 uebernommen; Vercel-Git-Sperre fuer den Releasebranch ergaenzt. Alte Browser-Testselektoren und verlorene Lage-Quellenfrische/Fallback korrigiert; Assetversion erneuert. Browser78+19 und Standard-Offlinesuite auf9feb9969 PASS; Bereich330/332. Zwei alte Profil-/Splash-Testannahmen gezielt korrigiert (5/5 HTTP,33/33 VM), ohne weiteren Produktfix. Pflicht-CI wird auf dem neuesten PR-Kopf abgenommen; main-Merge und Production bleiben gesperrt. [Uebernahme](betrieb/release-ci-20261105.md), [lokale Abnahme](betrieb/release-prep-20261105.md). |
 
 ## Neuer Testumfang und Arbeitsweise
 
