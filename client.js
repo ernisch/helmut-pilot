@@ -9192,7 +9192,7 @@ function profileEditorInitial(section) {
   if (section === "style") return { communicationStyle: profile.communicationStyle || "Sachlich",
     mainQuestion: profile.mainQuestion || "", publicPositions: list(profile.publicPositions),
     keyAudiences: list(profile.keyAudiences), riskTopics: list(profile.riskTopics),
-    opportunityTopics: list(profile.opportunityTopics), noGoTopics: list(profile.noGoTopics) };
+    opportunityTopics: list(profile.opportunityTopics) };
   return { fullName: profile.fullName || "", party: profile.party || "", faction: profile.faction || "",
     parliamentType: profileParliamentType(), state: profile.state || "", constituency: profile.constituency || "",
     location: profile.location || "", committees: uniqueViewList(list(profile.committees).concat(profile.committee || [])) };
@@ -9228,7 +9228,7 @@ function profileEditorReadForm(form) {
   } else if (draft.section === "style") {
     draft.values.communicationStyle = value("communicationStyle");
     draft.values.mainQuestion = value("mainQuestion");
-    for (const key of ["publicPositions", "keyAudiences", "riskTopics", "opportunityTopics", "noGoTopics"]) draft.values[key] = lines(value(key));
+    for (const key of ["publicPositions", "keyAudiences", "riskTopics", "opportunityTopics"]) draft.values[key] = lines(value(key));
   } else {
     const priorities = {};
     for (const [key, val] of data) if (key.startsWith("topicPriority:")) priorities[key.slice(14)] = Number(val);
@@ -9294,8 +9294,7 @@ function renderProfileStyleEditor(d) {
   const tone = styles.map(style => `<label class="profile-editor-check profile-editor-tone"><span>${escapeHtml(style)}</span><input type="radio" name="communicationStyle" value="${escapeAttribute(style)}" ${style === d.communicationStyle ? "checked" : ""}></label>`).join("");
   const other = profileEditorArea("mainQuestion", "Leitfrage", d.mainQuestion, "Welche Frage soll Helmut bei neuen Texten berücksichtigen?")
     + profileEditorArea("riskTopics", "Sensible Themen", d.riskTopics)
-    + profileEditorArea("opportunityTopics", "Chancen", d.opportunityTopics)
-    + profileEditorArea("noGoTopics", "Bitte vermeiden", d.noGoTopics, "Formulierungswünsche für neue Bürotexte.");
+    + profileEditorArea("opportunityTopics", "Chancen", d.opportunityTopics);
   return '<p class="profile-editor-subtitle">Für neue Bürotexte.</p>' + profileEditorGroup("Ton", tone)
     + profileEditorGroup("Optional",
       profileEditorDisclosure("Eigene Positionen", profileEditorArea("publicPositions", "Eigene Positionen", d.publicPositions), d.publicPositions.length ? "Hinterlegt" : "")

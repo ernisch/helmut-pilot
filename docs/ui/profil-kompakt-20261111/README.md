@@ -8,6 +8,53 @@ Basis `7898fd5d`, Bürostand `626c4f29` und Handystartfix bis `74679756` integri
 Der Auftrag umfasst ausdrücklich Oberfläche **und** tatsächlich angeschlossene Wirkung.
 Die früheren Befunde bleiben im [Profilaudit](../profil-wirkungscheck-20261111/README.md).
 
+## Folgeauftrag: „Bitte vermeiden“ entfernen (11.11.2026)
+
+**Blockiert, noch nicht live:** GitHub meldet zum 11.11., 20:59 UTC offiziell
+„Actions: major_outage“. Auch andere PRs dieses Repositorys warten seit längerer Zeit.
+Der frische integrierte Pflichtlauf `43099166752` auf `f61a7831` ist queued.
+[Primärbeleg und Prüfstand](ohne-vermeiden-ci-blocker.json). Der abschließende
+Dokumentationsstand ändert keine Runtime. Nächster Schritt nach Störungsende:
+beide Pflichtchecks des tatsächlichen aktuellen PR-Kopfs abwarten, regulär mergen
+und Deployment/Auslieferung lesend bestätigen. Kein weiterer Wiederlauf oder
+PR-Wechsel zur Umgehung der globalen Warteschlange.
+
+Auf Nutzerwunsch entfällt das Eingabefeld aus der Profiloberfläche: Die bisherige
+weiche Modellanweisung ist keine garantierte Sperre und soll diese Erwartung nicht
+wecken. Das Feld entfällt auch aus Initialwerten und Formulareinlesen; ein Stil-PATCH
+sendet deshalb keinen versteckten leeren `noGoTopics`-Wert. Vorhandene Bestandswerte
+werden nicht gelöscht; der bestehende serverseitige Modell-/Cachevertrag bleibt erhalten.
+Keine Datenmigration, Production-Profilspeicherung oder bezahlte KI-Probe.
+
+Gezielte Prüfung gegen echten lokalen Server: 60/60 Profilbrowserchecks auf Handy
+und Desktop, einschließlich entferntem Feld, erhaltenen Altwerten und Stil-PATCH
+ohne `noGoTopics`, unverändertem „Fertig“, 503/Wiederholung und Folgeantworten bestanden.
+Syntax und Diffprüfung grün. Pflicht-CI und regulärer Rollout dieses Folgeauftrags
+stehen noch aus. Rückweg: gezielter Revert des kleinen UI-/Formularcommits.
+
+Erster Pflichtlauf `43088060572` auf `3e74df78`: Browser und 189/189 Standardsuiten
+bestanden, Fachregression 366/367. Der verbleibende Fehler war eine alte
+Onboarding-HTML-Erwartung, die ausdrücklich `noGoTopics` verlangte. Sie wurde an
+den Nutzerauftrag angepasst: entfernte Felder fehlen, die vier übrigen optionalen
+Hinweise bleiben vorhanden. Kein Produktfehler oder abgeschwächtes CI-Gate;
+der neue Kopf benötigt erneut beide grünen Pflichtchecks.
+
+Der folgende Lauf `43093338107` auf `a0adbf8a` meldete alle Schritte einschließlich
+Standard-/Fachregression, Z22 und „Complete job“ erfolgreich (letzter Schritt
+20:27:53 UTC). Sein Gesamtcheck blieb jedoch über das 45-Minuten-Fenster hinaus
+`in_progress`. GitHub lieferte dabei widersprüchliche Zustände: normaler und
+vorgesehener Notabbruch jeweils HTTP409 „not in progress“, Wiederholung des Jobs
+und des Laufs jeweils HTTP403 „already running“. Kein Abbruch und kein Wiederlauf
+wurde dadurch ausgelöst; zwischendurch scheiterte nur die lokale Statusabfrage an
+HTTP503. Der alte Lauf ist deshalb kein formal grüner Pflichtnachweis.
+
+Der anschließend frisch integrierte Stand enthält den unabhängigen Büro-Quellentextfix
+bis `d6914b62`. Seine Runtime ist bytegleich zum getrennt geprüften gemeinsamen Baum
+`4f8d8a5ce69da29642f1cb5e311417fda5a11e52`: 60/60 Profilbrowserchecks und
+76/76 Büro-Ehrlichkeitsprüfungen bestanden, keine echten Daten-/Modellaufrufe.
+Ein neuer Kopf dokumentiert diese CI-Blockade und erhält regulär beide Pflichtchecks.
+Keine Workflowänderung, manuelle Erfolgsmarkierung, Schutzumgehung oder Datenmutation.
+
 ## Bedienung
 
 Unter Profil & Einstellungen führen drei kompakte Zeilen auf eigene Seiten:
@@ -19,8 +66,8 @@ Unter Profil & Einstellungen führen drei kompakte Zeilen auf eigene Seiten:
   Fachthemen bleiben bearbeitbar. Eine vorhandene `focusTopics`-Liste ist maßgeblich;
   alte hohe Gewichtsschlüssel aktivieren keine abgewählten Themen.
 - **Schreibstil:** Ton sowie aufklappbare optionale Positionen, Zielgruppen und
-  weitere Hinweise. „Bitte vermeiden“ bezeichnet Formulierungswünsche und verspricht
-  keine automatische inhaltliche Sperre. Eine ausdrückliche Modellanweisung ist ergänzt.
+  weitere Hinweise. „Bitte vermeiden“ entfällt mit dem oben dokumentierten Folgeauftrag;
+  die frühere Modellanweisung bleibt im historischen Prüf-/Rolloutnachweis nachvollziehbar.
 
 „Profil“ und „Fertig“ stehen oben; „Fertig“ bleibt auch beim Scrollen erreichbar.
 Während des Speicherns sind Eingaben gesperrt. Ein Fehler erhält den Draft und bietet

@@ -169,7 +169,7 @@ function check(name, cond, detail = "") {
   const topicsHtml = ot.renderSection("profile-topics");
   check("Eigene Themen bleiben im kompakten Editor, keine Slider", topicsHtml.includes('name="topicPriority:Finanzen"') && !topicsHtml.includes('type="range"'));
   const styleHtml = ot.renderSection("profile-style");
-  check("Wirkungslose Felder fehlen; angeschlossene Hinweise sind optional", !/name="(?:upcomingAppointments|opponents|currentCampaigns)"/.test(mandateHtml + topicsHtml + styleHtml) && styleHtml.includes('name="publicPositions"') && styleHtml.includes('name="noGoTopics"') && styleHtml.includes("<details"));
+  check("Entfernte Felder fehlen; angeschlossene Hinweise sind optional", !/name="(?:upcomingAppointments|opponents|currentCampaigns|noGoTopics)"/.test(mandateHtml + topicsHtml + styleHtml) && !styleHtml.includes("Bitte vermeiden") && ["publicPositions", "keyAudiences", "riskTopics", "opportunityTopics"].every(name => styleHtml.includes(`name="${name}"`)) && styleHtml.includes("<details"));
 
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);

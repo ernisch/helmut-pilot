@@ -1,0 +1,55 @@
+{
+  "schema": "helmut-profile-ui-ci-blocker/1",
+  "source": "https://www.githubstatus.com/api/v2/summary.json",
+  "sourceUpdatedAt": "2026-11-11T20:59:33.752Z",
+  "status": {
+    "indicator": "major",
+    "description": "Partial System Outage"
+  },
+  "components": [
+    {
+      "name": "API Requests",
+      "status": "operational"
+    },
+    {
+      "name": "Actions",
+      "status": "major_outage"
+    }
+  ],
+  "incidents": [
+    {
+      "name": "Impact across multiple GitHub products including Actions, Pages, and Copilot products.",
+      "status": "investigating",
+      "updatedAt": "2026-11-11T20:59:33.747Z",
+      "url": "https://stspg.io/jdjlq5zjyl48"
+    }
+  ],
+  "pr": 1151,
+  "lastObservedHead": "f61a7831eeec69f2ebd1bdcb4287e965e8d4075c",
+  "queuedRun": 43099166752,
+  "previousRun": {
+    "id": 43093338107,
+    "head": "a0adbf8a00aa2d44927ed7f7e37aa3c9e096a551",
+    "allStepsSucceeded": true,
+    "lastCompletedStepAt": "2026-11-11T20:27:53Z",
+    "formalCheck": "in_progress",
+    "normalCancelHTTP": 409,
+    "forceCancelHTTP": 409,
+    "jobRerunHTTP": 403,
+    "workflowRerunHTTP": 403,
+    "mutationRequestsSucceeded": false
+  },
+  "localVerification": {
+    "profileBrowserPassed": 60,
+    "officeHonestyPassed": 76,
+    "onboardingPassed": 31,
+    "modelProfileFieldsPassed": 43,
+    "clientSHA256": "e3712e499e05611726fdbda995ca498e94de27262733025564afaadab82ce39d"
+  },
+  "production": {
+    "profileFieldRemovalLive": false,
+    "dataMutated": false,
+    "paidModelCalls": 0
+  },
+  "nextStep": "Wait for GitHub Actions recovery; require both checks successful on actual current PR head, then normal merge and read-only rollout verification."
+}
