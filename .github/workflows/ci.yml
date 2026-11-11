@@ -508,7 +508,9 @@ jobs:
     if: inputs.mode != 'mock100'
     name: Browser-/Mobile-Smoke (Chromium)
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/playwright:v1.56.1-noble
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      options: --user 1001
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
