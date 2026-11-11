@@ -1,0 +1,21 @@
+{
+  "codeHead": "68abc505",
+  "customTopicAfterFormSave": {
+    "focusTopics": [
+      "Arbeit"
+    ],
+    "topicPriorities": {
+      "Arbeit": 5,
+      "Finanzen": 5
+    }
+  },
+  "emptyMainQuestion": {
+    "sent": "",
+    "stored": "Welche Pläne hat die Bundesregierung im Bereich Arbeit und Soziales und worauf sollte ich politisch reagieren?"
+  },
+  "regionAccepted": {
+    "state": "Bayern",
+    "constituency": "Testkreis Nord",
+    "location": "Teststadt"
+  }
+}
