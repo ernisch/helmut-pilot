@@ -70,6 +70,12 @@ Der erste Browserlauf stoppte nach den neuen Navigationsprüfungen an einem
 prüfte aber noch dessen Bindung. Vor der betreffenden Prüfung wird nun der echte
 Briefing-Verweis erneut geöffnet. Kein Produktfehler wurde verdeckt.
 
+Der erste Pflicht-CI-Lauf43026336007 stoppte ausschließlich in
+`kosten-limits-test.js`: Die historische Quelltextauslesung suchte noch die
+parameterlose Generatorsignatur und fand deshalb keinen Funktionsrumpf. Die
+Auslesung akzeptiert nun Parameter und scheitert weiterhin bei fehlender
+Funktion. Die Schutzbehauptungen wurden beibehalten; lokal20/20 bestanden.
+
 Keine bezahlten Helmut-Modellaufrufe, Production-Datenänderungen,
 Budgeterhöhungen oder Änderungen an bestehenden Reservierungen.
 Pflicht-CI und anschließende Production-Abnahme sind getrennte Nachweise.
