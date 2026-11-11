@@ -106,6 +106,11 @@ function check(name, cond, detail = "") {
   codeVm += `\n;globalThis.__ot = {
     setProfile: (p) => { profile = p; },
     renderSettings: () => renderProfileSettingsView(),
+    renderPartyStep: () => {
+      onboardingActive = true; onboardingStep = 1;
+      onboardingDraft = { party: "SPD", faction: "fraktionslos" };
+      return renderOnboarding();
+    },
     level: () => profileParliamentType(),
     banner: () => renderProfileReleaseStatus()
   };`;
@@ -172,6 +177,12 @@ function check(name, cond, detail = "") {
   check("Partei und Fraktion haben getrennte Auswahlwerte",
     settingsHtml.includes('value="parteilos"') && settingsHtml.includes('value="fraktionslos"')
     && settingsHtml.includes('value="CDU/CSU"'));
+  const partyStep = ot.renderPartyStep();
+  check("Ersteinrichtung rendert Partei und Fraktion ebenfalls als Dropdowns",
+    partyStep.includes('<select name="party"') && partyStep.includes('<select name="faction"')
+    && !partyStep.includes('<input name="party"') && !partyStep.includes('<input name="faction"'));
+  check("Ersteinrichtung erhält unabhängige ausgewählte Partei und Fraktion",
+    partyStep.includes('value="SPD" selected') && partyStep.includes('value="fraktionslos" selected'));
   const places = JSON.parse(fs.readFileSync(path.join(root, "assets/profil-orte-20260930.json"), "utf8"));
   check("Amtliche Ortsliste: alle 16 Länder, über 10.000 Ortsnamen, Quellenstand vorhanden",
     Object.keys(places.locationsByState).length === 16

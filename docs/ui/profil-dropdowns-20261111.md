@@ -2,7 +2,10 @@
 
 Stand 11.11.2026. Branch `codex/profil-dropdowns-20261111`, Basis `3a012b0b`.
 Status: lokal umgesetzt und geprüft; [PR1134](https://github.com/ernisch/helmut-pilot/pull/1134),
-Codecommit `21484e9b`. Pflicht-CI und konkretes Merge-/Deployment-GO offen.
+Codecommit `21484e9b`. CI43024856182: Browser und Standardprüfung erfolgreich,
+363/364 Fachbereichssuiten erfolgreich. Ein alter Test verlangte noch das ersetzte
+Partei-Textfeld; diese Erwartung ist jetzt auf das Dropdown korrigiert.
+Neue Pflicht-CI und konkretes Merge-/Deployment-GO offen.
 
 Partei und Fraktion sind im eigenen Mandatsprofil und in der Ersteinrichtung
 getrennte native Auswahllisten. Parteiunabhängigkeit (`parteilos`) und
@@ -39,7 +42,9 @@ die Profilmaske nennt Destatis und den Gebietsstand.
 ## Nachweise
 
 - Syntax und `git diff --check` bestanden.
-- `node scripts/lokal.js -- node scripts/onboarding-tenant-test.js`: 35/35.
+- `node scripts/lokal.js -- node scripts/onboarding-tenant-test.js`: 37/37,
+  einschließlich gerenderter Partei-/Fraktionsauswahl der Ersteinrichtung.
+- Gezielt korrigierter `admin-nutzer-anlegen-schnellstart-test.js`: 34/34.
 - Browser-/Mobile-Smoke mit lokalem Originalserver und System-Chromium:
   126/126, zusätzlich der enthaltene Adminstart-Nachweis 17/17.
   Die 12 neuen Profilprüfungen testen Desktop/Mobil, bestehende Werte,
