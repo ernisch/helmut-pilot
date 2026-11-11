@@ -35,5 +35,9 @@
     "lib/helmut/office-formatpruefung.js": "3b4687b379bb562d3a09af90ab63879e8746e5640feaf031c5a0d31fea91d51e"
   },
   "paidModelCalls": 0,
-  "productionDataChanges": 0
+  "productionDataChanges": 0,
+  "costBudgetGroups": {
+    "pass": 16,
+    "fail": 0
+  }
 }

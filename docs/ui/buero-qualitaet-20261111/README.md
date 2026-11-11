@@ -39,7 +39,9 @@ Erfolgreiche neue Entwürfe behalten ihr Prüfergebnis im bestehenden Cache. „
 
 ## Tatsächliche Abnahme
 
-[Maschinenlesbarer Beleg](verification.json):35Formgruppen über alle7Kanäle;92Büro-Ehrlichkeitsprüfungen einschließlich14Bundestags-/Landtags-Kanalkombinationen und negativer Ausgabeprüfung;13Antwortzeitgruppen mit virtueller Uhr;310Prüfungen in netzlosem Chromium auf Desktop und zwei Mobilgrößen. Erfasst echten Ladezustand mit gehaltener Antwort, Erhalt der Formprüfung, Septemberdatum samt Jahr vor Auftrag, manuellen Retry, Cache-/Mandats-/Quellenbindung und keine unbeauftragten Aufrufe.
+[Maschinenlesbarer Beleg](verification.json):35Formgruppen über alle7Kanäle;92Büro-Ehrlichkeitsprüfungen einschließlich14Bundestags-/Landtags-Kanalkombinationen und negativer Ausgabeprüfung;13Antwortzeitgruppen mit virtueller Uhr;16Kostenbudgetgruppen;310Prüfungen in netzlosem Chromium auf Desktop und zwei Mobilgrößen. Erfasst echten Ladezustand mit gehaltener Antwort, Erhalt der Formprüfung, Septemberdatum samt Jahr vor Auftrag, manuellen Retry, Cache-/Mandats-/Quellenbindung und keine unbeauftragten Aufrufe.
+
+Die bestehende Kostenprobe verwendete einen einzelnen Beispielsatz als erfolgreichen Büroauftrag. Ihr Mock liefert jetzt fünf gültige Stichpunkte; Reservierungs-, Abrechnungs- und Aufrufzahlassertionen bleiben unverändert und bestehen16/16offline.
 
 Der erste Browsertest zeigte eine übernommene Freigabefunktion aus einer früher gehaltenen Mock-Antwort. Gehaltene Testantworten werden nun vor jeder Probe separat initialisiert; danach vollständige Abnahme erfolgreich. Keine Änderung am produktiven Anfrage-/Retry-Verhalten dadurch.
 
