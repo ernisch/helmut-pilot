@@ -7,8 +7,29 @@ sie hat keine API-Verbindung, keine dauerhafte Ablage und keine echten Aktionen.
 Die unveränderte Originalverwaltung unter `verwaltung/claude-original/` bleibt die
 bisherige Produktvorlage. Dieser Entwurf ist ein Vorschlag für ihre Vereinfachung.
 
-**Abschluss:** Entwurf und lokale Abnahme fertig; Übernahme nach `main` durch
-ausstehende Pflicht-CI blockiert. [PR1155](https://github.com/ernisch/helmut-pilot/pull/1155),
+**Aktuell 11.11.:** Auf Betreiberwunsch bleibt
+[PR1155](https://github.com/ernisch/helmut-pilot/pull/1155) als **Draft ohne Merge**
+offen, damit zuerst die gesamte vorhandene Vorschau durchgeklickt werden kann.
+Die [private Onlinevorschau](https://helmut-verwaltung-vorschau-20261111.lueynohut.chatgpt.site)
+ist veröffentlicht; sie enthält dieselbe bytegleich geprüfte HTML-Datei, nur
+fiktive Daten und keinerlei App-Verbindung. Die Site wurde getrennt vom
+Helmut-Repository bereitgestellt, ohne Merge oder Liveänderung an Helmut.
+
+| In der Vorschau | Tatsächlicher Stand |
+| --- | --- |
+| Übersicht, Kundenliste, Suche, Kundendetails | Durchklickbar, sämtliche Zustände fiktiv |
+| Kundenanlage, Rückweg, Prüfung der Eingaben | Durchklickbarer Ablauf, nur flüchtiger Entwurf; keine Konto-/Profilanlage |
+| Profilvollständigkeit, Versorgung, Bereitstellung | Gestaltungsbeispiele, keine echten Nachweise aus der App |
+| Einstellungen, Kosten, Quellen, erweiterte Werkzeuge | Bisher erklärende Abschnitte und Aufklapptexte; keine angeschlossenen Bedienseiten |
+| Einladungen, Aktivierung, Zahlung, Datenschutzaktionen | Nicht als echte Aktionen angebunden |
+
+Die 49 lokalen Prüfungen belegen die Bedienung des Entwurfs und dessen
+Fehler-/Mobilfälle, **keine vollständige Appintegration**. Vor einer späteren
+Liveumsetzung müssen die einzelnen Funktionsanschlüsse separat belegt werden.
+Die vereinfachte Gestaltung ist ein Vorschlag; die Beurteilung als durchgängig
+selbsterklärend bleibt nach der Durchsicht offen.
+
+**Historischer CI-Wartebefund vor der Betreiber-Durchsicht:**
 Branch `codex/verwaltung-kundenablauf-20261111`. Der ursprüngliche geprüfte Kopf
 `96c5f7144ebabe790c435431caa28127dd0f317a` hat seit 20:35:48 UTC einen
 [wartenden CI-Lauf](https://github.com/ernisch/helmut-pilot/actions/runs/43096978463)
@@ -17,9 +38,9 @@ weiterhin `in_progress`; der datierte [Wartebefund](ci-wartebefund.json) erhält
 diese Beobachtung, ohne eine GitHub-Ursache zu behaupten. Diese abschließende
 Statusdokumentation ändert keine Vorschau-/Prüfeingaben. Für den finalen Kopf
 bleiben beide Pflichtchecks erforderlich; keine Umgehung und kein Merge.
-Nächster technischer Schritt: reguläre CI-Abschlussrückmeldung prüfen und erst
-bei grünen Pflichtchecks den Dokumentations-PR übernehmen. Der nächste fachliche
-Schritt danach bleibt das unten abgegrenzte lesende Kundendetail.
+Die neue Betreiberanweisung zur Durchsicht hat Vorrang: auch bei später grüner
+CI noch nicht mergen. Nächster Schritt ist die Durchsicht der privaten Vorschau;
+die spätere erste Implementierung bleibt das unten abgegrenzte lesende Kundendetail.
 
 ## Entscheidung
 
