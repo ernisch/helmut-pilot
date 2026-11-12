@@ -1,8 +1,8 @@
 # CURRENT STATE — Helmut
 
-**Stand: 12.11.2026.** [PR1105](betrieb/validierungsdiagnose-20261108.md); [Agentenregeln](../AGENTS.md).
+**Stand: 12.11.2026.** [PR1105](betrieb/validierungsdiagnose-20261108.md); [Regeln](../AGENTS.md).
 
-**12.11.:** [Briefingreparatur](betrieb/briefing-versorgung-reparatur-20261112.md): 3.DB-Abbruch; Lesefix live, Schreibfix inaktiv ausgerollt. Migration `20261112130226`: GO fehlt.
+**12.11.:** [Briefingreparatur](betrieb/briefing-versorgung-reparatur-20261112.md): Schreibfix aktiv; Migration `20261112130226` erfolgt. 4.DB-Abbruch, bezahlte Arbeit STOP.
 
 **11.11., Production:** PR1118–1124 live; main/Production `4dee3255`, READY, Hauptdomain/Runtime bestätigt. Release-Frische `ready=false`; vollständige reguläre Verarbeitung und echte Kundensitzung bleiben zu belegen.
 
