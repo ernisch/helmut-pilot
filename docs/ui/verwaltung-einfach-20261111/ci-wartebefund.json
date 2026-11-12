@@ -1,0 +1,32 @@
+{
+  "observedAt": "2026-11-11T20:48:14.150490+00:00",
+  "pr": 1155,
+  "head": "96c5f7144ebabe790c435431caa28127dd0f317a",
+  "runId": 43096978463,
+  "status": "queued",
+  "conclusion": null,
+  "jobs": 0,
+  "priorRuns": [
+    {
+      "runId": 43093338107,
+      "jobStatus": "in_progress",
+      "jobConclusion": null,
+      "completeJobStep": {
+        "status": "completed",
+        "conclusion": "success",
+        "completed_at": "2026-11-11T20:27:53Z"
+      }
+    },
+    {
+      "runId": 43094944663,
+      "jobStatus": "in_progress",
+      "jobConclusion": null,
+      "completeJobStep": {
+        "status": "completed",
+        "conclusion": "success",
+        "completed_at": "2026-11-11T20:17:48Z"
+      }
+    }
+  ],
+  "interpretation": "Pflicht-CI ohne Jobs ausstehend; aeltere erfolgreiche Complete-job-Schritte bei weiterhin in_progress. Ursache des GitHub-Zustands nicht bewiesen. Kein Merge."
+}

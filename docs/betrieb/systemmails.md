@@ -1,6 +1,6 @@
 # Helmut-Systemmails — Inhalte, Gestaltung, Nachweis
 
-**Stand:** 2026-08-01 · **Zustand:** umgesetzt, lokal nachgewiesen, **in Production nicht
+**Stand:** 2026-11-12 · **Zustand:** umgesetzt, lokal nachgewiesen, **in Production nicht
 aktiviert** (es gibt weiterhin keinen scharfgeschalteten Versand).
 
 **Zweck dieser Datei:** die eine kanonische Stelle für die Frage *„Welche Mails schickt Helmut,
@@ -11,7 +11,8 @@ Nicht hier, sondern dort:
 | Thema | Kanonische Quelle |
 |---|---|
 | Lokales Testpostfach starten und benutzen | [`lokale-mailtests-mailpit.md`](lokale-mailtests-mailpit.md) |
-| Echter Versand über Resend, Aktivierung, Domain, Schlüssel | [`mailversand-resend.md`](mailversand-resend.md) |
+| Vorhandenes Tophoster-Postfach, SMTP-Einrichtung und Test | [`mailversand-tophoster.md`](mailversand-tophoster.md) |
+| Alternativer Versand über Resend, Aktivierung, Domain, Schlüssel | [`mailversand-resend.md`](mailversand-resend.md) |
 | Umgebungsvariablen | [`env-inventar.md`](env-inventar.md) |
 
 ---
@@ -22,7 +23,7 @@ Genau **zwei**. Es gibt keine Willkommensmail, keinen Newsletter, keine Benachri
 
 | Mail | Betreff | Wann | Ausgelöst von |
 |---|---|---|---|
-| **Einladung** | `Deine Einladung zu Helmut` | Konto ohne Passwort bekommt einen Zugangslink | Admin legt ein Konto an · Admin klickt „Zugangslink erstellen" · „Passwort vergessen" für ein noch nicht aktiviertes Konto |
+| **Einladung** | `Ihre Einladung zu Helmut` | Konto ohne Passwort bekommt einen Zugangslink | Admin legt ein Konto an · Admin klickt „Zugangslink erstellen" · „Passwort vergessen" für ein noch nicht aktiviertes Konto |
 | **Passwort zurücksetzen** | `Neues Passwort für Helmut festlegen` | Konto **mit** Passwort fordert einen neuen Link an | Admin klickt „Zugangslink erstellen" · „Passwort vergessen" · eingeloggtes „Passwort ändern" |
 
 Welche der beiden Mails es wird, entscheidet **ausschließlich** `user.passwordHash` — nicht
@@ -44,33 +45,22 @@ Eintrag im Feld `absaetze`, mehr nicht.
 
 ## 3 · Gestaltungsregeln (bewusst eng)
 
-- Heller Hintergrund (`#f4f6fb`), weiße Karte (`#ffffff`), Inhaltsspalte **max. 600 px**.
-- **Tabellenlayout mit direkten `style`-Attributen.** Der `<style>`-Block enthält
-  ausschließlich Verbesserungen (Abstände auf schmalen Schirmen); entfernt ein Mailprogramm
-  ihn, sieht die Mail trotzdem richtig aus.
-- **Systemschriften.** Keine extern geladene Schrift — das wäre ein Ladevorgang zu einem
-  fremden Server und damit ein Rückkanal, der das Öffnen der Mail verrät.
-- **Keine Bilder, keine Grafiken, kein Zählpixel, keine Animation, keine Social-Links, kein
-  verstecktes Vorschautext-Element.** Der Helmut-Schriftzug ist echter Text.
-- Genau **zwei** Linkziele: der Aktionslink und das Impressum. Mehr ist nicht zulässig.
-- Farben stammen aus dem bestehenden Designsystem (`styles.css`, Light-Mode-Tokens) — als
-  deckende Hex-Werte, weil `rgba()` und CSS-Variablen in Mailprogrammen unzuverlässig sind.
-  Zwei Werte sind bewusst **keine** direkte Übernahme: `#4c5568`/`#3f4759` sind die deckend
-  gerechneten Entsprechungen des halbtransparenten `--muted`, und die Fußzeile bekam einen
-  eigenen, dunkleren Wert (Begründung unten). Jede Kombination erfüllt **WCAG AAA** (≥ 7:1),
-  gerechnet jeweils gegen den Hintergrund, auf dem der Text **tatsächlich** steht — die
-  Suite rechnet diese Werte nach, sie sind nicht behauptet:
-
-  | Rolle | Vordergrund auf Hintergrund | Kontrast |
-  |---|---|---|
-  | Fließtext, Schriftzug | `#0f1729` auf `#ffffff` | 17,87:1 |
-  | Nebentext, Hinweis (auf der Karte) | `#4c5568` auf `#ffffff` | 7,48:1 |
-  | Schaltflächenbeschriftung | `#ffffff` auf `#2c3f9e` | 9,08:1 |
-  | Links (auf der Karte) | `#2c3f9e` auf `#ffffff` | 9,08:1 |
-  | **Fußzeile** (steht als einzige auf dem Seitenhintergrund) | `#3f4759` auf `#f4f6fb` | 8,61:1 |
-
-  Die Fußzeile braucht den eigenen Wert, weil `#4c5568` dort nur auf 6,92:1 käme und AAA
-  knapp verfehlte.
+- Dunkler Helmut-Hintergrund (`#070b16`), ruhige Karte (`#0c1322`), Inhaltsspalte **max. 600 px**.
+- **Tabellenlayout mit direkten `style`-Attributen.** Abstände auf kleinen Schirmen sind eine
+  zusätzliche Verbesserung; auch ohne Style-Block bleiben alle Inhalte lesbar.
+- **Helmut-Schriften mit lokalen Ersatzschriften:** Spectral → Georgia/Times für Wortmarke
+  und Überschrift; Hanken Grotesk → Systemschrift/Arial für Text. Keine externen Font-Abrufe.
+  Eine pixelgleiche Schrift in allen Mailprogrammen ist damit nicht zugesichert.
+- **Keine Bilder, Grafiken, Zählpixel, Animationen, Social-Links oder versteckten Vorschautexte.**
+  Die Wortmarke ist echter Text; es wird kein Ersatzlogo erfunden.
+- Genau **zwei** Linkziele: Aktionslink und Impressum.
+- Markenfarben aus `verwaltung/einfach/styles.css`, deckende Hex-Werte für Mailprogramme.
+  Alle fünf Textkombinationen erfüllen **WCAG AAA** (≥ 7:1); die Suite rechnet jeweils gegen
+  den tatsächlichen Hintergrund nach: Fließtext `#eaeef6`, Nebentext `#aeb8c9`, Links und
+  Schaltfläche `#7fa8e0`, Schaltflächentext `#0a0f1c`, Fußzeile `#9ca8bc`.
+- **Durchgehend Sie-Ansprache** in beiden Mails und auf den zugehörigen Zugangsseiten.
+  Einladung: „Willkommen bei Helmut.“ mit „Passwort setzen“. Passwort-Hilfe: „Ein neues
+  Passwort.“ mit „Neues Passwort festlegen“. Kurze Erklärung des tatsächlichen App-Ablaufs.
 - Der **vollständige Ziel-Link** steht zusätzlich als sichtbarer Rückfallweg unter der
   Schaltfläche — in **beiden** Fassungen.
 
@@ -82,13 +72,13 @@ deshalb hergeleitet — und nur benutzt, wenn dabei etwas Brauchbares herauskomm
 
 | Namensfeld | Anrede | warum |
 |---|---|---|
-| `Eva Eingeladen` | `Hallo Eva,` | Normalfall |
-| `Dr. h.c. Maximiliane-Charlotte von Sonnenberg` | `Hallo Maximiliane-Charlotte,` | Titel und Abkürzungen werden übersprungen |
-| `Müller, Eva` | `Hallo Eva,` | Sortierform aus Mandats-/Ausschusslisten — sonst grüßte Helmut mit dem **Nach**namen |
-| `Eva Müller, MdB` | `Hallo Eva,` | hinter dem Komma steht nur ein Titel, also greift der Teil davor |
+| `Eva Eingeladen` | `Guten Tag Eva,` | Normalfall |
+| `Dr. h.c. Maximiliane-Charlotte von Sonnenberg` | `Guten Tag Maximiliane-Charlotte,` | Titel und Abkürzungen werden übersprungen |
+| `Müller, Eva` | `Guten Tag Eva,` | Sortierform aus Mandats-/Ausschusslisten — sonst grüßte Helmut mit dem **Nach**namen |
+| `Eva Müller, MdB` | `Guten Tag Eva,` | hinter dem Komma steht nur ein Titel, also greift der Teil davor |
 | `Jean-Luc` · `Renée` · `O'Brien` · `Ayşe` | wie geschrieben | Bindestrich, Diakritika, Apostroph, nicht-lateinische Schrift sind zulässig |
-| *(leer)* · `kontakt@example.org` · `123` · `---` · Vorname > 64 Zeichen | `Hallo,` | kein brauchbarer Vorname |
-| `http://example.org` · `www.example.org` | `Hallo,` | Mailprogramme **verlinken** so etwas automatisch — ein Anzeigename wäre damit ein Klickziel in einer Mail, die von Helmut zu kommen scheint |
+| *(leer)* · `kontakt@example.org` · `123` · `---` · Vorname > 64 Zeichen | `Guten Tag,` | kein brauchbarer Vorname |
+| `http://example.org` · `www.example.org` | `Guten Tag,` | Mailprogramme **verlinken** so etwas automatisch — ein Anzeigename wäre damit ein Klickziel in einer Mail, die von Helmut zu kommen scheint |
 
 Ein Vorname besteht danach aus einem Buchstaben, gefolgt von Buchstaben, diakritischen
 Zeichen, Bindestrichen und Apostrophen — sonst grüßt Helmut neutral. Diese Prüfung ist eine
@@ -185,19 +175,20 @@ wieder gelöscht.
 
 ## 8 · Was für den echten Nutzerbetrieb noch fehlt
 
-Resend ist **weiterhin deaktiviert** (`HELMUT_MAIL_TRANSPORT` ist in Production nicht gesetzt).
-Diese Arbeit hat daran **nichts** geändert. Vor einem echten Versand an Nutzer fehlen
-unverändert:
+**Versand weiterhin deaktiviert.** Aktuell wird das vorhandene Tophoster-Postfach mit SMTP
+vorbereitet. Verbindungsdaten, sichere Konfiguration, Nachweise und Aktivierung stehen unter
+[Tophoster-SMTP](mailversand-tophoster.md). Das Passwort und der echte Posteingangstest fehlen.
+Resend bleibt als bereits vorbereitete Alternative erhalten; dessen Domainverifizierung und
+API-Schlüssel sind für SMTP nicht erforderlich. Historische Resend-Anforderungen bleiben in
+[der Resend-Anleitung](mailversand-resend.md) erhalten.
 
-1. **Eigene Versanddomain** inklusive DNS-Einträgen (SPF/DKIM/DMARC) und Verifizierung —
-   [`mailversand-resend.md`](mailversand-resend.md) §4.
-2. **Neuer API-Schlüssel** in den Vercel-Umgebungsvariablen (der Testschlüssel des
-   Vorsprints wurde nach dem Testversand gelöscht) — §3 und §6.
-3. **AVV mit Resend** als Auftragsverarbeiter — gehört zu **OP-02** in
-   [`../datenmotor-restliste.md`](../datenmotor-restliste.md).
-4. **Kontrollierte Aktivierung in Production** als ausdrückliche Betreiberentscheidung — §6.
-5. Offen bleibt außerdem: **Bounces und Beschwerden werden nicht ausgewertet** (keine
-   Resend-Webhooks) — §9.2.
+Bis zum bestätigten Versand bleibt der Kopierlink im Admin der Rückfallweg.
 
-Bis dahin ist der Zustellweg unverändert der **Kopierlink im Admin**. Er bleibt auch nach der
-Aktivierung der Rückfallweg, wenn ein Versand scheitert.
+## 9 · Aktuelle Gestaltungsvorschau und Freigabestand (12.11.2026)
+
+[Private Mailvorschau und Nachweise](../ui/systemmails-20261112/README.md).
+Der Betreiber hat `Helmut <hallo@mithelmut.de>` als Absender gewählt; Antworten gehen ebenfalls
+an das vorhandene Hauptpostfach `hallo@mithelmut.de`. Persönliche Kommunikation und automatische
+Einladungen verwenden dieselbe Adresse. Ein zusätzliches Postfach ist nicht nötig, wohl aber
+eine beim Versanddienst verifizierte Domain.
+Der Versand ist dadurch noch nicht konfiguriert oder freigeschaltet.

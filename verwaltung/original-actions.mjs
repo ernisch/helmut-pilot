@@ -30,7 +30,7 @@ export function createAdminActions({ fetcher = globalThis.fetch, timeoutMs = 120
     if (!text(dto.customerName, 160)) errors.name = "Bitte einen Kundennamen mit höchstens 160 Zeichen angeben.";
     if (!text(dto.person, 160)) errors.person = "Bitte eine Ansprechperson mit höchstens 160 Zeichen angeben.";
     if (!text(dto.email, 254) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dto.email.trim())) errors.mail = "Bitte eine gültige E-Mail-Adresse angeben.";
-    if (!["Basis", "Büro", "Fraktion"].includes(dto.tariffIntent)) errors.tarif = "Bitte einen vorhandenen Tarifwunsch wählen.";
+    if (dto.tariffIntent != null && !["Basis", "Büro", "Fraktion"].includes(dto.tariffIntent)) errors.tarif = "Bitte einen vorhandenen Tarifwunsch wählen.";
     if (dto.politicianId != null && !validId(dto.politicianId)) errors.profil = "Bitte ein vorhandenes Profil wählen oder später zuordnen.";
     if (Object.keys(errors).length) throw new AdminMutationError(400, false, { fieldErrors: errors });
     return { customerName: dto.customerName.trim(), person: dto.person.trim(), email: dto.email.trim().toLowerCase(), tariffIntent: dto.tariffIntent, politicianId: dto.politicianId || null };
@@ -71,7 +71,10 @@ export function createAdminActions({ fetcher = globalThis.fetch, timeoutMs = 120
       if (disposed || controller.signal.aborted) throw new AdminMutationError(0, true);
       // Bestehende lesbare interne Notiz bewahrt beide Namen und den Tarifwunsch.
       // Kein CRM-Schema, kein echter Preis, keine Rechnung und keine Profilmutation.
-      const customer = { pricePerMonth: null, paymentStatus: "none", internalNote: `Kundenname: ${dto.customerName}\nAnsprechpartner: ${dto.person}\nTarifwunsch: ${dto.tariffIntent} (Preis offen)` };
+      const note = [`Kundenname: ${dto.customerName}`];
+      if (dto.person !== dto.customerName) note.push(`Ansprechpartner: ${dto.person}`);
+      if (dto.tariffIntent != null) note.push(`Tarifwunsch: ${dto.tariffIntent} (Preis offen)`);
+      const customer = { pricePerMonth: null, paymentStatus: "none", internalNote: note.join("\n") };
       stage = "customer";
       const saved = await fetcher(`/api/admin/users/${encodeURIComponent(user.id)}`, { ...options, method: "PATCH", headers, body: JSON.stringify({ customer }) });
       if (!saved.ok) throw new AdminMutationError(saved.status, saved.status >= 500);
@@ -166,6 +169,14 @@ export function createAdminActions({ fetcher = globalThis.fetch, timeoutMs = 120
   }
   return {
     createCustomerAccount,
+    createPersonalCustomerAccount(input) {
+      if (!plain(input) || Object.keys(input).some(key => !["name", "email"].includes(key))) return Promise.reject(new AdminMutationError(400));
+      // Eine neue Person darf kein unzugeordnetes Bestandsprofil allein durch
+      // den namensbasierten Server-Slug uebernehmen. Bestehende Auswahlpfade
+      // behalten ihre explizite Zuordnung; diese Zweifeldanlage beginnt neu.
+      if (typeof globalThis.crypto?.randomUUID !== "function") return Promise.reject(new AdminMutationError());
+      return createCustomerAccount({ customerName: input.name, person: input.name, email: input.email, tariffIntent: null, politicianId: `kunde-${globalThis.crypto.randomUUID()}` });
+    },
     setAccess(id, active) {
       if (typeof active !== "boolean") return Promise.reject(new AdminMutationError(400));
       if (active) return restoreAccess(id);

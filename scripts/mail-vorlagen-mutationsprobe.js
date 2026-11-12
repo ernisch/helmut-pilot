@@ -103,15 +103,15 @@ const MUTATIONEN = [
     // Umgebungsvariable jederzeit falsch machen kann.
     name: "M9 erfundene Gueltigkeitsdauer im Hinweistext",
     datei: "lib/helmut/invite-mail.js",
-    von: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für dich bestimmt, zeitlich begrenzt und kann nur einmal verwendet werden.\";",
-    nach: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für dich bestimmt, 7 Tage gültig und kann nur einmal verwendet werden.\";"
+    von: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für Sie bestimmt, zeitlich begrenzt und kann nur einmal verwendet werden.\";",
+    nach: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für Sie bestimmt, 7 Tage gültig und kann nur einmal verwendet werden.\";"
   },
   {
     // Die Einmaligkeit ist dauerhaft wahr und soll deshalb IN der Mail stehen.
     name: "M26 Einmaligkeits-Aussage faellt aus dem Hinweis",
     datei: "lib/helmut/invite-mail.js",
-    von: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für dich bestimmt, zeitlich begrenzt und kann nur einmal verwendet werden.\";",
-    nach: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für dich bestimmt und zeitlich begrenzt.\";"
+    von: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für Sie bestimmt, zeitlich begrenzt und kann nur einmal verwendet werden.\";",
+    nach: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für Sie bestimmt und zeitlich begrenzt.\";"
   },
   {
     name: "M10 Textfassung verliert den vollstaendigen Link",
@@ -128,7 +128,7 @@ const MUTATIONEN = [
   {
     name: "M12 Betreff der Einladung wieder auf den alten Wortlaut",
     datei: "lib/helmut/invite-mail.js",
-    von: "const BETREFF_EINLADUNG = \"Deine Einladung zu Helmut\";",
+    von: "const BETREFF_EINLADUNG = \"Ihre Einladung zu Helmut\";",
     nach: "const BETREFF_EINLADUNG = \"Dein Zugang zu Helmut steht bereit\";"
   },
   {
@@ -151,8 +151,8 @@ const MUTATIONEN = [
   {
     name: "M15 interne Kennung (Rolle) landet in der Mail",
     datei: "lib/helmut/invite-mail.js",
-    von: "      \"Lege jetzt dein persönliches Passwort fest, um deinen Zugang zu aktivieren.\"",
-    nach: "      \"Lege jetzt dein persönliches Passwort fest, um deinen Zugang zu aktivieren.\",\n"
+    von: "      \"Danach sind Sie angemeldet. Künftig melden Sie sich mit Ihrer E-Mail-Adresse und Ihrem Passwort an.\"",
+    nach: "      \"Danach sind Sie angemeldet. Künftig melden Sie sich mit Ihrer E-Mail-Adresse und Ihrem Passwort an.\",\n"
       + "      \"Deine Rolle: abgeordneter\""
   },
   {
@@ -205,10 +205,10 @@ const MUTATIONEN = [
     nach: "  const komma = -1;"
   },
   {
-    name: "M24 Fusszeile benutzt die Kartenfarbe und verfehlt AAA auf dem Seitenhintergrund",
+    name: "M24 Fusszeile wird zu dunkel und verfehlt AAA auf dem Seitenhintergrund",
     datei: "lib/helmut/mail-layout.js",
-    von: "  gedaempftAufSeite: \"#3f4759\", // dieselbe Rolle, aber auf dem Seitenhintergrund",
-    nach: "  gedaempftAufSeite: \"#4c5568\", // dieselbe Rolle, aber auf dem Seitenhintergrund"
+    von: "  gedaempftAufSeite: \"#9ca8bc\",",
+    nach: "  gedaempftAufSeite: \"#445064\","
   },
   {
     name: "M25 Ziel muss nicht mehr buchstaeblich mit http(s):// beginnen",

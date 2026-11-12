@@ -163,7 +163,7 @@ async function mitProtokollmitschnitt(fn) {
     transport.transportKonfiguration(RESEND_ENV).transport === "resend");
   check("A Transportname unempfindlich gegen Schreibweise/Leerraum",
     transport.transportKonfiguration({ ...RESEND_ENV, HELMUT_MAIL_TRANSPORT: "  ReSend " }).aktiv === true);
-  for (const name of ["resend-extern", "resendx", "re", "send", "smtp", "sendgrid", "mailpit-resend"]) {
+  for (const name of ["resend-extern", "resendx", "re", "send", "smtpx", "sendgrid", "mailpit-resend"]) {
     const konfig = transport.transportKonfiguration({ ...RESEND_ENV, HELMUT_MAIL_TRANSPORT: name });
     check(`A unbekannter Transportname bleibt inaktiv: ${name}`,
       konfig.aktiv === false && konfig.grund === "mail-transport-unbekannt", JSON.stringify(konfig));
@@ -475,11 +475,11 @@ async function mitProtokollmitschnitt(fn) {
   check("I Einladung -> sent:true ueber Resend", inviteStatus.sent === true && inviteStatus.transport === "resend", JSON.stringify(inviteStatus));
   check("I Einladung: richtiger Empfaenger", inviteRumpf.to[0] === TEST_EMPFAENGER, JSON.stringify(inviteRumpf.to));
   check("I Einladung: richtiger Absender", inviteRumpf.from === TEST_ABSENDER, inviteRumpf.from);
-  check("I Einladung: richtiger Betreff", inviteRumpf.subject === "Deine Einladung zu Helmut", inviteRumpf.subject);
+  check("I Einladung: richtiger Betreff", inviteRumpf.subject === "Ihre Einladung zu Helmut", inviteRumpf.subject);
   // Frueher wurde hier "7 Tage gültig" erwartet. Die Zahl war nur der Default von
   // HELMUT_INVITE_TOKEN_TTL_MS und stand damit potenziell falsch in der Mail.
   check("I Einladung: Anrede und Befristungshinweis im Text",
-    inviteRumpf.text.startsWith("Hallo Eva,") && /zeitlich begrenzt/.test(inviteRumpf.text));
+    inviteRumpf.text.startsWith("Guten Tag Eva,") && /zeitlich begrenzt/.test(inviteRumpf.text));
   check("I Einladung: genau ein Link, und zwar der richtige",
     (inviteRumpf.text.match(/passwort-setzen\?token=/g) || []).length === 1 && inviteRumpf.text.includes(inviteUrl));
   check("I Einladung: Fusszeile mit Absender und Impressum",
@@ -585,7 +585,7 @@ async function mitProtokollmitschnitt(fn) {
     check("K1 Absender und Antwortadresse korrekt",
       gesendet.length === 1 && gesendet[0].rumpf.from === TEST_ABSENDER && gesendet[0].rumpf.reply_to === TEST_ANTWORT,
       JSON.stringify(gesendet[0] && [gesendet[0].rumpf.from, gesendet[0].rumpf.reply_to]));
-    check("K1 Betreff ist der Einladungsbetreff", gesendet.length === 1 && gesendet[0].rumpf.subject === "Deine Einladung zu Helmut");
+    check("K1 Betreff ist der Einladungsbetreff", gesendet.length === 1 && gesendet[0].rumpf.subject === "Ihre Einladung zu Helmut");
     check("K1 Text traegt denselben Token wie der Kopierlink",
       gesendet.length === 1 && tokenFromText(gesendet[0].rumpf.text) === new URL(create.inviteUrl).searchParams.get("token"));
     check("K1 HTTP-Antwort verraet weder Schluessel noch Anbieterkennung",

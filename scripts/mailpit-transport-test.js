@@ -126,9 +126,9 @@ function tokenFromText(text) {
   // ── A · Einladungsvorlage ──────────────────────────────────────────────────────────────
   process.env.HELMUT_MAIL_FROM = TEST_ABSENDER;
   const invite = inviteMail.buildInviteMail({ name: "Eva Eingeladen", inviteUrl: "http://127.0.0.1:3000/passwort-setzen?token=abc" });
-  check("A Einladung: Betreff (neu seit dem HTML-Mail-Sprint)", invite.subject === "Deine Einladung zu Helmut", invite.subject);
+  check("A Einladung: Betreff (neu seit dem HTML-Mail-Sprint)", invite.subject === "Ihre Einladung zu Helmut", invite.subject);
   check("A Einladung: Absender aus HELMUT_MAIL_FROM", invite.from === TEST_ABSENDER, invite.from);
-  check("A Einladung: Anrede mit Vornamen", invite.text.startsWith("Hallo Eva,"), invite.text.slice(0, 30));
+  check("A Einladung: Anrede mit Vornamen", invite.text.startsWith("Guten Tag Eva,"), invite.text.slice(0, 30));
   check("A Einladung: enthaelt genau einen Link", (invite.text.match(/passwort-setzen\?token=/g) || []).length === 1);
   // Frueher stand hier "7 Tage gültig". Diese Zahl war nur der Default von
   // HELMUT_INVITE_TOKEN_TTL_MS und wurde falsch, sobald jemand die Variable setzt —
@@ -141,7 +141,7 @@ function tokenFromText(text) {
     typeof invite.html === "string" && invite.html.startsWith("<!doctype html>"));
   check("A Einladung: Fusszeile mit Absender und Impressum", invite.text.includes("Impressum:") && invite.text.includes(TEST_ABSENDER));
   const inviteOhneName = inviteMail.buildInviteMail({ inviteUrl: "http://127.0.0.1:3000/passwort-setzen?token=abc" });
-  check("A Einladung ohne Namen: neutrale Anrede", inviteOhneName.text.startsWith("Hallo,"));
+  check("A Einladung ohne Namen: neutrale Anrede", inviteOhneName.text.startsWith("Guten Tag,"));
 
   // ── B · Passwort-Reset-Vorlage ─────────────────────────────────────────────────────────
   const reset = inviteMail.buildResetMail({ name: "Eva Eingeladen", resetUrl: "http://127.0.0.1:3000/passwort-setzen?token=xyz" });
@@ -195,7 +195,7 @@ function tokenFromText(text) {
   check("D Rumpf: Absender nach Mailpit-Vertrag {Name,Email}",
     rumpf.From && rumpf.From.Email === "noreply@helmut.test" && rumpf.From.Name === "Helmut", JSON.stringify(rumpf.From));
   check("D Rumpf: genau ein Empfaenger", Array.isArray(rumpf.To) && rumpf.To.length === 1 && rumpf.To[0].Email === TEST_EMPFAENGER);
-  check("D Rumpf: Betreff der Einladung", rumpf.Subject === "Deine Einladung zu Helmut");
+  check("D Rumpf: Betreff der Einladung", rumpf.Subject === "Ihre Einladung zu Helmut");
   check("D Rumpf: Text enthaelt den Einladungslink", String(rumpf.Text).includes("/passwort-setzen?token=abc"));
   // Mailpit-Sendevertrag fuer mehrteilige Nachrichten: Feld `HTML` neben `Text`.
   check("D Rumpf: HTML-Teil im Mailpit-Feld HTML", typeof rumpf.HTML === "string" && rumpf.HTML === invite.html);
@@ -367,7 +367,7 @@ function tokenFromText(text) {
     const eingang = postfach[0] || {};
     check("K1 Empfaenger korrekt", eingang.To && eingang.To[0] && eingang.To[0].Email === TEST_EMPFAENGER, JSON.stringify(eingang.To));
     check("K1 Absender korrekt", eingang.From && eingang.From.Email === "noreply@helmut.test", JSON.stringify(eingang.From));
-    check("K1 Betreff ist der Einladungsbetreff", eingang.Subject === "Deine Einladung zu Helmut", eingang.Subject);
+    check("K1 Betreff ist der Einladungsbetreff", eingang.Subject === "Ihre Einladung zu Helmut", eingang.Subject);
     check("K1 Text traegt denselben Token wie der Kopierlink",
       tokenFromText(eingang.Text) === new URL(create.inviteUrl).searchParams.get("token"), tokenFromText(eingang.Text).slice(0, 8));
     check("K1 Link im Text zeigt auf den lokalen Server",

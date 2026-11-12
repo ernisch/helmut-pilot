@@ -199,8 +199,7 @@ dieser Übergangsweg wurde lokal mit echten Sessions geprüft.
 Der umfassendere historische Verwaltungstest
 stoppt im unveränderten Kontoclient an einer alten Null-IO-Erwartung beim Freigeben
 eines Kontos; die gezielte Navigationsauswahl führt keine Schreibaktion aus.
-Dieser Auftrag ist abgeschlossen. Nächster fachlicher Schritt bei weiterer
-Verwaltungsarbeit: fehlende Funktionen nach OP-33 einzeln zuordnen.
+**12.11.:** [Verwaltung/SMTP](betrieb/mailversand-tophoster.md): freigegeben; Laufzeitstand siehe PR1155.
 
 ## Verwaltung: Darstellungskorrekturen gegen Design v3 (06.11.2026)
 

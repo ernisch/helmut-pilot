@@ -209,9 +209,9 @@ async function nachricht(id) {
     const einladung = eingang.length ? await nachricht(eingang[0].ID) : {};
     check("6 Absender korrekt", einladung.From && einladung.From.Address === "noreply@helmut.test", JSON.stringify(einladung.From));
     check("6 Empfaenger korrekt", (einladung.To || []).length === 1 && einladung.To[0].Address === ADRESSE_BEKANNT, JSON.stringify(einladung.To));
-    check("6 Betreff ist der Einladungsbetreff", einladung.Subject === "Deine Einladung zu Helmut", einladung.Subject);
+    check("6 Betreff ist der Einladungsbetreff", einladung.Subject === "Ihre Einladung zu Helmut", einladung.Subject);
     check("6 Text traegt die Einladungsformulierung ohne erfundene Gueltigkeitsdauer",
-      /du wurdest eingeladen, Helmut zu nutzen\./.test(String(einladung.Text))
+      /Ihr Zugang zu Helmut ist vorbereitet\./.test(String(einladung.Text))
       && /zeitlich begrenzt/.test(String(einladung.Text))
       && !/\b(\d+|ein|eine|einen|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreißig)\s*(Minute|Minuten|Stunde|Stunden|Tag|Tage|Tagen|Woche|Wochen|Monat|Monate)\b/i.test(String(einladung.Text)));
     // Seit dem HTML-Mail-Sprint ist die Nachricht mehrteilig: Mailpit muss BEIDE Teile
@@ -220,7 +220,7 @@ async function nachricht(id) {
       String(einladung.HTML || "").startsWith("<!doctype html>")
       && String(einladung.HTML).trim().endsWith("</html>"), String(einladung.HTML || "").slice(0, 60));
     check("6 HTML-Teil traegt Anrede, Schaltflaeche und denselben Link wie der Text",
-      /Hallo /.test(String(einladung.HTML)) && />Passwort festlegen<\/a>/.test(String(einladung.HTML))
+      /Guten Tag /.test(String(einladung.HTML)) && />Passwort setzen<\/a>/.test(String(einladung.HTML))
       && String(einladung.HTML).includes(`http://127.0.0.1:${port}/passwort-setzen?token=`));
     check("6 HTML-Teil laedt nichts von aussen (kein Bild, keine Schrift, kein Skript)",
       !/<img\b|<script\b|<link\b|@import|url\s*\(/i.test(String(einladung.HTML)));
