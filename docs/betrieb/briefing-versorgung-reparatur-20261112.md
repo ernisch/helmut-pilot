@@ -2,12 +2,180 @@
 
 ## Endstand: Codekorrekturen live, Briefingbetrieb weiter blockiert
 
-Die sechs beschriebenen Codekorrekturen sind auf Production. Ein frisches,
-vollstaendiges Kundenbriefing ist weiterhin NICHT nachgewiesen: beide separat
-freigegebenen Quellenfenster wurden von ungeordneten Datenbankneustarts
+Die sieben beschriebenen Codekorrekturen sind auf Production. Ein frisches,
+vollstaendiges Kundenbriefing ist weiterhin NICHT nachgewiesen: drei separat
+freigegebene Quellenfenster wurden von ungeordneten Datenbankneustarts
 unterbrochen. Weitere Quellen-, Modell- und Briefinglaeufe sind nach der
 vereinbarten Stoppbedingung beendet; keine erneute Freigabe aus alten GOs ableiten.
-Die Lage-/Morgenaufrufe des ersten Zyklus sind erfolgt, die des zweiten NICHT.
+Die Lage-/Morgenaufrufe des ersten Zyklus sind erfolgt, die des zweiten/dritten NICHT.
+
+### Speicherbefund und Softwareentlastung ohne Mehrkosten
+
+Der Betreiber lehnt Small/2GB und zusaetzliche Kosten ausdruecklich ab:
+„Keine Mehrkosten; Software weiter pruefen“. Keine Ressourcenumschaltung,
+kein neuer Quellen-/Modell-/Lage-/Morgenlauf daraus freigegeben oder ausgefuehrt.
+Die beiden3h-Dashboardbilder zeigen hohe Memory commitment und Einbrueche
+nahe den Neustarts; maximal etwa15Verbindungen gegen60zulaessige. Commitment
+ist zugesagter virtueller Speicher, nicht residenter RAM. Native Momentaufnahme
+nach dem ersten Ausfall: Committed_AS1834622976Bytes bei CommitLimit1547833344,
+physischer Speicher948191232Bytes. Speicherknappheit ist belegt; der konkrete
+Absturzausloeser und ein OOM-Kill bleiben unbewiesen. Keine pauschale Erhoehung
+des Verbindungslimits oder Aenderung der Datenbankkonfiguration.
+
+Eine konkrete unnoetige Belastung liegt im Softwarelesepfad: die Sitzungspruefung
+und kleine Statusleser holen den kompletten main-auth-Block samt Kostenhistorie.
+Der Kostenbericht holt denselben Block sogar zweimal. Die Korrektur waehlt
+serverseitig nur benoetigte JSON-Felder; Kostenbericht und Laufzuordnung nutzen
+einen gemeinsamen Lesestand. Sitzungen werden nicht gecacht. Vollstaendige
+CAS-Mutationen, Kostenbuecher, offene Reserven und historische Journale bleiben
+erhalten. Die reine Teilsicht darf auch als flache Kopie weder den Auth- noch
+den Content-Speicher ueberschreiben, einschliesslich lokalem Dateimodus.
+
+Rein lesende native REST-Gegenprobe12.11.,10:47:30UTC: vollstaendige Antwort
+4304637Bytes, dieselben Konten/Sitzungen408327Bytes (-90,51Prozent), dieselben
+Prozesslaeufe339551Bytes (-92,11Prozent). Drei begrenzte GETs, Werte direkt
+verglichen; keine gespeicherten Konteninhalte im oeffentlichen Beleg. Einzelne
+Antwortzeiten2,153/0,877/0,401s sind keine Lastmessung. Keine behauptete Senkung
+des RAM-Spitzenverbrauchs und kein Nachweis ausgebliebener Neustarts.
+
+Gezielte lokale Pruefungen ueber lokal.js:12/12Lese-/Fehlergruppen,
+15/15Konten-CAS einschliesslich fuenf Prozessen,13/13Profil-/Auth-Entkopplung,
+24/24Login/HTTP,17/17Sitzungs-/Mandatszuordnung und21/21Speicherintegritaet.
+Socket-EPERM wurde mit demselben isolierten Test ausserhalb der Sandbox
+aufgeloest. Der zusaetzlich gelesene historische Kostenmessungstest meldet
+128/129: sein Scheduler-Regulaerausdruck endet am verschachtelten Optionsobjekt
+vor runId. Derselbe Fehler tritt
+unveraendert im isolierten main-Standf2676192 auf; die Kosten-/Laufaggregationen
+bestehen. Kein gruener Gesamtnachweis fuer diesen Legacytest behauptet.
+Die vorhandene verpflichtende PostgreSQL-/PostgREST-CI prueft zusaetzlich die
+echte JSON-Feldauswahl und den hashgleichen Datenbestand nach gesperrtem
+Teilschreiben. [PR1163](https://github.com/ernisch/helmut-pilot/pull/1163): beide Pflichtchecks
+auf Kopf46677bdf9b406d51dcdbd8ec33f919fb9bbc12f6 SUCCESS in
+[CI43203897145](https://github.com/ernisch/helmut-pilot/actions/runs/43203897145).
+Alle Datenbank-, Standard-, Fach- und Z22-Schritte erfolgreich; Browserausfuehrung
+fuer diesen Backenddiff planmaessig uebersprungen, erfolgreicher Pflichtcheck.
+Vor Merge mainf2676192, vollstaendiger Diff/Kopf und0lebende Leases bestaetigt.
+Merge6557405d8419a47dfdcfe53d6f03ca26a863ee3c um11:25:05UTC;
+Deploymentdpl_8MLTAiwYsrTA8Ho9jyvv5TEo5UgE READY und Hauptalias bestaetigt.
+Lesende Runtimekontrolle11:25:46UTC: Startseitenversion6557405d, exakter
+Mergecommit, production=true, kommunikationGesperrt=true. Anonyme Sitzung
+bleibt nicht authentifiziert. Im abgefragten neuen Deploymentfenster keine
+error/warning/fatal-Gruppen; kurze Ruhebeobachtung, kein Lastnachweis.
+Keine echte authentifizierte Production-Bedienabnahme oder wiederhergestelltes
+Kundenbriefing daraus ableiten.
+
+Native Nachkontrolle11:26:28UTC: weiterhin1aktives Profil,0lebende Job-/Pipeline-/
+Klassensperren, PostgreSQL seit09:27:43UTC ohne weiteren Neustart. Gesamtbindung
+1,720205USD, heute0,487723USD einschliesslich2offener Reservierungen; frozen=null,
+Vertrag8c98b2e1 unveraendert. Fenster3/8, Sekunden900/2400, Originale16/16.
+Kein neuer Quellen-, Modell-, Lage- oder Morgenlauf waehrend der Softwarephase.
+Der anschliessend ausdruecklich freigegebene dritte Nachlauf ist unten belegt;
+seine Stoppbedingung ist eingetreten. Kein unverbrauchtes Laufrecht daraus.
+Rueckweg: gezielter Revert dieser Lesekorrektur, keine Datenruecksetzung.
+
+### Drittes freigegebenes Zusatzfenster: trotz Lesefix erneut abgebrochen
+
+Der Betreiber gab genau ein weiteres300s-Quellenfenster frei, danach nur bei
+bestaetigtem Abschluss je einen Lage-/Morgenlauf. Gleiche1USD heute/30USD insgesamt
+inklusive Reserven, keine Mehrkosten durch Datenbankupgrade, Resets oder Nachrichten;
+Stopp bei erneutem Datenbankfehler. Startsignal12:43:58UTC, echter geschuetzter
+Adminstart12:44:55.738UTC, Quellenlauf
+admin-quellen-2026-11-12-d9fc6386-35e0-46d5-8c10-c00d075ed01e,
+commit6557405d8419a47dfdcfe53d6f03ca26a863ee3c,
+Requestwd8px-1794487495506-b95d3a6ca296. Damit wurde der Lesefix wirklich verwendet.
+
+Um12:47:29.631157UTC startet PostgreSQL erneut. Native Meldungen:
+`database system was interrupted`, `not properly shut down; automatic recovery`.
+Runtime ab12:47:32: KO-Schreiben503/PGRST002, unbestaetigter Kostenabschluss,
+danach521auch fuer Journale/Sperren/Endquittung. Die native Quittung bleibt
+running ohne Endbeleg; keine erzwungene Umschreibung oder Wiederholung.
+Lage-/Morgenlauf3 NICHT gestartet. Alle bezahlten Arbeiten nach der vereinbarten
+Stoppbedingung beendet. Die Lesekorrektur verhinderte diesen Neustart nicht.
+
+Fuenf Modellaufrufe sind mit zusammen0,033501USD abgerechnet; ein weiterer
+Aufruf seit12:46:47.608UTC bleibt mit0,212000USD reserviert und ungeklaert.
+Vier technisch vollstaendige Wissensobjekte sind geaendert gespeichert; weder
+fachliche Kundenrelevanz noch ein aktuelles Briefing dadurch nachgewiesen.
+Native Kontrolle12:51:54.941035UTC: Gesamtbindung1,965706USD,
+heute0,733224USD, frozen=null. Drei heutige Reserven zusammen0,636000USD und
+vier historische Reserven unveraendert gebunden. Fenster4/8, Sekunden1200/2400,
+Originale16/16;0lebende Job-/Pipeline-/Klassensperren. Keine Freigabe fuer einen
+vierten Quellenlauf; gebundene Betrage sind keine ausschliesslich abgerechneten Kosten.
+
+Erfolgreicher grosser Store-PATCH vor dem Neustart3997ms. Zwischen12:47:00 und
+12:47:31 keine App-REST-Anfrage sichtbar, waehrend ein Anbieteraufruf wartete.
+Store insgesamt12951552Bytes, nur Primaerschluesselindex und Zeitstempeltrigger.
+Das belegt weder einen bestimmten abstuerzenden SQL-Befehl noch OOM oder Bloat.
+Aktuelle Metriken nach Neustart:948195328Bytes RAM,600424448verfuegbar,
+Committed_AS1204494336 bei CommitLimit1547833344, oom_kill0; Momentaufnahme nach
+Reset, kein Entlastungsbeweis fuer den vorangegangenen Ausfall. Ursache bleibt UNKNOWN.
+
+### Auth-Schreibentlastung vorbereitet, noch nicht aktiviert
+
+[PR1165](https://github.com/ernisch/helmut-pilot/pull/1165): kleine Auth-Aenderungen
+sollen nur geaenderte oberste JSON-Felder uebertragen. Die ganze Zeilenrevision
+bleibt atomare Schreibbedingung, auch bei verschiedenen geaenderten Feldern.
+Unveraenderliche SHA256-Fingerabdruecke erkennen verschachtelte Aenderungen und
+Entfernungen. Unveraenderte Historien, Reserven und unbekannte Felder bleiben
+auf der Datenbank erhalten; kein Retention-, Reset- oder Kontingenteingriff.
+PostgreSQL bildet intern weiterhin eine komplette neue JSONB-Zeilenversion.
+Weniger HTTP-/JSON-Eingabe ist kein bewiesener Rueckgang des RAM-Spitzenverbrauchs
+und keine bestaetigte Reparatur der Neustartursache.
+
+Neue serverseitige Funktion `helmut_auth_cas_patch_v1`: SECURITY INVOKER,
+fester search_path, EXECUTE ausschliesslich service_role, Ziel-ID endet in `-auth`.
+Keine neuen Tabellen/Indizes/Policies, keine Bestandsdatenaenderung bei Installation.
+Eine fehlende Migration oder verlorene Schreibantwort bleibt Fehler; kein
+Rueckfall auf Gesamtschreiben und kein blinder Retry. Neue Zeilen bleiben beim
+bisherigen bedingten Insert. Ohne exakt `HELMUT_AUTH_PATCH_V1=on` bleiben bestehende
+Schreibpfade aktiv, einschliesslich ihrer bisherigen CAS-Pruefung.
+Vercel-Env-Metadaten rein lesend geprueft: Flag in keinem Ziel gesetzt.
+
+Gezielt lokal ueber lokal.js:12/12Schreibgruppen und12/12Lesegruppen bestanden.
+Synthetischer Sitzungstest mit3MBHistorie:594statt3000253Requestbytes, keine
+Production-/RAM-Messung. PostgreSQL17.6 im isolierten Container:8/8SQL-Gruppen
+mit echten Rollen, zwei konkurrierenden Verbindungen, Historien-/Reservenhashes,
+Altbestand, Eingabeabwehr und datenbewahrendem Rollback bestanden. Budget16/16,
+CAS15/15, Env38/38 und Migration71/71 zuvor bestanden. Zwei lokale REST-Aufbauten
+scheiterten an Containerstart/Portbereitstellung vor den neuen Testfaellen;
+kein bestandener lokaler REST-Nachweis behauptet. Der bestehende verpflichtende
+PG17-/PostgREST-CI-Schritt enthaelt neun neue echte REST-/SQL-Gruppen und ist
+im Pflichtlauf erfolgreich. Beide Pflichtchecks auf dem exakten Kopf
+2968bb57e8c151b38e1549eeeb487fca0aed1aac SUCCESS in
+[CI43228665680](https://github.com/ernisch/helmut-pilot/actions/runs/43228665680).
+Alle nativen DB-, Standard-, Fach- und Z22-Schritte bestanden. Browserausfuehrung
+beim Backenddiff planmaessig uebersprungen; erfolgreicher Pflichtcheck ist kein
+neuer authentifizierter Browsernachweis. Vor Merge main16700435, voller Diff,
+Konfliktfreiheit und0lebende Job-/Pipeline-/Klassensperren bestaetigt.
+Die Connector-Env-Liste kuerzt einzelne Metadaten; deshalb vollstaendige rein
+lesende API-Nachkontrolle ohne Ausgabe von Werten:86Eintraege, Flag nicht gesetzt.
+
+Merge4450622a8c11d287eaa1eddab8557ded0de1da79 am12.11.,14:05:25UTC,
+Deploymentdpl_8Q98eu5joJCVNLeKWuhSLiE9JNib READY, Hauptalias bestaetigt.
+Reine GET-Kontrolle14:06:48UTC: Startseitenversion4450622a, exakter Mergecommit,
+production=true, kommunikationGesperrt=true, anonyme Sitzung nicht authentifiziert.
+Im abgefragten neuen Deploymentfenster keine error/warning/fatal-Gruppen;
+kurze Ruhekontrolle, kein Last- oder Briefingnachweis. Native Kontrolle14:07:11UTC:
+RPC weiterhin NICHT installiert, PostgreSQL seit12:47:29UTC ohne neuen Neustart,
+0lebende Job-/Pipeline-/Klassensperren. Code ist inaktiv auf Production vorhanden;
+Migration, Flag-Aktivierung und gesonderter Redeploy sind NICHT ausgefuehrt.
+Keine weiteren Quellen-/Modell-/Lage-/Morgenlaeufe. Naechster Schritt bleibt die
+konkrete Freigabe fuer den folgenden Aktivierungsplan, keine alte Lauf-GO-Verwendung.
+
+Konkreter Aktivierungsplan nach gruener CI und inaktivem Coderollout:
+1. Frischen Productionstand, fehlenden RPC, Ziel-ID-Endung,0lebende Schreiber
+   und weiter fehlendes Flag rein lesend pruefen; aktuelle Kostenreserven erhalten.
+2. Nur mit gesondertem GO Migration
+   `20261112130226_auth_store_cas_patch_v1.sql` auf derselben Datenbank anwenden,
+   ausschliesslich Flag `HELMUT_AUTH_PATCH_V1=on` fuer Production setzen und
+   denselben geprueften Code regulaer neu deployen. Keine Ressourcenvergroesserung
+   oder neue monatliche Datenbankkosten; keine bezahlten Laeufe eingeschlossen.
+3. Funktion/ACL, Installation ohne Bestandsdatenveraenderung und Runtimeversion
+   rein lesend bestaetigen. Echte Schreib-/Quellenprobe braucht eigenes konkretes GO;
+   die drei alten Laufrechte sind verbraucht. Stopp bei erneutem DB-Fehler.
+4. Rueckweg bei Fehler: Flag entfernen und vorherigen Schreibpfad redeployen;
+   erst danach `rollback_20261112130226_auth_store_cas_patch_v1.sql` anwenden.
+   Die Funktion wird entfernt, keine Daten oder Journale zurueckgesetzt.
 
 ### Zusaetzliche Codekorrekturen und echte Rolloutbelege
 
@@ -70,9 +238,9 @@ Vier historische Reserven ebenfalls erhalten. Fenster3/8, Sekunden900/2400,
 Originale16/16. Beide Zusatzfenster sind verbraucht, keine weitere Startfreigabe.
 Um09:44:40UTC0lebende Job-/Pipelineleases; keine alten Quittungen umgeschrieben.
 
-### Verbleibender Nachweisbedarf
+### Diagnose nach dem zweiten Ausfall (historisch)
 
-Der Neustart ist zweimal nativ belegt, sein Ausloeser weiter UNKNOWN.
+Bis09:33UTC ist der Neustart zweimal nativ belegt, sein Ausloeser weiter UNKNOWN.
 pg_stat_statements enthaelt nach dem zweiten Neustart nur den neuen Bestand;
 die verursachende Abfrage laesst sich daraus nicht bestimmen. Langsamster
 erfolgreicher sichtbarer Store-PATCH vor dem Abbruch4905ms. Das beweist weder

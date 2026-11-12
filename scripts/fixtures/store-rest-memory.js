@@ -7,7 +7,7 @@ module.exports = function storeResponse(rows, input, options = {}) {
   const method = options.method || "GET";
   const body = options.body ? JSON.parse(options.body) : null;
   const id = body?.id || params.get("id")?.replace(/^eq\./, "");
-  if (method === "GET") return { status: 200, body: rows.has(id) ? [{ data: rows.get(id) }] : [] };
+  if (method === "GET") return { status: 200, body: rows.has(id) ? [require("./store-json-selection")(id, rows.get(id), input)] : [] };
   const prefer = String(options.headers?.Prefer || options.headers?.prefer || "");
   if (method === "POST") {
     if (rows.has(id) && !prefer.includes("resolution=merge-duplicates")) return { status: 409, body: { code: "23505" } };

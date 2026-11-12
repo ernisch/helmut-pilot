@@ -48,7 +48,7 @@ async function fakeFetch(url, options = {}) {
     if (method === "GET") {
       const m = /id=eq\.([^&]+)/.exec(path);
       const id = m ? decodeURIComponent(m[1]) : null;
-      return makeRes(200, id && blobRows.has(id) ? [{ data: blobRows.get(id) }] : []);
+      return makeRes(200, id && blobRows.has(id) ? [require("./fixtures/store-json-selection")(id, blobRows.get(id), url)] : []);
     }
     if (method === "POST") {
       if (blobRows.has(body.id) && !prefer.includes("resolution=merge-duplicates")) return makeRes(409, { message: "duplicate key" });
