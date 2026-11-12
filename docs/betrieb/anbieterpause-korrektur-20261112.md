@@ -21,7 +21,19 @@ Pauseninformation.35/35Vorlaufgruppen bestehen. Eine isolierte In-Memory-Gegenpr
 ohne Metadatenweitergabe laesst den neuen Test scheitern. Kein Runtimefile wurde
 fuer die Gegenprobe geaendert.
 
-Status: erneute Pflicht-CI und Coderollout ausstehend. Kein Nachweis fuer einen
+Der folgende Pflichtlauf scheiterte im nativen Kontodatenbanktest; seine genaue
+Ursache ist mangels lesbarer Rohlogs unbekannt. Die isolierte lokale Reproduktion
+mit echtem PostgreSQL17.6 und PostgREST12.2.3 bestand44/44Pruefungen. Eine einmalige
+Wiederholung desselben CI-Laufs scheiterte frueher an der bewusst erhaltenen
+Erstversuchsbindung der synthetischen Anschlussprobe. Weitere Blindwiederholungen
+unterbleiben. Eine geschlossene Annotation im Kontodatenbanktest meldet nun nur
+statische Phase, erlaubte Fehlerklasse, numerischen Exitstatus und Codezeile;
+Fehlermeldungen, SQL und Zugangsdaten gehen nicht in diese Annotation ein.
+Pruefauswahl, Einmalbindung, Grenzwerte und Abnahmekriterien bleiben erhalten.
+Die bestehende synthetische Kontosuite besteht mit der Annotation16/16Pruefungen,
+einschliesslich einer Gegenprobe gegen die Ausgabe beliebiger Fehlertexte.
+
+Status: Pflicht-CI und Coderollout ausstehend. Kein Nachweis fuer einen
 wiederhergestellten Briefingbetrieb; weitere betriebliche Laeufe bleiben gestoppt.
 Ausfuehrliche Betriebsnachweise bleiben lokal, dieser Nachweis enthaelt nur die
 Codekorrektur und deren Pruefstand.
