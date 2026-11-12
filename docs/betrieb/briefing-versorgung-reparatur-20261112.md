@@ -619,3 +619,17 @@ HELMUT_LLM_BUDGET_FAIL_CLOSED; der historische Flag-aus-Vertrag bleibt erhalten.
 Keine erneuten Production-Quellen-/Modell-/Lage-/Morgenlaeufe, keine Env-, Daten-
 oder Migrationsaenderung. Pflicht-CI und Live-Nachweis stehen im zugehoerigen PR.
 Ein wiederhergestelltes echtes Tagesbriefing ist weiterhin nicht bewiesen.
+
+Budgetleser [PR1175](https://github.com/ernisch/helmut-pilot/pull/1175) live:
+beide Pflichtchecks CI43311168839 aufe3fdd8db erfolgreich; expected-head-Merge
+ee2ef952f5a58566c96c712ccd4430aab7f619a0. Productiondpl_2Pgn1EkLprowJXgb44MQy1tPNHKY
+READY, Hauptalias gleicher Commit. Release HTTP200 mit ok/ready/storage true.
+Live-Leseprobe22:00:07UTC: Budgetreader HTTP200, unveraendert22Aufrufe,
+Limit2416, Rest2394. Native REST-Logs bestaetigen22:00:06.691/06.897UTC
+zweimal HTTP200 fuer die Nutzungssicht, kein Vollblob-Select in diesen Aufrufen.
+Nutzungslog- und Kostenbuchfingerprints21:59:46/22:00:31 identisch; keine Buchung,
+Reservierung oder sonstige Datenmutation. PostgreSQL weiterhin seit14:38UTC.
+Damit ist der kleinere Leser live belegt, weder die Neustartursache geloest noch
+wiederhergestellte echte Briefingversorgung behauptet. Kostenkontrolle21:49UTC:
+weiterhin0,988518USD heute gegen1USD inklusive4unklarer/reservierter Aufrufe,
+gesamt2,221000USD; kein weiterer bezahlter Nachlauf aus dieser Reparatur.
