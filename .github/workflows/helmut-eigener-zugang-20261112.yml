@@ -1,0 +1,45 @@
+name: Eigener Helmut-Zugangstest 2026-11-12
+on:
+  push:
+    branches: [codex/zugang-eigenprobe-20261112]
+permissions:
+  contents: read
+jobs:
+  own-access-once:
+    if: github.repository == 'ernisch/helmut-pilot' && github.ref == 'refs/heads/codex/zugang-eigenprobe-20261112' && github.event_name == 'push' && github.event.before == 'dc20e1948d3c4c25847b7bd5e528da4580a30fa1' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dc20e1948d3c4c25847b7bd5e528da4580a30fa1
+          persist-credentials: false
+      - name: Gepruefte Production lesend bestaetigen, danach genau eine eigene Zugangsmail
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$(git rev-parse HEAD)" = "dc20e1948d3c4c25847b7bd5e528da4580a30fa1"
+          base="https://helmut-pilot.vercel.app"
+          curl --silent --show-error --fail --connect-timeout 10 --max-time 30 "$base/" -o start.html
+          grep -Fq 'client.js?v=dc20e194' start.html
+          curl --silent --show-error --fail --connect-timeout 10 --max-time 30 "$base/client.js?v=dc20e194" -o served-client.js
+          cmp --silent client.js served-client.js
+          grep -Fq 'href="/verwaltung/einfach/"' served-client.js
+          curl --silent --show-error --fail --connect-timeout 10 --max-time 30 "$base/passwort-setzen" -o password.html
+          grep -Fq 'Wählen Sie ein Passwort für Ihren Helmut-Zugang' password.html
+          grep -Fq 'id="pw1"' password.html
+          grep -Fq 'id="pw2"' password.html
+          for route in /verwaltung/ /verwaltung/einfach/ /verwaltung/einfach/app.mjs '/api/admin/customers?scope=regular'; do
+            code="$(curl --silent --show-error --connect-timeout 10 --max-time 30 --output protected-response.json --write-out '%{http_code}' "$base$route")"
+            test "$code" = "401"
+          done
+          printf 'client_sha256='
+          sha256sum served-client.js | cut -d' ' -f1
+          printf 'production_readcheck=PASS commit=dc20e1948d3c4c25847b7bd5e528da4580a30fa1\n'
+          printf 'own_mail_attempt_started_at='
+          date -u +%Y-%m-%dT%H:%M:%SZ
+          code="$(curl --silent --show-error --connect-timeout 10 --max-time 45 --retry 0 --output mail-response.json --write-out '%{http_code}' -X POST -H 'Content-Type: application/json' -H 'Origin: https://helmut-pilot.vercel.app' --data '{"email":"hallo@mithelmut.de"}' "$base/api/auth/request-reset")"
+          printf 'own_mail_http_status=%s\n' "$code"
+          test "$code" = "200"
+          node -e 'const r=require("./mail-response.json");if(r.ok!==true)process.exit(1);console.log("generic_response_ok=true; SMTP acceptance requires separate audit proof");'
