@@ -24,6 +24,15 @@ const dir=path.resolve(__dirname,'../docs/ui/verwaltung-einfach-20261111');
   await page.locator('#name').fill('Fiktiver Vorschaukunde');await page.locator('#email').fill('test@example.invalid');await page.locator('#new-customer button[type="submit"]').click();
   await page.getByRole('heading',{name:'Fiktiver Vorschaukunde',exact:true}).waitFor();
   check('Erfasster Beispielkunde wird in der Vorschau geoeffnet',await page.locator('main').innerText().then(t=>t.includes('Das Mandat ist noch nicht bestätigt.')));
+  await page.locator('[data-action="profile"]').first().click();await page.locator('#profile-form').waitFor();
+  check('Vorschau hat dieselben drei Dropdowns',await page.locator('#party,#faction,#constituency').evaluateAll(nodes=>nodes.length===3&&nodes.every(n=>n.tagName==='SELECT')));
+  check('Wahlkreis wartet auf Parlament und Bundesland',await page.locator('#constituency').isDisabled());
+  await page.locator('#parliamentType').selectOption('Bundestag');await page.locator('#state').selectOption('Berlin');await page.locator('#party').selectOption('CDU');await page.locator('#faction').selectOption('CDU/CSU');
+  check('Vorhandene Wahlkreisdaten sind auch offline verfuegbar',await page.locator('#constituency option').count()>2);
+  await page.locator('#constituency').selectOption('Kein Wahlkreis (Landesliste)');
+  await page.screenshot({path:path.join(dir,'vorschau-mandat-dropdown-mobil.png'),fullPage:true});
+  await page.locator('#state').selectOption('Brandenburg');
+  check('Bundeslandwechsel leert den Wahlkreis auch in der privaten Vorschau',(await page.locator('#constituency').inputValue())==='');
   for(const width of [1440,390,360,320]){await page.setViewportSize({width,height:900});check('Vorschau ohne Ueberlauf bei '+width,await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
   check('Keine JavaScriptfehler',errors.length===0);check('Keine App-/Netzwerkverbindung',external.length===0);
   fs.writeFileSync(path.join(dir,'vorschau-v2-pruefung.json'),JSON.stringify({status:'PASS',observedAt:new Date().toISOString(),checks,pageErrors:errors,externalRequests:external.length,scope:'Export derselben Appkomponente mit fiktivem Beispieladapter; keine echten Appdaten'},null,2)+'\n');

@@ -1,6 +1,6 @@
 # Kundenverwaltung: einfache Bedienung mit vorhandenen App-Routen
 
-Stand: 11.11.2026. **App-Kandidat lokal geprüft, private Vorschau bereitgestellt;
+Stand: 12.11.2026. **App-Kandidat lokal geprüft, private Vorschau bereitgestellt;
 PR1155 bleibt auf Betreiberwunsch Draft ohne Merge. Kein Liveumbau von Helmut.**
 
 [Private Vorschau öffnen](https://helmut-verwaltung-vorschau-20261111.lueynohut.chatgpt.site)
@@ -13,6 +13,10 @@ PR1155 bleibt auf Betreiberwunsch Draft ohne Merge. Kein Liveumbau von Helmut.**
   Tarifwunsch und kein Passwort. Der Kunde ist die Person des Mandats.
 - **Eine Kundenseite:** Mandat ergänzen, Versorgung ausdrücklich aktivieren,
   heutigen Briefingstand prüfen und bei Bedarf einen Zugangslink erstellen.
+- **Mandat auswählen:** Partei, Fraktion und Wahlkreis als Dropdowns mit denselben
+  Listen wie im Profil. Wahlkreise passen zu Parlament und Bundesland; ein Wechsel
+  setzt die Wahlkreisauswahl zurück. Landesliste und bestehende Sonderwerte bleiben
+  auswählbar. [Ansicht auf dem Handy](vorschau-mandat-dropdown-mobil.png).
 - **Drei Einstiege:** Übersicht, Kunden, Einstellungen. Die Übersicht zeigt
   Kunden mit Handlungsbedarf. Fehlende Nachweise bleiben offen.
 - **Weitere Funktionen:** Kosten, Quellen und letzte Abläufe verwenden vorhandene
@@ -74,14 +78,15 @@ niemals den fiktiven Beispieladapter.
 
 ## Tatsächliche Prüfung
 
-- **25 Gruppen mit Browser und echtem isoliertem Backend:**
+- **30 Gruppen mit Browser und echtem isoliertem Backend:**
   [Prüfbeleg](app-pruefung.json), [Desktop](app-uebersicht.png),
   [Kundenseite Mobil](app-kunde-mobil.png). Von der UI ausgelöste Kontoanlage,
   Profil-PATCH, explizite Aktivierung und Einmallink sind im lokalen Speicher
-  nachgewiesen. Ergebnisstatus zusätzlich gegen synthetische bestehende
+  nachgewiesen, einschließlich gespeicherter Dropdownwerte und abhängiger
+  Wahlkreislisten. Ergebnisstatus zusätzlich gegen synthetische bestehende
   Antwortverträge geprüft; die lokale Umgebung besitzt keinen produktiven V3-Speicher.
-- **12 Gruppen für den Offlineexport:** [Prüfbeleg](vorschau-v2-pruefung.json),
-  1440/390/360/320 Pixel, Zweifeldanlage, Beispielzustände, keine JavaScriptfehler
+- **16 Gruppen für den Offlineexport:** [Prüfbeleg](vorschau-v2-pruefung.json),
+  1440/390/360/320 Pixel, Zweifeldanlage, Dropdowns, Beispielzustände, keine JavaScriptfehler
   und keine App-/Netzwerkverbindung.
 - Bestehende Adminansicht: **104/104 Renderprüfungen** und **5/5 bestehende
   Verwaltungs-Ergebnisprüfungen** grün. Kein fachfremder Last- oder Modelltest.
@@ -103,6 +108,11 @@ Die Browserprüfung verwendet einen wegwerfbaren lokalen Klon mit synthetischen
 Daten, keine gemeinsame Testdatenablage und keine echten Nachrichten.
 Native App-Routen bleiben serverseitig auf Administratoren beschränkt; jede neue
 Assetdatei hat denselben Zugriffsschutz und eine feste Allowlist.
+
+`scripts/profil-auswahl-paket.js` liest die vorhandenen Profillisten aus
+`client.js` und `assets/profil-wahlkreise.json`, ohne den Client auszuführen.
+App-Asset und Offlineexport entstehen daraus; `verwaltung/einfach/profil-auswahl.mjs`
+ist die daraus erzeugte Dateifassung. Es gibt keine zweite gepflegte Wahlliste.
 
 ## Stand, Grenze und nächster Schritt
 

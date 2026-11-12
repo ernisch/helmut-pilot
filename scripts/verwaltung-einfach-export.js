@@ -8,7 +8,8 @@ const moduleUrl=source=>'data:text/javascript;base64,'+Buffer.from(source).toStr
 function previewHtml(){
  const shared=moduleUrl(read('model.mjs'));
  const model=moduleUrl(read('einfach/model.mjs').replace("'../model.mjs'",JSON.stringify(shared)));
- const app=moduleUrl(read('einfach/app.mjs').replace("'./model.mjs'",JSON.stringify(model)));
+ const choices=moduleUrl(require('./profil-auswahl-paket').profileChoiceModule());
+ const app=moduleUrl(read('einfach/app.mjs').replace("'./model.mjs'",JSON.stringify(model)).replace("'./profil-auswahl.mjs'",JSON.stringify(choices)));
  const example=moduleUrl(read('einfach/preview.mjs').replace("'./model.mjs'",JSON.stringify(model)));
  const boot=`import {mountAdministration} from ${JSON.stringify(app)};import {createPreviewApi} from ${JSON.stringify(example)};mountAdministration(document.querySelector('#verwaltung'),{api:createPreviewApi(),preview:true});`;
  return read('einfach/index.html')

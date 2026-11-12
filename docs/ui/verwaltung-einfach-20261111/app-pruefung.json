@@ -1,7 +1,7 @@
 {
   "status": "PASS",
-  "observedAt": "2026-11-11T22:17:36.710Z",
-  "checks": 25,
+  "observedAt": "2026-11-12T07:30:10.762Z",
+  "checks": 30,
   "requests": [
     {
       "url": "/verwaltung/einfach/",
@@ -25,6 +25,10 @@
     },
     {
       "url": "/verwaltung/einfach/model.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/profil-auswahl.mjs",
       "method": "GET"
     },
     {
@@ -52,6 +56,14 @@
       "method": "GET"
     },
     {
+      "url": "/api/admin/profile/kunde-883a3bf6-4162-4f61-9924-093b7be09355",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-883a3bf6-4162-4f61-9924-093b7be09355",
+      "method": "GET"
+    },
+    {
       "url": "/api/admin/users",
       "method": "GET"
     },
@@ -64,7 +76,7 @@
       "method": "POST"
     },
     {
-      "url": "/api/admin/users/user-ca2bd928d88cca4e30",
+      "url": "/api/admin/users/user-2db0e113655e208ada",
       "method": "PATCH"
     },
     {
@@ -80,11 +92,11 @@
       "method": "GET"
     },
     {
-      "url": "/api/admin/profile/kunde-d4d340a9-5b63-4f62-bffe-b7e04a51aa03",
+      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
       "method": "GET"
     },
     {
-      "url": "/api/admin/profile/kunde-d4d340a9-5b63-4f62-bffe-b7e04a51aa03",
+      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
       "method": "GET"
     },
     {
@@ -92,11 +104,11 @@
       "method": "GET"
     },
     {
-      "url": "/api/admin/profile/kunde-d4d340a9-5b63-4f62-bffe-b7e04a51aa03",
+      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
       "method": "PATCH"
     },
     {
-      "url": "/api/admin/profile/kunde-d4d340a9-5b63-4f62-bffe-b7e04a51aa03",
+      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
       "method": "GET"
     },
     {
@@ -112,7 +124,7 @@
       "method": "GET"
     },
     {
-      "url": "/api/admin/profile/kunde-d4d340a9-5b63-4f62-bffe-b7e04a51aa03",
+      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
       "method": "GET"
     },
     {
@@ -120,11 +132,11 @@
       "method": "GET"
     },
     {
-      "url": "/api/admin/profile/kunde-d4d340a9-5b63-4f62-bffe-b7e04a51aa03",
+      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
       "method": "PATCH"
     },
     {
-      "url": "/api/admin/profile/kunde-d4d340a9-5b63-4f62-bffe-b7e04a51aa03",
+      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
       "method": "GET"
     },
     {
@@ -140,7 +152,7 @@
       "method": "GET"
     },
     {
-      "url": "/api/admin/profile/kunde-d4d340a9-5b63-4f62-bffe-b7e04a51aa03",
+      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
       "method": "GET"
     },
     {
@@ -156,7 +168,7 @@
       "method": "GET"
     },
     {
-      "url": "/api/admin/users/user-ca2bd928d88cca4e30/restore-access",
+      "url": "/api/admin/users/user-2db0e113655e208ada/restore-access",
       "method": "POST"
     },
     {
@@ -168,7 +180,7 @@
       "method": "GET"
     },
     {
-      "url": "/api/admin/users/user-ca2bd928d88cca4e30/invite",
+      "url": "/api/admin/users/user-2db0e113655e208ada/invite",
       "method": "POST"
     },
     {

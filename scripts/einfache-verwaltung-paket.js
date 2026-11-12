@@ -8,6 +8,7 @@ function simpleAdministrationPackage() {
  if (cached) return cached;
  const assets = new Map();
  for (const name of files) assets.set('einfach/'+name, fs.readFileSync(path.join(root, 'einfach', name)));
+ assets.set('einfach/profil-auswahl.mjs', Buffer.from(require('./profil-auswahl-paket').profileChoiceModule()));
  assets.set('einfach/', assets.get('einfach/index.html'));
  for (const name of ['api.mjs', 'model.mjs', 'original-actions.mjs']) assets.set(name, fs.readFileSync(path.join(root, name)));
  cached = assets; return assets;

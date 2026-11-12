@@ -13,7 +13,7 @@ function isolatedBackend(){
  // CI installiert Laufzeitpakete im Ausgangscheckout. Nur diese vorhandenen
  // Pakete teilen; Daten und Zugangsdaten bleiben im wegwerfbaren Klon isoliert.
  if(fs.existsSync(path.join(root,'node_modules')))fs.symlinkSync(path.join(root,'node_modules'),path.join(clone,'node_modules'),'dir');
- for(const file of ['server.js','verwaltung/original-actions.mjs','scripts/einfache-verwaltung-paket.js'])fs.copyFileSync(path.join(root,file),path.join(clone,file));
+ for(const file of ['server.js','verwaltung/original-actions.mjs','scripts/einfache-verwaltung-paket.js','scripts/profil-auswahl-paket.js'])fs.copyFileSync(path.join(root,file),path.join(clone,file));
  fs.cpSync(path.join(root,'verwaltung/einfach'),path.join(clone,'verwaltung/einfach'),{recursive:true});
  assert.equal(fs.existsSync(path.join(clone,'.helmut-data')),false);
  return {temp,clone};
@@ -39,7 +39,7 @@ async function run({browser=false,evidenceDir=null}={}){
   const {customerState,berlinDay}=await import(pathToFileURL(path.join(root,'verwaltung/einfach/model.mjs')));
   const api=createSimpleApi({fetcher:authenticated});
   await check('Alle Kandidatenassets nur fuer angemeldete Administratoren',async()=>{
-   for(const asset of ['','app.mjs','api.mjs','styles.css']){
+   for(const asset of ['','app.mjs','api.mjs','styles.css','profil-auswahl.mjs']){
     const route='/verwaltung/einfach/'+asset;
     assert.equal((await fetch(base+route)).status,401);
     assert.equal((await fetch(base+route,{headers:{Cookie:memberCookie}})).status,403);
@@ -118,6 +118,8 @@ async function run({browser=false,evidenceDir=null}={}){
    }});await p.load();assert.equal((await p.invite('synthetic-invite')).inviteUrl,url);assert.ok(calls.every(x=>x.startsWith('/api/')));p.dispose();
   });
   if(browser){
+   const oldProfile=await storage.getProfile(user.politicianId);
+   await storage.saveProfile({...oldProfile,party:'Fiktive Regionalpartei',faction:'Fiktive Fraktion',constituency:'Fiktive Region'});
    const {chromium}=require('playwright');
    browserInstance=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--disable-background-networking']});
    const context=await browserInstance.newContext({viewport:{width:1440,height:1100}});
@@ -132,6 +134,10 @@ async function run({browser=false,evidenceDir=null}={}){
    await page.getByRole('heading',{name:'Auf einen Blick.'}).waitFor();
    await check('Neue Oberflaeche bootet mit drei Hauptbereichen und echten lokalen Konten',async()=>{assert.equal(await page.locator('.nav button').count(),3);assert.ok((await page.locator('main').innerText()).includes('Fiktiver Kunde Einfach'));});
    if(evidenceDir)await page.screenshot({path:path.join(evidenceDir,'app-uebersicht.png'),fullPage:true});
+   await page.locator(`[data-customer="${user.id}"]`).click();await page.locator('[data-action="profile"]').first().click();
+   await page.locator('#profile-form').waitFor();
+   await check('Vorhandene freie Bezeichnungen bleiben beim Oeffnen im Dropdown erhalten',async()=>{assert.equal(await page.locator('#party').inputValue(),'Fiktive Regionalpartei');assert.equal(await page.locator('#faction').inputValue(),'Fiktive Fraktion');assert.equal(await page.locator('#constituency').inputValue(),'Fiktive Region');});
+   await page.locator('[data-nav="customers"]').click();
    await page.locator('[data-action="new"]').first().click();
    await check('Kundenanlage hat genau Name und E-Mail',async()=>{assert.equal(await page.locator('#new-customer input').count(),2);assert.equal(await page.getByText('Ansprechpartner',{exact:true}).count(),0);});
    await page.locator('#name').fill('Fiktiver Browserkunde');await page.locator('#email').fill('browser@example.invalid');
@@ -140,10 +146,21 @@ async function run({browser=false,evidenceDir=null}={}){
    await check('Browserkonto liegt wirklich im isolierten Backend',async()=>{const c=(await accounts.listUsers()).find(u=>u.email==='browser@example.invalid');assert.ok(c);assert.equal(c.active,false);assert.equal(await storage.getProfile(c.politicianId),null);assert.equal(await page.locator('h1').evaluate(el=>el===document.activeElement),true);});
    await page.locator('[data-action="profile"]').first().click();
    await page.getByRole('heading',{name:'Mandat einrichten.'}).waitFor();
-   await page.locator('#parliamentType').selectOption('Landtag');await page.locator('#state').selectOption('Berlin');await page.locator('#party').fill('SPD');await page.locator('#faction').fill('SPD');await page.locator('#constituency').fill('Fiktive Region');await page.locator('#topics').fill('Fiktives Thema');
+   const catalog=JSON.parse(fs.readFileSync(path.join(root,'assets/profil-wahlkreise.json'),'utf8')).constituencies;
+   await check('Partei, Fraktion und Wahlkreis sind native Dropdowns',async()=>{for(const key of ['party','faction','constituency'])assert.equal(await page.locator('#'+key).evaluate(el=>el.tagName),'SELECT');assert.equal(await page.locator('#constituency').isDisabled(),true);});
+   await page.locator('#parliamentType').selectOption('Bundestag');await page.locator('#state').selectOption('Berlin');
+   await page.locator('#party').selectOption('CDU');await page.locator('#faction').selectOption('CDU/CSU');
+   await check('Partei und Fraktion bleiben getrennt waehlbar',async()=>{assert.equal(await page.locator('#party').inputValue(),'CDU');assert.equal(await page.locator('#faction').inputValue(),'CDU/CSU');});
+   await page.locator('#constituency').selectOption(catalog.Bundestag.Berlin[0]);
+   await page.locator('#parliamentType').selectOption('Landtag');
+   await check('Parlamentswechsel leert alte Auswahl und nutzt die vorhandenen Landtagswahlkreise',async()=>{assert.equal(await page.locator('#constituency').inputValue(),'');const values=await page.locator('#constituency option').evaluateAll(options=>options.map(o=>o.value).filter(Boolean));assert.deepEqual(values,[...catalog.Landtag.Berlin,'Kein Wahlkreis (Landesliste)']);});
+   await page.locator('#constituency').selectOption(catalog.Landtag.Berlin[0]);await page.locator('#state').selectOption('Brandenburg');
+   await check('Bundeslandwechsel verlangt eine neue passende Wahlkreisauswahl',async()=>{assert.equal(await page.locator('#constituency').inputValue(),'');const values=await page.locator('#constituency option').evaluateAll(options=>options.map(o=>o.value).filter(Boolean));assert.deepEqual(values,[...catalog.Landtag.Brandenburg,'Kein Wahlkreis (Landesliste)']);});
+   await page.locator('#state').selectOption('Berlin');await page.locator('#party').selectOption('SPD');await page.locator('#faction').selectOption('SPD');await page.locator('#constituency').selectOption('Kein Wahlkreis (Landesliste)');await page.locator('#topics').fill('Fiktives Thema');
+   if(evidenceDir){await page.setViewportSize({width:390,height:1100});await page.screenshot({path:path.join(evidenceDir,'app-mandat-dropdown-mobil.png'),fullPage:true});}
    await page.locator('#profile-form button[type="submit"]').click();
    await page.getByRole('heading',{name:'Fiktiver Browserkunde',exact:true}).waitFor();
-   await check('Browser speichert Mandat, ohne den Kunden als versorgt auszugeben',async()=>{const c=(await accounts.listUsers()).find(u=>u.email==='browser@example.invalid');const p=await storage.getProfile(c.politicianId);assert.equal(p.parliamentType,'Landtag');assert.equal(p.profileActive,false);assert.match(await page.locator('main').innerText(),/Versorgung pausiert/);});
+   await check('Browser speichert Dropdownwerte, ohne den Kunden als versorgt auszugeben',async()=>{const c=(await accounts.listUsers()).find(u=>u.email==='browser@example.invalid');const p=await storage.getProfile(c.politicianId);assert.equal(p.parliamentType,'Landtag');assert.equal(p.party,'SPD');assert.equal(p.faction,'SPD');assert.equal(p.constituency,'Kein Wahlkreis (Landesliste)');assert.equal(p.profileActive,false);assert.match(await page.locator('main').innerText(),/Versorgung pausiert/);});
    await page.locator('[data-action="activate"]').click();
    await page.getByText('Aktiv',{exact:true}).waitFor();
    await check('Aktivieren bleibt getrennt vom tatsaechlichen Briefing',async()=>{assert.equal(await page.getByText('Heute bereit',{exact:true}).count(),0);});
