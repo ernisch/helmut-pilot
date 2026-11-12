@@ -236,5 +236,87 @@ function fireAndCount(setup) {
     renders === 1 && t.getRenderedDay() === dayNow);
 }
 
-console.log(`\n${passed}/${passed + failed} Block-5 (Lage-Frische & Live-Flow)-Assertions erfolgreich.`);
-if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
+// ═══ TEIL 5 — Auswertungszeit aus dem echten Speicherleser ════════════════
+async function pruefeAuswertungszeit() {
+  const assert = require("node:assert/strict"), S = require("../lib/helmut/storage");
+  const U = require("../lib/helmut/understanding"), F = require("../lib/helmut/briefing-frische");
+  const alt = "2020-01-01T05:00:00.000Z", now = new Date();
+  const queries = [];
+  const speicher = rows => async (endpoint, options = {}) => {
+    const url = new URL(endpoint, "https://offline.invalid");
+    assert.equal(url.pathname, "/rest/v1/knowledge_objects");
+    if (options.method === "PATCH") {
+      const patch = JSON.parse(options.body);
+      assert(!Object.hasOwn(patch, "updated_at"), "Anreicherung darf die Auswertungszeit nicht setzen");
+      Object.assign(rows.find(r => "eq." + r.id === url.searchParams.get("id")), patch);
+      return null;
+    }
+    queries.push(endpoint);
+    const field = url.searchParams.get("select");
+    assert(["created_at", "updated_at"].includes(field));
+    assert.equal(url.searchParams.get("understanding_status"), "eq.complete");
+    assert.equal(url.searchParams.get(field), "not.is.null");
+    assert.equal(url.searchParams.get("order"), field + ".desc");
+    assert.equal(url.searchParams.get("limit"), "1");
+    return rows.filter(r => r.understanding_status === "complete" && r[field] != null)
+      .sort((a, b) => Date.parse(b[field]) - Date.parse(a[field])).slice(0, 1).map(r => ({ [field]: r[field] }));
+  };
+  const lauf = { vertragVersion: F.VERTRAG_VERSION, berlinTag: F.berlinTagKey(now),
+    status: "erfolg", erzeugtAm: now.toISOString() };
+  const urteil = stamp => F.beurteileFrische({ jetzt: now, lauf, datenstandIso: stamp });
+  const bestand = { id: "ko-vg-auswertungszeit", vorgang_id: "vg-auswertungszeit", ko_version: 1, created_at: alt };
+  // Der echte Assembler liefert updated_at, aber keinen neuen created_at-Wert.
+  const auswertung = U.assembleKnowledgeObject({}, { documents: [] }, bestand.vorgang_id,
+    { understanding_status: "complete", koVersion: 2, bestand });
+  assert.equal(auswertung.created_at, undefined);
+  const neu = { ...bestand, ...auswertung };
+  const stamp = await S.getLatestCompleteKnowledgeObjectAt({ request: speicher([neu]) });
+  check("Speicher-Frische: neues Verstehen eines alten Vorgangs verwendet die echte Auswertungszeit",
+    stamp === neu.updated_at && urteil(stamp).aktuell && !urteil(neu.created_at).aktuell);
+  check("Speicher-Frische: beide Zeitspitzen werden begrenzt und nur fuer complete gelesen", queries.length === 2);
+
+  const legacy = { id: "ko-legacy", understanding_status: "complete", created_at: now.toISOString(), updated_at: null };
+  const frueher = { id: "ko-frueher", understanding_status: "complete", created_at: alt, updated_at: alt };
+  check("Speicher-Frische: neue Legacy-Zeile ohne updated_at verliert nicht gegen einen aelteren Updatewert",
+    await S.getLatestCompleteKnowledgeObjectAt({ request: speicher([legacy, frueher]) }) === legacy.created_at);
+  const pending = { id: "ko-offen", understanding_status: "pending", created_at: now.toISOString(), updated_at: now.toISOString() };
+  const failedKo = { ...pending, id: "ko-fehler", understanding_status: "failed" };
+  check("Speicher-Frische: neue pending- und Fehlerzeilen machen alten complete-Bestand nicht aktuell",
+    await S.getLatestCompleteKnowledgeObjectAt({ request: speicher([frueher, pending, failedKo]) }) === alt);
+  check("Speicher-Frische: alte Legacy-Zeile ohne Update bleibt alt, kein Abrufzeit-Fallback",
+    await S.getLatestCompleteKnowledgeObjectAt({ request: speicher([{ ...frueher, updated_at: null, generatedAt: now.toISOString() }]) }) === alt);
+
+  // Echten bestehenden Anreicherungswriter mit lokalem Speichertransport ausfuehren.
+  // Keine DB-Attrappe, die aus jedem PATCH eine neue Analysezeit macht.
+  const rows = [{ ...frueher, tags: [] }], request = speicher(rows);
+  const storageSource = fs.readFileSync(path.join(root, "lib/helmut/storage.js"), "utf8");
+  const start = storageSource.indexOf("async function saveKnowledgeObjectEnrichment("), end = storageSource.indexOf("\n}\n", start) + 2;
+  assert(start > 0 && end > start);
+  const enrich = vm.runInNewContext(storageSource.slice(start, end) + "\nsaveKnowledgeObjectEnrichment",
+    { v3StoreReady: () => true, supabaseRequest: request });
+  await enrich(frueher.id, { tags: ["Neue Klassifikation"] });
+  const nachAnreicherung = await S.getLatestCompleteKnowledgeObjectAt({ request });
+  check("Speicher-Frische: reine echte Klassifikationsanreicherung erzeugt keinen neuen Auswertungsstand",
+    rows[0].tags[0] === "Neue Klassifikation" && nachAnreicherung === alt && !urteil(nachAnreicherung).aktuell);
+  check("Speicher-Frische: leere Antwort ergibt unbekannten Datenstand",
+    await S.getLatestCompleteKnowledgeObjectAt({ request: speicher([]) }) === null);
+  check("Speicher-Frische: ungueltige gespeicherte Zeitpunkte erzeugen keinen aktuellen Stand",
+    await S.getLatestCompleteKnowledgeObjectAt({ request: speicher([{ ...frueher, created_at: "ungueltig", updated_at: "ungueltig" }]) }) === null);
+  for (const [label, row] of [["ungueltigem Updatewert", { updated_at: "ungueltig" }],
+    ["unerwartetem Nullwert", { updated_at: null }], ["falschem Antwortfeld", { created_at: now.toISOString() }]]) {
+    check(`Speicher-Frische: frische Erstellungszeit verdeckt keine Teilantwort mit ${label}`,
+      await S.getLatestCompleteKnowledgeObjectAt({ request: async endpoint => endpoint.includes("select=updated_at")
+        ? [row] : [{ created_at: now.toISOString() }] }) === null);
+  }
+  check("Speicher-Frische: Fehler einer Teilabfrage erlaubt keinen scheinbar sicheren Ersatz",
+    await S.getLatestCompleteKnowledgeObjectAt({ request: async endpoint => {
+      if (endpoint.includes("select=updated_at")) throw Error("offline-read-error");
+      return [{ created_at: now.toISOString() }];
+    } }) === null);
+  check("Speicher-Frische: fehlerhafte Transportantwort bleibt unbekannt",
+    await S.getLatestCompleteKnowledgeObjectAt({ request: async () => ({ created_at: now.toISOString() }) }) === null);
+}
+pruefeAuswertungszeit().then(() => {
+  console.log(`\n${passed}/${passed + failed} Block-5 (Lage-Frische & Live-Flow)-Assertions erfolgreich.`);
+  if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exitCode = 1; }
+}).catch(error => { console.error(error); process.exitCode = 1; });

@@ -35,6 +35,15 @@ Die restlichen sieben Termine sind keine automatische Fehlerbehebung.
    Der spezielle Bundestagsleser wird fuer diese belegten Artikelwege und
    die vollstaendige Artikelgewinnung angeschlossen; Titel, Ziel und Datum
    bleiben gebunden, ein Leitabsatz wird nicht als Vollartikel bezeichnet.
+4. Die globale Frischeabfrage betrachtet nur `created_at`. Der echte
+   Verarbeitungsweg schreibt bei der Aktualisierung eines vorhandenen Vorgangs
+   nur `updated_at`; das Anlagedatum bleibt erhalten. Dadurch koennte selbst ein
+   erfolgreicher Nachlauf weiter als veraltet gelten. Die Abfrage beruecksichtigt
+   deshalb beide gespeicherten Zeitpunkte vollstaendiger Wissensobjekte.
+   Keine aktuelle Uhrzeit wird als Ersatz verwendet. Die getrennte Pruefung
+   der Quellpublikation und des Tagesanlasses bleibt unveraendert.
+   Native Triggerpruefung: nur die Fencingwache, kein allgemeiner Zeitstempel-
+   Trigger; der Anreicherungswriter setzt `updated_at` nicht.
 
 Zwei weitere Metadatenwidersprueche in einem alten Quellenauftrag sind echte
 Bindungsabweichungen: geaenderter Titelsuffix beziehungsweise geaenderte
@@ -75,7 +84,7 @@ Quellenversionen und bisherige Laufquittungen erhalten.
 
 Alle lokalen Tests ueber scripts/lokal.js ohne Production-Zugangsdaten.
 Hash-/Restbindung24/24, Queue-Inhaltsversorgung29/29, Morgenpaket19/19,
-Frischekopf26/26 und schneller Kernschutz14/14 bestanden. Der erste
+Frischekopf26/26, Auswertungszeit/Live-Flow39/39 und schneller Kernschutz14/14 bestanden. Der erste
 Kernschutzversuch scheiterte in drei HTTP-Tests an Sandbox-EPERM fuer lokale
 Ports; derselbe geschuetzte Lauf ausserhalb der Sandbox bestand vollstaendig.
 Der private42-Zeilen-Replay erhaelt alle gebundenen Dokumente und Quellenhashes.
@@ -85,5 +94,7 @@ HTML-Fixtures werden vollstaendig gelesen; manipulierte Ziele, Titel, Tage,
 versteckte Texte, Sperrmetadaten und widerspruechliche Artikeldeklarationen
 bleiben gesperrt. Die beiden HTML-Fixtures enthalten nur oeffentlichen Kopf
 und Artikelbereich. Keine Cacheversionsaenderung oder neue Abruffreigabe.
-Finale Pflicht-CI und Production-Nachkontrolle folgen am
+Der erste Pflichtlauf43169501323 wurde nach bestaetigtem viertem Fehler bewusst
+abgebrochen, bevor seine Erfolge als Endabnahme gelten konnten; kein Testfehler
+und keine Productionmutation. Finale Pflicht-CI und Production-Nachkontrolle folgen am
 tatsaechlichen Endstand; hieraus wird noch kein produktiver Erfolg abgeleitet.
