@@ -250,6 +250,47 @@ async function main() {
     assert(next.results[0].promptDokumentIds.includes(rest[0]));
     assert.equal(s.p.prompts.length, 2); assert.equal(sources(s.p.prompts[1]).length, 12);
   });
+  await test("Hashgebundene Altzeilen ohne content_hash erreichen den echten Queueprompt vollstaendig", async () => {
+    const R = require("../lib/helmut/roh-quellenstaende"), f = fixture();
+    const text = "Die Konferenz diskutiert neue Bahnstrecken in Neustadt. ".repeat(24).trim();
+    assert(text.length > D.SUMMARY_MAX && text.length <= 1400);
+    const docs = [
+      { ...f.cluster.documents[0], summary: text, content_hash: null },
+      D.toRawDocumentRow({ ...f.cluster.documents[0], url: "https://example.org/politik/zweiter-weg" })
+    ];
+    delete docs[1].content_hash;
+    const before = structuredClone(docs), staende = Object.fromEntries(docs.map(d => [d.id, R.standHash(d)]));
+    const s = pruefstand({ enabled: () => true, aiEnabled: () => true,
+      acquireLock: async () => ({ granted: true }), releaseLock: async () => {},
+      gateMode: () => "off", priorityEnabled: () => false });
+    const result = await U.runUnderstandingShadow(docs, { ...s.deps, runId: "queue-gebundene-altzeilen",
+      verstehenVertrag: () => s.vertrag, quellenstaende: staende,
+      quellenRestDokumentIds: docs.map(d => d.id), quellenAbschnitte: {} });
+    assert.equal(result.clusters, 1); assert.equal(result.results[0].status, "saved");
+    assert.equal(s.p.prompts.length, 1);
+    const sent = sources(s.p.prompts[0]);
+    assert.deepEqual(new Set(sent.map(q => q.quelle_id)), new Set(docs.map(d => d.id)));
+    assert.equal(sent.find(q => q.quelle_id === docs[0].id).auszug, text);
+    assert.deepEqual(new Set(result.results[0].promptDokumentIds), new Set(docs.map(d => d.id)));
+    assert.deepEqual(docs, before, "Gebundene Originale bleiben byteinhaltlich erhalten");
+    for (const d of docs) {
+      const normal = R.normiereGebunden(d, staende);
+      assert.equal(normal.content_hash, d.id.slice(3));
+      assert.equal(R.standHash(normal), staende[d.id], "Abgeleiteter Dedupwert aendert den Quellenstand nicht");
+    }
+  });
+  await test("Gebundene Altzeilen reparieren weder fremde Kennung noch falschen Quellenstand oder Deduphash", async () => {
+    const R = require("../lib/helmut/roh-quellenstaende"), doc = { ...fixture().cluster.documents[0], content_hash: null };
+    const fremd = { ...doc, id: "rd-" + "f".repeat(64) };
+    for (const [row, hash] of [[fremd, R.standHash(fremd)], [doc, "f".repeat(64)],
+      [{ ...doc, content_hash: "f".repeat(64) }, R.standHash(doc)]]) {
+      const s = pruefstand({ enabled: () => true, aiEnabled: () => true,
+        acquireLock: async () => ({ granted: true }), releaseLock: async () => {} });
+      await assert.rejects(U.runUnderstandingShadow([row], { ...s.deps, runId: "queue-altstand-negativ",
+        quellenstaende: { [row.id]: hash }, quellenRestDokumentIds: [row.id] }), /quellenstand-eingabe-abweichend/);
+      assert.deepEqual(s.p.schritte, [], "Keine Reservierung, Modellattrappe oder Speicherung bei falscher Bindung");
+    }
+  });
   await test("Singlepromptbytes aus main e8a4b08b bleiben auch mit einteiligem Belegarray exakt erhalten", async () => {
     const f = fixture(), sha = s => crypto.createHash("sha256").update(s).digest("hex");
     assert.equal(sha(U.buildUnderstandingPrompt(f.cluster)), "f0eb1dae2543d9e3a8dfda9f65e20015a20dd4aac264c5e72b2eebf69d834304");

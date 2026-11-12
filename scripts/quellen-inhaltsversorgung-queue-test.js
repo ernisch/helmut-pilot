@@ -256,6 +256,36 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       assert.equal(r.leerlaufWarten, 0); assert.equal(sleeps, 0); assert.equal(prepared, 1);
     }
   });
+  await test("Restzeit vor Quellenbindung verbraucht keinen Fehlversuch und beendet den Slot ohne erneuten Claim", async () => {
+    const Anschluss = require("../lib/helmut/quellen-inhaltsversorgung-anschluss");
+    for (const alter of [0, 72 * 3600000]) {
+      let claims = 0, prepared = 0;
+      const deferred = [];
+      const row = { id: "quellenbindung-slotende", job_type: "document_understanding", payload: job.payload,
+        created_at: new Date(start - alter).toISOString(), attempts: 3, max_attempts: 3 };
+      const r = await P.arbeite({ env: { ...env, HELMUT_SCALABLE_PIPELINE: "on" }, budgetMs: 25000,
+        leaseMs: 300000, stapel: 2, leerlaufWarteMs: 10000, deps: deps({
+          budget: { reserviere: async () => assert.fail("Kein Budget bei Slotende") },
+          claim: async () => { claims++; assert.equal(claims, 1); return { verfuegbar: true,
+            auftraege: [row, { ...row, id: "unbegonnener-stapelrest" }] }; },
+          vorbereiteGespeicherteInhalte: async input => { prepared++;
+            return Anschluss.vorbereiteGespeicherteInhalte(input, {
+              leseKatalog: async () => assert.fail("Keine Quellenlesung nach Restzeitwache")
+            }); },
+          zurueckstellen: async args => { deferred.push(args); return { verfuegbar: true, uebernommen: true }; },
+          eagerUnderstanding: async () => assert.fail("Kein Modell bei Slotende"),
+          finish: async () => assert.fail("Slotende ist kein Abschluss/Fehlversuch"),
+          schlafe: async () => assert.fail("Kein Leerlauf nach Slotende")
+        }) });
+      assert.equal(prepared, 1); assert.equal(claims, 1);
+      assert.equal(r.endgueltigFehlgeschlagen, 0); assert.equal(r.wiederholt, 0);
+      assert.equal(r.zurueckgestellt, 1); assert.equal(r.stapelrestZurueckgegeben, 1);
+      assert.deepEqual(deferred.map(d => d.grund), ["artikelkontext-zeitbudget", "zeitbudget-des-laufs-erschoepft"]);
+    }
+    await assert.rejects(understanding(job, deps({ vorbereiteGespeicherteInhalte: async () => {
+      throw Error("quellenbestand-defekt");
+    } }), { auftragsDeadlineMs: start + 120000 }), /quellenbestand-defekt/);
+  });
   await test("Kurze Fortsetzung wartet virtuell 10 Sekunden und endet innerhalb vorhandenen Slotbudgets", async () => {
     let clock = start, due = start, done = false, calls = 0, sleeps = 0;
     const row = { id: "short-rest", job_type: "document_understanding", payload: {} };

@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const G = require("../lib/helmut/artikelkontext-gewinnung");
 const A = require("../lib/helmut/artikelkontext");
 const U = require("../lib/helmut/understanding");
+const fs = require("node:fs"), path = require("node:path");
 const doc = { id: "rd-synthetisch", title: "Neue Regeln zur Foerderung beraten",
   summary: "Der Bundestag hat einen neuen Entwurf beraten.",
   url: "https://www.bundestag.de/dokumente/textarchiv/2026/kw39-regeln-1234567",
@@ -109,5 +110,54 @@ test("Herkunft kann keine spaetere Absatzwahl oder fremde Adresse verdecken", ()
 test("Datumsbindung verwendet Berliner Tag, aendert die Publikation nicht", () => {
   const d = { ...doc, published_at: "2026-09-24T22:30:00.000Z" };
   assert.equal(get(response(), d).ok, true); assert.equal(d.published_at, "2026-09-24T22:30:00.000Z");
+});
+const original = name => fs.readFileSync(path.join(__dirname, "fixtures", "artikelkontext-bundestag", name + ".html"), "utf8");
+const hibDoc = { id: "rd-5ebb3904de4b580a6c5cfb25471fb26a0f3498f581fad4e1e31465e7577f26e4",
+  title: 'AfD will BpB "perspektivisch" abwickeln', source_name: "Deutscher Bundestag",
+  url: "https://www.bundestag.de/presse/hib/kurzmeldungen-1232952", published_at: "2026-11-11T17:08:00.000Z" };
+const presseDoc = { id: "rd-58225d6ee7039a35026c741a65322d291feb73c9f8a6de988e5f48aa64a2c69f",
+  title: "BILDTERMIN: Bundestagspräsidentin Julia Klöckner empfängt die stellvertretende Bundesvorsitzende des Zentralrates der Êzîden in Deutschland, Zemfira Dlovani",
+  source_name: "Deutscher Bundestag", url: "https://www.bundestag.de/presse/pressemitteilungen/2026/pm-261104-bildtermin-511-1231160",
+  published_at: "2026-11-04T12:56:22.000Z" };
+const originalResponse = (d, body) => ({ finalUrl: d.url, body, gelesenAm: "2026-11-12T06:40:00.000Z" });
+const full = (d, body) => G.gewinneArtikeltext(d, originalResponse(d, body), { abschnittsweise: true });
+test("Echte hib-Meldung ohne Canonical/JSON-LD behaelt alle vier Absaetze und ihr Quelldatum", () => {
+  const r = full(hibDoc, original("hib-20261111")); assert.equal(r.ok, true, r.reason);
+  const b = r.beleg; assert.equal(b.gewinnung.verfahren, "artikeltext-v3");
+  assert.equal(b.gewinnung.struktur, "bundestag"); assert.equal(b.gewinnung.originalDatum, "11.11.2026");
+  assert.equal(b.gewinnung.absaetze.length, 4); assert.equal(b.gewinnung.artikelAbsatzZahl, 4);
+  assert(b.text.includes("ersatzlos abwickeln")); assert(!b.text.includes("Dokument, öffnet"));
+  assert.equal(A.pruefeArtikelkontext([hibDoc], b).text, b.text);
+  assert.equal(hibDoc.published_at, "2026-11-11T17:08:00.000Z");
+});
+test("Echte Pressemitteilung behaelt Zeit, Ort und Zutrittshinweis vor und nach dem Meldungstext", () => {
+  const r = full(presseDoc, original("presse-20261104")); assert.equal(r.ok, true, r.reason);
+  assert(r.beleg.text.startsWith("Zeit: Donnerstag, 5. November 2026, 15.00 Uhr Ort: Reichstagsgebäude"));
+  assert(r.beleg.text.includes("zu einem Gespräch.")); assert(r.beleg.text.endsWith("Zutritt zur Präsidialebene ab 14.50 Uhr"));
+  assert.equal(r.beleg.gewinnung.absaetze.length, 3);
+});
+test("Amtliche Volltextbindung lehnt falsches Datum, Gegenziel, Titel, versteckte Texte und Sperrmetadaten ab", () => {
+  const body = original("hib-20261111");
+  for (const changed of [body.replace('content="11.11.2026"', 'content="12.11.2026"'),
+    body.replace('property="og:url" content="' + hibDoc.url, 'property="og:url" content="https://evil.example/fremd'),
+    body.replace('<h1 class="bt-artikel__title">', '<h1 class="bt-artikel__title">Fremder Titel'),
+    body.replace('<div class="bt-artikel__article">', '<div hidden class="bt-artikel__article">'),
+    body.replace('<p>Berlin:', '<p hidden>Berlin:'), body.replace('<head>', '<head><meta name="robots" content="nosnippet">'),
+    body.replace('</head>', '<script type="application/ld+json">{"@type":"Article","headline":"Andere Meldung"}</script></head>'),
+    body.replace('</head>', '<link rel="canonical" href="https://evil.example/fremd"></head>')])
+    assert.equal(full(hibDoc, changed).ok, false);
+  const fremd = { ...hibDoc, url: hibDoc.url.replace("www.bundestag.de", "evil.example") };
+  assert.equal(full(fremd, body.replaceAll(hibDoc.url, fremd.url)).ok, false);
+  const b = full(hibDoc, body).beleg;
+  for (const change of [{ originalDatum: "12.11.2026" }, { datumsFeld: "datePublished" }])
+    assert.throws(() => A.pruefeArtikelkontext([hibDoc], { ...b, gewinnung: { ...b.gewinnung, ...change } }), /artikelkontext/);
+});
+test("Amtlicher Volltext ueberspringt keine kurze Absage und kennzeichnet langen Text als Abschnitte", () => {
+  const body = original("hib-20261111");
+  const abgesagt = full(hibDoc, body.replace('<p></p><p>Berlin:', '<p>Abgesetzt.</p><p>Berlin:'));
+  assert.equal(abgesagt.ok, true, abgesagt.reason); assert(abgesagt.beleg.text.startsWith("Abgesetzt. Berlin:"));
+  const lang = full(hibDoc, body.replace('<p></p><p>Berlin:', '<p>' + lead.repeat(70) + '</p><p>Berlin:'));
+  assert.equal(lang.ok, true, lang.reason); assert.equal(lang.beleg.gewinnung.verfahren, "artikelabschnitte-v4");
+  assert(lang.beleg.text.startsWith(lead.repeat(70))); assert(lang.beleg.text.includes("ersatzlos abwickeln"));
 });
 console.log(`PASS ${count} Gruppen Bundestags-Artikelkontext`);
