@@ -163,6 +163,56 @@ async function main() {
       assert.match(quellenlaufText({ zustand: "gesperrt", grund: "arbeitslimit-tagesgrenze" }), /Keine Sonderfreigabe/);
       assert.equal(memo.size, 0); assert.equal(rendered.at(-1).offen, false); restored.dispose();
     });
+    await check("Nur eine belegte maximale Laufzeit erlaubt einen neuen manuellen Auftrag", async () => {
+      const { createQuellenlauf, quellenlaufText } = await import("../verwaltung/original-quellenlauf.mjs");
+      const a = auftrag();
+      for (const age of [299999, 300000, 300001, -1000, null]) {
+        const r = await admin.leseStatus(a, { lese: async () => [{ runId: admin.laufId(a), process: "warteschlange-crawl",
+          status: "running", startedAt: age === null ? "ungueltig" : new Date(now - age).toISOString() }] });
+        assert.equal(r.laufzeitAbgelaufen, age !== null && age >= 300000);
+        assert.notEqual(r.zustand, "abgeschlossen");
+      }
+      const memo = new Map([["helmut-admin-quellenauftrag-v1", JSON.stringify(a)]]), posts = [];
+      const host = { crypto, sessionStorage: { getItem: k => memo.get(k), setItem: (k, v) => memo.set(k, v), removeItem: k => memo.delete(k) } };
+      let proof = { zustand: "unbekannt", grund: "laufzeit-ohne-abschlussbeleg" };
+      const client = createQuellenlauf({ host, fetcher: async (url, o) => {
+        if (url === "/api/security/csrf") return { ok: true, json: async () => ({ token: "synthetic-csrf-for-unit-test" }) };
+        if (o.method === "POST") { const next = JSON.parse(o.body); posts.push(next);
+          return { ok: true, json: async () => ({ ...next, zustand: "abgeschlossen" }) }; }
+        return { ok: true, json: async () => ({ laufId: admin.laufId(a), ...proof }) };
+      } });
+      client.restore(); await client.status();
+      for (const p of [proof, { ...proof, laufzeitAbgelaufen: false },
+        { ...proof, grund: "laufbeleg-nicht-lesbar", laufzeitAbgelaufen: true },
+        { ...proof, laufId: "falsche-laufkennung", laufzeitAbgelaufen: true }]) {
+        proof = p; await client.status(); await client.start();
+        assert.equal(client.state().offen, true); assert.equal(posts.length, 0);
+      }
+      proof = { zustand: "unbekannt", grund: "laufzeit-ohne-abschlussbeleg", laufzeitAbgelaufen: true };
+      await client.status(); assert.equal(client.state().offen, false);
+      assert.equal(client.state().zustand, "unbekannt"); assert.equal(posts.length, 0);
+      assert.match(quellenlaufText(client.state()), /Abschluss bleibt unbekannt/);
+      await client.start(); assert.equal(posts.length, 1); assert.notEqual(posts[0].auftragId, a.auftragId);
+      client.dispose();
+    });
+    await check("Ein noch offener POST wird auch bei behauptetem Fristablauf nicht erneut gestartet", async () => {
+      const { createQuellenlauf } = await import("../verwaltung/original-quellenlauf.mjs");
+      const memo = new Map(); let finishPost, a, posts = 0;
+      const host = { crypto, sessionStorage: { getItem: k => memo.get(k), setItem: (k, v) => memo.set(k, v), removeItem: k => memo.delete(k) } };
+      const client = createQuellenlauf({ host, fetcher: async (url, o) => {
+        if (url === "/api/security/csrf") return { ok: true, json: async () => ({ token: "synthetic-csrf-for-unit-test" }) };
+        if (o.method === "POST") { posts++; a = JSON.parse(o.body); await new Promise(r => finishPost = r);
+          return { ok: true, json: async () => ({ ...a, zustand: "unbekannt" }) }; }
+        return { ok: true, json: async () => ({ laufId: admin.laufId(a), zustand: "unbekannt",
+          grund: "laufzeit-ohne-abschlussbeleg", laufzeitAbgelaufen: true }) };
+      } });
+      const post = client.start(); while (!finishPost) await Promise.resolve();
+      await client.status(); await client.start();
+      assert.equal(client.state().busy, true); assert.equal(client.state().offen, true); assert.equal(posts, 1);
+      finishPost(); await post; await client.status();
+      assert.equal(client.state().zustand, "unbekannt"); assert.equal(client.state().offen, false); assert.equal(posts, 1);
+      client.dispose();
+    });
     await check("spaeter Statusfehler ueberschreibt keinen bestaetigten POST-Abschluss", async () => {
       const { createQuellenlauf } = await import("../verwaltung/original-quellenlauf.mjs");
       const memo = new Map(); let finishPost, failStatus, a;
@@ -192,7 +242,9 @@ async function main() {
       const { browserCheck } = require("./quellen-adminstart-browser-cases");
       await browserCheck({ base, check, request, reset() {
         now = Date.parse("2026-11-11T14:20:00Z"); leaseBis = 0; counts.clear();
-      }, setHold(value) { hold = value; }, advance, plans: () => plans });
+      }, setHold(value) { hold = value; }, advance, plans: () => plans,
+      seedRunning(a) { const r = { runId: admin.laufId(a), process: "warteschlange-crawl", status: "running",
+        startedAt: new Date(now - 300001).toISOString() }; receipts.set(r.runId, r); return r; } });
     }
     console.log(`PASS ${passed}/${passed} Admin-Quellenstart; kein externer Aufruf`);
   } finally { await new Promise(r => server.close(r)); for (const restore of restores.reverse()) restore(); }

@@ -92,6 +92,40 @@ ausserhalb der verbrauchten Einmalfreigabe und benoetigt eine neue konkrete
 Betreiberentscheidung gemaess AGENTS.md/Production Schutz. Es besteht kein
 technischer Zwang, bis morgen zu warten; die Zusatzverarbeitung ist begrenzt.
 
+## Bestaetigter naechster Ansatz und Verwaltungssperre
+
+Zusaetzliche rein lesende Diagnose: Supabase-Projekt ACTIVE_HEALTHY,
+Metrikfeed HTTP200. Aktuell439.664.640 von948.191.232Bytes verfuegbar,
+OOM-Zaehler0. Die momentanen Metriken beweisen keine Ursache des vorigen
+Neustarts. Der konfigurierte Managementtoken liefert401; keine Credentials
+geaendert, der dokumentierte Projektmetrikfeed funktioniert mit dem bestehenden
+Serverschluessel. Weder Computewechsel noch Neustart oder Budgetaenderung.
+
+Von89 oeffentlichen Quelldokumenten ab11.11.,08:00UTC haben73 gemaess
+unveraendertem Inhaltsvertrag brauchbaren Bestandstext,16 benoetigen Originale.
+Zwei wartende Auftraege enthalten je16 der aktuellen Bestandstexte. Privater
+Replay aller32 gebundenen Original-Snapshots: Auftrag
+40607078-aeaf-430d-96aa-a94a7f582097 besteht16/16 Hash-/Metadatenbindungen,
+kein neuer Originalabruf erforderlich. Der andere Auftrag behaelt seine echte
+Metadatenabweichung und bleibt gesperrt. Das ist ein konkreter Arbeitsvorrat,
+kein behaupteter weiterer Production-Erfolg; noch kein neuer Lauf freigegeben.
+
+Beim Vorbereiten der Bedienung fiel eine weitere konkrete Sperre auf:
+original-quellenlauf.mjs behaelt unbekannte Auftragskennungen unbegrenzt in der
+Sitzung und deaktiviert jeden neuen Start, auch wenn die maximale Laufzeit
+nachweislich vorbei ist. Korrektur: nur ein korrelierter, authentifizierter
+Server-Status mit gueltiger Startzeit und abgelaufenen300s gibt die lokale
+Startsperre frei. Der Ausgang bleibt unbekannt; kein Endbeleg, keine Buchung,
+kein Job oder Kontingent wird umgeschrieben. Jeder weitere Lauf erfordert einen
+neuen ausdruecklichen Klick, eine neue Kennung, CSRF und saemtliche bisherigen
+serverseitigen Sperr-/Budgetpruefungen. Ein noch offener POST, unlesbarer Beleg,
+ungueltige Startzeit oder fremde Laufkennung halten die Sperre weiter fest.
+20/20 gezielte lokale Pruefungen bestanden, darunter vier echte Chromium-
+Browsergruppen mit1280/390/320px und dem beleglosen abgelaufenen Auftrag.
+0 externe Aufrufe; Originalquittung und Verbrauch im Browserfall erhalten.
+Eigener Arbeitsbranch; Preview fuer ihn explizit deaktiviert, damit keine
+Vorschau mit Productionzugang entsteht. Pflicht-CI und Rollout noch offen.
+
 ## Produktionsbefund vor der Reparatur
 
 Rein lesende Aufnahme am12.11.,06:22–06:30UTC. Production953c1dfe,
