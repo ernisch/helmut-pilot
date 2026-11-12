@@ -43,7 +43,8 @@ Gezielte lokale Pruefungen ueber lokal.js:12/12Lese-/Fehlergruppen,
 24/24Login/HTTP,17/17Sitzungs-/Mandatszuordnung und21/21Speicherintegritaet.
 Socket-EPERM wurde mit demselben isolierten Test ausserhalb der Sandbox
 aufgeloest. Der zusaetzlich gelesene historische Kostenmessungstest meldet
-128/129: sein Scheduler-Quelltextfenster ist zu kurz. Derselbe Fehler tritt
+128/129: sein Scheduler-Regulaerausdruck endet am verschachtelten Optionsobjekt
+vor runId. Derselbe Fehler tritt
 unveraendert im isolierten main-Standf2676192 auf; die Kosten-/Laufaggregationen
 bestehen. Kein gruener Gesamtnachweis fuer diesen Legacytest behauptet.
 Die vorhandene verpflichtende PostgreSQL-/PostgREST-CI prueft zusaetzlich die
