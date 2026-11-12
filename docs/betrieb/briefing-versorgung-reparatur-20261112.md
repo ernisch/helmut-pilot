@@ -590,3 +590,32 @@ liefen dort nicht. Die erste Kuerzung liess54 Restzeichen; ihr Zwischenlauf
 43174509306 wurde vom korrigierten Kopf abgeloest. Lokale Dokumentationsgrenze
 danach29978 Zeichen/4 von4 Pruefungen PASS. Der oben belegte Endlauf ist die
 massgebliche Abnahme, keine Umwertung der Vorlaeufe. Produktiver Nachlauf offen.
+
+### Budgetleser und Neustartabgrenzung, 21:30UTC
+
+Erneute rein lesende Diagnose nach Betreiberauftrag zur eigenen Fehlerbehebung:
+PostgreSQL weiterhin seit14:38:18UTC unveraendert. Health Advisor ohne Befunde;
+Performance Hinweise betreffen allgemeine Indexnutzung, keinen belegten Absturz.
+17.607KO-Zeilen, groesste Zeile8.948Bytes, Tabelle samt Indizes54.714.368Bytes.
+Der letzte KO-POST vor dem Ausfall trug nur513Bytes und endete nach2108ms mit521.
+Eine uebergrosse KO-Nutzlast ist dafuer nicht belegt. Neue Logabgrenzung: PgBouncer
+startet14:38:17.569UTC, PostgREST14:38:17.703UTC, PostgreSQL14:38:18.665UTC und
+Auth ab14:38:19UTC. Das belegt mehrere neu gestartete Dienste, weder den
+Host-/OOM-Ausloeser noch eine bestimmte fehlerhafte Anwendungsabfrage.
+
+Konkreter Anwendungsbefund: getLlmUsage, getLlmUsageToday und getLlmCostSince
+lasen weiterhin den gesamten Kontenblock. Die bestehenden geschuetzten
+Feldansichten lesen jetzt nur llmUsage; alle Eintraege, Mandatsfilter und
+Tages-/Monatsberechnungen bleiben erhalten. Kein Cache, kein Schemawechsel,
+kein gekuerztes Kostenbuch und keine Aenderung am atomaren Reservieren oder CAS.
+Native Groessenprobe21:27UTC:4.322.754Bytes Gesamtsicht gegen2.697.355Bytes
+Nutzungssicht,37,6Prozent weniger JSON-Daten. Das ist kein gemessener Rueckgang
+des Datenbank-RAMs und kein Beweis behobener Neustarts.
+
+Vor Korrektur schlaegt die neue Transportgegenprobe fehl; danach ueber lokal.js:
+14/14 Auth-Lesegruppen,23/23 Mandatsbudget und20/20 Budget-Rollout bestanden.
+Fehlerhafte Kostenansichten blockieren mit dem unveraenderten aktiven
+HELMUT_LLM_BUDGET_FAIL_CLOSED; der historische Flag-aus-Vertrag bleibt erhalten.
+Keine erneuten Production-Quellen-/Modell-/Lage-/Morgenlaeufe, keine Env-, Daten-
+oder Migrationsaenderung. Pflicht-CI und Live-Nachweis stehen im zugehoerigen PR.
+Ein wiederhergestelltes echtes Tagesbriefing ist weiterhin nicht bewiesen.
