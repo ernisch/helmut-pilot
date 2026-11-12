@@ -85,6 +85,15 @@ async function run({browser=false,evidenceDir=null}={}){
    await assert.rejects(api.createCustomer({...mandate,name:'Fiktiv Falsch',email:'falsch@example.invalid',constituency:'Falscher Wahlkreis'}),e=>e.status===400);
    assert.equal((await accounts.listUsers()).length,before);assert.equal(mailCalls.length,mailCount);
   });
+  await check('Leere oder ausgelassene Schwerpunkte erlauben Anlage und Einladung, Versorgung bleibt pausiert',async()=>{
+   for(const [email,focusTopics] of [['ohne-themen@example.invalid',[]],['spaeter@example.invalid',undefined]]){
+    const result=await api.createCustomer({...mandate,name:'Fiktiv ohne Schwerpunkte',email,focusTopics});
+    assert.equal(result.user.active,true);assert.ok((await accounts.listPendingInvites())[result.user.id]);assert.deepEqual((await storage.getProfile(result.user.politicianId)).focusTopics,[]);
+    assert.deepEqual(result.validierung.fehlendePflichtfelder,['mind. ein Schwerpunkt oder Ausschuss']);
+    const data=await api.load();assert.equal(customerState(data,data.customers.find(c=>c.userId===result.user.id)).label,'Schwerpunkte offen');
+    await assert.rejects(api.activateProfile(result.user.politicianId),e=>e.status===409);assert.equal((await storage.getProfile(result.user.politicianId)).profileActive,false);
+   }
+  });
   await check('Mandatsfehler behaelt gesperrtes Konto und sendet keine Einladung',async()=>{
    const mailCount=mailCalls.length;
    const broken=createSimpleApi({origin:base,fetcher:(url,options={})=>url.startsWith('/api/admin/profile/')&&options.method==='PATCH'?Promise.resolve(new Response('{}',{status:400})):authenticated(url,options)});
@@ -231,6 +240,25 @@ async function run({browser=false,evidenceDir=null}={}){
    await page.getByRole('heading',{name:'Fiktive Versandprobe',exact:true}).waitFor();
    await check('Ein synthetischer positiver Versandbeleg zeigt die abgeschickte Einladung',async()=>{assert.match(await page.locator('[role="status"]').innerText(),/an versandprobe@example.invalid versendet/);assert.equal(await page.getByText('Einladung versendet.',{exact:true}).count(),1);assert.equal(mailCalls.filter(m=>m.message.to==='versandprobe@example.invalid').length,1);});
    await context.unroute(invitePattern);
+   await fillNewCustomer('Fiktiv spaetere Schwerpunkte','spaetere-schwerpunkte@example.invalid');await page.locator('#topics').fill('');
+   await page.setViewportSize({width:390,height:900});await page.locator('h1').focus();await page.evaluate(()=>scrollTo(0,0));
+   if(evidenceDir)await page.screenshot({path:path.join(evidenceDir,'app-kunde-ohne-schwerpunkte-mobil.png'),fullPage:true});
+   await page.locator('#new-customer button[type="submit"]').click();await page.getByRole('heading',{name:'Fiktiv spaetere Schwerpunkte',exact:true}).waitFor();
+   await check('Browser legt einen Kunden ohne Schwerpunkte an und bietet den Einladungslink an',async()=>{assert.equal(await page.locator('[data-action="activate"]').count(),0);assert.equal(await page.getByText('Schwerpunkte offen',{exact:true}).count(),1);assert.ok((await accounts.listPendingInvites())[(await accounts.getUserByEmailRaw('spaetere-schwerpunkte@example.invalid')).id]);});
+   const laterInvitation=new URL(await page.locator('#invite-url').inputValue());
+   const laterContext=await browserInstance.newContext({viewport:{width:390,height:900}});
+   await laterContext.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
+   const laterPage=await laterContext.newPage();await laterPage.goto(base+laterInvitation.pathname+laterInvitation.search);await laterPage.locator('#formView').waitFor({state:'visible'});
+   await laterPage.locator('#pw1').fill('Only-Later-Synthetic-123!');await laterPage.locator('#pw2').fill('Only-Later-Synthetic-123!');await laterPage.locator('#setSubmit').click();await laterPage.waitForURL(base+'/');
+   await laterPage.locator('[data-view="settings"]:visible').first().waitFor();
+   if(await laterPage.locator('[data-onboard-skip]:visible').count())await laterPage.locator('[data-onboard-skip]:visible').click();
+   await laterPage.locator('[data-view="settings"]:visible').first().click();await laterPage.locator('[data-view="profile-topics"]:visible').click();await laterPage.locator('#profileForm').waitFor();
+   await check('Kunde kann sich ohne Schwerpunkte anmelden und die leere Profilauswahl oeffnen',async()=>{assert.equal(await laterPage.locator('[name^="topicPriority:"]').count(),0);await laterPage.getByText('Noch keine Schwerpunkte ausgewählt.',{exact:true}).waitFor();});
+   await laterPage.locator('.profile-topic-picker > summary').click();await laterPage.locator('[data-profile-add-topic="Wirtschaft"]').click();
+   const savedLater=laterPage.waitForResponse(r=>r.request().method()==='PATCH'&&new URL(r.url()).pathname==='/api/profile/current');
+   await laterPage.locator('#profileForm [type="submit"]').click();assert.equal((await savedLater).status(),200);await laterPage.locator('#profileForm').waitFor({state:'detached'});
+   await check('Kunde traegt Schwerpunkte selbst im Profil ein, Mandat und Pausierung bleiben erhalten',async()=>{const c=await accounts.getUserByEmailRaw('spaetere-schwerpunkte@example.invalid'),p=await storage.getProfile(c.politicianId);assert.deepEqual(p.focusTopics,['Wirtschaft']);assert.equal(p.party,'SPD');assert.equal(p.parliamentType,'Bundestag');assert.equal(p.profileActive,false);});
+   await laterContext.close();
    assert.deepEqual(consoleErrors,[]);
    const profilePattern='**/api/admin/profile/*';
    await context.route(profilePattern,route=>route.request().method()==='PATCH'?route.fulfill({status:400,contentType:'application/json',body:'{}'}):route.fallback());

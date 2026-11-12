@@ -91,9 +91,10 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
    if(!profilePartyOptions.includes(input.party))fieldErrors.party='Bitte eine Partei wählen.';
    if(!profileFactionOptions.includes(input.faction))fieldErrors.faction='Bitte eine Fraktion wählen.';
    if(!input.constituency||!constituencyChoices(input.parliamentType,input.state).includes(input.constituency))fieldErrors.constituency='Bitte einen passenden Wahlkreis wählen.';
-   if(!Array.isArray(input.focusTopics)||!input.focusTopics.length||input.focusTopics.length>30||input.focusTopics.some(t=>!text(t,160)))fieldErrors.topics='Bitte ein bis 30 Themen mit jeweils höchstens 160 Zeichen angeben.';
+   const topics=input.focusTopics??[];
+   if(!Array.isArray(topics)||topics.length>30||topics.some(t=>!text(t,160)))fieldErrors.topics='Bitte höchstens 30 Schwerpunkte mit jeweils höchstens 160 Zeichen angeben.';
    if(Object.keys(fieldErrors).length)throw new AdminMutationError(400,false,{fieldErrors});
-   return {...input,name:input.name.trim(),email:input.email.trim().toLowerCase(),focusTopics:input.focusTopics.map(t=>t.trim())};
+   return {...input,name:input.name.trim(),email:input.email.trim().toLowerCase(),focusTopics:topics.map(t=>t.trim())};
  }
  return {
   load,
@@ -105,7 +106,8 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
     stage='profile';
     const {name,email,...fields}=dto;
     const saved=await saveProfile(account.politicianId,{fullName:name,...fields},{requireNew:true});
-    if(saved.profile?.profileActive!==false||!Array.isArray(saved.validierung?.fehlendePflichtfelder)||saved.validierung.fehlendePflichtfelder.length||Object.keys(fields).some(k=>JSON.stringify(saved.profile?.[k])!==JSON.stringify(fields[k])))throw new AdminMutationError(0,true);
+    const optionalMissing=dto.focusTopics.length?[]:['mind. ein Schwerpunkt oder Ausschuss'];
+    if(saved.profile?.profileActive!==false||!Array.isArray(saved.validierung?.fehlendePflichtfelder)||saved.validierung.fehlendePflichtfelder.some(label=>!optionalMissing.includes(label))||Object.keys(fields).some(k=>JSON.stringify(saved.profile?.[k])!==JSON.stringify(fields[k])))throw new AdminMutationError(0,true);
     stage='invite';
     const invitation=await invite(account.id);
     const users=await request('/api/admin/users'),matches=users.filter(u=>u.id===account.id);

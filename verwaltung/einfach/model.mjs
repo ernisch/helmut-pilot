@@ -16,6 +16,7 @@ export function customerState(data, customer) {
   const profile=profileFor(data,customer);
   if (!profile) return state('setup','Einrichtung prüfen','warn','Das Mandat ist noch nicht bestätigt.','Prüfe die Zuordnung und ergänze die Mandatsangaben.');
   const missing=profile.validierung?.fehlendePflichtfelder;
+  if(profile.profileActive===false&&Array.isArray(missing)&&missing.length===1&&missing[0]==='mind. ein Schwerpunkt oder Ausschuss') return state('paused','Schwerpunkte offen','','Schwerpunkte können später ergänzt werden.','Der Kunde kann sie selbst im Profil eintragen. Die Briefingversorgung ist noch pausiert.');
   if (Array.isArray(missing)&&missing.length) return state('setup','Angaben fehlen','warn','Das Mandat braucht noch Angaben.',missing.join(', '));
   if (profile.profileActive===false) return state('paused','Versorgung pausiert','','Die Versorgung ist noch nicht aktiv.','Das Konto und das Mandat sind angelegt. Es wird noch kein neues Briefing erwartet.');
   if (profile.profileActive!==true) return state('unknown','Noch nicht geprüft','','Der aktuelle Zustand ist offen.','Der Versorgungsstatus konnte nicht bestätigt werden.');

@@ -14,6 +14,10 @@ PR1155 bleibt auf Betreiberwunsch Draft ohne Merge. Kein Liveumbau von Helmut.**
   zweiter Ansprechpartner, Tarifwunsch oder vom Betreiber gesetztes Passwort.
 - **Eine Kundenseite:** Mandat bearbeiten, Versorgung ausdrücklich aktivieren,
   heutigen Briefingstand prüfen und bei Bedarf einen Zugangslink erstellen.
+- **Politische Schwerpunkte (optional):** bei Anlage und Bearbeitung mit dem Hinweis
+  „Damit wählt Helmut passende Nachrichten für dein Briefing aus. Kann später im Profil ergänzt werden.“
+  Leerlassen verhindert weder Kundenanlage noch Einladung; der Kunde ergänzt seine
+  Auswahl nach der Anmeldung selbst unter Profil → Schwerpunkte.
 - **Mandat auswählen:** Partei, Fraktion und Wahlkreis als Dropdowns mit denselben
   Listen wie im Profil. Wahlkreise passen zu Parlament und Bundesland; ein Wechsel
   setzt die Wahlkreisauswahl zurück. Landesliste und bestehende Sonderwerte bleiben
@@ -52,7 +56,7 @@ Die Kopie unter Sites erhält ihren bestehenden privaten Zugriff.
 | Mandat laden und speichern | `GET/PATCH /api/admin/profile/:id`; vorhandene Mandatsprüfung und Zulassung bleiben serverseitig wirksam. Neue Profile bleiben ausdrücklich inaktiv. Bestehende Zusatzfelder werden erhalten; gespeicherte Werte werden wieder gelesen. |
 | Versorgung aktivieren | Bewusste Einzelaktion mit Bestätigung; vorherige Profilprüfung, ausschließlich PATCH `{profileActive:true}`, anschließende Leseprüfung. Aktivierung erzeugt keinen Briefing-Erfolgsnachweis und startet keinen zusätzlichen Crawl oder Modellaufruf. |
 | Briefing heute | Vorhandene `GET /api/admin/ergebnisse` mit Seitennachladen. Prüft aktuellen Berliner Tag und zusammenpassende Antwortseiten; fehlende/abweichende Antworten erzeugen keinen Erfolg. Briefing, Lage und Bereitstellungsquittung bleiben einzelne Aussagen. |
-| Einladung und Passwort | Nach vollständiger Anlage automatisch vorhandene Zugangsfreigabe und `POST /api/admin/users/:id/invite`. Einmalbindung, Gültigkeit und echter `mail.sent`-Status bleiben erhalten. Die bestehende Appseite `/passwort-setzen` verlangt zwei gleiche Passwörter, setzt die Sitzung und leitet zur App weiter. Kein Passwort durch den Betreiber. Link nur in der aktuellen Ansicht; beim Erneuern wird der alte Link sofort ausgeblendet. |
+| Einladung und Passwort | Nach bestätigter Anlage automatisch vorhandene Zugangsfreigabe und `POST /api/admin/users/:id/invite`, auch mit leerer Schwerpunktliste. Einmalbindung, Gültigkeit und echter `mail.sent`-Status bleiben erhalten. Die bestehende Appseite `/passwort-setzen` verlangt zwei gleiche Passwörter, setzt die Sitzung und leitet zur App weiter. Kein Passwort durch den Betreiber. Link nur in der aktuellen Ansicht; beim Erneuern wird der alte Link sofort ausgeblendet. |
 | Kosten, Quellen, Abläufe | Bestehende Budget-/Quellen-/Prozessrouten. Unbekannte Beträge und fehlende Quelldaten werden erklärt; der vollständige Quellenbericht bleibt verlinkt. |
 | Seltene Funktionen | Tatsächliche Verweise zur bestehenden Profilansicht und zu den erweiterten Werkzeugen. In der privaten Vorschau werden diese Verweise als noch in der bisherigen Verwaltung liegend erklärt. |
 
@@ -75,6 +79,12 @@ Versand bleibt der Link verfügbar; die private Site nennt dies ausdrücklich
 eine simulierte Einladung. Die Briefingversorgung bleibt bis zur bewussten
 Aktivierung pausiert, unabhängig vom freigegebenen Kontozugang.
 
+Fehlt ausschließlich die fachliche Schwerpunkt-/Ausschussangabe, ist das für
+Konto und Einladung erlaubt. Die Kundenseite zeigt „Schwerpunkte offen“ und
+verweist auf den späteren Profilnachtrag. Für die spätere Briefingaktivierung
+bleibt die vorhandene Vollständigkeitsprüfung erhalten; der Profilnachtrag
+aktiviert die Verarbeitung nicht automatisch.
+
 Lade-, Leer- und Fehlerzustände bieten einen nächsten Schritt. Eine fehlende
 Profilquelle ist kein leeres Kundeninventar. Ein inaktives neues Profil gilt nicht
 als versorgt. Unklare Schreibausgänge sperren weiteres Speichern und verweisen auf
@@ -87,20 +97,22 @@ niemals den fiktiven Beispieladapter.
 
 ## Tatsächliche Prüfung
 
-- **40 Gruppen mit Browser und echtem isoliertem Backend:**
+- **44 Gruppen mit Browser und echtem isoliertem Backend:**
   [Prüfbeleg](app-pruefung.json), [Desktop](app-uebersicht.png),
   [Kundenseite Mobil](app-kunde-mobil.png). Von der UI ausgelöste Kontoanlage,
   Profil-PATCH, explizite Aktivierung und Einmallink sind im lokalen Speicher
   nachgewiesen, einschließlich vollständiger Einformularanlage, Dropdownwerten,
-  Teilabbrüchen, E-Mail-Übergabe an den gesperrten Mailweg und anschließender
+  Teilabbrüchen, Anlage ohne Schwerpunkte, E-Mail-Übergabe an den gesperrten Mailweg und anschließender
   Passwortseite: Abweichung abgewiesen, zwei gleiche Passwörter, echte Sitzung,
-  richtiges Mandat und HTTP410 bei erneuter Tokenverwendung. Die positive
+  richtiges Mandat und HTTP410 bei erneuter Tokenverwendung. Ein zunächst leeres
+  Profil wurde anschließend vom angemeldeten Kunden im tatsächlichen Profil-Editor
+  ergänzt und serverseitig zurückgelesen. Die positive
   Versandanzeige ist mit einer ausdrücklich synthetischen Antwort geprüft;
   eine echte E-Mail wurde nicht versendet. Ergebnisstatus gegen synthetische bestehende
   Antwortverträge geprüft; die lokale Umgebung besitzt keinen produktiven V3-Speicher.
-- **18 Gruppen für den Offlineexport:** [Prüfbeleg](vorschau-v2-pruefung.json),
+- **22 Gruppen für den Offlineexport:** [Prüfbeleg](vorschau-v2-pruefung.json),
   1440/390/360/320 Pixel, vollständige Anlage, erhaltenes Mandat, simulierte
-  Einladung, Dropdowns, Beispielzustände, keine JavaScriptfehler
+  Einladung, optionale/leer speicherbare Schwerpunkte, Dropdowns, Beispielzustände, keine JavaScriptfehler
   und keine App-/Netzwerkverbindung.
 - Vorhandener Nachweis vom 11.11. für die bestehende Adminansicht:
   **104/104 Renderprüfungen** und **5/5 Verwaltungs-Ergebnisprüfungen** grün.
@@ -113,6 +125,7 @@ niemals den fiktiven Beispieladapter.
   Der alte Link wird beim Erneuern sofort entfernt; die Prüfung wartet auf den neuen.
 
 [Vollständiges Formular auf dem Handy](vorschau-kunde-komplett-mobil.png)
+· [Anlage ohne Schwerpunkte](vorschau-ohne-schwerpunkte-mobil.png)
 · [Bestehende Passwortseite](app-passwort-setzen-mobil.png).
 
 Reproduzierbar, jeweils ohne Productionkennungen:

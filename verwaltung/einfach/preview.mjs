@@ -12,7 +12,7 @@ export function createPreviewApi() {
  const profiles=Object.fromEntries(customers.map((c,i)=>[c.politicianId,{id:c.politicianId,fullName:c.name,parliamentType:'Bundestag',state:'Berlin',party:'SPD',faction:'SPD',constituency:'Fiktiver Wahlkreis',focusTopics:['Fiktives Thema'],profileActive:i<2}]));
  const result=id=>({id,positionen:{briefing:pos(),lage:pos(),zustellung:pos()},letzterErfolg:now});
  const results={'mandat-nord':{...result('mandat-nord'),positionen:{briefing:pos(0,'fehlt'),lage:pos(),zustellung:pos(0,'fehlt')}},'mandat-mitte':result('mandat-mitte')};
- const validation=p=>({bereit:p.profileActive!==false,fehlendePflichtfelder:[],budgetProbleme:[]});
+ const validation=p=>{const missing=p.focusTopics?.length||p.committee||p.committees?.length?[]:['mind. ein Schwerpunkt oder Ausschuss'];return {bereit:p.profileActive!==false&&!missing.length,fehlendePflichtfelder:missing,budgetProbleme:[]};};
  const clone=value=>structuredClone(value);
  const previewInvite=()=>({inviteUrl:(globalThis.location.origin==='null'?'https://vorschau.invalid':globalThis.location.origin)+'/passwort-setzen?token=fiktiver-vorschaulink',purpose:'invite',mail:{sent:false}});
  return {
@@ -25,7 +25,7 @@ export function createPreviewApi() {
    return {user:clone(c),profile:clone(profiles[c.politicianId]),validierung:validation(profiles[c.politicianId]),invitation:previewInvite(),invitationSent:false};
   },
   async saveProfile(id,input){profiles[id]={...profiles[id],...clone(input),id,profileActive:profiles[id]?.profileActive===true};return {profile:clone(profiles[id]),validierung:validation(profiles[id])};},
-  async activateProfile(id){profiles[id].profileActive=true;return {profile:clone(profiles[id]),validierung:validation(profiles[id])};},
+  async activateProfile(id){if(validation(profiles[id]).fehlendePflichtfelder.length)throw new Error('Bitte zuerst die Schwerpunkte im Profil ergänzen.');profiles[id].profileActive=true;return {profile:clone(profiles[id]),validierung:validation(profiles[id])};},
   async invite(id){const c=customers.find(c=>c.userId===id);c.active=true;return previewInvite();},
   async settings(key){return key==='budget'?{kostenwahrheit:{gesamt:{kostenUsd:0.12,kostenUnbekannt:0}}}:key==='runs'?{processRuns:[{process:'Morgenbriefing',startedAt:now,status:'erfolgreich · fiktives Beispiel'}]}:{verfuegbar:true,zaehler:{abrufwege:12,herausgeber:8},statusCounts:{broken:1,degraded:0}};},
   dispose(){}
